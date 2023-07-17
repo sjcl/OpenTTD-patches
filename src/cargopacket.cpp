@@ -101,7 +101,7 @@ void DumpCargoPacketDeferredPaymentStats(char *buffer, const char *last)
  */
 CargoPacket::CargoPacket()
 {
-	this->source_type = ST_INDUSTRY;
+	this->source_type = SourceType::Industry;
 	this->source_id   = INVALID_SOURCE;
 }
 
@@ -125,7 +125,7 @@ CargoPacket::CargoPacket(StationID source, TileIndex source_xy, uint16 count, So
 	source_xy(source_xy),
 	loaded_at_xy(0)
 {
-	assert(count != 0);
+	dbg_assert(count != 0);
 	this->source_type  = source_type;
 }
 
@@ -143,7 +143,7 @@ CargoPacket::CargoPacket(StationID source, TileIndex source_xy, uint16 count, So
  * @note We have to zero memory ourselves here because we are using a 'new'
  * that, in contrary to all other pools, does not memset to 0.
  */
-CargoPacket::CargoPacket(uint16 count, byte days_in_transit, StationID source, TileIndex source_xy, TileIndex loaded_at_xy, Money feeder_share, SourceType source_type, SourceID source_id) :
+CargoPacket::CargoPacket(uint16 count, uint16 days_in_transit, StationID source, TileIndex source_xy, TileIndex loaded_at_xy, Money feeder_share, SourceType source_type, SourceID source_id) :
 		feeder_share(feeder_share),
 		count(count),
 		days_in_transit(days_in_transit),
@@ -152,7 +152,7 @@ CargoPacket::CargoPacket(uint16 count, byte days_in_transit, StationID source, T
 		source_xy(source_xy),
 		loaded_at_xy(loaded_at_xy)
 {
-	assert(count != 0);
+	dbg_assert(count != 0);
 	this->source_type = source_type;
 }
 
@@ -227,7 +227,7 @@ void CargoPacket::Merge(CargoPacket *cp)
  */
 void CargoPacket::Reduce(uint count)
 {
-	assert(count < this->count);
+	dbg_assert(count < this->count);
 	this->feeder_share -= this->FeederShare(count);
 	if (this->flags & CPF_HAS_DEFERRED_PAYMENT) {
 		IterateCargoPacketDeferredPayments(this->index, false, [&](Money &payment, CompanyID cid, VehicleType type) {
@@ -335,9 +335,9 @@ void CargoList<Tinst, Tcont>::OnCleanPool()
 template <class Tinst, class Tcont>
 void CargoList<Tinst, Tcont>::RemoveFromCache(const CargoPacket *cp, uint count)
 {
-	assert(count <= cp->count);
+	dbg_assert(count <= cp->count);
 	this->count                 -= count;
-	this->cargo_days_in_transit -= cp->days_in_transit * count;
+	this->cargo_days_in_transit -= static_cast<uint64_t>(cp->days_in_transit) * count;
 }
 
 /**
@@ -349,7 +349,7 @@ template <class Tinst, class Tcont>
 void CargoList<Tinst, Tcont>::AddToCache(const CargoPacket *cp)
 {
 	this->count                 += cp->count;
-	this->cargo_days_in_transit += cp->days_in_transit * cp->count;
+	this->cargo_days_in_transit += static_cast<uint64_t>(cp->days_in_transit) * cp->count;
 }
 
 /** Invalidates the cached data and rebuilds it. */
@@ -406,8 +406,8 @@ template <class Tinst, class Tcont>
  */
 void VehicleCargoList::Append(CargoPacket *cp, MoveToAction action)
 {
-	assert(cp != nullptr);
-	assert(action == MTA_LOAD ||
+	dbg_assert(cp != nullptr);
+	dbg_assert(action == MTA_LOAD ||
 			(action == MTA_KEEP && this->action_counts[MTA_LOAD] == 0));
 	this->AddToMeta(cp, action);
 
@@ -541,7 +541,7 @@ void VehicleCargoList::AddToCache(const CargoPacket *cp)
  */
 void VehicleCargoList::RemoveFromMeta(const CargoPacket *cp, MoveToAction action, uint count)
 {
-	assert(count <= this->action_counts[action]);
+	dbg_assert(count <= this->action_counts[action]);
 	this->AssertCountConsistency();
 	this->RemoveFromCache(cp, count);
 	this->action_counts[action] -= count;
@@ -566,10 +566,9 @@ void VehicleCargoList::AddToMeta(const CargoPacket *cp, MoveToAction action)
  */
 void VehicleCargoList::AgeCargo()
 {
-	for (ConstIterator it(this->packets.begin()); it != this->packets.end(); it++) {
-		CargoPacket *cp = *it;
+	for (const auto &cp : this->packets) {
 		/* If we're at the maximum, then we can't increase no more. */
-		if (cp->days_in_transit == 0xFF) continue;
+		if (cp->days_in_transit == UINT16_MAX) continue;
 
 		cp->days_in_transit++;
 		this->cargo_days_in_transit += cp->count;
@@ -632,7 +631,7 @@ void VehicleCargoList::SetTransferLoadPlace(TileIndex xy)
 bool VehicleCargoList::Stage(bool accepted, StationID current_station, StationIDStack next_station, uint8 order_flags, const GoodsEntry *ge, CargoPayment *payment)
 {
 	this->AssertCountConsistency();
-	assert(this->action_counts[MTA_LOAD] == 0);
+	dbg_assert(this->action_counts[MTA_LOAD] == 0);
 	this->action_counts[MTA_TRANSFER] = this->action_counts[MTA_DELIVER] = this->action_counts[MTA_KEEP] = 0;
 	Iterator it = this->packets.begin();
 	uint sum = 0;
@@ -642,7 +641,7 @@ bool VehicleCargoList::Stage(bool accepted, StationID current_station, StationID
 	bool force_keep = (order_flags & OUFB_NO_UNLOAD) != 0;
 	bool force_unload = (order_flags & OUFB_UNLOAD) != 0;
 	bool force_transfer = (order_flags & (OUFB_TRANSFER | OUFB_UNLOAD)) != 0;
-	assert(this->count > 0 || it == this->packets.end());
+	dbg_assert(this->count > 0 || it == this->packets.end());
 	while (sum < this->count) {
 		CargoPacket *cp = *it;
 
@@ -716,7 +715,7 @@ bool VehicleCargoList::Stage(bool accepted, StationID current_station, StationID
 		this->action_counts[action] += cp->count;
 		sum += cp->count;
 	}
-	assert(this->packets.empty());
+	dbg_assert(this->packets.empty());
 	this->packets = std::move(transfer_deliver);
 	this->packets.insert(this->packets.end(), keep.begin(), keep.end());
 	this->AssertCountConsistency();
@@ -899,7 +898,7 @@ uint VehicleCargoList::RerouteFromSource(uint max_move, VehicleCargoList *dest, 
  */
 void StationCargoList::Append(CargoPacket *cp, StationID next)
 {
-	assert(cp != nullptr);
+	dbg_assert(cp != nullptr);
 	this->AddToCache(cp);
 
 	StationCargoPacketMap::List &list = this->packets[next];

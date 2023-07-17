@@ -19,6 +19,7 @@
 #include "rail_type.h"
 #include "newgrf_spritegroup.h"
 #include "newgrf_town.h"
+#include <vector>
 
 /** Scope resolver for stations. */
 struct StationScopeResolver : public ScopeResolver {
@@ -46,6 +47,13 @@ struct StationScopeResolver : public ScopeResolver {
 	uint32 GetTriggers() const override;
 
 	uint32 GetVariable(uint16 variable, uint32 parameter, GetVariableExtra *extra) const override;
+
+private:
+	enum class NearbyStationInfoMode {
+		Standard,
+		V2,
+	};
+	uint32 GetNearbyStationInfo(uint32 parameter, NearbyStationInfoMode mode) const;
 };
 
 /** Station resolver. */
@@ -59,7 +67,7 @@ struct StationResolverObject : public ResolverObject {
 
 	TownScopeResolver *GetTown();
 
-	ScopeResolver *GetScope(VarSpriteGroupScope scope = VSG_SCOPE_SELF, byte relative = 0) override
+	ScopeResolver *GetScope(VarSpriteGroupScope scope = VSG_SCOPE_SELF, VarSpriteGroupScopeOffset relative = 0) override
 	{
 		switch (scope) {
 			case VSG_SCOPE_SELF:

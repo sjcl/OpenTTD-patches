@@ -11,8 +11,10 @@
 #define NETWORK_CONTENT_H
 
 #include "core/tcp_content.h"
-#include "core/tcp_http.h"
+#include "core/http.h"
+#include "../core/container_func.hpp"
 #include "../3rdparty/cpp-btree/btree_map.h"
+#include <vector>
 
 /** Vector with content info */
 typedef std::vector<ContentInfo *> ContentVector;
@@ -57,7 +59,7 @@ struct ContentCallback {
 	virtual void OnDownloadComplete(ContentID cid) {}
 
 	/** Silentium */
-	virtual ~ContentCallback() {}
+	virtual ~ContentCallback() = default;
 };
 
 /**
@@ -76,6 +78,7 @@ protected:
 	FILE *curFile;        ///< Currently downloaded file
 	ContentInfo *curInfo; ///< Information about the currently downloaded file
 	bool isConnecting;    ///< Whether we're connecting
+	bool isCancelled;     ///< Whether the download has been cancelled
 	std::chrono::steady_clock::time_point lastActivity;  ///< The last time there was network activity
 
 	friend class NetworkContentConnecter;
@@ -95,6 +98,7 @@ protected:
 
 	void OnFailure() override;
 	void OnReceiveData(const char *data, size_t length) override;
+	bool IsCancelled() const override;
 
 	bool BeforeDownload();
 	void AfterDownload();

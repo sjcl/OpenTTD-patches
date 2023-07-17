@@ -21,26 +21,27 @@
 #include <sstream>
 
 #ifdef _MSC_VER
-#include <errno.h> // required by vsnprintf implementation for MSVC
+#	include <errno.h> // required by vsnprintf implementation for MSVC
+#	define strncasecmp strnicmp
 #endif
 
 #ifdef _WIN32
-#include "os/windows/win32.h"
+#	include "os/windows/win32.h"
 #endif
 
 #ifdef WITH_UNISCRIBE
-#include "os/windows/string_uniscribe.h"
+#	include "os/windows/string_uniscribe.h"
 #endif
 
 #ifdef WITH_ICU_I18N
-/* Required by strnatcmp. */
-#include <unicode/ustring.h>
-#include "language.h"
-#include "gfx_func.h"
+/* Required by StrNaturalCompare. */
+#	include <unicode/ustring.h>
+#	include "language.h"
+#	include "gfx_func.h"
 #endif /* WITH_ICU_I18N */
 
 #if defined(WITH_COCOA)
-#include "os/macosx/string_osx.h"
+#	include "os/macosx/string_osx.h"
 #endif
 
 /* The function vsnprintf is used internally to perform the required formatting
@@ -83,7 +84,7 @@ int CDECL vseprintf(char *str, const char *last, const char *format, va_list ap)
  */
 char *strecat(char *dst, const char *src, const char *last)
 {
-	assert(dst <= last);
+	dbg_assert(dst <= last);
 	while (*dst != '\0') {
 		if (dst == last) return dst;
 		dst++;
@@ -111,7 +112,7 @@ char *strecat(char *dst, const char *src, const char *last)
  */
 char *strecpy(char *dst, const char *src, const char *last, bool quiet_mode)
 {
-	assert(dst <= last);
+	dbg_assert(dst <= last);
 	while (dst != last && *src != '\0') {
 		*dst++ = *src++;
 	}
@@ -140,30 +141,6 @@ char *stredup(const char *s, const char *last)
 	char *tmp = CallocT<char>(len + 1);
 	memcpy(tmp, s, len);
 	return tmp;
-}
-
-char *str_vfmt(const char *str, va_list va)
-{
-	char buf[4096];
-
-	int len = vseprintf(buf, lastof(buf), str, va);
-	char *p = MallocT<char>(len + 1);
-	memcpy(p, buf, len + 1);
-	return p;
-}
-
-/**
- * Format, "printf", into a newly allocated string.
- * @param str The formatting string.
- * @return The formatted string. You must free this!
- */
-char *CDECL str_fmt(const char *str, ...)
-{
-	va_list va;
-	va_start(va, str);
-	char *output = str_vfmt(str, va);
-	va_end(va);
-	return output;
 }
 
 std::string stdstr_vfmt(const char *str, va_list va)
@@ -266,9 +243,14 @@ static void StrMakeValidInPlace(T &dst, const char *str, const char *last, Strin
 				str += len;
 				continue;
 			}
-			/* Replace the undesirable character with a question mark */
 			str += len;
-			if ((settings & SVS_REPLACE_WITH_QUESTION_MARK) != 0) *dst++ = '?';
+			if ((settings & SVS_REPLACE_TAB_CR_NL_WITH_SPACE) != 0 && (c == '\r' || c == '\n' || c == '\t')) {
+				/* Replace the tab, carriage return or newline with a space. */
+				*dst++ = ' ';
+			} else if ((settings & SVS_REPLACE_WITH_QUESTION_MARK) != 0) {
+				/* Replace the undesirable character with a question mark */
+				*dst++ = '?';
+			}
 		}
 	}
 
@@ -310,7 +292,7 @@ void StrMakeValidInPlace(char *str, StringValidationSettings settings)
  * @param str The string to validate.
  * @param settings The settings for the string validation.
  */
-std::string StrMakeValid(const std::string &str, StringValidationSettings settings)
+std::string StrMakeValid(std::string_view str, StringValidationSettings settings)
 {
 	auto buf = str.data();
 	auto last = buf + str.size();
@@ -404,6 +386,18 @@ bool StrStartsWith(const std::string_view str, const std::string_view prefix)
 }
 
 /**
+ * Check whether the given string starts with the given prefix, ignoring case.
+ * @param str    The string to look at.
+ * @param prefix The prefix to look for.
+ * @return True iff the begin of the string is the same as the prefix, ignoring case.
+ */
+bool StrStartsWithIgnoreCase(std::string_view str, const std::string_view prefix)
+{
+	if (str.size() < prefix.size()) return false;
+	return StrEqualsIgnoreCase(str.substr(0, prefix.size()), prefix);
+}
+
+/**
  * Check whether the given string ends with the given suffix.
  * @param str    The string to look at.
  * @param suffix The suffix to look for.
@@ -416,6 +410,71 @@ bool StrEndsWith(const std::string_view str, const std::string_view suffix)
 	return str.compare(str.size() - suffix_len, suffix_len, suffix, 0, suffix_len) == 0;
 }
 
+/** Case insensitive implementation of the standard character type traits. */
+struct CaseInsensitiveCharTraits : public std::char_traits<char> {
+	static bool eq(char c1, char c2) { return toupper(c1) == toupper(c2); }
+	static bool ne(char c1, char c2) { return toupper(c1) != toupper(c2); }
+	static bool lt(char c1, char c2) { return toupper(c1) <  toupper(c2); }
+
+	static int compare(const char *s1, const char *s2, size_t n)
+	{
+		while (n-- != 0) {
+			if (toupper(*s1) < toupper(*s2)) return -1;
+			if (toupper(*s1) > toupper(*s2)) return 1;
+			++s1; ++s2;
+		}
+		return 0;
+	}
+
+	static const char *find(const char *s, int n, char a)
+	{
+		while (n-- > 0 && toupper(*s) != toupper(a)) {
+			++s;
+		}
+		return s;
+	}
+};
+
+/** Case insensitive string view. */
+typedef std::basic_string_view<char, CaseInsensitiveCharTraits> CaseInsensitiveStringView;
+
+/**
+ * Check whether the given string ends with the given suffix, ignoring case.
+ * @param str    The string to look at.
+ * @param suffix The suffix to look for.
+ * @return True iff the end of the string is the same as the suffix, ignoring case.
+ */
+bool StrEndsWithIgnoreCase(std::string_view str, const std::string_view suffix)
+{
+	if (str.size() < suffix.size()) return false;
+	return StrEqualsIgnoreCase(str.substr(str.size() - suffix.size()), suffix);
+}
+
+/**
+ * Compares two string( view)s, while ignoring the case of the characters.
+ * @param str1 The first string.
+ * @param str2 The second string.
+ * @return Less than zero if str1 < str2, zero if str1 == str2, greater than
+ *         zero if str1 > str2. All ignoring the case of the characters.
+ */
+int StrCompareIgnoreCase(const std::string_view str1, const std::string_view str2)
+{
+	CaseInsensitiveStringView ci_str1{ str1.data(), str1.size() };
+	CaseInsensitiveStringView ci_str2{ str2.data(), str2.size() };
+	return ci_str1.compare(ci_str2);
+}
+
+/**
+ * Compares two string( view)s for equality, while ignoring the case of the characters.
+ * @param str1 The first string.
+ * @param str2 The second string.
+ * @return True iff both strings are equal, barring the case of the characters.
+ */
+bool StrEqualsIgnoreCase(const std::string_view str1, const std::string_view str2)
+{
+	if (str1.size() != str2.size()) return false;
+	return StrCompareIgnoreCase(str1, str2) == 0;
+}
 
 /** Scans the string for colour codes and strips them */
 void str_strip_colours(char *str)
@@ -585,9 +644,11 @@ bool IsValidChar(WChar key, CharSetFilter afilter)
 		case CS_NUMERAL:       return (key >= '0' && key <= '9');
 		case CS_NUMERAL_SIGNED:  return (key >= '0' && key <= '9') || key == '-';
 #if !defined(STRGEN) && !defined(SETTINGSGEN)
-		case CS_NUMERAL_DECIMAL: return (key >= '0' && key <= '9') || key == '.' || key == '-' || key == GetDecimalSeparatorChar();
+		case CS_NUMERAL_DECIMAL: return (key >= '0' && key <= '9') || key == '.' || key == GetDecimalSeparatorChar();
+		case CS_NUMERAL_DECIMAL_SIGNED: return (key >= '0' && key <= '9') || key == '.' || key == '-' || key == GetDecimalSeparatorChar();
 #else
-		case CS_NUMERAL_DECIMAL: return (key >= '0' && key <= '9') || key == '.' || key == '-';
+		case CS_NUMERAL_DECIMAL: return (key >= '0' && key <= '9') || key == '.';
+		case CS_NUMERAL_DECIMAL_SIGNED: return (key >= '0' && key <= '9') || key == '.' || key == '-';
 #endif
 		case CS_NUMERAL_SPACE: return (key >= '0' && key <= '9') || key == ' ';
 		case CS_ALPHA:         return IsPrintable(key) && !(key >= '0' && key <= '9');
@@ -654,25 +715,6 @@ int CDECL seprintf(char *str, const char *last, const char *format, ...)
 }
 
 
-/**
- * Convert the md5sum to a hexadecimal string representation
- * @param buf buffer to put the md5sum into
- * @param last last character of buffer (usually lastof(buf))
- * @param md5sum the md5sum itself
- * @return a pointer to the next character after the md5sum
- */
-char *md5sumToString(char *buf, const char *last, const uint8 md5sum[16])
-{
-	char *p = buf;
-
-	for (uint i = 0; i < 16; i++) {
-		p += seprintf(p, last, "%02X", md5sum[i]);
-	}
-
-	return p;
-}
-
-
 /* UTF-8 handling routines */
 
 
@@ -684,7 +726,7 @@ char *md5sumToString(char *buf, const char *last, const uint8 md5sum[16])
  */
 size_t Utf8Decode(WChar *c, const char *s)
 {
-	assert(c != nullptr);
+	dbg_assert(c != nullptr);
 
 	if (!HasBit(s[0], 7)) {
 		/* Single byte character: 0xxxxxxx */
@@ -710,7 +752,6 @@ size_t Utf8Decode(WChar *c, const char *s)
 		}
 	}
 
-	/* DEBUG(misc, 1, "[utf8] invalid UTF-8 sequence"); */
 	*c = '?';
 	return 1;
 }
@@ -746,7 +787,6 @@ inline size_t Utf8Encode(T buf, WChar c)
 		return 4;
 	}
 
-	/* DEBUG(misc, 1, "[utf8] can't UTF-8 encode value 0x%X", c); */
 	*buf = '?';
 	return 1;
 }
@@ -812,9 +852,9 @@ char *strcasestr(const char *haystack, const char *needle)
  * @param str The string to skip the initial garbage of.
  * @return The string with the garbage skipped.
  */
-static const char *SkipGarbage(const char *str)
+static std::string_view SkipGarbage(std::string_view str)
 {
-	while (*str != '\0' && (*str < '0' || IsInsideMM(*str, ';', '@' + 1) || IsInsideMM(*str, '[', '`' + 1) || IsInsideMM(*str, '{', '~' + 1))) str++;
+	while (str.size() != 0 && (str[0] < '0' || IsInsideMM(str[0], ';', '@' + 1) || IsInsideMM(str[0], '[', '`' + 1) || IsInsideMM(str[0], '{', '~' + 1))) str.remove_prefix(1);
 	return str;
 }
 
@@ -857,7 +897,7 @@ static int _strnatcmpIntl(const char *s1, const char *s2) {
  * @param ignore_garbage_at_front Skip punctuation characters in the front
  * @return Less than zero if s1 < s2, zero if s1 == s2, greater than zero if s1 > s2.
  */
-int strnatcmp(const char *s1, const char *s2, bool ignore_garbage_at_front)
+int StrNaturalCompare(std::string_view s1, std::string_view s2, bool ignore_garbage_at_front)
 {
 	if (ignore_garbage_at_front) {
 		s1 = SkipGarbage(s1);
@@ -867,7 +907,7 @@ int strnatcmp(const char *s1, const char *s2, bool ignore_garbage_at_front)
 #ifdef WITH_ICU_I18N
 	if (_current_collator) {
 		UErrorCode status = U_ZERO_ERROR;
-		int result = _current_collator->compareUTF8(s1, s2, status);
+		int result = _current_collator->compareUTF8(icu::StringPiece(s1.data(), s1.size()), icu::StringPiece(s2.data(), s2.size()), status);
 		if (U_SUCCESS(status)) return result;
 	}
 #endif /* WITH_ICU_I18N */
@@ -883,14 +923,14 @@ int strnatcmp(const char *s1, const char *s2, bool ignore_garbage_at_front)
 #endif
 
 	/* Do a manual natural sort comparison if ICU is missing or if we cannot create a collator. */
-	return _strnatcmpIntl(s1, s2);
+	return _strnatcmpIntl(s1.data(), s2.data());
 }
 
 #ifdef WITH_UNISCRIBE
 
-/* static */ StringIterator *StringIterator::Create()
+/* static */ std::unique_ptr<StringIterator> StringIterator::Create()
 {
-	return new UniscribeStringIterator();
+	return std::make_unique<UniscribeStringIterator>();
 }
 
 #elif defined(WITH_ICU_I18N)
@@ -1044,9 +1084,9 @@ public:
 	}
 };
 
-/* static */ StringIterator *StringIterator::Create()
+/* static */ std::unique_ptr<StringIterator> StringIterator::Create()
 {
-	return new IcuStringIterator();
+	return std::make_unique<IcuStringIterator>();
 }
 
 #else
@@ -1072,7 +1112,7 @@ public:
 
 	virtual size_t SetCurPosition(size_t pos)
 	{
-		assert(this->string != nullptr && pos <= this->len);
+		dbg_assert(this->string != nullptr && pos <= this->len);
 		/* Sanitize in case we get a position inside an UTF-8 sequence. */
 		while (pos > 0 && IsUtf8Part(this->string[pos])) pos--;
 		return this->cur_pos = pos;
@@ -1080,7 +1120,7 @@ public:
 
 	virtual size_t Next(IterType what)
 	{
-		assert(this->string != nullptr);
+		dbg_assert(this->string != nullptr);
 
 		/* Already at the end? */
 		if (this->cur_pos >= this->len) return END;
@@ -1118,7 +1158,7 @@ public:
 
 	virtual size_t Prev(IterType what)
 	{
-		assert(this->string != nullptr);
+		dbg_assert(this->string != nullptr);
 
 		/* Already at the beginning? */
 		if (this->cur_pos == 0) return END;
@@ -1155,17 +1195,17 @@ public:
 };
 
 #if defined(WITH_COCOA) && !defined(STRGEN) && !defined(SETTINGSGEN)
-/* static */ StringIterator *StringIterator::Create()
+/* static */ std::unique_ptr<StringIterator> StringIterator::Create()
 {
-	StringIterator *i = OSXStringIterator::Create();
+	std::unique_ptr<StringIterator> i = OSXStringIterator::Create();
 	if (i != nullptr) return i;
 
-	return new DefaultStringIterator();
+	return std::make_unique<DefaultStringIterator>();
 }
 #else
-/* static */ StringIterator *StringIterator::Create()
+/* static */ std::unique_ptr<StringIterator> StringIterator::Create()
 {
-	return new DefaultStringIterator();
+	return std::make_unique<DefaultStringIterator>();
 }
 #endif /* defined(WITH_COCOA) && !defined(STRGEN) && !defined(SETTINGSGEN) */
 

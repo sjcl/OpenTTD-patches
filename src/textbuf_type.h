@@ -48,6 +48,7 @@ struct Textbuf {
 
 	void Assign(StringID string);
 	void Assign(const char *text);
+	void Assign(const std::string &text);
 	void CDECL Print(const char *format, ...) WARN_FORMAT(2, 3);
 
 	void DeleteAll();
@@ -67,7 +68,7 @@ struct Textbuf {
 	void DiscardMarkedText(bool update = true);
 
 private:
-	StringIterator *char_iter;
+	std::unique_ptr<StringIterator> char_iter;
 
 	bool CanDelChar(bool backspace);
 

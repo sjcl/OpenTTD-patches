@@ -33,6 +33,8 @@
 #include "console_gui.h"
 #include "news_gui.h"
 #include "ai/ai_gui.hpp"
+#include "game/game_gui.hpp"
+#include "script/script_gui.h"
 #include "tilehighlight_func.h"
 #include "smallmap_gui.h"
 #include "graph_gui.h"
@@ -51,6 +53,13 @@
 #include "zoning.h"
 #include "guitimer_func.h"
 #include "screenshot_gui.h"
+#include "league_gui.h"
+#include "league_base.h"
+#include "object.h"
+#include "newgrf_object.h"
+#include "newgrf_roadstop.h"
+#include "newgrf_station.h"
+#include "zoom_func.h"
 
 #include "widgets/toolbar_widget.h"
 
@@ -80,6 +89,7 @@ enum CallBackFunction {
 	CBF_NONE,
 	CBF_PLACE_SIGN,
 	CBF_PLACE_LANDINFO,
+	CBF_PLACE_PICKER,
 };
 
 static CallBackFunction _last_started_action = CBF_NONE; ///< Last started user action.
@@ -95,21 +105,22 @@ public:
 
 	DropDownListCheckedItem(StringID string, int result, bool masked, bool checked) : DropDownListStringItem(string, result, masked), checked(checked)
 	{
-		this->checkmark_width = GetStringBoundingBox(STR_JUST_CHECKMARK).width + 3;
+		this->checkmark_width = GetStringBoundingBox(STR_JUST_CHECKMARK).width + WidgetDimensions::scaled.hsep_wide;
 	}
 
-	uint Width() const
+	uint Width() const override
 	{
 		return DropDownListStringItem::Width() + this->checkmark_width;
 	}
 
-	void Draw(int left, int right, int top, int bottom, bool sel, Colours bg_colour) const
+	void Draw(const Rect &r, bool sel, Colours bg_colour) const override
 	{
 		bool rtl = _current_text_dir == TD_RTL;
+		Rect tr = r.Shrink(WidgetDimensions::scaled.dropdowntext, RectPadding::zero);
 		if (this->checked) {
-			DrawString(left + WD_FRAMERECT_LEFT, right - WD_FRAMERECT_RIGHT, top, STR_JUST_CHECKMARK, sel ? TC_WHITE : TC_BLACK);
+			DrawString(tr, STR_JUST_CHECKMARK, sel ? TC_WHITE : TC_BLACK);
 		}
-		DrawString(left + WD_FRAMERECT_LEFT + (rtl ? 0 : this->checkmark_width), right - WD_FRAMERECT_RIGHT - (rtl ? this->checkmark_width : 0), top, this->String(), sel ? TC_WHITE : TC_BLACK);
+		DrawString(tr.Indent(this->checkmark_width, rtl), this->String(), sel ? TC_WHITE : TC_BLACK);
 	}
 };
 
@@ -138,15 +149,15 @@ public:
 		CompanyID company = (CompanyID)this->result;
 		SetDParam(0, company);
 		SetDParam(1, company);
-		return GetStringBoundingBox(STR_COMPANY_NAME_COMPANY_NUM).width + this->icon_size.width + this->lock_size.width + 6;
+		return GetStringBoundingBox(STR_COMPANY_NAME_COMPANY_NUM).width + this->icon_size.width + this->lock_size.width + WidgetDimensions::scaled.dropdowntext.Horizontal() + WidgetDimensions::scaled.hsep_wide;
 	}
 
 	uint Height(uint width) const override
 	{
-		return std::max(std::max(this->icon_size.height, this->lock_size.height) + 2U, (uint)FONT_HEIGHT_NORMAL);
+		return std::max(std::max(this->icon_size.height, this->lock_size.height) + WidgetDimensions::scaled.imgbtn.Vertical(), (uint)FONT_HEIGHT_NORMAL);
 	}
 
-	void Draw(int left, int right, int top, int bottom, bool sel, Colours bg_colour) const override
+	void Draw(const Rect &r, bool sel, Colours bg_colour) const override
 	{
 		CompanyID company = (CompanyID)this->result;
 		bool rtl = _current_text_dir == TD_RTL;
@@ -154,13 +165,14 @@ public:
 		/* It's possible the company is deleted while the dropdown is open */
 		if (!Company::IsValidID(company)) return;
 
-		int icon_offset = (bottom - top - icon_size.height) / 2;
-		int text_offset = (bottom - top - FONT_HEIGHT_NORMAL) / 2;
-		int lock_offset = (bottom - top - lock_size.height) / 2;
+		Rect tr = r.Shrink(WidgetDimensions::scaled.dropdowntext, RectPadding::zero);
+		int icon_y = CenterBounds(r.top, r.bottom, icon_size.height);
+		int text_y = CenterBounds(r.top, r.bottom, FONT_HEIGHT_NORMAL);
+		int lock_y = CenterBounds(r.top, r.bottom, lock_size.height);
 
-		DrawCompanyIcon(company, rtl ? right - this->icon_size.width - WD_FRAMERECT_RIGHT : left + WD_FRAMERECT_LEFT, top + icon_offset);
+		DrawCompanyIcon(company, tr.WithWidth(this->icon_size.width, rtl).left, icon_y);
 		if (NetworkCompanyIsPassworded(company)) {
-			DrawSprite(SPR_LOCK, PAL_NONE, rtl ? left + WD_FRAMERECT_LEFT : right - this->lock_size.width - WD_FRAMERECT_RIGHT, top + lock_offset);
+			DrawSprite(SPR_LOCK, PAL_NONE, tr.WithWidth(this->lock_size.width, !rtl).left, lock_y);
 		}
 
 		SetDParam(0, company);
@@ -171,7 +183,8 @@ public:
 		} else {
 			col = sel ? TC_WHITE : TC_BLACK;
 		}
-		DrawString(left + WD_FRAMERECT_LEFT + (rtl ? 3 + this->lock_size.width : 3 + this->icon_size.width), right - WD_FRAMERECT_RIGHT - (rtl ? 3 + this->icon_size.width : 3 + this->lock_size.width), top + text_offset, STR_COMPANY_NAME_COMPANY_NUM, col);
+		tr = tr.Indent(this->icon_size.width + WidgetDimensions::scaled.hsep_normal, rtl).Indent(this->lock_size.width + WidgetDimensions::scaled.hsep_normal, !rtl);
+		DrawString(tr.left, tr.right, text_y, STR_COMPANY_NAME_COMPANY_NUM, col);
 	}
 };
 
@@ -189,7 +202,7 @@ DropDownListItem *MakeCompanyDropDownListItem(CompanyID cid)
  */
 static void PopupMainToolbMenu(Window *w, int widget, DropDownList &&list, int def)
 {
-	ShowDropDownList(w, std::move(list), def, widget, 0, true, true);
+	ShowDropDownList(w, std::move(list), def, widget, 0, true);
 	if (_settings_client.sound.click_beep) SndPlayFx(SND_15_BEEP);
 }
 
@@ -200,11 +213,11 @@ static void PopupMainToolbMenu(Window *w, int widget, DropDownList &&list, int d
  * @param string String for the first item in the menu
  * @param count Number of items in the menu
  */
-static void PopupMainToolbMenu(Window *w, int widget, StringID string, int count)
+static void PopupMainToolbMenu(Window *w, int widget, StringID string, int count, uint32 disabled = 0)
 {
 	DropDownList list;
 	for (int i = 0; i < count; i++) {
-		list.emplace_back(new DropDownListStringItem(string + i, i, false));
+		list.emplace_back(new DropDownListStringItem(string + i, i, i < 32 && HasBit(disabled, i)));
 	}
 	PopupMainToolbMenu(w, widget, std::move(list), 0);
 }
@@ -252,7 +265,6 @@ static void PopupMainCompanyToolbMenu(Window *w, int widget, int grey = 0)
 	PopupMainToolbMenu(w, widget, std::move(list), _local_company == COMPANY_SPECTATOR ? (widget == WID_TN_COMPANIES ? CTMN_CLIENT_LIST : CTMN_SPECTATOR) : (int)_local_company);
 }
 
-
 static ToolbarMode _toolbar_mode;
 
 static CallBackFunction SelectSignTool()
@@ -298,7 +310,8 @@ static CallBackFunction ToolbarFastForwardClick(Window *w)
 enum OptionMenuEntries {
 	OME_GAMEOPTIONS,
 	OME_SETTINGS,
-	OME_SCRIPT_SETTINGS,
+	OME_AI_SETTINGS,
+	OME_GAMESCRIPT_SETTINGS,
 	OME_NEWGRFSETTINGS,
 	OME_ZONING,
 	OME_TRANSPARENCIES,
@@ -329,7 +342,10 @@ static CallBackFunction ToolbarOptionsClick(Window *w)
 	/* Changes to the per-AI settings don't get send from the server to the clients. Clients get
 	 * the settings once they join but never update it. As such don't show the window at all
 	 * to network clients. */
-	if (!_networking || _network_server) list.emplace_back(new DropDownListStringItem(STR_SETTINGS_MENU_SCRIPT_SETTINGS, OME_SCRIPT_SETTINGS, false));
+	if (!_networking || _network_server) {
+		list.emplace_back(new DropDownListStringItem(STR_SETTINGS_MENU_AI_SETTINGS,          OME_AI_SETTINGS, false));
+		list.emplace_back(new DropDownListStringItem(STR_SETTINGS_MENU_GAMESCRIPT_SETTINGS,  OME_GAMESCRIPT_SETTINGS, false));
+	}
 	list.emplace_back(new DropDownListStringItem(STR_SETTINGS_MENU_NEWGRF_SETTINGS,          OME_NEWGRFSETTINGS, false));
 	list.emplace_back(new DropDownListStringItem(STR_SETTINGS_MENU_ZONING,                   OME_ZONING, false));
 	list.emplace_back(new DropDownListStringItem(STR_SETTINGS_MENU_TRANSPARENCY_OPTIONS,     OME_TRANSPARENCIES, false));
@@ -348,7 +364,7 @@ static CallBackFunction ToolbarOptionsClick(Window *w)
 	list.emplace_back(new DropDownListCheckedItem(STR_SETTINGS_MENU_TRANSPARENT_SIGNS,       OME_SHOW_STATIONSIGNS, false, IsTransparencySet(TO_SIGNS)));
 	list.emplace_back(new DropDownListCheckedItem(STR_SETTINGS_MENU_MONEY_TEXT_EFFECTS,      OME_SHOW_MONEYTEXT, false, HasBit(_extra_display_opt, XDO_SHOW_MONEY_TEXT_EFFECTS)));
 
-	ShowDropDownList(w, std::move(list), 0, WID_TN_SETTINGS, 140, true, true);
+	ShowDropDownList(w, std::move(list), 0, WID_TN_SETTINGS, 140, true);
 	if (_settings_client.sound.click_beep) SndPlayFx(SND_15_BEEP);
 	return CBF_NONE;
 }
@@ -364,7 +380,8 @@ static CallBackFunction MenuClickSettings(int index)
 	switch (index) {
 		case OME_GAMEOPTIONS:          ShowGameOptions();                               return CBF_NONE;
 		case OME_SETTINGS:             ShowGameSettings();                              return CBF_NONE;
-		case OME_SCRIPT_SETTINGS:      ShowAIConfigWindow();                            return CBF_NONE;
+		case OME_AI_SETTINGS:          ShowAIConfigWindow();                            return CBF_NONE;
+		case OME_GAMESCRIPT_SETTINGS:  ShowGSConfigWindow();                            return CBF_NONE;
 		case OME_NEWGRFSETTINGS:       ShowNewGRFSettings(!_networking && _settings_client.gui.UserIsAllowedToChangeNewGRFs(), true, true, &_grfconfig); return CBF_NONE;
 		case OME_ZONING:               ShowZoningToolbar();                             break;
 		case OME_TRANSPARENCIES:       ShowTransparencyToolbar();                       break;
@@ -561,9 +578,7 @@ static CallBackFunction ToolbarSubsidiesClick(Window *w)
  */
 static CallBackFunction MenuClickSubsidies(int index)
 {
-	switch (index) {
-		case 0: ShowSubsidiesList(); break;
-	}
+	ShowSubsidiesList();
 	return CBF_NONE;
 }
 
@@ -683,59 +698,96 @@ static CallBackFunction MenuClickGoal(int index)
 	return CBF_NONE;
 }
 
-/* --- Graphs button menu --- */
+/* --- Graphs and League Table button menu --- */
+
+/**
+ * Enum for the League Toolbar's and Graph Toolbar's related buttons.
+ * Use continuous numbering as League Toolbar can be combined into the Graph Toolbar.
+ */
+static const int GRMN_OPERATING_PROFIT_GRAPH = -1;    ///< Show operating profit graph
+static const int GRMN_INCOME_GRAPH = -2;              ///< Show income graph
+static const int GRMN_DELIVERED_CARGO_GRAPH = -3;     ///< Show delivered cargo graph
+static const int GRMN_PERFORMANCE_HISTORY_GRAPH = -4; ///< Show performance history graph
+static const int GRMN_COMPANY_VALUE_GRAPH = -5;       ///< Show company value graph
+static const int GRMN_CARGO_PAYMENT_RATES = -6;       ///< Show cargo payment rates graph
+static const int LTMN_PERFORMANCE_LEAGUE = -7;        ///< Show default league table
+static const int LTMN_PERFORMANCE_RATING = -8;        ///< Show detailed performance rating
+static const int LTMN_HIGHSCORE          = -9;        ///< Show highscrore table
+
+static void AddDropDownLeagueTableOptions(DropDownList &list) {
+	if (LeagueTable::GetNumItems() > 0) {
+		for (LeagueTable *lt : LeagueTable::Iterate()) {
+			list.emplace_back(new DropDownListCharStringItem(lt->title, lt->index, false));
+		}
+	} else {
+		list.emplace_back(new DropDownListStringItem(STR_GRAPH_MENU_COMPANY_LEAGUE_TABLE, LTMN_PERFORMANCE_LEAGUE, false));
+		list.emplace_back(new DropDownListStringItem(STR_GRAPH_MENU_DETAILED_PERFORMANCE_RATING, LTMN_PERFORMANCE_RATING, false));
+		if (!_networking) {
+			list.emplace_back(new DropDownListStringItem(STR_GRAPH_MENU_HIGHSCORE, LTMN_HIGHSCORE, false));
+		}
+	}
+}
 
 static CallBackFunction ToolbarGraphsClick(Window *w)
 {
-	PopupMainToolbMenu(w, WID_TN_GRAPHS, STR_GRAPH_MENU_OPERATING_PROFIT_GRAPH, (_toolbar_mode == TB_NORMAL) ? 6 : 8);
+	DropDownList list;
+
+	list.emplace_back(new DropDownListStringItem(STR_GRAPH_MENU_OPERATING_PROFIT_GRAPH, GRMN_OPERATING_PROFIT_GRAPH, false));
+	list.emplace_back(new DropDownListStringItem(STR_GRAPH_MENU_INCOME_GRAPH, GRMN_INCOME_GRAPH, false));
+	list.emplace_back(new DropDownListStringItem(STR_GRAPH_MENU_DELIVERED_CARGO_GRAPH, GRMN_DELIVERED_CARGO_GRAPH, false));
+	list.emplace_back(new DropDownListStringItem(STR_GRAPH_MENU_PERFORMANCE_HISTORY_GRAPH, GRMN_PERFORMANCE_HISTORY_GRAPH, false));
+	list.emplace_back(new DropDownListStringItem(STR_GRAPH_MENU_COMPANY_VALUE_GRAPH, GRMN_COMPANY_VALUE_GRAPH, false));
+	list.emplace_back(new DropDownListStringItem(STR_GRAPH_MENU_CARGO_PAYMENT_RATES, GRMN_CARGO_PAYMENT_RATES, false));
+
+	if (_toolbar_mode != TB_NORMAL) AddDropDownLeagueTableOptions(list);
+
+	ShowDropDownList(w, std::move(list), GRMN_OPERATING_PROFIT_GRAPH, WID_TN_GRAPHS, 140, true);
+	if (_settings_client.sound.click_beep) SndPlayFx(SND_15_BEEP);
+
+	return CBF_NONE;
+}
+
+static CallBackFunction ToolbarLeagueClick(Window *w)
+{
+	DropDownList list;
+
+	AddDropDownLeagueTableOptions(list);
+
+	int selected = list[0]->result;
+	ShowDropDownList(w, std::move(list), selected, WID_TN_LEAGUE, 140, true);
+	if (_settings_client.sound.click_beep) SndPlayFx(SND_15_BEEP);
+
 	return CBF_NONE;
 }
 
 /**
- * Handle click on the entry in the Graphs menu.
+ * Handle click on the entry in the Graphs or CompanyLeague.
  *
  * @param index Graph to show.
  * @return #CBF_NONE
  */
-static CallBackFunction MenuClickGraphs(int index)
+static CallBackFunction MenuClickGraphsOrLeague(int index)
 {
 	switch (index) {
-		case 0: ShowOperatingProfitGraph();    break;
-		case 1: ShowIncomeGraph();             break;
-		case 2: ShowDeliveredCargoGraph();     break;
-		case 3: ShowPerformanceHistoryGraph(); break;
-		case 4: ShowCompanyValueGraph();       break;
-		case 5: ShowCargoPaymentRates();       break;
-		/* functions for combined graphs/league button */
-		case 6: ShowCompanyLeagueTable();      break;
-		case 7: ShowPerformanceRatingDetail(); break;
+		case GRMN_OPERATING_PROFIT_GRAPH: ShowOperatingProfitGraph(); break;
+		case GRMN_INCOME_GRAPH: ShowIncomeGraph(); break;
+		case GRMN_DELIVERED_CARGO_GRAPH: ShowDeliveredCargoGraph(); break;
+		case GRMN_PERFORMANCE_HISTORY_GRAPH: ShowPerformanceHistoryGraph(); break;
+		case GRMN_COMPANY_VALUE_GRAPH: ShowCompanyValueGraph(); break;
+		case GRMN_CARGO_PAYMENT_RATES: ShowCargoPaymentRates(); break;
+		case LTMN_PERFORMANCE_LEAGUE: ShowPerformanceLeagueTable(); break;
+		case LTMN_PERFORMANCE_RATING: ShowPerformanceRatingDetail(); break;
+		case LTMN_HIGHSCORE: ShowHighscoreTable(); break;
+		default: {
+			if (LeagueTable::IsValidID(index)) {
+				ShowScriptLeagueTable((LeagueTableID)index);
+			}
+		}
 	}
 	return CBF_NONE;
 }
 
-/* --- League button menu --- */
 
-static CallBackFunction ToolbarLeagueClick(Window *w)
-{
-	PopupMainToolbMenu(w, WID_TN_LEAGUE, STR_GRAPH_MENU_COMPANY_LEAGUE_TABLE, _networking ? 2 : 3);
-	return CBF_NONE;
-}
-
-/**
- * Handle click on the entry in the CompanyLeague menu.
- *
- * @param index Menu entry number.
- * @return #CBF_NONE
- */
-static CallBackFunction MenuClickLeague(int index)
-{
-	switch (index) {
-		case 0: ShowCompanyLeagueTable();      break;
-		case 1: ShowPerformanceRatingDetail(); break;
-		case 2: ShowHighscoreTable();          break;
-	}
-	return CBF_NONE;
-}
 
 /* --- Industries button menu --- */
 
@@ -857,7 +909,7 @@ static CallBackFunction MenuClickShowAir(int index)
 
 static CallBackFunction ToolbarZoomInClick(Window *w)
 {
-	if (DoZoomInOutWindow(ZOOM_IN, FindWindowById(WC_MAIN_WINDOW, 0))) {
+	if (DoZoomInOutWindow(ZOOM_IN, GetMainWindow())) {
 		w->HandleButtonClick((_game_mode == GM_EDITOR) ? (byte)WID_TE_ZOOM_IN : (byte)WID_TN_ZOOM_IN);
 		if (_settings_client.sound.click_beep) SndPlayFx(SND_15_BEEP);
 	}
@@ -868,7 +920,7 @@ static CallBackFunction ToolbarZoomInClick(Window *w)
 
 static CallBackFunction ToolbarZoomOutClick(Window *w)
 {
-	if (DoZoomInOutWindow(ZOOM_OUT, FindWindowById(WC_MAIN_WINDOW, 0))) {
+	if (DoZoomInOutWindow(ZOOM_OUT, GetMainWindow())) {
 		w->HandleButtonClick((_game_mode == GM_EDITOR) ? (byte)WID_TE_ZOOM_OUT : (byte)WID_TN_ZOOM_OUT);
 		if (_settings_client.sound.click_beep) SndPlayFx(SND_15_BEEP);
 	}
@@ -879,7 +931,7 @@ static CallBackFunction ToolbarZoomOutClick(Window *w)
 
 static CallBackFunction ToolbarBuildRailClick(Window *w)
 {
-	ShowDropDownList(w, GetRailTypeDropDownList(), _last_built_railtype, WID_TN_RAILS, 140, true, true);
+	ShowDropDownList(w, GetRailTypeDropDownList(), _last_built_railtype, WID_TN_RAILS, 140, true);
 	if (_settings_client.sound.click_beep) SndPlayFx(SND_15_BEEP);
 	return CBF_NONE;
 }
@@ -901,7 +953,7 @@ static CallBackFunction MenuClickBuildRail(int index)
 
 static CallBackFunction ToolbarBuildRoadClick(Window *w)
 {
-	ShowDropDownList(w, GetRoadTypeDropDownList(RTTB_ROAD), _last_built_roadtype, WID_TN_ROADS, 140, true, true);
+	ShowDropDownList(w, GetRoadTypeDropDownList(RTTB_ROAD), _last_built_roadtype, WID_TN_ROADS, 140, true);
 	if (_settings_client.sound.click_beep) SndPlayFx(SND_15_BEEP);
 	return CBF_NONE;
 }
@@ -923,7 +975,7 @@ static CallBackFunction MenuClickBuildRoad(int index)
 
 static CallBackFunction ToolbarBuildTramClick(Window *w)
 {
-	ShowDropDownList(w, GetRoadTypeDropDownList(RTTB_TRAM), _last_built_tramtype, WID_TN_TRAMS, 140, true, true);
+	ShowDropDownList(w, GetRoadTypeDropDownList(RTTB_TRAM), _last_built_tramtype, WID_TN_TRAMS, 140, true);
 	if (_settings_client.sound.click_beep) SndPlayFx(SND_15_BEEP);
 	return CBF_NONE;
 }
@@ -947,7 +999,7 @@ static CallBackFunction ToolbarBuildWaterClick(Window *w)
 {
 	DropDownList list;
 	list.emplace_back(new DropDownListIconItem(SPR_IMG_BUILD_CANAL, PAL_NONE, STR_WATERWAYS_MENU_WATERWAYS_CONSTRUCTION, 0, false));
-	ShowDropDownList(w, std::move(list), 0, WID_TN_WATER, 140, true, true);
+	ShowDropDownList(w, std::move(list), 0, WID_TN_WATER, 140, true);
 	if (_settings_client.sound.click_beep) SndPlayFx(SND_15_BEEP);
 	return CBF_NONE;
 }
@@ -970,7 +1022,7 @@ static CallBackFunction ToolbarBuildAirClick(Window *w)
 {
 	DropDownList list;
 	list.emplace_back(new DropDownListIconItem(SPR_IMG_AIRPORT, PAL_NONE, STR_AIRCRAFT_MENU_AIRPORT_CONSTRUCTION, 0, false));
-	ShowDropDownList(w, std::move(list), 0, WID_TN_AIR, 140, true, true);
+	ShowDropDownList(w, std::move(list), 0, WID_TN_AIR, 140, true);
 	if (_settings_client.sound.click_beep) SndPlayFx(SND_15_BEEP);
 	return CBF_NONE;
 }
@@ -995,7 +1047,7 @@ static CallBackFunction ToolbarForestClick(Window *w)
 	list.emplace_back(new DropDownListIconItem(SPR_IMG_LANDSCAPING, PAL_NONE, STR_LANDSCAPING_MENU_LANDSCAPING, 0, false));
 	list.emplace_back(new DropDownListIconItem(SPR_IMG_PLANTTREES, PAL_NONE, STR_LANDSCAPING_MENU_PLANT_TREES, 1, false));
 	list.emplace_back(new DropDownListIconItem(SPR_IMG_SIGN, PAL_NONE, STR_LANDSCAPING_MENU_PLACE_SIGN, 2, false));
-	ShowDropDownList(w, std::move(list), 0, WID_TN_LANDSCAPE, 100, true, true);
+	ShowDropDownList(w, std::move(list), 0, WID_TN_LANDSCAPE, 100, true);
 	if (_settings_client.sound.click_beep) SndPlayFx(SND_15_BEEP);
 	return CBF_NONE;
 }
@@ -1062,6 +1114,101 @@ static CallBackFunction MenuClickNewspaper(int index)
 
 /* --- Help button menu --- */
 
+/**
+ * Help button menu entries.
+ */
+enum HelpMenuEntries {
+	HME_LANDINFO = 0,
+	HME_PICKER,
+	HME_CONSOLE = 3,
+	HME_SCRIPT_DEBUG,
+	HME_SCREENSHOT,
+	HME_FRAMERATE,
+	HME_MODIFIER_KEYS,
+	HME_ABOUT,
+
+	HME_SPRITE_ALIGNER,
+	HME_BOUNDING_BOXES,
+	HME_DIRTY_BLOCKS,
+
+	HME_LAST,
+	HME_LAST_NON_DEV = HME_SPRITE_ALIGNER,
+};
+
+static void ShowBuildRailToolbarFromTile(TileIndex tile)
+{
+	_last_built_railtype = GetRailType(tile);
+	ShowBuildRailToolbar(_last_built_railtype);
+}
+
+static void ShowBuildRoadToolbarFromTile(TileIndex tile)
+{
+	if (HasRoadTypeRoad(tile)) {
+		_last_built_roadtype = GetRoadTypeRoad(tile);
+		CreateRoadTramToolbarForRoadType(_last_built_roadtype, RTT_ROAD);
+	} else {
+		_last_built_tramtype = GetRoadTypeTram(tile);
+		CreateRoadTramToolbarForRoadType(_last_built_tramtype, RTT_TRAM);
+	}
+}
+
+static void UsePickerTool(TileIndex tile)
+{
+	switch (GetTileType(tile)) {
+		case MP_RAILWAY:
+			ShowBuildRailToolbarFromTile(tile);
+			break;
+
+		case MP_ROAD: {
+			ShowBuildRoadToolbarFromTile(tile);
+			break;
+		}
+
+		case MP_STATION: {
+			StationType station_type = GetStationType(tile);
+			switch (station_type) {
+				case STATION_RAIL:
+				case STATION_WAYPOINT:
+					ShowBuildRailStationPickerAndSelect(station_type, GetStationSpec(tile));
+					break;
+
+				case STATION_TRUCK:
+				case STATION_BUS:
+				case STATION_ROADWAYPOINT:
+					ShowBuildRoadStopPickerAndSelect(station_type, GetRoadStopSpec(tile), HasRoadTypeRoad(tile) ? RTT_ROAD : RTT_TRAM);
+					break;
+
+				default:
+					break;
+			}
+			break;
+		}
+
+		case MP_TUNNELBRIDGE:
+			switch (GetTunnelBridgeTransportType(tile)) {
+				case TRANSPORT_RAIL:
+					ShowBuildRailToolbarFromTile(tile);
+					break;
+
+				case TRANSPORT_ROAD:
+					ShowBuildRoadToolbarFromTile(tile);
+					break;
+
+				default:
+					break;
+			}
+			break;
+
+		case MP_OBJECT: {
+			ShowBuildObjectPickerAndSelect(ObjectSpec::GetByTile(tile));
+			break;
+		}
+
+		default:
+			break;
+	}
+}
+
 static CallBackFunction PlaceLandBlockInfo()
 {
 	if (_last_started_action == CBF_PLACE_LANDINFO) {
@@ -1073,9 +1220,26 @@ static CallBackFunction PlaceLandBlockInfo()
 	}
 }
 
+static CallBackFunction PlacePickerTool()
+{
+	if (_local_company == COMPANY_SPECTATOR) return CBF_NONE;
+	if (_last_started_action == CBF_PLACE_PICKER) {
+		ResetObjectToPlace();
+		return CBF_NONE;
+	} else {
+		SetObjectToPlace(SPR_CURSOR_QUERY, PAL_NONE, HT_RECT, WC_MAIN_TOOLBAR, 0);
+		SetSelectionPalette(SPR_ZONING_INNER_HIGHLIGHT_GREEN);
+		return CBF_PLACE_PICKER;
+	}
+}
+
 static CallBackFunction ToolbarHelpClick(Window *w)
 {
-	PopupMainToolbMenu(w, _game_mode == GM_EDITOR ? (int)WID_TE_HELP : (int)WID_TN_HELP, STR_ABOUT_MENU_LAND_BLOCK_INFO, _settings_client.gui.newgrf_developer_tools ? 11 : 8);
+	uint mask = 0;
+	if (_local_company == COMPANY_SPECTATOR) SetBit(mask, HME_PICKER);
+	int count = _settings_client.gui.newgrf_developer_tools ? HME_LAST : HME_LAST_NON_DEV;
+	int widget = (_game_mode == GM_EDITOR) ? (int)WID_TE_HELP : (int)WID_TN_HELP;
+	PopupMainToolbMenu(w, widget, STR_ABOUT_MENU_LAND_BLOCK_INFO, count, mask);
 	return CBF_NONE;
 }
 
@@ -1128,6 +1292,7 @@ void SetStartingYear(Year year)
 	SetDate(new_date, 0);
 }
 
+
 /**
  * Choose the proper callback function for the main toolbar's help menu.
  * @param index The menu index which was selected.
@@ -1136,16 +1301,17 @@ void SetStartingYear(Year year)
 static CallBackFunction MenuClickHelp(int index)
 {
 	switch (index) {
-		case  0: return PlaceLandBlockInfo();
-		case  2: IConsoleSwitch();                 break;
-		case  3: ShowAIDebugWindow();              break;
-		case  4: ShowScreenshotWindow();           break;
-		case  5: ShowFramerateWindow();            break;
-		case  6: ShowModifierKeyToggleWindow();    break;
-		case  7: ShowAboutWindow();                break;
-		case  8: ShowSpriteAlignerWindow();        break;
-		case  9: ToggleBoundingBoxes();            break;
-		case 10: ToggleDirtyBlocks();              break;
+		case HME_LANDINFO:       return PlaceLandBlockInfo();
+		case HME_PICKER:         return PlacePickerTool();
+		case HME_CONSOLE:        IConsoleSwitch();                 break;
+		case HME_SCRIPT_DEBUG:   ShowScriptDebugWindow();          break;
+		case HME_SCREENSHOT:     ShowScreenshotWindow();           break;
+		case HME_FRAMERATE:      ShowFramerateWindow();            break;
+		case HME_MODIFIER_KEYS:  ShowModifierKeyToggleWindow();    break;
+		case HME_ABOUT:          ShowAboutWindow();                break;
+		case HME_SPRITE_ALIGNER: ShowSpriteAlignerWindow();        break;
+		case HME_BOUNDING_BOXES: ToggleBoundingBoxes();            break;
+		case HME_DIRTY_BLOCKS:   ToggleDirtyBlocks();              break;
 	}
 	return CBF_NONE;
 }
@@ -1232,7 +1398,7 @@ static CallBackFunction ToolbarScenGenIndustry(Window *w)
 
 static CallBackFunction ToolbarScenBuildRoadClick(Window *w)
 {
-	ShowDropDownList(w, GetScenRoadTypeDropDownList(RTTB_ROAD), _last_built_roadtype, WID_TE_ROADS, 140, true, true);
+	ShowDropDownList(w, GetScenRoadTypeDropDownList(RTTB_ROAD), _last_built_roadtype, WID_TE_ROADS, 140, true);
 	if (_settings_client.sound.click_beep) SndPlayFx(SND_15_BEEP);
 	return CBF_NONE;
 }
@@ -1252,7 +1418,7 @@ static CallBackFunction ToolbarScenBuildRoad(int index)
 
 static CallBackFunction ToolbarScenBuildTramClick(Window *w)
 {
-	ShowDropDownList(w, GetScenRoadTypeDropDownList(RTTB_TRAM), _last_built_tramtype, WID_TE_TRAMS, 140, true, true);
+	ShowDropDownList(w, GetScenRoadTypeDropDownList(RTTB_TRAM), _last_built_tramtype, WID_TE_TRAMS, 140, true);
 	if (_settings_client.sound.click_beep) SndPlayFx(SND_15_BEEP);
 	return CBF_NONE;
 }
@@ -1313,8 +1479,8 @@ static MenuClickedProc * const _menu_clicked_procs[] = {
 	MenuClickCompany,     // 9
 	MenuClickStory,       // 10
 	MenuClickGoal,        // 11
-	MenuClickGraphs,      // 12
-	MenuClickLeague,      // 13
+	MenuClickGraphsOrLeague, // 12
+	MenuClickGraphsOrLeague, // 13
 	MenuClickIndustry,    // 14
 	MenuClickShowTrains,  // 15
 	MenuClickShowRoad,    // 16
@@ -1368,10 +1534,10 @@ public:
 		/* First initialise some variables... */
 		for (NWidgetBase *child_wid = this->head; child_wid != nullptr; child_wid = child_wid->next) {
 			child_wid->SetupSmallestSize(w, init_array);
-			this->smallest_y = std::max(this->smallest_y, child_wid->smallest_y + child_wid->padding_top + child_wid->padding_bottom);
+			this->smallest_y = std::max(this->smallest_y, child_wid->smallest_y + child_wid->padding.Vertical());
 			if (this->IsButton(child_wid->type)) {
 				nbuttons++;
-				this->smallest_x = std::max(this->smallest_x, child_wid->smallest_x + child_wid->padding_left + child_wid->padding_right);
+				this->smallest_x = std::max(this->smallest_x, child_wid->smallest_x + child_wid->padding.Horizontal());
 			} else if (child_wid->type == NWID_SPACER) {
 				this->spacers++;
 			}
@@ -1988,6 +2154,8 @@ struct MainToolbarWindow : Window {
 
 	MainToolbarWindow(WindowDesc *desc) : Window(desc)
 	{
+		MainToolbarScaleAdjuster scale_adjust;
+
 		this->InitNested(0);
 
 		_last_started_action = CBF_NONE;
@@ -2001,11 +2169,15 @@ struct MainToolbarWindow : Window {
 
 	void FindWindowPlacementAndResize(int def_width, int def_height) override
 	{
+		MainToolbarScaleAdjuster scale_adjust;
+
 		Window::FindWindowPlacementAndResize(_toolbar_width, def_height);
 	}
 
 	void OnPaint() override
 	{
+		MainToolbarScaleAdjuster scale_adjust;
+
 		/* If spectator, disable all construction buttons
 		 * ie : Build road, rail, ships, airports and landscaping
 		 * Since enabled state is the default, just disable when needed */
@@ -2054,7 +2226,7 @@ struct MainToolbarWindow : Window {
 			case MTHK_STORY: ShowStoryBook(_local_company); break;
 			case MTHK_GOAL: ShowGoalsList(_local_company); break;
 			case MTHK_GRAPHS: ShowOperatingProfitGraph(); break;
-			case MTHK_LEAGUE: ShowCompanyLeagueTable(); break;
+			case MTHK_LEAGUE: ShowFirstLeagueTable(); break;
 			case MTHK_INDUSTRIES: ShowBuildIndustryWindow(); break;
 			case MTHK_INDUSTRY_CHAINS: ShowIndustryCargoesWindow(); break;
 			case MTHK_TRAIN_LIST: ShowVehicleListWindow(_local_company, VEH_TRAIN); break;
@@ -2070,7 +2242,7 @@ struct MainToolbarWindow : Window {
 			case MTHK_BUILD_AIRPORT: ShowBuildAirToolbar(); break;
 			case MTHK_BUILD_TREES: ShowBuildTreesToolbar(); break;
 			case MTHK_MUSIC: ShowMusicWindow(); break;
-			case MTHK_AI_DEBUG: ShowAIDebugWindow(); break;
+			case MTHK_SCRIPT_DEBUG: ShowScriptDebugWindow(); break;
 			case MTHK_SMALL_SCREENSHOT: MakeScreenshotWithConfirm(SC_VIEWPORT); break;
 			case MTHK_ZOOMEDIN_SCREENSHOT: MakeScreenshotWithConfirm(SC_ZOOMEDIN); break;
 			case MTHK_DEFAULTZOOM_SCREENSHOT: MakeScreenshotWithConfirm(SC_DEFAULTZOOM); break;
@@ -2081,6 +2253,7 @@ struct MainToolbarWindow : Window {
 			case MTHK_CLIENT_LIST: if (_networking) ShowClientList(); break;
 			case MTHK_SIGN_LIST: ShowSignList(); break;
 			case MTHK_LANDINFO: cbf = PlaceLandBlockInfo(); break;
+			case MTHK_PICKER: cbf = PlacePickerTool(); break;
 			case MTHK_PLAN_LIST: ShowPlansWindow(); break;
 			case MTHK_LINK_GRAPH_LEGEND: ShowLinkGraphLegend(); break;
 			case MTHK_MESSAGE_HISTORY: ShowMessageHistory(); break;
@@ -2102,6 +2275,10 @@ struct MainToolbarWindow : Window {
 
 			case CBF_PLACE_LANDINFO:
 				ShowLandInfo(tile);
+				break;
+
+			case CBF_PLACE_PICKER:
+				UsePickerTool(tile);
 				break;
 
 			default: NOT_REACHED();
@@ -2149,7 +2326,8 @@ struct MainToolbarWindow : Window {
 	void OnInvalidateData(int data = 0, bool gui_scope = true) override
 	{
 		if (!gui_scope) return;
-		if (FindWindowById(WC_MAIN_WINDOW, 0) != nullptr) HandleZoomMessage(this, FindWindowById(WC_MAIN_WINDOW, 0)->viewport, WID_TN_ZOOM_IN, WID_TN_ZOOM_OUT);
+		Window *w = FindWindowById(WC_MAIN_WINDOW, 0);
+		if (w != nullptr) HandleZoomMessage(this, w->viewport, WID_TN_ZOOM_IN, WID_TN_ZOOM_OUT);
 	}
 
 	static HotkeyList hotkeys;
@@ -2191,7 +2369,7 @@ static Hotkey maintoolbar_hotkeys[] = {
 	Hotkey(WKC_SHIFT | WKC_F10, "build_airport", MTHK_BUILD_AIRPORT),
 	Hotkey(WKC_SHIFT | WKC_F11, "build_trees", MTHK_BUILD_TREES),
 	Hotkey(WKC_SHIFT | WKC_F12, "music", MTHK_MUSIC),
-	Hotkey((uint16)0, "ai_debug", MTHK_AI_DEBUG),
+	Hotkey((uint16)0, "ai_debug", MTHK_SCRIPT_DEBUG),
 	Hotkey(WKC_CTRL  | 'S', "small_screenshot", MTHK_SMALL_SCREENSHOT),
 	Hotkey(WKC_CTRL  | 'P', "zoomedin_screenshot", MTHK_ZOOMEDIN_SCREENSHOT),
 	Hotkey(WKC_CTRL  | 'D', "defaultzoom_screenshot", MTHK_DEFAULTZOOM_SCREENSHOT),
@@ -2202,6 +2380,7 @@ static Hotkey maintoolbar_hotkeys[] = {
 	Hotkey((uint16)0, "client_list", MTHK_CLIENT_LIST),
 	Hotkey((uint16)0, "sign_list", MTHK_SIGN_LIST),
 	Hotkey((uint16)0, "land_info", MTHK_LANDINFO),
+	Hotkey((uint16)0, "picker_tool", MTHK_PICKER),
 	Hotkey('P', "plan_list", MTHK_PLAN_LIST),
 	Hotkey('Y', "link_graph_legend", MTHK_LINK_GRAPH_LEGEND),
 	Hotkey((uint16)0, "message_history", MTHK_MESSAGE_HISTORY),
@@ -2352,6 +2531,7 @@ enum MainToolbarEditorHotkeys {
 	MTEHK_SIGN,
 	MTEHK_MUSIC,
 	MTEHK_LANDINFO,
+	MTEHK_PICKER,
 	MTEHK_SMALL_SCREENSHOT,
 	MTEHK_ZOOMEDIN_SCREENSHOT,
 	MTEHK_DEFAULTZOOM_SCREENSHOT,
@@ -2368,6 +2548,8 @@ struct ScenarioEditorToolbarWindow : Window {
 
 	ScenarioEditorToolbarWindow(WindowDesc *desc) : Window(desc)
 	{
+		MainToolbarScaleAdjuster scale_adjust;
+
 		this->InitNested(0);
 
 		_last_started_action = CBF_NONE;
@@ -2380,11 +2562,15 @@ struct ScenarioEditorToolbarWindow : Window {
 
 	void FindWindowPlacementAndResize(int def_width, int def_height) override
 	{
+		MainToolbarScaleAdjuster scale_adjust;
+
 		Window::FindWindowPlacementAndResize(_toolbar_width, def_height);
 	}
 
 	void OnPaint() override
 	{
+		MainToolbarScaleAdjuster scale_adjust;
+
 		this->SetWidgetDisabledState(WID_TE_DATE_BACKWARD, _settings_game.game_creation.starting_year <= MIN_YEAR);
 		this->SetWidgetDisabledState(WID_TE_DATE_FORWARD, _settings_game.game_creation.starting_year >= MAX_YEAR);
 		this->SetWidgetDisabledState(WID_TE_ROADS, (GetRoadTypes(true) & ~_roadtypes_type) == ROADTYPES_NONE);
@@ -2406,10 +2592,10 @@ struct ScenarioEditorToolbarWindow : Window {
 	{
 		switch (widget) {
 			case WID_TE_SPACER: {
-				int height = r.bottom - r.top;
+				int height = r.Height();
 				if (height > 2 * FONT_HEIGHT_NORMAL) {
-					DrawString(r.left, r.right, (height + 1) / 2 - FONT_HEIGHT_NORMAL, STR_SCENEDIT_TOOLBAR_OPENTTD, TC_FROMSTRING, SA_HOR_CENTER);
-					DrawString(r.left, r.right, (height + 1) / 2, STR_SCENEDIT_TOOLBAR_SCENARIO_EDITOR, TC_FROMSTRING, SA_HOR_CENTER);
+					DrawString(r.left, r.right, height / 2 - FONT_HEIGHT_NORMAL, STR_SCENEDIT_TOOLBAR_OPENTTD, TC_FROMSTRING, SA_HOR_CENTER);
+					DrawString(r.left, r.right, height / 2, STR_SCENEDIT_TOOLBAR_SCENARIO_EDITOR, TC_FROMSTRING, SA_HOR_CENTER);
 				} else {
 					DrawString(r.left, r.right, (height - FONT_HEIGHT_NORMAL) / 2, STR_SCENEDIT_TOOLBAR_SCENARIO_EDITOR, TC_FROMSTRING, SA_HOR_CENTER);
 				}
@@ -2422,12 +2608,12 @@ struct ScenarioEditorToolbarWindow : Window {
 	{
 		switch (widget) {
 			case WID_TE_SPACER:
-				size->width = std::max(GetStringBoundingBox(STR_SCENEDIT_TOOLBAR_OPENTTD).width, GetStringBoundingBox(STR_SCENEDIT_TOOLBAR_SCENARIO_EDITOR).width) + WD_FRAMERECT_LEFT + WD_FRAMERECT_RIGHT;
+				size->width = std::max(GetStringBoundingBox(STR_SCENEDIT_TOOLBAR_OPENTTD).width, GetStringBoundingBox(STR_SCENEDIT_TOOLBAR_SCENARIO_EDITOR).width) + padding.width;
 				break;
 
 			case WID_TE_DATE:
 				SetDParam(0, ConvertYMDToDate(MAX_YEAR, 0, 1));
-				*size = GetStringBoundingBox(STR_WHITE_DATE_LONG);
+				*size = GetStringBoundingBox(STR_JUST_DATE_LONG);
 				break;
 		}
 	}
@@ -2464,6 +2650,7 @@ struct ScenarioEditorToolbarWindow : Window {
 			case MTEHK_SIGN:                   cbf = ToolbarScenPlaceSign(this); break;
 			case MTEHK_MUSIC:                  ShowMusicWindow(); break;
 			case MTEHK_LANDINFO:               cbf = PlaceLandBlockInfo(); break;
+			case MTEHK_PICKER:                 cbf = PlacePickerTool(); break;
 			case MTEHK_SMALL_SCREENSHOT:       MakeScreenshotWithConfirm(SC_VIEWPORT); break;
 			case MTEHK_ZOOMEDIN_SCREENSHOT:    MakeScreenshotWithConfirm(SC_ZOOMEDIN); break;
 			case MTEHK_DEFAULTZOOM_SCREENSHOT: MakeScreenshotWithConfirm(SC_DEFAULTZOOM); break;
@@ -2488,6 +2675,10 @@ struct ScenarioEditorToolbarWindow : Window {
 
 			case CBF_PLACE_LANDINFO:
 				ShowLandInfo(tile);
+				break;
+
+			case CBF_PLACE_PICKER:
+				UsePickerTool(tile);
 				break;
 
 			default: NOT_REACHED();
@@ -2530,7 +2721,8 @@ struct ScenarioEditorToolbarWindow : Window {
 	void OnInvalidateData(int data = 0, bool gui_scope = true) override
 	{
 		if (!gui_scope) return;
-		if (FindWindowById(WC_MAIN_WINDOW, 0) != nullptr) HandleZoomMessage(this, FindWindowById(WC_MAIN_WINDOW, 0)->viewport, WID_TE_ZOOM_IN, WID_TE_ZOOM_OUT);
+		Window *w = FindWindowById(WC_MAIN_WINDOW, 0);
+		if (w != nullptr) HandleZoomMessage(this, w->viewport, WID_TE_ZOOM_IN, WID_TE_ZOOM_OUT);
 	}
 
 	void OnQueryTextFinished(char *str) override
@@ -2568,6 +2760,7 @@ static Hotkey scenedit_maintoolbar_hotkeys[] = {
 	Hotkey(WKC_F10, "build_sign", MTEHK_SIGN),
 	Hotkey(WKC_F11, "music", MTEHK_MUSIC),
 	Hotkey(WKC_F12, "land_info", MTEHK_LANDINFO),
+	Hotkey((uint16)0, "picker_tool", MTEHK_PICKER),
 	Hotkey(WKC_CTRL  | 'S', "small_screenshot", MTEHK_SMALL_SCREENSHOT),
 	Hotkey(WKC_CTRL  | 'P', "zoomedin_screenshot", MTEHK_ZOOMEDIN_SCREENSHOT),
 	Hotkey(WKC_CTRL  | 'D', "defaultzoom_screenshot", MTEHK_DEFAULTZOOM_SCREENSHOT),
@@ -2592,7 +2785,7 @@ static const NWidgetPart _nested_toolb_scen_inner_widgets[] = {
 	NWidget(WWT_PANEL, COLOUR_GREY, WID_TE_DATE_PANEL),
 		NWidget(NWID_HORIZONTAL), SetPIP(2, 2, 2), SetPadding(1),
 			NWidget(WWT_IMGBTN, COLOUR_GREY, WID_TE_DATE_BACKWARD), SetDataTip(SPR_ARROW_DOWN, STR_SCENEDIT_TOOLBAR_TOOLTIP_MOVE_THE_STARTING_DATE_BACKWARD), SetFill(0, 1),
-			NWidget(WWT_TEXT, COLOUR_GREY, WID_TE_DATE), SetDataTip(STR_WHITE_DATE_LONG, STR_SCENEDIT_TOOLBAR_TOOLTIP_SET_DATE), SetAlignment(SA_CENTER), SetFill(0, 1),
+			NWidget(WWT_TEXT, COLOUR_GREY, WID_TE_DATE), SetDataTip(STR_JUST_DATE_LONG, STR_SCENEDIT_TOOLBAR_TOOLTIP_SET_DATE), SetTextStyle(TC_WHITE), SetAlignment(SA_CENTER), SetFill(0, 1),
 			NWidget(WWT_IMGBTN, COLOUR_GREY, WID_TE_DATE_FORWARD), SetDataTip(SPR_ARROW_UP, STR_SCENEDIT_TOOLBAR_TOOLTIP_MOVE_THE_STARTING_DATE_FORWARD), SetFill(0, 1),
 		EndContainer(),
 	EndContainer(),
@@ -2640,5 +2833,32 @@ void AllocateToolbar()
 		new ScenarioEditorToolbarWindow(&_toolb_scen_desc);
 	} else {
 		new MainToolbarWindow(&_toolb_normal_desc);
+	}
+}
+
+static uint _toolbar_scale_adjuster_depth = 0;
+MainToolbarScaleAdjuster::MainToolbarScaleAdjuster()
+{
+	_toolbar_scale_adjuster_depth++;
+	if (_settings_client.gui.bigger_main_toolbar && _toolbar_scale_adjuster_depth == 1) {
+		this->old_gui_zoom = _gui_zoom;
+		this->old_gui_scale = _gui_scale;
+
+		/* Bump scale to next integer multiple */
+		_gui_scale = Clamp(100 * ((_gui_scale / 100) + 1), MIN_INTERFACE_SCALE, MAX_INTERFACE_SCALE);
+
+		int8 new_zoom = ScaleGUITrad(1) <= 1 ? ZOOM_LVL_OUT_4X : ScaleGUITrad(1) >= 4 ? ZOOM_LVL_MIN : ZOOM_LVL_OUT_2X;
+		_gui_zoom = static_cast<ZoomLevel>(Clamp(new_zoom, _settings_client.gui.zoom_min, _settings_client.gui.zoom_max));
+		SetupWidgetDimensions();
+	}
+}
+
+MainToolbarScaleAdjuster::~MainToolbarScaleAdjuster()
+{
+	_toolbar_scale_adjuster_depth--;
+	if (_settings_client.gui.bigger_main_toolbar && _toolbar_scale_adjuster_depth == 0) {
+		_gui_zoom = this->old_gui_zoom;
+		_gui_scale = this->old_gui_scale;
+		SetupWidgetDimensions();
 	}
 }

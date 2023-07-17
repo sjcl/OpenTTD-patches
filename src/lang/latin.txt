@@ -316,39 +316,39 @@ STR_QUANTITY_N_A                                                :N/A
 
 # Two letter abbreviation of cargo name
 STR_ABBREV_NOTHING                                              :
-STR_ABBREV_PASSENGERS                                           :{TINY_FONT}VC
-STR_ABBREV_COAL                                                 :{TINY_FONT}CA
-STR_ABBREV_MAIL                                                 :{TINY_FONT}EP
-STR_ABBREV_OIL                                                  :{TINY_FONT}OL
-STR_ABBREV_LIVESTOCK                                            :{TINY_FONT}PC
-STR_ABBREV_GOODS                                                :{TINY_FONT}ME
-STR_ABBREV_GRAIN                                                :{TINY_FONT}FR
-STR_ABBREV_WOOD                                                 :{TINY_FONT}LI
-STR_ABBREV_IRON_ORE                                             :{TINY_FONT}FE
-STR_ABBREV_STEEL                                                :{TINY_FONT}CH
-STR_ABBREV_VALUABLES                                            :{TINY_FONT}RP
-STR_ABBREV_COPPER_ORE                                           :{TINY_FONT}AE
-STR_ABBREV_MAIZE                                                :{TINY_FONT}MZ
-STR_ABBREV_FRUIT                                                :{TINY_FONT}FT
-STR_ABBREV_DIAMONDS                                             :{TINY_FONT}AD
-STR_ABBREV_FOOD                                                 :{TINY_FONT}AL
-STR_ABBREV_PAPER                                                :{TINY_FONT}CA
-STR_ABBREV_GOLD                                                 :{TINY_FONT}AU
-STR_ABBREV_WATER                                                :{TINY_FONT}AQ
-STR_ABBREV_WHEAT                                                :{TINY_FONT}TR
-STR_ABBREV_RUBBER                                               :{TINY_FONT}GU
-STR_ABBREV_SUGAR                                                :{TINY_FONT}SC
-STR_ABBREV_TOYS                                                 :{TINY_FONT}LD
-STR_ABBREV_SWEETS                                               :{TINY_FONT}BL
-STR_ABBREV_COLA                                                 :{TINY_FONT}CL
-STR_ABBREV_CANDYFLOSS                                           :{TINY_FONT}SX
-STR_ABBREV_BUBBLES                                              :{TINY_FONT}BU
-STR_ABBREV_TOFFEE                                               :{TINY_FONT}ST
-STR_ABBREV_BATTERIES                                            :{TINY_FONT}PE
-STR_ABBREV_PLASTIC                                              :{TINY_FONT}PL
-STR_ABBREV_FIZZY_DRINKS                                         :{TINY_FONT}PC
-STR_ABBREV_NONE                                                 :{TINY_FONT}NO
-STR_ABBREV_ALL                                                  :{TINY_FONT}OMN
+STR_ABBREV_PASSENGERS                                           :VC
+STR_ABBREV_COAL                                                 :CA
+STR_ABBREV_MAIL                                                 :EP
+STR_ABBREV_OIL                                                  :OL
+STR_ABBREV_LIVESTOCK                                            :PC
+STR_ABBREV_GOODS                                                :ME
+STR_ABBREV_GRAIN                                                :FR
+STR_ABBREV_WOOD                                                 :LI
+STR_ABBREV_IRON_ORE                                             :FE
+STR_ABBREV_STEEL                                                :CH
+STR_ABBREV_VALUABLES                                            :RP
+STR_ABBREV_COPPER_ORE                                           :AE
+STR_ABBREV_MAIZE                                                :MZ
+STR_ABBREV_FRUIT                                                :FT
+STR_ABBREV_DIAMONDS                                             :AD
+STR_ABBREV_FOOD                                                 :AL
+STR_ABBREV_PAPER                                                :CA
+STR_ABBREV_GOLD                                                 :AU
+STR_ABBREV_WATER                                                :AQ
+STR_ABBREV_WHEAT                                                :TR
+STR_ABBREV_RUBBER                                               :GU
+STR_ABBREV_SUGAR                                                :SC
+STR_ABBREV_TOYS                                                 :LD
+STR_ABBREV_SWEETS                                               :BL
+STR_ABBREV_COLA                                                 :CL
+STR_ABBREV_CANDYFLOSS                                           :SX
+STR_ABBREV_BUBBLES                                              :BU
+STR_ABBREV_TOFFEE                                               :ST
+STR_ABBREV_BATTERIES                                            :PE
+STR_ABBREV_PLASTIC                                              :PL
+STR_ABBREV_FIZZY_DRINKS                                         :PC
+STR_ABBREV_NONE                                                 :NO
+STR_ABBREV_ALL                                                  :OMN
 
 # 'Mode' of transport for cargoes
 STR_PASSENGERS                                                  :{G=mp}{COMMA}{NBSP}vector{P "" es}
@@ -379,41 +379,38 @@ STR_COLOUR_WHITE                                                :Albus
 STR_COLOUR_RANDOM                                               :Fortuitus
 
 # Units used in OpenTTD
-STR_UNITS_VELOCITY_IMPERIAL                                     :{COMMA}{NBSP}mph
-STR_UNITS_VELOCITY_METRIC                                       :{COMMA}{NBSP}km/h
-STR_UNITS_VELOCITY_SI                                           :{COMMA}{NBSP}m/s
+STR_UNITS_VELOCITY_IMPERIAL                                     :{DECIMAL}{NBSP}mph
+STR_UNITS_VELOCITY_METRIC                                       :{DECIMAL}{NBSP}km/h
+STR_UNITS_VELOCITY_SI                                           :{DECIMAL}{NBSP}m/s
 
-STR_UNIT_NAME_VELOCITY_IMPERIAL                                 :mph
-STR_UNIT_NAME_VELOCITY_METRIC                                   :km/h
-STR_UNIT_NAME_VELOCITY_SI                                       :m/s
+STR_UNITS_POWER_IMPERIAL                                        :{DECIMAL}{NBSP}hp
+STR_UNITS_POWER_METRIC                                          :{DECIMAL}{NBSP}hp
+STR_UNITS_POWER_SI                                              :{DECIMAL}{NBSP}kW
 
-STR_UNITS_POWER_IMPERIAL                                        :{COMMA}{NBSP}hp
-STR_UNITS_POWER_METRIC                                          :{COMMA}{NBSP}hp
-STR_UNITS_POWER_SI                                              :{COMMA}{NBSP}kW
 
-STR_UNITS_WEIGHT_SHORT_IMPERIAL                                 :{COMMA}{NBSP}t
-STR_UNITS_WEIGHT_SHORT_METRIC                                   :{COMMA}{NBSP}t
-STR_UNITS_WEIGHT_SHORT_SI                                       :{COMMA}{NBSP}kg
+STR_UNITS_WEIGHT_SHORT_IMPERIAL                                 :{DECIMAL}{NBSP}t
+STR_UNITS_WEIGHT_SHORT_METRIC                                   :{DECIMAL}{NBSP}t
+STR_UNITS_WEIGHT_SHORT_SI                                       :{DECIMAL}{NBSP}kg
 
-STR_UNITS_WEIGHT_LONG_IMPERIAL                                  :{G=fp}{COMMA}{NBSP}tona{P "" e}
-STR_UNITS_WEIGHT_LONG_METRIC                                    :{G=fp}{COMMA}{NBSP}tonna{P "" e}
-STR_UNITS_WEIGHT_LONG_SI                                        :{G=np}{COMMA}{NBSP}chiliogramma{P "" ta}
+STR_UNITS_WEIGHT_LONG_IMPERIAL                                  :{G=fp}{DECIMAL}{NBSP}tona{P "" e}
+STR_UNITS_WEIGHT_LONG_METRIC                                    :{G=fp}{DECIMAL}{NBSP}tonna{P "" e}
+STR_UNITS_WEIGHT_LONG_SI                                        :{G=np}{DECIMAL}{NBSP}chiliogramma{P "" ta}
 
-STR_UNITS_VOLUME_SHORT_IMPERIAL                                 :{COMMA}{NBSP}gal
-STR_UNITS_VOLUME_SHORT_METRIC                                   :{COMMA}{NBSP}l
-STR_UNITS_VOLUME_SHORT_SI                                       :{COMMA}{NBSP}m³
+STR_UNITS_VOLUME_SHORT_IMPERIAL                                 :{DECIMAL}{NBSP}gal
+STR_UNITS_VOLUME_SHORT_METRIC                                   :{DECIMAL}{NBSP}l
+STR_UNITS_VOLUME_SHORT_SI                                       :{DECIMAL}{NBSP}m³
 
-STR_UNITS_VOLUME_LONG_IMPERIAL                                  :{G=mp}{COMMA}{NBSP}congi{P us i}
-STR_UNITS_VOLUME_LONG_METRIC                                    :{G=np}{COMMA}{NBSP}litr{P um a}
-STR_UNITS_VOLUME_LONG_SI                                        :{G=np}{COMMA}{NBSP}m³
+STR_UNITS_VOLUME_LONG_IMPERIAL                                  :{G=mp}{DECIMAL}{NBSP}congi{P us i}
+STR_UNITS_VOLUME_LONG_METRIC                                    :{G=np}{DECIMAL}{NBSP}litr{P um a}
+STR_UNITS_VOLUME_LONG_SI                                        :{G=np}{DECIMAL}{NBSP}m³
 
-STR_UNITS_FORCE_IMPERIAL                                        :{COMMA}{NBSP}lbf
-STR_UNITS_FORCE_METRIC                                          :{COMMA}{NBSP}kgf
-STR_UNITS_FORCE_SI                                              :{COMMA}{NBSP}kN
+STR_UNITS_FORCE_IMPERIAL                                        :{DECIMAL}{NBSP}lbf
+STR_UNITS_FORCE_METRIC                                          :{DECIMAL}{NBSP}kgf
+STR_UNITS_FORCE_SI                                              :{DECIMAL}{NBSP}kN
 
-STR_UNITS_HEIGHT_IMPERIAL                                       :{COMMA}{NBSP}pedes
-STR_UNITS_HEIGHT_METRIC                                         :{COMMA}{NBSP}m
-STR_UNITS_HEIGHT_SI                                             :{COMMA}{NBSP}m
+STR_UNITS_HEIGHT_IMPERIAL                                       :{DECIMAL}{NBSP}pedes
+STR_UNITS_HEIGHT_METRIC                                         :{DECIMAL}{NBSP}m
+STR_UNITS_HEIGHT_SI                                             :{DECIMAL}{NBSP}m
 
 # Common window strings
 STR_LIST_FILTER_TITLE                                           :{BLACK}Series colans:
@@ -425,7 +422,6 @@ STR_TOOLTIP_SORT_ORDER                                          :{BLACK}Eligere 
 STR_TOOLTIP_SORT_CRITERIA                                       :{BLACK}Eligere criteria separandi
 STR_TOOLTIP_FILTER_CRITERIA                                     :{BLACK}Eligere criteria colandi
 STR_BUTTON_SORT_BY                                              :{BLACK}Ordinare
-STR_BUTTON_RENAME                                               :{BLACK}Renominare
 
 STR_TOOLTIP_CLOSE_WINDOW                                        :{BLACK}Claudere fenestram
 STR_TOOLTIP_WINDOW_TITLE_DRAG_THIS                              :{BLACK}Titulus fenestrae - hunc trahe ut fenestra moveatur
@@ -569,10 +565,9 @@ STR_SCENEDIT_FILE_MENU_SEPARATOR                                :
 STR_SCENEDIT_FILE_MENU_QUIT                                     :Exire
 
 # Settings menu
-###length 14
+###length 15
 STR_SETTINGS_MENU_GAME_OPTIONS                                  :Ludi optiones
 STR_SETTINGS_MENU_CONFIG_SETTINGS_TREE                          :Electiones
-STR_SETTINGS_MENU_SCRIPT_SETTINGS                               :Optiones IA/Ludi scriptorum
 STR_SETTINGS_MENU_NEWGRF_SETTINGS                               :Optiones NewGRF
 STR_SETTINGS_MENU_TRANSPARENCY_OPTIONS                          :Optiones perluciditatis
 STR_SETTINGS_MENU_TOWN_NAMES_DISPLAYED                          :Nomina oppidorum spectabilia
@@ -756,12 +751,6 @@ STR_MONTH_SEP                                                   :Septembris
 STR_MONTH_OCT                                                   :Octobris
 STR_MONTH_NOV                                                   :Novembris
 STR_MONTH_DEC                                                   :Decembris
-
-###length VEHICLE_TYPES
-STR_VEHICLE_TYPE_TRAINS                                         :Tramina
-STR_VEHICLE_TYPE_ROAD_VEHICLES                                  :Vehicula Viaria
-STR_VEHICLE_TYPE_SHIPS                                          :Naves
-STR_VEHICLE_TYPE_AIRCRAFT                                       :Aeroplana
 
 # Graph window
 STR_GRAPH_KEY_BUTTON                                            :{BLACK}Clavis
@@ -1092,6 +1081,10 @@ STR_EXTRA_VIEW_MOVE_MAIN_TO_VIEW_TT                             :{BLACK}Transcri
 
 # Game options window
 STR_GAME_OPTIONS_CAPTION                                        :{WHITE}Ludi optiones
+
+
+
+
 STR_GAME_OPTIONS_CURRENCY_UNITS_FRAME                           :{BLACK}Unitates nummi
 STR_GAME_OPTIONS_CURRENCY_UNITS_DROPDOWN_TOOLTIP                :{BLACK}Electio unitatum nummi
 
@@ -1132,46 +1125,12 @@ STR_GAME_OPTIONS_CURRENCY_GEL                                   :Lari Georgiana 
 STR_GAME_OPTIONS_CURRENCY_IRR                                   :Regalis Iranica (IRR)
 STR_GAME_OPTIONS_CURRENCY_RUB                                   :Novus Rubelus Russicus (RUB)
 
-###length 2
-STR_GAME_OPTIONS_ROAD_VEHICLES_DROPDOWN_LEFT                    :Gubernantur sinistro
-STR_GAME_OPTIONS_ROAD_VEHICLES_DROPDOWN_RIGHT                   :Gubernantur dextro
-
-STR_GAME_OPTIONS_TOWN_NAMES_FRAME                               :{BLACK}Nomina oppidorum
-STR_GAME_OPTIONS_TOWN_NAMES_DROPDOWN_TOOLTIP                    :{BLACK}Eligere oppidorum nomina
-
-###length 21
-STR_GAME_OPTIONS_TOWN_NAME_ORIGINAL_ENGLISH                     :Anglica (Primigenia)
-STR_GAME_OPTIONS_TOWN_NAME_FRENCH                               :Francogallica
-STR_GAME_OPTIONS_TOWN_NAME_GERMAN                               :Theodisca
-STR_GAME_OPTIONS_TOWN_NAME_ADDITIONAL_ENGLISH                   :Anglica (Additicia)
-STR_GAME_OPTIONS_TOWN_NAME_LATIN_AMERICAN                       :Americae Latinae
-STR_GAME_OPTIONS_TOWN_NAME_SILLY                                :Ridicula
-STR_GAME_OPTIONS_TOWN_NAME_SWEDISH                              :Suecica
-STR_GAME_OPTIONS_TOWN_NAME_DUTCH                                :Batavica
-STR_GAME_OPTIONS_TOWN_NAME_FINNISH                              :Finnica
-STR_GAME_OPTIONS_TOWN_NAME_POLISH                               :Polonica
-STR_GAME_OPTIONS_TOWN_NAME_SLOVAK                               :Slovaca
-STR_GAME_OPTIONS_TOWN_NAME_NORWEGIAN                            :Norvegica
-STR_GAME_OPTIONS_TOWN_NAME_HUNGARIAN                            :Hungarica
-STR_GAME_OPTIONS_TOWN_NAME_AUSTRIAN                             :Austriaca
-STR_GAME_OPTIONS_TOWN_NAME_ROMANIAN                             :Romanica
-STR_GAME_OPTIONS_TOWN_NAME_CZECH                                :Cecha
-STR_GAME_OPTIONS_TOWN_NAME_SWISS                                :Helvetica
-STR_GAME_OPTIONS_TOWN_NAME_DANISH                               :Danica
-STR_GAME_OPTIONS_TOWN_NAME_TURKISH                              :Turcica
-STR_GAME_OPTIONS_TOWN_NAME_ITALIAN                              :Italiana
-STR_GAME_OPTIONS_TOWN_NAME_CATALAN                              :Catalana
-
 STR_GAME_OPTIONS_AUTOSAVE_FRAME                                 :{BLACK}Servare automatice
 STR_GAME_OPTIONS_AUTOSAVE_DROPDOWN_TOOLTIP                      :{BLACK}Eligere crebritatem automatice ludum servandi
 
 # Autosave dropdown
 ###length 5
 STR_GAME_OPTIONS_AUTOSAVE_DROPDOWN_OFF                          :Numquam
-STR_GAME_OPTIONS_AUTOSAVE_DROPDOWN_EVERY_1_MONTH                :Singulis mensibus
-STR_GAME_OPTIONS_AUTOSAVE_DROPDOWN_EVERY_3_MONTHS               :Ternis mensibus
-STR_GAME_OPTIONS_AUTOSAVE_DROPDOWN_EVERY_6_MONTHS               :Senis mensibus
-STR_GAME_OPTIONS_AUTOSAVE_DROPDOWN_EVERY_12_MONTHS              :Duodenis mensibus
 
 STR_GAME_OPTIONS_LANGUAGE                                       :{BLACK}Lingua
 STR_GAME_OPTIONS_LANGUAGE_TOOLTIP                               :{BLACK}Eligere linguam interfaciei
@@ -1186,19 +1145,9 @@ STR_GAME_OPTIONS_RESOLUTION_OTHER                               :alia
 
 
 
-STR_GAME_OPTIONS_GUI_ZOOM_FRAME                                 :{BLACK}Magnitudo interfaciei
-STR_GAME_OPTIONS_GUI_ZOOM_DROPDOWN_TOOLTIP                      :{BLACK}Eligere magnitudinem interfaciei adhibendam
 
-STR_GAME_OPTIONS_GUI_ZOOM_DROPDOWN_NORMAL                       :Simplex
-STR_GAME_OPTIONS_GUI_ZOOM_DROPDOWN_2X_ZOOM                      :Duplex
-STR_GAME_OPTIONS_GUI_ZOOM_DROPDOWN_4X_ZOOM                      :Quadruplex
 
-STR_GAME_OPTIONS_FONT_ZOOM                                      :{BLACK}Magnitudo Litterarum
-STR_GAME_OPTIONS_FONT_ZOOM_DROPDOWN_TOOLTIP                     :{BLACK}Eligere magnitudinem litterarum adhibendam
 
-STR_GAME_OPTIONS_FONT_ZOOM_DROPDOWN_NORMAL                      :Simplex
-STR_GAME_OPTIONS_FONT_ZOOM_DROPDOWN_2X_ZOOM                     :Duplex
-STR_GAME_OPTIONS_FONT_ZOOM_DROPDOWN_4X_ZOOM                     :Quadruplex
 
 
 
@@ -1244,8 +1193,6 @@ STR_CURRENCY_INCREASE_CUSTOM_CURRENCY_TO_EURO_TOOLTIP           :{BLACK}Mutare a
 STR_CURRENCY_PREVIEW                                            :{LTBLUE}Praevisum: {ORANGE}{CURRENCY_LONG}
 STR_CURRENCY_CUSTOM_CURRENCY_PREVIEW_TOOLTIP                    :{BLACK}Copia nummi tui quae aequa est 10000 Librae Britannicae (£)
 STR_CURRENCY_CHANGE_PARAMETER                                   :{BLACK}Mutare parametrum nummi proprii
-
-STR_DIFFICULTY_LEVEL_SETTING_MAXIMUM_NO_COMPETITORS             :{LTBLUE}Numerus competitorum maximus: {ORANGE}{COMMA}
 
 STR_NONE                                                        :Nullae
 STR_FUNDING_ONLY                                                :Modo conditu
@@ -1295,6 +1242,12 @@ STR_SUBSIDY_X1_5                                                :Sesquiplex
 STR_SUBSIDY_X2                                                  :Duplex
 STR_SUBSIDY_X3                                                  :Triplex
 STR_SUBSIDY_X4                                                  :Quadruplex
+
+###length 4
+STR_CLIMATE_TEMPERATE_LANDSCAPE                                 :Terra temperata
+STR_CLIMATE_SUB_ARCTIC_LANDSCAPE                                :Terra subarctica
+STR_CLIMATE_SUB_TROPICAL_LANDSCAPE                              :Terra subtropica
+STR_CLIMATE_TOYLAND_LANDSCAPE                                   :Terra ludicrorum
 
 ###length 7
 STR_TERRAIN_TYPE_VERY_FLAT                                      :Planissimus
@@ -1369,6 +1322,7 @@ STR_CONFIG_SETTING_HORIZONTAL_POS_RIGHT                         :Dextro
 
 STR_CONFIG_SETTING_MAXIMUM_INITIAL_LOAN                         :Creditum maximum in initio: {STRING}
 STR_CONFIG_SETTING_MAXIMUM_INITIAL_LOAN_HELPTEXT                :Copia crediti maxima (sine inflatione)
+###setting-zero-is-special
 
 STR_CONFIG_SETTING_INTEREST_RATE                                :Proportio faenoris: {STRING}
 STR_CONFIG_SETTING_INTEREST_RATE_HELPTEXT                       :Proportio faenoris creditorum; etiam inflationem afficit, si inflatio adest
@@ -1631,6 +1585,10 @@ STR_CONFIG_SETTING_TREE_PLACER_IMPROVED                         :Melior
 
 STR_CONFIG_SETTING_ROAD_SIDE                                    :Vehicula viaria: {STRING}
 STR_CONFIG_SETTING_ROAD_SIDE_HELPTEXT                           :Eligere latus viae gubernandi
+
+###length 2
+STR_CONFIG_SETTING_ROAD_SIDE_LEFT                               :Gubernantur sinistro
+STR_CONFIG_SETTING_ROAD_SIDE_RIGHT                              :Gubernantur dextro
 
 STR_CONFIG_SETTING_HEIGHTMAP_ROTATION                           :Rotatio tabulae altitudinum: {STRING}
 ###length 2
@@ -1909,10 +1867,6 @@ STR_CONFIG_SETTING_STARTING_YEAR                                :Annus initii: {
 
 ###length 3
 
-STR_CONFIG_SETTING_ALLOW_SHARES                                 :Sinere mercari sortes societatum: {STRING}
-STR_CONFIG_SETTING_ALLOW_SHARES_HELPTEXT                        :Sinere mercari sortes a societatibus. Sortes societatum satis aetatis modo mercari licet
-
-
 STR_CONFIG_SETTING_FEEDER_PAYMENT_SHARE                         :Centesimae partes lucri pendenda in translatione: {STRING}
 STR_CONFIG_SETTING_FEEDER_PAYMENT_SHARE_HELPTEXT                :Centesimae lucri pars medietati data in systematibus transferendi, ut melius distribuatur lucrum vehiculorum
 
@@ -2013,10 +1967,6 @@ STR_CONFIG_SETTING_LARGER_TOWNS_DISABLED                        :Nulla
 STR_CONFIG_SETTING_CITY_SIZE_MULTIPLIER                         :Multiplicator magnitudinis initialis urbis: {STRING}
 STR_CONFIG_SETTING_CITY_SIZE_MULTIPLIER_HELPTEXT                :Quam maiores sunt urbes quam oppida in initio ludi
 
-STR_CONFIG_SETTING_LINKGRAPH_INTERVAL                           :Recensere formulam partitionis {STRING} quoque die
-STR_CONFIG_SETTING_LINKGRAPH_INTERVAL_HELPTEXT                  :Tempus inter recensiones formulae partitionis. Quaeque recensio calculat rationes unius partis formulae. Ergo valor X huius electionis non facit ut cuncta formula recenseatur X quoque die; modo aliquot pars/partes recensebuntur. Valoribus minoribus, plus tempus CPU requiritur. Valoribus maioribus, plus tempus erit ad onerum partitionem incipiendam novis itineribus.
-STR_CONFIG_SETTING_LINKGRAPH_TIME                               :{STRING}{NBSP}die{P 0:2 "" s} ad formulam partitionis recalculandam
-STR_CONFIG_SETTING_LINKGRAPH_TIME_HELPTEXT                      :Tempus cuiusque recalculationis partis partitionis. Cum recalculatio incipitur, linea generatur quae agitur hos dies electos. Paucis diebus, magis probabilis est lineam non finiri cum debet esse finitam; tunc ludus intermittitur usque ad finitur ("segnitia"). Pluribus diebus, plus tempus requiritur ad partitionem mutandam cum itinera mutantur.
 
 STR_CONFIG_SETTING_DISTRIBUTION_PAX                             :Modus partitionis vectoribus: {STRING}
 STR_CONFIG_SETTING_DISTRIBUTION_PAX_HELPTEXT                    :Partitio "symmetrica" facit ut fere eadem copia vectorum mittatur a statione A ad stationem B quam a B ad A. Partitio "asymmetrica" facit ut quaelibet copia vectorum mittatur inter A et B. In partitione "manu" vectores non automatice partiuntur.
@@ -2044,7 +1994,7 @@ STR_CONFIG_SETTING_SHORT_PATH_SATURATION_HELPTEXT               :Frequenter sunt
 
 STR_CONFIG_SETTING_LOCALISATION_UNITS_VELOCITY                  :Unitates velocitatis: {STRING}
 STR_CONFIG_SETTING_LOCALISATION_UNITS_VELOCITY_HELPTEXT         :Quandocumque velocitas monstratur, monstrabitur his unitatibus electis
-###length 4
+###length 5
 STR_CONFIG_SETTING_LOCALISATION_UNITS_VELOCITY_IMPERIAL         :Anglicae (mph)
 STR_CONFIG_SETTING_LOCALISATION_UNITS_VELOCITY_METRIC           :Metricae (km/h)
 STR_CONFIG_SETTING_LOCALISATION_UNITS_VELOCITY_SI               :SI (m/s)
@@ -2118,7 +2068,7 @@ STR_CONFIG_SETTING_REVERSE_AT_SIGNALS                           :Reversio automa
 STR_CONFIG_SETTING_REVERSE_AT_SIGNALS_HELPTEXT                  :Sinere tramina reverti apud signale, si illic valde morati sunt
 ###length 2
 STR_CONFIG_SETTING_PATHFINDER_NPF                               :NPF
-STR_CONFIG_SETTING_PATHFINDER_YAPF_RECOMMENDED                  :YAPF {BLUE}(Commendatum)
+STR_CONFIG_SETTING_PATHFINDER_YAPF                              :YAPF {BLUE}(Commendatum)
 
 STR_CONFIG_SETTING_QUERY_CAPTION                                :{WHITE}Mutare valorem optionis
 
@@ -2159,7 +2109,6 @@ STR_INTRO_HIGHSCORE                                             :{BLACK}Album Pu
 STR_INTRO_CONFIG_SETTINGS_TREE                                  :{BLACK}Electiones
 STR_INTRO_NEWGRF_SETTINGS                                       :{BLACK}NewGRF Optiones
 STR_INTRO_ONLINE_CONTENT                                        :{BLACK}Inspicere Inventarium Interretiale
-STR_INTRO_SCRIPT_SETTINGS                                       :{BLACK}IA/Ludi Scriptorum Optiones
 STR_INTRO_QUIT                                                  :{BLACK}Exire
 
 STR_INTRO_TOOLTIP_NEW_GAME                                      :{BLACK}Incipere novum ludum. Ctrl+Preme ut configuratio tabulae omittatur
@@ -2179,7 +2128,6 @@ STR_INTRO_TOOLTIP_HIGHSCORE                                     :{BLACK}Monstrar
 STR_INTRO_TOOLTIP_CONFIG_SETTINGS_TREE                          :{BLACK}Monstrare electiones
 STR_INTRO_TOOLTIP_NEWGRF_SETTINGS                               :{BLACK}Monstrare optiones NewGRF
 STR_INTRO_TOOLTIP_ONLINE_CONTENT                                :{BLACK}Inspicere inventarium Interretiale in quo res sicut NewGRF, scaenaria, musica, etc. sunt
-STR_INTRO_TOOLTIP_SCRIPT_SETTINGS                               :{BLACK}Monstrare optiones IA/Ludi scriptorum
 STR_INTRO_TOOLTIP_QUIT                                          :{BLACK}Exire OpenTTD
 
 STR_INTRO_BASESET                                               :{BLACK}Hoc fundamento graphico desunt spiritus {NUM}. Quaere novam editionem huius fundamenti.
@@ -2208,12 +2156,6 @@ STR_CHEAT_EDIT_MAX_HL_QUERY_CAPT                                :{WHITE}Eligere 
 STR_CHEAT_CHANGE_DATE                                           :{LTBLUE}Mutare annum: {ORANGE}{DATE_SHORT}
 STR_CHEAT_CHANGE_DATE_QUERY_CAPT                                :{WHITE}Mutare annum currentem
 STR_CHEAT_SETUP_PROD                                            :{LTBLUE}Sinere mutare productiones industriarum: {ORANGE}{STRING}
-
-###length 4
-STR_CHEAT_SWITCH_CLIMATE_TEMPERATE_LANDSCAPE                    :Terra temperata
-STR_CHEAT_SWITCH_CLIMATE_SUB_ARCTIC_LANDSCAPE                   :Terra subarctica
-STR_CHEAT_SWITCH_CLIMATE_SUB_TROPICAL_LANDSCAPE                 :Terra subtropica
-STR_CHEAT_SWITCH_CLIMATE_TOYLAND_LANDSCAPE                      :Terra ludicrorum
 
 # Livery window
 STR_LIVERY_CAPTION                                              :{WHITE}{COMPANY} Schema Coloris
@@ -2402,12 +2344,12 @@ STR_NETWORK_NEED_COMPANY_PASSWORD_CAPTION                       :{WHITE}Societas
 
 # Network company list added strings
 STR_NETWORK_COMPANY_LIST_CLIENT_LIST                            :Index clientum
-STR_NETWORK_COMPANY_LIST_SPECTATE                               :Spectare
 
 # Network client list
 
 # Matches ConnectionType
 ###length 5
+
 
 
 
@@ -2625,6 +2567,8 @@ STR_LINKGRAPH_LEGEND_UNUSED                                     :{TINY_FONT}{BLA
 STR_LINKGRAPH_LEGEND_SATURATED                                  :{TINY_FONT}{BLACK}satur
 STR_LINKGRAPH_LEGEND_OVERLOADED                                 :{TINY_FONT}{BLACK}superoneratus
 
+# Linkgraph tooltip
+
 # Base for station construction window(s)
 STR_STATION_BUILD_COVERAGE_AREA_TITLE                           :{BLACK}Regio Acceptionis
 STR_STATION_BUILD_COVERAGE_OFF                                  :{BLACK}Celata
@@ -2717,8 +2661,6 @@ STR_BUILD_SIGNAL_DRAG_SIGNALS_DENSITY_INCREASE_TOOLTIP          :{BLACK}Augere i
 STR_SELECT_RAIL_BRIDGE_CAPTION                                  :{WHITE}Eligere Pontem Ferriviarium
 STR_SELECT_ROAD_BRIDGE_CAPTION                                  :{WHITE}Eligere Pontem Viarium
 STR_SELECT_BRIDGE_SELECTION_TOOLTIP                             :{BLACK}Electio pontium - preme in pontem delectum ut struatur
-STR_SELECT_BRIDGE_INFO                                          :{GOLD}{STRING},{} {VELOCITY} {WHITE}{CURRENCY_LONG}
-STR_SELECT_BRIDGE_SCENEDIT_INFO                                 :{GOLD}{STRING},{} {VELOCITY}
 STR_BRIDGE_NAME_SUSPENSION_STEEL                                :Pendulus, Chalybeius
 STR_BRIDGE_NAME_GIRDER_STEEL                                    :Trabum, Chalybeius
 STR_BRIDGE_NAME_CANTILEVER_STEEL                                :Prominens, Chalybeius
@@ -3083,18 +3025,39 @@ STR_MAPGEN_MAPSIZE                                              :{BLACK}Tabulae 
 STR_MAPGEN_MAPSIZE_TOOLTIP                                      :{BLACK}Eligere magnitudinem tegularum tabulae geographicae. Tegulae parabiles fere minores erunt
 STR_MAPGEN_BY                                                   :{BLACK}*
 STR_MAPGEN_NUMBER_OF_TOWNS                                      :{BLACK}Numerus oppidorum:
+STR_MAPGEN_TOWN_NAME_LABEL                                      :{BLACK}Nomina oppidorum
+STR_MAPGEN_TOWN_NAME_DROPDOWN_TOOLTIP                           :{BLACK}Eligere oppidorum nomina
 STR_MAPGEN_DATE                                                 :{BLACK}Dies:
 STR_MAPGEN_NUMBER_OF_INDUSTRIES                                 :{BLACK}Numerus industriarum:
-STR_MAPGEN_SNOW_LINE_HEIGHT                                     :{BLACK}Altitudo nivis lineae:
-STR_MAPGEN_SNOW_LINE_UP                                         :{BLACK}Tollere altitudinem lineae nivis
-STR_MAPGEN_SNOW_LINE_DOWN                                       :{BLACK}Inclinere altitudinem lineae nivis
-STR_MAPGEN_LAND_GENERATOR                                       :{BLACK}Generatrum terrae:
 STR_MAPGEN_TERRAIN_TYPE                                         :{BLACK}Typus terrae:
-STR_MAPGEN_QUANTITY_OF_SEA_LAKES                                :{BLACK}Magnitudo maris:
+STR_MAPGEN_SEA_LEVEL                                            :{BLACK}Magnitudo maris:
 STR_MAPGEN_QUANTITY_OF_RIVERS                                   :{BLACK}Numerus fluviorum:
 STR_MAPGEN_SMOOTHNESS                                           :{BLACK}Lenitas:
 STR_MAPGEN_VARIETY                                              :{BLACK}Partitio Varietatis:
 STR_MAPGEN_GENERATE                                             :{WHITE}Creare
+
+###length 21
+STR_MAPGEN_TOWN_NAME_ORIGINAL_ENGLISH                           :Anglica (Primigenia)
+STR_MAPGEN_TOWN_NAME_FRENCH                                     :Francogallica
+STR_MAPGEN_TOWN_NAME_GERMAN                                     :Theodisca
+STR_MAPGEN_TOWN_NAME_ADDITIONAL_ENGLISH                         :Anglica (Additicia)
+STR_MAPGEN_TOWN_NAME_LATIN_AMERICAN                             :Americae Latinae
+STR_MAPGEN_TOWN_NAME_SILLY                                      :Ridicula
+STR_MAPGEN_TOWN_NAME_SWEDISH                                    :Suecica
+STR_MAPGEN_TOWN_NAME_DUTCH                                      :Batavica
+STR_MAPGEN_TOWN_NAME_FINNISH                                    :Finnica
+STR_MAPGEN_TOWN_NAME_POLISH                                     :Polonica
+STR_MAPGEN_TOWN_NAME_SLOVAK                                     :Slovaca
+STR_MAPGEN_TOWN_NAME_NORWEGIAN                                  :Norvegica
+STR_MAPGEN_TOWN_NAME_HUNGARIAN                                  :Hungarica
+STR_MAPGEN_TOWN_NAME_AUSTRIAN                                   :Austriaca
+STR_MAPGEN_TOWN_NAME_ROMANIAN                                   :Romanica
+STR_MAPGEN_TOWN_NAME_CZECH                                      :Cecha
+STR_MAPGEN_TOWN_NAME_SWISS                                      :Helvetica
+STR_MAPGEN_TOWN_NAME_DANISH                                     :Danica
+STR_MAPGEN_TOWN_NAME_TURKISH                                    :Turcica
+STR_MAPGEN_TOWN_NAME_ITALIAN                                    :Italiana
+STR_MAPGEN_TOWN_NAME_CATALAN                                    :Catalana
 
 # Strings for map borders at game generation
 STR_MAPGEN_BORDER_TYPE                                          :{BLACK}Fines tabulae:
@@ -3113,7 +3076,6 @@ STR_MAPGEN_HEIGHTMAP_NAME                                       :{BLACK}Nomen ta
 STR_MAPGEN_HEIGHTMAP_SIZE_LABEL                                 :{BLACK}Magnitudo:
 STR_MAPGEN_HEIGHTMAP_SIZE                                       :{ORANGE}{NUM} x {NUM}
 
-STR_MAPGEN_SNOW_LINE_QUERY_CAPT                                 :{WHITE}Mutare altitudinem lineae nivis
 STR_MAPGEN_START_DATE_QUERY_CAPT                                :{WHITE}Mutare annum initii
 
 # SE Map generation
@@ -3237,6 +3199,10 @@ STR_SPRITE_ALIGNER_PREVIOUS_BUTTON                              :{BLACK}Spiritum
 STR_SPRITE_ALIGNER_PREVIOUS_TOOLTIP                             :{BLACK}Ire ad spiritum naturalem priorem et, termino contacto, ad ultimum revertere
 STR_SPRITE_ALIGNER_SPRITE_TOOLTIP                               :{BLACK}Imago spiritus electi. Directio neglegitur cum hic spiritus pingitur
 STR_SPRITE_ALIGNER_MOVE_TOOLTIP                                 :{BLACK}Movere spiritum mutatione X et Y incrementa. Ctrl+Preme ut spiritus octoni incrementa moveatur
+
+###length 2
+
+
 STR_SPRITE_ALIGNER_RESET_BUTTON                                 :{BLACK}Reponere relativas
 STR_SPRITE_ALIGNER_RESET_TOOLTIP                                :{BLACK}Reponere positiones relativas
 STR_SPRITE_ALIGNER_OFFSETS_ABS                                  :{BLACK}Positio X: {NUM}, Positio Y: {NUM} (Absolutae)
@@ -3251,7 +3217,6 @@ STR_NEWGRF_ERROR_MSG_INFO                                       :{SILVER}{STRING
 STR_NEWGRF_ERROR_MSG_WARNING                                    :{RED}Cautio: {SILVER}{STRING}
 STR_NEWGRF_ERROR_MSG_ERROR                                      :{RED}Error: {SILVER}{STRING}
 STR_NEWGRF_ERROR_MSG_FATAL                                      :{RED}Error Fatalis: {SILVER}{STRING}
-STR_NEWGRF_ERROR_FATAL_POPUP                                    :{WHITE}Error NewGRF fatalis:{}{STRING}
 STR_NEWGRF_ERROR_VERSION_NUMBER                                 :{1:STRING} non operat apud editionem TTDPatch ab OpenTTD dicta
 STR_NEWGRF_ERROR_DOS_OR_WINDOWS                                 :{1:STRING} spectat ad editionem {STRING} TTD
 STR_NEWGRF_ERROR_UNSET_SWITCH                                   :{1:STRING} spectat ad {STRING}
@@ -3583,7 +3548,6 @@ STR_COMPANY_VIEW_AIRCRAFT                                       :{WHITE}{COMMA} 
 STR_COMPANY_VIEW_SHIPS                                          :{WHITE}{COMMA} nav{P is es}
 STR_COMPANY_VIEW_VEHICLES_NONE                                  :{WHITE}Nulla
 STR_COMPANY_VIEW_COMPANY_VALUE                                  :{GOLD}Aestimatio societatis: {WHITE}{CURRENCY_LONG}
-STR_COMPANY_VIEW_SHARES_OWNED_BY                                :{WHITE}({COMMA}% posessa a {COMPANY})
 STR_COMPANY_VIEW_INFRASTRUCTURE                                 :{GOLD}Infrastructura:
 STR_COMPANY_VIEW_INFRASTRUCTURE_RAIL                            :{WHITE}{COMMA} par{P s tes} ferriviae
 STR_COMPANY_VIEW_INFRASTRUCTURE_ROAD                            :{WHITE}{COMMA} par{P s tes} viae
@@ -3600,7 +3564,6 @@ STR_COMPANY_VIEW_RELOCATE_HQ                                    :{BLACK}Movere s
 STR_COMPANY_VIEW_RELOCATE_COMPANY_HEADQUARTERS                  :{BLACK}Movere primariam sedem societatis aliquo pretio 1% aestimationis valoris societatis. Shift+Preme ut pretium monstretur sine sedem movendo
 STR_COMPANY_VIEW_INFRASTRUCTURE_BUTTON                          :{BLACK}Indicia
 STR_COMPANY_VIEW_INFRASTRUCTURE_TOOLTIP                         :{BLACK}Videre indicia descripta infrastructurae
-STR_COMPANY_VIEW_GIVE_MONEY_BUTTON                              :{BLACK}Dare pecuniam
 
 STR_COMPANY_VIEW_NEW_FACE_BUTTON                                :{BLACK}Facies Nova
 STR_COMPANY_VIEW_NEW_FACE_TOOLTIP                               :{BLACK}Eligere novam faciem praesidis
@@ -3611,14 +3574,8 @@ STR_COMPANY_VIEW_COMPANY_NAME_TOOLTIP                           :{BLACK}Mutare n
 STR_COMPANY_VIEW_PRESIDENT_NAME_BUTTON                          :{BLACK}Nomen Praesidis
 STR_COMPANY_VIEW_PRESIDENT_NAME_TOOLTIP                         :{BLACK}Mutare nomen praesidis
 
-STR_COMPANY_VIEW_BUY_SHARE_BUTTON                               :{BLACK}Quadrantem sortium huius societatis emere
-STR_COMPANY_VIEW_SELL_SHARE_BUTTON                              :{BLACK}Quadrantem sortium huius societatis vendere
-STR_COMPANY_VIEW_BUY_SHARE_TOOLTIP                              :{BLACK}Quadrantem sortium huius societatis emere. Shift+Preme ut pretium monstretur sine emptione
-STR_COMPANY_VIEW_SELL_SHARE_TOOLTIP                             :{BLACK}Quadrantem sortium huius societatis vendere. Shift+Preme ut pretium monstretur sine emptione
-
 STR_COMPANY_VIEW_COMPANY_NAME_QUERY_CAPTION                     :Nomen Societatis
 STR_COMPANY_VIEW_PRESIDENT_S_NAME_QUERY_CAPTION                 :Nomen Praesidis
-STR_COMPANY_VIEW_GIVE_MONEY_QUERY_CAPTION                       :Inscribe quantitatem pecuniae dandam
 
 STR_BUY_COMPANY_MESSAGE                                         :{WHITE}Quaerimus aliam societatem emere nostram societatem.{}{}Visne emere {COMPANY} pretio {CURRENCY_LONG}?
 
@@ -3755,7 +3712,6 @@ STR_PURCHASE_INFO_RUNNINGCOST                                   :{BLACK}Pretium 
 STR_PURCHASE_INFO_CAPACITY                                      :{BLACK}Capacitas: {GOLD}{CARGO_LONG} {STRING}
 STR_PURCHASE_INFO_REFITTABLE                                    :(refectabilis)
 STR_PURCHASE_INFO_DESIGNED_LIFE                                 :{BLACK}Productum: {GOLD}{NUM}{BLACK} Aetas: {GOLD}{COMMA} ann{P us i}
-STR_PURCHASE_INFO_DESIGNED                                      :{BLACK}Productum: {GOLD}{NUM}
 STR_PURCHASE_INFO_RELIABILITY                                   :{BLACK}Constantia Maxima: {GOLD}{COMMA}%
 STR_PURCHASE_INFO_COST                                          :{BLACK}Pretium: {GOLD}{CURRENCY_LONG}
 STR_PURCHASE_INFO_COST_REFIT                                    :{BLACK}Pretium: {GOLD}{CURRENCY_LONG}{BLACK} (Pretium Reficiendi: {GOLD}{CURRENCY_LONG}{BLACK})
@@ -3771,6 +3727,8 @@ STR_PURCHASE_INFO_ALL_BUT                                       :Omnibus praeter
 STR_PURCHASE_INFO_MAX_TE                                        :{BLACK}Vis Tractionis Maxima: {GOLD}{FORCE}
 STR_PURCHASE_INFO_AIRCRAFT_RANGE                                :{BLACK}Max. distantia volatus: {GOLD}{COMMA} tegulas
 STR_PURCHASE_INFO_AIRCRAFT_TYPE                                 :{BLACK}Typus aeroplani: {GOLD}{STRING}
+
+###length 3
 
 ###length VEHICLE_TYPES
 STR_BUY_VEHICLE_TRAIN_LIST_TOOLTIP                              :{BLACK}Index electionis vehiculorum ferriviariorum. Preme in vehiculum ut plura indicia monstrentur. Ctrl+Preme ut typus vehiculi celetur
@@ -4412,12 +4370,12 @@ STR_ERROR_AI_PLEASE_REPORT_CRASH                                :{WHITE}Unum cur
 STR_ERROR_AI_DEBUG_SERVER_ONLY                                  :{YELLOW}Fenestra Emendationis IA/Ludi Scripti tantum servatro licet uti
 
 # AI configuration window
-STR_AI_CONFIG_CAPTION                                           :{WHITE}Configuratio IA/Ludi Scriptum
 STR_AI_CONFIG_GAMELIST_TOOLTIP                                  :{BLACK}Ludi Scriptum quod imponet ludo proximo
 STR_AI_CONFIG_AILIST_TOOLTIP                                    :{BLACK}IA quae imponet ludo proximo
 STR_AI_CONFIG_HUMAN_PLAYER                                      :Lusor humanus
 STR_AI_CONFIG_RANDOM_AI                                         :IA Fortuita
 STR_AI_CONFIG_NONE                                              :(nullum)
+STR_AI_CONFIG_MAX_COMPETITORS                                   :{LTBLUE}Numerus competitorum maximus: {ORANGE}{COMMA}
 
 STR_AI_CONFIG_MOVE_UP                                           :{BLACK}Sursum Movere
 STR_AI_CONFIG_MOVE_UP_TOOLTIP                                   :{BLACK}Movere IA electam sursum in indice
@@ -4427,8 +4385,6 @@ STR_AI_CONFIG_MOVE_DOWN_TOOLTIP                                 :{BLACK}Movere I
 STR_AI_CONFIG_GAMESCRIPT                                        :{SILVER}Ludi Scriptum
 STR_AI_CONFIG_AI                                                :{SILVER}AI
 
-STR_AI_CONFIG_CHANGE                                            :{BLACK}Eligere {STRING}
-STR_AI_CONFIG_CHANGE_NONE                                       :
 STR_AI_CONFIG_CHANGE_AI                                         :IA
 STR_AI_CONFIG_CHANGE_GAMESCRIPT                                 :Scriptum
 STR_AI_CONFIG_CHANGE_TOOLTIP                                    :{BLACK}Legere aliud ludi scriptum
@@ -4451,14 +4407,11 @@ STR_AI_LIST_CANCEL                                              :{BLACK}Cancella
 STR_AI_LIST_CANCEL_TOOLTIP                                      :{BLACK}Non scriptum mutare
 
 
-# AI Parameters
-STR_AI_SETTINGS_CAPTION                                         :{WHITE}{STRING} Parametra
+# Script Parameters
 STR_AI_SETTINGS_CAPTION_AI                                      :IA
-STR_AI_SETTINGS_CAPTION_GAMESCRIPT                              :Ludi Scripti
 STR_AI_SETTINGS_CLOSE                                           :{BLACK}Claudere
 STR_AI_SETTINGS_RESET                                           :{BLACK}Revertere
 STR_AI_SETTINGS_SETTING                                         :{STRING}: {ORANGE}{STRING}
-STR_AI_SETTINGS_START_DELAY                                     :Quot dies post IA priorem haec IA incipiet (plus minusve): {ORANGE}{STRING}
 
 
 # Textfile window
@@ -4467,7 +4420,7 @@ STR_TEXTFILE_WRAP_TEXT_TOOLTIP                                  :{BLACK}Volvere 
 STR_TEXTFILE_VIEW_README                                        :{BLACK}Inspicere LegeMe
 STR_TEXTFILE_VIEW_CHANGELOG                                     :{BLACK}Index Mutationum
 STR_TEXTFILE_VIEW_LICENCE                                       :{BLACK}Licentia
-###length 3
+###length 4
 STR_TEXTFILE_README_CAPTION                                     :{WHITE}{STRING} - {STRING} LegeMe
 STR_TEXTFILE_CHANGELOG_CAPTION                                  :{WHITE}{STRING} - {STRING} Index Mutationum
 STR_TEXTFILE_LICENCE_CAPTION                                    :{WHITE}{STRING} - {STRING} Licentia
@@ -4592,9 +4545,6 @@ STR_ERROR_CAN_T_REPAY_LOAN                                      :{WHITE}Non lice
 STR_ERROR_INSUFFICIENT_FUNDS                                    :{WHITE}Non licet pecuniam mutuam largiri...
 STR_ERROR_CAN_T_BUY_COMPANY                                     :{WHITE}Non licet societatem emere...
 STR_ERROR_CAN_T_BUILD_COMPANY_HEADQUARTERS                      :{WHITE}Non licet sedem societatis struere...
-STR_ERROR_CAN_T_BUY_25_SHARE_IN_THIS                            :{WHITE}Non licet quadrantem sortium huius societatis emere...
-STR_ERROR_CAN_T_SELL_25_SHARE_IN                                :{WHITE}Non licet quadrantem sortium huius societatis vendere...
-STR_ERROR_PROTECTED                                             :{WHITE}Nondum licet sortes societatis mercari...
 
 # Town related errors
 STR_ERROR_CAN_T_GENERATE_TOWN                                   :{WHITE}Non licet oppida condi
@@ -4860,6 +4810,7 @@ STR_ERROR_CAN_T_CHANGE_SERVICING                                :{WHITE}Non lice
 
 STR_ERROR_VEHICLE_IS_DESTROYED                                  :{WHITE}... vehiculum est destructum!
 
+
 STR_ERROR_NO_VEHICLES_AVAILABLE_AT_ALL                          :{WHITE}Nulla vehicula omnino parabilia erunt
 STR_ERROR_NO_VEHICLES_AVAILABLE_AT_ALL_EXPLANATION              :{WHITE}Muta configurationem NewGRF tuam
 STR_ERROR_NO_VEHICLES_AVAILABLE_YET                             :{WHITE}Nulla vehicula adhuc parabilia sunt
@@ -4893,6 +4844,8 @@ STR_ERROR_CAN_T_COPY_ORDER_LIST                                 :{WHITE}Non lice
 STR_ERROR_TOO_FAR_FROM_PREVIOUS_DESTINATION                     :{WHITE}... nimis procul a destinato priore
 STR_ERROR_AIRCRAFT_NOT_ENOUGH_RANGE                             :{WHITE}... aeroplano non est satis distantia volatus
 
+# Extra messages which go on the third line of errors, explaining why orders failed
+
 # Timetable related errors
 STR_ERROR_CAN_T_TIMETABLE_VEHICLE                               :{WHITE}Non licet vehiculo dare horarium...
 STR_ERROR_TIMETABLE_ONLY_WAIT_AT_STATIONS                       :{WHITE}Vehicula modo in stationibus possunt manere
@@ -4920,11 +4873,6 @@ STR_BASEMUSIC_WIN_DESCRIPTION                                   :Musica ex editi
 STR_BASEMUSIC_DOS_DESCRIPTION                                   :Musica ex editione originale Transport Tycoon Deluxe DOS.
 STR_BASEMUSIC_TTO_DESCRIPTION                                   :Musica ex editione originale Transport Tycoon (Originale/World Editor) DOS.
 STR_BASEMUSIC_NONE_DESCRIPTION                                  :Sarcina musicae sine ulla musica.
-
-STR_TRADITIONAL_TRAIN_NAME                                      :Tramen {COMMA}
-STR_TRADITIONAL_ROAD_VEHICLE_NAME                               :Vehiculum Viarium {COMMA}
-STR_TRADITIONAL_SHIP_NAME                                       :Navis {COMMA}
-STR_TRADITIONAL_AIRCRAFT_NAME                                   :Aeroplanum {COMMA}
 
 ##id 0x2000
 # Town building names
@@ -5424,10 +5372,10 @@ STR_VEHICLE_NAME_AIRCRAFT_POWERNAUT_HELICOPTER                  :Helicopterum Po
 
 ##id 0x8800
 # Formatting of some strings
-STR_FORMAT_DATE_TINY                                            :{STRING}-{STRING}-{NUM}
+STR_FORMAT_DATE_TINY                                            :{ZEROFILL_NUM}-{ZEROFILL_NUM}-{NUM}
 STR_FORMAT_DATE_SHORT                                           :{STRING} {NUM}
 STR_FORMAT_DATE_LONG                                            :{STRING} {STRING} {NUM}
-STR_FORMAT_DATE_ISO                                             :{2:NUM}-{1:STRING}-{0:STRING}
+STR_FORMAT_DATE_ISO                                             :{2:NUM}-{1:ZEROFILL_NUM}-{0:ZEROFILL_NUM}
 
 STR_FORMAT_COMPANY_NUM                                          :(Societas {COMMA})
 STR_FORMAT_GROUP_NAME                                           :Grex {COMMA}
@@ -5511,33 +5459,8 @@ STR_JUST_RAW_STRING                                             :{STRING}
 STR_JUST_BIG_RAW_STRING                                         :{BIG_FONT}{STRING}
 
 # Slightly 'raw' stringcodes with colour or size
-STR_BLACK_COMMA                                                 :{BLACK}{COMMA}
-STR_TINY_BLACK_COMA                                             :{TINY_FONT}{BLACK}{COMMA}
-STR_TINY_COMMA                                                  :{TINY_FONT}{COMMA}
-STR_BLUE_COMMA                                                  :{BLUE}{COMMA}
-STR_RED_COMMA                                                   :{RED}{COMMA}
-STR_WHITE_COMMA                                                 :{WHITE}{COMMA}
-STR_TINY_BLACK_DECIMAL                                          :{TINY_FONT}{BLACK}{DECIMAL}
-STR_COMPANY_MONEY                                               :{WHITE}{CURRENCY_LONG}
-STR_BLACK_DATE_LONG                                             :{BLACK}{DATE_LONG}
-STR_WHITE_DATE_LONG                                             :{WHITE}{DATE_LONG}
-STR_SHORT_DATE                                                  :{WHITE}{DATE_TINY}
-STR_DATE_LONG_SMALL                                             :{TINY_FONT}{BLACK}{DATE_LONG}
-STR_TINY_GROUP                                                  :{TINY_FONT}{GROUP}
-STR_BLACK_INT                                                   :{BLACK}{NUM}
-STR_ORANGE_INT                                                  :{ORANGE}{NUM}
 STR_WHITE_SIGN                                                  :{WHITE}{SIGN}
-STR_TINY_BLACK_STATION                                          :{TINY_FONT}{BLACK}{STATION}
-STR_BLACK_STRING                                                :{BLACK}{STRING}
-STR_BLACK_RAW_STRING                                            :{BLACK}{STRING}
-STR_ORANGE_STRING                                               :{ORANGE}{STRING}
-STR_LTBLUE_STRING                                               :{LTBLUE}{STRING}
-STR_WHITE_STRING                                                :{WHITE}{STRING}
-STR_ORANGE_STRING1_WHITE                                        :{ORANGE}{STRING}{WHITE}
-STR_ORANGE_STRING1_LTBLUE                                       :{ORANGE}{STRING}{LTBLUE}
 STR_TINY_BLACK_HEIGHT                                           :{TINY_FONT}{BLACK}{HEIGHT}
-STR_TINY_BLACK_VEHICLE                                          :{TINY_FONT}{BLACK}{VEHICLE}
-STR_TINY_RIGHT_ARROW                                            :{TINY_FONT}{RIGHT_ARROW}
 
 STR_BLACK_1                                                     :{BLACK}1
 STR_BLACK_2                                                     :{BLACK}2

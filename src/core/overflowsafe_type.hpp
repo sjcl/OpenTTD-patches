@@ -172,7 +172,10 @@ public:
 	inline constexpr bool operator <  (const int other) const { return !(*this >= other); }
 	inline constexpr bool operator <= (const int other) const { return !(*this > other); }
 
-	inline constexpr operator int64 () const { return this->m_value; }
+	inline constexpr operator T () const { return this->m_value; }
+
+	static inline constexpr OverflowSafeInt<T> max() { return T_MAX; }
+	static inline constexpr OverflowSafeInt<T> min() { return T_MIN; }
 };
 
 
@@ -208,5 +211,9 @@ static_assert(OverflowSafeInt32(INT32_MIN) - 1 == OverflowSafeInt32(INT32_MIN));
 static_assert(OverflowSafeInt32(INT32_MAX) + 1 == OverflowSafeInt32(INT32_MAX));
 static_assert(OverflowSafeInt32(INT32_MAX) * 2 == OverflowSafeInt32(INT32_MAX));
 static_assert(OverflowSafeInt32(INT32_MIN) * 2 == OverflowSafeInt32(INT32_MIN));
+
+/* Specialisation of the generic ClampTo function for overflow safe integers to normal integers. */
+template <typename To, typename From>
+constexpr To ClampTo(OverflowSafeInt<From> value) { return ClampTo<To>(From(value)); }
 
 #endif /* OVERFLOWSAFE_TYPE_HPP */

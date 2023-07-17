@@ -119,13 +119,13 @@ void DrawCommonTileSeqInGUI(int x, int y, const DrawTileSprites *dts, int32 orig
 			Point pt = RemapCoords(dtss->delta_x, dtss->delta_y, dtss->delta_z);
 			DrawSprite(image, pal, x + UnScaleGUI(pt.x), y + UnScaleGUI(pt.y));
 
-			const Sprite *spr = GetSprite(image & SPRITE_MASK, ST_NORMAL);
+			const Sprite *spr = GetSprite(image & SPRITE_MASK, SpriteType::Normal);
 			child_offset.x = UnScaleGUI(pt.x + spr->x_offs);
 			child_offset.y = UnScaleGUI(pt.y + spr->y_offs);
 		} else {
 			int offs_x = child_offset_is_unsigned ? (uint8)dtss->delta_x : dtss->delta_x;
 			int offs_y = child_offset_is_unsigned ? (uint8)dtss->delta_y : dtss->delta_y;
-			DrawSprite(image, pal, x + child_offset.x + ScaleGUITrad(offs_x), y + child_offset.y + ScaleGUITrad(offs_y));
+			DrawSprite(image, pal, x + child_offset.x + ScaleSpriteTrad(offs_x), y + child_offset.y + ScaleSpriteTrad(offs_y));
 		}
 	}
 }

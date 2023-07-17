@@ -37,7 +37,9 @@
 #include "../error.h"
 #include "../core/checksum_func.hpp"
 #include "../string_func_extra.h"
+#include "../core/serialisation.hpp"
 #include "../3rdparty/randombytes/randombytes.h"
+#include "../3rdparty/monocypher/monocypher.h"
 #include "../settings_internal.h"
 #include <sstream>
 #include <iomanip>
@@ -87,16 +89,20 @@ uint32 _sync_frame;                   ///< The frame to perform the sync check.
 Date   _last_sync_date;               ///< The game date of the last successfully received sync frame
 DateFract _last_sync_date_fract;      ///< "
 uint8  _last_sync_tick_skip_counter;  ///< "
+uint32 _last_sync_frame_counter;      ///< "
 bool _network_first_time;             ///< Whether we have finished joining or not.
 CompanyMask _network_company_passworded; ///< Bitmask of the password status of all companies.
+
+std::vector<NetworkSyncRecord> _network_client_sync_records;
+std::unique_ptr<std::array<NetworkSyncRecord, 1024>> _network_server_sync_records;
+uint32 _network_server_sync_records_next;
 
 static_assert((int)NETWORK_COMPANY_NAME_LENGTH == MAX_LENGTH_COMPANY_NAME_CHARS * MAX_CHAR_LENGTH);
 
 /** The amount of clients connected */
 byte _network_clients_connected = 0;
 
-/* Some externs / forwards */
-extern void StateGameLoop();
+extern std::string GenerateUid(std::string_view subject);
 
 /**
  * Return whether there is any client connected or trying to connect at all.
@@ -205,18 +211,40 @@ std::string GenerateCompanyPasswordHash(const std::string &password, const std::
 	}
 
 	Md5 checksum;
-	uint8 digest[16];
+	MD5Hash digest;
 
 	/* Generate the MD5 hash */
 	std::string salted_password_string = salted_password.str();
 	checksum.Append(salted_password_string.data(), salted_password_string.size());
 	checksum.Finish(digest);
 
-	std::ostringstream hashed_password;
-	hashed_password << std::hex << std::setfill('0');
-	for (int di = 0; di < 16; di++) hashed_password << std::setw(2) << (int)digest[di]; // Cast needed, otherwise interpreted as character to add
+	return BytesToHexString(digest.data(), digest.size());
+}
 
-	return hashed_password.str();
+/**
+ * Hash the given password using server ID and game seed.
+ * @param password Password to hash.
+ * @param password_server_id Server ID.
+ * @param password_game_seed Game seed.
+ * @return The hashed password.
+ */
+std::vector<uint8> GenerateGeneralPasswordHash(const std::string &password, const std::string &password_server_id, uint64 password_game_seed)
+{
+	if (password.empty()) return {};
+
+	std::vector<byte> data;
+	data.reserve(password_server_id.size() + password.size() + 10);
+	BufferSerialiser buffer(data);
+
+	buffer.Send_uint64(password_game_seed);
+	buffer.Send_string(password_server_id);
+	buffer.Send_string(password);
+
+	std::vector<byte> output;
+	output.resize(64);
+	crypto_blake2b(output.data(), output.size(), data.data(), data.size());
+
+	return output;
 }
 
 /**
@@ -226,7 +254,7 @@ std::string GenerateCompanyPasswordHash(const std::string &password, const std::
  */
 bool NetworkCompanyIsPassworded(CompanyID company_id)
 {
-	return HasBit(_network_company_passworded, company_id);
+	return _networking && company_id < MAX_COMPANIES && HasBit(_network_company_passworded, company_id);
 }
 
 /* This puts a text-message to the console, or in the future, the chat-box,
@@ -633,6 +661,7 @@ void NetworkClose(bool close_admins)
 
 		_network_coordinator_client.CloseAllConnections();
 	}
+	NetworkGameSocketHandler::ProcessDeferredDeletions();
 
 	TCPConnecter::KillAll();
 
@@ -644,8 +673,13 @@ void NetworkClose(bool close_admins)
 	delete[] _network_company_states;
 	_network_company_states = nullptr;
 	_network_company_server_id.clear();
+	_network_company_passworded = 0;
 
 	InitializeNetworkPools(close_admins);
+
+	_network_client_sync_records.clear();
+	_network_client_sync_records.shrink_to_fit();
+	_network_server_sync_records.reset();
 }
 
 /* Initializes the network (cleans sockets and stuff) */
@@ -661,6 +695,7 @@ static void NetworkInitialize(bool close_admins = true)
 	_last_sync_date = 0;
 	_last_sync_date_fract = 0;
 	_last_sync_tick_skip_counter = 0;
+	_last_sync_frame_counter = 0;
 }
 
 /** Non blocking connection to query servers for their game info. */
@@ -936,6 +971,10 @@ bool NetworkServerStart()
 	_last_sync_frame = 0;
 	_network_own_client_id = CLIENT_ID_SERVER;
 
+	_network_server_sync_records.reset(new std::array<NetworkSyncRecord, 1024>());
+	_network_server_sync_records->fill({ 0, 0, 0 });
+	_network_server_sync_records_next = 0;
+
 	_network_clients_connected = 0;
 	_network_company_passworded = 0;
 
@@ -1035,12 +1074,15 @@ void NetworkUpdateServerGameType()
  */
 static bool NetworkReceive()
 {
+	bool result;
 	if (_network_server) {
 		ServerNetworkAdminSocketHandler::Receive();
-		return ServerNetworkGameSocketHandler::Receive();
+		result = ServerNetworkGameSocketHandler::Receive();
 	} else {
-		return ClientNetworkGameSocketHandler::Receive();
+		result = ClientNetworkGameSocketHandler::Receive();
 	}
+	NetworkGameSocketHandler::ProcessDeferredDeletions();
+	return result;
 }
 
 /* This sends all buffered commands (if possible) */
@@ -1052,6 +1094,7 @@ static void NetworkSend()
 	} else {
 		ClientNetworkGameSocketHandler::Send();
 	}
+	NetworkGameSocketHandler::ProcessDeferredDeletions();
 }
 
 /**
@@ -1066,6 +1109,7 @@ void NetworkBackgroundLoop()
 	TCPConnecter::CheckCallbacks();
 	NetworkHTTPSocketHandler::HTTPReceive();
 	QueryNetworkGameSocketHandler::SendReceive();
+	NetworkGameSocketHandler::ProcessDeferredDeletions();
 
 	NetworkBackgroundUDPLoop();
 }
@@ -1106,7 +1150,7 @@ void NetworkGameLoop()
 		while (f != nullptr && !feof(f)) {
 			if (_date == next_date && _date_fract == next_date_fract) {
 				if (cp != nullptr) {
-					NetworkSendCommand(cp->tile, cp->p1, cp->p2, cp->p3, cp->cmd & ~CMD_FLAGS_MASK, nullptr, cp->text.c_str(), cp->company, cp->binary_length);
+					NetworkSendCommand(cp->tile, cp->p1, cp->p2, cp->p3, cp->cmd & ~CMD_FLAGS_MASK, nullptr, cp->text.c_str(), cp->company, cp->aux_data);
 					DEBUG(net, 0, "injecting: date{%08x; %02x; %02x}; %02x; %06x; %08x; %08x; " OTTD_PRINTFHEX64PAD " %08x; \"%s\" (%x) (%s)", _date, _date_fract, _tick_skip_counter, (int)_current_company, cp->tile, cp->p1, cp->p2, cp->p3, cp->cmd, cp->text.c_str(), cp->binary_length, GetCommandName(cp->cmd));
 					cp.reset();
 				}
@@ -1153,7 +1197,7 @@ void NetworkGameLoop()
 				 * string misses because in 99% of the time it's not used. */
 				assert(ret == 10 || ret == 9);
 				cp->company = (CompanyID)company;
-				cp->binary_length = 0;
+				cp->aux_data = nullptr;
 			} else if (strncmp(p, "join: ", 6) == 0) {
 				/* Manually insert a pause when joining; this way the client can join at the exact right time. */
 				int ret = sscanf(p + 6, "date{%x; %x; %x}", &next_date, &next_date_fract, &next_tick_skip_counter);
@@ -1167,7 +1211,7 @@ void NetworkGameLoop()
 				cp->p2 = 1;
 				cp->p3 = 0;
 				cp->callback = nullptr;
-				cp->binary_length = 0;
+				cp->aux_data = nullptr;
 				_ddc_fastforward = false;
 			} else if (strncmp(p, "sync: ", 6) == 0) {
 				int ret = sscanf(p + 6, "date{%x; %x; %x}; %x; %x", &next_date, &next_date_fract, &next_tick_skip_counter, &sync_state[0], &sync_state[1]);
@@ -1225,6 +1269,9 @@ void NetworkGameLoop()
 #endif
 		_sync_state_checksum = _state_checksum.state;
 
+		(*_network_server_sync_records)[_network_server_sync_records_next] = { _frame_counter, _random.state[0], _state_checksum.state };
+		_network_server_sync_records_next = (_network_server_sync_records_next + 1) % _network_server_sync_records->size();
+
 		NetworkServer_Tick(send_frame);
 	} else {
 		/* Client */
@@ -1249,47 +1296,30 @@ void NetworkGameLoop()
 
 static void NetworkGenerateServerId()
 {
-	Md5 checksum;
-	uint8 digest[16];
-	char hex_output[16 * 2 + 1];
-	char coding_string[NETWORK_NAME_LENGTH];
-	int di;
+	_settings_client.network.network_id = GenerateUid("OpenTTD Server ID");
+}
 
-	seprintf(coding_string, lastof(coding_string), "%d%s", (uint)Random(), "OpenTTD Server ID");
+std::string BytesToHexString(const byte *data, size_t length)
+{
+	std::string hex_output;
+	hex_output.resize(length * 2);
 
-	/* Generate the MD5 hash */
-	checksum.Append((const uint8*)coding_string, strlen(coding_string));
-	checksum.Finish(digest);
-
-	for (di = 0; di < 16; ++di) {
-		seprintf(hex_output + di * 2, lastof(hex_output), "%02x", digest[di]);
+	char txt[3];
+	for (uint i = 0; i < length; ++i) {
+		seprintf(txt, lastof(txt), "%02x", data[i]);
+		hex_output[i * 2] = txt[0];
+		hex_output[(i * 2) + 1] = txt[1];
 	}
 
-	/* _settings_client.network.network_id is our id */
-	_settings_client.network.network_id = hex_output;
+	return hex_output;
 }
 
 std::string NetworkGenerateRandomKeyString(uint bytes)
 {
 	uint8 *key = AllocaM(uint8, bytes);
-	char *hex_output = AllocaM(char, bytes * 2);
+	NetworkRandomBytesWithFallback(key, bytes);
 
-	if (randombytes(key, bytes) < 0) {
-		/* Fallback poor-quality random */
-		DEBUG(misc, 0, "High quality random source unavailable");
-		for (uint i = 0; i < bytes; i++) {
-			key[i] = (uint8)InteractiveRandom();
-		}
-	}
-
-	char txt[3];
-	for (uint i = 0; i < bytes; ++i) {
-		seprintf(txt, lastof(txt), "%02x", key[i]);
-		hex_output[i * 2] = txt[0];
-		hex_output[i * 2 + 1] = txt[1];
-	}
-
-	return std::string(hex_output, hex_output + bytes * 2);
+	return BytesToHexString(key, bytes);
 }
 
 class TCPNetworkDebugConnecter : TCPConnecter {
@@ -1341,12 +1371,14 @@ void NetworkStartUp()
 	NetworkUDPInitialize();
 	DEBUG(net, 3, "Network online, multiplayer available");
 	NetworkFindBroadcastIPs(&_broadcast_list);
+	NetworkHTTPInitialize();
 }
 
 /** This shuts the network down */
 void NetworkShutDown()
 {
 	NetworkDisconnect(true);
+	NetworkHTTPUninitialize();
 	NetworkUDPClose();
 
 	DEBUG(net, 3, "Shutting down network");
@@ -1354,6 +1386,34 @@ void NetworkShutDown()
 	_network_available = false;
 
 	NetworkCoreShutdown();
+}
+
+void NetworkRandomBytesWithFallback(void *buf, size_t bytes)
+{
+	if (randombytes(buf, bytes) < 0) {
+		/* Fallback poor-quality random */
+		DEBUG(net, 0, "High quality random source unavailable");
+		for (uint i = 0; i < bytes; i++) {
+			reinterpret_cast<byte *>(buf)[i] = (byte)InteractiveRandom();
+		}
+	}
+}
+
+void NetworkGameKeys::Initialise()
+{
+	assert(!this->inited);
+
+	this->inited = true;
+
+	static_assert(sizeof(this->x25519_priv_key) == 32);
+	NetworkRandomBytesWithFallback(this->x25519_priv_key, sizeof(this->x25519_priv_key));
+	crypto_x25519_public_key(this->x25519_pub_key, this->x25519_priv_key);
+}
+
+NetworkSharedSecrets::~NetworkSharedSecrets()
+{
+	static_assert(sizeof(*this) == 64);
+	crypto_wipe(this, sizeof(*this));
 }
 
 #ifdef __EMSCRIPTEN__

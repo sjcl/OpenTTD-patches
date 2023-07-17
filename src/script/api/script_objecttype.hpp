@@ -13,6 +13,7 @@
 #include "script_list.hpp"
 
 #include "../../newgrf_object.h"
+#include <optional>
 
 /**
  * Class that handles all object-type related functions.
@@ -33,7 +34,7 @@ public:
 	 * @pre IsValidObjectType(object_type).
 	 * @return The name of an object.
 	 */
-	static char *GetName(ObjectType object_type);
+	static std::optional<std::string> GetName(ObjectType object_type);
 
 	/**
 	 * Get the number of views for an object-type.
@@ -41,7 +42,7 @@ public:
 	 * @pre IsValidObjectType(object_type).
 	 * @return The number of views for an object.
 	 */
-	static uint8 GetViews(ObjectType object_type);
+	static SQInteger GetViews(ObjectType object_type);
 
 	/**
 	 * Build an object of the specified type.
@@ -51,16 +52,16 @@ public:
 	 * @pre IsValidObjectType(object_type).
 	 * @return True if the object was successfully build.
 	 */
-	static bool BuildObject(ObjectType object_type, uint8 view, TileIndex tile);
+	static bool BuildObject(ObjectType object_type, SQInteger view, TileIndex tile);
 
 	/**
 	 * Get a specific object-type from a grf.
-	 * @param grf_id The ID of the NewGRF.
+	 * @param grfid The ID of the NewGRF.
 	 * @param grf_local_id The ID of the object, local to the NewGRF.
-	 * @pre 0x00 <= grf_local_id < NUM_OBJECTS_PER_GRF.
+	 * @pre 0x00 <= grf_local_id < NUM_OBJECTS.
 	 * @return the object-type ID, local to the current game (this diverges from the grf_local_id).
 	 */
-	static ObjectType ResolveNewGRFID(uint32 grfid, uint16 grf_local_id);
+	static ObjectType ResolveNewGRFID(SQInteger grfid, SQInteger grf_local_id);
 };
 
 #endif /* SCRIPT_OBJECTTYPE_HPP */

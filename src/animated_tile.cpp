@@ -10,7 +10,7 @@
 #include "stdafx.h"
 #include "animated_tile.h"
 #include "core/alloc_func.hpp"
-#include "core/smallvec_type.hpp"
+#include "core/container_func.hpp"
 #include "tile_cmd.h"
 #include "viewport_func.h"
 #include "framerate_type.h"
@@ -70,9 +70,9 @@ static void UpdateAnimatedTileSpeed(TileIndex tile, AnimatedTileInfo &info)
  * on that table yet). Also increases the size of the table if necessary.
  * @param tile the tile to make animated
  */
-void AddAnimatedTile(TileIndex tile)
+void AddAnimatedTile(TileIndex tile, bool mark_dirty)
 {
-	MarkTileDirtyByTile(tile, VMDF_NOT_MAP_MODE);
+	if (mark_dirty) MarkTileDirtyByTile(tile, VMDF_NOT_MAP_MODE);
 	AnimatedTileInfo &info = _animated_tiles[tile];
 	UpdateAnimatedTileSpeed(tile, info);
 	info.pending_deletion = false;

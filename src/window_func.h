@@ -16,6 +16,7 @@
 
 Window *FindWindowById(WindowClass cls, WindowNumber number);
 Window *FindWindowByClass(WindowClass cls);
+Window *GetMainWindow();
 void ChangeWindowOwner(Owner old_owner, Owner new_owner);
 
 void ResizeWindow(Window *w, int x, int y, bool clamp_to_screen = true);
@@ -44,6 +45,10 @@ void DeleteNetworkClientWindows();
 void HideVitalWindows();
 void ShowVitalWindows();
 
+inline void CloseNonVitalWindows() { DeleteNonVitalWindows(); }
+inline void CloseAllNonVitalWindows() { DeleteAllNonVitalWindows(); }
+inline void CloseConstructionWindows() { DeleteConstructionWindows(); }
+
 /**
  * Re-initialize all windows.
  * @param zoom_changed Set if windows are being re-initialized due to a zoom level changed.
@@ -57,6 +62,9 @@ void SetWindowClassesDirty(WindowClass cls);
 void DeleteWindowById(WindowClass cls, WindowNumber number, bool force = true);
 void DeleteAllWindowsById(WindowClass cls, WindowNumber number, bool force = true);
 void DeleteWindowByClass(WindowClass cls);
+
+inline void CloseWindowById(WindowClass cls, WindowNumber number, bool force = true) { DeleteWindowById(cls, number, force); }
+inline void CloseWindowByClass(WindowClass cls) { DeleteWindowByClass(cls); }
 
 bool FocusWindowById(WindowClass cls, WindowNumber number);
 

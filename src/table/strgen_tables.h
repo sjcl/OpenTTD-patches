@@ -79,6 +79,7 @@ static const CmdStruct _cmd_structs[] = {
 	{"CARGO_TINY",        EmitSingleChar, SCC_CARGO_TINY,         2,  1, C_NONE}, // tiny cargo description with only the amount, not a specifier for the amount or the actual cargo name
 	{"CARGO_LIST",        EmitSingleChar, SCC_CARGO_LIST,         1, -1, C_CASE},
 	{"POWER",             EmitSingleChar, SCC_POWER,              1,  0, C_NONE},
+	{"POWER_TO_WEIGHT",   EmitSingleChar, SCC_POWER_TO_WEIGHT,    1,  0, C_NONE},
 	{"VOLUME_LONG",       EmitSingleChar, SCC_VOLUME_LONG,        1,  0, C_NONE},
 	{"VOLUME_SHORT",      EmitSingleChar, SCC_VOLUME_SHORT,       1,  0, C_NONE},
 	{"WEIGHT_LONG",       EmitSingleChar, SCC_WEIGHT_LONG,        1,  0, C_NONE},
@@ -103,6 +104,7 @@ static const CmdStruct _cmd_structs[] = {
 
 	{"TIME_HHMM",         EmitSingleChar, SCC_TIME_HHMM,          1, -1, C_NONE},
 	{"TT_TICKS",          EmitSingleChar, SCC_TT_TICKS,           1, -1, C_NONE},
+	{"TT_TICKS_LONG",     EmitSingleChar, SCC_TT_TICKS_LONG,      1, -1, C_NONE},
 
 	{"STRING",            EmitSingleChar, SCC_STRING,             1, -1, C_CASE | C_GENDER},
 	{"RAW_STRING",        EmitSingleChar, SCC_RAW_STRING_POINTER, 1, -1, C_NONE | C_GENDER},

@@ -5,7 +5,7 @@ if(NOT BINARY_NAME)
 endif()
 
 project(${BINARY_NAME}
-    VERSION 13.0
+    VERSION 14.0
 )
 
 if(CMAKE_SOURCE_DIR STREQUAL CMAKE_BINARY_DIR)
@@ -17,7 +17,7 @@ if (EMSCRIPTEN)
 endif()
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake")
-set(CMAKE_OSX_DEPLOYMENT_TARGET 10.9)
+set(CMAKE_OSX_DEPLOYMENT_TARGET 10.13)
 
 # Use GNUInstallDirs to allow customisation
 # but set our own default data and bin dir
@@ -120,6 +120,15 @@ find_package(LibLZMA)
 find_package(LZO)
 find_package(ZSTD 1.4)
 find_package(PNG)
+find_package(nlohmann_json)
+
+if(WIN32 OR EMSCRIPTEN)
+    # Windows uses WinHttp for HTTP requests.
+    # Emscripten uses Javascript for HTTP requests.
+else()
+    # All other targets use libcurl.
+    find_package(CURL)
+endif()
 
 if(NOT OPTION_DEDICATED)
     if(NOT WIN32)
@@ -132,7 +141,8 @@ if(NOT OPTION_DEDICATED)
             endif()
             find_package(Fluidsynth)
             find_package(Fontconfig)
-            find_package(ICU OPTIONAL_COMPONENTS i18n lx)
+            find_package(Harfbuzz)
+            find_package(ICU OPTIONAL_COMPONENTS i18n)
         endif()
     endif()
 endif()
@@ -199,6 +209,12 @@ show_options()
 if(UNIX AND NOT APPLE AND NOT OPTION_DEDICATED)
     if(NOT SDL_FOUND AND NOT SDL2_FOUND AND NOT ALLEGRO_FOUND)
         message(FATAL_ERROR "SDL, SDL2 or Allegro is required for this platform")
+    endif()
+    if(HARFBUZZ_FOUND AND NOT ICU_i18n_FOUND)
+        message(WARNING "HarfBuzz depends on ICU i18n to function; HarfBuzz will be disabled")
+    endif()
+    if(NOT HARFBUZZ_FOUND)
+        message(WARNING "Without HarfBuzz and ICU i18n the game will not be able to render right-to-left languages correctly")
     endif()
 endif()
 if(APPLE)
@@ -330,6 +346,11 @@ link_package(ZLIB TARGET ZLIB::ZLIB ENCOURAGED)
 link_package(LIBLZMA TARGET LibLZMA::LibLZMA ENCOURAGED)
 link_package(LZO)
 link_package(ZSTD TARGET ZSTD::ZSTD RECOMMENDED)
+link_package(nlohmann_json ENCOURAGED)
+
+if(NOT WIN32 AND NOT EMSCRIPTEN)
+    link_package(CURL ENCOURAGED)
+endif()
 
 if(NOT OPTION_DEDICATED)
     link_package(Fluidsynth)
@@ -338,7 +359,7 @@ if(NOT OPTION_DEDICATED)
     link_package(Allegro)
     link_package(FREETYPE TARGET Freetype::Freetype)
     link_package(Fontconfig TARGET Fontconfig::Fontconfig)
-    link_package(ICU_lx)
+    link_package(Harfbuzz TARGET harfbuzz::harfbuzz)
     link_package(ICU_i18n)
     link_package(Fcitx)
     link_package(DBus1)
@@ -354,6 +375,8 @@ if(NOT OPTION_DEDICATED)
         link_package(OpenGL TARGET OpenGL::GL)
     endif()
 endif()
+
+include(CheckAtomic)
 
 if(APPLE)
     link_package(Iconv TARGET Iconv::Iconv)
@@ -443,6 +466,7 @@ if(WIN32)
         imm32
         usp10
         psapi
+        winhttp
     )
 endif()
 

@@ -13,7 +13,7 @@
 #include "../script/squirrel_class.hpp"
 
 #include "../script/script_storage.hpp"
-#include "../ai/ai_gui.hpp"
+#include "../script/script_gui.h"
 #include "game_config.hpp"
 #include "game_info.hpp"
 #include "game_instance.hpp"
@@ -27,7 +27,7 @@
 
 
 GameInstance::GameInstance() :
-	ScriptInstance("GS")
+	ScriptInstance("GS", ScriptType::GS)
 {}
 
 void GameInstance::Initialize(GameInfo *info)
@@ -52,12 +52,12 @@ void GameInstance::RegisterAPI()
 	if (!this->LoadCompatibilityScripts(this->versionAPI, GAME_DIR)) this->Died();
 }
 
-int GameInstance::GetSetting(const char *name)
+int GameInstance::GetSetting(const std::string &name)
 {
 	return GameConfig::GetConfig()->GetSetting(name);
 }
 
-ScriptInfo *GameInstance::FindLibrary(const char *library, int version)
+ScriptInfo *GameInstance::FindLibrary(const std::string &library, int version)
 {
 	return (ScriptInfo *)Game::FindLibrary(library, version);
 }
@@ -66,13 +66,13 @@ void GameInstance::Died()
 {
 	ScriptInstance::Died();
 
-	ShowAIDebugWindow(OWNER_DEITY);
+	ShowScriptDebugWindow(OWNER_DEITY);
 
 	const GameInfo *info = Game::GetInfo();
 	if (info != nullptr) {
 		ShowErrorMessage(STR_ERROR_AI_PLEASE_REPORT_CRASH, INVALID_STRING_ID, WL_WARNING);
 
-		if (info->GetURL() != nullptr) {
+		if (!info->GetURL().empty()) {
 			ScriptLog::Info("Please report the error to the following URL:");
 			ScriptLog::Info(info->GetURL());
 		}

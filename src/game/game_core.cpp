@@ -73,6 +73,9 @@
 {
 	if (Game::instance != nullptr) return;
 
+	/* Don't start GameScripts in intro */
+	if (_game_mode == GM_MENU) return;
+
 	/* Clients shouldn't start GameScripts */
 	if (_networking && !_network_server) return;
 
@@ -88,10 +91,12 @@
 	Game::info = info;
 	Game::instance = new GameInstance();
 	Game::instance->Initialize(info);
+	Game::instance->LoadOnStack(config->GetToLoadData());
+	config->SetToLoadData(nullptr);
 
 	cur_company.Restore();
 
-	InvalidateWindowData(WC_AI_DEBUG, 0, -1);
+	InvalidateWindowData(WC_SCRIPT_DEBUG, 0, -1);
 }
 
 /* static */ void Game::Uninitialize(bool keepConfig)
@@ -166,8 +171,8 @@
 	 *  the GameConfig. If not, remove the Game from the list. */
 	if (_settings_game.game_config != nullptr && _settings_game.game_config->HasScript()) {
 		if (!_settings_game.game_config->ResetInfo(true)) {
-			DEBUG(script, 0, "After a reload, the GameScript by the name '%s' was no longer found, and removed from the list.", _settings_game.game_config->GetName());
-			_settings_game.game_config->Change(nullptr);
+			DEBUG(script, 0, "After a reload, the GameScript by the name '%s' was no longer found, and removed from the list.", _settings_game.game_config->GetName().c_str());
+			_settings_game.game_config->Change(std::nullopt);
 			if (Game::instance != nullptr) {
 				delete Game::instance;
 				Game::instance = nullptr;
@@ -179,8 +184,8 @@
 	}
 	if (_settings_newgame.game_config != nullptr && _settings_newgame.game_config->HasScript()) {
 		if (!_settings_newgame.game_config->ResetInfo(false)) {
-			DEBUG(script, 0, "After a reload, the GameScript by the name '%s' was no longer found, and removed from the list.", _settings_newgame.game_config->GetName());
-			_settings_newgame.game_config->Change(nullptr);
+			DEBUG(script, 0, "After a reload, the GameScript by the name '%s' was no longer found, and removed from the list.", _settings_newgame.game_config->GetName().c_str());
+			_settings_newgame.game_config->Change(std::nullopt);
 		}
 	}
 }
@@ -193,9 +198,10 @@
 	Game::scanner_library->RescanDir();
 	ResetConfig();
 
-	InvalidateWindowData(WC_AI_LIST, 0, 1);
-	SetWindowClassesDirty(WC_AI_DEBUG);
-	InvalidateWindowClassesData(WC_AI_SETTINGS);
+	InvalidateWindowData(WC_SCRIPT_LIST, 0, 1);
+	SetWindowClassesDirty(WC_SCRIPT_DEBUG);
+	InvalidateWindowClassesData(WC_SCRIPT_SETTINGS);
+	InvalidateWindowClassesData(WC_GAME_OPTIONS);
 }
 
 
@@ -207,18 +213,6 @@
 		cur_company.Restore();
 	} else {
 		GameInstance::SaveEmpty();
-	}
-}
-
-/* static */ void Game::Load(int version)
-{
-	if (Game::instance != nullptr && (!_networking || _network_server)) {
-		Backup<CompanyID> cur_company(_current_company, OWNER_DEITY, FILE_LINE);
-		Game::instance->Load(version);
-		cur_company.Restore();
-	} else {
-		/* Read, but ignore, the load data */
-		GameInstance::LoadEmpty();
 	}
 }
 
@@ -242,12 +236,12 @@
 	return Game::scanner_info->GetUniqueInfoList();
 }
 
-/* static */ GameInfo *Game::FindInfo(const char *name, int version, bool force_exact_match)
+/* static */ GameInfo *Game::FindInfo(const std::string &name, int version, bool force_exact_match)
 {
 	return Game::scanner_info->FindInfo(name, version, force_exact_match);
 }
 
-/* static */ GameLibrary *Game::FindLibrary(const char *library, int version)
+/* static */ GameLibrary *Game::FindLibrary(const std::string &library, int version)
 {
 	return Game::scanner_library->FindLibrary(library, version);
 }

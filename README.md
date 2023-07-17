@@ -1,4 +1,4 @@
-## JGR's Patchpack version 0.48.5
+## JGR's Patchpack version 0.54.4
 
 This is a collection of patches applied to [OpenTTD](http://www.openttd.org/)
 
@@ -18,7 +18,7 @@ See [below](#openttd) for the original OpenTTD readme.
 
 The thread for this patchpack can be found [here](http://www.tt-forums.net/viewtopic.php?f=33&t=73469).
 
-See [jgrpp-changelog.md](jgrpp-changelog.md) for changelog.
+See [jgrpp-changelog.md](jgrpp-changelog.md) for the changelog.
 
 See the [wiki](https://github.com/JGRennison/OpenTTD-patches/wiki) for guides on how to use some of the included features.
 
@@ -57,6 +57,7 @@ See [installation.md](/installation.md) for instructions on how to install.
 * Add client setting to show all signals using the default baseset sprites.
 * Remember the last-used signal type between games.
 * Add client setting to show the introduction year for train wagons.
+* Add setting for rail depot maximum speed.
 
 #### Roads and Road Vehicles
 
@@ -99,6 +100,7 @@ See [installation.md](/installation.md) for instructions on how to install.
 #### Ships
 
 * [Ship collision avoidance](http://www.tt-forums.net/viewtopic.php?f=33&t=74365).
+* Allow NewGRF ships to carry more than one cargo.
 
 #### Vehicles in General
 
@@ -153,9 +155,12 @@ See [installation.md](/installation.md) for instructions on how to install.
 * Timetabled wait times at waypoints.
 * Add warning/info messages to the timetable window.
 * Add features to reverse the order of an order list, and to append the reverse of an order list.  
-  (Use the ctrl key when the end of orders marker is selected).
+  (Use the ctrl key when the end of orders marker is selected, or enable the order management button).
+* Add features to duplicate an individual order and to change the jump target of conditional orders.
 * Add company setting for whether to advance the current order when cloning/copying/sharing (if current depot is in order list).
 * Add vehicle list menu item to mass cancel go to or service at depot orders.
+* Allow changing colour of orders in order list and timetable windows.
+* Add text label and departure board via order types.
 
 #### Stations
 
@@ -177,6 +182,8 @@ See [installation.md](/installation.md) for instructions on how to install.
 * Add setting to allow hiding viewport labels of individual waypoints.
 * Increase the distance a station can be from the town centre and still be assigned have the same name as the town (no suffix/prefix), for large towns.
 * [Allow NewGRFs to supply additional station name strings](https://github.com/JGRennison/OpenTTD-patches/wiki/GRF-features#extra-station-names).
+* Allow generating new default name for station (ctrl-click default button in rename station query window).
+* Allow exchanging a station's name with another station in the same town.
 
 #### Towns
 
@@ -188,6 +195,11 @@ See [installation.md](/installation.md) for instructions on how to install.
 * Add "indifferent" mode to the town council attitude to area restructuring setting.
 * Disallow converting town-owned roads to types with the no houses flag.
 * Add public roads (road network automatically built between towns) at map generation and in the scenario editor.
+* Add settings for if/when towns can build road bridges and tunnels.
+* Add setting to limit length of continuous inclined roads built by towns.
+* Allow overriding town road construction settings and whether town growth is enabled on a per-town basis, add setting to enable this for multiplayer clients.
+* Allow NewGRFs to set town zone radii.
+* Show town count in town directory window.
 
 #### Industries
 
@@ -216,6 +228,7 @@ See [installation.md](/installation.md) for instructions on how to install.
 * Add setting to disable object expiry after a given year.
 * Add setting to ignore object introduction dates.
 * Add setting for whether to confirm before demolishing industries and/or rail stations.
+* Add picker tool for objects, rail types, road types, rail stations/waypoints and road stops/waypoints, to the main toolbar help menu.
 
 #### Scenario Editor
 
@@ -242,6 +255,9 @@ See [installation.md](/installation.md) for instructions on how to install.
 * Add display setting for income/cost text effects.
 * Make the company infrastructure window scrollable.
 * Add setting to disable water animation depending on zoom level.
+* Add zoom in support to the minimap window.
+* Add setting to increase the size of the main toolbar.
+* Add cargo filtering and a show by cargo mode to the company delivered cargo graph.
 
 #### Limits
 
@@ -266,7 +282,7 @@ See [installation.md](/installation.md) for instructions on how to install.
 * [Give money to company, instead of player](https://www.tt-forums.net/viewtopic.php?f=33&t=63899), broadcast money transfer notifications to all players.
 * Add setting to enable non-admin multiplayer clients to rename towns.
 * Add a password mechanism to change network game settings from a network client.
-* Change network protocol to send server/join and rcon passwords in hashed form instead of in clear text.
+* Auto-kick clients after too many failed rcon/settings attempts.
 * Various changes to reduce the probability of desyncs and improve desync reporting/diagnostics.
 * Add support for zstd savegame compression for autosaves and network joins.
 * Increase the number of settings which can be changed in multiplayer.
@@ -323,12 +339,6 @@ See [installation.md](/installation.md) for instructions on how to install.
 * [NML specification additions](docs/newgrf-additions-nml.html) ([online copy](https://jgrennison.github.io/OpenTTD-patches/newgrf-additions-nml.html)).
 * [AI/GS script additions](docs/script-additions.html) ([online copy](https://jgrennison.github.io/OpenTTD-patches/script-additions.html)).
 * [Low-level code/performance changes](docs/jgrpp-low-level-changes.md).
-
-#### Translations
-
-* German (by Auge and Kruemelchen)  
-* Korean (by kiwitreekor and TELK)  
-* Japanese (by Qwerty Asd)
 
 #### Save/load and savegame format changes  
 * Various changes to improve handling of savegames which use features not in trunk.  
@@ -557,6 +567,9 @@ The exact licensing terms can be found in `src/3rdparty/os2/getaddrinfo.c` resp.
 The implementation of C++17 `std::optional` in `src/3rdparty/optional` is licensed under the Boost Software License - Version 1.0.
 See `src/3rdparty/optional/LICENSE_1_0.txt` for the complete license text.
 
+
+The icu scriptrun implementation in `src/3rdparty/icu` is licensed under the Unicode license.
+See `src/3rdparty/icu/LICENSE` for the complete license text.
 
 ## 4.0 Credits
 

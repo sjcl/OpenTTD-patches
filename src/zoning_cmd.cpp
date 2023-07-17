@@ -194,7 +194,7 @@ SpriteID TileZoneCheckUnservedBuildingsEvaluation(TileIndex tile, Owner owner)
 		return ZONING_INVALID_SPRITE_ID;
 	}
 
-	CargoArray dat;
+	CargoArray dat{};
 	dat.Clear();
 	AddAcceptedCargo(tile, dat, nullptr);
 	if (dat[CT_MAIL] + dat[CT_PASSENGERS] == 0) {
@@ -442,7 +442,7 @@ void DrawTileZoning(const TileInfo *ti)
 					{ -INF    , -INF   , INF    , 30 - 8  }  // CORNER_N, clip  8 pixels from bottom
 				};
 
-				DrawSelectionSprite(sprite, colour, ti, 7 + TILE_HEIGHT, FOUNDATION_PART_HALFTILE, &(sub_sprites[GetHalftileSlopeCorner(ti->tileh)]));
+				DrawSelectionSprite(sprite, colour, ti, 7 + TILE_HEIGHT, FOUNDATION_PART_HALFTILE, 0, 0, &(sub_sprites[GetHalftileSlopeCorner(ti->tileh)]));
 			} else {
 				sprite += SlopeToSpriteOffset(ti->tileh);
 			}

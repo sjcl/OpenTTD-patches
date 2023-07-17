@@ -21,6 +21,8 @@
 
 #include "../../safeguards.h"
 
+static std::vector<NetworkGameSocketHandler *> _deferred_deletions;
+
 static const char* _packet_game_type_names[] {
 	"SERVER_FULL",
 	"SERVER_BANNED",
@@ -74,6 +76,7 @@ static const char* _packet_game_type_names[] {
 	"CLIENT_DESYNC_LOG",
 	"SERVER_DESYNC_LOG",
 	"CLIENT_DESYNC_MSG",
+	"CLIENT_DESYNC_SYNC_DATA",
 };
 static_assert(lengthof(_packet_game_type_names) == PACKET_END);
 
@@ -108,7 +111,6 @@ NetworkRecvStatus NetworkGameSocketHandler::CloseConnection(bool error)
 
 	/* Clients drop back to the main menu */
 	if (!_network_server && _networking) {
-		extern void ClientNetworkEmergencySave(); // from network_client.cpp
 		ClientNetworkEmergencySave();
 		DeleteNetworkClientWindows();
 		_switch_mode = SM_MENU;
@@ -131,12 +133,18 @@ NetworkRecvStatus NetworkGameSocketHandler::HandlePacket(Packet *p)
 {
 	PacketGameType type = (PacketGameType)p->Recv_uint8();
 
+	if (this->HasClientQuit()) {
+		DEBUG(net, 0, "[tcp/game] Received invalid packet from client %d", this->client_id);
+		this->CloseConnection();
+		return NETWORK_RECV_STATUS_MALFORMED_PACKET;
+	}
+
 	this->last_packet = std::chrono::steady_clock::now();
 	this->last_pkt_type = type;
 
 	DEBUG(net, 5, "[tcp/game] received packet type %d (%s) from client %d, %s", type, GetPacketGameTypeName(type), this->client_id, this->GetDebugInfo().c_str());
 
-	switch (this->HasClientQuit() ? PACKET_END : type) {
+	switch (type) {
 		case PACKET_SERVER_FULL:                  return this->Receive_SERVER_FULL(p);
 		case PACKET_SERVER_BANNED:                return this->Receive_SERVER_BANNED(p);
 		case PACKET_CLIENT_JOIN:                  return this->Receive_CLIENT_JOIN(p);
@@ -175,6 +183,7 @@ NetworkRecvStatus NetworkGameSocketHandler::HandlePacket(Packet *p)
 		case PACKET_CLIENT_DESYNC_LOG:            return this->Receive_CLIENT_DESYNC_LOG(p);
 		case PACKET_SERVER_DESYNC_LOG:            return this->Receive_SERVER_DESYNC_LOG(p);
 		case PACKET_CLIENT_DESYNC_MSG:            return this->Receive_CLIENT_DESYNC_MSG(p);
+		case PACKET_CLIENT_DESYNC_SYNC_DATA:      return this->Receive_CLIENT_DESYNC_SYNC_DATA(p);
 		case PACKET_SERVER_QUIT:                  return this->Receive_SERVER_QUIT(p);
 		case PACKET_SERVER_ERROR_QUIT:            return this->Receive_SERVER_ERROR_QUIT(p);
 		case PACKET_SERVER_SHUTDOWN:              return this->Receive_SERVER_SHUTDOWN(p);
@@ -189,13 +198,8 @@ NetworkRecvStatus NetworkGameSocketHandler::HandlePacket(Packet *p)
 		case PACKET_SERVER_CONFIG_UPDATE:         return this->Receive_SERVER_CONFIG_UPDATE(p);
 
 		default:
+			DEBUG(net, 0, "[tcp/game] Received invalid packet type %d from client %d", type, this->client_id);
 			this->CloseConnection();
-
-			if (this->HasClientQuit()) {
-				DEBUG(net, 0, "[tcp/game] Received invalid packet type %d from client %d", type, this->client_id);
-			} else {
-				DEBUG(net, 0, "[tcp/game] Received illegal packet from client %d", this->client_id);
-			}
 			return NETWORK_RECV_STATUS_MALFORMED_PACKET;
 	}
 }
@@ -267,6 +271,7 @@ NetworkRecvStatus NetworkGameSocketHandler::Receive_CLIENT_ERROR(Packet *p) { re
 NetworkRecvStatus NetworkGameSocketHandler::Receive_CLIENT_DESYNC_LOG(Packet *p) { return this->ReceiveInvalidPacket(PACKET_CLIENT_DESYNC_LOG); }
 NetworkRecvStatus NetworkGameSocketHandler::Receive_SERVER_DESYNC_LOG(Packet *p) { return this->ReceiveInvalidPacket(PACKET_SERVER_DESYNC_LOG); }
 NetworkRecvStatus NetworkGameSocketHandler::Receive_CLIENT_DESYNC_MSG(Packet *p) { return this->ReceiveInvalidPacket(PACKET_SERVER_DESYNC_LOG); }
+NetworkRecvStatus NetworkGameSocketHandler::Receive_CLIENT_DESYNC_SYNC_DATA(Packet *p) { return this->ReceiveInvalidPacket(PACKET_CLIENT_DESYNC_SYNC_DATA); }
 NetworkRecvStatus NetworkGameSocketHandler::Receive_SERVER_QUIT(Packet *p) { return this->ReceiveInvalidPacket(PACKET_SERVER_QUIT); }
 NetworkRecvStatus NetworkGameSocketHandler::Receive_SERVER_ERROR_QUIT(Packet *p) { return this->ReceiveInvalidPacket(PACKET_SERVER_ERROR_QUIT); }
 NetworkRecvStatus NetworkGameSocketHandler::Receive_SERVER_SHUTDOWN(Packet *p) { return this->ReceiveInvalidPacket(PACKET_SERVER_SHUTDOWN); }
@@ -286,4 +291,18 @@ void NetworkGameSocketHandler::LogSentPacket(const Packet &pkt)
 {
 	PacketGameType type = (PacketGameType)pkt.GetPacketType();
 	DEBUG(net, 5, "[tcp/game] sent packet type %d (%s) to client %d, %s", type, GetPacketGameTypeName(type), this->client_id, this->GetDebugInfo().c_str());
+}
+
+void NetworkGameSocketHandler::DeferDeletion()
+{
+	_deferred_deletions.push_back(this);
+	this->is_pending_deletion = true;
+}
+
+/* static */ void NetworkGameSocketHandler::ProcessDeferredDeletions()
+{
+	for (NetworkGameSocketHandler *cs : _deferred_deletions) {
+		delete cs;
+	}
+	_deferred_deletions.clear();
 }

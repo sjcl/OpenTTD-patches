@@ -132,6 +132,7 @@ enum PacketGameType {
 	PACKET_CLIENT_DESYNC_LOG,            ///< A client reports a desync log
 	PACKET_SERVER_DESYNC_LOG,            ///< A server reports a desync log
 	PACKET_CLIENT_DESYNC_MSG,            ///< A client reports a desync message
+	PACKET_CLIENT_DESYNC_SYNC_DATA,      ///< A client reports desync sync data
 
 	PACKET_END,                          ///< Must ALWAYS be on the end of this list!! (period)
 };
@@ -167,7 +168,8 @@ public:
 class NetworkGameSocketHandler : public NetworkTCPSocketHandler {
 /* TODO: rewrite into a proper class */
 private:
-	NetworkClientInfo *info;  ///< Client info related to this socket
+	NetworkClientInfo *info;          ///< Client info related to this socket
+	bool is_pending_deletion = false; ///< Whether this socket is pending deletion
 
 protected:
 	bool ignore_close = false;
@@ -454,6 +456,7 @@ protected:
 	virtual NetworkRecvStatus Receive_CLIENT_DESYNC_LOG(Packet *p);
 	virtual NetworkRecvStatus Receive_SERVER_DESYNC_LOG(Packet *p);
 	virtual NetworkRecvStatus Receive_CLIENT_DESYNC_MSG(Packet *p);
+	virtual NetworkRecvStatus Receive_CLIENT_DESYNC_SYNC_DATA(Packet *p);
 
 	/**
 	 * Notification that a client left the game:
@@ -562,7 +565,7 @@ public:
 	 * @param status The reason the connection got closed.
 	 */
 	virtual NetworkRecvStatus CloseConnection(NetworkRecvStatus status) = 0;
-	virtual ~NetworkGameSocketHandler() {}
+	virtual ~NetworkGameSocketHandler() = default;
 
 	/**
 	 * Sets the client info for this socket handler.
@@ -590,6 +593,11 @@ public:
 
 	virtual std::string GetDebugInfo() const;
 	virtual void LogSentPacket(const Packet &pkt) override;
+
+	bool IsPendingDeletion() const { return this->is_pending_deletion; }
+
+	void DeferDeletion();
+	static void ProcessDeferredDeletions();
 };
 
 #endif /* NETWORK_CORE_TCP_GAME_H */

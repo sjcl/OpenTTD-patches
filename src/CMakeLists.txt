@@ -20,15 +20,24 @@ add_subdirectory(network)
 add_subdirectory(os)
 add_subdirectory(pathfinder)
 add_subdirectory(saveload)
+add_subdirectory(sl)
 add_subdirectory(sound)
 add_subdirectory(spriteloader)
 add_subdirectory(table)
+add_subdirectory(tests)
+add_subdirectory(timer)
 add_subdirectory(video)
 add_subdirectory(widgets)
 
 add_files(
     viewport_sprite_sorter_sse4.cpp
     CONDITION SSE_FOUND
+)
+
+add_files(
+    gfx_layout_icu.cpp
+    gfx_layout_icu.h
+    CONDITION ICU_i18n_FOUND AND HARFBUZZ_FOUND
 )
 
 add_files(
@@ -84,6 +93,7 @@ add_files(
     clear_map.h
     cmd_helper.h
     command.cpp
+    command_aux.h
     command_func.h
     command_type.h
     company_base.h
@@ -176,6 +186,8 @@ add_files(
     gfx_func.h
     gfx_layout.cpp
     gfx_layout.h
+    gfx_layout_fallback.cpp
+    gfx_layout_fallback.h
     gfx_type.h
     gfxinit.cpp
     gfxinit.h
@@ -219,7 +231,14 @@ add_files(
     landscape.h
     landscape_type.h
     language.h
+    league_base.h
+    league_cmd.cpp
+    league_cmd.h
+    league_gui.h
+    league_gui.cpp
+    league_type.h
     livery.h
+    load_check.h
     main_gui.cpp
     map.cpp
     map_func.h
@@ -423,6 +442,7 @@ add_files(
     strgen/strgen.h
     string.cpp
     string_base.h
+    string_extra.cpp
     string_func.h
     string_func_extra.h
     string_type.h
@@ -539,6 +559,8 @@ add_files(
     window_func.h
     window_gui.h
     window_type.h
+    worker_thread.cpp
+    worker_thread.h
     zoom_func.h
     zoom_type.h
     zoning.h

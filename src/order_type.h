@@ -48,8 +48,25 @@ enum OrderType : byte {
 	OT_LOADING_ADVANCE = 10,
 	OT_RELEASE_SLOT  = 11,
 	OT_COUNTER       = 12,
+	OT_LABEL         = 13,
 	OT_END
 };
+
+enum OrderLabelSubType : byte {
+	OLST_TEXT                  = 0,
+	OLST_DEPARTURES_VIA        = 1,
+	OLST_DEPARTURES_REMOVE_VIA = 2,
+};
+
+inline bool IsDestinationOrderLabelSubType(OrderLabelSubType subtype)
+{
+	return subtype == OLST_DEPARTURES_VIA || subtype == OLST_DEPARTURES_REMOVE_VIA;
+}
+
+inline bool IsDeparturesOrderLabelSubType(OrderLabelSubType subtype)
+{
+	return subtype == OLST_DEPARTURES_VIA || subtype == OLST_DEPARTURES_REMOVE_VIA;
+}
 
 /**
  * Flags related to the unloading order.
@@ -152,7 +169,7 @@ enum OrderConditionVariable {
 	OCV_CARGO_ACCEPTANCE,   ///< Skip if specified cargo is accepted at next station
 	OCV_FREE_PLATFORMS,     ///< Skip based on free platforms at next station
 	OCV_PERCENT,            ///< Skip xx percent of times
-	OCV_SLOT_OCCUPANCY,     ///< Test if vehicle slot is fully occupied
+	OCV_SLOT_OCCUPANCY,     ///< Test if vehicle slot is fully occupied, or empty
 	OCV_VEH_IN_SLOT,        ///< Test if vehicle is in slot
 	OCV_CARGO_LOAD_PERCENTAGE, ///< Skip based on the amount of load of a specific cargo
 	OCV_CARGO_WAITING_AMOUNT,  ///< Skip based on the amount of a specific cargo waiting at next station
@@ -202,6 +219,9 @@ enum ModifyOrderFlags {
 	MOF_COUNTER_ID,      ///< Change the counter ID
 	MOF_COUNTER_OP,      ///< Change the counter operation
 	MOF_COUNTER_VALUE,   ///< Change the counter value
+	MOF_COLOUR,          ///< Change the colour value
+	MOF_LABEL_TEXT,      ///< Change the label text value
+	MOF_DEPARTURES_SUBTYPE, ///< Change the label departures subtype
 	MOF_END
 };
 template <> struct EnumPropsT<ModifyOrderFlags> : MakeEnumPropsT<ModifyOrderFlags, byte, MOF_NON_STOP, MOF_END, MOF_END, 8> {};

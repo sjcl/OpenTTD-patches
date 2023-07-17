@@ -16,6 +16,9 @@
 #include "../group.h"
 #include "../goal_type.h"
 #include "../story_type.h"
+#include "../3rdparty/robin_hood/robin_hood.h"
+
+#include "script_log_types.hpp"
 
 #include "table/strings.h"
 #include <vector>
@@ -26,6 +29,11 @@
 typedef bool (ScriptModeProc)();
 
 /**
+ * The callback function for Async Mode-classes.
+ */
+typedef bool (ScriptAsyncModeProc)();
+
+/**
  * The storage for each script. It keeps track of important information.
  */
 class ScriptStorage {
@@ -33,6 +41,8 @@ friend class ScriptObject;
 private:
 	ScriptModeProc *mode;             ///< The current build mode we are int.
 	class ScriptObject *mode_instance; ///< The instance belonging to the current build mode.
+	ScriptAsyncModeProc *async_mode;         ///< The current command async mode we are in.
+	class ScriptObject *async_mode_instance; ///< The instance belonging to the current command async mode.
 	CompanyID root_company;          ///< The root company, the company that the script really belongs to.
 	CompanyID company;               ///< The current company.
 
@@ -41,6 +51,7 @@ private:
 
 	CommandCost costs;               ///< The costs the script is tracking.
 	Money last_cost;                 ///< The last cost of the command.
+	uint32 last_result;              ///< The last result data of the command.
 	uint last_error;                 ///< The last error of the command.
 	bool last_command_res;           ///< The last result of the command.
 
@@ -63,18 +74,23 @@ private:
 	RailType rail_type;              ///< The current railtype we build.
 
 	void *event_data;                ///< Pointer to the event data storage.
-	void *log_data;                  ///< Pointer to the log data storage.
+	ScriptLogTypes::LogData log_data;///< Log data storage.
+
+	robin_hood::unordered_node_set<std::string> seen_unique_log_messages; ///< Messages which have already been logged once and don't need to be logged again
 
 public:
 	ScriptStorage() :
 		mode              (nullptr),
 		mode_instance     (nullptr),
+		async_mode        (nullptr),
+		async_mode_instance (nullptr),
 		root_company      (INVALID_OWNER),
 		company           (INVALID_OWNER),
 		delay             (1),
 		allow_do_command  (true),
 		/* costs (can't be set) */
 		last_cost         (0),
+		last_result       (0),
 		last_error        (STR_NULL),
 		last_command_res  (true),
 		last_tile         (INVALID_TILE),
@@ -91,8 +107,7 @@ public:
 		/* calback_value (can't be set) */
 		road_type         (INVALID_ROADTYPE),
 		rail_type         (INVALID_RAILTYPE),
-		event_data        (nullptr),
-		log_data          (nullptr)
+		event_data        (nullptr)
 	{ }
 
 	~ScriptStorage();

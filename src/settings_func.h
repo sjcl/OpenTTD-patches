@@ -10,7 +10,6 @@
 #ifndef SETTINGS_FUNC_H
 #define SETTINGS_FUNC_H
 
-#include "core/smallvec_type.hpp"
 #include "company_type.h"
 #include "string_type.h"
 
@@ -19,7 +18,7 @@ struct IniFile;
 void IConsoleSetSetting(const char *name, const char *value, bool force_newgame = false);
 void IConsoleSetSetting(const char *name, int32 value);
 void IConsoleGetSetting(const char *name, bool force_newgame = false);
-void IConsoleListSettings(const char *prefilter);
+void IConsoleListSettings(const char *prefilter, bool show_defaults);
 
 void LoadFromConfig(bool minimal = false);
 void SaveToConfig();

@@ -14,6 +14,8 @@
 #include "string_type.h"
 #include "gfx_type.h"
 #include "core/bitmath_func.hpp"
+#include "vehicle_type.h"
+#include <optional>
 
 /**
  * Extract the StringTab from a StringID.
@@ -175,8 +177,21 @@ char *GetStringWithArgs(char *buffr, StringID string, StringParameters *args, co
 const char *GetStringPtr(StringID string);
 uint32 GetStringGRFID(StringID string);
 
-uint ConvertKmhishSpeedToDisplaySpeed(uint speed);
-uint ConvertDisplaySpeedToKmhishSpeed(uint speed);
+uint ConvertKmhishSpeedToDisplaySpeed(uint speed, VehicleType type);
+uint ConvertDisplaySpeedToKmhishSpeed(uint speed, VehicleType type);
+
+/**
+ * Pack velocity and vehicle type for use with SCC_VELOCITY string parameter.
+ * @param speed Display speed for parameter.
+ * @param type Type of vehicle for parameter.
+ * @return Bit-packed velocity and vehicle type, for use with SetDParam().
+ */
+static inline int64 PackVelocity(uint speed, VehicleType type)
+{
+	/* Vehicle type is a byte, so packed into the top 8 bits of the 64-bit
+	 * parameter, although only values from 0-3 are relevant. */
+	return speed | (static_cast<uint64>(type) << 56);
+}
 
 WChar GetDecimalSeparatorChar();
 
@@ -206,6 +221,7 @@ void SetDParamMaxDigits(uint n, uint count, FontSize size = FS_NORMAL);
 
 void SetDParamStr(uint n, const char *str);
 void SetDParamStr(uint n, const std::string &str);
+void SetDParamStr(uint n, std::string &&str) = delete; // block passing temporaries to SetDParamStr
 
 void CopyInDParam(int offs, const uint64 *src, int num);
 void CopyOutDParam(uint64 *dst, int offs, int num);
@@ -245,13 +261,13 @@ bool StringIDSorter(const StringID &a, const StringID &b);
 class MissingGlyphSearcher {
 public:
 	/** Make sure everything gets destructed right. */
-	virtual ~MissingGlyphSearcher() {}
+	virtual ~MissingGlyphSearcher() = default;
 
 	/**
 	 * Get the next string to search through.
-	 * @return The next string or nullptr if there is none.
+	 * @return The next string or nullopt if there is none.
 	 */
-	virtual const char *NextString() = 0;
+	virtual std::optional<std::string_view> NextString() = 0;
 
 	/**
 	 * Get the default (font) size of the string.

@@ -308,8 +308,7 @@ bool CheckSharingChangePossible(VehicleType type, bool new_value)
 	}
 
 	if (error_message != STR_NULL) {
-		SetDParam(0, error_message);
-		ShowErrorMessage(STR_WHITE_STRING, INVALID_STRING_ID, WL_ERROR);
+		ShowErrorMessage(error_message, INVALID_STRING_ID, WL_ERROR);
 		return false;
 	}
 
@@ -394,18 +393,22 @@ void HandleSharingCompanyDeletion(Owner owner)
 void UpdateAllBlockSignals(Owner owner)
 {
 	Owner last_owner = INVALID_OWNER;
+	auto check_owner = [&](Owner track_owner) -> bool {
+		if (owner != INVALID_OWNER && track_owner != owner) return true;
+
+		if (!IsOneSignalBlock(track_owner, last_owner)) {
+			/* Cannot update signals of two different companies in one run,
+			 * if these signal blocks are not joined */
+			UpdateSignalsInBuffer();
+			last_owner = track_owner;
+		}
+		return false;
+	};
 	TileIndex tile = 0;
 	do {
 		if (IsTileType(tile, MP_RAILWAY) && HasSignals(tile)) {
 			Owner track_owner = GetTileOwner(tile);
-			if (owner != INVALID_OWNER && track_owner != owner) continue;
-
-			if (!IsOneSignalBlock(track_owner, last_owner)) {
-				/* Cannot update signals of two different companies in one run,
-				 * if these signal blocks are not joined */
-				UpdateSignalsInBuffer();
-				last_owner = track_owner;
-			}
+			if (check_owner(track_owner)) continue;
 			TrackBits bits = GetTrackBits(tile);
 			do {
 				Track track = RemoveFirstTrack(&bits);
@@ -416,8 +419,10 @@ void UpdateAllBlockSignals(Owner owner)
 		} else if (IsLevelCrossingTile(tile) && (owner == INVALID_OWNER || GetTileOwner(tile) == owner)) {
 			UpdateLevelCrossing(tile);
 		} else if (IsTunnelBridgeWithSignalSimulation(tile)) {
+			Owner track_owner = GetTileOwner(tile);
+			if (check_owner(track_owner)) continue;
 			if (IsTunnelBridgeSignalSimulationExit(tile)) {
-				AddSideToSignalBuffer(tile, INVALID_DIAGDIR, GetTileOwner(tile));
+				AddSideToSignalBuffer(tile, INVALID_DIAGDIR, track_owner);
 			}
 			if (_extra_aspects > 0 && IsTunnelBridgeSignalSimulationEntrance(tile) && GetTunnelBridgeEntranceSignalState(tile) == SIGNAL_STATE_GREEN) {
 				SetTunnelBridgeEntranceSignalAspect(tile, 0);

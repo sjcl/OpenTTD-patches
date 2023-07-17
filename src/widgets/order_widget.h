@@ -49,6 +49,8 @@ enum OrderWidgets {
 	WID_O_COUNTER_OP,                ///< Choose counter operation.
 	WID_O_CHANGE_COUNTER,            ///< Choose counter to change.
 	WID_O_COUNTER_VALUE,             ///< Choose counter value.
+	WID_O_TEXT_LABEL,                ///< Choose text label.
+	WID_O_DEPARTURE_VIA_TYPE,        ///< Choose departure board via subtype.
 	WID_O_SEL_COND_VALUE,            ///< Widget for conditional value or conditional cargo type.
 	WID_O_SEL_COND_AUX,              ///< Widget for auxiliary conditional cargo type.
 	WID_O_SEL_COND_AUX2,             ///< Widget for auxiliary conditional via button.
@@ -66,6 +68,7 @@ enum OrderWidgets {
 	WID_O_SEL_OCCUPANCY,             ///< #NWID_SELECTION widget for the occupancy list panel.
 	WID_O_OCCUPANCY_LIST,            ///< Occupancy list panel.
 	WID_O_OCCUPANCY_TOGGLE,          ///< Toggle display of occupancy measures.
+	WID_O_TOGGLE_SIZE,               ///< Toggle show order management button.
 };
 
 /** Widgets of the #CargoTypeOrdersWindow class. */

@@ -10,8 +10,8 @@
 #ifndef POOL_TYPE_HPP
 #define POOL_TYPE_HPP
 
-#include "smallvec_type.hpp"
 #include "enum_type.hpp"
+#include <vector>
 
 /** Various types of a pool. */
 enum PoolType {
@@ -109,7 +109,7 @@ struct Pool : PoolBase {
 	 */
 	inline Titem *Get(size_t index)
 	{
-		assert_msg(index < this->first_unused, "index: " PRINTF_SIZE ", first_unused: " PRINTF_SIZE ", name: %s", index, this->first_unused, this->name);
+		dbg_assert_msg(index < this->first_unused, "index: " PRINTF_SIZE ", first_unused: " PRINTF_SIZE ", name: %s", index, this->first_unused, this->name);
 		return this->data[index];
 	}
 
@@ -258,7 +258,7 @@ struct Pool : PoolBase {
 		{
 			if (p == nullptr) return;
 			Titem *pn = (Titem *)p;
-			assert_msg(pn == Tpool->Get(pn->index), "name: %s", Tpool->name);
+			dbg_assert_msg(pn == Tpool->Get(pn->index), "name: %s", Tpool->name);
 			Tpool->FreeItem(pn->index);
 		}
 
@@ -292,7 +292,7 @@ struct Pool : PoolBase {
 				 * memory are the same (because of possible inheritance).
 				 * Use { size_t index = item->index; delete item; new (index) item; }
 				 * instead to make sure destructor is called and no memory leaks. */
-				assert_msg(ptr != Tpool->data[i], "name: %s", Tpool->name);
+				dbg_assert_msg(ptr != Tpool->data[i], "name: %s", Tpool->name);
 			}
 			return ptr;
 		}

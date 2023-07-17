@@ -22,6 +22,7 @@
 #include "newgrf_animation_base.h"
 #include "newgrf_cargo.h"
 #include "station_base.h"
+#include "newgrf_analysis.h"
 
 #include "safeguards.h"
 
@@ -184,13 +185,12 @@ void DecreaseBuildingCount(Town *t, HouseID house_id)
 
 static uint32 GetNumHouses(HouseID house_id, const Town *town)
 {
-	uint8 map_id_count, town_id_count, map_class_count, town_class_count;
 	HouseClassID class_id = HouseSpec::Get(house_id)->class_id;
 
-	map_id_count     = ClampU(_building_counts.id_count[house_id], 0, 255);
-	map_class_count  = ClampU(_building_counts.class_count[class_id], 0, 255);
-	town_id_count    = ClampU(town->cache.building_counts.id_count[house_id], 0, 255);
-	town_class_count = ClampU(town->cache.building_counts.class_count[class_id], 0, 255);
+	uint8_t map_id_count     = ClampTo<uint8_t>(_building_counts.id_count[house_id]);
+	uint8_t map_class_count  = ClampTo<uint8_t>(_building_counts.class_count[class_id]);
+	uint8_t town_id_count    = ClampTo<uint8_t>(town->cache.building_counts.id_count[house_id]);
+	uint8_t town_class_count = ClampTo<uint8_t>(town->cache.building_counts.class_count[class_id]);
 
 	return map_class_count << 24 | town_class_count << 16 | map_id_count << 8 | town_id_count;
 }
@@ -347,7 +347,7 @@ static uint32 GetDistanceFromNearbyHouse(uint8 parameter, TileIndex tile, HouseI
 		case 0x46: return IsTileType(this->tile, MP_HOUSE) ? GetAnimationFrame(this->tile) : 0;
 
 		/* Position of the house */
-		case 0x47: return TileY(this->tile) << 16 | TileX(this->tile);
+		case 0x47: return TileY(this->tile) << 16 | (TileX(this->tile) & 0xFFFF);
 
 		/* Building counts for old houses with id = parameter. */
 		case 0x60: return parameter < NEW_HOUSE_OFFSET ? GetNumHouses(parameter, this->town) : 0;
@@ -727,8 +727,12 @@ bool NewHouseTileLoop(TileIndex tile)
 		return true;
 	}
 
-	TriggerHouse(tile, HOUSE_TRIGGER_TILE_LOOP);
-	if (hs->building_flags & BUILDING_HAS_1_TILE) TriggerHouse(tile, HOUSE_TRIGGER_TILE_LOOP_TOP);
+	bool do_triggers = !(hs->ctrl_flags & HCF_NO_TRIGGERS);
+
+	if (do_triggers) {
+		TriggerHouse(tile, HOUSE_TRIGGER_TILE_LOOP);
+		if (hs->building_flags & BUILDING_HAS_1_TILE) TriggerHouse(tile, HOUSE_TRIGGER_TILE_LOOP_TOP);
+	}
 
 	if (HasBit(hs->callback_mask, CBM_HOUSE_ANIMATION_START_STOP)) {
 		/* If this house is marked as having a synchronised callback, all the
@@ -758,7 +762,7 @@ bool NewHouseTileLoop(TileIndex tile)
 	}
 
 	SetHouseProcessingTime(tile, hs->processing_time);
-	MarkTileDirtyByTile(tile, VMDF_NOT_MAP_MODE);
+	if (do_triggers) MarkTileDirtyByTile(tile, VMDF_NOT_MAP_MODE);
 	return true;
 }
 
@@ -857,3 +861,21 @@ void WatchedCargoCallback(TileIndex tile, CargoTypes trigger_cargoes)
 	if (hs->building_flags & BUILDING_HAS_4_TILES) DoWatchedCargoCallback(TILE_ADDXY(north, 1, 1), tile, trigger_cargoes, r);
 }
 
+void AnalyseHouseSpriteGroups()
+{
+	for (uint i = 0; i < NUM_HOUSES; i++) {
+		HouseSpec *spec = HouseSpec::Get(i);
+		spec->ctrl_flags = HCF_NONE;
+
+		if (spec->grf_prop.spritegroup[0] == nullptr) {
+			spec->ctrl_flags |= HCF_NO_TRIGGERS;
+			continue;
+		}
+
+		AnalyseCallbackOperation find_triggers_op(ACOM_FIND_RANDOM_TRIGGER);
+		spec->grf_prop.spritegroup[0]->AnalyseCallbacks(find_triggers_op);
+		if ((find_triggers_op.callbacks_used & SGCU_RANDOM_TRIGGER) == 0) {
+			spec->ctrl_flags |= HCF_NO_TRIGGERS;
+		}
+	}
+}

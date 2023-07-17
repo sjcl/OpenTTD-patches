@@ -18,6 +18,7 @@
 #include "newgrf_extension.h"
 #include "scope.h"
 #include "debug_settings.h"
+#include "newgrf_engine.h"
 
 #include "safeguards.h"
 
@@ -30,6 +31,24 @@ std::map<const DeterministicSpriteGroup *, DeterministicSpriteGroupShadowCopy> _
 std::map<const RandomizedSpriteGroup *, RandomizedSpriteGroupShadowCopy> _randomized_sg_shadows;
 bool _grfs_loaded_with_sg_shadow_enable = false;
 
+GrfSpecFeature GetGrfSpecFeatureForParentScope(GrfSpecFeature feature)
+{
+	switch (feature) {
+		case GSF_STATIONS:
+		case GSF_BRIDGES:
+		case GSF_HOUSES:
+		case GSF_INDUSTRIES:
+		case GSF_OBJECTS:
+		case GSF_ROADSTOPS:
+			return GSF_FAKE_TOWNS;
+
+		case GSF_INDUSTRYTILES:
+			return GSF_INDUSTRIES;
+
+		default:
+			return feature;
+	}
+}
 
 /**
  * ResolverObject (re)entry point.
@@ -147,7 +166,7 @@ static inline uint32 GetVariable(const ResolverObject &object, ScopeResolver *sc
  * @param relative Additional parameter for #VSG_SCOPE_RELATIVE.
  * @return The resolver for the requested scope.
  */
-/* virtual */ ScopeResolver *ResolverObject::GetScope(VarSpriteGroupScope scope, byte relative)
+/* virtual */ ScopeResolver *ResolverObject::GetScope(VarSpriteGroupScope scope, VarSpriteGroupScopeOffset relative)
 {
 	return &this->default_scope;
 }
@@ -241,7 +260,7 @@ const SpriteGroup *DeterministicSpriteGroup::Resolve(ResolverObject &object) con
 	uint32 last_value = 0;
 	uint32 value = 0;
 
-	ScopeResolver *scope = object.GetScope(this->var_scope);
+	ScopeResolver *scope = object.GetScope(this->var_scope, this->var_scope_count);
 
 	const DeterministicSpriteGroupAdjust *end = this->adjusts.data() + this->adjusts.size();
 	for (const DeterministicSpriteGroupAdjust *iter = this->adjusts.data(); iter != end; ++iter) {
@@ -253,11 +272,29 @@ const SpriteGroup *DeterministicSpriteGroup::Resolve(ResolverObject &object) con
 		/* Try to get the variable. We shall assume it is available, unless told otherwise. */
 		GetVariableExtra extra(adjust.and_mask << adjust.shift_num);
 		if (adjust.variable == 0x7E) {
+			const Vehicle *relative_scope_vehicle = nullptr;
+			VarSpriteGroupScopeOffset relative_scope_cached_count = 0;
+			if (this->var_scope == VSG_SCOPE_RELATIVE) {
+				/* Save relative scope vehicle in case it will be changed during the procedure */
+				VehicleResolverObject *veh_object = dynamic_cast<VehicleResolverObject *>(&object);
+				if (veh_object != nullptr) {
+					relative_scope_vehicle = veh_object->relative_scope.v;
+					relative_scope_cached_count = veh_object->cached_relative_count;
+				}
+			}
+
 			const SpriteGroup *subgroup = SpriteGroup::Resolve(adjust.subroutine, object, false);
 			if (subgroup == nullptr) {
 				value = CALLBACK_FAILED;
 			} else {
 				value = subgroup->GetCallbackResult();
+			}
+
+			if (relative_scope_vehicle != nullptr) {
+				/* Reset relative scope vehicle in case it was changed during the procedure */
+				VehicleResolverObject *veh_object = static_cast<VehicleResolverObject *>(&object);
+				veh_object->relative_scope.v = relative_scope_vehicle;
+				veh_object->cached_relative_count = relative_scope_cached_count;
 			}
 
 			/* Note: 'last_value' and 'reseed' are shared between the main chain and the procedure */
@@ -320,7 +357,7 @@ bool DeterministicSpriteGroup::GroupMayBeBypassed() const
 
 const SpriteGroup *RandomizedSpriteGroup::Resolve(ResolverObject &object) const
 {
-	ScopeResolver *scope = object.GetScope(this->var_scope, this->count);
+	ScopeResolver *scope = object.GetScope(this->var_scope, this->var_scope_count);
 	if (object.callback == CBID_RANDOM_TRIGGER) {
 		/* Handle triggers */
 		byte match = this->triggers & object.waiting_triggers;
@@ -427,6 +464,14 @@ static const char *_sg_size_names[] {
 	"DWORD",
 };
 
+static const char *_sg_relative_scope_modes[] {
+	"BACKWARD_SELF",
+	"FORWARD_SELF",
+	"BACKWARD_ENGINE",
+	"BACKWARD_SAMEID",
+};
+static_assert(lengthof(_sg_relative_scope_modes) == VSGSRM_END);
+
 static char *GetAdjustOperationName(char *str, const char *last, DeterministicSpriteGroupAdjustOperation operation)
 {
 	if (operation < DSGA_OP_END) return strecat(str, _dsg_op_names[operation], last);
@@ -468,6 +513,13 @@ static char *DumpSpriteGroupAdjust(char *p, const char *last, const Deterministi
 		}
 	};
 
+	auto append_extended_var = [&](int var_id) {
+		const char *name = GetExtendedVariableNameById(var_id);
+		if (name != nullptr) {
+			p += seprintf(p, last, " (%s)", name);
+		}
+	};
+
 	if (IsEvalAdjustJumpOperation(adjust.operation)) {
 		conditional_indent++;
 	}
@@ -505,18 +557,16 @@ static char *DumpSpriteGroupAdjust(char *p, const char *last, const Deterministi
 		highlight_tag = (2 << 16) | (adjust.and_mask & 0xFFFF);
 	}
 	p += seprintf(p, last, "var: %X", adjust.variable);
-	if (adjust.variable == A2VRI_VEHICLE_CURRENT_SPEED_SCALED) {
-		p += seprintf(p, last, " (current_speed_scaled)");
-	} else if (adjust.variable >= 0x100) {
-		extern const GRFVariableMapDefinition _grf_action2_remappable_variables[];
-		for (const GRFVariableMapDefinition *info = _grf_action2_remappable_variables; info->name != nullptr; info++) {
-			if (adjust.variable == info->id) {
-				p += seprintf(p, last, " (%s)", info->name);
-				break;
-			}
-		}
+	if (adjust.variable >= 0x100) {
+		append_extended_var(adjust.variable);
 	}
-	if ((adjust.variable >= 0x60 && adjust.variable <= 0x7F && adjust.variable != 0x7E) || adjust.parameter != 0) p += seprintf(p, last, " (parameter: %X)", adjust.parameter);
+	if (adjust.variable == 0x7B && adjust.parameter >= 0x100) {
+		p += seprintf(p, last, " (parameter: %X", adjust.parameter);
+		append_extended_var(adjust.parameter);
+		p += seprintf(p, last, ")");
+	} else if ((adjust.variable >= 0x60 && adjust.variable <= 0x7F && adjust.variable != 0x7E) || adjust.parameter != 0) {
+		p += seprintf(p, last, " (parameter: %X)", adjust.parameter);
+	}
 	p += seprintf(p, last, ", shift: %X, and: %X", adjust.shift_num, adjust.and_mask);
 	switch (adjust.type) {
 		case DSGA_TYPE_DIV: p += seprintf(p, last, ", add: %X, div: %X", adjust.add_val, adjust.divmod_val); break;
@@ -572,6 +622,23 @@ void SpriteGroupDumper::DumpSpriteGroup(const SpriteGroup *sg, const char *paddi
 	if (HasBit(_misc_debug_flags, MDF_NEWGRF_SG_DUMP_MORE_DETAIL)) {
 		if (sg->sg_flags & SGF_INLINING) strecat(extra_info, " (inlining)", lastof(extra_info));
 	}
+
+	char scope_buffer[64] = "";
+	auto get_scope_name = [&](VarSpriteGroupScope var_scope, VarSpriteGroupScopeOffset var_scope_count) -> const char * {
+		if (var_scope == VSG_SCOPE_RELATIVE) {
+			char *b = scope_buffer;
+			b += seprintf(b, lastof(scope_buffer), "%s[%s, ", _sg_scope_names[var_scope], _sg_relative_scope_modes[GB(var_scope_count, 8, 2)]);
+			byte offset = GB(var_scope_count, 0, 8);
+			if (HasBit(var_scope_count, 15)) {
+				b += seprintf(b, lastof(scope_buffer), "var 0x100]");
+			} else {
+				b += seprintf(b, lastof(scope_buffer), "%u]", offset);
+			}
+			return scope_buffer;
+		} else {
+			return _sg_scope_names[var_scope];
+		}
+	};
 
 	switch (sg->type) {
 		case SGT_REAL: {
@@ -632,32 +699,33 @@ void SpriteGroupDumper::DumpSpriteGroup(const SpriteGroup *sg, const char *paddi
 			}
 			if (dsg == this->top_default_group && !((flags & SGDF_DEFAULT) && strlen(padding) == 2)) {
 				seprintf(this->buffer, lastof(this->buffer), "%sTOP LEVEL DEFAULT GROUP: Deterministic (%s, %s), [%u]",
-						padding, _sg_scope_names[dsg->var_scope], _sg_size_names[dsg->size], dsg->nfo_line);
+						padding, get_scope_name(dsg->var_scope, dsg->var_scope_count), _sg_size_names[dsg->size], dsg->nfo_line);
 				print();
 				return;
 			}
 			if (dsg == this->top_graphics_group && !((flags & SGDF_RANGE) && strlen(padding) == 2)) {
 				seprintf(this->buffer, lastof(this->buffer), "%sTOP LEVEL GRAPHICS GROUP: Deterministic (%s, %s), [%u]",
-						padding, _sg_scope_names[dsg->var_scope], _sg_size_names[dsg->size], dsg->nfo_line);
+						padding, get_scope_name(dsg->var_scope, dsg->var_scope_count), _sg_size_names[dsg->size], dsg->nfo_line);
 				print();
 				return;
 			}
 			auto res = this->seen_dsgs.insert(dsg);
 			if (!res.second) {
 				seprintf(this->buffer, lastof(this->buffer), "%sGROUP SEEN ABOVE: Deterministic (%s, %s), [%u]",
-						padding, _sg_scope_names[dsg->var_scope], _sg_size_names[dsg->size], dsg->nfo_line);
+						padding, get_scope_name(dsg->var_scope, dsg->var_scope_count), _sg_size_names[dsg->size], dsg->nfo_line);
 				print();
 				return;
 			}
 			char *p = this->buffer;
 			p += seprintf(p, lastof(this->buffer), "%sDeterministic (%s, %s)%s [%u]",
-					padding, _sg_scope_names[dsg->var_scope], _sg_size_names[dsg->size], extra_info, dsg->nfo_line);
+					padding, get_scope_name(dsg->var_scope, dsg->var_scope_count), _sg_size_names[dsg->size], extra_info, dsg->nfo_line);
 			if (HasBit(_misc_debug_flags, MDF_NEWGRF_SG_DUMP_MORE_DETAIL)) {
 				if (dsg->dsg_flags & DSGF_NO_DSE) p += seprintf(p, lastof(this->buffer), ", NO_DSE");
 				if (dsg->dsg_flags & DSGF_VAR_TRACKING_PENDING) p += seprintf(p, lastof(this->buffer), ", VAR_PENDING");
 				if (dsg->dsg_flags & DSGF_REQUIRES_VAR1C) p += seprintf(p, lastof(this->buffer), ", REQ_1C");
 				if (dsg->dsg_flags & DSGF_CHECK_EXPENSIVE_VARS) p += seprintf(p, lastof(this->buffer), ", CHECK_EXP_VAR");
 				if (dsg->dsg_flags & DSGF_CHECK_INSERT_JUMP) p += seprintf(p, lastof(this->buffer), ", CHECK_INS_JMP");
+				if (dsg->dsg_flags & DSGF_CB_RESULT) p += seprintf(p, lastof(this->buffer), ", CB_RESULT");
 				if (dsg->dsg_flags & DSGF_CB_HANDLER) p += seprintf(p, lastof(this->buffer), ", CB_HANDLER");
 				if (dsg->dsg_flags & DSGF_INLINE_CANDIDATE) p += seprintf(p, lastof(this->buffer), ", INLINE_CANDIDATE");
 			}
@@ -693,11 +761,18 @@ void SpriteGroupDumper::DumpSpriteGroup(const SpriteGroup *sg, const char *paddi
 							p += seprintf(p, lastof(this->buffer), " (%s)", cb_name);
 						}
 					}
+					if (HasBit(_misc_debug_flags, MDF_NEWGRF_SG_DUMP_MORE_DETAIL) && range.group == dsg->error_group) {
+						p += seprintf(p, lastof(this->buffer), " (error_group)");
+					}
 					print();
 					this->DumpSpriteGroup(range.group, subgroup_padding.c_str(), SGDF_RANGE);
 				}
 				if (default_group != nullptr) {
-					seprintf(this->buffer, lastof(this->buffer), "%sdefault", padding);
+					char *p = this->buffer;
+					p += seprintf(p, lastof(this->buffer), "%sdefault", padding);
+					if (HasBit(_misc_debug_flags, MDF_NEWGRF_SG_DUMP_MORE_DETAIL) && default_group == dsg->error_group) {
+						p += seprintf(p, lastof(this->buffer), " (error_group)");
+					}
 					print();
 					this->DumpSpriteGroup(default_group, subgroup_padding.c_str(), SGDF_DEFAULT);
 				}
@@ -716,15 +791,32 @@ void SpriteGroupDumper::DumpSpriteGroup(const SpriteGroup *sg, const char *paddi
 				}
 			}
 
-			seprintf(this->buffer, lastof(this->buffer), "%sRandom (%s, %s, triggers: %X, count: %X, lowest_randbit: %X, groups: %u)%s [%u]",
-					padding, _sg_scope_names[rsg->var_scope], rsg->cmp_mode == RSG_CMP_ANY ? "ANY" : "ALL",
-					rsg->triggers, rsg->count, rsg->lowest_randbit, (uint)rsg->groups.size(), extra_info, rsg->nfo_line);
+			seprintf(this->buffer, lastof(this->buffer), "%sRandom (%s, %s, triggers: %X, lowest_randbit: %X, groups: %u)%s [%u]",
+					padding, get_scope_name(rsg->var_scope, rsg->var_scope_count), rsg->cmp_mode == RSG_CMP_ANY ? "ANY" : "ALL",
+					rsg->triggers, rsg->lowest_randbit, (uint)rsg->groups.size(), extra_info, rsg->nfo_line);
 			print();
 			emit_start();
 			std::string sub_padding(padding);
 			sub_padding += "  ";
-			for (const auto &group : (*groups)) {
-				this->DumpSpriteGroup(group, sub_padding.c_str(), 0);
+			std::string sub_padding_indent(sub_padding);
+			sub_padding_indent += "  ";
+			auto end = groups->end();
+			for (auto iter = groups->begin(); iter != end;) {
+				uint count = 1;
+				const SpriteGroup *group = *iter;
+				while (true) {
+					++iter;
+					if (iter == end) break;
+					if (*iter != group) break;
+					count++;
+				}
+				if (count > 1) {
+					seprintf(this->buffer, lastof(this->buffer), "%s%u x:", sub_padding.c_str(), count);
+					print();
+					this->DumpSpriteGroup(group, sub_padding_indent.c_str(), 0);
+				} else {
+					this->DumpSpriteGroup(group, sub_padding.c_str(), 0);
+				}
 			}
 			break;
 		}
@@ -742,42 +834,68 @@ void SpriteGroupDumper::DumpSpriteGroup(const SpriteGroup *sg, const char *paddi
 			seprintf(this->buffer, lastof(this->buffer), "%sTile Layout%s [%u]", padding, extra_info, sg->nfo_line);
 			print();
 			emit_start();
-			if (tlsg->dts.registers != nullptr) {
-				const TileLayoutRegisters *registers = tlsg->dts.registers;
-				size_t count = 1; // 1 for the ground sprite
-				const DrawTileSeqStruct *element;
-				foreach_draw_tile_seq(element, tlsg->dts.seq) count++;
-				for (size_t i = 0; i < count; i ++) {
-					const TileLayoutRegisters *reg = registers + i;
-					seprintf(this->buffer, lastof(this->buffer), "%s  section: %X, register flags: %X", padding, (uint)i, reg->flags);
+
+			const TileLayoutRegisters *registers = tlsg->dts.registers;
+			auto print_reg_info = [&](char *b, uint i, bool is_parent) {
+				if (registers == nullptr) {
 					print();
-					auto log_reg = [&](TileLayoutFlags flag, const char *name, uint8 flag_reg) {
-						if (reg->flags & flag) {
-							highlight_tag = (1 << 16) | flag_reg;
-							seprintf(this->buffer, lastof(this->buffer), "%s    %s reg: %X", padding, name, flag_reg);
-							print();
-						}
-					};
-					log_reg(TLF_DODRAW, "TLF_DODRAW", reg->dodraw);
-					log_reg(TLF_SPRITE, "TLF_SPRITE", reg->sprite);
-					log_reg(TLF_PALETTE, "TLF_PALETTE", reg->palette);
-					if (element->IsParentSprite()) {
-						log_reg(TLF_BB_XY_OFFSET, "TLF_BB_XY_OFFSET x", reg->delta.parent[0]);
-						log_reg(TLF_BB_XY_OFFSET, "TLF_BB_XY_OFFSET y", reg->delta.parent[1]);
-						log_reg(TLF_BB_Z_OFFSET, "TLF_BB_Z_OFFSET", reg->delta.parent[2]);
-					} else {
-						log_reg(TLF_CHILD_X_OFFSET, "TLF_CHILD_X_OFFSET", reg->delta.child[0]);
-						log_reg(TLF_CHILD_Y_OFFSET, "TLF_CHILD_Y_OFFSET", reg->delta.child[1]);
-					}
-					if (reg->flags & TLF_SPRITE_VAR10) {
-						seprintf(this->buffer, lastof(this->buffer), "%s    TLF_SPRITE_VAR10 value: %X", padding, reg->sprite_var10);
-						print();
-					}
-					if (reg->flags & TLF_PALETTE_VAR10) {
-						seprintf(this->buffer, lastof(this->buffer), "%s    TLF_PALETTE_VAR10 value: %X", padding, reg->palette_var10);
-						print();
-					}
+					return;
 				}
+				const TileLayoutRegisters *reg = registers + i;
+				if (reg->flags == 0) {
+					print();
+					return;
+				}
+				seprintf(b, lastof(this->buffer), ", register flags: %X", reg->flags);
+				print();
+				auto log_reg = [&](TileLayoutFlags flag, const char *name, uint8 flag_reg) {
+					if (reg->flags & flag) {
+						highlight_tag = (1 << 16) | flag_reg;
+						seprintf(this->buffer, lastof(this->buffer), "%s    %s reg: %X", padding, name, flag_reg);
+						print();
+					}
+				};
+				log_reg(TLF_DODRAW, "TLF_DODRAW", reg->dodraw);
+				log_reg(TLF_SPRITE, "TLF_SPRITE", reg->sprite);
+				log_reg(TLF_PALETTE, "TLF_PALETTE", reg->palette);
+				if (is_parent) {
+					log_reg(TLF_BB_XY_OFFSET, "TLF_BB_XY_OFFSET x", reg->delta.parent[0]);
+					log_reg(TLF_BB_XY_OFFSET, "TLF_BB_XY_OFFSET y", reg->delta.parent[1]);
+					log_reg(TLF_BB_Z_OFFSET, "TLF_BB_Z_OFFSET", reg->delta.parent[2]);
+				} else {
+					log_reg(TLF_CHILD_X_OFFSET, "TLF_CHILD_X_OFFSET", reg->delta.child[0]);
+					log_reg(TLF_CHILD_Y_OFFSET, "TLF_CHILD_Y_OFFSET", reg->delta.child[1]);
+				}
+				if (reg->flags & TLF_SPRITE_VAR10) {
+					seprintf(this->buffer, lastof(this->buffer), "%s    TLF_SPRITE_VAR10 value: %X", padding, reg->sprite_var10);
+					print();
+				}
+				if (reg->flags & TLF_PALETTE_VAR10) {
+					seprintf(this->buffer, lastof(this->buffer), "%s    TLF_PALETTE_VAR10 value: %X", padding, reg->palette_var10);
+					print();
+				}
+			};
+
+			char *b = this->buffer + seprintf(this->buffer, lastof(this->buffer), "%s  ground: (%X, %X)",
+					padding, tlsg->dts.ground.sprite, tlsg->dts.ground.pal);
+			print_reg_info(b, 0, false);
+
+			uint offset = 0; // offset 0 is the ground sprite
+			const DrawTileSeqStruct *element;
+			foreach_draw_tile_seq(element, tlsg->dts.seq) {
+				offset++;
+				char *b = this->buffer;
+				if (element->IsParentSprite()) {
+					b += seprintf(this->buffer, lastof(this->buffer), "%s  section: %X, image: (%X, %X), d: (%d, %d, %d), s: (%d, %d, %d)",
+							padding, offset, element->image.sprite, element->image.pal,
+							element->delta_x, element->delta_y, element->delta_z,
+							element->size_x, element->size_y, element->size_z);
+				} else {
+					b += seprintf(this->buffer, lastof(this->buffer), "%s  section: %X, image: (%X, %X), d: (%d, %d)",
+							padding, offset, element->image.sprite, element->image.pal,
+							element->delta_x, element->delta_y);
+				}
+				print_reg_info(b, offset, element->IsParentSprite());
 			}
 			break;
 		}

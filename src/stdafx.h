@@ -35,11 +35,6 @@
 #	include <unistd.h>
 #	define _DEFAULT_SOURCE
 #	define _GNU_SOURCE
-#	define TROUBLED_INTS
-#endif
-
-#if defined(__HAIKU__) || defined(__CYGWIN__)
-#	include <strings.h> /* strncasecmp */
 #endif
 
 /* It seems that we need to include stdint.h before anything else
@@ -47,57 +42,16 @@
  * does not have stdint.h.
  * For OSX the inclusion is already done in osx_stdafx.h. */
 #if !defined(__APPLE__) && (!defined(_MSC_VER) || _MSC_VER >= 1600)
-#	if defined(SUNOS)
-		/* SunOS/Solaris does not have stdint.h, but inttypes.h defines everything
-		 * stdint.h defines and we need. */
-#		include <inttypes.h>
-#	else
+#	if !defined(SUNOS)
 #		define __STDC_LIMIT_MACROS
 #		define __STDC_FORMAT_MACROS
 #		include <stdint.h>
 #	endif
 #endif
 
-/* The conditions for these constants to be available are way too messy; so check them one by one */
-#if !defined(UINT64_MAX)
-#	define UINT64_MAX (18446744073709551615ULL)
-#endif
-#if !defined(INT64_MAX)
-#	define INT64_MAX  (9223372036854775807LL)
-#endif
-#if !defined(INT64_MIN)
-#	define INT64_MIN  (-INT64_MAX - 1)
-#endif
-#if !defined(UINT32_MAX)
-#	define UINT32_MAX (4294967295U)
-#endif
-#if !defined(INT32_MAX)
-#	define INT32_MAX  (2147483647)
-#endif
-#if !defined(INT32_MIN)
-#	define INT32_MIN  (-INT32_MAX - 1)
-#endif
-#if !defined(UINT16_MAX)
-#	define UINT16_MAX (65535U)
-#endif
-#if !defined(INT16_MAX)
-#	define INT16_MAX  (32767)
-#endif
-#if !defined(INT16_MIN)
-#	define INT16_MIN  (-INT16_MAX - 1)
-#endif
-#if !defined(UINT8_MAX)
-#	define UINT8_MAX  (255)
-#endif
-#if !defined(INT8_MAX)
-#	define INT8_MAX   (127)
-#endif
-#if !defined(INT8_MIN)
-#	define INT8_MIN   (-INT8_MAX - 1)
-#endif
-
 #include <algorithm>
 #include <cstdio>
+#include <cstdint>
 #include <cstddef>
 #include <cstring>
 #include <cstdlib>
@@ -105,18 +59,10 @@
 #include <cassert>
 #include <memory>
 #include <string>
-
-#ifndef SIZE_MAX
-#	define SIZE_MAX ((size_t)-1)
-#endif
+#include <inttypes.h>
 
 #if defined(UNIX) || defined(__MINGW32__)
 #	include <sys/types.h>
-#endif
-
-#if defined(__OS2__)
-#	include <types.h>
-#	define strcasecmp stricmp
 #endif
 
 #if defined(SUNOS) || defined(HPUX) || defined(__CYGWIN__)
@@ -130,7 +76,11 @@
 #	define __int64 long long
 	/* Warn about functions using 'printf' format syntax. First argument determines which parameter
 	 * is the format string, second argument is start of values passed to printf. */
-	#define WARN_FORMAT(string, args) __attribute__ ((format (printf, string, args)))
+#	if defined(__MINGW32__) && defined(__USE_MINGW_ANSI_STDIO)
+#		define WARN_FORMAT(string, args) __attribute__ ((format (__MINGW_PRINTF_FORMAT, string, args)))
+#	else
+#		define WARN_FORMAT(string, args) __attribute__ ((format (printf, string, args)))
+#	endif
 	#define WARN_TIME_FORMAT(string) __attribute__ ((format (strftime, string, 0)))
 	#define FINAL final
 
@@ -150,6 +100,13 @@
 #      define NOACCESS(args) __attribute__ ((access (none, args)))
 #else
 #      define NOACCESS(args)
+#endif
+
+/* [[nodiscard]] on constructors doesn't work in GCC older than 10.1. */
+#if __GNUC__ < 10 || (__GNUC__ == 10 && __GNUC_MINOR__ < 1)
+#      define NODISCARD
+#else
+#      define NODISCARD [[nodiscard]]
 #endif
 
 #if defined(__WATCOMC__)
@@ -249,10 +206,6 @@
 #		endif
 #	endif
 
-#	define strcasecmp stricmp
-#	define strncasecmp strnicmp
-#	define strtoull _strtoui64
-
 	/* MSVC doesn't have these :( */
 #	define S_ISDIR(mode) (mode & S_IFDIR)
 #	define S_ISREG(mode) (mode & S_IFREG)
@@ -300,13 +253,13 @@
 #define PACK(type_dec) PACK_N(type_dec, 1)
 
 /* MSVCRT of course has to have a different syntax for long long *sigh* */
-#if defined(_MSC_VER) || defined(__MINGW32__)
+#if defined(_MSC_VER) || (defined(__MINGW32__) && !defined(__USE_MINGW_ANSI_STDIO))
 #   define OTTD_PRINTF64 "%I64d"
 #   define OTTD_PRINTF64U "%I64u"
-#   define OTTD_PRINTFHEX64 "%I64X"
-#   define OTTD_PRINTFHEX64PAD "%016I64X"
+#   define OTTD_PRINTFHEX64_SUFFIX "I64X"
 #   define PRINTF_SIZE "%Iu"
 #   define PRINTF_SIZEX "%IX"
+#   define PRINTF_SIZEX_SUFFIX "IX"
 #else
 #if defined(PRId64)
 #   define OTTD_PRINTF64 "%" PRId64
@@ -319,46 +272,77 @@
 #   define OTTD_PRINTF64U "%llu"
 #endif
 #if defined(PRIX64)
-#   define OTTD_PRINTFHEX64 "%" PRIX64
-#   define OTTD_PRINTFHEX64PAD "%016" PRIX64
+#   define OTTD_PRINTFHEX64_SUFFIX PRIX64
 #else
-#   define OTTD_PRINTFHEX64 "%llX"
-#   define OTTD_PRINTFHEX64PAD "%016llX"
+#   define OTTD_PRINTFHEX64_SUFFIX "llX"
 #endif
 #   define PRINTF_SIZE "%zu"
 #   define PRINTF_SIZEX "%zX"
+#   define PRINTF_SIZEX_SUFFIX "zX"
+#endif
+#define OTTD_PRINTFHEX64 "%" OTTD_PRINTFHEX64_SUFFIX
+#define OTTD_PRINTFHEX64PAD "%016" OTTD_PRINTFHEX64_SUFFIX
+
+/*
+ * When making a (pure) debug build, the compiler will by default disable
+ * inlining of functions. This has a detremental effect on the performance of
+ * debug builds, especially when more and more trivial (wrapper) functions get
+ * added to the code base.
+ * Take for example the savegame called "Wentbourne", when running this game
+ * for 100 ticks with the null video driver a number of fairly trivial
+ * functions show up on top. The most common one is the implicit conversion
+ * operator of TileIndex to unsigned int, which takes up over 5% of the total
+ * run time and functionally does absolutely nothing. The remaining functions
+ * for the top 5 are GB, GetTileType, Map::Size and IsTileType to a total of
+ * about 12.5% of the game's total run time.
+ * It is possible to still force inlining in the most commonly used compilers,
+ * but that is at the cost of some problems with debugging due to the forced
+ * inlining. However, the performance benefit can be enormous; when forcing
+ * inlining for the previously mentioned top 5, the debug build ran about 15%
+ * quicker.
+ * The following debug_inline annotation may be added to functions comply
+ * with the following preconditions:
+ *  1: the function takes more than 0.5% of a profiled debug runtime
+ *  2: the function does not modify the game state
+ *  3: the function does not contain selection or iteration statements,
+ *     i.e. no if, switch, for, do, while, etcetera.
+ *  4: the function is one line of code, excluding assertions.
+ *  5: the function is defined in a header file.
+ * The debug_inline annotation must be placed in front of the function, i.e.
+ * before the optional static or constexpr modifier.
+ */
+#if !defined(_DEBUG) || defined(NO_DEBUG_INLINE)
+/*
+ * Do not force inlining when not in debug. This way we do not work against
+ * any carefully designed compiler optimizations.
+ */
+#define debug_inline inline
+#elif defined(__clang__) || defined(__GNUC__)
+#define debug_inline [[gnu::always_inline]] inline
+#else
+/*
+ * MSVC explicitly disables inlining, even forced inlining, in debug builds
+ * so __forceinline makes no difference compared to inline. Other unknown
+ * compilers can also just fallback to a normal inline.
+ */
+#define debug_inline inline
 #endif
 
-typedef unsigned char byte;
+typedef uint8_t byte;
 
 /* This is already defined in unix, but not in QNX Neutrino (6.x) or Cygwin. */
 #if (!defined(UNIX) && !defined(__HAIKU__)) || defined(__QNXNTO__) || defined(__CYGWIN__)
 	typedef unsigned int uint;
 #endif
 
-#if defined(TROUBLED_INTS)
-	/* Haiku's types for uint32/int32/uint64/int64 are different than what
-	 * they are on other platforms; not in length, but how to print them.
-	 * So make them more like the other platforms, to make printf() etc a
-	 * little bit easier. */
-#	define uint32 uint32_ugly_hack
-#	define int32 int32_ugly_hack
-#	define uint64 uint64_ugly_hack
-#	define int64 int64_ugly_hack
-	typedef unsigned int uint32_ugly_hack;
-	typedef signed int int32_ugly_hack;
-	typedef unsigned __int64 uint64_ugly_hack;
-	typedef signed __int64 int64_ugly_hack;
-#else
-	typedef unsigned char    uint8;
-	typedef   signed char     int8;
-	typedef unsigned short   uint16;
-	typedef   signed short    int16;
-	typedef unsigned int     uint32;
-	typedef   signed int      int32;
-	typedef unsigned __int64 uint64;
-	typedef   signed __int64  int64;
-#endif /* !TROUBLED_INTS */
+typedef uint8_t  uint8;
+typedef  int8_t   int8;
+typedef uint16_t uint16;
+typedef  int16_t  int16;
+typedef uint32_t uint32;
+typedef  int32_t  int32;
+typedef uint64_t uint64;
+typedef  int64_t  int64;
 
 #if !defined(WITH_PERSONAL_DIR)
 #	define PERSONAL_DIR ""
@@ -456,32 +440,40 @@ typedef uint32 unaligned_uint32;
 typedef uint64 unaligned_uint64;
 #endif /* __GNUC__ || __clang__ */
 
+/* For the FMT library we only want to use the headers, not link to some library. */
+#define FMT_HEADER_ONLY
+
 void NORETURN CDECL usererror(const char *str, ...) WARN_FORMAT(1, 2);
 void NORETURN CDECL error(const char *str, ...) WARN_FORMAT(1, 2);
 void NORETURN CDECL assert_msg_error(int line, const char *file, const char *expr, const char *extra, const char *str, ...) WARN_FORMAT(5, 6);
 const char *assert_tile_info(uint32 tile);
 #define NOT_REACHED() error("NOT_REACHED triggered at line %i of %s", __LINE__, __FILE__)
 
-/* For non-debug builds with assertions enabled use the special assertion handler. */
-#if defined(NDEBUG) && defined(WITH_ASSERT)
-#	undef assert
-#	define assert(expression) if (unlikely(!(expression))) error("Assertion failed at line %i of %s: %s", __LINE__, __FILE__, #expression);
-#endif
-
 /* Asserts are enabled if NDEBUG isn't defined or WITH_ASSERT is defined. */
 #if !defined(NDEBUG) || defined(WITH_ASSERT)
+#	undef assert
+#	define assert(expression) if (unlikely(!(expression))) error("Assertion failed at line %i of %s: %s", __LINE__, __FILE__, #expression);
 #	define assert_msg(expression, ...) if (unlikely(!(expression))) assert_msg_error(__LINE__, __FILE__, #expression, nullptr, __VA_ARGS__);
 #	define assert_msg_tile(expression, tile, ...) if (unlikely(!(expression))) assert_msg_error(__LINE__, __FILE__, #expression, assert_tile_info(tile), __VA_ARGS__);
 #	define assert_tile(expression, tile) if (unlikely(!(expression))) error("Assertion failed at line %i of %s: %s\n\t%s", __LINE__, __FILE__, #expression, assert_tile_info(tile));
 #else
+#	undef assert
+#	define assert(expression)
 #	define assert_msg(expression, ...)
 #	define assert_msg_tile(expression, tile, ...)
 #	define assert_tile(expression, tile)
 #endif
-
-#if defined(OPENBSD)
-	/* OpenBSD uses strcasecmp(3) */
-#	define _stricmp strcasecmp
+#if (!defined(NDEBUG) || defined(WITH_ASSERT)) && !defined(FEWER_ASSERTS)
+#	define WITH_FULL_ASSERTS
+#	define dbg_assert(expression) assert(expression)
+#	define dbg_assert_msg(expression, ...) assert_msg(expression, __VA_ARGS__)
+#	define dbg_assert_msg_tile(expression, tile, ...) assert_msg_tile(expression, tile, __VA_ARGS__)
+#	define dbg_assert_tile(expression, tile) assert_tile(expression, tile)
+#else
+#	define dbg_assert(expression)
+#	define dbg_assert_msg(expression, ...)
+#	define dbg_assert_msg_tile(expression, tile, ...)
+#	define dbg_assert_tile(expression, tile)
 #endif
 
 #if defined(MAX_PATH)

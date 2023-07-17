@@ -158,6 +158,11 @@ void ShowOSErrorBox(const char *buf, bool system)
 	}
 }
 
+void DoOSAbort()
+{
+	abort();
+}
+
 void OSOpenBrowser(const char *url)
 {
 	[ [ NSWorkspace sharedWorkspace ] openURL:[ NSURL URLWithString:[ NSString stringWithUTF8String:url ] ] ];
@@ -271,4 +276,9 @@ void MacOSSetThreadName(const char *name)
 	if (cur != nil && [ cur respondsToSelector:@selector(setName:) ]) {
 		[ cur performSelector:@selector(setName:) withObject:[ NSString stringWithUTF8String:name ] ];
 	}
+}
+
+uint64 MacOSGetPhysicalMemory()
+{
+	return [ [ NSProcessInfo processInfo ] physicalMemory ];
 }

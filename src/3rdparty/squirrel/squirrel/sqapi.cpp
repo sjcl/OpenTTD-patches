@@ -57,13 +57,12 @@ HSQUIRRELVM sq_open(SQInteger initialstacksize)
 	SQSharedState *ss;
 	SQVM *v;
 	sq_new(ss, SQSharedState);
-	v = (SQVM *)SQ_MALLOC(sizeof(SQVM));
-	new (v) SQVM(ss);
+	v = new (SQAllocationTag{}) SQVM(ss);
 	ss->_root_vm = v;
 	if(v->Init(nullptr, initialstacksize)) {
 		return v;
 	} else {
-		sq_delete(v, SQVM);
+		sq_delete_refcounted(v, SQVM);
 		return nullptr;
 	}
 	return v;
@@ -75,14 +74,13 @@ HSQUIRRELVM sq_newthread(HSQUIRRELVM friendvm, SQInteger initialstacksize)
 	SQVM *v;
 	ss=_ss(friendvm);
 
-	v= (SQVM *)SQ_MALLOC(sizeof(SQVM));
-	new (v) SQVM(ss);
+	v = new (SQAllocationTag{}) SQVM(ss);
 
 	if(v->Init(friendvm, initialstacksize)) {
 		friendvm->Push(v);
 		return v;
 	} else {
-		sq_delete(v, SQVM);
+		sq_delete_refcounted(v, SQVM);
 		return nullptr;
 	}
 }
@@ -932,9 +930,9 @@ void sq_resetobject(HSQOBJECT *po)
 	po->_unVal.pUserPointer=nullptr;po->_type=OT_NULL;
 }
 
-SQRESULT sq_throwerror(HSQUIRRELVM v,const SQChar *err)
+SQRESULT sq_throwerror(HSQUIRRELVM v,const SQChar *err, SQInteger len)
 {
-	v->_lasterror=SQString::Create(_ss(v),err);
+	v->_lasterror=SQString::Create(_ss(v),err, len);
 	return -1;
 }
 

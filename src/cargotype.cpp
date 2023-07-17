@@ -12,6 +12,7 @@
 #include "newgrf_cargo.h"
 #include "string_func.h"
 #include "strings_func.h"
+#include "settings_type.h"
 
 #include "table/sprites.h"
 #include "table/strings.h"
@@ -155,13 +156,10 @@ span<const CargoSpec *> _sorted_standard_cargo_specs; ///< Standard cargo specif
 /** Sort cargo specifications by their name. */
 static bool CargoSpecNameSorter(const CargoSpec * const &a, const CargoSpec * const &b)
 {
-	static char a_name[64];
-	static char b_name[64];
+	std::string a_name = GetString(a->name);
+	std::string b_name = GetString(b->name);
 
-	GetString(a_name, a->name, lastof(a_name));
-	GetString(b_name, b->name, lastof(b_name));
-
-	int res = strnatcmp(a_name, b_name); // Sort by name (natural sorting).
+	int res = StrNaturalCompare(a_name, b_name); // Sort by name (natural sorting).
 
 	/* If the names are equal, sort by cargo bitnum. */
 	return (res != 0) ? res < 0 : (a->bitnum < b->bitnum);
@@ -209,3 +207,8 @@ void InitializeSortedCargoSpecs()
 	_sorted_standard_cargo_specs = { _sorted_cargo_specs.data(), nb_standard_cargo };
 }
 
+uint64 CargoSpec::WeightOfNUnitsInTrain(uint32 n) const
+{
+	if (this->is_freight) n *= _settings_game.vehicle.freight_trains;
+	return this->WeightOfNUnits(n);
+}

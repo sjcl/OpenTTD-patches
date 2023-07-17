@@ -40,6 +40,7 @@
 #include "company_base.h"
 #include "train.h"
 #include "newgrf_debug.h"
+#include "core/backup_type.hpp"
 
 #include "tbtr_template_gui_create.h"
 #include "tbtr_template_vehicle.h"
@@ -77,7 +78,7 @@ static const NWidgetPart _widgets[] = {
 	EndContainer(),
 	NWidget(NWID_HORIZONTAL),
 		NWidget(NWID_VERTICAL),
-			NWidget(WWT_PANEL, COLOUR_GREY, TCW_NEW_TMPL_PANEL), SetMinimalSize(250, 30), SetResize(1, 0), SetScrollbar(TCW_SCROLLBAR_H_NEW_TMPL), EndContainer(),
+			NWidget(WWT_PANEL, COLOUR_GREY, TCW_NEW_TMPL_PANEL), SetMinimalSize(250, 30), SetResize(1, 0), SetScrollbar(TCW_SCROLLBAR_H_NEW_TMPL), SetDataTip(STR_NULL, STR_DEPOT_TRAIN_LIST_TOOLTIP), EndContainer(),
 			NWidget(WWT_PANEL, COLOUR_GREY, TCW_INFO_PANEL), SetMinimalSize(250, 100), SetResize(1, 1), SetScrollbar(TCW_SCROLLBAR_V_NEW_TMPL), EndContainer(),
 			NWidget(NWID_HSCROLLBAR, COLOUR_GREY, TCW_SCROLLBAR_H_NEW_TMPL),
 		EndContainer(),
@@ -289,21 +290,20 @@ public:
 		switch(widget) {
 			case TCW_NEW_TMPL_PANEL: {
 				if (this->virtual_train) {
-					DrawTrainImage(virtual_train, r.left + TRAIN_FRONT_SPACE, r.right - 25, r.top + 2, this->sel, EIT_IN_DEPOT, this->hscroll->GetPosition(), this->vehicle_over);
+					DrawTrainImage(virtual_train, r.Shrink(TRAIN_FRONT_SPACE, 2, 25, 0), this->sel, EIT_IN_DEPOT, this->hscroll->GetPosition(), this->vehicle_over);
 					SetDParam(0, CeilDiv(virtual_train->gcache.cached_total_length * 10, TILE_SIZE));
 					SetDParam(1, 1);
-					DrawString(r.left, r.right, r.top, STR_TINY_BLACK_DECIMAL, TC_BLACK, SA_RIGHT);
+					DrawString(r.left, r.right, r.top, STR_JUST_DECIMAL, TC_BLACK, SA_RIGHT, false, FS_SMALL);
 				}
 				break;
 			}
 			case TCW_INFO_PANEL: {
 				if (this->virtual_train) {
-					DrawPixelInfo tmp_dpi, *old_dpi;
+					DrawPixelInfo tmp_dpi;
 
 					if (!FillDrawPixelInfo(&tmp_dpi, r.left, r.top, r.right - r.left, r.bottom - r.top)) break;
 
-					old_dpi = _cur_dpi;
-					_cur_dpi = &tmp_dpi;
+					AutoRestoreBackup dpi_backup(_cur_dpi, &tmp_dpi);
 
 					int y = ScaleGUITrad(4) - this->vscroll->GetPosition();
 					bool buildable = true;
@@ -340,7 +340,7 @@ public:
 					SetDParam(2, this->virtual_train->GetDisplayMaxSpeed());
 					SetDParam(1, gcache->cached_power);
 					SetDParam(0, gcache->cached_weight);
-					SetDParam(3, gcache->cached_max_te / 1000);
+					SetDParam(3, gcache->cached_max_te);
 					DrawString(8, r.right, y, original_acceleration ? STR_VEHICLE_INFO_WEIGHT_POWER_MAX_SPEED : STR_VEHICLE_INFO_WEIGHT_POWER_MAX_SPEED_MAX_TE);
 					uint32 full_cargo_weight = 0;
 					for (Train *train = this->virtual_train; train != nullptr; train = train->Next()) {
@@ -355,7 +355,7 @@ public:
 							SetDParam(2, STR_VEHICLE_INFO_POWER_WEIGHT_RATIO);
 							SetDParam(3, (100 * this->virtual_train->gcache.cached_power) / std::max<uint>(1, full_weight));
 							SetDParam(4, this->virtual_train->GetAccelerationType() == 2 ? STR_EMPTY : STR_VEHICLE_INFO_TE_WEIGHT_RATIO);
-							SetDParam(5, (this->virtual_train->gcache.cached_max_te / 10) / std::max<uint>(1, full_weight));
+							SetDParam(5, (100 * this->virtual_train->gcache.cached_max_te) / std::max<uint>(1, full_weight));
 						} else {
 							SetDParam(1, STR_EMPTY);
 						}
@@ -367,7 +367,7 @@ public:
 						DrawString(8, r.right, y, STR_VEHICLE_INFO_MAX_SPEED_LOADED);
 					}
 					/* Draw cargo summary */
-					CargoArray cargo_caps;
+					CargoArray cargo_caps{};
 					for (const Train *tmp = this->virtual_train; tmp != nullptr; tmp = tmp->Next()) {
 						cargo_caps[tmp->cargo_type] += tmp->cargo_cap;
 					}
@@ -380,14 +380,67 @@ public:
 							y += FONT_HEIGHT_NORMAL;
 						}
 					}
-
-					_cur_dpi = old_dpi;
 				}
 				break;
 			}
 			default:
 				break;
 		}
+	}
+
+	virtual bool OnRightClick(Point pt, int widget) override
+	{
+		if (widget != TCW_NEW_TMPL_PANEL) return false;
+
+		GetDepotVehiclePtData gdvp = { nullptr, nullptr };
+		const Vehicle *v = nullptr;
+		NWidgetBase *nwi = this->GetWidget<NWidgetBase>(TCW_NEW_TMPL_PANEL);
+		DepotGUIAction mode = this->GetVehicleFromDepotWndPt(pt.x - nwi->pos_x, pt.y - nwi->pos_y, &v, &gdvp);
+		v = gdvp.wagon;
+
+		if (v == nullptr || mode != MODE_DRAG_VEHICLE) return false;
+
+		CargoArray capacity{}, loaded{};
+
+		/* Display info for single (articulated) vehicle, or for whole chain starting with selected vehicle */
+		bool whole_chain = _ctrl_pressed;
+
+		/* loop through vehicle chain and collect cargoes */
+		uint num = 0;
+		for (const Vehicle *w = v; w != nullptr; w = w->Next()) {
+			if (w->cargo_cap > 0 && w->cargo_type < NUM_CARGO) {
+				capacity[w->cargo_type] += w->cargo_cap;
+				loaded  [w->cargo_type] += w->cargo.StoredCount();
+			}
+
+			if (w->type == VEH_TRAIN && !w->HasArticulatedPart()) {
+				num++;
+				if (!whole_chain) break;
+			}
+		}
+
+		/* Build tooltipstring */
+		static char details[1024];
+		details[0] = '\0';
+		char *pos = details;
+
+		for (CargoID cargo_type = 0; cargo_type < NUM_CARGO; cargo_type++) {
+			if (capacity[cargo_type] == 0) continue;
+
+			SetDParam(0, cargo_type);           // {CARGO} #1
+			SetDParam(1, loaded[cargo_type]);   // {CARGO} #2
+			SetDParam(2, cargo_type);           // {SHORTCARGO} #1
+			SetDParam(3, capacity[cargo_type]); // {SHORTCARGO} #2
+			pos = GetString(pos, STR_DEPOT_VEHICLE_TOOLTIP_CARGO, lastof(details));
+		}
+
+		/* Show tooltip window */
+		uint64 args[2];
+		args[0] = (whole_chain ? num : v->engine_type);
+		args[1] = (uint64)(size_t)details;
+		GuiShowTooltips(this, whole_chain ? STR_DEPOT_VEHICLE_TOOLTIP_CHAIN : STR_DEPOT_VEHICLE_TOOLTIP, 2, args, TCC_RIGHT_CLICK);
+
+		return true;
 	}
 
 	virtual void OnDragDrop(Point pt, int widget) override
@@ -406,7 +459,7 @@ public:
 				if (this->GetVehicleFromDepotWndPt(pt.x - nwi->pos_x, pt.y - nwi->pos_y, &v, &gdvp) == MODE_DRAG_VEHICLE && sel != INVALID_VEHICLE) {
 					if (gdvp.wagon != nullptr && gdvp.wagon->index == sel && _ctrl_pressed) {
 						DoCommandP(Vehicle::Get(sel)->tile, Vehicle::Get(sel)->index, true,
-								CMD_REVERSE_TRAIN_DIRECTION | CMD_MSG(STR_ERROR_CAN_T_REVERSE_DIRECTION_RAIL_VEHICLE));
+								CMD_REVERSE_TRAIN_DIRECTION | CMD_MSG(STR_ERROR_CAN_T_REVERSE_DIRECTION_RAIL_VEHICLE), CcVirtualTrainWagonsMoved);
 					} else if (gdvp.wagon == nullptr || gdvp.wagon->index != sel) {
 						this->vehicle_over = INVALID_VEHICLE;
 						TrainDepotMoveVehicle(gdvp.wagon, sel, gdvp.head);
@@ -501,7 +554,7 @@ public:
 		uint min_width = 32;
 		uint width = 0;
 		uint height = ScaleGUITrad(8) + (3 * FONT_HEIGHT_NORMAL);
-		CargoArray cargo_caps;
+		CargoArray cargo_caps{};
 
 		if (virtual_train != nullptr) {
 			bool buildable = true;
@@ -604,6 +657,17 @@ public:
 			this->sel = v->index;
 			this->SetDirty();
 		}
+	}
+
+	EventState OnCTRLStateChange() override
+	{
+		if (this->sel != INVALID_VEHICLE) {
+			_cursor.vehchain = _ctrl_pressed;
+			this->SetWidgetDirty(TCW_NEW_TMPL_PANEL);
+			return ES_HANDLED;
+		}
+
+		return ES_NOT_HANDLED;
 	}
 
 	void VirtualVehicleDeleted(VehicleID id)

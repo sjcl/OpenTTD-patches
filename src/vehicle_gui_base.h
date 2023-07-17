@@ -10,7 +10,6 @@
 #ifndef VEHICLE_GUI_BASE_H
 #define VEHICLE_GUI_BASE_H
 
-#include "core/smallvec_type.hpp"
 #include "date_type.h"
 #include "economy_type.h"
 #include "sortlist_type.h"
@@ -38,7 +37,7 @@ struct GUIVehicleGroup {
 
 	const Vehicle *GetSingleVehicle() const
 	{
-		assert(this->NumVehicles() == 1);
+		dbg_assert(this->NumVehicles() == 1);
 		return this->vehicles_begin[0];
 	}
 
@@ -92,16 +91,11 @@ public:
 	typedef GUIVehicleGroupList::SortFunction VehicleGroupSortFunction;
 	typedef GUIVehicleList::SortFunction VehicleIndividualSortFunction;
 
-	/** Special cargo filter criteria */
-	enum CargoFilterSpecialType {
-		CF_ANY = CT_NO_REFIT,                   ///< Show all vehicles independent of carried cargo (i.e. no filtering)
-		CF_NONE = CT_INVALID,                   ///< Show only vehicles which do not carry cargo (e.g. train engines)
-		CF_FREIGHT = CT_AUTO_REFIT,             ///< Show only vehicles which carry any freight (non-passenger) cargo
-	};
-
 	CargoID cargo_filter[NUM_CARGO + 3];        ///< Available cargo filters; CargoID or CF_ANY or CF_NONE
 	StringID cargo_filter_texts[NUM_CARGO + 4]; ///< Texts for filter_cargo, terminated by INVALID_STRING_ID
 	byte cargo_filter_criteria;                 ///< Selected cargo filter
+
+	inline CargoID GetCargoFilter() const { return this->cargo_filter[this->cargo_filter_criteria]; }
 
 	enum ActionDropdownItem {
 		ADI_TEMPLATE_REPLACE,

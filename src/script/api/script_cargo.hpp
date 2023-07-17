@@ -13,6 +13,7 @@
 #include "script_object.hpp"
 #include "../../cargotype.h"
 #include "../../linkgraph/linkgraph_type.h"
+#include <optional>
 
 /**
  * Class that handles all cargo related functions.
@@ -90,7 +91,7 @@ public:
 	 * @pre IsValidCargo(cargo_type).
 	 * @return The name of the cargo type.
 	 */
-	static char *GetName(CargoID cargo_type);
+	static std::optional<std::string> GetName(CargoID cargo_type);
 
 	/**
 	 * Gets the string representation of the cargo label.
@@ -107,7 +108,7 @@ public:
 	 *  - In other words: Only use the cargo label, if you know more about the behaviour
 	 *    of a specific cargo from a specific industry set, than the API methods can tell you.
 	 */
-	static char *GetCargoLabel(CargoID cargo_type);
+	static std::optional<std::string> GetCargoLabel(CargoID cargo_type);
 
 	/**
 	 * Checks whether the give cargo is a freight or not.
@@ -142,10 +143,12 @@ public:
 	 * @param cargo_type The cargo to transport.
 	 * @pre ScriptCargo::IsValidCargo(cargo_type).
 	 * @param distance The distance the cargo travels from begin to end.
-	 * @param days_in_transit Amount of (game) days the cargo is in transit. The max value of this variable is 637. Any value higher returns the same as 637 would.
+	 *                 The value will be clamped to 0 .. MAX(uint32).
+	 * @param days_in_transit Amount of (game) days the cargo is in transit.
+	 *                        The max value of this variable is 637. Any value higher returns the same as 637 would.
 	 * @return The amount of money that would be earned by this trip.
 	 */
-	static Money GetCargoIncome(CargoID cargo_type, uint32 distance, uint32 days_in_transit);
+	static Money GetCargoIncome(CargoID cargo_type, SQInteger distance, SQInteger days_in_transit);
 
 	/**
 	 * Get the cargo distribution type for a cargo.
@@ -159,10 +162,11 @@ public:
 	 *   cargo for the specified type.
 	 * @param cargo_type The cargo to check on.
 	 * @param amount The quantity of cargo.
+	 *               The value will be clamped to 0 .. MAX(uint32).
 	 * @pre ScriptCargo::IsValidCargo(cargo_type).
 	 * @return The weight in tonnes for that quantity of cargo.
 	 */
-	static int64 GetWeight(CargoID cargo_type, uint32 amount);
+	static SQInteger GetWeight(CargoID cargo_type, SQInteger amount);
 };
 
 #endif /* SCRIPT_CARGO_HPP */

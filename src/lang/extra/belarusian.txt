@@ -1,0 +1,66 @@
+STR_GAME_OPTIONS_AUTOSAVE_DROPDOWN_EVERY_1_MONTH                :Штомесяц
+STR_GAME_OPTIONS_AUTOSAVE_DROPDOWN_EVERY_3_MONTHS               :Кожныя 3 месяцы
+STR_GAME_OPTIONS_AUTOSAVE_DROPDOWN_EVERY_6_MONTHS               :Кожныя 6 месяцаў
+STR_GAME_OPTIONS_AUTOSAVE_DROPDOWN_EVERY_12_MONTHS              :Кожныя 12 месяцаў
+
+STR_UNIT_NAME_VELOCITY_IMPERIAL                                 :міль/г
+STR_UNIT_NAME_VELOCITY_METRIC                                   :км/г
+STR_UNIT_NAME_VELOCITY_SI                                       :м/с
+
+STR_BUTTON_RENAME                                               :{BLACK}Перайменаваць
+
+STR_VEHICLE_TYPE_TRAINS                                         :Цыгнікі
+STR_VEHICLE_TYPE_ROAD_VEHICLES                                  :Аўтатранспарт
+STR_VEHICLE_TYPE_SHIPS                                          :Караблі
+STR_VEHICLE_TYPE_AIRCRAFT                                       :Авіятранспарт
+
+# Tracerestrict GUI
+
+# Programmable Pre-Signals
+
+#House construction window (for SE only)
+
+#Town select window (for SE only)
+
+STR_MAPGEN_SNOW_LINE_HEIGHT                                     :{BLACK}Вышыня сьнегавой лініі:
+STR_MAPGEN_SNOW_LINE_UP                                         :{BLACK}Падняць сьнегавую лінію
+STR_MAPGEN_SNOW_LINE_DOWN                                       :{BLACK}Апусьціць сьнегавую лінію
+STR_MAPGEN_SNOW_LINE_QUERY_CAPT                                 :{WHITE}Зьмяніць вышыню сьнегавой лініі
+
+# Town tooltip
+
+STR_PURCHASE_INFO_DESIGNED                                      :{BLACK}Распрацаваны ў {GOLD}{NUM} г.
+
+# Cargo type orders Window
+
+# Plans window
+
+# Clear area query
+
+# Plan related errors
+
+STR_TRADITIONAL_TRAIN_NAME                                      :Цягнiк {COMMA}
+STR_TRADITIONAL_ROAD_VEHICLE_NAME                               :Аўтамабiль {COMMA}
+STR_TRADITIONAL_SHIP_NAME                                       :Карабель {COMMA}
+STR_TRADITIONAL_AIRCRAFT_NAME                                   :Самалёт {COMMA}
+
+# Scheduled Dispatch
+
+# Modifier key toggle window
+
+STR_CONFIG_SETTING_ALLOW_SHARES                                 :Дазволіць купляць акцыі іншых кампаніяў: {STRING}
+STR_CONFIG_SETTING_ALLOW_SHARES_HELPTEXT                        :Калі ўключана, дазваляецца купляць і прадаваць долі ў кампаніях. Акцыі даступны для кампаніяў, якія дасягнулі пэўнага ўзросту.
+
+STR_CONFIG_SETTING_MIN_YEARS_FOR_SHARES                         :Мін. узрост кампаніі для выпуску акцыяў: {STRING}
+STR_CONFIG_SETTING_MIN_YEARS_FOR_SHARES_HELPTEXT                :Мінімальны ўзрост, якога павінна дасягнуць кампанія для пачатку выпуску акцыяў, якімі змогуць гандляваць іншыя гульцы.
+
+STR_COMPANY_VIEW_SHARES_OWNED_BY                                :{WHITE}({COMMA}% валодае {COMPANY})
+
+STR_COMPANY_VIEW_BUY_SHARE_BUTTON                               :{BLACK}Купіць 25% акцыяў кампаніі
+STR_COMPANY_VIEW_SELL_SHARE_BUTTON                              :{BLACK}Прадаць 25% акцыяў кампаніі
+STR_COMPANY_VIEW_BUY_SHARE_TOOLTIP                              :{BLACK}Набыць 25% акцыяў гэтай кампаніі. Shift+пстрычка — ацэнка кошту акцыяў.
+STR_COMPANY_VIEW_SELL_SHARE_TOOLTIP                             :{BLACK}Прадаць 25% акцыяў гэтай кампаніі. Shift+пстрычка — ацэнка кошту акцыяў.
+
+STR_ERROR_CAN_T_BUY_25_SHARE_IN_THIS                            :{WHITE}Немагчыма купіць 25% акцыяў гэтай кампаніі...
+STR_ERROR_CAN_T_SELL_25_SHARE_IN                                :{WHITE}Немагчыма прадаць 25% акцый гэтай кампаніі...
+STR_ERROR_PROTECTED                                             :{WHITE}Гэтая кампанія яшчэ не выпускае акцыі...

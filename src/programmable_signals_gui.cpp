@@ -139,7 +139,7 @@ static const StringID _program_sigstate[] = {
 };
 
 /** Get the string for a condition */
-static char *GetConditionString(SignalCondition *cond, char *buf, char *buflast, bool selected)
+static char *GetConditionString(SignalCondition *cond, char *buf, char *buflast)
 {
 	StringID string = INVALID_STRING_ID;
 	if (cond->ConditionCode() == PSC_SLOT_OCC || cond->ConditionCode() == PSC_SLOT_OCC_REM) {
@@ -180,7 +180,6 @@ static char *GetConditionString(SignalCondition *cond, char *buf, char *buflast,
 				SetDParam(1, TileY(sig_cond->sig_tile));
 			} else {
 				string = STR_PROGSIG_CONDVAR_SIGNAL_STATE_UNSPECIFIED;
-				SetDParam(0, selected ? STR_WHITE : STR_BLACK);
 			}
 		}
 	}
@@ -213,7 +212,7 @@ static void DrawInstructionString(SignalInstruction *instruction, int y, bool se
 
 		case PSO_IF: {
 			SignalIf *if_ins = static_cast<SignalIf*>(instruction);
-			GetConditionString(if_ins->condition, condstr, lastof(condstr), selected);
+			GetConditionString(if_ins->condition, condstr, lastof(condstr));
 			SetDParamStr(0, condstr);
 			instruction_string = STR_PROGSIG_IF;
 			break;
@@ -368,7 +367,7 @@ public:
 
 				int selected;
 				DropDownList list = GetSlotDropDownList(this->GetOwner(), sc->slot_id, selected, VEH_TRAIN, true);
-				if (!list.empty()) ShowDropDownList(this, std::move(list), selected, PROGRAM_WIDGET_COND_SLOT, 0, true);
+				if (!list.empty()) ShowDropDownList(this, std::move(list), selected, PROGRAM_WIDGET_COND_SLOT);
 			} break;
 
 			case PROGRAM_WIDGET_COND_COUNTER: {
@@ -380,7 +379,7 @@ public:
 
 				int selected;
 				DropDownList list = GetCounterDropDownList(this->GetOwner(), sc->ctr_id, selected);
-				if (!list.empty()) ShowDropDownList(this, std::move(list), selected, PROGRAM_WIDGET_COND_COUNTER, 0, true);
+				if (!list.empty()) ShowDropDownList(this, std::move(list), selected, PROGRAM_WIDGET_COND_COUNTER);
 			} break;
 
 			case PROGRAM_WIDGET_COND_SET_SIGNAL: {
@@ -419,7 +418,7 @@ public:
 	{
 		if (this->IsWidgetLowered(PROGRAM_WIDGET_COPY_PROGRAM)) {
 			//Copy program from another progsignal
-			TrackBits trackbits = TrackStatusToTrackBits(GetTileTrackStatus(tile1, TRANSPORT_RAIL, 0));
+			TrackBits trackbits = TrackdirBitsToTrackBits(GetTileTrackdirBits(tile1, TRANSPORT_RAIL, 0));
 			if (trackbits & TRACK_BIT_VERT) { // N-S direction
 				trackbits = (_tile_fract_coords.x <= _tile_fract_coords.y) ? TRACK_BIT_RIGHT : TRACK_BIT_LEFT;
 			}
@@ -466,7 +465,7 @@ public:
 			return;
 		}
 
-		TrackBits trackbits = TrackStatusToTrackBits(GetTileTrackStatus(tile1, TRANSPORT_RAIL, 0));
+		TrackBits trackbits = TrackdirBitsToTrackBits(GetTileTrackdirBits(tile1, TRANSPORT_RAIL, 0));
 		if (trackbits & TRACK_BIT_VERT) { // N-S direction
 			trackbits = (_tile_fract_coords.x <= _tile_fract_coords.y) ? TRACK_BIT_RIGHT : TRACK_BIT_LEFT;
 		}
@@ -607,7 +606,7 @@ public:
 		switch (widget) {
 			case PROGRAM_WIDGET_INSTRUCTION_LIST:
 				resize->height = FONT_HEIGHT_NORMAL;
-				size->height = 6 * resize->height + WD_FRAMERECT_TOP + WD_FRAMERECT_BOTTOM;
+				size->height = 6 * resize->height + WidgetDimensions::scaled.framerect.Vertical();
 				break;
 		}
 	}
@@ -627,7 +626,8 @@ public:
 	{
 		if (widget != PROGRAM_WIDGET_INSTRUCTION_LIST) return;
 
-		int y = r.top + WD_FRAMERECT_TOP;
+		Rect ir = r.Shrink(WidgetDimensions::scaled.framerect);
+		int y = ir.top;
 		int line_height = this->GetWidget<NWidgetBase>(PROGRAM_WIDGET_INSTRUCTION_LIST)->resize_y;
 
 		for (int no = this->vscroll->GetPosition(); no < (int) instructions.size(); no++) {
@@ -635,7 +635,7 @@ public:
 			/* Don't draw anything if it extends past the end of the window. */
 			if (!this->vscroll->IsVisible(no)) break;
 
-			DrawInstructionString(i.insn, y, no == this->selected_instruction, i.indent, r.left + WD_FRAMETEXT_LEFT, r.right - WD_FRAMETEXT_RIGHT);
+			DrawInstructionString(i.insn, y, no == this->selected_instruction, i.indent, ir.left, ir.right);
 			y += line_height;
 		}
 	}
@@ -700,7 +700,7 @@ private:
 	int GetInstructionFromPt(int y)
 	{
 		NWidgetBase *nwid = this->GetWidget<NWidgetBase>(PROGRAM_WIDGET_INSTRUCTION_LIST);
-		int sel = (y - nwid->pos_y - WD_FRAMERECT_TOP) / nwid->resize_y; // Selected line
+		int sel = (y - nwid->pos_y - WidgetDimensions::scaled.framerect.top) / nwid->resize_y; // Selected line
 
 		if ((uint)sel >= this->vscroll->GetCapacity()) return -1;
 
@@ -937,7 +937,7 @@ static const NWidgetPart _nested_program_widgets[] = {
 			EndContainer(),
 			NWidget(NWID_SELECTION, INVALID_COLOUR, PROGRAM_WIDGET_SEL_TOP_RIGHT),
 				NWidget(WWT_TEXTBTN, COLOUR_GREY, PROGRAM_WIDGET_COND_VALUE), SetMinimalSize(124, 12), SetFill(1, 0),
-														SetDataTip(STR_BLACK_COMMA, STR_PROGSIG_COND_VALUE_TOOLTIP), SetResize(1, 0),
+														SetDataTip(STR_JUST_COMMA, STR_PROGSIG_COND_VALUE_TOOLTIP), SetResize(1, 0),
 				NWidget(WWT_TEXTBTN, COLOUR_GREY, PROGRAM_WIDGET_COND_SET_SIGNAL), SetMinimalSize(124, 12), SetFill(1, 0),
 														SetDataTip(STR_PROGSIG_COND_SET_SIGNAL, STR_PROGSIG_COND_SET_SIGNAL_TOOLTIP), SetResize(1, 0),
 			EndContainer(),

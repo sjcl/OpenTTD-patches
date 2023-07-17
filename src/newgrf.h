@@ -17,9 +17,10 @@
 #include "debug.h"
 #include "core/bitmath_func.hpp"
 #include "core/alloc_type.hpp"
-#include "core/smallvec_type.hpp"
+#include "core/mem_func.hpp"
 #include "3rdparty/cpp-btree/btree_map.h"
 #include <bitset>
+#include <vector>
 
 /**
  * List of different canal 'features'.
@@ -87,15 +88,15 @@ enum GrfSpecFeature : uint8 {
 	GSF_AIRPORTTILES,
 	GSF_ROADTYPES,
 	GSF_TRAMTYPES,
-
 	GSF_ROADSTOPS,
+
 	GSF_NEWLANDSCAPE,
+	GSF_FAKE_TOWNS,           ///< Fake (but mappable) town GrfSpecFeature for NewGRF debugging (parent scope), and generic callbacks
 	GSF_END,
 
-	GSF_REAL_FEATURE_END = GSF_ROADSTOPS,
+	GSF_REAL_FEATURE_END = GSF_NEWLANDSCAPE,
 
-	GSF_FAKE_TOWNS = GSF_END, ///< Fake town GrfSpecFeature for NewGRF debugging (parent scope)
-	GSF_FAKE_STATION_STRUCT,  ///< Fake station struct GrfSpecFeature for NewGRF debugging
+	GSF_FAKE_STATION_STRUCT = GSF_END,  ///< Fake station struct GrfSpecFeature for NewGRF debugging
 	GSF_FAKE_END,             ///< End of the fake features
 
 	GSF_ERROR_ON_USE = 0xFE,  ///< An invalid value which generates an immediate error on mapping
@@ -108,7 +109,8 @@ struct GRFLabel {
 	byte label;
 	uint32 nfo_line;
 	size_t pos;
-	struct GRFLabel *next;
+
+	GRFLabel(byte label, uint32 nfo_line, size_t pos) : label(label), nfo_line(nfo_line), pos(pos) {}
 };
 
 enum GRFPropertyMapFallbackMode {
@@ -174,7 +176,8 @@ struct GRFFilePropertyRemapEntry {
 	const char *name = nullptr;
 	int id = 0;
 	GrfSpecFeature feature = (GrfSpecFeature)0;
-	uint8 property_id = 0;
+	bool extended = false;
+	uint16 property_id = 0;
 };
 
 struct GRFFilePropertyRemapSet {
@@ -204,6 +207,22 @@ struct GRFVariableMapDefinition {
 		name(name),
 		id(id),
 		feature(feature)
+	{}
+};
+
+struct GRFNameOnlyVariableMapDefinition {
+	const char *name; // nullptr indicates the end of the list
+	int id;
+
+	/** Create empty object used to identify the end of a list. */
+	GRFNameOnlyVariableMapDefinition() :
+		name(nullptr),
+		id(0)
+	{}
+
+	GRFNameOnlyVariableMapDefinition(int id, const char *name) :
+		name(name),
+		id(id)
 	{}
 };
 
@@ -286,8 +305,9 @@ enum NewSignalAction3ID {
 
 /** New landscape control flags. */
 enum NewLandscapeCtrlFlags {
-	NLCF_ROCKS_SET              = 0,                          ///< Custom landscape rocks sprites group set.
-	NLCF_ROCKS_RECOLOUR_ENABLED = 1,                          ///< Recolour sprites enabled for rocks
+	NLCF_ROCKS_SET                = 0,                        ///< Custom landscape rocks sprites group set.
+	NLCF_ROCKS_RECOLOUR_ENABLED   = 1,                        ///< Recolour sprites enabled for rocks
+	NLCF_ROCKS_DRAW_SNOWY_ENABLED = 2,                        ///< Enable drawing rock tiles on snow
 };
 
 /** New landscape action 3 IDs. */
@@ -304,32 +324,33 @@ struct NewSignalStyle;
 
 /** Dynamic data of a loaded NewGRF */
 struct GRFFile : ZeroedMemoryAllocator {
-	char *filename;
+	std::string filename;
 	uint32 grfid;
 	byte grf_version;
 
 	uint sound_offset;
 	uint16 num_sounds;
 
-	struct StationSpec **stations;
-	struct HouseSpec **housespec;
-	struct IndustrySpec **industryspec;
-	struct IndustryTileSpec **indtspec;
-	struct ObjectSpec **objectspec;
-	struct AirportSpec **airportspec;
-	struct AirportTileSpec **airtspec;
-	struct RoadStopSpec **roadstops;
+	std::vector<std::unique_ptr<struct StationSpec>> stations;
+	std::vector<std::unique_ptr<struct HouseSpec>> housespec;
+	std::vector<std::unique_ptr<struct IndustrySpec>> industryspec;
+	std::vector<std::unique_ptr<struct IndustryTileSpec>> indtspec;
+	std::vector<std::unique_ptr<struct ObjectSpec>> objectspec;
+	std::vector<std::unique_ptr<struct AirportSpec>> airportspec;
+	std::vector<std::unique_ptr<struct AirportTileSpec>> airtspec;
+	std::vector<std::unique_ptr<struct RoadStopSpec>> roadstops;
 
 	GRFFeatureMapRemapSet feature_id_remaps;
 	GRFFilePropertyRemapSet action0_property_remaps[GSF_END];
+	btree::btree_map<uint32, GRFFilePropertyRemapEntry> action0_extended_property_remaps;
 	Action5TypeRemapSet action5_type_remaps;
 	std::vector<GRFVariableMapEntry> grf_variable_remaps;
 	std::vector<std::unique_ptr<const char, FreeDeleter>> remap_unknown_property_names;
 
-	uint32 param[0x80];
+	std::array<uint32_t, 0x80> param;
 	uint param_end;  ///< one more than the highest set parameter
 
-	GRFLabel *label; ///< Pointer to the first label. This is a linked list, not an array.
+	std::vector<GRFLabel> labels;                   ///< List of labels
 
 	std::vector<CargoLabel> cargo_list;             ///< Cargo translation table (local ID -> label)
 	uint8 cargo_map[NUM_CARGO];                     ///< Inverse cargo translation table (CargoID -> local ID)
@@ -355,6 +376,9 @@ struct GRFFile : ZeroedMemoryAllocator {
 
 	uint32 var8D_overlay;                    ///< Overlay for global variable 8D (action 0x14)
 	uint32 var9D_overlay;                    ///< Overlay for global variable 9D (action 0x14)
+	std::vector<uint32> var91_values;        ///< Test result values for global variable 91 (action 0x14, only testable using action 7/9)
+
+	uint32 observed_feature_tests;           ///< Observed feature test bits (see: GRFFeatureTestObservationFlag)
 
 	const SpriteGroup *new_signals_group;    ///< New signals sprite group
 	byte new_signal_ctrl_flags;              ///< Ctrl flags for new signals
@@ -375,9 +399,9 @@ struct GRFFile : ZeroedMemoryAllocator {
 	/** Get GRF Parameter with range checking */
 	uint32 GetParam(uint number) const
 	{
-		/* Note: We implicitly test for number < lengthof(this->param) and return 0 for invalid parameters.
+		/* Note: We implicitly test for number < this->param.size() and return 0 for invalid parameters.
 		 *       In fact this is the more important test, as param is zeroed anyway. */
-		assert(this->param_end <= lengthof(this->param));
+		assert(this->param_end <= this->param.size());
 		return (number < this->param_end) ? this->param[number] : 0;
 	}
 };
@@ -440,5 +464,9 @@ struct GrfSpecFeatureRef {
 
 const char *GetFeatureString(GrfSpecFeatureRef feature);
 const char *GetFeatureString(GrfSpecFeature feature);
+
+void InitGRFGlobalVars();
+
+const char *GetExtendedVariableNameById(int id);
 
 #endif /* NEWGRF_H */

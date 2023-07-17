@@ -17,6 +17,10 @@
 #include "../command_type.h"
 #include "../date_type.h"
 
+#include <vector>
+#include <array>
+#include <memory>
+
 static const uint32 FIND_SERVER_EXTENDED_TOKEN = 0x2A49582A;
 
 #ifdef RANDOM_DEBUG
@@ -84,6 +88,7 @@ extern uint32 _sync_frame;
 extern Date   _last_sync_date;
 extern DateFract _last_sync_date_fract;
 extern uint8  _last_sync_tick_skip_counter;
+extern uint32  _last_sync_frame_counter;
 extern bool _network_first_time;
 /* Vars needed for the join-GUI */
 extern NetworkJoinStatus _network_join_status;
@@ -100,12 +105,36 @@ extern uint8 _network_reconnect;
 
 extern CompanyMask _network_company_passworded;
 
+/* Sync debugging */
+struct NetworkSyncRecord {
+	uint32 frame;
+	uint32 seed_1;
+	uint64 state_checksum;
+};
+extern std::vector<NetworkSyncRecord> _network_client_sync_records;
+extern std::unique_ptr<std::array<NetworkSyncRecord, 1024>> _network_server_sync_records;
+extern uint32 _network_server_sync_records_next;
+
 void NetworkQueryServer(const std::string &connection_string);
 
 void GetBindAddresses(NetworkAddressList *addresses, uint16 port);
 struct NetworkGameList *NetworkAddServer(const std::string &connection_string, bool manually = true, bool never_expire = false);
 void NetworkRebuildHostList();
 void UpdateNetworkGameWindow();
+
+struct NetworkGameKeys {
+	byte x25519_priv_key[32];    ///< x25519 key: private part
+	byte x25519_pub_key[32];     ///< x25519 key: public part
+	bool inited = false;
+
+	void Initialise();
+};
+
+struct NetworkSharedSecrets {
+	byte shared_data[64];
+
+	~NetworkSharedSecrets();
+};
 
 /* From network_command.cpp */
 /**
@@ -132,10 +161,16 @@ uint NetworkCalculateLag(const NetworkClientSocket *cs);
 StringID GetNetworkErrorMsg(NetworkErrorCode err);
 bool NetworkMakeClientNameUnique(std::string &new_name);
 std::string GenerateCompanyPasswordHash(const std::string &password, const std::string &password_server_id, uint32 password_game_seed);
+std::vector<uint8> GenerateGeneralPasswordHash(const std::string &password, const std::string &password_server_id, uint64 password_game_seed);
+std::string BytesToHexString(const byte *data, size_t length);
 std::string NetworkGenerateRandomKeyString(uint bytes);
 
 std::string_view ParseCompanyFromConnectionString(const std::string &connection_string, CompanyID *company_id);
 NetworkAddress ParseConnectionString(const std::string &connection_string, uint16 default_port);
 std::string NormalizeConnectionString(const std::string &connection_string, uint16 default_port);
+
+void ClientNetworkEmergencySave();
+
+void NetworkRandomBytesWithFallback(void *buf, size_t n);
 
 #endif /* NETWORK_INTERNAL_H */
