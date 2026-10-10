@@ -1434,6 +1434,8 @@ STR_DEPARTURES_VIA_BUTTON                                       :{BLACK}Via
 STR_DEPARTURES_VIA_TOOLTIP                                      :{BLACK}Show timetabled vehicles that do not stop here
 STR_DEPARTURES_FILTER_BUTTON                                    :{BLACK}Filter
 STR_DEPARTURES_FILTER_TOOLTIP                                   :{BLACK}Only show departures/arrivals calling at a particular destination, or only show a single shared order group.
+STR_DEPARTURES_GROUP_FILTER_ALL                                 :All groups
+STR_DEPARTURES_GROUP_FILTER_TOOLTIP                             :{BLACK}Only show departures/arrivals of vehicles in a particular vehicle group (including its sub-groups)
 STR_DEPARTURES_SHOW_TRAINS_TOOLTIP                              :{BLACK}Show timetabled trains
 STR_DEPARTURES_SHOW_ROAD_VEHICLES_TOOLTIP                       :{BLACK}Show timetabled road vehicles
 STR_DEPARTURES_SHOW_SHIPS_TOOLTIP                               :{BLACK}Show timetabled ships

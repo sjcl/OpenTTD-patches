@@ -206,3 +206,5 @@ STR_VEHICLE_VIEW_CARGODIST_COST_SCALE                           :貨物分配の
 STR_VEHICLE_VIEW_CARGODIST_COST_ADD                             :貨物分配の経路コスト加算: {NUM}日
 STR_VEHICLE_VIEW_CARGODIST_COST_SCALE_QUERY                     :{WHITE}この路線（共有オーダー）の貨物分配経路コスト倍率（%、10～1000）
 STR_VEHICLE_VIEW_CARGODIST_COST_ADD_QUERY                       :{WHITE}この路線（共有オーダー）の区間ごとの貨物分配経路コスト加算（日数、0～365）
+STR_DEPARTURES_GROUP_FILTER_ALL                                 :全てのグループ
+STR_DEPARTURES_GROUP_FILTER_TOOLTIP                             :{BLACK}特定の車両グループ（サブグループを含む）に属する車両の発着のみを表示します

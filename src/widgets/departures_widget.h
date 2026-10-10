@@ -28,6 +28,7 @@ enum DeparturesWindowWidgets : WidgetID {
 	WID_DB_SHOW_SHIPS,          ///< Toggle ships button
 	WID_DB_SHOW_PLANES,         ///< Toggle planes button
 	WID_DB_FILTER,              ///< Filter
+	WID_DB_GROUP_FILTER,        ///< Vehicle group filter
 };
 
 #endif /* WIDGETS_DEPARTURES_WIDGET_H */

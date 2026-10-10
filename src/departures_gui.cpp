@@ -34,6 +34,8 @@
 #include "cargotype.h"
 #include "zoom_func.h"
 #include "depot_map.h"
+#include "dropdown_func.h"
+#include "group.h"
 #include "tilehighlight_func.h"
 #include "viewport_func.h"
 #include "core/backup_type.hpp"
@@ -61,6 +63,7 @@ static constexpr NWidgetPart _nested_departures_list[] = {
 		NWidget(WWT_DROPDOWN, Colours::Grey, WID_DB_CARGO_MODE), SetFill(1, 1), SetResize(1, 0), SetToolTip(STR_DEPARTURES_CARGO_MODE_TOOLTIP),
 		NWidget(WWT_DROPDOWN, Colours::Grey, WID_DB_SOURCE_MODE), SetFill(1, 1), SetResize(1, 0), SetToolTip(STR_DEPARTURES_SOURCE_MODE_TOOLTIP),
 		NWidget(WWT_DROPDOWN, Colours::Grey, WID_DB_DEPARTURE_MODE), SetFill(1, 1), SetResize(1, 0), SetToolTip(STR_DEPARTURES_DEPARTURE_MODE_TOOLTIP),
+		NWidget(WWT_DROPDOWN, Colours::Grey, WID_DB_GROUP_FILTER), SetFill(1, 1), SetResize(1, 0), SetToolTip(STR_DEPARTURES_GROUP_FILTER_TOOLTIP),
 		NWidget(WWT_TEXTBTN, Colours::Grey, WID_DB_SHOW_TIMES), SetMinimalSize(11, 12), SetFill(0, 1), SetStringTip(STR_DEPARTURES_TIMES_BUTTON, STR_DEPARTURES_TIMES_TOOLTIP),
 		NWidget(WWT_TEXTBTN, Colours::Grey, WID_DB_SHOW_EMPTY), SetMinimalSize(11, 12), SetFill(0, 1), SetStringTip(STR_DEPARTURES_EMPTY_BUTTON, STR_DEPARTURES_EMPTY_TOOLTIP),
 		NWidget(WWT_TEXTBTN, Colours::Grey, WID_DB_SHOW_VIA), SetMinimalSize(11, 12), SetFill(0, 1), SetStringTip(STR_DEPARTURES_VIA_BUTTON, STR_DEPARTURES_VIA_TOOLTIP),
@@ -163,6 +166,8 @@ protected:
 	std::array<IntegerStringParameter, 3> title_params{}; ///< title string parameters
 	CallAtTargetID filter_target{};          ///< Filter target
 	const OrderList *order_list_filter{};    ///< Shared order list filter
+	GroupID group_filter = GroupID::Invalid(); ///< Vehicle group filter, including sub-groups
+	std::vector<GroupID> filter_groups{};    ///< Groups (including parent groups) of the vehicles calling at the source, for the group filter dropdown
 
 	uint GetScrollbarCapacity() const;
 	uint GetMinWidth() const;
@@ -190,7 +195,18 @@ protected:
 		this->route_id_width = 0;
 
 		robin_hood::unordered_flat_set<GroupID> groups;
+		robin_hood::unordered_flat_set<GroupID> filter_groups;
 		CompanyMask companies = {};
+
+		if (this->group_filter != GroupID::Invalid() && !Group::IsValidID(this->group_filter)) {
+			/* Group has been deleted */
+			this->group_filter = GroupID::Invalid();
+			this->SetWidgetDirty(WID_DB_GROUP_FILTER);
+		}
+
+		auto matches_group_filter = [&](const Vehicle *v) -> bool {
+			return this->group_filter == GroupID::Invalid() || GroupIsInGroup(v->group_id, this->group_filter);
+		};
 		VehicleTypeIndexArray<int> unitnumber_max = { -1, -1, -1, -1 };
 
 		bool show_vehicle_name = false;
@@ -211,8 +227,26 @@ protected:
 					/* Coarse filter against filter_target. */
 					if (!this->VehicleTargetCoarseFilter(veh)) return;
 
-					if (this->source_mode != DSM_LIVE) this->vehicles.push_back(veh);
+					/* Collect the groups available for the group filter, before applying the group filter. */
 					for (const Vehicle *v = veh; v != nullptr; v = v->NextShared()) {
+						for (GroupID gid = v->group_id; Group::IsValidID(gid); gid = Group::Get(gid)->parent) {
+							if (!filter_groups.insert(gid).second) break;
+						}
+					}
+
+					if (this->source_mode != DSM_LIVE) {
+						bool any_match = false;
+						for (const Vehicle *v = veh; v != nullptr; v = v->NextShared()) {
+							if (matches_group_filter(v)) {
+								any_match = true;
+								break;
+							}
+						}
+						if (!any_match) return;
+						this->vehicles.push_back(veh);
+					}
+					for (const Vehicle *v = veh; v != nullptr; v = v->NextShared()) {
+						if (!matches_group_filter(v)) continue;
 						if (this->source_mode == DSM_LIVE) this->vehicles.push_back(v);
 
 						if (show_vehicle_name) {
@@ -283,6 +317,12 @@ protected:
 		for (CompanyID owner : companies.IterateSetBits()) {
 			int width = (GetStringBoundingBox(GetString(STR_DEPARTURES_TOC, owner))).width + 4;
 			if (width > this->toc_width) this->toc_width = width;
+		}
+
+		this->filter_groups.assign(filter_groups.begin(), filter_groups.end());
+		if (this->group_filter != GroupID::Invalid() && std::ranges::find(this->filter_groups, this->group_filter) == this->filter_groups.end()) {
+			/* Keep the current filter selectable, even if no vehicles at this source are currently in the group */
+			this->filter_groups.push_back(this->group_filter);
 		}
 
 		this->vehicles_invalid = false;
@@ -453,12 +493,21 @@ public:
 				size.width = GetStringListWidth(_departure_source_mode_strings);
 				size.width += padding.width;
 				break;
+
+			case WID_DB_GROUP_FILTER:
+				size.width = GetStringBoundingBox(STR_DEPARTURES_GROUP_FILTER_ALL).width;
+				size.width += padding.width;
+				break;
 		}
 	}
 
 	virtual std::string GetWidgetString(WidgetID widget, StringID stringid) const override
 	{
 		switch (widget) {
+			case WID_DB_GROUP_FILTER:
+				if (this->group_filter == GroupID::Invalid() || !Group::IsValidID(this->group_filter)) return GetString(STR_DEPARTURES_GROUP_FILTER_ALL);
+				return GetString(STR_GROUP_NAME, this->group_filter.base() | GROUP_NAME_HIERARCHY);
+
 			case WID_DB_CAPTION: {
 				StringID str;
 				std::vector<StringParameter> params;
@@ -625,6 +674,25 @@ public:
 				break;
 			}
 
+			case WID_DB_GROUP_FILTER: {
+				if (this->vehicles_invalid) this->FillVehicleList();
+
+				std::vector<std::pair<std::string, GroupID>> groups;
+				for (GroupID gid : this->filter_groups) {
+					if (Group::IsValidID(gid)) groups.emplace_back(GetString(STR_GROUP_NAME, gid.base() | GROUP_NAME_HIERARCHY), gid);
+				}
+				std::ranges::sort(groups, [](const auto &a, const auto &b) { return StrNaturalCompare(a.first, b.first) < 0; });
+
+				DropDownList list;
+				list.push_back(MakeDropDownListStringItem(STR_DEPARTURES_GROUP_FILTER_ALL, 0));
+				for (auto &it : groups) {
+					list.push_back(MakeDropDownListStringItem(std::move(it.first), it.second.base() + 1));
+				}
+				const int selected = (this->group_filter == GroupID::Invalid()) ? 0 : this->group_filter.base() + 1;
+				ShowDropDownList(this, std::move(list), selected, widget);
+				break;
+			}
+
 			case WID_DB_FILTER: {
 				if (_thd.GetCallbackWnd() == this) {
 					ResetObjectToPlace();
@@ -685,6 +753,17 @@ public:
 				}
 				if (this->source_type == DST_STATION) {
 					_settings_client.gui.departure_default_mode = this->mode;
+				}
+				this->SetWidgetDirty(widget);
+				break;
+			}
+
+			case WID_DB_GROUP_FILTER: {
+				GroupID gid = (index <= 0) ? GroupID::Invalid() : GroupID(static_cast<GroupID::BaseType>(index - 1));
+				if (gid != GroupID::Invalid() && !Group::IsValidID(gid)) gid = GroupID::Invalid();
+				if (this->group_filter != gid) {
+					this->group_filter = gid;
+					this->OnInvalidateData(0, false);
 				}
 				this->SetWidgetDirty(widget);
 				break;
@@ -790,6 +869,9 @@ public:
 
 		/* Recompute the list of departures if we're due to. */
 		if (this->calc_tick_countdown <= 0) {
+			/* Vehicles may have been moved between groups, refresh the vehicle list if filtering by group */
+			if (this->group_filter != GroupID::Invalid()) this->FillVehicleList();
+
 			this->calc_tick_countdown = _settings_client.gui.departure_calc_frequency;
 			bool show_pax = this->cargo_mode != DCF_FREIGHT_ONLY;
 			bool show_freight = this->cargo_mode != DCF_PAX_ONLY;
