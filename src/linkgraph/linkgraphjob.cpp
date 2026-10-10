@@ -209,6 +209,12 @@ void LinkGraphJob::Init()
 	const bool express = IsLinkGraphCargoExpress(this->Cargo());
 	const uint16_t aircraft_link_scale = this->Settings().aircraft_link_scale;
 
+	/* Route cost additions and transfer penalties are given in days.
+	 * For express cargo the path cost is in ticks, otherwise it is in tiles, assuming an average speed of 1 tile/day. */
+	const uint day_cost = express ? DAY_TICKS * this->day_length_factor : 1;
+	this->transfer_penalty_same_mode = this->Settings().transfer_penalty_same_mode * day_cost;
+	this->transfer_penalty_mode_change = this->Settings().transfer_penalty_mode_change * day_cost;
+
 	size_t edge_count = 0;
 	for (auto &it : this->link_graph.GetEdges()) {
 		if (it.first.first == it.first.second) continue;
@@ -251,7 +257,24 @@ void LinkGraphJob::Init()
 			distance_anno /= 100;
 		}
 
-		this->edges[idx].InitEdge(it.first.first, it.first.second, edge.Capacity(), distance_anno);
+		/* Apply the per-route cost scale and addition, weighted by the capacity each route contributes. */
+		std::span<const LinkGraph::EdgeRoute> routes = edge.Routes();
+		uint64_t route_capacity = 0;
+		uint64_t weighted_scale = 0;
+		uint64_t weighted_add = 0;
+		for (const LinkGraph::EdgeRoute &route : routes) {
+			const uint64_t cap = std::max<uint>(route.capacity, 1);
+			route_capacity += cap;
+			weighted_scale += cap * route.cost_scale;
+			weighted_add += cap * route.cost_add;
+		}
+		if (route_capacity > 0) {
+			const uint64_t scale = weighted_scale / route_capacity;
+			const uint64_t add = weighted_add * day_cost / route_capacity;
+			distance_anno = ClampTo<uint>(std::max<uint64_t>(1, (distance_anno * scale / 100) + add));
+		}
+
+		this->edges[idx].InitEdge(it.first.first, it.first.second, edge.Capacity(), distance_anno, routes);
 		idx++;
 	}
 	flush();

@@ -7,6 +7,7 @@ add_test_files(
     format_target.cpp
     history_func.cpp
     landscape_partial_pixel_z.cpp
+    linkgraph_route_penalties.cpp
     math_func.cpp
     passenger_routing.cpp
     mock_environment.h

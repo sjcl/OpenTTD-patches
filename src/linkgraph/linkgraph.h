@@ -18,6 +18,7 @@
 #include "../sl/saveload_common_type.h"
 #include "linkgraph_type.h"
 #include "../3rdparty/cpp-btree/btree_map.h"
+#include <span>
 #include <utility>
 #include <vector>
 
@@ -68,6 +69,21 @@ public:
 	 * ID of the opposite Node of the first active edge (i.e. not just distance) in
 	 * the column as next_edge.
 	 */
+	/**
+	 * A route (shared order list) contributing capacity to an edge.
+	 */
+	struct EdgeRoute {
+		uint16_t route = 0;                        ///< Route ID (order list ID).
+		uint8_t vehicle_type = 0;                  ///< Vehicle type of the route.
+		uint16_t cost_scale = 100;                 ///< Cost scale of the route, in percent.
+		uint16_t cost_add = 0;                     ///< Cost addition of the route, in days.
+		uint capacity = 0;                         ///< Capacity contributed by the route.
+		EconTime::Date last_update{};              ///< When the route was last updated.
+	};
+
+	/** Maximum number of routes tracked per edge. */
+	static constexpr uint MAX_EDGE_ROUTES = 16;
+
 	struct BaseEdge {
 		uint capacity = 0;                         ///< Capacity of the link.
 		uint usage = 0;                            ///< Usage of the link.
@@ -75,6 +91,7 @@ public:
 		EconTime::Date last_unrestricted_update{}; ///< When the unrestricted part of the link was last updated.
 		EconTime::Date last_restricted_update{};   ///< When the restricted part of the link was last updated.
 		EconTime::Date last_aircraft_update{};     ///< When aircraft capacity of the link was last updated.
+		std::vector<EdgeRoute> routes;             ///< Routes contributing capacity to the link.
 
 		void Init()
 		{
@@ -84,6 +101,7 @@ public:
 			this->last_unrestricted_update = EconTime::INVALID_DATE;
 			this->last_restricted_update = EconTime::INVALID_DATE;
 			this->last_aircraft_update = EconTime::INVALID_DATE;
+			this->routes.clear();
 		}
 
 		BaseEdge() { this->Init(); }
@@ -150,6 +168,12 @@ public:
 		 * @return Last update.
 		 */
 		EconTime::Date LastUpdate() const { return std::max(this->edge->last_unrestricted_update, this->edge->last_restricted_update); }
+
+		/**
+		 * Get the routes contributing capacity to the edge.
+		 * @return Routes.
+		 */
+		std::span<const EdgeRoute> Routes() const { return this->edge->routes; }
 	};
 
 	/**
@@ -220,6 +244,8 @@ public:
 		 */
 		Edge(BaseEdge &edge) : EdgeWrapper<BaseEdge>(edge) {}
 		void Update(uint capacity, uint usage, uint32_t time, EdgeUpdateModes modes);
+		void UpdateRoute(const LinkGraphRouteInfo &info, uint capacity, EdgeUpdateModes modes);
+		void PruneRoutes(EconTime::DateDelta timeout);
 		void Restrict() { this->edge->last_unrestricted_update = EconTime::INVALID_DATE; }
 		void Release() { this->edge->last_restricted_update = EconTime::INVALID_DATE; }
 		void ClearAircraft() { this->edge->last_aircraft_update = EconTime::INVALID_DATE; }
@@ -372,7 +398,7 @@ public:
 	NodeID AddNode(const Station *st);
 	void RemoveNode(NodeID id);
 
-	void UpdateEdge(NodeID from, NodeID to, uint capacity, uint usage, uint32_t time, EdgeUpdateModes modes);
+	void UpdateEdge(NodeID from, NodeID to, uint capacity, uint usage, uint32_t time, EdgeUpdateModes modes, const LinkGraphRouteInfo *route = nullptr);
 	void RemoveEdge(NodeID from, NodeID to);
 
 	inline uint32_t CalculateCostEstimate() const {
@@ -383,6 +409,7 @@ protected:
 	friend class LinkGraph::ConstNode;
 	friend class LinkGraph::Node;
 	friend struct LinkGraphNodeStructHandler;
+	friend struct LinkGraphEdgeRoutesStructHandler;
 	friend struct LinkGraphNonTableHelper;
 	friend NamedSaveLoadTable GetLinkGraphDesc();
 	friend NamedSaveLoadTable GetLinkGraphJobDesc();

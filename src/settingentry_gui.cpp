@@ -1216,6 +1216,8 @@ SettingsContainer &GetSettingsTree()
 				cdist->Add(new SettingEntry("linkgraph.aircraft_link_scale"));
 				cdist->Add(new SettingEntry("linkgraph.passenger_transfer_timetables"));
 				cdist->Add(new SettingEntry("linkgraph.passenger_transfer_penalty"));
+				cdist->Add(new SettingEntry("linkgraph.transfer_penalty_same_mode"));
+				cdist->Add(new SettingEntry("linkgraph.transfer_penalty_mode_change"));
 			}
 
 			SettingsPage *trees = environment->Add(new SettingsPage(STR_CONFIG_SETTING_ENVIRONMENT_TREES));

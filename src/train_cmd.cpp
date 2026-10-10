@@ -534,6 +534,29 @@ int GetTileMarginInFrontOfTrain(const Train *v, int x_pos, int y_pos)
 }
 
 /**
+ * Check whether a train longer than the platform, with a "near end" stop location, should stop with the front
+ * of the train beyond the platform end (the rear of the train at the start of the platform), instead of the
+ * default of stopping with the rear of the train before the platform start.
+ * This requires that the last moving unit of the train fits in the platform.
+ * @param v Train.
+ * @param osl Stop location.
+ * @param overhang Amount by which the train is longer than the platform.
+ * @param station_length Platform length.
+ * @return True if the front of the train should overhang the platform end.
+ */
+static bool IsTrainFrontOverhangStop(const Train *v, OrderStopLocation osl, int overhang, int station_length)
+{
+	if (osl != OrderStopLocation::NearEnd || overhang <= 0) return false;
+
+	int last_unit_length = 0;
+	for (const Train *u = v->GetMovingFront(); u != nullptr; u = u->GetMovingNext()) {
+		if (u->IsMovingUnitStart()) last_unit_length = 0;
+		last_unit_length += u->gcache.cached_veh_length;
+	}
+	return last_unit_length <= station_length;
+}
+
+/**
  * Get the stop location of (the center) of the front vehicle of a train at
  * a platform of a station.
  *
@@ -570,6 +593,7 @@ int GetTrainStopLocation(StationID station_id, TileIndex tile, Train *v, bool up
 	}
 	int overhang = front->gcache.cached_total_length - *station_length;
 	int adjust = 0;
+	bool front_overhang = false;
 	if (osl == OrderStopLocation::Through && overhang > 0) {
 		for (Train *u = front; u != nullptr; u = u->Next()) {
 			/* Passengers may not be through-loaded */
@@ -621,6 +645,27 @@ int GetTrainStopLocation(StationID station_id, TileIndex tile, Train *v, bool up
 		}
 		for (Train *u = v->GetMovingFront(); u != v; u = u->GetMovingNext()) overhang -= u->gcache.cached_veh_length; // only advance until rear of train is in platform
 		if (overhang < 0) adjust += overhang;
+	} else if (IsTrainFrontOverhangStop(front, osl, overhang, *station_length)) {
+		/* The train is longer than the station, and should stop with the rear of the train at the start of the platform,
+		 * such that the front of the train is beyond the platform end. */
+		front_overhang = true;
+		if (update_train_state) {
+			/* Mark the leading units of the train which will stop beyond the platform end, such that the
+			 * stop location is determined by the first vehicle which will stop within the platform. */
+			int remaining = front->gcache.cached_total_length;
+			Train *u = v->GetMovingFront();
+			while (u != nullptr && remaining > *station_length) {
+				Train *part = u;
+				do {
+					remaining -= part->gcache.cached_veh_length;
+					part->flags.Set(VehicleRailFlag::BeyondPlatformEnd);
+					part = part->GetMovingNext();
+				} while (part != nullptr && !part->IsMovingUnitStart());
+				u = part;
+			}
+		}
+		/* Stop location relative to the vehicle v, instead of the front of the train */
+		for (Train *u = v->GetMovingFront(); u != v; u = u->GetMovingNext()) adjust -= u->gcache.cached_veh_length;
 	} else if (overhang >= 0) {
 		/* The train is longer than the station, make it stop at the far end of the platform */
 		osl = OrderStopLocation::FarEnd;
@@ -650,7 +695,7 @@ int GetTrainStopLocation(StationID station_id, TileIndex tile, Train *v, bool up
 	uint8_t rounding = v->IsDrivingBackwards() ? 2 : 1;
 	int result = stop - ((v->gcache.cached_veh_length + rounding) / 2) + adjust;
 
-	if (osl == OrderStopLocation::Through && v != v->GetMovingFront()) {
+	if ((osl == OrderStopLocation::Through || front_overhang) && v != v->GetMovingFront()) {
 		/* Check front of train for obstructions */
 
 		Train *moving_front = v->GetMovingFront();
@@ -868,6 +913,9 @@ int PredictStationStoppingLocation(const Train *v, const Order *order, int stati
 			}
 			if (overhang < 0) adjust += overhang;
 		}
+	} else if (IsTrainFrontOverhangStop(v, osl, overhang, station_length)) {
+		/* The train is longer than the station, and stops with the rear of the train at the start of the platform.
+		 * Keep the near end stop location, the front of the train stops beyond the platform end. */
 	} else if (overhang >= 0) {
 		/* The train is longer than the station, make it stop at the far end of the platform */
 		osl = OrderStopLocation::FarEnd;

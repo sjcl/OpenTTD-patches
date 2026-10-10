@@ -134,6 +134,60 @@ struct LinkGraphNodeStructHandler final : public TypedSaveLoadStructHandler<Link
 	}
 };
 
+static NodeID _edge_route_from;
+static NodeID _edge_route_to;
+
+/**
+ * SaveLoad desc for a route contributing to a link graph edge.
+ */
+static const NamedSaveLoad _edge_route_desc[] = {
+	NSL("from",            SLEG_VAR(_edge_route_from, SLE_UINT16)),
+	NSL("to",              SLEG_VAR(_edge_route_to,   SLE_UINT16)),
+	NSL("route",            SLE_VAR(LinkGraph::EdgeRoute, route,        SLE_UINT16)),
+	NSL("vehicle_type",     SLE_VAR(LinkGraph::EdgeRoute, vehicle_type, SLE_UINT8)),
+	NSL("cost_scale",       SLE_VAR(LinkGraph::EdgeRoute, cost_scale,   SLE_UINT16)),
+	NSL("cost_add",         SLE_VAR(LinkGraph::EdgeRoute, cost_add,     SLE_UINT16)),
+	NSL("capacity",         SLE_VAR(LinkGraph::EdgeRoute, capacity,     SLE_UINT32)),
+	NSL("last_update",      SLE_VAR(LinkGraph::EdgeRoute, last_update,  SLE_INT32)),
+};
+
+struct LinkGraphEdgeRoutesStructHandler final : public TypedSaveLoadStructHandler<LinkGraphEdgeRoutesStructHandler, LinkGraph> {
+	NamedSaveLoadTable GetDescription() const override
+	{
+		return _edge_route_desc;
+	}
+
+	void Save(LinkGraph *lg) const override
+	{
+		size_t count = 0;
+		for (const auto &it : lg->edges) {
+			count += it.second.routes.size();
+		}
+		SlSetStructListLength(count);
+
+		for (auto &it : lg->edges) {
+			_edge_route_from = it.first.first;
+			_edge_route_to = it.first.second;
+			for (LinkGraph::EdgeRoute &route : it.second.routes) {
+				SlObjectSaveFiltered(&route, this->GetLoadDescription());
+			}
+		}
+	}
+
+	void Load(LinkGraph *lg) const override
+	{
+		size_t count = SlGetStructListLength(UINT32_MAX);
+		for (size_t i = 0; i < count; i++) {
+			LinkGraph::EdgeRoute route;
+			SlObjectLoadFiltered(&route, this->GetLoadDescription());
+			auto it = lg->edges.find(std::make_pair(_edge_route_from, _edge_route_to));
+			if (it != lg->edges.end() && it->second.routes.size() < LinkGraph::MAX_EDGE_ROUTES) {
+				it->second.routes.push_back(route);
+			}
+		}
+	}
+};
+
 /**
  * Get a SaveLoad array for a link graph.
  * @return SaveLoad array for link graph.
@@ -147,6 +201,7 @@ NamedSaveLoadTable GetLinkGraphDesc()
 		NSL("",                          SLEG_VAR(_num_nodes,                  SLE_UINT16)),
 		NSL("cargo",                      SLE_VAR(LinkGraph, cargo,            SLE_UINT8)),
 		NSLT_STRUCTLIST<LinkGraphNodeStructHandler>("nodes"),
+		NSLT_STRUCTLIST<LinkGraphEdgeRoutesStructHandler>("edge_routes"),
 	};
 	return link_graph_desc;
 }

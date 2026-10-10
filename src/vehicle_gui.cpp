@@ -3966,6 +3966,13 @@ private:
 	bool depot_select_active = false;
 	bool depot_select_ctrl_pressed = false;
 	bool fixed_route_overlay_active = false;
+
+	enum class QueryMode : uint8_t {
+		Rename,
+		CargoDistCostScale,
+		CargoDistCostAdd,
+	};
+	QueryMode query_mode = QueryMode::Rename;
 	bool invalidate_pending = false;
 
 	/** Display planes available in the vehicle view window. */
@@ -3982,6 +3989,8 @@ private:
 
 	enum LocationDropDownActions : uint8_t {
 		LDDA_FIXED_ROUTE_OVERLAY,
+		LDDA_CARGODIST_COST_SCALE,
+		LDDA_CARGODIST_COST_ADD,
 	};
 
 	bool mouse_over_start_stop = false;
@@ -4411,6 +4420,7 @@ public:
 
 		switch (widget) {
 			case WID_VV_RENAME: { // rename
+				this->query_mode = QueryMode::Rename;
 				ShowQueryString(GetString(STR_VEHICLE_NAME, v->index), STR_QUERY_RENAME_TRAIN_CAPTION + to_underlying(v->type),
 						MAX_LENGTH_VEHICLE_NAME_CHARS, this, CS_ALPHANUMERAL, {QueryStringFlag::EnableDefault, QueryStringFlag::LengthIsInChars});
 				break;
@@ -4471,6 +4481,10 @@ public:
 					add_colour(Colours::Brown);
 					add_colour(Colours::Pink);
 					add_colour(Colours::Red);
+
+					list.push_back(MakeDropDownListDividerItem());
+					list.push_back(MakeDropDownListStringItem(GetString(STR_VEHICLE_VIEW_CARGODIST_COST_SCALE, v->orders->GetCargoDistCostScale()), LDDA_CARGODIST_COST_SCALE));
+					list.push_back(MakeDropDownListStringItem(GetString(STR_VEHICLE_VIEW_CARGODIST_COST_ADD, v->orders->GetCargoDistCostAdd()), LDDA_CARGODIST_COST_ADD));
 				}
 
 				ShowDropDownList(this, std::move(list), -1, widget, 0, DropDownOptions{}, DDSF_SHARED);
@@ -4563,7 +4577,28 @@ public:
 	{
 		if (!str.has_value()) return;
 
-		Command<Commands::RenameVehicle>::Post(STR_ERROR_CAN_T_RENAME_TRAIN + to_underlying(Vehicle::Get(this->window_number)->type), static_cast<VehicleID>(this->window_number), *str);
+		const Vehicle *v = Vehicle::Get(this->window_number);
+		switch (this->query_mode) {
+			case QueryMode::Rename:
+				Command<Commands::RenameVehicle>::Post(STR_ERROR_CAN_T_RENAME_TRAIN + to_underlying(v->type), v->index, *str);
+				break;
+
+			case QueryMode::CargoDistCostScale:
+			case QueryMode::CargoDistCostAdd: {
+				if (str->empty() || v->orders == nullptr) return;
+				auto value = ParseInteger<uint>(*str);
+				if (!value.has_value()) return;
+				uint16_t scale = v->orders->GetCargoDistCostScale();
+				uint16_t add = v->orders->GetCargoDistCostAdd();
+				if (this->query_mode == QueryMode::CargoDistCostScale) {
+					scale = Clamp<uint>(*value, MIN_ROUTE_CARGODIST_COST_SCALE, MAX_ROUTE_CARGODIST_COST_SCALE);
+				} else {
+					add = std::min<uint>(*value, MAX_ROUTE_CARGODIST_COST_ADD);
+				}
+				Command<Commands::SetRouteCargoDistCost>::Post(STR_ERROR_CAN_T_MODIFY_THIS_ORDER, v->tile, v->index, scale, add);
+				break;
+			}
+		}
 	}
 
 	virtual void OnDropdownSelect(WidgetID widget, int index, int) override
@@ -4593,6 +4628,22 @@ public:
 							RemoveFixedViewportRoutePath(this->window_number);
 						}
 						break;
+
+					case LDDA_CARGODIST_COST_SCALE: {
+						const Vehicle *v = Vehicle::Get(this->window_number);
+						if (v->orders == nullptr) break;
+						this->query_mode = QueryMode::CargoDistCostScale;
+						ShowQueryString(GetString(STR_JUST_INT, v->orders->GetCargoDistCostScale()), STR_VEHICLE_VIEW_CARGODIST_COST_SCALE_QUERY, 5, this, CS_NUMERAL, {});
+						break;
+					}
+
+					case LDDA_CARGODIST_COST_ADD: {
+						const Vehicle *v = Vehicle::Get(this->window_number);
+						if (v->orders == nullptr) break;
+						this->query_mode = QueryMode::CargoDistCostAdd;
+						ShowQueryString(GetString(STR_JUST_INT, v->orders->GetCargoDistCostAdd()), STR_VEHICLE_VIEW_CARGODIST_COST_ADD_QUERY, 4, this, CS_NUMERAL, {});
+						break;
+					}
 
 					default:
 						break;

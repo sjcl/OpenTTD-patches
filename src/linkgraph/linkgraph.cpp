@@ -49,6 +49,9 @@ void LinkGraph::ShiftDates(EconTime::DateDelta interval)
 		if (edge.last_unrestricted_update != EconTime::INVALID_DATE) edge.last_unrestricted_update += interval;
 		if (edge.last_restricted_update != EconTime::INVALID_DATE) edge.last_restricted_update += interval;
 		if (edge.last_aircraft_update != EconTime::INVALID_DATE) edge.last_aircraft_update += interval;
+		for (EdgeRoute &route : edge.routes) {
+			if (route.last_update != EconTime::INVALID_DATE) route.last_update += interval;
+		}
 	}
 }
 
@@ -69,6 +72,9 @@ void LinkGraph::Compress()
 			}
 			edge.capacity = new_capacity;
 			edge.usage /= 2;
+		}
+		for (EdgeRoute &route : edge.routes) {
+			route.capacity = std::max(1U, route.capacity / 2);
 		}
 	}
 }
@@ -97,6 +103,9 @@ void LinkGraph::Merge(LinkGraph *other)
 			edge.capacity = LinkGraph::Scale(edge.capacity, age, other_age);
 			edge.usage = LinkGraph::Scale(edge.usage, age, other_age);
 			edge.travel_time_sum = LinkGraph::Scale(edge.travel_time_sum, age, other_age);
+			for (EdgeRoute &route : edge.routes) {
+				route.capacity = LinkGraph::Scale(route.capacity, age, other_age);
+			}
 		}
 		this->edges[key] = edge;
 	}
@@ -185,7 +194,7 @@ static void AddEdge(LinkGraph::BaseEdge &edge, uint capacity, uint usage, uint32
  * @param travel_time Travel time to be added, in ticks.
  * @param modes Update modes to be used.
  */
-void LinkGraph::UpdateEdge(NodeID from, NodeID to, uint capacity, uint usage, uint32_t travel_time, EdgeUpdateModes modes)
+void LinkGraph::UpdateEdge(NodeID from, NodeID to, uint capacity, uint usage, uint32_t travel_time, EdgeUpdateModes modes, const LinkGraphRouteInfo *route)
 {
 	assert(capacity > 0);
 	assert(usage <= capacity);
@@ -196,6 +205,7 @@ void LinkGraph::UpdateEdge(NodeID from, NodeID to, uint capacity, uint usage, ui
 	} else {
 		Edge(edge).Update(capacity, usage, travel_time, modes);
 	}
+	if (route != nullptr) Edge(edge).UpdateRoute(*route, capacity, modes);
 }
 
 /**
@@ -253,6 +263,51 @@ void LinkGraph::Edge::Update(uint capacity, uint usage, uint32_t travel_time, Ed
 	if (modes.Test(EdgeUpdateMode::Unrestricted)) edge.last_unrestricted_update = EconTime::CurDate();
 	if (modes.Test(EdgeUpdateMode::Restricted)) edge.last_restricted_update = EconTime::CurDate();
 	if (modes.Test(EdgeUpdateMode::Aircraft)) edge.last_aircraft_update = EconTime::CurDate();
+}
+
+/**
+ * Update the entry of the given route in the edge's route list, or add one if
+ * none exists yet. If the list is full, the least recently updated entry is replaced.
+ * @param info Route to be updated.
+ * @param capacity Capacity to be added/updated.
+ * @param modes Update modes to be applied.
+ */
+void LinkGraph::Edge::UpdateRoute(const LinkGraphRouteInfo &info, uint capacity, EdgeUpdateModes modes)
+{
+	std::vector<EdgeRoute> &routes = this->edge->routes;
+	auto it = std::find_if(routes.begin(), routes.end(), [&](const EdgeRoute &r) { return r.route == info.route; });
+	if (it == routes.end()) {
+		if (routes.size() < MAX_EDGE_ROUTES) {
+			it = routes.emplace(routes.end());
+		} else {
+			it = std::min_element(routes.begin(), routes.end(), [](const EdgeRoute &a, const EdgeRoute &b) {
+				return std::tie(a.last_update, a.capacity) < std::tie(b.last_update, b.capacity);
+			});
+		}
+		*it = {};
+		it->route = info.route;
+	}
+	it->vehicle_type = info.vehicle_type;
+	it->cost_scale = info.cost_scale;
+	it->cost_add = info.cost_add;
+	if (modes.Test(EdgeUpdateMode::Increase)) {
+		it->capacity += capacity;
+	} else {
+		it->capacity = std::max(it->capacity, capacity);
+	}
+	it->last_update = EconTime::CurDate();
+}
+
+/**
+ * Remove routes from the edge's route list which have not been updated within the timeout.
+ * @param timeout Timeout.
+ */
+void LinkGraph::Edge::PruneRoutes(EconTime::DateDelta timeout)
+{
+	const EconTime::Date now = EconTime::CurDate();
+	std::erase_if(this->edge->routes, [&](const EdgeRoute &r) {
+		return r.last_update == EconTime::INVALID_DATE || (now - r.last_update) > timeout;
+	});
 }
 
 /**

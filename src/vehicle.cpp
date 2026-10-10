@@ -3379,6 +3379,13 @@ void Vehicle::DeleteUnreachedImplicitOrders()
  */
 static void VehicleIncreaseStats(const Vehicle *front)
 {
+	LinkGraphRouteInfo route_info{};
+	const LinkGraphRouteInfo *route = nullptr;
+	if (front->orders != nullptr) {
+		route_info = front->orders->GetLinkGraphRouteInfo(front->type);
+		route = &route_info;
+	}
+
 	for (const Vehicle *v = front; v != nullptr; v = v->Next()) {
 		StationID last_loading_station = front->vehicle_flags.Test(VehicleFlag::LastLoadStationSeparate) ? v->last_loading_station : front->last_loading_station;
 		StateTicks loading_tick = front->vehicle_flags.Test(VehicleFlag::LastLoadStationSeparate) ? v->last_loading_tick : front->last_loading_tick;
@@ -3396,7 +3403,7 @@ static void VehicleIncreaseStats(const Vehicle *front)
 			EdgeUpdateModes restricted_modes{EdgeUpdateMode::Increase};
 			if (v->type == VehicleType::Aircraft) restricted_modes.Set(EdgeUpdateMode::Aircraft);
 			IncreaseStats(Station::Get(last_loading_station), v->cargo_type, front->last_station_visited, v->refit_cap,
-				std::min<uint>(v->refit_cap, v->cargo.StoredCount()), (_state_ticks - loading_tick).AsTicksT<uint32_t>(), restricted_modes);
+				std::min<uint>(v->refit_cap, v->cargo.StoredCount()), (_state_ticks - loading_tick).AsTicksT<uint32_t>(), restricted_modes, route);
 		}
 	}
 }

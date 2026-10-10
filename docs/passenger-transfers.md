@@ -108,8 +108,31 @@ additional random route choices until the via is reached or invalidated.
 Existing saves load with an invalid retained via. The new via is saved as a
 named, versioned CargoPacket field (`passenger_via` feature); older JGR readers
 can ignore this feature in table-format saves and resume their original
-behaviour. No LinkGraph or FlowStat save schema is changed. The packet gains
+behaviour. The passenger predictor does not change the LinkGraph or FlowStat
+save schema. The packet gains
 one StationID field; differing retained vias may reduce packet merging.
+
+## Imported route cost controls
+
+The `ns2091/OpenTTD-patches` branch `claude/brave-faraday-lfcafd` is integrated
+alongside the arrival comparison. It adds per-shared-order-list CargoDist cost
+scale and cost addition controls to the vehicle's route settings dropdown,
+plus the synchronized `linkgraph.transfer_penalty_same_mode` and
+`linkgraph.transfer_penalty_mode_change` settings. Route defaults are 100% and
+zero days; both global penalties default to zero days.
+
+These controls adjust background CargoDist path costs. They do not estimate
+waiting time or replace the onboard passenger predictor. Per-edge route costs
+are capacity-weighted, and transfers are inferred from the overlap of routes
+serving the incoming and outgoing edges. At most 16 route records are tracked
+per edge. Missing route metadata suppresses the corresponding transfer penalty.
+Job snapshots contain their own copies of route records and settings.
+
+The imported controls extend the LinkGraph and OrderList save data under the
+`linkgraph_route_penalty` feature. Saves made with the combined build require
+a reader that understands that feature. Existing saves without it use neutral
+route controls. The import also includes near-end stopping for trains longer
+than a platform and the MSVC SSE4 blitter name-lookup fix.
 
 ## Verification
 
@@ -142,12 +165,25 @@ On the local Windows Release build, 10,000 predictions across 1,024 orders took
 70–123 ms (73 ms on the final run), and staging 2,001 separate packets took
 1–4 ms. These are synthetic
 measurements, not national-map frame-time estimates. Both executable targets
-build successfully. The full unit suite passes 3,801 assertions in 203 cases;
+build successfully. With the imported controls, the full unit suite passes
+3,850 assertions in 207 cases;
 the explicit `[passenger]` run, including its hidden performance case, passes
-10,225 assertions in 10 cases. The existing `stationlist` regression save loads, saves
+10,229 assertions in 10 cases. The four `[route_penalties]` cases pass 45
+assertions, including running MCF with and without a transfer penalty and
+checking the resulting edge flows. All four existing script regression tests
+pass. The existing `stationlist` regression save loads, saves
 with the feature enabled, and reloads with the setting preserved. Its regression
 output passes when the generated test configuration uses installed Windows fonts
 (the default bundled-font loading emits extra diagnostics in this environment).
+Saving and reloading the combined build also preserves enabled timetable
+comparisons and nonzero same-mode/mode-change penalties (2 and 5 days).
+
+The import retains the three source commits (`678b409ffb`, `ce80526327`,
+`0bfd472e8a`). Integration resolves the three settings conflicts by keeping both
+sets of controls, saturates the added MCF transfer cost to avoid unsigned
+overflow, and adds `src/tests/linkgraph_route_penalties.cpp` plus its CMake entry.
+Large-map profiling, multiplayer replay and a physical long-train/platform
+scenario have not been run for the combined build.
 
 ## Changed files
 

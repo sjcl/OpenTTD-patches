@@ -48,6 +48,7 @@ DEF_CMD_TUPLE_LT (Commands::MoveOrder,              CmdMoveOrder,               
 DEF_CMD_TUPLE_LT (Commands::ReverseOrderList,       CmdReverseOrderList,                {}, CommandType::RouteManagement, CmdDataT<VehicleID, ReverseOrderOperation>)
 DEF_CMD_TUPLE_LT (Commands::DuplicateOrder,         CmdDuplicateOrder,                  {}, CommandType::RouteManagement, CmdDataT<VehicleID, VehicleOrderID>)
 DEF_CMD_TUPLE_LT (Commands::SetRouteOverlayColour,  CmdSetRouteOverlayColour,           {}, CommandType::RouteManagement, CmdDataT<VehicleID, Colours>)
+DEF_CMD_TUPLE_LT (Commands::SetRouteCargoDistCost,  CmdSetRouteCargoDistCost,           {}, CommandType::RouteManagement, CmdDataT<VehicleID, uint16_t, uint16_t>)
 DEF_CMD_TUPLE_NT (Commands::MassChangeOrder,        CmdMassChangeOrder,                 {}, CommandType::RouteManagement, CmdDataT<DestinationID, VehicleType, OrderType, CargoType, DestinationID>)
 DEF_CMD_TUPLE    (Commands::ClearOrderBackup,       CmdClearOrderBackup,     CMD_CLIENT_ID, CommandType::ServerSetting,   CmdDataT<ClientID>)
 

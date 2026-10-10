@@ -59,4 +59,12 @@ enum class EdgeUpdateMode : uint8_t {
 /** Bitset of \c EdgeUpdateMode elements. */
 using EdgeUpdateModes = EnumBitSet<EdgeUpdateMode, uint8_t>;
 
+/** Information about the route (shared order list) serving a link, used for route cost penalties and transfer detection. */
+struct LinkGraphRouteInfo {
+	uint16_t route;      ///< Route ID (order list ID).
+	uint8_t vehicle_type; ///< Vehicle type of the route.
+	uint16_t cost_scale; ///< Cost scale of the route, in percent.
+	uint16_t cost_add;   ///< Cost addition of the route, in days.
+};
+
 #endif /* LINKGRAPH_TYPE_H */

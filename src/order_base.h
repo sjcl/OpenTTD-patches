@@ -24,6 +24,7 @@
 #include "company_type.h"
 #include "date_type.h"
 #include "gfx_type.h"
+#include "linkgraph/linkgraph_type.h"
 #include "sl/saveload_common_type.h"
 
 #include <memory>
@@ -1180,6 +1181,10 @@ public:
  * Shared order list linking together the linked list of orders and the list
  *  of vehicles sharing this order list.
  */
+static const uint16_t MIN_ROUTE_CARGODIST_COST_SCALE = 10;   ///< Minimum cargo distribution route cost scale, in percent.
+static const uint16_t MAX_ROUTE_CARGODIST_COST_SCALE = 1000; ///< Maximum cargo distribution route cost scale, in percent.
+static const uint16_t MAX_ROUTE_CARGODIST_COST_ADD = 365;    ///< Maximum cargo distribution route cost addition, in days.
+
 struct OrderList : OrderListPool::PoolItem<&_orderlist_pool> {
 private:
 	friend void AfterLoadVehiclesPhase1(bool part_of_load); ///< For instantiating the shared vehicle chain
@@ -1192,6 +1197,9 @@ private:
 	std::vector<Order> orders;        ///< Order list.
 
 	Colours route_overlay_colour = Colours::White;
+
+	uint16_t cargodist_cost_scale = 100;  ///< Cargo distribution route cost scale, in percent.
+	uint16_t cargodist_cost_add = 0;      ///< Cargo distribution route cost addition, in days.
 
 	VehicleOrderID num_manual_orders = 0; ///< NOSAVE: How many manually added orders are there in the list.
 	uint num_vehicles = 0;                ///< NOSAVE: Number of vehicles that share this order list.
@@ -1433,6 +1441,26 @@ public:
 	void SetRouteOverlayColour(Colours colour)
 	{
 		this->route_overlay_colour = colour;
+	}
+
+	/** Get the cargo distribution route cost scale, in percent. */
+	uint16_t GetCargoDistCostScale() const { return this->cargodist_cost_scale; }
+
+	/** Get the cargo distribution route cost addition, in days. */
+	uint16_t GetCargoDistCostAdd() const { return this->cargodist_cost_add; }
+
+	void SetCargoDistCostScale(uint16_t scale) { this->cargodist_cost_scale = scale; }
+
+	void SetCargoDistCostAdd(uint16_t add) { this->cargodist_cost_add = add; }
+
+	/**
+	 * Get the link graph route information for this order list.
+	 * @param type Vehicle type of the vehicles using this order list.
+	 * @return Route information.
+	 */
+	LinkGraphRouteInfo GetLinkGraphRouteInfo(VehicleType type) const
+	{
+		return { this->index.base(), static_cast<uint8_t>(type), this->cargodist_cost_scale, this->cargodist_cost_add };
 	}
 
 	/**

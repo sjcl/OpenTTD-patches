@@ -557,6 +557,7 @@ enum class Commands : uint8_t {
 	InsertOrder,                            ///< insert a new order
 	DuplicateOrder,                         ///< duplicate an order
 	SetRouteOverlayColour,                  ///< set route overlay colour
+	SetRouteCargoDistCost,                  ///< set cargo distribution route cost penalty
 	MassChangeOrder,                        ///< mass change the target of an order
 	BulkOrder,                              ///< bulk order operations
 
