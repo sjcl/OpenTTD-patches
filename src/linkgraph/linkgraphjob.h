@@ -53,6 +53,9 @@ public:
 
 		uint flow = 0;               ///< Planned flow over this edge.
 
+		std::span<const LinkGraph::EdgeRoute> routes{}; ///< Routes serving this edge.
+		uint8_t vehicle_type_mask = 0; ///< Bit mask of vehicle types of the routes serving this edge.
+
 	public:
 		/**
 		 * Get edge's from node.
@@ -100,13 +103,30 @@ public:
 			this->flow -= flow;
 		}
 
-		void InitEdge(NodeID from, NodeID to, uint capacity, uint distance_anno)
+		/**
+		 * Get the routes serving this edge.
+		 * @return Routes.
+		 */
+		std::span<const LinkGraph::EdgeRoute> Routes() const { return this->routes; }
+
+		/**
+		 * Get the bit mask of vehicle types of the routes serving this edge.
+		 * @return Vehicle type mask.
+		 */
+		uint8_t VehicleTypeMask() const { return this->vehicle_type_mask; }
+
+		void InitEdge(NodeID from, NodeID to, uint capacity, uint distance_anno, std::span<const LinkGraph::EdgeRoute> routes)
 		{
 			this->from = from;
 			this->to = to;
 			this->capacity = capacity;
 			this->distance_anno = distance_anno;
 			this->flow = 0;
+			this->routes = routes;
+			this->vehicle_type_mask = 0;
+			for (const LinkGraph::EdgeRoute &route : routes) {
+				SetBit(this->vehicle_type_mask, route.vehicle_type);
+			}
 		}
 	};
 
@@ -147,6 +167,8 @@ protected:
 	NodeAnnotationVector nodes;       ///< Extra node data necessary for link graph calculation.
 	EdgeAnnotationVector edges;       ///< Edge data necessary for link graph calculation.
 	uint8_t day_length_factor;        ///< Day length factor for this job
+	uint transfer_penalty_same_mode = 0;   ///< Path cost penalty for transferring between routes of the same vehicle type.
+	uint transfer_penalty_mode_change = 0; ///< Path cost penalty for transferring between routes of different vehicle types.
 	std::atomic<bool> job_completed;  ///< Is the job still running. This is accessed by multiple threads and reads may be stale.
 	std::atomic<bool> job_aborted;    ///< Has the job been aborted. This is accessed by multiple threads and reads may be stale.
 
@@ -337,6 +359,29 @@ public:
 	inline const LinkGraphSettings &Settings() const { return this->settings; }
 
 	/**
+	 * Get the path cost penalty for transferring from one edge to another at the node between them.
+	 * No penalty applies if any route serves both edges, or if route information is missing for either edge.
+	 * @param in Edge used to arrive at the node, or nullptr if the node is the origin of the path.
+	 * @param out Edge used to leave the node.
+	 * @return Transfer penalty.
+	 */
+	inline uint GetTransferPenalty(const Edge *in, const Edge &out) const
+	{
+		if (in == nullptr) return 0;
+		if (this->transfer_penalty_same_mode == 0 && this->transfer_penalty_mode_change == 0) return 0;
+		std::span<const LinkGraph::EdgeRoute> in_routes = in->Routes();
+		std::span<const LinkGraph::EdgeRoute> out_routes = out.Routes();
+		if (in_routes.empty() || out_routes.empty()) return 0;
+		for (const LinkGraph::EdgeRoute &a : in_routes) {
+			for (const LinkGraph::EdgeRoute &b : out_routes) {
+				if (a.route == b.route) return 0;
+			}
+		}
+		if ((in->VehicleTypeMask() & out.VehicleTypeMask()) != 0) return this->transfer_penalty_same_mode;
+		return this->transfer_penalty_mode_change;
+	}
+
+	/**
 	 * Get a node abstraction with the specified id.
 	 * @param num ID of the node.
 	 * @return the Requested node.
@@ -478,6 +523,18 @@ public:
 	uint AddFlow(uint f, LinkGraphJob &job, uint max_saturation);
 	void Fork(Path *base, uint cap, int free_cap, uint dist);
 
+	/**
+	 * Get the edge used to arrive at this leg's node.
+	 * @return Incoming edge, or nullptr if none.
+	 */
+	inline const LinkGraphJob::Edge *GetInEdge() const { return this->in_edge; }
+
+	/**
+	 * Set the edge used to arrive at this leg's node.
+	 * @param edge Incoming edge.
+	 */
+	inline void SetInEdge(const LinkGraphJob::Edge *edge) { this->in_edge = edge; }
+
 	inline bool GetAnnosSetFlag() const { return HasBit(this->parent_storage, 0); }
 	inline void SetAnnosSetFlag(bool flag) { AssignBit(this->parent_storage, 0, flag); }
 
@@ -500,6 +557,7 @@ protected:
 	uint num_children = 0;        ///< Number of child legs that have been forked from this path.
 
 	uintptr_t parent_storage{};   ///< Parent leg of this one, flag in LSB of pointer
+	const LinkGraphJob::Edge *in_edge = nullptr; ///< Edge used to arrive at this leg's node, for the current run of Dijkstra.
 
 public:
 	/** Set the parent leg of this one, only for internal use, or when moving parent path. */

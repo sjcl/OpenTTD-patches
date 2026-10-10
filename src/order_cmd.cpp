@@ -486,6 +486,8 @@ void OrderList::CopyOrderListContents(const OrderList &other)
 {
 	this->orders = other.orders;
 	this->route_overlay_colour = other.route_overlay_colour;
+	this->cargodist_cost_scale = other.cargodist_cost_scale;
+	this->cargodist_cost_add = other.cargodist_cost_add;
 	this->num_manual_orders = other.num_manual_orders;
 	this->num_vehicles = other.num_vehicles;
 	this->first_shared = other.first_shared;
@@ -1024,6 +1026,32 @@ CommandCost CmdSetRouteOverlayColour(DoCommandFlags flags, VehicleID veh_id, Col
 
 	if (flags.Test(DoCommandFlag::Execute)) {
 		v->orders->SetRouteOverlayColour(colour);
+	}
+	return CommandCost();
+}
+
+/**
+ * Edit the cargo distribution path cost penalty of the vehicle's route (shared order list).
+ * @param flags type of operation
+ * @param veh_id ID of the vehicle
+ * @param cost_scale path cost scale, in percent
+ * @param cost_add path cost addition, in days
+ * @return the cost of this operation or an error
+ */
+CommandCost CmdSetRouteCargoDistCost(DoCommandFlags flags, VehicleID veh_id, uint16_t cost_scale, uint16_t cost_add)
+{
+	if (cost_scale < MIN_ROUTE_CARGODIST_COST_SCALE || cost_scale > MAX_ROUTE_CARGODIST_COST_SCALE) return CMD_ERROR;
+	if (cost_add > MAX_ROUTE_CARGODIST_COST_ADD) return CMD_ERROR;
+
+	Vehicle *v = Vehicle::GetIfValid(veh_id);
+	if (v == nullptr || !IsCompanyBuildableVehicleType(v) || !v->IsPrimaryVehicle() || v->orders == nullptr) return CMD_ERROR;
+
+	CommandCost ret = CheckOwnership(v->owner);
+	if (ret.Failed()) return ret;
+
+	if (flags.Test(DoCommandFlag::Execute)) {
+		v->orders->SetCargoDistCostScale(cost_scale);
+		v->orders->SetCargoDistCostAdd(cost_add);
 	}
 	return CommandCost();
 }

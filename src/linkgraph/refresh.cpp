@@ -335,6 +335,13 @@ void LinkRefresher::RefreshStats(const Order *cur, const Order *next, uint32_t t
 
 			if (flags.Test(RefreshFlag::Aircraft)) restricted_modes.Set(EdgeUpdateMode::Aircraft);
 
+			LinkGraphRouteInfo route_info{};
+			const LinkGraphRouteInfo *route = nullptr;
+			if (this->vehicle->orders != nullptr) {
+				route_info = this->vehicle->orders->GetLinkGraphRouteInfo(this->vehicle->type);
+				route = &route_info;
+			}
+
 			/* If the vehicle is currently full loading, increase the capacities at the station
 			 * where it is loading by an estimate of what it would have transported if it wasn't
 			 * loading. Don't do that if the vehicle has been waiting for longer than the entire
@@ -348,14 +355,14 @@ void LinkRefresher::RefreshStats(const Order *cur, const Order *next, uint32_t t
 				if (effective_capacity > (uint)this->vehicle->orders->GetTotalDuration()) {
 					IncreaseStats(st, cargo, next_station, effective_capacity /
 							this->vehicle->orders->GetTotalDuration(), 0, 0,
-							EdgeUpdateModes{EdgeUpdateMode::Increase} | restricted_modes);
+							EdgeUpdateModes{EdgeUpdateMode::Increase} | restricted_modes, route);
 				} else if (RandomRange(this->vehicle->orders->GetTotalDuration()) < effective_capacity) {
-					IncreaseStats(st, cargo, next_station, 1, 0, 0, EdgeUpdateModes{EdgeUpdateMode::Increase} | restricted_modes);
+					IncreaseStats(st, cargo, next_station, 1, 0, 0, EdgeUpdateModes{EdgeUpdateMode::Increase} | restricted_modes, route);
 				} else {
-					IncreaseStats(st, cargo, next_station, cargo_quantity, 0, time_estimate, EdgeUpdateModes{EdgeUpdateMode::Refresh} | restricted_modes);
+					IncreaseStats(st, cargo, next_station, cargo_quantity, 0, time_estimate, EdgeUpdateModes{EdgeUpdateMode::Refresh} | restricted_modes, route);
 				}
 			} else {
-				IncreaseStats(st, cargo, next_station, cargo_quantity, 0, time_estimate, EdgeUpdateModes{EdgeUpdateMode::Refresh} | restricted_modes);
+				IncreaseStats(st, cargo, next_station, cargo_quantity, 0, time_estimate, EdgeUpdateModes{EdgeUpdateMode::Refresh} | restricted_modes, route);
 			}
 		}
 	}

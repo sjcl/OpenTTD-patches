@@ -410,9 +410,13 @@ void MultiCommodityFlow::Dijkstra(NodeID source_node, PathVector &paths, Dijkstr
 				if (capacity == 0) capacity = 1;
 			}
 
+			/* Add the transfer penalty if the edge isn't served by any of the routes serving the edge used to arrive here. */
+			const uint distance = edge.DistanceAnno() + this->job.GetTransferPenalty(source->GetInEdge(), edge);
+
 			Tannotation *dest = local_paths + to;
-			if (dest->IsBetter(source, capacity, capacity - edge.Flow(), edge.DistanceAnno())) {
-				dest->Fork(source, capacity, capacity - edge.Flow(), edge.DistanceAnno());
+			if (dest->IsBetter(source, capacity, capacity - edge.Flow(), distance)) {
+				dest->Fork(source, capacity, capacity - edge.Flow(), distance);
+				dest->SetInEdge(&edge);
 				dest->UpdateAnnotation();
 				if (!dest->GetAnnosSetFlag() || !update_queue_anno(to, dest)) {
 					/* Add new item to queue */

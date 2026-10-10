@@ -4595,6 +4595,7 @@ void DeleteStaleLinks(Station *from)
 			if (edge.LastAircraftUpdate() != EconTime::INVALID_DATE && (EconTime::CurDate() - edge.LastAircraftUpdate()) > timeout) {
 				edge.ClearAircraft();
 			}
+			edge.PruneRoutes(timeout);
 			if ((EconTime::CurDate() - edge.LastUpdate()) > timeout) {
 				bool updated = false;
 
@@ -4685,8 +4686,9 @@ void DeleteStaleLinks(Station *from)
  * @param usage Usage to add to link stat.
  * @param time The travel time for the link.
  * @param modes Update modes to be applied.
+ * @param route Route (order list) serving the link, may be nullptr.
  */
-void IncreaseStats(Station *st, CargoType cargo, StationID next_station_id, uint capacity, uint usage, uint32_t time, EdgeUpdateModes modes)
+void IncreaseStats(Station *st, CargoType cargo, StationID next_station_id, uint capacity, uint usage, uint32_t time, EdgeUpdateModes modes, const LinkGraphRouteInfo *route)
 {
 	GoodsEntry &ge1 = st->goods[cargo];
 	Station *st2 = Station::Get(next_station_id);
@@ -4728,7 +4730,7 @@ void IncreaseStats(Station *st, CargoType cargo, StationID next_station_id, uint
 		}
 	}
 	if (lg != nullptr) {
-		lg->UpdateEdge(ge1.node, ge2.node, capacity, usage, time, modes);
+		lg->UpdateEdge(ge1.node, ge2.node, capacity, usage, time, modes, route);
 	}
 }
 

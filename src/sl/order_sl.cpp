@@ -519,6 +519,8 @@ NamedSaveLoadTable GetOrderListDescription()
 		NSL("",            SLE_CONDNULL_X(21,                                                             SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_JOKERPP))),
 
 		NSLT("route_overlay_colour", SLE_VAR(OrderList, route_overlay_colour, SLE_UINT8)),
+		NSLT("cargodist_cost_scale", SLE_VAR(OrderList, cargodist_cost_scale, SLE_UINT16)),
+		NSLT("cargodist_cost_add",   SLE_VAR(OrderList, cargodist_cost_add,   SLE_UINT16)),
 
 		NSLT_STRUCTLIST<OrderListDispatchScheduleStructHandler>("dispatch_schedule"),
 		NSLT_STRUCTLIST<OrderListOrderVectorStructHandler>("order_vector"),

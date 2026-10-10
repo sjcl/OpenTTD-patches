@@ -197,3 +197,12 @@ STR_INTRO_TOOLTIP_NEWGRF_SETTINGS                               :{BLACK}NewGRF�
 STR_INTRO_TOOLTIP_AI_SETTINGS                                   :{BLACK}AI設定を表示
 STR_INTRO_TOOLTIP_GAMESCRIPT_SETTINGS                           :{BLACK}ゲームスクリプト設定を表示
 STR_INTRO_CAPTION_TRADITIONAL                                   :{WHITE}OpenTTD {REV}
+
+STR_CONFIG_SETTING_TRANSFER_PENALTY_SAME_MODE                   :同じ交通機関の別路線への乗り換えペナルティ: {STRING2}
+STR_CONFIG_SETTING_TRANSFER_PENALTY_SAME_MODE_HELPTEXT          :同じ種類の乗り物の別の路線（オーダーリスト）へ乗り換える（例: 列車から別の列車）たびに、経路のコストにこの日数を加算します。{}乗り換え駅に到着する区間と出発する区間の両方を運行する路線（オーダーリスト）が無い場合に乗り換えとみなします。
+STR_CONFIG_SETTING_TRANSFER_PENALTY_MODE_CHANGE                 :別の交通機関への乗り換えペナルティ: {STRING2}
+STR_CONFIG_SETTING_TRANSFER_PENALTY_MODE_CHANGE_HELPTEXT        :異なる種類の乗り物の路線へ乗り換える（例: 列車からバス）たびに、経路のコストにこの日数を加算します。
+STR_VEHICLE_VIEW_CARGODIST_COST_SCALE                           :貨物分配の経路コスト倍率: {NUM}%
+STR_VEHICLE_VIEW_CARGODIST_COST_ADD                             :貨物分配の経路コスト加算: {NUM}日
+STR_VEHICLE_VIEW_CARGODIST_COST_SCALE_QUERY                     :{WHITE}この路線（共有オーダー）の貨物分配経路コスト倍率（%、10～1000）
+STR_VEHICLE_VIEW_CARGODIST_COST_ADD_QUERY                       :{WHITE}この路線（共有オーダー）の区間ごとの貨物分配経路コスト加算（日数、0～365）
