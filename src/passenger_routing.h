@@ -31,15 +31,22 @@ struct PassengerJourney {
 	bool reachable = false;
 	std::optional<StateTicks> departure;
 	std::optional<StateTicks> arrival;
+	bool boarding_now = false; ///< Boarding on the currently loading visit, before any intervening stops.
 };
 
 PassengerJourney PredictPassengerJourney(const PassengerRouteState &state, VehicleOrderID boarding_order, StationID target,
 		CargoType cargo, StateTicks now, bool allow_intermediate);
 
+/** Find the first catchable visit before arrival_limit. Exhaustion/unsupported predictions remain unknown. */
+PassengerJourney PredictPassengerConnection(const PassengerRouteState &state, VehicleOrderID boarding_order, StationID target,
+		CargoType cargo, StateTicks now, StateTicks earliest_boarding, StateTicks arrival_limit, size_t &budget,
+		bool skip_current_departure = false);
+
 enum class PassengerTransferDecision : uint8_t { Unknown, Stay, Transfer };
 
+/** alternatives_complete requires evaluating subsequent visits up to the stay arrival horizon. */
 PassengerTransferDecision ComparePassengerJourneys(const PassengerJourney &stay, std::span<const PassengerJourney> alternatives,
-		StateTicks now, Ticks transfer_penalty);
+		StateTicks now, Ticks transfer_penalty, bool alternatives_complete = false);
 
 /** Invalidate the station-to-order-list index when order destinations change or pools are reset. */
 void InvalidatePassengerServiceIndex();
@@ -49,12 +56,29 @@ void InvalidatePassengerServiceIndex();
  * Destruction invalidates all time estimates; no mutable state is read by LinkGraph jobs.
  */
 class PassengerRoutingContext {
+	struct Service {
+		std::vector<VehicleOrderID> boarding_orders;
+		bool may_refit = false;
+	};
+	struct Capacity {
+		uint64_t total = 0;
+		uint64_t free = 0; ///< Includes confirmed unloading here, and subtracts reservations.
+	};
 	const Vehicle *vehicle;
 	StationID station;
 	std::map<std::pair<CargoType, StationID>, PassengerTransferDecision> decisions;
 	std::map<std::pair<CargoType, StationID>, PassengerJourney> journeys;
-	size_t prediction_budget = 32768; ///< Bound worst-case order visits for all comparisons at this arrival.
-	std::optional<PassengerRouteState> GetState(const Vehicle *v) const;
+	std::map<std::pair<OrderListID, CargoType>, Service> services;
+	std::map<const Vehicle *, std::optional<PassengerRouteState>> states;
+	std::map<std::pair<const Vehicle *, CargoType>, Capacity> capacities;
+	std::map<CargoType, uint64_t> demands;
+	std::map<std::pair<CargoType, StationID>, uint64_t> waiting;
+	bool services_ready = false;
+	size_t prediction_budget = 32768; ///< Shared deterministic allowance, including discovery and dispatch slots.
+	const std::optional<PassengerRouteState> &GetState(const Vehicle *v);
+	const Capacity &GetCapacity(const Vehicle *v, CargoType cargo);
+	uint64_t GetDemand(CargoType cargo);
+	uint64_t GetWaiting(CargoType cargo, StationID target);
 
 public:
 	PassengerRoutingContext(const Vehicle *vehicle, StationID station) : vehicle(vehicle), station(station) {}

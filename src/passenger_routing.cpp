@@ -10,6 +10,7 @@
 #include "stdafx.h"
 #include "passenger_routing.h"
 #include "vehicle_base.h"
+#include "station_base.h"
 #include "settings_type.h"
 #include "timetable.h"
 #include "date_func.h"
@@ -22,13 +23,21 @@ static bool IsPassengerStop(const Order &order)
 	return order.IsType(OT_GOTO_STATION) && !(order.GetNonStopType() & ONSF_NO_STOP_AT_DESTINATION_STATION);
 }
 
+static bool ConsumePassengerWork(size_t &budget, size_t work = 1)
+{
+	if (work > budget) { budget = 0; return false; }
+	budget -= work;
+	return true;
+}
+
 /**
  * Predict a journey without averaging local and express services. Timings are absolute state ticks.
  * Unknown timings remain unknown: distance and station-level LinkGraph times are never substituted.
  * A visit to the boarding station again ends the journey, including out-and-back order lists.
  */
-PassengerJourney PredictPassengerJourney(const PassengerRouteState &state, VehicleOrderID boarding_order, StationID target,
-		CargoType cargo, StateTicks now, bool allow_intermediate)
+static PassengerJourney PredictPassengerJourneyImpl(const PassengerRouteState &state, VehicleOrderID boarding_order, StationID target,
+		CargoType cargo, StateTicks now, bool allow_intermediate, size_t &budget,
+		std::optional<StateTicks> earliest_boarding = {}, std::optional<StateTicks> arrival_limit = {}, bool skip_current_departure = false)
 {
 	PassengerJourney result;
 	if (state.orders.empty() || state.current_order >= state.orders.size() || boarding_order >= state.orders.size()) return result;
@@ -39,7 +48,9 @@ PassengerJourney PredictPassengerJourney(const PassengerRouteState &state, Vehic
 	/* Unsupported orders may change the path. Report uncertainty if the target occurs anywhere,
 	 * so a known slow service cannot conceal an unpredicted faster alternative. */
 	auto uncertain = [&]() -> PassengerJourney {
+		if (earliest_boarding) return { true, std::nullopt, std::nullopt };
 		for (const Order &order : state.orders) {
+			if (!ConsumePassengerWork(budget)) return { true, std::nullopt, std::nullopt };
 			if (IsPassengerStop(order) && order.GetDestination() == target && order.GetCargoUnloadType(cargo) != OrderUnloadType::NoUnload) {
 				return { true, std::nullopt, std::nullopt };
 			}
@@ -53,8 +64,13 @@ PassengerJourney PredictPassengerJourney(const PassengerRouteState &state, Vehic
 	bool boarded = false;
 	bool skip_travel = state.loading;
 	VehicleOrderID index = state.current_order;
-	/* At most one loop to board, and one loop to reach the via. Also bounds unconditional jumps. */
-	for (size_t steps = 0; steps < state.orders.size() * 2; ++steps) {
+	std::map<int, int32_t> dispatch_history;
+	std::optional<StateTicks> previous_boarding;
+	/* Connections may repeat the actual vehicle's circuit, never an averaged fleet headway.
+	 * The time horizon and shared work budget also bound zero-time loops and conditional jumps. */
+	for (size_t steps = 0; earliest_boarding || steps < state.orders.size() * 2; ++steps) {
+		if (arrival_limit && timing_known && tick >= *arrival_limit) return {};
+		if (!ConsumePassengerWork(budget)) return { true, std::nullopt, std::nullopt };
 		const Order &order = state.orders[index];
 		if (order.IsType(OT_CONDITIONAL)) {
 			if (order.GetConditionVariable() != OrderConditionVariable::Unconditionally) return uncertain();
@@ -88,6 +104,7 @@ PassengerJourney PredictPassengerJourney(const PassengerRouteState &state, Vehic
 		skip_travel = false;
 
 		const bool stop = IsPassengerStop(order);
+		if (arrival_limit && timing_known && tick >= *arrival_limit) return {};
 		if (boarded && stop) {
 			if (order.GetDestination() == boarding.GetDestination()) return {};
 			if (order.GetDestination() == target && order.GetCargoUnloadType(cargo) != OrderUnloadType::NoUnload) {
@@ -112,6 +129,7 @@ PassengerJourney PredictPassengerJourney(const PassengerRouteState &state, Vehic
 			if (order.GetLoadType() == OrderLoadType::CargoTypeLoad) {
 				/* Full loading another cargo in this consist can also hold up the passenger coach. */
 				for (CargoType other{}; other < NUM_CARGO; ++other) {
+					if (!ConsumePassengerWork(budget)) return { true, std::nullopt, std::nullopt };
 					if (IsFullLoadOrderLoadType(order.GetCargoLoadType(other))) timing_known = false;
 				}
 			}
@@ -129,8 +147,14 @@ PassengerJourney PredictPassengerJourney(const PassengerRouteState &state, Vehic
 				/* Multiple vehicles can compete for the same future slot. Until a slot is assigned,
 				 * don't guess their booking order. Already assigned loading departures remain usable. */
 				if (schedule.GetScheduledDispatchDuration() == 0 || (state.shared_vehicles > 1 && !schedule.GetScheduledDispatchReuseSlots())) return uncertain();
-				const StateTicks slot = GetScheduledDispatchTime(schedule, tick).first;
+				/* Slot search is linear in the dispatch slot count, not just the order count. */
+				if (!ConsumePassengerWork(budget, schedule.GetScheduledDispatch().size())) return { true, std::nullopt, std::nullopt };
+				auto history = dispatch_history.try_emplace(schedule_index, schedule.GetScheduledDispatchLastDispatch()).first;
+				const StateTicks slot = GetScheduledDispatchTime(schedule, tick, history->second).first;
 				if (slot == INVALID_STATE_TICKS) return uncertain();
+				const auto offset = (slot - schedule.GetScheduledDispatchStartTick()).base();
+				if (offset < INT32_MIN || offset > INT32_MAX) return uncertain();
+				history->second = static_cast<int32_t>(offset);
 				tick = std::max(tick, slot);
 				lateness = 0;
 			}
@@ -140,7 +164,18 @@ PassengerJourney PredictPassengerJourney(const PassengerRouteState &state, Vehic
 			tick += order.GetWaitTime();
 		}
 		if (!boarded && index == boarding_order) {
+			if (earliest_boarding) {
+				if (!timing_known) return uncertain();
+				if (tick >= *arrival_limit) return {};
+				if (previous_boarding && tick <= *previous_boarding) return uncertain();
+				previous_boarding = tick;
+			}
+			if ((earliest_boarding && tick < *earliest_boarding) || (steps == 0 && state.loading && skip_current_departure)) {
+				index = (index + 1) % state.orders.size();
+				continue;
+			}
 			boarded = true;
+			result.boarding_now = steps == 0 && state.loading;
 			if (timing_known) result.departure = tick;
 		}
 		index = (index + 1) % state.orders.size();
@@ -148,9 +183,23 @@ PassengerJourney PredictPassengerJourney(const PassengerRouteState &state, Vehic
 	return {};
 }
 
+PassengerJourney PredictPassengerJourney(const PassengerRouteState &state, VehicleOrderID boarding_order, StationID target,
+		CargoType cargo, StateTicks now, bool allow_intermediate)
+{
+	size_t budget = std::numeric_limits<size_t>::max();
+	return PredictPassengerJourneyImpl(state, boarding_order, target, cargo, now, allow_intermediate, budget);
+}
+
+PassengerJourney PredictPassengerConnection(const PassengerRouteState &state, VehicleOrderID boarding_order, StationID target,
+		CargoType cargo, StateTicks now, StateTicks earliest_boarding, StateTicks arrival_limit, size_t &budget, bool skip_current_departure)
+{
+	if (earliest_boarding >= arrival_limit) return {};
+	return PredictPassengerJourneyImpl(state, boarding_order, target, cargo, now, false, budget, earliest_boarding, arrival_limit, skip_current_departure);
+}
+
 /** Choose the earliest usable direct alternative, applying a minimum transfer time as well as a cost. */
 PassengerTransferDecision ComparePassengerJourneys(const PassengerJourney &stay, std::span<const PassengerJourney> alternatives,
-		StateTicks now, Ticks transfer_penalty)
+		StateTicks now, Ticks transfer_penalty, bool alternatives_complete)
 {
 	if (!stay.reachable || !stay.arrival) return PassengerTransferDecision::Unknown;
 	std::optional<StateTicks> best;
@@ -161,7 +210,7 @@ PassengerTransferDecision ComparePassengerJourneys(const PassengerJourney &stay,
 		const StateTicks arrival = *alternative.arrival + transfer_penalty;
 		if (!best || arrival < *best) best = arrival;
 	}
-	if (!best) return PassengerTransferDecision::Unknown;
+	if (!best) return alternatives_complete ? PassengerTransferDecision::Stay : PassengerTransferDecision::Unknown;
 	return *stay.arrival <= *best ? PassengerTransferDecision::Stay : PassengerTransferDecision::Transfer;
 }
 
@@ -169,6 +218,7 @@ PassengerTransferDecision ComparePassengerJourneys(const PassengerJourney &stay,
  * Those are read afresh for each arrival. Order destination registration invalidates the index. */
 static std::map<StationID, std::vector<OrderListID>> _passenger_service_index;
 static bool _passenger_service_index_valid = false;
+static size_t _passenger_service_index_work = 0;
 
 void InvalidatePassengerServiceIndex()
 {
@@ -177,9 +227,17 @@ void InvalidatePassengerServiceIndex()
 	_passenger_service_index.clear();
 }
 
-static const std::vector<OrderListID> &GetPassengerServices(StationID station)
+static bool PreparePassengerServiceIndex(size_t &budget)
 {
 	if (!_passenger_service_index_valid) {
+		/* Preflight bounds a cold rebuild. Charge the same logical discovery cost when warm:
+		 * peers (including a newly joined client) must not decide differently due to cache state. */
+		size_t work = 0;
+		for (const OrderList *list : OrderList::Iterate()) {
+			if (budget - work < 2 || list->GetNumOrders() > budget - work - 2) { budget = 0; return false; }
+			work += 2 + list->GetNumOrders(); // Both preflight and rebuild visit this list.
+		}
+		_passenger_service_index_work = work;
 		for (const OrderList *list : OrderList::Iterate()) {
 			const Vehicle *v = list->GetFirstSharedVehicle();
 			if (v == nullptr || v->type >= VehicleType::CompanyEnd) continue;
@@ -191,7 +249,14 @@ static const std::vector<OrderListID> &GetPassengerServices(StationID station)
 		}
 		_passenger_service_index_valid = true;
 	}
-	return _passenger_service_index[station];
+	return ConsumePassengerWork(budget, _passenger_service_index_work);
+}
+
+static const std::vector<OrderListID> &GetPassengerServices(StationID station)
+{
+	static const std::vector<OrderListID> empty;
+	auto it = _passenger_service_index.find(station);
+	return it == _passenger_service_index.end() ? empty : it->second;
 }
 
 bool PassengerRoutingContext::IsEnabled(CargoType cargo) const
@@ -200,17 +265,71 @@ bool PassengerRoutingContext::IsEnabled(CargoType cargo) const
 			IsCargoInClass(cargo, CargoClass::Passengers) && _settings_game.linkgraph.GetDistributionType(cargo) != DistributionType::Manual;
 }
 
-std::optional<PassengerRouteState> PassengerRoutingContext::GetState(const Vehicle *v) const
+const std::optional<PassengerRouteState> &PassengerRoutingContext::GetState(const Vehicle *v)
 {
-	if (v->orders == nullptr || v->GetNumOrders() == 0 || v->vehstatus.Any({VehState::Stopped, VehState::Crashed})) return std::nullopt;
-	if (v->cur_implicit_order_index != v->cur_real_order_index || v->cur_real_order_index >= v->GetNumOrders()) return std::nullopt;
-	if (v->cur_timetable_order_index != INVALID_VEH_ORDER_ID && v->cur_timetable_order_index != v->cur_real_order_index) return std::nullopt;
+	auto [it, inserted] = this->states.try_emplace(v);
+	if (!inserted) return it->second;
+	if (v->orders == nullptr || v->GetNumOrders() == 0 || v->vehstatus.Any({VehState::Stopped, VehState::Crashed})) return it->second;
+	if (v->cur_implicit_order_index != v->cur_real_order_index || v->cur_real_order_index >= v->GetNumOrders()) return it->second;
+	if (v->cur_timetable_order_index != INVALID_VEH_ORDER_ID && v->cur_timetable_order_index != v->cur_real_order_index) return it->second;
 	const Order *order = v->GetOrder(v->cur_real_order_index);
 	bool loading = v->current_order.IsAnyLoadingType();
 	if (loading ? (!IsPassengerStop(*order) || order->GetDestination() != v->last_station_visited) :
-			(v->current_order.GetType() != order->GetType() || v->current_order.GetDestination() != order->GetDestination())) return std::nullopt;
-	return PassengerRouteState{ v->orders->GetOrderVector(), v->orders->GetScheduledDispatchScheduleSet(), v->cur_real_order_index,
+			(v->current_order.GetType() != order->GetType() || v->current_order.GetDestination() != order->GetDestination())) return it->second;
+	it->second = PassengerRouteState{ v->orders->GetOrderVector(), v->orders->GetScheduledDispatchScheduleSet(), v->cur_real_order_index,
 			v->current_order_time, v->lateness_counter, loading, v->vehicle_flags.Test(VehicleFlag::ScheduledDispatch), v->orders->GetNumVehicles() };
+	return it->second;
+}
+
+const PassengerRoutingContext::Capacity &PassengerRoutingContext::GetCapacity(const Vehicle *v, CargoType cargo)
+{
+	auto [it, inserted] = this->capacities.try_emplace(std::pair(v, cargo));
+	if (!inserted) return it->second;
+	const bool loading_here = v->current_order.IsAnyLoadingType() && v->last_station_visited == this->station;
+	for (const Vehicle *u = v; u != nullptr; u = u->Next()) {
+		if (!ConsumePassengerWork(this->prediction_budget)) break;
+		if (u->cargo_type != cargo) continue;
+		it->second.total += u->cargo_cap;
+		/* TotalCount includes reserved loads. Only a staged unload at this visit is certain;
+		 * neither present occupancy nor packet flows predict unloading on a future circuit. */
+		const uint unloading = loading_here && u->vehicle_flags.Test(VehicleFlag::CargoUnloading) &&
+				v->current_order.GetCargoUnloadType(cargo) != OrderUnloadType::NoUnload ? u->cargo.UnloadCount() : 0;
+		const uint remaining = u->cargo.TotalCount() - unloading;
+		if (remaining < u->cargo_cap) it->second.free += u->cargo_cap - remaining;
+	}
+	return it->second;
+}
+
+uint64_t PassengerRoutingContext::GetDemand(CargoType cargo)
+{
+	auto [it, inserted] = this->demands.try_emplace(cargo, 0);
+	if (inserted) {
+		for (const Vehicle *u = this->vehicle; u != nullptr; u = u->Next()) {
+			if (!ConsumePassengerWork(this->prediction_budget)) break;
+			if (u->cargo_type == cargo) it->second += u->cargo.StoredCount();
+		}
+	}
+	return it->second;
+}
+
+uint64_t PassengerRoutingContext::GetWaiting(CargoType cargo, StationID target)
+{
+	const Station *st = Station::GetIfValid(this->station);
+	if (st == nullptr || st->goods[cargo].data == nullptr) return 0;
+	const auto *packets = st->goods[cargo].data->cargo.Packets();
+	/* The loader matches the next cargo stop, not an order list. These are competing eligible
+	 * queues, not station-wide passengers and not a reservation for a particular express. */
+	auto count = [&](StationID via) {
+		auto [it, inserted] = this->waiting.try_emplace(std::pair(cargo, via), 0);
+		if (!inserted) return it->second;
+		for (StationCargoList::ConstIterator cp(packets->lower_bound(via)); cp != packets->end() && cp.GetKey() == via; ++cp) {
+			if (!ConsumePassengerWork(this->prediction_budget)) return it->second;
+			it->second += (*cp)->Count();
+		}
+		return it->second;
+	};
+	const uint64_t via_count = count(target);
+	return target == StationID::Invalid() ? via_count : via_count + count(StationID::Invalid());
 }
 
 bool PassengerRoutingContext::CanContinue(CargoType cargo, StationID target)
@@ -220,11 +339,7 @@ bool PassengerRoutingContext::CanContinue(CargoType cargo, StationID target)
 	if (inserted) {
 		auto state = this->GetState(this->vehicle);
 		if (state) {
-			const size_t work = state->orders.size() * 3; // Two traversal loops plus a possible uncertainty scan.
-			if (work <= this->prediction_budget) {
-				this->prediction_budget -= work;
-				it->second = PredictPassengerJourney(*state, state->current_order, target, cargo, _state_ticks, true);
-			}
+			it->second = PredictPassengerJourneyImpl(*state, state->current_order, target, cargo, _state_ticks, true, this->prediction_budget);
 		}
 	}
 	return it->second.reachable && it->second.arrival.has_value();
@@ -234,55 +349,82 @@ PassengerTransferDecision PassengerRoutingContext::Decide(CargoType cargo, Stati
 {
 	auto key = std::pair(cargo, target);
 	auto [it, inserted] = this->decisions.try_emplace(key, PassengerTransferDecision::Unknown);
-	if (!inserted || !this->CanContinue(cargo, target)) return it->second;
-	std::vector<PassengerJourney> alternatives;
+	if (!inserted || !this->IsEnabled(cargo) || !this->CanContinue(cargo, target)) return it->second;
+	const PassengerJourney &stay = this->journeys.at(key);
+	const Ticks penalty = _settings_game.linkgraph.passenger_transfer_penalty;
+	const StateTicks earliest_boarding = _state_ticks + penalty;
+	const StateTicks arrival_limit = *stay.arrival - penalty;
+	if (earliest_boarding >= arrival_limit) return it->second = PassengerTransferDecision::Stay;
+	if (!this->services_ready) {
+		if (!PreparePassengerServiceIndex(this->prediction_budget)) return it->second;
+		this->services_ready = true;
+	}
+	const auto &target_services = GetPassengerServices(target);
+	const uint64_t demand = this->GetDemand(cargo);
+	const uint64_t waiting = this->GetWaiting(cargo, target);
+	if (this->prediction_budget == 0) return it->second;
+	PassengerJourney best_alternative;
+	bool evaluated_connection = false;
 	for (OrderListID id : GetPassengerServices(this->station)) {
+		if (!ConsumePassengerWork(this->prediction_budget)) return it->second;
+		/* IDs are indexed in pool order. Reject unrelated routes before inspecting their fleet. */
+		if (!std::binary_search(target_services.begin(), target_services.end(), id)) continue;
 		const OrderList *list = OrderList::GetIfValid(id);
 		if (list == nullptr) continue;
-		if (list->GetNumOrders() > this->prediction_budget) return it->second;
-		this->prediction_budget -= list->GetNumOrders();
+		auto [service, new_service] = this->services.try_emplace(std::pair(id, cargo));
+		if (new_service) {
+			if (!ConsumePassengerWork(this->prediction_budget, list->GetNumOrders())) return it->second;
+			for (VehicleOrderID index = 0; index < list->GetNumOrders(); ++index) {
+				const Order *order = list->GetOrderAt(index);
+				service->second.may_refit |= order->IsRefit();
+				if (IsPassengerStop(*order) && order->GetDestination() == this->station && order->GetCargoLoadType(cargo) != OrderLoadType::NoLoad) service->second.boarding_orders.push_back(index);
+			}
+		}
 		std::vector<VehicleOrderID> boarding_orders;
-		for (VehicleOrderID index = 0; index < list->GetNumOrders(); ++index) {
-			const Order *order = list->GetOrderAt(index);
-			if (IsPassengerStop(*order) && order->GetDestination() == this->station && order->GetCargoLoadType(cargo) != OrderLoadType::NoLoad) boarding_orders.push_back(index);
+		/* Validate the loading contract once per shared order list, not once per vehicle.
+		 * Only the next cargo stop can be a connection; dynamic branches remain relevant/unknown. */
+		for (VehicleOrderID index : service->second.boarding_orders) {
+			PassengerRouteState route{ list->GetOrderVector(), {}, index, 0, 0, true, false, list->GetNumVehicles() };
+			if (PredictPassengerJourneyImpl(route, index, target, cargo, _state_ticks, false, this->prediction_budget).reachable) boarding_orders.push_back(index);
+			if (this->prediction_budget == 0) return it->second;
 		}
 		if (boarding_orders.empty()) continue;
 		for (const Vehicle *v = list->GetFirstSharedVehicle(); v != nullptr; v = v->NextShared()) {
+			if (!ConsumePassengerWork(this->prediction_budget)) return it->second;
 			if (v == this->vehicle || !v->IsPrimaryVehicle()) continue;
-			bool capacity = false;
-			for (const Vehicle *u = v; u != nullptr; u = u->Next()) {
-				if (this->prediction_budget == 0) return it->second;
-				--this->prediction_budget;
-				if (u->cargo_type == cargo && u->cargo_cap > 0) { capacity = true; break; }
+			if (v->vehstatus.Any({VehState::Stopped, VehState::Crashed})) continue;
+			const Capacity &capacity = this->GetCapacity(v, cargo);
+			if (this->prediction_budget == 0) return it->second;
+			if (capacity.total == 0) {
+				/* A refit can create passenger capacity before a future boarding visit. */
+				if (service->second.may_refit) return it->second;
+				continue;
 			}
-			if (!capacity || v->vehstatus.Any({VehState::Stopped, VehState::Crashed})) continue;
+			evaluated_connection = true;
 			auto state = this->GetState(v);
 			for (VehicleOrderID index : boarding_orders) {
-				const size_t work = list->GetNumOrders() * 3;
-				if (work > this->prediction_budget) return it->second;
-				this->prediction_budget -= work;
-				if (state) {
-					PassengerJourney journey = PredictPassengerJourney(*state, index, target, cargo, _state_ticks, false);
-					if (v->type != VehicleType::Train && journey.reachable) {
-						/* A connection using another transport mode may be faster. This feature only
-						 * predicts trains, so preserve CargoDist's decision when such a connection exists. */
-						journey.departure.reset();
-						journey.arrival.reset();
-					}
-					alternatives.push_back(journey);
-				} else {
-					/* Check the route from this boarding order before declaring an unknown
-					 * connection. An unrelated service with unknown phase must not block it. */
-					PassengerRouteState route{ list->GetOrderVector(), list->GetScheduledDispatchScheduleSet(), index,
-							0, 0, true, false, list->GetNumVehicles() };
-					PassengerJourney journey = PredictPassengerJourney(route, index, target, cargo, _state_ticks, false);
+				if (!state || v->type != VehicleType::Train) {
+					return it->second;
+				}
+				const bool full_here = state->loading && state->current_order == index && capacity.free == 0;
+				PassengerJourney journey = PredictPassengerConnection(*state, index, target, cargo, _state_ticks,
+						earliest_boarding, arrival_limit, this->prediction_budget, full_here);
+				if (journey.reachable && (!journey.boarding_now || capacity.free < demand || capacity.free - demand < waiting)) {
+					/* Future loading/unloading and competition cannot be assigned to a service.
+					 * Present free seats must cover the whole arriving consist, so a cached
+					 * decision for many packets/coaches cannot promise the same few seats twice. */
 					journey.departure.reset();
 					journey.arrival.reset();
-					alternatives.push_back(journey);
 				}
+				if (this->prediction_budget == 0) return it->second;
+				if (!journey.reachable) continue;
+				if (!journey.departure || !journey.arrival) return it->second;
+				if (!best_alternative.arrival || *journey.arrival < *best_alternative.arrival) best_alternative = journey;
 			}
 		}
 	}
-	it->second = ComparePassengerJourneys(this->journeys.at(key), alternatives, _state_ticks, _settings_game.linkgraph.passenger_transfer_penalty);
+	/* With no active connection at all, keep CargoDist's route-change behaviour. Complete
+	 * exclusion of observed connections (missed/full/slower visits) is a positive comparison. */
+	it->second = ComparePassengerJourneys(stay, std::span(&best_alternative, 1), _state_ticks, penalty, evaluated_connection);
 	return it->second;
 }

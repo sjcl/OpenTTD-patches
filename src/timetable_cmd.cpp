@@ -773,6 +773,12 @@ void UpdateSeparationOrder(Vehicle *v_start)
  */
 std::pair<StateTicks, int> GetScheduledDispatchTime(const DispatchSchedule &ds, StateTicks leave_time)
 {
+	return GetScheduledDispatchTime(ds, leave_time, ds.GetScheduledDispatchLastDispatch());
+}
+
+/** Read-only slot search with a caller-owned dispatch history, for bounded timetable prediction. */
+std::pair<StateTicks, int> GetScheduledDispatchTime(const DispatchSchedule &ds, StateTicks leave_time, int32_t last_dispatch)
+{
 	const uint32_t dispatch_duration = ds.GetScheduledDispatchDuration();
 	const int32_t max_delay          = ds.GetScheduledDispatchDelay();
 	const StateTicks minimum         = leave_time - max_delay;
@@ -781,7 +787,7 @@ std::pair<StateTicks, int> GetScheduledDispatchTime(const DispatchSchedule &ds, 
 		begin_time -= dispatch_duration;
 	}
 
-	int32_t last_dispatched_offset = ds.GetScheduledDispatchLastDispatch();
+	int32_t last_dispatched_offset = last_dispatch;
 
 	if (minimum < begin_time) {
 		const uint32_t duration_adjust = (uint32_t)CeilDivT<uint64_t>((begin_time - minimum).base(), dispatch_duration);
@@ -789,7 +795,7 @@ std::pair<StateTicks, int> GetScheduledDispatchTime(const DispatchSchedule &ds, 
 		last_dispatched_offset += dispatch_duration * duration_adjust;
 	}
 
-	if (ds.GetScheduledDispatchLastDispatch() == INVALID_SCHEDULED_DISPATCH_OFFSET || ds.GetScheduledDispatchReuseSlots()) {
+	if (last_dispatch == INVALID_SCHEDULED_DISPATCH_OFFSET || ds.GetScheduledDispatchReuseSlots()) {
 		last_dispatched_offset = -1;
 	}
 
