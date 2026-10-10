@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file network_survey.h Part of the network protocol handling opt-in survey. */
@@ -24,16 +24,21 @@ protected:
 	bool IsCancelled() const override { return false; }
 
 public:
-	enum class Reason {
-		PREVIEW, ///< User is previewing the survey result.
-		LEAVE, ///< User is leaving the game (but not exiting the application).
-		EXIT, ///< User is exiting the application.
-		CRASH, ///< Game crashed.
+	/** Reason why the survey data is being sent. */
+	enum class Reason : uint8_t {
+		Preview, ///< User is previewing the survey result.
+		Leave, ///< User is leaving the game (but not exiting the application).
+		Exit, ///< User is exiting the application.
+		Crash, ///< Game crashed.
 	};
 
 	void Transmit(Reason reason, bool blocking = false);
 	std::string CreatePayload(Reason reason, bool for_preview = false);
 
+	/**
+	 * Check whether a survey is possible.
+	 * @return \c true.
+	 */
 	constexpr static bool IsSurveyPossible()
 	{
 #if !defined(SURVEY_KEY)
@@ -50,6 +55,7 @@ private:
 	std::condition_variable transmitted_cv; ///< Condition variable to inform changes to transmitted.
 };
 
+/** The handler for sending surveys for statistics. */
 extern NetworkSurveyHandler _survey;
 
 #endif /* NETWORK_SURVEY_H */

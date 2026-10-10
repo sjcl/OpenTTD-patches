@@ -2,15 +2,15 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
-/** @file 32bpp_anim.cpp Implementation of a partially SSSE2 32bpp blitter with animation support. */
+/** @file 32bpp_anim_sse2.cpp Implementation of a partially SSE2 32bpp blitter with animation support. */
 
 #ifdef WITH_SSE
 
 #include "../stdafx.h"
-#include "../video/video_driver.hpp"
+#include "../video/video_driver_base.hpp"
 #include "32bpp_anim_sse2.hpp"
 #include "32bpp_sse_func.hpp"
 
@@ -40,7 +40,7 @@ void Blitter_32bppSSE2_Anim::PaletteAnimate(const Palette &palette)
 	const int screen_pitch = _screen.pitch;
 	const int anim_pitch = this->anim_buf_pitch;
 	__m128i anim_cmp = _mm_set1_epi16(PALETTE_ANIM_START - 1);
-	__m128i brightness_cmp = _mm_set1_epi16(Blitter_32bppBase::DEFAULT_BRIGHTNESS);
+	__m128i brightness_cmp = _mm_set1_epi16(DEFAULT_BRIGHTNESS);
 	__m128i colour_mask = _mm_set1_epi16(0xFF);
 	for (int y = this->anim_buf_height; y != 0 ; y--) {
 		Colour *next_dst_ln = dst + screen_pitch;
@@ -92,7 +92,7 @@ void Blitter_32bppSSE2_Anim::PaletteAnimate(const Palette &palette)
 
 	if (screen_dirty) {
 		/* Make sure the backend redraws the whole screen */
-		VideoDriver::GetInstance()->MakeDirty(0, 0, _screen.width, _screen.height);
+		VideoDriverBase::GetInstance()->MakeDirty(0, 0, _screen.width, _screen.height);
 	}
 }
 

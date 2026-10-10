@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file geometry_func.hpp Geometry functions. */
@@ -26,5 +26,12 @@ inline bool IsEmptyRect(const Rect &r)
 }
 
 Rect BoundingRect(const Rect &r1, const Rect &r2);
+
+inline uint EuclideanDistanceSquared(const Point &a, const Point &b)
+{
+	int dx = a.x - b.x;
+	int dy = a.y - b.y;
+	return static_cast<uint>(dx * dx) + static_cast<uint>(dy * dy);
+}
 
 #endif /* GEOMETRY_FUNC_HPP */

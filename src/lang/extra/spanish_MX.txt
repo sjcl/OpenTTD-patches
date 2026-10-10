@@ -22,6 +22,8 @@ STR_TRANSPARENT_LOADING_TOOLTIP                                 :{BLACK}Transpar
 STR_LINKGRAPH_STATS_TOOLTIP_TIME_EXTENSION_GENERAL              :{}Tiempo promedio de viaje: {STRING}
 STR_LINKGRAPH_STATS_TOOLTIP_CAPACITY                            :{}Capacidad: {CARGO_LONG}
 
+STR_BUILD_SIGNAL_TOGGLE_ADVANCED_SIGNAL_TOOLTIP                 :{BLACK}Alternar vista de señales avanzadas
+
 # Tracerestrict GUI
 
 # Programmable Pre-Signals
@@ -104,3 +106,13 @@ STR_COMPANY_PASSWORD_MAKE_DEFAULT_TOOLTIP                       :{BLACK}Usar la 
 STR_COMPANY_VIEW_PASSWORD                                       :{BLACK}Contraseña
 STR_COMPANY_VIEW_PASSWORD_TOOLTIP                               :{BLACK}Proteger con contraseña tu empresa para prevenir que usuarios no autorizados se unan a ella
 STR_COMPANY_VIEW_SET_PASSWORD                                   :{BLACK}Establecer contraseña de la empresa
+
+# JSON messages
+
+STR_INTRO_NEWGRF_SETTINGS                                       :{BLACK}Configuración de NewGRF
+STR_INTRO_AI_SETTINGS                                           :{BLACK}Configuración de IA
+STR_INTRO_GAMESCRIPT_SETTINGS                                   :{BLACK}Configuración de script de juego
+STR_INTRO_TOOLTIP_NEWGRF_SETTINGS                               :{BLACK}Abrir configuración de NewGRF
+STR_INTRO_TOOLTIP_AI_SETTINGS                                   :{BLACK}Abrir configuración de IA
+STR_INTRO_TOOLTIP_GAMESCRIPT_SETTINGS                           :{BLACK}Abrir configuración de script de juego
+STR_INTRO_CAPTION_TRADITIONAL                                   :{WHITE}OpenTTD {REV}

@@ -2,23 +2,46 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
-/** @file newgrf_text_type.h Header of Action 04 "universal holder" structure */
+/** @file newgrf_text_type.h Header of Action 04 "universal holder" structure. */
 
 #ifndef NEWGRF_TEXT_TYPE_H
 #define NEWGRF_TEXT_TYPE_H
 
+#include "core/strong_typedef_type.hpp"
+#include "newgrf_type.h"
+
 #include <utility>
 #include <vector>
+
+/** Type for GRF-internal string IDs. */
+struct GRFStringIDTag : public StrongType::TypedefTraits<uint32_t, StrongType::Compare, StrongType::Integer> {};
+using GRFStringID = StrongType::Typedef<GRFStringIDTag>;
+
+static constexpr GRFStringID GRFSTR_MISC_GRF_TEXT{0xD000}; ///< Miscellaneous GRF text range.
 
 /** This character (thorn) indicates a unicode string to NFO. */
 static const char32_t NFO_UTF8_IDENTIFIER = 0x00DE;
 
+/** Incomplete enumeration of the (New)GRF languages. */
+enum class GRFLanguage : uint8_t {
+	American = 0, ///< American (English US)
+	English = 1, ///< English (English UK)
+	German = 2, ///< German
+	French = 3, ///< French
+	Spanish = 4, ///< Spanish
+
+	Unspecified = 0x7F, ///< No specific language.
+	End = 0x7F, ///< End marker of the valid languages.
+
+	Fallback = American, ///< Default fallback language.
+};
+
 /** A GRF text with associated language ID. */
 struct GRFText {
-	uint8_t langid;      ///< The language associated with this GRFText.
+	GRFLanguage langid; ///< The language associated with this GRFText.
 	std::string text; ///< The actual (translated) text.
 };
 
@@ -47,7 +70,7 @@ struct LanguageMap {
 
 	int GetMapping(int newgrf_id, bool gender) const;
 	int GetReverseMapping(int openttd_id, bool gender) const;
-	static const LanguageMap *GetLanguageMap(uint32_t grfid, uint8_t language_id);
+	static const LanguageMap *GetLanguageMap(GrfID grfid, GRFLanguage language_id);
 };
 
 #endif /* NEWGRF_TEXT_TYPE_H */

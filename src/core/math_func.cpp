@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file math_func.cpp Math functions. */
@@ -34,20 +34,17 @@ int DivideApprox(int a, int b)
 	return ret;
 }
 
-/**
- * Compute the integer square root.
- * @param num Radicand.
- * @return Rounded integer square root.
- * @note Algorithm taken from http://en.wikipedia.org/wiki/Methods_of_computing_square_roots
- */
-uint32_t IntSqrt(uint32_t num)
+template <typename T>
+T IntSqrtImplementation(T num)
 {
-	uint32_t res = 0;
-	uint32_t bit = 1UL << 30; // Second to top bit number.
+	if (num <= 1) return num;
 
 	/* 'bit' starts at the highest power of four <= the argument. */
-	while (bit > num) bit >>= 2;
+	uint8_t leading_zeroes = std::countl_zero<T>(num) | 1;
+	T bit = static_cast<T>(1) << (std::numeric_limits<T>::digits - leading_zeroes - 1);
 
+
+	T res = 0;
 	while (bit != 0) {
 		if (num >= res + bit) {
 			num -= res + bit;
@@ -70,28 +67,20 @@ uint32_t IntSqrt(uint32_t num)
  * @return Rounded integer square root.
  * @note Algorithm taken from http://en.wikipedia.org/wiki/Methods_of_computing_square_roots
  */
-uint32_t IntSqrt64(uint64_t num)
+uint32_t IntSqrt(uint32_t num)
 {
-	uint64_t res = 0;
-	uint64_t bit = 1ULL << 62; // Second to top bit number.
+	return IntSqrtImplementation<uint32_t>(num);
+}
 
-	/* 'bit' starts at the highest power of four <= the argument. */
-	while (bit > num) bit >>= 2;
-
-	while (bit != 0) {
-		if (num >= res + bit) {
-			num -= res + bit;
-			res = (res >> 1) + bit;
-		} else {
-			res >>= 1;
-		}
-		bit >>= 2;
-	}
-
-	/* Arithmetic rounding to nearest integer. */
-	if (num > res) res++;
-
-	return (uint32_t)res;
+/**
+ * Compute the integer square root.
+ * @param num Radicand.
+ * @return Rounded integer square root.
+ * @note Algorithm taken from http://en.wikipedia.org/wiki/Methods_of_computing_square_roots
+ */
+uint64_t IntSqrt64(uint64_t num)
+{
+	return IntSqrtImplementation<uint64_t>(num);
 }
 
 /**
@@ -107,14 +96,7 @@ uint32_t IntCbrt(uint64_t num)
 
 	if (num == 0) return 0;
 
-#ifdef WITH_BITMATH_BUILTINS
-	int b = 64 - __builtin_clzll(num);
-#ifdef _DEBUG
-	assert(b == FindLastBit(num) + 1);
-#endif
-#else
 	int b = FindLastBit(num) + 1;
-#endif
 
 	r0 <<= (b + 2) / 3; /* ceil(b / 3) */
 

@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file cocoa_wnd.h OS interface for the cocoa video driver. */
@@ -12,13 +12,9 @@
 
 #import <Cocoa/Cocoa.h>
 
-#ifdef MAC_OS_X_VERSION_10_12_2
-#	define HAVE_TOUCHBAR_SUPPORT
-#endif
-
 class VideoDriver_Cocoa;
 
-/* Right Mouse Button Emulation enum */
+/** Right Mouse Button Emulation enum. */
 enum RightMouseButtonEmulationState {
 	RMBE_COMMAND = 0,
 	RMBE_CONTROL = 1,
@@ -34,9 +30,7 @@ extern NSString *OTTDMainLaunchGameEngine;
 
 /** Subclass of NSWindow to cater our special needs */
 @interface OTTD_CocoaWindow : NSWindow
-#ifdef HAVE_TOUCHBAR_SUPPORT
 	<NSTouchBarDelegate>
-#endif
 
 - (instancetype)initWithContentRect:(NSRect)contentRect styleMask:(NSUInteger)styleMask backing:(NSBackingStoreType)backingType defer:(BOOL)flag driver:(VideoDriver_Cocoa *)drv;
 

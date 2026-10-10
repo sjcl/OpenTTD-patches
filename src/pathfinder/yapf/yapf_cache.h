@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file yapf_cache.h Entry point for OpenTTD to YAPF's cache. */
@@ -14,10 +14,34 @@
 #include "../../track_type.h"
 
 /**
+ * Base class for segment cost cache providers. Contains global counter
+ *  of track layout changes and static notification function called whenever
+ *  the track layout changes. It is implemented as base class because it needs
+ *  to be shared between all rail YAPF types (one shared counter, one notification
+ *  function.
+ */
+struct CSegmentCostCacheBase {
+	static int   s_rail_change_counter;
+
+	static void NotifyTrackLayoutChange()
+	{
+		s_rail_change_counter++;
+	}
+};
+
+/**
  * Use this function to notify YAPF that track layout (or signal configuration) has change.
  * @param tile  the tile that is changed
  * @param track what piece of track is changed
  */
-void YapfNotifyTrackLayoutChange(TileIndex tile, Track track);
+inline void YapfNotifyTrackLayoutChange(TileIndex tile, Track track)
+{
+	CSegmentCostCacheBase::NotifyTrackLayoutChange();
+}
+
+inline void YapfNotifyTrackLayoutChange(TileIndex tile, TrackBits tracks)
+{
+	if (tracks != TRACK_BIT_NONE) CSegmentCostCacheBase::NotifyTrackLayoutChange();
+}
 
 #endif /* YAPF_CACHE_H */

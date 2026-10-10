@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file ini.cpp Definition of the IniItem class, related to reading/writing '*.ini' files. */
@@ -26,7 +26,7 @@
 
 /**
  * Create a new ini file with given group names.
- * @param list_group_names A list with group names that should be loaded as lists instead of variables. @see IGT_LIST
+ * @param list_group_names A list with group names that should be loaded as lists instead of variables. @see IniGroupType::List
  */
 IniFile::IniFile(const IniGroupNameList &list_group_names) : IniLoadFile(list_group_names)
 {
@@ -80,6 +80,7 @@ bool IniFile::SaveToDisk(const std::string &filename)
  */
 #if defined(_POSIX_SYNCHRONIZED_IO) && _POSIX_SYNCHRONIZED_IO > 0
 	int f = open(file_new.c_str(), O_RDWR);
+	if (f < 0) return false;
 	int ret = fdatasync(f);
 	close(f);
 	if (ret != 0) return false;
@@ -103,7 +104,7 @@ bool IniFile::SaveToDisk(const std::string &filename)
 	return FioFOpenFile(filename, "rb", subdir, size);
 }
 
-/* virtual */ void IniFile::ReportFileError(const char * const pre, const char * const buffer, const char * const post)
+/* virtual */ void IniFile::ReportFileError(std::string_view message)
 {
-	ShowInfo("{}{}{}", pre, buffer, post);
+	ShowInfo("{}", message);
 }

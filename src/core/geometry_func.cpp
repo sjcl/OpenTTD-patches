@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file geometry_func.cpp Geometry functions. */
@@ -10,8 +10,23 @@
 #include "../stdafx.h"
 #include "geometry_func.hpp"
 #include "math_func.hpp"
+#include "../strings_func.h"
+#include "../strings_type.h"
 
 #include "../safeguards.h"
+
+/**
+ * Resolve horizontal alignment for the current text direction.
+ * @return The resolved horizontal alignment.
+ */
+AlignmentH Alignment::ResolveRTL() const
+{
+	switch (this->h) {
+		case AlignmentH::Start: return _current_text_dir == TD_RTL ? AlignmentH::ForceRight : AlignmentH::ForceLeft;
+		case AlignmentH::End: return _current_text_dir == TD_RTL ? AlignmentH::ForceLeft : AlignmentH::ForceRight;
+		default: return this->h;
+	}
+}
 
 /**
  * Compute bounding box of both dimensions.

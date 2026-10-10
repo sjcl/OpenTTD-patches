@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file hashtable.hpp Hash table support. */
@@ -55,13 +55,17 @@ public:
 		return this->data.size();
 	}
 
-	/** simple clear - forget all items - used by CSegmentCostCacheT.Flush() */
+	/** Clear all items. */
 	inline void Clear()
 	{
 		this->data.clear();
 	}
 
-	/** const item search */
+	/**
+	 * Try to find an item by key.
+	 * @param key The key to find.
+	 * @return The found item, or \c nullptr.
+	 */
 	const Titem *Find(const Tkey &key) const
 	{
 		auto iter = this->data.find(key.GetHashKey());
@@ -69,7 +73,11 @@ public:
 		return nullptr;
 	}
 
-	/** non-const item search */
+	/**
+	 * Try to find an item by key.
+	 * @param key The key to find.
+	 * @return The found item, or \c nullptr.
+	 */
 	Titem *Find(const Tkey &key)
 	{
 		auto iter = this->data.find(key.GetHashKey());
@@ -77,7 +85,11 @@ public:
 		return nullptr;
 	}
 
-	/** non-const item search & optional removal (if found) */
+	/**
+	 * Remove an item by key if found.
+	 * @param key The key to search for.
+	 * @return The popped element, or \c nullptr.
+	 */
 	Titem *TryPop(const Tkey &key)
 	{
 		auto iter = this->data.find(key.GetHashKey());
@@ -89,7 +101,11 @@ public:
 		return nullptr;
 	}
 
-	/** non-const item search & removal */
+	/**
+	 * Remove an item by key that must exist.
+	 * @param key The key to search for.
+	 * @return The popped element; never \c nullptr.
+	 */
 	Titem &Pop(const Tkey &key)
 	{
 		Titem *item = TryPop(key);
@@ -97,7 +113,11 @@ public:
 		return *item;
 	}
 
-	/** non-const item search & optional removal (if found) */
+	/**
+	 * Remove an item if found.
+	 * @param item The item to remove.
+	 * @return \c true iff the item existed.
+	 */
 	bool TryPop(Titem &item)
 	{
 		auto iter = this->data.find(item.GetKey().GetHashKey());
@@ -108,14 +128,20 @@ public:
 		return false;
 	}
 
-	/** non-const item search & removal */
+	/**
+	 * Remove an item that must exist.
+	 * @param item The item to remove.
+	 */
 	void Pop(Titem &item)
 	{
 		[[maybe_unused]] bool ret = TryPop(item);
 		assert(ret);
 	}
 
-	/** add one item - copy it from the given item */
+	/**
+	 * Add an item that may not exist.
+	 * @param new_item The item to add.
+	 */
 	void Push(Titem &new_item)
 	{
 		this->data[new_item.GetKey().GetHashKey()] = &new_item;

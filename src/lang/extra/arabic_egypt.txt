@@ -91,3 +91,11 @@ STR_COMPANY_PASSWORD_MAKE_DEFAULT_TOOLTIP                       :{BLACK}استخ
 STR_COMPANY_VIEW_PASSWORD                                       :{BLACK}كلمة المرور
 STR_COMPANY_VIEW_PASSWORD_TOOLTIP                               :{BLACK}احمي شركتك بكلمة مرور خاصة لمنع الوصول الغير مسموح من اللاعبين الآخرين.
 STR_COMPANY_VIEW_SET_PASSWORD                                   :{BLACK}ادخل كلمة المرور
+
+# JSON messages
+
+STR_INTRO_NEWGRF_SETTINGS                                       :{BLACK} اعدادات NewGRF
+STR_INTRO_AI_SETTINGS                                           :{BLACK}اعدادات االذكاء الاصطناعي
+STR_INTRO_TOOLTIP_NEWGRF_SETTINGS                               :{BLACK}عرض إعدادات اﻹضافات
+STR_INTRO_TOOLTIP_AI_SETTINGS                                   :{BLACK} اعدادات الOpen AI
+STR_INTRO_CAPTION_TRADITIONAL                                   :{WHITE}OpenTTD {REV}

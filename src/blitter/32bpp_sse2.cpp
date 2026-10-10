@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file 32bpp_sse2.cpp Implementation of the SSE2 32 bpp blitter. */
@@ -20,24 +20,23 @@
 /** Instantiation of the SSE2 32bpp blitter factory. */
 static FBlitter_32bppSSE2 iFBlitter_32bppSSE2;
 
-Sprite *Blitter_32bppSSE_Base::Encode(const SpriteLoader::SpriteCollection &sprite, SpriteAllocator &allocator)
+Sprite *Blitter_32bppSSE_Base::Encode(SpriteType sprite_type, const SpriteLoader::SpriteCollection &sprite, SpriteAllocator &allocator)
 {
 	/* First uint32_t of a line = the number of transparent pixels from the left.
 	 * Second uint32_t of a line = the number of transparent pixels from the right.
 	 * Then all RGBA then all MV.
 	 */
-	ZoomLevel zoom_min = ZOOM_LVL_MIN;
-	ZoomLevel zoom_max = ZOOM_LVL_MIN;
-	uint8_t missing_zoom_levels = 0;
-	if (sprite[ZOOM_LVL_MIN].type != SpriteType::Font) {
+	ZoomLevel zoom_min = ZoomLevel::Min;
+	ZoomLevel zoom_max = ZoomLevel::Min;
+	LowZoomLevels missing_zoom_levels = {};
+	if (sprite_type != SpriteType::Font) {
 		zoom_min = _settings_client.gui.zoom_min;
-		zoom_max =  (ZoomLevel) std::min(_settings_client.gui.zoom_max, ZOOM_LVL_DRAW_SPR);
-		if (zoom_max == zoom_min) zoom_max = ZOOM_LVL_DRAW_SPR;
+		zoom_max = std::min<ZoomLevel>(_settings_client.gui.zoom_max, ZoomLevel::SpriteMax);
+		if (zoom_max == zoom_min) zoom_max = ZoomLevel::SpriteMax;
 	}
 
 	/* Calculate sizes and allocate. */
-	SpriteData sd;
-	memset(&sd, 0, sizeof(sd));
+	SpriteData sd{};
 	uint all_sprites_size = 0;
 	for (ZoomLevel z = zoom_min; z <= zoom_max; z++) {
 		const SpriteLoader::Sprite *src_sprite = &sprite[z];
@@ -46,7 +45,7 @@ Sprite *Blitter_32bppSSE_Base::Encode(const SpriteLoader::SpriteCollection &spri
 			sd.infos[z].mv_offset = 0;
 			sd.infos[z].sprite_line_size = 0;
 			sd.infos[z].sprite_width = 0;
-			SetBit(missing_zoom_levels, z);
+			missing_zoom_levels.Set(z);
 			continue;
 		}
 
@@ -62,10 +61,11 @@ Sprite *Blitter_32bppSSE_Base::Encode(const SpriteLoader::SpriteCollection &spri
 	}
 
 	Sprite *dst_sprite = allocator.Allocate<Sprite>(sizeof(Sprite) + sizeof(SpriteData) + all_sprites_size);
-	dst_sprite->height = sprite[ZOOM_LVL_MIN].height;
-	dst_sprite->width  = sprite[ZOOM_LVL_MIN].width;
-	dst_sprite->x_offs = sprite[ZOOM_LVL_MIN].x_offs;
-	dst_sprite->y_offs = sprite[ZOOM_LVL_MIN].y_offs;
+	const auto &root_sprite = sprite.Root();
+	dst_sprite->height = root_sprite.height;
+	dst_sprite->width = root_sprite.width;
+	dst_sprite->x_offs = root_sprite.x_offs;
+	dst_sprite->y_offs = root_sprite.y_offs;
 	dst_sprite->next = nullptr;
 	dst_sprite->missing_zoom_levels = missing_zoom_levels;
 	memcpy(dst_sprite->data, &sd, sizeof(SpriteData));
@@ -89,19 +89,19 @@ Sprite *Blitter_32bppSSE_Base::Encode(const SpriteLoader::SpriteCollection &spri
 					dst_rgba->a = src->a;
 					if (src->a != 0 && src->a != 255) has_translucency = true;
 					dst_mv->m = src->m;
-					if (z >= _settings_client.gui.disable_water_animation && src->m >= 245 && src->m <= 254) {
+					if (to_underlying(z) >= _settings_client.gui.disable_water_animation && src->m >= 245 && src->m <= 254) {
 						/* Get brightest value */
 						uint8_t rgb_max = std::max({ src->r, src->g, src->b });
 
 						/* Black pixel (8bpp or old 32bpp image), so use default value */
-						if (rgb_max == 0) rgb_max = Blitter_32bppBase::DEFAULT_BRIGHTNESS;
+						if (rgb_max == 0) rgb_max = DEFAULT_BRIGHTNESS;
 
 						extern Colour _water_palette[10];
 						Colour c = AdjustBrightneSSE(_water_palette[src->m - 245], rgb_max);
 						dst_rgba->r = c.r;
 						dst_rgba->g = c.g;
 						dst_rgba->b = c.b;
-						dst_mv->v = Blitter_32bppBase::DEFAULT_BRIGHTNESS;
+						dst_mv->v = DEFAULT_BRIGHTNESS;
 					} else if (src->m != 0) {
 						/* Do some accounting for flags. */
 						has_remap = true;
@@ -109,7 +109,7 @@ Sprite *Blitter_32bppSSE_Base::Encode(const SpriteLoader::SpriteCollection &spri
 
 						/* Get brightest value (or default brightness if it's a black pixel). */
 						const uint8_t rgb_max = std::max({src->r, src->g, src->b});
-						dst_mv->v = (rgb_max == 0) ? Blitter_32bppBase::DEFAULT_BRIGHTNESS : rgb_max;
+						dst_mv->v = (rgb_max == 0) ? DEFAULT_BRIGHTNESS : rgb_max;
 
 						/* Pre-convert the mapping channel to a RGB value. */
 						const Colour colour = AdjustBrightneSSE(Blitter_32bppBase::LookupColourInPalette(src->m), dst_mv->v);
@@ -120,7 +120,7 @@ Sprite *Blitter_32bppSSE_Base::Encode(const SpriteLoader::SpriteCollection &spri
 						dst_rgba->r = src->r;
 						dst_rgba->g = src->g;
 						dst_rgba->b = src->b;
-						dst_mv->v = Blitter_32bppBase::DEFAULT_BRIGHTNESS;
+						dst_mv->v = DEFAULT_BRIGHTNESS;
 					}
 				} else {
 					dst_rgba->data = 0;
@@ -139,7 +139,7 @@ Sprite *Blitter_32bppSSE_Base::Encode(const SpriteLoader::SpriteCollection &spri
 				else break;
 				dst_rgba++;
 			}
-			(*dst_rgba_line).data = nb_pix_transp;
+			dst_rgba_line->data = nb_pix_transp;
 
 			Colour *nb_right = dst_rgba_line + 1;
 			dst_rgba_line = (Colour*) ((uint8_t*) dst_rgba_line + sd.infos[z].sprite_line_size);
@@ -152,7 +152,7 @@ Sprite *Blitter_32bppSSE_Base::Encode(const SpriteLoader::SpriteCollection &spri
 				else break;
 				dst_rgba--;
 			}
-			(*nb_right).data = nb_pix_transp;
+			nb_right->data = nb_pix_transp;
 		}
 	}
 

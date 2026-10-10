@@ -25,7 +25,7 @@ jobs:
   
     steps:
     - name: Download source
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v8
       with:
         name: internal-source
 
@@ -52,9 +52,11 @@ jobs:
         echo "::group::Install system dependencies"
         # perl-IPC-Cmd, wget, and zip are needed to run vcpkg.
         # autoconf-archive is needed to build ICU.
+        # perl-Time-Piece is needed to build OpenSSL.
         yum install -y \
           autoconf-archive \
           perl-IPC-Cmd \
+          perl-Time-Piece \
           wget \
           zip \
           # EOF
@@ -86,7 +88,7 @@ jobs:
         cd build
 
         echo "::group::CMake"
-        cmake ${GITHUB_WORKSPACE} \
+        CMAKE_POLICY_VERSION_MINIMUM=3.5 cmake ${GITHUB_WORKSPACE} \
           -DCMAKE_TOOLCHAIN_FILE=/vcpkg/scripts/buildsystems/vcpkg.cmake \
           -DCMAKE_BUILD_TYPE=Release \
           -DOPTION_DEDICATED=ON \
@@ -117,7 +119,7 @@ jobs:
         echo "::endgroup::"
 
     - name: Store bundles
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: openttd-linux-dedicated
         path: build/bundles

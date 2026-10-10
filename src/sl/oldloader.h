@@ -2,10 +2,10 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
-/** @file oldloader.h Declarations of strctures and function used in loader of old savegames */
+/** @file oldloader.h Declarations of structures and functions used in loader of old savegames. */
 
 #ifndef SL_OLDLOADER_H
 #define SL_OLDLOADER_H
@@ -19,20 +19,23 @@ static const uint OLD_MAP_SIZE = 256 * 256;
 struct LoadgameState {
 	std::optional<FileHandle> file;
 
-	uint chunk_size;
+	uint chunk_size = 0;
 
-	bool decoding;
-	uint8_t decode_char;
+	bool decoding = false;
+	uint8_t decode_char = 0;
 
-	uint buffer_count;
-	uint buffer_cur;
-	uint8_t buffer[BUFFER_SIZE];
+	uint buffer_count = 0;
+	uint buffer_cur = 0;
+	std::array<uint8_t, BUFFER_SIZE> buffer{};
 
-	uint total_read;
+	uint total_read = 0;
+
+	uint8_t vehicle_multiplier = 1; ///< TTDPatch vehicle multiplier
+	std::vector<StringID> vehicle_names;
 };
 
-/* OldChunk-Type */
-enum OldChunkType {
+/** OldChunk-Type. */
+enum OldChunkType : uint32_t {
 	OC_SIMPLE    = 0,
 	OC_NULL      = 1,
 	OC_CHUNK     = 2,
@@ -70,18 +73,12 @@ enum OldChunkType {
 
 	OC_TILE      = OC_VAR_U32  | OC_FILE_U16,
 
-	/**
-	 * Dereference the pointer once before writing to it,
-	 * so we do not have to use big static arrays.
-	 */
-	OC_DEREFERENCE_POINTER = 1 << 31,
-
 	OC_END       = 0, ///< End of the whole chunk, all 32 bits set to zero
 };
 
 DECLARE_ENUM_AS_BIT_SET(OldChunkType)
 
-typedef bool OldChunkProc(LoadgameState *ls, int num);
+typedef bool OldChunkProc(LoadgameState &ls, int num);
 
 struct OldChunks {
 	OldChunkType type;   ///< Type of field
@@ -96,19 +93,19 @@ struct OldChunks {
 static_assert(sizeof(TileIndex) == 4);
 
 extern uint _bump_assert_value;
-uint8_t ReadByte(LoadgameState *ls);
-bool LoadChunk(LoadgameState *ls, void *base, const OldChunks *chunks);
+uint8_t ReadByte(LoadgameState &ls);
+bool LoadChunk(LoadgameState &ls, void *base, const OldChunks *chunks);
 
-bool LoadTTDMain(LoadgameState *ls);
-bool LoadTTOMain(LoadgameState *ls);
+bool LoadTTDMain(LoadgameState &ls);
+bool LoadTTOMain(LoadgameState &ls);
 
-inline uint16_t ReadUint16(LoadgameState *ls)
+inline uint16_t ReadUint16(LoadgameState &ls)
 {
 	uint8_t x = ReadByte(ls);
 	return x | ReadByte(ls) << 8;
 }
 
-inline uint32_t ReadUint32(LoadgameState *ls)
+inline uint32_t ReadUint32(LoadgameState &ls)
 {
 	uint16_t x = ReadUint16(ls);
 	return x | ReadUint16(ls) << 16;
@@ -130,6 +127,7 @@ inline uint32_t ReadUint32(LoadgameState *ls)
 #define OCL_CCHUNK(type, amount, proc)       { OC_CHUNK | type, amount, nullptr,    0,                             proc }
 #define OCL_ASSERT(type, size)               { OC_ASSERT | type,     1, nullptr, size,                             nullptr }
 #define OCL_NULL(amount)        OCL_CNULL((OldChunkType)0, amount)
+/** Load another proc to load a part of the savegame, 'amount' times. */
 #define OCL_CHUNK(amount, proc) OCL_CCHUNK((OldChunkType)0, amount, proc)
 
 #endif /* SL_OLDLOADER_H */

@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file texteff.cpp Handling of text effects. */
@@ -24,7 +24,7 @@ struct TextEffect : public ViewportSign {
 	uint64_t params_1;   ///< DParam parameter
 	uint64_t params_2;   ///< second DParam parameter
 	StringID string_id;  ///< String to draw for the text effect, if INVALID_STRING_ID then it's not valid
-	uint8_t duration;    ///< How long the text effect should stay, in ticks (applies only when mode == TE_RISING)
+	uint8_t duration;    ///< How long the text effect should stay, in ticks (applies only when mode == TextEffectMode::Rising)
 	TextEffectMode mode; ///< Type of text effect
 
 	void Reset();
@@ -36,7 +36,7 @@ static TextEffectID _free_text_effect = 0;
 /** Reset the text effect */
 void TextEffect::Reset()
 {
-	this->MarkDirty(ZOOM_LVL_TEXT_EFFECT);
+	this->MarkDirty(ZoomLevel::TextEffect);
 	this->width_normal = 0;
 	this->string_id = INVALID_STRING_ID;
 	this->params_1 = _free_text_effect;
@@ -46,7 +46,7 @@ void TextEffect::Reset()
 /* Text Effects */
 TextEffectID AddTextEffect(StringID msg, int center, int y, uint8_t duration, TextEffectMode mode, uint64_t param1, uint64_t param2)
 {
-	if (_game_mode == GM_MENU) return INVALID_TE_ID;
+	if (_game_mode == GameMode::Menu) return INVALID_TE_ID;
 
 	TextEffectID i = _free_text_effect;
 	if (i == _text_effects.size()) {
@@ -67,9 +67,8 @@ TextEffectID AddTextEffect(StringID msg, int center, int y, uint8_t duration, Te
 
 	/* Make sure we only dirty the new area */
 	te.width_normal = 0;
-	SetDParam(0, param1);
-	SetDParam(1, param2);
-	te.UpdatePosition(ZOOM_LVL_TEXT_EFFECT, center, y, msg);
+	auto params = MakeParameters(param1, param2);
+	te.UpdatePosition(ZoomLevel::TextEffect, center, y, params, msg);
 
 	return i;
 }
@@ -83,18 +82,16 @@ void UpdateTextEffect(TextEffectID te_id, StringID msg, uint64_t param1, uint64_
 	te->params_1 = param1;
 	te->params_2 = param2;
 
-	SetDParam(0, param1);
-	SetDParam(1, param2);
-	te->UpdatePosition(ZOOM_LVL_TEXT_EFFECT, te->center, te->top, te->string_id);
+	auto params = MakeParameters(param1, param2);
+	te->UpdatePosition(ZoomLevel::TextEffect, te->center, te->top, params, msg);
 }
 
 void UpdateAllTextEffectVirtCoords()
 {
 	for (auto &te : _text_effects) {
 		if (te.string_id == INVALID_STRING_ID) continue;
-		SetDParam(0, te.params_1);
-		SetDParam(1, te.params_2);
-		te.UpdatePosition(ZOOM_LVL_TEXT_EFFECT, te.center, te.top, te.string_id);
+		auto params = MakeParameters(te.params_1, te.params_2);
+		te.UpdatePosition(ZoomLevel::TextEffect, te.center, te.top, params, te.string_id);
 	}
 }
 
@@ -111,17 +108,17 @@ void MoveAllTextEffects(uint delta_ms)
 
 	for (TextEffect &te : _text_effects) {
 		if (te.string_id == INVALID_STRING_ID) continue;
-		if (te.mode != TE_RISING) continue;
+		if (te.mode != TextEffectMode::Rising) continue;
 
 		if (te.duration < count) {
 			te.Reset();
 			continue;
 		}
 
-		te.MarkDirty(ZOOM_LVL_TEXT_EFFECT);
+		te.MarkDirty(ZoomLevel::TextEffect);
 		te.duration -= count;
 		te.top -= count * ZOOM_BASE;
-		te.MarkDirty(ZOOM_LVL_TEXT_EFFECT);
+		te.MarkDirty(ZoomLevel::TextEffect);
 	}
 }
 
@@ -135,16 +132,19 @@ void InitTextEffects()
 void DrawTextEffects(ViewportDrawerDynamic *vdd, DrawPixelInfo *dpi, bool load_transparent)
 {
 	/* Don't draw the text effects when zoomed out a lot */
-	if (dpi->zoom > ZOOM_LVL_TEXT_EFFECT) return;
+	if (dpi->zoom > ZoomLevel::TextEffect) return;
 
 	const int bottom_threshold = dpi->top + dpi->height;
-	const int top_threshold = dpi->top - ScaleByZoom(WidgetDimensions::scaled.framerect.Horizontal() + GetCharacterHeight(FS_NORMAL), dpi->zoom);
+	const int top_threshold = dpi->top - ScaleByZoom(WidgetDimensions::scaled.framerect.Horizontal() + GetCharacterHeight(FontSize::Normal), dpi->zoom);
 	const bool show_loading = (_settings_client.gui.loading_indicators && !load_transparent);
+
+	ViewportStringFlags flags{};
+	if (dpi->zoom >= ZoomLevel::TextEffect) flags.Set(ViewportStringFlag::Small);
 
 	for (TextEffect &te : _text_effects) {
 		if (te.string_id == INVALID_STRING_ID) continue;
-		if ((te.mode == TE_RISING || show_loading) && te.top > top_threshold && te.top < bottom_threshold) {
-			ViewportAddString(vdd, dpi, ZOOM_LVL_TEXT_EFFECT, &te, te.string_id, te.string_id, STR_NULL, te.params_1, te.params_2);
+		if ((te.mode == TextEffectMode::Rising || show_loading) && te.top > top_threshold && te.top < bottom_threshold) {
+			ViewportAddString(vdd, dpi, &te, flags, te.string_id, te.params_1, te.params_2);
 		}
 	}
 }

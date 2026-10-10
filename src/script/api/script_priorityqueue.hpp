@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file script_priorityqueue.hpp A queue that keeps a list of items sorted by a priority. */
@@ -31,10 +31,10 @@ private:
 	};
 
 	PriorityComparator        comp;
-	std::vector<PriorityItem> queue;  ///< The priority list
+	std::vector<PriorityItem, ScriptStdAllocator<PriorityItem>> queue; ///< The priority list
 
 public:
-	~ScriptPriorityQueue();
+	~ScriptPriorityQueue() override;
 
 #ifdef DOXYGEN_API
 	/**
@@ -74,8 +74,8 @@ public:
 #else
 	SQInteger Insert(HSQUIRRELVM vm);
 	SQInteger Pop(HSQUIRRELVM vm);
-	SQInteger Peek(HSQUIRRELVM vm);
-	SQInteger Exists(HSQUIRRELVM vm);
+	SQInteger Peek(HSQUIRRELVM vm) const;
+	SQInteger Exists(HSQUIRRELVM vm) const;
 	SQInteger Clear(HSQUIRRELVM vm);
 #endif /* DOXYGEN_API */
 
@@ -83,13 +83,13 @@ public:
 	 * Check if the queue is empty.
 	 * @return true if the queue is empty.
 	 */
-	bool IsEmpty();
+	bool IsEmpty() const;
 
 	/**
 	 * Returns the amount of items in the queue.
 	 * @return amount of items in the queue.
 	 */
-	SQInteger Count();
+	SQInteger Count() const;
 };
 
 #endif /* SCRIPT_PRIORITYQUEUE_HPP */

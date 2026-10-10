@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file aircraft_gui.cpp The GUI of aircraft. */
@@ -15,7 +15,6 @@
 #include "vehicle_func.h"
 #include "vehicle_gui_base.h"
 #include "window_gui.h"
-#include "spritecache.h"
 #include "zoom_func.h"
 
 #include "table/strings.h"
@@ -35,19 +34,15 @@ void DrawAircraftDetails(const Aircraft *v, const Rect &r)
 	int y = r.top;
 	for (const Aircraft *u = v; u != nullptr; u = u->Next()) {
 		if (u->IsNormalAircraft()) {
-			SetDParam(0, PackEngineNameDParam(u->engine_type, EngineNameContext::VehicleDetails));
-			SetDParam(1, u->build_year);
-			SetDParam(2, u->value);
-			DrawString(r.left, r.right, y, STR_VEHICLE_INFO_BUILT_VALUE);
-			y += GetCharacterHeight(FS_NORMAL);
+			DrawString(r.left, r.right, y, GetString(STR_VEHICLE_INFO_BUILT_VALUE, PackEngineNameDParam(u->engine_type, EngineNameContext::VehicleDetails), u->build_year, u->value));
+			y += GetCharacterHeight(FontSize::Normal);
 
-			SetDParam(0, u->cargo_type);
-			SetDParam(1, u->cargo_cap);
-			SetDParam(2, u->Next()->cargo_type);
-			SetDParam(3, u->Next()->cargo_cap);
-			SetDParam(4, GetCargoSubtypeText(u));
-			DrawString(r.left, r.right, y, (u->Next()->cargo_cap != 0) ? STR_VEHICLE_INFO_CAPACITY_CAPACITY : STR_VEHICLE_INFO_CAPACITY);
-			y += GetCharacterHeight(FS_NORMAL) + WidgetDimensions::scaled.vsep_normal;
+			if (u->Next()->cargo_cap != 0) {
+				DrawString(r.left, r.right, y, GetString(STR_VEHICLE_INFO_CAPACITY_CAPACITY, u->cargo_type, u->cargo_cap, u->Next()->cargo_type, u->Next()->cargo_cap, GetCargoSubtypeText(u)));
+			} else {
+				DrawString(r.left, r.right, y, GetString(STR_VEHICLE_INFO_CAPACITY, u->cargo_type, u->cargo_cap, GetCargoSubtypeText(u)));
+			}
+			y += GetCharacterHeight(FontSize::Normal) + WidgetDimensions::scaled.vsep_normal;
 		}
 
 		if (u->cargo_cap != 0) {
@@ -55,19 +50,15 @@ void DrawAircraftDetails(const Aircraft *v, const Rect &r)
 
 			if (cargo_count != 0) {
 				/* Cargo names (fix pluralness) */
-				SetDParam(0, u->cargo_type);
-				SetDParam(1, cargo_count);
-				SetDParam(2, u->cargo.GetFirstStation());
-				DrawString(r.left, r.right, y, STR_VEHICLE_DETAILS_CARGO_FROM);
-				y += GetCharacterHeight(FS_NORMAL);
+				DrawString(r.left, r.right, y, GetString(STR_VEHICLE_DETAILS_CARGO_FROM, u->cargo_type, cargo_count, u->cargo.GetFirstStation()));
+				y += GetCharacterHeight(FontSize::Normal);
 				feeder_share += u->cargo.GetFeederShare();
 			}
 		}
 	}
 
 	y += WidgetDimensions::scaled.vsep_normal;
-	SetDParam(0, feeder_share);
-	DrawString(r.left, r.right, y, STR_VEHICLE_INFO_FEEDER_CARGO_VALUE);
+	DrawString(r.left, r.right, y, GetString(STR_VEHICLE_INFO_FEEDER_CARGO_VALUE, feeder_share));
 }
 
 
@@ -76,13 +67,14 @@ void DrawAircraftDetails(const Aircraft *v, const Rect &r)
  * @param v         Front vehicle
  * @param r         Rect to draw at
  * @param selection Selected vehicle to draw a frame around
+ * @param image_type Context where the image is being drawn.
  */
 void DrawAircraftImage(const Vehicle *v, const Rect &r, VehicleID selection, EngineImageType image_type)
 {
 	bool rtl = _current_text_dir == TD_RTL;
 
 	VehicleSpriteSeq seq;
-	v->GetImage(rtl ? DIR_E : DIR_W, image_type, &seq);
+	v->GetImage(rtl ? Direction::E : Direction::W, image_type, &seq);
 
 	Rect rect = ConvertRect<Rect16, Rect>(seq.GetBounds());
 
@@ -90,13 +82,13 @@ void DrawAircraftImage(const Vehicle *v, const Rect &r, VehicleID selection, Eng
 	int x_offs = UnScaleGUI(rect.left);
 	int x = rtl ? r.right - width - x_offs : r.left - x_offs;
 	/* This magic -1 offset is related to the sprite_y_offsets in build_vehicle_gui.cpp */
-	int y = ScaleSpriteTrad(-1) + CenterBounds(r.top, r.bottom, 0);
+	int y = ScaleSpriteTrad(-1) + CentreBounds(r.top, r.bottom, 0);
 	bool helicopter = v->subtype == AIR_HELICOPTER;
 
 	int heli_offs = 0;
 
-	PaletteID pal = (v->vehstatus & VS_CRASHED) ? PALETTE_CRASH : GetVehiclePalette(v);
-	seq.Draw(x, y, pal, (v->vehstatus & VS_CRASHED) != 0);
+	PaletteID pal = v->vehstatus.Test(VehState::Crashed) ? PALETTE_CRASH : GetVehiclePalette(v);
+	seq.Draw(x, y, pal, v->vehstatus.Test(VehState::Crashed));
 
 	/* Aircraft can store cargo in their shadow, show this if present. */
 	const Vehicle *u = v->Next();
@@ -120,6 +112,6 @@ void DrawAircraftImage(const Vehicle *v, const Rect &r, VehicleID selection, Eng
 		x += x_offs;
 		y += UnScaleGUI(rect.top) - heli_offs;
 		Rect hr = {x, y, x + width - 1, y + UnScaleGUI(rect.Height()) + heli_offs - 1};
-		DrawFrameRect(hr.Expand(WidgetDimensions::scaled.bevel), COLOUR_WHITE, FR_BORDERONLY);
+		DrawFrameRect(hr.Expand(WidgetDimensions::scaled.bevel), Colours::White, FrameFlag::BorderOnly);
 	}
 }

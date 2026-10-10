@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file station_base.h Base classes/functions for stations. */
@@ -20,14 +20,13 @@
 #include "3rdparty/cpp-btree/btree_map.h"
 #include "3rdparty/cpp-btree/btree_set.h"
 #include "bitmap_type.h"
-#include "core/alloc_type.hpp"
-#include "core/endian_type.hpp"
-#include "strings_type.h"
-#include <map>
+#include "core/alignment.hpp"
+#include "core/alloc_func.hpp"
+#include "strings_id_type.h"
+#include "vehicle_type.h"
 #include <vector>
 #include <array>
 #include <iterator>
-#include <functional>
 #include <algorithm>
 
 static const uint8_t INITIAL_STATION_RATING = 175;
@@ -76,7 +75,7 @@ public:
 #endif
 		StationID second;
 	};
-#if OTTD_ALIGNMENT == 0 && (defined(__GNUC__) || defined(__clang__))
+#if OTTD_ALIGNMENT == 0 && (defined(__GNUC__) && !defined(__clang__))
 	static_assert(sizeof(ShareEntry) == 6, "");
 #endif
 
@@ -297,10 +296,10 @@ public:
 		assert(!this->empty());
 		return this->unrestricted > 0 ?
 				this->upper_bound(RandomRange(this->unrestricted))->second :
-				INVALID_STATION;
+				StationID::Invalid();
 	}
 
-	StationID GetVia(StationID excluded, StationID excluded2 = INVALID_STATION) const;
+	StationID GetVia(StationID excluded, StationID excluded2 = StationID::Invalid()) const;
 
 	/**
 	 * Mark this flow stat as invalid, such that it is not included in link statistics.
@@ -364,11 +363,11 @@ private:
 	uint16_t flags;
 };
 static_assert(std::is_nothrow_move_constructible<FlowStat>::value, "FlowStat must be nothrow move constructible");
-#if OTTD_ALIGNMENT == 0 && (defined(__GNUC__) || defined(__clang__))
+#if OTTD_ALIGNMENT == 0 && (defined(__GNUC__) && !defined(__clang__))
 static_assert(sizeof(FlowStat) == 24, "");
 #endif
 
-template<typename cv_value, typename cv_container, typename cv_index_iter>
+template <typename cv_value, typename cv_container, typename cv_index_iter>
 class FlowStatMapIterator
 {
 	friend FlowStatMap;
@@ -425,7 +424,7 @@ public:
 
 	void AddFlow(StationID origin, StationID via, uint amount);
 	void PassOnFlow(StationID origin, StationID via, uint amount);
-	StationIDStack DeleteFlows(StationID via);
+	StationIDVector DeleteFlows(StationID via);
 	void RestrictFlows(StationID via);
 	void FinalizeLocalConsumption(StationID self);
 
@@ -517,9 +516,9 @@ public:
 	}
 };
 
-struct GoodsEntryData : ZeroedMemoryAllocator {
-	StationCargoList cargo; ///< The cargo packets of cargo waiting in this station
-	FlowStatMap flows;      ///< Planned flows through this station.
+struct GoodsEntryData {
+	StationCargoList cargo{}; ///< The cargo packets of cargo waiting in this station
+	FlowStatMap flows{};      ///< Planned flows through this station.
 
 	bool MayBeRemoved() const
 	{
@@ -532,12 +531,12 @@ struct GoodsEntryData : ZeroedMemoryAllocator {
  */
 struct GoodsEntry {
 	/** Status of this cargo for the station. */
-	enum GoodsEntryStatus {
+	enum class State : uint8_t {
 		/**
 		 * Set when the station accepts the cargo currently for final deliveries.
 		 * It is updated every STATION_ACCEPTANCE_TICKS ticks by checking surrounding tiles for acceptance >= 8/8.
 		 */
-		GES_ACCEPTANCE,
+		Acceptance = 0,
 
 		/**
 		 * This indicates whether a cargo has a rating at the station.
@@ -547,52 +546,55 @@ struct GoodsEntry {
 		 *
 		 * This flag is cleared after 255 * STATION_RATING_TICKS of not having seen a pickup.
 		 */
-		GES_RATING,
+		Rating = 1,
 
 		/**
 		 * Set when a vehicle ever delivered cargo to the station for final delivery.
 		 * This flag is never cleared.
 		 */
-		GES_EVER_ACCEPTED,
+		EverAccepted = 2,
 
 		/**
 		 * Set when cargo was delivered for final delivery last month.
-		 * This flag is set to the value of GES_CURRENT_MONTH at the start of each month.
+		 * This flag is set to the value of State::CurrentMonth at the start of each month.
 		 */
-		GES_LAST_MONTH,
+		LastMonth = 3,
 
 		/**
 		 * Set when cargo was delivered for final delivery this month.
 		 * This flag is reset on the beginning of every month.
 		 */
-		GES_CURRENT_MONTH,
+		CurrentMonth = 4,
 
 		/**
 		 * Set when cargo was delivered for final delivery during the current STATION_ACCEPTANCE_TICKS interval.
 		 * This flag is reset every STATION_ACCEPTANCE_TICKS ticks.
 		 */
-		GES_ACCEPTED_BIGTICK,
+		AcceptedBigtick = 5,
 
 		/**
 		 * Set when cargo is not permitted to be supplied by nearby industries/houses.
 		 */
-		GES_NO_CARGO_SUPPLY = 7,
+		NoCargoSupply = 7,
 	};
+
+	/** Bitset of \c State elements. */
+	using States = EnumBitSet<State, uint8_t>;
 
 	GoodsEntry() :
 		status(0),
 		time_since_pickup(255),
-		last_vehicle_type(VEH_INVALID),
+		last_vehicle_type(VehicleType::Invalid),
 		rating(INITIAL_STATION_RATING),
 		last_speed(0),
 		last_age(255),
 		amount_fract(0),
-		link_graph(INVALID_LINK_GRAPH),
+		link_graph(LinkGraphID::Invalid()),
 		node(INVALID_NODE),
 		max_waiting_cargo(0)
 	{}
 
-	uint8_t status; ///< Status of this cargo, see #GoodsEntryStatus.
+	States status{}; ///< Status of this cargo, see #State.
 
 	/**
 	 * Number of rating-intervals (up to 255) since the last vehicle tried to load this cargo.
@@ -601,7 +603,7 @@ struct GoodsEntry {
 	 */
 	uint8_t time_since_pickup;
 
-	uint8_t last_vehicle_type;
+	VehicleType last_vehicle_type = VehicleType::Invalid;
 
 	uint8_t rating;         ///< %Station rating for this cargo.
 
@@ -633,12 +635,12 @@ struct GoodsEntry {
 
 	bool IsSupplyAllowed() const
 	{
-		return !HasBit(this->status, GES_NO_CARGO_SUPPLY);
+		return !this->status.Test(GoodsEntry::State::NoCargoSupply);
 	}
 
 	/**
 	 * Reports whether a vehicle has ever tried to load the cargo at this station.
-	 * This does not imply that there was cargo available for loading. Refer to GES_RATING for that.
+	 * This does not imply that there was cargo available for loading. Refer to GoodsEntry::State::Rating for that.
 	 * @return true if vehicle tried to load.
 	 */
 	bool HasVehicleEverTriedLoading() const { return this->last_speed != 0; }
@@ -649,20 +651,20 @@ struct GoodsEntry {
 	 */
 	inline bool HasRating() const
 	{
-		return HasBit(this->status, GES_RATING);
+		return this->status.Test(GoodsEntry::State::Rating);
 	}
 
 	/**
 	 * Get the best next hop for a cargo packet from station source.
 	 * @param source Source of the packet.
-	 * @return The chosen next hop or INVALID_STATION if none was found.
+	 * @return The chosen next hop or StationID::Invalid() if none was found.
 	 */
 	inline StationID GetVia(StationID source) const
 	{
-		if (this->data == nullptr) return INVALID_STATION;
+		if (this->data == nullptr) return StationID::Invalid();
 
 		FlowStatMap::const_iterator flow_it(this->data->flows.find(source));
-		return flow_it != this->data->flows.end() ? flow_it->GetVia() : INVALID_STATION;
+		return flow_it != this->data->flows.end() ? flow_it->GetVia() : StationID::Invalid();
 	}
 
 	/**
@@ -670,15 +672,15 @@ struct GoodsEntry {
 	 * excluding one or two stations.
 	 * @param source Source of the packet.
 	 * @param excluded If this station would be chosen choose the second best one instead.
-	 * @param excluded2 Second station to be excluded, if != INVALID_STATION.
-	 * @return The chosen next hop or INVALID_STATION if none was found.
+	 * @param excluded2 Second station to be excluded, if != StationID::Invalid().
+	 * @return The chosen next hop or StationID::Invalid() if none was found.
 	 */
-	inline StationID GetVia(StationID source, StationID excluded, StationID excluded2 = INVALID_STATION) const
+	inline StationID GetVia(StationID source, StationID excluded, StationID excluded2 = StationID::Invalid()) const
 	{
-		if (this->data == nullptr) return INVALID_STATION;
+		if (this->data == nullptr) return StationID::Invalid();
 
 		FlowStatMap::const_iterator flow_it(this->data->flows.find(source));
-		return flow_it != this->data->flows.end() ? flow_it->GetVia(excluded, excluded2) : INVALID_STATION;
+		return flow_it != this->data->flows.end() ? flow_it->GetVia(excluded, excluded2) : StationID::Invalid();
 	}
 
 	GoodsEntryData &CreateData()
@@ -727,18 +729,20 @@ struct GoodsEntry {
 	{
 		if (this->data != nullptr && this->data->MayBeRemoved()) this->data.reset();
 	}
+
+	uint8_t ConvertState() const;
 };
 
 /** All airport-related information. Only valid if tile != INVALID_TILE. */
 struct Airport : public TileArea {
 	Airport() : TileArea(INVALID_TILE, 0, 0) {}
 
-	uint64_t flags;     ///< stores which blocks on the airport are taken. was 16 bit earlier on, then 32
-	uint8_t type;       ///< Type of this airport, @see AirportTypes
-	uint8_t layout;     ///< Airport layout number.
-	Direction rotation; ///< How this airport is rotated.
+	AirportBlocks blocks{};                  ///< stores which blocks on the airport are taken. was 16 bit earlier on, then 32
+	uint8_t type = 0;                        ///< Type of this airport, @see AirportTypes
+	uint8_t layout = 0;                      ///< Airport layout number.
+	Direction rotation = Direction::Invalid; ///< How this airport is rotated.
 
-	PersistentStorage *psa; ///< Persistent storage for NewGRF airports.
+	PersistentStorage *psa = nullptr; ///< Persistent storage for NewGRF airports.
 
 	/**
 	 * Get the AirportSpec that from the airport type of this airport. If there
@@ -762,7 +766,10 @@ struct Airport : public TileArea {
 		return this->GetSpec()->fsm;
 	}
 
-	/** Check if this airport has at least one hangar. */
+	/**
+	 * Check if this airport has at least one hangar.
+	 * @return \c true iff there are one or more hangars.
+	 */
 	inline bool HasHangar() const
 	{
 		return !this->GetSpec()->depots.empty();
@@ -780,13 +787,13 @@ struct Airport : public TileArea {
 	{
 		const AirportSpec *as = this->GetSpec();
 		switch (this->rotation) {
-			case DIR_N: return this->tile + ToTileIndexDiff(tidc);
+			case Direction::N: return this->tile + ToTileIndexDiff(tidc);
 
-			case DIR_E: return this->tile + TileDiffXY(tidc.y, as->size_x - 1 - tidc.x);
+			case Direction::E: return this->tile + TileDiffXY(tidc.y, as->size_x - 1 - tidc.x);
 
-			case DIR_S: return this->tile + TileDiffXY(as->size_x - 1 - tidc.x, as->size_y - 1 - tidc.y);
+			case Direction::S: return this->tile + TileDiffXY(as->size_x - 1 - tidc.x, as->size_y - 1 - tidc.y);
 
-			case DIR_W: return this->tile + TileDiffXY(as->size_y - 1 - tidc.y, tidc.x);
+			case Direction::W: return this->tile + TileDiffXY(as->size_y - 1 - tidc.y, tidc.x);
 
 			default: NOT_REACHED();
 		}
@@ -833,7 +840,10 @@ struct Airport : public TileArea {
 		return htt->hangar_num;
 	}
 
-	/** Get the number of hangars on this airport. */
+	/**
+	 * Get the number of hangars on this airport.
+	 * @return The number of unique hangars.
+	 */
 	inline uint GetNumHangars() const
 	{
 		uint num = 0;
@@ -866,8 +876,8 @@ private:
 };
 
 struct IndustryListEntry {
-	uint distance;
-	Industry *industry;
+	uint distance = 0;
+	Industry *industry = nullptr;
 
 	bool operator==(const IndustryListEntry &other) const { return this->distance == other.distance && this->industry == other.industry; }
 	bool operator!=(const IndustryListEntry &other) const { return !(*this == other); }
@@ -884,46 +894,46 @@ struct Station final : SpecializedStation<Station, false> {
 public:
 	RoadStop *GetPrimaryRoadStop(RoadStopType type) const
 	{
-		return type == ROADSTOP_BUS ? bus_stops : truck_stops;
+		return type == RoadStopType::Bus ? bus_stops : truck_stops;
 	}
 
 	RoadStop *GetPrimaryRoadStop(const struct RoadVehicle *v) const;
 
-	RoadStop *bus_stops;    ///< All the road stops
-	TileArea bus_station;   ///< Tile area the bus 'station' part covers
-	RoadStop *truck_stops;  ///< All the truck stops
-	TileArea truck_station; ///< Tile area the truck 'station' part covers
+	RoadStop *bus_stops = nullptr;          ///< All the road stops
+	TileArea bus_station{};                 ///< Tile area the bus 'station' part covers
+	RoadStop *truck_stops = nullptr;        ///< All the truck stops
+	TileArea truck_station{};               ///< Tile area the truck 'station' part covers
 
-	Airport airport;          ///< Tile area the airport covers
-	TileArea ship_station;    ///< Tile area the ship 'station' part covers
-	TileArea docking_station; ///< Tile area the docking tiles cover
-	std::vector<TileIndex> docking_tiles; ///< Tile vector the docking tiles cover
+	Airport airport{};                      ///< Tile area the airport covers
+	TileArea ship_station{};                ///< Tile area the ship 'station' part covers
+	TileArea docking_station{};             ///< Tile area the docking tiles cover
+	std::vector<TileIndex> docking_tiles{}; ///< Tile vector the docking tiles cover
 
-	IndustryType indtype;      ///< Industry type to get the name from
-	uint16_t extra_name_index; ///< Extra name index in use (or UINT16_MAX)
+	IndustryType indtype = IT_INVALID;      ///< Industry type to get the name from
+	uint16_t extra_name_index = 0;          ///< Extra name index in use (or UINT16_MAX)
 
-	BitmapTileArea catchment_tiles; ///< NOSAVE: Set of individual tiles covered by catchment area
-	uint station_tiles;             ///< NOSAVE: Count of station tiles owned by this station
+	BitmapTileArea catchment_tiles{};       ///< NOSAVE: Set of individual tiles covered by catchment area
+	uint station_tiles = 0;                 ///< NOSAVE: Count of station tiles owned by this station
 
-	StationHadVehicleOfType had_vehicle_of_type;
+	StationVehicleTypes had_vehicle_of_type{};
 
-	uint8_t time_since_load;
-	uint8_t time_since_unload;
+	uint8_t time_since_load = 0;
+	uint8_t time_since_unload = 0;
 
-	uint8_t station_cargo_history_offset = 0;                                                ///< Start offset in station_cargo_history cargo ring buffer, here for alignment
+	uint8_t station_cargo_history_offset = 0;  ///< Start offset in station_cargo_history cargo ring buffer, here for alignment
 
-	std::vector<Vehicle *> loading_vehicles;
-	GoodsEntry goods[NUM_CARGO];  ///< Goods at this station
-	CargoTypes always_accepted;       ///< Bitmask of always accepted cargo types (by houses, HQs, industry tiles when industry doesn't accept cargo)
+	std::vector<Vehicle *> loading_vehicles{};
+	std::array<GoodsEntry, NUM_CARGO> goods;   ///< Goods at this station
+	CargoTypes always_accepted{};              ///< Bitmask of always accepted cargo types (by houses, HQs, industry tiles when industry doesn't accept cargo)
 
-	IndustryList industries_near; ///< Cached list of industries near the station that can accept cargo, @see DeliverGoodsToIndustry()
-	Industry *industry;           ///< NOSAVE: Associated industry for neutral stations. (Rebuilt on load from Industry->st)
+	IndustryList industries_near{};            ///< Cached list of industries near the station that can accept cargo, @see DeliverGoodsToIndustry()
+	Industry *industry = nullptr;              ///< NOSAVE: Associated industry for neutral stations. (Rebuilt on load from Industry->st)
 
-	CargoTypes station_cargo_history_cargoes = 0;                                            ///< Bitmask of cargoes in station_cargo_history
+	CargoTypes station_cargo_history_cargoes{};                                              ///< Bitmask of cargoes in station_cargo_history
 	std::vector<std::array<uint16_t, MAX_STATION_CARGO_HISTORY_DAYS>> station_cargo_history; ///< Station history of waiting cargo, dynamic range compressed (see RXCompressUint)
 
-	Station(TileIndex tile = INVALID_TILE);
-	~Station();
+	Station(StationID index, TileIndex tile = INVALID_TILE);
+	~Station() override;
 
 	void AddFacility(StationFacility new_facility_bit, TileIndex facil_xy);
 
@@ -932,6 +942,8 @@ public:
 	void UpdateVirtCoord() override;
 
 	void UpdateCargoHistory();
+
+	void CheckCargoOverflow() const;
 
 	void MoveSign(TileIndex new_xy) override;
 
@@ -978,13 +990,13 @@ public:
 
 	uint32_t GetNewGRFVariable(const ResolverObject &object, uint16_t variable, uint8_t parameter, bool &available) const override;
 
-	void GetTileArea(TileArea *ta, StationType type) const override;
+	TileArea GetTileArea(StationType type) const override;
 };
 
 /** Iterator to iterate over all tiles belonging to an airport. */
 class AirportTileIterator : public OrthogonalTileIterator {
 private:
-	const Station *st; ///< The station the airport is a part of.
+	const Station *st = nullptr; ///< The station the airport is a part of.
 
 public:
 	/**
@@ -998,9 +1010,9 @@ public:
 
 	inline TileIterator& operator ++() override
 	{
-		(*this).OrthogonalTileIterator::operator++();
+		this->OrthogonalTileIterator::operator++();
 		while (this->tile != INVALID_TILE && !st->TileBelongsToAirport(this->tile)) {
-			(*this).OrthogonalTileIterator::operator++();
+			this->OrthogonalTileIterator::operator++();
 		}
 		return *this;
 	}
@@ -1013,44 +1025,45 @@ public:
 
 void RebuildStationKdtree();
 
+using ForAllStationsAroundTilesFunc = bool(Station *, TileIndex);
+using ForAllStationsAroundTilesIntlFunc = void(Station *, const TileArea &, uintptr_t);
+
 /**
  * Call a function on all stations that have any part of the requested area within their catchment.
- * @tparam Func The type of funcion to call
- * @param area The TileArea to check
+ * @tparam Func The type of function to call
+ * @param ta The TileArea to check.
  * @param func The function to call, must take two parameters: Station* and TileIndex and return true
  *             if coverage of that tile is acceptable for a given station or false if search should continue
  */
-template<typename Func>
+template <typename Func>
 void ForAllStationsAroundTiles(const TileArea &ta, Func func)
 {
 	/* There are no stations, so we will never find anything. */
 	if (Station::GetNumItems() == 0) return;
 
-	/* Not using, or don't have a nearby stations list, so we need to scan. */
-	btree::btree_set<StationID> seen_stations;
+	extern void ForAllStationsAroundTilesIntl(const TileArea &ta, ForAllStationsAroundTilesIntlFunc *func, uintptr_t data);
 
-	/* Scan an area around the building covering the maximum possible station
-	 * to find the possible nearby stations. */
-	uint max_c = _settings_game.station.modified_catchment ? MAX_CATCHMENT : CA_UNMODIFIED;
-	max_c += _settings_game.station.catchment_increase;
-	TileArea ta_ext = TileArea(ta).Expand(max_c);
-	for (TileIndex tile : ta_ext) {
-		if (IsTileType(tile, MP_STATION)) seen_stations.insert(GetStationIndex(tile));
-	}
-
-	for (StationID stationid : seen_stations) {
-		Station *st = Station::GetIfValid(stationid);
-		if (st == nullptr) continue; /* Waypoint */
-
-		/* Check if station is attached to an industry */
-		if (!_settings_game.station.serve_neutral_industries && st->industry != nullptr) continue;
-
-		/* Test if the tile is within the station's catchment */
-		for (TileIndex tile : ta) {
-			if (st->TileIsInCatchment(tile)) {
-				if (func(st, tile)) break;
+	struct Helper {
+		static void Exec(Station *st, const TileArea &ta, Func &f) {
+			/* Test if the tile is within the station's catchment */
+			for (TileIndex tile : ta) {
+				if (st->TileIsInCatchment(tile)) {
+					if (f(st, tile)) break;
+				}
 			}
-		}
+		};
+	};
+
+	if constexpr (std::is_convertible_v<Func, ForAllStationsAroundTilesFunc *>) {
+		ForAllStationsAroundTilesIntl(ta, [](Station *st, const TileArea &ta, uintptr_t data) {
+			Func f;
+			Helper::Exec(st, ta, f);
+		}, 0);
+	} else {
+		Func *ptr = &func;
+		ForAllStationsAroundTilesIntl(ta, [](Station *st, const TileArea &ta, uintptr_t data) {
+			Helper::Exec(st, ta, *reinterpret_cast<Func *>(data));
+		}, reinterpret_cast<uintptr_t>(ptr));
 	}
 }
 

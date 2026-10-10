@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file script_road.hpp Everything to query and build roads. */
@@ -13,6 +13,7 @@
 #include "script_tile.hpp"
 #include "../squirrel_helper_type.hpp"
 #include "../../../road.h"
+#include "../../station_type.h"
 #include <optional>
 
 /**
@@ -34,7 +35,7 @@ public:
 		ERR_ROAD_WORKS_IN_PROGRESS,                   // [STR_ERROR_ROAD_WORKS_IN_PROGRESS]
 
 		/** Drive through is in the wrong direction */
-		ERR_ROAD_DRIVE_THROUGH_WRONG_DIRECTION,       // [STR_ERROR_DRIVE_THROUGH_DIRECTION]
+		ERR_ROAD_DRIVE_THROUGH_WRONG_DIRECTION,       // [STR_ERROR_DRIVE_THROUGH_DIRECTION, STR_ERROR_DRIVE_THROUGH_CORNER, STR_ERROR_DRIVE_THROUGH_JUNCTION]
 
 		/** Drive through roads can't be build on town owned roads */
 		ERR_ROAD_CANNOT_BUILD_ON_TOWN_ROAD,           // [STR_ERROR_DRIVE_THROUGH_ON_TOWN_ROAD]
@@ -65,16 +66,16 @@ public:
 	 * Road/tram types
 	 */
 	enum RoadTramTypes : uint8_t {
-		ROADTRAMTYPES_ROAD = ::RTTB_ROAD, ///< Road road types.
-		ROADTRAMTYPES_TRAM = ::RTTB_TRAM, ///< Tram road types.
+		ROADTRAMTYPES_ROAD = ::RoadTramTypes{RoadTramType::Road}.base(), ///< Road road types.
+		ROADTRAMTYPES_TRAM = ::RoadTramTypes{RoadTramType::Tram}.base(), ///< Tram road types.
 	};
 
 	/**
 	 * Type of road station.
 	 */
 	enum RoadVehicleType {
-		ROADVEHTYPE_BUS,   ///< Build objects useable for busses and passenger trams
-		ROADVEHTYPE_TRUCK, ///< Build objects useable for trucks and cargo trams
+		ROADVEHTYPE_BUS,   ///< Build objects usable for busses and passenger trams
+		ROADVEHTYPE_TRUCK, ///< Build objects usable for trucks and cargo trams
 	};
 
 	/**
@@ -93,21 +94,21 @@ public:
 	enum RoadPieces {
 		/* Note: these values represent part of the in-game RoadBits enum with added shorthands to T-junctions */
 		ROADPIECES_NONE = 0,                            ///< No road pieces
-		ROADPIECES_NW = ::ROAD_NW,                      ///< North-west part
-		ROADPIECES_SW = ::ROAD_SW,                      ///< South-west part
-		ROADPIECES_SE = ::ROAD_SE,                      ///< South-east part
-		ROADPIECES_NE = ::ROAD_NE,                      ///< North-east part
-		ROADPIECES_X = ::ROAD_X,                        ///< Full road along the x-axis (south-west + north-east)
-		ROADPIECES_Y = ::ROAD_Y,                        ///< Full road along the y-axis (north-west + south-east)
-		ROADPIECES_N = ::ROAD_N,                        ///< Road at the two northern edges (corner, north-west + north-east)
-		ROADPIECES_E = ::ROAD_E,                        ///< Road at the two eastern edges (corner, north-east + south-east)
-		ROADPIECES_S = ::ROAD_S,                        ///< Road at the two southern edges (corner, south-east + south-west)
-		ROADPIECES_W = ::ROAD_W,                        ///< Road at the two western edges (corner, south-west + north-west)
-		ROADPIECES_S_NW = ROADPIECES_S | ROADPIECES_NW,   ///< T-junction, southern edges + north-west
-		ROADPIECES_W_NE = ROADPIECES_W | ROADPIECES_NE,   ///< T-junction, western edges + north-east
-		ROADPIECES_N_SE = ROADPIECES_N | ROADPIECES_SE,   ///< T-junction, northern edges + south-east
-		ROADPIECES_E_SW = ROADPIECES_E | ROADPIECES_SW,   ///< T-junction, eastern edges + south-west
-		ROADPIECES_ALL = ::ROAD_ALL,                    ///< Full 4-way crossing
+		ROADPIECES_NW = ::ROAD_NW.base(),               ///< North-west part
+		ROADPIECES_SW = ::ROAD_SW.base(),               ///< South-west part
+		ROADPIECES_SE = ::ROAD_SE.base(),               ///< South-east part
+		ROADPIECES_NE = ::ROAD_NE.base(),               ///< North-east part
+		ROADPIECES_X = ::ROAD_X.base(),                 ///< Full road along the x-axis (south-west + north-east)
+		ROADPIECES_Y = ::ROAD_Y.base(),                 ///< Full road along the y-axis (north-west + south-east)
+		ROADPIECES_N = ::ROAD_N.base(),                 ///< Road at the two northern edges (corner, north-west + north-east)
+		ROADPIECES_E = ::ROAD_E.base(),                 ///< Road at the two eastern edges (corner, north-east + south-east)
+		ROADPIECES_S = ::ROAD_S.base(),                 ///< Road at the two southern edges (corner, south-east + south-west)
+		ROADPIECES_W = ::ROAD_W.base(),                 ///< Road at the two western edges (corner, south-west + north-west)
+		ROADPIECES_S_NW = ROADPIECES_S | ROADPIECES_NW, ///< T-junction, southern edges + north-west
+		ROADPIECES_W_NE = ROADPIECES_W | ROADPIECES_NE, ///< T-junction, western edges + north-east
+		ROADPIECES_N_SE = ROADPIECES_N | ROADPIECES_SE, ///< T-junction, northern edges + south-east
+		ROADPIECES_E_SW = ROADPIECES_E | ROADPIECES_SW, ///< T-junction, eastern edges + south-west
+		ROADPIECES_ALL = ::ROAD_ALL.base(),             ///< Full 4-way crossing
 	};
 
 	/**
@@ -135,7 +136,7 @@ public:
 	 * @pre ScriptCargo::IsValidCargo(cargo_type).
 	 * @return The road vehicle type needed to transport the cargo.
 	 */
-	static RoadVehicleType GetRoadVehicleTypeForCargo(CargoID cargo_type);
+	static RoadVehicleType GetRoadVehicleTypeForCargo(CargoType cargo_type);
 
 	/**
 	 * Checks whether the given tile is actually a tile with road that can be
@@ -319,7 +320,7 @@ public:
 	 *         they are build or 2 when building the first part automatically
 	 *         builds the second part. -1 means the preconditions are not met.
 	 */
-	static SQInteger CanBuildConnectedRoadParts(ScriptTile::Slope slope, Array<TileIndex> &&existing, TileIndex start, TileIndex end);
+	static SQInteger CanBuildConnectedRoadParts(ScriptTile::Slope slope, Array<TileIndexDiff> &&existing, TileIndexDiff start, TileIndexDiff end);
 
 	/**
 	 * Lookup function for building road parts independent of whether the
@@ -516,6 +517,8 @@ public:
 	 * @exception ScriptStation::ERR_STATION_TOO_CLOSE_TO_ANOTHER_STATION
 	 * @exception ScriptStation::ERR_STATION_TOO_MANY_STATIONS
 	 * @exception ScriptStation::ERR_STATION_TOO_MANY_STATIONS_IN_TOWN
+	 * @exception ScriptError::ERR_BRIDGE_TOO_LOW
+	 * @exception ScriptError::ERR_STATION_TOO_SPREAD_OUT
 	 * @return Whether the station has been/can be build or not.
 	 */
 	static bool BuildRoadStation(TileIndex tile, TileIndex front, RoadVehicleType road_veh_type, StationID station_id);
@@ -541,6 +544,8 @@ public:
 	 * @exception ScriptStation::ERR_STATION_TOO_CLOSE_TO_ANOTHER_STATION
 	 * @exception ScriptStation::ERR_STATION_TOO_MANY_STATIONS
 	 * @exception ScriptStation::ERR_STATION_TOO_MANY_STATIONS_IN_TOWN
+	 * @exception ScriptError::ERR_BRIDGE_TOO_LOW
+	 * @exception ScriptError::ERR_STATION_TOO_SPREAD_OUT
 	 * @return Whether the station has been/can be build or not.
 	 */
 	static bool BuildDriveThroughRoadStation(TileIndex tile, TileIndex front, RoadVehicleType road_veh_type, StationID station_id);

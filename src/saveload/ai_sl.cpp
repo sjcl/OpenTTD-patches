@@ -2,10 +2,10 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
-/** @file ai_sl.cpp Handles the saveload part of the AIs */
+/** @file ai_sl.cpp Handles the saveload part of the AIs. */
 
 #include "../stdafx.h"
 #include "../debug.h"
@@ -31,22 +31,22 @@ static std::string _ai_saveload_settings;
 static bool        _ai_saveload_is_random;
 
 static const SaveLoad _ai_company_desc[] = {
-	   SLEG_SSTR("name",      _ai_saveload_name,         SLE_STR),
-	   SLEG_SSTR("settings",  _ai_saveload_settings,     SLE_STR),
-	SLEG_CONDVAR("version",   _ai_saveload_version,   SLE_UINT32, SLV_108, SL_MAX_VERSION),
-	SLEG_CONDVAR("is_random", _ai_saveload_is_random,   SLE_BOOL, SLV_136, SLV_AI_LOCAL_CONFIG),
+	   SLEG_SSTR("name",      _ai_saveload_name,         VarTypes::STR),
+	   SLEG_SSTR("settings",  _ai_saveload_settings,     VarTypes::STR),
+	SLEG_CONDVAR("version", _ai_saveload_version, VarFileType::U32 | VarMemType::I32, SaveLoadVersion::StoreAIVersion, SaveLoadVersion::MaxVersion),
+	SLEG_CONDVAR("is_random", _ai_saveload_is_random, VarTypes::BOOL, SaveLoadVersion::SplitLoadWaitCounters, SaveLoadVersion::AILocalConfig),
 };
 
 static const SaveLoad _ai_running_desc[] = {
-	SLEG_CONDSSTR("running_name",     _ai_saveload_name,        SLE_STR, SLV_AI_LOCAL_CONFIG, SL_MAX_VERSION),
-	SLEG_CONDSSTR("running_settings", _ai_saveload_settings,    SLE_STR, SLV_AI_LOCAL_CONFIG, SL_MAX_VERSION),
-	 SLEG_CONDVAR("running_version",  _ai_saveload_version,  SLE_UINT32, SLV_AI_LOCAL_CONFIG, SL_MAX_VERSION),
+	SLEG_CONDSSTR("running_name", _ai_saveload_name, VarTypes::STR, SaveLoadVersion::AILocalConfig, SaveLoadVersion::MaxVersion),
+	SLEG_CONDSSTR("running_settings", _ai_saveload_settings, VarTypes::STR, SaveLoadVersion::AILocalConfig, SaveLoadVersion::MaxVersion),
+	 SLEG_CONDVAR("running_version", _ai_saveload_version, VarFileType::U32 | VarMemType::I32, SaveLoadVersion::AILocalConfig, SaveLoadVersion::MaxVersion),
 };
 
 static void SaveReal_AIPL(int arg)
 {
 	CompanyID index = static_cast<CompanyID>(arg);
-	AIConfig *config = AIConfig::GetConfig(index, AIConfig::SSS_FORCE_GAME);
+	AIConfig *config = AIConfig::GetConfig(index, AIConfig::ScriptSettingSource::ForceCurrentGame);
 
 	if (config->HasScript()) {
 		_ai_saveload_name = config->GetName();
@@ -75,15 +75,15 @@ static void SaveReal_AIPL(int arg)
 }
 
 struct AIPLChunkHandler : ChunkHandler {
-	AIPLChunkHandler() : ChunkHandler('AIPL', CH_TABLE) {}
+	AIPLChunkHandler() : ChunkHandler("AIPL", ChunkType::Table) {}
 
 	void Load() const override
 	{
 		const std::vector<SaveLoad> slt = SlCompatTableHeader(_ai_company_desc, _ai_company_sl_compat);
 
 		/* Free all current data */
-		for (CompanyID c = COMPANY_FIRST; c < MAX_COMPANIES; c++) {
-			AIConfig::GetConfig(c, AIConfig::SSS_FORCE_GAME)->Change(std::nullopt);
+		for (CompanyID c = CompanyID::Begin(); c < MAX_COMPANIES; ++c) {
+			AIConfig::GetConfig(c, AIConfig::ScriptSettingSource::ForceCurrentGame)->Change(std::nullopt);
 		}
 
 		CompanyID index;
@@ -94,7 +94,7 @@ struct AIPLChunkHandler : ChunkHandler {
 			_ai_saveload_version = -1;
 			SlObject(nullptr, slt);
 
-			if (_game_mode == GM_MENU || (_networking && !_network_server)) {
+			if (_game_mode == GameMode::Menu || (_networking && !_network_server)) {
 				if (Company::IsValidAiID(index)) {
 					SlObject(nullptr, _ai_running_desc);
 					AIInstance::LoadEmpty();
@@ -102,7 +102,7 @@ struct AIPLChunkHandler : ChunkHandler {
 				continue;
 			}
 
-			AIConfig *config = AIConfig::GetConfig(index, AIConfig::SSS_FORCE_GAME);
+			AIConfig *config = AIConfig::GetConfig(index, AIConfig::ScriptSettingSource::ForceCurrentGame);
 			if (_ai_saveload_name.empty() || _ai_saveload_is_random) {
 				/* A random AI. */
 				config->Change(std::nullopt, -1, false);
@@ -113,7 +113,7 @@ struct AIPLChunkHandler : ChunkHandler {
 					 * latest version of the AI instead. */
 					config->Change(_ai_saveload_name, -1, false);
 					if (!config->HasScript()) {
-						if (_ai_saveload_name.compare("%_dummy") != 0) {
+						if (_ai_saveload_name != "%_dummy") {
 							Debug(script, 0, "The savegame has an AI by the name '{}', version {} which is no longer available.", _ai_saveload_name, _ai_saveload_version);
 							Debug(script, 0, "Configuration switched to Random AI.");
 						}
@@ -138,7 +138,7 @@ struct AIPLChunkHandler : ChunkHandler {
 				 * latest version of the AI instead. */
 				config->Change(_ai_saveload_name, -1, false);
 				if (!config->HasScript()) {
-					if (_ai_saveload_name.compare("%_dummy") != 0) {
+					if (_ai_saveload_name != "%_dummy") {
 						Debug(script, 0, "The savegame has an AI by the name '{}', version {} which is no longer available.", _ai_saveload_name, _ai_saveload_version);
 						Debug(script, 0, "A random other AI will be loaded in its place.");
 					} else {
@@ -162,9 +162,9 @@ struct AIPLChunkHandler : ChunkHandler {
 	{
 		SlTableHeader(_ai_company_desc);
 
-		for (int i = COMPANY_FIRST; i < MAX_COMPANIES; i++) {
+		for (CompanyID i = CompanyID::Begin(); i < MAX_COMPANIES; ++i) {
 			SlSetArrayIndex(i);
-			SlAutolength(SaveReal_AIPL, i);
+			SlAutolength(SaveReal_AIPL, i.base());
 		}
 	}
 };

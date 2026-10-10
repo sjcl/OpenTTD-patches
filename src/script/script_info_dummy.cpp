@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file script_info_dummy.cpp Implementation of a dummy Script. */
@@ -25,8 +25,13 @@
  *  to select manual. It is a fail-over in case no Scripts are available.
  */
 
-/** Run the dummy info.nut. */
-void Script_CreateDummyInfo(HSQUIRRELVM vm, const char *type, const char *dir)
+/**
+ * Run the dummy info.nut.
+ * @param vm The virtual machine to run in.
+ * @param type The type of script.
+ * @param dir The directory where these scripts would normally be in.
+ */
+void Script_CreateDummyInfo(HSQUIRRELVM vm, std::string_view type, std::string_view dir)
 {
 	std::string dummy_script = fmt::format(
 			"class Dummy{0} extends {0}Info {{\n"
@@ -42,7 +47,7 @@ void Script_CreateDummyInfo(HSQUIRRELVM vm, const char *type, const char *dir)
 	sq_pushroottable(vm);
 
 	/* Load and run the script */
-	if (SQ_SUCCEEDED(sq_compilebuffer(vm, dummy_script.c_str(), dummy_script.size(), "dummy", SQTrue))) {
+	if (SQ_SUCCEEDED(sq_compilebuffer(vm, dummy_script, "dummy", SQTrue))) {
 		sq_push(vm, -2);
 		if (SQ_SUCCEEDED(sq_call(vm, 1, SQFalse, SQTrue))) {
 			sq_pop(vm, 1);
@@ -66,6 +71,7 @@ static std::vector<std::string> EscapeQuotesAndSlashesAndSplitOnNewLines(const s
 	for (auto c : message) {
 		if (c == '\n') {
 			messages.emplace_back(std::move(safe_message));
+			safe_message.clear(); // std::move leaves safe_message in a "valid but unspecified state" according to the specification.
 			continue;
 		}
 
@@ -76,8 +82,13 @@ static std::vector<std::string> EscapeQuotesAndSlashesAndSplitOnNewLines(const s
 	return messages;
 }
 
-/** Run the dummy AI and let it generate an error message. */
-void Script_CreateDummy(HSQUIRRELVM vm, StringID string, const char *type)
+/**
+ * Run the dummy AI and let it generate an error message.
+ * @param vm The virtual machine to run in.
+ * @param string The error message to show to the end user.
+ * @param type The type of script.
+ */
+void Script_CreateDummy(HSQUIRRELVM vm, StringID string, std::string_view type)
 {
 	/* We want to translate the error message.
 	 * We do this in three steps:
@@ -101,7 +112,7 @@ void Script_CreateDummy(HSQUIRRELVM vm, StringID string, const char *type)
 
 	/* 3) Finally we load and run the script */
 	sq_pushroottable(vm);
-	if (SQ_SUCCEEDED(sq_compilebuffer(vm, dummy_script.c_str(), dummy_script.size(), "dummy", SQTrue))) {
+	if (SQ_SUCCEEDED(sq_compilebuffer(vm, dummy_script, "dummy", SQTrue))) {
 		sq_push(vm, -2);
 		if (SQ_SUCCEEDED(sq_call(vm, 1, SQFalse, SQTrue))) {
 			sq_pop(vm, 1);

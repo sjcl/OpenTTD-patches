@@ -2,26 +2,27 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
-/******************************************************************************
- *                             Cocoa video driver                             *
- * Known things left to do:                                                   *
- *  List available resolutions.                                               *
- ******************************************************************************/
+/**
+ * @file cocoa_wnd.mm Code related to OS interface for the cocoa video driver.
+ *
+ * @important Notice regarding all modifications!!!!!!!
+ * There are certain limitations because the file is objective C++.
+ * gdb has limitations.
+ * C++ and objective C code can't be joined in all cases (classes stuff).
+ * Read http://developer.apple.com/releasenotes/Cocoa/Objective-C++.html for more information.
+ *
+ * @todo List available resolutions.
+ */
 
-#ifdef WITH_COCOA
+#if defined(WITH_COCOA) || defined(DOXYGEN_API)
 
 #include "../../stdafx.h"
 #include "../../os/macosx/macos.h"
 
-#define Rect  OTTDRect
-#define Point OTTDPoint
-#import <Cocoa/Cocoa.h>
-#undef Rect
-#undef Point
-
+#include "../../os/macosx/macos_objective_c.h"
 #include "../../openttd.h"
 #include "../../debug.h"
 #include "cocoa_v.h"
@@ -34,41 +35,26 @@
 #include "../../spritecache.h"
 #include "../../textbuf_type.h"
 #include "../../toolbar_gui.h"
+#include "../../core/utf8.hpp"
 #include <array>
 
-#include "table/sprites.h"
+#include "../../table/sprites.h"
 
 /* Table data for key mapping. */
 #include "cocoa_keys.h"
 
-/* The 10.12 SDK added new names for some enum constants and
- * deprecated the old ones. As there's no functional change in any
- * way, just use a define for older SDKs to the old names. */
-#ifndef HAVE_OSX_1012_SDK
-#	define NSEventModifierFlagCommand NSCommandKeyMask
-#	define NSEventModifierFlagControl NSControlKeyMask
-#	define NSEventModifierFlagOption NSAlternateKeyMask
-#	define NSEventModifierFlagShift NSShiftKeyMask
-#	define NSEventModifierFlagCapsLock NSAlphaShiftKeyMask
-#endif
-
-/**
- * Important notice regarding all modifications!!!!!!!
- * There are certain limitations because the file is objective C++.
- * gdb has limitations.
- * C++ and objective C code can't be joined in all cases (classes stuff).
- * Read http://developer.apple.com/releasenotes/Cocoa/Objective-C++.html for more information.
- */
-
-#ifdef HAVE_TOUCHBAR_SUPPORT
+/** Structure to store information about single touch bar button. */
 struct TouchBarButton {
-	NSTouchBarItemIdentifier key;
-	SpriteID                 sprite;
-	MainToolbarHotkeys       hotkey;
-	NSString                *fallback_text;
+	NSTouchBarItemIdentifier key; ///< Unique identifier for this button.
+	SpriteID sprite; ///< Sprite to display on button.
+	MainToolbarHotkeys hotkey; ///< Index of widget that corresponds to this button.
+	NSString *fallback_text; ///< Text to use if sprite is unavailable.
 };
 
-/* 9 items can be displayed on the touch bar when using default buttons. */
+/**
+ * Storage of defined touch bar buttons.
+ * @note 9 items can be displayed on the touch bar when using default buttons.
+ */
 static const std::array<TouchBarButton, 9> _touchbar_buttons{{
 	{ @"openttd.pause",         SPR_IMG_PAUSE,       MTHK_PAUSE,         @"Pause" },
 	{ @"openttd.fastforward",   SPR_IMG_FASTFORWARD, MTHK_FASTFORWARD,   @"Fast Forward" },
@@ -81,36 +67,30 @@ static const std::array<TouchBarButton, 9> _touchbar_buttons{{
 	{ @"openttd.build_airport", SPR_IMG_BUILDAIR,    MTHK_BUILD_AIRPORT, @"Airport" }
 }};
 
-#endif
-
-bool _allow_hidpi_window = true; // Referenced from table/misc_settings.ini
+bool _allow_hidpi_window = true; ///< Storage for allow_hidpi setting. If true renders OTTD in native resolution. @see table/misc_settings.ini
 
 @interface OTTDMain : NSObject <NSApplicationDelegate>
 @end
 
+/** Name of notification observer used to restart the game loop if necessary. */
 NSString *OTTDMainLaunchGameEngine = @"ottdmain_launch_game_engine";
 
-bool _tab_is_down;
+bool _tab_is_down; ///< Is tab button pressed.
 
-static bool _cocoa_video_dialog = false;
-static OTTDMain *_ottd_main;
+static bool _cocoa_video_dialog = false; ///< True iff inside the scope of CocoaDialog method.
+static OTTDMain *_ottd_main; ///< App delegate instance of OTTDMain.
 
 
 /**
  * Count the number of UTF-16 code points in a range of an UTF-8 string.
- * @param from Start of the range.
- * @param to End of the range.
+ * @param str The view in range of the string.
  * @return Number of UTF-16 code points in the range.
  */
-static NSUInteger CountUtf16Units(const char *from, const char *to)
+static NSUInteger CountUtf16Units(std::string_view str)
 {
 	NSUInteger i = 0;
-
-	while (from < to) {
-		char32_t c;
-		size_t len = Utf8Decode(&c, from);
-		i += len < 4 ? 1 : 2; // Watch for surrogate pairs.
-		from += len;
+	for (char32_t c : Utf8View(str)) {
+		i += c < 0x10000 ? 1 : 2; // Watch for surrogate pairs.
 	}
 
 	return i;
@@ -120,18 +100,17 @@ static NSUInteger CountUtf16Units(const char *from, const char *to)
  * Advance an UTF-8 string by a number of equivalent UTF-16 code points.
  * @param str UTF-8 string.
  * @param count Number of UTF-16 code points to advance the string by.
- * @return Advanced string pointer.
+ * @return Position inside str.
  */
-static const char *Utf8AdvanceByUtf16Units(const char *str, NSUInteger count)
+static size_t Utf8AdvanceByUtf16Units(std::string_view str, NSUInteger count)
 {
-	for (NSUInteger i = 0; i < count && *str != '\0'; ) {
-		char32_t c;
-		size_t len = Utf8Decode(&c, str);
-		i += len < 4 ? 1 : 2; // Watch for surrogates.
-		str += len;
+	Utf8View view(str);
+	auto it = view.begin();
+	const auto end = view.end();
+	for (NSUInteger i = 0; it != end && i < count; ++it) {
+		i += *it < 0x10000 ? 1 : 2; // Watch for surrogate pairs.
 	}
-
-	return str;
+	return it.GetByteOffset();
 }
 
 /**
@@ -159,7 +138,10 @@ static std::vector<char32_t> NSStringToUTF32(NSString *s)
 	return unicode_str;
 }
 
-#ifdef HAVE_TOUCHBAR_SUPPORT
+/**
+ * Free memory where data was stored.
+ * @param data Pointer to memory that will be freed.
+ */
 static void CGDataFreeCallback(void *, const void *data, size_t)
 {
 	delete[] (const uint32_t *)data;
@@ -184,13 +166,12 @@ static NSImage *NSImageFromSprite(SpriteID sprite_id, ZoomLevel zoom)
 	if (!data) return nullptr;
 
 	CGBitmapInfo info = kCGImageAlphaFirst | kCGBitmapByteOrder32Host;
-	CFAutoRelease<CGColorSpaceRef> color_space(CGColorSpaceCreateWithName(kCGColorSpaceSRGB));
-	CFAutoRelease<CGImage> bitmap(CGImageCreate(dim.width, dim.height, 8, 32, dim.width * 4, color_space.get(), info, data.get(), nullptr, false, kCGRenderingIntentDefault));
+	CFAutoRelease<CGColorSpaceRef> colour_space(CGColorSpaceCreateWithName(kCGColorSpaceSRGB));
+	CFAutoRelease<CGImage> bitmap(CGImageCreate(dim.width, dim.height, 8, 32, dim.width * 4, colour_space.get(), info, data.get(), nullptr, false, kCGRenderingIntentDefault));
 	if (!bitmap) return nullptr;
 
 	return [ [ [ NSImage alloc ] initWithCGImage:bitmap.get() size:NSZeroSize ] autorelease ];
 }
-#endif /* HAVE_TOUCHBAR_SUPPORT */
 
 
 /**
@@ -205,17 +186,14 @@ static NSImage *NSImageFromSprite(SpriteID sprite_id, ZoomLevel zoom)
 	[ NSApp stop:self ];
 
 	/* Send an empty event to return from the run loop. Without that, application is stuck waiting for an event. */
-#ifdef HAVE_OSX_1012_SDK
 	NSEventType type = NSEventTypeApplicationDefined;
-#else
-	NSEventType type = NSApplicationDefined;
-#endif
 	NSEvent *event = [ NSEvent otherEventWithType:type location:NSMakePoint(0, 0) modifierFlags:0 timestamp:0.0 windowNumber:0 context:nil subtype:0 data1:0 data2:0 ];
 	[ NSApp postEvent:event atStart:YES ];
 }
 
 /**
  * Start the game loop.
+ * @param note Notification containing the application object. Exists because the API requires it.
  */
 - (void)launchGameEngine: (NSNotification*) note
 {
@@ -235,6 +213,7 @@ static NSImage *NSImageFromSprite(SpriteID sprite_id, ZoomLevel zoom)
 
 /**
  * Called when the internal event loop has just started running.
+ * @param note Notification containing the application object. Exists because the API requires it.
  */
 - (void) applicationDidFinishLaunching: (NSNotification*) note
 {
@@ -247,6 +226,8 @@ static NSImage *NSImageFromSprite(SpriteID sprite_id, ZoomLevel zoom)
 
 /**
  * Display the in game quit confirmation dialog.
+ * @param sender The application object. Exists because the API requires it.
+ * @return Whether the application should be terminating right now.
  */
 - (NSApplicationTerminateReply)applicationShouldTerminate:(NSApplication*) sender
 {
@@ -269,6 +250,8 @@ static NSImage *NSImageFromSprite(SpriteID sprite_id, ZoomLevel zoom)
  * Starting with 14, macOS logs a warning if we don't implement this ourselves. Since OpenTTD does not (yet) make use of restorable state, we simply don't care what happens with it.
  *
  * Explained here: https://developer.apple.com/documentation/foundation/nssecurecoding
+ * @param sender The application object. Exists because the API requires it.
+ * @return Always \c YES.
  */
 - (BOOL)applicationSupportsSecureRestorableState:(NSApplication*) sender
 {
@@ -335,10 +318,8 @@ static void setupWindowMenu()
 	[ menuItem setSubmenu:windowMenu ];
 	[ [ NSApp mainMenu ] addItem:menuItem ];
 
-	if (MacOSVersionIsAtLeast(10, 7, 0)) {
-		/* The OS will change the name of this menu item automatically */
-		[ windowMenu addItemWithTitle:@"Fullscreen" action:@selector(toggleFullScreen:) keyEquivalent:@"^f" ];
-	}
+	/* The OS will change the name of this menu item automatically */
+	[ windowMenu addItemWithTitle:@"Fullscreen" action:@selector(toggleFullScreen:) keyEquivalent:@"^f" ];
 
 	/* Tell the application object that this is now the window menu */
 	[ NSApp setWindowsMenu:windowMenu ];
@@ -350,6 +331,7 @@ static void setupWindowMenu()
 
 /**
  * Startup the application.
+ * @return True iff startup was successful.
  */
 bool CocoaSetupApplication()
 {
@@ -400,9 +382,9 @@ void CocoaExitApplication()
  * @param message Message text.
  * @param buttonLabel Button text.
  *
- * @note This is needed since sometimes assert is called before the videodriver is initialized .
+ * @note This is needed since sometimes assert is called before the videodriver is initialized.
  */
-void CocoaDialog(const char *title, const char *message, const char *buttonLabel)
+void CocoaDialog(std::string_view title, std::string_view message, std::string_view buttonLabel)
 {
 	_cocoa_video_dialog = true;
 
@@ -410,20 +392,16 @@ void CocoaDialog(const char *title, const char *message, const char *buttonLabel
 	if (VideoDriver::GetInstance() == nullptr) {
 		CocoaSetupApplication(); // Setup application before showing dialog
 	} else if (!_cocoa_video_started && VideoDriver::GetInstance()->Start({}) != nullptr) {
-		fprintf(stderr, "%s: %s\n", title, message);
+		fmt_print_no_system_error(stderr, "{}: {}\n", title, message);
 		return;
 	}
 
 	@autoreleasepool {
 		NSAlert *alert = [ [ NSAlert alloc ] init ];
-#ifdef HAVE_OSX_1012_SDK
 		[ alert setAlertStyle: NSAlertStyleCritical ];
-#else
-		[ alert setAlertStyle: NSCriticalAlertStyle ];
-#endif
-		[ alert setMessageText:[ NSString stringWithUTF8String:title ] ];
-		[ alert setInformativeText:[ NSString stringWithUTF8String:message ] ];
-		[ alert addButtonWithTitle: [ NSString stringWithUTF8String:buttonLabel ] ];
+		[ alert setMessageText:[ [ NSString alloc ] initWithBytes:title.data() length:title.size() encoding:NSUTF8StringEncoding ] ];
+		[ alert setInformativeText:[ [ NSString alloc ] initWithBytes:message.data() length:message.size() encoding:NSUTF8StringEncoding ] ];
+		[ alert addButtonWithTitle: [ [ NSString alloc ] initWithBytes:buttonLabel.data() length:buttonLabel.size() encoding:NSUTF8StringEncoding ] ];
 		[ alert runModal ];
 		[ alert release ];
 	}
@@ -438,6 +416,10 @@ void CocoaDialog(const char *title, const char *message, const char *buttonLabel
  * Re-implement the system cursor in order to allow hiding and showing it nicely
  */
 @implementation NSCursor (OTTD_CocoaCursor)
+/**
+ * Create clear cursor for cocoa driver.
+ * @return The created cursor.
+ */
 + (NSCursor *) clearCocoaCursor
 {
 	/* RAW 16x16 transparent GIF */
@@ -455,11 +437,17 @@ void CocoaDialog(const char *title, const char *message, const char *buttonLabel
 
 @implementation OTTD_CocoaWindow {
 	VideoDriver_Cocoa *driver;
-	bool touchbar_created;
+	bool touchbar_created; ///< Whether the touchbar exists.
 }
 
 /**
  * Initialize event system for the application rectangle
+ * @param contentRect The boundaries of the window.
+ * @param styleMask The window style to apply.
+ * @param backingType How the drawing is buffered.
+ * @param flag Whether to create the window immediately, or once it's moved on screen.
+ * @param drv The underlying video driver.
+ * @return The initialized window.
  */
 - (instancetype)initWithContentRect:(NSRect)contentRect styleMask:(NSUInteger)styleMask backing:(NSBackingStoreType)backingType defer:(BOOL)flag driver:(VideoDriver_Cocoa *)drv
 {
@@ -470,7 +458,7 @@ void CocoaDialog(const char *title, const char *message, const char *buttonLabel
 		[ self setContentMinSize:NSMakeSize(64.0f, 64.0f) ];
 
 		std::string caption = VideoDriver::GetCaption();
-		NSString *nsscaption = [ [ NSString alloc ] initWithUTF8String:caption.c_str() ];
+		NSString *nsscaption = [ [ NSString alloc ] initWithBytes:caption.data() length:caption.size() encoding:NSUTF8StringEncoding ];
 		[ self setTitle:nsscaption ];
 		[ self setMiniwindowTitle:nsscaption ];
 		[ nsscaption release ];
@@ -480,7 +468,9 @@ void CocoaDialog(const char *title, const char *message, const char *buttonLabel
 }
 
 /**
- * Define the rectangle we draw our window in
+ * Define the rectangle we draw our window in.
+ * @param frameRect The new boundaries of the window.
+ * @param flag Whether the window redraws the views.
  */
 - (void)setFrame:(NSRect)frameRect display:(BOOL)flag
 {
@@ -488,8 +478,6 @@ void CocoaDialog(const char *title, const char *message, const char *buttonLabel
 
 	driver->AllocateBackingStore();
 }
-
-#ifdef HAVE_TOUCHBAR_SUPPORT
 
 - (void)touchBarButtonAction:(id)sender
 {
@@ -532,11 +520,8 @@ void CocoaDialog(const char *title, const char *message, const char *buttonLabel
 	return tb_item;
 }
 
-#endif /* HAVE_TOUCHBAR_SUPPORT */
-
 - (void)refreshSystemSprites
 {
-#ifdef HAVE_TOUCHBAR_SUPPORT
 	if (!self->touchbar_created || ![ self respondsToSelector:@selector(touchBar) ] || self.touchBar == nil) return;
 
 	/* Re-create button images from OTTD sprites. */
@@ -563,15 +548,14 @@ void CocoaDialog(const char *title, const char *message, const char *buttonLabel
 			button.imagePosition = NSNoImage;
 		}
 	}
-#endif /* HAVE_TOUCHBAR_SUPPORT */
 }
 
 @end
 
 @implementation OTTD_CocoaView {
 	float _current_magnification;
-	NSUInteger _current_mods;
-	bool _emulated_down;
+	NSUInteger _current_mods; ///< Currently applied modifier flags.
+	bool _emulated_down; ///< Whether the mouse button is emulated or real.
 	bool _use_hidpi; ///< Render content in native resolution?
 }
 
@@ -599,7 +583,8 @@ void CocoaDialog(const char *title, const char *message, const char *buttonLabel
 }
 
 /**
- * Allow to handle events
+ * Allow to handle events.
+ * @return Always \c YES.
  */
 - (BOOL)acceptsFirstResponder
 {
@@ -614,10 +599,13 @@ void CocoaDialog(const char *title, const char *message, const char *buttonLabel
 	}
 }
 
-/** Update mouse cursor to use for this view. */
+/**
+ * Update mouse cursor to use for this view.
+ * @param event Event from the operating system. Exists because the API requires it.
+ */
 - (void)cursorUpdate:(NSEvent *)event
 {
-	[ (_game_mode == GM_BOOTSTRAP ? [ NSCursor arrowCursor ] : [ NSCursor clearCocoaCursor ]) set ];
+	[ (_game_mode == GameMode::Bootstrap ? [ NSCursor arrowCursor ] : [ NSCursor clearCocoaCursor ]) set ];
 }
 
 - (void)viewWillMoveToWindow:(NSWindow *)win
@@ -636,14 +624,16 @@ void CocoaDialog(const char *title, const char *message, const char *buttonLabel
 	[ track release ];
 }
 /**
- * Make OpenTTD aware that it has control over the mouse
+ * Make OpenTTD aware that it has control over the mouse.
+ * @param theEvent Information about occurred event.
  */
 - (void)mouseEntered:(NSEvent *)theEvent
 {
 	_cursor.in_window = true;
 }
 /**
- * Make OpenTTD aware that it has NOT control over the mouse
+ * Make OpenTTD aware that it has NO control over the mouse.
+ * @param theEvent Information about occurred event.
  */
 - (void)mouseExited:(NSEvent *)theEvent
 {
@@ -652,9 +642,9 @@ void CocoaDialog(const char *title, const char *message, const char *buttonLabel
 }
 
 /**
- * Return the mouse location
- * @param event UI event
- * @return mouse location as NSPoint
+ * Return the mouse location.
+ * @param e Information about occurred event.
+ * @return Mouse location as NSPoint.
  */
 - (NSPoint)mousePositionFromEvent:(NSEvent *)e
 {
@@ -665,6 +655,10 @@ void CocoaDialog(const char *title, const char *message, const char *buttonLabel
 	return [ self getRealRect:NSMakeRect(pt.x, self.bounds.size.height - pt.y, 0, 0) ].origin;
 }
 
+/**
+ * Internal handler of mouse movement.
+ * @param event Information about occurred event.
+ */
 - (void)internalMouseMoveEvent:(NSEvent *)event
 {
 	if (_cursor.fix_at) {
@@ -677,6 +671,9 @@ void CocoaDialog(const char *title, const char *message, const char *buttonLabel
 	HandleMouseEvents();
 }
 
+/**
+ * Internal handler of mouse buttons.
+ */
 - (void)internalMouseButtonEvent
 {
 	bool cur_fix = _cursor.fix_at;
@@ -686,6 +683,11 @@ void CocoaDialog(const char *title, const char *message, const char *buttonLabel
 	if (cur_fix != _cursor.fix_at) CGAssociateMouseAndMouseCursorPosition(!_cursor.fix_at);
 }
 
+/**
+ * Check if right mouse button should be emulated when left button is pressed.
+ * @param event Information about occurred event.
+ * @return True iff right button should be emulated instead of left one.
+ */
 - (BOOL)emulateRightButton:(NSEvent *)event
 {
 	uint32_t keymask = 0;
@@ -695,15 +697,28 @@ void CocoaDialog(const char *title, const char *message, const char *buttonLabel
 	return (event.modifierFlags & keymask) != 0;
 }
 
+/**
+ * Handler of mouse movement.
+ * @param event Information about occurred event.
+ */
 - (void)mouseMoved:(NSEvent *)event
 {
 	[ self internalMouseMoveEvent:event ];
 }
 
+/**
+ * Handler of mouse movement while left button is down.
+ * @param event Information about occurred event.
+ */
 - (void)mouseDragged:(NSEvent *)event
 {
 	[ self internalMouseMoveEvent:event ];
 }
+
+/**
+ * Handler of left mouse button pressing.
+ * @param event Information about occurred event.
+ */
 - (void)mouseDown:(NSEvent *)event
 {
 	if ([ self emulateRightButton:event ]) {
@@ -714,6 +729,11 @@ void CocoaDialog(const char *title, const char *message, const char *buttonLabel
 		[ self internalMouseButtonEvent ];
 	}
 }
+
+/**
+ * Handler of left mouse button releasing.
+ * @param event Information about occurred event.
+ */
 - (void)mouseUp:(NSEvent *)event
 {
 	if (self->_emulated_down) {
@@ -726,22 +746,40 @@ void CocoaDialog(const char *title, const char *message, const char *buttonLabel
 	}
 }
 
+/**
+ * Handler of mouse movement when right button is down.
+ * @param event Information about occurred event.
+ */
 - (void)rightMouseDragged:(NSEvent *)event
 {
 	[ self internalMouseMoveEvent:event ];
 }
+
+/**
+ * Handler of right mouse button pressing.
+ * @param event Information about occurred event.
+ */
 - (void)rightMouseDown:(NSEvent *)event
 {
 	_right_button_down = true;
 	_right_button_clicked = true;
 	[ self internalMouseButtonEvent ];
 }
+
+/**
+ * Handler of right mouse button releasing.
+ * @param event Information about occurred event.
+ */
 - (void)rightMouseUp:(NSEvent *)event
 {
 	_right_button_down = false;
 	[ self internalMouseButtonEvent ];
 }
 
+/**
+ * Handler of mouse wheel scrolling.
+ * @param event Information about occurred event.
+ */
 - (void)scrollWheel:(NSEvent *)event
 {
 	if ([ event deltaY ] > 0.0) { /* Scroll up */
@@ -771,6 +809,10 @@ void CocoaDialog(const char *title, const char *message, const char *buttonLabel
 	_cursor.wheel_moved = true;
 }
 
+/**
+ * Handler of magnification events.
+ * @param event Information about occurred event.
+ */
 - (void)magnifyWithEvent:(NSEvent *)event
 {
 	/* Pinch open or close gesture. */
@@ -788,6 +830,10 @@ void CocoaDialog(const char *title, const char *message, const char *buttonLabel
 	}
 }
 
+/**
+ * Handler of gesture to end magnification.
+ * @param event Information about occurred event.
+ */
 - (void)endGestureWithEvent:(NSEvent *)event
 {
 	/* Gesture ended. */
@@ -795,13 +841,21 @@ void CocoaDialog(const char *title, const char *message, const char *buttonLabel
 }
 
 
+/**
+ * Internal handler of keyboard keys.
+ * @param keycode The raw keycode of the key press.
+ * @param unicode The unicode character of the key press.
+ * @param down Whether pressing or releasing the key.
+ * @param modifiers Flags to denote other (special) keys that might have been pressed.
+ * @return Whether event should be interpreted.
+ */
 - (BOOL)internalHandleKeycode:(unsigned short)keycode unicode:(char32_t)unicode pressed:(BOOL)down modifiers:(NSUInteger)modifiers
 {
 	switch (keycode) {
-		case QZ_UP:    SB(_dirkeys, 1, 1, down); break;
-		case QZ_DOWN:  SB(_dirkeys, 3, 1, down); break;
-		case QZ_LEFT:  SB(_dirkeys, 0, 1, down); break;
-		case QZ_RIGHT: SB(_dirkeys, 2, 1, down); break;
+		case QZ_UP: _dirkeys.Set(DirectionKey::Up, down); break;
+		case QZ_DOWN: _dirkeys.Set(DirectionKey::Down, down); break;
+		case QZ_LEFT: _dirkeys.Set(DirectionKey::Left, down); break;
+		case QZ_RIGHT: _dirkeys.Set(DirectionKey::Right, down); break;
 
 		case QZ_TAB:
 			_tab_is_down = down;
@@ -867,6 +921,10 @@ void CocoaDialog(const char *title, const char *message, const char *buttonLabel
 	return interpret_keys;
 }
 
+/**
+ * Handler of keyboard key pressing.
+ * @param event Information about occurred event.
+ */
 - (void)keyDown:(NSEvent *)event
 {
 	/* Quit, hide and minimize */
@@ -896,6 +954,10 @@ void CocoaDialog(const char *title, const char *message, const char *buttonLabel
 	}
 }
 
+/**
+ * Handler of keyboard key releasing.
+ * @param event Information about occurred event.
+ */
 - (void)keyUp:(NSEvent *)event
 {
 	/* Quit, hide and minimize */
@@ -916,6 +978,10 @@ void CocoaDialog(const char *title, const char *message, const char *buttonLabel
 	[ self internalHandleKeycode:event.keyCode unicode:unicode_str[0] pressed:NO modifiers:event.modifierFlags ];
 }
 
+/**
+ * Handler of modifiers.
+ * @param event Information about occurred event.
+ */
 - (void)flagsChanged:(NSEvent *)event
 {
 	const int mapping[] = { QZ_CAPSLOCK, QZ_LSHIFT, QZ_LCTRL, QZ_LALT, QZ_LMETA };
@@ -941,32 +1007,45 @@ void CocoaDialog(const char *title, const char *message, const char *buttonLabel
 }
 
 
-/** Insert the given text at the given range. */
+/**
+ * Insert the given text at the given range.
+ * @param aString The string to insert.
+ * @param replacementRange The range of the original string to replace.
+ */
 - (void)insertText:(id)aString replacementRange:(NSRange)replacementRange
 {
 	if (!EditBoxInGlobalFocus()) return;
 
 	NSString *s = [ aString isKindOfClass:[ NSAttributedString class ] ] ? [ aString string ] : (NSString *)aString;
 
-	const char *insert_point = nullptr;
-	const char *replace_range = nullptr;
+	std::optional<size_t> insert_point;
+	std::optional<size_t> replace_range;
 	if (replacementRange.location != NSNotFound) {
 		/* Calculate the part to be replaced. */
-		insert_point = Utf8AdvanceByUtf16Units(_focused_window->GetFocusedTextbuf()->GetText(), replacementRange.location);
-		replace_range = Utf8AdvanceByUtf16Units(insert_point, replacementRange.length);
+		std::string_view focused_text{_focused_window->GetFocusedTextbuf()->GetText()};
+		insert_point = Utf8AdvanceByUtf16Units(focused_text, replacementRange.location);
+		replace_range = *insert_point + Utf8AdvanceByUtf16Units(focused_text.substr(*insert_point), replacementRange.length);
 	}
 
-	HandleTextInput(nullptr, true);
-	HandleTextInput([ s UTF8String ], false, nullptr, insert_point, replace_range);
+	HandleTextInput({}, true);
+	HandleTextInput([ s UTF8String ], false, std::nullopt, insert_point, replace_range);
 }
 
-/** Insert the given text at the caret. */
+/**
+ * Insert the given text at the caret.
+ * @param aString The string to insert.
+ */
 - (void)insertText:(id)aString
 {
 	[ self insertText:aString replacementRange:NSMakeRange(NSNotFound, 0) ];
 }
 
-/** Set a new marked text and reposition the caret. */
+/**
+ * Set a new marked text and reposition the caret.
+ * @param aString The string to set the marked text for.
+ * @param selRange The new selection range.
+ * @param replacementRange The range to replace, counted from the marked range.
+ */
 - (void)setMarkedText:(id)aString selectedRange:(NSRange)selRange replacementRange:(NSRange)replacementRange
 {
 	if (!EditBoxInGlobalFocus()) return;
@@ -975,23 +1054,28 @@ void CocoaDialog(const char *title, const char *message, const char *buttonLabel
 
 	const char *utf8 = [ s UTF8String ];
 	if (utf8 != nullptr) {
-		const char *insert_point = nullptr;
-		const char *replace_range = nullptr;
+		std::optional<size_t> insert_point;
+		std::optional<size_t> replace_range;
 		if (replacementRange.location != NSNotFound) {
 			/* Calculate the part to be replaced. */
 			NSRange marked = [ self markedRange ];
-			insert_point = Utf8AdvanceByUtf16Units(_focused_window->GetFocusedTextbuf()->GetText(), replacementRange.location + (marked.location != NSNotFound ? marked.location : 0u));
-			replace_range = Utf8AdvanceByUtf16Units(insert_point, replacementRange.length);
+			std::string_view focused_text{_focused_window->GetFocusedTextbuf()->GetText()};
+			insert_point = Utf8AdvanceByUtf16Units(focused_text, replacementRange.location + (marked.location != NSNotFound ? marked.location : 0u));
+			replace_range = *insert_point + Utf8AdvanceByUtf16Units(focused_text.substr(*insert_point), replacementRange.length);
 		}
 
 		/* Convert caret index into a pointer in the UTF-8 string. */
-		const char *selection = Utf8AdvanceByUtf16Units(utf8, selRange.location);
+		size_t selection = Utf8AdvanceByUtf16Units(utf8, selRange.location);
 
 		HandleTextInput(utf8, true, selection, insert_point, replace_range);
 	}
 }
 
-/** Set a new marked text and reposition the caret. */
+/**
+ * Set a new marked text and reposition the caret.
+ * @param aString The string to set the marked text for.
+ * @param selRange The new selection range.
+ */
 - (void)setMarkedText:(id)aString selectedRange:(NSRange)selRange
 {
 	[ self setMarkedText:aString selectedRange:selRange replacementRange:NSMakeRange(NSNotFound, 0) ];
@@ -1000,31 +1084,36 @@ void CocoaDialog(const char *title, const char *message, const char *buttonLabel
 /** Unmark the current marked text. */
 - (void)unmarkText
 {
-	HandleTextInput(nullptr, true);
+	HandleTextInput({}, true);
 }
 
-/** Get the caret position. */
+/**
+ * Get the caret position.
+ * @return The range with caret position.
+ */
 - (NSRange)selectedRange
 {
 	if (!EditBoxInGlobalFocus()) return NSMakeRange(NSNotFound, 0);
 
 	const Textbuf *text_buf = _focused_window->GetFocusedTextbuf();
-	const char *text = text_buf->GetText();
-	NSUInteger start = CountUtf16Units(text, text + text_buf->caretpos);
+	std::string_view text = text_buf->GetText();
+	NSUInteger start = CountUtf16Units(text.substr(0, text_buf->caretpos));
 	return NSMakeRange(start, 0);
 }
 
-/** Get the currently marked range. */
+/**
+ * Get the currently marked range.
+ * @return The currently marked range.
+ */
 - (NSRange)markedRange
 {
 	if (!EditBoxInGlobalFocus()) return NSMakeRange(NSNotFound, 0);
 
 	const Textbuf *text_buf = _focused_window->GetFocusedTextbuf();
 	if (text_buf->markend != 0) {
-		const char *text = text_buf->GetText();
-		const char *mark = text + text_buf->markpos;
-		NSUInteger start = CountUtf16Units(text, mark);
-		NSUInteger len = CountUtf16Units(mark, text + text_buf->markend);
+		std::string_view text = text_buf->GetText();
+		NSUInteger start = CountUtf16Units(text.substr(0, text_buf->markpos));
+		NSUInteger len = CountUtf16Units(text.substr(text_buf->markpos, text_buf->markend - text_buf->markpos));
 
 		return NSMakeRange(start, len);
 	}
@@ -1032,7 +1121,10 @@ void CocoaDialog(const char *title, const char *message, const char *buttonLabel
 	return NSMakeRange(NSNotFound, 0);
 }
 
-/** Is any text marked? */
+/**
+ * Is any text marked?
+ * @return \c YES iff text is marked.
+ */
 - (BOOL)hasMarkedText
 {
 	if (!EditBoxInGlobalFocus()) return NO;
@@ -1040,12 +1132,18 @@ void CocoaDialog(const char *title, const char *message, const char *buttonLabel
 	return _focused_window->GetFocusedTextbuf()->markend != 0;
 }
 
-/** Get a string corresponding to the given range. */
+/**
+ * Get a string corresponding to the given range.
+ * @param theRange The requested range of the string to return.
+ * @param[out] actualRange Optional output of range after validation.
+ * @return The requested substring.
+ */
 - (NSAttributedString *)attributedSubstringForProposedRange:(NSRange)theRange actualRange:(NSRangePointer)actualRange
 {
 	if (!EditBoxInGlobalFocus()) return nil;
 
-	NSString *s = [ NSString stringWithUTF8String:_focused_window->GetFocusedTextbuf()->GetText() ];
+	auto text = _focused_window->GetFocusedTextbuf()->GetText();
+	NSString *s = [ [ NSString alloc] initWithBytes:text.data() length:text.size() encoding:NSUTF8StringEncoding ];
 	NSRange valid_range = NSIntersectionRange(NSMakeRange(0, [ s length ]), theRange);
 
 	if (actualRange != nullptr) *actualRange = valid_range;
@@ -1054,21 +1152,33 @@ void CocoaDialog(const char *title, const char *message, const char *buttonLabel
 	return [ [ [ NSAttributedString alloc ] initWithString:[ s substringWithRange:valid_range ] ] autorelease ];
 }
 
-/** Get a string corresponding to the given range. */
+/**
+ * Get a string corresponding to the given range.
+ * @param theRange The requested range of the string to return.
+ * @return The requested substring.
+ */
 - (NSAttributedString *)attributedSubstringFromRange:(NSRange)theRange
 {
 	return [ self attributedSubstringForProposedRange:theRange actualRange:nil ];
 }
 
-/** Get the current edit box string. */
+/**
+ * Get the current edit box string.
+ * @return The string from the edit box.
+ */
 - (NSAttributedString *)attributedString
 {
 	if (!EditBoxInGlobalFocus()) return [ [ [ NSAttributedString alloc ] initWithString:@"" ] autorelease ];
 
-	return [ [ [ NSAttributedString alloc ] initWithString:[ NSString stringWithUTF8String:_focused_window->GetFocusedTextbuf()->GetText() ] ] autorelease ];
+	auto text = _focused_window->GetFocusedTextbuf()->GetText();
+	return [ [ [ NSAttributedString alloc ] initWithString:[ [ NSString alloc ] initWithBytes:text.data() length:text.size() encoding:NSUTF8StringEncoding ] ] autorelease ];
 }
 
-/** Get the character that is rendered at the given point. */
+/**
+ * Get the character that is rendered at the given point.
+ * @param thePoint The point in screen coordinates to get the character index for.
+ * @return A negative number to denote an error, otherwise the number of UTF-16 characters up to \c thePoint.
+ */
 - (NSUInteger)characterIndexForPoint:(NSPoint)thePoint
 {
 	if (!EditBoxInGlobalFocus()) return NSNotFound;
@@ -1081,18 +1191,22 @@ void CocoaDialog(const char *title, const char *message, const char *buttonLabel
 	if (index == -1) return NSNotFound;
 
 	auto text = _focused_window->GetFocusedTextbuf()->GetText();
-	return CountUtf16Units(text, text + index);
+	return CountUtf16Units(text.substr(0, index));
 }
 
-/** Get the bounding rect for the given range. */
+/**
+ * Get the bounding rect for the given range.
+ * @param aRange The start and end location of the string in UTF-16 characters.
+ * @return The rectangle in screen coordinates for the given range.
+ */
 - (NSRect)firstRectForCharacterRange:(NSRange)aRange
 {
 	if (!EditBoxInGlobalFocus()) return NSMakeRect(0, 0, 0, 0);
 
-	const char *focused_text = _focused_window->GetFocusedTextbuf()->GetText();
+	std::string_view focused_text = _focused_window->GetFocusedTextbuf()->GetText();
 	/* Convert range to UTF-8 string pointers. */
-	const char *start = Utf8AdvanceByUtf16Units(focused_text, aRange.location);
-	const char *end = aRange.length != 0 ? Utf8AdvanceByUtf16Units(focused_text, aRange.location + aRange.length) : start;
+	size_t start = Utf8AdvanceByUtf16Units(focused_text, aRange.location);
+	size_t end = start + Utf8AdvanceByUtf16Units(focused_text.substr(start), aRange.length);
 
 	/* Get the bounding rect for the text range.*/
 	Rect r = _focused_window->GetTextBoundingRect(start, end);
@@ -1101,153 +1215,230 @@ void CocoaDialog(const char *title, const char *message, const char *buttonLabel
 	return [ [ self window ] convertRectToScreen:[ self convertRect:view_rect toView:nil ] ];
 }
 
-/** Get the bounding rect for the given range. */
+/**
+ * Get the bounding rect for the given range.
+ * @param aRange The start and end location of the string in UTF-16 characters.
+ * @param[out] actualRange Optional output of range after validation. Exists because the API requires it.
+ * @return The rectangle in screen coordinates for the given range.
+ */
 - (NSRect)firstRectForCharacterRange:(NSRange)aRange actualRange:(NSRangePointer)actualRange
 {
 	return [ self firstRectForCharacterRange:aRange ];
 }
 
-/** Get all string attributes that we can process for marked text. */
+/**
+ * Get all string attributes that we can process for marked text.
+ * @return The valid attributes, in this case an empty array.
+ */
 - (NSArray*)validAttributesForMarkedText
 {
 	return [ NSArray array ];
 }
 
-/** Delete single character left of the cursor. */
+/**
+ * Delete single character left of the cursor.
+ * @param sender Where the event comes from.
+ */
 - (void)deleteBackward:(id)sender
 {
 	if (EditBoxInGlobalFocus()) HandleKeypress(WKC_BACKSPACE, 0);
 }
 
-/** Delete word left of the cursor. */
+/**
+ * Delete word left of the cursor.
+ * @param sender Where the event comes from.
+ */
 - (void)deleteWordBackward:(id)sender
 {
 	if (EditBoxInGlobalFocus()) HandleKeypress(WKC_BACKSPACE | WKC_CTRL, 0);
 }
 
-/** Delete single character right of the cursor. */
+/**
+ * Delete single character right of the cursor.
+ * @param sender Where the event comes from.
+ */
 - (void)deleteForward:(id)sender
 {
 	if (EditBoxInGlobalFocus()) HandleKeypress(WKC_DELETE, 0);
 }
 
-/** Delete word right of the cursor. */
+/**
+ * Delete word right of the cursor.
+ * @param sender Where the event comes from.
+ */
 - (void)deleteWordForward:(id)sender
 {
 	if (EditBoxInGlobalFocus()) HandleKeypress(WKC_DELETE | WKC_CTRL, 0);
 }
 
-/** Move cursor one character left. */
+/**
+ * Move cursor one character left.
+ * @param sender Where the event comes from.
+ */
 - (void)moveLeft:(id)sender
 {
 	if (EditBoxInGlobalFocus()) HandleKeypress(WKC_LEFT, 0);
 }
 
-/** Move cursor one word left. */
+/**
+ * Move cursor one word left.
+ * @param sender Where the event comes from.
+ */
 - (void)moveWordLeft:(id)sender
 {
 	if (EditBoxInGlobalFocus()) HandleKeypress(WKC_LEFT | WKC_CTRL, 0);
 }
 
-/** Move cursor one character right. */
+/**
+ * Move cursor one character right.
+ * @param sender Where the event comes from.
+ */
 - (void)moveRight:(id)sender
 {
 	if (EditBoxInGlobalFocus()) HandleKeypress(WKC_RIGHT, 0);
 }
 
-/** Move cursor one word right. */
+/**
+ * Move cursor one word right.
+ * @param sender Where the event comes from.
+ */
 - (void)moveWordRight:(id)sender
 {
 	if (EditBoxInGlobalFocus()) HandleKeypress(WKC_RIGHT | WKC_CTRL, 0);
 }
 
-/** Move cursor one line up. */
+/**
+ * Move cursor one line up.
+ * @param sender Where the event comes from.
+ */
 - (void)moveUp:(id)sender
 {
 	if (EditBoxInGlobalFocus()) HandleKeypress(WKC_UP, 0);
 }
 
-/** Move cursor one line down. */
+/**
+ * Move cursor one line down.
+ * @param sender Where the event comes from.
+ */
 - (void)moveDown:(id)sender
 {
 	if (EditBoxInGlobalFocus()) HandleKeypress(WKC_DOWN, 0);
 }
 
-/** MScroll one line up. */
+/**
+ * MScroll one line up.
+ * @param sender Where the event comes from.
+ */
 - (void)moveUpAndModifySelection:(id)sender
 {
 	if (EditBoxInGlobalFocus()) HandleKeypress(WKC_UP | WKC_SHIFT, 0);
 }
 
-/** Scroll one line down. */
+/**
+ * Scroll one line down.
+ * @param sender Where the event comes from.
+ */
 - (void)moveDownAndModifySelection:(id)sender
 {
 	if (EditBoxInGlobalFocus()) HandleKeypress(WKC_DOWN | WKC_SHIFT, 0);
 }
 
-/** Move cursor to the start of the line. */
+/**
+ * Move cursor to the start of the line.
+ * @param sender Where the event comes from.
+ */
 - (void)moveToBeginningOfLine:(id)sender
 {
 	if (EditBoxInGlobalFocus()) HandleKeypress(WKC_HOME, 0);
 }
 
-/** Move cursor to the end of the line. */
+/**
+ * Move cursor to the end of the line.
+ * @param sender Where the event comes from.
+ */
 - (void)moveToEndOfLine:(id)sender
 {
 	if (EditBoxInGlobalFocus()) HandleKeypress(WKC_END, 0);
 }
 
-/** Scroll one page up. */
+/**
+ * Scroll one page up.
+ * @param sender Where the event comes from.
+ */
 - (void)scrollPageUp:(id)sender
 {
 	if (EditBoxInGlobalFocus()) HandleKeypress(WKC_PAGEUP, 0);
 }
 
-/** Scroll one page down. */
+/**
+ * Scroll one page down.
+ * @param sender Where the event comes from.
+ */
 - (void)scrollPageDown:(id)sender
 {
 	if (EditBoxInGlobalFocus()) HandleKeypress(WKC_PAGEDOWN, 0);
 }
 
-/** Move cursor (and selection) one page up. */
+/**
+ * Move cursor (and selection) one page up.
+ * @param sender Where the event comes from.
+ */
 - (void)pageUpAndModifySelection:(id)sender
 {
 	if (EditBoxInGlobalFocus()) HandleKeypress(WKC_PAGEUP | WKC_SHIFT, 0);
 }
 
-/** Move cursor (and selection) one page down. */
+/**
+ * Move cursor (and selection) one page down.
+ * @param sender Where the event comes from.
+ */
 - (void)pageDownAndModifySelection:(id)sender
 {
 	if (EditBoxInGlobalFocus()) HandleKeypress(WKC_PAGEDOWN | WKC_SHIFT, 0);
 }
 
-/** Scroll to the beginning of the document. */
+/**
+ * Scroll to the beginning of the document.
+ * @param sender Where the event comes from.
+ */
 - (void)scrollToBeginningOfDocument:(id)sender
 {
 	/* For compatibility with OTTD on Win/Linux. */
 	[ self moveToBeginningOfLine:sender ];
 }
 
-/** Scroll to the end of the document. */
+/**
+ * Scroll to the end of the document.
+ * @param sender Where the event comes from.
+ */
 - (void)scrollToEndOfDocument:(id)sender
 {
 	/* For compatibility with OTTD on Win/Linux. */
 	[ self moveToEndOfLine:sender ];
 }
 
-/** Return was pressed. */
+/**
+ * Return was pressed.
+ * @param sender Where the event comes from.
+ */
 - (void)insertNewline:(id)sender
 {
 	if (EditBoxInGlobalFocus()) HandleKeypress(WKC_RETURN, '\r');
 }
 
-/** Escape was pressed. */
+/**
+ * Escape was pressed.
+ * @param sender Where the event comes from.
+ */
 - (void)cancelOperation:(id)sender
 {
 	if (EditBoxInGlobalFocus()) HandleKeypress(WKC_ESC, 0);
 }
 
-/** Invoke the selector if we implement it. */
+/**
+ * Invoke the selector if we implement it.
+ * @param aSelector The selector to invoke.
+ */
 - (void)doCommandBySelector:(SEL)aSelector
 {
 	if ([ self respondsToSelector:aSelector ]) [ self performSelector:aSelector ];
@@ -1260,7 +1451,11 @@ void CocoaDialog(const char *title, const char *message, const char *buttonLabel
 	VideoDriver_Cocoa *driver;
 }
 
-/** Initialize the video driver */
+/**
+ * Initialize the video driver.
+ * @param drv Instance of the video driver.
+ * @return The new instance, or \c nullptr.
+ */
 - (instancetype)initWithDriver:(VideoDriver_Cocoa *)drv
 {
 	if (self = [ super init ]) {
@@ -1268,14 +1463,21 @@ void CocoaDialog(const char *title, const char *message, const char *buttonLabel
 	}
 	return self;
 }
-/** Handle closure requests */
+/**
+ * Handle closure requests.
+ * @param sender Where the event comes from.
+ * @return \c NO as we want to ask the user whether to quit.
+ */
 - (BOOL)windowShouldClose:(id)sender
 {
 	HandleExitGameRequest();
 
 	return NO;
 }
-/** Window entered fullscreen mode (10.7). */
+/**
+ * Window entered fullscreen mode (10.7).
+ * @param aNotification Notification containing the window object.
+ */
 - (void)windowDidEnterFullScreen:(NSNotification *)aNotification
 {
 	NSPoint loc = [ driver->cocoaview convertPoint:[ [ aNotification object ] mouseLocationOutsideOfEventStream ] fromView:nil ];
@@ -1288,7 +1490,10 @@ void CocoaDialog(const char *title, const char *message, const char *buttonLabel
 		[ e release ];
 	}
 }
-/** Screen the window is on changed. */
+/**
+ * Screen the window is on changed.
+ * @param notification Notification containing the window object. Exists because the API requires it.
+ */
 - (void)windowDidChangeBackingProperties:(NSNotification *)notification
 {
 	bool did_adjust = AdjustGUIZoom(AGZM_AUTOMATIC);
@@ -1299,7 +1504,12 @@ void CocoaDialog(const char *title, const char *message, const char *buttonLabel
 	if (did_adjust) ReInitAllWindows(true);
 }
 
-/** Presentation options to use for full screen mode. */
+/**
+ * Presentation options to use for full screen mode.
+ * @param window The window to get the presentation options for.
+ * @param proposedOptions A proposed set of options.
+ * @return The actual options we want.
+ */
 - (NSApplicationPresentationOptions)window:(NSWindow *)window willUseFullScreenPresentationOptions:(NSApplicationPresentationOptions)proposedOptions
 {
 	return NSApplicationPresentationFullScreen | NSApplicationPresentationHideMenuBar | NSApplicationPresentationHideDock;
@@ -1307,4 +1517,4 @@ void CocoaDialog(const char *title, const char *message, const char *buttonLabel
 
 @end
 
-#endif /* WITH_COCOA */
+#endif /* WITH_COCOA or DOXYGEN_API */

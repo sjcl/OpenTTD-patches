@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file network_sync.h Variables and function used for network sync tracking. */
@@ -10,7 +10,7 @@
 #ifndef NETWORK_SYNC_H
 #define NETWORK_SYNC_H
 
-#include "../core/ring_buffer.hpp"
+#include "../3rdparty/cpp-ring-buffer/ring_buffer.hpp"
 
 /* Sync debugging */
 struct NetworkSyncRecord {
@@ -18,13 +18,15 @@ struct NetworkSyncRecord {
 	uint32_t seed_1;
 	uint64_t state_checksum;
 };
-extern ring_buffer<NetworkSyncRecord> _network_sync_records;
-extern ring_buffer<uint> _network_sync_record_counts;
+extern jgr::ring_buffer<NetworkSyncRecord> _network_sync_records;
+extern jgr::ring_buffer<uint> _network_sync_record_counts;
 extern bool _record_sync_records;
 
 enum NetworkSyncRecordEvents : uint32_t {
 	NSRE_BEGIN,
 	NSRE_CMD,
+	NSRE_CALDATE_INC,
+	NSRE_ECONDATE_INC,
 	NSRE_AUX_TILE,
 	NSRE_TILE,
 	NSRE_TOWN,

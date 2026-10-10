@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file newgrf_newsignals.h NewGRF handling of new signals. */
@@ -12,8 +12,7 @@
 
 #include "newgrf_commons.h"
 #include "newgrf_spritegroup.h"
-#include "tunnel_map.h"
-#include "gfx_type.h"
+#include "rail.h"
 
 #include <vector>
 #include <array>
@@ -44,19 +43,19 @@ struct NewSignalStyle {
 	uint8_t grf_local_id;
 	uint8_t style_flags;
 	uint8_t lookahead_extra_aspects;
-	uint8_t semaphore_mask;
-	uint8_t electric_mask;
+	SignalTypeMask semaphore_mask;
+	SignalTypeMask electric_mask;
 
-	PalSpriteID signals[SIGTYPE_END][2][2];
+	RailTypeInfo::SignalSprites signals;
 };
 extern std::array<NewSignalStyle, MAX_NEW_SIGNAL_STYLES> _new_signal_styles;
 extern uint8_t _default_signal_style_lookahead_extra_aspects;
 
 struct NewSignalStyleMapping {
-	uint32_t grfid = 0;
+	GrfID grfid{};
 	uint8_t grf_local_id = 0;
 
-	inline bool operator==(const NewSignalStyleMapping& o) const { return grfid == o.grfid && grf_local_id == o.grf_local_id; }
+	inline bool operator==(const NewSignalStyleMapping &) const = default;
 };
 extern std::array<NewSignalStyleMapping, MAX_NEW_SIGNAL_STYLES> _new_signal_style_mapping;
 extern uint8_t _num_new_signal_styles;
@@ -94,15 +93,15 @@ struct NewSignalsResolverObject : public ResolverObject {
 	NewSignalsResolverObject(const GRFFile *grffile, TileIndex tile, TileContext context, uint32_t param1, uint32_t param2,
 			CustomSignalSpriteContext signal_context, uint8_t signal_style, const TraceRestrictProgram *prog = nullptr, uint z = 0);
 
-	ScopeResolver *GetScope(VarSpriteGroupScope scope = VSG_SCOPE_SELF, VarSpriteGroupScopeOffset relative = 0) override
+	ScopeResolver *GetScope(VarSpriteGroupScope scope = VarSpriteGroupScope::Self, VarSpriteGroupScopeOffset relative = 0) override
 	{
 		switch (scope) {
-			case VSG_SCOPE_SELF: return &this->newsignals_scope;
+			case VarSpriteGroupScope::Self: return &this->newsignals_scope;
 			default:             return ResolverObject::GetScope(scope, relative);
 		}
 	}
 
-	const SpriteGroup *ResolveReal(const RealSpriteGroup *group) const override;
+	const SpriteGroup *ResolveReal(const RealSpriteGroup &group) const override;
 
 	GrfSpecFeature GetFeature() const override;
 };

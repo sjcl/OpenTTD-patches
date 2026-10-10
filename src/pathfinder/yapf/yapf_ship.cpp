@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file yapf_ship.cpp Implementation of YAPF for ships. */
@@ -19,13 +19,12 @@
 #include "../../safeguards.h"
 
 constexpr int NUMBER_OR_WATER_REGIONS_LOOKAHEAD = 4;
-constexpr int MAX_SHIP_PF_NODES = (NUMBER_OR_WATER_REGIONS_LOOKAHEAD + 1) * WATER_REGION_NUMBER_OF_TILES * 4; // 4 possible exit dirs per tile.
+constexpr int MAX_SHIP_PF_NODES = (NUMBER_OR_WATER_REGIONS_LOOKAHEAD + 1) * WATER_REGION_NUMBER_OF_TILES * 4; ///< 4 possible exit dirs per tile.
 
-constexpr int SHIP_LOST_PATH_LENGTH = 8; // The length of the (aimless) path assigned when a ship is lost.
+constexpr int SHIP_LOST_PATH_LENGTH = 8; ///< The length of the (aimless) path assigned when a ship is lost.
 
 template <class Types>
-class CYapfDestinationTileWaterT
-{
+class CYapfDestinationTileWaterT {
 public:
 	typedef typename Types::Tpf Tpf; ///< the pathfinder class (derived from THIS class).
 	typedef typename Types::TrackFollower TrackFollower;
@@ -45,13 +44,13 @@ public:
 	void SetDestination(const Ship *v)
 	{
 		if (v->current_order.IsType(OT_GOTO_STATION)) {
-			this->dest_station   = v->current_order.GetDestination();
-			this->dest_tile      = CalcClosestStationTile(this->dest_station, v->tile, STATION_DOCK);
+			this->dest_station   = v->current_order.GetDestination().ToStationID();
+			this->dest_tile      = CalcClosestStationTile(this->dest_station, v->tile, StationType::Dock);
 			this->dest_trackdirs = INVALID_TRACKDIR_BIT;
 		} else {
-			this->dest_station   = INVALID_STATION;
-			this->dest_tile      = v->dest_tile;
-			this->dest_trackdirs = GetTileTrackdirBits(v->dest_tile, TRANSPORT_WATER, 0);
+			this->dest_station   = StationID::Invalid();
+			this->dest_tile      = (v->dest_tile == INVALID_TILE) ? TileIndex{} : v->dest_tile;
+			this->dest_trackdirs = GetTileTrackdirBits(this->dest_tile, TransportType::Water, 0);
 		}
 	}
 
@@ -63,20 +62,21 @@ public:
 	}
 
 protected:
-	/** To access inherited path finder. */
+	/** @copydoc CYapfBaseT::Yapf */
 	inline Tpf& Yapf()
 	{
 		return *static_cast<Tpf*>(this);
 	}
 
 public:
-	/** Called by YAPF to detect if node ends in the desired destination. */
+	/** @copydoc CYapfBaseT::PfDetectDestinationFunc */
 	inline bool PfDetectDestination(Node &n)
 	{
-		return this->PfDetectDestinationTile(n.segment_last_tile, n.segment_last_td);
+		return this->PfDetectDestinationTile(n.GetTile(), n.GetTrackdir());
 	}
 
-	inline bool PfDetectDestinationTile(TileIndex tile, Trackdir trackdir)
+	/** @copydoc CYapfBaseT::PfDetectDestinationTileFunc */
+	inline bool PfDetectDestinationTile(TileIndex tile, Trackdir td)
 	{
 		if (this->has_intermediate_dest) {
 			/* GetWaterRegionInfo is much faster than GetWaterRegionPatchInfo so we try that first. */
@@ -84,38 +84,22 @@ public:
 			return GetWaterRegionPatchInfo(tile) == this->intermediate_dest_region_patch;
 		}
 
-		if (this->dest_station != INVALID_STATION) return IsDockingTile(tile) && IsShipDestinationTile(tile, this->dest_station);
+		if (this->dest_station != StationID::Invalid()) return IsDockingTile(tile) && IsShipDestinationTile(tile, this->dest_station);
 
-		return tile == this->dest_tile && ((this->dest_trackdirs & TrackdirToTrackdirBits(trackdir)) != TRACKDIR_BIT_NONE);
+		return tile == this->dest_tile && ((this->dest_trackdirs & TrackdirToTrackdirBits(td)) != TRACKDIR_BIT_NONE);
 	}
 
-	/**
-	 * Called by YAPF to calculate cost estimate. Calculates distance to the destination
-	 * adds it to the actual cost from origin and stores the sum to the Node::estimate.
-	 */
+	/** @copydoc CYapfBaseT::PfCalcEstimateFunc */
 	inline bool PfCalcEstimate(Node &n)
 	{
 		const TileIndex destination_tile = this->has_intermediate_dest ? this->intermediate_dest_tile : this->dest_tile;
 
-		static const int dg_dir_to_x_offs[] = { -1, 0, 1, 0 };
-		static const int dg_dir_to_y_offs[] = { 0, 1, 0, -1 };
 		if (this->PfDetectDestination(n)) {
 			n.estimate = n.cost;
 			return true;
 		}
 
-		TileIndex tile = n.segment_last_tile;
-		DiagDirection exitdir = TrackdirToExitdir(n.segment_last_td);
-		int x1 = 2 * TileX(tile) + dg_dir_to_x_offs[(int)exitdir];
-		int y1 = 2 * TileY(tile) + dg_dir_to_y_offs[(int)exitdir];
-		int x2 = 2 * TileX(destination_tile);
-		int y2 = 2 * TileY(destination_tile);
-		int dx = abs(x1 - x2);
-		int dy = abs(y1 - y2);
-		int dmin = std::min(dx, dy);
-		int dxy = abs(dx - dy);
-		int d = dmin * YAPF_TILE_CORNER_LENGTH + (dxy - 1) * (YAPF_TILE_LENGTH / 2);
-		n.estimate = n.cost + d;
+		n.estimate = n.cost + OctileDistanceCost(n.GetTile(), n.GetTrackdir(), destination_tile);
 		assert(n.estimate >= n.parent->estimate);
 		return true;
 	}
@@ -123,8 +107,7 @@ public:
 
 /** Node Follower module of YAPF for ships */
 template <class Types>
-class CYapfFollowShipT
-{
+class CYapfFollowShipT {
 public:
 	typedef typename Types::Tpf Tpf; ///< the pathfinder class (derived from THIS class).
 	typedef typename Types::TrackFollower TrackFollower;
@@ -132,7 +115,7 @@ public:
 	typedef typename Node::Key Key; ///< key to hash tables.
 
 protected:
-	/** to access inherited path finder */
+	/** @copydoc CYapfBaseT::Yapf */
 	inline Tpf &Yapf()
 	{
 		return *static_cast<Tpf*>(this);
@@ -141,36 +124,39 @@ protected:
 	std::vector<WaterRegionDesc> water_region_corridor;
 
 public:
-	/**
-	 * Called by YAPF to move from the given node to the next tile. For each
-	 *  reachable trackdir on the new tile creates new node, initializes it
-	 *  and adds it to the open list by calling Yapf().AddNewNode(n)
-	 */
+	/** @copydoc CYapfBaseT::PfFollowNodeFunc */
 	inline void PfFollowNode(Node &old_node)
 	{
-		TrackFollower F(Yapf().GetVehicle());
-		if (F.Follow(old_node.key.tile, old_node.key.td)) {
+		TrackFollower follower{Yapf().GetVehicle()};
+		if (follower.Follow(old_node.key.tile, old_node.key.td)) {
 			if (this->water_region_corridor.empty()
-					|| std::ranges::find(this->water_region_corridor, GetWaterRegionInfo(F.new_tile)) != this->water_region_corridor.end()) {
-				Yapf().AddMultipleNodes(&old_node, F);
+					|| std::ranges::find(this->water_region_corridor, GetWaterRegionInfo(follower.new_tile)) != this->water_region_corridor.end()) {
+				Yapf().AddMultipleNodes(&old_node, follower);
 			}
 		}
 	}
 
-	/** Restricts the search by creating corridor or water regions through which the ship is allowed to travel. */
+	/**
+	 * Restricts the search by creating corridor or water regions through which the ship is allowed to travel.
+	 * @param path The path to restrict the search by.
+	 */
 	inline void RestrictSearch(const std::vector<WaterRegionPatchDesc> &path)
 	{
 		this->water_region_corridor.clear();
 		for (const WaterRegionPatchDesc &path_entry : path) this->water_region_corridor.push_back(path_entry);
 	}
 
-	/** Return debug report character to identify the transportation type. */
+	/** @copydoc CYapfBaseT::TransportTypeCharFunc */
 	inline char TransportTypeChar() const
 	{
 		return 'w';
 	}
 
-	/** Returns a random trackdir out of a set of trackdirs. */
+	/**
+	 * Returns a random trackdir out of a set of trackdirs.
+	 * @param trackdirs The possible track dirs.
+	 * @return One of the possible track dirs.
+	 */
 	static Trackdir GetRandomTrackdir(TrackdirBits trackdirs)
 	{
 		const int strip_amount = RandomRange(CountBits(trackdirs));
@@ -178,10 +164,16 @@ public:
 		return FindFirstTrackdir(trackdirs);
 	}
 
-	/** Returns a random tile/trackdir that can be reached from the current tile/trackdir, or tile/INVALID_TRACK if none is available. */
+	/**
+	 * Returns a random tile/trackdir that can be reached from the current tile/trackdir, or tile/INVALID_TRACK if none is available.
+	 * @param v The ship to get the direction for.
+	 * @param tile The start tile.
+	 * @param dir the start direction.
+	 * @return The next tile and a direction.
+	 */
 	static std::pair<TileIndex, Trackdir> GetRandomFollowUpTileTrackdir(const Ship *v, TileIndex tile, Trackdir dir)
 	{
-		TrackFollower follower(v);
+		TrackFollower follower{v};
 		if (follower.Follow(tile, dir)) {
 			TrackdirBits dirs = follower.new_td_bits;
 			const TrackdirBits dirs_without_90_degree = dirs & ~TrackdirCrossesTrackdirs(dir);
@@ -191,7 +183,13 @@ public:
 		return { follower.new_tile, INVALID_TRACKDIR };
 	}
 
-	/** Creates a random path, avoids 90 degree turns. */
+	/**
+	 * Creates a random path, avoids 90 degree turns.
+	 * @param v The ship to create the path for.
+	 * @param[in,out] path_cache Cache of the path for the ship.
+	 * @param path_length The length of the random path to create.
+	 * @return The next track direction to take, or \c INVALID_TRACKDIR when there is no option.
+	 */
 	static Trackdir CreateRandomPath(const Ship *v, ShipPathCache &path_cache, int path_length)
 	{
 		std::pair<TileIndex, Trackdir> tile_dir = { v->tile, v->GetVehicleTrackdir()};
@@ -286,7 +284,7 @@ public:
 			return result;
 		}
 
-		return INVALID_TRACKDIR;
+		NOT_REACHED();
 	}
 
 	/**
@@ -312,7 +310,7 @@ public:
 		} else {
 			/* This gets called when a ship suddenly can't move forward, e.g. due to terraforming. */
 			const DiagDirection entry = ReverseDiagDir(VehicleExitDir(v->direction, v->state));
-			const TrackdirBits reverse_dirs = DiagdirReachesTrackdirs(entry) & GetTileTrackdirBits(v->tile, TRANSPORT_WATER, 0, entry);
+			const TrackdirBits reverse_dirs = DiagdirReachesTrackdirs(entry) & GetTileTrackdirBits(v->tile, TransportType::Water, 0, entry);
 			(void)ChooseShipTrack(v, v->tile, TRACKDIR_BIT_NONE, reverse_dirs, path_found, dummy_cache, best_origin_dir);
 			*trackdir = path_found && best_origin_dir != INVALID_TRACKDIR ? best_origin_dir : GetRandomTrackdir(reverse_dirs);
 			return true;
@@ -322,15 +320,14 @@ public:
 
 /** Cost Provider module of YAPF for ships. */
 template <class Types>
-class CYapfCostShipT
-{
+class CYapfCostShipT {
 public:
 	typedef typename Types::Tpf Tpf; ///< the pathfinder class (derived from THIS class).
 	typedef typename Types::TrackFollower TrackFollower;
 	typedef typename Types::NodeList::Item Node; ///< this will be our node type.
 	typedef typename Node::Key Key; ///< key to hash tables.
 
-	/** to access inherited path finder */
+	/** @copydoc CYapfBaseT::Yapf */
 	Tpf &Yapf()
 	{
 		return *static_cast<Tpf*>(this);
@@ -352,21 +349,25 @@ public:
 		return 0;
 	}
 
-	static Vehicle *CountShipProc(Vehicle *v, void *data)
+	/**
+	 * Whether the provided direction is a preferred direction for a given tile. This is used to separate ships travelling in opposite directions.
+	 * @param tile Tile of current node.
+	 * @param td Trackdir of current node.
+	 * @returns true if a preferred direction, false otherwise.
+	 */
+	inline static bool IsPreferredShipDirection(TileIndex tile, Trackdir td)
 	{
-		uint *count = (uint*)data;
-		/* Ignore other vehicles (aircraft) and ships inside depot. */
-		if ((v->vehstatus & VS_HIDDEN) == 0) (*count)++;
-
-		return nullptr;
+		const bool odd_x = TileX(tile) & 1;
+		const bool odd_y = TileY(tile) & 1;
+		if (td == TRACKDIR_X_NE) return odd_y;
+		if (td == TRACKDIR_X_SW) return !odd_y;
+		if (td == TRACKDIR_Y_NW) return odd_x;
+		if (td == TRACKDIR_Y_SE) return !odd_x;
+		return (odd_x ^ odd_y) ^ HasBit(TRACKDIR_BIT_RIGHT_N | TRACKDIR_BIT_LEFT_S | TRACKDIR_BIT_UPPER_W | TRACKDIR_BIT_LOWER_E, td);
 	}
 
-	/**
-	 * Called by YAPF to calculate the cost from the origin to the given node.
-	 * Calculates only the cost of given node, adds it to the parent node cost
-	 * and stores the result into Node::cost member.
-	 */
-	inline bool PfCalcCost(Node &n, const TrackFollower *tf)
+	/** @copydoc CYapfBaseT::PfCalcCostFunc */
+	inline bool PfCalcCost(Node &n, const TrackFollower *follower)
 	{
 		/* Base tile cost depending on distance. */
 		int c = IsDiagonalTrackdir(n.GetTrackdir()) ? YAPF_TILE_LENGTH : YAPF_TILE_CORNER_LENGTH;
@@ -376,17 +377,30 @@ public:
 		if (IsDockingTile(n.GetTile())) {
 			/* Check docking tile for occupancy. */
 			uint count = 0;
-			HasVehicleOnPos(n.GetTile(), VEH_SHIP, &count, &CountShipProc);
+			for (const Vehicle *v : VehiclesOnTile(n.GetTile(), VehicleType::Ship)) {
+				/* Ignore other vehicles (aircraft) and ships inside depot. */
+				if (!v->vehstatus.Test(VehState::Hidden)) count++;
+			}
 			c += count * 3 * YAPF_TILE_LENGTH;
 		}
 
+		/* Encourage separation between ships traveling in different directions. */
+		if (!IsPreferredShipDirection(n.GetTile(), n.GetTrackdir())) c += YAPF_TILE_LENGTH;
+
 		/* Skipped tile cost for aqueducts. */
-		c += YAPF_TILE_LENGTH * tf->tiles_skipped;
+		c += YAPF_TILE_LENGTH * follower->tiles_skipped;
 
 		/* Ocean/canal speed penalty. */
 		const ShipVehicleInfo *svi = ShipVehInfo(Yapf().GetVehicle()->engine_type);
-		uint8_t speed_frac = (GetEffectiveWaterClass(n.GetTile()) == WATER_CLASS_SEA) ? svi->ocean_speed_frac : svi->canal_speed_frac;
-		if (speed_frac > 0) c += YAPF_TILE_LENGTH * (1 + tf->tiles_skipped) * speed_frac / (256 - speed_frac);
+		uint8_t speed_frac = (GetEffectiveWaterClass(n.GetTile()) == WaterClass::Sea) ? svi->ocean_speed_frac : svi->canal_speed_frac;
+		if (speed_frac > 0) c += YAPF_TILE_LENGTH * (1 + follower->tiles_skipped) * speed_frac / (256 - speed_frac);
+
+		/* Lock penalty. */
+		if (IsTileType(n.GetTile(), TileType::Water) && IsLock(n.GetTile()) && GetLockPart(n.GetTile()) == LockPart::Middle) {
+			const uint canal_speed = svi->ApplyWaterClassSpeedFrac(svi->max_speed, false);
+			/* Cost is proportional to the vehicle's speed as the vehicle stops in the lock. */
+			c += (TILE_HEIGHT * YAPF_TILE_LENGTH * canal_speed) / 128;
+		}
 
 		/* Apply it. */
 		n.cost = n.parent->cost + c;
@@ -398,14 +412,13 @@ public:
  * Config struct of YAPF for ships.
  * Defines all 6 base YAPF modules as classes providing services for CYapfBaseT.
  */
-template <class Tpf_, class Ttrack_follower, class Tnode_list>
-struct CYapfShip_TypesT
-{
-	typedef CYapfShip_TypesT<Tpf_, Ttrack_follower, Tnode_list>  Types;         ///< Shortcut for this struct type.
-	typedef Tpf_                                                 Tpf;           ///< Pathfinder type.
-	typedef Ttrack_follower                                      TrackFollower; ///< Track follower helper class.
-	typedef Tnode_list                                           NodeList;
-	typedef Ship                                                 VehicleType;
+template <class Tpf_>
+struct CYapfShip_TypesT {
+	typedef CYapfShip_TypesT<Tpf_> Types;         ///< Shortcut for this struct type.
+	typedef Tpf_                   Tpf;           ///< Pathfinder type.
+	typedef CFollowTrackWater      TrackFollower; ///< Track follower helper class.
+	typedef CShipNodeList          NodeList;
+	typedef Ship                   VehicleType;
 
 	/** Pathfinder components (modules). */
 	typedef CYapfBaseT<Types>                 PfBase;        ///< Base pathfinder class.
@@ -416,12 +429,10 @@ struct CYapfShip_TypesT
 	typedef CYapfCostShipT<Types>             PfCost;        ///< Cost provider.
 };
 
-struct CYapfShip : CYapfT<CYapfShip_TypesT<CYapfShip, CFollowTrackWater, CShipNodeListExitDir > >
-{
+struct CYapfShip : CYapfT<CYapfShip_TypesT<CYapfShip>> {
 	explicit CYapfShip(int max_nodes) { this->max_search_nodes = max_nodes; }
 };
 
-/** Ship controller helper - path finder invoker. */
 Track YapfShipChooseTrack(const Ship *v, TileIndex tile, bool &path_found, ShipPathCache &path_cache)
 {
 	Trackdir best_origin_dir = INVALID_TRACKDIR;

@@ -2,12 +2,10 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
-/**
- * @file packet.cpp Basic functions to create, fill and read packets.
- */
+/** @file packet.cpp Basic functions to create, fill and read packets. */
 
 #include "../../stdafx.h"
 #include "../../string_func.h"
@@ -56,7 +54,7 @@ void Packet::ResetState(PacketType type)
 	this->tx_packet_type = type;
 
 	/* Allocate space for the the size so we can write that in just before sending the packet. */
-	size_t size = EncodedLengthOfPacketSize();
+	size_t size = Packet::ENCODED_LENGTH_OF_PACKET_SIZE;
 	if (cs != nullptr && cs->send_encryption_handler != nullptr) {
 		/* Allocate some space for the message authentication code of the encryption. */
 		size += cs->send_encryption_handler->MACSize();
@@ -88,7 +86,7 @@ void Packet::PrepareForSendQueue()
 void Packet::PreSendEncryption()
 {
 	this->encyption_pending = false;
-	size_t offset = EncodedLengthOfPacketSize();
+	size_t offset = Packet::ENCODED_LENGTH_OF_PACKET_SIZE;
 	size_t mac_size = cs->send_encryption_handler->MACSize();
 	size_t message_offset = offset + mac_size;
 	cs->send_encryption_handler->Encrypt(std::span(&this->buffer[offset], mac_size), std::span(&this->buffer[message_offset], this->buffer.size() - message_offset));
@@ -145,7 +143,7 @@ bool Packet::CanReadFromPacket(size_t bytes_to_read, bool close_connection)
  */
 bool Packet::HasPacketSizeData() const
 {
-	return this->pos >= EncodedLengthOfPacketSize();
+	return this->pos >= Packet::ENCODED_LENGTH_OF_PACKET_SIZE;
 }
 
 /**
@@ -178,10 +176,10 @@ bool Packet::ParsePacketSize()
 	/* If the size of the packet is less than the bytes required for the size and type of
 	 * the packet, or more than the allowed limit, then something is wrong with the packet.
 	 * In those cases the packet can generally be regarded as containing garbage data. */
-	if (size < EncodedLengthOfPacketSize() + EncodedLengthOfPacketType() || size > this->limit) return false;
+	if (size < Packet::ENCODED_LENGTH_OF_PACKET_SIZE + Packet::ENCODED_LENGTH_OF_PACKET_TYPE || size > this->limit) return false;
 
 	this->buffer.resize(size);
-	this->pos = static_cast<PacketSize>(EncodedLengthOfPacketSize());
+	this->pos = static_cast<PacketSize>(Packet::ENCODED_LENGTH_OF_PACKET_SIZE);
 	return true;
 }
 
@@ -192,7 +190,7 @@ bool Packet::ParsePacketSize()
 bool Packet::PrepareToRead()
 {
 	/* Put the position on the right place */
-	this->pos = static_cast<PacketSize>(EncodedLengthOfPacketSize());
+	this->pos = static_cast<PacketSize>(Packet::ENCODED_LENGTH_OF_PACKET_SIZE);
 
 	if (cs == nullptr || cs->receive_encryption_handler == nullptr) return true;
 
@@ -201,7 +199,8 @@ bool Packet::PrepareToRead()
 
 	bool valid = cs->receive_encryption_handler->Decrypt(std::span(&this->buffer[pos], mac_size), std::span(&this->buffer[pos + mac_size], this->buffer.size() - pos - mac_size));
 	this->pos += static_cast<PacketSize>(mac_size);
-	return valid;
+	/* Is the decryption valid *and* is the remaining data big enough to contain the packet type? */
+	return valid && this->CanReadFromPacket(Packet::ENCODED_LENGTH_OF_PACKET_TYPE);
 }
 
 /**
@@ -210,15 +209,14 @@ bool Packet::PrepareToRead()
  */
 PacketType Packet::GetPacketType() const
 {
-	assert(this->Size() >= EncodedLengthOfPacketSize() + EncodedLengthOfPacketType());
-	size_t offset = EncodedLengthOfPacketSize();
+	size_t offset = Packet::ENCODED_LENGTH_OF_PACKET_SIZE;
 	if (cs != nullptr && cs->send_encryption_handler != nullptr) offset += cs->send_encryption_handler->MACSize();
 	return static_cast<PacketType>(buffer[offset]);
 }
 
 /**
  * Get the amount of bytes that are still available for the Transfer functions.
- * @return The number of bytes that still have to be transfered.
+ * @return The number of bytes that still have to be transferred.
  */
 size_t Packet::RemainingBytesToTransfer() const
 {
@@ -227,18 +225,18 @@ size_t Packet::RemainingBytesToTransfer() const
 
 /**
  * Extract at most the length of the span bytes from the packet into the span.
- * @param span The span to write the bytes to.
+ * @param destination The span to write the bytes to.
  * @return The number of bytes that were actually read.
  */
-size_t Packet::Recv_bytes(std::span<uint8_t> span)
+size_t Packet::Recv_bytes(std::span<uint8_t> destination)
 {
-	auto tranfer_to_span = [](std::span<uint8_t> destination, const char *source, size_t amount) {
-		size_t to_copy = std::min(amount, destination.size());
-		std::copy(source, source + to_copy, destination.data());
-		return to_copy;
+	auto transfer_to_span = [&destination](std::span<const uint8_t> source) {
+		auto to_copy = source.subspan(0, destination.size());
+		std::ranges::copy(to_copy, destination.begin());
+		return to_copy.size();
 	};
 
-	return this->TransferOut(tranfer_to_span, span);
+	return this->TransferOut(transfer_to_span);
 }
 
 void SubPacketDeserialiser::RaiseDeserialisationError()
@@ -255,3 +253,7 @@ bool SubPacketDeserialiser::CanDeserialiseBytes(size_t bytes_to_read, bool raise
 
 	return true;
 }
+
+template struct BufferDeserialisationHelper<struct Packet>;
+template struct BufferDeserialisationHelper<struct SubPacketDeserialiser>;
+template struct BufferSerialisationHelper<struct Packet>;

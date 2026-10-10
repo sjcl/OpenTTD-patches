@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file company_sl.cpp Code handling saving and loading of company data */
@@ -29,74 +29,6 @@
 
 #include "../safeguards.h"
 
-/**
- * Converts an old company manager's face format to the new company manager's face format
- *
- * Meaning of the bits in the old face (some bits are used in several times):
- * - 4 and 5: chin
- * - 6 to 9: eyebrows
- * - 10 to 13: nose
- * - 13 to 15: lips (also moustache for males)
- * - 16 to 19: hair
- * - 20 to 22: eye colour
- * - 20 to 27: tie, ear rings etc.
- * - 28 to 30: glasses
- * - 19, 26 and 27: race (bit 27 set and bit 19 equal to bit 26 = black, otherwise white)
- * - 31: gender (0 = male, 1 = female)
- *
- * @param face the face in the old format
- * @return the face in the new format
- */
-CompanyManagerFace ConvertFromOldCompanyManagerFace(uint32_t face)
-{
-	CompanyManagerFace cmf = 0;
-	GenderEthnicity ge = GE_WM;
-
-	if (HasBit(face, 31)) SetBit(ge, GENDER_FEMALE);
-	if (HasBit(face, 27) && (HasBit(face, 26) == HasBit(face, 19))) SetBit(ge, ETHNICITY_BLACK);
-
-	SetCompanyManagerFaceBits(cmf, CMFV_GEN_ETHN,    ge, ge);
-	SetCompanyManagerFaceBits(cmf, CMFV_HAS_GLASSES, ge, GB(face, 28, 3) <= 1);
-	SetCompanyManagerFaceBits(cmf, CMFV_EYE_COLOUR,  ge, HasBit(ge, ETHNICITY_BLACK) ? 0 : ClampU(GB(face, 20, 3), 5, 7) - 5);
-	SetCompanyManagerFaceBits(cmf, CMFV_CHIN,        ge, ScaleCompanyManagerFaceValue(CMFV_CHIN,     ge, GB(face,  4, 2)));
-	SetCompanyManagerFaceBits(cmf, CMFV_EYEBROWS,    ge, ScaleCompanyManagerFaceValue(CMFV_EYEBROWS, ge, GB(face,  6, 4)));
-	SetCompanyManagerFaceBits(cmf, CMFV_HAIR,        ge, ScaleCompanyManagerFaceValue(CMFV_HAIR,     ge, GB(face, 16, 4)));
-	SetCompanyManagerFaceBits(cmf, CMFV_JACKET,      ge, ScaleCompanyManagerFaceValue(CMFV_JACKET,   ge, GB(face, 20, 2)));
-	SetCompanyManagerFaceBits(cmf, CMFV_COLLAR,      ge, ScaleCompanyManagerFaceValue(CMFV_COLLAR,   ge, GB(face, 22, 2)));
-	SetCompanyManagerFaceBits(cmf, CMFV_GLASSES,     ge, GB(face, 28, 1));
-
-	uint lips = GB(face, 10, 4);
-	if (!HasBit(ge, GENDER_FEMALE) && lips < 4) {
-		SetCompanyManagerFaceBits(cmf, CMFV_HAS_MOUSTACHE, ge, true);
-		SetCompanyManagerFaceBits(cmf, CMFV_MOUSTACHE,     ge, std::max(lips, 1U) - 1);
-	} else {
-		if (!HasBit(ge, GENDER_FEMALE)) {
-			lips = lips * 15 / 16;
-			lips -= 3;
-			if (HasBit(ge, ETHNICITY_BLACK) && lips > 8) lips = 0;
-		} else {
-			lips = ScaleCompanyManagerFaceValue(CMFV_LIPS, ge, lips);
-		}
-		SetCompanyManagerFaceBits(cmf, CMFV_LIPS, ge, lips);
-
-		uint nose = GB(face, 13, 3);
-		if (ge == GE_WF) {
-			nose = (nose * 3 >> 3) * 3 >> 2; // There is 'hole' in the nose sprites for females
-		} else {
-			nose = ScaleCompanyManagerFaceValue(CMFV_NOSE, ge, nose);
-		}
-		SetCompanyManagerFaceBits(cmf, CMFV_NOSE, ge, nose);
-	}
-
-	uint tie_earring = GB(face, 24, 4);
-	if (!HasBit(ge, GENDER_FEMALE) || tie_earring < 3) { // Not all females have an earring
-		if (HasBit(ge, GENDER_FEMALE)) SetCompanyManagerFaceBits(cmf, CMFV_HAS_TIE_EARRING, ge, true);
-		SetCompanyManagerFaceBits(cmf, CMFV_TIE_EARRING, ge, HasBit(ge, GENDER_FEMALE) ? tie_earring : ScaleCompanyManagerFaceValue(CMFV_TIE_EARRING, ge, tie_earring / 2));
-	}
-
-	return cmf;
-}
-
 /** Rebuilding of company statistics after loading a savegame. */
 void AfterLoadCompanyStats()
 {
@@ -105,15 +37,15 @@ void AfterLoadCompanyStats()
 
 	/* Collect airport count. */
 	for (const Station *st : Station::Iterate()) {
-		if ((st->facilities & FACIL_AIRPORT) && Company::IsValidID(st->owner)) {
+		if (st->facilities.Test(StationFacility::Airport) && Company::IsValidID(st->owner)) {
 			Company::Get(st->owner)->infrastructure.airport++;
 		}
 	}
 
 	Company *c;
-	for (TileIndex tile = 0; tile < MapSize(); tile++) {
+	for (TileIndex tile(0); tile < Map::Size(); ++tile) {
 		switch (GetTileType(tile)) {
-			case MP_RAILWAY:
+			case TileType::Railway:
 				c = Company::GetIfValid(GetTileOwner(tile));
 				if (c != nullptr) {
 					uint pieces = 1;
@@ -132,14 +64,14 @@ void AfterLoadCompanyStats()
 				}
 				break;
 
-			case MP_ROAD: {
+			case TileType::Road: {
 				if (IsLevelCrossing(tile)) {
 					c = Company::GetIfValid(GetTileOwner(tile));
 					if (c != nullptr) c->infrastructure.rail[GetRailType(tile)] += LEVELCROSSING_TRACKBIT_FACTOR;
 				}
 
 				/* Iterate all present road types as each can have a different owner. */
-				for (RoadTramType rtt : _roadtramtypes) {
+				for (RoadTramType rtt : ROADTRAMTYPES_ALL) {
 					RoadType rt = GetRoadType(tile, rtt);
 					if (rt == INVALID_ROADTYPE) continue;
 					c = Company::GetIfValid(IsRoadDepot(tile) ? GetTileOwner(tile) : GetRoadOwner(tile, rtt));
@@ -149,21 +81,21 @@ void AfterLoadCompanyStats()
 				break;
 			}
 
-			case MP_STATION:
+			case TileType::Station:
 				c = Company::GetIfValid(GetTileOwner(tile));
-				if (c != nullptr && GetStationType(tile) != STATION_AIRPORT && !IsBuoy(tile)) c->infrastructure.station++;
+				if (c != nullptr && GetStationType(tile) != StationType::Airport && !IsBuoy(tile)) c->infrastructure.station++;
 
 				switch (GetStationType(tile)) {
-					case STATION_RAIL:
-					case STATION_WAYPOINT:
+					case StationType::Rail:
+					case StationType::RailWaypoint:
 						if (c != nullptr && !IsStationTileBlocked(tile)) c->infrastructure.rail[GetRailType(tile)]++;
 						break;
 
-					case STATION_BUS:
-					case STATION_TRUCK:
-					case STATION_ROADWAYPOINT: {
+					case StationType::Bus:
+					case StationType::Truck:
+					case StationType::RoadWaypoint: {
 						/* Iterate all present road types as each can have a different owner. */
-						for (RoadTramType rtt : _roadtramtypes) {
+						for (RoadTramType rtt : ROADTRAMTYPES_ALL) {
 							RoadType rt = GetRoadType(tile, rtt);
 							if (rt == INVALID_ROADTYPE) continue;
 							c = Company::GetIfValid(GetRoadOwner(tile, rtt));
@@ -172,9 +104,9 @@ void AfterLoadCompanyStats()
 						break;
 					}
 
-					case STATION_DOCK:
-					case STATION_BUOY:
-						if (GetWaterClass(tile) == WATER_CLASS_CANAL) {
+					case StationType::Dock:
+					case StationType::Buoy:
+						if (GetWaterClass(tile) == WaterClass::Canal) {
 							if (c != nullptr) c->infrastructure.water++;
 						}
 						break;
@@ -184,12 +116,12 @@ void AfterLoadCompanyStats()
 				}
 				break;
 
-			case MP_WATER:
+			case TileType::Water:
 				if (IsShipDepot(tile) || IsLock(tile)) {
 					c = Company::GetIfValid(GetTileOwner(tile));
 					if (c != nullptr) {
 						if (IsShipDepot(tile)) c->infrastructure.water += LOCK_DEPOT_TILE_FACTOR;
-						if (IsLock(tile) && GetLockPart(tile) == LOCK_PART_MIDDLE) {
+						if (IsLock(tile) && GetLockPart(tile) == LockPart::Middle) {
 							/* The middle tile specifies the owner of the lock. */
 							c->infrastructure.water += 3 * LOCK_DEPOT_TILE_FACTOR; // the middle tile specifies the owner of the
 							break; // do not count the middle tile as canal
@@ -198,16 +130,16 @@ void AfterLoadCompanyStats()
 				}
 				[[fallthrough]];
 
-			case MP_OBJECT:
-				if (GetWaterClass(tile) == WATER_CLASS_CANAL) {
+			case TileType::Object:
+				if (GetWaterClass(tile) == WaterClass::Canal) {
 					c = Company::GetIfValid(GetTileOwner(tile));
 					if (c != nullptr) c->infrastructure.water++;
 				}
 				break;
 
-			case MP_TUNNELBRIDGE: {
+			case TileType::TunnelBridge: {
 				/* Only count the tunnel/bridge if we're on the western end tile. */
-				if (GetTunnelBridgeDirection(tile) < DIAGDIR_SW) {
+				if (GetTunnelBridgeDirection(tile) < DiagDirection::SW) {
 					TileIndex other_end = GetOtherTunnelBridgeEnd(tile);
 
 					/* Count each tunnel/bridge TUNNELBRIDGE_TRACKBIT_FACTOR times to simulate
@@ -215,16 +147,16 @@ void AfterLoadCompanyStats()
 					const uint middle_len = GetTunnelBridgeLength(tile, other_end) * TUNNELBRIDGE_TRACKBIT_FACTOR;
 
 					switch (GetTunnelBridgeTransportType(tile)) {
-						case TRANSPORT_RAIL:
+						case TransportType::Rail:
 							AddRailTunnelBridgeInfrastructure(tile, other_end);
 							break;
 
-						case TRANSPORT_ROAD: {
+						case TransportType::Road: {
 							AddRoadTunnelBridgeInfrastructure(tile, other_end);
 							break;
 						}
 
-						case TRANSPORT_WATER:
+						case TransportType::Water:
 							c = Company::GetIfValid(GetTileOwner(tile));
 							if (c != nullptr) c->infrastructure.water += middle_len + (2 * TUNNELBRIDGE_TRACKBIT_FACTOR);
 							break;
@@ -331,28 +263,29 @@ static void LoadLiveries(CompanyProperties *c, uint num_liveries, const SaveLoad
 	bool update_in_use = IsSavegameVersionBefore(SLV_GROUP_LIVERIES);
 
 	for (uint i = 0; i < num_liveries; i++) {
-		SlObjectLoadFiltered(&c->livery[i], slt);
-		if (update_in_use && i != LS_DEFAULT) {
-			if (c->livery[i].in_use == 0) {
-				c->livery[i].colour1 = c->livery[LS_DEFAULT].colour1;
-				c->livery[i].colour2 = c->livery[LS_DEFAULT].colour2;
+		Livery &livery = c->livery[static_cast<LiveryScheme>(i)];
+		SlObjectLoadFiltered(&livery, slt);
+		if (update_in_use && i != to_underlying(LiveryScheme::Default)) {
+			if (livery.in_use.base() == 0) {
+				livery.colour1 = c->livery[LiveryScheme::Default].colour1;
+				livery.colour2 = c->livery[LiveryScheme::Default].colour2;
 			} else {
-				c->livery[i].in_use = 3;
+				livery.in_use = {Livery::Flag::Primary, Livery::Flag::Secondary};
 			}
 		}
 	}
 
-	if (num_liveries < LS_END) {
+	if (num_liveries < to_underlying(LiveryScheme::End)) {
 		/* We want to insert some liveries somewhere in between. This means some have to be moved. */
-		memmove(&c->livery[LS_FREIGHT_WAGON], &c->livery[LS_PASSENGER_WAGON_MONORAIL], (LS_END - LS_FREIGHT_WAGON) * sizeof(c->livery[0]));
-		c->livery[LS_PASSENGER_WAGON_MONORAIL] = c->livery[LS_MONORAIL];
-		c->livery[LS_PASSENGER_WAGON_MAGLEV]   = c->livery[LS_MAGLEV];
+		memmove(&c->livery[LiveryScheme::FreightWagon], &c->livery[LiveryScheme::PassengerWagonMonorail], (to_underlying(LiveryScheme::End) - to_underlying(LiveryScheme::FreightWagon)) * sizeof(c->livery[LiveryScheme::Begin]));
+		c->livery[LiveryScheme::PassengerWagonMonorail] = c->livery[LiveryScheme::Monorail];
+		c->livery[LiveryScheme::PassengerWagonMaglev]   = c->livery[LiveryScheme::Maglev];
 	}
 
-	if (num_liveries == LS_END - 4) {
+	if (num_liveries == to_underlying(LiveryScheme::End) - 4) {
 		/* Copy bus/truck liveries over to trams */
-		c->livery[LS_PASSENGER_TRAM] = c->livery[LS_BUS];
-		c->livery[LS_FREIGHT_TRAM]   = c->livery[LS_TRUCK];
+		c->livery[LiveryScheme::PassengerTram] = c->livery[LiveryScheme::Bus];
+		c->livery[LiveryScheme::FreightTram] = c->livery[LiveryScheme::Truck];
 	}
 }
 
@@ -442,7 +375,7 @@ struct CompanyOldEconomyStructHandler final : public TypedSaveLoadStructHandler<
 
 	void Load(CompanyProperties *cprops) const override
 	{
-		cprops->num_valid_stat_ent = static_cast<uint8_t>(SlGetStructListLength(lengthof(cprops->old_economy)));
+		cprops->num_valid_stat_ent = static_cast<uint8_t>(SlGetStructListLength(std::size(cprops->old_economy)));
 
 		for (int i = 0; i < cprops->num_valid_stat_ent; i++) {
 			SlObjectLoadFiltered(&cprops->old_economy[i], this->GetLoadDescription());
@@ -460,15 +393,15 @@ struct CompanyLiveriesStructHandler final : public TypedSaveLoadStructHandler<Co
 
 	void Save(CompanyProperties *cprops) const override
 	{
-		SlSetStructListLength(LS_END);
-		for (int i = 0; i < LS_END; i++) {
-			SlObjectSaveFiltered(&cprops->livery[i], this->GetLoadDescription());
+		SlSetStructListLength(to_underlying(LiveryScheme::End));
+		for (int i = 0; i < to_underlying(LiveryScheme::End); i++) {
+			SlObjectSaveFiltered(&cprops->livery[static_cast<LiveryScheme>(i)], this->GetLoadDescription());
 		}
 	}
 
 	void Load(CompanyProperties *cprops) const override
 	{
-		uint num_liveries = static_cast<uint>(SlGetStructListLength(LS_END));
+		uint num_liveries = static_cast<uint>(SlGetStructListLength(to_underlying(LiveryScheme::End)));
 		LoadLiveries(cprops, num_liveries, this->GetLoadDescription());
 	}
 
@@ -520,7 +453,8 @@ static const NamedSaveLoad _company_desc[] = {
 	NSL("president_name_2",                 SLE_VAR(CompanyProperties, president_name_2,      SLE_UINT32)),
 	NSL("president_name",              SLE_CONDSSTR(CompanyProperties, president_name,        SLE_STR | SLF_ALLOW_CONTROL, SLV_84, SL_MAX_VERSION)),
 
-	NSL("face",                             SLE_VAR(CompanyProperties, face,                  SLE_UINT32)),
+	NSL("face",                             SLE_VAR(CompanyProperties, face.bits,             SLE_UINT32)),
+	NSLT("face_style",                     SLE_SSTR(CompanyProperties, face.style_label,      SLE_STR)),
 
 	/* money was changed to a 64 bit field in savegame version 1. */
 	NSL("money",                        SLE_CONDVAR(CompanyProperties, money,                 SLE_VAR_I64 | SLE_FILE_I32,  SL_MIN_VERSION, SLV_1)),
@@ -579,6 +513,7 @@ static const NamedSaveLoad _company_desc[] = {
 	NSLT_STRUCTLIST<CompanyOldEconomyStructHandler>("old_economy"),
 	NSLT_STRUCTLIST<CompanyLiveriesStructHandler>("liveries"),
 	NSLT_STRUCTLIST<CompanyAllowListStructHandler>("allow_list"),
+	NSLT("allow_any", SLE_VAR(CompanyProperties, allow_any, SLE_BOOL)),
 };
 
 struct PLYRNonTableHelper {
@@ -615,13 +550,14 @@ void PLYRNonTableHelper::Load_PLYR_common(Company *c, CompanyProperties *cprops)
 	SlObjectLoadFiltered(&cprops->cur_economy, this->economy_desc);
 
 	/* Write old economy entries. */
-	if (cprops->num_valid_stat_ent > lengthof(cprops->old_economy)) SlErrorCorrupt("Too many old economy entries");
+	if (cprops->num_valid_stat_ent > std::size(cprops->old_economy)) SlErrorCorrupt("Too many old economy entries");
 	for (uint i = 0; i < cprops->num_valid_stat_ent; i++) {
 		SlObjectLoadFiltered(&cprops->old_economy[i], this->economy_desc);
 	}
 
 	/* Write each livery entry. */
-	uint num_liveries = IsSavegameVersionBefore(SLV_63) ? LS_END - 4 : (IsSavegameVersionBefore(SLV_85) ? LS_END - 2: LS_END);
+	static_assert(to_underlying(LiveryScheme::End) == 23);
+	uint num_liveries = IsSavegameVersionBefore(SLV_63) ? to_underlying(LiveryScheme::End) - 4 : (IsSavegameVersionBefore(SLV_85) ? to_underlying(LiveryScheme::End) - 2 : to_underlying(LiveryScheme::End));
 
 	if (c != nullptr) {
 		LoadLiveries(cprops, num_liveries, this->liveries_desc);
@@ -654,14 +590,14 @@ static void Load_PLYR()
 
 	int index;
 	while ((index = SlIterateArray()) != -1) {
-		Company *c = new (index) Company();
+		Company *c = Company::CreateAtIndex(CompanyID(index));
 		CompanyProperties *cprops = c;
 		SetDefaultCompanySettings(c->index);
 		SlObjectLoadFiltered(cprops, slt);
 		if (!SlIsTableChunk()) {
 			helper.Load_PLYR_common(c, cprops);
 		}
-		_company_colours[index] = (Colours)c->colour;
+		_company_colours[CompanyID(index)] = (Colours)c->colour;
 
 		/* settings moved from game settings to company settings */
 		if (SlXvIsFeaturePresent(XSLFI_AUTO_TIMETABLE, 1, 2)) {
@@ -699,7 +635,7 @@ static void Check_PLYR()
 			}
 		}
 
-		if (cprops->name.empty() && !IsInsideMM(cprops->name_1, SPECSTR_COMPANY_NAME_START, SPECSTR_COMPANY_NAME_LAST + 1) &&
+		if (cprops->name.empty() && !IsInsideMM(cprops->name_1, SPECSTR_COMPANY_NAME_START, SPECSTR_COMPANY_NAME_END) &&
 				cprops->name_1 != STR_GAME_SAVELOAD_NOT_AVAILABLE && cprops->name_1 != STR_SV_UNNAMED &&
 				cprops->name_1 != SPECSTR_ANDCO_NAME && cprops->name_1 != SPECSTR_PRESIDENT_NAME &&
 				cprops->name_1 != SPECSTR_SILLY_NAME) {
@@ -737,10 +673,10 @@ static void Check_PLYX()
 static void Load_PLYP()
 {
 	size_t size = SlGetFieldLength();
-	CompanyMask invalid_mask = 0;
+	CompanyMask invalid_mask = {};
 	if (SlXvIsFeaturePresent(XSLFI_COMPANY_PW, 2)) {
 		if (size <= 2) return;
-		invalid_mask = SlReadUint16();
+		invalid_mask.edit_base() = SlReadUint16();
 		size -= 2;
 	}
 	if (size <= 16 + 24 + 16 || (_networking && !_network_server)) {
@@ -775,16 +711,16 @@ static void Load_PLYP()
 
 	if (crypto_aead_unlock(buffer.data(), mac.data(), _network_company_password_storage_key.data(), nonce.data(), nullptr, 0, buffer.data(), buffer.size()) == 0) {
 		SlLoadFromBuffer(buffer.data(), buffer.size(), [invalid_mask]() {
-			_network_company_server_id.resize(SlReadUint32());
+			_network_company_server_id.resize(SlReadUint32LengthField());
 			ReadBuffer::GetCurrent()->CopyBytes((uint8_t *)_network_company_server_id.data(), _network_company_server_id.size());
 
 			while (true) {
 				uint16_t cid = SlReadUint16();
 				if (cid >= MAX_COMPANIES) break;
 				std::string password;
-				password.resize(SlReadUint32());
+				password.resize(SlReadUint32LengthField());
 				ReadBuffer::GetCurrent()->CopyBytes((uint8_t *)password.data(), password.size());
-				if (!HasBit(invalid_mask, cid)) {
+				if (!HasBit(invalid_mask.base(), cid)) {
 					NetworkServerSetCompanyPassword((CompanyID)cid, password, true);
 				}
 			}
@@ -859,9 +795,9 @@ static void Save_PLYP()
 }
 
 static const ChunkHandler company_chunk_handlers[] = {
-	{ 'PLYR', Save_PLYR, Load_PLYR, Ptrs_PLYR, Check_PLYR, CH_TABLE },
-	{ 'PLYX', nullptr,   Load_PLYX, nullptr,   Check_PLYX, CH_READONLY },
-	{ 'PLYP', Save_PLYP, Load_PLYP, nullptr,      nullptr, CH_RIFF  },
+	{ 'PLYR', Save_PLYR, Load_PLYR, Ptrs_PLYR, Check_PLYR, ChunkType::Table },
+	{ 'PLYX', nullptr,   Load_PLYX, nullptr,   Check_PLYX, ChunkType::ReadOnly },
+	{ 'PLYP', Save_PLYP, Load_PLYP, nullptr,      nullptr, ChunkType::Riff  },
 };
 
 extern const ChunkHandlerTable _company_chunk_handlers(company_chunk_handlers);

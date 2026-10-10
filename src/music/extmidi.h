@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file extmidi.h Base support for playing music via an external application. */
@@ -14,9 +14,9 @@
 
 class MusicDriver_ExtMidi : public MusicDriver {
 private:
-	std::vector<std::string> command_tokens;
-	std::string song;
-	pid_t pid;
+	std::vector<std::string> command_tokens{};
+	std::string song{};
+	pid_t pid = 0;
 	bool failed = false;
 
 	void DoPlay();
@@ -41,8 +41,8 @@ public:
 
 class FMusicDriver_ExtMidi : public DriverFactoryBase {
 public:
-	FMusicDriver_ExtMidi() : DriverFactoryBase(Driver::DT_MUSIC, 3, "extmidi", "External MIDI Driver") {}
-	Driver *CreateInstance() const override { return new MusicDriver_ExtMidi(); }
+	FMusicDriver_ExtMidi() : DriverFactoryBase(Driver::Type::Music, 3, "extmidi", "External MIDI Driver") {}
+	std::unique_ptr<Driver> CreateInstance() const override { return std::make_unique<MusicDriver_ExtMidi>(); }
 };
 
 #endif /* MUSIC_EXTERNAL_H */

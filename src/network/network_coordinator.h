@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file network_coordinator.h Part of the network protocol handling Game Coordinator requests. */
@@ -54,26 +54,26 @@
 class ClientNetworkCoordinatorSocketHandler : public NetworkCoordinatorSocketHandler {
 private:
 	std::chrono::steady_clock::time_point next_update; ///< When to send the next update (if server and public).
-	std::map<std::string, std::pair<std::string, TCPServerConnecter *>> connecter; ///< Based on tokens, the current (invite-code, connecter) that are pending.
-	std::map<std::string, TCPServerConnecter *> connecter_pre; ///< Based on invite codes, the current connecters that are pending.
-	std::map<std::string, std::map<int, std::unique_ptr<ClientNetworkStunSocketHandler>>> stun_handlers; ///< All pending STUN handlers, stored by token:family.
-	std::map<std::string, std::unique_ptr<ClientNetworkTurnSocketHandler>> turn_handlers; ///< Pending TURN handler (if any), stored by token.
+	std::map<std::string, std::pair<std::string, TCPServerConnecter *>, std::less<>> connecter; ///< Based on tokens, the current (invite-code, connecter) that are pending.
+	std::map<std::string, TCPServerConnecter *, std::less<>> connecter_pre; ///< Based on invite codes, the current connecters that are pending.
+	std::map<std::string, std::map<int, std::unique_ptr<ClientNetworkStunSocketHandler>>, std::less<>> stun_handlers; ///< All pending STUN handlers, stored by token:family.
+	std::map<std::string, std::unique_ptr<ClientNetworkTurnSocketHandler>, std::less<>> turn_handlers; ///< Pending TURN handler (if any), stored by token.
 	std::shared_ptr<TCPConnecter> game_connecter{}; ///< Pending connecter to the game server.
 
 	uint32_t newgrf_lookup_table_cursor = 0; ///< Last received cursor for the #GameInfoNewGRFLookupTable updates.
 	GameInfoNewGRFLookupTable newgrf_lookup_table; ///< Table to look up NewGRFs in the GC_LISTING packets.
 
 protected:
-	bool Receive_GC_ERROR(Packet &p) override;
-	bool Receive_GC_REGISTER_ACK(Packet &p) override;
-	bool Receive_GC_LISTING(Packet &p) override;
-	bool Receive_GC_CONNECTING(Packet &p) override;
-	bool Receive_GC_CONNECT_FAILED(Packet &p) override;
-	bool Receive_GC_DIRECT_CONNECT(Packet &p) override;
-	bool Receive_GC_STUN_REQUEST(Packet &p) override;
-	bool Receive_GC_STUN_CONNECT(Packet &p) override;
-	bool Receive_GC_NEWGRF_LOOKUP(Packet &p) override;
-	bool Receive_GC_TURN_CONNECT(Packet &p) override;
+	bool ReceiveGameCoordinatorError(Packet &p) override;
+	bool ReceiveGameCoordinatorRegisterAck(Packet &p) override;
+	bool ReceiveGameCoordinatorListing(Packet &p) override;
+	bool ReceiveGameCoordinatorConnecting(Packet &p) override;
+	bool ReceiveGameCoordinatorConnectFailed(Packet &p) override;
+	bool ReceiveGameCoordinatorDirectConnect(Packet &p) override;
+	bool ReceiveGameCoordinatorStunRequest(Packet &p) override;
+	bool ReceiveGameCoordinatorStunConnect(Packet &p) override;
+	bool ReceiveGameCoordinatorNewGRFLookup(Packet &p) override;
+	bool ReceiveGameCoordinatorTurnConnect(Packet &p) override;
 
 public:
 	/** The idle timeout; when to close the connection because it's idle. */
@@ -87,22 +87,22 @@ public:
 	NetworkRecvStatus CloseConnection(bool error = true) override;
 	void SendReceive();
 
-	void ConnectFailure(const std::string &token, uint8_t tracking_number);
-	void ConnectSuccess(const std::string &token, SOCKET sock, NetworkAddress &address);
-	void StunResult(const std::string &token, uint8_t family, bool result);
+	void ConnectFailure(std::string_view token, uint8_t tracking_number);
+	void ConnectSuccess(std::string_view token, SOCKET sock, NetworkAddress &address);
+	void StunResult(std::string_view token, uint8_t family, bool result);
 
 	void Connect();
-	void CloseToken(const std::string &token);
+	void CloseToken(std::string_view token);
 	void CloseAllConnections();
-	void CloseStunHandler(const std::string &token, uint8_t family = AF_UNSPEC);
-	void CloseTurnHandler(const std::string &token);
+	void CloseStunHandler(std::string_view token, uint8_t family = AF_UNSPEC);
+	void CloseTurnHandler(std::string_view token);
 
 	void Register();
 	void SendServerUpdate();
 	void GetListing();
 
-	void ConnectToServer(const std::string &invite_code, TCPServerConnecter *connecter);
-	void StartTurnConnection(std::string &token);
+	void ConnectToServer(std::string_view invite_code, TCPServerConnecter *connecter);
+	void StartTurnConnection(std::string_view token);
 };
 
 extern ClientNetworkCoordinatorSocketHandler _network_coordinator_client;

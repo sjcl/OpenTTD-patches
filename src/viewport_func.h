@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file viewport_func.h Functions related to (drawing on) viewports. */
@@ -11,6 +11,7 @@
 #define VIEWPORT_FUNC_H
 
 #include "gfx_type.h"
+#include "sprite.h"
 #include "viewport_type.h"
 #include "window_type.h"
 #include "tile_map.h"
@@ -81,10 +82,14 @@ DECLARE_ENUM_AS_BIT_SET(ViewportSortableSpriteSpecialFlags);
 
 void DrawGroundSprite(SpriteID image, PaletteID pal, const SubSprite *sub = nullptr, int extra_offs_x = 0, int extra_offs_y = 0);
 void DrawGroundSpriteAt(SpriteID image, PaletteID pal, int32_t x, int32_t y, int z, const SubSprite *sub = nullptr, int extra_offs_x = 0, int extra_offs_y = 0);
-void AddSortableSpriteToDraw(SpriteID image, PaletteID pal, int x, int y, int w, int h, int dz, int z, bool transparent = false, int bb_offset_x = 0, int bb_offset_y = 0, int bb_offset_z = 0, const SubSprite *sub = nullptr, ViewportSortableSpriteSpecialFlags special_flags = VSSF_NONE);
+void AddSortableSpriteToDraw(SpriteID image, PaletteID pal, int x, int y, int z, const SpriteBounds &bounds, bool transparent = false, const SubSprite *sub = nullptr, ViewportSortableSpriteSpecialFlags special_flags = VSSF_NONE);
 void AddChildSpriteScreen(SpriteID image, PaletteID pal, int x, int y, bool transparent = false, const SubSprite *sub = nullptr, bool scale = true, ChildScreenSpritePositionMode position_mode = ChildScreenSpritePositionMode::Relative);
-void ViewportAddString(ViewportDrawerDynamic *vdd, const DrawPixelInfo *dpi, ZoomLevel small_from, const ViewportSign *sign, StringID string_normal, StringID string_small, StringID string_small_shadow, uint64_t params_1, uint64_t params_2 = 0, Colours colour = INVALID_COLOUR);
+void ViewportAddString(ViewportDrawerDynamic *vdd, const DrawPixelInfo *dpi, const ViewportSign *sign, ViewportStringFlags flags, StringID string, uint64_t params_1, uint64_t params_2 = 0, Colours colour = Colours::Invalid);
 
+inline void AddSortableSpriteToDraw(SpriteID image, PaletteID pal, const Coord3D<int32_t> &world, const SpriteBounds &bounds, bool transparent = false, const SubSprite *sub = nullptr, ViewportSortableSpriteSpecialFlags special_flags = VSSF_NONE)
+{
+	AddSortableSpriteToDraw(image, pal, world.x, world.y, world.z, bounds, transparent, sub, special_flags);
+}
 
 void StartSpriteCombine();
 void EndSpriteCombine();
@@ -101,7 +106,6 @@ void SetRedErrorSquare(TileIndex tile);
 void SetTileSelectSize(int w, int h);
 void SetTileSelectBigSize(int ox, int oy, int sx, int sy);
 
-void ViewportDoDraw(Viewport *vp, int left, int top, int right, int bottom, uint8_t display_flags);
 void ViewportDoDrawProcessAllPending();
 
 bool ScrollWindowToTile(TileIndex tile, Window *w, bool instant = false);
@@ -153,20 +157,22 @@ struct Waypoint;
 struct Town;
 struct TraceRestrictProgram;
 void SetViewportCatchmentStation(const Station *st, bool sel);
+void SetViewportStationRect(const Station *st, bool sel);
 void SetViewportCatchmentWaypoint(const Waypoint *wp, bool sel);
+void SetViewportWaypointRect(const Waypoint *wp, bool sel);
 void SetViewportCatchmentTown(const Town *t, bool sel);
 void SetViewportCatchmentTraceRestrictProgram(const TraceRestrictProgram *prog, bool sel);
 
-template<class T>
+template <class T>
 void SetViewportCatchmentSpecializedStation(const T *st, bool sel);
 
-template<>
+template <>
 inline void SetViewportCatchmentSpecializedStation(const Station *st, bool sel)
 {
 	SetViewportCatchmentStation(st, sel);
 }
 
-template<>
+template <>
 inline void SetViewportCatchmentSpecializedStation(const Waypoint *st, bool sel)
 {
 	SetViewportCatchmentWaypoint(st, sel);
@@ -178,5 +184,7 @@ void MarkBridgeOrTunnelDirty(TileIndex tile, TileIndex end, ViewportMarkDirtyFla
 void MarkBridgeOrTunnelDirtyOnReservationChange(TileIndex tile, ViewportMarkDirtyFlags flags = VMDF_NONE);
 
 bool IsViewportMouseHoverActive();
+
+void UpdateRouteStepSpriteSize();
 
 #endif /* VIEWPORT_FUNC_H */

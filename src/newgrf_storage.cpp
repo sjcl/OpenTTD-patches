@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file newgrf_storage.cpp Functionality related to the temporary and persistent storage arrays for NewGRFs. */
@@ -10,7 +10,7 @@
 #include "stdafx.h"
 #include "newgrf_storage.h"
 #include "core/pool_func.hpp"
-#include "core/endian_func.hpp"
+#include "string_func.h"
 #include "debug.h"
 #include "3rdparty/cpp-btree/btree_set.h"
 
@@ -92,7 +92,7 @@ void AddChangedPersistentStorage(BasePersistentStorageArray *storage)
 
 	/* Discard all temporary changes */
 	for (auto &it : _changed_storage_arrays) {
-		Debug(desync, 1, "Discarding persistent storage changes: Feature {}, GrfID {:08X}, Tile {}", it->feature, BSWAP32(it->grfid), it->tile);
+		Debug(desync, 1, "Discarding persistent storage changes: Feature {}, GrfID {}, Tile {}", it->feature, it->grfid, it->tile);
 		it->ClearChanges();
 	}
 	_changed_storage_arrays.clear();

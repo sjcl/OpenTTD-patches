@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file fontcache.h Functions to read fonts from files and cache them. */
@@ -10,14 +10,17 @@
 #ifndef FONTCACHE_H
 #define FONTCACHE_H
 
-#include "string_type.h"
+#include <any>
+#include "gfx_type.h"
+#include "provider_manager.h"
 #include "spritecache.h"
+#include "core/enum_type.hpp"
 
 /** Glyphs are characters from a font. */
 typedef uint32_t GlyphID;
 static const GlyphID SPRITE_GLYPH = 1U << 30;
 
-extern int font_height_cache[FS_END]; ///< Cache of font heights
+extern EnumIndexArray<int, FontSize, FontSize::End> font_height_cache; ///< Cache of font heights
 
 void UpdateFontHeightCache();
 
@@ -25,21 +28,35 @@ void UpdateFontHeightCache();
 class FontCache {
 	friend class MockFontCache;
 private:
-	static FontCache *caches[FS_END]; ///< All the font caches.
+	static EnumIndexArray<std::unique_ptr<FontCache>, FontSize, FontSize::End> caches; ///< All the font caches.
 protected:
-	FontCache *parent;                ///< The parent of this font cache.
-	const FontSize fs;                ///< The size of the font.
-	int height;                       ///< The height of the font.
-	int ascender;                     ///< The ascender value of the font.
-	int descender;                    ///< The descender value of the font.
+	std::unique_ptr<FontCache> parent; ///< The parent of this font cache.
+	const FontSize fs; ///< The size of the font.
+	int height = 0; ///< The height of the font.
+	int ascender = 0; ///< The ascender value of the font.
+	int descender = 0; ///< The descender value of the font.
+
+	FontCache(FontSize fs) : fs(fs) {}
+	static void Register(std::unique_ptr<FontCache> &&fc);
 
 public:
-	FontCache(FontSize fs);
-	virtual ~FontCache();
+	virtual ~FontCache() = default;
 
 	static void InitializeFontCaches();
+	static void UninitializeFontCaches();
+	static void LoadFontCaches(FontSizes fontsizes);
+	static void ClearFontCaches(FontSizes fontsizes);
+
+	/** Default unscaled font heights. */
+	static const EnumIndexArray<int, FontSize, FontSize::End> DEFAULT_FONT_HEIGHT;
+	/** Default unscaled font ascenders. */
+	static const EnumIndexArray<int, FontSize, FontSize::End> DEFAULT_FONT_ASCENDER;
 
 	static int GetDefaultFontHeight(FontSize fs);
+
+	static void AddFallback(FontSizes fontsizes, std::string_view name, const std::any &os_handle = {});
+
+	static bool TryFallback(FontSizes fontsizes, std::span<const char32_t> glyphs, const std::string &name, const std::any &os_handle = {});
 
 	/**
 	 * Get the FontSize of the font.
@@ -70,16 +87,6 @@ public:
 	 * @return The nominal font size.
 	 */
 	virtual int GetFontSize() const { return this->height; }
-
-	/**
-	 * Map a SpriteID to the key
-	 * @param key The key to map to.
-	 * @param sprite The sprite that is being mapped.
-	 */
-	virtual void SetUnicodeGlyph(char32_t key, SpriteID sprite) = 0;
-
-	/** Initialize the glyph map */
-	virtual void InitializeUnicodeGlyphMap() = 0;
 
 	/** Clear the font cache. */
 	virtual void ClearFontCache() = 0;
@@ -134,12 +141,13 @@ public:
 	 */
 	static inline FontCache *Get(FontSize fs)
 	{
-		assert(fs < FS_END);
-		return FontCache::caches[fs];
+		assert(fs < FontSize::End);
+		return FontCache::caches[fs].get();
 	}
 
 	/**
 	 * Check whether the font cache has a parent.
+	 * @return \c true iff this font has a parent, i.e. is not the root.
 	 */
 	inline bool HasParent()
 	{
@@ -148,39 +156,29 @@ public:
 
 	/**
 	 * Is this a built-in sprite font?
+	 * @return \c true iff the font is the sprite font.
 	 */
 	virtual bool IsBuiltInFont() = 0;
 };
 
-/** Map a SpriteID to the font size and key */
-inline void SetUnicodeGlyph(FontSize size, char32_t key, SpriteID sprite)
-{
-	FontCache::Get(size)->SetUnicodeGlyph(key, sprite);
-}
-
-/** Initialize the glyph map */
-inline void InitializeUnicodeGlyphMap()
-{
-	for (FontSize fs = FS_BEGIN; fs < FS_END; fs++) {
-		FontCache::Get(fs)->InitializeUnicodeGlyphMap();
-	}
-}
-
-inline void ClearFontCache()
-{
-	for (FontSize fs = FS_BEGIN; fs < FS_END; fs++) {
-		FontCache::Get(fs)->ClearFontCache();
-	}
-}
-
-/** Get the Sprite for a glyph */
+/**
+ * Get the Sprite for a glyph
+ * @param size The font size to look in.
+ * @param key The key to look up.
+ * @return The sprite.
+ */
 inline const Sprite *GetGlyph(FontSize size, char32_t key)
 {
 	FontCache *fc = FontCache::Get(size);
 	return fc->GetGlyph(fc->MapCharToGlyph(key));
 }
 
-/** Get the width of a glyph */
+/**
+ * Get the width of a glyph.
+ * @param size The font size to look in.
+ * @param key The key to look up.
+ * @return The sprite's width.
+ */
 inline uint GetGlyphWidth(FontSize size, char32_t key)
 {
 	FontCache *fc = FontCache::Get(size);
@@ -197,7 +195,7 @@ struct FontCacheSubSetting {
 	std::string font; ///< The name of the font, or path to the font.
 	uint size;        ///< The (requested) size of the font.
 
-	const void *os_handle = nullptr; ///< Optional native OS font info. Only valid during font search.
+	std::any os_handle; ///< Optional native OS font info.
 };
 
 /** Settings for the four different fonts. */
@@ -221,19 +219,66 @@ inline FontCacheSubSetting *GetFontCacheSubSetting(FontSize fs)
 {
 	switch (fs) {
 		default: NOT_REACHED();
-		case FS_SMALL:  return &_fcsettings.small;
-		case FS_NORMAL: return &_fcsettings.medium;
-		case FS_LARGE:  return &_fcsettings.large;
-		case FS_MONO:   return &_fcsettings.mono;
+		case FontSize::Small: return &_fcsettings.small;
+		case FontSize::Normal: return &_fcsettings.medium;
+		case FontSize::Large: return &_fcsettings.large;
+		case FontSize::Monospace: return &_fcsettings.mono;
 	}
 }
 
 uint GetFontCacheFontSize(FontSize fs);
-std::string GetFontCacheFontName(FontSize fs);
-void InitFontCache(bool monospace);
-void UninitFontCache();
 
 bool GetFontAAState();
 void SetFont(FontSize fontsize, const std::string &font, uint size);
+
+/** Different types of font that can be loaded. */
+enum class FontType : uint8_t {
+	Sprite, ///< Bitmap sprites from GRF files.
+	TrueType, ///< Scalable TrueType fonts.
+};
+
+/** Factory for FontCaches. */
+class FontCacheFactory : public BaseProvider<FontCacheFactory> {
+public:
+	FontCacheFactory(std::string_view name, std::string_view description) : BaseProvider<FontCacheFactory>(name, description)
+	{
+		ProviderManager<FontCacheFactory>::Register(*this);
+	}
+
+	~FontCacheFactory() override
+	{
+		ProviderManager<FontCacheFactory>::Unregister(*this);
+	}
+
+	/**
+	 * Try loading a font with this factory.
+	 * @param fs Font size to load.
+	 * @param fonttype Font type requested.
+	 * @param search Set if searching for the font.
+	 * @param font_name Font name to load.
+	 * @param os_handle Font handle to load.
+	 * @return FontCache of the font if loaded, or nullptr.
+	 */
+	virtual std::unique_ptr<FontCache> LoadFont(FontSize fs, FontType fonttype, bool search, const std::string &font_name, const std::any &os_handle) const = 0;
+
+	/**
+	 * We would like to have a fallback font as the current one
+	 * doesn't contain all characters we need.
+	 * @param language_isocode The language, e.g. en_GB.
+	 * @param callback The function to call to check for missing glyphs.
+	 * @return \c true if a font has been set, \c false otherwise.
+	 */
+	virtual bool FindFallbackFont(const std::string &language_isocode, class MissingGlyphSearcher *callback) const = 0;
+};
+
+class FontProviderManager : ProviderManager<FontCacheFactory> {
+public:
+	static std::unique_ptr<FontCache> LoadFont(FontSize fs, FontType fonttype, bool search, const std::string &font_name, const std::any &os_handle = {});
+	static bool FindFallbackFont(const std::string &language_isocode, MissingGlyphSearcher *callback);
+};
+
+/* Implemented in spritefontcache.cpp */
+void InitializeUnicodeGlyphMap();
+void SetUnicodeGlyph(FontSize size, char32_t key, SpriteID sprite);
 
 #endif /* FONTCACHE_H */

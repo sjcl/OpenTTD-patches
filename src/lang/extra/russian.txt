@@ -13,23 +13,9 @@ STR_CONFIG_SETTING_ZOOM_LVL_OUT_32X                             :32x
 STR_CONFIG_SETTING_ZOOM_LVL_OUT_64X                             :64x
 STR_CONFIG_SETTING_ZOOM_LVL_OUT_128X                            :128x
 
-STR_CONFIG_SETTING_DEFAULT_ROAD_TYPE_DEFAULT                    :По умолчанию
+STR_ORDER_STOP_LOCATION_THROUGH                                 :{SPACE}[через нагрузку]
 
-STR_ORDER_CONDITIONAL_CARGO_WAITING                             :Доступный груз
-STR_ORDER_CONDITIONAL_ACCEPTANCE_DROPDOWN                       :Принятый груз
-STR_ORDER_CONDITIONAL_FREE_PLATFORMS                            :Свободные платформы
-STR_ORDER_CONDITIONAL_PERCENT                                   :Процент случаев
-STR_ORDER_CONDITIONAL_SLOT_OCCUPANCY                            :Заполненность слотов
-STR_ORDER_CONDITIONAL_TRAIN_IN_SLOT                             :Поезд в слоте
-STR_ORDER_CONDITIONAL_CARGO_LOAD_PERCENTAGE                     :Процент загрузки груза
-STR_ORDER_CONDITIONAL_CARGO_WAITING_AMOUNT                      :Количество доступного груза
-STR_ORDER_CONDITIONAL_COUNTER_VALUE                             :Значение счётчика
-STR_ORDER_CONDITIONAL_TIME_DATE_VALUE                           :Текущее время/дата
-STR_ORDER_CONDITIONAL_TIMETABLE_STATE                           :Состояние расписания
-STR_ORDER_CONDITIONAL_DISPATCH_SLOT                             :Диспетчерский слот
-STR_ORDER_CONDITIONAL_CARGO_WAITING_AMOUNT_PERCENTAGE           :Доступный груз/вместимость
-
-STR_ORDER_STOP_LOCATION_THROUGH                                 :[через нагрузку]
+STR_CONFIG_SETTING_STOP_LOCATION_THROUGH                        :через нагрузку
 
 STR_CONFIG_SETTING_TOWN_GROWTH_EXTREME_SLOW                     :крайне низкая
 STR_CONFIG_SETTING_TOWN_GROWTH_VERY_SLOW                        :очень низкая
@@ -90,8 +76,7 @@ STR_GRAPH_DELIVERED_CARGO_BY_CARGO_MODE                         :{TINY_FONT}{BLA
 STR_GRAPH_DELIVERED_CARGO_BY_COMPANY_MODE_TOOLTIP               :{BLACK}Отображение одной строки для каждой выбранной компании
 STR_GRAPH_DELIVERED_CARGO_BY_CARGO_MODE_TOOLTIP                 :{BLACK}Отображение одной строки для каждого выбранного груза
 
-STR_GRAPH_LAST_24_PRODUCTION_INTERVALS_TIME_LABEL               :{TINY_FONT}{BLACK}Последние 24 производственных интервала
-STR_GRAPH_LAST_72_PRODUCTION_INTERVALS_TIME_LABEL               :{TINY_FONT}{BLACK}Последние 72 производственных интервала
+STR_GRAPH_LAST_N_PRODUCTION_INTERVALS_TIME_LABEL                :{TINY_FONT}{BLACK}Последние {NUM} производственных интервала
 
 STR_SMALLMAP_SCREENSHOT                                         :{BLACK}Скриншот
 
@@ -331,9 +316,6 @@ STR_CONFIG_SETTING_RIVER_MIN_LENGTH_HELPTEXT                    :Минимал�
 STR_CONFIG_SETTING_RIVER_ROUTE_RANDOM                           :Случайность речных маршрутов: {STRING}
 STR_CONFIG_SETTING_RIVER_ROUTE_RANDOM_HELPTEXT                  :Установите, насколько случайным может быть путь реки.
 
-STR_CONFIG_SETTING_RIVERS_TOP_OF_HILL                           :Реки должны начинаться на вершинах холмов: {STRING}
-STR_CONFIG_SETTING_RIVERS_TOP_OF_HILL_HELPTEXT                  :Укажите, должны ли истоки рек обязательно генерироваться на вершинах холмов.
-
 STR_CONFIG_SETTING_RIVER_TROPICS_WIDTH                          :Ширина тропиков вокруг рек: {STRING}
 STR_CONFIG_SETTING_RIVER_TROPICS_WIDTH_HELPTEXT                 :Определяет ширину тропической зоны, которая окружает реки в субтропическом климате.{}Это суммарная ширина зоны обеих сторон реки.
 
@@ -441,9 +423,6 @@ STR_CONFIG_SETTING_AUTO_TIMETABLE_BY_DEFAULT_HELPTEXT           :Выберит�
 STR_CONFIG_SETTING_TIMETABLE_SEPARATION_BY_DEFAULT              :По умолчанию использовать расписание для обеспечения разделения транспортных средств: {STRING}
 STR_CONFIG_SETTING_TIMETABLE_SEPARATION_BY_DEFAULT_HELPTEXT     :Выберите, следует ли автоматически включать разделение транспортных средств для новых автомобилей
 
-STR_CONFIG_SETTING_TIMETABLE_LEFTOVER_TICKS                     :Показывать оставшиеся тики в расписании: {STRING}
-STR_CONFIG_SETTING_TIMETABLE_LEFTOVER_TICKS_HELPTEXT            :При преобразовании тиков в дни/минуты  также показывать оставшиеся тики в расписании
-
 STR_CONFIG_SETTING_OVERRIDE_TIME_SETTINGS                       :Использовать настройки времени расписания клиента вместо настроек времени сохранения игры: {STRING}
 STR_CONFIG_SETTING_OVERRIDE_TIME_SETTINGS_HELPTEXT              :Выберите, использовать ли локальные настройки клиента для отображения времени расписания вместо настроек времени в сохраненной игре.
 
@@ -482,9 +461,6 @@ STR_CONFIG_SETTING_SCHEDULED_DISPATCH_DEFAULT_DURATION_HELPTEXT :Устанав�
 STR_CONFIG_SETTING_SCHEDULED_DISPATCH_DEFAULT_DURATION_VALUE    :{COMMA}{NBSP}минут{P а ы ""}
 STR_CONFIG_SETTING_SCHEDULED_DISPATCH_DEFAULT_DURATION_DEFAULT  :По умолчанию
 
-STR_CONFIG_SETTING_DEFAULT_ROAD_TYPE                            :Типы дорог/трамвайных путей по умолчанию (после запуска новой игры/загрузки): {STRING}
-STR_CONFIG_SETTING_DEFAULT_ROAD_TYPE_HELPTEXT                   :Выбор типа дороги/трамвайных путей после запуска новой игры или загрузки старой. «Первые доступные» выбирает самый старый тип дороги/трамвайного пути, «последние доступные» выбирает самый новый тип дороги/трамвайного пути, «наиболее используемые» выбирает тип, который наиболее часто используется в настоящее время, и «по умолчанию» выбирает тип по умолчанию.
-
 STR_CONFIG_SETTING_ENABLE_BUILD_RIVER                           :Включить строительство рек: {STRING}
 STR_CONFIG_SETTING_ENABLE_BUILD_RIVER_HELPTEXT                  :Разрешить прокладывать реки не только в редакторе сценариев
 
@@ -503,11 +479,6 @@ STR_CONFIG_SETTING_SHARING_FEE_HELPTEXT                         :Плата вз
 STR_CONFIG_SETTING_SHARING_PAYMENT_IN_DEBT                      :Разрешить компаниям, имеющим задолженность, оплачивать совместное использование: {STRING}
 STR_CONFIG_SETTING_SHARING_USED_BY_VEHICLES                     :Невозможно изменить этот параметр - транспортные средства используют инфраструктуру чужих компаний.
 STR_CONFIG_SETTING_SHARING_ORDERS_TO_OTHERS                     :Невозможно изменить этот параметр - у транспортных средств есть задания с пунктами назначения в инфраструктуре чужих компаний.
-
-STR_CONFIG_SETTING_INFRA_OTHERS_BUY_IN_DEPOT_RAIL               :Конкуренты могут покупать и обновлять поезда в депо: {STRING}
-STR_CONFIG_SETTING_INFRA_OTHERS_BUY_IN_DEPOT_ROAD               :Конкуренты могут покупать и обновлять автотранспорт в депо: {STRING}
-STR_CONFIG_SETTING_INFRA_OTHERS_BUY_IN_DEPOT_WATER              :Конкуренты могут покупать и обновлять корабли в депо: {STRING}
-STR_CONFIG_SETTING_INFRA_OTHERS_BUY_IN_DEPOT_AIR                :Конкуренты могут покупать и обновлять авиатранспорт в ангарах: {STRING}
 
 STR_CONFIG_SETTING_TRAIN_SPEED_ADAPTATION                       :Включить адаптацию скорости поезда: {STRING}
 STR_CONFIG_SETTING_TRAIN_SPEED_ADAPTATION_HELPTEXT              :Если включено, то более быстрые поезда будут регулировать свою скорость при прохождении сигналов, пытаясь сравняться с более медленными поездами впереди.{}Это может быть неприемлемо для некоторых типов сигнализации или схем, и может быть отключено и снова включено для каждого поезда с помощью ограничений маршрутизации сигналов.
@@ -626,14 +597,6 @@ STR_CONFIG_SETTING_CARGO_PAYMENT_ALGORITHM_HELPTEXT             :Алгорит�
 STR_CONFIG_SETTING_CARGO_PAYMENT_ALGORITHM_TRADITIONAL          :Традиционный
 STR_CONFIG_SETTING_CARGO_PAYMENT_ALGORITHM_MODERN               :Современный
 
-STR_CONFIG_SETTING_TICK_RATE                                    :Скорость игровых тиков: {STRING}
-STR_CONFIG_SETTING_TICK_RATE_HELPTEXT                           :Количество миллисекунд на один игровой тик.
-STR_CONFIG_SETTING_TICK_RATE_TRADITIONAL                        :30 мс/тик (традиционная)
-STR_CONFIG_SETTING_TICK_RATE_MODERN                             :27 мс/тик (современная)
-
-STR_CONFIG_SETTING_TOWN_MIN_DISTANCE                            :Минимальное расстояние между городами: {STRING}
-STR_CONFIG_SETTING_TOWN_MIN_DISTANCE_HELPTEXT                   :Устанавливает минимальное расстояние между городами (в клетках) при генерации карты и случайном основании.
-
 STR_CONFIG_SETTING_DISTRIBUTION_PER_CARGO                       :Переопределение режима распределения для этого груза: {STRING}
 STR_CONFIG_SETTING_DISTRIBUTION_PER_CARGO_PARAM                 :Переопределение режима распределения для {STRING}: {STRING}
 STR_CONFIG_SETTING_DISTRIBUTION_PER_CARGO_HELPTEXT              :«(по умолчанию)» означает, что режим распределения является стандартным для класса этого груза. «симметричный» означает, что со станции А на станцию Б будет отправлено примерно столько же грузов, сколько со станции Б на А. «асимметричный» означает, что произвольное количество груза может быть отправлено в любом направлении. «ручной» означает, что для этого груза не будет проводиться автоматическое распределение.
@@ -666,23 +629,11 @@ STR_CONFIG_SETTING_REROUTE_RV_ON_LAYOUT_CHANGE_NO               :Нет
 STR_CONFIG_SETTING_REROUTE_RV_ON_LAYOUT_CHANGE_REMOVE_ONLY      :Только при удалении дорог
 STR_CONFIG_SETTING_REROUTE_RV_ON_LAYOUT_CHANGE_YES              :Да
 
-STR_CONFIG_SETTING_ENABLE_ROAD_CUSTOM_BRIDGE_HEADS              :Включить настраиваемые опоры дорожных мостов: {STRING}
-STR_CONFIG_SETTING_ENABLE_ROAD_CUSTOM_BRIDGE_HEADS_HELPTEXT     :Позволяет дорожным мостам иметь пользовательские, непрямые плоские клетки для въезда/выезда
-STR_CONFIG_SETTING_ENABLE_RAIL_CUSTOM_BRIDGE_HEADS              :Включить настраиваемые опоры железнодорожных мостов: {STRING}
-STR_CONFIG_SETTING_ENABLE_RAIL_CUSTOM_BRIDGE_HEADS_HELPTEXT     :Позволяет железнодорожным мостам иметь нестандартные, непрямые плоские клетки для въезда/выезда
-
 STR_CONFIG_SETTING_ALLOW_GRF_OBJECTS_UNDER_BRIDGES              :Разрешить все объекты NewGRF под мостами: {STRING}
 STR_CONFIG_SETTING_ALLOW_GRF_OBJECTS_UNDER_BRIDGES_HELPTEXT     :Разрешить всем объектам NewGRF строиться под мостами, даже если это не разрешено GRF.{}Может вызвать проблемы с графикой.
 
 STR_CONFIG_SETTING_ALLOW_GRF_STATIONS_UNDER_BRIDGES             :Разрешить железнодорожные станции/маршрутные точки NewGRF под мостами: {STRING}
 STR_CONFIG_SETTING_ALLOW_GRF_STATIONS_UNDER_BRIDGES_HELPTEXT    :Если включено, NewGRF железнодорожные станции/маршрутные точки, для которых не указано, можно ли их строить под мостами, будут разрешены под мостами без ограничений.{}Может вызвать проблемы с графикой.
-
-STR_CONFIG_SETTING_ALLOW_ROAD_STATIONS_UNDER_BRIDGES            :Разрешить дорожные/трамвайные остановки под мостами: {STRING}
-STR_CONFIG_SETTING_ALLOW_ROAD_STATIONS_UNDER_BRIDGES_HELPTEXT   :Разрешает дорожные/трамвайные остановки под мостами. Для сквозных остановок требуется 1 уровень высоты, для въездных - 2 уровня.
-STR_CONFIG_SETTING_ALLOW_ROAD_STATIONS_UNDER_BRIDGES_HELPTEXT_EXTRA :{STRING}{}{}NewGRF дорожные/трамвайные остановки могут изменять эту настройку и разрешать или запрещать пользовательские остановки под мостами, а также устанавливать собственные требования к уровню высоты.
-
-STR_CONFIG_SETTING_ALLOW_DOCKS_UNDER_BRIDGES                    :Разрешить пристани под мостами: {STRING}
-STR_CONFIG_SETTING_ALLOW_DOCKS_UNDER_BRIDGES_HELPTEXT           :Разрешает пристани под мостами. Пристани требуют 2 уровня высоты.{}Может вызвать проблемы с графикой.
 
 STR_CONFIG_SETTING_PURCHASE_LAND_PERMITTED                      :Разрешение на покупку земли: {STRING}
 STR_CONFIG_SETTING_PURCHASE_LAND_PERMITTED_HELPTEXT             :Установить, разрешено ли компаниям приобретать земельные участки и в каком количестве.
@@ -765,8 +716,8 @@ STR_CHEAT_INFLATION_INCOME                                      :{LTBLUE}Изм�
 STR_CHEAT_INFLATION_INCOME_QUERY_CAPT                           :{WHITE}Изменение уровня инфляции доходов
 STR_CHEAT_TOWN_RATING                                           :{LTBLUE}Рейтинг у городской администрации зафиксирован на «Великолепном» уровне: {ORANGE}{STRING}
 
-STR_NETWORK_MESSAGE_GIVE_MONEY_RECEIVE                          :*** {STRING} даёт вашей компании {2:CURRENCY_LONG}
-STR_NETWORK_MESSAGE_GAVE_MONEY_AWAY                             :*** Вы дали {1:STRING} {2:CURRENCY_LONG}
+STR_NETWORK_MESSAGE_GIVE_MONEY_RECEIVE                          :*** {STRING} даёт вашей компании {CURRENCY_LONG}
+STR_NETWORK_MESSAGE_GAVE_MONEY_AWAY                             :*** Вы дали {STRING} {CURRENCY_LONG}
 STR_NETWORK_MESSAGE_MONEY_GIVE_SRC_DESCRIPTION                  :{STRING} ({COMPANY})
 
 STR_TRANSPARENT_LOADING_TOOLTIP                                 :{BLACK}Переключение прозрачности индикаторов загрузки. Ctrl+клик - заблокировать.
@@ -782,6 +733,7 @@ STR_LINKGRAPH_STATS_TOOLTIP_PRODUCTION_INTERVAL                 :{BLACK}{CARGO_L
 
 STR_RAIL_TOOLBAR_TOOLTIP_BUILD_POLYRAIL                         :{BLACK}Построить железнодорожный путь с помощью режима полилинии. Ctrl переключает строительство/удаление железной дороги. Shift переключает строительство/показ сметы расходов
 
+STR_BUILD_SIGNAL_TOGGLE_ADVANCED_SIGNAL_TOOLTIP                 :{BLACK}Переключить отображение расширенного списка сигналов
 STR_BUILD_SIGNAL_SEMAPHORE_PROG_TOOLTIP                         :{BLACK}Программируемый предварительный сигнал (семафор){}Программируемый предварительный сигнал - это комбинированный сигнал, который может быть запрограммирован на сложное поведение.
 STR_BUILD_SIGNAL_SEMAPHORE_NO_ENTRY_TOOLTIP                     :{BLACK}Сигнал запрета входа (семафор){}Сигнал пути позволяет нескольким поездам одновременно входить в сигнальный блок, если поезд может зарезервировать путь к безопасной точке остановки. Сигналы о запрете въезда не могут быть переданы с лицевой стороны
 STR_BUILD_SIGNAL_ELECTRIC_PROG_TOOLTIP                          :{BLACK}Программируемый предварительный сигнал (электрический){}Программируемый предварительный сигнал - это комбинированный сигнал, который может быть запрограммирован на сложное поведение.
@@ -933,8 +885,7 @@ STR_TRACE_RESTRICT_SLOT_PBS_RES_END_TRY_ACQUIRE_ITEM            :Резерви�
 STR_TRACE_RESTRICT_SLOT_PBS_RES_END_RELEASE_ITEM                :Резервирование маршрута заканчивается здесь: Освободить слот: {PUSH_COLOUR}{STRING}{POP_COLOUR}
 STR_TRACE_RESTRICT_SLOT_NAME                                    :{TRSLOT}
 STR_TRACE_RESTRICT_SLOT_NAME_PREFIXED                           :[{STRING}] {TRSLOT}
-STR_TRACE_RESTRICT_SLOT_LIST_HEADER                             :{BLACK}Слот{CONSUME_ARG}{P а ы ""}: {LTBLUE}
-STR_TRACE_RESTRICT_SLOT_LIST_SEPARATOR                          :{BLACK}, {LTBLUE}
+STR_TRACE_RESTRICT_SLOT_LIST_HEADER                             :{BLACK}Слот{CONSUME_ARG}{P а ы ""}:{SPACE}
 STR_TRACE_RESTRICT_COUNTER_NAME                                 :{TRCOUNTER}
 STR_TRACE_RESTRICT_COUNTER_INCREASE                             :Увеличить
 STR_TRACE_RESTRICT_COUNTER_DECREASE                             :Уменьшить
@@ -1168,15 +1119,15 @@ STR_PROGSIG_CONDVAR_NUM_GREEN                                   :зелёные 
 
 STR_PROGSIG_CONDITION_VALUE_CAPT                                :{WHITE}Значение состояния
 
-STR_ERROR_CAN_T_INSERT_INSTRUCTION                              :{WHITE}Невозможно вставить инструкцию
-STR_ERROR_CAN_T_MODIFY_INSTRUCTION                              :{WHITE}Невозможно изменить инструкцию
-STR_ERROR_CAN_T_REMOVE_INSTRUCTION                              :{WHITE}Невозможно удалить инструкцию
-STR_ERROR_CAN_T_GOTO_UNDEFINED_SIGNAL                           :{WHITE}Невозможно перейти к неопределенному сигналу
-STR_ERROR_NOT_AN_EXIT_SIGNAL                                    :{WHITE}Не выходной сигнал
-STR_ERROR_NOT_AN_PROG_SIGNAL                                    :{WHITE}Не программируемый пресигнал
-STR_ERROR_CANNOT_USE_SELF                                       :{WHITE}Невозможно скопировать программу от себя
-STR_ERROR_CAN_T_DEPEND_UPON_BIDIRECTIONAL_SIGNALS               :{WHITE}Не может условно зависеть от двунаправленных сигналов
-STR_ERROR_INVALID_SIGNAL                                        :{WHITE}Недопустимый сигнал
+STR_PROGSIG_ERROR_CAN_T_INSERT_INSTRUCTION                      :{WHITE}Невозможно вставить инструкцию
+STR_PROGSIG_ERROR_CAN_T_MODIFY_INSTRUCTION                      :{WHITE}Невозможно изменить инструкцию
+STR_PROGSIG_ERROR_CAN_T_REMOVE_INSTRUCTION                      :{WHITE}Невозможно удалить инструкцию
+STR_PROGSIG_ERROR_CAN_T_GOTO_UNDEFINED_SIGNAL                   :{WHITE}Невозможно перейти к неопределенному сигналу
+STR_PROGSIG_ERROR_NOT_AN_EXIT_SIGNAL                            :{WHITE}Не выходной сигнал
+STR_PROGSIG_ERROR_NOT_AN_PROG_SIGNAL                            :{WHITE}Не программируемый пресигнал
+STR_PROGSIG_ERROR_CANNOT_USE_SELF                               :{WHITE}Невозможно скопировать программу от себя
+STR_PROGSIG_ERROR_CAN_T_DEPEND_UPON_BIDIRECTIONAL_SIGNALS       :{WHITE}Не может условно зависеть от двунаправленных сигналов
+STR_PROGSIG_ERROR_INVALID_SIGNAL                                :{WHITE}Недопустимый сигнал
 
 STR_WATERWAYS_TOOLBAR_CREATE_RIVER_IN_GAME_TOOLTIP              :{BLACK}Разместить реки
 
@@ -1230,7 +1181,7 @@ STR_SAVELOAD_DIFFERENT_ID                                       :{YELLOW}Это�
 STR_SAVELOAD_OVERWRITE_TITLE_DIFFERENT_ID                       :{WHITE}Перезаписать файл (другая игра)
 STR_SAVELOAD_OVERWRITE_TITLE_DIFFERENT_VERSION_SUFFIX           :{STRING} (Другая версия)
 STR_SAVELOAD_OVERWRITE_WARNING_DIFFERENT_ID                     :{YELLOW}Вы уверены, что хотите перезаписать существующий файл?{}{}Этот файл из другой игры.
-STR_SAVELOAD_OVERWRITE_WARNING_DIFFERENT_VERSION_SUFFIX         :{STRING}{}{}Файл из другой версии{STRING}.{}Если файл будет перезаписан, он больше не будет читаться оригинальной версией.
+STR_SAVELOAD_OVERWRITE_WARNING_DIFFERENT_VERSION_SUFFIX         :{YELLOW}{STRING}{}{}Файл из другой версии{STRING}.{}Если файл будет перезаписан, он больше не будет читаться оригинальной версией.
 STR_SAVELOAD_OVERWRITE_WARNING_VERSION_NAME                     : ({STRING})
 
 STR_MAPGEN_SNOW_LINE_HEIGHT                                     :{BLACK}Высота снеговой линии:
@@ -1297,6 +1248,8 @@ STR_STATION_VIEW_HISTORY_BUTTON                                 :{BLACK}Исто
 STR_STATION_VIEW_HISTORY_TOOLTIP                                :{BLACK}Показать историю ожидающих грузов
 
 STR_DEPARTURES_CAPTION                                          :{WHITE}{STRING} Информация о путешествиях в реальном времени
+STR_DEPARTURES_CAPTION_FILTER                                   :{WHITE}{STRING} - В направлении {STRING}
+STR_DEPARTURES_CAPTION_VEHICLE_FILTER                           :{WHITE}{STRING} - Общие задания: {VEHICLE}
 STR_DEPARTURES_CARGO_MODE_TOOLTIP                               :{BLACK}Установите режим фильтрации грузов для прибытий/отбытий
 STR_DEPARTURES_DEPARTURES                                       :Прибытия
 STR_DEPARTURES_ARRIVALS                                         :Отбытия
@@ -1309,6 +1262,8 @@ STR_DEPARTURES_EMPTY_BUTTON                                     :{BLACK}Пуст
 STR_DEPARTURES_EMPTY_TOOLTIP                                    :{BLACK}Также показывать отбытия, прибытия и станции, через которые транспортное средство проходит пустым или не загружает/выгружает груз.
 STR_DEPARTURES_VIA_BUTTON                                       :{BLACK}через
 STR_DEPARTURES_VIA_TOOLTIP                                      :{BLACK}Показать транспортные средства, которые не останавливаются здесь по расписанию
+STR_DEPARTURES_FILTER_BUTTON                                    :{BLACK}Фильтр
+STR_DEPARTURES_FILTER_TOOLTIP                                   :{BLACK}Показывать только прибытия/отправления в определенном направлении, или из отдельной группы заданий.
 STR_DEPARTURES_SHOW_TRAINS_TOOLTIP                              :{BLACK}Показать расписание поездов
 STR_DEPARTURES_SHOW_ROAD_VEHICLES_TOOLTIP                       :{BLACK}Показать расписание автотранспорта
 STR_DEPARTURES_SHOW_SHIPS_TOOLTIP                               :{BLACK}Показать расписание судов
@@ -1327,16 +1282,16 @@ STR_DEPARTURES_VIA                                              :{ORANGE}чер�
 STR_DEPARTURES_TOC                                              :{ORANGE}{COMPANY}
 STR_DEPARTURES_GROUP                                            :{ORANGE}{GROUP}
 STR_DEPARTURES_VEH                                              :{ORANGE}{VEHICLE}
-STR_DEPARTURES_CALLING_AT                                       :{ORANGE}Вызов по адресу:
-STR_DEPARTURES_CALLING_AT_STATION                               :{STRING}, {STRING}
-STR_DEPARTURES_CALLING_AT_LAST_STATION                          :{STRING} и {STRING}
-STR_DEPARTURES_CALLING_AT_LIST                                  :{ORANGE}{STRING}.
-STR_DEPARTURES_CALLING_AT_LIST_SMART_TERMINUS                   :{ORANGE}{STRING}. Эта служба продолжает {STRING}.
+STR_DEPARTURES_CALLING_AT                                       :{ORANGE}В направлении:
+STR_DEPARTURES_CALLING_AT_STATION                               :, {STRING}
+STR_DEPARTURES_CALLING_AT_LAST_STATION                          : и {STRING}
+STR_DEPARTURES_CALLING_AT_LIST_SUFFIX                           :.
+STR_DEPARTURES_CALLING_AT_LIST_SUFFIX_SMART_TERMINUS            :. Следует до {STRING}.
 STR_DEPARTURES_CALLING_AT_STATION_WITH_TIME                     :{STRING} ({TT_TIME_ABS})
 STR_DEPARTURES_TINY                                             :{TINY_FONT}{STRING}
 STR_DEPARTURES_VIA_DESCRIPTOR                                   :{STRING}{STRING}
 STR_DEPARTURES_VIA_AND                                          :{STRING} и {STRING}
-STR_DEPARTURES_SOURCE_MODE_TOOLTIP                              :{BLACK}Установите, показывать ли отправления в реальном времени или 24-часовое расписание отправлений по расписанию..
+STR_DEPARTURES_SOURCE_MODE_TOOLTIP                              :{BLACK}Установите, показывать ли отправления в реальном времени или 24-часовое расписание отправлений по расписанию.
 STR_DEPARTURES_SOURCE_MODE_LIVE                                 :Реальное время
 STR_DEPARTURES_SOURCE_MODE_SCHEDULE_24_HOUR                     :24-часовое расписание
 
@@ -1493,13 +1448,11 @@ STR_QUERY_RENAME_TRAIN_TYPE_WAGON_CAPTION                       :{WHITE}Пере
 STR_VEHICLE_VIEW_SEND_TO_DEPOT_TOOLTIP_SHIFT                    :{STRING}. Shift+клик чтобы выбрать, какой
 STR_VEHICLE_VIEW_SEND_TO_DEPOT_MENU                             :{BLACK}Отменить отправку транспортного средства в депо/ангар. Ctrl+клик - меню. Shift+клик - выбрать депо/ангар
 
-STR_VEHICLE_VIEW_TRAIN_CENTER_TOOLTIP_EXTRA                     :{STRING}{BLACK}{}Shift+клик - переключить показ наложения маршрута, даже если окно не выбрано
-
 STR_VEHICLE_VIEW_SHOW_ORDERS_TOOLTIP_EXTRA                      :{STRING}{BLACK}{}Shift+клик - показать окно расписания диспетчерской службы
 
-STR_VEHICLE_VIEW_ORDER_NUMBER                                   :{COMMA}: {STRING}
+STR_VEHICLE_VIEW_ORDER_NUMBER                                   :{COMMA}:{SPACE}
 
-STR_VEHICLE_STATUS_LOADING_UNLOADING_ADVANCE                    :{STRING}, {VELOCITY}
+STR_VEHICLE_STATUS_LOADING_UNLOADING_ADVANCE                    :{LTBLUE}{STRING}, {VELOCITY}
 STR_VEHICLE_STATUS_BROKEN_DOWN_VEL                              :{RED}Сломано - {STRING}, {LTBLUE} {VELOCITY}
 STR_VEHICLE_STATUS_BROKEN_DOWN_VEL_SHORT                        :{RED}Сломано - {STRING}
 STR_VEHICLE_STATUS_TRAIN_STUCK_WAIT_RESTRICTION                 :{ORANGE}Ожидание из-за ограничения маршрутизации
@@ -1561,7 +1514,7 @@ STR_VEHICLE_INFO_MAX_SPEED_LOADED                               :{BLACK}Макс
 
 STR_VEHICLE_INFO_AGE_RUNNING_COST_ORIG_YR                       :{BLACK}Возраст: {LTBLUE}{STRING}{BLACK}   Эксплуатационные расходы: {LTBLUE}{CURRENCY_LONG}/исходный год
 
-STR_VEHICLE_INFO_PROFIT_THIS_YEAR_LAST_YEAR_LIFETIME            :{STRING} (срок службы: {CURRENCY_LONG})
+STR_VEHICLE_INFO_PROFIT_THIS_YEAR_LAST_YEAR_LIFETIME            :{STRING} {LTBLUE}(срок службы: {CURRENCY_LONG})
 
 STR_VEHICLE_INFO_GROUP                                          :{BLACK}Группа: {LTBLUE}{GROUP}
 
@@ -1599,6 +1552,20 @@ STR_ORDER_REVERSE                                               :{BLACK}Инве
 STR_ORDER_REVERSE_TOOLTIP                                       :{BLACK}Измените поведение выделенного порядка в обратную сторону.
 
 STR_ORDER_DROP_SELL_DEPOT                                       :Продать транспортное средство
+
+STR_ORDER_CONDITIONAL_CARGO_WAITING                             :Доступный груз
+STR_ORDER_CONDITIONAL_ACCEPTANCE_DROPDOWN                       :Принятый груз
+STR_ORDER_CONDITIONAL_FREE_PLATFORMS                            :Свободные платформы
+STR_ORDER_CONDITIONAL_PERCENT                                   :Процент случаев
+STR_ORDER_CONDITIONAL_SLOT_OCCUPANCY                            :Заполненность слотов
+STR_ORDER_CONDITIONAL_TRAIN_IN_SLOT                             :Поезд в слоте
+STR_ORDER_CONDITIONAL_CARGO_LOAD_PERCENTAGE                     :Процент загрузки груза
+STR_ORDER_CONDITIONAL_CARGO_WAITING_AMOUNT                      :Количество доступного груза
+STR_ORDER_CONDITIONAL_COUNTER_VALUE                             :Значение счётчика
+STR_ORDER_CONDITIONAL_TIME_DATE_VALUE                           :Текущее время/дата
+STR_ORDER_CONDITIONAL_TIMETABLE_STATE                           :Состояние расписания
+STR_ORDER_CONDITIONAL_DISPATCH_SLOT                             :Диспетчерский слот
+STR_ORDER_CONDITIONAL_CARGO_WAITING_AMOUNT_PERCENTAGE           :Доступный груз/вместимость
 
 STR_ORDER_CONDITIONAL_VEHICLE_IN_SLOT                           :Транспортное средство в слоте
 
@@ -1642,11 +1609,11 @@ STR_ORDER_CONDITIONAL_COMPARATOR_DISPATCH_SLOT_IS_NOT_FIRST     :не первы
 STR_ORDER_CONDITIONAL_COMPARATOR_DISPATCH_SLOT_IS_LAST          :последний слот
 STR_ORDER_CONDITIONAL_COMPARATOR_DISPATCH_SLOT_IS_NOT_LAST      :не последний слот
 
-STR_ORDER_CONDITIONAL_COMPARATOR_DISPATCH_SLOT_HAS_TAG          :имеет метку {NUM}
-STR_ORDER_CONDITIONAL_COMPARATOR_DISPATCH_SLOT_HAS_TAG_NAMED    :имеет метку {NUM} ({STRING})
+STR_ORDER_CONDITIONAL_DISPATCH_SLOT_HAS_TAG                     :имеет метку {NUM}
+STR_ORDER_CONDITIONAL_DISPATCH_SLOT_HAS_TAG_NAMED               :имеет метку {NUM} ({STRING})
 
-STR_ORDER_CONDITIONAL_COMPARATOR_DISPATCH_SLOT_DOESNT_HAVE_TAG  :не имеет метку {NUM}
-STR_ORDER_CONDITIONAL_COMPARATOR_DISPATCH_SLOT_DOESNT_HAVE_TAG_NAMED :не имеет метку {NUM} ({STRING})
+STR_ORDER_CONDITIONAL_DISPATCH_SLOT_DOESNT_HAVE_TAG             :не имеет метку {NUM}
+STR_ORDER_CONDITIONAL_DISPATCH_SLOT_DOESNT_HAVE_TAG_NAMED       :не имеет метку {NUM} ({STRING})
 
 STR_ORDERS_MANAGE_LIST                                          :{BLACK}Управление списком
 STR_ORDERS_MANAGE_LIST_TOOLTIP                                  :{BLACK}Управление списком заданий
@@ -1690,24 +1657,24 @@ STR_ORDERS_VEH_WITH_SHARED_ORDERS_LIST_TOOLTIP_EXTRA            :{STRING}{}{BLAC
 
 STR_ORDER_GO_TO_WAYPOINT_REVERSE                                :Идти через и обратно на {WAYPOINT}
 STR_ORDER_GO_NON_STOP_TO_WAYPOINT_REVERSE                       :Идти через без остановки и обратно на {WAYPOINT}
-STR_ORDER_SELL_ORDER                                            :(Продать транспортное средство)
-STR_ORDER_CARGO_TYPE_LOAD                                       :(Загрузить по типу груза)
-STR_ORDER_UNLOAD_CARGO_TYPE_LOAD                                :(Разгрузить и загрузить по типу груза)
-STR_ORDER_TRANSFER_CARGO_TYPE_LOAD                              :(Переместить и загрузить по типу груза)
-STR_ORDER_NO_UNLOAD_CARGO_TYPE_LOAD                             :(Не разгружать и загружать по типу груза)
-STR_ORDER_CARGO_TYPE_UNLOAD                                     :(Разгрузить по типу груза)
-STR_ORDER_CARGO_TYPE_UNLOAD_FULL_LOAD                           :(Разгрузить по типу груза и ждать полной загрузки)
-STR_ORDER_CARGO_TYPE_UNLOAD_FULL_LOAD_ANY                       :(Разгрузить по типу груза и ждать полной загрузки чем угодно)
-STR_ORDER_CARGO_TYPE_UNLOAD_NO_LOAD                             :(Разгрузить по типу груза и оставить пустым)
-STR_ORDER_CARGO_TYPE_UNLOAD_CARGO_TYPE_LOAD                     :(Разгрузить по типу груза и загрузить по типу груза)
-STR_ORDER_CARGO_TYPE_LOAD_REFIT                                 :(Загрузить по типу груза с переоборудованием в {STRING})
-STR_ORDER_UNLOAD_CARGO_TYPE_LOAD_REFIT                          :(Разгрузить и загрузить по типу груза с переоборудованием в {STRING})
-STR_ORDER_TRANSFER_CARGO_TYPE_LOAD_REFIT                        :(Переместить и загрузить по типу груза с переоборудованием в {STRING})
-STR_ORDER_NO_UNLOAD_CARGO_TYPE_LOAD_REFIT                       :(Не разгружать и загружать по типу груза с переоборудованием в {STRING})
-STR_ORDER_CARGO_TYPE_UNLOAD_REFIT                               :(Разгрузить по типу груза и взять груз с переоборудованием в {STRING})
-STR_ORDER_CARGO_TYPE_UNLOAD_FULL_LOAD_REFIT                     :(Разгрузить по типу груза и ждать полной загрузки с переоборудованием в {STRING})
-STR_ORDER_CARGO_TYPE_UNLOAD_FULL_LOAD_ANY_REFIT                 :(Разгрузить по типу груза и ждать полной загрузки чем угодно с переоборудованием в {STRING})
-STR_ORDER_CARGO_TYPE_UNLOAD_CARGO_TYPE_LOAD_REFIT               :(Разгрузить по типу груза и загрузить по типу груза с переоборудованием в {STRING})
+STR_ORDER_SELL_ORDER                                            :{SPACE}(Продать транспортное средство)
+STR_ORDER_CARGO_TYPE_LOAD                                       :{SPACE}(Загрузить по типу груза)
+STR_ORDER_UNLOAD_CARGO_TYPE_LOAD                                :{SPACE}(Разгрузить и загрузить по типу груза)
+STR_ORDER_TRANSFER_CARGO_TYPE_LOAD                              :{SPACE}(Переместить и загрузить по типу груза)
+STR_ORDER_NO_UNLOAD_CARGO_TYPE_LOAD                             :{SPACE}(Не разгружать и загружать по типу груза)
+STR_ORDER_CARGO_TYPE_UNLOAD                                     :{SPACE}(Разгрузить по типу груза)
+STR_ORDER_CARGO_TYPE_UNLOAD_FULL_LOAD                           :{SPACE}(Разгрузить по типу груза и ждать полной загрузки)
+STR_ORDER_CARGO_TYPE_UNLOAD_FULL_LOAD_ANY                       :{SPACE}(Разгрузить по типу груза и ждать полной загрузки чем угодно)
+STR_ORDER_CARGO_TYPE_UNLOAD_NO_LOAD                             :{SPACE}(Разгрузить по типу груза и оставить пустым)
+STR_ORDER_CARGO_TYPE_UNLOAD_CARGO_TYPE_LOAD                     :{SPACE}(Разгрузить по типу груза и загрузить по типу груза)
+STR_ORDER_CARGO_TYPE_LOAD_REFIT                                 :{SPACE}(Загрузить по типу груза с переоборудованием в {STRING})
+STR_ORDER_UNLOAD_CARGO_TYPE_LOAD_REFIT                          :{SPACE}(Разгрузить и загрузить по типу груза с переоборудованием в {STRING})
+STR_ORDER_TRANSFER_CARGO_TYPE_LOAD_REFIT                        :{SPACE}(Переместить и загрузить по типу груза с переоборудованием в {STRING})
+STR_ORDER_NO_UNLOAD_CARGO_TYPE_LOAD_REFIT                       :{SPACE}(Не разгружать и загружать по типу груза с переоборудованием в {STRING})
+STR_ORDER_CARGO_TYPE_UNLOAD_REFIT                               :{SPACE}(Разгрузить по типу груза и взять груз с переоборудованием в {STRING})
+STR_ORDER_CARGO_TYPE_UNLOAD_FULL_LOAD_REFIT                     :{SPACE}(Разгрузить по типу груза и ждать полной загрузки с переоборудованием в {STRING})
+STR_ORDER_CARGO_TYPE_UNLOAD_FULL_LOAD_ANY_REFIT                 :{SPACE}(Разгрузить по типу груза и ждать полной загрузки чем угодно с переоборудованием в {STRING})
+STR_ORDER_CARGO_TYPE_UNLOAD_CARGO_TYPE_LOAD_REFIT               :{SPACE}(Разгрузить по типу груза и загрузить по типу груза с переоборудованием в {STRING})
 
 STR_ORDER_RV_DIR_ANY                                            :[любое направление]
 STR_ORDER_RV_DIR_NE                                             :[северо-восточное направление]
@@ -1764,9 +1731,9 @@ STR_TIMETABLE_SCHEDULED_DISPATCH_ORDER_NAMED_SCHEDULE           :{STRING}{NBSP}-
 
 STR_TIMETABLE_LOCK_ORDER_TIME_TOOLTIP                           :{BLACK}Заблокировать/разблокировать количество времени для выделенного задания (Ctrl+клик - установить состояние блокировки для всех заданий).{}Если время заблокировано, оно не может быть изменено автозаполнением расписания or автоматически.
 
-STR_TIMETABLE_LEAVE_EARLY_ORDER                                 :[уходить раньше]
-STR_TIMETABLE_LEAVE_EARLY_ORDER_FULL_ANY                        :[уходить раньше, если груз заполнен]
-STR_TIMETABLE_LEAVE_EARLY_ORDER_FULL_ALL                        :[уходить раньше, если все грузы заполнены]
+STR_TIMETABLE_LEAVE_EARLY_ORDER                                 :{SPACE}[уходить раньше]
+STR_TIMETABLE_LEAVE_EARLY_ORDER_FULL_ANY                        :{SPACE}[уходить раньше, если груз заполнен]
+STR_TIMETABLE_LEAVE_EARLY_ORDER_FULL_ALL                        :{SPACE}[уходить раньше, если все грузы заполнены]
 STR_TIMETABLE_LEAVE_NORMAL                                      :Уходить по расписанию
 STR_TIMETABLE_LEAVE_EARLY                                       :Уходить раньше
 STR_TIMETABLE_LEAVE_EARLY_FULL_ANY                              :Уходить раньше если заполнено что угодно
@@ -1843,7 +1810,7 @@ STR_PLANS_DELETE                                                :{BLACK}Удал
 STR_PLANS_DELETE_TOOLTIP                                        :{BLACK}Удалить выбранный план
 STR_PLANS_TAKE_OWNERSHIP                                        :{BLACK}Принять в собственность
 STR_PLANS_TAKE_OWNERSHIP_TOOLTIP                                :{BLACK}Принять в собственность выбранный бесхозный план
-STR_PLANS_LIST_ITEM_PLAN_PRIVATE                                :[Закрытый]: {STRING}
+STR_PLANS_LIST_ITEM_PLAN_PRIVATE                                :[Закрытый]:{SPACE}
 STR_PLANS_LIST_ITEM_PLAN                                        :План #{NUM}: {NUM} лин{P ия ии ий} ({DATE_SHORT})
 STR_PLANS_LIST_ITEM_NAMED_PLAN                                  :{STRING}: {NUM} лин{P ия ии ий} ({DATE_SHORT})
 STR_PLANS_LIST_ITEM_LINE                                        : -- Линия #{NUM}: {NUM} сегмент{P "" а ов}
@@ -1879,9 +1846,7 @@ STR_ERROR_ONLY_ONE_BUILDING_ALLOWED_PER_TOWN                    :{WHITE}... в �
 STR_ERROR_TOO_MANY_DOCKS                                        :{WHITE}Слишком много доков
 STR_ERROR_UNSUITABLE_SIGNAL_TYPE                                :{WHITE}... неподходящий тип сигнала
 STR_ERROR_RESTRICTED_SIGNAL                                     :{WHITE}... сигнал прикреплён программу ограничения маршрутизации
-STR_ERROR_SIGNAL_CHANGES                                        :{WHITE}Превышен предел количество программируемых пресигналов
 
-STR_ERROR_BRIDGE_TOO_LOW_FOR_STATION                            :{WHITE}Мост слишком низкий для станции
 STR_ERROR_BRIDGE_PILLARS_OBSTRUCT_STATION                       :{WHITE}Опоры моста загораживают станцию
 STR_ERROR_CHUNNEL_THROUGH_MAP_BORDER                            :{WHITE}Подводный туннель будет заканчиваться за пределами карты
 STR_ERROR_CHUNNEL_RAMP                                          :{WHITE}... Подводные туннели требуют, чтобы зазор между клетками туннеля и берега был между {NUM} и {NUM} клеток.
@@ -2073,7 +2038,7 @@ STR_SCHDISPATCH_ENABLED_TOOLTIP                                 :{BLACK}Вклю
 STR_SCHDISPATCH_ADD                                             :{BLACK}Добавить слот
 STR_SCHDISPATCH_ADD_TOOLTIP                                     :{BLACK}Добавить новый слот отправления для этого расписания.
 STR_SCHDISPATCH_ADD_TOOLTIP_EXTRA                               :{BLACK}{STRING} Ctrl+клик добавить сразу несколько слотов отправления.
-STR_SCHDISPATCH_ADD_CAPTION                                     :{BLACK}Слот отправления
+STR_SCHDISPATCH_ADD_CAPTION                                     :Слот отправления
 STR_SCHDISPATCH_DURATION                                        :{BLACK}Продолжительность
 STR_SCHDISPATCH_DURATION_TOOLTIP                                :{BLACK}Установить продолжительность этого расписания.
 STR_SCHDISPATCH_DURATION_CAPTION_MINUTE                         :{BLACK}Продолжительность (минуты)
@@ -2144,13 +2109,10 @@ STR_SCHDISPATCH_SLOT_TOOLTIP_LAST                               :{}Послед�
 STR_SCHDISPATCH_SLOT_TOOLTIP_NEXT                               :{}Следующий доступный слот отправления
 STR_SCHDISPATCH_SLOT_TOOLTIP_REUSE                              :{}Слот отправления может быть использован более одного раза
 STR_SCHDISPATCH_SLOT_TOOLTIP_TIME_SUFFIX                        : ({TT_TIME})
-STR_SCHDISPATCH_SLOT_TOOLTIP_TAG                                :{}Метка {NUM}
-STR_SCHDISPATCH_SLOT_TOOLTIP_TAG_NAMED                          :{}Метка {NUM}: {STRING}
 
 STR_SCHDISPATCH_SUMMARY_NO_LAST_DEPARTURE                       :{BLACK}Предыдущих отправлений нет.
 STR_SCHDISPATCH_SUMMARY_VEHICLE_NO_LAST_DEPARTURE               :{BLACK}Этот транспорт не отбывал.
 STR_SCHDISPATCH_SUMMARY_DEPARTURE_DETAILS                       : ({STRING})
-STR_SCHDISPATCH_SUMMARY_DEPARTURE_DETAIL_SEPARATOR              :, {STRING}
 STR_SCHDISPATCH_SUMMARY_DEPARTURE_DETAIL_WAS_FIRST              :первый слот
 STR_SCHDISPATCH_SUMMARY_DEPARTURE_DETAIL_WAS_LAST               :последний слот
 STR_SCHDISPATCH_SUMMARY_DEPARTURE_DETAIL_TAG                    :метка {NUM}
@@ -2242,7 +2204,7 @@ STR_ERROR_CAN_T_BUY_25_SHARE_IN_THIS                            :{WHITE}Нево
 STR_ERROR_CAN_T_SELL_25_SHARE_IN                                :{WHITE}Невозможно продать 25% акций этой компании...
 STR_ERROR_PROTECTED                                             :{WHITE}Эта компания ещё не выпускает акции...
 
-STR_GAME_OPTIONS_GUI_SCALE_MAIN_TOOLBAR                         :{BLACK}Увеличенная главная панель инструментов
+STR_GAME_OPTIONS_GUI_SCALE_MAIN_TOOLBAR                         :Увеличенная главная панель инструментов
 STR_GAME_OPTIONS_GUI_SCALE_MAIN_TOOLBAR_TOOLTIP                 :{BLACK}Установите этот флажок, чтобы увеличить масштаб главной панели инструментов
 
 STR_CONFIG_SETTING_INTERFACE_TOOLTIPS                           :{ORANGE}Всплывающие подсказки
@@ -2326,3 +2288,13 @@ STR_COMPANY_PASSWORD_MAKE_DEFAULT_TOOLTIP                       :{BLACK}Испо
 STR_COMPANY_VIEW_PASSWORD                                       :{BLACK}Пароль
 STR_COMPANY_VIEW_PASSWORD_TOOLTIP                               :{BLACK}Защитить вашу компанию паролем, чтобы посторонние пользователи не могли присоединиться.
 STR_COMPANY_VIEW_SET_PASSWORD                                   :{BLACK}Установить пароль компании
+
+# JSON messages
+
+STR_INTRO_NEWGRF_SETTINGS                                       :{BLACK}Настройки NewGRF
+STR_INTRO_AI_SETTINGS                                           :{BLACK}Настройки ИИ
+STR_INTRO_GAMESCRIPT_SETTINGS                                   :{BLACK}Настройки игровых скриптов
+STR_INTRO_TOOLTIP_NEWGRF_SETTINGS                               :{BLACK}Открыть настройки NewGRF
+STR_INTRO_TOOLTIP_AI_SETTINGS                                   :{BLACK}Открыть настройки ИИ
+STR_INTRO_TOOLTIP_GAMESCRIPT_SETTINGS                           :{BLACK}Открыть настройки игровых скриптов
+STR_INTRO_CAPTION_TRADITIONAL                                   :{WHITE}OpenTTD {REV}

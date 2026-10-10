@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file geometry_type.hpp All geometry types in OpenTTD. */
@@ -16,17 +16,94 @@
 #	define Point OTTD_Point
 #endif /* __APPLE__ */
 
+/** Horizontal alignments. */
+enum class AlignmentH : uint8_t {
+	Start, ///< Align to the start, LTR/RTL aware.
+	Centre, ///< Align to the centre.
+	End, ///< Align to the end, LTR/RTL aware.
+	ForceLeft, ///< Force align to the left.
+	ForceRight, ///< Force align to the right.
+};
+
+/** Vertical alignments. */
+enum class AlignmentV : uint8_t {
+	Top, ///< Align to the top.
+	Middle, ///< Align to the middle.
+	Bottom, ///< Align to the bottom.
+};
+
+/** Horizontal and vertical alignment. */
+struct Alignment {
+	AlignmentH h; ///< Horizontal alignment.
+	AlignmentV v; ///< Vertical alignment.
+
+	/**
+	 * Construct an alignment with the specified horizontal and vertical alignment.
+	 * @param h The horizontal alignment.
+	 * @param v The vertical alignment.
+	 */
+	constexpr Alignment(AlignmentH h, AlignmentV v) : h(h), v(v) {}
+
+	/**
+	 * Construct an alignment with the specific horizontal alignment.
+	 * @param h The horizontal alignment.
+	 */
+	constexpr Alignment(AlignmentH h) : Alignment(h, AlignmentV::Top) {}
+
+	AlignmentH ResolveRTL() const;
+};
+
+/**
+ * Determine where to position a centred object.
+ * @param min The top or left coordinate.
+ * @param max The bottom or right coordinate.
+ * @param size The height or width of the object to draw.
+ * @return Offset of where to position the object.
+ */
+inline int CentreBounds(int min, int max, int size)
+{
+	return (min + max - size + 1) / 2;
+}
+
+/** A coordinate with two dimensions. */
+template <typename T>
+struct Coord2D {
+	T x = 0; ///< X coordinate.
+	T y = 0; ///< Y coordinate.
+
+	constexpr Coord2D() = default;
+	constexpr Coord2D(T x, T y) : x(x), y(y) {}
+
+	constexpr bool operator==(const Coord2D<T> &) const = default;
+
+	/**
+	 * Compare with another instance of this class.
+	 * @return The std::strong_ordering of the comparison.
+	 */
+	constexpr auto operator<=>(const Coord2D<T> &) const = default;
+};
+
+/** A coordinate with three dimensions. */
+template <typename T>
+struct Coord3D {
+	T x = 0; ///< X coordinate.
+	T y = 0; ///< Y coordinate.
+	T z = 0; ///< Z coordinate.
+
+	constexpr Coord3D() = default;
+	constexpr Coord3D(T x, T y, T z) : x(x), y(y), z(z) {}
+
+	constexpr bool operator==(const Coord3D<T> &) const = default;
+
+	/**
+	 * Compare with another instance of this class.
+	 * @return The std::strong_ordering of the comparison.
+	 */
+	constexpr auto operator<=>(const Coord3D<T> &) const = default;
+};
 
 /** Coordinates of a point in 2D */
-struct Point {
-	int x;
-	int y;
-
-	constexpr Point() : x(0), y(0) {}
-	constexpr Point(int x, int y) : x(x), y(y) {}
-
-	bool operator==(const Point&) const = default;
-};
+using Point = Coord2D<int>;
 
 /** Dimensions (a width and height) of a rectangle in 2D */
 struct Dimension {
@@ -38,23 +115,23 @@ struct Dimension {
 
 	bool operator< (const Dimension &other) const
 	{
-		int x = (*this).width - other.width;
+		int x = this->width - other.width;
 		if (x != 0) return x < 0;
-		return (*this).height < other.height;
+		return this->height < other.height;
 	}
 
 	bool operator== (const Dimension &other) const
 	{
-		return (*this).width == other.width && (*this).height == other.height;
+		return this->width == other.width && this->height == other.height;
 	}
 };
 
 /** Padding dimensions to apply to each side of a Rect. */
 struct RectPadding {
-	uint8_t left;
-	uint8_t top;
-	uint8_t right;
-	uint8_t bottom;
+	uint8_t left = 0;
+	uint8_t top = 0;
+	uint8_t right = 0;
+	uint8_t bottom = 0;
 
 	static const RectPadding zero;
 
@@ -75,10 +152,10 @@ inline const RectPadding RectPadding::zero{};
 
 /** Specification of a rectangle with absolute coordinates of all edges */
 struct Rect {
-	int left;
-	int top;
-	int right;
-	int bottom;
+	int left = 0;
+	int top = 0;
+	int right = 0;
+	int bottom = 0;
 
 	/**
 	 * Get width of Rect.
@@ -187,8 +264,8 @@ struct Rect {
 	[[nodiscard]] inline Rect WithWidth(int width, bool end) const
 	{
 		return end
-			? Rect {this->right - width + 1, this->top, this->right,            this->bottom}
-			: Rect {this->left,              this->top, this->left + width - 1, this->bottom};
+			? this->WithX(this->right - width + 1, this->right)
+			: this->WithX(this->left, this->left + width - 1);
 	}
 
 	/**
@@ -200,21 +277,21 @@ struct Rect {
 	[[nodiscard]] inline Rect Indent(int indent, bool end) const
 	{
 		return end
-			? Rect {this->left,          this->top, this->right - indent, this->bottom}
-			: Rect {this->left + indent, this->top, this->right,          this->bottom};
+			? this->WithX(this->left, this->right - indent)
+			: this->WithX(this->left + indent, this->right);
 	}
 
 	/**
 	 * Copy Rect and set its height.
-	 * @param width height in pixels for new Rect.
+	 * @param height height in pixels for new Rect.
 	 * @param end   if set, set height at end of Rect, i.e. at bottom.
 	 * @return the new resized Rect.
 	 */
 	[[nodiscard]] inline Rect WithHeight(int height, bool end = false) const
 	{
 		return end
-			? Rect {this->left, this->bottom - height + 1, this->right, this->bottom}
-			: Rect {this->left, this->top,                 this->right, this->top + height - 1};
+			? this->WithY(this->bottom - height + 1, this->bottom)
+			: this->WithY(this->top, this->top + height - 1);
 	}
 
 	/**
@@ -225,8 +302,49 @@ struct Rect {
 	inline bool Contains(const Point &pt) const
 	{
 		/* This is a local version of IsInsideMM, to avoid including math_func everywhere. */
-		return (uint)(pt.x - this->left) < (uint)(this->right - this->left) && (uint)(pt.y - this->top) < (uint)(this->bottom - this->top);
+		return (uint)(pt.x - this->left) <= (uint)(this->right - this->left) && (uint)(pt.y - this->top) <= (uint)(this->bottom - this->top);
 	}
+
+	/**
+	 * Centre a vertical dimension within this Rect.
+	 * @param height The vertical dimension.
+	 * @return the new resized Rect.
+	 */
+	[[nodiscard]] inline Rect CentreToHeight(int height) const
+	{
+		int new_top = CentreBounds(this->top, this->bottom, height);
+		return {this->left, new_top, this->right, new_top + height - 1};
+	}
+
+	/**
+	 * Create a new Rect, replacing the left and right coordinates.
+	 * @param new_left New left coordinate.
+	 * @param new_right New right coordinate.
+	 * @return The new Rect.
+	 */
+	[[nodiscard]] inline Rect WithX(int new_left, int new_right) const { return {new_left, this->top, new_right, this->bottom}; }
+
+	/**
+	 * Create a new Rect, replacing the top and bottom coordinates.
+	 * @param new_top New top coordinate.
+	 * @param new_bottom New bottom coordinate.
+	 * @return The new Rect.
+	 */
+	[[nodiscard]] inline Rect WithY(int new_top, int new_bottom) const { return {this->left, new_top, this->right, new_bottom}; }
+
+	/**
+	 * Create a new Rect, replacing the left and right coordinates.
+	 * @param other Rect containing the new left and right coordinates.
+	 * @return The new Rect.
+	 */
+	[[nodiscard]] inline Rect WithX(const Rect &other) const { return this->WithX(other.left, other.right); }
+
+	/**
+	 * Create a new Rect, replacing the top and bottom coordinates.
+	 * @param other Rect containing the new top and bottom coordinates.
+	 * @return The new Rect.
+	 */
+	[[nodiscard]] inline Rect WithY(const Rect &other) const { return this->WithY(other.top, other.bottom); }
 };
 
 struct Rect16 {
@@ -252,10 +370,10 @@ OutT ConvertRect(const InT &in)
  * (relative) width/height
  */
 struct PointDimension {
-	int x;
-	int y;
-	int width;
-	int height;
+	int x = 0;
+	int y = 0;
+	int width = 0;
+	int height = 0;
 };
 
 #endif /* GEOMETRY_TYPE_HPP */

@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file industry_sl_compat.h Loading of industry chunks before table headers were added. */
@@ -21,17 +21,18 @@ const SaveLoadCompat _industry_sl_compat[] = {
 	SLC_VAR("location.h"),
 	SLC_VAR("town"),
 	SLC_VAR("neutral_station"),
-	SLC_NULL(2, SL_MIN_VERSION, SLV_61),
+	SLC_NULL(2, SaveLoadVersion::MinVersion, SaveLoadVersion::MultipleRoadTypes),
 	SLC_VAR("produced_cargo"),
 	SLC_VAR("incoming_cargo_waiting"),
 	SLC_VAR("produced_cargo_waiting"),
 	SLC_VAR("production_rate"),
-	SLC_NULL(3, SL_MIN_VERSION, SLV_61),
+	SLC_NULL(3, SaveLoadVersion::MinVersion, SaveLoadVersion::MultipleRoadTypes),
 	SLC_VAR("accepts_cargo"),
 	SLC_VAR("prod_level"),
 	SLC_VAR("this_month_production"),
 	SLC_VAR("this_month_transported"),
-	SLC_VAR("last_month_pct_transported"),
+	SLC_NULL(2, SaveLoadVersion::MinVersion, SaveLoadVersion::ExtendIndustryCargoSlots),
+	SLC_NULL(16, SaveLoadVersion::ExtendIndustryCargoSlots, SaveLoadVersion::IndustryCargoReorganise),
 	SLC_VAR("last_month_production"),
 	SLC_VAR("last_month_transported"),
 	SLC_VAR("counter"),
@@ -51,10 +52,10 @@ const SaveLoadCompat _industry_sl_compat[] = {
 	SLC_VAR("exclusive_consumer"),
 	SLC_VAR("storage"),
 	SLC_VAR("psa"),
-	SLC_NULL(1, SLV_82, SLV_197),
+	SLC_NULL(1, SaveLoadVersion::NewGRFIndustryRandomTriggers, SaveLoadVersion::StoreMapVariety),
 	SLC_VAR("random"),
 	SLC_VAR("text"),
-	SLC_NULL(32, SLV_2, SLV_144),
+	SLC_NULL(32, SaveLoadVersion::VehicleCurrencyStationChanges, SaveLoadVersion::ReorderUnmovableRemoveReserved),
 };
 
 /** Original field order for _industry_builder_desc. */

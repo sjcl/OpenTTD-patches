@@ -2,10 +2,10 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
-/** @file house.h definition of HouseSpec and accessors */
+/** @file house.h Definition of HouseSpec and accessors. */
 
 #ifndef HOUSE_H
 #define HOUSE_H
@@ -13,7 +13,10 @@
 #include "cargo_type.h"
 #include "date_type.h"
 #include "house_type.h"
+#include "money_type.h"
 #include "newgrf_animation_type.h"
+#include "newgrf_badge_type.h"
+#include "newgrf_callbacks.h"
 #include "newgrf_commons.h"
 
 /**
@@ -32,62 +35,76 @@ static const HouseID NUM_HOUSES_PER_GRF = NUM_HOUSES; ///< Number of supported h
 static const uint HOUSE_NUM_ACCEPTS = 16; ///< Max number of cargoes accepted by a tile
 static const uint HOUSE_ORIGINAL_NUM_ACCEPTS = 3; ///< Original number of accepted cargo types.
 
-enum BuildingFlags : uint8_t {
-	TILE_NO_FLAG         =       0,
-	TILE_SIZE_1x1        = 1U << 0,
-	TILE_NOT_SLOPED      = 1U << 1,
-	TILE_SIZE_2x1        = 1U << 2,
-	TILE_SIZE_1x2        = 1U << 3,
-	TILE_SIZE_2x2        = 1U << 4,
-	BUILDING_IS_ANIMATED = 1U << 5,
-	BUILDING_IS_CHURCH   = 1U << 6,
-	BUILDING_IS_STADIUM  = 1U << 7,
-	BUILDING_HAS_1_TILE  = TILE_SIZE_1x1 | TILE_SIZE_2x1 | TILE_SIZE_1x2 | TILE_SIZE_2x2,
-	BUILDING_HAS_2_TILES = TILE_SIZE_2x1 | TILE_SIZE_1x2 | TILE_SIZE_2x2,
-	BUILDING_2_TILES_X   = TILE_SIZE_2x1 | TILE_SIZE_2x2,
-	BUILDING_2_TILES_Y   = TILE_SIZE_1x2 | TILE_SIZE_2x2,
-	BUILDING_HAS_4_TILES = TILE_SIZE_2x2,
+/** Flags describing the layout and purpose of a building. */
+enum class BuildingFlag : uint8_t {
+	Size1x1    = 0, ///< The building is a single tile.
+	NotSloped  = 1, ///< The building can only be built on flat land; when not set foundations are placed.
+	Size2x1    = 2, ///< The building is 2x1 tiles, i.e. wider on the X-axis.
+	Size1x2    = 3, ///< The building is 1x2 tiles, i.e. wider on the Y-axis.
+	Size2x2    = 4, ///< The building is 2x2 tiles.
+	IsAnimated = 5, ///< The building uses animation.
+	IsChurch   = 6, ///< The building functions as a church, i.e. only one can be built in a town.
+	IsStadium  = 7, ///< The building functions as a stadium, i.e. only one can be built in a town.
 };
-DECLARE_ENUM_AS_BIT_SET(BuildingFlags)
 
-enum HouseZonesBits : uint8_t {
-	HZB_BEGIN     = 0,
-	HZB_TOWN_EDGE = 0,
-	HZB_TOWN_OUTSKIRT,
-	HZB_TOWN_OUTER_SUBURB,
-	HZB_TOWN_INNER_SUBURB,
-	HZB_TOWN_CENTRE,
-	HZB_END,
+/** Bitset of \c BuildingFlag elements. */
+using BuildingFlags = EnumBitSet<BuildingFlag, uint8_t>;
+
+static constexpr BuildingFlags BUILDING_HAS_1_TILE  = {BuildingFlag::Size1x1, BuildingFlag::Size2x1, BuildingFlag::Size1x2, BuildingFlag::Size2x2};
+static constexpr BuildingFlags BUILDING_HAS_2_TILES = {BuildingFlag::Size2x1, BuildingFlag::Size1x2, BuildingFlag::Size2x2};
+static constexpr BuildingFlags BUILDING_2_TILES_X   = {BuildingFlag::Size2x1, BuildingFlag::Size2x2};
+static constexpr BuildingFlags BUILDING_2_TILES_Y   = {BuildingFlag::Size1x2, BuildingFlag::Size2x2};
+static constexpr BuildingFlags BUILDING_HAS_4_TILES = {BuildingFlag::Size2x2};
+
+/** Concentric rings of zoning around the centre of a town. */
+enum class HouseZone : uint8_t {
+	TownEdge = 0, ///< Edge of the town; roads without pavement.
+	TownOutskirt = 1, ///< Outskirts of a town; roads without pavement.
+	TownOuterSuburb = 2, ///< Outer suburbs; roads with pavement.
+	TownInnerSuburb = 3, ///< Inner suburbs; roads with pavement and trees.
+	TownCentre = 4, ///< Centre of town; roads with pavement and streetlights.
+	TownEnd,
+
+	ClimateSubarcticAboveSnow = 11, ///< Building can appear in sub-arctic climate above the snow line
+	ClimateTemperate = 12, ///< Building can appear in temperate climate
+	ClimateSubarcticBelowSnow = 13, ///< Building can appear in sub-arctic climate below the snow line
+	ClimateSubtropic = 14, ///< Building can appear in subtropical climate
+	ClimateToyland = 15, ///< Building can appear in toyland climate
 };
-static_assert(HZB_END == 5);
+DECLARE_INCREMENT_DECREMENT_OPERATORS(HouseZone)
+DECLARE_ENUM_ADD_OPERATOR(HouseZone)
 
-DECLARE_POSTFIX_INCREMENT(HouseZonesBits)
+/** Bitset of \c HouseZone elements. */
+using HouseZones = EnumBitSet<HouseZone, uint16_t>;
 
-enum HouseZones : uint16_t {        ///< Bit  Value       Meaning
-	HZ_NOZNS             = 0x0000,  ///<       0          This is just to get rid of zeros, meaning none
-	HZ_ZON1              = 1U << HZB_TOWN_EDGE,    ///< 0..4 1,2,4,8,10  which town zones the building can be built in, Zone1 been the further suburb
-	HZ_ZON2              = 1U << HZB_TOWN_OUTSKIRT,
-	HZ_ZON3              = 1U << HZB_TOWN_OUTER_SUBURB,
-	HZ_ZON4              = 1U << HZB_TOWN_INNER_SUBURB,
-	HZ_ZON5              = 1U << HZB_TOWN_CENTRE,  ///<  center of town
-	HZ_ZONALL            = 0x001F,  ///<       1F         This is just to englobe all above types at once
-	HZ_SUBARTC_ABOVE     = 0x0800,  ///< 11    800        can appear in sub-arctic climate above the snow line
-	HZ_TEMP              = 0x1000,  ///< 12   1000        can appear in temperate climate
-	HZ_SUBARTC_BELOW     = 0x2000,  ///< 13   2000        can appear in sub-arctic climate below the snow line
-	HZ_SUBTROPIC         = 0x4000,  ///< 14   4000        can appear in subtropical climate
-	HZ_TOYLND            = 0x8000,  ///< 15   8000        can appear in toyland climate
-	HZ_CLIMALL           = 0xF800,  ///< Bitmask of all climate bits
+static constexpr uint NUM_HOUSE_ZONES = to_underlying(HouseZone::TownEnd);
+static_assert(NUM_HOUSE_ZONES == 5);
+
+static constexpr HouseZones HZ_ZONE_ALL = {
+	HouseZone::TownEdge,
+	HouseZone::TownOutskirt,
+	HouseZone::TownOuterSuburb,
+	HouseZone::TownInnerSuburb,
+	HouseZone::TownCentre,
 };
-DECLARE_ENUM_AS_BIT_SET(HouseZones)
 
-enum HouseExtraFlags : uint8_t {
-	NO_EXTRA_FLAG            =       0,
-	BUILDING_IS_HISTORICAL   = 1U << 0,  ///< this house will only appear during town generation in random games, thus the historical
-	BUILDING_IS_PROTECTED    = 1U << 1,  ///< towns and AI will not remove this house, while human players will be able to
-	SYNCHRONISED_CALLBACK_1B = 1U << 2,  ///< synchronized callback 1B will be performed, on multi tile houses
-	CALLBACK_1A_RANDOM_BITS  = 1U << 3,  ///< callback 1A needs random bits
+static constexpr HouseZones HZ_CLIMATE_ALL = {
+	HouseZone::ClimateSubarcticAboveSnow,
+	HouseZone::ClimateTemperate,
+	HouseZone::ClimateSubarcticBelowSnow,
+	HouseZone::ClimateSubtropic,
+	HouseZone::ClimateToyland,
 };
-DECLARE_ENUM_AS_BIT_SET(HouseExtraFlags)
+
+enum class HouseExtraFlag : uint8_t {
+	BuildingIsHistorical   = 0, ///< this house will only appear during town generation in random games, thus the historical
+	BuildingIsProtected    = 1, ///< towns and AI will not remove this house, while human players will be able to
+	SynchronisedCallback1B = 2, ///< synchronized callback 1B will be performed, on multi tile houses
+	Callback1ARandomBits   = 3, ///< callback 1A needs random bits
+};
+
+/** Bitset of \c HouseExtraFlag elements. */
+using HouseExtraFlags = EnumBitSet<HouseExtraFlag, uint8_t>;
 
 enum HouseCtrlFlags : uint8_t {
 	HCF_NONE                 =       0,
@@ -105,23 +122,24 @@ struct HouseSpec {
 	uint16_t remove_rating_decrease;                   ///< rating decrease if removed
 	uint8_t mail_generation;                           ///< mail generation multiplier (tile based, as the acceptances below)
 	uint8_t cargo_acceptance[HOUSE_NUM_ACCEPTS];       ///< acceptance level for the cargo slots
-	CargoID accepts_cargo[HOUSE_NUM_ACCEPTS];          ///< input cargo slots
+	CargoType accepts_cargo[HOUSE_NUM_ACCEPTS];        ///< input cargo slots
 	BuildingFlags building_flags;                      ///< some flags that describe the house (size, stadium etc...)
 	HouseZones building_availability;                  ///< where can it be built (climates, zones)
 	bool enabled;                                      ///< the house is available to build (true by default, but can be disabled by newgrf)
 
 	/* NewHouses properties */
-	GRFFileProps grf_prop;                    ///< Properties related the the grf file
-	uint16_t callback_mask;                   ///< Bitmask of house callbacks that have to be called
+	SubstituteGRFFileProps grf_prop;          ///< Properties related the the grf file
+	HouseCallbackMasks callback_mask;         ///< Bitmask of house callbacks that have to be called
 	Colours random_colour[4];                 ///< 4 "random" colours
 	uint8_t probability;                      ///< Relative probability of appearing (16 is the standard value)
 	HouseExtraFlags extra_flags;              ///< some more flags
 	HouseCtrlFlags ctrl_flags;                ///< control flags
 	HouseClassID class_id;                    ///< defines the class this house has (not grf file based)
-	AnimationInfo animation;                  ///< information about the animation.
+	AnimationInfo<void> animation;            ///< information about the animation.
 	uint8_t processing_time;                  ///< Periodic refresh multiplier
 	uint8_t minimum_life;                     ///< The minimum number of years this house will survive before the town rebuilds it
 	CargoTypes watched_cargoes;               ///< Cargo types watched for acceptance.
+	std::vector<BadgeID> badges;
 
 	CargoLabel accepts_cargo_label[HOUSE_ORIGINAL_NUM_ACCEPTS]; ///< input landscape cargo slots
 
@@ -140,10 +158,12 @@ struct HouseSpec {
 inline HouseID GetTranslatedHouseID(HouseID hid)
 {
 	const HouseSpec *hs = HouseSpec::Get(hid);
-	return hs->grf_prop.override == INVALID_HOUSE_ID ? hid : hs->grf_prop.override;
+	return hs->grf_prop.override_id == INVALID_HOUSE_ID ? hid : hs->grf_prop.override_id;
 }
 
 void ShowBuildHousePicker(struct Window *);
+void ShowBuildHousePickerAndSelect(TileIndex tile);
+HouseZones GetClimateMaskForLandscape();
 
 StringID GetHouseName(HouseID house, TileIndex tile = INVALID_TILE);
 

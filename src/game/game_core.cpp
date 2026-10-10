@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file game_core.cpp Implementation of Game. */
@@ -24,29 +24,27 @@
 
 /* static */ uint Game::frame_counter = 0;
 /* static */ GameInfo *Game::info = nullptr;
-/* static */ GameInstance *Game::instance = nullptr;
-/* static */ GameScannerInfo *Game::scanner_info = nullptr;
-/* static */ GameScannerLibrary *Game::scanner_library = nullptr;
+/* static */ std::unique_ptr<GameInstance> Game::instance = nullptr;
+/* static */ std::unique_ptr<GameScannerInfo> Game::scanner_info = nullptr;
+/* static */ std::unique_ptr<GameScannerLibrary> Game::scanner_library = nullptr;
 
 /* static */ void Game::GameLoop()
 {
 	if (_networking && !_network_server) {
-		PerformanceMeasurer::SetInactive(PFE_GAMESCRIPT);
+		PerformanceMeasurer::SetInactive(PerformanceElement::GameScript);
 		return;
 	}
 	if (Game::instance == nullptr) {
-		PerformanceMeasurer::SetInactive(PFE_GAMESCRIPT);
+		PerformanceMeasurer::SetInactive(PerformanceElement::GameScript);
 		return;
 	}
 
-	PerformanceMeasurer framerate(PFE_GAMESCRIPT);
+	PerformanceMeasurer framerate(PerformanceElement::GameScript);
 
 	Game::frame_counter++;
 
-	Backup<CompanyID> cur_company(_current_company, FILE_LINE);
-	cur_company.Change(OWNER_DEITY);
+	AutoRestoreBackup cur_company(_current_company, OWNER_DEITY);
 	Game::instance->GameLoop();
-	cur_company.Restore();
 
 	/* Occasionally collect garbage */
 	if ((Game::frame_counter & 255) == 0) {
@@ -61,10 +59,10 @@
 	Game::frame_counter = 0;
 
 	if (Game::scanner_info == nullptr) {
-		TarScanner::DoScan(TarScanner::GAME);
-		Game::scanner_info = new GameScannerInfo();
+		TarScanner::DoScan(TarScanner::Mode::Game);
+		Game::scanner_info = std::make_unique<GameScannerInfo>();
 		Game::scanner_info->Initialize();
-		Game::scanner_library = new GameScannerLibrary();
+		Game::scanner_library = std::make_unique<GameScannerLibrary>();
 		Game::scanner_library->Initialize();
 	}
 }
@@ -74,38 +72,33 @@
 	if (Game::instance != nullptr) return;
 
 	/* Don't start GameScripts in intro */
-	if (_game_mode == GM_MENU) return;
+	if (_game_mode == GameMode::Menu) return;
 
 	/* Clients shouldn't start GameScripts */
 	if (_networking && !_network_server) return;
 
-	GameConfig *config = GameConfig::GetConfig(GameConfig::SSS_FORCE_GAME);
+	GameConfig *config = GameConfig::GetConfig(GameConfig::ScriptSettingSource::ForceCurrentGame);
 	GameInfo *info = config->GetInfo();
 	if (info == nullptr) return;
 
 	config->AnchorUnchangeableSettings();
 
-	Backup<CompanyID> cur_company(_current_company, FILE_LINE);
-	cur_company.Change(OWNER_DEITY);
+	AutoRestoreBackup cur_company(_current_company, OWNER_DEITY);
 
 	Game::info = info;
-	Game::instance = new GameInstance();
+	Game::instance = std::make_unique<GameInstance>();
 	Game::instance->Initialize(info);
 	Game::instance->LoadOnStack(config->GetToLoadData());
 	config->SetToLoadData(nullptr);
 
-	cur_company.Restore();
-
-	InvalidateWindowClassesData(WC_SCRIPT_DEBUG, -1);
+	InvalidateWindowClassesData(WindowClass::ScriptDebug, -1);
 }
 
 /* static */ void Game::Uninitialize(bool keepConfig)
 {
 	Backup<CompanyID> cur_company(_current_company, FILE_LINE);
 
-	delete Game::instance;
-	Game::instance = nullptr;
-	Game::info = nullptr;
+	Game::ResetInstance();
 
 	cur_company.Restore();
 
@@ -114,14 +107,8 @@
 		ResetConfig();
 	} else {
 		/* Do not bother re-scanning game script, just delete config */
-		if (_settings_game.game_config != nullptr) {
-			delete _settings_game.game_config;
-			_settings_game.game_config = nullptr;
-		}
-		if (_settings_newgame.game_config != nullptr) {
-			delete _settings_newgame.game_config;
-			_settings_newgame.game_config = nullptr;
-		}
+		_settings_game.script_config.game.reset();
+		_settings_newgame.script_config.game.reset();
 	}
 }
 
@@ -155,57 +142,51 @@
 	}
 
 	/* Queue the event */
-	Backup<CompanyID> cur_company(_current_company, OWNER_DEITY, FILE_LINE);
+	AutoRestoreBackup cur_company(_current_company, OWNER_DEITY);
 	Game::instance->InsertEvent(event);
-	cur_company.Restore();
 }
 
 /* static */ void Game::ResetConfig()
 {
 	/* Check for both newgame as current game if we can reload the GameInfo inside
 	 *  the GameConfig. If not, remove the Game from the list. */
-	if (_settings_game.game_config != nullptr && _settings_game.game_config->HasScript()) {
-		if (!_settings_game.game_config->ResetInfo(true)) {
-			Debug(script, 0, "After a reload, the GameScript by the name '{}' was no longer found, and removed from the list.", _settings_game.game_config->GetName());
-			_settings_game.game_config->Change(std::nullopt);
-			if (Game::instance != nullptr) {
-				delete Game::instance;
-				Game::instance = nullptr;
-				Game::info = nullptr;
-			}
+	if (_settings_game.script_config.game != nullptr && _settings_game.script_config.game->HasScript()) {
+		if (!_settings_game.script_config.game->ResetInfo(true)) {
+			Debug(script, 0, "After a reload, the GameScript by the name '{}' was no longer found, and removed from the list.", _settings_game.script_config.game->GetName());
+			_settings_game.script_config.game->Change(std::nullopt);
+			if (Game::instance != nullptr) Game::ResetInstance();
 		} else if (Game::instance != nullptr) {
-			Game::info = _settings_game.game_config->GetInfo();
+			Game::info = _settings_game.script_config.game->GetInfo();
 		}
 	}
-	if (_settings_newgame.game_config != nullptr && _settings_newgame.game_config->HasScript()) {
-		if (!_settings_newgame.game_config->ResetInfo(false)) {
-			Debug(script, 0, "After a reload, the GameScript by the name '{}' was no longer found, and removed from the list.", _settings_newgame.game_config->GetName());
-			_settings_newgame.game_config->Change(std::nullopt);
+	if (_settings_newgame.script_config.game != nullptr && _settings_newgame.script_config.game->HasScript()) {
+		if (!_settings_newgame.script_config.game->ResetInfo(false)) {
+			Debug(script, 0, "After a reload, the GameScript by the name '{}' was no longer found, and removed from the list.", _settings_newgame.script_config.game->GetName());
+			_settings_newgame.script_config.game->Change(std::nullopt);
 		}
 	}
 }
 
 /* static */ void Game::Rescan()
 {
-	TarScanner::DoScan(TarScanner::GAME);
+	TarScanner::DoScan(TarScanner::Mode::Game);
 
 	Game::scanner_info->RescanDir();
 	Game::scanner_library->RescanDir();
 	ResetConfig();
 
-	InvalidateWindowData(WC_SCRIPT_LIST, 0, 1);
-	SetWindowClassesDirty(WC_SCRIPT_DEBUG);
-	InvalidateWindowClassesData(WC_SCRIPT_SETTINGS);
-	InvalidateWindowClassesData(WC_GAME_OPTIONS);
+	InvalidateWindowData(WindowClass::ScriptList, 0, 1);
+	SetWindowClassesDirty(WindowClass::ScriptDebug);
+	InvalidateWindowClassesData(WindowClass::ScriptSettings);
+	InvalidateWindowClassesData(WindowClass::GameOptions);
 }
 
 
 /* static */ void Game::Save()
 {
 	if (Game::instance != nullptr && (!_networking || _network_server)) {
-		Backup<CompanyID> cur_company(_current_company, OWNER_DEITY, FILE_LINE);
+		AutoRestoreBackup cur_company(_current_company, OWNER_DEITY);
 		Game::instance->Save();
-		cur_company.Restore();
 	} else {
 		GameInstance::SaveEmpty();
 	}
@@ -216,9 +197,9 @@
 	return Game::scanner_info->GetConsoleList(newest_only);
 }
 
-/* static */ std::string Game::GetConsoleLibraryList()
+/* static */ std::string Game::GetConsoleLibraryList(bool newest_only)
 {
-	 return Game::scanner_library->GetConsoleList(true);
+	 return Game::scanner_library->GetConsoleList(newest_only);
 }
 
 /* static */ const ScriptInfoList *Game::GetInfoList()
@@ -241,27 +222,48 @@
 	return Game::scanner_library->FindLibrary(library, version);
 }
 
+/* static */ void Game::ResetInstance()
+{
+	Game::instance.reset();
+	Game::info = nullptr;
+}
+
 /**
- * Check whether we have an Game (library) with the exact characteristics as ci.
+ * Check whether we have an Game with the exact characteristics as ci.
  * @param ci the characteristics to search on (shortname and md5sum)
  * @param md5sum whether to check the MD5 checksum
- * @return true iff we have an Game (library) matching.
+ * @return true iff we have an Game matching.
  */
-/* static */ bool Game::HasGame(const ContentInfo *ci, bool md5sum)
+/* static */ bool Game::HasGame(const ContentInfo &ci, bool md5sum)
 {
 	return Game::scanner_info->HasScript(ci, md5sum);
 }
 
-/* static */ bool Game::HasGameLibrary(const ContentInfo *ci, bool md5sum)
+/**
+ * Check whether we have an Game library with the exact characteristics as ci.
+ * @param ci the characteristics to search on (shortname and md5sum)
+ * @param md5sum whether to check the MD5 checksum
+ * @return true iff we have an Game library matching.
+ */
+/* static */ bool Game::HasGameLibrary(const ContentInfo &ci, bool md5sum)
 {
 	return Game::scanner_library->HasScript(ci, md5sum);
 }
 
+/**
+ * Get the scanner info for Game scripts.
+ * @return The Game Script scanner info.
+ */
 /* static */ GameScannerInfo *Game::GetScannerInfo()
 {
-	return Game::scanner_info;
+	return Game::scanner_info.get();
 }
+
+/**
+ * Get the scanner info for Game script libraries.
+ * @return The Game script library scanner info.
+ */
 /* static */ GameScannerLibrary *Game::GetScannerLibrary()
 {
-	return Game::scanner_library;
+	return Game::scanner_library.get();
 }

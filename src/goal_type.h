@@ -2,42 +2,73 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
-/** @file goal_type.h basic types related to goals */
+/** @file goal_type.h Basic types related to goals. */
 
 #ifndef GOAL_TYPE_H
 #define GOAL_TYPE_H
 
 #include "core/enum_type.hpp"
+#include "core/pool_id_type.hpp"
 
-static const uint32_t GOAL_QUESTION_BUTTON_COUNT = 18; ///< Amount of buttons available.
+/** Types of goal questions. */
+enum class GoalQuestionType : uint8_t {
+	Question = 0, ///< Asking a simple question; title: Question.
+	Information = 1, ///< Showing an informational message; title: Information.
+	Warning = 2, ///< Showing a warning; title: Warning.
+	Error = 3, ///< Showing an error; title: Error.
+	End, ///< End marker.
+};
 
-enum GoalQuestionType : uint8_t {
-	GQT_QUESTION = 0,
-	GQT_INFORMATION = 1,
-	GQT_WARNING = 2,
-	GQT_ERROR = 3,
-	GQT_END = 4,
+/** Types of buttons that can be in the question window. */
+enum class GoalQuestionButton : uint8_t {
+	Cancel, ///< Cancel button.
+	Ok, ///< OK button.
+	No, ///< No button.
+	Yes, ///< Yes button.
+	Decline, ///< Decline button.
+	Accept, ///< Accept button.
+	Ignore, ///< Ignore button.
+	Retry, ///< Retry button.
+	Previous, ///< Previous button.
+	Next, ///< Next button.
+	Stop, ///< Stop button.
+	Start, ///< Start button.
+	Go, ///< Go button.
+	Continue, ///< Continue button.
+	Restart, ///< Restart button.
+	Postpone, ///< Postpone button.
+	Surrender, ///< Surrender button.
+	Close, ///< Close button.
+	End, ///< End marker.
+};
+
+/** Bitset of \c GoalQuestionButton elements. */
+using GoalQuestionButtons = EnumBitSet<GoalQuestionButton, uint32_t, GoalQuestionButton::End>;
+
+template <>
+struct BaseBitSetEnableDirectIteration<GoalQuestionButtons> {
+	static const bool value = true;
 };
 
 /** Types of goal destinations */
-enum GoalType : uint8_t {
-	GT_NONE,         ///< Destination is not linked
-	GT_TILE,         ///< Destination is a tile
-	GT_INDUSTRY,     ///< Destination is an industry
-	GT_TOWN,         ///< Destination is a town
-	GT_COMPANY,      ///< Destination is a company
-	GT_STORY_PAGE,   ///< Destination is a story page
+enum class GoalType : uint8_t {
+	None, ///< Destination is not linked
+	Tile, ///< Destination is a tile
+	Industry, ///< Destination is an industry
+	Town, ///< Destination is a town
+	Company, ///< Destination is a company
+	StoryPage, ///< Destination is a story page
 };
 
 typedef uint32_t GoalTypeID; ///< Contains either tile, industry ID, town ID, company ID, or story page ID
 
-typedef uint16_t GoalID; ///< ID of a goal
-struct Goal;
-static const GoalID INVALID_GOAL = 0xFFFF; ///< Constant representing a non-existing goal.
+/** ID of a goal */
+struct GoalIDTag : public PoolIDTraits<uint16_t, 64000, 0xFFFF> {};
+using GoalID = PoolID<GoalIDTag>;
 
-extern GoalID _new_goal_id;
+struct Goal;
 
 #endif /* GOAL_TYPE_H */

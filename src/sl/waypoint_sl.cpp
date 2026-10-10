@@ -2,28 +2,30 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
-/** @file waypoint_sl.cpp Code handling saving and loading of waypoints */
+/** @file waypoint_sl.cpp Code handling saving and loading of waypoints. */
 
 #include "../stdafx.h"
+#include "../command_type.h"
 #include "../waypoint_base.h"
 #include "../debug.h"
 #include "../newgrf_station.h"
 #include "../vehicle_base.h"
 #include "../town.h"
 #include "../newgrf.h"
+#include "saveload_internal.h"
 
 #include "table/strings.h"
 
-#include "saveload_internal.h"
-
 #include "../safeguards.h"
+
+using OldWaypointID = uint16_t;
 
 /** Helper structure to convert from the old waypoint system. */
 struct OldWaypoint {
-	size_t index;
+	OldWaypointID index;
 	TileIndex xy;
 	TownID town_index;
 	Town *town;
@@ -33,11 +35,11 @@ struct OldWaypoint {
 	uint8_t delete_ctr;
 	CalTime::Date build_date;
 	uint8_t localidx;
-	uint32_t grfid;
+	GrfID grfid;
 	const StationSpec *spec;
 	Owner owner;
 
-	size_t new_index;
+	StationID new_index;
 };
 
 /** Temporary array with old waypoints. */
@@ -54,7 +56,7 @@ static void UpdateWaypointOrder(Order *o)
 	for (OldWaypoint &wp : _old_waypoints) {
 		if (wp.index != o->GetDestination()) continue;
 
-		o->SetDestination((DestinationID)wp.new_index);
+		o->SetDestination(wp.new_index);
 		return;
 	}
 }
@@ -74,7 +76,7 @@ void MoveWaypointsToBaseStations()
 			if (wp.delete_ctr != 0) continue; // The waypoint was deleted
 
 			/* Waypoint indices were not added to the map prior to this. */
-			_m[wp.xy].m2 = (StationID)wp.index;
+			_m[wp.xy].m2 = wp.index;
 
 			if (HasBit(_m[wp.xy].m3, 4)) {
 				wp.spec = StationClass::Get(STAT_CLASS_WAYP)->GetSpec(_m[wp.xy].m4 + 1);
@@ -97,20 +99,20 @@ void MoveWaypointsToBaseStations()
 		TileIndex t = wp.xy;
 		/* Sometimes waypoint (sign) locations became disconnected from their actual location in
 		 * the map array. If this is the case, try to locate the actual location in the map array */
-		if (!IsTileType(t, MP_RAILWAY) || GetRailTileType(t) != 2 /* RAIL_TILE_WAYPOINT */ || _m[t].m2 != wp.index) {
+		if (!IsTileType(t, TileType::Railway) || GetRailTileType(t) != RailTileType{2} /* RAIL_TILE_WAYPOINT */ || _m[t].m2 != wp.index) {
 			Debug(sl, 0, "Found waypoint tile {:#X} with invalid position", t);
-			for (t = 0; t < MapSize(); t++) {
-				if (IsTileType(t, MP_RAILWAY) && GetRailTileType(t) == 2 /* RAIL_TILE_WAYPOINT */ && _m[t].m2 == wp.index) {
+			for (t = TileIndex{0}; t < Map::Size(); t++) {
+				if (IsTileType(t, TileType::Railway) && GetRailTileType(t) == RailTileType{2} /* RAIL_TILE_WAYPOINT */ && _m[t].m2 == wp.index) {
 					Debug(sl, 0, "Found actual waypoint position at {:#X}", t);
 					break;
 				}
 			}
 		}
-		if (t == MapSize()) {
+		if (t == Map::Size()) {
 			SlErrorCorrupt("Waypoint with invalid tile");
 		}
 
-		Waypoint *new_wp = new Waypoint(t);
+		Waypoint *new_wp = Waypoint::Create(t);
 		new_wp->town       = wp.town;
 		new_wp->town_cn    = wp.town_cn;
 		new_wp->name       = std::move(wp.name);
@@ -123,8 +125,8 @@ void MoveWaypointsToBaseStations()
 		bool reserved = !IsSavegameVersionBefore(SLV_100) && HasBit(_m[t].m5, 4);
 
 		/* The tile really has our waypoint, so reassign the map array */
-		MakeRailWaypoint(t, GetTileOwner(t), new_wp->index, (Axis)GB(_m[t].m5, 0, 1), 0, GetRailType(t));
-		new_wp->facilities |= FACIL_TRAIN;
+		MakeRailWaypoint(t, GetTileOwner(t), new_wp->index, static_cast<Axis>(GB(_m[t].m5, 0, 1)), 0, GetRailType(t));
+		new_wp->facilities.Set(StationFacility::Train);
 		new_wp->owner = GetTileOwner(t);
 
 		SetRailStationReservation(t, reserved);
@@ -139,12 +141,12 @@ void MoveWaypointsToBaseStations()
 
 	/* Update the orders of vehicles */
 	for (OrderList *ol : OrderList::Iterate()) {
-		if (ol->GetFirstSharedVehicle()->type != VEH_TRAIN) continue;
+		if (ol->GetFirstSharedVehicle()->type != VehicleType::Train) continue;
 
 		for (Order *o : ol->Orders()) UpdateWaypointOrder(o);
 	}
 
-	for (Vehicle *v : Vehicle::IterateType(VEH_TRAIN)) {
+	for (Vehicle *v : Vehicle::IterateType(VehicleType::Train)) {
 		UpdateWaypointOrder(&v->current_order);
 	}
 
@@ -171,7 +173,7 @@ static const SaveLoad _old_waypoint_desc[] = {
 	SLE_CONDVAR(OldWaypoint, build_date, SLE_FILE_U16 | SLE_VAR_I32,  SLV_3, SLV_31),
 	SLE_CONDVAR(OldWaypoint, build_date, SLE_INT32,                  SLV_31, SL_MAX_VERSION),
 	SLE_CONDVAR(OldWaypoint, localidx,   SLE_UINT8,                   SLV_3, SL_MAX_VERSION),
-	SLE_CONDVAR(OldWaypoint, grfid,      SLE_UINT32,                 SLV_17, SL_MAX_VERSION),
+	SLE_CONDVAR(OldWaypoint, grfid,      SLE_LABEL,                  SLV_17, SL_MAX_VERSION),
 	SLE_CONDVAR(OldWaypoint, owner,      SLE_UINT8,                 SLV_101, SL_MAX_VERSION),
 };
 
@@ -185,7 +187,7 @@ static void Load_WAYP()
 	while ((index = SlIterateArray()) != -1) {
 		OldWaypoint *wp = &_old_waypoints.emplace_back();
 
-		wp->index = index;
+		wp->index = static_cast<OldWaypointID>(index);
 		SlObject(wp, _old_waypoint_desc);
 	}
 }
@@ -196,7 +198,7 @@ static void Ptrs_WAYP()
 		SlObject(&wp, _old_waypoint_desc);
 
 		if (IsSavegameVersionBefore(SLV_12)) {
-			wp.town_cn = (wp.string_id & 0xC000) == 0xC000 ? (wp.string_id >> 8) & 0x3F : 0;
+			wp.town_cn = (wp.string_id.base() & 0xC000) == 0xC000 ? (wp.string_id.base() >> 8) & 0x3F : 0;
 			wp.town = ClosestTownFromTile(wp.xy, UINT_MAX);
 		} else if (IsSavegameVersionBefore(SLV_122)) {
 			/* Only for versions 12 .. 122 */
@@ -218,7 +220,7 @@ static void Ptrs_WAYP()
 }
 
 static const ChunkHandler waypoint_chunk_handlers[] = {
-	{ 'CHKP', nullptr, Load_WAYP, Ptrs_WAYP, nullptr, CH_READONLY },
+	{ 'CHKP', nullptr, Load_WAYP, Ptrs_WAYP, nullptr, ChunkType::ReadOnly },
 };
 
 extern const ChunkHandlerTable _waypoint_chunk_handlers(waypoint_chunk_handlers);

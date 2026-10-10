@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file game_config.hpp GameConfig stores the configuration settings of every Game. */
@@ -12,21 +12,29 @@
 
 #include "../script/script_config.hpp"
 
+/** Game script instantion of script configuration. */
 class GameConfig : public ScriptConfig {
 public:
 	/**
-	 * Get the config of a company.
+	 * Get the script configuration.
+	 * @param source The context, i.e. current / new game mode.
+	 * @return The configuration.
 	 */
-	static GameConfig *GetConfig(ScriptSettingSource source = SSS_DEFAULT);
+	static GameConfig *GetConfig(ScriptSettingSource source = ScriptSettingSource::Default);
 
 	GameConfig() :
 		ScriptConfig()
 	{}
 
-	GameConfig(const GameConfig *config) :
+	/**
+	 * Copy constructor.
+	 * @param config The configuration to copy.
+	 */
+	GameConfig(const GameConfig &config) :
 		ScriptConfig(config)
 	{}
 
+	/** @copydoc ScriptConfig::GetInfo. */
 	class GameInfo *GetInfo() const;
 
 	/**

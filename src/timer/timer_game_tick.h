@@ -2,17 +2,13 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
-/** @file timer_game_tick.h Definition of the tick-based game-timer */
+/** @file timer_game_tick.h Definition of the tick-based game-timer. */
 
 #ifndef TIMER_GAME_TICK_H
 #define TIMER_GAME_TICK_H
-
-#include "../gfx_type.h"
-
-#include <chrono>
 
 /**
  * Timer that represents the game-ticks. It will pause when the game is paused.
@@ -21,12 +17,14 @@
  */
 class TimerGameTick {
 public:
-	enum Priority {
-		NONE, ///< These timers can be executed in any order; the order is not relevant.
+	/** Different levels of priority to run the timers in. */
+	enum class Priority : uint8_t {
+		None, ///< These timers can be executed in any order; the order is not relevant.
 
 		/* For all other priorities, the order is important.
 		 * For safety, you can only setup a single timer on a single priority. */
-		COMPETITOR_TIMEOUT,
+
+		CompetitorTimeout, ///< Considering starting a new competitor/AI.
 	};
 
 	struct TPeriod {

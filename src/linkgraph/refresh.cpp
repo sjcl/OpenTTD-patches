@@ -2,10 +2,10 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
-/** @file refresh.h Definition of link refreshing utility. */
+/** @file refresh.cpp Definition of link refreshing utility. */
 
 #include "../stdafx.h"
 #include "../core/bitmath_func.hpp"
@@ -32,18 +32,18 @@
 	CargoTypes have_cargo_mask = v->GetLastLoadingStationValidCargoMask();
 
 	/* Scan orders for cargo-specific load/unload, and run LinkRefresher separately for each set of cargoes where they differ. */
-	while (cargo_mask != 0) {
+	while (cargo_mask.Any()) {
 		CargoTypes iter_cargo_mask = cargo_mask;
 		for (const Order *o : v->Orders()) {
 			if (o->IsType(OT_GOTO_STATION) || o->IsType(OT_IMPLICIT)) {
-				if (o->GetUnloadType() == OUFB_CARGO_TYPE_UNLOAD) {
-					CargoMaskValueFilter<uint>(iter_cargo_mask, [&](CargoID cargo) -> uint {
-						return o->GetCargoUnloadType(cargo) & (OUFB_TRANSFER | OUFB_UNLOAD | OUFB_NO_UNLOAD);
+				if (o->GetUnloadType() == OrderUnloadType::CargoTypeUnload) {
+					CargoMaskValueFilter<OrderUnloadType>(iter_cargo_mask, [&](CargoType cargo) -> OrderUnloadType {
+						return o->GetCargoUnloadType(cargo);
 					});
 				}
-				if (o->GetLoadType() == OLFB_CARGO_TYPE_LOAD) {
-					CargoMaskValueFilter<uint>(iter_cargo_mask, [&](CargoID cargo) -> uint {
-						return o->GetCargoLoadType(cargo) & (OLFB_NO_LOAD);
+				if (o->GetLoadType() == OrderLoadType::CargoTypeLoad) {
+					CargoMaskValueFilter<bool>(iter_cargo_mask, [&](CargoType cargo) -> bool {
+						return o->GetCargoLoadType(cargo) == OrderLoadType::NoLoad;
 					});
 				}
 			}
@@ -55,10 +55,10 @@
 			HopSet seen_hops;
 			LinkRefresher refresher(v, &seen_hops, allow_merge, is_full_loading, iter_cargo_mask);
 
-			uint8_t flags = 0;
-			if (iter_cargo_mask & have_cargo_mask) flags |= 1 << HAS_CARGO;
-			if (v->type == VEH_AIRCRAFT) flags |= 1 << AIRCRAFT;
-			refresher.RefreshLinks(first, first, { 0, TTT_NO_WAIT_TIME }, flags);
+			RefreshFlags flags = {};
+			if (iter_cargo_mask.Any(have_cargo_mask)) flags.Set(RefreshFlag::HasCargo);
+			if (v->type == VehicleType::Aircraft) flags.Set(RefreshFlag::Aircraft);
+			refresher.RefreshLinks(first, first, { 0, TimetableTravelTimeFlag::NoWaitTime }, flags);
 		}
 
 		cargo_mask &= ~iter_cargo_mask;
@@ -92,24 +92,24 @@ LinkRefresher::LinkRefresher(Vehicle *vehicle, HopSet *seen_hops, bool allow_mer
  * @param refit_cargo Cargo to refit to.
  * @return True if any vehicle was refit; false if none was.
  */
-bool LinkRefresher::HandleRefit(CargoID refit_cargo)
+bool LinkRefresher::HandleRefit(CargoType refit_cargo)
 {
 	this->cargo = refit_cargo;
 	RefitList::iterator refit_it = this->refit_capacities.begin();
 	bool any_refit = false;
 	for (Vehicle *v = this->vehicle; v != nullptr; v = v->Next()) {
 		const Engine *e = Engine::Get(v->engine_type);
-		if (!HasBit(e->info.refit_mask, this->cargo)) {
+		if (!e->info.refit_mask.Test(this->cargo)) {
 			++refit_it;
 			continue;
 		}
 		any_refit = true;
 
 		/* Back up the vehicle's cargo type */
-		CargoID temp_cid = v->cargo_type;
+		CargoType temp_cargo_type = v->cargo_type;
 		uint8_t temp_subtype = v->cargo_subtype;
 		v->cargo_type = this->cargo;
-		if (e->refit_capacity_values == nullptr || !(e->callbacks_used & SGCU_REFIT_CB_ALL_CARGOES) || this->cargo == e->GetDefaultCargoType() || (e->type == VEH_AIRCRAFT && IsCargoInClass(this->cargo, CC_PASSENGERS))) {
+		if (e->refit_capacity_values == nullptr || !(e->callbacks_used & SGCU_REFIT_CB_ALL_CARGOES) || this->cargo == e->GetDefaultCargoType() || (e->type == VehicleType::Aircraft && IsCargoInClass(this->cargo, CargoClass::Passengers))) {
 			/* This can be omitted when the refit capacity values are already determined, and the capacity is definitely from the refit callback */
 			v->cargo_subtype = GetBestFittingSubType(v, v, this->cargo);
 		}
@@ -118,7 +118,7 @@ bool LinkRefresher::HandleRefit(CargoID refit_cargo)
 		uint amount = e->DetermineCapacity(v, &mail_capacity);
 
 		/* Restore the original cargo type */
-		v->cargo_type = temp_cid;
+		v->cargo_type = temp_cargo_type;
 		v->cargo_subtype = temp_subtype;
 
 		/* Skip on next refit. */
@@ -135,7 +135,7 @@ bool LinkRefresher::HandleRefit(CargoID refit_cargo)
 		++refit_it;
 
 		/* Special case for aircraft with mail. */
-		if (v->type == VEH_AIRCRAFT) {
+		if (v->type == VehicleType::Aircraft) {
 			if (mail_capacity < refit_it->remaining) {
 				this->capacities[refit_it->cargo] -= refit_it->remaining - mail_capacity;
 				refit_it->remaining = mail_capacity;
@@ -169,48 +169,48 @@ void LinkRefresher::ResetRefit()
  */
 LinkRefresher::TimetableTravelTime LinkRefresher::UpdateTimetableTravelSoFar(const Order *from, const Order *to, LinkRefresher::TimetableTravelTime travel)
 {
-	if (from == to || from == nullptr || to == nullptr || (travel.flags & TTT_INVALID) != 0) return travel;
+	if (from == to || from == nullptr || to == nullptr || travel.flags.Test(TimetableTravelTimeFlag::Invalid)) return travel;
 
 	do {
 		if (from->IsType(OT_CONDITIONAL)) {
-			if (from->GetConditionVariable() == OCV_UNCONDITIONALLY) {
+			if (from->GetConditionVariable() == OrderConditionVariable::Unconditionally) {
 				/* Taken branch travel time */
 				travel.time_so_far += from->GetWaitTime();
 				from = this->vehicle->orders->GetOrderAt(from->GetConditionSkipToOrder());
-				travel.flags |= TTT_NO_TRAVEL_TIME;
-			} else if ((travel.flags & TTT_ALLOW_CONDITION) == 0) {
+				travel.flags.Set(TimetableTravelTimeFlag::NoTravelTime);
+			} else if (!travel.flags.Test(TimetableTravelTimeFlag::AllowCondition)) {
 				/* Unexpected conditional branch, give up */
-				travel.flags |= TTT_INVALID;
+				travel.flags.Set(TimetableTravelTimeFlag::Invalid);
 				return travel;
 			} else {
 				/* Non-taken branch, ignore travel time field */
 				from = this->vehicle->orders->GetNext(from);
-				travel.flags &= ~TTT_NO_TRAVEL_TIME;
+				travel.flags.Reset(TimetableTravelTimeFlag::NoTravelTime);
 			}
 		} else {
-			if ((travel.flags & TTT_NO_WAIT_TIME) == 0) {
+			if (!travel.flags.Test(TimetableTravelTimeFlag::NoWaitTime)) {
 				if (from->IsScheduledDispatchOrder(true)) {
-					travel.flags |= TTT_INVALID;
+					travel.flags.Set(TimetableTravelTimeFlag::Invalid);
 					return travel;
 				}
 				travel.time_so_far += from->GetWaitTime();
 			}
 			from = this->vehicle->orders->GetNext(from);
-			travel.flags &= ~TTT_NO_TRAVEL_TIME;
+			travel.flags.Reset(TimetableTravelTimeFlag::NoTravelTime);
 		}
 
-		travel.flags &= ~TTT_NO_WAIT_TIME;
-		travel.flags &= ~TTT_ALLOW_CONDITION;
+		travel.flags.Reset(TimetableTravelTimeFlag::NoWaitTime);
+		travel.flags.Reset(TimetableTravelTimeFlag::AllowCondition);
 
-		if (!from->IsType(OT_CONDITIONAL) && (travel.flags & TTT_NO_TRAVEL_TIME) == 0) {
+		if (!from->IsType(OT_CONDITIONAL) && !travel.flags.Test(TimetableTravelTimeFlag::NoTravelTime)) {
 			if (from->GetTravelTime() == 0 && !from->IsTravelTimetabled() && !from->IsType(OT_IMPLICIT)) {
-				travel.flags |= TTT_INVALID;
+				travel.flags.Set(TimetableTravelTimeFlag::Invalid);
 				return travel;
 			}
 			travel.time_so_far += from->GetTravelTime();
 		}
 
-		travel.flags &= ~TTT_NO_TRAVEL_TIME;
+		travel.flags.Reset(TimetableTravelTimeFlag::NoTravelTime);
 	} while (from != to);
 
 	return travel;
@@ -226,20 +226,20 @@ LinkRefresher::TimetableTravelTime LinkRefresher::UpdateTimetableTravelSoFar(con
  * @param num_hops Number of hops already taken by recursive calls to this method.
  * @return new next Order, and travel time so far.
  */
-std::pair<const Order *, LinkRefresher::TimetableTravelTime> LinkRefresher::PredictNextOrder(const Order *cur, const Order *next, LinkRefresher::TimetableTravelTime travel, uint8_t flags, uint num_hops)
+std::pair<const Order *, LinkRefresher::TimetableTravelTime> LinkRefresher::PredictNextOrder(const Order *cur, const Order *next, LinkRefresher::TimetableTravelTime travel, RefreshFlags flags, uint num_hops)
 {
 	/* next is good if it's either nullptr (then the caller will stop the
 	 * evaluation) or if it's not conditional and the caller allows it to be
-	 * chosen (by setting USE_NEXT). */
-	while (next != nullptr && (!HasBit(flags, USE_NEXT) || next->IsType(OT_CONDITIONAL))) {
+	 * chosen (by setting RefreshFlag::UseNext). */
+	while (next != nullptr && (!flags.Test(RefreshFlag::UseNext) || next->IsType(OT_CONDITIONAL))) {
 
 		/* After the first step any further non-conditional order is good,
-		 * regardless of previous USE_NEXT settings. The case of cur and next or
+		 * regardless of previous RefreshFlag::UseNext settings. The case of cur and next or
 		 * their respective stations being equal is handled elsewhere. */
-		SetBit(flags, USE_NEXT);
+		flags.Set(RefreshFlag::UseNext);
 
 		if (next->IsType(OT_CONDITIONAL)) {
-			if (next->GetConditionVariable() == OCV_UNCONDITIONALLY) {
+			if (next->GetConditionVariable() == OrderConditionVariable::Unconditionally) {
 				const Order *current = next;
 				CargoTypes this_cargo_mask = this->cargo_mask;
 				next = this->vehicle->orders->GetNextDecisionNode(
@@ -266,7 +266,7 @@ std::pair<const Order *, LinkRefresher::TimetableTravelTime> LinkRefresher::Pred
 					this->seen_hops->insert(iter, hop);
 					TimetableTravelTime branch_travel = travel;
 					branch_travel.time_so_far += next->GetWaitTime();
-					branch_travel.flags |= TTT_NO_TRAVEL_TIME;
+					branch_travel.flags.Set(TimetableTravelTimeFlag::NoTravelTime);
 					LinkRefresher branch(*this);
 					branch.RefreshLinks(cur, skip_to, this->UpdateTimetableTravelSoFar(target, skip_to, branch_travel), flags, num_hops + 1);
 				}
@@ -283,7 +283,7 @@ std::pair<const Order *, LinkRefresher::TimetableTravelTime> LinkRefresher::Pred
 				this->vehicle->orders->GetNext(next), num_hops++, this_cargo_mask);
 		assert(this_cargo_mask == this->cargo_mask);
 
-		travel.flags |= TTT_ALLOW_CONDITION;
+		travel.flags.Set(TimetableTravelTimeFlag::AllowCondition);
 		travel = this->UpdateTimetableTravelSoFar(current, next, travel);
 	}
 	return std::make_pair(next, travel);
@@ -296,31 +296,31 @@ std::pair<const Order *, LinkRefresher::TimetableTravelTime> LinkRefresher::Pred
  * @param travel_estimate Estimated travel time, only valid if non-zero.
  * @param flags RefreshFlags to give hints about the previous link and state carried over from that.
  */
-void LinkRefresher::RefreshStats(const Order *cur, const Order *next, uint32_t travel_estimate, uint8_t flags)
+void LinkRefresher::RefreshStats(const Order *cur, const Order *next, uint32_t travel_estimate, RefreshFlags flags)
 {
-	StationID next_station = next->GetDestination();
-	Station *st = Station::GetIfValid(cur->GetDestination());
-	if (st != nullptr && next_station != INVALID_STATION && next_station != st->index) {
+	StationID next_station = next->GetDestination().ToStationID();
+	Station *st = Station::GetIfValid(cur->GetDestination().ToStationID());
+	if (st != nullptr && next_station != StationID::Invalid() && next_station != st->index) {
 		Station *st_to = Station::Get(next_station);
-		for (CargoID c = 0; c < NUM_CARGO; c++) {
+		for (CargoType cargo : EnumRange(NUM_CARGO)) {
 			/* Refresh the link and give it a minimum capacity. */
 
-			if (!HasBit(this->cargo_mask, c)) continue;
+			if (!this->cargo_mask.Test(cargo)) continue;
 
-			uint cargo_quantity = this->capacities[c];
+			uint cargo_quantity = this->capacities[cargo];
 			if (cargo_quantity == 0) continue;
 
 			if (this->vehicle->GetDisplayMaxSpeed() == 0) continue;
 
 			/* If not allowed to merge link graphs, make sure the stations are
 			 * already in the same link graph. */
-			if (!this->allow_merge && st->goods[c].link_graph != st_to->goods[c].link_graph) {
+			if (!this->allow_merge && st->goods[cargo].link_graph != st_to->goods[cargo].link_graph) {
 				continue;
 			}
 
 			/* A link is at least partly restricted if a vehicle can't load at its source. */
-			EdgeUpdateMode restricted_mode = (cur->GetCargoLoadType(c) & OLFB_NO_LOAD) == 0 ?
-						EUM_UNRESTRICTED : EUM_RESTRICTED;
+			EdgeUpdateModes restricted_modes = (cur->GetCargoLoadType(cargo) != OrderLoadType::NoLoad) ?
+						EdgeUpdateMode::Unrestricted : EdgeUpdateMode::Restricted;
 			/* This estimates the travel time of the link as the time needed
 			 * to travel between the stations at half the max speed of the consist.
 			 * The result is in tiles/tick (= 2048 km-ish/h). */
@@ -333,7 +333,7 @@ void LinkRefresher::RefreshStats(const Order *cur, const Order *next, uint32_t t
 				time_estimate = Clamp<uint32_t>(travel_estimate, time_estimate / 3, time_estimate * 2);
 			}
 
-			if (HasBit(flags, AIRCRAFT)) restricted_mode |= EUM_AIRCRAFT;
+			if (flags.Test(RefreshFlag::Aircraft)) restricted_modes.Set(EdgeUpdateMode::Aircraft);
 
 			/* If the vehicle is currently full loading, increase the capacities at the station
 			 * where it is loading by an estimate of what it would have transported if it wasn't
@@ -346,16 +346,16 @@ void LinkRefresher::RefreshStats(const Order *cur, const Order *next, uint32_t t
 					(Ticks)this->vehicle->current_order_time) {
 				uint effective_capacity = cargo_quantity * this->vehicle->load_unload_ticks;
 				if (effective_capacity > (uint)this->vehicle->orders->GetTotalDuration()) {
-					IncreaseStats(st, c, next_station, effective_capacity /
+					IncreaseStats(st, cargo, next_station, effective_capacity /
 							this->vehicle->orders->GetTotalDuration(), 0, 0,
-							EUM_INCREASE | restricted_mode);
+							EdgeUpdateModes{EdgeUpdateMode::Increase} | restricted_modes);
 				} else if (RandomRange(this->vehicle->orders->GetTotalDuration()) < effective_capacity) {
-					IncreaseStats(st, c, next_station, 1, 0, 0, EUM_INCREASE | restricted_mode);
+					IncreaseStats(st, cargo, next_station, 1, 0, 0, EdgeUpdateModes{EdgeUpdateMode::Increase} | restricted_modes);
 				} else {
-					IncreaseStats(st, c, next_station, cargo_quantity, 0, time_estimate, EUM_REFRESH | restricted_mode);
+					IncreaseStats(st, cargo, next_station, cargo_quantity, 0, time_estimate, EdgeUpdateModes{EdgeUpdateMode::Refresh} | restricted_modes);
 				}
 			} else {
-				IncreaseStats(st, c, next_station, cargo_quantity, 0, time_estimate, EUM_REFRESH | restricted_mode);
+				IncreaseStats(st, cargo, next_station, cargo_quantity, 0, time_estimate, EdgeUpdateModes{EdgeUpdateMode::Refresh} | restricted_modes);
 			}
 		}
 	}
@@ -373,21 +373,21 @@ void LinkRefresher::RefreshStats(const Order *cur, const Order *next, uint32_t t
  * @param flags RefreshFlags to give hints about the previous link and state carried over from that.
  * @param num_hops Number of hops already taken by recursive calls to this method.
  */
-void LinkRefresher::RefreshLinks(const Order *cur, const Order *next, TimetableTravelTime travel, uint8_t flags, uint num_hops)
+void LinkRefresher::RefreshLinks(const Order *cur, const Order *next, TimetableTravelTime travel, RefreshFlags flags, uint num_hops)
 {
 	while (next != nullptr) {
 
 		if ((next->IsType(OT_GOTO_DEPOT) || next->IsType(OT_GOTO_STATION)) && next->IsRefit()) {
-			SetBit(flags, WAS_REFIT);
+			flags.Set(RefreshFlag::WasRefit);
 			if (!next->IsAutoRefit()) {
 				this->HandleRefit(next->GetRefitCargo());
-			} else if (!HasBit(flags, IN_AUTOREFIT)) {
-				SetBit(flags, IN_AUTOREFIT);
+			} else if (!flags.Test(RefreshFlag::InAutorefit)) {
+				flags.Set(RefreshFlag::InAutorefit);
 				LinkRefresher backup(*this);
-				for (CargoID c = 0; c != NUM_CARGO; ++c) {
-					if (!CargoSpec::Get(c)->IsValid()) continue;
-					if (next->GetCargoLoadType(c) == OLFB_NO_LOAD) continue;
-					if (this->HandleRefit(c)) {
+				for (CargoType cargo : EnumRange(NUM_CARGO)) {
+					if (!CargoSpec::Get(cargo)->IsValid()) continue;
+					if (next->GetCargoLoadType(cargo) == OrderLoadType::NoLoad) continue;
+					if (this->HandleRefit(cargo)) {
 						this->RefreshLinks(cur, next, travel, flags, num_hops);
 						*this = backup;
 					}
@@ -398,10 +398,10 @@ void LinkRefresher::RefreshLinks(const Order *cur, const Order *next, TimetableT
 		/* Only reset the refit capacities if the "previous" next is a station,
 		 * meaning that either the vehicle was refit at the previous station or
 		 * it wasn't at all refit during the current hop. */
-		if (HasBit(flags, WAS_REFIT) && (next->IsType(OT_GOTO_STATION) || next->IsType(OT_IMPLICIT))) {
-			SetBit(flags, RESET_REFIT);
+		if (flags.Test(RefreshFlag::WasRefit) && (next->IsType(OT_GOTO_STATION) || next->IsType(OT_IMPLICIT))) {
+			flags.Set(RefreshFlag::ResetRefit);
 		} else {
-			ClrBit(flags, RESET_REFIT);
+			flags.Reset(RefreshFlag::ResetRefit);
 		}
 
 		std::tie(next, travel) = this->PredictNextOrder(cur, next, travel, flags, num_hops);
@@ -415,29 +415,28 @@ void LinkRefresher::RefreshLinks(const Order *cur, const Order *next, TimetableT
 		}
 
 		/* Don't use the same order again, but choose a new one in the next round. */
-		ClrBit(flags, USE_NEXT);
+		flags.Reset(RefreshFlag::UseNext);
 
 		/* Skip resetting and link refreshing if next order won't do anything with cargo. */
 		if (!next->IsType(OT_GOTO_STATION) && !next->IsType(OT_IMPLICIT)) continue;
 
-		if (HasBit(flags, RESET_REFIT)) {
+		if (flags.Test(RefreshFlag::ResetRefit)) {
 			this->ResetRefit();
-			ClrBit(flags, RESET_REFIT);
-			ClrBit(flags, WAS_REFIT);
+			flags.Reset({RefreshFlag::ResetRefit, RefreshFlag::WasRefit});
 		}
 
 		if (cur->IsType(OT_GOTO_STATION) || cur->IsType(OT_IMPLICIT)) {
-			if (cur->CanLeaveWithCargo(HasBit(flags, HAS_CARGO), FindFirstBit(this->cargo_mask))) {
-				SetBit(flags, HAS_CARGO);
-				this->RefreshStats(cur, next, ((travel.flags & TTT_INVALID) == 0 && travel.time_so_far > 0) ? (uint32_t)travel.time_so_far : 0, flags);
+			if (cur->CanLeaveWithCargo(flags.Test(RefreshFlag::HasCargo), this->cargo_mask.FindFirstBit())) {
+				flags.Set(RefreshFlag::HasCargo);
+				this->RefreshStats(cur, next, (!travel.flags.Test(TimetableTravelTimeFlag::Invalid) && travel.time_so_far > 0) ? (uint32_t)travel.time_so_far : 0, flags);
 			} else {
-				ClrBit(flags, HAS_CARGO);
+				flags.Reset(RefreshFlag::HasCargo);
 			}
 		}
 
 		/* "cur" is only assigned here if the stop is a station so that
 		 * whenever stats are to be increased two stations can be found. */
 		cur = next;
-		travel = { 0, TTT_NO_WAIT_TIME };
+		travel = { 0, TimetableTravelTimeFlag::NoWaitTime };
 	}
 }

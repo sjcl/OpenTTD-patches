@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file newgrf_engine.cpp NewGRF handling of engines. */
@@ -12,6 +12,8 @@
 #include "train.h"
 #include "roadveh.h"
 #include "company_func.h"
+#include "newgrf.h"
+#include "newgrf_badge.h"
 #include "newgrf_cargo.h"
 #include "newgrf_spritegroup.h"
 #include "date_func.h"
@@ -30,17 +32,20 @@
 #include "newgrf_analysis.h"
 #include "newgrf_dump.h"
 #include "engine_override.h"
+#include "core/format.hpp"
+#include "3rdparty/fmt/ranges.h"
+#include "3rdparty/robin_hood/robin_hood.h"
 
 #include "safeguards.h"
 
 bool _sprite_group_resolve_check_veh_check = false;
 bool _sprite_group_resolve_check_veh_curvature_check = false;
 
-void SetWagonOverrideSprites(EngineID engine, CargoID cargo, const SpriteGroup *group, std::span<EngineID> engine_ids)
+void SetWagonOverrideSprites(EngineID engine, CargoType cargo, const SpriteGroup *group, std::span<EngineID> engine_ids)
 {
 	Engine *e = Engine::Get(engine);
 
-	assert(cargo < NUM_CARGO + 2); // Include SpriteGroupCargo::SG_DEFAULT and SpriteGroupCargo::SG_PURCHASE pseudo cargoes.
+	assert(cargo < NUM_CARGO + 2); // Include CargoGRFFileProps::SG_DEFAULT and CargoGRFFileProps::SG_PURCHASE pseudo cargoes.
 
 	WagonOverride *wo = &e->overrides.emplace_back();
 	wo->group = group;
@@ -48,26 +53,25 @@ void SetWagonOverrideSprites(EngineID engine, CargoID cargo, const SpriteGroup *
 	wo->engines.assign(engine_ids.begin(), engine_ids.end());
 }
 
-const SpriteGroup *GetWagonOverrideSpriteSet(EngineID engine, CargoID cargo, EngineID overriding_engine)
+const SpriteGroup *GetWagonOverrideSpriteSet(EngineID engine, CargoType cargo, EngineID overriding_engine)
 {
 	const Engine *e = Engine::Get(engine);
 
 	for (const WagonOverride &wo : e->overrides) {
-		if (wo.cargo != cargo && wo.cargo != SpriteGroupCargo::SG_DEFAULT) continue;
+		if (wo.cargo != cargo && wo.cargo != CargoGRFFileProps::SG_DEFAULT) continue;
 		if (std::ranges::find(wo.engines, overriding_engine) != wo.engines.end()) return wo.group;
 	}
 	return nullptr;
 }
 
-void SetCustomEngineSprites(EngineID engine, uint8_t cargo, const SpriteGroup *group)
+void SetCustomEngineSprites(EngineID engine, CargoType cargo, const SpriteGroup *group)
 {
 	Engine *e = Engine::Get(engine);
-	assert(cargo < std::size(e->grf_prop.spritegroup));
 
-	if (e->grf_prop.spritegroup[cargo] != nullptr) {
+	if (e->grf_prop.GetSpriteGroup(cargo) != nullptr) {
 		GrfMsg(6, "SetCustomEngineSprites: engine {} cargo {} already has group -- replacing", engine, cargo);
 	}
-	e->grf_prop.spritegroup[cargo] = group;
+	e->grf_prop.SetSpriteGroup(cargo, group);
 }
 
 
@@ -80,30 +84,29 @@ void SetCustomEngineSprites(EngineID engine, uint8_t cargo, const SpriteGroup *g
 void SetEngineGRF(EngineID engine, const GRFFile *file)
 {
 	Engine *e = Engine::Get(engine);
-	e->grf_prop.grfid = file->grfid;
-	e->grf_prop.grffile = file;
+	e->grf_prop.SetGRFFile(file);
 }
 
 
 static int MapOldSubType(const Vehicle *v)
 {
 	switch (v->type) {
-		case VEH_TRAIN:
+		case VehicleType::Train:
 			if (Train::From(v)->IsEngine()) return 0;
 			if (Train::From(v)->IsFreeWagon()) return 4;
 			return 2;
-		case VEH_ROAD:
-		case VEH_SHIP:     return 0;
-		case VEH_AIRCRAFT:
-		case VEH_DISASTER: return v->subtype;
-		case VEH_EFFECT:   return v->subtype << 1;
+		case VehicleType::Road:
+		case VehicleType::Ship: return 0;
+		case VehicleType::Aircraft:
+		case VehicleType::Disaster: return v->subtype;
+		case VehicleType::Effect: return v->subtype << 1;
 		default: NOT_REACHED();
 	}
 }
 
 
-/* TTDP style aircraft movement states for GRF Action 2 Var 0xE2 */
-enum TTDPAircraftMovementStates {
+/** TTDP style aircraft movement states for GRF Action 2 Var 0xE2. */
+enum TTDPAircraftMovementStates : uint8_t {
 	AMS_TTDP_HANGAR,
 	AMS_TTDP_TO_HANGAR,
 	AMS_TTDP_TO_PAD1,
@@ -139,6 +142,8 @@ enum TTDPAircraftMovementStates {
 /**
  * Map OTTD aircraft movement states to TTDPatch style movement states
  * (VarAction 2 Variable 0xE2)
+ * @param v The aircraft to consider.
+ * @return The TTDP movement state.
  */
 uint8_t MapAircraftMovementState(const Aircraft *v)
 {
@@ -146,35 +151,35 @@ uint8_t MapAircraftMovementState(const Aircraft *v)
 	if (st == nullptr) return AMS_TTDP_FLIGHT_TO_TOWER;
 
 	const AirportFTAClass *afc = st->airport.GetFTA();
-	uint16_t amdflag = afc->MovingData(v->pos)->flag;
+	AirportMovingDataFlags amdflag = afc->MovingData(v->pos)->flags;
 
 	switch (v->state) {
 		case HANGAR:
 			/* The international airport is a special case as helicopters can land in
 			 * front of the hangar. Helicopters also change their air.state to
-			 * AMED_HELI_LOWER some time before actually descending. */
+			 * AirportMovingDataFlag::HeliLower some time before actually descending. */
 
 			/* This condition only occurs for helicopters, during descent,
 			 * to a landing by the hangar of an international airport. */
-			if (amdflag & AMED_HELI_LOWER) return AMS_TTDP_HELI_LAND_AIRPORT;
+			if (amdflag.Test(AirportMovingDataFlag::HeliLower)) return AMS_TTDP_HELI_LAND_AIRPORT;
 
 			/* This condition only occurs for helicopters, before starting descent,
 			 * to a landing by the hangar of an international airport. */
-			if (amdflag & AMED_SLOWTURN) return AMS_TTDP_FLIGHT_TO_TOWER;
+			if (amdflag.Test(AirportMovingDataFlag::SlowTurn)) return AMS_TTDP_FLIGHT_TO_TOWER;
 
 			/* The final two conditions apply to helicopters or aircraft.
 			 * Has reached hangar? */
-			if (amdflag & AMED_EXACTPOS) return AMS_TTDP_HANGAR;
+			if (amdflag.Test(AirportMovingDataFlag::ExactPosition)) return AMS_TTDP_HANGAR;
 
 			/* Still moving towards hangar. */
 			return AMS_TTDP_TO_HANGAR;
 
 		case TERM1:
-			if (amdflag & AMED_EXACTPOS) return AMS_TTDP_TO_PAD1;
+			if (amdflag.Test(AirportMovingDataFlag::ExactPosition)) return AMS_TTDP_TO_PAD1;
 			return AMS_TTDP_TO_JUNCTION;
 
 		case TERM2:
-			if (amdflag & AMED_EXACTPOS) return AMS_TTDP_TO_PAD2;
+			if (amdflag.Test(AirportMovingDataFlag::ExactPosition)) return AMS_TTDP_TO_PAD2;
 			return AMS_TTDP_TO_ENTRY_2_AND_3_AND_H;
 
 		case TERM3:
@@ -184,15 +189,15 @@ uint8_t MapAircraftMovementState(const Aircraft *v)
 		case TERM7:
 		case TERM8:
 			/* TTDPatch only has 3 terminals, so treat these states the same */
-			if (amdflag & AMED_EXACTPOS) return AMS_TTDP_TO_PAD3;
+			if (amdflag.Test(AirportMovingDataFlag::ExactPosition)) return AMS_TTDP_TO_PAD3;
 			return AMS_TTDP_TO_ENTRY_2_AND_3_AND_H;
 
 		case HELIPAD1:
 		case HELIPAD2:
 		case HELIPAD3:
 			/* Will only occur for helicopters.*/
-			if (amdflag & AMED_HELI_LOWER) return AMS_TTDP_HELI_LAND_AIRPORT; // Descending.
-			if (amdflag & AMED_SLOWTURN)   return AMS_TTDP_FLIGHT_TO_TOWER;   // Still hasn't started descent.
+			if (amdflag.Test(AirportMovingDataFlag::HeliLower)) return AMS_TTDP_HELI_LAND_AIRPORT; // Descending.
+			if (amdflag.Test(AirportMovingDataFlag::SlowTurn)) return AMS_TTDP_FLIGHT_TO_TOWER;   // Still hasn't started descent.
 			return AMS_TTDP_TO_JUNCTION; // On the ground.
 
 		case TAKEOFF: // Moving to takeoff position.
@@ -206,26 +211,26 @@ uint8_t MapAircraftMovementState(const Aircraft *v)
 
 		case HELITAKEOFF: // Helicopter is moving to take off position.
 			if (afc->delta_z == 0) {
-				return amdflag & AMED_HELI_RAISE ?
+				return amdflag.Test(AirportMovingDataFlag::HeliRaise) ?
 					AMS_TTDP_HELI_TAKEOFF_AIRPORT : AMS_TTDP_TO_JUNCTION;
 			} else {
 				return AMS_TTDP_HELI_TAKEOFF_HELIPORT;
 			}
 
 		case FLYING:
-			return amdflag & AMED_HOLD ? AMS_TTDP_FLIGHT_APPROACH : AMS_TTDP_FLIGHT_TO_TOWER;
+			return amdflag.Test(AirportMovingDataFlag::Hold) ? AMS_TTDP_FLIGHT_APPROACH : AMS_TTDP_FLIGHT_TO_TOWER;
 
 		case LANDING: // Descent
 			return AMS_TTDP_FLIGHT_DESCENT;
 
 		case ENDLANDING: // On the runway braking
-			if (amdflag & AMED_BRAKE) return AMS_TTDP_BRAKING;
+			if (amdflag.Test(AirportMovingDataFlag::Brake)) return AMS_TTDP_BRAKING;
 			/* Landed - moving off runway */
 			return AMS_TTDP_TO_INWAY;
 
 		case HELILANDING:
 		case HELIENDLANDING: // Helicoptor is descending.
-			if (amdflag & AMED_HELI_LOWER) {
+			if (amdflag.Test(AirportMovingDataFlag::HeliLower)) {
 				return afc->delta_z == 0 ?
 					AMS_TTDP_HELI_LAND_AIRPORT : AMS_TTDP_HELI_LAND_HELIPORT;
 			} else {
@@ -238,8 +243,8 @@ uint8_t MapAircraftMovementState(const Aircraft *v)
 }
 
 
-/* TTDP style aircraft movement action for GRF Action 2 Var 0xE6 */
-enum TTDPAircraftMovementActions {
+/** TTDP style aircraft movement action for GRF Action 2 Var 0xE6. */
+enum TTDPAircraftMovementActions : uint8_t {
 	AMA_TTDP_IN_HANGAR,
 	AMA_TTDP_ON_PAD1,
 	AMA_TTDP_ON_PAD2,
@@ -256,7 +261,7 @@ enum TTDPAircraftMovementActions {
 	AMA_TTDP_PAD1_TO_TAKEOFF,
 	AMA_TTDP_PAD2_TO_TAKEOFF,
 	AMA_TTDP_PAD3_TO_TAKEOFF,
-	AMA_TTDP_HANGAR_TO_TAKOFF,
+	AMA_TTDP_HANGAR_TO_TAKEOFF,
 	AMA_TTDP_LANDING_TO_HANGAR,
 	AMA_TTDP_IN_FLIGHT,
 };
@@ -266,6 +271,8 @@ enum TTDPAircraftMovementActions {
  * Map OTTD aircraft movement states to TTDPatch style movement actions
  * (VarAction 2 Variable 0xE6)
  * This is not fully supported yet but it's enough for Planeset.
+ * @param v The aircraft to consider.
+ * @return The TTDP movement action.
  */
 static uint8_t MapAircraftMovementAction(const Aircraft *v)
 {
@@ -319,7 +326,7 @@ static uint8_t MapAircraftMovementAction(const Aircraft *v)
 	return this->v == nullptr ? 0 : this->v->random_bits;
 }
 
-/* virtual */ uint32_t VehicleScopeResolver::GetTriggers() const
+/* virtual */ uint32_t VehicleScopeResolver::GetRandomTriggers() const
 {
 	if (this->v == nullptr) {
 		return 0;
@@ -327,21 +334,20 @@ static uint8_t MapAircraftMovementAction(const Aircraft *v)
 		if (_sprite_group_resolve_check_veh_check) {
 			SetBit(const_cast<Vehicle*>(this->v->First())->vcache.cached_veh_flags, VCF_REDRAW_ON_TRIGGER);
 		}
-		return this->v->waiting_triggers;
+		return this->v->waiting_random_triggers.base();
 	}
-	return this->v == nullptr ? 0 : this->v->waiting_triggers;
 }
 
 
 /* virtual */ ScopeResolver *VehicleResolverObject::GetScope(VarSpriteGroupScope scope, VarSpriteGroupScopeOffset relative)
 {
 	switch (scope) {
-		case VSG_SCOPE_SELF:   return &this->self_scope;
-		case VSG_SCOPE_PARENT: return &this->parent_scope;
-		case VSG_SCOPE_RELATIVE: {
+		case VarSpriteGroupScope::Self:   return &this->self_scope;
+		case VarSpriteGroupScope::Parent: return &this->parent_scope;
+		case VarSpriteGroupScope::Relative: {
 			int32_t count = GB(relative, 0, 8);
 			if (this->self_scope.v != nullptr && (relative != this->cached_relative_count || HasBit(relative, 15))) {
-				/* Note: This caching only works as long as the VSG_SCOPE_RELATIVE cannot be used in
+				/* Note: This caching only works as long as the VarSpriteGroupScope::Relative cannot be used in
 				 *       VarAct2 with procedure calls. */
 				/* Therefore procedure calls made from within a relative scope must save and restore the cached relative scope */
 				if (HasBit(relative, 15)) count = GetRegister(0x100);
@@ -395,11 +401,11 @@ static const Livery *LiveryHelper(EngineID engine, const Vehicle *v)
 
 	if (v == nullptr) {
 		if (!Company::IsValidID(_current_company)) return nullptr;
-		l = GetEngineLivery(engine, _current_company, INVALID_ENGINE, nullptr, LIT_ALL);
+		l = GetEngineLivery(engine, _current_company, EngineID::Invalid(), nullptr, LIT_ALL);
 	} else if (v->IsGroundVehicle()) {
 		l = GetEngineLivery(v->engine_type, v->owner, v->GetGroundVehicleCache()->first_engine, v, LIT_ALL);
 	} else {
-		l = GetEngineLivery(v->engine_type, v->owner, INVALID_ENGINE, v, LIT_ALL);
+		l = GetEngineLivery(v->engine_type, v->owner, EngineID::Invalid(), v, LIT_ALL);
 	}
 
 	return l;
@@ -453,6 +459,7 @@ static uint32_t VehicleGetVariable(Vehicle *v, const VehicleScopeResolver *objec
 			case 0x4D:
 			case 0x60:
 			case 0x61:
+			case 0x7A:
 			case 0x7D:
 			case 0x7F:
 			case 0x80 + 0x0:
@@ -477,7 +484,7 @@ static uint32_t VehicleGetVariable(Vehicle *v, const VehicleScopeResolver *objec
 				break;
 
 			case 0x80 + 0x32:
-				if (extra.mask & (VS_HIDDEN | VS_TRAIN_SLOWING)) {
+				if (extra.mask & VehStates({VehState::Hidden, VehState::TrainSlowing}).base()) {
 					_sprite_group_resolve_check_veh_check = false;
 				}
 				break;
@@ -485,7 +492,7 @@ static uint32_t VehicleGetVariable(Vehicle *v, const VehicleScopeResolver *objec
 			case 0x80 + 0x34:
 			case 0x80 + 0x35:
 			case A2VRI_VEHICLE_CURRENT_SPEED_SCALED:
-				if (v->type == VEH_AIRCRAFT) {
+				if (v->type == VehicleType::Aircraft) {
 					_sprite_group_resolve_check_veh_check = false;
 				} else {
 					SetBit(v->First()->vcache.cached_veh_flags, VCF_REDRAW_ON_SPEED_CHANGE);
@@ -498,25 +505,25 @@ static uint32_t VehicleGetVariable(Vehicle *v, const VehicleScopeResolver *objec
 				break;
 
 			case 0x80 + 0x48:
-				// VRF_REVERSE_DIRECTION
-				if (v->type != VEH_TRAIN) {
+				/* VehicleRailFlag::Flipped */
+				if (v->type != VehicleType::Train) {
 					_sprite_group_resolve_check_veh_check = false;
 				}
 				break;
 
 			case 0x80 + 0x62:
 				switch (v->type) {
-					case VEH_TRAIN:
-					case VEH_SHIP:
+					case VehicleType::Train:
+					case VehicleType::Ship:
 						if (extra.mask & 0x7F) {
 							_sprite_group_resolve_check_veh_check = false;
 						}
 						break;
 
-					case VEH_ROAD:
+					case VehicleType::Road:
 						break;
 
-					case VEH_AIRCRAFT:
+					case VehicleType::Aircraft:
 						if (v == v->First()) {
 							SetBit(v->First()->vcache.cached_veh_flags, VCF_REDRAW_ON_SPEED_CHANGE);
 						} else {
@@ -531,9 +538,9 @@ static uint32_t VehicleGetVariable(Vehicle *v, const VehicleScopeResolver *objec
 				break;
 
 			case 0xFE:
-				// vehicle is unloading, VF_CARGO_UNLOADING may disappear without the vehicle being marked dirty
-				// the vehicle is always marked dirty when VF_CARGO_UNLOADING is set
-				if (HasBit(v->vehicle_flags, VF_CARGO_UNLOADING)) {
+				// vehicle is unloading, VehicleFlag::CargoUnloading may disappear without the vehicle being marked dirty
+				// the vehicle is always marked dirty when VehicleFlag::CargoUnloading is set
+				if (v->vehicle_flags.Test(VehicleFlag::CargoUnloading)) {
 					_sprite_group_resolve_check_veh_check = false;
 				}
 				break;
@@ -547,7 +554,7 @@ static uint32_t VehicleGetVariable(Vehicle *v, const VehicleScopeResolver *objec
 	/* Calculated vehicle parameters */
 	switch (variable) {
 		case 0x25: // Get engine GRF ID
-			return v->GetGRFID();
+			return FlattenNewGRFLabel(v->GetGRFID());
 
 		case 0x40: // Get length of consist
 			if (!HasBit(v->grf_cache.cache_valid, NCVV_POSITION_CONSIST_LENGTH)) {
@@ -567,7 +574,7 @@ static uint32_t VehicleGetVariable(Vehicle *v, const VehicleScopeResolver *objec
 			if ((extra.mask & 0x00FFFFFF) == 0) {
 				if (!HasBit(v->grf_cache.cache_valid, NCVV_CONSIST_CARGO_INFORMATION_UD)) {
 					uint8_t user_def_data = 0;
-					if (v->type == VEH_TRAIN) {
+					if (v->type == VehicleType::Train) {
 						for (const Vehicle *u = v; u != nullptr; u = u->Next()) {
 							user_def_data |= Train::From(u)->tcache.user_def_data;
 						}
@@ -583,19 +590,19 @@ static uint32_t VehicleGetVariable(Vehicle *v, const VehicleScopeResolver *objec
 				uint8_t user_def_data = 0;
 
 				for (const Vehicle *u = v; u != nullptr; u = u->Next()) {
-					if (v->type == VEH_TRAIN) user_def_data |= Train::From(u)->tcache.user_def_data;
+					if (v->type == VehicleType::Train) user_def_data |= Train::From(u)->tcache.user_def_data;
 
 					/* Skip empty engines */
 					if (!u->GetEngine()->CanCarryCargo()) continue;
 
-					cargo_classes |= CargoSpec::Get(u->cargo_type)->classes;
+					cargo_classes |= CargoSpec::Get(u->cargo_type)->classes.base();
 					common_cargoes[u->cargo_type]++;
 				}
 
 				/* Pick the most common cargo type */
 				auto cargo_it = std::max_element(std::begin(common_cargoes), std::end(common_cargoes));
 				/* Return INVALID_CARGO if nothing is carried */
-				CargoID common_cargo_type = (*cargo_it == 0) ? INVALID_CARGO : static_cast<CargoID>(std::distance(std::begin(common_cargoes), cargo_it));
+				CargoType common_cargo_type = (*cargo_it == 0) ? INVALID_CARGO : static_cast<CargoType>(std::distance(std::begin(common_cargoes), cargo_it));
 
 				/* Count subcargo types of common_cargo_type */
 				std::array<uint8_t, UINT8_MAX + 1> common_subtypes{};
@@ -619,7 +626,7 @@ static uint32_t VehicleGetVariable(Vehicle *v, const VehicleScopeResolver *objec
 			}
 
 			/* The cargo translation is specific to the accessing GRF, and thus cannot be cached. */
-			CargoID common_cargo_type = (v->grf_cache.consist_cargo_information >> 8) & 0xFF;
+			CargoType common_cargo_type = static_cast<CargoType>(GB(v->grf_cache.consist_cargo_information, 8, 8));
 
 			/* Note:
 			 *  - Unlike everywhere else the cargo translation table is only used since grf version 8, not 7.
@@ -644,7 +651,7 @@ static uint32_t VehicleGetVariable(Vehicle *v, const VehicleScopeResolver *objec
 			return v->grf_cache.company_information;
 
 		case 0x44: // Aircraft information
-			if (v->type != VEH_AIRCRAFT || !Aircraft::From(v)->IsNormalAircraft()) return UINT_MAX;
+			if (v->type != VehicleType::Aircraft || !Aircraft::From(v)->IsNormalAircraft()) return UINT_MAX;
 
 			{
 				const Vehicle *w = v->Next();
@@ -673,13 +680,13 @@ static uint32_t VehicleGetVariable(Vehicle *v, const VehicleScopeResolver *objec
 
 			const Vehicle *u_p = v->Previous();
 			const Vehicle *u_n = v->Next();
-			DirDiff f = (u_p == nullptr) ?  DIRDIFF_SAME : DirDifference(u_p->direction, v->direction);
-			DirDiff b = (u_n == nullptr) ?  DIRDIFF_SAME : DirDifference(v->direction, u_n->direction);
+			DirDiff f = (u_p == nullptr) ?  DirDiff::Same : DirDifference(u_p->direction, v->direction);
+			DirDiff b = (u_n == nullptr) ?  DirDiff::Same : DirDifference(v->direction, u_n->direction);
 			DirDiff t = ChangeDirDiff(f, b);
 
-			return ((t > DIRDIFF_REVERSE ? t | 8 : t) << 16) |
-			       ((b > DIRDIFF_REVERSE ? b | 8 : b) <<  8) |
-			       ( f > DIRDIFF_REVERSE ? f | 8 : f);
+			return ((t > DirDiff::Reverse ? to_underlying(t) | 8 : to_underlying(t)) << 16) |
+			       ((b > DirDiff::Reverse ? to_underlying(b) | 8 : to_underlying(b)) <<  8) |
+			       ( f > DirDiff::Reverse ? to_underlying(f) | 8 : to_underlying(f));
 		}
 
 		case 0x46: // Motion counter
@@ -699,30 +706,37 @@ static uint32_t VehicleGetVariable(Vehicle *v, const VehicleScopeResolver *objec
 			 * is object->ro.grffile.
 			 * In case of CBID_TRAIN_ALLOW_WAGON_ATTACH this is not the same as v->GetGRF().
 			 */
-			return (cs->classes << 16) | (cs->weight << 8) | object->ro.grffile->cargo_map[v->cargo_type];
+			return (cs->classes.base() << 16) | (cs->weight << 8) | object->ro.grffile->cargo_map[v->cargo_type];
 		}
 
-		case 0x48: return v->GetEngine()->flags; // Vehicle Type Info
+		case 0x48: return v->GetEngine()->flags.base(); // Vehicle Type Info
 		case 0x49: return v->build_year.base();
 
 		case 0x4A:
 			switch (v->type) {
-				case VEH_TRAIN: {
+				case VehicleType::Train: {
 					if (Train::From(v)->IsVirtual()) {
-						return 0x1FF | ((GetRailTypeInfo(Train::From(v)->railtype)->flags & RTFB_CATENARY) ? 0x200 : 0);
+						uint32_t result = 0x1FF;
+						for (RailType rt : Train::From(v)->railtypes) {
+							if (GetRailTypeInfo(rt)->flags.Test(RailTypeFlag::Catenary)) {
+								result |= 0x200;
+								break;
+							}
+						}
+						return result;
 					}
 					RailType rt = GetTileRailTypeByTrackBit(v->tile, Train::From(v)->track);
 					const RailTypeInfo *rti = GetRailTypeInfo(rt);
-					return ((rti->flags & RTFB_CATENARY) ? 0x200 : 0) |
-						(HasPowerOnRail(Train::From(v)->railtype, rt) ? 0x100 : 0) |
+					return (rti->flags.Test(RailTypeFlag::Catenary) ? 0x200 : 0) |
+						(HasPowerOnRail(Train::From(v)->railtypes, rt) ? 0x100 : 0) |
 						GetReverseRailTypeTranslation(rt, object->ro.grffile);
 				}
 
-				case VEH_ROAD: {
+				case VehicleType::Road: {
 					RoadType rt = GetRoadType(v->tile, GetRoadTramType(RoadVehicle::From(v)->roadtype));
 					if (rt == INVALID_ROADTYPE) return 0xFF;
 					const RoadTypeInfo *rti = GetRoadTypeInfo(rt);
-					return ((rti->flags & ROTFB_CATENARY) ? 0x200 : 0) |
+					return (rti->flags.Test(RoadTypeFlag::Catenary) ? 0x200 : 0) |
 						0x100 |
 						GetReverseRoadTypeTranslation(rt, object->ro.grffile);
 				}
@@ -751,7 +765,7 @@ static uint32_t VehicleGetVariable(Vehicle *v, const VehicleScopeResolver *objec
 
 		/* Variables which use the parameter */
 		case 0x60: // Count consist's engine ID occurrence
-			if (v->type != VEH_TRAIN && v->type != VEH_SHIP) return v->GetEngine()->grf_prop.local_id == parameter ? 1 : 0;
+			if (v->type != VehicleType::Train && v->type != VehicleType::Ship) return v->GetEngine()->grf_prop.local_id == parameter ? 1 : 0;
 
 			{
 				uint count = 0;
@@ -762,7 +776,7 @@ static uint32_t VehicleGetVariable(Vehicle *v, const VehicleScopeResolver *objec
 			}
 
 		case 0x61: // Get variable of n-th vehicle in chain [signed number relative to vehicle]
-			if (!(v->IsGroundVehicle() || v->type == VEH_SHIP) || parameter == 0x61) {
+			if (!(v->IsGroundVehicle() || v->type == VehicleType::Ship) || parameter == 0x61) {
 				/* Not available */
 				break;
 			}
@@ -779,7 +793,7 @@ static uint32_t VehicleGetVariable(Vehicle *v, const VehicleScopeResolver *objec
 					if (_sprite_group_resolve_check_veh_check) {
 						SetBit(u->First()->vcache.cached_veh_flags, VCF_REDRAW_ON_TRIGGER);
 					}
-					return (u->random_bits << 8) | u->waiting_triggers;
+					return (u->random_bits << 8) | u->waiting_random_triggers.base();
 				} else {
 					return VehicleGetVariable(u, object, parameter, GetRegister(0x10E), extra);
 				}
@@ -792,22 +806,23 @@ static uint32_t VehicleGetVariable(Vehicle *v, const VehicleScopeResolver *objec
 			 * zz - Signed difference of z position between the selected and this vehicle.
 			 * yy - Signed difference of y position between the selected and this vehicle.
 			 * xx - Signed difference of x position between the selected and this vehicle.
-			 * F  - Flags, bit 7 corresponds to VS_HIDDEN.
+			 * F  - Flags, bit 7 corresponds to VehState::Hidden.
 			 * D  - Dir difference, like in 0x45.
 			 */
 			if (!v->IsGroundVehicle()) return 0;
 
-			const Vehicle *u = v->Move((int8_t)parameter);
+			const Vehicle *u = v->Move(static_cast<int8_t>(parameter));
 			if (u == nullptr) return 0;
 
 			_sprite_group_resolve_check_veh_curvature_check = false;
 
 			/* Get direction difference. */
-			bool prev = (int8_t)parameter < 0;
-			uint32_t ret = prev ? DirDifference(u->direction, v->direction) : DirDifference(v->direction, u->direction);
-			if (ret > DIRDIFF_REVERSE) ret |= 0x08;
+			bool prev = static_cast<int8_t>(parameter) < 0;
+			DirDiff dirdiff = prev ? DirDifference(u->direction, v->direction) : DirDifference(v->direction, u->direction);
+			uint32_t ret = to_underlying(dirdiff);
+			if (dirdiff > DirDiff::Reverse) ret |= 0x08;
 
-			if (u->vehstatus & VS_HIDDEN) ret |= 0x80;
+			if (u->vehstatus.Test(VehState::Hidden)) ret |= 0x80;
 
 			/* Get position difference. */
 			ret |= ((prev ? u->x_pos - v->x_pos : v->x_pos - u->x_pos) & 0xFF) << 8;
@@ -826,21 +841,22 @@ static uint32_t VehicleGetVariable(Vehicle *v, const VehicleScopeResolver *objec
 			 *  bit 3: This tile has type 'parameter' or it is considered equivalent (alternate labels).
 			 */
 			switch (v->type) {
-				case VEH_TRAIN: {
+				case VehicleType::Train: {
 					RailType param_type = GetRailTypeTranslation(parameter, object->ro.grffile);
 					if (param_type == INVALID_RAILTYPE) return 0x00;
-					RailType tile_type;
 					if (Train::From(v)->IsVirtual()) {
-						tile_type = Train::From(v)->railtype;
-					} else {
-						tile_type = GetTileRailTypeByTrackBit(v->tile, Train::From(v)->track);
+						RailTypes rts = Train::From(v)->railtypes;
+						return (GetRailTypeInfo(param_type)->powered_railtypes.Any(rts) ? 0x04 : 0x00) |
+								(GetRailTypeInfo(param_type)->compatible_railtypes.Any(rts) ? 0x02 : 0x00) |
+								0x01;
 					}
+					RailType tile_type = GetTileRailTypeByTrackBit(v->tile, Train::From(v)->track);
 					if (tile_type == param_type) return 0x0F;
 					return (HasPowerOnRail(param_type, tile_type) ? 0x04 : 0x00) |
 							(IsCompatibleRail(param_type, tile_type) ? 0x02 : 0x00) |
 							0x01;
 				}
-				case VEH_ROAD: {
+				case VehicleType::Road: {
 					RoadTramType rtt = GetRoadTramType(RoadVehicle::From(v)->roadtype);
 					RoadType param_type = GetRoadTypeTranslation(rtt, parameter, object->ro.grffile);
 					if (param_type == INVALID_ROADTYPE) return 0x00;
@@ -852,13 +868,43 @@ static uint32_t VehicleGetVariable(Vehicle *v, const VehicleScopeResolver *objec
 				default: return 0x00;
 			}
 
+		case 0x64: { // Count consist's badge ID occurrence
+			if (v->type != VehicleType::Train) return GetBadgeVariableResult(*object->ro.grffile, v->GetEngine()->badges, parameter);
+
+			/* Look up badge index. */
+			if (parameter >= std::size(object->ro.grffile->badge_list)) return UINT_MAX;
+			BadgeID index = object->ro.grffile->badge_list[parameter];
+
+			/* Count number of vehicles that contain this badge index. */
+			uint count = 0;
+			for (; v != nullptr; v = v->Next()) {
+				const auto &badges = v->GetEngine()->badges;
+				if (std::ranges::find(badges, index) != std::end(badges)) count++;
+			}
+
+			return count;
+		}
+
+		case 0x65:
+			if (v->type == VehicleType::Train) {
+				RailType rt = GetRailTypeByTrackBit(v->tile, Train::From(v)->track);
+				return GetBadgeVariableResult(*object->ro.grffile, GetRailTypeInfo(rt)->badges, parameter);
+			}
+			if (v->type == VehicleType::Road) {
+				RoadType rt = GetRoadType(v->tile, GetRoadTramType(RoadVehicle::From(v)->roadtype));
+				return GetBadgeVariableResult(*object->ro.grffile, GetRoadTypeInfo(rt)->badges, parameter);
+			}
+			return UINT_MAX;
+
+		case 0x7A: return GetBadgeVariableResult(*object->ro.grffile, v->GetEngine()->badges, parameter);
+
 		case 0xFE:
 		case 0xFF: {
 			uint16_t modflags = 0;
 
-			if (v->type == VEH_TRAIN) {
+			if (v->type == VehicleType::Train) {
 				const Train *t = Train::From(v);
-				bool is_powered_wagon = HasBit(t->flags, VRF_POWEREDWAGON);
+				bool is_powered_wagon = t->flags.Test(VehicleRailFlag::PoweredWagon);
 				const Train *u = is_powered_wagon ? t->First() : t; // for powered wagons the engine defines the type of engine (i.e. railtype)
 				bool powered = t->IsEngine() || is_powered_wagon;
 				bool has_power;
@@ -866,15 +912,22 @@ static uint32_t VehicleGetVariable(Vehicle *v, const VehicleScopeResolver *objec
 					has_power = true;
 				} else {
 					RailType railtype = GetRailTypeByTrackBit(v->tile, t->track);
-					has_power = HasPowerOnRail(u->railtype, railtype);
+					has_power = HasPowerOnRail(u->railtypes, railtype);
 				}
 
 				if (powered && has_power) SetBit(modflags, 5);
 				if (powered && !has_power) SetBit(modflags, 6);
-				if (HasBit(t->flags, VRF_TOGGLE_REVERSE)) SetBit(modflags, 8);
+				/* Before trains could drive backwards, many NewGRFs faked this effect by swapping sprites when the Reversed flag was set.
+				 * To maintain their intended behaviour, only pass them the Reversed flag if the vehicle is not driving backwards. */
+				if (t->flags.Test(VehicleRailFlag::Reversed) != t->IsDrivingBackwards()) SetBit(modflags, 8);
+
+				if (v->IsDrivingBackwards()) SetBit(modflags, 11);
 			}
-			if (HasBit(v->vehicle_flags, VF_CARGO_UNLOADING)) SetBit(modflags, 1);
-			if (HasBit(v->vehicle_flags, VF_BUILT_AS_PROTOTYPE)) SetBit(modflags, 10);
+
+			if (v->type == VehicleType::Ship && Ship::From(v)->flags.Test(VehicleShipFlag::SecondEndFacingForward)) SetBit(modflags, 11);
+
+			if (v->vehicle_flags.Test(VehicleFlag::CargoUnloading)) SetBit(modflags, 1);
+			if (v->vehicle_flags.Test(VehicleFlag::BuiltAsPrototype)) SetBit(modflags, 10);
 
 			return variable == 0xFE ? modflags : GB(modflags, 8, 8);
 		}
@@ -890,18 +943,18 @@ static uint32_t VehicleGetVariable(Vehicle *v, const VehicleScopeResolver *objec
 	 * (see http://marcin.ttdpatch.net/sv1codec/TTD-locations.html#_VehicleArray)
 	 */
 	switch (variable - 0x80) {
-		case 0x00: return v->type + 0x10;
+		case 0x00: return to_underlying(v->type) + 0x10;
 		case 0x01: return MapOldSubType(v);
 		case 0x02: break; // not implemented
 		case 0x03: break; // not implemented
-		case 0x04: return v->index;
-		case 0x05: return GB(v->index, 8, 8);
+		case 0x04: return v->index.base();
+		case 0x05: return GB(v->index.base(), 8, 8);
 		case 0x06: break; // not implemented
 		case 0x07: break; // not implemented
 		case 0x08: break; // not implemented
 		case 0x09: break; // not implemented
 		case 0x0A: return v->current_order.MapOldOrder();
-		case 0x0B: return v->current_order.GetDestination();
+		case 0x0B: return v->current_order.GetDestination().value;
 		case 0x0C: return v->GetNumOrders();
 		case 0x0D: return v->cur_real_order_index;
 		case 0x0E: break; // not implemented
@@ -913,8 +966,8 @@ static uint32_t VehicleGetVariable(Vehicle *v, const VehicleScopeResolver *objec
 				ticks = v->load_unload_ticks;
 			} else {
 				switch (v->type) {
-					case VEH_TRAIN:    ticks = Train::From(v)->wait_counter; break;
-					case VEH_AIRCRAFT: ticks = Aircraft::From(v)->turn_counter; break;
+					case VehicleType::Train:    ticks = Train::From(v)->wait_counter; break;
+					case VehicleType::Aircraft: ticks = Aircraft::From(v)->turn_counter; break;
 					default:           ticks = 0; break;
 				}
 			}
@@ -924,13 +977,13 @@ static uint32_t VehicleGetVariable(Vehicle *v, const VehicleScopeResolver *objec
 		case 0x13: return GB(ClampTo<uint16_t>(v->date_of_last_service_newgrf - CalTime::DAYS_TILL_ORIGINAL_BASE_YEAR), 8, 8);
 		case 0x14: return v->GetServiceInterval();
 		case 0x15: return GB(v->GetServiceInterval(), 8, 8);
-		case 0x16: return v->last_station_visited;
+		case 0x16: return v->last_station_visited.base();
 		case 0x17: return v->tick_counter;
 		case 0x18:
 		case 0x19: {
 			uint max_speed;
 			switch (v->type) {
-				case VEH_AIRCRAFT:
+				case VehicleType::Aircraft:
 					max_speed = Aircraft::From(v)->GetSpeedOldUnits(); // Convert to old units.
 					break;
 
@@ -945,7 +998,7 @@ static uint32_t VehicleGetVariable(Vehicle *v, const VehicleScopeResolver *objec
 		case 0x1C: return v->y_pos;
 		case 0x1D: return GB(v->y_pos, 8, 8);
 		case 0x1E: return v->z_pos;
-		case 0x1F: return object->rotor_in_gui ? DIR_W : v->direction; // for rotors the spriteset contains animation frames, so NewGRF need a different way to tell the helicopter orientation.
+		case 0x1F: return to_underlying(object->rotor_in_gui ? Direction::W : v->direction); // for rotors the spriteset contains animation frames, so NewGRF need a different way to tell the helicopter orientation.
 		case 0x20: break; // not implemented
 		case 0x21: break; // not implemented
 		case 0x22: break; // not implemented
@@ -964,10 +1017,10 @@ static uint32_t VehicleGetVariable(Vehicle *v, const VehicleScopeResolver *objec
 		case 0x2F: break; // not implemented
 		case 0x30: break; // not implemented
 		case 0x31: break; // not implemented
-		case 0x32: return v->vehstatus;
+		case 0x32: return v->vehstatus.base();
 		case 0x33: return 0; // non-existent high byte of vehstatus
-		case 0x34: return v->type == VEH_AIRCRAFT ? (v->cur_speed * 10) / 128 : v->cur_speed;
-		case 0x35: return GB(v->type == VEH_AIRCRAFT ? (v->cur_speed * 10) / 128 : v->cur_speed, 8, 8);
+		case 0x34: return v->type == VehicleType::Aircraft ? (v->cur_speed * 10) / 128 : v->cur_speed;
+		case 0x35: return GB(v->type == VehicleType::Aircraft ? (v->cur_speed * 10) / 128 : v->cur_speed, 8, 8);
 		case 0x36: return v->subspeed;
 		case 0x37: return v->acceleration;
 		case 0x38: break; // not implemented
@@ -976,7 +1029,7 @@ static uint32_t VehicleGetVariable(Vehicle *v, const VehicleScopeResolver *objec
 		case 0x3B: return GB(v->cargo_cap, 8, 8);
 		case 0x3C: return ClampTo<uint16_t>(v->cargo.StoredCount());
 		case 0x3D: return GB(ClampTo<uint16_t>(v->cargo.StoredCount()), 8, 8);
-		case 0x3E: return v->cargo.GetFirstStation();
+		case 0x3E: return v->cargo.GetFirstStation().base();
 		case 0x3F: return ClampTo<uint8_t>(v->cargo.PeriodsInTransit());
 		case 0x40: return ClampTo<uint16_t>(v->age);
 		case 0x41: return GB(ClampTo<uint16_t>(v->age), 8, 8);
@@ -987,8 +1040,8 @@ static uint32_t VehicleGetVariable(Vehicle *v, const VehicleScopeResolver *objec
 		case 0x46: return v->GetEngine()->grf_prop.local_id;
 		case 0x47: return GB(v->GetEngine()->grf_prop.local_id, 8, 8);
 		case 0x48:
-			if (v->type != VEH_TRAIN || v->spritenum != 0xFD) return v->spritenum;
-			return HasBit(Train::From(v)->flags, VRF_REVERSE_DIRECTION) ? 0xFE : 0xFD;
+			if (v->type != VehicleType::Train || v->spritenum != CUSTOM_VEHICLE_SPRITENUM) return v->spritenum;
+			return Train::From(v)->flags.Test(VehicleRailFlag::Flipped) ? CUSTOM_VEHICLE_SPRITENUM_REVERSED : CUSTOM_VEHICLE_SPRITENUM;
 
 		case 0x49: return v->day_counter;
 		case 0x4A: return v->breakdowns_since_last_service;
@@ -1007,7 +1060,7 @@ static uint32_t VehicleGetVariable(Vehicle *v, const VehicleScopeResolver *objec
 		case 0x57: return GB(ClampTo<int32_t>(v->GetDisplayProfitLastYear()),  8, 24);
 		case 0x58: return GB(ClampTo<int32_t>(v->GetDisplayProfitLastYear()), 16, 16);
 		case 0x59: return GB(ClampTo<int32_t>(v->GetDisplayProfitLastYear()), 24,  8);
-		case 0x5A: return v->Next() == nullptr ? INVALID_VEHICLE : v->Next()->index;
+		case 0x5A: return (v->Next() == nullptr ? VehicleID::Invalid() : v->Next()->index).base();
 		case 0x5B: break; // not implemented
 		case 0x5C: return ClampTo<int32_t>(v->value);
 		case 0x5D: return GB(ClampTo<int32_t>(v->value),  8, 24);
@@ -1040,7 +1093,7 @@ static uint32_t VehicleGetVariable(Vehicle *v, const VehicleScopeResolver *objec
 		case 0x78: break; // not implemented
 		case 0x79: break; // not implemented
 		case 0x7A: return v->random_bits;
-		case 0x7B: return v->waiting_triggers;
+		case 0x7B: return v->waiting_random_triggers.base();
 		case 0x7C: break; // vehicle specific, see below
 		case 0x7D: break; // vehicle specific, see below
 		case 0x7E: break; // not implemented
@@ -1049,24 +1102,24 @@ static uint32_t VehicleGetVariable(Vehicle *v, const VehicleScopeResolver *objec
 
 	/* Vehicle specific properties */
 	switch (v->type) {
-		case VEH_TRAIN: {
+		case VehicleType::Train: {
 			Train *t = Train::From(v);
 			switch (variable - 0x80) {
 				case 0x62: return t->track;
-				case 0x66: return t->railtype;
+				case 0x66: return t->railtypes.GetNthSetBit(0).value_or(RailType::INVALID_RAILTYPE);
 				case 0x73: return 0x80 + VEHICLE_LENGTH - t->gcache.cached_veh_length;
 				case 0x74: return t->gcache.cached_power;
 				case 0x75: return GB(t->gcache.cached_power,  8, 24);
 				case 0x76: return GB(t->gcache.cached_power, 16, 16);
 				case 0x77: return GB(t->gcache.cached_power, 24,  8);
-				case 0x7C: return t->First()->index;
-				case 0x7D: return GB(t->First()->index, 8, 8);
+				case 0x7C: return t->First()->index.base();
+				case 0x7D: return GB(t->First()->index.base(), 8, 8);
 				case 0x7F: return 0; // Used for vehicle reversing hack in TTDP
 			}
 			break;
 		}
 
-		case VEH_ROAD: {
+		case VehicleType::Road: {
 			RoadVehicle *rv = RoadVehicle::From(v);
 			switch (variable - 0x80) {
 				case 0x62: return rv->state;
@@ -1080,7 +1133,7 @@ static uint32_t VehicleGetVariable(Vehicle *v, const VehicleScopeResolver *objec
 			break;
 		}
 
-		case VEH_SHIP: {
+		case VehicleType::Ship: {
 			Ship *s = Ship::From(v);
 			switch (variable - 0x80) {
 				case 0x62: return s->state;
@@ -1088,11 +1141,11 @@ static uint32_t VehicleGetVariable(Vehicle *v, const VehicleScopeResolver *objec
 			break;
 		}
 
-		case VEH_AIRCRAFT: {
+		case VehicleType::Aircraft: {
 			Aircraft *a = Aircraft::From(v);
 			switch (variable - 0x80) {
 				case 0x62: return MapAircraftMovementState(a);  // Current movement state
-				case 0x63: return a->targetairport;             // Airport to which the action refers
+				case 0x63: return a->targetairport.base();      // Airport to which the action refers
 				case 0x66: return MapAircraftMovementAction(a); // Current movement action
 			}
 			break;
@@ -1116,23 +1169,26 @@ static uint32_t VehicleGetVariable(Vehicle *v, const VehicleScopeResolver *objec
 			case 0x46: return 0;               // Motion counter
 			case 0x47: { // Vehicle cargo info
 				const Engine *e = Engine::Get(this->self_type);
-				CargoID cargo_type = e->GetDefaultCargoType();
+				CargoType cargo_type = e->GetDefaultCargoType();
 				if (cargo_type != INVALID_CARGO) {
 					const CargoSpec *cs = CargoSpec::Get(cargo_type);
-					return (cs->classes << 16) | (cs->weight << 8) | this->ro.grffile->cargo_map[cargo_type];
+					return (cs->classes.base() << 16) | (cs->weight << 8) | this->ro.grffile->cargo_map[cargo_type];
 				} else {
 					return 0x000000FF;
 				}
 			}
-			case 0x48: return Engine::Get(this->self_type)->flags; // Vehicle Type Info
+			case 0x48: return Engine::Get(this->self_type)->flags.base(); // Vehicle Type Info
 			case 0x49: return CalTime::CurYear().base(); // 'Long' format build year
 			case 0x4B: return CalTime::CurDate().base(); // Long date of last service
+
+			case 0x7A: return GetBadgeVariableResult(*this->ro.grffile, Engine::Get(this->self_type)->badges, parameter);
+
 			case 0x92: return ClampTo<uint16_t>(CalTime::CurDate() - CalTime::DAYS_TILL_ORIGINAL_BASE_YEAR); // Date of last service
 			case 0x93: return GB(ClampTo<uint16_t>(CalTime::CurDate() - CalTime::DAYS_TILL_ORIGINAL_BASE_YEAR), 8, 8);
 			case 0xC4: return (Clamp(CalTime::CurYear(), CalTime::ORIGINAL_BASE_YEAR, CalTime::ORIGINAL_MAX_YEAR) - CalTime::ORIGINAL_BASE_YEAR).base(); // Build year
 			case 0xC6: return Engine::Get(this->self_type)->grf_prop.local_id;
 			case 0xC7: return GB(Engine::Get(this->self_type)->grf_prop.local_id, 8, 8);
-			case 0xDA: return INVALID_VEHICLE; // Next vehicle
+			case 0xDA: return VehicleID::Invalid().base(); // Next vehicle
 			case 0xF2: return 0; // Cargo subtype
 		}
 
@@ -1144,26 +1200,28 @@ static uint32_t VehicleGetVariable(Vehicle *v, const VehicleScopeResolver *objec
 }
 
 
-/* virtual */ const SpriteGroup *VehicleResolverObject::ResolveReal(const RealSpriteGroup *group) const
+/* virtual */ const SpriteGroup *VehicleResolverObject::ResolveReal(const RealSpriteGroup &group) const
 {
 	const Vehicle *v = this->self_scope.v;
 
 	if (v == nullptr) {
-		if (!group->loading.empty()) return group->loading[0];
-		if (!group->loaded.empty())  return group->loaded[0];
+		if (!group.loading.empty()) return group.loading[0];
+		if (!group.loaded.empty()) return group.loaded[0];
 		return nullptr;
 	}
 
-	bool in_motion = !v->First()->current_order.IsType(OT_LOADING);
+	const Order &order = v->First()->current_order;
+	bool not_loading = (order.GetUnloadType() == OrderUnloadType::NoUnload) && (order.GetLoadType() == OrderLoadType::NoLoad);
+	bool in_motion = !order.IsType(OT_LOADING) || not_loading;
 
-	uint totalsets = in_motion ? (uint)group->loaded.size() : (uint)group->loading.size();
+	uint totalsets = static_cast<uint>(in_motion ? group.loaded.size() : group.loading.size());
 
 	if (totalsets == 0) return nullptr;
-	if (totalsets == 1) return in_motion ? group->loaded[0] : group->loading[0];
+	if (totalsets == 1) return in_motion ? group.loaded[0] : group.loading[0];
 
 	uint stored = v->cargo.StoredCount();
 	uint capacity = v->cargo_cap;
-	if (v->type == VEH_SHIP) {
+	if (v->type == VehicleType::Ship) {
 		for (const Vehicle *u = v->Next(); u != nullptr; u = u->Next()) {
 			stored += u->cargo.StoredCount();
 			capacity += u->cargo_cap;
@@ -1173,17 +1231,17 @@ static uint32_t VehicleGetVariable(Vehicle *v, const VehicleScopeResolver *objec
 	uint set = (stored * totalsets) / std::max<uint16_t>(1u, capacity);
 	set = std::min(set, totalsets - 1);
 
-	return in_motion ? group->loaded[set] : group->loading[set];
+	return in_motion ? group.loaded[set] : group.loading[set];
 }
 
 GrfSpecFeature VehicleResolverObject::GetFeature() const
 {
 	switch (Engine::Get(this->self_scope.self_type)->type) {
-		case VEH_TRAIN: return GSF_TRAINS;
-		case VEH_ROAD: return GSF_ROADVEHICLES;
-		case VEH_SHIP: return GSF_SHIPS;
-		case VEH_AIRCRAFT: return GSF_AIRCRAFT;
-		default: return GSF_INVALID;
+		case VehicleType::Train: return GrfSpecFeature::Trains;
+		case VehicleType::Road: return GrfSpecFeature::RoadVehicles;
+		case VehicleType::Ship: return GrfSpecFeature::Ships;
+		case VehicleType::Aircraft: return GrfSpecFeature::Aircraft;
+		default: return GrfSpecFeature::Invalid;
 	}
 }
 
@@ -1215,22 +1273,22 @@ static const GRFFile *GetEngineGrfFile(EngineID engine_type)
  */
 VehicleResolverObject::VehicleResolverObject(EngineID engine_type, const Vehicle *v, WagonOverride wagon_override, bool rotor_in_gui,
 		CallbackID callback, uint32_t callback_param1, uint32_t callback_param2)
-	: ResolverObject(GetEngineGrfFile(engine_type), callback, callback_param1, callback_param2),
+	: SpecializedResolverObject<VehicleRandomTriggers>(GetEngineGrfFile(engine_type), callback, callback_param1, callback_param2),
 	self_scope(*this, engine_type, v, rotor_in_gui),
 	parent_scope(*this, engine_type, ((v != nullptr) ? v->First() : v), rotor_in_gui),
 	relative_scope(*this, engine_type, v, rotor_in_gui),
 	cached_relative_count(0)
 {
-	if (wagon_override == WO_SELF) {
-		this->root_spritegroup = GetWagonOverrideSpriteSet(engine_type, SpriteGroupCargo::SG_DEFAULT, engine_type);
+	if (wagon_override == WagonOverride::Self) {
+		this->root_spritegroup = GetWagonOverrideSpriteSet(engine_type, CargoGRFFileProps::SG_DEFAULT, engine_type);
 	} else {
-		if (wagon_override != WO_NONE && v != nullptr && v->IsGroundVehicle()) {
+		if (wagon_override != WagonOverride::None && v != nullptr && v->IsGroundVehicle()) {
 			assert(v->engine_type == engine_type); // overrides make little sense with fake scopes
 
 			/* For trains we always use cached value, except for callbacks because the override spriteset
 			 * to use may be different than the one cached. It happens for callback 0x15 (refit engine),
 			 * as v->cargo_type is temporary changed to the new type */
-			if (wagon_override == WO_CACHED && v->type == VEH_TRAIN) {
+			if (wagon_override == WagonOverride::Cached && v->type == VehicleType::Train) {
 				this->root_spritegroup = Train::From(v)->tcache.cached_override;
 			} else {
 				this->root_spritegroup = GetWagonOverrideSpriteSet(v->engine_type, v->cargo_type, v->GetGroundVehicleCache()->first_engine);
@@ -1239,29 +1297,25 @@ VehicleResolverObject::VehicleResolverObject(EngineID engine_type, const Vehicle
 
 		if (this->root_spritegroup == nullptr) {
 			const Engine *e = Engine::Get(engine_type);
-			CargoID cargo = v != nullptr ? v->cargo_type : SpriteGroupCargo::SG_PURCHASE;
-			assert(cargo < std::size(e->grf_prop.spritegroup));
-			this->root_spritegroup = e->grf_prop.spritegroup[cargo] != nullptr ? e->grf_prop.spritegroup[cargo] : e->grf_prop.spritegroup[SpriteGroupCargo::SG_DEFAULT];
+			CargoType cargo = v != nullptr ? v->cargo_type : CargoGRFFileProps::SG_PURCHASE;
+			this->root_spritegroup = e->grf_prop.GetFirstSpriteGroupOf({cargo, CargoGRFFileProps::SG_DEFAULT});
 		}
 	}
 }
 
-
-
-void GetCustomEngineSprite(EngineID engine, const Vehicle *v, Direction direction, EngineImageType image_type, VehicleSpriteSeq *result)
+static void GetCustomEngineSprite(EngineID engine, const Vehicle *v, Direction direction, EngineImageType image_type, VehicleSpriteSeq *result)
 {
-	VehicleResolverObject object(engine, v, VehicleResolverObject::WO_CACHED, false, CBID_NO_CALLBACK);
+	VehicleResolverObject object(engine, v, VehicleResolverObject::WagonOverride::Cached, false, CBID_NO_CALLBACK);
 	result->Clear();
 
-	bool sprite_stack = HasBit(EngInfo(engine)->misc_flags, EF_SPRITE_STACK);
-	uint max_stack = sprite_stack ? lengthof(result->seq) : 1;
+	bool sprite_stack = EngInfo(engine)->misc_flags.Test(EngineMiscFlag::SpriteStack);
+	uint max_stack = sprite_stack ? static_cast<uint>(std::size(result->seq)) : 1;
 	for (uint stack = 0; stack < max_stack; ++stack) {
-		object.ResetState();
-		object.callback_param1 = image_type | (stack << 8);
-		const SpriteGroup *group = object.Resolve();
+		object.callback_param1 = to_underlying(image_type) | (stack << 8);
+		const ResultSpriteGroup *group = object.Resolve<ResultSpriteGroup>();
 		uint32_t reg100 = sprite_stack ? GetRegister(0x100) : 0;
-		if (group != nullptr && group->GetNumResults() != 0) {
-			result->seq[result->count].sprite = group->GetResult() + (direction % group->GetNumResults());
+		if (group != nullptr && group->num_sprites != 0) {
+			result->seq[result->count].sprite = group->sprite + (to_underlying(direction) % group->num_sprites);
 			result->seq[result->count].pal    = GB(reg100, 0, 16); // zero means default recolouring
 			result->count++;
 		}
@@ -1269,33 +1323,41 @@ void GetCustomEngineSprite(EngineID engine, const Vehicle *v, Direction directio
 	}
 }
 
+void GetCustomVehicleSprite(const Vehicle *v, Direction direction, EngineImageType image_type, VehicleSpriteSeq *result)
+{
+	GetCustomEngineSprite(v->engine_type, v, direction, image_type, result);
+}
 
-void GetRotorOverrideSprite(EngineID engine, const struct Aircraft *v, EngineImageType image_type, VehicleSpriteSeq *result)
+void GetCustomVehicleIcon(EngineID engine, Direction direction, EngineImageType image_type, VehicleSpriteSeq *result)
+{
+	GetCustomEngineSprite(engine, nullptr, direction, image_type, result);
+}
+
+static void GetRotorOverrideSprite(EngineID engine, const struct Aircraft *v, EngineImageType image_type, VehicleSpriteSeq *result)
 {
 	const Engine *e = Engine::Get(engine);
 
 	/* Only valid for helicopters */
-	assert(e->type == VEH_AIRCRAFT);
-	assert(!(e->u.air.subtype & AIR_CTOL));
+	assert(e->type == VehicleType::Aircraft);
+	assert(!(e->VehInfo<AircraftVehicleInfo>().subtype & AIR_CTOL));
 
 	/* We differ from TTDPatch by resolving the sprite using the primary vehicle 'v', and not using the rotor vehicle 'v->Next()->Next()'.
 	 * TTDPatch copies some variables between the vehicles each time, to somehow synchronize the rotor vehicle with the primary vehicle.
 	 * We use 'rotor_in_gui' to replicate when the variables differ.
 	 * But some other variables like 'rotor state' and 'rotor speed' are not available in OpenTTD, while they are in TTDPatch. */
-	bool rotor_in_gui = image_type != EIT_ON_MAP;
-	VehicleResolverObject object(engine, v, VehicleResolverObject::WO_SELF, rotor_in_gui, CBID_NO_CALLBACK);
+	bool rotor_in_gui = image_type != EngineImageType::OnMap;
+	VehicleResolverObject object(engine, v, VehicleResolverObject::WagonOverride::Self, rotor_in_gui, CBID_NO_CALLBACK);
 	result->Clear();
 	uint rotor_pos = v == nullptr || rotor_in_gui ? 0 : v->Next()->Next()->state;
 
-	bool sprite_stack = HasBit(e->info.misc_flags, EF_SPRITE_STACK);
-	uint max_stack = sprite_stack ? lengthof(result->seq) : 1;
+	bool sprite_stack = e->info.misc_flags.Test(EngineMiscFlag::SpriteStack);
+	uint max_stack = sprite_stack ? static_cast<uint>(std::size(result->seq)) : 1;
 	for (uint stack = 0; stack < max_stack; ++stack) {
-		object.ResetState();
-		object.callback_param1 = image_type | (stack << 8);
-		const SpriteGroup *group = object.Resolve();
+		object.callback_param1 = to_underlying(image_type) | (stack << 8);
+		const ResultSpriteGroup *group = object.Resolve<ResultSpriteGroup>();
 		uint32_t reg100 = sprite_stack ? GetRegister(0x100) : 0;
-		if (group != nullptr && group->GetNumResults() != 0) {
-			result->seq[result->count].sprite = group->GetResult() + (rotor_pos % group->GetNumResults());
+		if (group != nullptr && group->num_sprites != 0) {
+			result->seq[result->count].sprite = group->sprite + (rotor_pos % group->num_sprites);
 			result->seq[result->count].pal    = GB(reg100, 0, 16); // zero means default recolouring
 			result->count++;
 		}
@@ -1303,6 +1365,15 @@ void GetRotorOverrideSprite(EngineID engine, const struct Aircraft *v, EngineIma
 	}
 }
 
+void GetCustomRotorSprite(const struct Aircraft *v, EngineImageType image_type, VehicleSpriteSeq *result)
+{
+	GetRotorOverrideSprite(v->engine_type, v, image_type, result);
+}
+
+void GetCustomRotorIcon(EngineID engine, EngineImageType image_type, VehicleSpriteSeq *result)
+{
+	GetRotorOverrideSprite(engine, nullptr, image_type, result);
+}
 
 /**
  * Check if a wagon is currently using a wagon override
@@ -1311,7 +1382,7 @@ void GetRotorOverrideSprite(EngineID engine, const struct Aircraft *v, EngineIma
  */
 bool UsesWagonOverride(const Vehicle *v)
 {
-	assert(v->type == VEH_TRAIN);
+	assert(v->type == VehicleType::Train);
 	return Train::From(v)->tcache.cached_override != nullptr;
 }
 
@@ -1326,7 +1397,7 @@ bool UsesWagonOverride(const Vehicle *v)
  */
 uint16_t GetVehicleCallback(CallbackID callback, uint32_t param1, uint32_t param2, EngineID engine, const Vehicle *v)
 {
-	VehicleResolverObject object(engine, v, VehicleResolverObject::WO_UNCACHED, false, callback, param1, param2);
+	VehicleResolverObject object(engine, v, VehicleResolverObject::WagonOverride::Uncached, false, callback, param1, param2);
 	return object.ResolveCallback();
 }
 
@@ -1342,7 +1413,7 @@ uint16_t GetVehicleCallback(CallbackID callback, uint32_t param1, uint32_t param
  */
 uint16_t GetVehicleCallbackParent(CallbackID callback, uint32_t param1, uint32_t param2, EngineID engine, const Vehicle *v, const Vehicle *parent)
 {
-	VehicleResolverObject object(engine, v, VehicleResolverObject::WO_NONE, false, callback, param1, param2);
+	VehicleResolverObject object(engine, v, VehicleResolverObject::WagonOverride::None, false, callback, param1, param2);
 	object.parent_scope.SetVehicle(parent);
 	return object.ResolveCallback();
 }
@@ -1360,7 +1431,7 @@ int GetEngineProperty(EngineID engine, PropertyID property, int orig_value, cons
 	const Engine *e = Engine::Get(engine);
 	if (static_cast<uint>(property) < 64 && !HasBit(e->cb36_properties_used, property)) return orig_value;
 
-	VehicleResolverObject object(engine, v, VehicleResolverObject::WO_UNCACHED, false, CBID_VEHICLE_MODIFY_PROPERTY, property, 0);
+	VehicleResolverObject object(engine, v, VehicleResolverObject::WagonOverride::Uncached, false, CBID_VEHICLE_MODIFY_PROPERTY, property, 0);
 	if (static_cast<uint>(property) < 64 && !e->sprite_group_cb36_properties_used.empty()) {
 		auto iter = e->sprite_group_cb36_properties_used.find(object.root_spritegroup);
 		if (iter != e->sprite_group_cb36_properties_used.end()) {
@@ -1381,52 +1452,51 @@ int GetEngineProperty(EngineID engine, PropertyID property, int orig_value, cons
 }
 
 /**
- * Test for vehicle build probablity type.
+ * Test for vehicle build probability type.
  * @param v Vehicle whose build probability to test.
  * @param type Build probability type to test for.
- * @returns True iff the probability result says so.
+ * @returns True or false depending on the probability result, or std::nullopt if the callback failed.
  */
-bool TestVehicleBuildProbability(Vehicle *v, EngineID engine, BuildProbabilityType type)
+std::optional<bool> TestVehicleBuildProbability(const Vehicle *v, BuildProbabilityType type)
 {
-	uint16_t p = GetVehicleCallback(CBID_VEHICLE_BUILD_PROBABILITY, to_underlying(type), 0, engine, v);
-	if (p == CALLBACK_FAILED) return false;
+	uint16_t p = GetVehicleCallback(CBID_VEHICLE_BUILD_PROBABILITY, to_underlying(type), 0, v->engine_type, v);
+	if (p == CALLBACK_FAILED) return std::nullopt;
 
 	const uint16_t PROBABILITY_RANGE = 100;
 	return p + RandomRange(PROBABILITY_RANGE) >= PROBABILITY_RANGE;
 }
 
-static void DoTriggerVehicle(Vehicle *v, VehicleTrigger trigger, uint16_t base_random_bits, bool first)
+static void DoTriggerVehicleRandomisation(Vehicle *v, VehicleRandomTrigger trigger, uint16_t base_random_bits, bool first)
 {
 	/* We can't trigger a non-existent vehicle... */
 	assert(v != nullptr);
 
 	uint32_t reseed = 0;
 	if (Engine::Get(v->engine_type)->callbacks_used & SGCU_RANDOM_TRIGGER) {
-		VehicleResolverObject object(v->engine_type, v, VehicleResolverObject::WO_CACHED, false, CBID_RANDOM_TRIGGER);
-		object.waiting_triggers = v->waiting_triggers | trigger;
-		v->waiting_triggers = object.waiting_triggers; // store now for var 5F
+		VehicleResolverObject object(v->engine_type, v, VehicleResolverObject::WagonOverride::Cached, false, CBID_RANDOM_TRIGGER);
+		v->waiting_random_triggers.Set(trigger); // store now for var 5F
+		object.SetWaitingRandomTriggers(v->waiting_random_triggers);
 
-		const SpriteGroup *group = object.Resolve();
-		if (group == nullptr) return;
+		object.ResolveRerandomisation();
 
 		/* Store remaining triggers. */
-		v->waiting_triggers = object.GetRemainingTriggers();
+		v->waiting_random_triggers.Reset(object.GetUsedRandomTriggers());
 
 		reseed = object.GetReseedSum();
 	} else {
-		v->waiting_triggers |= trigger;
+		v->waiting_random_triggers.Set(trigger);
 
 		const Engine *e = Engine::Get(v->engine_type);
-		if (!(e->grf_prop.spritegroup[v->cargo_type] || e->grf_prop.spritegroup[SpriteGroupCargo::SG_DEFAULT])) return;
+		if (e->grf_prop.GetSpriteGroup(v->cargo_type) == nullptr && e->grf_prop.GetSpriteGroup(CargoGRFFileProps::SG_DEFAULT) == nullptr) return;
 	}
 
 	/* Rerandomise bits. Scopes other than SELF are invalid for rerandomisation. For bug-to-bug-compatibility with TTDP we ignore the scope. */
-	uint8_t new_random_bits = Random();
+	uint16_t new_random_bits = Random();
 	v->random_bits &= ~reseed;
 	v->random_bits |= (first ? new_random_bits : base_random_bits) & reseed;
 
 	switch (trigger) {
-		case VEHICLE_TRIGGER_NEW_CARGO:
+		case VehicleRandomTrigger::NewCargo:
 			/* All vehicles in chain get ANY_NEW_CARGO trigger now.
 			 * So we call it for the first one and they will recurse.
 			 * Indexing part of vehicle random bits needs to be
@@ -1435,46 +1505,41 @@ static void DoTriggerVehicle(Vehicle *v, VehicleTrigger trigger, uint16_t base_r
 			 * i.e.), so we give them all the NEW_CARGO triggered
 			 * vehicle's portion of random bits. */
 			assert(first);
-			DoTriggerVehicle(v->First(), VEHICLE_TRIGGER_ANY_NEW_CARGO, new_random_bits, false);
+			DoTriggerVehicleRandomisation(v->First(), VehicleRandomTrigger::AnyNewCargo, new_random_bits, false);
 			break;
 
-		case VEHICLE_TRIGGER_DEPOT:
+		case VehicleRandomTrigger::Depot:
 			/* We now trigger the next vehicle in chain recursively.
 			 * The random bits portions may be different for each
 			 * vehicle in chain. */
-			if (v->Next() != nullptr) DoTriggerVehicle(v->Next(), trigger, 0, true);
+			if (v->Next() != nullptr) DoTriggerVehicleRandomisation(v->Next(), trigger, 0, true);
 			break;
 
-		case VEHICLE_TRIGGER_EMPTY:
+		case VehicleRandomTrigger::Empty:
 			/* We now trigger the next vehicle in chain
 			 * recursively.  The random bits portions must be same
 			 * for each vehicle in chain, so we give them all
 			 * first chained vehicle's portion of random bits. */
-			if (v->Next() != nullptr) DoTriggerVehicle(v->Next(), trigger, first ? new_random_bits : base_random_bits, false);
+			if (v->Next() != nullptr) DoTriggerVehicleRandomisation(v->Next(), trigger, first ? new_random_bits : base_random_bits, false);
 			break;
 
-		case VEHICLE_TRIGGER_ANY_NEW_CARGO:
+		case VehicleRandomTrigger::AnyNewCargo:
 			/* Now pass the trigger recursively to the next vehicle
 			 * in chain. */
 			assert(!first);
-			if (v->Next() != nullptr) DoTriggerVehicle(v->Next(), VEHICLE_TRIGGER_ANY_NEW_CARGO, base_random_bits, false);
+			if (v->Next() != nullptr) DoTriggerVehicleRandomisation(v->Next(), trigger, base_random_bits, false);
 			break;
 
-		case VEHICLE_TRIGGER_CALLBACK_32:
+		case VehicleRandomTrigger::Callback32:
 			/* Do not do any recursion */
 			break;
 	}
 }
 
-void TriggerVehicle(Vehicle *v, VehicleTrigger trigger)
+void TriggerVehicleRandomisation(Vehicle *v, VehicleRandomTrigger trigger)
 {
-	if (trigger == VEHICLE_TRIGGER_DEPOT) {
-		/* store that the vehicle entered a depot this tick */
-		VehicleEnteredDepotThisTick(v);
-	}
-
 	v->InvalidateNewGRFCacheOfChain();
-	DoTriggerVehicle(v, trigger, 0, true);
+	DoTriggerVehicleRandomisation(v, trigger, 0, true);
 	if (HasBit(v->First()->vcache.cached_veh_flags, VCF_REDRAW_ON_TRIGGER)) {
 		v->First()->InvalidateImageCacheOfChain();
 	}
@@ -1526,13 +1591,13 @@ static bool EnginePreSort(const EngineID &a, const EngineID &b)
 }
 
 /**
- * Deternine default engine sorting and execute recorded ListOrderChanges from AlterVehicleListOrder.
+ * Determine default engine sorting and execute recorded ListOrderChanges from AlterVehicleListOrder.
  */
 void CommitVehicleListOrderChanges()
 {
 	/* Build a list of EngineIDs. EngineIDs are sequential from 0 up to the number of pool items with no gaps. */
 	std::vector<EngineID> ordering(Engine::GetNumItems());
-	std::iota(std::begin(ordering), std::end(ordering), 0);
+	std::iota(std::begin(ordering), std::end(ordering), EngineID::Begin());
 
 	/* Pre-sort engines by scope-grfid and local index */
 	std::ranges::sort(ordering, EnginePreSort);
@@ -1545,7 +1610,7 @@ void CommitVehicleListOrderChanges()
 		if (id_source.internal_id == loc.target) continue;
 
 		EngineID target = _engine_mngr.GetID(id_source.type, loc.target, id_source.grfid);
-		if (target == INVALID_ENGINE) continue;
+		if (target == EngineID::Invalid()) continue;
 
 		auto it_source = std::ranges::find(ordering, source);
 		auto it_target = std::ranges::find(ordering, target);
@@ -1574,7 +1639,7 @@ void CommitVehicleListOrderChanges()
  */
 void FillNewGRFVehicleCache(const Vehicle *v)
 {
-	VehicleResolverObject ro(v->engine_type, v, VehicleResolverObject::WO_NONE);
+	VehicleResolverObject ro(v->engine_type, v, VehicleResolverObject::WagonOverride::None);
 
 	/* These variables we have to check; these are the ones with a cache. */
 	static const int cache_entries[][2] = {
@@ -1594,7 +1659,7 @@ void FillNewGRFVehicleCache(const Vehicle *v)
 		/* Only resolve when the cache isn't valid. */
 		if (HasBit(v->grf_cache.cache_valid, cache_entry[1])) continue;
 		GetVariableExtra extra;
-		ro.GetScope(VSG_SCOPE_SELF)->GetVariable(cache_entry[0], 0, extra);
+		ro.GetScope(VarSpriteGroupScope::Self)->GetVariable(cache_entry[0], 0, extra);
 	}
 
 	/* Make sure really all bits are set. */
@@ -1603,8 +1668,18 @@ void FillNewGRFVehicleCache(const Vehicle *v)
 
 void AnalyseEngineCallbacks()
 {
-	btree::btree_map<const SpriteGroup *, uint64_t> sg_cb36;
-	btree::btree_map<uint32_t, CargoTypes> cb_refit_cap_values;
+	robin_hood::unordered_map<const SpriteGroup *, uint64_t> sg_cb36;
+	std::vector<EngineRefitCapacityValue> cb_refit_cap_values;
+	auto set_cb_refit_cap_value = [&cb_refit_cap_values](uint32_t capacity, CargoTypes cargoes) {
+		for (EngineRefitCapacityValue &rcv : cb_refit_cap_values) {
+			if (rcv.capacity == capacity) {
+				rcv.cargoes |= cargoes;
+				return;
+			}
+		}
+		cb_refit_cap_values.emplace_back(cargoes, capacity);
+	};
+
 	for (Engine *e : Engine::Iterate()) {
 		sg_cb36.clear();
 		e->sprite_group_cb36_properties_used.clear();
@@ -1628,8 +1703,8 @@ void AnalyseEngineCallbacks()
 			if (!is_purchase) non_purchase_groups++;
 		};
 
-		for (uint i = 0; i < NUM_CARGO + 2; i++) {
-			process_sg(e->grf_prop.spritegroup[i], i == SpriteGroupCargo::SG_PURCHASE);
+		for (const auto &[cargo, spritegroup] : e->grf_prop) {
+			process_sg(spritegroup, cargo == CargoGRFFileProps::SG_PURCHASE);
 		}
 		for (const WagonOverride &wo : e->overrides) {
 			process_sg(wo.group, false);
@@ -1642,26 +1717,38 @@ void AnalyseEngineCallbacks()
 			}
 		}
 
-		if (refit_cap_whitelist_ok && non_purchase_groups <= 1 && HasBit(e->info.callback_mask, CBM_VEHICLE_REFIT_CAPACITY) && e->grf_prop.spritegroup[SpriteGroupCargo::SG_DEFAULT] != nullptr) {
-			const SpriteGroup *purchase_sg = e->grf_prop.spritegroup[SpriteGroupCargo::SG_PURCHASE];
-			e->grf_prop.spritegroup[SpriteGroupCargo::SG_PURCHASE] = nullptr; // Temporarily disable separate purchase sprite group
+		if (refit_cap_whitelist_ok && non_purchase_groups <= 1 && e->info.callback_mask.Test(VehicleCallbackMask::RefitCapacity) && e->grf_prop.GetSpriteGroup(CargoGRFFileProps::SG_DEFAULT) != nullptr) {
+			const SpriteGroup **purchase_sg_ptr = e->grf_prop.GetSpriteGroupPtr(CargoGRFFileProps::SG_PURCHASE);
+			const SpriteGroup *purchase_sg = nullptr;
+			if (purchase_sg_ptr != nullptr) {
+				purchase_sg = *purchase_sg_ptr;
+				*purchase_sg_ptr = nullptr; // Temporarily disable separate purchase sprite group
+			}
+
 			if (refit_cap_no_var_47) {
-				cb_refit_cap_values[GetVehicleCallback(CBID_VEHICLE_REFIT_CAPACITY, 0, 0, e->index, nullptr)] = ALL_CARGOTYPES;
+				cb_refit_cap_values.emplace_back(ALL_CARGOTYPES, GetVehicleCallback(CBID_VEHICLE_REFIT_CAPACITY, 0, 0, e->index, nullptr));
 			} else {
-				const CargoID default_cb = e->info.cargo_type;
-				for (CargoID c = 0; c < NUM_CARGO; c++) {
+				const CargoType default_cb = e->info.cargo_type;
+				for (CargoType c{}; c < NUM_CARGO; c++) {
 					e->info.cargo_type = c;
-					cb_refit_cap_values[GetVehicleCallback(CBID_VEHICLE_REFIT_CAPACITY, 0, 0, e->index, nullptr)] |= (static_cast<CargoTypes>(1) << c);
+					set_cb_refit_cap_value(GetVehicleCallback(CBID_VEHICLE_REFIT_CAPACITY, 0, 0, e->index, nullptr), CargoTypes{c});
 				}
 				e->info.cargo_type = default_cb;
+				std::sort(cb_refit_cap_values.begin(), cb_refit_cap_values.end(), [](const EngineRefitCapacityValue &a, const EngineRefitCapacityValue &b) -> bool {
+					return a.capacity < b.capacity;
+				});
 			}
-			e->grf_prop.spritegroup[SpriteGroupCargo::SG_PURCHASE] = purchase_sg;
+
+			if (purchase_sg_ptr != nullptr) {
+				*purchase_sg_ptr = purchase_sg;
+			}
+
 			bool all_ok = true;
 			uint index = 0;
 			e->refit_capacity_values.reset(MallocT<EngineRefitCapacityValue>(cb_refit_cap_values.size()));
-			for (const auto &iter : cb_refit_cap_values) {
-				if (iter.first == CALLBACK_FAILED) all_ok = false;
-				e->refit_capacity_values.get()[index] = { iter.second, iter.first };
+			for (const EngineRefitCapacityValue &rcv : cb_refit_cap_values) {
+				if (rcv.capacity == CALLBACK_FAILED) all_ok = false;
+				e->refit_capacity_values.get()[index] = rcv;
 				index++;
 			}
 			if (all_ok) e->callbacks_used |= SGCU_REFIT_CB_ALL_CARGOES;
@@ -1684,40 +1771,39 @@ void DumpVehicleSpriteGroup(const Vehicle *v, SpriteGroupDumper &dumper)
 	}
 
 	if (root_spritegroup == nullptr) {
-		CargoID cargo = v->cargo_type;
-		assert(cargo < std::size(e->grf_prop.spritegroup));
-		if (e->grf_prop.spritegroup[cargo] != nullptr) {
-			root_spritegroup = e->grf_prop.spritegroup[cargo];
-			dumper.Print(fmt::format("Cargo: {}", cargo));
+		const SpriteGroup *cargo_spritegroup = e->grf_prop.GetSpriteGroup(v->cargo_type);
+		if (cargo_spritegroup != nullptr) {
+			root_spritegroup = cargo_spritegroup;
+			dumper.Print(fmt::format("Cargo: {}", v->cargo_type));
 		} else {
-			root_spritegroup = e->grf_prop.spritegroup[SpriteGroupCargo::SG_DEFAULT];
+			root_spritegroup = e->grf_prop.GetSpriteGroup(CargoGRFFileProps::SG_DEFAULT);
 			dumper.Print("SG_DEFAULT");
 		}
 	}
 
 	dumper.DumpSpriteGroup(root_spritegroup, 0);
 
-	for (uint i = 0; i < NUM_CARGO + 2; i++) {
-		if (e->grf_prop.spritegroup[i] != root_spritegroup && e->grf_prop.spritegroup[i] != nullptr) {
+	for (const auto &[cargo, spritegroup] : e->grf_prop) {
+		if (spritegroup != root_spritegroup) {
 			dumper.Print("");
-			switch (i) {
-				case SpriteGroupCargo::SG_DEFAULT:
+			switch (cargo) {
+				case CargoGRFFileProps::SG_DEFAULT:
 					dumper.Print("OTHER SPRITE GROUP: SG_DEFAULT");
 					break;
-				case SpriteGroupCargo::SG_PURCHASE:
+				case CargoGRFFileProps::SG_PURCHASE:
 					dumper.Print("OTHER SPRITE GROUP: SG_PURCHASE");
 					break;
 				default:
-					dumper.Print(fmt::format("OTHER SPRITE GROUP: Cargo: {}", i));
+					dumper.Print(fmt::format("OTHER SPRITE GROUP: Cargo: {}", cargo));
 					break;
 			}
-			dumper.DumpSpriteGroup(e->grf_prop.spritegroup[i], 0);
+			dumper.DumpSpriteGroup(spritegroup, 0);
 		}
 	}
 	for (const WagonOverride &wo : e->overrides) {
 		if (wo.group != root_spritegroup && wo.group != nullptr) {
 			dumper.Print("");
-			dumper.Print("OTHER SPRITE GROUP: Wagon override");
+			dumper.Print(fmt::format("OTHER SPRITE GROUP: Wagon override, cargo: {}, engines: {}", wo.cargo, wo.engines));
 			dumper.DumpSpriteGroup(wo.group, 0);
 		}
 	}

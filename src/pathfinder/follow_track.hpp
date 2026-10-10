@@ -2,10 +2,10 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
-/** @file follow_track.hpp Template function for track followers */
+/** @file follow_track.hpp Template function for track followers. */
 
 #ifndef  FOLLOW_TRACK_HPP
 #define  FOLLOW_TRACK_HPP
@@ -26,15 +26,15 @@
  *  types w/ or w/o 90-deg turns allowed
  */
 template <TransportType Ttr_type_, typename VehicleType, bool T90deg_turns_allowed_ = true, bool Tmask_reserved_tracks = false>
-struct CFollowTrackT
-{
-	enum ErrorCode {
-		EC_NONE,
-		EC_OWNER,
-		EC_RAIL_ROAD_TYPE,
-		EC_90DEG,
-		EC_NO_WAY,
-		EC_RESERVED,
+struct CFollowTrackT {
+	/** Errors encountered when attempting to follow tracks. */
+	enum class ErrorCode : uint8_t {
+		None, ///< No error.
+		Owner, ///< Wrong owner.
+		RailRoadType, ///< Incompatible rail or road type.
+		SharpTurn, ///< 90 degree turn.
+		NoWay, ///< Tile cannot be entered.
+		Reserved, ///< Path reserved track.
 	};
 
 	const VehicleType   *veh;          ///< moving vehicle
@@ -65,7 +65,7 @@ struct CFollowTrackT
 
 	inline void Init(const VehicleType *v, RailTypes railtype_override)
 	{
-		dbg_assert(!IsRailTT() || (v != nullptr && v->type == VEH_TRAIN));
+		dbg_assert(!IsRailTT() || (v != nullptr && v->type == ::VehicleType::Train));
 		this->veh = v;
 		Init(v != nullptr ? v->owner : INVALID_OWNER, IsRailTT() && railtype_override == INVALID_RAILTYPES ? Train::From(v)->compatible_railtypes : railtype_override);
 	}
@@ -80,55 +80,62 @@ struct CFollowTrackT
 		this->old_td = INVALID_TRACKDIR;
 		this->new_tile = INVALID_TILE;
 		this->new_td_bits = TRACKDIR_BIT_NONE;
-		this->exitdir = INVALID_DIAGDIR;
+		this->exitdir = DiagDirection::Invalid;
 		this->is_station = false;
 		this->is_bridge = false;
 		this->is_tunnel = false;
 		this->tiles_skipped = 0;
-		this->err = EC_NONE;
+		this->err = ErrorCode::None;
 		this->railtypes = railtype_override;
 	}
 
-	debug_inline static TransportType TT() { return Ttr_type_; }
-	debug_inline static bool IsWaterTT() { return TT() == TRANSPORT_WATER; }
-	debug_inline static bool IsRailTT() { return TT() == TRANSPORT_RAIL; }
+	[[debug_inline]] inline static TransportType TT() { return Ttr_type_; }
+	[[debug_inline]] inline static bool IsWaterTT() { return TT() == TransportType::Water; }
+	[[debug_inline]] inline static bool IsRailTT() { return TT() == TransportType::Rail; }
 	inline bool IsTram() const { return IsRoadTT() && RoadTypeIsTram(RoadVehicle::From(this->veh)->roadtype); }
-	debug_inline static bool IsRoadTT() { return TT() == TRANSPORT_ROAD; }
-	inline static bool Allow90degTurns() { return T90deg_turns_allowed_; }
-	inline static bool DoTrackMasking() { return Tmask_reserved_tracks; }
+	[[debug_inline]] inline static bool IsRoadTT() { return TT() == TransportType::Road; }
+	static inline bool Allow90degTurns() { return T90deg_turns_allowed_; }
+	static inline bool DoTrackMasking() { return Tmask_reserved_tracks; }
 
-	/** Tests if a tile is a road tile with a single tramtrack (tram can reverse) */
+	/**
+	 * Tests if a tile is a road tile with a single tramtrack (tram can reverse).
+	 * @param tile The tile to get this for.
+	 * @return The direction of the tram bit, or \c DiagDirection::Invalid when there are no or multiple tram bits.
+	 */
 	inline DiagDirection GetSingleTramBit(TileIndex tile)
 	{
 		dbg_assert(this->IsTram()); // this function shouldn't be called in other cases
 
 		const bool is_bridge = IsRoadCustomBridgeHeadTile(tile);
 		if (is_bridge || IsNormalRoadTile(tile)) {
-			RoadBits rb = is_bridge ? GetCustomBridgeHeadRoadBits(tile, RTT_TRAM) : GetRoadBits(tile, RTT_TRAM);
-			switch (rb) {
-				case ROAD_NW: return DIAGDIR_NW;
-				case ROAD_SW: return DIAGDIR_SW;
-				case ROAD_SE: return DIAGDIR_SE;
-				case ROAD_NE: return DIAGDIR_NE;
+			RoadBits rb = is_bridge ? GetCustomBridgeHeadRoadBits(tile, RoadTramType::Tram) : GetRoadBits(tile, RoadTramType::Tram);
+			switch (rb.base()) {
+				case ROAD_NW.base(): return DiagDirection::NW;
+				case ROAD_SW.base(): return DiagDirection::SW;
+				case ROAD_SE.base(): return DiagDirection::SE;
+				case ROAD_NE.base(): return DiagDirection::NE;
 				default: break;
 			}
 		}
-		return INVALID_DIAGDIR;
+		return DiagDirection::Invalid;
 	}
 
 	/**
-	 * main follower routine. Fills all members and return true on success.
-	 *  Otherwise returns false if track can't be followed.
+	 * Main follower routine. Tries to follow the given track direction
+	 * onto the next tile (\c new_tile), while updating the internal state.
+	 * @param old_tile The previous tile.
+	 * @param old_td The track direction on the previous tile.
+	 * @return \c true iff there are one or more tracks to follow on the next tile (\c new_tile).
 	 */
 	inline bool Follow(TileIndex old_tile, Trackdir old_td)
 	{
 		this->old_tile = old_tile;
 		this->old_td = old_td;
-		this->err = EC_NONE;
+		this->err = ErrorCode::None;
 
 		dbg_assert_tile([&]() {
-			if (this->IsTram() && GetSingleTramBit(this->old_tile) != INVALID_DIAGDIR) return true; // Skip the check for single tram bits
-			const uint sub_mode = (IsRoadTT() && this->veh != nullptr) ? (this->IsTram() ? RTT_TRAM : RTT_ROAD) : 0;
+			if (this->IsTram() && GetSingleTramBit(this->old_tile) != DiagDirection::Invalid) return true; // Skip the check for single tram bits
+			const uint sub_mode = (IsRoadTT() && this->veh != nullptr) ? to_underlying(this->IsTram() ? RoadTramType::Tram : RoadTramType::Road) : 0;
 			const TrackdirBits old_tile_valid_dirs = GetTileTrackdirBits(this->old_tile, TT(), sub_mode);
 			return (old_tile_valid_dirs & TrackdirToTrackdirBits(this->old_td)) != TRACKDIR_BIT_NONE;
 		}(), this->old_tile);
@@ -154,16 +161,16 @@ struct CFollowTrackT
 			if (IsRoadTT() && !this->IsTram() && this->TryReverse()) return true;
 
 			/* CanEnterNewTile already set a reason.
-			 * Do NOT overwrite it (important for example for EC_RAIL_ROAD_TYPE).
+			 * Do NOT overwrite it (important for example for ErrorCode::RailRoadType).
 			 * Only set a reason if CanEnterNewTile was not called */
-			if (this->new_td_bits == TRACKDIR_BIT_NONE) this->err = EC_NO_WAY;
+			if (this->new_td_bits == TRACKDIR_BIT_NONE) this->err = ErrorCode::NoWay;
 
 			return false;
 		}
 		if (this->tiles_skipped == 0 && ((!IsRailTT() && !Allow90degTurns()) || (IsRailTT() && Rail90DegTurnDisallowedTilesFromDiagDir(this->old_tile, this->new_tile, this->exitdir, !Allow90degTurns())))) {
-			this->new_td_bits &= (TrackdirBits)~(int)TrackdirCrossesTrackdirs(this->old_td);
+			this->new_td_bits &= ~TrackdirCrossesTrackdirs(this->old_td);
 			if (this->new_td_bits == TRACKDIR_BIT_NONE) {
-				this->err = EC_90DEG;
+				this->err = ErrorCode::SharpTurn;
 				return false;
 			}
 		}
@@ -180,7 +187,7 @@ struct CFollowTrackT
 			for (TileIndex tile = this->new_tile - diff * this->tiles_skipped; tile != this->new_tile; tile += diff) {
 				if (HasStationReservation(tile)) {
 					this->new_td_bits = TRACKDIR_BIT_NONE;
-					this->err = EC_RESERVED;
+					this->err = ErrorCode::Reserved;
 					return false;
 				}
 			}
@@ -194,7 +201,7 @@ struct CFollowTrackT
 			if (TracksOverlap(reserved | TrackToTrackBits(t))) this->new_td_bits &= ~TrackToTrackdirBits(t);
 		}
 		if (this->new_td_bits == TRACKDIR_BIT_NONE) {
-			this->err = EC_RESERVED;
+			this->err = ErrorCode::Reserved;
 			return false;
 		}
 		return true;
@@ -210,7 +217,7 @@ protected:
 		this->tiles_skipped = 0;
 
 		/* extra handling for tunnels and bridges in our direction */
-		if (IsTileType(this->old_tile, MP_TUNNELBRIDGE)) {
+		if (IsTileType(this->old_tile, TileType::TunnelBridge)) {
 			DiagDirection enterdir = GetTunnelBridgeDirection(this->old_tile);
 			if (enterdir == this->exitdir) {
 				/* we are entering the tunnel / bridge */
@@ -240,27 +247,33 @@ protected:
 		}
 	}
 
-	/** stores track status (available trackdirs) for the new tile into new_td_bits */
+	/**
+	 * Stores track status (available trackdirs) for the new tile into new_td_bits.
+	 * @return \c true when at least one trackdir bit exists on the new tile.
+	 */
 	inline bool QueryNewTileTrackStatus()
 	{
 		if (IsRailTT() && IsPlainRailTile(this->new_tile)) {
-			this->new_td_bits = (TrackdirBits)(GetTrackBits(this->new_tile) * 0x101);
+			this->new_td_bits = TrackBitsToTrackdirBits(GetTrackBits(this->new_tile));
 		} else if (IsRoadTT()) {
-			this->new_td_bits = GetTrackdirBitsForRoad(this->new_tile, this->IsTram() ? RTT_TRAM : RTT_ROAD);
+			this->new_td_bits = GetTrackdirBitsForRoad(this->new_tile, this->IsTram() ? RoadTramType::Tram : RoadTramType::Road);
 		} else {
 			this->new_td_bits = GetTileTrackdirBits(this->new_tile, TT(), 0);
 		}
 		return (this->new_td_bits != TRACKDIR_BIT_NONE);
 	}
 
-	/** return true if we can leave old_tile in exitdir */
+	/**
+	 * Check whether we can leave the old tile.
+	 * @return \c true iff we can leave old_tile in exitdir.
+	 */
 	inline bool CanExitOldTile()
 	{
 		/* road stop can be left at one direction only unless it's a drive-through stop */
 		if (IsRoadTT() && IsBayRoadStopTile(this->old_tile)) {
 			DiagDirection exitdir = GetBayRoadStopDir(this->old_tile);
 			if (exitdir != this->exitdir) {
-				this->err = EC_NO_WAY;
+				this->err = ErrorCode::NoWay;
 				return false;
 			}
 		}
@@ -268,8 +281,8 @@ protected:
 		/* single tram bits can only be left in one direction */
 		if (this->IsTram()) {
 			DiagDirection single_tram = GetSingleTramBit(this->old_tile);
-			if (single_tram != INVALID_DIAGDIR && single_tram != this->exitdir) {
-				this->err = EC_NO_WAY;
+			if (single_tram != DiagDirection::Invalid && single_tram != this->exitdir) {
+				this->err = ErrorCode::NoWay;
 				return false;
 			}
 		}
@@ -278,26 +291,29 @@ protected:
 		if (IsRoadTT() && IsDepotTypeTile(this->old_tile, TT())) {
 			DiagDirection exitdir = GetRoadDepotDirection(this->old_tile);
 			if (exitdir != this->exitdir) {
-				this->err = EC_NO_WAY;
+				this->err = ErrorCode::NoWay;
 				return false;
 			}
 		}
 		return true;
 	}
 
-	/** return true if we can enter new_tile from exitdir */
+	/**
+	 * Checks whether we can enter the next tile.
+	 * @return \c true iff we can enter new_tile from exitdir.
+	 */
 	inline bool CanEnterNewTile()
 	{
 		if (IsRoadTT() && IsBayRoadStopTile(this->new_tile)) {
 			/* road stop can be entered from one direction only unless it's a drive-through stop */
 			DiagDirection exitdir = GetBayRoadStopDir(this->new_tile);
 			if (ReverseDiagDir(exitdir) != this->exitdir) {
-				this->err = EC_NO_WAY;
+				this->err = ErrorCode::NoWay;
 				return false;
 			}
 			/* road stops shouldn't be entered unless allowed to */
-			if (!IsInfraTileUsageAllowed(VEH_ROAD, this->veh_owner, this->new_tile)) {
-				this->err = EC_OWNER;
+			if (!IsInfraTileUsageAllowed(::VehicleType::Road, this->veh_owner, this->new_tile)) {
+				this->err = ErrorCode::Owner;
 				return false;
 			}
 		}
@@ -305,8 +321,8 @@ protected:
 		/* single tram bits can only be entered from one direction */
 		if (this->IsTram()) {
 			DiagDirection single_tram = this->GetSingleTramBit(this->new_tile);
-			if (single_tram != INVALID_DIAGDIR && single_tram != ReverseDiagDir(this->exitdir)) {
-				this->err = EC_NO_WAY;
+			if (single_tram != DiagDirection::Invalid && single_tram != ReverseDiagDir(this->exitdir)) {
+				this->err = ErrorCode::NoWay;
 				return false;
 			}
 		}
@@ -315,36 +331,36 @@ protected:
 		if (IsRoadTT() && IsDepotTypeTile(this->new_tile, TT())) {
 			DiagDirection exitdir = GetRoadDepotDirection(this->new_tile);
 			if (ReverseDiagDir(exitdir) != this->exitdir) {
-				this->err = EC_NO_WAY;
+				this->err = ErrorCode::NoWay;
 				return false;
 			}
 			/* don't try to enter other company's depots if not allowed */
-			if (!IsInfraTileUsageAllowed(VEH_ROAD, this->veh_owner, this->new_tile)) {
-				this->err = EC_OWNER;
+			if (!IsInfraTileUsageAllowed(::VehicleType::Road, this->veh_owner, this->new_tile)) {
+				this->err = ErrorCode::Owner;
 				return false;
 			}
 		}
 		if (IsRailTT() && IsDepotTypeTile(this->new_tile, TT())) {
 			DiagDirection exitdir = GetRailDepotDirection(this->new_tile);
 			if (ReverseDiagDir(exitdir) != this->exitdir) {
-				this->err = EC_NO_WAY;
+				this->err = ErrorCode::NoWay;
 				return false;
 			}
 		}
 
 		/* rail transport is possible only on allowed tiles */
-		if (IsRailTT() && !IsInfraTileUsageAllowed(VEH_TRAIN, this->veh_owner, this->new_tile)) {
+		if (IsRailTT() && !IsInfraTileUsageAllowed(::VehicleType::Train, this->veh_owner, this->new_tile)) {
 			/* different owner */
-			this->err = EC_NO_WAY;
+			this->err = ErrorCode::NoWay;
 			return false;
 		}
 
 		/* rail transport is possible only on compatible rail types */
 		if (IsRailTT()) {
 			RailType rail_type = GetTileRailTypeByEntryDir(this->new_tile, this->exitdir);
-			if (!HasBit(this->railtypes, rail_type)) {
+			if (!this->railtypes.Test(rail_type)) {
 				/* incompatible rail type */
-				this->err = EC_RAIL_ROAD_TYPE;
+				this->err = ErrorCode::RailRoadType;
 				return false;
 			}
 		}
@@ -353,42 +369,42 @@ protected:
 		if (IsRoadTT()) {
 			const RoadVehicle *v = RoadVehicle::From(this->veh);
 			RoadType roadtype = GetRoadType(this->new_tile, GetRoadTramType(v->roadtype));
-			if (!HasBit(v->compatible_roadtypes, roadtype)) {
+			if (!v->compatible_roadtypes.Test(roadtype)) {
 				/* incompatible road type */
-				this->err = EC_RAIL_ROAD_TYPE;
+				this->err = ErrorCode::RailRoadType;
 				return false;
 			}
 		}
 
 		/* tunnel holes and bridge ramps can be entered only from proper direction */
-		if (IsTileType(this->new_tile, MP_TUNNELBRIDGE)) {
+		if (IsTileType(this->new_tile, TileType::TunnelBridge)) {
 			if (IsTunnel(this->new_tile)) {
 				if (!this->is_tunnel) {
 					DiagDirection tunnel_enterdir = GetTunnelBridgeDirection(this->new_tile);
 					if (tunnel_enterdir != this->exitdir) {
-						this->err = EC_NO_WAY;
+						this->err = ErrorCode::NoWay;
 						return false;
 					}
 				}
 			} else { // IsBridge(this->new_tile)
 				DiagDirection ramp_enderdir = GetTunnelBridgeDirection(this->new_tile);
 				if (!this->is_bridge && ramp_enderdir == ReverseDiagDir(this->exitdir)) {
-					this->err = EC_NO_WAY;
+					this->err = ErrorCode::NoWay;
 					return false;
 				}
 				if (!this->is_bridge && IsRoadTT() && IsRoadCustomBridgeHeadTile(this->new_tile)) {
-					if (!(DiagDirToRoadBits(ReverseDiagDir(this->exitdir)) & GetCustomBridgeHeadRoadBits(this->new_tile, this->IsTram() ? RTT_TRAM : RTT_ROAD))) {
-						this->err = EC_NO_WAY;
+					if ((DiagDirToRoadBits(ReverseDiagDir(this->exitdir)) & GetCustomBridgeHeadRoadBits(this->new_tile, this->IsTram() ? RoadTramType::Tram : RoadTramType::Road)).None()) {
+						this->err = ErrorCode::NoWay;
 						return false;
 					}
 				} else if (!this->is_bridge && IsRailTT() && IsRailCustomBridgeHeadTile(this->new_tile)) {
 					if (!(DiagdirReachesTracks(this->exitdir) & GetCustomBridgeHeadTrackBits(this->new_tile))) {
-						this->err = EC_NO_WAY;
+						this->err = ErrorCode::NoWay;
 						return false;
 					}
 				} else if (!this->is_bridge) {
 					if (ramp_enderdir != this->exitdir) {
-						this->err = EC_NO_WAY;
+						this->err = ErrorCode::NoWay;
 						return false;
 					}
 				}
@@ -412,7 +428,10 @@ protected:
 		return true;
 	}
 
-	/** return true if we must reverse (in depots and single tram bits) */
+	/**
+	 * Are we forced to reverse the vehicle?
+	 * @return \c true iff we must reverse (in depots and single tram bits).
+	 */
 	inline bool ForcedReverse()
 	{
 		/* rail and road depots cause reversing */
@@ -448,7 +467,10 @@ protected:
 		return false;
 	}
 
-	/** return true if we successfully reversed at end of road/track */
+	/**
+	 * Try whether we can reverse our road vehicle.
+	 * @return \c true iff we successfully reversed at end of road/track.
+	 */
 	inline bool TryReverse()
 	{
 		if (IsRoadTT() && !this->IsTram()) {
@@ -464,12 +486,16 @@ protected:
 				return true;
 			}
 		}
-		this->err = EC_NO_WAY;
+		this->err = ErrorCode::NoWay;
 		return false;
 	}
 
 public:
-	/** Helper for pathfinders - get min/max speed on the old_tile/old_td */
+	/**
+	 * Helper for pathfinders - get min/max speed on the old_tile/old_td.
+	 * @param[out] pmin_speed Optional pointer to location to store the minimum speed to.
+	 * @return The speed limit.
+	 */
 	int GetSpeedLimit(int *pmin_speed = nullptr) const
 	{
 		int min_speed = 0;
@@ -498,13 +524,13 @@ public:
 	}
 };
 
-typedef CFollowTrackT<TRANSPORT_WATER, Ship,        true > CFollowTrackWater;
-typedef CFollowTrackT<TRANSPORT_ROAD,  RoadVehicle, true > CFollowTrackRoad;
-typedef CFollowTrackT<TRANSPORT_RAIL,  Train,       true > CFollowTrackRail;
+typedef CFollowTrackT<TransportType::Water, Ship, true> CFollowTrackWater;
+typedef CFollowTrackT<TransportType::Road, RoadVehicle, true> CFollowTrackRoad;
+typedef CFollowTrackT<TransportType::Rail, Train, true> CFollowTrackRail;
 
-typedef CFollowTrackT<TRANSPORT_RAIL,  Train,       false> CFollowTrackRailNo90;
+typedef CFollowTrackT<TransportType::Rail, Train, false> CFollowTrackRailNo90;
 
-typedef CFollowTrackT<TRANSPORT_RAIL, Train, true,  true > CFollowTrackFreeRail;
-typedef CFollowTrackT<TRANSPORT_RAIL, Train, false, true > CFollowTrackFreeRailNo90;
+typedef CFollowTrackT<TransportType::Rail, Train, true, true> CFollowTrackFreeRail;
+typedef CFollowTrackT<TransportType::Rail, Train, false, true> CFollowTrackFreeRailNo90;
 
 #endif /* FOLLOW_TRACK_HPP */

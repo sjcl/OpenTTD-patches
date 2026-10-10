@@ -2,15 +2,15 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
-/** @file timer_window.h Definition of the Window system */
+/** @file timer_window.h Definition of the Window system. */
 
 #ifndef TIMER_WINDOW_H
 #define TIMER_WINDOW_H
 
-#include <chrono>
+#include "../time_type.h"
 
 /**
  * Timer that represents the real time, usable for the Window system.
@@ -25,11 +25,14 @@
  */
 class TimerWindow {
 public:
-	using TPeriod = std::chrono::milliseconds;
-	using TElapsed = std::chrono::milliseconds;
+	using TPeriod = TimeType::Milliseconds;
+	using TElapsed = TimeType::Milliseconds;
 	struct TStorage {
-		std::chrono::milliseconds elapsed;
+		TimeType::Milliseconds elapsed;
 	};
 };
+
+/** Interval used by blinking interface elements. */
+static constexpr TimeType::Milliseconds TIMER_BLINK_INTERVAL{450};
 
 #endif /* TIMER_WINDOW_H */

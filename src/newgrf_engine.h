@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file newgrf_engine.h Functions for NewGRF engines. */
@@ -15,7 +15,7 @@
 #include "newgrf_properties.h"
 #include "vehicle_type.h"
 #include "engine_type.h"
-#include "gfx_type.h"
+#include "sprite_id_type.h"
 #include "newgrf_spritegroup.h"
 
 /** Resolver for a vehicle scope. */
@@ -40,17 +40,17 @@ struct VehicleScopeResolver : public ScopeResolver {
 
 	uint32_t GetRandomBits() const override;
 	uint32_t GetVariable(uint16_t variable, uint32_t parameter, GetVariableExtra &extra) const override;
-	uint32_t GetTriggers() const override;
+	uint32_t GetRandomTriggers() const override;
 };
 
 /** Resolver for a vehicle (chain) */
-struct VehicleResolverObject : public ResolverObject {
+struct VehicleResolverObject : public SpecializedResolverObject<VehicleRandomTriggers> {
 	/** Application of 'wagon overrides'. */
-	enum WagonOverride {
-		WO_NONE,     //!< Resolve no wagon overrides.
-		WO_UNCACHED, //!< Resolve wagon overrides.
-		WO_CACHED,   //!< Resolve wagon overrides using TrainCache::cached_override.
-		WO_SELF,     //!< Resolve self-override (helicopter rotors and such).
+	enum class WagonOverride : uint8_t {
+		None, ///< Resolve no wagon overrides.
+		Uncached, ///< Resolve wagon overrides.
+		Cached, ///< Resolve wagon overrides using TrainCache::cached_override.
+		Self, ///< Resolve self-override (helicopter rotors and such).
 	};
 
 	VehicleScopeResolver self_scope;     ///< Scope resolver for the indicated vehicle.
@@ -62,9 +62,9 @@ struct VehicleResolverObject : public ResolverObject {
 	VehicleResolverObject(EngineID engine_type, const Vehicle *v, WagonOverride wagon_override, bool rotor_in_gui = false,
 			CallbackID callback = CBID_NO_CALLBACK, uint32_t callback_param1 = 0, uint32_t callback_param2 = 0);
 
-	ScopeResolver *GetScope(VarSpriteGroupScope scope = VSG_SCOPE_SELF, VarSpriteGroupScopeOffset relative = 0) override;
+	ScopeResolver *GetScope(VarSpriteGroupScope scope = VarSpriteGroupScope::Self, VarSpriteGroupScopeOffset relative = 0) override;
 
-	const SpriteGroup *ResolveReal(const RealSpriteGroup *group) const override;
+	const SpriteGroup *ResolveReal(const RealSpriteGroup &group) const override;
 
 	GrfSpecFeature GetFeature() const override;
 	uint32_t GetDebugID() const override;
@@ -76,17 +76,15 @@ static const uint VEHICLEINFO_FULL_VEHICLE_WIDTH    = 32;
 
 struct VehicleSpriteSeq;
 
-void SetWagonOverrideSprites(EngineID engine, CargoID cargo, const struct SpriteGroup *group, std::span<EngineID> engine_ids);
-const SpriteGroup *GetWagonOverrideSpriteSet(EngineID engine, CargoID cargo, EngineID overriding_engine);
-void SetCustomEngineSprites(EngineID engine, uint8_t cargo, const struct SpriteGroup *group);
+void SetWagonOverrideSprites(EngineID engine, CargoType cargo, const struct SpriteGroup *group, std::span<EngineID> engine_ids);
+const SpriteGroup *GetWagonOverrideSpriteSet(EngineID engine, CargoType cargo, EngineID overriding_engine);
+void SetCustomEngineSprites(EngineID engine, CargoType cargo, const struct SpriteGroup *group);
 
-void GetCustomEngineSprite(EngineID engine, const Vehicle *v, Direction direction, EngineImageType image_type, VehicleSpriteSeq *result);
-#define GetCustomVehicleSprite(v, direction, image_type, result) GetCustomEngineSprite(v->engine_type, v, direction, image_type, result)
-#define GetCustomVehicleIcon(et, direction, image_type, result) GetCustomEngineSprite(et, nullptr, direction, image_type, result)
+void GetCustomVehicleSprite(const Vehicle *v, Direction direction, EngineImageType image_type, VehicleSpriteSeq *result);
+void GetCustomVehicleIcon(EngineID engine, Direction direction, EngineImageType image_type, VehicleSpriteSeq *result);
 
-void GetRotorOverrideSprite(EngineID engine, const struct Aircraft *v, EngineImageType image_type, VehicleSpriteSeq *result);
-#define GetCustomRotorSprite(v, image_type, result) GetRotorOverrideSprite(v->engine_type, v, image_type, result)
-#define GetCustomRotorIcon(et, image_type, result) GetRotorOverrideSprite(et, nullptr, image_type, result)
+void GetCustomRotorSprite(const struct Aircraft *v, EngineImageType image_type, VehicleSpriteSeq *result);
+void GetCustomRotorIcon(EngineID engine, EngineImageType image_type, VehicleSpriteSeq *result);
 
 /* Forward declaration of GRFFile, to avoid unnecessary inclusion of newgrf.h
  * elsewhere... */
@@ -103,24 +101,14 @@ bool UsesWagonOverride(const Vehicle *v);
 int GetVehicleProperty(const Vehicle *v, PropertyID property, int orig_value, bool is_signed = false);
 int GetEngineProperty(EngineID engine, PropertyID property, int orig_value, const Vehicle *v = nullptr, bool is_signed = false);
 
-enum class BuildProbabilityType {
-	Reversed = 0,
+/** Different types of modifications during the purchase of a vehicle to request the chance for using a NewGRF callback. */
+enum class BuildProbabilityType : uint8_t {
+	Reversed = 0, ///< Change the rail vehicle should be reversed when purchased.
 };
 
-bool TestVehicleBuildProbability(Vehicle *v, EngineID engine, BuildProbabilityType type);
+std::optional<bool> TestVehicleBuildProbability(const Vehicle *v, BuildProbabilityType type);
 
-enum VehicleTrigger {
-	VEHICLE_TRIGGER_NEW_CARGO     = 0x01,
-	/* Externally triggered only for the first vehicle in chain */
-	VEHICLE_TRIGGER_DEPOT         = 0x02,
-	/* Externally triggered only for the first vehicle in chain, only if whole chain is empty */
-	VEHICLE_TRIGGER_EMPTY         = 0x04,
-	/* Not triggered externally (called for the whole chain if we got NEW_CARGO) */
-	VEHICLE_TRIGGER_ANY_NEW_CARGO = 0x08,
-	/* Externally triggered for each vehicle in chain */
-	VEHICLE_TRIGGER_CALLBACK_32   = 0x10,
-};
-void TriggerVehicle(Vehicle *veh, VehicleTrigger trigger);
+void TriggerVehicleRandomisation(Vehicle *veh, VehicleRandomTrigger trigger);
 
 void AlterVehicleListOrder(EngineID engine, uint16_t target);
 void CommitVehicleListOrderChanges();

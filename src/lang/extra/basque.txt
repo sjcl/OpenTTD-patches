@@ -89,3 +89,10 @@ STR_COMPANY_PASSWORD_MAKE_DEFAULT_TOOLTIP                       :{BLACK}Konpaini
 STR_COMPANY_VIEW_PASSWORD                                       :{BLACK}Pasahitza
 STR_COMPANY_VIEW_PASSWORD_TOOLTIP                               :{BLACK}Pasahitzak zure konpainia babestuko du ez baimendutako bezeroetaz
 STR_COMPANY_VIEW_SET_PASSWORD                                   :{BLACK}Konpainia pasahitza ezarri
+
+# JSON messages
+
+STR_INTRO_NEWGRF_SETTINGS                                       :{BLACK}NewGRF-ren Ezarpenak
+STR_INTRO_AI_SETTINGS                                           :{BLACK}AAren ezarpenak
+STR_INTRO_TOOLTIP_NEWGRF_SETTINGS                               :{BLACK}NewGRF ezarpenak erakutsi
+STR_INTRO_CAPTION_TRADITIONAL                                   :{WHITE}OpenTTD {REV}

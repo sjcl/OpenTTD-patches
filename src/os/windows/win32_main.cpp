@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file win32_main.cpp Implementation main for Windows. */
@@ -58,6 +58,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 
 	PerThreadSetupInit();
 	CrashLog::InitialiseCrashLog();
+	CrashLog::InitialiseExceptionTerminateHandler();
 
 	/* Convert the command line to UTF-8. */
 	std::string cmdline = FS2OTTD(GetCommandLine());
@@ -71,8 +72,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 
 	_set_error_mode(_OUT_TO_MSGBOX); // force assertion output to messagebox
 
-	/* setup random seed to something quite random */
-	SetRandomSeed(GetTickCount());
+	InitialiseRandomSeeds();
 
 	auto arguments = ParseCommandLine(cmdline.data());
 

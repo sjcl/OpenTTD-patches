@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file sdl2_opengl_v.h OpenGL backend of the SDL2 video driver. */
@@ -49,8 +49,9 @@ private:
 /** The factory for SDL' OpenGL video driver. */
 class FVideoDriver_SDL_OpenGL : public DriverFactoryBase {
 public:
-	FVideoDriver_SDL_OpenGL() : DriverFactoryBase(Driver::DT_VIDEO, 8, "sdl-opengl", "SDL OpenGL Video Driver") {}
-	/* virtual */ Driver *CreateInstance() const override { return new VideoDriver_SDL_OpenGL(); }
+	/** Create the factory. */
+	FVideoDriver_SDL_OpenGL() : DriverFactoryBase(Driver::Type::Video, 8, "sdl-opengl", "SDL OpenGL Video Driver") {}
+	std::unique_ptr<Driver> CreateInstance() const override { return std::make_unique<VideoDriver_SDL_OpenGL>(); }
 
 protected:
 	bool UsesHardwareAcceleration() const override { return true; }

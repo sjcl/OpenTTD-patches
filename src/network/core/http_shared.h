@@ -2,12 +2,10 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
-/**
- * @file http.h Shared functions for implementations of HTTP requests.
- */
+/** @file http_shared.h Shared functions for implementations of HTTP requests. */
 
 #ifndef NETWORK_CORE_HTTP_SHARED_H
 #define NETWORK_CORE_HTTP_SHARED_H
@@ -24,11 +22,15 @@ private:
 	/** Entries on the queue for later handling. */
 	class Callback {
 	public:
+		/**
+		 * Create the callback.
+		 * @param data The data of the callback.
+		 */
 		Callback(UniqueBuffer<char> data) : data(std::move(data)), failure(false) {}
 		Callback() : data({}), failure(true) {}
 
-		UniqueBuffer<char> data;
-		bool failure;
+		UniqueBuffer<char> data; ///< The data of the callback.
+		bool failure; ///< Whether the callback denotes a failure.
 	};
 
 public:
@@ -43,6 +45,7 @@ public:
 
 	/**
 	 * Similar to HTTPCallback::OnReceiveData, but thread-safe.
+	 * @copydoc HTTPCallback::OnReceiveData
 	 */
 	void OnReceiveData(UniqueBuffer<char> data)
 	{
@@ -89,6 +92,7 @@ public:
 
 	/**
 	 * Check if the queue is empty.
+	 * @return \c true iff the queue is empty.
 	 */
 	bool IsQueueEmpty()
 	{
@@ -96,6 +100,10 @@ public:
 		return this->queue.empty();
 	}
 
+	/**
+	 * Create the thread safe callback.
+	 * @param callback The underlying callback to call.
+	 */
 	HTTPThreadSafeCallback(HTTPCallback *callback) : callback(callback) {}
 
 	~HTTPThreadSafeCallback()
@@ -106,7 +114,7 @@ public:
 		queue_cv.notify_all();
 	}
 
-	std::atomic<bool> cancelled = false;
+	std::atomic<bool> cancelled = false; ///< Whether this callback has been cancelled, or not.
 
 private:
 	HTTPCallback *callback; ///< The callback to send data back on.

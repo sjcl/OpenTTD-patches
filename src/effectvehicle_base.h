@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file effectvehicle_base.h Base class for all effect vehicles. */
@@ -21,14 +21,13 @@
  *  - bulldozer (road works)
  *  - bubbles (industry)
  */
-struct EffectVehicle final : public SpecializedVehicle<EffectVehicle, VEH_EFFECT> {
-	uint16_t animation_state;   ///< State primarily used to change the graphics/behaviour.
-	uint8_t animation_substate; ///< Sub state to time the change of the graphics/behaviour.
+struct EffectVehicle final : public SpecializedVehicle<EffectVehicle, VehicleType::Effect, Vehicle> {
+	uint16_t animation_state = 0;   ///< State primarily used to change the graphics/behaviour.
+	uint8_t animation_substate = 0; ///< Sub state to time the change of the graphics/behaviour.
 
-	/** We don't want GCC to zero our struct! It already is zeroed and has an index! */
-	EffectVehicle() : SpecializedVehicleBase() {}
+	EffectVehicle(VehicleID index) : SpecializedVehicleBase(index) {}
 	/** We want to 'destruct' the right class. */
-	virtual ~EffectVehicle() { this->RemoveEffectVehicleFromTickCache(); }
+	~EffectVehicle() override { this->RemoveEffectVehicleFromTickCache(); }
 
 	void UpdateDeltaXY() override;
 	bool Tick() override;

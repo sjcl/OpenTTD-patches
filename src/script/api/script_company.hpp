@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file script_company.hpp Everything to query a company's financials and statistics or build company related buildings. */
@@ -31,14 +31,26 @@ public:
 	/** Different constants related to CompanyID. */
 	enum CompanyID {
 		/* Note: these values represent part of the in-game Owner enum */
-		COMPANY_FIRST     = ::COMPANY_FIRST,   ///< The first available company.
-		COMPANY_LAST      = ::MAX_COMPANIES,   ///< The last available company.
+		COMPANY_FIRST     = ::CompanyID::Begin().base(), ///< The first available company.
+		COMPANY_LAST      = ::CompanyID::End().base(),   ///< The last available company.
 
 		/* Custom added value, only valid for this API */
 		COMPANY_INVALID   = -1,                ///< An invalid company.
 		COMPANY_SELF      = 254,               ///< Constant that gets resolved to the correct company index for your company.
 		COMPANY_SPECTATOR = 255,               ///< Constant indicating that player is spectating (gets resolved to COMPANY_INVALID)
 	};
+
+	/**
+	 * Internal helper to convert from the script's company to the game's internal company.
+	 * @api none
+	 */
+	static ::CompanyID FromScriptCompanyID(ScriptCompany::CompanyID company);
+
+	/**
+	 * Internal helper to convert from the game's internal company to the script's company.
+	 * @api none
+	 */
+	static ScriptCompany::CompanyID ToScriptCompanyID(::CompanyID company);
 
 	/** Possible genders for company presidents. */
 	enum Gender {
@@ -49,29 +61,29 @@ public:
 
 	/** List of different livery schemes. */
 	enum LiveryScheme {
-		LS_DEFAULT,                  ///< Default scheme.
-		LS_STEAM,                    ///< Steam engines.
-		LS_DIESEL,                   ///< Diesel engines.
-		LS_ELECTRIC,                 ///< Electric engines.
-		LS_MONORAIL,                 ///< Monorail engines.
-		LS_MAGLEV,                   ///< Maglev engines.
-		LS_DMU,                      ///< DMUs and their passenger wagons.
-		LS_EMU,                      ///< EMUs and their passenger wagons.
-		LS_PASSENGER_WAGON_STEAM,    ///< Passenger wagons attached to steam engines.
-		LS_PASSENGER_WAGON_DIESEL,   ///< Passenger wagons attached to diesel engines.
-		LS_PASSENGER_WAGON_ELECTRIC, ///< Passenger wagons attached to electric engines.
-		LS_PASSENGER_WAGON_MONORAIL, ///< Passenger wagons attached to monorail engines.
-		LS_PASSENGER_WAGON_MAGLEV,   ///< Passenger wagons attached to maglev engines.
-		LS_FREIGHT_WAGON,            ///< Freight wagons.
-		LS_BUS,                      ///< Buses.
-		LS_TRUCK,                    ///< Trucks.
-		LS_PASSENGER_SHIP,           ///< Passenger ships.
-		LS_FREIGHT_SHIP,             ///< Freight ships.
-		LS_HELICOPTER,               ///< Helicopters.
-		LS_SMALL_PLANE,              ///< Small aeroplanes.
-		LS_LARGE_PLANE,              ///< Large aeroplanes.
-		LS_PASSENGER_TRAM,           ///< Passenger trams.
-		LS_FREIGHT_TRAM,             ///< Freight trams.
+		LS_DEFAULT = to_underlying(::LiveryScheme::Default), ///< Default scheme.
+		LS_STEAM = to_underlying(::LiveryScheme::Steam), ///< Steam engines.
+		LS_DIESEL = to_underlying(::LiveryScheme::Diesel), ///< Diesel engines.
+		LS_ELECTRIC = to_underlying(::LiveryScheme::Electric), ///< Electric engines.
+		LS_MONORAIL = to_underlying(::LiveryScheme::Monorail), ///< Monorail engines.
+		LS_MAGLEV = to_underlying(::LiveryScheme::Maglev), ///< Maglev engines.
+		LS_DMU = to_underlying(::LiveryScheme::DMU), ///< DMUs and their passenger wagons.
+		LS_EMU = to_underlying(::LiveryScheme::EMU), ///< EMUs and their passenger wagons.
+		LS_PASSENGER_WAGON_STEAM = to_underlying(::LiveryScheme::PassengerWagonSteam), ///< Passenger wagons attached to steam engines.
+		LS_PASSENGER_WAGON_DIESEL = to_underlying(::LiveryScheme::PassengerWagonDiesel), ///< Passenger wagons attached to diesel engines.
+		LS_PASSENGER_WAGON_ELECTRIC = to_underlying(::LiveryScheme::PassengerWagonElectric), ///< Passenger wagons attached to electric engines.
+		LS_PASSENGER_WAGON_MONORAIL = to_underlying(::LiveryScheme::PassengerWagonMonorail), ///< Passenger wagons attached to monorail engines.
+		LS_PASSENGER_WAGON_MAGLEV = to_underlying(::LiveryScheme::PassengerWagonMaglev), ///< Passenger wagons attached to maglev engines.
+		LS_FREIGHT_WAGON = to_underlying(::LiveryScheme::FreightWagon), ///< Freight wagons.
+		LS_BUS = to_underlying(::LiveryScheme::Bus), ///< Buses.
+		LS_TRUCK = to_underlying(::LiveryScheme::Truck), ///< Trucks.
+		LS_PASSENGER_SHIP = to_underlying(::LiveryScheme::PassengerShip), ///< Passenger ships.
+		LS_FREIGHT_SHIP = to_underlying(::LiveryScheme::FreightShip), ///< Freight ships.
+		LS_HELICOPTER = to_underlying(::LiveryScheme::Helicopter), ///< Helicopters.
+		LS_SMALL_PLANE = to_underlying(::LiveryScheme::SmallPlane), ///< Small aeroplanes.
+		LS_LARGE_PLANE = to_underlying(::LiveryScheme::LargePlane), ///< Large aeroplanes.
+		LS_PASSENGER_TRAM = to_underlying(::LiveryScheme::PassengerTram), ///< Passenger trams.
+		LS_FREIGHT_TRAM = to_underlying(::LiveryScheme::FreightTram), ///< Freight trams.
 		LS_INVALID = -1,
 	};
 
@@ -93,29 +105,29 @@ public:
 		COLOUR_BROWN,
 		COLOUR_GREY,
 		COLOUR_WHITE,
-		COLOUR_INVALID = ::INVALID_COLOUR
+		COLOUR_INVALID = to_underlying(::Colours::Invalid)
 	};
 
 	/**
 	 * Types of expenses.
 	 */
 	enum ExpensesType : uint8_t {
-		EXPENSES_CONSTRUCTION = ::EXPENSES_CONSTRUCTION,     ///< Construction costs.
-		EXPENSES_NEW_VEHICLES = ::EXPENSES_NEW_VEHICLES,     ///< New vehicles.
-		EXPENSES_TRAIN_RUN    = ::EXPENSES_TRAIN_RUN,        ///< Running costs trains.
-		EXPENSES_ROADVEH_RUN  = ::EXPENSES_ROADVEH_RUN,      ///< Running costs road vehicles.
-		EXPENSES_AIRCRAFT_RUN = ::EXPENSES_AIRCRAFT_RUN,     ///< Running costs aircraft.
-		EXPENSES_SHIP_RUN     = ::EXPENSES_SHIP_RUN,         ///< Running costs ships.
-		EXPENSES_PROPERTY     = ::EXPENSES_PROPERTY,         ///< Property costs.
-		EXPENSES_TRAIN_INC    = ::EXPENSES_TRAIN_REVENUE,    ///< Revenue from trains.
-		EXPENSES_ROADVEH_INC  = ::EXPENSES_ROADVEH_REVENUE,  ///< Revenue from road vehicles.
-		EXPENSES_AIRCRAFT_INC = ::EXPENSES_AIRCRAFT_REVENUE, ///< Revenue from aircraft.
-		EXPENSES_SHIP_INC     = ::EXPENSES_SHIP_REVENUE,     ///< Revenue from ships.
-		EXPENSES_LOAN_INT     = ::EXPENSES_LOAN_INTEREST,    ///< Interest payments over the loan.
-		EXPENSES_OTHER        = ::EXPENSES_OTHER,            ///< Other expenses.
-		EXPENSES_SHARING_COST = ::EXPENSES_SHARING_COST,     ///< Infrastructure sharing costs.
-		EXPENSES_SHARING_INC  = ::EXPENSES_SHARING_INC,      ///< Infrastructure sharing income.
-		EXPENSES_INVALID      = ::INVALID_EXPENSES,          ///< Invalid expense type.
+		EXPENSES_CONSTRUCTION = to_underlying(::ExpensesType::Construction), ///< Construction costs.
+		EXPENSES_NEW_VEHICLES = to_underlying(::ExpensesType::NewVehicles), ///< New vehicles.
+		EXPENSES_TRAIN_RUN    = to_underlying(::ExpensesType::TrainRun), ///< Running costs trains.
+		EXPENSES_ROADVEH_RUN  = to_underlying(::ExpensesType::RoadVehRun), ///< Running costs road vehicles.
+		EXPENSES_AIRCRAFT_RUN = to_underlying(::ExpensesType::AircraftRun), ///< Running costs aircraft.
+		EXPENSES_SHIP_RUN     = to_underlying(::ExpensesType::ShipRun), ///< Running costs ships.
+		EXPENSES_PROPERTY     = to_underlying(::ExpensesType::Property), ///< Property costs.
+		EXPENSES_TRAIN_INC    = to_underlying(::ExpensesType::TrainRevenue), ///< Revenue from trains.
+		EXPENSES_ROADVEH_INC  = to_underlying(::ExpensesType::RoadVehRevenue), ///< Revenue from road vehicles.
+		EXPENSES_AIRCRAFT_INC = to_underlying(::ExpensesType::AircraftRevenue), ///< Revenue from aircraft.
+		EXPENSES_SHIP_INC     = to_underlying(::ExpensesType::ShipRevenue), ///< Revenue from ships.
+		EXPENSES_LOAN_INT     = to_underlying(::ExpensesType::LoanInterest), ///< Interest payments over the loan.
+		EXPENSES_OTHER        = to_underlying(::ExpensesType::Other), ///< Other expenses.
+		EXPENSES_SHARING_COST = to_underlying(::ExpensesType::SharingCost), ///< Infrastructure sharing costs.
+		EXPENSES_SHARING_INC  = to_underlying(::ExpensesType::SharingRevenue), ///< Infrastructure sharing income.
+		EXPENSES_INVALID      = to_underlying(::ExpensesType::Invalid), ///< Invalid expense type.
 	};
 
 	/**
@@ -126,7 +138,7 @@ public:
 	 * @param company The company index to resolve.
 	 * @return The resolved company index.
 	 */
-	static CompanyID ResolveCompanyID(CompanyID company);
+	static ScriptCompany::CompanyID ResolveCompanyID(ScriptCompany::CompanyID company);
 
 	/**
 	 * Check if a CompanyID is your CompanyID, to ease up checks.
@@ -134,7 +146,7 @@ public:
 	 * @game @pre ScriptCompanyMode::IsValid().
 	 * @return True if and only if this company is your CompanyID.
 	 */
-	static bool IsMine(CompanyID company);
+	static bool IsMine(ScriptCompany::CompanyID company);
 
 	/**
 	 * Set the name of your company.
@@ -152,7 +164,7 @@ public:
 	 * @pre ResolveCompanyID(company) != COMPANY_INVALID.
 	 * @return The name of the given company.
 	 */
-	static std::optional<std::string> GetName(CompanyID company);
+	static std::optional<std::string> GetName(ScriptCompany::CompanyID company);
 
 	/**
 	 * Set the name of your president.
@@ -170,7 +182,7 @@ public:
 	 * @pre ResolveCompanyID(company) != COMPANY_INVALID.
 	 * @return The name of the president of the given company.
 	 */
-	static std::optional<std::string> GetPresidentName(CompanyID company);
+	static std::optional<std::string> GetPresidentName(ScriptCompany::CompanyID company);
 
 	/**
 	 * Set the gender of the president of your company.
@@ -187,7 +199,7 @@ public:
 	 * @param company The company to get the presidents gender off.
 	 * @return The gender of the president.
 	 */
-	static Gender GetPresidentGender(CompanyID company);
+	static Gender GetPresidentGender(ScriptCompany::CompanyID company);
 
 	/**
 	 * Sets the amount to loan.
@@ -237,7 +249,7 @@ public:
 	 * @note Max loan value set with this method is not affected by inflation.
 	 * @api -ai
 	 */
-	static bool SetMaxLoanAmountForCompany(CompanyID company, Money amount);
+	static bool SetMaxLoanAmountForCompany(ScriptCompany::CompanyID company, Money amount);
 
 	/**
 	 * Makes the max amount of money company can loan follow the global max loan setting.
@@ -249,7 +261,7 @@ public:
 	 * @note You need to create your own news message to inform about max loan change.
 	 * @api -ai
 	 */
-	static bool ResetMaxLoanAmountForCompany(CompanyID company);
+	static bool ResetMaxLoanAmountForCompany(ScriptCompany::CompanyID company);
 
 	/**
 	 * Gets the interval/loan step.
@@ -265,7 +277,7 @@ public:
 	 * @pre ResolveCompanyID(company) != COMPANY_INVALID.
 	 * @return The actual bank balance or INT32_MAX.
 	 */
-	static Money GetBankBalance(CompanyID company);
+	static Money GetBankBalance(ScriptCompany::CompanyID company);
 
 	/**
 	 * Changes the bank balance by a delta value. This method does not affect the loan but instead
@@ -280,7 +292,7 @@ public:
 	 * @note You need to create your own news message to inform about costs/gifts that you create using this command.
 	 * @api -ai
 	 */
-	static bool ChangeBankBalance(CompanyID company, Money delta, ExpensesType expenses_type, TileIndex tile);
+	static bool ChangeBankBalance(ScriptCompany::CompanyID company, Money delta, ExpensesType expenses_type, TileIndex tile);
 
 	/**
 	 * Get the income of the company in the given economy-quarter.
@@ -293,7 +305,7 @@ public:
 	 * @return The gross income of the company in the given economy-quarter.
 	 * @see \ref ScriptEconomyTime
 	 */
-	static Money GetQuarterlyIncome(CompanyID company, SQInteger quarter);
+	static Money GetQuarterlyIncome(ScriptCompany::CompanyID company, SQInteger quarter);
 
 	/**
 	 * Get the expenses of the company in the given economy-quarter.
@@ -307,7 +319,7 @@ public:
 	 * @return The expenses of the company in the given economy-quarter.
 	 * @see \ref ScriptEconomyTime
 	 */
-	static Money GetQuarterlyExpenses(CompanyID company, SQInteger quarter);
+	static Money GetQuarterlyExpenses(ScriptCompany::CompanyID company, SQInteger quarter);
 
 	/**
 	 * Get the amount of cargo delivered by the given company in the given economy-quarter.
@@ -318,7 +330,7 @@ public:
 	 * @return The amount of cargo delivered by the given company in the given economy-quarter.
 	 * @see \ref ScriptEconomyTime
 	 */
-	static SQInteger GetQuarterlyCargoDelivered(CompanyID company, SQInteger quarter);
+	static SQInteger GetQuarterlyCargoDelivered(ScriptCompany::CompanyID company, SQInteger quarter);
 
 	/**
 	 * Get the performance rating of the given company in the given economy-quarter.
@@ -331,7 +343,7 @@ public:
 	 * @return The performance rating of the given company in the given economy-quarter.
 	 * @see \ref ScriptEconomyTime
 	 */
-	static SQInteger GetQuarterlyPerformanceRating(CompanyID company, SQInteger quarter);
+	static SQInteger GetQuarterlyPerformanceRating(ScriptCompany::CompanyID company, SQInteger quarter);
 
 	/**
 	 * Get the value of the company in the given economy-quarter.
@@ -342,7 +354,7 @@ public:
 	 * @return The value of the company in the given economy-quarter.
 	 * @see \ref ScriptEconomyTime
 	 */
-	static Money GetQuarterlyCompanyValue(CompanyID company, SQInteger quarter);
+	static Money GetQuarterlyCompanyValue(ScriptCompany::CompanyID company, SQInteger quarter);
 
 	/**
 	 * Get the expense category value of the company in the given year (relative to the current year).
@@ -375,7 +387,7 @@ public:
 	 * @return The tile of the company's HQ, this tile is the most northern tile
 	 *  of that HQ, or ScriptMap::TILE_INVALID if there is no HQ yet.
 	 */
-	static TileIndex GetCompanyHQ(CompanyID company);
+	static TileIndex GetCompanyHQ(ScriptCompany::CompanyID company);
 
 	/**
 	 * Set whether autorenew is enabled for your company.
@@ -391,7 +403,7 @@ public:
 	 * @pre ResolveCompanyID(company) != COMPANY_INVALID.
 	 * @return True if autorenew is enabled.
 	 */
-	static bool GetAutoRenewStatus(CompanyID company);
+	static bool GetAutoRenewStatus(ScriptCompany::CompanyID company);
 
 	/**
 	 * Set the number of months before/after max age to autorenew an engine for your company.
@@ -410,7 +422,7 @@ public:
 	 * @return The number of calendar-months before/after max age of engine.
 	 * @see \ref ScriptCalendarTime
 	 */
-	static SQInteger GetAutoRenewMonths(CompanyID company);
+	static SQInteger GetAutoRenewMonths(ScriptCompany::CompanyID company);
 
 	/**
 	 * Set the minimum money needed to autorenew an engine for your company.
@@ -428,7 +440,7 @@ public:
 	 * @pre ResolveCompanyID(company) != COMPANY_INVALID.
 	 * @return The minimum required money for autorenew to work.
 	 */
-	static Money GetAutoRenewMoney(CompanyID company);
+	static Money GetAutoRenewMoney(ScriptCompany::CompanyID company);
 
 	/**
 	 * Set primary colour for your company.
@@ -451,6 +463,9 @@ public:
 	/**
 	 * Get primary colour of a livery for your company.
 	 * @param scheme Livery scheme to get.
+	 * @game @pre ScriptCompanyMode::IsValid().
+	 * @pre scheme >= LS_DEFAULT.
+	 * @pre scheme <= LS_FREIGHT_TRAM.
 	 * @return Primary colour of livery.
 	 */
 	static ScriptCompany::Colours GetPrimaryLiveryColour(LiveryScheme scheme);
@@ -458,11 +473,14 @@ public:
 	/**
 	 * Get secondary colour of a livery for your company.
 	 * @param scheme Livery scheme to get.
+	 * @game @pre ScriptCompanyMode::IsValid().
+	 * @pre scheme >= LS_DEFAULT.
+	 * @pre scheme <= LS_FREIGHT_TRAM.
 	 * @return Secondary colour of livery.
 	 */
 	static ScriptCompany::Colours GetSecondaryLiveryColour(LiveryScheme scheme);
 };
 
-DECLARE_POSTFIX_INCREMENT(ScriptCompany::CompanyID)
+DECLARE_INCREMENT_DECREMENT_OPERATORS(ScriptCompany::CompanyID)
 
 #endif /* SCRIPT_COMPANY_HPP */

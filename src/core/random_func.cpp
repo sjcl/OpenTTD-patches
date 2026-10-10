@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file random_func.cpp Implementation of the pseudo random generator. */
@@ -11,10 +11,10 @@
 #include "random_func.hpp"
 #include "bitmath_func.hpp"
 #include "hash_func.hpp"
+#include "../time_type.h"
 #include "../debug.h"
 #include <atomic>
 #include <bit>
-#include <chrono>
 
 #ifdef RANDOM_DEBUG
 #include "../network/network.h"
@@ -29,7 +29,7 @@
 #	include <windows.h>
 #	include <bcrypt.h>
 #elif defined(__APPLE__) || defined(__NetBSD__) || defined(__FreeBSD__)
-// No includes required.
+/* No includes required. */
 #elif defined(__GLIBC__) && ((__GLIBC__ > 2) || ((__GLIBC__ == 2) && (__GLIBC_MINOR__ >= 25)))
 #	include <sys/random.h>
 #elif defined(__EMSCRIPTEN__)
@@ -81,14 +81,21 @@ void Randomizer::SetSeed(uint32_t seed)
 void SetRandomSeed(uint32_t seed)
 {
 	_random.SetSeed(seed);
-	_interactive_random.SetSeed(seed * 0x1234567);
+}
+
+void InitialiseRandomSeeds()
+{
+	std::array<uint32_t, 2> random_seeds;
+	RandomBytesWithFallback({ reinterpret_cast<uint8_t *>(random_seeds.data()), std::span(random_seeds).size_bytes() });
+	_random.SetSeed(random_seeds[0]);
+	_interactive_random.SetSeed(random_seeds[1]);
 }
 
 #ifdef RANDOM_DEBUG
 uint32_t DoRandom(int line, const char *file)
 {
-	if (_networking && (!_network_server || (NetworkClientSocket::IsValidID(0) && NetworkClientSocket::Get(0)->status != NetworkClientSocket::STATUS_INACTIVE))) {
-		Debug(random, 0, "{}; {:04x}; {:02x}; {}:{}", debug_date_dumper().HexDate(), _frame_counter, (uint8_t)_current_company, file, line);
+	if (_networking && (!_network_server || (NetworkClientSocket::IsValidID(0) && NetworkClientSocket::Get(0)->status != NetworkClientSocket::ClientStatus::Inactive))) {
+		Debug(random, 0, "{}; {:04x}; {:02x}; {}:{}", debug_date_dumper().HexDate(), _frame_counter, _current_company, file, line);
 	}
 
 	return _random.Next();
@@ -146,7 +153,7 @@ void RandomBytesWithFallback(std::span<uint8_t> buf)
 	Debug(misc, have_warned ? 1 : 0, "Cryptographically-strong random generator unavailable; using fallback");
 
 	for (uint i = 0; i < buf.size(); i ++) {
-		uint64_t current_time = static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now().time_since_epoch()).count());
+		uint64_t current_time = NanosecondsRealtimeTicks();
 		buf[i] = static_cast<uint8_t>(SimpleHash64(current_time ^ InteractiveRandom()));
 	}
 }

@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file signal_sl.cpp Code handling saving and loading of signals */
@@ -33,6 +33,11 @@ static void WriteVLI(Buffer &b, uint i)
 	b.push_back((uint8_t) i);
 }
 
+static inline void WriteVLI(Buffer &b, TileIndex t)
+{
+	WriteVLI(b, t.base());
+}
+
 static uint ReadVLI()
 {
 	uint shift = 0;
@@ -58,43 +63,52 @@ static void WriteCondition(Buffer &b, SignalCondition *c)
 			SignalVariableCondition *vc = static_cast<SignalVariableCondition*>(c);
 			WriteVLI(b, vc->comparator);
 			WriteVLI(b, vc->value);
-		} break;
+			break;
+		}
 
 		case PSC_SIGNAL_STATE: {
 			SignalStateCondition *sc = static_cast<SignalStateCondition*>(c);
 			WriteVLI(b, sc->sig_tile);
 			WriteVLI(b, sc->sig_track);
-		} break;
+			break;
+		}
 
 		case PSC_SLOT_OCC:
 		case PSC_SLOT_OCC_REM: {
 			SignalSlotCondition *cc = static_cast<SignalSlotCondition*>(c);
-			WriteVLI(b, cc->slot_id);
+			WriteVLI(b, cc->slot_id.base());
 			WriteVLI(b, cc->comparator);
 			WriteVLI(b, cc->value);
-		} break;
+			break;
+		}
 
 		case PSC_COUNTER: {
 			SignalCounterCondition *cc = static_cast<SignalCounterCondition*>(c);
-			WriteVLI(b, cc->ctr_id);
+			WriteVLI(b, cc->ctr_id.base());
 			WriteVLI(b, cc->comparator);
 			WriteVLI(b, cc->value);
-		} break;
+			break;
+		}
 
 		default:
 			break;
 	}
 }
 
+[[noreturn]] static void ProgSigSlErrorCorrupt(int line)
+{
+	SlErrorCorruptFmt("Progsig: Load error on line: {}", line);
+}
+
 static SignalCondition *ReadCondition(SignalReference this_sig)
 {
 	SignalConditionCode code = (SignalConditionCode) ReadVLI();
-	switch(code) {
+	switch (code) {
 		case PSC_NUM_GREEN:
 		case PSC_NUM_RED: {
 			SignalVariableCondition *c = new SignalVariableCondition(code);
 			c->comparator = (SignalComparator) ReadVLI();
-			if(c->comparator > SGC_LAST) NOT_REACHED();
+			if (c->comparator > SGC_LAST) ProgSigSlErrorCorrupt(__LINE__);
 			c->value = ReadVLI();
 			return c;
 		}
@@ -110,16 +124,17 @@ static SignalCondition *ReadCondition(SignalReference this_sig)
 			TraceRestrictSlotID slot_id = (TraceRestrictSlotID) ReadVLI();
 			SignalSlotCondition *c = new SignalSlotCondition(code, this_sig, slot_id);
 			c->comparator = (SignalComparator) ReadVLI();
-			if(c->comparator > SGC_LAST) NOT_REACHED();
+			if (c->comparator > SGC_LAST) ProgSigSlErrorCorrupt(__LINE__);
 			c->value = ReadVLI();
 			return c;
-		} break;
+			break;
+		}
 
 		case PSC_COUNTER: {
 			TraceRestrictCounterID ctr_id = (TraceRestrictCounterID) ReadVLI();
 			SignalCounterCondition *c = new SignalCounterCondition(this_sig, ctr_id);
 			c->comparator = (SignalComparator) ReadVLI();
-			if(c->comparator > SGC_LAST) NOT_REACHED();
+			if(c->comparator > SGC_LAST) ProgSigSlErrorCorrupt(__LINE__);
 			c->value = ReadVLI();
 			return c;
 		}
@@ -133,7 +148,7 @@ static void Save_SPRG()
 {
 	// Check for, and dispose of, any signal information on a tile which doesn't have signals.
 	// This indicates that someone removed the signals from the tile but didn't clean them up.
-	// (This code is to detect bugs and limit their consquences, not to cover them up!)
+	// (This code is to detect bugs and limit their consequences, not to cover them up!)
 	for (ProgramList::iterator i = _signal_programs.begin(); i != _signal_programs.end();) {
 		SignalReference ref = i->first;
 		if (!HasProgrammableSignals(ref)) {
@@ -188,7 +203,7 @@ static void Save_SPRG()
 				case PSO_SET_SIGNAL: {
 					SignalSet *s = static_cast<SignalSet*>(insn);
 					WriteVLI(b, s->next->Id());
-					WriteVLI(b, s->to_state ? 1 : 0);
+					WriteVLI(b, to_underlying(s->to_state));
 					break;
 				}
 
@@ -220,7 +235,7 @@ struct Fixup {
 
 typedef std::vector<Fixup> FixupList;
 
-template<typename T>
+template <typename T>
 static void MakeFixup(FixupList &l, T *&ir, uint id, SignalOpcode op = PSO_INVALID)
 {
 	ir = reinterpret_cast<T*>((size_t)id);
@@ -231,14 +246,12 @@ static void DoFixups(FixupList &l, InstructionList &il)
 {
 	for (Fixup &i : l) {
 		uint id = (uint)reinterpret_cast<size_t>(*(i.ptr));
-		if (id >= il.size())
-			NOT_REACHED();
+		if (id >= il.size()) ProgSigSlErrorCorrupt(__LINE__);
 
 		*(i.ptr) = il[id];
 
 		if (i.type != PSO_INVALID && (*(i.ptr))->Opcode() != i.type) {
-			Debug(sl, 0, "Expected Id {} to be {}, but was in fact {}", id, i.type, (*(i.ptr))->Opcode());
-			NOT_REACHED();
+			SlErrorCorruptFmt("Progsig: Expected Id {} to be {}, but was in fact {}", id, i.type, (*(i.ptr))->Opcode());
 		}
 	}
 }
@@ -248,7 +261,7 @@ static void Load_SPRG()
 	uint count = ReadVLI();
 	for(uint i = 0; i < count; i++) {
 		FixupList l;
-		TileIndex tile    = ReadVLI();
+		TileIndex tile    = (TileIndex) ReadVLI();
 		Track     track   = (Track) ReadVLI();
 		uint instructions = ReadVLI();
 		SignalReference ref(tile, track);
@@ -256,7 +269,7 @@ static void Load_SPRG()
 		SignalProgram *sp = new SignalProgram(tile, track, true);
 		_signal_programs[ref] = sp;
 
-		for(uint j = 0; j < instructions; j++) {
+		for (uint j = 0; j < instructions; j++) {
 			SignalOpcode op = (SignalOpcode) ReadVLI();
 			switch(op) {
 				case PSO_FIRST: {
@@ -295,12 +308,12 @@ static void Load_SPRG()
 					SignalSet *s = new SignalSet(sp);
 					MakeFixup(l, s->GetPrevHandle(), ReadVLI());
 					MakeFixup(l, s->next, ReadVLI());
-					s->to_state = (SignalState) ReadVLI();
-					if(s->to_state > SIGNAL_STATE_MAX) NOT_REACHED();
+					s->to_state = static_cast<SignalState>(ReadVLI());
+					if (s->to_state >= SignalState::End) ProgSigSlErrorCorrupt(__LINE__);
 					break;
 				}
 
-				default: NOT_REACHED();
+				default: ProgSigSlErrorCorrupt(__LINE__);
 			}
 		}
 
@@ -309,7 +322,7 @@ static void Load_SPRG()
 }
 
 extern const ChunkHandler signal_chunk_handlers[] = {
-	{ 'SPRG', Save_SPRG, Load_SPRG, nullptr, nullptr, CH_RIFF },
+	{ 'SPRG', Save_SPRG, Load_SPRG, nullptr, nullptr, ChunkType::Riff },
 };
 
 extern const ChunkHandlerTable _signal_chunk_handlers(signal_chunk_handlers);

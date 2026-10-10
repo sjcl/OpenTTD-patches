@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file 32bpp_base.hpp Base for all 32 bits blitters. */
@@ -11,9 +11,8 @@
 #define BLITTER_32BPP_BASE_HPP
 
 #include "base.hpp"
-#include "../core/bitmath_func.hpp"
-#include "../core/math_func.hpp"
 #include "../gfx_func.h"
+#include "../palette_func.h"
 
 /** Base for all 32bpp blitters. */
 class Blitter_32bppBase : public Blitter {
@@ -24,14 +23,14 @@ public:
 	}
 
 	void *MoveTo(void *video, int x, int y) override;
-	void SetPixel(void *video, int x, int y, uint8_t colour) override;
-	void SetPixel32(void *video, int x, int y, uint8_t colour, uint32_t colour32) override;
-	void DrawLine(void *video, int x, int y, int x2, int y2, int screen_width, int screen_height, uint8_t colour, int width, int dash) override;
+	void SetPixel(void *video, int x, int y, PixelColour colour) override;
+	void SetPixel32(void *video, int x, int y, PixelColour colour, uint32_t colour32) override;
+	void DrawLine(void *video, int x, int y, int x2, int y2, int screen_width, int screen_height, PixelColour colour, int width, int dash) override;
 	void SetRect(void *video, int x, int y, const uint8_t *colours, uint lines, uint width, uint pitch) override;
 	void SetRect32(void *video, int x, int y, const uint32_t *colours, uint lines, uint width, uint pitch) override;
 	void SetRectNoD7(void *video, int x, int y, const uint8_t *colours, uint lines, uint width, uint pitch) override;
-	void DrawRect(void *video, int width, int height, uint8_t colour) override;
-	void DrawRectAt(void *video, int x, int y, int width, int height, uint8_t colour) override;
+	void DrawRect(void *video, int width, int height, PixelColour colour) override;
+	void DrawRectAt(void *video, int x, int y, int width, int height, PixelColour colour) override;
 	void CopyFromBuffer(void *video, const void *src, int width, int height) override;
 	void CopyToBuffer(const void *video, void *dst, int width, int height) override;
 	void CopyImageToBuffer(const void *video, void *dst, int width, int height, int dst_pitch) override;
@@ -42,6 +41,8 @@ public:
 
 	/**
 	 * Look up the colour in the current palette.
+	 * @param index The index into the palette.
+	 * @return The colour.
 	 */
 	static inline Colour LookupColourInPalette(uint index)
 	{
@@ -50,6 +51,12 @@ public:
 
 	/**
 	 * Compose a colour based on RGBA values and the current pixel value.
+	 * @param r The red component of the colour to blend between 0 and 255 (inclusive).
+	 * @param g The green component of the colour to blend between 0 and 255 (inclusive).
+	 * @param b The blue component of the colour to blend between 0 and 255 (inclusive).
+	 * @param a The 'percentage' between 0 and 255 (inclusive) to blend into the current colour.
+	 * @param current The current/base colour.
+	 * @return The blended colour.
 	 */
 	static inline Colour ComposeColourRGBANoCheck(uint r, uint g, uint b, uint a, Colour current)
 	{
@@ -67,6 +74,12 @@ public:
 	/**
 	 * Compose a colour based on RGBA values and the current pixel value.
 	 * Handles fully transparent and solid pixels in a special (faster) way.
+	 * @param r The red component of the colour to blend between 0 and 255 (inclusive).
+	 * @param g The green component of the colour to blend between 0 and 255 (inclusive).
+	 * @param b The blue component of the colour to blend between 0 and 255 (inclusive).
+	 * @param a The 'percentage' between 0 and 255 (inclusive) to blend into the current colour.
+	 * @param current The current/base colour.
+	 * @return The blended colour.
 	 */
 	static inline Colour ComposeColourRGBA(uint r, uint g, uint b, uint a, Colour current)
 	{
@@ -78,6 +91,10 @@ public:
 
 	/**
 	 * Compose a colour based on Pixel value, alpha value, and the current pixel value.
+	 * @param colour The colour to blend.
+	 * @param a The 'percentage' between 0 and 255 (inclusive) to blend into the current colour.
+	 * @param current The current/base colour.
+	 * @return The blended colour.
 	 */
 	static inline Colour ComposeColourPANoCheck(Colour colour, uint a, Colour current)
 	{
@@ -91,6 +108,10 @@ public:
 	/**
 	 * Compose a colour based on Pixel value, alpha value, and the current pixel value.
 	 * Handles fully transparent and solid pixels in a special (faster) way.
+	 * @param colour The colour to blend.
+	 * @param a The 'percentage' between 0 and 255 (inclusive) to blend into the current colour.
+	 * @param current The current/base colour.
+	 * @return The blended colour.
 	 */
 	static inline Colour ComposeColourPA(Colour colour, uint a, Colour current)
 	{
@@ -161,28 +182,6 @@ public:
 		uint grey = ((r * 19595) + (g * 38470) + (b * 7471)) / 65536;
 
 		return Colour(grey, grey, grey);
-	}
-
-	static const int DEFAULT_BRIGHTNESS = 128;
-
-	static Colour ReallyAdjustBrightness(Colour colour, uint8_t brightness);
-
-	static inline Colour AdjustBrightness(Colour colour, uint8_t brightness)
-	{
-		/* Shortcut for normal brightness */
-		if (likely(brightness == DEFAULT_BRIGHTNESS)) return colour;
-
-		return ReallyAdjustBrightness(colour, brightness);
-	}
-
-	static inline uint8_t GetColourBrightness(Colour colour)
-	{
-		uint8_t rgb_max = std::max(colour.r, std::max(colour.g, colour.b));
-
-		/* Black pixel (8bpp or old 32bpp image), so use default value */
-		if (rgb_max == 0) rgb_max = DEFAULT_BRIGHTNESS;
-
-		return rgb_max;
 	}
 };
 

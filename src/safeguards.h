@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /**
@@ -18,6 +18,9 @@
 
 #ifndef SAFEGUARDS_H
 #define SAFEGUARDS_H
+
+/* Ignore everything in here for doxygen. These should not be used, so also not show up in the documentation. */
+#ifndef DOXYGEN_API
 
 /* Use MallocT instead. */
 #define malloc    SAFEGUARD_DO_NOT_USE_THIS_METHOD
@@ -54,6 +57,22 @@
 /* No clear replacement. */
 #define strtok    SAFEGUARD_DO_NOT_USE_THIS_METHOD
 
+/* Use ParseInteger or StringConsumer instead. */
+#define atoi      SAFEGUARD_DO_NOT_USE_THIS_METHOD
+#define atol      SAFEGUARD_DO_NOT_USE_THIS_METHOD
+#define atoll     SAFEGUARD_DO_NOT_USE_THIS_METHOD
+#define strtol    SAFEGUARD_DO_NOT_USE_THIS_METHOD
+#define strtoll   SAFEGUARD_DO_NOT_USE_THIS_METHOD
+#define strtoul   SAFEGUARD_DO_NOT_USE_THIS_METHOD
+#define strtoull  SAFEGUARD_DO_NOT_USE_THIS_METHOD
+#define stoi      SAFEGUARD_DO_NOT_USE_THIS_METHOD
+#define stol      SAFEGUARD_DO_NOT_USE_THIS_METHOD
+#define stoll     SAFEGUARD_DO_NOT_USE_THIS_METHOD
+#define stoul     SAFEGUARD_DO_NOT_USE_THIS_METHOD
+#define stoull    SAFEGUARD_DO_NOT_USE_THIS_METHOD
+#define stoimax   SAFEGUARD_DO_NOT_USE_THIS_METHOD
+#define stoumax   SAFEGUARD_DO_NOT_USE_THIS_METHOD
+
 /* Use our own templated implementation instead of a macro or function with only one type. */
 #ifdef min
 #undef min
@@ -82,4 +101,5 @@
 #define strerror SAFEGUARD_DO_NOT_USE_THIS_METHOD
 #endif /* defined(NETWORK_CORE_OS_ABSTRACTION_H) && defined(_WIN32) */
 
+#endif /* DOXYGEN_API */
 #endif /* SAFEGUARDS_H */

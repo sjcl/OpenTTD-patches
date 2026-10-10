@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file cocoa_ogl.h The Cocoa OpenGL video driver. */
@@ -37,7 +37,6 @@ public:
 
 	bool HasAnimBuffer() override { return true; }
 
-	/** Return driver name */
 	const char *GetName() const override { return "cocoa-opengl"; }
 
 	const char *GetInfoString() const override { return this->driver_info.c_str(); }
@@ -55,8 +54,8 @@ protected:
 
 class FVideoDriver_CocoaOpenGL : public DriverFactoryBase {
 public:
-	FVideoDriver_CocoaOpenGL() : DriverFactoryBase(Driver::DT_VIDEO, 9, "cocoa-opengl", "Cocoa OpenGL Video Driver") {}
-	Driver *CreateInstance() const override { return new VideoDriver_CocoaOpenGL(); }
+	FVideoDriver_CocoaOpenGL() : DriverFactoryBase(Driver::Type::Video, 9, "cocoa-opengl", "Cocoa OpenGL Video Driver") {}
+	std::unique_ptr<Driver> CreateInstance() const override { return std::make_unique<VideoDriver_CocoaOpenGL>(); }
 
 protected:
 	bool UsesHardwareAcceleration() const override { return true; }

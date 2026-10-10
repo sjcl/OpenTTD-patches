@@ -2,12 +2,10 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
-/**
- * @file http_winhttp.cpp WinHTTP-based implementation for HTTP requests.
- */
+/** @file http_winhttp.cpp WinHTTP-based implementation for HTTP requests. */
 
 #include "../../stdafx.h"
 #include "../../debug.h"
@@ -22,7 +20,7 @@
 
 #include "../../safeguards.h"
 
-static HINTERNET _winhttp_session = nullptr;
+static HINTERNET _winhttp_session = nullptr; ///< Currently running download session.
 
 /** Single HTTP request. */
 class NetworkHTTPRequest {
@@ -37,7 +35,7 @@ private:
 	int depth = 0;                       ///< Current redirect depth we are in.
 
 public:
-	NetworkHTTPRequest(const std::wstring &uri, HTTPCallback *callback, const std::string &data);
+	NetworkHTTPRequest(std::wstring &&uri, HTTPCallback *callback, std::string &&data);
 
 	~NetworkHTTPRequest();
 
@@ -46,14 +44,14 @@ public:
 	void WinHttpCallback(DWORD code, void *info, DWORD length);
 };
 
-static std::vector<NetworkHTTPRequest *> _http_requests;
-static std::vector<NetworkHTTPRequest *> _new_http_requests;
-static std::mutex _new_http_requests_mutex;
+static std::vector<NetworkHTTPRequest *> _http_requests; ///< HTTP requests that are currently running.
+static std::vector<NetworkHTTPRequest *> _new_http_requests; ///< HTTP requests that should be started.
+static std::mutex _new_http_requests_mutex; ///< Mutex to prevent concurrent access #_new_http_requests.
 
-static std::vector<HTTPThreadSafeCallback *> _http_callbacks;
-static std::vector<HTTPThreadSafeCallback *> _new_http_callbacks;
-static std::mutex _http_callback_mutex;
-static std::mutex _new_http_callback_mutex;
+static std::vector<HTTPThreadSafeCallback *> _http_callbacks; ///< Callback for the current requests.
+static std::vector<HTTPThreadSafeCallback *> _new_http_callbacks; ///< Callbacks for the request that should be started.
+static std::mutex _http_callback_mutex; ///< Mutex to prevent concurrent access to #_http_callbacks.
+static std::mutex _new_http_callback_mutex; ///< Mutex to prevent concurrent access to #_new_http_callbacks.
 
 /**
  * Create a new HTTP request.
@@ -62,15 +60,19 @@ static std::mutex _new_http_callback_mutex;
  * @param callback the callback to send data back on.
  * @param data     the data we want to send. When non-empty, this will be a POST request, otherwise a GET request.
  */
-NetworkHTTPRequest::NetworkHTTPRequest(const std::wstring &uri, HTTPCallback *callback, const std::string &data) :
-	uri(uri),
+NetworkHTTPRequest::NetworkHTTPRequest(std::wstring &&uri, HTTPCallback *callback, std::string &&data) :
+	uri(std::move(uri)),
 	callback(callback),
-	data(data)
+	data(std::move(data))
 {
 	std::lock_guard<std::mutex> lock(_new_http_callback_mutex);
 	_new_http_callbacks.push_back(&this->callback);
 }
 
+/**
+ * Gets the last error from Windows as a string.
+ * @return The human readable form of the last error.
+ */
 static std::string GetLastErrorAsString()
 {
 	wchar_t buffer[512];
@@ -159,7 +161,7 @@ void NetworkHTTPRequest::WinHttpCallback(DWORD code, void *info, DWORD length)
 			DWORD size = *(DWORD *)info;
 
 			/* Next step: read the data in a temporary allocated buffer.
-			 * The buffer will be free'd by OnReceiveData() in the next step. */
+			 * The buffer will be freed by OnReceiveData() in the next step. */
 			char *buffer = size == 0 ? nullptr : new char[size];
 			WinHttpReadData(this->request, buffer, size, 0);
 		} break;
@@ -188,13 +190,20 @@ void NetworkHTTPRequest::WinHttpCallback(DWORD code, void *info, DWORD length)
 			break;
 
 		default:
-			Debug(net, 0, "HTTP request failed: unexepected callback code 0x{:x}", code);
+			Debug(net, 0, "HTTP request failed: unexpected callback code 0x{:x}", code);
 			this->callback.OnFailure();
 			this->finished = true;
 			return;
 	}
 }
 
+/**
+ * Implementation of Microsoft's WINHTTP_STATUS_CALLBACK.
+ * @param context Pointer to our context, i.e. our request.
+ * @param code The code of the event.
+ * @param info The information about the event.
+ * @param length The length of the information.
+ */
 static void CALLBACK StaticWinHttpCallback(HINTERNET, DWORD_PTR context, DWORD code, void *info, DWORD length)
 {
 	if (context == 0) return;
@@ -254,7 +263,7 @@ void NetworkHTTPRequest::Connect()
 	} else {
 		/* When the payload starts with a '{', it is a JSON payload. */
 		LPCWSTR content_type = data.starts_with("{") ? L"Content-Type: application/json\r\n" : L"Content-Type: application/x-www-form-urlencoded\r\n";
-		WinHttpSendRequest(this->request, content_type, -1, const_cast<char *>(data.c_str()), static_cast<DWORD>(data.size()), static_cast<DWORD>(data.size()), reinterpret_cast<DWORD_PTR>(this));
+		WinHttpSendRequest(this->request, content_type, -1, const_cast<char *>(data.data()), static_cast<DWORD>(data.size()), static_cast<DWORD>(data.size()), reinterpret_cast<DWORD_PTR>(this));
 	}
 }
 
@@ -281,7 +290,7 @@ bool NetworkHTTPRequest::Receive()
 /**
  * Destructor of the HTTP request.
  *
- * Makes sure all handlers are closed, and all memory is free'd.
+ * Makes sure all handlers are closed, and all memory is freed.
  */
 NetworkHTTPRequest::~NetworkHTTPRequest()
 {
@@ -294,7 +303,7 @@ NetworkHTTPRequest::~NetworkHTTPRequest()
 	_http_callbacks.erase(std::remove(_http_callbacks.begin(), _http_callbacks.end(), &this->callback), _http_callbacks.end());
 }
 
-/* static */ void NetworkHTTPSocketHandler::Connect(const std::string &uri, HTTPCallback *callback, std::string data)
+/* static */ void NetworkHTTPSocketHandler::Connect(std::string_view uri, HTTPCallback *callback, std::string &&data)
 {
 	auto request = new NetworkHTTPRequest(std::wstring(uri.begin(), uri.end()), callback, std::move(data));
 	request->Connect();

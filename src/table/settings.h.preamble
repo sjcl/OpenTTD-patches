@@ -2,13 +2,15 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
-/** @file table/settings.h Settings to save in the savegame and config file. */
+/** @file settings.h Settings to save in the savegame and config file. */
+
+#include "table/strings.h"
 
 /* Callback function used in _settings[] as well as _company_settings[] */
-static size_t ConvertLandscape(const char *value);
+static std::optional<uint32_t> ConvertLandscape(std::string_view value);
 
 static StringID SettingTitleWallclock(const IntSettingDesc &sd);
 static StringID SettingHelpWallclock(const IntSettingDesc &sd);
@@ -19,6 +21,17 @@ static void UpdateTimeSettings(int32_t new_value);
 
 /* Callback function used for various settings */
 static bool CheckTTDPatchSettingFlag(uint flag);
+
+template <typename T>
+static void SettingMarkWholeScreenDirty(T new_value)
+{
+	MarkWholeScreenDirty();
+}
+
+static void InvalidateSettingsWindows(int32_t new_value)
+{
+	InvalidateWindowClassesData(WindowClass::GameOptions);
+}
 
 /****************************
  * OTTD specific INI stuff
@@ -63,27 +76,64 @@ static bool CheckTTDPatchSettingFlag(uint flag);
  * on the appropriate macro.
  */
 
-template <typename T, std::enable_if_t<!std::is_base_of<StrongTypedefBase, T>::value, int> = 0>
-constexpr T STUnwrap(T value)
+template <typename T>
+concept STUnwrapAsBase = T::serialisation_as_base || false;
+
+template <typename T>
+constexpr auto STUnwrap(T value)
 {
-	return value;
+	if constexpr (STUnwrapAsBase<T>) {
+		return value.base();
+	} else if constexpr (is_scoped_enum_v<T>) {
+		return to_underlying(value);
+	} else {
+		return value;
+	}
 }
 
-template <typename T, std::enable_if_t<std::is_base_of<StrongTypedefBase, T>::value, int> = 0>
-constexpr typename T::BaseType STUnwrap(T value)
+template <typename T>
+constexpr bool DoesMaxFitVariableImpl(T max, VarType type)
 {
-	return value.base();
+	switch (type.mem) {
+		case SLE_VAR_BL: return max <= 1;
+		case SLE_VAR_I8: return max <= INT8_MAX;
+		case SLE_VAR_U8: return std::make_unsigned_t<T>(max) <= UINT8_MAX;
+		case SLE_VAR_I16: return max <= INT16_MAX;
+		case SLE_VAR_U16: return std::make_unsigned_t<T>(max) <= UINT16_MAX;
+		case SLE_VAR_I32: return max <= INT32_MAX;
+		case SLE_VAR_U32: return std::make_unsigned_t<T>(max) <= UINT32_MAX;
+		/* 64 bits variables are not supported by the settings logic. For strings checking the maximum makes no sense. */
+		default: NOT_REACHED();
+	}
 }
 
-#define NSD(type, ...) std::unique_ptr<const SettingDesc>(new type##SettingDesc(__VA_ARGS__))
+/**
+ * Check whether the given maximum value fits within the range of the variable of the given type.
+ * @param max The maximum value.
+ * @param type The \c VarType to get the variable type from.
+ * @return \c true iff \c max is less than or equal to the maximum value that can be stored in \c type.
+ */
+template <typename T>
+constexpr bool DoesMaxFitVariable(T max, VarType type)
+{
+	return DoesMaxFitVariableImpl(STUnwrap(max), type);
+}
+
+#if USE_CONSTEXPR_CPPOFFSET_OF
+#define SDEF(id) static constinit const auto id =
+#else
+#define SDEF(id) static const auto id =
+#endif
+
+#define NSD(type, ...) type##SettingDesc(__VA_ARGS__)
 
 /* Macros for various objects to go in the configuration file.
  * This section is for global variables */
-#define SDTG_VAR(name, type, flags, var, def, min, max, interval, str, strhelp, strval, pre_check, post_callback, get_title_hook, get_help_hook, set_value_dparams_hook, get_def_hook, from, to, extver, cat, guiproc, startup, patxname)\
-	NSD(Int, SLEG_GENERAL_X(SL_VAR, var, type, 1, from, to, extver), name, flags, guiproc, startup, patxname, STUnwrap(def), STUnwrap(min), STUnwrap(max), interval, str, strhelp, strval, cat, pre_check, post_callback, get_title_hook, get_help_hook, set_value_dparams_hook, get_def_hook, nullptr)
+#define SDTG_VAR(name, type, flags, var, def, min, max, interval, str, strhelp, strval, pre_check, post_callback, get_title_hook, get_help_hook, set_value_dparams_hook, get_def_hook, get_range_hook, from, to, extver, cat, guiproc, startup, patxname)\
+	NSD(Int, SLEG_GENERAL_X(SL_VAR, var, type, 1, from, to, extver), name, flags, guiproc, startup, patxname, STUnwrap(def), STUnwrap(min), STUnwrap(max), interval, str, strhelp, strval, cat, pre_check, post_callback, get_title_hook, get_help_hook, set_value_dparams_hook, get_def_hook, get_range_hook, nullptr)
 
 #define SDTG_ENUM(name, type, flags, var, def, str, strhelp, pre_check, post_callback, get_title_hook, get_help_hook, set_value_dparams_hook, get_def_hook, from, to, extver, cat, guiproc, startup, patxname, enumlist)\
-	NSD(Int, SLEG_GENERAL_X(SL_VAR, var, type, 1, from, to, extver), name, flags | SF_ENUM, guiproc, startup, patxname, def, 0, 0, 0, str, strhelp, STR_NULL, cat, pre_check, post_callback, get_title_hook, get_help_hook, set_value_dparams_hook, get_def_hook, enumlist)
+	NSD(Int, SLEG_GENERAL_X(SL_VAR, var, type, 1, from, to, extver), name, flags.Set(SettingFlag::Enum), guiproc, startup, patxname, STUnwrap(def), 0, 0, 0, str, strhelp, STR_NULL, cat, pre_check, post_callback, get_title_hook, get_help_hook, set_value_dparams_hook, get_def_hook, nullptr, enumlist)
 
 #define SDTG_BOOL(name, flags, var, def, str, strhelp, strval, pre_check, post_callback, get_title_hook, get_help_hook, set_value_dparams_hook, get_def_hook, from, to, extver, cat, guiproc, startup, patxname)\
 	NSD(Bool, SLEG_GENERAL_X(SL_VAR, var, SLE_BOOL, 1, from, to, extver), name, flags, guiproc, startup, patxname, def, str, strhelp, strval, cat, pre_check, post_callback, get_title_hook, get_help_hook, set_value_dparams_hook, get_def_hook)
@@ -95,24 +145,24 @@ constexpr typename T::BaseType STUnwrap(T value)
 	NSD(String, SLEG_GENERAL_X(SL_STDSTR, var, type, sizeof(var), from, to, extver), name, flags, guiproc, startup, patxname, def, max_length, pre_check, post_callback)
 
 #define SDTG_OMANY(name, type, flags, var, def, max, full, str, strhelp, strval, pre_check, post_callback, get_title_hook, get_help_hook, set_value_dparams_hook, get_def_hook, from, to, extver, cat, guiproc, startup, patxname)\
-	NSD(OneOfMany, SLEG_GENERAL_X(SL_VAR, var, type, 1, from, to, extver), name, flags, guiproc, startup, patxname, def, max, str, strhelp, strval, cat, pre_check, post_callback, get_title_hook, get_help_hook, set_value_dparams_hook, get_def_hook, full, nullptr)
+	NSD(OneOfMany, SLEG_GENERAL_X(SL_VAR, var, type, 1, from, to, extver), name, flags, guiproc, startup, patxname, STUnwrap(def), STUnwrap(max), str, strhelp, strval, cat, pre_check, post_callback, get_title_hook, get_help_hook, set_value_dparams_hook, get_def_hook, full, nullptr)
 
 #define SDTG_MMANY(name, type, flags, var, def, full, str, strhelp, strval, pre_check, post_callback, get_title_hook, get_help_hook, set_value_dparams_hook, get_def_hook, from, to, extver, cat, guiproc, startup, patxname)\
-	NSD(ManyOfMany, SLEG_GENERAL_X(SL_VAR, var, type, 1, from, to, extver), name, flags, guiproc, startup, patxname, def, str, strhelp, strval, cat, pre_check, post_callback, get_title_hook, get_help_hook, set_value_dparams_hook, get_def_hook, full, nullptr)
+	NSD(ManyOfMany, SLEG_GENERAL_X(SL_VAR, var, type, 1, from, to, extver), name, flags, guiproc, startup, patxname, STUnwrap(def), str, strhelp, strval, cat, pre_check, post_callback, get_title_hook, get_help_hook, set_value_dparams_hook, get_def_hook, full, nullptr)
 
 #define SDTG_NULL(length, from, to, extver)\
 	NSD(Null, SLE_CONDNULL_X(length, from, to, extver))
 
 /* Macros for various objects to go in the configuration file.
  * This section is for structures where their various members are saved */
-#define SDT_VAR(base, var, type, flags, def, min, max, interval, str, strhelp, strval, pre_check, post_callback, get_title_hook, get_help_hook, set_value_dparams_hook, get_def_hook, from, to, extver, cat, guiproc, startup, patxname)\
-	NSD(Int, SLE_GENERAL_X(SL_VAR, base, var, type, 1, from, to, extver), #var, flags, guiproc, startup, patxname, STUnwrap(def), STUnwrap(min), STUnwrap(max), interval, str, strhelp, strval, cat, pre_check, post_callback, get_title_hook, get_help_hook, set_value_dparams_hook, get_def_hook, nullptr)
+#define SDT_VAR(base, var, type, flags, def, min, max, interval, str, strhelp, strval, pre_check, post_callback, get_title_hook, get_help_hook, set_value_dparams_hook, get_def_hook, get_range_hook, from, to, extver, cat, guiproc, startup, patxname)\
+	NSD(Int, SLE_GENERAL_X(SL_VAR, base, var, type, 1, from, to, extver), #var, flags, guiproc, startup, patxname, STUnwrap(def), STUnwrap(min), STUnwrap(max), interval, str, strhelp, strval, cat, pre_check, post_callback, get_title_hook, get_help_hook, set_value_dparams_hook, get_def_hook, get_range_hook, nullptr)
 
-#define SDT_VAR2(base, name, var, type, flags, def, min, max, interval, str, strhelp, strval, pre_check, post_callback, get_title_hook, get_help_hook, set_value_dparams_hook, get_def_hook, from, to, extver, cat, guiproc, startup, patxname)\
-	NSD(Int, SLE_GENERAL_X(SL_VAR, base, var, type, 1, from, to, extver), name, flags, guiproc, startup, patxname, STUnwrap(def), STUnwrap(min), STUnwrap(max), interval, str, strhelp, strval, cat, pre_check, post_callback, get_title_hook, get_help_hook, set_value_dparams_hook, get_def_hook, nullptr)
+#define SDT_VAR2(base, name, var, type, flags, def, min, max, interval, str, strhelp, strval, pre_check, post_callback, get_title_hook, get_help_hook, set_value_dparams_hook, get_def_hook, get_range_hook, from, to, extver, cat, guiproc, startup, patxname)\
+	NSD(Int, SLE_GENERAL_X(SL_VAR, base, var, type, 1, from, to, extver), name, flags, guiproc, startup, patxname, STUnwrap(def), STUnwrap(min), STUnwrap(max), interval, str, strhelp, strval, cat, pre_check, post_callback, get_title_hook, get_help_hook, set_value_dparams_hook, get_def_hook, get_range_hook, nullptr)
 
 #define SDT_ENUM(base, var, type, flags, def, str, strhelp, pre_check, post_callback, get_title_hook, get_help_hook, set_value_dparams_hook, get_def_hook, from, to, extver, cat, guiproc, startup, patxname, enumlist)\
-	NSD(Int, SLE_GENERAL_X(SL_VAR, base, var, type, 1, from, to, extver), #var, flags | SF_ENUM, guiproc, startup, patxname, def, 0, 0, 0, str, strhelp, STR_NULL, cat, pre_check, post_callback, get_title_hook, get_help_hook, set_value_dparams_hook, get_def_hook, enumlist)
+	NSD(Int, SLE_GENERAL_X(SL_VAR, base, var, type, 1, from, to, extver), #var, flags.Set(SettingFlag::Enum), guiproc, startup, patxname, STUnwrap(def), 0, 0, 0, str, strhelp, STR_NULL, cat, pre_check, post_callback, get_title_hook, get_help_hook, set_value_dparams_hook, get_def_hook, nullptr, enumlist)
 
 #define SDT_BOOL(base, var, flags, def, str, strhelp, strval, pre_check, post_callback, get_title_hook, get_help_hook, set_value_dparams_hook, get_def_hook, from, to, extver, cat, guiproc, startup, patxname)\
 	NSD(Bool, SLE_GENERAL_X(SL_VAR, base, var, SLE_BOOL, 1, from, to, extver), #var, flags, guiproc, startup, patxname, def, str, strhelp, strval, cat, pre_check, post_callback, get_title_hook, get_help_hook, set_value_dparams_hook, get_def_hook)
@@ -124,10 +174,10 @@ constexpr typename T::BaseType STUnwrap(T value)
 	NSD(String, SLE_GENERAL_X(SL_STDSTR, base, var, type, sizeof(((base*)8)->var), from, to, extver), #var, flags, guiproc, startup, patxname, def, 0, pre_check, post_callback)
 
 #define SDT_OMANY(base, var, type, flags, def, max, full, str, strhelp, strval, pre_check, post_callback, get_title_hook, get_help_hook, set_value_dparams_hook, get_def_hook, from, to, extver, load, cat, guiproc, startup, patxname)\
-	NSD(OneOfMany, SLE_GENERAL_X(SL_VAR, base, var, type, 1, from, to, extver), #var, flags, guiproc, startup, patxname, def, max, str, strhelp, strval, cat, pre_check, post_callback, get_title_hook, get_help_hook, set_value_dparams_hook, get_def_hook, full, load)
+	NSD(OneOfMany, SLE_GENERAL_X(SL_VAR, base, var, type, 1, from, to, extver), #var, flags, guiproc, startup, patxname, STUnwrap(def), STUnwrap(max), str, strhelp, strval, cat, pre_check, post_callback, get_title_hook, get_help_hook, set_value_dparams_hook, get_def_hook, full, load)
 
 #define SDT_MMANY(base, var, type, flags, def, full, str, pre_check, post_callback, get_title_hook, get_help_hook, set_value_dparams_hook, get_def_hook, strhelp, strval, from, to, extver, cat, guiproc, startup, patxname)\
-	NSD(ManyOfMany, SLE_GENERAL_X(SL_VAR, base, var, type, 1, from, to, extver), #var, flags, guiproc, startup, patxname, def, str, strhelp, strval, cat, pre_check, post_callback, get_title_hook, get_help_hook, set_value_dparams_hook, get_def_hook, full, nullptr)
+	NSD(ManyOfMany, SLE_GENERAL_X(SL_VAR, base, var, type, 1, from, to, extver), #var, flags, guiproc, startup, patxname, STUnwrap(def), str, strhelp, strval, cat, pre_check, post_callback, get_title_hook, get_help_hook, set_value_dparams_hook, get_def_hook, full, nullptr)
 
 #define SDT_NULL(length, from, to, extver)\
 	NSD(Null, SLE_CONDNULL_X(length, from, to, extver))
@@ -135,20 +185,20 @@ constexpr typename T::BaseType STUnwrap(T value)
 #define SDT_NAMED_NULL(name, length, from, to, extver, patxname)\
 	NSD(Null, SLE_CONDNULL_X(length, from, to, extver), name, patxname)
 
-#define SDTC_VAR(var, type, flags, def, min, max, interval, str, strhelp, strval, pre_check, post_callback, get_title_hook, get_help_hook, set_value_dparams_hook, get_def_hook, from, to, extver, cat, guiproc, startup, patxname)\
-	SDTG_VAR(#var, type, flags, _settings_client.var, STUnwrap(def), STUnwrap(min), STUnwrap(max), interval, str, strhelp, strval, pre_check, post_callback, get_title_hook, get_help_hook, set_value_dparams_hook, get_def_hook, from, to, extver, cat, guiproc, startup, patxname)
+#define SDTC_VAR(var, type, flags, def, min, max, interval, str, strhelp, strval, pre_check, post_callback, get_title_hook, get_help_hook, set_value_dparams_hook, get_def_hook, get_range_hook, from, to, extver, cat, guiproc, startup, patxname)\
+	SDTG_VAR(#var, type, flags, _settings_client.var, STUnwrap(def), STUnwrap(min), STUnwrap(max), interval, str, strhelp, strval, pre_check, post_callback, get_title_hook, get_help_hook, set_value_dparams_hook, get_def_hook, get_range_hook, from, to, extver, cat, guiproc, startup, patxname)
 
 #define SDTC_ENUM(var, type, flags, def, str, strhelp, pre_check, post_callback, get_title_hook, get_help_hook, set_value_dparams_hook, get_def_hook, from, to, extver, cat, guiproc, startup, patxname, enumlist)\
-	SDTG_ENUM(#var, type, flags, _settings_client.var, def, str, strhelp, pre_check, post_callback, get_title_hook, get_help_hook, set_value_dparams_hook, get_def_hook, from, to, extver, cat, guiproc, startup, patxname, enumlist)
+	SDTG_ENUM(#var, type, flags, _settings_client.var, STUnwrap(def), str, strhelp, pre_check, post_callback, get_title_hook, get_help_hook, set_value_dparams_hook, get_def_hook, from, to, extver, cat, guiproc, startup, patxname, enumlist)
 
 #define SDTC_BOOL(var, flags, def, str, strhelp, strval, pre_check, post_callback, get_title_hook, get_help_hook, set_value_dparams_hook, get_def_hook, from, to, extver, cat, guiproc, startup, patxname)\
 	SDTG_BOOL(#var, flags, _settings_client.var, def, str, strhelp, strval, pre_check, post_callback, get_title_hook, get_help_hook, set_value_dparams_hook, get_def_hook, from, to, extver, cat, guiproc, startup, patxname)
 
 #define SDTC_LIST(var, type, flags, def, from, to, extver, cat, guiproc, startup, patxname)\
-	SDTG_LIST(#var, type, flags, _settings_client.var, def, lengthof(_settings_client.var), from, to, extver, cat, guiproc, startup, patxname)
+	SDTG_LIST(#var, type, flags, _settings_client.var, def, std::tuple_size_v<decltype(_settings_client.var)>, from, to, extver, cat, guiproc, startup, patxname)
 
 #define SDTC_SSTR(var, type, flags, def, max_length, pre_check, post_callback, from, to, extver, cat, guiproc, startup, patxname)\
 	SDTG_SSTR(#var, type, flags, _settings_client.var, def, max_length, pre_check, post_callback, from, to, extver, cat, guiproc, startup, patxname)\
 
 #define SDTC_OMANY(var, type, flags, def, max, full, str, strhelp, strval, pre_check, post_callback, get_title_hook, get_help_hook, set_value_dparams_hook, get_def_hook, from, to, extver, cat, guiproc, startup, patxname)\
-	SDTG_OMANY(#var, type, flags, _settings_client.var, def, max, full, str, strhelp, strval, pre_check, post_callback, get_title_hook, get_help_hook, set_value_dparams_hook, get_def_hook, from, to, extver, cat, guiproc, startup, patxname)
+	SDTG_OMANY(#var, type, flags, _settings_client.var, STUnwrap(def), STUnwrap(max), full, str, strhelp, strval, pre_check, post_callback, get_title_hook, get_help_hook, set_value_dparams_hook, get_def_hook, from, to, extver, cat, guiproc, startup, patxname)

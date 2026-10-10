@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file tracerestrict.h Header file for Trace Restrict */
@@ -10,72 +10,68 @@
 #ifndef TRACERESTRICT_H
 #define TRACERESTRICT_H
 
-#include "stdafx.h"
+#include "tracerestrict_id_type.h"
 #include "core/bitmath_func.hpp"
 #include "core/enum_type.hpp"
 #include "core/pool_type.hpp"
 #include "core/container_func.hpp"
-#include "command_aux.h"
-#include "command_func.h"
+#include "core/strong_typedef_type.hpp"
+#include "command_type.h"
 #include "rail_map.h"
 #include "tile_type.h"
 #include "group_type.h"
 #include "vehicle_type.h"
 #include "signal_type.h"
+#include "station_type.h"
 #include "3rdparty/cpp-btree/btree_map.h"
-#include <map>
+#include "3rdparty/svector/svector.h"
 #include <vector>
 
 struct Train;
+struct Window;
 
-/** Program pool ID type. */
-typedef uint32_t TraceRestrictProgramID;
 struct TraceRestrictProgram;
 
 /** Tile/track mapping type. */
 typedef uint32_t TraceRestrictRefId;
 
 /** Type of the pool for trace restrict programs. */
-typedef Pool<TraceRestrictProgram, TraceRestrictProgramID, 16, 256000> TraceRestrictProgramPool;
+using TraceRestrictProgramPool = Pool<TraceRestrictProgram, TraceRestrictProgramID, 64>;
 /** The actual pool for trace restrict nodes. */
 extern TraceRestrictProgramPool _tracerestrictprogram_pool;
 
-/** Slot pool ID type. */
-typedef uint16_t TraceRestrictSlotID;
 struct TraceRestrictSlot;
 
 /** Type of the pool for trace restrict slots. */
-typedef Pool<TraceRestrictSlot, TraceRestrictSlotID, 16, 0xFFF0> TraceRestrictSlotPool;
+using TraceRestrictSlotPool = Pool<TraceRestrictSlot, TraceRestrictSlotID, 64>;
 /** The actual pool for trace restrict slots. */
 extern TraceRestrictSlotPool _tracerestrictslot_pool;
 
-static const TraceRestrictSlotID NEW_TRACE_RESTRICT_SLOT_ID = 0xFFFD;        // for GUI use only
-static const TraceRestrictSlotID ALL_TRAINS_TRACE_RESTRICT_SLOT_ID = 0xFFFE; // for GUI use only
-static const TraceRestrictSlotID INVALID_TRACE_RESTRICT_SLOT_ID = 0xFFFF;
+static constexpr TraceRestrictSlotID NEW_TRACE_RESTRICT_SLOT_ID{0xFFFD};        // for GUI use only
+static constexpr TraceRestrictSlotID ALL_TRAINS_TRACE_RESTRICT_SLOT_ID{0xFFFE}; // for GUI use only
+static constexpr TraceRestrictSlotID INVALID_TRACE_RESTRICT_SLOT_ID{0xFFFF};
 
-/** Slot group pool ID type. */
-typedef uint16_t TraceRestrictSlotGroupID;
+static const uint32_t TRACE_RESTRICT_SLOT_DEFAULT_MAX_OCCUPANCY = 1;
+
 struct TraceRestrictSlotGroup;
 
 /** Type of the pool for trace restrict slot groups. */
-typedef Pool<TraceRestrictSlotGroup, TraceRestrictSlotGroupID, 16, 0xFFF0> TraceRestrictSlotGroupPool;
+using TraceRestrictSlotGroupPool = Pool<TraceRestrictSlotGroup, TraceRestrictSlotGroupID, 64>;
 /** The actual pool for trace restrict slot groups. */
 extern TraceRestrictSlotGroupPool _tracerestrictslotgroup_pool;
 
-static const GroupID NEW_TRACE_RESTRICT_SLOT_GROUP     = 0xFFFE; ///< Sentinel for a to-be-created group.
-static const GroupID INVALID_TRACE_RESTRICT_SLOT_GROUP = 0xFFFF; ///< Sentinel for invalid slot groups. Ungrouped slots are in this group.
+static constexpr TraceRestrictSlotGroupID NEW_TRACE_RESTRICT_SLOT_GROUP{0xFFFE};     ///< Sentinel for a to-be-created group.
+static constexpr TraceRestrictSlotGroupID INVALID_TRACE_RESTRICT_SLOT_GROUP{0xFFFF}; ///< Sentinel for invalid slot groups. Ungrouped slots are in this group.
 
-/** Counter pool ID type. */
-typedef uint16_t TraceRestrictCounterID;
 struct TraceRestrictCounter;
 
 /** Type of the pool for trace restrict counters. */
-typedef Pool<TraceRestrictCounter, TraceRestrictCounterID, 16, 0xFFF0> TraceRestrictCounterPool;
+using TraceRestrictCounterPool = Pool<TraceRestrictCounter, TraceRestrictCounterID, 64>;
 /** The actual pool for trace restrict counters. */
 extern TraceRestrictCounterPool _tracerestrictcounter_pool;
 
-static const TraceRestrictCounterID NEW_TRACE_RESTRICT_COUNTER_ID = 0xFFFE;        // for GUI use only
-static const TraceRestrictCounterID INVALID_TRACE_RESTRICT_COUNTER_ID = 0xFFFF;
+static constexpr TraceRestrictCounterID NEW_TRACE_RESTRICT_COUNTER_ID{0xFFFE};     // for GUI use only
+static constexpr TraceRestrictCounterID INVALID_TRACE_RESTRICT_COUNTER_ID{0xFFFF};
 
 extern const uint16_t _tracerestrict_pathfinder_penalty_preset_values[];
 
@@ -96,37 +92,44 @@ extern TraceRestrictMapping _tracerestrictprogram_mapping;
 
 void ClearTraceRestrictMapping();
 
-/** Type of a single instruction, this is bit-packed as per TraceRestrictItemFlagAllocation */
-typedef uint32_t TraceRestrictItem;
+/**
+ * Type of a single program item, as in std::vector<TraceRestrictProgramItem>.
+ * Each instruction is formed of a TraceRestrictInstructionItem value, optionally followed by
+ * a free-form item in the next slot (if TraceRestrictInstructionItem::IsDoubleItem() is true).
+ */
+struct TraceRestrictProgramItemTag : public StrongType::TypedefTraits<uint32_t, StrongType::Compare> {};
+using TraceRestrictProgramItem = StrongType::Typedef<TraceRestrictProgramItemTag>;
 
 /**
- * Describes the allocation of bits to fields in TraceRestrictItem.
+ * Describes the allocation of bits to fields in TraceRestrictInstructionItem.
  * Of the fields below, the type seems the most likely
  * to need future expansion, hence the reserved bits are placed
  * immediately after them.
  *
  * This only applies to the first item of dual-item instructions.
  *
- *  0                   1                   2                   3
- *  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
- * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
- * |    Type   |   |Cond |Aux|Cond |             Value             |
- * |           |   |Flags|   | Op  |                               |
- * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
- *               |         |    |
- *              Free     Combined wider field (TRIFA_CMB_AUX_COND)
+ *   0                                       1                                       2                                       3
+ *   0   1   2   3   4   5   6   7   8   9   0   1   2   3   4   5   6   7   8   9   0   1   2   3   4   5   6   7   8   9   0   1
+ * +---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+
+ * |          Type         | Free  | Cond  |Fr |  Aux  |    Cond   |                            Value                              |
+ * |                       |       | Flags |ee |       |     Op    |                                                               |
+ * +---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+
+ *                                                 |         |
+ *                                               Combined wider field (TRIFA_CMB_AUX_COND)
  *
  * COUNT values describe the field bit width
  * OFFSET values describe the field bit offset
  */
-enum TraceRestrictItemFlagAllocation {
+enum TraceRestrictInstructionItemFlagAllocation {
 	TRIFA_TYPE_COUNT              = 6,
 	TRIFA_TYPE_OFFSET             = 0,
 
 	/* 2 bits reserved for future use */
 
-	TRIFA_COND_FLAGS_COUNT        = 3,
+	TRIFA_COND_FLAGS_COUNT        = 2,
 	TRIFA_COND_FLAGS_OFFSET       = 8,
+
+	/* 1 bit reserved for future use */
 
 	TRIFA_AUX_FIELD_COUNT         = 2,
 	TRIFA_AUX_FIELD_OFFSET        = 11,
@@ -159,6 +162,7 @@ enum TraceRestrictItemType : uint8_t {
 	TRIT_LONG_RESERVE             = 4,    ///< Long reserve PBS signal
 	TRIT_WAIT_AT_PBS              = 5,    ///< Wait at PBS signal
 	TRIT_SLOT                     = 6,    ///< Slot operation
+	TRIT_GUI_LABEL                = 7,    ///< GUI label
 
 	TRIT_COND_BEGIN               = 8,    ///< Start of conditional item types, note that this has the same value as TRIT_COND_ENDIF
 	TRIT_COND_ENDIF               = 8,    ///< This is an endif block or an else block
@@ -185,6 +189,9 @@ enum TraceRestrictItemType : uint8_t {
 	TRIT_COND_CATEGORY            = 30,   ///< Test train category
 	TRIT_COND_TARGET_DIRECTION    = 31,   ///< Test direction of order target tile relative to this signal tile
 	TRIT_COND_RESERVATION_THROUGH = 32,   ///< Test if train reservation passes through tile
+	TRIT_COND_TRAIN_IN_SLOT_GROUP = 33,   ///< Test train slot membership
+	TRIT_COND_ORDER_STOP_LOCATION = 34,   ///< Test train stop location (near/middle/far/through load)
+	TRIT_COND_TIMETABLE_STATE     = 35,   ///< Test train lateness/earliness
 
 	TRIT_COND_END                 = 48,   ///< End (exclusive) of conditional item types, note that this has the same value as TRIT_REVERSE
 	TRIT_REVERSE                  = 48,   ///< Reverse behind/at signal
@@ -194,6 +201,7 @@ enum TraceRestrictItemType : uint8_t {
 	TRIT_PF_PENALTY_CONTROL       = 52,   ///< Control base signal penalties
 	TRIT_SPEED_ADAPTATION_CONTROL = 53,   ///< Control speed adaptation
 	TRIT_SIGNAL_MODE_CONTROL      = 54,   ///< Control signal modes
+	TRIT_SLOT_GROUP               = 55,   ///< Slot group operation
 
 	/* space up to 63 */
 };
@@ -205,7 +213,6 @@ enum TraceRestrictCondFlags : uint8_t {
 	TRCF_DEFAULT                  = 0,       ///< indicates end if for type: TRIT_COND_ENDIF, if otherwise
 	TRCF_ELSE                     = 1 << 0,  ///< indicates an else block for type: TRIT_COND_ENDIF, elif otherwise
 	TRCF_OR                       = 1 << 1,  ///< indicates an orif block, not valid with type: TRIT_COND_ENDIF
-	/* 1 bit spare */
 };
 DECLARE_ENUM_AS_BIT_SET(TraceRestrictCondFlags)
 
@@ -222,10 +229,10 @@ enum TraceRestrictNullTypeSpecialValue : uint8_t {
  * Enumeration of TraceRestrictItemvalue type field when value type is TRVT_DIRECTION
  */
 enum TraceRestrictDirectionTypeSpecialValue : uint8_t {
-	TRNTSV_NE                     = 0,       ///< DIAGDIR_NE: entering at NE tile edge
-	TRNTSV_SE                     = 1,       ///< DIAGDIR_SE: entering at SE tile edge
-	TRNTSV_SW                     = 2,       ///< DIAGDIR_SW: entering at SW tile edge
-	TRNTSV_NW                     = 3,       ///< DIAGDIR_NW: entering at NW tile edge
+	TRNTSV_NE                     = 0,       ///< DiagDirection::NE: entering at NE tile edge
+	TRNTSV_SE                     = 1,       ///< DiagDirection::SE: entering at SE tile edge
+	TRNTSV_SW                     = 2,       ///< DiagDirection::SW: entering at SW tile edge
+	TRNTSV_NW                     = 3,       ///< DiagDirection::NW: entering at NW tile edge
 	TRDTSV_FRONT                  = 4,       ///< entering at front face of signal
 	TRDTSV_BACK                   = 5,       ///< entering at rear face of signal
 	TRDTSV_TUNBRIDGE_ENTER        = 32,      ///< signal is a tunnel/bridge entrance
@@ -277,7 +284,7 @@ enum TraceRestrictPhysPropRatioCondAuxField : uint8_t {
 /**
  * TraceRestrictItem auxiliary type field, for category type conditionals
  */
-enum TraceRestrictCatgeoryCondAuxField : uint8_t {
+enum TraceRestrictCategoryCondAuxField : uint8_t {
 	TRCCAF_ENGINE_CLASS           = 0,       ///< value field is an EngineClass type
 	/* space up to 3 */
 };
@@ -297,6 +304,15 @@ enum TraceRestrictPathfinderPenaltyAuxField : uint8_t {
 enum TraceRestrictTargetDirectionCondAuxField : uint8_t {
 	TRTDCAF_CURRENT_ORDER         = 0,       ///< Current order
 	TRTDCAF_NEXT_ORDER            = 1,       ///< Next order
+	/* space up to 3 */
+};
+
+/**
+ * TraceRestrictItem auxiliary type field, for TRIT_COND_TIMETABLE_STATE
+ */
+enum TraceRestrictTimetableStateCondAuxField : uint8_t {
+	TRTSCAF_LATENESS              = 0,       ///< Lateness
+	TRTSCAF_EARLINESS             = 1,       ///< Earliness
 	/* space up to 3 */
 };
 
@@ -377,6 +393,8 @@ enum TraceRestrictTrainStatusValueField : uint8_t {
 	TRTSVF_LOST                        =  9,      ///< Train is lost
 	TRTSVF_REQUIRES_SERVICE            = 10,      ///< Train requires service
 	TRTSVF_STOPPING_AT_STATION_WAYPOINT= 11,      ///< Train stops at destination station/waypoint
+	TRTSVF_DRIVING_BACKWARDS           = 12,      ///< Train is driving backwards
+	TRTSVF_DRIVING_BACKWARDS_NO_CAB    = 13,      ///< Train is driving backwards (no rear cab)
 };
 
 /**
@@ -446,6 +464,329 @@ enum TraceRestrictPathfinderPenaltyPresetIndex : uint8_t {
 	TRPPPI_END,                              ///< end value
 };
 
+/** Is TraceRestrictItemType a conditional type? */
+inline bool IsTraceRestrictTypeConditional(TraceRestrictItemType type)
+{
+	return type >= TRIT_COND_BEGIN && type < TRIT_COND_END;
+}
+
+/** Is TraceRestrictItem a double-item type? */
+inline bool IsTraceRestrictDoubleItemType(TraceRestrictItemType type)
+{
+	return type == TRIT_COND_PBS_ENTRY_SIGNAL || type == TRIT_COND_SLOT_OCCUPANCY || type == TRIT_COUNTER ||
+			type == TRIT_COND_COUNTER_VALUE || type == TRIT_COND_TIME_DATE_VALUE || type == TRIT_COND_RESERVATION_THROUGH;
+}
+
+namespace TracerestrictDetail {
+	/* Mixin for TraceRestrictInstructionItem */
+	struct InstructionItemOperations {
+		template <typename TType, typename TBaseType>
+		struct mixin {
+		private:
+			TBaseType base() const { return static_cast<const TType &>(*this).base(); }
+			TBaseType &edit_base() { return static_cast<TType &>(*this).edit_base(); }
+
+		public:
+			/** Get TraceRestrictItem type field */
+			TraceRestrictItemType GetType() const
+			{
+				return static_cast<TraceRestrictItemType>(GB(this->base(), TRIFA_TYPE_OFFSET, TRIFA_TYPE_COUNT));
+			}
+
+			/** Get TraceRestrictItem condition flags field */
+			TraceRestrictCondFlags GetCondFlags() const
+			{
+				return static_cast<TraceRestrictCondFlags>(GB(this->base(), TRIFA_COND_FLAGS_OFFSET, TRIFA_COND_FLAGS_COUNT));
+			}
+
+			/** Get condition operator field */
+			inline TraceRestrictCondOp GetCondOp() const
+			{
+				return static_cast<TraceRestrictCondOp>(GB(this->base(), TRIFA_COND_OP_OFFSET, TRIFA_COND_OP_COUNT));
+			}
+
+			/** Get auxiliary field */
+			uint8_t GetAuxField() const
+			{
+				return GB(this->base(), TRIFA_AUX_FIELD_OFFSET, TRIFA_AUX_FIELD_COUNT);
+			}
+
+			/** Get combined condition operator and auxiliary fields */
+			uint8_t GetCombinedAuxCondOpField() const
+			{
+				return GB(this->base(), TRIFA_CMB_AUX_COND_OFFSET, TRIFA_CMB_AUX_COND_COUNT);
+			}
+
+			/** Get value field */
+			uint16_t GetValue() const
+			{
+				return static_cast<uint16_t>(GB(this->base(), TRIFA_VALUE_OFFSET, TRIFA_VALUE_COUNT));
+			}
+
+			/** Get value field, as a slot ID */
+			TraceRestrictSlotID GetValueAsSlot() const
+			{
+				return TraceRestrictSlotID(this->GetValue());
+			}
+
+			/** Get value field, as a slot group ID */
+			TraceRestrictSlotGroupID GetValueAsSlotGroup() const
+			{
+				return TraceRestrictSlotGroupID(this->GetValue());
+			}
+
+			/** Get value field, as a counter ID */
+			TraceRestrictCounterID GetValueAsCounter() const
+			{
+				return TraceRestrictCounterID(this->GetValue());
+			}
+
+			/** Get value field, as a company ID */
+			CompanyID GetValueAsCompany() const
+			{
+				return CompanyID(this->GetValue());
+			}
+
+			/** Get value field, as a station ID */
+			StationID GetValueAsStation() const
+			{
+				return StationID(this->GetValue());
+			}
+
+			/** Get value field, as a group ID */
+			GroupID GetValueAsGroup() const
+			{
+				return GroupID(this->GetValue());
+			}
+
+			/** Get value field, as a cargo type */
+			CargoType GetValueAsCargoType() const
+			{
+				return static_cast<CargoType>(this->GetValue());
+			}
+
+			/** Set type field */
+			inline void SetType(TraceRestrictItemType type)
+			{
+				SB(this->edit_base(), TRIFA_TYPE_OFFSET, TRIFA_TYPE_COUNT, type);
+			}
+
+			/** Set condition operator field */
+			inline void SetCondOp(TraceRestrictCondOp condop)
+			{
+				SB(this->edit_base(), TRIFA_COND_OP_OFFSET, TRIFA_COND_OP_COUNT, condop);
+			}
+
+			/** Set condition flags field */
+			inline void SetCondFlags(TraceRestrictCondFlags condflags)
+			{
+				SB(this->edit_base(), TRIFA_COND_FLAGS_OFFSET, TRIFA_COND_FLAGS_COUNT, condflags);
+			}
+
+			/** Set auxiliary field */
+			inline void SetAuxField(uint8_t data)
+			{
+				SB(this->edit_base(), TRIFA_AUX_FIELD_OFFSET, TRIFA_AUX_FIELD_COUNT, data);
+			}
+
+			/** Set combined condition operator and auxiliary fields */
+			inline void SetCombinedAuxCondOpField(uint8_t data)
+			{
+				SB(this->edit_base(), TRIFA_CMB_AUX_COND_OFFSET, TRIFA_CMB_AUX_COND_COUNT, data);
+			}
+
+			/** Set value field */
+			inline void SetValue(uint16_t value)
+			{
+				SB(this->edit_base(), TRIFA_VALUE_OFFSET, TRIFA_VALUE_COUNT, value);
+			}
+
+			/** Set value field (slot ID) */
+			inline void SetValue(TraceRestrictSlotID value)
+			{
+				this->SetValue(value.base());
+			}
+
+			/** Set value field (slot group ID) */
+			inline void SetValue(TraceRestrictSlotGroupID value)
+			{
+				this->SetValue(value.base());
+			}
+
+			/** Set value field (counter ID) */
+			inline void SetValue(TraceRestrictCounterID value)
+			{
+				this->SetValue(value.base());
+			}
+
+			/** Set value field (company ID) */
+			inline void SetValue(CompanyID value)
+			{
+				this->SetValue(value.base());
+			}
+
+			/** Set value field (station ID) */
+			inline void SetValue(StationID value)
+			{
+				this->SetValue(value.base());
+			}
+
+			/** Set value field (group ID) */
+			inline void SetValue(GroupID value)
+			{
+				this->SetValue(value.base());
+			}
+
+			/** Set value field (cargo type) */
+			inline void SetValue(CargoType value)
+			{
+				this->SetValue(to_underlying(value));
+			}
+
+			/** Is the type field a conditional type? */
+			inline bool IsConditional() const
+			{
+				return IsTraceRestrictTypeConditional(this->GetType());
+			}
+
+			/** Is this a double-item type? */
+			inline bool IsDoubleItem() const
+			{
+				return IsTraceRestrictDoubleItemType(this->GetType());
+			}
+
+			/** Get TraceRestrictProgramItem of this instruction item */
+			inline TraceRestrictProgramItem AsProgramItem() const
+			{
+				return TraceRestrictProgramItem{this->base()};
+			}
+		};
+	};
+};
+
+/**
+ * Type of a single instruction item. Instructions are bit-packed as per TraceRestrictItemFlagAllocation.
+ */
+struct TraceRestrictInstructionItemTag : public StrongType::TypedefTraits<uint32_t, StrongType::Compare, TracerestrictDetail::InstructionItemOperations> {};
+using TraceRestrictInstructionItem = StrongType::Typedef<TraceRestrictInstructionItemTag>;
+
+/** Reference wrapper type for TraceRestrictInstructionItem */
+using TraceRestrictInstructionItemRef = StrongType::BaseRefTypedef<TraceRestrictInstructionItemTag>;
+
+template <typename ITER>
+struct TraceRestrictInstructionEndSentinel {
+private:
+	ITER iter; // Underlying iterator type
+
+public:
+	constexpr TraceRestrictInstructionEndSentinel(ITER iter) : iter(iter) {}
+	constexpr TraceRestrictInstructionEndSentinel(const TraceRestrictInstructionEndSentinel &other) = default;
+
+	ITER ItemIter() const { return this->iter; }
+};
+
+template <typename ITER>
+struct TraceRestrictInstructionIterator {
+	using difference_type = std::ptrdiff_t;
+	using value_type = TraceRestrictInstructionIterator;
+	using reference = TraceRestrictInstructionIterator;
+	using pointer = TraceRestrictInstructionIterator;
+	using iterator_category = std::forward_iterator_tag;
+
+private:
+	ITER iter; // Underlying iterator type
+
+	void Next()
+	{
+		if (this->Instruction().IsDoubleItem()) ++this->iter;
+		++this->iter;
+	}
+
+public:
+	constexpr TraceRestrictInstructionIterator(ITER iter) : iter(iter) {}
+	constexpr TraceRestrictInstructionIterator(const TraceRestrictInstructionIterator &other) = default;
+
+	bool operator==(const TraceRestrictInstructionIterator &other) const = default;
+	bool operator<(const TraceRestrictInstructionIterator &other) const = default;
+	bool operator==(const ITER &other) const { return this->iter == other; }
+	bool operator<(const ITER &other) const { return this->iter < other; }
+
+	/* For instruction iteration, use operator < on the underlying iterator instead of !=, this is to disallow skipping over the end in pre-validation saveload edits */
+	bool operator!=(const TraceRestrictInstructionEndSentinel<ITER> &end) const { return this->iter < end.ItemIter(); }
+
+	TraceRestrictInstructionItem Instruction() const { return TraceRestrictInstructionItem{this->iter->base()}; }
+	TraceRestrictInstructionItemRef InstructionRef() const { return TraceRestrictInstructionItemRef{this->iter->edit_base()}; }
+
+	uint32_t Secondary() const
+	{
+		dbg_assert(this->Instruction().IsDoubleItem());
+		return (this->iter + 1)->base();
+	}
+
+	uint32_t &SecondaryRef() const
+	{
+		dbg_assert(this->Instruction().IsDoubleItem());
+		return (this->iter + 1)->edit_base();
+	}
+
+	ITER ItemIter() const { return this->iter; }
+
+	/* Increment operator (postfix) */
+	TraceRestrictInstructionIterator operator ++(int)
+	{
+		TraceRestrictInstructionIterator tmp = *this;
+		this->Next();
+		return tmp;
+	}
+
+	/* Increment operator (prefix) */
+	TraceRestrictInstructionIterator &operator ++()
+	{
+		this->Next();
+		return *this;
+	}
+
+	/* For range for, don't automatically dereference, but return a const ref to prevent the iterator being modified */
+	const TraceRestrictInstructionIterator &operator *() { return *this; }
+};
+
+template <typename C>
+struct TraceRestrictInstructionIterateWrapper {
+	C &container;
+
+	constexpr TraceRestrictInstructionIterateWrapper(C &container) : container(container) {}
+
+	auto begin() { return TraceRestrictInstructionIterator(this->container.begin()); }
+	auto end() { return TraceRestrictInstructionEndSentinel(this->container.end()); }
+};
+
+
+size_t TraceRestrictInstructionOffsetToArrayOffset(const std::span<const TraceRestrictProgramItem> items, size_t offset);
+size_t TraceRestrictArrayOffsetToInstructionOffset(const std::span<const TraceRestrictProgramItem> items, size_t offset);
+
+/** Get number of instructions in @p items */
+inline size_t TraceRestrictGetInstructionCount(const std::span<const TraceRestrictProgramItem> items)
+{
+	return TraceRestrictArrayOffsetToInstructionOffset(items, items.size());
+}
+
+/** Get an instruction iterator at a given @p instruction_offset in @p items */
+template <typename T>
+auto TraceRestrictInstructionIteratorAt(T &items, size_t instruction_offset)
+{
+	return TraceRestrictInstructionIterator(items.begin() + TraceRestrictInstructionOffsetToArrayOffset(items, instruction_offset));
+}
+
+/**
+ * Type to hold a complete instruction, including the optional second item.
+ * The second item is 0 if unused.
+ * Not used for instruction storage.
+ */
+struct TraceRestrictInstructionRecord {
+	TraceRestrictInstructionItem instruction = {};
+	uint32_t secondary = {};
+};
+
 /**
  * Enumeration for TraceRestrictProgramResult::flags
  */
@@ -493,10 +834,15 @@ enum TraceRestrictProgramActionsUsedFlags : uint32_t {
 	TRPAUF_CMB_SIGNAL_MODE_CTRL   = 1 << 18, ///< Combined normal/shunt signal mode control
 	TRPAUF_ORDER_CONDITIONALS     = 1 << 19, ///< Order conditionals are present
 	TRPAUF_REVERSE_AT             = 1 << 20, ///< Reverse at signal
+	TRPAUF_COUNTER_CONDITIONALS   = 1 << 21, ///< Counter conditionals are present
+	TRPAUF_IS_BACKUP              = 1 << 22, ///< This program is a backup
+	TRPAUF_DRIVE_DIR_CONDITIONALS = 1 << 23, ///< Driving direction conditionals are present
 };
 DECLARE_ENUM_AS_BIT_SET(TraceRestrictProgramActionsUsedFlags)
 
 static constexpr TraceRestrictProgramActionsUsedFlags TRPAUF_SPECIAL_ASPECT_PROPAGATION_FLAG_MASK = TRPAUF_WAIT_AT_PBS | TRPAUF_REVERSE_AT | TRPAUF_PBS_RES_END_WAIT | TRPAUF_RESERVE_THROUGH;
+static constexpr TraceRestrictProgramActionsUsedFlags TRPAUF_HAS_SLOT_FLAG_MASK = TRPAUF_SLOT_ACQUIRE | TRPAUF_SLOT_RELEASE_BACK | TRPAUF_SLOT_RELEASE_FRONT | TRPAUF_PBS_RES_END_SLOT | TRPAUF_SLOT_CONDITIONALS;
+static constexpr TraceRestrictProgramActionsUsedFlags TRPAUF_HAS_COUNTER_FLAG_MASK = TRPAUF_CHANGE_COUNTER | TRPAUF_COUNTER_CONDITIONALS;
 
 /**
  * Enumeration for TraceRestrictProgramInput::permitted_slot_operations
@@ -516,15 +862,15 @@ DECLARE_ENUM_AS_BIT_SET(TraceRestrictProgramInputSlotPermissions)
 /**
  * Enumeration for TraceRestrictProgramInput::input_flags
  */
-enum TraceRestrictProgramInputFlags : uint8_t {
-	TRPIF_NONE                    = 0,       ///< No flags set
-	TRPIF_PASSED_STOP             = 1 << 0,  ///< Train has passed stop
+enum class TraceRestrictProgramInputFlag : uint8_t {
+	PassedStop,             ///< Train has passed stop
+	InvertDrivingDirection, ///< Invert whether train is considered to be driving backwards
 };
-DECLARE_ENUM_AS_BIT_SET(TraceRestrictProgramInputFlags)
+using TraceRestrictProgramInputFlags = EnumBitSet<TraceRestrictProgramInputFlag, uint8_t>;
 
 struct TraceRestrictSlotTemporaryState {
-	std::vector<TraceRestrictSlotID> veh_temporarily_added;
-	std::vector<TraceRestrictSlotID> veh_temporarily_removed;
+	ankerl::svector<TraceRestrictSlotID, 8> veh_temporarily_added;
+	ankerl::svector<TraceRestrictSlotID, 8> veh_temporarily_removed;
 
 private:
 	bool is_active = false;
@@ -536,6 +882,7 @@ private:
 
 public:
 	static TraceRestrictSlotTemporaryState *GetCurrent() { return change_stack.back(); }
+	static std::span<const TraceRestrictSlotTemporaryState * const> GetChangeStack() { return change_stack; }
 
 	static void ClearChangeStackApplyAllTemporaryChanges(const Vehicle *v)
 	{
@@ -584,8 +931,8 @@ struct TraceRestrictProgramInput {
 	PreviousSignalProc *previous_signal_callback; ///< Callback to retrieve tile and direction of previous signal, may be nullptr
 	const void *previous_signal_ptr;              ///< Opaque pointer suitable to be passed to previous_signal_callback
 
-	TraceRestrictProgramInput(TileIndex tile_, Trackdir trackdir_, PreviousSignalProc *previous_signal_callback_, const void *previous_signal_ptr_)
-			: tile(tile_), trackdir(trackdir_), input_flags(TRPIF_NONE), permitted_slot_operations(TRPISP_NONE),
+	TraceRestrictProgramInput(TileIndex tile_, Trackdir trackdir_, PreviousSignalProc *previous_signal_callback_, const void *previous_signal_ptr_, TraceRestrictProgramInputFlags input_flags_ = {})
+			: tile(tile_), trackdir(trackdir_), input_flags(input_flags_), permitted_slot_operations(TRPISP_NONE),
 			previous_signal_callback(previous_signal_callback_), previous_signal_ptr(previous_signal_ptr_) { }
 };
 
@@ -601,93 +948,72 @@ struct TraceRestrictProgramResult {
 			: penalty(0), flags(static_cast<TraceRestrictProgramResultFlags>(0)) { }
 };
 
+struct TraceRestrictProgramTexts {
+	std::vector<std::string> labels;
+
+	bool IsEmpty() const
+	{
+		return this->labels.empty();
+	}
+};
+
 /**
  * Program type, this stores the instruction list
  * This is refcounted, see info at top of tracerestrict.cpp
  */
 struct TraceRestrictProgram : TraceRestrictProgramPool::PoolItem<&_tracerestrictprogram_pool> {
-	uint32_t refcount;
-	std::vector<TraceRestrictItem> items;
-	TraceRestrictProgramActionsUsedFlags actions_used_flags;
-
 private:
-
-	struct ptr_buffer {
-		TraceRestrictRefId *buffer;
-		uint32_t elem_capacity;
-	};
-	union refid_list_union {
-		TraceRestrictRefId inline_ref_ids[4];
-		ptr_buffer ptr_ref_ids;
-
-		/* Actual construction/destruction done by struct TraceRestrictProgram */
-		refid_list_union() {}
-		~refid_list_union() {}
-	};
-	refid_list_union ref_ids;
-
-	void ClearRefIds();
-
-	inline TraceRestrictRefId *GetRefIdsPtr() { return this->refcount <= 4 ? this->ref_ids.inline_ref_ids : this->ref_ids.ptr_ref_ids.buffer; };
+	ankerl::svector<TraceRestrictRefId, 3> references;
 
 public:
-
-	TraceRestrictProgram()
-			: refcount(0), actions_used_flags(TRPAUF_NONE) { }
-
-	~TraceRestrictProgram()
-	{
-		this->ClearRefIds();
-	}
+	std::vector<TraceRestrictProgramItem> items;
+	TraceRestrictProgramActionsUsedFlags actions_used_flags = TRPAUF_NONE;
+	std::unique_ptr<TraceRestrictProgramTexts> texts;
 
 	void Execute(const Train *v, const TraceRestrictProgramInput &input, TraceRestrictProgramResult &out) const;
 
-	inline const TraceRestrictRefId *GetRefIdsPtr() const { return const_cast<TraceRestrictProgram *>(this)->GetRefIdsPtr(); }
+	inline uint32_t GetReferenceCount() const { return static_cast<uint32_t>(this->references.size()); }
 
-	void IncrementRefCount(TraceRestrictRefId ref_id);
+	inline std::span<const TraceRestrictRefId> GetReferences() const { return this->references; }
+
+	/**
+	 * We need an (empty) constructor so struct isn't zeroed (as C++ standard states)
+	 */
+	TraceRestrictProgram(TraceRestrictProgramID index) : PoolItemBase(index) {}
+
+	/**
+	 * (Empty) destructor has to be defined else operator delete might be called with nullptr parameter
+	 */
+	~TraceRestrictProgram() {}
+
+	/**
+	 * Increment ref count, only use when creating a mapping
+	 */
+	void IncrementRefCount(TraceRestrictRefId ref_id)
+	{
+		this->references.push_back(ref_id);
+	}
 
 	void DecrementRefCount(TraceRestrictRefId ref_id);
 
-	static CommandCost Validate(const std::vector<TraceRestrictItem> &items, TraceRestrictProgramActionsUsedFlags &actions_used_flags);
+	static CommandCost Validate(const std::span<const TraceRestrictProgramItem> items, TraceRestrictProgramActionsUsedFlags &actions_used_flags);
 
-	static size_t InstructionOffsetToArrayOffset(const std::vector<TraceRestrictItem> &items, size_t offset);
-
-	static size_t ArrayOffsetToInstructionOffset(const std::vector<TraceRestrictItem> &items, size_t offset);
-
-	/** Call InstructionOffsetToArrayOffset on current program instruction list */
-	size_t InstructionOffsetToArrayOffset(size_t offset) const
-	{
-		return TraceRestrictProgram::InstructionOffsetToArrayOffset(this->items, offset);
-	}
-
-	/** Call ArrayOffsetToInstructionOffset on current program instruction list */
-	size_t ArrayOffsetToInstructionOffset(size_t offset) const
-	{
-		return TraceRestrictProgram::ArrayOffsetToInstructionOffset(this->items, offset);
-	}
-
-	/** Get number of instructions in @p items */
-	static size_t GetInstructionCount(const std::vector<TraceRestrictItem> &items)
-	{
-		return ArrayOffsetToInstructionOffset(items, items.size());
-	}
-
-	/** Call GetInstructionCount on current program instruction list */
+	/** Get instruction count of current program instruction list */
 	size_t GetInstructionCount() const
 	{
-		return TraceRestrictProgram::GetInstructionCount(this->items);
+		return TraceRestrictGetInstructionCount(this->items);
 	}
 
-	/** Get an iterator to the instruction at a given @p instruction_offset in @p items */
-	static std::vector<TraceRestrictItem>::iterator InstructionAt(std::vector<TraceRestrictItem> &items, size_t instruction_offset)
+	/** Get an instruction record at the given instruction offset, this reads the second item if suitable for the instruction type. */
+	TraceRestrictInstructionRecord GetInstructionRecordAt(size_t instruction_offset) const
 	{
-		return items.begin() + TraceRestrictProgram::InstructionOffsetToArrayOffset(items, instruction_offset);
-	}
-
-	/** Get a const_iterator to the instruction at a given @p instruction_offset in @p items */
-	static std::vector<TraceRestrictItem>::const_iterator InstructionAt(const std::vector<TraceRestrictItem> &items, size_t instruction_offset)
-	{
-		return items.begin() + TraceRestrictProgram::InstructionOffsetToArrayOffset(items, instruction_offset);
+		auto iter = TraceRestrictInstructionIteratorAt(this->items, instruction_offset);
+		TraceRestrictInstructionRecord record{ iter.Instruction() };
+		if (record.instruction.IsDoubleItem()) {
+			dbg_assert(iter.ItemIter() + 1 < this->items.end());
+			record.secondary = iter.Secondary();
+		}
+		return record;
 	}
 
 	/** Call validation function on current program instruction list and set actions_used_flags */
@@ -695,99 +1021,16 @@ public:
 	{
 		return TraceRestrictProgram::Validate(this->items, this->actions_used_flags);
 	}
+
+	auto IterateInstructions() const { return TraceRestrictInstructionIterateWrapper(this->items); }
+	auto IterateInstructionsMutable() { return TraceRestrictInstructionIterateWrapper(this->items); }
+
+	uint16_t AddLabel(std::string_view str);
+	void TrimLabels(const std::span<const TraceRestrictProgramItem> items);
+	std::string_view GetLabel(uint16_t id) const;
 };
 
-/** Get TraceRestrictItem type field */
-inline TraceRestrictItemType GetTraceRestrictType(TraceRestrictItem item)
-{
-	return static_cast<TraceRestrictItemType>(GB(item, TRIFA_TYPE_OFFSET, TRIFA_TYPE_COUNT));
-}
-
-/** Get TraceRestrictItem condition flags field */
-inline TraceRestrictCondFlags GetTraceRestrictCondFlags(TraceRestrictItem item)
-{
-	return static_cast<TraceRestrictCondFlags>(GB(item, TRIFA_COND_FLAGS_OFFSET, TRIFA_COND_FLAGS_COUNT));
-}
-
-/** Get TraceRestrictItem condition operator field */
-inline TraceRestrictCondOp GetTraceRestrictCondOp(TraceRestrictItem item)
-{
-	return static_cast<TraceRestrictCondOp>(GB(item, TRIFA_COND_OP_OFFSET, TRIFA_COND_OP_COUNT));
-}
-
-/** Get TraceRestrictItem auxiliary field */
-inline uint8_t GetTraceRestrictAuxField(TraceRestrictItem item)
-{
-	return GB(item, TRIFA_AUX_FIELD_OFFSET, TRIFA_AUX_FIELD_COUNT);
-}
-
-/** Get TraceRestrictItem combined condition operator and auxiliary fields */
-inline uint8_t GetTraceRestrictCombinedAuxCondOpField(TraceRestrictItem item)
-{
-	return GB(item, TRIFA_CMB_AUX_COND_OFFSET, TRIFA_CMB_AUX_COND_COUNT);
-}
-
-/** Get TraceRestrictItem value field */
-inline uint16_t GetTraceRestrictValue(TraceRestrictItem item)
-{
-	return static_cast<uint16_t>(GB(item, TRIFA_VALUE_OFFSET, TRIFA_VALUE_COUNT));
-}
-
-/** Set TraceRestrictItem type field */
-inline void SetTraceRestrictType(TraceRestrictItem &item, TraceRestrictItemType type)
-{
-	SB(item, TRIFA_TYPE_OFFSET, TRIFA_TYPE_COUNT, type);
-}
-
-/** Set TraceRestrictItem condition operator field */
-inline void SetTraceRestrictCondOp(TraceRestrictItem &item, TraceRestrictCondOp condop)
-{
-	SB(item, TRIFA_COND_OP_OFFSET, TRIFA_COND_OP_COUNT, condop);
-}
-
-/** Set TraceRestrictItem condition flags field */
-inline void SetTraceRestrictCondFlags(TraceRestrictItem &item, TraceRestrictCondFlags condflags)
-{
-	SB(item, TRIFA_COND_FLAGS_OFFSET, TRIFA_COND_FLAGS_COUNT, condflags);
-}
-
-/** Set TraceRestrictItem auxiliary field */
-inline void SetTraceRestrictAuxField(TraceRestrictItem &item, uint8_t data)
-{
-	SB(item, TRIFA_AUX_FIELD_OFFSET, TRIFA_AUX_FIELD_COUNT, data);
-}
-
-/** Set TraceRestrictItem combined condition operator and auxiliary fields */
-inline void SetTraceRestrictCombinedAuxCondOpField(TraceRestrictItem &item, uint8_t data)
-{
-	SB(item, TRIFA_CMB_AUX_COND_OFFSET, TRIFA_CMB_AUX_COND_COUNT, data);
-}
-
-/** Set TraceRestrictItem value field */
-inline void SetTraceRestrictValue(TraceRestrictItem &item, uint16_t value)
-{
-	SB(item, TRIFA_VALUE_OFFSET, TRIFA_VALUE_COUNT, value);
-}
-
-/** Is TraceRestrictItemType a conditional type? */
-inline bool IsTraceRestrictTypeConditional(TraceRestrictItemType type)
-{
-	return type >= TRIT_COND_BEGIN && type < TRIT_COND_END;
-}
-
-/** Is TraceRestrictItem type field a conditional type? */
-inline bool IsTraceRestrictConditional(TraceRestrictItem item)
-{
-	return IsTraceRestrictTypeConditional(GetTraceRestrictType(item));
-}
-
-/** Is TraceRestrictItem a double-item type? */
-inline bool IsTraceRestrictDoubleItem(TraceRestrictItem item)
-{
-	const TraceRestrictItemType type = GetTraceRestrictType(item);
-	return type == TRIT_COND_PBS_ENTRY_SIGNAL || type == TRIT_COND_SLOT_OCCUPANCY || type == TRIT_COUNTER ||
-			type == TRIT_COND_COUNTER_VALUE || type == TRIT_COND_TIME_DATE_VALUE || type == TRIT_COND_RESERVATION_THROUGH;
-}
+bool TraceRestrictProgramsEquivalent(const TraceRestrictProgram *a, const TraceRestrictProgram *b);
 
 /**
  * Categorisation of what is allowed in the TraceRestrictItem condition op field
@@ -797,6 +1040,7 @@ enum TraceRestrictConditionOpType : uint8_t {
 	TRCOT_NONE                    = 0, ///< takes no condition op
 	TRCOT_BINARY                  = 1, ///< takes "is" and "is not" condition ops
 	TRCOT_ALL                     = 2, ///< takes all condition ops (i.e. all relational ops)
+	TRCOT_LT_GTE                  = 3, ///< takes < and >= only
 };
 
 /**
@@ -809,8 +1053,9 @@ enum TraceRestrictValueType : uint8_t {
 	TRVT_INT,                      ///< takes an unsigned integer value
 	TRVT_DENY,                     ///< takes a value 0 = deny, 1 = allow (cancel previous deny)
 	TRVT_SPEED,                    ///< takes an integer speed value
+	TRVT_TICK_COUNT,               ///< takes an integer tick count
 	TRVT_ORDER,                    ///< takes an order target ID, as per the auxiliary field as type: TraceRestrictOrderCondAuxField
-	TRVT_CARGO_ID,                 ///< takes a CargoID
+	TRVT_CARGO_ID,                 ///< takes a CargoType
 	TRVT_DIRECTION,                ///< takes a TraceRestrictDirectionTypeSpecialValue
 	TRVT_TILE_INDEX,               ///< takes a TileIndex in the next item slot
 	TRVT_PF_PENALTY,               ///< takes a pathfinder penalty value or preset index, as per the auxiliary field as type: TraceRestrictPathfinderPenaltyAuxField
@@ -825,6 +1070,7 @@ enum TraceRestrictValueType : uint8_t {
 	TRVT_WAIT_AT_PBS,              ///< takes a TraceRestrictWaitAtPbsValueField value
 	TRVT_SLOT_INDEX,               ///< takes a TraceRestrictSlotID
 	TRVT_SLOT_INDEX_INT,           ///< takes a TraceRestrictSlotID, and an integer in the next item slot
+	TRVT_SLOT_GROUP_INDEX,         ///< takes a TraceRestrictSlotGroupID
 	TRVT_PERCENT,                  ///> takes a unsigned integer percentage value between 0 and 100
 	TRVT_OWNER,                    ///< takes a CompanyID
 	TRVT_TRAIN_STATUS,             ///< takes a TraceRestrictTrainStatusValueField
@@ -838,6 +1084,8 @@ enum TraceRestrictValueType : uint8_t {
 	TRVT_SIGNAL_MODE_CONTROL,      ///< takes a TraceRestrictSignalModeControlField
 	TRVT_ORDER_TARGET_DIAGDIR,     ///< takes a DiagDirection, and the order type in the auxiliary field
 	TRVT_TILE_INDEX_THROUGH,       ///< takes a TileIndex in the next item slot (passes through)
+	TRVT_LABEL_INDEX,              ///< takes a label ID
+	TRVT_ORDER_STOP_LOCATION,      ///< takes an OrderStopLocation
 };
 
 /**
@@ -848,27 +1096,27 @@ struct TraceRestrictTypePropertySet {
 	TraceRestrictValueType value_type;
 };
 
-void SetTraceRestrictValueDefault(TraceRestrictItem &item, TraceRestrictValueType value_type);
-void SetTraceRestrictTypeAndNormalise(TraceRestrictItem &item, TraceRestrictItemType type, uint8_t aux_data = 0);
+void SetTraceRestrictValueDefault(TraceRestrictInstructionItemRef item, TraceRestrictValueType value_type, bool gui_context = false);
+void SetTraceRestrictTypeAndNormalise(TraceRestrictInstructionItemRef item, TraceRestrictItemType type, uint8_t aux_data = 0);
 
 /**
- * Get TraceRestrictTypePropertySet for a given instruction, using the instruction type and where appropriate the auxilliary type field
+ * Get TraceRestrictTypePropertySet for a given instruction, using the instruction type and where appropriate the auxiliary type field
  */
-inline TraceRestrictTypePropertySet GetTraceRestrictTypeProperties(TraceRestrictItem item)
+inline TraceRestrictTypePropertySet GetTraceRestrictTypeProperties(TraceRestrictInstructionItem item)
 {
 	TraceRestrictTypePropertySet out;
 
-	if (GetTraceRestrictType(item) == TRIT_NULL) {
+	if (item.GetType() == TRIT_NULL) {
 		out.cond_type = TRCOT_NONE;
 		out.value_type = TRVT_SPECIAL;
-	} else if (GetTraceRestrictType(item) == TRIT_COND_ENDIF ||
-			GetTraceRestrictType(item) == TRIT_COND_UNDEFINED) {
+	} else if (item.GetType() == TRIT_COND_ENDIF ||
+			item.GetType() == TRIT_COND_UNDEFINED) {
 		out.cond_type = TRCOT_NONE;
 		out.value_type = TRVT_NONE;
-	} else if (IsTraceRestrictConditional(item)) {
+	} else if (item.IsConditional()) {
 		out.cond_type = TRCOT_ALL;
 
-		switch (GetTraceRestrictType(item)) {
+		switch (item.GetType()) {
 			case TRIT_COND_TRAIN_LENGTH:
 				out.value_type = TRVT_INT;
 				break;
@@ -881,6 +1129,11 @@ inline TraceRestrictTypePropertySet GetTraceRestrictTypeProperties(TraceRestrict
 			case TRIT_COND_NEXT_ORDER:
 			case TRIT_COND_LAST_STATION:
 				out.value_type = TRVT_ORDER;
+				out.cond_type = TRCOT_BINARY;
+				break;
+
+			case TRIT_COND_ORDER_STOP_LOCATION:
+				out.value_type = TRVT_ORDER_STOP_LOCATION;
 				out.cond_type = TRCOT_BINARY;
 				break;
 
@@ -914,7 +1167,7 @@ inline TraceRestrictTypePropertySet GetTraceRestrictTypeProperties(TraceRestrict
 				break;
 
 			case TRIT_COND_PHYS_PROP:
-				switch (static_cast<TraceRestrictPhysPropCondAuxField>(GetTraceRestrictAuxField(item))) {
+				switch (static_cast<TraceRestrictPhysPropCondAuxField>(item.GetAuxField())) {
 					case TRPPCAF_WEIGHT:
 						out.value_type = TRVT_WEIGHT;
 						break;
@@ -934,7 +1187,7 @@ inline TraceRestrictTypePropertySet GetTraceRestrictTypeProperties(TraceRestrict
 				break;
 
 			case TRIT_COND_PHYS_RATIO:
-				switch (static_cast<TraceRestrictPhysPropRatioCondAuxField>(GetTraceRestrictAuxField(item))) {
+				switch (static_cast<TraceRestrictPhysPropRatioCondAuxField>(item.GetAuxField())) {
 					case TRPPRCAF_POWER_WEIGHT:
 						out.value_type = TRVT_POWER_WEIGHT_RATIO;
 						break;
@@ -976,7 +1229,7 @@ inline TraceRestrictTypePropertySet GetTraceRestrictTypeProperties(TraceRestrict
 				break;
 
 			case TRIT_COND_CATEGORY:
-				switch (static_cast<TraceRestrictCatgeoryCondAuxField>(GetTraceRestrictAuxField(item))) {
+				switch (static_cast<TraceRestrictCategoryCondAuxField>(item.GetAuxField())) {
 					case TRCCAF_ENGINE_CLASS:
 						out.value_type = TRVT_ENGINE_CLASS;
 						break;
@@ -997,6 +1250,16 @@ inline TraceRestrictTypePropertySet GetTraceRestrictTypeProperties(TraceRestrict
 				out.cond_type = TRCOT_BINARY;
 				break;
 
+			case TRIT_COND_TRAIN_IN_SLOT_GROUP:
+				out.value_type = TRVT_SLOT_GROUP_INDEX;
+				out.cond_type = TRCOT_BINARY;
+				break;
+
+			case TRIT_COND_TIMETABLE_STATE:
+				out.value_type = TRVT_TICK_COUNT;
+				out.cond_type = TRCOT_LT_GTE;
+				break;
+
 			default:
 				NOT_REACHED();
 				break;
@@ -1004,7 +1267,7 @@ inline TraceRestrictTypePropertySet GetTraceRestrictTypeProperties(TraceRestrict
 	} else {
 		out.cond_type = TRCOT_NONE;
 
-		switch (GetTraceRestrictType(item)) {
+		switch (item.GetType()) {
 			case TRIT_PF_PENALTY:
 				out.value_type = TRVT_PF_PENALTY;
 				break;
@@ -1027,6 +1290,10 @@ inline TraceRestrictTypePropertySet GetTraceRestrictTypeProperties(TraceRestrict
 
 			case TRIT_SLOT:
 				out.value_type = TRVT_SLOT_INDEX;
+				break;
+
+			case TRIT_GUI_LABEL:
+				out.value_type = TRVT_LABEL_INDEX;
 				break;
 
 			case TRIT_REVERSE:
@@ -1057,6 +1324,10 @@ inline TraceRestrictTypePropertySet GetTraceRestrictTypeProperties(TraceRestrict
 				out.value_type = TRVT_SIGNAL_MODE_CONTROL;
 				break;
 
+			case TRIT_SLOT_GROUP:
+				out.value_type = TRVT_SLOT_GROUP_INDEX;
+				break;
+
 			default:
 				out.value_type = TRVT_NONE;
 				break;
@@ -1075,6 +1346,7 @@ inline bool IsTraceRestrictTypeAuxSubtype(TraceRestrictItemType type)
 		case TRIT_COND_SLOT_OCCUPANCY:
 		case TRIT_COND_PBS_ENTRY_SIGNAL:
 		case TRIT_COND_CATEGORY:
+		case TRIT_COND_TIMETABLE_STATE:
 			return true;
 
 		default:
@@ -1097,7 +1369,7 @@ inline bool IsTraceRestrictTypeNonMatchingVehicleTypeSlot(TraceRestrictItemType 
 /** Get mapping ref ID from tile and track */
 inline TraceRestrictRefId MakeTraceRestrictRefId(TileIndex t, Track track)
 {
-	return (t << 3) | track;
+	return (t.base() << 3) | track;
 }
 
 /** Get tile from mapping ref ID */
@@ -1123,9 +1395,9 @@ void TraceRestrictNotifySignalRemoval(TileIndex tile, Track track);
 inline bool IsRestrictedSignalTile(TileIndex t)
 {
 	switch (GetTileType(t)) {
-		case MP_RAILWAY:
+		case TileType::Railway:
 			return IsRestrictedSignal(t);
-		case MP_TUNNELBRIDGE:
+		case TileType::TunnelBridge:
 			return IsTunnelBridgeRestrictedSignal(t);
 		default:
 			return false;
@@ -1144,70 +1416,37 @@ inline const TraceRestrictProgram *GetExistingTraceRestrictProgram(TileIndex t, 
 	}
 }
 
-/**
- * Enumeration for command action type field, indicates what command to do
- */
-enum TraceRestrictDoCommandType : uint8_t {
-	TRDCT_INSERT_ITEM,                       ///< insert new instruction before offset field as given value
-	TRDCT_MODIFY_ITEM,                       ///< modify instruction at offset field to given value
-	TRDCT_MODIFY_DUAL_ITEM,                  ///< modify second item of dual-part instruction at offset field to given value
-	TRDCT_REMOVE_ITEM,                       ///< remove instruction at offset field
-	TRDCT_SHALLOW_REMOVE_ITEM,               ///< shallow remove instruction at offset field, does not delete contents of block
-	TRDCT_MOVE_ITEM,                         ///< move instruction or block at offset field
-	TRDCT_DUPLICATE_ITEM,                    ///< duplicate instruction/block at offset field
-
-	TRDCT_PROG_COPY,                         ///< copy program operation. Do not re-order this with respect to other values
-	TRDCT_PROG_COPY_APPEND,                  ///< copy and append program operation
-	TRDCT_PROG_SHARE,                        ///< share program operation
-	TRDCT_PROG_SHARE_IF_UNMAPPED,            ///< share program operation (if unmapped)
-	TRDCT_PROG_UNSHARE,                      ///< unshare program (copy as a new program)
-	TRDCT_PROG_RESET,                        ///< reset program state of signal
-};
-
-BaseCommandContainer GetTraceRestrictCommandContainer(TileIndex tile, Track track, TraceRestrictDoCommandType type, uint32_t offset, uint32_t value, StringID error_msg);
-void TraceRestrictDoCommandP(TileIndex tile, Track track, TraceRestrictDoCommandType type, uint32_t offset, uint32_t value, StringID error_msg);
-
-void TraceRestrictProgMgmtWithSourceDoCommandP(TileIndex tile, Track track, TraceRestrictDoCommandType type,
-		TileIndex source_tile, Track source_track, StringID error_msg);
-
-/**
- * Short-hand to call TraceRestrictProgMgmtWithSourceDoCommandP with 0 for source tile/track
- */
-inline void TraceRestrictProgMgmtDoCommandP(TileIndex tile, Track track, TraceRestrictDoCommandType type, StringID error_msg)
-{
-	TraceRestrictProgMgmtWithSourceDoCommandP(tile, track, type, static_cast<TileIndex>(0), static_cast<Track>(0), error_msg);
-}
-
-CommandCost CmdProgramSignalTraceRestrict(TileIndex tile, DoCommandFlag flags, uint32_t p1, uint32_t p2, const char *text);
-CommandCost CmdProgramSignalTraceRestrictProgMgmt(TileIndex tile, DoCommandFlag flags, uint32_t p1, uint32_t p2, const char *text);
-
-CommandCost TraceRestrictProgramRemoveItemAt(std::vector<TraceRestrictItem> &items, uint32_t offset, bool shallow_mode);
-CommandCost TraceRestrictProgramMoveItemAt(std::vector<TraceRestrictItem> &items, uint32_t &offset, bool up, bool shallow_mode);
-CommandCost TraceRestrictProgramDuplicateItemAt(std::vector<TraceRestrictItem> &items, uint32_t offset);
-bool TraceRestrictProgramDuplicateItemAtDryRun(const std::vector<TraceRestrictItem> &items, uint32_t offset);
+CommandCost TraceRestrictProgramRemoveItemAt(std::vector<TraceRestrictProgramItem> &items, uint32_t offset, bool shallow_mode);
+CommandCost TraceRestrictProgramMoveItemAt(std::vector<TraceRestrictProgramItem> &items, uint32_t &offset, bool up, bool shallow_mode);
+CommandCost TraceRestrictProgramDuplicateItemAt(std::vector<TraceRestrictProgramItem> &items, uint32_t offset);
+bool TraceRestrictProgramDuplicateItemAtDryRun(const std::vector<TraceRestrictProgramItem> &items, uint32_t offset);
 
 void ShowTraceRestrictProgramWindow(TileIndex tile, Track track);
 
 int GetTraceRestrictTimeDateValue(TraceRestrictTimeDateValueField type);
 int GetTraceRestrictTimeDateValueFromStateTicks(TraceRestrictTimeDateValueField type, StateTicks state_ticks);
 
-void TraceRestrictRemoveDestinationID(TraceRestrictOrderCondAuxField type, uint16_t index);
+void TraceRestrictRemoveDestinationID(TraceRestrictOrderCondAuxField type, struct DestinationID index);
 void TraceRestrictRemoveGroupID(GroupID index);
 void TraceRestrictUpdateCompanyID(CompanyID old_company, CompanyID new_company);
 void TraceRestrictRemoveSlotID(TraceRestrictSlotID index);
+void TraceRestrictRemoveSlotGroupID(TraceRestrictSlotGroupID index);
 void TraceRestrictRemoveCounterID(TraceRestrictCounterID index);
-void TraceRestrictRemoveNonOwnedReferencesFromInstructionRange(std::span<TraceRestrictItem> instructions, Owner instructions_owner);
+void TraceRestrictRemoveNonOwnedReferencesFromInstructionRange(std::span<TraceRestrictProgramItem> instructions, Owner instructions_owner);
 void TraceRestrictRemoveNonOwnedReferencesFromOrder(struct Order *o, Owner order_owner);
 
 void TraceRestrictRemoveVehicleFromAllSlots(VehicleID id);
 void TraceRestrictTransferVehicleOccupantInAllSlots(VehicleID from, VehicleID to);
 void TraceRestrictGetVehicleSlots(VehicleID id, std::vector<TraceRestrictSlotID> &out);
+void TraceRestrictVacateSlotGroup(const TraceRestrictSlotGroup *sg, Owner owner, const Vehicle *v);
+bool TraceRestrictIsVehicleInSlotGroup(const TraceRestrictSlotGroup *sg, Owner owner, const Vehicle *v);
 
 void TraceRestrictRecordRecentSlot(TraceRestrictSlotID index);
+void TraceRestrictRecordRecentSlotGroup(TraceRestrictSlotGroupID index);
 void TraceRestrictRecordRecentCounter(TraceRestrictCounterID index);
 void TraceRestrictClearRecentSlotsAndCounters();
 
-StringID TraceRestrictPrepareSlotCounterSelectTooltip(StringID base_str, VehicleType vtype);
+class EncodedString TraceRestrictPrepareSlotCounterSelectTooltip(StringID base_str, VehicleType vtype);
 
 static const uint MAX_LENGTH_TRACE_RESTRICT_SLOT_NAME_CHARS = 128; ///< The maximum length of a slot name in characters including '\0'
 
@@ -1217,30 +1456,35 @@ static const uint MAX_LENGTH_TRACE_RESTRICT_SLOT_NAME_CHARS = 128; ///< The maxi
 struct TraceRestrictSlot : TraceRestrictSlotPool::PoolItem<&_tracerestrictslot_pool> {
 	friend TraceRestrictSlotTemporaryState;
 
-	enum class Flags : uint8_t {
-		None        = 0,         ///< No flag set.
-		Public      = (1U << 0), ///< Public slot.
+	enum class Flag : uint8_t {
+		Public, ///< Public slot.
 	};
+	using Flags = EnumBitSet<Flag, uint8_t>;
 
 	Owner owner;
-	Flags flags = Flags::None;
+	Flags flags{};
 	VehicleType vehicle_type;
 	TraceRestrictSlotGroupID parent_group = INVALID_TRACE_RESTRICT_SLOT_GROUP;
 	uint32_t max_occupancy = 1;
 	std::string name;
-	std::vector<VehicleID> occupants;
-	std::vector<SignalReference> progsig_dependants;
+	ankerl::svector<VehicleID, 3> occupants;
+	ankerl::svector<SignalReference, 0> progsig_dependants;
 
 	static void RebuildVehicleIndex();
 	static bool ValidateVehicleIndex();
 	static void ValidateSlotOccupants(std::function<void(std::string_view)> log);
+	static void ValidateSlotGroupDescendants(std::function<void(std::string_view)> log);
 	static void PreCleanPool();
 
-	TraceRestrictSlot(CompanyID owner = INVALID_COMPANY, VehicleType type = VEH_TRAIN) : owner(owner), vehicle_type(type) {}
+	TraceRestrictSlot(TraceRestrictSlotID index, CompanyID owner = CompanyID::Invalid(), VehicleType type = VehicleType::Train) :
+		PoolItemBase(index), owner(owner), vehicle_type(type) {}
 
 	~TraceRestrictSlot()
 	{
-		if (!CleaningPool()) this->Clear();
+		if (!CleaningPool()) {
+			this->Clear();
+			this->RemoveFromParentGroups();
+		}
 	}
 
 	/** Test whether vehicle ID is already an occupant */
@@ -1252,7 +1496,11 @@ struct TraceRestrictSlot : TraceRestrictSlotPool::PoolItem<&_tracerestrictslot_p
 		return false;
 	}
 
-	inline bool IsUsableByOwner(Owner using_owner) const;
+	inline bool IsUsableByOwner(Owner using_owner) const
+	{
+		return this->owner == using_owner || this->flags.Test(Flag::Public);
+	}
+
 	bool Occupy(const Vehicle *v, bool force = false);
 	bool OccupyDryRun(VehicleID ids);
 	bool OccupyUsingTemporaryState(VehicleID id, TraceRestrictSlotTemporaryState *state);
@@ -1260,24 +1508,49 @@ struct TraceRestrictSlot : TraceRestrictSlotPool::PoolItem<&_tracerestrictslot_p
 	void VacateUsingTemporaryState(VehicleID id, TraceRestrictSlotTemporaryState *state);
 	void Clear();
 	void UpdateSignals();
+	void AddToParentGroups();
+	void RemoveFromParentGroups();
 
 private:
 	void AddIndex(const Vehicle *v);
 	void DeIndex(VehicleID id, const Vehicle *v);
 };
 
-DECLARE_ENUM_AS_BIT_SET(TraceRestrictSlot::Flags)
 
-bool TraceRestrictSlot::IsUsableByOwner(Owner using_owner) const
-{
-	return this->owner == using_owner || HasFlag(this->flags, Flags::Public);
-}
+struct TraceRestrictVehicleTemporarySlotMembershipState {
+private:
+	ankerl::svector<TraceRestrictSlotID, 8> vehicle_slots;
+	ankerl::svector<TraceRestrictSlotID, 8> current_slots;
+	const Vehicle *vehicle = nullptr;
 
-enum TraceRestrictAlterSlotOperation {
-	TRASO_RENAME,
-	TRASO_CHANGE_MAX_OCCUPANCY,
-	TRASO_SET_PUBLIC,
-	TRASO_SET_PARENT_GROUP,
+	void InitialiseFromVehicle(const Vehicle *v);
+
+public:
+	bool IsValid() const { return this->vehicle != nullptr; }
+
+	bool IsInSlot(TraceRestrictSlotID slot_id) const
+	{
+		for (TraceRestrictSlotID s : this->current_slots) {
+			if (s == slot_id) return true;
+		}
+		return false;
+	}
+
+	void AddSlot(TraceRestrictSlotID slot_id);
+	void RemoveSlot(TraceRestrictSlotID slot_id);
+	int GetSlotOccupancyDelta(TraceRestrictSlotID slot_id);
+	void ApplyToVehicle();
+
+	void Initialise(const Vehicle *v)
+	{
+		if (!this->IsValid()) this->InitialiseFromVehicle(v);
+	}
+
+	void Clear()
+	{
+		this->current_slots.clear();
+		this->vehicle = nullptr;
+	}
 };
 
 /**
@@ -1289,27 +1562,34 @@ struct TraceRestrictSlotGroup : TraceRestrictSlotGroupPool::PoolItem<&_tracerest
 	VehicleType vehicle_type;   ///< Vehicle type of the slot group
 	TraceRestrictSlotGroupID parent; ///< Parent slot group
 
+	ankerl::svector<TraceRestrictSlotID, 8> contained_slots; ///< NOSAVE: slots directly and indirectly contained in this slot group, sorted
 	bool folded = false;        ///< NOSAVE: Is this slot group folded in the slot view?
 
-	TraceRestrictSlotGroup(CompanyID owner = INVALID_COMPANY, VehicleType type = VEH_TRAIN) : owner(owner), vehicle_type(type), parent(INVALID_TRACE_RESTRICT_SLOT_GROUP) {}
+	TraceRestrictSlotGroup(TraceRestrictSlotGroupID index, CompanyID owner = CompanyID::Invalid(), VehicleType type = VehicleType::Train) :
+		PoolItemBase(index), owner(owner), vehicle_type(type), parent(INVALID_TRACE_RESTRICT_SLOT_GROUP) {}
+
+	void AddSlotsToParentGroups();
+	void RemoveSlotsFromParentGroups();
+
+	bool CompanyCanReferenceSlotGroup(Owner owner) const;
 };
 
 /**
  * Counter type
  */
 struct TraceRestrictCounter : TraceRestrictCounterPool::PoolItem<&_tracerestrictcounter_pool> {
-	enum class Flags : uint8_t {
-		None        = 0,         ///< No flag set.
-		Public      = (1U << 0), ///< Public counter.
+	enum class Flag : uint8_t {
+		Public, ///< Public counter.
 	};
+	using Flags = EnumBitSet<Flag, uint8_t>;
 
 	Owner owner;
-	Flags flags = Flags::None;
+	Flags flags{};
 	int32_t value = 0;
 	std::string name;
-	std::vector<SignalReference> progsig_dependants;
+	ankerl::svector<SignalReference, 0> progsig_dependants;
 
-	TraceRestrictCounter(CompanyID owner = INVALID_COMPANY) : owner(owner) {}
+	TraceRestrictCounter(TraceRestrictCounterID index, CompanyID owner = CompanyID::Invalid()) : PoolItemBase(index), owner(owner) {}
 
 	void UpdateValue(int32_t new_value);
 
@@ -1320,29 +1600,12 @@ struct TraceRestrictCounter : TraceRestrictCounterPool::PoolItem<&_tracerestrict
 		this->UpdateValue(TraceRestrictCounter::ApplyValue(this->value, op, value));
 	}
 
-	inline bool IsUsableByOwner(Owner using_owner) const;
+	inline bool IsUsableByOwner(Owner using_owner) const
+	{
+		return this->owner == using_owner || this->flags.Test(Flag::Public);
+	}
 };
 
-DECLARE_ENUM_AS_BIT_SET(TraceRestrictCounter::Flags)
 
-bool TraceRestrictCounter::IsUsableByOwner(Owner using_owner) const
-{
-	return this->owner == using_owner || HasFlag(this->flags, Flags::Public);
-}
-
-enum TraceRestrictAlterCounterOperation {
-	TRACO_RENAME,
-	TRACO_CHANGE_VALUE,
-	TRACO_SET_PUBLIC,
-};
-
-struct TraceRestrictFollowUpCmdData : public CommandAuxiliarySerialisable<TraceRestrictFollowUpCmdData> {
-	BaseCommandContainer cmd;
-
-	virtual void Serialise(BufferSerialisationRef buffer) const override;
-	CommandCost Deserialise(DeserialisationBuffer &buffer);
-	CommandCost ExecuteWithValue(uint16_t value, DoCommandFlag flags) const;
-	std::string GetDebugSummary() const override;
-};
-
+void ShowSlotCreationQueryString(Window &parent);
 #endif /* TRACERESTRICT_H */

@@ -2,13 +2,14 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file animated_tile_sl.cpp Code handling saving and loading of animated tiles */
 
 #include "../stdafx.h"
 #include "../animated_tile.h"
+#include "../map_type.h"
 #include "../tile_type.h"
 #include "../core/alloc_func.hpp"
 
@@ -51,7 +52,7 @@ struct AnimatedTileStructHandler : public SaveLoadStructHandler {
 
 		size_t count = SlGetStructListLength(MAX_MAP_TILES);
 		for (size_t i = 0; i < count; i++) {
-			TileIndex tile = SlReadUint32();
+			TileIndex tile(SlReadUint32());
 			AnimatedTileInfo info = {};
 			info.speed = SlReadByte();
 			_animated_tiles[tile] = info;
@@ -100,7 +101,7 @@ static void Load_ANIT()
 	if (SlXvIsFeaturePresent(XSLFI_ANIMATED_TILE_EXTRA)) {
 		uint count = (uint)SlGetFieldLength() / 5;
 		for (uint i = 0; i < count; i++) {
-			TileIndex tile = SlReadUint32();
+			TileIndex tile(SlReadUint32());
 			AnimatedTileInfo info = {};
 			info.speed = SlReadByte();
 			_animated_tiles[tile] = info;
@@ -108,7 +109,7 @@ static void Load_ANIT()
 	} else {
 		uint count = (uint)SlGetFieldLength() / 4;
 		for (uint i = 0; i < count; i++) {
-			_animated_tiles[SlReadUint32()] = {};
+			_animated_tiles[TileIndex(SlReadUint32())] = {};
 		}
 	}
 }
@@ -118,7 +119,7 @@ static void Load_ANIT()
  * the animated tile table.
  */
 static const ChunkHandler animated_tile_chunk_handlers[] = {
-	{ 'ANIT', Save_ANIT, Load_ANIT, nullptr, nullptr, CH_TABLE },
+	{ 'ANIT', Save_ANIT, Load_ANIT, nullptr, nullptr, ChunkType::Table },
 };
 
 extern const ChunkHandlerTable _animated_tile_chunk_handlers(animated_tile_chunk_handlers);

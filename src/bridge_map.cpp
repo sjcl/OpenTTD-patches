@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file bridge_map.cpp Map accessor functions for bridges. */
@@ -22,6 +22,7 @@
  * Finds the end of a bridge in the specified direction starting at a middle tile
  * @param tile the bridge tile to find the bridge ramp for
  * @param dir  the direction to search in
+ * @return The tile at the bridge end.
  */
 static TileIndex GetBridgeEnd(TileIndex tile, DiagDirection dir)
 {
@@ -39,6 +40,7 @@ static TileIndex GetBridgeEnd(TileIndex tile, DiagDirection dir)
 /**
  * Finds the northern end of a bridge starting at a middle tile
  * @param t the bridge tile to find the bridge ramp for
+ * @return The tile at the northern bridge end.
  */
 TileIndex GetNorthernBridgeEnd(TileIndex t)
 {
@@ -49,6 +51,7 @@ TileIndex GetNorthernBridgeEnd(TileIndex t)
 /**
  * Finds the southern end of a bridge starting at a middle tile
  * @param t the bridge tile to find the bridge ramp for
+ * @return The tile at the southern bridge end.
  */
 TileIndex GetSouthernBridgeEnd(TileIndex t)
 {
@@ -59,6 +62,7 @@ TileIndex GetSouthernBridgeEnd(TileIndex t)
 /**
  * Starting at one bridge end finds the other bridge end
  * @param tile the bridge ramp tile to find the other bridge ramp for
+ * @return The tile at the other bridge end.
  */
 TileIndex GetOtherBridgeEnd(TileIndex tile)
 {
@@ -90,10 +94,10 @@ SignalState GetBridgeEntranceSimulatedSignalStateExtended(TileIndex t, uint16_t 
 		uint16_t offset = signal - BRIDGE_M2_SIGNAL_STATE_COUNT;
 		uint16_t slot = offset >> 6;
 		uint16_t bit = offset & 0x3F;
-		if (slot >= lbss.signal_red_bits.size()) return SIGNAL_STATE_GREEN;
-		return GB(lbss.signal_red_bits[slot], bit, 1) ? SIGNAL_STATE_RED : SIGNAL_STATE_GREEN;
+		if (slot >= lbss.signal_red_bits.size()) return SignalState::Green;
+		return GB(lbss.signal_red_bits[slot], bit, 1) ? SignalState::Red : SignalState::Green;
 	} else {
-		return SIGNAL_STATE_GREEN;
+		return SignalState::Green;
 	}
 }
 
@@ -104,7 +108,7 @@ void SetBridgeEntranceSimulatedSignalStateExtended(TileIndex t, uint16_t signal,
 	uint16_t slot = offset >> 6;
 	uint16_t bit = offset & 0x3F;
 	if (slot >= lbss.signal_red_bits.size()) lbss.signal_red_bits.resize(slot + 1);
-	AssignBit(lbss.signal_red_bits[slot], bit, state == SIGNAL_STATE_RED);
+	AssignBit(lbss.signal_red_bits[slot], bit, state == SignalState::Red);
 	_m[t].m2 |= BRIDGE_M2_SIGNAL_STATE_EXT_FLAG;
 }
 
@@ -196,20 +200,20 @@ void SetBridgeSignalStyle(TileIndex t, uint8_t style)
 		/* No style allocated before */
 		if (!HasBit(_m[t].m3, 7)) return;
 
-		auto iter = _bridge_signal_style_map.lower_bound(t << 4);
+		auto iter = _bridge_signal_style_map.lower_bound(t.base() << 4);
 		if (iter != _bridge_signal_style_map.end() && *iter >> 4 == t) _bridge_signal_style_map.erase(iter);
 		ClrBit(_m[t].m3, 7);
 	} else {
-		auto iter = _bridge_signal_style_map.lower_bound(t << 4);
+		auto iter = _bridge_signal_style_map.lower_bound(t.base() << 4);
 		if (iter != _bridge_signal_style_map.end() && *iter >> 4 == t) iter = _bridge_signal_style_map.erase(iter);
-		_bridge_signal_style_map.insert(iter, (t << 4) | style);
+		_bridge_signal_style_map.insert(iter, (t.base() << 4) | style);
 		SetBit(_m[t].m3, 7);
 	}
 }
 
 uint8_t GetBridgeSignalStyleExtended(TileIndex t)
 {
-	auto iter = _bridge_signal_style_map.lower_bound(t << 4);
+	auto iter = _bridge_signal_style_map.lower_bound(t.base() << 4);
 	if (iter != _bridge_signal_style_map.end() && *iter >> 4 == t) return (*iter) & 0xF;
 	return 0;
 }

@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file settingsgen.cpp Tool to create computer-readable settings. */
@@ -29,7 +29,7 @@
  */
 [[noreturn]] void FatalErrorI(const std::string &msg)
 {
-	fmt::print(stderr, "settingsgen: FATAL: {}\n", msg);
+	fmt_print_no_system_error(stderr, "settingsgen: FATAL: {}\n", msg);
 	exit(1);
 }
 
@@ -46,8 +46,7 @@ public:
 
 	/**
 	 * Add text to the output buffer.
-	 * @param text   Text to store.
-	 * @param length Length of the text in bytes.
+	 * @param text Text to store.
 	 * @return Number of bytes actually stored.
 	 */
 	size_t Add(const char *text, size_t length)
@@ -131,6 +130,17 @@ public:
 		}
 	}
 
+	/**
+	 * Append all stored output to another output store.
+	 * @param out OutputStore to append the \a data to.
+	 */
+	void AppendTo(OutputStore &out) const
+	{
+		for (const OutputBuffer &out_data : output_buffer) {
+			out.Add(out_data.data, out_data.size);
+		}
+	}
+
 private:
 	/**
 	 * Does the buffer have room without adding a new #OutputBuffer block?
@@ -151,8 +161,8 @@ private:
 struct SettingsIniFile : IniLoadFile {
 	/**
 	 * Construct a new ini loader.
-	 * @param list_group_names A list with group names that should be loaded as lists instead of variables. @see IGT_LIST
-	 * @param seq_group_names  A list with group names that should be loaded as lists of names. @see IGT_SEQUENCE
+	 * @param list_group_names A list with group names that should be loaded as lists instead of variables. @see IniGroupType::List
+	 * @param seq_group_names  A list with group names that should be loaded as lists of names. @see IniGroupType::Sequence
 	 */
 	SettingsIniFile(const IniGroupNameList &list_group_names = {}, const IniGroupNameList &seq_group_names = {}) :
 			IniLoadFile(list_group_names, seq_group_names)
@@ -173,30 +183,32 @@ struct SettingsIniFile : IniLoadFile {
 		return in;
 	}
 
-	void ReportFileError(const char * const pre, const char * const buffer, const char * const post) override
+	void ReportFileError(std::string_view message) override
 	{
-		FatalError("{}{}{}", pre, buffer, post);
+		FatalError("{}", message);
 	}
 };
 
 OutputStore _stored_output; ///< Temporary storage of the output, until all processing is done.
 OutputStore _post_amble_output; ///< Similar to _stored_output, but for the post amble.
+OutputStore _table_list_output; ///< Temporary storage of table list entries.
 
 static const char *PREAMBLE_GROUP_NAME  = "pre-amble"; ///< Name of the group containing the pre amble.
+static const char *TABLESTART_GROUP_NAME  = "table-start"; ///< Name of the group containing the table start declaration.
 static const char *POSTAMBLE_GROUP_NAME = "post-amble"; ///< Name of the group containing the post amble.
 static const char *TEMPLATES_GROUP_NAME = "templates"; ///< Name of the group containing the templates.
 static const char *VALIDATION_GROUP_NAME = "validation"; ///< Name of the group containing the validation statements.
 static const char *DEFAULTS_GROUP_NAME  = "defaults"; ///< Name of the group containing default values for the template variables.
 
 /**
- * Dump a #IGT_SEQUENCE group into #_stored_output.
+ * Dump a #IniGroupType::Sequence group into #_stored_output.
  * @param ifile      Loaded INI data.
  * @param group_name Name of the group to copy.
  */
 static void DumpGroup(const IniLoadFile &ifile, const char * const group_name)
 {
 	const IniGroup *grp = ifile.GetGroup(group_name);
-	if (grp != nullptr && grp->type == IGT_SEQUENCE) {
+	if (grp != nullptr && grp->type == IniGroupType::Sequence) {
 		for (const IniItem &item : grp->items) {
 			if (!item.name.empty()) {
 				_stored_output.Add(item.name.c_str());
@@ -221,17 +233,8 @@ static const char *FindItemValue(const char *name, const IniGroup *grp, const In
 	return item->value->c_str();
 }
 
-/**
- * Parse a single entry via a template and output this.
- * @param item The template to use for the output.
- * @param grp Group current being used for template rendering.
- * @param default_grp Default values for items not set in @grp.
- * @param output Output to use for result.
- */
-static void DumpLine(const IniItem *item, const IniGroup *grp, const IniGroup *default_grp, OutputStore &output)
+static int DumpConditionStart(const IniGroup *grp, const IniGroup *default_grp, OutputStore &output)
 {
-	static const int MAX_VAR_LENGTH = 64;
-
 	/* Prefix with #if/#ifdef/#ifndef */
 	static const auto pp_lines = {"if", "ifdef", "ifndef"};
 	int count = 0;
@@ -246,6 +249,27 @@ static void DumpLine(const IniItem *item, const IniGroup *grp, const IniGroup *d
 			count++;
 		}
 	}
+	return count;
+}
+
+static void DumpConditionEnd(int count, OutputStore &output)
+{
+	while (count > 0) {
+		output.Add("#endif\n");
+		count--;
+	}
+}
+
+/**
+ * Parse a single entry via a template and output this.
+ * @param item The template to use for the output.
+ * @param grp Group current being used for template rendering.
+ * @param default_grp Default values for items not set in @grp.
+ * @param output Output to use for result.
+ */
+static void DumpLine(const IniItem *item, const IniGroup *grp, const IniGroup *default_grp, OutputStore &output)
+{
+	static const int MAX_VAR_LENGTH = 64;
 
 	/* Output text of the template, except template variables of the form '$[_a-z0-9]+' which get replaced by their value. */
 	const char *txt = item->value->c_str();
@@ -282,11 +306,9 @@ static void DumpLine(const IniItem *item, const IniGroup *grp, const IniGroup *d
 		}
 	}
 	output.Add("\n", 1); // \n after the expanded template.
-	while (count > 0) {
-		output.Add("#endif\n");
-		count--;
-	}
 }
+
+static uint _setting_seq = 0;
 
 /**
  * Output all non-special sections through the template / template variable expansion system.
@@ -294,12 +316,14 @@ static void DumpLine(const IniItem *item, const IniGroup *grp, const IniGroup *d
  */
 static void DumpSections(const IniLoadFile &ifile)
 {
-	static const auto special_group_names = {PREAMBLE_GROUP_NAME, POSTAMBLE_GROUP_NAME, DEFAULTS_GROUP_NAME, TEMPLATES_GROUP_NAME, VALIDATION_GROUP_NAME};
+	static const auto special_group_names = {PREAMBLE_GROUP_NAME, TABLESTART_GROUP_NAME, POSTAMBLE_GROUP_NAME, DEFAULTS_GROUP_NAME, TEMPLATES_GROUP_NAME, VALIDATION_GROUP_NAME};
 
 	const IniGroup *default_grp = ifile.GetGroup(DEFAULTS_GROUP_NAME);
 	const IniGroup *templates_grp = ifile.GetGroup(TEMPLATES_GROUP_NAME);
 	const IniGroup *validation_grp = ifile.GetGroup(VALIDATION_GROUP_NAME);
 	if (templates_grp == nullptr) return;
+
+	format_buffer_sized<64> setting_buf;
 
 	/* Output every group, using its name as template name. */
 	for (const IniGroup &grp : ifile.groups) {
@@ -310,12 +334,28 @@ static void DumpSections(const IniLoadFile &ifile)
 		if (template_item == nullptr || !template_item->value.has_value()) {
 			FatalError("Cannot find template {}", grp.name);
 		}
+
+		const uint setting_id = _setting_seq++;
+
+		int count = DumpConditionStart(&grp, default_grp, _stored_output);
+		setting_buf.clear();
+		setting_buf.format("SDEF(_s{}) ", setting_id);
+		_stored_output.Add(setting_buf.data(), setting_buf.size());
 		DumpLine(template_item, &grp, default_grp, _stored_output);
+		DumpConditionEnd(count, _stored_output);
+
+		count = DumpConditionStart(&grp, default_grp, _table_list_output);
+		setting_buf.clear();
+		setting_buf.format("&sdef::_s{},\n", setting_id);
+		_table_list_output.Add(setting_buf.data(), setting_buf.size());
+		DumpConditionEnd(count, _table_list_output);
 
 		if (validation_grp != nullptr) {
 			const IniItem *validation_item = validation_grp->GetItem(grp.name); // Find template value.
 			if (validation_item != nullptr && validation_item->value.has_value()) {
+				count = DumpConditionStart(&grp, default_grp, _post_amble_output);
 				DumpLine(validation_item, &grp, default_grp, _post_amble_output);
+				DumpConditionEnd(count, _post_amble_output);
 			}
 		}
 	}
@@ -347,8 +387,8 @@ static void AppendFile(const char *fname, FILE *out_fp)
 
 /**
  * Compare two files for identity.
- * @param n1 First file.
- * @param n2 Second file.
+ * @param path1 First file.
+ * @param path2 Second file.
  * @return True if both files are identical.
  */
 static bool CompareFiles(const char *n1, const char *n2)
@@ -403,17 +443,24 @@ static const OptionData _opts[] = {
  *
  * Last but not least, the [post-amble] group is copied verbatim.
  *
- * @param fname  Ini file to process. @return Exit status of the processing.
+ * @param fname Ini file to process.
  */
 static void ProcessIniFile(const char *fname)
 {
-	static const IniLoadFile::IniGroupNameList seq_groups = {PREAMBLE_GROUP_NAME, POSTAMBLE_GROUP_NAME};
+	static const IniLoadFile::IniGroupNameList seq_groups = {PREAMBLE_GROUP_NAME, TABLESTART_GROUP_NAME, POSTAMBLE_GROUP_NAME};
 
 	SettingsIniFile ini{{}, seq_groups};
-	ini.LoadFromDisk(fname, NO_DIRECTORY);
+	ini.LoadFromDisk(fname, Subdirectory::None);
+
+	_table_list_output.Clear();
 
 	DumpGroup(ini, PREAMBLE_GROUP_NAME);
+	_stored_output.Add("namespace sdef {\n");
 	DumpSections(ini);
+	_stored_output.Add("};\n");
+	DumpGroup(ini, TABLESTART_GROUP_NAME);
+	_table_list_output.AppendTo(_stored_output);
+	_table_list_output.Clear();
 	DumpGroup(ini, POSTAMBLE_GROUP_NAME);
 }
 
@@ -421,6 +468,7 @@ static void ProcessIniFile(const char *fname)
  * And the main program (what else?)
  * @param argc Number of command-line arguments including the program name itself.
  * @param argv Vector of the command-line arguments.
+ * @return The exit code of the application.
  */
 int CDECL main(int argc, char *argv[])
 {

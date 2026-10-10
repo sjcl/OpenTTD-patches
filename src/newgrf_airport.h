@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file newgrf_airport.h NewGRF handling of airports. */
@@ -12,6 +12,7 @@
 
 #include "airport.h"
 #include "date_type.h"
+#include "newgrf_badge_type.h"
 #include "newgrf_class.h"
 #include "newgrf_commons.h"
 #include "newgrf_spritegroup.h"
@@ -24,14 +25,15 @@ typedef uint8_t StationGfx;
 /** Tile-offset / AirportTileID pair. */
 struct AirportTileTable {
 	TileIndexDiffC ti; ///< Tile offset from  the top-most airport tile.
-	StationGfx gfx;    ///< AirportTile to use for this tile.
+	StationGfx gfx; ///< AirportTile to use for this tile.
 };
 
 /** Iterator to iterate over all tiles belonging to an airport spec. */
 class AirportTileTableIterator : public TileIterator {
 private:
-	const AirportTileTable *att; ///< The offsets.
-	TileIndex base_tile;         ///< The tile we base the offsets off.
+	std::span<const AirportTileTable> att; ///< The offsets.
+	TileIndex base_tile; ///< The tile we base the offsets off.
+	std::span<const AirportTileTable>::iterator iter;
 
 public:
 	/**
@@ -39,25 +41,30 @@ public:
 	 * @param att The TileTable we want to iterate over.
 	 * @param base_tile The basetile for all offsets.
 	 */
-	AirportTileTableIterator(const AirportTileTable *att, TileIndex base_tile) : TileIterator(base_tile + ToTileIndexDiff(att->ti)), att(att), base_tile(base_tile)
+	AirportTileTableIterator(std::span<const AirportTileTable> att, TileIndex base_tile)
+		: TileIterator(base_tile + ToTileIndexDiff(att.front().ti))
+		, att(att), base_tile(base_tile), iter(att.begin())
 	{
 	}
 
 	inline TileIterator& operator ++() override
 	{
-		this->att++;
-		if (this->att->ti.x == -0x80) {
+		++this->iter;
+		if (this->iter == std::end(att)) {
 			this->tile = INVALID_TILE;
 		} else {
-			this->tile = this->base_tile + ToTileIndexDiff(this->att->ti);
+			this->tile = this->base_tile + ToTileIndexDiff(this->iter->ti);
 		}
 		return *this;
 	}
 
-	/** Get the StationGfx for the current tile. */
+	/**
+	 * Get the StationGfx for the current tile.
+	 * @return The identifier of the graphics for this tile.
+	 */
 	StationGfx GetStationGfx() const
 	{
-		return this->att->gfx;
+		return this->iter->gfx;
 	}
 
 	std::unique_ptr<TileIterator> Clone() const override
@@ -66,21 +73,17 @@ public:
 	}
 };
 
-/** List of default airport classes. */
-enum AirportClassID {
-	APC_BEGIN     = 0,  ///< Lowest valid airport class id
-	APC_SMALL     = 0,  ///< id for small airports class
-	APC_LARGE,          ///< id for large airports class
-	APC_HUB,            ///< id for hub airports class
-	APC_HELIPORT,       ///< id for heliports
-	APC_MAX       = 16, ///< maximum number of airport classes
-};
+/** Class IDs for airports. */
+struct AirportClassIDTag : public PoolIDTraits<uint8_t, 16, UINT8_MAX> {};
+using AirportClassID = PoolID<AirportClassIDTag>;
 
-/** Allow incrementing of AirportClassID variables */
-DECLARE_POSTFIX_INCREMENT(AirportClassID)
+static constexpr AirportClassID APC_SMALL{0}; ///< id for small airports class.
+static constexpr AirportClassID APC_LARGE{1}; ///< id for large airports class.
+static constexpr AirportClassID APC_HUB{2}; ///< id for hub airports class.
+static constexpr AirportClassID APC_HELIPORT{3}; ///< id for heliports.
 
 /** TTDP airport types. Used to map our types to TTDPatch's */
-enum TTDPAirportType {
+enum TTDPAirportType : uint8_t {
 	ATP_TTDP_SMALL,    ///< Same as AT_SMALL
 	ATP_TTDP_LARGE,    ///< Same as AT_LARGE
 	ATP_TTDP_HELIPORT, ///< Same as AT_HELIPORT
@@ -118,7 +121,8 @@ struct AirportSpec : NewGRFSpecBase<AirportClassID> {
 	uint16_t maintenance_cost;             ///< maintenance cost multiplier
 	/* Newgrf data */
 	bool enabled;                          ///< Entity still available (by default true). Newgrf can disable it, though.
-	struct GRFFileProps grf_prop;          ///< Properties related to the grf file.
+	SubstituteGRFFileProps grf_prop;       ///< Properties related to the grf file.
+	std::vector<BadgeID> badges;
 
 	static const AirportSpec *Get(uint8_t type);
 	static AirportSpec *GetWithoutOverride(uint8_t type);
@@ -128,7 +132,10 @@ struct AirportSpec : NewGRFSpecBase<AirportClassID> {
 
 	static void ResetAirports();
 
-	/** Get the index of this spec. */
+	/**
+	 * Get the index of this spec.
+	 * @return The offset in the specs table.
+	 */
 	uint8_t GetIndex() const
 	{
 		assert(this >= std::begin(specs) && this < std::end(specs));
@@ -139,10 +146,12 @@ struct AirportSpec : NewGRFSpecBase<AirportClassID> {
 
 private:
 	static AirportSpec specs[NUM_AIRPORTS]; ///< Specs of the airports.
+
+	friend void AirportOverrideManager::SetEntitySpec(AirportSpec &&as);
 };
 
 /** Information related to airport classes. */
-using AirportClass = NewGRFClass<AirportSpec, AirportClassID, APC_MAX>;
+using AirportClass = NewGRFClass<AirportSpec, AirportClassID>;
 
 void BindAirportSpecs();
 
@@ -182,11 +191,11 @@ struct AirportResolverObject : public ResolverObject {
 
 	TownScopeResolver *GetTown();
 
-	ScopeResolver *GetScope(VarSpriteGroupScope scope = VSG_SCOPE_SELF, VarSpriteGroupScopeOffset relative = 0) override
+	ScopeResolver *GetScope(VarSpriteGroupScope scope = VarSpriteGroupScope::Self, VarSpriteGroupScopeOffset relative = 0) override
 	{
 		switch (scope) {
-			case VSG_SCOPE_SELF: return &this->airport_scope;
-			case VSG_SCOPE_PARENT:
+			case VarSpriteGroupScope::Self: return &this->airport_scope;
+			case VarSpriteGroupScope::Parent:
 			{
 				TownScopeResolver *tsr = this->GetTown();
 				if (tsr != nullptr) return tsr;

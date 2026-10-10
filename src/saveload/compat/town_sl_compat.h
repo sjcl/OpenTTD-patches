@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file town_sl_compat.h Loading of town chunks before table headers were added. */
@@ -40,16 +40,16 @@ const SaveLoadCompat _town_acceptance_matrix_sl_compat[] = {
 /** Original field order for town_desc. */
 const SaveLoadCompat _town_sl_compat[] = {
 	SLC_VAR("xy"),
-	SLC_NULL(2, SL_MIN_VERSION, SLV_3),
-	SLC_NULL(4, SLV_3, SLV_85),
-	SLC_NULL(2, SL_MIN_VERSION, SLV_92),
+	SLC_NULL(2, SaveLoadVersion::MinVersion, SaveLoadVersion::BiggerStationVariables),
+	SLC_NULL(4, SaveLoadVersion::BiggerStationVariables, SaveLoadVersion::MaglevMonorailPaxWagonLivery),
+	SLC_NULL(2, SaveLoadVersion::MinVersion, SaveLoadVersion::RemoveHouseCount),
 	SLC_VAR("townnamegrfid"),
 	SLC_VAR("townnametype"),
 	SLC_VAR("townnameparts"),
 	SLC_VAR("name"),
 	SLC_VAR("flags"),
 	SLC_VAR("statues"),
-	SLC_NULL(1, SL_MIN_VERSION, SLV_2),
+	SLC_NULL(1, SaveLoadVersion::MinVersion, SaveLoadVersion::VehicleCurrencyStationChanges),
 	SLC_VAR("have_ratings"),
 	SLC_VAR("ratings"),
 	SLC_VAR("unwanted"),
@@ -61,7 +61,7 @@ const SaveLoadCompat _town_sl_compat[] = {
 	SLC_VAR("supplied[CT_MAIL].old_act"),
 	SLC_VAR("supplied[CT_PASSENGERS].new_act"),
 	SLC_VAR("supplied[CT_MAIL].new_act"),
-	SLC_NULL(2, SL_MIN_VERSION, SLV_164),
+	SLC_NULL(2, SaveLoadVersion::MinVersion, SaveLoadVersion::VehicleCentreAndZPos),
 	SLC_VAR("received[TE_FOOD].old_act"),
 	SLC_VAR("received[TE_WATER].old_act"),
 	SLC_VAR("received[TE_FOOD].new_act"),
@@ -78,9 +78,9 @@ const SaveLoadCompat _town_sl_compat[] = {
 	SLC_VAR("larger_town"),
 	SLC_VAR("layout"),
 	SLC_VAR("psa_list"),
-	SLC_NULL(4, SLV_166, SLV_EXTEND_CARGOTYPES),
-	SLC_NULL(8, SLV_EXTEND_CARGOTYPES, SLV_REMOVE_TOWN_CARGO_CACHE),
-	SLC_NULL(30, SLV_2, SLV_REMOVE_TOWN_CARGO_CACHE),
+	SLC_NULL(4, SaveLoadVersion::InfrastructureMaintenanceCosts, SaveLoadVersion::ExtendCargotypes),
+	SLC_NULL(8, SaveLoadVersion::ExtendCargotypes, SaveLoadVersion::RemoveTownCargoCache),
+	SLC_NULL(30, SaveLoadVersion::VehicleCurrencyStationChanges, SaveLoadVersion::RemoveTownCargoCache),
 	SLC_VAR("supplied"),
 	SLC_VAR("received"),
 	SLC_VAR("acceptance_matrix"),

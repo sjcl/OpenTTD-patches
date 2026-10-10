@@ -2,10 +2,10 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
-/** @file table/townname.h Namepart tables for the town name generator */
+/** @file townname.h Namepart tables for the town name generator. */
 
 #include "../core/enum_type.hpp"
 
@@ -1699,189 +1699,192 @@ static const char * const _name_czech_real[] = {
  * Feel free to ask me about anything unclear or if you need help
  * with cloning this for your own language. */
 
-/* Sing., pl. */
-enum CzechGender {
+/** Sing., pl. */
+enum CzechGender : uint8_t {
 	CZG_SMASC,
 	CZG_SFEM,
 	CZG_SNEUT,
 	CZG_PMASC,
 	CZG_PFEM,
 	CZG_PNEUT,
-	/* Special for substantive stems - the ending chooses the gender. */
+	/** Special for substantive stems - the ending chooses the gender. */
 	CZG_FREE,
-	/* Like CZG_FREE, but disallow CZG_SNEUT. */
+	/** Like CZG_FREE, but disallow CZG_SNEUT. */
 	CZG_NFREE
 };
 
-enum CzechPattern {
+enum CzechPattern : uint8_t {
 	CZP_JARNI,
 	CZP_MLADY,
 	CZP_PRIVL
 };
 
-/* [CzechGender][CzechPattern] - replaces the last character of the adjective
- * by this.
- * XXX: [CZG_SMASC][CZP_PRIVL] needs special handling: -ovX -> -uv. */
+/* [CzechGender][CzechPattern] - suffixes for adjectives */
 static const char * const _name_czech_patmod[][3] = {
-	/* CZG_SMASC */ { "\u00ed", "\u00fd", "X" },
-	/* CZG_SFEM */  { "\u00ed", "\u00e1", "a" },
-	/* CZG_SNEUT */ { "\u00ed", "\u00e9", "o" },
-	/* CZG_PMASC */ { "\u00ed", "\u00e9", "y" },
-	/* CZG_PFEM */  { "\u00ed", "\u00e9", "y" },
-	/* CZG_PNEUT */ { "\u00ed", "\u00e1", "a" }
+	/* CZG_SMASC */ { "\u00ed", "\u00fd", "uv" },
+	/* CZG_SFEM */  { "\u00ed", "\u00e1", "ova" },
+	/* CZG_SNEUT */ { "\u00ed", "\u00e9", "ovo" },
+	/* CZG_PMASC */ { "\u00ed", "\u00e9", "ovy" },
+	/* CZG_PFEM */  { "\u00ed", "\u00e9", "ovy" },
+	/* CZG_PNEUT */ { "\u00ed", "\u00e1", "ova" }
 };
 
-/* This way the substantive can choose only some adjectives/endings:
- * At least one of these flags must be satisfied: */
-enum CzechAllow {
-	CZA_SHORT = 1,
-	CZA_MIDDLE = 2,
-	CZA_LONG = 4,
-	CZA_ALL = ~0
+/**
+ * This way the substantive can choose only some adjectives/endings:
+ * At least one of these flags must be satisfied:
+ */
+enum class CzechAllowFlag : uint8_t {
+	Short,
+	Middle,
+	Long,
 };
 
-DECLARE_ENUM_AS_BIT_SET(CzechAllow)
+/** Bitset of \c CzechAllowFlag elements. */
+using CzechAllowFlags = EnumBitSet<CzechAllowFlag, uint8_t>;
 
-/* All these flags must be satisfied (in the stem->others direction): */
-enum CzechChoose {
-	CZC_NONE = 0, // No requirements.
-	CZC_COLOR = 1,
-	CZC_POSTFIX = 2, // Matched if postfix was inserted.
-	CZC_NOPOSTFIX = 4, // Matched if no postfix was inserted.
-	CZC_ANY = ~0
+static constexpr CzechAllowFlags CZA_ALL = {CzechAllowFlag::Short, CzechAllowFlag::Middle, CzechAllowFlag::Long};
+
+/** All these flags must be satisfied (in the stem->others direction): */
+enum class CzechChooseFlag : uint8_t {
+	Colour,
+	Postfix, ///< Matched if postfix was inserted.
+	NoPostfix, ///< Matched if no postfix was inserted.
 };
 
-DECLARE_ENUM_AS_BIT_SET(CzechChoose)
+/** Bitset of \c CzechChooseFlag elements. */
+using CzechChooseFlags = EnumBitSet<CzechChooseFlag, uint8_t>;
+
+static constexpr CzechChooseFlags CZC_ANY = {CzechChooseFlag::Colour, CzechChooseFlag::Postfix, CzechChooseFlag::NoPostfix};
 
 struct CzechNameSubst {
 	CzechGender gender;
-	CzechAllow allow;
-	CzechChoose choose;
+	CzechAllowFlags allow;
+	CzechChooseFlags choose;
 	const char *name;
 };
 
 struct CzechNameAdj {
 	CzechPattern pattern;
-	CzechChoose choose;
+	CzechChooseFlags choose;
 	const char *name;
 };
 
-/* Some of items which should be common are doubled. */
+/** Adjectives for Czech town names. @note Some of items which should be common are doubled. */
 static const CzechNameAdj _name_czech_adj[] = {
-	{ CZP_JARNI, CZC_ANY, "Horn\u00ed" },
-	{ CZP_JARNI, CZC_ANY, "Horn\u00ed" },
-	{ CZP_JARNI, CZC_ANY, "Doln\u00ed" },
-	{ CZP_JARNI, CZC_ANY, "Doln\u00ed" },
-	{ CZP_JARNI, CZC_ANY, "P\u0159edn\u00ed" },
-	{ CZP_JARNI, CZC_ANY, "Zadn\u00ed" },
-	{ CZP_JARNI, CZC_ANY, "Kosteln\u00ed" },
-	{ CZP_JARNI, CZC_ANY, "Havran\u00ed" },
-	{ CZP_JARNI, CZC_ANY, "\u0158\u00ed\u010dn\u00ed" },
-	{ CZP_JARNI, CZC_ANY, "Jezern\u00ed" },
-	{ CZP_MLADY, CZC_ANY, "Velk\u00fd" },
-	{ CZP_MLADY, CZC_ANY, "Velk\u00fd" },
-	{ CZP_MLADY, CZC_ANY, "Mal\u00fd" },
-	{ CZP_MLADY, CZC_ANY, "Mal\u00fd" },
-	{ CZP_MLADY, CZC_ANY, "Vysok\u00fd" },
-	{ CZP_MLADY, CZC_ANY, "\u010cesk\u00fd" },
-	{ CZP_MLADY, CZC_ANY, "Moravsk\u00fd" },
-	{ CZP_MLADY, CZC_ANY, "Slov\u00e1ck\u00fd" },
-	{ CZP_MLADY, CZC_ANY, "Slezsk\u00fd" },
-	{ CZP_MLADY, CZC_ANY, "Uhersk\u00fd" },
-	{ CZP_MLADY, CZC_ANY, "Star\u00fd" },
-	{ CZP_MLADY, CZC_ANY, "Star\u00fd" },
-	{ CZP_MLADY, CZC_ANY, "Nov\u00fd" },
-	{ CZP_MLADY, CZC_ANY, "Nov\u00fd" },
-	{ CZP_MLADY, CZC_ANY, "Mlad\u00fd" },
-	{ CZP_MLADY, CZC_ANY, "Kr\u00e1lovsk\u00fd" },
-	{ CZP_MLADY, CZC_ANY, "Kamenn\u00fd" },
-	{ CZP_MLADY, CZC_ANY, "Cihlov\u00fd" },
-	{ CZP_MLADY, CZC_ANY, "Divn\u00fd" },
-	{ CZP_MLADY, CZC_COLOR, "\u010cerven\u00e1" },
-	{ CZP_MLADY, CZC_COLOR, "\u010cerven\u00e1" },
-	{ CZP_MLADY, CZC_COLOR, "\u010cerven\u00e1" },
-	{ CZP_MLADY, CZC_COLOR, "Zelen\u00e1" },
-	{ CZP_MLADY, CZC_COLOR, "\u017dlut\u00e1" },
-	{ CZP_MLADY, CZC_COLOR, "Siv\u00e1" },
-	{ CZP_MLADY, CZC_COLOR, "\u0160ed\u00e1" },
-	{ CZP_MLADY, CZC_COLOR, "B\u00edl\u00e1" },
-	{ CZP_MLADY, CZC_COLOR, "B\u00edl\u00e1" },
-	{ CZP_MLADY, CZC_COLOR, "Modr\u00e1" },
-	{ CZP_MLADY, CZC_COLOR, "R\u016f\u017eov\u00e1" },
-	{ CZP_MLADY, CZC_COLOR, "\u010cern\u00e1" },
-	{ CZP_PRIVL, CZC_ANY, "Kr\u00e1lova" },
-	{ CZP_PRIVL, CZC_ANY, "Janova" },
-	{ CZP_PRIVL, CZC_ANY, "Karlova" },
-	{ CZP_PRIVL, CZC_ANY, "Kry\u0161tofova" },
-	{ CZP_PRIVL, CZC_ANY, "Ji\u0159\u00edkova" },
-	{ CZP_PRIVL, CZC_ANY, "Petrova" },
-	{ CZP_PRIVL, CZC_ANY, "Sudovo" },
+	{ CZP_JARNI, CZC_ANY, "Horn" },
+	{ CZP_JARNI, CZC_ANY, "Horn" },
+	{ CZP_JARNI, CZC_ANY, "Doln" },
+	{ CZP_JARNI, CZC_ANY, "Doln" },
+	{ CZP_JARNI, CZC_ANY, "P\u0159edn" },
+	{ CZP_JARNI, CZC_ANY, "Zadn" },
+	{ CZP_JARNI, CZC_ANY, "Kosteln" },
+	{ CZP_JARNI, CZC_ANY, "Havran" },
+	{ CZP_JARNI, CZC_ANY, "\u0158\u00ed\u010dn" },
+	{ CZP_JARNI, CZC_ANY, "Jezern" },
+	{ CZP_MLADY, CZC_ANY, "Velk" },
+	{ CZP_MLADY, CZC_ANY, "Velk" },
+	{ CZP_MLADY, CZC_ANY, "Mal" },
+	{ CZP_MLADY, CZC_ANY, "Mal" },
+	{ CZP_MLADY, CZC_ANY, "Vysok" },
+	{ CZP_MLADY, CZC_ANY, "\u010cesk" },
+	{ CZP_MLADY, CZC_ANY, "Moravsk" },
+	{ CZP_MLADY, CZC_ANY, "Slov\u00e1ck" },
+	{ CZP_MLADY, CZC_ANY, "Slezsk" },
+	{ CZP_MLADY, CZC_ANY, "Uhersk" },
+	{ CZP_MLADY, CZC_ANY, "Star" },
+	{ CZP_MLADY, CZC_ANY, "Star" },
+	{ CZP_MLADY, CZC_ANY, "Nov" },
+	{ CZP_MLADY, CZC_ANY, "Nov" },
+	{ CZP_MLADY, CZC_ANY, "Mlad" },
+	{ CZP_MLADY, CZC_ANY, "Kr\u00e1lovsk" },
+	{ CZP_MLADY, CZC_ANY, "Kamenn" },
+	{ CZP_MLADY, CZC_ANY, "Cihlov" },
+	{ CZP_MLADY, CZC_ANY, "Divn" },
+	{ CZP_MLADY, CzechChooseFlag::Colour, "\u010cerven" },
+	{ CZP_MLADY, CzechChooseFlag::Colour, "\u010cerven" },
+	{ CZP_MLADY, CzechChooseFlag::Colour, "\u010cerven" },
+	{ CZP_MLADY, CzechChooseFlag::Colour, "Zelen" },
+	{ CZP_MLADY, CzechChooseFlag::Colour, "\u017dlut" },
+	{ CZP_MLADY, CzechChooseFlag::Colour, "Siv" },
+	{ CZP_MLADY, CzechChooseFlag::Colour, "\u0160ed" },
+	{ CZP_MLADY, CzechChooseFlag::Colour, "B\u00edl" },
+	{ CZP_MLADY, CzechChooseFlag::Colour, "B\u00edl" },
+	{ CZP_MLADY, CzechChooseFlag::Colour, "Modr" },
+	{ CZP_MLADY, CzechChooseFlag::Colour, "R\u016f\u017eov" },
+	{ CZP_MLADY, CzechChooseFlag::Colour, "\u010cern" },
+	{ CZP_PRIVL, CZC_ANY, "Kr\u00e1l" },
+	{ CZP_PRIVL, CZC_ANY, "Jan" },
+	{ CZP_PRIVL, CZC_ANY, "Karl" },
+	{ CZP_PRIVL, CZC_ANY, "Kry\u0161tof" },
+	{ CZP_PRIVL, CZC_ANY, "Ji\u0159\u00edk" },
+	{ CZP_PRIVL, CZC_ANY, "Petr" },
+	{ CZP_PRIVL, CZC_ANY, "Sud" },
 };
 
-/* Considered a stem for choose/allow matching purposes. */
+/** Considered a stem for choose/allow matching purposes. */
 static const CzechNameSubst _name_czech_subst_full[] = {
-	{ CZG_SMASC, CZA_ALL, CZC_COLOR, "Sedlec" },
-	{ CZG_SMASC, CZA_ALL, CZC_COLOR, "Brod" },
-	{ CZG_SMASC, CZA_ALL, CZC_COLOR, "Brod" },
-	{ CZG_SMASC, CZA_ALL, CZC_NONE, "\u00daval" },
-	{ CZG_SMASC, CZA_ALL, CZC_COLOR, "\u017d\u010f\u00e1r" },
-	{ CZG_SMASC, CZA_ALL, CZC_COLOR, "Smrk" },
-	{ CZG_SFEM,  CZA_ALL, CZC_COLOR, "Hora" },
-	{ CZG_SFEM,  CZA_ALL, CZC_COLOR, "Lhota" },
-	{ CZG_SFEM,  CZA_ALL, CZC_COLOR, "Lhota" },
-	{ CZG_SFEM,  CZA_ALL, CZC_COLOR, "Hlava" },
-	{ CZG_SFEM,  CZA_ALL, CZC_COLOR, "L\u00edpa" },
-	{ CZG_SNEUT, CZA_ALL, CZC_COLOR, "Pole" },
-	{ CZG_SNEUT, CZA_ALL, CZC_COLOR, "\u00dadol\u00ed" },
-	{ CZG_PMASC, CZA_ALL, CZC_NONE, "\u00davaly" },
-	{ CZG_PFEM,  CZA_ALL, CZC_COLOR, "Luka" },
-	{ CZG_PNEUT, CZA_ALL, CZC_COLOR, "Pole" },
+	{ CZG_SMASC, CZA_ALL, CzechChooseFlag::Colour, "Sedlec" },
+	{ CZG_SMASC, CZA_ALL, CzechChooseFlag::Colour, "Brod" },
+	{ CZG_SMASC, CZA_ALL, CzechChooseFlag::Colour, "Brod" },
+	{ CZG_SMASC, CZA_ALL, {}, "\u00daval" },
+	{ CZG_SMASC, CZA_ALL, CzechChooseFlag::Colour, "\u017d\u010f\u00e1r" },
+	{ CZG_SMASC, CZA_ALL, CzechChooseFlag::Colour, "Smrk" },
+	{ CZG_SFEM,  CZA_ALL, CzechChooseFlag::Colour, "Hora" },
+	{ CZG_SFEM,  CZA_ALL, CzechChooseFlag::Colour, "Lhota" },
+	{ CZG_SFEM,  CZA_ALL, CzechChooseFlag::Colour, "Lhota" },
+	{ CZG_SFEM,  CZA_ALL, CzechChooseFlag::Colour, "Hlava" },
+	{ CZG_SFEM,  CZA_ALL, CzechChooseFlag::Colour, "L\u00edpa" },
+	{ CZG_SNEUT, CZA_ALL, CzechChooseFlag::Colour, "Pole" },
+	{ CZG_SNEUT, CZA_ALL, CzechChooseFlag::Colour, "\u00dadol\u00ed" },
+	{ CZG_PMASC, CZA_ALL, {}, "\u00davaly" },
+	{ CZG_PFEM,  CZA_ALL, CzechChooseFlag::Colour, "Luka" },
+	{ CZG_PNEUT, CZA_ALL, CzechChooseFlag::Colour, "Pole" },
 };
 
-/* TODO: More stems needed. --pasky */
+/** Beginnings for Czech town names. */
 static const CzechNameSubst _name_czech_subst_stem[] = {
-	{ CZG_SMASC,             CZA_MIDDLE,            CZC_COLOR, "Kostel" },
-	{ CZG_SMASC,             CZA_MIDDLE,            CZC_COLOR, "Kl\u00e1\u0161ter" },
-	{ CZG_SMASC, CZA_SHORT,                         CZC_COLOR, "Lhot" },
-	{ CZG_SFEM,  CZA_SHORT,                         CZC_COLOR, "Lhot" },
-	{ CZG_SFEM,  CZA_SHORT,                         CZC_COLOR, "Hur" },
-	{ CZG_FREE,              CZA_MIDDLE | CZA_LONG, CZC_NONE, "Sedl" },
-	{ CZG_FREE,  CZA_SHORT | CZA_MIDDLE | CZA_LONG, CZC_COLOR, "Hrad" },
-	{ CZG_NFREE,             CZA_MIDDLE,            CZC_NONE, "Pras" },
-	{ CZG_NFREE,             CZA_MIDDLE,            CZC_NONE, "Ba\u017e" },
-	{ CZG_NFREE,             CZA_MIDDLE,            CZC_NONE, "Tes" },
-	{ CZG_NFREE,             CZA_MIDDLE,            CZC_NONE, "U\u017e" },
-	{ CZG_NFREE,             CZA_MIDDLE | CZA_LONG, CZC_POSTFIX, "B\u0159" },
-	{ CZG_NFREE,             CZA_MIDDLE | CZA_LONG, CZC_NONE, "Vod" },
-	{ CZG_NFREE,             CZA_MIDDLE | CZA_LONG, CZC_NONE, "Jan" },
-	{ CZG_NFREE,                          CZA_LONG, CZC_NONE, "Prach" },
-	{ CZG_NFREE,                          CZA_LONG, CZC_NONE, "Kunr" },
-	{ CZG_NFREE,                          CZA_LONG, CZC_NONE, "Strak" },
-	{ CZG_NFREE,                          CZA_LONG, CZC_NONE, "V\u00edt" },
-	{ CZG_NFREE,                          CZA_LONG, CZC_NONE, "Vy\u0161" },
-	{ CZG_NFREE,                          CZA_LONG, CZC_NONE, "\u017dat" },
-	{ CZG_NFREE,                          CZA_LONG, CZC_NONE, "\u017der" },
-	{ CZG_NFREE,                          CZA_LONG, CZC_NONE, "St\u0159ed" },
-	{ CZG_NFREE,                          CZA_LONG, CZC_NONE, "Harv" },
-	{ CZG_NFREE,                          CZA_LONG, CZC_NONE, "Pruh" },
-	{ CZG_NFREE,                          CZA_LONG, CZC_NONE, "Tach" },
-	{ CZG_NFREE,                          CZA_LONG, CZC_NONE, "P\u00edsn" },
-	{ CZG_NFREE,                          CZA_LONG, CZC_NONE, "Jin" },
-	{ CZG_NFREE,                          CZA_LONG, CZC_NONE, "Jes" },
-	{ CZG_NFREE,                          CZA_LONG, CZC_NONE, "Jar" },
-	{ CZG_NFREE,                          CZA_LONG, CZC_NONE, "Sok" },
-	{ CZG_NFREE,                          CZA_LONG, CZC_NONE, "Hod" },
-	{ CZG_NFREE,                          CZA_LONG, CZC_NONE, "Net" },
-	{ CZG_FREE,                           CZA_LONG, CZC_NONE, "Pra\u017e" },
-	{ CZG_FREE,                           CZA_LONG, CZC_NONE, "Nerat" },
-	{ CZG_FREE,                           CZA_LONG, CZC_NONE, "Kral" },
-	{ CZG_FREE,                           CZA_LONG, CZC_NONE, "Hut" },
-	{ CZG_FREE,                           CZA_LONG, CZC_NOPOSTFIX, "Pan" },
-	{ CZG_FREE,  CZA_SHORT | CZA_MIDDLE | CZA_LONG, CZC_NOPOSTFIX, "Odst\u0159ed" },
-	{ CZG_FREE,  CZA_SHORT | CZA_MIDDLE | CZA_LONG, CZC_COLOR, "Mrat" },
-	{ CZG_FREE,                           CZA_LONG, CZC_COLOR, "Hlav" },
-	{ CZG_FREE,  CZA_SHORT | CZA_MIDDLE,            CZC_NONE, "M\u011b\u0159" },
-	{ CZG_FREE,              CZA_MIDDLE | CZA_LONG, CZC_NONE, "Lip" },
+	{ CZG_SMASC, {                       CzechAllowFlag::Middle                      }, CzechChooseFlag::Colour, "Kostel" },
+	{ CZG_SMASC, {                       CzechAllowFlag::Middle                      }, CzechChooseFlag::Colour, "Kl\u00e1\u0161ter" },
+	{ CZG_SMASC, {CzechAllowFlag::Short                                              }, CzechChooseFlag::Colour, "Lhot" },
+	{ CZG_SFEM,  {CzechAllowFlag::Short                                              }, CzechChooseFlag::Colour, "Lhot" },
+	{ CZG_SFEM,  {CzechAllowFlag::Short                                              }, CzechChooseFlag::Colour, "Hur" },
+	{ CZG_FREE,  {                       CzechAllowFlag::Middle, CzechAllowFlag::Long}, {}, "Sedl" },
+	{ CZG_FREE,  {CzechAllowFlag::Short, CzechAllowFlag::Middle, CzechAllowFlag::Long}, CzechChooseFlag::Colour, "Hrad" },
+	{ CZG_NFREE, {                       CzechAllowFlag::Middle                      }, {}, "Pras" },
+	{ CZG_NFREE, {                       CzechAllowFlag::Middle                      }, {}, "Ba\u017e" },
+	{ CZG_NFREE, {                       CzechAllowFlag::Middle                      }, {}, "Tes" },
+	{ CZG_NFREE, {                       CzechAllowFlag::Middle                      }, {}, "U\u017e" },
+	{ CZG_NFREE, {                       CzechAllowFlag::Middle, CzechAllowFlag::Long}, CzechChooseFlag::Postfix, "B\u0159" },
+	{ CZG_NFREE, {                       CzechAllowFlag::Middle, CzechAllowFlag::Long}, {}, "Vod" },
+	{ CZG_NFREE, {                       CzechAllowFlag::Middle, CzechAllowFlag::Long}, {}, "Jan" },
+	{ CZG_NFREE, {                                               CzechAllowFlag::Long}, {}, "Prach" },
+	{ CZG_NFREE, {                                               CzechAllowFlag::Long}, {}, "Kunr" },
+	{ CZG_NFREE, {                                               CzechAllowFlag::Long}, {}, "Strak" },
+	{ CZG_NFREE, {                                               CzechAllowFlag::Long}, {}, "V\u00edt" },
+	{ CZG_NFREE, {                                               CzechAllowFlag::Long}, {}, "Vy\u0161" },
+	{ CZG_NFREE, {                                               CzechAllowFlag::Long}, {}, "\u017dat" },
+	{ CZG_NFREE, {                                               CzechAllowFlag::Long}, {}, "\u017der" },
+	{ CZG_NFREE, {                                               CzechAllowFlag::Long}, {}, "St\u0159ed" },
+	{ CZG_NFREE, {                                               CzechAllowFlag::Long}, {}, "Harv" },
+	{ CZG_NFREE, {                                               CzechAllowFlag::Long}, {}, "Pruh" },
+	{ CZG_NFREE, {                                               CzechAllowFlag::Long}, {}, "Tach" },
+	{ CZG_NFREE, {                                               CzechAllowFlag::Long}, {}, "P\u00edsn" },
+	{ CZG_NFREE, {                                               CzechAllowFlag::Long}, {}, "Jin" },
+	{ CZG_NFREE, {                                               CzechAllowFlag::Long}, {}, "Jes" },
+	{ CZG_NFREE, {                                               CzechAllowFlag::Long}, {}, "Jar" },
+	{ CZG_NFREE, {                                               CzechAllowFlag::Long}, {}, "Sok" },
+	{ CZG_NFREE, {                                               CzechAllowFlag::Long}, {}, "Hod" },
+	{ CZG_NFREE, {                                               CzechAllowFlag::Long}, {}, "Net" },
+	{ CZG_FREE,  {                                               CzechAllowFlag::Long}, {}, "Pra\u017e" },
+	{ CZG_FREE,  {                                               CzechAllowFlag::Long}, {}, "Nerat" },
+	{ CZG_FREE,  {                                               CzechAllowFlag::Long}, {}, "Kral" },
+	{ CZG_FREE,  {                                               CzechAllowFlag::Long}, {}, "Hut" },
+	{ CZG_FREE,  {                                               CzechAllowFlag::Long}, CzechChooseFlag::NoPostfix, "Pan" },
+	{ CZG_FREE,  {CzechAllowFlag::Short, CzechAllowFlag::Middle, CzechAllowFlag::Long}, CzechChooseFlag::NoPostfix, "Odst\u0159ed" },
+	{ CZG_FREE,  {CzechAllowFlag::Short, CzechAllowFlag::Middle, CzechAllowFlag::Long}, CzechChooseFlag::Colour, "Mrat" },
+	{ CZG_FREE,  {                                               CzechAllowFlag::Long}, CzechChooseFlag::Colour, "Hlav" },
+	{ CZG_FREE,  {CzechAllowFlag::Short, CzechAllowFlag::Middle                      }, {}, "M\u011b\u0159" },
+	{ CZG_FREE,  {                       CzechAllowFlag::Middle, CzechAllowFlag::Long}, {}, "Lip" },
 };
 
 /* Optional postfix inserted between stem and ending. */
@@ -1891,28 +1894,28 @@ static const char * const _name_czech_subst_postfix[] = {
 	"ev", "en", "et",
 };
 
-/* This array must have the both neutral genders at the end! */
+/** Endings for Czech town names. @important This array must have the both neutral genders at the end! */
 static const CzechNameSubst _name_czech_subst_ending[] = {
-	{ CZG_SMASC, CZA_SHORT | CZA_MIDDLE,            CZC_ANY, "ec" },
-	{ CZG_SMASC, CZA_SHORT | CZA_MIDDLE,            CZC_ANY, "\u00edn" },
-	{ CZG_SMASC, CZA_SHORT | CZA_MIDDLE | CZA_LONG, CZC_ANY, "ov" },
-	{ CZG_SMASC, CZA_SHORT       |        CZA_LONG, CZC_ANY, "kov" },
-	{ CZG_SMASC,                          CZA_LONG, CZC_POSTFIX, "\u00edn" },
-	{ CZG_SMASC,                          CZA_LONG, CZC_POSTFIX, "n\u00edk" },
-	{ CZG_SMASC,                          CZA_LONG, CZC_ANY, "burk" },
-	{ CZG_SFEM,  CZA_SHORT,                         CZC_ANY, "ka" },
-	{ CZG_SFEM,              CZA_MIDDLE,            CZC_ANY, "inka" },
-	{ CZG_SFEM,              CZA_MIDDLE,            CZC_ANY, "n\u00e1" },
-	{ CZG_SFEM,                           CZA_LONG, CZC_ANY, "ava" },
-	{ CZG_PMASC,                          CZA_LONG, CZC_POSTFIX, "\u00edky" },
-	{ CZG_PMASC,                          CZA_LONG, CZC_ANY, "upy" },
-	{ CZG_PMASC,                          CZA_LONG, CZC_ANY, "olupy" },
-	{ CZG_PFEM,                           CZA_LONG, CZC_ANY, "avy" },
-	{ CZG_PFEM,  CZA_SHORT | CZA_MIDDLE | CZA_LONG, CZC_ANY, "ice" },
-	{ CZG_PFEM,  CZA_SHORT | CZA_MIDDLE | CZA_LONG, CZC_ANY, "i\u010dky" },
-	{ CZG_PNEUT, CZA_SHORT | CZA_MIDDLE,            CZC_ANY, "na" },
-	{ CZG_SNEUT, CZA_SHORT | CZA_MIDDLE,            CZC_ANY, "no" },
-	{ CZG_SNEUT,                          CZA_LONG, CZC_ANY, "i\u0161t\u011b" },
+	{ CZG_SMASC, {CzechAllowFlag::Short, CzechAllowFlag::Middle                      }, CZC_ANY, "ec" },
+	{ CZG_SMASC, {CzechAllowFlag::Short, CzechAllowFlag::Middle                      }, CZC_ANY, "\u00edn" },
+	{ CZG_SMASC, {CzechAllowFlag::Short, CzechAllowFlag::Middle, CzechAllowFlag::Long}, CZC_ANY, "ov" },
+	{ CZG_SMASC, {CzechAllowFlag::Short,                         CzechAllowFlag::Long}, CZC_ANY, "kov" },
+	{ CZG_SMASC, {                                               CzechAllowFlag::Long}, CzechChooseFlag::Postfix, "\u00edn" },
+	{ CZG_SMASC, {                                               CzechAllowFlag::Long}, CzechChooseFlag::Postfix, "n\u00edk" },
+	{ CZG_SMASC, {                                               CzechAllowFlag::Long}, CZC_ANY, "burk" },
+	{ CZG_SFEM,  {CzechAllowFlag::Short                                              }, CZC_ANY, "ka" },
+	{ CZG_SFEM,  {                       CzechAllowFlag::Middle                      }, CZC_ANY, "inka" },
+	{ CZG_SFEM,  {                       CzechAllowFlag::Middle                      }, CZC_ANY, "n\u00e1" },
+	{ CZG_SFEM,  {                                               CzechAllowFlag::Long}, CZC_ANY, "ava" },
+	{ CZG_PMASC, {                                               CzechAllowFlag::Long}, CzechChooseFlag::Postfix, "\u00edky" },
+	{ CZG_PMASC, {                                               CzechAllowFlag::Long}, CZC_ANY, "upy" },
+	{ CZG_PMASC, {                                               CzechAllowFlag::Long}, CZC_ANY, "olupy" },
+	{ CZG_PFEM,  {                                               CzechAllowFlag::Long}, CZC_ANY, "avy" },
+	{ CZG_PFEM,  {CzechAllowFlag::Short, CzechAllowFlag::Middle, CzechAllowFlag::Long}, CZC_ANY, "ice" },
+	{ CZG_PFEM,  {CzechAllowFlag::Short, CzechAllowFlag::Middle, CzechAllowFlag::Long}, CZC_ANY, "i\u010dky" },
+	{ CZG_PNEUT, {CzechAllowFlag::Short, CzechAllowFlag::Middle                      }, CZC_ANY, "na" },
+	{ CZG_SNEUT, {CzechAllowFlag::Short, CzechAllowFlag::Middle                      }, CZC_ANY, "no" },
+	{ CZG_SNEUT, {                                               CzechAllowFlag::Long}, CZC_ANY, "i\u0161t\u011b" },
 };
 
 static const char * const _name_czech_suffix[] = {
@@ -2453,7 +2456,7 @@ static const char * const _name_hungarian_3[] = {
 	"fa",
 	"f\u00f6ld",
 	"hegyes",
-	"kak",
+	"lak",
 	"kereszt",
 	"k\u00fcrt",
 	"lad\u00e1ny",

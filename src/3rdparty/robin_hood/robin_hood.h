@@ -815,6 +815,56 @@ struct hash<Enum, typename std::enable_if<std::is_enum<Enum>::value>::type> {
     }
 };
 
+/* StrongType support */
+
+template<typename T>
+concept enable_hash_as_base = T::hash_as_base || false;
+
+template <typename T>
+struct hash<T, typename std::enable_if<enable_hash_as_base<T>>::type> {
+    size_t operator()(T value) const noexcept {
+        return hash<typename T::BaseType>{}(value.base());
+    }
+};
+
+/* StrongType support ends */
+
+/* Inline hash method support */
+
+struct hash_helper {
+    size_t hash_bytes(void const* ptr, size_t len) noexcept
+    {
+        return robin_hood::hash_bytes(ptr, len);
+    }
+
+    size_t hash_int(uint64_t x) noexcept
+    {
+         return robin_hood::hash_int(x);
+    }
+
+    template <typename T>
+    size_t hash_type(const T &obj) noexcept
+    {
+         return robin_hood::hash<T>()(obj);
+    }
+};
+
+template <typename T>
+concept HasHashMethod = requires(const T &obj)
+{
+    { obj.hash(hash_helper{}) } -> std::same_as<size_t>;
+};
+
+template <typename T> requires HasHashMethod<T>
+struct hash<T> {
+    size_t operator()(const T &obj) const noexcept(noexcept(std::declval<T>().hash(hash_helper{})))
+    {
+        return obj.hash(hash_helper{});
+    }
+};
+
+/* Inline hash method support ends */
+
 #define ROBIN_HOOD_HASH_INT(T)                           \
     template <>                                          \
     struct hash<T> {                                     \
@@ -1345,7 +1395,7 @@ private:
     // Lower bits are used for indexing into the array (2^n size)
     // The upper 1-5 bits need to be a reasonable good hash, to save comparisons.
     template <typename HashKey>
-    void keyToIdx(HashKey&& key, size_t* idx, InfoType* info) const {
+    void keyToIdx(const HashKey& key, size_t* idx, InfoType* info) const {
         // In addition to whatever hash is used, add another mul & shift so we get better hashing.
         // This serves as a bad hash prevention, if the given data is
         // badly mixed.
@@ -1848,6 +1898,34 @@ public:
         return try_emplace_impl(std::move(key), std::forward<Args>(args)...).first;
     }
 
+/* try_emplace_heterogenous */
+    template <typename OtherKey, typename... Args>
+    std::pair<iterator, bool> try_emplace_heterogenous(const OtherKey& key, Args&&... args) {
+        ROBIN_HOOD_TRACE(this)
+        auto idxAndState = insertKeyPrepareEmptySpot(key);
+        switch (idxAndState.second) {
+        case InsertionState::key_found:
+            break;
+
+        case InsertionState::new_node:
+            ::new (static_cast<void*>(&mKeyVals[idxAndState.first])) Node(
+                *this, std::forward<Args>(args)...);
+            break;
+
+        case InsertionState::overwrite_node:
+            mKeyVals[idxAndState.first] = Node(*this, std::forward<Args>(args)...);
+            break;
+
+        case InsertionState::overflow_error:
+            throwOverflowError();
+            break;
+        }
+
+        return std::make_pair(iterator(mKeyVals + idxAndState.first, mInfo + idxAndState.first),
+                              InsertionState::key_found != idxAndState.second);
+    }
+/* try_emplace_heterogenous ends */
+
     template <typename Mapped>
     std::pair<iterator, bool> insert_or_assign(const key_type& key, Mapped&& obj) {
         return insertOrAssignImpl(key, std::forward<Mapped>(obj));
@@ -2344,7 +2422,7 @@ private:
     // This potentially shifts nodes out of the way, updates mInfo and number of inserted
     // elements, so the only operation left to do is create/assign a new node at that spot.
     template <typename OtherKey>
-    std::pair<size_t, InsertionState> insertKeyPrepareEmptySpot(OtherKey&& key) {
+    std::pair<size_t, InsertionState> insertKeyPrepareEmptySpot(const OtherKey& key) {
         for (int i = 0; i < 256; ++i) {
             size_t idx{};
             InfoType info{};

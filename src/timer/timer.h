@@ -2,10 +2,10 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
-/** @file timer.h Definition of Interval and OneShot timers */
+/** @file timer.h Definition of Interval and OneShot timers. */
 
 #ifndef TIMER_H
 #define TIMER_H
@@ -87,7 +87,7 @@ public:
 	 */
 	[[nodiscard]] IntervalTimer(const TPeriod interval, std::function<void(uint)> callback) :
 		BaseTimer<TTimerType>(interval),
-		callback(callback)
+		callback(std::move(callback))
 	{
 	}
 
@@ -131,7 +131,7 @@ public:
 	[[nodiscard]] TimeoutTimer(const TPeriod timeout, std::function<void()> callback, bool start = false) :
 		BaseTimer<TTimerType>(timeout),
 		fired(!start),
-		callback(callback)
+		callback(std::move(callback))
 	{
 	}
 

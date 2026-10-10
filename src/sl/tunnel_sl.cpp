@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file tunnel_sl.cpp Code handling saving and loading of tunnels */
@@ -41,7 +41,7 @@ static void Load_TUNN()
 
 	int index;
 	while ((index = SlIterateArray()) != -1) {
-		Tunnel *tunnel = new (index) Tunnel();
+		Tunnel *tunnel = Tunnel::CreateAtIndex(TunnelID(index));
 		SlObjectLoadFiltered(tunnel, slt);
 		tunnel->UpdateIndexes();
 	}
@@ -49,7 +49,7 @@ static void Load_TUNN()
 
 
 extern const ChunkHandler tunnel_chunk_handlers[] = {
-	{ 'TUNN', Save_TUNN, Load_TUNN, nullptr, nullptr, CH_TABLE },
+	{ 'TUNN', Save_TUNN, Load_TUNN, nullptr, nullptr, ChunkType::Table },
 };
 
 extern const ChunkHandlerTable _tunnel_chunk_handlers(tunnel_chunk_handlers);

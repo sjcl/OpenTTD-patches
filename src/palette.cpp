@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file palette.cpp Handling of palettes. */
@@ -25,23 +25,23 @@
 Palette _cur_palette;
 std::mutex _cur_palette_mutex;
 
-uint8_t _colour_value[COLOUR_END] = {
-	133, // COLOUR_DARK_BLUE
-	 99, // COLOUR_PALE_GREEN,
-	 48, // COLOUR_PINK,
-	 68, // COLOUR_YELLOW,
-	184, // COLOUR_RED,
-	152, // COLOUR_LIGHT_BLUE,
-	209, // COLOUR_GREEN,
-	 95, // COLOUR_DARK_GREEN,
-	150, // COLOUR_BLUE,
-	 79, // COLOUR_CREAM,
-	134, // COLOUR_MAUVE,
-	174, // COLOUR_PURPLE,
-	195, // COLOUR_ORANGE,
-	116, // COLOUR_BROWN,
-	  6, // COLOUR_GREY,
-	 15, // COLOUR_WHITE,
+const EnumIndexArray<PixelColour, Colours, Colours::End> _colour_value{
+	PixelColour{133}, // Colours::DarkBlue
+	PixelColour{ 99}, // Colours::PaleGreen,
+	PixelColour{ 48}, // Colours::Pink,
+	PixelColour{ 68}, // Colours::Yellow,
+	PixelColour{184}, // Colours::Red,
+	PixelColour{152}, // Colours::LightBlue,
+	PixelColour{209}, // Colours::Green,
+	PixelColour{ 95}, // Colours::DarkGreen,
+	PixelColour{150}, // Colours::Blue,
+	PixelColour{ 79}, // Colours::Cream,
+	PixelColour{134}, // Colours::Mauve,
+	PixelColour{174}, // Colours::Purple,
+	PixelColour{195}, // Colours::Orange,
+	PixelColour{116}, // Colours::Brown,
+	PixelColour{  6}, // Colours::Grey,
+	PixelColour{ 15}, // Colours::White,
 };
 
 Colour _water_palette[10];
@@ -50,8 +50,8 @@ Colour _water_palette[10];
  * PALETTE_BITS reduces the bits-per-channel of 32bpp graphics data to allow faster palette lookups from
  * a smaller lookup table.
  *
- * 6 bpc is chosen as this results in a palette lookup table of 256KiB with adequate fidelty.
- * In constract, a 5 bpc lookup table would be 32KiB, and 7 bpc would be 2MiB.
+ * 6 bpc is chosen as this results in a palette lookup table of 256KiB with adequate fidelity.
+ * In contrast, a 5 bpc lookup table would be 32KiB, and 7 bpc would be 2MiB.
  *
  * Values in the table are filled as they are first encountered -- larger lookup table means more colour
  * distance calculations, and is therefore slower.
@@ -61,9 +61,17 @@ const uint PALETTE_SHIFT = 8 - PALETTE_BITS;
 const uint PALETTE_BITS_MASK = ((1U << PALETTE_BITS) - 1) << PALETTE_SHIFT;
 const uint PALETTE_BITS_OR = (1U << (PALETTE_SHIFT - 1));
 
-/* Palette and reshade lookup table. */
+/** @{
+ * Palette lookup table. */
 using PaletteLookup = std::array<uint8_t, 1U << (PALETTE_BITS * 3)>;
 static PaletteLookup _palette_lookup{};
+/** @} */
+
+/** @{
+ * Reshade lookup table. */
+using ReshadeLookup = std::array<uint8_t, 1U << PALETTE_BITS>;
+static ReshadeLookup _reshade_lookup{};
+/** @} */
 
 /**
  * Reduce bits per channel to PALETTE_BITS, and place value in the middle of the reduced range.
@@ -138,6 +146,27 @@ static uint8_t FindNearestColourIndex(uint8_t r, uint8_t g, uint8_t b)
 }
 
 /**
+ * Find nearest company colour palette index for a brightness level.
+ * @param b Pixel-colour to find.
+ * @returns palette index of nearest colour.
+ */
+static uint8_t FindNearestColourReshadeIndex(uint8_t b)
+{
+	b = CrunchColour(b);
+
+	uint best_index = 0;
+	uint best_distance = UINT32_MAX;
+
+	for (uint i = PALETTE_INDEX_CC_START; i < PALETTE_INDEX_CC_END; i++) {
+		if (uint distance = CalculateColourDistance(_palette.palette[i], b, b, b); distance < best_distance) {
+			best_index = i;
+			best_distance = distance;
+		}
+	}
+	return best_index;
+}
+
+/**
  * Get nearest colour palette index from an RGB colour.
  * A search is performed if this colour is not already in the lookup table.
  * @param r Red component.
@@ -152,12 +181,61 @@ uint8_t GetNearestColourIndex(uint8_t r, uint8_t g, uint8_t b)
 	return _palette_lookup[key];
 }
 
+/**
+ * Get nearest colour palette index from a brightness level.
+ * A search is performed if this brightness level is not already in the lookup table.
+ * @param b Brightness component.
+ * @returns nearest colour palette index.
+ */
+uint8_t GetNearestColourReshadeIndex(uint8_t b)
+{
+	uint32_t key = (b >> PALETTE_SHIFT);
+	if (_reshade_lookup[key] == 0) _reshade_lookup[key] = FindNearestColourReshadeIndex(b);
+	return _reshade_lookup[key];
+}
+
+/**
+ * Adjust brightness of colour.
+ * @param colour Colour to adjust.
+ * @param brightness Brightness to apply to colour.
+ * @returns Adjusted colour.
+ */
+Colour ReallyAdjustBrightness(Colour colour, int brightness)
+{
+	if (brightness == DEFAULT_BRIGHTNESS) return colour;
+
+	uint64_t combined = (static_cast<uint64_t>(colour.r) << 32) | (static_cast<uint64_t>(colour.g) << 16) | static_cast<uint64_t>(colour.b);
+	combined *= brightness;
+
+	uint16_t r = GB(combined, 39, 9);
+	uint16_t g = GB(combined, 23, 9);
+	uint16_t b = GB(combined, 7, 9);
+
+	if ((combined & 0x800080008000L) == 0L) {
+		return Colour(r, g, b, colour.a);
+	}
+
+	uint16_t ob = 0;
+	/* Sum overbright */
+	if (r > 255) ob += r - 255;
+	if (g > 255) ob += g - 255;
+	if (b > 255) ob += b - 255;
+
+	/* Reduce overbright strength */
+	ob /= 2;
+	return Colour(
+		r >= 255 ? 255 : std::min(r + ob * (255 - r) / 256, 255),
+		g >= 255 ? 255 : std::min(g + ob * (255 - g) / 256, 255),
+		b >= 255 ? 255 : std::min(b + ob * (255 - b) / 256, 255),
+		colour.a);
+}
+
 void DoPaletteAnimations();
 
 void GfxInitPalettes()
 {
-	MemCpyT<Colour>(_water_palette, (_settings_game.game_creation.landscape == LT_TOYLAND) ? _extra_palette_values.dark_water_toyland : _extra_palette_values.dark_water, 5);
-	const Colour *s = (_settings_game.game_creation.landscape == LT_TOYLAND) ? _extra_palette_values.glitter_water_toyland : _extra_palette_values.glitter_water;
+	MemCpyT<Colour>(_water_palette, (_settings_game.game_creation.landscape == LandscapeType::Toyland) ? _extra_palette_values.dark_water_toyland : _extra_palette_values.dark_water, 5);
+	const Colour *s = (_settings_game.game_creation.landscape == LandscapeType::Toyland) ? _extra_palette_values.glitter_water_toyland : _extra_palette_values.glitter_water;
 	for (int i = 0; i < 5; i++) {
 		_water_palette[i + 5] = s[i * 3];
 	}
@@ -183,7 +261,7 @@ void DoPaletteAnimations()
 	const uint old_tc = palette_animation_counter;
 	uint j;
 
-	if (blitter != nullptr && blitter->UsePaletteAnimation() == Blitter::PALETTE_ANIMATION_NONE) {
+	if (blitter != nullptr && blitter->UsePaletteAnimation() == Blitter::PaletteAnimation::None) {
 		palette_animation_counter = 0;
 	}
 
@@ -251,7 +329,7 @@ void DoPaletteAnimations()
 	}
 
 	/* Dark blue water */
-	s = (_settings_game.game_creation.landscape == LT_TOYLAND) ? ev->dark_water_toyland : ev->dark_water;
+	s = (_settings_game.game_creation.landscape == LandscapeType::Toyland) ? ev->dark_water_toyland : ev->dark_water;
 	j = EXTR(320, EPV_CYCLES_DARK_WATER);
 	for (uint i = 0; i != EPV_CYCLES_DARK_WATER; i++) {
 		*palette_pos++ = s[j];
@@ -260,7 +338,7 @@ void DoPaletteAnimations()
 	}
 
 	/* Glittery water */
-	s = (_settings_game.game_creation.landscape == LT_TOYLAND) ? ev->glitter_water_toyland : ev->glitter_water;
+	s = (_settings_game.game_creation.landscape == LandscapeType::Toyland) ? ev->glitter_water_toyland : ev->glitter_water;
 	j = EXTR(128, EPV_CYCLES_GLITTER_WATER);
 	for (uint i = 0; i != EPV_CYCLES_GLITTER_WATER / 3; i++) {
 		*palette_pos++ = s[j];
@@ -268,7 +346,7 @@ void DoPaletteAnimations()
 		if (j >= EPV_CYCLES_GLITTER_WATER) j -= EPV_CYCLES_GLITTER_WATER;
 	}
 
-	if (blitter != nullptr && blitter->UsePaletteAnimation() == Blitter::PALETTE_ANIMATION_NONE) {
+	if (blitter != nullptr && blitter->UsePaletteAnimation() == Blitter::PaletteAnimation::None) {
 		palette_animation_counter = old_tc;
 	} else if (_cur_palette.count_dirty == 0 && memcmp(old_val, &_cur_palette.palette[PALETTE_ANIM_START], sizeof(old_val)) != 0) {
 		/* Did we changed anything on the palette? Seems so.  Mark it as dirty */
@@ -280,17 +358,17 @@ void DoPaletteAnimations()
 /**
  * Determine a contrasty text colour for a coloured background.
  * @param background Background colour.
- * @param threshold Background colour brightness threshold below which the background is considered dark and TC_WHITE is returned, range: 0 - 255, default 128.
- * @return TC_BLACK or TC_WHITE depending on what gives a better contrast.
+ * @param threshold Background colour brightness threshold below which the background is considered dark and TextColour::White is returned, range: 0 - 255, default 128.
+ * @return TextColour::Black or TextColour::White depending on what gives a better contrast.
  */
-TextColour GetContrastColour(uint8_t background, uint8_t threshold)
+TextColour GetContrastColour(PixelColour background, uint8_t threshold)
 {
-	Colour c = _cur_palette.palette[background];
+	Colour c = _cur_palette.palette[background.p];
 	/* Compute brightness according to http://www.w3.org/TR/AERT#color-contrast.
 	 * The following formula computes 1000 * brightness^2, with brightness being in range 0 to 255. */
 	uint sq1000_brightness = c.r * c.r * 299 + c.g * c.g * 587 + c.b * c.b * 114;
 	/* Compare with threshold brightness which defaults to 128 (50%) */
-	return sq1000_brightness < ((uint) threshold) * ((uint) threshold) * 1000 ? TC_WHITE : TC_BLACK;
+	return sq1000_brightness < ((uint) threshold) * ((uint) threshold) * 1000 ? TextColour::White : TextColour::Black;
 }
 
 /**
@@ -299,9 +377,9 @@ TextColour GetContrastColour(uint8_t background, uint8_t threshold)
  */
 struct ColourGradients
 {
-	using ColourGradient = std::array<uint8_t, SHADE_END>;
+	using ColourGradient = std::array<PixelColour, to_underlying(Shade::End)>;
 
-	static inline std::array<ColourGradient, COLOUR_END> gradient{};
+	static inline std::array<ColourGradient, to_underlying(Colours::End)> gradient{};
 };
 
 /**
@@ -310,9 +388,9 @@ struct ColourGradients
  * @param shade Shade level from 1 to 7.
  * @returns palette index of colour.
  */
-uint8_t GetColourGradient(Colours colour, ColourShade shade)
+PixelColour GetColourGradient(Colours colour, Shade shade)
 {
-	return ColourGradients::gradient[colour % COLOUR_END][shade % SHADE_END];
+	return ColourGradients::gradient[to_underlying(colour) % to_underlying(Colours::End)][to_underlying(shade) % to_underlying(Shade::End)];
 }
 
 /**
@@ -321,9 +399,9 @@ uint8_t GetColourGradient(Colours colour, ColourShade shade)
  * @param shade Shade level from 1 to 7.
  * @param palette_index Palette index to set.
  */
-void SetColourGradient(Colours colour, ColourShade shade, uint8_t palette_index)
+void SetColourGradient(Colours colour, Shade shade, PixelColour palette_index)
 {
-	assert(colour < COLOUR_END);
-	assert(shade < SHADE_END);
-	ColourGradients::gradient[colour % COLOUR_END][shade % SHADE_END] = palette_index;
+	assert(colour < Colours::End);
+	assert(shade < Shade::End);
+	ColourGradients::gradient[to_underlying(colour) % to_underlying(Colours::End)][to_underlying(shade) % to_underlying(Shade::End)] = palette_index;
 }

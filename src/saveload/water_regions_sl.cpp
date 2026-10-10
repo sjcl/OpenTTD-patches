@@ -2,10 +2,10 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
-/** @file water_regions_sl.cpp Handles saving and loading of water region data */
+/** @file water_regions_sl.cpp Handles saving and loading of water region data. */
 
 #include "../stdafx.h"
 
@@ -17,9 +17,9 @@ namespace upstream_sl {
 
 extern void SlSkipArray();
 
-/* Water Region savegame data is no longer used, but still needed for old savegames to load without errors. */
+/** Water Region savegame data is no longer used, but still needed for old savegames to load without errors. */
 struct WaterRegionChunkHandler : ChunkHandler {
-	WaterRegionChunkHandler() : ChunkHandler('WRGN', CH_READONLY)
+	WaterRegionChunkHandler() : ChunkHandler("WRGN", ChunkType::ReadOnly)
 	{}
 
 	void Load() const override

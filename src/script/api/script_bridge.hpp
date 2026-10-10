@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file script_bridge.hpp Everything to query and build bridges. */
@@ -11,6 +11,7 @@
 #define SCRIPT_BRIDGE_HPP
 
 #include "script_vehicle.hpp"
+#include "../../bridge.h"
 #include <optional>
 
 /**
@@ -43,10 +44,10 @@ public:
 
 	/**
 	 * Checks whether the given bridge type is valid.
-	 * @param bridge_id The bridge to check.
+	 * @param bridge_type The bridge to check.
 	 * @return True if and only if the bridge type is valid.
 	 */
-	static bool IsValidBridge(BridgeID bridge_id);
+	static bool IsValidBridge(BridgeType bridge_type);
 
 	/**
 	 * Checks whether the given tile is actually a bridge start or end tile.
@@ -57,59 +58,59 @@ public:
 	static bool IsBridgeTile(TileIndex tile);
 
 	/**
-	 * Get the BridgeID of a bridge at a given tile.
-	 * @param tile The tile to get the BridgeID from.
+	 * Get the BridgeType of a bridge at a given tile.
+	 * @param tile The tile to get the BridgeType from.
 	 * @pre IsBridgeTile(tile).
-	 * @return The BridgeID from the bridge at tile 'tile'.
+	 * @return The BridgeType from the bridge at tile 'tile'.
 	 */
-	static BridgeID GetBridgeID(TileIndex tile);
+	static BridgeType GetBridgeType(TileIndex tile);
 
 	/**
 	 * Get the name of a bridge.
-	 * @param bridge_id The bridge to get the name of.
+	 * @param bridge_type The bridge to get the name of.
 	 * @param vehicle_type The vehicle-type of bridge to get the name of.
-	 * @pre IsValidBridge(bridge_id).
+	 * @pre IsValidBridge(bridge_type).
 	 * @pre vehicle_type == ScriptVehicle::VT_ROAD || vehicle_type == ScriptVehicle::VT_RAIL || vehicle_type == ScriptVehicle::VT_WATER
 	 * @return The name the bridge has.
 	 */
-	static std::optional<std::string> GetName(BridgeID bridge_id, ScriptVehicle::VehicleType vehicle_type);
+	static std::optional<std::string> GetName(BridgeType bridge_type, ScriptVehicle::VehicleType vehicle_type);
 
 	/**
 	 * Get the maximum speed of a bridge.
-	 * @param bridge_id The bridge to get the maximum speed of.
-	 * @pre IsValidBridge(bridge_id).
+	 * @param bridge_type The bridge to get the maximum speed of.
+	 * @pre IsValidBridge(bridge_type).
 	 * @return The maximum speed the bridge has.
 	 * @note The speed is in OpenTTD's internal speed unit.
 	 *       This is mph / 1.6, which is roughly km/h.
 	 *       To get km/h multiply this number by 1.00584.
 	 */
-	static SQInteger GetMaxSpeed(BridgeID bridge_id);
+	static SQInteger GetMaxSpeed(BridgeType bridge_type);
 
 	/**
 	 * Get the new cost of a bridge, excluding the road and/or rail.
-	 * @param bridge_id The bridge to get the new cost of.
+	 * @param bridge_type The bridge to get the new cost of.
 	 * @param length The length of the bridge.
 	 *               The value will be clamped to 0 .. MAX(int32_t).
-	 * @pre IsValidBridge(bridge_id).
+	 * @pre IsValidBridge(bridge_type).
 	 * @return The new cost the bridge has.
 	 */
-	static Money GetPrice(BridgeID bridge_id, SQInteger length);
+	static Money GetPrice(BridgeType bridge_type, SQInteger length);
 
 	/**
 	 * Get the maximum length of a bridge.
-	 * @param bridge_id The bridge to get the maximum length of.
-	 * @pre IsValidBridge(bridge_id).
+	 * @param bridge_type The bridge to get the maximum length of.
+	 * @pre IsValidBridge(bridge_type).
 	 * @returns The maximum length the bridge has.
 	 */
-	static SQInteger GetMaxLength(BridgeID bridge_id);
+	static SQInteger GetMaxLength(BridgeType bridge_type);
 
 	/**
 	 * Get the minimum length of a bridge.
-	 * @param bridge_id The bridge to get the minimum length of.
-	 * @pre IsValidBridge(bridge_id).
+	 * @param bridge_type The bridge to get the minimum length of.
+	 * @pre IsValidBridge(bridge_type).
 	 * @returns The minimum length the bridge has.
 	 */
-	static SQInteger GetMinLength(BridgeID bridge_id);
+	static SQInteger GetMinLength(BridgeType bridge_type);
 
 	/**
 	 * Internal function to help BuildBridge in case of road.
@@ -129,7 +130,7 @@ public:
 	 *  each end of the bridge, making it easier for you to connect it to your
 	 *  network.
 	 * @param vehicle_type The vehicle-type of bridge to build.
-	 * @param bridge_id The bridge-type to build.
+	 * @param bridge_type The bridge-type to build.
 	 * @param start Where to start the bridge.
 	 * @param end Where to end the bridge.
 	 * @pre ScriptMap::IsValidTile(start).
@@ -153,7 +154,7 @@ public:
 	 * @note No matter if the road pieces were build or not, if building the
 	 *  bridge succeeded, this function returns true.
 	 */
-	static bool BuildBridge(ScriptVehicle::VehicleType vehicle_type, BridgeID bridge_id, TileIndex start, TileIndex end);
+	static bool BuildBridge(ScriptVehicle::VehicleType vehicle_type, BridgeType bridge_type, TileIndex start, TileIndex end);
 
 	/**
 	 * Removes a bridge, by executing it on either the start or end tile.

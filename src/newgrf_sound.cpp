@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file newgrf_sound.cpp Handling NewGRF provided sounds. */
@@ -19,6 +19,7 @@
 #include "random_access_file_type.h"
 #include "debug.h"
 #include "settings_type.h"
+#include "core/alloc_func.hpp"
 
 #include "safeguards.h"
 
@@ -78,6 +79,7 @@ size_t GetSoundPoolAllocatedMemory()
 /**
  * Extract meta data from a NewGRF sound.
  * @param sound Sound to load.
+ * @param sound_id Identifier of the sound to load.
  * @return True if a valid sound was loaded.
  */
 bool LoadNewGRFSound(SoundEntry &sound, SoundID sound_id)
@@ -152,7 +154,7 @@ bool PlayVehicleSound(const Vehicle *v, VehicleSoundEvent event, bool force)
 	if (file == nullptr) return false;
 
 	/* Check that the vehicle type uses the sound effect callback */
-	if (!HasBit(EngInfo(v->engine_type)->callback_mask, CBM_VEHICLE_SOUND_EFFECT)) return false;
+	if (!EngInfo(v->engine_type)->callback_mask.Test(VehicleCallbackMask::SoundEffect)) return false;
 
 	callback = GetVehicleCallback(CBID_VEHICLE_SOUND_EFFECT, event, 0, v->engine_type, v);
 	/* Play default sound if callback fails */

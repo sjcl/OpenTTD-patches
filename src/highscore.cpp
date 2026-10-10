@@ -2,10 +2,10 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
-/** @file highscore.cpp Definition of functions used for highscore handling */
+/** @file highscore.cpp Definition of functions used for highscore handling. */
 
 #include "stdafx.h"
 #include "highscore.h"
@@ -15,8 +15,9 @@
 #include "fileio_func.h"
 #include "string_func.h"
 #include "strings_func.h"
-#include "table/strings.h"
 #include "debug.h"
+
+#include "table/strings.h"
 
 #include "safeguards.h"
 
@@ -68,15 +69,13 @@ int8_t SaveHighScoreValue(const Company *c)
 	std::move_backward(it, highscores.end() - 1, highscores.end());
 
 	/* Fill the elements. */
-	SetDParam(0, c->index);
-	SetDParam(1, c->index);
-	it->name = GetString(STR_HIGHSCORE_NAME); // get manager/company name string
+	it->name = GetString(STR_HIGHSCORE_NAME, c->index, c->index); // get manager/company name string
 	it->score = score;
 	it->title = EndGameGetPerformanceTitleFromValue(score);
 	return std::distance(highscores.begin(), it);
 }
 
-/** Sort all companies given their performance */
+/** Sort all companies given their performance. @copydoc GUIList::Sorter */
 static bool HighScoreSorter(const Company * const &a, const Company * const &b)
 {
 	return b->old_economy[0].performance_history < a->old_economy[0].performance_history;
@@ -88,25 +87,22 @@ static bool HighScoreSorter(const Company * const &a, const Company * const &b)
  */
 int8_t SaveHighScoreValueNetwork()
 {
-	const Company *cl[MAX_COMPANIES];
-	size_t count = 0;
+	std::vector<const Company *> cl;
 	int8_t local_company_place = -1;
 
 	/* Sort all active companies with the highest score first */
-	for (const Company *c : Company::Iterate()) cl[count++] = c;
+	for (const Company *c : Company::Iterate()) cl.push_back(c);
 
-	std::sort(std::begin(cl), std::begin(cl) + count, HighScoreSorter);
+	std::ranges::sort(cl, HighScoreSorter);
 
 	/* Clear the high scores from the previous network game. */
 	auto &highscores = _highscore_table[SP_MULTIPLAYER];
 	std::fill(highscores.begin(), highscores.end(), HighScore{});
 
-	for (size_t i = 0; i < count && i < highscores.size(); i++) {
+	for (size_t i = 0; i < cl.size() && i < highscores.size(); i++) {
 		const Company *c = cl[i];
 		auto &highscore = highscores[i];
-		SetDParam(0, c->index);
-		SetDParam(1, c->index);
-		highscore.name = GetString(STR_HIGHSCORE_NAME); // get manager/company name string
+		highscore.name = GetString(STR_HIGHSCORE_NAME, c->index, c->index); // get manager/company name string
 		highscore.score = c->old_economy[0].performance_history;
 		highscore.title = EndGameGetPerformanceTitleFromValue(highscore.score);
 
@@ -124,7 +120,7 @@ void SaveToHighScore()
 	auto &fp = *ofp;
 
 	/* Does not iterate through the complete array!. */
-	for (int i = 0; i < SP_SAVED_HIGHSCORE_END; i++) {
+	for (SettingsProfile i : EnumRange(SP_SAVED_HIGHSCORE_END)) {
 		for (HighScore &hs : _highscore_table[i]) {
 			/* This code is weird and old fashioned to keep compatibility with the old high score files. */
 			uint8_t name_length = ClampTo<uint8_t>(hs.name.size());
@@ -149,7 +145,7 @@ void LoadFromHighScore()
 	auto &fp = *ofp;
 
 	/* Does not iterate through the complete array!. */
-	for (int i = 0; i < SP_SAVED_HIGHSCORE_END; i++) {
+	for (SettingsProfile i : EnumRange(SP_SAVED_HIGHSCORE_END)) {
 		for (HighScore &hs : _highscore_table[i]) {
 			/* This code is weird and old fashioned to keep compatibility with the old high score files. */
 			uint8_t name_length;

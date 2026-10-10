@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file economy_type.h Types related to the economy. */
@@ -10,19 +10,18 @@
 #ifndef ECONOMY_TYPE_H
 #define ECONOMY_TYPE_H
 
-#include "core/overflowsafe_type.hpp"
+#include "money_type.h"
 #include "core/enum_type.hpp"
+#include "core/pool_id_type.hpp"
 #include <array>
 
-typedef OverflowSafeInt64 Money;
-
 /** Type of the game economy. */
-enum EconomyType : uint8_t {
-	ET_BEGIN = 0,
-	ET_ORIGINAL = 0,
-	ET_SMOOTH = 1,
-	ET_FROZEN = 2,
-	ET_END = 3,
+enum class EconomyType : uint8_t {
+	Begin, ///< The lowest valid value.
+	Original = EconomyType::Begin, ///< Imitates original TTD economy.
+	Smooth, ///< Makes production changes more often, and in smaller steps.
+	Frozen, ///< Stops production changes and industry closures.
+	End, ///< Economy type end marker.
 };
 
 /** Data of the economy. */
@@ -43,163 +42,151 @@ struct Economy {
 };
 
 /** Score categories in the detailed performance rating. */
-enum ScoreID {
-	SCORE_BEGIN      = 0,
-	SCORE_VEHICLES   = 0,
-	SCORE_STATIONS   = 1,
-	SCORE_MIN_PROFIT = 2,
-	SCORE_MIN_INCOME = 3,
-	SCORE_MAX_INCOME = 4,
-	SCORE_DELIVERED  = 5,
-	SCORE_CARGO      = 6,
-	SCORE_MONEY      = 7,
-	SCORE_LOAN       = 8,
-	SCORE_TOTAL      = 9,  ///< This must always be the last entry
-	SCORE_END        = 10, ///< How many scores are there..
-
-	SCORE_MAX = 1000,      ///< The max score that can be in the performance history
-	/* the scores together of score_info is allowed to be more! */
+enum class ScoreID : uint8_t {
+	Begin, ///< The lowest valid value.
+	Vehicles = ScoreID::Begin, ///< Number of vehicles that turned profit last year.
+	Stations, ///< Number of recently-serviced stations.
+	MinProfit, ///< The profit of the vehicle with the lowest income.
+	MinIncome, ///< Income in the quarter with the lowest profit of the last 12 quarters.
+	MaxIncome, ///< Income in the quarter with the highest profit of the last 12 quarters.
+	Delivered, ///< Units of cargo delivered in the last four quarters.
+	Cargo, ///< Number of types of cargo delivered in the last four quarters.
+	Money, ///< Amount of money company has in the bank.
+	Loan, ///< The amount of money company can take as a loan.
+	Total, ///< Total points out of possible points ,must always be the last entry.
+	End, ///< Score ID end marker.
 };
-DECLARE_POSTFIX_INCREMENT(ScoreID)
+
+/**
+ * The max score that can be in the performance history.
+ * The scores together of score_info is allowed to be more!
+ */
+static constexpr int SCORE_MAX = 1000;
 
 /** Data structure for storing how the score is computed for a single score id. */
 struct ScoreInfo {
-	int needed; ///< How much you need to get the perfect score
 	int score;  ///< How much score it will give
+	int needed; ///< How much you need to get the perfect score
 };
 
 /**
  * Enumeration of all base prices for use with #Prices.
  * The prices are ordered as they are expected by NewGRF cost multipliers, so don't shuffle them.
  */
-enum Price : uint8_t {
-	PR_BEGIN = 0,
-	PR_STATION_VALUE = 0,
-	PR_BUILD_RAIL,
-	PR_BUILD_ROAD,
-	PR_BUILD_SIGNALS,
-	PR_BUILD_BRIDGE,
-	PR_BUILD_DEPOT_TRAIN,
-	PR_BUILD_DEPOT_ROAD,
-	PR_BUILD_DEPOT_SHIP,
-	PR_BUILD_TUNNEL,
-	PR_BUILD_STATION_RAIL,
-	PR_BUILD_STATION_RAIL_LENGTH,
-	PR_BUILD_STATION_AIRPORT,
-	PR_BUILD_STATION_BUS,
-	PR_BUILD_STATION_TRUCK,
-	PR_BUILD_STATION_DOCK,
-	PR_BUILD_VEHICLE_TRAIN,
-	PR_BUILD_VEHICLE_WAGON,
-	PR_BUILD_VEHICLE_AIRCRAFT,
-	PR_BUILD_VEHICLE_ROAD,
-	PR_BUILD_VEHICLE_SHIP,
-	PR_BUILD_TREES,
-	PR_TERRAFORM,
-	PR_CLEAR_GRASS,
-	PR_CLEAR_ROUGH,
-	PR_CLEAR_ROCKS,
-	PR_CLEAR_FIELDS,
-	PR_CLEAR_TREES,
-	PR_CLEAR_RAIL,
-	PR_CLEAR_SIGNALS,
-	PR_CLEAR_BRIDGE,
-	PR_CLEAR_DEPOT_TRAIN,
-	PR_CLEAR_DEPOT_ROAD,
-	PR_CLEAR_DEPOT_SHIP,
-	PR_CLEAR_TUNNEL,
-	PR_CLEAR_WATER,
-	PR_CLEAR_STATION_RAIL,
-	PR_CLEAR_STATION_AIRPORT,
-	PR_CLEAR_STATION_BUS,
-	PR_CLEAR_STATION_TRUCK,
-	PR_CLEAR_STATION_DOCK,
-	PR_CLEAR_HOUSE,
-	PR_CLEAR_ROAD,
-	PR_RUNNING_TRAIN_STEAM,
-	PR_RUNNING_TRAIN_DIESEL,
-	PR_RUNNING_TRAIN_ELECTRIC,
-	PR_RUNNING_AIRCRAFT,
-	PR_RUNNING_ROADVEH,
-	PR_RUNNING_SHIP,
-	PR_BUILD_INDUSTRY,
-	PR_CLEAR_INDUSTRY,
-	PR_BUILD_OBJECT,
-	PR_CLEAR_OBJECT,
-	PR_BUILD_WAYPOINT_RAIL,
-	PR_CLEAR_WAYPOINT_RAIL,
-	PR_BUILD_WAYPOINT_BUOY,
-	PR_CLEAR_WAYPOINT_BUOY,
-	PR_TOWN_ACTION,
-	PR_BUILD_FOUNDATION,
-	PR_BUILD_INDUSTRY_RAW,
-	PR_BUILD_TOWN,
-	PR_BUILD_CANAL,
-	PR_CLEAR_CANAL,
-	PR_BUILD_AQUEDUCT,
-	PR_CLEAR_AQUEDUCT,
-	PR_BUILD_LOCK,
-	PR_CLEAR_LOCK,
-	PR_INFRASTRUCTURE_RAIL,
-	PR_INFRASTRUCTURE_ROAD,
-	PR_INFRASTRUCTURE_WATER,
-	PR_INFRASTRUCTURE_STATION,
-	PR_INFRASTRUCTURE_AIRPORT,
-
-	PR_END,
-	INVALID_PRICE = 0xFF
+enum class Price : uint8_t {
+	Begin, ///< The lowest valid value.
+	StationValue = Price::Begin, ///< Stations value and additional constant company running fee.
+	BuildRail, ///< Price for building rails.
+	BuildRoad, ///< Price for building roads.
+	BuildSignals, ///< Price for building rail signals.
+	BuildBridge, ///< Price for building bridges.
+	BuildDepotTrain, ///< Price for building train depots.
+	BuildDepotRoad, ///< Price for building road vehicle depots.
+	BuildDepotShip, ///< Price for building ship depots.
+	BuildTunnel, ///< Price for building tunnels.
+	BuildStationRail, ///< Price for building rail stations.
+	BuildStationRailLength, ///< Additional price for building rail stations dependent on their length.
+	BuildStationAirport, ///< Price for building airports.
+	BuildStationBus, ///< Price for building bus stops.
+	BuildStationTruck, ///< Price for building lorry stations.
+	BuildStationDock, ///< Price for building docks.
+	BuildVehicleTrain, ///< Price for purchasing new train engines.
+	BuildVehicleWagon, ///< Price for purchasing new wagons.
+	BuildVehicleAircraft, ///< Price for purchasing new aircrafts.
+	BuildVehicleRoad, ///< Price for purchasing new road vehicles.
+	BuildVehicleShip, ///< Price for purchasing new ships.
+	BuildTrees, ///< Price for planting trees.
+	Terraform, ///< Price for terraforming land, e.g. rising, lowering and flattening.
+	ClearGrass, ///< Price for destroying grass.
+	ClearRough, ///< Price for destroying rough land.
+	ClearRocks, ///< Price for destroying rocks.
+	ClearFields, ///< Price for destroying fields.
+	ClearTrees, ///< Price for destroying trees.
+	ClearRail, ///< Price for destroying rails.
+	ClearSignals, ///< Price for destroying rail signals.
+	ClearBridge, ///< Price for destroying bridges.
+	ClearDepotTrain, ///< Price for destroying train depots.
+	ClearDepotRoad, ///< Price for destroying road vehicle depots.
+	ClearDepotShip, ///< Price for destroying ship depots.
+	ClearTunnel, ///< Price for destroying tunnels.
+	ClearWater, ///< Price for destroying water e.g. see, rives.
+	ClearStationRail, ///< Price for destroying rail stations.
+	ClearStationAirport, ///< Price for destroying airports.
+	ClearStationBus, ///< Price for destroying bus stops.
+	ClearStationTruck, ///< Price for destroying lorry stations.
+	ClearStationDock, ///< Price for destroying docks.
+	ClearHouse, ///< Price for destroying houses and other town buildings.
+	ClearRoad, ///< Price for destroying roads.
+	RunningTrainSteam, ///< Running cost of steam trains.
+	RunningTrainDiesel, ///< Running cost of diesel trains.
+	RunningTrainElectric, ///< Running cost of electric trains.
+	RunningAircraft, ///< Running cost of aircrafts.
+	RunningRoadveh, ///< Running cost of road vehicles.
+	RunningShip, ///< Running cost of ships.
+	BuildIndustry, ///< Price for funding new industries.
+	ClearIndustry, ///< Price for destroying industries.
+	BuildObject, ///< Price for building new objects.
+	ClearObject, ///< Price for destroying objects.
+	BuildWaypointRail, ///< Price for building new rail waypoints.
+	ClearWaypointRail, ///< Price for destroying rail waypoints.
+	BuildWaypointBuoy, ///< Price for building new buoys.
+	ClearWaypointBuoy, ///< Price for destroying buoys.
+	TownAction, ///< Price for interaction with local authorities.
+	BuildFoundation, ///< Price for building foundation under other constructions e.g. roads, rails, depots, objects, etc., etc..
+	BuildIndustryRaw, ///< Price for funding new raw industries, e.g. coal mine, forest.
+	BuildTown, ///< Price for funding new towns and cities.
+	BuildCanal, ///< Price for building new canals.
+	ClearCanal, ///< Price for destroying canals.
+	BuildAqueduct, ///< Price for building new aqueducts.
+	ClearAqueduct, ///< Price for destroying aqueducts.
+	BuildLock, ///< Price for building new locks.
+	ClearLock, ///< Price for destroying locks.
+	InfrastructureRail, ///< Rails maintenance cost.
+	InfrastructureRoad, ///< Roads maintenance cost.
+	InfrastructureWater, ///< Canals maintenance cost.
+	InfrastructureStation, ///< Stations maintenance cost.
+	InfrastructureAirport, ///< Airports maintenance cost.
+	End, ///< Price base end marker.
+	Invalid = 0xFF ///< Invalid base price.
 };
-DECLARE_POSTFIX_INCREMENT(Price)
 
-typedef Money Prices[PR_END]; ///< Prices of everything. @see Price
-typedef int8_t PriceMultipliers[PR_END];
+using Prices = EnumIndexArray<Money, Price, Price::End>; ///< Prices of everything. @see Price
+using PriceMultipliers = EnumIndexArray<int8_t, Price, Price::End>;
 
 /** Types of expenses. */
-enum ExpensesType : uint8_t {
-	EXPENSES_CONSTRUCTION =  0,   ///< Construction costs.
-	EXPENSES_NEW_VEHICLES,        ///< New vehicles.
-	EXPENSES_TRAIN_RUN,           ///< Running costs trains.
-	EXPENSES_ROADVEH_RUN,         ///< Running costs road vehicles.
-	EXPENSES_AIRCRAFT_RUN,        ///< Running costs aircraft.
-	EXPENSES_SHIP_RUN,            ///< Running costs ships.
-	EXPENSES_PROPERTY,            ///< Property costs.
-	EXPENSES_TRAIN_REVENUE,       ///< Revenue from trains.
-	EXPENSES_ROADVEH_REVENUE,     ///< Revenue from road vehicles.
-	EXPENSES_AIRCRAFT_REVENUE,    ///< Revenue from aircraft.
-	EXPENSES_SHIP_REVENUE,        ///< Revenue from ships.
-	EXPENSES_LOAN_INTEREST,       ///< Interest payments over the loan.
-	EXPENSES_OTHER,               ///< Other expenses.
-	EXPENSES_SHARING_COST,        ///< Infrastructure sharing costs
-	EXPENSES_SHARING_INC,         ///< Infrastructure sharing income
-	EXPENSES_END,                 ///< Number of expense types.
-	INVALID_EXPENSES      = 0xFF, ///< Invalid expense type.
+enum class ExpensesType : uint8_t {
+	Construction =  0, ///< Construction costs.
+	NewVehicles, ///< New vehicles.
+	TrainRun, ///< Running costs trains.
+	RoadVehRun, ///< Running costs road vehicles.
+	AircraftRun, ///< Running costs aircraft.
+	ShipRun, ///< Running costs ships.
+	Property, ///< Property costs.
+	TrainRevenue, ///< Revenue from trains.
+	RoadVehRevenue, ///< Revenue from road vehicles.
+	AircraftRevenue, ///< Revenue from aircraft.
+	ShipRevenue, ///< Revenue from ships.
+	LoanInterest, ///< Interest payments over the loan.
+	Other, ///< Other expenses.
+	SharingCost, ///< Infrastructure sharing costs.
+	SharingRevenue, ///< Infrastructure sharing income.
+	End, ///< End marker.
+	Begin = ExpensesType::Construction, ///< Begin marker.
+	Invalid = 0xFF, ///< Invalid expense type.
 };
-
-/** Define basic enum properties for ExpensesType */
-template <> struct EnumPropsT<ExpensesType> : MakeEnumPropsT<ExpensesType, uint8_t, EXPENSES_CONSTRUCTION, EXPENSES_END, INVALID_EXPENSES, 8> {};
 
 /**
  * Data type for storage of Money for each #ExpensesType category.
  */
-using Expenses = std::array<Money, EXPENSES_END>;
+using Expenses = EnumIndexArray<Money, ExpensesType, ExpensesType::End>;
 
 /**
  * Categories of a price bases.
  */
-enum PriceCategory {
-	PCAT_NONE,         ///< Not affected by difficulty settings
-	PCAT_RUNNING,      ///< Price is affected by "vehicle running cost" difficulty setting
-	PCAT_CONSTRUCTION, ///< Price is affected by "construction cost" difficulty setting
-};
-
-/**
- * Describes properties of price bases.
- */
-struct PriceBaseSpec {
-	Money start_price;      ///< Default value at game start, before adding multipliers.
-	PriceCategory category; ///< Price is affected by certain difficulty settings.
-	uint grf_feature;       ///< GRF Feature that decides whether price multipliers apply locally or globally, #GSF_END if none.
-	Price fallback_price;   ///< Fallback price multiplier for new prices but old grfs.
+enum class PriceCategory : uint8_t {
+	None, ///< Not affected by difficulty settings
+	Running, ///< Price is affected by "vehicle running cost" difficulty setting
+	Construction, ///< Price is affected by "construction cost" difficulty setting
 };
 
 /** The "steps" in loan size, in British Pounds! */
@@ -240,20 +227,14 @@ static const uint ROAD_STOP_TRACKBIT_FACTOR = 2;
 static const uint LOCK_DEPOT_TILE_FACTOR = 2;
 
 struct CargoPayment;
-typedef uint32_t CargoPaymentID;
+struct CargoPaymentIDTag : public PoolIDTraits<uint32_t, 0xFF000, 0xFFFFF> {};
+using CargoPaymentID = PoolID<CargoPaymentIDTag>;
 
 enum CargoPaymentAlgorithm : uint8_t {
 	CPA_BEGIN = 0,       ///< Used for iterations and limit testing
 	CPA_TRADITIONAL = 0, ///< Traditional algorithm
 	CPA_MODERN,          ///< Modern algorithm
 	CPA_END,             ///< Used for iterations and limit testing
-};
-
-enum TickRateMode : uint8_t {
-	TRM_BEGIN = 0,       ///< Used for iterations and limit testing
-	TRM_TRADITIONAL = 0, ///< Traditional value (30ms)
-	TRM_MODERN,          ///< Modern value (27ms)
-	TRM_END,             ///< Used for iterations and limit testing
 };
 
 enum CargoScalingMode : uint8_t {

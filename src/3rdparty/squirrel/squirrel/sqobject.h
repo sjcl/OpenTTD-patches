@@ -64,11 +64,11 @@ struct SQSizedAllocationTag {
 
 struct SQRefCounted
 {
-	SQRefCounted() { _uiRef = 0; _weakref = nullptr; }
+	SQRefCounted() {}
 	virtual ~SQRefCounted();
 	SQWeakRef *GetWeakRef(SQObjectType type);
-	SQUnsignedInteger _uiRef;
-	struct SQWeakRef *_weakref;
+	SQUnsignedInteger _uiRef = 0;
+	struct SQWeakRef *_weakref = nullptr;
 	virtual void Release()=0;
 
 	inline void *operator new(size_t size, SQRefCounted *place) = delete;
@@ -167,7 +167,7 @@ struct SQObjectPtr;
 #define _refcounted(obj) ((obj)._unVal.pRefCounted)
 #define _rawval(obj) ((obj)._unVal.raw)
 
-#define _stringval(obj) (obj)._unVal.pString->_val
+#define _stringval(obj) (obj)._unVal.pString->View()
 #define _userdataval(obj) (obj)._unVal.pUserData->_val
 
 #define tofloat(num) ((type(num)==OT_INTEGER)?(SQFloat)_integer(num):_float(num))
@@ -189,6 +189,14 @@ struct SQObjectPtr : public SQObject
 		_type=o._type;
 		_unVal=o._unVal;
 		__AddRef(_type,_unVal);
+	}
+	SQObjectPtr(SQObjectPtr &&o)
+	{
+		SQ_OBJECT_RAWINIT()
+		this->_type = OT_NULL;
+		this->_unVal.pUserPointer = nullptr;
+		std::swap(this->_type, o._type);
+		std::swap(this->_unVal, o._unVal);
 	}
 	SQObjectPtr(const SQObject &o)
 	{
@@ -359,6 +367,12 @@ struct SQObjectPtr : public SQObject
 		__Release(tOldType,unOldVal);
 		return *this;
 	}
+	inline SQObjectPtr& operator=(SQObjectPtr &&obj)
+	{
+		std::swap(this->_type, obj._type);
+		std::swap(this->_unVal, obj._unVal);
+		return *this;
+	}
 	inline SQObjectPtr& operator=(const SQObject& obj)
 	{
 		SQObjectType tOldType;
@@ -372,7 +386,7 @@ struct SQObjectPtr : public SQObject
 		return *this;
 	}
 	private:
-		SQObjectPtr(const SQChar *){} //safety
+		SQObjectPtr(const char *) = delete; //safety
 };
 
 inline void _Swap(SQObject &a,SQObject &b)
@@ -464,8 +478,8 @@ struct SQDelegable : public CHAINABLE_OBJ {
 SQUnsignedInteger TranslateIndex(const SQObjectPtr &idx);
 typedef sqvector<SQObjectPtr> SQObjectPtrVec;
 typedef sqvector<SQInteger> SQIntVec;
-const SQChar *GetTypeName(const SQObjectPtr &obj1);
-const SQChar *IdType2Name(SQObjectType type);
+std::string_view GetTypeName(const SQObjectPtr &obj1);
+std::string_view IdType2Name(SQObjectType type);
 
 
 

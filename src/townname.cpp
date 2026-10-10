@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file townname.cpp %Town name generators. */
@@ -11,11 +11,12 @@
 #include "string_func.h"
 #include "townname_type.h"
 #include "town.h"
+#include "scope.h"
 #include "strings_func.h"
 #include "core/random_func.hpp"
 #include "genworld.h"
 #include "gfx_layout.h"
-#include "strings_builder.h"
+#include "core/string_builder.hpp"
 #include "strings_internal.h"
 
 #include "table/townname.h"
@@ -31,10 +32,10 @@ TownNameParams::TownNameParams(const Town *t) :
 		grfid(t->townnamegrfid), // by default, use supplied data
 		type(t->townnametype)
 {
-	if (t->townnamegrfid != 0 && GetGRFTownName(t->townnamegrfid) == nullptr) {
-		/* Fallback to english original */
-		this->grfid = 0;
-		this->type = SPECSTR_TOWNNAME_ENGLISH;
+	if (!t->townnamegrfid.Empty() && GetGRFTownName(t->townnamegrfid) == nullptr) {
+		/* Fallback to the first built in town name (English). */
+		this->grfid = {};
+		this->type = SPECSTR_TOWNNAME_START;
 		return;
 	}
 }
@@ -48,9 +49,9 @@ TownNameParams::TownNameParams(const Town *t) :
  */
 static void GetTownName(StringBuilder builder, const TownNameParams *par, uint32_t townnameparts)
 {
-	if (par->grfid == 0) {
+	if (par->grfid.Empty()) {
 		auto tmp_params = MakeParameters(townnameparts);
-		GetStringWithArgs(builder, par->type, tmp_params);
+		GetStringWithArgs(builder, static_cast<StringID>(par->type), tmp_params);
 		return;
 	}
 
@@ -136,10 +137,6 @@ bool GenerateTownName(Randomizer &randomizer, uint32_t *townnameparts, TownNames
 {
 	TownNameParams par(_settings_game.game_creation.town_name);
 
-	/* This function is called very often without entering the gameloop
-	 * in between. So reset layout cache to prevent it from growing too big. */
-	Layouter::ReduceLineCache();
-
 	/* Do not set i too low, since when we run out of names, we loop
 	 * for #tries only one time anyway - then we stop generating more
 	 * towns. Do not set it too high either, since looping through all
@@ -209,36 +206,37 @@ static inline int32_t SeedChanceBias(uint8_t shift_by, size_t max, uint32_t seed
 
 /**
  * Replaces a string beginning in 'org' with 'rep'.
- * @param org     string to replace, has to be 4 characters long
- * @param rep     string to be replaced with, has to be 4 characters long
- * @param builder string builder of the town name
- * @param start   the start index within the builder for the town name
+ * @param org     string to replace
+ * @param rep     string to be replaced with
+ * @param str     string of the town name
  */
-static void ReplaceWords(const char *org, const char *rep, StringBuilder builder, size_t start)
+static void ReplaceWords(std::string_view org, std::string_view rep, std::span<char> str)
 {
-	assert(strlen(org) == 4 && strlen(rep) == 4 && builder.CurrentIndex() - start >= 4);
-	if (strncmp(&builder[start], org, 4) == 0) memcpy(&builder[start], rep, 4); // Safe as the string in buf is always more than 4 characters long.
+	assert(org.size() == rep.size());
+	if (org.size() > str.size()) return;
+	if (std::equal(str.begin(), str.begin() + org.size(), org.begin(), org.end())) std::copy(rep.begin(), rep.end(), str.begin());
 }
 
 
 /**
  * Replaces english curses and ugly letter combinations by nicer ones.
- * @param builder  The builder with the town name
- * @param start    The start index into the builder for the first town name
+ * @param str      The string with the town name
  * @param original English (Original) generator was used
  */
-static void ReplaceEnglishWords(StringBuilder builder, size_t start, bool original)
+static void ReplaceEnglishWords(std::span<char> str, bool original)
 {
-	ReplaceWords("Cunt", "East", builder, start);
-	ReplaceWords("Slag", "Pits", builder, start);
-	ReplaceWords("Slut", "Edin", builder, start);
-	if (!original) ReplaceWords("Fart", "Boot", builder, start); // never happens with 'English (Original)'
-	ReplaceWords("Drar", "Quar", builder, start);
-	ReplaceWords("Dreh", "Bash", builder, start);
-	ReplaceWords("Frar", "Shor", builder, start);
-	ReplaceWords("Grar", "Aber", builder, start);
-	ReplaceWords("Brar", "Over", builder, start);
-	ReplaceWords("Wrar", original ? "Inve" : "Stan", builder, start);
+	if (original) ReplaceWords("Ce", "Ke", str);
+	if (original) ReplaceWords("Ci", "Ki", str);
+	ReplaceWords("Cunt", "East", str);
+	ReplaceWords("Slag", "Pits", str);
+	ReplaceWords("Slut", "Edin", str);
+	if (!original) ReplaceWords("Fart", "Boot", str); // never happens with 'English (Original)'
+	ReplaceWords("Drar", "Quar", str);
+	ReplaceWords("Dreh", "Bash", str);
+	ReplaceWords("Frar", "Shor", str);
+	ReplaceWords("Grar", "Aber", str);
+	ReplaceWords("Brar", "Over", str);
+	ReplaceWords("Wrar", original ? "Inve" : "Stan", str);
 }
 
 /**
@@ -246,9 +244,13 @@ static void ReplaceEnglishWords(StringBuilder builder, size_t start, bool origin
  * @param builder string builder
  * @param seed town name seed
  */
-static void MakeEnglishOriginalTownName(StringBuilder builder, uint32_t seed)
+static void MakeEnglishOriginalTownName(StringBuilder output_builder, uint32_t seed)
 {
-	size_t start = builder.CurrentIndex();
+	format_buffer str;
+	StringBuilder builder(str);
+	auto guard = scope_guard([&]() {
+		output_builder.Put(str);
+	});
 
 	/* optional first segment */
 	int i = SeedChanceBias(0, std::size(_name_original_english_1), seed, 50);
@@ -264,13 +266,7 @@ static void MakeEnglishOriginalTownName(StringBuilder builder, uint32_t seed)
 	i = SeedChanceBias(15, std::size(_name_original_english_6), seed, 60);
 	if (i >= 0) builder += _name_original_english_6[i];
 
-	/* Ce, Ci => Ke, Ki */
-	if (builder[start] == 'C' && (builder[start + 1] == 'e' || builder[start + 1] == 'i')) {
-		builder[start] = 'K';
-	}
-
-	assert(builder.CurrentIndex() - start >= 4);
-	ReplaceEnglishWords(builder, start, true);
+	ReplaceEnglishWords({str.data(), str.size()}, true);
 }
 
 
@@ -279,9 +275,13 @@ static void MakeEnglishOriginalTownName(StringBuilder builder, uint32_t seed)
  * @param builder string builder
  * @param seed town name seed
  */
-static void MakeEnglishAdditionalTownName(StringBuilder builder, uint32_t seed)
+static void MakeEnglishAdditionalTownName(StringBuilder output_builder, uint32_t seed)
 {
-	size_t start = builder.CurrentIndex();
+	format_buffer str;
+	StringBuilder builder(str);
+	auto guard = scope_guard([&]() {
+		output_builder.Put(str);
+	});
 
 	/* optional first segment */
 	int i = SeedChanceBias(0, std::size(_name_additional_english_prefix), seed, 50);
@@ -305,8 +305,7 @@ static void MakeEnglishAdditionalTownName(StringBuilder builder, uint32_t seed)
 	i = SeedChanceBias(15, std::size(_name_additional_english_3), seed, 60);
 	if (i >= 0) builder += _name_additional_english_3[i];
 
-	assert(builder.CurrentIndex() - start >= 4);
-	ReplaceEnglishWords(builder, start, false);
+	ReplaceEnglishWords({str.data(), str.size()}, false);
 }
 
 
@@ -477,9 +476,13 @@ static void MakeDutchTownName(StringBuilder builder, uint32_t seed)
  * @param builder string builder
  * @param seed town name seed
  */
-static void MakeFinnishTownName(StringBuilder builder, uint32_t seed)
+static void MakeFinnishTownName(StringBuilder output_builder, uint32_t seed)
 {
-	size_t start = builder.CurrentIndex();
+	format_buffer str;
+	StringBuilder builder(str);
+	auto guard = scope_guard([&]() {
+		output_builder.Put(str);
+	});
 
 	/* Select randomly if town name should consists of one or two parts. */
 	if (SeedChance(0, 15, seed) >= 10) {
@@ -493,10 +496,10 @@ static void MakeFinnishTownName(StringBuilder builder, uint32_t seed)
 		 * that the ones in _name_finnish_2 are not good for this purpose. */
 		uint sel = SeedChance( 0, std::size(_name_finnish_1), seed);
 		builder += _name_finnish_1[sel];
-		size_t last = builder.CurrentIndex() - 1;
-		if (builder[last] == 'i') builder[last] = 'e';
 
-		std::string_view view(&builder[start], builder.CurrentIndex() - start);
+		if (!str.empty() && str.back() == 'i') str.back() = 'e';
+
+		std::string_view view = str;
 		if (view.find_first_of("aouAOU") != std::string_view::npos) {
 			builder += "la";
 		} else {
@@ -585,8 +588,14 @@ static void MakePolishTownName(StringBuilder builder, uint32_t seed)
  * @param builder string builder
  * @param seed town name seed
  */
-static void MakeCzechTownName(StringBuilder builder, uint32_t seed)
+static void MakeCzechTownName(StringBuilder output_builder, uint32_t seed)
 {
+	format_buffer str;
+	StringBuilder builder(str);
+	auto guard = scope_guard([&]() {
+		output_builder.Put(str);
+	});
+
 	/* 1:3 chance to use a real name. */
 	if (SeedModChance(0, 4, seed) == 0) {
 		builder += _name_czech_real[SeedModChance(4, std::size(_name_czech_real), seed)];
@@ -607,8 +616,8 @@ static void MakeCzechTownName(StringBuilder builder, uint32_t seed)
 
 	/* The select criteria. */
 	CzechGender gender;
-	CzechChoose choose;
-	CzechAllow allow;
+	CzechChooseFlags choose;
+	CzechAllowFlags allow;
 
 	if (do_prefix) prefix = SeedModChance(5, std::size(_name_czech_adj) * 12, seed) / 12;
 	if (do_suffix) suffix = SeedModChance(7, std::size(_name_czech_suffix), seed);
@@ -637,18 +646,18 @@ static void MakeCzechTownName(StringBuilder builder, uint32_t seed)
 		/* Load the postfix (1:1 chance that a postfix will be inserted) */
 		postfix = SeedModChance(14, std::size(_name_czech_subst_postfix) * 2, seed);
 
-		if (choose & CZC_POSTFIX) {
+		if (choose.Test(CzechChooseFlag::Postfix)) {
 			/* Always get a real postfix. */
 			postfix %= std::size(_name_czech_subst_postfix);
 		}
-		if (choose & CZC_NOPOSTFIX) {
+		if (choose.Test(CzechChooseFlag::NoPostfix)) {
 			/* Always drop a postfix. */
 			postfix += std::size(_name_czech_subst_postfix);
 		}
 		if (postfix < std::size(_name_czech_subst_postfix)) {
-			choose |= CZC_POSTFIX;
+			choose.Set(CzechChooseFlag::Postfix);
 		} else {
-			choose |= CZC_NOPOSTFIX;
+			choose.Set(CzechChooseFlag::NoPostfix);
 		}
 
 		/* Localize the array segment containing a good gender */
@@ -676,7 +685,7 @@ static void MakeCzechTownName(StringBuilder builder, uint32_t seed)
 		for (ending = ending_start; ending <= ending_stop; ending++) {
 			const CzechNameSubst *e = &_name_czech_subst_ending[ending];
 
-			if ((e->choose & choose) == choose && (e->allow & allow) != 0) {
+			if (e->choose.All(choose) && e->allow.Any(allow)) {
 				map[i++] = ending;
 			}
 		}
@@ -690,7 +699,7 @@ static void MakeCzechTownName(StringBuilder builder, uint32_t seed)
 		assert(gender != CZG_FREE && gender != CZG_NFREE);
 	}
 
-	if (do_prefix && (_name_czech_adj[prefix].choose & choose) != choose) {
+	if (do_prefix && !_name_czech_adj[prefix].choose.All(choose)) {
 		/* Throw away non-matching prefix. */
 		do_prefix = false;
 	}
@@ -700,47 +709,19 @@ static void MakeCzechTownName(StringBuilder builder, uint32_t seed)
 		CzechPattern pattern = _name_czech_adj[prefix].pattern;
 
 		builder += _name_czech_adj[prefix].name;
-
-		size_t endpos = builder.CurrentIndex() - 1;
-		/* Find the first character in a UTF-8 sequence */
-		while (GB(builder[endpos], 6, 2) == 2) endpos--;
-		builder.RemoveElementsFromBack(builder.CurrentIndex() - endpos);
-
-		if (gender == CZG_SMASC && pattern == CZP_PRIVL) {
-			/* -ovX -> -uv */
-			builder[endpos - 2] = 'u';
-		} else {
-			builder += _name_czech_patmod[gender][pattern];
-		}
-
+		builder += _name_czech_patmod[gender][pattern];
 		builder += ' ';
 	}
 
 	if (dynamic_subst) {
 		builder += _name_czech_subst_stem[stem].name;
 		if (postfix < std::size(_name_czech_subst_postfix)) {
-			const char *poststr = _name_czech_subst_postfix[postfix];
-			const char *endstr = _name_czech_subst_ending[ending].name;
-
-			size_t postlen = strlen(poststr);
-			size_t endlen = strlen(endstr);
-			assert(postlen > 0 && endlen > 0);
+			std::string_view poststr = _name_czech_subst_postfix[postfix];
+			std::string_view endstr = _name_czech_subst_ending[ending].name;
 
 			/* Kill the "avava" and "Jananna"-like cases */
-			if (postlen < 2 || postlen > endlen ||
-					((poststr[1] != 'v' || poststr[1] != endstr[1]) &&
-					poststr[2] != endstr[1])) {
+			if (poststr[1] != 'v' || poststr[1] != endstr[1]) {
 				builder += poststr;
-
-				/* k-i -> c-i, h-i -> z-i */
-				if (endstr[0] == 'i') {
-					size_t last = builder.CurrentIndex() - 1;
-					switch (builder[last]) {
-						case 'k': builder[last] = 'c'; break;
-						case 'h': builder[last] = 'z'; break;
-						default: break;
-					}
-				}
 			}
 		}
 		builder += _name_czech_subst_ending[ending].name;
@@ -901,7 +882,7 @@ static void MakeItalianTownName(StringBuilder builder, uint32_t seed)
 		return;
 	}
 
-	static const char * const mascul_femin_italian[] = {
+	static const std::string_view mascul_femin_italian[] = {
 		"o",
 		"a",
 	};
@@ -978,7 +959,7 @@ static void MakeCatalanTownName(StringBuilder builder, uint32_t seed)
 typedef void TownNameGenerator(StringBuilder builder, uint32_t seed);
 
 /** Town name generators */
-static TownNameGenerator *_town_name_generators[] = {
+static TownNameGenerator *const _town_name_generators[] = {
 	MakeEnglishOriginalTownName,  // replaces first 4 characters of name
 	MakeFrenchTownName,
 	MakeGermanTownName,

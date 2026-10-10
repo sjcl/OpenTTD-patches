@@ -2,16 +2,15 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
-/**
- * @file roadtypes.h
- * All the roadtype-specific information is stored here.
- */
+/** @file roadtypes.h All the roadtype-specific information is stored here. */
 
 #ifndef ROADTYPES_H
 #define ROADTYPES_H
+
+#include "table/strings.h"
 
 /**
  * Global Roadtype definition
@@ -58,13 +57,13 @@ static const RoadTypeInfo _original_roadtypes[] = {
 		},
 
 		/* Powered roadtypes */
-		ROADTYPES_ROAD,
+		{ROADTYPE_ROAD},
 
 		/* flags */
-		ROTFB_TOWN_BUILD,
+		{RoadTypeFlag::TownBuild},
 
 		/* extra flags */
-		RXTFB_NONE,
+		{},
 
 		/* collision mode */
 		RTCM_NORMAL,
@@ -82,25 +81,26 @@ static const RoadTypeInfo _original_roadtypes[] = {
 		ROADTYPE_LABEL_ROAD,
 
 		/* alternate labels */
-		RoadTypeLabelList(),
+		{},
 
 		/* map colour */
-		0x01,
+		PC_BLACK,
 
 		/* introduction date */
 		CalTime::MIN_DATE,
 
 		/* roadtypes required for this to be introduced */
-		ROADTYPES_NONE,
+		{},
 
 		/* introduction road types */
-		ROADTYPES_ROAD,
+		{ROADTYPE_ROAD},
 
 		/* sort order */
 		0x07,
 
 		{ nullptr },
 		{ nullptr },
+		{},
 	},
 
 	/* Electrified Tram */
@@ -144,13 +144,13 @@ static const RoadTypeInfo _original_roadtypes[] = {
 		},
 
 		/* Powered roadtypes */
-		ROADTYPES_TRAM,
+		{ROADTYPE_TRAM},
 
 		/* flags */
-		ROTFB_CATENARY | ROTFB_NO_HOUSES,
+		{RoadTypeFlag::Catenary, RoadTypeFlag::NoHouses},
 
 		/* extra flags */
-		RXTFB_NONE,
+		{},
 
 		/* collision mode */
 		RTCM_NORMAL,
@@ -168,25 +168,26 @@ static const RoadTypeInfo _original_roadtypes[] = {
 		ROADTYPE_LABEL_TRAM,
 
 		/* alternate labels */
-		RoadTypeLabelList(),
+		{},
 
 		/* map colour */
-		0x01,
+		PC_BLACK,
 
 		/* introduction date */
 		CalTime::INVALID_DATE,
 
 		/* roadtypes required for this to be introduced */
-		ROADTYPES_NONE,
+		{},
 
 		/* introduction road types */
-		ROADTYPES_TRAM,
+		{ROADTYPE_TRAM},
 
 		/* sort order */
 		0x17,
 
 		{ nullptr },
 		{ nullptr },
+		{},
 	},
 };
 

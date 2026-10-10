@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file scope_info.cpp Scope info debug functions. */
@@ -42,16 +42,14 @@ void WriteScopeLog(struct format_target &buffer)
 
 #endif
 
-template<>
-void GeneralFmtDumper<Company, int>::fmt_format_value(format_target &buf) const
+void CompanyInfoDumper::fmt_format_value(format_target &buf) const
 {
 	buf.format("{} (", this->value);
-	SetDParam(0, this->value);
-	buf.append(GetString(STR_COMPANY_NAME));
+	AppendStringInPlace(buf, STR_COMPANY_NAME, this->value);
 	buf.push_back(')');
 }
 
-template<>
+template <>
 void GeneralFmtDumper<Vehicle, const Vehicle *>::fmt_format_value(format_target &buf) const
 {
 	const Vehicle *v = this->value;
@@ -60,8 +58,8 @@ void GeneralFmtDumper<Vehicle, const Vehicle *>::fmt_format_value(format_target 
 		u->DumpVehicleFlags(buf, true);
 	};
 	auto dump_name = [&](const Vehicle *u) {
-		if (u->type < VEH_COMPANY_END) {
-			const char *veh_type[] = {
+		if (u->type < VehicleType::CompanyEnd) {
+			static const VehicleTypeIndexArray<const char *> veh_type = {
 				"Train",
 				"Road Vehicle",
 				"Ship",
@@ -76,20 +74,20 @@ void GeneralFmtDumper<Vehicle, const Vehicle *>::fmt_format_value(format_target 
 			if (!u->name.empty()) {
 				buf.format(" ({})", u->name.c_str());
 			}
-		} else if (u->type == VEH_EFFECT) {
+		} else if (u->type == VehicleType::Effect) {
 			buf.format("Effect Vehicle: subtype: {}", u->subtype);
-		} else if (u->type == VEH_DISASTER) {
+		} else if (u->type == VehicleType::Disaster) {
 			buf.format("Disaster Vehicle: subtype: {}", u->subtype);
 		}
 	};
-	if (v) {
+	if (v != nullptr) {
 		buf.format("veh: {}: (", v->index);
 		if (Vehicle::GetIfValid(v->index) != v) {
 			buf.format("INVALID PTR: {})", fmt::ptr(v));
 			return;
 		}
 		dump_name(v);
-		buf.format(", c:{}, ", (int)v->owner);
+		buf.format(", c:{}, ", v->owner);
 		dump_flags(v);
 		if (v->First() && v->First() != v) {
 			buf.format(", front: {}: (", v->First()->index);
@@ -108,38 +106,37 @@ void GeneralFmtDumper<Vehicle, const Vehicle *>::fmt_format_value(format_target 
 	}
 }
 
-template<>
+template <>
 void GeneralFmtDumper<BaseStation, const BaseStation *>::fmt_format_value(format_target &buf) const
 {
 	const BaseStation *st = this->value;
 	if (st != nullptr) {
 		const bool waypoint = Waypoint::IsExpected(st);
 		buf.format("{}: {}: (", waypoint ? "waypoint" : "station", st->index);
-		SetDParam(0, st->index);
-		buf.append(GetString(waypoint ? STR_WAYPOINT_NAME : STR_STATION_NAME));
-		buf.format(", c:{}, facil: ", (int)st->owner);
+		AppendStringInPlace(buf, waypoint ? STR_WAYPOINT_NAME : STR_STATION_NAME, st->index);
+		buf.format(", c:{}, facil: ", st->owner);
 		auto dump_facil = [&](char c, StationFacility flag) {
-			if (st->facilities & flag) buf.push_back(c);
+			if (st->facilities.Test(flag)) buf.push_back(c);
 		};
-		dump_facil('R', FACIL_TRAIN);
-		dump_facil('T', FACIL_TRUCK_STOP);
-		dump_facil('B', FACIL_BUS_STOP);
-		dump_facil('A', FACIL_AIRPORT);
-		dump_facil('D', FACIL_DOCK);
-		dump_facil('W', FACIL_WAYPOINT);
+		dump_facil('R', StationFacility::Train);
+		dump_facil('T', StationFacility::TruckStop);
+		dump_facil('B', StationFacility::BusStop);
+		dump_facil('A', StationFacility::Airport);
+		dump_facil('D', StationFacility::Dock);
+		dump_facil('W', StationFacility::Waypoint);
 		buf.push_back(')');
 	} else {
 		buf.append("station/waypoint: nullptr");
 	}
 }
 
-template<>
+template <>
 void GeneralFmtDumper<DumpTileInfoTag, TileIndex>::fmt_format_value(format_target &output) const
 {
 	DumpTileInfo(output, this->value);
 }
 
-template<>
+template <>
 void GeneralFmtDumper<Window, const struct Window *>::fmt_format_value(format_target &output) const
 {
 	DumpWindowInfo(output, this->value);

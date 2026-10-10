@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file cargoaction.cpp Implementation of cargo actions. */
@@ -20,7 +20,7 @@
  * @return Either new packet if splitting was necessary or the given one
  *         otherwise.
  */
-template<class Tsource, class Tdest>
+template <class Tsource, class Tdest>
 CargoPacket *CargoMovement<Tsource, Tdest>::Preprocess(CargoPacket *cp)
 {
 	if (this->max_move < cp->Count()) {
@@ -38,7 +38,7 @@ CargoPacket *CargoMovement<Tsource, Tdest>::Preprocess(CargoPacket *cp)
  * @param cp Packet to be removed completely or partially.
  * @return Amount of cargo to be removed.
  */
-template<class Tsource>
+template <class Tsource>
 uint CargoRemoval<Tsource>::Preprocess(CargoPacket *cp)
 {
 	if (this->max_move >= cp->Count()) {
@@ -57,7 +57,7 @@ uint CargoRemoval<Tsource>::Preprocess(CargoPacket *cp)
  * @param remove Amount of cargo to be removed.
  * @return True if the packet was deleted, False if it was reduced.
  */
-template<class Tsource>
+template <class Tsource>
 bool CargoRemoval<Tsource>::Postprocess(CargoPacket *cp, uint remove)
 {
 	if (remove == cp->Count()) {
@@ -75,7 +75,7 @@ bool CargoRemoval<Tsource>::Postprocess(CargoPacket *cp, uint remove)
  * @return True if the packet was completely delivered, false if only part of
  *         it was.
  */
-template<>
+template <>
 bool CargoRemoval<StationCargoList>::operator()(CargoPacket *cp)
 {
 	uint remove = this->Preprocess(cp);
@@ -89,11 +89,11 @@ bool CargoRemoval<StationCargoList>::operator()(CargoPacket *cp)
  * @return True if the packet was completely delivered, false if only part of
  *         it was.
  */
-template<>
+template <>
 bool CargoRemoval<VehicleCargoList>::operator()(CargoPacket *cp)
 {
 	uint remove = this->Preprocess(cp);
-	this->source->RemoveFromMeta(cp, VehicleCargoList::MTA_KEEP, remove);
+	this->source->RemoveFromMeta(cp, VehicleCargoList::MoveToAction::Keep, remove);
 	return this->Postprocess(cp, remove);
 }
 
@@ -106,7 +106,7 @@ bool CargoRemoval<VehicleCargoList>::operator()(CargoPacket *cp)
 bool CargoDelivery::operator()(CargoPacket *cp)
 {
 	uint remove = this->Preprocess(cp);
-	this->source->RemoveFromMeta(cp, VehicleCargoList::MTA_DELIVER, remove);
+	this->source->RemoveFromMeta(cp, VehicleCargoList::MoveToAction::Deliver, remove);
 	this->payment->PayFinalDelivery(this->cargo, cp, remove, this->current_tile);
 	return this->Postprocess(cp, remove);
 }
@@ -122,7 +122,7 @@ bool CargoLoad::operator()(CargoPacket *cp)
 	if (cp_new == nullptr) return false;
 	cp_new->UpdateLoadingTile(this->current_tile);
 	this->source->RemoveFromCache(cp_new, cp_new->Count());
-	this->destination->Append(cp_new, VehicleCargoList::MTA_KEEP);
+	this->destination->Append(cp_new, VehicleCargoList::MoveToAction::Keep);
 	return cp_new == cp;
 }
 
@@ -138,7 +138,7 @@ bool CargoReservation::operator()(CargoPacket *cp)
 	cp_new->UpdateLoadingTile(this->current_tile);
 	this->source->reserved_count += cp_new->Count();
 	this->source->RemoveFromCache(cp_new, cp_new->Count());
-	this->destination->Append(cp_new, VehicleCargoList::MTA_LOAD);
+	this->destination->Append(cp_new, VehicleCargoList::MoveToAction::Load);
 	return cp_new == cp;
 }
 
@@ -153,7 +153,7 @@ bool CargoReturn::operator()(CargoPacket *cp)
 	if (cp_new == nullptr) cp_new = cp;
 	assert(cp_new->Count() <= this->destination->reserved_count);
 	cp_new->UpdateUnloadingTile(this->current_tile);
-	this->source->RemoveFromMeta(cp_new, VehicleCargoList::MTA_LOAD, cp_new->Count());
+	this->source->RemoveFromMeta(cp_new, VehicleCargoList::MoveToAction::Load, cp_new->Count());
 	this->destination->reserved_count -= cp_new->Count();
 	this->destination->Append(cp_new, this->next);
 	return cp_new == cp;
@@ -169,7 +169,7 @@ bool CargoTransfer::operator()(CargoPacket *cp)
 	CargoPacket *cp_new = this->Preprocess(cp);
 	if (cp_new == nullptr) return false;
 	cp_new->UpdateUnloadingTile(this->current_tile);
-	this->source->RemoveFromMeta(cp_new, VehicleCargoList::MTA_TRANSFER, cp_new->Count());
+	this->source->RemoveFromMeta(cp_new, VehicleCargoList::MoveToAction::Transfer, cp_new->Count());
 	/* No transfer credits here as they were already granted during Stage(). */
 	this->destination->Append(cp_new, cp_new->GetNextHop());
 	return cp_new == cp;
@@ -184,8 +184,8 @@ bool CargoShift::operator()(CargoPacket *cp)
 {
 	CargoPacket *cp_new = this->Preprocess(cp);
 	if (cp_new == nullptr) cp_new = cp;
-	this->source->RemoveFromMeta(cp_new, VehicleCargoList::MTA_KEEP, cp_new->Count());
-	this->destination->Append(cp_new, VehicleCargoList::MTA_KEEP);
+	this->source->RemoveFromMeta(cp_new, VehicleCargoList::MoveToAction::Keep, cp_new->Count());
+	this->destination->Append(cp_new, VehicleCargoList::MoveToAction::Keep);
 	return cp_new == cp;
 }
 
@@ -226,8 +226,8 @@ bool VehicleCargoReroute::operator()(CargoPacket *cp, std::vector<CargoPacket *>
 		cp->SetNextHop(this->ge->GetVia(cp_new->GetFirstStation(), this->avoid, this->avoid2));
 	}
 	if (unlikely(this->source != this->destination)) {
-		this->source->RemoveFromMeta(cp_new, VehicleCargoList::MTA_TRANSFER, cp_new->Count());
-		this->destination->AddToMeta(cp_new, VehicleCargoList::MTA_TRANSFER);
+		this->source->RemoveFromMeta(cp_new, VehicleCargoList::MoveToAction::Transfer, cp_new->Count());
+		this->destination->AddToMeta(cp_new, VehicleCargoList::MoveToAction::Transfer);
 	}
 
 	if (likely(this->source == this->destination)) {

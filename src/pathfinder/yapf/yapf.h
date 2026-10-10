@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file yapf.h Entry point for OpenTTD to YAPF. */
@@ -22,6 +22,7 @@
  * @param v        the ship that needs to find a path
  * @param tile     the tile to find the path from (should be next tile the ship is about to enter)
  * @param path_found [out] Whether a path has been found (true) or has been guessed (false)
+ * @param path_cache Cache of a previously chosen path.
  * @return         the best trackdir for next turn or INVALID_TRACK if the path could not be found
  */
 Track YapfShipChooseTrack(const Ship *v, TileIndex tile, bool &path_found, ShipPathCache &path_cache);
@@ -41,6 +42,7 @@ bool YapfShipCheckReverse(const Ship *v, Trackdir *trackdir);
  * @param enterdir  diagonal direction which the RV will enter this new tile from
  * @param trackdirs available trackdirs on the new tile (to choose from)
  * @param path_found [out] Whether a path has been found (true) or has been guessed (false)
+ * @param path_cache Cache of a previously chosen path.
  * @return          the best trackdir for next turn or INVALID_TRACKDIR if the path could not be found
  */
 Trackdir YapfRoadVehicleChooseTrack(const RoadVehicle *v, TileIndex tile, DiagDirection enterdir, TrackdirBits trackdirs, bool &path_found, RoadVehPathCache &path_cache);

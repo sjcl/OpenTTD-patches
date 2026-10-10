@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file linkgraph_sl.cpp Code handling saving and loading of link graphs */
@@ -96,7 +96,7 @@ struct LinkGraphNodeStructHandler final : public TypedSaveLoadStructHandler<Link
 
 	void Load(LinkGraph *lg) const override
 	{
-		uint num_nodes = static_cast<uint>(SlGetStructListLength(UINT16_MAX));
+		NodeID num_nodes = static_cast<NodeID>(SlGetStructListLength(UINT16_MAX));
 		lg->Init(num_nodes);
 
 		for (NodeID from = 0; from < num_nodes; ++from) {
@@ -205,7 +205,7 @@ NamedSaveLoadTable GetLinkGraphJobDesc()
 		const SettingTable &linkgraph_table = GetLinkGraphSettingTable();
 		for (const auto &desc : linkgraph_table) {
 			SaveLoad sl = desc->save;
-			if (GetVarMemType(sl.conv) != SLE_VAR_NULL) {
+			if (sl.conv.mem != SLE_VAR_NULL) {
 				char *&address = reinterpret_cast<char *&>(sl.address);
 				address -= offset_gamesettings;
 				address += offset_component;
@@ -325,9 +325,9 @@ static void Load_LGRP()
 	while ((index = SlIterateArray()) != -1) {
 		if (!LinkGraph::CanAllocateItem()) {
 			/* Impossible as they have been present in previous game. */
-			NOT_REACHED();
+			SlErrorCorrupt("LinkGraph::CanAllocateItem");
 		}
-		LinkGraph *lg = new (index) LinkGraph();
+		LinkGraph *lg = LinkGraph::CreateAtIndex(LinkGraphID(index));
 		SlObjectLoadFiltered(lg, slt);
 		if (!is_table) {
 			lg->Init(_num_nodes);
@@ -351,9 +351,9 @@ static void Load_LGRJ()
 	while ((index = SlIterateArray()) != -1) {
 		if (!LinkGraphJob::CanAllocateItem()) {
 			/* Impossible as they have been present in previous game. */
-			NOT_REACHED();
+			SlErrorCorrupt("LinkGraphJob::CanAllocateItem");
 		}
-		LinkGraphJob *lgj = new (index) LinkGraphJob();
+		LinkGraphJob *lgj = LinkGraphJob::CreateAtIndex(LinkGraphJobID(index));
 		SlObjectLoadFiltered(lgj, slt);
 		if (SlXvIsFeatureMissing(XSLFI_LINKGRAPH_DAY_SCALE)) {
 			extern void GetLinkGraphJobDayLengthScaleAfterLoad(LinkGraphJob *lgj);
@@ -450,9 +450,9 @@ static void Ptrs_LGRS()
 }
 
 static const ChunkHandler linkgraph_chunk_handlers[] = {
-	{ 'LGRP', Save_LGRP, Load_LGRP, nullptr,   nullptr, CH_TABLE },
-	{ 'LGRJ', Save_LGRJ, Load_LGRJ, nullptr,   nullptr, CH_TABLE },
-	{ 'LGRS', Save_LGRS, Load_LGRS, Ptrs_LGRS, nullptr, CH_TABLE }
+	{ 'LGRP', Save_LGRP, Load_LGRP, nullptr,   nullptr, ChunkType::Table },
+	{ 'LGRJ', Save_LGRJ, Load_LGRJ, nullptr,   nullptr, ChunkType::Table },
+	{ 'LGRS', Save_LGRS, Load_LGRS, Ptrs_LGRS, nullptr, ChunkType::Table }
 };
 
 extern const ChunkHandlerTable _linkgraph_chunk_handlers(linkgraph_chunk_handlers);

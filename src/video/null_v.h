@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file null_v.h Base of the video driver that doesn't blit. */
@@ -15,8 +15,8 @@
 /** The null video driver. */
 class VideoDriver_Null : public VideoDriver {
 private:
-	int ticks; ///< Amount of ticks to run.
-	bool until_exit;
+	int ticks = 0; ///< Amount of ticks to run.
+	bool until_exit = false;
 
 public:
 	const char *Start(const StringList &param) override;
@@ -37,8 +37,8 @@ public:
 /** Factory the null video driver. */
 class FVideoDriver_Null : public DriverFactoryBase {
 public:
-	FVideoDriver_Null() : DriverFactoryBase(Driver::DT_VIDEO, 0, "null", "Null Video Driver") {}
-	Driver *CreateInstance() const override { return new VideoDriver_Null(); }
+	FVideoDriver_Null() : DriverFactoryBase(Driver::Type::Video, 0, "null", "Null Video Driver") {}
+	std::unique_ptr<Driver> CreateInstance() const override { return std::make_unique<VideoDriver_Null>(); }
 };
 
 #endif /* VIDEO_NULL_H */

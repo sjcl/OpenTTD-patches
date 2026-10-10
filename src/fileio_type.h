@@ -2,167 +2,167 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
-/** @file fileio_type.h Types for Standard In/Out file operations */
+/** @file fileio_type.h Types for standard in/out file operations. */
 
 #ifndef FILEIO_TYPE_H
 #define FILEIO_TYPE_H
 
 #include "core/enum_type.hpp"
+#include "misc/autorelease.hpp"
 #include <optional>
 
 /** The different abstract types of files that the system knows about. */
-enum AbstractFileType {
-	FT_NONE,      ///< nothing to do
-	FT_SAVEGAME,  ///< old or new savegame
-	FT_SCENARIO,  ///< old or new scenario
-	FT_HEIGHTMAP, ///< heightmap file
-	FT_TOWN_DATA, ///< town data file
+enum class AbstractFileType : uint8_t {
+	None, ///< nothing to do
+	Savegame, ///< old or new savegame
+	Scenario, ///< old or new scenario
+	Heightmap, ///< heightmap file
+	TownData, ///< town data file
+	Orderlist, ///< orderlist file
 
-	FT_INVALID = 7, ///< Invalid or unknown file type.
-	FT_NUMBITS = 3, ///< Number of bits required for storing a #AbstractFileType value.
-	FT_MASK = (1 << FT_NUMBITS) - 1, ///< Bitmask for extracting an abstract file type.
+	Invalid = 7, ///< Invalid or unknown file type.
 };
 
 /** Kinds of files in each #AbstractFileType. */
-enum DetailedFileType {
+enum class DetailedFileType : uint8_t {
 	/* Save game and scenario files. */
-	DFT_OLD_GAME_FILE, ///< Old save game or scenario file.
-	DFT_GAME_FILE,     ///< Save game or scenario file.
+	OldGameFile, ///< Old save game or scenario file.
+	GameFile, ///< Save game or scenario file.
 
 	/* Heightmap files. */
-	DFT_HEIGHTMAP_BMP, ///< BMP file.
-	DFT_HEIGHTMAP_PNG, ///< PNG file.
+	HeightmapBmp, ///< BMP file.
+	HeightmapPng, ///< PNG file.
+
+	/* Orderlist files */
+	OrderlistJson, ///< JSON file.
 
 	/* Town data files. */
-	DFT_TOWN_DATA_JSON,  ///< JSON file.
+	TownDataJson, ///< JSON file.
 
 	/* fios 'files' */
-	DFT_FIOS_DRIVE,  ///< A drive (letter) entry.
-	DFT_FIOS_PARENT, ///< A parent directory entry.
-	DFT_FIOS_DIR,    ///< A directory entry.
-	DFT_FIOS_DIRECT, ///< Direct filename.
+	FiosDrive, ///< A drive (letter) entry.
+	FiosParent, ///< A parent directory entry.
+	FiosDirectory, ///< A directory entry.
+	FiosDirect, ///< Direct filename.
 
-	DFT_END,         ///< End of this enum. Supports a compile time size check against _fios_colours in fios_gui.cpp
+	End, ///< End marker.
 
-	DFT_INVALID = 255, ///< Unknown or invalid file.
+	Invalid = 255, ///< Unknown or invalid file.
 };
 
 /** Operation performed on the file. */
-enum SaveLoadOperation {
-	SLO_CHECK,   ///< Load file for checking and/or preview.
-	SLO_LOAD,    ///< File is being loaded.
-	SLO_SAVE,    ///< File is being saved.
+enum class SaveLoadOperation : uint8_t {
+	Check, ///< Load file for checking and/or preview.
+	Load, ///< File is being loaded.
+	Save, ///< File is being saved.
 
-	SLO_INVALID, ///< Unknown file operation.
+	Invalid, ///< Unknown file operation.
 };
-
-/**
- * Construct an enum value for #FiosType as a combination of an abstract and a detailed file type.
- * @param abstract Abstract file type (one of #AbstractFileType).
- * @param detailed Detailed file type (one of #DetailedFileType).
- */
-#define MAKE_FIOS_TYPE(abstract, detailed) ((abstract) | ((detailed) << FT_NUMBITS))
 
 /**
  * Elements of a file system that are recognized.
- * Values are a combination of #AbstractFileType and #DetailedFileType.
- * @see GetAbstractFileType GetDetailedFileType
  */
-enum FiosType {
-	FIOS_TYPE_DRIVE  = MAKE_FIOS_TYPE(FT_NONE, DFT_FIOS_DRIVE),
-	FIOS_TYPE_PARENT = MAKE_FIOS_TYPE(FT_NONE, DFT_FIOS_PARENT),
-	FIOS_TYPE_DIR    = MAKE_FIOS_TYPE(FT_NONE, DFT_FIOS_DIR),
-	FIOS_TYPE_DIRECT = MAKE_FIOS_TYPE(FT_NONE, DFT_FIOS_DIRECT),
+struct FiosType {
+	AbstractFileType abstract; ///< Abstract file type.
+	DetailedFileType detailed; ///< Detailed file type.
 
-	FIOS_TYPE_FILE         = MAKE_FIOS_TYPE(FT_SAVEGAME, DFT_GAME_FILE),
-	FIOS_TYPE_OLDFILE      = MAKE_FIOS_TYPE(FT_SAVEGAME, DFT_OLD_GAME_FILE),
-	FIOS_TYPE_SCENARIO     = MAKE_FIOS_TYPE(FT_SCENARIO, DFT_GAME_FILE),
-	FIOS_TYPE_OLD_SCENARIO = MAKE_FIOS_TYPE(FT_SCENARIO, DFT_OLD_GAME_FILE),
-	FIOS_TYPE_PNG          = MAKE_FIOS_TYPE(FT_HEIGHTMAP, DFT_HEIGHTMAP_PNG),
-	FIOS_TYPE_BMP          = MAKE_FIOS_TYPE(FT_HEIGHTMAP, DFT_HEIGHTMAP_BMP),
-	FIOS_TYPE_JSON         = MAKE_FIOS_TYPE(FT_TOWN_DATA, DFT_TOWN_DATA_JSON),
-
-	FIOS_TYPE_INVALID = MAKE_FIOS_TYPE(FT_INVALID, DFT_INVALID),
+	constexpr bool operator==(const FiosType &) const noexcept = default;
 };
 
-#undef MAKE_FIOS_TYPE
+constexpr FiosType FIOS_TYPE_DRIVE{AbstractFileType::None, DetailedFileType::FiosDrive};
+constexpr FiosType FIOS_TYPE_PARENT{AbstractFileType::None, DetailedFileType::FiosParent};
+constexpr FiosType FIOS_TYPE_DIR{AbstractFileType::None, DetailedFileType::FiosDirectory};
+constexpr FiosType FIOS_TYPE_DIRECT{AbstractFileType::None, DetailedFileType::FiosDirect};
 
-/**
- * Extract the abstract file type from a #FiosType.
- * @param fios_type Type to query.
- * @return The Abstract file type of the \a fios_type.
- */
-inline AbstractFileType GetAbstractFileType(FiosType fios_type)
-{
-	return static_cast<AbstractFileType>(static_cast<uint>(fios_type) & FT_MASK);
-}
+constexpr FiosType FIOS_TYPE_FILE{AbstractFileType::Savegame, DetailedFileType::GameFile};
+constexpr FiosType FIOS_TYPE_OLDFILE{AbstractFileType::Savegame, DetailedFileType::OldGameFile};
+constexpr FiosType FIOS_TYPE_SCENARIO{AbstractFileType::Scenario, DetailedFileType::GameFile};
+constexpr FiosType FIOS_TYPE_OLD_SCENARIO{AbstractFileType::Scenario, DetailedFileType::OldGameFile};
+constexpr FiosType FIOS_TYPE_PNG{AbstractFileType::Heightmap, DetailedFileType::HeightmapPng};
+constexpr FiosType FIOS_TYPE_BMP{AbstractFileType::Heightmap, DetailedFileType::HeightmapBmp};
+constexpr FiosType FIOS_TYPE_ORDERLIST{AbstractFileType::Orderlist, DetailedFileType::OrderlistJson};
+constexpr FiosType FIOS_TYPE_JSON{AbstractFileType::TownData, DetailedFileType::TownDataJson};
 
-/**
- * Extract the detailed file type from a #FiosType.
- * @param fios_type Type to query.
- * @return The Detailed file type of the \a fios_type.
- */
-inline DetailedFileType GetDetailedFileType(FiosType fios_type)
-{
-	return static_cast<DetailedFileType>(fios_type >> FT_NUMBITS);
-}
+constexpr FiosType FIOS_TYPE_INVALID{AbstractFileType::Invalid, DetailedFileType::Invalid};
 
 /**
  * The different kinds of subdirectories OpenTTD uses
  */
-enum Subdirectory {
-	BASE_DIR,      ///< Base directory for all subdirectories
-	SAVE_DIR,      ///< Base directory for all savegames
-	AUTOSAVE_DIR,  ///< Subdirectory of save for autosaves
-	SCENARIO_DIR,  ///< Base directory for all scenarios
-	HEIGHTMAP_DIR, ///< Subdirectory of scenario for heightmaps
-	OLD_GM_DIR,    ///< Old subdirectory for the music
-	OLD_DATA_DIR,  ///< Old subdirectory for the data.
-	BASESET_DIR,   ///< Subdirectory for all base data (base sets, intro game)
-	NEWGRF_DIR,    ///< Subdirectory for all NewGRFs
-	LANG_DIR,      ///< Subdirectory for all translation files
-	AI_DIR,        ///< Subdirectory for all %AI files
-	AI_LIBRARY_DIR,///< Subdirectory for all %AI libraries
-	GAME_DIR,      ///< Subdirectory for all game scripts
-	GAME_LIBRARY_DIR, ///< Subdirectory for all GS libraries
-	SCREENSHOT_DIR,   ///< Subdirectory for all screenshots
-	SOCIAL_INTEGRATION_DIR, ///< Subdirectory for all social integration plugins
-	NUM_SUBDIRS,   ///< Number of subdirectories
-	NO_DIRECTORY,  ///< A path without any base directory
+enum class Subdirectory : uint8_t {
+	Base, ///< Base directory for all subdirectories.
+	Save, ///< Base directory for all savegames.
+	Autosave, ///< Subdirectory of save for autosaves.
+	Scenario, ///< Base directory for all scenarios.
+	Heightmap, ///< Subdirectory of scenario for heightmaps.
+	Orderlist, ///< Subdirectory for all orderlists.
+	OldGm, ///< Old subdirectory for the music.
+	OldData, ///< Old subdirectory for the data.
+	Baseset, ///< Subdirectory for all base data (base sets, intro game).
+	NewGrf, ///< Subdirectory for all NewGRFs.
+	Lang, ///< Subdirectory for all translation files.
+	Ai, ///< Subdirectory for all %AI files.
+	AiLibrary, ///< Subdirectory for all %AI libraries.
+	Gs, ///< Subdirectory for all game scripts.
+	GsLibrary, ///< Subdirectory for all GS libraries.
+	Screenshot, ///< Subdirectory for all screenshots.
+	SocialIntegration, ///< Subdirectory for all social integration plugins.
+	Docs, ///< Subdirectory for documentation.
+	End, ///< End marker.
+	None, ///< A path without any base directory.
 };
 
 /**
  * Types of searchpaths OpenTTD might use
  */
-enum Searchpath : unsigned {
-	SP_FIRST_DIR,
-	SP_WORKING_DIR = SP_FIRST_DIR, ///< Search in the working directory
+enum class Searchpath : uint8_t {
+	Begin, ///< The lowest valid value.
+	WorkingDir = Searchpath::Begin, ///< Search in the working directory.
 #ifdef USE_XDG
-	SP_PERSONAL_DIR_XDG,           ///< Search in the personal directory from the XDG specification
+	PersonalDirXdg, ///< Search in the personal directory from the XDG specification.
 #endif
-	SP_PERSONAL_DIR,               ///< Search in the personal directory
-	SP_SHARED_DIR,                 ///< Search in the shared directory, like 'Shared Files' under Windows
-	SP_BINARY_DIR,                 ///< Search in the directory where the binary resides
-	SP_INSTALLATION_DIR,           ///< Search in the installation directory
-	SP_APPLICATION_BUNDLE_DIR,     ///< Search within the application bundle
-	SP_AUTODOWNLOAD_DIR,           ///< Search within the autodownload directory
-	SP_AUTODOWNLOAD_PERSONAL_DIR,  ///< Search within the autodownload directory located in the personal directory
-	SP_AUTODOWNLOAD_PERSONAL_DIR_XDG, ///< Search within the autodownload directory located in the personal directory (XDG variant)
-	NUM_SEARCHPATHS
+	PersonalDir, ///< Search in the personal directory.
+	SharedDir, ///< Search in the shared directory, like 'Shared Files' under Windows.
+	BinaryDir, ///< Search in the directory where the binary resides.
+	InstallationDir, ///< Search in the installation directory.
+	ApplicationBundleDir, ///< Search within the application bundle.
+	TransportTycoonDeluxeDir, ///< Search within the Transport Tycoon Deluxe data directory (if installed).
+	AutodownloadDir, ///< Search within the autodownload directory.
+	AutodownloadPersonalDir,///< Search within the autodownload directory located in the personal directory.
+	AutodownloadPersonalDirXdg, ///< Search within the autodownload directory located in the personal directory (XDG variant).
+	End, ///< End marker.
 };
-
-DECLARE_POSTFIX_INCREMENT(Searchpath)
 
 class FileHandle {
 public:
+	/**
+	 * Open an RAII file handle if possible.
+	 * The canonical RAII-way is for FileHandle to open the file and throw an exception on failure, but we don't want that.
+	 * @param filename UTF-8 encoded filename to open.
+	 * @param mode Mode to open file.
+	 * @return FileHandle, or std::nullopt on failure.
+	 */
 	static std::optional<FileHandle> Open(const char *filename, const char *mode);
 
+	/**
+	 * Open an RAII file handle if possible.
+	 * The canonical RAII-way is for FileHandle to open the file and throw an exception on failure, but we don't want that.
+	 * @param filename UTF-8 encoded filename to open.
+	 * @param mode Mode to open file.
+	 * @return FileHandle, or std::nullopt on failure.
+	 */
 	static std::optional<FileHandle> Open(const std::string &filename, const char *mode)
 	{
 		return FileHandle::Open(filename.c_str(), mode);
+	}
+
+	template <typename T> requires std::is_same_v<T, std::string_view>
+	static std::optional<FileHandle> Open(T filename, const char *mode)
+	{
+		std::string filename_str(filename);
+		return FileHandle::Open(filename_str.c_str(), mode);
 	}
 
 	inline int Close()
@@ -181,15 +181,7 @@ public:
 	}
 
 private:
-	/** Helper to close a FILE * with a \c std::unique_ptr. */
-	struct FileDeleter {
-		void operator ()(FILE *f)
-		{
-			if (f != nullptr) fclose(f);
-		}
-	};
-
-	std::unique_ptr<FILE, FileDeleter> f;
+	AutoRelease<FILE, fclose> f;
 
 	FileHandle(FILE *f) : f(f) { assert(this->f != nullptr); }
 };

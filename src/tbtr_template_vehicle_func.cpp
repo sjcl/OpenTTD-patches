@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file tbtr_template_vehicle_func.cpp Template-based train replacement: template vehicle functions. */
@@ -19,11 +19,14 @@
 #include "debug.h"
 #include "depot_base.h"
 #include "gfx_func.h"
+#include "group_cmd.h"
+#include "order_cmd.h"
 #include "newgrf.h"
 #include "spritecache.h"
 #include "strings_func.h"
 #include "table/sprites.h"
 #include "table/strings.h"
+#include "tbtr_template_vehicle_cmd.h"
 #include "tbtr_template_vehicle_func.h"
 #include "tbtr_template_vehicle.h"
 #include "train.h"
@@ -103,7 +106,7 @@ void SetupTemplateVehicleFromVirtual(TemplateVehicle *tmp, TemplateVehicle *prev
 		tmp->SetPrev(prev);
 		tmp->SetFirst(prev->First());
 	}
-	tmp->railtype = virt->railtype;
+	tmp->railtypes = virt->railtypes;
 	tmp->owner = virt->owner;
 
 	/* Set the subtype but also clear the virtual flag while doing it */
@@ -113,7 +116,7 @@ void SetupTemplateVehicleFromVirtual(TemplateVehicle *tmp, TemplateVehicle *prev
 	tmp->cargo_subtype = virt->cargo_subtype;
 	tmp->cargo_cap = virt->cargo_cap;
 
-	AssignBit(tmp->ctrl_flags, TVCF_REVERSED, HasBit(virt->flags, VRF_REVERSE_DIRECTION));
+	AssignBit(tmp->ctrl_flags, TVCF_REVERSED, virt->flags.Test(VehicleRailFlag::Flipped));
 
 	if (virt->Previous() == nullptr) {
 		uint cargo_weight = 0;
@@ -131,7 +134,7 @@ void SetupTemplateVehicleFromVirtual(TemplateVehicle *tmp, TemplateVehicle *prev
 		tmp->air_drag = gcache->cached_air_drag;
 	}
 
-	virt->GetImage(_current_text_dir == TD_RTL ? DIR_E : DIR_W, EIT_IN_DEPOT, &tmp->sprite_seq);
+	virt->GetImage(_current_text_dir == TD_RTL ? Direction::E : Direction::W, EngineImageType::InDepot, &tmp->sprite_seq);
 	tmp->image_dimensions.SetFromTrain(virt);
 	tmp->colourmap = GetUncachedTrainPaletteIgnoringGroup(virt);
 }
@@ -146,7 +149,7 @@ TemplateVehicle *TemplateVehicleFromVirtualTrain(Train *virt)
 	TemplateVehicle *tmp = nullptr;
 	TemplateVehicle *prev = nullptr;
 	for (; virt != nullptr; virt = virt->Next()) {
-		tmp = new TemplateVehicle(virt->engine_type);
+		tmp = TemplateVehicle::Create(virt->engine_type);
 		SetupTemplateVehicleFromVirtual(tmp, prev, virt);
 		prev = tmp;
 	}
@@ -155,16 +158,16 @@ TemplateVehicle *TemplateVehicleFromVirtualTrain(Train *virt)
 	return tmp->First();
 }
 
-CommandCost CmdSellRailWagon(DoCommandFlag flags, Vehicle *t, uint16_t data, uint32_t user);
+CommandCost CmdSellRailWagon(DoCommandFlags flags, Vehicle *t, bool sell_chain, bool backup_order, ClientID user);
 
 Train *DeleteVirtualTrain(Train *chain, Train *to_del)
 {
 	if (chain != to_del) {
-		CmdSellRailWagon(DC_EXEC, to_del, 0, 0);
+		CmdSellRailWagon(DoCommandFlag::Execute, to_del, false, false, ClientID::Invalid);
 		return chain;
 	} else {
 		chain = chain->GetNextUnit();
-		CmdSellRailWagon(DC_EXEC, to_del, 0, 0);
+		CmdSellRailWagon(DoCommandFlag::Execute, to_del, false, false, ClientID::Invalid);
 		return chain;
 	}
 }
@@ -194,7 +197,7 @@ bool TemplateVehicleContainsEngineOfRailtype(const TemplateVehicle *tv, RailType
 	/* For standard rail engines, allow only those */
 	if (type == RAILTYPE_BEGIN || type == RAILTYPE_RAIL) {
 		while (tv != nullptr) {
-			if (tv->railtype != type) {
+			if (!tv->railtypes.Test(type)) {
 				return false;
 			}
 			tv = tv->GetNextUnit();
@@ -203,7 +206,7 @@ bool TemplateVehicleContainsEngineOfRailtype(const TemplateVehicle *tv, RailType
 	}
 	/* For electrified rail engines, standard wagons or engines are allowed to be included */
 	while (tv != nullptr) {
-		if (tv->railtype == type) {
+		if (tv->railtypes.Test(type)) {
 			return true;
 		}
 		tv = tv->GetNextUnit();
@@ -235,11 +238,9 @@ static bool IsTrainUsableAsTemplateReplacementSource(const Train *t)
 
 void TemplateDepotVehicles::Init(TileIndex tile)
 {
-	FindVehicleOnPos(tile, VEH_TRAIN, this, [](Vehicle *v, void *data) -> Vehicle * {
-		TemplateDepotVehicles *self = static_cast<TemplateDepotVehicles *>(data);
-		self->vehicles.insert(v->index);
-		return v;
-	});
+	for (const Train *v : VehiclesOnTile<VehicleType::Train>(tile)) {
+		this->vehicles.insert(v->index);
+	}
 }
 
 void TemplateDepotVehicles::RemoveVehicle(VehicleID id)
@@ -268,9 +269,9 @@ Train *TemplateDepotVehicles::ContainsEngine(EngineID eid, Train *not_in)
 
 void NeutralizeStatus(Train *t)
 {
-	DoCommand(t->tile, DEFAULT_GROUP, t->index, DC_EXEC, CMD_ADD_VEHICLE_GROUP);
-	DoCommand(0, t->index | CO_UNSHARE << 30, 0, DC_EXEC, CMD_CLONE_ORDER);
-	DoCommand(0, t->index, 0, DC_EXEC, CMD_RENAME_VEHICLE, nullptr);
+	Command<Commands::AddVehicleToGroup>::Do(DoCommandFlag::Execute, DEFAULT_GROUP, t->index, false);
+	Command<Commands::CloneOrder>::Do(DoCommandFlag::Execute, CO_SHARE, t->index, VehicleID::Invalid());
+	Command<Commands::RenameVehicle>::Do(DoCommandFlag::Execute, t->index, {});
 }
 
 TBTRDiffFlags TrainTemplateDifference(const Train *t, const TemplateVehicle *tv)
@@ -284,7 +285,7 @@ TBTRDiffFlags TrainTemplateDifference(const Train *t, const TemplateVehicle *tv)
 		if (check_refit_as_template && (t->cargo_type != tv->cargo_type || t->cargo_subtype != tv->cargo_subtype)) {
 			diff |= TBTRDF_REFIT;
 		}
-		if (HasBit(t->flags, VRF_REVERSE_DIRECTION) != HasBit(tv->ctrl_flags, TVCF_REVERSED)) {
+		if (t->flags.Test(VehicleRailFlag::Flipped) != HasBit(tv->ctrl_flags, TVCF_REVERSED)) {
 			diff |= TBTRDF_DIR;
 		}
 		t = t->GetNextUnit();
@@ -302,7 +303,7 @@ void BreakUpRemainders(Train *t)
 		if (HasBit(t->subtype, GVSF_ENGINE)) {
 			Train *move = t;
 			t = t->Next();
-			DoCommand(move->tile, move->index | (1 << 22), INVALID_VEHICLE, DC_EXEC, CMD_MOVE_RAIL_VEHICLE);
+			Command<Commands::MoveRailVehicle>::Do(DoCommandFlag::Execute, move->index, VehicleID::Invalid(), MoveRailVehicleFlags::NewHead);
 			NeutralizeStatus(move);
 		} else {
 			t = t->Next();
@@ -324,15 +325,13 @@ uint CountTrainsNeedingTemplateReplacement(GroupID g_id, const TemplateVehicle *
 }
 
 /* Refit each vehicle in t as is in tv, assume t and tv contain the same types of vehicles */
-CommandCost CmdRefitTrainFromTemplate(Train *t, const TemplateVehicle *tv, DoCommandFlag flags)
+CommandCost CmdRefitTrainFromTemplate(Train *t, const TemplateVehicle *tv, DoCommandFlags flags)
 {
 	CommandCost cost(t->GetExpenseType(false));
 
 	while (t != nullptr && tv != nullptr) {
 		/* Refit t as tv */
-		uint32_t cb = GetCmdRefitVeh(t);
-
-		cost.AddCost(DoCommand(t->tile, t->index, tv->cargo_type | tv->cargo_subtype << 8 | (1 << 16) | (1 << 31), flags, cb));
+		cost.AddCost(Command<Commands::RefitVehicle>::Do(flags, t->index, tv->cargo_type, tv->cargo_subtype, false, false, 1));
 
 		t = t->GetNextUnit();
 		tv = tv->GetNextUnit();
@@ -341,32 +340,29 @@ CommandCost CmdRefitTrainFromTemplate(Train *t, const TemplateVehicle *tv, DoCom
 }
 
 /* Set unit direction of each vehicle in t as is in tv, assume t and tv contain the same types of vehicles */
-CommandCost CmdSetTrainUnitDirectionFromTemplate(Train *t, const TemplateVehicle *tv, DoCommandFlag flags)
+void CmdSetTrainUnitDirectionFromTemplate(Train *t, const TemplateVehicle *tv, DoCommandFlags flags)
 {
-	CommandCost cost(t->GetExpenseType(false));
-
 	while (t != nullptr && tv != nullptr) {
 		/* Refit t as tv */
-		if (HasBit(t->flags, VRF_REVERSE_DIRECTION) != HasBit(tv->ctrl_flags, TVCF_REVERSED)) {
-			cost.AddCost(DoCommand(t->tile, t->index, true, flags, CMD_REVERSE_TRAIN_DIRECTION | CMD_MSG(STR_ERROR_CAN_T_REVERSE_DIRECTION_RAIL_VEHICLE)));
+		if (t->flags.Test(VehicleRailFlag::Flipped) != HasBit(tv->ctrl_flags, TVCF_REVERSED)) {
+			Command<Commands::ReverseTrainDirection>::Do(flags, t->index, true);
 		}
 
 		t = t->GetNextUnit();
 		tv = tv->GetNextUnit();
 	}
-	return cost;
 }
 
-/** using cmdtemplatereplacevehicle as test-function (i.e. with flag DC_NONE) is not a good idea as that function relies on
+/** Using CmdTemplateReplaceVehicle as a test function (i.e. without DoCommandFlag::Execute) is not a good idea as that function relies on
  *  actually moving vehicles around to work properly.
  *  We do this worst-cast test instead.
  */
 CommandCost TestBuyAllTemplateVehiclesInChain(const TemplateVehicle *tv, TileIndex tile)
 {
-	CommandCost cost(EXPENSES_NEW_VEHICLES);
+	CommandCost cost(ExpensesType::NewVehicles);
 
 	for (; tv != nullptr; tv = tv->GetNextUnit()) {
-		cost.AddCost(DoCommand(tile, tv->engine_type, 0, DC_NONE, CMD_BUILD_VEHICLE));
+		cost.AddCost(Command<Commands::BuildVehicle>::Do({}, tile, tv->engine_type, false, INVALID_CARGO, ClientID::Invalid));
 	}
 
 	return cost;
@@ -384,7 +380,7 @@ void TransferCargoForTrain(Train *old_veh, Train *new_head)
 {
 	assert(new_head->IsPrimaryVehicle() || new_head->IsFreeWagon());
 
-	const CargoID cargo_type = old_veh->cargo_type;
+	const CargoType cargo_type = old_veh->cargo_type;
 	const uint8_t cargo_subtype = old_veh->cargo_subtype;
 
 	/* How much cargo has to be moved (if possible) */
@@ -416,7 +412,7 @@ void UpdateAllTemplateVehicleImages()
 		if (tv->Prev() == nullptr) {
 			Backup<CompanyID> cur_company(_current_company, tv->owner, FILE_LINE);
 			StringID err;
-			Train *t = VirtualTrainFromTemplateVehicle(tv, err, 0);
+			Train *t = VirtualTrainFromTemplateVehicle(tv, err, (ClientID)0);
 			if (t != nullptr) {
 				int tv_len = 0;
 				for (TemplateVehicle *u = tv; u != nullptr; u = u->Next()) {
@@ -429,7 +425,7 @@ void UpdateAllTemplateVehicleImages()
 				if (t_len == tv_len) {
 					Train *v = t;
 					for (TemplateVehicle *u = tv; u != nullptr; u = u->Next(), v = v->Next()) {
-						v->GetImage(_current_text_dir == TD_RTL ? DIR_E : DIR_W, EIT_IN_DEPOT, &u->sprite_seq);
+						v->GetImage(_current_text_dir == TD_RTL ? Direction::E : Direction::W, EngineImageType::InDepot, &u->sprite_seq);
 						u->image_dimensions.SetFromTrain(v);
 						u->colourmap = GetVehiclePalette(v);
 					}
@@ -456,7 +452,7 @@ int GetTemplateVehicleEstimatedMaxAchievableSpeed(const TemplateVehicle *tv, int
 
 	do {
 		max_speed++;
-		acceleration = GetTrainRealisticAccelerationAtSpeed(max_speed, mass, tv->power, tv->max_te, tv->air_drag, tv->railtype);
+		acceleration = GetTrainRealisticAccelerationAtSpeed(max_speed, mass, tv->power, tv->max_te, tv->air_drag, tv->railtypes);
 	} while (acceleration > 0 && max_speed < speed_cap);
 
 	return max_speed;

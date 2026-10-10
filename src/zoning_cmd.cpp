@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file zoning_cmd.cpp */
@@ -27,6 +27,7 @@
 #include "viewport_func.h"
 #include "road_map.h"
 #include "animated_tile.h"
+#include "tile_cmd.h"
 #include "3rdparty/cpp-btree/btree_set.h"
 
 Zoning _zoning;
@@ -48,7 +49,7 @@ static btree::btree_set<uint32_t> _zoning_cache_outer;
 void DrawZoningSprites(SpriteID image, SpriteID colour, const TileInfo *ti)
 {
 	if (colour != ZONING_INVALID_SPRITE_ID) {
-		AddSortableSpriteToDraw(image + ti->tileh, colour, ti->x, ti->y, 0x10, 0x10, 1, ti->z + 7);
+		AddSortableSpriteToDraw(image + ti->tileh, colour, ti->x, ti->y, ti->z + 7, {{}, {0x10, 0x10, 1}, {}});
 	}
 }
 
@@ -68,7 +69,7 @@ bool IsAreaWithinAcceptanceZoneOfStation(TileArea area, Owner owner, StationFaci
 	StationFinder morestations(area);
 
 	for (const Station *st : morestations.GetStations()) {
-		if (st->owner != owner || !(st->facilities & facility_mask)) continue;
+		if (st->owner != owner || !st->facilities.Test(facility_mask)) continue;
 		Rect rect = st->GetCatchmentRect();
 		return TileArea(TileXY(rect.left, rect.top), TileXY(rect.right, rect.bottom)).Intersects(area);
 	}
@@ -87,11 +88,11 @@ SpriteID TileZoneCheckBuildEvaluation(TileIndex tile, Owner owner)
 {
 	/* Let's first check for the obvious things you cannot build on */
 	switch (GetTileType(tile)) {
-		case MP_INDUSTRY:
-		case MP_OBJECT:
-		case MP_STATION:
-		case MP_HOUSE:
-		case MP_TUNNELBRIDGE:
+		case TileType::Industry:
+		case TileType::Object:
+		case TileType::Station:
+		case TileType::House:
+		case TileType::TunnelBridge:
 			return SPR_ZONING_INNER_HIGHLIGHT_RED;
 
 		/* There are only two things you can own (or some else
@@ -107,8 +108,8 @@ SpriteID TileZoneCheckBuildEvaluation(TileIndex tile, Owner owner)
 		 * else's/your own road/railway (e.g. the railway track
 		 * is curved or a cross).
 		 */
-		case MP_ROAD:
-		case MP_RAILWAY:
+		case TileType::Road:
+		case TileType::Railway:
 			if (GetTileOwner(tile) != owner) {
 				return SPR_ZONING_INNER_HIGHLIGHT_RED;
 			} else {
@@ -134,7 +135,7 @@ SpriteID TileZoneCheckOpinionEvaluation(TileIndex tile, Owner owner)
 	Town *town = ClosestTownFromTile(tile, _settings_game.economy.dist_local_authority);
 
 	if (town != nullptr) {
-		if (HasBit(town->have_ratings, owner)) {
+		if (town->have_ratings.Test(owner)) {
 			opinion = (town->ratings[owner] > 0) ? 3 : 2;
 		} else {
 			opinion = 1;
@@ -162,7 +163,7 @@ SpriteID TileZoneCheckOpinionEvaluation(TileIndex tile, Owner owner)
 SpriteID TileZoneCheckStationCatchmentEvaluation(TileIndex tile, Owner owner, bool open_window_only)
 {
 	// Never on a station.
-	if (IsTileType(tile, MP_STATION)) {
+	if (IsTileType(tile, TileType::Station)) {
 		return ZONING_INVALID_SPRITE_ID;
 	}
 
@@ -170,7 +171,7 @@ SpriteID TileZoneCheckStationCatchmentEvaluation(TileIndex tile, Owner owner, bo
 
 	for (const Station *st : stations.GetStations()) {
 		if (st->owner == owner) {
-			if (!open_window_only || FindWindowById(WC_STATION_VIEW, st->index) != nullptr) {
+			if (!open_window_only || FindWindowById(WindowClass::StationView, st->index) != nullptr) {
 				return SPR_ZONING_INNER_HIGHLIGHT_LIGHT_BLUE;
 			}
 		}
@@ -189,12 +190,12 @@ SpriteID TileZoneCheckStationCatchmentEvaluation(TileIndex tile, Owner owner, bo
  */
 SpriteID TileZoneCheckUnservedBuildingsEvaluation(TileIndex tile, Owner owner)
 {
-	if (!IsTileType(tile, MP_HOUSE)) {
+	if (!IsTileType(tile, TileType::House)) {
 		return ZONING_INVALID_SPRITE_ID;
 	}
 
 	auto has_town_cargo = [&](const CargoArray &dat) {
-		for (CargoID cid : SetCargoBitIterator(CargoSpec::town_production_cargo_mask[TPE_PASSENGERS] | CargoSpec::town_production_cargo_mask[TPE_MAIL])) {
+		for (CargoType cid : (CargoSpec::town_production_cargo_mask[TownProductionEffect::Passengers] | CargoSpec::town_production_cargo_mask[TownProductionEffect::Mail])) {
 			if (dat[cid] > 0) return true;
 		}
 		return false;
@@ -202,7 +203,8 @@ SpriteID TileZoneCheckUnservedBuildingsEvaluation(TileIndex tile, Owner owner)
 
 	CargoArray dat{};
 	dat.Clear();
-	AddAcceptedCargo(tile, dat, nullptr);
+	CargoTypes always_accepted{};
+	AddAcceptedCargo(tile, dat, always_accepted);
 	if (!has_town_cargo(dat)) {
 		/* nothing is accepted, so now test if cargo is produced */
 		AddProducedCargo(tile, dat);
@@ -233,25 +235,25 @@ SpriteID TileZoneCheckUnservedBuildingsEvaluation(TileIndex tile, Owner owner)
  */
 SpriteID TileZoneCheckUnservedIndustriesEvaluation(TileIndex tile, Owner owner)
 {
-	if (IsTileType(tile, MP_INDUSTRY)) {
+	if (IsTileType(tile, TileType::Industry)) {
 		const Industry *ind = Industry::GetByTile(tile);
 		if (ind->neutral_station != nullptr) return ZONING_INVALID_SPRITE_ID;
 
 		for (const Station *st : ind->stations_near) {
 			if (st->owner == owner) {
-				if (st->facilities & (~(FACIL_BUS_STOP | FACIL_TRUCK_STOP)) || st->facilities == (FACIL_BUS_STOP | FACIL_TRUCK_STOP)) {
-					return ZONING_INVALID_SPRITE_ID;
-				} else if (st->facilities & (FACIL_BUS_STOP | FACIL_TRUCK_STOP)) {
+				if (st->facilities == StationFacility::BusStop || st->facilities == StationFacility::TruckStop) {
 					for (const auto &p : ind->Produced()) {
-						if (p.cargo != INVALID_CARGO && st->facilities & (IsCargoInClass(p.cargo, CC_PASSENGERS) ? FACIL_BUS_STOP : FACIL_TRUCK_STOP)) {
+						if (p.cargo != INVALID_CARGO && st->facilities.Test(IsCargoInClass(p.cargo, CargoClass::Passengers) ? StationFacility::BusStop : StationFacility::TruckStop)) {
 							return ZONING_INVALID_SPRITE_ID;
 						}
 					}
 					for (const auto &a : ind->Accepted()) {
-						if (a.cargo != INVALID_CARGO && st->facilities & (IsCargoInClass(a.cargo, CC_PASSENGERS) ? FACIL_BUS_STOP : FACIL_TRUCK_STOP)) {
+						if (a.cargo != INVALID_CARGO && st->facilities.Test(IsCargoInClass(a.cargo, CargoClass::Passengers) ? StationFacility::BusStop : StationFacility::TruckStop)) {
 							return ZONING_INVALID_SPRITE_ID;
 						}
 					}
+				} else if (st->facilities.Any()) {
+					return ZONING_INVALID_SPRITE_ID;
 				}
 			}
 		}
@@ -271,7 +273,7 @@ SpriteID TileZoneCheckUnservedIndustriesEvaluation(TileIndex tile, Owner owner)
  */
 SpriteID TileZoneCheckTraceRestrictEvaluation(TileIndex tile, Owner owner)
 {
-	if (IsTileType(tile, MP_RAILWAY) && HasSignals(tile) && IsRestrictedSignal(tile)) {
+	if (IsTileType(tile, TileType::Railway) && HasSignals(tile) && IsRestrictedSignal(tile)) {
 		return SPR_ZONING_INNER_HIGHLIGHT_RED;
 	}
 	if (IsTunnelBridgeWithSignalSimulation(tile) && IsTunnelBridgeRestrictedSignal(tile)) {
@@ -318,7 +320,7 @@ inline SpriteID TileZoneCheckOneWayRoadEvaluation(TileIndex tile)
 			return SPR_ZONING_INNER_HIGHLIGHT_RED;
 		case RCOWS_NON_JUNCTION_A:
 		case RCOWS_NON_JUNCTION_B:
-			if (IsTileType(tile, MP_STATION)) {
+			if (IsTileType(tile, TileType::Station)) {
 				return SPR_ZONING_INNER_HIGHLIGHT_GREEN;
 			} else if (IsNormalRoadTile(tile) && GetDisallowedRoadDirections(tile) != DRD_NONE) {
 				return SPR_ZONING_INNER_HIGHLIGHT_LIGHT_BLUE;
@@ -356,9 +358,9 @@ inline SpriteID TileZoneDebugWaterRegion(TileIndex tile)
 inline SpriteID TileZoneDebugTropicZone(TileIndex tile)
 {
 	switch (GetTropicZone(tile)) {
-		case TROPICZONE_DESERT:
+		case TropicZone::Desert:
 			return SPR_ZONING_INNER_HIGHLIGHT_YELLOW;
-		case TROPICZONE_RAINFOREST:
+		case TropicZone::Rainforest:
 			return SPR_ZONING_INNER_HIGHLIGHT_LIGHT_BLUE;
 		default:
 			return ZONING_INVALID_SPRITE_ID;
@@ -411,13 +413,13 @@ SpriteID TileZoningSpriteEvaluation(TileIndex tile, Owner owner, ZoningEvaluatio
 inline SpriteID TileZoningSpriteEvaluationCached(TileIndex tile, Owner owner, ZoningEvaluationMode ev_mode, bool is_inner)
 {
 	if (owner == COMPANY_SPECTATOR && (ev_mode == ZEM_CAN_BUILD || (ev_mode >= ZEM_STA_CATCH && ev_mode <= ZEM_IND_UNSER))) return ZONING_INVALID_SPRITE_ID;
-	if (ev_mode == ZEM_BUL_UNSER && !IsTileType(tile, MP_HOUSE)) return ZONING_INVALID_SPRITE_ID;
-	if (ev_mode == ZEM_IND_UNSER && !IsTileType(tile, MP_INDUSTRY)) return ZONING_INVALID_SPRITE_ID;
+	if (ev_mode == ZEM_BUL_UNSER && !IsTileType(tile, TileType::House)) return ZONING_INVALID_SPRITE_ID;
+	if (ev_mode == ZEM_IND_UNSER && !IsTileType(tile, TileType::Industry)) return ZONING_INVALID_SPRITE_ID;
 	if (ev_mode >= ZEM_STA_CATCH && ev_mode <= ZEM_IND_UNSER) {
 		// cacheable
 		btree::btree_set<uint32_t> &cache = is_inner ? _zoning_cache_inner : _zoning_cache_outer;
-		auto iter = cache.lower_bound(tile << 3);
-		if (iter != cache.end() && *iter >> 3 == tile) {
+		auto iter = cache.lower_bound(tile.base() << 3);
+		if (iter != cache.end() && *iter >> 3 == tile.base()) {
 			switch (*iter & 7) {
 				case 0: return ZONING_INVALID_SPRITE_ID;
 				case 1: return SPR_ZONING_INNER_HIGHLIGHT_RED;
@@ -428,7 +430,7 @@ inline SpriteID TileZoningSpriteEvaluationCached(TileIndex tile, Owner owner, Zo
 			}
 		} else {
 			SpriteID s = TileZoningSpriteEvaluation(tile, owner, ev_mode);
-			uint val = tile << 3;
+			uint val = tile.base() << 3;
 			switch (s) {
 				case ZONING_INVALID_SPRITE_ID:              val |= 0; break;
 				case SPR_ZONING_INNER_HIGHLIGHT_RED:        val |= 1; break;
@@ -453,7 +455,7 @@ inline SpriteID TileZoningSpriteEvaluationCached(TileIndex tile, Owner owner, Zo
  */
 void DrawTileZoning(const TileInfo *ti)
 {
-	if (IsTileType(ti->tile, MP_VOID) || _game_mode != GM_NORMAL) {
+	if (IsTileType(ti->tile, TileType::Void) || (_game_mode != GameMode::Normal && _game_mode != GameMode::Editor)) {
 		return;
 	}
 
@@ -480,11 +482,11 @@ void DrawTileZoning(const TileInfo *ti)
 					{ -INF    , -INF   , INF    , 30 - 8  }  // CORNER_N, clip  8 pixels from bottom
 				};
 
-				DrawSelectionSprite(sprite, colour, ti, 7 + TILE_HEIGHT, FOUNDATION_PART_HALFTILE, 0, 0, &(sub_sprites[GetHalftileSlopeCorner(ti->tileh)]));
+				DrawSelectionSprite(sprite, colour, ti, 7 + TILE_HEIGHT, FoundationPart::Halftile, 0, 0, &(sub_sprites[GetHalftileSlopeCorner(ti->tileh)]));
 			} else {
 				sprite += SlopeToSpriteOffset(ti->tileh);
 			}
-			DrawSelectionSprite(sprite, colour, ti, 7, FOUNDATION_PART_NORMAL);
+			DrawSelectionSprite(sprite, colour, ti, 7, FoundationPart::Normal);
 		}
 	}
 }
@@ -528,11 +530,15 @@ void ZoningMarkDirtyStationCoverageArea(const Station *st, ZoningModeMask mask)
 		}
 		auto invalidate_cache_rect = [&](btree::btree_set<uint32_t> &cache) {
 			for (int y = rect.top; y <= rect.bottom; y++) {
-				auto iter = cache.lower_bound(TileXY(rect.left, y) << 3);
+				const auto iter = cache.lower_bound(TileXY(rect.left, y).base() << 3);
 				auto end_iter = iter;
-				uint end = (TileXY(rect.right, y) + 1) << 3;
-				while (end_iter != cache.end() && *end_iter < end) ++end_iter;
-				cache.erase(iter, end_iter);
+				size_t erase_count = 0;
+				const uint end = (TileXY(rect.right, y).base() + 1) << 3;
+				while (end_iter != cache.end() && *end_iter < end) {
+					++erase_count;
+					++end_iter;
+				}
+				cache.erase_count(iter, erase_count);
 			}
 		};
 		if (outer_radius) invalidate_cache_rect(_zoning_cache_outer);

@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file roadstop_base.h Base class for roadstops. */
@@ -12,36 +12,34 @@
 
 #include "station_type.h"
 #include "core/pool_type.hpp"
-#include "core/bitmath_func.hpp"
 #include "vehicle_type.h"
 #include "roadveh.h"
 #include "road_map.h"
 
-typedef Pool<RoadStop, RoadStopID, 32, 64000> RoadStopPool;
+using RoadStopPool = Pool<RoadStop, RoadStopID, 32>;
 extern RoadStopPool _roadstop_pool;
 
 /** A Stop for a Road Vehicle */
 struct RoadStop : RoadStopPool::PoolItem<&_roadstop_pool> {
-	enum RoadStopStatusFlags {
-		RSSFB_BAY0_FREE  = 0, ///< Non-zero when bay 0 is free
-		RSSFB_BAY1_FREE  = 1, ///< Non-zero when bay 1 is free
-		RSSFB_BASE_ENTRY = 6, ///< Non-zero when the entries on this road stop are the primary, i.e. the ones to delete
-		RSSFB_ENTRY_BUSY = 7, ///< Non-zero when roadstop entry is busy
+	/** Flags describing the status of a single road stop. */
+	enum class RoadStopStatusFlag : uint8_t {
+		Bay0Free  = 0, ///< Non-zero when bay 0 is free
+		Bay1Free  = 1, ///< Non-zero when bay 1 is free
+		BaseEntry = 6, ///< Non-zero when the entries on this road stop are the primary, i.e. the ones to delete
+		EntryBusy = 7, ///< Non-zero when roadstop entry is busy
 	};
 
-	static constexpr uint8_t BAY_COUNT = 2; ///< Max. number of bays
+	/** Bitset of \c RoadStopStatusFlag elements. */
+	using RoadStopStatusFlags = EnumBitSet<RoadStopStatusFlag, uint8_t>;
 
 	/** Container for each entry point of a drive through road stop */
 	struct Entry {
 	private:
-		int length;      ///< The length of the stop in tile 'units'
-		int occupied;    ///< The amount of occupied stop in tile 'units'
+		uint16_t length = 0; ///< The length of the stop in tile 'units'
+		uint16_t occupied = 0; ///< The amount of occupied stop in tile 'units'
 
 	public:
 		friend struct RoadStop; ///< Oh yeah, the road stop may play with me.
-
-		/** Create an entry */
-		Entry() : length(0), occupied(0) {}
 
 		/**
 		 * Get the length of this drive through stop.
@@ -75,15 +73,22 @@ struct RoadStop : RoadStopPool::PoolItem<&_roadstop_pool> {
 		void Rebuild(const RoadStop *rs, int side = -1);
 	};
 
-	uint8_t         status; ///< Current status of the Stop, @see RoadStopSatusFlag. Access using *Bay and *Busy functions.
-	TileIndex       xy;     ///< Position on the map
-	struct RoadStop *next;  ///< Next stop of the given type at this station
+	/** Container for both east and west entry points. */
+	struct Entries {
+		Entry east{}; ///< Information for vehicles that entered from the east
+		Entry west{}; ///< Information for vehicles that entered from the west
+	};
 
-	/** Initializes a RoadStop */
-	inline RoadStop(TileIndex tile = INVALID_TILE) :
-		status((1 << BAY_COUNT) - 1),
-		xy(tile)
-	{ }
+	RoadStopStatusFlags status{RoadStopStatusFlag::Bay0Free, RoadStopStatusFlag::Bay1Free}; ///< Current status of the Stop. Access using *Bay and *Busy functions.
+	TileIndex xy = INVALID_TILE; ///< Position on the map
+	RoadStop *next = nullptr;    ///< Next stop of the given type at this station
+
+	/**
+	 * Initializes a RoadStop.
+	 * @param index The pool identifier of the road stop.
+	 * @param tile The tile the road stop is at.
+	 */
+	inline RoadStop(RoadStopID index, TileIndex tile = INVALID_TILE) : PoolItemBase(index), xy(tile) { }
 
 	~RoadStop();
 
@@ -93,7 +98,7 @@ struct RoadStop : RoadStopPool::PoolItem<&_roadstop_pool> {
 	 */
 	inline bool HasFreeBay() const
 	{
-		return GB(this->status, 0, BAY_COUNT) != 0;
+		return this->status.Any({RoadStopStatusFlag::Bay0Free, RoadStopStatusFlag::Bay1Free});
 	}
 
 	/**
@@ -103,8 +108,11 @@ struct RoadStop : RoadStopPool::PoolItem<&_roadstop_pool> {
 	 */
 	inline bool IsFreeBay(uint nr) const
 	{
-		assert(nr < BAY_COUNT);
-		return HasBit(this->status, nr);
+		switch (nr) {
+			case 0: return this->status.Test(RoadStopStatusFlag::Bay0Free);
+			case 1: return this->status.Test(RoadStopStatusFlag::Bay1Free);
+			default: NOT_REACHED();
+		}
 	}
 
 	/**
@@ -113,7 +121,7 @@ struct RoadStop : RoadStopPool::PoolItem<&_roadstop_pool> {
 	 */
 	inline bool IsEntranceBusy() const
 	{
-		return HasBit(this->status, RSSFB_ENTRY_BUSY);
+		return this->status.Test(RoadStopStatusFlag::EntryBusy);
 	}
 
 	/**
@@ -122,7 +130,7 @@ struct RoadStop : RoadStopPool::PoolItem<&_roadstop_pool> {
 	 */
 	inline void SetEntranceBusy(bool busy)
 	{
-		SB(this->status, RSSFB_ENTRY_BUSY, 1, busy);
+		this->status.Set(RoadStopStatusFlag::EntryBusy, busy);
 	}
 
 	/**
@@ -130,9 +138,9 @@ struct RoadStop : RoadStopPool::PoolItem<&_roadstop_pool> {
 	 * @param dir The direction to get the entry for.
 	 * @return the entry
 	 */
-	inline const Entry *GetEntry(DiagDirection dir) const
+	inline const Entry &GetEntry(DiagDirection dir) const
 	{
-		return HasBit((int)dir, 1) ? this->west : this->east;
+		return dir >= DiagDirection::SW ? this->entries->west : this->entries->east;
 	}
 
 	/**
@@ -140,17 +148,17 @@ struct RoadStop : RoadStopPool::PoolItem<&_roadstop_pool> {
 	 * @param dir The direction to get the entry for.
 	 * @return the entry
 	 */
-	inline Entry *GetEntry(DiagDirection dir)
+	inline Entry &GetEntry(DiagDirection dir)
 	{
-		return HasBit((int)dir, 1) ? this->west : this->east;
+		return dir >= DiagDirection::SW ? this->entries->west : this->entries->east;
 	}
 
-	inline const Entry *GetEntry(const RoadVehicle *rv) const {
+	inline const Entry &GetEntry(const RoadVehicle *rv) const {
 		DiagDirection diag_dir = DirToDiagDir(rv->direction);
 		return this->GetEntry(rv->overtaking != 0 ? ReverseDiagDir(diag_dir) : diag_dir);
 	}
 
-	inline Entry *GetEntry(const RoadVehicle *rv) {
+	inline Entry &GetEntry(const RoadVehicle *rv) {
 		DiagDirection diag_dir = DirToDiagDir(rv->direction);
 		return this->GetEntry(rv->overtaking != 0 ? ReverseDiagDir(diag_dir) : diag_dir);
 	}
@@ -172,8 +180,7 @@ struct RoadStop : RoadStopPool::PoolItem<&_roadstop_pool> {
 	void DebugReEnter(const RoadVehicle *rv);
 
 private:
-	Entry *east; ///< The vehicles that entered from the east
-	Entry *west; ///< The vehicles that entered from the west
+	Entries *entries = nullptr; ///< Information about available and allocated bays.
 
 	/**
 	 * Allocates a bay
@@ -184,11 +191,11 @@ private:
 	{
 		assert(this->HasFreeBay());
 
-		/* Find the first free bay. If the bit is set, the bay is free. */
+		/* Find the first free bay. */
 		uint bay_nr = 0;
-		while (!HasBit(this->status, bay_nr)) bay_nr++;
+		while (!this->IsFreeBay(bay_nr)) ++bay_nr;
 
-		ClrBit(this->status, bay_nr);
+		this->AllocateDriveThroughBay(bay_nr);
 		return bay_nr;
 	}
 
@@ -198,8 +205,11 @@ private:
 	 */
 	inline void AllocateDriveThroughBay(uint nr)
 	{
-		assert(nr < BAY_COUNT);
-		ClrBit(this->status, nr);
+		switch (nr) {
+			case 0: this->status.Reset(RoadStopStatusFlag::Bay0Free); break;
+			case 1: this->status.Reset(RoadStopStatusFlag::Bay1Free); break;
+			default: NOT_REACHED();
+		}
 	}
 
 	/**
@@ -208,8 +218,11 @@ private:
 	 */
 	inline void FreeBay(uint nr)
 	{
-		assert(nr < BAY_COUNT);
-		SetBit(this->status, nr);
+		switch (nr) {
+			case 0: this->status.Set(RoadStopStatusFlag::Bay0Free); break;
+			case 1: this->status.Set(RoadStopStatusFlag::Bay1Free); break;
+			default: NOT_REACHED();
+		}
 	}
 };
 

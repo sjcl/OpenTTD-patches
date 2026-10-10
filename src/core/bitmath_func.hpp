@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file bitmath_func.hpp Functions related to bit mathematics. */
@@ -13,6 +13,9 @@
 #include <bit>
 #include <limits>
 #include <type_traits>
+
+template <typename T>
+concept BitsetTypeAsBase = T::bitset_as_base || false;
 
 /**
  * Fetch \a n bits from \a x, started at bit \a s.
@@ -33,7 +36,7 @@
  * @return The selected bits, aligned to a LSB.
  */
 template <typename T>
-debug_inline constexpr static uint GB(const T x, const uint8_t s, const uint8_t n)
+[[debug_inline]] inline constexpr static uint GB(const T x, const uint8_t s, const uint8_t n)
 {
 	return (x >> s) & (((T)1U << n) - 1);
 }
@@ -105,7 +108,7 @@ constexpr T AB(T &x, const uint8_t s, const uint8_t n, const U i)
  * @return True if the bit is set, false else.
  */
 template <typename T>
-debug_inline constexpr bool HasBit(const T x, const uint8_t y)
+[[debug_inline]] inline constexpr bool HasBit(const T x, const uint8_t y)
 {
 	return (x & ((T)1U << y)) != 0;
 }
@@ -129,18 +132,6 @@ constexpr T SetBit(T &x, const uint8_t y)
 }
 
 /**
- * Sets several bits in a variable.
- *
- * This macro sets several bits in a variable. The bits to set are provided
- * by a value. The new value is also returned.
- *
- * @param x The variable to set some bits
- * @param y The value with set bits for setting them in the variable
- * @return The new value of x
- */
-#define SETBITS(x, y) ((x) |= (y))
-
-/**
  * Clears a bit in a variable.
  *
  * This function clears a bit in a variable. The variable is
@@ -157,18 +148,6 @@ constexpr T ClrBit(T &x, const uint8_t y)
 {
 	return x = (T)(x & ~((T)1U << y));
 }
-
-/**
- * Clears several bits in a variable.
- *
- * This macro clears several bits in a variable. The bits to clear are
- * provided by a value. The new value is also returned.
- *
- * @param x The variable to clear some bits
- * @param y The value with set bits for clearing them in the variable
- * @return The new value of x
- */
-#define CLRBITS(x, y) ((x) &= ~(y))
 
 /**
  * Toggles a bit in a variable.
@@ -314,6 +293,8 @@ constexpr uint CountBits(T value)
 {
 	if constexpr (std::is_enum_v<T>) {
 		return std::popcount<std::underlying_type_t<T>>(value);
+	} else if constexpr (BitsetTypeAsBase<T>) {
+		return std::popcount(value.base());
 	} else {
 		return std::popcount(value);
 	}
@@ -352,7 +333,11 @@ inline bool IsOddParity(T value)
 template <typename T>
 constexpr bool HasExactlyOneBit(T value)
 {
-	return value != 0 && (value & (value - 1)) == 0;
+	if constexpr (BitsetTypeAsBase<T>) {
+		return HasExactlyOneBit(value.base());
+	} else {
+		return value != 0 && (value & (value - 1)) == 0;
+	}
 }
 
 /**
@@ -364,7 +349,11 @@ constexpr bool HasExactlyOneBit(T value)
 template <typename T>
 constexpr bool HasAtMostOneBit(T value)
 {
-	return (value & (value - 1)) == 0;
+	if constexpr (BitsetTypeAsBase<T>) {
+		return HasAtMostOneBit(value.base());
+	} else {
+		return (value & (value - 1)) == 0;
+	}
 }
 
  /**
@@ -390,7 +379,6 @@ struct SetBitIterator {
 		{
 			return this->bitset == other.bitset;
 		}
-		bool operator!=(const Iterator &other) const { return !(*this == other); }
 		Tbitpos operator*() const { return this->bitpos; }
 		Iterator & operator++() { this->Next(); this->Validate(); return *this; }
 
@@ -411,6 +399,7 @@ struct SetBitIterator {
 	};
 
 	SetBitIterator(Tbitset bitset) : bitset(bitset) {}
+
 	Iterator begin() { return Iterator(this->bitset); }
 	Iterator end() { return Iterator(static_cast<Tbitset>(0)); }
 	bool empty() { return this->begin() == this->end(); }
@@ -419,66 +408,28 @@ private:
 	Tbitset bitset;
 };
 
-#if defined(__APPLE__)
-	/* Make endian swapping use Apple's macros to increase speed
-	 * (since it will use hardware swapping if available).
-	 * Even though they should return uint16_t and uint32_t, we get
-	 * warnings if we don't cast those (why?) */
-	#define BSWAP64(x) ((uint64_t)CFSwapInt64((uint64_t)(x)))
-	#define BSWAP32(x) ((uint32_t)CFSwapInt32((uint32_t)(x)))
-	#define BSWAP16(x) ((uint16_t)CFSwapInt16((uint16_t)(x)))
-#elif defined(_MSC_VER)
-	/* MSVC has intrinsics for swapping, resulting in faster code */
-	#define BSWAP64(x) ((uint64_t)_byteswap_uint64((uint64_t)(x)))
-	#define BSWAP32(x) ((uint32_t)_byteswap_ulong((uint32_t)(x)))
-	#define BSWAP16(x) ((uint16_t)_byteswap_ushort((uint16_t)(x)))
-#else
+namespace std {
 	/**
-	 * Perform a 64 bits endianness bitswap on x.
+	 * Custom implementation of std::byteswap; remove once we build with C++23.
+	 * Perform an endianness bitswap on x.
 	 * @param x the variable to bitswap
 	 * @return the bitswapped value.
 	 */
-	static inline uint64_t BSWAP64(uint64_t x)
+	template <typename T>
+	[[nodiscard]] constexpr enable_if_t<is_integral_v<T>, T> byteswap(T x) noexcept
 	{
+		if constexpr (sizeof(T) == 1) return x;
 #if !defined(__ICC) && (defined(__GNUC__) || defined(__clang__))
-		/* GCC >= 4.3 provides a builtin, resulting in faster code */
-		return (uint64_t)__builtin_bswap64((uint64_t)x);
+		if constexpr (sizeof(T) == 2) return static_cast<T>(__builtin_bswap16((uint16_t)x));
+		if constexpr (sizeof(T) == 4) return static_cast<T>(__builtin_bswap32((uint32_t)x));
+		if constexpr (sizeof(T) == 8) return static_cast<T>(__builtin_bswap64((uint64_t)x));
 #else
-		return ((x >> 56) & 0xFFULL) | ((x >> 40) & 0xFF00ULL) | ((x >> 24) & 0xFF0000ULL) | ((x >> 8) & 0xFF000000ULL) |
+		if constexpr (sizeof(T) == 2) return (x >> 8) | (x << 8);
+		if constexpr (sizeof(T) == 4) return ((x >> 24) & 0xFF) | ((x >> 8) & 0xFF00) | ((x << 8) & 0xFF0000) | ((x << 24) & 0xFF000000);
+		if constexpr (sizeof(T) == 8) return ((x >> 56) & 0xFFULL) | ((x >> 40) & 0xFF00ULL) | ((x >> 24) & 0xFF0000ULL) | ((x >> 8) & 0xFF000000ULL) |
 				((x << 8) & 0xFF00000000ULL) | ((x << 24) & 0xFF0000000000ULL) | ((x << 40) & 0xFF000000000000ULL) | ((x << 56) & 0xFF00000000000000ULL);
-				;
-#endif /* __GNUC__ || __clang__ */
+#endif
 	}
-
-	/**
-	 * Perform a 32 bits endianness bitswap on x.
-	 * @param x the variable to bitswap
-	 * @return the bitswapped value.
-	 */
-	static inline uint32_t BSWAP32(uint32_t x)
-	{
-#if !defined(__ICC) && (defined(__GNUC__) || defined(__clang__))
-		/* GCC >= 4.3 provides a builtin, resulting in faster code */
-		return (uint32_t)__builtin_bswap32((uint32_t)x);
-#else
-		return ((x >> 24) & 0xFF) | ((x >> 8) & 0xFF00) | ((x << 8) & 0xFF0000) | ((x << 24) & 0xFF000000);
-#endif /* __GNUC__ || __clang__ */
-	}
-
-	/**
-	 * Perform a 16 bits endianness bitswap on x.
-	 * @param x the variable to bitswap
-	 * @return the bitswapped value.
-	 */
-	static inline uint16_t BSWAP16(uint16_t x)
-	{
-#if !defined(__ICC) && (defined(__GNUC__) || defined(__clang__))
-		/* GCC >= 4.3 provides a builtin, resulting in faster code */
-		return (uint16_t)__builtin_bswap16((uint16_t)x);
-#else
-		return (x >> 8) | (x << 8);
-#endif /* __GNUC__ || __clang__ */
-	}
-#endif /* __APPLE__ */
+}
 
 #endif /* BITMATH_FUNC_HPP */

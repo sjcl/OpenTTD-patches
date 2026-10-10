@@ -4,7 +4,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file departures_type.h Types related to departures. */
@@ -17,6 +17,7 @@
 #include "order_base.h"
 #include "vehicle_base.h"
 #include "core/bitmath_func.hpp"
+#include "core/enum_type.hpp"
 #include <vector>
 
 /** Whether or not a vehicle has arrived for a departure. */
@@ -32,6 +33,7 @@ enum DepartureType : uint8_t {
 	D_DEPARTURE = 0,
 	D_ARRIVAL = 1,
 };
+using DepartureTypes = EnumBitSet<DepartureType, uint8_t>;
 
 enum DeparturesSourceMode : uint8_t {
 	DSM_LIVE,
@@ -49,17 +51,21 @@ private:
 	constexpr CallAtTargetID(uint32_t id) : id(id) {}
 
 public:
-	constexpr CallAtTargetID() : id(INVALID_STATION) {}
+	constexpr CallAtTargetID() : id(StationID::Invalid().base()) {}
 
 	static CallAtTargetID FromTile(TileIndex tile);
 	static CallAtTargetID FromOrder(const Order *order);
-	static constexpr CallAtTargetID FromStation(StationID station) { return CallAtTargetID(station); }
+	static constexpr CallAtTargetID FromStation(StationID station) { return CallAtTargetID(station.base()); }
 
-	inline bool IsValid() const { return id != INVALID_STATION; }
+	inline bool IsValid() const { return id != StationID::Invalid(); }
 	inline bool IsStationID() const { return (id & DEPOT_TAG) == 0; }
 	inline StationID GetStationID() const { return (StationID)this->id; }
 	inline DestinationID GetDepotDestinationID() const { return this->id & ~DEPOT_TAG; }
 	inline bool MatchesStationID(StationID st) const { return this->IsStationID() && st == this->GetStationID(); }
+
+	inline bool MatchesOrder(const Order *order) const {
+		return (order->IsGotoOrder() || order->IsType(OT_IMPLICIT)) && CallAtTargetID::FromOrder(order) == *this;
+	}
 
 	bool operator==(const CallAtTargetID& c) const = default;
 	auto operator<=>(const CallAtTargetID& c) const = default;
@@ -100,8 +106,8 @@ struct Departure {
 
 	StateTicks scheduled_tick{0};          ///< The tick this departure is scheduled to finish on (i.e. when the vehicle leaves the station)
 	Ticks lateness = 0;                    ///< How delayed the departure is expected to be
-	StationID via = INVALID_STATION;       ///< The station the departure should list as going via
-	StationID via2 = INVALID_STATION;      ///< Secondary station the departure should list as going via
+	StationID via = StationID::Invalid();  ///< The station the departure should list as going via
+	StationID via2 = StationID::Invalid(); ///< Secondary station the departure should list as going via
 	CallAt terminus = CallAtTargetID();    ///< The station at which the vehicle will terminate following this departure
 	std::vector<CallAt> calling_at;        ///< The stations both called at and unloaded at by the vehicle after this departure before it terminates
 	std::vector<RemoveVia> remove_vias;    ///< Vias to remove when using smart terminus.
@@ -110,7 +116,12 @@ struct Departure {
 	DepartureShowAs show_as = DSA_NORMAL;  ///< Show as type
 	const Vehicle *vehicle = nullptr;      ///< The vehicle performing this departure
 	const Order *order = nullptr;          ///< The order corresponding to this departure
+	const Order *dispatch_order = nullptr; ///< The original dispatch order, if applicable
 	Ticks scheduled_waiting_time = INVALID_WAIT_TICKS; ///< Scheduled waiting time if scheduled dispatch is used
+	Ticks dispatch_offset = 0;             ///< Tick offset from original dispatch order, if applicable
+	uint32_t sequence_id = 0;              ///< Nominal sequence ID, used in determining vehicle_idx
+	uint32_t vehicle_idx = 0;              ///< Nominal vehicle index within a shared order group
+	std::string schedule_route_id;         ///< Scheduled dispatch route ID
 
 	inline bool operator==(const Departure& d) const {
 		if (this->calling_at.size() != d.calling_at.size()) return false;
@@ -154,7 +165,7 @@ struct Departure {
 
 struct DepartureOrderDestinationDetector {
 	OrderTypeMask order_type_mask = 0;
-	DestinationID destination;
+	DestinationID destination{};
 
 	bool OrderMatches(const Order *order) const
 	{
@@ -169,11 +180,16 @@ struct DepartureOrderDestinationDetector {
 	{
 		return HasBit(this->order_type_mask, OT_GOTO_STATION) && station == this->destination;
 	}
+
+	bool BaseStationMatches(StationID station) const
+	{
+		return (HasBit(this->order_type_mask, OT_GOTO_STATION) || HasBit(this->order_type_mask, OT_GOTO_WAYPOINT)) && station == this->destination;
+	}
 };
 
 struct DepartureCallingSettings {
 private:
-	uint8_t flags = 0;
+	uint16_t flags = 0;
 
 	struct FlagBits {
 		enum {
@@ -185,6 +201,8 @@ private:
 			ShowFreight,
 			SmartTerminusEnabled,
 			DispatchArrivalTicksEnabled,
+			VehicleCycleTrackingEnabled,
+			DispatchScheduleRouteIDEnabled,
 		};
 	};
 
@@ -197,6 +215,8 @@ public:
 	inline bool ShowFreight() const { return HasBit(this->flags, FlagBits::ShowFreight); }
 	inline bool SmartTerminusEnabled() const { return HasBit(this->flags, FlagBits::SmartTerminusEnabled); }
 	inline bool DispatchArrivalTicksEnabled() const { return HasBit(this->flags, FlagBits::DispatchArrivalTicksEnabled); }
+	inline bool VehicleCycleTrackingEnabled() const { return HasBit(this->flags, FlagBits::VehicleCycleTrackingEnabled); }
+	inline bool DispatchScheduleRouteIDEnabled() const { return HasBit(this->flags, FlagBits::DispatchScheduleRouteIDEnabled); }
 
 	inline void SetViaMode(bool allow_via, bool check_show_as_via_type)
 	{
@@ -223,6 +243,14 @@ public:
 	inline void SetDispatchArrivalTicksEnabled(bool enabled)
 	{
 		AssignBit(this->flags, FlagBits::DispatchArrivalTicksEnabled, enabled);
+	}
+	inline void SetVehicleCycleTrackingEnabled(bool enabled)
+	{
+		AssignBit(this->flags, FlagBits::VehicleCycleTrackingEnabled, enabled);
+	}
+	inline void SetDispatchScheduleRouteIDEnabled(bool enabled)
+	{
+		AssignBit(this->flags, FlagBits::DispatchScheduleRouteIDEnabled, enabled);
 	}
 
 	bool IsDeparture(const Order *order, const DepartureOrderDestinationDetector &source) const;

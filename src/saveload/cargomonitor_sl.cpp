@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file cargomonitor_sl.cpp Code handling saving and loading of Cargo monitoring. */
@@ -26,13 +26,13 @@ struct TempStorage {
 
 /** Description of the #TempStorage structure for the purpose of load and save. */
 static const SaveLoad _cargomonitor_pair_desc[] = {
-	SLE_VAR(TempStorage, number, SLE_UINT32),
-	SLE_VAR(TempStorage, amount, SLE_UINT32),
+	SLE_VAR(TempStorage, number, VarTypes::U32),
+	SLE_VAR(TempStorage, amount, VarTypes::U32),
 };
 
 static CargoMonitorID FixupCargoMonitor(CargoMonitorID number)
 {
-	/* Between SLV_EXTEND_CARGOTYPES and SLV_FIX_CARGO_MONITOR, the
+	/* Between SaveLoadVersion::ExtendCargotypes and SaveLoadVersion::FixCargoMonitor, the
 	 * CargoMonitorID structure had insufficient packing for more
 	 * than 32 cargo types. Here we have to shuffle bits to account
 	 * for the change.
@@ -47,7 +47,7 @@ static CargoMonitorID FixupCargoMonitor(CargoMonitorID number)
 
 /** #_cargo_deliveries monitoring map. */
 struct CMDLChunkHandler : ChunkHandler {
-	CMDLChunkHandler() : ChunkHandler('CMDL', CH_TABLE) {}
+	CMDLChunkHandler() : ChunkHandler("CMDL", ChunkType::Table) {}
 
 	void Save() const override
 	{
@@ -74,7 +74,7 @@ struct CMDLChunkHandler : ChunkHandler {
 		const std::vector<SaveLoad> slt = SlCompatTableHeader(_cargomonitor_pair_desc, _cargomonitor_pair_sl_compat);
 
 		TempStorage storage;
-		bool fix = IsSavegameVersionBefore(SLV_FIX_CARGO_MONITOR);
+		bool fix = IsSavegameVersionBefore(SaveLoadVersion::FixCargoMonitor);
 
 		ClearCargoDeliveryMonitoring();
 		for (;;) {
@@ -91,7 +91,7 @@ struct CMDLChunkHandler : ChunkHandler {
 
 /** #_cargo_pickups monitoring map. */
 struct CMPUChunkHandler : ChunkHandler {
-	CMPUChunkHandler() : ChunkHandler('CMPU', CH_TABLE) {}
+	CMPUChunkHandler() : ChunkHandler("CMPU", ChunkType::Table) {}
 
 	void Save() const override
 	{
@@ -118,7 +118,7 @@ struct CMPUChunkHandler : ChunkHandler {
 		const std::vector<SaveLoad> slt = SlCompatTableHeader(_cargomonitor_pair_desc, _cargomonitor_pair_sl_compat);
 
 		TempStorage storage;
-		bool fix = IsSavegameVersionBefore(SLV_FIX_CARGO_MONITOR);
+		bool fix = IsSavegameVersionBefore(SaveLoadVersion::FixCargoMonitor);
 
 		ClearCargoPickupMonitoring();
 		for (;;) {

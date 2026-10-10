@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file newgrf_analysis.cpp NewGRF analysis. */
@@ -13,6 +13,16 @@
 #include "newgrf_spritegroup.h"
 
 #include "safeguards.h"
+
+static const SpriteGroup *GetSwitchTargetForValue(const DeterministicSpriteGroup *dsg, uint32_t value)
+{
+	for (const auto &range : dsg->ranges) {
+		if (range.low <= value && value <= range.high) {
+			return range.group;
+		}
+	}
+	return dsg->default_group;
+};
 
 /* Returns true if group already seen before */
 bool BaseSpriteChainAnalyser::RegisterSeenDeterministicSpriteGroup(const DeterministicSpriteGroup *dsg)
@@ -25,22 +35,12 @@ bool BaseSpriteChainAnalyser::RegisterSeenDeterministicSpriteGroup(const Determi
 	return false;
 }
 
-const SpriteGroup *GetSwitchTargetForValue(const DeterministicSpriteGroup *dsg, uint32_t value)
-{
-	for (const auto &range : dsg->ranges) {
-		if (range.low <= value && value <= range.high) {
-			return range.group;
-		}
-	}
-	return dsg->default_group;
-}
-
 std::pair<bool, const SpriteGroup *> BaseSpriteChainAnalyser::HandleGroupBypassing(const DeterministicSpriteGroup *dsg)
 {
 	if (dsg->GroupMayBeBypassed()) {
 		/* Not clear why some GRFs do this, perhaps a way of commenting out a branch */
 		uint32_t value = (dsg->adjusts.size() == 1) ? EvaluateDeterministicSpriteGroupAdjust(dsg->size, dsg->adjusts[0], nullptr, 0, UINT_MAX) : 0;
-		return { true, GetSwitchTargetForValue(dsg, value) };
+		return { true, dsg->GetBypassGroupForValue(value) };
 	}
 	return { false, nullptr };
 }
@@ -86,6 +86,11 @@ void SpriteChainAnalyser<T>::AnalyseGroup(const SpriteGroup *sg)
 		case SGT_CALLBACK: {
 			const CallbackResultSpriteGroup *crsg = static_cast<const CallbackResultSpriteGroup *>(sg);
 			self->AnalyseCallbackResultSpriteGroup(crsg);
+			break;
+		}
+
+		case SGT_CALCULATED_RESULT: {
+			self->AnalyseCalculatedResultSpriteGroup();
 			break;
 		}
 
@@ -174,12 +179,35 @@ void FindRandomTriggerAnalyser::AnalyseDeterministicSpriteGroup(const Determinis
 
 void FindRandomTriggerAnalyser::AnalyseRandomisedSpriteGroup(const RandomizedSpriteGroup *rsg)
 {
-	if (rsg->triggers != 0 || rsg->cmp_mode == RSG_CMP_ALL) {
+	if (rsg->triggers != 0 || rsg->cmp_mode == RandomizedSpriteGroupCompareMode::All) {
 		this->found_trigger = true;
 		return;
 	}
 
 	this->DefaultAnalyseRandomisedSpriteGroup(rsg);
+}
+
+/* Industry analysis */
+
+void IndustryLocationAnalyser::AnalyseDeterministicSpriteGroup(const DeterministicSpriteGroup *dsg)
+{
+	/* Only follow CBID_INDUSTRY_LOCATION in callback switches */
+	if (IsTrivialSwitchOfSpecificVariable(dsg, 0xC, 0xFF)) {
+		this->AnalyseGroup(GetSwitchTargetForValue(dsg, CBID_INDUSTRY_LOCATION));
+		return;
+	}
+
+	for (const auto &adjust : dsg->adjusts) {
+		if (adjust.variable == 0x7E) this->AnalyseGroup(adjust.subroutine);
+		if (dsg->var_scope == VarSpriteGroupScope::Self) {
+			if (adjust.variable == 0x43 || adjust.variable == 0x8B) {
+				this->expensive_location_cb = true;
+				return; // early exit
+			}
+		}
+	}
+
+	this->DefaultAnalyseDeterministicSpriteGroup(dsg);
 }
 
 /* Industry tile analysis */
@@ -190,11 +218,11 @@ void IndustryTileDataAnalyser::AnalyseDeterministicSpriteGroup(const Determinist
 		const auto &adjust = dsg->adjusts[0];
 
 		if (IsSingleVariableLoadAdjustOfSpecificVariable(adjust, 0xC, 0xFF)) {
-			/* Check for CBID_INDTILE_ANIM_NEXT_FRAME, mark layout subset as animated if found */
+			/* Check for CBID_INDTILE_ANIMATION_NEXT_FRAME, mark layout subset as animated if found */
 			if (this->cfg.check_anim_next_frame_cb) {
 				for (const auto &range : dsg->ranges) {
-					if (range.low <= CBID_INDTILE_ANIM_NEXT_FRAME && CBID_INDTILE_ANIM_NEXT_FRAME <= range.high) {
-						/* Found a CBID_INDTILE_ANIM_NEXT_FRAME */
+					if (range.low <= CBID_INDTILE_ANIMATION_NEXT_FRAME && CBID_INDTILE_ANIMATION_NEXT_FRAME <= range.high) {
+						/* Found a CBID_INDTILE_ANIMATION_NEXT_FRAME */
 						*(this->cfg.result_mask) &= ~this->check_mask;
 					}
 				}
@@ -210,12 +238,12 @@ void IndustryTileDataAnalyser::AnalyseDeterministicSpriteGroup(const Determinist
 			this->AnalyseGroup(dsg->default_group);
 			return;
 		}
-		if (IsSingleVariableLoadAdjustOfSpecificVariable(adjust, 0x44, 0xFF) && dsg->var_scope == VSG_SCOPE_PARENT) {
+		if (IsSingleVariableLoadAdjustOfSpecificVariable(adjust, 0x44, 0xFF) && dsg->var_scope == VarSpriteGroupScope::Parent) {
 			/* Layout index switch */
 			this->AnalyseGroup(GetSwitchTargetForValue(dsg, this->cfg.layout_index));
 			return;
 		}
-		if (adjust.variable == 0x43 && dsg->var_scope == VSG_SCOPE_SELF) {
+		if (adjust.variable == 0x43 && dsg->var_scope == VarSpriteGroupScope::Self) {
 			const uint32_t effective_mask = adjust.and_mask << adjust.shift_num;
 			if (effective_mask == 0xFFFF || effective_mask == 0xFF00 || effective_mask == 0x00FF) {
 				/* Relative position switch */
@@ -266,10 +294,10 @@ void IndustryTileDataAnalyser::AnalyseDeterministicSpriteGroup(const Determinist
 
 	for (const auto &adjust : dsg->adjusts) {
 		if (adjust.variable == 0x7E) this->AnalyseGroup(adjust.subroutine);
-		if (dsg->var_scope == VSG_SCOPE_SELF && (adjust.variable == 0x44 || (adjust.variable == 0x61 && adjust.parameter == 0))) {
+		if (dsg->var_scope == VarSpriteGroupScope::Self && (adjust.variable == 0x44 || (adjust.variable == 0x61 && adjust.parameter == 0))) {
 			*(this->cfg.result_mask) &= ~this->check_mask;
 		}
-		if ((dsg->var_scope == VSG_SCOPE_SELF && adjust.variable == 0x61) || (dsg->var_scope == VSG_SCOPE_PARENT && adjust.variable == 0x63)) {
+		if ((dsg->var_scope == VarSpriteGroupScope::Self && adjust.variable == 0x61) || (dsg->var_scope == VarSpriteGroupScope::Parent && adjust.variable == 0x63)) {
 			this->anim_state_at_offset = true;
 			return;
 		}
@@ -282,7 +310,7 @@ void IndustryTileDataAnalyser::AnalyseDeterministicSpriteGroup(const Determinist
 
 void CallbackOperationAnalyser::AnalyseDeterministicSpriteGroup(const DeterministicSpriteGroup *dsg)
 {
-	if ((this->mode == ACOM_CB_VAR || this->mode == ACOM_CB_REFIT_CAPACITY) && dsg->var_scope != VSG_SCOPE_SELF) {
+	if ((this->mode == ACOM_CB_VAR || this->mode == ACOM_CB_REFIT_CAPACITY) && dsg->var_scope != VarSpriteGroupScope::Self) {
 		this->result_flags |= ACORF_CB_REFIT_CAP_NON_WHITELIST_FOUND;
 	}
 
@@ -401,7 +429,7 @@ void CallbackOperationAnalyser::AnalyseRandomisedSpriteGroup(const RandomizedSpr
 {
 	this->result_flags |= ACORF_CB_REFIT_CAP_NON_WHITELIST_FOUND;
 
-	if (this->mode == ACOM_CB_VAR && (rsg->triggers != 0 || rsg->cmp_mode == RSG_CMP_ALL)) {
+	if (this->mode == ACOM_CB_VAR && (rsg->triggers != 0 || rsg->cmp_mode == RandomizedSpriteGroupCompareMode::All)) {
 		this->callbacks_used |= SGCU_RANDOM_TRIGGER;
 	}
 

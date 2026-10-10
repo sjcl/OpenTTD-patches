@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file 32bpp_base.cpp Implementation of base for 32 bpp blitters. */
@@ -19,19 +19,19 @@ void *Blitter_32bppBase::MoveTo(void *video, int x, int y)
 	return (uint32_t *)video + x + y * _screen.pitch;
 }
 
-void Blitter_32bppBase::SetPixel(void *video, int x, int y, uint8_t colour)
+void Blitter_32bppBase::SetPixel(void *video, int x, int y, PixelColour colour)
 {
-	*((Colour *)video + x + y * _screen.pitch) = LookupColourInPalette(colour);
+	*((Colour *)video + x + y * _screen.pitch) = LookupColourInPalette(colour.p);
 }
 
-void Blitter_32bppBase::SetPixel32(void *video, int x, int y, uint8_t colour, uint32_t colour32)
+void Blitter_32bppBase::SetPixel32(void *video, int x, int y, PixelColour colour, uint32_t colour32)
 {
 	*((Colour *)video + x + y * _screen.pitch) = colour32;
 }
 
-void Blitter_32bppBase::DrawLine(void *video, int x, int y, int x2, int y2, int screen_width, int screen_height, uint8_t colour, int width, int dash)
+void Blitter_32bppBase::DrawLine(void *video, int x, int y, int x2, int y2, int screen_width, int screen_height, PixelColour colour, int width, int dash)
 {
-	const Colour c = LookupColourInPalette(colour);
+	const Colour c = LookupColourInPalette(colour.p);
 	this->DrawLineGeneric(x, y, x2, y2, screen_width, screen_height, width, dash, [=](int x, int y) {
 		*((Colour *)video + x + y * _screen.pitch) = c;
 	});
@@ -77,9 +77,9 @@ void Blitter_32bppBase::SetRectNoD7(void *video, int x, int y, const uint8_t *co
 	} while (--lines);
 }
 
-void Blitter_32bppBase::DrawRect(void *video, int width, int height, uint8_t colour)
+void Blitter_32bppBase::DrawRect(void *video, int width, int height, PixelColour colour)
 {
-	Colour colour32 = LookupColourInPalette(colour);
+	Colour colour32 = LookupColourInPalette(colour.p);
 
 	do {
 		Colour *dst = (Colour *)video;
@@ -91,7 +91,7 @@ void Blitter_32bppBase::DrawRect(void *video, int width, int height, uint8_t col
 	} while (--height);
 }
 
-void Blitter_32bppBase::DrawRectAt(void *video, int x, int y, int width, int height, uint8_t colour)
+void Blitter_32bppBase::DrawRectAt(void *video, int x, int y, int width, int height, PixelColour colour)
 {
 	this->Blitter_32bppBase::DrawRect((Colour *)video + x + y * _screen.pitch, width, height, colour);
 }
@@ -201,37 +201,7 @@ void Blitter_32bppBase::PaletteAnimate(const Palette &)
 	/* By default, 32bpp doesn't have palette animation */
 }
 
-Colour Blitter_32bppBase::ReallyAdjustBrightness(Colour colour, uint8_t brightness)
-{
-	assert(DEFAULT_BRIGHTNESS == 1 << 7);
-
-	uint64_t combined = (((uint64_t) colour.r) << 32) | (((uint64_t) colour.g) << 16) | ((uint64_t) colour.b);
-	combined *= brightness;
-
-	uint16_t r = GB(combined, 39, 9);
-	uint16_t g = GB(combined, 23, 9);
-	uint16_t b = GB(combined, 7, 9);
-
-	if ((combined & 0x800080008000L) == 0L) {
-		return Colour(r, g, b, colour.a);
-	}
-
-	uint16_t ob = 0;
-	/* Sum overbright */
-	if (r > 255) ob += r - 255;
-	if (g > 255) ob += g - 255;
-	if (b > 255) ob += b - 255;
-
-	/* Reduce overbright strength */
-	ob /= 2;
-	return Colour(
-		r >= 255 ? 255 : std::min(r + ob * (255 - r) / 256, 255),
-		g >= 255 ? 255 : std::min(g + ob * (255 - g) / 256, 255),
-		b >= 255 ? 255 : std::min(b + ob * (255 - b) / 256, 255),
-		colour.a);
-}
-
 Blitter::PaletteAnimation Blitter_32bppBase::UsePaletteAnimation()
 {
-	return Blitter::PALETTE_ANIMATION_NONE;
+	return Blitter::PaletteAnimation::None;
 }

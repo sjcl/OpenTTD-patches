@@ -2,14 +2,10 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
-/**
- * @file os_abstraction.h Network stuff has many things that needs to be
- *                        included and/or implemented by default.
- *                        All those things are in this file.
- */
+/** @file os_abstraction.h Includes and/or implementations for the network stuff. */
 
 #ifndef NETWORK_CORE_OS_ABSTRACTION_H
 #define NETWORK_CORE_OS_ABSTRACTION_H
@@ -23,13 +19,13 @@ private:
 	int error;                   ///< The underlying error number from errno or WSAGetLastError.
 	mutable std::string message; ///< The string representation of the error (set on first call to #AsString).
 public:
-	NetworkError(int error);
+	NetworkError(int error, std::string_view message = {});
 
 	bool HasError() const;
 	bool WouldBlock() const;
 	bool IsConnectionReset() const;
 	bool IsConnectInProgress() const;
-	const char *AsString() const;
+	std::string_view AsString() const;
 
 	static NetworkError GetLast();
 };
@@ -157,5 +153,35 @@ NetworkError GetSocketError(SOCKET d);
 /* Make sure these structures have the size we expect them to be */
 static_assert(sizeof(in_addr)  ==  4); ///< IPv4 addresses should be 4 bytes.
 static_assert(sizeof(in6_addr) == 16); ///< IPv6 addresses should be 16 bytes.
+
+/** Helper for #Packet::TransferOut that writes data to a socket. */
+struct SocketSender {
+	SOCKET sock; ///< The socket we're sending data to.
+
+	/**
+	 * Write the buffer to the socket.
+	 * @param buffer The buffer to write.
+	 * @return The number of elements/bytes that were written, or -1 upon an error.
+	 */
+	ssize_t operator()(std::span<const uint8_t> buffer)
+	{
+		return send(this->sock, reinterpret_cast<const char *>(buffer.data()), static_cast<int>(buffer.size()), 0);
+	}
+};
+
+/** Helper for #Packet::TransferIn that reads data from a socket. */
+struct SocketReceiver {
+	SOCKET sock; ///< The socket we're receiving data from.
+
+	/**
+	 * Read data from the socket into the buffer.
+	 * @param buffer The buffer to read into.
+	 * @return The number of elements/bytes that were read, or -1 upon an error.
+	 */
+	ssize_t operator()(std::span<uint8_t> buffer)
+	{
+		return recv(this->sock, reinterpret_cast<char *>(buffer.data()), static_cast<int>(buffer.size()), 0);
+	}
+};
 
 #endif /* NETWORK_CORE_OS_ABSTRACTION_H */

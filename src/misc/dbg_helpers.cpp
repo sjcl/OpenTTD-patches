@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file dbg_helpers.cpp Helpers for outputting debug information. */
@@ -10,6 +10,7 @@
 #include "../stdafx.h"
 #include "../rail_map.h"
 #include "../string_func.h"
+#include "../core/enum_type.hpp"
 #include "dbg_helpers.h"
 
 #include "../safeguards.h"
@@ -20,16 +21,24 @@ static const char * const trackdir_names[] = {
 	"SW", "NW", "UW", "LW", "LN", "RN", "rsw", "rnw",
 };
 
-/** Return name of given Trackdir. */
+/**
+ * Return name of given Trackdir.
+ * @param td The track direction.
+ * @return String representation of the track direction.
+ */
 std::string ValueStr(Trackdir td)
 {
-	return std::to_string(td) + " (" + ItemAtT(td, trackdir_names, "UNK", INVALID_TRACKDIR, "INV") + ")";
+	return fmt::format("{} ({})", to_underlying(td), ItemAt(td, trackdir_names, "UNK", INVALID_TRACKDIR, "INV"));
 }
 
-/** Return composed name of given TrackdirBits. */
+/**
+ * Return composed name of given TrackdirBits.
+ * @param td_bits The track direction bits.
+ * @return The string representation.
+ */
 std::string ValueStr(TrackdirBits td_bits)
 {
-	return std::to_string(td_bits) + " (" + ComposeNameT(td_bits, trackdir_names, "UNK", INVALID_TRACKDIR_BIT, "INV") + ")";
+	return fmt::format("{} ({})", to_underlying(td_bits), ComposeName(td_bits, trackdir_names, "UNK", INVALID_TRACKDIR_BIT, "INV"));
 }
 
 
@@ -38,10 +47,14 @@ static const char * const diagdir_names[] = {
 	"NE", "SE", "SW", "NW",
 };
 
-/** Return name of given DiagDirection. */
+/**
+ * Return name of given DiagDirection.
+ * @param dd The diagonal direction.
+ * @return The string representation.
+ */
 std::string ValueStr(DiagDirection dd)
 {
-	return std::to_string(dd) + " (" + ItemAtT(dd, diagdir_names, "UNK", INVALID_DIAGDIR, "INV") + ")";
+	return fmt::format("{} ({})", to_underlying(dd), ItemAt(dd, diagdir_names, "UNK", DiagDirection::Invalid, "INV"));
 }
 
 
@@ -50,90 +63,94 @@ static const char * const signal_type_names[] = {
 	"NORMAL", "ENTRY", "EXIT", "COMBO", "PBS", "NOENTRY",
 };
 
-/** Return name of given SignalType. */
+/**
+ * Return name of given SignalType.
+ * @param t The signal type.
+ * @return The string representation.
+ */
 std::string ValueStr(SignalType t)
 {
-	return std::to_string(t) + " (" + ItemAtT(t, signal_type_names, "UNK") + ")";
+	return fmt::format("{} ({})", to_underlying(t), ItemAt(t, signal_type_names, "UNK"));
 }
 
 
-/** Translate TileIndex into string. */
+/**
+ * Translate TileIndex into string.
+ * @param tile The tile to convert.
+ * @return The string representation.
+ */
 std::string TileStr(TileIndex tile)
 {
 	return fmt::format("0x{:04X} ({}, {})", tile, TileX(tile), TileY(tile));
 }
 
 /**
- * Keep track of the last assigned type_id. Used for anti-recursion.
- *static*/ size_t& DumpTarget::LastTypeId()
+ * Create a new type_id. Used for anti-recursion.
+ * @return The new type_id.
+ */
+/* static */ size_t DumpTarget::NewTypeId()
 {
 	static size_t last_type_id = 0;
-	return last_type_id;
+	return ++last_type_id;
 }
 
-/** Return structured name of the current class/structure. */
+/**
+ * Return structured name of the current class/structure.
+ * @return The name of the current string.
+ */
 std::string DumpTarget::GetCurrentStructName()
 {
-	std::string out;
-	if (!m_cur_struct.empty()) {
-		/* we are inside some named struct, return its name */
-		out = m_cur_struct.top();
-	}
-	return out;
+	if (this->cur_struct.empty()) return {};
+
+	/* we are inside some named struct, return its name */
+	return this->cur_struct.top();
 }
 
 /**
  * Find the given instance in our anti-recursion repository.
- * Return true and set name when object was found.
+ * @param type_id Identifier of the type being dumped.
+ * @param ptr The content of the struct.
+ * @return The name or \c std::nullopt when the type was not found.
  */
-bool DumpTarget::FindKnownName(size_t type_id, const void *ptr, std::string &name)
+std::optional<std::string> DumpTarget::FindKnownAsName(size_t type_id, const void *ptr)
 {
-	KNOWN_NAMES::const_iterator it = m_known_names.find(KnownStructKey(type_id, ptr));
-	if (it != m_known_names.end()) {
-		/* we have found it */
-		name = (*it).second;
-		return true;
-	}
-	return false;
+	KnownNamesMap::const_iterator it = this->known_names.find(KnownStructKey(type_id, ptr));
+	if (it == this->known_names.end()) return std::nullopt;
+
+	return fmt::format("known_as.{}", it->second);
 }
 
 /** Write some leading spaces into the output. */
 void DumpTarget::WriteIndent()
 {
-	int num_spaces = 2 * m_indent;
+	int num_spaces = 2 * this->indent;
 	if (num_spaces > 0) {
-		m_out += std::string(num_spaces, ' ');
+		std::span<char> chars = this->output_buffer.append_as_span(num_spaces);
+		std::fill(chars.begin(), chars.end(), ' ');
 	}
 }
 
-/** Write 'name = value' with indent and new-line. */
-void DumpTarget::WriteValue(const char *name, int value)
+/**
+ * Write name & TileIndex to the output.
+ * @param name The name to output.
+ * @param tile The tile to output.
+ */
+void DumpTarget::WriteTile(std::string_view name, TileIndex tile)
 {
-	WriteIndent();
-	m_out += std::string(name) + " = " + std::to_string(value) + "\n";
-}
-
-/** Write 'name = value' with indent and new-line. */
-void DumpTarget::WriteValue(const char *name, const char *value_str)
-{
-	WriteIndent();
-	m_out += std::string(name) + " = " + value_str + "\n";
-}
-
-/** Write name & TileIndex to the output. */
-void DumpTarget::WriteTile(const char *name, TileIndex tile)
-{
-	WriteIndent();
-	m_out += std::string(name) + " = " + TileStr(tile) + "\n";
+	this->WriteIndent();
+	this->output_buffer.format("{} = {}\n", name, TileStr(tile));
 }
 
 /**
  * Open new structure (one level deeper than the current one) 'name = {\<LF\>'.
+ * @param type_id Identifier of the type being dumped.
+ * @param name The name of the struct.
+ * @param ptr The content of the struct.
  */
-void DumpTarget::BeginStruct(size_t type_id, const char *name, const void *ptr)
+void DumpTarget::BeginStruct(size_t type_id, std::string_view name, const void *ptr)
 {
 	/* make composite name */
-	std::string cur_name = GetCurrentStructName();
+	std::string cur_name = this->GetCurrentStructName();
 	if (!cur_name.empty()) {
 		/* add name delimiter (we use structured names) */
 		cur_name += ".";
@@ -141,14 +158,14 @@ void DumpTarget::BeginStruct(size_t type_id, const char *name, const void *ptr)
 	cur_name += name;
 
 	/* put the name onto stack (as current struct name) */
-	m_cur_struct.push(cur_name);
+	this->cur_struct.push(cur_name);
 
 	/* put it also to the map of known structures */
-	m_known_names.insert(KNOWN_NAMES::value_type(KnownStructKey(type_id, ptr), cur_name));
+	this->known_names.insert(KnownNamesMap::value_type(KnownStructKey(type_id, ptr), cur_name));
 
-	WriteIndent();
-	m_out += std::string(name) + " = {\n";
-	m_indent++;
+	this->WriteIndent();
+	this->output_buffer.format("{} = {{\n", name);
+	this->indent++;
 }
 
 /**
@@ -156,10 +173,10 @@ void DumpTarget::BeginStruct(size_t type_id, const char *name, const void *ptr)
  */
 void DumpTarget::EndStruct()
 {
-	m_indent--;
-	WriteIndent();
-	m_out += "}\n";
+	this->indent--;
+	this->WriteIndent();
+	this->output_buffer.append("}\n");
 
 	/* remove current struct name from the stack */
-	m_cur_struct.pop();
+	this->cur_struct.pop();
 }

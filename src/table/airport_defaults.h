@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file airport_defaults.h Tables with default values for airports and airport tiles. */
@@ -20,11 +20,6 @@
  */
 #define MK(x, y, m) {{x, y}, m}
 
-/**
- * Terminator of airport tiles layout definition
- */
-#define MKEND {{-0x80, 0}, 0}
-
 /** Tiles for Country Airfield (small) */
 static const std::initializer_list<AirportTileTable> _tile_table_country_0 = {
 	MK(0, 0, APT_SMALL_BUILDING_1),
@@ -39,11 +34,10 @@ static const std::initializer_list<AirportTileTable> _tile_table_country_0 = {
 	MK(1, 2, APT_RUNWAY_SMALL_MIDDLE),
 	MK(2, 2, APT_RUNWAY_SMALL_MIDDLE),
 	MK(3, 2, APT_RUNWAY_SMALL_NEAR_END),
-	MKEND
 };
 
 static const std::initializer_list<AirportTileLayout> _tile_table_country = {
-	{ _tile_table_country_0, DIR_N },
+	{ _tile_table_country_0, Direction::N },
 };
 
 /** Tiles for Commuter Airfield (small) */
@@ -68,11 +62,10 @@ static const std::initializer_list<AirportTileTable> _tile_table_commuter_0 = {
 	MK(2, 3, APT_RUNWAY_2),
 	MK(3, 3, APT_RUNWAY_2),
 	MK(4, 3, APT_RUNWAY_END_FENCE_SE),
-	MKEND
 };
 
 static const std::initializer_list<AirportTileLayout> _tile_table_commuter = {
-	{ _tile_table_commuter_0, DIR_N },
+	{ _tile_table_commuter_0, Direction::N },
 };
 
 /** Tiles for City Airport (large) */
@@ -113,14 +106,13 @@ static const std::initializer_list<AirportTileTable> _tile_table_city_0 = {
 	MK(3, 5, APT_RUNWAY_3),
 	MK(4, 5, APT_RUNWAY_4),
 	MK(5, 5, APT_RUNWAY_END_FENCE_SE),
-	MKEND
 };
 
 static const std::initializer_list<AirportTileLayout> _tile_table_city = {
-	{ _tile_table_city_0, DIR_N },
+	{ _tile_table_city_0, Direction::N },
 };
 
-/** Tiles for Metropolitain Airport (large) - 2 runways */
+/** Tiles for Metropolitan Airport (large) - 2 runways */
 static const std::initializer_list<AirportTileTable> _tile_table_metropolitan_0 = {
 	MK(0, 0, APT_BUILDING_1),
 	MK(1, 0, APT_APRON_FENCE_NW),
@@ -158,11 +150,10 @@ static const std::initializer_list<AirportTileTable> _tile_table_metropolitan_0 
 	MK(3, 5, APT_RUNWAY_2),
 	MK(4, 5, APT_RUNWAY_2),
 	MK(5, 5, APT_RUNWAY_END_FENCE_SE),
-	MKEND
 };
 
 static const std::initializer_list<AirportTileLayout> _tile_table_metropolitan = {
-	{ _tile_table_metropolitan_0, DIR_N },
+	{ _tile_table_metropolitan_0, Direction::N },
 };
 
 /** Tiles for International Airport (large) - 2 runways */
@@ -216,11 +207,10 @@ static const std::initializer_list<AirportTileTable> _tile_table_international_0
 	MK(4, 6, APT_RUNWAY_2),
 	MK(5, 6, APT_RUNWAY_2),
 	MK(6, 6, APT_RUNWAY_END_FENCE_SE),
-	MKEND
 };
 
 static const std::initializer_list<AirportTileLayout> _tile_table_international = {
-	{ _tile_table_international_0, DIR_N },
+	{ _tile_table_international_0, Direction::N },
 };
 
 /** Tiles for International Airport (large) - 2 runways */
@@ -324,21 +314,19 @@ static const std::initializer_list<AirportTileTable> _tile_table_intercontinenta
 	MK(6, 10, APT_RUNWAY_2),
 	MK(7, 10, APT_RUNWAY_END_FENCE_SE_SW),
 	MK(8, 10, APT_EMPTY),
-	MKEND
 };
 
 static const std::initializer_list<AirportTileLayout> _tile_table_intercontinental = {
-	{ _tile_table_intercontinental_0, DIR_N },
+	{ _tile_table_intercontinental_0, Direction::N },
 };
 
 /** Tiles for Heliport */
 static const std::initializer_list<AirportTileTable> _tile_table_heliport_0 = {
 	MK(0, 0, APT_HELIPORT),
-	MKEND
 };
 
 static const std::initializer_list<AirportTileLayout> _tile_table_heliport = {
-	{ _tile_table_heliport_0, DIR_N },
+	{ _tile_table_heliport_0, Direction::N },
 };
 
 /** Tiles for Helidepot */
@@ -347,11 +335,10 @@ static const std::initializer_list<AirportTileTable> _tile_table_helidepot_0 = {
 	MK(1, 0, APT_DEPOT_SE),
 	MK(0, 1, APT_HELIPAD_2_FENCE_NE_SE),
 	MK(1, 1, APT_APRON_FENCE_SE_SW),
-	MKEND
 };
 
 static const std::initializer_list<AirportTileLayout> _tile_table_helidepot = {
-	{ _tile_table_helidepot_0, DIR_N },
+	{ _tile_table_helidepot_0, Direction::N },
 };
 
 /** Tiles for Helistation */
@@ -364,19 +351,17 @@ static const std::initializer_list<AirportTileTable> _tile_table_helistation_0 =
 	MK(1, 1, APT_APRON_FENCE_SE),
 	MK(2, 1, APT_APRON_FENCE_SE),
 	MK(3, 1, APT_HELIPAD_3_FENCE_SE_SW),
-	MKEND
 };
 
 static const std::initializer_list<AirportTileLayout> _tile_table_helistation = {
-	{ _tile_table_helistation_0, DIR_N },
+	{ _tile_table_helistation_0, Direction::N },
 };
 
 #undef MK
-#undef MKEND
 
 /** General AirportSpec definition. */
 #define AS_GENERIC(fsm, layouts, depots, size_x, size_y, noise, catchment, min_year, max_year, maint_cost, ttdpatch_type, class_id, name, preview, enabled) \
-	{{class_id, 0}, fsm, layouts, depots, size_x, size_y, noise, catchment, CalTime::Year{min_year}, CalTime::Year{max_year}, name, ttdpatch_type, preview, maint_cost, enabled, GRFFileProps(AT_INVALID)}
+	{{class_id, 0}, fsm, layouts, depots, size_x, size_y, noise, catchment, CalTime::Year{min_year}, CalTime::Year{max_year}, name, ttdpatch_type, preview, maint_cost, enabled, SubstituteGRFFileProps(AT_INVALID), {}}
 
 /** AirportSpec definition for airports without any depot. */
 #define AS_ND(ap_name, size_x, size_y, min_year, max_year, catchment, noise, maint_cost, ttdpatch_type, class_id, name, preview) \
@@ -388,7 +373,7 @@ static const std::initializer_list<AirportTileLayout> _tile_table_helistation = 
 	AS_GENERIC(&_airportfta_##ap_name, _tile_table_##ap_name, _airport_depots_##ap_name, \
 		size_x, size_y, noise, catchment, min_year, max_year, maint_cost, ttdpatch_type, class_id, name, preview, true)
 
-/* The helidepot and helistation have ATP_TTDP_SMALL because they are at ground level */
+/** The helidepot and helistation have ATP_TTDP_SMALL because they are at ground level. */
 extern const AirportSpec _origin_airport_specs[] = {
 	AS(country,          4, 3,     0,              1959,  4,  3,  7, ATP_TTDP_SMALL,    APC_SMALL,    STR_AIRPORT_SMALL,            SPR_AIRPORT_PREVIEW_SMALL),
 	AS(city,             6, 6,  1955, CalTime::MAX_YEAR,  5,  5, 24, ATP_TTDP_LARGE,    APC_LARGE,    STR_AIRPORT_CITY,             SPR_AIRPORT_PREVIEW_LARGE),
@@ -404,7 +389,7 @@ extern const AirportSpec _origin_airport_specs[] = {
 
 static_assert(NEW_AIRPORT_OFFSET == lengthof(_origin_airport_specs));
 
-const AirportSpec AirportSpec::dummy = AS_GENERIC(&_airportfta_dummy, {}, {}, 0, 0, 0, 0, CalTime::MIN_YEAR, CalTime::MIN_YEAR, 0, ATP_TTDP_LARGE, APC_BEGIN, STR_NULL, 0, false);
+const AirportSpec AirportSpec::dummy = AS_GENERIC(&_airportfta_dummy, {}, {}, 0, 0, 0, 0, CalTime::MIN_YEAR, CalTime::MIN_YEAR, 0, ATP_TTDP_LARGE, {}, STR_NULL, 0, false);
 
 #undef AS
 #undef AS_ND

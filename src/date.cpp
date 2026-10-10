@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file date.cpp Handling of dates in our native format and transforming them to something human readable. */
@@ -10,7 +10,7 @@
 #include "stdafx.h"
 #include "network/network.h"
 #include "network/network_func.h"
-#include "currency.h"
+#include "network/network_sync.h"
 #include "window_func.h"
 #include "settings_type.h"
 #include "date_func.h"
@@ -36,8 +36,8 @@ uint32_t _quit_after_days;                 ///< Quit after this many days of run
 
 CalTime::State CalTime::Detail::now;
 EconTime::State EconTime::Detail::now;
-YearDelta EconTime::Detail::years_elapsed;
-YearDelta EconTime::Detail::period_display_offset;
+EconTime::YearDelta EconTime::Detail::years_elapsed;
+EconTime::YearDelta EconTime::Detail::period_display_offset;
 
 namespace DateDetail {
 	StateTicksDelta _state_ticks_offset;   ///< Offset to add when calculating a StateTicks value from an economy date, date fract and tick skip counter
@@ -303,7 +303,7 @@ EconTime::Date EconTime::ConvertYMDToDate(EconTime::Year year, EconTime::Month m
 bool CalTime::IsCalendarFrozen(bool newgame)
 {
 	GameSettings &settings = (newgame) ? _settings_newgame : _settings_game;
-	return settings.economy.timekeeping_units == TKU_WALLCLOCK && settings.economy.minutes_per_calendar_year == CalTime::FROZEN_MINUTES_PER_YEAR;
+	return settings.economy.timekeeping_units == TimekeepingUnits::Wallclock && settings.economy.minutes_per_calendar_year == CalTime::FROZEN_MINUTES_PER_YEAR;
 }
 
 CalTime::Day CalTime::NumberOfDaysInMonth(Year year, Month month)
@@ -327,9 +327,9 @@ CalTime::Day CalTime::NumberOfDaysInMonth(Year year, Month month)
 
 bool EconTime::UsingWallclockUnits(bool newgame)
 {
-	if (newgame) return (_settings_newgame.economy.timekeeping_units == TKU_WALLCLOCK);
+	if (newgame) return (_settings_newgame.economy.timekeeping_units == TimekeepingUnits::Wallclock);
 
-	return (_settings_game.economy.timekeeping_units == TKU_WALLCLOCK);
+	return (_settings_game.economy.timekeeping_units == TimekeepingUnits::Wallclock);
 }
 
 /** Functions used by the IncreaseDate function */
@@ -358,9 +358,9 @@ extern void ShowEndGameChart();
  */
 static void OnNewCalendarYear()
 {
-	InvalidateWindowClassesData(WC_BUILD_STATION);
-	InvalidateWindowClassesData(WC_BUS_STATION);
-	InvalidateWindowClassesData(WC_TRUCK_STATION);
+	InvalidateWindowClassesData(WindowClass::BuildStation);
+	InvalidateWindowClassesData(WindowClass::BuildBusStation);
+	InvalidateWindowClassesData(WindowClass::BuildTruckStation);
 	if (_network_server) NetworkServerCalendarYearlyLoop();
 
 	if (CalTime::CurYear() == _settings_client.gui.semaphore_build_before) ResetSignalVariant();
@@ -377,6 +377,7 @@ static void OnNewCalendarYear()
 		CalTime::Detail::now.cal_date -= days_this_year;
 	}
 
+	extern void CheckSwitchToEuro();
 	if (_settings_client.gui.auto_euro) CheckSwitchToEuro();
 	IConsoleCmdExec("exec scripts/on_newyear.scr 0");
 }
@@ -396,7 +397,7 @@ static void OnNewEconomyYear()
 	if (EconTime::CurYear() == EconTime::MAX_YEAR + 1) {
 		EconTime::Detail::period_display_offset++;
 		EconTime::Detail::now.econ_ymd.year--;
-		DateDelta days_this_year = DateDelta{EconTime::IsLeapYear(EconTime::Detail::now.econ_ymd.year) ? DAYS_IN_LEAP_YEAR : DAYS_IN_YEAR};
+		const EconTime::DateDelta days_this_year{EconTime::IsLeapYear(EconTime::Detail::now.econ_ymd.year) ? DAYS_IN_LEAP_YEAR : DAYS_IN_YEAR};
 		EconTime::Detail::now.econ_date -= days_this_year;
 		LinkGraphSchedule::instance.ShiftDates(-days_this_year);
 		UpdateOrderUIOnDateChange();
@@ -412,7 +413,7 @@ static void OnNewEconomyYear()
  */
 static void OnNewCalendarMonth()
 {
-	SetWindowClassesDirty(WC_CHEATS);
+	SetWindowClassesDirty(WindowClass::Cheat);
 	CompaniesCalendarMonthlyLoop();
 	EnginesMonthlyLoop();
 	IConsoleCmdExec("exec scripts/on_newmonth.scr 0");
@@ -439,10 +440,10 @@ static void OnNewCalendarDay()
 	EnginesDailyLoop();
 
 	if (!_settings_time.time_in_minutes || _settings_client.gui.date_with_time > 0) {
-		SetWindowWidgetDirty(WC_STATUS_BAR, 0, WID_S_LEFT);
+		SetWindowWidgetDirty(WindowClass::Statusbar, 0, WID_S_LEFT);
 	}
 	/* Refresh after possible snowline change */
-	SetWindowClassesDirty(WC_TOWN_VIEW);
+	SetWindowClassesDirty(WindowClass::TownView);
 	IConsoleCmdExec("exec scripts/on_newday.scr 0");
 }
 
@@ -473,7 +474,7 @@ void IncreaseCalendarDate()
 	if (CalTime::IsCalendarFrozen()) return;
 
 	/* If we are using a non-default calendar progression speed, we need to check the sub_date_fract before updating date_fract. */
-	if (_settings_game.economy.timekeeping_units == TKU_WALLCLOCK && _settings_game.economy.minutes_per_calendar_year != CalTime::DEF_MINUTES_PER_YEAR) {
+	if (_settings_game.economy.timekeeping_units == TimekeepingUnits::Wallclock && _settings_game.economy.minutes_per_calendar_year != CalTime::DEF_MINUTES_PER_YEAR) {
 		CalTime::Detail::now.sub_date_fract += DAY_TICKS;
 
 		/* Check if we are ready to increment date_fract */
@@ -513,15 +514,17 @@ void IncreaseCalendarDate()
 	/* yes, call various yearly loops */
 	if (new_year) OnNewCalendarYear();
 
-	uint calendar_triggers = 0;
-	SetBit(calendar_triggers, TimerGameCalendar::DAY);
-	if ((CalTime::CurDate().base() % 7) == 3) SetBit(calendar_triggers, TimerGameCalendar::WEEK);
+	TimerGameCalendar::TElapsed calendar_triggers{};
+	calendar_triggers.Set(TimerGameCalendar::Trigger::Day);
+	if ((CalTime::CurDate().base() % 7) == 3) calendar_triggers.Set(TimerGameCalendar::Trigger::Week);
 	if (new_month) {
-		SetBit(calendar_triggers, TimerGameCalendar::MONTH);
-		if ((CalTime::CurMonth() % 3) == 0) SetBit(calendar_triggers, TimerGameCalendar::QUARTER);
+		calendar_triggers.Set(TimerGameCalendar::Trigger::Month);
+		if ((CalTime::CurMonth() % 3) == 0) calendar_triggers.Set(TimerGameCalendar::Trigger::Quarter);
 	}
-	if (new_year) SetBit(calendar_triggers, TimerGameCalendar::YEAR);
+	if (new_year) calendar_triggers.Set(TimerGameCalendar::Trigger::Year);
 	TimerManager<TimerGameCalendar>::Elapsed(calendar_triggers);
+
+	RecordSyncEvent(NSRE_CALDATE_INC);
 }
 
 static void IncreaseEconomyDate()
@@ -552,6 +555,8 @@ static void IncreaseEconomyDate()
 
 	/* yes, call various yearly loops */
 	if (new_year) OnNewEconomyYear();
+
+	RecordSyncEvent(NSRE_ECONDATE_INC);
 }
 
 /**
@@ -563,7 +568,7 @@ void IncreaseDate()
 	/* increase day, and check if a new day is there? */
 	_tick_counter++;
 
-	if (_game_mode == GM_MENU || _game_mode == GM_BOOTSTRAP) return;
+	if (_game_mode == GameMode::Menu || _game_mode == GameMode::Bootstrap) return;
 
 	IncreaseCalendarDate();
 	IncreaseEconomyDate();

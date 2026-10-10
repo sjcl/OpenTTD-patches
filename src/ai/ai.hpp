@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file ai.hpp Base functions for all AIs. */
@@ -10,7 +10,7 @@
 #ifndef AI_HPP
 #define AI_HPP
 
-#include "../script/api/script_event_types.hpp"
+#include "../script/api/script_event.hpp"
 #include "ai_scanner.hpp"
 
 /**
@@ -37,6 +37,7 @@ public:
 
 	/**
 	 * Get the current AI tick.
+	 * @return The tick number.
 	 */
 	static uint GetTick();
 
@@ -97,30 +98,35 @@ public:
 
 	/**
 	 * Queue a new event for an AI.
+	 * @param company The company to receive the event.
+	 * @param event The event.
 	 */
 	static void NewEvent(CompanyID company, ScriptEvent *event);
 
 	/**
 	 * Broadcast a new event to all active AIs.
+	 * @param event The event to broadcast.
+	 * @param skip_company The optional company not to send the event to.
 	 */
-	static void BroadcastNewEvent(ScriptEvent *event, CompanyID skip_company = MAX_COMPANIES);
+	static void BroadcastNewEvent(ScriptEvent *event, CompanyID skip_company = CompanyID::Invalid());
 
 	/**
 	 * Save data from an AI to a savegame.
+	 * @param company To company to save.
 	 */
 	static void Save(CompanyID company);
 
-	/** Wrapper function for AIScanner::GetAIConsoleList */
-	static std::string GetConsoleList(bool newest_only = false);
-	/** Wrapper function for AIScanner::GetAIConsoleLibraryList */
-	static std::string GetConsoleLibraryList();
-	/** Wrapper function for AIScanner::GetAIInfoList */
+	/** @copydoc ScriptScanner::GetConsoleList */
+	static std::string GetConsoleList(bool newest_only);
+	/** @copydoc ScriptScanner::GetConsoleList */
+	static std::string GetConsoleLibraryList(bool newest_only);
+	/** @copydoc ScriptScanner::GetInfoList */
 	static const ScriptInfoList *GetInfoList();
-	/** Wrapper function for AIScanner::GetUniqueAIInfoList */
+	/** @copydoc ScriptScanner::GetUniqueInfoList */
 	static const ScriptInfoList *GetUniqueInfoList();
-	/** Wrapper function for AIScanner::FindInfo */
+	/** @copydoc ScriptConfig::FindInfo */
 	static class AIInfo *FindInfo(const std::string &name, int version, bool force_exact_match);
-	/** Wrapper function for AIScanner::FindLibrary */
+	/** @copydoc ScriptInstance::FindLibrary */
 	static class AILibrary *FindLibrary(const std::string &library, int version);
 
 	/**
@@ -135,12 +141,12 @@ public:
 	static AIScannerLibrary *GetScannerLibrary();
 
 	/** Wrapper function for AIScanner::HasAI */
-	static bool HasAI(const struct ContentInfo *ci, bool md5sum);
-	static bool HasAILibrary(const ContentInfo *ci, bool md5sum);
+	static bool HasAI(const ContentInfo &ci, bool md5sum);
+	static bool HasAILibrary(const ContentInfo &ci, bool md5sum);
 private:
-	static uint frame_counter;                      ///< Tick counter for the AI code
-	static class AIScannerInfo *scanner_info;       ///< ScriptScanner instance that is used to find AIs
-	static class AIScannerLibrary *scanner_library; ///< ScriptScanner instance that is used to find AI Libraries
+	static uint frame_counter; ///< Tick counter for the AI code
+	static std::unique_ptr<AIScannerInfo> scanner_info; ///< ScriptScanner instance that is used to find AIs
+	static std::unique_ptr<AIScannerLibrary> scanner_library; ///< ScriptScanner instance that is used to find AI Libraries
 };
 
 #endif /* AI_HPP */

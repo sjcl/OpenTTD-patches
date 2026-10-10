@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file train_cmd.h Sprites to use for trains. */
@@ -20,8 +20,7 @@ static const SpriteID _engine_sprite_base[] = {
 0x0B31, 0x0B35,
 };
 
-/* For how many directions do we have sprites? (8 or 4; if 4, the other 4
- * directions are symmetric. */
+/** For how many directions do we have sprites? (8 or 4; if 4, the other 4 directions are symmetric. */
 static const uint8_t _engine_sprite_and[] = {
 7, 7, 7, 7, 3, 3, 7, 7,
 7, 7, 7, 7, 7, 7, 7, 3,
@@ -35,7 +34,7 @@ static const uint8_t _engine_sprite_and[] = {
 3, 3,
 };
 
-/* Non-zero for multihead trains. */
+/** Non-zero for multihead trains. */
 static const uint8_t _engine_sprite_add[] = {
 0, 0, 0, 0, 0, 0, 0, 4,
 0, 4, 0, 4, 0, 0, 0, 0,

@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file league_cmd.cpp Handling of league tables. */
@@ -36,12 +36,12 @@ INSTANTIATE_POOL_METHODS(LeagueTable)
 bool IsValidLink(Link link)
 {
 	switch (link.type) {
-		case LT_NONE: return (link.target == 0);
-		case LT_TILE: return IsValidTile(link.target);
-		case LT_INDUSTRY: return Industry::IsValidID(link.target);
-		case LT_TOWN: return Town::IsValidID(link.target);
-		case LT_COMPANY: return Company::IsValidID(link.target);
-		case LT_STORY_PAGE: return StoryPage::IsValidID(link.target);
+		case LinkType::None: return (link.target == 0);
+		case LinkType::Tile: return IsValidTile(TileIndex(link.target));
+		case LinkType::Industry: return Industry::IsValidID(link.target);
+		case LinkType::Town: return Town::IsValidID(link.target);
+		case LinkType::Company: return Company::IsValidID(link.target);
+		case LinkType::StoryPage: return StoryPage::IsValidID(link.target);
 		default: return false;
 	}
 	return false;
@@ -55,82 +55,86 @@ bool IsValidLink(Link link)
  * @param footer Text to show below the table
  * @return the cost of this operation or an error
  */
-std::tuple<CommandCost, LeagueTableID> CmdCreateLeagueTable(DoCommandFlag flags, const std::string &title, const std::string &header, const std::string &footer)
+static std::tuple<CommandCost, LeagueTableID> CmdCreateLeagueTableImpl(DoCommandFlags flags, const EncodedString &title, const EncodedString &header, const EncodedString &footer)
 {
-	if (_current_company != OWNER_DEITY) return { CMD_ERROR, INVALID_LEAGUE_TABLE };
-	if (!LeagueTable::CanAllocateItem()) return { CMD_ERROR, INVALID_LEAGUE_TABLE };
-	if (title.empty()) return { CMD_ERROR, INVALID_LEAGUE_TABLE };
+	if (_current_company != OWNER_DEITY) return { CMD_ERROR, LeagueTableID::Invalid() };
+	if (!LeagueTable::CanAllocateItem()) return { CMD_ERROR, LeagueTableID::Invalid() };
+	if (title.empty()) return { CMD_ERROR, LeagueTableID::Invalid() };
 
-	if (flags & DC_EXEC) {
-		LeagueTable *lt = new LeagueTable();
-		lt->title = title;
-		lt->header = header;
-		lt->footer = footer;
+	if (flags.Test(DoCommandFlag::Execute)) {
+		LeagueTable *lt = LeagueTable::Create(title, header, footer);
 		return { CommandCost(), lt->index };
 	}
 
-	return { CommandCost(), INVALID_LEAGUE_TABLE };
+	return { CommandCost(), LeagueTableID::Invalid() };
 }
 
+CommandCost CmdCreateLeagueTable(DoCommandFlags flags, const EncodedString &title, const EncodedString &header, const EncodedString &footer)
+{
+	auto [res, id] = CmdCreateLeagueTableImpl(flags, title, header, footer);
+	res.SetResultData(id);
+	return res;
+}
 
 /**
  * Create a new element in a league table.
  * @param flags type of operation
  * @param table Id of the league table this element belongs to
  * @param rating Value that elements are ordered by
- * @param company Company to show the color blob for or INVALID_COMPANY
+ * @param company Company to show the colour blob for or CompanyID::Invalid()
  * @param text Text of the element
  * @param score String representation of the score associated with the element
  * @param link_type Type of the referenced object
  * @param link_target Id of the referenced object
  * @return the cost of this operation or an error
  */
-std::tuple<CommandCost, LeagueTableElementID> CmdCreateLeagueTableElement(DoCommandFlag flags, LeagueTableID table, int64_t rating, CompanyID company, const std::string &text, const std::string &score, LinkType link_type, LinkTargetID link_target)
+static std::tuple<CommandCost, LeagueTableElementID> CmdCreateLeagueTableElementImpl(DoCommandFlags flags, LeagueTableID table, int64_t rating, CompanyID company, const EncodedString &text, const EncodedString &score, LinkType link_type, LinkTargetID link_target)
 {
-	if (_current_company != OWNER_DEITY) return { CMD_ERROR, INVALID_LEAGUE_TABLE_ELEMENT };
-	if (!LeagueTableElement::CanAllocateItem()) return { CMD_ERROR, INVALID_LEAGUE_TABLE_ELEMENT };
+	if (_current_company != OWNER_DEITY) return { CMD_ERROR, LeagueTableElementID::Invalid() };
+	if (!LeagueTableElement::CanAllocateItem()) return { CMD_ERROR, LeagueTableElementID::Invalid() };
 	Link link{link_type, link_target};
-	if (!IsValidLink(link)) return { CMD_ERROR, INVALID_LEAGUE_TABLE_ELEMENT };
-	if (company != INVALID_COMPANY && !Company::IsValidID(company)) return { CMD_ERROR, INVALID_LEAGUE_TABLE_ELEMENT };
+	if (!IsValidLink(link)) return { CMD_ERROR, LeagueTableElementID::Invalid() };
+	if (company != CompanyID::Invalid() && !Company::IsValidID(company)) return { CMD_ERROR, LeagueTableElementID::Invalid() };
 
-	if (flags & DC_EXEC) {
-		LeagueTableElement *lte = new LeagueTableElement();
-		lte->table = table;
-		lte->rating = rating;
-		lte->company = company;
-		lte->text = text;
-		lte->score = score;
-		lte->link = link;
-		InvalidateWindowData(WC_COMPANY_LEAGUE, table);
+	if (flags.Test(DoCommandFlag::Execute)) {
+		LeagueTableElement *lte = LeagueTableElement::Create(table, rating, company, text, score, link);
+		InvalidateWindowData(WindowClass::CompanyLeague, table);
 		return { CommandCost(), lte->index };
 	}
-	return { CommandCost(), INVALID_LEAGUE_TABLE_ELEMENT };
+	return { CommandCost(), LeagueTableElementID::Invalid() };
+}
+
+CommandCost CmdCreateLeagueTableElement(DoCommandFlags flags, LeagueTableID table, int64_t rating, CompanyID company, const EncodedString &text, const EncodedString &score, LinkType link_type, LinkTargetID link_target)
+{
+	auto [res, id] = CmdCreateLeagueTableElementImpl(flags, table, rating, company, text, score, link_type, link_target);
+	res.SetResultData(id);
+	return res;
 }
 
 /**
  * Update the attributes of a league table element.
  * @param flags type of operation
  * @param element Id of the element to update
- * @param company Company to show the color blob for or INVALID_COMPANY
+ * @param company Company to show the colour blob for or CompanyID::Invalid()
  * @param text Text of the element
  * @param link_type Type of the referenced object
  * @param link_target Id of the referenced object
  * @return the cost of this operation or an error
  */
-CommandCost CmdUpdateLeagueTableElementData(DoCommandFlag flags, LeagueTableElementID element, CompanyID company, const std::string &text, LinkType link_type, LinkTargetID link_target)
+CommandCost CmdUpdateLeagueTableElementData(DoCommandFlags flags, LeagueTableElementID element, CompanyID company, const EncodedString &text, LinkType link_type, LinkTargetID link_target)
 {
 	if (_current_company != OWNER_DEITY) return CMD_ERROR;
 	auto lte = LeagueTableElement::GetIfValid(element);
 	if (lte == nullptr) return CMD_ERROR;
-	if (company != INVALID_COMPANY && !Company::IsValidID(company)) return CMD_ERROR;
+	if (company != CompanyID::Invalid() && !Company::IsValidID(company)) return CMD_ERROR;
 	Link link{link_type, link_target};
 	if (!IsValidLink(link)) return CMD_ERROR;
 
-	if (flags & DC_EXEC) {
+	if (flags.Test(DoCommandFlag::Execute)) {
 		lte->company = company;
 		lte->text = text;
 		lte->link = link;
-		InvalidateWindowData(WC_COMPANY_LEAGUE, lte->table);
+		InvalidateWindowData(WindowClass::CompanyLeague, lte->table);
 	}
 	return CommandCost();
 }
@@ -143,16 +147,16 @@ CommandCost CmdUpdateLeagueTableElementData(DoCommandFlag flags, LeagueTableElem
  * @param score String representation of the score associated with the element
  * @return the cost of this operation or an error
  */
-CommandCost CmdUpdateLeagueTableElementScore(DoCommandFlag flags, LeagueTableElementID element, int64_t rating, const std::string &score)
+CommandCost CmdUpdateLeagueTableElementScore(DoCommandFlags flags, LeagueTableElementID element, int64_t rating, const EncodedString &score)
 {
 	if (_current_company != OWNER_DEITY) return CMD_ERROR;
 	auto lte = LeagueTableElement::GetIfValid(element);
 	if (lte == nullptr) return CMD_ERROR;
 
-	if (flags & DC_EXEC) {
+	if (flags.Test(DoCommandFlag::Execute)) {
 		lte->rating = rating;
 		lte->score = score;
-		InvalidateWindowData(WC_COMPANY_LEAGUE, lte->table);
+		InvalidateWindowData(WindowClass::CompanyLeague, lte->table);
 	}
 	return CommandCost();
 }
@@ -163,63 +167,16 @@ CommandCost CmdUpdateLeagueTableElementScore(DoCommandFlag flags, LeagueTableEle
  * @param element Id of the element to update
  * @return the cost of this operation or an error
  */
-CommandCost CmdRemoveLeagueTableElement(DoCommandFlag flags, LeagueTableElementID element)
+CommandCost CmdRemoveLeagueTableElement(DoCommandFlags flags, LeagueTableElementID element)
 {
 	if (_current_company != OWNER_DEITY) return CMD_ERROR;
 	auto lte = LeagueTableElement::GetIfValid(element);
 	if (lte == nullptr) return CMD_ERROR;
 
-	if (flags & DC_EXEC) {
+	if (flags.Test(DoCommandFlag::Execute)) {
 		auto table = lte->table;
 		delete lte;
-		InvalidateWindowData(WC_COMPANY_LEAGUE, table);
+		InvalidateWindowData(WindowClass::CompanyLeague, table);
 	}
 	return CommandCost();
-}
-
-CommandCost CmdCreateLeagueTable(TileIndex tile, DoCommandFlag flags, const CommandAuxiliaryBase *aux_data)
-{
-	CommandAuxData<LeagueTableCmdData> data;
-	CommandCost ret = data.Load(aux_data);
-	if (ret.Failed()) return ret;
-
-	auto [res, id] = CmdCreateLeagueTable(flags, data->title, data->header, data->footer);
-	res.SetResultData(id);
-	return res;
-}
-
-CommandCost CmdCreateLeagueTableElement(TileIndex tile, DoCommandFlag flags, const CommandAuxiliaryBase *aux_data)
-{
-	CommandAuxData<LeagueTableElementCmdData> data;
-	CommandCost ret = data.Load(aux_data);
-	if (ret.Failed()) return ret;
-
-	auto [res, id] = CmdCreateLeagueTableElement(flags, data->table, data->rating, data->company, data->text_str, data->score, data->link_type, data->link_target);
-	res.SetResultData(id);
-	return res;
-}
-
-CommandCost CmdUpdateLeagueTableElementData(TileIndex tile, DoCommandFlag flags, uint32_t p1, uint32_t p2, const char *text)
-{
-	LeagueTableElementID element = GB(p1, 0, 16);
-	CompanyID company = (CompanyID)GB(p1, 16, 8);
-	LinkType link_type = (LinkType)GB(p1, 24, 8);
-	LinkTargetID link_target = (LinkTargetID)p2;
-
-	return CmdUpdateLeagueTableElementData(flags, element, company, text, link_type, link_target);
-}
-
-CommandCost CmdUpdateLeagueTableElementScore(TileIndex tile, DoCommandFlag flags, uint32_t p1, uint32_t p2, uint64_t p3, const char *text, const CommandAuxiliaryBase *aux_data)
-{
-	return CmdUpdateLeagueTableElementScore(flags, p1, p3, text);
-}
-
-CommandCost CmdRemoveLeagueTableElement(TileIndex tile, DoCommandFlag flags, uint32_t p1, uint32_t p2, const char *text)
-{
-	return CmdRemoveLeagueTableElement(flags, p1);
-}
-
-std::string LeagueTableElementCmdData::GetDebugSummary() const
-{
-	return fmt::format("t: {}, r: {}, c: {}, type: {}, targ: {}", this->table, this->rating, this->company, this->link_type, this->link_target);
 }

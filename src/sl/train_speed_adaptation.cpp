@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file train_speed_adaptation.cpp Code handling saving and loading of data for train speed adaptation */
@@ -31,7 +31,7 @@ static void Load_TSAS()
 	SignalSpeedType data;
 	while ((index = SlIterateArray()) != -1) {
 		if (!table_mode) {
-			const_cast<SignalSpeedKey &>(data.first).signal_tile = index;
+			const_cast<SignalSpeedKey &>(data.first).signal_tile = TileIndex(index);
 		}
 		SlObjectLoadFiltered(&data, slt);
 		_signal_speeds.insert(data);
@@ -51,7 +51,7 @@ static void Save_TSAS()
 }
 
 extern const ChunkHandler train_speed_adaptation_chunk_handlers[] = {
-	{ 'TSAS', Save_TSAS, Load_TSAS, nullptr, nullptr, CH_TABLE },
+	{ 'TSAS', Save_TSAS, Load_TSAS, nullptr, nullptr, ChunkType::Table },
 };
 
 extern const ChunkHandlerTable _train_speed_adaptation_chunk_handlers(train_speed_adaptation_chunk_handlers);

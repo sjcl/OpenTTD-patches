@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file strgen.h Structures related to strgen. */
@@ -10,21 +10,28 @@
 #ifndef STRGEN_H
 #define STRGEN_H
 
+#include "../core/string_consumer.hpp"
 #include "../language.h"
+#include "../3rdparty/robin_hood/robin_hood.h"
 
 #include <memory>
 #include <string>
 #include <vector>
 
-#include <unordered_map>
 #include <array>
 
 /** Container for the different cases of a string. */
 struct Case {
-	int caseidx;        ///< The index of the case.
+	uint8_t caseidx;    ///< The index of the case.
 	std::string string; ///< The translation of the case.
 
-	Case(int caseidx, std::string string);
+	/**
+	 * Create a new case.
+	 * @param caseidx The index of the case.
+	 * @param string  The translation of the case.
+	 */
+	Case(uint8_t caseidx, std::string_view string) :
+			caseidx(caseidx), string(string) {}
 };
 
 /** Information about a single string. */
@@ -33,24 +40,24 @@ struct LangString {
 	std::string english;    ///< English text.
 	std::string translated; ///< Translated text.
 	int index;              ///< The index in the language file.
-	int line;               ///< Line of string in source-file.
+	uint line;              ///< Line of string in source-file.
 	std::vector<Case> translated_cases; ///< Cases of the translation.
 	std::unique_ptr<LangString> chain_before;
 	std::unique_ptr<LangString> chain_after;
 	bool no_translate_mode = false;
 	LangString *default_translation = nullptr;
 
-	LangString(std::string name, std::string english, int index, int line);
-	void ReplaceDefinition(std::string english, int line);
+	LangString(std::string_view name, std::string_view english, int index, uint line);
+	void ReplaceDefinition(std::string_view english, uint line);
 	void FreeTranslation();
 };
 
 /** Information about the currently known strings. */
 struct StringData {
 	std::vector<LangString *> strings; ///< List of all known strings.
-	std::unordered_map<std::string_view, LangString *> name_to_string; ///< Lookup table for the strings.
-	size_t tabs;          ///< The number of 'tabs' of strings.
-	size_t max_strings;   ///< The maximum number of strings.
+	robin_hood::unordered_map<std::string_view, LangString *> name_to_string; ///< Lookup table for the strings.
+	uint tabs;            ///< The number of 'tabs' of strings.
+	uint max_strings;     ///< The maximum number of strings.
 	int next_string_id;   ///< The next string ID to allocate.
 
 	std::vector<std::unique_ptr<LangString>> string_store;
@@ -60,11 +67,10 @@ struct StringData {
 	bool no_translate_mode = false;
 	LangString *default_translation = nullptr;
 
-	StringData(size_t tabs);
+	StringData(uint tabs);
 	void FreeTranslation();
-	LangString *Find(const std::string_view s);
-	uint VersionHashStr(uint hash, const char *s) const;
-	uint Version() const;
+	LangString *Find(std::string_view s);
+	uint32_t Version() const;
 	uint CountInUse(uint tab) const;
 };
 
@@ -77,7 +83,7 @@ struct StringReader {
 
 	StringReader(StringData &data, std::string file, bool master, bool translation);
 	virtual ~StringReader() = default;
-	void HandleString(char *str);
+	void HandleString(std::string_view str);
 
 	/**
 	 * Read a single line from the source of strings.
@@ -89,9 +95,10 @@ struct StringReader {
 
 	/**
 	 * Handle the pragma of the file.
-	 * @param str    The pragma string to parse.
+	 * @param str The pragma string to parse.
+	 * @param lang The header metadata to write the parsed pragma data to.
 	 */
-	virtual void HandlePragma(char *str);
+	virtual void HandlePragma(std::string_view str, LanguagePackHeader &lang);
 
 	/**
 	 * Start parsing the file.
@@ -108,7 +115,7 @@ struct HeaderWriter {
 	 * @param name     The name of the string.
 	 * @param stringid The ID of the string.
 	 */
-	virtual void WriteStringID(const char *name, int stringid) = 0;
+	virtual void WriteStringID(const std::string &name, uint stringid) = 0;
 
 	/**
 	 * Finalise writing the file.
@@ -134,9 +141,8 @@ struct LanguageWriter {
 	/**
 	 * Write a number of bytes.
 	 * @param buffer The buffer to write.
-	 * @param length The amount of byte to write.
 	 */
-	virtual void Write(const uint8_t *buffer, size_t length) = 0;
+	virtual void Write(std::string_view buffer) = 0;
 
 	/**
 	 * Finalise writing the file.
@@ -146,7 +152,7 @@ struct LanguageWriter {
 	/** Especially destroy the subclasses. */
 	virtual ~LanguageWriter() = default;
 
-	virtual void WriteLength(uint length);
+	virtual void WriteLength(size_t length);
 	virtual void WriteLang(const StringData &data);
 };
 
@@ -155,15 +161,17 @@ struct CmdStruct;
 struct CmdPair {
 	const CmdStruct *cmd;
 	std::string param;
+
+	auto operator<=>(const CmdPair &other) const = default;
 };
 
 struct ParsedCommandStruct {
 	std::vector<CmdPair> non_consuming_commands;
-	std::array<const CmdStruct*, 32> consuming_commands{ nullptr }; // ordered by param #
+	std::array<const CmdStruct*, 32> consuming_commands{ nullptr }; ///< Ordered by param #.
 };
 
 const CmdStruct *TranslateCmdForCompare(const CmdStruct *a);
-ParsedCommandStruct ExtractCommandString(const char *s, bool warnings);
+ParsedCommandStruct ExtractCommandString(std::string_view s, bool warnings);
 
 void StrgenWarningI(const std::string &msg);
 void StrgenErrorI(const std::string &msg);
@@ -171,11 +179,19 @@ void StrgenErrorI(const std::string &msg);
 #define StrgenWarning(format_string, ...) StrgenWarningI(fmt::format(FMT_STRING(format_string) __VA_OPT__(,) __VA_ARGS__))
 #define StrgenError(format_string, ...) StrgenErrorI(fmt::format(FMT_STRING(format_string) __VA_OPT__(,) __VA_ARGS__))
 #define StrgenFatal(format_string, ...) StrgenFatalI(fmt::format(FMT_STRING(format_string) __VA_OPT__(,) __VA_ARGS__))
-char *ParseWord(char **buf);
+std::optional<std::string_view> ParseWord(StringConsumer &consumer);
 
-extern const char *_file;
-extern int _cur_line;
-extern int _errors, _warnings, _show_todo;
-extern LanguagePackHeader _lang;
+/** Global state shared between strgen.cpp, game_text.cpp and strgen_base.cpp */
+struct StrgenState {
+	std::string file = "(unknown file)"; ///< The filename of the input, so we can refer to it in errors/warnings
+	uint cur_line = 0; ///< The current line we're parsing in the input file
+	uint errors = 0;
+	uint warnings = 0;
+	bool show_warnings = false;
+	bool annotate_todos = false;
+	bool translation = false; ///< Is the current file actually a translation or not
+	LanguagePackHeader lang; ///< Header information about a language.
+};
+extern StrgenState _strgen;
 
 #endif /* STRGEN_H */

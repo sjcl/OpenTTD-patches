@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file bridge_map.h Map accessor functions for bridges. */
@@ -17,12 +17,12 @@
 /**
  * Checks if this is a bridge, instead of a tunnel
  * @param t The tile to analyze
- * @pre IsTileType(t, MP_TUNNELBRIDGE)
+ * @pre IsTileType(t, TileType::TunnelBridge)
  * @return true if the structure is a bridge one
  */
 inline bool IsBridge(TileIndex t)
 {
-	assert_tile(IsTileType(t, MP_TUNNELBRIDGE), t);
+	assert_tile(IsTileType(t, TileType::TunnelBridge), t);
 	return HasBit(_m[t].m5, 7);
 }
 
@@ -33,7 +33,7 @@ inline bool IsBridge(TileIndex t)
  */
 inline bool IsBridgeTile(TileIndex t)
 {
-	return IsTileType(t, MP_TUNNELBRIDGE) && IsBridge(t);
+	return IsTileType(t, TileType::TunnelBridge) && IsBridge(t);
 }
 
 /**
@@ -67,7 +67,7 @@ inline BridgeType GetBridgeType(TileIndex t)
 inline Axis GetBridgeAxis(TileIndex t)
 {
 	assert_tile(IsBridgeAbove(t), t);
-	return (Axis)(GB(_m[t].type, 2, 2) - 1);
+	return static_cast<Axis>((GB(_m[t].type, 2, 2) - 1));
 }
 
 TileIndex GetNorthernBridgeEnd(TileIndex t);
@@ -92,7 +92,7 @@ inline int GetBridgePixelHeight(TileIndex tile)
  */
 inline void ClearSingleBridgeMiddle(TileIndex t, Axis a)
 {
-	ClrBit(_m[t].type, 2 + a);
+	ClrBit(_m[t].type, 2 + to_underlying(a));
 }
 
 /**
@@ -101,8 +101,8 @@ inline void ClearSingleBridgeMiddle(TileIndex t, Axis a)
  */
 inline void ClearBridgeMiddle(TileIndex t)
 {
-	ClearSingleBridgeMiddle(t, AXIS_X);
-	ClearSingleBridgeMiddle(t, AXIS_Y);
+	ClearSingleBridgeMiddle(t, Axis::X);
+	ClearSingleBridgeMiddle(t, Axis::Y);
 }
 
 /**
@@ -112,7 +112,7 @@ inline void ClearBridgeMiddle(TileIndex t)
  */
 inline void SetBridgeMiddle(TileIndex t, Axis a)
 {
-	SetBit(_m[t].type, 2 + a);
+	SetBit(_m[t].type, 2 + to_underlying(a));
 }
 
 /**
@@ -126,16 +126,17 @@ inline void SetBridgeMiddle(TileIndex t, Axis a)
  */
 inline void MakeBridgeRamp(TileIndex t, Owner o, BridgeType bridgetype, DiagDirection d, TransportType tt)
 {
-	SetTileType(t, MP_TUNNELBRIDGE);
+	SetTileType(t, TileType::TunnelBridge);
 	SetTileOwner(t, o);
 	SetDockingTile(t, false);
 	_m[t].m2 = 0;
 	_m[t].m3 = 0;
-	_m[t].m4 = INVALID_ROADTYPE;
-	_m[t].m5 = 1 << 7 | tt << 2 | d;
+	_m[t].m4 = 0;
+	_m[t].m5 = 1 << 7 | to_underlying(tt) << 2 | to_underlying(d);
+	_me[t].m6 = 0;
 	SB(_me[t].m6, 2, 4, bridgetype);
 	_me[t].m7 = 0;
-	_me[t].m8 = INVALID_ROADTYPE << 6;
+	_me[t].m8 = 0;
 }
 
 /**
@@ -151,9 +152,9 @@ inline void MakeBridgeRamp(TileIndex t, Owner o, BridgeType bridgetype, DiagDire
  */
 inline void MakeRoadBridgeRamp(TileIndex t, Owner o, Owner owner_road, Owner owner_tram, BridgeType bridgetype, DiagDirection d, RoadType road_rt, RoadType tram_rt)
 {
-	MakeBridgeRamp(t, o, bridgetype, d, TRANSPORT_ROAD);
-	SetRoadOwner(t, RTT_ROAD, owner_road);
-	if (owner_tram != OWNER_TOWN) SetRoadOwner(t, RTT_TRAM, owner_tram);
+	MakeBridgeRamp(t, o, bridgetype, d, TransportType::Road);
+	SetRoadOwner(t, RoadTramType::Road, owner_road);
+	if (owner_tram != OWNER_TOWN) SetRoadOwner(t, RoadTramType::Tram, owner_tram);
 	SetRoadTypes(t, road_rt, tram_rt);
 }
 
@@ -176,7 +177,7 @@ inline void MakeRailBridgeRamp(TileIndex t, Owner o, BridgeType bridgetype, Diag
 	auto m6_backup = _me[t].m6;
 	auto m8_backup = _me[t].m8;
 
-	MakeBridgeRamp(t, o, bridgetype, d, TRANSPORT_RAIL);
+	MakeBridgeRamp(t, o, bridgetype, d, TransportType::Rail);
 	_m[t].m4 = 0;
 	_me[t].m8 = rt;
 
@@ -204,7 +205,7 @@ inline void MakeRailBridgeRamp(TileIndex t, Owner o, BridgeType bridgetype, Diag
  */
 inline void MakeAqueductBridgeRamp(TileIndex t, Owner o, DiagDirection d)
 {
-	MakeBridgeRamp(t, o, 0, d, TRANSPORT_WATER);
+	MakeBridgeRamp(t, o, 0, d, TransportType::Water);
 }
 
 /**
@@ -214,7 +215,7 @@ inline void MakeAqueductBridgeRamp(TileIndex t, Owner o, DiagDirection d)
 */
 inline bool IsRoadBridgeTile(TileIndex t)
 {
-	return IsBridgeTile(t) && (TransportType)GB(_m[t].m5, 2, 2) == TRANSPORT_ROAD;
+	return IsBridgeTile(t) && (TransportType)GB(_m[t].m5, 2, 2) == TransportType::Road;
 }
 
 /**
@@ -243,26 +244,26 @@ inline bool IsRoadCustomBridgeHeadTile(TileIndex t)
  * Returns the road bits for a (possibly custom) road bridge head
  * @param t The tile to analyze
  * @param rtt Road/tram type.
- * @pre IsBridgeTile(t) && GetTunnelBridgeTransportType(t) == TRANSPORT_ROAD
+ * @pre IsBridgeTile(t) && GetTunnelBridgeTransportType(t) == TransportType::Road
  * @return road bits for the bridge head
  */
 inline RoadBits GetCustomBridgeHeadRoadBits(TileIndex t, RoadTramType rtt)
 {
 	assert_tile(IsBridgeTile(t), t);
-	if (!HasTileRoadType(t, rtt)) return (RoadBits) 0;
-	RoadBits bits = (GB(_m[t].m5, 0, 1) ? ROAD_Y : ROAD_X) ^ (RoadBits) GB(_m[t].m2, rtt == RTT_TRAM ? 4 : 0, 4);
+	if (!HasTileRoadType(t, rtt)) return {};
+	RoadBits bits = static_cast<RoadBits>((GB(_m[t].m5, 0, 1) ? ROAD_Y : ROAD_X).base() ^ GB(_m[t].m2, rtt == RoadTramType::Tram ? 4 : 0, 4));
 	return bits;
 }
 
 /**
  * Returns the road bits for a (possibly custom) road bridge head, for all road types
  * @param t The tile to analyze
- * @pre IsBridgeTile(t) && GetTunnelBridgeTransportType(t) == TRANSPORT_ROAD
+ * @pre IsBridgeTile(t) && GetTunnelBridgeTransportType(t) == TransportType::Road
  * @return road bits for the bridge head
  */
 inline RoadBits GetCustomBridgeHeadAllRoadBits(TileIndex t)
 {
-	return GetCustomBridgeHeadRoadBits(t, RTT_ROAD) | GetCustomBridgeHeadRoadBits(t, RTT_TRAM);
+	return GetCustomBridgeHeadRoadBits(t, RoadTramType::Road) | GetCustomBridgeHeadRoadBits(t, RoadTramType::Tram);
 }
 
 /**
@@ -270,7 +271,7 @@ inline RoadBits GetCustomBridgeHeadAllRoadBits(TileIndex t)
  * @param t The tile to modify
  * @param rtt Road/tram type.
  * @param bits The road bits.
- * @pre IsBridgeTile(t) && GetTunnelBridgeTransportType(t) == TRANSPORT_ROAD
+ * @pre IsBridgeTile(t) && GetTunnelBridgeTransportType(t) == TransportType::Road
  * @pre HasTileRoadType() must be set correctly before calling this
  */
 inline void SetCustomBridgeHeadRoadBits(TileIndex t, RoadTramType rtt, RoadBits bits)
@@ -278,10 +279,10 @@ inline void SetCustomBridgeHeadRoadBits(TileIndex t, RoadTramType rtt, RoadBits 
 	assert_tile(IsBridgeTile(t), t);
 	if (HasTileRoadType(t, rtt)) {
 		assert(bits != ROAD_NONE);
-		SB(_m[t].m2, rtt == RTT_TRAM ? 4 : 0, 4, bits ^ (GB(_m[t].m5, 0, 1) ? ROAD_Y : ROAD_X));
+		SB(_m[t].m2, rtt == RoadTramType::Tram ? 4 : 0, 4, bits.base() ^ (GB(_m[t].m5, 0, 1) ? ROAD_Y : ROAD_X).base());
 	} else {
 		assert(bits == ROAD_NONE);
-		SB(_m[t].m2, rtt == RTT_TRAM ? 4 : 0, 4, 0);
+		SB(_m[t].m2, rtt == RoadTramType::Tram ? 4 : 0, 4, 0);
 	}
 }
 
@@ -305,7 +306,7 @@ inline void SetBridgeDisallowedRoadDirections(TileIndex t, DisallowedRoadDirecti
 {
 	assert_tile(IsRoadBridgeTile(t), t);
 	assert(drd < DRD_END);
-	SB(_m[t].m4, 6, 2, drd);
+	SB(_m[t].m4, 6, 2, drd.base());
 }
 
 /**
@@ -315,7 +316,7 @@ inline void SetBridgeDisallowedRoadDirections(TileIndex t, DisallowedRoadDirecti
  */
 inline bool IsRailBridgeHeadTile(TileIndex t)
 {
-	return IsBridgeTile(t) && (TransportType)GB(_m[t].m5, 2, 2) == TRANSPORT_RAIL;
+	return IsBridgeTile(t) && (TransportType)GB(_m[t].m5, 2, 2) == TransportType::Rail;
 }
 
 /**
@@ -465,7 +466,7 @@ inline TrackBits GetAcrossBridgePossibleTrackBits(TileIndex t)
 
 /**
  * Get the reserved track bits of the bridge head tile onto/across the bridge
- * @pre IsBridgeTile(t) && GetTunnelBridgeTransportType(t) == TRANSPORT_RAIL
+ * @pre IsBridgeTile(t) && GetTunnelBridgeTransportType(t) == TransportType::Rail
  * @param t the tile
  * @return reservation state
  */
@@ -476,7 +477,7 @@ inline TrackBits GetAcrossBridgeReservationTrackBits(TileIndex t)
 
 /**
  * Get the reservation state of the bridge head tile onto/across the bridge
- * @pre IsBridgeTile(t) && GetTunnelBridgeTransportType(t) == TRANSPORT_RAIL
+ * @pre IsBridgeTile(t) && GetTunnelBridgeTransportType(t) == TransportType::Rail
  * @param t the tile
  * @return reservation state
  */

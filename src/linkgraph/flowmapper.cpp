@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file flowmapper.cpp Definition of flowmapper. */
@@ -21,12 +21,9 @@ void FlowMapper::Run(LinkGraphJob &job) const
 	for (NodeID node_id = 0; node_id < job.Size(); ++node_id) {
 		Node prev_node = job[node_id];
 		StationID prev = prev_node.Station();
-		PathList &paths = prev_node.Paths();
-		for (PathList::reverse_iterator i = paths.rbegin(); i != paths.rend(); ++i) {
-			Path *path = *i;
-			if (!path) continue;
+		for (Path *path : prev_node.Paths()) {
+			if (path == nullptr) continue;
 			uint flow = path->GetFlow();
-			if (flow == 0) break;
 			Node node = job[path->GetNode()];
 			StationID via = node.Station();
 			StationID origin = job[path->GetOrigin()].Station();

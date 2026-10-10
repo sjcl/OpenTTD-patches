@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file settings_compat.h Tables for loading non-table format settings chunks. */
@@ -16,7 +16,7 @@
 #define SLCX_XREF(name, from, to, extver) {name, SettingsCompatType::Xref, 0, from, to, extver, nullptr}
 #define SLCX_XREFCVT(name, from, to, extver, cvt) {name, SettingsCompatType::Xref, 0, from, to, extver, cvt}
 
-static std::initializer_list<SettingsCompat> _gameopt_compat{
+extern const std::initializer_list<SettingsCompat> _gameopt_compat{
 	SLCX_VAR("diff_custom"),
 	SLCX_VAR("diff_level"),
 	SLCX_VAR("locale.currency"),
@@ -30,7 +30,7 @@ static std::initializer_list<SettingsCompat> _gameopt_compat{
 	SLCX_VAR("vehicle.road_side"),
 };
 
-static std::initializer_list<SettingsCompat> _settings_compat{
+extern const std::initializer_list<SettingsCompat> _settings_compat{
 	SLCX_VAR("difficulty.max_no_competitors"),
 	SLCX_NULL(1, SLV_97, SLV_110), // difficulty.competitor_start_time
 	SLCX_VAR("difficulty.number_towns"),
@@ -230,7 +230,7 @@ static std::initializer_list<SettingsCompat> _settings_compat{
 	SLCX_VAR("order.gradual_loading"),
 	SLCX_VAR("construction.road_stop_on_town_road"),
 	SLCX_VAR("construction.road_stop_on_competitor_road"),
-	SLCX_XREF("construction.road_custom_bridge_heads", SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_JOKERPP)),
+	SLCX_NULL_X(1, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_JOKERPP)), // construction.road_custom_bridge_heads
 	SLCX_NULL(1, SLV_62, SLV_TABLE_CHUNKS), // station.adjacent_stations
 	SLCX_VAR("economy.station_noise_level"),
 	SLCX_VAR("station.distant_join_stations"),
@@ -342,7 +342,7 @@ static std::initializer_list<SettingsCompat> _settings_compat{
 	SLCX_NULL_X(4, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_CHILLPP, SL_CHILLPP_232)), // pf.npf.npf_road_trafficlight_penalty
 	SLCX_NULL(8, SLV_130, SLV_TABLE_CHUNKS), // pf.npf.npf_road_dt_occupied_penalty, pf.npf.npf_road_bay_occupied_penalty
 	SLCX_NULL(4, SLV_131, SLV_TABLE_CHUNKS), // pf.npf.maximum_go_to_depot_penalty
-	SLCX_VAR("pf.yapf.disable_node_optimization"),
+	SLCX_NULL(1, SLV_28, SLV_TABLE_CHUNKS), // pf.yapf.disable_node_optimization
 	SLCX_VAR("pf.yapf.max_search_nodes"),
 	SLCX_VAR("pf.yapf.rail_firstred_twoway_eol"),
 	SLCX_VAR("pf.yapf.rail_firstred_penalty"),

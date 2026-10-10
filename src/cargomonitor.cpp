@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file cargomonitor.cpp Implementation of the cargo transport monitoring. */
@@ -111,26 +111,25 @@ int32_t GetPickupAmount(CargoMonitorID monitor, bool keep_monitoring)
  * @param cargo_type type of cargo.
  * @param company company delivering the cargo.
  * @param amount Amount of cargo delivered.
- * @param src_type type of \a src.
- * @param src index of source.
+ * @param src source of cargo.
  * @param st station where the cargo is delivered to.
  * @param dest industry index where the cargo is delivered to.
  */
-void AddCargoDelivery(CargoID cargo_type, CompanyID company, uint32_t amount, SourceType src_type, SourceID src, const Station *st, IndustryID dest)
+void AddCargoDelivery(CargoType cargo_type, CompanyID company, uint32_t amount, Source src, const Station *st, IndustryID dest)
 {
 	if (amount == 0) return;
 
-	if (src != INVALID_SOURCE) {
+	if (src.IsValid()) {
 		/* Handle pickup update. */
-		switch (src_type) {
+		switch (src.type) {
 			case SourceType::Industry: {
-				CargoMonitorID num = EncodeCargoIndustryMonitor(company, cargo_type, src);
+				CargoMonitorID num = EncodeCargoIndustryMonitor(company, cargo_type, src.ToIndustryID());
 				CargoMonitorMap::iterator iter = _cargo_pickups.find(num);
 				if (iter != _cargo_pickups.end()) iter->second += amount;
 				break;
 			}
 			case SourceType::Town: {
-				CargoMonitorID num = EncodeCargoTownMonitor(company, cargo_type, src);
+				CargoMonitorID num = EncodeCargoTownMonitor(company, cargo_type, src.ToTownID());
 				CargoMonitorMap::iterator iter = _cargo_pickups.find(num);
 				if (iter != _cargo_pickups.end()) iter->second += amount;
 				break;

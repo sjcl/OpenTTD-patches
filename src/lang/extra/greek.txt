@@ -19,6 +19,8 @@ STR_CONFIG_SETTING_TIMETABLE_IN_TICKS_HELPTEXT                  :Εμφάνισ�
 
 STR_TRANSPARENT_LOADING_TOOLTIP                                 :{BLACK}Εναλλαγή διαφάνειας για τις ενδείξεις φόρτωσης. Ctrl+Κλικ για να την κλειδώσετε
 
+STR_BUILD_SIGNAL_TOGGLE_ADVANCED_SIGNAL_TOOLTIP                 :{BLACK}Εναλλαγή εμφάνισης προχωρημένων τύπων σηματοδοτών
+
 # Tracerestrict GUI
 
 # Programmable Pre-Signals
@@ -101,3 +103,13 @@ STR_COMPANY_PASSWORD_MAKE_DEFAULT_TOOLTIP                       :{BLACK}Χρήσ
 STR_COMPANY_VIEW_PASSWORD                                       :{BLACK}Κωδικός
 STR_COMPANY_VIEW_PASSWORD_TOOLTIP                               :{BLACK}Προστατεύστε την εταιρεία με κωδικό ώστε να αποφύγετε την συμμετοχή ανεπιθύμητων παικτών
 STR_COMPANY_VIEW_SET_PASSWORD                                   :{BLACK}Θέση του κωδικού της εταιρείας
+
+# JSON messages
+
+STR_INTRO_NEWGRF_SETTINGS                                       :{BLACK}Ρυθμίσεις NewGRF
+STR_INTRO_AI_SETTINGS                                           :{BLACK}Ρυθμίσεις AI
+STR_INTRO_GAMESCRIPT_SETTINGS                                   :{BLACK}Ρυθμίσεις σενάριου παιχνιδιού
+STR_INTRO_TOOLTIP_NEWGRF_SETTINGS                               :{BLACK}Εμφάνιση ρυθμίσεων NewGRF
+STR_INTRO_TOOLTIP_AI_SETTINGS                                   :{BLACK}Εμφάνιση ρυθμίσεων ΤΝ
+STR_INTRO_TOOLTIP_GAMESCRIPT_SETTINGS                           :{BLACK}Εμφάνιση ρυθμίσεων σενάριου παιχνιδιού
+STR_INTRO_CAPTION_TRADITIONAL                                   :{WHITE}OpenTTD {REV}

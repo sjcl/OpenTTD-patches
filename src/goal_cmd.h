@@ -1,0 +1,26 @@
+/*
+ * This file is part of OpenTTD.
+ * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
+ * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
+ */
+
+/** @file goal_cmd.h Command definitions related to goals. */
+
+#ifndef GOAL_CMD_H
+#define GOAL_CMD_H
+
+#include "command_type.h"
+#include "company_type.h"
+#include "goal_type.h"
+
+DEF_CMD_TUPLE_NT(Commands::CreateGoal,          CmdCreateGoal,              CMD_STR_CTRL | CMD_DEITY | CMD_LOG_AUX, CommandType::OtherManagement, CmdDataT<CompanyID, GoalType, GoalTypeID, EncodedString>)
+DEF_CMD_TUPLE_NT(Commands::RemoveGoal,          CmdRemoveGoal,                             CMD_DEITY | CMD_LOG_AUX, CommandType::OtherManagement, CmdDataT<GoalID>)
+DEF_CMD_TUPLE_NT(Commands::SetGoalDestination,  CmdSetGoalDestination,                     CMD_DEITY | CMD_LOG_AUX, CommandType::OtherManagement, CmdDataT<GoalID, GoalType, GoalTypeID>)
+DEF_CMD_TUPLE_NT(Commands::SetGoalText,         CmdSetGoalText,             CMD_STR_CTRL | CMD_DEITY | CMD_LOG_AUX, CommandType::OtherManagement, CmdDataT<GoalID, EncodedString>)
+DEF_CMD_TUPLE_NT(Commands::SetGoalProgress,     CmdSetGoalProgress,         CMD_STR_CTRL | CMD_DEITY | CMD_LOG_AUX, CommandType::OtherManagement, CmdDataT<GoalID, EncodedString>)
+DEF_CMD_TUPLE_NT(Commands::SetGoalCompleted,    CmdSetGoalCompleted,        CMD_STR_CTRL | CMD_DEITY | CMD_LOG_AUX, CommandType::OtherManagement, CmdDataT<GoalID, bool>)
+DEF_CMD_TUPLE_NT(Commands::GoalQuestion,        CmdGoalQuestion,            CMD_STR_CTRL | CMD_DEITY | CMD_LOG_AUX, CommandType::OtherManagement, CmdDataT<uint16_t, uint32_t, bool, GoalQuestionButtons, GoalQuestionType, EncodedString>)
+DEF_CMD_TUPLE_NT(Commands::GoalQuestionAnswer,  CmdGoalQuestionAnswer,                     CMD_DEITY | CMD_LOG_AUX, CommandType::OtherManagement, CmdDataT<uint16_t, GoalQuestionButton>)
+
+#endif /* GOAL_CMD_H */

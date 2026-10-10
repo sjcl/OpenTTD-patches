@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file water_map.h Map accessors for water tiles. */
@@ -28,35 +28,36 @@ static constexpr uint8_t WBL_DEPOT_PART = 0; ///< Depot part flag.
 static constexpr uint8_t WBL_DEPOT_AXIS = 1; ///< Depot axis flag.
 
 /** Available water tile types. */
-enum WaterTileType {
-	WATER_TILE_CLEAR, ///< Plain water.
-	WATER_TILE_COAST, ///< Coast.
-	WATER_TILE_LOCK,  ///< Water lock.
-	WATER_TILE_DEPOT, ///< Water Depot.
+enum class WaterTileType : uint8_t {
+	Clear = 0, ///< Plain water.
+	Coast = 1, ///< Coast.
+	Lock  = 2, ///< Water lock.
+	Depot = 3, ///< Water Depot.
+	ClearRocks = 4, ///< Rocks on water.
+	CoastRocks = 5, ///< Rocks on coast.
 };
 
-/** classes of water (for #WATER_TILE_CLEAR water tile type). */
-enum WaterClass : uint8_t {
-	WATER_CLASS_SEA,     ///< Sea.
-	WATER_CLASS_CANAL,   ///< Canal.
-	WATER_CLASS_RIVER,   ///< River.
-	WATER_CLASS_INVALID, ///< Used for industry tiles on land (also for oilrig if newgrf says so).
+/** classes of water (for #WaterTileType::Clear water tile type). */
+enum class WaterClass : uint8_t {
+	Sea     = 0, ///< Sea.
+	Canal   = 1, ///< Canal.
+	River   = 2, ///< River.
+	Invalid = 3, ///< Used for industry tiles on land (also for oilrig if newgrf says so).
 };
-/** Helper information for extract tool. */
-template <> struct EnumPropsT<WaterClass> : MakeEnumPropsT<WaterClass, uint8_t, WATER_CLASS_SEA, WATER_CLASS_INVALID, WATER_CLASS_INVALID, 2> {};
 
 /** Sections of the water depot. */
-enum DepotPart {
-	DEPOT_PART_NORTH = 0, ///< Northern part of a depot.
-	DEPOT_PART_SOUTH = 1, ///< Southern part of a depot.
-	DEPOT_PART_END
+enum class DepotPart : uint8_t {
+	North = 0, ///< Northern part of a depot.
+	South = 1, ///< Southern part of a depot.
+	End, ///< End marker.
 };
 
 /** Sections of the water lock. */
-enum LockPart {
-	LOCK_PART_MIDDLE = 0, ///< Middle part of a lock.
-	LOCK_PART_LOWER  = 1, ///< Lower part of a lock.
-	LOCK_PART_UPPER  = 2, ///< Upper part of a lock.
+enum class LockPart : uint8_t {
+	Middle = 0, ///< Middle part of a lock.
+	Lower  = 1, ///< Lower part of a lock.
+	Upper  = 2, ///< Upper part of a lock.
+	End, ///< End marker.
 };
 
 bool IsPossibleDockingTile(TileIndex t);
@@ -68,7 +69,7 @@ bool IsPossibleDockingTile(TileIndex t);
  */
 inline WaterTileType GetWaterTileType(TileIndex t)
 {
-	dbg_assert_tile(IsTileType(t, MP_WATER), t);
+	dbg_assert_tile(IsTileType(t, TileType::Water), t);
 	return static_cast<WaterTileType>(GB(_m[t].m5, WBL_TYPE_BEGIN, WBL_TYPE_COUNT));
 }
 
@@ -79,7 +80,7 @@ inline WaterTileType GetWaterTileType(TileIndex t)
  */
 inline void SetWaterTileType(TileIndex t, WaterTileType type)
 {
-	dbg_assert_tile(IsTileType(t, MP_WATER), t);
+	dbg_assert_tile(IsTileType(t, TileType::Water), t);
 	SB(_m[t].m5, WBL_TYPE_BEGIN, WBL_TYPE_COUNT, to_underlying(type));
 }
 
@@ -91,86 +92,86 @@ inline void SetWaterTileType(TileIndex t, WaterTileType type)
  */
 inline bool HasTileWaterClass(TileIndex t)
 {
-	return IsTileType(t, MP_WATER) || IsTileType(t, MP_STATION) || IsTileType(t, MP_INDUSTRY) || IsTileType(t, MP_OBJECT) || IsTileType(t, MP_TREES);
+	return IsTileType(t, TileType::Water) || IsTileType(t, TileType::Station) || IsTileType(t, TileType::Industry) || IsTileType(t, TileType::Object) || IsTileType(t, TileType::Trees);
 }
 
 /**
  * Get the water class at a tile.
  * @param t Water tile to query.
- * @pre IsTileType(t, MP_WATER) || IsTileType(t, MP_STATION) || IsTileType(t, MP_INDUSTRY) || IsTileType(t, MP_OBJECT)
+ * @pre IsTileType(t, TileType::Water) || IsTileType(t, TileType::Station) || IsTileType(t, TileType::Industry) || IsTileType(t, TileType::Object)
  * @return Water class at the tile.
  */
 inline WaterClass GetWaterClass(TileIndex t)
 {
 	dbg_assert_tile(HasTileWaterClass(t), t);
-	return (WaterClass)GB(_m[t].m1, 5, 2);
+	return static_cast<WaterClass>(GB(_m[t].m1, 5, 2));
 }
 
 /**
  * Set the water class at a tile.
  * @param t  Water tile to change.
  * @param wc New water class.
- * @pre IsTileType(t, MP_WATER) || IsTileType(t, MP_STATION) || IsTileType(t, MP_INDUSTRY) || IsTileType(t, MP_OBJECT)
+ * @pre IsTileType(t, TileType::Water) || IsTileType(t, TileType::Station) || IsTileType(t, TileType::Industry) || IsTileType(t, TileType::Object)
  */
 inline void SetWaterClass(TileIndex t, WaterClass wc)
 {
 	dbg_assert_tile(HasTileWaterClass(t), t);
-	SB(_m[t].m1, 5, 2, wc);
+	SB(_m[t].m1, 5, 2, to_underlying(wc));
 }
 
 /**
  * Tests if the tile was built on water.
  * @param t the tile to check
- * @pre IsTileType(t, MP_WATER) || IsTileType(t, MP_STATION) || IsTileType(t, MP_INDUSTRY) || IsTileType(t, MP_OBJECT)
+ * @pre IsTileType(t, TileType::Water) || IsTileType(t, TileType::Station) || IsTileType(t, TileType::Industry) || IsTileType(t, TileType::Object)
  * @return true iff on water
  */
 inline bool IsTileOnWater(TileIndex t)
 {
-	return (GetWaterClass(t) != WATER_CLASS_INVALID);
+	return (GetWaterClass(t) != WaterClass::Invalid);
 }
 
 /**
  * Is it a plain water tile?
  * @param t Water tile to query.
  * @return \c true if any type of clear water like ocean, river, or canal.
- * @pre IsTileType(t, MP_WATER)
+ * @pre IsTileType(t, TileType::Water)
  */
 inline bool IsWater(TileIndex t)
 {
-	return GetWaterTileType(t) == WATER_TILE_CLEAR;
+	return GetWaterTileType(t) == WaterTileType::Clear;
 }
 
 /**
  * Is it a sea water tile?
  * @param t Water tile to query.
  * @return \c true if it is a sea water tile.
- * @pre IsTileType(t, MP_WATER)
+ * @pre IsTileType(t, TileType::Water)
  */
 inline bool IsSea(TileIndex t)
 {
-	return IsWater(t) && GetWaterClass(t) == WATER_CLASS_SEA;
+	return IsWater(t) && GetWaterClass(t) == WaterClass::Sea;
 }
 
 /**
  * Is it a canal tile?
  * @param t Water tile to query.
  * @return \c true if it is a canal tile.
- * @pre IsTileType(t, MP_WATER)
+ * @pre IsTileType(t, TileType::Water)
  */
 inline bool IsCanal(TileIndex t)
 {
-	return IsWater(t) && GetWaterClass(t) == WATER_CLASS_CANAL;
+	return IsWater(t) && GetWaterClass(t) == WaterClass::Canal;
 }
 
 /**
  * Is it a river water tile?
  * @param t Water tile to query.
  * @return \c true if it is a river water tile.
- * @pre IsTileType(t, MP_WATER)
+ * @pre IsTileType(t, TileType::Water)
  */
 inline bool IsRiver(TileIndex t)
 {
-	return IsWater(t) && GetWaterClass(t) == WATER_CLASS_RIVER;
+	return IsWater(t) && GetWaterClass(t) == WaterClass::River;
 }
 
 /**
@@ -180,18 +181,19 @@ inline bool IsRiver(TileIndex t)
  */
 inline bool IsWaterTile(TileIndex t)
 {
-	return IsTileType(t, MP_WATER) && IsWater(t);
+	return IsTileType(t, TileType::Water) && IsWater(t);
 }
 
 /**
  * Is it a coast tile?
  * @param t Water tile to query.
- * @return \c true if it is a sea water tile.
- * @pre IsTileType(t, MP_WATER)
+ * @return \c true if it is a coast or rocky coast tile.
+ * @pre IsTileType(t, TileType::Water)
  */
 inline bool IsCoast(TileIndex t)
 {
-	return GetWaterTileType(t) == WATER_TILE_COAST;
+	WaterTileType wtt = GetWaterTileType(t);
+	return wtt == WaterTileType::Coast || wtt == WaterTileType::CoastRocks;
 }
 
 /**
@@ -201,18 +203,18 @@ inline bool IsCoast(TileIndex t)
  */
 inline bool IsCoastTile(TileIndex t)
 {
-	return (IsTileType(t, MP_WATER) && IsCoast(t)) || (IsTileType(t, MP_TREES) && GetWaterClass(t) != WATER_CLASS_INVALID);
+	return (IsTileType(t, TileType::Water) && IsCoast(t)) || (IsTileType(t, TileType::Trees) && GetWaterClass(t) != WaterClass::Invalid);
 }
 
 /**
  * Is it a water tile with a ship depot on it?
  * @param t Water tile to query.
  * @return \c true if it is a ship depot tile.
- * @pre IsTileType(t, MP_WATER)
+ * @pre IsTileType(t, TileType::Water)
  */
 inline bool IsShipDepot(TileIndex t)
 {
-	return GetWaterTileType(t) == WATER_TILE_DEPOT;
+	return GetWaterTileType(t) == WaterTileType::Depot;
 }
 
 /**
@@ -222,7 +224,7 @@ inline bool IsShipDepot(TileIndex t)
  */
 inline bool IsShipDepotTile(TileIndex t)
 {
-	return IsTileType(t, MP_WATER) && IsShipDepot(t);
+	return IsTileType(t, TileType::Water) && IsShipDepot(t);
 }
 
 /**
@@ -234,7 +236,7 @@ inline bool IsShipDepotTile(TileIndex t)
 inline Axis GetShipDepotAxis(TileIndex t)
 {
 	dbg_assert_tile(IsShipDepotTile(t), t);
-	return (Axis)GB(_m[t].m5, WBL_DEPOT_AXIS, 1);
+	return static_cast<Axis>(GB(_m[t].m5, WBL_DEPOT_AXIS, 1));
 }
 
 /**
@@ -246,7 +248,7 @@ inline Axis GetShipDepotAxis(TileIndex t)
 inline DepotPart GetShipDepotPart(TileIndex t)
 {
 	dbg_assert_tile(IsShipDepotTile(t), t);
-	return (DepotPart)GB(_m[t].m5, WBL_DEPOT_PART, 1);
+	return static_cast<DepotPart>(GB(_m[t].m5, WBL_DEPOT_PART, 1));
 }
 
 /**
@@ -257,7 +259,7 @@ inline DepotPart GetShipDepotPart(TileIndex t)
  */
 inline DiagDirection GetShipDepotDirection(TileIndex t)
 {
-	return XYNSToDiagDir(GetShipDepotAxis(t), GetShipDepotPart(t));
+	return XYNSToDiagDir(GetShipDepotAxis(t), to_underlying(GetShipDepotPart(t)));
 }
 
 /**
@@ -268,7 +270,7 @@ inline DiagDirection GetShipDepotDirection(TileIndex t)
  */
 inline TileIndex GetOtherShipDepotTile(TileIndex t)
 {
-	return t + (GetShipDepotPart(t) != DEPOT_PART_NORTH ? -1 : 1) * TileOffsByAxis(GetShipDepotAxis(t));
+	return t + (GetShipDepotPart(t) != DepotPart::North ? -1 : 1) * TileOffsByAxis(GetShipDepotAxis(t));
 }
 
 /**
@@ -289,18 +291,18 @@ inline TileIndex GetShipDepotNorthTile(TileIndex t)
  * Is there a lock on a given water tile?
  * @param t Water tile to query.
  * @return \c true if it is a water lock tile.
- * @pre IsTileType(t, MP_WATER)
+ * @pre IsTileType(t, TileType::Water)
  */
 inline bool IsLock(TileIndex t)
 {
-	return GetWaterTileType(t) == WATER_TILE_LOCK;
+	return GetWaterTileType(t) == WaterTileType::Lock;
 }
 
 /**
  * Get the direction of the water lock.
  * @param t Water tile to query.
  * @return Direction of the lock.
- * @pre IsTileType(t, MP_WATER) && IsLock(t)
+ * @pre IsTileType(t, TileType::Water) && IsLock(t)
  */
 inline DiagDirection GetLockDirection(TileIndex t)
 {
@@ -312,29 +314,30 @@ inline DiagDirection GetLockDirection(TileIndex t)
  * Get the part of a lock.
  * @param t Water tile to query.
  * @return The part.
- * @pre IsTileType(t, MP_WATER) && IsLock(t)
+ * @pre IsTileType(t, TileType::Water) && IsLock(t)
  */
-inline uint8_t GetLockPart(TileIndex t)
+inline LockPart GetLockPart(TileIndex t)
 {
 	dbg_assert_tile(IsLock(t), t);
-	return GB(_m[t].m5, WBL_LOCK_PART_BEGIN, WBL_LOCK_PART_COUNT);
+	return static_cast<LockPart>(GB(_m[t].m5, WBL_LOCK_PART_BEGIN, WBL_LOCK_PART_COUNT));
 }
 
 /**
  * Get the random bits of the water tile.
  * @param t Water tile to query.
  * @return Random bits of the tile.
- * @pre IsTileType(t, MP_WATER)
+ * @pre IsTileType(t, TileType::Water)
  */
 inline uint8_t GetWaterTileRandomBits(TileIndex t)
 {
-	dbg_assert_tile(IsTileType(t, MP_WATER), t);
+	dbg_assert_tile(IsTileType(t, TileType::Water), t);
 	return _m[t].m4;
 }
 
 /**
  * Checks whether the tile has water at the ground.
  * That is, it is either some plain water tile, or a object/industry/station/... with water under it.
+ * @param t The tile to query.
  * @return true iff the tile has water at the ground.
  * @note Coast tiles are not considered waterish, even if there is water on a halftile.
  */
@@ -351,37 +354,40 @@ inline bool HasTileWaterGround(TileIndex t)
  */
 inline void SetDockingTile(TileIndex t, bool b)
 {
-	dbg_assert(IsTileType(t, MP_WATER) || IsTileType(t, MP_RAILWAY) || IsTileType(t, MP_STATION) || IsTileType(t, MP_TUNNELBRIDGE));
+	dbg_assert(IsTileType(t, TileType::Water) || IsTileType(t, TileType::Railway) || IsTileType(t, TileType::Station) || IsTileType(t, TileType::TunnelBridge));
 	AssignBit(_m[t].m1, 7, b);
 }
 
 /**
  * Checks whether the tile is marked as a dockling tile.
+ * @param t The tile to query.
  * @return true iff the tile is marked as a docking tile.
  */
 inline bool IsDockingTile(TileIndex t)
 {
-	return (IsTileType(t, MP_WATER) || IsTileType(t, MP_RAILWAY) || IsTileType(t, MP_STATION) || IsTileType(t, MP_TUNNELBRIDGE)) && HasBit(_m[t].m1, 7);
+	return (IsTileType(t, TileType::Water) || IsTileType(t, TileType::Railway) || IsTileType(t, TileType::Station) || IsTileType(t, TileType::TunnelBridge)) && HasBit(_m[t].m1, 7);
 }
 
 
 /**
  * Helper function to make a coast tile.
  * @param t The tile to change into water
+ * @param rocks Whether the tile should have rocks on.
  */
-inline void MakeShore(TileIndex t)
+inline void MakeShore(TileIndex t, bool rocks = false)
 {
-	SetTileType(t, MP_WATER);
+	SetTileType(t, TileType::Water);
 	SetTileOwner(t, OWNER_WATER);
-	SetWaterClass(t, WATER_CLASS_SEA);
+	SetWaterClass(t, WaterClass::Sea);
 	SetDockingTile(t, false);
 	_m[t].m2 = 0;
 	_m[t].m3 = 0;
 	_m[t].m4 = 0;
 	_m[t].m5 = 0;
-	SetWaterTileType(t, WATER_TILE_COAST);
-	SB(_me[t].m6, 2, 4, 0);
+	SetWaterTileType(t, rocks ? WaterTileType::CoastRocks : WaterTileType::Coast);
+	_me[t].m6 = 0;
 	_me[t].m7 = 0;
+	_me[t].m8 = 0;
 }
 
 /**
@@ -390,10 +396,11 @@ inline void MakeShore(TileIndex t)
  * @param o The owner of the water
  * @param wc The class of water the tile has to be
  * @param random_bits Eventual random bits to be set for this tile
+ * @param rocks Whether the tile should have rocks on.
  */
-inline void MakeWater(TileIndex t, Owner o, WaterClass wc, uint8_t random_bits)
+inline void MakeWater(TileIndex t, Owner o, WaterClass wc, uint8_t random_bits, bool rocks = false)
 {
-	SetTileType(t, MP_WATER);
+	SetTileType(t, TileType::Water);
 	SetTileOwner(t, o);
 	SetWaterClass(t, wc);
 	SetDockingTile(t, false);
@@ -401,18 +408,20 @@ inline void MakeWater(TileIndex t, Owner o, WaterClass wc, uint8_t random_bits)
 	_m[t].m3 = 0;
 	_m[t].m4 = random_bits;
 	_m[t].m5 = 0;
-	SetWaterTileType(t, WATER_TILE_CLEAR);
-	SB(_me[t].m6, 2, 4, 0);
+	SetWaterTileType(t, rocks ? WaterTileType::ClearRocks : WaterTileType::Clear);
+	_me[t].m6 = 0;
 	_me[t].m7 = 0;
+	_me[t].m8 = 0;
 }
 
 /**
  * Make a sea tile.
  * @param t The tile to change into sea
+ * @param rocks Whether the tile should have rocks on.
  */
-inline void MakeSea(TileIndex t)
+inline void MakeSea(TileIndex t, bool rocks = false)
 {
-	MakeWater(t, OWNER_WATER, WATER_CLASS_SEA, 0);
+	MakeWater(t, OWNER_WATER, WaterClass::Sea, 0, rocks);
 }
 
 /**
@@ -422,7 +431,7 @@ inline void MakeSea(TileIndex t)
  */
 inline void MakeRiver(TileIndex t, uint8_t random_bits)
 {
-	MakeWater(t, OWNER_WATER, WATER_CLASS_RIVER, random_bits);
+	MakeWater(t, OWNER_WATER, WaterClass::River, random_bits);
 }
 
 /**
@@ -434,7 +443,7 @@ inline void MakeRiver(TileIndex t, uint8_t random_bits)
 inline void MakeCanal(TileIndex t, Owner o, uint8_t random_bits)
 {
 	dbg_assert(o != OWNER_WATER);
-	MakeWater(t, o, WATER_CLASS_CANAL, random_bits);
+	MakeWater(t, o, WaterClass::Canal, random_bits);
 }
 
 /**
@@ -442,23 +451,24 @@ inline void MakeCanal(TileIndex t, Owner o, uint8_t random_bits)
  * @param t    Tile to place the ship depot section.
  * @param o    Owner of the depot.
  * @param did  Depot ID.
- * @param part Depot part (either #DEPOT_PART_NORTH or #DEPOT_PART_SOUTH).
+ * @param part Depot part (either #DepotPart::North or #DepotPart::South).
  * @param a    Axis of the depot.
  * @param original_water_class Original water class.
  */
 inline void MakeShipDepot(TileIndex t, Owner o, DepotID did, DepotPart part, Axis a, WaterClass original_water_class)
 {
-	SetTileType(t, MP_WATER);
+	SetTileType(t, TileType::Water);
 	SetTileOwner(t, o);
 	SetWaterClass(t, original_water_class);
 	SetDockingTile(t, false);
-	_m[t].m2 = did;
+	_m[t].m2 = did.base();
 	_m[t].m3 = 0;
 	_m[t].m4 = 0;
-	_m[t].m5 = part << WBL_DEPOT_PART | a << WBL_DEPOT_AXIS;
-	SetWaterTileType(t, WATER_TILE_DEPOT);
-	SB(_me[t].m6, 2, 4, 0);
+	_m[t].m5 = to_underlying(part) << WBL_DEPOT_PART | to_underlying(a) << WBL_DEPOT_AXIS;
+	SetWaterTileType(t, WaterTileType::Depot);
+	_me[t].m6 = 0;
 	_me[t].m7 = 0;
+	_me[t].m8 = 0;
 }
 
 /**
@@ -472,17 +482,18 @@ inline void MakeShipDepot(TileIndex t, Owner o, DepotID did, DepotPart part, Axi
  */
 inline void MakeLockTile(TileIndex t, Owner o, LockPart part, DiagDirection dir, WaterClass original_water_class)
 {
-	SetTileType(t, MP_WATER);
+	SetTileType(t, TileType::Water);
 	SetTileOwner(t, o);
 	SetWaterClass(t, original_water_class);
 	SetDockingTile(t, false);
 	_m[t].m2 = 0;
 	_m[t].m3 = 0;
 	_m[t].m4 = 0;
-	_m[t].m5 = part << WBL_LOCK_PART_BEGIN | dir << WBL_LOCK_ORIENT_BEGIN;
-	SetWaterTileType(t, WATER_TILE_LOCK);
-	SB(_me[t].m6, 2, 4, 0);
+	_m[t].m5 = to_underlying(part) << WBL_LOCK_PART_BEGIN | to_underlying(dir) << WBL_LOCK_ORIENT_BEGIN;
+	SetWaterTileType(t, WaterTileType::Lock);
+	_me[t].m6 = 0;
 	_me[t].m7 = 0;
+	_me[t].m8 = 0;
 }
 
 /**
@@ -500,9 +511,9 @@ inline void MakeLock(TileIndex t, Owner o, DiagDirection d, WaterClass wc_lower,
 
 	/* Keep the current waterclass and owner for the tiles.
 	 * It allows to restore them after the lock is deleted */
-	MakeLockTile(t, o, LOCK_PART_MIDDLE, d, wc_middle);
-	MakeLockTile(t - delta, IsWaterTile(t - delta) ? GetTileOwner(t - delta) : o, LOCK_PART_LOWER, d, wc_lower);
-	MakeLockTile(t + delta, IsWaterTile(t + delta) ? GetTileOwner(t + delta) : o, LOCK_PART_UPPER, d, wc_upper);
+	MakeLockTile(t, o, LockPart::Middle, d, wc_middle);
+	MakeLockTile(t - delta, IsWaterTile(t - delta) ? GetTileOwner(t - delta) : o, LockPart::Lower, d, wc_lower);
+	MakeLockTile(t + delta, IsWaterTile(t + delta) ? GetTileOwner(t + delta) : o, LockPart::Upper, d, wc_upper);
 }
 
 
@@ -513,16 +524,17 @@ inline void MakeLock(TileIndex t, Owner o, DiagDirection d, WaterClass wc_lower,
  */
 inline void SetNonFloodingWaterTile(TileIndex t, bool b)
 {
-	dbg_assert(IsTileType(t, MP_WATER));
+	dbg_assert(IsTileType(t, TileType::Water));
 	AssignBit(_m[t].m3, 0, b);
 }
 /**
  * Checks whether the tile is marked as a non-flooding water tile.
+ * @param t The tile to query.
  * @return true iff the tile is marked as a non-flooding water tile.
  */
 inline bool IsNonFloodingWaterTile(TileIndex t)
 {
-	return IsTileType(t, MP_WATER) && HasBit(_m[t].m3, 0);
+	return IsTileType(t, TileType::Water) && HasBit(_m[t].m3, 0);
 }
 
 /**
@@ -531,8 +543,9 @@ inline bool IsNonFloodingWaterTile(TileIndex t)
  */
 inline bool IsFloodingTypeTile(TileIndex t)
 {
-	static const uint16_t mask = (1 << MP_WATER) | (1 << MP_STATION) | (1 << MP_INDUSTRY) | (1 << MP_RAILWAY) | (1 << MP_TREES) | (1 << MP_OBJECT) | (1 << MP_VOID);
-	return HasBit(mask, GetTileType(t));
+	constexpr auto tile_mask = [](TileType t) -> uint16_t { return 1U << to_underlying(t); };
+	static constexpr uint16_t mask = tile_mask(TileType::Water) | tile_mask(TileType::Station) | tile_mask(TileType::Industry) | tile_mask(TileType::Railway) | tile_mask(TileType::Trees) | tile_mask(TileType::Object) | tile_mask(TileType::Void);
+	return HasBit(mask, to_underlying(GetTileType(t)));
 }
 
 #endif /* WATER_MAP_H */

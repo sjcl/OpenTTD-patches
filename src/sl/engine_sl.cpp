@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file engine_sl.cpp Code handling saving and loading of engines */
@@ -20,17 +20,17 @@
 
 #include "../safeguards.h"
 
-static std::vector<Engine*> _temp_engine;
+static TypedIndexContainer<std::vector<Engine *>, EngineID> _temp_engine;
 
 /**
  * Allocate an Engine structure, but not using the pools.
  * The allocated Engine must be freed using FreeEngine;
  * @return Allocated engine.
  */
-static Engine* CallocEngine()
+static Engine *CallocEngine(EngineID index, VehicleType type, uint16_t local_id)
 {
 	uint8_t *zero = CallocT<uint8_t>(sizeof(Engine));
-	Engine *engine = new (zero) Engine();
+	Engine *engine = ::new (zero) Engine(index, type, local_id);
 	return engine;
 }
 
@@ -46,12 +46,12 @@ static void FreeEngine(Engine *e)
 	}
 }
 
-Engine *GetTempDataEngine(EngineID index)
+Engine *GetTempDataEngine(EngineID index, VehicleType type, uint16_t local_id)
 {
 	if (index < _temp_engine.size()) {
 		return _temp_engine[index];
 	} else if (index == _temp_engine.size()) {
-		_temp_engine.push_back(CallocEngine());
+		_temp_engine.push_back(CallocEngine(index, type, local_id));
 		return _temp_engine[index];
 	} else {
 		NOT_REACHED();
@@ -107,9 +107,9 @@ static void Load_ENGS()
 	SlArray(names, lengthof(names), SLE_STRINGID);
 
 	/* Copy each string into the temporary engine array. */
-	for (EngineID engine = 0; engine < lengthof(names); engine++) {
+	for (EngineID engine = EngineID::Begin(); engine < lengthof(names); ++engine) {
 		Engine *e = GetTempDataEngine(engine);
-		e->name = CopyFromOldName(names[engine]);
+		e->name = CopyFromOldName(names[engine.base()]);
 	}
 }
 
@@ -130,10 +130,10 @@ void Save_ERNC()
 	uint32_t count = 0;
 	std::span<uint8_t> result = SlSaveToTempBuffer([&]() {
 		for (const Engine *e : Engine::Iterate()) {
-			if (HasBit(e->info.callback_mask, CBM_VEHICLE_CUSTOM_REFIT)) {
+			if (e->info.callback_mask.Test(VehicleCallbackMask::CustomRefit)) {
 				count++;
 				SlWriteUint16(e->index);
-				SlWriteUint64(e->info.refit_mask);
+				SlWriteUint64(e->info.refit_mask.base());
 			}
 		}
 	});
@@ -161,8 +161,8 @@ void Load_ERNC()
 	const uint32_t count = SlReadUint32();
 	_engine_refit_network_caches.reserve(count);
 	for (uint32_t idx = 0; idx < count; idx++) {
-		EngineID id = SlReadUint16();
-		CargoTypes refit_mask = SlReadUint64();
+		EngineID id = static_cast<EngineID>(SlReadUint16());
+		CargoTypes refit_mask{SlReadUint64()};
 		_engine_refit_network_caches.push_back({ id, refit_mask });
 	}
 }
@@ -207,8 +207,8 @@ static ChunkSaveLoadSpecialOpResult Special_ERNC(uint32_t chunk_id, ChunkSaveLoa
 static const ChunkHandler engine_chunk_handlers[] = {
 	MakeUpstreamChunkHandler<'EIDS', GeneralUpstreamChunkLoadInfo>(),
 	MakeUpstreamChunkHandler<'ENGN', GeneralUpstreamChunkLoadInfo>(),
-	{ 'ENGS', nullptr,   Load_ENGS, nullptr, nullptr, CH_READONLY  },
-	{ 'ERNC', Save_ERNC, Load_ERNC, nullptr, nullptr, CH_RIFF, Special_ERNC },
+	{ 'ENGS', nullptr,   Load_ENGS, nullptr, nullptr, ChunkType::ReadOnly  },
+	{ 'ERNC', Save_ERNC, Load_ERNC, nullptr, nullptr, ChunkType::Riff, Special_ERNC },
 };
 
 extern const ChunkHandlerTable _engine_chunk_handlers(engine_chunk_handlers);

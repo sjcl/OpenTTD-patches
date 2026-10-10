@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file gamelog_sl.cpp Code handling saving and loading of gamelog data */
@@ -49,31 +49,31 @@ static const SaveLoad _glog_setting_desc[] = {
 };
 
 static const SaveLoad _glog_grfadd_desc[] = {
-	SLE_VAR(LoggedChange, grfadd.grfid,      SLE_UINT32    ),
+	SLE_VAR(LoggedChange, grfadd.grfid,      SLE_LABEL     ),
 	SLE_ARR(LoggedChange, grfadd.md5sum,     SLE_UINT8,  16),
 };
 
 static const SaveLoad _glog_grfrem_desc[] = {
-	SLE_VAR(LoggedChange, grfrem.grfid,      SLE_UINT32),
+	SLE_VAR(LoggedChange, grfrem.grfid,      SLE_LABEL),
 };
 
 static const SaveLoad _glog_grfcompat_desc[] = {
-	SLE_VAR(LoggedChange, grfcompat.grfid,   SLE_UINT32    ),
+	SLE_VAR(LoggedChange, grfcompat.grfid,   SLE_LABEL     ),
 	SLE_ARR(LoggedChange, grfcompat.md5sum,  SLE_UINT8,  16),
 };
 
 static const SaveLoad _glog_grfparam_desc[] = {
-	SLE_VAR(LoggedChange, grfparam.grfid,    SLE_UINT32),
+	SLE_VAR(LoggedChange, grfparam.grfid,    SLE_LABEL),
 };
 
 static const SaveLoad _glog_grfmove_desc[] = {
-	SLE_VAR(LoggedChange, grfmove.grfid,     SLE_UINT32),
+	SLE_VAR(LoggedChange, grfmove.grfid,     SLE_LABEL),
 	SLE_VAR(LoggedChange, grfmove.offset,    SLE_INT32),
 };
 
 static const SaveLoad _glog_grfbug_desc[] = {
 	SLE_VAR(LoggedChange, grfbug.data,       SLE_UINT64),
-	SLE_VAR(LoggedChange, grfbug.grfid,      SLE_UINT32),
+	SLE_VAR(LoggedChange, grfbug.grfid,      SLE_LABEL),
 	SLE_VAR(LoggedChange, grfbug.bug,        SLE_UINT8),
 };
 
@@ -81,7 +81,7 @@ static const SaveLoad _glog_emergency_desc[] = {
 	SLE_CONDNULL(0, SL_MIN_VERSION, SL_MIN_VERSION), // Just an empty list, to keep the rest of the code easier.
 };
 
-static const SaveLoadTable _glog_desc[] = {
+static const EnumIndexArray<SaveLoadTable, GamelogChangeType, GamelogChangeType::End> _glog_desc = {
 	_glog_mode_desc,
 	_glog_revision_desc,
 	_glog_oldver_desc,
@@ -95,16 +95,13 @@ static const SaveLoadTable _glog_desc[] = {
 	_glog_emergency_desc,
 };
 
-static_assert(lengthof(_glog_desc) == GLCT_END);
-
 static void Load_GLOG_common(std::vector<LoggedAction> &gamelog_actions)
 {
 	assert(gamelog_actions.empty());
 
-	uint8_t type;
-	while ((type = SlReadByte()) != GLAT_NONE) {
-		if (type >= GLAT_END) SlErrorCorrupt("Invalid gamelog action type");
-		GamelogActionType at = (GamelogActionType)type;
+	GamelogActionType at;
+	while ((at = static_cast<GamelogActionType>(SlReadByte())) != GamelogActionType::None) {
+		if (at >= GamelogActionType::End) SlErrorCorrupt("Invalid gamelog action type");
 
 		LoggedAction &la = gamelog_actions.emplace_back();
 
@@ -112,9 +109,9 @@ static void Load_GLOG_common(std::vector<LoggedAction> &gamelog_actions)
 
 		SlObject(&la, _glog_action_desc); // has to be saved after 'DATE'!
 
-		while ((type = SlReadByte()) != GLCT_NONE) {
-			if (type >= GLCT_END) SlErrorCorrupt("Invalid gamelog change type");
-			GamelogChangeType ct = (GamelogChangeType)type;
+		GamelogChangeType ct;
+		while ((ct = static_cast<GamelogChangeType>(SlReadByte())) != GamelogChangeType::None) {
+			if (ct >= GamelogChangeType::End) SlErrorCorrupt("Invalid gamelog change type");
 
 			la.changes.push_back({});
 			LoggedChange *lc = &la.changes.back();
@@ -122,7 +119,7 @@ static void Load_GLOG_common(std::vector<LoggedAction> &gamelog_actions)
 			lc->ct = ct;
 			SlObject(lc, _glog_desc[ct]);
 
-			if (ct == GLCT_REVISION && SlXvIsFeatureMissing(XSLFI_EXTENDED_GAMELOG)) {
+			if (ct == GamelogChangeType::Revision && SlXvIsFeatureMissing(XSLFI_EXTENDED_GAMELOG)) {
 				lc->revision.text = stredup(old_revision_text, lastof(old_revision_text));
 			}
 		}

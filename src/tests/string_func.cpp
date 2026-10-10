@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file string_func.cpp Test functionality from string_func. */
@@ -12,7 +12,15 @@
 #include "../3rdparty/catch2/catch.hpp"
 
 #include "../string_func.h"
+#include "../strings_func.h"
+#include "../core/string_builder.hpp"
+#include "../core/string_consumer.hpp"
+#include "../table/control_codes.h"
 #include <array>
+
+#include "table/strings.h"
+
+#include "../safeguards.h"
 
 /**** String compare/equals *****/
 
@@ -394,7 +402,8 @@ static const std::vector<std::pair<std::string, std::string>> _str_trim_testcase
 	{"a  ", "a"},
 	{"  a   ", "a"},
 	{"  a  b  c  ", "a  b  c"},
-	{"   ", ""}
+	{"   ", ""},
+	{"  \r\f\t  ", ""},
 };
 
 TEST_CASE("StrTrimInPlace")
@@ -407,6 +416,125 @@ TEST_CASE("StrTrimInPlace")
 
 TEST_CASE("StrTrimView") {
 	for (const auto& [input, expected] : _str_trim_testcases) {
-		CHECK(StrTrimView(input) == expected);
+		CHECK(StrTrimView(input, StringConsumer::WHITESPACE_NO_NEWLINE) == expected);
 	}
+}
+
+namespace upstream_sl {
+	extern void FixSCCEncoded(std::string &str, bool fix_code);
+}
+
+/* Helper to call FixSCCEncoded and return the result in a new string. */
+static std::string FixSCCEncodedWrapper(const std::string &str, bool fix_code)
+{
+	std::string result = str;
+	upstream_sl::FixSCCEncoded(result, fix_code);
+	return result;
+}
+
+/* Helper to compose a string part from a unicode character */
+static void ComposePart(StringBuilder builder, char32_t c)
+{
+	builder.PutUtf8(c);
+}
+
+/* Helper to compose a string part from a string. */
+static void ComposePart(StringBuilder builder, const std::string &value)
+{
+	builder += value;
+}
+
+/* Helper to compose a string from unicode or string parts. */
+template <typename... Args>
+static std::string Compose(Args &&... args)
+{
+	format_buffer result;
+	StringBuilder builder(result);
+	(ComposePart(builder, args), ...);
+	return result.to_string();
+}
+
+TEST_CASE("FixSCCEncoded")
+{
+	/* Test conversion of empty string. */
+	CHECK(FixSCCEncodedWrapper("", false) == "");
+
+	/* Test conversion of old code to new code. */
+	CHECK(FixSCCEncodedWrapper("\uE0280", true) == Compose(SCC_ENCODED, "0"));
+
+	/* Test conversion of two old codes to new codes. */
+	CHECK(FixSCCEncodedWrapper("\uE0280:\uE0281", true) == Compose(SCC_ENCODED, "0", SCC_RECORD_SEPARATOR, SCC_ENCODED, "1"));
+
+	/* Test conversion with no parameter. */
+	CHECK(FixSCCEncodedWrapper("\uE0001", false) == Compose(SCC_ENCODED, "1"));
+
+	/* Test conversion with one numeric parameter. */
+	CHECK(FixSCCEncodedWrapper("\uE00022:1", false) == Compose(SCC_ENCODED, "22", SCC_RECORD_SEPARATOR, SCC_ENCODED_NUMERIC, "1"));
+
+	/* Test conversion with signed numeric parameter. */
+	CHECK(FixSCCEncodedWrapper("\uE00022:-1", false) == Compose(SCC_ENCODED, "22", SCC_RECORD_SEPARATOR, SCC_ENCODED_NUMERIC, "-1"));
+
+	/* Test conversion with two numeric parameters. */
+	CHECK(FixSCCEncodedWrapper("\uE0003:12:2", false) == Compose(SCC_ENCODED, "3", SCC_RECORD_SEPARATOR, SCC_ENCODED_NUMERIC, "12", SCC_RECORD_SEPARATOR, SCC_ENCODED_NUMERIC, "2"));
+
+	/* Test conversion with one string parameter. */
+	CHECK(FixSCCEncodedWrapper("\uE0004:\"Foo\"", false) == Compose(SCC_ENCODED, "4", SCC_RECORD_SEPARATOR, SCC_ENCODED_STRING, "Foo"));
+
+	/* Test conversion with two string parameters. */
+	CHECK(FixSCCEncodedWrapper("\uE00055:\"Foo\":\"Bar\"", false) == Compose(SCC_ENCODED, "55", SCC_RECORD_SEPARATOR, SCC_ENCODED_STRING, "Foo", SCC_RECORD_SEPARATOR, SCC_ENCODED_STRING, "Bar"));
+
+	/* Test conversion with two string parameters surrounding a numeric parameter. */
+	CHECK(FixSCCEncodedWrapper("\uE0006:\"Foo\":7CA:\"Bar\"", false) == Compose(SCC_ENCODED, "6", SCC_RECORD_SEPARATOR, SCC_ENCODED_STRING, "Foo", SCC_RECORD_SEPARATOR, SCC_ENCODED_NUMERIC, "7CA", SCC_RECORD_SEPARATOR, SCC_ENCODED_STRING, "Bar"));
+
+	/* Test conversion with one sub-string and two string parameters. */
+	CHECK(FixSCCEncodedWrapper("\uE000777:\uE0008888:\"Foo\":\"BarBaz\"", false) == Compose(SCC_ENCODED, "777", SCC_RECORD_SEPARATOR, SCC_ENCODED, "8888", SCC_RECORD_SEPARATOR, SCC_ENCODED_STRING, "Foo", SCC_RECORD_SEPARATOR, SCC_ENCODED_STRING, "BarBaz"));
+}
+
+TEST_CASE("EncodedString::ReplaceParam - positive")
+{
+	/* Test that two encoded strings with different parameters are not the same. */
+	EncodedString string1 = GetEncodedString(STR_NULL, "Foo", 10, "Bar");
+	EncodedString string2 = GetEncodedString(STR_NULL, "Foo", 15, "Bar");
+	CHECK(string1 != string2);
+
+	/* Test that replacing parameter results in the same string. */
+	EncodedString string3 = string1.ReplaceParam(1, 15);
+	CHECK(string2 == string3);
+}
+
+TEST_CASE("EncodedString::ReplaceParam - negative")
+{
+	EncodedString string1 = GetEncodedString(STR_NULL, "Foo", -1, "Bar");
+	EncodedString string2 = GetEncodedString(STR_NULL, "Foo", -2, "Bar");
+	EncodedString string3 = GetEncodedString(STR_NULL, "Foo", 0xFFFF'FFFF'FFFF'FFFF, "Bar");
+	/* Test that two encoded strings with different parameters are not the same. */
+	CHECK(string1 != string2);
+	/* Test that signed values are stored as unsigned. */
+	CHECK(string1 == string3);
+
+	/* Test that replacing parameter results in the same string. */
+	EncodedString string4 = string1.ReplaceParam(1, -2);
+	CHECK(string2 == string4);
+}
+
+namespace upstream_sl {
+	extern void FixSCCEncodedNegative(std::string &str);
+}
+
+/* Helper to call FixSCCEncodedNegative and return the result in a new string. */
+static std::string FixSCCEncodedNegativeWrapper(const std::string &str)
+{
+	std::string result = str;
+	upstream_sl::FixSCCEncodedNegative(result);
+	return result;
+}
+
+TEST_CASE("FixSCCEncodedNegative")
+{
+	auto positive = Compose(SCC_ENCODED, "777", SCC_RECORD_SEPARATOR, SCC_ENCODED_NUMERIC, "ffffffffffffffff");
+	auto negative = Compose(SCC_ENCODED, "777", SCC_RECORD_SEPARATOR, SCC_ENCODED_NUMERIC, "-1");
+
+	CHECK(FixSCCEncodedNegativeWrapper("") == "");
+	CHECK(FixSCCEncodedNegativeWrapper(positive) == positive);
+	CHECK(FixSCCEncodedNegativeWrapper(negative) == positive);
 }

@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file linkgraph_type.h Declaration of link graph types used for cargo distribution. */
@@ -10,24 +10,29 @@
 #ifndef LINKGRAPH_TYPE_H
 #define LINKGRAPH_TYPE_H
 
-typedef uint16_t LinkGraphID;
-static const LinkGraphID INVALID_LINK_GRAPH = UINT16_MAX;
+#include "../core/pool_id_type.hpp"
 
-typedef uint16_t LinkGraphJobID;
-static const LinkGraphJobID INVALID_LINK_GRAPH_JOB = UINT16_MAX;
+struct LinkGraphIDTag : public PoolIDTraits<uint16_t, 0xFFFF, 0xFFFF> {};
+using LinkGraphID = PoolID<LinkGraphIDTag>;
+
+struct LinkGraphJobIDTag : public PoolIDTraits<uint16_t, 0xFFFF, 0xFFFF> {};
+using LinkGraphJobID = PoolID<LinkGraphJobIDTag>;
 
 typedef uint16_t NodeID;
 static const NodeID INVALID_NODE = UINT16_MAX;
 
-enum DistributionType : uint8_t {
-	DT_MANUAL = 0,           ///< Manual distribution. No link graph calculations are run.
-	DT_ASYMMETRIC = 1,       ///< Asymmetric distribution. Usually cargo will only travel in one direction.
-	DT_SYMMETRIC = 2,        ///< Symmetric distribution. The same amount of cargo travels in each direction between each pair of nodes.
+/**
+ * Distribution types.
+ */
+enum class DistributionType : uint8_t {
+	Manual = 0,              ///< Manual distribution. No link graph calculations are run.
+	Asymmetric = 1,          ///< Asymmetric distribution. Usually cargo will only travel in one direction.
+	Symmetric = 2,           ///< Symmetric distribution. The same amount of cargo travels in each direction between each pair of nodes.
 
-	DT_ASYMMETRIC_EQ = 20,   ///< Asymmetric distribution (equal). Usually cargo will only travel in one direction. Attempt to distribute the same amount of cargo to each sink.
-	DT_ASYMMETRIC_NEAR = 21, ///< Asymmetric distribution (nearest). Usually cargo will only travel in one direction. Attempt to distribute cargo to the nearest sink.
+	AsymmetricEqual = 20,    ///< Asymmetric distribution (equal). Usually cargo will only travel in one direction. Attempt to distribute the same amount of cargo to each sink.
+	AsymmetricNearest = 21,  ///< Asymmetric distribution (nearest). Usually cargo will only travel in one direction. Attempt to distribute cargo to the nearest sink.
 
-	DT_PER_CARGO_DEFAULT = 128, ///< Per cargo: Use default value
+	PerCargoDefault = 128,   ///< Per cargo: Use default value
 };
 
 /**
@@ -43,14 +48,15 @@ enum DistributionType : uint8_t {
  * Refreshing a link makes just sure a minimum capacity is kept. Increasing
  * actually adds the given capacity.
  */
-enum EdgeUpdateMode {
-	EUM_INCREASE     = 1,      ///< Increase capacity.
-	EUM_REFRESH      = 1 << 1, ///< Refresh capacity.
-	EUM_RESTRICTED   = 1 << 2, ///< Use restricted link.
-	EUM_UNRESTRICTED = 1 << 3, ///< Use unrestricted link.
-	EUM_AIRCRAFT     = 1 << 4, ///< Capacity is an aircraft link.
+enum class EdgeUpdateMode : uint8_t {
+	Increase, ///< Increase capacity.
+	Refresh, ///< Refresh capacity.
+	Restricted, ///< Use restricted link.
+	Unrestricted, ///< Use unrestricted link.
+	Aircraft, ///< Capacity is an aircraft link.
 };
 
-DECLARE_ENUM_AS_BIT_SET(EdgeUpdateMode)
+/** Bitset of \c EdgeUpdateMode elements. */
+using EdgeUpdateModes = EnumBitSet<EdgeUpdateMode, uint8_t>;
 
 #endif /* LINKGRAPH_TYPE_H */

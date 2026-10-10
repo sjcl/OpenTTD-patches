@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file ship.h Base for ships. */
@@ -14,40 +14,47 @@
 
 #include "vehicle_base.h"
 #include "water_map.h"
-#include "core/ring_buffer.hpp"
+#include "3rdparty/cpp-ring-buffer/ring_buffer.hpp"
 
-extern const DiagDirection _ship_search_directions[TRACK_END][DIAGDIR_END];
+extern const TrackIndexArray<DiagDirectionIndexArray<DiagDirection>> _ship_search_directions;
 
 void GetShipSpriteSize(EngineID engine, uint &width, uint &height, int &xoffs, int &yoffs, EngineImageType image_type);
 WaterClass GetEffectiveWaterClass(TileIndex tile);
 
-typedef ring_buffer<Trackdir> ShipPathCache;
+typedef jgr::ring_buffer<Trackdir> ShipPathCache;
 
 /** Maximum segments of ship path cache */
 static const uint8_t SHIP_PATH_CACHE_LENGTH = 32;
 static const uint8_t SHIP_PATH_CACHE_MASK = (SHIP_PATH_CACHE_LENGTH - 1);
 static_assert((SHIP_PATH_CACHE_LENGTH & SHIP_PATH_CACHE_MASK) == 0, ""); // Must be a power of 2
 
+/** Ship flags. */
+enum class VehicleShipFlag : uint8_t {
+	SecondEndFacingForward = 0, ///< Whether the other end is facing forward. Only applies to dual-ended ships.
+};
+/** Bitset of the %VehicleShipFlag elements. */
+using VehicleShipFlags = EnumBitSet<VehicleShipFlag, uint8_t>;
+
 /**
  * All ships have this type.
  */
-struct Ship final : public SpecializedVehicle<Ship, VEH_SHIP> {
-	TrackBits state;                  ///< The "track" the ship is following.
-	ShipPathCache cached_path;        ///< Cached path.
-	Direction rotation;               ///< Visible direction.
-	int16_t rotation_x_pos;           ///< NOSAVE: X Position before rotation.
-	int16_t rotation_y_pos;           ///< NOSAVE: Y Position before rotation.
-	uint8_t lost_count;               ///< Count of number of failed pathfinder attempts
-	uint8_t critical_breakdown_count; ///< Counter for the number of critical breakdowns since last service
+struct Ship final : public SpecializedVehicle<Ship, VehicleType::Ship, Vehicle> {
+	TrackBits state{};                       ///< The "track" the ship is following.
+	ShipPathCache cached_path{};             ///< Cached path.
+	Direction rotation = Direction::Invalid; ///< Visible direction.
+	VehicleShipFlags flags;                  ///< Ship-specific flags. @see VehicleShipFlags.
+	int16_t rotation_x_pos = 0;              ///< NOSAVE: X Position before rotation.
+	int16_t rotation_y_pos = 0;              ///< NOSAVE: Y Position before rotation.
+	uint8_t lost_count = 0;                  ///< Count of number of failed pathfinder attempts
+	uint8_t critical_breakdown_count = 0;    ///< Counter for the number of critical breakdowns since last service
 
-	/** We don't want GCC to zero our struct! It already is zeroed and has an index! */
-	Ship() : SpecializedVehicleBase() {}
+	Ship(VehicleID index) : SpecializedVehicleBase(index) {}
 	/** We want to 'destruct' the right class. */
-	virtual ~Ship() { this->PreDestructor(); }
+	~Ship() override { this->PreDestructor(); }
 
 	void MarkDirty() override;
 	void UpdateDeltaXY() override;
-	ExpensesType GetExpenseType(bool income) const override { return income ? EXPENSES_SHIP_REVENUE : EXPENSES_SHIP_RUN; }
+	ExpensesType GetExpenseType(bool income) const override { return income ? ExpensesType::ShipRevenue : ExpensesType::ShipRun; }
 	void PlayLeaveStationSound(bool force = false) const override;
 	bool IsPrimaryVehicle() const override { return this->Previous() == nullptr; }
 	void GetImage(Direction direction, EngineImageType image_type, VehicleSpriteSeq *result) const override;
@@ -65,7 +72,7 @@ struct Ship final : public SpecializedVehicle<Ship, VEH_SHIP> {
 	Trackdir GetVehicleTrackdir() const override;
 	TileIndex GetOrderStationLocation(StationID station) override;
 	TileIndex GetCargoTile() const override { return this->First()->tile; }
-	ClosestDepot FindClosestDepot() override;
+	ClosestDepot FindClosestDepot() const override;
 	void UpdateCache();
 	void SetDestTile(TileIndex tile) override;
 };

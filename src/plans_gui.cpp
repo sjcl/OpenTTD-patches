@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file plans_gui.cpp The GUI for planning. */
@@ -10,6 +10,7 @@
 #include "stdafx.h"
 #include "plans_func.h"
 #include "plans_base.h"
+#include "plans_cmd.h"
 #include "command_func.h"
 #include "company_func.h"
 #include "company_base.h"
@@ -27,6 +28,7 @@
 #include "stringfilter_type.h"
 #include "querystring_gui.h"
 #include "core/pool_func.hpp"
+#include "core/format.hpp"
 #include "core/geometry_func.hpp"
 #include "widgets/plans_widget.h"
 #include "table/strings.h"
@@ -34,75 +36,75 @@
 
 static constexpr NWidgetPart _nested_plans_widgets[] = {
 	NWidget(NWID_HORIZONTAL),
-		NWidget(WWT_CLOSEBOX, COLOUR_GREY),
-		NWidget(WWT_CAPTION, COLOUR_GREY, WID_PLN_CAPTION), SetDataTip(STR_PLANS_CAPTION, STR_NULL),
-		NWidget(WWT_SHADEBOX, COLOUR_GREY),
-		NWidget(WWT_DEFSIZEBOX, COLOUR_GREY),
-		NWidget(WWT_STICKYBOX, COLOUR_GREY),
+		NWidget(WWT_CLOSEBOX, Colours::Grey),
+		NWidget(WWT_CAPTION, Colours::Grey, WID_PLN_CAPTION), SetStringTip(STR_PLANS_CAPTION, STR_NULL),
+		NWidget(WWT_SHADEBOX, Colours::Grey),
+		NWidget(WWT_DEFSIZEBOX, Colours::Grey),
+		NWidget(WWT_STICKYBOX, Colours::Grey),
 	EndContainer(),
 
 	NWidget(NWID_HORIZONTAL),
-		NWidget(WWT_TEXTBTN, COLOUR_GREY, WID_PLN_SORT_ORDER), SetDataTip(STR_BUTTON_SORT_BY, STR_TOOLTIP_SORT_ORDER),
-		NWidget(WWT_DROPDOWN, COLOUR_GREY, WID_PLN_SORT_CRITERIA), SetDataTip(STR_JUST_STRING, STR_TOOLTIP_SORT_CRITERIA),
-		NWidget(WWT_TEXTBTN, COLOUR_GREY, WID_PLN_OWN_ONLY), SetDataTip(STR_PLANS_OWN_ONLY, STR_PLANS_OWN_ONLY_TOOLTIP),
-		NWidget(WWT_EDITBOX, COLOUR_GREY, WID_PLN_FILTER), SetFill(1, 0), SetResize(1, 0), SetDataTip(STR_LIST_FILTER_OSKTITLE, STR_LIST_FILTER_TOOLTIP),
+		NWidget(WWT_TEXTBTN, Colours::Grey, WID_PLN_SORT_ORDER), SetStringTip(STR_BUTTON_SORT_BY, STR_TOOLTIP_SORT_ORDER),
+		NWidget(WWT_DROPDOWN, Colours::Grey, WID_PLN_SORT_CRITERIA), SetToolTip(STR_TOOLTIP_SORT_CRITERIA),
+		NWidget(WWT_TEXTBTN, Colours::Grey, WID_PLN_OWN_ONLY), SetStringTip(STR_PLANS_OWN_ONLY, STR_PLANS_OWN_ONLY_TOOLTIP),
+		NWidget(WWT_EDITBOX, Colours::Grey, WID_PLN_FILTER), SetFill(1, 0), SetResize(1, 0), SetStringTip(STR_LIST_FILTER_OSKTITLE, STR_LIST_FILTER_TOOLTIP),
 	EndContainer(),
 
 	NWidget(NWID_HORIZONTAL),
-		NWidget(WWT_PANEL, COLOUR_GREY),
+		NWidget(WWT_PANEL, Colours::Grey),
 			NWidget(NWID_HORIZONTAL),
-				NWidget(WWT_INSET, COLOUR_GREY, WID_PLN_LIST), SetFill(1, 1), SetPadding(2, 1, 2, 2), SetResize(1, 0), SetScrollbar(WID_PLN_SCROLLBAR), SetDataTip(STR_NULL, STR_PLANS_LIST_TOOLTIP),
+				NWidget(WWT_INSET, Colours::Grey, WID_PLN_LIST), SetFill(1, 1), SetPadding(2, 1, 2, 2), SetResize(1, 0), SetScrollbar(WID_PLN_SCROLLBAR), SetToolTip(STR_PLANS_LIST_TOOLTIP),
 				EndContainer(),
 			EndContainer(),
 		EndContainer(),
-		NWidget(NWID_VSCROLLBAR, COLOUR_GREY, WID_PLN_SCROLLBAR),
+		NWidget(NWID_VSCROLLBAR, Colours::Grey, WID_PLN_SCROLLBAR),
 	EndContainer(),
 
-	NWidget(WWT_PANEL, COLOUR_GREY),
+	NWidget(WWT_PANEL, Colours::Grey),
 		NWidget(NWID_HORIZONTAL),
-			NWidget(NWID_HORIZONTAL, NC_EQUALSIZE),
-				NWidget(WWT_PUSHTXTBTN, COLOUR_GREY, WID_PLN_NEW), SetResize(1, 0), SetFill(1, 0), SetDataTip(STR_PLANS_NEW_PLAN, STR_PLANS_NEW_PLAN_TOOLTIP),
-				NWidget(WWT_TEXTBTN_2, COLOUR_GREY, WID_PLN_ADD_LINES), SetResize(1, 0), SetFill(1, 0), SetDataTip(STR_PLANS_ADD_LINES, STR_PLANS_ADD_LINES_TOOLTIP),
-				NWidget(WWT_TEXTBTN, COLOUR_GREY, WID_PLN_VISIBILITY), SetResize(1, 0), SetFill(1, 0), SetDataTip(STR_PLANS_VISIBILITY_PUBLIC, STR_PLANS_VISIBILITY_TOOLTIP),
-				NWidget(WWT_DROPDOWN, COLOUR_GREY, WID_PLN_COLOUR), SetResize(1, 0), SetFill(1, 0), SetDataTip(STR_JUST_STRING, STR_PLANS_COLOUR_TOOLTIP),
-				NWidget(NWID_SELECTION, INVALID_COLOUR, WID_PLN_HIDE_ALL_SEL),
-					NWidget(WWT_PUSHTXTBTN, COLOUR_GREY, WID_PLN_HIDE_ALL), SetResize(1, 0), SetFill(1, 0), SetDataTip(STR_PLANS_HIDE_ALL, STR_PLANS_HIDE_ALL_TOOLTIP),
-					NWidget(WWT_PUSHTXTBTN, COLOUR_GREY, WID_PLN_SHOW_ALL), SetResize(1, 0), SetFill(1, 0), SetDataTip(STR_PLANS_SHOW_ALL, STR_PLANS_SHOW_ALL_TOOLTIP),
+			NWidget(NWID_HORIZONTAL, NWidContainerFlag::EqualSize),
+				NWidget(WWT_PUSHTXTBTN, Colours::Grey, WID_PLN_NEW), SetResize(1, 0), SetFill(1, 0), SetStringTip(STR_PLANS_NEW_PLAN, STR_PLANS_NEW_PLAN_TOOLTIP),
+				NWidget(WWT_TEXTBTN_2, Colours::Grey, WID_PLN_ADD_LINES), SetResize(1, 0), SetFill(1, 0), SetStringTip(STR_PLANS_ADD_LINES, STR_PLANS_ADD_LINES_TOOLTIP),
+				NWidget(WWT_TEXTBTN, Colours::Grey, WID_PLN_VISIBILITY), SetResize(1, 0), SetFill(1, 0), SetStringTip(STR_PLANS_VISIBILITY_PUBLIC, STR_PLANS_VISIBILITY_TOOLTIP),
+				NWidget(WWT_DROPDOWN, Colours::Grey, WID_PLN_COLOUR), SetResize(1, 0), SetFill(1, 0), SetToolTip(STR_PLANS_COLOUR_TOOLTIP),
+				NWidget(NWID_SELECTION, Colours::Invalid, WID_PLN_HIDE_ALL_SEL),
+					NWidget(WWT_PUSHTXTBTN, Colours::Grey, WID_PLN_HIDE_ALL), SetResize(1, 0), SetFill(1, 0), SetStringTip(STR_PLANS_HIDE_ALL, STR_PLANS_HIDE_ALL_TOOLTIP),
+					NWidget(WWT_PUSHTXTBTN, Colours::Grey, WID_PLN_SHOW_ALL), SetResize(1, 0), SetFill(1, 0), SetStringTip(STR_PLANS_SHOW_ALL, STR_PLANS_SHOW_ALL_TOOLTIP),
 				EndContainer(),
-				NWidget(WWT_PUSHTXTBTN, COLOUR_GREY, WID_PLN_DELETE), SetResize(1, 0), SetFill(1, 0), SetDataTip(STR_PLANS_DELETE, STR_PLANS_DELETE_TOOLTIP),
-				NWidget(NWID_SELECTION, INVALID_COLOUR, WID_PLN_RENAME_SEL),
-					NWidget(WWT_PUSHTXTBTN, COLOUR_GREY, WID_PLN_RENAME), SetResize(1, 0), SetFill(1, 0), SetDataTip(STR_BUTTON_RENAME, STR_NULL),
-					NWidget(WWT_PUSHTXTBTN, COLOUR_GREY, WID_PLN_TAKE_OWNERSHIP), SetResize(1, 0), SetFill(1, 0), SetDataTip(STR_PLANS_TAKE_OWNERSHIP, STR_PLANS_TAKE_OWNERSHIP_TOOLTIP),
+				NWidget(WWT_PUSHTXTBTN, Colours::Grey, WID_PLN_DELETE), SetResize(1, 0), SetFill(1, 0), SetStringTip(STR_PLANS_DELETE, STR_PLANS_DELETE_TOOLTIP),
+				NWidget(NWID_SELECTION, Colours::Invalid, WID_PLN_RENAME_SEL),
+					NWidget(WWT_PUSHTXTBTN, Colours::Grey, WID_PLN_RENAME), SetResize(1, 0), SetFill(1, 0), SetStringTip(STR_BUTTON_RENAME, STR_NULL),
+					NWidget(WWT_PUSHTXTBTN, Colours::Grey, WID_PLN_TAKE_OWNERSHIP), SetResize(1, 0), SetFill(1, 0), SetStringTip(STR_PLANS_TAKE_OWNERSHIP, STR_PLANS_TAKE_OWNERSHIP_TOOLTIP),
 				EndContainer(),
 			EndContainer(),
-			NWidget(WWT_RESIZEBOX, COLOUR_GREY),
+			NWidget(WWT_RESIZEBOX, Colours::Grey),
 		EndContainer(),
 	EndContainer(),
 };
 
 static WindowDesc _plans_desc(__FILE__, __LINE__,
-	WDP_AUTO, "plans", 350, 100,
-	WC_PLANS, WC_NONE,
-	WDF_CONSTRUCTION,
+	WindowPosition::Automatic, "plans", 350, 100,
+	WindowClass::Plans, WindowClass::None,
+	WindowDefaultFlag::Construction,
 	_nested_plans_widgets
 );
 
 typedef GUIList<const Plan*, const bool &> GUIPlanList;
 
 struct PlansWindow : Window {
-	typedef struct {
+	struct ListItem {
 		bool is_plan;
-		int plan_id;
+		PlanID plan_id;
 		int line_id;
-	} ListItem;
+	};
 
-	Scrollbar *vscroll;
-	NWidgetStacked *hide_all_sel;
-	NWidgetStacked *rename_sel;
-	std::vector<ListItem> list; ///< The translation table linking panel indices to their related PlanID.
-	int selected; ///< What item is currently selected in the panel.
-	uint vis_btn_left; ///< left offset of visibility button
-	Dimension company_icon_spr_dim; ///< dimensions of company icon
+	Scrollbar *vscroll = nullptr;
+	NWidgetStacked *hide_all_sel = nullptr;
+	NWidgetStacked *rename_sel = nullptr;
+	std::vector<ListItem> list{};                   ///< The translation table linking panel indices to their related PlanID.
+	int selected = INT_MAX;                         ///< What item is currently selected in the panel.
+	uint vis_btn_left = 0;                          ///< left offset of visibility button
+	Dimension company_icon_spr_dim{};               ///< dimensions of company icon
 	WindowToken current_dragging_viewport_window{0};
 
 private:
@@ -154,7 +156,7 @@ private:
 
 	void RebuildList()
 	{
-		int old_focused_plan_id = this->selected == INT_MAX ? INT_MAX : this->list[this->selected].plan_id;
+		const ListItem old_focused_item = this->selected == INT_MAX ? ListItem{ true, INVALID_PLAN, 0 } : this->list[this->selected];
 		this->selected = INT_MAX;
 
 		int sbcnt = 0;
@@ -165,17 +167,36 @@ private:
 			li.is_plan = true;
 			li.plan_id = p->index;
 			this->list.push_back(li);
-			if (old_focused_plan_id == p->index) this->selected = sbcnt;
+			if (old_focused_item.is_plan && old_focused_item.plan_id == p->index && p == _current_plan) {
+				_current_plan->SetFocus(true);
+				this->selected = sbcnt;
+			}
 			sbcnt++;
 
 			if (p->show_lines) {
 				const int sz = (int) p->lines.size();
-				sbcnt += sz;
+
+				/* Select single line if only one plan line focused. */
+				if (!old_focused_item.is_plan && old_focused_item.plan_id == p->index && p == _current_plan) {
+					uint focus_count = 0;
+					int last_focused = 0;
+					for (int i = 0; i < sz; i++) {
+						if (p->lines[i].focused) {
+							focus_count++;
+							last_focused = i;
+						}
+					}
+					if (focus_count == 1) {
+						this->selected = sbcnt + last_focused;
+					}
+				}
+
 				li.is_plan = false;
 				for (int i = 0; i < sz; i++) {
 					li.line_id = i;
 					this->list.push_back(li);
 				}
+				sbcnt += sz;
 			}
 
 			if (p == _current_plan) seen_current_plan = true;
@@ -186,7 +207,10 @@ private:
 			_current_plan = nullptr;
 		}
 
-		if (this->selected == INT_MAX) ResetObjectToPlace();
+		if (this->selected == INT_MAX) {
+			ResetObjectToPlace();
+			if (_current_plan != nullptr) _current_plan->SetFocus(false);
+		}
 
 		this->vscroll->SetCount(sbcnt);
 	}
@@ -236,7 +260,6 @@ public:
 		this->rename_sel->SetDisplayedPlane(0);
 		this->FinishInitNested();
 
-		this->selected = INT_MAX;
 		this->plans.SetListing(this->last_sorting);
 		this->plans.SetSortFuncs(PlansWindow::sorter_funcs);
 		this->plans.ForceRebuild();
@@ -260,7 +283,7 @@ public:
 	{
 		switch (widget) {
 			case WID_PLN_NEW:
-				DoCommandP(0, 0, 0, CMD_ADD_PLAN, CcAddPlan);
+				Command<Commands::AddPlan>::Post(STR_ERROR_CAN_T_DO_THIS, CommandCallback::AddPlan);
 				break;
 			case WID_PLN_ADD_LINES:
 				if (_current_plan != nullptr) HandlePlacePushButton(this, widget, SPR_CURSOR_MOUSE, HT_POINT | HT_MAP);
@@ -268,9 +291,9 @@ public:
 			case WID_PLN_DELETE:
 				if (this->selected != INT_MAX) {
 					if (this->list[this->selected].is_plan) {
-						DoCommandP(0, this->list[this->selected].plan_id, 0, CMD_REMOVE_PLAN);
+						Command<Commands::RemovePlan>::Post(STR_ERROR_CAN_T_DO_THIS, this->list[this->selected].plan_id);
 					} else {
-						DoCommandP(0, this->list[this->selected].plan_id, this->list[this->selected].line_id, CMD_REMOVE_PLAN_LINE);
+						Command<Commands::RemovePlanLine>::Post(STR_ERROR_CAN_T_DO_THIS, this->list[this->selected].plan_id, this->list[this->selected].line_id);
 					}
 				}
 				break;
@@ -284,16 +307,15 @@ public:
 
 			case WID_PLN_RENAME: {
 				if (_current_plan != nullptr) {
-					SetDParamStr(0, _current_plan->GetName().c_str());
-					ShowQueryString(STR_JUST_RAW_STRING, STR_PLANS_QUERY_RENAME_PLAN,
-						MAX_LENGTH_PLAN_NAME_CHARS, this, CS_ALPHANUMERAL, QSF_LEN_IN_CHARS);
+					ShowQueryString(_current_plan->GetName(), STR_PLANS_QUERY_RENAME_PLAN,
+						MAX_LENGTH_PLAN_NAME_CHARS, this, CS_ALPHANUMERAL, QueryStringFlag::LengthIsInChars);
 				}
 				break;
 			}
 
 			case WID_PLN_TAKE_OWNERSHIP: {
 				if (_current_plan != nullptr && !IsNonAdminNetworkClient()) {
-					DoCommandP(0, this->list[this->selected].plan_id, 0, CMD_ACQUIRE_UNOWNED_PLAN);
+					Command<Commands::AcquireUnownedPlan>::Post(STR_ERROR_CAN_T_DO_THIS, this->list[this->selected].plan_id);
 				}
 				break;
 			}
@@ -306,24 +328,26 @@ public:
 				break;
 			}
 			case WID_PLN_VISIBILITY:
-				if (_current_plan != nullptr) _current_plan->ToggleVisibilityByAll();
+				if (_current_plan != nullptr) {
+					Command<Commands::ChangePlanVisibility>::Post(STR_ERROR_CAN_T_DO_THIS, _current_plan->index, !_current_plan->visible_by_all);
+				}
 				break;
 			case WID_PLN_COLOUR: {
 				if (_current_plan != nullptr) {
 					DropDownList list;
 					auto add_colour = [&](Colours colour) {
-						list.push_back(MakeDropDownListStringItem(STR_COLOUR_DARK_BLUE + colour, colour, false));
+						list.push_back(MakeDropDownListStringItem(STR_COLOUR_DARK_BLUE + to_underlying(colour), colour, false));
 					};
-					add_colour(COLOUR_WHITE);
-					add_colour(COLOUR_YELLOW);
-					add_colour(COLOUR_LIGHT_BLUE);
-					add_colour(COLOUR_BLUE);
-					add_colour(COLOUR_GREEN);
-					add_colour(COLOUR_PURPLE);
-					add_colour(COLOUR_ORANGE);
-					add_colour(COLOUR_BROWN);
-					add_colour(COLOUR_PINK);
-					ShowDropDownList(this, std::move(list), _current_plan->colour, widget);
+					add_colour(Colours::White);
+					add_colour(Colours::Yellow);
+					add_colour(Colours::LightBlue);
+					add_colour(Colours::Blue);
+					add_colour(Colours::Green);
+					add_colour(Colours::Purple);
+					add_colour(Colours::Orange);
+					add_colour(Colours::Brown);
+					add_colour(Colours::Pink);
+					ShowDropDownList(this, std::move(list), to_underlying(_current_plan->colour), widget);
 				}
 				break;
 			}
@@ -396,12 +420,12 @@ public:
 		}
 	}
 
-	virtual void OnDropdownSelect(WidgetID widget, int index) override
+	virtual void OnDropdownSelect(WidgetID widget, int index, int) override
 	{
 		switch (widget) {
 			case WID_PLN_COLOUR:
-				if (_current_plan != nullptr && index < COLOUR_END) {
-					_current_plan->SetPlanColour((Colours)index);
+				if (_current_plan != nullptr && index >= to_underlying(Colours::Begin) && index < to_underlying(Colours::End)) {
+					Command<Commands::ChangePlanColour>::Post(STR_ERROR_CAN_T_DO_THIS, _current_plan->index, static_cast<Colours>(index));
 				}
 				break;
 
@@ -419,7 +443,7 @@ public:
 	{
 		if (_current_plan == nullptr || !str.has_value()) return;
 
-		DoCommandP(0, _current_plan->index, 0, CMD_RENAME_PLAN | CMD_MSG(STR_ERROR_CAN_T_RENAME_PLAN), nullptr, str->c_str());
+		Command<Commands::RenamePlan>::Post(STR_ERROR_CAN_T_RENAME_PLAN, _current_plan->index, *str);
 	}
 
 	bool AllPlansHidden() const
@@ -435,11 +459,12 @@ public:
 		this->SetWidgetDisabledState(WID_PLN_HIDE_ALL, this->vscroll->GetCount() == 0);
 		this->SetWidgetDisabledState(WID_PLN_SHOW_ALL, this->vscroll->GetCount() == 0);
 		this->hide_all_sel->SetDisplayedPlane(this->vscroll->GetCount() != 0 && this->AllPlansHidden() ? 1 : 0);
+		this->SetWidgetsDisabledState(_game_mode != GameMode::Editor && !Company::IsValidID(_local_company), WID_PLN_NEW);
 		if (_current_plan != nullptr) {
 			this->SetWidgetsDisabledState(_current_plan->owner != _local_company, WID_PLN_ADD_LINES, WID_PLN_VISIBILITY, WID_PLN_DELETE, WID_PLN_RENAME, WID_PLN_COLOUR);
-			this->GetWidget<NWidgetCore>(WID_PLN_VISIBILITY)->widget_data = _current_plan->visible_by_all ? STR_PLANS_VISIBILITY_PRIVATE : STR_PLANS_VISIBILITY_PUBLIC;
+			this->GetWidget<NWidgetCore>(WID_PLN_VISIBILITY)->SetString(_current_plan->visible_by_all ? STR_PLANS_VISIBILITY_PRIVATE : STR_PLANS_VISIBILITY_PUBLIC);
 			this->SetWidgetDisabledState(WID_PLN_TAKE_OWNERSHIP, Company::IsValidID(_current_plan->owner) || IsNonAdminNetworkClient());
-			this->rename_sel->SetDisplayedPlane(Company::IsValidID(_current_plan->owner) || !Company::IsValidID(_current_company) ? 0 : 1);
+			this->rename_sel->SetDisplayedPlane(Company::IsValidID(_current_plan->owner) || !Company::IsValidID(_local_company) ? 0 : 1);
 		} else {
 			this->SetWidgetsDisabledState(true, WID_PLN_ADD_LINES, WID_PLN_VISIBILITY, WID_PLN_DELETE, WID_PLN_RENAME, WID_PLN_COLOUR, WID_PLN_TAKE_OWNERSHIP);
 			this->rename_sel->SetDisplayedPlane(0);
@@ -451,7 +476,7 @@ public:
 	{
 		switch (widget) {
 			case WID_PLN_SORT_ORDER:
-				this->DrawSortButtonState(widget, this->plans.IsDescSortOrder() ? SBS_DOWN : SBS_UP);
+				this->DrawSortButton(widget, this->plans.IsDescSortOrder());
 				break;
 
 			case WID_PLN_LIST: {
@@ -469,34 +494,28 @@ public:
 				uint text_right = (rtl ? btn_left - 4 : ir.right);
 				const_cast<PlansWindow*>(this)->vis_btn_left = btn_left;
 
-				for (uint16_t i = this->vscroll->GetPosition(); this->vscroll->IsVisible(i) && i < this->vscroll->GetCount(); i++) {
+				for (int32_t i = this->vscroll->GetPosition(); this->vscroll->IsVisible(i) && i < this->vscroll->GetCount(); i++) {
 					Plan *p = Plan::Get(list[i].plan_id);
 
 					if (i == this->selected) GfxFillRect(r.left + 1, y, r.right, y + this->resize.step_height, PC_DARK_GREY);
 
 					if (list[i].is_plan) {
 						if (Company::IsValidID(p->owner)) DrawCompanyIcon(p->owner, icon_left, y + (this->resize.step_height - this->company_icon_spr_dim.height) / 2);
-						DrawBoolButton(btn_left, y + (this->resize.step_height - SETTING_BUTTON_HEIGHT) / 2, p->visible, true);
-						uint dparam_offset = 0;
-						StringID str = p->HasName() ? STR_PLANS_LIST_ITEM_NAMED_PLAN : STR_PLANS_LIST_ITEM_PLAN;
-						if (!p->visible_by_all) {
-							SetDParam(dparam_offset++, str);
-							str = STR_PLANS_LIST_ITEM_PLAN_PRIVATE;
-						}
+						DrawBoolButton(btn_left, y + (this->resize.step_height - SETTING_BUTTON_HEIGHT) / 2, Colours::Yellow, Colours::Grey, p->visible, true);
+
+						format_buffer buf;
+						if (!p->visible_by_all) AppendStringInPlace(buf, STR_PLANS_LIST_ITEM_PLAN_PRIVATE);
 						if (p->HasName()) {
-							SetDParamStr(dparam_offset++, p->GetName().c_str());
+							AppendStringInPlace(buf, STR_PLANS_LIST_ITEM_NAMED_PLAN, p->GetName(), p->lines.size(), p->creation_date);
 						} else {
-							SetDParam(dparam_offset++, list[i].plan_id + 1);
+							AppendStringInPlace(buf, STR_PLANS_LIST_ITEM_PLAN, list[i].plan_id + 1, p->lines.size(), p->creation_date);
 						}
-						SetDParam(dparam_offset++, p->lines.size());
-						SetDParam(dparam_offset++, p->creation_date);
-						DrawString(text_left, text_right, y + (this->resize.step_height - GetCharacterHeight(FS_NORMAL)) / 2, str, TC_IS_PALETTE_COLOUR | (TextColour)_colour_value[p->colour]);
+						DrawString(text_left, text_right, y + (this->resize.step_height - GetCharacterHeight(FontSize::Normal)) / 2, buf, _colour_value[p->colour]);
 					} else {
 						PlanLine &pl = p->lines[list[i].line_id];
-						DrawBoolButton(btn_left, y + (this->resize.step_height - SETTING_BUTTON_HEIGHT) / 2, pl.visible, true);
-						SetDParam(0, list[i].line_id + 1);
-						SetDParam(1, pl.tiles.size() - 1);
-						DrawString(text_left, text_right, y + (this->resize.step_height - GetCharacterHeight(FS_NORMAL)) / 2, STR_PLANS_LIST_ITEM_LINE, TC_WHITE);
+						DrawBoolButton(btn_left, y + (this->resize.step_height - SETTING_BUTTON_HEIGHT) / 2, Colours::Yellow, Colours::Grey, pl.visible, true);
+						std::string str = GetString(STR_PLANS_LIST_ITEM_LINE, list[i].line_id + 1, pl.tiles.size() - 1);
+						DrawString(text_left, text_right, y + (this->resize.step_height - GetCharacterHeight(FontSize::Normal)) / 2, str, TextColour::White);
 					}
 					y += this->resize.step_height;
 				}
@@ -505,16 +524,17 @@ public:
 		}
 	}
 
-	void SetStringParameters(WidgetID widget) const override
+	std::string GetWidgetString(WidgetID widget, StringID stringid) const override
 	{
 		switch (widget) {
 			case WID_PLN_COLOUR:
-				SetDParam(0, _current_plan ? STR_COLOUR_DARK_BLUE + _current_plan->colour : STR_PLANS_COLOUR);
-				break;
+				return GetString(_current_plan ? STR_COLOUR_DARK_BLUE + to_underlying(_current_plan->colour) : STR_PLANS_COLOUR);
 
 			case WID_PLN_SORT_CRITERIA:
-				SetDParam(0, PlansWindow::sorter_names[this->plans.SortType()]);
-				break;
+				return GetString(PlansWindow::sorter_names[this->plans.SortType()]);
+
+			default:
+				return this->Window::GetWidgetString(widget, stringid);
 		}
 	}
 
@@ -527,7 +547,7 @@ public:
 	{
 		switch (widget) {
 			case WID_PLN_SORT_ORDER: {
-				Dimension d = GetStringBoundingBox(this->GetWidget<NWidgetCore>(widget)->widget_data);
+				Dimension d = GetStringBoundingBox(this->GetWidget<NWidgetCore>(widget)->GetString());
 				d.width += padding.width + Window::SortButtonWidth() * 2; // Doubled since the string is centred and it also looks better.
 				d.height += padding.height;
 				size = maxdim(size, d);
@@ -544,7 +564,7 @@ public:
 
 			case WID_PLN_LIST:
 				this->company_icon_spr_dim = GetSpriteSize(SPR_COMPANY_ICON);
-				resize.height = std::max<int>(GetCharacterHeight(FS_NORMAL), SETTING_BUTTON_HEIGHT);
+				resize.height = std::max<int>(GetCharacterHeight(FontSize::Normal), SETTING_BUTTON_HEIGHT);
 				size.height = resize.height * 5 + WidgetDimensions::scaled.framerect.Vertical();
 				break;
 
@@ -562,8 +582,8 @@ public:
 
 			case WID_PLN_COLOUR: {
 				Dimension dim = GetStringBoundingBox(STR_PLANS_COLOUR);
-				for (uint8_t colour = COLOUR_BEGIN; colour != COLOUR_END; ++colour) {
-					dim = maxdim(dim, GetStringBoundingBox(STR_COLOUR_DARK_BLUE + colour));
+				for (Colours colour = Colours::Begin; colour != Colours::End; ++colour) {
+					dim = maxdim(dim, GetStringBoundingBox(STR_COLOUR_DARK_BLUE + to_underlying(colour)));
 				}
 				size = adddim(dim, padding);
 				break;
@@ -604,7 +624,7 @@ public:
 		}
 
 		const TileIndex tile = TileVirtXY(pt.x, pt.y);
-		if (_current_plan != nullptr && tile < MapSize()) {
+		if (_current_plan != nullptr && tile < Map::Size()) {
 			if (_ctrl_pressed && _current_plan->temp_line.tiles.empty() && _current_plan->last_tile != INVALID_TILE) {
 				_current_plan->StoreTempTile(_current_plan->last_tile);
 				_current_plan->last_tile = INVALID_TILE;
@@ -636,15 +656,15 @@ public:
 	void OnEditboxChanged(WidgetID wid) override
 	{
 		if (wid == WID_PLN_FILTER) {
-			this->string_filter.SetFilterTerm(this->planname_editbox.text.buf);
-			this->InvalidateData(INVALID_PLAN);
+			this->string_filter.SetFilterTerm(this->planname_editbox.text.GetText());
+			this->InvalidateData(INVALID_PLAN.base());
 		}
 	}
 
 	virtual void OnInvalidateData(int data = 0, bool gui_scope = true) override
 	{
-		if (data != INVALID_PLAN && this->selected != INT_MAX) {
-			if (this->list[this->selected].plan_id == data) {
+		if (data != INVALID_PLAN.base() && this->selected != INT_MAX) {
+			if (this->list[this->selected].plan_id.base() == data) {
 				/* Invalidate the selection if the selected plan has been modified or deleted. */
 				this->selected = INT_MAX;
 
@@ -692,7 +712,7 @@ const std::initializer_list<GUIPlanList::SortFunction * const> PlansWindow::sort
 /** Show the window to manage plans. */
 void ShowPlansWindow()
 {
-	if (BringWindowToFrontById(WC_PLANS, 0) != nullptr) return;
+	if (BringWindowToFrontById(WindowClass::Plans, 0) != nullptr) return;
 	new PlansWindow(_plans_desc);
 }
 
@@ -700,14 +720,18 @@ void ShowPlansWindow()
  * Only the creator of a plan executes this function.
  * The other players should not be bothered with these changes.
  */
-void CcAddPlan(const CommandCost &result, TileIndex tile, uint32_t p1, uint32_t p2, uint64_t p3, uint32_t cmd)
+void CcAddPlan(const CommandCost &result)
 {
 	if (result.Failed()) return;
 
-	_current_plan = _new_plan;
+	auto plan_id = result.GetResultData<PlanID>();
+	if (!plan_id.has_value()) return;
+
+	if (_current_plan != nullptr) _current_plan->SetFocus(false);
+	_current_plan = Plan::Get(*plan_id);
 	_current_plan->SetVisibility(true);
 
-	Window *w = FindWindowById(WC_PLANS, 0);
+	Window *w = FindWindowById(WindowClass::Plans, 0);
 	if (w != nullptr) {
 		w->ClearEditBox(WID_PLN_FILTER);
 		w->InvalidateData(INVALID_PLAN, false);

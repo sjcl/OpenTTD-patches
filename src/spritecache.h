@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file spritecache.h Functions to cache sprites in memory. */
@@ -10,7 +10,7 @@
 #ifndef SPRITECACHE_H
 #define SPRITECACHE_H
 
-#include "gfx_type.h"
+#include "sprite_id_type.h"
 #include "zoom_type.h"
 #include "spriteloader/spriteloader.hpp"
 #include "3rdparty/robin_hood/robin_hood.h"
@@ -23,7 +23,7 @@ struct Sprite {
 	int16_t x_offs;              ///< Number of pixels to shift the sprite to the right.
 	int16_t y_offs;              ///< Number of pixels to shift the sprite downwards.
 	uint32_t lru;                ///< Sprite cache LRU of this sprite structure.
-	uint8_t missing_zoom_levels; ///< Bitmask of zoom levels missing in data
+	LowZoomLevels missing_zoom_levels; ///< Bitmask of zoom levels missing in data
 	Sprite *next = nullptr;      ///< Next sprite structure, this is the only member which may be changed after the sprite has been inserted in the sprite cache
 	uint8_t data[];              ///< Sprite data.
 };
@@ -40,21 +40,15 @@ enum SpriteCacheCtrlFlags {
 
 extern uint _sprite_cache_size;
 
-/** SpriteAllocate that uses malloc to allocate memory. */
-class SimpleSpriteAllocator : public SpriteAllocator {
-protected:
-	void *AllocatePtr(size_t size) override;
-};
-
 /** SpriteAllocator that allocates memory via a unique_ptr array. */
 class UniquePtrSpriteAllocator : public SpriteAllocator {
 public:
-	std::unique_ptr<uint8_t[]> data;
+	std::unique_ptr<std::byte[]> data;
 protected:
 	void *AllocatePtr(size_t size) override;
 };
 
-void *GetRawSprite(SpriteID sprite, SpriteType type, uint8_t zoom_levels, SpriteAllocator *allocator = nullptr, SpriteEncoder *encoder = nullptr);
+void *GetRawSprite(SpriteID sprite, SpriteType type, LowZoomLevels zoom_levels, SpriteAllocator *allocator = nullptr, SpriteEncoder *encoder = nullptr);
 bool SpriteExists(SpriteID sprite);
 
 SpriteType GetSpriteType(SpriteID sprite);
@@ -63,7 +57,7 @@ uint32_t GetSpriteLocalID(SpriteID sprite);
 uint GetSpriteCountForFile(const std::string &filename, SpriteID begin, SpriteID end);
 uint GetMaxSpriteID();
 
-inline const Sprite *GetSprite(SpriteID sprite, SpriteType type, uint8_t zoom_levels)
+inline const Sprite *GetSprite(SpriteID sprite, SpriteType type, LowZoomLevels zoom_levels)
 {
 	dbg_assert(type != SpriteType::Recolour);
 	return (Sprite*)GetRawSprite(sprite, type, zoom_levels);
@@ -72,7 +66,7 @@ inline const Sprite *GetSprite(SpriteID sprite, SpriteType type, uint8_t zoom_le
 inline const uint8_t *GetNonSprite(SpriteID sprite, SpriteType type)
 {
 	dbg_assert(type == SpriteType::Recolour);
-	return (uint8_t*)GetRawSprite(sprite, type, UINT8_MAX);
+	return (uint8_t*)GetRawSprite(sprite, type, LOW_ZOOM_ALL_BITS);
 }
 
 void GfxInitSpriteMem();
@@ -116,12 +110,12 @@ public:
 
 	inline void CacheSprite(SpriteID sprite, SpriteType type, ZoomLevel zoom_level)
 	{
-		this->cache[sprite | (static_cast<uint32_t>(type) << 29)] = GetRawSprite(sprite, type, ZoomMask(zoom_level));
+		this->cache[sprite | (static_cast<uint32_t>(type) << 29)] = GetRawSprite(sprite, type, LowZoomMask(zoom_level));
 	}
 
 	inline void CacheRecolourSprite(SpriteID sprite)
 	{
-		this->cache[sprite | (static_cast<uint32_t>(SpriteType::Recolour) << 29)] = GetRawSprite(sprite, SpriteType::Recolour, 0);
+		this->cache[sprite | (static_cast<uint32_t>(SpriteType::Recolour) << 29)] = GetRawSprite(sprite, SpriteType::Recolour, {});
 	}
 };
 

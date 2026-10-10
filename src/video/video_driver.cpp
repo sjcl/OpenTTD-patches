@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file video_driver.cpp Common code between video driver implementations. */
@@ -21,6 +21,8 @@
 #include "../thread.h"
 #include "../window_func.h"
 #include "video_driver.hpp"
+
+#include "../safeguards.h"
 
 bool _video_hw_accel; ///< Whether to consider hardware accelerated video drivers on startup.
 bool _video_vsync; ///< Whether we should use vsync (only if active video driver supports HW acceleration).
@@ -147,8 +149,11 @@ void VideoDriver::Tick()
 
 			this->InputLoop();
 
+			const bool fast_forward_key_active = this->fast_forward_key_pressed && !_networking && _game_mode != GameMode::Menu &&
+					!FocusedWindowSuppressesTabToFastForward();
+
 			/* Check if the fast-forward button is still pressed. */
-			if (fast_forward_key_pressed && !_networking && _game_mode != GM_MENU) {
+			if (fast_forward_key_active) {
 				ChangeGameSpeed(true);
 				this->fast_forward_via_key = true;
 			} else if (this->fast_forward_via_key) {
@@ -166,7 +171,7 @@ void VideoDriver::Tick()
 			::InputLoop();
 
 			/* Prevent drawing when switching mode, as windows can be removed when they should still appear. */
-			if (_game_mode == GM_BOOTSTRAP || _switch_mode == SM_NONE || HasModalProgress()) {
+			if (_game_mode == GameMode::Bootstrap || _switch_mode == SwitchMode::None || HasModalProgress()) {
 				::UpdateWindows();
 			}
 
@@ -208,7 +213,7 @@ void VideoDriver::SleepTillNextTick()
 
 void VideoDriver::InvalidateGameOptionsWindow()
 {
-	InvalidateWindowClassesData(WC_GAME_OPTIONS, 3);
+	InvalidateWindowClassesData(WindowClass::GameOptions, 3);
 }
 
 /**

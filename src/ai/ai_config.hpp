@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file ai_config.hpp AIConfig stores the configuration settings of every AI. */
@@ -13,21 +13,30 @@
 #include "../script/script_config.hpp"
 #include "../company_type.h"
 
+/** AI instantion of script configuration. */
 class AIConfig : public ScriptConfig {
 public:
 	/**
-	 * Get the config of a company.
+	 * Get the AI configuration of specific company.
+	 * @param company The company to get the configuration for.
+	 * @param source The context, i.e. current / new game mode.
+	 * @return The configuration.
 	 */
-	static AIConfig *GetConfig(CompanyID company, ScriptSettingSource source = SSS_DEFAULT);
+	static AIConfig *GetConfig(CompanyID company, ScriptSettingSource source = ScriptSettingSource::Default);
 
 	AIConfig() :
 		ScriptConfig()
 	{}
 
-	AIConfig(const AIConfig *config) :
+	/**
+	 * Copy constructor.
+	 * @param config The configuration to copy.
+	 */
+	AIConfig(const AIConfig &config) :
 		ScriptConfig(config)
 	{}
 
+	/** @copydoc ScriptConfig::GetInfo. */
 	class AIInfo *GetInfo() const;
 
 	/**

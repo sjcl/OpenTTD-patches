@@ -2,15 +2,13 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file mem_func.hpp Functions related to memory operations. */
 
 #ifndef MEM_FUNC_HPP
 #define MEM_FUNC_HPP
-
-#include "math_func.hpp"
 
 /**
  * Type-safe version of memcpy().
@@ -49,20 +47,6 @@ template <typename T>
 inline void MemSetT(T *ptr, uint8_t value, size_t num = 1)
 {
 	memset(ptr, value, num * sizeof(T));
-}
-
-/**
- * Type-safe version of memcmp().
- *
- * @param ptr1 Pointer to the first buffer
- * @param ptr2 Pointer to the second buffer
- * @param num Number of items to compare. (!not number of bytes!)
- * @return an int value indicating the relationship between the content of the two buffers
- */
-template <typename T>
-inline int MemCmpT(const T *ptr1, const T *ptr2, size_t num = 1)
-{
-	return memcmp(ptr1, ptr2, num * sizeof(T));
 }
 
 #endif /* MEM_FUNC_HPP */

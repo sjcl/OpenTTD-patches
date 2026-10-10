@@ -2,10 +2,10 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
-/** @file subsidy_sl.cpp Code handling saving and loading of subsidies */
+/** @file subsidy_sl.cpp Code handling saving and loading of subsidies. */
 
 #include "../stdafx.h"
 
@@ -19,20 +19,20 @@
 namespace upstream_sl {
 
 static const SaveLoad _subsidies_desc[] = {
-	    SLE_VAR(Subsidy, cargo_type, SLE_UINT8),
-	SLE_CONDVAR(Subsidy, remaining,  SLE_FILE_U8 | SLE_VAR_U16, SL_MIN_VERSION, SLV_CUSTOM_SUBSIDY_DURATION),
-	SLE_CONDVAR(Subsidy, remaining,  SLE_UINT16,                SLV_CUSTOM_SUBSIDY_DURATION, SL_MAX_VERSION),
-	SLE_CONDVAR(Subsidy, awarded,    SLE_UINT8,                                     SLV_125, SL_MAX_VERSION),
-	SLE_CONDVAR(Subsidy, src_type,   SLE_UINT8,                                     SLV_125, SL_MAX_VERSION),
-	SLE_CONDVAR(Subsidy, dst_type,   SLE_UINT8,                                     SLV_125, SL_MAX_VERSION),
-	SLE_CONDVAR(Subsidy, src,        SLE_FILE_U8 | SLE_VAR_U16,                       SL_MIN_VERSION, SLV_5),
-	SLE_CONDVAR(Subsidy, src,        SLE_UINT16,                                      SLV_5, SL_MAX_VERSION),
-	SLE_CONDVAR(Subsidy, dst,        SLE_FILE_U8 | SLE_VAR_U16,                       SL_MIN_VERSION, SLV_5),
-	SLE_CONDVAR(Subsidy, dst,        SLE_UINT16,                                      SLV_5, SL_MAX_VERSION),
+	    SLE_VAR(Subsidy, cargo_type, VarTypes::U8),
+	SLE_CONDVAR(Subsidy, remaining, VarFileType::U8 | VarMemType::U16, SaveLoadVersion::MinVersion, SaveLoadVersion::CustomSubsidyDuration),
+	SLE_CONDVAR(Subsidy, remaining, VarTypes::U16, SaveLoadVersion::CustomSubsidyDuration, SaveLoadVersion::MaxVersion),
+	SLE_CONDVAR(Subsidy, awarded, VarTypes::U8, SaveLoadVersion::RemoveSubsidyStationBinding, SaveLoadVersion::MaxVersion),
+	SLE_CONDVARNAME(Subsidy, src.type, "src_type", VarTypes::U8, SaveLoadVersion::RemoveSubsidyStationBinding, SaveLoadVersion::MaxVersion),
+	SLE_CONDVARNAME(Subsidy, dst.type, "dst_type", VarTypes::U8, SaveLoadVersion::RemoveSubsidyStationBinding, SaveLoadVersion::MaxVersion),
+	SLE_CONDVARNAME(Subsidy, src.id, "src", VarFileType::U8 | VarMemType::U16, SaveLoadVersion::MinVersion, SaveLoadVersion::BigMap),
+	SLE_CONDVARNAME(Subsidy, src.id, "src", VarTypes::U16, SaveLoadVersion::BigMap, SaveLoadVersion::MaxVersion),
+	SLE_CONDVARNAME(Subsidy, dst.id, "dst", VarFileType::U8 | VarMemType::U16, SaveLoadVersion::MinVersion, SaveLoadVersion::BigMap),
+	SLE_CONDVARNAME(Subsidy, dst.id, "dst", VarTypes::U16, SaveLoadVersion::BigMap, SaveLoadVersion::MaxVersion),
 };
 
 struct SUBSChunkHandler : ChunkHandler {
-	SUBSChunkHandler() : ChunkHandler('SUBS', CH_TABLE) {}
+	SUBSChunkHandler() : ChunkHandler("SUBS", ChunkType::Table) {}
 
 	void Save() const override
 	{
@@ -50,7 +50,7 @@ struct SUBSChunkHandler : ChunkHandler {
 
 		int index;
 		while ((index = SlIterateArray()) != -1) {
-			Subsidy *s = new (index) Subsidy();
+			Subsidy *s = Subsidy::CreateAtIndex(SubsidyID(index));
 			SlObject(s, slt);
 		}
 	}

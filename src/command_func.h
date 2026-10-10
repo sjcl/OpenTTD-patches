@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file command_func.h Functions related to commands. */
@@ -13,154 +13,188 @@
 #include "command_type.h"
 #include "company_type.h"
 
-/**
- * Define a default return value for a failed command.
- *
- * This variable contains a CommandCost object with is declared as "failed".
- * Other functions just need to return this error if there is an error,
- * which doesn't need to specific by a StringID.
- */
-static const CommandCost CMD_ERROR = CommandCost(INVALID_STRING_ID);
+/* DoCommand and variants */
 
-CommandCost DoCommandEx(TileIndex tile, uint32_t p1, uint32_t p2, uint64_t p3, DoCommandFlag flags, uint32_t cmd, const char *text = nullptr, const CommandAuxiliaryBase *aux_data = nullptr);
+CommandCost DoCommandImplementation(Commands cmd, TileIndex tile, const CommandPayloadBase &payload, DoCommandFlags flags, DoCommandIntlFlag intl_flags);
 
-inline CommandCost DoCommand(TileIndex tile, uint32_t p1, uint32_t p2, DoCommandFlag flags, uint32_t cmd, const char *text = nullptr)
+/* Note that output_no_tile is used here instead of input_no_tile, because a tile index used only for error messages is not useful */
+template <Commands cmd, typename = typename std::enable_if<!CommandTraits<cmd>::output_no_tile>>
+CommandCost DoCommand(TileIndex tile, const CmdPayload<cmd> &payload, DoCommandFlags flags, DoCommandIntlFlag intl_flags = DCIF_NONE)
 {
-	return DoCommandEx(tile, p1, p2, 0, flags, cmd, text, nullptr);
+	return DoCommandImplementation(cmd, tile, payload, flags, intl_flags | DCIF_TYPE_CHECKED);
 }
 
-inline CommandCost DoCommandAux(TileIndex tile, const CommandAuxiliaryBase *aux_data, DoCommandFlag flags, uint32_t cmd)
+template <Commands cmd, typename = typename std::enable_if<CommandTraits<cmd>::output_no_tile>>
+CommandCost DoCommand(const CmdPayload<cmd> &payload, DoCommandFlags flags, DoCommandIntlFlag intl_flags = DCIF_NONE)
 {
-	return DoCommandEx(tile, 0, 0, 0, flags, cmd, nullptr, aux_data);
+	return DoCommandImplementation(cmd, TileIndex{0}, payload, flags, intl_flags | DCIF_TYPE_CHECKED);
 }
 
-inline CommandCost DoCommand(const BaseCommandContainer &container, DoCommandFlag flags)
+inline CommandCost DoCommandContainer(const DynBaseCommandContainer &container, DoCommandFlags flags)
 {
-	return DoCommandEx(container.tile, container.p1, container.p2, container.p3, flags, container.cmd & CMD_ID_MASK, container.text.c_str(), container.aux_data.get());
+	return DoCommandImplementation(container.cmd, container.tile, *container.payload, flags, DCIF_NONE);
 }
 
-bool DoCommandPEx(TileIndex tile, uint32_t p1, uint32_t p2, uint64_t p3, uint32_t cmd, CommandCallback *callback = nullptr, const char *text = nullptr, const CommandAuxiliaryBase *aux_data = nullptr, bool my_cmd = true);
-
-inline bool DoCommandP(TileIndex tile, uint32_t p1, uint32_t p2, uint32_t cmd, CommandCallback *callback = nullptr, const char *text = nullptr, bool my_cmd = true)
+template <Commands cmd>
+inline CommandCost DoCommandContainer(const BaseCommandContainer<cmd> &container, DoCommandFlags flags)
 {
-	return DoCommandPEx(tile, p1, p2, 0, cmd, callback, text, nullptr, my_cmd);
+	return DoCommandImplementation(cmd, container.tile, container.payload, flags, DCIF_TYPE_CHECKED);
 }
 
-inline bool DoCommandPAux(TileIndex tile, const CommandAuxiliaryBase *aux_data, uint32_t cmd, CommandCallback *callback = nullptr, bool my_cmd = true)
+/* DoCommandP and variants */
+
+bool DoCommandPImplementation(Commands cmd, TileIndex tile, const CommandPayloadBase &payload, StringID error_msg, CommandCallback callback, CallbackParameter callback_param, DoCommandIntlFlag intl_flags);
+
+inline bool DoCommandPContainer(const DynCommandContainer &container, DoCommandIntlFlag intl_flags = DCIF_NONE)
 {
-	return DoCommandPEx(tile, 0, 0, 0, cmd, callback, nullptr, aux_data, my_cmd);
+	return DoCommandPImplementation(container.command.cmd, container.command.tile, *container.command.payload, container.command.error_msg, container.callback, container.callback_param, intl_flags);
 }
 
-inline bool DoCommandP(const CommandContainer &container, bool my_cmd = true)
+template <Commands cmd>
+inline bool DoCommandPContainer(const CommandContainer<cmd> &container, DoCommandIntlFlag intl_flags = DCIF_NONE)
 {
-	return DoCommandPEx(container.tile, container.p1, container.p2, container.p3, container.cmd, container.callback, container.text.c_str(), container.aux_data.get(), my_cmd);
+	return DoCommandPImplementation(cmd, container.tile, container.payload, container.error_msg, container.callback, container.callback_param, intl_flags | DCIF_TYPE_CHECKED);
 }
 
-CommandCost DoCommandPScript(TileIndex tile, uint32_t p1, uint32_t p2, uint64_t p3, uint32_t cmd, CommandCallback *callback, const char *text, bool my_cmd, bool estimate_only, bool asynchronous, const CommandAuxiliaryBase *aux_data);
-CommandCost DoCommandPInternal(TileIndex tile, uint32_t p1, uint32_t p2, uint64_t p3, uint32_t cmd, CommandCallback *callback, const char *text, bool my_cmd, bool estimate_only, const CommandAuxiliaryBase *aux_data);
+template <Commands cmd, typename = typename std::enable_if<!CommandTraits<cmd>::input_no_tile>>
+bool DoCommandP(TileIndex tile, const CmdPayload<cmd> &payload, StringID error_msg, CommandCallback callback = CommandCallback::None, CallbackParameter callback_param = 0, DoCommandIntlFlag intl_flags = DCIF_NONE)
+{
+	return DoCommandPImplementation(cmd, tile, payload, error_msg, callback, callback_param, intl_flags | DCIF_TYPE_CHECKED);
+}
 
-void NetworkSendCommand(TileIndex tile, uint32_t p1, uint32_t p2, uint64_t p3, uint32_t cmd, CommandCallback *callback, const char *text, CompanyID company, const CommandAuxiliaryBase *aux_data);
+template <Commands cmd, typename = typename std::enable_if<CommandTraits<cmd>::input_no_tile>>
+bool DoCommandP(const CmdPayload<cmd> &payload, StringID error_msg, CommandCallback callback = CommandCallback::None, CallbackParameter callback_param = 0, DoCommandIntlFlag intl_flags = DCIF_NONE)
+{
+	return DoCommandPImplementation(cmd, TileIndex{0}, payload, error_msg, callback, callback_param, intl_flags | DCIF_TYPE_CHECKED);
+}
 
-extern Money _additional_cash_required;
+template <Commands TCmd, typename T> struct DoCommandHelper;
+template <Commands TCmd, typename T> struct DoCommandHelperNoTile;
 
-bool IsValidCommand(uint32_t cmd);
-CommandFlags GetCommandFlags(uint32_t cmd);
-const char *GetCommandName(uint32_t cmd);
-bool IsCommandAllowedWhilePaused(uint32_t cmd);
+template <Commands Tcmd, typename... Targs>
+struct DoCommandHelper<Tcmd, TypeList<Targs...>> {
+	static inline CommandCost Do(DoCommandFlags flags, TileIndex tile, Targs... args)
+	{
+		return DoCommand<Tcmd>(tile, CmdPayload<Tcmd>::Make(std::forward<Targs>(args)...), flags);
+	}
+};
+
+template <Commands Tcmd, typename... Targs>
+struct DoCommandHelperNoTile<Tcmd, TypeList<Targs...>> {
+	static inline CommandCost Do(DoCommandFlags flags, Targs... args)
+	{
+		return DoCommand<Tcmd>(CmdPayload<Tcmd>::Make(std::forward<Targs>(args)...), flags);
+	}
+};
+
+template <Commands TCmd, typename T> struct DoCommandPHelper;
+template <Commands TCmd, typename T> struct DoCommandPHelperNoTile;
+
+template <Commands Tcmd, typename... Targs>
+struct DoCommandPHelper<Tcmd, TypeList<Targs...>> {
+	using PayloadType = CmdPayload<Tcmd>;
+
+	static inline bool Post(TileIndex tile, Targs... args)
+	{
+		return DoCommandP<Tcmd>(tile, PayloadType::Make(std::forward<Targs>(args)...), (StringID)0, CommandCallback::None);
+	}
+
+	static inline bool Post(StringID error_msg, TileIndex tile, Targs... args)
+	{
+		return DoCommandP<Tcmd>(tile, PayloadType::Make(std::forward<Targs>(args)...), error_msg, CommandCallback::None);
+	}
+
+	static inline bool Post(CommandCallback callback, TileIndex tile, Targs... args)
+	{
+		return DoCommandP<Tcmd>(tile, PayloadType::Make(std::forward<Targs>(args)...), (StringID)0, callback);
+	}
+
+	static inline bool Post(StringID error_msg, CommandCallback callback, TileIndex tile, Targs... args)
+	{
+		return DoCommandP<Tcmd>(tile, PayloadType::Make(std::forward<Targs>(args)...), error_msg, callback);
+	}
+};
+
+template <Commands Tcmd, typename... Targs>
+struct DoCommandPHelperNoTile<Tcmd, TypeList<Targs...>> {
+	using PayloadType = CmdPayload<Tcmd>;
+
+	static inline bool Post(Targs... args)
+	{
+		return DoCommandP<Tcmd>(PayloadType::Make(std::forward<Targs>(args)...), (StringID)0, CommandCallback::None);
+	}
+
+	static inline bool Post(StringID error_msg, Targs... args)
+	{
+		return DoCommandP<Tcmd>(PayloadType::Make(std::forward<Targs>(args)...), error_msg, CommandCallback::None);
+	}
+
+	static inline bool Post(CommandCallback callback, Targs... args)
+	{
+		return DoCommandP<Tcmd>(PayloadType::Make(std::forward<Targs>(args)...), (StringID)0, callback);
+	}
+
+	static inline bool Post(StringID error_msg, CommandCallback callback, Targs... args)
+	{
+		return DoCommandP<Tcmd>(PayloadType::Make(std::forward<Targs>(args)...), error_msg, callback);
+	}
+};
+
+template <Commands Tcmd>
+struct Command :
+		public std::conditional_t<CommandTraits<Tcmd>::output_no_tile,
+			DoCommandHelperNoTile<Tcmd, typename CmdPayload<Tcmd>::Types>,
+			DoCommandHelper<Tcmd, typename CmdPayload<Tcmd>::Types>>,
+		public std::conditional_t<CommandTraits<Tcmd>::input_no_tile,
+			DoCommandPHelperNoTile<Tcmd, typename CmdPayload<Tcmd>::Types>,
+			DoCommandPHelper<Tcmd, typename CmdPayload<Tcmd>::Types>> {};
+
+/* Other command functions */
+
+CommandCost DoCommandPScript(Commands cmd, TileIndex tile, const CommandPayloadBase &payload, CommandCallback callback, CallbackParameter callback_param, DoCommandIntlFlag intl_flags, bool estimate_only, bool asynchronous);
+CommandCost DoCommandPInternal(Commands cmd, TileIndex tile, const CommandPayloadBase &payload, StringID error_msg, CommandCallback callback, CallbackParameter callback_param, DoCommandIntlFlag intl_flags, bool estimate_only);
+
+template <Commands Tcmd>
+void NetworkSendCommand(TileIndex tile, const CmdPayload<Tcmd> &payload, StringID error_msg, CommandCallback callback, CallbackParameter callback_param, CompanyID company)
+{
+	extern void NetworkSendCommandImplementation(Commands cmd, TileIndex tile, const CommandPayloadBase &payload, StringID error_msg, CommandCallback callback, CallbackParameter callback_param, CompanyID company);
+	return NetworkSendCommandImplementation(Tcmd, tile, payload, error_msg, callback, callback_param, company);
+}
+
+inline bool IsValidCommand(Commands cmd) { return cmd < Commands::End; }
+CommandFlags GetCommandFlags(Commands cmd);
+std::string_view GetCommandName(Commands cmd);
+bool IsCommandAllowedWhilePaused(Commands cmd);
+bool IsCorrectCommandPayloadType(Commands cmd, const CommandPayloadBase &payload);
+
+template <Commands Tcmd>
+constexpr CommandFlags GetCommandFlags()
+{
+	return CommandTraits<Tcmd>::flags;
+}
 
 /**
  * Extracts the DC flags needed for DoCommand from the flags returned by GetCommandFlags
  * @param cmd_flags Flags from GetCommandFlags
  * @return flags for DoCommand
  */
-inline DoCommandFlag CommandFlagsToDCFlags(CommandFlags cmd_flags)
+inline DoCommandFlags CommandFlagsToDCFlags(CommandFlags cmd_flags)
 {
-	DoCommandFlag flags = DC_NONE;
-	if (cmd_flags & CMD_NO_WATER) flags |= DC_NO_WATER;
-	if (cmd_flags & CMD_AUTO) flags |= DC_AUTO;
-	if (cmd_flags & CMD_ALL_TILES) flags |= DC_ALL_TILES;
+	DoCommandFlags flags = {};
+	if (cmd_flags.Test(CommandFlag::NoWater)) flags.Set(DoCommandFlag::NoWater);
+	if (cmd_flags.Test(CommandFlag::Auto)) flags.Set(DoCommandFlag::Auto);
+	if (cmd_flags.Test(CommandFlag::AllTiles)) flags.Set(DoCommandFlag::AllTiles);
 	return flags;
 }
 
 void ExecuteCommandQueue();
 void ClearCommandQueue();
-void EnqueueDoCommandP(CommandContainer cmd);
 
-/*** All command callbacks that exist ***/
-
-/* ai/ai_instance.cpp */
-CommandCallback CcAI;
-
-/* airport_gui.cpp */
-CommandCallback CcBuildAirport;
-
-/* bridge_gui.cpp */
-CommandCallback CcBuildBridge;
-
-/* dock_gui.cpp */
-CommandCallback CcBuildDocks;
-CommandCallback CcPlaySound_CONSTRUCTION_WATER;
-
-/* depot_gui.cpp */
-CommandCallback CcCloneVehicle;
-
-/* game/game_instance.cpp */
-CommandCallback CcGame;
-
-/* group_gui.cpp */
-CommandCallback CcCreateGroup;
-CommandCallback CcAddVehicleNewGroup;
-
-/* industry_gui.cpp */
-CommandCallback CcBuildIndustry;
-
-/* main_gui.cpp */
-CommandCallback CcPlaySound_EXPLOSION;
-CommandCallback CcPlaceSign;
-CommandCallback CcTerraform;
-CommandCallback CcGiveMoney;
-
-/* plans_gui.cpp */
-CommandCallback CcAddPlan;
-
-/* rail_gui.cpp */
-CommandCallback CcPlaySound_CONSTRUCTION_RAIL;
-CommandCallback CcRailDepot;
-CommandCallback CcStation;
-CommandCallback CcBuildRailTunnel;
-
-/* road_gui.cpp */
-CommandCallback CcPlaySound_CONSTRUCTION_OTHER;
-CommandCallback CcBuildRoadTunnel;
-CommandCallback CcRoadDepot;
-CommandCallback CcRoadStop;
-
-/* train_gui.cpp */
-CommandCallback CcBuildWagon;
-
-/* town_gui.cpp */
-CommandCallback CcFoundTown;
-CommandCallback CcFoundRandomTown;
-
-/* vehicle_gui.cpp */
-CommandCallback CcBuildPrimaryVehicle;
-CommandCallback CcStartStopVehicle;
-
-/* tbtr_template_gui_create.cpp */
-CommandCallback CcSetVirtualTrain;
-CommandCallback CcVirtualTrainWagonsMoved;
-CommandCallback CcDeleteVirtualTrain;
-
-/* build_vehicle_gui.cpp */
-CommandCallback CcAddVirtualEngine;
-CommandCallback CcMoveNewVirtualEngine;
-
-/* schdispatch_gui.cpp */
-CommandCallback CcAddNewSchDispatchSchedule;
-CommandCallback CcSwapSchDispatchSchedules;
-
-/* tracerestrict_gui.cpp */
-CommandCallback CcCreateTraceRestrictSlot;
-CommandCallback CcCreateTraceRestrictCounter;
+template <Commands Tcmd>
+void EnqueueDoCommandP(TileIndex tile, const CmdPayload<Tcmd> &payload, StringID error_msg, CommandCallback callback = CommandCallback::None, CallbackParameter callback_param = 0, DoCommandIntlFlag intl_flags = DCIF_NONE)
+{
+	extern void EnqueueDoCommandPImplementation(Commands cmd, TileIndex tile, const CommandPayloadBase &payload, StringID error_msg, CommandCallback callback, CallbackParameter callback_param, DoCommandIntlFlag intl_flags);
+	return EnqueueDoCommandPImplementation(Tcmd, tile, payload, error_msg, callback, callback_param, intl_flags | DCIF_TYPE_CHECKED | DCIF_NO_ESTIMATE);
+}
 
 #endif /* COMMAND_FUNC_H */

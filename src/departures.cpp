@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file departures.cpp Scheduled departures from a station. */
@@ -36,8 +36,10 @@
 #include "depot_map.h"
 #include "industry.h"
 #include "scope.h"
+#include "debug.h"
 #include "3rdparty/cpp-btree/btree_set.h"
 #include "3rdparty/cpp-btree/btree_map.h"
+#include "3rdparty/robin_hood/robin_hood.h"
 
 #include <vector>
 #include <algorithm>
@@ -46,11 +48,11 @@ static constexpr Ticks INVALID_DEPARTURE_TICKS = INT32_MIN;
 
 /* A cache of used departure time for scheduled dispatch in departure time calculation */
 using ScheduledDispatchCache = btree::btree_map<const DispatchSchedule *, btree::btree_set<StateTicks>>;
-using ScheduledDispatchVehicleRecords = btree::btree_map<std::pair<uint, VehicleID>, LastDispatchRecord>;
+using ScheduledDispatchVehicleRecords = btree::btree_map<uint, LastDispatchRecord>;
 
 CallAtTargetID CallAtTargetID::FromOrder(const Order *order)
 {
-	uint32_t id = order->GetDestination();
+	uint32_t id = order->GetDestination().base();
 	if (order->IsType(OT_GOTO_DEPOT)) id |= DEPOT_TAG;
 	return CallAtTargetID(id);
 }
@@ -58,12 +60,12 @@ CallAtTargetID CallAtTargetID::FromOrder(const Order *order)
 CallAtTargetID CallAtTargetID::FromTile(TileIndex tile)
 {
 	if (IsDepotTile(tile)) {
-		return CallAtTargetID(DEPOT_TAG | (IsHangarTile(tile) ? GetStationIndex(tile) : GetDepotIndex(tile)));
+		return CallAtTargetID(DEPOT_TAG | GetDepotDestinationIndex(tile).base());
 	}
-	if (IsTileType(tile, MP_STATION)) {
+	if (IsTileType(tile, TileType::Station)) {
 		return CallAtTargetID::FromStation(GetStationIndex(tile));
 	}
-	if (IsTileType(tile, MP_INDUSTRY)) {
+	if (IsTileType(tile, TileType::Industry)) {
 		const Industry *in = Industry::GetByTile(tile);
 		if (in->neutral_station != nullptr) {
 			return CallAtTargetID::FromStation(in->neutral_station->index);
@@ -87,8 +89,12 @@ struct OrderDate {
 	bool have_veh_dispatch_conditionals; ///< Whether vehicle dispatch conditionals are present
 	bool arrivals_complete;       ///< arrival history is complete
 	Ticks scheduled_waiting_time = Departure::INVALID_WAIT_TICKS; ///< Scheduled waiting time if scheduled dispatch is used
+	Ticks lateness_post_adjust = 0;                   ///< Lateness adjustment to apply after this order
 	ScheduledDispatchVehicleRecords dispatch_records; ///< Dispatch records for this vehicle
 	std::vector<ArrivalHistoryEntry> arrival_history;
+
+	uint order_iterations_remaining = 0; ///< For use in AdvanceLiveDepartureOrderToNextCandidate
+	bool require_travel_time = false;    ///< For use in AdvanceLiveDepartureOrderToNextCandidate
 
 	inline Ticks EffectiveWaitingTime() const
 	{
@@ -99,6 +105,11 @@ struct OrderDate {
 		}
 	}
 
+	inline bool HasScheduledWaitingTime() const
+	{
+		return this->scheduled_waiting_time != Departure::INVALID_WAIT_TICKS && this->scheduled_waiting_time != Departure::MISSING_WAIT_TICKS;
+	}
+
 	Ticks GetQueueTick(DepartureType type) const
 	{
 		Ticks tick = this->expected_tick - this->lateness;
@@ -106,17 +117,6 @@ struct OrderDate {
 			tick -= this->EffectiveWaitingTime();
 		}
 		return tick;
-	}
-};
-
-struct OrderDateQueueItem {
-	uint order_data_index;
-	Ticks tick;
-
-	bool operator<(const OrderDateQueueItem &other) const
-	{
-		/* Sort in opposite order */
-		return std::tie(this->tick, this->order_data_index) > std::tie(other.tick, other.order_data_index);
 	}
 };
 
@@ -141,12 +141,12 @@ bool IsArrivalDepartureTest(DepartureCallingSettings settings, const Order *orde
 
 static bool DepartureLoadFilter(const Order *order)
 {
-	return order->GetLoadType() != OLFB_NO_LOAD;
+	return order->GetLoadType() != OrderLoadType::NoLoad;
 }
 
 static bool ArrivalLoadFilter(const Order *order)
 {
-	return order->GetUnloadType() != OUFB_NO_UNLOAD;
+	return order->GetUnloadType() != OrderUnloadType::NoUnload;
 }
 
 bool DepartureCallingSettings::IsDeparture(const Order *order, const DepartureOrderDestinationDetector &source) const
@@ -173,22 +173,27 @@ DepartureShowAs DepartureCallingSettings::GetShowAsType(const Order *order, Depa
 	return DSA_NORMAL;
 }
 
-static uint8_t GetNonScheduleDepartureConditionalOrderMode(const Order *order, const Vehicle *v, StateTicks eval_tick)
+static DeparturesConditionalJumpResult GetNonScheduleDepartureConditionalOrderMode(const Order *order, const Vehicle *v, StateTicks eval_tick)
 {
-	if (order->GetConditionVariable() == OCV_UNCONDITIONALLY) return 1;
-	if (order->GetConditionVariable() == OCV_TIME_DATE) {
+	if (order->GetConditionVariable() == OrderConditionVariable::Unconditionally) return DCJD_TAKEN;
+	if (order->GetConditionVariable() == OrderConditionVariable::RequiresService) return OrderConditionCompare(order->GetConditionComparator(), 0, order->GetConditionValue()) ? DCJD_TAKEN : DCJD_NOT_TAKEN;
+	if (order->GetConditionVariable() == OrderConditionVariable::TimeDate) {
 		int value = GetTraceRestrictTimeDateValueFromStateTicks(static_cast<TraceRestrictTimeDateValueField>(order->GetConditionValue()), eval_tick);
-		return OrderConditionCompare(order->GetConditionComparator(), value, order->GetXData()) ? 1 : 2;
+		return OrderConditionCompare(order->GetConditionComparator(), value, order->GetXData()) ? DCJD_TAKEN : DCJD_NOT_TAKEN;
 	}
 
 	return _settings_client.gui.departure_conditionals;
 }
 
-static uint8_t GetDepartureConditionalOrderMode(const Order *order, const Vehicle *v, StateTicks eval_tick, const ScheduledDispatchVehicleRecords &records)
+static DeparturesConditionalJumpResult GetDepartureConditionalOrderMode(const Order *order, const Vehicle *v, StateTicks eval_tick, const ScheduledDispatchVehicleRecords &records, Ticks current_lateness)
 {
-	if (order->GetConditionVariable() == OCV_DISPATCH_SLOT) {
+	if (order->GetConditionVariable() == OrderConditionVariable::Timetable) {
+		return EvaluateTimetableStateConditionalOrder(order, current_lateness) ? DCJD_TAKEN : DCJD_NOT_TAKEN;
+	}
+
+	if (order->GetConditionVariable() == OrderConditionVariable::DispatchSlot) {
 		auto get_vehicle_records = [&](uint16_t schedule_index) -> const LastDispatchRecord * {
-			auto record = records.find(std::make_pair(schedule_index, v->index));
+			auto record = records.find(schedule_index);
 			if (record != records.end()) {
 				/* ScheduledDispatchVehicleRecords contains a last dispatch entry, use that instead of the one stored in the vehicle */
 				return &(record->second);
@@ -196,24 +201,52 @@ static uint8_t GetDepartureConditionalOrderMode(const Order *order, const Vehicl
 				return GetVehicleLastDispatchRecord(v, schedule_index);
 			}
 		};
-		return EvaluateDispatchSlotConditionalOrder(order, v->orders->GetScheduledDispatchScheduleSet(), eval_tick, get_vehicle_records).GetResult() ? 1 : 2;
+		return EvaluateDispatchSlotConditionalOrder(order, v->orders->GetScheduledDispatchScheduleSet(), eval_tick, get_vehicle_records).GetResult() ? DCJD_TAKEN : DCJD_NOT_TAKEN;
 	} else {
 		return GetNonScheduleDepartureConditionalOrderMode(order, v, eval_tick);
 	}
 }
 
+static void HandleScheduledWaitLateness(OrderDate &od)
+{
+	if (!od.HasScheduledWaitingTime()) {
+		od.lateness = 0;
+		od.lateness_post_adjust = 0;
+		return;
+	}
+
+	Ticks new_lateness = std::max<Ticks>(-od.scheduled_waiting_time, 0);
+	od.expected_tick += od.lateness;
+	od.scheduled_waiting_time += od.lateness;
+	od.lateness_post_adjust = new_lateness - od.lateness;
+}
+
+static void HandleLatenessPostAdjustment(OrderDate &od)
+{
+	od.lateness += od.lateness_post_adjust;
+	od.expected_tick += od.lateness_post_adjust;
+	od.lateness_post_adjust = 0;
+}
+
+static bool VehicleOrderRequiresScheduledDispatch(const Vehicle *v, const Order *order, bool arrived_at_timing_point)
+{
+	if (!v->vehicle_flags.Test(VehicleFlag::ScheduledDispatch) || !order->IsScheduledDispatchOrder(true)) return false;
+
+	auto is_current_implicit_order = [&v](const Order *o) -> bool {
+		if (v->cur_implicit_order_index >= v->orders->GetNumOrders()) return false;
+		return v->orders->GetOrderAt(v->cur_implicit_order_index) == o;
+	};
+
+	return !(arrived_at_timing_point && is_current_implicit_order(order));
+}
+
 static bool VehicleSetNextDepartureTime(Ticks *previous_departure, Ticks *waiting_time, const StateTicks state_ticks_base,
 		const Vehicle *v, const Order *order, bool arrived_at_timing_point, ScheduledDispatchCache &dept_schedule_last, ScheduledDispatchVehicleRecords &records)
 {
-	if (HasBit(v->vehicle_flags, VF_SCHEDULED_DISPATCH)) {
-		auto is_current_implicit_order = [&v](const Order *o) -> bool {
-			if (v->cur_implicit_order_index >= v->orders->GetNumOrders()) return false;
-			return v->orders->GetOrderAt(v->cur_implicit_order_index) == o;
-		};
-
+	if (v->vehicle_flags.Test(VehicleFlag::ScheduledDispatch)) {
 		/* This condition means that we want departure time for the dispatch order */
 		/* but not if the vehicle has arrived at the dispatch order because the timetable is already shifted */
-		if (order->IsScheduledDispatchOrder(true) && !(arrived_at_timing_point && is_current_implicit_order(order))) {
+		if (VehicleOrderRequiresScheduledDispatch(v, order, arrived_at_timing_point)) {
 			const DispatchSchedule &ds = v->orders->GetDispatchScheduleByIndex(order->GetDispatchScheduleIndex());
 
 			StateTicks actual_departure         = STATE_TICKS_INT_MAX;
@@ -281,17 +314,10 @@ static bool VehicleSetNextDepartureTime(Ticks *previous_departure, Ticks *waitin
 			}
 
 			extern LastDispatchRecord MakeLastDispatchRecord(const DispatchSchedule &ds, StateTicks slot, int slot_index);
-			records[std::make_pair((uint)order->GetDispatchScheduleIndex(), v->index)] = MakeLastDispatchRecord(ds, actual_departure, actual_slot_index);
+			records[(uint)order->GetDispatchScheduleIndex()] = MakeLastDispatchRecord(ds, actual_departure, actual_slot_index);
 
 			/* Return true means that vehicle lateness should be clear from this point onward */
 			return true;
-		}
-
-		/* This is special case for proper calculation of arrival time. */
-		if (arrived_at_timing_point && v->cur_implicit_order_index < v->orders->GetNumOrders() && v->orders->GetOrderAt(v->cur_implicit_order_index)->IsScheduledDispatchOrder(true)) {
-			*previous_departure += order->GetTravelTime() + order->GetWaitTime();
-			*waiting_time = -v->lateness_counter + order->GetWaitTime();
-			return false;
 		}
 	} /* if vehicle is on scheduled dispatch */
 
@@ -301,48 +327,14 @@ static bool VehicleSetNextDepartureTime(Ticks *previous_departure, Ticks *waitin
 	return false;
 }
 
-static void ScheduledDispatchDepartureLocalFix(DepartureList &departure_list)
+static void SortDepartures(DepartureList &departure_list)
 {
-	/* Separate departure by each shared order group */
-	btree::btree_map<uint32_t, std::vector<Departure *>> separated_departure;
-	for (auto &departure : departure_list) {
-		separated_departure[departure->vehicle->orders->index].push_back(departure.get());
-	}
-
-	for (auto& pair : separated_departure) {
-		std::vector<Departure *> &d_list = pair.second;
-
-		/* If the group is scheduled dispatch, then */
-		if (HasBit(d_list[0]->vehicle->vehicle_flags, VF_SCHEDULED_DISPATCH)) {
-			/* Separate departure time and sort them ascendently */
-			std::vector<StateTicks> departure_time_list;
-			for (const auto& d : d_list) {
-				departure_time_list.push_back(d->scheduled_tick);
-			}
-			std::sort(departure_time_list.begin(), departure_time_list.end());
-
-			/* Sort the departure list by arrival time */
-			std::sort(d_list.begin(), d_list.end(), [](const Departure * const &a, const Departure * const &b) -> bool {
-				StateTicks arr_a = a->scheduled_tick - a->EffectiveWaitingTime();
-				StateTicks arr_b = b->scheduled_tick - b->EffectiveWaitingTime();
-				return arr_a < arr_b;
-			});
-
-			/* Re-assign them sequentially */
-			for (size_t i = 0; i < d_list.size(); i++) {
-				const StateTicks arrival = d_list[i]->scheduled_tick - d_list[i]->EffectiveWaitingTime();
-				d_list[i]->scheduled_waiting_time = (departure_time_list[i] - arrival).AsTicks();
-				d_list[i]->scheduled_tick = departure_time_list[i];
-
-				if (d_list[i]->scheduled_waiting_time == (Ticks)d_list[i]->order->GetWaitTime()) {
-					d_list[i]->scheduled_waiting_time = Departure::INVALID_WAIT_TICKS;
-				}
-			}
-		}
-	}
-
-	/* Re-sort the departure list */
 	std::sort(departure_list.begin(), departure_list.end(), [](std::unique_ptr<Departure> &a, std::unique_ptr<Departure> &b) -> bool {
+		if (a->scheduled_tick == b->scheduled_tick) {
+			/* sort type field in the opposite direction so that arrivals come before departures */
+			return std::tie(b->type, a->terminus.target, a->terminus.scheduled_tick, a->vehicle->index)
+					< std::tie(a->type, b->terminus.target, b->terminus.scheduled_tick, b->vehicle->index);
+		}
 		return a->scheduled_tick < b->scheduled_tick;
 	});
 }
@@ -352,6 +344,8 @@ static void ScheduledDispatchSmartTerminusDetection(DepartureList &departure_lis
 	btree::btree_map<CallAtTargetID, StateTicks> earliest_seen;
 
 	auto check_departure = [&](Departure *d) {
+		if (d->type != D_DEPARTURE) return;
+
 		size_t calling_at_size = d->calling_at.size();
 
 		/* If the terminus has already been moved back, find the right starting offset */
@@ -370,10 +364,10 @@ static void ScheduledDispatchSmartTerminusDetection(DepartureList &departure_lis
 					d->terminus = d->calling_at[new_terminus_offset];
 
 					auto remove_via = [&](StationID st) {
-						if (d->via2 == st) d->via2 = INVALID_STATION;
+						if (d->via2 == st) d->via2 = StationID::Invalid();
 						if (d->via == st) {
 							d->via = d->via2;
-							d->via2 = INVALID_STATION;
+							d->via2 = StationID::Invalid();
 						}
 					};
 					if (d->terminus.target.IsStationID()) {
@@ -429,7 +423,7 @@ static bool IsVehicleUsableForDepartures(const Vehicle *v, DepartureCallingSetti
 
 		const Vehicle *u = v;
 		while (u != nullptr) {
-			if (u->cargo_cap > 0 && IsCargoInClass(u->cargo_type, CC_PASSENGERS)) {
+			if (u->cargo_cap > 0 && IsCargoInClass(u->cargo_type, CargoClass::Passengers)) {
 				carries_passengers = true;
 				break;
 			}
@@ -449,15 +443,55 @@ static bool IsVehicleUsableForDepartures(const Vehicle *v, DepartureCallingSetti
 	return true;
 }
 
-static void GetDepartureCandidateOrderDatesFromVehicle(std::vector<OrderDate> &next_orders, const Vehicle *v, const DepartureOrderDestinationDetector &source, const DepartureType type,
-		DepartureCallingSettings calling_settings, const Ticks max_ticks, ScheduledDispatchCache &schdispatch_last_planned_dispatch)
-{
-	if (!IsVehicleUsableForDepartures(v, calling_settings)) return;
-
+struct LiveCandidateVehicle {
 	ScheduledDispatchVehicleRecords dispatch_records;
 	std::vector<ArrivalHistoryEntry> arrival_history;
 
-	const StateTicks state_ticks_base = _state_ticks;
+	const Vehicle *v;
+	const Order *order;
+	bool have_veh_dispatch_conditionals;
+	bool require_travel_time;
+	DepartureStatus status;
+	Ticks tick;
+	Ticks current_lateness;
+	int orders_remaining;
+
+	LiveCandidateVehicle(const Vehicle *v, const Order *order, bool have_veh_dispatch_conditionals, bool require_travel_time, DepartureStatus status, Ticks tick)
+			: v(v), order(order), have_veh_dispatch_conditionals(have_veh_dispatch_conditionals), require_travel_time(require_travel_time), status(status),
+			tick(tick), current_lateness(v->lateness_counter), orders_remaining(v->GetNumOrders() * (have_veh_dispatch_conditionals ? 8 : 1)) {}
+};
+
+struct LiveQueueItem {
+	enum class DataType : uint8_t {
+		CandidateVehicle,
+		CandidateOrder,
+		AdvanceOrder,
+	};
+
+private:
+	Ticks tick;
+	uint32_t data;
+
+public:
+	LiveQueueItem(Ticks tick, DataType type, uint32_t idx) : tick(tick), data(idx | (to_underlying(type) << 24)) {}
+
+	/** Only for use when the item is not currently in the queue/heap */
+	void SetTick(Ticks tick) { this->tick = tick; }
+	void SetType(DataType type) { SB(this->data, 24, 8, to_underlying(type)); }
+
+	bool operator<(const LiveQueueItem &other) const
+	{
+		/* Sort in opposite order */
+		return std::tie(this->tick, this->data) > std::tie(other.tick, other.data);
+	}
+
+	DataType Type() const { return static_cast<DataType>(GB(this->data, 24, 8)); }
+	uint32_t Index() const { return GB(this->data, 0, 24); }
+};
+
+static void PrepareLiveDepartureCandidateVehicle(std::vector<LiveCandidateVehicle> &candidates, const Vehicle *v, DepartureCallingSettings calling_settings)
+{
+	if (!IsVehicleUsableForDepartures(v, calling_settings)) return;
 
 	const Order *order = v->GetOrder(v->cur_implicit_order_index % v->GetNumOrders());
 	if (order == nullptr) return;
@@ -467,14 +501,13 @@ static void GetDepartureCandidateOrderDatesFromVehicle(std::vector<OrderDate> &n
 		const Order *real_current_order = v->GetOrder(v->cur_real_order_index);
 		const Order *real_timetable_order = v->GetOrder(v->cur_timetable_order_index);
 		if (real_timetable_order->IsType(OT_CONDITIONAL)) {
-			start_ticks += (real_timetable_order->GetWaitTime() - real_current_order->GetTravelTime());
+			start_ticks += real_timetable_order->GetWaitTime(); // NB: wait and travel times are unsigned
+			start_ticks -= real_current_order->GetTravelTime();
 		} else {
 			/* This can also occur with implicit orders, when there are no real orders, do nothing */
 		}
 	}
 	DepartureStatus status = D_TRAVELLING;
-	bool should_reset_lateness = false;
-	Ticks waiting_time = 0;
 
 	/* If the vehicle is heading for a depot to stop there, then its departures are cancelled. */
 	if (v->current_order.IsType(OT_GOTO_DEPOT) && v->current_order.GetDepotActionType() & ODATFB_HALT) {
@@ -491,31 +524,81 @@ static void GetDepartureCandidateOrderDatesFromVehicle(std::vector<OrderDate> &n
 
 	bool have_veh_dispatch_conditionals = false;
 	for (const Order *order : v->Orders()) {
-		if (order->IsType(OT_CONDITIONAL) && order->GetConditionVariable() == OCV_DISPATCH_SLOT && GB(order->GetConditionValue(), ODCB_SRC_START, ODCB_SRC_COUNT) == ODCS_VEH) {
+		if (order->IsType(OT_CONDITIONAL) && order->GetConditionVariable() == OrderConditionVariable::DispatchSlot && GB(order->GetConditionValue(), ODCB_SRC_START, ODCB_SRC_COUNT) == ODCS_VEH) {
 			have_veh_dispatch_conditionals = true;
 		}
 	}
 
+	candidates.emplace_back(v, order, have_veh_dispatch_conditionals, require_travel_time, status, start_ticks);
+}
+
+enum class ProcessLiveDepartureCandidateVehicleResult : uint8_t {
+	None,
+	EnqueueCandidateVehicle,
+	AppendedOrderDate,
+};
+
+static ProcessLiveDepartureCandidateVehicleResult ProcessLiveDepartureCandidateVehicle(std::vector<OrderDate> &next_orders, LiveCandidateVehicle &candidate, const DepartureOrderDestinationDetector &source, const DepartureType type,
+		DepartureCallingSettings calling_settings, const Ticks max_ticks, ScheduledDispatchCache &schdispatch_last_planned_dispatch, bool check_first_order)
+{
+	const Vehicle *v = candidate.v;
+	const Order *order = candidate.order;
+	bool require_travel_time = candidate.require_travel_time;
+	DepartureStatus status = candidate.status;
+	Ticks start_ticks = candidate.tick;
+	Ticks current_lateness = candidate.current_lateness;
+
+	const StateTicks state_ticks_base = _state_ticks;
+
 	/* Loop through the vehicle's orders until we've found a suitable order or we've determined that no such order exists. */
 	/* We only need to consider each order at most once. */
-	for (int i = v->GetNumOrders() * (have_veh_dispatch_conditionals ? 8 : 1); i > 0; --i) {
-		if (VehicleSetNextDepartureTime(&start_ticks, &waiting_time, state_ticks_base, v, order, status == D_ARRIVED, schdispatch_last_planned_dispatch, dispatch_records)) {
-			if (!should_reset_lateness && waiting_time != Departure::INVALID_WAIT_TICKS) {
-				/* Changing effective lateness to 0, so adjust waiting time to get correct arrival time */
-				waiting_time += v->lateness_counter;
+	for (int i = candidate.orders_remaining; i > 0; --i) {
+		if (check_first_order) {
+			if (VehicleOrderRequiresScheduledDispatch(v, order, status == D_ARRIVED)) {
+				candidate.order = order;
+				candidate.require_travel_time = require_travel_time;
+				candidate.status = status;
+				candidate.tick = start_ticks;
+				candidate.current_lateness = current_lateness;
+				candidate.orders_remaining = i;
+				return ProcessLiveDepartureCandidateVehicleResult::EnqueueCandidateVehicle;
 			}
+		}
 
-			should_reset_lateness = true;
+		check_first_order = true;
+
+		Ticks lateness_post_adjust = 0; // Lateness change to apply after this order
+		Ticks waiting_time = 0;
+		if (status == D_ARRIVED && v->vehicle_flags.Test(VehicleFlag::ScheduledDispatch) && v->cur_implicit_order_index < v->orders->GetNumOrders() && v->orders->GetOrderAt(v->cur_implicit_order_index)->IsScheduledDispatchOrder(true)) {
+			/* This is a special case for proper calculation of dispatch order arrival time. */
+			start_ticks += order->GetTravelTime() + order->GetWaitTime();
+			waiting_time = -current_lateness + order->GetWaitTime();
+			current_lateness = std::max<Ticks>(0, -waiting_time);
+		} else if (VehicleSetNextDepartureTime(&start_ticks, &waiting_time, state_ticks_base, v, order, status == D_ARRIVED, schdispatch_last_planned_dispatch, candidate.dispatch_records)) {
+			if (waiting_time != Departure::INVALID_WAIT_TICKS) {
+				Ticks arrival_tick = start_ticks - waiting_time;
+				Ticks timetable_arrival_tick = arrival_tick - current_lateness;
+
+				Ticks new_lateness = std::max<Ticks>(-waiting_time, 0);
+
+				/* Changing effective lateness, so adjust waiting time to get correct arrival time */
+				waiting_time = start_ticks - timetable_arrival_tick;
+
+				start_ticks += current_lateness;
+				lateness_post_adjust = new_lateness - current_lateness;
+			} else {
+				current_lateness = 0;
+			}
 		}
 
 		/* If the order is a conditional branch, handle it. */
 		if (order->IsType(OT_CONDITIONAL)) {
-			switch (GetDepartureConditionalOrderMode(order, v, state_ticks_base + start_ticks, dispatch_records)) {
-					case 0: {
+			switch (GetDepartureConditionalOrderMode(order, v, state_ticks_base + start_ticks, candidate.dispatch_records, current_lateness)) {
+					case DCJD_GIVE_UP: {
 						/* Give up */
 						break;
 					}
-					case 1: {
+					case DCJD_TAKEN: {
 						/* Take the branch */
 						if (status != D_CANCELLED) {
 							status = D_TRAVELLING;
@@ -529,7 +612,7 @@ static void GetDepartureCandidateOrderDatesFromVehicle(std::vector<OrderDate> &n
 						require_travel_time = false;
 						continue;
 					}
-					case 2: {
+					case DCJD_NOT_TAKEN: {
 						/* Do not take the branch */
 						if (status != D_CANCELLED) {
 							status = D_TRAVELLING;
@@ -543,12 +626,17 @@ static void GetDepartureCandidateOrderDatesFromVehicle(std::vector<OrderDate> &n
 			break;
 		}
 
-		/* If the scheduled departure date is too far in the future, stop. */
-		if (start_ticks - v->lateness_counter > max_ticks) {
+		/* If the order to halt at a depot, then give up. */
+		if (order->IsType(OT_GOTO_DEPOT) && order->GetDepotActionType() & ODATFB_HALT) {
 			break;
 		}
 
-		/* If an order has a 0 travel time, and it's not explictly set, then stop. */
+		/* If the scheduled departure date is too far in the future, stop. */
+		if (start_ticks - current_lateness > max_ticks) {
+			break;
+		}
+
+		/* If an order has a 0 travel time, and it's not explicitly set, then stop. */
 		if (require_travel_time && order->GetTravelTime() == 0 && !order->IsTravelTimetabled() && !order->IsType(OT_IMPLICIT)) {
 			break;
 		}
@@ -567,31 +655,27 @@ static void GetDepartureCandidateOrderDatesFromVehicle(std::vector<OrderDate> &n
 			od.v = v;
 			/* We store the expected date for now, so that vehicles will be shown in order of expected time. */
 			od.expected_tick = start_ticks;
-			od.lateness = v->lateness_counter > 0 ? v->lateness_counter : 0;
+			od.lateness = current_lateness > 0 ? current_lateness : 0;
 			od.status = status;
-			od.have_veh_dispatch_conditionals = have_veh_dispatch_conditionals;
+			od.have_veh_dispatch_conditionals = candidate.have_veh_dispatch_conditionals;
 			od.scheduled_waiting_time = waiting_time;
-			od.dispatch_records = std::move(dispatch_records);
+			od.lateness_post_adjust = lateness_post_adjust;
+			od.dispatch_records = std::move(candidate.dispatch_records);
 			od.arrivals_complete = false;
-			od.arrival_history = std::move(arrival_history);
-
-			/* Reset lateness if timing is from scheduled dispatch */
-			if (should_reset_lateness) {
-				od.lateness = 0;
-			}
+			od.arrival_history = std::move(candidate.arrival_history);
 
 			/* If we are early, use the scheduled date as the expected date. We also take lateness to be zero. */
-			if (!should_reset_lateness && v->lateness_counter < 0 && !(v->current_order.IsAnyLoadingType() || v->current_order.IsType(OT_WAITING))) {
-				od.expected_tick -= v->lateness_counter;
+			if (current_lateness < 0 && status != D_ARRIVED) {
+				od.expected_tick -= current_lateness;
 			}
 
 			next_orders.push_back(std::move(od));
 
 			/* We're done with this vehicle. */
-			break;
+			return ProcessLiveDepartureCandidateVehicleResult::AppendedOrderDate;
 		} else {
 			if (type == D_ARRIVAL) {
-				arrival_history.push_back({ order, start_ticks });
+				candidate.arrival_history.push_back({ order, start_ticks });
 			}
 
 			/* Go to the next order in the list. */
@@ -601,7 +685,12 @@ static void GetDepartureCandidateOrderDatesFromVehicle(std::vector<OrderDate> &n
 			order = v->orders->GetNext(order);
 			require_travel_time = true;
 		}
+
+		start_ticks += lateness_post_adjust;
+		current_lateness += lateness_post_adjust;
 	}
+
+	return ProcessLiveDepartureCandidateVehicleResult::None;
 }
 
 static bool IsCallingPointTargetOrder(const Order *order)
@@ -614,9 +703,9 @@ static bool IsCallingPointTargetOrder(const Order *order)
 
 struct DepartureViaTerminusState {
 	/* We keep track of potential via stations along the way. If we call at a station immediately after going via it, then it is the via station. */
-	StationID candidate_via = INVALID_STATION;
-	StationID pending_via = INVALID_STATION;
-	StationID pending_via2 = INVALID_STATION;
+	StationID candidate_via = StationID::Invalid();
+	StationID pending_via = StationID::Invalid();
+	StationID pending_via2 = StationID::Invalid();
 
 	/* We only need to consider each order at most once. */
 	bool found_terminus = false;
@@ -635,7 +724,7 @@ bool DepartureViaTerminusState::CheckOrder(const Vehicle *v, Departure *d, const
 	/* If we reach the original station again, then use it as the terminus. */
 	if (order->GetType() == OT_GOTO_STATION &&
 			source.OrderMatches(order) &&
-			(order->GetUnloadType() != OUFB_NO_UNLOAD || calling_settings.ShowAllStops()) &&
+			(order->GetUnloadType() != OrderUnloadType::NoUnload || calling_settings.ShowAllStops()) &&
 			(((order->GetNonStopType() & ONSF_NO_STOP_AT_DESTINATION_STATION) == 0) || ((d->order->GetNonStopType() & ONSF_NO_STOP_AT_DESTINATION_STATION) != 0))) {
 		/* If we're not calling anywhere, then skip this departure. */
 		this->found_terminus = (d->calling_at.size() > 0);
@@ -650,20 +739,20 @@ bool DepartureViaTerminusState::CheckOrder(const Vehicle *v, Departure *d, const
 	if ((order->GetNonStopType() == ONSF_NO_STOP_AT_ANY_STATION ||
 			order->GetNonStopType() == ONSF_NO_STOP_AT_DESTINATION_STATION) &&
 			order->GetType() == OT_GOTO_STATION &&
-			d->via == INVALID_STATION) {
-		this->candidate_via = (StationID)order->GetDestination();
+			d->via == StationID::Invalid()) {
+		this->candidate_via = order->GetDestination().ToStationID();
 	}
 
-	if (order->GetType() == OT_LABEL && order->GetLabelSubType() == OLST_DEPARTURES_VIA && d->via == INVALID_STATION && this->pending_via == INVALID_STATION) {
-		this->pending_via = (StationID)order->GetDestination();
+	if (order->GetType() == OT_LABEL && order->GetLabelSubType() == OLST_DEPARTURES_VIA && d->via == StationID::Invalid() && this->pending_via == StationID::Invalid()) {
+		this->pending_via = order->GetDestination().ToStationID();
 		const Order *next = v->orders->GetNext(order);
-		if (next->GetType() == OT_LABEL && next->GetLabelSubType() == OLST_DEPARTURES_VIA && (StationID)next->GetDestination() != this->pending_via) {
-			this->pending_via2 = (StationID)next->GetDestination();
+		if (next->GetType() == OT_LABEL && next->GetLabelSubType() == OLST_DEPARTURES_VIA && next->GetDestination().ToStationID() != this->pending_via) {
+			this->pending_via2 = next->GetDestination().ToStationID();
 		}
 	}
 
 	if (order->GetType() == OT_LABEL && order->GetLabelSubType() == OLST_DEPARTURES_REMOVE_VIA && !d->calling_at.empty()) {
-		d->remove_vias.push_back({ (StationID)order->GetDestination(), (uint)(d->calling_at.size() - 1) });
+		d->remove_vias.push_back({ order->GetDestination().ToStationID(), (uint)(d->calling_at.size() - 1) });
 	}
 
 	return false;
@@ -676,7 +765,7 @@ bool DepartureViaTerminusState::HandleCallingPoint(Departure *d, const Order *or
 	if (order->IsType(OT_GOTO_WAYPOINT) || order->IsType(OT_GOTO_DEPOT)) {
 		if (!calling_settings.ShowAllStops()) return false;
 	} else {
-		if (!calling_settings.ShowAllStops() && order->GetUnloadType() == OUFB_NO_UNLOAD) return false;
+		if (!calling_settings.ShowAllStops() && order->GetUnloadType() == OrderUnloadType::NoUnload) return false;
 	}
 
 	/* If this order's station is already in the calling, then the previous called at station is the terminus. */
@@ -695,16 +784,16 @@ bool DepartureViaTerminusState::HandleCallingPoint(Departure *d, const Order *or
 	}
 
 	/* Add the station to the calling at list and make it the candidate terminus. */
-	if (d->via == INVALID_STATION && pending_via != INVALID_STATION) {
+	if (d->via == StationID::Invalid() && pending_via != StationID::Invalid()) {
 		d->via = this->pending_via;
 		d->via2 = this->pending_via2;
 	}
-	if (d->via == INVALID_STATION && this->candidate_via == (StationID)order->GetDestination()) {
-		d->via = (StationID)order->GetDestination();
+	if (d->via == StationID::Invalid() && this->candidate_via == order->GetDestination().ToStationID()) {
+		d->via = order->GetDestination().ToStationID();
 	}
 
 	/* If we unload all at this station and departure load tests are not disabled, then it is the terminus. */
-	if (order->GetType() == OT_GOTO_STATION && order->GetUnloadType() == OUFB_UNLOAD && !calling_settings.DepartureNoLoadTest()) {
+	if (order->GetType() == OT_GOTO_STATION && order->GetUnloadType() == OrderUnloadType::Unload && !calling_settings.DepartureNoLoadTest()) {
 		if (d->calling_at.size() > 0) {
 			this->found_terminus = true;
 		}
@@ -735,24 +824,24 @@ static bool ProcessArrivalHistory(Departure *d, std::span<ArrivalHistoryEntry> a
 		const Order *o = arrival_history[i].order;
 
 		if (IsCallingPointTargetOrder(o)) {
-			if (source.StationMatches(o->GetDestination())) {
+			if (source.StationMatches(o->GetDestination().ToStationID())) {
 				/* Same as source order, remove all possible origins */
 				possible_origins.clear();
-			} else if (!calling_settings.ShowAllStops() && o->IsType(OT_GOTO_STATION) && o->GetLoadType() == OLFB_NO_LOAD && (o->GetUnloadType() & (OUFB_TRANSFER | OUFB_UNLOAD)) != 0) {
+			} else if (!calling_settings.ShowAllStops() && o->IsType(OT_GOTO_STATION) && o->GetLoadType() == OrderLoadType::NoLoad && (o->GetUnloadType() == OrderUnloadType::Transfer || o->GetUnloadType() == OrderUnloadType::Unload)) {
 				/* All cargo unloaded, remove all possible origins */
 				possible_origins.clear();
 			} else {
 				/* Remove all possible origins of this station */
 				for (auto &item : possible_origins) {
-					if (item.first == o->GetDestination()) {
-						item.first = INVALID_STATION;
+					if (item.first == o->GetDestination().ToStationID()) {
+						item.first = StationID::Invalid();
 					}
 				}
 
 				if (o->IsType(OT_GOTO_WAYPOINT) || o->IsType(OT_GOTO_DEPOT)) {
-					if (calling_settings.ShowAllStops()) possible_origins.push_back({ o->GetDestination(), i });
+					if (calling_settings.ShowAllStops()) possible_origins.push_back({ o->GetDestination().ToStationID(), i });
 				} else {
-					if (calling_settings.ShowAllStops() || o->GetLoadType() != OLFB_NO_LOAD) possible_origins.push_back({ o->GetDestination(), i });
+					if (calling_settings.ShowAllStops() || o->GetLoadType() != OrderLoadType::NoLoad) possible_origins.push_back({ o->GetDestination().ToStationID(), i });
 				}
 			}
 		}
@@ -761,7 +850,7 @@ static bool ProcessArrivalHistory(Departure *d, std::span<ArrivalHistoryEntry> a
 	ArrivalHistoryEntry origin = { nullptr, 0 };
 	uint origin_arrival_history_index = 0;
 	for (const auto &item : possible_origins) {
-		if (item.first != INVALID_STATION) {
+		if (item.first != StationID::Invalid()) {
 			origin_arrival_history_index = item.second;
 			origin = arrival_history[item.second];
 			break;
@@ -775,7 +864,7 @@ static bool ProcessArrivalHistory(Departure *d, std::span<ArrivalHistoryEntry> a
 			d->show_as = DSA_NO_LOAD;
 		}
 		auto check_order = [&](const Order *o) {
-			if (check_no_load_mode && o->IsType(OT_GOTO_STATION) && o->GetLoadType() != OLFB_NO_LOAD) {
+			if (check_no_load_mode && o->IsType(OT_GOTO_STATION) && o->GetLoadType() != OrderLoadType::NoLoad) {
 				d->show_as = DSA_NORMAL;
 				check_no_load_mode = false;
 			}
@@ -794,7 +883,7 @@ static bool ProcessArrivalHistory(Departure *d, std::span<ArrivalHistoryEntry> a
 			const Order *o = arrival_history[i].order;
 			if (IsCallingPointTargetOrder(o)) {
 				check_order(o);
-				if (o->IsType(OT_GOTO_STATION) && (o->GetLoadType() != OLFB_NO_LOAD || calling_settings.ShowAllStops())) {
+				if (o->IsType(OT_GOTO_STATION) && (o->GetLoadType() != OrderLoadType::NoLoad || calling_settings.ShowAllStops())) {
 					d->calling_at.push_back(make_call_at(arrival_history[i]));
 				} else if ((o->IsType(OT_GOTO_WAYPOINT) || o->IsType(OT_GOTO_DEPOT))&& calling_settings.ShowAllStops()) {
 					d->calling_at.push_back(make_call_at(arrival_history[i]));
@@ -808,6 +897,113 @@ static bool ProcessArrivalHistory(Departure *d, std::span<ArrivalHistoryEntry> a
 	}
 
 	return false;
+}
+
+static void AdvanceLiveDepartureOrderToNextCandidate(LiveQueueItem queue_item, OrderDate &lod, std::vector<LiveQueueItem> &candidate_queue, const DepartureType type,
+		DepartureOrderDestinationDetector source, DepartureCallingSettings calling_settings, const Ticks max_ticks, ScheduledDispatchCache &schdispatch_last_planned_dispatch, bool check_first_order)
+{
+	const Order *order = lod.order;
+	const StateTicks state_ticks_base = _state_ticks;
+
+	/* Go through the order list to find the next candidate departure. */
+	/* We only need to consider each order at most once. */
+	bool found_next_order = false;
+	for (uint i = lod.order_iterations_remaining; i > 0; --i) {
+		if (check_first_order) {
+			if (VehicleOrderRequiresScheduledDispatch(lod.v, order, false)) {
+				/* Enqueue for later */
+				lod.order = order;
+				lod.order_iterations_remaining = i;
+				queue_item.SetTick(lod.GetQueueTick(type));
+				queue_item.SetType(LiveQueueItem::DataType::AdvanceOrder);
+				candidate_queue.push_back(queue_item);
+				std::push_heap(candidate_queue.begin(), candidate_queue.end());
+				return;
+			}
+		}
+
+		check_first_order = true;
+
+		if (VehicleSetNextDepartureTime(&lod.expected_tick, &lod.scheduled_waiting_time, state_ticks_base, lod.v, order, false, schdispatch_last_planned_dispatch, lod.dispatch_records)) {
+			HandleScheduledWaitLateness(lod);
+		}
+
+		/* If the order is a conditional branch, handle it. */
+		if (order->IsType(OT_CONDITIONAL)) {
+			HandleLatenessPostAdjustment(lod);
+			switch (GetDepartureConditionalOrderMode(order, lod.v, state_ticks_base + lod.expected_tick, lod.dispatch_records, lod.lateness)) {
+					case DCJD_GIVE_UP: {
+						/* Give up */
+						break;
+					}
+					case DCJD_TAKEN: {
+						/* Take the branch */
+						const Order *target = lod.v->GetOrder(order->GetConditionSkipToOrder());
+						if (target == nullptr) {
+							break;
+						}
+						if (order->GetWaitTime() == 0 && !order->IsWaitTimetabled() && !target->HasNoTimetableTimes() && !target->IsType(OT_CONDITIONAL)) {
+							break;
+						}
+						order = target;
+
+						lod.expected_tick -= order->GetTravelTime(); /* Added in next VehicleSetNextDepartureTime */
+						lod.require_travel_time = false;
+						continue;
+					}
+					case DCJD_NOT_TAKEN: {
+						/* Do not take the branch */
+						lod.expected_tick -= order->GetWaitTime(); /* Added previously in VehicleSetNextDepartureTime */
+						order = lod.v->orders->GetNext(order);
+						lod.require_travel_time = true;
+						continue;
+					}
+			}
+			break;
+		}
+
+		/* If the order to halt at a depot, then give up. */
+		if (order->IsType(OT_GOTO_DEPOT) && order->GetDepotActionType() & ODATFB_HALT) {
+			break;
+		}
+
+		/* If an order has a 0 travel time, and it's not explicitly set, then stop. */
+		if (lod.require_travel_time && order->GetTravelTime() == 0 && !order->IsTravelTimetabled() && !order->IsType(OT_IMPLICIT)) {
+			break;
+		}
+
+		/* If the departure is scheduled to be too late, then stop. */
+		if (lod.expected_tick - lod.lateness > max_ticks) {
+			break;
+		}
+
+		/* If the order loads from this station (or unloads if we're computing arrivals) and has a wait time set, then it is suitable for being a departure. */
+		if ((type == D_DEPARTURE && calling_settings.IsDeparture(order, source)) ||
+				(type == D_ARRIVAL && calling_settings.IsArrival(order, source))) {
+			lod.order = order;
+			found_next_order = true;
+			break;
+		} else if (type == D_ARRIVAL) {
+			lod.arrival_history.push_back({ order, lod.expected_tick });
+		}
+
+		HandleLatenessPostAdjustment(lod);
+		order = lod.v->orders->GetNext(order);
+		lod.require_travel_time = true;
+	}
+
+	/* The vehicle can't possibly have arrived at its next candidate departure yet. */
+	if (lod.status == D_ARRIVED) {
+		lod.status = D_TRAVELLING;
+	}
+
+	/* If we found a suitable order for being a departure, add it back to the queue, otherwise then we can ignore this vehicle from now on. */
+	if (found_next_order) {
+		queue_item.SetTick(lod.GetQueueTick(type));
+		queue_item.SetType(LiveQueueItem::DataType::CandidateOrder);
+		candidate_queue.push_back(queue_item);
+		std::push_heap(candidate_queue.begin(), candidate_queue.end());
+	}
 }
 
 /**
@@ -832,6 +1028,9 @@ static DepartureList MakeDepartureListLiveMode(DepartureOrderDestinationDetector
 	/* The list of departures which will be returned as a result. */
 	std::vector<std::unique_ptr<Departure>> result;
 
+	/* A list of the candidate vehicle states */
+	std::vector<LiveCandidateVehicle> candidate_vehicles;
+
 	/* A list of the next scheduled orders to be considered for inclusion in the departure list. */
 	std::vector<OrderDate> next_orders;
 
@@ -843,24 +1042,33 @@ static DepartureList MakeDepartureListLiveMode(DepartureOrderDestinationDetector
 	/* Cache for scheduled departure time */
 	ScheduledDispatchCache schdispatch_last_planned_dispatch;
 
+	/* Candidates, later converted into a queue/heap */
+	std::vector<LiveQueueItem> candidate_queue;
+
 	/* Get the first order for each vehicle for the station we're interested in that doesn't have No Loading set. */
 	/* We find the least order while we're at it. */
 	for (const Vehicle *v : vehicles) {
-		GetDepartureCandidateOrderDatesFromVehicle(next_orders, v, source, type, calling_settings, max_ticks, schdispatch_last_planned_dispatch);
+		PrepareLiveDepartureCandidateVehicle(candidate_vehicles, v, calling_settings);
+	}
+	for (uint i = 0; i < (uint)candidate_vehicles.size(); i++) {
+		auto result = ProcessLiveDepartureCandidateVehicle(next_orders, candidate_vehicles[i], source, type, calling_settings, max_ticks, schdispatch_last_planned_dispatch, true);
+		if (result == ProcessLiveDepartureCandidateVehicleResult::EnqueueCandidateVehicle) {
+			candidate_queue.emplace_back(candidate_vehicles[i].tick, LiveQueueItem::DataType::CandidateVehicle, i);
+		}
 	}
 
-	/* No suitable orders found? Then stop. */
-	if (next_orders.size() == 0) {
+	/* No suitable candidates found? Then stop. */
+	if (candidate_queue.empty() && next_orders.empty()) {
 		return result;
 	}
 
-	/* Priority queue/heap */
-	std::vector<OrderDateQueueItem> order_queue;
-	order_queue.reserve(next_orders.size());
+	candidate_queue.reserve(candidate_queue.size() + next_orders.size());
 	for (uint i = 0; i < (uint)next_orders.size(); i++) {
-		order_queue.push_back({ i, next_orders[i].GetQueueTick(type) });
+		candidate_queue.emplace_back(next_orders[i].GetQueueTick(type), LiveQueueItem::DataType::CandidateOrder, i);
 	}
-	std::make_heap(order_queue.begin(), order_queue.end());
+	std::make_heap(candidate_queue.begin(), candidate_queue.end());
+
+	/* candidate_queue is now a queue/heap */
 
 	/* We now find as many departures as we can. It's a little involved so I'll try to explain each major step. */
 	/* The countdown from 10000 is a safeguard just in case something nasty happens. 10000 seemed large enough. */
@@ -873,14 +1081,32 @@ static DepartureList MakeDepartureListLiveMode(DepartureOrderDestinationDetector
 		/* 4. Therefore the loop must eventually terminate. */
 
 		/* First, we check if we can stop looking for departures yet. */
-		if (result.size() >= _settings_client.gui.max_departures || order_queue.empty()) break;
+		if (result.size() >= _settings_client.gui.max_departures || candidate_queue.empty()) break;
 
 		/* The best candidate for the next departure is at the top of the next_orders queue, store it in least_item, lod. */
-		OrderDateQueueItem least_item = order_queue.front();
-		std::pop_heap(order_queue.begin(), order_queue.end());
-		order_queue.pop_back();
+		LiveQueueItem least_item = candidate_queue.front();
+		std::pop_heap(candidate_queue.begin(), candidate_queue.end());
+		candidate_queue.pop_back();
 
-		OrderDate &lod = next_orders[least_item.order_data_index];
+		if (least_item.Type() == LiveQueueItem::DataType::CandidateVehicle) {
+			LiveCandidateVehicle &lcv = candidate_vehicles[least_item.Index()];
+			auto result = ProcessLiveDepartureCandidateVehicle(next_orders, lcv, source, type, calling_settings, max_ticks, schdispatch_last_planned_dispatch, false);
+			if (result == ProcessLiveDepartureCandidateVehicleResult::EnqueueCandidateVehicle) {
+				candidate_queue.emplace_back(lcv.tick, LiveQueueItem::DataType::CandidateVehicle, least_item.Index());
+				std::push_heap(candidate_queue.begin(), candidate_queue.end());
+			} else if (result == ProcessLiveDepartureCandidateVehicleResult::AppendedOrderDate) {
+				uint32_t idx = (uint32_t)(next_orders.size() - 1);
+				candidate_queue.emplace_back(next_orders[idx].GetQueueTick(type), LiveQueueItem::DataType::CandidateOrder, idx);
+				std::push_heap(candidate_queue.begin(), candidate_queue.end());
+			}
+			continue;
+		} else if (least_item.Type() == LiveQueueItem::DataType::AdvanceOrder) {
+			AdvanceLiveDepartureOrderToNextCandidate(least_item, next_orders[least_item.Index()], candidate_queue,
+					type, source, calling_settings, max_ticks, schdispatch_last_planned_dispatch, false);
+			continue;
+		}
+
+		OrderDate &lod = next_orders[least_item.Index()];
 
 		if (lod.expected_tick - lod.lateness > max_ticks) break;
 
@@ -896,10 +1122,34 @@ static DepartureList MakeDepartureListLiveMode(DepartureOrderDestinationDetector
 		d->order = lod.order;
 		d->scheduled_waiting_time = lod.scheduled_waiting_time;
 
-		ScheduledDispatchVehicleRecords dispatch_records = lod.dispatch_records;
+		if (calling_settings.DispatchScheduleRouteIDEnabled()) {
+			const auto schedule_count = lod.v->orders->GetScheduledDispatchScheduleCount();
+			StateTicks best_tick = StateTicks{INT64_MIN};
+			uint best_schedule = 0;
+			const LastDispatchRecord *best_record = nullptr;
+			auto process_record = [&](uint schedule_index, const LastDispatchRecord &record) {
+				if (schedule_index >= schedule_count) return;
 
-		/* We'll be going through the order list later, so we need a separate variable for it. */
-		const Order *order = lod.order;
+				if (record.dispatched > best_tick) {
+					best_tick = record.dispatched;
+					best_schedule = schedule_index;
+					best_record = &record;
+				}
+			};
+			for (const std::pair<const uint16_t, LastDispatchRecord> &record_pair : lod.v->dispatch_records) {
+				process_record(record_pair.first, record_pair.second);
+			}
+			for (const std::pair<const uint, LastDispatchRecord> &record_pair : lod.dispatch_records) {
+				process_record(record_pair.first, record_pair.second);
+			}
+
+			if (best_record != nullptr && best_record->route_id != 0) {
+				const DispatchSchedule &schedule = lod.v->orders->GetDispatchScheduleByIndex(best_schedule);
+				d->schedule_route_id = schedule.GetSupplementaryName(DispatchSchedule::SupplementaryNameType::RouteID, best_record->route_id);
+			}
+		}
+
+		ScheduledDispatchVehicleRecords &dispatch_records = lod.dispatch_records;
 
 		const uint order_iteration_limit = lod.v->GetNumOrders() * (lod.have_veh_dispatch_conditionals ? 8 : 1);
 
@@ -919,7 +1169,7 @@ static DepartureList MakeDepartureListLiveMode(DepartureOrderDestinationDetector
 
 			/* Go through the order list, looping if necessary, to find a terminus. */
 			/* Get the next order, which may be the vehicle's first order. */
-			order = lod.v->orders->GetNext(order);
+			const Order *order = lod.v->orders->GetNext(lod.order);
 			StateTicks departure_tick = d->scheduled_tick;
 			bool travel_time_required = true;
 			CallAt c = CallAt(order, departure_tick);
@@ -933,18 +1183,19 @@ static DepartureList MakeDepartureListLiveMode(DepartureOrderDestinationDetector
 
 				/* If the order is a conditional branch, handle it. */
 				if (order->IsType(OT_CONDITIONAL)) {
-					switch (GetDepartureConditionalOrderMode(order, lod.v, departure_tick, dispatch_records)) {
-							case 0: {
+					switch (GetDepartureConditionalOrderMode(order, lod.v, departure_tick, dispatch_records, lod.lateness)) {
+							case DCJD_GIVE_UP: {
 								/* Give up */
 								break;
 							}
-							case 1: {
+							case DCJD_TAKEN: {
 								/* Take the branch */
 								const Order *target = lod.v->GetOrder(order->GetConditionSkipToOrder());
 								if (target == nullptr) {
 									break;
 								}
-								departure_tick += order->GetWaitTime() - target->GetTravelTime();
+								departure_tick += order->GetWaitTime(); // NB: wait and travel times are unsigned
+								departure_tick -= target->GetTravelTime();
 								if (order->GetWaitTime() == 0 && !order->IsWaitTimetabled() && !target->HasNoTimetableTimes()) {
 									c.scheduled_tick = StateTicks{0};
 								}
@@ -952,7 +1203,7 @@ static DepartureList MakeDepartureListLiveMode(DepartureOrderDestinationDetector
 								travel_time_required = false;
 								continue;
 							}
-							case 2: {
+							case DCJD_NOT_TAKEN: {
 								/* Do not take the branch */
 								order = lod.v->orders->GetNext(order);
 								continue;
@@ -996,12 +1247,6 @@ static DepartureList MakeDepartureListLiveMode(DepartureOrderDestinationDetector
 
 				if (!duplicate) {
 					result.push_back(std::move(departure_ptr));
-
-					/* If the vehicle is expected to be late, we want to know what time it will arrive rather than depart. */
-					/* This is done because it looked silly to me to have a vehicle not be expected for another few days, yet it be at the same time pulling into the station. */
-					if (d->status != D_ARRIVED && d->lateness > 0) {
-						d->lateness = std::max<Ticks>(0, d->lateness - lod.order->GetWaitTime());
-					}
 				}
 			}
 		} else {
@@ -1016,21 +1261,21 @@ static DepartureList MakeDepartureListLiveMode(DepartureOrderDestinationDetector
 			/* Project back the arrival history if the vehicle is already part way along the route, this stops at conditional jumps or jump targets */
 			if (!lod.arrivals_complete) {
 				ArrivalHistoryEntry existing_history_start = lod.arrival_history.empty() ? ArrivalHistoryEntry{ lod.order, lod.expected_tick } : lod.arrival_history.front();
-				OrderID existing_history_start_idx = 0;
-				OrderID arrival_idx = 0;
-				for (OrderID i = 0; i < lod.v->GetNumOrders(); i++) {
+				VehicleOrderID existing_history_start_idx = 0;
+				VehicleOrderID arrival_idx = 0;
+				for (VehicleOrderID i = 0; i < lod.v->GetNumOrders(); i++) {
 					const Order *o = lod.v->GetOrder(i);
 					if (o == existing_history_start.order) existing_history_start_idx = i;
 					if (o == lod.order) arrival_idx = i;
 				}
 
-				OrderID predict_history_starting_from = arrival_idx + 1;
+				VehicleOrderID predict_history_starting_from = arrival_idx + 1;
 				if (predict_history_starting_from >= lod.v->GetNumOrders()) predict_history_starting_from = 0;
 
-				for (OrderID i = 0; i < lod.v->GetNumOrders(); i++) {
+				for (VehicleOrderID i = 0; i < lod.v->GetNumOrders(); i++) {
 					const Order *o = lod.v->GetOrder(i);
 					if (o->IsType(OT_CONDITIONAL)) {
-						auto stop_prediction_at = [&](OrderID target) {
+						auto stop_prediction_at = [&](VehicleOrderID target) {
 							if (target < lod.v->GetNumOrders()) {
 								if (predict_history_starting_from > existing_history_start_idx) {
 									/* Prediction range is cut into two sections by the end of the order list */
@@ -1042,7 +1287,7 @@ static DepartureList MakeDepartureListLiveMode(DepartureOrderDestinationDetector
 							}
 						};
 						stop_prediction_at(i);
-						stop_prediction_at(order->GetConditionSkipToOrder());
+						stop_prediction_at(o->GetConditionSkipToOrder());
 					}
 				}
 
@@ -1107,106 +1352,19 @@ static DepartureList MakeDepartureListLiveMode(DepartureOrderDestinationDetector
 			lod.arrivals_complete = true;
 		}
 
-		/* Save on pointer dereferences in the coming loop. */
-		order = lod.order;
-
 		/* Now we find the next suitable order for being a departure for this vehicle. */
 		/* We do this in a similar way to finding the first suitable order for the vehicle. */
-
+		HandleLatenessPostAdjustment(lod);
 		/* Go to the next order so we don't add the current order again. */
-		order = lod.v->orders->GetNext(order);
-		if (VehicleSetNextDepartureTime(&lod.expected_tick, &lod.scheduled_waiting_time, state_ticks_base, lod.v, order, false, schdispatch_last_planned_dispatch, dispatch_records)) {
-			lod.lateness = 0;
-		}
-
-		/* Go through the order list to find the next candidate departure. */
-		/* We only need to consider each order at most once. */
-		bool found_next_order = false;
-		bool require_travel_time = true;
-		for (uint i = order_iteration_limit; i > 0; --i) {
-			/* If the order is a conditional branch, handle it. */
-			if (order->IsType(OT_CONDITIONAL)) {
-				switch (GetDepartureConditionalOrderMode(order, lod.v, state_ticks_base + lod.expected_tick, dispatch_records)) {
-						case 0: {
-							/* Give up */
-							break;
-						}
-						case 1: {
-							/* Take the branch */
-							const Order *target = lod.v->GetOrder(order->GetConditionSkipToOrder());
-							if (target == nullptr) {
-								break;
-							}
-							if (order->GetWaitTime() == 0 && !order->IsWaitTimetabled() && !target->HasNoTimetableTimes() && !target->IsType(OT_CONDITIONAL)) {
-								break;
-							}
-							order = target;
-
-							lod.expected_tick -= order->GetTravelTime(); /* Added in next VehicleSetNextDepartureTime */
-							if (VehicleSetNextDepartureTime(&lod.expected_tick, &lod.scheduled_waiting_time, state_ticks_base, lod.v, order, false, schdispatch_last_planned_dispatch, dispatch_records)) {
-								lod.lateness = 0;
-							}
-							require_travel_time = false;
-							continue;
-						}
-						case 2: {
-							/* Do not take the branch */
-							lod.expected_tick -= order->GetWaitTime(); /* Added previously in VehicleSetNextDepartureTime */
-							order = lod.v->orders->GetNext(order);
-							if (VehicleSetNextDepartureTime(&lod.expected_tick, &lod.scheduled_waiting_time, state_ticks_base, lod.v, order, false, schdispatch_last_planned_dispatch, dispatch_records)) {
-								lod.lateness = 0;
-							}
-							require_travel_time = true;
-							continue;
-						}
-				}
-				break;
-			}
-
-			/* If an order has a 0 travel time, and it's not explictly set, then stop. */
-			if (require_travel_time && order->GetTravelTime() == 0 && !order->IsTravelTimetabled() && !order->IsType(OT_IMPLICIT)) {
-				break;
-			}
-
-			/* If the departure is scheduled to be too late, then stop. */
-			if (lod.expected_tick - lod.lateness > max_ticks) {
-				break;
-			}
-
-			/* If the order loads from this station (or unloads if we're computing arrivals) and has a wait time set, then it is suitable for being a departure. */
-			if ((type == D_DEPARTURE && calling_settings.IsDeparture(order, source)) ||
-					(type == D_ARRIVAL && calling_settings.IsArrival(order, source))) {
-				lod.order = order;
-				found_next_order = true;
-				break;
-			} else {
-				if (type == D_ARRIVAL) {
-					lod.arrival_history.push_back({ order, lod.expected_tick });
-				}
-			}
-
-			order = lod.v->orders->GetNext(order);
-			if (VehicleSetNextDepartureTime(&lod.expected_tick, &lod.scheduled_waiting_time, state_ticks_base, lod.v, order, false, schdispatch_last_planned_dispatch, dispatch_records)) {
-				lod.lateness = 0;
-			}
-			require_travel_time = true;
-		}
-
-		/* The vehicle can't possibly have arrived at its next candidate departure yet. */
-		if (lod.status == D_ARRIVED) {
-			lod.status = D_TRAVELLING;
-		}
-
-		/* If we found a suitable order for being a departure, add it back to the queue, otherwise then we can ignore this vehicle from now on. */
-		if (found_next_order) {
-			least_item.tick = lod.GetQueueTick(type);
-			order_queue.push_back(least_item);
-			std::push_heap(order_queue.begin(), order_queue.end());
-		}
+		lod.order = lod.v->orders->GetNext(lod.order);
+		lod.order_iterations_remaining = (int)order_iteration_limit;
+		lod.require_travel_time = true;
+		AdvanceLiveDepartureOrderToNextCandidate(least_item, lod, candidate_queue,
+				type, source, calling_settings, max_ticks, schdispatch_last_planned_dispatch, true);
 	}
 
 	if (type == D_DEPARTURE) {
-		ScheduledDispatchDepartureLocalFix(result);
+		SortDepartures(result);
 		if (calling_settings.SmartTerminusEnabled()) {
 			ScheduledDispatchSmartTerminusDetection(result);
 		}
@@ -1225,6 +1383,21 @@ Ticks GetDeparturesMaxTicksAhead()
 	}
 }
 
+struct DispatchArrivalRecord {
+	const Order *order;
+	const Order *source_order;
+	StateTicks arrival_tick;
+	StateTicks departure_tick;
+	uint32_t sequence_id;
+
+	DispatchArrivalRecord(const Order *order, StateTicks arrival_tick, const Order *source_order, StateTicks departure_tick, uint32_t sequence_id)
+			: order(order), source_order(source_order), arrival_tick(arrival_tick), departure_tick(departure_tick), sequence_id(sequence_id) {}
+};
+
+struct DispatchScheduleModeSequenceIdHandler {
+	uint32_t last_sequence_id = 0;
+};
+
 struct DepartureListScheduleModeSlotEvaluator {
 	struct DispatchScheduleAnno {
 		DispatchSchedule::PositionBackup original_position_backup;
@@ -1239,35 +1412,43 @@ struct DepartureListScheduleModeSlotEvaluator {
 	DispatchScheduleAnno &anno;
 	const uint schedule_index;
 	const DepartureOrderDestinationDetector &source;
-	DepartureType type;
 	DepartureCallingSettings calling_settings;
+	DispatchScheduleModeSequenceIdHandler &sequence_id_handler;
 	std::vector<ArrivalHistoryEntry> &arrival_history;
-	std::vector<std::pair<const Order *, StateTicks>> *dispatch_arrival_ticks; // This may be nullptr if not required
+	std::vector<DispatchArrivalRecord> *dispatch_arrival_ticks; // This may be nullptr if not required
 
 	StateTicks slot{};
 	uint slot_index{};
 	bool departure_dependant_condition_found = false;
 
-	void EvaluateSlots();
+	void EvaluateSlots(DepartureTypes types);
 
 private:
-	inline bool IsDepartureDependantConditionVariable(OrderConditionVariable ocv) const { return ocv == OCV_DISPATCH_SLOT || ocv == OCV_TIME_DATE; }
+	inline bool IsDepartureDependantConditionVariable(OrderConditionVariable ocv) const { return ocv == OrderConditionVariable::DispatchSlot || ocv == OrderConditionVariable::TimeDate; }
 
-	uint8_t EvaluateConditionalOrder(const Order *order, StateTicks eval_tick);
+	DeparturesConditionalJumpResult EvaluateConditionalOrder(const Order *order, StateTicks eval_tick);
 	std::pair<const Order *, StateTicks> EvaluateDepartureFromSourceOrder(const Order *source_order, StateTicks departure_tick);
-	void EvaluateSlotIndex(uint slot_index);
+	void EvaluateSlotIndex(uint slot_index, DepartureTypes types);
+	void EvaluateSlotIndexForType(DepartureType type);
 	void CheckSourceOrderArrival(const Order *order, StateTicks departure_tick);
+	std::string_view GetRouteID() const;
 };
 
-uint8_t DepartureListScheduleModeSlotEvaluator::EvaluateConditionalOrder(const Order *order, StateTicks eval_tick) {
-	if (order->GetConditionVariable() == OCV_TIME_DATE) {
+DeparturesConditionalJumpResult DepartureListScheduleModeSlotEvaluator::EvaluateConditionalOrder(const Order *order, StateTicks eval_tick) {
+	if (order->GetConditionVariable() == OrderConditionVariable::TimeDate) {
 		TraceRestrictTimeDateValueField field = static_cast<TraceRestrictTimeDateValueField>(order->GetConditionValue());
 		if (field != TRTDVF_MINUTE && field != TRTDVF_HOUR && field != TRTDVF_HOUR_MINUTE) {
 			/* No reasonable way to handle this with a minutes schedule, give up */
-			return 0;
+			return DCJD_GIVE_UP;
 		}
 	}
-	if (order->GetConditionVariable() == OCV_DISPATCH_SLOT) {
+
+	if (order->GetConditionVariable() == OrderConditionVariable::Timetable) {
+		/* In schedule/slot evaluation mode, take lateness/earliness to always be 0. */
+		return EvaluateTimetableStateConditionalOrder(order, 0) ? DCJD_TAKEN : DCJD_NOT_TAKEN;
+	}
+
+	if (order->GetConditionVariable() == OrderConditionVariable::DispatchSlot) {
 		LastDispatchRecord record{};
 
 		auto get_vehicle_records = [&](uint16_t schedule_index) -> const LastDispatchRecord * {
@@ -1281,7 +1462,7 @@ uint8_t DepartureListScheduleModeSlotEvaluator::EvaluateConditionalOrder(const O
 			}
 		};
 
-		return EvaluateDispatchSlotConditionalOrder(order, this->v->orders->GetScheduledDispatchScheduleSet(), eval_tick, get_vehicle_records).GetResult() ? 1 : 2;
+		return EvaluateDispatchSlotConditionalOrder(order, this->v->orders->GetScheduledDispatchScheduleSet(), eval_tick, get_vehicle_records).GetResult() ? DCJD_TAKEN : DCJD_NOT_TAKEN;
 	} else {
 		return GetNonScheduleDepartureConditionalOrderMode(order, this->v, eval_tick);
 	}
@@ -1299,7 +1480,13 @@ std::pair<const Order *, StateTicks> DepartureListScheduleModeSlotEvaluator::Eva
 	d.type = D_DEPARTURE;
 	d.show_as = this->calling_settings.GetShowAsType(source_order, D_DEPARTURE);
 	d.order = source_order;
+	d.dispatch_order = this->start_order;
 	d.scheduled_waiting_time = source_order->IsScheduledDispatchOrder(true) ? Departure::MISSING_WAIT_TICKS : Departure::INVALID_WAIT_TICKS;
+	d.dispatch_offset = (departure_tick - this->slot).AsTicks();
+	if (this->calling_settings.VehicleCycleTrackingEnabled() && (source_order == this->start_order || this->source.OrderMatches(source_order))) {
+		d.sequence_id = this->sequence_id_handler.last_sequence_id;
+	}
+	if (this->calling_settings.DispatchScheduleRouteIDEnabled()) d.schedule_route_id = this->GetRouteID();
 
 	/* We'll be going through the order list later, so we need a separate variable for it. */
 	const Order *order = source_order;
@@ -1317,7 +1504,7 @@ std::pair<const Order *, StateTicks> DepartureListScheduleModeSlotEvaluator::Eva
 		if (order == source_order) {
 			/* If we're not calling anywhere, then skip this departure. */
 			via_state.found_terminus = (d.calling_at.size() > 0);
-			next_state.first = nullptr;
+			next_state.first = order;
 			break;
 		}
 
@@ -1326,17 +1513,18 @@ std::pair<const Order *, StateTicks> DepartureListScheduleModeSlotEvaluator::Eva
 			next_state.first = nullptr; // Don't try to continue from here, unless a reasonable order is found after the conditional order jump
 			if (this->IsDepartureDependantConditionVariable(order->GetConditionVariable())) this->departure_dependant_condition_found = true;
 			switch (this->EvaluateConditionalOrder(order, departure_tick)) {
-					case 0: {
+					case DCJD_GIVE_UP: {
 						/* Give up */
 						break;
 					}
-					case 1: {
+					case DCJD_TAKEN: {
 						/* Take the branch */
 						const Order *target = this->v->GetOrder(order->GetConditionSkipToOrder());
 						if (target == nullptr) {
 							break;
 						}
-						departure_tick += order->GetWaitTime() - target->GetTravelTime();
+						departure_tick += order->GetWaitTime(); // NB: wait and travel times are unsigned
+						departure_tick -= target->GetTravelTime();
 						if (order->GetWaitTime() == 0 && !order->IsWaitTimetabled() && !target->HasNoTimetableTimes() && !target->IsType(OT_CONDITIONAL)) {
 							c.scheduled_tick = StateTicks{0};
 						}
@@ -1344,7 +1532,7 @@ std::pair<const Order *, StateTicks> DepartureListScheduleModeSlotEvaluator::Eva
 						travel_time_required = false;
 						continue;
 					}
-					case 2: {
+					case DCJD_NOT_TAKEN: {
 						/* Do not take the branch */
 						order = this->v->orders->GetNext(order);
 						continue;
@@ -1400,15 +1588,27 @@ std::pair<const Order *, StateTicks> DepartureListScheduleModeSlotEvaluator::Eva
 void DepartureListScheduleModeSlotEvaluator::CheckSourceOrderArrival(const Order *order, StateTicks departure_tick)
 {
 	if (this->dispatch_arrival_ticks != nullptr && departure_tick != this->slot) {
-		this->dispatch_arrival_ticks->emplace_back(order, departure_tick - order->GetWaitTime());
+		this->dispatch_arrival_ticks->emplace_back(order, departure_tick - order->GetWaitTime(),
+				this->start_order, this->slot,
+				this->sequence_id_handler.last_sequence_id);
 	}
 }
 
-void DepartureListScheduleModeSlotEvaluator::EvaluateSlotIndex(uint slot_index)
+std::string_view DepartureListScheduleModeSlotEvaluator::GetRouteID() const
+{
+	const DispatchSlot &slot = this->ds.GetScheduledDispatch()[this->slot_index];
+	if (slot.route_id != 0) {
+		return this->ds.GetSupplementaryName(DispatchSchedule::SupplementaryNameType::RouteID, slot.route_id);
+	} else {
+		return {};
+	}
+}
+
+void DepartureListScheduleModeSlotEvaluator::EvaluateSlotIndex(uint slot_index, DepartureTypes types)
 {
 	this->slot_index = slot_index;
 	this->slot = this->ds.GetScheduledDispatchStartTick() + this->ds.GetScheduledDispatch()[slot_index].offset;
-	StateTicks departure_tick = this->slot;
+	++this->sequence_id_handler.last_sequence_id;
 	this->arrival_history.clear();
 
 	/* The original last dispatch time will be restored in MakeDepartureListScheduleMode */
@@ -1417,6 +1617,14 @@ void DepartureListScheduleModeSlotEvaluator::EvaluateSlotIndex(uint slot_index)
 		this->ds.SetScheduledDispatchLastDispatch(INVALID_SCHEDULED_DISPATCH_OFFSET);
 	});
 
+	for (DepartureType type : types.IterateSetBits()) {
+		this->EvaluateSlotIndexForType(type);
+	}
+}
+
+void DepartureListScheduleModeSlotEvaluator::EvaluateSlotIndexForType(DepartureType type)
+{
+	StateTicks departure_tick = this->slot;
 	const Order *order = this->start_order;
 
 	while (type == D_DEPARTURE && calling_settings.IsDeparture(order, this->source)) {
@@ -1437,7 +1645,7 @@ void DepartureListScheduleModeSlotEvaluator::EvaluateSlotIndex(uint slot_index)
 	/* Loop through the vehicle's orders until we've found a suitable order or we've determined that no such order exists. */
 	/* We only need to consider each order at most once. */
 	for (int i = this->v->GetNumOrders(); i > 0; --i) {
-		/* If an order has a 0 travel time, and it's not explictly set, then stop. */
+		/* If an order has a 0 travel time, and it's not explicitly set, then stop. */
 		if (require_travel_time && order->GetTravelTime() == 0 && !order->IsTravelTimetabled() && !order->IsType(OT_IMPLICIT) && !order->IsType(OT_CONDITIONAL)) {
 			break;
 		}
@@ -1454,6 +1662,8 @@ void DepartureListScheduleModeSlotEvaluator::EvaluateSlotIndex(uint slot_index)
 			d.show_as = this->calling_settings.GetShowAsType(order, D_ARRIVAL);
 			d.order = order;
 			d.scheduled_waiting_time = Departure::INVALID_WAIT_TICKS;
+			if (this->calling_settings.VehicleCycleTrackingEnabled()) d.sequence_id = this->sequence_id_handler.last_sequence_id;
+			if (this->calling_settings.DispatchScheduleRouteIDEnabled()) d.schedule_route_id = this->GetRouteID();
 			if (ProcessArrivalHistory(&d, this->arrival_history, (departure_tick - this->slot).AsTicks(), this->source, this->calling_settings)) {
 				this->result.push_back(std::make_unique<Departure>(std::move(d)));
 			}
@@ -1463,7 +1673,7 @@ void DepartureListScheduleModeSlotEvaluator::EvaluateSlotIndex(uint slot_index)
 		departure_tick += order->GetWaitTime();
 
 		if (order->IsScheduledDispatchOrder(true)) {
-			this->CheckSourceOrderArrival(order, departure_tick);
+			if (type == D_DEPARTURE) this->CheckSourceOrderArrival(order, departure_tick);
 			return;
 		}
 
@@ -1480,11 +1690,11 @@ void DepartureListScheduleModeSlotEvaluator::EvaluateSlotIndex(uint slot_index)
 		if (order->IsType(OT_CONDITIONAL)) {
 			if (this->IsDepartureDependantConditionVariable(order->GetConditionVariable())) this->departure_dependant_condition_found = true;
 			switch (this->EvaluateConditionalOrder(order, departure_tick)) {
-				case 0: {
+				case DCJD_GIVE_UP: {
 					/* Give up */
 					break;
 				}
-				case 1: {
+				case DCJD_TAKEN: {
 					/* Take the branch */
 					const Order *target = this->v->GetOrder(order->GetConditionSkipToOrder());
 					if (target == nullptr) {
@@ -1498,7 +1708,7 @@ void DepartureListScheduleModeSlotEvaluator::EvaluateSlotIndex(uint slot_index)
 					require_travel_time = false;
 					continue;
 				}
-				case 2: {
+				case DCJD_NOT_TAKEN: {
 					/* Do not take the branch */
 					departure_tick -= order->GetWaitTime(); /* Added previously above */
 					order = this->v->orders->GetNext(order);
@@ -1518,7 +1728,7 @@ void DepartureListScheduleModeSlotEvaluator::EvaluateSlotIndex(uint slot_index)
 	}
 }
 
-void DepartureListScheduleModeSlotEvaluator::EvaluateSlots()
+void DepartureListScheduleModeSlotEvaluator::EvaluateSlots(DepartureTypes types)
 {
 	const size_t start_number_departures = this->result.size();
 
@@ -1526,12 +1736,12 @@ void DepartureListScheduleModeSlotEvaluator::EvaluateSlots()
 	const size_t start_number_dispatch_arrival_ticks = get_dispatch_arrival_ticks();
 
 	this->departure_dependant_condition_found = false;
-	this->EvaluateSlotIndex(0);
+	this->EvaluateSlotIndex(0, types);
 	const auto &slots = this->ds.GetScheduledDispatch();
 	if (this->departure_dependant_condition_found) {
 		/* Need to evaluate every slot individually */
 		for (uint i = 1; i < (uint)slots.size(); i++) {
-			this->EvaluateSlotIndex(i);
+			this->EvaluateSlotIndex(i, types);
 		}
 
 		if (this->anno.repetition > 1) {
@@ -1542,7 +1752,7 @@ void DepartureListScheduleModeSlotEvaluator::EvaluateSlots()
 			for (uint i = 1; i < this->anno.repetition; i++) {
 				this->ds.SetScheduledDispatchStartTick(this->ds.GetScheduledDispatchStartTick() + this->ds.GetScheduledDispatchDuration());
 				for (uint j = 0; j < (uint)slots.size(); j++) {
-					this->EvaluateSlotIndex(j);
+					this->EvaluateSlotIndex(j, types);
 				}
 			}
 		}
@@ -1553,10 +1763,12 @@ void DepartureListScheduleModeSlotEvaluator::EvaluateSlots()
 		const size_t done_first_slot_dispatch_arrival_ticks = get_dispatch_arrival_ticks();
 		if (done_first_slot_dispatch_arrival_ticks > start_number_dispatch_arrival_ticks) {
 			for (size_t i = 1; i < slots.size(); i++) {
-				Ticks adjustment = slots[i].offset - first_offset;
+				const Ticks adjustment = slots[i].offset - first_offset;
 				for (size_t j = start_number_dispatch_arrival_ticks; j != done_first_slot_dispatch_arrival_ticks; j++) {
-					std::pair<const Order *, StateTicks> record = (*this->dispatch_arrival_ticks)[j];
-					record.second += adjustment;
+					DispatchArrivalRecord record = (*this->dispatch_arrival_ticks)[j];
+					record.arrival_tick += adjustment;
+					record.departure_tick += adjustment;
+					if (record.sequence_id != 0) record.sequence_id += static_cast<uint32_t>(i);
 					this->dispatch_arrival_ticks->push_back(record);
 				}
 			}
@@ -1564,39 +1776,49 @@ void DepartureListScheduleModeSlotEvaluator::EvaluateSlots()
 		const size_t done_schedule_dispatch_arrival_ticks = get_dispatch_arrival_ticks();
 		if (done_schedule_dispatch_arrival_ticks > start_number_dispatch_arrival_ticks) {
 			for (uint i = 1; i < this->anno.repetition; i++) {
-				uint32_t adjustment = this->ds.GetScheduledDispatchDuration() * i;
+				const uint32_t adjustment = this->ds.GetScheduledDispatchDuration() * i;
+				const uint32_t seq_adjustment = static_cast<uint32_t>(i * slots.size());
 				for (size_t j = start_number_dispatch_arrival_ticks; j != done_schedule_dispatch_arrival_ticks; j++) {
-					std::pair<const Order *, StateTicks> record = (*this->dispatch_arrival_ticks)[j];
-					record.second += adjustment;
+					DispatchArrivalRecord record = (*this->dispatch_arrival_ticks)[j];
+					record.arrival_tick += adjustment;
+					record.departure_tick += adjustment;
+					if (record.sequence_id != 0) record.sequence_id += seq_adjustment;
 					this->dispatch_arrival_ticks->push_back(record);
 				}
 			}
 		}
 
+		this->sequence_id_handler.last_sequence_id += static_cast<uint32_t>(this->anno.repetition * slots.size()) - 1;
+
 		/* Trivially repeat found departures */
 		const size_t done_first_slot_departures = this->result.size();
 		if (done_first_slot_departures == start_number_departures) return;
 		for (size_t i = 1; i < slots.size(); i++) {
-			Ticks adjustment = slots[i].offset - first_offset;
+			const Ticks adjustment = slots[i].offset - first_offset;
 			for (size_t j = start_number_departures; j != done_first_slot_departures; j++) {
 				std::unique_ptr<Departure> d = std::make_unique<Departure>(*this->result[j]); // Clone departure
 				d->ShiftTimes(StateTicksDelta{adjustment});
+				if (d->sequence_id != 0) d->sequence_id += static_cast<uint32_t>(i);
+				if (this->calling_settings.DispatchScheduleRouteIDEnabled()) d->schedule_route_id = this->GetRouteID();
 				this->result.push_back(std::move(d));
 			}
 		}
 		const size_t done_schedule_departures = this->result.size();
 		for (uint i = 1; i < this->anno.repetition; i++) {
-			uint32_t adjustment = this->ds.GetScheduledDispatchDuration() * i;
+			const uint32_t adjustment = this->ds.GetScheduledDispatchDuration() * i;
+			const uint32_t seq_adjustment = static_cast<uint32_t>(i * slots.size());
 			for (size_t j = start_number_departures; j != done_schedule_departures; j++) {
 				std::unique_ptr<Departure> d = std::make_unique<Departure>(*this->result[j]); // Clone departure
 				d->ShiftTimes(StateTicksDelta{adjustment});
+				if (d->sequence_id != 0) d->sequence_id += seq_adjustment;
+				if (this->calling_settings.DispatchScheduleRouteIDEnabled()) d->schedule_route_id = this->GetRouteID();
 				this->result.push_back(std::move(d));
 			}
 		}
 	}
 }
 
-static DepartureList MakeDepartureListScheduleMode(DepartureOrderDestinationDetector source, const std::span<const Vehicle *> vehicles, DepartureType type,
+static DepartureList MakeDepartureListScheduleMode(DepartureOrderDestinationDetector source, const std::span<const Vehicle *> vehicles, DepartureTypes types,
 		DepartureCallingSettings calling_settings, const StateTicks start_tick, const StateTicks end_tick, const uint max_departure_slots_per_schedule)
 {
 	const Ticks tick_duration = (end_tick - start_tick).AsTicks();
@@ -1604,8 +1826,35 @@ static DepartureList MakeDepartureListScheduleMode(DepartureOrderDestinationDete
 	std::vector<std::unique_ptr<Departure>> result;
 	std::vector<ArrivalHistoryEntry> arrival_history;
 
+	DispatchScheduleModeSequenceIdHandler sequence_id_handler{};
+
+	uint32_t last_seq_mapping_id = 0;
+	robin_hood::unordered_flat_map<uint32_t, uint32_t> seq_mapping;
+
+	auto link_seq_ids = [&](uint32_t a, uint32_t b) {
+		auto a_it = seq_mapping.find(a);
+		auto b_it = seq_mapping.find(b);
+		if (a_it != seq_mapping.end() && b_it != seq_mapping.end()) {
+			/* Merge existing sets */
+			const uint32_t old_id = a_it->second;
+			const uint32_t new_id = b_it->second;
+			for (auto &it : seq_mapping) {
+				if (it.second == old_id) it.second = new_id;
+			}
+		} else if (a_it != seq_mapping.end()) {
+			seq_mapping[b] = a_it->second;
+		} else if (b_it != seq_mapping.end()) {
+			seq_mapping[a] = b_it->second;
+		} else {
+			/* Make a new ID */
+			const uint32_t new_id = ++last_seq_mapping_id;
+			seq_mapping[a] = new_id;
+			seq_mapping[b] = new_id;
+		}
+	};
+
 	for (const Vehicle *veh : vehicles) {
-		if (!HasBit(veh->vehicle_flags, VF_SCHEDULED_DISPATCH)) continue;
+		if (!veh->vehicle_flags.Test(VehicleFlag::ScheduledDispatch)) continue;
 
 		const Vehicle *v = nullptr;
 		for (const Vehicle *u = veh->FirstShared(); u != nullptr; u = u->NextShared()) {
@@ -1659,7 +1908,7 @@ static DepartureList MakeDepartureListScheduleMode(DepartureOrderDestinationDete
 		});
 
 		const size_t initial_result_size = result.size();
-		std::vector<std::pair<const Order *, StateTicks>> dispatch_arrival_ticks;
+		std::vector<DispatchArrivalRecord> dispatch_arrival_ticks;
 
 		for (const Order *start_order : v->Orders()) {
 			if (start_order->IsScheduledDispatchOrder(true)) {
@@ -1669,44 +1918,71 @@ static DepartureList MakeDepartureListScheduleMode(DepartureOrderDestinationDete
 
 				DispatchSchedule &ds = const_cast<Vehicle *>(v)->orders->GetDispatchScheduleByIndex(schedule_index);
 				DepartureListScheduleModeSlotEvaluator evaluator{
-					result, v, start_order, ds, anno, schedule_index, source, type, calling_settings, arrival_history, calling_settings.DispatchArrivalTicksEnabled() ? &dispatch_arrival_ticks : nullptr
+					result, v, start_order, ds, anno, schedule_index, source, calling_settings, sequence_id_handler,
+					arrival_history, calling_settings.DispatchArrivalTicksEnabled() ? &dispatch_arrival_ticks : nullptr
 				};
-				evaluator.EvaluateSlots();
+				evaluator.EvaluateSlots(types);
 			}
 		}
 
 		if (calling_settings.DispatchArrivalTicksEnabled() && !dispatch_arrival_ticks.empty()) {
 			/* Use dispatch arrival tick map to fill in missing arrival times for vehicles dispatched from here, if required */
 			std::vector<Departure *> pending_departures;
+			std::vector<const DispatchArrivalRecord *> pending_arrival_records;
+			robin_hood::unordered_flat_set<StateTicks> pending_departure_ticks;
 			for (const Order *start_order : v->Orders()) {
 				if (start_order->IsScheduledDispatchOrder(true)) {
 					pending_departures.clear();
+					pending_arrival_records.clear();
 					for (size_t i = initial_result_size; i < result.size(); i++) {
 						Departure *d = result[i].get();
-						if (d->scheduled_waiting_time == Departure::MISSING_WAIT_TICKS && d->order == start_order) {
+						if (d->type == D_DEPARTURE && d->scheduled_waiting_time == Departure::MISSING_WAIT_TICKS && d->order == start_order) {
+							/* Calculate arrival time for departure from dispatch order and optionally handle vehicle cycle tracking. */
 							pending_departures.push_back(d);
+							if (calling_settings.VehicleCycleTrackingEnabled()) pending_departure_ticks.insert(d->scheduled_tick);
+						} else if (d->type == D_DEPARTURE && d->scheduled_waiting_time != Departure::MISSING_WAIT_TICKS && d->dispatch_order == start_order && calling_settings.VehicleCycleTrackingEnabled()) {
+							/* For departures starting after the dispatch order, handle vehicle cycle tracking if enabled. */
+							pending_departures.push_back(d);
+							pending_departure_ticks.insert(d->scheduled_tick - d->dispatch_offset);
 						}
 					}
+					if (calling_settings.VehicleCycleTrackingEnabled()) {
+						for (const auto &it : dispatch_arrival_ticks) {
+							if (it.source_order == start_order && !pending_departure_ticks.contains(it.departure_tick)) {
+								pending_arrival_records.push_back(&it);
+							}
+						}
+						pending_departure_ticks.clear();
+					}
 
-					if (pending_departures.empty()) continue;
+					if (pending_departures.empty() && pending_arrival_records.empty()) continue;
 
 					for (const auto &it : dispatch_arrival_ticks) {
-						if (it.first != start_order) continue;
-						StateTicks arrival_tick = it.second;
+						if (it.order != start_order) continue;
+						StateTicks arrival_tick = it.arrival_tick;
 
-						size_t best_idx = SIZE_MAX;
+						enum class BestSourceType : uint8_t {
+							None,
+							Departure,
+							ArrivalRecord,
+						};
+						BestSourceType best_type = BestSourceType::None;
+						size_t best_idx{};
 						StateTicks best_tick = StateTicks(INT64_MAX);
+						bool best_wrapped{};
 
 						/* Evaluate pending departures */
 						for (size_t i = 0; i < pending_departures.size(); i++) {
 							const Departure *d = pending_departures[i];
 
-							StateTicks tick = d->scheduled_tick;
-							if (arrival_tick <= tick - d->order->GetWaitTime()) {
+							StateTicks tick = d->scheduled_tick - d->dispatch_offset; // Tick of departure from dispatch order
+							bool is_wrapped = false;
+							if (arrival_tick <= tick - start_order->GetWaitTime()) {
 								/* Found a usable departure */
-							} else if (arrival_tick <= tick + tick_duration - d->order->GetWaitTime()) {
+							} else if (arrival_tick <= tick + tick_duration - start_order->GetWaitTime()) {
 								/* Found a usable departure, with the schedule duration added (wrapping at end of schedule) */
 								tick += tick_duration;
+								is_wrapped = true;
 							} else {
 								/* Not usable */
 								continue;
@@ -1714,21 +1990,51 @@ static DepartureList MakeDepartureListScheduleMode(DepartureOrderDestinationDete
 
 							/* Found first/better departure */
 							if (tick < best_tick) {
+								best_type = BestSourceType::Departure;
 								best_idx = i;
 								best_tick = tick;
+								best_wrapped = is_wrapped;
 							}
 						}
 
-						if (best_idx != SIZE_MAX) {
+						for (size_t i = 0; i < pending_arrival_records.size(); i++) {
+							/* Found first/better arrival record */
+							StateTicks tick = pending_arrival_records[i]->departure_tick;
+							if (arrival_tick <= tick - start_order->GetWaitTime() && tick < best_tick) {
+								best_type = BestSourceType::ArrivalRecord;
+								best_idx = i;
+								best_tick = pending_arrival_records[i]->departure_tick;
+								best_wrapped = false;
+							}
+						}
+
+						if (best_type == BestSourceType::Departure) {
 							/* Found a suitable departure for this arrival, update the waiting time (i.e. arrival time) and remove from pending list */
 							Departure *d = pending_departures[best_idx];
 							pending_departures[best_idx] = pending_departures.back();
 							pending_departures.pop_back();
 
-							d->scheduled_waiting_time = (best_tick - arrival_tick).AsTicks();
+							if (d->scheduled_waiting_time == Departure::MISSING_WAIT_TICKS) {
+								d->scheduled_waiting_time = (best_tick - arrival_tick).AsTicks();
+							}
+
+							if (!best_wrapped && d->sequence_id > 0 && it.sequence_id > 0) {
+								/* Vehicle cycle tracking is active, record a match to be resolved later. */
+								link_seq_ids(d->sequence_id, it.sequence_id);
+							}
+						}
+						if (best_type == BestSourceType::ArrivalRecord) {
+							const DispatchArrivalRecord *record = pending_arrival_records[best_idx];
+							pending_arrival_records[best_idx] = pending_arrival_records.back();
+							pending_arrival_records.pop_back();
+
+							if (record->sequence_id > 0 && it.sequence_id > 0) {
+								/* Vehicle cycle tracking is active, record a match to be resolved later. */
+								link_seq_ids(record->sequence_id, it.sequence_id);
+							}
 						}
 
-						if (pending_departures.empty()) break;
+						if (pending_departures.empty() && pending_arrival_records.empty()) break;
 					}
 				}
 			}
@@ -1746,18 +2052,38 @@ static DepartureList MakeDepartureListScheduleMode(DepartureOrderDestinationDete
 		}
 		if (new_tick != d->scheduled_tick) {
 			d->ShiftTimes(new_tick - d->scheduled_tick);
+			d->sequence_id = 0;
 		}
 	}
 
-	std::sort(result.begin(), result.end(), [](std::unique_ptr<Departure> &a, std::unique_ptr<Departure> &b) -> bool {
-		if (a->scheduled_tick == b->scheduled_tick) {
-			return std::tie(a->terminus.target, a->terminus.scheduled_tick, a->vehicle->index)
-					< std::tie(b->terminus.target, b->terminus.scheduled_tick, b->vehicle->index);
-		}
-		return a->scheduled_tick < b->scheduled_tick;
-	});
+	SortDepartures(result);
 
-	if (type == D_DEPARTURE && calling_settings.SmartTerminusEnabled()) {
+	if (calling_settings.VehicleCycleTrackingEnabled()) {
+		uint32_t last_vehicle_idx = 0;
+		auto seq_mapping_to_vehicle_idx_map = std::make_unique<uint32_t[]>(last_seq_mapping_id);
+		robin_hood::unordered_flat_map<uint32_t, uint32_t> single_seq_id_to_vehicle_idx_map;
+		for (std::unique_ptr<Departure> &d : result) {
+			if (d->sequence_id == 0) continue;
+
+			auto it = seq_mapping.find(d->sequence_id);
+			if (it == seq_mapping.end()) {
+				if (d->type == D_DEPARTURE) {
+					uint32_t &idx = single_seq_id_to_vehicle_idx_map[d->sequence_id];
+					if (idx == 0) idx = ++last_vehicle_idx;
+					d->vehicle_idx = idx;
+				} else {
+					auto idx_it = single_seq_id_to_vehicle_idx_map.find(d->sequence_id);
+					if (idx_it != single_seq_id_to_vehicle_idx_map.end()) d->vehicle_idx = idx_it->second;
+				}
+			} else {
+				uint32_t &seq_mapping_to_vehicle_idx = seq_mapping_to_vehicle_idx_map[it->second - 1];
+				if (seq_mapping_to_vehicle_idx == 0 && d->type == D_DEPARTURE) seq_mapping_to_vehicle_idx = ++last_vehicle_idx;
+				d->vehicle_idx = seq_mapping_to_vehicle_idx;
+			}
+		}
+	}
+
+	if (types.Test(D_DEPARTURE) && calling_settings.SmartTerminusEnabled()) {
 		ScheduledDispatchSmartTerminusDetection(result, tick_duration);
 	}
 
@@ -1769,16 +2095,34 @@ static DepartureList MakeDepartureListScheduleMode(DepartureOrderDestinationDete
  * @param source_mode the departure source mode to use
  * @param source the station/etc to compute the departures of
  * @param vehicles set of all the vehicles stopping at this station, of all vehicles types that we are interested in
- * @param type the type of departures to get (departures or arrivals)
+ * @param types the types of departures to get (departures or arrivals)
  * @param calling_settings departure calling settings
  * @return a list of departures, which is empty if an error occurred
  */
 DepartureList MakeDepartureList(DeparturesSourceMode source_mode, DepartureOrderDestinationDetector source, const std::span<const Vehicle *> vehicles,
-		DepartureType type, DepartureCallingSettings calling_settings)
+		DepartureTypes types, DepartureCallingSettings calling_settings)
 {
+	DepartureList departures;
+	DepartureList arrivals;
 	switch (source_mode) {
 		case DSM_LIVE:
-			return MakeDepartureListLiveMode(source, vehicles, type, calling_settings);
+			if (types.Test(D_DEPARTURE)) departures = MakeDepartureListLiveMode(source, vehicles, D_DEPARTURE, calling_settings);
+			if (types.Test(D_ARRIVAL)) arrivals = MakeDepartureListLiveMode(source, vehicles, D_ARRIVAL, calling_settings);
+			if (departures.empty()) {
+				departures = std::move(arrivals);
+			} else if (!arrivals.empty()) {
+				/* Merge */
+				const size_t partition = departures.size();
+				departures.insert(departures.end(), std::make_move_iterator(arrivals.begin()), std::make_move_iterator(arrivals.end()));
+				std::inplace_merge(departures.begin(), departures.begin() + partition, departures.end(),
+						[](const std::unique_ptr<Departure> &a, const std::unique_ptr<Departure> &b) {
+							if (a->scheduled_tick == b->scheduled_tick) {
+								return a->type > b->type;
+							}
+							return a->scheduled_tick < b->scheduled_tick;
+						});
+			}
+			return departures;
 
 		case DSM_SCHEDULE_24H: {
 			if (!_settings_time.time_in_minutes) return {};
@@ -1787,7 +2131,7 @@ DepartureList MakeDepartureList(DeparturesSourceMode source_mode, DepartureOrder
 			StateTicks end_tick = _settings_time.FromTickMinutes(start + (24 * 60));
 
 			/* Set maximum to 90 departures per hour per dispatch schedule, to prevent excessive numbers of departures */
-			return MakeDepartureListScheduleMode(source, vehicles, type, calling_settings, start_tick, end_tick, 90 * 24);
+			return MakeDepartureListScheduleMode(source, vehicles, types, calling_settings, start_tick, end_tick, 90 * 24);
 		}
 
 		default:

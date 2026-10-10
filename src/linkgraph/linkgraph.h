@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file linkgraph.h Declaration of link graph classes used for cargo distribution. */
@@ -15,7 +15,7 @@
 #include "../station_base.h"
 #include "../cargotype.h"
 #include "../date_func.h"
-#include "../sl/saveload_common.h"
+#include "../sl/saveload_common_type.h"
 #include "linkgraph_type.h"
 #include "../3rdparty/cpp-btree/btree_map.h"
 #include <utility>
@@ -27,7 +27,7 @@ class LinkGraph;
  * Type of the pool for link graph components. Each station can be in at up to
  * 32 link graphs. So we allow for plenty of them to be created.
  */
-typedef Pool<LinkGraph, LinkGraphID, 32, 0xFFFF> LinkGraphPool;
+using LinkGraphPool = Pool<LinkGraph, LinkGraphID, 32>;
 /** The actual pool with link graphs. */
 extern LinkGraphPool _link_graph_pool;
 
@@ -53,12 +53,13 @@ public:
 	 * in a separate thread.
 	 */
 	struct BaseNode {
-		uint supply;             ///< Supply at the station.
-		uint demand;             ///< Acceptance at the station.
-		StationID station;       ///< Station ID.
-		TileIndex xy;            ///< Location of the station referred to by the node.
-		EconTime::Date last_update; ///< When the supply was last updated.
-		void Init(TileIndex xy = INVALID_TILE, StationID st = INVALID_STATION, uint demand = 0);
+		uint supply = 0;                          ///< Supply at the station.
+		uint demand = 0;                          ///< Acceptance at the station.
+		StationID station = StationID::Invalid(); ///< Station ID.
+		TileIndex xy = INVALID_TILE;              ///< Location of the station referred to by the node.
+		EconTime::Date last_update{};             ///< When the supply was last updated.
+
+		void Init(TileIndex xy = INVALID_TILE, StationID st = StationID::Invalid(), uint demand = 0);
 	};
 
 	/**
@@ -68,12 +69,12 @@ public:
 	 * the column as next_edge.
 	 */
 	struct BaseEdge {
-		uint capacity;                 ///< Capacity of the link.
-		uint usage;                    ///< Usage of the link.
-		uint64_t travel_time_sum;      ///< Sum of the travel times of the link, in ticks.
-		EconTime::Date last_unrestricted_update; ///< When the unrestricted part of the link was last updated.
-		EconTime::Date last_restricted_update;   ///< When the restricted part of the link was last updated.
-		EconTime::Date last_aircraft_update;     ///< When aircraft capacity of the link was last updated.
+		uint capacity = 0;                         ///< Capacity of the link.
+		uint usage = 0;                            ///< Usage of the link.
+		uint64_t travel_time_sum = 0;              ///< Sum of the travel times of the link, in ticks.
+		EconTime::Date last_unrestricted_update{}; ///< When the unrestricted part of the link was last updated.
+		EconTime::Date last_restricted_update{};   ///< When the restricted part of the link was last updated.
+		EconTime::Date last_aircraft_update{};     ///< When aircraft capacity of the link was last updated.
 
 		void Init()
 		{
@@ -95,7 +96,7 @@ public:
 	 * Wrapper for an edge (const or not) allowing retrieval, but no modification.
 	 * @tparam Tedge Actual edge class, may be "const BaseEdge" or just "BaseEdge".
 	 */
-	template<typename Tedge>
+	template <typename Tedge>
 	class EdgeWrapper {
 	protected:
 		Tedge *edge; ///< Actual edge to be used.
@@ -155,7 +156,7 @@ public:
 	 * Wrapper for a node (const or not) allowing retrieval, but no modification.
 	 * @tparam Tedge Actual node class, may be "const BaseNode" or just "BaseNode".
 	 */
-	template<typename Tnode>
+	template <typename Tnode>
 	class NodeWrapper {
 	protected:
 		Tnode &node;          ///< Node being wrapped.
@@ -218,7 +219,7 @@ public:
 		 * @param edge Edge to be wrapped.
 		 */
 		Edge(BaseEdge &edge) : EdgeWrapper<BaseEdge>(edge) {}
-		void Update(uint capacity, uint usage, uint32_t time, EdgeUpdateMode mode);
+		void Update(uint capacity, uint usage, uint32_t time, EdgeUpdateModes modes);
 		void Restrict() { this->edge->last_unrestricted_update = EconTime::INVALID_DATE; }
 		void Release() { this->edge->last_restricted_update = EconTime::INVALID_DATE; }
 		void ClearAircraft() { this->edge->last_aircraft_update = EconTime::INVALID_DATE; }
@@ -287,7 +288,7 @@ public:
 	static const uint MIN_TIMEOUT_DISTANCE = 32;
 
 	/** Number of days before deleting links served only by vehicles stopped in depot. */
-	static constexpr DateDelta STALE_LINK_DEPOT_TIMEOUT = DateDelta{1024};
+	static constexpr EconTime::DateDelta STALE_LINK_DEPOT_TIMEOUT{1024};
 
 	/** Minimum number of ticks between subsequent compressions of a LG. */
 	static constexpr ScaledTickCounter COMPRESSION_INTERVAL = 256 * DAY_TICKS;
@@ -300,21 +301,21 @@ public:
 	 * @param orig_age Age of the original link graph.
 	 * @return scaled value.
 	 */
-	inline static uint Scale(uint val, uint target_age, uint orig_age)
+	static inline uint Scale(uint val, uint target_age, uint orig_age)
 	{
 		return val > 0 ? std::max(1U, val * target_age / orig_age) : 0;
 	}
 
-	/** Bare constructor, only for save/load. */
-	LinkGraph() : cargo(INVALID_CARGO), last_compression(0) {}
 	/**
 	 * Real constructor.
+	 * @param index Unique identifier of this graph.
 	 * @param cargo Cargo the link graph is about.
 	 */
-	LinkGraph(CargoID cargo) : cargo(cargo), last_compression(_scaled_tick_counter) {}
+	LinkGraph(LinkGraphID index, CargoType cargo = INVALID_CARGO) :
+		PoolItemBase(index), cargo(cargo), last_compression(_scaled_tick_counter) {}
 
 	void Init(uint size);
-	void ShiftDates(DateDelta interval);
+	void ShiftDates(EconTime::DateDelta interval);
 	void Compress();
 	void Merge(LinkGraph *other);
 
@@ -353,10 +354,10 @@ public:
 	inline ScaledTickCounter LastCompression() const { return this->last_compression; }
 
 	/**
-	 * Get the cargo ID this component's link graph refers to.
-	 * @return Cargo ID.
+	 * Get the cargo type this component's link graph refers to.
+	 * @return Cargo type.
 	 */
-	inline CargoID Cargo() const { return this->cargo; }
+	inline CargoType Cargo() const { return this->cargo; }
 
 	/**
 	 * Scale a value to its monthly equivalent, based on last compression.
@@ -371,12 +372,11 @@ public:
 	NodeID AddNode(const Station *st);
 	void RemoveNode(NodeID id);
 
-	void UpdateEdge(NodeID from, NodeID to, uint capacity, uint usage, uint32_t time, EdgeUpdateMode mode);
+	void UpdateEdge(NodeID from, NodeID to, uint capacity, uint usage, uint32_t time, EdgeUpdateModes modes);
 	void RemoveEdge(NodeID from, NodeID to);
 
-	inline uint64_t CalculateCostEstimate() const {
-		uint64_t size_squared = (uint32_t)this->Size() * (uint32_t)this->Size();
-		return size_squared * FindLastBit(size_squared * size_squared); // N^2 * 4log_2(N)
+	inline uint32_t CalculateCostEstimate() const {
+		return (uint32_t)this->Size() * (uint32_t)this->Size();
 	}
 
 protected:
@@ -394,10 +394,10 @@ protected:
 
 	friend void LinkGraphFixupAfterLoad(bool compression_was_date);
 
-	CargoID cargo;         ///< Cargo of this component's link graph.
-	ScaledTickCounter last_compression; ///< Last time the capacities and supplies were compressed.
-	NodeVector nodes;      ///< Nodes in the component.
-	EdgeMatrix edges;      ///< Edges in the component.
+	CargoType cargo = INVALID_CARGO;      ///< Cargo of this component's link graph.
+	ScaledTickCounter last_compression{}; ///< Last time the capacities and supplies were compressed.
+	NodeVector nodes{};                   ///< Nodes in the component.
+	EdgeMatrix edges{};                   ///< Edges in the component.
 
 public:
 	const EdgeMatrix &GetEdges() const { return this->edges; }

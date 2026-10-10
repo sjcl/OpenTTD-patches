@@ -2,13 +2,14 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file strgen.cpp Tool to create computer readable (stand-alone) translation files. */
 
 #include "../stdafx.h"
 #include "../core/endian_func.hpp"
+#include "../core/math_func.hpp"
 #include "../core/mem_func.hpp"
 #include "../error_func.h"
 #include "../fileio_type.h"
@@ -43,34 +44,34 @@
 
 void StrgenWarningI(const std::string &msg)
 {
-	if (_show_todo > 0) {
-		fmt::print(stderr, LINE_NUM_FMT("warning"), _file, _cur_line, msg);
+	if (_strgen.translation) {
+		fmt::print(stderr, LINE_NUM_FMT("info"), _strgen.file, _strgen.cur_line, msg);
 	} else {
-		fmt::print(stderr, LINE_NUM_FMT("info"), _file, _cur_line, msg);
+		fmt::print(stderr, LINE_NUM_FMT("warning"), _strgen.file, _strgen.cur_line, msg);
 	}
-	_warnings++;
+	_strgen.warnings++;
 }
 
 void StrgenErrorI(const std::string &msg)
 {
-	fmt::print(stderr, LINE_NUM_FMT("error"), _file, _cur_line, msg);
-	_errors++;
+	fmt::print(stderr, LINE_NUM_FMT("error"), _strgen.file, _strgen.cur_line, msg);
+	_strgen.errors++;
 }
 
 [[noreturn]] void StrgenFatalI(const std::string &msg)
 {
-	fmt::print(stderr, LINE_NUM_FMT("FATAL"), _file, _cur_line, msg);
+	fmt::print(stderr, LINE_NUM_FMT("FATAL"), _strgen.file, _strgen.cur_line, msg);
 #ifdef _MSC_VER
-	fmt::print(stderr, LINE_NUM_FMT("warning"), _file, _cur_line, "language is not compiled");
+	fmt::print(stderr, LINE_NUM_FMT("warning"), _strgen.file, _strgen.cur_line, "language is not compiled");
 #endif
 	throw std::exception();
 }
 
 [[noreturn]] void FatalErrorI(const std::string &msg)
 {
-	fmt::print(stderr, LINE_NUM_FMT("FATAL"), _file, _cur_line, msg);
+	fmt::print(stderr, LINE_NUM_FMT("FATAL"), _strgen.file, _strgen.cur_line, msg);
 #ifdef _MSC_VER
-	fmt::print(stderr, LINE_NUM_FMT("warning"), _file, _cur_line, "language is not compiled");
+	fmt::print(stderr, LINE_NUM_FMT("warning"), _strgen.file, _strgen.cur_line, "language is not compiled");
 #endif
 	exit(2);
 }
@@ -124,139 +125,146 @@ struct FileStringReader : StringReader {
 			this->fh = std::move(this->fh2);
 			this->fh2.reset();
 			this->file = std::move(this->file2);
-			_file = this->file.c_str();
-			_cur_line = 1;
+			_strgen.file = this->file.c_str();
+			_strgen.cur_line = 1;
 			return this->FileStringReader::ReadLine(buffer, last);
 		}
 		return result;
 	}
 
-	void HandlePragma(char *str) override;
+	void HandlePragma(std::string_view str, LanguagePackHeader &lang) override;
 
 	void ParseFile() override
 	{
 		this->StringReader::ParseFile();
 
-		if (StrEmpty(_lang.name) || StrEmpty(_lang.own_name) || StrEmpty(_lang.isocode)) {
+		if (StrEmpty(_strgen.lang.name) || StrEmpty(_strgen.lang.own_name) || StrEmpty(_strgen.lang.isocode)) {
 			FatalError("Language must include ##name, ##ownname and ##isocode");
 		}
 	}
 };
 
-void FileStringReader::HandlePragma(char *str)
+void FileStringReader::HandlePragma(std::string_view str, LanguagePackHeader &lang)
 {
-	if (!memcmp(str, "id ", 3)) {
-		this->data.next_string_id = std::strtoul(str + 3, nullptr, 0);
-	} else if (!memcmp(str, "name ", 5)) {
-		strecpy(_lang.name, str + 5);
-	} else if (!memcmp(str, "ownname ", 8)) {
-		strecpy(_lang.own_name, str + 8);
-	} else if (!memcmp(str, "isocode ", 8)) {
-		strecpy(_lang.isocode, str + 8);
-	} else if (!memcmp(str, "textdir ", 8)) {
-		if (!memcmp(str + 8, "ltr", 3)) {
-			_lang.text_dir = TD_LTR;
-		} else if (!memcmp(str + 8, "rtl", 3)) {
-			_lang.text_dir = TD_RTL;
+	StringConsumer consumer(str);
+	auto name = consumer.ReadUntilChar(' ', StringConsumer::SKIP_ALL_SEPARATORS);
+	if (name == "id") {
+		this->data.next_string_id = consumer.ReadIntegerBase<uint32_t>(0);
+	} else if (name == "name") {
+		strecpy(lang.name, consumer.Read(StringConsumer::npos));
+	} else if (name == "ownname") {
+		strecpy(lang.own_name, consumer.Read(StringConsumer::npos));
+	} else if (name == "isocode") {
+		strecpy(lang.isocode, consumer.Read(StringConsumer::npos));
+	} else if (name == "textdir") {
+		auto dir = consumer.Read(StringConsumer::npos);
+		if (dir == "ltr") {
+			lang.text_dir = TD_LTR;
+		} else if (dir == "rtl") {
+			lang.text_dir = TD_RTL;
 		} else {
-			FatalError("Invalid textdir {}", str + 8);
+			FatalError("Invalid textdir {}", dir);
 		}
-	} else if (!memcmp(str, "digitsep ", 9)) {
-		str += 9;
-		strecpy(_lang.digit_group_separator, strcmp(str, "{NBSP}") == 0 ? NBSP : str);
-	} else if (!memcmp(str, "digitsepcur ", 12)) {
-		str += 12;
-		strecpy(_lang.digit_group_separator_currency, strcmp(str, "{NBSP}") == 0 ? NBSP : str);
-	} else if (!memcmp(str, "decimalsep ", 11)) {
-		str += 11;
-		strecpy(_lang.digit_decimal_separator, strcmp(str, "{NBSP}") == 0 ? NBSP : str);
-	} else if (!memcmp(str, "winlangid ", 10)) {
-		const char *buf = str + 10;
-		long langid = std::strtol(buf, nullptr, 16);
-		if (langid > (long)UINT16_MAX || langid < 0) {
-			FatalError("Invalid winlangid {}", buf);
+	} else if (name == "digitsep") {
+		auto sep = consumer.Read(StringConsumer::npos);
+		strecpy(lang.digit_group_separator, sep == "{NBSP}" ? NBSP : sep);
+	} else if (name == "digitsepcur") {
+		auto sep = consumer.Read(StringConsumer::npos);
+		strecpy(lang.digit_group_separator_currency, sep == "{NBSP}" ? NBSP : sep);
+	} else if (name == "decimalsep") {
+		auto sep = consumer.Read(StringConsumer::npos);
+		strecpy(lang.digit_decimal_separator, sep == "{NBSP}" ? NBSP : sep);
+	} else if (name == "winlangid") {
+		auto langid = consumer.ReadIntegerBase<int32_t>(0);
+		if (langid > UINT16_MAX || langid < 0) {
+			FatalError("Invalid winlangid {}", langid);
 		}
-		_lang.winlangid = (uint16_t)langid;
-	} else if (!memcmp(str, "grflangid ", 10)) {
-		const char *buf = str + 10;
-		long langid = std::strtol(buf, nullptr, 16);
+		lang.winlangid = static_cast<uint16_t>(langid);
+	} else if (name == "grflangid") {
+		auto langid = consumer.ReadIntegerBase<int32_t>(0);
 		if (langid >= 0x7F || langid < 0) {
-			FatalError("Invalid grflangid {}", buf);
+			FatalError("Invalid grflangid {}", langid);
 		}
-		_lang.newgrflangid = (uint8_t)langid;
-	} else if (!memcmp(str, "gender ", 7)) {
+		lang.newgrflangid = static_cast<GRFLanguage>(langid);
+	} else if (name == "gender") {
 		if (this->master) FatalError("Genders are not allowed in the base translation.");
-		char *buf = str + 7;
-
 		for (;;) {
-			const char *s = ParseWord(&buf);
+			auto s = ParseWord(consumer);
 
-			if (s == nullptr) break;
-			if (_lang.num_genders >= MAX_NUM_GENDERS) FatalError("Too many genders, max {}", MAX_NUM_GENDERS);
-			strecpy(_lang.genders[_lang.num_genders], s);
-			_lang.num_genders++;
+			if (!s.has_value()) break;
+			if (lang.num_genders >= MAX_NUM_GENDERS) FatalError("Too many genders, max {}", MAX_NUM_GENDERS);
+			s->copy(lang.genders[lang.num_genders], CASE_GENDER_LEN - 1);
+			lang.num_genders++;
 		}
-	} else if (!memcmp(str, "case ", 5)) {
+	} else if (name == "case") {
 		if (this->master) FatalError("Cases are not allowed in the base translation.");
-		char *buf = str + 5;
-
 		for (;;) {
-			const char *s = ParseWord(&buf);
+			auto s = ParseWord(consumer);
 
-			if (s == nullptr) break;
-			if (_lang.num_cases >= MAX_NUM_CASES) FatalError("Too many cases, max {}", MAX_NUM_CASES);
-			strecpy(_lang.cases[_lang.num_cases], s);
-			_lang.num_cases++;
+			if (!s.has_value()) break;
+			if (lang.num_cases >= MAX_NUM_CASES) FatalError("Too many cases, max {}", MAX_NUM_CASES);
+			s->copy(lang.cases[lang.num_cases], CASE_GENDER_LEN - 1);
+			lang.num_cases++;
 		}
-	} else if (!memcmp(str, "override ", 9)) {
+	} else if (name == "override") {
 		if (this->translation) FatalError("Overrides are only allowed in the base translation.");
-		if (!memcmp(str + 9, "on", 2)) {
+		consumer.SkipUntilCharNotIn(StringConsumer::WHITESPACE_NO_NEWLINE);
+		std::string_view mode = consumer.ReadUntilCharIn(StringConsumer::WHITESPACE_NO_NEWLINE);
+		if (mode == "on") {
 			this->data.override_mode = true;
-		} else if (!memcmp(str + 9, "off", 3)) {
+		} else if (mode == "off") {
 			this->data.override_mode = false;
 		} else {
-			FatalError("Invalid override mode {}", str + 9);
+			FatalError("Invalid override mode {}", mode);
 		}
-	} else if (!memcmp(str, "after ", 6)) {
+	} else if (name == "after") {
 		if (this->translation) FatalError("Insert after is only allowed in the base translation.");
-		LangString *ent = this->data.Find(str + 6);
+		consumer.SkipUntilCharNotIn(StringConsumer::WHITESPACE_NO_NEWLINE);
+		std::string_view target = consumer.ReadUntilCharIn(StringConsumer::WHITESPACE_NO_NEWLINE);
+		LangString *ent = this->data.Find(target);
 		if (ent != nullptr) {
 			this->data.insert_after = ent;
 			this->data.insert_before = nullptr;
 		} else {
-			FatalError("Can't find string to insert after: '{}'", str + 6);
+			FatalError("Can't find string to insert after: '{}'", target);
 		}
-	} else if (!memcmp(str, "before ", 7)) {
+	} else if (name == "before") {
 		if (this->translation) FatalError("Insert before is only allowed in the base translation.");
-		LangString *ent = this->data.Find(str + 7);
+		consumer.SkipUntilCharNotIn(StringConsumer::WHITESPACE_NO_NEWLINE);
+		std::string_view target = consumer.ReadUntilCharIn(StringConsumer::WHITESPACE_NO_NEWLINE);
+		LangString *ent = this->data.Find(target);
 		if (ent != nullptr) {
 			this->data.insert_after = nullptr;
 			this->data.insert_before = ent;
 		} else {
-			FatalError("Can't find string to insert after: '{}'", str + 6);
+			FatalError("Can't find string to insert after: '{}'", target);
 		}
-	} else if (!memcmp(str, "end-after", 10)) {
+	} else if (name == "end-after") {
 		if (this->translation) FatalError("Insert after is only allowed in the base translation.");
 		this->data.insert_after = nullptr;
-	} else if (!memcmp(str, "default-translation ", 20)) {
+	} else if (name == "default-translation") {
 		if (this->translation) FatalError("Default translation is only allowed in the base translation.");
-		LangString *ent = this->data.Find(str + 20);
+		consumer.SkipUntilCharNotIn(StringConsumer::WHITESPACE_NO_NEWLINE);
+		std::string_view target = consumer.ReadUntilCharIn(StringConsumer::WHITESPACE_NO_NEWLINE);
+		LangString *ent = this->data.Find(target);
 		if (ent != nullptr) {
 			this->data.default_translation = ent;
 		} else {
-			FatalError("Can't find string to use as default translation: '{}'", str + 20);
+			FatalError("Can't find string to use as default translation: '{}'", target);
 		}
-	} else if (!memcmp(str, "no-translate ", 13)) {
+	} else if (name == "no-translate") {
 		if (this->translation) FatalError("No-translate sections are only allowed in the base translation.");
-		if (!memcmp(str + 13, "on", 2)) {
+		consumer.SkipUntilCharNotIn(StringConsumer::WHITESPACE_NO_NEWLINE);
+		std::string_view mode = consumer.ReadUntilCharIn(StringConsumer::WHITESPACE_NO_NEWLINE);
+		if (mode == "on") {
 			this->data.no_translate_mode = true;
-		} else if (!memcmp(str + 13, "off", 3)) {
+		} else if (mode == "off") {
 			this->data.no_translate_mode = false;
 		} else {
-			FatalError("Invalid no-translate mode {}", str + 13);
+			FatalError("Invalid no-translate mode {}", mode);
 		}
 	} else {
-		StringReader::HandlePragma(str);
+		StringReader::HandlePragma(str, lang);
 	}
 }
 
@@ -325,7 +333,7 @@ struct HeaderFileWriter : HeaderWriter, FileWriter {
 	/** The real file name we eventually want to write to. */
 	std::string real_filename;
 	/** The previous string ID that was printed. */
-	int prev;
+	uint prev;
 	uint total_strings;
 
 	/**
@@ -335,15 +343,24 @@ struct HeaderFileWriter : HeaderWriter, FileWriter {
 	HeaderFileWriter(const char *filename) : FileWriter("tmp.xxx"),
 		real_filename(filename), prev(0), total_strings(0)
 	{
-		fprintf(*this->fh, "/* This file is automatically generated. Do not modify */\n\n");
-		fprintf(*this->fh, "#ifndef TABLE_STRINGS_H\n");
-		fprintf(*this->fh, "#define TABLE_STRINGS_H\n");
+		fprintf(*this->fh, "/**\n" \
+			" * @file strings.h This file contains IDs for all registered strings.\n" \
+			" * @attention This file is automatically generated. Do not modify.\n" \
+			" */\n\n" \
+			"#ifndef TABLE_STRINGS_H\n" \
+			"#define TABLE_STRINGS_H\n");
 	}
 
-	void WriteStringID(const char *name, int stringid) override
+	void WriteStringID(const std::string &name, uint stringid) override
 	{
+		if (stringid == 0) {
+			if (name != "STR_NULL") StrgenFatal("String ID 0 is not STR_NULL");
+			total_strings++;
+			return;
+		}
+
 		if (prev + 1 != stringid) fprintf(*this->fh, "\n");
-		fprintf(*this->fh, "static const StringID %s = 0x%X;\n", name, stringid);
+		fprintf(*this->fh, "static constexpr StringID %s{0x%X};\n", name.c_str(), stringid);
 		prev = stringid;
 		total_strings++;
 	}
@@ -351,7 +368,7 @@ struct HeaderFileWriter : HeaderWriter, FileWriter {
 	void Finalise(const StringData &data) override
 	{
 		/* Find the plural form with the most amount of cases. */
-		int max_plural_forms = 0;
+		size_t max_plural_forms = 0;
 		for (const auto &pf : _plural_forms) {
 			max_plural_forms = std::max(max_plural_forms, pf.plural_count);
 		}
@@ -360,10 +377,10 @@ struct HeaderFileWriter : HeaderWriter, FileWriter {
 			"\n"
 			"static const uint LANGUAGE_PACK_VERSION     = 0x%X;\n"
 			"static const uint LANGUAGE_MAX_PLURAL       = %u;\n"
-			"static const uint LANGUAGE_MAX_PLURAL_FORMS = %d;\n"
+			"static const uint LANGUAGE_MAX_PLURAL_FORMS = %u;\n"
 			"static const uint LANGUAGE_TOTAL_STRINGS    = %u;\n"
 			"\n",
-			(uint)data.Version(), (uint)std::size(_plural_forms), max_plural_forms, total_strings
+			(uint)data.Version(), (uint)std::size(_plural_forms), (uint)max_plural_forms, total_strings
 		);
 
 		fprintf(*this->fh, "#endif /* TABLE_STRINGS_H */\n");
@@ -397,7 +414,7 @@ struct LanguageFileWriter : LanguageWriter, FileWriter {
 
 	void WriteHeader(const LanguagePackHeader *header) override
 	{
-		this->Write((const uint8_t *)header, sizeof(*header));
+		this->Write({reinterpret_cast<const char *>(header), sizeof(*header)});
 	}
 
 	void Finalise() override
@@ -408,10 +425,10 @@ struct LanguageFileWriter : LanguageWriter, FileWriter {
 		this->FileWriter::Finalise();
 	}
 
-	void Write(const uint8_t *buffer, size_t length) override
+	void Write(std::string_view buffer) override
 	{
-		if (length == 0) return;
-		if (fwrite(buffer, sizeof(*buffer), length, *this->fh) != length) {
+		if (buffer.empty()) return;
+		if (fwrite(buffer.data(), sizeof(*buffer.data()), buffer.size(), *this->fh) != buffer.size()) {
 			FatalError("Could not write to {}", this->filename);
 		}
 	}
@@ -514,19 +531,19 @@ int CDECL main(int argc, char *argv[])
 						flags = 'g'; // Command needs number of parameters defined by number of genders
 					} else if (cs.proc == EmitPlural) {
 						flags = 'p'; // Command needs number of parameters defined by plural value
-					} else if (cs.flags & C_DONTCOUNT) {
+					} else if (cs.flags.Test(CmdFlag::DontCount)) {
 						flags = 'i'; // Command may be in the translation when it is not in base
 					} else {
 						flags = '0'; // Command needs no parameters
 					}
-					printf("%i\t%c\t\"%s\"\t\"%s\"\n", cs.consumes, flags, cs.cmd, strstr(cs.cmd, "STRING") ? "STRING" : cs.cmd);
+					fmt::print("{}\t{:c}\t\"{}\"\t\"{}\"\n", cs.consumes, flags, cs.cmd, cs.cmd.find("STRING") != std::string::npos ? "STRING" : cs.cmd);
 				}
 				return 0;
 
 			case 'L':
 				printf("count\tdescription\tnames\n");
 				for (const auto &pf : _plural_forms) {
-					printf("%i\t\"%s\"\t%s\n", pf.plural_count, pf.description, pf.names);
+					printf("%u\t\"%s\"\t%s\n", (uint)pf.plural_count, pf.description, pf.names);
 				}
 				return 0;
 
@@ -539,11 +556,11 @@ int CDECL main(int argc, char *argv[])
 				return 0;
 
 			case 't':
-				_show_todo |= 1;
+				_strgen.annotate_todos = true;
 				break;
 
 			case 'w':
-				_show_todo |= 2;
+				_strgen.show_warnings = true;
 				break;
 
 			case 'h':
@@ -592,7 +609,7 @@ int CDECL main(int argc, char *argv[])
 			StringData data(TEXT_TAB_END);
 			FileStringReader master_reader(data, pathbuf, pathbuf2, true, false);
 			master_reader.ParseFile();
-			if (_errors != 0) return 1;
+			if (_strgen.errors != 0) return 1;
 
 			/* write strings.h */
 			ottd_mkdir(dest_dir.c_str());
@@ -601,7 +618,7 @@ int CDECL main(int argc, char *argv[])
 			HeaderFileWriter writer(pathbuf);
 			writer.WriteHeader(data);
 			writer.Finalise(data);
-			if (_errors != 0) return 1;
+			if (_strgen.errors != 0) return 1;
 		} else {
 			mkpath(pathbuf, lastof(pathbuf), src_dir.c_str(), "english.txt");
 			mkpath2(pathbuf2, lastof(pathbuf2), src_dir.c_str(), "extra", "english.txt");
@@ -623,7 +640,7 @@ int CDECL main(int argc, char *argv[])
 				}
 				FileStringReader translation_reader(data, translation.c_str(), translation2, false, file == nullptr || strcmp(file + 1, "english.txt") != 0);
 				translation_reader.ParseFile(); // target file
-				if (_errors != 0) return 1;
+				if (_strgen.errors != 0) return 1;
 
 				/* get the targetfile, strip any directories and append to destination path */
 				mkpath(pathbuf, lastof(pathbuf), dest_dir.c_str(), (file != nullptr) ? file + 1 : translation.c_str());
@@ -638,8 +655,8 @@ int CDECL main(int argc, char *argv[])
 				writer.Finalise();
 
 				/* if showing warnings, print a summary of the language */
-				if ((_show_todo & 2) != 0) {
-					fprintf(stdout, "%d warnings and %d errors for %s\n", _warnings, _errors, pathbuf);
+				if (_strgen.show_warnings) {
+					fmt::print("{} warnings and {} errors for {}\n", _strgen.warnings, _strgen.errors, pathbuf);
 				}
 			}
 		}

@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file date_type.h Types related to the dates in OpenTTD. */
@@ -34,10 +34,6 @@ static constexpr Ticks INVALID_TICKS = -1; ///< Representation of an invalid num
 
 using ScaledTickCounter = uint64_t;       ///< The type for the scaled tick counter
 
-using YearDelta = StrongType::Typedef<int32_t, struct YearDeltaTag, StrongType::Compare, StrongType::IntegerScalable>;
-using DateDelta = StrongType::Typedef<int32_t, struct DateDeltaTag, StrongType::Compare, StrongType::IntegerScalable>;
-using DateTicksDelta = StrongType::Typedef<int64_t, struct DateTicksDeltaTag, StrongType::Compare, StrongType::IntegerScalable>;
-
 namespace DateDetail {
 	/* Mixin for DateTicks */
 	template <typename TDate, typename TDateFract>
@@ -52,20 +48,37 @@ namespace DateDetail {
 			TDateFract ToDateFractRemainder() const { return this->GetBase() % DAY_TICKS; }
 		};
 	};
+};
 
+template <typename T>
+struct DateDeltaTag : public StrongType::TypedefTraits<int32_t, StrongType::Compare, StrongType::IntegerScalable> {};
+
+template <typename T>
+struct DateTicksDeltaTag : public StrongType::TypedefTraits<int64_t, StrongType::Compare, StrongType::IntegerScalable> {};
+
+template <typename T>
+struct YearDeltaTag : public StrongType::TypedefTraits<int32_t, StrongType::Compare, StrongType::IntegerScalable> {};
+
+template <typename T>
+struct DateTag : public StrongType::TypedefTraits<int32_t, StrongType::Compare, StrongType::IntegerDelta<StrongType::Typedef<DateDeltaTag<T>>>> {};
+
+template <typename T>
+struct DateTicksTag : public StrongType::TypedefTraits<int64_t, StrongType::Compare, StrongType::IntegerDelta<StrongType::Typedef<DateTicksDeltaTag<T>>>, DateDetail::DateTicksOperations<StrongType::Typedef<DateTag<T>>, uint16_t>> {};
+
+template <typename T>
+struct YearTag : public StrongType::TypedefTraits<int32_t, StrongType::Compare, StrongType::IntegerDelta<StrongType::Typedef<YearDeltaTag<T>>>> {};
+
+namespace DateDetail {
 	template <typename T>
 	struct BaseTime {
-		/* The type to store our dates in */
-		template <class ST> struct DateDeltaTag;
-
-		template <class ST> struct DateTag;
-		using Date = StrongType::Typedef<int32_t, struct DateTag<T>, StrongType::Compare, StrongType::IntegerDelta<DateDelta>>;
+		using DateDelta = StrongType::Typedef<DateDeltaTag<T>>;
+		using Date = StrongType::Typedef<DateTag<T>>;
 
 		using DateFract = uint16_t; ///< The fraction of a date we're in, i.e. the number of ticks since the last date changeover
 
 		/* The type to store dates in when tick-precision is required */
-		template <class ST> struct DateTicksTag;
-		using DateTicks = StrongType::Typedef<int64_t, struct DateTicksTag<T>, StrongType::Compare, StrongType::IntegerDelta<DateTicksDelta>, DateTicksOperations<Date, DateFract>>;
+		using DateTicksDelta = StrongType::Typedef<DateTicksDeltaTag<T>>;
+		using DateTicks = StrongType::Typedef<DateTicksTag<T>>;
 
 		static constexpr DateTicks DateToDateTicks(Date date, DateFract fract = 0)
 		{
@@ -73,8 +86,8 @@ namespace DateDetail {
 		}
 
 		/* Year type */
-		template <class ST> struct YearTag;
-		using Year = StrongType::Typedef<int32_t, struct YearTag<T>, StrongType::Compare, StrongType::IntegerDelta<YearDelta>>;
+		using YearDelta = StrongType::Typedef<YearDeltaTag<T>>;
+		using Year = StrongType::Typedef<YearTag<T>>;
 
 		using Month = uint8_t;     ///< Type for the month, note: 0 based, i.e. 0 = January, 11 = December.
 		using Day = uint8_t;       ///< Type for the day of the month, note: 1 based, first day of a month is 1.
@@ -173,8 +186,8 @@ namespace DateDetail {
 	};
 };
 
-struct CalTime : public DateDetail::BaseTime<struct CalendarTimeTag> {
-	using ParentBaseTime = DateDetail::BaseTime<struct CalendarTimeTag>;
+struct CalTime : public DateDetail::BaseTime<struct CalTag> {
+	using ParentBaseTime = DateDetail::BaseTime<struct CalTag>;
 
 	/* Use a state struct to make backup/restore/init simpler */
 	struct State {
@@ -236,8 +249,8 @@ struct CalTime : public DateDetail::BaseTime<struct CalendarTimeTag> {
 	}
 };
 
-struct EconTime : public DateDetail::BaseTime<struct EconTimeTag> {
-	using ParentBaseTime = DateDetail::BaseTime<struct EconTimeTag>;
+struct EconTime : public DateDetail::BaseTime<struct EconTag> {
+	using ParentBaseTime = DateDetail::BaseTime<struct EconTag>;
 
 	/* Use a state struct to make backup/restore/init simpler */
 	struct State {
@@ -321,7 +334,7 @@ namespace DateDetail {
 			TBaseType GetBase() const { return static_cast<const TType &>(*this).base(); }
 
 		public:
-			template<typename T>
+			template <typename T>
 			T AsTicksT() const { return ClampTo<T>(this->GetBase()); }
 
 			Ticks AsTicks() const { return this->AsTicksT<Ticks>(); }
@@ -330,8 +343,10 @@ namespace DateDetail {
 };
 
 /* The type to store state ticks (this always ticks at the same rate regardless of day length, even in the scenario editor */
-using StateTicksDelta = StrongType::Typedef<int64_t, struct StateTicksDeltaTag, StrongType::Compare, StrongType::IntegerScalable, DateDetail::StateTicksDeltaOperations>;
-using StateTicks = StrongType::Typedef<int64_t, struct StateTicksTag, StrongType::Compare, StrongType::IntegerDelta<StateTicksDelta>>;
+struct StateTicksDeltaTag : public StrongType::TypedefTraits<int64_t, StrongType::Compare, StrongType::IntegerScalable, DateDetail::StateTicksDeltaOperations> {};
+using StateTicksDelta = StrongType::Typedef<StateTicksDeltaTag>;
+struct StateTicksTag : public StrongType::TypedefTraits<int64_t, StrongType::Compare, StrongType::IntegerDelta<StateTicksDelta>> {};
+using StateTicks = StrongType::Typedef<StateTicksTag>;
 
 namespace DateDetail {
 	/* Mixin for TickMinutes, ClockFaceMinutes */
@@ -371,7 +386,12 @@ namespace DateDetail {
 };
 
 /* The type to store general clock-face minutes in (i.e. 0..1440) */
-using ClockFaceMinutes = StrongType::Typedef<int, struct ClockFaceMinutesTag, StrongType::Compare, StrongType::Integer, DateDetail::MinuteOperations<false>, DateDetail::ClockFaceMinuteOperations>;
+struct ClockFaceMinutesTag : public StrongType::TypedefTraits<int, StrongType::Compare, StrongType::Integer, DateDetail::MinuteOperations<false>, DateDetail::ClockFaceMinuteOperations> {};
+using ClockFaceMinutes = StrongType::Typedef<ClockFaceMinutesTag>;
+
+/* The type to store the absolute day number for tick minutes */
+struct TickMinutesDayNumberTag : public StrongType::TypedefTraits<int64_t, StrongType::Compare, StrongType::Integer> {};
+using TickMinutesDayNumber = StrongType::Typedef<TickMinutesDayNumberTag>;
 
 namespace DateDetail {
 	/* Mixin for TickMinutes */
@@ -394,12 +414,28 @@ namespace DateDetail {
 				if (minutes < 0) minutes += 1440;
 				return ClockFaceMinutes{static_cast<int>(minutes)};
 			}
+
+			TickMinutesDayNumber DayNumber() const
+			{
+				return TickMinutesDayNumber{DivTowardsNegativeInf<TBaseType>(this->GetBase(), 1440)};
+			}
+
+			static constexpr TType FromAbsolute(TickMinutesDayNumber day_number, int hour, int minute)
+			{
+				return TType{(day_number.base() * 1440) + (hour * 60) + minute};
+			}
+
+			static constexpr TType FromAbsolute(TickMinutesDayNumber day_number, ClockFaceMinutes clock_face)
+			{
+				return TType{(day_number.base() * 1440) + clock_face.base()};
+			}
 		};
 	};
 };
 
 /* The type to store StateTicks-based minutes in */
-using TickMinutes = StrongType::Typedef<int64_t, struct TickMinutesTag, StrongType::Compare, StrongType::Integer, DateDetail::MinuteOperations<true>, DateDetail::TickMinuteOperations>;
+struct TickMinutesTag : public StrongType::TypedefTraits<int64_t, StrongType::Compare, StrongType::Integer, DateDetail::MinuteOperations<true>, DateDetail::TickMinuteOperations> {};
+using TickMinutes = StrongType::Typedef<TickMinutesTag>;
 
 static const int STATION_RATING_TICKS     = 185; ///< cycle duration for updating station rating
 static const int STATION_ACCEPTANCE_TICKS = 250; ///< cycle duration for updating station acceptance

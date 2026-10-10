@@ -2,15 +2,13 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file mock_fontcache.h Mock font cache implementation definition. */
 
 #ifndef MOCK_FONTCACHE_H
 #define MOCK_FONTCACHE_H
-
-#include "../stdafx.h"
 
 #include "../fontcache.h"
 #include "../string_func.h"
@@ -23,8 +21,6 @@ public:
 		this->height = FontCache::GetDefaultFontHeight(this->fs);
 	}
 
-	void SetUnicodeGlyph(char32_t, SpriteID) override {}
-	void InitializeUnicodeGlyphMap() override {}
 	void ClearFontCache() override {}
 	const Sprite *GetGlyph(GlyphID) override { return nullptr; }
 	uint GetGlyphWidth(GlyphID) override { return this->height / 2; }
@@ -35,8 +31,9 @@ public:
 
 	static void InitializeFontCaches()
 	{
-		for (FontSize fs = FS_BEGIN; fs != FS_END; fs++) {
-			if (FontCache::caches[fs] == nullptr) new MockFontCache(fs); /* FontCache inserts itself into to the cache. */
+		for (FontSize fs : EnumRange(FontSize::End)) {
+			if (FontCache::Get(fs) != nullptr) continue;
+			FontCache::Register(std::make_unique<MockFontCache>(fs));
 		}
 	}
 };

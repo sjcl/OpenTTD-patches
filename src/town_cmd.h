@@ -1,0 +1,49 @@
+/*
+ * This file is part of OpenTTD.
+ * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
+ * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
+ */
+
+/** @file town_cmd.h Command definitions related to towns. */
+
+#ifndef TOWN_CMD_H
+#define TOWN_CMD_H
+
+#include "command_type.h"
+#include "company_type.h"
+#include "town.h"
+#include "town_type.h"
+
+enum class TownAcceptanceEffect : uint8_t;
+enum TownSettingOverrideFlags : uint8_t;
+using HouseID = uint16_t;
+
+struct HouseIDCmdVector {
+	static constexpr bool command_payload_as_ref = true;
+	static constexpr size_t MAX_HOUSE_IDS = 1024;
+
+	std::vector<HouseID> ids;
+
+	void Serialise(BufferSerialisationRef buffer) const;
+	bool Deserialise(DeserialisationBuffer &buffer, StringValidationSettings default_string_validation);
+
+	void fmt_format_value(struct format_target &) const;
+};
+
+DEF_CMD_TUPLE   (Commands::FoundTown,                     CmdFoundTown,                    CMD_DEITY | CMD_NO_TEST, CommandType::LandscapeConstruction, CmdDataT<TownSize, bool, TownLayout, bool, uint32_t, std::string>) // founding random town can fail only in exec run
+DEF_CMD_TUPLE_NT(Commands::RenameTown,                    CmdRenameTown,                    CMD_DEITY | CMD_SERVER, CommandType::OtherManagement,       CmdDataT<TownID, std::string>)
+DEF_CMD_TUPLE_NT(Commands::RenameTownNonAdmin,            CmdRenameTownNonAdmin,                                {}, CommandType::OtherManagement,       CmdDataT<TownID, std::string>)
+DEF_CMD_TUPLE_LT(Commands::TownAction,                    CmdDoTownAction,                                      {}, CommandType::LandscapeConstruction, CmdDataT<TownID, TownAction>)
+DEF_CMD_TUPLE_NT(Commands::TownCargoGoal,                 CmdTownCargoGoal,                CMD_LOG_AUX | CMD_DEITY, CommandType::OtherManagement,       CmdDataT<TownID, TownAcceptanceEffect, uint32_t>)
+DEF_CMD_TUPLE_NT(Commands::TownGrowthRate,                CmdTownGrowthRate,               CMD_LOG_AUX | CMD_DEITY, CommandType::OtherManagement,       CmdDataT<TownID, uint16_t>)
+DEF_CMD_TUPLE_NT(Commands::TownRating,                    CmdTownRating,                   CMD_LOG_AUX | CMD_DEITY, CommandType::OtherManagement,       CmdDataT<TownID, CompanyID, int16_t>)
+DEF_CMD_TUPLE_NT(Commands::TownSetText,                   CmdTownSetText,   CMD_LOG_AUX | CMD_STR_CTRL | CMD_DEITY, CommandType::OtherManagement,       CmdDataT<TownID, EncodedString>)
+DEF_CMD_TUPLE_NT(Commands::ExpandTown,                    CmdExpandTown,                                 CMD_DEITY, CommandType::LandscapeConstruction, CmdDataT<TownID, uint32_t, TownExpandModes>)
+DEF_CMD_TUPLE_NT(Commands::DeleteTown,                    CmdDeleteTown,                               CMD_OFFLINE, CommandType::LandscapeConstruction, CmdDataT<TownID>)
+DEF_CMD_TUPLE   (Commands::PlaceHouse,                    CmdPlaceHouse,                                 CMD_DEITY, CommandType::OtherManagement,       CmdDataT<HouseID, bool, TownID, bool>)
+DEF_CMD_TUPLE   (Commands::PlaceHouseArea,                CmdPlaceHouseArea,                             CMD_DEITY, CommandType::OtherManagement,       CmdDataT<TileIndex, HouseIDCmdVector, bool, TownID, bool, bool>)
+DEF_CMD_TUPLE_NT(Commands::TownSettingOverride,           CmdOverrideTownSetting,           CMD_DEITY | CMD_SERVER, CommandType::OtherManagement,       CmdDataT<TownID, TownSettingOverrideFlags, bool, uint8_t>)
+DEF_CMD_TUPLE_NT(Commands::TownSettingOverrideNonAdmin,   CmdOverrideTownSettingNonAdmin,                       {}, CommandType::OtherManagement,       CmdDataT<TownID, TownSettingOverrideFlags, bool, uint8_t>)
+
+#endif /* TOWN_CMD_H */

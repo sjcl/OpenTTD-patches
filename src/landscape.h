@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file landscape.h Functions related to OTTD's landscape. */
@@ -11,8 +11,13 @@
 #define LANDSCAPE_H
 
 #include "core/geometry_type.hpp"
-#include "tile_cmd.h"
+#include "direction_type.h"
+#include "slope_type.h"
+#include "tile_type.h"
+#include "zoom_type.h"
 #include <vector>
+
+struct TileInfo;
 
 static const uint SNOW_LINE_MONTHS = 12; ///< Number of months in the snow line table.
 static const uint SNOW_LINE_DAYS   = 32; ///< Number of days in each month in the snow line table.
@@ -23,12 +28,12 @@ static const uint SNOW_LINE_DAYS   = 32; ///< Number of days in each month in th
  */
 struct SnowLine {
 	uint8_t table[SNOW_LINE_MONTHS][SNOW_LINE_DAYS]; ///< Height of the snow line each day of the year
-	uint8_t highest_value; ///< Highest snow line of the year
-	uint8_t lowest_value;  ///< Lowest snow line of the year
+	uint8_t highest_value = 0; ///< Highest snow line of the year
+	uint8_t lowest_value = UINT8_MAX; ///< Lowest snow line of the year
 };
 
 bool IsSnowLineSet();
-void SetSnowLine(uint8_t table[SNOW_LINE_MONTHS][SNOW_LINE_DAYS]);
+void SetSnowLine(std::unique_ptr<SnowLine> snow_line);
 uint8_t GetSnowLineUncached();
 void UpdateCachedSnowLine();
 void UpdateCachedSnowLineBounds();
@@ -65,12 +70,12 @@ inline uint8_t LowestTreePlacementSnowLine()
 
 int GetSlopeZInCorner(Slope tileh, Corner corner);
 Slope UpdateFoundationSlopeFromTileSlope(TileIndex tile, Slope tileh, int &tilez);
-std::tuple<Slope, int> GetFoundationSlope(TileIndex tile);
+std::pair<Slope, int> GetFoundationSlope(TileIndex tile);
 
 uint GetPartialPixelZ(int x, int y, Slope corners);
 int GetSlopePixelZ(int x, int y, bool ground_vehicle = false);
 int GetSlopePixelZOutsideMap(int x, int y);
-void GetSlopePixelZOnEdge(Slope tileh, DiagDirection edge, int &z1, int &z2);
+std::tuple<int, int> GetSlopePixelZOnEdge(Slope tileh, DiagDirection edge, int z);
 
 /**
  * Determine the Z height of a corner relative to TileZ.
@@ -93,7 +98,7 @@ inline int GetSlopePixelZInCorner(Slope tileh, Corner corner)
  * @param tile The tile of interest.
  * @return The slope on top of the foundation and the z of the foundation.
  */
-inline std::tuple<Slope, int> GetFoundationPixelSlope(TileIndex tile)
+inline std::pair<Slope, int> GetFoundationPixelSlope(TileIndex tile)
 {
 	auto [s, z] = GetFoundationSlope(tile);
 	return {s, z * TILE_HEIGHT};
@@ -159,9 +164,8 @@ inline uint ApplyPixelFoundationToSlope(Foundation f, Slope &s)
 	return ApplyFoundationToSlope(f, s) * TILE_HEIGHT;
 }
 
+uint GetFoundationSpriteBlock (TileIndex tile);
 void DrawFoundation(TileInfo *ti, Foundation f);
-bool HasFoundationNW(TileIndex tile, Slope slope_here, uint z_here);
-bool HasFoundationNE(TileIndex tile, Slope slope_here, uint z_here);
 
 void DoClearSquare(TileIndex tile);
 void SetupTileLoopCounts();

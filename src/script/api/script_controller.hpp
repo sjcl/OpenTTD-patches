@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file script_controller.hpp The controller of the script. */
@@ -11,6 +11,8 @@
 #define SCRIPT_CONTROLLER_HPP
 
 #include "script_types.hpp"
+#include "../../string_func.h"
+#include "../../company_type.h"
 #include "../../string_func.h"
 #include <map>
 
@@ -53,7 +55,7 @@ public:
 	 * Initializer of the ScriptController.
 	 * @param company The company this Script is normally serving.
 	 */
-	ScriptController(CompanyID company);
+	ScriptController(::CompanyID company);
 
 #else
 	/**
@@ -78,9 +80,8 @@ public:
 	 *   - booleans, and
 	 *   - nulls.
 	 *
-	 * In particular, instances of classes can't be saved including
-	 *   ScriptList. Such a list should be converted to an array or table on
-	 *   save and converted back on load.
+	 * In particular, instances of classes can't be saved with the exception of
+	 *   ScriptList.
 	 *
 	 * The function is called as soon as the user saves the game,
 	 *   independently of other activities of the script. The script is not
@@ -215,11 +216,6 @@ private:
 	uint ticks;                       ///< The amount of ticks we're sleeping.
 	LoadedLibraryList loaded_library; ///< The libraries we loaded.
 	int loaded_library_count;         ///< The amount of libraries.
-
-	/**
-	 * Register all classes that are known inside the script API.
-	 */
-	void RegisterClasses();
 };
 
 #endif /* SCRIPT_CONTROLLER_HPP */

@@ -2,10 +2,10 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
-/** @file animated_tile_sl.cpp Code handling saving and loading of animated tiles */
+/** @file animated_tile_sl.cpp Code handling saving and loading of animated tiles. */
 
 #include "../stdafx.h"
 
@@ -23,11 +23,11 @@ namespace upstream_sl {
 static std::vector <TileIndex> _tmp_animated_tiles;
 
 static const SaveLoad _animated_tile_desc[] = {
-	 SLEG_VECTOR("tiles", _tmp_animated_tiles, SLE_UINT32),
+	 SLEG_VECTOR("tiles", _tmp_animated_tiles, VarTypes::U32),
 };
 
 struct ANITChunkHandler : ChunkHandler {
-	ANITChunkHandler() : ChunkHandler('ANIT', CH_TABLE) {}
+	ANITChunkHandler() : ChunkHandler("ANIT", ChunkType::Table) {}
 
 	void Save() const override
 	{
@@ -38,10 +38,10 @@ struct ANITChunkHandler : ChunkHandler {
 	void Load() const override
 	{
 		/* Before version 80 we did NOT have a variable length animated tile table */
-		if (IsSavegameVersionBefore(SLV_80)) {
+		if (IsSavegameVersionBefore(SaveLoadVersion::NewGRFMoreAnimation)) {
 			/* In pre version 6, we has 16bit per tile, now we have 32bit per tile, convert it ;) */
 			TileIndex anim_list[256];
-			SlCopy(anim_list, 256, IsSavegameVersionBefore(SLV_6) ? (SLE_FILE_U16 | SLE_VAR_U32) : SLE_UINT32);
+			SlCopy(anim_list, 256, IsSavegameVersionBefore(SaveLoadVersion::MultipleRoadStops) ? (VarFileType::U16 | VarMemType::U32) : VarTypes::U32);
 
 			for (int i = 0; i < 256; i++) {
 				if (anim_list[i] == 0) break;
@@ -50,11 +50,11 @@ struct ANITChunkHandler : ChunkHandler {
 			return;
 		}
 
-		if (IsSavegameVersionBefore(SLV_RIFF_TO_ARRAY)) {
+		if (IsSavegameVersionBefore(SaveLoadVersion::RiffToArray)) {
 			size_t count = SlGetFieldLength() / sizeof(uint32_t);
 			_animated_tiles.clear();
 			for (uint i = 0; i < count; i++) {
-				_animated_tiles[SlReadUint32()] = {};
+				_animated_tiles[TileIndex(SlReadUint32())] = {};
 			}
 			return;
 		}

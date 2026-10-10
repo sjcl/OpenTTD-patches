@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file cheat_sl.cpp Code handling saving and loading of cheats */
@@ -94,7 +94,7 @@ static void Load_CHTS()
 	if (SlIsTableChunk()) {
 		struct UnknownCheatHandler : public TableHeaderSpecialHandler {
 			bool MissingField(const std::string &key, uint8_t type, std::vector<SaveLoad> &saveloads) override {
-				if (type == SLE_FILE_I8) {
+				if (type == to_underlying(SLE_FILE_I8)) {
 					Debug(sl, 1, "CHTS chunk: Unknown cheat field: '{}'", key);
 					saveloads.push_back(SLEG_VAR(_unknown_cheat_fields[key], SLE_BOOL));
 					return true;
@@ -128,12 +128,12 @@ static void Load_CHTS()
 static void Load_CHTX()
 {
 	struct CheatsExtLoad {
-		char name[256];
+		std::string name;
 		Cheat cht;
 	};
 
 	static const SaveLoad _cheats_ext_load_desc[] = {
-		SLE_STR(CheatsExtLoad, name,           SLE_STRB, 256),
+		SLE_SSTR(CheatsExtLoad, name,          SLE_STR),
 		SLE_VAR(CheatsExtLoad, cht.been_used,  SLE_BOOL),
 		SLE_VAR(CheatsExtLoad, cht.value,      SLE_BOOL),
 	};
@@ -151,7 +151,7 @@ static void Load_CHTX()
 		bool found = false;
 		for (uint j = 0; j < lengthof(_extra_cheat_descs); j++) {
 			const ExtraCheatNameDesc &desc = _extra_cheat_descs[j];
-			if (strcmp(desc.name, current_cheat.name) == 0) {
+			if (desc.name == current_cheat.name) {
 				*(desc.cht) = current_cheat.cht;
 				found = true;
 				break;
@@ -159,16 +159,16 @@ static void Load_CHTX()
 		}
 		if (!found) {
 			Debug(sl, 1, "CHTX chunk: Could not find cheat: '{}'", current_cheat.name);
-			_unknown_cheat_fields[std::string(current_cheat.name) + ".been_used"] = current_cheat.cht.been_used;
-			_unknown_cheat_fields[std::string(current_cheat.name) + ".value"] = current_cheat.cht.value;
+			_unknown_cheat_fields[current_cheat.name + ".been_used"] = current_cheat.cht.been_used;
+			_unknown_cheat_fields[current_cheat.name + ".value"] = current_cheat.cht.value;
 		}
 	}
 }
 
 /** Chunk handlers related to cheats. */
 static const ChunkHandler cheat_chunk_handlers[] = {
-	{ 'CHTS', Save_CHTS, Load_CHTS, nullptr, nullptr, CH_TABLE },
-	{ 'CHTX', nullptr,   Load_CHTX, nullptr, nullptr, CH_READONLY },
+	{ 'CHTS', Save_CHTS, Load_CHTS, nullptr, nullptr, ChunkType::Table },
+	{ 'CHTX', nullptr,   Load_CHTX, nullptr, nullptr, ChunkType::ReadOnly },
 };
 
 extern const ChunkHandlerTable _cheat_chunk_handlers(cheat_chunk_handlers);

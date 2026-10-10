@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file script_vehicle.hpp Everything to query and build vehicles. */
@@ -11,6 +11,8 @@
 #define SCRIPT_VEHICLE_HPP
 
 #include "script_road.hpp"
+#include "../../engine_type.h"
+#include "../../group_type.h"
 #include <optional>
 
 /**
@@ -41,7 +43,7 @@ public:
 		ERR_VEHICLE_WRONG_DEPOT,                // [STR_ERROR_DEPOT_WRONG_DEPOT_TYPE]
 
 		/** Vehicle can't return to the depot */
-		ERR_VEHICLE_CANNOT_SEND_TO_DEPOT,       // [STR_ERROR_CAN_T_SEND_TRAIN_TO_DEPOT, STR_ERROR_CAN_T_SEND_ROAD_VEHICLE_TO_DEPOT, STR_ERROR_CAN_T_SEND_SHIP_TO_DEPOT, STR_ERROR_CAN_T_SEND_AIRCRAFT_TO_HANGAR]
+		ERR_VEHICLE_CANNOT_SEND_TO_DEPOT,       // [STR_ERROR_CAN_T_SEND_TRAIN_TO_DEPOT, STR_ERROR_CAN_T_SEND_ROAD_VEHICLE_TO_DEPOT, STR_ERROR_CAN_T_SEND_SHIP_TO_DEPOT, STR_ERROR_CAN_T_SEND_AIRCRAFT_TO_HANGAR, STR_ERROR_UNABLE_TO_FIND_LOCAL_DEPOT, STR_ERROR_UNABLE_TO_FIND_LOCAL_HANGAR]
 
 		/** Vehicle can't start / stop */
 		ERR_VEHICLE_CANNOT_START_STOP,          // [STR_ERROR_CAN_T_STOP_START_TRAIN, STR_ERROR_CAN_T_STOP_START_ROAD_VEHICLE, STR_ERROR_CAN_T_STOP_START_SHIP, STR_ERROR_CAN_T_STOP_START_AIRCRAFT]
@@ -94,7 +96,7 @@ public:
 		VS_INVALID = 0xFF, ///< An invalid vehicle state.
 	};
 
-	static const VehicleID VEHICLE_INVALID = 0xFFFFF; ///< Invalid VehicleID.
+	static constexpr VehicleID VEHICLE_INVALID = ::VehicleID::Invalid(); ///< Invalid VehicleID.
 
 	/**
 	 * Checks whether the given vehicle is valid and owned by you.
@@ -358,7 +360,7 @@ public:
 	 *   as the vehicle isn't really built yet. Build it for real first before
 	 *   assigning orders.
 	 */
-	static VehicleID BuildVehicleWithRefit(TileIndex depot, EngineID engine_id, CargoID cargo);
+	static VehicleID BuildVehicleWithRefit(TileIndex depot, EngineID engine_id, CargoType cargo);
 
 	/**
 	 * Gets the capacity of a vehicle built at the given depot with the given engine and refitted to the given cargo.
@@ -369,9 +371,9 @@ public:
 	 *   is owned by you.
 	 * @pre ScriptEngine::IsBuildable(engine_id).
 	 * @pre ScriptCargo::IsValidCargo(cargo).
-	 * @return The capacity the vehicle will have when refited.
+	 * @return The capacity the vehicle will have when refitted.
 	 */
-	static SQInteger GetBuildWithRefitCapacity(TileIndex depot, EngineID engine_id, CargoID cargo);
+	static SQInteger GetBuildWithRefitCapacity(TileIndex depot, EngineID engine_id, CargoType cargo);
 
 	/**
 	 * Clones a vehicle at the given depot, copying or cloning its orders.
@@ -430,9 +432,9 @@ public:
 	 * @pre ScriptCargo::IsValidCargo(cargo).
 	 * @pre You must own the vehicle.
 	 * @pre The vehicle must be stopped in the depot.
-	 * @return The capacity the vehicle will have when refited.
+	 * @return The capacity the vehicle will have when refitted.
 	 */
-	static SQInteger GetRefitCapacity(VehicleID vehicle_id, CargoID cargo);
+	static SQInteger GetRefitCapacity(VehicleID vehicle_id, CargoType cargo);
 
 	/**
 	 * Refits a vehicle to the given cargo type.
@@ -448,7 +450,7 @@ public:
 	 * @exception ScriptVehicle::ERR_VEHICLE_NOT_IN_DEPOT
 	 * @return True if and only if the refit succeeded.
 	 */
-	static bool RefitVehicle(VehicleID vehicle_id, CargoID cargo);
+	static bool RefitVehicle(VehicleID vehicle_id, CargoType cargo);
 
 	/**
 	 * Sells the given vehicle.
@@ -547,7 +549,7 @@ public:
 	 * @pre ScriptCargo::IsValidCargo(cargo).
 	 * @return The maximum amount of the given cargo the vehicle can transport.
 	 */
-	static SQInteger GetCapacity(VehicleID vehicle_id, CargoID cargo);
+	static SQInteger GetCapacity(VehicleID vehicle_id, CargoType cargo);
 
 	/**
 	 * Get the length of a the total vehicle in 1/16's of a tile.
@@ -566,7 +568,7 @@ public:
 	 * @pre ScriptCargo::IsValidCargo(cargo).
 	 * @return The amount of the given cargo the vehicle is currently transporting.
 	 */
-	static SQInteger GetCargoLoad(VehicleID vehicle_id, CargoID cargo);
+	static SQInteger GetCargoLoad(VehicleID vehicle_id, CargoType cargo);
 
 	/**
 	 * Get the group of a given vehicle.
@@ -620,7 +622,7 @@ private:
 	/**
 	 * Internal function used by BuildVehicle(WithRefit).
 	 */
-	static VehicleID _BuildVehicleInternal(TileIndex depot, EngineID engine_id, CargoID cargo);
+	static VehicleID _BuildVehicleInternal(TileIndex depot, EngineID engine_id, CargoType cargo);
 
 	/**
 	 * Internal function used by SellWagon(Chain).

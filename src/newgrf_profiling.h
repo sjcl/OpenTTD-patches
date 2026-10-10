@@ -2,15 +2,14 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
- /** @file newgrf_profiling.h Profiling of NewGRF action 2 handling. */
+/** @file newgrf_profiling.h Profiling of NewGRF action 2 handling. */
 
 #ifndef NEWGRF_PROFILING_H
 #define NEWGRF_PROFILING_H
 
-#include "stdafx.h"
 #include "date_type.h"
 #include "newgrf.h"
 #include "newgrf_callbacks.h"
@@ -52,11 +51,11 @@ struct NewGRFProfiler {
 		GrfSpecFeature feat;   ///< GRF feature being resolved for
 	};
 
-	const GRFFile *grffile;    ///< Which GRF is being profiled
-	bool active;               ///< Is this profiler collecting data
-	uint64_t start_tick;       ///< Tick number this profiler was started on
-	Call cur_call;             ///< Data for current call in progress
-	std::vector<Call> calls;   ///< All calls collected so far
+	const GRFFile *grffile = nullptr; ///< Which GRF is being profiled
+	bool active = false;              ///< Is this profiler collecting data
+	uint64_t start_tick = 0;          ///< Tick number this profiler was started on
+	Call cur_call{};                  ///< Data for current call in progress
+	std::vector<Call> calls{};        ///< All calls collected so far
 };
 
 extern std::vector<NewGRFProfiler> _newgrf_profilers;

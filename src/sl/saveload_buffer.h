@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file saveload_buffer.h Functions/types related to buffers used for saving and loading games. */
@@ -10,9 +10,10 @@
 #ifndef SL_SAVELOAD_BUFFER_H
 #define SL_SAVELOAD_BUFFER_H
 
+#include "../core/alignment.hpp"
 #include "../core/alloc_func.hpp"
-#include "../core/endian_type.hpp"
 #include "../core/endian_func.hpp"
+#include "../core/enum_type.hpp"
 #include "../core/math_func.hpp"
 
 #include <vector>
@@ -87,11 +88,18 @@ struct RawReadBuffer {
 	}
 };
 
+enum class ReadBufferFlag : uint8_t {
+	InhibitAcquireBytes,
+};
+
+using ReadBufferFlags = EnumBitSet<ReadBufferFlag, uint8_t>;
+
 /** A buffer for reading (and buffering) savegame data. */
 struct ReadBuffer {
 	uint8_t *bufp;                      ///< Location we're at reading the buffer.
 	uint8_t *bufe;                      ///< End of the buffer we can read from.
 	std::shared_ptr<LoadFilter> reader; ///< The filter used to actually read.
+	ReadBufferFlags flags{};            ///< Flags.
 	size_t read;                        ///< The amount of read bytes so far from the filter.
 	uint8_t buf[MEMORY_CHUNK_SIZE];     ///< Buffer we're going to read from.
 
@@ -114,7 +122,7 @@ struct ReadBuffer {
 		if (likely(b <= this->bufe)) {
 			this->bufp = b;
 		} else {
-			SkipBytesSlowPath(bytes);
+			this->SkipBytesSlowPath(bytes);
 		}
 	}
 
@@ -212,6 +220,11 @@ struct ReadBuffer {
 	{
 		return this->read - (this->bufe - this->bufp);
 	}
+
+	inline size_t RemainingInBuffer() const
+	{
+		return this->bufe - this->bufp;
+	}
 };
 
 
@@ -296,7 +309,7 @@ struct MemoryDumper {
 		~BufferInfo() { free(this->data); }
 
 		BufferInfo(const BufferInfo &) = delete;
-		BufferInfo(BufferInfo &&other) : data(other.data), size(other.size) { other.data = nullptr; };
+		BufferInfo(BufferInfo &&other) noexcept : data(other.data), size(other.size) { other.data = nullptr; };
 	};
 
 	std::vector<BufferInfo> blocks;         ///< Buffer with blocks of allocated memory.
@@ -312,7 +325,7 @@ struct MemoryDumper {
 	MemoryDumper()
 	{
 		const size_t size = 8192;
-		this->autolen_buf = CallocT<uint8_t>(size);
+		this->autolen_buf = MallocT<uint8_t>(size);
 		this->autolen_buf_end = this->autolen_buf + size;
 	}
 

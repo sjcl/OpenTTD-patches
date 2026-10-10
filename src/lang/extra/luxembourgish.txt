@@ -19,6 +19,8 @@ STR_CONFIG_SETTING_TIMETABLE_IN_TICKS_HELPTEXT                  :Weist d'Transpo
 
 STR_TRANSPARENT_LOADING_TOOLTIP                                 :{BLACK}Wiesselt d'Transparenz fir d'Luedungsindikatoren. Ctrl+Klick fir festzesetzen
 
+STR_BUILD_SIGNAL_TOGGLE_ADVANCED_SIGNAL_TOOLTIP                 :{BLACK}Wiesselen tëschent erweiderte Signaler
+
 # Tracerestrict GUI
 
 # Programmable Pre-Signals
@@ -102,3 +104,13 @@ STR_COMPANY_PASSWORD_MAKE_DEFAULT_TOOLTIP                       :{BLACK}Benotzt 
 STR_COMPANY_VIEW_PASSWORD                                       :{BLACK}Passwuert
 STR_COMPANY_VIEW_PASSWORD_TOOLTIP                               :{BLACK}Setzt en Passwuert fir nëmmen authoriséiert Benotzer spillen ze loossen
 STR_COMPANY_VIEW_SET_PASSWORD                                   :{BLACK}Setzt d'Firmen-Passwuert
+
+# JSON messages
+
+STR_INTRO_NEWGRF_SETTINGS                                       :{BLACK}NewGRF Astellungen
+STR_INTRO_AI_SETTINGS                                           :{BLACK}KI Astellungen
+STR_INTRO_GAMESCRIPT_SETTINGS                                   :{BLACK}Spillscriptastellungen
+STR_INTRO_TOOLTIP_NEWGRF_SETTINGS                               :{BLACK}NewGRF Astellungen opman
+STR_INTRO_TOOLTIP_AI_SETTINGS                                   :{BLACK}KI-Astellungen opman
+STR_INTRO_TOOLTIP_GAMESCRIPT_SETTINGS                           :{BLACK}Spillscriptastellungen opman
+STR_INTRO_CAPTION_TRADITIONAL                                   :{WHITE}OpenTTD {REV}

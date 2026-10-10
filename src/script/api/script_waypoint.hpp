@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file script_waypoint.hpp Everything to query and build waypoints. */
@@ -40,9 +40,9 @@ public:
 	 * Type of waypoints known in the game.
 	 */
 	enum WaypointType {
-		/* Note: these values represent part of the in-game StationFacility enum */
-		WAYPOINT_RAIL      = (int)::FACIL_TRAIN, ///< Rail waypoint
-		WAYPOINT_BUOY      = (int)::FACIL_DOCK,  ///< Buoy
+		/* Note: these values represent part of the in-game StationFacilities enum */
+		WAYPOINT_RAIL      = ::StationFacilities{::StationFacility::Train}.base(), ///< Rail waypoint
+		WAYPOINT_BUOY      = ::StationFacilities{::StationFacility::Dock}.base(),  ///< Buoy
 		WAYPOINT_ANY       = WAYPOINT_RAIL | WAYPOINT_BUOY, ///< All waypoint types
 	};
 
@@ -54,10 +54,11 @@ public:
 	static bool IsValidWaypoint(StationID waypoint_id);
 
 	/**
-	 * Get the StationID of a tile.
+	 * Get the StationID of a tile, if there is a waypoint.
 	 * @param tile The tile to find the StationID of.
-	 * @pre ScriptRail::IsRailWaypointTile(tile).
+	 * @pre IsValidTile(tile).
 	 * @return StationID of the waypoint.
+	 * @post Use IsValidWaypoint() to see if the waypoint is valid.
 	 */
 	static StationID GetWaypointID(TileIndex tile);
 

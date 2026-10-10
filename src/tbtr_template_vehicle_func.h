@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file tbtr_template_vehicle_func.h Template-based train replacement: template vehicle functions headers. */
@@ -15,7 +15,9 @@
 #include "tbtr_template_vehicle.h"
 #include "3rdparty/cpp-btree/btree_set.h"
 
-Train *VirtualTrainFromTemplateVehicle(const TemplateVehicle *tv, StringID &err, uint32_t user);
+enum class ClientID : uint32_t;
+
+Train *VirtualTrainFromTemplateVehicle(const TemplateVehicle *tv, StringID &err, ClientID user);
 
 void BuildTemplateGuiList(GUITemplateList *, Scrollbar *, Owner, RailType);
 
@@ -27,8 +29,6 @@ void DrawTemplate(const TemplateVehicle *, int, int, int, int);
 TemplateVehicle *TemplateVehicleFromVirtualTrain(Train *virt);
 Train* DeleteVirtualTrain(Train *, Train *);
 void SetupTemplateVehicleFromVirtual(TemplateVehicle *tmp, TemplateVehicle *prev, Train *virt);
-
-CommandCost CmdTemplateReplaceVehicle(Train *, bool, DoCommandFlag);
 
 TemplateVehicle *GetTemplateVehicleByGroupID(GroupID gid);
 TemplateVehicle *GetTemplateVehicleByGroupIDRecursive(GroupID gid);
@@ -46,8 +46,8 @@ uint CountTrainsNeedingTemplateReplacement(GroupID g_id, const TemplateVehicle *
 
 CommandCost TestBuyAllTemplateVehiclesInChain(const TemplateVehicle *tv, TileIndex tile);
 
-CommandCost CmdRefitTrainFromTemplate(Train *t, const TemplateVehicle *tv, DoCommandFlag flags);
-CommandCost CmdSetTrainUnitDirectionFromTemplate(Train *t, const TemplateVehicle *tv, DoCommandFlag flags);
+CommandCost CmdRefitTrainFromTemplate(Train *t, const TemplateVehicle *tv, DoCommandFlags flags);
+void CmdSetTrainUnitDirectionFromTemplate(Train *t, const TemplateVehicle *tv, DoCommandFlags flags);
 void BreakUpRemainders(Train *t);
 
 bool TemplateVehicleContainsEngineOfRailtype(const TemplateVehicle *tv, RailType type);

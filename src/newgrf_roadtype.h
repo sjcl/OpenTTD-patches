@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file newgrf_roadtype.h NewGRF handling of road types. */
@@ -40,13 +40,13 @@ struct RoadTypeScopeResolver : public ScopeResolver {
 struct RoadTypeResolverObject : public ResolverObject {
 	RoadTypeScopeResolver roadtype_scope; ///< Resolver for the roadtype scope.
 
-	RoadTypeResolverObject(const RoadTypeInfo *rti, TileIndex tile, TileContext context, RoadTypeSpriteGroup rtsg, uint32_t param1 = 0, uint32_t param2 = 0);
+	RoadTypeResolverObject(const RoadTypeInfo *rti, TileIndex tile, TileContext context, RoadSpriteType rtsg, uint32_t param1 = 0, uint32_t param2 = 0);
 
-	ScopeResolver *GetScope(VarSpriteGroupScope scope = VSG_SCOPE_SELF, VarSpriteGroupScopeOffset relative = 0) override
+	ScopeResolver *GetScope(VarSpriteGroupScope scope = VarSpriteGroupScope::Self, VarSpriteGroupScopeOffset relative = 0) override
 	{
 		switch (scope) {
-			case VSG_SCOPE_SELF: return &this->roadtype_scope;
-			default:             return ResolverObject::GetScope(scope, relative);
+			case VarSpriteGroupScope::Self: return &this->roadtype_scope;
+			default: return ResolverObject::GetScope(scope, relative);
 		}
 	}
 
@@ -54,10 +54,12 @@ struct RoadTypeResolverObject : public ResolverObject {
 	uint32_t GetDebugID() const override;
 };
 
-SpriteID GetCustomRoadSprite(const RoadTypeInfo *rti, TileIndex tile, RoadTypeSpriteGroup rtsg, TileContext context = TCX_NORMAL, uint *num_results = nullptr);
+SpriteID GetCustomRoadSprite(const RoadTypeInfo *rti, TileIndex tile, RoadSpriteType rtsg, TileContext context = TileContext::Normal, uint *num_results = nullptr);
 
 RoadType GetRoadTypeTranslation(RoadTramType rtt, uint8_t tracktype, const GRFFile *grffile);
 uint8_t GetReverseRoadTypeTranslation(RoadType roadtype, const GRFFile *grffile);
+
+uint32_t GetTrackTypesRoad(TileIndex tile, const GRFFile *grffile);
 
 void ConvertRoadTypes();
 void SetCurrentRoadTypeLabelList();

@@ -2,10 +2,10 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
-/** @file town_kdtree.h Declarations for accessing the k-d tree of towns */
+/** @file viewport_kdtree.h Declarations for accessing the k-d tree of viewports. */
 
 #ifndef VIEWPORT_KDTREE_H
 #define VIEWPORT_KDTREE_H
@@ -17,6 +17,15 @@
 #include "signs_base.h"
 
 struct ViewportSignKdtreeItem {
+	using IDType = uint16_t;
+
+	template <typename T>
+	static constexpr void IDTypeCheck()
+	{
+		static_assert(std::is_same_v<T, StationID> || std::is_same_v<T, TownID> || std::is_same_v<T, SignID>);
+		static_assert(sizeof(IDType) >= sizeof(T));
+	}
+
 	enum ItemType : uint16_t {
 		VKI_STATION,
 		VKI_WAYPOINT,
@@ -24,44 +33,45 @@ struct ViewportSignKdtreeItem {
 		VKI_SIGN,
 	};
 	ItemType type;
-	union {
-		StationID station;
-		TownID town;
-		SignID sign;
-	} id;
+	IDType id;
 	int32_t center;
 	int32_t top;
+
+	template <typename T>
+	T GetIdAs() const
+	{
+		IDTypeCheck<T>();
+		if constexpr (std::is_integral_v<T> || std::is_enum_v<T>) {
+			return T(this->id);
+		} else {
+			return T(static_cast<typename T::BaseType>(this->id));
+		}
+
+	}
+
+	template <typename T>
+	void SetID(T id)
+	{
+		IDTypeCheck<T>();
+		if constexpr (std::is_integral_v<T>) {
+			this->id = id;
+		} else if constexpr (std::is_enum_v<T>) {
+			this->id = to_underlying(id);
+		} else {
+			this->id = id.base();
+		}
+	}
 
 	bool operator== (const ViewportSignKdtreeItem &other) const
 	{
 		if (this->type != other.type) return false;
-		switch (this->type) {
-			case VKI_STATION:
-			case VKI_WAYPOINT:
-				return this->id.station == other.id.station;
-			case VKI_TOWN:
-				return this->id.town == other.id.town;
-			case VKI_SIGN:
-				return this->id.sign == other.id.sign;
-			default:
-				NOT_REACHED();
-		}
+		return this->id == other.id;
 	}
 
 	bool operator< (const ViewportSignKdtreeItem &other) const
 	{
 		if (this->type != other.type) return this->type < other.type;
-		switch (this->type) {
-			case VKI_STATION:
-			case VKI_WAYPOINT:
-				return this->id.station < other.id.station;
-			case VKI_TOWN:
-				return this->id.town < other.id.town;
-			case VKI_SIGN:
-				return this->id.sign < other.id.sign;
-			default:
-				NOT_REACHED();
-		}
+		return this->id < other.id;
 	}
 
 	static ViewportSignKdtreeItem MakeStation(StationID id);

@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file void_map.h Map accessors for void tiles. */
@@ -18,7 +18,7 @@
  */
 inline void MakeVoid(TileIndex t)
 {
-	SetTileType(t, MP_VOID);
+	SetTileType(t, TileType::Void);
 	SetTileHeight(t, 0);
 	_m[t].m1 = 0;
 	_m[t].m2 = 0;
@@ -27,6 +27,7 @@ inline void MakeVoid(TileIndex t)
 	_m[t].m5 = 0;
 	_me[t].m6 = 0;
 	_me[t].m7 = 0;
+	_me[t].m8 = 0;
 }
 
 #endif /* VOID_MAP_H */

@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file debug_settings.h Debug settings. */
@@ -50,7 +50,7 @@ inline bool HasGrfOptimiserFlag(NewGRFOptimiserFlags flag)
 enum MiscDebugFlags {
 	MDF_OVERHEAT_BREAKDOWN_OPEN_WIN,
 	MDF_ZONING_DEBUG_MODES,
-	MDF_UNUSED1,
+	MDF_LANDINFO_TILE_DUMP,
 	MDF_UNUSED2,
 	MDF_NEWGRF_SG_SAVE_RAW,
 	MDF_SPECIAL_CMDS,

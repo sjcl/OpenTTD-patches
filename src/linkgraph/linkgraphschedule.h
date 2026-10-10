@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file linkgraphschedule.h Declaration of link graph schedule used for cargo distribution. */
@@ -12,7 +12,7 @@
 
 #include "linkgraph.h"
 #include "../thread.h"
-#include "../core/ring_buffer.hpp"
+#include "../3rdparty/cpp-ring-buffer/ring_buffer.hpp"
 #include <memory>
 #include <vector>
 
@@ -45,8 +45,8 @@ class LinkGraphSchedule {
 private:
 	LinkGraphSchedule();
 	~LinkGraphSchedule();
-	typedef ring_buffer<LinkGraph *> GraphList;
-	typedef ring_buffer<std::unique_ptr<LinkGraphJob>> JobList;
+	typedef jgr::ring_buffer<LinkGraph *> GraphList;
+	typedef jgr::ring_buffer<std::unique_ptr<LinkGraphJob>> JobList;
 	friend NamedSaveLoadTable GetLinkGraphScheduleDesc();
 	friend upstream_sl::SaveLoadTable upstream_sl::GetLinkGraphScheduleDesc();
 
@@ -67,7 +67,7 @@ public:
 	bool IsJoinWithUnfinishedJobDue() const;
 	void JoinNext();
 	void SpawnAll();
-	void ShiftDates(DateDelta interval);
+	void ShiftDates(EconTime::DateDelta interval);
 
 	/**
 	 * Queue a link graph for execution.
@@ -83,7 +83,7 @@ public:
 	 * Remove a link graph from the execution queue.
 	 * @param lg Link graph to be removed.
 	 */
-	void Unqueue(LinkGraph *lg)
+	void Dequeue(LinkGraph *lg)
 	{
 		for (auto iter = this->schedule.begin(); iter != this->schedule.end();) {
 			if (*iter == lg) {

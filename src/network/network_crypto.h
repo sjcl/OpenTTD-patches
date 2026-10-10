@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /**
@@ -74,6 +74,7 @@ public:
 
 	/**
 	 * Reply to the request with the given password.
+	 * @param password The requested password from the user.
 	 */
 	virtual void Reply(const std::string &password) = 0;
 };
@@ -88,7 +89,7 @@ protected:
 	std::string password; ///< The entered password.
 public:
 
-	virtual void Reply(const std::string &password) override;
+	void Reply(const std::string &password) override;
 
 	/**
 	 * Callback to trigger sending the response for the password request.
@@ -174,15 +175,15 @@ public:
 
 
 /** The authentication method that can be used. */
-enum NetworkAuthenticationMethod : uint8_t {
-	NETWORK_AUTH_METHOD_X25519_KEY_EXCHANGE_ONLY, ///< No actual authentication is taking place, just perform a x25519 key exchange. This method is not supported for the admin connection.
-	NETWORK_AUTH_METHOD_X25519_PAKE, ///< Authentication using x25519 password-authenticated key agreement.
-	NETWORK_AUTH_METHOD_X25519_AUTHORIZED_KEY, ///< Authentication using x22519 key exchange and authorized keys.
-	NETWORK_AUTH_METHOD_END, ///< Must ALWAYS be on the end of this list!! (period)
+enum class NetworkAuthenticationMethod : uint8_t {
+	X25519_KeyExchangeOnly, ///< No actual authentication is taking place, just perform a x25519 key exchange. This method is not supported for the admin connection.
+	X25519_PAKE, ///< Authentication using x25519 password-authenticated key agreement.
+	X25519_AuthorizedKey, ///< Authentication using x22519 key exchange and authorized keys.
+	End, ///< Must ALWAYS be on the end of this list!! (period)
 };
 
 /** The mask of authentication methods that can be used. */
-using NetworkAuthenticationMethodMask = uint16_t;
+using NetworkAuthenticationMethodMask = EnumBitSet<NetworkAuthenticationMethod, uint16_t>;
 
 /**
  * Base class for cryptographic authentication handlers.
@@ -222,10 +223,10 @@ public:
 class NetworkAuthenticationClientHandler : public NetworkAuthenticationHandler {
 public:
 	/** The processing result of receiving a request. */
-	enum RequestResult {
-		AWAIT_USER_INPUT, ///< We have requested some user input, but must wait on that.
-		READY_FOR_RESPONSE, ///< We do not have to wait for user input, and can immediately respond to the server.
-		INVALID, ///< We have received an invalid request.
+	enum class RequestResult : uint8_t {
+		AwaitUserInput, ///< We have requested some user input, but must wait on that.
+		ReadyForResponse, ///< We do not have to wait for user input, and can immediately respond to the server.
+		Invalid, ///< We have received an invalid request.
 	};
 
 	/**
@@ -245,6 +246,7 @@ public:
 	/**
 	 * Read the request to enable encryption from the server.
 	 * @param p The request from the server.
+	 * @return \c true when enough bytes could be read for the nonce, otherwise \c false.
 	 */
 	virtual bool ReceiveEnableEncryption(struct Packet &p) = 0;
 
@@ -257,10 +259,10 @@ public:
 class NetworkAuthenticationServerHandler : public NetworkAuthenticationHandler {
 public:
 	/** The processing result of receiving a response. */
-	enum ResponseResult {
-		AUTHENTICATED, ///< The client was authenticated successfully.
-		NOT_AUTHENTICATED, ///< All authentications for this handler have been exhausted.
-		RETRY_NEXT_METHOD, ///< The client failed to authenticate, but there is another method to try.
+	enum class ResponseResult : uint8_t {
+		Authenticated, ///< The client was authenticated successfully.
+		NotAuthenticated, ///< All authentications for this handler have been exhausted.
+		RetryNextMethod, ///< The client failed to authenticate, but there is another method to try.
 	};
 
 	/**
@@ -295,7 +297,7 @@ public:
 	 */
 	virtual std::string GetPeerPublicKey() const = 0;
 
-	static std::unique_ptr<NetworkAuthenticationServerHandler> Create(const NetworkAuthenticationPasswordProvider *password_provider, const NetworkAuthenticationAuthorizedKeyHandler *authorized_key_handler, NetworkAuthenticationMethodMask client_supported_method_mask = ~static_cast<NetworkAuthenticationMethodMask>(0));
+	static std::unique_ptr<NetworkAuthenticationServerHandler> Create(const NetworkAuthenticationPasswordProvider *password_provider, const NetworkAuthenticationAuthorizedKeyHandler *authorized_key_handler, NetworkAuthenticationMethodMask client_supported_method_mask = {NetworkAuthenticationMethod::X25519_KeyExchangeOnly, NetworkAuthenticationMethod::X25519_PAKE, NetworkAuthenticationMethod::X25519_AuthorizedKey});
 };
 
 #endif /* NETWORK_CRYPTO_H */

@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file random_func.hpp Pseudo random number generator. */
@@ -11,11 +11,6 @@
 #define RANDOM_FUNC_HPP
 
 #include "bitmath_func.hpp"
-
-#if defined(__APPLE__)
-	/* Apple already has Random declared */
-#	define Random OTTD_Random
-#endif /* __APPLE__ */
 
 /**
  * Structure to encapsulate the pseudo random number generators.
@@ -34,7 +29,6 @@ extern Randomizer _interactive_random; ///< Random used everywhere else, where i
 /** Stores the state of all random number generators */
 struct SavedRandomSeeds {
 	Randomizer random;
-	Randomizer interactive_random;
 };
 
 /**
@@ -44,7 +38,6 @@ struct SavedRandomSeeds {
 inline void SaveRandomSeeds(SavedRandomSeeds *storage)
 {
 	storage->random = _random;
-	storage->interactive_random = _interactive_random;
 }
 
 /**
@@ -54,7 +47,6 @@ inline void SaveRandomSeeds(SavedRandomSeeds *storage)
 inline void RestoreRandomSeeds(const SavedRandomSeeds &storage)
 {
 	_random = storage.random;
-	_interactive_random = storage.interactive_random;
 }
 
 struct GameRandomSeedChecker {
@@ -74,15 +66,19 @@ public:
 };
 
 void SetRandomSeed(uint32_t seed);
+void InitialiseRandomSeeds();
+
 #ifdef RANDOM_DEBUG
-#	ifdef __APPLE__
-#		define OTTD_Random() DoRandom(__LINE__, __FILE__)
-#	else
-#		define Random() DoRandom(__LINE__, __FILE__)
-#	endif
+#	define Random() DoRandom(__LINE__, __FILE__)
 	uint32_t DoRandom(int line, const char *file);
 #	define RandomRange(limit) DoRandomRange(limit, __LINE__, __FILE__)
 	uint32_t DoRandomRange(uint32_t limit, int line, const char *file);
+
+	template <typename T> requires std::is_enum_v<T>
+	inline T DoRandomRange(T limit, int line, const char *file)
+	{
+		return static_cast<T>(DoRandomRange(to_underlying(limit), line, file));
+	}
 #else
 	static inline uint32_t Random()
 	{
@@ -99,6 +95,13 @@ void SetRandomSeed(uint32_t seed);
 	static inline uint32_t RandomRange(uint32_t limit)
 	{
 		return _random.Next(limit);
+	}
+
+	/** @copydoc RandomRange */
+	template <typename T> requires std::is_enum_v<T>
+	inline T RandomRange(T limit)
+	{
+		return static_cast<T>(RandomRange(to_underlying(limit)));
 	}
 #endif
 
@@ -141,6 +144,7 @@ inline bool Chance16I(const uint a, const uint b, const uint32_t r)
  * @see Chance16I()
  * @param a The nominator of the fraction
  * @param b The denominator of the fraction
+ * @param location Source code location where this function is called from.
  * @return True with (a/b) probability
  */
 #ifdef RANDOM_DEBUG
@@ -165,6 +169,7 @@ inline bool Chance16(const uint a, const uint b)
  * @param a The numerator of the fraction
  * @param b The denominator of the fraction
  * @param r The variable to save the randomize-number from Random()
+ * @param location Source code location where this function is called from.
  * @return True in (a/b) percent
  */
 #ifdef RANDOM_DEBUG

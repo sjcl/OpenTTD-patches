@@ -70,6 +70,11 @@ macro(compile_flags)
                 -Wno-multichar
             )
         endif()
+        if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+            add_compile_options(
+                "$<$<CONFIG:Debug>:/bigobj>" # Switch to bigobj as x64 Debug builds run into error C1128: number of sections exceeded object file format limit
+            )
+        endif()
     elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
         add_compile_options(
             -W
@@ -123,9 +128,6 @@ macro(compile_flags)
         endif()
 
         if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-            include(CheckCXXCompilerFlag)
-            check_cxx_compiler_flag("-flifetime-dse=1" LIFETIME_DSE_FOUND)
-
             add_compile_options(
                 # GCC 4.2+ automatically assumes that signed overflows do
                 # not occur in signed arithmetics, whereas we are not
@@ -133,14 +135,20 @@ macro(compile_flags)
                 # about its own optimized code in some places.
                 "-fno-strict-overflow"
 
-                # -flifetime-dse=2 (default since GCC 6) doesn't play
-                # well with our custom pool item allocator
-                "$<$<BOOL:${LIFETIME_DSE_FOUND}>:-flifetime-dse=1>"
-
                 # We have a fight between clang wanting std::move() and gcc not wanting it
                 # and of course they both warn when the other compiler is happy
                 "$<$<COMPILE_LANGUAGE:CXX>:-Wno-redundant-move>"
             )
+
+            if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 14)
+                add_compile_options(
+                    # Disable these warnings on GCC < 14 due to false-positives
+                    "-Wno-stringop-overflow"
+                    "-Wno-stringop-overread"
+                )
+                # Pass to linker as well in case LTO is being used
+                set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wno-stringop-overflow -Wno-stringop-overread")
+            endif()
 
             if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 11)
                 add_compile_options(
@@ -166,6 +174,11 @@ macro(compile_flags)
                     )
                 endif()
             endif()
+        endif()
+
+        if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
+            # Suppress useless warnings about template static members instantiated in translation unit only.
+            add_compile_options(-Wno-undefined-var-template)
         endif()
 
         if(OPTION_COMPRESS_DEBUG)
@@ -197,18 +210,6 @@ macro(compile_flags)
         if (EMSCRIPTEN)
             add_compile_options(-Wno-deprecated-builtins)
         endif()
-    elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Intel")
-        add_compile_options(
-            -Wall
-            # warning #873: function ... ::operator new ... has no corresponding operator delete ...
-            -wd873
-            # warning #1292: unknown attribute "fallthrough"
-            -wd1292
-            # warning #1899: multicharacter character literal (potential portability problem)
-            -wd1899
-            # warning #2160: anonymous union qualifier is ignored
-            -wd2160
-        )
     else()
         message(FATAL_ERROR "No warning flags are set for this compiler yet; please consider creating a Pull Request to add support for this compiler.")
     endif()

@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file string_type.h Types for strings. */
@@ -23,12 +23,12 @@
 /**
  * Valid filter types for IsValidChar.
  */
-enum CharSetFilter {
+enum CharSetFilter : uint8_t {
 	CS_ALPHANUMERAL,      ///< Both numeric and alphabetic and spaces and stuff
 	CS_NUMERAL,           ///< Only numeric ones
 	CS_NUMERAL_SIGNED,    ///< Only numeric ones, and minus/negative
-	CS_NUMERAL_DECIMAL,   ///< Only numeric, decimal separaters
-	CS_NUMERAL_DECIMAL_SIGNED, ///< Only numeric, decimal separaters, and minus/negative
+	CS_NUMERAL_DECIMAL,   ///< Only numeric, decimal separators
+	CS_NUMERAL_DECIMAL_SIGNED, ///< Only numeric, decimal separators, and minus/negative
 	CS_NUMERAL_SPACE,     ///< Only numbers and spaces
 	CS_ALPHA,             ///< Only alphabetic values
 	CS_HEXADECIMAL,       ///< Only hexadecimal characters
@@ -45,22 +45,36 @@ static const char32_t CHAR_TD_RLO = 0x202E; ///< Force the following characters 
 static const char32_t CHAR_TD_PDF = 0x202C; ///< Restore the text-direction state to before the last LRE, RLE, LRO or RLO.
 
 /** Settings for the string validation. */
-enum StringValidationSettings {
-	SVS_NONE                       = 0,      ///< Allow nothing and replace nothing.
-	SVS_REPLACE_WITH_QUESTION_MARK = 1 << 0, ///< Replace the unknown/bad bits with question marks.
-	SVS_ALLOW_NEWLINE              = 1 << 1, ///< Allow newlines; replaces '\r\n' with '\n' during processing.
-	SVS_ALLOW_CONTROL_CODE         = 1 << 2, ///< Allow the special control codes.
+enum class StringValidationSetting : uint8_t {
+	ReplaceWithQuestionMark, ///< Replace the unknown/bad bits with question marks.
+	AllowNewline, ///< Allow newlines; replaces '\r\n' with '\n' during processing.
+	AllowControlCode, ///< Allow the special control codes.
 	/**
 	 * Replace tabs ('\t'), carriage returns ('\r') and newlines ('\n') with spaces.
-	 * When #SVS_ALLOW_NEWLINE is set, a '\n' or '\r\n' combination are not replaced with a space. A lone '\r' is replaced with a space.
-	 * When #SVS_REPLACE_WITH_QUESTION_MARK is set, this replacement runs first.
+	 * When #StringValidationSetting::AllowNewline is set, a '\n' or '\r\n' combination are not replaced with a space. A lone '\r' is replaced with a space.
+	 * When #StringValidationSetting::ReplaceWithQuestionMark is set, this replacement runs first.
 	 */
-	SVS_REPLACE_TAB_CR_NL_WITH_SPACE = 1 << 3,
+	ReplaceTabCrNlWithSpace,
 };
-DECLARE_ENUM_AS_BIT_SET(StringValidationSettings)
+
+/** Bitset of \c StringValidationSetting elements. */
+using StringValidationSettings = EnumBitSet<StringValidationSetting, uint8_t>;
 
 
 /** Type for a list of strings. */
 typedef std::vector<std::string> StringList;
+
+#if defined(WITH_ICU_I18N) || (defined(_WIN32) && !defined(STRGEN) && !defined(SETTINGSGEN))
+#define WITH_LOCALE_STRING
+
+struct LocaleStringList {
+	std::vector<struct LocaleString> items;
+
+	LocaleStringList();
+	LocaleStringList(LocaleStringList &&);
+	~LocaleStringList();
+	LocaleStringList& operator = (LocaleStringList&&);
+};
+#endif /* defined(WITH_ICU_I18N) || (defined(_WIN32) && !defined(STRGEN) && !defined(SETTINGSGEN)) */
 
 #endif /* STRING_TYPE_H */

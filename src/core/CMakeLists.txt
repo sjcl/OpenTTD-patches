@@ -1,23 +1,29 @@
 add_files(
+    alignment.hpp
     alloc_func.cpp
     alloc_func.hpp
     alloc_type.hpp
     backup_type.hpp
+    base_bitset_type.hpp
     bit_cast.hpp
     bitmath_func.hpp
     checksum_func.hpp
     container_func.hpp
     dyn_arena_alloc.hpp
     endian_func.hpp
-    endian_type.hpp
     enum_type.hpp
     hash_func.hpp
+    flatset_type.hpp
     format.cpp
     format.hpp
+    format_variant.hpp
     geometry_func.cpp
     geometry_func.hpp
     geometry_type.hpp
+    integer_type.hpp
     kdtree.hpp
+    label.cpp
+    label_type.hpp
     math_func.cpp
     math_func.hpp
     mem_func.hpp
@@ -26,15 +32,23 @@ add_files(
     pod_pool.hpp
     pool_func.cpp
     pool_func.hpp
+    pool_id_type.hpp
     pool_type.hpp
     random_func.cpp
     random_func.hpp
-    ring_buffer.hpp
     ring_buffer_queue.hpp
     serialisation.cpp
     serialisation.hpp
-    smallstack_type.hpp
+    string_builder.cpp
+    string_builder.hpp
+    string_consumer.cpp
+    string_consumer.hpp
     strong_typedef_type.hpp
     tinystring_type.hpp
+    type_util.hpp
+    typed_container.hpp
+    utf8.cpp
+    utf8.hpp
+    utf8_util.hpp
     y_combinator.hpp
 )

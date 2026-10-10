@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file script_cargolist.cpp Implementation of ScriptCargoList and friends. */
@@ -30,7 +30,7 @@ ScriptCargoList_IndustryAccepting::ScriptCargoList_IndustryAccepting(IndustryID 
 
 	const Industry *ind = ::Industry::Get(industry_id);
 	for (const auto &a : ind->Accepted()) {
-		if (::IsValidCargoID(a.cargo)) {
+		if (::IsValidCargoType(a.cargo)) {
 			this->AddItem(a.cargo);
 		}
 	}
@@ -42,7 +42,7 @@ ScriptCargoList_IndustryProducing::ScriptCargoList_IndustryProducing(IndustryID 
 
 	const Industry *ind = ::Industry::Get(industry_id);
 	for (const auto &p : ind->Produced()) {
-		if (::IsValidCargoID(p.cargo)) {
+		if (::IsValidCargoType(p.cargo)) {
 			this->AddItem(p.cargo);
 		}
 	}
@@ -53,7 +53,7 @@ ScriptCargoList_StationAccepting::ScriptCargoList_StationAccepting(StationID sta
 	if (!ScriptStation::IsValidStation(station_id)) return;
 
 	const Station *st = ::Station::Get(station_id);
-	for (CargoID i = 0; i < NUM_CARGO; i++) {
-		if (HasBit(st->goods[i].status, GoodsEntry::GES_ACCEPTANCE)) this->AddItem(i);
+	for (CargoType cargo : EnumRange(NUM_CARGO)) {
+		if (st->goods[cargo].status.Test(GoodsEntry::State::Acceptance)) this->AddItem(cargo);
 	}
 }

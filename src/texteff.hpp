@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file texteff.hpp Functions related to text effects. */
@@ -10,18 +10,18 @@
 #ifndef TEXTEFF_HPP
 #define TEXTEFF_HPP
 
-#include "economy_type.h"
+#include "money_type.h"
 #include "gfx_type.h"
-#include "strings_type.h"
+#include "strings_id_type.h"
 
 struct ViewportDrawerDynamic;
 
 /**
  * Text effect modes.
  */
-enum TextEffectMode : uint8_t {
-	TE_RISING, ///< Make the text effect slowly go upwards
-	TE_STATIC, ///< Keep the text effect static
+enum class TextEffectMode : uint8_t {
+	Rising, ///< Make the text effect slowly go upwards
+	Static, ///< Keep the text effect static
 };
 
 using TextEffectID = uint16_t;

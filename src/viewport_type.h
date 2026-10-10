@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file viewport_type.h Types related to viewports. */
@@ -10,14 +10,26 @@
 #ifndef VIEWPORT_TYPE_H
 #define VIEWPORT_TYPE_H
 
+#include "core/enum_type.hpp"
+#include "strings_id_type.h"
 #include "zoom_type.h"
-#include "strings_type.h"
-#include "table/strings.h"
 
 #include <limits>
 #include <vector>
 
 class LinkGraphOverlay;
+
+/** Flags to control how Viewport Strings are rendered. */
+enum class ViewportStringFlag : uint8_t {
+	Small, ///< Draw using the small font.
+	Shadow, ///< Draw an extra text shadow. Should only be used with ViewportStringFlag::Small, as normal font already has a shadow.
+	ColourRect, ///< Draw a colour rect around the sign.
+	TransparentRect, ///< Draw a transparent rect around the sign.
+	TextColour, ///< Draw text in colour.
+};
+
+/** Bitset of \c ViewportStringFlag elements. */
+using ViewportStringFlags = EnumBitSet<ViewportStringFlag, uint8_t>;
 
 enum ViewportMapType {
 	VPMT_BEGIN = 0,
@@ -96,48 +108,36 @@ struct Viewport {
 private:
 	uint GetDirtyBlockShift() const
 	{
-		if (this->zoom >= ZOOM_LVL_DRAW_MAP) return 3;
-		if (this->zoom >= ZOOM_LVL_OUT_2X) return 4;
-		return 7 - this->zoom;
+		if (this->zoom >= ZoomLevel::DrawMap) return 3;
+		if (this->zoom >= ZoomLevel::Out2x) return 4;
+		return 7 - to_underlying(this->zoom);
 	}
 };
 
 /** Location information about a sign as seen on the viewport */
 struct ViewportSign {
-	int32_t center;        ///< The center position of the sign
-	int32_t top;           ///< The top of the sign
-	uint16_t width_normal; ///< The width when not zoomed out (normal font)
-	uint16_t width_small;  ///< The width when zoomed out (small font)
+	int32_t center = 0; ///< The center position of the sign
+	int32_t top = 0; ///< The top of the sign
+	uint16_t width_normal = 0; ///< The width when not zoomed out (normal font)
+	uint16_t width_small = 0; ///< The width when zoomed out (small font)
 
-	void UpdatePosition(ZoomLevel maxzoom, int center, int top, StringID str, StringID str_small = STR_NULL);
+	void UpdatePosition(ZoomLevel maxzoom, int center, int top, std::span<struct StringParameter> params, StringID str, StringID str_small = STR_NULL);
 	void MarkDirty(ZoomLevel maxzoom) const;
 };
 
 /** Specialised ViewportSign that tracks whether it is valid for entering into a Kdtree */
 struct TrackedViewportSign : ViewportSign {
-	bool kdtree_valid; ///< Are the sign data valid for use with the _viewport_sign_kdtree?
+	TrackedViewportSign() { this->top = INT32_MIN; }
 
-	/**
-	 * Update the position of the viewport sign.
-	 * Note that this function hides the base class function.
-	 */
-	void UpdatePosition(ZoomLevel maxzoom, int center, int top, StringID str, StringID str_small = STR_NULL)
-	{
-		this->kdtree_valid = true;
-		this->ViewportSign::UpdatePosition(maxzoom, center, top, str, str_small);
-	}
-
-
-	TrackedViewportSign() : kdtree_valid{ false }
-	{
-	}
+	/** Is the sign data valid for use with the _viewport_sign_kdtree? */
+	inline bool kdtree_valid() const { return this->top != INT32_MIN; };
 };
 
 /**
  * Directions of zooming.
  * @see DoZoomInOutWindow
  */
-enum ZoomStateChange {
+enum ZoomStateChange : uint8_t {
 	ZOOM_IN   = 0, ///< Zoom in (get more detailed view).
 	ZOOM_OUT  = 1, ///< Zoom out (get helicopter view).
 	ZOOM_NONE = 2, ///< Hack, used to update the button status.
@@ -149,11 +149,11 @@ enum ZoomStateChange {
  * z=6     reserved, currently unused.
  * z=7     Z separator between bridge/tunnel and the things under/above it.
  */
-static const uint BB_HEIGHT_UNDER_BRIDGE = 6; ///< Everything that can be built under low bridges, must not exceed this Z height.
-static const uint BB_Z_SEPARATOR         = 7; ///< Separates the bridge/tunnel from the things under/above it.
+static constexpr int BB_HEIGHT_UNDER_BRIDGE = 6; ///< Everything that can be built under low bridges, must not exceed this Z height.
+static constexpr int BB_Z_SEPARATOR         = 7; ///< Separates the bridge/tunnel from the things under/above it.
 
 /** Viewport place method (type of highlighted area and placed objects) */
-enum ViewportPlaceMethod {
+enum ViewportPlaceMethod : uint8_t {
 	VPM_X_OR_Y          =    0, ///< drag in X or Y direction
 	VPM_FIX_X           =    1, ///< drag only in X axis
 	VPM_FIX_Y           =    2, ///< drag only in Y axis
@@ -173,13 +173,14 @@ DECLARE_ENUM_AS_BIT_SET(ViewportPlaceMethod)
  * Drag and drop selection process, or, what to do with an area of land when
  * you've selected it.
  */
-enum ViewportDragDropSelectionProcess {
+enum ViewportDragDropSelectionProcess : uint8_t {
 	DDSP_DEMOLISH_AREA,        ///< Clear area
 	DDSP_RAISE_AND_LEVEL_AREA, ///< Raise / level area
 	DDSP_LOWER_AND_LEVEL_AREA, ///< Lower / level area
 	DDSP_LEVEL_AREA,           ///< Level area
 	DDSP_CREATE_DESERT,        ///< Fill area with desert
 	DDSP_CREATE_ROCKS,         ///< Fill area with rocks
+	DDSP_CREATE_ROUGH,         ///< Fill area with rough land
 	DDSP_CREATE_WATER,         ///< Create a canal
 	DDSP_CREATE_RIVER,         ///< Create rivers
 	DDSP_PLANT_TREES,          ///< Plant trees
@@ -187,7 +188,8 @@ enum ViewportDragDropSelectionProcess {
 	DDSP_MEASURE,              ///< Measurement tool
 	DDSP_DRAW_PLANLINE,        ///< Draw a line for a plan
 	DDSP_BUY_LAND,             ///< Purchase land
-	DDSP_BUILD_OBJECT,         ///< Build object
+	DDSP_BUILD_OBJECT,         ///< Build an object
+	DDSP_PLACE_HOUSE,          ///< Place a house
 
 	/* Rail specific actions */
 	DDSP_PLACE_RAIL,           ///< Rail placement
@@ -214,18 +216,18 @@ enum ViewportDragDropSelectionProcess {
 /**
  * Target of the viewport scrolling GS method
  */
-enum ViewportScrollTarget : uint8_t {
-	VST_EVERYONE, ///< All players
-	VST_COMPANY,  ///< All players in specific company
-	VST_CLIENT,   ///< Single player
+enum class ViewportScrollTarget : uint8_t {
+	Everyone, ///< All players
+	Company, ///< All players in specific company
+	Client, ///< Single player
 };
 
 /** Enumeration of multi-part foundations */
-enum FoundationPart {
-	FOUNDATION_PART_NONE     = 0xFF,  ///< Neither foundation nor groundsprite drawn yet.
-	FOUNDATION_PART_NORMAL   = 0,     ///< First part (normal foundation or no foundation)
-	FOUNDATION_PART_HALFTILE = 1,     ///< Second part (halftile foundation)
-	FOUNDATION_PART_END
+enum class FoundationPart : uint8_t {
+	None = 0xFF,  ///< Neither foundation nor groundsprite drawn yet.
+	Normal = 0,   ///< First part (normal foundation or no foundation)
+	Halftile = 1, ///< Second part (halftile foundation)
+	End,          ///< End marker.
 };
 
 enum ViewportMarkDirtyFlags : uint8_t {

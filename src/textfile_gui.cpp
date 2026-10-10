@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file textfile_gui.cpp Implementation of textfile window. */
@@ -14,6 +14,7 @@
 #include "gfx_type.h"
 #include "gfx_func.h"
 #include "string_func.h"
+#include "core/string_builder.hpp"
 #include "textfile_gui.h"
 #include "dropdown_type.h"
 #include "dropdown_func.h"
@@ -40,53 +41,54 @@
 #include "safeguards.h"
 
 /** Widgets for the textfile window. */
-static constexpr NWidgetPart _nested_textfile_widgets[] = {
+static constexpr std::initializer_list<NWidgetPart> _nested_textfile_widgets = {
 	NWidget(NWID_HORIZONTAL),
-		NWidget(WWT_CLOSEBOX, COLOUR_MAUVE),
-		NWidget(WWT_PUSHARROWBTN, COLOUR_MAUVE, WID_TF_NAVBACK), SetFill(0, 1), SetMinimalSize(15, 1), SetDataTip(AWV_DECREASE, STR_TEXTFILE_NAVBACK_TOOLTIP),
-		NWidget(WWT_PUSHARROWBTN, COLOUR_MAUVE, WID_TF_NAVFORWARD), SetFill(0, 1), SetMinimalSize(15, 1), SetDataTip(AWV_INCREASE, STR_TEXTFILE_NAVFORWARD_TOOLTIP),
-		NWidget(WWT_CAPTION, COLOUR_MAUVE, WID_TF_CAPTION), SetDataTip(STR_NULL, STR_TOOLTIP_WINDOW_TITLE_DRAG_THIS),
-		NWidget(WWT_TEXTBTN, COLOUR_MAUVE, WID_TF_WRAPTEXT), SetDataTip(STR_TEXTFILE_WRAP_TEXT, STR_TEXTFILE_WRAP_TEXT_TOOLTIP),
-		NWidget(WWT_DEFSIZEBOX, COLOUR_MAUVE),
+		NWidget(WWT_CLOSEBOX, Colours::Mauve),
+		NWidget(WWT_PUSHARROWBTN, Colours::Mauve, WID_TF_NAVBACK), SetFill(0, 1), SetMinimalSize(15, 1), SetArrowWidgetTypeTip(ArrowWidgetType::Decrease, STR_TEXTFILE_NAVBACK_TOOLTIP),
+		NWidget(WWT_PUSHARROWBTN, Colours::Mauve, WID_TF_NAVFORWARD), SetFill(0, 1), SetMinimalSize(15, 1), SetArrowWidgetTypeTip(ArrowWidgetType::Increase, STR_TEXTFILE_NAVFORWARD_TOOLTIP),
+		NWidget(WWT_CAPTION, Colours::Mauve, WID_TF_CAPTION), SetToolTip(STR_TOOLTIP_WINDOW_TITLE_DRAG_THIS),
+		NWidget(WWT_TEXTBTN, Colours::Mauve, WID_TF_WRAPTEXT), SetStringTip(STR_TEXTFILE_WRAP_TEXT, STR_TEXTFILE_WRAP_TEXT_TOOLTIP),
+		NWidget(WWT_DEFSIZEBOX, Colours::Mauve),
 	EndContainer(),
-	NWidget(NWID_SELECTION, INVALID_COLOUR, WID_TF_SEL_JUMPLIST),
-		NWidget(WWT_PANEL, COLOUR_MAUVE),
+	NWidget(NWID_SELECTION, Colours::Invalid, WID_TF_SEL_JUMPLIST),
+		NWidget(WWT_PANEL, Colours::Mauve),
 			NWidget(NWID_HORIZONTAL), SetPIP(WidgetDimensions::unscaled.frametext.left, 0, WidgetDimensions::unscaled.frametext.right),
-				/* As this widget can be toggled, it needs to be a multiplier of FS_MONO. So add a spacer that ensures this. */
-				NWidget(NWID_SPACER), SetMinimalSize(1, 0), SetMinimalTextLines(2, 0, FS_MONO),
+				/* As this widget can be toggled, it needs to be a multiplier of FontSize::Monospace. So add a spacer that ensures this. */
+				NWidget(NWID_SPACER), SetMinimalSize(1, 0), SetMinimalTextLines(2, 0, FontSize::Monospace),
 				NWidget(NWID_VERTICAL),
 					NWidget(NWID_SPACER), SetFill(1, 1), SetResize(1, 0),
-					NWidget(WWT_DROPDOWN, COLOUR_MAUVE, WID_TF_JUMPLIST), SetDataTip(STR_TEXTFILE_JUMPLIST, STR_TEXTFILE_JUMPLIST_TOOLTIP), SetFill(1, 0), SetResize(1, 0),
+					NWidget(WWT_DROPDOWN, Colours::Mauve, WID_TF_JUMPLIST), SetStringTip(STR_TEXTFILE_JUMPLIST, STR_TEXTFILE_JUMPLIST_TOOLTIP), SetFill(1, 0), SetResize(1, 0),
 					NWidget(NWID_SPACER), SetFill(1, 1), SetResize(1, 0),
 				EndContainer(),
 			EndContainer(),
 		EndContainer(),
 	EndContainer(),
 	NWidget(NWID_HORIZONTAL),
-		NWidget(WWT_PANEL, COLOUR_MAUVE, WID_TF_BACKGROUND), SetMinimalSize(200, 125), SetResize(1, 12), SetScrollbar(WID_TF_VSCROLLBAR),
+		NWidget(WWT_PANEL, Colours::Mauve, WID_TF_BACKGROUND), SetMinimalSize(200, 125), SetResize(1, 12), SetScrollbar(WID_TF_VSCROLLBAR),
 		EndContainer(),
 		NWidget(NWID_VERTICAL),
-			NWidget(NWID_VSCROLLBAR, COLOUR_MAUVE, WID_TF_VSCROLLBAR),
+			NWidget(NWID_VSCROLLBAR, Colours::Mauve, WID_TF_VSCROLLBAR),
 		EndContainer(),
 	EndContainer(),
 	NWidget(NWID_HORIZONTAL),
-		NWidget(NWID_HSCROLLBAR, COLOUR_MAUVE, WID_TF_HSCROLLBAR),
-		NWidget(WWT_RESIZEBOX, COLOUR_MAUVE),
+		NWidget(NWID_HSCROLLBAR, Colours::Mauve, WID_TF_HSCROLLBAR),
+		NWidget(WWT_RESIZEBOX, Colours::Mauve),
 	EndContainer(),
 };
 
 /** Window definition for the textfile window */
 static WindowDesc _textfile_desc(__FILE__, __LINE__,
-	WDP_CENTER, "textfile", 630, 460,
-	WC_TEXTFILE, WC_NONE,
-	0,
+	WindowPosition::Center, "textfile", 630, 460,
+	WindowClass::Textfile, WindowClass::None,
+	{},
 	_nested_textfile_widgets
 );
 
-TextfileWindow::TextfileWindow(TextfileType file_type) : Window(_textfile_desc), file_type(file_type)
+TextfileWindow::TextfileWindow(Window *parent, TextfileType file_type) : Window(_textfile_desc), BaseStringMissingGlyphSearcher(FontSize::Monospace), file_type(file_type)
 {
 	/* Init of nested tree is deferred.
 	 * TextfileWindow::ConstructWindow must be called by the inheriting window. */
+	this->parent = parent;
 }
 
 void TextfileWindow::ConstructWindow()
@@ -94,7 +96,7 @@ void TextfileWindow::ConstructWindow()
 	this->CreateNestedTree();
 	this->vscroll = this->GetScrollbar(WID_TF_VSCROLLBAR);
 	this->hscroll = this->GetScrollbar(WID_TF_HSCROLLBAR);
-	this->GetWidget<NWidgetCore>(WID_TF_CAPTION)->SetDataTip(STR_TEXTFILE_README_CAPTION + this->file_type, STR_TOOLTIP_WINDOW_TITLE_DRAG_THIS);
+	this->GetWidget<NWidgetCore>(WID_TF_CAPTION)->SetStringTip(STR_TEXTFILE_README_CAPTION + to_underlying(this->file_type), STR_TOOLTIP_WINDOW_TITLE_DRAG_THIS);
 	this->GetWidget<NWidgetStacked>(WID_TF_SEL_JUMPLIST)->SetDisplayedPlane(SZSP_HORIZONTAL);
 	this->FinishInitNested(this->file_type);
 
@@ -104,41 +106,26 @@ void TextfileWindow::ConstructWindow()
 }
 
 /**
- * Get the total height of the content displayed in this window, if wrapping is disabled.
- * @return the height in pixels
+ * Reset the reflow process to start on the next UI tick.
  */
-uint TextfileWindow::ReflowContent()
+void TextfileWindow::ReflowContent()
 {
-	uint height = 0;
-	if (!IsWidgetLowered(WID_TF_WRAPTEXT)) {
-		for (auto &line : this->lines) {
-			line.top = height;
-			height++;
-			line.bottom = height;
-		}
-	} else {
-		int max_width = this->GetWidget<NWidgetCore>(WID_TF_BACKGROUND)->current_x - WidgetDimensions::scaled.frametext.Horizontal();
-		for (auto &line : this->lines) {
-			line.top = height;
-			height += GetStringHeight(line.text, max_width, FS_MONO) / GetCharacterHeight(FS_MONO);
-			line.bottom = height;
-		}
-	}
+	/* Minimum number of lines that will be flowed. */
+	if (this->num_lines == 0) this->num_lines = std::size(this->lines);
 
-	return height;
-}
+	auto it = this->GetIteratorFromPosition(this->vscroll->GetPosition());
 
-uint TextfileWindow::GetContentHeight()
-{
-	if (this->lines.empty()) return 0;
-	return this->lines.back().bottom;
+	auto adapter = AlternatingView{this->lines, it};
+	this->reflow_iter = adapter.begin();
+	this->reflow_end = adapter.end();
 }
 
 /* virtual */ void TextfileWindow::UpdateWidgetSize(WidgetID widget, Dimension &size, [[maybe_unused]] const Dimension &padding, [[maybe_unused]] Dimension &fill, [[maybe_unused]] Dimension &resize)
 {
 	switch (widget) {
 		case WID_TF_BACKGROUND:
-			resize.height = GetCharacterHeight(FS_MONO);
+			resize.width = GetCharacterHeight(FontSize::Monospace); // Width is not available here as the font may not be loaded yet.
+			fill.height = resize.height = GetCharacterHeight(FontSize::Monospace);
 
 			size.height = 4 * resize.height + WidgetDimensions::scaled.frametext.Vertical(); // At least 4 lines are visible.
 			size.width = std::max(200u, size.width); // At least 200 pixels wide.
@@ -147,20 +134,14 @@ uint TextfileWindow::GetContentHeight()
 }
 
 /** Set scrollbars to the right lengths. */
-void TextfileWindow::SetupScrollbars(bool force_reflow)
+void TextfileWindow::SetupScrollbars()
 {
-	if (IsWidgetLowered(WID_TF_WRAPTEXT)) {
-		/* Reflow is mandatory if text wrapping is on */
-		uint height = this->ReflowContent();
-		this->vscroll->SetCount(ClampTo<uint16_t>(height));
-		this->hscroll->SetCount(0);
-	} else {
-		uint height = force_reflow ? this->ReflowContent() : this->GetContentHeight();
-		this->vscroll->SetCount(ClampTo<uint16_t>(height));
-		this->hscroll->SetCount(this->max_length);
-	}
+	this->vscroll->SetCount(this->num_lines);
+	this->hscroll->SetCount(this->IsTextWrapped() ? 0 : CeilDiv(this->max_width, this->resize.step_width));
 
-	this->SetWidgetDisabledState(WID_TF_HSCROLLBAR, IsWidgetLowered(WID_TF_WRAPTEXT));
+	this->SetWidgetDirty(WID_TF_VSCROLLBAR);
+	this->SetWidgetDirty(WID_TF_HSCROLLBAR);
+	this->SetWidgetDisabledState(WID_TF_HSCROLLBAR, this->IsTextWrapped());
 }
 
 
@@ -168,7 +149,7 @@ void TextfileWindow::SetupScrollbars(bool force_reflow)
 static const std::regex _markdown_link_regex{"\\[(.+?)\\]\\((.+?)\\)", std::regex_constants::ECMAScript | std::regex_constants::optimize};
 
 /** Types of link we support in markdown files. */
-enum class HyperlinkType {
+enum class HyperlinkType : uint8_t {
 	Internal, ///< Internal link, or "anchor" in HTML language.
 	Web,      ///< Link to an external website.
 	File,     ///< Link to a local file.
@@ -245,17 +226,14 @@ static std::string MakeAnchorSlug(const std::string &line)
 void TextfileWindow::FindHyperlinksInMarkdown(Line &line, size_t line_index)
 {
 	std::string::const_iterator last_match_end = line.text.cbegin();
-	std::string fixed_line;
-	char ccbuf[5];
+	format_buffer fixed_line;
+	StringBuilder builder(fixed_line);
 
 	std::sregex_iterator matcher{ line.text.cbegin(), line.text.cend(), _markdown_link_regex};
 	while (matcher != std::sregex_iterator()) {
 		std::smatch match = *matcher;
 
-		Hyperlink link;
-		link.line = line_index;
-		link.destination = match[2].str();
-		this->links.push_back(link);
+		Hyperlink &link = this->links.emplace_back(line_index, 0, 0, match[2].str());
 
 		HyperlinkType link_type = ClassifyHyperlink(link.destination, this->trusted);
 		StringControlCode link_colour;
@@ -277,13 +255,13 @@ void TextfileWindow::FindHyperlinksInMarkdown(Line &line, size_t line_index)
 
 		if (link_colour != SCC_CONTROL_END) {
 			/* Format the link to look like a link. */
-			fixed_line += std::string(last_match_end, match[0].first);
-			this->links.back().begin = fixed_line.length();
-			fixed_line += std::string(ccbuf, Utf8Encode(ccbuf, SCC_PUSH_COLOUR));
-			fixed_line += std::string(ccbuf, Utf8Encode(ccbuf, link_colour));
-			fixed_line += match[1].str();
-			this->links.back().end = fixed_line.length();
-			fixed_line += std::string(ccbuf, Utf8Encode(ccbuf, SCC_POP_COLOUR));
+			builder += std::string_view(last_match_end, match[0].first);
+			link.begin = fixed_line.size();
+			builder.PutUtf8(SCC_PUSH_COLOUR);
+			builder.PutUtf8(link_colour);
+			builder += match[1].str();
+			link.end = fixed_line.size();
+			builder.PutUtf8(SCC_POP_COLOUR);
 			last_match_end = match[0].second;
 		}
 
@@ -293,60 +271,60 @@ void TextfileWindow::FindHyperlinksInMarkdown(Line &line, size_t line_index)
 	if (last_match_end == line.text.cbegin()) return; // nothing found
 
 	/* Add remaining text on line. */
-	fixed_line += std::string(last_match_end, line.text.cend());
+	fixed_line.append(std::string_view(last_match_end, line.text.cend()));
 
 	/* Overwrite original line text with "fixed" line text. */
-	line.text = fixed_line;
+	line.text = fixed_line.to_string();
 }
 
 /**
- * Check if the user clicked on a hyperlink, and handle it if so.
- *
- * @param pt The loation the user clicked.
+ * Get the hyperlink at the given position.
+ * @param pt The point to check.
+ * @returns The hyperlink at the given position, or nullptr if there is no hyperlink.
  */
-void TextfileWindow::CheckHyperlinkClick(Point pt)
+const TextfileWindow::Hyperlink *TextfileWindow::GetHyperlink(Point pt) const
 {
-	if (this->links.empty()) return;
+	if (this->links.empty()) return nullptr;
 
 	/* Which line was clicked. */
-	const int clicked_row = this->GetRowFromWidget(pt.y, WID_TF_BACKGROUND, WidgetDimensions::scaled.frametext.top, GetCharacterHeight(FS_MONO)) + this->GetScrollbar(WID_TF_VSCROLLBAR)->GetPosition();
-	size_t line_index;
-	size_t subline;
-	if (IsWidgetLowered(WID_TF_WRAPTEXT)) {
-		auto it = std::ranges::find_if(this->lines, [clicked_row](const Line &l) { return l.top <= clicked_row && l.bottom > clicked_row; });
-		if (it == this->lines.cend()) return;
-		line_index = it - this->lines.cbegin();
-		subline = clicked_row - it->top;
-		Debug(misc, 4, "TextfileWindow check hyperlink: clicked_row={}, line_index={}, line.top={}, subline={}", clicked_row, line_index, it->top, subline);
-	} else {
-		line_index = clicked_row / GetCharacterHeight(FS_MONO);
-		subline = 0;
-	}
+	const int clicked_row = this->GetRowFromWidget(pt.y, WID_TF_BACKGROUND, WidgetDimensions::scaled.frametext.top, GetCharacterHeight(FontSize::Monospace)) + this->GetScrollbar(WID_TF_VSCROLLBAR)->GetPosition();
+
+	int visible_line = 0;
+	auto it = std::ranges::find_if(this->lines, [&visible_line, clicked_row](const Line &l) {
+		visible_line += l.num_lines;
+		return (visible_line - l.num_lines) <= clicked_row && visible_line > clicked_row;
+	});
+	if (it == this->lines.cend()) return nullptr;
+
+	size_t line_index = it - this->lines.cbegin();
+	size_t subline = clicked_row - (visible_line - it->num_lines);
+	Debug(misc, 4, "TextfileWindow check hyperlink: clicked_row={}, line_index={}, line.top={}, subline={}", clicked_row, line_index, visible_line - it->num_lines, subline);
 
 	/* Find hyperlinks in this line. */
-	std::vector<Hyperlink> found_links;
+	std::vector<const Hyperlink *> found_links;
 	for (const auto &link : this->links) {
-		if (link.line == line_index) found_links.push_back(link);
+		if (link.line == line_index) found_links.push_back(&link);
 	}
-	if (found_links.empty()) return;
+	if (found_links.empty()) return nullptr;
 
 	/* Build line layout to figure out character position that was clicked. */
-	uint window_width = IsWidgetLowered(WID_TF_WRAPTEXT) ? this->GetWidget<NWidgetCore>(WID_TF_BACKGROUND)->current_x - WidgetDimensions::scaled.frametext.Horizontal() : INT_MAX;
-	Layouter layout(this->lines[line_index].text, window_width, FS_MONO);
+	const Line &line = this->lines[line_index];
+	Layouter layout(line.text, line.wrapped_width == 0 ? INT32_MAX : line.wrapped_width, FontSize::Monospace);
 	assert(subline < layout.size());
 	ptrdiff_t char_index = layout.GetCharAtPosition(pt.x - WidgetDimensions::scaled.frametext.left, subline);
-	if (char_index < 0) return;
-	Debug(misc, 4, "TextfileWindow check hyperlink click: line={}, subline={}, char_index={}", line_index, subline, (int)char_index);
+	if (char_index < 0) return nullptr;
+	Debug(misc, 4, "TextfileWindow check hyperlink click: line={}, subline={}, char_index={}", line_index, subline, char_index);
 
 	/* Found character index in line, check if any links are at that position. */
-	for (const auto &link : found_links) {
-		Debug(misc, 4, "Checking link from char {} to {}", link.begin, link.end);
-		if (static_cast<size_t>(char_index) >= link.begin && static_cast<size_t>(char_index) < link.end) {
-			Debug(misc, 4, "Activating link with destination: {}", link.destination);
-			this->OnHyperlinkClick(link);
-			return;
+	for (const Hyperlink *link : found_links) {
+		Debug(misc, 4, "Checking link from char {} to {}", link->begin, link->end);
+		if (static_cast<size_t>(char_index) >= link->begin && static_cast<size_t>(char_index) < link->end) {
+			Debug(misc, 4, "Returning link with destination: {}", link->destination);
+			return link;
 		}
 	}
+
+	return nullptr;
 }
 
 /**
@@ -358,7 +336,7 @@ void TextfileWindow::AppendHistory(const std::string &filepath)
 {
 	this->history.erase(this->history.begin() + this->history_pos + 1, this->history.end());
 	this->UpdateHistoryScrollpos();
-	this->history.push_back(HistoryEntry{ filepath, 0 });
+	this->history.emplace_back(filepath, 0);
 	this->EnableWidget(WID_TF_NAVBACK);
 	this->DisableWidget(WID_TF_NAVFORWARD);
 	this->history_pos = this->history.size() - 1;
@@ -389,7 +367,7 @@ void TextfileWindow::NavigateHistory(int delta)
 	if (this->history[this->history_pos].filepath != this->filepath) {
 		this->filepath = this->history[this->history_pos].filepath;
 		this->filename = this->filepath.substr(this->filepath.find_last_of(PATHSEP) + 1);
-		this->LoadTextfile(this->filepath, NO_DIRECTORY);
+		this->LoadTextfile(this->filepath, Subdirectory::None);
 	}
 
 	this->SetWidgetDisabledState(WID_TF_NAVFORWARD, this->history_pos + 1 >= this->history.size());
@@ -468,7 +446,7 @@ void TextfileWindow::NavigateToFile(std::string newfile, size_t line)
 
 	/* Paste the two together and check file exists. */
 	newpath = newpath + newfile;
-	if (!FioCheckFileExists(newpath, NO_DIRECTORY)) return;
+	if (!FioCheckFileExists(newpath, Subdirectory::None)) return;
 
 	/* Update history. */
 	this->AppendHistory(newpath);
@@ -477,7 +455,7 @@ void TextfileWindow::NavigateToFile(std::string newfile, size_t line)
 	this->filepath = newpath;
 	this->filename = newpath.substr(newpath.find_last_of(PATHSEP) + 1);
 
-	this->LoadTextfile(this->filepath, NO_DIRECTORY);
+	this->LoadTextfile(this->filepath, Subdirectory::None);
 
 	this->GetScrollbar(WID_TF_HSCROLLBAR)->SetPosition(0);
 	this->GetScrollbar(WID_TF_VSCROLLBAR)->SetPosition(0);
@@ -518,8 +496,8 @@ void TextfileWindow::AfterLoadMarkdown()
 		/* All lines beginning with # are headings. */
 		if (!line.text.empty() && line.text[0] == '#') {
 			this->jumplist.push_back(line_index);
-			this->lines[line_index].colour = TC_GOLD;
-			this->link_anchors.emplace_back(Hyperlink{ line_index, 0, 0, MakeAnchorSlug(line.text) });
+			this->lines[line_index].colour = TextColour::Gold;
+			this->link_anchors.emplace_back(line_index, 0, 0, MakeAnchorSlug(line.text));
 		}
 	}
 }
@@ -535,8 +513,7 @@ void TextfileWindow::AfterLoadMarkdown()
 		case WID_TF_JUMPLIST: {
 			DropDownList list;
 			for (size_t line : this->jumplist) {
-				SetDParamStr(0, this->lines[line].text);
-				list.push_back(MakeDropDownListStringItem(STR_TEXTFILE_JUMPLIST_ITEM, (int)line));
+				list.push_back(MakeDropDownListStringItem(GetString(STR_TEXTFILE_JUMPLIST_ITEM, this->lines[line].text), (int)line));
 			}
 			ShowDropDownList(this, std::move(list), -1, widget);
 			break;
@@ -550,14 +527,36 @@ void TextfileWindow::AfterLoadMarkdown()
 			this->NavigateHistory(+1);
 			break;
 
-		case WID_TF_BACKGROUND:
-			this->CheckHyperlinkClick(pt);
+		case WID_TF_BACKGROUND: {
+			const Hyperlink *link = this->GetHyperlink(pt);
+			if (link != nullptr) this->OnHyperlinkClick(*link);
 			break;
+		}
 	}
+}
+
+/* virtual */ bool TextfileWindow::OnTooltip([[maybe_unused]] Point pt, WidgetID widget, TooltipCloseCondition close_cond)
+{
+	if (widget != WID_TF_BACKGROUND) return false;
+
+	const Hyperlink *link = this->GetHyperlink(pt);
+	if (link == nullptr) return false;
+
+	GuiShowTooltips(this, GetEncodedRawString(link->destination), close_cond);
+
+	return true;
 }
 
 /* virtual */ void TextfileWindow::DrawWidget(const Rect &r, WidgetID widget) const
 {
+	if (widget == WID_TF_CAPTION && std::size(this->lines) > 0 && this->reflow_iter != this->reflow_end) {
+		/* Draw a progress bar in the caption. */
+		Rect fr = r.Shrink(WidgetDimensions::scaled.captiontext).WithHeight(WidgetDimensions::scaled.vsep_normal, true);
+		size_t remaining = std::distance(this->reflow_iter, this->reflow_end);
+		fr = fr.WithWidth(static_cast<int>(remaining * fr.Width() / std::size(this->lines)), _current_text_dir != TD_RTL);
+		GfxFillRect(fr, PC_WHITE, FillRectMode::Checker);
+	}
+
 	if (widget != WID_TF_BACKGROUND) return;
 
 	Rect fr = r.Shrink(WidgetDimensions::scaled.frametext);
@@ -568,22 +567,25 @@ void TextfileWindow::AfterLoadMarkdown()
 
 	/* Draw content (now coordinates given to DrawString* are local to the new clipping region). */
 	fr = fr.Translate(-fr.left, -fr.top);
-	int line_height = GetCharacterHeight(FS_MONO);
+	int line_height = GetCharacterHeight(FontSize::Monospace);
 
-	if (!IsWidgetLowered(WID_TF_WRAPTEXT)) fr = ScrollRect(fr, *this->hscroll, 1);
+	if (!this->IsTextWrapped()) fr = ScrollRect(fr, *this->hscroll, this->resize.step_width);
 
 	int pos = this->vscroll->GetPosition();
 	int cap = this->vscroll->GetCapacity();
-
+	int cur_line = 0;
 	for (auto &line : this->lines) {
-		if (line.bottom < pos) continue;
-		if (line.top > pos + cap) break;
+		int top = cur_line;
+		cur_line += line.num_lines;
+		if (cur_line <= pos) continue;
+		if (top > pos + cap) break;
 
-		int y_offset = (line.top - pos) * line_height;
-		if (IsWidgetLowered(WID_TF_WRAPTEXT)) {
-			DrawStringMultiLine(fr.left, fr.right, y_offset, fr.bottom, line.text, line.colour, SA_TOP | SA_LEFT, false, FS_MONO);
+		int y_offset = (top - pos) * line_height;
+		if (line.wrapped_width != 0) {
+			Rect tr = fr.WithWidth(line.wrapped_width, _current_text_dir == TD_RTL);
+			DrawStringMultiLineWithClipping(tr.left, tr.right, y_offset, y_offset + line.num_lines * line_height, line.text, line.colour, {AlignmentH::Start, AlignmentV::Top}, false, FontSize::Monospace);
 		} else {
-			DrawString(fr.left, fr.right, y_offset, line.text, line.colour, SA_TOP | SA_LEFT, false, FS_MONO);
+			DrawString(fr.left, fr.right, y_offset, line.text, line.colour, {AlignmentH::Start, AlignmentV::Top}, false, FontSize::Monospace);
 		}
 	}
 }
@@ -593,34 +595,147 @@ void TextfileWindow::AfterLoadMarkdown()
 	this->vscroll->SetCapacityFromWidget(this, WID_TF_BACKGROUND, WidgetDimensions::scaled.frametext.Vertical());
 	this->hscroll->SetCapacityFromWidget(this, WID_TF_BACKGROUND, WidgetDimensions::scaled.framerect.Horizontal());
 
-	this->SetupScrollbars(false);
+	this->UpdateVisibleIterators();
+	this->ReflowContent();
+	this->SetupScrollbars();
+}
+
+/* virtual */ void TextfileWindow::OnInit()
+{
+	/* If font has changed we need to recalculate the maximum width. */
+	this->num_lines = 0;
+	this->max_width = 0;
+	for (auto &line : this->lines) {
+		line.max_width = -1;
+		line.num_lines = 1;
+		line.wrapped_width = 0;
+	}
+
+	this->ReflowContent();
 }
 
 /* virtual */ void TextfileWindow::OnInvalidateData([[maybe_unused]] int data, [[maybe_unused]] bool gui_scope)
 {
 	if (!gui_scope) return;
 
-	this->SetupScrollbars(true);
+	this->ReflowContent();
+	this->SetupScrollbars();
 }
 
-void TextfileWindow::OnDropdownSelect(WidgetID widget, int index)
+void TextfileWindow::OnDropdownSelect(WidgetID widget, int index, int)
 {
 	if (widget != WID_TF_JUMPLIST) return;
 
 	this->ScrollToLine(index);
 }
 
+extern bool CanContinueRealtimeTick();
+
+TextfileWindow::ReflowState TextfileWindow::ContinueReflow()
+{
+	if (this->reflow_iter == this->reflow_end) return ReflowState::None;
+
+	int window_width = this->GetWidget<NWidgetCore>(WID_TF_BACKGROUND)->current_x - WidgetDimensions::scaled.frametext.Horizontal();
+
+	bool wrapped = this->IsTextWrapped();
+	bool dirty = false;
+	int pos = this->vscroll->GetPosition();
+
+	for (/* nothing */; this->reflow_iter != this->reflow_end; ++this->reflow_iter) {
+		auto it = this->reflow_iter.Base();
+		Line &line = *it;
+
+		int old_lines = line.num_lines;
+		if (wrapped) {
+			if (line.wrapped_width != window_width) {
+				line.num_lines = GetStringHeight(line.text, window_width, FontSize::Monospace) / GetCharacterHeight(FontSize::Monospace);
+				line.wrapped_width = window_width;
+			}
+		} else {
+			if (line.max_width == -1) {
+				line.max_width = GetStringBoundingBox(line.text, FontSize::Monospace).width;
+				this->max_width = std::max(this->max_width, line.max_width);
+			}
+			line.num_lines = 1;
+			line.wrapped_width = 0;
+		}
+
+		/* Adjust the total number of lines. */
+		this->num_lines += (line.num_lines - old_lines);
+
+		/* Maintain scroll position. */
+		if (this->visible_first > it) pos += (line.num_lines - old_lines);
+
+		/* Mark dirty if visible range is touched. */
+		if (it >= this->visible_first && it <= this->visible_last) dirty = true;
+
+		if (!CanContinueRealtimeTick()) break;
+	}
+
+	if (this->vscroll->SetPosition(pos)) dirty = true;
+
+	return dirty ? ReflowState::VisibleReflowed : ReflowState::Reflowed;
+}
+
+void TextfileWindow::OnRealtimeTick(uint)
+{
+	auto r = this->ContinueReflow();
+	if (r == ReflowState::None) return;
+
+	this->SetupScrollbars();
+
+	if (r == ReflowState::VisibleReflowed) {
+		this->SetWidgetDirty(WID_TF_BACKGROUND);
+		this->UpdateVisibleIterators();
+	}
+
+	/* Caption is always dirty. */
+	this->SetWidgetDirty(WID_TF_CAPTION);
+}
+
+void TextfileWindow::UpdateVisibleIterators()
+{
+	int pos = this->vscroll->GetPosition();
+	int cap = this->vscroll->GetCapacity();
+	this->visible_first = this->GetIteratorFromPosition(pos);
+
+	/* The last visible iterator ignores line wrapping so that it does not need to change when line heights change. */
+	this->visible_last = std::ranges::next(this->visible_first, cap + 1, std::end(this->lines));
+}
+
+void TextfileWindow::OnScrollbarScroll(WidgetID widget)
+{
+	if (widget != WID_TF_VSCROLLBAR) return;
+
+	this->UpdateVisibleIterators();
+	this->ReflowContent();
+}
+
+std::vector<TextfileWindow::Line>::iterator TextfileWindow::GetIteratorFromPosition(int pos)
+{
+	for (auto it = std::begin(this->lines); it != std::end(this->lines); ++it) {
+		pos -= it->num_lines;
+		if (pos <= 0) return it;
+	}
+	return std::end(this->lines);
+}
+
 void TextfileWindow::ScrollToLine(size_t line)
 {
 	Scrollbar *sb = this->GetScrollbar(WID_TF_VSCROLLBAR);
-	int newpos;
-	if (this->IsWidgetLowered(WID_TF_WRAPTEXT)) {
-		newpos = this->lines[line].top;
-	} else {
-		newpos = static_cast<int>(line);
+	int newpos = 0;
+	for (auto it = std::begin(this->lines); it != std::end(this->lines) && line > 0; --line, ++it) {
+		newpos += it->num_lines;
 	}
 	sb->SetPosition(std::min(newpos, sb->GetCount() - sb->GetCapacity()));
+	this->UpdateVisibleIterators();
+	this->ReflowContent();
 	this->SetDirty();
+}
+
+bool TextfileWindow::IsTextWrapped() const
+{
+	return this->IsWidgetLowered(WID_TF_WRAPTEXT);
 }
 
 /* virtual */ void TextfileWindow::Reset()
@@ -630,7 +745,7 @@ void TextfileWindow::ScrollToLine(size_t line)
 
 /* virtual */ FontSize TextfileWindow::DefaultSize()
 {
-	return FS_MONO;
+	return FontSize::Monospace;
 }
 
 /* virtual */ std::optional<std::string_view> TextfileWindow::NextString()
@@ -638,19 +753,6 @@ void TextfileWindow::ScrollToLine(size_t line)
 	if (this->search_iterator >= this->lines.size()) return std::nullopt;
 
 	return this->lines[this->search_iterator++].text;
-}
-
-/* virtual */ bool TextfileWindow::Monospace()
-{
-	return true;
-}
-
-/* virtual */ void TextfileWindow::SetFontNames([[maybe_unused]] FontCacheSettings *settings, [[maybe_unused]] const char *font_name, [[maybe_unused]] const void *os_data)
-{
-#if defined(WITH_FREETYPE) || defined(_WIN32) || defined(WITH_COCOA)
-	settings->mono.font = font_name;
-	settings->mono.os_handle = os_data;
-#endif
 }
 
 #if defined(WITH_ZLIB)
@@ -668,8 +770,7 @@ static std::vector<char> Gunzip(std::span<char> input)
 	static const int BLOCKSIZE = 8192;
 	std::vector<char> output;
 
-	z_stream z;
-	memset(&z, 0, sizeof(z));
+	z_stream z{};
 	z.next_in = reinterpret_cast<Bytef *>(input.data());
 	z.avail_in = static_cast<uInt>(input.size());
 
@@ -681,7 +782,7 @@ static std::vector<char> Gunzip(std::span<char> input)
 		 * inflate is out of output space - allocate more */
 		z.avail_out += BLOCKSIZE;
 		output.resize(output.size() + BLOCKSIZE);
-		z.next_out = reinterpret_cast<Bytef *>(&*output.end() - z.avail_out);
+		z.next_out = reinterpret_cast<Bytef *>(output.data() + output.size() - z.avail_out);
 		res = inflate(&z, Z_FINISH);
 	}
 
@@ -719,7 +820,7 @@ static std::vector<char> Xunzip(std::span<char> input)
 		 * inflate is out of output space - allocate more */
 		z.avail_out += BLOCKSIZE;
 		output.resize(output.size() + BLOCKSIZE);
-		z.next_out = reinterpret_cast<uint8_t *>(&*output.end() - z.avail_out);
+		z.next_out = reinterpret_cast<uint8_t *>(output.data() + output.size() - z.avail_out);
 		res = lzma_code(&z, LZMA_FINISH);
 	}
 
@@ -734,6 +835,8 @@ static std::vector<char> Xunzip(std::span<char> input)
 
 /**
  * Loads the textfile text from file and setup #lines.
+ * @param textfile The filename of the file to load.
+ * @param dir The sub directory to find the file in.
  */
 /* virtual */ void TextfileWindow::LoadTextfile(const std::string &textfile, Subdirectory dir)
 {
@@ -778,7 +881,7 @@ static std::vector<char> Xunzip(std::span<char> input)
 	this->filepath = textfile;
 	this->filename = this->filepath.substr(this->filepath.find_last_of(PATHSEP) + 1);
 	/* If it's the first file being loaded, add to history. */
-	if (this->history.empty()) this->history.push_back(HistoryEntry{ this->filepath, 0 });
+	if (this->history.empty()) this->history.emplace_back(this->filepath, 0);
 
 	/* Process the loaded text into lines, and do any further parsing needed. */
 	this->LoadText(sv_buf);
@@ -793,32 +896,24 @@ static std::vector<char> Xunzip(std::span<char> input)
  */
 void TextfileWindow::LoadText(std::string_view buf)
 {
-	std::string text = StrMakeValid(buf, SVS_REPLACE_WITH_QUESTION_MARK | SVS_ALLOW_NEWLINE | SVS_REPLACE_TAB_CR_NL_WITH_SPACE);
+	std::string text = StrMakeValid(buf, {StringValidationSetting::ReplaceWithQuestionMark, StringValidationSetting::AllowNewline, StringValidationSetting::ReplaceTabCrNlWithSpace});
 	this->lines.clear();
 
 	/* Split the string on newlines. */
 	std::string_view p(text);
-	int row = 0;
 	auto next = p.find_first_of('\n');
 	while (next != std::string_view::npos) {
-		this->lines.emplace_back(row, p.substr(0, next));
+		this->lines.emplace_back(p.substr(0, next));
 		p.remove_prefix(next + 1);
 
-		row++;
 		next = p.find_first_of('\n');
 	}
-	this->lines.emplace_back(row, p);
-
-	/* Calculate maximum text line length. */
-	uint max_length = 0;
-	for (auto &line : this->lines) {
-		max_length = std::max(max_length, GetStringBoundingBox(line.text, FS_MONO).width);
-	}
-	this->max_length = max_length;
+	this->lines.emplace_back(p);
 
 	this->AfterLoadText();
+	this->ReflowContent();
 
-	CheckForMissingGlyphs(true, this);
+	CheckForMissingGlyphs(this);
 
 	/* The font may have changed when searching for glyphs, so ensure widget sizes are updated just in case. */
 	this->ReInit();
@@ -833,15 +928,14 @@ void TextfileWindow::LoadText(std::string_view buf)
  */
 std::optional<std::string> GetTextfile(TextfileType type, Subdirectory dir, std::string_view filename)
 {
-	static const char * const prefixes[] = {
+	static const EnumIndexArray<std::string_view, TextfileType, TextfileType::ContentEnd> prefixes = {
 		"readme",
 		"changelog",
 		"license",
 	};
-	static_assert(lengthof(prefixes) == TFT_CONTENT_END);
 
 	/* Only the generic text file types allowed for this function */
-	if (type >= TFT_CONTENT_END) return std::nullopt;
+	if (type >= TextfileType::ContentEnd) return std::nullopt;
 
 	std::string_view prefix = prefixes[type];
 
@@ -850,9 +944,9 @@ std::optional<std::string> GetTextfile(TextfileType type, Subdirectory dir, std:
 	auto slash = filename.find_last_of(PATHSEPCHAR);
 	if (slash == std::string::npos) return std::nullopt;
 
-	std::string_view base_path(filename.data(), slash + 1);
+	std::string_view base_path = filename.substr(0, slash + 1);
 
-	static const std::initializer_list<std::string_view> extensions{
+	static const std::initializer_list<const std::string_view> extensions{
 		"txt",
 		"md",
 #if defined(WITH_ZLIB)

@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file script_engine.hpp Everything to query and build engines. */
@@ -10,6 +10,7 @@
 #ifndef SCRIPT_ENGINE_HPP
 #define SCRIPT_ENGINE_HPP
 
+#include "script_list.hpp"
 #include "script_vehicle.hpp"
 #include "script_rail.hpp"
 #include "script_airport.hpp"
@@ -54,7 +55,7 @@ public:
 	 * @pre IsValidEngine(engine_id).
 	 * @return The cargo-type of the engine.
 	 */
-	static CargoID GetCargoType(EngineID engine_id);
+	static CargoType GetCargoType(EngineID engine_id);
 
 	/**
 	 * Check if the cargo of an engine can be refitted to your requested. If
@@ -62,26 +63,26 @@ public:
 	 *  In case of articulated vehicles the function decides whether at least one
 	 *  part can carry the cargo.
 	 * @param engine_id The engine to check for refitting.
-	 * @param cargo_id The cargo to check for refitting.
+	 * @param cargo_type The cargo to check for refitting.
 	 * @pre IsValidEngine(engine_id).
-	 * @pre ScriptCargo::IsValidCargo(cargo_id).
+	 * @pre ScriptCargo::IsValidCargo(cargo_type).
 	 * @return True if the engine can carry this cargo, either via refit, or
 	 *  by default.
 	 */
-	static bool CanRefitCargo(EngineID engine_id, CargoID cargo_id);
+	static bool CanRefitCargo(EngineID engine_id, CargoType cargo_type);
 
 	/**
 	 * Check if the engine can pull a wagon with the given cargo.
 	 * @param engine_id The engine to check.
-	 * @param cargo_id The cargo to check.
+	 * @param cargo_type The cargo to check.
 	 * @pre IsValidEngine(engine_id).
 	 * @pre GetVehicleType(engine_id) == ScriptVehicle::VT_RAIL.
-	 * @pre ScriptCargo::IsValidCargo(cargo_id).
+	 * @pre ScriptCargo::IsValidCargo(cargo_type).
 	 * @return True if the engine can pull wagons carrying this cargo.
 	 * @note This function is not exhaustive; a true here does not mean
 	 *  that the vehicle can pull the wagons, a false does mean it can't.
 	 */
-	static bool CanPullCargo(EngineID engine_id, CargoID cargo_id);
+	static bool CanPullCargo(EngineID engine_id, CargoType cargo_type);
 
 	/**
 	 * Get the capacity of an engine. In case it can transport multiple cargoes, it
@@ -249,13 +250,23 @@ public:
 	static ScriptRoad::RoadType GetRoadType(EngineID engine_id);
 
 	/**
-	 * Get the RailType of the engine.
+	 * Get the first RailType of the engine.
+	 * @note This will only return the first RailType of a multi-system engine. Use GetAllRailTypes to get all rail types of the engine.
 	 * @param engine_id The engine to get the RailType of.
 	 * @pre IsValidEngine(engine_id).
 	 * @pre GetVehicleType(engine_id) == ScriptVehicle::VT_RAIL.
-	 * @return The RailType the engine has.
+	 * @return The first RailType the engine has.
 	 */
 	static ScriptRail::RailType GetRailType(EngineID engine_id);
+
+	/**
+	 * Get a list of all RailTypes of the engine.
+	 * @param engine_id The engine to get all RailTypes of.
+	 * @pre IsValidEngine(engine_id).
+	 * @pre GetVehicleType(engine_id) == ScriptVehicle::VT_RAIL.
+	 * @return All rail types of the engine.
+	 */
+	static ScriptList *GetAllRailTypes(EngineID engine_id);
 
 	/**
 	 * Check if the engine is articulated.

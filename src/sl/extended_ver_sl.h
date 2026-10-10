@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file extended_ver_sl.h Functions/types related to handling save/load extended version info. */
@@ -123,6 +123,8 @@ enum SlXvFeatureIndex {
 	XSLFI_COMPANY_PW,                             ///< Company passwords
 	XSLFI_ST_INDUSTRY_CARGO_MODE,                 ///< Station industry cargo mode setting
 	XSLFI_TL_SPEED_LIMIT,                         ///< Through load maximum speed setting
+	XSLFI_MAX_RELIABILITY_FLOOR,                  ///< The minimum value (%) for maximum reliability randomizer
+	XSLFI_RELIABILITY_DECAY_SPEED,                ///< Reliability decay factor (higher means faster decay)
 	XSLFI_RAIL_DEPOT_SPEED_LIMIT,                 ///< Rail depot maximum speed setting
 	XSLFI_WAYPOINT_FLAGS,                         ///< Waypoint flags
 	XSLFI_ROAD_WAYPOINTS,                         ///< Road waypoints
@@ -140,13 +142,13 @@ enum SlXvFeatureIndex {
 	XSLFI_MULTI_CARGO_SHIPS,                      ///< Multi-cargo ships
 	XSLFI_REMAIN_NEXT_ORDER_STATION,              ///< Remain in station if next order is for same station
 	XSLFI_LABEL_ORDERS,                           ///< Label orders
-	XSLFI_VARIABLE_TICK_RATE,                     ///< Variable tick rate
 	XSLFI_ROAD_VEH_FLAGS,                         ///< Road vehicle flags
 	XSLFI_STATION_TILE_CACHE_FLAGS,               ///< Station tile cache flags
 	XSLFI_INDUSTRY_CARGO_TOTALS,                  ///< Industry cargo totals are 32 bit
 	XSLFI_SIGNAL_SPECIAL_PROPAGATION_FLAG,        ///< Signal special propagation flag
 	XSLFI_ORDER_VECTOR,                           ///< Use std::vector for order lists
 	XSLFI_ERNC_CHUNK,                             ///< ERNC chunk
+	XSLFI_STATION_CARGO_TRUNCATE,                 ///< Station cargo truncation setting
 
 	XSLFI_SCRIPT_INT64,                           ///< See: SLV_SCRIPT_INT64
 	XSLFI_U64_TICK_COUNTER,                       ///< See: SLV_U64_TICK_COUNTER
@@ -167,7 +169,17 @@ enum SlXvFeatureIndex {
 	XSLFI_VEHICLE_ECONOMY_AGE,                    ///< See: SLV_VEHICLE_ECONOMY_AGE (PR #12141)
 	XSLFI_GROUP_NUMBERS,                          ///< See: SLV_GROUP_NUMBERS (PR #12297)
 	XSLFI_WATER_TILE_TYPE,                        ///< See: SLV_WATER_TILE_TYPE (PR #13030)
-	XSLFI_INDUSTRY_CARGO_REORGANISE,              ///< See: SLV_INDUSTRY_CARGO_REORGANISE (PR #10853)
+	XSLFI_INDUSTRY_CARGO_REORGANISE,              ///< See: SLV_INDUSTRY_CARGO_REORGANISE (PR #10853) (v1), SLV_PRODUCTION_HISTORY (PR#10541) (v2), SLV_INDUSTRY_NUM_VALID_HISTORY (PR#14416) (v3)
+	XSLFI_ENCODED_STRING_FORMAT,                  ///< See: SLV_ENCODED_STRING_FORMAT (PR #13499) (v1), SLV_FIX_SCC_ENCODED_NEGATIVE (PR #14049) (v2)
+	XSLFI_PROTECT_PLACED_HOUSES,                  ///< See: SLV_PROTECT_PLACED_HOUSES (PR #13270)
+	XSLFI_FACE_STYLES,                            ///< See: SLV_FACE_STYLES (PR #14319)
+	XSLFI_ENGINE_MULTI_RAILTYPE,                  ///< See: SLV_ENGINE_MULTI_RAILTYPE (PR #14357)
+	XSLFI_TOWN_SUPPLY_HISTORY,                    ///< See: SLV_TOWN_SUPPLY_HISTORY (PR #14461)
+	XSLFI_DRIVE_BACKWARDS,                        ///< See: SLV_DRIVE_BACKWARDS (PR#15379)
+	XSLFI_DOUBLE_ENDED_SHIPS,                     ///< See: SLV_DOUBLE_ENDED_SHIPS (PR#16002)
+
+	XSLFI_PR_13745_APPLIED,                       ///< Tag to indicate that the fix in PR #13745 has been already applied
+	XSLFI_SIGNAL_STATE_FIX,                       ///< Tag for signal state fixes
 
 	XSLFI_TABLE_PATS,                             ///< Use upstream table format for PATS
 	XSLFI_TABLE_PLYR,                             ///< Use table format for PLYR
@@ -265,6 +277,12 @@ inline bool SlXvIsFeatureMissing(const std::array<uint16_t, XSLFI_SIZE> &feature
 }
 
 const char *SlXvGetFeatureName(SlXvFeatureIndex feature);
+
+inline SaveLoadVersion SlXvGetUpstreamVersion()
+{
+	extern SaveLoadVersion _sl_xv_upstream_version;
+	return _sl_xv_upstream_version;
+}
 
 /**
  * sub chunk flags, this is saved as-is

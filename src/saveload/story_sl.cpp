@@ -2,10 +2,10 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
-/** @file story_sl.cpp Code handling saving and loading of story pages */
+/** @file story_sl.cpp Code handling saving and loading of story pages. */
 
 #include "../stdafx.h"
 
@@ -19,7 +19,7 @@
 /** Called after load to trash broken pages. */
 void AfterLoadStoryBook()
 {
-	if (upstream_sl::IsSavegameVersionBefore(SLV_185)) {
+	if (upstream_sl::IsSavegameVersionBefore(upstream_sl::SaveLoadVersion::Storybooks)) {
 		/* Trash all story pages and page elements because
 		 * they were saved with wrong data types.
 		 */
@@ -31,17 +31,17 @@ void AfterLoadStoryBook()
 namespace upstream_sl {
 
 static const SaveLoad _story_page_elements_desc[] = {
-	SLE_CONDVAR(StoryPageElement, sort_value,    SLE_FILE_U16 | SLE_VAR_U32, SL_MIN_VERSION,   SLV_185),
-	SLE_CONDVAR(StoryPageElement, sort_value,    SLE_UINT32,                 SLV_185, SL_MAX_VERSION),
-	    SLE_VAR(StoryPageElement, page,          SLE_UINT16),
-	SLE_CONDVAR(StoryPageElement, type,          SLE_FILE_U16 | SLE_VAR_U8,  SL_MIN_VERSION,   SLV_185),
-	SLE_CONDVAR(StoryPageElement, type,          SLE_UINT8,                  SLV_185, SL_MAX_VERSION),
-	    SLE_VAR(StoryPageElement, referenced_id, SLE_UINT32),
-	   SLE_SSTR(StoryPageElement, text,          SLE_STR | SLF_ALLOW_CONTROL),
+	SLE_CONDVAR(StoryPageElement, sort_value, VarFileType::U16 | VarMemType::U32, SaveLoadVersion::MinVersion, SaveLoadVersion::Storybooks),
+	SLE_CONDVAR(StoryPageElement, sort_value, VarTypes::U32, SaveLoadVersion::Storybooks, SaveLoadVersion::MaxVersion),
+	    SLE_VAR(StoryPageElement, page,          VarTypes::U16),
+	SLE_CONDVAR(StoryPageElement, type, VarFileType::U16 | VarMemType::U8, SaveLoadVersion::MinVersion, SaveLoadVersion::Storybooks),
+	SLE_CONDVAR(StoryPageElement, type, VarTypes::U8, SaveLoadVersion::Storybooks, SaveLoadVersion::MaxVersion),
+	    SLE_VAR(StoryPageElement, referenced_id, VarTypes::U32),
+	   SLE_SSTR(StoryPageElement, text,          VarTypes::STR | StringValidationSetting::AllowControlCode),
 };
 
 struct STPEChunkHandler : ChunkHandler {
-	STPEChunkHandler() : ChunkHandler('STPE', CH_TABLE) {}
+	STPEChunkHandler() : ChunkHandler("STPE", ChunkType::Table) {}
 
 	void Save() const override
 	{
@@ -60,7 +60,7 @@ struct STPEChunkHandler : ChunkHandler {
 		int index;
 		uint32_t max_sort_value = 0;
 		while ((index = SlIterateArray()) != -1) {
-			StoryPageElement *s = new (index) StoryPageElement();
+			StoryPageElement *s = StoryPageElement::CreateAtIndex(StoryPageElementID(index));
 			SlObject(s, slt);
 			if (s->sort_value > max_sort_value) {
 				max_sort_value = s->sort_value;
@@ -74,16 +74,16 @@ struct STPEChunkHandler : ChunkHandler {
 };
 
 static const SaveLoad _story_pages_desc[] = {
-	SLE_CONDVAR(StoryPage, sort_value, SLE_FILE_U16 | SLE_VAR_U32, SL_MIN_VERSION,   SLV_185),
-	SLE_CONDVAR(StoryPage, sort_value, SLE_UINT32,                 SLV_185, SL_MAX_VERSION),
-	    SLE_VAR(StoryPage, date,       SLE_UINT32),
-	SLE_CONDVAR(StoryPage, company,    SLE_FILE_U16 | SLE_VAR_U8,  SL_MIN_VERSION,   SLV_185),
-	SLE_CONDVAR(StoryPage, company,    SLE_UINT8,                  SLV_185, SL_MAX_VERSION),
-	   SLE_SSTR(StoryPage, title,      SLE_STR | SLF_ALLOW_CONTROL),
+	SLE_CONDVAR(StoryPage, sort_value, VarFileType::U16 | VarMemType::U32, SaveLoadVersion::MinVersion, SaveLoadVersion::Storybooks),
+	SLE_CONDVAR(StoryPage, sort_value, VarTypes::U32, SaveLoadVersion::Storybooks, SaveLoadVersion::MaxVersion),
+	    SLE_VAR(StoryPage, date,       VarFileType::U32 | VarMemType::I32),
+	SLE_CONDVAR(StoryPage, company, VarFileType::U16 | VarMemType::U8, SaveLoadVersion::MinVersion, SaveLoadVersion::Storybooks),
+	SLE_CONDVAR(StoryPage, company, VarTypes::U8, SaveLoadVersion::Storybooks, SaveLoadVersion::MaxVersion),
+	   SLE_SSTR(StoryPage, title,      VarTypes::STR | StringValidationSetting::AllowControlCode),
 };
 
 struct STPAChunkHandler : ChunkHandler {
-	STPAChunkHandler() : ChunkHandler('STPA', CH_TABLE) {}
+	STPAChunkHandler() : ChunkHandler("STPA", ChunkType::Table) {}
 
 	void Save() const override
 	{
@@ -102,7 +102,7 @@ struct STPAChunkHandler : ChunkHandler {
 		int index;
 		uint32_t max_sort_value = 0;
 		while ((index = SlIterateArray()) != -1) {
-			StoryPage *s = new (index) StoryPage();
+			StoryPage *s = StoryPage::CreateAtIndex(StoryPageID(index));
 			SlObject(s, slt);
 			if (s->sort_value > max_sort_value) {
 				max_sort_value = s->sort_value;

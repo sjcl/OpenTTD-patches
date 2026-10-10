@@ -2,11 +2,14 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
+#include "table/strings.h"
+
 /**
- * @file bridge_land.h This file contains all the sprites for bridges
+ * @file bridge_land.h This file contains all the sprites for bridges.
+ *
  * It consists of a number of arrays.
  * <ul><li>_bridge_sprite_table_n_m. Defines all the sprites of a bridge besides the pylons.
  * n defines the number of the bridge type, m the number of the section. the highest m for
@@ -40,7 +43,7 @@ static const PalSpriteID _aqueduct_sprites[] = {
 	{  SPR_AQUEDUCT_RAMP_SW, PAL_NONE }, { SPR_AQUEDUCT_RAMP_SE, PAL_NONE }, {  SPR_AQUEDUCT_RAMP_NE, PAL_NONE }, { SPR_AQUEDUCT_RAMP_NW, PAL_NONE },
 };
 
-static const PalSpriteID _bridge_sprite_table_4_0[] = {
+static const PalSpriteID _bridge_sprite_table_suspension_oxide_north[] = {
 	{  0x9A9, PAL_NONE }, {  0x99F, PAL_NONE }, {  0x9B1, PAL_NONE }, {    0x0, PAL_NONE },
 	{  0x9A5, PAL_NONE }, {  0x997, PAL_NONE }, {  0x9AD, PAL_NONE }, {    0x0, PAL_NONE },
 	{  0x99D, PAL_NONE }, {  0x99F, PAL_NONE }, {  0x9B1, PAL_NONE }, {    0x0, PAL_NONE },
@@ -51,7 +54,7 @@ static const PalSpriteID _bridge_sprite_table_4_0[] = {
 	{ 0x1116, PAL_NONE }, {  0x997, PAL_NONE }, {  0x9AD, PAL_NONE }, {    0x0, PAL_NONE },
 };
 
-static const PalSpriteID _bridge_sprite_table_4_1[] = {
+static const PalSpriteID _bridge_sprite_table_suspension_oxide_south[] = {
 	{  0x9AA, PAL_NONE }, {  0x9A0, PAL_NONE }, {  0x9B2, PAL_NONE }, {    0x0, PAL_NONE },
 	{  0x9A6, PAL_NONE }, {  0x998, PAL_NONE }, {  0x9AE, PAL_NONE }, {    0x0, PAL_NONE },
 	{  0x99E, PAL_NONE }, {  0x9A0, PAL_NONE }, {  0x9B2, PAL_NONE }, {    0x0, PAL_NONE },
@@ -62,7 +65,7 @@ static const PalSpriteID _bridge_sprite_table_4_1[] = {
 	{ 0x1117, PAL_NONE }, {  0x998, PAL_NONE }, {  0x9AE, PAL_NONE }, {    0x0, PAL_NONE },
 };
 
-static const PalSpriteID _bridge_sprite_table_4_2[] = {
+static const PalSpriteID _bridge_sprite_table_suspension_oxide_inner_north[] = {
 	{  0x9AC, PAL_NONE }, {  0x9A4, PAL_NONE }, {  0x9B4, PAL_NONE }, {    0x0, PAL_NONE },
 	{  0x9A8, PAL_NONE }, {  0x99C, PAL_NONE }, {  0x9B0, PAL_NONE }, {    0x0, PAL_NONE },
 	{  0x9A2, PAL_NONE }, {  0x9A4, PAL_NONE }, {  0x9B4, PAL_NONE }, {    0x0, PAL_NONE },
@@ -73,7 +76,7 @@ static const PalSpriteID _bridge_sprite_table_4_2[] = {
 	{ 0x1119, PAL_NONE }, {  0x99C, PAL_NONE }, {  0x9B0, PAL_NONE }, {    0x0, PAL_NONE },
 };
 
-static const PalSpriteID _bridge_sprite_table_4_3[] = {
+static const PalSpriteID _bridge_sprite_table_suspension_oxide_inner_south[] = {
 	{  0x9AB, PAL_NONE }, {  0x9A3, PAL_NONE }, {  0x9B3, PAL_NONE }, {    0x0, PAL_NONE },
 	{  0x9A7, PAL_NONE }, {  0x99B, PAL_NONE }, {  0x9AF, PAL_NONE }, {    0x0, PAL_NONE },
 	{  0x9A1, PAL_NONE }, {  0x9A3, PAL_NONE }, {  0x9B3, PAL_NONE }, {    0x0, PAL_NONE },
@@ -84,7 +87,7 @@ static const PalSpriteID _bridge_sprite_table_4_3[] = {
 	{ 0x1118, PAL_NONE }, {  0x99B, PAL_NONE }, {  0x9AF, PAL_NONE }, {    0x0, PAL_NONE },
 };
 
-static const PalSpriteID _bridge_sprite_table_4_4[] = {
+static const PalSpriteID _bridge_sprite_table_suspension_oxide_middle_odd[] = {
 	{  0x9B6, PAL_NONE }, {  0x9BA, PAL_NONE }, {  0x9BC, PAL_NONE }, {    0x0, PAL_NONE },
 	{  0x9B5, PAL_NONE }, {  0x9B9, PAL_NONE }, {  0x9BB, PAL_NONE }, {    0x0, PAL_NONE },
 	{  0x9B8, PAL_NONE }, {  0x9BA, PAL_NONE }, {  0x9BC, PAL_NONE }, {    0x0, PAL_NONE },
@@ -95,7 +98,7 @@ static const PalSpriteID _bridge_sprite_table_4_4[] = {
 	{ 0x111E, PAL_NONE }, {  0x9B9, PAL_NONE }, {  0x9BB, PAL_NONE }, {    0x0, PAL_NONE },
 };
 
-static const PalSpriteID _bridge_sprite_table_4_5[] = {
+static const PalSpriteID _bridge_sprite_table_suspension_middle_even[] = {
 	{  0x9BD, PAL_NONE }, {  0x9C1, PAL_NONE }, {    0x0, PAL_NONE }, {    0x0, PAL_NONE },
 	{  0x9BE, PAL_NONE }, {  0x9C2, PAL_NONE }, {    0x0, PAL_NONE }, {    0x0, PAL_NONE },
 	{  0x9BF, PAL_NONE }, {  0x9C1, PAL_NONE }, {    0x0, PAL_NONE }, {    0x0, PAL_NONE },
@@ -106,7 +109,7 @@ static const PalSpriteID _bridge_sprite_table_4_5[] = {
 	{ 0x1121, PAL_NONE }, {  0x9C2, PAL_NONE }, {    0x0, PAL_NONE }, {    0x0, PAL_NONE },
 };
 
-static const PalSpriteID _bridge_sprite_table_4_6[] = {
+static const PalSpriteID _bridge_sprite_table_generic_oxide_heads[] = {
 	{  0x986, PAL_NONE }, {  0x988, PAL_NONE }, {  0x985, PAL_NONE }, {  0x987, PAL_NONE },
 	{  0x98A, PAL_NONE }, {  0x98C, PAL_NONE }, {  0x989, PAL_NONE }, {  0x98B, PAL_NONE },
 	{  0x98E, PAL_NONE }, {  0x990, PAL_NONE }, {  0x98D, PAL_NONE }, {  0x98F, PAL_NONE },
@@ -117,7 +120,7 @@ static const PalSpriteID _bridge_sprite_table_4_6[] = {
 	{ 0x1113, PAL_NONE }, { 0x1115, PAL_NONE }, { 0x1112, PAL_NONE }, { 0x1114, PAL_NONE },
 };
 
-static const PalSpriteID _bridge_sprite_table_5_0[] = {
+static const PalSpriteID _bridge_sprite_table_suspension_yellow_north[] = {
 	{  0x9A9, PALETTE_TO_STRUCT_YELLOW }, { 0x99F, PALETTE_TO_STRUCT_YELLOW }, { 0x9B1, PALETTE_TO_STRUCT_YELLOW }, {  0x0, PAL_NONE },
 	{  0x9A5, PALETTE_TO_STRUCT_YELLOW }, { 0x997, PALETTE_TO_STRUCT_YELLOW }, { 0x9AD, PALETTE_TO_STRUCT_YELLOW }, {  0x0, PAL_NONE },
 	{  0x99D, PALETTE_TO_STRUCT_YELLOW }, { 0x99F, PALETTE_TO_STRUCT_YELLOW }, { 0x9B1, PALETTE_TO_STRUCT_YELLOW }, {  0x0, PAL_NONE },
@@ -128,7 +131,7 @@ static const PalSpriteID _bridge_sprite_table_5_0[] = {
 	{ 0x1116, PALETTE_TO_STRUCT_YELLOW }, { 0x997, PALETTE_TO_STRUCT_YELLOW }, { 0x9AD, PALETTE_TO_STRUCT_YELLOW }, {  0x0, PAL_NONE },
 };
 
-static const PalSpriteID _bridge_sprite_table_5_1[] = {
+static const PalSpriteID _bridge_sprite_table_suspension_yellow_south[] = {
 	{  0x9AA, PALETTE_TO_STRUCT_YELLOW }, { 0x9A0, PALETTE_TO_STRUCT_YELLOW }, { 0x9B2, PALETTE_TO_STRUCT_YELLOW }, {       0x0, PAL_NONE },
 	{  0x9A6, PALETTE_TO_STRUCT_YELLOW }, { 0x998, PALETTE_TO_STRUCT_YELLOW }, { 0x9AE, PALETTE_TO_STRUCT_YELLOW }, {       0x0, PAL_NONE },
 	{  0x99E, PALETTE_TO_STRUCT_YELLOW }, { 0x9A0, PALETTE_TO_STRUCT_YELLOW }, { 0x9B2, PALETTE_TO_STRUCT_YELLOW }, {       0x0, PAL_NONE },
@@ -139,7 +142,7 @@ static const PalSpriteID _bridge_sprite_table_5_1[] = {
 	{ 0x1117, PALETTE_TO_STRUCT_YELLOW }, { 0x998, PALETTE_TO_STRUCT_YELLOW }, { 0x9AE, PALETTE_TO_STRUCT_YELLOW }, {       0x0, PAL_NONE },
 };
 
-static const PalSpriteID _bridge_sprite_table_5_2[] = {
+static const PalSpriteID _bridge_sprite_table_suspension_yellow_inner_north[] = {
 	{  0x9AC, PALETTE_TO_STRUCT_YELLOW }, { 0x9A4, PALETTE_TO_STRUCT_YELLOW }, { 0x9B4, PALETTE_TO_STRUCT_YELLOW }, {       0x0, PAL_NONE },
 	{  0x9A8, PALETTE_TO_STRUCT_YELLOW }, { 0x99C, PALETTE_TO_STRUCT_YELLOW }, { 0x9B0, PALETTE_TO_STRUCT_YELLOW }, {       0x0, PAL_NONE },
 	{  0x9A2, PALETTE_TO_STRUCT_YELLOW }, { 0x9A4, PALETTE_TO_STRUCT_YELLOW }, { 0x9B4, PALETTE_TO_STRUCT_YELLOW }, {       0x0, PAL_NONE },
@@ -150,7 +153,7 @@ static const PalSpriteID _bridge_sprite_table_5_2[] = {
 	{ 0x1119, PALETTE_TO_STRUCT_YELLOW }, { 0x99C, PALETTE_TO_STRUCT_YELLOW }, { 0x9B0, PALETTE_TO_STRUCT_YELLOW }, {       0x0, PAL_NONE },
 };
 
-static const PalSpriteID _bridge_sprite_table_5_3[] = {
+static const PalSpriteID _bridge_sprite_table_suspension_yellow_inner_south[] = {
 	{  0x9AB, PALETTE_TO_STRUCT_YELLOW }, { 0x9A3, PALETTE_TO_STRUCT_YELLOW }, { 0x9B3, PALETTE_TO_STRUCT_YELLOW }, {       0x0, PAL_NONE },
 	{  0x9A7, PALETTE_TO_STRUCT_YELLOW }, { 0x99B, PALETTE_TO_STRUCT_YELLOW }, { 0x9AF, PALETTE_TO_STRUCT_YELLOW }, {       0x0, PAL_NONE },
 	{  0x9A1, PALETTE_TO_STRUCT_YELLOW }, { 0x9A3, PALETTE_TO_STRUCT_YELLOW }, { 0x9B3, PALETTE_TO_STRUCT_YELLOW }, {       0x0, PAL_NONE },
@@ -161,7 +164,7 @@ static const PalSpriteID _bridge_sprite_table_5_3[] = {
 	{ 0x1118, PALETTE_TO_STRUCT_YELLOW }, { 0x99B, PALETTE_TO_STRUCT_YELLOW }, { 0x9AF, PALETTE_TO_STRUCT_YELLOW }, {       0x0, PAL_NONE },
 };
 
-static const PalSpriteID _bridge_sprite_table_5_4[] = {
+static const PalSpriteID _bridge_sprite_table_suspension_yellow_middle_odd[] = {
 	{  0x9B6, PALETTE_TO_STRUCT_YELLOW }, { 0x9BA, PALETTE_TO_STRUCT_YELLOW }, { 0x9BC, PALETTE_TO_STRUCT_YELLOW }, {       0x0, PAL_NONE },
 	{  0x9B5, PALETTE_TO_STRUCT_YELLOW }, { 0x9B9, PALETTE_TO_STRUCT_YELLOW }, { 0x9BB, PALETTE_TO_STRUCT_YELLOW }, {       0x0, PAL_NONE },
 	{  0x9B8, PALETTE_TO_STRUCT_YELLOW }, { 0x9BA, PALETTE_TO_STRUCT_YELLOW }, { 0x9BC, PALETTE_TO_STRUCT_YELLOW }, {       0x0, PAL_NONE },
@@ -172,7 +175,7 @@ static const PalSpriteID _bridge_sprite_table_5_4[] = {
 	{ 0x111E, PALETTE_TO_STRUCT_YELLOW }, { 0x9B9, PALETTE_TO_STRUCT_YELLOW }, { 0x9BB, PALETTE_TO_STRUCT_YELLOW }, {       0x0, PAL_NONE },
 };
 
-static const PalSpriteID _bridge_sprite_table_5_5[] = {
+static const PalSpriteID _bridge_sprite_table_suspension_yellow_middle_even[] = {
 	{  0x9BD, PALETTE_TO_STRUCT_YELLOW }, { 0x9C1, PALETTE_TO_STRUCT_YELLOW }, {       0x0, PAL_NONE }, {       0x0, PAL_NONE },
 	{  0x9BE, PALETTE_TO_STRUCT_YELLOW }, { 0x9C2, PALETTE_TO_STRUCT_YELLOW }, {       0x0, PAL_NONE }, {       0x0, PAL_NONE },
 	{  0x9BF, PALETTE_TO_STRUCT_YELLOW }, { 0x9C1, PALETTE_TO_STRUCT_YELLOW }, {       0x0, PAL_NONE }, {       0x0, PAL_NONE },
@@ -183,7 +186,7 @@ static const PalSpriteID _bridge_sprite_table_5_5[] = {
 	{ 0x1121, PALETTE_TO_STRUCT_YELLOW }, { 0x9C2, PALETTE_TO_STRUCT_YELLOW }, {       0x0, PAL_NONE }, {       0x0, PAL_NONE },
 };
 
-static const PalSpriteID _bridge_sprite_table_5_6[] = {
+static const PalSpriteID _bridge_sprite_table_generic_yellow_heads[] = {
 	{  0x986, PAL_NONE }, {  0x988, PAL_NONE }, {  0x985, PAL_NONE }, {  0x987, PAL_NONE },
 	{  0x98A, PAL_NONE }, {  0x98C, PAL_NONE }, {  0x989, PAL_NONE }, {  0x98B, PAL_NONE },
 	{  0x98E, PALETTE_TO_STRUCT_YELLOW }, {  0x990, PALETTE_TO_STRUCT_YELLOW }, {  0x98D, PALETTE_TO_STRUCT_YELLOW }, {  0x98F, PALETTE_TO_STRUCT_YELLOW },
@@ -194,7 +197,7 @@ static const PalSpriteID _bridge_sprite_table_5_6[] = {
 	{ 0x1113, PALETTE_TO_STRUCT_YELLOW }, { 0x1115, PALETTE_TO_STRUCT_YELLOW }, { 0x1112, PALETTE_TO_STRUCT_YELLOW }, { 0x1114, PALETTE_TO_STRUCT_YELLOW },
 };
 
-static const PalSpriteID _bridge_sprite_table_6_0[] = {
+static const PalSpriteID _bridge_sprite_table_cantilever_oxide_north[] = {
 	{  0x9CD, PAL_NONE }, {  0x9D9, PAL_NONE }, {    0x0, PAL_NONE }, {    0x0, PAL_NONE },
 	{  0x9CE, PAL_NONE }, {  0x9DA, PAL_NONE }, {    0x0, PAL_NONE }, {    0x0, PAL_NONE },
 	{  0x9D3, PAL_NONE }, {  0x9D9, PAL_NONE }, {    0x0, PAL_NONE }, {    0x0, PAL_NONE },
@@ -205,7 +208,7 @@ static const PalSpriteID _bridge_sprite_table_6_0[] = {
 	{ 0x1125, PAL_NONE }, {  0x9DA, PAL_NONE }, {    0x0, PAL_NONE }, {    0x0, PAL_NONE },
 };
 
-static const PalSpriteID _bridge_sprite_table_6_1[] = {
+static const PalSpriteID _bridge_sprite_table_cantilever_oxide_south[] = {
 	{  0x9CB, PAL_NONE }, {  0x9D7, PAL_NONE }, {  0x9DD, PAL_NONE }, {    0x0, PAL_NONE },
 	{  0x9D0, PAL_NONE }, {  0x9DC, PAL_NONE }, {  0x9E0, PAL_NONE }, {    0x0, PAL_NONE },
 	{  0x9D1, PAL_NONE }, {  0x9D7, PAL_NONE }, {  0x9DD, PAL_NONE }, {    0x0, PAL_NONE },
@@ -216,7 +219,7 @@ static const PalSpriteID _bridge_sprite_table_6_1[] = {
 	{ 0x1127, PAL_NONE }, {  0x9DC, PAL_NONE }, {  0x9E0, PAL_NONE }, {    0x0, PAL_NONE },
 };
 
-static const PalSpriteID _bridge_sprite_table_6_2[] = {
+static const PalSpriteID _bridge_sprite_table_cantilever_oxide_middle[] = {
 	{  0x9CC, PAL_NONE }, {  0x9D8, PAL_NONE }, {  0x9DE, PAL_NONE }, {    0x0, PAL_NONE },
 	{  0x9CF, PAL_NONE }, {  0x9DB, PAL_NONE }, {  0x9DF, PAL_NONE }, {    0x0, PAL_NONE },
 	{  0x9D2, PAL_NONE }, {  0x9D8, PAL_NONE }, {  0x9DE, PAL_NONE }, {    0x0, PAL_NONE },
@@ -227,7 +230,7 @@ static const PalSpriteID _bridge_sprite_table_6_2[] = {
 	{ 0x1126, PAL_NONE }, {  0x9DB, PAL_NONE }, {  0x9DF, PAL_NONE }, {    0x0, PAL_NONE },
 };
 
-static const PalSpriteID _bridge_sprite_table_6_3[] = {
+static const PalSpriteID _bridge_sprite_table_cantilever_oxide_heads[] = {
 	{  0x986, PAL_NONE }, {  0x988, PAL_NONE }, {  0x985, PAL_NONE }, {  0x987, PAL_NONE },
 	{  0x98A, PAL_NONE }, {  0x98C, PAL_NONE }, {  0x989, PAL_NONE }, {  0x98B, PAL_NONE },
 	{  0x98E, PAL_NONE }, {  0x990, PAL_NONE }, {  0x98D, PAL_NONE }, {  0x98F, PAL_NONE },
@@ -238,7 +241,7 @@ static const PalSpriteID _bridge_sprite_table_6_3[] = {
 	{ 0x1113, PAL_NONE }, { 0x1115, PAL_NONE }, { 0x1112, PAL_NONE }, { 0x1114, PAL_NONE },
 };
 
-static const PalSpriteID _bridge_sprite_table_7_0[] = {
+static const PalSpriteID _bridge_sprite_table_cantilever_brown_north[] = {
 	{  0x9CD, PALETTE_TO_STRUCT_BROWN }, { 0x9D9, PALETTE_TO_STRUCT_BROWN }, {    0x0, PAL_NONE }, {    0x0, PAL_NONE },
 	{  0x9CE, PALETTE_TO_STRUCT_BROWN }, { 0x9DA, PALETTE_TO_STRUCT_BROWN }, {    0x0, PAL_NONE }, {    0x0, PAL_NONE },
 	{  0x9D3, PALETTE_TO_STRUCT_BROWN }, { 0x9D9, PALETTE_TO_STRUCT_BROWN }, {    0x0, PAL_NONE }, {    0x0, PAL_NONE },
@@ -249,7 +252,7 @@ static const PalSpriteID _bridge_sprite_table_7_0[] = {
 	{ 0x1125, PALETTE_TO_STRUCT_BROWN }, { 0x9DA, PALETTE_TO_STRUCT_BROWN }, {    0x0, PAL_NONE }, {    0x0, PAL_NONE },
 };
 
-static const PalSpriteID _bridge_sprite_table_7_1[] = {
+static const PalSpriteID _bridge_sprite_table_cantilever_brown_south[] = {
 	{  0x9CB, PALETTE_TO_STRUCT_BROWN }, { 0x9D7, PALETTE_TO_STRUCT_BROWN }, { 0x9DD, PALETTE_TO_STRUCT_BROWN }, {       0x0, PAL_NONE },
 	{  0x9D0, PALETTE_TO_STRUCT_BROWN }, { 0x9DC, PALETTE_TO_STRUCT_BROWN }, { 0x9E0, PALETTE_TO_STRUCT_BROWN }, {       0x0, PAL_NONE },
 	{  0x9D1, PALETTE_TO_STRUCT_BROWN }, { 0x9D7, PALETTE_TO_STRUCT_BROWN }, { 0x9DD, PALETTE_TO_STRUCT_BROWN }, {       0x0, PAL_NONE },
@@ -260,7 +263,7 @@ static const PalSpriteID _bridge_sprite_table_7_1[] = {
 	{ 0x1127, PALETTE_TO_STRUCT_BROWN }, { 0x9DC, PALETTE_TO_STRUCT_BROWN }, { 0x9E0, PALETTE_TO_STRUCT_BROWN }, {       0x0, PAL_NONE },
 };
 
-static const PalSpriteID _bridge_sprite_table_7_2[] = {
+static const PalSpriteID _bridge_sprite_table_cantilever_brown_middle[] = {
 	{  0x9CC, PALETTE_TO_STRUCT_BROWN }, { 0x9D8, PALETTE_TO_STRUCT_BROWN }, { 0x9DE, PALETTE_TO_STRUCT_BROWN }, {       0x0, PAL_NONE },
 	{  0x9CF, PALETTE_TO_STRUCT_BROWN }, { 0x9DB, PALETTE_TO_STRUCT_BROWN }, { 0x9DF, PALETTE_TO_STRUCT_BROWN }, {       0x0, PAL_NONE },
 	{  0x9D2, PALETTE_TO_STRUCT_BROWN }, { 0x9D8, PALETTE_TO_STRUCT_BROWN }, { 0x9DE, PALETTE_TO_STRUCT_BROWN }, {       0x0, PAL_NONE },
@@ -271,7 +274,7 @@ static const PalSpriteID _bridge_sprite_table_7_2[] = {
 	{ 0x1126, PALETTE_TO_STRUCT_BROWN }, { 0x9DB, PALETTE_TO_STRUCT_BROWN }, { 0x9DF, PALETTE_TO_STRUCT_BROWN }, {       0x0, PAL_NONE },
 };
 
-static const PalSpriteID _bridge_sprite_table_7_3[] = {
+static const PalSpriteID _bridge_sprite_table_cantilever_brown_heads[] = {
 	{  0x986, PAL_NONE }, {  0x988, PAL_NONE }, {  0x985, PAL_NONE }, {  0x987, PAL_NONE },
 	{  0x98A, PAL_NONE }, {  0x98C, PAL_NONE }, {  0x989, PAL_NONE }, {  0x98B, PAL_NONE },
 	{  0x98E, PALETTE_TO_STRUCT_BROWN }, {  0x990, PALETTE_TO_STRUCT_BROWN }, {  0x98D, PALETTE_TO_STRUCT_BROWN }, {  0x98F, PALETTE_TO_STRUCT_BROWN },
@@ -282,7 +285,7 @@ static const PalSpriteID _bridge_sprite_table_7_3[] = {
 	{ 0x1113, PALETTE_TO_STRUCT_BROWN }, { 0x1115, PALETTE_TO_STRUCT_BROWN }, { 0x1112, PALETTE_TO_STRUCT_BROWN }, { 0x1114, PALETTE_TO_STRUCT_BROWN },
 };
 
-static const PalSpriteID _bridge_sprite_table_8_0[] = {
+static const PalSpriteID _bridge_sprite_table_cantilever_red_north[] = {
 	{  0x9CD, PALETTE_TO_STRUCT_RED }, { 0x9D9, PALETTE_TO_STRUCT_RED }, {       0x0, PAL_NONE }, {      0x0, PAL_NONE },
 	{  0x9CE, PALETTE_TO_STRUCT_RED }, { 0x9DA, PALETTE_TO_STRUCT_RED }, {       0x0, PAL_NONE }, {      0x0, PAL_NONE },
 	{  0x9D3, PALETTE_TO_STRUCT_RED }, { 0x9D9, PALETTE_TO_STRUCT_RED }, {       0x0, PAL_NONE }, {      0x0, PAL_NONE },
@@ -293,7 +296,7 @@ static const PalSpriteID _bridge_sprite_table_8_0[] = {
 	{ 0x1125, PALETTE_TO_STRUCT_RED }, { 0x9DA, PALETTE_TO_STRUCT_RED }, {       0x0, PAL_NONE }, {      0x0, PAL_NONE },
 };
 
-static const PalSpriteID _bridge_sprite_table_8_1[] = {
+static const PalSpriteID _bridge_sprite_table_cantilever_red_south[] = {
 	{  0x9CB, PALETTE_TO_STRUCT_RED }, { 0x9D7, PALETTE_TO_STRUCT_RED }, { 0x9DD, PALETTE_TO_STRUCT_RED }, {       0x0, PAL_NONE },
 	{  0x9D0, PALETTE_TO_STRUCT_RED }, { 0x9DC, PALETTE_TO_STRUCT_RED }, { 0x9E0, PALETTE_TO_STRUCT_RED }, {       0x0, PAL_NONE },
 	{  0x9D1, PALETTE_TO_STRUCT_RED }, { 0x9D7, PALETTE_TO_STRUCT_RED }, { 0x9DD, PALETTE_TO_STRUCT_RED }, {       0x0, PAL_NONE },
@@ -304,7 +307,7 @@ static const PalSpriteID _bridge_sprite_table_8_1[] = {
 	{ 0x1127, PALETTE_TO_STRUCT_RED }, { 0x9DC, PALETTE_TO_STRUCT_RED }, { 0x9E0, PALETTE_TO_STRUCT_RED }, {       0x0, PAL_NONE },
 };
 
-static const PalSpriteID _bridge_sprite_table_8_2[] = {
+static const PalSpriteID _bridge_sprite_table_cantilever_red_middle[] = {
 	{  0x9CC, PALETTE_TO_STRUCT_RED }, { 0x9D8, PALETTE_TO_STRUCT_RED }, { 0x9DE, PALETTE_TO_STRUCT_RED }, {       0x0, PAL_NONE },
 	{  0x9CF, PALETTE_TO_STRUCT_RED }, { 0x9DB, PALETTE_TO_STRUCT_RED }, { 0x9DF, PALETTE_TO_STRUCT_RED }, {       0x0, PAL_NONE },
 	{  0x9D2, PALETTE_TO_STRUCT_RED }, { 0x9D8, PALETTE_TO_STRUCT_RED }, { 0x9DE, PALETTE_TO_STRUCT_RED }, {       0x0, PAL_NONE },
@@ -315,7 +318,7 @@ static const PalSpriteID _bridge_sprite_table_8_2[] = {
 	{ 0x1126, PALETTE_TO_STRUCT_RED }, { 0x9DB, PALETTE_TO_STRUCT_RED }, { 0x9DF, PALETTE_TO_STRUCT_RED }, {       0x0, PAL_NONE },
 };
 
-static const PalSpriteID _bridge_sprite_table_8_3[] = {
+static const PalSpriteID _bridge_sprite_table_cantilever_red_heads[] = {
 	{  0x986, PAL_NONE }, {  0x988, PAL_NONE }, {  0x985, PAL_NONE }, {  0x987, PAL_NONE },
 	{  0x98A, PAL_NONE }, {  0x98C, PAL_NONE }, {  0x989, PAL_NONE }, {  0x98B, PAL_NONE },
 	{  0x98E, PALETTE_TO_STRUCT_RED }, {  0x990, PALETTE_TO_STRUCT_RED }, {  0x98D, PALETTE_TO_STRUCT_RED }, {  0x98F, PALETTE_TO_STRUCT_RED },
@@ -392,7 +395,7 @@ static const PalSpriteID _bridge_sprite_table_archgirder_heads[] = {
 	MW( SPR_BTGEN_MGLV_RAMP_X_DOWN ),   MW( SPR_BTGEN_MGLV_RAMP_Y_DOWN ), MW( SPR_BTGEN_MGLV_RAMP_X_UP    ), MW( SPR_BTGEN_MGLV_RAMP_Y_UP    ),
 };
 
-static const PalSpriteID _bridge_sprite_table_concrete_suspended_A[] = {
+static const PalSpriteID _bridge_sprite_table_suspension_concrete_north[] = {
 	MC( SPR_BTSUS_RAIL_X_REAR_TILE_A ), MC( SPR_BTSUS_X_FRONT_TILE_A ),   MC( SPR_BTSUS_X_PILLAR_TILE_A ),   MN( 0x0 ),
 	MC( SPR_BTSUS_RAIL_Y_REAR_TILE_A ), MC( SPR_BTSUS_Y_FRONT_TILE_A ),   MC( SPR_BTSUS_Y_PILLAR_TILE_A ),   MN( 0x0 ),
 	MC( SPR_BTSUS_ROAD_X_REAR_TILE_A ), MC( SPR_BTSUS_X_FRONT_TILE_A ),   MC( SPR_BTSUS_X_PILLAR_TILE_A ),   MN( 0x0 ),
@@ -403,7 +406,7 @@ static const PalSpriteID _bridge_sprite_table_concrete_suspended_A[] = {
 	MC( SPR_BTSUS_MGLV_Y_REAR_TILE_A ), MC( SPR_BTSUS_Y_FRONT_TILE_A ),   MC( SPR_BTSUS_Y_PILLAR_TILE_A ),   MN( 0x0 ),
 };
 
-static const PalSpriteID _bridge_sprite_table_concrete_suspended_B[] = {
+static const PalSpriteID _bridge_sprite_table_suspension_concrete_south[] = {
 	MC( SPR_BTSUS_RAIL_X_REAR_TILE_B ), MC( SPR_BTSUS_X_FRONT_TILE_B ),   MC( SPR_BTSUS_X_PILLAR_TILE_B ),   MN( 0x0 ),
 	MC( SPR_BTSUS_RAIL_Y_REAR_TILE_B ), MC( SPR_BTSUS_Y_FRONT_TILE_B ),   MC( SPR_BTSUS_Y_PILLAR_TILE_B ),   MN( 0x0 ),
 	MC( SPR_BTSUS_ROAD_X_REAR_TILE_B ), MC( SPR_BTSUS_X_FRONT_TILE_B ),   MC( SPR_BTSUS_X_PILLAR_TILE_B ),   MN( 0x0 ),
@@ -414,7 +417,7 @@ static const PalSpriteID _bridge_sprite_table_concrete_suspended_B[] = {
 	MC( SPR_BTSUS_MGLV_Y_REAR_TILE_B ), MC( SPR_BTSUS_Y_FRONT_TILE_B ),   MC( SPR_BTSUS_Y_PILLAR_TILE_B ),   MN( 0x0 ),
 };
 
-static const PalSpriteID _bridge_sprite_table_concrete_suspended_C[] = {
+static const PalSpriteID _bridge_sprite_table_suspension_concrete_inner_north[] = {
 	MC( SPR_BTSUS_RAIL_X_REAR_TILE_C ), MC( SPR_BTSUS_X_FRONT_TILE_C ),   MC( SPR_BTSUS_X_PILLAR_TILE_C ),   MN( 0x0 ),
 	MC( SPR_BTSUS_RAIL_Y_REAR_TILE_C ), MC( SPR_BTSUS_Y_FRONT_TILE_C ),   MC( SPR_BTSUS_Y_PILLAR_TILE_C ),   MN( 0x0 ),
 	MC( SPR_BTSUS_ROAD_X_REAR_TILE_C ), MC( SPR_BTSUS_X_FRONT_TILE_C ),   MC( SPR_BTSUS_X_PILLAR_TILE_C ),   MN( 0x0 ),
@@ -425,7 +428,7 @@ static const PalSpriteID _bridge_sprite_table_concrete_suspended_C[] = {
 	MC( SPR_BTSUS_MGLV_Y_REAR_TILE_C ), MC( SPR_BTSUS_Y_FRONT_TILE_C ),   MC( SPR_BTSUS_Y_PILLAR_TILE_C ),   MN( 0x0 ),
 };
 
-static const PalSpriteID _bridge_sprite_table_concrete_suspended_D[] = {
+static const PalSpriteID _bridge_sprite_table_suspension_concrete_inner_south[] = {
 	MC( SPR_BTSUS_RAIL_X_REAR_TILE_D ), MC( SPR_BTSUS_X_FRONT_TILE_D ),   MC( SPR_BTSUS_X_PILLAR_TILE_D ),   MN( 0x0 ),
 	MC( SPR_BTSUS_RAIL_Y_REAR_TILE_D ), MC( SPR_BTSUS_Y_FRONT_TILE_D ),   MC( SPR_BTSUS_Y_PILLAR_TILE_D ),   MN( 0x0 ),
 	MC( SPR_BTSUS_ROAD_X_REAR_TILE_D ), MC( SPR_BTSUS_X_FRONT_TILE_D ),   MC( SPR_BTSUS_X_PILLAR_TILE_D ),   MN( 0x0 ),
@@ -436,7 +439,7 @@ static const PalSpriteID _bridge_sprite_table_concrete_suspended_D[] = {
 	MC( SPR_BTSUS_MGLV_Y_REAR_TILE_D ), MC( SPR_BTSUS_Y_FRONT_TILE_D ),   MC( SPR_BTSUS_Y_PILLAR_TILE_D ),   MN( 0x0 ),
 };
 
-static const PalSpriteID _bridge_sprite_table_concrete_suspended_E[] = {
+static const PalSpriteID _bridge_sprite_table_suspension_concrete_middle_odd[] = {
 	MC( SPR_BTSUS_RAIL_X_REAR_TILE_E ), MC( SPR_BTSUS_X_FRONT_TILE_E ),   MC( SPR_BTSUS_X_PILLAR_TILE_E ),   MN( 0x0 ),
 	MC( SPR_BTSUS_RAIL_Y_REAR_TILE_E ), MC( SPR_BTSUS_Y_FRONT_TILE_E ),   MC( SPR_BTSUS_Y_PILLAR_TILE_E ),   MN( 0x0 ),
 	MC( SPR_BTSUS_ROAD_X_REAR_TILE_E ), MC( SPR_BTSUS_X_FRONT_TILE_E ),   MC( SPR_BTSUS_X_PILLAR_TILE_E ),   MN( 0x0 ),
@@ -447,7 +450,7 @@ static const PalSpriteID _bridge_sprite_table_concrete_suspended_E[] = {
 	MC( SPR_BTSUS_MGLV_Y_REAR_TILE_E ), MC( SPR_BTSUS_Y_FRONT_TILE_E ),   MC( SPR_BTSUS_Y_PILLAR_TILE_E ),   MN( 0x0 ),
 };
 
-static const PalSpriteID _bridge_sprite_table_concrete_suspended_F[] = {
+static const PalSpriteID _bridge_sprite_table_suspension_concrete_middle_even[] = {
 	MC( SPR_BTSUS_RAIL_X_REAR_TILE_F ), MC( SPR_BTSUS_X_FRONT ),          MN( 0x0 ),                         MN( 0x0 ),
 	MC( SPR_BTSUS_RAIL_Y_REAR_TILE_F ), MC( SPR_BTSUS_Y_FRONT ),          MN( 0x0 ),                         MN( 0x0 ),
 	MC( SPR_BTSUS_ROAD_X_REAR_TILE_F ), MC( SPR_BTSUS_X_FRONT ),          MN( 0x0 ),                         MN( 0x0 ),
@@ -458,7 +461,7 @@ static const PalSpriteID _bridge_sprite_table_concrete_suspended_F[] = {
 	MC( SPR_BTSUS_MGLV_Y_REAR_TILE_F ), MC( SPR_BTSUS_Y_FRONT ),          MN( 0x0 ),                         MN( 0x0 ),
 };
 
-static const PalSpriteID _bridge_sprite_table_concrete_suspended_heads[] = {
+static const PalSpriteID _bridge_sprite_table_generic_concrete_heads[] = {
 	MN( SPR_BTGEN_RAIL_X_SLOPE_UP  ),   MN( SPR_BTGEN_RAIL_Y_SLOPE_UP  ), MN( SPR_BTGEN_RAIL_X_SLOPE_DOWN ), MN( SPR_BTGEN_RAIL_Y_SLOPE_DOWN ),
 	MN( SPR_BTGEN_RAIL_RAMP_X_DOWN ),   MN( SPR_BTGEN_RAIL_RAMP_Y_DOWN ), MN( SPR_BTGEN_RAIL_RAMP_X_UP    ), MN( SPR_BTGEN_RAIL_RAMP_Y_UP    ),
 	MC( SPR_BTGEN_ROAD_X_SLOPE_UP  ),   MC( SPR_BTGEN_ROAD_Y_SLOPE_UP  ), MC( SPR_BTGEN_ROAD_X_SLOPE_DOWN ), MC( SPR_BTGEN_ROAD_Y_SLOPE_DOWN ),
@@ -469,7 +472,7 @@ static const PalSpriteID _bridge_sprite_table_concrete_suspended_heads[] = {
 	MC( SPR_BTGEN_MGLV_RAMP_X_DOWN ),   MC( SPR_BTGEN_MGLV_RAMP_Y_DOWN ), MC( SPR_BTGEN_MGLV_RAMP_X_UP    ), MC( SPR_BTGEN_MGLV_RAMP_Y_UP    ),
 };
 
-static const PalSpriteID _bridge_sprite_table_9_0[] = {
+static const PalSpriteID _bridge_sprite_table_girder_middle[] = {
 	{  0x9F9, PAL_NONE }, {  0x9FD, PAL_NONE }, {  0x9C9, PAL_NONE }, {    0x0, PAL_NONE },
 	{  0x9FA, PAL_NONE }, {  0x9FE, PAL_NONE }, {  0x9CA, PAL_NONE }, {    0x0, PAL_NONE },
 	{  0x9FB, PAL_NONE }, {  0x9FD, PAL_NONE }, {  0x9C9, PAL_NONE }, {    0x0, PAL_NONE },
@@ -480,7 +483,7 @@ static const PalSpriteID _bridge_sprite_table_9_0[] = {
 	{ 0x1133, PAL_NONE }, {  0x9FE, PAL_NONE }, {  0x9CA, PAL_NONE }, {    0x0, PAL_NONE },
 };
 
-static const PalSpriteID _bridge_sprite_table_10_0[] = {
+static const PalSpriteID _bridge_sprite_table_tubular_oxide_north[] = {
 	{  0xA0B, PAL_NONE }, {  0xA01, PAL_NONE }, {    0x0, PAL_NONE }, {    0x0, PAL_NONE },
 	{  0xA0C, PAL_NONE }, {  0xA02, PAL_NONE }, {    0x0, PAL_NONE }, {    0x0, PAL_NONE },
 	{  0xA11, PAL_NONE }, {  0xA01, PAL_NONE }, {    0x0, PAL_NONE }, {    0x0, PAL_NONE },
@@ -491,7 +494,7 @@ static const PalSpriteID _bridge_sprite_table_10_0[] = {
 	{  0xA1E, PAL_NONE }, {  0xA02, PAL_NONE }, {    0x0, PAL_NONE }, {    0x0, PAL_NONE },
 };
 
-static const PalSpriteID _bridge_sprite_table_10_1[] = {
+static const PalSpriteID _bridge_sprite_table_tubular_oxide_south[] = {
 	{  0xA09, PAL_NONE }, {  0x9FF, PAL_NONE }, {  0xA05, PAL_NONE }, {    0x0, PAL_NONE },
 	{  0xA0E, PAL_NONE }, {  0xA04, PAL_NONE }, {  0xA08, PAL_NONE }, {    0x0, PAL_NONE },
 	{  0xA0F, PAL_NONE }, {  0x9FF, PAL_NONE }, {  0xA05, PAL_NONE }, {    0x0, PAL_NONE },
@@ -502,7 +505,7 @@ static const PalSpriteID _bridge_sprite_table_10_1[] = {
 	{  0xA20, PAL_NONE }, {  0xA04, PAL_NONE }, {  0xA08, PAL_NONE }, {    0x0, PAL_NONE },
 };
 
-static const PalSpriteID _bridge_sprite_table_10_2[] = {
+static const PalSpriteID _bridge_sprite_table_tubular_oxide_middle[] = {
 	{  0xA0A, PAL_NONE }, {  0xA00, PAL_NONE }, {  0xA06, PAL_NONE }, {    0x0, PAL_NONE },
 	{  0xA0D, PAL_NONE }, {  0xA03, PAL_NONE }, {  0xA07, PAL_NONE }, {    0x0, PAL_NONE },
 	{  0xA10, PAL_NONE }, {  0xA00, PAL_NONE }, {  0xA06, PAL_NONE }, {    0x0, PAL_NONE },
@@ -513,7 +516,7 @@ static const PalSpriteID _bridge_sprite_table_10_2[] = {
 	{  0xA1F, PAL_NONE }, {  0xA03, PAL_NONE }, {  0xA07, PAL_NONE }, {    0x0, PAL_NONE },
 };
 
-static const PalSpriteID _bridge_sprite_table_11_0[] = {
+static const PalSpriteID _bridge_sprite_table_tubular_yellow_north[] = {
 	{  0xA0B, PALETTE_TO_STRUCT_YELLOW }, {     0xA01, PALETTE_TO_STRUCT_YELLOW }, {       0x0, PAL_NONE }, {    0x0, PAL_NONE },
 	{  0xA0C, PALETTE_TO_STRUCT_YELLOW }, {     0xA02, PALETTE_TO_STRUCT_YELLOW }, {       0x0, PAL_NONE }, {    0x0, PAL_NONE },
 	{  0xA11, PALETTE_TO_STRUCT_YELLOW }, {     0xA01, PALETTE_TO_STRUCT_YELLOW }, {       0x0, PAL_NONE }, {    0x0, PAL_NONE },
@@ -524,7 +527,7 @@ static const PalSpriteID _bridge_sprite_table_11_0[] = {
 	{  0xA1E, PALETTE_TO_STRUCT_YELLOW }, {     0xA02, PALETTE_TO_STRUCT_YELLOW }, {       0x0, PAL_NONE }, {    0x0, PAL_NONE },
 };
 
-static const PalSpriteID _bridge_sprite_table_11_1[] = {
+static const PalSpriteID _bridge_sprite_table_tubular_yellow_south[] = {
 	{  0xA09, PALETTE_TO_STRUCT_YELLOW }, {     0x9FF, PALETTE_TO_STRUCT_YELLOW }, {     0xA05, PALETTE_TO_STRUCT_YELLOW }, {       0x0, PAL_NONE },
 	{  0xA0E, PALETTE_TO_STRUCT_YELLOW }, {     0xA04, PALETTE_TO_STRUCT_YELLOW }, {     0xA08, PALETTE_TO_STRUCT_YELLOW }, {       0x0, PAL_NONE },
 	{  0xA0F, PALETTE_TO_STRUCT_YELLOW }, {     0x9FF, PALETTE_TO_STRUCT_YELLOW }, {     0xA05, PALETTE_TO_STRUCT_YELLOW }, {       0x0, PAL_NONE },
@@ -535,7 +538,7 @@ static const PalSpriteID _bridge_sprite_table_11_1[] = {
 	{  0xA20, PALETTE_TO_STRUCT_YELLOW }, {     0xA04, PALETTE_TO_STRUCT_YELLOW }, {     0xA08, PALETTE_TO_STRUCT_YELLOW }, {       0x0, PAL_NONE },
 };
 
-static const PalSpriteID _bridge_sprite_table_11_2[] = {
+static const PalSpriteID _bridge_sprite_table_tubular_yellow_middle[] = {
 	{  0xA0A, PALETTE_TO_STRUCT_YELLOW }, {     0xA00, PALETTE_TO_STRUCT_YELLOW }, {     0xA06, PALETTE_TO_STRUCT_YELLOW }, {       0x0, PAL_NONE },
 	{  0xA0D, PALETTE_TO_STRUCT_YELLOW }, {     0xA03, PALETTE_TO_STRUCT_YELLOW }, {     0xA07, PALETTE_TO_STRUCT_YELLOW }, {       0x0, PAL_NONE },
 	{  0xA10, PALETTE_TO_STRUCT_YELLOW }, {     0xA00, PALETTE_TO_STRUCT_YELLOW }, {     0xA06, PALETTE_TO_STRUCT_YELLOW }, {       0x0, PAL_NONE },
@@ -546,7 +549,7 @@ static const PalSpriteID _bridge_sprite_table_11_2[] = {
 	{  0xA1F, PALETTE_TO_STRUCT_YELLOW }, {     0xA03, PALETTE_TO_STRUCT_YELLOW }, {     0xA07, PALETTE_TO_STRUCT_YELLOW }, {       0x0, PAL_NONE },
 };
 
-static const PalSpriteID _bridge_sprite_table_12_0[] = {
+static const PalSpriteID _bridge_sprite_table_tubular_silicon_north[] = {
 	{  0xA0B, PALETTE_TO_STRUCT_CONCRETE }, {     0xA01, PALETTE_TO_STRUCT_CONCRETE }, {       0x0, PAL_NONE }, {    0x0, PAL_NONE },
 	{  0xA0C, PALETTE_TO_STRUCT_CONCRETE }, {     0xA02, PALETTE_TO_STRUCT_CONCRETE }, {       0x0, PAL_NONE }, {    0x0, PAL_NONE },
 	{  0xA11, PALETTE_TO_STRUCT_CONCRETE }, {     0xA01, PALETTE_TO_STRUCT_CONCRETE }, {       0x0, PAL_NONE }, {    0x0, PAL_NONE },
@@ -557,7 +560,7 @@ static const PalSpriteID _bridge_sprite_table_12_0[] = {
 	{  0xA1E, PALETTE_TO_STRUCT_CONCRETE }, {     0xA02, PALETTE_TO_STRUCT_CONCRETE }, {       0x0, PAL_NONE }, {    0x0, PAL_NONE },
 };
 
-static const PalSpriteID _bridge_sprite_table_12_1[] = {
+static const PalSpriteID _bridge_sprite_table_tubular_silicon_south[] = {
 	{  0xA09, PALETTE_TO_STRUCT_CONCRETE }, {     0x9FF, PALETTE_TO_STRUCT_CONCRETE }, {     0xA05, PALETTE_TO_STRUCT_CONCRETE }, {       0x0, PAL_NONE },
 	{  0xA0E, PALETTE_TO_STRUCT_CONCRETE }, {     0xA04, PALETTE_TO_STRUCT_CONCRETE }, {     0xA08, PALETTE_TO_STRUCT_CONCRETE }, {       0x0, PAL_NONE },
 	{  0xA0F, PALETTE_TO_STRUCT_CONCRETE }, {     0x9FF, PALETTE_TO_STRUCT_CONCRETE }, {     0xA05, PALETTE_TO_STRUCT_CONCRETE }, {       0x0, PAL_NONE },
@@ -568,7 +571,7 @@ static const PalSpriteID _bridge_sprite_table_12_1[] = {
 	{  0xA20, PALETTE_TO_STRUCT_CONCRETE }, {     0xA04, PALETTE_TO_STRUCT_CONCRETE }, {     0xA08, PALETTE_TO_STRUCT_CONCRETE }, {       0x0, PAL_NONE },
 };
 
-static const PalSpriteID _bridge_sprite_table_12_2[] = {
+static const PalSpriteID _bridge_sprite_table_tubular_silicon_middle[] = {
 	{  0xA0A, PALETTE_TO_STRUCT_CONCRETE }, {     0xA00, PALETTE_TO_STRUCT_CONCRETE }, {     0xA06, PALETTE_TO_STRUCT_CONCRETE }, {       0x0, PAL_NONE },
 	{  0xA0D, PALETTE_TO_STRUCT_CONCRETE }, {     0xA03, PALETTE_TO_STRUCT_CONCRETE }, {     0xA07, PALETTE_TO_STRUCT_CONCRETE }, {       0x0, PAL_NONE },
 	{  0xA10, PALETTE_TO_STRUCT_CONCRETE }, {     0xA00, PALETTE_TO_STRUCT_CONCRETE }, {     0xA06, PALETTE_TO_STRUCT_CONCRETE }, {       0x0, PAL_NONE },
@@ -579,7 +582,7 @@ static const PalSpriteID _bridge_sprite_table_12_2[] = {
 	{  0xA1F, PALETTE_TO_STRUCT_CONCRETE }, {     0xA03, PALETTE_TO_STRUCT_CONCRETE }, {     0xA07, PALETTE_TO_STRUCT_CONCRETE }, {       0x0, PAL_NONE },
 };
 
-static const PalSpriteID * const _bridge_sprite_table_archgirder[] = {
+static const std::span<const PalSpriteID> _bridge_sprite_table_archgirder[] = {
 	_bridge_sprite_table_archgirder_middle,
 	_bridge_sprite_table_archgirder_middle,
 	_bridge_sprite_table_archgirder_middle,
@@ -589,67 +592,67 @@ static const PalSpriteID * const _bridge_sprite_table_archgirder[] = {
 	_bridge_sprite_table_archgirder_heads,
 };
 
-static const PalSpriteID * const _bridge_sprite_table_4[] = {
-	_bridge_sprite_table_4_0,
-	_bridge_sprite_table_4_1,
-	_bridge_sprite_table_4_2,
-	_bridge_sprite_table_4_3,
-	_bridge_sprite_table_4_4,
-	_bridge_sprite_table_4_5,
-	_bridge_sprite_table_4_6,
+static const std::span<const PalSpriteID> _bridge_sprite_table_suspension_oxide[] = {
+	_bridge_sprite_table_suspension_oxide_north,
+	_bridge_sprite_table_suspension_oxide_south,
+	_bridge_sprite_table_suspension_oxide_inner_north,
+	_bridge_sprite_table_suspension_oxide_inner_south,
+	_bridge_sprite_table_suspension_oxide_middle_odd,
+	_bridge_sprite_table_suspension_middle_even,
+	_bridge_sprite_table_generic_oxide_heads,
 };
 
-static const PalSpriteID * const _bridge_sprite_table_5[] = {
-	_bridge_sprite_table_5_0,
-	_bridge_sprite_table_5_1,
-	_bridge_sprite_table_5_2,
-	_bridge_sprite_table_5_3,
-	_bridge_sprite_table_5_4,
-	_bridge_sprite_table_5_5,
-	_bridge_sprite_table_5_6,
+static const std::span<const PalSpriteID> _bridge_sprite_table_suspension_yellow[] = {
+	_bridge_sprite_table_suspension_yellow_north,
+	_bridge_sprite_table_suspension_yellow_south,
+	_bridge_sprite_table_suspension_yellow_inner_north,
+	_bridge_sprite_table_suspension_yellow_inner_south,
+	_bridge_sprite_table_suspension_yellow_middle_odd,
+	_bridge_sprite_table_suspension_yellow_middle_even,
+	_bridge_sprite_table_generic_yellow_heads,
 };
 
-static const PalSpriteID * const _bridge_sprite_table_concrete_suspended[] = {
-	_bridge_sprite_table_concrete_suspended_A,
-	_bridge_sprite_table_concrete_suspended_B,
-	_bridge_sprite_table_concrete_suspended_C,
-	_bridge_sprite_table_concrete_suspended_D,
-	_bridge_sprite_table_concrete_suspended_E,
-	_bridge_sprite_table_concrete_suspended_F,
-	_bridge_sprite_table_concrete_suspended_heads,
+static const std::span<const PalSpriteID> _bridge_sprite_table_suspension_concrete[] = {
+	_bridge_sprite_table_suspension_concrete_north,
+	_bridge_sprite_table_suspension_concrete_south,
+	_bridge_sprite_table_suspension_concrete_inner_north,
+	_bridge_sprite_table_suspension_concrete_inner_south,
+	_bridge_sprite_table_suspension_concrete_middle_odd,
+	_bridge_sprite_table_suspension_concrete_middle_even,
+	_bridge_sprite_table_generic_concrete_heads,
 };
 
-static const PalSpriteID * const _bridge_sprite_table_6[] = {
-	_bridge_sprite_table_6_0,
-	_bridge_sprite_table_6_1,
-	_bridge_sprite_table_6_2,
-	_bridge_sprite_table_6_2,
-	_bridge_sprite_table_6_2,
-	_bridge_sprite_table_6_2,
-	_bridge_sprite_table_6_3,
+static const std::span<const PalSpriteID> _bridge_sprite_table_cantilever_oxide[] = {
+	_bridge_sprite_table_cantilever_oxide_north,
+	_bridge_sprite_table_cantilever_oxide_south,
+	_bridge_sprite_table_cantilever_oxide_middle,
+	_bridge_sprite_table_cantilever_oxide_middle,
+	_bridge_sprite_table_cantilever_oxide_middle,
+	_bridge_sprite_table_cantilever_oxide_middle,
+	_bridge_sprite_table_cantilever_oxide_heads,
 };
 
-static const PalSpriteID * const _bridge_sprite_table_7[] = {
-	_bridge_sprite_table_7_0,
-	_bridge_sprite_table_7_1,
-	_bridge_sprite_table_7_2,
-	_bridge_sprite_table_7_2,
-	_bridge_sprite_table_7_2,
-	_bridge_sprite_table_7_2,
-	_bridge_sprite_table_7_3,
+static const std::span<const PalSpriteID> _bridge_sprite_table_cantilever_brown[] = {
+	_bridge_sprite_table_cantilever_brown_north,
+	_bridge_sprite_table_cantilever_brown_south,
+	_bridge_sprite_table_cantilever_brown_middle,
+	_bridge_sprite_table_cantilever_brown_middle,
+	_bridge_sprite_table_cantilever_brown_middle,
+	_bridge_sprite_table_cantilever_brown_middle,
+	_bridge_sprite_table_cantilever_brown_heads,
 };
 
-static const PalSpriteID * const _bridge_sprite_table_8[] = {
-	_bridge_sprite_table_8_0,
-	_bridge_sprite_table_8_1,
-	_bridge_sprite_table_8_2,
-	_bridge_sprite_table_8_2,
-	_bridge_sprite_table_8_2,
-	_bridge_sprite_table_8_2,
-	_bridge_sprite_table_8_3,
+static const std::span<const PalSpriteID> _bridge_sprite_table_cantilever_red[] = {
+	_bridge_sprite_table_cantilever_red_north,
+	_bridge_sprite_table_cantilever_red_south,
+	_bridge_sprite_table_cantilever_red_middle,
+	_bridge_sprite_table_cantilever_red_middle,
+	_bridge_sprite_table_cantilever_red_middle,
+	_bridge_sprite_table_cantilever_red_middle,
+	_bridge_sprite_table_cantilever_red_heads,
 };
 
-static const PalSpriteID * const _bridge_sprite_table_wood[] = {
+static const std::span<const PalSpriteID> _bridge_sprite_table_wood[] = {
 	_bridge_sprite_table_wood_middle,
 	_bridge_sprite_table_wood_middle,
 	_bridge_sprite_table_wood_middle,
@@ -659,7 +662,7 @@ static const PalSpriteID * const _bridge_sprite_table_wood[] = {
 	_bridge_sprite_table_wood_heads,
 };
 
-static const PalSpriteID * const _bridge_sprite_table_concrete[] = {
+static const std::span<const PalSpriteID> _bridge_sprite_table_concrete[] = {
 	_bridge_sprite_table_concrete_middle,
 	_bridge_sprite_table_concrete_middle,
 	_bridge_sprite_table_concrete_middle,
@@ -669,63 +672,63 @@ static const PalSpriteID * const _bridge_sprite_table_concrete[] = {
 	_bridge_sprite_table_concrete_heads,
 };
 
-static const PalSpriteID * const _bridge_sprite_table_9[] = {
-	_bridge_sprite_table_9_0,
-	_bridge_sprite_table_9_0,
-	_bridge_sprite_table_9_0,
-	_bridge_sprite_table_9_0,
-	_bridge_sprite_table_9_0,
-	_bridge_sprite_table_9_0,
-	_bridge_sprite_table_4_6,
+static const std::span<const PalSpriteID> _bridge_sprite_table_girder[] = {
+	_bridge_sprite_table_girder_middle,
+	_bridge_sprite_table_girder_middle,
+	_bridge_sprite_table_girder_middle,
+	_bridge_sprite_table_girder_middle,
+	_bridge_sprite_table_girder_middle,
+	_bridge_sprite_table_girder_middle,
+	_bridge_sprite_table_generic_oxide_heads,
 };
 
-static const PalSpriteID * const _bridge_sprite_table_10[] = {
-	_bridge_sprite_table_10_0,
-	_bridge_sprite_table_10_1,
-	_bridge_sprite_table_10_2,
-	_bridge_sprite_table_10_2,
-	_bridge_sprite_table_10_2,
-	_bridge_sprite_table_10_2,
-	_bridge_sprite_table_4_6,
+static const std::span<const PalSpriteID> _bridge_sprite_table_tubular_oxide[] = {
+	_bridge_sprite_table_tubular_oxide_north,
+	_bridge_sprite_table_tubular_oxide_south,
+	_bridge_sprite_table_tubular_oxide_middle,
+	_bridge_sprite_table_tubular_oxide_middle,
+	_bridge_sprite_table_tubular_oxide_middle,
+	_bridge_sprite_table_tubular_oxide_middle,
+	_bridge_sprite_table_generic_oxide_heads,
 };
 
-static const PalSpriteID * const _bridge_sprite_table_11[] = {
-	_bridge_sprite_table_11_0,
-	_bridge_sprite_table_11_1,
-	_bridge_sprite_table_11_2,
-	_bridge_sprite_table_11_2,
-	_bridge_sprite_table_11_2,
-	_bridge_sprite_table_11_2,
-	_bridge_sprite_table_5_6,
+static const std::span<const PalSpriteID> _bridge_sprite_table_tubular_yellow[] = {
+	_bridge_sprite_table_tubular_yellow_north,
+	_bridge_sprite_table_tubular_yellow_south,
+	_bridge_sprite_table_tubular_yellow_middle,
+	_bridge_sprite_table_tubular_yellow_middle,
+	_bridge_sprite_table_tubular_yellow_middle,
+	_bridge_sprite_table_tubular_yellow_middle,
+	_bridge_sprite_table_generic_yellow_heads,
 };
 
-static const PalSpriteID * const _bridge_sprite_table_12[] = {
-	_bridge_sprite_table_12_0,
-	_bridge_sprite_table_12_1,
-	_bridge_sprite_table_12_2,
-	_bridge_sprite_table_12_2,
-	_bridge_sprite_table_12_2,
-	_bridge_sprite_table_12_2,
-	_bridge_sprite_table_concrete_suspended_heads,
+static const std::span<const PalSpriteID> _bridge_sprite_table_tubular_silicon[] = {
+	_bridge_sprite_table_tubular_silicon_north,
+	_bridge_sprite_table_tubular_silicon_south,
+	_bridge_sprite_table_tubular_silicon_middle,
+	_bridge_sprite_table_tubular_silicon_middle,
+	_bridge_sprite_table_tubular_silicon_middle,
+	_bridge_sprite_table_tubular_silicon_middle,
+	_bridge_sprite_table_generic_concrete_heads,
 };
 
-static const PalSpriteID * const * const _bridge_sprite_table[MAX_BRIDGES] = {
+static const std::span<const std::span<const PalSpriteID>> _bridge_sprite_table[MAX_BRIDGES] = {
 	_bridge_sprite_table_wood,
 	_bridge_sprite_table_concrete,
 	_bridge_sprite_table_archgirder,
-	_bridge_sprite_table_concrete_suspended,
-	_bridge_sprite_table_4,
-	_bridge_sprite_table_5,
-	_bridge_sprite_table_6,
-	_bridge_sprite_table_7,
-	_bridge_sprite_table_8,
-	_bridge_sprite_table_9,
-	_bridge_sprite_table_10,
-	_bridge_sprite_table_11,
-	_bridge_sprite_table_12,
-	_bridge_sprite_table_12,
-	_bridge_sprite_table_12,
-	_bridge_sprite_table_12,
+	_bridge_sprite_table_suspension_concrete,
+	_bridge_sprite_table_suspension_oxide,
+	_bridge_sprite_table_suspension_yellow,
+	_bridge_sprite_table_cantilever_oxide,
+	_bridge_sprite_table_cantilever_brown,
+	_bridge_sprite_table_cantilever_red,
+	_bridge_sprite_table_girder,
+	_bridge_sprite_table_tubular_oxide,
+	_bridge_sprite_table_tubular_yellow,
+	_bridge_sprite_table_tubular_silicon,
+	_bridge_sprite_table_tubular_silicon,
+	_bridge_sprite_table_tubular_silicon,
+	_bridge_sprite_table_tubular_silicon,
 };
 
 /**
@@ -742,7 +745,7 @@ static const PalSpriteID * const * const _bridge_sprite_table[MAX_BRIDGES] = {
  * @param nrd description of the road bridge in query tool
  */
 #define MBR(y, mnl, mxl, p, mxs, spr, plt, dsc, nrl, nrd, pillars) \
-	{CalTime::Year{y}, mnl, mxl, p, mxs, spr, plt, dsc, { nrl, nrd }, nullptr, 0, 0, pillars}
+	{CalTime::Year{y}, mnl, mxl, p, mxs, spr, plt, dsc, { nrl, nrd }, {}, 0, 0, pillars}
 
 #define ALL_PILLARS  { 0x0F, 0x0F, 0x0F, 0x0F, 0x0F, 0x0F, 0x0F, 0x0F, 0x0F, 0x0F, 0x0F, 0x0F }
 #define SUSP_PILLARS { 0x03, 0x06, 0x0C, 0x09, 0x0C, 0x09, 0x03, 0x06, 0x0F, 0x0F, 0x00, 0x00 }

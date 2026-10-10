@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file tunnel_base.h Base for all tunnels */
@@ -15,22 +15,22 @@
 
 struct Tunnel;
 
-typedef Pool<Tunnel, TunnelID, 64, 1048576> TunnelPool;
+using TunnelPool = Pool<Tunnel, TunnelID, 64>;
 extern TunnelPool _tunnel_pool;
 
 struct Tunnel : TunnelPool::PoolItem<&_tunnel_pool> {
+	TileIndex tile_n = INVALID_TILE; ///< North tile of tunnel.
+	TileIndex tile_s = INVALID_TILE; ///< South tile of tunnel.
+	uint8_t height = 0;              ///< Tunnel height
+	bool is_chunnel = false;         ///< Whether this tunnel is a chunnel
+	uint8_t style_n = 0;             ///< Style (new signals) of north tile of tunnel.
+	uint8_t style_s = 0;             ///< Style (new signals) of south tile of tunnel.
 
-	TileIndex tile_n; ///< North tile of tunnel.
-	TileIndex tile_s; ///< South tile of tunnel.
-	uint8_t height;   ///< Tunnel height
-	bool is_chunnel;  ///< Whether this tunnel is a chunnel
-	uint8_t style_n;  ///< Style (new signals) of north tile of tunnel.
-	uint8_t style_s;  ///< Style (new signals) of south tile of tunnel.
-
-	Tunnel() {}
+	Tunnel(TunnelID index) : PoolItemBase(index) {}
 	~Tunnel();
 
-	Tunnel(TileIndex tile_n, TileIndex tile_s, uint8_t height, bool is_chunnel) : tile_n(tile_n), tile_s(tile_s), height(height), is_chunnel(is_chunnel)
+	Tunnel(TunnelID index, TileIndex tile_n, TileIndex tile_s, uint8_t height, bool is_chunnel) :
+		PoolItemBase(index), tile_n(tile_n), tile_s(tile_s), height(height), is_chunnel(is_chunnel)
 	{
 		this->UpdateIndexes();
 	}

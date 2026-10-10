@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file linkgraphschedule.cpp Definition of link graph schedule used for cargo distribution. */
@@ -15,6 +15,7 @@
 #include "flowmapper.h"
 #include "../framerate_type.h"
 #include "../command_func.h"
+#include "../misc_cmd.h"
 #include "../network/network.h"
 #include <algorithm>
 
@@ -30,16 +31,16 @@
 /**
  * Start the next job(s) in the schedule.
  *
- * The cost estimate of a link graph job is C ~ N^2 log N, where
+ * The cost estimate of a link graph job is C ~ N^2, where
  * N is the number of nodes in the job link graph.
  *
  * The cost estimate is summed for all running and scheduled jobs to form the total cost estimate T = sum C.
- * The clamped total cost estimate is calculated as U = min(1 << 25, T). This is to prevent excessively high cost budgets.
+ * The clamped total cost estimate is calculated as U = min(1 << 24, T). This is to prevent excessively high cost budgets.
  * The nominal cycle time (in recalc intervals) required to schedule all jobs is calculated as S = 1 + max(0, log_2 U - 13).
  * The cost budget for an individual call to this method is given by U / S.
  * The last scheduled job may exceed the cost budget.
  *
- * The nominal duration of an individual job is D = N / 75
+ * The nominal duration of an individual job is D = N / 500
  *
  * The purpose of this algorithm is so that overall responsiveness is not hindered by large numbers of small/cheap
  * jobs which would previously need to be cycled through individually, but equally large/slow jobs have an extended
@@ -65,7 +66,7 @@ void LinkGraphSchedule::SpawnNext()
 	for (auto &it : this->running) {
 		total_cost += it->Graph().CalculateCostEstimate();
 	}
-	uint64_t clamped_total_cost = std::min<uint64_t>(total_cost, 1 << 25);
+	uint64_t clamped_total_cost = std::min<uint64_t>(total_cost, 1 << 24);
 	uint log2_clamped_total_cost = FindLastBit(clamped_total_cost);
 	uint scaling = log2_clamped_total_cost > 13 ? log2_clamped_total_cost - 12 : 1;
 	uint64_t cost_budget = clamped_total_cost / scaling;
@@ -78,8 +79,8 @@ void LinkGraphSchedule::SpawnNext()
 		uint64_t cost = lg->CalculateCostEstimate();
 		used_budget += cost;
 		if (LinkGraphJob::CanAllocateItem()) {
-			uint duration_multiplier = CeilDivT<uint64_t>(lg->Size(), 75);
-			std::unique_ptr<LinkGraphJob> job(new LinkGraphJob(*lg, duration_multiplier));
+			uint duration_multiplier = CeilDivT<uint64_t>(lg->Size(), 500);
+			std::unique_ptr<LinkGraphJob> job(LinkGraphJob::Create(*lg, duration_multiplier));
 			jobs_to_execute.emplace_back(job.get(), cost);
 			if (this->running.empty() || job->JoinTick() >= this->running.back()->JoinTick()) {
 				this->running.push_back(std::move(job));
@@ -140,7 +141,7 @@ void LinkGraphSchedule::JoinNext()
 		next.reset();
 		if (LinkGraph::IsValidID(id)) {
 			LinkGraph *lg = LinkGraph::Get(id);
-			this->Unqueue(lg); // Unqueue to avoid double-queueing recycled IDs.
+			this->Dequeue(lg); // Dequeue to avoid double-queueing recycled IDs.
 			this->Queue(lg);
 		}
 	}
@@ -200,7 +201,7 @@ void LinkGraphSchedule::SpawnAll()
  * graph jobs by the number of days given.
  * @param interval Number of days to be added or subtracted.
  */
-void LinkGraphSchedule::ShiftDates(DateDelta interval)
+void LinkGraphSchedule::ShiftDates(EconTime::DateDelta interval)
 {
 	for (LinkGraph *lg : LinkGraph::Iterate()) lg->ShiftDates(interval);
 }
@@ -241,7 +242,7 @@ void LinkGraphJobGroup::SpawnThread()
 		}
 	} else {
 		/* Of course this will hang a bit.
-		 * On the other hand, if you want to play games which make this hang noticably
+		 * On the other hand, if you want to play games which make this hang noticeably
 		 * on a platform without threads then you'll probably get other problems first.
 		 * OK:
 		 * If someone comes and tells me that this hangs for them, I'll implement a
@@ -312,18 +313,18 @@ LinkGraphJobGroup::JobInfo::JobInfo(LinkGraphJob *job) :
  */
 void StateGameLoop_LinkGraphPauseControl()
 {
-	if (_pause_mode & PM_PAUSED_LINK_GRAPH) {
+	if (_pause_mode.Test(PauseMode::LinkGraph)) {
 		/* We are paused waiting on a job, check the job every tick */
 		if (!LinkGraphSchedule::instance.IsJoinWithUnfinishedJobDue()) {
-			DoCommandP(0, PM_PAUSED_LINK_GRAPH, 0, CMD_PAUSE);
+			Command<Commands::Pause>::Post(PauseMode::LinkGraph, false);
 		}
-	} else if (_pause_mode == PM_UNPAUSED) {
+	} else if (_pause_mode.None()) {
 		int interval = _settings_game.linkgraph.recalc_interval * DAY_TICKS / SECONDS_PER_DAY;
 		int offset = _scaled_tick_counter % interval;
 		if (offset == (interval / 2) - 2) {
 			/* perform check 2 ticks before we would join */
 			if (LinkGraphSchedule::instance.IsJoinWithUnfinishedJobDue()) {
-				DoCommandP(0, PM_PAUSED_LINK_GRAPH, 1, CMD_PAUSE);
+				Command<Commands::Pause>::Post(PauseMode::LinkGraph, true);
 			}
 		}
 	}
@@ -337,7 +338,7 @@ void StateGameLoop_LinkGraphPauseControl()
 void AfterLoad_LinkGraphPauseControl()
 {
 	if (LinkGraphSchedule::instance.IsJoinWithUnfinishedJobDue()) {
-		_pause_mode |= PM_PAUSED_LINK_GRAPH;
+		_pause_mode.Set(PauseMode::LinkGraph);
 	}
 }
 
@@ -353,10 +354,10 @@ void OnTick_LinkGraph()
 		LinkGraphSchedule::instance.SpawnNext();
 	} else if (offset == interval / 2) {
 		if (!_networking || _network_server) {
-			PerformanceMeasurer::SetInactive(PFE_GL_LINKGRAPH);
+			PerformanceMeasurer::SetInactive(PerformanceElement::GameLoopLinkGraph);
 			LinkGraphSchedule::instance.JoinNext();
 		} else {
-			PerformanceMeasurer framerate(PFE_GL_LINKGRAPH);
+			PerformanceMeasurer framerate(PerformanceElement::GameLoopLinkGraph);
 			LinkGraphSchedule::instance.JoinNext();
 		}
 	}

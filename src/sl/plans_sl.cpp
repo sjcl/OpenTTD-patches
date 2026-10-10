@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file plans_sl.cpp Code handling saving and loading of plans data. */
@@ -73,7 +73,7 @@ static void Load_PLAN()
 	if (SlIsTableChunk()) {
 		int index;
 		while ((index = SlIterateArray()) != -1) {
-			Plan *p = new (index) Plan();
+			Plan *p = Plan::CreateAtIndex(PlanID(index));
 			SlObjectLoadFiltered(p, slt);
 			p->SetVisibility(false);
 		}
@@ -82,7 +82,7 @@ static void Load_PLAN()
 
 	int index;
 	while ((index = SlIterateArray()) != -1) {
-		Plan *p = new (index) Plan();
+		Plan *p = Plan::CreateAtIndex(PlanID(index));
 		SlObjectLoadFiltered(p, slt);
 		if (SlXvIsFeaturePresent(XSLFI_ENH_VIEWPORT_PLANS, 2)) {
 			const size_t line_count = SlReadUint32();
@@ -121,8 +121,8 @@ static void Load_PLANLINE()
 
 /** Chunk handlers related to plans. */
 static const ChunkHandler plan_chunk_handlers[] = {
-	{ 'PLAN', Save_PLAN, Load_PLAN,     nullptr, nullptr, CH_TABLE },
-	{ 'PLLN', nullptr,   Load_PLANLINE, nullptr, nullptr, CH_READONLY },
+	{ 'PLAN', Save_PLAN, Load_PLAN,     nullptr, nullptr, ChunkType::Table },
+	{ 'PLLN', nullptr,   Load_PLANLINE, nullptr, nullptr, ChunkType::ReadOnly },
 };
 
 extern const ChunkHandlerTable _plan_chunk_handlers(plan_chunk_handlers);

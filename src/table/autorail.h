@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file autorail.h Highlight/sprite information for autorail. */
@@ -15,12 +15,14 @@
  *   0      1      2      3     4     5
  */
 
-/* mark invalid tiles red */
+/** Mark invalid tiles red. */
 #define RED(c) -c
 
-/* table maps each of the six rail directions and tileh combinations to a sprite
- * invalid entries are required to make sure that this array can be quickly accessed */
-static const int _AutorailTilehSprite[][6] = {
+/**
+ * Table maps each of the six rail directions and tileh combinations to a sprite offset.
+ * Invalid entries are required to make sure that this array can be quickly accessed.
+ */
+static constexpr SlopeIndexArray<std::array<int, 6>> _autorail_slope_sprite_offsets = {{{
 /* type   0        1        2        3        4        5 */
 	{       0,       8,      16,      25,      34,      42 }, // tileh = 0
 	{       5,      13, RED(22), RED(31),      35,      42 }, // tileh = 1
@@ -53,12 +55,11 @@ static const int _AutorailTilehSprite[][6] = {
 	{       0,       1,       2,       3,       4,       5 }, // invalid (28)
 	{       3,      14,      18,      26, RED(41), RED(49) }, // tileh = 29
 	{       4,      12, RED(21), RED(30),      37,      45 }  // tileh = 30
-};
+}}};
 #undef RED
 
 
-/* maps each pixel of a tile (16x16) to a selection type
- * (0,0) is the top corner, (16,16) the bottom corner */
+/** Maps each pixel of a tile (16x16) to a selection type (0,0) is the top corner, (16,16) the bottom corner. */
 static const HighLightStyle _autorail_piece[][16] = {
 	{ HT_DIR_HU, HT_DIR_HU, HT_DIR_HU, HT_DIR_HU, HT_DIR_HU, HT_DIR_HU, HT_DIR_X, HT_DIR_X, HT_DIR_X, HT_DIR_X, HT_DIR_VR, HT_DIR_VR, HT_DIR_VR, HT_DIR_VR, HT_DIR_VR, HT_DIR_VR },
 	{ HT_DIR_HU, HT_DIR_HU, HT_DIR_HU, HT_DIR_HU, HT_DIR_HU, HT_DIR_HU, HT_DIR_X, HT_DIR_X, HT_DIR_X, HT_DIR_X, HT_DIR_VR, HT_DIR_VR, HT_DIR_VR, HT_DIR_VR, HT_DIR_VR, HT_DIR_VR },

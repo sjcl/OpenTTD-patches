@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file network_internal.h Variables and function used internally. */
@@ -36,19 +36,18 @@ static const uint32_t FIND_SERVER_EXTENDED_TOKEN = 0x2A49582A;
 #define ENABLE_NETWORK_SYNC_EVERY_FRAME
 #endif /* RANDOM_DEBUG */
 
-typedef class ServerNetworkGameSocketHandler NetworkClientSocket;
+using NetworkClientSocket = class ServerNetworkGameSocketHandler; ///< @copydoc ServerNetworkGameSocketHandler
 
 /** Status of the clients during joining. */
-enum NetworkJoinStatus {
-	NETWORK_JOIN_STATUS_CONNECTING,
-	NETWORK_JOIN_STATUS_AUTHORIZING,
-	NETWORK_JOIN_STATUS_WAITING,
-	NETWORK_JOIN_STATUS_DOWNLOADING,
-	NETWORK_JOIN_STATUS_PROCESSING,
-	NETWORK_JOIN_STATUS_REGISTERING,
+enum class NetworkJoinStatus : uint8_t {
+	Connecting, ///< Opening the connection to the server.
+	Authorizing, ///< Starting authorizing the client to join the game and optionally company.
+	Waiting, ///< Waiting for other clients to finish downloading the map.
+	Downloading, ///< Downloading the map from the server.
+	Processing, ///< Loading the savegame.
+	Registering, ///< Creating a new company.
 
-	NETWORK_JOIN_STATUS_GETTING_COMPANY_INFO,
-	NETWORK_JOIN_STATUS_END,
+	End, ///< Sentinel for end-of-enumeration.
 };
 
 extern uint32_t _frame_counter_server; // The frame_counter of the server, if in network-mode
@@ -83,10 +82,10 @@ extern uint8_t _network_reconnect;
 
 extern CompanyMask _network_company_passworded;
 
-void NetworkQueryServer(const std::string &connection_string);
+void NetworkQueryServer(std::string_view connection_string);
 
 void GetBindAddresses(NetworkAddressList *addresses, uint16_t port);
-struct NetworkGameList *NetworkAddServer(const std::string &connection_string, bool manually = true, bool never_expire = false);
+struct NetworkGame *NetworkAddServer(std::string_view connection_string, bool manually = true, bool never_expire = false);
 void NetworkRebuildHostList();
 void UpdateNetworkGameWindow();
 
@@ -108,14 +107,45 @@ struct NetworkSharedSecrets {
 /**
  * Everything we need to know about a command to be able to execute it.
  */
-struct CommandPacket : CommandContainer {
-	/** Make sure the pointer is nullptr. */
-	CommandPacket() : frame(0), client_id(INVALID_CLIENT_ID), company(INVALID_COMPANY), my_cmd(false) {}
-	uint32_t frame;      ///< the frame in which this packet is executed
-	ClientID client_id;  ///< originating client ID (or INVALID_CLIENT_ID if not specified)
-	CompanyID company;   ///< company that is executing the command
-	bool my_cmd;         ///< did the command originate from "me"
+template <typename T>
+struct GeneralCommandPacket {
+	uint32_t frame = 0;                       ///< the frame in which this packet is executed
+	ClientID client_id = ClientID::Invalid;   ///< originating client ID (or ClientID::Invalid if not specified)
+	CompanyID company = CompanyID::Invalid(); ///< company that is executing the command
+	bool my_cmd = false;                      ///< did the command originate from "me"
+
+	T command_container{};              ///< command being executed.
+	CommandCallback callback{};         ///< any callback function executed upon successful completion of the command.
+	CallbackParameter callback_param{}; ///< arbitrary data associated with callback.
 };
+
+struct CommandPacket : public GeneralCommandPacket<DynBaseCommandContainer> {};
+struct OutgoingCommandPacket : public GeneralCommandPacket<SerialisedBaseCommandContainer> {};
+
+inline OutgoingCommandPacket SerialiseCommandPacketUsingPayload(const CommandPacket &cp, const CommandPayloadBase &payload)
+{
+	OutgoingCommandPacket out;
+
+	out.frame = cp.frame;
+	out.client_id = cp.client_id;
+	out.company = cp.company;
+	out.my_cmd = cp.my_cmd;
+
+	out.command_container.cmd = cp.command_container.cmd;
+	out.command_container.error_msg = cp.command_container.error_msg;
+	out.command_container.tile = cp.command_container.tile;
+	payload.Serialise(BufferSerialisationRef(out.command_container.payload.serialised_data));
+
+	out.callback = cp.callback;
+	out.callback_param = cp.callback_param;
+
+	return out;
+}
+
+inline OutgoingCommandPacket SerialiseCommandPacket(const CommandPacket &cp)
+{
+	return SerialiseCommandPacketUsingPayload(cp, *cp.command_container.payload);
+}
 
 void NetworkDistributeCommands();
 void NetworkExecuteLocalCommandQueue();
@@ -123,17 +153,17 @@ void NetworkFreeLocalCommandQueue();
 void NetworkSyncCommandQueue(NetworkClientSocket *cs);
 
 void ShowNetworkError(StringID error_string);
-void NetworkTextMessage(NetworkAction action, TextColour colour, bool self_send, const std::string &name, const std::string &str = "", NetworkTextMessageData data = NetworkTextMessageData(), const char *data_str = "");
+void NetworkTextMessage(NetworkAction action, ExtendedTextColour colour, bool self_send, std::string_view name, std::string_view str = {}, NetworkTextMessageData data = NetworkTextMessageData(), std::string_view data_str = {});
 uint NetworkCalculateLag(const NetworkClientSocket *cs);
 StringID GetNetworkErrorMsg(NetworkErrorCode err);
 bool NetworkMakeClientNameUnique(std::string &new_name);
-std::string GenerateCompanyPasswordHash(const std::string &password, const std::string &password_server_id, uint32_t password_game_seed);
-std::vector<uint8_t> GenerateGeneralPasswordHash(const std::string &password, const std::string &password_server_id, uint64_t password_game_seed);
+std::string GenerateCompanyPasswordHash(std::string_view password, std::string_view password_server_id, uint32_t password_game_seed);
+std::vector<uint8_t> GenerateGeneralPasswordHash(std::string_view password, std::string_view password_server_id, uint64_t password_game_seed);
 std::string NetworkGenerateRandomKeyString(uint bytes);
 
-std::string_view ParseCompanyFromConnectionString(const std::string &connection_string, CompanyID *company_id);
-NetworkAddress ParseConnectionString(const std::string &connection_string, uint16_t default_port);
-std::string NormalizeConnectionString(const std::string &connection_string, uint16_t default_port);
+std::string_view ParseCompanyFromConnectionString(std::string_view connection_string, CompanyID *company_id);
+NetworkAddress ParseConnectionString(std::string_view connection_string, uint16_t default_port);
+std::string NormalizeConnectionString(std::string_view connection_string, uint16_t default_port);
 
 void ClientNetworkEmergencySave();
 

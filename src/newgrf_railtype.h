@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file newgrf_railtype.h NewGRF handling of rail types. */
@@ -28,6 +28,7 @@ struct RailTypeScopeResolver : public ScopeResolver {
 	/**
 	 * Constructor of the railtype scope resolvers.
 	 * @param ro Surrounding resolver.
+	 * @param rti Specification of the rail type.
 	 * @param tile %Tile containing the track. For track on a bridge this is the southern bridgehead.
 	 * @param context Are we resolving sprites for the upper halftile, or on a bridge?
 	 * @param signal_context Signal context.
@@ -45,14 +46,14 @@ struct RailTypeScopeResolver : public ScopeResolver {
 struct RailTypeResolverObject : public ResolverObject {
 	RailTypeScopeResolver railtype_scope; ///< Resolver for the railtype scope.
 
-	RailTypeResolverObject(const RailTypeInfo *rti, TileIndex tile, TileContext context, RailTypeSpriteGroup rtsg, uint32_t param1 = 0, uint32_t param2 = 0,
+	RailTypeResolverObject(const RailTypeInfo *rti, TileIndex tile, TileContext context, RailSpriteType rtsg, uint32_t param1 = 0, uint32_t param2 = 0,
 			CustomSignalSpriteContext signal_context = { CSSC_GUI }, const TraceRestrictProgram *prog = nullptr, uint z = 0);
 
-	ScopeResolver *GetScope(VarSpriteGroupScope scope = VSG_SCOPE_SELF, VarSpriteGroupScopeOffset relative = 0) override
+	ScopeResolver *GetScope(VarSpriteGroupScope scope = VarSpriteGroupScope::Self, VarSpriteGroupScopeOffset relative = 0) override
 	{
 		switch (scope) {
-			case VSG_SCOPE_SELF: return &this->railtype_scope;
-			default:             return ResolverObject::GetScope(scope, relative);
+			case VarSpriteGroupScope::Self: return &this->railtype_scope;
+			default: return ResolverObject::GetScope(scope, relative);
 		}
 	}
 
@@ -65,12 +66,14 @@ struct CustomSignalSpriteResult {
 	bool restricted_valid;
 };
 
-SpriteID GetCustomRailSprite(const RailTypeInfo *rti, TileIndex tile, RailTypeSpriteGroup rtsg, TileContext context = TCX_NORMAL, uint *num_results = nullptr);
+SpriteID GetCustomRailSprite(const RailTypeInfo *rti, TileIndex tile, RailSpriteType rtsg, TileContext context = TileContext::Normal, uint *num_results = nullptr);
 CustomSignalSpriteResult GetCustomSignalSprite(const RailTypeInfo *rti, TileIndex tile, SignalType type, SignalVariant var, uint8_t aspect,
 		CustomSignalSpriteContext context, uint8_t style, const TraceRestrictProgram *prog = nullptr, uint z = 0);
 
 RailType GetRailTypeTranslation(uint8_t railtype, const GRFFile *grffile);
 uint8_t GetReverseRailTypeTranslation(RailType railtype, const GRFFile *grffile);
+
+uint32_t GetTrackTypesRail(RailType railtype, const GRFFile *grffile);
 
 void ConvertRailTypes();
 void SetCurrentRailTypeLabelList();

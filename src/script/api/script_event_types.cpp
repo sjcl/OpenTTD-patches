@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file script_event_types.cpp Implementation of all EventTypes. */
@@ -14,9 +14,12 @@
 #include "../../strings_func.h"
 #include "../../settings_type.h"
 #include "../../engine_base.h"
+#include "../../engine_cmd.h"
 #include "../../articulated_vehicles.h"
 #include "../../string_func.h"
+#include "../../company_cmd.h"
 #include "../../3rdparty/nlohmann/json.hpp"
+
 #include "table/strings.h"
 
 #include "../../safeguards.h"
@@ -27,15 +30,14 @@ bool ScriptEventEnginePreview::IsEngineValid() const
 	return e != nullptr && e->IsEnabled();
 }
 
-std::optional<std::string> ScriptEventEnginePreview::GetName()
+std::optional<std::string> ScriptEventEnginePreview::GetName() const
 {
 	if (!this->IsEngineValid()) return std::nullopt;
 
-	::SetDParam(0, this->engine);
-	return GetString(STR_ENGINE_NAME);
+	return ::StrMakeValid(::GetString(STR_ENGINE_NAME, this->engine), {});
 }
 
-CargoID ScriptEventEnginePreview::GetCargoType()
+CargoType ScriptEventEnginePreview::GetCargoType() const
 {
 	if (!this->IsEngineValid()) return INVALID_CARGO;
 	CargoArray cap = ::GetCapacityOfArticulatedParts(this->engine);
@@ -43,16 +45,16 @@ CargoID ScriptEventEnginePreview::GetCargoType()
 	auto it = std::max_element(std::cbegin(cap), std::cend(cap));
 	if (*it == 0) return INVALID_CARGO;
 
-	return CargoID(std::distance(std::cbegin(cap), it));
+	return CargoType(std::distance(std::cbegin(cap), it));
 }
 
-int32_t ScriptEventEnginePreview::GetCapacity()
+int32_t ScriptEventEnginePreview::GetCapacity() const
 {
 	if (!this->IsEngineValid()) return -1;
 	const Engine *e = ::Engine::Get(this->engine);
 	switch (e->type) {
-		case VEH_ROAD:
-		case VEH_TRAIN: {
+		case VehicleType::Road:
+		case VehicleType::Train: {
 			CargoArray capacities = GetCapacityOfArticulatedParts(this->engine);
 			for (uint &cap : capacities) {
 				if (cap != 0) return cap;
@@ -60,43 +62,43 @@ int32_t ScriptEventEnginePreview::GetCapacity()
 			return -1;
 		}
 
-		case VEH_SHIP:
-		case VEH_AIRCRAFT:
+		case VehicleType::Ship:
+		case VehicleType::Aircraft:
 			return e->GetDisplayDefaultCapacity();
 
 		default: NOT_REACHED();
 	}
 }
 
-int32_t ScriptEventEnginePreview::GetMaxSpeed()
+int32_t ScriptEventEnginePreview::GetMaxSpeed() const
 {
 	if (!this->IsEngineValid()) return -1;
 	const Engine *e = ::Engine::Get(this->engine);
 	int32_t max_speed = e->GetDisplayMaxSpeed(); // km-ish/h
-	if (e->type == VEH_AIRCRAFT) max_speed /= _settings_game.vehicle.plane_speed;
+	if (e->type == VehicleType::Aircraft) max_speed /= _settings_game.vehicle.plane_speed;
 	return max_speed;
 }
 
-Money ScriptEventEnginePreview::GetPrice()
+Money ScriptEventEnginePreview::GetPrice() const
 {
 	if (!this->IsEngineValid()) return -1;
 	return ::Engine::Get(this->engine)->GetCost();
 }
 
-Money ScriptEventEnginePreview::GetRunningCost()
+Money ScriptEventEnginePreview::GetRunningCost() const
 {
 	if (!this->IsEngineValid()) return -1;
 	return ::Engine::Get(this->engine)->GetRunningCost();
 }
 
-int32_t ScriptEventEnginePreview::GetVehicleType()
+int32_t ScriptEventEnginePreview::GetVehicleType() const
 {
 	if (!this->IsEngineValid()) return ScriptVehicle::VT_INVALID;
 	switch (::Engine::Get(this->engine)->type) {
-		case VEH_ROAD:     return ScriptVehicle::VT_ROAD;
-		case VEH_TRAIN:    return ScriptVehicle::VT_RAIL;
-		case VEH_SHIP:     return ScriptVehicle::VT_WATER;
-		case VEH_AIRCRAFT: return ScriptVehicle::VT_AIR;
+		case VehicleType::Road:     return ScriptVehicle::VT_ROAD;
+		case VehicleType::Train:    return ScriptVehicle::VT_RAIL;
+		case VehicleType::Ship:     return ScriptVehicle::VT_WATER;
+		case VehicleType::Aircraft: return ScriptVehicle::VT_AIR;
 		default: NOT_REACHED();
 	}
 }
@@ -105,13 +107,13 @@ bool ScriptEventEnginePreview::AcceptPreview()
 {
 	EnforceCompanyModeValid(false);
 	if (!this->IsEngineValid()) return false;
-	return ScriptObject::DoCommand(0, this->engine, 0, CMD_WANT_ENGINE_PREVIEW);
+	return ScriptObject::Command<Commands::WantEnginePreview>::Do(this->engine);
 }
 
 bool ScriptEventCompanyAskMerger::AcceptMerger()
 {
 	EnforceCompanyModeValid(false);
-	return ScriptObject::DoCommand(0, this->owner, 0, CMD_BUY_COMPANY);
+	return ScriptObject::Command<Commands::BuyCompany>::Do(ScriptCompany::FromScriptCompanyID(this->owner), false);
 }
 
 ScriptEventAdminPort::ScriptEventAdminPort(const std::string &json) :
@@ -120,7 +122,7 @@ ScriptEventAdminPort::ScriptEventAdminPort(const std::string &json) :
 {
 }
 /**
- * Convert a JSON part fo Squirrel.
+ * Convert a JSON part for Squirrel.
  * @param vm The VM used.
  * @param json The JSON part to convert to Squirrel.
  */
@@ -137,7 +139,7 @@ static bool ScriptEventAdminPortReadValue(HSQUIRRELVM vm, nlohmann::json &json)
 
 		case nlohmann::json::value_t::string: {
 			auto value = json.get<std::string>();
-			sq_pushstring(vm, value.data(), value.size());
+			sq_pushstring(vm, value);
 			break;
 		}
 
@@ -150,7 +152,7 @@ static bool ScriptEventAdminPortReadValue(HSQUIRRELVM vm, nlohmann::json &json)
 			sq_newtable(vm);
 
 			for (auto &[key, value] : json.items()) {
-				sq_pushstring(vm, key.data(), key.size());
+				sq_pushstring(vm, key);
 
 				if (!ScriptEventAdminPortReadValue(vm, value)) {
 					return false;
@@ -181,7 +183,7 @@ static bool ScriptEventAdminPortReadValue(HSQUIRRELVM vm, nlohmann::json &json)
 	return true;
 }
 
-SQInteger ScriptEventAdminPort::GetObject(HSQUIRRELVM vm)
+SQInteger ScriptEventAdminPort::GetObject(HSQUIRRELVM vm) const
 {
 	auto json = nlohmann::json::parse(this->json, nullptr, false);
 

@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file extmidi.cpp Playing music via an external player. */
@@ -10,9 +10,8 @@
 #include "../stdafx.h"
 #include "../debug.h"
 #include "../string_func.h"
-#include "../core/alloc_func.hpp"
 #include "../sound/sound_driver.hpp"
-#include "../video/video_driver.hpp"
+#include "../video/video_driver_base.hpp"
 #include "../gfx_func.h"
 #include "extmidi.h"
 #include "../base_media_base.h"
@@ -26,6 +25,8 @@
 #include <sys/stat.h>
 #include <errno.h>
 
+#include "table/strings.h"
+
 #include "../safeguards.h"
 
 #ifndef EXTERNAL_PLAYER
@@ -38,27 +39,26 @@ static FMusicDriver_ExtMidi iFMusicDriver_ExtMidi;
 
 const char *MusicDriver_ExtMidi::Start(const StringList &parm)
 {
-	if (strcmp(VideoDriver::GetInstance()->GetName(), "allegro") == 0 ||
+	if (strcmp(VideoDriverBase::GetInstance()->GetName(), "allegro") == 0 ||
 			strcmp(SoundDriver::GetInstance()->GetName(), "allegro") == 0) {
 		return "the extmidi driver does not work when Allegro is loaded.";
 	}
 
-	const char *command = GetDriverParam(parm, "cmd");
+	auto command = GetDriverParam(parm, "cmd");
 #ifndef MIDI_ARG
-	if (StrEmpty(command)) command = EXTERNAL_PLAYER;
+	if (!command.has_value() || command->empty()) command = EXTERNAL_PLAYER;
 #else
-	if (StrEmpty(command)) command = EXTERNAL_PLAYER " " MIDI_ARG;
+	if (!command.has_value() || command->empty()) command = EXTERNAL_PLAYER " " MIDI_ARG;
 #endif
 
 	this->command_tokens.clear();
 
-	std::string_view view = command;
 	for (;;) {
-		auto pos = view.find(' ');
-		this->command_tokens.emplace_back(view.substr(0, pos));
+		auto pos = command->find(' ');
+		this->command_tokens.emplace_back(command->substr(0, pos));
 
 		if (pos == std::string_view::npos) break;
-		view.remove_prefix(pos + 1);
+		command->remove_prefix(pos + 1);
 	}
 
 	this->song.clear();

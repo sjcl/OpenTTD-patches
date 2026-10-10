@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file newgrf_debug.h Functions/types related to NewGRF debugging. */
@@ -16,7 +16,7 @@
 #include <vector>
 
 /** Current state of spritepicker */
-enum NewGrfDebugSpritePickerMode {
+enum NewGrfDebugSpritePickerMode : uint8_t {
 	SPM_NONE,
 	SPM_WAIT_CLICK,
 	SPM_REDRAW,
@@ -38,12 +38,11 @@ private:
 extern NewGrfDebugSpritePicker _newgrf_debug_sprite_picker;
 
 bool IsNewGRFInspectable(GrfSpecFeature feature, uint index);
-void ShowNewGRFInspectWindow(GrfSpecFeature feature, uint index, const uint32_t grfid = 0);
+void ShowNewGRFInspectWindow(GrfSpecFeature feature, uint index, const GrfID grfid = {});
 void InvalidateNewGRFInspectWindow(GrfSpecFeature feature, uint index);
 void DeleteNewGRFInspectWindow(GrfSpecFeature feature, uint index);
 
 GrfSpecFeature GetGrfSpecFeature(TileIndex tile);
-GrfSpecFeature GetGrfSpecFeature(VehicleType type);
 
 void ShowSpriteAlignerWindow();
 

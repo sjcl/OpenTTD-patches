@@ -21,6 +21,8 @@ STR_CONFIG_SETTING_TIMETABLE_IN_TICKS_HELPTEXT                  :Vis rejsetider 
 
 STR_TRANSPARENT_LOADING_TOOLTIP                                 :{BLACK}Slå gennemsigtighed til/fra for laste-indikatorer. CTRL+Klik for at låse værdi.
 
+STR_BUILD_SIGNAL_TOGGLE_ADVANCED_SIGNAL_TOOLTIP                 :{BLACK}Vis eller skjul avancerede signaltyper
+
 # Tracerestrict GUI
 
 # Programmable Pre-Signals
@@ -106,3 +108,13 @@ STR_COMPANY_PASSWORD_MAKE_DEFAULT_TOOLTIP                       :{BLACK}Brug den
 STR_COMPANY_VIEW_PASSWORD                                       :{BLACK}Kodeord
 STR_COMPANY_VIEW_PASSWORD_TOOLTIP                               :{BLACK}Beskyt dit selskab med et kodeord for at undgå, at fremmede slutter sig til det.
 STR_COMPANY_VIEW_SET_PASSWORD                                   :{BLACK}Sæt selskabets kodeord
+
+# JSON messages
+
+STR_INTRO_NEWGRF_SETTINGS                                       :{BLACK}NewGRF indstillinger
+STR_INTRO_AI_SETTINGS                                           :{BLACK}AI Indstillinger
+STR_INTRO_GAMESCRIPT_SETTINGS                                   :{BLACK}Indstillinger for spilscript
+STR_INTRO_TOOLTIP_NEWGRF_SETTINGS                               :{BLACK}Åben NewGRF-indstillinger
+STR_INTRO_TOOLTIP_AI_SETTINGS                                   :{BLACK}Åben AI indstillinger
+STR_INTRO_TOOLTIP_GAMESCRIPT_SETTINGS                           :{BLACK}Åben indstillinger for spilscript
+STR_INTRO_CAPTION_TRADITIONAL                                   :{WHITE}OpenTTD {REV}

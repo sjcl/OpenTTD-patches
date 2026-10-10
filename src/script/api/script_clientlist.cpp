@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file script_clientlist.cpp Implementation of ScriptClientList and friends. */
@@ -19,23 +19,23 @@ ScriptClientList::ScriptClientList()
 {
 	if (!_networking) return;
 	for (const NetworkClientInfo *ci : NetworkClientInfo::Iterate()) {
-		this->AddItem(ci->client_id);
+		this->AddItem(to_underlying(ci->client_id));
 	}
 }
 
 ScriptClientList_Company::ScriptClientList_Company(ScriptCompany::CompanyID company)
 {
 	if (!_networking) return;
-	CompanyID c;
+	::CompanyID c;
 	if (company == ScriptCompany::COMPANY_SPECTATOR) {
 		c = ::COMPANY_SPECTATOR;
 	} else {
 		company = ScriptCompany::ResolveCompanyID(company);
 		if (company == ScriptCompany::COMPANY_INVALID) return;
-		c = (CompanyID)company;
+		c = ScriptCompany::FromScriptCompanyID(company);
 	}
 
 	for (const NetworkClientInfo *ci : NetworkClientInfo::Iterate()) {
-		if (ci->client_playas == c) this->AddItem(ci->client_id);
+		if (ci->client_playas == c) this->AddItem(to_underlying(ci->client_id));
 	}
 }

@@ -25,7 +25,7 @@ jobs:
   
     steps:
     - name: Download source
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v8
       with:
         name: internal-source
 
@@ -39,22 +39,16 @@ jobs:
     - name: Enable Rust cache
       uses: Swatinem/rust-cache@v2
 
-#    - name: Setup vcpkg caching
-#      uses: actions/github-script@v7
-#      with:
-#        script: |
-#          core.exportVariable('ACTIONS_CACHE_URL', process.env.ACTIONS_CACHE_URL || '');
-#          core.exportVariable('ACTIONS_RUNTIME_TOKEN', process.env.ACTIONS_RUNTIME_TOKEN || '');
-#          core.exportVariable('VCPKG_BINARY_SOURCES', 'clear;x-gha,readwrite')
-
     - name: Install dependencies
       run: |
         echo "::group::Install system dependencies"
         # perl-IPC-Cmd, wget, and zip are needed to run vcpkg.
         # autoconf-archive is needed to build ICU.
+        # perl-Time-Piece is needed to build OpenSSL.
         yum install -y \
           autoconf-archive \
           perl-IPC-Cmd \
+          perl-Time-Piece \
           wget \
           zip \
           # EOF
@@ -75,10 +69,10 @@ jobs:
         # dependencies as possible. We do it before anything else is installed,
         # to make sure it doesn't pick up on any of the drivers.
         echo "::group::Install fluidsynth"
-        wget https://github.com/FluidSynth/fluidsynth/archive/v2.3.3.tar.gz
-        tar xf v2.3.3.tar.gz
+        wget https://github.com/FluidSynth/fluidsynth/archive/v2.4.4.tar.gz
+        tar xf v2.4.4.tar.gz
         (
-          cd fluidsynth-2.3.3
+          cd fluidsynth-2.4.4
           mkdir build
           cd build
           cmake .. -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX=/usr
@@ -93,6 +87,7 @@ jobs:
         yum install -y \
           alsa-lib-devel \
           pulseaudio-libs-devel \
+          pipewire-devel \
           # EOF
         echo "::endgroup::"
 
@@ -117,15 +112,12 @@ jobs:
           # EOF
         echo "::endgroup::"
 
-        # We use vcpkg for our dependencies, to get more up-to-date version.
-        echo "::group::Install vcpkg and dependencies"
-
-        git clone https://github.com/microsoft/vcpkg /vcpkg
-
-        (
-          cd /vcpkg
-          ./bootstrap-vcpkg.sh -disableMetrics
-        )
+    - name: Setup vcpkg
+      id: vcpkg
+      uses: OpenTTD/actions/setup-vcpkg@v6
+      with:
+        vcpkg-location: /vcpkg
+        mono-install-command: 'yum install -y mono-complete'
 
     - name: Install GCC problem matcher
       uses: ammaraskar/gcc-problem-matcher@master
@@ -137,7 +129,7 @@ jobs:
 
         echo "::group::CMake"
         cmake ${GITHUB_WORKSPACE} \
-          -DCMAKE_TOOLCHAIN_FILE=/vcpkg/scripts/buildsystems/vcpkg.cmake \
+          -DCMAKE_TOOLCHAIN_FILE=${{ steps.vcpkg.outputs.vcpkg-cmake }} \
           -DCMAKE_BUILD_TYPE=Release \
           -DOPTION_COMPRESS_DEBUG=ON \
           -DOPTION_LTO=ON \
@@ -166,7 +158,7 @@ jobs:
         echo "::endgroup::"
 
     - name: Store bundles
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: openttd-linux-generic
         path: build/bundles

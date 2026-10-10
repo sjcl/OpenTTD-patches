@@ -2,12 +2,10 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
-/**
- * @file http_curl.cpp CURL-based implementation for HTTP requests.
- */
+/** @file http_curl.cpp CURL-based implementation for HTTP requests. */
 
 #include "../../stdafx.h"
 #include "../../debug.h"
@@ -30,7 +28,7 @@
 
 #if defined(UNIX)
 /** List of certificate bundles, depending on OS. Taken from: https://go.dev/src/crypto/x509/root_linux.go. */
-static auto _certificate_files = {
+static constexpr std::initializer_list<const char *> _certificate_files = {
 	"/etc/ssl/certs/ca-certificates.crt",                // Debian/Ubuntu/Gentoo etc.
 	"/etc/pki/tls/certs/ca-bundle.crt",                  // Fedora/RHEL 6
 	"/etc/ssl/ca-bundle.pem",                            // OpenSUSE
@@ -39,17 +37,17 @@ static auto _certificate_files = {
 	"/etc/ssl/cert.pem",                                 // Alpine Linux
 };
 /** List of certificate directories, depending on OS. Taken from: https://go.dev/src/crypto/x509/root_linux.go. */
-static auto _certificate_directories = {
+static constexpr std::initializer_list<const char *> _certificate_directories = {
 	"/etc/ssl/certs",                                    // SLES10/SLES11, https://golang.org/issue/12139
 	"/etc/pki/tls/certs",                                // Fedora/RHEL
 	"/system/etc/security/cacerts",                      // Android
 };
 #endif /* UNIX */
 
-static std::vector<HTTPThreadSafeCallback *> _http_callbacks;
-static std::vector<HTTPThreadSafeCallback *> _new_http_callbacks;
-static std::mutex _http_callback_mutex;
-static std::mutex _new_http_callback_mutex;
+static std::vector<HTTPThreadSafeCallback *> _http_callbacks; ///< Callback for the current requests.
+static std::vector<HTTPThreadSafeCallback *> _new_http_callbacks; ///< Callbacks for the request that should be started.
+static std::mutex _http_callback_mutex; ///< Mutex to prevent concurrent access to #_http_callbacks.
+static std::mutex _new_http_callback_mutex; ///< Mutex to prevent concurrent access to #_new_http_callbacks.
 
 /** Single HTTP request. */
 class NetworkHTTPRequest {
@@ -61,7 +59,7 @@ public:
 	 * @param callback the callback to send data back on.
 	 * @param data     the data we want to send. When non-empty, this will be a POST request, otherwise a GET request.
 	 */
-	NetworkHTTPRequest(const std::string &uri, HTTPCallback *callback, std::string data) :
+	NetworkHTTPRequest(std::string_view uri, HTTPCallback *callback, std::string data) :
 		uri(uri),
 		callback(callback),
 		data(std::move(data))
@@ -81,17 +79,18 @@ public:
 	const std::string data; ///< Data to send, if any.
 };
 
-static std::thread _http_thread;
-static std::atomic<bool> _http_thread_exit = false;
-static ring_buffer_queue<std::unique_ptr<NetworkHTTPRequest>> _http_requests;
-static std::mutex _http_mutex;
-static std::condition_variable _http_cv;
+static std::thread _http_thread; ///< The thread running the HTTP requests.
+static std::atomic<bool> _http_thread_exit = false; ///< Whether to ask the HTTP request thread to stop.
+static ring_buffer_queue<std::unique_ptr<NetworkHTTPRequest>> _http_requests; ///< HTTP requests that are currently running
+static std::mutex _http_mutex; ///< Mutex to prevent concurrent access #_http_requests.
+static std::condition_variable _http_cv; ///< Conditional variable to wake up the HTTP request thread.
 #if defined(UNIX)
-static std::string _http_ca_file = "";
-static std::string _http_ca_path = "";
+static std::string _http_ca_file = ""; ///< File with certificate authority data.
+static std::string _http_ca_path = ""; ///< Folder with certificate authority data.
 #endif /* UNIX */
 
-/* static */ void NetworkHTTPSocketHandler::Connect(const std::string &uri, HTTPCallback *callback, std::string data)
+
+/* static */ void NetworkHTTPSocketHandler::Connect(std::string_view uri, HTTPCallback *callback, std::string &&data)
 {
 #if defined(UNIX)
 	if (_http_ca_file.empty() && _http_ca_path.empty()) {
@@ -123,6 +122,21 @@ static std::string _http_ca_path = "";
 	}
 }
 
+/**
+ * Set some specific option and emit debug information upon failure.
+ * @param curl The curl instance we're using.
+ * @param option The option to set.
+ * @param value The value for the option.
+ */
+void CurlSetOption(CURL *curl, auto option, auto value)
+{
+	CURLcode res = curl_easy_setopt(curl, option, value);
+	if (res != CURLE_OK) {
+		Debug(net, 0, "Could not execute curl_easy_setopt for {} [{}]", option, res);
+	}
+}
+
+/** Thread entry point for the HTTP request thread. */
 void HttpThread()
 {
 	CURL *curl = curl_easy_init();
@@ -148,31 +162,31 @@ void HttpThread()
 		curl_slist *headers = nullptr;
 
 		if (GetDebugLevel(DebugLevelID::net) >= 5) {
-			curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
+			CurlSetOption(curl, CURLOPT_VERBOSE, 1L);
 		}
 
 		/* Setup some default options. */
 		std::string user_agent = fmt::format("OpenTTD/{}", GetNetworkRevisionString());
-		curl_easy_setopt(curl, CURLOPT_USERAGENT, user_agent.c_str());
-		curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
-		curl_easy_setopt(curl, CURLOPT_MAXREDIRS, 5L);
+		CurlSetOption(curl, CURLOPT_USERAGENT, user_agent.c_str());
+		CurlSetOption(curl, CURLOPT_FOLLOWLOCATION, 1L);
+		CurlSetOption(curl, CURLOPT_MAXREDIRS, 5L);
 
 		/* Ensure we validate the certificate and hostname of the server. */
 #if defined(UNIX)
-		curl_easy_setopt(curl, CURLOPT_CAINFO, _http_ca_file.empty() ? nullptr : _http_ca_file.c_str());
-		curl_easy_setopt(curl, CURLOPT_CAPATH, _http_ca_path.empty() ? nullptr : _http_ca_path.c_str());
+		CurlSetOption(curl, CURLOPT_CAINFO, _http_ca_file.empty() ? nullptr : _http_ca_file.c_str());
+		CurlSetOption(curl, CURLOPT_CAPATH, _http_ca_path.empty() ? nullptr : _http_ca_path.c_str());
 #endif /* UNIX */
-		curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 2);
-		curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, true);
+		CurlSetOption(curl, CURLOPT_SSL_VERIFYHOST, 2);
+		CurlSetOption(curl, CURLOPT_SSL_VERIFYPEER, true);
 
 		/* Give the connection about 10 seconds to complete. */
-		curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 10L);
+		CurlSetOption(curl, CURLOPT_CONNECTTIMEOUT, 10L);
 
 		/* Set a buffer of 100KiB, as the default of 16KiB seems a bit small. */
-		curl_easy_setopt(curl, CURLOPT_BUFFERSIZE, 100L * 1024L);
+		CurlSetOption(curl, CURLOPT_BUFFERSIZE, 100L * 1024L);
 
 		/* Fail our call if we don't receive a 2XX return value. */
-		curl_easy_setopt(curl, CURLOPT_FAILONERROR, 1L);
+		CurlSetOption(curl, CURLOPT_FAILONERROR, 1L);
 
 		/* Prepare POST body and URI. */
 		if (!request->data.empty()) {
@@ -183,14 +197,14 @@ void HttpThread()
 				headers = curl_slist_append(headers, "Content-Type: application/x-www-form-urlencoded");
 			}
 
-			curl_easy_setopt(curl, CURLOPT_POST, 1L);
-			curl_easy_setopt(curl, CURLOPT_POSTFIELDS, request->data.c_str());
-			curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+			CurlSetOption(curl, CURLOPT_POST, 1L);
+			CurlSetOption(curl, CURLOPT_POSTFIELDS, request->data.c_str());
+			CurlSetOption(curl, CURLOPT_HTTPHEADER, headers);
 		}
-		curl_easy_setopt(curl, CURLOPT_URL, request->uri.c_str());
+		CurlSetOption(curl, CURLOPT_URL, request->uri.c_str());
 
 		/* Setup our (C-style) callback function which we pipe back into the callback. */
-		curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, +[](char *ptr, size_t size, size_t nmemb, void *userdata) -> size_t {
+		CurlSetOption(curl, CURLOPT_WRITEFUNCTION, +[](char *ptr, size_t size, size_t nmemb, void *userdata) -> size_t {
 			Debug(net, 6, "HTTP callback: {} bytes", size * nmemb);
 			HTTPThreadSafeCallback *callback = static_cast<HTTPThreadSafeCallback *>(userdata);
 
@@ -203,18 +217,18 @@ void HttpThread()
 
 			return size * nmemb;
 		});
-		curl_easy_setopt(curl, CURLOPT_WRITEDATA, &request->callback);
+		CurlSetOption(curl, CURLOPT_WRITEDATA, &request->callback);
 
 		/* Create a callback from which we can cancel. Sadly, there is no other
 		 * thread-safe way to do this. If the connection went idle, it can take
 		 * up to a second before this callback is called. There is little we can
 		 * do about this. */
-		curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0L);
-		curl_easy_setopt(curl, CURLOPT_XFERINFOFUNCTION, +[](void *userdata, curl_off_t /*dltotal*/, curl_off_t /*dlnow*/, curl_off_t /*ultotal*/, curl_off_t /*ulnow*/) -> int {
+		CurlSetOption(curl, CURLOPT_NOPROGRESS, 0L);
+		CurlSetOption(curl, CURLOPT_XFERINFOFUNCTION, +[](void *userdata, curl_off_t /*dltotal*/, curl_off_t /*dlnow*/, curl_off_t /*ultotal*/, curl_off_t /*ulnow*/) -> int {
 			const HTTPThreadSafeCallback *callback = static_cast<HTTPThreadSafeCallback *>(userdata);
 			return (callback->cancelled || _http_thread_exit) ? 1 : 0;
 		});
-		curl_easy_setopt(curl, CURLOPT_XFERINFODATA, &request->callback);
+		CurlSetOption(curl, CURLOPT_XFERINFODATA, &request->callback);
 
 		/* Perform the request. */
 		CURLcode res = curl_easy_perform(curl);

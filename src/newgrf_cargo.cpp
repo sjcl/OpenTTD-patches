@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file newgrf_cargo.cpp Implementation of NewGRF cargoes. */
@@ -26,12 +26,12 @@ struct CargoResolverObject : public ResolverObject {
 
 GrfSpecFeature CargoResolverObject::GetFeature() const
 {
-	return GSF_CARGOES;
+	return GrfSpecFeature::Cargoes;
 }
 
 uint32_t CargoResolverObject::GetDebugID() const
 {
-	return this->cargospec->label.base();
+	return FlattenNewGRFLabel(this->cargospec->label);
 }
 
 /**
@@ -55,10 +55,10 @@ CargoResolverObject::CargoResolverObject(const CargoSpec *cs, CallbackID callbac
 SpriteID GetCustomCargoSprite(const CargoSpec *cs)
 {
 	CargoResolverObject object(cs);
-	const SpriteGroup *group = object.Resolve();
-	if (group == nullptr) return 0;
+	const ResultSpriteGroup *group = object.Resolve<ResultSpriteGroup>();
+	if (group == nullptr || group->num_sprites == 0) return 0;
 
-	return group->GetResult();
+	return group->sprite;
 }
 
 
@@ -69,20 +69,20 @@ uint16_t GetCargoCallback(CallbackID callback, uint32_t param1, uint32_t param2,
 }
 
 /**
- * Translate a GRF-local cargo slot/bitnum into a CargoID.
+ * Translate a GRF-local cargo slot/bitnum into a CargoType.
  * @param cargo   GRF-local cargo slot/bitnum.
  * @param grffile Originating GRF file.
  * @param usebit  Defines the meaning of \a cargo for GRF version < 7.
  *                If true, then \a cargo is a bitnum. If false, then \a cargo is a cargoslot.
  *                For GRF version >= 7 \a cargo is always a translated cargo bit.
- * @return CargoID or INVALID_CARGO if the cargo is not available.
+ * @return CargoType or INVALID_CARGO if the cargo is not available.
  */
-CargoID GetCargoTranslation(uint8_t cargo, const GRFFile *grffile, bool usebit)
+CargoType GetCargoTranslation(uint8_t cargo, const GRFFile *grffile, bool usebit)
 {
-	/* We can't use GetCargoTranslationTable here as the usebit flag changes behviour. */
+	/* We can't use GetCargoTranslationTable here as the usebit flag changes behaviour. */
 	/* Pre-version 7 uses the bitnum lookup from (standard in v8) instead of climate dependent in some places.. */
 	std::span<const CargoLabel> cargo_list;
-	if (grffile->grf_version < 7 && !usebit) {
+	if (grffile->grf_version < 7 && !usebit && !grffile->cargo_list_is_fallback) {
 		cargo_list = GetClimateDependentCargoTranslationTable();
 	} else if (!grffile->cargo_list.empty()) {
 		cargo_list = grffile->cargo_list;
@@ -90,6 +90,6 @@ CargoID GetCargoTranslation(uint8_t cargo, const GRFFile *grffile, bool usebit)
 		cargo_list = GetClimateIndependentCargoTranslationTable();
 	}
 
-	if (cargo < cargo_list.size()) return GetCargoIDByLabel(cargo_list[cargo]);
+	if (cargo < cargo_list.size()) return GetCargoTypeByLabel(cargo_list[cargo]);
 	return INVALID_CARGO;
 }

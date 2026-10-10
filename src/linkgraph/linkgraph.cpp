@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file linkgraph.cpp Definition of link graph classes used for cargo distribution. */
@@ -38,7 +38,7 @@ inline void LinkGraph::BaseNode::Init(TileIndex xy, StationID st, uint demand)
  * This is useful if the date has been modified with the cheat menu.
  * @param interval Number of days to be added or subtracted.
  */
-void LinkGraph::ShiftDates(DateDelta interval)
+void LinkGraph::ShiftDates(EconTime::DateDelta interval)
 {
 	for (NodeID node1 = 0; node1 < this->Size(); ++node1) {
 		BaseNode &source = this->nodes[node1];
@@ -151,10 +151,8 @@ NodeID LinkGraph::AddNode(const Station *st)
 	const GoodsEntry &good = st->goods[this->cargo];
 
 	NodeID new_node = this->Size();
-	this->nodes.emplace_back();
-
-	this->nodes[new_node].Init(st->xy, st->index,
-			HasBit(good.status, GoodsEntry::GES_ACCEPTANCE));
+	auto &node  = this->nodes.emplace_back();
+	node.Init(st->xy, st->index, good.status.Test(GoodsEntry::State::Acceptance));
 
 	return new_node;
 }
@@ -165,16 +163,17 @@ NodeID LinkGraph::AddNode(const Station *st)
  * @param edge Edge to fill.
  * @param capacity Capacity of the link.
  * @param usage Usage to be added.
- * @param mode Update mode to be used.
+ * @param travel_time Travel time to be added, in ticks.
+ * @param modes Update modes to be used.
  */
-static void AddEdge(LinkGraph::BaseEdge &edge, uint capacity, uint usage, uint32_t travel_time, EdgeUpdateMode mode)
+static void AddEdge(LinkGraph::BaseEdge &edge, uint capacity, uint usage, uint32_t travel_time, EdgeUpdateModes modes)
 {
 	edge.capacity = capacity;
 	edge.usage = usage;
 	edge.travel_time_sum = static_cast<uint64_t>(travel_time) * capacity;
-	if (mode & EUM_UNRESTRICTED)  edge.last_unrestricted_update = EconTime::CurDate();
-	if (mode & EUM_RESTRICTED) edge.last_restricted_update = EconTime::CurDate();
-	if (mode & EUM_AIRCRAFT) edge.last_aircraft_update = EconTime::CurDate();
+	if (modes.Test(EdgeUpdateMode::Unrestricted)) edge.last_unrestricted_update = EconTime::CurDate();
+	if (modes.Test(EdgeUpdateMode::Restricted)) edge.last_restricted_update = EconTime::CurDate();
+	if (modes.Test(EdgeUpdateMode::Aircraft)) edge.last_aircraft_update = EconTime::CurDate();
 }
 
 /**
@@ -183,18 +182,19 @@ static void AddEdge(LinkGraph::BaseEdge &edge, uint capacity, uint usage, uint32
  * @param to Target node.
  * @param capacity Capacity of the link.
  * @param usage Usage to be added.
- * @param mode Update mode to be used.
+ * @param travel_time Travel time to be added, in ticks.
+ * @param modes Update modes to be used.
  */
-void LinkGraph::UpdateEdge(NodeID from, NodeID to, uint capacity, uint usage, uint32_t travel_time, EdgeUpdateMode mode)
+void LinkGraph::UpdateEdge(NodeID from, NodeID to, uint capacity, uint usage, uint32_t travel_time, EdgeUpdateModes modes)
 {
 	assert(capacity > 0);
 	assert(usage <= capacity);
 	BaseEdge &edge = this->edges[std::make_pair(from, to)];
 	if (edge.capacity == 0) {
 		assert(from != to);
-		AddEdge(edge, capacity, usage, travel_time, mode);
+		AddEdge(edge, capacity, usage, travel_time, modes);
 	} else {
-		Edge(edge).Update(capacity, usage, travel_time, mode);
+		Edge(edge).Update(capacity, usage, travel_time, modes);
 	}
 }
 
@@ -217,15 +217,15 @@ void LinkGraph::RemoveEdge(NodeID from, NodeID to)
  * @param capacity Capacity to be added/updated.
  * @param usage Usage to be added.
  * @param travel_time Travel time to be added, in ticks.
- * @param mode Update mode to be applied.
+ * @param modes Update modes to be applied.
  */
-void LinkGraph::Edge::Update(uint capacity, uint usage, uint32_t travel_time, EdgeUpdateMode mode)
+void LinkGraph::Edge::Update(uint capacity, uint usage, uint32_t travel_time, EdgeUpdateModes modes)
 {
 	BaseEdge &edge = *(this->edge);
 	assert(edge.capacity > 0);
 	assert(capacity >= usage);
 
-	if (mode & EUM_INCREASE) {
+	if (modes.Test(EdgeUpdateMode::Increase)) {
 		if (edge.travel_time_sum == 0) {
 			edge.travel_time_sum = static_cast<uint64_t>(edge.capacity + capacity) * travel_time;
 		} else if (travel_time == 0) {
@@ -235,7 +235,7 @@ void LinkGraph::Edge::Update(uint capacity, uint usage, uint32_t travel_time, Ed
 		}
 		edge.capacity += capacity;
 		edge.usage += usage;
-	} else if (mode & EUM_REFRESH) {
+	} else if (modes.Test(EdgeUpdateMode::Refresh)) {
 		/* If travel time is not provided, we scale the stored time based on
 		 * the capacity increase. */
 		if (capacity > edge.capacity) {
@@ -250,9 +250,9 @@ void LinkGraph::Edge::Update(uint capacity, uint usage, uint32_t travel_time, Ed
 		}
 		edge.usage = std::max(edge.usage, usage);
 	}
-	if (mode & EUM_UNRESTRICTED) edge.last_unrestricted_update = EconTime::CurDate();
-	if (mode & EUM_RESTRICTED) edge.last_restricted_update = EconTime::CurDate();
-	if (mode & EUM_AIRCRAFT) edge.last_aircraft_update = EconTime::CurDate();
+	if (modes.Test(EdgeUpdateMode::Unrestricted)) edge.last_unrestricted_update = EconTime::CurDate();
+	if (modes.Test(EdgeUpdateMode::Restricted)) edge.last_restricted_update = EconTime::CurDate();
+	if (modes.Test(EdgeUpdateMode::Aircraft)) edge.last_aircraft_update = EconTime::CurDate();
 }
 
 /**

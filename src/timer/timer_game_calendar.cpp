@@ -2,15 +2,12 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /**
- * @file timer_game_calendar.cpp
- * This file implements the timer logic for the game-calendar-timer.
- */
-
-/**
+ * @file timer_game_calendar.cpp This file implements the timer logic for the game-calendar-timer.
+ *
  * Calendar time is used for technology and time-of-year changes, including:
  * - Vehicle, airport, station, object introduction and obsolescence
  * - Vehicle and engine age
@@ -27,26 +24,26 @@
 
 #include "../safeguards.h"
 
-template<>
+template <>
 void IntervalTimer<TimerGameCalendar>::Elapsed(TimerGameCalendar::TElapsed triggers)
 {
-	if (HasBit(triggers, this->period.trigger)) {
+	if (triggers.Test(this->period.trigger)) {
 		this->callback(1);
 	}
 }
 
-template<>
+template <>
 void TimeoutTimer<TimerGameCalendar>::Elapsed(TimerGameCalendar::TElapsed triggers)
 {
 	if (this->fired) return;
 
-	if (HasBit(triggers, this->period.trigger)) {
+	if (triggers.Test(this->period.trigger)) {
 		this->callback();
 		this->fired = true;
 	}
 }
 
-template<>
+template <>
 void TimerManager<TimerGameCalendar>::Elapsed(TimerGameCalendar::TElapsed triggers)
 {
 	for (auto timer : TimerManager<TimerGameCalendar>::GetTimerVector()) {
@@ -55,10 +52,10 @@ void TimerManager<TimerGameCalendar>::Elapsed(TimerGameCalendar::TElapsed trigge
 }
 
 #ifdef WITH_ASSERT
-template<>
+template <>
 void TimerManager<TimerGameCalendar>::Validate(TimerGameCalendar::TPeriod period)
 {
-	if (period.priority == TimerGameCalendar::Priority::NONE) return;
+	if (period.priority == TimerGameCalendar::Priority::None) return;
 
 	/* Validate we didn't make a developer error and scheduled more than one
 	 * entry on the same priority/trigger. There can only be one timer on

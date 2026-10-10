@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file debug.h Functions related to debugging. */
@@ -67,11 +67,11 @@ template <typename... T>
 void DebugIntl(DebugLevelID dbg, int8_t level, fmt::format_string<T...> msg, T&&... args)
 {
 	extern void DebugIntlVFmt(DebugLevelID dbg, int8_t level, fmt::string_view msg, fmt::format_args args);
-	DebugIntlVFmt(dbg, level, msg, fmt::make_format_args(args...));
+	DebugIntlVFmt(dbg, level, msg, make_preprocessed_format_args(args...));
 }
 
 /**
- * Ouptut a line of debugging information.
+ * Output a line of debugging information.
  * @param name The category of debug information.
  * @param level The maximum debug level this message should be shown at. When the debug level for this category is set lower, then the message will not be shown.
  * @param format_string The formatting string of the message.
@@ -83,11 +83,11 @@ extern std::string _loadgame_DBGL_data;
 extern bool _save_DBGC_data;
 extern std::string _loadgame_DBGC_data;
 
-void CDECL debug(DebugLevelID dbg, int8_t level, const char *format, ...) WARN_FORMAT(3, 4);
 void debug_print(DebugLevelID dbg, int8_t level, std::string_view msg);
 
 void DumpDebugFacilityNames(struct format_target &output);
-void SetDebugString(const char *s, void (*error_func)(std::string));
+using SetDebugStringErrorFunc = void(std::string_view);
+void SetDebugString(std::string_view s, SetDebugStringErrorFunc error_func);
 std::string GetDebugString();
 
 /* Shorter form for passing filename and linenumber */
@@ -99,11 +99,11 @@ template <typename... T>
 void ShowInfo(fmt::format_string<T...> msg, T&&... args)
 {
 	extern void ShowInfoVFmt(fmt::string_view msg, fmt::format_args args);
-	ShowInfoVFmt(msg, fmt::make_format_args(args...));
+	ShowInfoVFmt(msg, make_preprocessed_format_args(args...));
 }
 
 struct log_prefix {
-	const char *GetLogPrefix(bool force = false);
+	std::string_view GetLogPrefix(bool force = false);
 
 private:
 	char buffer[24];
@@ -120,18 +120,18 @@ template <typename... T>
 [[noreturn]] void AssertMsgError(int line, const char *file, const char *expr, fmt::format_string<T...> msg, T&&... args)
 {
 	[[noreturn]] extern void AssertMsgErrorVFmt(int line, const char *file, const char *expr, fmt::string_view msg, fmt::format_args args);
-	AssertMsgErrorVFmt(line, file, expr, msg, fmt::make_format_args(args...));
+	AssertMsgErrorVFmt(line, file, expr, msg, make_preprocessed_format_args(args...));
 }
 template <typename... T>
 [[noreturn]] void AssertMsgTileError(int line, const char *file, const char *expr, uint32_t tile, fmt::format_string<T...> msg, T&&... args)
 {
 	[[noreturn]] extern void AssertMsgTileErrorVFmt(int line, const char *file, const char *expr, uint32_t tile, fmt::string_view msg, fmt::format_args args);
-	AssertMsgTileErrorVFmt(line, file, expr, tile, msg, fmt::make_format_args(args...));
+	AssertMsgTileErrorVFmt(line, file, expr, tile, msg, make_preprocessed_format_args(args...));
 }
 
 #if !defined(NDEBUG) || defined(WITH_ASSERT)
 #	define assert_msg(expression, ...) do { if (unlikely(!(expression))) AssertMsgError(__LINE__, __FILE__, #expression, __VA_ARGS__); } while (false)
-#	define assert_msg_tile(expression, tile, ...) do { if (unlikely(!(expression))) AssertMsgTileError(__LINE__, __FILE__, #expression, tile, __VA_ARGS__); } while (false)
+#	define assert_msg_tile(expression, tile, ...) do { if (unlikely(!(expression))) AssertMsgTileError(__LINE__, __FILE__, #expression, debug_tile_index_type_erasure(tile), __VA_ARGS__); } while (false)
 #else
 #	define assert_msg(expression, ...)
 #	define assert_msg_tile(expression, tile, ...)

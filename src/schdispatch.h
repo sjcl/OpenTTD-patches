@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file schdispatch.h Functions related to scheduled dispatch. */
@@ -15,6 +15,7 @@
 #include "vehicle_type.h"
 #include "settings_type.h"
 
+void AddNewScheduledDispatchSchedule(VehicleID vindex);
 void ShowSchdispatchWindow(const Vehicle *v);
 void SchdispatchInvalidateWindows(const Vehicle *v);
 
@@ -41,5 +42,7 @@ public:
 
 using GetVehicleLastDispatchRecordFunctor = std::function<const LastDispatchRecord *(uint16_t)>;
 OrderConditionEvalResult EvaluateDispatchSlotConditionalOrder(const Order *order, std::span<const DispatchSchedule> schedules, StateTicks state_ticks, GetVehicleLastDispatchRecordFunctor get_vehicle_record);
+
+uint32_t WrapTickToScheduledDispatchRange(StateTicks base, uint32_t duration, StateTicks value);
 
 #endif /* SCHDISPATCH_H */

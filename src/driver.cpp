@@ -2,23 +2,25 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file driver.cpp Base for all driver handling. */
 
 #include "stdafx.h"
+#include "driver.h"
 #include "debug.h"
 #include "error.h"
 #include "error_func.h"
-#include "sound/sound_driver.hpp"
-#include "music/music_driver.hpp"
-#include "video/video_driver.hpp"
+#include "strings_func.h"
+#include "video/video_driver_base.hpp"
 #include "string_func.h"
-#include "table/strings.h"
 #include "fileio_func.h"
+#include "core/string_consumer.hpp"
 #include <string>
 #include <sstream>
+
+#include "table/strings.h"
 
 #include "safeguards.h"
 
@@ -42,18 +44,18 @@ static const std::string HWACCELERATION_TEST_FILE = "hwaccel.dat"; ///< Filename
  * @param name The parameter name we're looking for.
  * @return The parameter value.
  */
-const char *GetDriverParam(const StringList &parm, const char *name)
+std::optional<std::string_view> GetDriverParam(const StringList &parm, std::string_view name)
 {
-	if (parm.empty()) return nullptr;
+	if (parm.empty()) return std::nullopt;
 
-	size_t len = strlen(name);
 	for (auto &p : parm) {
-		if (p.compare(0, len, name) == 0) {
-			if (p.length() == len) return "";
-			if (p[len] == '=') return p.c_str() + len + 1;
+		StringConsumer consumer{p};
+		if (consumer.ReadIf(name)) {
+			if (!consumer.AnyBytesLeft()) return "";
+			if (consumer.ReadIf("=")) return consumer.GetLeftData();
 		}
 	}
-	return nullptr;
+	return std::nullopt;
 }
 
 /**
@@ -62,9 +64,9 @@ const char *GetDriverParam(const StringList &parm, const char *name)
  * @param name The parameter name we're looking for.
  * @return The parameter value.
  */
-bool GetDriverParamBool(const StringList &parm, const char *name)
+bool GetDriverParamBool(const StringList &parm, std::string_view name)
 {
-	return GetDriverParam(parm, name) != nullptr;
+	return GetDriverParam(parm, name).has_value();
 }
 
 /**
@@ -74,10 +76,13 @@ bool GetDriverParamBool(const StringList &parm, const char *name)
  * @param def  The default value if the parameter doesn't exist.
  * @return The parameter value.
  */
-int GetDriverParamInt(const StringList &parm, const char *name, int def)
+int GetDriverParamInt(const StringList &parm, std::string_view name, int def)
 {
-	const char *p = GetDriverParam(parm, name);
-	return p != nullptr ? atoi(p) : def;
+	auto p = GetDriverParam(parm, name);
+	if (!p.has_value()) return def;
+	auto value = ParseInteger<int>(*p);
+	if (value.has_value()) return *value;
+	UserError("Invalid value for driver parameter {}: {}", name, *p);
 }
 
 /**
@@ -116,47 +121,46 @@ bool DriverFactoryBase::SelectDriverImpl(const std::string &name, Driver::Type t
 				if (d->type != type) continue;
 				if (d->priority != priority) continue;
 
-				if (type == Driver::DT_VIDEO && !_video_hw_accel && d->UsesHardwareAcceleration()) continue;
+				if (type == Driver::Type::Video && !_video_hw_accel && d->UsesHardwareAcceleration()) continue;
 
-				if (type == Driver::DT_VIDEO && _video_hw_accel && d->UsesHardwareAcceleration()) {
+				if (type == Driver::Type::Video && _video_hw_accel && d->UsesHardwareAcceleration()) {
 					/* Check if we have already tried this driver in last run.
 					 * If it is here, it most likely means we crashed. So skip
 					 * hardware acceleration. */
-					auto filename = FioFindFullPath(BASE_DIR, HWACCELERATION_TEST_FILE);
+					auto filename = FioFindFullPath(Subdirectory::Base, HWACCELERATION_TEST_FILE);
 					if (!filename.empty()) {
 						FioRemove(filename);
 
 						Debug(driver, 1, "Probing {} driver '{}' skipped due to earlier crash", GetDriverTypeName(type), d->name);
 
 						_video_hw_accel = false;
-						ErrorMessageData msg(STR_VIDEO_DRIVER_ERROR, STR_VIDEO_DRIVER_ERROR_HARDWARE_ACCELERATION_CRASH, true);
-						ScheduleErrorMessage(msg);
+						ErrorMessageData msg(GetEncodedString(STR_VIDEO_DRIVER_ERROR), GetEncodedString(STR_VIDEO_DRIVER_ERROR_HARDWARE_ACCELERATION_CRASH), true);
+						ScheduleErrorMessage(std::move(msg));
 						continue;
 					}
 
 					/* Write empty file to note we are attempting hardware acceleration. */
-					FioFOpenFile(HWACCELERATION_TEST_FILE, "w", BASE_DIR);
+					FioFOpenFile(HWACCELERATION_TEST_FILE, "w", Subdirectory::Base);
 				}
 
-				Driver *oldd = *GetActiveDriver(type);
-				Driver *newd = d->CreateInstance();
-				*GetActiveDriver(type) = newd;
+				/* Keep old driver in case we need to switch back, or may still need to process an OS callback. */
+				auto oldd = std::move(GetActiveDriver(type));
+				auto newd = d->CreateInstance();
 
 				const char *err = newd->Start({});
 				if (err == nullptr) {
 					Debug(driver, 1, "Successfully probed {} driver '{}'", GetDriverTypeName(type), d->name);
-					delete oldd;
+					GetActiveDriver(type) = std::move(newd);
 					return true;
 				}
 
-				*GetActiveDriver(type) = oldd;
+				GetActiveDriver(type) = std::move(oldd);
 				Debug(driver, 1, "Probing {} driver '{}' failed with error: {}", GetDriverTypeName(type), d->name, err);
-				delete newd;
 
-				if (type == Driver::DT_VIDEO && _video_hw_accel && d->UsesHardwareAcceleration()) {
+				if (type == Driver::Type::Video && _video_hw_accel && d->UsesHardwareAcceleration()) {
 					_video_hw_accel = false;
-					ErrorMessageData msg(STR_VIDEO_DRIVER_ERROR, STR_VIDEO_DRIVER_ERROR_NO_HARDWARE_ACCELERATION, true);
-					ScheduleErrorMessage(msg);
+					ErrorMessageData msg(GetEncodedString(STR_VIDEO_DRIVER_ERROR), GetEncodedString(STR_VIDEO_DRIVER_ERROR_NO_HARDWARE_ACCELERATION), true);
+					ScheduleErrorMessage(std::move(msg));
 				}
 			}
 		}
@@ -184,17 +188,14 @@ bool DriverFactoryBase::SelectDriverImpl(const std::string &name, Driver::Type t
 			if (!StrEqualsIgnoreCase(dname, d->name)) continue;
 
 			/* Found our driver, let's try it */
-			Driver *newd = d->CreateInstance();
-
+			auto newd = d->CreateInstance();
 			const char *err = newd->Start(parms);
 			if (err != nullptr) {
-				delete newd;
-				UserError("Unable to load driver '{}'. The error was: {}", d->name, err);
+				UserError("Unable to load driver '{}'. The error was: {}", d->name, *err);
 			}
 
 			Debug(driver, 1, "Successfully loaded {} driver '{}'", GetDriverTypeName(type), d->name);
-			delete *GetActiveDriver(type);
-			*GetActiveDriver(type) = newd;
+			GetActiveDriver(type) = std::move(newd);
 			return true;
 		}
 		UserError("No such {} driver: {}\n", GetDriverTypeName(type), dname);
@@ -209,7 +210,7 @@ void DriverFactoryBase::MarkVideoDriverOperational()
 	/* As part of the detection whether the GPU driver crashes the game,
 	 * and as we are operational now, remove the hardware acceleration
 	 * test-file. */
-	auto filename = FioFindFullPath(BASE_DIR, HWACCELERATION_TEST_FILE);
+	auto filename = FioFindFullPath(Subdirectory::Base, HWACCELERATION_TEST_FILE);
 	if (!filename.empty()) FioRemove(filename);
 }
 
@@ -219,7 +220,7 @@ void DriverFactoryBase::MarkVideoDriverOperational()
  */
 void DriverFactoryBase::GetDriversInfo(format_target &output)
 {
-	for (Driver::Type type = Driver::DT_BEGIN; type != Driver::DT_END; type++) {
+	for (Driver::Type type : EnumRange(Driver::Type::End)) {
 		output.format("List of {} drivers:\n", GetDriverTypeName(type));
 
 		for (int priority = 10; priority >= 0; priority--) {

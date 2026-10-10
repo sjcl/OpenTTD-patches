@@ -42,10 +42,15 @@ STR_CONFIG_SETTING_CITY_ZONE_4_MULT_HELPTEXT                    :Multiplier for 
 STR_CONFIG_SETTING_TIMETABLE_IN_TICKS                           :Show timetable in ticks rather than days: {STRING}
 STR_CONFIG_SETTING_TIMETABLE_IN_TICKS_HELPTEXT                  :Show travel times in time tables in game ticks instead of days
 
+STR_NETWORK_MESSAGE_GIVE_MONEY_RECEIVE                          :*** {STRING} gave your company {CURRENCY_LONG}
+STR_NETWORK_MESSAGE_GAVE_MONEY_AWAY                             :*** You gave {STRING} {CURRENCY_LONG}
+
 STR_TRANSPARENT_LOADING_TOOLTIP                                 :{BLACK}Toggle transparency for loading indicators. Ctrl+Click to lock
 
 STR_LINKGRAPH_STATS_TOOLTIP_TIME_EXTENSION_GENERAL              :{}Average travel time: {STRING}
 STR_LINKGRAPH_STATS_TOOLTIP_CAPACITY                            :{}Capacity: {CARGO_LONG}
+
+STR_BUILD_SIGNAL_TOGGLE_ADVANCED_SIGNAL_TOOLTIP                 :{BLACK}Toggle showing advanced signal types
 
 # Tracerestrict GUI
 
@@ -132,3 +137,16 @@ STR_COMPANY_PASSWORD_MAKE_DEFAULT_TOOLTIP                       :{BLACK}Use this
 STR_COMPANY_VIEW_PASSWORD                                       :{BLACK}Password
 STR_COMPANY_VIEW_PASSWORD_TOOLTIP                               :{BLACK}Password-protect your company to prevent unauthorised users from joining
 STR_COMPANY_VIEW_SET_PASSWORD                                   :{BLACK}Set company password
+
+# JSON messages
+
+STR_INTRO_NEWGRF_SETTINGS                                       :{BLACK}NewGRF Settings
+STR_INTRO_AI_SETTINGS                                           :{BLACK}AI Settings
+STR_INTRO_GAMESCRIPT_SETTINGS                                   :{BLACK}Game Script Settings
+STR_INTRO_TOOLTIP_NEWGRF_SETTINGS                               :{BLACK}Open NewGRF settings
+STR_INTRO_TOOLTIP_AI_SETTINGS                                   :{BLACK}Open AI settings
+STR_INTRO_TOOLTIP_GAMESCRIPT_SETTINGS                           :{BLACK}Open Game script settings
+STR_INTRO_CAPTION_TRADITIONAL                                   :{WHITE}OpenTTD {REV}
+
+STR_CONFIG_SETTING_LINEAR_MAINTENANCE                           :Linear maintenance growth: {STRING}
+STR_CONFIG_SETTING_LINEAR_MAINTENANCE_HELPTEXT                  :When enabled, infrastructure maintenance costs grow linearly rather than polynomially

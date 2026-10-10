@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file xaudio2_s.h Base for XAudio2 sound handling. */
@@ -24,8 +24,8 @@ public:
 /** Factory for the XAudio2 sound driver. */
 class FSoundDriver_XAudio2 : public DriverFactoryBase {
 public:
-	FSoundDriver_XAudio2() : DriverFactoryBase(Driver::DT_SOUND, 10, "xaudio2", "XAudio2 Sound Driver (param hz,samples)") {}
-	Driver *CreateInstance() const override { return new SoundDriver_XAudio2(); }
+	FSoundDriver_XAudio2() : DriverFactoryBase(Driver::Type::Sound, 10, "xaudio2", "XAudio2 Sound Driver (param hz,samples)") {}
+	std::unique_ptr<Driver> CreateInstance() const override { return std::make_unique<SoundDriver_XAudio2>(); }
 };
 
 #endif /* SOUND_XAUDIO2_H */

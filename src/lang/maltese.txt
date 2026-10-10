@@ -13,7 +13,7 @@
 # This file is part of OpenTTD.
 # OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
 # OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-# See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+# See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
 
 
 ##id 0x0000
@@ -275,7 +275,6 @@ STR_SCENEDIT_FILE_MENU_SEPARATOR                                :
 
 
 # Settings menu
-###length 16
 
 # File menu
 
@@ -318,6 +317,9 @@ STR_GRAPH_X_LABEL_MONTH                                         :{TINY_FONT}{STR
 STR_GRAPH_X_LABEL_MONTH_YEAR                                    :{TINY_FONT}{STRING}{}{NUM}
 STR_GRAPH_Y_LABEL                                               :{TINY_FONT}{STRING}
 STR_GRAPH_Y_LABEL_NUMBER                                        :{TINY_FONT}{COMMA}
+
+
+
 
 
 
@@ -401,7 +403,8 @@ STR_NEWS_VEHICLE_IS_LOST                                        :{WHITE}{VEHICLE
 
 
 
-###length 44
+
+###length 46
 
 
 # Autosave dropdown
@@ -410,6 +413,7 @@ STR_NEWS_VEHICLE_IS_LOST                                        :{WHITE}{VEHICLE
 
 
 STR_GAME_OPTIONS_RESOLUTION_OTHER                               :oħrajn
+
 
 
 
@@ -456,7 +460,7 @@ STR_GAME_OPTIONS_RESOLUTION_OTHER                               :oħrajn
 ###length 4
 
 
-# Settings tree window
+# Settings tree in the Game Options window
 
 
 
@@ -476,6 +480,7 @@ STR_GAME_OPTIONS_RESOLUTION_OTHER                               :oħrajn
 
 
 STR_CONFIG_SETTING_RUNNING_COSTS_HELPTEXT                       :Stabbilixxi l-kosti għal manutenzjoni u servizzi fuq vetturi u infrastruttura
+###length 3
 
 STR_CONFIG_SETTING_CONSTRUCTION_SPEED                           :Veloċita' tal-kostruzzjoni: {STRING}
 STR_CONFIG_SETTING_CONSTRUCTION_SPEED_HELPTEXT                  :Illimita l-ammont massimu ta' kostruzzjonijiet għall-AI
@@ -492,12 +497,13 @@ STR_CONFIG_SETTING_SUBSIDY_MULTIPLIER_HELPTEXT                  :Stabbilixxi kem
 
 STR_CONFIG_SETTING_CONSTRUCTION_COSTS                           :Kosti tal-kostruzzjoni: {STRING}
 STR_CONFIG_SETTING_CONSTRUCTION_COSTS_HELPTEXT                  :Stabbilixxi l-livell ta' kostruzzjoni u l-prezz tax-xiri
+###length 3
 
 STR_CONFIG_SETTING_RECESSIONS                                   :Riċessjonijiet: {STRING}
 STR_CONFIG_SETTING_RECESSIONS_HELPTEXT                          :Jekk mixgħula kull ftit snin tista' sseħħ riċessjoni. Waqt riċessjoni, il-produzzjoni ta' kollox tonqos (tirritorna għal kemm kienet qabel kif tgħaddi r-riċessjoni)
 
-STR_CONFIG_SETTING_TRAIN_REVERSING                              :Tħallix li ferrovija ddur lura fi stazzjon: {STRING}
-STR_CONFIG_SETTING_TRAIN_REVERSING_HELPTEXT                     :Jekk tinxtegħel, ferroviji ma jdurux lura fi stazzjonijiet li mhumiex fit-tarf, jekk teżisti rotta iqsar għad-destinazzjoni li jmiss
+
+###length 3
 
 STR_CONFIG_SETTING_DISASTERS                                    :Diżastri: {STRING}
 STR_CONFIG_SETTING_DISASTERS_HELPTEXT                           :Ixgħel jew itfi diżastri li xi drabi jistgħu jaffetwaw jew ikissru vetturi jew infrastrutturi
@@ -569,6 +575,8 @@ STR_CONFIG_SETTING_WARN_LOST_VEHICLE                            :Avza jekk jinti
 ###setting-zero-is-special
 
 
+###setting-zero-is-special
+
 
 ###length 2
 
@@ -590,6 +598,8 @@ STR_CONFIG_SETTING_WARN_LOST_VEHICLE                            :Avza jekk jinti
 
 ###length 4
 
+###length 4
+
 
 
 ###length 3
@@ -609,6 +619,7 @@ STR_CONFIG_SETTING_WARN_LOST_VEHICLE                            :Avza jekk jinti
 ###length 4
 
 ###length 4
+
 
 
 
@@ -693,10 +704,13 @@ STR_CONFIG_SETTING_ADVANCED_VEHICLE_LISTS_HELPTEXT              :Ippermetti l-uz
 
 
 
+
 ###length 3
 
 
 ###setting-zero-is-special
+
+###length 2
 
 ###length 3
 
@@ -710,6 +724,8 @@ STR_CONFIG_SETTING_ADVANCED_VEHICLE_LISTS_HELPTEXT              :Ippermetti l-uz
 ###length 5
 
 
+
+###length 3
 
 ###length 3
 
@@ -743,14 +759,14 @@ STR_CONFIG_SETTING_ADVANCED_VEHICLE_LISTS_HELPTEXT              :Ippermetti l-uz
 
 ###length 3
 
-###length 3
+###length 4
 
 
 
 
 # Config errors
 
-# Video initalization errors
+# Video initialization errors
 
 # Intro window
 STR_INTRO_CAPTION                                               :{WHITE}OpenTTD {REV}
@@ -801,7 +817,7 @@ STR_NETWORK_SERVER_LIST_MAP_SIZE_SHORT                          :{BLACK}{COMMA}x
 STR_NETWORK_CONNECTING_DOWNLOADING_1                            :{BLACK}{BYTES} imnizzlin s'issa
 STR_NETWORK_CONNECTING_DOWNLOADING_2                            :{BLACK}{BYTES} / {BYTES} imnizzlin s'issa
 
-###length 8
+###length 6
 
 
 
@@ -831,7 +847,7 @@ STR_NETWORK_ERROR_CLIENT_NAME_IN_USE                            :isem diġa qed 
 STR_NETWORK_ERROR_CLIENT_WRONG_PASSWORD                         :password ħażin
 
 # Network related errors
-STR_NETWORK_SERVER_MESSAGE                                      :*** {1:STRING}
+STR_NETWORK_SERVER_MESSAGE                                      :*** {STRING}
 
 ###length 12
 
@@ -880,6 +896,11 @@ STR_NETWORK_SERVER_MESSAGE                                      :*** {1:STRING}
 
 
 
+
+
+
+
+
 # Signal window
 
 # Bridge selection window
@@ -916,6 +937,7 @@ STR_NETWORK_SERVER_MESSAGE                                      :*** {1:STRING}
 
 
 # Town generation window (SE)
+
 
 
 
@@ -960,6 +982,8 @@ STR_MAPGEN_BY                                                   :{BLACK}*
 ###length 21
 
 # Strings for map borders at game generation
+
+###length 3
 
 
 
@@ -1043,6 +1067,7 @@ STR_LOCAL_AUTHORITY_COMPANY_RATING                              :{YELLOW}{COMPAN
 STR_GOALS_TEXT                                                  :{ORANGE}{STRING}
 
 # Goal question window
+###length 4
 
 # Goal Question button list
 ###length 18
@@ -1131,6 +1156,8 @@ STR_FINANCES_POSITIVE_INCOME                                    :{BLACK}+{CURREN
 ###length VEHICLE_TYPES
 
 
+# Vehicle sort details
+
 ###length 3
 
 ###length VEHICLE_TYPES
@@ -1191,6 +1218,7 @@ STR_DEPOT_VEHICLE_TOOLTIP_CARGO                                 :{}{CARGO_LONG} 
 
 
 # Engine preview window
+
 
 
 
@@ -1278,7 +1306,7 @@ STR_ORDER_INDEX                                                 :{COMMA}:{NBSP}
 
 
 # Conditional order variables, must follow order of OrderConditionVariable enum
-###length 8
+###length 9
 ###next-name-looks-similar
 
 
@@ -1294,12 +1322,11 @@ STR_ORDERS_DELETE_ALL_TOOLTIP                                   :{BLACK}Hassar l
 ###length 3
 ###next-name-looks-similar
 
-STR_ORDER_GO_TO_NEAREST_DEPOT_FORMAT                            :{STRING} {STRING} {STRING}
 STR_ORDER_GO_TO_DEPOT_FORMAT                                    :{STRING} {DEPOT}
 
 
 
-STR_ORDER_GO_TO_STATION                                         :{STRING} {STATION} {STRING}
+STR_ORDER_GO_TO_STATION                                         :{STRING} {STATION}
 
 STR_ORDER_IMPLICIT                                              :(Awtomatiku)
 
@@ -1315,11 +1342,10 @@ STR_ORDER_IMPLICIT                                              :(Awtomatiku)
 
 STR_TIMETABLE_TOOLTIP                                           :{BLACK}Skeda - agħfas fuq ordni biex tagħzilha.
 
-STR_TIMETABLE_TRAVEL_NOT_TIMETABLED_SPEED                       :Патуваат со најмногу {2:VELOCITY} (не е време-Увезени)
+STR_TIMETABLE_TRAVEL_NOT_TIMETABLED_SPEED                       :Патуваат со најмногу {VELOCITY} (не е време-Увезени)
 STR_TIMETABLE_TRAVEL_FOR_SPEED                                  :патуваат за {STRING} со најмногу {VELOCITY}
 
 STR_TIMETABLE_TOTAL_TIME                                        :{BLACK}Din l-iskeda ser iddum {STRING} biex titlesta
-
 
 
 
@@ -1467,6 +1493,10 @@ STR_ERROR_CAN_T_SELL_TRAIN                                      :{WHITE}Ma tista
 STR_ERROR_CAN_T_SELL_ROAD_VEHICLE                               :{WHITE}Ma tistax tbigħ din il-karozza...
 STR_ERROR_CAN_T_SELL_SHIP                                       :{WHITE}Ma tistax tbigħ dan il-vapur...
 STR_ERROR_CAN_T_SELL_AIRCRAFT                                   :{WHITE}Ma tistax tbigħ dan l-ajruplan...
+
+###length VEHICLE_TYPES
+
+###length VEHICLE_TYPES
 
 STR_ERROR_TOO_MANY_VEHICLES_IN_GAME                             :{WHITE}Hemm wisq vetturi fil-logħba
 
@@ -1726,18 +1756,7 @@ STR_SAVEGAME_NAME_DEFAULT                                       :{COMPANY}, {STR
 
 # Viewport strings
 STR_VIEWPORT_TOWN_POP                                           :{WHITE}{TOWN} ({COMMA})
-STR_VIEWPORT_TOWN                                               :{WHITE}{TOWN}
-STR_VIEWPORT_TOWN_TINY_BLACK                                    :{TINY_FONT}{BLACK}{TOWN}
-STR_VIEWPORT_TOWN_TINY_WHITE                                    :{TINY_FONT}{WHITE}{TOWN}
-
-STR_VIEWPORT_SIGN_SMALL_BLACK                                   :{TINY_FONT}{BLACK}{SIGN}
-STR_VIEWPORT_SIGN_SMALL_WHITE                                   :{TINY_FONT}{WHITE}{SIGN}
-
 STR_VIEWPORT_STATION                                            :{STATION} {STATION_FEATURES}
-STR_VIEWPORT_STATION_TINY                                       :{TINY_FONT}{STATION}
-
-STR_VIEWPORT_WAYPOINT                                           :{WAYPOINT}
-STR_VIEWPORT_WAYPOINT_TINY                                      :{TINY_FONT}{WAYPOINT}
 
 # Simple strings to get specific types of data
 STR_COMPANY_NAME                                                :{COMPANY}
@@ -1788,3 +1807,4 @@ STR_PLANE                                                       :{BLACK}{PLANE}
 STR_SHIP                                                        :{BLACK}{SHIP}
 
 STR_TOOLBAR_RAILTYPE_VELOCITY                                   :{STRING} ({VELOCITY})
+

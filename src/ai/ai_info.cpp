@@ -2,10 +2,10 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
-/** @file ai_info.cpp Implementation of AIInfo and AILibrary */
+/** @file ai_info.cpp Implementation of AIInfo and AILibrary. */
 
 #include "../stdafx.h"
 
@@ -24,11 +24,11 @@
 /**
  * Check if the API version provided by the AI is supported.
  * @param api_version The API version as provided by the AI.
+ * @return \c true if the given version is supported by this version of OpenTTD.
  */
 static bool CheckAPIVersion(const std::string &api_version)
 {
-	static constexpr std::initializer_list<const char*> versions{ "0.7", "1.0", "1.1", "1.2", "1.3", "1.4", "1.5", "1.6", "1.7", "1.8", "1.9", "1.10", "1.11", "12", "13", "14", "15" };
-	return std::find_if(versions.begin(), versions.end(), [&](const char *v) { return api_version == v; }) != versions.end();
+	return std::ranges::find(AIInfo::ApiVersions, api_version) != std::end(AIInfo::ApiVersions);
 }
 
 #if defined(_WIN32)
@@ -36,29 +36,29 @@ static bool CheckAPIVersion(const std::string &api_version)
 #endif /* _WIN32 */
 template <> const char *GetClassName<AIInfo, ScriptType::AI>() { return "AIInfo"; }
 
-/* static */ void AIInfo::RegisterAPI(Squirrel *engine)
+/* static */ void AIInfo::RegisterAPI(Squirrel &engine)
 {
 	/* Create the AIInfo class, and add the RegisterAI function */
 	DefSQClass<AIInfo, ScriptType::AI> SQAIInfo("AIInfo");
 	SQAIInfo.PreRegister(engine);
-	SQAIInfo.AddConstructor<void (AIInfo::*)(), 1>(engine, "x");
+	SQAIInfo.AddConstructor<void (AIInfo::*)()>(engine, "x");
 	SQAIInfo.DefSQAdvancedMethod(engine, &AIInfo::AddSetting, "AddSetting");
 	SQAIInfo.DefSQAdvancedMethod(engine, &AIInfo::AddLabels, "AddLabels");
-	SQAIInfo.DefSQConst(engine, SCRIPTCONFIG_NONE, "CONFIG_NONE");
-	SQAIInfo.DefSQConst(engine, SCRIPTCONFIG_NONE, "CONFIG_RANDOM"); // Deprecated, mapped to NONE.
-	SQAIInfo.DefSQConst(engine, SCRIPTCONFIG_BOOLEAN, "CONFIG_BOOLEAN");
-	SQAIInfo.DefSQConst(engine, SCRIPTCONFIG_INGAME, "CONFIG_INGAME");
-	SQAIInfo.DefSQConst(engine, SCRIPTCONFIG_DEVELOPER, "CONFIG_DEVELOPER");
+	SQAIInfo.DefSQConst(engine, ScriptConfigFlags{}.base(), "CONFIG_NONE");
+	SQAIInfo.DefSQConst(engine, ScriptConfigFlags{}.base(), "CONFIG_RANDOM"); // Deprecated, mapped to NONE.
+	SQAIInfo.DefSQConst(engine, ScriptConfigFlags{ScriptConfigFlag::Boolean}.base(), "CONFIG_BOOLEAN");
+	SQAIInfo.DefSQConst(engine, ScriptConfigFlags{ScriptConfigFlag::InGame}.base(), "CONFIG_INGAME");
+	SQAIInfo.DefSQConst(engine, ScriptConfigFlags{ScriptConfigFlag::Developer}.base(), "CONFIG_DEVELOPER");
 
 	/* Pre 1.2 had an AI prefix */
-	SQAIInfo.DefSQConst(engine, SCRIPTCONFIG_NONE, "AICONFIG_NONE");
-	SQAIInfo.DefSQConst(engine, SCRIPTCONFIG_NONE, "AICONFIG_RANDOM"); // Deprecated, mapped to NONE.
-	SQAIInfo.DefSQConst(engine, SCRIPTCONFIG_BOOLEAN, "AICONFIG_BOOLEAN");
-	SQAIInfo.DefSQConst(engine, SCRIPTCONFIG_INGAME, "AICONFIG_INGAME");
+	SQAIInfo.DefSQConst(engine, ScriptConfigFlags{}.base(), "AICONFIG_NONE");
+	SQAIInfo.DefSQConst(engine, ScriptConfigFlags{}.base(), "AICONFIG_RANDOM"); // Deprecated, mapped to NONE.
+	SQAIInfo.DefSQConst(engine, ScriptConfigFlags{ScriptConfigFlag::Boolean}.base(), "AICONFIG_BOOLEAN");
+	SQAIInfo.DefSQConst(engine, ScriptConfigFlags{ScriptConfigFlag::InGame}.base(), "AICONFIG_INGAME");
 
 	SQAIInfo.PostRegister(engine);
-	engine->AddMethod("RegisterAI", &AIInfo::Constructor, 2, "tx");
-	engine->AddMethod("RegisterDummyAI", &AIInfo::DummyConstructor, 2, "tx");
+	engine.AddMethod("RegisterAI", &AIInfo::Constructor, "tx");
+	engine.AddMethod("RegisterDummyAI", &AIInfo::DummyConstructor, "tx");
 }
 
 /* static */ SQInteger AIInfo::Constructor(HSQUIRRELVM vm)
@@ -68,11 +68,12 @@ template <> const char *GetClassName<AIInfo, ScriptType::AI>() { return "AIInfo"
 	if (SQ_FAILED(sq_getinstanceup(vm, 2, &instance, nullptr)) || instance == nullptr) return sq_throwerror(vm, "Pass an instance of a child class of AIInfo to RegisterAI");
 	AIInfo *info = (AIInfo *)instance;
 
-	SQInteger res = ScriptInfo::Constructor(vm, info);
+	SQInteger res = ScriptInfo::Constructor(vm, *info);
 	if (res != 0) return res;
 
 	if (info->engine->MethodExists(info->SQ_instance, "MinVersionToLoad")) {
 		if (!info->engine->CallIntegerMethod(info->SQ_instance, "MinVersionToLoad", &info->min_loadable_version, MAX_GET_OPS)) return SQ_ERROR;
+		if (info->min_loadable_version < 0) return SQ_ERROR;
 	} else {
 		info->min_loadable_version = info->GetVersion();
 	}
@@ -86,7 +87,7 @@ template <> const char *GetClassName<AIInfo, ScriptType::AI>() { return "AIInfo"
 	if (info->engine->MethodExists(info->SQ_instance, "GetAPIVersion")) {
 		if (!info->engine->CallStringMethod(info->SQ_instance, "GetAPIVersion", &info->api_version, MAX_GET_OPS)) return SQ_ERROR;
 		if (!CheckAPIVersion(info->api_version)) {
-			Debug(script, 1, "Loading info.nut from ({}.{}): GetAPIVersion returned invalid version", info->GetName(), info->GetVersion());
+			sq_throwerror(vm, fmt::format("Loading info.nut from ({}.{}): GetAPIVersion returned invalid version", info->GetName(), info->GetVersion()));
 			return SQ_ERROR;
 		}
 	} else {
@@ -96,7 +97,7 @@ template <> const char *GetClassName<AIInfo, ScriptType::AI>() { return "AIInfo"
 	/* Remove the link to the real instance, else it might get deleted by RegisterAI() */
 	sq_setinstanceup(vm, 2, nullptr);
 	/* Register the AI to the base system */
-	info->GetScanner()->RegisterScript(info);
+	info->GetScanner()->RegisterScript(std::unique_ptr<AIInfo>{info});
 	return 0;
 }
 
@@ -106,15 +107,15 @@ template <> const char *GetClassName<AIInfo, ScriptType::AI>() { return "AIInfo"
 	SQUserPointer instance;
 	sq_getinstanceup(vm, 2, &instance, nullptr);
 	AIInfo *info = (AIInfo *)instance;
-	info->api_version = fmt::format("{}.{}", GB(_openttd_newgrf_version, 28, 4), GB(_openttd_newgrf_version, 24, 4));
+	info->api_version = *std::rbegin(AIInfo::ApiVersions);
 
-	SQInteger res = ScriptInfo::Constructor(vm, info);
+	SQInteger res = ScriptInfo::Constructor(vm, *info);
 	if (res != 0) return res;
 
 	/* Remove the link to the real instance, else it might get deleted by RegisterAI() */
 	sq_setinstanceup(vm, 2, nullptr);
 	/* Register the AI to the base system */
-	static_cast<AIScannerInfo *>(info->GetScanner())->SetDummyAI(info);
+	static_cast<AIScannerInfo *>(info->GetScanner())->SetDummyAI(std::unique_ptr<AIInfo>(info));
 	return 0;
 }
 
@@ -131,33 +132,32 @@ bool AIInfo::CanLoadFromVersion(int version) const
 }
 
 
-/* static */ void AILibrary::RegisterAPI(Squirrel *engine)
+/* static */ void AILibrary::RegisterAPI(Squirrel &engine)
 {
 	/* Create the AILibrary class, and add the RegisterLibrary function */
-	engine->AddClassBegin("AILibrary");
-	engine->AddClassEnd();
-	engine->AddMethod("RegisterLibrary", &AILibrary::Constructor, 2, "tx");
+	engine.AddClassBegin("AILibrary");
+	engine.AddClassEnd();
+	engine.AddMethod("RegisterLibrary", &AILibrary::Constructor, "tx");
 }
 
 /* static */ SQInteger AILibrary::Constructor(HSQUIRRELVM vm)
 {
 	/* Create a new library */
-	AILibrary *library = new AILibrary();
+	auto library = std::make_unique<AILibrary>();
 
-	SQInteger res = ScriptInfo::Constructor(vm, library);
+	SQInteger res = ScriptInfo::Constructor(vm, *library);
 	if (res != 0) {
-		delete library;
 		return res;
 	}
 
 	/* Cache the category */
 	if (!library->CheckMethod("GetCategory") || !library->engine->CallStringMethod(library->SQ_instance, "GetCategory", &library->category, MAX_GET_OPS)) {
-		delete library;
 		return SQ_ERROR;
 	}
 
 	/* Register the Library to the base system */
-	library->GetScanner()->RegisterScript(library);
+	ScriptScanner *scanner = library->GetScanner();
+	scanner->RegisterScript(std::move(library));
 
 	return 0;
 }

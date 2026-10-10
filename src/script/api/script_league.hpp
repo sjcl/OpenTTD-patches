@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file script_league.hpp Everything to manipulate league tables. */
@@ -25,30 +25,20 @@
  */
 class ScriptLeagueTable : public ScriptObject {
 public:
-	/**
-	 * The league table IDs.
-	 */
-	enum LeagueTableID {
-		LEAGUE_TABLE_INVALID = ::INVALID_LEAGUE_TABLE, ///< An invalid league table id.
-	};
+	static constexpr LeagueTableID LEAGUE_TABLE_INVALID = ::LeagueTableID::Invalid(); ///< An invalid league table id.
 
-	/**
-	 * The league table element IDs.
-	 */
-	enum LeagueTableElementID {
-		LEAGUE_TABLE_ELEMENT_INVALID = ::INVALID_LEAGUE_TABLE_ELEMENT, ///< An invalid league table element id.
-	};
+	static constexpr LeagueTableElementID LEAGUE_TABLE_ELEMENT_INVALID = ::LeagueTableElementID::Invalid(); ///< An invalid league table element id.
 
 	/**
 	 * The type of a link.
 	 */
 	enum LinkType : uint8_t {
-		LINK_NONE = ::LT_NONE,             ///< No link
-		LINK_TILE = ::LT_TILE,             ///< Link a tile
-		LINK_INDUSTRY = ::LT_INDUSTRY,     ///< Link an industry
-		LINK_TOWN = ::LT_TOWN,             ///< Link a town
-		LINK_COMPANY = ::LT_COMPANY,       ///< Link a company
-		LINK_STORY_PAGE = ::LT_STORY_PAGE, ///< Link a story page
+		LINK_NONE = to_underlying(::LinkType::None), ///< No link
+		LINK_TILE = to_underlying(::LinkType::Tile), ///< Link a tile
+		LINK_INDUSTRY = to_underlying(::LinkType::Industry), ///< Link an industry
+		LINK_TOWN = to_underlying(::LinkType::Town), ///< Link a town
+		LINK_COMPANY = to_underlying(::LinkType::Company), ///< Link a company
+		LINK_STORY_PAGE = to_underlying(::LinkType::StoryPage), ///< Link a story page
 	};
 
 	/**
@@ -80,7 +70,7 @@ public:
 	 * Create a new league table element.
 	 * @param table Id of the league table this element belongs to.
 	 * @param rating Value that elements are ordered by.
-	 * @param company Company to show the color blob for or INVALID_COMPANY.
+	 * @param company Company to show the colour blob for or COMPANY_INVALID.
 	 * @param text Text of the element (can be either a raw string, or ScriptText object).
 	 * @param score String representation of the score associated with the element (can be either a raw string, or ScriptText object).
 	 * @param link_type Type of the referenced object.
@@ -97,7 +87,7 @@ public:
 	/**
 	 * Update the attributes of a league table element.
 	 * @param element Id of the element to update
-	 * @param company Company to show the color blob for or INVALID_COMPANY.
+	 * @param company Company to show the colour blob for or COMPANY_INVALID.
 	 * @param text Text of the element (can be either a raw string, or ScriptText object).
 	 * @param link_type Type of the referenced object.
 	 * @param link_target Id of the referenced object.

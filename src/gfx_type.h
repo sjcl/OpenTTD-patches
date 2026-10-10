@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file gfx_type.h Types related to the graphics and/or input devices. */
@@ -10,23 +10,15 @@
 #ifndef GFX_TYPE_H
 #define GFX_TYPE_H
 
-#include "core/endian_type.hpp"
 #include "core/enum_type.hpp"
 #include "core/geometry_type.hpp"
+#include "sprite_id_type.h"
+#include "strings_type_trait.h"
 #include "zoom_type.h"
+#include <bit>
 #include <vector>
 
-typedef uint32_t SpriteID;  ///< The number of a sprite, without mapping bits and colourtables
-typedef uint32_t PaletteID; ///< The number of the palette
-typedef uint32_t CursorID;  ///< The number of the cursor (sprite)
-
-/** Combination of a palette sprite and a 'real' sprite */
-struct PalSpriteID {
-	SpriteID sprite;  ///< The 'real' sprite
-	PaletteID pal;    ///< The palette (use \c PAL_NONE) if not needed)
-};
-
-enum WindowKeyCodes {
+enum WindowKeyCodes : uint16_t {
 	WKC_SHIFT = 0x8000,
 	WKC_CTRL  = 0x4000,
 	WKC_ALT   = 0x2000,
@@ -109,8 +101,7 @@ enum WindowKeyCodes {
 
 /** A single sprite of a list of animated cursors */
 struct AnimCursor {
-	static const CursorID LAST = MAX_UVALUE(CursorID);
-	CursorID sprite;   ///< Must be set to LAST_ANIM when it is the last sprite of the loop
+	CursorID sprite; ///< Must be set to LAST_ANIM when it is the last sprite of the loop
 	uint8_t display_time; ///< Amount of ticks this sprite will be shown
 };
 
@@ -140,8 +131,8 @@ struct CursorVars {
 
 	Point draw_pos, draw_size;    ///< position and size bounding-box for drawing
 
-	const AnimCursor *animate_list; ///< in case of animated cursor, list of frames
-	const AnimCursor *animate_cur;  ///< in case of animated cursor, current frame
+	std::span<const AnimCursor> animate_list{}; ///< in case of animated cursor, list of frames
+	std::span<const AnimCursor>::iterator animate_cur = std::end(animate_list);  ///< in case of animated cursor, current frame
 	uint animate_timeout;           ///< in case of animated cursor, number of ticks to show the current cursor
 
 	bool visible;                 ///< cursor is visible
@@ -163,17 +154,11 @@ struct DrawPixelInfo {
 	ZoomLevel zoom;
 };
 
-/** Structure to access the alpha, red, green, and blue channels from a 32 bit number. */
-union Colour {
+/** Packed colour union to access the alpha, red, green, and blue channels from a 32 bit number for Emscripten build. */
+union ColourRGBA {
 	uint32_t data; ///< Conversion of the channel information to a 32 bit number.
 	struct {
-#if defined(__EMSCRIPTEN__)
-		uint8_t r, g, b, a;  ///< colour channels as used in browsers
-#elif TTD_ENDIAN == TTD_BIG_ENDIAN
-		uint8_t a, r, g, b; ///< colour channels in BE order
-#else
-		uint8_t b, g, r, a; ///< colour channels in LE order
-#endif /* TTD_ENDIAN == TTD_BIG_ENDIAN */
+		uint8_t r, g, b, a; ///< colour channels as used in browsers
 	};
 
 	/**
@@ -183,46 +168,98 @@ union Colour {
 	 * @param b The channel for the blue colour.
 	 * @param a The channel for the alpha/transparency.
 	 */
-	constexpr Colour(uint8_t r, uint8_t g, uint8_t b, uint8_t a = 0xFF) :
-#if defined(__EMSCRIPTEN__)
-		r(r), g(g), b(b), a(a)
-#elif TTD_ENDIAN == TTD_BIG_ENDIAN
-		a(a), r(r), g(g), b(b)
-#else
-		b(b), g(g), r(r), a(a)
-#endif /* TTD_ENDIAN == TTD_BIG_ENDIAN */
-	{
-	}
+	constexpr ColourRGBA(uint8_t r, uint8_t g, uint8_t b, uint8_t a = 0xFF) : r(r), g(g), b(b), a(a) { }
 
 	/**
 	 * Create a new colour.
 	 * @param data The colour in the correct packed format.
 	 */
-	constexpr Colour(uint data = 0) : data(data)
-	{
-	}
+	constexpr ColourRGBA(uint data = 0) : data(data) { }
 };
+
+/** Packed colour union to access the alpha, red, green, and blue channels from a 32 bit number for big-endian systems. */
+union ColourARGB {
+	uint32_t data; ///< Conversion of the channel information to a 32 bit number.
+	struct {
+		uint8_t a, r, g, b; ///< colour channels in BE order
+	};
+
+	/**
+	 * Create a new colour.
+	 * @param r The channel for the red colour.
+	 * @param g The channel for the green colour.
+	 * @param b The channel for the blue colour.
+	 * @param a The channel for the alpha/transparency.
+	 */
+	constexpr ColourARGB(uint8_t r, uint8_t g, uint8_t b, uint8_t a = 0xFF) : a(a), r(r), g(g), b(b) { }
+
+	/**
+	 * Create a new colour.
+	 * @param data The colour in the correct packed format.
+	 */
+	constexpr ColourARGB(uint data = 0) : data(data) { }
+};
+
+/** Packed colour union to access the alpha, red, green, and blue channels from a 32 bit number for little-endian systems. */
+union ColourBGRA {
+	uint32_t data; ///< Conversion of the channel information to a 32 bit number.
+	struct {
+		uint8_t b, g, r, a; ///< colour channels in LE order
+	};
+
+	/**
+	 * Create a new colour.
+	 * @param r The channel for the red colour.
+	 * @param g The channel for the green colour.
+	 * @param b The channel for the blue colour.
+	 * @param a The channel for the alpha/transparency.
+	 */
+	constexpr ColourBGRA(uint8_t r, uint8_t g, uint8_t b, uint8_t a = 0xFF) : b(b), g(g), r(r), a(a) { }
+
+	/**
+	 * Create a new colour.
+	 * @param data The colour in the correct packed format.
+	 */
+	constexpr ColourBGRA(uint data = 0) : data(data) { }
+};
+
+#if defined(__EMSCRIPTEN__)
+using Colour = ColourRGBA;
+#else
+using Colour = std::conditional_t<std::endian::native == std::endian::little, ColourBGRA, ColourARGB>;
+#endif /* defined(__EMSCRIPTEN__) */
 
 static_assert(sizeof(Colour) == sizeof(uint32_t));
 
-
 /** Available font sizes */
-enum FontSize {
-	FS_NORMAL, ///< Index of the normal font in the font tables.
-	FS_SMALL,  ///< Index of the small font in the font tables.
-	FS_LARGE,  ///< Index of the large font in the font tables.
-	FS_MONO,   ///< Index of the monospaced font in the font tables.
-	FS_END,
+enum class FontSize : uint8_t {
+	Normal, ///< Index of the normal font in the font tables.
+	Small, ///< Index of the small font in the font tables.
+	Large, ///< Index of the large font in the font tables.
+	Monospace, ///< Index of the monospaced font in the font tables.
 
-	FS_BEGIN = FS_NORMAL, ///< First font.
+	End, ///< Marker for the end of the enumerations.
+	Begin = FontSize::Normal, ///< Marker for the first font in the enumeration.
 };
-DECLARE_POSTFIX_INCREMENT(FontSize)
 
-inline const char *FontSizeToName(FontSize fs)
+/** Bitset of \c FontSize elements. */
+using FontSizes = EnumBitSet<FontSize, uint8_t>;
+
+template <>
+struct BaseBitSetEnableDirectIteration<FontSizes> {
+	static const bool value = true;
+};
+
+/** Mask of all possible font sizes. */
+constexpr FontSizes FONTSIZES_ALL{FontSize::Normal, FontSize::Small, FontSize::Large, FontSize::Monospace};
+/** Mask of font sizes required to be present. */
+constexpr FontSizes FONTSIZES_REQUIRED{FontSize::Normal, FontSize::Small, FontSize::Large};
+
+inline std::string_view FontSizeToName(FontSize fs)
 {
-	static const char *SIZE_TO_NAME[] = { "medium", "small", "large", "mono" };
-	assert(fs < FS_END);
-	return SIZE_TO_NAME[fs];
+	static const std::string_view SIZE_TO_NAME[] = { "medium", "small", "large", "mono" };
+	assert(fs < FontSize::End);
+	return SIZE_TO_NAME[to_underlying(fs)];
 }
 
 /**
@@ -234,84 +271,130 @@ struct SubSprite {
 	int left, top, right, bottom;
 };
 
-enum Colours : uint8_t {
-	COLOUR_BEGIN,
-	COLOUR_DARK_BLUE = COLOUR_BEGIN,
-	COLOUR_PALE_GREEN,
-	COLOUR_PINK,
-	COLOUR_YELLOW,
-	COLOUR_RED,
-	COLOUR_LIGHT_BLUE,
-	COLOUR_GREEN,
-	COLOUR_DARK_GREEN,
-	COLOUR_BLUE,
-	COLOUR_CREAM,
-	COLOUR_MAUVE,
-	COLOUR_PURPLE,
-	COLOUR_ORANGE,
-	COLOUR_BROWN,
-	COLOUR_GREY,
-	COLOUR_WHITE,
-	COLOUR_END,
-	INVALID_COLOUR = 0xFF,
+/** One of 16 base colours used for companies and windows/widgets. */
+enum class Colours : uint8_t {
+	Begin, ///< Begin marker.
+	DarkBlue = Colours::Begin, ///< Dark blue
+	PaleGreen, ///< Pale green
+	Pink, ///< Pink
+	Yellow, ///< Yellow
+	Red, ///< Red
+	LightBlue, ///< Light blue
+	Green, ///< Green
+	DarkGreen, ///< Dark green
+	Blue, ///< Blue
+	Cream, ///< Cream
+	Mauve, ///< Mauve
+	Purple, ///< Purple
+	Orange, ///< Orange
+	Brown, ///< Brown
+	Grey, ///< Grey
+	White, ///< White
+	End, ///< End-of-array marker.
+	Invalid = 0xFF, ///< Invalid marker.
 };
-template <> struct EnumPropsT<Colours> : MakeEnumPropsT<Colours, uint8_t, COLOUR_BEGIN, COLOUR_END, INVALID_COLOUR, 8> {};
-DECLARE_POSTFIX_INCREMENT(Colours)
-DECLARE_ENUM_AS_ADDABLE(Colours)
+DECLARE_INCREMENT_DECREMENT_OPERATORS(Colours)
+
+/** Colour for pixel/line drawing. */
+struct PixelColour {
+	uint8_t p; ///< Palette index.
+
+	constexpr PixelColour() : p(0) {}
+	explicit constexpr PixelColour(uint8_t p) : p(p) {}
+};
 
 /** Colour of the strings, see _string_colourmap in table/string_colours.h or docs/ottd-colourtext-palette.png */
-enum TextColour {
-	TC_BEGIN       = 0x00,
-	TC_FROMSTRING  = 0x00,
-	TC_BLUE        = 0x00,
-	TC_SILVER      = 0x01,
-	TC_GOLD        = 0x02,
-	TC_RED         = 0x03,
-	TC_PURPLE      = 0x04,
-	TC_LIGHT_BROWN = 0x05,
-	TC_ORANGE      = 0x06,
-	TC_GREEN       = 0x07,
-	TC_YELLOW      = 0x08,
-	TC_DARK_GREEN  = 0x09,
-	TC_CREAM       = 0x0A,
-	TC_BROWN       = 0x0B,
-	TC_WHITE       = 0x0C,
-	TC_LIGHT_BLUE  = 0x0D,
-	TC_GREY        = 0x0E,
-	TC_DARK_BLUE   = 0x0F,
-	TC_BLACK       = 0x10,
-	TC_END,
-	TC_INVALID     = 0xFF,
-
-	TC_IS_PALETTE_COLOUR = 0x100, ///< Colour value is already a real palette colour index, not an index of a StringColour.
-	TC_NO_SHADE          = 0x200, ///< Do not add shading to this text colour.
-	TC_FORCED            = 0x400, ///< Ignore colour changes from strings.
-
-	TC_COLOUR_MASK = 0xFF, ///< Mask to test if TextColour (without flags) is within limits.
-	TC_FLAGS_MASK = 0x700, ///< Mask to test if TextColour (with flags) is within limits.
+enum class TextColour : uint8_t {
+	Begin = 0x00, ///< Marker for the begin of the range.
+	FromString = Begin, ///< Marker for telling to use the colour from the string.
+	Blue = Begin, ///< Blue colour.
+	Silver, ///< Silver colour.
+	Gold, ///< Gold colour.
+	Red, ///< Red colour.
+	Purple, ///< Purple colour.
+	LightBrown, ///< Light brown colour.
+	Orange, ///< Orange colour.
+	Green, ///< Green colour.
+	Yellow, ///< Yellow colour.
+	DarkGreen, ///< Dark green colour.
+	Cream, ///< Cream colour.
+	Brown, ///< Brown colour.
+	White, ///< White colour.
+	LightBlue, ///< Light blue colour.
+	Grey, ///< Grey colour.
+	DarkBlue, ///< Dark blue colour.
+	Black, ///< Black colour.
+	End, ///< Marker for the end of the range.
+	Invalid = 0xFF, ///< Invalid colour.
 };
-DECLARE_ENUM_AS_BIT_SET(TextColour)
+DECLARE_SCOPED_ENUM_CONVERTIBLE_TO_STRING_PARAMETER(TextColour);
+
+/** Enumeration of the flags of ExtendedTextColour. */
+enum class ExtendedTextColourFlag : uint8_t{
+	IsPaletteColour, ///< Colour value is already a real palette colour index, not an index of a StringColour.
+	NoShade, ///< Do not add shading to this text colour.
+	Forced, ///< Ignore colour changes from strings.
+};
+
+using ExtendedTextColourFlags = EnumBitSet<ExtendedTextColourFlag, uint8_t>; ///< Bitset of the flags of ExtendedTextColour. */
+
+/** Container for the text colour and some text colour related flags for drawing. */
+struct ExtendedTextColour {
+	/**
+	 * Create the extended text colour based on a TextColour and optional flags.
+	 * @param colour The colour.
+	 * @param flags The flags.
+	 */
+	constexpr ExtendedTextColour(TextColour colour = TextColour::Invalid, ExtendedTextColourFlags flags = {}) : colour(colour), flags(flags) {}
+
+	/**
+	 * Create the extended text colour based on a PixelColour.
+	 * @param pc The pixel colour for this colour.
+	 * @param flags The flags.
+	 */
+	constexpr ExtendedTextColour(PixelColour pc, ExtendedTextColourFlags flags = {}) : colour(static_cast<TextColour>(pc.p)), flags(flags.Set(ExtendedTextColourFlag::IsPaletteColour)) {}
+
+	TextColour colour; ///< The colour
+	ExtendedTextColourFlags flags{}; ///< The flags.
+
+	/**
+	 * Compare with another instance of this class.
+	 * @return The std::strong_ordering of the comparison.
+	 */
+	constexpr auto operator<=>(const ExtendedTextColour &) const = default;
+
+	/**
+	 * Decode the network encoded text colour.
+	 * @param tc The network encoded colour.
+	 * @return The decoded colour.
+	 */
+	constexpr static ExtendedTextColour FromNetwork(uint16_t tc) { return ExtendedTextColour{static_cast<TextColour>(tc & 0xFF), ExtendedTextColourFlags(tc >> 8)}; }
+
+	/**
+	 * Encode this text colour for sending over the network.
+	 * @return The encoded colour.
+	 */
+	constexpr uint16_t ToNetwork() const { return to_underlying(this->colour) | this->flags.base() << 8; }
+};
 
 /* A few values that are related to animations using palette changes */
 static constexpr uint8_t PALETTE_ANIM_SIZE = 28; ///< number of animated colours
 static constexpr uint8_t PALETTE_ANIM_START = 227; ///< Index in  the _palettes array from which all animations are taking places (table/palettes.h)
 
 /** Define the operation GfxFillRect performs */
-enum FillRectMode {
-	FILLRECT_OPAQUE,  ///< Fill rectangle with a single colour
-	FILLRECT_CHECKER, ///< Draw only every second pixel, used for greying-out
-	FILLRECT_RECOLOUR, ///< Apply a recolour sprite to the screen content
-	FILLRECT_FUNCTOR, ///<  Apply a functor to a line of pixels
+enum class FillRectMode : uint8_t {
+	Opaque, ///< Fill rectangle with a single colour
+	Checker, ///< Draw only every second pixel, used for greying-out
+	Recolour, ///< Apply a recolour sprite to the screen content
+	Functor, ///< Apply a functor to a line of pixels
 };
 
 typedef void GfxFillRectModeFunctor(void *pixel, int count);
 
 /** Palettes OpenTTD supports. */
-enum PaletteType {
-	PAL_DOS,        ///< Use the DOS palette.
-	PAL_WINDOWS,    ///< Use the Windows palette.
-	PAL_AUTODETECT, ///< Automatically detect the palette based on the graphics pack.
-	MAX_PAL = 2,    ///< The number of palettes.
+enum class PaletteType : uint8_t {
+	DOS, ///< Use the DOS palette.
+	Windows, ///< Use the Windows palette.
 };
 
 /** Types of sprites that might be loaded */
@@ -328,7 +411,7 @@ enum class SpriteType : uint8_t {
  * The value 27 together with a day length of 74 ticks makes one day 1998 milliseconds, almost exactly 2 seconds.
  * With a 2 second day, one standard month is 1 minute, and one standard year is slightly over 12 minutes.
  */
-#define MILLISECONDS_PER_TICK ((uint)_milliseconds_per_tick)
+static const uint MILLISECONDS_PER_TICK = 27;
 
 /** Information about the currently used palette. */
 struct Palette {
@@ -338,28 +421,19 @@ struct Palette {
 };
 
 /** Modes for 8bpp support */
-enum Support8bpp {
-	S8BPP_NONE = 0, ///< No support for 8bpp by OS or hardware, force 32bpp blitters.
-	S8BPP_SYSTEM,   ///< No 8bpp support by hardware, do not try to use 8bpp video modes or hardware palettes.
-	S8BPP_HARDWARE, ///< Full 8bpp support by OS and hardware.
+enum class Support8bpp : uint8_t {
+	None = 0, ///< No support for 8bpp by OS or hardware, force 32bpp blitters.
+	System, ///< No 8bpp support by hardware, do not try to use 8bpp video modes or hardware palettes.
+	Hardware, ///< Full 8bpp support by OS and hardware.
 };
 
-	/** How to align the to-be drawn text. */
-enum StringAlignment {
-	SA_LEFT        = 0 << 0, ///< Left align the text.
-	SA_HOR_CENTER  = 1 << 0, ///< Horizontally center the text.
-	SA_RIGHT       = 2 << 0, ///< Right align the text (must be a single bit).
-	SA_HOR_MASK    = 3 << 0, ///< Mask for horizontal alignment.
-
-	SA_TOP         = 0 << 2, ///< Top align the text.
-	SA_VERT_CENTER = 1 << 2, ///< Vertically center the text.
-	SA_BOTTOM      = 2 << 2, ///< Bottom align the text.
-	SA_VERT_MASK   = 3 << 2, ///< Mask for vertical alignment.
-
-	SA_CENTER      = SA_HOR_CENTER | SA_VERT_CENTER, ///< Center both horizontally and vertically.
-
-	SA_FORCE       = 1 << 4, ///< Force the alignment, i.e. don't swap for RTL languages.
+/** The four direction keys on a keyboard. */
+enum class DirectionKey {
+	Left, ///< Left
+	Up, ///< Up
+	Right, ///< Right
+	Down, ///< Down
 };
-DECLARE_ENUM_AS_BIT_SET(StringAlignment)
+using DirectionKeys = EnumBitSet<DirectionKey, uint8_t>; ///< Bitset of the direction keys.
 
 #endif /* GFX_TYPE_H */

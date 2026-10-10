@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file alloc_func.hpp Functions related to the allocation of memory */
@@ -153,13 +153,13 @@ public:
 	/** Construct with storage for num_elements elements, the elements are uninitialised. */
 	TempBufferT(size_t num_elements)
 	{
-		init(num_elements);
+		this->init(num_elements);
 	}
 
-	/** Construct with storage for num_elements elements, the elements are uninitialised. */
+	/** Construct with storage for num_elements elements, the elements are initialised using init_value. */
 	TempBufferT(size_t num_elements, const T &init_value)
 	{
-		init(num_elements);
+		this->init(num_elements);
 		std::fill_n(this->ptr, num_elements, init_value);
 	}
 

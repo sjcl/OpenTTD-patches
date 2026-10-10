@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file script_object.cpp Implementation of ScriptObject. */
@@ -25,6 +25,7 @@
 #include "script_controller.hpp"
 #include "script_error.hpp"
 #include "../../debug.h"
+#include "../squirrel_helper.hpp"
 
 #include "../../safeguards.h"
 
@@ -47,18 +48,18 @@ void SimpleCountedObject::Release()
  * Get the storage associated with the current ScriptInstance.
  * @return The storage.
  */
-static ScriptStorage *GetStorage()
+static ScriptStorage &GetStorage()
 {
-	return ScriptObject::GetActiveInstance()->GetStorage();
+	return ScriptObject::GetActiveInstance().GetStorage();
 }
 
 
 /* static */ ScriptInstance *ScriptObject::ActiveInstance::active = nullptr;
 
-ScriptObject::ActiveInstance::ActiveInstance(ScriptInstance *instance) : alc_scope(instance->engine)
+ScriptObject::ActiveInstance::ActiveInstance(ScriptInstance &instance) : alc_scope(instance.engine.get())
 {
 	this->last_active = ScriptObject::ActiveInstance::active;
-	ScriptObject::ActiveInstance::active = instance;
+	ScriptObject::ActiveInstance::active = &instance;
 }
 
 ScriptObject::ActiveInstance::~ActiveInstance()
@@ -66,282 +67,206 @@ ScriptObject::ActiveInstance::~ActiveInstance()
 	ScriptObject::ActiveInstance::active = this->last_active;
 }
 
-/* static */ ScriptInstance *ScriptObject::GetActiveInstance()
+ScriptObject::DisableDoCommandScope::DisableDoCommandScope()
+	: AutoRestoreBackup(GetStorage().allow_do_command, false)
+{}
+
+/* static */ ScriptInstance &ScriptObject::GetActiveInstance()
 {
 	assert(ScriptObject::ActiveInstance::active != nullptr);
-	return ScriptObject::ActiveInstance::active;
+	return *ScriptObject::ActiveInstance::active;
 }
 
 
 /* static */ void ScriptObject::SetDoCommandDelay(uint ticks)
 {
 	assert(ticks > 0);
-	GetStorage()->delay = ticks;
+	GetStorage().delay = ticks;
 }
 
 /* static */ uint ScriptObject::GetDoCommandDelay()
 {
-	return GetStorage()->delay;
+	return GetStorage().delay;
 }
 
 /* static */ void ScriptObject::SetDoCommandMode(ScriptModeProc *proc, ScriptObject *instance)
 {
-	GetStorage()->mode = proc;
-	GetStorage()->mode_instance = instance;
+	GetStorage().mode = proc;
+	GetStorage().mode_instance = instance;
 }
 
 /* static */ ScriptModeProc *ScriptObject::GetDoCommandMode()
 {
-	return GetStorage()->mode;
+	return GetStorage().mode;
 }
 
 /* static */ ScriptObject *ScriptObject::GetDoCommandModeInstance()
 {
-	return GetStorage()->mode_instance;
+	return GetStorage().mode_instance;
 }
 
 /* static */ void ScriptObject::SetDoCommandAsyncMode(ScriptAsyncModeProc *proc, ScriptObject *instance)
 {
-	GetStorage()->async_mode = proc;
-	GetStorage()->async_mode_instance = instance;
+	GetStorage().async_mode = proc;
+	GetStorage().async_mode_instance = instance;
 }
 
 /* static */ ScriptAsyncModeProc *ScriptObject::GetDoCommandAsyncMode()
 {
-	return GetStorage()->async_mode;
+	return GetStorage().async_mode;
 }
 
 /* static */ ScriptObject *ScriptObject::GetDoCommandAsyncModeInstance()
 {
-	return GetStorage()->async_mode_instance;
+	return GetStorage().async_mode_instance;
 }
 
-/* static */ void ScriptObject::SetLastCommand(TileIndex tile, uint32_t p1, uint32_t p2, uint64_t p3, uint32_t cmd)
+/* static */ void ScriptObject::SetLastCommand(Commands cmd, TileIndex tile, CallbackParameter cb_param)
 {
-	ScriptStorage *s = GetStorage();
-	Debug(script, 6, "SetLastCommand company={} tile={:X} p1={:X} p2={:X} p3={:X} cmd={:X}", s->root_company, tile, p1, p2, p3, cmd);
-	s->last_tile = tile;
-	s->last_p1 = p1;
-	s->last_p2 = p2;
-	s->last_p3 = p3;
-	s->last_cmd = cmd & CMD_ID_MASK;
+	ScriptStorage &s = GetStorage();
+	Debug(script, 6, "SetLastCommand company={} cmd={:X} tile={:X}, cb_param={:X}", s.root_company, cmd, tile, cb_param);
+	s.last_cmd = cmd;
+	s.last_tile = tile;
+	s.last_cb_param = cb_param;
 }
 
-/* static */ bool ScriptObject::CheckLastCommand(TileIndex tile, uint32_t p1, uint32_t p2, uint64_t p3, uint32_t cmd)
+/* static */ bool ScriptObject::CheckLastCommand(Commands cmd, TileIndex tile, CallbackParameter cb_param)
 {
-	ScriptStorage *s = GetStorage();
-	Debug(script, 6, "CheckLastCommand company={} tile={:X} p1={:X} p2={:X} p3={:X} cmd={:X}", s->root_company, tile, p1, p2, p3, cmd);
-	if (s->last_tile != tile) return false;
-	if (s->last_p1 != p1) return false;
-	if (s->last_p2 != p2) return false;
-	if (s->last_p3 != p3) return false;
-	if (s->last_cmd != (cmd & CMD_ID_MASK)) return false;
+	ScriptStorage &s = GetStorage();
+	Debug(script, 6, "CheckLastCommand company={} cmd={:X} tile={:X}, cb_param={:X}", s.root_company, cmd, tile, cb_param);
+	if (s.last_cmd != cmd) return false;
+	if (s.last_tile != tile) return false;
+	if (s.last_cb_param != cb_param) return false;
+
 	return true;
 }
 
 /* static */ void ScriptObject::SetDoCommandCosts(Money value)
 {
-	GetStorage()->costs = CommandCost(INVALID_EXPENSES, value); // Expense type is never read.
+	GetStorage().costs = CommandCost(ExpensesType::Invalid, value); // Expense type is never read.
 }
 
 /* static */ void ScriptObject::IncreaseDoCommandCosts(Money value)
 {
-	GetStorage()->costs.AddCost(value);
+	GetStorage().costs.AddCost(value);
 }
 
 /* static */ Money ScriptObject::GetDoCommandCosts()
 {
-	return GetStorage()->costs.GetCost();
+	return GetStorage().costs.GetCost();
 }
 
 /* static */ void ScriptObject::SetLastError(ScriptErrorType last_error)
 {
-	GetStorage()->last_error = last_error;
+	GetStorage().last_error = last_error;
 }
 
 /* static */ ScriptErrorType ScriptObject::GetLastError()
 {
-	return GetStorage()->last_error;
+	return GetStorage().last_error;
 }
 
 /* static */ void ScriptObject::SetLastCost(Money last_cost)
 {
-	GetStorage()->last_cost = last_cost;
+	GetStorage().last_cost = last_cost;
 }
 
 /* static */ Money ScriptObject::GetLastCost()
 {
-	return GetStorage()->last_cost;
+	return GetStorage().last_cost;
 }
 
-/* static */ void ScriptObject::SetLastCommandResultData(uint32_t last_result)
+/* static */ void ScriptObject::SetLastCommandResultData(CommandResultData last_result)
 {
-	GetStorage()->last_result = last_result;
+	GetStorage().last_result = last_result;
 }
 
-/* static */ uint32_t ScriptObject::GetLastCommandResultData()
+/* static */ void ScriptObject::ClearLastCommandResultData()
 {
-	return GetStorage()->last_result;
+	GetStorage().last_result = {};
+}
+
+/* static */ CommandResultData ScriptObject::GetLastCommandResultDataRaw()
+{
+	return GetStorage().last_result;
 }
 
 /* static */ void ScriptObject::SetRoadType(RoadType road_type)
 {
-	GetStorage()->road_type = road_type;
+	GetStorage().road_type = road_type;
 }
 
 /* static */ RoadType ScriptObject::GetRoadType()
 {
-	return GetStorage()->road_type;
+	return GetStorage().road_type;
 }
 
 /* static */ void ScriptObject::SetRailType(RailType rail_type)
 {
-	GetStorage()->rail_type = rail_type;
+	GetStorage().rail_type = rail_type;
 }
 
 /* static */ RailType ScriptObject::GetRailType()
 {
-	return GetStorage()->rail_type;
+	return GetStorage().rail_type;
 }
 
 /* static */ void ScriptObject::SetLastCommandRes(bool res)
 {
-	GetStorage()->last_command_res = res;
-	/* Also store the results of various global variables */
-	SetNewVehicleID(_new_vehicle_id);
-	SetNewSignID(_new_sign_id);
-	SetNewGroupID(_new_group_id);
-	SetNewGoalID(_new_goal_id);
-	SetNewStoryPageID(_new_story_page_id);
-	SetNewStoryPageElementID(_new_story_page_element_id);
+	GetStorage().last_command_res = res;
 }
 
 /* static */ bool ScriptObject::GetLastCommandRes()
 {
-	return GetStorage()->last_command_res;
+	return GetStorage().last_command_res;
 }
 
-/* static */ void ScriptObject::SetNewVehicleID(VehicleID vehicle_id)
+/* static */ void ScriptObject::SetCompany(::CompanyID company)
 {
-	GetStorage()->new_vehicle_id = vehicle_id;
-}
-
-/* static */ VehicleID ScriptObject::GetNewVehicleID()
-{
-	return GetStorage()->new_vehicle_id;
-}
-
-/* static */ void ScriptObject::SetNewSignID(SignID sign_id)
-{
-	GetStorage()->new_sign_id = sign_id;
-}
-
-/* static */ SignID ScriptObject::GetNewSignID()
-{
-	return GetStorage()->new_sign_id;
-}
-
-/* static */ void ScriptObject::SetNewGroupID(GroupID group_id)
-{
-	GetStorage()->new_group_id = group_id;
-}
-
-/* static */ GroupID ScriptObject::GetNewGroupID()
-{
-	return GetStorage()->new_group_id;
-}
-
-/* static */ void ScriptObject::SetNewGoalID(GoalID goal_id)
-{
-	GetStorage()->new_goal_id = goal_id;
-}
-
-/* static */ GroupID ScriptObject::GetNewGoalID()
-{
-	return GetStorage()->new_goal_id;
-}
-
-/* static */ void ScriptObject::SetNewStoryPageID(StoryPageID story_page_id)
-{
-	GetStorage()->new_story_page_id = story_page_id;
-}
-
-/* static */ GroupID ScriptObject::GetNewStoryPageID()
-{
-	return GetStorage()->new_story_page_id;
-}
-
-/* static */ void ScriptObject::SetNewStoryPageElementID(StoryPageElementID story_page_element_id)
-{
-	GetStorage()->new_story_page_element_id = story_page_element_id;
-}
-
-/* static */ GroupID ScriptObject::GetNewStoryPageElementID()
-{
-	return GetStorage()->new_story_page_element_id;
-}
-
-/* static */ void ScriptObject::SetAllowDoCommand(bool allow)
-{
-	GetStorage()->allow_do_command = allow;
-}
-
-/* static */ bool ScriptObject::GetAllowDoCommand()
-{
-	return GetStorage()->allow_do_command;
-}
-
-/* static */ void ScriptObject::SetCompany(CompanyID company)
-{
-	if (GetStorage()->root_company == INVALID_OWNER) GetStorage()->root_company = company;
-	GetStorage()->company = company;
+	if (GetStorage().root_company == INVALID_OWNER) GetStorage().root_company = company;
+	GetStorage().company = company;
 
 	_current_company = company;
 }
 
-/* static */ CompanyID ScriptObject::GetCompany()
+/* static */ ::CompanyID ScriptObject::GetCompany()
 {
-	return GetStorage()->company;
+	return GetStorage().company;
 }
 
-/* static */ CompanyID ScriptObject::GetRootCompany()
+/* static */ ::CompanyID ScriptObject::GetRootCompany()
 {
-	return GetStorage()->root_company;
+	return GetStorage().root_company;
 }
 
 /* static */ bool ScriptObject::CanSuspend()
 {
-	Squirrel *squirrel = ScriptObject::GetActiveInstance()->engine;
-	return GetStorage()->allow_do_command && squirrel->CanSuspend();
+	Squirrel &squirrel = *ScriptObject::GetActiveInstance().engine;
+	return GetStorage().allow_do_command && squirrel.CanSuspend();
 }
 
-/* static */ void *&ScriptObject::GetEventPointer()
+/* static */ ScriptEventQueue &ScriptObject::GetEventQueue()
 {
-	return GetStorage()->event_data;
+	return GetStorage().event_queue;
 }
 
 /* static */ ScriptLogTypes::LogData &ScriptObject::GetLogData()
 {
-	return GetStorage()->log_data;
-}
-
-/* static */ std::string ScriptObject::GetString(StringID string)
-{
-	return ::StrMakeValid(::GetString(string));
+	return GetStorage().log_data;
 }
 
 /* static */ void ScriptObject::SetCallbackVariable(int index, int value)
 {
-	if (static_cast<size_t>(index) >= GetStorage()->callback_value.size()) GetStorage()->callback_value.resize(index + 1);
-	GetStorage()->callback_value[index] = value;
+	if (static_cast<size_t>(index) >= GetStorage().callback_value.size()) GetStorage().callback_value.resize(index + 1);
+	GetStorage().callback_value[index] = value;
 }
 
 /* static */ int ScriptObject::GetCallbackVariable(int index)
 {
-	return GetStorage()->callback_value[index];
+	return GetStorage().callback_value[index];
 }
 
-/* static */ bool ScriptObject::DoCommandEx(TileIndex tile, uint32_t p1, uint32_t p2, uint64_t p3, uint cmd, const char *text, const CommandAuxiliaryBase *aux_data, Script_SuspendCallbackProc *callback)
+/* static */ bool ScriptObject::DoCommandImplementation(Commands cmd, TileIndex tile, CommandPayloadBase &&payload, Script_SuspendCallbackProc *callback, DoCommandIntlFlag intl_flags)
 {
 	if (!ScriptObject::CanSuspend()) {
 		throw Script_FatalError("You are not allowed to execute any DoCommand (even indirect) in your constructor, Save(), Load(), and any valuator.");
@@ -352,13 +277,10 @@ ScriptObject::ActiveInstance::~ActiveInstance()
 		return false;
 	}
 
-	std::string text_validated;
-	if (!StrEmpty(text) && (GetCommandFlags(cmd) & CMD_STR_CTRL) == 0) {
+	if (!GetCommandFlags(cmd).Test(CommandFlag::StrCtrl)) {
 		/* The string must be valid, i.e. not contain special codes. Since some
 		 * can be made with GSText, make sure the control codes are removed. */
-		text_validated = text;
-		::StrMakeValidInPlace(text_validated, SVS_NONE);
-		text = text_validated.c_str();
+		payload.SanitiseStrings({});
 	}
 
 	/* Set the default callback to return a true/false result of the DoCommand */
@@ -368,21 +290,27 @@ ScriptObject::ActiveInstance::~ActiveInstance()
 	bool estimate_only = GetDoCommandMode() != nullptr && !GetDoCommandMode()();
 
 	/* Should the command be executed asynchronously? */
-	bool asynchronous = GetDoCommandAsyncMode() != nullptr && GetDoCommandAsyncMode()() && GetActiveInstance()->GetScriptType() == ScriptType::GS;
+	bool asynchronous = GetDoCommandAsyncMode() != nullptr && GetDoCommandAsyncMode()() && GetActiveInstance().GetScriptType() == ScriptType::GS;
 
-	/* Only set p2 when the command does not come from the network. */
-	if (GetCommandFlags(cmd) & CMD_CLIENT_ID && p2 == 0) p2 = UINT32_MAX;
+#if !defined(DISABLE_SCOPE_INFO)
+	FunctorScopeStackRecord scope_print([=, &payload](format_target &output) {
+		output.format("ScriptObject::DoCommand: tile: {}, intl_flags: 0x{:X}, company: {}, cmd: 0x{:X} {}, estimate_only: {}, payload: ",
+				tile, intl_flags, CompanyInfoDumper(_current_company), cmd, GetCommandName(cmd), estimate_only);
+		payload.fmt_format_value(output);
+	});
+#endif
 
-	SCOPE_INFO_FMT([=], "ScriptObject::DoCommand: tile: 0x{:X} ({} x {}), p1: 0x{:X}, p2: 0x{:X}, p3: 0x{:X}, company: {}, cmd: 0x{:X} ({}), estimate_only: {}",
-			tile, TileX(tile), TileY(tile), p1, p2, p3, CompanyInfoDumper(_current_company), cmd, GetCommandName(cmd), estimate_only);
+	/* Rolling identifier for script callback identification */
+	static CallbackParameter _last_cb_param = 0;
+	CallbackParameter cb_param = ++_last_cb_param;
 
 	/* Store the command for command callback validation. */
-	if (!estimate_only && _networking && !_generating_world) SetLastCommand(tile, p1, p2, p3, cmd);
+	if (!estimate_only && _networking && !_generating_world) SetLastCommand(cmd, tile, cb_param);
 
 	/* Try to perform the command. */
-	CommandCost res = ::DoCommandPScript(tile, p1, p2, p3, cmd,
-			(_networking && !_generating_world && !asynchronous) ? ScriptObject::GetActiveInstance()->GetDoCommandCallback() : nullptr,
-			text, false, estimate_only, asynchronous, aux_data);
+	const bool use_cb = (_networking && !_generating_world && !asynchronous);
+	CommandCost res = ::DoCommandPScript(cmd, tile, payload, use_cb ? ScriptObject::GetActiveInstance().GetDoCommandCallback() : CommandCallback::None, use_cb ? cb_param : 0,
+			intl_flags, estimate_only, asynchronous);
 
 	/* We failed; set the error and bail out */
 	if (res.Failed()) {
@@ -401,11 +329,20 @@ ScriptObject::ActiveInstance::~ActiveInstance()
 
 	/* Costs of this operation. */
 	SetLastCost(res.GetCost());
-	SetLastCommandResultData(res.GetResultData());
+	if (res.HasAnyResultData()) {
+		SetLastCommandResultData(res.GetResultDataWithType());
+	} else {
+		ClearLastCommandResultData();
+	}
 	SetLastCommandRes(true);
 
 	if (_generating_world || asynchronous) {
 		IncreaseDoCommandCosts(res.GetCost());
+		if (!_generating_world) {
+			/* Charge a nominal fee for asynchronously executed commands */
+			Squirrel &engine = *ScriptObject::GetActiveInstance().engine;
+			Squirrel::DecreaseOps(engine.GetVM(), 100);
+		}
 		if (callback != nullptr) {
 			/* Insert return value into to stack and throw a control code that
 			 * the return value in the stack should be used. */
@@ -417,7 +354,7 @@ ScriptObject::ActiveInstance::~ActiveInstance()
 	} else if (_networking) {
 		/* Suspend the script till the command is really executed. */
 		throw Script_Suspend(-(int)GetDoCommandDelay(), callback);
-	} else if (GetActiveInstance()->GetScriptType() == ScriptType::GS && (_pause_mode & PM_PAUSED_GAME_SCRIPT) != PM_UNPAUSED) {
+	} else if (GetActiveInstance().GetScriptType() == ScriptType::GS && _pause_mode.Test(PauseMode::GameScript)) {
 		/* Game is paused due to GS, just execute as fast as possible */
 		IncreaseDoCommandCosts(res.GetCost());
 		ScriptController::DecreaseOps(100);
@@ -437,27 +374,45 @@ ScriptObject::ActiveInstance::~ActiveInstance()
 }
 
 
-/* static */ Randomizer ScriptObject::random_states[OWNER_END];
+/* static */ ScriptObject::RandomizerArray ScriptObject::random_states;
 
-Randomizer &ScriptObject::GetRandomizer(Owner owner)
+/* static */ Randomizer &ScriptObject::GetRandomizer(Owner owner)
 {
 	return ScriptObject::random_states[owner];
 }
 
-void ScriptObject::InitializeRandomizers()
+/* static */ void ScriptObject::InitializeRandomizers()
 {
 	Randomizer random = _random;
-	for (Owner owner = OWNER_BEGIN; owner < OWNER_END; owner++) {
+	for (Owner owner = OWNER_BEGIN; owner < OWNER_END; ++owner) {
 		ScriptObject::GetRandomizer(owner).SetSeed(random.Next());
 	}
 }
 
 /* static */ bool ScriptObject::IsNewUniqueLogMessage(const std::string &msg)
 {
-	return !GetStorage()->seen_unique_log_messages.contains(msg);
+	return !GetStorage().seen_unique_log_messages.contains(msg);
 }
 
 /* static */ void ScriptObject::RegisterUniqueLogMessage(std::string &&msg)
 {
-	GetStorage()->seen_unique_log_messages.emplace(std::move(msg));
+	GetStorage().seen_unique_log_messages.emplace(std::move(msg));
+}
+
+/* static */ SQInteger ScriptObject::Constructor(HSQUIRRELVM)
+{
+	throw Script_FatalError("This class is not instantiatable");
+}
+
+/* static */ SQInteger ScriptObject::_cloned(HSQUIRRELVM vm)
+{
+	ScriptObject *original = static_cast<ScriptObject *>(Squirrel::GetRealInstance(vm, 2, "Object"));
+	if (ScriptObject *clone = original->CloneObject(); clone != nullptr) {
+		clone->AddRef();
+		sq_setinstanceup(vm, 1, clone);
+		sq_setreleasehook(vm, 1, SQConvert::DefSQDestructorCallback<ScriptObject>);
+		return 0;
+	}
+
+	throw Script_FatalError("This instance is not cloneable");
 }

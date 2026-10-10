@@ -1,0 +1,33 @@
+/*
+ * This file is part of OpenTTD.
+ * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
+ * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
+ */
+
+/** @file tree_cmd.h Command definitions related to tree tiles. */
+
+#ifndef TREE_CMD_H
+#define TREE_CMD_H
+
+#include "command_type.h"
+#include "tree_type.h"
+#include <vector>
+
+void PlaceTree(TileIndex tile, uint32_t r, bool keep_density = false);
+
+struct BulkTreeCmdData final : public CommandPayloadSerialisable<BulkTreeCmdData> {
+	static constexpr bool HasStringSanitiser = false;
+	static constexpr size_t MAX_SERIALISED_COUNT = 512;
+
+	std::vector<std::pair<TileIndex, TreePlacerData>> plant_tree_data; // List of every tile index and the tree type/count intended to be on this tile.
+
+	void SerialisePayload(BufferSerialisationRef buffer) const;
+	bool Deserialise(DeserialisationBuffer &buffer, StringValidationSettings default_string_validation);
+	void FormatDebugSummary(format_target &output) const;
+};
+
+DEF_CMD_TUPLE    (Commands::PlantTree, CmdPlantTree, CMD_AUTO, CommandType::LandscapeConstruction, CmdDataT<TileIndex, TreeTypes, uint8_t, bool>)
+DEF_CMD_DIRECT_LT(Commands::BulkTree,  CmdBulkTree,  CMD_AUTO, CommandType::LandscapeConstruction, BulkTreeCmdData)
+
+#endif /* TREE_CMD_H */

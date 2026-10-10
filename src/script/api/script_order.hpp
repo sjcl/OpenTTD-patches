@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file script_order.hpp Everything to query and build orders. */
@@ -57,9 +57,9 @@ public:
 		/** Never unload the vehicle; only for stations. Cannot be set when OF_UNLOAD, OF_TRANSFER or OF_NO_LOAD is set. */
 		OF_NO_UNLOAD         = 1 << 4,
 
-		/** Wt till the vehicle is fully loaded; only for stations. Cannot be set when OF_NO_LOAD is set. */
+		/** Wait till the vehicle is fully loaded; only for stations. Cannot be set when OF_NO_LOAD is set. */
 		OF_FULL_LOAD         = 2 << 5,
-		/** Wt till at least one cargo of the vehicle is fully loaded; only for stations. Cannot be set when OF_NO_LOAD is set. */
+		/** Wait till at least one cargo of the vehicle is fully loaded; only for stations. Cannot be set when OF_NO_LOAD is set. */
 		OF_FULL_LOAD_ANY     = 3 << 5,
 		/** Do not load any cargo; only for stations. Cannot be set when OF_NO_UNLOAD, OF_FULL_LOAD or OF_FULL_LOAD_ANY is set. */
 		OF_NO_LOAD           = 1 << 7,
@@ -89,14 +89,15 @@ public:
 	 */
 	enum OrderCondition {
 		/* Note: these values represent part of the in-game OrderConditionVariable enum */
-		OC_LOAD_PERCENTAGE     = ::OCV_LOAD_PERCENTAGE,    ///< Skip based on the amount of load, value is in tons.
-		OC_RELIABILITY         = ::OCV_RELIABILITY,        ///< Skip based on the reliability, value is percent (0..100).
-		OC_MAX_RELIABILITY     = ::OCV_MAX_RELIABILITY,    ///< Skip based on the maximum reliability.  Value in percent
-		OC_MAX_SPEED           = ::OCV_MAX_SPEED,          ///< Skip based on the maximum speed, value is in OpenTTD's internal speed unit, see ScriptEngine::GetMaxSpeed.
-		OC_AGE                 = ::OCV_AGE,                ///< Skip based on the age, value is in calender-years. @see \ref ScriptCalendarTime
-		OC_REQUIRES_SERVICE    = ::OCV_REQUIRES_SERVICE,   ///< Skip when the vehicle requires service, no value.
-		OC_UNCONDITIONALLY     = ::OCV_UNCONDITIONALLY,    ///< Always skip, no compare function, no value.
-		OC_REMAINING_LIFETIME  = ::OCV_REMAINING_LIFETIME, ///< Skip based on the remaining lifetime in calendar-years. @see \ref ScriptCalendarTime
+		OC_LOAD_PERCENTAGE     = to_underlying(::OrderConditionVariable::LoadPercentage),    ///< Skip based on the amount of load, value is in tons.
+		OC_RELIABILITY         = to_underlying(::OrderConditionVariable::Reliability),       ///< Skip based on the reliability, value is percent (0..100).
+		OC_MAX_RELIABILITY     = to_underlying(::OrderConditionVariable::MaxReliability),    ///< Skip based on the maximum reliability.  Value in percent
+		OC_MAX_SPEED           = to_underlying(::OrderConditionVariable::MaxSpeed),          ///< Skip based on the maximum speed, value is in OpenTTD's internal speed unit, see ScriptEngine::GetMaxSpeed.
+		OC_AGE                 = to_underlying(::OrderConditionVariable::Age),               ///< Skip based on the age, value is in calendar-years. @see \ref ScriptCalendarTime
+		OC_REQUIRES_SERVICE    = to_underlying(::OrderConditionVariable::RequiresService),   ///< Skip when the vehicle requires service, no value.
+		OC_UNCONDITIONALLY     = to_underlying(::OrderConditionVariable::Unconditionally),   ///< Always skip, no compare function, no value.
+		OC_REMAINING_LIFETIME  = to_underlying(::OrderConditionVariable::RemainingLifetime), ///< Skip based on the remaining lifetime in calendar-years. @see \ref ScriptCalendarTime
+		OC_IS_REVERSING        = to_underlying(::OrderConditionVariable::DrivingBackwards), ///< Skip when the vehicle is reversing.
 
 		/* Custom added value, only valid for this API */
 		OC_INVALID             = -1,                       ///< An invalid condition, do not use.
@@ -107,14 +108,14 @@ public:
 	 */
 	enum CompareFunction {
 		/* Note: these values represent part of the in-game OrderConditionComparator enum */
-		CF_EQUALS        = ::OCC_EQUALS,       ///< Skip if both values are equal
-		CF_NOT_EQUALS    = ::OCC_NOT_EQUALS,   ///< Skip if both values are not equal
-		CF_LESS_THAN     = ::OCC_LESS_THAN,    ///< Skip if the value is less than the limit
-		CF_LESS_EQUALS   = ::OCC_LESS_EQUALS,  ///< Skip if the value is less or equal to the limit
-		CF_MORE_THAN     = ::OCC_MORE_THAN,    ///< Skip if the value is more than the limit
-		CF_MORE_EQUALS   = ::OCC_MORE_EQUALS,  ///< Skip if the value is more or equal to the limit
-		CF_IS_TRUE       = ::OCC_IS_TRUE,      ///< Skip if the variable is true
-		CF_IS_FALSE      = ::OCC_IS_FALSE,     ///< Skip if the variable is false
+		CF_EQUALS        = to_underlying(::OrderConditionComparator::Equal),           ///< Skip if both values are equal
+		CF_NOT_EQUALS    = to_underlying(::OrderConditionComparator::NotEqual),        ///< Skip if both values are not equal
+		CF_LESS_THAN     = to_underlying(::OrderConditionComparator::LessThan),        ///< Skip if the value is less than the limit
+		CF_LESS_EQUALS   = to_underlying(::OrderConditionComparator::LessThanOrEqual), ///< Skip if the value is less or equal to the limit
+		CF_MORE_THAN     = to_underlying(::OrderConditionComparator::MoreThan),        ///< Skip if the value is more than the limit
+		CF_MORE_EQUALS   = to_underlying(::OrderConditionComparator::MoreThanOrEqual), ///< Skip if the value is more or equal to the limit
+		CF_IS_TRUE       = to_underlying(::OrderConditionComparator::IsTrue),          ///< Skip if the variable is true
+		CF_IS_FALSE      = to_underlying(::OrderConditionComparator::IsFalse),         ///< Skip if the variable is false
 
 		/* Custom added value, only valid for this API */
 		CF_INVALID       = -1,                 ///< Invalid compare function, do not use.
@@ -348,7 +349,7 @@ public:
 	 *  in the orderlist, but they can be the current order of a vehicle.
 	 * @return The refit cargo of the order or CT_NO_REFIT if no refit is set.
 	 */
-	static CargoID GetOrderRefit(VehicleID vehicle_id, OrderPosition order_position);
+	static CargoType GetOrderRefit(VehicleID vehicle_id, OrderPosition order_position);
 
 	/**
 	 * Sets the OrderPosition to jump to if the check succeeds of the given order for the given vehicle.
@@ -427,7 +428,7 @@ public:
 	 * @game @pre ScriptCompanyMode::IsValid().
 	 * @return Whether the order has been/can be changed.
 	 */
-	static bool SetOrderRefit(VehicleID vehicle_id, OrderPosition order_position, CargoID refit_cargo);
+	static bool SetOrderRefit(VehicleID vehicle_id, OrderPosition order_position, CargoType refit_cargo);
 
 	/**
 	 * Appends an order to the end of the vehicle's order list.
@@ -604,9 +605,6 @@ public:
 	 * @see ScriptEngine::GetMaximumOrderDistance and ScriptVehicle::GetMaximumOrderDistance
 	 */
 	static SQInteger GetOrderDistance(ScriptVehicle::VehicleType vehicle_type, TileIndex origin_tile, TileIndex dest_tile);
-
-protected:
-	static bool ScriptOrderModifyOrder(VehicleID vehicle_id, VehicleOrderID order_position, uint32_t p2, Script_SuspendCallbackProc *callback = nullptr);
 };
 DECLARE_ENUM_AS_BIT_SET(ScriptOrder::ScriptOrderFlags)
 

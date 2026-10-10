@@ -14,12 +14,6 @@ if(NOT OPTION_DEDICATED)
     )
 
     add_files(
-        sdl_v.cpp
-        sdl_v.h
-        CONDITION SDL_FOUND
-    )
-
-    add_files(
         sdl2_v.cpp
         sdl2_v.h
         sdl2_default_v.cpp
@@ -47,4 +41,5 @@ add_files(
     null_v.h
     video_driver.cpp
     video_driver.hpp
+    video_driver_base.hpp
 )

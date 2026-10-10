@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file base_station_base.h Base classes/functions for base stations. */
@@ -11,37 +11,37 @@
 #define BASE_STATION_BASE_H
 
 #include "core/pool_type.hpp"
-#include "command_type.h"
+#include "command_type_fwd_declare.h"
 #include "viewport_type.h"
 #include "station_map.h"
 #include "core/geometry_type.hpp"
 #include "core/tinystring_type.hpp"
+#include "3rdparty/cpp-btree/btree_map.h"
 #include <memory>
 #include <vector>
 
-typedef Pool<BaseStation, StationID, 32, 64000> StationPool;
+typedef Pool<BaseStation, StationID, 32> StationPool;
 extern StationPool _station_pool;
 
 template <typename T>
 struct SpecMapping {
-	const T *spec;       ///< Custom spec.
-	uint32_t grfid;      ///< GRF ID of this custom station
-	uint16_t localidx;   ///< Station ID within GRF of station
+	const T *spec = nullptr; ///< Custom spec.
+	GrfID grfid{};           ///< GRF ID of this custom spec.
+	uint16_t localidx = 0;   ///< Local ID within GRF of this custom spec.
 };
 
 using StationSpecList = SpecMapping<StationSpec>;
 using RoadStopSpecList = SpecMapping<RoadStopSpec>;
 
 struct RoadStopTileData {
-	TileIndex tile;
-	uint8_t random_bits;
-	uint8_t animation_frame;
+	TileIndex tile = INVALID_TILE;
+	uint8_t random_bits = 0;
+	uint8_t animation_frame = 0;
 };
 
 /** StationRect - used to track station spread out rectangle - cheaper than scanning whole map */
 struct StationRect : public Rect {
-	enum StationRectMode
-	{
+	enum StationRectMode : uint8_t {
 		ADD_TEST = 0,
 		ADD_TRY,
 		ADD_FORCE
@@ -63,44 +63,42 @@ struct StationRect : public Rect {
 
 /** Base class for all station-ish types */
 struct BaseStation : StationPool::PoolItem<&_station_pool> {
-	Owner owner;                    ///< The owner of this station
-	StationFacility facilities;     ///< The facilities that this station has
-	TileIndex xy;                   ///< Base tile of the station
-	TrackedViewportSign sign;       ///< NOSAVE: Dimensions of sign
+	Owner owner = INVALID_OWNER;            ///< The owner of this station
+	StationFacilities facilities{};         ///< The facilities that this station has
+	TileIndex xy = INVALID_TILE;            ///< Base tile of the station
+	TrackedViewportSign sign{};             ///< NOSAVE: Dimensions of sign
 
-	mutable std::string cached_name; ///< NOSAVE: Cache of the resolved name of the station, if not using a custom name
-	TinyString name;                ///< Custom name
-	StringID string_id;             ///< Default name (town area) of station
+	mutable std::string cached_name{};      ///< NOSAVE: Cache of the resolved name of the station, if not using a custom name
+	TinyString name{};                      ///< Custom name
+	StringID string_id = INVALID_STRING_ID; ///< Default name (town area) of station
 
-	CalTime::Date build_date;       ///< Date of construction
+	CalTime::Date build_date{};             ///< Date of construction
 
-	Town *town;                     ///< The town this station is associated with
+	Town *town = nullptr;                   ///< The town this station is associated with
 
-	std::vector<StationSpecList> speclist;           ///< List of rail station specs of this station.
-	std::vector<RoadStopSpecList> roadstop_speclist; ///< List of road stop specs of this station
+	std::vector<StationSpecList> speclist{};           ///< List of rail station specs of this station.
+	std::vector<RoadStopSpecList> roadstop_speclist{}; ///< List of road stop specs of this station
 
-	uint16_t random_bits;           ///< Random bits assigned to this station
-	uint8_t waiting_triggers;       ///< Waiting triggers (NewGRF) for this station
-	uint8_t delete_ctr;             ///< Delete counter. If greater than 0 then it is decremented until it reaches 0; the waypoint is then is deleted.
-	uint8_t cached_anim_triggers;              ///< NOSAVE: Combined animation trigger bitmask, used to determine if trigger processing should happen.
-	uint8_t cached_roadstop_anim_triggers;     ///< NOSAVE: Combined animation trigger bitmask for road stops, used to determine if trigger processing should happen.
-	CargoTypes cached_cargo_triggers;          ///< NOSAVE: Combined cargo trigger bitmask
-	CargoTypes cached_roadstop_cargo_triggers; ///< NOSAVE: Combined cargo trigger bitmask for road stops
+	btree::btree_map<TileIndex, StationRandomTriggers> tile_waiting_random_triggers;
+	uint16_t random_bits = 0;                               ///< Random bits assigned to this station
+	StationRandomTriggers waiting_random_triggers;          ///< Waiting triggers (NewGRF), shared by all station parts/tiles, road stops, ... essentially useless and broken by design.
+	uint8_t delete_ctr = 0;                                 ///< Delete counter. If greater than 0 then it is decremented until it reaches 0; the waypoint is then is deleted.
+	StationAnimationTriggers cached_anim_triggers;          ///< NOSAVE: Combined animation trigger bitmask, used to determine if trigger processing should happen.
+	StationAnimationTriggers cached_roadstop_anim_triggers; ///< NOSAVE: Combined animation trigger bitmask for road stops, used to determine if trigger processing should happen.
+	CargoTypes cached_cargo_triggers{};                     ///< NOSAVE: Combined cargo trigger bitmask
+	CargoTypes cached_roadstop_cargo_triggers{};            ///< NOSAVE: Combined cargo trigger bitmask for road stops
 
-	TileArea train_station;         ///< Tile area the train 'station' part covers
-	StationRect rect;               ///< NOSAVE: Station spread out rectangle maintained by StationRect::xxx() functions
+	TileArea train_station{INVALID_TILE, 0, 0}; ///< Tile area the train 'station' part covers
+	StationRect rect{}; ///< NOSAVE: Station spread out rectangle maintained by StationRect::xxx() functions
 
-	std::vector<RoadStopTileData> custom_roadstop_tile_data; ///< List of custom road stop tile data
+	std::vector<RoadStopTileData> custom_roadstop_tile_data{}; ///< List of custom road stop tile data
 
 	/**
 	 * Initialize the base station.
+	 * @param index The index of the station within the pool.
 	 * @param tile The location of the station sign
 	 */
-	BaseStation(TileIndex tile) :
-		xy(tile),
-		train_station(INVALID_TILE, 0, 0)
-	{
-	}
+	BaseStation(StationID index, TileIndex tile) : PoolItemBase(index), xy(tile) {}
 
 	virtual ~BaseStation();
 
@@ -126,13 +124,17 @@ struct BaseStation : StationPool::PoolItem<&_station_pool> {
 	 */
 	virtual void UpdateVirtCoord() = 0;
 
-	inline const char *GetCachedName() const
+	inline std::string_view GetCachedName() const
 	{
-		if (!this->name.empty()) return this->name.c_str();
+		if (!this->name.empty()) return this->name;
 		if (this->cached_name.empty()) this->FillCachedName();
-		return this->cached_name.c_str();
+		return this->cached_name;
 	}
 
+	/**
+	 * Move this station's main coordinate somewhere else.
+	 * @param new_xy New tile location of the sign.
+	 */
 	virtual void MoveSign(TileIndex new_xy)
 	{
 		this->xy = new_xy;
@@ -141,11 +143,10 @@ struct BaseStation : StationPool::PoolItem<&_station_pool> {
 
 	/**
 	 * Get the tile area for a given station type.
-	 * @param ta tile area to fill.
 	 * @param type the type of the area
+	 * @return The tile area.
 	 */
-	virtual void GetTileArea(TileArea *ta, StationType type) const = 0;
-
+	virtual TileArea GetTileArea(StationType type) const = 0;
 
 	/**
 	 * Obtain the length of a platform
@@ -182,17 +183,7 @@ struct BaseStation : StationPool::PoolItem<&_station_pool> {
 	 */
 	inline bool IsInUse() const
 	{
-		return (this->facilities & ~FACIL_WAYPOINT) != 0;
-	}
-
-	/**
-	 * Check whether the base station has given facilities.
-	 * @param facilities The facilities to check.
-	 * @return True if station has at least one of the given \a facilities.
-	 */
-	inline bool HasFacilities(StationFacility facilities) const
-	{
-		return (this->facilities & facilities) != 0;
+		return this->facilities.Any({StationFacility::Train, StationFacility::TruckStop, StationFacility::BusStop, StationFacility::Airport, StationFacility::Dock});
 	}
 
 	inline uint8_t GetRoadStopRandomBits(TileIndex tile) const
@@ -231,14 +222,15 @@ private:
  */
 template <class T, bool Tis_waypoint>
 struct SpecializedStation : public BaseStation {
-	static const StationFacility EXPECTED_FACIL = Tis_waypoint ? FACIL_WAYPOINT : FACIL_NONE; ///< Specialized type
+	static constexpr StationFacilities EXPECTED_FACIL = Tis_waypoint ? StationFacility::Waypoint : StationFacilities{}; ///< Specialized type
 
 	/**
 	 * Set station type correctly
+	 * @param index The index within the station pool.
 	 * @param tile The base tile of the station.
 	 */
-	inline SpecializedStation(TileIndex tile) :
-			BaseStation(tile)
+	inline SpecializedStation(StationID index, TileIndex tile) :
+			BaseStation(index, tile)
 	{
 		this->facilities = EXPECTED_FACIL;
 	}
@@ -250,7 +242,7 @@ struct SpecializedStation : public BaseStation {
 	 */
 	static inline bool IsExpected(const BaseStation *st)
 	{
-		return (st->facilities & FACIL_WAYPOINT) == EXPECTED_FACIL;
+		return st->facilities.Test(StationFacility::Waypoint) == Tis_waypoint;
 	}
 
 	/**
@@ -258,25 +250,27 @@ struct SpecializedStation : public BaseStation {
 	 * @param index tested index
 	 * @return is this index valid index of T?
 	 */
-	static inline bool IsValidID(size_t index)
+	static inline bool IsValidID(auto index)
 	{
 		return BaseStation::IsValidID(index) && IsExpected(BaseStation::Get(index));
 	}
 
 	/**
 	 * Gets station with given index
-	 * @return pointer to station with given index casted to T *
+	 * @param index The pool index to look for.
+	 * @return pointer to station with given index cast to T *
 	 */
-	static inline T *Get(size_t index)
+	static inline T *Get(auto index)
 	{
 		return (T *)BaseStation::Get(index);
 	}
 
 	/**
 	 * Returns station if the index is a valid index for this station type
+	 * @param index The pool index to look for.
 	 * @return pointer to station with given index if it's a station of this type
 	 */
-	static inline T *GetIfValid(size_t index)
+	static inline T *GetIfValid(auto index)
 	{
 		return IsValidID(index) ? Get(index) : nullptr;
 	}
@@ -289,6 +283,29 @@ struct SpecializedStation : public BaseStation {
 	static inline T *GetByTile(TileIndex tile)
 	{
 		return GetIfValid(GetStationIndex(tile));
+	}
+
+	/**
+	 * Creates a new T-object in the station pool.
+	 * @param args The arguments to the constructor.
+	 * @return The created object.
+	 */
+	template <typename... Targs>
+	static inline T *Create(Targs &&... args)
+	{
+		return BaseStation::Create<T>(std::forward<Targs&&>(args)...);
+	}
+
+	/**
+	 * Creates a new T-object in the station pool.
+	 * @param index The index allocate the object at.
+	 * @param args The arguments to the constructor.
+	 * @return The created object.
+	 */
+	template <typename... Targs>
+	static inline T *CreateAtIndex(StationID index, Targs &&... args)
+	{
+		return BaseStation::CreateAtIndex<T>(index, std::forward<Targs&&>(args)...);
 	}
 
 	/**
@@ -328,7 +345,9 @@ struct SpecializedStation : public BaseStation {
  * @return Speclist of custom spec type.
  */
 template <class T> std::vector<SpecMapping<T>> &GetStationSpecList(BaseStation *bst);
+/** @copydoc GetStationSpecList */
 template <> inline std::vector<SpecMapping<StationSpec>> &GetStationSpecList<StationSpec>(BaseStation *bst) { return bst->speclist; }
+/** @copydoc GetStationSpecList */
 template <> inline std::vector<SpecMapping<RoadStopSpec>> &GetStationSpecList<RoadStopSpec>(BaseStation *bst) { return bst->roadstop_speclist; }
 
 #endif /* BASE_STATION_BASE_H */

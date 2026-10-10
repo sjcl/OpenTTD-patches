@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file league_cmd.h Command definitions related to league tables. */
@@ -10,62 +10,17 @@
 #ifndef LEAGUE_CMD_H
 #define LEAGUE_CMD_H
 
-#include "command_aux.h"
+#include "command_type.h"
+#include "league_type.h"
 
-struct LeagueTableCmdData : public CommandAuxiliarySerialisable<LeagueTableCmdData> {
-	std::string title;
-	std::string header;
-	std::string footer;
-
-	virtual void Serialise(BufferSerialisationRef buffer) const override
-	{
-		buffer.Send_string(this->title);
-		buffer.Send_string(this->header);
-		buffer.Send_string(this->footer);
-	}
-
-	CommandCost Deserialise(DeserialisationBuffer &buffer)
-	{
-		buffer.Recv_string(this->title,  SVS_ALLOW_CONTROL_CODE | SVS_REPLACE_WITH_QUESTION_MARK);
-		buffer.Recv_string(this->header, SVS_ALLOW_CONTROL_CODE | SVS_REPLACE_WITH_QUESTION_MARK);
-		buffer.Recv_string(this->footer, SVS_ALLOW_CONTROL_CODE | SVS_REPLACE_WITH_QUESTION_MARK);
-		return CommandCost();
-	}
+struct LeagueTableElementCmdData final : public AutoFmtTupleCmdData<LeagueTableElementCmdData, TCDF_NONE, LeagueTableID, int64_t, CompanyID, EncodedString, EncodedString, LinkType, LinkTargetID> {
+	static inline constexpr const char fmt_str[] = "t: {}, r: {}, c: {}, type: {}, targ: {}";
 };
 
-struct LeagueTableElementCmdData : public CommandAuxiliarySerialisable<LeagueTableElementCmdData> {
-	LeagueTableID table;
-	int64_t rating;
-	CompanyID company;
-	LinkType link_type;
-	LinkTargetID link_target;
-	std::string text_str;
-	std::string score;
-
-	virtual void Serialise(BufferSerialisationRef buffer) const override
-	{
-		buffer.Send_uint8(this->table);
-		buffer.Send_uint64(this->rating);
-		buffer.Send_uint8(this->company);
-		buffer.Send_uint8(this->link_type);
-		buffer.Send_uint32(this->link_target);
-		buffer.Send_string(this->text_str);
-		buffer.Send_string(this->score);
-	}
-
-	CommandCost Deserialise(DeserialisationBuffer &buffer)
-	{
-		this->table = buffer.Recv_uint8();
-		this->rating = buffer.Recv_uint64();
-		this->company = (CompanyID)buffer.Recv_uint8();
-		this->link_type = (LinkType)buffer.Recv_uint8();
-		this->link_target = (LinkTargetID)buffer.Recv_uint32();
-		buffer.Recv_string(this->text_str, SVS_ALLOW_CONTROL_CODE | SVS_REPLACE_WITH_QUESTION_MARK);
-		buffer.Recv_string(this->score,    SVS_ALLOW_CONTROL_CODE | SVS_REPLACE_WITH_QUESTION_MARK);
-		return CommandCost();
-	}
-
-	std::string GetDebugSummary() const override;
-};
+DEF_CMD_TUPLE_NT(Commands::CreateLeagueTable,              CmdCreateLeagueTable,             CMD_STR_CTRL | CMD_DEITY, CommandType::OtherManagement, CmdDataT<EncodedString, EncodedString, EncodedString>)
+DEF_CMD_TUPLE_NT(Commands::CreateLeagueTableElement,       CmdCreateLeagueTableElement,      CMD_STR_CTRL | CMD_DEITY, CommandType::OtherManagement, LeagueTableElementCmdData)
+DEF_CMD_TUPLE_NT(Commands::UpdateLeagueTableElementData,   CmdUpdateLeagueTableElementData,  CMD_STR_CTRL | CMD_DEITY, CommandType::OtherManagement, CmdDataT<LeagueTableElementID, CompanyID, EncodedString, LinkType, LinkTargetID>)
+DEF_CMD_TUPLE_NT(Commands::UpdateLeagueTableElementScore,  CmdUpdateLeagueTableElementScore, CMD_STR_CTRL | CMD_DEITY, CommandType::OtherManagement, CmdDataT<LeagueTableElementID, int64_t, EncodedString>)
+DEF_CMD_TUPLE_NT(Commands::RemoveLeagueTableElement,       CmdRemoveLeagueTableElement,                     CMD_DEITY, CommandType::OtherManagement, CmdDataT<LeagueTableElementID>)
 
 #endif /* LEAGUE_CMD_H */

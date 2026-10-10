@@ -2,12 +2,10 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
-/**
- * @file tcp_connect.cpp Basic functions to create connections without blocking.
- */
+/** @file tcp_connect.cpp Basic functions to create connections without blocking. */
 
 #include "../../stdafx.h"
 #include "../../thread.h"
@@ -15,7 +13,7 @@
 #include "tcp.h"
 #include "../network_coordinator.h"
 #include "../network_internal.h"
-#include "../../core/ring_buffer.hpp"
+#include "../../3rdparty/cpp-ring-buffer/ring_buffer.hpp"
 
 #include "../../safeguards.h"
 
@@ -26,8 +24,9 @@
  * @param connection_string The address to connect to.
  * @param default_port If not indicated in connection_string, what port to use.
  * @param bind_address The local bind address to use. Defaults to letting the OS find one.
+ * @param family The IP-family to connect with.
  */
-TCPConnecter::TCPConnecter(const std::string &connection_string, uint16_t default_port, const NetworkAddress &bind_address, int family) :
+TCPConnecter::TCPConnecter(std::string_view connection_string, uint16_t default_port, const NetworkAddress &bind_address, int family) :
 	bind_address(bind_address),
 	family(family)
 {
@@ -39,15 +38,15 @@ TCPConnecter::TCPConnecter(const std::string &connection_string, uint16_t defaul
  * @param connection_string The address to connect to.
  * @param default_port If not indicated in connection_string, what port to use.
  */
-TCPServerConnecter::TCPServerConnecter(const std::string &connection_string, uint16_t default_port) :
+TCPServerConnecter::TCPServerConnecter(std::string_view connection_string, uint16_t default_port) :
 	server_address(ServerAddress::Parse(connection_string, default_port))
 {
 	switch (this->server_address.type) {
-		case SERVER_ADDRESS_DIRECT:
+		case ServerAddressType::Direct:
 			this->connection_string = this->server_address.connection_string;
 			break;
 
-		case SERVER_ADDRESS_INVITE_CODE:
+		case ServerAddressType::InviteCode:
 			this->status = Status::Connecting;
 			_network_coordinator_client.ConnectToServer(this->server_address.connection_string, this);
 			break;
@@ -124,7 +123,7 @@ void TCPConnecter::Connect(addrinfo *address)
 		return;
 	}
 
-	this->sock_to_address[sock] = network_address;
+	this->sock_to_address[sock] = std::move(network_address);
 	this->sockets.push_back(sock);
 }
 
@@ -148,7 +147,7 @@ bool TCPConnecter::TryNextAddress()
  */
 void TCPConnecter::OnResolved(addrinfo *ai)
 {
-	ring_buffer<addrinfo *> addresses_ipv4, addresses_ipv6;
+	jgr::ring_buffer<addrinfo *> addresses_ipv4, addresses_ipv6;
 
 	/* Apply "Happy Eyeballs" if it is likely IPv6 is functional. */
 
@@ -223,13 +222,12 @@ void TCPConnecter::Resolve()
 	/* Port is already guaranteed part of the connection_string. */
 	NetworkAddress address = ParseConnectionString(this->connection_string, 0);
 
-	addrinfo hints;
-	memset(&hints, 0, sizeof(hints));
+	addrinfo hints{};
 	hints.ai_family = AF_UNSPEC;
 	hints.ai_flags = AI_ADDRCONFIG;
 	hints.ai_socktype = SOCK_STREAM;
 
-	std::string port_name = std::to_string(address.GetPort());
+	std::string port_name = fmt::format("{}", address.GetPort());
 
 	static bool getaddrinfo_timeout_error_shown = false;
 	auto start = std::chrono::steady_clock::now();
@@ -259,6 +257,7 @@ void TCPConnecter::Resolve()
 
 /**
  * Thunk to start Resolve() on the right instance.
+ * @param connecter The connector to resolve on.
  */
 /* static */ void TCPConnecter::ResolveThunk(TCPConnecter *connecter)
 {
@@ -407,10 +406,10 @@ bool TCPServerConnecter::CheckActivity()
 	if (this->killed) return true;
 
 	switch (this->server_address.type) {
-		case SERVER_ADDRESS_DIRECT:
+		case ServerAddressType::Direct:
 			return TCPConnecter::CheckActivity();
 
-		case SERVER_ADDRESS_INVITE_CODE:
+		case ServerAddressType::InviteCode:
 			/* Check if a result has come in. */
 			switch (this->status) {
 				case Status::Failure:

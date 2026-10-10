@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file truetypefontcache.h Common base definition for font file based font caches. */
@@ -25,12 +25,12 @@ protected:
 	static constexpr int MAX_GLYPH_DIM = 256;          ///< Maximum glyph dimensions.
 	static constexpr uint MAX_FONT_MIN_REC_SIZE = 20u; ///< Upper limit for the recommended font size in case a font file contains nonsensical values.
 
-	int req_size;  ///< Requested font size.
-	int used_size; ///< Used font size.
+	int req_size = 0; ///< Requested font size.
+	int used_size = 0; ///< Used font size.
 
 	/** Container for information about a glyph. */
 	struct GlyphEntry {
-		std::unique_ptr<uint8_t[]> data; ///< The loaded sprite.
+		std::unique_ptr<std::byte[]> data; ///< The loaded sprite.
 		uint8_t width = 0; ///< The width of the glyph.
 
 		Sprite *GetSprite() { return reinterpret_cast<Sprite *>(data.get()); }
@@ -41,21 +41,18 @@ protected:
 	GlyphEntry *GetGlyphPtr(GlyphID key);
 	GlyphEntry &SetGlyphPtr(GlyphID key, GlyphEntry &&glyph);
 
+	/**
+	 * Load the glyph as a sprite.
+	 * @param key Unique ID of glyph to load.
+	 * @param aa Whether to enable anti-aliasing.
+	 * @return The loaded sprite.
+	 */
 	virtual const Sprite *InternalGetGlyph(GlyphID key, bool aa) = 0;
 
 public:
 	TrueTypeFontCache(FontSize fs, int pixels);
-	virtual ~TrueTypeFontCache();
+	~TrueTypeFontCache() override;
 	int GetFontSize() const override { return this->used_size; }
-	void SetUnicodeGlyph(char32_t key, SpriteID sprite) override { this->parent->SetUnicodeGlyph(key, sprite); }
-
-	virtual void InitializeUnicodeGlyphMap() override
-	{
-		this->parent->InitializeUnicodeGlyphMap();
-		font_height_cache[this->fs] = this->GetHeight();
-	}
-
-
 	const Sprite *GetGlyph(GlyphID key) override;
 	void ClearFontCache() override;
 	uint GetGlyphWidth(GlyphID key) override;

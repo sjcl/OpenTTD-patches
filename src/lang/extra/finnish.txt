@@ -19,6 +19,8 @@ STR_CONFIG_SETTING_TIMETABLE_IN_TICKS_HELPTEXT                  :Näytä aikatau
 
 STR_TRANSPARENT_LOADING_TOOLTIP                                 :{BLACK}Muuta lastausilmaisimien läpinäkyvyyttä. Ctrl+napsautus lukitsee.
 
+STR_BUILD_SIGNAL_TOGGLE_ADVANCED_SIGNAL_TOOLTIP                 :{BLACK}Edistyneiden opastintyyppien näyttäminen
+
 # Tracerestrict GUI
 
 # Programmable Pre-Signals
@@ -104,3 +106,13 @@ STR_COMPANY_PASSWORD_MAKE_DEFAULT_TOOLTIP                       :{BLACK}Käytä 
 STR_COMPANY_VIEW_PASSWORD                                       :{BLACK}Salasana
 STR_COMPANY_VIEW_PASSWORD_TOOLTIP                               :{BLACK}Salasanalla voit suojata yhtiösi, jotta kukaan vieras ei pääse liittymään
 STR_COMPANY_VIEW_SET_PASSWORD                                   :{BLACK}Aseta yhtiön salasana
+
+# JSON messages
+
+STR_INTRO_NEWGRF_SETTINGS                                       :{BLACK}NewGRF-asetukset
+STR_INTRO_AI_SETTINGS                                           :{BLACK}Tekoälyasetukset
+STR_INTRO_GAMESCRIPT_SETTINGS                                   :{BLACK}Peliskriptiasetukset
+STR_INTRO_TOOLTIP_NEWGRF_SETTINGS                               :{BLACK}Avaa NewGRF-asetukset
+STR_INTRO_TOOLTIP_AI_SETTINGS                                   :{BLACK}Avaa tekoälyasetukset
+STR_INTRO_TOOLTIP_GAMESCRIPT_SETTINGS                           :{BLACK}Avaa peliskriptiasetukset
+STR_INTRO_CAPTION_TRADITIONAL                                   :{WHITE}OpenTTD {REV}

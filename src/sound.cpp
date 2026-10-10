@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file sound.cpp Handling of playing sounds. */
@@ -17,10 +17,9 @@
 #include "window_func.h"
 #include "window_gui.h"
 #include "vehicle_base.h"
-
-/* The type of set we're replacing */
-#define SET_TYPE "sounds"
 #include "base_media_func.h"
+#include "base_media_sounds.h"
+#include "settings_type.h"
 
 #include "safeguards.h"
 
@@ -39,7 +38,7 @@ static void OpenBankFile(const std::string &filename)
 	/* If there is no sound file (nosound set), don't load anything */
 	if (filename.empty()) return;
 
-	original_sound_file = std::make_unique<RandomAccessFile>(filename, BASESET_DIR);
+	original_sound_file = std::make_unique<RandomAccessFile>(filename, Subdirectory::Baseset);
 	size_t pos = original_sound_file->GetPos();
 	uint count = original_sound_file->ReadDword();
 
@@ -92,7 +91,7 @@ static bool SetBankSource(MixerChannel *mc, SoundEntry *sound, SoundID sound_id)
 void InitializeSound()
 {
 	Debug(sound, 1, "Loading sound effects...");
-	OpenBankFile(BaseSounds::GetUsedSet()->files->filename);
+	OpenBankFile(BaseSounds::GetUsedSet()->files[0].filename);
 }
 
 
@@ -122,9 +121,8 @@ static void StartSound(SoundID sound_id, float pan, uint volume)
 	MxActivateChannel(mc);
 }
 
-
-static const uint8_t _vol_factor_by_zoom[] = {255, 255, 255, 190, 134, 87, 10, 1, 1, 1};
-static_assert(lengthof(_vol_factor_by_zoom) == ZOOM_LVL_END);
+/** Volume scaling for each zoom level. */
+static constexpr EnumIndexArray<uint8_t, ZoomLevel, ZoomLevel::End> _vol_factor_by_zoom{255, 255, 255, 190, 134, 87, 10, 1, 1, 1};
 
 static const uint8_t _sound_base_vol[] = {
 	128,  90, 128, 128, 128, 128, 128, 128,
@@ -171,6 +169,7 @@ void ChangeSoundSet(int index)
 	if (BaseSounds::GetIndexOfUsedSet() == index) return;
 
 	auto set = BaseSounds::GetSet(index);
+	if (set->name != "NoSound") InitSoundDriver();
 	BaseSounds::ini_set = set->name;
 	BaseSounds::SetSet(set);
 
@@ -189,7 +188,7 @@ void ChangeSoundSet(int index)
 		sound->priority = 0;
 	}
 
-	InvalidateWindowData(WC_GAME_OPTIONS, WN_GAME_OPTIONS_GAME_OPTIONS, 0, true);
+	InvalidateWindowData(WindowClass::GameOptions, GameOptionsWindowNumber::GameOptions, 0, true);
 }
 
 /**
@@ -229,8 +228,8 @@ void SndPlayTileFx(SoundID sound, TileIndex tile)
 	if (_settings_client.music.effect_vol == 0) return;
 
 	/* emits sound from center of the tile */
-	int x = std::min(MapMaxX() - 1, TileX(tile)) * TILE_SIZE + TILE_SIZE / 2;
-	int y = std::min(MapMaxY() - 1, TileY(tile)) * TILE_SIZE - TILE_SIZE / 2;
+	int x = std::min(Map::MaxX() - 1, TileX(tile)) * TILE_SIZE + TILE_SIZE / 2;
+	int y = std::min(Map::MaxY() - 1, TileY(tile)) * TILE_SIZE - TILE_SIZE / 2;
 	int z = (y < 0 ? 0 : GetSlopePixelZ(x, y));
 	Point pt = RemapCoords(x, y, z);
 	y += 2 * TILE_SIZE;
@@ -253,28 +252,47 @@ void SndPlayFx(SoundID sound)
 	StartSound(sound, 0.5, UINT8_MAX);
 }
 
-INSTANTIATE_BASE_MEDIA_METHODS(BaseMedia<SoundsSet>, SoundsSet)
+/**
+ * Play a beep sound for a click event if enabled in settings.
+ */
+void SndClickBeep()
+{
+	if (_settings_client.sound.click_beep) SndPlayFx(SND_15_BEEP);
+}
+
+/**
+ * Play a beep sound for a confirm event if enabled in settings.
+ */
+void SndConfirmBeep()
+{
+	if (_settings_client.sound.confirm) SndPlayFx(SND_15_BEEP);
+}
 
 /** Names corresponding to the sound set's files */
-static const char * const _sound_file_names[] = { "samples" };
+static const std::string_view _sound_file_names[] = { "samples" };
 
+/** @copydoc BaseSet::GetFilenames */
+template <>
+/* static */ std::span<const std::string_view> BaseSet<SoundsSet>::GetFilenames()
+{
+	return _sound_file_names;
+}
 
-template <class T, size_t Tnum_files, bool Tsearch_in_tars>
-/* static */ const char * const *BaseSet<T, Tnum_files, Tsearch_in_tars>::file_names = _sound_file_names;
-
-template <class Tbase_set>
-/* static */ const char *BaseMedia<Tbase_set>::GetExtension()
+/** @copydoc BaseMedia::GetExtension */
+template <>
+/* static */ std::string_view BaseMedia<SoundsSet>::GetExtension()
 {
 	return ".obs"; // OpenTTD Base Sounds
 }
 
-template <class Tbase_set>
-/* static */ bool BaseMedia<Tbase_set>::DetermineBestSet()
+/** @copydoc BaseMedia::DetermineBestSet */
+template <>
+/* static */ bool BaseMedia<SoundsSet>::DetermineBestSet()
 {
-	if (BaseMedia<Tbase_set>::used_set != nullptr) return true;
+	if (BaseMedia<SoundsSet>::used_set != nullptr) return true;
 
-	const Tbase_set *best = nullptr;
-	for (const Tbase_set *c = BaseMedia<Tbase_set>::available_sets; c != nullptr; c = c->next) {
+	const SoundsSet *best = nullptr;
+	for (const auto &c : BaseMedia<SoundsSet>::available_sets) {
 		/* Skip unusable sets */
 		if (c->GetNumMissing() != 0) continue;
 
@@ -283,11 +301,12 @@ template <class Tbase_set>
 				best->valid_files < c->valid_files ||
 				(best->valid_files == c->valid_files &&
 					(best->shortname == c->shortname && best->version < c->version))) {
-			best = c;
+			best = c.get();
 		}
 	}
 
-	BaseMedia<Tbase_set>::used_set = best;
-	return BaseMedia<Tbase_set>::used_set != nullptr;
+	BaseMedia<SoundsSet>::used_set = best;
+	return BaseMedia<SoundsSet>::used_set != nullptr;
 }
 
+template class BaseMedia<SoundsSet>;

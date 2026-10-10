@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file tile_map.cpp Global tile accessors. */
@@ -13,14 +13,14 @@
 #include "safeguards.h"
 
 /**
- * Get a tile's slope given the heigh of its four corners.
+ * Get a tile's slope given the height of its four corners.
  * @param hnorth The height at the northern corner in the same unit as TileHeight.
  * @param hwest  The height at the western corner in the same unit as TileHeight.
  * @param heast  The height at the eastern corner in the same unit as TileHeight.
  * @param hsouth The height at the southern corner in the same unit as TileHeight.
  * @return The slope and the lowest height of the four corners.
  */
-static std::tuple<Slope, int> GetTileSlopeGivenHeight(int hnorth, int hwest, int heast, int hsouth)
+static std::pair<Slope, int> GetTileSlopeGivenHeight(int hnorth, int hwest, int heast, int hsouth)
 {
 	/* Due to the fact that tiles must connect with each other without leaving gaps, the
 	 * biggest difference in height between any corner and 'min' is between 0, 1, or 2.
@@ -52,12 +52,12 @@ static std::tuple<Slope, int> GetTileSlopeGivenHeight(int hnorth, int hwest, int
  * @param tile Tile to compute slope of
  * @return Slope of the tile, except for the HALFTILE part, and the z height
  */
-std::tuple<Slope, int> GetTileSlopeZ(TileIndex tile)
+std::pair<Slope, int> GetTileSlopeZ(TileIndex tile)
 {
 	uint x1 = TileX(tile);
 	uint y1 = TileY(tile);
-	uint x2 = std::min(x1 + 1, MapMaxX());
-	uint y2 = std::min(y1 + 1, MapMaxY());
+	uint x2 = std::min(x1 + 1, Map::MaxX());
+	uint y2 = std::min(y1 + 1, Map::MaxY());
 
 	int hnorth = TileHeight(tile);           // Height of the North corner.
 	int hwest  = TileHeight(TileXY(x2, y1)); // Height of the West corner.
@@ -72,10 +72,9 @@ std::tuple<Slope, int> GetTileSlopeZ(TileIndex tile)
  *
  * @param x X coordinate of the tile to compute slope of, may be outside the map.
  * @param y Y coordinate of the tile to compute slope of, may be outside the map.
- * @param h If not \c nullptr, pointer to storage of z height.
  * @return Slope of the tile, except for the HALFTILE part, and the z height of the tile.
  */
-std::tuple<Slope, int> GetTilePixelSlopeOutsideMap(int x, int y)
+std::pair<Slope, int> GetTilePixelSlopeOutsideMap(int x, int y)
 {
 	int hnorth = TileHeightOutsideMap(x,     y);     // N corner.
 	int hwest  = TileHeightOutsideMap(x + 1, y);     // W corner.
@@ -96,8 +95,8 @@ bool IsTileFlat(TileIndex tile, int *h)
 {
 	uint x1 = TileX(tile);
 	uint y1 = TileY(tile);
-	uint x2 = std::min(x1 + 1, MapMaxX());
-	uint y2 = std::min(y1 + 1, MapMaxY());
+	uint x2 = std::min(x1 + 1, Map::MaxX());
+	uint y2 = std::min(y1 + 1, Map::MaxY());
 
 	uint z = TileHeight(tile);
 	if (TileHeight(TileXY(x2, y1)) != z) return false;
@@ -117,8 +116,8 @@ int GetTileZ(TileIndex tile)
 {
 	uint x1 = TileX(tile);
 	uint y1 = TileY(tile);
-	uint x2 = std::min(x1 + 1, MapMaxX());
-	uint y2 = std::min(y1 + 1, MapMaxY());
+	uint x2 = std::min(x1 + 1, Map::MaxX());
+	uint y2 = std::min(y1 + 1, Map::MaxY());
 
 	return std::min({
 		TileHeight(tile),           // N corner
@@ -137,8 +136,8 @@ int GetTileMaxZ(TileIndex t)
 {
 	uint x1 = TileX(t);
 	uint y1 = TileY(t);
-	uint x2 = std::min(x1 + 1, MapMaxX());
-	uint y2 = std::min(y1 + 1, MapMaxY());
+	uint x2 = std::min(x1 + 1, Map::MaxX());
+	uint y2 = std::min(y1 + 1, Map::MaxY());
 
 	return std::max({
 		TileHeight(t),              // N corner

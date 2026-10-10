@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file train_speed_adaptation.h Train speed adaptation data structures. */
@@ -21,12 +21,7 @@ struct SignalSpeedKey {
 	uint16_t signal_track;
 	Trackdir last_passing_train_dir;
 
-	bool operator==(const SignalSpeedKey& other) const
-	{
-		return signal_tile == other.signal_tile &&
-			signal_track == other.signal_track &&
-			last_passing_train_dir == other.last_passing_train_dir;
-	}
+	bool operator==(const SignalSpeedKey& other) const = default;
 
 	bool operator<(const SignalSpeedKey& other) const
 	{

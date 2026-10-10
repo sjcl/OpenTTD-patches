@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file newgrf.h Base for the NewGRF implementation. */
@@ -11,17 +11,24 @@
 #define NEWGRF_H
 
 #include "cargotype.h"
+#include "economy_type.h"
+#include "livery.h"
 #include "rail_type.h"
 #include "road_type.h"
 #include "fileio_type.h"
+#include "newgrf_badge_type.h"
+#include "newgrf_callbacks.h"
 #include "newgrf_text_type.h"
 #include "newgrf_act5.h"
+#include "strings_type.h"
+#include "vehicle_type.h"
 #include "core/bitmath_func.hpp"
 #include "core/alloc_type.hpp"
 #include "core/format.hpp"
 #include "core/mem_func.hpp"
 #include "3rdparty/cpp-btree/btree_map.h"
 #include "3rdparty/robin_hood/robin_hood.h"
+#include <array>
 #include <bitset>
 #include <vector>
 
@@ -29,85 +36,100 @@
  * List of different canal 'features'.
  * Each feature gets an entry in the canal spritegroup table
  */
-enum CanalFeature {
-	CF_WATERSLOPE,
-	CF_LOCKS,
-	CF_DIKES,
-	CF_ICON,
-	CF_DOCKS,
-	CF_RIVER_SLOPE,
-	CF_RIVER_EDGE,
-	CF_RIVER_GUI,
-	CF_BUOY,
-	CF_END,
+enum class CanalFeature : uint8_t {
+	LockWaterSlope, ///< The sloped water tiles in locks.
+	Locks, ///< The sides of the lock.
+	Dikes, ///< The canal dikes/embankment.
+	Icon, ///< Unused: the TTDP UI icon for canals.
+	FlatDocks, ///< Unused: the graphics for TTDP flat docks.
+	RiverSlope, ///< The sloped water tiles for rivers.
+	RiverEdge, ///< The river banks.
+	RiverIcon, ///< Unused: the TTDP UI icons for rivers.
+	Buoy, ///< Buoy without underlying water.
+	End, ///< End marker.
 };
+
+/** Flags controlling the display of canals. */
+enum class CanalFeatureFlag : uint8_t {
+	HasFlatSprite = 0, ///< Additional flat ground sprite in the beginning.
+};
+/** CanalFeatureFlag bitmask. */
+using CanalFeatureFlags = EnumBitSet<CanalFeatureFlag, uint8_t>;
 
 /** Canal properties local to the NewGRF */
 struct CanalProperties {
-	uint8_t callback_mask;  ///< Bitmask of canal callbacks that have to be called.
-	uint8_t flags;          ///< Flags controlling display.
+	CanalCallbackMasks callback_mask; ///< Bitmask of canal callbacks that have to be called.
+	CanalFeatureFlags flags; ///< Flags controlling display.
 };
 
-enum GrfLoadingStage {
-	GLS_FILESCAN,
-	GLS_SAFETYSCAN,
-	GLS_LABELSCAN,
-	GLS_INIT,
-	GLS_RESERVE,
-	GLS_ACTIVATION,
-	GLS_END,
+/** Stages of loading all NewGRFs. */
+enum class GrfLoadingStage : uint8_t {
+	FileScan, ///< Load the Action 8 metadata (GRF ID, name).
+	SafetyScan, ///< Checks whether the NewGRF can be used in a static context.
+	LabelScan, ///< First step of NewGRF loading; find the 'goto' labels in the NewGRF.
+	Init, ///< Second step of NewGRF loading; load all actions into memory.
+	Reserve, ///< Third step of NewGRF loading; reserve features and GRMs.
+	Activation, ///< Forth step of NewGRF loading; activate the features.
+	End, ///< End marker.
 };
 
-DECLARE_POSTFIX_INCREMENT(GrfLoadingStage)
-
-enum GrfMiscBit {
-	GMB_DESERT_TREES_FIELDS    = 0, // Unsupported.
-	GMB_DESERT_PAVED_ROADS     = 1,
-	GMB_FIELD_BOUNDING_BOX     = 2, // Unsupported.
-	GMB_TRAIN_WIDTH_32_PIXELS  = 3, ///< Use 32 pixels per train vehicle in depot gui and vehicle details. Never set in the global variable; @see GRFFile::traininfo_vehicle_width
-	GMB_AMBIENT_SOUND_CALLBACK = 4,
-	GMB_CATENARY_ON_3RD_TRACK  = 5, // Unsupported.
-	GMB_SECOND_ROCKY_TILE_SET  = 6,
+/** Bits of NewGRF's GlobalVariable 1E/9E. */
+enum class GrfMiscBit : uint8_t {
+	DesertTreesFields = 0, ///< Unsupported: allow trees and fields in desert climate.
+	DesertPavedRoads = 1, ///< Show pavement and lights in desert towns
+	FieldBoundingBox = 2, ///< Unsupported: fields have a height.
+	TrainWidth32Pixels = 3, ///< Use 32 pixels per train vehicle in depot gui and vehicle details. Never set in the global variable; @see GRFFile::traininfo_vehicle_width
+	AmbientSoundCallback = 4, ///< Enable ambient sound effect callback 144.
+	CatenaryOn3rdTrack = 5, ///< Unsupported: enable catenaries over third track type.
+	SecondRockyTileSet = 6, ///< Enable using the second rocky tile set.
 };
 
-enum GrfSpecFeature : uint8_t {
-	GSF_TRAINS,
-	GSF_ROADVEHICLES,
-	GSF_SHIPS,
-	GSF_AIRCRAFT,
-	GSF_STATIONS,
-	GSF_CANALS,
-	GSF_BRIDGES,
-	GSF_HOUSES,
-	GSF_GLOBALVAR,
-	GSF_INDUSTRYTILES,
-	GSF_INDUSTRIES,
-	GSF_CARGOES,
-	GSF_SOUNDFX,
-	GSF_AIRPORTS,
-	GSF_SIGNALS,
-	GSF_OBJECTS,
-	GSF_RAILTYPES,
-	GSF_AIRPORTTILES,
-	GSF_ROADTYPES,
-	GSF_TRAMTYPES,
-	GSF_ROADSTOPS,
+/** Bitset of \c GrfMiscBit elements. */
+using GrfMiscBits = EnumBitSet<GrfMiscBit, uint8_t>;
 
-	GSF_NEWLANDSCAPE,
-	GSF_FAKE_TOWNS,           ///< Fake (but mappable) town GrfSpecFeature for NewGRF debugging (parent scope), and generic callbacks
-	GSF_END,
+enum class GrfSpecFeature : uint8_t {
+	Trains, ///< Trains feature
+	RoadVehicles, ///< Road vehicles feature
+	Ships, ///< Ships feature
+	Aircraft, ///< Aircraft feature
+	Stations, ///< Stations feature
+	Canals, ///< Canals feature
+	Bridges, ///< Bridges feature
+	Houses, ///< Houses feature
+	GlobalVar, ///< Global variables feature
+	IndustryTiles, ///< Industry tiles feature
+	Industries, ///< Industries feature
+	Cargoes, ///< Cargoes feature
+	SoundEffects, ///< Sound effects feature
+	Airports, ///< Airports feature
+	Signals, ///< Signals feature
+	Objects, ///< Objects feature
+	RailTypes, ///< Rail types feature
+	AirportTiles, ///< Airport tiles feature
+	RoadTypes, ///< Road types feature
+	TramTypes, ///< Tram types feature
+	RoadStops, ///< Road stops feature
+	Badges, ///< Badges feature
 
-	GSF_REAL_FEATURE_END = GSF_NEWLANDSCAPE,
+	NewLandscape,
+	FakeTowns, ///< Fake town GrfSpecFeature for NewGRF debugging (parent scope)
+	End, ///< End marker
 
-	GSF_FAKE_STATION_STRUCT = GSF_END,  ///< Fake station struct GrfSpecFeature for NewGRF debugging
-	GSF_FAKE_TRACERESTRICT,   ///< Fake routing restriction GrfSpecFeature for debugging
-	GSF_FAKE_END,             ///< End of the fake features
+	RealFeatureEnd = NewLandscape,
 
-	GSF_ERROR_ON_USE = 0xFE,  ///< An invalid value which generates an immediate error on mapping
-	GSF_INVALID = 0xFF,       ///< An invalid spec feature
+	Default = End, ///< Unspecified feature, default badge
+
+	FakeStationStruct = End, ///< Fake station struct GrfSpecFeature for NewGRF debugging
+	FakeTracerestrict, ///< Fake routing restriction GrfSpecFeature for debugging
+	FakeEnd, ///< End of the fake features
+
+	OriginalStrings = 0x48, ///< Pseudo unsupported 'feature' for replacing original strings
+	ErrorOnUse = 0xFE, ///< An invalid value which generates an immediate error on mapping
+	Invalid = 0xFF, ///< An invalid spec feature
 };
 
-static const uint32_t INVALID_GRFID = 0xFFFFFFFF;
+/** Bitset of \c GrfSpecFeature elements. */
+using GrfSpecFeatures = EnumBitSet<GrfSpecFeature, uint32_t, GrfSpecFeature::End>;
 
 struct GRFLabel {
 	uint8_t label;
@@ -232,7 +254,7 @@ struct GRFNameOnlyVariableMapDefinition {
 
 struct GRFVariableMapEntry {
 	uint16_t id = 0;
-	uint8_t feature = 0;
+	GrfSpecFeature feature{};
 	uint8_t input_shift = 0;
 	uint8_t output_shift = 0;
 	uint32_t input_mask = 0;
@@ -247,7 +269,7 @@ struct Action5TypeRemapDefinition {
 	/** Create empty object used to identify the end of a list. */
 	Action5TypeRemapDefinition() :
 		name(nullptr),
-		info({ A5BLOCK_INVALID, 0, 0, 0, nullptr })
+		info({ Action5BlockType::Invalid, 0, 0, 0, nullptr })
 	{}
 
 	Action5TypeRemapDefinition(const char *type_name, Action5BlockType block_type, SpriteID sprite_base, uint16_t min_sprites, uint16_t max_sprites, const char *info_name) :
@@ -307,18 +329,19 @@ enum NewLandscapeAction3ID {
 /** GRFFile control flags. */
 enum GRFFileCtrlFlags {
 	GFCF_HAVE_FEATURE_ID_REMAP  = 0,                          ///< This GRF has one or more feature ID mappings
+	GFCF_ROADSTOPS_FEATURE_MAP_NON_DEFAULT_ID,                ///< The road stops feature was mapped to a non-default feature ID (not GrfSpecFeature::RoadStops), enable some workarounds
 };
 
 struct NewSignalStyle;
 
 /** Dynamic data of a loaded NewGRF */
-struct GRFFile : ZeroedMemoryAllocator {
-	std::string filename;
-	uint32_t grfid;
-	uint8_t grf_version;
+struct GRFFile {
+	std::string filename{};
+	GrfID grfid{};
+	uint8_t grf_version = 0;
 
-	uint sound_offset;
-	uint16_t num_sounds;
+	uint sound_offset = 0;
+	uint16_t num_sounds = 0;
 
 	std::vector<std::unique_ptr<struct StationSpec>> stations;
 	std::vector<std::unique_ptr<struct HouseSpec>> housespec;
@@ -329,61 +352,72 @@ struct GRFFile : ZeroedMemoryAllocator {
 	std::vector<std::unique_ptr<struct AirportTileSpec>> airtspec;
 	std::vector<std::unique_ptr<struct RoadStopSpec>> roadstops;
 
-	GRFFeatureMapRemapSet feature_id_remaps;
-	GRFFilePropertyRemapSet action0_property_remaps[GSF_END];
-	btree::btree_map<uint32_t, GRFFilePropertyRemapEntry> action0_extended_property_remaps;
-	Action5TypeRemapSet action5_type_remaps;
-	std::vector<GRFVariableMapEntry> grf_variable_remaps;
-	std::vector<std::unique_ptr<const char, FreeDeleter>> remap_unknown_property_names;
+	GRFFeatureMapRemapSet feature_id_remaps{};
+	EnumIndexArray<GRFFilePropertyRemapSet, GrfSpecFeature, GrfSpecFeature::End> action0_property_remaps{};
+	btree::btree_map<uint32_t, GRFFilePropertyRemapEntry> action0_extended_property_remaps{};
+	Action5TypeRemapSet action5_type_remaps{};
+	std::vector<GRFVariableMapEntry> grf_variable_remaps{};
+	std::vector<std::unique_ptr<const char, FreeDeleter>> remap_unknown_property_names{};
 
-	std::vector<uint32_t> param;
+	std::vector<uint32_t> param{};
 
-	std::vector<GRFLabel> labels;                   ///< List of labels
+	std::vector<GRFLabel> labels{}; ///< List of labels
 
-	std::vector<CargoLabel> cargo_list;             ///< Cargo translation table (local ID -> label)
-	std::array<uint8_t, NUM_CARGO> cargo_map{};     ///< Inverse cargo translation table (CargoID -> local ID)
+	std::vector<CargoLabel> cargo_list{};           ///< Cargo translation table (local ID -> label)
+	std::array<uint8_t, NUM_CARGO> cargo_map{};     ///< Inverse cargo translation table (CargoType -> local ID)
 
-	std::vector<RailTypeLabel> railtype_list;       ///< Railtype translation table
+	std::vector<BadgeID> badge_list{}; ///< Badge translation table (local index -> global index)
+	btree::btree_map<uint16_t, BadgeID> badge_map{};
+
+	std::vector<RailTypeLabel> railtype_list{}; ///< Railtype translation table
 	std::array<RailType, RAILTYPE_END> railtype_map{};
 
-	std::vector<RoadTypeLabel> roadtype_list;       ///< Roadtype translation table (road)
+	std::vector<RoadTypeLabel> roadtype_list{}; ///< Roadtype translation table (road)
 	std::array<RoadType, ROADTYPE_END> roadtype_map{};
 
-	std::vector<RoadTypeLabel> tramtype_list;       ///< Roadtype translation table (tram)
+	std::vector<RoadTypeLabel> tramtype_list{}; ///< Roadtype translation table (tram)
 	std::array<RoadType, ROADTYPE_END> tramtype_map{};
 
-	CanalProperties canal_local_properties[CF_END]; ///< Canal properties as set by this NewGRF
+	EnumIndexArray<CanalProperties, CanalFeature, CanalFeature::End> canal_local_properties{}; ///< Canal properties as set by this NewGRF
 
-	robin_hood::unordered_node_map<uint8_t, LanguageMap> language_map; ///< Mappings related to the languages.
+	robin_hood::unordered_node_map<GRFLanguage, LanguageMap> language_map{}; ///< Mappings related to the languages.
 
-	int traininfo_vehicle_pitch;  ///< Vertical offset for drawing train images in depot GUI and vehicle details
-	uint traininfo_vehicle_width; ///< Width (in pixels) of a 8/8 train vehicle in depot GUI and vehicle details
+	int traininfo_vehicle_pitch = 0;                    ///< Vertical offset for drawing train images in depot GUI and vehicle details
+	uint traininfo_vehicle_width = 0;                   ///< Width (in pixels) of a 8/8 train vehicle in depot GUI and vehicle details
+	bool cargo_list_is_fallback = false;                ///< Set if cargo types have been created but a cargo list has not been installed
 
-	uint32_t grf_features;                   ///< Bitset of GrfSpecFeature the grf uses
-	PriceMultipliers price_base_multipliers; ///< Price base multipliers as set by the grf.
+	GrfSpecFeatures grf_features{};                     ///< Bitset of GrfSpecFeature the grf uses
+	PriceMultipliers price_base_multipliers{};          ///< Price base multipliers as set by the grf.
 
-	uint32_t var8D_overlay;                  ///< Overlay for global variable 8D (action 0x14)
-	uint32_t var9D_overlay;                  ///< Overlay for global variable 9D (action 0x14)
-	std::vector<uint32_t> var91_values;      ///< Test result values for global variable 91 (action 0x14, only testable using action 7/9)
+	uint32_t var8D_overlay = 0;                         ///< Overlay for global variable 8D (action 0x14)
+	uint32_t var9D_overlay = 0;                         ///< Overlay for global variable 9D (action 0x14)
+	std::vector<uint32_t> var91_values{};               ///< Test result values for global variable 91 (action 0x14, only testable using action 7/9)
 
-	uint32_t observed_feature_tests;         ///< Observed feature test bits (see: GRFFeatureTestObservationFlag)
+	uint32_t observed_feature_tests = 0;                ///< Observed feature test bits (see: GRFFeatureTestObservationFlag)
 
-	const SpriteGroup *new_signals_group;    ///< New signals sprite group
-	uint8_t new_signal_ctrl_flags;           ///< Ctrl flags for new signals
-	uint8_t new_signal_extra_aspects;        ///< Number of extra aspects for new signals
-	uint16_t new_signal_style_mask;          ///< New signal styles usable with this GRF
-	NewSignalStyle *current_new_signal_style; ///< Current new signal style being defined by this GRF
+	const SpriteGroup *new_signals_group = nullptr;     ///< New signals sprite group
+	uint8_t new_signal_ctrl_flags = 0;                  ///< Ctrl flags for new signals
+	uint8_t new_signal_extra_aspects = 0;               ///< Number of extra aspects for new signals
+	uint16_t new_signal_style_mask = 0;                 ///< New signal styles usable with this GRF
+	NewSignalStyle *current_new_signal_style = nullptr; ///< Current new signal style being defined by this GRF
 
-	const SpriteGroup *new_rocks_group;      ///< New landscape rocks group
-	uint8_t new_landscape_ctrl_flags;        ///< Ctrl flags for new landscape
+	const SpriteGroup *new_rocks_group = nullptr;       ///< New landscape rocks group
+	uint8_t new_landscape_ctrl_flags = 0;               ///< Ctrl flags for new landscape
 
-	uint8_t ctrl_flags;                      ///< General GRF control flags
+	uint8_t ctrl_flags = 0;                             ///< General GRF control flags
 
-	btree::btree_map<uint16_t, uint> string_map; ///< Map of local GRF string ID to string ID
+	btree::btree_map<GRFStringID, StringIndexInTab> string_map{}; ///< Map of local GRF string ID to string ID
 
-	GRFFile(const struct GRFConfig *config);
+	GRFFile(const GRFConfig &config);
+	GRFFile();
+	GRFFile(GRFFile &&other);
+	~GRFFile();
 
-	/** Get GRF Parameter with range checking */
+	/**
+	 * Get GRF Parameter with range checking.
+	 * @param number The parameter number/index.
+	 * @return The parameter, or \c 0 when the number is out of bounds.
+	 */
 	uint32_t GetParam(uint number) const
 	{
 		/* Note: We implicitly test for number < this->param.size() and return 0 for invalid parameters.
@@ -392,24 +426,37 @@ struct GRFFile : ZeroedMemoryAllocator {
 	}
 };
 
-enum ShoreReplacement {
-	SHORE_REPLACE_NONE,       ///< No shore sprites were replaced.
-	SHORE_REPLACE_ACTION_5,   ///< Shore sprites were replaced by Action5.
-	SHORE_REPLACE_ACTION_A,   ///< Shore sprites were replaced by ActionA (using grass tiles for the corner-shores).
-	SHORE_REPLACE_ONLY_NEW,   ///< Only corner-shores were loaded by Action5 (openttd(w/d).grf only).
+/** Type of shore replacement loaded by NewGRFs. */
+enum class ShoreReplacement : uint8_t {
+	None, ///< No shore sprites were replaced.
+	Action5, ///< Shore sprites were replaced by Action5.
+	ActionA, ///< Shore sprites were replaced by ActionA (using grass tiles for the corner-shores).
+	OnlyNew, ///< Only corner-shores were loaded by Action5 (openttd(w/d).grf only).
 };
 
-enum TramReplacement {
-	TRAMWAY_REPLACE_DEPOT_NONE,       ///< No tram depot graphics were loaded.
-	TRAMWAY_REPLACE_DEPOT_WITH_TRACK, ///< Electrified depot graphics with tram track were loaded.
-	TRAMWAY_REPLACE_DEPOT_NO_TRACK,   ///< Electrified depot graphics without tram track were loaded.
+/** Type of tram depot replacement loaded by NewGRFs. */
+enum class TramDepotReplacement : uint8_t {
+	None, ///< No tram depot graphics were loaded.
+	WithTrack, ///< Electrified depot graphics with tram track were loaded.
+	WithoutTrack, ///< Electrified depot graphics without tram track were loaded.
 };
 
+/** State of features loaded by NewGRFs. */
 struct GRFLoadedFeatures {
-	bool has_2CC;             ///< Set if any vehicle is loaded which uses 2cc (two company colours).
-	uint64_t used_liveries;   ///< Bitmask of #LiveryScheme used by the defined engines.
-	ShoreReplacement shore;   ///< In which way shore sprites were replaced.
-	TramReplacement tram;     ///< In which way tram depots were replaced.
+	bool has_2CC;                ///< Set if any vehicle is loaded which uses 2cc (two company colours).
+	LiverySchemes used_liveries; ///< Bitmask of #LiveryScheme used by the defined engines.
+	ShoreReplacement shore;      ///< In which way shore sprites were replaced.
+	TramDepotReplacement tram;   ///< In which way tram depots were replaced.
+};
+
+/**
+ * Describes properties of price bases.
+ */
+struct PriceBaseSpec {
+	Money start_price; ///< Default value at game start, before adding multipliers.
+	PriceCategory category; ///< Price is affected by certain difficulty settings.
+	GrfSpecFeature grf_feature; ///< GRF Feature that decides whether price multipliers apply locally or globally, #GrfSpecFeature::End if none.
+	Price fallback_price; ///< Fallback price multiplier for new prices but old grfs.
 };
 
 /**
@@ -419,14 +466,14 @@ struct GRFLoadedFeatures {
  */
 inline bool HasGrfMiscBit(GrfMiscBit bit)
 {
-	extern uint8_t _misc_grf_features;
-	return HasBit(_misc_grf_features, bit);
+	extern GrfMiscBits _misc_grf_features;
+	return _misc_grf_features.Test(bit);
 }
 
 /* Indicates which are the newgrf features currently loaded ingame */
 extern GRFLoadedFeatures _loaded_newgrf_features;
 
-void LoadNewGRFFile(struct GRFConfig *config, GrfLoadingStage stage, Subdirectory subdir, bool temporary);
+void LoadNewGRFFile(GRFConfig &config, GrfLoadingStage stage, Subdirectory subdir, bool temporary);
 void LoadNewGRF(SpriteID load_index, uint num_baseset);
 void ReloadNewGRFData(); // in saveload/afterload.cpp
 void ResetNewGRFData();
@@ -436,17 +483,19 @@ template <typename... T>
 void GrfMsgIntl(int severity, fmt::format_string<T...> msg, T&&... args)
 {
 	extern void GrfInfoVFmt(int severity, fmt::string_view msg, fmt::format_args args);
-	GrfInfoVFmt(severity, msg, fmt::make_format_args(args...));
+	GrfInfoVFmt(severity, msg, make_preprocessed_format_args(args...));
 }
 
 #define GrfMsg(severity, format_string, ...) do { if ((severity) == 0 || GetDebugLevel(DebugLevelID::grf) >= (severity)) GrfMsgIntl(severity, FMT_STRING(format_string) __VA_OPT__(,) __VA_ARGS__); } while(false)
 
 bool GetGlobalVariable(uint8_t param, uint32_t *value, const GRFFile *grffile);
 
-StringID MapGRFStringID(uint32_t grfid, StringID str);
-StringID MapGRFStringID(const struct GRFFile *grf, StringID str);
+StringID MapGRFStringID(GrfID grfid, GRFStringID str);
+StringID MapGRFStringID(const struct GRFFile *grf, GRFStringID str);
 void ShowNewGRFError();
-uint CountSelectedGRFs(GRFConfig *grfconf);
+
+GrfSpecFeature GetGrfSpecFeature(VehicleType type);
+VehicleType GetVehicleType(GrfSpecFeature feature);
 
 struct TemplateVehicle;
 
@@ -455,7 +504,7 @@ struct GrfSpecFeatureRef {
 	uint8_t raw_byte;
 };
 
-struct GetFeatureStringFormatter : public fmt_formattable {
+struct GetFeatureStringFormatter {
 	GrfSpecFeatureRef feature;
 
 	GetFeatureStringFormatter(GrfSpecFeatureRef feature) : feature(feature) {}
@@ -470,11 +519,29 @@ void InitGRFGlobalVars();
 
 const char *GetExtendedVariableNameById(int id);
 
-struct NewGRFLabelDumper {
-	const char *Label(uint32_t label);
+/**
+ * Flatten a NewGRF related label to a 32 bits integer.
+ * @param label The label to flatten.
+ * @return The flattened label.
+ */
+template <typename T> requires std::is_base_of_v<BaseLabel, T>
+constexpr uint32_t FlattenNewGRFLabel(T label) { return label[0] | label[1] << 8 | label[2] << 16 | label[3] << 24; }
 
-private:
-	char buffer[12];
-};
+/**
+ * Unflatten a NewGRF related label from a 32 bits integer.
+ * @param value The value to decode.
+ * @return The unflattened label.
+ */
+template <typename T> requires std::is_base_of_v<BaseLabel, T>
+constexpr T UnflattenNewGRFLabel(uint32_t value)
+{
+	uint8_t buf[]{
+		static_cast<uint8_t>(GB(value, 0, 8)),
+		static_cast<uint8_t>(GB(value, 8, 8)),
+		static_cast<uint8_t>(GB(value, 16, 8)),
+		static_cast<uint8_t>(GB(value, 24, 8))
+	};
+	return buf;
+}
 
 #endif /* NEWGRF_H */

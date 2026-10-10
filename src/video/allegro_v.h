@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file allegro_v.h Base of the Allegro video driver. */
@@ -29,7 +29,7 @@ public:
 
 	bool AfterBlitterChange() override;
 
-	bool ClaimMousePointer() override;
+	void ClaimMousePointer() override;
 
 	std::vector<int> GetListOfMonitorRefreshRates() override;
 
@@ -45,8 +45,8 @@ protected:
 /** Factory for the allegro video driver. */
 class FVideoDriver_Allegro : public DriverFactoryBase {
 public:
-	FVideoDriver_Allegro() : DriverFactoryBase(Driver::DT_VIDEO, 4, "allegro", "Allegro Video Driver") {}
-	Driver *CreateInstance() const override { return new VideoDriver_Allegro(); }
+	FVideoDriver_Allegro() : DriverFactoryBase(Driver::Type::Video, 4, "allegro", "Allegro Video Driver") {}
+	std::unique_ptr<Driver> CreateInstance() const override { return std::make_unique<VideoDriver_Allegro>(); }
 };
 
 #endif /* VIDEO_ALLEGRO_H */

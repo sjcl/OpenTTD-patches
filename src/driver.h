@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file driver.h Base for all drivers (video, sound, music, etc). */
@@ -12,11 +12,12 @@
 
 #include "core/enum_type.hpp"
 #include "string_type.h"
+#include <array>
 #include <map>
 
-const char *GetDriverParam(const StringList &parm, const char *name);
-bool GetDriverParamBool(const StringList &parm, const char *name);
-int GetDriverParamInt(const StringList &parm, const char *name, int def);
+std::optional<std::string_view> GetDriverParam(const StringList &parm, std::string_view name);
+bool GetDriverParamBool(const StringList &parm, std::string_view name);
+int GetDriverParamInt(const StringList &parm, std::string_view name, int def);
 
 /** A driver for communicating with the user. */
 class Driver {
@@ -36,12 +37,12 @@ public:
 	virtual ~Driver() = default;
 
 	/** The type of driver */
-	enum Type {
-		DT_BEGIN = 0, ///< Helper for iteration
-		DT_MUSIC = 0, ///< A music driver, needs to be before sound to properly shut down extmidi forked music players
-		DT_SOUND,     ///< A sound driver
-		DT_VIDEO,     ///< A video driver
-		DT_END,       ///< Helper for iteration
+	enum class Type : uint8_t {
+		Begin = 0, ///< Helper for iteration
+		Music = 0, ///< A music driver, needs to be before sound to properly shut down extmidi forked music players
+		Sound, ///< A sound driver
+		Video, ///< A video driver
+		End, ///< Helper for iteration
 	};
 
 	/**
@@ -51,15 +52,13 @@ public:
 	virtual const char *GetName() const = 0;
 };
 
-DECLARE_POSTFIX_INCREMENT(Driver::Type)
-
-
 /** Base for all driver factories. */
 class DriverFactoryBase {
 private:
 	friend class MusicDriver;
 	friend class SoundDriver;
 	friend class VideoDriver;
+	friend class VideoDriverBase;
 
 	Driver::Type type;       ///< The type of driver.
 	int priority;            ///< The priority of this factory.
@@ -70,6 +69,7 @@ private:
 
 	/**
 	 * Get the map with drivers.
+	 * @return A reference to the drivers.
 	 */
 	static Drivers &GetDrivers()
 	{
@@ -82,10 +82,10 @@ private:
 	 * @param type The type to get the driver for.
 	 * @return The active driver.
 	 */
-	static Driver **GetActiveDriver(Driver::Type type)
+	static std::unique_ptr<Driver> &GetActiveDriver(Driver::Type type)
 	{
-		static Driver *s_driver[3] = { nullptr, nullptr, nullptr };
-		return &s_driver[type];
+		static EnumIndexArray<std::unique_ptr<Driver>, Driver::Type, Driver::Type::End> s_driver{};
+		return s_driver[type];
 	}
 
 	/**
@@ -95,7 +95,9 @@ private:
 	 */
 	static const char *GetDriverTypeName(Driver::Type type)
 	{
-		static const char * const driver_type_name[] = { "music", "sound", "video" };
+		static constexpr EnumIndexArray<const char *, Driver::Type, Driver::Type::End> driver_type_name{
+			"music", "sound", "video"
+		};
 		return driver_type_name[type];
 	}
 
@@ -123,8 +125,8 @@ public:
 	 */
 	static void ShutdownDrivers()
 	{
-		for (Driver::Type dt = Driver::DT_BEGIN; dt < Driver::DT_END; dt++) {
-			Driver *driver = *GetActiveDriver(dt);
+		for (Driver::Type dt : EnumRange(Driver::Type::End)) {
+			auto &driver = GetActiveDriver(dt);
 			if (driver != nullptr) driver->Stop();
 		}
 	}
@@ -145,7 +147,7 @@ public:
 	 * Create an instance of this driver-class.
 	 * @return The instance.
 	 */
-	virtual Driver *CreateInstance() const = 0;
+	virtual std::unique_ptr<Driver> CreateInstance() const = 0;
 };
 
 #endif /* DRIVER_H */

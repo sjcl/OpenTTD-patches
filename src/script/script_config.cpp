@@ -2,14 +2,13 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file script_config.cpp Implementation of ScriptConfig. */
 
 #include "../stdafx.h"
 #include "../settings_type.h"
-#include "../core/random_func.hpp"
 #include "script_info.hpp"
 #include "api/script_object.hpp"
 #include "../textfile_gui.h"
@@ -17,12 +16,14 @@
 #include "../core/format.hpp"
 #include <charconv>
 
+#include "table/strings.h"
+
 #include "../safeguards.h"
 
-void ScriptConfig::Change(std::optional<const std::string> name, int version, bool force_exact_match)
+void ScriptConfig::Change(std::optional<std::string_view> name, int version, bool force_exact_match)
 {
 	if (name.has_value()) {
-		this->name = std::move(name.value());
+		this->name = name.value();
 		this->info = this->FindInfo(this->name, version, force_exact_match);
 	} else {
 		this->info = nullptr;
@@ -34,14 +35,14 @@ void ScriptConfig::Change(std::optional<const std::string> name, int version, bo
 	this->ClearConfigList();
 }
 
-ScriptConfig::ScriptConfig(const ScriptConfig *config)
+ScriptConfig::ScriptConfig(const ScriptConfig &config)
 {
-	this->name = config->name;
-	this->info = config->info;
-	this->version = config->version;
+	this->name = config.name;
+	this->info = config.info;
+	this->version = config.version;
 	this->to_load_data.reset();
 
-	for (const auto &item : config->settings) {
+	for (const auto &item : config.settings) {
 		this->settings[item.first] = item.second;
 	}
 }
@@ -74,7 +75,7 @@ void ScriptConfig::ClearConfigList()
 void ScriptConfig::AnchorUnchangeableSettings()
 {
 	for (const auto &item : *this->GetConfigList()) {
-		if ((item.flags & SCRIPTCONFIG_INGAME) == 0) {
+		if (!item.flags.Test(ScriptConfigFlag::InGame)) {
 			this->SetSetting(item.name, this->GetSetting(item.name));
 		}
 	}
@@ -84,10 +85,10 @@ int ScriptConfig::GetSetting(const std::string &name) const
 {
 	const auto it = this->settings.find(name);
 	if (it == this->settings.end()) return this->info->GetSettingDefaultValue(name);
-	return (*it).second;
+	return it->second;
 }
 
-void ScriptConfig::SetSetting(const std::string_view name, int value)
+void ScriptConfig::SetSetting(std::string_view name, int value)
 {
 	/* You can only set Script specific settings if an Script is selected. */
 	if (this->info == nullptr) return;
@@ -113,8 +114,8 @@ void ScriptConfig::ResetEditableSettings(bool yet_to_start)
 		const ScriptConfigItem *config_item = this->info->GetConfigItem(it->first);
 		assert(config_item != nullptr);
 
-		bool editable = yet_to_start || (config_item->flags & SCRIPTCONFIG_INGAME) != 0;
-		bool visible = _settings_client.gui.ai_developer_tools || (config_item->flags & SCRIPTCONFIG_DEVELOPER) == 0;
+		bool editable = yet_to_start || config_item->flags.Test(ScriptConfigFlag::InGame);
+		bool visible = _settings_client.gui.ai_developer_tools || !config_item->flags.Test(ScriptConfigFlag::Developer);
 
 		if (editable && visible) {
 			it = this->settings.erase(it);
@@ -139,7 +140,7 @@ int ScriptConfig::GetVersion() const
 	return this->version;
 }
 
-void ScriptConfig::StringToSettings(const std::string &value)
+void ScriptConfig::StringToSettings(std::string_view value)
 {
 	std::string_view to_process = value;
 	for (;;) {
@@ -177,9 +178,9 @@ std::string ScriptConfig::SettingsToString() const
 
 std::optional<std::string> ScriptConfig::GetTextfile(TextfileType type, CompanyID slot) const
 {
-	if (slot == INVALID_COMPANY || this->GetInfo() == nullptr) return std::nullopt;
+	if (slot == CompanyID::Invalid() || this->GetInfo() == nullptr) return std::nullopt;
 
-	return ::GetTextfile(type, (slot == OWNER_DEITY) ? GAME_DIR : AI_DIR, this->GetInfo()->GetMainScript());
+	return ::GetTextfile(type, (slot == OWNER_DEITY) ? Subdirectory::Gs : Subdirectory::Ai, this->GetInfo()->GetMainScript());
 }
 
 void ScriptConfig::SetToLoadData(ScriptInstance::ScriptData *data)
@@ -190,5 +191,37 @@ void ScriptConfig::SetToLoadData(ScriptInstance::ScriptData *data)
 ScriptInstance::ScriptData *ScriptConfig::GetToLoadData()
 {
 	return this->to_load_data.get();
+}
+
+static std::pair<StringParameter, StringParameter> GetValueParams(const ScriptConfigItem &config_item, int value)
+{
+	if (config_item.flags.Test(ScriptConfigFlag::Boolean)) return {value != 0 ? STR_CONFIG_SETTING_ON : STR_CONFIG_SETTING_OFF, {}};
+
+	auto it = config_item.labels.find(value);
+	if (it != std::end(config_item.labels)) return {STR_JUST_RAW_STRING, it->second};
+
+	return {STR_JUST_INT, value};
+}
+
+/**
+ * Get string to display this setting in the configuration interface.
+ * @param value Current value.
+ * @returns String to display.
+ */
+std::string ScriptConfigItem::GetString(int value) const
+{
+	auto [param1, param2] = GetValueParams(*this, value);
+	return this->description.empty()
+		? ::GetString(STR_JUST_STRING1, param1, param2)
+		: ::GetString(STR_AI_SETTINGS_SETTING, this->description, param1, param2);
+}
+
+/**
+ * Get text colour to display this setting in the configuration interface.
+ * @returns Text colour to display this setting.
+ */
+TextColour ScriptConfigItem::GetColour() const
+{
+	return this->description.empty() ? TextColour::Orange : TextColour::LightBlue;
 }
 

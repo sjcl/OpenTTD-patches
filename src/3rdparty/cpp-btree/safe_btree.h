@@ -359,6 +359,20 @@ class safe_btree {
     tree_.erase(begin.iter(), end.iter());
     ++generation_;
   }
+  iterator erase_count(const iterator &begin, size_t count) {
+    if (count == 0) return begin;
+    tree_iterator res = tree_.erase_count(begin.iter(), count);
+    ++generation_;
+    return iterator(this, res);
+  }
+  template <typename Pred>
+  iterator erase_count_if(const iterator &begin, size_t count, Pred pred) {
+    if (count == 0) return begin;
+    const size_t initial_size = tree_.size();
+    tree_iterator res = tree_.erase_count_if(begin.iter(), count, std::move(pred));
+    if (initial_size != tree_.size()) ++generation_;
+    return iterator(this, res);
+  }
   // Erase the specified iterator from the btree. The iterator must be valid
   // (i.e. not equal to end()).  Return an iterator pointing to the node after
   // the one that was erased (or end() if none exists).
@@ -367,14 +381,14 @@ class safe_btree {
     ++generation_;
     return iterator(this, res);
   }
-  int erase_unique(const key_type &key) {
-    int res = tree_.erase_unique(key);
-    generation_ += res;
+  size_t erase_unique(const key_type &key) {
+    size_t res = tree_.erase_unique(key);
+    generation_ += static_cast<int64_t>(res);
     return res;
   }
-  int erase_multi(const key_type &key) {
-    int res = tree_.erase_multi(key);
-    generation_ += res;
+  size_t erase_multi(const key_type &key) {
+    size_t res = tree_.erase_multi(key);
+    generation_ += static_cast<int64_t>(res);
     return res;
   }
 
@@ -391,6 +405,10 @@ class safe_btree {
     ++generation_;
     ++x.generation_;
     tree_.swap(x.tree_);
+  }
+  void swap(btree_type &x) {
+    ++generation_;
+    tree_.swap(x);
   }
 #ifndef BTREE_NO_IOSTREAM
   void dump(std::ostream &os) const {
@@ -423,6 +441,39 @@ class safe_btree {
  private:
   btree_type tree_;
   int64_t generation_;
+};
+
+template <typename Tree>
+class safe_btree_unprotected_view {
+ public:
+  typedef typename Tree::const_iterator iterator;
+  typedef typename Tree::const_iterator const_iterator;
+  typedef typename Tree::key_type key_type;
+  typedef typename Tree::data_type data_type;
+  typedef typename Tree::mapped_type mapped_type;
+  typedef typename Tree::value_type value_type;
+  typedef typename Tree::key_compare key_compare;
+  typedef typename Tree::allocator_type allocator_type;
+  typedef typename Tree::pointer pointer;
+  typedef typename Tree::const_pointer const_pointer;
+  typedef typename Tree::reference reference;
+  typedef typename Tree::const_reference const_reference;
+  typedef typename Tree::size_type size_type;
+  typedef typename Tree::difference_type difference_type;
+
+  safe_btree_unprotected_view(const Tree &tree) : tree_(tree) {}
+
+  const_iterator begin() const {
+    return tree_.begin();
+  }
+  const_iterator end() const {
+    return tree_.end();
+  }
+
+  size_type size() const { return tree_.size(); }
+
+ private:
+  const Tree &tree_;
 };
 
 }  // namespace btree

@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file roadveh_gui.cpp GUI for road vehicles. */
@@ -30,14 +30,10 @@
 void DrawRoadVehDetails(const Vehicle *v, const Rect &r)
 {
 	int y = r.top + (v->HasArticulatedPart() ? ScaleSpriteTrad(15) : 0); // Draw the first line below the sprite of an articulated RV instead of after it.
-	StringID str;
 	Money feeder_share = 0;
 
-	SetDParam(0, PackEngineNameDParam(v->engine_type, EngineNameContext::VehicleDetails));
-	SetDParam(1, v->build_year);
-	SetDParam(2, v->value);
-	DrawString(r.left, r.right, y, STR_VEHICLE_INFO_BUILT_VALUE);
-	y += GetCharacterHeight(FS_NORMAL);
+	DrawString(r.left, r.right, y, GetString(STR_VEHICLE_INFO_BUILT_VALUE, PackEngineNameDParam(v->engine_type, EngineNameContext::VehicleDetails), v->build_year, v->value));
+	y += GetCharacterHeight(FontSize::Normal);
 
 	if (v->HasArticulatedPart()) {
 		CargoArray max_cargo{};
@@ -51,72 +47,63 @@ void DrawRoadVehDetails(const Vehicle *v, const Rect &r)
 			}
 		}
 
-		std::string capacity = GetString(STR_VEHICLE_DETAILS_TRAIN_ARTICULATED_RV_CAPACITY);
+		std::string capacity;
 		std::string_view list_separator = GetListSeparator();
 
 		bool first = true;
 		for (const CargoSpec *cs : _sorted_cargo_specs) {
-			CargoID cid = cs->Index();
-			if (max_cargo[cid] > 0) {
+			CargoType cargo_type = cs->Index();
+			if (max_cargo[cargo_type] > 0) {
 				if (!first) capacity += list_separator;
 
-				SetDParam(0, cid);
-				SetDParam(1, max_cargo[cid]);
-				AppendStringInPlace(capacity, STR_JUST_CARGO);
+				AppendStringInPlace(capacity, STR_JUST_CARGO, cargo_type, max_cargo[cargo_type]);
 
-				if (subtype_text[cid] != STR_NULL) {
-					AppendStringInPlace(capacity, subtype_text[cid]);
+				if (subtype_text[cargo_type] != STR_NULL) {
+					AppendStringInPlace(capacity, subtype_text[cargo_type]);
 				}
 
 				first = false;
 			}
 		}
 
-		DrawString(r.left, r.right, y, capacity, TC_BLUE);
-		y += GetCharacterHeight(FS_NORMAL) + WidgetDimensions::scaled.vsep_normal;
+		DrawString(r.left, r.right, y, GetString(STR_VEHICLE_DETAILS_TRAIN_ARTICULATED_RV_CAPACITY, capacity), TextColour::Blue);
+		y += GetCharacterHeight(FontSize::Normal) + WidgetDimensions::scaled.vsep_normal;
 
 		for (const Vehicle *u = v; u != nullptr; u = u->Next()) {
 			if (u->cargo_cap == 0) continue;
 
-			str = STR_VEHICLE_DETAILS_CARGO_EMPTY;
+			std::string str;
 			if (u->cargo.StoredCount() > 0) {
-				SetDParam(0, u->cargo_type);
-				SetDParam(1, u->cargo.StoredCount());
-				SetDParam(2, u->cargo.GetFirstStation());
-				str = STR_VEHICLE_DETAILS_CARGO_FROM;
+				str = GetString(STR_VEHICLE_DETAILS_CARGO_FROM, u->cargo_type, u->cargo.StoredCount(), u->cargo.GetFirstStation());
 				feeder_share += u->cargo.GetFeederShare();
+			} else {
+				str = GetString(STR_VEHICLE_DETAILS_CARGO_EMPTY);
 			}
 			DrawString(r.left, r.right, y, str);
-			y += GetCharacterHeight(FS_NORMAL);
+			y += GetCharacterHeight(FontSize::Normal);
 		}
 		y += WidgetDimensions::scaled.vsep_normal;
 	} else {
-		SetDParam(0, v->cargo_type);
-		SetDParam(1, v->cargo_cap);
-		SetDParam(4, GetCargoSubtypeText(v));
-		DrawString(r.left, r.right, y, STR_VEHICLE_INFO_CAPACITY);
-		y += GetCharacterHeight(FS_NORMAL) + WidgetDimensions::scaled.vsep_normal;
+		DrawString(r.left, r.right, y, GetString(STR_VEHICLE_INFO_CAPACITY, v->cargo_type, v->cargo_cap, GetCargoSubtypeText(v)));
+		y += GetCharacterHeight(FontSize::Normal) + WidgetDimensions::scaled.vsep_normal;
 
-		str = STR_VEHICLE_DETAILS_CARGO_EMPTY;
+		std::string str;
 		if (v->cargo.StoredCount() > 0) {
-			SetDParam(0, v->cargo_type);
-			SetDParam(1, v->cargo.StoredCount());
-			SetDParam(2, v->cargo.GetFirstStation());
-			str = STR_VEHICLE_DETAILS_CARGO_FROM;
+			str = GetString(STR_VEHICLE_DETAILS_CARGO_FROM, v->cargo_type, v->cargo.StoredCount(), v->cargo.GetFirstStation());
 			feeder_share += v->cargo.GetFeederShare();
+		} else {
+			str = GetString(STR_VEHICLE_DETAILS_CARGO_EMPTY);
 		}
 		DrawString(r.left, r.right, y, str);
-		y += GetCharacterHeight(FS_NORMAL) + WidgetDimensions::scaled.vsep_normal;
+		y += GetCharacterHeight(FontSize::Normal) + WidgetDimensions::scaled.vsep_normal;
 	}
 
 	/* Draw Transfer credits text */
-	SetDParam(0, feeder_share);
-	DrawString(r.left, r.right, y, STR_VEHICLE_INFO_FEEDER_CARGO_VALUE);
-	y += GetCharacterHeight(FS_NORMAL) + WidgetDimensions::scaled.vsep_normal;
+	DrawString(r.left, r.right, y, GetString(STR_VEHICLE_INFO_FEEDER_CARGO_VALUE, feeder_share));
+	y += GetCharacterHeight(FontSize::Normal) + WidgetDimensions::scaled.vsep_normal;
 
 	if (RoadVehicle::From(v)->critical_breakdown_count > 0) {
-		SetDParam(0, RoadVehicle::From(v)->GetDisplayEffectiveMaxSpeed());
-		DrawString(r.left, r.right, y, STR_NEED_REPAIR);
+		DrawString(r.left, r.right, y, GetString(STR_NEED_REPAIR, RoadVehicle::From(v)->GetDisplayEffectiveMaxSpeed()));
 	}
 }
 
@@ -126,11 +113,12 @@ void DrawRoadVehDetails(const Vehicle *v, const Rect &r)
  * @param r         Rect to draw at
  * @param selection Selected vehicle to draw a frame around
  * @param skip      Number of pixels to skip at the front (for scrolling)
+ * @param image_type Context where the image is being drawn.
  */
 void DrawRoadVehImage(const Vehicle *v, const Rect &r, VehicleID selection, EngineImageType image_type, int skip)
 {
 	bool rtl = _current_text_dir == TD_RTL;
-	Direction dir = rtl ? DIR_E : DIR_W;
+	Direction dir = rtl ? Direction::E : Direction::W;
 	const RoadVehicle *u = RoadVehicle::From(v);
 
 	DrawPixelInfo tmp_dpi;
@@ -152,10 +140,10 @@ void DrawRoadVehImage(const Vehicle *v, const Rect &r, VehicleID selection, Engi
 		int width = u->GetDisplayImageWidth(&offset);
 
 		if (rtl ? px + width > 0 : px - width < max_width) {
-			PaletteID pal = (u->vehstatus & VS_CRASHED) ? PALETTE_CRASH : GetVehiclePalette(u);
+			PaletteID pal = u->vehstatus.Test(VehState::Crashed) ? PALETTE_CRASH : GetVehiclePalette(u);
 			VehicleSpriteSeq seq;
 			u->GetImage(dir, image_type, &seq);
-			seq.Draw(px + (rtl ? -offset.x : offset.x), y + offset.y, pal, (u->vehstatus & VS_CRASHED) != 0);
+			seq.Draw(px + (rtl ? -offset.x : offset.x), y + offset.y, pal, u->vehstatus.Test(VehState::Crashed));
 		}
 
 		if (do_overlays) AddCargoIconOverlay(overlays, px, width, u);
@@ -170,6 +158,6 @@ void DrawRoadVehImage(const Vehicle *v, const Rect &r, VehicleID selection, Engi
 	if (v->index == selection) {
 		int height = ScaleSpriteTrad(12);
 		Rect hr = {(rtl ? px : 0), 0, (rtl ? max_width : px) - 1, height - 1};
-		DrawFrameRect(hr.Translate(r.left, CenterBounds(r.top, r.bottom, height)).Expand(WidgetDimensions::scaled.bevel), COLOUR_WHITE, FR_BORDERONLY);
+		DrawFrameRect(hr.Translate(r.left, CentreBounds(r.top, r.bottom, height)).Expand(WidgetDimensions::scaled.bevel), Colours::White, FrameFlag::BorderOnly);
 	}
 }

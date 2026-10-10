@@ -119,6 +119,9 @@
 
 namespace btree {
 
+template <typename T>
+concept btree_integer_type_hint = T::integer_type_hint || false;
+
 // Inside a btree method, if we just call swap(), it will choose the
 // btree::swap method, which we don't want. And we can't say ::swap
 // because then MSVC won't pickup any std::swap() implementations. We
@@ -484,7 +487,8 @@ class btree_node {
   // configure linear search based on node-size.
   typedef typename if_<
     std::is_integral<key_type>::value ||
-    std::is_floating_point<key_type>::value,
+    std::is_floating_point<key_type>::value ||
+    btree_integer_type_hint<key_type>,
     linear_search_type, binary_search_type>::type search_type;
 
   struct base_fields {
@@ -744,6 +748,7 @@ public:
   // Removes the value at position i, shifting all existing values and children
   // at positions > i to the left by 1.
   void remove_value(int i);
+  void remove_values_from_leaf(int i, int to_remove);
 
   // Rebalances a node with its right sibling.
   void rebalance_right_to_left(btree_node *sibling, int to_move);
@@ -784,6 +789,9 @@ public:
     root.rightmost = parent;
     root.size = parent->count();
   }
+  void value_destroy(int i) {
+    get_values_ptr()[i].~value_type();
+  }
   void destroy() {
     for (int i = 0; i < count(); ++i) {
       value_destroy(i);
@@ -794,9 +802,6 @@ public:
   template <typename... Args>
   void value_init_args(int i, Args&&... args) {
     new (get_values_ptr() + i) value_type(std::forward<Args>(args)...);
-  }
-  void value_destroy(int i) {
-    get_values_ptr()[i].~value_type();
   }
 
  private:
@@ -814,46 +819,117 @@ public:
 #endif
 #endif /* _MSC_VER */
 
-template <typename Node, typename Reference, typename Pointer>
-struct btree_iterator {
+template <typename Params>
+struct btree_const_iterator;
+
+template <typename Params>
+struct btree_iterator : public btree_const_iterator<Params> {
+  typedef btree_node<Params> node_type;
+  typedef typename Params::pointer pointer;
+  typedef typename Params::reference reference;
+  typedef btree_iterator<Params> self_type;
+
+  btree_iterator()
+      : btree_const_iterator<Params>() {
+  }
+  btree_iterator(node_type *n, int p)
+      : btree_const_iterator<Params>(n, p) {
+  }
+  btree_iterator(const btree_iterator &x)
+      : btree_const_iterator<Params>(x) {
+  }
+
+  btree_iterator &operator=(const btree_iterator &) = default;
+
+  bool operator==(const btree_const_iterator<Params> &x) const {
+    return this->node == x.node && this->position == x.position;
+  }
+
+#if defined(__cplusplus) && __cplusplus >= 202002L
+  friend bool operator==(const btree_iterator &a, const btree_iterator &b) noexcept {
+    return a.node == b.node && a.position == b.position;
+  }
+#else
+  bool operator==(const btree_iterator &x) const {
+    return this->node == x.node && this->position == x.position;
+  }
+  bool operator!=(const btree_iterator &x) const {
+    return this->node != x.node || this->position != x.position;
+  }
+  bool operator!=(const btree_const_iterator<Params> &x) const {
+    return this->node != x.node || this->position != x.position;
+  }
+#endif
+
+  reference operator*() const {
+    return this->node->value(this->position);
+  }
+  pointer operator->() const {
+    return &this->node->value(this->position);
+  }
+
+  self_type& operator++() {
+    this->increment();
+    return *this;
+  }
+  self_type& operator--() {
+    this->decrement();
+    return *this;
+  }
+  self_type operator++(int) {
+    self_type tmp = *this;
+    ++*this;
+    return tmp;
+  }
+  self_type operator--(int) {
+    self_type tmp = *this;
+    --*this;
+    return tmp;
+  }
+};
+
+template <typename Params>
+struct btree_const_iterator {
+  typedef btree_node<Params> Node;
   typedef typename Node::key_type key_type;
   typedef typename Node::size_type size_type;
   typedef typename Node::difference_type difference_type;
-  typedef typename Node::params_type params_type;
 
   typedef Node node_type;
-  typedef typename std::remove_const<Node>::type normal_node;
+  typedef Node normal_node;
   typedef const Node const_node;
-  typedef typename params_type::value_type value_type;
-  typedef typename params_type::pointer normal_pointer;
-  typedef typename params_type::reference normal_reference;
-  typedef typename params_type::const_pointer const_pointer;
-  typedef typename params_type::const_reference const_reference;
+  typedef typename Params::value_type value_type;
+  typedef typename Params::pointer normal_pointer;
+  typedef typename Params::reference normal_reference;
+  typedef typename Params::const_pointer const_pointer;
+  typedef typename Params::const_reference const_reference;
 
-  typedef Pointer pointer;
-  typedef Reference reference;
+  typedef const_pointer pointer;
+  typedef const_reference reference;
   typedef std::bidirectional_iterator_tag iterator_category;
 
-  typedef btree_iterator<
-    normal_node, normal_reference, normal_pointer> iterator;
-  typedef btree_iterator<
-    const_node, const_reference, const_pointer> const_iterator;
-  typedef btree_iterator<Node, Reference, Pointer> self_type;
+  typedef btree_const_iterator<Params> const_iterator;
+  typedef btree_iterator<Params> iterator;
+  typedef const_iterator self_type;
 
-  btree_iterator()
+  btree_const_iterator()
       : node(NULL),
         position(-1) {
   }
-  btree_iterator(Node *n, int p)
-      : node(n),
+  btree_const_iterator(const Node *n, int p)
+      : node(const_cast<Node *>(n)),
         position(p) {
   }
-  btree_iterator(const iterator &x)
+  btree_const_iterator(const const_iterator &x)
+      : node(x.node),
+        position(x.position) {
+  }
+  btree_const_iterator(const iterator &x)
       : node(x.node),
         position(x.position) {
   }
 
-  btree_iterator &operator=(const btree_iterator &) = default;
+  btree_const_iterator &operator=(const btree_const_iterator &) = default;
 
   // Increment/decrement the iterator.
   void increment() {
@@ -862,7 +938,7 @@ struct btree_iterator {
     }
     increment_slow();
   }
-  void increment_by(int count);
+  void increment_by(ptrdiff_t count);
   void increment_slow();
 
   void decrement() {
@@ -871,9 +947,12 @@ struct btree_iterator {
     }
     decrement_slow();
   }
+  void decrement_by(ptrdiff_t count);
   void decrement_slow();
 
-  friend bool operator==(const btree_iterator &a, const btree_iterator &b) noexcept {
+  static size_t distance(btree_const_iterator from, const btree_const_iterator to);
+
+  friend bool operator==(const btree_const_iterator &a, const btree_const_iterator &b) noexcept {
     return a.node == b.node && a.position == b.position;
   }
 
@@ -1004,8 +1083,8 @@ class btree : public Params::key_compare {
   typedef typename Params::const_reference const_reference;
   typedef typename Params::size_type size_type;
   typedef typename Params::difference_type difference_type;
-  typedef btree_iterator<node_type, reference, pointer> iterator;
-  typedef typename iterator::const_iterator const_iterator;
+  typedef btree_const_iterator<Params> const_iterator;
+  typedef btree_iterator<Params> iterator;
   typedef std::reverse_iterator<const_iterator> const_reverse_iterator;
   typedef std::reverse_iterator<iterator> reverse_iterator;
 
@@ -1155,16 +1234,29 @@ class btree : public Params::key_compare {
   // the one that was erased (or end() if none exists).
   iterator erase(iterator iter);
 
+ private:
+  iterator rebalance_after_delete(iterator iter);
+
+ public:
   // Erases range. Returns the number of keys erased.
-  int erase(iterator begin, iterator end);
+  size_t erase(iterator begin, iterator end);
+
+  // Erases count items starting at begin iterator. Return an iterator pointing to the node after
+  // the ones that were erased (or end() if none exists).
+  iterator erase_count(iterator begin, size_t count);
+
+  // Erases count items starting at begin iterator, which match pred. Return an iterator pointing to the node after
+  // the ones that were evaluated by pred (or end() if none exists).
+  template <typename Pred>
+  iterator erase_count_if(iterator begin, size_t count, Pred pred);
 
   // Erases the specified key from the btree. Returns 1 if an element was
   // erased and 0 otherwise.
-  int erase_unique(const key_type &key);
+  size_t erase_unique(const key_type &key);
 
   // Erases all of the entries matching the specified key from the
   // btree. Returns the number of elements erased.
-  int erase_multi(const key_type &key);
+  size_t erase_multi(const key_type &key);
 
   // Finds the iterator corresponding to a key or returns end() if the key is
   // not present.
@@ -1197,7 +1289,7 @@ class btree : public Params::key_compare {
   }
   // Returns a count of the number of times the key appears in the btree.
   size_type count_multi(const key_type &key) const {
-    return distance(lower_bound(key), upper_bound(key));
+    return const_iterator::distance(lower_bound(key), upper_bound(key));
   }
 
   // Clear the btree, deleting all of the values it contains.
@@ -1421,12 +1513,19 @@ class btree : public Params::key_compare {
   template <typename... Args>
   iterator internal_insert(iterator iter, Args&&... args);
 
+  static iterator internal_as_mutable(const const_iterator &iter) {
+    return iterator(iter.node, iter.position);
+  }
+
   // Returns an iterator pointing to the first value >= the value "iter" is
   // pointing at. Note that "iter" might be pointing to an invalid location as
   // iter.position == iter.node->count(). This routine simply moves iter up in
   // the tree to a valid location.
-  template <typename IterType>
-  static IterType internal_last(IterType iter);
+  static iterator internal_last(iterator iter);
+
+  static const_iterator internal_last(const const_iterator &iter) {
+    return internal_last(internal_as_mutable(iter));
+  }
 
   // Returns an iterator pointing to the leaf position at which key would
   // reside in the tree. We provide 2 versions of internal_locate. The first
@@ -1437,35 +1536,48 @@ class btree : public Params::key_compare {
   // field of the pair. The compare_to specialization allows the caller to
   // avoid a subsequent comparison to determine if an exact match was made,
   // speeding up string keys.
-  template <typename IterType>
-  std::pair<IterType, int> internal_locate(
-      const key_type &key, IterType iter) const;
-  template <typename IterType>
-  std::pair<IterType, int> internal_locate_plain_compare(
-      const key_type &key, IterType iter) const;
-  template <typename IterType>
-  std::pair<IterType, int> internal_locate_compare_to(
-      const key_type &key, IterType iter) const;
+  std::pair<iterator, int> internal_locate(
+      const key_type &key, iterator iter) const;
+  std::pair<iterator, int> internal_locate_plain_compare(
+      const key_type &key, iterator iter) const;
+  std::pair<iterator, int> internal_locate_compare_to(
+      const key_type &key, iterator iter) const;
 
   // Internal routine which implements lower_bound().
-  template <typename IterType>
-  IterType internal_lower_bound(
-      const key_type &key, IterType iter) const;
+  iterator internal_lower_bound(
+      const key_type &key, iterator iter) const;
+
+  const_iterator internal_lower_bound(
+      const key_type &key, const const_iterator &iter) const {
+    return internal_lower_bound(key, internal_as_mutable(iter));
+  }
 
   // Internal routine which implements upper_bound().
-  template <typename IterType>
-  IterType internal_upper_bound(
-      const key_type &key, IterType iter) const;
+  iterator internal_upper_bound(
+      const key_type &key, iterator iter) const;
+
+  const_iterator internal_upper_bound(
+      const key_type &key, const const_iterator &iter) const {
+    return internal_upper_bound(key, internal_as_mutable(iter));
+  }
 
   // Internal routine which implements find_unique().
-  template <typename IterType>
-  IterType internal_find_unique(
-      const key_type &key, IterType iter) const;
+  iterator internal_find_unique(
+      const key_type &key, iterator iter) const;
+
+  const_iterator internal_find_unique(
+      const key_type &key, const const_iterator &iter) const {
+    return internal_find_unique(key, internal_as_mutable(iter));
+  }
 
   // Internal routine which implements find_multi().
-  template <typename IterType>
-  IterType internal_find_multi(
-      const key_type &key, IterType iter) const;
+  iterator internal_find_multi(
+      const key_type &key, iterator iter) const;
+
+  const_iterator internal_find_multi(
+      const key_type &key, const const_iterator &iter) const {
+    return internal_find_multi(key, internal_as_mutable(iter));
+  }
 
   // Deletes a node and all of its children.
   void internal_clear(node_type *node);
@@ -1584,6 +1696,19 @@ inline void btree_node<P>::remove_value(int i) {
 }
 
 template <typename P>
+inline void btree_node<P>::remove_values_from_leaf(int i, int to_remove) {
+  dbg_assert(leaf());
+
+  set_count(count() - to_remove);
+  for (; i < count(); ++i) {
+    value_move(i, this, i + to_remove);
+  }
+  for (int j = 0; j < to_remove; j++) {
+    value_destroy(i + j);
+  }
+}
+
+template <typename P>
 void btree_node<P>::rebalance_right_to_left(btree_node *src, int to_move) {
   dbg_assert(parent() == src->parent());
   dbg_assert(position() + 1 == src->position());
@@ -1591,29 +1716,35 @@ void btree_node<P>::rebalance_right_to_left(btree_node *src, int to_move) {
   dbg_assert(to_move >= 1);
   dbg_assert(to_move <= src->count());
 
+  // optimization: cache these locally to reduce pointer chasing
+  const int position = this->position();
+  const int count = this->count();
+  btree_node* const parent = this->parent();
+  const int src_count = src->count();
+
   // Move the delimiting value to the left node and the new delimiting value
   // from the right node.
-  value_move_construct(count(), parent(), position());
-  parent()->value_move(position(), src, to_move - 1);
+  value_move_construct(count, parent, position);
+  parent->value_move(position, src, to_move - 1);
 
   // Move the values from the right to the left node.
   for (int i = 1; i < to_move; ++i) {
-    value_move_construct(count() + i, src, i - 1);
+    value_move_construct(count + i, src, i - 1);
   }
   // Shift the values in the right node to their correct position.
-  for (int i = to_move; i < src->count(); ++i) {
+  for (int i = to_move; i < src_count; ++i) {
     src->value_move(i - to_move, src, i);
   }
   for (int i = 1; i <= to_move; ++i) {
-    src->value_destroy(src->count() - i);
+    src->value_destroy(src_count - i);
   }
 
   if (!leaf()) {
     // Move the child pointers from the right to the left node.
     for (int i = 0; i < to_move; ++i) {
-      set_child(1 + count() + i, src->child(i));
+      set_child(1 + count + i, src->child(i));
     }
-    for (int i = 0; i <= src->count() - to_move; ++i) {
+    for (int i = 0; i <= src_count - to_move; ++i) {
       dbg_assert(i + to_move <= src->max_count());
       src->set_child(i, src->child(i + to_move));
       *src->mutable_child(i + to_move) = NULL;
@@ -1621,8 +1752,8 @@ void btree_node<P>::rebalance_right_to_left(btree_node *src, int to_move) {
   }
 
   // Fixup the counts on the src and dest nodes.
-  set_count(count() + to_move);
-  src->set_count(src->count() - to_move);
+  set_count(count + to_move);
+  src->set_count(src_count - to_move);
 }
 
 template <typename P>
@@ -1633,39 +1764,45 @@ void btree_node<P>::rebalance_left_to_right(btree_node *dest, int to_move) {
   dbg_assert(to_move >= 1);
   dbg_assert(to_move <= count());
 
+  // optimization: cache these locally to reduce pointer chasing
+  const int position = this->position();
+  const int count = this->count();
+  btree_node* const parent = this->parent();
+  const int dest_count = dest->count();
+
   // Make room in the right node for the new values.
-  for (int i = dest->count() - 1; i >= 0; --i) {
+  for (int i = dest_count - 1; i >= 0; --i) {
     dest->value_move_construct(i + to_move, dest, i);
     dest->value_destroy(i);
   }
 
   // Move the delimiting value to the right node and the new delimiting value
   // from the left node.
-  dest->value_move_construct(to_move - 1, parent(), position());
-  parent()->value_move(position(), this, count() - to_move);
-  value_destroy(count() - to_move);
+  dest->value_move_construct(to_move - 1, parent, position);
+  parent->value_move(position, this, count - to_move);
+  value_destroy(count - to_move);
 
   // Move the values from the left to the right node.
   for (int i = 1; i < to_move; ++i) {
-    dest->value_move_construct(i - 1, this, count() - to_move + i);
-    value_destroy(count() - to_move + i);
+    dest->value_move_construct(i - 1, this, count - to_move + i);
+    value_destroy(count - to_move + i);
   }
 
   if (!leaf()) {
     // Move the child pointers from the left to the right node.
-    for (int i = dest->count(); i >= 0; --i) {
+    for (int i = dest_count; i >= 0; --i) {
       dest->set_child(i + to_move, dest->child(i));
       *dest->mutable_child(i) = NULL;
     }
     for (int i = 1; i <= to_move; ++i) {
-      dest->set_child(i - 1, child(count() - to_move + i));
-      *mutable_child(count() - to_move + i) = NULL;
+      dest->set_child(i - 1, child(count - to_move + i));
+      *mutable_child(count - to_move + i) = NULL;
     }
   }
 
   // Fixup the counts on the src and dest nodes.
-  set_count(count() - to_move);
-  dest->set_count(dest->count() + to_move);
+  set_count(count - to_move);
+  dest->set_count(dest_count + to_move);
 }
 
 template <typename P>
@@ -1777,9 +1914,9 @@ void btree_node<P>::swap(btree_node *x) {
 }
 
 ////
-// btree_iterator methods
-template <typename N, typename R, typename P>
-void btree_iterator<N, R, P>::increment_slow() {
+// btree_const_iterator methods
+template <typename P>
+void btree_const_iterator<P>::increment_slow() {
   if (node->leaf()) {
     dbg_assert(position >= node->count());
     self_type save(*this);
@@ -1801,12 +1938,12 @@ void btree_iterator<N, R, P>::increment_slow() {
   }
 }
 
-template <typename N, typename R, typename P>
-void btree_iterator<N, R, P>::increment_by(int count) {
+template <typename P>
+void btree_const_iterator<P>::increment_by(ptrdiff_t count) {
   while (count > 0) {
     if (node->leaf()) {
       int rest = node->count() - position;
-      position += std::min(rest, count);
+      position += static_cast<int>(std::min<ptrdiff_t>(rest, count));
       count = count - rest;
       if (position < node->count()) {
         return;
@@ -1818,8 +1955,8 @@ void btree_iterator<N, R, P>::increment_by(int count) {
   }
 }
 
-template <typename N, typename R, typename P>
-void btree_iterator<N, R, P>::decrement_slow() {
+template <typename P>
+void btree_const_iterator<P>::decrement_slow() {
   if (node->leaf()) {
     dbg_assert(position <= -1);
     self_type save(*this);
@@ -1839,6 +1976,41 @@ void btree_iterator<N, R, P>::decrement_slow() {
     }
     position = node->count() - 1;
   }
+}
+
+template <typename P>
+void btree_const_iterator<P>::decrement_by(ptrdiff_t count) {
+  while (count > 0) {
+    if (node->leaf()) {
+      int rest = position + 1;
+      position -= static_cast<int>(std::min<ptrdiff_t>(rest, count));
+      count -= rest;
+      if (position >= 0) {
+        return;
+      }
+    } else {
+      --count;
+    }
+    decrement_slow();
+  }
+}
+
+template <typename P>
+size_t btree_const_iterator<P>::distance(btree_const_iterator<P> from, const btree_const_iterator<P> to) {
+  size_t result = 0;
+  while (from != to) {
+    if (from.node->leaf()) {
+      if (from.node == to.node) {
+        return result + (to.position - from.position);
+      }
+      result += from.node->count() - from.position;
+      from.position = from.node->count();
+    } else {
+      result++;
+    }
+    from.increment_slow();
+  }
+  return result;
 }
 
 ////
@@ -2003,6 +2175,16 @@ typename btree<P>::iterator btree<P>::erase(iterator iter) {
   // internal node and the value in the internal node may move to a leaf node
   // (iter.node) when rebalancing is performed at the leaf level.
 
+  iterator res = rebalance_after_delete(iter);
+  // If we erased from an internal node, advance the iterator.
+  if (internal_delete) {
+    ++res;
+  }
+  return res;
+}
+
+template <typename P>
+typename btree<P>::iterator btree<P>::rebalance_after_delete(iterator iter) {
   // Merge/rebalance as we walk back up the tree.
   iterator res(iter);
   for (;;) {
@@ -2032,24 +2214,76 @@ typename btree<P>::iterator btree<P>::erase(iterator iter) {
     res.position = res.node->count() - 1;
     ++res;
   }
-  // If we erased from an internal node, advance the iterator.
-  if (internal_delete) {
-    ++res;
-  }
   return res;
 }
 
 template <typename P>
-int btree<P>::erase(iterator begin, iterator end) {
-  int count = distance(begin, end);
-  for (int i = 0; i < count; i++) {
-    begin = erase(begin);
-  }
+size_t btree<P>::erase(iterator begin, iterator end) {
+  size_t count = const_iterator::distance(begin, end);
+  erase_count(begin, count);
   return count;
 }
 
 template <typename P>
-int btree<P>::erase_unique(const key_type &key) {
+typename btree<P>::iterator btree<P>::erase_count(iterator begin, size_t count) {
+  if (count == size()) {
+    clear();
+    return end();
+  }
+  while (count > 0) {
+    if (begin.node->leaf()) {
+      size_t remaining = static_cast<size_t>(begin.node->count() - begin.position);
+      size_t to_remove = std::min(count, remaining);
+      if (!root()->leaf()) *mutable_size() -= to_remove;
+      count -= to_remove;
+      begin.node->remove_values_from_leaf(begin.position, static_cast<int>(to_remove));
+      begin = rebalance_after_delete(begin);
+    } else {
+      begin = erase(begin);
+      count--;
+    }
+  }
+  return begin;
+}
+
+template <typename P> template <typename Pred>
+typename btree<P>::iterator btree<P>::erase_count_if(iterator begin, size_t count, Pred pred) {
+  ptrdiff_t remaining = static_cast<ptrdiff_t>(count);
+  while (remaining > 0) {
+    if (begin.node->leaf()) {
+      int target_pos = begin.position;
+      const int end_pos = begin.node->count();
+      for (int pos = begin.position; pos < end_pos; pos++) {
+        --remaining;
+        if (remaining >= 0 && pred(begin.node->value(pos))) {
+          begin.node->value_destroy(pos);
+        } else {
+          if (pos != target_pos) {
+            begin.node->value_move_construct(target_pos, begin.node, pos);
+            begin.node->value_destroy(pos);
+          }
+          target_pos++;
+        }
+      }
+      begin.node->set_count(target_pos);
+      if (!root()->leaf()) *mutable_size() -= (end_pos - target_pos);
+      begin.position = target_pos;
+      if (remaining < 0) begin.position += static_cast<int>(remaining);
+      begin = rebalance_after_delete(begin);
+    } else {
+      if (pred(*begin)) {
+        begin = erase(begin);
+      } else {
+        ++begin;
+      }
+      remaining--;
+    }
+  }
+  return begin;
+}
+
+template <typename P>
+size_t btree<P>::erase_unique(const key_type &key) {
   iterator iter = internal_find_unique(key, iterator(root(), 0));
   if (!iter.node) {
     // The key doesn't exist in the tree, return nothing done.
@@ -2060,7 +2294,7 @@ int btree<P>::erase_unique(const key_type &key) {
 }
 
 template <typename P>
-int btree<P>::erase_multi(const key_type &key) {
+size_t btree<P>::erase_multi(const key_type &key) {
   iterator begin = internal_lower_bound(key, iterator(root(), 0));
   if (!begin.node) {
     // The key doesn't exist in the tree, return nothing done.
@@ -2302,8 +2536,8 @@ void btree<P>::try_shrink() {
   }
 }
 
-template <typename P> template <typename IterType>
-inline IterType btree<P>::internal_last(IterType iter) {
+template <typename P>
+inline typename btree<P>::iterator btree<P>::internal_last(iterator iter) {
   while (iter.node && iter.position == iter.node->count()) {
     iter.position = iter.node->position();
     iter.node = iter.node->parent();
@@ -2352,15 +2586,15 @@ btree<P>::internal_insert(iterator iter, Args&&... args) {
   return iter;
 }
 
-template <typename P> template <typename IterType>
-inline std::pair<IterType, int> btree<P>::internal_locate(
-    const key_type &key, IterType iter) const {
+template <typename P>
+inline std::pair<typename btree<P>::iterator, int> btree<P>::internal_locate(
+    const key_type &key, iterator iter) const {
   return internal_locate_type::dispatch(key, *this, iter);
 }
 
-template <typename P> template <typename IterType>
-inline std::pair<IterType, int> btree<P>::internal_locate_plain_compare(
-    const key_type &key, IterType iter) const {
+template <typename P>
+inline std::pair<typename btree<P>::iterator, int> btree<P>::internal_locate_plain_compare(
+    const key_type &key, iterator iter) const {
   for (;;) {
     iter.position = iter.node->lower_bound(key, key_comp());
     if (iter.node->leaf()) {
@@ -2371,9 +2605,9 @@ inline std::pair<IterType, int> btree<P>::internal_locate_plain_compare(
   return std::make_pair(iter, 0);
 }
 
-template <typename P> template <typename IterType>
-inline std::pair<IterType, int> btree<P>::internal_locate_compare_to(
-    const key_type &key, IterType iter) const {
+template <typename P>
+inline std::pair<typename btree<P>::iterator, int> btree<P>::internal_locate_compare_to(
+    const key_type &key, iterator iter) const {
   for (;;) {
     int res = iter.node->lower_bound(key, key_comp());
     iter.position = res & kMatchMask;
@@ -2388,9 +2622,9 @@ inline std::pair<IterType, int> btree<P>::internal_locate_compare_to(
   return std::make_pair(iter, -kExactMatch);
 }
 
-template <typename P> template <typename IterType>
-IterType btree<P>::internal_lower_bound(
-    const key_type &key, IterType iter) const {
+template <typename P>
+typename btree<P>::iterator btree<P>::internal_lower_bound(
+    const key_type &key, iterator iter) const {
   if (iter.node) {
     for (;;) {
       iter.position =
@@ -2405,9 +2639,9 @@ IterType btree<P>::internal_lower_bound(
   return iter;
 }
 
-template <typename P> template <typename IterType>
-IterType btree<P>::internal_upper_bound(
-    const key_type &key, IterType iter) const {
+template <typename P>
+typename btree<P>::iterator btree<P>::internal_upper_bound(
+    const key_type &key, iterator iter) const {
   if (iter.node) {
     for (;;) {
       iter.position = iter.node->upper_bound(key, key_comp());
@@ -2421,11 +2655,11 @@ IterType btree<P>::internal_upper_bound(
   return iter;
 }
 
-template <typename P> template <typename IterType>
-IterType btree<P>::internal_find_unique(
-    const key_type &key, IterType iter) const {
+template <typename P>
+typename btree<P>::iterator btree<P>::internal_find_unique(
+    const key_type &key, iterator iter) const {
   if (iter.node) {
-    std::pair<IterType, int> res = internal_locate(key, iter);
+    std::pair<iterator, int> res = internal_locate(key, iter);
     if (res.second == kExactMatch) {
       return res.first;
     }
@@ -2436,12 +2670,12 @@ IterType btree<P>::internal_find_unique(
       }
     }
   }
-  return IterType(NULL, 0);
+  return iterator(NULL, 0);
 }
 
-template <typename P> template <typename IterType>
-IterType btree<P>::internal_find_multi(
-    const key_type &key, IterType iter) const {
+template <typename P>
+typename btree<P>::iterator btree<P>::internal_find_multi(
+    const key_type &key, iterator iter) const {
   if (iter.node) {
     iter = internal_lower_bound(key, iter);
     if (iter.node) {
@@ -2451,7 +2685,7 @@ IterType btree<P>::internal_find_multi(
       }
     }
   }
-  return IterType(NULL, 0);
+  return iterator(NULL, 0);
 }
 
 template <typename P>

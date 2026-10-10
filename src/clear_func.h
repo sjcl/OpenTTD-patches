@@ -2,21 +2,23 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
-/** @file clear_func.h Functions related to clear (MP_CLEAR) land. */
+/** @file clear_func.h Functions related to clear (TileType::Clear) land. */
 
 #ifndef CLEAR_FUNC_H
 #define CLEAR_FUNC_H
 
-#include "tile_cmd.h"
+struct TileInfo;
+enum Slope : uint8_t;
 
-void DrawHillyLandTile(const TileInfo *ti);
-void DrawClearLandTile(const TileInfo *ti, uint8_t set);
+void DrawRoughLandTile(const TileInfo *ti);
+void DrawClearLandTile(const TileInfo *ti, uint8_t density);
+void GenerateRocks(TileIndex tile, uint32_t count);
 
-SpriteID GetSpriteIDForClearLand(const Slope slope, uint8_t set);
-SpriteID GetSpriteIDForHillyLand(const Slope slope, const uint rough_index);
+SpriteID GetSpriteIDForClearLand(const Slope slope, uint8_t density);
+SpriteID GetSpriteIDForRoughLand(const Slope slope, const uint rough_index);
 SpriteID GetSpriteIDForRocks(const Slope slope, const uint tile_hash);
 SpriteID GetSpriteIDForFields(const Slope slope, const uint field_type);
 SpriteID GetSpriteIDForSnowDesert(const Slope slope, const uint density);

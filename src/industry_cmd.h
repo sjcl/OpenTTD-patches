@@ -1,0 +1,24 @@
+/*
+ * This file is part of OpenTTD.
+ * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
+ * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
+ */
+
+/** @file industry_cmd.h Command definitions related to industries. */
+
+#ifndef INDUSTRY_CMD_H
+#define INDUSTRY_CMD_H
+
+#include "command_type.h"
+#include "company_type.h"
+#include "industry_type.h"
+#include "industry.h"
+
+DEF_CMD_TUPLE   (Commands::BuildIndustry,          CmdBuildIndustry,                          CMD_DEITY, CommandType::LandscapeConstruction, CmdDataT<IndustryType, uint32_t, bool, uint32_t>)
+DEF_CMD_TUPLE_NT(Commands::IndustrySetFlags,       CmdIndustrySetFlags,        CMD_STR_CTRL | CMD_DEITY, CommandType::OtherManagement,       CmdDataT<IndustryID, IndustryControlFlags>)
+DEF_CMD_TUPLE_NT(Commands::IndustrySetExclusivity, CmdIndustrySetExclusivity,  CMD_STR_CTRL | CMD_DEITY, CommandType::OtherManagement,       CmdDataT<IndustryID, Owner, bool>)
+DEF_CMD_TUPLE_NT(Commands::IndustrySetText,        CmdIndustrySetText,         CMD_STR_CTRL | CMD_DEITY, CommandType::OtherManagement,       CmdDataT<IndustryID, EncodedString>)
+DEF_CMD_TUPLE_NT(Commands::IndustrySetProduction,  CmdIndustrySetProduction,                  CMD_DEITY, CommandType::OtherManagement,       CmdDataT<IndustryID, uint8_t, bool, EncodedString>)
+
+#endif /* INDUSTRY_CMD_H */

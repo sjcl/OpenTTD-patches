@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file script_tile.cpp Implementation of ScriptTile. */
@@ -17,6 +17,10 @@
 #include "../../tree_map.h"
 #include "../../town.h"
 #include "../../landscape.h"
+#include "../../landscape_cmd.h"
+#include "../../terraform_cmd.h"
+#include "../../tile_track_func.h"
+#include "../../tree_cmd.h"
 
 #include "../../safeguards.h"
 
@@ -27,17 +31,17 @@
 
 	switch (::GetTileType(tile)) {
 		default: return false;
-		case MP_CLEAR: return true;
-		case MP_TREES: return true;
-		case MP_WATER: return IsCoast(tile);
-		case MP_ROAD:
+		case TileType::Clear: return true;
+		case TileType::Trees: return true;
+		case TileType::Water: return IsCoast(tile);
+		case TileType::Road:
 			/* Tram bits aren't considered buildable */
 			if (::GetRoadTypeTram(tile) != INVALID_ROADTYPE) return false;
 			/* Depots and crossings aren't considered buildable */
-			if (::GetRoadTileType(tile) != ROAD_TILE_NORMAL) return false;
-			if (!HasExactlyOneBit(::GetRoadBits(tile, RTT_ROAD))) return false;
-			if (::IsRoadOwner(tile, RTT_ROAD, OWNER_TOWN)) return true;
-			if (::IsRoadOwner(tile, RTT_ROAD, ScriptObject::GetCompany())) return true;
+			if (::GetRoadTileType(tile) != RoadTileType::Normal) return false;
+			if (!HasExactlyOneBit(::GetRoadBits(tile, RoadTramType::Road))) return false;
+			if (::IsRoadOwner(tile, RoadTramType::Road, OWNER_TOWN)) return true;
+			if (::IsRoadOwner(tile, RoadTramType::Road, ScriptObject::GetCompany())) return true;
 			return false;
 	}
 }
@@ -45,15 +49,10 @@
 /* static */ bool ScriptTile::IsBuildableRectangle(TileIndex tile, SQInteger width, SQInteger height)
 {
 	/* Check whether we can extract valid X and Y */
-	if (!::IsValidTile(tile) || width < 0 || height < 0) return false;
+	if (!::IsValidTile(tile) || width < 1 || height < 1) return false;
 
-	uint tx = ScriptMap::GetTileX(tile);
-	uint ty = ScriptMap::GetTileY(tile);
-
-	for (uint x = tx; x < width + tx; x++) {
-		for (uint y = ty; y < height + ty; y++) {
-			if (!IsBuildable(ScriptMap::GetTileIndex(x, y))) return false;
-		}
+	for (auto cur_tile : TileArea(tile, width, height)) {
+		if (!IsBuildable(cur_tile)) return false;
 	}
 
 	return true;
@@ -63,36 +62,36 @@
 {
 	if (!::IsValidTile(tile)) return false;
 
-	return ::IsTileType(tile, MP_WATER) && ::IsSea(tile);
+	return ::IsTileType(tile, TileType::Water) && ::IsSea(tile);
 }
 
 /* static */ bool ScriptTile::IsRiverTile(TileIndex tile)
 {
 	if (!::IsValidTile(tile)) return false;
 
-	return ::IsTileType(tile, MP_WATER) && ::IsRiver(tile);
+	return ::IsTileType(tile, TileType::Water) && ::IsRiver(tile);
 }
 
 /* static */ bool ScriptTile::IsWaterTile(TileIndex tile)
 {
 	if (!::IsValidTile(tile)) return false;
 
-	return ::IsTileType(tile, MP_WATER) && !::IsCoast(tile);
+	return ::IsTileType(tile, TileType::Water) && !::IsCoast(tile);
 }
 
 /* static */ bool ScriptTile::IsCoastTile(TileIndex tile)
 {
 	if (!::IsValidTile(tile)) return false;
 
-	return (::IsTileType(tile, MP_WATER) && ::IsCoast(tile)) ||
-		(::IsTileType(tile, MP_TREES) && ::GetTreeGround(tile) == TREE_GROUND_SHORE);
+	return (::IsTileType(tile, TileType::Water) && ::IsCoast(tile)) ||
+		(::IsTileType(tile, TileType::Trees) && ::GetTreeGround(tile) == TreeGround::Shore);
 }
 
 /* static */ bool ScriptTile::IsStationTile(TileIndex tile)
 {
 	if (!::IsValidTile(tile)) return false;
 
-	return ::IsTileType(tile, MP_STATION);
+	return ::IsTileType(tile, TileType::Station);
 }
 
 /* static */ bool ScriptTile::IsSteepSlope(Slope slope)
@@ -113,42 +112,49 @@
 {
 	if (!::IsValidTile(tile)) return false;
 
-	return ::IsTileType(tile, MP_TREES);
+	return ::IsTileType(tile, TileType::Trees);
 }
 
 /* static */ bool ScriptTile::IsFarmTile(TileIndex tile)
 {
 	if (!::IsValidTile(tile)) return false;
 
-	return (::IsTileType(tile, MP_CLEAR) && ::IsClearGround(tile, CLEAR_FIELDS));
+	return (::IsTileType(tile, TileType::Clear) && ::IsClearGround(tile, ClearGround::Fields));
 }
 
 /* static */ bool ScriptTile::IsRockTile(TileIndex tile)
 {
 	if (!::IsValidTile(tile)) return false;
 
-	return (::IsTileType(tile, MP_CLEAR) && ::GetRawClearGround(tile) == ::CLEAR_ROCKS);
+	return (::IsTileType(tile, TileType::Clear) && ::GetClearGround(tile) == ::ClearGround::Rocks);
 }
 
 /* static */ bool ScriptTile::IsRoughTile(TileIndex tile)
 {
 	if (!::IsValidTile(tile)) return false;
 
-	return (::IsTileType(tile, MP_CLEAR) && ::GetRawClearGround(tile) == ::CLEAR_ROUGH);
+	return (::IsTileType(tile, TileType::Clear) && ::GetClearGround(tile) == ::ClearGround::Rough);
 }
 
 /* static */ bool ScriptTile::IsSnowTile(TileIndex tile)
 {
 	if (!::IsValidTile(tile)) return false;
 
-	return (::IsTileType(tile, MP_CLEAR) && ::IsSnowTile(tile));
+	return (::IsTileType(tile, TileType::Clear) && ::IsSnowTile(tile));
 }
 
 /* static */ bool ScriptTile::IsDesertTile(TileIndex tile)
 {
 	if (!::IsValidTile(tile)) return false;
 
-	return (::IsTileType(tile, MP_CLEAR) && ::IsClearGround(tile, CLEAR_DESERT));
+	return (::IsTileType(tile, TileType::Clear) && ::IsClearGround(tile, ClearGround::Desert));
+}
+
+/* static */ bool ScriptTile::IsHouseTile(TileIndex tile)
+{
+	if (!::IsValidTile(tile)) return false;
+
+	return ::IsTileType(tile, TileType::House);
 }
 
 /* static */ ScriptTile::TerrainType ScriptTile::GetTerrainType(TileIndex tile)
@@ -203,10 +209,10 @@
 /* static */ ScriptCompany::CompanyID ScriptTile::GetOwner(TileIndex tile)
 {
 	if (!::IsValidTile(tile)) return ScriptCompany::COMPANY_INVALID;
-	if (::IsTileType(tile, MP_HOUSE)) return ScriptCompany::COMPANY_INVALID;
-	if (::IsTileType(tile, MP_INDUSTRY)) return ScriptCompany::COMPANY_INVALID;
+	if (::IsTileType(tile, TileType::House)) return ScriptCompany::COMPANY_INVALID;
+	if (::IsTileType(tile, TileType::Industry)) return ScriptCompany::COMPANY_INVALID;
 
-	return ScriptCompany::ResolveCompanyID((ScriptCompany::CompanyID)(uint8_t)::GetTileOwner(tile));
+	return ScriptCompany::ResolveCompanyID(ScriptCompany::ToScriptCompanyID(::GetTileOwner(tile)));
 }
 
 /* static */ bool ScriptTile::HasTransportType(TileIndex tile, TransportType transport_type)
@@ -214,22 +220,22 @@
 	if (!::IsValidTile(tile)) return false;
 
 	if (transport_type == TRANSPORT_ROAD) {
-		return ::GetTileTrackdirBits(tile, (::TransportType)transport_type, 0) != TRACKDIR_BIT_NONE ||
-				::GetTileTrackdirBits(tile, (::TransportType)transport_type, 1) != TRACKDIR_BIT_NONE;
+		return ::GetTileTrackdirBits(tile, (::TransportType)transport_type, to_underlying(::RoadTramType::Road)) != TRACKDIR_BIT_NONE ||
+				::GetTileTrackdirBits(tile, (::TransportType)transport_type, to_underlying(::RoadTramType::Tram)) != TRACKDIR_BIT_NONE;
 	} else {
 		return ::GetTileTrackdirBits(tile, (::TransportType)transport_type, 0) != TRACKDIR_BIT_NONE;
 	}
 }
 
-/* static */ SQInteger ScriptTile::GetCargoAcceptance(TileIndex tile, CargoID cargo_type, SQInteger width, SQInteger height, SQInteger radius)
+/* static */ SQInteger ScriptTile::GetCargoAcceptance(TileIndex tile, CargoType cargo_type, SQInteger width, SQInteger height, SQInteger radius)
 {
 	if (!::IsValidTile(tile) || width <= 0 || height <= 0 || radius < 0 || !ScriptCargo::IsValidCargo(cargo_type)) return -1;
 
-	CargoArray acceptance = ::GetAcceptanceAroundTiles(tile, width, height, _settings_game.station.modified_catchment ? radius : (int)CA_UNMODIFIED + _settings_game.station.catchment_increase);
+	CargoArray acceptance = ::GetAcceptanceAroundTiles(tile, width, height, _settings_game.station.modified_catchment ? radius : (int)CA_UNMODIFIED + _settings_game.station.catchment_increase).first;
 	return acceptance[cargo_type];
 }
 
-/* static */ SQInteger ScriptTile::GetCargoProduction(TileIndex tile, CargoID cargo_type, SQInteger width, SQInteger height, SQInteger radius)
+/* static */ SQInteger ScriptTile::GetCargoProduction(TileIndex tile, CargoType cargo_type, SQInteger width, SQInteger height, SQInteger radius)
 {
 	if (!::IsValidTile(tile) || width <= 0 || height <= 0 || radius < 0 || !ScriptCargo::IsValidCargo(cargo_type)) return -1;
 
@@ -252,7 +258,7 @@
 	EnforceCompanyModeValid(false);
 	EnforcePrecondition(false, tile < ScriptMap::GetMapSize());
 
-	return ScriptObject::DoCommand(tile, slope, 1, CMD_TERRAFORM_LAND);
+	return ScriptObject::Command<Commands::TerraformLand>::Do(tile, (::Slope)slope, true);
 }
 
 /* static */ bool ScriptTile::LowerTile(TileIndex tile, Slope slope)
@@ -260,7 +266,7 @@
 	EnforceCompanyModeValid(false);
 	EnforcePrecondition(false, tile < ScriptMap::GetMapSize());
 
-	return ScriptObject::DoCommand(tile, slope, 0, CMD_TERRAFORM_LAND);
+	return ScriptObject::Command<Commands::TerraformLand>::Do(tile, (::Slope)slope, false);
 }
 
 /* static */ bool ScriptTile::LevelTiles(TileIndex start_tile, TileIndex end_tile)
@@ -269,7 +275,7 @@
 	EnforcePrecondition(false, start_tile < ScriptMap::GetMapSize());
 	EnforcePrecondition(false, end_tile < ScriptMap::GetMapSize());
 
-	return ScriptObject::DoCommand(end_tile, start_tile, LM_LEVEL << 1, CMD_LEVEL_LAND);
+	return ScriptObject::Command<Commands::LevelLand>::Do(end_tile, start_tile, false, LevelMode::Level);
 }
 
 /* static */ bool ScriptTile::DemolishTile(TileIndex tile)
@@ -277,7 +283,7 @@
 	EnforceDeityOrCompanyModeValid(false);
 	EnforcePrecondition(false, ::IsValidTile(tile));
 
-	return ScriptObject::DoCommand(tile, 0, 0, CMD_LANDSCAPE_CLEAR);
+	return ScriptObject::Command<Commands::LandscapeClear>::Do(tile);
 }
 
 /* static */ bool ScriptTile::PlantTree(TileIndex tile)
@@ -285,7 +291,7 @@
 	EnforceCompanyModeValid(false);
 	EnforcePrecondition(false, ::IsValidTile(tile));
 
-	return ScriptObject::DoCommand(tile, TREE_INVALID, tile, CMD_PLANT_TREE);
+	return ScriptObject::Command<Commands::PlantTree>::Do(tile, tile, {}, 1, false);
 }
 
 /* static */ bool ScriptTile::PlantTreeRectangle(TileIndex tile, SQInteger width, SQInteger height)
@@ -297,7 +303,7 @@
 	TileIndex end_tile = TileAddWrap(tile, width - 1, height - 1);
 	EnforcePrecondition(false, ::IsValidTile(end_tile));
 
-	return ScriptObject::DoCommand(tile, TREE_INVALID, end_tile, CMD_PLANT_TREE);
+	return ScriptObject::Command<Commands::PlantTree>::Do(tile, end_tile, {}, 1, false);
 }
 
 /* static */ bool ScriptTile::IsWithinTownInfluence(TileIndex tile, TownID town_id)
@@ -307,20 +313,20 @@
 
 /* static */ TownID ScriptTile::GetTownAuthority(TileIndex tile)
 {
-	if (!::IsValidTile(tile)) return INVALID_TOWN;
+	if (!::IsValidTile(tile)) return TownID::Invalid();
 
 	Town *town = ::ClosestTownFromTile(tile, _settings_game.economy.dist_local_authority);
-	if (town == nullptr) return INVALID_TOWN;
+	if (town == nullptr) return TownID::Invalid();
 
 	return town->index;
 }
 
 /* static */ TownID ScriptTile::GetClosestTown(TileIndex tile)
 {
-	if (!::IsValidTile(tile)) return INVALID_TOWN;
+	if (!::IsValidTile(tile)) return TownID::Invalid();
 
 	Town *town = ::ClosestTownFromTile(tile, UINT_MAX);
-	if (town == nullptr) return INVALID_TOWN;
+	if (town == nullptr) return TownID::Invalid();
 
 	return town->index;
 }
@@ -328,15 +334,15 @@
 /* static */ Money ScriptTile::GetBuildCost(BuildType build_type)
 {
 	switch (build_type) {
-		case BT_FOUNDATION:   return ::GetPrice(PR_BUILD_FOUNDATION, 1, nullptr);
-		case BT_TERRAFORM:    return ::GetPrice(PR_TERRAFORM, 1, nullptr);
-		case BT_BUILD_TREES:  return ::GetPrice(PR_BUILD_TREES, 1, nullptr);
-		case BT_CLEAR_GRASS:  return ::GetPrice(PR_CLEAR_GRASS, 1, nullptr);
-		case BT_CLEAR_ROUGH:  return ::GetPrice(PR_CLEAR_ROUGH, 1, nullptr);
-		case BT_CLEAR_ROCKY:  return ::GetPrice(PR_CLEAR_ROCKS, 1, nullptr);
-		case BT_CLEAR_FIELDS: return ::GetPrice(PR_CLEAR_FIELDS, 1, nullptr);
-		case BT_CLEAR_HOUSE:  return ::GetPrice(PR_CLEAR_HOUSE, 1, nullptr);
-		case BT_CLEAR_WATER:  return ::GetPrice(PR_CLEAR_WATER, 1, nullptr);
+		case BT_FOUNDATION:   return ::GetPrice(Price::BuildFoundation, 1, nullptr);
+		case BT_TERRAFORM:    return ::GetPrice(Price::Terraform, 1, nullptr);
+		case BT_BUILD_TREES:  return ::GetPrice(Price::BuildTrees, 1, nullptr);
+		case BT_CLEAR_GRASS:  return ::GetPrice(Price::ClearGrass, 1, nullptr);
+		case BT_CLEAR_ROUGH:  return ::GetPrice(Price::ClearRough, 1, nullptr);
+		case BT_CLEAR_ROCKY:  return ::GetPrice(Price::ClearRocks, 1, nullptr);
+		case BT_CLEAR_FIELDS: return ::GetPrice(Price::ClearFields, 1, nullptr);
+		case BT_CLEAR_HOUSE:  return ::GetPrice(Price::ClearHouse, 1, nullptr);
+		case BT_CLEAR_WATER:  return ::GetPrice(Price::ClearWater, 1, nullptr);
 		default: return -1;
 	}
 }

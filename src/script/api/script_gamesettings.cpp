@@ -2,13 +2,14 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file script_gamesettings.cpp Implementation of ScriptGameSettings. */
 
 #include "../../stdafx.h"
 #include "script_gamesettings.hpp"
+#include "../../settings_cmd.h"
 #include "../../settings_internal.h"
 #include "../../settings_type.h"
 #include "../../command_type.h"
@@ -40,8 +41,8 @@ struct CargoScalingProxy {
 		CargoScalingMode mode = this->is_industry ? _settings_game.economy.industry_cargo_scale_mode : _settings_game.economy.town_cargo_scale_mode;
 		if (mode == CSM_DAYLENGTH) {
 			/* Asynchronous free command, don't bother halting the script or saving the result */
-			::DoCommandPScript(0, 0, (uint32_t)CSM_NORMAL, 0, CMD_CHANGE_SETTING, nullptr,
-					this->is_industry ? "economy.industry_cargo_scale_mode" : "economy.town_cargo_scale_mode", false, false, true, nullptr);
+			auto payload = ChangeSettingCmdData::Make(this->is_industry ? "economy.industry_cargo_scale_mode" : "economy.town_cargo_scale_mode", (uint32_t)CSM_NORMAL);
+			::DoCommandPScript(Commands::ChangeSetting, TileIndex{}, std::move(payload), CommandCallback::None, 0, DCIF_NONE, false, true);
 		}
 
 		return ScriptGameSettings::SetValue(this->is_industry ? "economy.industry_cargo_scale" : "economy.town_cargo_scale", ScaleQuantity(100, (int)value));
@@ -91,11 +92,11 @@ struct CargoScalingProxy {
 	const SettingDesc *sd = GetSettingFromName(setting);
 	if (sd == nullptr || !sd->IsIntSetting()) return false;
 
-	if ((sd->flags & SF_NO_NETWORK_SYNC) != 0) return false;
+	if ((sd->flags.Test(SettingFlag::NoNetworkSync))) return false;
 
 	value = Clamp<SQInteger>(value, INT32_MIN, INT32_MAX);
 
-	return ScriptObject::DoCommand(0, 0, value, CMD_CHANGE_SETTING, sd->name);
+	return ScriptObject::Command<Commands::ChangeSetting>::Do(sd->name, value);
 }
 
 /* static */ bool ScriptGameSettings::IsDisabledVehicleType(ScriptVehicle::VehicleType vehicle_type)

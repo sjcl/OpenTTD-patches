@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file textbuf_gui.h Stuff related to the text buffer GUI. */
@@ -12,25 +12,56 @@
 
 #include "window_type.h"
 #include "string_type.h"
-#include "strings_type.h"
+#include "strings_id_type.h"
 
 /** Flags used in ShowQueryString() call */
-enum QueryStringFlags {
-	QSF_NONE             =    0,
-	QSF_ACCEPT_UNCHANGED = 0x01, ///< return success even when the text didn't change
-	QSF_ENABLE_DEFAULT   = 0x02, ///< enable the 'Default' button ("\0" is returned)
-	QSF_LEN_IN_CHARS     = 0x04, ///< the length of the string is counted in characters
-	QSF_PASSWORD         = 0x08, ///< password entry box, show warning about password security
+enum class QueryStringFlag : uint8_t {
+	AcceptUnchanged, ///< return success even when the text didn't change
+	EnableDefault,   ///< enable the 'Default' button ("\0" is returned)
+	LengthIsInChars, ///< the length of the string is counted in characters
+	EnableMove, ///< enable the 'Move' button
+	Password,        ///< password entry box, show warning about password security
+	DefaultIsDelete, ///< Default button is labelled 'Delete'
 };
 
-DECLARE_ENUM_AS_BIT_SET(QueryStringFlags)
+/** Bitset of \c QueryStringFlag elements. */
+using QueryStringFlags = EnumBitSet<QueryStringFlag, uint8_t>;
 
 /** Callback procedure for the ShowQuery method. */
 typedef void QueryCallbackProc(Window*, bool);
 
-void ShowQueryString(StringID str, StringID caption, uint max_len, Window *parent, CharSetFilter afilter, QueryStringFlags flags);
-void ShowQuery(StringID caption, StringID message, Window *w, QueryCallbackProc *callback, bool focus = false);
-void ShowQuery(std::string caption, std::string message, Window *parent, QueryCallbackProc *callback, bool focus = false);
+/**
+ * Information needed by QueryStringWindow for each editbox.
+ */
+struct QueryEditboxDescription
+{
+	/** Text to populate the editbox with initially */
+	std::string_view str;
+	/** Text shown in the on-screen keyboard's title bar */
+	StringID caption;
+	/**
+	 * Text of the label in the query window before this string.
+	 *
+	 * Set to #INVALID_STRING_ID when not required
+	 */
+	StringID label;
+	/** Filters out unwanted character input */
+	CharSetFilter afilter;
+	/**
+	 * Maximum length of the text, including the terminating '\0'.
+	 *
+	 * Whether this is in bytes or in characters depends on QueryStringFlags.
+	 */
+	uint max_size;
+};
+
+void ShowQueryString(const std::span<QueryEditboxDescription, 1> &ed, StringID window_caption, Window *parent, QueryStringFlags flags);
+void ShowQueryString(const std::span<QueryEditboxDescription, 2> &ed, StringID window_caption, Window *parent, QueryStringFlags flags);
+void ShowQueryString(std::string_view str, StringID caption, uint max_len, Window *parent, CharSetFilter afilter, QueryStringFlags flags);
+void ShowQueryString(std::string_view str, EncodedString &&caption, uint maxsize, Window *parent, CharSetFilter afilter, QueryStringFlags flags);
+void ShowQuery(EncodedString &&caption, EncodedString &&message, Window *parent, QueryCallbackProc *callback, bool focus = false);
+
+void UpdateQueryStringDefault(std::string_view str);
 
 /** The number of 'characters' on the on-screen keyboard. */
 static const uint OSK_KEYBOARD_ENTRIES = 50;

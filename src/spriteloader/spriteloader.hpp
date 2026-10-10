@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file spriteloader.hpp Base for loading sprites. */
@@ -19,24 +19,53 @@
 struct Sprite;
 
 /** The different colour components a sprite can have. */
-enum SpriteColourComponent {
-	SCC_RGB   = 1 << 0, ///< Sprite has RGB.
-	SCC_ALPHA = 1 << 1, ///< Sprite has alpha.
-	SCC_PAL   = 1 << 2, ///< Sprite has palette data.
-	SCC_MASK  = SCC_RGB | SCC_ALPHA | SCC_PAL, ///< Mask of valid colour bits.
+enum class SpriteComponent : uint8_t {
+	RGB     = 0, ///< Sprite has RGB.
+	Alpha   = 1, ///< Sprite has alpha.
+	Palette = 2, ///< Sprite has palette data.
+	End, ///< End marker.
 };
-DECLARE_ENUM_AS_BIT_SET(SpriteColourComponent)
+
+/** Bitset of \c SpriteComponent elements. */
+using SpriteComponents = EnumBitSet<SpriteComponent, uint8_t, SpriteComponent::End>;
+
+struct SpriteLoaderResult {
+	LowZoomLevels loaded_sprites{};  ///< Bit mask of the zoom levels successfully loaded or 0 if no sprite could be loaded.
+	LowZoomLevels avail_8bpp{};
+	LowZoomLevels avail_32bpp{};
+
+	void Apply(const SpriteLoaderResult &other)
+	{
+		this->loaded_sprites |= other.loaded_sprites;
+		this->avail_8bpp |= other.avail_8bpp;
+		this->avail_32bpp |= other.avail_32bpp;
+	}
+};
+
+/**
+ * Map zoom level to data.
+ */
+template <class T>
+class SpriteCollMap {
+	EnumIndexArray<T, ZoomLevel, ZoomLevel::SpriteEnd> data{};
+public:
+	inline constexpr T &operator[](const ZoomLevel &zoom) { return this->data[zoom]; }
+	inline constexpr const T &operator[](const ZoomLevel &zoom) const { return this->data[zoom]; }
+
+	T &Root() { return this->data[ZoomLevel::Min]; }
+	const T &Root() const { return this->data[ZoomLevel::Min]; }
+};
 
 /** Interface for the loader of our sprites. */
 class SpriteLoader {
 public:
 	/** Definition of a common pixel in OpenTTD's realm. */
 	struct CommonPixel {
-		uint8_t r;  ///< Red-channel
-		uint8_t g;  ///< Green-channel
-		uint8_t b;  ///< Blue-channel
-		uint8_t a;  ///< Alpha-channel
-		uint8_t m;  ///< Remap-channel
+		uint8_t r = 0;  ///< Red-channel
+		uint8_t g = 0;  ///< Green-channel
+		uint8_t b = 0;  ///< Blue-channel
+		uint8_t a = 0;  ///< Alpha-channel
+		uint8_t m = 0;  ///< Remap-channel
 	};
 
 	/**
@@ -50,8 +79,7 @@ public:
 		uint16_t width;                  ///< Width of the sprite
 		int16_t x_offs;                  ///< The x-offset of where the sprite will be drawn
 		int16_t y_offs;                  ///< The y-offset of where the sprite will be drawn
-		SpriteType type;                 ///< The sprite type
-		SpriteColourComponent colours;   ///< The colour components of the sprite with useful information.
+		SpriteComponents colours;   ///< The colour components of the sprite with useful information.
 		SpriteLoader::CommonPixel *data; ///< The sprite itself
 
 		/**
@@ -62,25 +90,25 @@ public:
 		void AllocateData(ZoomLevel zoom, size_t size) { this->data = Sprite::buffer[zoom].ZeroAllocate(size); }
 	private:
 		/** Allocated memory to pass sprite data around */
-		static ReusableBuffer<SpriteLoader::CommonPixel> buffer[ZOOM_LVL_SPR_COUNT];
+		static SpriteCollMap<ReusableBuffer<SpriteLoader::CommonPixel>> buffer;
 	};
 
 	/**
 	 * Type defining a collection of sprites, one for each zoom level.
 	 */
-	using SpriteCollection = std::array<Sprite, ZOOM_LVL_SPR_COUNT>;
+	using SpriteCollection = SpriteCollMap<Sprite>;
 
 	/**
 	 * Load a sprite from the disk and return a sprite struct which is the same for all loaders.
 	 * @param[out] sprite The sprites to fill with data.
-	 * @param file_slot   The file "descriptor" of the file we read from.
+	 * @param file The file "descriptor" of the file we read from.
 	 * @param file_pos    The position within the file the image begins.
 	 * @param sprite_type The type of sprite we're trying to load.
 	 * @param load_32bpp  True if 32bpp sprites should be loaded, false for a 8bpp sprite.
 	 * @param control_flags Control flags, see SpriteCacheCtrlFlags.
-	 * @return Bit mask of the zoom levels successfully loaded or 0 if no sprite could be loaded.
+	 * @return SpriteLoaderResult. loaded_sprites field is a bit mask of the zoom levels successfully loaded or 0 if no sprite could be loaded.
 	 */
-	virtual uint8_t LoadSprite(SpriteLoader::SpriteCollection &sprite, SpriteFile &file, size_t file_pos, SpriteType sprite_type, bool load_32bpp, uint count, uint16_t control_flags, uint8_t zoom_levels) = 0;
+	virtual SpriteLoaderResult LoadSprite(SpriteLoader::SpriteCollection &sprite, SpriteFile &file, size_t file_pos, SpriteType sprite_type, bool load_32bpp, uint count, uint16_t control_flags, LowZoomLevels zoom_levels) = 0;
 
 	virtual ~SpriteLoader() = default;
 };
@@ -149,6 +177,7 @@ public:
 
 	/**
 	 * Can the sprite encoder make use of RGBA sprites?
+	 * @return \c true iff RGBA sprites are supported.
 	 */
 	inline bool Is32BppSupported() const
 	{
@@ -157,8 +186,12 @@ public:
 
 	/**
 	 * Convert a sprite from the loader to our own format.
+	 * @param sprite_type The type of sprite to load.
+	 * @param sprite The sprites to load.
+	 * @param allocator The allocator for the sprite's memory.
+	 * @return The encoded sprite.
 	 */
-	virtual Sprite *Encode(const SpriteLoader::SpriteCollection &sprite, SpriteAllocator &allocator) = 0;
+	virtual Sprite *Encode(SpriteType sprite_type, const SpriteLoader::SpriteCollection &sprite, SpriteAllocator &allocator) = 0;
 
 	/**
 	 * Get the value which the height and width on a sprite have to be aligned by.

@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file subsidy.cpp Handling of subsidies. */
@@ -17,6 +17,7 @@
 #include "strings_func.h"
 #include "window_func.h"
 #include "subsidy_base.h"
+#include "subsidy_cmd.h"
 #include "subsidy_func.h"
 #include "core/pool_func.hpp"
 #include "core/random_func.hpp"
@@ -25,6 +26,7 @@
 #include "command_func.h"
 #include "string_func.h"
 #include "tile_cmd.h"
+#include "script/api/script_event_types.hpp"
 
 #include "table/strings.h"
 
@@ -32,6 +34,32 @@
 
 SubsidyPool _subsidy_pool("Subsidy"); ///< Pool for the subsidies.
 INSTANTIATE_POOL_METHODS(Subsidy)
+
+/**
+ * Get the NewsReference for a subsidy Source.
+ * @returns NewsReference.
+ */
+static NewsReference GetSourceNewsReference(const Source &source)
+{
+	switch (source.type) {
+		case SourceType::Industry: return static_cast<IndustryID>(source.id);
+		case SourceType::Town: return static_cast<TownID>(source.id);
+		default: NOT_REACHED();
+	}
+}
+
+/**
+ * Get the format string for a subsidy Source.
+ * @returns The format string.
+ */
+StringID Source::GetFormat() const
+{
+	switch (this->type) {
+		case SourceType::Industry: return STR_INDUSTRY_NAME;
+		case SourceType::Town: return STR_TOWN_NAME;
+		default: NOT_REACHED();
+	}
+}
 
 /**
  * Marks subsidy as awarded, creates news and AI event
@@ -44,85 +72,28 @@ void Subsidy::AwardTo(CompanyID company)
 	this->awarded = company;
 	this->remaining = _settings_game.difficulty.subsidy_duration * MONTHS_IN_YEAR;
 
-	SetDParam(0, company);
-	std::string company_name = GetString(STR_COMPANY_NAME);
+	std::string company_name = GetString(STR_COMPANY_NAME, company);
 
 	/* Add a news item */
-	std::pair<NewsReferenceType, NewsReferenceType> reftype = SetupSubsidyDecodeParam(this, SubsidyDecodeParamType::NewsAwarded, 1);
-
-	SetDParamStr(0, company_name);
-	AddNewsItem(
-		STR_NEWS_SERVICE_SUBSIDY_AWARDED_HALF + _settings_game.difficulty.subsidy_multiplier,
-		NT_SUBSIDIES, NF_NORMAL,
-		reftype.first, this->src, reftype.second, this->dst
-	);
+	const CargoSpec *cs = CargoSpec::Get(this->cargo_type);
+	EncodedString headline = GetEncodedString(STR_NEWS_SERVICE_SUBSIDY_AWARDED_HALF + _settings_game.difficulty.subsidy_multiplier, std::move(company_name), cs->name, this->src.GetFormat(), this->src.id, this->dst.GetFormat(), this->dst.id, _settings_game.difficulty.subsidy_duration);
+	AddNewsItem(std::move(headline), NewsType::Subsidies, NewsStyle::Normal, {}, GetSourceNewsReference(this->src), GetSourceNewsReference(this->dst));
 	AI::BroadcastNewEvent(new ScriptEventSubsidyAwarded(this->index));
 	Game::NewEvent(new ScriptEventSubsidyAwarded(this->index));
 
-	InvalidateWindowData(WC_SUBSIDIES_LIST, 0);
-}
-
-/**
- * Setup the string parameters for printing the subsidy at the screen, and compute the news reference for the subsidy.
- * @param s %Subsidy being printed.
- * @param mode Type of subsidy news message to decide on parameter format.
- * @param parameter_offset The location/index in the String DParams to start decoding the subsidy's parameters. Defaults to 0.
- * @return Reference of the subsidy in the news system.
- */
-std::pair<NewsReferenceType, NewsReferenceType> SetupSubsidyDecodeParam(const Subsidy *s, SubsidyDecodeParamType mode, uint parameter_offset)
-{
-	NewsReferenceType reftype1 = NR_NONE;
-	NewsReferenceType reftype2 = NR_NONE;
-
-	/* Always use the plural form of the cargo name - trying to decide between plural or singular causes issues for translations */
-	const CargoSpec *cs = CargoSpec::Get(s->cargo_type);
-	SetDParam(parameter_offset, cs->name);
-
-	switch (s->src_type) {
-		case SourceType::Industry:
-			reftype1 = NR_INDUSTRY;
-			SetDParam(parameter_offset + 1, STR_INDUSTRY_NAME);
-			break;
-		case SourceType::Town:
-			reftype1 = NR_TOWN;
-			SetDParam(parameter_offset + 1, STR_TOWN_NAME);
-			break;
-		default: NOT_REACHED();
-	}
-	SetDParam(parameter_offset + 2, s->src);
-
-	switch (s->dst_type) {
-		case SourceType::Industry:
-			reftype2 = NR_INDUSTRY;
-			SetDParam(parameter_offset + 4, STR_INDUSTRY_NAME);
-			break;
-		case SourceType::Town:
-			reftype2 = NR_TOWN;
-			SetDParam(parameter_offset + 4, STR_TOWN_NAME);
-			break;
-		default: NOT_REACHED();
-	}
-	SetDParam(parameter_offset + 5, s->dst);
-
-	/* If the subsidy is being offered or awarded, the news item mentions the subsidy duration. */
-	if (mode == SubsidyDecodeParamType::NewsOffered || mode == SubsidyDecodeParamType::NewsAwarded) {
-		SetDParam(parameter_offset + 7, _settings_game.difficulty.subsidy_duration);
-	}
-
-	return std::pair<NewsReferenceType, NewsReferenceType>(reftype1, reftype2);
+	InvalidateWindowData(WindowClass::SubsidyList, 0);
 }
 
 /**
  * Sets a flag indicating that given town/industry is part of subsidised route.
- * @param type is it a town or an industry?
- * @param index index of town/industry
+ * @param source actual source
  * @param flag flag to set
  */
-static inline void SetPartOfSubsidyFlag(SourceType type, SourceID index, PartOfSubsidy flag)
+static inline void SetPartOfSubsidyFlag(Source source, PartOfSubsidy flag)
 {
-	switch (type) {
-		case SourceType::Industry: Industry::Get(index)->part_of_subsidy |= flag; return;
-		case SourceType::Town:   Town::Get(index)->cache.part_of_subsidy |= flag; return;
+	switch (source.type) {
+		case SourceType::Industry: Industry::Get(source.ToIndustryID())->part_of_subsidy.Set(flag); return;
+		case SourceType::Town: Town::Get(source.ToTownID())->cache.part_of_subsidy.Set(flag); return;
 		default: NOT_REACHED();
 	}
 }
@@ -130,34 +101,33 @@ static inline void SetPartOfSubsidyFlag(SourceType type, SourceID index, PartOfS
 /** Perform a full rebuild of the subsidies cache. */
 void RebuildSubsidisedSourceAndDestinationCache()
 {
-	for (Town *t : Town::Iterate()) t->cache.part_of_subsidy = POS_NONE;
+	for (Town *t : Town::Iterate()) t->cache.part_of_subsidy = {};
 
-	for (Industry *i : Industry::Iterate()) i->part_of_subsidy = POS_NONE;
+	for (Industry *i : Industry::Iterate()) i->part_of_subsidy = {};
 
 	for (const Subsidy *s : Subsidy::Iterate()) {
-		SetPartOfSubsidyFlag(s->src_type, s->src, POS_SRC);
-		SetPartOfSubsidyFlag(s->dst_type, s->dst, POS_DST);
+		SetPartOfSubsidyFlag(s->src, PartOfSubsidy::Source);
+		SetPartOfSubsidyFlag(s->dst, PartOfSubsidy::Destination);
 	}
 }
 
 /**
  * Delete the subsidies associated with a given cargo source type and id.
- * @param type  Cargo source type of the id.
- * @param index Id to remove.
+ * @param source The source to look for.
  */
-void DeleteSubsidyWith(SourceType type, SourceID index)
+void DeleteSubsidyWith(Source source)
 {
 	bool dirty = false;
 
 	for (Subsidy *s : Subsidy::Iterate()) {
-		if ((s->src_type == type && s->src == index) || (s->dst_type == type && s->dst == index)) {
+		if (s->src == source || s->dst == source) {
 			delete s;
 			dirty = true;
 		}
 	}
 
 	if (dirty) {
-		InvalidateWindowData(WC_SUBSIDIES_LIST, 0);
+		InvalidateWindowData(WindowClass::SubsidyList, 0);
 		RebuildSubsidisedSourceAndDestinationCache();
 	}
 }
@@ -165,18 +135,14 @@ void DeleteSubsidyWith(SourceType type, SourceID index)
 /**
  * Check whether a specific subsidy already exists.
  * @param cargo Cargo type.
- * @param src_type Type of source of the cargo, affects interpretation of \a src.
- * @param src Id of the source.
- * @param dst_type Type of the destination of the cargo, affects interpretation of \a dst.
- * @param dst Id of the destination.
+ * @param src The source.
+ * @param dst The destination.
  * @return \c true if the subsidy already exists, \c false if not.
  */
-static bool CheckSubsidyDuplicate(CargoID cargo, SourceType src_type, SourceID src, SourceType dst_type, SourceID dst)
+static bool CheckSubsidyDuplicate(CargoType cargo, Source src, Source dst)
 {
 	for (const Subsidy *s : Subsidy::Iterate()) {
-		if (s->cargo_type == cargo &&
-				s->src_type == src_type && s->src == src &&
-				s->dst_type == dst_type && s->dst == dst) {
+		if (s->cargo_type == cargo && s->src == src && s->dst == dst) {
 			return true;
 		}
 	}
@@ -185,100 +151,78 @@ static bool CheckSubsidyDuplicate(CargoID cargo, SourceType src_type, SourceID s
 
 /**
  * Checks if the source and destination of a subsidy are inside the distance limit.
- * @param src_type Type of \a src.
- * @param src      Index of source.
- * @param dst_type Type of \a dst.
- * @param dst      Index of destination.
+ * @param src Source of cargo.
+ * @param dst Destination of cargo.
  * @return True if they are inside the distance limit.
  */
-static bool CheckSubsidyDistance(SourceType src_type, SourceID src, SourceType dst_type, SourceID dst)
+static bool CheckSubsidyDistance(Source src, Source dst)
 {
-	TileIndex tile_src = (src_type == SourceType::Town) ? Town::Get(src)->xy : Industry::Get(src)->location.tile;
-	TileIndex tile_dst = (dst_type == SourceType::Town) ? Town::Get(dst)->xy : Industry::Get(dst)->location.tile;
+	TileIndex tile_src = (src.type == SourceType::Town) ? Town::Get(src.ToTownID())->xy : Industry::Get(src.ToIndustryID())->location.tile;
+	TileIndex tile_dst = (dst.type == SourceType::Town) ? Town::Get(dst.ToTownID())->xy : Industry::Get(dst.ToIndustryID())->location.tile;
 
 	return (DistanceManhattan(tile_src, tile_dst) <= SUBSIDY_MAX_DISTANCE);
 }
 
 /**
  * Creates a subsidy with the given parameters.
- * @param cid      Subsidised cargo.
- * @param src_type Type of \a src.
- * @param src      Index of source.
- * @param dst_type Type of \a dst.
- * @param dst      Index of destination.
+ * @param cargo_type Subsidised cargo.
+ * @param src Source of cargo.
+ * @param dst Destination of cargo.
  */
-void CreateSubsidy(CargoID cid, SourceType src_type, SourceID src, SourceType dst_type, SourceID dst)
+void CreateSubsidy(CargoType cargo_type, Source src, Source dst)
 {
-	Subsidy *s = new Subsidy();
-	s->cargo_type = cid;
-	s->src_type = src_type;
-	s->src = src;
-	s->dst_type = dst_type;
-	s->dst = dst;
-	s->remaining = SUBSIDY_OFFER_MONTHS;
-	s->awarded = INVALID_COMPANY;
+	Subsidy *s = Subsidy::Create(cargo_type, src, dst, SUBSIDY_OFFER_MONTHS);
 
-	std::pair<NewsReferenceType, NewsReferenceType> reftype = SetupSubsidyDecodeParam(s, SubsidyDecodeParamType::NewsOffered);
-	AddNewsItem(STR_NEWS_SERVICE_SUBSIDY_OFFERED, NT_SUBSIDIES, NF_NORMAL, reftype.first, s->src, reftype.second, s->dst);
-	SetPartOfSubsidyFlag(s->src_type, s->src, POS_SRC);
-	SetPartOfSubsidyFlag(s->dst_type, s->dst, POS_DST);
+	const CargoSpec *cs = CargoSpec::Get(s->cargo_type);
+	EncodedString headline = GetEncodedString(STR_NEWS_SERVICE_SUBSIDY_OFFERED, cs->name, s->src.GetFormat(), s->src.id, s->dst.GetFormat(), s->dst.id, _settings_game.difficulty.subsidy_duration);
+	AddNewsItem(std::move(headline), NewsType::Subsidies, NewsStyle::Normal, {}, GetSourceNewsReference(s->src), GetSourceNewsReference(s->dst));
+	SetPartOfSubsidyFlag(s->src, PartOfSubsidy::Source);
+	SetPartOfSubsidyFlag(s->dst, PartOfSubsidy::Destination);
 	AI::BroadcastNewEvent(new ScriptEventSubsidyOffer(s->index));
 	Game::NewEvent(new ScriptEventSubsidyOffer(s->index));
 
-	InvalidateWindowData(WC_SUBSIDIES_LIST, 0);
+	InvalidateWindowData(WindowClass::SubsidyList, 0);
 }
 
 /**
  * Create a new subsidy.
- * @param tile unused.
  * @param flags type of operation
- * @param p1 various bitstuffed elements
- * - p1 = (bit  0 -  7) - SourceType of source.
- * - p1 = (bit  8 - 23) - SourceID of source.
- * - p1 = (bit 24 - 31) - CargoID of subsidy.
- * @param p2 various bitstuffed elements
- * - p2 = (bit  0 -  7) - SourceType of destination.
- * - p2 = (bit  8 - 23) - SourceID of destination.
- * @param text unused.
+ * @param cargo_type CargoType of subsidy.
+ * @param src Source.
+ * @param dst Destination.
  * @return the cost of this operation or an error
  */
-CommandCost CmdCreateSubsidy(TileIndex tile, DoCommandFlag flags, uint32_t p1, uint32_t p2, const char *text)
+CommandCost CmdCreateSubsidy(DoCommandFlags flags, CargoType cargo_type, Source src, Source dst)
 {
 	if (!Subsidy::CanAllocateItem()) return CMD_ERROR;
 
-	CargoID cid = GB(p1, 24, 8);
-	SourceType src_type = (SourceType)GB(p1, 0, 8);
-	SourceID src = GB(p1, 8, 16);
-	SourceType dst_type = (SourceType)GB(p2, 0, 8);
-	SourceID dst = GB(p2, 8, 16);
-
 	if (_current_company != OWNER_DEITY) return CMD_ERROR;
 
-	if (cid >= NUM_CARGO || !::CargoSpec::Get(cid)->IsValid()) return CMD_ERROR;
+	if (cargo_type >= NUM_CARGO || !::CargoSpec::Get(cargo_type)->IsValid()) return CMD_ERROR;
 
-	switch (src_type) {
+	switch (src.type) {
 		case SourceType::Town:
-			if (!Town::IsValidID(src)) return CMD_ERROR;
+			if (!Town::IsValidID(src.ToTownID())) return CMD_ERROR;
 			break;
 		case SourceType::Industry:
-			if (!Industry::IsValidID(src)) return CMD_ERROR;
+			if (!Industry::IsValidID(src.ToIndustryID())) return CMD_ERROR;
 			break;
 		default:
 			return CMD_ERROR;
 	}
-	switch (dst_type) {
+	switch (dst.type) {
 		case SourceType::Town:
-			if (!Town::IsValidID(dst)) return CMD_ERROR;
+			if (!Town::IsValidID(dst.ToTownID())) return CMD_ERROR;
 			break;
 		case SourceType::Industry:
-			if (!Industry::IsValidID(dst)) return CMD_ERROR;
+			if (!Industry::IsValidID(dst.ToIndustryID())) return CMD_ERROR;
 			break;
 		default:
 			return CMD_ERROR;
 	}
 
-	if (flags & DC_EXEC) {
-		CreateSubsidy(cid, src_type, src, dst_type, dst);
+	if (flags.Test(DoCommandFlag::Execute)) {
+		CreateSubsidy(cargo_type, src, dst);
 	}
 
 	return CommandCost();
@@ -292,14 +236,14 @@ bool FindSubsidyPassengerRoute()
 {
 	if (!Subsidy::CanAllocateItem()) return false;
 
-	if (CargoSpec::town_production_cargo_mask[TPE_PASSENGERS] == 0) return false;
+	if (CargoSpec::town_production_cargo_mask[TownProductionEffect::Passengers].None()) return false;
 
 	/* Pick a random TPE_PASSENGER type */
-	uint32_t r = RandomRange(CountBits(CargoSpec::town_production_cargo_mask[TPE_PASSENGERS]));
-	CargoID cid{};
-	for (CargoID cargo_id : SetCargoBitIterator(CargoSpec::town_production_cargo_mask[TPE_PASSENGERS])) {
+	uint32_t r = RandomRange(CountBits(CargoSpec::town_production_cargo_mask[TownProductionEffect::Passengers]));
+	CargoType cargo_type{};
+	for (CargoType c : CargoSpec::town_production_cargo_mask[TownProductionEffect::Passengers]) {
 		if (r == 0) {
-			cid = cargo_id;
+			cargo_type = c;
 			break;
 		}
 		r--;
@@ -307,7 +251,7 @@ bool FindSubsidyPassengerRoute()
 
 	const Town *src = Town::GetRandom();
 	if (src->cache.population < SUBSIDY_PAX_MIN_POPULATION ||
-			src->GetPercentTransported(cid) > SUBSIDY_MAX_PCT_TRANSPORTED) {
+			src->GetPercentTransported(cargo_type) > SUBSIDY_MAX_PCT_TRANSPORTED) {
 		return false;
 	}
 
@@ -317,14 +261,14 @@ bool FindSubsidyPassengerRoute()
 	}
 
 	if (DistanceManhattan(src->xy, dst->xy) > SUBSIDY_MAX_DISTANCE) return false;
-	if (CheckSubsidyDuplicate(cid, SourceType::Town, src->index, SourceType::Town, dst->index)) return false;
+	if (CheckSubsidyDuplicate(cargo_type, Source::Make<SourceType::Town>(src->index), Source::Make<SourceType::Town>(dst->index))) return false;
 
-	CreateSubsidy(cid, SourceType::Town, src->index, SourceType::Town, dst->index);
+	CreateSubsidy(cargo_type, Source::Make<SourceType::Town>(src->index), Source::Make<SourceType::Town>(dst->index));
 
 	return true;
 }
 
-bool FindSubsidyCargoDestination(CargoID cid, SourceType src_type, SourceID src);
+bool FindSubsidyCargoDestination(CargoType cargo_type, Source src);
 
 
 /**
@@ -335,8 +279,6 @@ bool FindSubsidyTownCargoRoute()
 {
 	if (!Subsidy::CanAllocateItem()) return false;
 
-	SourceType src_type = SourceType::Town;
-
 	/* Select a random town. */
 	const Town *src_town = Town::GetRandom();
 	if (src_town->cache.population < SUBSIDY_CARGO_MIN_POPULATION) return false;
@@ -345,14 +287,14 @@ bool FindSubsidyTownCargoRoute()
 	CargoArray town_cargo_produced{};
 	TileArea ta = TileArea(src_town->xy, 1, 1).Expand(SUBSIDY_TOWN_CARGO_RADIUS);
 	for (TileIndex tile : ta) {
-		if (IsTileType(tile, MP_HOUSE)) {
+		if (IsTileType(tile, TileType::House)) {
 			AddProducedCargo(tile, town_cargo_produced);
 		}
 	}
 
 	/* Passenger subsidies are not handled here. */
-	for (CargoID cid : SetCargoBitIterator(CargoSpec::town_production_cargo_mask[TPE_PASSENGERS])) {
-		town_cargo_produced[cid] = 0;
+	for (CargoType c : CargoSpec::town_production_cargo_mask[TownProductionEffect::Passengers]) {
+		town_cargo_produced[c] = 0;
 	}
 
 	uint8_t cargo_count = town_cargo_produced.GetCount();
@@ -362,26 +304,21 @@ bool FindSubsidyTownCargoRoute()
 
 	/* Choose a random cargo that is produced in the town. */
 	uint8_t cargo_number = RandomRange(cargo_count);
-	CargoID cid;
-	for (cid = 0; cid < NUM_CARGO; cid++) {
-		if (town_cargo_produced[cid] > 0) {
+	CargoType cargo_type{};
+	for (; cargo_type < NUM_CARGO; ++cargo_type) {
+		if (town_cargo_produced[cargo_type] > 0) {
 			if (cargo_number == 0) break;
 			cargo_number--;
 		}
 	}
 
 	/* Avoid using invalid NewGRF cargoes. */
-	if (!CargoSpec::Get(cid)->IsValid() ||
-			_settings_game.linkgraph.GetDistributionType(cid) != DT_MANUAL) {
-		return false;
-	}
+	if (!CargoSpec::Get(cargo_type)->IsValid()) return false;
 
 	/* Quit if the percentage transported is large enough. */
-	if (src_town->GetPercentTransported(cid) > SUBSIDY_MAX_PCT_TRANSPORTED) return false;
+	if (src_town->GetPercentTransported(cargo_type) > SUBSIDY_MAX_PCT_TRANSPORTED) return false;
 
-	SourceID src = src_town->index;
-
-	return FindSubsidyCargoDestination(cid, src_type, src);
+	return FindSubsidyCargoDestination(cargo_type, Source::Make<SourceType::Town>(src_town->index));
 }
 
 /**
@@ -392,15 +329,13 @@ bool FindSubsidyIndustryCargoRoute()
 {
 	if (!Subsidy::CanAllocateItem()) return false;
 
-	SourceType src_type = SourceType::Industry;
-
 	/* Select a random industry. */
 	const Industry *src_ind = Industry::GetRandom();
 	if (src_ind == nullptr) return false;
 
 	uint trans = 0;
 	uint total = 0;
-	CargoID cid = INVALID_CARGO;
+	CargoType cargo_type = INVALID_CARGO;
 
 	/* Randomize cargo type */
 	int num_cargos = 0;
@@ -413,7 +348,7 @@ bool FindSubsidyIndustryCargoRoute()
 	for (const auto &p : src_ind->Produced()) {
 		if (p.cargo != INVALID_CARGO) cargo_num--;
 		if (cargo_num == 0) {
-			cid = p.cargo;
+			cargo_type = p.cargo;
 			trans = p.history[LAST_MONTH].PctTransported();
 			total = p.history[LAST_MONTH].production;
 			break;
@@ -421,51 +356,51 @@ bool FindSubsidyIndustryCargoRoute()
 	}
 	assert(cargo_num == 0); // indicates loop didn't break as intended
 
+	auto is_usable_distribution_mode = [](DistributionType mode) -> bool {
+		return mode != DistributionType::AsymmetricEqual && mode != DistributionType::AsymmetricNearest;
+	};
+
 	/* Quit if no production in this industry
-	 * or if the pct transported is already large enough
 	 * or if the cargo is automatically distributed */
 	if (total == 0 || trans > SUBSIDY_MAX_PCT_TRANSPORTED ||
-			cid == INVALID_CARGO ||
-			_settings_game.linkgraph.GetDistributionType(cid) != DT_MANUAL) {
+			cargo_type == INVALID_CARGO ||
+			!is_usable_distribution_mode(_settings_game.linkgraph.GetDistributionType(cargo_type))) {
 		return false;
 	}
 
-	SourceID src = src_ind->index;
-
-	return FindSubsidyCargoDestination(cid, src_type, src);
+	return FindSubsidyCargoDestination(cargo_type, Source::Make<SourceType::Industry>(src_ind->index));
 }
 
 /**
  * Tries to find a suitable destination for the given source and cargo.
- * @param cid      Subsidized cargo.
- * @param src_type Type of \a src.
- * @param src      Index of source.
+ * @param cargo_type Subsidized cargo.
+ * @param src Source of cargo.
  * @return True iff the subsidy was created.
  */
-bool FindSubsidyCargoDestination(CargoID cid, SourceType src_type, SourceID src)
+bool FindSubsidyCargoDestination(CargoType cargo_type, Source src)
 {
 	/* Choose a random destination. */
-	SourceType dst_type = Chance16(1, 2) ? SourceType::Town : SourceType::Industry;
+	Source dst{Source::Invalid, Chance16(1, 2) ? SourceType::Town : SourceType::Industry};
 
-	SourceID dst;
-	switch (dst_type) {
+	switch (dst.type) {
 		case SourceType::Town: {
 			/* Select a random town. */
 			const Town *dst_town = Town::GetRandom();
 
 			/* Calculate cargo acceptance of houses around town center. */
 			CargoArray town_cargo_accepted{};
+			CargoTypes always_accepted{};
 			TileArea ta = TileArea(dst_town->xy, 1, 1).Expand(SUBSIDY_TOWN_CARGO_RADIUS);
 			for (TileIndex tile : ta) {
-				if (IsTileType(tile, MP_HOUSE)) {
-					AddAcceptedCargo(tile, town_cargo_accepted, nullptr);
+				if (IsTileType(tile, TileType::House)) {
+					AddAcceptedCargo(tile, town_cargo_accepted, always_accepted);
 				}
 			}
 
 			/* Check if the town can accept this cargo. */
-			if (town_cargo_accepted[cid] < 8) return false;
+			if (town_cargo_accepted[cargo_type] < 8) return false;
 
-			dst = dst_town->index;
+			dst.SetIndex(dst_town->index.base());
 			break;
 		}
 
@@ -475,9 +410,9 @@ bool FindSubsidyCargoDestination(CargoID cid, SourceType src_type, SourceID src)
 			if (dst_ind == nullptr) return false;
 
 			/* The industry must accept the cargo */
-			if (!dst_ind->IsCargoAccepted(cid)) return false;
+			if (!dst_ind->IsCargoAccepted(cargo_type)) return false;
 
-			dst = dst_ind->index;
+			dst.SetIndex(dst_ind->index.base());
 			break;
 		}
 
@@ -485,15 +420,15 @@ bool FindSubsidyCargoDestination(CargoID cid, SourceType src_type, SourceID src)
 	}
 
 	/* Check that the source and the destination are not the same. */
-	if (src_type == dst_type && src == dst) return false;
+	if (src == dst) return false;
 
 	/* Check distance between source and destination. */
-	if (!CheckSubsidyDistance(src_type, src, dst_type, dst)) return false;
+	if (!CheckSubsidyDistance(src, dst)) return false;
 
 	/* Avoid duplicate subsidies. */
-	if (CheckSubsidyDuplicate(cid, src_type, src, dst_type, dst)) return false;
+	if (CheckSubsidyDuplicate(cargo_type, src, dst)) return false;
 
-	CreateSubsidy(cid, src_type, src, dst_type, dst);
+	CreateSubsidy(cargo_type, src, dst);
 
 	return true;
 }
@@ -506,14 +441,16 @@ void SubsidyMonthlyLoop()
 	for (Subsidy *s : Subsidy::Iterate()) {
 		if (--s->remaining == 0) {
 			if (!s->IsAwarded()) {
-				std::pair<NewsReferenceType, NewsReferenceType> reftype = SetupSubsidyDecodeParam(s, SubsidyDecodeParamType::NewsWithdrawn);
-				AddNewsItem(STR_NEWS_OFFER_OF_SUBSIDY_EXPIRED, NT_SUBSIDIES, NF_NORMAL, reftype.first, s->src, reftype.second, s->dst);
+				const CargoSpec *cs = CargoSpec::Get(s->cargo_type);
+				EncodedString headline = GetEncodedString(STR_NEWS_OFFER_OF_SUBSIDY_EXPIRED, cs->name, s->src.GetFormat(), s->src.id, s->dst.GetFormat(), s->dst.id);
+				AddNewsItem(std::move(headline), NewsType::Subsidies, NewsStyle::Normal, {}, GetSourceNewsReference(s->src), GetSourceNewsReference(s->dst));
 				AI::BroadcastNewEvent(new ScriptEventSubsidyOfferExpired(s->index));
 				Game::NewEvent(new ScriptEventSubsidyOfferExpired(s->index));
 			} else {
 				if (s->awarded == _local_company) {
-					std::pair<NewsReferenceType, NewsReferenceType> reftype = SetupSubsidyDecodeParam(s, SubsidyDecodeParamType::NewsWithdrawn);
-					AddNewsItem(STR_NEWS_SUBSIDY_WITHDRAWN_SERVICE, NT_SUBSIDIES, NF_NORMAL, reftype.first, s->src, reftype.second, s->dst);
+					const CargoSpec *cs = CargoSpec::Get(s->cargo_type);
+					EncodedString headline = GetEncodedString(STR_NEWS_SUBSIDY_WITHDRAWN_SERVICE, cs->name, s->src.GetFormat(), s->src.id, s->dst.GetFormat(), s->dst.id);
+					AddNewsItem(std::move(headline), NewsType::Subsidies, NewsStyle::Normal, {}, GetSourceNewsReference(s->src), GetSourceNewsReference(s->dst));
 				}
 				AI::BroadcastNewEvent(new ScriptEventSubsidyExpired(s->index));
 				Game::NewEvent(new ScriptEventSubsidyExpired(s->index));
@@ -528,13 +465,6 @@ void SubsidyMonthlyLoop()
 	} else if (_settings_game.difficulty.subsidy_duration == 0) {
 		/* If subsidy duration is set to 0, subsidies are disabled, so bail out. */
 		return;
-	} else if (_settings_game.linkgraph.distribution_pax != DT_MANUAL &&
-			   _settings_game.linkgraph.distribution_mail != DT_MANUAL &&
-			   _settings_game.linkgraph.distribution_armoured != DT_MANUAL &&
-			   _settings_game.linkgraph.distribution_default != DT_MANUAL) {
-		/* Return early if there are no manually distributed cargoes and if we
-		 * don't need to invalidate the subsidies window. */
-		return;
 	}
 
 	bool passenger_subsidy = false;
@@ -543,7 +473,7 @@ void SubsidyMonthlyLoop()
 
 	int random_chance = RandomRange(16);
 
-	if (random_chance < 2 && _settings_game.linkgraph.distribution_pax == DT_MANUAL) {
+	if (random_chance < 2) {
 		/* There is a 1/8 chance each month of generating a passenger subsidy. */
 		int n = 1000;
 
@@ -568,28 +498,27 @@ void SubsidyMonthlyLoop()
 
 	modified |= passenger_subsidy || town_subsidy || industry_subsidy;
 
-	if (modified) InvalidateWindowData(WC_SUBSIDIES_LIST, 0);
+	if (modified) InvalidateWindowData(WindowClass::SubsidyList, 0);
 }
 
 /**
  * Tests whether given delivery is subsidised and possibly awards the subsidy to delivering company
  * @param cargo_type type of cargo
  * @param company company delivering the cargo
- * @param src_type type of \a src
- * @param src index of source
+ * @param src source of cargo
  * @param st station where the cargo is delivered to
  * @return is the delivery subsidised?
  */
-bool CheckSubsidised(CargoID cargo_type, CompanyID company, SourceType src_type, SourceID src, const Station *st)
+bool CheckSubsidised(CargoType cargo_type, CompanyID company, Source src, const Station *st)
 {
 	/* If the source isn't subsidised, don't continue */
-	if (src == INVALID_SOURCE) return false;
-	switch (src_type) {
+	if (!src.IsValid()) return false;
+	switch (src.type) {
 		case SourceType::Industry:
-			if (!(Industry::Get(src)->part_of_subsidy & POS_SRC)) return false;
+			if (!Industry::Get(src.ToIndustryID())->part_of_subsidy.Test(PartOfSubsidy::Source)) return false;
 			break;
 		case SourceType::Town:
-			if (!(Town::Get(src)->cache.part_of_subsidy & POS_SRC)) return false;
+			if (!Town::Get(src.ToTownID())->cache.part_of_subsidy.Test(PartOfSubsidy::Source)) return false;
 			break;
 		default: return false;
 	}
@@ -600,15 +529,15 @@ bool CheckSubsidised(CargoID cargo_type, CompanyID company, SourceType src_type,
 	if (!st->rect.IsEmpty()) {
 		for (const Subsidy *s : Subsidy::Iterate()) {
 			/* Don't create the cache if there is no applicable subsidy with town as destination */
-			if (s->dst_type != SourceType::Town) continue;
-			if (s->cargo_type != cargo_type || s->src_type != src_type || s->src != src) continue;
+			if (s->dst.type != SourceType::Town) continue;
+			if (s->cargo_type != cargo_type || s->src != src) continue;
 			if (s->IsAwarded() && s->awarded != company) continue;
 
 			BitmapTileIterator it(st->catchment_tiles);
 			for (TileIndex tile = it; tile != INVALID_TILE; tile = ++it) {
-				if (!IsTileType(tile, MP_HOUSE)) continue;
+				if (!IsTileType(tile, TileType::House)) continue;
 				const Town *t = Town::GetByTile(tile);
-				if (t->cache.part_of_subsidy & POS_DST) include(towns_near, t);
+				if (t->cache.part_of_subsidy.Test(PartOfSubsidy::Destination)) include(towns_near, t);
 			}
 			break;
 		}
@@ -619,12 +548,12 @@ bool CheckSubsidised(CargoID cargo_type, CompanyID company, SourceType src_type,
 	/* Check if there's a (new) subsidy that applies. There can be more subsidies triggered by this delivery!
 	 * Think about the case that subsidies are A->B and A->C and station has both B and C in its catchment area */
 	for (Subsidy *s : Subsidy::Iterate()) {
-		if (s->cargo_type == cargo_type && s->src_type == src_type && s->src == src && (!s->IsAwarded() || s->awarded == company)) {
-			switch (s->dst_type) {
+		if (s->cargo_type == cargo_type && s->src == src && (!s->IsAwarded() || s->awarded == company)) {
+			switch (s->dst.type) {
 				case SourceType::Industry:
 					for (const auto &i : st->industries_near) {
-						if (s->dst == i.industry->index) {
-							assert(i.industry->part_of_subsidy & POS_DST);
+						if (s->dst.ToIndustryID() == i.industry->index) {
+							assert(i.industry->part_of_subsidy.Test(PartOfSubsidy::Destination));
 							subsidised = true;
 							if (!s->IsAwarded()) s->AwardTo(company);
 						}
@@ -632,8 +561,8 @@ bool CheckSubsidised(CargoID cargo_type, CompanyID company, SourceType src_type,
 					break;
 				case SourceType::Town:
 					for (const Town *tp : towns_near) {
-						if (s->dst == tp->index) {
-							assert(tp->cache.part_of_subsidy & POS_DST);
+						if (s->dst.ToTownID() == tp->index) {
+							assert(tp->cache.part_of_subsidy.Test(PartOfSubsidy::Destination));
 							subsidised = true;
 							if (!s->IsAwarded()) s->AwardTo(company);
 						}
@@ -646,4 +575,9 @@ bool CheckSubsidised(CargoID cargo_type, CompanyID company, SourceType src_type,
 	}
 
 	return subsidised;
+}
+
+void Source::fmt_format_value(format_target &output) const
+{
+	output.format("source({}, {})", this->id, this->type);
 }

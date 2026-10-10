@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file newgrf_canal.cpp Implementation of NewGRF canals. */
@@ -13,12 +13,11 @@
 #include "newgrf_canal.h"
 #include "water.h"
 #include "water_map.h"
-#include "spritecache.h"
 
 #include "safeguards.h"
 
 /** Table of canal 'feature' sprite groups */
-WaterFeature _water_feature[CF_END];
+EnumIndexArray<WaterFeature, CanalFeature, CanalFeature::End> _water_feature;
 
 /** Scope resolver of a canal tile. */
 struct CanalScopeResolver : public ScopeResolver {
@@ -41,10 +40,10 @@ struct CanalResolverObject : public ResolverObject {
 	CanalResolverObject(CanalFeature feature, TileIndex tile,
 			CallbackID callback = CBID_NO_CALLBACK, uint32_t callback_param1 = 0, uint32_t callback_param2 = 0);
 
-	ScopeResolver *GetScope(VarSpriteGroupScope scope = VSG_SCOPE_SELF, VarSpriteGroupScopeOffset relative = 0) override
+	ScopeResolver *GetScope(VarSpriteGroupScope scope = VarSpriteGroupScope::Self, VarSpriteGroupScopeOffset relative = 0) override
 	{
 		switch (scope) {
-			case VSG_SCOPE_SELF: return &this->canal_scope;
+			case VarSpriteGroupScope::Self: return &this->canal_scope;
 			default: return ResolverObject::GetScope(scope, relative);
 		}
 	}
@@ -56,7 +55,7 @@ struct CanalResolverObject : public ResolverObject {
 /* virtual */ uint32_t CanalScopeResolver::GetRandomBits() const
 {
 	/* Return random bits only for water tiles, not station tiles */
-	return IsTileType(this->tile, MP_WATER) ? GetWaterTileRandomBits(this->tile) : 0;
+	return IsTileType(this->tile, TileType::Water) ? GetWaterTileRandomBits(this->tile) : 0;
 }
 
 /* virtual */ uint32_t CanalScopeResolver::GetVariable(uint16_t variable, uint32_t parameter, GetVariableExtra &extra) const
@@ -66,7 +65,7 @@ struct CanalResolverObject : public ResolverObject {
 		case 0x80: {
 			int z = GetTileZ(this->tile);
 			/* Return consistent height within locks */
-			if (IsTileType(this->tile, MP_WATER) && IsLock(this->tile) && GetLockPart(this->tile) == LOCK_PART_UPPER) z--;
+			if (IsTileType(this->tile, TileType::Water) && IsLock(this->tile) && GetLockPart(this->tile) == LockPart::Upper) z--;
 			return z;
 		}
 
@@ -85,19 +84,19 @@ struct CanalResolverObject : public ResolverObject {
 		 */
 		case 0x82: {
 			uint32_t connectivity =
-				  (!IsWateredTile(TileAddXY(tile, -1,  0), DIR_SW) << 0)  // NE
-				+ (!IsWateredTile(TileAddXY(tile,  0,  1), DIR_NW) << 1)  // SE
-				+ (!IsWateredTile(TileAddXY(tile,  1,  0), DIR_NE) << 2)  // SW
-				+ (!IsWateredTile(TileAddXY(tile,  0, -1), DIR_SE) << 3)  // NW
-				+ (!IsWateredTile(TileAddXY(tile, -1,  1), DIR_W)  << 4)  // E
-				+ (!IsWateredTile(TileAddXY(tile,  1,  1), DIR_N)  << 5)  // S
-				+ (!IsWateredTile(TileAddXY(tile,  1, -1), DIR_E)  << 6)  // W
-				+ (!IsWateredTile(TileAddXY(tile, -1, -1), DIR_S)  << 7); // N
+				  (!IsWateredTile(TileAddXY(tile, -1,  0), Direction::SW) << 0)  // NE
+				+ (!IsWateredTile(TileAddXY(tile,  0,  1), Direction::NW) << 1)  // SE
+				+ (!IsWateredTile(TileAddXY(tile,  1,  0), Direction::NE) << 2)  // SW
+				+ (!IsWateredTile(TileAddXY(tile,  0, -1), Direction::SE) << 3)  // NW
+				+ (!IsWateredTile(TileAddXY(tile, -1,  1), Direction::W)  << 4)  // E
+				+ (!IsWateredTile(TileAddXY(tile,  1,  1), Direction::N)  << 5)  // S
+				+ (!IsWateredTile(TileAddXY(tile,  1, -1), Direction::E)  << 6)  // W
+				+ (!IsWateredTile(TileAddXY(tile, -1, -1), Direction::S)  << 7); // N
 			return connectivity;
 		}
 
 		/* Random data for river or canal tiles, otherwise zero */
-		case 0x83: return IsTileType(this->tile, MP_WATER) ? GetWaterTileRandomBits(this->tile) : 0;
+		case 0x83: return IsTileType(this->tile, TileType::Water) ? GetWaterTileRandomBits(this->tile) : 0;
 	}
 
 	Debug(grf, 1, "Unhandled canal variable 0x{:02X}", variable);
@@ -108,12 +107,12 @@ struct CanalResolverObject : public ResolverObject {
 
 GrfSpecFeature CanalResolverObject::GetFeature() const
 {
-	return GSF_CANALS;
+	return GrfSpecFeature::Canals;
 }
 
 uint32_t CanalResolverObject::GetDebugID() const
 {
-	return this->feature;
+	return to_underlying(this->feature);
 }
 
 /**
@@ -140,10 +139,10 @@ CanalResolverObject::CanalResolverObject(CanalFeature feature, TileIndex tile,
 SpriteID GetCanalSprite(CanalFeature feature, TileIndex tile)
 {
 	CanalResolverObject object(feature, tile);
-	const SpriteGroup *group = object.Resolve();
-	if (group == nullptr) return 0;
+	const ResultSpriteGroup *group = object.Resolve<ResultSpriteGroup>();
+	if (group == nullptr || group->num_sprites == 0) return 0;
 
-	return group->GetResult();
+	return group->sprite;
 }
 
 /**
@@ -170,7 +169,7 @@ static uint16_t GetCanalCallback(CallbackID callback, uint32_t param1, uint32_t 
  */
 uint GetCanalSpriteOffset(CanalFeature feature, TileIndex tile, uint cur_offset)
 {
-	if (HasBit(_water_feature[feature].callback_mask, CBM_CANAL_SPRITE_OFFSET)) {
+	if (_water_feature[feature].callback_mask.Test(CanalCallbackMask::SpriteOffset)) {
 		uint16_t cb = GetCanalCallback(CBID_CANALS_SPRITE_OFFSET, cur_offset, 0, feature, tile);
 		if (cb != CALLBACK_FAILED) return cur_offset + cb;
 	}

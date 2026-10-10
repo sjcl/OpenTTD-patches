@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file script_cargomonitor.hpp Everything to monitor cargo pickup and deliveries by companies. */
@@ -51,7 +51,7 @@ public:
 	 * @return Amount of delivered cargo of the given cargo type to the given town by the given company since the last call, or
 	 * \c -1 if a parameter is out-of-bound.
 	 */
-	static SQInteger GetTownDeliveryAmount(ScriptCompany::CompanyID company, CargoID cargo, TownID town_id, bool keep_monitoring);
+	static SQInteger GetTownDeliveryAmount(ScriptCompany::CompanyID company, CargoType cargo, TownID town_id, bool keep_monitoring);
 
 	/**
 	 * Get the amount of cargo delivered to an industry by a company since the last query, and update the monitoring state.
@@ -62,7 +62,7 @@ public:
 	 * @return Amount of delivered cargo of the given cargo type to the given industry by the given company since the last call, or
 	 * \c -1 if a parameter is out-of-bound.
 	 */
-	static SQInteger GetIndustryDeliveryAmount(ScriptCompany::CompanyID company, CargoID cargo, IndustryID industry_id, bool keep_monitoring);
+	static SQInteger GetIndustryDeliveryAmount(ScriptCompany::CompanyID company, CargoType cargo, IndustryID industry_id, bool keep_monitoring);
 
 	/**
 	 * Get the amount of cargo picked up (and delivered) from a town by a company since the last query, and update the monitoring state.
@@ -74,7 +74,7 @@ public:
 	 * \c -1 if a parameter is out-of-bound.
 	 * @note Amounts of picked-up cargo are added during final delivery of it, to prevent users from getting credit for picking up without delivering it.
 	 */
-	static SQInteger GetTownPickupAmount(ScriptCompany::CompanyID company, CargoID cargo, TownID town_id, bool keep_monitoring);
+	static SQInteger GetTownPickupAmount(ScriptCompany::CompanyID company, CargoType cargo, TownID town_id, bool keep_monitoring);
 
 	/**
 	 * Get the amount of cargo picked up (and delivered) from an industry by a company since the last query, and update the monitoring state.
@@ -86,7 +86,7 @@ public:
 	 * \c -1 if a parameter is out-of-bound.
 	 * @note Amounts of picked-up cargo are added during final delivery of it, to prevent users from getting credit for picking up without delivering it.
 	 */
-	static SQInteger GetIndustryPickupAmount(ScriptCompany::CompanyID company, CargoID cargo, IndustryID industry_id, bool keep_monitoring);
+	static SQInteger GetIndustryPickupAmount(ScriptCompany::CompanyID company, CargoType cargo, IndustryID industry_id, bool keep_monitoring);
 
 	/** Stop monitoring everything. */
 	static void StopAllMonitoring();

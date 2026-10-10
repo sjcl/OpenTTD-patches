@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file 8bpp_base.cpp Implementation of the base for all 8 bpp blitters. */
@@ -30,21 +30,21 @@ void *Blitter_8bppBase::MoveTo(void *video, int x, int y)
 	return (uint8_t *)video + x + y * this->GetScreenPitch();
 }
 
-void Blitter_8bppBase::SetPixel(void *video, int x, int y, uint8_t colour)
+void Blitter_8bppBase::SetPixel(void *video, int x, int y, PixelColour colour)
 {
-	*((uint8_t *)video + x + y * this->GetScreenPitch()) = colour;
+	*((uint8_t *)video + x + y * this->GetScreenPitch()) = colour.p;
 }
 
-void Blitter_8bppBase::SetPixel32(void *video, int x, int y, uint8_t colour, uint32_t colour32)
+void Blitter_8bppBase::SetPixel32(void *video, int x, int y, PixelColour colour, uint32_t colour32)
 {
 	this->Blitter_8bppBase::SetPixel(video, x, y, colour);
 }
 
-void Blitter_8bppBase::DrawLine(void *video, int x, int y, int x2, int y2, int screen_width, int screen_height, uint8_t colour, int width, int dash)
+void Blitter_8bppBase::DrawLine(void *video, int x, int y, int x2, int y2, int screen_width, int screen_height, PixelColour colour, int width, int dash)
 {
 	const int screen_pitch = this->GetScreenPitch();
 	this->DrawLineGeneric(x, y, x2, y2, screen_width, screen_height, width, dash, [=](int x, int y) {
-		*((uint8_t *)video + x + y * screen_pitch) = colour;
+		*((uint8_t *)video + x + y * screen_pitch) = colour.p;
 	});
 }
 
@@ -72,16 +72,16 @@ void Blitter_8bppBase::SetRectNoD7(void *video, int x, int y, const uint8_t *col
 	} while (--lines);
 }
 
-void Blitter_8bppBase::DrawRect(void *video, int width, int height, uint8_t colour)
+void Blitter_8bppBase::DrawRect(void *video, int width, int height, PixelColour colour)
 {
 	const int screen_pitch = this->GetScreenPitch();
 	do {
-		memset(video, colour, width);
+		memset(video, colour.p, width);
 		video = (uint8_t *)video + screen_pitch;
 	} while (--height);
 }
 
-void Blitter_8bppBase::DrawRectAt(void *video, int x, int y, int width, int height, uint8_t colour)
+void Blitter_8bppBase::DrawRectAt(void *video, int x, int y, int width, int height, PixelColour colour)
 {
 	this->Blitter_8bppBase::DrawRect((uint8_t *)video + x + y * this->GetScreenPitch(), width, height, colour);
 }
@@ -197,5 +197,5 @@ void Blitter_8bppBase::PaletteAnimate(const Palette &)
 
 Blitter::PaletteAnimation Blitter_8bppBase::UsePaletteAnimation()
 {
-	return Blitter::PALETTE_ANIMATION_VIDEO_BACKEND;
+	return Blitter::PaletteAnimation::VideoBackend;
 }

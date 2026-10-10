@@ -22,6 +22,8 @@ STR_TRANSPARENT_LOADING_TOOLTIP                                 :{BLACK}Transpar
 STR_LINKGRAPH_STATS_TOOLTIP_TIME_EXTENSION_GENERAL              :{}Temps de trajet moyen{NBSP}: {STRING}
 STR_LINKGRAPH_STATS_TOOLTIP_CAPACITY                            :{}Capacité{NBSP}: {CARGO_LONG}
 
+STR_BUILD_SIGNAL_TOGGLE_ADVANCED_SIGNAL_TOOLTIP                 :{BLACK}Basculer l'affichage des types de signaux avancés
+
 # Tracerestrict GUI
 
 # Programmable Pre-Signals
@@ -107,3 +109,17 @@ STR_COMPANY_PASSWORD_MAKE_DEFAULT_TOOLTIP                       :{BLACK}Utiliser
 STR_COMPANY_VIEW_PASSWORD                                       :{BLACK}Mot de passe
 STR_COMPANY_VIEW_PASSWORD_TOOLTIP                               :{BLACK}Permet de protéger par mot de passe votre compagnie pour empêcher des utilisateurs non autorisés de rejoindre
 STR_COMPANY_VIEW_SET_PASSWORD                                   :{BLACK}Choisir le mot de passe de la compagnie
+
+# JSON messages
+
+STR_CONFIG_SETTING_BETTER_TOWN_PLACEMENT                        :Meilleur emplacement pour les villes
+STR_CONFIG_SETTING_BETTER_TOWN_PLACEMENT_HELPTEXT               :Lors de la construction d'une ville, recherche dans le voisinage un endroit plus propice. Privilégie les vallées et endroits proche de l'eau.
+STR_CONFIG_SETTING_BETTER_TOWN_PLACEMENT_RADIUS                 :Rayon dans lequel rechercher un meilleur emplacement : {STRING}
+
+STR_INTRO_NEWGRF_SETTINGS                                       :{BLACK}Paramètres NewGRF
+STR_INTRO_AI_SETTINGS                                           :{BLACK}Configuration des IAs
+STR_INTRO_GAMESCRIPT_SETTINGS                                   :{BLACK}Configuration du script de jeu
+STR_INTRO_TOOLTIP_NEWGRF_SETTINGS                               :{BLACK}Ouvrir la configuration des NewGRF
+STR_INTRO_TOOLTIP_AI_SETTINGS                                   :{BLACK}Ouvrir la configuration des IAs
+STR_INTRO_TOOLTIP_GAMESCRIPT_SETTINGS                           :{BLACK}Ouvrir la configuration du script de jeu
+STR_INTRO_CAPTION_TRADITIONAL                                   :{WHITE}OpenTTD {REV}

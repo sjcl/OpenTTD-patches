@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file sdl_s.h Base for playing sound via SDL. */
@@ -24,8 +24,9 @@ public:
 /** Factory for the SDL sound driver. */
 class FSoundDriver_SDL : public DriverFactoryBase {
 public:
-	FSoundDriver_SDL() : DriverFactoryBase(Driver::DT_SOUND, 5, "sdl", "SDL Sound Driver (param hz,samples)") {}
-	Driver *CreateInstance() const override { return new SoundDriver_SDL(); }
+	/** Create the factory. */
+	FSoundDriver_SDL() : DriverFactoryBase(Driver::Type::Sound, 5, "sdl", "SDL Sound Driver (param hz,samples)") {}
+	std::unique_ptr<Driver> CreateInstance() const override { return std::make_unique<SoundDriver_SDL>(); }
 };
 
 #endif /* SOUND_SDL_H */

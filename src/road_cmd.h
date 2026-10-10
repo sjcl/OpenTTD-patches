@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file road_cmd.h Road related functions. */
@@ -12,8 +12,22 @@
 
 #include "direction_type.h"
 #include "road_type.h"
+#include "command_type.h"
+#include "town_type.h"
 
 void DrawRoadDepotSprite(int x, int y, DiagDirection dir, RoadType rt);
-void UpdateNearestTownForRoadTiles(bool invalidate);
+bool UpdateNearestTownForRoadTiles(bool invalidate);
+
+enum class BuildRoadFlags : uint8_t {
+	None                  = 0,         ///< No flag set.
+	NoCustomBridgeHeads   = (1U << 0), ///< Disable custom bridge heads.
+};
+DECLARE_ENUM_AS_BIT_SET(BuildRoadFlags)
+
+DEF_CMD_TUPLE(Commands::BuildRoadLong,   CmdBuildLongRoad,  CMD_DEITY | CMD_NO_WATER | CMD_AUTO, CommandType::LandscapeConstruction, CmdDataT<TileIndex, RoadType, Axis, DisallowedRoadDirections, bool, bool, bool>)
+DEF_CMD_TUPLE(Commands::RemoveRoadLong,  CmdRemoveLongRoad,              CMD_NO_TEST | CMD_AUTO, CommandType::LandscapeConstruction, CmdDataT<TileIndex, RoadType, Axis, bool, bool>) // towns may disallow removing road bits (as they are connected) in test, but in exec they're removed and thus removing is allowed.
+DEF_CMD_TUPLE(Commands::BuildRoad,       CmdBuildRoad,      CMD_DEITY | CMD_NO_WATER | CMD_AUTO, CommandType::LandscapeConstruction, CmdDataT<RoadBits, RoadType, DisallowedRoadDirections, TownID, BuildRoadFlags>)
+DEF_CMD_TUPLE(Commands::BuildRoadDepot,  CmdBuildRoadDepot,             CMD_NO_WATER | CMD_AUTO, CommandType::LandscapeConstruction, CmdDataT<RoadType, DiagDirection>)
+DEF_CMD_TUPLE(Commands::ConvertRoad,     CmdConvertRoad,                                     {}, CommandType::LandscapeConstruction, CmdDataT<TileIndex, RoadType, bool>)
 
 #endif /* ROAD_CMD_H */

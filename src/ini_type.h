@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file ini_type.h Types related to reading/writing '*.ini' files. */
@@ -16,10 +16,10 @@
 #include <optional>
 
 /** Types of groups */
-enum IniGroupType {
-	IGT_VARIABLES = 0, ///< Values of the form "landscape = hilly".
-	IGT_LIST      = 1, ///< A list of values, separated by \n and terminated by the next group block.
-	IGT_SEQUENCE  = 2, ///< A list of uninterpreted lines, terminated by the next group block.
+enum class IniGroupType : uint8_t {
+	Variables, ///< Values of the form "landscape = hilly".
+	List, ///< A list of values, separated by \n and terminated by the next group block.
+	Sequence, ///< A list of uninterpreted lines, terminated by the next group block.
 };
 
 /** A single "line" in an ini file. */
@@ -51,7 +51,7 @@ struct IniGroup {
 
 /** Ini file that only supports loading. */
 struct IniLoadFile {
-	using IniGroupNameList = std::initializer_list<std::string_view>;
+	using IniGroupNameList = std::initializer_list<const std::string_view>;
 
 	std::list<IniGroup> groups; ///< all groups in the ini
 	std::string comment;                  ///< last comment in file
@@ -80,11 +80,9 @@ struct IniLoadFile {
 
 	/**
 	 * Report an error about the file contents.
-	 * @param pre    Prefix text of the \a buffer part.
-	 * @param buffer Part of the file with the error.
-	 * @param post   Suffix text of the \a buffer part.
+	 * @param message The message to show.
 	 */
-	virtual void ReportFileError(const char * const pre, const char * const buffer, const char * const post) = 0;
+	virtual void ReportFileError(std::string_view message) = 0;
 };
 
 /** Ini file that supports both loading and saving. */
@@ -94,7 +92,7 @@ struct IniFile : IniLoadFile {
 	bool SaveToDisk(const std::string &filename);
 
 	std::optional<FileHandle> OpenFile(const std::string &filename, Subdirectory subdir, size_t *size) override;
-	void ReportFileError(const char * const pre, const char * const buffer, const char * const post) override;
+	void ReportFileError(std::string_view message) override;
 };
 
 #endif /* INI_TYPE_H */

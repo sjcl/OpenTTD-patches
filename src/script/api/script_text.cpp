@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file script_text.cpp Implementation of ScriptText. */
@@ -16,13 +16,16 @@
 #include "../script_fatalerror.hpp"
 #include "../script_instance.hpp"
 #include "script_log.hpp"
-#include "../../table/control_codes.h"
 #include "../../core/format.hpp"
-
-#include "table/strings.h"
+#include "../../core/string_consumer.hpp"
+#include "../../table/control_codes.h"
 
 #include "../../safeguards.h"
 
+EncodedString RawText::GetEncodedText() const
+{
+	return ::GetEncodedRawString(this->text);
+}
 
 ScriptText::ScriptText(HSQUIRRELVM vm)
 {
@@ -36,7 +39,7 @@ ScriptText::ScriptText(HSQUIRRELVM vm)
 	if (SQ_FAILED(sq_getinteger(vm, 2, &sqstring))) {
 		throw sq_throwerror(vm, "First argument must be a valid StringID");
 	}
-	this->string = sqstring;
+	this->string = StringIndexInTab(sqstring);
 
 	/* The rest of the parameters must be arguments. */
 	for (int i = 0; i < nparam - 1; i++) {
@@ -55,14 +58,14 @@ ScriptText::ScriptText(HSQUIRRELVM vm)
 
 SQInteger ScriptText::_SetParam(int parameter, HSQUIRRELVM vm)
 {
-	if (parameter >= SCRIPT_TEXT_MAX_PARAMETERS) return SQ_ERROR;
+	if (static_cast<size_t>(parameter) >= std::size(this->param)) this->param.resize(parameter + 1);
 
 	switch (sq_gettype(vm, -1)) {
 		case OT_STRING: {
-			const SQChar *value;
-			sq_getstring(vm, -1, &value);
+			std::string_view view;
+			sq_getstring(vm, -1, view);
 
-			this->param[parameter] = StrMakeValid(value);
+			this->param[parameter] = StrMakeValid(view);
 			break;
 		}
 
@@ -82,7 +85,7 @@ SQInteger ScriptText::_SetParam(int parameter, HSQUIRRELVM vm)
 
 			/* Validate if it is a GSText instance */
 			sq_pushroottable(vm);
-			sq_pushstring(vm, "GSText", -1);
+			sq_pushstring(vm, "GSText");
 			sq_get(vm, -2);
 			sq_pushobject(vm, instance);
 			if (sq_instanceof(vm) != SQTrue) return SQ_ERROR;
@@ -97,10 +100,13 @@ SQInteger ScriptText::_SetParam(int parameter, HSQUIRRELVM vm)
 			break;
 		}
 
+		case OT_NULL:
+			this->param[parameter] = {};
+			break;
+
 		default: return SQ_ERROR;
 	}
 
-	if (this->paramc <= parameter) this->paramc = parameter + 1;
 	return 0;
 }
 
@@ -111,7 +117,6 @@ SQInteger ScriptText::SetParam(HSQUIRRELVM vm)
 	SQInteger k;
 	sq_getinteger(vm, 2, &k);
 
-	if (k > SCRIPT_TEXT_MAX_PARAMETERS) return SQ_ERROR;
 	if (k < 1) return SQ_ERROR;
 	k--;
 
@@ -121,7 +126,7 @@ SQInteger ScriptText::SetParam(HSQUIRRELVM vm)
 SQInteger ScriptText::AddParam(HSQUIRRELVM vm)
 {
 	SQInteger res;
-	res = this->_SetParam(this->paramc, vm);
+	res = this->_SetParam(static_cast<int>(std::size(this->param)), vm);
 	if (res != 0) return res;
 
 	/* Push our own instance back on top of the stack */
@@ -134,13 +139,15 @@ SQInteger ScriptText::_set(HSQUIRRELVM vm)
 	int32_t k;
 
 	if (sq_gettype(vm, 2) == OT_STRING) {
-		const SQChar *key_string;
-		sq_getstring(vm, 2, &key_string);
+		std::string_view view;
+		sq_getstring(vm, 2, view);
 
-		std::string str = StrMakeValid(key_string);
-		if (!str.starts_with("param_") || str.size() > 8) return SQ_ERROR;
+		std::string str = StrMakeValid(view);
+		if (!str.starts_with("param_")) return SQ_ERROR;
 
-		k = stoi(str.substr(6));
+		auto key = ParseInteger<int32_t>(str.substr(6));
+		if (!key.has_value()) return SQ_ERROR;
+		k = *key;
 	} else if (sq_gettype(vm, 2) == OT_INTEGER) {
 		SQInteger key;
 		sq_getinteger(vm, 2, &key);
@@ -149,189 +156,142 @@ SQInteger ScriptText::_set(HSQUIRRELVM vm)
 		return SQ_ERROR;
 	}
 
-	if (k > SCRIPT_TEXT_MAX_PARAMETERS) return SQ_ERROR;
 	if (k < 1) return SQ_ERROR;
 	k--;
 
 	return this->_SetParam(k, vm);
 }
 
-std::string ScriptText::GetEncodedText()
+/**
+ * Set the number of padding parameters to use, for compatibility with old scripts.
+ * This is called during RegisterGameTranslation.
+ */
+void ScriptText::SetPadParameterCount(HSQUIRRELVM vm)
 {
-	int param_count = 0;
-	std::string result;
-	auto output = std::back_inserter(result);
-	if (this->GetActiveInstance()->IsTextParamMismatchAllowed()) {
-		static StringIDList seen_ids;
-		seen_ids.clear();
-		this->_GetEncodedTextTraditional(output, param_count, seen_ids);
-	} else {
-		static ScriptTextList seen_texts;
-		seen_texts.clear();
-		ParamList params;
-		this->_FillParamList(params, seen_texts);
-		this->_GetEncodedText(output, param_count, params, true);
-	}
-	if (param_count > SCRIPT_TEXT_MAX_PARAMETERS) throw Script_FatalError(fmt::format("{}: Too many parameters", GetGameStringName(this->string)));
-	return result;
-}
+	ScriptText::pad_parameter_count = 0;
 
-void ScriptText::_TextParamError(std::string msg)
-{
-	if (this->GetActiveInstance()->IsTextParamMismatchAllowed()) {
-		ScriptLog::LogOnce(ScriptLogTypes::LOG_ERROR, std::move(msg));
-	} else {
-		throw Script_FatalError(std::move(msg));
-	}
-}
-
-void ScriptText::_GetEncodedTextTraditional(std::back_insert_iterator<std::string> &output, int &param_count, StringIDList &seen_ids)
-{
-	const std::string &name = GetGameStringName(this->string);
-
-	if (std::find(seen_ids.begin(), seen_ids.end(), this->string) != seen_ids.end()) throw Script_FatalError(fmt::format("{}: Circular reference detected", name));
-	seen_ids.push_back(this->string);
-
-	Utf8Encode(output, SCC_ENCODED);
-	fmt::format_to(output, "{:X}", this->string);
-
-	auto write_param_fallback = [&](int idx) {
-		if (std::holds_alternative<ScriptTextRef>(this->param[idx])) {
-			int count = 1; // 1 because the string id is included in consumed parameters
-			fmt::format_to(output, ":");
-			std::get<ScriptTextRef>(this->param[idx])->_GetEncodedTextTraditional(output, count, seen_ids);
-			param_count += count;
-		} else if (std::holds_alternative<SQInteger>(this->param[idx])) {
-			fmt::format_to(output, ":{:X}", std::get<SQInteger>(this->param[idx]));
-			param_count++;
-		} else {
-			/* Fallback value */
-			fmt::format_to(output, ":0");
-			param_count++;
-		}
-	};
-
-	const StringParams &params = GetGameStringParams(this->string);
-	int cur_idx = 0;
-
-	for (const StringParam &cur_param : params) {
-		if (cur_idx >= this->paramc) {
-			this->_TextParamError(fmt::format("{}: Not enough parameters", name));
-			break;
-		}
-
-		switch (cur_param.type) {
-			case StringParam::RAW_STRING:
-				if (!std::holds_alternative<std::string>(this->param[cur_idx])) {
-					this->_TextParamError(fmt::format("{}: Parameter {} expects a raw string", name, cur_idx));
-					write_param_fallback(cur_idx++);
-					break;
-				}
-				fmt::format_to(output, ":\"{}\"", std::get<std::string>(this->param[cur_idx++]));
-				param_count++;
-				break;
-
-			case StringParam::STRING: {
-				if (!std::holds_alternative<ScriptTextRef>(this->param[cur_idx])) {
-					this->_TextParamError(fmt::format("{}: Parameter {} expects a substring", name, cur_idx));
-					write_param_fallback(cur_idx++);
-					break;
-				}
-				int count = 1; // 1 because the string id is included in consumed parameters
-				fmt::format_to(output, ":");
-				std::get<ScriptTextRef>(this->param[cur_idx++])->_GetEncodedTextTraditional(output, count, seen_ids);
-				if (count != cur_param.consumes) {
-					this->_TextParamError(fmt::format("{}: Parameter {} substring consumes {}, but expected {} to be consumed", name, cur_idx, count - 1, cur_param.consumes - 1));
-				}
-				param_count += count;
-				break;
+	SQInteger top = sq_gettop(vm);
+	sq_pushroottable(vm);
+	sq_pushstring(vm, "GSText");
+	if (!SQ_FAILED(sq_get(vm, -2))) {
+		sq_pushstring(vm, "SCRIPT_TEXT_MAX_PARAMETERS");
+		if (!SQ_FAILED(sq_get(vm, -2))) {
+			SQInteger value;
+			if (!SQ_FAILED(sq_getinteger(vm, -1, &value))) {
+				ScriptText::pad_parameter_count = value;
 			}
-
-			default:
-				if (cur_idx + cur_param.consumes > this->paramc) {
-					this->_TextParamError(fmt::format("{}: Not enough parameters", name));
-				}
-				for (int i = 0; i < cur_param.consumes && cur_idx < this->paramc; i++) {
-					if (!std::holds_alternative<SQInteger>(this->param[cur_idx])) {
-						this->_TextParamError(fmt::format("{}: Parameter {} expects an integer", name, cur_idx));
-						write_param_fallback(cur_idx++);
-						continue;
-					}
-					fmt::format_to(output, ":{:X}", std::get<SQInteger>(this->param[cur_idx++]));
-					param_count++;
-				}
-				break;
 		}
 	}
-
-	for (int i = cur_idx; i < this->paramc; i++) {
-		write_param_fallback(i);
-	}
-
-	seen_ids.pop_back();
+	sq_settop(vm, top);
 }
 
-void ScriptText::_FillParamList(ParamList &params, ScriptTextList &seen_texts)
+EncodedString ScriptText::GetEncodedText() const
+{
+	static ScriptTextList seen_texts;
+	seen_texts.clear();
+	ParamList params;
+	int param_count = 0;
+	format_buffer result;
+	this->_FillParamList(params, seen_texts);
+	this->_GetEncodedText(result, param_count, params, true);
+	return ::EncodedString{result.to_string()};
+}
+
+void ScriptText::_FillParamList(ParamList &params, ScriptTextList &seen_texts) const
 {
 	if (std::ranges::find(seen_texts, this) != seen_texts.end()) throw Script_FatalError(fmt::format("{}: Circular reference detected", GetGameStringName(this->string)));
 	seen_texts.push_back(this);
 
-	for (int i = 0; i < this->paramc; i++) {
-		Param *p = &this->param[i];
-		params.emplace_back(this->string, i, p);
-		if (!std::holds_alternative<ScriptTextRef>(*p)) continue;
-		std::get<ScriptTextRef>(*p)->_FillParamList(params, seen_texts);
+	for (int idx = 0; const Param &p : this->param) {
+		params.emplace_back(this->string, idx, &p);
+		++idx;
+		if (!std::holds_alternative<ScriptTextRef>(p)) continue;
+		std::get<ScriptTextRef>(p)->_FillParamList(params, seen_texts);
 	}
 
 	seen_texts.pop_back();
 
-	/* Fill with dummy parameters to match FormatString() behaviour. */
-	if (seen_texts.empty()) {
-		static Param dummy = 0;
-		int nb_extra = SCRIPT_TEXT_MAX_PARAMETERS - (int)params.size();
-		for (int i = 0; i < nb_extra; i++)
-			params.emplace_back(-1, i, &dummy);
+	/* Fill with dummy parameters to match old FormatString() compatibility behaviour. */
+	if (seen_texts.empty() && ScriptText::pad_parameter_count > 0) {
+		static Param dummy = {};
+		for (int idx = static_cast<int>(std::size(this->param)); idx < ScriptText::pad_parameter_count; ++idx) {
+			params.emplace_back(StringIndexInTab(-1), idx, &dummy);
+		}
 	}
 }
 
-void ScriptText::ParamCheck::Encode(std::back_insert_iterator<std::string> &output, const char *cmd)
+void ScriptText::ParamCheck::Encode(format_target &output, std::string_view cmd)
 {
-	if (this->cmd == nullptr) this->cmd = cmd;
+	if (this->cmd.empty()) this->cmd = cmd;
 	if (this->used) return;
 
 	struct visitor {
-		std::back_insert_iterator<std::string> &output;
+		format_target &output;
 
-		void operator()(const std::string &value) { fmt::format_to(this->output, ":\"{}\"", value); }
-		void operator()(const SQInteger &value) { fmt::format_to(this->output, ":{:X}", value); }
+		void operator()(const std::monostate &) { }
+
+		void operator()(const std::string &value)
+		{
+			this->output.push_back_utf8(SCC_ENCODED_STRING);
+			AppendStrMakeValidInPlace(this->output, value, {StringValidationSetting::ReplaceWithQuestionMark, StringValidationSetting::AllowNewline, StringValidationSetting::ReplaceTabCrNlWithSpace});
+		}
+
+		void operator()(const StringParameterDataStringView &value)
+		{
+			this->output.push_back_utf8(SCC_ENCODED_STRING);
+			AppendStrMakeValidInPlace(this->output, value.view, {StringValidationSetting::ReplaceWithQuestionMark, StringValidationSetting::AllowNewline, StringValidationSetting::ReplaceTabCrNlWithSpace});
+		}
+
+		void operator()(const SQInteger &value)
+		{
+			this->output.push_back_utf8(SCC_ENCODED_NUMERIC);
+			/* Sign-extend the value, then store as unsigned */
+			this->output.format("{:X}", static_cast<uint64_t>(static_cast<int64_t>(value)));
+		}
+
 		void operator()(const ScriptTextRef &value)
 		{
-			fmt::format_to(this->output, ":");
-			Utf8Encode(this->output, SCC_ENCODED);
-			fmt::format_to(this->output, "{:X}", value->string);
+			this->output.push_back_utf8(SCC_ENCODED);
+			this->output.format("{:X}", value->string);
 		}
 	};
 
+	output.push_back_utf8(SCC_RECORD_SEPARATOR);
 	std::visit(visitor{output}, *this->param);
 	this->used = true;
 }
 
-void ScriptText::_GetEncodedText(std::back_insert_iterator<std::string> &output, int &param_count, ParamSpan args, bool first)
+void ScriptText::_GetEncodedText(format_target &output, int &param_count, ParamSpan args, bool first) const
 {
 	const std::string &name = GetGameStringName(this->string);
 
 	if (first) {
-		Utf8Encode(output, SCC_ENCODED);
-		fmt::format_to(output, "{:X}", this->string);
+		output.push_back_utf8(SCC_ENCODED);
+		output.format("{:X}", this->string);
 	}
 
 	const StringParams &params = GetGameStringParams(this->string);
+
+	auto log_error = [&](std::string msg) {
+		if (this->GetActiveInstance().IsTextParamMismatchAllowed()) {
+			ScriptLog::LogOnce(ScriptLogTypes::LOG_ERROR, std::move(msg));
+		} else {
+			ScriptLog::Error(std::move(msg));
+		}
+	};
+	auto log_warning = [&](std::string msg) {
+		if (this->GetActiveInstance().IsTextParamMismatchAllowed()) {
+			ScriptLog::LogOnce(ScriptLogTypes::LOG_WARNING, std::move(msg));
+		} else {
+			ScriptLog::Warning(std::move(msg));
+		}
+	};
 
 	size_t idx = 0;
 	auto get_next_arg = [&]() {
 		if (idx >= args.size()) throw Script_FatalError(fmt::format("{}({}): Not enough parameters", name, param_count + 1));
 		ParamCheck &pc = args[idx++];
-		if (pc.owner != this->string) ScriptLog::Warning(fmt::format("{}({}): Consumes {}({})", name, param_count + 1, GetGameStringName(pc.owner), pc.idx + 1));
+		if (pc.owner != this->string) log_warning(fmt::format("{}({}): Consumes {}({})", name, param_count + 1, GetGameStringName(pc.owner), pc.idx + 1));
 		return &pc;
 	};
 	auto skip_args = [&](size_t nb) { idx += nb; };
@@ -348,7 +308,7 @@ void ScriptText::_GetEncodedText(std::back_insert_iterator<std::string> &output,
 					ParamCheck &p = *get_next_arg();
 					p.Encode(output, cur_param.cmd);
 					if (p.cmd != cur_param.cmd) throw 1;
-					if (!std::holds_alternative<std::string>(*p.param)) ScriptLog::Error(fmt::format("{}({}): {{{}}} expects a raw string", name, param_count + 1, cur_param.cmd));
+					if (!std::holds_alternative<std::string>(*p.param)) log_error(fmt::format("{}({}): {{{}}} expects a raw string", name, param_count + 1, cur_param.cmd));
 					break;
 				}
 
@@ -358,17 +318,19 @@ void ScriptText::_GetEncodedText(std::back_insert_iterator<std::string> &output,
 					p.Encode(output, cur_param.cmd);
 					if (p.cmd != cur_param.cmd) throw 1;
 					if (!std::holds_alternative<ScriptTextRef>(*p.param)) {
-						ScriptLog::Error(fmt::format("{}({}): {{{}}} expects a GSText", name, param_count + 1, cur_param.cmd));
+						log_error(fmt::format("{}({}): {{{}}} expects a GSText", name, param_count + 1, cur_param.cmd));
 						param_count++;
 						continue;
 					}
 					int count = 0;
-					ScriptTextRef &ref = std::get<ScriptTextRef>(*p.param);
+					const ScriptTextRef &ref = std::get<ScriptTextRef>(*p.param);
 					ref->_GetEncodedText(output, count, args.subspan(idx), false);
 					if (++count != cur_param.consumes) {
-						ScriptLog::Warning(fmt::format("{}({}): {{{}}} expects {} to be consumed, but {} consumes {}", name, param_count + 1, cur_param.cmd, cur_param.consumes - 1, GetGameStringName(ref->string), count - 1));
+						log_warning(fmt::format("{}({}): {{{}}} expects {} to be consumed, but {} consumes {}", name, param_count + 1, cur_param.cmd, cur_param.consumes - 1, GetGameStringName(ref->string), count - 1));
 						/* Fill missing params if needed. */
-						for (int i = count; i < cur_param.consumes; i++) fmt::format_to(output, ":0");
+						for (int i = count; i < cur_param.consumes; i++) {
+							output.push_back_utf8(SCC_RECORD_SEPARATOR);
+						}
 					}
 					skip_args(cur_param.consumes - 1);
 					break;
@@ -377,22 +339,21 @@ void ScriptText::_GetEncodedText(std::back_insert_iterator<std::string> &output,
 				default:
 					for (int i = 0; i < cur_param.consumes; i++) {
 						ParamCheck &p = *get_next_arg();
-						p.Encode(output, i == 0 ? cur_param.cmd : nullptr);
+						p.Encode(output, i == 0 ? cur_param.cmd : "");
 						if (i == 0 && p.cmd != cur_param.cmd) throw 1;
-						if (!std::holds_alternative<SQInteger>(*p.param)) ScriptLog::Error(fmt::format("{}({}): {{{}}} expects an integer", name, param_count + i + 1, cur_param.cmd));
+						if (!std::holds_alternative<SQInteger>(*p.param)) log_error(fmt::format("{}({}): {{{}}} expects an integer", name, param_count + i + 1, cur_param.cmd));
 					}
 			}
 
 			param_count += cur_param.consumes;
 		} catch (int nb) {
 			param_count += nb;
-			ScriptLog::Warning(fmt::format("{}({}): Invalid parameter", name, param_count));
+			log_warning(fmt::format("{}({}): Invalid parameter", name, param_count));
 		}
 	}
 }
 
-const std::string Text::GetDecodedText()
+std::string Text::GetDecodedText() const
 {
-	::SetDParamStr(0, this->GetEncodedText());
-	return ::GetString(STR_JUST_RAW_STRING);
+	return this->GetEncodedText().GetDecodedString();
 }

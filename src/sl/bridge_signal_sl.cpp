@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file bridge_signal_sl.cpp Code handling saving and loading of data for signal on bridges */
@@ -30,7 +30,7 @@ static void Load_XBSS()
 
 	int index;
 	while ((index = SlIterateArray()) != -1) {
-		LongBridgeSignalStorage &lbss = _long_bridge_signal_sim_map[index];
+		LongBridgeSignalStorage &lbss = _long_bridge_signal_sim_map[TileIndex(index)];
 		SlObjectLoadFiltered(&lbss, slt);
 	}
 }
@@ -41,7 +41,7 @@ static void Save_XBSS()
 
 	for (auto &it : _long_bridge_signal_sim_map) {
 		LongBridgeSignalStorage &lbss = it.second;
-		SlSetArrayIndex(it.first);
+		SlSetArrayIndex(it.first.base());
 		SlObjectSaveFiltered(&lbss, slt);
 	}
 }
@@ -75,8 +75,8 @@ static void Save_XBST()
 }
 
 extern const ChunkHandler bridge_signal_chunk_handlers[] = {
-	{ 'XBSS', Save_XBSS, Load_XBSS, nullptr, nullptr, CH_SPARSE_TABLE },
-	{ 'XBST', Save_XBST, Load_XBST, nullptr, nullptr, CH_TABLE },
+	{ 'XBSS', Save_XBSS, Load_XBSS, nullptr, nullptr, ChunkType::SparseTable },
+	{ 'XBST', Save_XBST, Load_XBST, nullptr, nullptr, ChunkType::Table },
 };
 
 extern const ChunkHandlerTable _bridge_signal_chunk_handlers(bridge_signal_chunk_handlers);

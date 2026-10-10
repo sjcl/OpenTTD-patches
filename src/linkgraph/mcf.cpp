@@ -1,10 +1,16 @@
+/*
+ * This file is part of OpenTTD.
+ * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
+ * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
+ */
+
 /** @file mcf.cpp Definition of Multi-Commodity-Flow solver. */
 
 #include "../stdafx.h"
 #include "../core/math_func.hpp"
 #include "mcf.h"
 #include "../3rdparty/cpp-btree/btree_map.h"
-#include <set>
 
 #include "../safeguards.h"
 
@@ -13,7 +19,7 @@ typedef btree::btree_map<NodeID, Path *> PathViaMap;
 /**
  * This is a priority queue item for Tannotation annotation values and IDs
  */
-template<typename Tannotation>
+template <typename Tannotation>
 class AnnoQueueItem {
 public:
 	typename Tannotation::AnnotationValueType cached_annotation;
@@ -38,7 +44,7 @@ public:
 	 */
 	DistanceAnnotation(NodeID n, bool source = false) : Path(n, source) {}
 
-	bool IsBetter(const DistanceAnnotation *base, uint cap, int free_cap, uint dist) const;
+	bool IsBetter(const DistanceAnnotation *base, uint, int free_cap, uint dist) const;
 
 	/**
 	 * Return the actual value of the annotation, in this case the distance.
@@ -82,7 +88,7 @@ static_assert(std::is_trivially_destructible_v<DistanceAnnotation>);
  * can only decrease or stay the same if you add more edges.
  */
 class CapacityAnnotation final : public Path {
-	int cached_annotation;
+	int cached_annotation = 0;
 
 public:
 	typedef int AnnotationValueType;
@@ -198,7 +204,7 @@ private:
 	LinkGraphJob &job; ///< Link graph job we're working with.
 
 	/** Lookup table for getting NodeIDs from StationIDs. */
-	std::vector<NodeID> station_to_node;
+	TypedIndexContainer<std::vector<NodeID>, StationID> station_to_node;
 
 	/** Current iterator in the shares map. */
 	FlowStat::const_iterator it;
@@ -293,6 +299,7 @@ bool DistanceAnnotation::IsBetter(const DistanceAnnotation *base, uint,
  * Determines if an extension to the given Path with the given parameters is
  * better than this path.
  * @param base Other path.
+ * @param cap Capacity of the edge.
  * @param free_cap Capacity of the new edge to be added to base.
  * @param dist Distance of the new edge.
  * @return True if base + the new edge would be better than the path associated
@@ -312,7 +319,7 @@ bool CapacityAnnotation::IsBetter(const CapacityAnnotation *base, uint cap,
 	}
 }
 
-template<class Tannotation>
+template <class Tannotation>
 struct MultiCommodityFlow::DijkstraState {
 	std::vector<AnnoQueueItem<Tannotation>> anno_queue;
 	std::vector<Tannotation> local_paths;
@@ -334,7 +341,7 @@ struct MultiCommodityFlow::DijkstraState {
  * @param source_node Node where the algorithm starts.
  * @param paths Container for the paths to be calculated.
  */
-template<class Tannotation, class Tedge_iterator>
+template <class Tannotation, class Tedge_iterator>
 void MultiCommodityFlow::Dijkstra(NodeID source_node, PathVector &paths, DijkstraState<Tannotation> &state)
 {
 	const uint size = this->job.Size();
@@ -472,6 +479,7 @@ void MultiCommodityFlow::CleanupPaths(NodeID source_id, PathVector &paths)
  * @param accuracy Accuracy of the calculation.
  * @param max_saturation If < UINT_MAX only push flow up to the given
  *                       saturation, otherwise the path can be "overloaded".
+ * @return The new flow.
  */
 uint MultiCommodityFlow::PushFlow(DemandAnnotation &anno, Path *path, uint min_step_size, uint accuracy,
 		uint max_saturation)
@@ -514,7 +522,7 @@ void MCF1stPass::EliminateCycle(PathVector &path, Path *cycle_begin, uint flow)
 		cycle_begin->ReduceFlow(flow);
 		if (cycle_begin->GetFlow() == 0) {
 			PathList &node_paths = this->job[cycle_begin->GetParent()->GetNode()].Paths();
-			for (PathList::reverse_iterator i = node_paths.rbegin(); i != node_paths.rend(); ++i) {
+			for (PathList::iterator i = node_paths.begin(); i != node_paths.end(); ++i) {
 				if (*i == cycle_begin) {
 					*i = nullptr;
 					break;
@@ -549,16 +557,15 @@ bool MCF1stPass::EliminateCycles(PathVector &path, NodeID origin_id, NodeID next
 		PathList &paths = this->job[next_id].Paths();
 		PathViaMap next_hops;
 		uint holes = 0;
-		for (PathList::reverse_iterator i = paths.rbegin(); i != paths.rend();) {
+		for (PathList::iterator i = paths.begin(); i != paths.end();) {
 			Path *new_child = *i;
-			if (new_child) {
-				uint new_flow = new_child->GetFlow();
-				if (new_flow == 0) break;
+			if (new_child != nullptr) {
 				if (new_child->GetOrigin() == origin_id) {
 					PathViaMap::iterator via_it = next_hops.find(new_child->GetNode());
 					if (via_it == next_hops.end()) {
 						next_hops[new_child->GetNode()] = new_child;
 					} else {
+						uint new_flow = new_child->GetFlow();
 						Path *child = via_it->second;
 						child->AddFlow(new_flow);
 						new_child->ReduceFlow(new_flow);
@@ -572,7 +579,7 @@ bool MCF1stPass::EliminateCycles(PathVector &path, NodeID origin_id, NodeID next
 			}
 			++i;
 		}
-		if (holes >= paths.size() / 8) {
+		if (holes > paths.size() / 4) {
 			/* remove any holes */
 			paths.erase(std::remove(paths.begin(), paths.end(), nullptr), paths.end());
 		}

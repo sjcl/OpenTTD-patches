@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file yapf_destrail.hpp Determining the destination for rail vehicles. */
@@ -22,12 +22,12 @@ public:
 	void SetDestination(const Train *v, bool override_rail_type = false)
 	{
 		this->compatible_railtypes = v->compatible_railtypes;
-		if (override_rail_type) this->compatible_railtypes |= GetRailTypeInfo(v->railtype)->compatible_railtypes;
+		if (override_rail_type) this->compatible_railtypes.Set(GetAllCompatibleRailTypes(v->railtypes));
 	}
 
 	bool IsCompatibleRailType(RailType rt)
 	{
-		return HasBit(this->compatible_railtypes, rt);
+		return this->compatible_railtypes.Test(rt);
 	}
 
 	RailTypes GetCompatibleRailTypes() const
@@ -43,28 +43,25 @@ public:
 	typedef typename Types::NodeList::Item Node; ///< this will be our node type
 	typedef typename Node::Key Key; ///< key to hash tables
 
-	/** to access inherited path finder */
+	/** @copydoc CYapfBaseT::Yapf */
 	Tpf &Yapf()
 	{
 		return *static_cast<Tpf *>(this);
 	}
 
-	/** Called by YAPF to detect if node ends in the desired destination */
+	/** @copydoc CYapfBaseT::PfDetectDestinationFunc */
 	inline bool PfDetectDestination(Node &n)
 	{
 		return this->PfDetectDestination(n.GetLastTile(), n.GetLastTrackdir());
 	}
 
-	/** Called by YAPF to detect if node ends in the desired destination */
-	inline bool PfDetectDestination(TileIndex tile, Trackdir)
+	/** @copydoc CYapfBaseT::PfDetectDestinationTileFunc */
+	inline bool PfDetectDestination(TileIndex tile, [[maybe_unused]] Trackdir td)
 	{
 		return IsRailDepotTile(tile);
 	}
 
-	/**
-	 * Called by YAPF to calculate cost estimate. Calculates distance to the destination
-	 *  adds it to the actual cost from origin and stores the sum to the Node::estimate
-	 */
+	/** @copydoc CYapfBaseT::PfCalcEstimateFunc */
 	inline bool PfCalcEstimate(Node &n)
 	{
 		n.estimate = n.cost;
@@ -85,29 +82,26 @@ public:
 	typedef typename Node::Key Key; ///< key to hash tables
 	typedef typename Types::TrackFollower TrackFollower; ///< TrackFollower. Need to typedef for gcc 2.95
 
-	/** to access inherited path finder */
+	/** @copydoc CYapfBaseT::Yapf */
 	Tpf &Yapf()
 	{
 		return *static_cast<Tpf *>(this);
 	}
 
-	/** Called by YAPF to detect if node ends in the desired destination */
+	/** @copydoc CYapfBaseT::PfDetectDestinationFunc */
 	inline bool PfDetectDestination(Node &n)
 	{
 		return this->PfDetectDestination(n.GetLastTile(), n.GetLastTrackdir());
 	}
 
-	/** Called by YAPF to detect if node ends in the desired destination */
+	/** @copydoc CYapfBaseT::PfDetectDestinationTileFunc */
 	inline bool PfDetectDestination(TileIndex tile, Trackdir td)
 	{
 		return IsSafeWaitingPosition(Yapf().GetVehicle(), tile, td, true, !TrackFollower::Allow90degTurns()) &&
 				IsWaitingPositionFree(Yapf().GetVehicle(), tile, td, !TrackFollower::Allow90degTurns());
 	}
 
-	/**
-	 * Called by YAPF to calculate cost estimate. Calculates distance to the destination
-	 *  adds it to the actual cost from origin and stores the sum to the Node::estimate.
-	 */
+	/** @copydoc CYapfBaseT::PfCalcEstimateFunc */
 	inline bool PfCalcEstimate(Node &n)
 	{
 		n.estimate = n.cost;
@@ -133,7 +127,7 @@ protected:
 	StationID dest_station_id;
 	bool any_depot;
 
-	/** to access inherited path finder */
+	/** @copydoc CYapfBaseT::Yapf */
 	Tpf &Yapf()
 	{
 		return *static_cast<Tpf *>(this);
@@ -145,7 +139,7 @@ public:
 		this->any_depot = false;
 		switch (v->current_order.GetType()) {
 			case OT_GOTO_WAYPOINT:
-				if (!Waypoint::Get(v->current_order.GetDestination())->IsSingleTile()) {
+				if (!Waypoint::Get(v->current_order.GetDestination().ToStationID())->IsSingleTile()) {
 					/* In case of 'complex' waypoints we need to do a look
 					 * ahead. This look ahead messes a bit about, which
 					 * means that it 'corrupts' the cache. To prevent this
@@ -156,8 +150,8 @@ public:
 				[[fallthrough]];
 
 			case OT_GOTO_STATION:
-				this->dest_tile = CalcClosestStationTile(v->current_order.GetDestination(), v->tile, v->current_order.IsType(OT_GOTO_STATION) ? STATION_RAIL : STATION_WAYPOINT);
-				this->dest_station_id = v->current_order.GetDestination();
+				this->dest_tile = CalcClosestStationTile(v->current_order.GetDestination().ToStationID(), v->GetMovingFront()->tile, v->current_order.IsType(OT_GOTO_STATION) ? StationType::Rail : StationType::RailWaypoint);
+				this->dest_station_id = v->current_order.GetDestination().ToStationID();
 				this->dest_trackdirs = INVALID_TRACKDIR_BIT;
 				break;
 
@@ -168,24 +162,24 @@ public:
 				[[fallthrough]];
 
 			default:
-				this->dest_tile = v->dest_tile;
-				this->dest_station_id = INVALID_STATION;
-				this->dest_trackdirs = GetTileTrackdirBits(v->dest_tile, TRANSPORT_RAIL, 0);
+				this->dest_tile = (v->dest_tile == INVALID_TILE) ? TileIndex{} : v->dest_tile;
+				this->dest_station_id = StationID::Invalid();
+				this->dest_trackdirs = GetTileTrackdirBits(this->dest_tile, TransportType::Rail, 0);
 				break;
 		}
 		this->CYapfDestinationRailBase::SetDestination(v);
 	}
 
-	/** Called by YAPF to detect if node ends in the desired destination */
+	/** @copydoc CYapfBaseT::PfDetectDestinationFunc */
 	inline bool PfDetectDestination(Node &n)
 	{
 		return this->PfDetectDestination(n.GetLastTile(), n.GetLastTrackdir());
 	}
 
-	/** Called by YAPF to detect if node ends in the desired destination */
+	/** @copydoc CYapfBaseT::PfDetectDestinationTileFunc */
 	inline bool PfDetectDestination(TileIndex tile, Trackdir td)
 	{
-		if (this->dest_station_id != INVALID_STATION) {
+		if (this->dest_station_id != StationID::Invalid()) {
 			return HasStationTileRail(tile)
 				&& (GetStationIndex(tile) == this->dest_station_id)
 				&& (GetRailStationTrack(tile) == TrackdirToTrack(td));
@@ -198,31 +192,15 @@ public:
 		return (tile == this->dest_tile) && HasTrackdir(this->dest_trackdirs, td);
 	}
 
-	/**
-	 * Called by YAPF to calculate cost estimate. Calculates distance to the destination
-	 *  adds it to the actual cost from origin and stores the sum to the Node::estimate
-	 */
+	/** @copydoc CYapfBaseT::PfCalcEstimateFunc */
 	inline bool PfCalcEstimate(Node &n)
 	{
-		static const int dg_dir_to_x_offs[] = {-1, 0, 1, 0};
-		static const int dg_dir_to_y_offs[] = {0, 1, 0, -1};
 		if (this->PfDetectDestination(n)) {
 			n.estimate = n.cost;
 			return true;
 		}
 
-		TileIndex tile = n.GetLastTile();
-		DiagDirection exitdir = TrackdirToExitdir(n.GetLastTrackdir());
-		int x1 = 2 * TileX(tile) + dg_dir_to_x_offs[(int)exitdir];
-		int y1 = 2 * TileY(tile) + dg_dir_to_y_offs[(int)exitdir];
-		int x2 = 2 * TileX(this->dest_tile);
-		int y2 = 2 * TileY(this->dest_tile);
-		int dx = abs(x1 - x2);
-		int dy = abs(y1 - y2);
-		int dmin = std::min(dx, dy);
-		int dxy = abs(dx - dy);
-		int d = dmin * YAPF_TILE_CORNER_LENGTH + (dxy - 1) * (YAPF_TILE_LENGTH / 2);
-		n.estimate = n.cost + d;
+		n.estimate = n.cost + OctileDistanceCost(n.GetLastTile(), n.GetLastTrackdir(), this->dest_tile);
 		assert(n.estimate >= n.parent->estimate);
 		return true;
 	}

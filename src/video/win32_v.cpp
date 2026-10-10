@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file win32_v.cpp Implementation of the Windows (GDI) video driver. */
@@ -13,6 +13,7 @@
 #include "../gfx_func.h"
 #include "../os/windows/win32.h"
 #include "../blitter/factory.hpp"
+#include "../core/alloc_func.hpp"
 #include "../core/geometry_func.hpp"
 #include "../core/math_func.hpp"
 #include "../core/random_func.hpp"
@@ -23,11 +24,23 @@
 #include "../window_func.h"
 #include "../framerate_type.h"
 #include "../library_loader.h"
+#include "../core/utf8.hpp"
 #include "win32_v.h"
 #include <windows.h>
 #include <imm.h>
+#include <objbase.h>
 #include <versionhelpers.h>
+#if defined(_MSC_VER) && defined(NTDDI_WIN10_RS4)
+#include <winrt/Windows.UI.ViewManagement.h>
+#endif
 #include <algorithm>
+
+#ifdef WITH_OPENGL
+#include <GL/gl.h>
+#include "../3rdparty/opengl/glext.h"
+#include "../3rdparty/opengl/wglext.h"
+#include "opengl.h"
+#endif /* WITH_OPENGL */
 
 #include "../safeguards.h"
 
@@ -51,10 +64,9 @@ DWORD _imm_props;
 /** Local copy of the palette for use in the drawing thread. */
 static Palette _local_palette;
 
-bool VideoDriver_Win32Base::ClaimMousePointer()
+void VideoDriver_Win32Base::ClaimMousePointer()
 {
 	MyShowCursor(false, true);
-	return true;
 }
 
 struct Win32VkMapping {
@@ -124,11 +136,14 @@ static uint MapWindowsKey(uint sym)
 	return key;
 }
 
-/** Colour depth to use for fullscreen display modes. */
+/**
+ * Colour depth to use for fullscreen display modes.
+ * @return The colour depth in bits per pixel.
+ */
 uint8_t VideoDriver_Win32Base::GetFullscreenBpp()
 {
 	/* Check modes for the relevant fullscreen bpp */
-	return _support8bpp != S8BPP_HARDWARE ? 32 : BlitterFactory::GetCurrentBlitter()->GetScreenDepth();
+	return _support8bpp != Support8bpp::Hardware ? 32 : BlitterFactory::GetCurrentBlitter()->GetScreenDepth();
 }
 
 /**
@@ -150,9 +165,7 @@ bool VideoDriver_Win32Base::MakeWindow(bool full_screen, bool resize)
 	}
 
 	if (full_screen) {
-		DEVMODE settings;
-
-		memset(&settings, 0, sizeof(settings));
+		DEVMODE settings{};
 		settings.dmSize = sizeof(settings);
 		settings.dmFields =
 			DM_BITSPERPEL |
@@ -241,7 +254,12 @@ bool VideoDriver_Win32Base::MakeWindow(bool full_screen, bool resize)
 	return true;
 }
 
-/** Forward key presses to the window system. */
+/**
+ * Forward key presses to the window system.
+ * @param keycode The pressed key code.
+ * @param charcode The pressed char code.
+ * @return Always \c \0 to denote it was handled.
+ */
 static LRESULT HandleCharMsg(uint keycode, char32_t charcode)
 {
 	static char32_t prev_char = 0;
@@ -268,13 +286,19 @@ static LRESULT HandleCharMsg(uint keycode, char32_t charcode)
 	return 0;
 }
 
-/** Should we draw the composition string ourself, i.e is this a normal IME? */
+/**
+ * Should we draw the composition string ourself, i.e is this a normal IME?
+ * @return \c true when the window is at the caret and does not a non-standard UI.
+ */
 static bool DrawIMECompositionString()
 {
 	return (_imm_props & IME_PROP_AT_CARET) && !(_imm_props & IME_PROP_SPECIAL_UI);
 }
 
-/** Set position of the composition window to the caret position. */
+/**
+ * Set position of the composition window to the caret position.
+ * @param hwnd Handle to the window.
+ */
 static void SetCompositionPos(HWND hwnd)
 {
 	HIMC hIMC = ImmGetContext(hwnd);
@@ -296,7 +320,10 @@ static void SetCompositionPos(HWND hwnd)
 	ImmReleaseContext(hwnd, hIMC);
 }
 
-/** Set the position of the candidate window. */
+/**
+ * Set the position of the candidate window.
+ * @param hwnd Handle to the window.
+ */
 static void SetCandidatePos(HWND hwnd)
 {
 	HIMC hIMC = ImmGetContext(hwnd);
@@ -309,7 +336,7 @@ static void SetCandidatePos(HWND hwnd)
 			Point pt = _focused_window->GetCaretPosition();
 			cf.ptCurrentPos.x = _focused_window->left + pt.x;
 			cf.ptCurrentPos.y = _focused_window->top  + pt.y;
-			if (_focused_window->window_class == WC_CONSOLE) {
+			if (_focused_window->window_class == WindowClass::Console) {
 				cf.rcArea.left   = _focused_window->left;
 				cf.rcArea.top    = _focused_window->top;
 				cf.rcArea.right  = _focused_window->left + _focused_window->width;
@@ -330,7 +357,13 @@ static void SetCandidatePos(HWND hwnd)
 	ImmReleaseContext(hwnd, hIMC);
 }
 
-/** Handle WM_IME_COMPOSITION messages. */
+/**
+ * Handle WM_IME_COMPOSITION messages.
+ * @param hwnd The handle to the window.
+ * @param wParam The latest change in the composition.
+ * @param lParam How the composition was changed.
+ * @return Always \0 to denote it was handled.
+ */
 static LRESULT HandleIMEComposition(HWND hwnd, WPARAM wParam, LPARAM lParam)
 {
 	HIMC hIMC = ImmGetContext(hwnd);
@@ -339,14 +372,14 @@ static LRESULT HandleIMEComposition(HWND hwnd, WPARAM wParam, LPARAM lParam)
 		if (lParam & GCS_RESULTSTR) {
 			/* Read result string from the IME. */
 			LONG len = ImmGetCompositionString(hIMC, GCS_RESULTSTR, nullptr, 0); // Length is always in bytes, even in UNICODE build.
-			wchar_t *str = (wchar_t *)_alloca(len + sizeof(wchar_t));
+			TempBufferST<wchar_t, 1024> str(1 + len / sizeof(wchar_t));
 			len = ImmGetCompositionString(hIMC, GCS_RESULTSTR, str, len);
 			str[len / sizeof(wchar_t)] = '\0';
 
 			/* Transmit text to windowing system. */
 			if (len > 0) {
-				HandleTextInput(nullptr, true); // Clear marked string.
-				HandleTextInput(FS2OTTD(str).c_str());
+				HandleTextInput({}, true); // Clear marked string.
+				HandleTextInput(FS2OTTD(str.get()));
 			}
 			SetCompositionPos(hwnd);
 
@@ -357,29 +390,31 @@ static LRESULT HandleIMEComposition(HWND hwnd, WPARAM wParam, LPARAM lParam)
 		if ((lParam & GCS_COMPSTR) && DrawIMECompositionString()) {
 			/* Read composition string from the IME. */
 			LONG len = ImmGetCompositionString(hIMC, GCS_COMPSTR, nullptr, 0); // Length is always in bytes, even in UNICODE build.
-			wchar_t *str = (wchar_t *)_alloca(len + sizeof(wchar_t));
+			TempBufferST<wchar_t, 1024> str(1 + len / sizeof(wchar_t));
 			len = ImmGetCompositionString(hIMC, GCS_COMPSTR, str, len);
 			str[len / sizeof(wchar_t)] = '\0';
 
 			if (len > 0) {
 				static char utf8_buf[1024];
-				convert_from_fs(str, utf8_buf);
+				convert_from_fs(str.get(), utf8_buf);
 
 				/* Convert caret position from bytes in the input string to a position in the UTF-8 encoded string. */
 				LONG caret_bytes = ImmGetCompositionString(hIMC, GCS_CURSORPOS, nullptr, 0);
-				const char *caret = utf8_buf;
-				for (const wchar_t *c = str; *c != '\0' && *caret != '\0' && caret_bytes > 0; c++, caret_bytes--) {
+				Utf8View view(utf8_buf);
+				auto caret = view.begin();
+				const auto end = view.end();
+				for (const wchar_t *c = str.get(); *c != '\0' && caret != end && caret_bytes > 0; c++, caret_bytes--) {
 					/* Skip DBCS lead bytes or leading surrogates. */
 					if (Utf16IsLeadSurrogate(*c)) {
 						c++;
 						caret_bytes--;
 					}
-					Utf8Consume(&caret);
+					++caret;
 				}
 
-				HandleTextInput(utf8_buf, true, caret);
+				HandleTextInput(utf8_buf, true, caret.GetByteOffset());
 			} else {
-				HandleTextInput(nullptr, true);
+				HandleTextInput({}, true);
 			}
 
 			lParam &= ~(GCS_COMPSTR | GCS_COMPATTR | GCS_COMPCLAUSE | GCS_CURSORPOS | GCS_DELTASTART);
@@ -390,20 +425,112 @@ static LRESULT HandleIMEComposition(HWND hwnd, WPARAM wParam, LPARAM lParam)
 	return lParam != 0 ? DefWindowProc(hwnd, WM_IME_COMPOSITION, wParam, lParam) : 0;
 }
 
-/** Clear the current composition string. */
+/**
+ * Clear the current composition string.
+ * @param hwnd Handle to the window to cancel the composition for.
+ */
 static void CancelIMEComposition(HWND hwnd)
 {
 	HIMC hIMC = ImmGetContext(hwnd);
 	if (hIMC != nullptr) ImmNotifyIME(hIMC, NI_COMPOSITIONSTR, CPS_CANCEL, 0);
 	ImmReleaseContext(hwnd, hIMC);
 	/* Clear any marked string from the current edit box. */
-	HandleTextInput(nullptr, true);
+	HandleTextInput({}, true);
+}
+
+#if defined(_MSC_VER) && defined(NTDDI_WIN10_RS4)
+/* We only use WinRT functions on Windows 10 or later. Unfortunately, newer Windows SDKs are now
+ * linking the two functions below directly instead of using dynamic linking as previously.
+ * To avoid any runtime linking errors on Windows 7 or older, we stub in our own dynamic
+ * linking trampoline. */
+
+static LibraryLoader _combase("combase.dll");
+
+extern "C" int32_t __stdcall WINRT_IMPL_RoOriginateLanguageException(int32_t error, void *message, void *languageException) noexcept
+{
+	typedef BOOL(WINAPI *PFNRoOriginateLanguageException)(int32_t, void *, void *);
+	static PFNRoOriginateLanguageException RoOriginateLanguageException = _combase.GetFunction("RoOriginateLanguageException");
+
+	if (RoOriginateLanguageException != nullptr) {
+		return RoOriginateLanguageException(error, message, languageException);
+	} else {
+		return TRUE;
+	}
+}
+
+extern "C" int32_t __stdcall WINRT_IMPL_RoGetActivationFactory(void *classId, winrt::guid const &iid, void **factory) noexcept
+{
+	typedef BOOL(WINAPI *PFNRoGetActivationFactory)(void *, winrt::guid const &, void **);
+	static PFNRoGetActivationFactory RoGetActivationFactory = _combase.GetFunction("RoGetActivationFactory");
+
+	if (RoGetActivationFactory != nullptr) {
+		return RoGetActivationFactory(classId, iid, factory);
+	} else {
+		*factory = nullptr;
+		return winrt::impl::error_class_not_available;
+	}
+}
+#endif
+
+static bool IsDarkModeEnabled()
+{
+	/* Only build if SDK is Windows 10 1803 or later. */
+#if defined(_MSC_VER) && defined(NTDDI_WIN10_RS4)
+	if (IsWindows10OrGreater()) {
+		try {
+			/*
+			 * The official documented way to find out if the system is running in dark mode is to
+			 * check the brightness of the current theme's colour.
+			 * See: https://learn.microsoft.com/en-us/windows/apps/desktop/modernize/ui/apply-windows-themes#know-when-dark-mode-is-enabled
+			 *
+			 * There are other variants floating around on the Internet, but they all rely on internal,
+			 * undocumented Windows functions that may or may not work in the future.
+			 */
+			winrt::Windows::UI::ViewManagement::UISettings settings;
+			auto foreground = settings.GetColorValue(winrt::Windows::UI::ViewManagement::UIColorType::Foreground);
+
+			/* If the Foreground colour is a light colour, the system is running in dark mode. */
+			return ((5 * foreground.G) + (2 * foreground.R) + foreground.B) > (8 * 128);
+		} catch (...) {
+			/* Some kind of error, like a too old Windows version. Just return false. */
+			return false;
+		}
+	}
+#endif /* defined(_MSC_VER) && defined(NTDDI_WIN10_RS4) */
+
+	return false;
+}
+
+static void SetDarkModeForWindow(HWND hWnd, bool dark_mode)
+{
+	/* Only build if SDK is Windows 10+. */
+#if defined(NTDDI_WIN10)
+	if (!IsWindows10OrGreater()) return;
+
+	/* This function is documented, but not supported on all Windows 10/11 SDK builds. For this
+	 * reason, the code uses dynamic loading and ignores any errors for a best-effort result. */
+	static LibraryLoader _dwmapi("dwmapi.dll");
+	typedef HRESULT(WINAPI *PFNDWMSETWINDOWATTRIBUTE)(HWND, DWORD, LPCVOID, DWORD);
+	static const PFNDWMSETWINDOWATTRIBUTE DwmSetWindowAttribute = _dwmapi.GetFunction("DwmSetWindowAttribute");
+
+	if (DwmSetWindowAttribute != nullptr) {
+		/* Contrary to the published documentation, DWMWA_USE_IMMERSIVE_DARK_MODE does not change the
+		 * window chrome according to the current theme, but forces it to either light or dark mode.
+		 * As such, the set value has to depend on the current theming mode.*/
+		BOOL value = dark_mode ? TRUE : FALSE;
+		if (DwmSetWindowAttribute(hWnd, 20 /* DWMWA_USE_IMMERSIVE_DARK_MODE */, &value, sizeof(value)) != S_OK) {
+			DwmSetWindowAttribute(hWnd, 19 /* DWMWA_USE_IMMERSIVE_DARK_MODE_BEFORE_20H1 */, &value, sizeof(value)); // Ignore errors. It works or it doesn't.
+		}
+	}
+#endif /* defined(NTDDI_WIN10) */
 }
 
 LRESULT CALLBACK WndProcGdi(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	static uint32_t keycode = 0;
 	static bool console = false;
+
+	const float SCROLL_BUILTIN_MULTIPLIER = 14.0f / WHEEL_DELTA;
 
 	VideoDriver_Win32Base *video_driver = (VideoDriver_Win32Base *)GetWindowLongPtr(hwnd, GWLP_USERDATA);
 
@@ -413,6 +540,14 @@ LRESULT CALLBACK WndProcGdi(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			_cursor.in_window = false; // Win32 has mouse tracking.
 			SetCompositionPos(hwnd);
 			_imm_props = ImmGetProperty(GetKeyboardLayout(0), IGP_PROPERTY);
+
+			/* Enable dark mode theming for window chrome. */
+			SetDarkModeForWindow(hwnd, IsDarkModeEnabled());
+			break;
+
+		case WM_SETTINGCHANGE:
+			/* Synchronize dark mode theming state. */
+			SetDarkModeForWindow(hwnd, IsDarkModeEnabled());
 			break;
 
 		case WM_PAINT: {
@@ -531,7 +666,7 @@ LRESULT CALLBACK WndProcGdi(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
 		case WM_IME_ENDCOMPOSITION:
 			/* Clear any pending composition string. */
-			HandleTextInput(nullptr, true);
+			HandleTextInput({}, true);
 			if (DrawIMECompositionString()) return 0;
 			break;
 
@@ -707,6 +842,9 @@ LRESULT CALLBACK WndProcGdi(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 #if !defined(WM_MOUSEWHEEL)
 # define WM_MOUSEWHEEL 0x020A
 #endif  /* WM_MOUSEWHEEL */
+#if !defined(WM_MOUSEHWHEEL)
+# define WM_MOUSEHWHEEL 0x020E
+#endif  /* WM_MOUSEHWHEEL */
 #if !defined(GET_WHEEL_DELTA_WPARAM)
 # define GET_WHEEL_DELTA_WPARAM(wparam) ((short)HIWORD(wparam))
 #endif  /* GET_WHEEL_DELTA_WPARAM */
@@ -719,6 +857,18 @@ LRESULT CALLBACK WndProcGdi(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			} else if (delta > 0) {
 				_cursor.wheel--;
 			}
+
+			_cursor.v_wheel -= static_cast<float>(delta) * SCROLL_BUILTIN_MULTIPLIER * _settings_client.gui.scrollwheel_multiplier;
+			_cursor.wheel_moved = true;
+			HandleMouseEvents();
+			return 0;
+		}
+
+		case WM_MOUSEHWHEEL: {
+			int delta = GET_WHEEL_DELTA_WPARAM(wParam);
+
+			_cursor.h_wheel += static_cast<float>(delta) * SCROLL_BUILTIN_MULTIPLIER * _settings_client.gui.scrollwheel_multiplier;
+			_cursor.wheel_moved = true;
 			HandleMouseEvents();
 			return 0;
 		}
@@ -815,8 +965,11 @@ static void FindResolutions(uint8_t bpp)
 	SortResolutions();
 }
 
-void VideoDriver_Win32Base::Initialize()
+const char *VideoDriver_Win32Base::Initialize()
 {
+	/* Initialize COM */
+	if (FAILED(CoInitializeEx(nullptr, COINIT_MULTITHREADED))) return "COM initialization failed";
+
 	this->UpdateAutoResolution();
 
 	RegisterWndClass();
@@ -827,6 +980,7 @@ void VideoDriver_Win32Base::Initialize()
 	this->height = this->height_org = _cur_resolution.height;
 
 	Debug(driver, 2, "Resolution for display: {}x{}", _cur_resolution.width, _cur_resolution.height);
+	return nullptr;
 }
 
 void VideoDriver_Win32Base::Stop()
@@ -865,13 +1019,12 @@ void VideoDriver_Win32Base::InputLoop()
 
 	/* Determine which directional keys are down. */
 	if (this->has_focus) {
-		_dirkeys =
-			(GetAsyncKeyState(VK_LEFT) < 0 ? 1 : 0) +
-			(GetAsyncKeyState(VK_UP) < 0 ? 2 : 0) +
-			(GetAsyncKeyState(VK_RIGHT) < 0 ? 4 : 0) +
-			(GetAsyncKeyState(VK_DOWN) < 0 ? 8 : 0);
+		_dirkeys.Set(DirectionKey::Left, GetAsyncKeyState(VK_LEFT));
+		_dirkeys.Set(DirectionKey::Up, GetAsyncKeyState(VK_UP));
+		_dirkeys.Set(DirectionKey::Right, GetAsyncKeyState(VK_RIGHT));
+		_dirkeys.Set(DirectionKey::Down, GetAsyncKeyState(VK_DOWN));
 	} else {
-		_dirkeys = 0;
+		_dirkeys.Reset();
 	}
 
 	if (old_ctrl_pressed != _ctrl_pressed) HandleCtrlChanged();
@@ -905,6 +1058,12 @@ void VideoDriver_Win32Base::MainLoop()
 	this->StopGameThread();
 }
 
+/**
+ * Indicate to the driver the client-size might have changed.
+ * @param w The new width of the window.
+ * @param h The new height of the window.
+ * @param force Whether to force full reallocation, instead of not reallocating when size did not change.
+ */
 void VideoDriver_Win32Base::ClientSizeChanged(int w, int h, bool force)
 {
 	/* Allocate backing store of the new size. */
@@ -975,47 +1134,6 @@ Dimension VideoDriver_Win32Base::GetScreenSize() const
 	return { static_cast<uint>(GetSystemMetrics(SM_CXSCREEN)), static_cast<uint>(GetSystemMetrics(SM_CYSCREEN)) };
 }
 
-float VideoDriver_Win32Base::GetDPIScale()
-{
-	typedef UINT (WINAPI *PFNGETDPIFORWINDOW)(HWND hwnd);
-	typedef UINT (WINAPI *PFNGETDPIFORSYSTEM)(VOID);
-	typedef HRESULT (WINAPI *PFNGETDPIFORMONITOR)(HMONITOR hMonitor, int dpiType, UINT *dpiX, UINT *dpiY);
-
-	static PFNGETDPIFORWINDOW _GetDpiForWindow = nullptr;
-	static PFNGETDPIFORSYSTEM _GetDpiForSystem = nullptr;
-	static PFNGETDPIFORMONITOR _GetDpiForMonitor = nullptr;
-
-	static bool init_done = false;
-	if (!init_done) {
-		init_done = true;
-		static LibraryLoader _user32("user32.dll");
-		static LibraryLoader _shcore("shcore.dll");
-		_GetDpiForWindow = _user32.GetFunction("GetDpiForWindow");
-		_GetDpiForSystem = _user32.GetFunction("GetDpiForSystem");
-		_GetDpiForMonitor = _shcore.GetFunction("GetDpiForMonitor");
-	}
-
-	UINT cur_dpi = 0;
-
-	if (cur_dpi == 0 && _GetDpiForWindow != nullptr && this->main_wnd != nullptr) {
-		/* Per window DPI is supported since Windows 10 Ver 1607. */
-		cur_dpi = _GetDpiForWindow(this->main_wnd);
-	}
-	if (cur_dpi == 0 && _GetDpiForMonitor != nullptr && this->main_wnd != nullptr) {
-		/* Per monitor is supported since Windows 8.1. */
-		UINT dpiX, dpiY;
-		if (SUCCEEDED(_GetDpiForMonitor(MonitorFromWindow(this->main_wnd, MONITOR_DEFAULTTOPRIMARY), 0 /* MDT_EFFECTIVE_DPI */, &dpiX, &dpiY))) {
-			cur_dpi = dpiX; // X and Y are always identical.
-		}
-	}
-	if (cur_dpi == 0 && _GetDpiForSystem != nullptr) {
-		/* Fall back to system DPI. */
-		cur_dpi = _GetDpiForSystem();
-	}
-
-	return cur_dpi > 0 ? cur_dpi / 96.0f : 1.0f; // Default Windows DPI value is 96.
-}
-
 bool VideoDriver_Win32Base::LockVideoBuffer()
 {
 	if (this->buffer_locked) return false;
@@ -1046,7 +1164,8 @@ const char *VideoDriver_Win32GDI::Start(const StringList &param)
 {
 	if (BlitterFactory::GetCurrentBlitter()->GetScreenDepth() == 0) return "Only real blitters supported";
 
-	this->Initialize();
+	const char *err = this->Initialize();
+	if (err != nullptr) return err;
 
 	this->MakePalette();
 	this->AllocateBackingStore(_cur_resolution.width, _cur_resolution.height);
@@ -1169,7 +1288,7 @@ void VideoDriver_Win32GDI::PaletteChanged(HWND hWnd)
 
 void VideoDriver_Win32GDI::Paint()
 {
-	PerformanceMeasurer framerate(PFE_VIDEO);
+	PerformanceMeasurer framerate(PerformanceElement::Video);
 
 	if (IsEmptyRect(this->dirty_rect)) return;
 
@@ -1183,16 +1302,16 @@ void VideoDriver_Win32GDI::Paint()
 		Blitter *blitter = BlitterFactory::GetCurrentBlitter();
 
 		switch (blitter->UsePaletteAnimation()) {
-			case Blitter::PALETTE_ANIMATION_VIDEO_BACKEND:
+			case Blitter::PaletteAnimation::VideoBackend:
 				this->UpdatePalette(dc2, _local_palette.first_dirty, _local_palette.count_dirty);
 				break;
 
-			case Blitter::PALETTE_ANIMATION_BLITTER: {
+			case Blitter::PaletteAnimation::Blitter: {
 				blitter->PaletteAnimate(_local_palette);
 				break;
 			}
 
-			case Blitter::PALETTE_ANIMATION_NONE:
+			case Blitter::PaletteAnimation::None:
 				break;
 
 			default:
@@ -1232,11 +1351,6 @@ void VideoDriver_Win32GDI::Paint()
 
 #ifdef WITH_OPENGL
 
-#include <GL/gl.h>
-#include "../3rdparty/opengl/glext.h"
-#include "../3rdparty/opengl/wglext.h"
-#include "opengl.h"
-
 #ifndef PFD_SUPPORT_COMPOSITION
 #	define PFD_SUPPORT_COMPOSITION 0x00008000
 #endif
@@ -1245,7 +1359,11 @@ static PFNWGLCREATECONTEXTATTRIBSARBPROC _wglCreateContextAttribsARB = nullptr;
 static PFNWGLSWAPINTERVALEXTPROC _wglSwapIntervalEXT = nullptr;
 static bool _hasWGLARBCreateContextProfile = false; ///< Is WGL_ARB_create_context_profile supported?
 
-/** Platform-specific callback to get an OpenGL function pointer. */
+/**
+ * Platform-specific callback to get an OpenGL function pointer.
+ * @param proc The name of the function.
+ * @return The function pointer, or \c nullptr when it could not be found.
+ */
 static OGLProc GetOGLProcAddressCallback(const char *proc)
 {
 	OGLProc ret = reinterpret_cast<OGLProc>(wglGetProcAddress(proc));
@@ -1317,13 +1435,13 @@ static void LoadWGLExtensions()
 			/* Get list of WGL extensions. */
 			PFNWGLGETEXTENSIONSSTRINGARBPROC wglGetExtensionsStringARB = (PFNWGLGETEXTENSIONSSTRINGARBPROC)wglGetProcAddress("wglGetExtensionsStringARB");
 			if (wglGetExtensionsStringARB != nullptr) {
-				const char *wgl_exts = wglGetExtensionsStringARB(dc);
+				std::string_view wgl_exts = wglGetExtensionsStringARB(dc);
 				/* Bind supported functions. */
-				if (FindStringInExtensionList(wgl_exts, "WGL_ARB_create_context") != nullptr) {
+				if (HasStringInExtensionList(wgl_exts, "WGL_ARB_create_context")) {
 					_wglCreateContextAttribsARB = (PFNWGLCREATECONTEXTATTRIBSARBPROC)wglGetProcAddress("wglCreateContextAttribsARB");
 				}
-				_hasWGLARBCreateContextProfile = FindStringInExtensionList(wgl_exts, "WGL_ARB_create_context_profile") != nullptr;
-				if (FindStringInExtensionList(wgl_exts, "WGL_EXT_swap_control") != nullptr) {
+				_hasWGLARBCreateContextProfile = HasStringInExtensionList(wgl_exts, "WGL_ARB_create_context_profile");
+				if (HasStringInExtensionList(wgl_exts, "WGL_EXT_swap_control")) {
 					_wglSwapIntervalEXT = (PFNWGLSWAPINTERVALEXTPROC)wglGetProcAddress("wglSwapIntervalEXT");
 				}
 			}
@@ -1350,11 +1468,16 @@ const char *VideoDriver_Win32OpenGL::Start(const StringList &param)
 
 	LoadWGLExtensions();
 
-	this->Initialize();
+	const char *err = this->Initialize();
+	if (err != nullptr) {
+		this->Stop();
+		_cur_resolution = old_res;
+		return err;
+	}
 	this->MakeWindow(_fullscreen);
 
 	/* Create and initialize OpenGL context. */
-	const char *err = this->AllocateContext();
+	err = this->AllocateContext();
 	if (err != nullptr) {
 		this->Stop();
 		_cur_resolution = old_res;
@@ -1447,7 +1570,7 @@ const char *VideoDriver_Win32OpenGL::AllocateContext()
 		rc = wglCreateContext(this->dc);
 		if (rc == nullptr) return "Can't create OpenGL context";
 	}
-	if (!wglMakeCurrent(this->dc, rc)) return "Can't active GL context";
+	if (!wglMakeCurrent(this->dc, rc)) return "Can't activate GL context";
 
 	this->ToggleVsync(_video_vsync);
 
@@ -1520,14 +1643,14 @@ void VideoDriver_Win32OpenGL::ReleaseVideoPointer()
 
 void VideoDriver_Win32OpenGL::Paint()
 {
-	PerformanceMeasurer framerate(PFE_VIDEO);
+	PerformanceMeasurer framerate(PerformanceElement::Video);
 
 	if (_local_palette.count_dirty != 0) {
 		Blitter *blitter = BlitterFactory::GetCurrentBlitter();
 
 		/* Always push a changed palette to OpenGL. */
 		OpenGLBackend::Get()->UpdatePalette(_local_palette.palette, _local_palette.first_dirty, _local_palette.count_dirty);
-		if (blitter->UsePaletteAnimation() == Blitter::PALETTE_ANIMATION_BLITTER) {
+		if (blitter->UsePaletteAnimation() == Blitter::PaletteAnimation::Blitter) {
 			blitter->PaletteAnimate(_local_palette);
 		}
 

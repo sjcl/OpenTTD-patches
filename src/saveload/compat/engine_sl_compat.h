@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file engine_sl_compat.h Loading for engine chunks before table headers were added. */
@@ -26,17 +26,17 @@ const SaveLoadCompat _engine_sl_compat[] = {
 	SLC_VAR("duration_phase_1"),
 	SLC_VAR("duration_phase_2"),
 	SLC_VAR("duration_phase_3"),
-	SLC_NULL(1, SL_MIN_VERSION, SLV_121),
+	SLC_NULL(1, SaveLoadVersion::MinVersion, SaveLoadVersion::CargoPayments),
 	SLC_VAR("flags"),
-	SLC_NULL(1, SL_MIN_VERSION, SLV_179),
+	SLC_NULL(1, SaveLoadVersion::MinVersion, SaveLoadVersion::RobustEnginePreview),
 	SLC_VAR("preview_asked"),
 	SLC_VAR("preview_company"),
 	SLC_VAR("preview_wait"),
-	SLC_NULL(1, SL_MIN_VERSION,  SLV_45),
+	SLC_NULL(1, SaveLoadVersion::MinVersion, SaveLoadVersion::CountPaidForCargo),
 	SLC_VAR("company_avail"),
 	SLC_VAR("company_hidden"),
 	SLC_VAR("name"),
-	SLC_NULL(16, SLV_2, SLV_144),
+	SLC_NULL(16, SaveLoadVersion::VehicleCurrencyStationChanges, SaveLoadVersion::ReorderUnmovableRemoveReserved),
 };
 
 /** Original field order for _engine_id_mapping_desc. */

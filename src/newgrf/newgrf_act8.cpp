@@ -1,0 +1,90 @@
+/*
+ * This file is part of OpenTTD.
+ * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
+ * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
+ */
+
+/** @file newgrf_act8.cpp NewGRF Action 0x08 handler. */
+
+#include "../stdafx.h"
+#include "../debug.h"
+#include "../string_func.h"
+#include "newgrf_bytereader.h"
+#include "newgrf_internal.h"
+
+#include "table/strings.h"
+
+#include "../safeguards.h"
+
+/* Action 0x08 (GrfLoadingStage::FileScan) */
+static void ScanInfo(ByteReader &buf)
+{
+	uint8_t grf_version = buf.ReadByte();
+	GrfID grfid = buf.ReadLabel<GrfID>();
+	std::string_view name = buf.ReadString();
+
+	_cur_gps.grfconfig->ident.grfid = grfid;
+
+	if (grf_version < 2 || grf_version > 8) {
+		_cur_gps.grfconfig->flags.Set(GRFConfigFlag::Invalid);
+		Debug(grf, 0, "{}: NewGRF \"{}\" (GRFID {}) uses GRF version {}, which is incompatible with this version of OpenTTD.", _cur_gps.grfconfig->GetDisplayPath(), StrMakeValid(name), grfid, grf_version);
+	}
+
+	/* GRF IDs starting with 0xFF are reserved for internal TTDPatch use */
+	if (grfid[0] == 0xFF) _cur_gps.grfconfig->flags.Set(GRFConfigFlag::System);
+
+	AddGRFTextToList(_cur_gps.grfconfig->name, GRFLanguage::Unspecified, grfid, false, name);
+
+	if (buf.HasData()) {
+		std::string_view info = buf.ReadString();
+		AddGRFTextToList(_cur_gps.grfconfig->info, GRFLanguage::Unspecified, grfid, true, info);
+	}
+
+	/* GrfLoadingStage::FileScan only looks for the action 8, so we can skip the rest of the file */
+	_cur_gps.skip_sprites = -1;
+}
+
+/* Action 0x08 */
+static void GRFInfo(ByteReader &buf)
+{
+	/* <08> <version> <grf-id> <name> <info>
+	 *
+	 * B version       newgrf version, currently 06
+	 * 4*B grf-id      globally unique ID of this .grf file
+	 * S name          name of this .grf set
+	 * S info          string describing the set, and e.g. author and copyright */
+
+	uint8_t version    = buf.ReadByte();
+	GrfID grfid = buf.ReadLabel<GrfID>();
+	std::string_view name = buf.ReadString();
+
+	if (_cur_gps.stage < GrfLoadingStage::Reserve && _cur_gps.grfconfig->status != GRFStatus::Unknown) {
+		DisableGrf(STR_NEWGRF_ERROR_MULTIPLE_ACTION_8);
+		return;
+	}
+
+	if (_cur_gps.grffile->grfid != grfid) {
+		Debug(grf, 0, "GRFInfo: GRFID {} in FILESCAN stage does not match GRFID {} in INIT/RESERVE/ACTIVATION stage", FormatArrayAsHex(_cur_gps.grffile->grfid), FormatArrayAsHex(grfid));
+		_cur_gps.grffile->grfid = grfid;
+	}
+
+	_cur_gps.grffile->grf_version = version;
+	_cur_gps.grfconfig->status = _cur_gps.stage < GrfLoadingStage::Reserve ? GRFStatus::Initialised : GRFStatus::Activated;
+
+	/* Do swap the GRFID for displaying purposes since people expect that */
+	Debug(grf, 1, "GRFInfo: Loaded GRFv{} set {} - {} (palette: {}, version: {})", version, FormatArrayAsHex(grfid), StrMakeValid(name), (_cur_gps.grfconfig->palette & GRFP_USE_MASK) ? "Windows" : "DOS", _cur_gps.grfconfig->version);
+}
+
+/** @copydoc GrfActionHandler::FileScan */
+template <> void GrfActionHandler<0x08>::FileScan(ByteReader &buf) { ScanInfo(buf); }
+/** @copybrief GrfActionHandler::SafetyScan */
+template <> void GrfActionHandler<0x08>::SafetyScan(ByteReader &) { }
+/** @copybrief GrfActionHandler::LabelScan */
+template <> void GrfActionHandler<0x08>::LabelScan(ByteReader &) { }
+/** @copydoc GrfActionHandler::Init */
+template <> void GrfActionHandler<0x08>::Init(ByteReader &buf) { GRFInfo(buf); }
+/** @copydoc GrfActionHandler::Reserve */
+template <> void GrfActionHandler<0x08>::Reserve(ByteReader &buf) { GRFInfo(buf); }
+/** @copydoc GrfActionHandler::Activation */
+template <> void GrfActionHandler<0x08>::Activation(ByteReader &buf) { GRFInfo(buf); }

@@ -14,7 +14,7 @@
 # This file is part of OpenTTD.
 # OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
 # OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-# See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+# See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
 
 
 ##id 0x0000
@@ -369,7 +369,6 @@ STR_SCENEDIT_FILE_MENU_QUIT                                     :باہر نکل
 
 
 # Settings menu
-###length 16
 STR_SETTINGS_MENU_GAME_OPTIONS                                  :کھیل کے اختیارات
 STR_SETTINGS_MENU_NEWGRF_SETTINGS                               :NewGRF اختیارات
 STR_SETTINGS_MENU_TRANSPARENCY_OPTIONS                          :Transparency کے اختیارات
@@ -531,6 +530,8 @@ STR_GRAPH_COMPANY_PERFORMANCE_RATINGS_CAPTION                   :{WHITE} کمپ�
 STR_GRAPH_COMPANY_VALUES_CAPTION                                :{WHITE}کمپنی کی مالیت
 
 
+
+
 STR_GRAPH_CARGO_PAYMENT_RATES_CAPTION                           :{WHITE} سامان کی ادایگی کا تناسب
 STR_GRAPH_CARGO_PAYMENT_RATES_TITLE                             :{TINY_FONT}{BLACK} سامان کی دس اکائیات (یآ 10،000 لیٹر)، 20 چکور تک لے جانے کی ادائیگی
 STR_GRAPH_CARGO_ENABLE_ALL                                      :{TINY_FONT} {BLACK} سب کو قابل کیجیئے
@@ -539,6 +540,7 @@ STR_GRAPH_CARGO_TOOLTIP_ENABLE_ALL                              :{BLACK} سام�
 STR_GRAPH_CARGO_TOOLTIP_DISABLE_ALL                             :{BLACK} سامان کی ادائیگی کے مخطط پر کوئ بھی سامان نا دیکھئہے
 STR_GRAPH_CARGO_PAYMENT_TOGGLE_CARGO                            :{BLACK} ظرزِ سامان مخطط تدویم کیجئیے
 STR_GRAPH_CARGO_PAYMENT_CARGO                                   :{TINY_FONT}{BLACK}{STRING}
+
 
 
 STR_GRAPH_PERFORMANCE_DETAIL_TOOLTIP                            :{BLACK} کارکردگی کی تفصیلی درجہ بندی دکھائیے
@@ -718,7 +720,6 @@ STR_MESSAGE_HISTORY_TOOLTIP                                     :{BLACK}حالی
 STR_MESSAGE_NEWS_FORMAT                                         :{STRING}  -  {STRING}
 
 STR_NEWS_MESSAGE_CAPTION                                        :{WHITE}پیغام
-STR_NEWS_CUSTOM_ITEM                                            :{BIG_FONT}{BLACK}{STRING}
 
 STR_NEWS_FIRST_TRAIN_ARRIVAL                                    :{BIG_FONT}{BLACK}شہریوں کا جشن ۔ ۔ ۔{}پہلی ریل گاڑی {STATION} پر پہنچی
 STR_NEWS_FIRST_BUS_ARRIVAL                                      :{BIG_FONT}{BLACK}شہریوں کا جشن ۔ ۔ ۔{}پہلی لاری {STATION} پر پہنچی
@@ -822,11 +823,12 @@ STR_GAME_OPTIONS_CAPTION                                        :{WHITE}کھیل
 
 
 
-STR_GAME_OPTIONS_CURRENCY_UNITS_FRAME                           :{BLACK}کرنسی کی اکائیاں
-STR_GAME_OPTIONS_CURRENCY_UNITS_DROPDOWN_TOOLTIP                :{BLACK}کرنسی کی اکائی اختیار کریں
+
+STR_GAME_OPTIONS_CURRENCY_UNITS_FRAME                           :کرنسی کی اکائیاں
+STR_GAME_OPTIONS_CURRENCY_UNITS_DROPDOWN_TOOLTIP                :کرنسی کی اکائی اختیار کریں
 
 
-###length 44
+###length 46
 STR_GAME_OPTIONS_CURRENCY_GBP                                   :برطانوی پاونڈ
 STR_GAME_OPTIONS_CURRENCY_USD                                   :امریکی ڈالر
 STR_GAME_OPTIONS_CURRENCY_EUR                                   :یورو
@@ -860,21 +862,21 @@ STR_GAME_OPTIONS_CURRENCY_KRW                                   :جنوبی کو
 STR_GAME_OPTIONS_CURRENCY_ZAR                                   :جنوبی افریقہ کے رنڈ
 STR_GAME_OPTIONS_CURRENCY_CUSTOM                                :اپنی مرضی کی ۔۔۔
 
-STR_GAME_OPTIONS_AUTOSAVE_FRAME                                 :{BLACK}خود مختار بچاو
-STR_GAME_OPTIONS_AUTOSAVE_DROPDOWN_TOOLTIP                      :{BLACK}خودمختار کھیل بچانے کے درمیان وقفہ اختیار کریں
+STR_GAME_OPTIONS_AUTOSAVE_FRAME                                 :خود مختار بچاو
+STR_GAME_OPTIONS_AUTOSAVE_DROPDOWN_TOOLTIP                      :خودمختار کھیل بچانے کے درمیان وقفہ اختیار کریں
 
 # Autosave dropdown
 ###length 5
 STR_GAME_OPTIONS_AUTOSAVE_DROPDOWN_OFF                          :بند
 
-STR_GAME_OPTIONS_LANGUAGE                                       :{BLACK}زبان
-STR_GAME_OPTIONS_LANGUAGE_TOOLTIP                               :{BLACK}استعمال کرنے کےلئے زبان اختیار کئیجیے
+STR_GAME_OPTIONS_LANGUAGE                                       :زبان
+STR_GAME_OPTIONS_LANGUAGE_TOOLTIP                               :استعمال کرنے کےلئے زبان اختیار کئیجیے
 
-STR_GAME_OPTIONS_FULLSCREEN                                     :{BLACK}مُکمل سکرین
-STR_GAME_OPTIONS_FULLSCREEN_TOOLTIP                             :{BLACK}مُکمل اسکرین پر کھیلنے کے لئے اِس ڈبے کو نشان لگائیں
+STR_GAME_OPTIONS_FULLSCREEN                                     :مُکمل سکرین
+STR_GAME_OPTIONS_FULLSCREEN_TOOLTIP                             :مُکمل اسکرین پر کھیلنے کے لئے اِس ڈبے کو نشان لگائیں
 
-STR_GAME_OPTIONS_RESOLUTION                                     :{BLACK}اسکرین کی resolution
-STR_GAME_OPTIONS_RESOLUTION_TOOLTIP                             :{BLACK}اسکرین کی resolution اختیار کریں
+STR_GAME_OPTIONS_RESOLUTION                                     :اسکرین کی resolution
+STR_GAME_OPTIONS_RESOLUTION_TOOLTIP                             :اسکرین کی resolution اختیار کریں
 STR_GAME_OPTIONS_RESOLUTION_OTHER                               :دیگر
 
 
@@ -887,17 +889,18 @@ STR_GAME_OPTIONS_RESOLUTION_OTHER                               :دیگر
 
 
 
-STR_GAME_OPTIONS_BASE_GRF                                       :{BLACK}بُنیادی گرافک سیٹ
-STR_GAME_OPTIONS_BASE_GRF_TOOLTIP                               :{BLACK}بُنیادی گرافک سیٹ اختیار کریں
-STR_GAME_OPTIONS_BASE_GRF_DESCRIPTION_TOOLTIP                   :{BLACK}بُنیادی گرافک سیٹ کے بارے میں اضافی معلومات
 
-STR_GAME_OPTIONS_BASE_SFX                                       :{BLACK}بُنیادی صوتی سیٹ
-STR_GAME_OPTIONS_BASE_SFX_TOOLTIP                               :{BLACK}بُنیادی صوتی سیٹ اختیار کریں
-STR_GAME_OPTIONS_BASE_SFX_DESCRIPTION_TOOLTIP                   :{BLACK}بُنیادی صوتی سیٹ کے بارے میں اضافی معلومات
+STR_GAME_OPTIONS_BASE_GRF                                       :بُنیادی گرافک سیٹ
+STR_GAME_OPTIONS_BASE_GRF_TOOLTIP                               :بُنیادی گرافک سیٹ اختیار کریں
+STR_GAME_OPTIONS_BASE_GRF_DESCRIPTION_TOOLTIP                   :بُنیادی گرافک سیٹ کے بارے میں اضافی معلومات
 
-STR_GAME_OPTIONS_BASE_MUSIC                                     :{BLACK}بُنیادی موسیقی سیٹ
-STR_GAME_OPTIONS_BASE_MUSIC_TOOLTIP                             :{BLACK}بُنیادی موسیقی سیٹ اختیار کریں
-STR_GAME_OPTIONS_BASE_MUSIC_DESCRIPTION_TOOLTIP                 :{BLACK}بُنیادی موسیقی سیٹ کے بارے میں اضافی معلومات
+STR_GAME_OPTIONS_BASE_SFX                                       :بُنیادی صوتی سیٹ
+STR_GAME_OPTIONS_BASE_SFX_TOOLTIP                               :بُنیادی صوتی سیٹ اختیار کریں
+STR_GAME_OPTIONS_BASE_SFX_DESCRIPTION_TOOLTIP                   :بُنیادی صوتی سیٹ کے بارے میں اضافی معلومات
+
+STR_GAME_OPTIONS_BASE_MUSIC                                     :بُنیادی موسیقی سیٹ
+STR_GAME_OPTIONS_BASE_MUSIC_TOOLTIP                             :بُنیادی موسیقی سیٹ اختیار کریں
+STR_GAME_OPTIONS_BASE_MUSIC_DESCRIPTION_TOOLTIP                 :بُنیادی موسیقی سیٹ کے بارے میں اضافی معلومات
 
 
 
@@ -969,9 +972,9 @@ STR_RIVERS_MODERATE                                             :درمیانے
 STR_RIVERS_LOT                                                  :بہت سے
 
 ###length 3
-STR_DISASTER_NONE                                               :کوئی نہیں
-STR_DISASTER_REDUCED                                            :کم
-STR_DISASTER_NORMAL                                             :نارمل
+STR_BREAKDOWNS_NONE                                             :کوئی نہیں
+STR_BREAKDOWNS_REDUCED                                          :کم
+STR_BREAKDOWNS_NORMAL                                           :نارمل
 
 ###length 4
 STR_SUBSIDY_X1_5                                                :x1.5
@@ -997,7 +1000,7 @@ STR_CITY_APPROVAL_HOSTILE                                       :مخالفان�
 STR_CITY_APPROVAL_PERMISSIVE                                    :اجازت دینے والا
 
 
-# Settings tree window
+# Settings tree in the Game Options window
 STR_CONFIG_SETTING_NO_EXPLANATION_AVAILABLE_HELPTEXT            :(کوئی وضاحت موجود نہیں)
 STR_CONFIG_SETTING_TYPE                                         :{LTBLUE}ترتیب قسم: {ORANGE}{STRING}
 
@@ -1030,6 +1033,7 @@ STR_CONFIG_SETTING_HORIZONTAL_POS_RIGHT                         :دائیں
 ###setting-zero-is-special
 
 
+###length 3
 
 
 
@@ -1038,8 +1042,11 @@ STR_CONFIG_SETTING_HORIZONTAL_POS_RIGHT                         :دائیں
 
 ###setting-zero-is-special
 
+###length 3
 
 
+
+###length 3
 
 
 
@@ -1159,6 +1166,8 @@ STR_CONFIG_SETTING_NEVER_EXPIRE_VEHICLES                        :گاڑیوں ک
 ###setting-zero-is-special
 
 
+###setting-zero-is-special
+
 STR_CONFIG_SETTING_AUTORENEW_VEHICLE                            :گاڑی پرانی ہونے کی صورت میں خودکار طریقے سے بدل دیں: {STRING}
 
 STR_CONFIG_SETTING_AUTORENEW_MONTHS                             :گاڑی کی زیادہ سے زیادہ عمر {STRING} ہونے پر خودکار تجدید کریں۔
@@ -1199,6 +1208,8 @@ STR_CONFIG_SETTING_ROUGHNESS_OF_TERRAIN_SMOOTH                  :ہموار
 STR_CONFIG_SETTING_ROUGHNESS_OF_TERRAIN_ROUGH                   :رف
 STR_CONFIG_SETTING_ROUGHNESS_OF_TERRAIN_VERY_ROUGH              :بہت رف
 
+###length 4
+
 
 
 STR_CONFIG_SETTING_TREE_PLACER                                  :درخت لگانے کا طریقہ: {STRING}
@@ -1236,6 +1247,7 @@ STR_CONFIG_SETTING_SMALLMAP_LAND_COLOUR_VIOLET                  :بنفشی
 ###length 4
 
 ###length 4
+
 
 
 STR_CONFIG_SETTING_MEASURE_TOOLTIP                              :تعمیراتی کام کے دوران پیمائشی ٹول ٹپ دکھائیں: {STRING}
@@ -1292,11 +1304,7 @@ STR_CONFIG_SETTING_TIMETABLE_SHOW_ARRIVAL_DEPARTURE             :قوقات کے
 
 STR_CONFIG_SETTING_QUICKGOTO                                    :جلدی گاڑیوں کو احکامات دینا: {STRING}
 
-STR_CONFIG_SETTING_DEFAULT_RAIL_TYPE                            :کھیل شروع کرنے یا لوڈ کرنے کے بعد ریل گاڑی کی شروعاتی قسم: {STRING}
 ###length 3
-STR_CONFIG_SETTING_DEFAULT_RAIL_TYPE_FIRST                      :پہلی دستیاب
-STR_CONFIG_SETTING_DEFAULT_RAIL_TYPE_LAST                       :آخری دستیاب
-STR_CONFIG_SETTING_DEFAULT_RAIL_TYPE_MOST_USED                  :زیادہ استعمال شدہ
 
 STR_CONFIG_SETTING_SHOW_TRACK_RESERVATION                       :مخصوص پٹریاں دکھائیں: {STRING}
 
@@ -1351,6 +1359,7 @@ STR_CONFIG_SETTING_NOSERVICE                                    :گاڑیوں ک
 
 STR_CONFIG_SETTING_WAGONSPEEDLIMITS                             :مال گاڑی کی حد رفتار فعال کریں: {STRING}
 
+
 STR_CONFIG_SETTING_DISABLE_ELRAILS                              :الیلٹرک ریل گاڑیاں غیر فعال کریں: {STRING}
 
 STR_CONFIG_SETTING_NEWS_ARRIVAL_FIRST_VEHICLE_OWN               :کھلاڑی کے اسٹیشن پر پہلی گاڑی کی آمد: {STRING}
@@ -1393,6 +1402,8 @@ STR_CONFIG_SETTING_STARTING_YEAR                                :شروعاتی 
 
 ###setting-zero-is-special
 
+###length 2
+
 ###length 3
 
 
@@ -1423,6 +1434,8 @@ STR_CONFIG_SETTING_TOWN_FOUNDING                                :کھیل میں
 STR_CONFIG_SETTING_TOWN_FOUNDING_FORBIDDEN                      :ممنوع
 STR_CONFIG_SETTING_TOWN_FOUNDING_ALLOWED                        :اجازت ہے
 STR_CONFIG_SETTING_TOWN_FOUNDING_ALLOWED_CUSTOM_LAYOUT          :اپنی مرضی کے شہر کے پھیلاو کی اجازت ہے
+
+###length 3
 
 ###length 2
 
@@ -1472,7 +1485,7 @@ STR_CONFIG_SETTING_CITY_SIZE_MULTIPLIER                         :شہر کا ش�
 
 ###length 3
 
-###length 3
+###length 4
 
 STR_CONFIG_SETTING_INTERFACE                                    :انٹرفیس
 STR_CONFIG_SETTING_INTERFACE_CONSTRUCTION                       :تعمیرات
@@ -1502,7 +1515,7 @@ STR_CONFIG_ERROR_INVALID_GRF_UNKNOWN                            :نا معلوم
 STR_CONFIG_ERROR_INVALID_SAVEGAME_COMPRESSION_LEVEL             :{WHITE}- - - کمپریشن کی سطح '{STRING}' درست نہیں ہے
 STR_CONFIG_ERROR_INVALID_SAVEGAME_COMPRESSION_ALGORITHM         :{WHITE} ۔ ۔ ۔ کھیل بچانے کا یہ فارمیٹ '{STRING}' دستیاب نہیں ہے۔ واپس '{STRING}' پر جا رہے ہیں
 
-# Video initalization errors
+# Video initialization errors
 
 # Intro window
 STR_INTRO_CAPTION                                               :{WHITE}OpenTTD {REV}
@@ -1515,7 +1528,6 @@ STR_INTRO_SCENARIO_EDITOR                                       :{BLACK}منظر
 STR_INTRO_MULTIPLAYER                                           :{BLACK}زیادہ کھلاڑی
 
 STR_INTRO_GAME_OPTIONS                                          :{BLACK}کھیل کے اختیارات
-STR_INTRO_NEWGRF_SETTINGS                                       :{BLACK}NewGRF چنئے
 STR_INTRO_ONLINE_CONTENT                                        :{BLACK}آن لائن مواد دیکھیں
 STR_INTRO_QUIT                                                  :{BLACK}باہر نکلو
 
@@ -1532,7 +1544,6 @@ STR_INTRO_TOOLTIP_SUB_TROPICAL_LANDSCAPE                        :{BLACK}منظر
 STR_INTRO_TOOLTIP_TOYLAND_LANDSCAPE                             :{BLACK}منظر کشی کا 'toyland' طریقہ چُنئیے
 
 STR_INTRO_TOOLTIP_GAME_OPTIONS                                  :{BLACK}کھیل کے اختیارات دکھائیں
-STR_INTRO_TOOLTIP_NEWGRF_SETTINGS                               :{BLACK}NewGRF سیٹنگز دیکھیئے
 STR_INTRO_TOOLTIP_ONLINE_CONTENT                                :{BLACK}نئے اور ترمیم شدہ مواد کو ڈاون لوڈ کرنے کے لئے چیک کریں
 STR_INTRO_TOOLTIP_QUIT                                          :{BLACK}'OpenTTD' سے باہر نکلو
 
@@ -1601,10 +1612,6 @@ STR_FACE_CAPTION                                                :{WHITE}چہرہ
 STR_FACE_CANCEL_TOOLTIP                                         :{BLACK}چہرہ چننا منسوخ کریں
 STR_FACE_OK_TOOLTIP                                             :{BLACK}نیا چہرہ چننا قبول کریں
 
-STR_FACE_MALE_BUTTON                                            :{BLACK}مرد
-STR_FACE_MALE_TOOLTIP                                           :{BLACK}مردانہ چہرے چنئے
-STR_FACE_FEMALE_BUTTON                                          :{BLACK}عورت
-STR_FACE_FEMALE_TOOLTIP                                         :{BLACK}زنانہ چہرے چنئے
 STR_FACE_NEW_FACE_BUTTON                                        :{BLACK}نیا چہرہ
 STR_FACE_NEW_FACE_TOOLTIP                                       :{BLACK}بے ترتیب نیا چہرہ بنائیں
 STR_FACE_ADVANCED                                               :{BLACK}ایڈوانسڈ
@@ -1622,36 +1629,20 @@ STR_FACE_FACECODE_ERR                                           :{WHITE}نمبر
 STR_FACE_SAVE                                                   :{BLACK}بچائیں
 STR_FACE_SAVE_TOOLTIP                                           :{BLACK}پسندیدہ چہرہ بچائیں
 STR_FACE_SAVE_DONE                                              :{WHITE}یہ چہرہ آپ کے پسندیدہ چہرے کے طور پر OpenTTD configuration file میں محفوظ کر لیا جائے گا
-STR_FACE_EUROPEAN                                               :{BLACK}یورپئین
-STR_FACE_EUROPEAN_TOOLTIP                                       :{BLACK}یورپئین چہرہ چنئے
-STR_FACE_AFRICAN                                                :{BLACK}افریقی
-STR_FACE_AFRICAN_TOOLTIP                                        :{BLACK}افریقی چہرہ چنئے
 STR_FACE_YES                                                    :ہاں
 STR_FACE_NO                                                     :نہیں
-STR_FACE_MOUSTACHE_EARRING_TOOLTIP                              :{BLACK}مونچھیں یا کان کی بالیاں فعال کریں
 STR_FACE_HAIR                                                   :بال:
-STR_FACE_HAIR_TOOLTIP                                           :{BLACK}بال بدلیں
 STR_FACE_EYEBROWS                                               :بھوئیں:
-STR_FACE_EYEBROWS_TOOLTIP                                       :{BLACK}بھوئیں بدلیں
 STR_FACE_EYECOLOUR                                              :آنکھوں کا رنگ:
-STR_FACE_EYECOLOUR_TOOLTIP                                      :{BLACK}آنکھوں کا رنگ بدلیں
 STR_FACE_GLASSES                                                :چشمے:
-STR_FACE_GLASSES_TOOLTIP                                        :{BLACK}چشمے فعال کریں
-STR_FACE_GLASSES_TOOLTIP_2                                      :{BLACK}چشمے بدلیں
 STR_FACE_NOSE                                                   :ناک:
-STR_FACE_NOSE_TOOLTIP                                           :{BLACK}ناک بدلیں
 STR_FACE_LIPS                                                   :ہونٹ:
 STR_FACE_MOUSTACHE                                              :مونچھیں:
-STR_FACE_LIPS_MOUSTACHE_TOOLTIP                                 :{BLACK}ہونٹ یا مونچھیں بدلیں
 STR_FACE_CHIN                                                   :ٹھوڑی:
-STR_FACE_CHIN_TOOLTIP                                           :{BLACK}ٹھوڑی بدلیں
 STR_FACE_JACKET                                                 :جیکٹ:
-STR_FACE_JACKET_TOOLTIP                                         :{BLACK}جیکٹ بدلیں
 STR_FACE_COLLAR                                                 :کالر:
-STR_FACE_COLLAR_TOOLTIP                                         :{BLACK}کالر بدلیں
 STR_FACE_TIE                                                    :ٹائی:
 STR_FACE_EARRING                                                :بالیاں:
-STR_FACE_TIE_EARRING_TOOLTIP                                    :{BLACK}ٹائی یا بالیاں بدلیں
 
 # Matches ServerGameType
 ###length 3
@@ -1726,15 +1717,13 @@ STR_NETWORK_CONNECTING_WAITING                                  :{BLACK}آپ س�
 STR_NETWORK_CONNECTING_DOWNLOADING_1                            :{BLACK}اب تک {BYTES} ڈاون لوڈ ہوئی ہیں
 STR_NETWORK_CONNECTING_DOWNLOADING_2                            :{BLACK}اب تک {BYTES} / {BYTES} ڈاون لوڈ ہوئی ہیں
 
-###length 8
+###length 6
 STR_NETWORK_CONNECTING_1                                        :{BLACK}(1/6) رابطہ کر رہے ہیں۔ ۔ ۔
 STR_NETWORK_CONNECTING_2                                        :{BLACK}(2/6) اختیار دے رہے ہیں ۔ ۔ ۔
 STR_NETWORK_CONNECTING_3                                        :{BLACK}(3/6) انتظار کر رہے ہیں ۔ ۔ ۔
 STR_NETWORK_CONNECTING_4                                        :{BLACK}(4/6) نقشہ ڈاون لوڈ کر رہے ہیں ۔ ۔ ۔
 STR_NETWORK_CONNECTING_5                                        :{BLACK}(5/6) معلومات پر کام کر رہے ہیں ۔ ۔ ۔
 STR_NETWORK_CONNECTING_6                                        :{BLACK}(6/6) رجسٹر کر رہے ہیں ۔ ۔ ۔
-STR_NETWORK_CONNECTING_SPECIAL_1                                :{BLACK}کھیل کے بارے میں معلومات حاصل کر رہے ہیں ۔ ۔ ۔
-STR_NETWORK_CONNECTING_SPECIAL_2                                :{BLACK}کمپنی کے بارے میں معلومات حاصل کر رہے ہیں ۔ ۔ ۔
 
 STR_NETWORK_CONNECTION_DISCONNECT                               :{BLACK}رابطہ منقطع کریں
 
@@ -1819,7 +1808,7 @@ STR_NETWORK_ERROR_CLIENT_TIMEOUT_MAP                            :نقشہ ڈاو
 STR_NETWORK_ERROR_CLIENT_TIMEOUT_JOIN                           :نقشہ پر کام کرنے میں بہت دیر لگی
 
 # Network related errors
-STR_NETWORK_SERVER_MESSAGE                                      :*** {1:STRING}
+STR_NETWORK_SERVER_MESSAGE                                      :*** {STRING}
 
 ###length 12
 STR_NETWORK_SERVER_MESSAGE_GAME_PAUSED                          :کھیل رکا ہوا ہے۔ ({STRING})
@@ -1835,11 +1824,10 @@ STR_NETWORK_SERVER_MESSAGE_GAME_REASON_GAME_SCRIPT              :کھیل کا �
 
 STR_NETWORK_MESSAGE_CLIENT_LEAVING                              :چھوڑ رہا ہوں
 STR_NETWORK_MESSAGE_CLIENT_JOINED                               :*** {STRING} کھیل میں شامل ہوا ہے
-STR_NETWORK_MESSAGE_CLIENT_JOINED_ID                            :*** {STRING} کھیل میں شامل ہوا ہے (Client #{2:NUM})
-STR_NETWORK_MESSAGE_CLIENT_COMPANY_JOIN                         :*** {STRING} کمپنی میں شامل ہوا #{2:NUM}
+STR_NETWORK_MESSAGE_CLIENT_JOINED_ID                            :*** {STRING} کھیل میں شامل ہوا ہے (Client #{NUM})
 STR_NETWORK_MESSAGE_CLIENT_COMPANY_SPECTATE                     :*** {STRING} ناظرین میں شامل ہوا
-STR_NETWORK_MESSAGE_CLIENT_COMPANY_NEW                          :*** {STRING} نے نئی کمپنی شروع کی ہے (#{2:NUM})
-STR_NETWORK_MESSAGE_CLIENT_LEFT                                 :*** {STRING} نے کھیل چھوڑ دیا ہے ({2:STRING})
+STR_NETWORK_MESSAGE_CLIENT_COMPANY_NEW                          :*** {STRING} نے نئی کمپنی شروع کی ہے (#{NUM})
+STR_NETWORK_MESSAGE_CLIENT_LEFT                                 :*** {STRING} نے کھیل چھوڑ دیا ہے ({STRING})
 STR_NETWORK_MESSAGE_NAME_CHANGE                                 :*** {STRING} نے اپنا نام بدل کر {STRING} رکھ لیا ہے
 STR_NETWORK_MESSAGE_SERVER_SHUTDOWN                             :{WHITE}سرور نے سیشن بند کر دیا
 STR_NETWORK_MESSAGE_SERVER_REBOOT                               :{WHITE}سرور دوبارہ سے سٹارٹ ہو رہا ہے - - -{}برائے مہربانی انتظار فرمائیے ۔ ۔ ۔
@@ -1946,10 +1934,10 @@ STR_STATION_BUILD_SUPPLIES_CARGO                                :{GOLD}{CARGO_LI
 
 # Join station window
 STR_JOIN_STATION_CAPTION                                        :{WHITE}اسٹیشن ملائیں
-STR_JOIN_STATION_CREATE_SPLITTED_STATION                        :{YELLOW}الگ اسٹیشن تعمیر کریں
+STR_JOIN_STATION_CREATE_SPLIT_STATION                           :{YELLOW}الگ اسٹیشن تعمیر کریں
 
 STR_JOIN_WAYPOINT_CAPTION                                       :{WHITE}گزرگاہ ملائیں
-STR_JOIN_WAYPOINT_CREATE_SPLITTED_WAYPOINT                      :{YELLOW}الگ سے گزرگاہ تعمیر کریں
+STR_JOIN_WAYPOINT_CREATE_SPLIT_WAYPOINT                         :{YELLOW}الگ سے گزرگاہ تعمیر کریں
 
 # Generic toolbar
 
@@ -1991,6 +1979,11 @@ STR_STATION_BUILD_PLATFORM_LENGTH                               :{BLACK}پلیٹ
 STR_STATION_BUILD_PLATFORM_LENGTH_TOOLTIP                       :{BLACK}ریلوے اسٹیشن کی لمبائی منتخب کریں
 STR_STATION_BUILD_DRAG_DROP                                     :{BLACK}کھینچ کر رکھ دیں
 STR_STATION_BUILD_DRAG_DROP_TOOLTIP                             :{BLACK}کھینچ کر رکھ کر اسٹیشن تعمیر کریں
+
+
+
+
+
 
 
 
@@ -2155,6 +2148,7 @@ STR_FOUND_TOWN_SIZE_RANDOM                                      :{G=m}{BLACK}ک�
 STR_FOUND_TOWN_INITIAL_SIZE_TOOLTIP                             :{BLACK}شہر کا حجم منتخب کرو
 STR_FOUND_TOWN_CITY                                             :{BLACK}شہر
 
+
 STR_FOUND_TOWN_ROAD_LAYOUT                                      :{YELLOW}شہر کی سڑکوں کا پھیلائو:
 STR_FOUND_TOWN_SELECT_LAYOUT_TOOLTIP                            :{BLACK}اس شہر کیلئے سڑکوں کا بھیلائو منتخب کرو
 STR_FOUND_TOWN_SELECT_LAYOUT_ORIGINAL                           :{BLACK}اصلی
@@ -2233,6 +2227,8 @@ STR_MAPGEN_BORDER_TYPE_TOOLTIP                                  :{BLACK}کھیل
 STR_MAPGEN_BORDER_FREEFORM                                      :{BLACK}فری فارم
 STR_MAPGEN_BORDER_WATER                                         :{BLACK}پانی
 STR_MAPGEN_BORDER_RANDOM                                        :{BLACK}بے ترتیب
+
+###length 3
 STR_MAPGEN_BORDER_RANDOMIZE                                     :{BLACK}بے ترتیب
 STR_MAPGEN_BORDER_MANUAL                                        :{BLACK}دستی
 
@@ -2259,8 +2255,6 @@ STR_NEWGRF_SETTINGS_UPGRADE                                     :{BLACK}اپگر
 
 
 # NewGRF save preset window
-STR_SAVE_PRESET_CANCEL                                          :{BLACK}منسوخ
-STR_SAVE_PRESET_CANCEL_TOOLTIP                                  :{BLACK}پریسیٹ تبدیل نہ کریں
 STR_SAVE_PRESET_SAVE                                            :{BLACK}بچایں
 
 # NewGRF parameters window
@@ -2343,6 +2337,7 @@ STR_LOCAL_AUTHORITY_COMPANY_RATING                              :{YELLOW}{COMPAN
 STR_GOALS_TEXT                                                  :{ORANGE}{STRING}
 
 # Goal question window
+###length 4
 STR_GOAL_QUESTION_CAPTION_QUESTION                              :سوال
 STR_GOAL_QUESTION_CAPTION_INFORMATION                           :معلومات
 STR_GOAL_QUESTION_CAPTION_WARNING                               :انتباہ
@@ -2467,6 +2462,8 @@ STR_PURCHASE_INFO_ALL_BUT                                       :{CARGO_LIST} ک
 STR_PURCHASE_INFO_AIRCRAFT_RANGE                                :{BLACK}پہنچ: {GOLD}{COMMA} ٹائلیں
 STR_PURCHASE_INFO_AIRCRAFT_TYPE                                 :{BLACK}ہوائی جہاز کی قسم: {GOLD}{STRING}
 
+# Vehicle sort details
+
 ###length 3
 
 ###length VEHICLE_TYPES
@@ -2542,6 +2539,7 @@ STR_DEPOT_VEHICLE_TOOLTIP_CARGO                                 :{}{CARGO_LONG} 
 
 
 # Engine preview window
+
 
 
 
@@ -2637,7 +2635,7 @@ STR_ORDER_INDEX                                                 :{COMMA}:{NBSP}
 
 
 # Conditional order variables, must follow order of OrderConditionVariable enum
-###length 8
+###length 9
 ###next-name-looks-similar
 
 
@@ -2652,12 +2650,11 @@ STR_ORDER_INDEX                                                 :{COMMA}:{NBSP}
 ###length 3
 ###next-name-looks-similar
 
-STR_ORDER_GO_TO_NEAREST_DEPOT_FORMAT                            :{STRING} {STRING} {STRING}
 STR_ORDER_GO_TO_DEPOT_FORMAT                                    :{STRING} {DEPOT}
 
 
 
-STR_ORDER_GO_TO_STATION                                         :{STRING} {STATION} {STRING}
+STR_ORDER_GO_TO_STATION                                         :{STRING} {STATION}
 
 
 
@@ -2672,9 +2669,8 @@ STR_ORDER_OUT_OF_RANGE                                          :{RED} (اگلا
 # Time table window
 
 
-STR_TIMETABLE_TRAVEL_NOT_TIMETABLED_SPEED                       :زیادہ سے زیادہ {2:VELOCITY} رفتار پر سفر کریں (بغیر اوقات کے)
+STR_TIMETABLE_TRAVEL_NOT_TIMETABLED_SPEED                       :زیادہ سے زیادہ {VELOCITY} رفتار پر سفر کریں (بغیر اوقات کے)
 STR_TIMETABLE_TRAVEL_FOR_SPEED                                  :{STRING} کے لئے زیادہ سے زیادہ {VELOCITY} رفتار پر سفر کریں
-
 
 
 
@@ -2758,7 +2754,6 @@ STR_ERROR_ALREADY_BUILT                                         :{WHITE}...تع�
 STR_ERROR_OWNED_BY                                              :{WHITE}۔۔۔ یھ {STRING} کی ملکیت ھے
 STR_ERROR_AREA_IS_OWNED_BY_ANOTHER                              :{WHITE}۔۔۔ رقبھ کسی اور کمپنی کی ملکیت ھے
 STR_ERROR_NAME_MUST_BE_UNIQUE                                   :{WHITE} نام منفرد ھونا چاھیے
-STR_ERROR_GENERIC_OBJECT_IN_THE_WAY                             :{WHITE}{1:STRING} راستے میں ھے
 
 # Local authority errors
 STR_ERROR_LOCAL_AUTHORITY_REFUSES_TO_ALLOW_THIS                 :{WHITE}{TOWN} مقامی حکومت اس کی اجازت نھیں دیتی
@@ -2883,6 +2878,10 @@ STR_ERROR_CAN_T_BUY_AIRCRAFT                                    :{WHITE}ھوائ
 
 ###length VEHICLE_TYPES
 STR_ERROR_CAN_T_SELL_AIRCRAFT                                   :{WHITE}ھوائی جہاز فروخت نہیں کر سکتے
+
+###length VEHICLE_TYPES
+
+###length VEHICLE_TYPES
 
 STR_ERROR_TOO_MANY_VEHICLES_IN_GAME                             :{WHITE}کھیل میں بہت زیادہ سواریاں
 STR_ERROR_CAN_T_CHANGE_SERVICING                                :{WHITE}مرمت کا دورانیہ تبدیل نہین کرسکتے
@@ -3126,18 +3125,7 @@ STR_SAVEGAME_NAME_SPECTATOR                                     :تماشائی,
 
 # Viewport strings
 STR_VIEWPORT_TOWN_POP                                           :{WHITE}{TOWN} ({COMMA})
-STR_VIEWPORT_TOWN                                               :{WHITE}{TOWN}
-STR_VIEWPORT_TOWN_TINY_BLACK                                    :{TINY_FONT}{BLACK}{TOWN}
-STR_VIEWPORT_TOWN_TINY_WHITE                                    :{TINY_FONT}{WHITE}{TOWN}
-
-STR_VIEWPORT_SIGN_SMALL_BLACK                                   :{TINY_FONT}{BLACK}{SIGN}
-STR_VIEWPORT_SIGN_SMALL_WHITE                                   :{TINY_FONT}{WHITE}{SIGN}
-
 STR_VIEWPORT_STATION                                            :{STATION} {STATION_FEATURES}
-STR_VIEWPORT_STATION_TINY                                       :{TINY_FONT}{STATION}
-
-STR_VIEWPORT_WAYPOINT                                           :{WAYPOINT}
-STR_VIEWPORT_WAYPOINT_TINY                                      :{TINY_FONT}{WAYPOINT}
 
 # Simple strings to get specific types of data
 STR_COMPANY_NAME                                                :{COMPANY}
@@ -3189,3 +3177,4 @@ STR_PLANE                                                       :{BLACK}{PLANE}
 STR_SHIP                                                        :{BLACK}{SHIP}
 
 STR_TOOLBAR_RAILTYPE_VELOCITY                                   :({STRING} ({VELOCITY}
+

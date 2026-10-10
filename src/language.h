@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file language.h Information about languages and their files. */
@@ -10,11 +10,10 @@
 #ifndef LANGUAGE_H
 #define LANGUAGE_H
 
-#ifdef WITH_ICU_I18N
-#include <unicode/coll.h>
-#endif /* WITH_ICU_I18N */
 #include "strings_type.h"
 #include <vector>
+
+enum class GRFLanguage : uint8_t;
 
 static const uint8_t CASE_GENDER_LEN = 16; ///< The (maximum) length of a case/gender string.
 static const uint8_t MAX_NUM_GENDERS =  8; ///< Maximum number of supported genders.
@@ -24,22 +23,22 @@ static const uint8_t MAX_NUM_CASES   = 16; ///< Maximum number of supported case
 struct LanguagePackHeader {
 	static const uint32_t IDENT = 0x474E414C; ///< Identifier for OpenTTD language files, big endian for "LANG"
 
-	uint32_t ident;     ///< 32-bits identifier
-	uint32_t version;   ///< 32-bits of auto generated version info which is basically a hash of strings.h
-	char name[32];      ///< the international name of this language
-	char own_name[32];  ///< the localized name of this language
-	char isocode[16];   ///< the ISO code for the language (not country code)
-	uint16_t offsets[TEXT_TAB_END]; ///< the offsets
+	uint32_t ident = 0;                  ///< 32-bits identifier
+	uint32_t version = 0;                ///< 32-bits of auto generated version info which is basically a hash of strings.h
+	char name[32] = "";                  ///< the international name of this language
+	char own_name[32] = "";              ///< the localized name of this language
+	char isocode[16] = "";               ///< the ISO code for the language (not country code)
+	uint16_t offsets[TEXT_TAB_END] = {}; ///< the offsets
 
 	/** Thousand separator used for anything not currencies */
-	char digit_group_separator[8];
+	char digit_group_separator[8] = ",";
 	/** Thousand separator used for currencies */
-	char digit_group_separator_currency[8];
+	char digit_group_separator_currency[8] = ",";
 	/** Decimal separator */
-	char digit_decimal_separator[8];
-	uint16_t missing;    ///< number of missing strings.
-	uint8_t plural_form; ///< plural form index
-	uint8_t text_dir;    ///< default direction of the text
+	char digit_decimal_separator[8] = ".";
+	uint16_t missing = 0;    ///< number of missing strings.
+	uint8_t plural_form = 0; ///< plural form index
+	uint8_t text_dir = 0;    ///< default direction of the text
 	/**
 	 * Windows language ID:
 	 * Windows cannot and will not convert isocodes to something it can use to
@@ -48,14 +47,14 @@ struct LanguagePackHeader {
 	 * what language it is in "Windows". The ID is the 'locale identifier' on:
 	 *   http://msdn.microsoft.com/en-us/library/ms776294.aspx
 	 */
-	uint16_t winlangid;   ///< windows language id
-	uint8_t newgrflangid; ///< newgrf language id
-	uint8_t num_genders;  ///< the number of genders of this language
-	uint8_t num_cases;    ///< the number of cases of this language
-	uint8_t pad[3];       ///< pad header to be a multiple of 4
+	uint16_t winlangid = 0;     ///< windows language id
+	GRFLanguage newgrflangid{}; ///< newgrf language id
+	uint8_t num_genders = 0;    ///< the number of genders of this language
+	uint8_t num_cases = 0;      ///< the number of cases of this language
+	uint8_t pad[3] = {};        ///< pad header to be a multiple of 4
 
-	char genders[MAX_NUM_GENDERS][CASE_GENDER_LEN]; ///< the genders used by this translation
-	char cases[MAX_NUM_CASES][CASE_GENDER_LEN];     ///< the cases used by this translation
+	char genders[MAX_NUM_GENDERS][CASE_GENDER_LEN] = {}; ///< the genders used by this translation
+	char cases[MAX_NUM_CASES][CASE_GENDER_LEN] = {}; ///< the cases used by this translation
 
 	bool IsValid() const;
 	bool IsReasonablyFinished() const;
@@ -65,12 +64,10 @@ struct LanguagePackHeader {
 	 * @param gender_str The string representation of the gender.
 	 * @return The index of the gender, or MAX_NUM_GENDERS when the gender is unknown.
 	 */
-	uint8_t GetGenderIndex(const char *gender_str) const
+	uint8_t GetGenderIndex(std::string_view gender_str) const
 	{
-		for (uint8_t i = 0; i < MAX_NUM_GENDERS; i++) {
-			if (strcmp(gender_str, this->genders[i]) == 0) return i;
-		}
-		return MAX_NUM_GENDERS;
+		auto it = std::ranges::find(this->genders, gender_str);
+		return static_cast<uint8_t>(std::distance(std::begin(this->genders), it));
 	}
 
 	/**
@@ -78,12 +75,10 @@ struct LanguagePackHeader {
 	 * @param case_str The string representation of the case.
 	 * @return The index of the case, or MAX_NUM_CASES when the case is unknown.
 	 */
-	uint8_t GetCaseIndex(const char *case_str) const
+	uint8_t GetCaseIndex(std::string_view case_str) const
 	{
-		for (uint8_t i = 0; i < MAX_NUM_CASES; i++) {
-			if (strcmp(case_str, this->cases[i]) == 0) return i;
-		}
-		return MAX_NUM_CASES;
+		auto it = std::ranges::find(this->cases, case_str);
+		return static_cast<uint8_t>(std::distance(std::begin(this->cases), it));
 	}
 };
 /** Make sure the size is right. */
@@ -103,11 +98,7 @@ extern LanguageList _languages;
 /** The currently loaded language. */
 extern const LanguageMetadata *_current_language;
 
-#ifdef WITH_ICU_I18N
-extern std::unique_ptr<icu::Collator> _current_collator;
-#endif /* WITH_ICU_I18N */
-
 bool ReadLanguagePack(const LanguageMetadata *lang);
-const LanguageMetadata *GetLanguage(uint8_t newgrflangid);
+const LanguageMetadata *GetLanguage(GRFLanguage newgrflangid);
 
 #endif /* LANGUAGE_H */

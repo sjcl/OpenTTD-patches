@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file pool_func.hpp Some methods of Pool are placed here in order to reduce compilation time and binary size. */
@@ -21,41 +21,22 @@
  * @param type The return type of the method.
  */
 #define DEFINE_POOL_METHOD(type) \
-	template <class Titem, typename Tindex, size_t Tgrowth_step, size_t Tmax_size, PoolType Tpool_type, bool Tcache, bool Tzero, typename Tops> \
-	type Pool<Titem, Tindex, Tgrowth_step, Tmax_size, Tpool_type, Tcache, Tzero, Tops>
-
-/**
- * Create a clean pool.
- * @param name The name for the pool.
- */
-DEFINE_POOL_METHOD(inline)::Pool(const char *name) :
-		PoolBase(Tpool_type),
-		name(name),
-		size(0),
-		first_free(0),
-		first_unused(0),
-		items(0),
-#ifdef WITH_FULL_ASSERTS
-		checked(0),
-#endif /* WITH_FULL_ASSERTS */
-		cleaning(false),
-		data(nullptr),
-		free_bitmap(nullptr),
-		alloc_cache(nullptr)
-{ }
+	template <class Titem, typename Tindex, size_t Tgrowth_step, PoolType Tpool_type, bool Tcache, typename Tops> \
+	requires std::is_base_of_v<PoolIDBase, Tindex> \
+	type Pool<Titem, Tindex, Tgrowth_step, Tpool_type, Tcache, Tops>
 
 /**
  * Resizes the pool so 'index' can be addressed
  * @param index index we will allocate later
  * @pre index >= this->size
- * @pre index < Tmax_size
+ * @pre index < MAX_SIZE
  */
 DEFINE_POOL_METHOD(inline void)::ResizeFor(size_t index)
 {
 	dbg_assert(index >= this->size);
-	dbg_assert(index < Tmax_size);
+	dbg_assert(index < MAX_SIZE);
 
-	size_t new_size = std::min<size_t>(Tmax_size, Align(std::max<size_t>(index + 1, (this->size * 3) / 2), std::max<uint>(64, static_cast<uint>(Tgrowth_step))));
+	size_t new_size = std::min<size_t>(MAX_SIZE, Align(std::max<size_t>(index + 1, (this->size * 3) / 2), std::max<uint>(64, static_cast<uint>(Tgrowth_step))));
 
 	this->data = ReallocT(this->data, new_size);
 	MemSetT(this->data + this->size, 0, new_size - this->size);
@@ -90,12 +71,12 @@ DEFINE_POOL_METHOD(inline size_t)::FindFirstFree()
 
 	dbg_assert(this->first_unused == this->size);
 
-	if (this->first_unused < Tmax_size) {
+	if (this->first_unused < MAX_SIZE) {
 		this->ResizeFor(this->first_unused);
 		return this->first_unused;
 	}
 
-	dbg_assert(this->first_unused == Tmax_size);
+	dbg_assert(this->first_unused == MAX_SIZE);
 
 	return NO_FREE_ITEM;
 }
@@ -106,6 +87,7 @@ DEFINE_POOL_METHOD(inline size_t)::FindFirstFree()
  * @param index index of item
  * @pre index < this->size
  * @pre this->Get(index) == nullptr
+ * @return The resulting allocation and pool-type index.
  */
 DEFINE_POOL_METHOD(inline void *)::AllocateItem(size_t size, size_t index, Pool::ParamType param)
 {
@@ -119,29 +101,22 @@ DEFINE_POOL_METHOD(inline void *)::AllocateItem(size_t size, size_t index, Pool:
 		dbg_assert(sizeof(Titem) == size);
 		item = reinterpret_cast<Titem *>(this->alloc_cache);
 		this->alloc_cache = this->alloc_cache->next;
-		if (Tzero) {
-			/* Explicitly casting to (void *) prevents a clang warning -
-			 * we are actually memsetting a (not-yet-constructed) object */
-			memset(static_cast<void *>(item), 0, sizeof(Titem));
-		}
-	} else if (Tzero) {
-		item = reinterpret_cast<Titem *>(CallocT<uint8_t>(size));
 	} else {
 		item = reinterpret_cast<Titem *>(MallocT<uint8_t>(size));
 	}
 	this->data[index] = Tops::PutPtr(item, param);
 	SetBit(this->free_bitmap[index / 64], index % 64);
-	item->index = (Tindex)(uint)index;
+	/* MSVC complains about casting to narrower type, so first cast to the base type... then to the strong type. */
 	return item;
 }
 
 /**
  * Allocates new item
  * @param size size of item
- * @return pointer to allocated item
+ * @return The resulting allocation and pool-type index.
  * @note FatalError() on failure! (no free item)
  */
-DEFINE_POOL_METHOD(void *)::GetNew(size_t size, Pool::ParamType param)
+DEFINE_POOL_METHOD(AllocationResult<Tindex>)::GetNew(size_t size, Pool::ParamType param)
 {
 	size_t index = this->FindFirstFree();
 
@@ -150,12 +125,12 @@ DEFINE_POOL_METHOD(void *)::GetNew(size_t size, Pool::ParamType param)
 	this->checked--;
 #endif /* WITH_FULL_ASSERTS */
 	if (index == NO_FREE_ITEM) {
-		[[noreturn]] extern void PoolNoMoreFreeItemsError(const char *name);
+		[[noreturn]] extern void PoolNoMoreFreeItemsError(std::string_view name);
 		PoolNoMoreFreeItemsError(this->name);
 	}
 
 	this->first_free = index + 1;
-	return this->AllocateItem(size, index, param);
+	return { this->AllocateItem(size, index, param), static_cast<Tindex>(static_cast<Tindex::BaseType>(index)) };
 }
 
 /**
@@ -167,15 +142,15 @@ DEFINE_POOL_METHOD(void *)::GetNew(size_t size, Pool::ParamType param)
  */
 DEFINE_POOL_METHOD(void *)::GetNew(size_t size, size_t index, Pool::ParamType param)
 {
-	if (unlikely(index >= Tmax_size)) {
-		[[noreturn]] extern void PoolOutOfRangeError(const char *name, size_t index, size_t max_size);
-		PoolOutOfRangeError(this->name, index, Tmax_size);
+	if (unlikely(index >= MAX_SIZE)) {
+		[[noreturn]] extern void PoolOutOfRangeError(std::string_view name, size_t index, size_t max_size);
+		PoolOutOfRangeError(this->name, index, MAX_SIZE);
 	}
 
 	if (index >= this->size) this->ResizeFor(index);
 
 	if (unlikely(this->data[index] != Tops::NullValue())) {
-		[[noreturn]] extern void PoolIndexAlreadyInUseError(const char *name, size_t index);
+		[[noreturn]] extern void PoolIndexAlreadyInUseError(std::string_view name, size_t index);
 		PoolIndexAlreadyInUseError(this->name, index);
 	}
 
@@ -229,6 +204,9 @@ DEFINE_POOL_METHOD(void)::CleanPool()
 			free(ac);
 		}
 	}
+
+	/* Ensure that item type has necessary constructors/destructors defined. */
+	static_assert(!std::is_aggregate_v<Titem>);
 }
 
 #undef DEFINE_POOL_METHOD
@@ -239,7 +217,7 @@ DEFINE_POOL_METHOD(void)::CleanPool()
  * forcefully instantiated.
  */
 #define INSTANTIATE_POOL_METHODS(name) \
-	template void * name ## Pool::GetNew(size_t size, name ## Pool::ParamType param); \
+	template AllocationResult<name ## Pool::IndexType> name ## Pool::GetNew(size_t size, name ## Pool::ParamType param); \
 	template void * name ## Pool::GetNew(size_t size, size_t index, name ## Pool::ParamType param); \
 	template void name ## Pool::FreeItem(size_t index); \
 	template void name ## Pool::CleanPool();

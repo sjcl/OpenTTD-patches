@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file depot_sl.cpp Code handling saving and loading of depots */
@@ -33,11 +33,11 @@ static void Load_DEPT()
 	int index;
 
 	while ((index = SlIterateArray()) != -1) {
-		Depot *depot = new (index) Depot();
+		Depot *depot = Depot::CreateAtIndex(DepotID(index));
 		SlObject(depot, _depot_desc);
 
 		/* Set the town 'pointer' so we can restore it later. */
-		if (IsSavegameVersionBefore(SLV_141)) depot->town = (Town *)(size_t)_town_index;
+		if (IsSavegameVersionBefore(SLV_141)) depot->town = (Town *)(uintptr_t)_town_index.base();
 	}
 }
 
@@ -45,7 +45,7 @@ static void Ptrs_DEPT()
 {
 	for (Depot *depot : Depot::Iterate()) {
 		SlObject(depot, _depot_desc);
-		if (IsSavegameVersionBefore(SLV_141)) depot->town = Town::Get((size_t)depot->town);
+		if (IsSavegameVersionBefore(SLV_141)) depot->town = Town::Get(static_cast<TownID>((uintptr_t)depot->town));
 	}
 }
 

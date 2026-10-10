@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file sdl2_v.h Base of the SDL2 video driver. */
@@ -18,7 +18,11 @@
 /** The SDL video driver. */
 class VideoDriver_SDL_Base : public VideoDriver {
 public:
-	VideoDriver_SDL_Base(bool uses_hardware_acceleration = false) : VideoDriver(uses_hardware_acceleration), sdl_window(nullptr), buffer_locked(false) {}
+	/**
+	 * Create the video driver.
+	 * @param uses_hardware_acceleration Whether hardware acceleration is used by this instance of the driver.
+	 */
+	VideoDriver_SDL_Base(bool uses_hardware_acceleration = false) : VideoDriver(uses_hardware_acceleration) {}
 
 	const char *Start(const StringList &param) override;
 
@@ -34,7 +38,7 @@ public:
 
 	bool AfterBlitterChange() override;
 
-	bool ClaimMousePointer() override;
+	void ClaimMousePointer() override;
 
 	void EditBoxGainedFocus() override;
 
@@ -44,12 +48,14 @@ public:
 
 	const char *GetInfoString() const override { return this->driver_info.c_str(); }
 
+	void SetScreensaverInhibited(bool inhibited) override;
+
 protected:
-	struct SDL_Window *sdl_window; ///< Main SDL window.
-	Palette local_palette; ///< Copy of _cur_palette.
-	bool buffer_locked; ///< Video buffer was locked by the main thread.
-	Rect dirty_rect; ///< Rectangle encompassing the dirty area of the video buffer.
-	std::string driver_info; ///< Information string about selected driver.
+	struct SDL_Window *sdl_window = nullptr; ///< Main SDL window.
+	Palette local_palette{}; ///< Current palette to use for drawing.
+	bool buffer_locked = false; ///< Video buffer was locked by the main thread.
+	Rect dirty_rect{}; ///< Rectangle encompassing the dirty area of the video buffer.
+	std::string driver_info{}; ///< Information string about selected driver.
 
 	Dimension GetScreenSize() const override;
 	void InputLoop() override;
@@ -58,21 +64,37 @@ protected:
 	void CheckPaletteAnim() override;
 	bool PollEvent() override;
 
-	/** Indicate to the driver the client-side might have changed. */
 	void ClientSizeChanged(int w, int h, bool force);
 
-	/** (Re-)create the backing store. */
+	/**
+	 * (Re-)create the backing store.
+	 * @param w The width of the window.
+	 * @param h The height of the window.
+	 * @param force Whether to force full reallocation, instead of not reallocating when size did not change.
+	 * @return Whether the backing store was (re-)created.
+	 */
 	virtual bool AllocateBackingStore(int w, int h, bool force = false) = 0;
-	/** Get a pointer to the video buffer. */
+
+	/**
+	 * Get a pointer to the video buffer.
+	 * @return The pointer.
+	 */
 	virtual void *GetVideoPointer() = 0;
+
 	/** Hand video buffer back to the painting backend. */
 	virtual void ReleaseVideoPointer() = 0;
-	/** Create the main window. */
+
+	/**
+	 * Create the main window.
+	 * @param w The width of the window.
+	 * @param h The height of the window.
+	 * @param flags SDL specific flags for the window.
+	 * @return Whether the window was created or already existed.
+	 */
 	virtual bool CreateMainWindow(uint w, uint h, uint flags = 0);
 
 private:
 	void LoopOnce();
-	void MainLoopCleanup();
 	bool CreateMainSurface(uint w, uint h, bool resize);
 	const char *Initialize();
 
@@ -84,9 +106,9 @@ private:
 	/**
 	 * This is true to indicate that keyboard input is in text input mode, and SDL_TEXTINPUT events are enabled.
 	 */
-	bool edit_box_focused;
+	bool edit_box_focused = false;
 
-	int startup_display;
+	int startup_display = 0; ///< The display to show OpenTTD on when starting.
 };
 
 #endif /* VIDEO_SDL_H */

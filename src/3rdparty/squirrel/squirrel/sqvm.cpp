@@ -116,7 +116,6 @@ SQVM::SQVM(SQSharedState *ss)
 	_in_stackoverflow = false;
 	_ops_till_suspend = 0;
 	_ops_till_suspend_error_threshold = INT64_MIN;
-	_ops_till_suspend_error_label = nullptr;
 	_callsstack = nullptr;
 	_callsstacksize = 0;
 	_alloccallsstacksize = 0;
@@ -197,7 +196,7 @@ bool SQVM::ObjCmp(const SQObjectPtr &o1,const SQObjectPtr &o2,SQInteger &result)
 		SQObjectPtr res;
 		switch(type(o1)){
 		case OT_STRING:
-			_RET_SUCCEED(strcmp(_stringval(o1),_stringval(o2)));
+			_RET_SUCCEED(_stringval(o1).compare(_stringval(o2)));
 		case OT_INTEGER:
 			/* FS#3954: wrong integer comparison */
 			_RET_SUCCEED((_integer(o1)<_integer(o2))?-1:(_integer(o1)==_integer(o2))?0:1);
@@ -292,7 +291,7 @@ void SQVM::ToString(const SQObjectPtr &o,SQObjectPtr &res)
 	default:
 		buf.format("({} : 0x{:08X})",GetTypeName(o),(size_t)(void*)_rawval(o));
 	}
-	res = SQString::Create(_ss(this),buf.data(),buf.size());
+	res = SQString::Create(_ss(this),buf);
 }
 
 
@@ -301,11 +300,7 @@ bool SQVM::StringCat(const SQObjectPtr &str,const SQObjectPtr &obj,SQObjectPtr &
 	SQObjectPtr a, b;
 	ToString(str, a);
 	ToString(obj, b);
-	SQInteger l = _string(a)->_len , ol = _string(b)->_len;
-	SQChar *s = _sp(l + ol + 1);
-	memcpy(s, _stringval(a), (size_t)l);
-	memcpy(s + l, _stringval(b), (size_t)ol);
-	dest = SQString::Create(_ss(this), _spval, l + ol);
+	dest = SQString::Create(_ss(this), fmt::format("{}{}", _stringval(a), _stringval(b)));
 	return true;
 }
 
@@ -428,7 +423,7 @@ bool SQVM::Return(SQInteger _arg0, SQInteger _arg1, SQObjectPtr &retval)
 		else retval = _null_;
 	}
 	else {
-		if(target != -1) { //-1 is when a class contructor ret value has to be ignored
+		if(target != -1) { //-1 is when a class constructor ret value has to be ignored
 			if (_arg0 != MAX_FUNC_STACKSIZE)
 				STK(target) = _stack._vals[oldstackbase+_arg1];
 			else
@@ -1252,7 +1247,8 @@ bool SQVM::Get(const SQObjectPtr &self,const SQObjectPtr &key,SQObjectPtr &dest,
 	if(fetchroot) {
 		if(_rawval(STK(0)) == _rawval(self) &&
 			type(STK(0)) == type(self)) {
-				return _table(_roottable)->Get(key,dest);
+				if (_table(_roottable)->Get(key,dest)) return true;
+				return _table(_ss(this)->_consts)->Get(key,dest);
 		}
 	}
 	return false;
@@ -1287,9 +1283,10 @@ bool SQVM::FallBackGet(const SQObjectPtr &self,const SQObjectPtr &key,SQObjectPt
 	case OT_STRING:
 		if(sq_isnumeric(key)){
 			SQInteger n=tointeger(key);
-			if(abs((int)n)<_string(self)->_len){
-				if(n<0)n=_string(self)->_len-n;
-				dest=SQInteger(_stringval(self)[n]);
+			std::string_view str = _stringval(self);
+			if (n < 0) n = str.size() + n;
+			if (n >= 0 && n < static_cast<SQInteger>(str.size())) {
+				dest=SQInteger(str[n]);
 				return true;
 			}
 			return false;
@@ -1479,7 +1476,6 @@ bool SQVM::DeleteSlot(const SQObjectPtr &self,const SQObjectPtr &key,SQObjectPtr
 
 bool SQVM::Call(SQObjectPtr &closure,SQInteger nparams,SQInteger stackbase,SQObjectPtr &outres,SQBool raiseerror,SQBool can_suspend)
 {
-	[[maybe_unused]] SQInteger prevstackbase = _stackbase;
 	switch(type(closure)) {
 	case OT_CLOSURE: {
 		assert(!can_suspend || this->_can_suspend);
@@ -1489,13 +1485,12 @@ bool SQVM::Call(SQObjectPtr &closure,SQInteger nparams,SQInteger stackbase,SQObj
 		this->_can_suspend = backup_suspend;
 		return ret;
 	}
-		break;
+
 	case OT_NATIVECLOSURE: {
 		bool suspend;
 		return CallNative(_nativeclosure(closure), nparams, stackbase, outres,suspend);
-
 	}
-		break;
+
 	case OT_CLASS: {
 		SQObjectPtr constr;
 		SQObjectPtr temp;
@@ -1506,14 +1501,10 @@ bool SQVM::Call(SQObjectPtr &closure,SQInteger nparams,SQInteger stackbase,SQObj
 		}
 		return true;
 	}
-		break;
+
 	default:
 		return false;
 	}
-	if(!_suspended) {
-		assert(_stackbase == prevstackbase);
-	}
-	return true;
 }
 
 bool SQVM::CallMetaMethod(SQDelegable *del,SQMetaMethod mm,SQInteger nparams,SQObjectPtr &outres)

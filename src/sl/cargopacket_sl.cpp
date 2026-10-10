@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file cargopacket_sl.cpp Code handling saving and loading of cargo packets */
@@ -46,7 +46,7 @@ extern btree::btree_map<uint64_t, Money> _cargo_packet_deferred_payments;
 		 * information is lost. In that case we set it to the position of this
 		 * station */
 		for (Station *st : Station::Iterate()) {
-			for (CargoID c = 0; c < NUM_CARGO; c++) {
+			for (CargoType c{}; c < NUM_CARGO; c++) {
 				GoodsEntry *ge = &st->goods[c];
 
 				if (ge->data == nullptr) continue;
@@ -60,9 +60,9 @@ extern btree::btree_map<uint64_t, Money> _cargo_packet_deferred_payments;
 	}
 
 	if (IsSavegameVersionBefore(SLV_120)) {
-		/* CargoPacket's first_station should be either INVALID_STATION or a valid station */
+		/* CargoPacket's first_station should be either StationID::Invalid() or a valid station */
 		for (CargoPacket *cp : CargoPacket::Iterate()) {
-			if (!Station::IsValidID(cp->first_station)) cp->first_station = INVALID_STATION;
+			if (!Station::IsValidID(cp->first_station)) cp->first_station = StationID::Invalid();
 		}
 	}
 
@@ -73,7 +73,7 @@ extern btree::btree_map<uint64_t, Money> _cargo_packet_deferred_payments;
 		for (Vehicle *v : Vehicle::Iterate()) v->cargo.InvalidateCache();
 
 		for (Station *st : Station::Iterate()) {
-			for (CargoID c = 0; c < NUM_CARGO; c++) {
+			for (CargoType c{}; c < NUM_CARGO; c++) {
 				if (st->goods[c].data != nullptr) st->goods[c].data->cargo.InvalidateCache();
 			}
 		}
@@ -137,7 +137,7 @@ extern btree::btree_map<uint64_t, Money> _cargo_packet_deferred_payments;
 			assert_msg(st != nullptr, "{}", VehicleInfoDumper(v));
 			for (CargoPacket *cp : iter.second) {
 				st->goods[v->cargo_type].CreateData().cargo.AfterLoadIncreaseReservationCount(cp->count);
-				v->cargo.Append(cp, VehicleCargoList::MTA_LOAD);
+				v->cargo.Append(cp, VehicleCargoList::MoveToAction::Load);
 				if (cp->source_xy != INVALID_TILE) {
 					cp->UpdateLoadingTile(cp->source_xy);
 				}
@@ -166,8 +166,8 @@ NamedSaveLoadTable GetCargoPacketDesc()
 		NSL("periods_in_transit", SLE_CONDVAR_X(CargoPacket, periods_in_transit, SLE_FILE_U8 | SLE_VAR_U16, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_MORE_CARGO_AGE, 0, 0))),
 		NSL("periods_in_transit", SLE_CONDVAR_X(CargoPacket, periods_in_transit, SLE_UINT16, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_MORE_CARGO_AGE))),
 		NSL("feeder_share",       SLE_VAR(CargoPacket, feeder_share,             SLE_INT64)),
-		NSL("source_type",        SLE_CONDVAR(CargoPacket, source_type,          SLE_UINT8,  SLV_125, SL_MAX_VERSION)),
-		NSL("source_id",          SLE_CONDVAR(CargoPacket, source_id,            SLE_UINT16, SLV_125, SL_MAX_VERSION)),
+		NSL("source_type",        SLE_CONDVAR(CargoPacket, source.type,          SLE_UINT8,  SLV_125, SL_MAX_VERSION)),
+		NSL("source_id",          SLE_CONDVAR(CargoPacket, source.id,            SLE_UINT16, SLV_125, SL_MAX_VERSION)),
 		NSL("travelled.x",        SLE_CONDVAR_X(CargoPacket, travelled.x,        SLE_INT32, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_CARGO_TRAVELLED))),
 		NSL("travelled.y",        SLE_CONDVAR_X(CargoPacket, travelled.y,        SLE_INT32, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_CARGO_TRAVELLED))),
 
@@ -199,7 +199,7 @@ static void Load_CAPA()
 
 	int index;
 	while ((index = SlIterateArray()) != -1) {
-		CargoPacket *cp = new (index) CargoPacket();
+		CargoPacket *cp = CargoPacket::CreateAtIndex(CargoPacketID(index));
 		SlObjectLoadFiltered(cp, slt);
 	}
 }
@@ -240,8 +240,8 @@ void Load_CPDP()
 
 /** Chunk handlers related to cargo packets. */
 static const ChunkHandler cargopacket_chunk_handlers[] = {
-	{ 'CAPA', Save_CAPA, Load_CAPA, nullptr, nullptr, CH_TABLE },
-	{ 'CPDP', Save_CPDP, Load_CPDP, nullptr, nullptr, CH_RIFF  },
+	{ 'CAPA', Save_CAPA, Load_CAPA, nullptr, nullptr, ChunkType::Table },
+	{ 'CPDP', Save_CPDP, Load_CPDP, nullptr, nullptr, ChunkType::Riff  },
 };
 
 extern const ChunkHandlerTable _cargopacket_chunk_handlers(cargopacket_chunk_handlers);

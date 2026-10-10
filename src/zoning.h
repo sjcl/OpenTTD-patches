@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file zoning.h */
@@ -10,8 +10,9 @@
 #ifndef ZONING_H
 #define ZONING_H
 
-#include "tile_cmd.h"
 #include "company_type.h"
+
+struct TileInfo;
 
 /**
  * Zoning evaluation modes
@@ -19,7 +20,7 @@
 enum ZoningEvaluationMode : uint8_t {
 	ZEM_NOTHING = 0,   ///< No zoning action selected
 	ZEM_AUTHORITY,     ///< Check the local authority's opinion.
-	ZEM_CAN_BUILD,     ///< Check wither or not the player can build.
+	ZEM_CAN_BUILD,     ///< Check whether or not the player can build.
 	ZEM_STA_CATCH,     ///< Check catchment area for stations
 	ZEM_STA_CATCH_WIN, ///< Check catchment area for stations with their station windows open
 	ZEM_BUL_UNSER,     ///< Check for unserved buildings
@@ -41,9 +42,9 @@ enum ZoningEvaluationMode : uint8_t {
  * Zoning evaluation modes
  */
 enum ZoningModeMask {
-	ZMM_NOTHING = 0,   ///< No zoning mask
-	ZMM_INNER,         ///< Inner
-	ZMM_OUTER,         ///< Outer
+	ZMM_NOTHING = 0,     ///< No zoning mask
+	ZMM_INNER   = 1 << 0, ///< Inner
+	ZMM_OUTER   = 1 << 1, ///< Outer
 	ZMM_ALL = ZMM_INNER | ZMM_OUTER,
 };
 DECLARE_ENUM_AS_BIT_SET(ZoningModeMask)

@@ -13,7 +13,7 @@
 # This file is part of OpenTTD.
 # OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
 # OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-# See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+# See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
 
 
 ##id 0x0000
@@ -411,9 +411,7 @@ STR_SCENEDIT_FILE_MENU_QUIT                                     :انهاء
 
 
 # Settings menu
-###length 16
 STR_SETTINGS_MENU_GAME_OPTIONS                                  :إعدادات اللعبه
-STR_SETTINGS_MENU_CONFIG_SETTINGS_TREE                          :الإعدادات
 STR_SETTINGS_MENU_AI_SETTINGS                                   :اعدادات االذكاء الاصطناعي
 STR_SETTINGS_MENU_NEWGRF_SETTINGS                               :إعدادات اﻹضافات
 STR_SETTINGS_MENU_TRANSPARENCY_OPTIONS                          :خيارات الشفافية
@@ -582,6 +580,8 @@ STR_GRAPH_COMPANY_PERFORMANCE_RATINGS_CAPTION                   :{WHITE}تقيي
 STR_GRAPH_COMPANY_VALUES_CAPTION                                :{WHITE}قيمة الشركة
 
 
+
+
 STR_GRAPH_CARGO_PAYMENT_RATES_CAPTION                           :{WHITE}النسبة التنازلية لقيمة نقل البضائع
 STR_GRAPH_CARGO_PAYMENT_RATES_TITLE                             :{TINY_FONT}{BLACK}الدخل من نقل 10 وحدات (او 10,000 لتر) من البضاعة مسافة 20 مربع
 STR_GRAPH_CARGO_ENABLE_ALL                                      :{TINY_FONT}{BLACK}فعل الكل
@@ -590,6 +590,7 @@ STR_GRAPH_CARGO_TOOLTIP_ENABLE_ALL                              :{BLACK}اعرض
 STR_GRAPH_CARGO_TOOLTIP_DISABLE_ALL                             :{BLACK}لا تعرض البضائع في جدول اسعار النقل.
 STR_GRAPH_CARGO_PAYMENT_TOGGLE_CARGO                            :{BLACK}اظهار / اخفاء الشحن
 STR_GRAPH_CARGO_PAYMENT_CARGO                                   :{TINY_FONT}{BLACK}{STRING}
+
 
 
 STR_GRAPH_PERFORMANCE_DETAIL_TOOLTIP                            :{BLACK}عرض كامل تفاصيل الأداء
@@ -776,7 +777,6 @@ STR_MESSAGE_HISTORY_TOOLTIP                                     :{BLACK}قائم
 STR_MESSAGE_NEWS_FORMAT                                         :{STRING}  -  {STRING}
 
 STR_NEWS_MESSAGE_CAPTION                                        :{WHITE}رسالة
-STR_NEWS_CUSTOM_ITEM                                            :{BIG_FONT}{BLACK}{STRING}
 
 STR_NEWS_FIRST_TRAIN_ARRIVAL                                    :{BIG_FONT}{BLACK} ... المواطنون يحتفلون{} اول قطار وصل في {STATION}!
 STR_NEWS_FIRST_BUS_ARRIVAL                                      :{BIG_FONT}{BLACK}يحتفل الأهالي ...{}بوصول اول باص للمحطة ...{STATION}!
@@ -882,12 +882,13 @@ STR_GAME_OPTIONS_CAPTION                                        :{WHITE}إعدا
 
 
 
-STR_GAME_OPTIONS_CURRENCY_UNITS_FRAME                           :{BLACK}وحدة العملة
-STR_GAME_OPTIONS_CURRENCY_UNITS_DROPDOWN_TOOLTIP                :{BLACK}اختيار وحدة العملة
+
+STR_GAME_OPTIONS_CURRENCY_UNITS_FRAME                           :وحدة العملة
+STR_GAME_OPTIONS_CURRENCY_UNITS_DROPDOWN_TOOLTIP                :اختيار وحدة العملة
 
 STR_GAME_OPTIONS_CURRENCY_CODE                                  :{STRING} ({STRING})
 
-###length 44
+###length 46
 STR_GAME_OPTIONS_CURRENCY_GBP                                   :جنية
 STR_GAME_OPTIONS_CURRENCY_USD                                   :دولار
 STR_GAME_OPTIONS_CURRENCY_EUR                                   :يورو
@@ -932,8 +933,8 @@ STR_GAME_OPTIONS_CURRENCY_IDR                                   :الروبية 
 STR_GAME_OPTIONS_CURRENCY_MYR                                   :رينغيت ماليزي
 STR_GAME_OPTIONS_CURRENCY_LVL                                   :لاتفيا لاتس
 
-STR_GAME_OPTIONS_AUTOSAVE_FRAME                                 :{BLACK}حفظ آلي
-STR_GAME_OPTIONS_AUTOSAVE_DROPDOWN_TOOLTIP                      :{BLACK}اختار مدة الحفظ الآلي
+STR_GAME_OPTIONS_AUTOSAVE_FRAME                                 :حفظ آلي
+STR_GAME_OPTIONS_AUTOSAVE_DROPDOWN_TOOLTIP                      :اختار مدة الحفظ الآلي
 
 # Autosave dropdown
 ###length 5
@@ -943,55 +944,62 @@ STR_GAME_OPTIONS_AUTOSAVE_DROPDOWN_EVERY_30_MINUTES             :كل 30 دقي�
 STR_GAME_OPTIONS_AUTOSAVE_DROPDOWN_EVERY_60_MINUTES             :كل 60 دقيقة
 STR_GAME_OPTIONS_AUTOSAVE_DROPDOWN_EVERY_120_MINUTES            :كل 120 دقيقة
 
-STR_GAME_OPTIONS_LANGUAGE                                       :{BLACK}لغة
-STR_GAME_OPTIONS_LANGUAGE_TOOLTIP                               :{BLACK}اختر لغة الواجهه
+STR_GAME_OPTIONS_LANGUAGE                                       :لغة
+STR_GAME_OPTIONS_LANGUAGE_TOOLTIP                               :اختر لغة الواجهه
 STR_GAME_OPTIONS_LANGUAGE_PERCENTAGE                            :{STRING} ({NUM}% مكتمل)
 
-STR_GAME_OPTIONS_FULLSCREEN                                     :{BLACK}شاشة كاملة
-STR_GAME_OPTIONS_FULLSCREEN_TOOLTIP                             :{BLACK}اختر هذا المربع للعب OpenTTD على لشاشة الكاملة
+STR_GAME_OPTIONS_FULLSCREEN                                     :شاشة كاملة
+STR_GAME_OPTIONS_FULLSCREEN_TOOLTIP                             :اختر هذا المربع للعب OpenTTD على لشاشة الكاملة
 
-STR_GAME_OPTIONS_RESOLUTION                                     :{BLACK}دقة الشاشة
-STR_GAME_OPTIONS_RESOLUTION_TOOLTIP                             :{BLACK}اختر دقة الشاشة
+STR_GAME_OPTIONS_RESOLUTION                                     :دقة الشاشة
+STR_GAME_OPTIONS_RESOLUTION_TOOLTIP                             :اختر دقة الشاشة
 STR_GAME_OPTIONS_RESOLUTION_OTHER                               :اخرى
 
-STR_GAME_OPTIONS_VIDEO_ACCELERATION                             :{BLACK}تسريع الأجهزة
-STR_GAME_OPTIONS_VIDEO_ACCELERATION_TOOLTIP                     :{BLACK}اخترهذا المربع للسماح لـ OpenTTD بمحاولة استخدام تسريع الأجهزة. سيتم تطبيق الإعداد الذي تم تغييره فقط عند إعادة تشغيل اللعبة
+STR_GAME_OPTIONS_VIDEO_ACCELERATION                             :تسريع الأجهزة
+STR_GAME_OPTIONS_VIDEO_ACCELERATION_TOOLTIP                     :اخترهذا المربع للسماح لـ OpenTTD بمحاولة استخدام تسريع الأجهزة. سيتم تطبيق الإعداد الذي تم تغييره فقط عند إعادة تشغيل اللعبة
 STR_GAME_OPTIONS_VIDEO_ACCELERATION_RESTART                     :{WHITE}لن يعمل الإعداد إلا بعد إعادة تشغيل اللعبة
 
-STR_GAME_OPTIONS_VIDEO_VSYNC                                    :{BLACK}VSync
-STR_GAME_OPTIONS_VIDEO_VSYNC_TOOLTIP                            :{BLACK}حدد هذا المربع لمزامنة الشاشة (v-sync). سيتم تطبيق الإعداد الذي تم تغييره فقط عند إعادة تشغيل اللعبة. يعمل فقط مع تمكين تسريع الأجهزة (hardware acceleration)
-
-
-STR_GAME_OPTIONS_GUI_SCALE_TOOLTIP                              :{BLACK}اسحب شريط التمرير لتعيين حجم الواجهة. اضغط مع الاستمرار على Ctrl للتعديل المستمر
-STR_GAME_OPTIONS_GUI_SCALE_AUTO                                 :{BLACK}الكشف التلقائي عن الحجم
-STR_GAME_OPTIONS_GUI_SCALE_AUTO_TOOLTIP                         :{BLACK}اختر هذا المربع لكشف حجم الواجهة تلقائيا
+STR_GAME_OPTIONS_VIDEO_VSYNC                                    :VSync
+STR_GAME_OPTIONS_VIDEO_VSYNC_TOOLTIP                            :حدد هذا المربع لمزامنة الشاشة (v-sync). سيتم تطبيق الإعداد الذي تم تغييره فقط عند إعادة تشغيل اللعبة. يعمل فقط مع تمكين تسريع الأجهزة (hardware acceleration)
 
 
 
+STR_GAME_OPTIONS_GUI_SCALE_TOOLTIP                              :اسحب شريط التمرير لتعيين حجم الواجهة. اضغط مع الاستمرار على Ctrl للتعديل المستمر
+STR_GAME_OPTIONS_GUI_SCALE_AUTO                                 :الكشف التلقائي عن الحجم
+STR_GAME_OPTIONS_GUI_SCALE_AUTO_TOOLTIP                         :اختر هذا المربع لكشف حجم الواجهة تلقائيا
 
 
-STR_GAME_OPTIONS_GRAPHICS                                       :{BLACK}الرسومات
 
-STR_GAME_OPTIONS_REFRESH_RATE                                   :{BLACK}معدل تحديث الشاشة
-STR_GAME_OPTIONS_REFRESH_RATE_TOOLTIP                           :{BLACK}حدد معدل تحديث الشاشة
+
+
+
+STR_GAME_OPTIONS_REFRESH_RATE                                   :معدل تحديث الشاشة
+STR_GAME_OPTIONS_REFRESH_RATE_TOOLTIP                           :حدد معدل تحديث الشاشة
 STR_GAME_OPTIONS_REFRESH_RATE_ITEM                              :{NUM}هرتز
 STR_GAME_OPTIONS_REFRESH_RATE_WARNING                           :{WHITE}قد تؤثر معدلات التحديث الأعلى من 60 هرتز على الأداء.
 
-STR_GAME_OPTIONS_BASE_GRF                                       :{BLACK} الواجهة الرسومية الاساسية
-STR_GAME_OPTIONS_BASE_GRF_TOOLTIP                               :{BLACK} اختر مجموعة الواجهة الرسومية
-STR_GAME_OPTIONS_BASE_GRF_DESCRIPTION_TOOLTIP                   :{BLACK} معلومات اضافية عن القاعدة الرسومية
+STR_GAME_OPTIONS_BASE_GRF                                       : الواجهة الرسومية الاساسية
+STR_GAME_OPTIONS_BASE_GRF_TOOLTIP                               : اختر مجموعة الواجهة الرسومية
+STR_GAME_OPTIONS_BASE_GRF_DESCRIPTION_TOOLTIP                   : معلومات اضافية عن القاعدة الرسومية
 
-STR_GAME_OPTIONS_BASE_SFX                                       :{BLACK}قاعدة الاصوات الاساسية
-STR_GAME_OPTIONS_BASE_SFX_TOOLTIP                               :{BLACK}اختر الاصوات الاساسية للاستخدام
-STR_GAME_OPTIONS_BASE_SFX_DESCRIPTION_TOOLTIP                   :{BLACK}معلومات اضافية حول مجوعة الصوت
+STR_GAME_OPTIONS_BASE_SFX                                       :قاعدة الاصوات الاساسية
+STR_GAME_OPTIONS_BASE_SFX_TOOLTIP                               :اختر الاصوات الاساسية للاستخدام
+STR_GAME_OPTIONS_BASE_SFX_DESCRIPTION_TOOLTIP                   :معلومات اضافية حول مجوعة الصوت
 
-STR_GAME_OPTIONS_BASE_MUSIC                                     :{BLACK}قاعده الموسيقى الاساسيه
-STR_GAME_OPTIONS_BASE_MUSIC_TOOLTIP                             :{BLACK}اختر الموسيقى الاساسية التي تود استخدامها
-STR_GAME_OPTIONS_BASE_MUSIC_DESCRIPTION_TOOLTIP                 :{BLACK}معلومات اضافية عن الموسيقى الاساسية
-
-
+STR_GAME_OPTIONS_BASE_MUSIC                                     :قاعده الموسيقى الاساسيه
+STR_GAME_OPTIONS_BASE_MUSIC_TOOLTIP                             :اختر الموسيقى الاساسية التي تود استخدامها
+STR_GAME_OPTIONS_BASE_MUSIC_DESCRIPTION_TOOLTIP                 :معلومات اضافية عن الموسيقى الاساسية
 
 
+STR_GAME_OPTIONS_SOCIAL_PLUGINS_NONE                            :{LTBLUE}(لا توجد اضافات مثبتة للتكامل مع منصات التواصل)
+
+STR_GAME_OPTIONS_SOCIAL_PLUGIN_PLATFORM                         :المنصة:
+STR_GAME_OPTIONS_SOCIAL_PLUGIN_STATE                            :حالة الاضافة:
+
+STR_GAME_OPTIONS_SOCIAL_PLUGIN_STATE_FAILED                     :{RED}فشلت التهيئة
+STR_GAME_OPTIONS_SOCIAL_PLUGIN_STATE_PLATFORM_NOT_RUNNING       :{ORANGE}{STRING} غير مفعلة
+STR_GAME_OPTIONS_SOCIAL_PLUGIN_STATE_DUPLICATE                  :{RED}اضافة مكررة
+STR_GAME_OPTIONS_SOCIAL_PLUGIN_STATE_INVALID_SIGNATURE          :{RED}توقيع غير صالح
 
 
 STR_ERROR_RESOLUTION_LIST_FAILED                                :{WHITE}فشل في استرداد قائمة الدقة المدعومة
@@ -1060,9 +1068,9 @@ STR_RIVERS_MODERATE                                             :متوسطة
 STR_RIVERS_LOT                                                  :كثيرة
 
 ###length 3
-STR_DISASTER_NONE                                               :بدون
-STR_DISASTER_REDUCED                                            :قليل
-STR_DISASTER_NORMAL                                             :طبيعي
+STR_BREAKDOWNS_NONE                                             :بدون
+STR_BREAKDOWNS_REDUCED                                          :قليل
+STR_BREAKDOWNS_NORMAL                                           :طبيعي
 
 ###length 4
 STR_SUBSIDY_X1_5                                                :*1.5
@@ -1092,17 +1100,16 @@ STR_CITY_APPROVAL_PERMISSIVE                                    :متساهل (�
 
 STR_WARNING_NO_SUITABLE_AI                                      :{WHITE}لايوجد ذكاء اصطناعي متاح ...{}تستطيع تجميل العديد من الذكاء الاصطناعي عن طريق اللانترنت
 
-# Settings tree window
-STR_CONFIG_SETTING_TREE_CAPTION                                 :{WHITE}الإعدادات
-STR_CONFIG_SETTING_FILTER_TITLE                                 :{BLACK}تصفية القائمة:
-STR_CONFIG_SETTING_EXPAND_ALL                                   :{BLACK}مدد الكل
-STR_CONFIG_SETTING_COLLAPSE_ALL                                 :{BLACK}إسحب الكل
-STR_CONFIG_SETTING_RESET_ALL                                    :{BLACK}اعادة ضبط جميع القيم
+# Settings tree in the Game Options window
+STR_CONFIG_SETTING_FILTER_TITLE                                 :تصفية القائمة:
+STR_CONFIG_SETTING_EXPAND_ALL                                   :مدد الكل
+STR_CONFIG_SETTING_COLLAPSE_ALL                                 :إسحب الكل
+STR_CONFIG_SETTING_RESET_ALL                                    :اعادة ضبط جميع القيم
 STR_CONFIG_SETTING_NO_EXPLANATION_AVAILABLE_HELPTEXT            :(لا يوجد تفسير متوفر)
 STR_CONFIG_SETTING_RESET_ALL_CONFIRMATION_DIALOG_CAPTION        :{WHITE}تحذير!
 
-STR_CONFIG_SETTING_RESTRICT_CATEGORY                            :{BLACK} فئة:
-STR_CONFIG_SETTING_RESTRICT_TYPE                                :{BLACK}نوع:
+STR_CONFIG_SETTING_RESTRICT_CATEGORY                            : فئة:
+STR_CONFIG_SETTING_RESTRICT_TYPE                                :نوع:
 STR_CONFIG_SETTING_RESTRICT_BASIC                               :اﻹعدادات الاساسيه
 
 STR_CONFIG_SETTING_TYPE_DROPDOWN_HELPTEXT                       :{BLACK}احصر القائمة على انواع اعدادات محددة
@@ -1115,7 +1122,7 @@ STR_CONFIG_SETTING_TYPE_DROPDOWN_COMPANY_INGAME                 :اعدادات 
 
 STR_CONFIG_SETTINGS_NONE                                        :{WHITE} - بدون -
 ###length 3
-STR_CONFIG_SETTING_CATEGORY_AND_TYPE_HIDES                      :{BLACK}عرض جميع النتائج بالنسبة للإعداد{}{SILVER} الفئة {BLACK} إلى {WHITE}{STRING} {BLACK}و{SILVER}نوع {BLACK} إلى{WHITE} جميع انواع الإعدادات
+STR_CONFIG_SETTING_CATEGORY_AND_TYPE_HIDES                      :عرض جميع النتائج بالنسبة للإعداد{}{SILVER} الفئة {BLACK} إلى {WHITE}{STRING} {BLACK}و{SILVER}نوع {BLACK} إلى{WHITE} جميع انواع الإعدادات
 
 ###length 3
 STR_CONFIG_SETTING_OFF                                          :قفل
@@ -1144,8 +1151,10 @@ STR_CONFIG_SETTING_HORIZONTAL_POS_RIGHT                         :يمين
 STR_CONFIG_SETTING_INTEREST_RATE_HELPTEXT                       :سعر الفائدة على القرض يتحكم أيضًا في التضخم ، إذا تم تمكينه
 
 STR_CONFIG_SETTING_RUNNING_COSTS_HELPTEXT                       :تحديد مستوى تكاليف الصيانة والتشغيل للمركبات والبنية التحتية
+###length 3
 
 STR_CONFIG_SETTING_CONSTRUCTION_SPEED                           ::سرعة البناء {STRING}
+STR_CONFIG_SETTING_CONSTRUCTION_SPEED_HELPTEXT                  :الحد من كمية البناء للذكاء الاصطناعي
 
 STR_CONFIG_SETTING_VEHICLE_BREAKDOWNS                           ::تعطلات العربة {STRING}
 
@@ -1155,10 +1164,14 @@ STR_CONFIG_SETTING_SUBSIDY_MULTIPLIER_HELPTEXT                  :حدد المب
 
 ###setting-zero-is-special
 
+STR_CONFIG_SETTING_CONSTRUCTION_COSTS                           :تكاليف البناء: {STRING}
+STR_CONFIG_SETTING_CONSTRUCTION_COSTS_HELPTEXT                  :تحديد مستوى تكاليف البناء والشراء
+###length 3
 
 STR_CONFIG_SETTING_RECESSIONS                                   :حالات الركود: {STRING}
 
-STR_CONFIG_SETTING_TRAIN_REVERSING                              :عدم السماح بعودة القطار إلى الخلف في المحطات: {STRING}
+
+###length 3
 
 STR_CONFIG_SETTING_DISASTERS                                    :الكوارث: {STRING}
 
@@ -1284,11 +1297,17 @@ STR_CONFIG_SETTING_WARN_INCOME_LESS_HELPTEXT                    :عند التم
 
 STR_CONFIG_SETTING_NEVER_EXPIRE_VEHICLES                        :المركبات لا تنتهي صلاحيتها ابدا : {STRING}
 
+STR_CONFIG_SETTING_TIMEKEEPING_UNITS                            :تتبع الوقت: {STRING}
+STR_CONFIG_SETTING_TIMEKEEPING_UNITS_HELPTEXT                   :اختبر وحدات تتبع الوقت في اللعبة. ﻻ يمكن تغيير هذا الاعداد لاحقاً.{}{}المعتمد على التقويم هو تجربة OpenTTD التقليدية، حيث يتكون العام من 12 شهر، والشهر يتكون من 28 الى 31 يوماً.{}{}في الوقت المعتمد على ساعة الحائط، يتم حساب انتاج البضائع والشؤون المالية بناءً على فترات زمنية مدتها دقيقة واحدة، وهي تقريباً مدة الشهر الذي يستمر 30 يوماً في وضع التقويم. يتم تجميع هذه في فترات مدتها 12 دقيقة، وهو ما يعادل سنة واحدة في وضع التقويم.{}{}في أي من الموضعين، يوجد دائماً تقويم تقليدي، الذي يستخدم لتواريخ تقديم المركبات والمنازل والبنية التحتية الأخرى.
 ###length 2
+STR_CONFIG_SETTING_TIMEKEEPING_UNITS_CALENDAR                   :التقويم
+STR_CONFIG_SETTING_TIMEKEEPING_UNITS_WALLCLOCK                  :ساعة الحائط
 
 
 ###setting-zero-is-special
 
+
+###setting-zero-is-special
 
 STR_CONFIG_SETTING_AUTORENEW_VEHICLE                            :جدد العربات عندما تصبح قديمة : {STRING}
 STR_CONFIG_SETTING_AUTORENEW_VEHICLE_HELPTEXT                   :عند التمكين ، يتم استبدال العربة التي اقتربت من نهاية عمرها عند اكتمال شروط التجديد
@@ -1336,6 +1355,8 @@ STR_CONFIG_SETTING_ROUGHNESS_OF_TERRAIN_VERY_SMOOTH             :ناعم جدا
 STR_CONFIG_SETTING_ROUGHNESS_OF_TERRAIN_SMOOTH                  :ناعم
 STR_CONFIG_SETTING_ROUGHNESS_OF_TERRAIN_ROUGH                   :خشن
 STR_CONFIG_SETTING_ROUGHNESS_OF_TERRAIN_VERY_ROUGH              :خشن جدا
+
+###length 4
 
 STR_CONFIG_SETTING_VARIETY                                      :توزيع منوع: {STRING}
 STR_CONFIG_SETTING_VARIETY_HELPTEXT                             :(TerraGenesis only)التحكم بالخريطة هل تحتوي علىجبال ومناطق مسطحه, لأن هذا الإعداد يجعل الخارطة مستوية, هنالك إعدادات أخرى يجب ان تغير إلى الجبال
@@ -1385,6 +1406,7 @@ STR_CONFIG_SETTING_LINKGRAPH_COLOURS_GREY_TO_RED                :رمادي إل
 ###length 4
 
 STR_CONFIG_SETTING_SMOOTH_SCROLLING                             :تحريك سلس في نوافذ المشاهدة: {STRING}
+
 
 STR_CONFIG_SETTING_MEASURE_TOOLTIP                              :عرض المقاسات عند استخدام ادوات البناء المختلفة: {STRING}
 
@@ -1449,11 +1471,7 @@ STR_CONFIG_SETTING_TIMETABLE_SHOW_ARRIVAL_DEPARTURE             :عرض الوص
 
 STR_CONFIG_SETTING_QUICKGOTO                                    :إنشاء سريع لأوامر المركبات: {STRING}
 
-STR_CONFIG_SETTING_DEFAULT_RAIL_TYPE                            :سكة الحديد القياسية (بعد بدأ لعبة جديدة أو تحميل لعبة): {STRING}
 ###length 3
-STR_CONFIG_SETTING_DEFAULT_RAIL_TYPE_FIRST                      :القديم
-STR_CONFIG_SETTING_DEFAULT_RAIL_TYPE_LAST                       :الجديد
-STR_CONFIG_SETTING_DEFAULT_RAIL_TYPE_MOST_USED                  :الأكثر استخداما
 
 STR_CONFIG_SETTING_SHOW_TRACK_RESERVATION                       :اظهار الطرق المحجوزة: {STRING}
 
@@ -1529,6 +1547,7 @@ STR_CONFIG_SETTING_NOSERVICE                                    :الغاء ال
 
 STR_CONFIG_SETTING_WAGONSPEEDLIMITS                             :السماح بتحديد سرعة العربات: {STRING}
 
+
 STR_CONFIG_SETTING_DISABLE_ELRAILS                              :تعطيل سكة القطار الكهربائي: {STRING}
 
 STR_CONFIG_SETTING_NEWS_ARRIVAL_FIRST_VEHICLE_OWN               :وصول اول مركبة لمحطة اللاعب: {STRING}
@@ -1582,6 +1601,8 @@ STR_CONFIG_SETTING_ENDING_YEAR_VALUE                            :{NUM}
 ###setting-zero-is-special
 STR_CONFIG_SETTING_ENDING_YEAR_ZERO                             :لا تنتهي
 
+###length 2
+
 ###length 3
 STR_CONFIG_SETTING_ECONOMY_TYPE_FROZEN                          :مجمد
 
@@ -1618,6 +1639,8 @@ STR_CONFIG_SETTING_TOWN_FOUNDING_FORBIDDEN                      :محذور
 STR_CONFIG_SETTING_TOWN_FOUNDING_ALLOWED                        :مسموح
 STR_CONFIG_SETTING_TOWN_FOUNDING_ALLOWED_CUSTOM_LAYOUT          :مسموح - نمط مدينة قابل للتعديل
 
+###length 3
+
 STR_CONFIG_SETTING_TOWN_CARGOGENMODE                            :توليد البضائع في المدينة: {STRING}
 ###length 2
 STR_CONFIG_SETTING_TOWN_CARGOGENMODE_ORIGINAL                   :تربيعي (أصلي)
@@ -1647,8 +1670,12 @@ STR_CONFIG_SETTING_ZOOM_LVL_OUT_2X                              :X2
 STR_CONFIG_SETTING_ZOOM_LVL_OUT_4X                              :X4
 STR_CONFIG_SETTING_ZOOM_LVL_OUT_8X                              :X8
 
+STR_CONFIG_SETTING_SPRITE_ZOOM_MIN                              :أعلى دقة صور للاستخدام: {STRING}
+STR_CONFIG_SETTING_SPRITE_ZOOM_MIN_HELPTEXT                     :الحد من الدقة الاعلى الستخدمة للصور. تحديد الدقة المستخدمة للصور سيتجنب استخدام الرسومات العالية الدقة حتى ولو كانت متوفرة. مما يساعد على توحيد مظهر اللعبة عند استخدام مزيج من ملفات GRF التي تحتوي على رسومات ذات دقة عالية ورسومات ذات دقة منخفضة.
 ###length 3
 STR_CONFIG_SETTING_SPRITE_ZOOM_LVL_MIN                          :4x
+STR_CONFIG_SETTING_SPRITE_ZOOM_LVL_IN_2X                        :2x
+STR_CONFIG_SETTING_SPRITE_ZOOM_LVL_NORMAL                       :1x
 
 STR_CONFIG_SETTING_TOWN_GROWTH                                  :سرعة نمو المدينه: {STRING}
 ###length 5
@@ -1691,7 +1718,7 @@ STR_CONFIG_SETTING_LOCALISATION_UNITS_FORCE                     ::وحدات ج�
 STR_CONFIG_SETTING_LOCALISATION_UNITS_FORCE_IMPERIAL            :إمبراطوري (lbf)
 STR_CONFIG_SETTING_LOCALISATION_UNITS_FORCE_METRIC              :متري (كغ - قوة)
 
-###length 3
+###length 4
 STR_CONFIG_SETTING_LOCALISATION_UNITS_HEIGHT_IMPERIAL           :إمبراطوري (قدم)
 STR_CONFIG_SETTING_LOCALISATION_UNITS_HEIGHT_METRIC             :متري (م)
 
@@ -1736,9 +1763,8 @@ STR_CONFIG_ERROR_INVALID_GRF_SYSTEM                             :نظام الا
 STR_CONFIG_ERROR_INVALID_GRF_INCOMPATIBLE                       :غير متطابق مع هذه النسخة من OpenTTD
 STR_CONFIG_ERROR_INVALID_GRF_UNKNOWN                            :مجهول
 STR_CONFIG_ERROR_INVALID_SAVEGAME_COMPRESSION_LEVEL             :{WHITE}... نسبة الضغط '{STRING}' غير صحيحة
-STR_CONFIG_ERROR_OUT_OF_MEMORY                                  :{WHITE}نفذت الذاكرة
 
-# Video initalization errors
+# Video initialization errors
 STR_VIDEO_DRIVER_ERROR_NO_HARDWARE_ACCELERATION                 :{WHITE}... لم يتم العثور على GPU متوافق. تم تعطيل تسريع الأجهزة
 
 # Intro window
@@ -1753,10 +1779,7 @@ STR_INTRO_MULTIPLAYER                                           :{BLACK}لعب �
 
 STR_INTRO_GAME_OPTIONS                                          :{BLACK}إعدادات اللعبه
 STR_INTRO_HIGHSCORE                                             :{BLACK}قائمه المتفوقين
-STR_INTRO_CONFIG_SETTINGS_TREE                                  :{BLACK}الاعدادات
-STR_INTRO_NEWGRF_SETTINGS                                       :{BLACK} اعدادات NewGRF
 STR_INTRO_ONLINE_CONTENT                                        :{BLACK} إبحث عن المحتوى عبر الشبكه العنكبوتيه
-STR_INTRO_AI_SETTINGS                                           :{BLACK}اعدادات االذكاء الاصطناعي
 STR_INTRO_QUIT                                                  :{BLACK}خروج
 
 STR_INTRO_TOOLTIP_NEW_GAME                                      :{BLACK}بدأ لعبة جديدة
@@ -1773,10 +1796,7 @@ STR_INTRO_TOOLTIP_TOYLAND_LANDSCAPE                             :{BLACK} اخت�
 
 STR_INTRO_TOOLTIP_GAME_OPTIONS                                  :{BLACK}عرض خيارات اللعبة
 STR_INTRO_TOOLTIP_HIGHSCORE                                     :{BLACK}عرض قائمه المتفوقين
-STR_INTRO_TOOLTIP_CONFIG_SETTINGS_TREE                          :{BLACK}إعدادات العرض
-STR_INTRO_TOOLTIP_NEWGRF_SETTINGS                               :{BLACK}عرض إعدادات اﻹضافات
 STR_INTRO_TOOLTIP_ONLINE_CONTENT                                :{BLACK} ابحث عن محتوى جديد او تحديث
-STR_INTRO_TOOLTIP_AI_SETTINGS                                   :{BLACK} اعدادات الOpen AI
 STR_INTRO_TOOLTIP_QUIT                                          :{BLACK}اغلاق'OpenTTD'
 
 STR_INTRO_TRANSLATION                                           :{BLACK}هذة الترجمة تفتقد لـ {NUM}عبارات/عبارة. فضلا اجعل الترجمة افضل بالتسجيل في موقع الترجمة, اقرأ ملف المساعدة readme
@@ -1846,12 +1866,7 @@ STR_LIVERY_FREIGHT_TRAM                                         :عربة ترا
 STR_FACE_CAPTION                                                :{WHITE}اختيار الوجة
 STR_FACE_CANCEL_TOOLTIP                                         :{BLACK}الغاء اختيار الوجة الجديد
 STR_FACE_OK_TOOLTIP                                             :{BLACK}موافقة على الوجه الجديد
-STR_FACE_RANDOM                                                 :{BLACK}عشوائي
 
-STR_FACE_MALE_BUTTON                                            :{BLACK}رجل
-STR_FACE_MALE_TOOLTIP                                           :{BLACK}اختر وجة رجل
-STR_FACE_FEMALE_BUTTON                                          :{BLACK}امرأة
-STR_FACE_FEMALE_TOOLTIP                                         :{BLACK}اختر وجة امرأة
 STR_FACE_NEW_FACE_BUTTON                                        :{BLACK}وجة جديد
 STR_FACE_NEW_FACE_TOOLTIP                                       :{BLACK}اختر وجة عشوائي
 STR_FACE_ADVANCED                                               :{BLACK}متقدم
@@ -1869,39 +1884,26 @@ STR_FACE_FACECODE_ERR                                           :{WHITE}لا ن�
 STR_FACE_SAVE                                                   :{BLACK}حفظ
 STR_FACE_SAVE_TOOLTIP                                           :{BLACK}حفظ الوجه المفضل
 STR_FACE_SAVE_DONE                                              :{WHITE}هذا الوجه سيحفظ كالمفضل في ملف تكوينك الخاص بـ Open TTD.
-STR_FACE_EUROPEAN                                               :{BLACK}أوربي
-STR_FACE_EUROPEAN_TOOLTIP                                       :{BLACK}إختيار وجوه أوربيه
-STR_FACE_AFRICAN                                                :{BLACK}أفريقي
-STR_FACE_AFRICAN_TOOLTIP                                        :{BLACK}إختيار وجوه أفريقيه
 STR_FACE_YES                                                    :نعم
 STR_FACE_NO                                                     :لا
-STR_FACE_MOUSTACHE_EARRING_TOOLTIP                              :{BLACK}تفعيل الشوارب أو أقراط الأذان
 STR_FACE_HAIR                                                   :الشعر:
-STR_FACE_HAIR_TOOLTIP                                           :{BLACK}غير الشعر
 STR_FACE_EYEBROWS                                               :الحواجب:
-STR_FACE_EYEBROWS_TOOLTIP                                       :{BLACK}غير الحواجب
 STR_FACE_EYECOLOUR                                              :لون العيون:
-STR_FACE_EYECOLOUR_TOOLTIP                                      :{BLACK}غير لون العيون
 STR_FACE_GLASSES                                                :نظارات:
-STR_FACE_GLASSES_TOOLTIP                                        :{BLACK}تفعيل النظارات
-STR_FACE_GLASSES_TOOLTIP_2                                      :{BLACK}غير النظارات
 STR_FACE_NOSE                                                   :الأنف:
-STR_FACE_NOSE_TOOLTIP                                           :{BLACK}غير الأنف
 STR_FACE_LIPS                                                   :الشفاه:
 STR_FACE_MOUSTACHE                                              :الشوارب:
-STR_FACE_LIPS_MOUSTACHE_TOOLTIP                                 :{BLACK}غير الشفاه أو الشوارب
 STR_FACE_CHIN                                                   :الذقن:
-STR_FACE_CHIN_TOOLTIP                                           :{BLACK}غير الذقن
 STR_FACE_JACKET                                                 :سترة:
-STR_FACE_JACKET_TOOLTIP                                         :{BLACK}غير السترة
 STR_FACE_COLLAR                                                 :الياقة:
-STR_FACE_COLLAR_TOOLTIP                                         :{BLACK}غير الياقة
 STR_FACE_TIE                                                    :الربطة:
 STR_FACE_EARRING                                                :أقراط الأذان:
-STR_FACE_TIE_EARRING_TOOLTIP                                    :{BLACK}غير الربطة أو أقراط الأذن
 
 # Matches ServerGameType
 ###length 3
+STR_NETWORK_SERVER_VISIBILITY_LOCAL                             :محلي
+STR_NETWORK_SERVER_VISIBILITY_PUBLIC                            :عام
+STR_NETWORK_SERVER_VISIBILITY_INVITE_ONLY                       :بدعوة فقط
 
 # Network server list
 STR_NETWORK_SERVER_LIST_CAPTION                                 :{WHITE}لعب جماعي
@@ -1949,6 +1951,7 @@ STR_NETWORK_SERVER_LIST_START_SERVER                            :{BLACK}أبدأ
 STR_NETWORK_SERVER_LIST_START_SERVER_TOOLTIP                    :{BLACK}أبدأ خادمك الخاص
 
 STR_NETWORK_SERVER_LIST_PLAYER_NAME_OSKTITLE                    :{BLACK}أدخل أسمك
+STR_NETWORK_SERVER_LIST_ENTER_SERVER_ADDRESS                    :{BLACK}ادخل عنوان الخادم (السيرفر) أو رقم الدعوة
 
 # Start new multiplayer server
 STR_NETWORK_START_SERVER_CAPTION                                :{WHITE}أبدا لعبة متعددة اللاعبين جديدة
@@ -1975,15 +1978,13 @@ STR_NETWORK_CONNECTING_WAITING                                  :{BLACK}{NUM}ا�
 STR_NETWORK_CONNECTING_DOWNLOADING_1                            :{BLACK}{BYTES}تم تحميل حتى الان
 STR_NETWORK_CONNECTING_DOWNLOADING_2                            :{BLACK}{BYTES} / {BYTES} حمل حتى الان
 
-###length 8
+###length 6
 STR_NETWORK_CONNECTING_1                                        :{BLACK}(1/6) إتصال..
 STR_NETWORK_CONNECTING_2                                        :{BLACK}(2/6)تصريح الدخول...
 STR_NETWORK_CONNECTING_3                                        :{BLACK}(3/6) إنتظار..
 STR_NETWORK_CONNECTING_4                                        :{BLACK}(4/6) تحميل الخريطة..
 STR_NETWORK_CONNECTING_5                                        :{BLACK}(5/6) معالجة البيانات..
 STR_NETWORK_CONNECTING_6                                        :{BLACK}(6/6) تسجيل..
-STR_NETWORK_CONNECTING_SPECIAL_1                                :{BLACK}جلب معلومات اللعبة..
-STR_NETWORK_CONNECTING_SPECIAL_2                                :{BLACK}جلب معلومات الشركة..
 
 STR_NETWORK_CONNECTION_DISCONNECT                               :{BLACK}فصل
 
@@ -1998,6 +1999,8 @@ STR_NETWORK_CLIENT_LIST_CAPTION                                 :{WHITE}اللا
 STR_NETWORK_CLIENT_LIST_SERVER_NAME                             :{BLACK}الاسم
 STR_NETWORK_CLIENT_LIST_SERVER_CONNECTION_TYPE_TOOLTIP          :{BLACK}سواء ان يمكن الوصول إلى الخادم الخاص بك من قبل الآخرين وكيف سيصلون اليه
 STR_NETWORK_CLIENT_LIST_PLAYER_NAME                             :{BLACK}الاسم
+STR_NETWORK_CLIENT_LIST_ADMIN_CLIENT_TOOLTIP                    :{BLACK}الاجراءات الادارية لتنفيذها لهذا العميل
+STR_NETWORK_CLIENT_LIST_ADMIN_COMPANY_TOOLTIP                   :{BLACK}الاجراءات الادارية لتنفيذها لهذه الشركة
 STR_NETWORK_CLIENT_LIST_SPECTATORS                              :المشاهدين
 STR_NETWORK_CLIENT_LIST_NEW_COMPANY                             :(شركة جديدة)
 
@@ -2007,6 +2010,7 @@ STR_NETWORK_CLIENT_LIST_SERVER_CONNECTION_TYPE_DIRECT           :{BLACK}عامة
 
 STR_NETWORK_CLIENT_LIST_ADMIN_CLIENT_KICK                       :طرد
 STR_NETWORK_CLIENT_LIST_ADMIN_CLIENT_BAN                        :منع
+STR_NETWORK_CLIENT_LIST_ADMIN_COMPANY_RESET                     :حذف
 
 STR_NETWORK_CLIENT_LIST_ASK_CLIENT_KICK                         :{YELLOW}هل أنت متأكد أنك تريد طرد اللاعب '{STRING}'؟
 STR_NETWORK_CLIENT_LIST_ASK_CLIENT_BAN                          :{YELLOW}هل أنت متأكد أنك تريد حظر اللاعب '{STRING}'؟
@@ -2032,7 +2036,7 @@ STR_NETWORK_CHAT_TO_COMPANY                                     :[فريق] ال
 STR_NETWORK_CHAT_CLIENT                                         :[خاص] {STRING}: {WHITE}{STRING}
 STR_NETWORK_CHAT_TO_CLIENT                                      :[خاص] الى {STRING} : {WHITE}{STRING}
 STR_NETWORK_CHAT_ALL                                            :[الكل] {STRING}: {WHITE}{STRING}
-STR_NETWORK_CHAT_EXTERNAL                                       :[{3:STRING}] {0:STRING}: {WHITE}{1:STRING}
+STR_NETWORK_CHAT_EXTERNAL                                       :[{STRING}] {STRING}: {WHITE}{STRING}
 STR_NETWORK_CHAT_OSKTITLE                                       :{BLACK}ادخل نص للمحادثة
 
 # Network messages
@@ -2077,7 +2081,7 @@ STR_NETWORK_ERROR_CLIENT_SERVER_FULL                            :خادم ممت
 STR_NETWORK_ERROR_CLIENT_TOO_MANY_COMMANDS                      :كان يرسل الكثير من الاوامر
 
 # Network related errors
-STR_NETWORK_SERVER_MESSAGE                                      :*** {1:STRING}
+STR_NETWORK_SERVER_MESSAGE                                      :*** {STRING}
 
 ###length 12
 STR_NETWORK_SERVER_MESSAGE_GAME_PAUSED                          :اللعبة متوقفة ({STRING})
@@ -2093,13 +2097,12 @@ STR_NETWORK_SERVER_MESSAGE_GAME_REASON_MANUAL                   :يدوي
 
 STR_NETWORK_MESSAGE_CLIENT_LEAVING                              :يغادر
 STR_NETWORK_MESSAGE_CLIENT_JOINED                               :*** {STRING} قد انضم للعبة
-STR_NETWORK_MESSAGE_CLIENT_JOINED_ID                            :*** {STRING} انضم الى اللعبة (Client #{2:NUM})
-STR_NETWORK_MESSAGE_CLIENT_COMPANY_JOIN                         :*** {STRING} انضم الى الشركة رقم : {2:NUM}
+STR_NETWORK_MESSAGE_CLIENT_JOINED_ID                            :*** {STRING} انضم الى اللعبة (Client #{NUM})
 STR_NETWORK_MESSAGE_CLIENT_COMPANY_SPECTATE                     :*** {STRING} انضم الى المشاهدين
-STR_NETWORK_MESSAGE_CLIENT_COMPANY_NEW                          :*** {STRING} قد بدأ شركة جديدة: (#{2:NUM})
-STR_NETWORK_MESSAGE_CLIENT_LEFT                                 :*** {STRING} قد غادر اللعبة : - {2:STRING}-
+STR_NETWORK_MESSAGE_CLIENT_COMPANY_NEW                          :*** {STRING} قد بدأ شركة جديدة: (#{NUM})
+STR_NETWORK_MESSAGE_CLIENT_LEFT                                 :*** {STRING} قد غادر اللعبة : - {STRING}-
 STR_NETWORK_MESSAGE_NAME_CHANGE                                 :*** {STRING} قد غير الاسم الى {STRING}
-STR_NETWORK_MESSAGE_GIVE_MONEY                                  :*** {STRING} اعطى {2:CURRENCY_LONG} إلى {1:STRING}
+STR_NETWORK_MESSAGE_GIVE_MONEY                                  :*** {STRING} اعطى {CURRENCY_LONG} إلى {STRING}
 STR_NETWORK_MESSAGE_SERVER_SHUTDOWN                             :{WHITE}اقفل الخادم الجلسة
 STR_NETWORK_MESSAGE_SERVER_REBOOT                               :{WHITE}يتم بدأ الخادم من جديد ...{} الرجاء الأنتظار
 
@@ -2220,10 +2223,10 @@ STR_STATION_BUILD_SUPPLIES_CARGO                                :{GOLD}{CARGO_LI
 
 # Join station window
 STR_JOIN_STATION_CAPTION                                        :{WHITE}اربط المحطات
-STR_JOIN_STATION_CREATE_SPLITTED_STATION                        :{YELLOW} بناء محطة مفصلة
+STR_JOIN_STATION_CREATE_SPLIT_STATION                           :{YELLOW} بناء محطة مفصلة
 
 STR_JOIN_WAYPOINT_CAPTION                                       :{WHITE}اربط نقطة العبور
-STR_JOIN_WAYPOINT_CREATE_SPLITTED_WAYPOINT                      :{YELLOW} ابني نقطة عبور مستقلة
+STR_JOIN_WAYPOINT_CREATE_SPLIT_WAYPOINT                         :{YELLOW} ابني نقطة عبور مستقلة
 
 # Generic toolbar
 
@@ -2271,6 +2274,27 @@ STR_STATION_BUILD_DRAG_DROP_TOOLTIP                             :{BLACK}بناء
 
 
 
+
+STR_HOUSE_PICKER_CAPTION                                        :اختيار المنزل
+STR_HOUSE_PICKER_NAME                                           :{BLACK}الأسم: {ORANGE}{STRING}
+STR_HOUSE_PICKER_POPULATION                                     :{BLACK}عدد السكان: {ORANGE}{NUM}
+STR_HOUSE_PICKER_YEARS                                          :{BLACK}السنوات: {ORANGE}{NUM}-{NUM}
+STR_HOUSE_PICKER_YEARS_ANY                                      :{BLACK}السنوات: {ORANGE} أي
+STR_HOUSE_PICKER_YEARS_FROM                                     :{BLACK}السنوات: {ORANGE}من {NUM}
+STR_HOUSE_PICKER_YEARS_UNTIL                                    :{BLACK}السنوات: {ORANGE}حتى {NUM}
+STR_HOUSE_PICKER_SIZE                                           :{BLACK}الحجم: {ORANGE}{NUM}×{NUM} مربع
+STR_HOUSE_PICKER_CARGO_ACCEPTED                                 :{BLACK}الشحنة المقبولة: {GOLD}{STRING}
+
+STR_HOUSE_PICKER_CLASS_ZONE1                                    :الطرف
+STR_HOUSE_PICKER_CLASS_ZONE2                                    :الضواحي
+STR_HOUSE_PICKER_CLASS_ZONE3                                    :الضواحي الخارجية
+STR_HOUSE_PICKER_CLASS_ZONE4                                    :الضواحي الداخلية
+STR_HOUSE_PICKER_CLASS_ZONE5                                    :مركز المدينة
+
+STR_HOUSE_PICKER_PROTECT                                        :منع الترقيات
+STR_HOUSE_PICKER_PROTECT_TOOLTIP                                :اختر ما اذا كان هذا المنزل محمي من الاستبدال مع نمو المدينة
+
+
 STR_STATION_CLASS_DFLT                                          :المحطة القياسية
 STR_STATION_CLASS_WAYP                                          :نقطة عبور
 
@@ -2297,6 +2321,9 @@ STR_BUILD_SIGNAL_DRAG_SIGNALS_DENSITY_INCREASE_TOOLTIP          :{BLACK}زياد
 STR_SELECT_RAIL_BRIDGE_CAPTION                                  :{WHITE}اختر جسر السكة
 STR_SELECT_ROAD_BRIDGE_CAPTION                                  :{WHITE}اختر الجسر المناسب
 STR_SELECT_BRIDGE_SELECTION_TOOLTIP                             :{BLACK}بناء الجسور - اختر الجسر المفضل لديك لبنائة
+STR_SELECT_BRIDGE_INFO_NAME                                     :{GOLD}{STRING}
+STR_SELECT_BRIDGE_INFO_NAME_MAX_SPEED                           :{GOLD}{STRING},{} {VELOCITY}
+STR_SELECT_BRIDGE_INFO_NAME_MAX_SPEED_COST                      :{GOLD}{STRING},{} {VELOCITY} {WHITE}{CURRENCY_LONG}
 STR_BRIDGE_NAME_SUSPENSION_STEEL                                :تعليق, حديدي
 STR_BRIDGE_NAME_GIRDER_STEEL                                    :العارضة, حديدية
 STR_BRIDGE_NAME_CANTILEVER_STEEL                                :الحامل, حديدي
@@ -2458,6 +2485,7 @@ STR_FOUND_TOWN_INITIAL_SIZE_TOOLTIP                             :{BLACK}حدد �
 STR_FOUND_TOWN_CITY                                             :{BLACK}مدينة
 STR_FOUND_TOWN_CITY_TOOLTIP                                     :{BLACK} المدن الكبيرة تنمو اسرع من المدن العادية.{} كلما كانت اكبر عند انشائها, بالاعتماد على الاعدادات.
 
+
 STR_FOUND_TOWN_ROAD_LAYOUT                                      :{YELLOW} تصميم طرق المدينة
 STR_FOUND_TOWN_SELECT_LAYOUT_TOOLTIP                            :{BLACK} اختر تصميم الطرق لهذه المدينة
 STR_FOUND_TOWN_SELECT_LAYOUT_ORIGINAL                           :{BLACK} اصلي
@@ -2519,7 +2547,7 @@ STR_LAND_AREA_INFORMATION_AIRPORT_CLASS                         :{BLACK}فئة �
 STR_LAND_AREA_INFORMATION_AIRPORT_NAME                          :{BLACK}اسم المطار: {LTBLUE}{STRING}
 STR_LAND_AREA_INFORMATION_AIRPORTTILE_NAME                      :{BLACK}اسم مربع المطار: {LTBLUE}{STRING}
 STR_LAND_AREA_INFORMATION_NEWGRF_NAME                           :{BLACK}NewGRF: {LTBLUE}{STRING}
-STR_LAND_AREA_INFORMATION_CARGO_ACCEPTED                        :{BLACK}الشحنة المقبولة: {LTBLUE}
+STR_LAND_AREA_INFORMATION_CARGO_ACCEPTED                        :{BLACK}الشحنة المقبولة: {LTBLUE}{STRING}
 STR_LAND_AREA_INFORMATION_CARGO_EIGHTS                          :({COMMA} /8 {STRING})
 STR_LANG_AREA_INFORMATION_ROAD_TYPE                             :{BLACK}:نوع الطريق {LTBLUE}{STRING}
 STR_LANG_AREA_INFORMATION_TRAM_TYPE                             :{BLACK}:نوع الترام {LTBLUE}{STRING}
@@ -2532,7 +2560,6 @@ STR_LAI_CLEAR_DESCRIPTION_ROUGH_LAND                            :ارض جبلي
 STR_LAI_CLEAR_DESCRIPTION_BARE_LAND                             :ارض جرداء
 STR_LAI_CLEAR_DESCRIPTION_GRASS                                 :عشب
 STR_LAI_CLEAR_DESCRIPTION_FIELDS                                :حقول
-STR_LAI_CLEAR_DESCRIPTION_SNOW_COVERED_LAND                     :ارض ثلجية
 STR_LAI_CLEAR_DESCRIPTION_DESERT                                :صحراء
 
 STR_LAI_RAIL_DESCRIPTION_TRACK                                  :سكة حديد مسار
@@ -2624,17 +2651,29 @@ STR_ABOUT_VERSION                                               :{BLACK}النس
 STR_ABOUT_COPYRIGHT_OPENTTD                                     :{BLACK}النسخة المفتوحة {COPYRIGHT}2002-{STRING} فريق النسخة المفتوحة
 
 # Framerate display window
+STR_FRAMERATE_CAPTION                                           :{WHITE}معدل الاطارات
+STR_FRAMERATE_CAPTION_SMALL                                     :{STRING}{WHITE} ({DECIMAL}x)
 STR_FRAMERATE_CURRENT                                           :{WHITE}الحالي
+STR_FRAMERATE_AVERAGE                                           :{WHITE}المتوسط
+STR_FRAMERATE_DATA_POINTS                                       :{BLACK}البيانات بناءً على قياسات {COMMA}
 STR_FRAMERATE_MS_GOOD                                           :{LTBLUE}{DECIMAL} ms
 STR_FRAMERATE_MS_BAD                                            :{RED}{DECIMAL} ms
-STR_FRAMERATE_FPS_GOOD                                          :{LTBLUE}{DECIMAL} صورة في الثانية
-STR_FRAMERATE_FPS_WARN                                          :{YELLOW}{DECIMAL} صورة في الثانية
+STR_FRAMERATE_FPS_GOOD                                          :{LTBLUE}{DECIMAL} اطار في الثانية
+STR_FRAMERATE_FPS_WARN                                          :{YELLOW}{DECIMAL} اطار في الثانية
+STR_FRAMERATE_FPS_BAD                                           :{RED}{DECIMAL} اطار بالثانية
+STR_FRAMERATE_BYTES_GOOD                                        :{LTBLUE}{BYTES}
 STR_FRAMERATE_GRAPH_SECONDS                                     :{TINY_FONT}{COMMA} ثواني
 
 ###length 15
+STR_FRAMERATE_GAMELOOP                                          :{BLACK}اجمالي تكرارات اللعبة:
 STR_FRAMERATE_GL_ECONOMY                                        :{BLACK}  التعامل مع البضائع:
 STR_FRAMERATE_GL_TRAINS                                         :{BLACK}  تكتكة القطار:
+STR_FRAMERATE_GL_AIRCRAFT                                       :{BLACK} دورات الطائرات (ticks):
+STR_FRAMERATE_GL_LANDSCAPE                                      :{BLACK} دورات العالم (ticks):
+STR_FRAMERATE_GL_LINKGRAPH                                      :{BLACK} التأخير في ارتباط الرسم البياني:
+STR_FRAMERATE_DRAWING                                           :{BLACK}عرض الرسومات:
 STR_FRAMERATE_DRAWING_VIEWPORTS                                 :{BLACK} منافذ العرض للعالم:
+STR_FRAMERATE_ALLSCRIPTS                                        :{BLACK}اجمالي GS/AI:
 STR_FRAMERATE_GAMESCRIPT                                        :{BLACK}  مخطوط اللعبة:
 STR_FRAMERATE_AI                                                :{BLACK}   AI {NUM} {STRING}
 
@@ -2683,7 +2722,10 @@ STR_MAPGEN_TOWN_NAME_LABEL                                      :{BLACK}اسما
 STR_MAPGEN_TOWN_NAME_DROPDOWN_TOOLTIP                           :{BLACK}اختيار طريقة عرض اسماء المدن
 STR_MAPGEN_DATE                                                 :{BLACK}التاريخ:
 STR_MAPGEN_NUMBER_OF_INDUSTRIES                                 :{BLACK}عدد المصانع:
+STR_MAPGEN_HEIGHTMAP_HEIGHT                                     :{BLACK}أعلى قمة:
+STR_MAPGEN_HEIGHTMAP_HEIGHT_TOOLTIP                             :{BLACK}اختر أعلى قمة ستقوم اللعبة بمحاولة انشائها، تقاس بارتفاعها عن سطح البحر
 STR_MAPGEN_HEIGHTMAP_HEIGHT_UP_TOOLTIP                          :{BLACK}قم بزيادة أقصى ارتفاع لأعلى قمة على الخريطة بواحد
+STR_MAPGEN_HEIGHTMAP_HEIGHT_DOWN_TOOLTIP                        :{BLACK}تقليل أقصى ارتفاع لأعلى قمة في الخريطة بمقدار واحد
 STR_MAPGEN_SNOW_COVERAGE                                        :{BLACK}تغطية الثلج:
 STR_MAPGEN_SNOW_COVERAGE_DOWN_TOOLTIP                           :{BLACK}تقليل تغطية الثلوج بنسبة عشرة بالمائة
 STR_MAPGEN_SNOW_COVERAGE_TEXT                                   :{BLACK}{NUM}%
@@ -2729,14 +2771,19 @@ STR_MAPGEN_SOUTHWEST                                            :{BLACK} الج�
 STR_MAPGEN_BORDER_FREEFORM                                      :{BLACK} حر
 STR_MAPGEN_BORDER_WATER                                         :{BLACK} ماء
 STR_MAPGEN_BORDER_RANDOM                                        :{BLACK} عشوائي
+
+###length 3
 STR_MAPGEN_BORDER_RANDOMIZE                                     :{BLACK} عشوائيا
 STR_MAPGEN_BORDER_MANUAL                                        :{BLACK} يدوي
 
 STR_MAPGEN_HEIGHTMAP_ROTATION                                   :{BLACK}اتجاة خريطة المرتفعات:
-STR_MAPGEN_HEIGHTMAP_NAME                                       :{BLACK}اسم خريطة المرتفعات:
+STR_MAPGEN_HEIGHTMAP_NAME                                       :{BLACK}اسم خريطة المرتفعات (heightmap):
+STR_MAPGEN_HEIGHTMAP_NAME_TOOLTIP                               :{BLACK}اسم ملف صورة خريطة الارتفاع (heightmap)
 STR_MAPGEN_HEIGHTMAP_SIZE_LABEL                                 :{BLACK}الحجم:
+STR_MAPGEN_HEIGHTMAP_SIZE_LABEL_TOOLTIP                         :{BLACK}حجم صورة خريطة الارتفاع (heightmap). للحصول على أفضل نتيجة، يجب أن يتطابق كل جانب مع طول حافة متاح في OpenTTD، مثل 256، 512، 1024، الخ.
 STR_MAPGEN_HEIGHTMAP_SIZE                                       :{ORANGE}{NUM} * {NUM}
 
+STR_MAPGEN_HEIGHTMAP_HEIGHT_QUERY_CAPT                          :{WHITE}أعلى قمة
 STR_MAPGEN_START_DATE_QUERY_CAPT                                :{WHITE}غير سنة البداية
 
 # SE Map generation
@@ -2808,7 +2855,10 @@ STR_NEWGRF_SETTINGS_VERSION                                     :{BLACK} نسخ�
 STR_NEWGRF_SETTINGS_MIN_VERSION                                 :{BLACK}اقل نسخة متوافقة: {SILVER}{NUM}
 STR_NEWGRF_SETTINGS_MD5SUM                                      :{BLACK} : مجموع ام دي 5 {SILVER}{STRING}
 STR_NEWGRF_SETTINGS_PALETTE                                     :{BLACK} صحيفة : {SILVER}{STRING}
+STR_NEWGRF_SETTINGS_PALETTE_DEFAULT                             :الإفتراضي
+STR_NEWGRF_SETTINGS_PALETTE_DEFAULT_32BPP                       :الإفتراضي / 32bpp
 STR_NEWGRF_SETTINGS_PALETTE_LEGACY                              :ليجاسي (W)
+STR_NEWGRF_SETTINGS_PALETTE_LEGACY_32BPP                        :تقليدي (W) / 32bpp
 STR_NEWGRF_SETTINGS_PARAMETER                                   :{BLACK}الاعدادات: {SILVER}{STRING}
 
 STR_NEWGRF_SETTINGS_NO_INFO                                     :{BLACK}لا يوجد معلومات متاحة
@@ -2821,14 +2871,11 @@ STR_SAVE_PRESET_CAPTION                                         :{WHITE}حفظ �
 STR_SAVE_PRESET_LIST_TOOLTIP                                    :{BLACK}لائحة الإعدادات المسبقة. اختر واحدة لنسخها للإسم المحفوظ بالإسفل
 STR_SAVE_PRESET_TITLE                                           :{BLACK}أدخل اسم للإعداد المسبق
 STR_SAVE_PRESET_EDITBOX_TOOLTIP                                 :{BLACK}الإسم المختار لحفظ الإعداد المسبق
-STR_SAVE_PRESET_CANCEL                                          :{BLACK}إلغاء
-STR_SAVE_PRESET_CANCEL_TOOLTIP                                  :{BLACK}لا تغير الإعداد المسبق
 STR_SAVE_PRESET_SAVE                                            :{BLACK}إحفظ
 STR_SAVE_PRESET_SAVE_TOOLTIP                                    :{BLACK} احفظ الإعدادات للإسم المختار حاليا
 
 # NewGRF parameters window
 STR_NEWGRF_PARAMETERS_CAPTION                                   :{WHITE}غير خصائص الاضافات الجديدة
-STR_NEWGRF_PARAMETERS_CLOSE                                     :{BLACK}اغلق
 STR_NEWGRF_PARAMETERS_RESET                                     :{BLACK}استرجاع القياسي
 STR_NEWGRF_PARAMETERS_RESET_TOOLTIP                             :{BLACK}استرجاع جميع الخصائص لقيمها الاصلية
 STR_NEWGRF_PARAMETERS_DEFAULT_NAME                              :نمط {NUM}
@@ -2931,7 +2978,6 @@ STR_INVALID_VEHICLE                                             :<مركبه غ�
 STR_NEWGRF_SCAN_CAPTION                                         :{WHITE}بحث اضافات جديدة
 STR_NEWGRF_SCAN_MESSAGE                                         :{BLACK}تحديث الاضافات. وقت البحث يعتمدعلى عدد الاضافات. من الممكن ان يستغرق وقتا اطول...
 STR_NEWGRF_SCAN_STATUS                                          :{BLACK}{NUM}الاضافات الجديدة من {NUM}مجموع الاضافات
-STR_NEWGRF_SCAN_ARCHIVES                                        :البحث للارشيفات
 
 # Sign list window
 STR_SIGN_LIST_CAPTION                                           :{WHITE}قائمة العلامات - {COMMA} علامة
@@ -3013,6 +3059,7 @@ STR_GOALS_TEXT                                                  :{ORANGE}{STRING
 STR_GOALS_PROGRESS                                              :{ORANGE}{STRING}
 
 # Goal question window
+###length 4
 STR_GOAL_QUESTION_CAPTION_QUESTION                              :{BLACK}اسئله
 STR_GOAL_QUESTION_CAPTION_INFORMATION                           :{BLACK}معلومات
 STR_GOAL_QUESTION_CAPTION_WARNING                               :{BLACK}تحذير
@@ -3100,25 +3147,21 @@ STR_CARGO_RATING_EXCELLENT                                      :ممتاز
 STR_CARGO_RATING_OUTSTANDING                                    :خارق
 
 STR_STATION_VIEW_CENTER_TOOLTIP                                 :{BLACK}وسط الشاشة على موقع المحطة
-STR_STATION_VIEW_RENAME_TOOLTIP                                 :{BLACK}غير اسم المحطة
 
 STR_STATION_VIEW_SCHEDULED_TRAINS_TOOLTIP                       :{BLACK} عرض جميع القطارات المرتبطة بهذه المحطة
 STR_STATION_VIEW_SCHEDULED_ROAD_VEHICLES_TOOLTIP                :{BLACK} عرض جميع العربات المرتبطة بهذه المحطة
 STR_STATION_VIEW_SCHEDULED_AIRCRAFT_TOOLTIP                     :{BLACK} عرض جميع القطارات المرتبطة بهذه المحطة
 STR_STATION_VIEW_SCHEDULED_SHIPS_TOOLTIP                        :{BLACK}عرض جميع السفن المرتبطة بهذا المرفئ
 
-STR_STATION_VIEW_RENAME_STATION_CAPTION                         :اعادة تسمية المحطة
 
 STR_STATION_VIEW_CLOSE_AIRPORT                                  :{BLACK}اغلاق المطار
 
 # Waypoint/buoy view window
 STR_WAYPOINT_VIEW_CAPTION                                       :{WHITE}{WAYPOINT}
 STR_WAYPOINT_VIEW_CENTER_TOOLTIP                                :{BLACK} ركز شاشة العرض على نقطة العبور
-STR_WAYPOINT_VIEW_CHANGE_WAYPOINT_NAME                          :{BLACK}غير اسم نقطة العبور
 STR_BUOY_VIEW_CENTER_TOOLTIP                                    :{BLACK} ضع العوامة في مركز الشاشة. Ctrl+Click لفتح نافذة لموقع العوامة
 STR_BUOY_VIEW_RENAME_TOOLTIP                                    :{BLACK} غير اسم العومة
 
-STR_EDIT_WAYPOINT_NAME                                          :{WHITE}عدل اسم نقطة العبور
 
 # Finances window
 STR_FINANCES_CAPTION                                            :{WHITE}{COMPANY} {BLACK} {COMPANY_NUM} سجل المحاسبة
@@ -3214,8 +3257,8 @@ STR_COMPANY_INFRASTRUCTURE_VIEW_AIRPORTS                        :{WHITE}المط
 # Industry directory
 STR_INDUSTRY_DIRECTORY_NONE                                     :{ORANGE}-بدون-
 STR_INDUSTRY_DIRECTORY_ITEM_NOPROD                              :{ORANGE}{INDUSTRY}
-STR_INDUSTRY_DIRECTORY_ITEM_PROD1                               :{ORANGE}{INDUSTRY} {STRING}
-STR_INDUSTRY_DIRECTORY_ITEM_PRODMORE                            :{ORANGE}{INDUSTRY} {STRING}، {STRING}، {STRING} و{NUM} اكثر...
+STR_INDUSTRY_DIRECTORY_ITEM_PROD1                               :{ORANGE}{INDUSTRY} {BLACK}{STRING}
+STR_INDUSTRY_DIRECTORY_ITEM_PRODMORE                            :{ORANGE}{INDUSTRY} {BLACK}{STRING}، {STRING}، {STRING} و{NUM} اكثر...
 STR_INDUSTRY_DIRECTORY_LIST_TOOLTIP                             :{BLACK}اسماء المصانع - اضغط على اسم المصنع لتوسيط الشاشة عليه. اضغط + كنترول لفتح شاشة عرض جديدة لمنطقة المصنع.
 STR_INDUSTRY_DIRECTORY_FILTER_ALL_TYPES                         :جميع انواع الحمولة
 STR_INDUSTRY_DIRECTORY_FILTER_NONE                              :بدون
@@ -3227,12 +3270,11 @@ STR_INDUSTRY_VIEW_TRANSPORTED                                   :{YELLOW}{CARGO_
 STR_INDUSTRY_VIEW_LOCATION_TOOLTIP                              :{BLACK}وسط الشاشة على المصنع
 STR_INDUSTRY_VIEW_PRODUCTION_LEVEL                              :{BLACK}نسبة الانتاج: {YELLOW}{COMMA}%
 
-STR_INDUSTRY_VIEW_REQUIRES_N_CARGO                              :{BLACK}يتطلب: {YELLOW}{STRING}{STRING}
-STR_INDUSTRY_VIEW_PRODUCES_N_CARGO                              :{BLACK}ينتج: {YELLOW}{STRING}{STRING}
-STR_INDUSTRY_VIEW_CARGO_LIST_EXTENSION                          :، {STRING}{STRING}
+STR_INDUSTRY_VIEW_REQUIRES_N_CARGO                              :{BLACK}يتطلب: {YELLOW}{STRING}
+STR_INDUSTRY_VIEW_PRODUCES_N_CARGO                              :{BLACK}ينتج: {YELLOW}{STRING}
+STR_INDUSTRY_VIEW_CARGO_LIST_EXTENSION                          :{STRING}{STRING}
 
 STR_INDUSTRY_VIEW_REQUIRES                                      :{BLACK}:يتطلب
-STR_INDUSTRY_VIEW_ACCEPT_CARGO_AMOUNT                           :{YELLOW}{STRING}{BLACK}: {CARGO_SHORT} تنتظر{STRING}
 
 STR_CONFIG_GAME_PRODUCTION                                      :{WHITE}تغيير الانتاج مضاعف من 8 الى 2040
 STR_CONFIG_GAME_PRODUCTION_LEVEL                                :{WHITE}غير مستوى الانتاج{}نسبة مئوية حتى 800%.
@@ -3345,6 +3387,8 @@ STR_PURCHASE_INFO_ENGINES_ONLY                                  :محركات ف
 STR_PURCHASE_INFO_ALL_BUT                                       :الكل الا {CARGO_LIST}
 STR_PURCHASE_INFO_MAX_TE                                        :{BLACK}تأثير الجذب القصى: {GOLD}{FORCE}
 STR_PURCHASE_INFO_AIRCRAFT_TYPE                                 :{BLACK}نوع الطائرة:{GOLD}{STRING}
+
+# Vehicle sort details
 
 ###length 3
 STR_CARGO_TYPE_FILTER_NONE                                      :لا شيء
@@ -3497,6 +3541,7 @@ STR_DEPOT_SELL_CONFIRMATION_TEXT                                :{YELLOW}أنت 
 STR_ENGINE_PREVIEW_CAPTION                                      :{WHITE}رسالة من المصنعين
 STR_ENGINE_PREVIEW_MESSAGE                                      :{GOLD}قد صممنا موديل جديد من {STRING} - هل ترغب في استخدام سنة حصري لهذه المركبة, لنستطيع تقييمها للأستخدام العام
 
+
 STR_ENGINE_PREVIEW_RAILROAD_LOCOMOTIVE                          :قاطرة سكة حديد
 STR_ENGINE_PREVIEW_MONORAIL_LOCOMOTIVE                          :قاطرة سكة قطار احادية
 STR_ENGINE_PREVIEW_MAGLEV_LOCOMOTIVE                            :قاطرة سكة قطار ممغنطة
@@ -3633,12 +3678,11 @@ STR_VEHICLE_INFO_WEIGHT_POWER_MAX_SPEED                         :{BLACK} الو�
 STR_VEHICLE_INFO_WEIGHT_POWER_MAX_SPEED_MAX_TE                  :{BLACK} الوزن {LTBLUE}{WEIGHT_SHORT} {BLACK} القوة {LTBLUE}{POWER}{BLACK} السرعة القصوى {LTBLUE}{VELOCITY} {BLACK} قوة السحب القصوى {LTBLUE}{FORCE}
 
 STR_VEHICLE_INFO_PROFIT_THIS_YEAR_LAST_YEAR                     :{BLACK} دخل هذة السنة {LTBLUE}{CURRENCY_LONG} السنة السابقة - {CURRENCY_LONG}
-STR_VEHICLE_INFO_RELIABILITY_BREAKDOWNS                         :{BLACK} الاعتمادية {LTBLUE}{COMMA} % {BLACK} الاعطال منذ اخر صيانة {LTBLUE}{COMMA}
 
 STR_VEHICLE_INFO_BUILT_VALUE                                    :{LTBLUE}{ENGINE} {BLACK} بني {LTBLUE}{NUM}{BLACK} القيمة {LTBLUE}{CURRENCY_LONG}
 STR_VEHICLE_INFO_NO_CAPACITY                                    :{BLACK}السعة: {LTBLUE}بدون{STRING}
-STR_VEHICLE_INFO_CAPACITY                                       :{BLACK} السعة {LTBLUE}{CARGO_LONG}{3:STRING}
-STR_VEHICLE_INFO_CAPACITY_MULT                                  :{BLACK} السعة {LTBLUE}{CARGO_LONG}{3:STRING} (x{4:NUM})
+STR_VEHICLE_INFO_CAPACITY                                       :{BLACK} السعة {LTBLUE}{CARGO_LONG}{STRING}
+STR_VEHICLE_INFO_CAPACITY_MULT                                  :{BLACK} السعة {LTBLUE}{CARGO_LONG}{STRING} (x{NUM})
 STR_VEHICLE_INFO_CAPACITY_CAPACITY                              :{BLACK} السعة {LTBLUE}{CARGO_LONG}, {CARGO_LONG}{STRING}
 
 STR_VEHICLE_INFO_FEEDER_CARGO_VALUE                             :{BLACK}مقدار التحويل: {LTBLUE}{CURRENCY_LONG}
@@ -3674,7 +3718,7 @@ STR_VEHICLE_DETAILS_TRAIN_CAPACITIES_TOOLTIP                    :{BLACK}عرض �
 STR_VEHICLE_DETAIL_TAB_TOTAL_CARGO                              :{BLACK}مجموع الحمولة
 STR_VEHICLE_DETAILS_TRAIN_TOTAL_CARGO_TOOLTIP                   :{BLACK} عرض الحمولة الكاملة للقطار, مفصلة بحسب نوع البضائع
 
-STR_VEHICLE_DETAILS_TRAIN_ARTICULATED_RV_CAPACITY               :{BLACK}السعة: {LTBLUE}
+STR_VEHICLE_DETAILS_TRAIN_ARTICULATED_RV_CAPACITY               :{BLACK}السعة: {LTBLUE}{STRING}
 
 # Vehicle refit
 STR_REFIT_CAPTION                                               :{WHITE}{VEHICLE} (تغيير)
@@ -3753,7 +3797,7 @@ STR_ORDER_DROP_HALT_DEPOT                                       :توقف
 STR_ORDER_CONDITIONAL_VARIABLE_TOOLTIP                          :{BLACK}بيانات العربة لتعريف التجاوز الى
 
 # Conditional order variables, must follow order of OrderConditionVariable enum
-###length 8
+###length 9
 STR_ORDER_CONDITIONAL_LOAD_PERCENTAGE                           :نسبة التحميل
 STR_ORDER_CONDITIONAL_RELIABILITY                               :الصلاحية
 STR_ORDER_CONDITIONAL_MAX_SPEED                                 :السرعة القصوى
@@ -3801,15 +3845,12 @@ STR_ORDER_GO_NON_STOP_TO_WAYPOINT                               :توجة بشك
 STR_ORDER_SERVICE_AT                                            :الصيانة في
 STR_ORDER_SERVICE_NON_STOP_AT                                   :الصيانة بدون توقف في
 
-STR_ORDER_NEAREST_DEPOT                                         :الأقرب
-STR_ORDER_NEAREST_HANGAR                                        :الحظيرة الأقرب
 ###length 3
 STR_ORDER_TRAIN_DEPOT                                           :مستودع قطار
 STR_ORDER_ROAD_VEHICLE_DEPOT                                    :مستودع العربات
 STR_ORDER_SHIP_DEPOT                                            :حوض صيانة السفن
 ###next-name-looks-similar
 
-STR_ORDER_GO_TO_NEAREST_DEPOT_FORMAT                            :{STRING} {STRING} {STRING}
 STR_ORDER_GO_TO_DEPOT_FORMAT                                    :{STRING} {DEPOT}
 
 STR_ORDER_REFIT_ORDER                                           :هيئة الى {STRING}
@@ -3817,8 +3858,8 @@ STR_ORDER_REFIT_STOP_ORDER                                      :هيئت الى
 STR_ORDER_STOP_ORDER                                            :توقف
 
 
-STR_ORDER_GO_TO_STATION                                         :{STRING} {STATION} {STRING}
-STR_ORDER_GO_TO_STATION_CAN_T_USE_STATION                       :{PUSH_COLOUR}{RED}(لا يمكن استخدام المحطة){POP_COLOUR} {STRING} {STATION} {STRING}
+STR_ORDER_GO_TO_STATION                                         :{STRING} {STATION}
+STR_ORDER_GO_TO_STATION_CAN_T_USE_STATION                       :{PUSH_COLOUR}{RED}(لا يمكن استخدام المحطة){POP_COLOUR} {STRING} {STATION}
 
 STR_ORDER_IMPLICIT                                              :(تلقائى)
 
@@ -3876,7 +3917,7 @@ STR_TIMETABLE_TOOLTIP                                           :{BLACK}جدول
 STR_TIMETABLE_NO_TRAVEL                                         :لا رحيل
 STR_TIMETABLE_NOT_TIMETABLEABLE                                 :مسافرة (ذاتي: مجدول بواسطة الامر اليدوي التالي)
 STR_TIMETABLE_TRAVEL_NOT_TIMETABLED                             :مسافرة (غير مجدول)
-STR_TIMETABLE_TRAVEL_NOT_TIMETABLED_SPEED                       :مسافرة (ليس مجدول) بسرعة لا تتعدى {2:VELOCITY}
+STR_TIMETABLE_TRAVEL_NOT_TIMETABLED_SPEED                       :مسافرة (ليس مجدول) بسرعة لا تتعدى {VELOCITY}
 STR_TIMETABLE_TRAVEL_FOR                                        :مسافر لـ {STRING}
 STR_TIMETABLE_TRAVEL_FOR_SPEED                                  :سافر لي {STRING} بمعدل {VELOCITY}
 STR_TIMETABLE_TRAVEL_FOR_ESTIMATED                              :مسافرة (ل {STRING}، ليس مجدول)
@@ -3895,7 +3936,6 @@ STR_TIMETABLE_STATUS_EARLY                                      :{BLACK}هذه �
 STR_TIMETABLE_STATUS_NOT_STARTED                                :{BLACK}جدول الاعمال لم تبدأ بعد
 
 STR_TIMETABLE_START                                             :{BLACK}بدء جدول الاعمال
-
 
 STR_TIMETABLE_CHANGE_TIME                                       :{BLACK}غير الوقت
 STR_TIMETABLE_WAIT_TIME_TOOLTIP                                 :{BLACK}غير مقدار الزمن الذي يستغرقه هذا الامر
@@ -3919,6 +3959,7 @@ STR_TIMETABLE_EXPECTED                                          :{BLACK}متوق
 STR_TIMETABLE_SCHEDULED                                         :{BLACK}مجدول
 STR_TIMETABLE_EXPECTED_TOOLTIP                                  :{BLACK}غير بين المتوقع و المجدول
 
+STR_TIMETABLE_ARRIVAL_SECONDS_IN_FUTURE                         :A-أ: {COLOUR}{COMMA} ثانية
 
 
 # Date window (for timetable)
@@ -3990,15 +4031,12 @@ STR_AI_LIST_URL                                                 :{LTBLUE}الع�
 
 STR_AI_LIST_ACCEPT                                              :{BLACK} موافق
 STR_AI_LIST_ACCEPT_TOOLTIP                                      :{BLACK} اختر الذكاء الصناعي المنتقى
-STR_AI_LIST_CANCEL                                              :{BLACK} الغاء
-STR_AI_LIST_CANCEL_TOOLTIP                                      :{BLACK} لا تغير الذكاء الصناعي
 
 STR_SCREENSHOT_SCREENSHOT                                       :{BLACK}لقطة شاشة عادية
 STR_SCREENSHOT_ZOOMIN_SCREENSHOT                                :{BLACK}التقط لقطة شاشة كاملة
 STR_SCREENSHOT_WORLD_SCREENSHOT                                 :{BLACK}صور الخاريطة الكاملة
 
 # Script Parameters
-STR_AI_SETTINGS_CLOSE                                           :{BLACK} اغلاق
 STR_AI_SETTINGS_RESET                                           :{BLACK} اعادة ضبط
 STR_AI_SETTINGS_SETTING                                         :{STRING}: {ORANGE}{STRING}
 
@@ -4070,7 +4108,6 @@ STR_ERROR_SCREENSHOT_FAILED                                     :{WHITE}لم ي�
 
 # Error message titles
 STR_ERROR_MESSAGE_CAPTION                                       :{YELLOW}رسالة
-STR_ERROR_MESSAGE_CAPTION_OTHER_COMPANY                         :{YELLOW}رسالة من {STRING}
 
 # Generic construction errors
 STR_ERROR_OFF_EDGE_OF_MAP                                       :{WHITE}خارج حدود الخريطة
@@ -4089,7 +4126,6 @@ STR_ERROR_TERRAFORM_LIMIT_REACHED                               :{WHITE}... تم
 STR_ERROR_CLEARING_LIMIT_REACHED                                :{WHITE}... تم الوصول لاقصى عدد ازالة
 STR_ERROR_TREE_PLANT_LIMIT_REACHED                              :{WHITE}... تم الوصول للحد الاقصى لزرع الاشجار
 STR_ERROR_NAME_MUST_BE_UNIQUE                                   :{WHITE}السم يجب ان يكون فريدا - غير مستخدم
-STR_ERROR_GENERIC_OBJECT_IN_THE_WAY                             :{WHITE}{1:STRING} على الطريق
 STR_ERROR_NOT_ALLOWED_WHILE_PAUSED                              :{WHITE}غير مسموح في حين توقفت
 
 # Local authority errors
@@ -4113,7 +4149,7 @@ STR_ERROR_CAN_T_CHANGE_PRESIDENT                                :{WHITE}لا ي�
 
 STR_ERROR_MAXIMUM_PERMITTED_LOAN                                :{WHITE}... اعلى دين مسموح به : {CURRENCY_LONG}
 STR_ERROR_CAN_T_BORROW_ANY_MORE_MONEY                           :{WHITE}بلغت الحد الاقصى للقرض
-STR_ERROR_LOAN_ALREADY_REPAYED                                  :{WHITE}... لا يوجد دين للسداد
+STR_ERROR_LOAN_ALREADY_REPAID                                   :{WHITE}... لا يوجد دين للسداد
 STR_ERROR_CURRENCY_REQUIRED                                     :{WHITE}...{CURRENCY_LONG} مطلوب
 STR_ERROR_CAN_T_REPAY_LOAN                                      :{WHITE}لا يمكن تسديد الدين
 STR_ERROR_INSUFFICIENT_FUNDS                                    :{WHITE}لا يمكن التخلي عن النقود المعطاة من البنك على سبيل الاعارة ...
@@ -4125,7 +4161,6 @@ STR_ERROR_CAN_T_GENERATE_TOWN                                   :{WHITE}لا ي�
 STR_ERROR_CAN_T_RENAME_TOWN                                     :{WHITE}تعذر إعاده تسميه المدينه...
 STR_ERROR_CAN_T_FOUND_TOWN_HERE                                 :{WHITE}لا يمكن انشاء مدينة هنا
 STR_ERROR_CAN_T_EXPAND_TOWN                                     :{WHITE}لا يمكن توسيع المدينة ...
-STR_ERROR_TOO_CLOSE_TO_EDGE_OF_MAP_SUB                          :{WHITE}... قريبة جدا من حافة الخريطة
 STR_ERROR_TOO_CLOSE_TO_ANOTHER_TOWN                             :{WHITE}... قريبة جدا من مدينة أخرى
 STR_ERROR_TOO_MANY_TOWNS                                        :{WHITE}... المدن كثيرة جدا
 STR_ERROR_NO_SPACE_FOR_TOWN                                     :{WHITE}... لا يوجد فراغ في الخريطة
@@ -4152,6 +4187,9 @@ STR_ERROR_FOREST_CAN_ONLY_BE_PLANTED                            :{WHITE}... يم
 STR_ERROR_CAN_ONLY_BE_BUILT_ABOVE_SNOW_LINE                     :{WHITE}يمكن بنائة فوق خط الثلج فقط
 STR_ERROR_CAN_ONLY_BE_BUILT_BELOW_SNOW_LINE                     :{WHITE}يمكن بنائة تحت خط الثلج فقط
 
+STR_ERROR_NO_SUITABLE_PLACES_FOR_PROSPECTING                    :{WHITE}لا توجد أماكن مناسبة للتنقيب عن هذه الصناعة
+STR_ERROR_NO_SUITABLE_PLACES_FOR_INDUSTRIES                     :{WHITE}لا توجد أماكن مناسبة لصناعات '{STRING}'
+STR_ERROR_NO_SUITABLE_PLACES_FOR_INDUSTRIES_EXPLANATION         :{WHITE}غير اعدادات توليد الخريطة للحصول على واحدة افضل
 
 # Station construction related errors
 STR_ERROR_CAN_T_BUILD_RAILROAD_STATION                          :{WHITE}لا يمكن بناء محطة سكة حديد هنا ...
@@ -4198,11 +4236,11 @@ STR_ERROR_MUST_DEMOLISH_AIRPORT_FIRST                           :{WHITE}يجب �
 STR_ERROR_WAYPOINT_ADJOINS_MORE_THAN_ONE_EXISTING               :{WHITE}جاور اكثر من نقطه عبور متواجده
 STR_ERROR_TOO_CLOSE_TO_ANOTHER_WAYPOINT                         :{WHITE}قريب للغايه من نقطه عبور اخرى
 
-STR_ERROR_CAN_T_BUILD_TRAIN_WAYPOINT                            :{WHITE}تعذر بناء نقطه العبور هنا...
+STR_ERROR_CAN_T_BUILD_RAIL_WAYPOINT                             :{WHITE}تعذر بناء نقطه العبور هنا...
 STR_ERROR_CAN_T_POSITION_BUOY_HERE                              :{WHITE}تعذر وضع العوامه هنا...
 STR_ERROR_CAN_T_CHANGE_WAYPOINT_NAME                            :{WHITE}تعذر إعاده تسميه نقطه العبور
 
-STR_ERROR_CAN_T_REMOVE_TRAIN_WAYPOINT                           :{WHITE}لا يمكن ازالة نقطة عبور القطار من هنا...
+STR_ERROR_CAN_T_REMOVE_RAIL_WAYPOINT                            :{WHITE}لا يمكن ازالة نقطة عبور القطار من هنا...
 STR_ERROR_MUST_REMOVE_RAILWAYPOINT_FIRST                        :{WHITE}يجب إزالة السكه الحديديه اولاً
 STR_ERROR_BUOY_IN_THE_WAY                                       :{WHITE}... توجد عوامه فى المسار
 STR_ERROR_BUOY_IS_IN_USE                                        :{WHITE}... العوامه مُستخدمه من قِبَل شركه اخرى!
@@ -4382,6 +4420,10 @@ STR_ERROR_CAN_T_SELL_ROAD_VEHICLE                               :{WHITE}لا ي�
 STR_ERROR_CAN_T_SELL_SHIP                                       :{WHITE}لا يمكن بيع السفينة ...
 STR_ERROR_CAN_T_SELL_AIRCRAFT                                   :{WHITE}لا يمكن بيع الطائرة
 
+###length VEHICLE_TYPES
+
+###length VEHICLE_TYPES
+
 STR_ERROR_TOO_MANY_VEHICLES_IN_GAME                             :{WHITE}العربات كثيرة جدا في اللعبة
 STR_ERROR_CAN_T_CHANGE_SERVICING                                :{WHITE}لا يمكن تغيير فترات الصيانة
 
@@ -4390,6 +4432,7 @@ STR_ERROR_VEHICLE_IS_DESTROYED                                  :{WHITE}... ال
 STR_ERROR_CAN_T_CLONE_VEHICLE_LIST                              :{WHITE}... ليست كل العربات متطابقة
 
 STR_ERROR_NO_VEHICLES_AVAILABLE_AT_ALL                          :{WHITE}لن تتوافر اى وسائل نقل على اﻹطلاق
+STR_ERROR_NO_VEHICLES_AVAILABLE_AT_ALL_EXPLANATION              :{WHITE}تغيير اعداد NewGRF الخاص بك
 STR_ERROR_NO_VEHICLES_AVAILABLE_YET                             :{WHITE}لا تتوافر اى آليه نقل بعد
 
 
@@ -4877,18 +4920,7 @@ STR_SAVEGAME_NAME_SPECTATOR                                     :المشاهد�
 
 # Viewport strings
 STR_VIEWPORT_TOWN_POP                                           :{WHITE}{TOWN} ){COMMA})
-STR_VIEWPORT_TOWN                                               :{WHITE}{TOWN}
-STR_VIEWPORT_TOWN_TINY_BLACK                                    :{TINY_FONT}{BLACK}{TOWN}
-STR_VIEWPORT_TOWN_TINY_WHITE                                    :{TINY_FONT}{WHITE}{TOWN}
-
-STR_VIEWPORT_SIGN_SMALL_BLACK                                   :{TINY_FONT}{BLACK}{SIGN}
-STR_VIEWPORT_SIGN_SMALL_WHITE                                   :{TINY_FONT}{WHITE}{SIGN}
-
 STR_VIEWPORT_STATION                                            :{STATION} {STATION_FEATURES}
-STR_VIEWPORT_STATION_TINY                                       :{TINY_FONT}{STATION}
-
-STR_VIEWPORT_WAYPOINT                                           :{WAYPOINT}
-STR_VIEWPORT_WAYPOINT_TINY                                      :{TINY_FONT}{WAYPOINT}
 
 # Simple strings to get specific types of data
 STR_COMPANY_NAME                                                :{COMPANY}
@@ -4941,3 +4973,4 @@ STR_PLANE                                                       :{BLACK}{PLANE}
 STR_SHIP                                                        :{BLACK}{SHIP}
 
 STR_TOOLBAR_RAILTYPE_VELOCITY                                   :{STRING} ({VELOCITY})
+

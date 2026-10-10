@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file script_town.hpp Everything to query towns. */
@@ -12,6 +12,7 @@
 
 #include "script_cargo.hpp"
 #include "script_company.hpp"
+#include "../../town.h"
 #include "../../town_type.h"
 #include <optional>
 
@@ -32,49 +33,49 @@ public:
 		 * absolute percentage, so 10% becomes 35%, with a max of 99%)
 		 * for all stations within 10 tiles.
 		 */
-		TOWN_ACTION_ADVERTISE_SMALL  = 0,
+		TOWN_ACTION_ADVERTISE_SMALL  = to_underlying(::TownAction::AdvertiseSmall),
 
 		/**
 		 * The cargo ratings temporary gains 44% of rating (in
 		 * absolute percentage, so 10% becomes 54%, with a max of 99%)
 		 * for all stations within 15 tiles.
 		 */
-		TOWN_ACTION_ADVERTISE_MEDIUM = 1,
+		TOWN_ACTION_ADVERTISE_MEDIUM = to_underlying(::TownAction::AdvertiseMedium),
 
 		/**
 		 * The cargo ratings temporary gains 63% of rating (in
 		 * absolute percentage, so 10% becomes 73%, with a max of 99%)
 		 * for all stations within 20 tiles.
 		 */
-		TOWN_ACTION_ADVERTISE_LARGE  = 2,
+		TOWN_ACTION_ADVERTISE_LARGE  = to_underlying(::TownAction::AdvertiseLarge),
 
 		/**
 		 * Rebuild the roads of this town for 6 economy-months.
 		 * @see \ref ScriptEconomyTime
 		 */
-		TOWN_ACTION_ROAD_REBUILD     = 3,
+		TOWN_ACTION_ROAD_REBUILD     = to_underlying(::TownAction::RoadRebuild),
 
 		/**
 		 * Build a statue in this town.
 		 */
-		TOWN_ACTION_BUILD_STATUE     = 4,
+		TOWN_ACTION_BUILD_STATUE     = to_underlying(::TownAction::BuildStatue),
 
 		/**
 		 * Fund the creation of extra buildings for 3 economy-months.
 		 * @see \ref ScriptEconomyTime
 		 */
-		TOWN_ACTION_FUND_BUILDINGS   = 5,
+		TOWN_ACTION_FUND_BUILDINGS   = to_underlying(::TownAction::FundBuildings),
 
 		/**
 		 * Buy exclusive rights for this town for 12 economy-months.
 		 * @see \ref ScriptEconomyTime
 		 */
-		TOWN_ACTION_BUY_RIGHTS       = 6,
+		TOWN_ACTION_BUY_RIGHTS       = to_underlying(::TownAction::BuyRights),
 
 		/**
 		 * Bribe the town in order to get a higher rating.
 		 */
-		TOWN_ACTION_BRIBE            = 7,
+		TOWN_ACTION_BRIBE            = to_underlying(::TownAction::Bribe),
 	};
 
 	/**
@@ -98,25 +99,25 @@ public:
 	 */
 	enum RoadLayout {
 		/* Note: these values represent part of the in-game TownLayout enum */
-		ROAD_LAYOUT_ORIGINAL      = ::TL_ORIGINAL,     ///< Original algorithm (min. 1 distance between roads).
-		ROAD_LAYOUT_BETTER_ROADS  = ::TL_BETTER_ROADS, ///< Extended original algorithm (min. 2 distance between roads).
-		ROAD_LAYOUT_2x2           = ::TL_2X2_GRID,     ///< Geometric 2x2 grid algorithm
-		ROAD_LAYOUT_3x3           = ::TL_3X3_GRID,     ///< Geometric 3x3 grid algorithm
-		ROAD_LAYOUT_RANDOM        = ::TL_RANDOM,       ///< Random road layout
+		ROAD_LAYOUT_ORIGINAL = to_underlying(::TownLayout::Original), ///< Original algorithm (min. 1 distance between roads).
+		ROAD_LAYOUT_BETTER_ROADS = to_underlying(::TownLayout::BetterRoads), ///< Extended original algorithm (min. 2 distance between roads).
+		ROAD_LAYOUT_2x2 = to_underlying(::TownLayout::Grid2x2), ///< Geometric 2x2 grid algorithm
+		ROAD_LAYOUT_3x3 = to_underlying(::TownLayout::Grid3x3), ///< Geometric 3x3 grid algorithm
+		ROAD_LAYOUT_RANDOM = to_underlying(::TownLayout::Random), ///< Random road layout
 
 		/* Custom added value, only valid for this API */
-		ROAD_LAYOUT_INVALID       = -1,                ///< The layout for invalid towns.
+		ROAD_LAYOUT_INVALID = -1, ///< The layout for invalid towns.
 	};
 
 	/**
 	 * Possible town construction sizes.
 	 */
 	enum TownSize {
-		TOWN_SIZE_SMALL   = ::TSZ_SMALL,  ///< Small town.
-		TOWN_SIZE_MEDIUM  = ::TSZ_MEDIUM, ///< Medium town.
-		TOWN_SIZE_LARGE   = ::TSZ_LARGE,  ///< Large town.
+		TOWN_SIZE_SMALL = to_underlying(::TownSize::Small), ///< Small town.
+		TOWN_SIZE_MEDIUM = to_underlying(::TownSize::Medium), ///< Medium town.
+		TOWN_SIZE_LARGE = to_underlying(::TownSize::Large), ///< Large town.
 
-		TOWN_SIZE_INVALID = -1,  ///< Invalid town size.
+		TOWN_SIZE_INVALID = -1, ///< Invalid town size.
 	};
 
 	/**
@@ -197,42 +198,42 @@ public:
 	/**
 	 * Get the total last economy-month's production of the given cargo at a town.
 	 * @param town_id The index of the town.
-	 * @param cargo_id The index of the cargo.
+	 * @param cargo_type The index of the cargo.
 	 * @pre IsValidTown(town_id).
-	 * @pre ScriptCargo::IsValidCargo(cargo_id).
+	 * @pre ScriptCargo::IsValidCargo(cargo_type).
 	 * @return The last economy-month's production of the given cargo for this town.
 	 * @see \ref ScriptEconomyTime
 	 */
-	static SQInteger GetLastMonthProduction(TownID town_id, CargoID cargo_id);
+	static SQInteger GetLastMonthProduction(TownID town_id, CargoType cargo_type);
 
 	/**
 	 * Get the total amount of cargo supplied from a town last economy-month.
 	 * @param town_id The index of the town.
-	 * @param cargo_id The index of the cargo.
+	 * @param cargo_type The index of the cargo.
 	 * @pre IsValidTown(town_id).
-	 * @pre ScriptCargo::IsValidCargo(cargo_id).
+	 * @pre ScriptCargo::IsValidCargo(cargo_type).
 	 * @return The amount of cargo supplied for transport from this town last economy-month.
 	 * @see \ref ScriptEconomyTime
 	 */
-	static SQInteger GetLastMonthSupplied(TownID town_id, CargoID cargo_id);
+	static SQInteger GetLastMonthSupplied(TownID town_id, CargoType cargo_type);
 
 	/**
 	 * Get the percentage of transported production of the given cargo at a town last economy-month.
 	 * @param town_id The index of the town.
-	 * @param cargo_id The index of the cargo.
+	 * @param cargo_type The index of the cargo.
 	 * @pre IsValidTown(town_id).
-	 * @pre ScriptCargo::IsValidCargo(cargo_id).
+	 * @pre ScriptCargo::IsValidCargo(cargo_type).
 	 * @return The percentage of given cargo transported from this town last economy-month.
 	 * @see \ref ScriptEconomyTime
 	 */
-	static SQInteger GetLastMonthTransportedPercentage(TownID town_id, CargoID cargo_id);
+	static SQInteger GetLastMonthTransportedPercentage(TownID town_id, CargoType cargo_type);
 
 	/**
 	 * Get the total amount of cargo effects received by a town last economy-month.
 	 * @param town_id The index of the town.
 	 * @param towneffect_id The index of the cargo.
 	 * @pre IsValidTown(town_id).
-	 * @pre ScriptCargo::IsValidTownEffect(cargo_id).
+	 * @pre ScriptCargo::IsValidTownEffect(cargo_type).
 	 * @return The amount of cargo received by this town last economy-month for this cargo effect.
 	 * @see \ref ScriptEconomyTime
 	 */

@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file town.h Base of the town class. */
@@ -10,22 +10,25 @@
 #ifndef TOWN_H
 #define TOWN_H
 
+#include "misc/history_type.hpp"
 #include "viewport_type.h"
 #include "town_map.h"
+#include "station_container.h"
 #include "subsidy_type.h"
 #include "newgrf_storage.h"
 #include "cargotype.h"
-#include "openttd.h"
 #include "table/strings.h"
 #include "company_func.h"
+#include "settings_type.h"
 #include "core/tinystring_type.hpp"
+#include "core/typed_container.hpp"
 #include <array>
 #include <memory>
 
 template <typename T>
 struct BuildingCounts {
-	std::vector<T> id_count;
-	std::vector<T> class_count;
+	std::vector<T> id_count{};
+	std::vector<T> class_count{};
 
 	bool operator==(const BuildingCounts&) const = default;
 };
@@ -46,21 +49,32 @@ enum TownCouncilAttitudes {
 	TOWN_COUNCIL_PERMISSIVE = 3,
 };
 
-typedef Pool<Town, TownID, 64, 64000> TownPool;
+typedef Pool<Town, TownID, 64> TownPool;
 extern TownPool _town_pool;
+
+/** Flags controlling various town behaviours. */
+enum class TownFlag : uint8_t {
+	IsGrowing = 0, ///< Conditions for town growth are met. Grow according to Town::growth_rate.
+//	HasChurch = 1, ///< There can be only one church by town. Replaced by church_count.
+//	HasStadium = 2, ///< There can be only one stadium by town. Replaced by stadium_count.
+	CustomGrowth = 3, ///< Growth rate is controlled by GS.
+};
+
+/** Bitset of \c TownFlag elements. */
+using TownFlags = EnumBitSet<TownFlag, uint8_t>;
 
 /** Data structure with cached data of towns. */
 struct TownCache {
-	uint32_t num_houses;                        ///< Amount of houses
-	uint32_t population;                        ///< Current population of people
-	TrackedViewportSign sign;                   ///< Location of name sign, UpdateVirtCoord updates this
-	PartOfSubsidy part_of_subsidy;              ///< Is this town a source/destination of a subsidy?
-	std::array<uint32_t, HZB_END> squared_town_zone_radius; ///< UpdateTownRadius updates this given the house count
-	BuildingCounts<uint16_t> building_counts;   ///< The number of each type of building in the town
+	uint32_t num_houses = 0;                                          ///< Amount of houses
+	uint32_t population = 0;                                          ///< Current population of people
+	TrackedViewportSign sign{};                                       ///< Location of name sign, UpdateVirtCoord updates this
+	PartsOfSubsidy part_of_subsidy{};                                 ///< Is this town a source/destination of a subsidy?
+	std::array<uint32_t, NUM_HOUSE_ZONES> squared_town_zone_radius{}; ///< UpdateTownRadius updates this given the house count
+	BuildingCounts<uint16_t> building_counts{};                       ///< The number of each type of building in the town
 };
 
 /** Town setting override flags */
-enum TownSettingOverrideFlags {
+enum TownSettingOverrideFlags : uint8_t {
 	TSOF_OVERRIDE_BEGIN                     = 0, // Begin marker
 	TSOF_OVERRIDE_BUILD_ROADS               = 0,
 	TSOF_OVERRIDE_BUILD_LEVEL_CROSSINGS     = 1,
@@ -73,75 +87,161 @@ enum TownSettingOverrideFlags {
 
 /** Town data structure. */
 struct Town : TownPool::PoolItem<&_town_pool> {
-	TileIndex xy;                  ///< town center tile
+	TileIndex xy = INVALID_TILE; ///< town center tile
 
-	TownCache cache; ///< Container for all cacheable data.
+	TownCache cache{}; ///< Container for all cacheable data.
 
-	/* Town name */
-	uint32_t townnamegrfid;
-	uint16_t townnametype;
-	uint32_t townnameparts;
-	TinyString name;                 ///< Custom town name. If empty, the town was not renamed and uses the generated name.
-	mutable std::string cached_name; ///< NOSAVE: Cache of the resolved name of the town, if not using a custom town name
+	GrfID townnamegrfid{};               ///< NewGRF id that contains the name. O is not used.
+	uint16_t townnametype = 0;           ///< The style of the name.
+	uint32_t townnameparts = 0;          ///< Random number that give unique town name when passed to generator.
+	TinyString name{};                   ///< Custom town name. If empty, the town was not renamed and uses the generated name.
+	mutable std::string cached_name{};   ///< NOSAVE: Cache of the resolved name of the town, if not using a custom town name
 
-	uint8_t flags;                   ///< See #TownFlags.
+	TownFlags flags{};                   ///< See #TownFlags.
 
-	uint8_t override_flags;          ///< Bitmask of enabled flag overrides. See #TownSettingOverrideFlags.
-	uint8_t override_values;         ///< Bitmask of flag override values. See #TownSettingOverrideFlags.
-	TownTunnelMode build_tunnels;    ///< If/when towns are allowed to build road tunnels (if TSOF_OVERRIDE_BUILD_TUNNELS set in override_flags)
-	uint8_t max_road_slope;          ///< Maximum number of consecutive sloped road tiles which towns are allowed to build (if TSOF_OVERRIDE_BUILD_INCLINED_ROADS set in override_flags)
+	uint8_t override_flags = 0;          ///< Bitmask of enabled flag overrides. See #TownSettingOverrideFlags.
+	uint8_t override_values = 0;         ///< Bitmask of flag override values. See #TownSettingOverrideFlags.
+	TownTunnelMode build_tunnels{};      ///< If/when towns are allowed to build road tunnels (if TSOF_OVERRIDE_BUILD_TUNNELS set in override_flags)
+	uint8_t max_road_slope = 0;          ///< Maximum number of consecutive sloped road tiles which towns are allowed to build (if TSOF_OVERRIDE_BUILD_INCLINED_ROADS set in override_flags)
 
-	uint16_t church_count;           ///< Number of church buildings in the town.
-	uint16_t stadium_count;          ///< Number of stadium buildings in the town.
+	uint16_t church_count = 0;           ///< Number of church buildings in the town.
+	uint16_t stadium_count = 0;          ///< Number of stadium buildings in the town.
 
-	uint16_t noise_reached;          ///< level of noise that all the airports are generating
+	uint16_t noise_reached = 0;                   ///< level of noise that all the airports are generating
 
-	CompanyMask statues;             ///< which companies have a statue?
+	CompanyMask statues{};                        ///< which companies have a statue?
 
 	/* Company ratings. */
-	CompanyMask have_ratings;        ///< which companies have a rating
-	uint8_t unwanted[MAX_COMPANIES]; ///< how many months companies aren't wanted by towns (bribe)
-	CompanyID exclusivity;           ///< which company has exclusivity
-	uint8_t exclusive_counter;       ///< months till the exclusivity expires
-	int16_t ratings[MAX_COMPANIES];  ///< ratings of each company for this town
-	uint8_t town_label_rating;       ///< Label dependent on _local_company rating.
+	CompanyMask have_ratings{};                   ///< which companies have a rating
+	TypedIndexContainer<std::array<uint8_t, MAX_COMPANIES>, CompanyID> unwanted{}; ///< how many months companies aren't wanted by towns (bribe)
+	CompanyID exclusivity = CompanyID::Invalid(); ///< which company has exclusivity
+	uint8_t exclusive_counter;                    ///< months till the exclusivity expires
+	TypedIndexContainer<std::array<int16_t, MAX_COMPANIES>, CompanyID, TypedIndexContainerPolicy::AllowInteger> ratings{}; ///< ratings of each company for this town
+	uint8_t town_label_rating = 0;                ///< Label dependent on _local_company rating.
 
-	TransportedCargoStat<uint32_t> supplied[NUM_CARGO]; ///< Cargo statistics about supplied cargo.
-	TransportedCargoStat<uint16_t> received[NUM_TAE]; ///< Cargo statistics about received cargotypes.
-	uint32_t goal[NUM_TAE]; ///< Amount of cargo required for the town to grow.
+	struct SuppliedHistory {
+		uint32_t production = 0; ///< Total produced
+		uint32_t transported = 0; ///< Total transported
 
-	std::string text; ///< General text with additional information.
+		uint8_t PctTransported() const
+		{
+			if (this->production == 0) return 0;
+			return ClampTo<uint8_t>(this->transported * 256 / this->production);
+		}
+	};
 
-	inline uint8_t GetPercentTransported(CargoID cid) const
+	struct SuppliedCargo {
+		CargoType cargo = INVALID_CARGO;
+		HistoryData<SuppliedHistory> history{};
+
+		SuppliedCargo() = default;
+		SuppliedCargo(CargoType cargo) : cargo(cargo) {}
+	};
+
+	/** Individual data point for accepted cargo history. */
+	struct AcceptedHistory {
+		uint32_t accepted = 0; ///< Total accepted.
+	};
+
+	/** Storage for accepted cargo history. */
+	struct AcceptedCargo {
+		CargoType cargo = INVALID_CARGO; ///< Cargo type of accepted cargo.
+		HistoryData<AcceptedHistory> history{}; ///< Histor data of accepted cargo.
+
+		AcceptedCargo() = default;
+		/**
+		 * Construct AcceptedCargo.
+		 * @param cargo Cargo type of this AcceptedCargo.
+		 */
+		AcceptedCargo(CargoType cargo) : cargo(cargo) {}
+	};
+
+	using SuppliedCargoes = std::vector<SuppliedCargo>; ///< Type for storage of all supplied cargo history.
+	using AcceptedCargoes = std::vector<AcceptedCargo>; ///< Type for storage of all accepted cargo history.
+
+	SuppliedCargoes supplied{};                                     ///< Cargo statistics about supplied cargo.
+	AcceptedCargoes accepted{};                                     ///< Cargo statistics about accepted cargo.
+	EnumIndexArray<TransportedCargoStat<uint16_t>, TownAcceptanceEffect, TownAcceptanceEffect::End> received{}; ///< Cargo statistics about received cargotypes.
+	EnumIndexArray<uint32_t, TownAcceptanceEffect, TownAcceptanceEffect::End> goal{}; ///< Amount of cargo required for the town to grow.
+	ValidHistoryMask valid_history = 0;                             ///< Mask of valid history records.
+
+	EncodedString text{}; ///< General text with additional information.
+
+	inline SuppliedCargo &GetOrCreateCargoSupplied(CargoType cargo)
 	{
-		if (!IsValidCargoID(cid)) return 0;
-		return this->supplied[cid].old_act * 256 / (this->supplied[cid].old_max + 1);
+		assert(IsValidCargoType(cargo));
+		auto it = std::ranges::lower_bound(this->supplied, cargo, std::less{}, &SuppliedCargo::cargo);
+		if (it == std::end(this->supplied) || it->cargo != cargo) it = this->supplied.emplace(it, cargo);
+		return *it;
 	}
 
-	StationList stations_near;       ///< NOSAVE: List of nearby stations.
+	inline SuppliedCargoes::const_iterator GetCargoSupplied(CargoType cargo) const
+	{
+		if (!IsValidCargoType(cargo)) return std::end(this->supplied);
+		auto it = std::ranges::lower_bound(this->supplied, cargo, std::less{}, &SuppliedCargo::cargo);
+		if (it == std::end(this->supplied) || it->cargo != cargo) return std::end(this->supplied);
+		return it;
+	}
 
-	uint16_t time_until_rebuild;     ///< time until we rebuild a house
+	/**
+	 * Get or create the storage for an accepted cargo.
+	 * @param cargo Cargo type to get.
+	 * @return Accepted cargo storage for the cargo type.
+	 */
+	inline AcceptedCargo &GetOrCreateCargoAccepted(CargoType cargo)
+	{
+		assert(IsValidCargoType(cargo));
+		auto it = std::ranges::lower_bound(this->accepted, cargo, std::less{}, &AcceptedCargo::cargo);
+		if (it == std::end(this->accepted) || it->cargo != cargo) it = this->accepted.emplace(it, cargo);
+		return *it;
+	}
 
-	uint16_t grow_counter;           ///< counter to count when to grow, value is smaller than or equal to growth_rate
-	uint16_t growth_rate;            ///< town growth rate
+	/**
+	 * Get iterator to the storage for an accepted cargo.
+	 * @param cargo Cargo type to get.
+	 * @return Iterator to the cargo type or end of accepted cargo if it is not present.
+	 */
+	inline AcceptedCargoes::const_iterator GetCargoAccepted(CargoType cargo) const
+	{
+		if (!IsValidCargoType(cargo)) return std::end(this->accepted);
+		auto it = std::ranges::lower_bound(this->accepted, cargo, std::less{}, &AcceptedCargo::cargo);
+		if (it == std::end(this->accepted) || it->cargo != cargo) return std::end(this->accepted);
+		return it;
+	}
 
-	uint8_t fund_buildings_months;   ///< fund buildings program in action?
-	uint8_t road_build_months;       ///< fund road reconstruction in action?
+	inline uint8_t GetPercentTransported(CargoType cargo_type) const
+	{
+		auto it = this->GetCargoSupplied(cargo_type);
+		if (it == std::end(this->supplied)) return 0;
 
-	bool larger_town;                ///< if this is a larger town and should grow more quickly
-	TownLayout layout;               ///< town specific road layout
+		return it->history[LAST_MONTH].PctTransported();
+	}
 
-	bool show_zone;                  ///< NOSAVE: mark town to show the local authority zone in the viewports
+	StationList stations_near{};          ///< NOSAVE: List of nearby stations.
 
-	std::vector<PersistentStorage *> psa_list;
+	uint16_t time_until_rebuild = 0;;     ///< time until we rebuild a house
+
+	uint16_t grow_counter = 0;;           ///< counter to count when to grow, value is smaller than or equal to growth_rate
+	uint16_t growth_rate = 0;;            ///< town growth rate
+
+	uint8_t fund_buildings_months = 0;;   ///< fund buildings program in action?
+	uint8_t road_build_months = 0;;       ///< fund road reconstruction in action?
+
+	bool larger_town = false;             ///< if this is a larger town and should grow more quickly
+	TownLayout layout{};                  ///< town specific road layout
+
+	bool show_zone = false;               ///< NOSAVE: mark town to show the local authority zone in the viewports
+
+	std::vector<PersistentStorage *> psa_list{};
 
 	std::vector<struct IndustryLocationCacheEntry> industry_cache; ///< NOSAVE: Industry type and location cache
 
 	/**
 	 * Creates a new town.
+	 * @param index the index within the town pool
 	 * @param tile center tile of the town
 	 */
-	Town(TileIndex tile = INVALID_TILE);
+	Town(TownID index, TileIndex tile = INVALID_TILE);
 
 	/** Destroy the town. */
 	~Town();
@@ -169,11 +269,11 @@ struct Town : TownPool::PoolItem<&_town_pool> {
 
 	void UpdateVirtCoord(bool only_if_label_changed = false);
 
-	inline const char *GetCachedName() const
+	inline std::string_view GetCachedName() const
 	{
-		if (!this->name.empty()) return this->name.c_str();
+		if (!this->name.empty()) return this->name;
 		if (this->cached_name.empty()) this->FillCachedName();
-		return this->cached_name.c_str();
+		return this->cached_name;
 	}
 
 	inline bool IsTownGrowthDisabledByOverride() const
@@ -231,10 +331,10 @@ void RebuildTownKdtree();
  * Action types that a company must ask permission for to a town authority.
  * @see CheckforTownRating
  */
-enum TownRatingCheckType {
-	ROAD_REMOVE         = 0,      ///< Removal of a road owned by the town.
-	TUNNELBRIDGE_REMOVE = 1,      ///< Removal of a tunnel or bridge owned by the towb.
-	TOWN_RATING_CHECK_TYPE_COUNT, ///< Number of town checking action types.
+enum class TownRatingCheckType : uint8_t {
+	RoadRemove, ///< Removal of a road owned by the town.
+	TunnelBridgeRemove, ///< Removal of a tunnel or bridge owned by the town.
+	End, ///< End marker.
 };
 
 /** Special values for town list window for the data parameter of #InvalidateWindowData. */
@@ -242,23 +342,10 @@ enum TownDirectoryInvalidateWindowData {
 	TDIWD_FORCE_REBUILD,
 	TDIWD_POPULATION_CHANGE,
 	TDIWD_FORCE_RESORT,
+	TDIWD_SHOW_GROWTH_CHANGE,
 };
 
-/**
- * This enum is used in conjunction with town->flags.
- * IT simply states what bit is used for.
- * It is pretty unrealistic (IMHO) to only have one church/stadium
- * per town, NO MATTER the population of it.
- * And there are 5 more bits available on flags...
- */
-enum TownFlags {
-	TOWN_IS_GROWING     = 0,   ///< Conditions for town growth are met. Grow according to Town::growth_rate.
-//	TOWN_HAS_CHURCH     = 1,   ///< There can be only one church per town. Replaced by church_count.
-//	TOWN_HAS_STADIUM    = 2,   ///< There can be only one stadium per town. Replaced by stadium_count.
-	TOWN_CUSTOM_GROWTH  = 3,   ///< Growth rate is controlled by GS.
-};
-
-CommandCost CheckforTownRating(DoCommandFlag flags, Town *t, TownRatingCheckType type);
+CommandCost CheckforTownRating(DoCommandFlags flags, Town *t, TownRatingCheckType type);
 
 
 TileIndexDiff GetHouseNorthPart(HouseID &house);
@@ -267,44 +354,39 @@ Town *CalcClosestTownFromTile(TileIndex tile, uint threshold = UINT_MAX);
 
 void ResetHouses();
 
+/** Town actions of a company. */
+enum class TownAction : uint8_t {
+	AdvertiseSmall, ///< Small advertising campaign.
+	AdvertiseMedium, ///< Medium advertising campaign.
+	AdvertiseLarge, ///< Large advertising campaign.
+	RoadRebuild, ///< Rebuild the roads.
+	BuildStatue, ///< Build a statue.
+	FundBuildings, ///< Fund new buildings.
+	BuyRights, ///< Buy exclusive transport rights.
+	Bribe, ///< Try to bribe the council.
+	End, ///< End marker.
+};
+
+/** Bitset of \c TownAction elements. */
+using TownActions = EnumBitSet<TownAction, uint8_t>;
+
 void ClearTownHouse(Town *t, TileIndex tile);
 void UpdateTownMaxPass(Town *t);
 void UpdateTownRadius(Town *t);
 void UpdateTownRadii();
-CommandCost CheckIfAuthorityAllowsNewStation(TileIndex tile, DoCommandFlag flags);
+CommandCost CheckIfAuthorityAllowsNewStation(TileIndex tile, DoCommandFlags flags);
 Town *ClosestTownFromTile(TileIndex tile, uint threshold);
-void ChangeTownRating(Town *t, int add, int max, DoCommandFlag flags);
-HouseZonesBits TryGetTownRadiusGroup(const Town *t, TileIndex tile);
-HouseZonesBits GetTownRadiusGroup(const Town *t, TileIndex tile);
+void ChangeTownRating(Town *t, int add, int max, DoCommandFlags flags);
+HouseZone GetTownRadiusGroup(const Town *t, TileIndex tile);
 void SetTownRatingTestMode(bool mode);
-uint GetMaskOfTownActions(int *nump, CompanyID cid, const Town *t);
-bool GenerateTowns(TownLayout layout);
+TownActions GetMaskOfTownActions(CompanyID cid, const Town *t);
+uint GetDefaultTownsForMapSize();
+bool GenerateTowns(TownLayout layout, std::optional<uint> number = std::nullopt);
+Town *TryGenerateNamedTownAroundTile(TileIndex target_tile, TownSize size, bool city, TownLayout layout, std::string_view name);
 const CargoSpec *FindFirstCargoWithTownAcceptanceEffect(TownAcceptanceEffect effect);
 CargoArray GetAcceptedCargoOfHouse(const HouseSpec *hs);
 
-/** Town actions of a company. */
-enum TownActions {
-	TACT_NONE             = 0x00, ///< Empty action set.
-
-	TACT_ADVERTISE_SMALL  = 0x01, ///< Small advertising campaign.
-	TACT_ADVERTISE_MEDIUM = 0x02, ///< Medium advertising campaign.
-	TACT_ADVERTISE_LARGE  = 0x04, ///< Large advertising campaign.
-	TACT_ROAD_REBUILD     = 0x08, ///< Rebuild the roads.
-	TACT_BUILD_STATUE     = 0x10, ///< Build a statue.
-	TACT_FUND_BUILDINGS   = 0x20, ///< Fund new buildings.
-	TACT_BUY_RIGHTS       = 0x40, ///< Buy exclusive transport rights.
-	TACT_BRIBE            = 0x80, ///< Try to bribe the council.
-
-	TACT_COUNT            = 8,    ///< Number of available town actions.
-
-	TACT_ADVERTISE        = TACT_ADVERTISE_SMALL | TACT_ADVERTISE_MEDIUM | TACT_ADVERTISE_LARGE, ///< All possible advertising actions.
-	TACT_CONSTRUCTION     = TACT_ROAD_REBUILD | TACT_BUILD_STATUE | TACT_FUND_BUILDINGS,         ///< All possible construction actions.
-	TACT_FUNDS            = TACT_BUY_RIGHTS | TACT_BRIBE,                                        ///< All possible funding actions.
-	TACT_ALL              = TACT_ADVERTISE | TACT_CONSTRUCTION | TACT_FUNDS,                     ///< All possible actions.
-};
-DECLARE_ENUM_AS_BIT_SET(TownActions)
-
-extern const uint8_t _town_action_costs[TACT_COUNT];
+uint8_t GetTownActionCost(TownAction action);
 
 /**
  * Set the default name for a depot/waypoint

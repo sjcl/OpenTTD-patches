@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file script_industrytype.hpp Everything to query and build industries. */
@@ -11,6 +11,7 @@
 #define SCRIPT_INDUSTRYTYPE_HPP
 
 #include "script_list.hpp"
+#include "../../industry_type.h"
 #include <optional>
 
 /**
@@ -43,22 +44,22 @@ public:
 	static std::optional<std::string> GetName(IndustryType industry_type);
 
 	/**
-	 * Get a list of CargoID possible produced by this industry-type.
+	 * Get a list of CargoType possible produced by this industry-type.
 	 * @warning This function only returns the default cargoes of the industry type.
 	 *          Industries can specify new cargotypes on construction.
-	 * @param industry_type The type to get the CargoIDs for.
+	 * @param industry_type The type to get the CargoTypes for.
 	 * @pre IsValidIndustryType(industry_type).
-	 * @return The CargoIDs of all cargotypes this industry could produce.
+	 * @return The CargoTypes of all cargotypes this industry could produce.
 	 */
 	static ScriptList *GetProducedCargo(IndustryType industry_type);
 
 	/**
-	 * Get a list of CargoID accepted by this industry-type.
+	 * Get a list of CargoType accepted by this industry-type.
 	 * @warning This function only returns the default cargoes of the industry type.
 	 *          Industries can specify new cargotypes on construction.
-	 * @param industry_type The type to get the CargoIDs for.
+	 * @param industry_type The type to get the CargoTypes for.
 	 * @pre IsValidIndustryType(industry_type).
-	 * @return The CargoIDs of all cargotypes this industry accepts.
+	 * @return The CargoTypes of all cargotypes this industry accepts.
 	 */
 	static ScriptList *GetAcceptedCargo(IndustryType industry_type);
 

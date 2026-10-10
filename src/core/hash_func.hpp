@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file hash_func.hpp Functions related to hashing operations. */
@@ -38,6 +38,18 @@ inline uint64_t SimpleHash64(uint64_t h)
 	h ^= h >> 33;
 
 	return h;
+}
+
+/**
+ * Combine a hashed value into an existing hash.
+ *
+ * See: boost::hash_combine
+ * See: https://github.com/martinus/robin-hood-hashing/issues/140
+ */
+template <typename T>
+void HashCombine(T &result, T value)
+{
+	result ^= (value + 0x9e3779b9 + (result << 6) + (result >> 2));
 }
 
 #endif /* HASH_FUNC_HPP */

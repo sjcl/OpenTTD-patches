@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file sdl2_opengl_v.cpp Implementation of the OpenGL backend for SDL2 video driver. */
@@ -19,10 +19,6 @@
 #include "../network/network.h"
 #include "../thread.h"
 #include "../progress.h"
-#include "../core/random_func.hpp"
-#include "../core/math_func.hpp"
-#include "../core/mem_func.hpp"
-#include "../core/geometry_func.hpp"
 #include "../fileio_func.h"
 #include "../framerate_type.h"
 #include "../window_func.h"
@@ -40,9 +36,13 @@
 
 #include "../safeguards.h"
 
-static FVideoDriver_SDL_OpenGL iFVideoDriver_SDL_OpenGL;
+static FVideoDriver_SDL_OpenGL iFVideoDriver_SDL_OpenGL; ///< The OpenGL SDL video driver.
 
-/** Platform-specific callback to get an OpenGL funtion pointer. */
+/**
+ * Platform-specific callback to get an OpenGL function pointer.
+ * @param proc The name of the function.
+ * @return The function pointer, or \c nullptr when it could not be found.
+ */
 static OGLProc GetOGLProcAddressCallback(const char *proc)
 {
 	return reinterpret_cast<OGLProc>(SDL_GL_GetProcAddress(proc));
@@ -90,6 +90,9 @@ void VideoDriver_SDL_OpenGL::Stop()
 	this->VideoDriver_SDL_Base::Stop();
 }
 
+/**
+ * Destroy and release the OpenGL context.
+ */
 void VideoDriver_SDL_OpenGL::DestroyContext()
 {
 	OpenGLBackend::Destroy();
@@ -119,7 +122,7 @@ const char *VideoDriver_SDL_OpenGL::AllocateContext()
 	}
 
 	this->gl_context = SDL_GL_CreateContext(this->sdl_window);
-	if (this->gl_context == nullptr) return "SDL2: Can't active GL context";
+	if (this->gl_context == nullptr) return "SDL2: Can't activate GL context";
 
 	ToggleVsync(_video_vsync);
 
@@ -144,7 +147,7 @@ bool VideoDriver_SDL_OpenGL::AllocateBackingStore(int w, int h, bool force)
 
 	w = std::max(w, 64);
 	h = std::max(h, 64);
-	MemSetT(&this->dirty_rect, 0);
+	this->dirty_rect = {};
 
 	bool res = OpenGLBackend::Get()->Resize(w, h, force);
 	SDL_GL_SwapWindow(this->sdl_window);
@@ -170,20 +173,20 @@ void VideoDriver_SDL_OpenGL::ReleaseVideoPointer()
 {
 	if (this->anim_buffer != nullptr) OpenGLBackend::Get()->ReleaseAnimBuffer(this->dirty_rect);
 	OpenGLBackend::Get()->ReleaseVideoBuffer(this->dirty_rect);
-	MemSetT(&this->dirty_rect, 0);
+	this->dirty_rect = {};
 	this->anim_buffer = nullptr;
 }
 
 void VideoDriver_SDL_OpenGL::Paint()
 {
-	PerformanceMeasurer framerate(PFE_VIDEO);
+	PerformanceMeasurer framerate(PerformanceElement::Video);
 
 	if (this->local_palette.count_dirty != 0) {
 		Blitter *blitter = BlitterFactory::GetCurrentBlitter();
 
 		/* Always push a changed palette to OpenGL. */
 		OpenGLBackend::Get()->UpdatePalette(this->local_palette.palette, this->local_palette.first_dirty, this->local_palette.count_dirty);
-		if (blitter->UsePaletteAnimation() == Blitter::PALETTE_ANIMATION_BLITTER) {
+		if (blitter->UsePaletteAnimation() == Blitter::PaletteAnimation::Blitter) {
 			blitter->PaletteAnimate(this->local_palette);
 		}
 

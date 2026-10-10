@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file script_rail.hpp Everything to query and build rails. */
@@ -11,7 +11,9 @@
 #define SCRIPT_RAIL_HPP
 
 #include "script_tile.hpp"
+#include "../../industry_type.h"
 #include "../../signal_type.h"
+#include "../../station_type.h"
 #include "../../track_type.h"
 #include <optional>
 
@@ -43,9 +45,8 @@ public:
 	/**
 	 * Types of rail known to the game.
 	 */
-	enum RailType : uint8_t {
-		/* Note: these values represent part of the in-game static values */
-		RAILTYPE_INVALID  = ::INVALID_RAILTYPE, ///< Invalid RailType.
+	enum RailType {
+		RAILTYPE_INVALID = -1, ///< Invalid RailType.
 	};
 
 	/**
@@ -59,7 +60,7 @@ public:
 		RAILTRACK_SW_SE   = ::TRACK_BIT_LOWER,   ///< Track in the lower corner of the tile (south).
 		RAILTRACK_NW_SW   = ::TRACK_BIT_LEFT,    ///< Track in the left corner of the tile (west).
 		RAILTRACK_NE_SE   = ::TRACK_BIT_RIGHT,   ///< Track in the right corner of the tile (east).
-		RAILTRACK_INVALID = ::INVALID_TRACK_BIT, ///< Flag for an invalid track.
+		RAILTRACK_INVALID = 0xFF, ///< Flag for an invalid track.
 	};
 
 	/**
@@ -67,12 +68,12 @@ public:
 	 */
 	enum SignalType {
 		/* Note: these values represent part of the in-game SignalType enum */
-		SIGNALTYPE_NORMAL        = ::SIGTYPE_BLOCK,      ///< Block signal.
-		SIGNALTYPE_ENTRY         = ::SIGTYPE_ENTRY,      ///< Entry presignal.
-		SIGNALTYPE_EXIT          = ::SIGTYPE_EXIT,       ///< Exit signal.
-		SIGNALTYPE_COMBO         = ::SIGTYPE_COMBO,      ///< Combo signal.
-		SIGNALTYPE_PBS           = ::SIGTYPE_PBS,        ///< Normal PBS signal.
-		SIGNALTYPE_PBS_ONEWAY    = ::SIGTYPE_PBS_ONEWAY, ///< No-entry PBS signal.
+		SIGNALTYPE_NORMAL = to_underlying(::SignalType::Block), ///< Block signal.
+		SIGNALTYPE_ENTRY = to_underlying(::SignalType::Entry), ///< Entry presignal.
+		SIGNALTYPE_EXIT = to_underlying(::SignalType::Exit), ///< Exit signal.
+		SIGNALTYPE_COMBO = to_underlying(::SignalType::Combo), ///< Combo signal.
+		SIGNALTYPE_PBS = to_underlying(::SignalType::Path), ///< Normal path signal.
+		SIGNALTYPE_PBS_ONEWAY = to_underlying(::SignalType::PathOneWay), ///< No-entry path signal.
 
 		SIGNALTYPE_TWOWAY        = 8, ///< Bit mask for twoway signal.
 		SIGNALTYPE_NORMAL_TWOWAY = SIGNALTYPE_NORMAL | SIGNALTYPE_TWOWAY, ///< Normal twoway signal.
@@ -242,6 +243,18 @@ public:
 	static bool BuildRailDepot(TileIndex tile, TileIndex front);
 
 	/**
+	 * Removes a rail depot.
+	 * @param tile Place to remove the depot from.
+	 * @pre ScriptMap::IsValidTile(tile).
+	 * @pre Tile is a rail depot.
+	 * @game @pre ScriptCompanyMode::IsValid().
+	 * @exception ScriptError::ERR_OWNED_BY_ANOTHER_COMPANY
+	 * @exception ScriptError::ERR_VEHICLE_IN_THE_WAY
+	 * @return Whether the rail depot has been/can be removed or not.
+	 */
+	static bool RemoveRailDepot(TileIndex tile);
+
+	/**
 	 * Build a rail station.
 	 * @param tile Place to build the station.
 	 * @param direction The direction to build the station.
@@ -261,6 +274,8 @@ public:
 	 * @exception ScriptStation::ERR_STATION_TOO_CLOSE_TO_ANOTHER_STATION
 	 * @exception ScriptStation::ERR_STATION_TOO_MANY_STATIONS
 	 * @exception ScriptStation::ERR_STATION_TOO_MANY_STATIONS_IN_TOWN
+	 * @exception ScriptError::ERR_BRIDGE_TOO_LOW
+	 * @exception ScriptError::ERR_STATION_TOO_SPREAD_OUT
 	 * @return Whether the station has been/can be build or not.
 	 */
 	static bool BuildRailStation(TileIndex tile, RailTrack direction, SQInteger num_platforms, SQInteger platform_length, StationID station_id);
@@ -277,7 +292,7 @@ public:
 	 * @param num_platforms The number of platforms to build.
 	 * @param platform_length The length of each platform.
 	 * @param station_id The station to join, ScriptStation::STATION_NEW or ScriptStation::STATION_JOIN_ADJACENT.
-	 * @param cargo_id The CargoID of the cargo that will be transported from / to this station.
+	 * @param cargo_type The CargoType of the cargo that will be transported from / to this station.
 	 * @param source_industry The IndustryType of the industry you'll transport goods from, ScriptIndustryType::INDUSTRYTYPE_UNKNOWN or ScriptIndustryType::INDUSTRYTYPE_TOWN.
 	 * @param goal_industry The IndustryType of the industry you'll transport goods to, ScriptIndustryType::INDUSTRYTYPE_UNKNOWN or ScriptIndustryType::INDUSTRYTYPE_TOWN.
 	 * @param distance The manhattan distance you'll transport the cargo over.
@@ -298,9 +313,11 @@ public:
 	 * @exception ScriptStation::ERR_STATION_TOO_CLOSE_TO_ANOTHER_STATION
 	 * @exception ScriptStation::ERR_STATION_TOO_MANY_STATIONS
 	 * @exception ScriptStation::ERR_STATION_TOO_MANY_STATIONS_IN_TOWN
+	 * @exception ScriptError::ERR_BRIDGE_TOO_LOW
+	 * @exception ScriptError::ERR_STATION_TOO_SPREAD_OUT
 	 * @return Whether the station has been/can be build or not.
 	 */
-	static bool BuildNewGRFRailStation(TileIndex tile, RailTrack direction, SQInteger num_platforms, SQInteger platform_length, StationID station_id, CargoID cargo_id, IndustryType source_industry, IndustryType goal_industry, SQInteger distance, bool source_station);
+	static bool BuildNewGRFRailStation(TileIndex tile, RailTrack direction, SQInteger num_platforms, SQInteger platform_length, StationID station_id, CargoType cargo_type, IndustryType source_industry, IndustryType goal_industry, SQInteger distance, bool source_station);
 
 	/**
 	 * Build a rail waypoint.
@@ -311,6 +328,8 @@ public:
 	 * @pre IsRailTypeAvailable(GetCurrentRailType()).
 	 * @game @pre ScriptCompanyMode::IsValid().
 	 * @exception ScriptError::ERR_FLAT_LAND_REQUIRED
+	 * @exception ScriptError::ERR_BRIDGE_TOO_LOW
+	 * @exception ScriptError::ERR_STATION_TOO_SPREAD_OUT
 	 * @return Whether the rail waypoint has been/can be build or not.
 	 */
 	static bool BuildRailWaypoint(TileIndex tile);

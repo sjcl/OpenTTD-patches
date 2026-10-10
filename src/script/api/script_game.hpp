@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file script_game.hpp Everything to manipulate the current running game. */
@@ -24,10 +24,10 @@ public:
 	 */
 	enum LandscapeType {
 		/* Note: these values represent part of the in-game LandscapeType enum */
-		LT_TEMPERATE  = ::LT_TEMPERATE, ///< Temperate climate.
-		LT_ARCTIC     = ::LT_ARCTIC,    ///< Arctic climate.
-		LT_TROPIC     = ::LT_TROPIC,    ///< Tropic climate.
-		LT_TOYLAND    = ::LT_TOYLAND,   ///< Toyland climate.
+		LT_TEMPERATE  = to_underlying(::LandscapeType::Temperate), ///< Temperate climate.
+		LT_ARCTIC     = to_underlying(::LandscapeType::Arctic),    ///< Arctic climate.
+		LT_TROPIC     = to_underlying(::LandscapeType::Tropic),    ///< Tropic climate.
+		LT_TOYLAND    = to_underlying(::LandscapeType::Toyland),   ///< Toyland climate.
 	};
 
 	/**

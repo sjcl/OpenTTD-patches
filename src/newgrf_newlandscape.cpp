@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file newgrf_newlandscape.cpp NewGRF handling of new landscape. */
@@ -16,6 +16,7 @@
 #include "core/hash_func.hpp"
 #include "string_func.h"
 #include "newgrf_dump.h"
+#include "tile_cmd.h"
 
 #include "safeguards.h"
 
@@ -36,7 +37,7 @@ std::vector<const GRFFile *> _new_landscape_rocks_grfs;
 
 	switch (variable) {
 		case 0x40:
-			return GetTerrainType(this->ti->tile, TCX_NORMAL);
+			return GetTerrainType(this->ti->tile, TileContext::Normal);
 
 		case 0x41:
 			return this->ti->tileh;
@@ -45,7 +46,7 @@ std::vector<const GRFFile *> _new_landscape_rocks_grfs;
 			return this->ti->z / TILE_HEIGHT;
 
 		case 0x43:
-			return SimpleHash32(this->ti->tile);
+			return SimpleHash32(this->ti->tile.base());
 
 		case 0x44:
 			return this->landscape_type;
@@ -61,7 +62,7 @@ std::vector<const GRFFile *> _new_landscape_rocks_grfs;
 			if (extra.mask & 0x100) {
 				switch (this->landscape_type) {
 					case NEW_LANDSCAPE_ROCKS:
-						if (IsTileType(tile, MP_CLEAR) && IsClearGround(tile, CLEAR_ROCKS)) result |= 0x100;
+						if (IsTileType(tile, TileType::Clear) && IsClearGround(tile, ClearGround::Rocks)) result |= 0x100;
 						break;
 				}
 			}
@@ -75,16 +76,16 @@ std::vector<const GRFFile *> _new_landscape_rocks_grfs;
 	return UINT_MAX;
 }
 
-/* virtual */ const SpriteGroup *NewLandscapeResolverObject::ResolveReal(const RealSpriteGroup *group) const
+/* virtual */ const SpriteGroup *NewLandscapeResolverObject::ResolveReal(const RealSpriteGroup &group) const
 {
-	if (!group->loading.empty()) return group->loading[0];
-	if (!group->loaded.empty())  return group->loaded[0];
+	if (!group.loading.empty()) return group.loading[0];
+	if (!group.loaded.empty())  return group.loaded[0];
 	return nullptr;
 }
 
 GrfSpecFeature NewLandscapeResolverObject::GetFeature() const
 {
-	return GSF_NEWLANDSCAPE;
+	return GrfSpecFeature::NewLandscape;
 }
 
 NewLandscapeResolverObject::NewLandscapeResolverObject(const GRFFile *grffile, const TileInfo *ti, NewLandscapeType landscape_type, uint32_t param1, uint32_t param2)
@@ -110,7 +111,7 @@ void DumpNewLandscapeRocksSpriteGroups(SpriteGroupDumper &dumper)
 	bool first = true;
 	for (const GRFFile *grf : _new_landscape_rocks_grfs) {
 		if (!first) dumper.Print("");
-		dumper.Print(fmt::format("GRF: {:08X}", BSWAP32(grf->grfid)));
+		dumper.Print(fmt::format("GRF: {}", grf->grfid));
 		first = false;
 		dumper.DumpSpriteGroup(grf->new_rocks_group, 0);
 	}

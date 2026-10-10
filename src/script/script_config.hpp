@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file script_config.hpp ScriptConfig stores the configuration settings of every Script. */
@@ -11,7 +11,6 @@
 #define SCRIPT_CONFIG_HPP
 
 #include <map>
-#include <list>
 #include "../company_type.h"
 #include "../textfile_gui.h"
 #include "script_instance.hpp"
@@ -20,14 +19,16 @@
 /** Maximum of 10 digits for MIN / MAX_INT32, 1 for the sign and 1 for '\0'. */
 static const int INT32_DIGITS_WITH_SIGN_AND_TERMINATION = 10 + 1 + 1;
 
-/** Bitmask of flags for Script settings. */
-enum ScriptConfigFlags {
-	SCRIPTCONFIG_NONE      = 0x0, ///< No flags set.
-	// Unused flag 0x1.
-	SCRIPTCONFIG_BOOLEAN   = 0x2, ///< This value is a boolean (either 0 (false) or 1 (true) ).
-	SCRIPTCONFIG_INGAME    = 0x4, ///< This setting can be changed while the Script is running.
-	SCRIPTCONFIG_DEVELOPER = 0x8, ///< This setting will only be visible when the Script development tools are active.
+/** Flags for Script settings. */
+enum class ScriptConfigFlag : uint8_t {
+	/* Unused flag 0x1. */
+	Boolean   = 1, ///< This value is a boolean (either 0 (false) or 1 (true) ).
+	InGame    = 2, ///< This setting can be changed while the Script is running.
+	Developer = 3, ///< This setting will only be visible when the Script development tools are active.
 };
+
+/** Bitset of \c ScriptConfigFlag elements. */
+using ScriptConfigFlags = EnumBitSet<ScriptConfigFlag, uint8_t>;
 
 typedef std::map<int, std::string> LabelMapping; ///< Map-type used to map the setting numbers to labels.
 
@@ -39,9 +40,12 @@ struct ScriptConfigItem {
 	int max_value = 1;            ///< The maximal value this configuration setting can have.
 	int default_value = 0;        ///< The default value of this configuration setting.
 	int step_size = 1;            ///< The step size in the gui.
-	ScriptConfigFlags flags = SCRIPTCONFIG_NONE; ///< Flags for the configuration setting.
+	ScriptConfigFlags flags{};    ///< Flags for the configuration setting.
 	LabelMapping labels;          ///< Text labels for the integer values.
 	bool complete_labels = false; ///< True if all values have a label.
+
+	std::string GetString(int value) const;
+	TextColour GetColour() const;
 };
 
 typedef std::vector<ScriptConfigItem> ScriptConfigItemList; ///< List of ScriptConfig items.
@@ -65,7 +69,7 @@ public:
 	 * Create a new Script config that is a copy of an existing config.
 	 * @param config The object to copy.
 	 */
-	ScriptConfig(const ScriptConfig *config);
+	ScriptConfig(const ScriptConfig &config);
 
 	/** Delete an Script configuration. */
 	virtual ~ScriptConfig();
@@ -77,15 +81,17 @@ public:
 	 * @param force_exact_match If true try to find the exact same version
 	 *   as specified. If false any compatible version is ok.
 	 */
-	void Change(std::optional<const std::string> name, int version = -1, bool force_exact_match = false);
+	void Change(std::optional<std::string_view> name, int version = -1, bool force_exact_match = false);
 
 	/**
 	 * Get the ScriptInfo linked to this ScriptConfig.
+	 * @return The info.
 	 */
 	class ScriptInfo *GetInfo() const;
 
 	/**
 	 * Get the config list for this ScriptConfig.
+	 * @return The configuration list.
 	 */
 	const ScriptConfigItemList *GetConfigList();
 
@@ -93,10 +99,10 @@ public:
 	 * Where to get the config from, either default (depends on current game
 	 * mode) or force either newgame or normal
 	 */
-	enum ScriptSettingSource {
-		SSS_DEFAULT,       ///< Get the Script config from the current game mode
-		SSS_FORCE_NEWGAME, ///< Get the newgame Script config
-		SSS_FORCE_GAME,    ///< Get the Script config from the current game
+	enum class ScriptSettingSource : uint8_t {
+		Default, ///< Get the Script config from the current game mode
+		ForceNewGame, ///< Get the newgame Script config
+		ForceCurrentGame, ///< Get the Script config from the current game
 	};
 
 	/**
@@ -113,6 +119,7 @@ public:
 	 * Get the value of a setting for this config. It might fallback to its
 	 *  'info' to find the default value (if not set or if not-custom difficulty
 	 *  level).
+	 * @param name The name of the setting.
 	 * @return The (default) value of the setting, or -1 if the setting was not
 	 *  found.
 	 */
@@ -120,8 +127,10 @@ public:
 
 	/**
 	 * Set the value of a setting for this config.
+	 * @param name The name of the setting.
+	 * @param value The new value for the setting.
 	 */
-	void SetSetting(const std::string_view name, int value);
+	void SetSetting(std::string_view name, int value);
 
 	/**
 	 * Reset all settings to their default value.
@@ -130,34 +139,40 @@ public:
 
 	/**
 	 * Reset only editable and visible settings to their default value.
+	 * @param yet_to_start Denotes whether the script is not yet running, e.g. the main menu.
 	 */
 	void ResetEditableSettings(bool yet_to_start);
 
 	/**
 	 * Is this config attached to an Script? In other words, is there a Script
 	 *  that is assigned to this slot.
+	 * @return \c true iff a script is assigned to this configuration.
 	 */
 	bool HasScript() const;
 
 	/**
 	 * Get the name of the Script.
+	 * @return The script's name.
 	 */
 	const std::string &GetName() const;
 
 	/**
 	 * Get the version of the Script.
+	 * @return The script's version.
 	 */
 	int GetVersion() const;
 
 	/**
 	 * Convert a string which is stored in the config file or savegames to
 	 *  custom settings of this Script.
+	 * @param value The string-encoded settings to decode into this configuration.
 	 */
-	void StringToSettings(const std::string &value);
+	void StringToSettings(std::string_view value);
 
 	/**
 	 * Convert the custom settings to a string that can be stored in the config
 	 *  file or savegames.
+	 * @return The string-encoded version of the settings in this configuration.
 	 */
 	std::string SettingsToString() const;
 
@@ -186,8 +201,11 @@ protected:
 	void ClearConfigList();
 
 	/**
-	 * This function should call back to the Scanner in charge of this Config,
-	 *  to find the ScriptInfo belonging to a name+version.
+	 * Finds the appropriate ScriptInfo for a given script name and version.
+	 * @param name The script name to find.
+	 * @param version The version the script should have.
+	 * @param force_exact_match Whether an exact match is required.
+	 * @return The script if found, nullptr otherwise.
 	 */
 	virtual ScriptInfo *FindInfo(const std::string &name, int version, bool force_exact_match) = 0;
 };

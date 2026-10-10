@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file engine_func.h Functions related to engines. */
@@ -20,8 +20,18 @@ void CheckEngines();
 void AnalyseEngineCallbacks();
 
 /* Original engine data counts and offsets */
-extern const uint8_t _engine_counts[4];
-extern const uint8_t _engine_offsets[4];
+inline uint8_t GetOriginalEngineCount(VehicleType type)
+{
+	extern const VehicleTypeIndexArray<uint8_t> _engine_counts;
+	dbg_assert(type < VehicleType::CompanyEnd);
+	return _engine_counts[type];
+}
+inline uint8_t GetOriginalEngineOffset(VehicleType type)
+{
+	extern const VehicleTypeIndexArray<uint8_t> _engine_offsets;
+	dbg_assert(type < VehicleType::CompanyEnd);
+	return _engine_offsets[type];
+}
 
 bool IsEngineBuildable(EngineID engine, VehicleType type, CompanyID company);
 bool IsEngineRefittable(EngineID engine);
@@ -29,6 +39,6 @@ void SetYearEngineAgingStops();
 void CalcEngineReliability(Engine *e, bool new_month);
 void StartupOneEngine(Engine *e, const CalTime::YearMonthDay &aging_ymd, const CalTime::YearMonthDay &expire_stop_ymd, uint32_t seed, CalTime::Date no_introduce_after_date);
 
-uint GetTotalCapacityOfArticulatedParts(EngineID engine, CargoID attempt_refit = INVALID_CARGO);
+uint GetTotalCapacityOfArticulatedParts(EngineID engine, CargoType attempt_refit = INVALID_CARGO);
 
 #endif /* ENGINE_FUNC_H */

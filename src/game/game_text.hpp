@@ -2,13 +2,16 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file game_text.hpp Base functions regarding game texts. */
 
 #ifndef GAME_TEXT_HPP
 #define GAME_TEXT_HPP
+
+#include "../strings_type.h"
+#include "../core/typed_container.hpp"
 
 struct StringParam {
 	enum ParamType : uint8_t {
@@ -20,23 +23,23 @@ struct StringParam {
 
 	ParamType type;
 	uint8_t consumes;
-	const char *cmd;
+	std::string_view cmd;
 
-	StringParam(ParamType type, uint8_t consumes, const char *cmd) : type(type), consumes(consumes), cmd(cmd) {}
+	StringParam(ParamType type, uint8_t consumes, std::string_view cmd = {}) : type(type), consumes(consumes), cmd(cmd) {}
 };
 using StringParams = std::vector<StringParam>;
 using StringParamsList = std::vector<StringParams>;
 
-const char *GetGameStringPtr(uint id);
-const StringParams &GetGameStringParams(uint id);
-const std::string &GetGameStringName(uint id);
-void RegisterGameTranslation(class Squirrel *engine);
+std::string_view GetGameStringPtr(StringIndexInTab id);
+const StringParams &GetGameStringParams(StringIndexInTab id);
+const std::string &GetGameStringName(StringIndexInTab id);
+void RegisterGameTranslation(class Squirrel &engine);
 void ReconsiderGameScriptLanguage();
 
 /** Container for the raw (unencoded) language strings of a language. */
 struct LanguageStrings {
 	std::string language; ///< Name of the language (base filename). Empty string if invalid.
-	StringList  lines;    ///< The lines of the file to pass into the parser/encoder.
+	TypedIndexContainer<StringList, StringIndexInTab> lines;    ///< The lines of the file to pass into the parser/encoder.
 
 	LanguageStrings() {}
 	LanguageStrings(const std::string &lang) : language(lang) {}
@@ -53,8 +56,8 @@ struct GameStrings {
 
 	std::vector<LanguageStrings> raw_strings;      ///< The raw strings per language, first must be English/the master language!.
 	std::vector<LanguageStrings> compiled_strings; ///< The compiled strings per language, first must be English/the master language!.
-	StringList string_names;                       ///< The names of the compiled strings.
-	StringParamsList string_params;                ///< The parameters for the strings.
+	TypedIndexContainer<StringList, StringIndexInTab> string_names; ///< The names of the compiled strings.
+	TypedIndexContainer<StringParamsList, StringIndexInTab> string_params; ///< The parameters for the strings.
 
 	void Compile();
 

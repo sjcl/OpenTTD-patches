@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file order_sl_compat.h Loading of order chunks before table headers were added. */
@@ -21,11 +21,11 @@ const SaveLoadCompat _order_sl_compat[] = {
 	SLC_VAR("dest"),
 	SLC_VAR("next"),
 	SLC_VAR("refit_cargo"),
-	SLC_NULL(1, SLV_36, SLV_182),
+	SLC_NULL(1, SaveLoadVersion::RefitOrders, SaveLoadVersion::GoalProgressPlaneAcceleration),
 	SLC_VAR("wait_time"),
 	SLC_VAR("travel_time"),
 	SLC_VAR("max_speed"),
-	SLC_NULL(10, SLV_5, SLV_36),
+	SLC_NULL(10, SaveLoadVersion::BigMap, SaveLoadVersion::RefitOrders),
 };
 
 /** Original field order for _orderlist_desc. */
@@ -40,7 +40,7 @@ const SaveLoadCompat _order_backup_sl_compat[] = {
 	SLC_VAR("group"),
 	SLC_VAR("service_interval"),
 	SLC_VAR("name"),
-	SLC_NULL(2, SL_MIN_VERSION, SLV_192),
+	SLC_NULL(2, SaveLoadVersion::MinVersion, SaveLoadVersion::FixOrderBackup),
 	SLC_VAR("clone"),
 	SLC_VAR("cur_real_order_index"),
 	SLC_VAR("cur_implicit_order_index"),

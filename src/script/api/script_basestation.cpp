@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file script_basestation.cpp Implementation of ScriptBaseStation. */
@@ -11,8 +11,11 @@
 #include "script_basestation.hpp"
 #include "script_error.hpp"
 #include "../../station_base.h"
+#include "../../station_cmd.h"
 #include "../../string_func.h"
 #include "../../strings_func.h"
+#include "../../waypoint_cmd.h"
+
 #include "table/strings.h"
 
 #include "../../safeguards.h"
@@ -24,12 +27,17 @@
 	return st != nullptr && (st->owner == ScriptObject::GetCompany() || ScriptCompanyMode::IsDeity() || st->owner == OWNER_NONE);
 }
 
+/* static */ ScriptCompany::CompanyID ScriptBaseStation::GetOwner(StationID station_id)
+{
+	if (!IsValidBaseStation(station_id)) return ScriptCompany::COMPANY_INVALID;
+	return ScriptCompany::ToScriptCompanyID(::BaseStation::Get(station_id)->owner);
+}
+
 /* static */ std::optional<std::string> ScriptBaseStation::GetName(StationID station_id)
 {
 	if (!IsValidBaseStation(station_id)) return std::nullopt;
 
-	::SetDParam(0, station_id);
-	return GetString(::Station::IsValidID(station_id) ? STR_STATION_NAME : STR_WAYPOINT_NAME);
+	return ::StrMakeValid(::GetString(::Station::IsValidID(station_id) ? STR_STATION_NAME : STR_WAYPOINT_NAME, station_id), {});
 }
 
 /* static */ bool ScriptBaseStation::SetName(StationID station_id, Text *name)
@@ -43,7 +51,11 @@
 	EnforcePreconditionEncodedText(false, text);
 	EnforcePreconditionCustomError(false, ::Utf8StringLength(text) < MAX_LENGTH_STATION_NAME_CHARS, ScriptError::ERR_PRECONDITION_STRING_TOO_LONG);
 
-	return ScriptObject::DoCommand(0, station_id, 0, ::Station::IsValidID(station_id) ? CMD_RENAME_STATION : CMD_RENAME_WAYPOINT, text);
+	if (::Station::IsValidID(station_id)) {
+		return ScriptObject::Command<Commands::RenameStation>::Do(station_id, false, text);
+	} else {
+		return ScriptObject::Command<Commands::RenameWaypoint>::Do(station_id, text);
+	}
 }
 
 /* static */ TileIndex ScriptBaseStation::GetLocation(StationID station_id)

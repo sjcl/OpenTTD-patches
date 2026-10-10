@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file vehicle_gui.h Functions related to the vehicle's GUIs. */
@@ -17,6 +17,7 @@
 #include "engine_type.h"
 #include "company_type.h"
 #include "dropdown_func.h"
+#include <bitset>
 #include <vector>
 
 void ShowVehicleRefitWindow(const Vehicle *v, VehicleOrderID order, Window *parent, bool auto_refit = false, bool is_virtual_train = false);
@@ -27,21 +28,23 @@ enum TrainDetailsWindowTabs : uint8_t {
 	TDW_TAB_INFO,      ///< Tab with name and value of the vehicles
 	TDW_TAB_CAPACITY,  ///< Tab with cargo capacity of the vehicles
 	TDW_TAB_TOTALS,    ///< Tab with sum of total cargo transported
+	TDW_TAB_PERF,      ///< Tab with empty/full train performance statistics
 };
 DECLARE_ENUM_AS_ADDABLE(TrainDetailsWindowTabs)
 
 /** Special values for vehicle-related windows for the data parameter of #InvalidateWindowData. */
-enum VehicleInvalidateWindowData {
+enum VehicleInvalidateWindowData : int {
 	VIWD_REMOVE_ALL_ORDERS = -1, ///< Removed / replaced all orders (after deleting / sharing).
 	VIWD_MODIFY_ORDERS     = -2, ///< Other order modifications.
 	VIWD_CONSIST_CHANGED   = -3, ///< Vehicle composition was changed.
 	VIWD_AUTOREPLACE       = -4, ///< Autoreplace replaced the vehicle.
+	VIWD_ROUTE_OVERLAY     = -5, ///< Route overlay mode change.
 };
 
 /** Extra information about refitted cargo and capacity */
 struct TestedEngineDetails {
 	Money cost{};                ///< Refit cost
-	CargoID cargo{};             ///< Cargo type
+	CargoType cargo{};           ///< Cargo type
 	uint capacity{};             ///< Cargo capacity
 	uint16_t mail_capacity{};    ///< Mail capacity if available
 	CargoArray all_capacities{}; ///< Capacities for all cargoes
@@ -51,7 +54,7 @@ struct TestedEngineDetails {
 
 int DrawVehiclePurchaseInfo(int left, int right, int y, EngineID engine_number, TestedEngineDetails &te);
 
-void DrawTrainImage(const Train *v, const Rect &r, VehicleID selection, EngineImageType image_type, int skip, VehicleID drag_dest = INVALID_VEHICLE);
+void DrawTrainImage(const Train *v, const Rect &r, VehicleID selection, EngineImageType image_type, int skip, VehicleID drag_dest = VehicleID::Invalid());
 void DrawRoadVehImage(const Vehicle *v, const Rect &r, VehicleID selection, EngineImageType image_type, int skip = 0);
 void DrawShipImage(const Vehicle *v, const Rect &r, VehicleID selection, EngineImageType image_type);
 void DrawAircraftImage(const Vehicle *v, const Rect &r, VehicleID selection, EngineImageType image_type);
@@ -76,7 +79,7 @@ void DirtyVehicleListWindowForVehicle(const Vehicle *v);
  */
 inline uint GetVehicleHeight(VehicleType type)
 {
-	return (type == VEH_TRAIN || type == VEH_ROAD) ? 14 : 24;
+	return (type == VehicleType::Train || type == VehicleType::Road) ? 14 : 24;
 }
 
 int GetSingleVehicleWidth(const Vehicle *v, EngineImageType image_type);
@@ -101,18 +104,21 @@ inline WindowClass GetWindowClassForVehicleType(VehicleType vt)
 {
 	switch (vt) {
 		default: NOT_REACHED();
-		case VEH_TRAIN:    return WC_TRAINS_LIST;
-		case VEH_ROAD:     return WC_ROADVEH_LIST;
-		case VEH_SHIP:     return WC_SHIPS_LIST;
-		case VEH_AIRCRAFT: return WC_AIRCRAFT_LIST;
+		case VehicleType::Train: return WindowClass::TrainList;
+		case VehicleType::Road: return WindowClass::RoadVehicleList;
+		case VehicleType::Ship: return WindowClass::ShipList;
+		case VehicleType::Aircraft: return WindowClass::AircraftList;
 	}
 }
+
+void InvalidateVehicleListWindows(VehicleType vt);
 
 typedef std::vector<const Vehicle *> VehicleList;
 struct GUIVehicleGroup;
 
 /* Unified window procedure */
 void ShowVehicleViewWindow(const Vehicle *v);
+void DirtySharedVehicleViewWindowTitles(const Vehicle *v);
 bool VehicleClicked(const Vehicle *v);
 bool VehicleClicked(VehicleList::const_iterator begin, VehicleList::const_iterator end);
 bool VehicleClicked(const GUIVehicleGroup &vehgroup);

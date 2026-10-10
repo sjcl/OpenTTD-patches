@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file thread.h Base of all threads. */
@@ -29,7 +29,12 @@ inline void CSleep(int milliseconds)
  * Name the thread this function is called on for the debugger.
  * @param name Name to set for the thread..
  */
-void SetCurrentThreadName(const char *name);
+void SetCurrentThreadName(const std::string &name);
+
+/**
+ * Clear any resources associated with a previous call to SetCurrentThreadName, may do nothing.
+ */
+void ClearCurrentThreadName();
 
 /**
  * Get the name of the current thread, if any.
@@ -88,14 +93,14 @@ bool IsNonGameThread();
  * @param _Ax Arguments for the thread function.
  * @return True if the thread was successfully started, false otherwise.
  */
-template<class TFn, class... TArgs>
-inline bool StartNewThread(std::thread *thr, const char *name, TFn&& _Fx, TArgs&&... _Ax)
+template <class TFn, class... TArgs>
+inline bool StartNewThread(std::thread *thr, std::string_view name, TFn&& _Fx, TArgs&&... _Ax)
 {
 	try {
 		static std::mutex thread_startup_mutex;
 		std::lock_guard<std::mutex> lock(thread_startup_mutex);
 
-		std::thread t([] (const char *name, TFn&& F, TArgs&&... A) {
+		std::thread t([] (std::string name, TFn&& F, TArgs&&... A) noexcept {
 				/* Delay starting the thread till the main thread is finished
 				 * with the administration. This prevent race-conditions on
 				 * startup. */
@@ -105,15 +110,12 @@ inline bool StartNewThread(std::thread *thr, const char *name, TFn&& _Fx, TArgs&
 
 				SetCurrentThreadName(name);
 				PerThreadSetup(true);
-				try {
-					/* Call user function with the given arguments. */
-					F(A...);
-				} catch (std::exception &e) {
-					FatalError("Unhandled exception in {} thread: {}", name, e.what());
-				} catch (...) {
-					NOT_REACHED();
-				}
-			}, std::forward<const char *>(name), std::forward<TFn>(_Fx), std::forward<TArgs>(_Ax)...);
+
+				/* Call user function with the given arguments. */
+				F(A...);
+
+				ClearCurrentThreadName();
+			}, std::string{name}, std::forward<TFn>(_Fx), std::forward<TArgs>(_Ax)...);
 
 		if (thr != nullptr) {
 			*thr = std::move(t);

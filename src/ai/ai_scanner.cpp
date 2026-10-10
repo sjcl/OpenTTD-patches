@@ -2,12 +2,13 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
-/** @file ai_scanner.cpp allows scanning AI scripts */
+/** @file ai_scanner.cpp Allows scanning AI scripts. */
 
 #include "../stdafx.h"
+#include <ranges>
 #include "../debug.h"
 #include "../network/network.h"
 #include "../openttd.h"
@@ -22,75 +23,57 @@
 #include "../safeguards.h"
 
 
-AIScannerInfo::AIScannerInfo() :
-	ScriptScanner(),
-	info_dummy(nullptr)
-{
-}
+AIScannerInfo::AIScannerInfo() = default;
+AIScannerInfo::~AIScannerInfo() = default;
 
 void AIScannerInfo::Initialize()
 {
 	ScriptScanner::Initialize("AIScanner");
 
-	ScriptAllocatorScope alloc_scope(this->engine);
+	ScriptAllocatorScope alloc_scope(this->engine.get());
 
 	/* Create the dummy AI */
 	this->main_script = "%_dummy";
 	Script_CreateDummyInfo(this->engine->GetVM(), "AI", "ai");
 }
 
-void AIScannerInfo::SetDummyAI(class AIInfo *info)
+void AIScannerInfo::SetDummyAI(std::unique_ptr<class AIInfo> &&info)
 {
-	this->info_dummy = info;
+	this->info_dummy = std::move(info);
 }
 
-AIScannerInfo::~AIScannerInfo()
+std::string AIScannerInfo::GetScriptName(ScriptInfo &info)
 {
-	delete this->info_dummy;
+	return info.GetName();
 }
 
-std::string AIScannerInfo::GetScriptName(ScriptInfo *info)
-{
-	return info->GetName();
-}
-
-void AIScannerInfo::RegisterAPI(class Squirrel *engine)
+void AIScannerInfo::RegisterAPI(class Squirrel &engine)
 {
 	AIInfo::RegisterAPI(engine);
 }
 
 AIInfo *AIScannerInfo::SelectRandomAI() const
 {
-	if (_game_mode == GM_MENU) {
+	if (_game_mode == GameMode::Menu) {
 		Debug(script, 0, "The intro game should not use AI, loading 'dummy' AI.");
-		return this->info_dummy;
+		return this->info_dummy.get();
 	}
 
-	uint num_random_ais = 0;
-	for (const auto &item : info_single_list) {
-		AIInfo *i = static_cast<AIInfo *>(item.second);
-		if (i->UseAsRandomAI()) num_random_ais++;
-	}
+	/* Filter for AIs suitable as Random AI. */
+	auto random_ais = info_single_list | std::views::filter([](const auto &item) { return static_cast<AIInfo *>(item.second)->UseAsRandomAI(); });
 
+	uint num_random_ais = std::ranges::distance(random_ais);
 	if (num_random_ais == 0) {
 		Debug(script, 0, "No suitable AI found, loading 'dummy' AI.");
-		return this->info_dummy;
+		return this->info_dummy.get();
 	}
 
-	/* Find a random AI */
+	/* Pick a random AI */
 	uint pos = ScriptObject::GetRandomizer(OWNER_NONE).Next(num_random_ais);
+	auto it = std::ranges::next(std::begin(random_ais), pos, std::end(random_ais));
+	assert(it != std::end(random_ais));
 
-	/* Find the Nth item from the array */
-	ScriptInfoList::const_iterator it = this->info_single_list.begin();
-
-#define GetAIInfo(it) static_cast<AIInfo *>((*it).second)
-	while (!GetAIInfo(it)->UseAsRandomAI()) it++;
-	for (; pos > 0; pos--) {
-		it++;
-		while (!GetAIInfo(it)->UseAsRandomAI()) it++;
-	}
-	return GetAIInfo(it);
-#undef GetAIInfo
+	return static_cast<AIInfo *>(it->second);
 }
 
 AIInfo *AIScannerInfo::FindInfo(const std::string &name, int version, bool force_exact_match)
@@ -135,13 +118,13 @@ void AIScannerLibrary::Initialize()
 	ScriptScanner::Initialize("AIScanner");
 }
 
-std::string AIScannerLibrary::GetScriptName(ScriptInfo *info)
+std::string AIScannerLibrary::GetScriptName(ScriptInfo &info)
 {
-	AILibrary *library = static_cast<AILibrary *>(info);
-	return fmt::format("{}.{}", library->GetCategory(), library->GetInstanceName());
+	AILibrary &library = static_cast<AILibrary &>(info);
+	return fmt::format("{}.{}", library.GetCategory(), library.GetInstanceName());
 }
 
-void AIScannerLibrary::RegisterAPI(class Squirrel *engine)
+void AIScannerLibrary::RegisterAPI(class Squirrel &engine)
 {
 	AILibrary::RegisterAPI(engine);
 }
@@ -155,5 +138,5 @@ AILibrary *AIScannerLibrary::FindLibrary(const std::string &library, int version
 	ScriptInfoList::iterator it = this->info_list.find(library_name);
 	if (it == this->info_list.end()) return nullptr;
 
-	return static_cast<AILibrary *>((*it).second);
+	return static_cast<AILibrary *>(it->second);
 }

@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file economy_sl.cpp Code handling saving and loading of economy data */
@@ -19,7 +19,7 @@
 static void Load_PRIC()
 {
 	/* Old games store 49 base prices, very old games store them as int32_t */
-	int vt = IsSavegameVersionBefore(SLV_65) ? SLE_FILE_I32 : SLE_FILE_I64;
+	VarFileType vt = IsSavegameVersionBefore(SLV_65) ? SLE_FILE_I32 : SLE_FILE_I64;
 	SlArray(nullptr, 49, vt | SLE_VAR_NULL);
 	SlArray(nullptr, 49, SLE_FILE_U16 | SLE_VAR_NULL);
 }
@@ -28,7 +28,7 @@ static void Load_PRIC()
 static void Load_CAPR()
 {
 	uint num_cargo = IsSavegameVersionBefore(SLV_55) ? 12 : IsSavegameVersionBefore(SLV_EXTEND_CARGOTYPES) ? 32 : NUM_CARGO;
-	int vt = IsSavegameVersionBefore(SLV_65) ? SLE_FILE_I32 : SLE_FILE_I64;
+	VarFileType vt = IsSavegameVersionBefore(SLV_65) ? SLE_FILE_I32 : SLE_FILE_I64;
 	SlArray(nullptr, num_cargo, vt | SLE_VAR_NULL);
 	SlArray(nullptr, num_cargo, SLE_FILE_U16 | SLE_VAR_NULL);
 }
@@ -68,7 +68,7 @@ static void Load_CAPY()
 	int index;
 
 	while ((index = SlIterateArray()) != -1) {
-		CargoPayment *cp = new (index) CargoPayment();
+		CargoPayment *cp = CargoPayment::CreateAtIndex(CargoPaymentID(index));
 		SlObject(cp, _cargopayment_desc);
 	}
 }
@@ -83,8 +83,8 @@ static void Ptrs_CAPY()
 
 static const ChunkHandler economy_chunk_handlers[] = {
 	MakeSaveUpstreamFeatureConditionalLoadUpstreamChunkHandler<'CAPY', XSLFI_TABLE_MISC_SL, 2>(Load_CAPY, Ptrs_CAPY, nullptr),
-	{ 'PRIC', nullptr,   Load_PRIC, nullptr,   nullptr, CH_READONLY  },
-	{ 'CAPR', nullptr,   Load_CAPR, nullptr,   nullptr, CH_READONLY  },
+	{ 'PRIC', nullptr,   Load_PRIC, nullptr,   nullptr, ChunkType::ReadOnly  },
+	{ 'CAPR', nullptr,   Load_CAPR, nullptr,   nullptr, ChunkType::ReadOnly  },
 	MakeSaveUpstreamFeatureConditionalLoadUpstreamChunkHandler<'ECMY', XSLFI_TABLE_MISC_SL, 2>(Load_ECMY, nullptr, nullptr),
 };
 

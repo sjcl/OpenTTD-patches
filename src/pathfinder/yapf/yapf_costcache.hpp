@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file yapf_costcache.hpp Caching of segment costs. */
@@ -10,6 +10,7 @@
 #ifndef YAPF_COSTCACHE_HPP
 #define YAPF_COSTCACHE_HPP
 
+#include "yapf_cache.h"
 #include "../../core/arena_alloc.hpp"
 #include "../../misc/hashtable.hpp"
 #include "../../tile_type.h"
@@ -21,15 +22,14 @@
  * defined (they don't count with any segment cost caching).
  */
 template <class Types>
-class CYapfSegmentCostCacheNoneT
-{
+class CYapfSegmentCostCacheNoneT {
 public:
 	typedef typename Types::Tpf Tpf; ///< the pathfinder class (derived from THIS class)
 	typedef typename Types::NodeList::Item Node; ///< this will be our node type
 
 	/**
 	 * Called by YAPF to attach cached or local segment cost data to the given node.
-	 *  @return true if globally cached data were used or false if local data was used
+	 * @return \c true if globally cached data were used or \c false if local data was used.
 	 */
 	inline bool PfNodeCacheFetch(Node &)
 	{
@@ -72,23 +72,6 @@ public:
 		CacheKey key(n.GetKey());
 		Yapf().ConnectNodeToCachedData(n, *(m_local_cache.New(key)));
 		return false;
-	}
-};
-
-/**
- * Base class for segment cost cache providers. Contains global counter
- *  of track layout changes and static notification function called whenever
- *  the track layout changes. It is implemented as base class because it needs
- *  to be shared between all rail YAPF types (one shared counter, one notification
- *  function.
- */
-struct CSegmentCostCacheBase
-{
-	static int   s_rail_change_counter;
-
-	static void NotifyTrackLayoutChange(TileIndex, Track)
-	{
-		s_rail_change_counter++;
 	}
 };
 
@@ -154,13 +137,13 @@ protected:
 
 	inline CYapfSegmentCostCacheGlobalT() : global_cache(stGetGlobalCache()) {};
 
-	/** to access inherited path finder */
+	/** @copydoc CYapfBaseT::Yapf */
 	inline Tpf &Yapf()
 	{
 		return *static_cast<Tpf *>(this);
 	}
 
-	inline static Cache &stGetGlobalCache()
+	static inline Cache &stGetGlobalCache()
 	{
 		static int last_rail_change_counter = 0;
 		static Cache C;
@@ -176,7 +159,8 @@ protected:
 public:
 	/**
 	 * Called by YAPF to attach cached or local segment cost data to the given node.
-	 *  @return true if globally cached data were used or false if local data was used
+	 * @param n The node to get the cache for.
+	 * @return \c true if globally cached data were used or \c false if local data was used
 	 */
 	inline bool PfNodeCacheFetch(Node &n)
 	{

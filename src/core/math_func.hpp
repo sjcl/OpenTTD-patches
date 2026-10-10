@@ -2,15 +2,13 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
-/** @file math_func.hpp Integer math functions */
+/** @file math_func.hpp Integer math functions. */
 
 #ifndef MATH_FUNC_HPP
 #define MATH_FUNC_HPP
-
-#include "strong_typedef_type.hpp"
 
 #include <limits>
 #include <type_traits>
@@ -161,7 +159,7 @@ constexpr uint ClampU(const uint a, const uint min, const uint max)
  * For example ClampTo<uint8_t> will return a value clamped to the range of 0
  * to 255. Anything smaller will become 0, anything larger will become 255.
  *
- * @param a The 64-bit value to clamp.
+ * @param value The 64-bit value to clamp.
  * @return The 64-bit value reduced to a value within the given allowed range
  * for the return type.
  * @see Clamp(int, int, int)
@@ -220,7 +218,7 @@ constexpr To ClampTo(From value)
 /**
  * Specialization of ClampTo for #StrongType::Typedef.
  */
-template <typename To, typename From, std::enable_if_t<std::is_base_of<StrongTypedefBase, From>::value, int> = 0>
+template <typename To, typename From, std::enable_if_t<std::is_base_of<struct StrongTypedefBase, From>::value, int> = 0>
 constexpr To ClampTo(From value)
 {
 	return ClampTo<To>(value.base());
@@ -234,7 +232,7 @@ constexpr To ClampTo(From value)
  * @return The absolute difference between the given scalars
  */
 template <typename T>
-constexpr T Delta(const T a, const T b)
+constexpr auto Delta(const T a, const T b)
 {
 	return (a < b) ? b - a : a - b;
 }
@@ -249,12 +247,21 @@ constexpr T Delta(const T a, const T b)
  * @param x The value to check
  * @param base The base value of the interval
  * @param size The size of the interval
- * @return True if the value is in the interval, false else.
+ * @return \c true iff the value is in the interval.
  */
 template <typename T>
 constexpr bool IsInsideBS(const T x, const size_t base, const size_t size)
 {
 	return static_cast<size_t>(x - base) < size;
+}
+
+/**
+ * Specialization of IsInsideBS for #StrongType::Typedef.
+ */
+template <typename T, std::enable_if_t<std::is_base_of<struct StrongTypedefBase, T>::value, int> = 0>
+constexpr bool IsInsideBS(const T x, const T base, const size_t size)
+{
+	return IsInsideBS(x.base(), base.base(), size);
 }
 
 /**
@@ -265,29 +272,30 @@ constexpr bool IsInsideBS(const T x, const size_t base, const size_t size)
  * @param x The value to check
  * @param min The minimum of the interval
  * @param max The maximum of the interval
+ * @return \c true iff the value is in the interval.
  * @see IsInsideBS()
  */
-template <typename T, std::enable_if_t<std::disjunction_v<std::is_convertible<T, size_t>, std::is_base_of<StrongTypedefBase, T>>, int> = 0>
+template <typename T, std::enable_if_t<std::disjunction_v<std::is_convertible<T, size_t>, std::is_base_of<struct StrongTypedefBase, T>>, int> = 0>
 constexpr bool IsInsideMM(const T x, const size_t min, const size_t max) noexcept
 {
-	if constexpr (std::is_base_of_v<StrongTypedefBase, T>) {
+	if constexpr (std::is_base_of_v<struct StrongTypedefBase, T>) {
 		return static_cast<size_t>(x.base() - min) < (max - min);
 	} else {
 		return static_cast<size_t>(x - min) < (max - min);
 	}
 }
 
-/**
- * Type safe swap operation
- * @param a variable to swap with b
- * @param b variable to swap with a
- */
-template <typename T>
-constexpr void Swap(T &a, T &b)
+template <typename T, std::enable_if_t<std::is_base_of<struct StrongTypedefBase, T>::value, int> = 0>
+constexpr bool IsInsideMM(const T x, const T min, const T max) noexcept
 {
-	T t = a;
-	a = b;
-	b = t;
+	return static_cast<size_t>(x.base() - min.base()) < static_cast<size_t>(max.base() - min.base());
+}
+
+/** Specialization of IsInsideMM for enums. @copydoc IsInsideMM(const size_t, const size_t, const size_t) */
+template <typename enum_type, std::enable_if_t<std::is_enum_v<enum_type>, bool> = true>
+constexpr bool IsInsideMM(enum_type x, enum_type min, enum_type max) noexcept
+{
+	return IsInsideMM(to_underlying(x), to_underlying(min), to_underlying(max));
 }
 
 /**
@@ -417,7 +425,7 @@ constexpr uint64_t PowerOfTen(int power)
 /**
  * Unsigned saturating add.
  */
-template<typename T, std::enable_if_t<std::is_unsigned_v<T>, int> = 0>
+template <typename T, std::enable_if_t<std::is_unsigned_v<T>, int> = 0>
 constexpr inline T SaturatingAdd(T a, T b)
 {
 #ifdef WITH_OVERFLOW_BUILTINS
@@ -436,7 +444,7 @@ constexpr inline T SaturatingAdd(T a, T b)
 /**
  * Return number of base 10 digits required for an unsigned value.
  */
-template<typename T, std::enable_if_t<std::is_unsigned_v<T>, int> = 0>
+template <typename T, std::enable_if_t<std::is_unsigned_v<T>, int> = 0>
 constexpr inline uint GetBase10DigitsRequired(T x)
 {
 	if (sizeof(T) <= sizeof(uint32_t) || x <= UINT32_MAX) {
@@ -450,10 +458,35 @@ constexpr inline uint GetBase10DigitsRequired(T x)
 
 
 uint32_t IntSqrt(uint32_t num);
-uint32_t IntSqrt64(uint64_t num);
+uint64_t IntSqrt64(uint64_t num);
 uint32_t IntCbrt(uint64_t num);
 
 uint16_t RXCompressUint(uint32_t num);
 uint32_t RXDecompressUint(uint16_t num);
+
+/**
+ * Scale a number by the required percentage.
+ *
+ * Calculation is performed in the type U of the num parameter.
+ * The result is clamped to the limits of type T if needed.
+ *
+ * @param num The number to scale.
+ * @param percentage The percentage value. 100% = don't scale.
+ * @return The number scaled by the percentage value.
+ */
+template <typename T, typename U>
+constexpr T ScaleByPercentage(U num, uint16_t percentage)
+{
+	U scaled;
+	/* We might not need to do anything. */
+	if (percentage == 100) {
+		scaled = num;
+	} else {
+		scaled = (num * static_cast<U>(percentage)) / 100;
+	}
+
+	/* Make sure the value fits resulting type T. */
+	return ClampTo<T>(scaled);
+}
 
 #endif /* MATH_FUNC_HPP */

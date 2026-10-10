@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file cargotype.cpp Implementation of cargoes. */
@@ -22,13 +22,11 @@
 #include "table/strings.h"
 #include "table/cargo_const.h"
 
-#include <sstream>
-
 #include "safeguards.h"
 
 CargoSpec CargoSpec::array[NUM_CARGO];
-std::array<std::vector<CargoID>, NUM_TPE> CargoSpec::town_production_cargoes{};
-std::array<CargoTypes, NUM_TPE> CargoSpec::town_production_cargo_mask{};
+EnumIndexArray<std::vector<CargoType>, TownProductionEffect, TownProductionEffect::End> CargoSpec::town_production_cargoes{};
+EnumIndexArray<CargoTypes, TownProductionEffect, TownProductionEffect::End> CargoSpec::town_production_cargo_mask{};
 
 /**
  * Bitmask of cargo types available. This includes phony cargoes like regearing cargoes.
@@ -47,14 +45,14 @@ CargoTypes _standard_cargo_mask;
  */
 static std::vector<CargoLabel> _default_cargo_labels;
 
-static btree::btree_map<CargoLabel, CargoID> _cargo_label_map; ///< Translation map from CargoLabel to Cargo ID.
-CargoID _cargo_id_passengers = INVALID_CARGO;
-CargoID _cargo_id_mail = INVALID_CARGO;
+static btree::btree_map<CargoLabel, CargoType> _cargo_label_map; ///< Translation map from CargoLabel to Cargo ID.
+CargoType _cargo_id_passengers = INVALID_CARGO;
+CargoType _cargo_id_mail = INVALID_CARGO;
 
 /**
- * Default cargo translation for upto version 7 NewGRFs.
+ * Default cargo translation for up to version 7 NewGRFs.
  * This maps the original 12 cargo slots to their original label. If a climate dependent cargo is not present it will
- * map to CT_INVALID. For default cargoes this ends up as a 1:1 mapping via climate slot -> label -> cargo ID.
+ * map to CT_INVALID. For default cargoes this ends up as a 1:1 mapping via climate slot -> label -> cargo type.
  */
 static std::array<CargoLabel, 12> _climate_dependent_cargo_labels;
 
@@ -69,18 +67,18 @@ static std::array<CargoLabel, 32> _climate_independent_cargo_labels;
  * Set up the default cargo types for the given landscape type.
  * @param l Landscape
  */
-void SetupCargoForClimate(LandscapeID l)
+void SetupCargoForClimate(LandscapeType l)
 {
-	assert(l < lengthof(_default_climate_cargo));
+	assert(to_underlying(l) < std::size(_default_climate_cargo));
 
-	_cargo_mask = 0;
+	_cargo_mask.Reset();
 	_default_cargo_labels.clear();
 	_climate_dependent_cargo_labels.fill(CT_INVALID);
 	_climate_independent_cargo_labels.fill(CT_INVALID);
 
 	/* Copy from default cargo by label or index. */
 	auto insert = std::begin(CargoSpec::array);
-	for (const auto &cl : _default_climate_cargo[l]) {
+	for (const auto &cl : _default_climate_cargo[to_underlying(l)]) {
 
 		struct visitor {
 			const CargoSpec &operator()(const int &index)
@@ -102,7 +100,7 @@ void SetupCargoForClimate(LandscapeID l)
 		*insert = std::visit(visitor{}, cl);
 
 		if (insert->IsValid()) {
-			SetBit(_cargo_mask, insert->Index());
+			_cargo_mask.Set(insert->Index());
 			_default_cargo_labels.push_back(insert->label);
 			_climate_dependent_cargo_labels[insert->Index()] = insert->label;
 			_climate_independent_cargo_labels[insert->bitnum] = insert->label;
@@ -156,12 +154,12 @@ void BuildCargoLabelMap()
 
 /**
  * Test if a cargo is a default cargo type.
- * @param cid Cargo ID.
+ * @param cargo_type Cargo type.
  * @returns true iff the cargo type is a default cargo type.
  */
-bool IsDefaultCargo(CargoID cid)
+bool IsDefaultCargo(CargoType cargo_type)
 {
-	auto cs = CargoSpec::Get(cid);
+	auto cs = CargoSpec::Get(cargo_type);
 	if (!cs->IsValid()) return false;
 
 	CargoLabel label = cs->label;
@@ -181,7 +179,7 @@ Dimension GetLargestCargoIconSize()
 	return size;
 }
 
-CargoID GetCargoIDByLabelUsingMap(CargoLabel label)
+CargoType GetCargoIDByLabelUsingMap(CargoLabel label)
 {
 	auto found = _cargo_label_map.find(label);
 	if (found != _cargo_label_map.end()) return found->second;
@@ -209,7 +207,7 @@ std::array<uint8_t, NUM_CARGO> _sorted_cargo_types;        ///< Sort order of ca
 std::vector<const CargoSpec *> _sorted_cargo_specs;        ///< Cargo specifications sorted alphabetically by name.
 std::span<const CargoSpec *> _sorted_standard_cargo_specs; ///< Standard cargo specifications sorted alphabetically by name.
 
-/** Sort cargo specifications by their name. */
+/** Sort cargo specifications by their name. @copydoc GUIList::Sorter */
 static bool CargoSpecNameSorter(const CargoSpec * const &a, const CargoSpec * const &b)
 {
 	format_buffer a_name;
@@ -223,14 +221,14 @@ static bool CargoSpecNameSorter(const CargoSpec * const &a, const CargoSpec * co
 	return (res != 0) ? res < 0 : (a->bitnum < b->bitnum);
 }
 
-/** Sort cargo specifications by their cargo class. */
+/** Sort cargo specifications by their cargo class. @copydoc GUIList::Sorter */
 static bool CargoSpecClassSorter(const CargoSpec * const &a, const CargoSpec * const &b)
 {
-	int res = (b->classes & CC_PASSENGERS) - (a->classes & CC_PASSENGERS);
+	int res = b->classes.Test(CargoClass::Passengers) - a->classes.Test(CargoClass::Passengers);
 	if (res == 0) {
-		res = (b->classes & CC_MAIL) - (a->classes & CC_MAIL);
+		res = b->classes.Test(CargoClass::Mail) - a->classes.Test(CargoClass::Mail);
 		if (res == 0) {
-			res = (a->classes & CC_SPECIAL) - (b->classes & CC_SPECIAL);
+			res = a->classes.Test(CargoClass::Special) - b->classes.Test(CargoClass::Special);
 			if (res == 0) {
 				return CargoSpecNameSorter(a, b);
 			}
@@ -244,7 +242,7 @@ static bool CargoSpecClassSorter(const CargoSpec * const &a, const CargoSpec * c
 void InitializeSortedCargoSpecs()
 {
 	for (auto &tpc : CargoSpec::town_production_cargoes) tpc.clear();
-	for (auto &tpc : CargoSpec::town_production_cargo_mask) tpc = 0;
+	for (auto &tpc : CargoSpec::town_production_cargo_mask) tpc = CargoTypes{};
 	_sorted_cargo_specs.clear();
 	/* Add each cargo spec to the list, and determine the largest cargo icon size. */
 	for (const CargoSpec *cargo : CargoSpec::Iterate()) {
@@ -260,15 +258,15 @@ void InitializeSortedCargoSpecs()
 	}
 
 	/* Count the number of standard cargos and fill the mask. */
-	_standard_cargo_mask = 0;
+	_standard_cargo_mask.Reset();
 	uint8_t nb_standard_cargo = 0;
 	for (const auto &cargo : _sorted_cargo_specs) {
-		assert(cargo->town_production_effect != INVALID_TPE);
+		assert(cargo->town_production_effect != TownProductionEffect::Invalid);
 		CargoSpec::town_production_cargoes[cargo->town_production_effect].push_back(cargo->Index());
-		SetBit(CargoSpec::town_production_cargo_mask[cargo->town_production_effect], cargo->Index());
-		if (cargo->classes & CC_SPECIAL) break;
+		CargoSpec::town_production_cargo_mask[cargo->town_production_effect].Set(cargo->Index());
+		if (cargo->classes.Test(CargoClass::Special)) break;
 		nb_standard_cargo++;
-		SetBit(_standard_cargo_mask, cargo->Index());
+		_standard_cargo_mask.Set(cargo->Index());
 	}
 
 	/* _sorted_standard_cargo_specs is a subset of _sorted_cargo_specs. */
@@ -293,28 +291,25 @@ std::optional<std::string> BuildCargoAcceptanceString(const CargoArray &acceptan
 
 	/* Cargo acceptance is displayed in a extra multiline */
 	format_buffer line;
-	AppendStringInPlace(line, label);
 
 	bool found = false;
 	for (const CargoSpec *cs : _sorted_cargo_specs) {
-		CargoID cid = cs->Index();
-		if (acceptance[cid] > 0) {
+		CargoType cargo_type = cs->Index();
+		if (acceptance[cargo_type] > 0) {
 			/* Add a comma between each item. */
 			if (found) line.append(list_separator);
 			found = true;
 
 			/* If the accepted value is less than 8, show it in 1/8:ths */
-			if (acceptance[cid] < 8) {
-				SetDParam(0, acceptance[cid]);
-				SetDParam(1, cs->name);
-				AppendStringInPlace(line, STR_LAND_AREA_INFORMATION_CARGO_EIGHTS);
+			if (acceptance[cargo_type] < 8) {
+				AppendStringInPlace(line, STR_LAND_AREA_INFORMATION_CARGO_EIGHTS, acceptance[cargo_type], cs->name);
 			} else {
 				AppendStringInPlace(line, cs->name);
 			}
 		}
 	}
 
-	if (found) return line.to_string();
+	if (found) return GetString(label, line);
 
 	return std::nullopt;
 }

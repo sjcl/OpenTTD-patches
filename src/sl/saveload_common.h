@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file saveload_common.h Common functions/types for saving and loading games. */
@@ -10,21 +10,16 @@
 #ifndef SL_SAVELOAD_COMMON_H
 #define SL_SAVELOAD_COMMON_H
 
-#include "../strings_type.h"
+#include "saveload_common_type.h"
+#include "saveload_common_error.h"
+#include "../strings_id_type.h"
+#include "../core/label_type.hpp"
 
-struct SaveLoad;
-struct NamedSaveLoad;
+template <typename T>
+concept SlIsPrimitiveType = T::saveload_primitive_type || false;
 
-/** A table of SaveLoad entries. */
-using SaveLoadTable = std::span<const SaveLoad>;
-using NamedSaveLoadTable = std::span<const NamedSaveLoad>;
-
-namespace upstream_sl {
-	struct SaveLoad;
-
-	/** A table of SaveLoad entries. */
-	using SaveLoadTable = std::span<const SaveLoad>;
-}
+/** Label/unique identifier for each of the chunks in the savegame. */
+using ChunkId = Label<struct ChunkIdTag>;
 
 /** SaveLoad versions
  * Previous savegame versions, the trunk revision where they were
@@ -343,9 +338,9 @@ enum SaveLoadVersion : uint16_t {
 	/* upstream savegame versions follow */
 
 	SLV_SAVELOAD_LIST_LENGTH,               ///< 293  PR#9374 Consistency in list length with SL_STRUCT / SL_STRUCTLIST / SL_DEQUE / SL_REFLIST.
-	SLV_RIFF_TO_ARRAY,                      ///< 294  PR#9375 Changed many CH_RIFF chunks to CH_ARRAY chunks.
+	SLV_RIFF_TO_ARRAY,                      ///< 294  PR#9375 Changed many ChunkType::Riff chunks to ChunkType::Array chunks.
 
-	SLV_TABLE_CHUNKS,                       ///< 295  PR#9322 Introduction of CH_TABLE and CH_SPARSE_TABLE.
+	SLV_TABLE_CHUNKS,                       ///< 295  PR#9322 Introduction of ChunkType::Table and ChunkType::SparseTable.
 	SLV_SCRIPT_INT64,                       ///< 296  PR#9415 SQInteger is 64bit but was saved as 32bit.
 	SLV_LINKGRAPH_TRAVEL_TIME,              ///< 297  PR#9457 v12.0-RC1  Store travel time in the linkgraph.
 	SLV_DOCK_DOCKINGTILES,                  ///< 298  PR#9578 All tiles around docks may be docking tiles.
@@ -411,6 +406,29 @@ enum SaveLoadVersion : uint16_t {
 	SLV_INCREASE_HOUSE_LIMIT,               ///< 348  PR#12288 Increase house limit to 4096.
 	SLV_COMPANY_INAUGURATED_PERIOD_V2,      ///< 349  PR#13448 Fix savegame storage for company inaugurated year in wallclock mode.
 
+	SLV_ENCODED_STRING_FORMAT,              ///< 350  PR#13499 Encoded String format changed.
+	SLV_PROTECT_PLACED_HOUSES,              ///< 351  PR#13270 Houses individually placed by players can be protected from town/AI removal.
+	SLV_SCRIPT_SAVE_INSTANCES,              ///< 352  PR#13556 Scripts are allowed to save instances.
+	SLV_FIX_SCC_ENCODED_NEGATIVE,           ///< 353  PR#14049 Fix encoding of negative parameters.
+	SLV_ORDERS_OWNED_BY_ORDERLIST,          ///< 354  PR#13948 Orders stored in OrderList, pool removed.
+
+	SLV_FACE_STYLES,                        ///< 355  PR#14319 Addition of face styles, replacing gender and ethnicity.
+	SLV_INDUSTRY_NUM_VALID_HISTORY,         ///< 356  PR#14416 Store number of valid history records for industries.
+	SLV_INDUSTRY_ACCEPTED_HISTORY,          ///< 357  PR#14321 Add per-industry history of cargo delivered and waiting.
+	SLV_TOWN_SUPPLY_HISTORY,                ///< 358  PR#14461 Town supply history.
+	SLV_STATIONS_UNDER_BRIDGES,             ///< 359  PR#14477 Allow stations under bridges.
+
+	SLV_DOCKS_UNDER_BRIDGES,                ///< 360  PR#14594 Allow docks under bridges.
+	SLV_LOCKS_UNDER_BRIDGES,                ///< 361  PR#14595 Allow locks under bridges.
+	SLV_ENGINE_MULTI_RAILTYPE,              ///< 362  PR#14357 v15.0 Train engines can have multiple railtypes.
+	SLV_SIGN_TEXT_COLOURS,                  ///< 363  PR#14743 Configurable sign text colors in scenario editor.
+	SLV_BUOYS_AT_0_0,                       ///< 364  PR#14983 Allow to build buoys at (0x0).
+
+	SLV_DRIVE_BACKWARDS,                    ///< 365  PR#15379 Trains can drive backwards.
+	SLV_DEPOTS_UNDER_BRIDGES,               ///< 366  PR#15836 Allow depots under bridges.
+	SLV_LABEL_ORIENTATION_UNIFICATION,      ///< 367  PR#15888 Unify the orientation in which labels are written.
+	SLV_DOUBLE_ENDED_SHIPS,                 ///< 368  PR#16002 Double-ended (NewGRF-only) ships can reverse without turning.
+
 	SL_MAX_VERSION,                         ///< Highest possible saveload version
 
 	SL_SPRING_2013_v2_0_102 = 220,
@@ -438,7 +456,12 @@ enum SaveLoadVersion : uint16_t {
 	SL_CHILLPP_233 = 233,
 };
 
+static constexpr SaveLoadVersion SAVEGAME_VERSION = SLV_CUSTOM_SUBSIDY_DURATION;                    ///< Current savegame version of OpenTTD.
+static constexpr SaveLoadVersion MAX_LOAD_SAVEGAME_VERSION = (SaveLoadVersion)(SL_MAX_VERSION - 1); ///< Max loadable savegame version of OpenTTD.
+static constexpr SaveLoadVersion SL_UPSTREAM_VERSION = MAX_LOAD_SAVEGAME_VERSION;                   ///< Savegame version to save/load in XSLFI_UPSTREAM_VERSION sub-chunk
+
 uint8_t SlReadByte();
+void SlReadString(std::string &str, size_t length);
 void SlWriteByte(uint8_t b);
 
 uint16_t SlReadUint16();
@@ -449,12 +472,32 @@ void SlWriteUint16(uint16_t v);
 void SlWriteUint32(uint32_t v);
 void SlWriteUint64(uint64_t v);
 
+inline void SlWriteByte(const SlIsPrimitiveType auto &data)
+{
+	static_assert(sizeof(decltype(data.base())) == 1);
+	SlWriteByte((uint8_t)data.base());
+}
+
+inline void SlWriteUint16(const SlIsPrimitiveType auto &data)
+{
+	static_assert(sizeof(decltype(data.base())) <= 2);
+	SlWriteUint16((uint16_t)data.base());
+}
+
+inline void SlWriteUint32(const SlIsPrimitiveType auto &data)
+{
+	static_assert(sizeof(decltype(data.base())) <= 4);
+	SlWriteUint32((uint32_t)data.base());
+}
+
 void SlSkipBytes(size_t length);
+
+void SlCopyBytesRead(void *ptr, size_t length);
+void SlCopyBytesWrite(const void *ptr, size_t length);
 
 size_t SlGetBytesRead();
 size_t SlGetBytesWritten();
 
-[[noreturn]] void SlError(StringID string, std::string extra_msg = {});
 [[noreturn]] void SlErrorCorrupt(std::string msg);
 
 #define SlErrorCorruptFmt(format_string, ...) SlErrorCorrupt(fmt::format(FMT_STRING(format_string) __VA_OPT__(,) __VA_ARGS__))

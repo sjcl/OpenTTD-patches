@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file waypoint.cpp Handling of waypoints. */
@@ -30,28 +30,17 @@
  */
 void DrawWaypointSprite(int x, int y, StationClassID station_class, uint16_t station_type, RailType railtype)
 {
-	if (!DrawStationTile(x, y, railtype, AXIS_X, station_class, station_type)) {
-		StationPickerDrawSprite(x, y, STATION_WAYPOINT, railtype, INVALID_ROADTYPE, AXIS_X);
+	if (!DrawStationTile(x, y, railtype, Axis::X, station_class, station_type)) {
+		StationPickerDrawSprite(x, y, StationType::RailWaypoint, railtype, INVALID_ROADTYPE, to_underlying(Axis::X));
 	}
 }
 
-void Waypoint::GetTileArea(TileArea *ta, StationType type) const
+TileArea Waypoint::GetTileArea(StationType type) const
 {
 	switch (type) {
-		case STATION_WAYPOINT:
-			*ta = this->train_station;
-			return;
-
-		case STATION_ROADWAYPOINT:
-			*ta = this->road_waypoint_area;
-			return;
-
-		case STATION_BUOY:
-			ta->tile = this->xy;
-			ta->w    = 1;
-			ta->h    = 1;
-			break;
-
+		case StationType::RailWaypoint: return this->train_station;
+		case StationType::RoadWaypoint: return this->road_waypoint_area;
+		case StationType::Buoy: return {this->xy, 1, 1};
 		default: NOT_REACHED();
 	}
 }
@@ -59,14 +48,14 @@ void Waypoint::GetTileArea(TileArea *ta, StationType type) const
 Waypoint::~Waypoint()
 {
 	if (CleaningPool()) return;
-	CloseWindowById(WC_WAYPOINT_VIEW, this->index);
-	DeleteNewGRFInspectWindow(GSF_FAKE_STATION_STRUCT, this->index);
+	CloseWindowById(WindowClass::WaypointView, this->index);
+	DeleteNewGRFInspectWindow(GrfSpecFeature::FakeStationStruct, this->index.base());
 	RemoveOrderFromAllVehicles(OT_GOTO_WAYPOINT, this->index);
-	if (_viewport_sign_kdtree_valid && this->sign.kdtree_valid) _viewport_sign_kdtree.Remove(ViewportSignKdtreeItem::MakeWaypoint(this->index));
+	if (_viewport_sign_kdtree_valid && this->sign.kdtree_valid()) _viewport_sign_kdtree.Remove(ViewportSignKdtreeItem::MakeWaypoint(this->index));
 	TraceRestrictRemoveDestinationID(TROCAF_WAYPOINT, this->index);
 
 	/* Remove all news items */
 	DeleteStationNews(this->index);
 
-	if (ShouldShowBaseStationViewportLabel(this)) this->sign.MarkDirty(ZOOM_LVL_DRAW_SPR);
+	if (ShouldShowBaseStationViewportLabel(this)) this->sign.MarkDirty(ZoomLevel::SpriteMax);
 }

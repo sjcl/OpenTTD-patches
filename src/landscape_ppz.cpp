@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file landscape_ppz.cpp Functions related to landscape partial pixel z. */
@@ -59,7 +59,7 @@ uint GetPartialPixelZ(int x, int y, Slope corners)
 		case SLOPE_S: return x + y >= (int)TILE_SIZE ? (1 + x + y - TILE_SIZE) >> 1 : 0;
 		case SLOPE_W: return x >= y                  ? (x - y)                 >> 1 : 0;
 
-		/* Two corners next to eachother are up. */
+		/* Two corners next to each other are up. */
 		case SLOPE_NE: return (TILE_SIZE - x) >> 1;
 		case SLOPE_SE: return (y + 1) >> 1;
 		case SLOPE_SW: return (x + 1) >> 1;

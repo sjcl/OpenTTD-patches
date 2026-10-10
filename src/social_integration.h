@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file social_integration.h Interface definitions for game to report/respond to social integration. */
@@ -14,7 +14,7 @@
 
 class SocialIntegrationPlugin {
 public:
-	enum State {
+	enum State : uint8_t {
 		RUNNING, ///< The plugin is successfully loaded and running.
 
 		FAILED, ///< The plugin failed to initialize.
@@ -40,6 +40,7 @@ class SocialIntegration {
 public:
 	/**
 	 * Get the list of loaded social integration plugins.
+	 * @return The loaded plugins.
 	 */
 	static std::vector<SocialIntegrationPlugin *> GetPlugins();
 
@@ -68,16 +69,22 @@ public:
 
 	/**
 	 * Event: user entered the Scenario Editor.
+	 * @param map_width The width of the entered scenario.
+	 * @param map_height The width of the entered scenario.
 	 */
 	static void EventEnterScenarioEditor(uint map_width, uint map_height);
 
 	/**
 	 * Event: user entered a singleplayer game.
+	 * @param map_width The width of the entered map.
+	 * @param map_height The width of the entered map.
 	 */
 	static void EventEnterSingleplayer(uint map_width, uint map_height);
 
 	/**
 	 * Event: user entered a multiplayer game.
+	 * @param map_width The width of the entered map.
+	 * @param map_height The width of the entered map.
 	 */
 	static void EventEnterMultiplayer(uint map_width, uint map_height);
 

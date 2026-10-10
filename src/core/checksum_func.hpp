@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file checksum_func.hpp Checksum utility functions. */
@@ -46,10 +46,10 @@ inline void UpdateStateChecksum(uint64_t input)
 #ifdef RANDOM_DEBUG
 inline bool ShouldLogUpdateStateChecksum()
 {
-	return _networking && (!_network_server || (NetworkClientSocket::IsValidID(0) && NetworkClientSocket::Get(0)->status != NetworkClientSocket::STATUS_INACTIVE));
+	return _networking && (!_network_server || (NetworkClientSocket::IsValidID(0) && NetworkClientSocket::Get(0)->status != NetworkClientSocket::ClientStatus::Inactive));
 }
 #	define DEBUG_UPDATESTATECHECKSUM(str, ...) do { if (ShouldLogUpdateStateChecksum()) Debug(statecsum, 0, "{}; {:04x}; {:02x}; {:016x}; {}:{} " str, \
-		debug_date_dumper().HexDate(), _frame_counter, (uint8_t)_current_company, _state_checksum.state, __FILE__, __LINE__, __VA_ARGS__); } while(false)
+		debug_date_dumper().HexDate(), _frame_counter, _current_company, _state_checksum.state, __FILE__, __LINE__, __VA_ARGS__); } while(false)
 #else
 #	define DEBUG_UPDATESTATECHECKSUM(str, ...)
 #endif /* RANDOM_DEBUG */

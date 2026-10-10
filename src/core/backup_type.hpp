@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file backup_type.hpp Class for backupping variables and making sure they are restored later. */
@@ -47,8 +47,7 @@ struct Backup {
 	~Backup()
 	{
 		/* Check whether restoration was done */
-		if (this->valid)
-		{
+		if (this->valid) {
 			/* We cannot assert here, as missing restoration is 'normal' when exceptions are thrown.
 			 * Exceptions are especially used to abort world generation. */
 			Debug(misc, 0, "{}:{}: Backed-up value was not restored!", this->file, this->line);
@@ -72,7 +71,7 @@ struct Backup {
 	const T &GetOriginalValue() const
 	{
 		assert(this->valid);
-		return original_value;
+		return this->original_value;
 	}
 
 	/**
@@ -85,7 +84,7 @@ struct Backup {
 	{
 		/* Note: We use a separate typename U, so type conversions are handled by assignment operator. */
 		assert(this->valid);
-		original = new_value;
+		this->original = new_value;
 	}
 
 	/**
@@ -136,11 +135,11 @@ struct Backup {
 	}
 
 private:
-	T &original;
-	const char * const file;
-	const int line;
-	bool valid;
-	T original_value;
+	T &original;             ///< Reference to the value we are backing up.
+	const char * const file; ///< File location where the backup was created.
+	const int line;          ///< Line location where the backup was created.
+	bool valid;              ///< Whether the original value has been restored.
+	T original_value;        ///< The value at the moment of making a backup.
 };
 
 struct AutoRestoreBackupNoNewValueTag {};
@@ -183,9 +182,18 @@ struct AutoRestoreBackup {
 		this->original = this->original_value;
 	}
 
+	/**
+	 * Returns the backupped value.
+	 * @return value from the backup.
+	 */
+	const T &GetOriginalValue() const
+	{
+		return this->original_value;
+	}
+
 private:
-	T &original;
-	T original_value;
+	T &original; ///< Reference to the value we are backing up.
+	T original_value; ///< The value at the moment of making a backup.
 
 	/* Prevent copy, assignment and allocation on stack. */
 	AutoRestoreBackup(const AutoRestoreBackup&) = delete;

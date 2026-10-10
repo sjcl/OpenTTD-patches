@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file tinystring_type.hpp Functions related to the allocation of memory */
@@ -105,6 +105,7 @@ public:
 	inline bool empty() const { return this->storage == nullptr || *this->storage == 0; }
 	inline const char *c_str() const { return this->storage; }
 	inline const char *data() const { return this->storage; }
+	operator std::string_view() const { return this->storage != nullptr ? std::string_view(this->storage) : std::string_view{}; }
 };
 
 

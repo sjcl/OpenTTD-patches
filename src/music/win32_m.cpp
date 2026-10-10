@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file win32_m.cpp Music playback for Windows. */
@@ -17,6 +17,7 @@
 #include "midifile.hpp"
 #include "midi.h"
 #include "../base_media_base.h"
+#include "../base_media_music.h"
 #include "../core/mem_func.hpp"
 #include <mutex>
 
@@ -64,7 +65,7 @@ void CALLBACK MidiOutProc(HMIDIOUT hmo, UINT wMsg, DWORD_PTR, DWORD_PTR dwParam1
 	if (wMsg == MOM_DONE) {
 		MIDIHDR *hdr = (LPMIDIHDR)dwParam1;
 		midiOutUnprepareHeader(hmo, hdr, sizeof(*hdr));
-		free(hdr);
+		delete hdr;
 	}
 }
 
@@ -81,15 +82,13 @@ static void TransmitSysex(const uint8_t *&msg_start, size_t &remaining)
 	msg_end++; /* also include sysex end byte */
 
 	/* prepare header */
-	MIDIHDR *hdr = CallocT<MIDIHDR>(1);
+	auto hdr = std::make_unique<MIDIHDR>();
 	hdr->lpData = reinterpret_cast<LPSTR>(const_cast<uint8_t *>(msg_start));
-	hdr->dwBufferLength = msg_end - msg_start;
-	if (midiOutPrepareHeader(_midi.midi_out, hdr, sizeof(*hdr)) == MMSYSERR_NOERROR) {
+	hdr->dwBufferLength = static_cast<DWORD>(msg_end - msg_start);
+	if (midiOutPrepareHeader(_midi.midi_out, hdr.get(), sizeof(MIDIHDR)) == MMSYSERR_NOERROR) {
 		/* transmit - just point directly into the data buffer */
 		hdr->dwBytesRecorded = hdr->dwBufferLength;
-		midiOutLongMsg(_midi.midi_out, hdr, sizeof(*hdr));
-	} else {
-		free(hdr);
+		midiOutLongMsg(_midi.midi_out, hdr.release(), sizeof(MIDIHDR));
 	}
 
 	/* update position in buffer */
@@ -107,6 +106,7 @@ static void TransmitStandardSysex(MidiSysexMessage msg)
 /**
  * Realtime MIDI playback service routine.
  * This is called by the multimedia timer.
+ * @param uTimerID The identifier of the timer.
  */
 void CALLBACK TimerCallback(UINT uTimerID, UINT, DWORD_PTR, DWORD_PTR, DWORD_PTR)
 {
@@ -203,7 +203,7 @@ void CALLBACK TimerCallback(UINT uTimerID, UINT, DWORD_PTR, DWORD_PTR, DWORD_PTR
 			preload_bytes += block.data.size();
 			if (block.ticktime >= _midi.current_segment.start) {
 				if (_midi.current_segment.loop) {
-					Debug(driver, 2, "Win32-MIDI: timer: loop from block {} (ticktime {}, realtime {:.3f}, bytes {})", bl, block.ticktime, ((int)block.realtime)/1000.0, preload_bytes);
+					Debug(driver, 2, "Win32-MIDI: timer: loop from block {} (ticktime {}, realtime {:.3f}, bytes {})", bl, block.ticktime, block.realtime / 1000.0, preload_bytes);
 					_midi.current_segment.start_block = bl;
 					break;
 				} else {
@@ -212,7 +212,7 @@ void CALLBACK TimerCallback(UINT uTimerID, UINT, DWORD_PTR, DWORD_PTR, DWORD_PTR
 					 * which have a bitrate of 31,250 bits/sec, and transmit 1+8+1 start/data/stop bits per byte.
 					 * The delay compensation is needed to avoid time-compression of following messages.
 					 */
-					Debug(driver, 2, "Win32-MIDI: timer: start from block {} (ticktime {}, realtime {:.3f}, bytes {})", bl, block.ticktime, ((int)block.realtime) / 1000.0, preload_bytes);
+					Debug(driver, 2, "Win32-MIDI: timer: start from block {} (ticktime {}, realtime {:.3f}, bytes {})", bl, block.ticktime, block.realtime / 1000.0, preload_bytes);
 					_midi.playback_start_time -= block.realtime / 1000 - (DWORD)(preload_bytes * 1000 / 3125);
 					break;
 				}
@@ -373,10 +373,10 @@ const char *MusicDriver_Win32::Start(const StringList &parm)
 
 	int resolution = GetDriverParamInt(parm, "resolution", 5);
 	uint port = (uint)GetDriverParamInt(parm, "port", UINT_MAX);
-	const char *portname = GetDriverParam(parm, "portname");
+	auto portname = GetDriverParam(parm, "portname");
 
 	/* Enumerate ports either for selecting port by name, or for debug output */
-	if (portname != nullptr || GetDebugLevel(DebugLevelID::driver) > 0) {
+	if (portname.has_value() || GetDebugLevel(DebugLevelID::driver) > 0) {
 		uint numports = midiOutGetNumDevs();
 		Debug(driver, 1, "Win32-MIDI: Found {} output devices:", numports);
 		for (uint tryport = 0; tryport < numports; tryport++) {
@@ -387,7 +387,7 @@ const char *MusicDriver_Win32::Start(const StringList &parm)
 
 				/* Compare requested and detected port name.
 				 * If multiple ports have the same name, this will select the last matching port, and the debug output will be confusing. */
-				if (portname != nullptr && strncmp(tryportname, portname, lengthof(tryportname)) == 0) port = tryport;
+				if (portname.has_value() && *portname == tryportname) port = tryport;
 
 				Debug(driver, 1, "MIDI port {:2d}: {}{}", tryport, tryportname, (tryport == port) ? " [selected]" : "");
 			}

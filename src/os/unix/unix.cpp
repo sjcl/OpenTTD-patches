@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file unix.cpp Implementation of Unix specific file handling. */
@@ -19,7 +19,6 @@
 #include "../../thread.h"
 #include "../../scope.h"
 
-
 #include <dirent.h>
 #include <unistd.h>
 #include <sys/stat.h>
@@ -31,6 +30,11 @@
 #ifdef WITH_SDL2
 #include <SDL.h>
 #endif
+
+#ifdef WITH_ICONV
+#include <iconv.h>
+#include <errno.h>
+#endif /* WITH_ICONV */
 
 #ifdef __EMSCRIPTEN__
 #	include <emscripten.h>
@@ -142,11 +146,6 @@ bool FioCopyFile(const char *old_name, const char *new_name)
 
 #ifdef WITH_ICONV
 
-#include <iconv.h>
-#include <errno.h>
-#include "../../debug.h"
-#include "../../string_func.h"
-
 const char *GetCurrentLocale(const char *param);
 
 #define INTERNALCODE "UTF-8"
@@ -179,7 +178,7 @@ static std::string convert_tofrom_fs(iconv_t convd, std::string_view name)
 	 * e.g. SUSv2, pass a const pointer, whereas the newer ones, e.g.
 	 * IEEE 1003.1 (2004), pass a non-const pointer. */
 #ifdef HAVE_NON_CONST_ICONV
-	char *inbuf = const_cast<char*>(name.data());
+	char *inbuf = const_cast<char *>(name.data());
 #else
 	const char *inbuf = name.data();
 #endif
@@ -244,7 +243,9 @@ std::string FS2OTTD(std::string_view name)
 
 void ShowInfoI(std::string_view str)
 {
-	fmt::print(stderr, "{}\n", str);
+	format_buffer buf;
+	buf.format("{}\n", str);
+	fwrite(buf.data(), 1, buf.size(), stderr);
 }
 
 void ShowInfoVFmt(fmt::string_view msg, fmt::format_args args)
@@ -256,14 +257,16 @@ void ShowInfoVFmt(fmt::string_view msg, fmt::format_args args)
 }
 
 #if !defined(__APPLE__)
-void ShowOSErrorBox(const char *buf, bool)
+void ShowOSErrorBox(std::string_view buf, bool)
 {
 	/* All unix systems, except OSX. Only use escape codes on a TTY. */
+	format_buffer buffer;
 	if (isatty(fileno(stderr))) {
-		fprintf(stderr, "\033[1;31mError: %s\033[0;39m\n", buf);
+		buffer.format("\033[1;31mError: {}\033[0;39m\n", buf);
 	} else {
-		fprintf(stderr, "Error: %s\n", buf);
+		buffer.format("Error: {}\n", buf);
 	}
+	fwrite(buffer.data(), 1, buffer.size(), stderr);
 }
 
 [[noreturn]] void DoOSAbort()
@@ -295,7 +298,7 @@ std::optional<std::string> GetClipboardContents()
 void OSOpenBrowser(const std::string &url)
 {
 	/* Implementation in pre.js */
-	EM_ASM({ if (window["openttd_open_url"]) window.openttd_open_url($0, $1) }, url.c_str(), url.size());
+	EM_ASM({ if (window["openttd_open_url"]) window.openttd_open_url($0, $1) }, url.data(), url.size());
 }
 #elif !defined( __APPLE__)
 void OSOpenBrowser(const std::string &url)
@@ -313,15 +316,17 @@ void OSOpenBrowser(const std::string &url)
 }
 #endif /* __APPLE__ */
 
-void SetCurrentThreadName([[maybe_unused]] const char *threadName)
+void SetCurrentThreadName([[maybe_unused]] const std::string &thread_name)
 {
 #if defined(__GLIBC__)
-	if (threadName) pthread_setname_np(pthread_self(), threadName);
+	pthread_setname_np(pthread_self(), thread_name.c_str());
 #endif /* defined(__GLIBC__) */
 #if defined(__APPLE__)
-	MacOSSetThreadName(threadName);
+	MacOSSetThreadName(thread_name);
 #endif /* defined(__APPLE__) */
 }
+
+void ClearCurrentThreadName() {}
 
 void GetCurrentThreadName(format_target &buf)
 {

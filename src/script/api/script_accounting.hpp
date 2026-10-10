@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file script_accounting.hpp Everything to handle script accounting things. */
@@ -40,7 +40,7 @@ public:
 	 *   So basically restore the value of GetCosts to what it was before we
 	 *   created this instance.
 	 */
-	~ScriptAccounting();
+	~ScriptAccounting() override;
 
 	/**
 	 * Get the current value of the costs.
@@ -48,7 +48,7 @@ public:
 	 * @note when nesting ScriptAccounting instances all instances' GetCosts
 	 *   will always return the value of the 'top' instance.
 	 */
-	Money GetCosts();
+	Money GetCosts() const;
 
 	/**
 	 * Reset the costs to zero.

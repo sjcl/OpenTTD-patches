@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file smallmap_gui.h Smallmap GUI functions. */
@@ -17,25 +17,12 @@
 #include "linkgraph/linkgraph_gui.h"
 #include "widgets/smallmap_widget.h"
 #include "guitimer_func.h"
+#include "tile_type.h"
 #include <vector>
 
 static const int NUM_NO_COMPANY_ENTRIES = 4; ///< Number of entries in the owner legend that are not companies.
 
-/** Mapping of tile type to importance of the tile (higher number means more interesting to show). */
-static const uint8_t _tiletype_importance[] = {
-	2, // MP_CLEAR
-	8, // MP_RAILWAY
-	7, // MP_ROAD
-	5, // MP_HOUSE
-	2, // MP_TREES
-	9, // MP_STATION
-	2, // MP_WATER
-	1, // MP_VOID
-	6, // MP_INDUSTRY
-	8, // MP_TUNNELBRIDGE
-	2, // MP_OBJECT
-	0,
-};
+extern const EnumIndexArray<uint8_t, TileType, to_underlying(TileType::End) + 1> _tiletype_importance;
 
 /* set up the cargos to be displayed in the smallmap's route legend */
 void BuildLinkStatsLegend();
@@ -54,8 +41,8 @@ void BuildOwnerLegend();
 
 /** Structure for holding relevant data for legends in small map */
 struct LegendAndColour {
-	uint8_t colour;            ///< Colour of the item on the map.
 	StringID legend;           ///< String corresponding to the coloured item.
+	PixelColour colour;        ///< Colour of the item on the map.
 	IndustryType type;         ///< Type of industry. Only valid for industry entries.
 	uint8_t height;            ///< Height in tiles. Only valid for height legend entries.
 	CompanyID company;         ///< Company to display. Only valid for company entries of the owner legend.
@@ -65,25 +52,26 @@ struct LegendAndColour {
 };
 
 /** Types of legends in the #WID_SM_LEGEND widget. */
-enum SmallMapType : uint8_t {
-	SMT_CONTOUR,
-	SMT_VEHICLES,
-	SMT_INDUSTRY,
-	SMT_LINKSTATS,
-	SMT_ROUTES,
-	SMT_VEGETATION,
-	SMT_OWNER,
+enum class SmallMapType : uint8_t {
+	Contour, ///< Contour legend.
+	Vehicles, ///< Vehicles legend.
+	Industries, ///< Industries legend.
+	LinkStats, ///< LinkStats legend.
+	Routes, ///< Routes legend.
+	Vegetation, ///< Vegetation legend.
+	Owners, ///< Owners legend.
+	End, ///< End marker.
 };
-DECLARE_ENUM_AS_ADDABLE(SmallMapType)
+//DECLARE_ENUM_AS_ADDABLE(SmallMapType)
 
 /** Class managing the smallmap window. */
 class SmallMapWindow : public Window {
 protected:
 	/** Available kinds of zoomlevel changes. */
-	enum ZoomLevelChange {
-		ZLC_INITIALIZE, ///< Initialize zoom level.
-		ZLC_ZOOM_OUT,   ///< Zoom out.
-		ZLC_ZOOM_IN,    ///< Zoom in.
+	enum class ZoomLevelChange : uint8_t {
+		Init, ///< Initialize zoom level.
+		ZoomOut, ///< Zoom out.
+		ZoomIn, ///< Zoom in.
 	};
 
 	static SmallMapType map_type; ///< Currently displayed legends.
@@ -97,19 +85,19 @@ protected:
 	static const uint FORCE_REFRESH_PERIOD_LINK_GRAPH = 2850; ///< map is redrawn after that many milliseconds (link graph mode).
 	static const uint BLINK_PERIOD         = 450;             ///< highlight blinking interval in milliseconds.
 
-	uint min_number_of_columns;    ///< Minimal number of columns in legends.
-	uint min_number_of_fixed_rows; ///< Minimal number of rows in the legends for the fixed layouts only (all except #SMT_INDUSTRY).
-	uint column_width;             ///< Width of a column in the #WID_SM_LEGEND widget.
-	uint legend_width;             ///< Width of legend 'blob'.
+	uint min_number_of_columns = 0;    ///< Minimal number of columns in legends.
+	uint min_number_of_fixed_rows = 0; ///< Minimal number of rows in the legends for the fixed layouts only (all except #SMT_INDUSTRY).
+	uint column_width = 0;             ///< Width of a column in the #WID_SM_LEGEND widget.
+	uint legend_width = 0;             ///< Width of legend 'blob'.
 
-	int32_t scroll_x;  ///< Horizontal world coordinate of the base tile left of the top-left corner of the smallmap display.
-	int32_t scroll_y;  ///< Vertical world coordinate of the base tile left of the top-left corner of the smallmap display.
-	int tile_zoom;     ///< Tile zoom level. Bigger number means more zoom-out (further away).
-	int ui_zoom;       ///< UI (pixel doubling) Zoom level. Bigger number means more zoom-in (closer).
-	int zoom = 1;      ///< Zoom level. Bigger number means more zoom-out (further away).
+	int32_t scroll_x = 0;  ///< Horizontal world coordinate of the base tile left of the top-left corner of the smallmap display.
+	int32_t scroll_y = 0;  ///< Vertical world coordinate of the base tile left of the top-left corner of the smallmap display.
+	int tile_zoom = 0;     ///< Tile zoom level. Bigger number means more zoom-out (further away).
+	int ui_zoom = 0;       ///< UI (pixel doubling) Zoom level. Bigger number means more zoom-in (closer).
+	int zoom = 1;          ///< Zoom level. Bigger number means more zoom-out (further away).
 
-	GUITimer refresh; ///< Refresh timer.
-	std::unique_ptr<LinkGraphOverlay> overlay;
+	GUITimer refresh{}; ///< Refresh timer.
+	std::unique_ptr<LinkGraphOverlay> overlay{};
 
 	static void BreakIndustryChainLink();
 
@@ -163,7 +151,7 @@ protected:
 	inline uint GetLegendHeight(uint num_columns) const
 	{
 		return WidgetDimensions::scaled.framerect.Vertical() +
-				this->GetNumberRowsLegend(num_columns) * GetCharacterHeight(FS_SMALL);
+				this->GetNumberRowsLegend(num_columns) * GetCharacterHeight(FontSize::Small);
 	}
 
 	/**
@@ -173,7 +161,13 @@ protected:
 	 */
 	inline CompanyMask GetOverlayCompanyMask() const
 	{
-		return Company::IsValidID(_local_company) ? 1U << _local_company : MAX_UVALUE(CompanyMask);
+		CompanyMask mask{};
+		if (Company::IsValidID(_local_company)) {
+			mask.Set(_local_company);
+		} else {
+			mask.Set();
+		}
+		return mask;
 	}
 
 	uint GetNumberRowsLegend(uint columns) const;
@@ -197,6 +191,7 @@ protected:
 	uint32_t GetTileColours(const TileArea &ta) const;
 
 	int GetPositionOnLegend(Point pt);
+	void DrawLegend(const Rect &text, const Rect &icon, bool highlight, std::string_view string) const;
 
 public:
 	friend class NWidgetSmallmapDisplay;
@@ -209,14 +204,14 @@ public:
 	Point GetStationMiddle(const Station *st) const;
 
 	void Close([[maybe_unused]] int data = 0) override;
-	void SetStringParameters(WidgetID widget) const override;
+	std::string GetWidgetString(WidgetID widget, StringID stringid) const override;
 	void OnInit() override;
 	void OnPaint() override;
 	void DrawWidget(const Rect &r, WidgetID widget) const override;
 	void OnClick([[maybe_unused]] Point pt, WidgetID widget, [[maybe_unused]] int click_count) override;
 	void OnInvalidateData(int data = 0, bool gui_scope = true) override;
 	bool OnRightClick(Point pt, WidgetID widget) override;
-	void OnMouseWheel(int wheel) override;
+	void OnMouseWheel(int wheel, WidgetID widget) override;
 	void OnRealtimeTick(uint delta_ms) override;
 	void OnScroll(Point delta) override;
 	void OnMouseOver(Point pt, WidgetID widget) override;

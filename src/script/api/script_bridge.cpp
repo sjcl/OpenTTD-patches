@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file script_bridge.cpp Implementation of ScriptBridge. */
@@ -12,16 +12,20 @@
 #include "script_rail.hpp"
 #include "../script_instance.hpp"
 #include "../../bridge_map.h"
+#include "../../landscape_cmd.h"
 #include "../../strings_func.h"
 #include "../../date_func.h"
+#include "../../tunnelbridge_cmd.h"
+#include "../../road_cmd.h"
+
 #include "table/strings.h"
 
 #include "../../safeguards.h"
 
-/* static */ bool ScriptBridge::IsValidBridge(BridgeID bridge_id)
+/* static */ bool ScriptBridge::IsValidBridge(BridgeType bridge_type)
 {
-	if (bridge_id >= MAX_BRIDGES) return false;
-	const BridgeSpec *b = ::GetBridgeSpec(bridge_id);
+	if (bridge_type >= MAX_BRIDGES) return false;
+	const BridgeSpec *b = ::GetBridgeSpec(bridge_type);
 	return b->avail_year <= CalTime::CurYear() && !HasBit(b->ctrl_flags, BSCF_NOT_AVAILABLE_AI_GS);
 }
 
@@ -31,17 +35,17 @@
 	return ::IsBridgeTile(tile);
 }
 
-/* static */ BridgeID ScriptBridge::GetBridgeID(TileIndex tile)
+/* static */ BridgeType ScriptBridge::GetBridgeType(TileIndex tile)
 {
-	if (!IsBridgeTile(tile)) return (BridgeID)-1;
-	return (BridgeID)::GetBridgeType(tile);
+	if (!IsBridgeTile(tile)) return (BridgeType)-1;
+	return (BridgeType)::GetBridgeType(tile);
 }
 
 /**
  * Helper function to connect a just built bridge to nearby roads.
  * @param instance The script instance we have to built the road for.
  */
-static void _DoCommandReturnBuildBridge2(class ScriptInstance *instance)
+static void _DoCommandReturnBuildBridge2(class ScriptInstance &instance)
 {
 	if (!ScriptBridge::_BuildBridgeRoad2()) {
 		ScriptInstance::DoCommandReturn(instance);
@@ -57,7 +61,7 @@ static void _DoCommandReturnBuildBridge2(class ScriptInstance *instance)
  * Helper function to connect a just built bridge to nearby roads.
  * @param instance The script instance we have to built the road for.
  */
-static void _DoCommandReturnBuildBridge1(class ScriptInstance *instance)
+static void _DoCommandReturnBuildBridge1(class ScriptInstance &instance)
 {
 	if (!ScriptBridge::_BuildBridgeRoad1()) {
 		ScriptInstance::DoCommandReturn(instance);
@@ -69,7 +73,7 @@ static void _DoCommandReturnBuildBridge1(class ScriptInstance *instance)
 	NOT_REACHED();
 }
 
-/* static */ bool ScriptBridge::BuildBridge(ScriptVehicle::VehicleType vehicle_type, BridgeID bridge_id, TileIndex start, TileIndex end)
+/* static */ bool ScriptBridge::BuildBridge(ScriptVehicle::VehicleType vehicle_type, BridgeType bridge_type, TileIndex start, TileIndex end)
 {
 	EnforceDeityOrCompanyModeValid(false);
 	EnforcePrecondition(false, start != end);
@@ -80,30 +84,17 @@ static void _DoCommandReturnBuildBridge1(class ScriptInstance *instance)
 	EnforcePrecondition(false, vehicle_type != ScriptVehicle::VT_ROAD || ScriptRoad::IsRoadTypeAvailable(ScriptRoad::GetCurrentRoadType()));
 	EnforcePrecondition(false, ScriptCompanyMode::IsValid() || vehicle_type == ScriptVehicle::VT_ROAD);
 
-	uint type = (1 << 17);
 	switch (vehicle_type) {
 		case ScriptVehicle::VT_ROAD:
-			type |= (TRANSPORT_ROAD << 15);
-			type |= (ScriptRoad::GetCurrentRoadType() << 8);
-			break;
+			ScriptObject::SetCallbackVariable(0, start.base());
+			ScriptObject::SetCallbackVariable(1, end.base());
+			return ScriptObject::Command<Commands::BuildBridge>::Do(&::_DoCommandReturnBuildBridge1, end, start, TransportType::Road, bridge_type, ScriptRoad::GetCurrentRoadType(), BuildBridgeFlags::ScriptCommand);
 		case ScriptVehicle::VT_RAIL:
-			type |= (TRANSPORT_RAIL << 15);
-			type |= (ScriptRail::GetCurrentRailType() << 8);
-			break;
+			return ScriptObject::Command<Commands::BuildBridge>::Do(end, start, TransportType::Rail, bridge_type, ScriptRail::GetCurrentRailType(), BuildBridgeFlags::ScriptCommand);
 		case ScriptVehicle::VT_WATER:
-			type |= (TRANSPORT_WATER << 15);
-			break;
+			return ScriptObject::Command<Commands::BuildBridge>::Do(end, start, TransportType::Water, bridge_type, 0, BuildBridgeFlags::ScriptCommand);
 		default: NOT_REACHED();
 	}
-
-	/* For rail and water we do nothing special */
-	if (vehicle_type == ScriptVehicle::VT_RAIL || vehicle_type == ScriptVehicle::VT_WATER) {
-		return ScriptObject::DoCommand(end, start, type | bridge_id, CMD_BUILD_BRIDGE);
-	}
-
-	ScriptObject::SetCallbackVariable(0, start);
-	ScriptObject::SetCallbackVariable(1, end);
-	return ScriptObject::DoCommand(end, start, type | bridge_id, CMD_BUILD_BRIDGE, nullptr, &::_DoCommandReturnBuildBridge1);
 }
 
 /* static */ bool ScriptBridge::_BuildBridgeRoad1()
@@ -111,13 +102,13 @@ static void _DoCommandReturnBuildBridge1(class ScriptInstance *instance)
 	EnforceDeityOrCompanyModeValid(false);
 
 	/* Build the piece of road on the 'start' side of the bridge */
-	TileIndex end = ScriptObject::GetCallbackVariable(0);
-	TileIndex start = ScriptObject::GetCallbackVariable(1);
+	TileIndex end(ScriptObject::GetCallbackVariable(0));
+	TileIndex start(ScriptObject::GetCallbackVariable(1));
 
 	DiagDirection dir_1 = ::DiagdirBetweenTiles(end, start);
 	DiagDirection dir_2 = ::ReverseDiagDir(dir_1);
 
-	return ScriptObject::DoCommand(start + ::TileOffsByDiagDir(dir_1), ::DiagDirToRoadBits(dir_2) | (ScriptRoad::GetCurrentRoadType() << 4) | (1 << 13), INVALID_TOWN, CMD_BUILD_ROAD, nullptr, &::_DoCommandReturnBuildBridge2);
+	return ScriptObject::Command<Commands::BuildRoad>::Do(&::_DoCommandReturnBuildBridge2, start + ::TileOffsByDiagDir(dir_1), ::DiagDirToRoadBits(dir_2), (::RoadType)ScriptRoad::GetCurrentRoadType(), {}, TownID::Invalid(), BuildRoadFlags::NoCustomBridgeHeads);
 }
 
 /* static */ bool ScriptBridge::_BuildBridgeRoad2()
@@ -125,58 +116,58 @@ static void _DoCommandReturnBuildBridge1(class ScriptInstance *instance)
 	EnforceDeityOrCompanyModeValid(false);
 
 	/* Build the piece of road on the 'end' side of the bridge */
-	TileIndex end = ScriptObject::GetCallbackVariable(0);
-	TileIndex start = ScriptObject::GetCallbackVariable(1);
+	TileIndex end(ScriptObject::GetCallbackVariable(0));
+	TileIndex start(ScriptObject::GetCallbackVariable(1));
 
 	DiagDirection dir_1 = ::DiagdirBetweenTiles(end, start);
 	DiagDirection dir_2 = ::ReverseDiagDir(dir_1);
 
-	return ScriptObject::DoCommand(end + ::TileOffsByDiagDir(dir_2), ::DiagDirToRoadBits(dir_1) | (ScriptRoad::GetCurrentRoadType() << 4) | (1 << 13), INVALID_TOWN, CMD_BUILD_ROAD);
+	return ScriptObject::Command<Commands::BuildRoad>::Do(end + ::TileOffsByDiagDir(dir_2), ::DiagDirToRoadBits(dir_1), (::RoadType)ScriptRoad::GetCurrentRoadType(), {}, TownID::Invalid(), BuildRoadFlags::NoCustomBridgeHeads);
 }
 
 /* static */ bool ScriptBridge::RemoveBridge(TileIndex tile)
 {
 	EnforceCompanyModeValid(false);
 	EnforcePrecondition(false, IsBridgeTile(tile));
-	return ScriptObject::DoCommand(tile, 0, 0, CMD_LANDSCAPE_CLEAR);
+	return ScriptObject::Command<Commands::LandscapeClear>::Do(tile);
 }
 
-/* static */ std::optional<std::string> ScriptBridge::GetName(BridgeID bridge_id, ScriptVehicle::VehicleType vehicle_type)
+/* static */ std::optional<std::string> ScriptBridge::GetName(BridgeType bridge_type, ScriptVehicle::VehicleType vehicle_type)
 {
 	EnforcePrecondition(std::nullopt, vehicle_type == ScriptVehicle::VT_ROAD || vehicle_type == ScriptVehicle::VT_RAIL || vehicle_type == ScriptVehicle::VT_WATER);
-	if (!IsValidBridge(bridge_id)) return std::nullopt;
+	if (!IsValidBridge(bridge_type)) return std::nullopt;
 
-	return GetString(vehicle_type == ScriptVehicle::VT_WATER ? STR_LAI_BRIDGE_DESCRIPTION_AQUEDUCT : ::GetBridgeSpec(bridge_id)->transport_name[vehicle_type]);
+	return ::StrMakeValid(::GetString(vehicle_type == ScriptVehicle::VT_WATER ? STR_LAI_BRIDGE_DESCRIPTION_AQUEDUCT : ::GetBridgeSpec(bridge_type)->transport_name[vehicle_type]), {});
 }
 
-/* static */ SQInteger ScriptBridge::GetMaxSpeed(BridgeID bridge_id)
+/* static */ SQInteger ScriptBridge::GetMaxSpeed(BridgeType bridge_type)
 {
-	if (!IsValidBridge(bridge_id)) return -1;
+	if (!IsValidBridge(bridge_type)) return -1;
 
-	return ::GetBridgeSpec(bridge_id)->speed; // km-ish/h
+	return ::GetBridgeSpec(bridge_type)->speed; // km-ish/h
 }
 
-/* static */ Money ScriptBridge::GetPrice(BridgeID bridge_id, SQInteger length)
+/* static */ Money ScriptBridge::GetPrice(BridgeType bridge_type, SQInteger length)
 {
-	if (!IsValidBridge(bridge_id)) return -1;
+	if (!IsValidBridge(bridge_type)) return -1;
 
 	length = Clamp<SQInteger>(length, 0, INT32_MAX);
 
-	return ::CalcBridgeLenCostFactor(length) * _price[PR_BUILD_BRIDGE] * ::GetBridgeSpec(bridge_id)->price >> 8;
+	return ::CalcBridgeLenCostFactor(length) * _price[Price::BuildBridge] * ::GetBridgeSpec(bridge_type)->price >> 8;
 }
 
-/* static */ SQInteger ScriptBridge::GetMaxLength(BridgeID bridge_id)
+/* static */ SQInteger ScriptBridge::GetMaxLength(BridgeType bridge_type)
 {
-	if (!IsValidBridge(bridge_id)) return -1;
+	if (!IsValidBridge(bridge_type)) return -1;
 
-	return std::min<SQInteger>(::GetBridgeSpec(bridge_id)->max_length, _settings_game.construction.max_bridge_length) + 2;
+	return std::min<SQInteger>(::GetBridgeSpec(bridge_type)->max_length, _settings_game.construction.max_bridge_length) + 2;
 }
 
-/* static */ SQInteger ScriptBridge::GetMinLength(BridgeID bridge_id)
+/* static */ SQInteger ScriptBridge::GetMinLength(BridgeType bridge_type)
 {
-	if (!IsValidBridge(bridge_id)) return -1;
+	if (!IsValidBridge(bridge_type)) return -1;
 
-	return static_cast<SQInteger>(::GetBridgeSpec(bridge_id)->min_length) + 2;
+	return static_cast<SQInteger>(::GetBridgeSpec(bridge_type)->min_length) + 2;
 }
 
 /* static */ TileIndex ScriptBridge::GetOtherBridgeEnd(TileIndex tile)

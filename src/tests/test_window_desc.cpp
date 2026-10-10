@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file test_window_desc.cpp Test WindowDescs for valid widget parts. */
@@ -17,6 +17,8 @@
 #include "../core/format.hpp"
 
 #include <set>
+
+#include "../safeguards.h"
 
 /**
  * List of WindowDescs. Defined in window.cpp but not exposed as this unit-test is the only other place that needs it.
@@ -69,7 +71,7 @@ TEST_CASE("WindowDesc - ini_key validity")
 static bool IsNWidgetTreeClosed(std::span<const NWidgetPart> nwid_parts)
 {
 	int depth = 0;
-	for (const auto nwid : nwid_parts) {
+	for (const auto &nwid : nwid_parts) {
 		if (IsContainerWidgetType(nwid.type)) ++depth;
 		if (nwid.type == WPT_ENDCONTAINER) --depth;
 	}

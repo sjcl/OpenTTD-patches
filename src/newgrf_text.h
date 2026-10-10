@@ -2,10 +2,10 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
-/** @file newgrf_text.h Header of Action 04 "universal holder" structure and functions */
+/** @file newgrf_text.h Header of Action 04 "universal holder" structure and functions. */
 
 #ifndef NEWGRF_TEXT_H
 #define NEWGRF_TEXT_H
@@ -15,30 +15,25 @@
 #include "table/control_codes.h"
 #include <string>
 
-StringID AddGRFString(uint32_t grfid, uint16_t stringid, uint8_t langid, bool new_scheme, bool allow_newlines, std::string_view text_to_add, StringID def_string);
-StringID GetGRFStringID(uint32_t grfid, StringID stringid);
-StringID GetGRFStringID(const struct GRFFile *grf, StringID stringid);
-const char *GetGRFStringFromGRFText(const GRFTextList &text_list);
-const char *GetGRFStringFromGRFText(const GRFTextWrapper &text);
+StringID AddGRFString(GrfID grfid, GRFStringID stringid, uint8_t langid, bool new_scheme, bool allow_newlines, std::string_view text_to_add, StringID def_string);
+StringID GetGRFStringID(GrfID grfid, GRFStringID stringid);
+StringID GetGRFStringID(const struct GRFFile *grf, GRFStringID stringid);
+std::optional<std::string_view> GetGRFStringFromGRFText(const GRFTextList &text_list);
+std::optional<std::string_view> GetGRFStringFromGRFText(const GRFTextWrapper &text);
 const char *GetDefaultLangGRFStringFromGRFText(const GRFTextList &text_list);
 const char *GetDefaultLangGRFStringFromGRFText(const GRFTextWrapper &text);
-const char *GetGRFStringPtr(uint32_t stringid);
+std::string_view GetGRFStringPtr(StringIndexInTab stringid);
 void CleanUpStrings();
-void SetCurrentGrfLangID(uint8_t language_id);
-std::string TranslateTTDPatchCodes(uint32_t grfid, uint8_t language_id, bool allow_newlines, std::string_view str, StringControlCode byte80 = SCC_NEWGRF_PRINT_WORD_STRING_ID);
-void AddGRFTextToList(GRFTextList &list, uint8_t langid, uint32_t grfid, bool allow_newlines, std::string_view text_to_add);
-void AddGRFTextToList(GRFTextWrapper &list, uint8_t langid, uint32_t grfid, bool allow_newlines, std::string_view text_to_add);
+std::string TranslateTTDPatchCodes(GrfID grfid, GRFLanguage language_id, bool allow_newlines, std::string_view str, StringControlCode byte80 = SCC_NEWGRF_PRINT_WORD_STRING_ID);
+void AddGRFTextToList(GRFTextList &list, GRFLanguage langid, GrfID grfid, bool allow_newlines, std::string_view text_to_add);
+void AddGRFTextToList(GRFTextWrapper &list, GRFLanguage langid, GrfID grfid, bool allow_newlines, std::string_view text_to_add);
 void AddGRFTextToList(GRFTextWrapper &list, std::string_view text_to_add);
 
 bool CheckGrfLangID(uint8_t lang_id, uint8_t grf_version);
 
-void StartTextRefStackUsage(const struct GRFFile *grffile, uint8_t numEntries, const uint32_t *values = nullptr);
-void StopTextRefStackUsage();
-bool UsingNewGRFTextStack();
-struct TextRefStack *CreateTextRefStackBackup();
-void RestoreTextRefStackBackup(struct TextRefStack *backup);
+std::vector<StringParameter> GetGRFStringTextStackParameters(const struct GRFFile *grffile, StringID stringid, std::span<const int32_t> textstack);
+std::string GetGRFStringWithTextStack(const struct GRFFile *grffile, GRFStringID grfstringid, std::span<const int32_t> textstack);
 
-class StringParameters;
-char32_t RemapNewGRFStringControlCode(char32_t scc, class StringBuilder builder, const char **str, StringParameters &parameters, bool modify_parameters);
+char32_t RemapNewGRFStringControlCode(char32_t scc, class StringConsumer &consumer);
 
 #endif /* NEWGRF_TEXT_H */

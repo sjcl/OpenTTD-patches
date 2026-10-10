@@ -30,3 +30,7 @@ STR_TRADITIONAL_AIRCRAFT_NAME                                   :Ajruplan {COMMA
 # Modifier key toggle window
 
 # Network set password
+
+# JSON messages
+
+STR_INTRO_CAPTION_TRADITIONAL                                   :{WHITE}OpenTTD {REV}

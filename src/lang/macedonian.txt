@@ -13,7 +13,7 @@
 # This file is part of OpenTTD.
 # OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
 # OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-# See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+# See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
 
 
 ##id 0x0000
@@ -361,7 +361,6 @@ STR_SCENEDIT_FILE_MENU_QUIT                                     :Напушти
 
 
 # Settings menu
-###length 16
 STR_SETTINGS_MENU_GAME_OPTIONS                                  :игра опции
 STR_SETTINGS_MENU_NEWGRF_SETTINGS                               :NewGRF подесувања
 STR_SETTINGS_MENU_TRANSPARENCY_OPTIONS                          :транспарентност опции
@@ -522,6 +521,8 @@ STR_GRAPH_COMPANY_PERFORMANCE_RATINGS_CAPTION                   :{WHITE}Перф
 STR_GRAPH_COMPANY_VALUES_CAPTION                                :{WHITE}компанијата вредности
 
 
+
+
 STR_GRAPH_CARGO_PAYMENT_RATES_CAPTION                           :{WHITE}Карго плаќање цени
 STR_GRAPH_CARGO_PAYMENT_RATES_TITLE                             :{TINY_FONT}{BLACK}Плаќање за доставување 10 единици (или 10.000 литри) на товар на растојание од 20 квадрати
 STR_GRAPH_CARGO_ENABLE_ALL                                      :{TINY_FONT}{BLACK}им овозможи на сите
@@ -530,6 +531,7 @@ STR_GRAPH_CARGO_TOOLTIP_ENABLE_ALL                              :{BLACK}Прик
 STR_GRAPH_CARGO_TOOLTIP_DISABLE_ALL                             :{BLACK}Покажи нема Товарот на товар плаќање стапки графикон
 STR_GRAPH_CARGO_PAYMENT_TOGGLE_CARGO                            :{BLACK}Вклучи графикон за карго тип за вклучување / исклучување
 STR_GRAPH_CARGO_PAYMENT_CARGO                                   :{TINY_FONT}{BLACK}{STRING}
+
 
 
 STR_GRAPH_PERFORMANCE_DETAIL_TOOLTIP                            :{BLACK}Прикажи детални перформанси рејтингот
@@ -713,7 +715,6 @@ STR_MESSAGE_HISTORY_TOOLTIP                                     :{BLACK}Лист
 STR_MESSAGE_NEWS_FORMAT                                         :{STRING}  -  {STRING}
 
 STR_NEWS_MESSAGE_CAPTION                                        :{WHITE}Порака
-STR_NEWS_CUSTOM_ITEM                                            :{BIG_FONT}{BLACK}{STRING}
 
 STR_NEWS_FIRST_TRAIN_ARRIVAL                                    :{BIG_FONT}{BLACK}Граѓаните го слават. . .{}Првиот воз пристигнува во {STATION}!
 STR_NEWS_FIRST_BUS_ARRIVAL                                      :{BIG_FONT}{BLACK}граѓаните го слават . . .{}Прво автобус пристигнува во {STATION}!
@@ -765,11 +766,13 @@ STR_GAME_OPTIONS_CAPTION                                        :{WHITE}Опци
 
 
 
-###length 44
+
+###length 46
 
 
 # Autosave dropdown
 ###length 5
+
 
 
 
@@ -822,7 +825,7 @@ STR_SEA_LEVEL_CUSTOM_PERCENTAGE                                 :Прилаго�
 ###length 4
 
 
-# Settings tree window
+# Settings tree in the Game Options window
 
 
 STR_CONFIG_SETTING_TYPE_DROPDOWN_ALL                            :Сите подесувања
@@ -845,6 +848,7 @@ STR_CONFIG_SETTING_REALISTIC                                    :Реален
 ###setting-zero-is-special
 
 
+###length 3
 
 
 
@@ -853,8 +857,11 @@ STR_CONFIG_SETTING_REALISTIC                                    :Реален
 
 ###setting-zero-is-special
 
+###length 3
 
 
+
+###length 3
 
 
 
@@ -923,6 +930,8 @@ STR_CONFIG_SETTING_INFRASTRUCTURE_MAINTENANCE                   :Инфраст�
 ###setting-zero-is-special
 
 
+###setting-zero-is-special
+
 
 ###length 2
 
@@ -945,6 +954,8 @@ STR_CONFIG_SETTING_GRAPH_LINE_THICKNESS                         :Дебелин�
 
 ###length 4
 
+###length 4
+
 
 
 ###length 3
@@ -964,6 +975,7 @@ STR_CONFIG_SETTING_GRAPH_LINE_THICKNESS                         :Дебелин�
 ###length 4
 
 ###length 4
+
 
 
 
@@ -1033,6 +1045,7 @@ STR_CONFIG_SETTING_SCRIPT_MAX_OPCODES                           :#ОПкодов
 
 
 
+
 STR_CONFIG_SETTING_NEWS_ARRIVAL_FIRST_VEHICLE_OWN               :Пристигнување на првото возило на станицата на играчот: {STRING}
 
 STR_CONFIG_SETTING_NEWS_ARRIVAL_FIRST_VEHICLE_OTHER             :Пристигнување на прво возило на конкурентска станица: {STRING}
@@ -1071,6 +1084,8 @@ STR_CONFIG_SETTING_NEWS_MESSAGES_FULL                           :целосна
 
 ###setting-zero-is-special
 
+###length 2
+
 ###length 3
 
 
@@ -1084,6 +1099,8 @@ STR_CONFIG_SETTING_NEWS_MESSAGES_FULL                           :целосна
 
 STR_CONFIG_SETTING_ALLOW_TOWN_LEVEL_CROSSINGS                   :Градови смеете да изгради ниво премини: {STRING}
 
+
+###length 3
 
 ###length 3
 
@@ -1126,7 +1143,7 @@ STR_CONFIG_SETTING_ZOOM_LVL_OUT_8X                              :8x
 
 ###length 3
 
-###length 3
+###length 4
 
 
 
@@ -1145,9 +1162,8 @@ STR_CONFIG_ERROR_INVALID_GRF_INCOMPATIBLE                       :некомпа�
 STR_CONFIG_ERROR_INVALID_GRF_UNKNOWN                            :непознат
 STR_CONFIG_ERROR_INVALID_SAVEGAME_COMPRESSION_LEVEL             :{WHITE}... ниво на компресија '{STRING}' не е валидна
 STR_CONFIG_ERROR_INVALID_SAVEGAME_COMPRESSION_ALGORITHM         :{WHITE}... спаси играта формат '{STRING}' не е достапен. се врати на '{STRING}'
-STR_CONFIG_ERROR_OUT_OF_MEMORY                                  :{WHITE}Нема доволно меморија
 
-# Video initalization errors
+# Video initialization errors
 
 # Intro window
 STR_INTRO_CAPTION                                               :{WHITE}OpenTTD {REV}
@@ -1205,7 +1221,7 @@ STR_NETWORK_SERVER_LIST_MAP_SIZE_SHORT                          :{BLACK}{COMMA}x
 # Network connecting window
 
 
-###length 8
+###length 6
 
 
 
@@ -1234,7 +1250,7 @@ STR_NETWORK_ERROR_TOO_MANY_COMMANDS                             :{WHITE}Ти б�
 STR_NETWORK_ERROR_CLIENT_TOO_MANY_COMMANDS                      :испраќа премногу команди
 
 # Network related errors
-STR_NETWORK_SERVER_MESSAGE                                      :*** {1:STRING}
+STR_NETWORK_SERVER_MESSAGE                                      :*** {STRING}
 
 ###length 12
 STR_NETWORK_SERVER_MESSAGE_GAME_STILL_PAUSED_4                  :Игра уште пауза ({STRING}, {STRING}, {STRING}, {STRING})
@@ -1288,6 +1304,11 @@ STR_RAIL_TOOLBAR_TOOLTIP_BUILD_AUTORAIL                         :{BLACK}Изгр
 # Rail waypoint construction window
 
 # Rail station construction window
+
+
+
+
+
 
 
 
@@ -1368,6 +1389,7 @@ STR_FOUND_TOWN_RANDOM_TOWN_TOOLTIP                              :{BLACK}Игра
 
 
 
+
 # Fund new industry window
 STR_FUND_INDUSTRY_BUILD_NEW_INDUSTRY                            :{BLACK}Изгради
 
@@ -1395,7 +1417,7 @@ STR_LAND_AREA_INFORMATION_LOCAL_AUTHORITY_NONE                  :Ништо
 STR_LAND_AREA_INFORMATION_BUILD_DATE                            :{BLACK}Изградба: {LTBLUE}{DATE_LONG}
 STR_LAND_AREA_INFORMATION_AIRPORT_CLASS                         :{BLACK}Аеродромот класа: {LTBLUE}{STRING}
 STR_LAND_AREA_INFORMATION_AIRPORT_NAME                          :{BLACK}Името на аеродромот: {LTBLUE}{STRING}
-STR_LAND_AREA_INFORMATION_CARGO_ACCEPTED                        :{BLACK}Прифатен товар: {LTBLUE}
+STR_LAND_AREA_INFORMATION_CARGO_ACCEPTED                        :{BLACK}Прифатен товар: {LTBLUE}{STRING}
 STR_LAND_AREA_INFORMATION_CARGO_EIGHTS                          :({COMMA}/8 {STRING})
 
 # Description of land area of different tiles
@@ -1449,6 +1471,8 @@ STR_MAPGEN_BY                                                   :{BLACK}*
 
 # Strings for map borders at game generation
 
+###length 3
+
 
 
 # SE Map generation
@@ -1485,7 +1509,6 @@ STR_NEWGRF_SETTINGS_MIN_VERSION                                 :{BLACK}Мин. 
 
 # NewGRF parameters window
 STR_NEWGRF_PARAMETERS_CAPTION                                   :{WHITE}Промена НовGRF параметри
-STR_NEWGRF_PARAMETERS_CLOSE                                     :{BLACK}Затвори
 STR_NEWGRF_PARAMETERS_RESET                                     :{BLACK}Ресетирај
 STR_NEWGRF_PARAMETERS_RESET_TOOLTIP                             :{BLACK}Наместете ги сите параметри на нивните стандардни вредности
 STR_NEWGRF_PARAMETERS_DEFAULT_NAME                              :Параметар {NUM}
@@ -1565,6 +1588,7 @@ STR_GOALS_NONE                                                  :{ORANGE}- Ни�
 STR_GOALS_TOOLTIP_CLICK_ON_SERVICE_TO_CENTER                    :{BLACK}Кликнете на цел центар главниот приказ на индустријата / град / плочка. Ctrl + Кликнете отвора нов прозорец на индустријата / град / плочка Локација
 
 # Goal question window
+###length 4
 
 # Goal Question button list
 ###length 18
@@ -1695,6 +1719,8 @@ STR_BUY_VEHICLE_AIRCRAFT_CAPTION                                :Нов авио
 
 STR_PURCHASE_INFO_AIRCRAFT_RANGE                                :{BLACK}Опсег: {GOLD}{COMMA} плочки
 
+# Vehicle sort details
+
 ###length 3
 
 ###length VEHICLE_TYPES
@@ -1766,6 +1792,7 @@ STR_DEPOT_AIRCRAFT_LOCATION_TOOLTIP                             :{BLACK}Цент
 
 
 # Engine preview window
+
 
 
 
@@ -1849,7 +1876,7 @@ STR_VEHICLE_DETAIL_TAB_INFORMATION                              :{BLACK}Инфо
 STR_VEHICLE_DETAIL_TAB_CAPACITIES                               :{BLACK}Капацитети
 STR_VEHICLE_DETAIL_TAB_TOTAL_CARGO                              :{BLACK}Вкупно Товар
 
-STR_VEHICLE_DETAILS_TRAIN_ARTICULATED_RV_CAPACITY               :{BLACK}Капацитет: {LTBLUE}
+STR_VEHICLE_DETAILS_TRAIN_ARTICULATED_RV_CAPACITY               :{BLACK}Капацитет: {LTBLUE}{STRING}
 
 # Vehicle refit
 STR_REFIT_TITLE                                                 :{GOLD}Одбери тип на товар за носење:
@@ -1885,7 +1912,7 @@ STR_ORDER_INDEX                                                 :{COMMA}:{NBSP}
 
 
 # Conditional order variables, must follow order of OrderConditionVariable enum
-###length 8
+###length 9
 ###next-name-looks-similar
 
 
@@ -1900,12 +1927,11 @@ STR_ORDER_INDEX                                                 :{COMMA}:{NBSP}
 ###length 3
 ###next-name-looks-similar
 
-STR_ORDER_GO_TO_NEAREST_DEPOT_FORMAT                            :{STRING} {STRING} {STRING}
 STR_ORDER_GO_TO_DEPOT_FORMAT                                    :{STRING} {DEPOT}
 
 
 
-STR_ORDER_GO_TO_STATION                                         :{STRING} {STATION} {STRING}
+STR_ORDER_GO_TO_STATION                                         :{STRING} {STATION}
 
 
 
@@ -1918,7 +1944,6 @@ STR_ORDER_OUT_OF_RANGE                                          :{RED} (След
 
 
 # Time table window
-
 
 
 
@@ -1994,7 +2019,6 @@ STR_ERROR_BMPMAP_IMAGE_TYPE                                     :{WHITE}... мо
 
 # Error message titles
 STR_ERROR_MESSAGE_CAPTION                                       :{YELLOW}Порака
-STR_ERROR_MESSAGE_CAPTION_OTHER_COMPANY                         :{YELLOW}Порака од {STRING}
 
 # Generic construction errors
 STR_ERROR_OFF_EDGE_OF_MAP                                       :{WHITE}Надвор од работ на мапата
@@ -2005,7 +2029,6 @@ STR_ERROR_CAN_T_DO_THIS                                         :{WHITE}Ова �
 STR_ERROR_CAN_T_CLEAR_THIS_AREA                                 :{WHITE}Не може да се исчисти оваа област...
 STR_ERROR_SITE_UNSUITABLE                                       :{WHITE}... несоодветно место
 STR_ERROR_OWNED_BY                                              :{WHITE}... во сопственост на {STRING}
-STR_ERROR_GENERIC_OBJECT_IN_THE_WAY                             :{WHITE}{1:STRING} во начинот на
 
 # Local authority errors
 
@@ -2019,7 +2042,6 @@ STR_ERROR_ALREADY_LEVELLED                                      :{WHITE}... ве
 STR_ERROR_CAN_T_GENERATE_TOWN                                   :{WHITE}Не може да се направи град
 STR_ERROR_CAN_T_FOUND_TOWN_HERE                                 :{WHITE}Овде не може да се изгради град...
 STR_ERROR_CAN_T_EXPAND_TOWN                                     :{WHITE}Не може да се прошири градот...
-STR_ERROR_TOO_CLOSE_TO_EDGE_OF_MAP_SUB                          :{WHITE}... премногу блиску до крајот на мапата
 STR_ERROR_TOO_CLOSE_TO_ANOTHER_TOWN                             :{WHITE}... премногу блиску до друг град
 STR_ERROR_TOO_MANY_TOWNS                                        :{WHITE}... премногу градови
 STR_ERROR_STATUE_NO_SUITABLE_PLACE                              :{WHITE}... не постои такво место за статуа во центарот на градот
@@ -2115,6 +2137,10 @@ STR_ERROR_CAN_T_RENAME_AIRCRAFT_TYPE                            :{WHITE}Не м�
 ###length VEHICLE_TYPES
 STR_ERROR_CAN_T_SELL_AIRCRAFT                                   :{WHITE}Не може да се продаде авионот...
 
+###length VEHICLE_TYPES
+
+###length VEHICLE_TYPES
+
 STR_ERROR_TOO_MANY_VEHICLES_IN_GAME                             :{WHITE}Има премногу возила во играта
 STR_ERROR_CAN_T_CHANGE_SERVICING                                :{WHITE}Не може да се смени интервалот за сервисирање...
 
@@ -2200,18 +2226,7 @@ STR_COMPANY_SOMEONE                                             :некој
 
 # Viewport strings
 STR_VIEWPORT_TOWN_POP                                           :{WHITE}{TOWN} ({COMMA})
-STR_VIEWPORT_TOWN                                               :{WHITE}{TOWN}
-STR_VIEWPORT_TOWN_TINY_BLACK                                    :{TINY_FONT}{BLACK}{TOWN}
-STR_VIEWPORT_TOWN_TINY_WHITE                                    :{TINY_FONT}{WHITE}{TOWN}
-
-STR_VIEWPORT_SIGN_SMALL_BLACK                                   :{TINY_FONT}{BLACK}{SIGN}
-STR_VIEWPORT_SIGN_SMALL_WHITE                                   :{TINY_FONT}{WHITE}{SIGN}
-
 STR_VIEWPORT_STATION                                            :{STATION} {STATION_FEATURES}
-STR_VIEWPORT_STATION_TINY                                       :{TINY_FONT}{STATION}
-
-STR_VIEWPORT_WAYPOINT                                           :{WAYPOINT}
-STR_VIEWPORT_WAYPOINT_TINY                                      :{TINY_FONT}{WAYPOINT}
 
 # Simple strings to get specific types of data
 STR_COMPANY_NAME                                                :{COMPANY}
@@ -2262,3 +2277,4 @@ STR_PLANE                                                       :{BLACK}{PLANE}
 STR_SHIP                                                        :{BLACK}{SHIP}
 
 STR_TOOLBAR_RAILTYPE_VELOCITY                                   :{STRING} ({VELOCITY})
+

@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file signal_func.h Functions related to signals. */
@@ -15,7 +15,6 @@
 #include "tile_type.h"
 #include "direction_type.h"
 #include "company_type.h"
-#include "settings_type.h"
 #include "vehicle_type.h"
 
 extern uint8_t _extra_aspects;
@@ -44,100 +43,107 @@ extern bool _signal_sprite_oversized;
 /**
  * Maps a trackdir to the bit that stores its status in the map arrays, in the
  * direction along with the trackdir.
+ * @param trackdir The track dir to consider.
+ * @return Bitmask of the storage of the signal in the associated trackdir in the map array.
  */
 inline uint8_t SignalAlongTrackdir(Trackdir trackdir)
 {
-	extern const uint8_t _signal_along_trackdir[TRACKDIR_END];
+	extern const TrackdirIndexArray<uint8_t> _signal_along_trackdir;
 	return _signal_along_trackdir[trackdir];
 }
 
 /**
  * Maps a trackdir to the bit that stores its status in the map arrays, in the
  * direction against the trackdir.
+ * @param trackdir The track dir to consider.
+ * @return Bitmask of the storage of the signal in the associated trackdir in the map array.
  */
 inline uint8_t SignalAgainstTrackdir(Trackdir trackdir)
 {
-	extern const uint8_t _signal_against_trackdir[TRACKDIR_END];
+	extern const TrackdirIndexArray<uint8_t> _signal_against_trackdir;
 	return _signal_against_trackdir[trackdir];
 }
 
 /**
  * Maps a Track to the bits that store the status of the two signals that can
  * be present on the given track.
+ * @param track The track to consider.
+ * @return Bitmask of the storage of the signal in the associated track in the map array.
  */
 inline uint8_t SignalOnTrack(Track track)
 {
-	extern const uint8_t _signal_on_track[TRACK_END];
+	extern const TrackIndexArray<uint8_t> _signal_on_track;
 	return _signal_on_track[track];
 }
 
 /// Is a given signal type a presignal entry signal?
 inline bool IsEntrySignal(SignalType type)
 {
-	return type == SIGTYPE_ENTRY || type == SIGTYPE_COMBO || type == SIGTYPE_PROG;
+	return type == SignalType::Entry || type == SignalType::Combo || type == SignalType::Prog;
 }
 
 /// Is a given signal type a presignal exit signal?
 inline bool IsExitSignal(SignalType type)
 {
-	return type == SIGTYPE_EXIT || type == SIGTYPE_COMBO || type == SIGTYPE_PROG;
+	return type == SignalType::Exit || type == SignalType::Combo || type == SignalType::Prog;
 }
 
 /// Is a given signal type a presignal combo signal?
 inline bool IsComboSignal(SignalType type)
 {
-	return type == SIGTYPE_COMBO || type == SIGTYPE_PROG;
+	return type == SignalType::Combo || type == SignalType::Prog;
 }
 
 /// Is a given signal type a PBS signal?
 inline bool IsPbsSignal(SignalType type)
 {
-	return _settings_game.vehicle.train_braking_model == TBM_REALISTIC || type == SIGTYPE_PBS || type == SIGTYPE_PBS_ONEWAY || type == SIGTYPE_NO_ENTRY;
+	extern SignalTypeMask _pbs_signal_types;
+	return _pbs_signal_types.Test(type);
 }
 
 /// Is a given signal type a PBS signal?
 inline bool IsPbsSignalNonExtended(SignalType type)
 {
-	return type == SIGTYPE_PBS || type == SIGTYPE_PBS_ONEWAY;
+	return type == SignalType::Path || type == SignalType::PathOneWay;
 }
 
 /// Is this a programmable pre-signal?
 inline bool IsProgrammableSignal(SignalType type)
 {
-	return type == SIGTYPE_PROG;
+	return type == SignalType::Prog;
 }
 
 /// Is this a programmable pre-signal?
 inline bool IsNoEntrySignal(SignalType type)
 {
-	return type == SIGTYPE_NO_ENTRY;
+	return type == SignalType::NoEntry;
 }
 
 /** One-way signals can't be passed the 'wrong' way. */
 inline bool IsOnewaySignal(SignalType type)
 {
-	return type != SIGTYPE_PBS && type != SIGTYPE_NO_ENTRY;
+	return type != SignalType::Path && type != SignalType::NoEntry;
 }
 
 /// Is this signal type unsuitable for realistic braking?
 inline bool IsSignalTypeUnsuitableForRealisticBraking(SignalType type)
 {
-	return type == SIGTYPE_ENTRY || type == SIGTYPE_EXIT || type == SIGTYPE_COMBO || type == SIGTYPE_PROG;
+	return type == SignalType::Entry || type == SignalType::Exit || type == SignalType::Combo || type == SignalType::Prog;
 }
 
 /// Does a given signal have a PBS sprite?
 inline bool IsSignalSpritePBS(SignalType type)
 {
-	return type >= SIGTYPE_FIRST_PBS_SPRITE;
+	return type >= SignalType::Path;
 }
 
 SignalType NextSignalType(SignalType cur, SignalCycleGroups which_signals);
 
 /** State of the signal segment */
-enum SigSegState {
-	SIGSEG_FREE,    ///< Free and has no pre-signal exits or at least one green exit
-	SIGSEG_FULL,    ///< Occupied by a train
-	SIGSEG_PBS,     ///< Segment is a PBS segment
+enum class SigSegState : uint8_t {
+	Free, ///< Free and has no pre-signal exits or at least one green exit
+	Full, ///< Occupied by a train
+	Path, ///< Segment is a path segment
 };
 
 /** Checks for any data attached to any signals, and removes it. Call when performing
@@ -153,7 +159,7 @@ void CheckRemoveSignalsFromTile(TileIndex tile);
 void CheckRemoveSignal(TileIndex tile, Track track);
 
 /** Adds a signal dependency
- *  The signal identified by @p dep will be marked as dependend upon
+ *  The signal identified by @p dep will be marked as dependent upon
  *  the signal identified by @p on
  */
 void AddSignalDependency(SignalReference on, SignalReference dep);
@@ -210,5 +216,7 @@ void UpdateRailSignalSpecialPropagationFlag(TileIndex tile, Track track, const s
 void UpdateTunnelBridgeSignalSpecialPropagationFlag(TileIndex tile, bool update_signal);
 void UpdateTunnelBridgeSignalSpecialPropagationFlag(TileIndex tile, Track track, const TraceRestrictProgram *prog, bool update_signal);
 void UpdateAllSignalsSpecialPropagationFlag();
+
+void UpdateRealisticBrakingTypeCache();
 
 #endif /* SIGNAL_FUNC_H */

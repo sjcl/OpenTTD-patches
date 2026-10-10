@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file signs_sl.cpp Code handling saving and loading of economy data */
@@ -12,6 +12,7 @@
 #include "../fios.h"
 
 #include "saveload.h"
+#include "saveload_func.h"
 
 #include "../safeguards.h"
 
@@ -33,7 +34,7 @@ static void Load_SIGN()
 {
 	int index;
 	while ((index = SlIterateArray()) != -1) {
-		Sign *si = new (index) Sign();
+		Sign *si = Sign::CreateAtIndex(SignID(index));
 		SlObject(si, _sign_desc);
 		/* Before version 6.1, signs didn't have owner.
 		 * Before version 83, invalid signs were determined by si->str == 0.
@@ -46,7 +47,7 @@ static void Load_SIGN()
 		}
 
 		/* Signs placed in scenario editor shall now be OWNER_DEITY */
-		if (IsSavegameVersionBefore(SLV_171) && si->owner == OWNER_NONE && _file_to_saveload.abstract_ftype == FT_SCENARIO) {
+		if (IsSavegameVersionBefore(SLV_171) && si->owner == OWNER_NONE && _file_to_saveload.ftype.abstract == AbstractFileType::Scenario) {
 			si->owner = OWNER_DEITY;
 		}
 	}

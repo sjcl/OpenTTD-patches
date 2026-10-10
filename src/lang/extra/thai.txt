@@ -14,6 +14,8 @@ STR_CONFIG_SETTING_TIMETABLE_IN_TICKS_HELPTEXT                  :แสดงเ
 
 STR_TRANSPARENT_LOADING_TOOLTIP                                 :{BLACK}เปิด/ปิด การโปร่งใสของตัวบอกการบรรทุกของ. กด Ctrl+Click สำหรับการล็อก
 
+STR_BUILD_SIGNAL_TOGGLE_ADVANCED_SIGNAL_TOOLTIP                 :{BLACK}แสดงประเภทเสาสัญญาณแบบขั้นสูง
+
 # Tracerestrict GUI
 
 # Programmable Pre-Signals
@@ -90,3 +92,9 @@ STR_COMPANY_PASSWORD_MAKE_DEFAULT_TOOLTIP                       :{BLACK}ใช�
 STR_COMPANY_VIEW_PASSWORD                                       :{BLACK}พาสเวิร์ด
 STR_COMPANY_VIEW_PASSWORD_TOOLTIP                               :{BLACK}รหัสผ่านป้องกันบริษัทของคุณจากผู้เล่นที่ไม่ได้รับอนุญาตให้เข้าร่วม
 STR_COMPANY_VIEW_SET_PASSWORD                                   :{BLACK}ตั้งพาสเวิร์ดของบริษัท
+
+# JSON messages
+
+STR_INTRO_NEWGRF_SETTINGS                                       :{BLACK}การตั้งค่า NewGRF
+STR_INTRO_TOOLTIP_NEWGRF_SETTINGS                               :{BLACK}แสดงการกำหนดค่า NewGRF
+STR_INTRO_CAPTION_TRADITIONAL                                   :{WHITE}OpenTTD {REV}

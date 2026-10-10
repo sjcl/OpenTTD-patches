@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file bridge_signal_map.h Map accessor functions for bridge signal simulation. */
@@ -45,7 +45,7 @@ enum {
 inline SignalState GetBridgeEntranceSimulatedSignalState(TileIndex t, uint16_t signal)
 {
 	if (signal < BRIDGE_M2_SIGNAL_STATE_COUNT) {
-		return GB(_m[t].m2, signal + BRIDGE_M2_SIGNAL_STATE_OFFSET, 1) ? SIGNAL_STATE_RED : SIGNAL_STATE_GREEN;
+		return GB(_m[t].m2, signal + BRIDGE_M2_SIGNAL_STATE_OFFSET, 1) ? SignalState::Red : SignalState::Green;
 	} else {
 		return GetBridgeEntranceSimulatedSignalStateExtended(t, signal);
 	}
@@ -56,7 +56,7 @@ void SetBridgeEntranceSimulatedSignalStateExtended(TileIndex t, uint16_t signal,
 inline void SetBridgeEntranceSimulatedSignalState(TileIndex t, uint16_t signal, SignalState state)
 {
 	if (signal < BRIDGE_M2_SIGNAL_STATE_COUNT) {
-		AssignBit(_m[t].m2, signal + BRIDGE_M2_SIGNAL_STATE_OFFSET, state == SIGNAL_STATE_RED);
+		AssignBit(_m[t].m2, signal + BRIDGE_M2_SIGNAL_STATE_OFFSET, state == SignalState::Red);
 	} else {
 		SetBridgeEntranceSimulatedSignalStateExtended(t, signal, state);
 	}

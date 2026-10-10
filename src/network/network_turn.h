@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file network_turn.h Part of the network protocol handling TURN requests. */
@@ -20,14 +20,20 @@ private:
 	std::string connection_string; ///< The connection string of the TURN server we are connecting to.
 
 protected:
-	bool Receive_TURN_ERROR(Packet &p) override;
-	bool Receive_TURN_CONNECTED(Packet &p) override;
+	bool ReceiveServerError(Packet &p) override;
+	bool ReceiveServerConnected(Packet &p) override;
 
 public:
 	std::shared_ptr<TCPConnecter> connecter{}; ///< Connecter instance.
 	bool connect_started = false;      ///< Whether we started the connection.
 
-	ClientNetworkTurnSocketHandler(const std::string &token, uint8_t tracking_number, const std::string &connection_string) : token(token), tracking_number(tracking_number), connection_string(connection_string) {}
+	/**
+	 * Create this handler.
+	 * @param token The unique token of the connection.
+	 * @param tracking_number Tracking number for the connection, from the TURN server.
+	 * @param connection_string The address to connect to.
+	 */
+	ClientNetworkTurnSocketHandler(std::string_view token, uint8_t tracking_number, std::string_view connection_string) : token(token), tracking_number(tracking_number), connection_string(connection_string) {}
 
 	NetworkRecvStatus CloseConnection(bool error = true) override;
 	~ClientNetworkTurnSocketHandler() override;
@@ -36,7 +42,7 @@ public:
 	void Connect();
 	void ConnectFailure();
 
-	static std::unique_ptr<ClientNetworkTurnSocketHandler> Turn(const std::string &token, uint8_t tracking_number, const std::string &ticket, const std::string &connection_string);
+	static std::unique_ptr<ClientNetworkTurnSocketHandler> Turn(std::string_view token, uint8_t tracking_number, std::string_view ticket, std::string_view connection_string);
 };
 
 #endif /* NETWORK_TURN_H */

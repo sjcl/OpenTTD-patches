@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file group.h Base class for groups and group functions. */
@@ -19,18 +19,18 @@
 #include "3rdparty/cpp-btree/btree_map.h"
 #include <string>
 
-typedef Pool<Group, GroupID, 16, 64000> GroupPool;
+using GroupPool = Pool<Group, GroupID, 16>;
 extern GroupPool _group_pool; ///< Pool of groups.
 
 /** Statistics and caches on the vehicles in a group. */
 struct GroupStatistics {
-	Money profit_last_year;                 ///< Sum of profits for all vehicles.
-	Money profit_last_year_min_age;         ///< Sum of profits for vehicles considered for profit statistics.
-	btree::btree_map<EngineID, uint16_t> num_engines; ///< Caches the number of engines of each type the company owns.
-	uint16_t num_vehicle;                   ///< Number of vehicles.
-	uint16_t num_vehicle_min_age;           ///< Number of vehicles considered for profit statistics;
-	bool autoreplace_defined;               ///< Are any autoreplace rules set?
-	bool autoreplace_finished;              ///< Have all autoreplacement finished?
+	Money profit_last_year = 0;                         ///< Sum of profits for all vehicles.
+	Money profit_last_year_min_age = 0;                 ///< Sum of profits for vehicles considered for profit statistics.
+	btree::btree_map<EngineID, uint16_t> num_engines{}; ///< Caches the number of engines of each type the company owns.
+	uint16_t num_vehicle = 0;                           ///< Number of vehicles.
+	uint16_t num_vehicle_min_age = 0;                   ///< Number of vehicles considered for profit statistics;
+	bool autoreplace_defined = false;                   ///< Are any autoreplace rules set?
+	bool autoreplace_finished = false;                  ///< Have all autoreplacement finished?
 
 	void Clear();
 
@@ -64,28 +64,41 @@ struct GroupStatistics {
 	static void UpdateAutoreplace(CompanyID company);
 };
 
-enum GroupFlags : uint8_t {
-	GF_REPLACE_PROTECTION,    ///< If set to true, the global autoreplace has no effect on the group
-	GF_REPLACE_WAGON_REMOVAL, ///< If set, autoreplace will perform wagon removal on vehicles in this group.
-	GF_END,
+/** Configuration flags for a group. */
+enum class GroupFlag : uint8_t {
+	ReplaceProtection = 0, ///< If set, the global autoreplace has no effect on the group
+	ReplaceWagonRemoval = 1, ///< If set, autoreplace will perform wagon removal on vehicles in this group.
 };
+
+/** Bitset of \c GroupFlag elements. */
+using GroupFlags = EnumBitSet<GroupFlag, uint8_t>;
+
+enum class GroupFoldBits : uint8_t {
+	None                = 0,
+	GroupView           = 1U << 0, ///< If set, this group is folded in the group view.
+	TemplateReplaceView = 1U << 1, ///< If set, this group is folded in the template replacement view.
+};
+DECLARE_ENUM_AS_BIT_SET(GroupFoldBits)
 
 /** Group data. */
 struct Group : GroupPool::PoolItem<&_group_pool> {
-	std::string name;           ///< Group Name
-	Owner owner;                ///< Group Owner
-	VehicleType vehicle_type;   ///< Vehicle type of the group
+	std::string name{};                              ///< Group Name
+	Owner owner = INVALID_OWNER;                     ///< Group Owner
+	VehicleType vehicle_type = VehicleType::Invalid; ///< Vehicle type of the group
 
-	uint8_t flags;              ///< Group flags
-	Livery livery;              ///< Custom colour scheme for vehicles in this group
-	GroupStatistics statistics; ///< NOSAVE: Statistics and caches on the vehicles in the group.
+	GroupFlags flags{};           ///< Group flags
+	Livery livery{};              ///< Custom colour scheme for vehicles in this group
+	GroupStatistics statistics{}; ///< NOSAVE: Statistics and caches on the vehicles in the group.
 
-	bool folded;                ///< NOSAVE: Is this group folded in the group view?
+	GroupFoldBits folded_mask = GroupFoldBits::None; ///< NOSAVE: Which views this group is folded in?
 
-	GroupID parent;             ///< Parent group
-	uint16_t number; ///< Per-company group number.
+	GroupID parent = GroupID::Invalid();             ///< Parent group
+	uint16_t number = 0;                             ///< Per-company group number.
 
-	Group(CompanyID owner = INVALID_COMPANY);
+	Group(GroupID index, CompanyID owner = INVALID_OWNER, VehicleType vehicle_type = VehicleType::Invalid) :
+		PoolItemBase(index), owner(owner), vehicle_type(vehicle_type) {}
+
+	bool IsFolded(GroupFoldBits fold_bit) const { return (this->folded_mask & fold_bit) != GroupFoldBits::None; }
 };
 
 
@@ -121,7 +134,5 @@ bool GroupIsInGroup(GroupID search, GroupID group);
 void UpdateCompanyGroupLiveries(const Company *c);
 
 std::string GenerateAutoNameForVehicleGroup(const Vehicle *v);
-
-extern GroupID _new_group_id;
 
 #endif /* GROUP_H */

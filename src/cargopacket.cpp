@@ -2,12 +2,13 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file cargopacket.cpp Implementation of the cargo packets. */
 
 #include "stdafx.h"
+#include "command_type.h"
 #include "debug.h"
 #include "station_base.h"
 #include "core/pool_func.hpp"
@@ -19,7 +20,10 @@
 #include "core/backup_type.hpp"
 #include "string_func.h"
 #include "strings_func.h"
+#include "settings_type.h"
 #include "3rdparty/cpp-btree/btree_map.h"
+
+#include "table/strings.h"
 
 #include <vector>
 
@@ -43,7 +47,7 @@ void ChangeOwnershipOfCargoPacketDeferredPayments(Owner old_owner, Owner new_own
 		uint64_t k = iter->first;
 		if ((CompanyID) GB(k, 24, 8) == old_owner) {
 			if (new_owner != INVALID_OWNER) {
-				SB(k, 24, 8, new_owner);
+				SB(k, 24, 8, new_owner.base());
 				to_merge.push_back({ k, iter->second });
 			}
 			iter = _cargo_packet_deferred_payments.erase(iter);
@@ -58,7 +62,7 @@ void ChangeOwnershipOfCargoPacketDeferredPayments(Owner old_owner, Owner new_own
 
 inline uint64_t CargoPacketDeferredPaymentKey(CargoPacketID id, CompanyID cid, VehicleType type)
 {
-	return (((uint64_t) id) << 32) | (cid << 24) | (type << 22);
+	return (((uint64_t) id.base()) << 32) | (cid.base() << 24) | (to_underlying(type) << 22);
 }
 
 template <typename F>
@@ -85,13 +89,11 @@ std::string DumpCargoPacketDeferredPaymentStats()
 	for (uint i = 0; i < 256; i++) {
 		for (uint j = 0; j < 4; j++) {
 			if (payments[i][j] != 0) {
-				SetDParam(0, i);
-				AppendStringInPlace(buffer, STR_COMPANY_NAME);
+				AppendStringInPlace(buffer, STR_COMPANY_NAME, i);
 				buffer.append(" (");
 				AppendStringInPlace(buffer, STR_REPLACE_VEHICLE_TRAIN + j);
 				buffer.append("): ");
-				SetDParam(0, payments[i][j]);
-				AppendStringInPlace(buffer, STR_JUST_CURRENCY_LONG);
+				AppendStringInPlace(buffer, STR_JUST_CURRENCY_LONG, payments[i][j]);
 				buffer.push_back('\n');
 			}
 		}
@@ -103,26 +105,25 @@ std::string DumpCargoPacketDeferredPaymentStats()
 
 /**
  * Create a new packet for savegame loading.
+ * @param index Index into the cargo packet pool.
  */
-CargoPacket::CargoPacket()
+CargoPacket::CargoPacket(CargoPacketID index) : PoolItemBase(index)
 {
-	this->source_type = SourceType::Industry;
-	this->source_id   = INVALID_SOURCE;
 }
 
 /**
  * Creates a new cargo packet.
  *
+ * @param index Index into the cargo packet pool.
  * @param first_station Source station of the packet.
  * @param count         Number of cargo entities to put in this packet.
- * @param source_type   'Type' of source the packet comes from (for subsidies).
- * @param source_id     Actual source of the packet (for subsidies).
+ * @param source        Source of the packet (for subsidies).
  * @pre count != 0
  */
-CargoPacket::CargoPacket(StationID first_station,uint16_t count, SourceType source_type, SourceID source_id) :
+CargoPacket::CargoPacket(CargoPacketID index, StationID first_station,uint16_t count, Source source) :
+		PoolItemBase(index),
 		count(count),
-		source_id(source_id),
-		source_type(source_type),
+		source(source),
 		first_station(first_station)
 {
 	dbg_assert(count != 0);
@@ -131,13 +132,15 @@ CargoPacket::CargoPacket(StationID first_station,uint16_t count, SourceType sour
 /**
  * Create a new cargo packet. Used for older savegames to load in their partial data.
  *
+ * @param index Index into the cargo packet pool.
  * @param count              Number of cargo entities to put in this packet.
  * @param periods_in_transit Number of cargo aging periods the cargo has been in transit.
  * @param first_station      Station the cargo was initially loaded.
  * @param source_xy          Station location the cargo was initially loaded.
  * @param feeder_share       Feeder share the packet has already accumulated.
  */
-CargoPacket::CargoPacket(uint16_t count, uint16_t periods_in_transit, StationID first_station, TileIndex source_xy, Money feeder_share) :
+CargoPacket::CargoPacket(CargoPacketID index, uint16_t count, uint16_t periods_in_transit, StationID first_station, TileIndex source_xy, Money feeder_share) :
+		PoolItemBase(index),
 		count(count),
 		periods_in_transit(periods_in_transit),
 		feeder_share(feeder_share),
@@ -150,18 +153,19 @@ CargoPacket::CargoPacket(uint16_t count, uint16_t periods_in_transit, StationID 
 /**
  * Creates a new cargo packet. Used when loading or splitting packets.
  *
+ * @param index Index into the cargo packet pool.
  * @param count         Number of cargo entities to put in this packet.
  * @param feeder_share  Feeder share the packet has already accumulated.
  * @param original      The original packet we are splitting.
  */
-CargoPacket::CargoPacket(uint16_t count, Money feeder_share, const CargoPacket &original) :
+CargoPacket::CargoPacket(CargoPacketID index, uint16_t count, Money feeder_share, const CargoPacket &original) :
+		PoolItemBase(index),
 		count(count),
 		periods_in_transit(original.periods_in_transit),
 		feeder_share(feeder_share),
 		source_xy(original.source_xy),
 		travelled(original.travelled),
-		source_id(original.source_id),
-		source_type(original.source_type),
+		source(original.source),
 		first_station(original.first_station),
 		next_hop(original.next_hop)
 {
@@ -191,7 +195,7 @@ CargoPacket *CargoPacket::Split(uint new_size)
 	if (!CargoPacket::CanAllocateItem()) return nullptr;
 
 	Money fs = this->GetFeederShare(new_size);
-	CargoPacket *cp_new = new CargoPacket(new_size, fs, *this);
+	CargoPacket *cp_new = CargoPacket::Create(new_size, fs, *this);
 	this->feeder_share -= fs;
 
 	if (this->flags & CPF_HAS_DEFERRED_PAYMENT) {
@@ -262,19 +266,15 @@ void CargoPacket::PayDeferredPayments()
 {
 	if (this->flags & CPF_HAS_DEFERRED_PAYMENT) {
 		IterateCargoPacketDeferredPayments(this->index, true, [&](Money &payment, CompanyID cid, VehicleType type) {
-			Backup<CompanyID> cur_company(_current_company, cid, FILE_LINE);
-
 			ExpensesType exp;
 			switch (type) {
-				case VEH_TRAIN: exp = EXPENSES_TRAIN_REVENUE; break;
-				case VEH_ROAD: exp = EXPENSES_ROADVEH_REVENUE; break;
-				case VEH_SHIP: exp = EXPENSES_SHIP_REVENUE; break;
-				case VEH_AIRCRAFT: exp = EXPENSES_AIRCRAFT_REVENUE; break;
+				case VehicleType::Train: exp = ExpensesType::TrainRevenue; break;
+				case VehicleType::Road: exp = ExpensesType::RoadVehRevenue; break;
+				case VehicleType::Ship: exp = ExpensesType::ShipRevenue; break;
+				case VehicleType::Aircraft: exp = ExpensesType::AircraftRevenue; break;
 				default: NOT_REACHED();
 			}
-			SubtractMoneyFromCompany(CommandCost(exp, -payment));
-
-			cur_company.Restore();
+			SubtractMoneyFromCompany(cid, CommandCost(exp, -payment));
 		});
 		this->flags &= ~CPF_HAS_DEFERRED_PAYMENT;
 	}
@@ -282,24 +282,23 @@ void CargoPacket::PayDeferredPayments()
 
 /**
  * Invalidates (sets source_id to INVALID_SOURCE) all cargo packets from given source.
- * @param src_type Type of source.
  * @param src Index of source.
  */
-/* static */ void CargoPacket::InvalidateAllFrom(SourceType src_type, SourceID src)
+/* static */ void CargoPacket::InvalidateAllFrom(Source src)
 {
 	for (CargoPacket *cp : CargoPacket::Iterate()) {
-		if (cp->source_type == src_type && cp->source_id == src) cp->source_id = INVALID_SOURCE;
+		if (cp->source == src) cp->source.MakeInvalid();
 	}
 }
 
 /**
- * Invalidates (sets source to INVALID_STATION) all cargo packets from given station.
+ * Invalidates (sets source to StationID::Invalid()) all cargo packets from given station.
  * @param sid Station that gets removed.
  */
 /* static */ void CargoPacket::InvalidateAllFrom(StationID sid)
 {
 	for (CargoPacket *cp : CargoPacket::Iterate()) {
-		if (cp->first_station == sid) cp->first_station = INVALID_STATION;
+		if (cp->first_station == sid) cp->first_station = StationID::Invalid();
 	}
 }
 
@@ -414,16 +413,16 @@ template <class Tinst, class Tcont>
  * @warning After appending this packet may not exist anymore!
  * @note Do not use the cargo packet anymore after it has been appended to this CargoList!
  * @param cp Cargo packet to add.
- * @param action Either MTA_KEEP if you want to add the packet directly or MTA_LOAD
+ * @param action Either MoveToAction::Keep if you want to add the packet directly or MoveToAction::Load
  * if you want to reserve it first.
  * @pre cp != nullptr
- * @pre action == MTA_LOAD || (action == MTA_KEEP && this->designation_counts[MTA_LOAD] == 0)
+ * @pre action == MoveToAction::Load || (action == MoveToAction::Keep && this->designation_counts[MoveToAction::Load] == 0)
  */
 void VehicleCargoList::Append(CargoPacket *cp, MoveToAction action)
 {
 	dbg_assert(cp != nullptr);
-	dbg_assert(action == MTA_LOAD ||
-			(action == MTA_KEEP && this->action_counts[MTA_LOAD] == 0));
+	dbg_assert(action == MoveToAction::Load ||
+			(action == MoveToAction::Keep && this->action_counts[MoveToAction::Load] == 0));
 	this->AddToMeta(cp, action);
 
 	if (this->count == cp->count) {
@@ -453,7 +452,7 @@ void VehicleCargoList::Append(CargoPacket *cp, MoveToAction action)
  *                 will be kept and the loop will be aborted.
  * @param action Action instance to be applied.
  */
-template<class Taction>
+template <class Taction>
 void VehicleCargoList::ShiftCargo(Taction action)
 {
 	Iterator it(this->packets.begin());
@@ -477,7 +476,7 @@ void VehicleCargoList::ShiftCargo(Taction action)
  * @param action Action instance to be applied.
  * @param filter Cargo packet filter.
  */
-template<class Taction, class Tfilter>
+template <class Taction, class Tfilter>
 void VehicleCargoList::ShiftCargoWithFrontInsert(Taction action, Tfilter filter)
 {
 	std::vector<CargoPacket *> packets_to_front_insert;
@@ -509,7 +508,7 @@ void VehicleCargoList::ShiftCargoWithFrontInsert(Taction action, Tfilter filter)
  *                 will be kept and the loop will be aborted.
  * @param action Action instance to be applied.
  */
-template<class Taction>
+template <class Taction>
 void VehicleCargoList::PopCargo(Taction action)
 {
 	if (this->packets.empty()) return;
@@ -527,15 +526,15 @@ void VehicleCargoList::PopCargo(Taction action)
 
 void VehicleCargoList::AssertCountConsistencyError() const
 {
-	assert_msg(this->action_counts[MTA_KEEP] +
-			this->action_counts[MTA_DELIVER] +
-			this->action_counts[MTA_TRANSFER] +
-			this->action_counts[MTA_LOAD] == this->count,
+	assert_msg(this->action_counts[MoveToAction::Keep] +
+			this->action_counts[MoveToAction::Deliver] +
+			this->action_counts[MoveToAction::Transfer] +
+			this->action_counts[MoveToAction::Load] == this->count,
 			"{} + {} + {} + {} != {}, ({} in {} packets)",
-			this->action_counts[MTA_KEEP],
-			this->action_counts[MTA_DELIVER],
-			this->action_counts[MTA_TRANSFER],
-			this->action_counts[MTA_LOAD],
+			this->action_counts[MoveToAction::Keep],
+			this->action_counts[MoveToAction::Deliver],
+			this->action_counts[MoveToAction::Transfer],
+			this->action_counts[MoveToAction::Load],
 			this->count,
 			this->RecalculateCargoTotal(),
 			this->packets.size());
@@ -616,16 +615,16 @@ void VehicleCargoList::AgeCargo()
  * @return MoveToAction to be performed.
  */
 /* static */ VehicleCargoList::MoveToAction VehicleCargoList::ChooseAction(const CargoPacket *cp, StationID cargo_next,
-		StationID current_station, bool accepted, StationIDStack next_station)
+		StationID current_station, bool accepted, std::span<const StationID> next_station)
 {
-	if (cargo_next == INVALID_STATION) {
-		return (accepted && cp->first_station != current_station) ? MTA_DELIVER : MTA_KEEP;
+	if (cargo_next == StationID::Invalid()) {
+		return (accepted && cp->first_station != current_station) ? MoveToAction::Deliver : MoveToAction::Keep;
 	} else if (cargo_next == current_station) {
-		return MTA_DELIVER;
-	} else if (next_station.Contains(cargo_next)) {
-		return MTA_KEEP;
+		return MoveToAction::Deliver;
+	} else if (std::ranges::find(next_station, cargo_next) != std::end(next_station)) {
+		return MoveToAction::Keep;
 	} else {
-		return MTA_TRANSFER;
+		return MoveToAction::Transfer;
 	}
 }
 
@@ -637,18 +636,18 @@ void VehicleCargoList::AgeCargo()
  * @param accepted If the cargo will be accepted at the station.
  * @param current_station ID of the station.
  * @param next_station ID of the station the vehicle will go to next.
- * @param order_flags OrderUnloadFlags that will apply to the unload operation.
+ * @param unload_type OrderUnloadType that will apply to the unload operation.
  * @param ge GoodsEntry for getting the flows.
  * @param cargo The cargo type of the cargo.
  * @param payment Payment object for registering transfers.
  * @param current_tile Current tile the cargo handling is happening on.
- * return If any cargo will be unloaded.
+ * @return \c true iff any cargo will be unloaded.
  */
-bool VehicleCargoList::Stage(bool accepted, StationID current_station, StationIDStack next_station, uint8_t order_flags, const GoodsEntry *ge, CargoID cargo, CargoPayment *payment, TileIndex current_tile)
+bool VehicleCargoList::Stage(bool accepted, StationID current_station, std::span<const StationID> next_station, OrderUnloadType unload_type, const GoodsEntry *ge, CargoType cargo, CargoPayment *payment, TileIndex current_tile)
 {
 	this->AssertCountConsistency();
-	dbg_assert(this->action_counts[MTA_LOAD] == 0);
-	this->action_counts[MTA_TRANSFER] = this->action_counts[MTA_DELIVER] = this->action_counts[MTA_KEEP] = 0;
+	dbg_assert(this->action_counts[MoveToAction::Load] == 0);
+	this->action_counts[MoveToAction::Transfer] = this->action_counts[MoveToAction::Deliver] = this->action_counts[MoveToAction::Keep] = 0;
 	Iterator it = this->packets.begin();
 	uint sum = 0;
 	CargoPacketList transfer_deliver;
@@ -656,70 +655,79 @@ bool VehicleCargoList::Stage(bool accepted, StationID current_station, StationID
 
 	const FlowStatMap &flows = ge->ConstFlows();
 
-	bool force_keep = (order_flags & OUFB_NO_UNLOAD) != 0;
-	bool force_unload = (order_flags & OUFB_UNLOAD) != 0;
-	bool force_transfer = (order_flags & (OUFB_TRANSFER | OUFB_UNLOAD)) != 0;
+	bool force_keep = (unload_type == OrderUnloadType::NoUnload);
+	bool force_unload = (unload_type == OrderUnloadType::Unload);
+	bool force_transfer = (unload_type == OrderUnloadType::Transfer) || (unload_type == OrderUnloadType::Unload);
+	bool transfer_cargodist_mode = force_transfer && _settings_game.linkgraph.GetDistributionType(cargo) != DistributionType::Manual;
 	dbg_assert(this->count > 0 || it == this->packets.end());
 	while (sum < this->count) {
 		CargoPacket *cp = *it;
 
 		it = this->packets.erase(it);
-		StationID cargo_next = INVALID_STATION;
-		MoveToAction action = MTA_LOAD;
-		if (force_keep) {
-			action = MTA_KEEP;
-		} else if (force_unload && accepted && cp->first_station != current_station) {
-			action = MTA_DELIVER;
-		} else if (force_transfer) {
-			action = MTA_TRANSFER;
+		StationID cargo_next = StationID::Invalid();
+		MoveToAction action = MoveToAction::Load;
+
+		auto handle_forced_transfer = [&]() {
+			action = MoveToAction::Transfer;
 			/* We cannot send the cargo to any of the possible next hops and
 			 * also not to the current station. */
 			FlowStatMap::const_iterator flow_it(flows.find(cp->first_station));
 			if (flow_it == flows.end()) {
-				cargo_next = INVALID_STATION;
+				cargo_next = StationID::Invalid();
 			} else {
 				FlowStat new_shares = *flow_it;
 				new_shares.ChangeShare(current_station, INT_MIN);
-				StationIDStack excluded = next_station;
-				while (!excluded.IsEmpty() && !new_shares.empty()) {
-					new_shares.ChangeShare(excluded.Pop(), INT_MIN);
+				for (StationID st : next_station) {
+					if (new_shares.empty()) break;
+					new_shares.ChangeShare(st, INT_MIN);
 				}
 				if (new_shares.empty()) {
-					cargo_next = INVALID_STATION;
+					cargo_next = StationID::Invalid();
 				} else {
 					cargo_next = new_shares.GetVia();
 				}
 			}
+		};
+
+		if (force_keep) {
+			action = MoveToAction::Keep;
+		} else if (force_unload && !transfer_cargodist_mode && accepted && cp->first_station != current_station) {
+			action = MoveToAction::Deliver;
+		} else if (force_transfer && !transfer_cargodist_mode) {
+			handle_forced_transfer();
 		} else {
 			/* Rewrite an invalid source station to some random other one to
 			 * avoid keeping the cargo in the vehicle forever. */
-			if (cp->first_station == INVALID_STATION && !flows.empty()) {
+			if (cp->first_station == StationID::Invalid() && !flows.empty()) {
 				cp->first_station = flows.FirstStationID();
 			}
 			bool restricted = false;
 			FlowStatMap::const_iterator flow_it(flows.find(cp->first_station));
 			if (flow_it == flows.end()) {
-				cargo_next = INVALID_STATION;
+				cargo_next = StationID::Invalid();
 			} else {
 				cargo_next = flow_it->GetViaWithRestricted(restricted);
 			}
 			action = VehicleCargoList::ChooseAction(cp, cargo_next, current_station, accepted, next_station);
-			if (restricted && action == MTA_TRANSFER) {
+			if (restricted && action == MoveToAction::Transfer) {
 				/* If the flow is restricted we can't transfer to it. Choose an
 				 * unrestricted one instead. */
 				cargo_next = flow_it->GetVia();
 				action = VehicleCargoList::ChooseAction(cp, cargo_next, current_station, accepted, next_station);
 			}
+			if (transfer_cargodist_mode && action == MoveToAction::Keep) {
+				handle_forced_transfer();
+			}
 		}
 		Money share;
 		switch (action) {
-			case MTA_KEEP:
+			case MoveToAction::Keep:
 				keep.push_back(cp);
 				break;
-			case MTA_DELIVER:
+			case MoveToAction::Deliver:
 				transfer_deliver.push_back(cp);
 				break;
-			case MTA_TRANSFER:
+			case MoveToAction::Transfer:
 				transfer_deliver.push_front(cp);
 				/* Add feeder share here to allow reusing field for next station. */
 				share = payment->PayTransfer(cargo, cp, cp->count, current_tile);
@@ -737,7 +745,7 @@ bool VehicleCargoList::Stage(bool accepted, StationID current_station, StationID
 	this->packets = std::move(transfer_deliver);
 	this->packets.insert(this->packets.end(), keep.begin(), keep.end());
 	this->AssertCountConsistency();
-	return this->action_counts[MTA_DELIVER] > 0 || this->action_counts[MTA_TRANSFER] > 0;
+	return this->action_counts[MoveToAction::Deliver] > 0 || this->action_counts[MoveToAction::Transfer] > 0;
 }
 
 /** Invalidates the cached data and rebuild it. */
@@ -750,20 +758,20 @@ void VehicleCargoList::InvalidateCache()
 /**
  * Moves some cargo from one designation to another. You can only move
  * between adjacent designations. E.g. you can keep cargo that was previously
- * reserved (MTA_LOAD), but you can't reserve cargo that's marked as to be
+ * reserved (MoveToAction::Load), but you can't reserve cargo that's marked as to be
  * delivered. Furthermore, as this method doesn't change the actual packets,
- * you cannot move cargo from or to MTA_TRANSFER. You need a specialized
+ * you cannot move cargo from or to MoveToAction::Transfer. You need a specialized
  * template method for that.
  * @tparam from Previous designation of cargo.
  * @tparam to New designation of cargo.
  * @param max_move Maximum amount of cargo to reassign.
  * @return Amount of cargo actually reassigned.
  */
-template<VehicleCargoList::MoveToAction Tfrom, VehicleCargoList::MoveToAction Tto>
+template <VehicleCargoList::MoveToAction Tfrom, VehicleCargoList::MoveToAction Tto>
 uint VehicleCargoList::Reassign(uint max_move)
 {
-	static_assert(Tfrom != MTA_TRANSFER && Tto != MTA_TRANSFER);
-	static_assert(Tfrom - Tto == 1 || Tto - Tfrom == 1);
+	static_assert(Tfrom != MoveToAction::Transfer && Tto != MoveToAction::Transfer);
+	static_assert(to_underlying(Tfrom) - to_underlying(Tto) == 1 || to_underlying(Tto) - to_underlying(Tfrom) == 1);
 	max_move = std::min(this->action_counts[Tfrom], max_move);
 	this->action_counts[Tfrom] -= max_move;
 	this->action_counts[Tto] += max_move;
@@ -771,23 +779,23 @@ uint VehicleCargoList::Reassign(uint max_move)
 }
 
 /**
- * Reassign cargo from MTA_DELIVER to MTA_TRANSFER and take care of the next
+ * Reassign cargo from MoveToAction::Deliver to MoveToAction::Transfer and take care of the next
  * station the cargo wants to visit.
  * @param max_move Maximum amount of cargo to reassign.
  * @return Amount of cargo actually reassigned.
  */
-template<>
-uint VehicleCargoList::Reassign<VehicleCargoList::MTA_DELIVER, VehicleCargoList::MTA_TRANSFER>(uint max_move)
+template <>
+uint VehicleCargoList::Reassign<VehicleCargoList::MoveToAction::Deliver, VehicleCargoList::MoveToAction::Transfer>(uint max_move)
 {
-	max_move = std::min(this->action_counts[MTA_DELIVER], max_move);
+	max_move = std::min(this->action_counts[MoveToAction::Deliver], max_move);
 
 	uint sum = 0;
-	for (Iterator it(this->packets.begin()); sum < this->action_counts[MTA_TRANSFER] + max_move;) {
+	for (Iterator it(this->packets.begin()); sum < this->action_counts[MoveToAction::Transfer] + max_move;) {
 		CargoPacket *cp = *it++;
 		sum += cp->Count();
-		if (sum <= this->action_counts[MTA_TRANSFER]) continue;
-		if (sum > this->action_counts[MTA_TRANSFER] + max_move) {
-			CargoPacket *cp_split = cp->Split(sum - this->action_counts[MTA_TRANSFER] + max_move);
+		if (sum <= this->action_counts[MoveToAction::Transfer]) continue;
+		if (sum > this->action_counts[MoveToAction::Transfer] + max_move) {
+			CargoPacket *cp_split = cp->Split(sum - this->action_counts[MoveToAction::Transfer] + max_move);
 			sum -= cp_split->Count();
 			it = this->packets.insert(it, cp_split);
 			/* it points to the inserted value, which is just before the previous value of it.
@@ -795,11 +803,11 @@ uint VehicleCargoList::Reassign<VehicleCargoList::MTA_DELIVER, VehicleCargoList:
 			 */
 			++it;
 		}
-		cp->next_hop = INVALID_STATION;
+		cp->next_hop = StationID::Invalid();
 	}
 
-	this->action_counts[MTA_DELIVER] -= max_move;
-	this->action_counts[MTA_TRANSFER] += max_move;
+	this->action_counts[MoveToAction::Deliver] -= max_move;
+	this->action_counts[MoveToAction::Transfer] += max_move;
 	return max_move;
 }
 
@@ -813,7 +821,7 @@ uint VehicleCargoList::Reassign<VehicleCargoList::MTA_DELIVER, VehicleCargoList:
  */
 uint VehicleCargoList::Return(uint max_move, StationCargoList *dest, StationID next, TileIndex current_tile)
 {
-	max_move = std::min(this->action_counts[MTA_LOAD], max_move);
+	max_move = std::min(this->action_counts[MoveToAction::Load], max_move);
 	this->PopCargo(CargoReturn(this, dest, max_move, next, current_tile));
 	return max_move;
 }
@@ -841,16 +849,16 @@ uint VehicleCargoList::Shift(uint max_move, VehicleCargoList *dest)
  * @param current_tile Current tile the cargo handling is happening on.
  * @return Amount of cargo actually unloaded.
  */
-uint VehicleCargoList::Unload(uint max_move, StationCargoList *dest, CargoID cargo, CargoPayment *payment, TileIndex current_tile)
+uint VehicleCargoList::Unload(uint max_move, StationCargoList *dest, CargoType cargo, CargoPayment *payment, TileIndex current_tile)
 {
 	uint moved = 0;
-	if (this->action_counts[MTA_TRANSFER] > 0) {
-		uint move = std::min(this->action_counts[MTA_TRANSFER], max_move);
+	if (this->action_counts[MoveToAction::Transfer] > 0) {
+		uint move = std::min(this->action_counts[MoveToAction::Transfer], max_move);
 		this->ShiftCargo(CargoTransfer(this, dest, move, current_tile));
 		moved += move;
 	}
-	if (this->action_counts[MTA_TRANSFER] == 0 && this->action_counts[MTA_DELIVER] > 0 && moved < max_move) {
-		uint move = std::min(this->action_counts[MTA_DELIVER], max_move - moved);
+	if (this->action_counts[MoveToAction::Transfer] == 0 && this->action_counts[MoveToAction::Deliver] > 0 && moved < max_move) {
+		uint move = std::min(this->action_counts[MoveToAction::Deliver], max_move - moved);
 		this->ShiftCargo(CargoDelivery(this, move, cargo, payment, current_tile));
 		moved += move;
 	}
@@ -866,7 +874,7 @@ uint VehicleCargoList::Unload(uint max_move, StationCargoList *dest, CargoID car
 uint VehicleCargoList::Truncate(uint max_move)
 {
 	max_move = std::min(this->count, max_move);
-	if (max_move > this->ActionCount(MTA_KEEP)) this->KeepAll();
+	if (max_move > this->ActionCount(MoveToAction::Keep)) this->KeepAll();
 	this->PopCargo(CargoRemoval<VehicleCargoList>(this, max_move));
 	return max_move;
 }
@@ -878,10 +886,11 @@ uint VehicleCargoList::Truncate(uint max_move)
  * @param avoid Station to exclude from routing and current next hop of packets to reroute.
  * @param avoid2 Additional station to exclude from routing.
  * @param ge GoodsEntry to get the routing info from.
+ * @return The number of elements that got rerouted.
  */
 uint VehicleCargoList::Reroute(uint max_move, VehicleCargoList *dest, StationID avoid, StationID avoid2, const GoodsEntry *ge)
 {
-	max_move = std::min(this->action_counts[MTA_TRANSFER], max_move);
+	max_move = std::min(this->action_counts[MoveToAction::Transfer], max_move);
 	this->ShiftCargoWithFrontInsert(VehicleCargoReroute(this, dest, max_move, avoid, avoid2, ge), [](CargoPacket *cp) { return true; });
 	return max_move;
 }
@@ -897,7 +906,7 @@ uint VehicleCargoList::Reroute(uint max_move, VehicleCargoList *dest, StationID 
  */
 uint VehicleCargoList::RerouteFromSource(uint max_move, VehicleCargoList *dest, StationID source, StationID avoid, StationID avoid2, const GoodsEntry *ge)
 {
-	max_move = std::min(this->action_counts[MTA_TRANSFER], max_move);
+	max_move = std::min(this->action_counts[MoveToAction::Transfer], max_move);
 	this->ShiftCargoWithFrontInsert(VehicleCargoReroute(this, dest, max_move, avoid, avoid2, ge), [source](CargoPacket *cp) { return cp->GetFirstStation() == source; });
 	return max_move;
 }
@@ -968,20 +977,20 @@ bool StationCargoList::ShiftCargo(Taction &action, StationID next)
  *                 will be kept and the loop will be aborted.
  * @param action Action instance to be applied.
  * @param next Next hop the cargo wants to visit.
- * @param include_invalid If cargo from the INVALID_STATION list should be
+ * @param include_invalid If cargo from the StationID::Invalid() list should be
  *                        used if necessary.
  * @return Amount of cargo actually moved.
  */
 template <class Taction>
-uint StationCargoList::ShiftCargo(Taction action, StationIDStack next, bool include_invalid)
+uint StationCargoList::ShiftCargo(Taction action, std::span<const StationID> next, bool include_invalid)
 {
 	uint max_move = action.MaxMove();
-	while (!next.IsEmpty()) {
-		this->ShiftCargo(action, next.Pop());
+	for (StationID st : next) {
+		this->ShiftCargo(action, st);
 		if (action.MaxMove() == 0) break;
 	}
 	if (include_invalid && action.MaxMove() > 0) {
-		this->ShiftCargo(action, INVALID_STATION);
+		this->ShiftCargo(action, StationID::Invalid());
 	}
 	return max_move - action.MaxMove();
 }
@@ -1029,20 +1038,20 @@ bool StationCargoList::ShiftCargoFromSource(Taction &action, StationID source, S
  * @param action Action instance to be applied.
  * @param source Source station.
  * @param next Next hop the cargo wants to visit.
- * @param include_invalid If cargo from the INVALID_STATION list should be
+ * @param include_invalid If cargo from the StationID::Invalid() list should be
  *                        used if necessary.
  * @return Amount of cargo actually moved.
  */
 template <class Taction>
-uint StationCargoList::ShiftCargoFromSource(Taction action, StationID source, StationIDStack next, bool include_invalid)
+uint StationCargoList::ShiftCargoFromSource(Taction action, StationID source, std::span<const StationID> next, bool include_invalid)
 {
 	uint max_move = action.MaxMove();
-	while (!next.IsEmpty()) {
-		this->ShiftCargoFromSource(action, source, next.Pop());
+	for (StationID st : next) {
+		this->ShiftCargoFromSource(action, source, st);
 		if (action.MaxMove() == 0) break;
 	}
 	if (include_invalid && action.MaxMove() > 0) {
-		this->ShiftCargoFromSource(action, source, INVALID_STATION);
+		this->ShiftCargoFromSource(action, source, StationID::Invalid());
 	}
 	return max_move - action.MaxMove();
 }
@@ -1118,7 +1127,7 @@ uint StationCargoList::Truncate(uint max_move, StationCargoAmountMap *cargo_per_
  * @param current_tile Current tile the cargo handling is happening on.
  * @return Amount of cargo actually reserved.
  */
-uint StationCargoList::Reserve(uint max_move, VehicleCargoList *dest, StationIDStack next_station, TileIndex current_tile)
+uint StationCargoList::Reserve(uint max_move, VehicleCargoList *dest, std::span<const StationID> next_station, TileIndex current_tile)
 {
 	return this->ShiftCargo(CargoReservation(this, dest, max_move, current_tile), next_station, true);
 }
@@ -1135,15 +1144,15 @@ uint StationCargoList::Reserve(uint max_move, VehicleCargoList *dest, StationIDS
  *       modes of loading are exclusive, though. If cargo is reserved we don't
  *       need to load unreserved cargo.
  */
-uint StationCargoList::Load(uint max_move, VehicleCargoList *dest, StationIDStack next_station, TileIndex current_tile)
+uint StationCargoList::Load(uint max_move, VehicleCargoList *dest, std::span<const StationID> next_station, TileIndex current_tile)
 {
-	uint move = std::min(dest->ActionCount(VehicleCargoList::MTA_LOAD), max_move);
+	uint move = std::min(dest->ActionCount(VehicleCargoList::MoveToAction::Load), max_move);
 	if (move > 0) {
 		this->reserved_count -= move;
-		dest->Reassign<VehicleCargoList::MTA_LOAD, VehicleCargoList::MTA_KEEP>(move);
+		dest->Reassign<VehicleCargoList::MoveToAction::Load, VehicleCargoList::MoveToAction::Keep>(move);
 		return move;
 	} else {
-		return this->ShiftCargo(CargoLoad(this, dest, max_move, current_tile), next_station, true);
+		return this->ShiftCargo(CargoLoad{this, dest, max_move, current_tile}, next_station, true);
 	}
 }
 
@@ -1154,10 +1163,11 @@ uint StationCargoList::Load(uint max_move, VehicleCargoList *dest, StationIDStac
  * @param avoid Station to exclude from routing and current next hop of packets to reroute.
  * @param avoid2 Additional station to exclude from routing.
  * @param ge GoodsEntry to get the routing info from.
+ * @return The number of elements that got rerouted.
  */
 uint StationCargoList::Reroute(uint max_move, StationCargoList *dest, StationID avoid, StationID avoid2, const GoodsEntry *ge)
 {
-	return this->ShiftCargo(StationCargoReroute(this, dest, max_move, avoid, avoid2, ge), avoid, false);
+	return this->ShiftCargo(StationCargoReroute(this, dest, max_move, avoid, avoid2, ge), {&avoid, 1}, false);
 }
 
 /**
@@ -1170,7 +1180,7 @@ uint StationCargoList::Reroute(uint max_move, StationCargoList *dest, StationID 
  */
 uint StationCargoList::RerouteFromSource(uint max_move, StationCargoList *dest, StationID source, StationID avoid, StationID avoid2, const GoodsEntry *ge)
 {
-	return this->ShiftCargoFromSource(StationCargoReroute(this, dest, max_move, avoid, avoid2, ge), source, avoid, false);
+	return this->ShiftCargoFromSource(StationCargoReroute(this, dest, max_move, avoid, avoid2, ge), source, {&avoid, 1}, false);
 }
 
 /*
@@ -1178,4 +1188,9 @@ uint StationCargoList::RerouteFromSource(uint max_move, StationCargoList *dest, 
  */
 template class CargoList<VehicleCargoList, CargoPacketList>;
 template class CargoList<StationCargoList, StationCargoPacketMap>;
-template uint VehicleCargoList::Reassign<VehicleCargoList::MTA_DELIVER, VehicleCargoList::MTA_KEEP>(uint);
+
+/**
+ * Moves some cargo from one designation to another.
+ * @return Amount of cargo actually reassigned.
+ */
+template uint VehicleCargoList::Reassign<VehicleCargoList::MoveToAction::Deliver, VehicleCargoList::MoveToAction::Keep>(uint);

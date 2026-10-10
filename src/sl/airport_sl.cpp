@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file airport_sl.cpp Code handling saving and loading airport ids */
@@ -35,8 +35,8 @@ static void Load_ATID()
 }
 
 static const ChunkHandler airport_chunk_handlers[] = {
-	{ 'ATID', Save_ATID, Load_ATID, nullptr, nullptr, CH_TABLE },
-	{ 'APID', Save_APID, Load_APID, nullptr, nullptr, CH_TABLE },
+	{ 'ATID', Save_ATID, Load_ATID, nullptr, nullptr, ChunkType::Table },
+	{ 'APID', Save_APID, Load_APID, nullptr, nullptr, ChunkType::Table },
 };
 
 extern const ChunkHandlerTable _airport_chunk_handlers(airport_chunk_handlers);

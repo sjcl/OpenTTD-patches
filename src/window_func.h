@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file window_func.h %Window functions not directly related to making/drawing windows. */
@@ -11,8 +11,11 @@
 #define WINDOW_FUNC_H
 
 #include "window_type.h"
+#include "window_type_trait.h"
 #include "company_type.h"
+#include "core/enum_type.hpp"
 #include "core/geometry_type.hpp"
+#include "strings_id_type.h"
 
 #include <bitset>
 
@@ -38,7 +41,20 @@ void SetupColoursAndInitialWindow();
 void InputLoop();
 
 void InvalidateWindowData(WindowClass cls, WindowNumber number, int data = 0, bool gui_scope = false);
+
+template <typename T> requires std::is_base_of_v<struct PoolIDBase, T>
+void InvalidateWindowData(WindowClass cls, WindowNumber number, T data, bool gui_scope = false) { InvalidateWindowData(cls, number, data.base(), gui_scope); }
+
+template <typename T> requires is_convertible_to_window_invalidation_data_v<T>
+void InvalidateWindowData(WindowClass cls, WindowNumber number, T data, bool gui_scope = false) { InvalidateWindowData(cls, number, to_underlying(data), gui_scope); }
+
 void InvalidateWindowClassesData(WindowClass cls, int data = 0, bool gui_scope = false);
+
+template <typename T> requires std::is_base_of_v<struct PoolIDBase, T>
+void InvalidateWindowClassesData(WindowClass cls, T data, bool gui_scope = false) { InvalidateWindowClassesData(cls, data.base(), gui_scope); }
+
+template <typename T> requires is_convertible_to_window_invalidation_data_v<T>
+void InvalidateWindowClassesData(WindowClass cls, T data, bool gui_scope = false) { InvalidateWindowClassesData(cls, to_underlying(data), gui_scope); }
 
 void CloseNonVitalWindows();
 void CloseAllNonVitalWindows();
@@ -64,16 +80,38 @@ void CloseWindowByClass(WindowClass cls, int data = 0);
 
 bool FocusWindowById(WindowClass cls, WindowNumber number);
 
+class WindowClassBitset {
+	std::bitset<to_underlying(WindowClass::End)> data{};
+
+public:
+	bool operator[](WindowClass wc) const { return wc < WindowClass::End ? this->data[to_underlying(wc)] : false; }
+	void set(WindowClass wc) { this->data.set(to_underlying(wc)); }
+	void reset(WindowClass wc) { this->data.reset(to_underlying(wc)); }
+	void clear() { this->data.reset(); }
+	bool none() const { return this->data.none(); }
+
+	void operator &=(const WindowClassBitset other) { this->data &= other.data; }
+};
+
 inline bool HaveWindowByClass(WindowClass wc)
 {
-	extern std::bitset<WC_END> _present_window_types;
-	return wc < WC_END && _present_window_types[wc];
+	extern WindowClassBitset _present_window_types;
+	return _present_window_types[wc];
 }
 
 bool EditBoxInGlobalFocus();
 bool FocusedWindowIsConsole();
+bool FocusedWindowSuppressesTabToFastForward();
 Point GetCaretPosition();
 
 void DumpWindowInfo(struct format_target &buffer, const Window *w);
+
+/**
+ * Adding a window number to a string is a common occurence to get the caption for a vehicle type.
+ * @param string The base string.
+ * @param window_number The window number to add.
+ * @return The resulting \c StringID.
+ */
+constexpr StringID operator+(StringID string, WindowNumber window_number) noexcept { return string + static_cast<int32_t>(window_number); }
 
 #endif /* WINDOW_FUNC_H */

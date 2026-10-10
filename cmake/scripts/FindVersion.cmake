@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.17)
 
 if(NOT REV_MAJOR)
     set(REV_MAJOR 0)
@@ -170,9 +170,9 @@ else()
     set(REV_ISSTABLETAG 0)
 endif()
 
-string(REGEX MATCH "^jgrpp-ya-[0-9]+(\\.[0-9]+)?(\\.[0-9]+)?(\\+[0-9]+)?" REV_RELEASE "${REV_RELEASE}")
+string(REGEX MATCH "^jgrpp-ya-[0-9]+([.][0-9]+)?([.][0-9]+)?([+][0-9]+)?" REV_RELEASE "${REV_RELEASE}")
 string(REPLACE "jgrpp-ya-" "" REV_RELEASE "${REV_RELEASE}")
-string(REGEX MATCH "^[0-9]+(\\.[0-9]+)?(\\.[0-9]+)?" REV_JGRPP "${REV_RELEASE}")
+string(REGEX MATCH "^[0-9]+([.][0-9]+)?([.][0-9]+)?" REV_JGRPP "${REV_RELEASE}")
 
 # Extract REV_YEAR and REV_DATE from REV_ISODATE
 string(SUBSTRING "${REV_ISODATE}" 0 4 REV_YEAR)

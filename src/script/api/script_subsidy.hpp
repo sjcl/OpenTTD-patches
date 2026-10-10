@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file script_subsidy.hpp Everything to query subsidies. */
@@ -12,6 +12,8 @@
 
 #include "script_company.hpp"
 #include "script_date.hpp"
+#include "../../cargo_type.h"
+#include "../../subsidy_type.h"
 
 /**
  * Class that handles all subsidy related functions.
@@ -49,7 +51,7 @@ public:
 
 	/**
 	 * Create a new subsidy.
-	 * @param cargo_type The type of cargo to cary for the subsidy.
+	 * @param cargo_type The type of cargo to carry for the subsidy.
 	 * @param from_type The type of the subsidy on the 'from' side.
 	 * @param from_id The ID of the 'from' side.
 	 * @param to_type The type of the subsidy on the 'to' side.
@@ -63,7 +65,7 @@ public:
 	 * @pre (to_type   == SPT_INDUSTRY && ScriptIndustry::IsValidIndustry(to_id))   || (to_type   == SPT_TOWN && ScriptTown::IsValidTown(to_id))
 	 * @api -ai
 	 */
-	static bool Create(CargoID cargo_type, SubsidyParticipantType from_type, SQInteger from_id, SubsidyParticipantType to_type, SQInteger to_id);
+	static bool Create(CargoType cargo_type, SubsidyParticipantType from_type, SQInteger from_id, SubsidyParticipantType to_type, SQInteger to_id);
 
 	/**
 	 * Get the company index of the company this subsidy is awarded to.
@@ -93,7 +95,7 @@ public:
 	 * @pre IsValidSubsidy(subsidy_id).
 	 * @return The cargo type to transport.
 	 */
-	static CargoID GetCargoType(SubsidyID subsidy_id);
+	static CargoType GetCargoType(SubsidyID subsidy_id);
 
 	/**
 	 * Returns the type of source of subsidy.

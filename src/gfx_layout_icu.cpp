@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file gfx_layout_icu.cpp Handling of laying out with ICU / Harfbuzz. */
@@ -77,7 +77,7 @@ public:
 
 		const Font *GetFont() const override { return this->font; }
 		int GetLeading() const override { return this->font->fc->GetHeight(); }
-		int GetGlyphCount() const override { return this->glyphs.size(); }
+		size_t GetGlyphCount() const override { return this->glyphs.size(); }
 		int GetAdvance() const { return this->total_advance; }
 	};
 
@@ -86,8 +86,8 @@ public:
 	public:
 		int GetLeading() const override;
 		int GetWidth() const override;
-		int CountRuns() const override { return (uint)this->size();  }
-		const VisualRun &GetVisualRun(int run) const override { return this->at(run); }
+		size_t CountRuns() const override { return this->size();  }
+		const VisualRun &GetVisualRun(size_t run) const override { return this->at(run); }
 
 		int GetInternalCharLength(char32_t c) const override
 		{
@@ -109,7 +109,7 @@ public:
 		this->Reflow();
 	}
 
-	~ICUParagraphLayout() override { }
+	~ICUParagraphLayout() override = default;
 
 	void Reflow() override
 	{
@@ -145,7 +145,7 @@ ICUParagraphLayout::ICUVisualRun::ICUVisualRun(const ICURun &run, int x) :
  * Shape a single run.
  *
  * @param buff The buffer of which a partial (depending on start/length of the run) will be shaped.
- * @param length The length of the buffer.
+ * @param buff_length The length of the buffer.
  */
 void ICURun::Shape(UChar *buff, size_t buff_length)
 {
@@ -435,7 +435,8 @@ std::unique_ptr<const ICUParagraphLayout::Line> ICUParagraphLayout::NextLine(int
 	if (cur_width > max_width) {
 		/* Create a break-iterator to find a good place to break lines. */
 		auto break_iterator = ICUParagraphLayoutFactory::GetBreakIterator();
-		break_iterator->setText(icu::UnicodeString(this->buff, this->buff_length));
+		icu::UnicodeString text(this->buff, this->buff_length);
+		break_iterator->setText(text);
 
 		auto overflow_run = last_run - 1;
 
@@ -443,11 +444,11 @@ std::unique_ptr<const ICUParagraphLayout::Line> ICUParagraphLayout::NextLine(int
 		size_t index;
 		if ((overflow_run->level & 1) == 0) {
 			/* LTR */
-			for (index = overflow_run->glyphs.size(); index > 0; index--) {
-				cur_width -= overflow_run->advance[index - 1];
+			for (index = overflow_run->glyphs.size(); index > 0; /* nothing */) {
+				--index;
+				cur_width -= overflow_run->advance[index];
 				if (cur_width <= max_width) break;
 			}
-			index--;
 		} else {
 			/* RTL */
 			for (index = 0; index < overflow_run->glyphs.size(); index++) {

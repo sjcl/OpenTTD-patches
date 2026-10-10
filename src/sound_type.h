@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file sound_type.h Types related to sounds. */
@@ -13,14 +13,15 @@
 #include <memory>
 #include <vector>
 
+/** Source of loaded sound data. */
 enum class SoundSource : uint8_t {
-	BasesetOldFormat,
-	BasesetNewFormat,
-	NewGRF,
+	BasesetOldFormat, ///< The TTD format with certain internal bugs (incorrect frequency, WAV without headers, ...).
+	BasesetNewFormat, ///< New format with Opus and WAV files.
+	NewGRF, ///< Contained within a NewGRF.
 };
 
 struct SoundEntry {
-	std::shared_ptr<std::vector<uint8_t>> data;
+	std::shared_ptr<std::vector<std::byte>> data;
 	class RandomAccessFile *file;
 	size_t file_offset;
 	size_t file_size;
@@ -45,7 +46,7 @@ struct SoundEntry {
  *  - The naming of the enum values includes the position in the baseset.
  * That is, for sound effects 0x02 to 0x28 the naming is off-by-two.
  */
-enum SoundFx {
+enum SoundFx : uint8_t {
 	SND_BEGIN = 0,
 	SND_02_CONSTRUCTION_WATER = 0,         ///<  0 == 0x00  Construction: water infrastructure
 	SND_03_FACTORY,                        ///<  1 == 0x01  Industry producing: factory: whistle

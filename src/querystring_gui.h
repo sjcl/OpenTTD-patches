@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file querystring_gui.h Base for the GUIs that have an edit box in them. */
@@ -25,19 +25,19 @@ struct QueryString {
 	static const int ACTION_DESELECT = -2; ///< Deselect editbox.
 	static const int ACTION_CLEAR    = -3; ///< Clear editbox.
 
-	StringID caption;
-	int ok_button;      ///< Widget button of parent window to simulate when pressing OK in OSK.
-	int cancel_button;  ///< Widget button of parent window to simulate when pressing CANCEL in OSK.
+	StringID caption{};                  ///< Description of this string. Shown in OskWindow's title bar
+	int ok_button = ACTION_NOTHING;      ///< Widget button of parent window to simulate when pressing OK in OSK.
+	int cancel_button = ACTION_DESELECT; ///< Widget button of parent window to simulate when pressing CANCEL in OSK.
 	Textbuf text;
-	std::optional<std::string> orig;
-	bool handled;
+	std::optional<std::string> orig{};
+	bool handled = false;
 
 	/**
 	 * Initialize string.
 	 * @param size Maximum size in bytes.
 	 * @param chars Maximum size in chars.
 	 */
-	QueryString(uint16_t size, uint16_t chars = UINT16_MAX) : ok_button(ACTION_NOTHING), cancel_button(ACTION_DESELECT), text(size, chars)
+	QueryString(uint16_t size, uint16_t chars = UINT16_MAX) : text(size, chars)
 	{
 	}
 
@@ -47,7 +47,7 @@ public:
 	void HandleEditBox(Window *w, WidgetID wid);
 
 	Point GetCaretPosition(const Window *w, WidgetID wid) const;
-	Rect GetBoundingRect(const Window *w, WidgetID wid, const char *from, const char *to) const;
+	Rect GetBoundingRect(const Window *w, WidgetID wid, size_t from, size_t to) const;
 	ptrdiff_t GetCharAtPosition(const Window *w, WidgetID wid, const Point &pt) const;
 };
 

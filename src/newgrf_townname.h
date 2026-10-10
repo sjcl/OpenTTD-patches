@@ -2,19 +2,17 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
-/**
- * @file newgrf_townname.h
- * Header of Action 0F "universal holder" structure and functions
- */
+/** @file newgrf_townname.h Header of Action 0F "universal holder" structure and functions. */
 
 #ifndef NEWGRF_TOWNNAME_H
 #define NEWGRF_TOWNNAME_H
 
+#include "newgrf_type.h"
+#include "strings_id_type.h"
 #include <vector>
-#include "strings_type.h"
 
 struct NamePart {
 	std::string text; ///< If probability bit 7 is clear
@@ -39,16 +37,16 @@ struct TownNameStyle {
 struct GRFTownName {
 	static const uint MAX_LISTS = 128; ///< Maximum number of town name lists that can be defined per GRF.
 
-	uint32_t grfid;                                 ///< GRF ID of NewGRF.
+	GrfID grfid;                                    ///< GRF ID of NewGRF.
 	std::vector<TownNameStyle> styles;              ///< Style names defined by the Town Name NewGRF.
 	std::vector<NamePartList> partlists[MAX_LISTS]; ///< Lists of town name parts.
 };
 
-GRFTownName *AddGRFTownName(uint32_t grfid);
-GRFTownName *GetGRFTownName(uint32_t grfid);
-void DelGRFTownName(uint32_t grfid);
+GRFTownName *AddGRFTownName(GrfID grfid);
+GRFTownName *GetGRFTownName(GrfID grfid);
+void DelGRFTownName(GrfID grfid);
 void CleanUpGRFTownNames();
-uint32_t GetGRFTownNameId(uint16_t gen);
+GrfID GetGRFTownNameId(uint16_t gen);
 uint16_t GetGRFTownNameType(uint16_t gen);
 StringID GetGRFTownNameName(uint16_t gen);
 

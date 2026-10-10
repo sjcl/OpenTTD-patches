@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file script_event_types.hpp The detailed types of all events. */
@@ -13,6 +13,13 @@
 #include "script_event.hpp"
 #include "script_goal.hpp"
 #include "script_window.hpp"
+#include "../../engine_type.h"
+#include "../../industry_type.h"
+#include "../../station_type.h"
+#include "../../story_type.h"
+#include "../../subsidy_type.h"
+#include "../../town_type.h"
+#include "../../vehicle_type.h"
 #include <optional>
 
 /**
@@ -40,13 +47,15 @@ public:
 	 * @param crash_site Where the vehicle crashed.
 	 * @param crash_reason The reason why the vehicle crashed.
 	 * @param victims The number of victims caused by the crash.
+	 * @param the ID of the company owning the crashed vehicle.
 	 */
-	ScriptEventVehicleCrashed(VehicleID vehicle, TileIndex crash_site, CrashReason crash_reason, uint victims) :
+	ScriptEventVehicleCrashed(VehicleID vehicle, TileIndex crash_site, CrashReason crash_reason, uint victims, ::CompanyID company) :
 		ScriptEvent(ET_VEHICLE_CRASHED),
 		crash_site(crash_site),
 		vehicle(vehicle),
 		crash_reason(crash_reason),
-		victims(victims)
+		victims(victims),
+		company(ScriptCompany::ToScriptCompanyID(company))
 	{}
 #endif /* DOXYGEN_API */
 
@@ -55,37 +64,44 @@ public:
 	 * @param instance The instance to convert.
 	 * @return The converted instance.
 	 */
-	static ScriptEventVehicleCrashed *Convert(ScriptEvent *instance) { return (ScriptEventVehicleCrashed *)instance; }
+	static ScriptEventVehicleCrashed *Convert(ScriptEvent *instance) { return dynamic_cast<ScriptEventVehicleCrashed *>(instance); }
 
 	/**
 	 * Get the VehicleID of the crashed vehicle.
 	 * @return The crashed vehicle.
 	 */
-	VehicleID GetVehicleID() { return this->vehicle; }
+	VehicleID GetVehicleID() const { return this->vehicle; }
 
 	/**
 	 * Find the tile the vehicle crashed.
 	 * @return The crash site.
 	 */
-	TileIndex GetCrashSite() { return this->crash_site; }
+	TileIndex GetCrashSite() const { return this->crash_site; }
 
 	/**
 	 * Get the reason for crashing
 	 * @return The reason for crashing
 	 */
-	CrashReason GetCrashReason() { return this->crash_reason; }
+	CrashReason GetCrashReason() const { return this->crash_reason; }
 
 	/**
 	 * Get the number of victims
 	 * @return The number of victims
 	 */
-	SQInteger GetVictims() { return this->victims; }
+	SQInteger GetVictims() const { return this->victims; }
+
+	/**
+	 * Get the CompanyID of the company owning the vehicle
+	 * @return The company owning the vehicle
+	 */
+	ScriptCompany::CompanyID GetVehicleOwner() const { return this->company; }
 
 private:
 	TileIndex crash_site;     ///< The location of the crash.
 	VehicleID vehicle;        ///< The crashed vehicle.
 	CrashReason crash_reason; ///< The reason for crashing.
-	uint victims; ///< The number of victims.
+	uint victims;             ///< The number of victims.
+	ScriptCompany::CompanyID company; ///< The company owning the vehicle.
 };
 
 /**
@@ -109,13 +125,13 @@ public:
 	 * @param instance The instance to convert.
 	 * @return The converted instance.
 	 */
-	static ScriptEventSubsidyOffer *Convert(ScriptEvent *instance) { return (ScriptEventSubsidyOffer *)instance; }
+	static ScriptEventSubsidyOffer *Convert(ScriptEvent *instance) { return dynamic_cast<ScriptEventSubsidyOffer *>(instance); }
 
 	/**
 	 * Get the SubsidyID of the subsidy.
 	 * @return The subsidy id.
 	 */
-	SubsidyID GetSubsidyID() { return this->subsidy_id; }
+	SubsidyID GetSubsidyID() const { return this->subsidy_id; }
 
 private:
 	SubsidyID subsidy_id; ///< The subsidy that got offered.
@@ -142,13 +158,13 @@ public:
 	 * @param instance The instance to convert.
 	 * @return The converted instance.
 	 */
-	static ScriptEventSubsidyOfferExpired *Convert(ScriptEvent *instance) { return (ScriptEventSubsidyOfferExpired *)instance; }
+	static ScriptEventSubsidyOfferExpired *Convert(ScriptEvent *instance) { return dynamic_cast<ScriptEventSubsidyOfferExpired *>(instance); }
 
 	/**
 	 * Get the SubsidyID of the subsidy.
 	 * @return The subsidy id.
 	 */
-	SubsidyID GetSubsidyID() { return this->subsidy_id; }
+	SubsidyID GetSubsidyID() const { return this->subsidy_id; }
 
 private:
 	SubsidyID subsidy_id; ///< The subsidy offer that expired.
@@ -175,13 +191,13 @@ public:
 	 * @param instance The instance to convert.
 	 * @return The converted instance.
 	 */
-	static ScriptEventSubsidyAwarded *Convert(ScriptEvent *instance) { return (ScriptEventSubsidyAwarded *)instance; }
+	static ScriptEventSubsidyAwarded *Convert(ScriptEvent *instance) { return dynamic_cast<ScriptEventSubsidyAwarded *>(instance); }
 
 	/**
 	 * Get the SubsidyID of the subsidy.
 	 * @return The subsidy id.
 	 */
-	SubsidyID GetSubsidyID() { return this->subsidy_id; }
+	SubsidyID GetSubsidyID() const { return this->subsidy_id; }
 
 private:
 	SubsidyID subsidy_id; ///< The subsidy that was awarded.
@@ -208,13 +224,13 @@ public:
 	 * @param instance The instance to convert.
 	 * @return The converted instance.
 	 */
-	static ScriptEventSubsidyExpired *Convert(ScriptEvent *instance) { return (ScriptEventSubsidyExpired *)instance; }
+	static ScriptEventSubsidyExpired *Convert(ScriptEvent *instance) { return dynamic_cast<ScriptEventSubsidyExpired *>(instance); }
 
 	/**
 	 * Get the SubsidyID of the subsidy.
 	 * @return The subsidy id.
 	 */
-	 SubsidyID GetSubsidyID() { return this->subsidy_id; }
+	 SubsidyID GetSubsidyID() const { return this->subsidy_id; }
 
 private:
 	SubsidyID subsidy_id; ///< The subsidy that expired.
@@ -243,27 +259,27 @@ public:
 	 * @param instance The instance to convert.
 	 * @return The converted instance.
 	 */
-	static ScriptEventEnginePreview *Convert(ScriptEvent *instance) { return (ScriptEventEnginePreview *)instance; }
+	static ScriptEventEnginePreview *Convert(ScriptEvent *instance) { return dynamic_cast<ScriptEventEnginePreview *>(instance); }
 
 	/**
 	 * Get the name of the offered engine.
 	 * @return The name the engine has.
 	 */
-	std::optional<std::string> GetName();
+	std::optional<std::string> GetName() const;
 
 	/**
 	 * Get the cargo-type of the offered engine. In case it can transport multiple cargoes, it
 	 *  returns the first/main.
 	 * @return The cargo-type of the engine.
 	 */
-	CargoID GetCargoType();
+	CargoType GetCargoType() const;
 
 	/**
 	 * Get the capacity of the offered engine. In case it can transport multiple cargoes, it
 	 *  returns the first/main.
 	 * @return The capacity of the engine.
 	 */
-	int32_t GetCapacity();
+	int32_t GetCapacity() const;
 
 	/**
 	 * Get the maximum speed of the offered engine.
@@ -272,29 +288,29 @@ public:
 	 *       This is mph / 1.6, which is roughly km/h.
 	 *       To get km/h multiply this number by 1.00584.
 	 */
-	int32_t GetMaxSpeed();
+	int32_t GetMaxSpeed() const;
 
 	/**
 	 * Get the new cost of the offered engine.
 	 * @return The new cost the engine has.
 	 */
-	Money GetPrice();
+	Money GetPrice() const;
 
 	/**
 	 * Get the running cost of the offered engine.
 	 * @return The running cost of the vehicle per economy-year.
 	 * @see \ref ScriptEconomyTime
 	 */
-	Money GetRunningCost();
+	Money GetRunningCost() const;
 
 	/**
 	 * Get the type of the offered engine.
 	 * @return The type the engine has.
 	 */
 #ifdef DOXYGEN_API
-	ScriptVehicle::VehicleType GetVehicleType();
+	ScriptVehicle::VehicleType GetVehicleType() const;
 #else
-	int32_t GetVehicleType();
+	int32_t GetVehicleType() const;
 #endif /* DOXYGEN_API */
 
 	/**
@@ -326,7 +342,7 @@ public:
 	 */
 	ScriptEventCompanyNew(Owner owner) :
 		ScriptEvent(ET_COMPANY_NEW),
-		owner((ScriptCompany::CompanyID)owner)
+		owner(ScriptCompany::ToScriptCompanyID(owner))
 	{}
 #endif /* DOXYGEN_API */
 
@@ -335,16 +351,58 @@ public:
 	 * @param instance The instance to convert.
 	 * @return The converted instance.
 	 */
-	static ScriptEventCompanyNew *Convert(ScriptEvent *instance) { return (ScriptEventCompanyNew *)instance; }
+	static ScriptEventCompanyNew *Convert(ScriptEvent *instance) { return dynamic_cast<ScriptEventCompanyNew *>(instance); }
 
 	/**
 	 * Get the CompanyID of the company that has been created.
 	 * @return The CompanyID of the company.
 	 */
-	ScriptCompany::CompanyID GetCompanyID() { return this->owner; }
+	ScriptCompany::CompanyID GetCompanyID() const { return this->owner; }
 
 private:
 	ScriptCompany::CompanyID owner; ///< The new company.
+};
+
+/**
+ * Event Company Renamed, indicating a company has changed name.
+ * @api ai game
+ */
+class ScriptEventCompanyRenamed : public ScriptEvent {
+public:
+#ifndef DOXYGEN_API
+	/**
+	 * @param owner The company that is renamed.
+	 */
+	ScriptEventCompanyRenamed(::CompanyID company, const std::string &new_name) :
+		ScriptEvent(ET_COMPANY_RENAMED),
+		company(ScriptCompany::ToScriptCompanyID(company)),
+		new_name(new_name)
+	{}
+#endif /* DOXYGEN_API */
+
+	/**
+	 * Convert an ScriptEvent to the real instance.
+	 * @param instance The instance to convert.
+	 * @return The converted instance.
+	 */
+	static ScriptEventCompanyRenamed *Convert(ScriptEvent *instance) { return dynamic_cast<ScriptEventCompanyRenamed *>(instance); }
+
+	/**
+	 * Get the CompanyID of the company that has been renamed.
+	 * @return The CompanyID of the company.
+	 */
+	ScriptCompany::CompanyID GetCompanyID() const { return this->company; }
+
+	/**
+	 * Get the new name of the company.
+	 * @return The new name of the company.
+	 */
+	std::optional<std::string> GetNewName() const { return this->new_name; }
+
+private:
+
+	ScriptCompany::CompanyID company; ///< The company that was renamed.
+	std::string new_name; ///< The new name of the company.
 };
 
 /**
@@ -360,7 +418,7 @@ public:
 	 */
 	ScriptEventCompanyInTrouble(Owner owner) :
 		ScriptEvent(ET_COMPANY_IN_TROUBLE),
-		owner((ScriptCompany::CompanyID)owner)
+		owner(ScriptCompany::ToScriptCompanyID(owner))
 	{}
 #endif /* DOXYGEN_API */
 
@@ -369,13 +427,13 @@ public:
 	 * @param instance The instance to convert.
 	 * @return The converted instance.
 	 */
-	static ScriptEventCompanyInTrouble *Convert(ScriptEvent *instance) { return (ScriptEventCompanyInTrouble *)instance; }
+	static ScriptEventCompanyInTrouble *Convert(ScriptEvent *instance) { return dynamic_cast<ScriptEventCompanyInTrouble *>(instance); }
 
 	/**
 	 * Get the CompanyID of the company that is in trouble.
 	 * @return The CompanyID of the company in trouble.
 	 */
-	ScriptCompany::CompanyID GetCompanyID() { return this->owner; }
+	ScriptCompany::CompanyID GetCompanyID() const { return this->owner; }
 
 private:
 	ScriptCompany::CompanyID owner; ///< The company that is in trouble.
@@ -394,7 +452,7 @@ public:
 	 */
 	ScriptEventCompanyAskMerger(Owner owner, Money value) :
 		ScriptEvent(ET_COMPANY_ASK_MERGER),
-		owner((ScriptCompany::CompanyID)owner),
+		owner(ScriptCompany::ToScriptCompanyID(owner)),
 		value(value)
 	{}
 #endif /* DOXYGEN_API */
@@ -404,20 +462,20 @@ public:
 	 * @param instance The instance to convert.
 	 * @return The converted instance.
 	 */
-	static ScriptEventCompanyAskMerger *Convert(ScriptEvent *instance) { return (ScriptEventCompanyAskMerger *)instance; }
+	static ScriptEventCompanyAskMerger *Convert(ScriptEvent *instance) { return dynamic_cast<ScriptEventCompanyAskMerger *>(instance); }
 
 	/**
 	 * Get the CompanyID of the company that can be bought.
 	 * @return The CompanyID of the company that can be bought.
 	 * @note If the company is bought this will become invalid.
 	 */
-	ScriptCompany::CompanyID GetCompanyID() { return this->owner; }
+	ScriptCompany::CompanyID GetCompanyID() const { return this->owner; }
 
 	/**
 	 * Get the value of the new company.
 	 * @return The value of the new company.
 	 */
-	Money GetValue() { return this->value; }
+	Money GetValue() const { return this->value; }
 
 	/**
 	 * Take over the company for this merger.
@@ -445,8 +503,8 @@ public:
 	 */
 	ScriptEventCompanyMerger(Owner old_owner, Owner new_owner) :
 		ScriptEvent(ET_COMPANY_MERGER),
-		old_owner((ScriptCompany::CompanyID)old_owner),
-		new_owner((ScriptCompany::CompanyID)new_owner)
+		old_owner(ScriptCompany::ToScriptCompanyID(old_owner)),
+		new_owner(ScriptCompany::ToScriptCompanyID(new_owner))
 	{}
 #endif /* DOXYGEN_API */
 
@@ -455,7 +513,7 @@ public:
 	 * @param instance The instance to convert.
 	 * @return The converted instance.
 	 */
-	static ScriptEventCompanyMerger *Convert(ScriptEvent *instance) { return (ScriptEventCompanyMerger *)instance; }
+	static ScriptEventCompanyMerger *Convert(ScriptEvent *instance) { return dynamic_cast<ScriptEventCompanyMerger *>(instance); }
 
 	/**
 	 * Get the CompanyID of the company that has been bought.
@@ -464,13 +522,13 @@ public:
 	 *  ScriptCompany::ResolveCompanyID will return COMPANY_COMPANY. It's
 	 *  only useful if you're keeping track of company's yourself.
 	 */
-	ScriptCompany::CompanyID GetOldCompanyID() { return this->old_owner; }
+	ScriptCompany::CompanyID GetOldCompanyID() const { return this->old_owner; }
 
 	/**
 	 * Get the CompanyID of the new owner.
 	 * @return The CompanyID of the new owner.
 	 */
-	ScriptCompany::CompanyID GetNewCompanyID() { return this->new_owner; }
+	ScriptCompany::CompanyID GetNewCompanyID() const { return this->new_owner; }
 
 private:
 	ScriptCompany::CompanyID old_owner; ///< The company that ended to exist.
@@ -489,7 +547,7 @@ public:
 	 */
 	ScriptEventCompanyBankrupt(Owner owner) :
 		ScriptEvent(ET_COMPANY_BANKRUPT),
-		owner((ScriptCompany::CompanyID)owner)
+		owner(ScriptCompany::ToScriptCompanyID(owner))
 	{}
 #endif /* DOXYGEN_API */
 
@@ -498,13 +556,13 @@ public:
 	 * @param instance The instance to convert.
 	 * @return The converted instance.
 	 */
-	static ScriptEventCompanyBankrupt *Convert(ScriptEvent *instance) { return (ScriptEventCompanyBankrupt *)instance; }
+	static ScriptEventCompanyBankrupt *Convert(ScriptEvent *instance) { return dynamic_cast<ScriptEventCompanyBankrupt *>(instance); }
 
 	/**
 	 * Get the CompanyID of the company that has gone bankrupt.
 	 * @return The CompanyID of the company that has gone bankrupt.
 	 */
-	ScriptCompany::CompanyID GetCompanyID() { return this->owner; }
+	ScriptCompany::CompanyID GetCompanyID() const { return this->owner; }
 
 private:
 	ScriptCompany::CompanyID owner; ///< The company that has gone bankrupt.
@@ -531,13 +589,13 @@ public:
 	 * @param instance The instance to convert.
 	 * @return The converted instance.
 	 */
-	static ScriptEventVehicleLost *Convert(ScriptEvent *instance) { return (ScriptEventVehicleLost *)instance; }
+	static ScriptEventVehicleLost *Convert(ScriptEvent *instance) { return dynamic_cast<ScriptEventVehicleLost *>(instance); }
 
 	/**
 	 * Get the VehicleID of the vehicle that is lost.
 	 * @return The VehicleID of the vehicle that is lost.
 	 */
-	VehicleID GetVehicleID() { return this->vehicle_id; }
+	VehicleID GetVehicleID() const { return this->vehicle_id; }
 
 private:
 	VehicleID vehicle_id; ///< The vehicle that is lost.
@@ -564,13 +622,13 @@ public:
 	 * @param instance The instance to convert.
 	 * @return The converted instance.
 	 */
-	static ScriptEventVehicleWaitingInDepot *Convert(ScriptEvent *instance) { return (ScriptEventVehicleWaitingInDepot *)instance; }
+	static ScriptEventVehicleWaitingInDepot *Convert(ScriptEvent *instance) { return dynamic_cast<ScriptEventVehicleWaitingInDepot *>(instance); }
 
 	/**
 	 * Get the VehicleID of the vehicle that is waiting in a depot.
 	 * @return The VehicleID of the vehicle that is waiting in a depot.
 	 */
-	VehicleID GetVehicleID() { return this->vehicle_id; }
+	VehicleID GetVehicleID() const { return this->vehicle_id; }
 
 private:
 	VehicleID vehicle_id; ///< The vehicle that is waiting in the depot.
@@ -597,13 +655,13 @@ public:
 	 * @param instance The instance to convert.
 	 * @return The converted instance.
 	 */
-	static ScriptEventVehicleUnprofitable *Convert(ScriptEvent *instance) { return (ScriptEventVehicleUnprofitable *)instance; }
+	static ScriptEventVehicleUnprofitable *Convert(ScriptEvent *instance) { return dynamic_cast<ScriptEventVehicleUnprofitable *>(instance); }
 
 	/**
 	 * Get the VehicleID of the vehicle that lost money.
 	 * @return The VehicleID of the vehicle that lost money.
 	 */
-	VehicleID GetVehicleID() { return this->vehicle_id; }
+	VehicleID GetVehicleID() const { return this->vehicle_id; }
 
 private:
 	VehicleID vehicle_id; ///< The vehicle that is unprofitable.
@@ -630,13 +688,13 @@ public:
 	 * @param instance The instance to convert.
 	 * @return The converted instance.
 	 */
-	static ScriptEventIndustryOpen *Convert(ScriptEvent *instance) { return (ScriptEventIndustryOpen *)instance; }
+	static ScriptEventIndustryOpen *Convert(ScriptEvent *instance) { return dynamic_cast<ScriptEventIndustryOpen *>(instance); }
 
 	/**
 	 * Get the IndustryID of the new industry.
 	 * @return The IndustryID of the industry.
 	 */
-	IndustryID GetIndustryID() { return this->industry_id; }
+	IndustryID GetIndustryID() const { return this->industry_id; }
 
 private:
 	IndustryID industry_id; ///< The industry that opened.
@@ -663,13 +721,13 @@ public:
 	 * @param instance The instance to convert.
 	 * @return The converted instance.
 	 */
-	static ScriptEventIndustryClose *Convert(ScriptEvent *instance) { return (ScriptEventIndustryClose *)instance; }
+	static ScriptEventIndustryClose *Convert(ScriptEvent *instance) { return dynamic_cast<ScriptEventIndustryClose *>(instance); }
 
 	/**
 	 * Get the IndustryID of the closing industry.
 	 * @return The IndustryID of the industry.
 	 */
-	IndustryID GetIndustryID() { return this->industry_id; }
+	IndustryID GetIndustryID() const { return this->industry_id; }
 
 private:
 	IndustryID industry_id; ///< The industry that closed.
@@ -696,13 +754,13 @@ public:
 	 * @param instance The instance to convert.
 	 * @return The converted instance.
 	 */
-	static ScriptEventEngineAvailable *Convert(ScriptEvent *instance) { return (ScriptEventEngineAvailable *)instance; }
+	static ScriptEventEngineAvailable *Convert(ScriptEvent *instance) { return dynamic_cast<ScriptEventEngineAvailable *>(instance); }
 
 	/**
 	 * Get the EngineID of the new engine.
 	 * @return The EngineID of the new engine.
 	 */
-	EngineID GetEngineID() { return this->engine; }
+	EngineID GetEngineID() const { return this->engine; }
 
 private:
 	EngineID engine; ///< The engine that became available.
@@ -731,19 +789,19 @@ public:
 	 * @param instance The instance to convert.
 	 * @return The converted instance.
 	 */
-	static ScriptEventStationFirstVehicle *Convert(ScriptEvent *instance) { return (ScriptEventStationFirstVehicle *)instance; }
+	static ScriptEventStationFirstVehicle *Convert(ScriptEvent *instance) { return dynamic_cast<ScriptEventStationFirstVehicle *>(instance); }
 
 	/**
 	 * Get the StationID of the visited station.
 	 * @return The StationID of the visited station.
 	 */
-	StationID GetStationID() { return this->station; }
+	StationID GetStationID() const { return this->station; }
 
 	/**
 	 * Get the VehicleID of the first vehicle.
 	 * @return The VehicleID of the first vehicle.
 	 */
-	VehicleID GetVehicleID() { return this->vehicle; }
+	VehicleID GetVehicleID() const { return this->vehicle; }
 
 private:
 	StationID station; ///< The station the vehicle arrived at.
@@ -771,13 +829,13 @@ public:
 	 * @param instance The instance to convert.
 	 * @return The converted instance.
 	 */
-	static ScriptEventDisasterZeppelinerCrashed *Convert(ScriptEvent *instance) { return (ScriptEventDisasterZeppelinerCrashed *)instance; }
+	static ScriptEventDisasterZeppelinerCrashed *Convert(ScriptEvent *instance) { return dynamic_cast<ScriptEventDisasterZeppelinerCrashed *>(instance); }
 
 	/**
 	 * Get the StationID of the station containing the affected airport.
 	 * @return The StationID of the station containing the affected airport.
 	 */
-	StationID GetStationID() { return this->station; }
+	StationID GetStationID() const { return this->station; }
 
 private:
 	StationID station; ///< The station the zeppeliner crashed.
@@ -804,13 +862,13 @@ public:
 	 * @param instance The instance to convert.
 	 * @return The converted instance.
 	 */
-	static ScriptEventDisasterZeppelinerCleared *Convert(ScriptEvent *instance) { return (ScriptEventDisasterZeppelinerCleared *)instance; }
+	static ScriptEventDisasterZeppelinerCleared *Convert(ScriptEvent *instance) { return dynamic_cast<ScriptEventDisasterZeppelinerCleared *>(instance); }
 
 	/**
 	 * Get the StationID of the station containing the affected airport.
 	 * @return The StationID of the station containing the affected airport.
 	 */
-	StationID GetStationID() { return this->station; }
+	StationID GetStationID() const { return this->station; }
 
 private:
 	StationID station; ///< The station the zeppeliner crashed.
@@ -837,13 +895,13 @@ public:
 	 * @param instance The instance to convert.
 	 * @return The converted instance.
 	 */
-	static ScriptEventTownFounded *Convert(ScriptEvent *instance) { return (ScriptEventTownFounded *)instance; }
+	static ScriptEventTownFounded *Convert(ScriptEvent *instance) { return dynamic_cast<ScriptEventTownFounded *>(instance); }
 
 	/**
 	 * Get the TownID of the town.
 	 * @return The TownID of the town that was created.
 	 */
-	TownID GetTownID() { return this->town; }
+	TownID GetTownID() const { return this->town; }
 
 private:
 	TownID town; ///< The town that got founded.
@@ -872,13 +930,13 @@ public:
 	 * @param instance The instance to convert.
 	 * @return The converted instance.
 	 */
-	static ScriptEventAircraftDestTooFar *Convert(ScriptEvent *instance) { return (ScriptEventAircraftDestTooFar *)instance; }
+	static ScriptEventAircraftDestTooFar *Convert(ScriptEvent *instance) { return dynamic_cast<ScriptEventAircraftDestTooFar *>(instance); }
 
 	/**
 	 * Get the VehicleID of the aircraft whose destination is too far away.
 	 * @return The VehicleID of the aircraft whose destination is too far away.
 	 */
-	VehicleID GetVehicleID() { return this->vehicle_id; }
+	VehicleID GetVehicleID() const { return this->vehicle_id; }
 
 private:
 	VehicleID vehicle_id; ///< The vehicle aircraft whose destination is too far away.
@@ -902,19 +960,19 @@ public:
 	 * @param instance The instance to convert.
 	 * @return The converted instance.
 	 */
-	static ScriptEventAdminPort *Convert(ScriptEvent *instance) { return (ScriptEventAdminPort *)instance; }
+	static ScriptEventAdminPort *Convert(ScriptEvent *instance) { return dynamic_cast<ScriptEventAdminPort *>(instance); }
 
 #ifndef DOXYGEN_API
 	/**
 	 * The GetObject() wrapper from Squirrel.
 	 */
-	SQInteger GetObject(HSQUIRRELVM vm);
+	SQInteger GetObject(HSQUIRRELVM vm) const;
 #else
 	/**
 	 * Get the information that was sent to you back as Squirrel object.
 	 * @return The object.
 	 */
-	SQObject GetObject();
+	SQObject GetObject() const;
 #endif /* DOXYGEN_API */
 
 
@@ -947,25 +1005,25 @@ public:
 	 * @param instance The instance to convert.
 	 * @return The converted instance.
 	 */
-	static ScriptEventWindowWidgetClick *Convert(ScriptEvent *instance) { return (ScriptEventWindowWidgetClick *)instance; }
+	static ScriptEventWindowWidgetClick *Convert(ScriptEvent *instance) { return dynamic_cast<ScriptEventWindowWidgetClick *>(instance); }
 
 	/**
 	 * Get the class of the window that was clicked.
 	 * @return The clicked window class.
 	 */
-	ScriptWindow::WindowClass GetWindowClass() { return this->window; }
+	ScriptWindow::WindowClass GetWindowClass() const { return this->window; }
 
 	/**
 	 * Get the number of the window that was clicked.
 	 * @return The clicked identifying number of the widget within the class.
 	 */
-	uint32_t GetWindowNumber() { return this->number; }
+	uint32_t GetWindowNumber() const { return this->number; }
 
 	/**
 	 * Get the number of the widget that was clicked.
 	 * @return The number of the clicked widget.
 	 */
-	int GetWidgetNumber() { return this->widget; }
+	int GetWidgetNumber() const { return this->widget; }
 
 private:
 	ScriptWindow::WindowClass window; ///< Window of the click.
@@ -987,10 +1045,10 @@ public:
 	 * @param company The company that is replying.
 	 * @param button The button the company pressed.
 	 */
-	ScriptEventGoalQuestionAnswer(uint16_t uniqueid, ScriptCompany::CompanyID company, ScriptGoal::QuestionButton button) :
+	ScriptEventGoalQuestionAnswer(uint16_t uniqueid, ::CompanyID company, ScriptGoal::QuestionButton button) :
 		ScriptEvent(ET_GOAL_QUESTION_ANSWER),
 		uniqueid(uniqueid),
-		company(company),
+		company(ScriptCompany::ToScriptCompanyID(company)),
 		button(button)
 	{}
 #endif /* DOXYGEN_API */
@@ -1000,25 +1058,25 @@ public:
 	 * @param instance The instance to convert.
 	 * @return The converted instance.
 	 */
-	static ScriptEventGoalQuestionAnswer *Convert(ScriptEvent *instance) { return (ScriptEventGoalQuestionAnswer *)instance; }
+	static ScriptEventGoalQuestionAnswer *Convert(ScriptEvent *instance) { return dynamic_cast<ScriptEventGoalQuestionAnswer *>(instance); }
 
 	/**
 	 * Get the unique id of the question.
 	 * @return The unique id.
 	 */
-	uint16_t GetUniqueID() { return this->uniqueid; }
+	uint16_t GetUniqueID() const { return this->uniqueid; }
 
 	/**
 	 * Get the company that pressed a button.
 	 * @return The company.
 	 */
-	ScriptCompany::CompanyID GetCompany() { return this->company; }
+	ScriptCompany::CompanyID GetCompany() const { return this->company; }
 
 	/**
 	 * Get the button that got pressed.
 	 * @return The button.
 	 */
-	ScriptGoal::QuestionButton GetButton() { return this->button; }
+	ScriptGoal::QuestionButton GetButton() const { return this->button; }
 
 private:
 	uint16_t uniqueid;                 ///< The uniqueid of the question.
@@ -1038,9 +1096,9 @@ public:
 	 * @param company The company.
 	 * @param town The town.
 	 */
-	ScriptEventCompanyTown(ScriptEventType event, ScriptCompany::CompanyID company, TownID town) :
+	ScriptEventCompanyTown(ScriptEventType event, ::CompanyID company, TownID town) :
 		ScriptEvent(event),
-		company(company),
+		company(ScriptCompany::ToScriptCompanyID(company)),
 		town(town)
 	{}
 #endif /* DOXYGEN_API */
@@ -1050,19 +1108,19 @@ public:
 	 * @param instance The instance to convert.
 	 * @return The converted instance.
 	 */
-	static ScriptEventCompanyTown *Convert(ScriptEvent *instance) { return (ScriptEventCompanyTown *)instance; }
+	static ScriptEventCompanyTown *Convert(ScriptEvent *instance) { return dynamic_cast<ScriptEventCompanyTown *>(instance); }
 
 	/**
 	 * Get the CompanyID of the company.
 	 * @return The CompanyID of the company involved into the event.
 	 */
-	ScriptCompany::CompanyID GetCompanyID() { return this->company; }
+	ScriptCompany::CompanyID GetCompanyID() const { return this->company; }
 
 	/**
 	 * Get the TownID of the town.
 	 * @return The TownID of the town involved into the event.
 	 */
-	TownID GetTownID() { return this->town; }
+	TownID GetTownID() const { return this->town; }
 
 private:
 	ScriptCompany::CompanyID company; ///< The company involved into the event.
@@ -1081,7 +1139,7 @@ public:
 	 * @param company The company.
 	 * @param town The town.
 	 */
-	ScriptEventExclusiveTransportRights(ScriptCompany::CompanyID company, TownID town) :
+	ScriptEventExclusiveTransportRights(::CompanyID company, TownID town) :
 		ScriptEventCompanyTown(ET_EXCLUSIVE_TRANSPORT_RIGHTS, company, town)
 	{}
 #endif /* DOXYGEN_API */
@@ -1091,7 +1149,7 @@ public:
 	 * @param instance The instance to convert.
 	 * @return The converted instance.
 	 */
-	static ScriptEventExclusiveTransportRights *Convert(ScriptEventCompanyTown *instance) { return (ScriptEventExclusiveTransportRights *)instance; }
+	static ScriptEventExclusiveTransportRights *Convert(ScriptEvent *instance) { return dynamic_cast<ScriptEventExclusiveTransportRights *>(instance); }
 };
 
 /**
@@ -1106,7 +1164,7 @@ public:
 	 * @param company The company.
 	 * @param town The town.
 	 */
-	ScriptEventRoadReconstruction(ScriptCompany::CompanyID company, TownID town) :
+	ScriptEventRoadReconstruction(::CompanyID company, TownID town) :
 		ScriptEventCompanyTown(ET_ROAD_RECONSTRUCTION, company, town)
 	{}
 #endif /* DOXYGEN_API */
@@ -1116,7 +1174,7 @@ public:
 	 * @param instance The instance to convert.
 	 * @return The converted instance.
 	 */
-	static ScriptEventRoadReconstruction *Convert(ScriptEventCompanyTown *instance) { return (ScriptEventRoadReconstruction *)instance; }
+	static ScriptEventRoadReconstruction *Convert(ScriptEvent *instance) { return dynamic_cast<ScriptEventRoadReconstruction *>(instance); }
 };
 
 /**
@@ -1142,19 +1200,19 @@ public:
 	 * @param instance The instance to convert.
 	 * @return The converted instance.
 	 */
-	static ScriptEventVehicleAutoReplaced *Convert(ScriptEvent *instance) { return (ScriptEventVehicleAutoReplaced *)instance; }
+	static ScriptEventVehicleAutoReplaced *Convert(ScriptEvent *instance) { return dynamic_cast<ScriptEventVehicleAutoReplaced *>(instance); }
 
 	/**
 	 * Get the VehicleID of the vehicle that has been replaced.
 	 * @return The VehicleID of the vehicle that has been replaced. This ID is no longer valid for referencing the vehicle.
 	 */
-	VehicleID GetOldVehicleID() { return this->old_id; }
+	VehicleID GetOldVehicleID() const { return this->old_id; }
 
 	/**
 	 * Get the VehicleID of the vehicle that has been created in replacement.
 	 * @return The VehicleID of the vehicle that has been created in replacement.
 	 */
-	VehicleID GetNewVehicleID() { return this->new_id; }
+	VehicleID GetNewVehicleID() const { return this->new_id; }
 
 private:
 	VehicleID old_id; ///< The vehicle that has been replaced.
@@ -1173,9 +1231,9 @@ public:
 	 * @param page_id     Which page was the clicked button on.
 	 * @param element_id  Which button element was clicked.
 	 */
-	ScriptEventStoryPageButtonClick(CompanyID company_id, StoryPageID page_id, StoryPageElementID element_id) :
+	ScriptEventStoryPageButtonClick(::CompanyID company_id, StoryPageID page_id, StoryPageElementID element_id) :
 		ScriptEvent(ET_STORYPAGE_BUTTON_CLICK),
-		company_id((ScriptCompany::CompanyID)company_id),
+		company_id(ScriptCompany::ToScriptCompanyID(company_id)),
 		page_id(page_id),
 		element_id(element_id)
 	{}
@@ -1186,25 +1244,25 @@ public:
 	 * @param instance The instance to convert.
 	 * @return The converted instance.
 	 */
-	static ScriptEventStoryPageButtonClick *Convert(ScriptEvent *instance) { return (ScriptEventStoryPageButtonClick *)instance; }
+	static ScriptEventStoryPageButtonClick *Convert(ScriptEvent *instance) { return dynamic_cast<ScriptEventStoryPageButtonClick *>(instance); }
 
 	/**
-	 * Get the CompanyID of the player that selected a tile.
+	 * Get the CompanyID of the player that clicked a button.
 	 * @return The ID of the company.
 	 */
-	ScriptCompany::CompanyID GetCompanyID() { return this->company_id; }
+	ScriptCompany::CompanyID GetCompanyID() const { return this->company_id; }
 
 	/**
 	 * Get the StoryPageID of the storybook page the clicked button is located on.
 	 * @return The ID of the page in the story book the click was on.
 	 */
-	StoryPageID GetStoryPageID() { return this->page_id; }
+	StoryPageID GetStoryPageID() const { return this->page_id; }
 
 	/**
 	 * Get the StoryPageElementID of the button element that was clicked.
 	 * @return The ID of the element that was clicked.
 	 */
-	StoryPageElementID GetElementID() { return this->element_id; }
+	StoryPageElementID GetElementID() const { return this->element_id; }
 
 private:
 	ScriptCompany::CompanyID company_id;
@@ -1225,9 +1283,9 @@ public:
 	 * @param element_id  Which button element was used to select the tile.
 	 * @param tile_index  Which tile was selected by the player.
 	 */
-	ScriptEventStoryPageTileSelect(CompanyID company_id, StoryPageID page_id, StoryPageElementID element_id, TileIndex tile_index) :
+	ScriptEventStoryPageTileSelect(::CompanyID company_id, StoryPageID page_id, StoryPageElementID element_id, TileIndex tile_index) :
 		ScriptEvent(ET_STORYPAGE_TILE_SELECT),
-		company_id((ScriptCompany::CompanyID)company_id),
+		company_id(ScriptCompany::ToScriptCompanyID(company_id)),
 		page_id(page_id),
 		element_id(element_id),
 		tile_index(tile_index)
@@ -1239,31 +1297,31 @@ public:
 	 * @param instance The instance to convert.
 	 * @return The converted instance.
 	 */
-	static ScriptEventStoryPageTileSelect *Convert(ScriptEvent *instance) { return (ScriptEventStoryPageTileSelect *)instance; }
+	static ScriptEventStoryPageTileSelect *Convert(ScriptEvent *instance) { return dynamic_cast<ScriptEventStoryPageTileSelect *>(instance); }
 
 	/**
 	 * Get the CompanyID of the player that selected a tile.
 	 * @return The company that selected the tile.
 	 */
-	ScriptCompany::CompanyID GetCompanyID() { return this->company_id; }
+	ScriptCompany::CompanyID GetCompanyID() const { return this->company_id; }
 
 	/**
 	 * Get the StoryPageID of the storybook page the used selection button is located on.
 	 * @return The ID of the story page selection was done from.
 	 */
-	StoryPageID GetStoryPageID() { return this->page_id; }
+	StoryPageID GetStoryPageID() const { return this->page_id; }
 
 	/**
 	 * Get the StoryPageElementID of the selection button used to select the tile.
 	 * @return The ID of the element that was used to select the tile.
 	 */
-	StoryPageElementID GetElementID() { return this->element_id; }
+	StoryPageElementID GetElementID() const { return this->element_id; }
 
 	/**
 	 * Get the TileIndex of the tile the player selected.
 	 * @return The selected tile.
 	 */
-	TileIndex GetTile() { return this->tile_index; }
+	TileIndex GetTile() const { return this->tile_index; }
 
 private:
 	ScriptCompany::CompanyID company_id;
@@ -1273,7 +1331,7 @@ private:
 };
 
 /**
- * Event StoryPageTileSelect, indicating a player clicked a tile selection button on a storybook page, and selected a tile.
+ * Event StoryPageVehicleSelect, indicating a player clicked a vehicle selection button on a storybook page, and selected a vehicle.
  * @api game
  */
 class ScriptEventStoryPageVehicleSelect : public ScriptEvent {
@@ -1285,9 +1343,9 @@ public:
 	 * @param element_id  Which button element was used to select the tile.
 	 * @param vehicle_id  Which vehicle was selected by the player.
 	 */
-	ScriptEventStoryPageVehicleSelect(CompanyID company_id, StoryPageID page_id, StoryPageElementID element_id, VehicleID vehicle_id) :
+	ScriptEventStoryPageVehicleSelect(::CompanyID company_id, StoryPageID page_id, StoryPageElementID element_id, VehicleID vehicle_id) :
 		ScriptEvent(ET_STORYPAGE_VEHICLE_SELECT),
-		company_id((ScriptCompany::CompanyID)company_id),
+		company_id(ScriptCompany::ToScriptCompanyID(company_id)),
 		page_id(page_id),
 		element_id(element_id),
 		vehicle_id(vehicle_id)
@@ -1299,37 +1357,81 @@ public:
 	 * @param instance The instance to convert.
 	 * @return The converted instance.
 	 */
-	static ScriptEventStoryPageVehicleSelect *Convert(ScriptEvent *instance) { return (ScriptEventStoryPageVehicleSelect *)instance; }
+	static ScriptEventStoryPageVehicleSelect *Convert(ScriptEvent *instance) { return dynamic_cast<ScriptEventStoryPageVehicleSelect *>(instance); }
 
 	/**
-	 * Get the CompanyID of the player that selected a tile.
+	 * Get the CompanyID of the player that selected a vehicle.
 	 * @return The company's ID.
 	 */
-	ScriptCompany::CompanyID GetCompanyID() { return this->company_id; }
+	ScriptCompany::CompanyID GetCompanyID() const { return this->company_id; }
 
 	/**
 	 * Get the StoryPageID of the storybook page the used selection button is located on.
 	 * @return The ID of the storybook page the selected element is on.
 	 */
-	StoryPageID GetStoryPageID() { return this->page_id; }
+	StoryPageID GetStoryPageID() const { return this->page_id; }
 
 	/**
 	 * Get the StoryPageElementID of the selection button used to select the vehicle.
 	 * @return The ID of the selected element of the story page.
 	 */
-	StoryPageElementID GetElementID() { return this->element_id; }
+	StoryPageElementID GetElementID() const { return this->element_id; }
 
 	/**
 	 * Get the VehicleID of the vehicle the player selected.
 	 * @return The ID of the vehicle.
 	 */
-	VehicleID GetVehicleID() { return this->vehicle_id; }
+	VehicleID GetVehicleID() const { return this->vehicle_id; }
 
 private:
 	ScriptCompany::CompanyID company_id;
 	StoryPageID page_id;
 	StoryPageElementID element_id;
 	VehicleID vehicle_id;
+};
+
+
+/**
+ * Event President Renamed, indicating a company's president's name has changed.
+ * This event is not sent to the company for who the president's name changed.
+ * @api ai game
+ */
+class ScriptEventPresidentRenamed : public ScriptEvent {
+public:
+#ifndef DOXYGEN_API
+	/**
+	 * @param company The company of the president.
+	 * @param new_name The new name of the president.
+	 */
+	ScriptEventPresidentRenamed(::CompanyID company, const std::string &new_name) :
+		ScriptEvent(ET_PRESIDENT_RENAMED),
+		company(ScriptCompany::ToScriptCompanyID(company)),
+		new_name(new_name)
+	{}
+#endif /* DOXYGEN_API */
+
+	/**
+	 * Convert an ScriptEvent to the real instance.
+	 * @param instance The instance to convert.
+	 * @return The converted instance.
+	 */
+	static ScriptEventPresidentRenamed *Convert(ScriptEvent *instance) { return dynamic_cast<ScriptEventPresidentRenamed *>(instance); }
+
+	/**
+	 * Get the CompanyID of the company that got its president renamed.
+	 * @return The CompanyID of the company.
+	 */
+	ScriptCompany::CompanyID GetCompanyID() const { return this->company; }
+
+	/**
+	 * Get the new name of the president.
+	 * @return The new name of the president.
+	 */
+	std::optional<std::string> GetNewName() const { return this->new_name; }
+
+private:
+	ScriptCompany::CompanyID company; ///< The company of the renamed president.
+	std::string new_name; ///< The new name of the president.
 };
 
 #endif /* SCRIPT_EVENT_TYPES_HPP */

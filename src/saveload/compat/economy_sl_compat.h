@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file economy_sl_compat.h Loading for economy chunks before table headers were added. */
@@ -16,8 +16,8 @@ namespace upstream_sl {
 
 /** Original field order for _economy_desc. */
 const SaveLoadCompat _economy_sl_compat[] = {
-	SLC_NULL(4, SL_MIN_VERSION, SLV_65),
-	SLC_NULL(8, SLV_65, SLV_144),
+	SLC_NULL(4, SaveLoadVersion::MinVersion, SaveLoadVersion::UnifyCurrency),
+	SLC_NULL(8, SaveLoadVersion::UnifyCurrency, SaveLoadVersion::ReorderUnmovableRemoveReserved),
 	SLC_VAR("old_max_loan_unround"),
 	SLC_VAR("old_max_loan_unround_fract"),
 	SLC_VAR("inflation_prices"),

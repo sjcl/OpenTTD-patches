@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file osx_stdafx.h OSX is different on some places. */
@@ -13,64 +13,6 @@
 #define __ASSERT_MACROS_DEFINE_VERSIONS_WITHOUT_UNDERSCORES 0
 
 #include <AvailabilityMacros.h>
-
-/* We assume if these macros are defined, the SDK is also at least this version or later. */
-#ifdef MAC_OS_X_VERSION_10_7
-#define HAVE_OSX_107_SDK
-#endif
-
-#ifdef MAC_OS_X_VERSION_10_9
-#define HAVE_OSX_109_SDK
-#endif
-
-#ifdef MAC_OS_X_VERSION_10_11
-#define HAVE_OSX_1011_SDK
-#endif
-
-#ifdef MAC_OS_X_VERSION_10_12
-#define HAVE_OSX_1012_SDK
-#endif
-
-#ifdef MAC_OS_X_VERSION_10_15
-#define HAVE_OSX_1015_SDK
-#endif
-
-/* It would seem that to ensure backward compatibility we have to ensure that we have defined MAC_OS_X_VERSION_10_x everywhere */
-#ifndef MAC_OS_X_VERSION_10_3
-#define MAC_OS_X_VERSION_10_3 1030
-#endif
-
-#ifndef MAC_OS_X_VERSION_10_4
-#define MAC_OS_X_VERSION_10_4 1040
-#endif
-
-#ifndef MAC_OS_X_VERSION_10_5
-#define MAC_OS_X_VERSION_10_5 1050
-#endif
-
-#ifndef MAC_OS_X_VERSION_10_6
-#define MAC_OS_X_VERSION_10_6 1060
-#endif
-
-#ifndef MAC_OS_X_VERSION_10_7
-#define MAC_OS_X_VERSION_10_7 1070
-#endif
-
-#ifndef MAC_OS_X_VERSION_10_8
-#define MAC_OS_X_VERSION_10_8 1080
-#endif
-
-#ifndef MAC_OS_X_VERSION_10_9
-#define MAC_OS_X_VERSION_10_9 1090
-#endif
-
-#ifndef MAC_OS_X_VERSION_10_10
-#define MAC_OS_X_VERSION_10_10 101000
-#endif
-
-#ifndef MAC_OS_X_VERSION_10_11
-#define MAC_OS_X_VERSION_10_11 101100
-#endif
 
 #define __STDC_LIMIT_MACROS
 #include <stdint.h>
@@ -112,8 +54,6 @@
 /* Name conflict */
 #define GetTime OTTD_GetTime
 
-#define SL_ERROR OSX_SL_ERROR
-
 /* NSInteger and NSUInteger are part of 10.5 and higher. */
 #ifndef NSInteger
 #ifdef __LP64__
@@ -133,9 +73,7 @@ typedef float CGFloat;
 #endif /* __LP64__ */
 #endif /* CGFLOAT_DEFINED */
 
-/* OS X SDK versions >= 10.5 have a non-const iconv. */
-#if MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_5
-#	define HAVE_NON_CONST_ICONV
-#endif
+/** OS X has a non-const iconv. */
+#define HAVE_NON_CONST_ICONV
 
 #endif /* MACOS_STDAFX_H */

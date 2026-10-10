@@ -2,13 +2,10 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
-/**
- * @file timer_game_realtime.cpp
- * This file implements the timer logic for the real time game-timer.
- */
+/** @file timer_game_realtime.cpp This file implements the timer logic for the real time game-timer. */
 
 #include "../stdafx.h"
 #include "../openttd.h"
@@ -17,12 +14,12 @@
 
 #include "../safeguards.h"
 
-template<>
+template <>
 void IntervalTimer<TimerGameRealtime>::Elapsed(TimerGameRealtime::TElapsed delta)
 {
-	if (this->period.period == std::chrono::milliseconds::zero()) return;
-	if (this->period.flag == TimerGameRealtime::PeriodFlags::AUTOSAVE && _pause_mode != PM_UNPAUSED && (_pause_mode & PM_COMMAND_DURING_PAUSE) == 0) return;
-	if (this->period.flag == TimerGameRealtime::PeriodFlags::UNPAUSED && _pause_mode != PM_UNPAUSED) return;
+	if (this->period.period == 0) return;
+	if (this->period.trigger == TimerGameRealtime::Trigger::Autosave && _pause_mode.Any() && !_pause_mode.Test(PauseMode::CommandDuringPause)) return;
+	if (this->period.trigger == TimerGameRealtime::Trigger::Unpaused && _pause_mode.Any()) return;
 
 	this->storage.elapsed += delta;
 
@@ -37,13 +34,13 @@ void IntervalTimer<TimerGameRealtime>::Elapsed(TimerGameRealtime::TElapsed delta
 	}
 }
 
-template<>
+template <>
 void TimeoutTimer<TimerGameRealtime>::Elapsed(TimerGameRealtime::TElapsed delta)
 {
 	if (this->fired) return;
-	if (this->period.period == std::chrono::milliseconds::zero()) return;
-	if (this->period.flag == TimerGameRealtime::PeriodFlags::AUTOSAVE && _pause_mode != PM_UNPAUSED && (_pause_mode & PM_COMMAND_DURING_PAUSE) == 0) return;
-	if (this->period.flag == TimerGameRealtime::PeriodFlags::UNPAUSED && _pause_mode != PM_UNPAUSED) return;
+	if (this->period.period == 0) return;
+	if (this->period.trigger == TimerGameRealtime::Trigger::Autosave && _pause_mode.Any() && _pause_mode.Test(PauseMode::CommandDuringPause)) return;
+	if (this->period.trigger == TimerGameRealtime::Trigger::Unpaused && _pause_mode.Any()) return;
 
 	this->storage.elapsed += delta;
 
@@ -53,7 +50,7 @@ void TimeoutTimer<TimerGameRealtime>::Elapsed(TimerGameRealtime::TElapsed delta)
 	}
 }
 
-template<>
+template <>
 void TimerManager<TimerGameRealtime>::Elapsed(TimerGameRealtime::TElapsed delta)
 {
 	for (auto timer : TimerManager<TimerGameRealtime>::GetTimers()) {
@@ -62,7 +59,7 @@ void TimerManager<TimerGameRealtime>::Elapsed(TimerGameRealtime::TElapsed delta)
 }
 
 #ifdef WITH_ASSERT
-template<>
+template <>
 void TimerManager<TimerGameRealtime>::Validate(TimerGameRealtime::TPeriod)
 {
 }

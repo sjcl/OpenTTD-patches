@@ -2,17 +2,16 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
-/** @file timer_game_calendar.h Definition of the game-calendar-timer */
+/** @file timer_game_calendar.h Definition of the game-calendar-timer. */
 
 #ifndef TIMER_GAME_CALENDAR_H
 #define TIMER_GAME_CALENDAR_H
 
-#include "../stdafx.h"
-#include "../core/strong_typedef_type.hpp"
 #include "timer_game_common.h"
+#include "../core/enum_type.hpp"
 
 /**
  * Timer for calendar days / months / years.
@@ -25,6 +24,8 @@
  *   so we follow a previous decision to tie inflation to original TTD game years.
  */
 class TimerGameCalendar : public TimerGame<struct Calendar> {
+public:
+	using TElapsed = EnumBitSet<Trigger, uint8_t>;
 };
 
 #endif /* TIMER_GAME_CALENDAR_H */

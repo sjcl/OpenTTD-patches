@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file toolbar_gui.h Stuff related to the (main) toolbar. */
@@ -12,8 +12,10 @@
 
 #include "company_type.h"
 #include "dropdown_type.h"
+#include "rail_type.h"
+#include "road_type.h"
 
-enum MainToolbarHotkeys {
+enum MainToolbarHotkeys : int32_t {
 	MTHK_PAUSE,
 	MTHK_FASTFORWARD,
 	MTHK_SETTINGS,
@@ -72,6 +74,10 @@ void ToggleWidgetOutlines();
 std::unique_ptr<DropDownListItem> MakeCompanyDropDownListItem(CompanyID cid, bool selectable = true);
 
 extern uint _toolbar_width;
+
+extern RailType _last_built_railtype; ///< The most recently used type of rail.
+extern RoadType _last_built_roadtype; ///< The most recently used type of road.
+extern RoadType _last_built_tramtype; ///< The most recently used type of tram track.
 
 struct MainToolbarScaleAdjuster {
 	ZoomLevel old_gui_zoom;

@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file event_logs.cpp Functions related to event logging. */
@@ -97,7 +97,7 @@ void DumpSpecialEventsLog(format_target &buffer)
 
 		EconTime::YearMonthDay ymd = EconTime::ConvertDateToYMD(entry.date);
 		buffer.format(" {:3} | {:4}-{:02}-{:02}, {:2}, {:3} | cc: {:3}, lc: {:3} | {}\n",
-				i, ymd.year.base(), ymd.month + 1, ymd.day, entry.date_fract, entry.tick_skip_counter, (uint) entry.current_company, (uint) entry.local_company, entry.msg.c_str());
+				i, ymd.year.base(), ymd.month + 1, ymd.day, entry.date_fract, entry.tick_skip_counter, entry.current_company, entry.local_company, entry.msg.c_str());
 	}
 }
 

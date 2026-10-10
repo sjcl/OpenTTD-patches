@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file aircraft.h Base for aircraft. */
@@ -25,7 +25,7 @@ static constexpr int HELICOPTER_HOLD_MAX_FLYING_ALTITUDE = 184; ///< holding fly
 struct Aircraft;
 
 /** An aircraft can be one of those types. */
-enum AircraftSubType {
+enum AircraftSubType : uint8_t {
 	AIR_HELICOPTER = 0, ///< an helicopter
 	AIR_AIRCRAFT   = 2, ///< an airplane
 	AIR_SHADOW     = 4, ///< shadow of the aircraft
@@ -33,17 +33,20 @@ enum AircraftSubType {
 };
 
 /** Flags for air vehicles; shared with disaster vehicles. */
-enum AirVehicleFlags {
-	VAF_DEST_TOO_FAR             = 0, ///< Next destination is too far away.
+enum class VehicleAirFlag : uint8_t {
+	DestinationTooFar = 0, ///< Next destination is too far away.
 
 	/* The next two flags are to prevent stair climbing of the aircraft. The idea is that the aircraft
 	 * will ascend or descend multiple flight levels at a time instead of following the contours of the
 	 * landscape at a fixed altitude. This only has effect when there are more than 15 height levels. */
-	VAF_IN_MAX_HEIGHT_CORRECTION = 1, ///< The vehicle is currently lowering its altitude because it hit the upper bound.
-	VAF_IN_MIN_HEIGHT_CORRECTION = 2, ///< The vehicle is currently raising its altitude because it hit the lower bound.
+	InMaximumHeightCorrection = 1, ///< The vehicle is currently lowering its altitude because it hit the upper bound.
+	InMinimumHeightCorrection = 2, ///< The vehicle is currently raising its altitude because it hit the lower bound.
 
-	VAF_HELI_DIRECT_DESCENT      = 3, ///< The helicopter is descending directly at its destination (helipad or in front of hangar)
+	HelicopterDirectDescent = 3, ///< The helicopter is descending directly at its destination (helipad or in front of hangar)
 };
+
+/** Bitset of \c VehicleAirFlag elements. */
+using VehicleAirFlags = EnumBitSet<VehicleAirFlag, uint8_t>;
 
 static const int ROTOR_Z_OFFSET         = 5;    ///< Z Offset between helicopter- and rotorsprite.
 
@@ -63,9 +66,9 @@ int GetAircraftFlightLevel(T *v, bool takeoff = false);
 
 /** Variables that are cached to improve performance and such. */
 struct AircraftCache {
-	uint32_t cached_max_range_sqr; ///< Cached squared maximum range.
-	uint16_t cached_max_range;     ///< Cached maximum range.
-	uint8_t image_movement_state;  ///< Cached image aircraft movement state
+	uint32_t cached_max_range_sqr = 0; ///< Cached squared maximum range.
+	uint16_t cached_max_range = 0;     ///< Cached maximum range.
+	uint8_t image_movement_state = 0;  ///< Cached image aircraft movement state
 
 	bool operator==(const AircraftCache &) const = default;
 };
@@ -73,27 +76,26 @@ struct AircraftCache {
 /**
  * Aircraft, helicopters, rotors and their shadows belong to this class.
  */
-struct Aircraft final : public SpecializedVehicle<Aircraft, VEH_AIRCRAFT> {
-	uint16_t crashed_counter;         ///< Timer for handling crash animations.
-	uint8_t pos;                      ///< Next desired position of the aircraft.
-	uint8_t previous_pos;             ///< Previous desired position of the aircraft.
-	StationID targetairport;          ///< Airport to go to next.
-	uint8_t state;                    ///< State of the airport. @see AirportMovementStates
-	Direction last_direction;
-	uint8_t number_consecutive_turns; ///< Protection to prevent the aircraft of making a lot of turns in order to reach a specific point.
-	uint8_t turn_counter;             ///< Ticks between each turn to prevent > 45 degree turns.
-	uint8_t flags;                    ///< Aircraft flags. @see AirVehicleFlags
+struct Aircraft final : public SpecializedVehicle<Aircraft, VehicleType::Aircraft, Vehicle> {
+	uint16_t crashed_counter = 0;                   ///< Timer for handling crash animations.
+	uint8_t pos = 0;                                ///< Next desired position of the aircraft.
+	uint8_t previous_pos = 0;                       ///< Previous desired position of the aircraft.
+	StationID targetairport = StationID::Invalid(); ///< Airport to go to next.
+	uint8_t state = 0;                              ///< State of the airport. @see AirportMovementStates
+	Direction last_direction = Direction::Invalid;
+	uint8_t number_consecutive_turns = 0;           ///< Protection to prevent the aircraft of making a lot of turns in order to reach a specific point.
+	uint8_t turn_counter = 0;                       ///< Ticks between each turn to prevent > 45 degree turns.
+	VehicleAirFlags flags{};                        ///< Aircraft flags. @see VehicleAirFlags
 
-	AircraftCache acache;
+	AircraftCache acache{};
 
-	/** We don't want GCC to zero our struct! It already is zeroed and has an index! */
-	Aircraft() : SpecializedVehicleBase() {}
+	Aircraft(VehicleID index) : SpecializedVehicleBase(index) {}
 	/** We want to 'destruct' the right class. */
-	virtual ~Aircraft() { this->PreDestructor(); }
+	~Aircraft() override { this->PreDestructor(); }
 
 	void MarkDirty() override;
 	void UpdateDeltaXY() override;
-	ExpensesType GetExpenseType(bool income) const override { return income ? EXPENSES_AIRCRAFT_REVENUE : EXPENSES_AIRCRAFT_RUN; }
+	ExpensesType GetExpenseType(bool income) const override { return income ? ExpensesType::AircraftRevenue : ExpensesType::AircraftRun; }
 	bool IsPrimaryVehicle() const override                  { return this->IsNormalAircraft(); }
 	void GetImage(Direction direction, EngineImageType image_type, VehicleSpriteSeq *result) const override;
 	Direction GetMapImageDirection() const { return this->First()->direction; }
@@ -106,7 +108,7 @@ struct Aircraft final : public SpecializedVehicle<Aircraft, VEH_AIRCRAFT> {
 	bool IsInDepot() const override
 	{
 		assert(this->IsPrimaryVehicle());
-		return (this->vehstatus & VS_HIDDEN) != 0 && IsHangarTile(this->tile);
+		return this->vehstatus.Test(VehState::Hidden) && IsHangarTile(this->tile);
 	}
 
 	bool Tick() override;
@@ -115,7 +117,7 @@ struct Aircraft final : public SpecializedVehicle<Aircraft, VEH_AIRCRAFT> {
 	uint Crash(bool flooded = false) override;
 	TileIndex GetOrderStationLocation(StationID station) override;
 	TileIndex GetCargoTile() const override { return this->First()->tile; }
-	ClosestDepot FindClosestDepot() override;
+	ClosestDepot FindClosestDepot() const override;
 
 	/**
 	 * Check if the aircraft type is a normal flying device; eg

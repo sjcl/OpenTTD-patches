@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file dedicated_v.cpp Dedicated server video 'driver'. */
@@ -20,7 +20,7 @@
 #include "../blitter/factory.hpp"
 #include "../company_func.h"
 #include "../core/random_func.hpp"
-#include "../sl/saveload.h"
+#include "../sl/saveload_func.h"
 #include "../thread.h"
 #include "../window_func.h"
 #include <iostream>
@@ -33,12 +33,15 @@
 #	include <signal.h>
 #	define STDIN 0  /* file descriptor for standard input */
 
+std::atomic<bool> _dedicated_exit_requested;
+
 /* Signal handlers */
 static void DedicatedSignalHandler(int sig)
 {
-	if (_game_mode == GM_NORMAL && _settings_client.gui.autosave_on_exit) DoExitSave();
-	_exit_game = true;
+	_dedicated_exit_requested = true;
+#ifndef WITH_SIGACTION
 	signal(sig, DedicatedSignalHandler);
+#endif
 }
 #endif
 
@@ -64,6 +67,8 @@ static void WINAPI CheckForConsoleInput()
 		/* Signal input waiting that input is read and wait for it being handled. */
 		SignalObjectAndWait(_hInputReady, _hWaitForInputHandling, INFINITE, FALSE);
 	}
+
+	ClearCurrentThreadName();
 }
 
 static void CreateWindowsConsoleThread()
@@ -93,9 +98,9 @@ static void CloseWindowsConsoleThread()
 #include "../safeguards.h"
 
 
-static void *_dedicated_video_mem;
+static std::unique_ptr<uint8_t[]> _dedicated_video_mem;
 
-/* Whether a fork has been done. */
+/** Whether a fork has been done. */
 bool _dedicated_forks;
 
 extern bool SafeLoad(const std::string &filename, SaveLoadOperation fop, DetailedFileType dft, GameMode newgm, Subdirectory subdir,
@@ -109,11 +114,11 @@ const char *VideoDriver_Dedicated::Start(const StringList &)
 	this->UpdateAutoResolution();
 
 	int bpp = BlitterFactory::GetCurrentBlitter()->GetScreenDepth();
-	_dedicated_video_mem = (bpp == 0) ? nullptr : MallocT<uint8_t>(static_cast<size_t>(_cur_resolution.width) * _cur_resolution.height * (bpp / 8));
+	if (bpp != 0) _dedicated_video_mem = std::make_unique<uint8_t[]>(static_cast<size_t>(_cur_resolution.width) * _cur_resolution.height * (bpp / 8));
 
 	_screen.width  = _screen.pitch = _cur_resolution.width;
 	_screen.height = _cur_resolution.height;
-	_screen.dst_ptr = _dedicated_video_mem;
+	_screen.dst_ptr = _dedicated_video_mem.get();
 	ScreenSizeChanged();
 	BlitterFactory::GetCurrentBlitter()->PostResize();
 
@@ -140,7 +145,7 @@ void VideoDriver_Dedicated::Stop()
 #ifdef _WIN32
 	CloseWindowsConsoleThread();
 #endif
-	free(_dedicated_video_mem);
+	_dedicated_video_mem = nullptr;
 }
 
 void VideoDriver_Dedicated::MakeDirty(int, int, int, int) {}
@@ -197,9 +202,20 @@ void VideoDriver_Dedicated::MainLoop()
 {
 	/* Signal handlers */
 #if defined(UNIX)
+#ifdef WITH_SIGACTION
+	struct sigaction sa;
+	memset(&sa, 0, sizeof(sa));
+	sa.sa_flags = SA_RESTART;
+	sigemptyset(&sa.sa_mask);
+	sa.sa_handler = DedicatedSignalHandler;
+	sigaction(SIGTERM, &sa, nullptr);
+	sigaction(SIGINT, &sa, nullptr);
+	sigaction(SIGQUIT, &sa, nullptr);
+#else
 	signal(SIGTERM, DedicatedSignalHandler);
 	signal(SIGINT, DedicatedSignalHandler);
 	signal(SIGQUIT, DedicatedSignalHandler);
+#endif
 #endif
 
 	SetSelfAsGameThread();
@@ -209,8 +225,8 @@ void VideoDriver_Dedicated::MainLoop()
 	_network_dedicated = true;
 	_current_company = _local_company = COMPANY_SPECTATOR;
 
-	/* If SwitchMode is SM_LOAD_GAME / SM_START_HEIGHTMAP, it means that the user used the '-g' options */
-	if (_switch_mode != SM_LOAD_GAME && _switch_mode != SM_START_HEIGHTMAP) {
+	/* If SwitchMode is SwitchMode::LoadGame / SwitchMode::StartHeightmap, it means that the user used the '-g' options */
+	if (_switch_mode != SwitchMode::LoadGame && _switch_mode != SwitchMode::StartHeightmap) {
 		StartNewGameWithoutGUI(GENERATE_NEW_SEED);
 	}
 
@@ -224,5 +240,12 @@ void VideoDriver_Dedicated::MainLoop()
 
 		this->Tick();
 		this->SleepTillNextTick();
+
+#if defined(UNIX)
+		if (_dedicated_exit_requested) {
+			if (_game_mode == GameMode::Normal && _settings_client.gui.autosave_on_exit) DoExitSave();
+			_exit_game = true;
+		}
+#endif
 	}
 }

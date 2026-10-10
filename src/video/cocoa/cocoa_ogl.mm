@@ -2,25 +2,28 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
-/** @file cocoa_ogl.mm Code related to the cocoa OpengL video driver. */
+/**
+ * @file cocoa_ogl.mm Code related to the cocoa OpengL video driver.
+ *
+ * @important Notice regarding all modifications!!!!!!!
+ * There are certain limitations because the file is objective C++.
+ * gdb has limitations.
+ * C++ and objective C code can't be joined in all cases (classes stuff).
+ * Read http://developer.apple.com/releasenotes/Cocoa/Objective-C++.html for more information.
+ */
 
-#ifdef WITH_COCOA
+#if defined(WITH_COCOA) || defined(DOXYGEN_API)
 
 #include "../../stdafx.h"
 #include "../../os/macosx/macos.h"
 
+/** Macro defined before OpenGL and GLUT includes to avoid deprecation messages. */
 #define GL_SILENCE_DEPRECATION
 
-#define Rect  OTTDRect
-#define Point OTTDPoint
-#import <Cocoa/Cocoa.h>
-#import <QuartzCore/QuartzCore.h>
-#undef Rect
-#undef Point
-
+#include "../../os/macosx/macos_objective_c.h"
 #include "../../openttd.h"
 #include "../../debug.h"
 #include "../../core/geometry_func.hpp"
@@ -37,16 +40,13 @@
 #import <OpenGL/OpenGL.h>
 #import <OpenGL/gl3.h>
 
+static Palette _local_palette; ///< Current palette to use for drawing.
 
 /**
- * Important notice regarding all modifications!!!!!!!
- * There are certain limitations because the file is objective C++.
- * gdb has limitations.
- * C++ and objective C code can't be joined in all cases (classes stuff).
- * Read http://developer.apple.com/releasenotes/Cocoa/Objective-C++.html for more information.
+ * Platform-specific callback to get an OpenGL function pointer.
+ * @param proc The name of the function.
+ * @return The function pointer, or \c nullptr when it could not be found.
  */
-
-/** Platform-specific callback to get an OpenGL funtion pointer. */
 static OGLProc GetOGLProcAddressCallback(const char *proc)
 {
 	static void *dl = nullptr;
@@ -180,6 +180,7 @@ static bool _allowSoftware;
 @end
 
 
+/** Storage for instance of the FVideoDriver_CocoaOpenGL class. */
 static FVideoDriver_CocoaOpenGL iFVideoDriver_CocoaOpenGL;
 
 
@@ -272,7 +273,6 @@ NSView *VideoDriver_CocoaOpenGL::AllocateDrawView()
 	return [ [ OTTD_CGLLayerView alloc ] initWithFrame:this->cocoaview.bounds context:this->gl_context ];
 }
 
-/** Resize the window. */
 void VideoDriver_CocoaOpenGL::AllocateBackingStore(bool force)
 {
 	if (this->window == nil || this->setup) return;
@@ -311,7 +311,7 @@ void VideoDriver_CocoaOpenGL::ReleaseVideoPointer()
 
 void VideoDriver_CocoaOpenGL::Paint()
 {
-	PerformanceMeasurer framerate(PFE_VIDEO);
+	PerformanceMeasurer framerate(PerformanceElement::Video);
 
 	if (_cur_palette.count_dirty != 0) {
 		Blitter *blitter = BlitterFactory::GetCurrentBlitter();
@@ -319,7 +319,7 @@ void VideoDriver_CocoaOpenGL::Paint()
 		/* Always push a changed palette to OpenGL. */
 		CGLSetCurrentContext(this->gl_context);
 		OpenGLBackend::Get()->UpdatePalette(_cur_palette.palette, _cur_palette.first_dirty, _cur_palette.count_dirty);
-		if (blitter->UsePaletteAnimation() == Blitter::PALETTE_ANIMATION_BLITTER) {
+		if (blitter->UsePaletteAnimation() == Blitter::PaletteAnimation::Blitter) {
 			blitter->PaletteAnimate(_cur_palette);
 		}
 
@@ -331,4 +331,4 @@ void VideoDriver_CocoaOpenGL::Paint()
 	[ CATransaction commit ];
 }
 
-#endif /* WITH_COCOA */
+#endif /* WITH_COCOA or DOXYGEN_API */

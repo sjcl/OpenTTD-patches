@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file depot.cpp Handling of depots. */
@@ -45,11 +45,11 @@ Depot::~Depot()
 	TraceRestrictRemoveDestinationID(TROCAF_DEPOT, this->index);
 
 	/* Delete the depot-window */
-	CloseWindowById(WC_VEHICLE_DEPOT, this->xy);
+	CloseWindowById(WindowClass::VehicleDepot, this->xy.base());
 
 	/* Delete the depot list */
 	VehicleType vt = GetDepotVehicleType(this->xy);
-	CloseWindowById(GetWindowClassForVehicleType(vt), VehicleListIdentifier(VL_DEPOT_LIST, vt, GetTileOwner(this->xy), this->index).Pack());
+	CloseWindowById(GetWindowClassForVehicleType(vt), VehicleListIdentifier(VehicleListType::Depot, vt, GetTileOwner(this->xy), this->index).ToWindowNumber());
 
 	/* Delete any depot departure window */
 	CloseDepotDeparturesWindow(this->xy);

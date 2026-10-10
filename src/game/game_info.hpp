@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file game_info.hpp GameInfo keeps track of all information of an Game, like Author, Description, ... */
@@ -15,25 +15,34 @@
 /** All static information from an Game like name, version, etc. */
 class GameInfo : public ScriptInfo {
 public:
+	/** All valid GameScript API versions, in order. */
+	static constexpr std::string_view ApiVersions[]{ "1.2", "1.3", "1.4", "1.5", "1.6", "1.7", "1.8", "1.9", "1.10", "1.11", "12", "13", "14", "15", "16" };
+
 	GameInfo();
 
 	/**
 	 * Register the functions of this class.
+	 * @param engine The engine to register to.
 	 */
-	static void RegisterAPI(Squirrel *engine);
+	static void RegisterAPI(Squirrel &engine);
 
 	/**
 	 * Create an Game, using this GameInfo as start-template.
+	 * @param vm The virtual machine to push the instance to.
+	 * @return The number of stack places occupied.
 	 */
 	static SQInteger Constructor(HSQUIRRELVM vm);
 
 	/**
 	 * Check if we can start this Game.
+	 * @param version The version to check.
+	 * @return \c true if this script can load the data from that version.
 	 */
 	bool CanLoadFromVersion(int version) const;
 
 	/**
 	 * Get the API version this Game is written for.
+	 * @return The API version.
 	 */
 	const std::string &GetAPIVersion() const { return this->api_version; }
 
@@ -52,16 +61,20 @@ public:
 
 	/**
 	 * Register the functions of this class.
+	 * @param engine The engine to register to.
 	 */
-	static void RegisterAPI(Squirrel *engine);
+	static void RegisterAPI(Squirrel &engine);
 
 	/**
 	 * Create an GSLibrary, using this GSInfo as start-template.
+	 * @param vm The virtual machine to push the instance to.
+	 * @return The number of stack places occupied.
 	 */
 	static SQInteger Constructor(HSQUIRRELVM vm);
 
 	/**
 	 * Get the category this library is in.
+	 * @return The category.
 	 */
 	const std::string &GetCategory() const { return this->category; }
 

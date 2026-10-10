@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file factory.hpp Factory to 'query' all available blitters. */
@@ -40,10 +40,10 @@ private:
 	 * Get the currently active blitter.
 	 * @return The currently active blitter.
 	 */
-	static Blitter **GetActiveBlitter()
+	static std::unique_ptr<Blitter> &GetActiveBlitter()
 	{
-		static Blitter *s_blitter = nullptr;
-		return &s_blitter;
+		static std::unique_ptr<Blitter> s_blitter = nullptr;
+		return s_blitter;
 	}
 
 protected:
@@ -56,7 +56,7 @@ protected:
 	 * @pre description != nullptr.
 	 * @pre There is no blitter registered with this name.
 	 */
-	BlitterFactory(const char *name, const char *description, bool usable = true) :
+	BlitterFactory(std::string_view name, std::string_view description, bool usable = true) :
 			name(name), description(description)
 	{
 		if (usable) {
@@ -93,18 +93,17 @@ public:
 	 * Find the requested blitter and return its class.
 	 * @param name the blitter to select.
 	 * @post Sets the blitter so GetCurrentBlitter() returns it too.
+	 * @return The selected blitter or \c nullptr when no blitter could be found.
 	 */
-	static Blitter *SelectBlitter(const std::string_view name)
+	static Blitter *SelectBlitter(std::string_view name)
 	{
 		BlitterFactory *b = GetBlitterFactory(name);
 		if (b == nullptr) return nullptr;
 
-		Blitter *newb = b->CreateInstance();
-		delete *GetActiveBlitter();
-		*GetActiveBlitter() = newb;
+		GetActiveBlitter() = b->CreateInstance();
 
-		Debug(driver, 1, "Successfully {} blitter '{}'", name.empty() ? "probed" : "loaded", newb->GetName());
-		return newb;
+		Debug(driver, 1, "Successfully {} blitter '{}'", name.empty() ? "probed" : "loaded", GetCurrentBlitter()->GetName());
+		return GetCurrentBlitter();
 	}
 
 	/**
@@ -112,17 +111,17 @@ public:
 	 * @param name the blitter factory to select.
 	 * @return The blitter factory, or nullptr when there isn't one with the wanted name.
 	 */
-	static BlitterFactory *GetBlitterFactory(const std::string_view name)
+	static BlitterFactory *GetBlitterFactory(std::string_view name)
 	{
 #if defined(DEDICATED)
-		const std::string_view default_blitter = "null";
+		static const std::string_view default_blitter = "null";
 #elif defined(WITH_COCOA)
-		const std::string_view default_blitter = "32bpp-anim";
+		static const std::string_view default_blitter = "32bpp-anim";
 #else
-		const std::string_view default_blitter = "8bpp-optimized";
+		static const std::string_view default_blitter = "8bpp-optimized";
 #endif
 		if (GetBlitters().empty()) return nullptr;
-		const std::string_view bname = name.empty() ? default_blitter : name;
+		std::string_view bname = name.empty() ? default_blitter : name;
 
 		for (auto &it : GetBlitters()) {
 			BlitterFactory *b = it.second;
@@ -135,10 +134,11 @@ public:
 
 	/**
 	 * Get the current active blitter (always set by calling SelectBlitter).
+	 * @return The active blitter.
 	 */
 	static Blitter *GetCurrentBlitter()
 	{
-		return *GetActiveBlitter();
+		return GetActiveBlitter().get();
 	}
 
 	/**
@@ -157,6 +157,7 @@ public:
 
 	/**
 	 * Get the long, human readable, name for the Blitter-class.
+	 * @return Name of this instance.
 	 */
 	const std::string &GetName() const
 	{
@@ -165,6 +166,7 @@ public:
 
 	/**
 	 * Get a nice description of the blitter-class.
+	 * @return Description of this instance.
 	 */
 	const std::string &GetDescription() const
 	{
@@ -173,8 +175,9 @@ public:
 
 	/**
 	 * Create an instance of this Blitter-class.
+	 * @return The created instance.
 	 */
-	virtual Blitter *CreateInstance() = 0;
+	virtual std::unique_ptr<Blitter> CreateInstance() = 0;
 };
 
 extern std::string _ini_blitter;

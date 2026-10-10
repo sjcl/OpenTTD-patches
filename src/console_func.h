@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file console_func.h Console functions used outside of the console code. */
@@ -13,8 +13,8 @@
 #include "console_type.h"
 #include "core/format.hpp"
 
-/* console modes */
-extern IConsoleModes _iconsole_mode;
+/** Console modes. */
+extern IConsoleMode _iconsole_mode;
 
 /* console functions */
 void IConsoleInit();
@@ -22,7 +22,7 @@ void IConsoleFree();
 void IConsoleClose();
 
 /* console output */
-void IConsolePrint(TextColour colour_code, std::string string);
+void IConsolePrint(ExtendedTextColour colour_code, std::string string);
 
 /**
  * Handle the printing of text entered into the console or redirected there
@@ -31,14 +31,14 @@ void IConsolePrint(TextColour colour_code, std::string string);
  * are also logged. All lines to print are added to a temporary buffer which can be
  * used as a history to print them onscreen
  * @param colour_code The colour of the command.
- * @param format_string The formatting string to tell what to do with the remaining arguments.
+ * @param format The formatting string to tell what to do with the remaining arguments.
  * @param first_arg The first argument to the format.
  * @param other_args The other arguments to the format.
  * @tparam A The type of the first argument.
  * @tparam Args The types of the other arguments.
  */
 template <typename A, typename ... Args>
-inline void IConsolePrint(TextColour colour_code, fmt::format_string<A, Args...> format, A&& first_arg, Args&&... other_args)
+inline void IConsolePrint(ExtendedTextColour colour_code, fmt::format_string<A, Args...> format, A&& first_arg, Args&&... other_args)
 {
 	/* The separate first_arg argument is added to aid overloading.
 	 * Otherwise the calls that do no need formatting will still use this function. */
@@ -46,9 +46,9 @@ inline void IConsolePrint(TextColour colour_code, fmt::format_string<A, Args...>
 }
 
 /* Parser */
-void IConsoleCmdExec(const std::string &command_string, const uint recurse_count = 0);
-void IConsoleCmdExecTokens(uint token_count, char *tokens[], const uint recurse_count = 0);
+void IConsoleCmdExec(std::string_view command_string, const uint recurse_count = 0);
+void IConsoleCmdExecTokens(std::span<std::string_view> tokens, const uint recurse_count = 0);
 
-bool IsValidConsoleColour(TextColour c);
+bool IsValidConsoleColour(ExtendedTextColour c);
 
 #endif /* CONSOLE_FUNC_H */

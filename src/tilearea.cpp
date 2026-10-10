@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file tilearea.cpp Handling of tile areas. */
@@ -21,16 +21,16 @@
  */
 OrthogonalTileArea::OrthogonalTileArea(TileIndex start, TileIndex end)
 {
-	dbg_assert(start < MapSize());
-	dbg_assert(end < MapSize());
+	dbg_assert(start < Map::Size());
+	dbg_assert(end < Map::Size());
 
 	uint sx = TileX(start);
 	uint sy = TileY(start);
 	uint ex = TileX(end);
 	uint ey = TileY(end);
 
-	if (sx > ex) Swap(sx, ex);
-	if (sy > ey) Swap(sy, ey);
+	if (sx > ex) std::swap(sx, ex);
+	if (sy > ey) std::swap(sy, ey);
 
 	this->tile = TileXY(sx, sy);
 	this->w    = ex - sx + 1;
@@ -128,8 +128,8 @@ OrthogonalTileArea &OrthogonalTileArea::Expand(int rad)
 
 	int sx = std::max<int>(x - rad, 0);
 	int sy = std::max<int>(y - rad, 0);
-	int ex = std::min<int>(x + this->w + rad, MapSizeX());
-	int ey = std::min<int>(y + this->h + rad, MapSizeY());
+	int ex = std::min<int>(x + this->w + rad, Map::SizeX());
+	int ey = std::min<int>(y + this->h + rad, Map::SizeY());
 
 	this->tile = TileXY(sx, sy);
 	this->w    = ex - sx;
@@ -142,9 +142,9 @@ OrthogonalTileArea &OrthogonalTileArea::Expand(int rad)
  */
 void OrthogonalTileArea::ClampToMap()
 {
-	dbg_assert(this->tile < MapSize());
-	this->w = std::min<int>(this->w, MapSizeX() - TileX(this->tile));
-	this->h = std::min<int>(this->h, MapSizeY() - TileY(this->tile));
+	dbg_assert(this->tile < Map::Size());
+	this->w = std::min<int>(this->w, Map::SizeX() - TileX(this->tile));
+	this->h = std::min<int>(this->h, Map::SizeY() - TileY(this->tile));
 }
 
 /**
@@ -172,8 +172,8 @@ OrthogonalTileIterator OrthogonalTileArea::end() const
  */
 DiagonalTileArea::DiagonalTileArea(TileIndex start, TileIndex end) : tile(start)
 {
-	dbg_assert(start < MapSize());
-	dbg_assert(end < MapSize());
+	dbg_assert(start < Map::Size());
+	dbg_assert(end < Map::Size());
 
 	/* Unfortunately we can't find a new base and make all a and b positive because
 	 * the new base might be a "flattened" corner where there actually is no single
@@ -231,6 +231,7 @@ bool DiagonalTileArea::Contains(TileIndex tile) const
 
 /**
  * Move ourselves to the next tile in the rectangle on the map.
+ * @return Reference to this iterator.
  */
 TileIterator &DiagonalTileIterator::operator++()
 {
@@ -275,8 +276,8 @@ TileIterator &DiagonalTileIterator::operator++()
 		uint x = this->base_x + (this->a_cur - this->b_cur) / 2;
 		uint y = this->base_y + (this->b_cur + this->a_cur) / 2;
 		/* Prevent wrapping around the map's borders. */
-		this->tile = x >= MapSizeX() || y >= MapSizeY() ? INVALID_TILE : TileXY(x, y);
-	} while (this->tile > MapSize() && this->b_max != this->b_cur);
+		this->tile = x >= Map::SizeX() || y >= Map::SizeY() ? INVALID_TILE : TileXY(x, y);
+	} while (this->tile > Map::Size() && this->b_max != this->b_cur);
 
 	if (this->b_max == this->b_cur) this->tile = INVALID_TILE;
 	return *this;
@@ -335,4 +336,104 @@ void BitmapTileArea::SetTiles(const TileArea &area)
 			}
 		}
 	}
+}
+
+/**
+ * See SpiralTileSequence constructor for description.
+ */
+SpiralTileIterator::SpiralTileIterator(TileIndex center, uint diameter) :
+	max_radius(diameter / 2),
+	cur_radius(0),
+	dir(DiagDirection::Begin)
+{
+	assert(diameter > 0);
+
+	if (diameter % 2 == 1) {
+		this->extent.fill(1);
+		this->dir = DiagDirection::Invalid; // special case for odd diameters, see Increment()
+		this->position = 0;
+
+		this->x = TileX(center);
+		this->y = TileY(center);
+	} else {
+		this->extent.fill(0);
+		this->dir = DiagDirection::Begin;
+		this->InitPosition();
+
+		/* Start with the west corner of the center 2x2 rect */
+		this->x = TileX(center) + 1;
+		this->y = TileY(center);
+	}
+	this->SkipOutsideMap();
+}
+
+/** Create the iterator. @copydoc SpiralTileSequence::SpiralTileSequence(TileIndex, uint, uint, uint) */
+SpiralTileIterator::SpiralTileIterator(TileIndex start_north, uint radius, uint w, uint h) :
+	max_radius(radius),
+	extent{w, h, w, h},
+	cur_radius(0),
+	dir(DiagDirection::Begin),
+	/* first tile is the west corner */
+	x(TileX(start_north) + w + 1),
+	y(TileY(start_north))
+{
+	assert(max_radius > 0);
+	this->InitPosition();
+	this->SkipOutsideMap();
+}
+
+/**
+ * Advance the internal state until it reaches a valid tile or the end.
+ */
+void SpiralTileIterator::SkipOutsideMap()
+{
+	while (!this->IsEnd() && (this->x >= Map::SizeX() || this->y >= Map::SizeY())) this->Increment();
+}
+
+/**
+ * Initialise "position" after "dir" was changed.
+ */
+void SpiralTileIterator::InitPosition()
+{
+	this->position = this->extent[this->dir] + this->cur_radius * 2 + 1;
+}
+
+/**
+ * Advance the internal state to the next potential tile.
+ * The tile may be outside the map though.
+ */
+void SpiralTileIterator::Increment()
+{
+	assert(!this->IsEnd());
+
+	/* Special value for first tile in areas with odd diameter */
+	if (this->dir == DiagDirection::Invalid) {
+		const auto west = TileIndexDiffCByDir(Direction::W);
+		this->x += west.x;
+		this->y += west.y;
+		this->dir = DiagDirection::Begin;
+		this->InitPosition();
+		return;
+	}
+
+	/* Step to the next 'neighbour' in the circular line */
+	const auto diff = TileIndexDiffCByDiagDir(this->dir);
+	this->x += diff.x;
+	this->y += diff.y;
+	--this->position;
+	if (this->position > 0) return;
+
+	/* Corner reached, switch direction */
+	++this->dir;
+
+	if (this->dir == DiagDirection::End) {
+		/* Jump to next circle */
+		const auto west = TileIndexDiffCByDir(Direction::W);
+		this->x += west.x;
+		this->y += west.y;
+		++this->cur_radius;
+		this->dir = DiagDirection::Begin;
+	}
+
+	this->InitPosition();
 }

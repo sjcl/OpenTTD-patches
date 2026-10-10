@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file picker_widget.h Types related to the picker widgets. */
@@ -19,16 +19,27 @@ enum PickerClassWindowWidgets : WidgetID {
 	WID_PW_CLASS_LIST, ///< List of classes.
 	WID_PW_CLASS_SCROLL, ///< Scrollbar for list of classes.
 
+	WID_PW_COLEC_LIST,   ///< List of collections.
+	WID_PW_COLEC_ADD,    ///< Button to create a new collections.
+	WID_PW_COLEC_RENAME, ///< Button to rename a collections.
+	WID_PW_COLEC_DELETE, ///< Button to delete a collection.
+
 	WID_PW_TYPE_SEL, ///< Stack to hide the type picker.
 	WID_PW_TYPE_FILTER, ///< Text filter.
 	WID_PW_MODE_ALL, ///< Toggle "Show all" filter mode.
 	WID_PW_MODE_USED, ///< Toggle showing only used types.
 	WID_PW_MODE_SAVED, ///< Toggle showing only saved types.
+	WID_PW_SHRINK, ///< Button to reduce preview image height.
+	WID_PW_EXPAND, ///< Button to increase preview image height.
 	WID_PW_TYPE_MATRIX, ///< Matrix with items.
 	WID_PW_TYPE_ITEM, ///< A single item.
 	WID_PW_TYPE_SCROLL, ///< Scrollbar for the matrix.
+	WID_PW_TYPE_RAND_SEL, ///< Selector for random item button, which can be hidden.
+	WID_PW_TYPE_RANDOM, ///< Random item button.
 	WID_PW_TYPE_NAME, ///< Name of selected item.
 	WID_PW_TYPE_RESIZE, ///< Type resize handle.
+	WID_PW_CONFIGURE_BADGES, ///< Button to configure badges.
+	WID_PW_BADGE_FILTER, ///< Container for dropdown badge filters. Must be last in this list.
 };
 
 #endif /* WIDGETS_PICKER_WIDGET_H */

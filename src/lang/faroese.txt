@@ -14,7 +14,7 @@
 # This file is part of OpenTTD.
 # OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
 # OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-# See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+# See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
 
 
 ##id 0x0000
@@ -363,7 +363,6 @@ STR_SCENEDIT_FILE_MENU_QUIT                                     :Gevst
 
 
 # Settings menu
-###length 16
 STR_SETTINGS_MENU_GAME_OPTIONS                                  :Spæl møguleikar
 STR_SETTINGS_MENU_NEWGRF_SETTINGS                               :NewGRF innstillingar
 STR_SETTINGS_MENU_TRANSPARENCY_OPTIONS                          :Gjøgnumskygnis møguleikar
@@ -528,6 +527,8 @@ STR_GRAPH_COMPANY_PERFORMANCE_RATINGS_CAPTION                   :{WHITE}Avriks m
 STR_GRAPH_COMPANY_VALUES_CAPTION                                :{WHITE}Virðir hjá fyritøku
 
 
+
+
 STR_GRAPH_CARGO_PAYMENT_RATES_CAPTION                           :{WHITE}Farma gjald takstur
 STR_GRAPH_CARGO_PAYMENT_RATES_TITLE                             :{TINY_FONT}{BLACK}Útgjald fyri útflyggjan av 10 eindum (ella 10,000 litrum) av farmi við fjarstøðu av 20 puntum
 STR_GRAPH_CARGO_ENABLE_ALL                                      :{TINY_FONT}{BLACK}Gilda alt
@@ -536,6 +537,7 @@ STR_GRAPH_CARGO_TOOLTIP_ENABLE_ALL                              :{BLACK}Vís all
 STR_GRAPH_CARGO_TOOLTIP_DISABLE_ALL                             :{BLACK}Vís ongan farm á farmagjalds takst grafi
 STR_GRAPH_CARGO_PAYMENT_TOGGLE_CARGO                            :{BLACK}Tendra/sløkk graf fyri farma slag
 STR_GRAPH_CARGO_PAYMENT_CARGO                                   :{TINY_FONT}{BLACK}{STRING}
+
 
 
 STR_GRAPH_PERFORMANCE_DETAIL_TOOLTIP                            :{BLACK}Vís avriks metingar í smálutum
@@ -719,7 +721,6 @@ STR_MESSAGE_HISTORY_TOOLTIP                                     :{BLACK}Yvirlit 
 STR_MESSAGE_NEWS_FORMAT                                         :{STRING}  -  {STRING}
 
 STR_NEWS_MESSAGE_CAPTION                                        :{WHITE}Boð
-STR_NEWS_CUSTOM_ITEM                                            :{BIG_FONT}{BLACK}{STRING}
 
 STR_NEWS_FIRST_TRAIN_ARRIVAL                                    :{BIG_FONT}{BLACK}Íbúgvar fegnast . . .{}Fyrsta toki kemur til {STATION}!
 STR_NEWS_FIRST_BUS_ARRIVAL                                      :{BIG_FONT}{BLACK}Íbúgvar fegnast . . .{}Fyrsti bussur kemur til {STATION}!
@@ -824,11 +825,12 @@ STR_GAME_OPTIONS_CAPTION                                        :{WHITE}Spæli m
 
 
 
-STR_GAME_OPTIONS_CURRENCY_UNITS_FRAME                           :{BLACK}Gjaldsoyra eindir
-STR_GAME_OPTIONS_CURRENCY_UNITS_DROPDOWN_TOOLTIP                :{BLACK}Úrval av gjaldsoyra eindum
+
+STR_GAME_OPTIONS_CURRENCY_UNITS_FRAME                           :Gjaldsoyra eindir
+STR_GAME_OPTIONS_CURRENCY_UNITS_DROPDOWN_TOOLTIP                :Úrval av gjaldsoyra eindum
 
 
-###length 44
+###length 46
 STR_GAME_OPTIONS_CURRENCY_GBP                                   :Bretsk Pund
 STR_GAME_OPTIONS_CURRENCY_USD                                   :Dollarar
 STR_GAME_OPTIONS_CURRENCY_EUR                                   :Evrir
@@ -864,21 +866,21 @@ STR_GAME_OPTIONS_CURRENCY_CUSTOM                                :Sjálvgjørt...
 STR_GAME_OPTIONS_CURRENCY_GEL                                   :Georgiskur Lari
 STR_GAME_OPTIONS_CURRENCY_IRR                                   :Iranskur Rial
 
-STR_GAME_OPTIONS_AUTOSAVE_FRAME                                 :{BLACK}Sjálvgoymsla
-STR_GAME_OPTIONS_AUTOSAVE_DROPDOWN_TOOLTIP                      :{BLACK}Vel títtleika av sjálvgoymslu
+STR_GAME_OPTIONS_AUTOSAVE_FRAME                                 :Sjálvgoymsla
+STR_GAME_OPTIONS_AUTOSAVE_DROPDOWN_TOOLTIP                      :Vel títtleika av sjálvgoymslu
 
 # Autosave dropdown
 ###length 5
 STR_GAME_OPTIONS_AUTOSAVE_DROPDOWN_OFF                          :Sløkt
 
-STR_GAME_OPTIONS_LANGUAGE                                       :{BLACK}Mál
-STR_GAME_OPTIONS_LANGUAGE_TOOLTIP                               :{BLACK}Vel mál at nýta í takførisflatu
+STR_GAME_OPTIONS_LANGUAGE                                       :Mál
+STR_GAME_OPTIONS_LANGUAGE_TOOLTIP                               :Vel mál at nýta í takførisflatu
 
-STR_GAME_OPTIONS_FULLSCREEN                                     :{BLACK}Fullan skerm
-STR_GAME_OPTIONS_FULLSCREEN_TOOLTIP                             :{BLACK}Marka hendan kassan fyri at spæla OpenTTD í fullum skermi
+STR_GAME_OPTIONS_FULLSCREEN                                     :Fullan skerm
+STR_GAME_OPTIONS_FULLSCREEN_TOOLTIP                             :Marka hendan kassan fyri at spæla OpenTTD í fullum skermi
 
-STR_GAME_OPTIONS_RESOLUTION                                     :{BLACK}Skerm upploysn
-STR_GAME_OPTIONS_RESOLUTION_TOOLTIP                             :{BLACK}Vel hvørja skermupploysn tú vil brúka
+STR_GAME_OPTIONS_RESOLUTION                                     :Skerm upploysn
+STR_GAME_OPTIONS_RESOLUTION_TOOLTIP                             :Vel hvørja skermupploysn tú vil brúka
 STR_GAME_OPTIONS_RESOLUTION_OTHER                               :annað
 
 
@@ -891,17 +893,18 @@ STR_GAME_OPTIONS_RESOLUTION_OTHER                               :annað
 
 
 
-STR_GAME_OPTIONS_BASE_GRF                                       :{BLACK}Base grafikk sett
-STR_GAME_OPTIONS_BASE_GRF_TOOLTIP                               :{BLACK}Vel ta base grafikk setti tú vil brúka
-STR_GAME_OPTIONS_BASE_GRF_DESCRIPTION_TOOLTIP                   :{BLACK}Meira kunning um base grafikk setti
 
-STR_GAME_OPTIONS_BASE_SFX                                       :{BLACK}Base ljóð sett
-STR_GAME_OPTIONS_BASE_SFX_TOOLTIP                               :{BLACK}Vel ta base ljóð setti tú vil brúka
-STR_GAME_OPTIONS_BASE_SFX_DESCRIPTION_TOOLTIP                   :{BLACK}Meira kunning um base ljóð setti
+STR_GAME_OPTIONS_BASE_GRF                                       :Base grafikk sett
+STR_GAME_OPTIONS_BASE_GRF_TOOLTIP                               :Vel ta base grafikk setti tú vil brúka
+STR_GAME_OPTIONS_BASE_GRF_DESCRIPTION_TOOLTIP                   :Meira kunning um base grafikk setti
 
-STR_GAME_OPTIONS_BASE_MUSIC                                     :{BLACK}Base tónleika sett
-STR_GAME_OPTIONS_BASE_MUSIC_TOOLTIP                             :{BLACK}Vel ta base tónleika setti tú vil brúka
-STR_GAME_OPTIONS_BASE_MUSIC_DESCRIPTION_TOOLTIP                 :{BLACK}Meira kunning um base tónleika setti
+STR_GAME_OPTIONS_BASE_SFX                                       :Base ljóð sett
+STR_GAME_OPTIONS_BASE_SFX_TOOLTIP                               :Vel ta base ljóð setti tú vil brúka
+STR_GAME_OPTIONS_BASE_SFX_DESCRIPTION_TOOLTIP                   :Meira kunning um base ljóð setti
+
+STR_GAME_OPTIONS_BASE_MUSIC                                     :Base tónleika sett
+STR_GAME_OPTIONS_BASE_MUSIC_TOOLTIP                             :Vel ta base tónleika setti tú vil brúka
+STR_GAME_OPTIONS_BASE_MUSIC_DESCRIPTION_TOOLTIP                 :Meira kunning um base tónleika setti
 
 
 
@@ -973,9 +976,9 @@ STR_RIVERS_MODERATE                                             :Miðal
 STR_RIVERS_LOT                                                  :Nógvir
 
 ###length 3
-STR_DISASTER_NONE                                               :Ongar
-STR_DISASTER_REDUCED                                            :Færri
-STR_DISASTER_NORMAL                                             :Vanligar
+STR_BREAKDOWNS_NONE                                             :Ongar
+STR_BREAKDOWNS_REDUCED                                          :Færri
+STR_BREAKDOWNS_NORMAL                                           :Vanligar
 
 ###length 4
 STR_SUBSIDY_X1_5                                                :x1.5
@@ -1002,10 +1005,10 @@ STR_CITY_APPROVAL_PERMISSIVE                                    :Eftirgevandi
 
 STR_WARNING_NO_SUITABLE_AI                                      :{WHITE}Einki hóskandi AI til taks...{}Tú kann heinta niður fleiri ymisk AI gjøgnum 'Online tilfar' kervi
 
-# Settings tree window
-STR_CONFIG_SETTING_FILTER_TITLE                                 :{BLACK}Filtur strongur:
-STR_CONFIG_SETTING_EXPAND_ALL                                   :{BLACK}Víðka alt
-STR_CONFIG_SETTING_COLLAPSE_ALL                                 :{BLACK}Toga alt saman
+# Settings tree in the Game Options window
+STR_CONFIG_SETTING_FILTER_TITLE                                 :Filtur strongur:
+STR_CONFIG_SETTING_EXPAND_ALL                                   :Víðka alt
+STR_CONFIG_SETTING_COLLAPSE_ALL                                 :Toga alt saman
 STR_CONFIG_SETTING_NO_EXPLANATION_AVAILABLE_HELPTEXT            :(eingin frágreiðing tøk)
 STR_CONFIG_SETTING_DEFAULT_VALUE                                :{LTBLUE}Vanligt virði: {ORANGE}{STRING}
 STR_CONFIG_SETTING_TYPE                                         :{LTBLUE}Slag av instilling: {ORANGE}{STRING}
@@ -1015,7 +1018,7 @@ STR_CONFIG_SETTING_TYPE_GAME_INGAME                             :Goymslu instill
 STR_CONFIG_SETTING_TYPE_COMPANY_MENU                            :Fyritøku instilling (goymt í goymslufílum; ávirkar einans nýggj spøl)
 STR_CONFIG_SETTING_TYPE_COMPANY_INGAME                          :Fyritøku instilling (goymt í goymslufílum; ávirkar einans núverðandi fyritøku)
 
-STR_CONFIG_SETTING_RESTRICT_DROPDOWN_HELPTEXT                   :{BLACK}Avmarkar listan niðanfyr so hann einans vísur broyttar instillingar
+STR_CONFIG_SETTING_RESTRICT_DROPDOWN_HELPTEXT                   :Avmarkar listan niðanfyr so hann einans vísur broyttar instillingar
 STR_CONFIG_SETTING_RESTRICT_BASIC                               :Grund innstillingar
 STR_CONFIG_SETTING_RESTRICT_ADVANCED                            :Víðkaðir innstillingar
 STR_CONFIG_SETTING_RESTRICT_ALL                                 :Serfrøðinga innstillingar / allir innstillingar
@@ -1063,6 +1066,7 @@ STR_CONFIG_SETTING_INTEREST_RATE_HELPTEXT                       :Rentustigi á l
 
 STR_CONFIG_SETTING_RUNNING_COSTS                                :Rakstrar kostnaður: {STRING}
 STR_CONFIG_SETTING_RUNNING_COSTS_HELPTEXT                       :Set hvussu høgur/lágur rakstrarkostnaðurin av flutningstólum og innankervi skal vera
+###length 3
 
 STR_CONFIG_SETTING_CONSTRUCTION_SPEED                           :Byggingar fer: {STRING}
 STR_CONFIG_SETTING_CONSTRUCTION_SPEED_HELPTEXT                  :Avmarka hvussu nógv AI kann byggja
@@ -1079,12 +1083,13 @@ STR_CONFIG_SETTING_SUBSIDY_MULTIPLIER_HELPTEXT                  :Vel hvussu nóg
 
 STR_CONFIG_SETTING_CONSTRUCTION_COSTS                           :Bygnings kostnaður: {STRING}
 STR_CONFIG_SETTING_CONSTRUCTION_COSTS_HELPTEXT                  :Set hvussu høgur/lágur bygnings- og keypskostnaður skal vera
+###length 3
 
 STR_CONFIG_SETTING_RECESSIONS                                   :Ringar tíðir: {STRING}
 STR_CONFIG_SETTING_RECESSIONS_HELPTEXT                          :Um hetta er tendra kunnu ringar tíðir koma fyri við nøkrum ára millumbili. Meðan ringar tíðir eru, er øll framleiðsla munandi lægri (fer aftur á støði ta var áðrenn tá ringu tíðinar eru av)
 
-STR_CONFIG_SETTING_TRAIN_REVERSING                              :Tok hava ikki loyvi at venda inni á støðum: {STRING}
-STR_CONFIG_SETTING_TRAIN_REVERSING_HELPTEXT                     :Um hetta er sligi til, venda tok ikki vi inni á ikki-endastøðum, sjálvt um ta er ein styttri leið til næsta stað um tey venda vi
+
+###length 3
 
 STR_CONFIG_SETTING_DISASTERS                                    :Ólukkur: {STRING}
 STR_CONFIG_SETTING_DISASTERS_HELPTEXT                           :Tendra/sløkk ólukkur sum kunnu av og á blokera ella oyðileggja flutningstól ella innankervi
@@ -1254,6 +1259,8 @@ STR_CONFIG_SETTING_NEVER_EXPIRE_VEHICLES_HELPTEXT               :Um gilda, eru �
 ###setting-zero-is-special
 
 
+###setting-zero-is-special
+
 STR_CONFIG_SETTING_AUTORENEW_VEHICLE                            :Sjálvendurnýggja flutningstól tá ta gerst gamalt: {STRING}
 STR_CONFIG_SETTING_AUTORENEW_VEHICLE_HELPTEXT                   :Um gilda, verður eitt flutningstól tá tað nærkast endanum á sínum lívi sjálvirkandi umbýtt tá endurnýggjanar treytirnar eru nøktaðar
 
@@ -1304,6 +1311,8 @@ STR_CONFIG_SETTING_ROUGHNESS_OF_TERRAIN_SMOOTH                  :Mjúkt
 STR_CONFIG_SETTING_ROUGHNESS_OF_TERRAIN_ROUGH                   :Harðrent
 STR_CONFIG_SETTING_ROUGHNESS_OF_TERRAIN_VERY_ROUGH              :Sera harðrent
 
+###length 4
+
 
 
 STR_CONFIG_SETTING_TREE_PLACER                                  :Algoritma fyri setan av trøðum: {STRING}
@@ -1349,6 +1358,7 @@ STR_CONFIG_SETTING_SMALLMAP_LAND_COLOUR_VIOLET                  :Blákollulitur
 
 STR_CONFIG_SETTING_SMOOTH_SCROLLING                             :Mjúka sýnisglugga skrulling: {STRING}
 STR_CONFIG_SETTING_SMOOTH_SCROLLING_HELPTEXT                    :Stýr hvussu høvuðs sýni skrullar til eitt ávíst stað tá tú trýstir á lítlakorti ella tú tú gevur eini boð um at skrulla til ein ávísan lut á kortinum. Um gilda, skrullar sýni mjúgdliga, um ógilda leypur sýni beint til staði
+
 
 STR_CONFIG_SETTING_MEASURE_TOOLTIP                              :Vís eina mátingar vegleiðing tá tú brúkar ymisku byggji amboðini: {STRING}
 STR_CONFIG_SETTING_MEASURE_TOOLTIP_HELPTEXT                     :Vís punta fjarstøðir og hæddar munir tá tú togar undir bygging
@@ -1424,12 +1434,7 @@ STR_CONFIG_SETTING_TIMETABLE_SHOW_ARRIVAL_DEPARTURE_HELPTEXT    :Vís væntaðu 
 STR_CONFIG_SETTING_QUICKGOTO                                    :Skjót gerð av boðum til flutningstól: {STRING}
 STR_CONFIG_SETTING_QUICKGOTO_HELPTEXT                           :'far til pílurin' er longu valdur tá tú opnar boðs vindeyga
 
-STR_CONFIG_SETTING_DEFAULT_RAIL_TYPE                            :Vanliga jarnbreyta slagi (aftaná nýtt spæl/heinta spæl): {STRING}
-STR_CONFIG_SETTING_DEFAULT_RAIL_TYPE_HELPTEXT                   :Jarnbreyta slag ið er valt eftir byrjan ella heintan av einum spæli. 'fyrst tøka' velur ta elsta slagi av breytum, 'síðst tøka' velur ta nýggjasta slagi av breytum, 'mest nýtta' velur ta slagi av breyt sum í verandi løtu er mest nýtt
 ###length 3
-STR_CONFIG_SETTING_DEFAULT_RAIL_TYPE_FIRST                      :Fyrsta tøka
-STR_CONFIG_SETTING_DEFAULT_RAIL_TYPE_LAST                       :Síðst tøka
-STR_CONFIG_SETTING_DEFAULT_RAIL_TYPE_MOST_USED                  :Mest nýtta
 
 STR_CONFIG_SETTING_SHOW_TRACK_RESERVATION                       :Vís umbidnar breytir: {STRING}
 STR_CONFIG_SETTING_SHOW_TRACK_RESERVATION_HELPTEXT              :Gev umbidnum breytum ein øðrvísi lit fyri at hjálpa tá ið tok sýta at koyra á leið-bygdum blokkum
@@ -1520,6 +1525,7 @@ STR_CONFIG_SETTING_NOSERVICE_HELPTEXT                           :Um gilda fáa f
 STR_CONFIG_SETTING_WAGONSPEEDLIMITS                             :Gilda hámarksferð fyri vognar: {STRING}
 STR_CONFIG_SETTING_WAGONSPEEDLIMITS_HELPTEXT                    :Um gilda, verður hámarksferðin hjá vognum eisini nýtt fyri at avgerða mest loydu ferðina á tokum
 
+
 STR_CONFIG_SETTING_DISABLE_ELRAILS                              :Ógilda ravmagns jarnbreytir: {STRING}
 STR_CONFIG_SETTING_DISABLE_ELRAILS_HELPTEXT                     :Um gilda er ikki neyðugt við ravmagns jarnbreytum fyri at fáa ravmagns tok at koyra
 
@@ -1579,6 +1585,8 @@ STR_CONFIG_SETTING_STARTING_YEAR                                :Byrjunar ár: {
 
 ###setting-zero-is-special
 
+###length 2
+
 ###length 3
 
 STR_CONFIG_SETTING_FEEDER_PAYMENT_SHARE                         :Prosentpartur av deilvinningi at gjalda í veitingar kervum: {STRING}
@@ -1618,6 +1626,8 @@ STR_CONFIG_SETTING_TOWN_FOUNDING_HELPTEXT                       :Gildan av hesum
 STR_CONFIG_SETTING_TOWN_FOUNDING_FORBIDDEN                      :Bannað
 STR_CONFIG_SETTING_TOWN_FOUNDING_ALLOWED                        :Loyvt
 STR_CONFIG_SETTING_TOWN_FOUNDING_ALLOWED_CUSTOM_LAYOUT          :Loyvt, sjálvgjørd bygda uppseting
+
+###length 3
 
 ###length 2
 
@@ -1665,7 +1675,7 @@ STR_CONFIG_SETTING_LARGER_TOWNS_DISABLED                        :Eingin
 
 ###length 3
 
-###length 3
+###length 4
 
 STR_CONFIG_SETTING_SOUND                                        :Ljóð effektir
 STR_CONFIG_SETTING_INTERFACE                                    :Takførisflati
@@ -1686,10 +1696,8 @@ STR_CONFIG_ERROR_INVALID_GRF_NOT_FOUND                          :ikki funni
 STR_CONFIG_ERROR_INVALID_GRF_SYSTEM                             :system NewGRF
 STR_CONFIG_ERROR_INVALID_GRF_INCOMPATIBLE                       :ósambæriligur við hesa útgávuna av OpenTTD
 STR_CONFIG_ERROR_INVALID_GRF_UNKNOWN                            :ókendur
-STR_CONFIG_ERROR_OUT_OF_MEMORY                                  :{WHITE}Einki minni eftir
-STR_CONFIG_ERROR_SPRITECACHE_TOO_BIG                            :{WHITE}Leitan eftir {BYTES} av spritecache eydnaðist ikki. Spritecache var skerd til {BYTES}. Hetta vil skerja framførsluna av OpenTTD. Fyri at minka um minnis krøvini kann tú royna at sløkkja fyri 32bpp grafikki og/ella suma-in stig
 
-# Video initalization errors
+# Video initialization errors
 
 # Intro window
 STR_INTRO_CAPTION                                               :{WHITE}OpenTTD {REV}
@@ -1703,7 +1711,6 @@ STR_INTRO_MULTIPLAYER                                           :{BLACK}Hópspæ
 
 STR_INTRO_GAME_OPTIONS                                          :{BLACK}Spæli møguleikar
 STR_INTRO_HIGHSCORE                                             :{BLACK}Hástigs yvirlit
-STR_INTRO_NEWGRF_SETTINGS                                       :{BLACK}NewGRF innstillingar
 STR_INTRO_ONLINE_CONTENT                                        :{BLACK}Kanna online tilfar
 STR_INTRO_QUIT                                                  :{BLACK}Gevst
 
@@ -1721,7 +1728,6 @@ STR_INTRO_TOOLTIP_TOYLAND_LANDSCAPE                             :{BLACK}Vel 'toy
 
 STR_INTRO_TOOLTIP_GAME_OPTIONS                                  :{BLACK}Vís spæli møguleikar
 STR_INTRO_TOOLTIP_HIGHSCORE                                     :{BLACK}Vís hástigs yvirlit
-STR_INTRO_TOOLTIP_NEWGRF_SETTINGS                               :{BLACK}Vís NewGRF innstillingar
 STR_INTRO_TOOLTIP_ONLINE_CONTENT                                :{BLACK}Kanna um nýtt og betra tilfar er klárt at heinta niður
 STR_INTRO_TOOLTIP_QUIT                                          :{BLACK}Gevst at spæla 'OpenTTD'
 
@@ -1790,12 +1796,7 @@ STR_LIVERY_FREIGHT_TRAM                                         :{G=m}Góðs spo
 STR_FACE_CAPTION                                                :{WHITE}Andlits úrval
 STR_FACE_CANCEL_TOOLTIP                                         :{BLACK}Angra nýtt andlits val
 STR_FACE_OK_TOOLTIP                                             :{BLACK}Góðtak nýtt andlits val
-STR_FACE_RANDOM                                                 :{BLACK}Blanda
 
-STR_FACE_MALE_BUTTON                                            :{BLACK}Kallkyn
-STR_FACE_MALE_TOOLTIP                                           :{BLACK}Vel kallkyns andlit
-STR_FACE_FEMALE_BUTTON                                          :{BLACK}Kvennkyn
-STR_FACE_FEMALE_TOOLTIP                                         :{BLACK}Vel kvennkyns andlit
 STR_FACE_NEW_FACE_BUTTON                                        :{BLACK}Nýtt andlit
 STR_FACE_NEW_FACE_TOOLTIP                                       :{BLACK}Framleið tilvildarligt nýtt andlit
 STR_FACE_ADVANCED                                               :{BLACK}Víðka
@@ -1813,36 +1814,20 @@ STR_FACE_FACECODE_ERR                                           :{WHITE}Eydnaði
 STR_FACE_SAVE                                                   :{BLACK}Goym
 STR_FACE_SAVE_TOOLTIP                                           :{BLACK}Goym yndis andlit
 STR_FACE_SAVE_DONE                                              :{WHITE}Hetta andliti verur goymt sum títt yndis andlit í OpenTTD uppsetanar fíluni
-STR_FACE_EUROPEAN                                               :{BLACK}Evropeiskt
-STR_FACE_EUROPEAN_TOOLTIP                                       :{BLACK}Vel Evropeisk andlit
-STR_FACE_AFRICAN                                                :{BLACK}Afrikansk
-STR_FACE_AFRICAN_TOOLTIP                                        :{BLACK}Vel Afrikonsk andlit
 STR_FACE_YES                                                    :Ja
 STR_FACE_NO                                                     :Nei
-STR_FACE_MOUSTACHE_EARRING_TOOLTIP                              :{BLACK}Tendra yvirskegg ella oyraring
 STR_FACE_HAIR                                                   :Hár:
-STR_FACE_HAIR_TOOLTIP                                           :{BLACK}Broyt hár
 STR_FACE_EYEBROWS                                               :Eygnabrýr:
-STR_FACE_EYEBROWS_TOOLTIP                                       :{BLACK}Broyt eygnabrýr
 STR_FACE_EYECOLOUR                                              :Eygna litur:
-STR_FACE_EYECOLOUR_TOOLTIP                                      :{BLACK}Broyt eygna lit
 STR_FACE_GLASSES                                                :Brillur:
-STR_FACE_GLASSES_TOOLTIP                                        :{BLACK}Tendra brillur
-STR_FACE_GLASSES_TOOLTIP_2                                      :{BLACK}Broyt brillur
 STR_FACE_NOSE                                                   :Nøs:
-STR_FACE_NOSE_TOOLTIP                                           :{BLACK}Broyt nøs
 STR_FACE_LIPS                                                   :Varrar:
 STR_FACE_MOUSTACHE                                              :Yvirskegg:
-STR_FACE_LIPS_MOUSTACHE_TOOLTIP                                 :{BLACK}Broyt varrar ella yvirskegg
 STR_FACE_CHIN                                                   :Høka:
-STR_FACE_CHIN_TOOLTIP                                           :{BLACK}Broyt høku
 STR_FACE_JACKET                                                 :Jakki:
-STR_FACE_JACKET_TOOLTIP                                         :{BLACK}Broyt jakka
 STR_FACE_COLLAR                                                 :Kragi:
-STR_FACE_COLLAR_TOOLTIP                                         :{BLACK}Broyt kraga
 STR_FACE_TIE                                                    :Slips:
 STR_FACE_EARRING                                                :Oyraringur:
-STR_FACE_TIE_EARRING_TOOLTIP                                    :{BLACK}Broyt slips ella oyraring
 
 # Matches ServerGameType
 ###length 3
@@ -1917,15 +1902,13 @@ STR_NETWORK_CONNECTING_WAITING                                  :{BLACK}{NUM} kl
 STR_NETWORK_CONNECTING_DOWNLOADING_1                            :{BLACK}{BYTES} heinta niður sum nú er
 STR_NETWORK_CONNECTING_DOWNLOADING_2                            :{BLACK}{BYTES} / {BYTES} heinta niður sum nú er
 
-###length 8
+###length 6
 STR_NETWORK_CONNECTING_1                                        :{BLACK}(1/6) Fær samband...
 STR_NETWORK_CONNECTING_2                                        :{BLACK}(2/6) Heimildar...
 STR_NETWORK_CONNECTING_3                                        :{BLACK}(3/6) Bíðar...
 STR_NETWORK_CONNECTING_4                                        :{BLACK}(4/6) Heintar niður kort...
 STR_NETWORK_CONNECTING_5                                        :{BLACK}(5/6) Viðgerð dáta...
 STR_NETWORK_CONNECTING_6                                        :{BLACK}(6/6) Skrásetur...
-STR_NETWORK_CONNECTING_SPECIAL_1                                :{BLACK}Fær kunning um spæl til vega...
-STR_NETWORK_CONNECTING_SPECIAL_2                                :{BLACK}Fær kunning um fyritøku til vega...
 
 STR_NETWORK_CONNECTION_DISCONNECT                               :{BLACK}Slít samband
 
@@ -2009,7 +1992,7 @@ STR_NETWORK_ERROR_CLIENT_TIMEOUT_MAP                            :tók ov langa t
 STR_NETWORK_ERROR_CLIENT_TIMEOUT_JOIN                           :viðgerð av kort tók ov langa tíð
 
 # Network related errors
-STR_NETWORK_SERVER_MESSAGE                                      :*** {1:STRING}
+STR_NETWORK_SERVER_MESSAGE                                      :*** {STRING}
 
 ###length 12
 STR_NETWORK_SERVER_MESSAGE_GAME_PAUSED                          :Spæl steðga ({STRING})
@@ -2025,11 +2008,10 @@ STR_NETWORK_SERVER_MESSAGE_GAME_REASON_GAME_SCRIPT              :spæl skript
 
 STR_NETWORK_MESSAGE_CLIENT_LEAVING                              :rýmur
 STR_NETWORK_MESSAGE_CLIENT_JOINED                               :*** {STRING} tekur lut í spælinum
-STR_NETWORK_MESSAGE_CLIENT_JOINED_ID                            :*** {STRING} tekur lut í spælinum (klient #{2:NUM})
-STR_NETWORK_MESSAGE_CLIENT_COMPANY_JOIN                         :*** {STRING} tekur lut í fyritøku #{2:NUM}
+STR_NETWORK_MESSAGE_CLIENT_JOINED_ID                            :*** {STRING} tekur lut í spælinum (klient #{NUM})
 STR_NETWORK_MESSAGE_CLIENT_COMPANY_SPECTATE                     :*** {STRING} er vorðin eygleiðari
-STR_NETWORK_MESSAGE_CLIENT_COMPANY_NEW                          :*** {STRING} hevur stovnað eina nýggja fyritøku (#{2:NUM})
-STR_NETWORK_MESSAGE_CLIENT_LEFT                                 :*** {STRING} er farin úr spælinum ({2:STRING})
+STR_NETWORK_MESSAGE_CLIENT_COMPANY_NEW                          :*** {STRING} hevur stovnað eina nýggja fyritøku (#{NUM})
+STR_NETWORK_MESSAGE_CLIENT_LEFT                                 :*** {STRING} er farin úr spælinum ({STRING})
 STR_NETWORK_MESSAGE_NAME_CHANGE                                 :*** {STRING} hevur broytt sítt navn til {STRING}
 STR_NETWORK_MESSAGE_SERVER_SHUTDOWN                             :{WHITE}Servarin endaði setuna
 STR_NETWORK_MESSAGE_SERVER_REBOOT                               :{WHITE}Servarin endurbyrjar...{}Vinarliga bíða...
@@ -2137,10 +2119,10 @@ STR_STATION_BUILD_SUPPLIES_CARGO                                :{BLACK}Veitur: 
 
 # Join station window
 STR_JOIN_STATION_CAPTION                                        :{WHITE}Bind støð saman
-STR_JOIN_STATION_CREATE_SPLITTED_STATION                        :{YELLOW}Bygg serstaka støð
+STR_JOIN_STATION_CREATE_SPLIT_STATION                           :{YELLOW}Bygg serstaka støð
 
 STR_JOIN_WAYPOINT_CAPTION                                       :{WHITE}Bind waypoint saman
-STR_JOIN_WAYPOINT_CREATE_SPLITTED_WAYPOINT                      :{YELLOW}Bygg eitt serstakt waypoint
+STR_JOIN_WAYPOINT_CREATE_SPLIT_WAYPOINT                         :{YELLOW}Bygg eitt serstakt waypoint
 
 # Generic toolbar
 
@@ -2173,6 +2155,11 @@ STR_STATION_BUILD_PLATFORM_LENGTH                               :{BLACK}Pall lon
 STR_STATION_BUILD_PLATFORM_LENGTH_TOOLTIP                       :{BLACK}Vel hvussu lang tokstøðin skal verða
 STR_STATION_BUILD_DRAG_DROP                                     :{BLACK}Toga & Slepp
 STR_STATION_BUILD_DRAG_DROP_TOOLTIP                             :{BLACK}Bygg eina støð vi at nýta toga & slepp
+
+
+
+
+
 
 
 
@@ -2304,6 +2291,7 @@ STR_FOUND_TOWN_INITIAL_SIZE_TOOLTIP                             :{BLACK}Vel stø
 STR_FOUND_TOWN_CITY                                             :{BLACK}Býur
 STR_FOUND_TOWN_CITY_TOOLTIP                                     :{BLACK}Býir vaksa skjótari enn vanligar bygdir{}Treyta av innstillingum, eru teir størri tá teir verða stovnaðir
 
+
 STR_FOUND_TOWN_ROAD_LAYOUT                                      :{YELLOW}Bygda vegakervi:
 STR_FOUND_TOWN_SELECT_LAYOUT_TOOLTIP                            :{BLACK}Vel hvat vegakervi skal nýtast í hesi bygdini
 STR_FOUND_TOWN_SELECT_LAYOUT_ORIGINAL                           :{BLACK}Upprunaligt
@@ -2358,7 +2346,7 @@ STR_LAND_AREA_INFORMATION_AIRPORT_CLASS                         :{BLACK}Floghavn
 STR_LAND_AREA_INFORMATION_AIRPORT_NAME                          :{BLACK}Navn á floghavn: {LTBLUE}{STRING}
 STR_LAND_AREA_INFORMATION_AIRPORTTILE_NAME                      :{BLACK}Navn á floghavna punti: {LTBLUE}{STRING}
 STR_LAND_AREA_INFORMATION_NEWGRF_NAME                           :{BLACK}NewGRF: {LTBLUE}{STRING}
-STR_LAND_AREA_INFORMATION_CARGO_ACCEPTED                        :{BLACK}Farmur móttikin: {LTBLUE}
+STR_LAND_AREA_INFORMATION_CARGO_ACCEPTED                        :{BLACK}Farmur móttikin: {LTBLUE}{STRING}
 STR_LAND_AREA_INFORMATION_CARGO_EIGHTS                          :({COMMA}/8 {STRING})
 STR_LANG_AREA_INFORMATION_RAIL_SPEED_LIMIT                      :{BLACK}Jarnbreyta hámarksferð: {LTBLUE}{VELOCITY}
 
@@ -2368,7 +2356,6 @@ STR_LAI_CLEAR_DESCRIPTION_ROUGH_LAND                            :Harðrent lendi
 STR_LAI_CLEAR_DESCRIPTION_BARE_LAND                             :Bert lendi
 STR_LAI_CLEAR_DESCRIPTION_GRASS                                 :Gras
 STR_LAI_CLEAR_DESCRIPTION_FIELDS                                :Markir
-STR_LAI_CLEAR_DESCRIPTION_SNOW_COVERED_LAND                     :Kava-klætt lendi
 STR_LAI_CLEAR_DESCRIPTION_DESERT                                :Oyðimørk
 
 STR_LAI_RAIL_DESCRIPTION_TRACK                                  :{G=m}Jarnbreyt breyt
@@ -2539,6 +2526,8 @@ STR_MAPGEN_SOUTHWEST                                            :{BLACK}Útsynni
 STR_MAPGEN_BORDER_FREEFORM                                      :{BLACK}Freeform
 STR_MAPGEN_BORDER_WATER                                         :{BLACK}Vatn
 STR_MAPGEN_BORDER_RANDOM                                        :{BLACK}Tilvildarligt
+
+###length 3
 STR_MAPGEN_BORDER_RANDOMIZE                                     :{BLACK}Tilvildarligt
 STR_MAPGEN_BORDER_MANUAL                                        :{BLACK}Manuelt
 
@@ -2628,7 +2617,6 @@ STR_NEWGRF_SETTINGS_INCOMPATIBLE                                :{RED}Samsvarar 
 
 # NewGRF parameters window
 STR_NEWGRF_PARAMETERS_CAPTION                                   :{WHITE}Broyt NewGRF parametur
-STR_NEWGRF_PARAMETERS_CLOSE                                     :{BLACK}Lat aftur
 STR_NEWGRF_PARAMETERS_RESET                                     :{BLACK}Endustilla
 STR_NEWGRF_PARAMETERS_RESET_TOOLTIP                             :{BLACK}Áset øll parametur til teirra vanligu virði
 STR_NEWGRF_PARAMETERS_DEFAULT_NAME                              :Parametur {NUM}
@@ -2686,7 +2674,6 @@ STR_NEWGRF_INVALID_INDUSTRYTYPE                                 :<ógildigur íd
 STR_NEWGRF_SCAN_CAPTION                                         :{WHITE}Skannar NewGRFs
 STR_NEWGRF_SCAN_MESSAGE                                         :{BLACK}Skannar NewGRFs. Treytað av nøgdini kann hetta taka eina løtu...
 STR_NEWGRF_SCAN_STATUS                                          :{BLACK}{NUM} NewGRF{P "" s} skannað{P ur ir} út av meting á {NUM} NewGRF{P "" s}
-STR_NEWGRF_SCAN_ARCHIVES                                        :Skannar eftir skjalagoymslum
 
 # Sign list window
 STR_SIGN_LIST_CAPTION                                           :{WHITE}Skelta yvirlit - {COMMA} Skelt{P i ir}
@@ -2763,6 +2750,7 @@ STR_GOALS_NONE                                                  :{ORANGE}- Einki
 STR_GOALS_TOOLTIP_CLICK_ON_SERVICE_TO_CENTER                    :{BLACK}Trýst á mál fyri at savna høvuðs sýni á ídnað/bygd/punt. Ctrl+trýst letur upp nýggjan sýnisglugga á ídnað/bygd/punt
 
 # Goal question window
+###length 4
 STR_GOAL_QUESTION_CAPTION_QUESTION                              :Spurningur
 STR_GOAL_QUESTION_CAPTION_INFORMATION                           :Kunning
 STR_GOAL_QUESTION_CAPTION_WARNING                               :Ávaring
@@ -2835,14 +2823,12 @@ STR_CARGO_RATING_EXCELLENT                                      :Framúrskarandi
 STR_CARGO_RATING_OUTSTANDING                                    :Avberða gott
 
 STR_STATION_VIEW_CENTER_TOOLTIP                                 :{BLACK}Savna høvuðs sýni á støðina. Ctrl+trýst letur nýggjan sýnisglugga upp við sýni á støðina
-STR_STATION_VIEW_RENAME_TOOLTIP                                 :{BLACK}Broyt navn á støð
 
 STR_STATION_VIEW_SCHEDULED_TRAINS_TOOLTIP                       :{BLACK}Vís øll tok ið hava hesa støðina í teirra skrá
 STR_STATION_VIEW_SCHEDULED_ROAD_VEHICLES_TOOLTIP                :{BLACK}Vís øll akfør ið hava hesa støðina í teirra skrá
 STR_STATION_VIEW_SCHEDULED_AIRCRAFT_TOOLTIP                     :{BLACK}Vís øll flogfør ið hava hesa støðina í teirra skrá
 STR_STATION_VIEW_SCHEDULED_SHIPS_TOOLTIP                        :{BLACK}Vís øll skip ið hava hesa støðina í teirra skrá
 
-STR_STATION_VIEW_RENAME_STATION_CAPTION                         :Navngev støð/lessingar øki
 
 STR_STATION_VIEW_CLOSE_AIRPORT                                  :{BLACK}Stong floghavn
 STR_STATION_VIEW_CLOSE_AIRPORT_TOOLTIP                          :{BLACK}Forða flogførum í at lenda í hesari floghavnini
@@ -2850,11 +2836,9 @@ STR_STATION_VIEW_CLOSE_AIRPORT_TOOLTIP                          :{BLACK}Forða f
 # Waypoint/buoy view window
 STR_WAYPOINT_VIEW_CAPTION                                       :{WHITE}{WAYPOINT}
 STR_WAYPOINT_VIEW_CENTER_TOOLTIP                                :{BLACK}Savna høvuðs sýni á waypoint. Ctrl+trýst letur nýggjan sýnisglugga upp við sýni á waypoint
-STR_WAYPOINT_VIEW_CHANGE_WAYPOINT_NAME                          :{BLACK}Broyt navn á waypoint
 STR_BUOY_VIEW_CENTER_TOOLTIP                                    :{BLACK}Savna høvuðs sýni á boyjuna. Ctrl+trýst letur nýggjan sýnisglugga upp á boyjuna
 STR_BUOY_VIEW_RENAME_TOOLTIP                                    :{BLACK}Broyt navn á boyju
 
-STR_EDIT_WAYPOINT_NAME                                          :{WHITE}Rætta waypoint navn
 
 # Finances window
 STR_FINANCES_CAPTION                                            :{WHITE}{COMPANY} Fíggjar støða {BLACK}{COMPANY_NUM}
@@ -3055,6 +3039,8 @@ STR_PURCHASE_INFO_ALL_BUT                                       :Alt uttan {CARG
 STR_PURCHASE_INFO_MAX_TE                                        :{BLACK}Maks. Dráttar ómak: {GOLD}{FORCE}
 STR_PURCHASE_INFO_AIRCRAFT_RANGE                                :{BLACK}Vídd: {GOLD}{COMMA} puntar
 
+# Vehicle sort details
+
 ###length 3
 
 ###length VEHICLE_TYPES
@@ -3193,6 +3179,7 @@ STR_DEPOT_SELL_CONFIRMATION_TEXT                                :{YELLOW}Tú er 
 STR_ENGINE_PREVIEW_CAPTION                                      :{WHITE}Boð frá framleiðarinum av flutningstólinum
 STR_ENGINE_PREVIEW_MESSAGE                                      :{GOLD}Vit hava júst sniðgivi eitt nýtt {STRING} - hevði tú havt áhuga í einkarrættindum at nýtt hetta flutningstóli í eitt ár, so vit kunnu síggja hvussu ta virkar áðrenn vit gera ta tøkt á marknaðinum?
 
+
 STR_ENGINE_PREVIEW_RAILROAD_LOCOMOTIVE                          :jarnbreyta lokomotiv
 STR_ENGINE_PREVIEW_MONORAIL_LOCOMOTIVE                          :einsporað lokomotiv
 STR_ENGINE_PREVIEW_MAGLEV_LOCOMOTIVE                            :maglev lokomotiv
@@ -3300,12 +3287,11 @@ STR_VEHICLE_INFO_WEIGHT_POWER_MAX_SPEED                         :{BLACK}Vekt: {L
 STR_VEHICLE_INFO_WEIGHT_POWER_MAX_SPEED_MAX_TE                  :{BLACK}Vekt: {LTBLUE}{WEIGHT_SHORT} {BLACK}Megi: {LTBLUE}{POWER}{BLACK} Maks. ferð: {LTBLUE}{VELOCITY} {BLACK}Maks. D.Ó.: {LTBLUE}{FORCE}
 
 STR_VEHICLE_INFO_PROFIT_THIS_YEAR_LAST_YEAR                     :{BLACK}Vinningur hetta ári: {LTBLUE}{CURRENCY_LONG} (síðsta ár: {CURRENCY_LONG})
-STR_VEHICLE_INFO_RELIABILITY_BREAKDOWNS                         :{BLACK}Álítandi: {LTBLUE}{COMMA}%  {BLACK}Maskinskaðar síðan síðsta eftirlit: {LTBLUE}{COMMA}
 
 STR_VEHICLE_INFO_BUILT_VALUE                                    :{LTBLUE}{ENGINE} {BLACK}Bygt: {LTBLUE}{NUM}{BLACK} Virði: {LTBLUE}{CURRENCY_LONG}
 STR_VEHICLE_INFO_NO_CAPACITY                                    :{BLACK}Pláss: {LTBLUE}Einki{STRING}
-STR_VEHICLE_INFO_CAPACITY                                       :{BLACK}Pláss: {LTBLUE}{CARGO_LONG}{3:STRING}
-STR_VEHICLE_INFO_CAPACITY_MULT                                  :{BLACK}Pláss: {LTBLUE}{CARGO_LONG}{3:STRING} (x{4:NUM})
+STR_VEHICLE_INFO_CAPACITY                                       :{BLACK}Pláss: {LTBLUE}{CARGO_LONG}{STRING}
+STR_VEHICLE_INFO_CAPACITY_MULT                                  :{BLACK}Pláss: {LTBLUE}{CARGO_LONG}{STRING} (x{NUM})
 STR_VEHICLE_INFO_CAPACITY_CAPACITY                              :{BLACK}Pláss: {LTBLUE}{CARGO_LONG}, {CARGO_LONG}{STRING}
 
 STR_VEHICLE_INFO_FEEDER_CARGO_VALUE                             :{BLACK}Umskipanar góðskriving: {LTBLUE}{CURRENCY_LONG}
@@ -3342,7 +3328,7 @@ STR_VEHICLE_DETAILS_TRAIN_CAPACITIES_TOOLTIP                    :{BLACK}Vís pl�
 STR_VEHICLE_DETAIL_TAB_TOTAL_CARGO                              :{BLACK}Farmur í alt
 STR_VEHICLE_DETAILS_TRAIN_TOTAL_CARGO_TOOLTIP                   :{BLACK}Vís samanlagda plássi í toki, deilt eftir farma slagi
 
-STR_VEHICLE_DETAILS_TRAIN_ARTICULATED_RV_CAPACITY               :{BLACK}Pláss: {LTBLUE}
+STR_VEHICLE_DETAILS_TRAIN_ARTICULATED_RV_CAPACITY               :{BLACK}Pláss: {LTBLUE}{STRING}
 
 # Vehicle refit
 STR_REFIT_CAPTION                                               :{WHITE}{VEHICLE} (Umbygg)
@@ -3407,7 +3393,7 @@ STR_ORDER_DROP_HALT_DEPOT                                       :Steðga
 
 
 # Conditional order variables, must follow order of OrderConditionVariable enum
-###length 8
+###length 9
 STR_ORDER_CONDITIONAL_LOAD_PERCENTAGE                           :Lessingar prosent
 STR_ORDER_CONDITIONAL_RELIABILITY                               :Álítandi
 STR_ORDER_CONDITIONAL_MAX_SPEED                                 :Mesta ferð
@@ -3453,15 +3439,12 @@ STR_ORDER_GO_NON_STOP_TO_WAYPOINT                               :Far non-stop vi
 STR_ORDER_SERVICE_AT                                            :Eftirlit í
 STR_ORDER_SERVICE_NON_STOP_AT                                   :Eftirlit non-stop í
 
-STR_ORDER_NEAREST_DEPOT                                         :nærmastu
-STR_ORDER_NEAREST_HANGAR                                        :nærmasti hangarur
 ###length 3
 STR_ORDER_TRAIN_DEPOT                                           :Tok goymsla
 STR_ORDER_ROAD_VEHICLE_DEPOT                                    :Akfars goymsla
 STR_ORDER_SHIP_DEPOT                                            :Skips goymsla
 ###next-name-looks-similar
 
-STR_ORDER_GO_TO_NEAREST_DEPOT_FORMAT                            :{STRING} {STRING} {STRING}
 STR_ORDER_GO_TO_DEPOT_FORMAT                                    :{STRING} {DEPOT}
 
 STR_ORDER_REFIT_ORDER                                           :(Bygg um til {STRING})
@@ -3469,7 +3452,7 @@ STR_ORDER_REFIT_STOP_ORDER                                      :(Bygg um til {S
 STR_ORDER_STOP_ORDER                                            :(Steðga)
 
 
-STR_ORDER_GO_TO_STATION                                         :{STRING} {STATION} {STRING}
+STR_ORDER_GO_TO_STATION                                         :{STRING} {STATION}
 
 STR_ORDER_IMPLICIT                                              :(Undirskilt)
 
@@ -3524,7 +3507,6 @@ STR_TIMETABLE_ORDER_VIEW_TOOLTIP                                :{BLACK}Skift ti
 
 
 STR_TIMETABLE_NO_TRAVEL                                         :Ferðast ikki
-
 
 
 
@@ -3604,13 +3586,10 @@ STR_AI_LIST_URL                                                 :{LTBLUE}URL: {O
 
 STR_AI_LIST_ACCEPT                                              :{BLACK}Góðtak
 STR_AI_LIST_ACCEPT_TOOLTIP                                      :{BLACK}Vel undirstrikaða scripti
-STR_AI_LIST_CANCEL                                              :{BLACK}Angra
-STR_AI_LIST_CANCEL_TOOLTIP                                      :{BLACK}Ikki broyta scripti
 
 
 # Script Parameters
 STR_AI_SETTINGS_CAPTION_AI                                      :AI
-STR_AI_SETTINGS_CLOSE                                           :{BLACK}Lat aftur
 STR_AI_SETTINGS_RESET                                           :{BLACK}Endurstilla
 STR_AI_SETTINGS_SETTING                                         :{STRING}: {ORANGE}{STRING}
 
@@ -3683,7 +3662,6 @@ STR_ERROR_SCREENSHOT_FAILED                                     :{WHITE}Skermmyn
 
 # Error message titles
 STR_ERROR_MESSAGE_CAPTION                                       :{YELLOW}Boð
-STR_ERROR_MESSAGE_CAPTION_OTHER_COMPANY                         :{YELLOW}Boð frá {STRING}
 
 # Generic construction errors
 STR_ERROR_OFF_EDGE_OF_MAP                                       :{WHITE}Útav eggini á kortinum
@@ -3702,7 +3680,6 @@ STR_ERROR_TERRAFORM_LIMIT_REACHED                               :{WHITE}... mark
 STR_ERROR_CLEARING_LIMIT_REACHED                                :{WHITE}... marki at reinsa puntar er rokki
 STR_ERROR_TREE_PLANT_LIMIT_REACHED                              :{WHITE}... marki fyri at planta trø er rokki
 STR_ERROR_NAME_MUST_BE_UNIQUE                                   :{WHITE}Navn má vera serstakt
-STR_ERROR_GENERIC_OBJECT_IN_THE_WAY                             :{WHITE}{1:STRING} í vegin
 STR_ERROR_NOT_ALLOWED_WHILE_PAUSED                              :{WHITE}Ikki loyvt meðan steðgur er
 
 # Local authority errors
@@ -3726,7 +3703,7 @@ STR_ERROR_CAN_T_CHANGE_PRESIDENT                                :{WHITE}Kann ikk
 
 STR_ERROR_MAXIMUM_PERMITTED_LOAN                                :{WHITE}... hægst loyvda lán er {CURRENCY_LONG}
 STR_ERROR_CAN_T_BORROW_ANY_MORE_MONEY                           :{WHITE}Kann ikki lána meira pening...
-STR_ERROR_LOAN_ALREADY_REPAYED                                  :{WHITE}... einki lán at gjalda aftur
+STR_ERROR_LOAN_ALREADY_REPAID                                   :{WHITE}... einki lán at gjalda aftur
 STR_ERROR_CURRENCY_REQUIRED                                     :{WHITE}... {CURRENCY_LONG} neyðugar
 STR_ERROR_CAN_T_REPAY_LOAN                                      :{WHITE}Kann ikki gjalda lán aftur...
 STR_ERROR_INSUFFICIENT_FUNDS                                    :{WHITE}Kann ikki geva pening burtur ið er lándur frá bankanum...
@@ -3738,7 +3715,6 @@ STR_ERROR_CAN_T_GENERATE_TOWN                                   :{WHITE}Kann ikk
 STR_ERROR_CAN_T_RENAME_TOWN                                     :{WHITE}Kann ikki navngeva bygd...
 STR_ERROR_CAN_T_FOUND_TOWN_HERE                                 :{WHITE}Kann ikki stovna bygd her...
 STR_ERROR_CAN_T_EXPAND_TOWN                                     :{WHITE}Kann ikki vaksa um bygdina...
-STR_ERROR_TOO_CLOSE_TO_EDGE_OF_MAP_SUB                          :{WHITE}... ov tætt við eggina á kortinum
 STR_ERROR_TOO_CLOSE_TO_ANOTHER_TOWN                             :{WHITE}... ov tætt við eina aðra bygd
 STR_ERROR_TOO_MANY_TOWNS                                        :{WHITE}... ov nógvar bygdir
 STR_ERROR_NO_SPACE_FOR_TOWN                                     :{WHITE}... tað er einki pláss eftir á kortinum
@@ -3811,11 +3787,11 @@ STR_ERROR_MUST_DEMOLISH_AIRPORT_FIRST                           :{WHITE}Neyðugt
 STR_ERROR_WAYPOINT_ADJOINS_MORE_THAN_ONE_EXISTING               :{WHITE}Førir saman meira enn eitt verðandi waypoint
 STR_ERROR_TOO_CLOSE_TO_ANOTHER_WAYPOINT                         :{WHITE}Ov nær vi eitt annað waypoint
 
-STR_ERROR_CAN_T_BUILD_TRAIN_WAYPOINT                            :{WHITE}Kann ikki byggja tok waypoint her...
+STR_ERROR_CAN_T_BUILD_RAIL_WAYPOINT                             :{WHITE}Kann ikki byggja tok waypoint her...
 STR_ERROR_CAN_T_POSITION_BUOY_HERE                              :{WHITE}Kann ikki seta boyju her...
 STR_ERROR_CAN_T_CHANGE_WAYPOINT_NAME                            :{WHITE}Kann ikki broyta navn á waypoint...
 
-STR_ERROR_CAN_T_REMOVE_TRAIN_WAYPOINT                           :{WHITE}Kann ikki beina burtur tok waypoint her...
+STR_ERROR_CAN_T_REMOVE_RAIL_WAYPOINT                            :{WHITE}Kann ikki beina burtur tok waypoint her...
 STR_ERROR_MUST_REMOVE_RAILWAYPOINT_FIRST                        :{WHITE}Neyðugt at beina burtur jarnbreyta waypoint fyrst
 STR_ERROR_BUOY_IN_THE_WAY                                       :{WHITE}... boyja í vegin
 STR_ERROR_BUOY_IS_IN_USE                                        :{WHITE}... boyja verður nýtt av eini aðrari fyritøku!
@@ -3988,6 +3964,10 @@ STR_ERROR_CAN_T_SELL_TRAIN                                      :{WHITE}Kann ikk
 STR_ERROR_CAN_T_SELL_ROAD_VEHICLE                               :{WHITE}Kann ikki selja akfar...
 STR_ERROR_CAN_T_SELL_SHIP                                       :{WHITE}Kann ikki selja skip...
 STR_ERROR_CAN_T_SELL_AIRCRAFT                                   :{WHITE}Kann ikki selja flogfar...
+
+###length VEHICLE_TYPES
+
+###length VEHICLE_TYPES
 
 STR_ERROR_TOO_MANY_VEHICLES_IN_GAME                             :{WHITE}Ov nógv akfør í spæli
 STR_ERROR_CAN_T_CHANGE_SERVICING                                :{WHITE}Kann ikki broyta tænastu títtleika...
@@ -4470,18 +4450,7 @@ STR_SAVEGAME_NAME_SPECTATOR                                     :Eygleiðari, {1
 
 # Viewport strings
 STR_VIEWPORT_TOWN_POP                                           :{WHITE}{TOWN} ({COMMA})
-STR_VIEWPORT_TOWN                                               :{WHITE}{TOWN}
-STR_VIEWPORT_TOWN_TINY_BLACK                                    :{TINY_FONT}{BLACK}{TOWN}
-STR_VIEWPORT_TOWN_TINY_WHITE                                    :{TINY_FONT}{WHITE}{TOWN}
-
-STR_VIEWPORT_SIGN_SMALL_BLACK                                   :{TINY_FONT}{BLACK}{SIGN}
-STR_VIEWPORT_SIGN_SMALL_WHITE                                   :{TINY_FONT}{WHITE}{SIGN}
-
 STR_VIEWPORT_STATION                                            :{STATION} {STATION_FEATURES}
-STR_VIEWPORT_STATION_TINY                                       :{TINY_FONT}{STATION}
-
-STR_VIEWPORT_WAYPOINT                                           :{WAYPOINT}
-STR_VIEWPORT_WAYPOINT_TINY                                      :{TINY_FONT}{WAYPOINT}
 
 # Simple strings to get specific types of data
 STR_COMPANY_NAME                                                :{COMPANY}
@@ -4532,3 +4501,4 @@ STR_PLANE                                                       :{BLACK}{PLANE}
 STR_SHIP                                                        :{BLACK}{SHIP}
 
 STR_TOOLBAR_RAILTYPE_VELOCITY                                   :{STRING} ({VELOCITY})
+

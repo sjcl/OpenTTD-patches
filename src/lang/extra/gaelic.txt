@@ -89,3 +89,9 @@ STR_COMPANY_PASSWORD_MAKE_DEFAULT_TOOLTIP                       :{BLACK}Cleachd 
 STR_COMPANY_VIEW_PASSWORD                                       :{BLACK}Facal-faire
 STR_COMPANY_VIEW_PASSWORD_TOOLTIP                               :{BLACK}Dìon do chompanaidh le facal-faire ach nach gabh cluicheadairean eile innte gun chead
 STR_COMPANY_VIEW_SET_PASSWORD                                   :{BLACK}Suidhich facal-faire na companaidh
+
+# JSON messages
+
+STR_INTRO_NEWGRF_SETTINGS                                       :{BLACK}Roghainnean NewGRF
+STR_INTRO_TOOLTIP_NEWGRF_SETTINGS                               :{BLACK}Seall na roghainnean NewGRF
+STR_INTRO_CAPTION_TRADITIONAL                                   :{WHITE}OpenTTD {REV}

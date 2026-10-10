@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file infrastructure_func.h Functions for access to (shared) infrastructure */
@@ -23,6 +23,11 @@ bool CheckSharingChangePossible(VehicleType type, bool new_value);
 void HandleSharingCompanyDeletion(Owner owner);
 void UpdateAllBlockSignals(Owner owner = INVALID_OWNER);
 
+inline bool IsInfrastructureSharingEnabled(VehicleType vt)
+{
+	return _settings_game.economy.infrastructure_sharing[to_underlying(vt)];
+}
+
 /**
  * Check whether a vehicle of a given owner and type can use the infrastrucutre of a given company.
  * @param type        Type of vehicle we are talking about.
@@ -32,7 +37,7 @@ void UpdateAllBlockSignals(Owner owner = INVALID_OWNER);
  */
 inline bool IsInfraUsageAllowed(VehicleType type, Owner veh_owner, Owner infra_owner)
 {
-	return infra_owner == veh_owner || infra_owner == OWNER_NONE || _settings_game.economy.infrastructure_sharing[type];
+	return infra_owner == veh_owner || infra_owner == OWNER_NONE || IsInfrastructureSharingEnabled(type);
 }
 
 /**
@@ -57,9 +62,9 @@ inline bool IsInfraTileUsageAllowed(VehicleType type, Owner veh_owner, TileIndex
  * @param tile        Tile of the infrastructure.
  * @return            CommandCost indicating success or failure.
  */
-inline CommandCost CheckInfraUsageAllowed(VehicleType type, Owner infra_owner, TileIndex tile = 0)
+inline CommandCost CheckInfraUsageAllowed(VehicleType type, Owner infra_owner, TileIndex tile = {})
 {
-	if (infra_owner == OWNER_NONE || _settings_game.economy.infrastructure_sharing[type]) return CommandCost();
+	if (infra_owner == OWNER_NONE || IsInfrastructureSharingEnabled(type)) return CommandCost();
 	return CheckOwnership(infra_owner, tile);
 }
 
@@ -72,7 +77,7 @@ inline CommandCost CheckInfraUsageAllowed(VehicleType type, Owner infra_owner, T
  */
 inline bool IsVehicleControlAllowed(const Vehicle *v, Owner o)
 {
-	return v->owner == o || (v->type == VEH_TRAIN && IsTileOwner(v->tile, o) && !v->IsChainInDepot());
+	return v->owner == o || (v->type == VehicleType::Train && IsTileOwner(v->tile, o) && !v->IsChainInDepot());
 }
 
 /**
@@ -84,7 +89,7 @@ inline bool IsVehicleControlAllowed(const Vehicle *v, Owner o)
  */
 inline CommandCost CheckVehicleControlAllowed(const Vehicle *v)
 {
-	if (v->type == VEH_TRAIN && IsTileOwner(v->tile, _current_company) && !v->IsChainInDepot()) return CommandCost();
+	if (v->type == VehicleType::Train && IsTileOwner(v->tile, _current_company) && !v->IsChainInDepot()) return CommandCost();
 	return CheckOwnership(v->owner);
 }
 
@@ -98,7 +103,7 @@ inline CommandCost CheckVehicleControlAllowed(const Vehicle *v)
  */
 inline bool IsOneSignalBlock(Owner o1, Owner o2)
 {
-	return o1 == o2 || _settings_game.economy.infrastructure_sharing[VEH_TRAIN];
+	return o1 == o2 || IsInfrastructureSharingEnabled(VehicleType::Train);
 }
 
 #endif /* INFRASTRUCTURE_FUNC_H */

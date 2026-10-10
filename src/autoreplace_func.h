@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file autoreplace_func.h Functions related to autoreplacing. */
@@ -15,8 +15,8 @@
 
 void RemoveAllEngineReplacement(EngineRenewList *erl);
 EngineID EngineReplacement(EngineRenewList erl, EngineID engine, GroupID group, bool *replace_when_old = nullptr);
-CommandCost AddEngineReplacement(EngineRenewList *erl, EngineID old_engine, EngineID new_engine, GroupID group, bool replace_when_old, DoCommandFlag flags);
-CommandCost RemoveEngineReplacement(EngineRenewList *erl, EngineID engine, GroupID group, DoCommandFlag flags);
+CommandCost AddEngineReplacement(EngineRenewList *erl, EngineID old_engine, EngineID new_engine, GroupID group, bool replace_when_old, DoCommandFlags flags);
+CommandCost RemoveEngineReplacement(EngineRenewList *erl, EngineID engine, GroupID group, DoCommandFlags flags);
 
 /**
  * Remove all engine replacement settings for the given company.
@@ -33,7 +33,7 @@ inline void RemoveAllEngineReplacementForCompany(Company *c)
  * @param engine Engine type.
  * @param group The group related to this replacement.
  * @param[out] replace_when_old Set to true if the replacement should be done when old.
- * @return The engine type to replace with, or INVALID_ENGINE if no
+ * @return The engine type to replace with, or EngineID::Invalid() if no
  * replacement is in the list.
  */
 inline EngineID EngineReplacementForCompany(const Company *c, EngineID engine, GroupID group, bool *replace_when_old = nullptr)
@@ -50,7 +50,7 @@ inline EngineID EngineReplacementForCompany(const Company *c, EngineID engine, G
  */
 inline bool EngineHasReplacementForCompany(const Company *c, EngineID engine, GroupID group)
 {
-	return EngineReplacementForCompany(c, engine, group) != INVALID_ENGINE;
+	return EngineReplacementForCompany(c, engine, group) != EngineID::Invalid();
 }
 
 /**
@@ -77,7 +77,7 @@ inline bool EngineHasReplacementWhenOldForCompany(const Company *c, EngineID eng
  * @param flags The calling command flags.
  * @return 0 on success, CMD_ERROR on failure.
  */
-inline CommandCost AddEngineReplacementForCompany(Company *c, EngineID old_engine, EngineID new_engine, GroupID group, bool replace_when_old, DoCommandFlag flags)
+inline CommandCost AddEngineReplacementForCompany(Company *c, EngineID old_engine, EngineID new_engine, GroupID group, bool replace_when_old, DoCommandFlags flags)
 {
 	return AddEngineReplacement(&c->engine_renew_list, old_engine, new_engine, group, replace_when_old, flags);
 }
@@ -90,14 +90,14 @@ inline CommandCost AddEngineReplacementForCompany(Company *c, EngineID old_engin
  * @param flags The calling command flags.
  * @return 0 on success, CMD_ERROR on failure.
  */
-inline CommandCost RemoveEngineReplacementForCompany(Company *c, EngineID engine, GroupID group, DoCommandFlag flags)
+inline CommandCost RemoveEngineReplacementForCompany(Company *c, EngineID engine, GroupID group, DoCommandFlags flags)
 {
 	return RemoveEngineReplacement(&c->engine_renew_list, engine, group, flags);
 }
 
 bool CheckAutoreplaceValidity(EngineID from, EngineID to, CompanyID company);
 
-CommandCost CopyHeadSpecificThings(Vehicle*, Vehicle*, DoCommandFlag, bool start_stop_check);
+CommandCost CopyHeadSpecificThings(Vehicle*, Vehicle*, DoCommandFlags flags, bool start_stop_check);
 
 bool AutoreplaceMultiPartShipWouldSucceed(EngineID e, const Vehicle *old_veh, CargoTypes all_cargoes);
 

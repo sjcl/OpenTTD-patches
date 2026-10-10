@@ -2,10 +2,10 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
-/** @file goal_sl.cpp Code handling saving and loading of goals */
+/** @file goal_sl.cpp Code handling saving and loading of goals. */
 
 #include "../stdafx.h"
 
@@ -19,16 +19,16 @@
 namespace upstream_sl {
 
 static const SaveLoad _goals_desc[] = {
-	     SLE_VAR(Goal, company,   SLE_FILE_U16 | SLE_VAR_U8),
-	     SLE_VAR(Goal, type,      SLE_FILE_U16 | SLE_VAR_U8),
-	     SLE_VAR(Goal, dst,       SLE_UINT32),
-	    SLE_SSTR(Goal, text,      SLE_STR | SLF_ALLOW_CONTROL),
-	SLE_CONDSSTR(Goal, progress,  SLE_STR | SLF_ALLOW_CONTROL, SLV_182, SL_MAX_VERSION),
-	 SLE_CONDVAR(Goal, completed, SLE_BOOL, SLV_182, SL_MAX_VERSION),
+	     SLE_VAR(Goal, company,   VarFileType::U16 | VarMemType::U8),
+	     SLE_VAR(Goal, type,      VarFileType::U16 | VarMemType::U8),
+	     SLE_VAR(Goal, dst,       VarTypes::U32),
+	    SLE_SSTR(Goal, text,      VarTypes::STR | StringValidationSetting::AllowControlCode),
+	SLE_CONDSSTR(Goal, progress, VarTypes::STR | StringValidationSetting::AllowControlCode, SaveLoadVersion::GoalProgressPlaneAcceleration, SaveLoadVersion::MaxVersion),
+	 SLE_CONDVAR(Goal, completed, VarTypes::BOOL, SaveLoadVersion::GoalProgressPlaneAcceleration, SaveLoadVersion::MaxVersion),
 };
 
 struct GOALChunkHandler : ChunkHandler {
-	GOALChunkHandler() : ChunkHandler('GOAL', CH_TABLE) {}
+	GOALChunkHandler() : ChunkHandler("GOAL", ChunkType::Table) {}
 
 	void Save() const override
 	{
@@ -46,7 +46,7 @@ struct GOALChunkHandler : ChunkHandler {
 
 		int index;
 		while ((index = SlIterateArray()) != -1) {
-			Goal *s = new (index) Goal();
+			Goal *s = Goal::CreateAtIndex(GoalID(index));
 			SlObject(s, slt);
 		}
 	}

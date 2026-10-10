@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file test_network_crypto.cpp Tests for network related crypto functions. */
@@ -16,6 +16,8 @@
 #include "../network/core/packet.h"
 #include "../string_func.h"
 #include <set>
+
+#include "../safeguards.h"
 
 /* The length of the hexadecimal representation of a X25519 key must fit in the key length. */
 static_assert(NETWORK_SECRET_KEY_LENGTH >= X25519_KEY_SIZE * 2 + 1);
@@ -38,14 +40,14 @@ static std::tuple<Packet, bool> CreatePacketForReading(Packet &source, MockNetwo
 
 	Packet dest(Packet::ReadTag{}, socket_handler, COMPAT_MTU, source.Size());
 
-	auto transfer_in = [](Packet &source, char *dest_data, size_t length) {
-		auto transfer_out = [](char *dest_data, const char *source_data, size_t length) {
-			std::copy(source_data, source_data + length, dest_data);
-			return length;
+	auto transfer_in = [&source](std::span<uint8_t> dest_data) {
+		auto transfer_out = [&dest_data](std::span<const uint8_t> source_data) {
+			std::ranges::copy(source_data, dest_data.begin());
+			return source_data.size();
 		};
-		return source.TransferOutWithLimit(transfer_out, length, dest_data);
+		return source.TransferOutWithLimit(transfer_out, dest_data.size());
 	};
-	dest.TransferIn(transfer_in, source);
+	dest.TransferIn(transfer_in);
 
 	bool valid = dest.PrepareToRead();
 	dest.Recv_uint8(); // Ignore the type
@@ -87,7 +89,7 @@ TEST_CASE("Authentication_KeyExchangeOnly")
 	X25519KeyExchangeOnlyServerHandler server(X25519SecretKey::CreateRandom());
 	X25519KeyExchangeOnlyClientHandler client(X25519SecretKey::CreateRandom());
 
-	TestAuthentication(server, client, NetworkAuthenticationServerHandler::AUTHENTICATED, NetworkAuthenticationClientHandler::READY_FOR_RESPONSE);
+	TestAuthentication(server, client, NetworkAuthenticationServerHandler::ResponseResult::Authenticated, NetworkAuthenticationClientHandler::RequestResult::ReadyForResponse);
 }
 
 
@@ -98,21 +100,21 @@ static void TestAuthenticationPAKE(std::string server_password, std::string clie
 	X25519PAKEServerHandler server(X25519SecretKey::CreateRandom(), &server_password_provider);
 	X25519PAKEClientHandler client(X25519SecretKey::CreateRandom(), std::make_shared<TestPasswordRequestHandler>(client_password));
 
-	TestAuthentication(server, client, expected_response_result, NetworkAuthenticationClientHandler::AWAIT_USER_INPUT);
+	TestAuthentication(server, client, expected_response_result, NetworkAuthenticationClientHandler::RequestResult::AwaitUserInput);
 }
 
 TEST_CASE("Authentication_PAKE")
 {
 	SECTION("Correct password") {
-		TestAuthenticationPAKE("sikrit", "sikrit", NetworkAuthenticationServerHandler::AUTHENTICATED);
+		TestAuthenticationPAKE("sikrit", "sikrit", NetworkAuthenticationServerHandler::ResponseResult::Authenticated);
 	}
 
 	SECTION("Empty password") {
-		TestAuthenticationPAKE("", "", NetworkAuthenticationServerHandler::AUTHENTICATED);
+		TestAuthenticationPAKE("", "", NetworkAuthenticationServerHandler::ResponseResult::Authenticated);
 	}
 
 	SECTION("Wrong password") {
-		TestAuthenticationPAKE("sikrit", "secret", NetworkAuthenticationServerHandler::NOT_AUTHENTICATED);
+		TestAuthenticationPAKE("sikrit", "secret", NetworkAuthenticationServerHandler::ResponseResult::NotAuthenticated);
 	}
 }
 
@@ -127,7 +129,7 @@ static void TestAuthenticationAuthorizedKey(const X25519SecretKey &client_secret
 	X25519AuthorizedKeyServerHandler server(X25519SecretKey::CreateRandom(), &authorized_key_handler);
 	X25519AuthorizedKeyClientHandler client(client_secret_key);
 
-	TestAuthentication(server, client, expected_response_result, NetworkAuthenticationClientHandler::READY_FOR_RESPONSE);
+	TestAuthentication(server, client, expected_response_result, NetworkAuthenticationClientHandler::RequestResult::ReadyForResponse);
 }
 
 TEST_CASE("Authentication_AuthorizedKey")
@@ -137,11 +139,11 @@ TEST_CASE("Authentication_AuthorizedKey")
 	auto invalid_client_public_key = X25519SecretKey::CreateRandom().CreatePublicKey();
 
 	SECTION("Correct public key") {
-		TestAuthenticationAuthorizedKey(client_secret_key, valid_client_public_key, NetworkAuthenticationServerHandler::AUTHENTICATED);
+		TestAuthenticationAuthorizedKey(client_secret_key, valid_client_public_key, NetworkAuthenticationServerHandler::ResponseResult::Authenticated);
 	}
 
 	SECTION("Incorrect public key") {
-		TestAuthenticationAuthorizedKey(client_secret_key, invalid_client_public_key, NetworkAuthenticationServerHandler::NOT_AUTHENTICATED);
+		TestAuthenticationAuthorizedKey(client_secret_key, invalid_client_public_key, NetworkAuthenticationServerHandler::ResponseResult::NotAuthenticated);
 	}
 }
 
@@ -176,39 +178,39 @@ TEST_CASE("Authentication_Combined")
 	SECTION("Invalid authorized keys, invalid password") {
 		auto server = NetworkAuthenticationServerHandler::Create(&invalid_password_provider, &invalid_authorized_key_handler);
 
-		TestAuthentication(*server, *client, NetworkAuthenticationServerHandler::RETRY_NEXT_METHOD, NetworkAuthenticationClientHandler::READY_FOR_RESPONSE);
-		TestAuthentication(*server, *client, NetworkAuthenticationServerHandler::NOT_AUTHENTICATED, NetworkAuthenticationClientHandler::AWAIT_USER_INPUT);
+		TestAuthentication(*server, *client, NetworkAuthenticationServerHandler::ResponseResult::RetryNextMethod, NetworkAuthenticationClientHandler::RequestResult::ReadyForResponse);
+		TestAuthentication(*server, *client, NetworkAuthenticationServerHandler::ResponseResult::NotAuthenticated, NetworkAuthenticationClientHandler::RequestResult::AwaitUserInput);
 	}
 
 	SECTION("Invalid authorized keys, valid password") {
 		auto server = NetworkAuthenticationServerHandler::Create(&valid_password_provider, &invalid_authorized_key_handler);
 
-		TestAuthentication(*server, *client, NetworkAuthenticationServerHandler::RETRY_NEXT_METHOD, NetworkAuthenticationClientHandler::READY_FOR_RESPONSE);
-		TestAuthentication(*server, *client, NetworkAuthenticationServerHandler::AUTHENTICATED, NetworkAuthenticationClientHandler::AWAIT_USER_INPUT);
+		TestAuthentication(*server, *client, NetworkAuthenticationServerHandler::ResponseResult::RetryNextMethod, NetworkAuthenticationClientHandler::RequestResult::ReadyForResponse);
+		TestAuthentication(*server, *client, NetworkAuthenticationServerHandler::ResponseResult::Authenticated, NetworkAuthenticationClientHandler::RequestResult::AwaitUserInput);
 	}
 
 	SECTION("Valid authorized keys, valid password") {
 		auto server = NetworkAuthenticationServerHandler::Create(&valid_password_provider, &valid_authorized_key_handler);
 
-		TestAuthentication(*server, *client, NetworkAuthenticationServerHandler::AUTHENTICATED, NetworkAuthenticationClientHandler::READY_FOR_RESPONSE);
+		TestAuthentication(*server, *client, NetworkAuthenticationServerHandler::ResponseResult::Authenticated, NetworkAuthenticationClientHandler::RequestResult::ReadyForResponse);
 	}
 
 	SECTION("No authorized keys, invalid password") {
 		auto server = NetworkAuthenticationServerHandler::Create(&invalid_password_provider, &no_authorized_key_handler);
 
-		TestAuthentication(*server, *client, NetworkAuthenticationServerHandler::NOT_AUTHENTICATED, NetworkAuthenticationClientHandler::AWAIT_USER_INPUT);
+		TestAuthentication(*server, *client, NetworkAuthenticationServerHandler::ResponseResult::NotAuthenticated, NetworkAuthenticationClientHandler::RequestResult::AwaitUserInput);
 	}
 
 	SECTION("No authorized keys, valid password") {
 		auto server = NetworkAuthenticationServerHandler::Create(&valid_password_provider, &no_authorized_key_handler);
 
-		TestAuthentication(*server, *client, NetworkAuthenticationServerHandler::AUTHENTICATED, NetworkAuthenticationClientHandler::AWAIT_USER_INPUT);
+		TestAuthentication(*server, *client, NetworkAuthenticationServerHandler::ResponseResult::Authenticated, NetworkAuthenticationClientHandler::RequestResult::AwaitUserInput);
 	}
 
 	SECTION("No authorized keys, no password") {
 		auto server = NetworkAuthenticationServerHandler::Create(&no_password_provider, &no_authorized_key_handler);
 
-		TestAuthentication(*server, *client, NetworkAuthenticationServerHandler::AUTHENTICATED, NetworkAuthenticationClientHandler::READY_FOR_RESPONSE);
+		TestAuthentication(*server, *client, NetworkAuthenticationServerHandler::ResponseResult::Authenticated, NetworkAuthenticationClientHandler::RequestResult::ReadyForResponse);
 	}
 }
 
@@ -249,7 +251,7 @@ TEST_CASE("Encryption handling")
 	X25519KeyExchangeOnlyServerHandler server(X25519SecretKey::CreateRandom());
 	X25519KeyExchangeOnlyClientHandler client(X25519SecretKey::CreateRandom());
 
-	TestAuthentication(server, client, NetworkAuthenticationServerHandler::AUTHENTICATED, NetworkAuthenticationClientHandler::READY_FOR_RESPONSE);
+	TestAuthentication(server, client, NetworkAuthenticationServerHandler::ResponseResult::Authenticated, NetworkAuthenticationClientHandler::RequestResult::ReadyForResponse);
 
 	Packet packet(&mock_socket_handler, PacketType{});
 	server.SendEnableEncryption(packet);
@@ -262,11 +264,11 @@ TEST_CASE("Encryption handling")
 	MockNetworkSocketHandler server_socket_handler(server.CreateClientToServerEncryptionHandler(), server.CreateServerToClientEncryptionHandler());
 	MockNetworkSocketHandler client_socket_handler(client.CreateServerToClientEncryptionHandler(), client.CreateClientToServerEncryptionHandler());
 
-	SECTION("Encyption happening client -> server") {
+	SECTION("Encryption happening client -> server") {
 		CheckEncryption(&client_socket_handler, &server_socket_handler);
 	}
 
-	SECTION("Encyption happening server -> client") {
+	SECTION("Encryption happening server -> client") {
 		CheckEncryption(&server_socket_handler, &client_socket_handler);
 	}
 

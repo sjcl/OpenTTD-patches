@@ -2,21 +2,22 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
-/** @file win32.cpp Implementation of MS Windows system calls */
+/** @file win32.cpp Implementation of MS Windows system calls. */
 
 #include "../../stdafx.h"
 #include "../../debug.h"
 #include "../../gfx_func.h"
+#include "../../strings_func.h"
 #include "../../textbuf_gui.h"
 #include "../../fileio_func.h"
 #include <windows.h>
 #include <fcntl.h>
 #include <mmsystem.h>
 #include <regstr.h>
-#define NO_SHOBJIDL_SORTDIRECTION // Avoid multiple definition of SORT_ASCENDING
+#define NO_SHOBJIDL_SORTDIRECTION /**< Avoid multiple definition of SORT_ASCENDING. */
 #include <shlobj.h> /* SHGetFolderPath */
 #include <shellapi.h>
 #include <winnls.h>
@@ -37,6 +38,8 @@
 #include <atomic>
 #include <map>
 #include <mutex>
+
+#include "table/strings.h"
 
 #include "../../safeguards.h"
 
@@ -60,7 +63,7 @@ bool MyShowCursor(bool show, bool toggle)
 	return !show;
 }
 
-void ShowOSErrorBox(const char *buf, bool system)
+void ShowOSErrorBox(std::string_view buf, bool system)
 {
 	MyShowCursor(true);
 	MessageBox(GetActiveWindow(), OTTD2FS(buf).c_str(), L"Error!", MB_ICONSTOP | MB_TASKMODAL);
@@ -208,7 +211,7 @@ void FiosGetDrives(FileList &file_list)
 		fios->mtime = 0;
 		fios->name += (char)(s[0] & 0xFF);
 		fios->name += ':';
-		fios->title = fios->name;
+		fios->title = GetEncodedRawString(fios->name);
 		while (*s++ != '\0') { /* Nothing */ }
 	}
 }
@@ -317,9 +320,20 @@ void CreateConsole()
 /** Temporary pointer to get the help message to the window */
 static std::string_view _help_msg;
 
-/** Callback function to handle the window */
+/**
+ * Callback function to handle the window.
+ *
+ * Relates to the resource with id 101 in ottdres.rc.in.
+ * @param wnd Handle to the window.
+ * @param msg The dialog message to handle.
+ * @param wParam Message specific data; for \c WM_COMMAND the id of the button.
+ * @return \c TRUE when the message is handled, otherwise \c FALSE.
+ */
 static INT_PTR CALLBACK HelpDialogFunc(HWND wnd, UINT msg, WPARAM wParam, LPARAM)
 {
+	static constexpr int TEXT_CONTROL = 11;
+	static constexpr int OK_BUTTON = 12;
+
 	switch (msg) {
 		case WM_INITDIALOG: {
 			const size_t help_msg_size = 1 + _help_msg.size() + std::count(_help_msg.begin(), _help_msg.end(), '\n');
@@ -342,12 +356,12 @@ static INT_PTR CALLBACK HelpDialogFunc(HWND wnd, UINT msg, WPARAM wParam, LPARAM
 			 * buffer in OTTD2FS might not be large enough (512 chars). */
 			const size_t help_msg_buf_size = ((q - help_msg.get()) * 3) / 2;
 			auto help_msg_buf = std::make_unique<wchar_t[]>(help_msg_buf_size);
-			SetDlgItemText(wnd, 11, convert_to_fs(help_msg.get(), {help_msg_buf.get(), help_msg_buf_size}));
-			SendDlgItemMessage(wnd, 11, WM_SETFONT, (WPARAM)GetStockObject(ANSI_FIXED_FONT), FALSE);
+			SetDlgItemText(wnd, TEXT_CONTROL, convert_to_fs(help_msg.get(), {help_msg_buf.get(), help_msg_buf_size}));
+			SendDlgItemMessage(wnd, TEXT_CONTROL, WM_SETFONT, (WPARAM)GetStockObject(ANSI_FIXED_FONT), FALSE);
 		} return TRUE;
 
 		case WM_COMMAND:
-			if (wParam == 12) ExitProcess(0);
+			if (wParam == OK_BUTTON) ExitProcess(0);
 			return TRUE;
 		case WM_CLOSE:
 			ExitProcess(0);
@@ -359,7 +373,7 @@ static INT_PTR CALLBACK HelpDialogFunc(HWND wnd, UINT msg, WPARAM wParam, LPARAM
 void ShowInfoI(std::string_view str)
 {
 	if (_has_console) {
-		fmt::print(stderr, "{}\n", str);
+		fmt_print_no_system_error(stderr, "{}\n", str);
 	} else {
 		bool old;
 		ReleaseCapture();
@@ -407,7 +421,7 @@ extern std::string _config_file;
 
 void DetermineBasePaths(const char *exe)
 {
-	extern std::array<std::string, NUM_SEARCHPATHS> _searchpaths;
+	extern EnumIndexArray<std::string, Searchpath, Searchpath::End> _searchpaths;
 
 	wchar_t path[MAX_PATH];
 #ifdef WITH_PERSONAL_DIR
@@ -416,13 +430,13 @@ void DetermineBasePaths(const char *exe)
 		AppendPathSeparator(tmp);
 		tmp += PERSONAL_DIR;
 		AppendPathSeparator(tmp);
-		_searchpaths[SP_PERSONAL_DIR] = tmp;
+		_searchpaths[Searchpath::PersonalDir] = tmp;
 
 		tmp += "content_download";
 		AppendPathSeparator(tmp);
-		_searchpaths[SP_AUTODOWNLOAD_PERSONAL_DIR] = tmp;
+		_searchpaths[Searchpath::AutodownloadPersonalDir] = tmp;
 	} else {
-		_searchpaths[SP_PERSONAL_DIR].clear();
+		_searchpaths[Searchpath::PersonalDir].clear();
 	}
 
 	if (SUCCEEDED(SHGetFolderPath(nullptr, CSIDL_COMMON_DOCUMENTS, nullptr, SHGFP_TYPE_CURRENT, path))) {
@@ -430,13 +444,13 @@ void DetermineBasePaths(const char *exe)
 		AppendPathSeparator(tmp);
 		tmp += PERSONAL_DIR;
 		AppendPathSeparator(tmp);
-		_searchpaths[SP_SHARED_DIR] = tmp;
+		_searchpaths[Searchpath::SharedDir] = tmp;
 	} else {
-		_searchpaths[SP_SHARED_DIR].clear();
+		_searchpaths[Searchpath::SharedDir].clear();
 	}
 #else
-	_searchpaths[SP_PERSONAL_DIR].clear();
-	_searchpaths[SP_SHARED_DIR].clear();
+	_searchpaths[Searchpath::PersonalDir].clear();
+	_searchpaths[Searchpath::SharedDir].clear();
 #endif
 
 	if (_config_file.empty()) {
@@ -444,43 +458,61 @@ void DetermineBasePaths(const char *exe)
 		getcwd(cwd, lengthof(cwd));
 		std::string cwd_s(cwd);
 		AppendPathSeparator(cwd_s);
-		_searchpaths[SP_WORKING_DIR] = cwd_s;
+		_searchpaths[Searchpath::WorkingDir] = cwd_s;
 	} else {
 		/* Use the folder of the config file as working directory. */
 		wchar_t config_dir[MAX_PATH];
 		convert_to_fs(_config_file, path);
 		if (!GetFullPathName(path, static_cast<DWORD>(std::size(config_dir)), config_dir, nullptr)) {
 			Debug(misc, 0, "GetFullPathName failed ({})", GetLastError());
-			_searchpaths[SP_WORKING_DIR].clear();
+			_searchpaths[Searchpath::WorkingDir].clear();
 		} else {
 			std::string tmp(FS2OTTD(config_dir));
 			auto pos = tmp.find_last_of(PATHSEPCHAR);
 			if (pos != std::string::npos) tmp.erase(pos + 1);
 
-			_searchpaths[SP_WORKING_DIR] = tmp;
+			_searchpaths[Searchpath::WorkingDir] = tmp;
 		}
 	}
 
 	if (!GetModuleFileName(nullptr, path, static_cast<DWORD>(std::size(path)))) {
 		Debug(misc, 0, "GetModuleFileName failed ({})", GetLastError());
-		_searchpaths[SP_BINARY_DIR].clear();
+		_searchpaths[Searchpath::BinaryDir].clear();
 	} else {
 		wchar_t exec_dir[MAX_PATH];
 		convert_to_fs(exe, path);
 		if (!GetFullPathName(path, static_cast<DWORD>(std::size(exec_dir)), exec_dir, nullptr)) {
 			Debug(misc, 0, "GetFullPathName failed ({})", GetLastError());
-			_searchpaths[SP_BINARY_DIR].clear();
+			_searchpaths[Searchpath::BinaryDir].clear();
 		} else {
 			std::string tmp(FS2OTTD(exec_dir));
 			auto pos = tmp.find_last_of(PATHSEPCHAR);
 			if (pos != std::string::npos) tmp.erase(pos + 1);
 
-			_searchpaths[SP_BINARY_DIR] = tmp;
+			_searchpaths[Searchpath::BinaryDir] = tmp;
 		}
 	}
 
-	_searchpaths[SP_INSTALLATION_DIR].clear();
-	_searchpaths[SP_APPLICATION_BUNDLE_DIR].clear();
+	_searchpaths[Searchpath::InstallationDir].clear();
+	_searchpaths[Searchpath::ApplicationBundleDir].clear();
+	_searchpaths[Searchpath::TransportTycoonDeluxeDir].clear();
+
+	if (SUCCEEDED(SHGetFolderPath(nullptr, CSIDL_APPDATA, nullptr, SHGFP_TYPE_CURRENT, path))) {
+		std::string config_file_path(FS2OTTD(path));
+		AppendPathSeparator(config_file_path);
+		config_file_path += "Atari\\Transport Tycoon Deluxe\\installpath.ini";
+
+		std::optional<UniqueBuffer<uint8_t>> installpath = ReadFileToBuffer(config_file_path, MAX_PATH);
+
+		if (installpath.has_value() && installpath->size() > 0) {
+			std::string ttd_path((const char *)installpath->get(), installpath->size());
+			AppendPathSeparator(ttd_path);
+			ttd_path += "CD";
+			AppendPathSeparator(ttd_path);
+
+			if (FileExists(ttd_path)) _searchpaths[Searchpath::TransportTycoonDeluxeDir] = ttd_path;
+		}
+	}
 }
 
 
@@ -523,7 +555,6 @@ std::string FS2OTTD(std::wstring_view name)
  * Convert from OpenTTD's encoding to a wide string.
  * OpenTTD internal encoding is UTF8.
  * @param name valid string that will be converted (UTF8)
- * @param console_cp convert to the console encoding instead of the normal system encoding.
  * @return converted string; if failed string is of zero-length
  */
 std::wstring OTTD2FS(std::string_view name)
@@ -562,7 +593,7 @@ char *convert_from_fs(const std::wstring_view src, std::span<char> dst_buf)
  * @param dst_buf span of valid wide-char buffer that will receive the converted string
  * @return pointer to dst_buf. If conversion fails the string is of zero-length
  */
-wchar_t *convert_to_fs(const std::string_view src, std::span<wchar_t> dst_buf)
+wchar_t *convert_to_fs(std::string_view src, std::span<wchar_t> dst_buf)
 {
 	int len = MultiByteToWideChar(CP_UTF8, 0, src.data(), static_cast<int>(src.size()), dst_buf.data(), static_cast<int>(dst_buf.size() - 1U));
 	dst_buf[len] = '\0';
@@ -570,7 +601,10 @@ wchar_t *convert_to_fs(const std::string_view src, std::span<wchar_t> dst_buf)
 	return dst_buf.data();
 }
 
-/** Determine the current user's locale. */
+/**
+ * Determine the current user's locale.
+ * @return String containing current charset, or nullptr if not-determinable.
+ */
 const char *GetCurrentLocale(const char *)
 {
 	const LANGID userUiLang = GetUserDefaultUILanguage();
@@ -604,27 +638,26 @@ void Win32SetCurrentLocaleName(std::string iso_code)
 		}
 	}
 
-	MultiByteToWideChar(CP_UTF8, 0, iso_code.c_str(), -1, _cur_iso_locale, static_cast<int>(std::size(_cur_iso_locale)));
+	MultiByteToWideChar(CP_UTF8, 0, iso_code.data(), static_cast<int>(iso_code.size()), _cur_iso_locale, static_cast<int>(std::size(_cur_iso_locale)));
+}
+
+static LibraryLoader::Function GetKernel32Function(const std::string &symbol_name)
+{
+	static LibraryLoader _kernel32("Kernel32.dll");
+	return _kernel32.GetFunction(symbol_name);
 }
 
 int OTTDStringCompare(std::string_view s1, std::string_view s2)
 {
 	typedef int (WINAPI *PFNCOMPARESTRINGEX)(LPCWSTR, DWORD, LPCWCH, int, LPCWCH, int, LPVOID, LPVOID, LPARAM);
-	static PFNCOMPARESTRINGEX _CompareStringEx = nullptr;
-	static bool first_time = true;
+	static const PFNCOMPARESTRINGEX _CompareStringEx = GetKernel32Function("CompareStringEx");
 
 #ifndef SORT_DIGITSASNUMBERS
-#	define SORT_DIGITSASNUMBERS 0x00000008  // use digits as numbers sort method
+#	define SORT_DIGITSASNUMBERS 0x00000008  /**< Use digits as numbers sort method. */
 #endif
 #ifndef LINGUISTIC_IGNORECASE
-#	define LINGUISTIC_IGNORECASE 0x00000010 // linguistically appropriate 'ignore case'
+#	define LINGUISTIC_IGNORECASE 0x00000010 /**< Linguistically appropriate 'ignore case'. */
 #endif
-
-	if (first_time) {
-		static LibraryLoader _kernel32("Kernel32.dll");
-		_CompareStringEx = _kernel32.GetFunction("CompareStringEx");
-		first_time = false;
-	}
 
 	int len_s1 = MultiByteToWideChar(CP_UTF8, 0, s1.data(), (int)s1.size(), nullptr, 0);
 	int len_s2 = MultiByteToWideChar(CP_UTF8, 0, s2.data(), (int)s2.size(), nullptr, 0);
@@ -644,6 +677,13 @@ int OTTDStringCompare(std::string_view s1, std::string_view s2)
 	return CompareString(MAKELCID(_current_language->winlangid, SORT_DEFAULT), NORM_IGNORECASE, str_s1.get(), len_s1, str_s2.get(), len_s2);
 }
 
+typedef int (WINAPI *PFNFINDNLSSTRINGEX)(LPCWSTR, DWORD, LPCWSTR, int, LPCWSTR, int, LPINT, LPNLSVERSIONINFO, LPVOID, LPARAM);
+static PFNFINDNLSSTRINGEX GetFindNLSStringEx()
+{
+	static const PFNFINDNLSSTRINGEX _FindNLSStringEx = GetKernel32Function("FindNLSStringEx");
+	return _FindNLSStringEx;
+}
+
 /**
  * Search if a string is contained in another string using the current locale.
  *
@@ -652,17 +692,9 @@ int OTTDStringCompare(std::string_view s1, std::string_view s2)
  * @param case_insensitive Search case-insensitive.
  * @return 1 if value was found, 0 if it was not found, or -1 if not supported by the OS.
  */
-int Win32StringContains(const std::string_view str, const std::string_view value, bool case_insensitive)
+int Win32StringContains(std::string_view str, std::string_view value, bool case_insensitive)
 {
-	typedef int (WINAPI *PFNFINDNLSSTRINGEX)(LPCWSTR, DWORD, LPCWSTR, int, LPCWSTR, int, LPINT, LPNLSVERSIONINFO, LPVOID, LPARAM);
-	static PFNFINDNLSSTRINGEX _FindNLSStringEx = nullptr;
-	static bool first_time = true;
-
-	if (first_time) {
-		static LibraryLoader _kernel32("Kernel32.dll");
-		_FindNLSStringEx = _kernel32.GetFunction("FindNLSStringEx");
-		first_time = false;
-	}
+	PFNFINDNLSSTRINGEX _FindNLSStringEx = GetFindNLSStringEx();
 
 	if (_FindNLSStringEx != nullptr) {
 		int len_str = MultiByteToWideChar(CP_UTF8, 0, str.data(), (int)str.size(), nullptr, 0);
@@ -680,6 +712,30 @@ int Win32StringContains(const std::string_view str, const std::string_view value
 	}
 
 	return -1; // Failure indication.
+}
+
+UniqueBuffer<wchar_t> Win32LocaleStringForStringContains(std::string_view str)
+{
+	PFNFINDNLSSTRINGEX _FindNLSStringEx = GetFindNLSStringEx();
+
+	if (_FindNLSStringEx == nullptr) return {};
+
+	int len_str = MultiByteToWideChar(CP_UTF8, 0, str.data(), (int)str.size(), nullptr, 0);
+	if (len_str == 0) return {};
+
+	UniqueBuffer<wchar_t> buffer((size_t)len_str);
+	MultiByteToWideChar(CP_UTF8, 0, str.data(), (int)str.size(), buffer.get(), len_str);
+
+	return buffer;
+}
+
+int Win32StringContains(std::span<const wchar_t> str, std::span<const wchar_t> value, bool case_insensitive)
+{
+	PFNFINDNLSSTRINGEX _FindNLSStringEx = GetFindNLSStringEx();
+
+	if (_FindNLSStringEx == nullptr) return -1;
+
+	return _FindNLSStringEx(_cur_iso_locale, FIND_FROMSTART | (case_insensitive ? LINGUISTIC_IGNORECASE : 0), str.data(), (int)str.size(), value.data(), (int)value.size(), nullptr, nullptr, nullptr, 0) >= 0 ? 1 : 0;
 }
 
 static DWORD main_thread_id;
@@ -711,8 +767,7 @@ void PerThreadSetup(bool non_main_thread)
 
 void PerThreadSetupInit()
 {
-	static LibraryLoader _kernel32("Kernel32.dll");
-	_SetThreadStackGuarantee = _kernel32.GetFunction("SetThreadStackGuarantee");
+	_SetThreadStackGuarantee = GetKernel32Function("SetThreadStackGuarantee");
 }
 
 bool IsMainThread()
@@ -738,7 +793,7 @@ bool IsNonGameThread()
 static std::map<DWORD, std::string> _thread_name_map;
 static std::mutex _thread_name_map_mutex;
 
-static void Win32SetThreadName(uint id, const char *name)
+static void Win32SetThreadName(uint id, std::string_view name)
 {
 	std::lock_guard<std::mutex> lock(_thread_name_map_mutex);
 	_thread_name_map[id] = name;
@@ -753,41 +808,17 @@ void GetCurrentThreadName(format_target &buffer)
 	}
 }
 
-#ifdef _MSC_VER
-/* Based on code from MSDN: https://msdn.microsoft.com/en-us/library/xcb2z8hs.aspx */
-const DWORD MS_VC_EXCEPTION = 0x406D1388;
-
-PACK_N(struct THREADNAME_INFO {
-	DWORD dwType;     ///< Must be 0x1000.
-	LPCSTR szName;    ///< Pointer to name (in user addr space).
-	DWORD dwThreadID; ///< Thread ID (-1=caller thread).
-	DWORD dwFlags;    ///< Reserved for future use, must be zero.
-}, 8);
-
-/**
- * Signal thread name to any attached debuggers.
- */
-void SetCurrentThreadName(const char *threadName)
+void SetCurrentThreadName(const std::string &name)
 {
-	Win32SetThreadName(GetCurrentThreadId(), threadName);
+	Win32SetThreadName(GetCurrentThreadId(), name);
 
-	THREADNAME_INFO info;
-	info.dwType = 0x1000;
-	info.szName = threadName;
-	info.dwThreadID = -1;
-	info.dwFlags = 0;
-
-#pragma warning(push)
-#pragma warning(disable: 6320 6322)
-	__try {
-		RaiseException(MS_VC_EXCEPTION, 0, sizeof(info) / sizeof(ULONG_PTR), (ULONG_PTR*)&info);
-	} __except (EXCEPTION_EXECUTE_HANDLER) {
-	}
-#pragma warning(pop)
+	using SetThreadDescriptionProc = HRESULT(WINAPI *)(HANDLE, PCWSTR);
+	static const SetThreadDescriptionProc std_proc = GetKernel32Function("SetThreadDescription");
+	if (std_proc != nullptr) std_proc(GetCurrentThread(), OTTD2FS(name).c_str());
 }
-#else
-void SetCurrentThreadName(const char *threadName)
+
+void ClearCurrentThreadName()
 {
-	Win32SetThreadName(GetCurrentThreadId(), threadName);
+	std::lock_guard<std::mutex> lock(_thread_name_map_mutex);
+	_thread_name_map.erase(GetCurrentThreadId());
 }
-#endif

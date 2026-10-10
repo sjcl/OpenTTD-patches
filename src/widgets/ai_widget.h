@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file ai_widget.h Types related to the ai widgets. */
@@ -29,7 +29,7 @@ enum AIConfigWidgets : WidgetID {
 	WID_AIC_CONFIGURE,        ///< Change AI settings button.
 	WID_AIC_OPEN_URL,         ///< Open AI URL.
 	WID_AIC_TEXTFILE,         ///< Open AI readme, changelog (+1) or license (+2).
-	WID_AIC_CONTENT_DOWNLOAD = WID_AIC_TEXTFILE + TFT_CONTENT_END, ///< Download content button.
+	WID_AIC_CONTENT_DOWNLOAD = WID_AIC_TEXTFILE + to_underlying(TextfileType::ContentEnd), ///< Download content button.
 };
 
 #endif /* WIDGETS_AI_WIDGET_H */

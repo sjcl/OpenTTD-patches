@@ -2,10 +2,10 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
-/** @file bitmap_type.hpp Bitmap functions. */
+/** @file bitmap_type.h Bitmap functions. */
 
 #ifndef BITMAP_TYPE_HPP
 #define BITMAP_TYPE_HPP
@@ -73,7 +73,7 @@ public:
 
 	/**
 	 * Initialize the BitmapTileArea with the specified Rect.
-	 * @param rect Rect to use.
+	 * @param r Rect to use.
 	 */
 	void Initialize(const Rect &r)
 	{
@@ -117,7 +117,8 @@ public:
 
 	/**
 	 * Test if a tile is part of the tile area.
-	 * @param tile Tile to check
+	 * @param tile Tile to check.
+	 * @return \c true iff the tile is in this area.
 	 */
 	inline bool HasTile(TileIndex tile) const
 	{
@@ -155,7 +156,7 @@ protected:
 					return;
 				}
 				this->block_x = 0;
-				this->row_start += MapSizeX();
+				this->row_start += Map::SizeX();
 			}
 			/* Read next block and advance next pointer */
 			this->block = *this->next;

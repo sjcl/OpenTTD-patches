@@ -29,9 +29,9 @@ NamedSaveLoadTable GetTemplateVehicleDesc() {
 		NSL("cargo_subtype",           SLE_VAR(TemplateVehicle, cargo_subtype, SLE_UINT8)),
 
 		NSL("subtype",                 SLE_VAR(TemplateVehicle, subtype, SLE_UINT8)),
-		NSL("railtype",                SLE_VAR(TemplateVehicle, railtype, SLE_UINT8)),
+		NSL("",                        SLE_CONDNULL_X(1, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_ENGINE_MULTI_RAILTYPE, 0, 0))), // railtype
 
-		NSL("",                        SLE_VAR(TemplateVehicle, index, SLE_UINT32)),
+		NSL("",                        SLE_VAR(TemplateVehicle, index, SLE_VAR_U16 | SLE_FILE_U32)),
 
 		NSL("real_consist_length",     SLE_VAR(TemplateVehicle, real_consist_length, SLE_UINT16)),
 
@@ -71,7 +71,7 @@ static void Load_TMPLS()
 
 	int index;
 	while ((index = SlIterateArray()) != -1) {
-		TemplateVehicle *tv = new (index) TemplateVehicle();
+		TemplateVehicle *tv = TemplateVehicle::CreateAtIndex(TemplateID(index));
 		SlObjectLoadFiltered(tv, slt);
 	}
 }
@@ -91,6 +91,9 @@ void AfterLoadTemplateVehicles()
 		/* Reinstate the previous pointer */
 		if (tv->next != nullptr) tv->next->previous = tv;
 		tv->first = nullptr;
+
+		/* Set railtypes */
+		tv->railtypes = Engine::Get(tv->engine_type)->VehInfo<RailVehicleInfo>().railtypes;
 	}
 	for (TemplateVehicle *tv : TemplateVehicle::Iterate()) {
 		/* Fill the first pointers */
@@ -135,7 +138,7 @@ void AfterLoadTemplateVehiclesUpdateProperties()
 		if (tv->Prev() == nullptr) {
 			Backup<CompanyID> cur_company(_current_company, tv->owner, FILE_LINE);
 			StringID err;
-			Train* t = VirtualTrainFromTemplateVehicle(tv, err, 0);
+			Train *t = VirtualTrainFromTemplateVehicle(tv, err, (ClientID)0);
 			if (t != nullptr) {
 				uint32_t full_cargo_weight = 0;
 				for (Train *u = t; u != nullptr; u = u->Next()) {
@@ -158,7 +161,7 @@ void AfterLoadTemplateVehiclesUpdateProperties()
 }
 
 extern const ChunkHandler template_vehicle_chunk_handlers[] = {
-	{ 'TMPL', Save_TMPLS, Load_TMPLS, Ptrs_TMPLS, nullptr, CH_TABLE },
+	{ 'TMPL', Save_TMPLS, Load_TMPLS, Ptrs_TMPLS, nullptr, ChunkType::Table },
 };
 
 extern const ChunkHandlerTable _template_vehicle_chunk_handlers(template_vehicle_chunk_handlers);

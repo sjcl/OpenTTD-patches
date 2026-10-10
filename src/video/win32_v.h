@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file win32_v.h Base of the Windows video driver. */
@@ -31,7 +31,7 @@ public:
 
 	bool ToggleFullscreen(bool fullscreen) override;
 
-	bool ClaimMousePointer() override;
+	void ClaimMousePointer() override;
 
 	void EditBoxLostFocus() override;
 
@@ -50,26 +50,40 @@ protected:
 	bool buffer_locked;     ///< Video buffer was locked by the main thread.
 
 	Dimension GetScreenSize() const override;
-	float GetDPIScale() override;
 	void InputLoop() override;
 	bool LockVideoBuffer() override;
 	void UnlockVideoBuffer() override;
 	void CheckPaletteAnim() override;
 	bool PollEvent() override;
 
-	void Initialize();
+	const char *Initialize();
 	bool MakeWindow(bool full_screen, bool resize = true);
 	void ClientSizeChanged(int w, int h, bool force = false);
 
-	/** Get screen depth to use for fullscreen mode. */
 	virtual uint8_t GetFullscreenBpp();
-	/** (Re-)create the backing store. */
+
+	/**
+	 * (Re-)create the backing store.
+	 * @param w The width of the window.
+	 * @param h The height of the window.
+	 * @param force Whether to force full reallocation, instead of not reallocating when size did not change.
+	 * @return Whether the backing store was (re-)created.
+	 */
 	virtual bool AllocateBackingStore(int w, int h, bool force = false) = 0;
-	/** Get a pointer to the video buffer. */
+
+	/**
+	 * Get a pointer to the video buffer.
+	 * @return The pointer.
+	 */
 	virtual void *GetVideoPointer() = 0;
+
 	/** Hand video buffer back to the painting backend. */
 	virtual void ReleaseVideoPointer() {}
-	/** Palette of the window has changed. */
+
+	/**
+	 * Palette of the window has changed.
+	 * @param hWnd The window handle of the changed window.
+	 */
 	virtual void PaletteChanged(HWND hWnd) = 0;
 
 private:
@@ -110,8 +124,8 @@ public:
 /** The factory for Windows' video driver. */
 class FVideoDriver_Win32GDI : public DriverFactoryBase {
 public:
-	FVideoDriver_Win32GDI() : DriverFactoryBase(Driver::DT_VIDEO, 9, "win32", "Win32 GDI Video Driver") {}
-	Driver *CreateInstance() const override { return new VideoDriver_Win32GDI(); }
+	FVideoDriver_Win32GDI() : DriverFactoryBase(Driver::Type::Video, 9, "win32", "Win32 GDI Video Driver") {}
+	std::unique_ptr<Driver> CreateInstance() const override { return std::make_unique<VideoDriver_Win32GDI>(); }
 };
 
 #ifdef WITH_OPENGL
@@ -166,8 +180,8 @@ protected:
 /** The factory for Windows' OpenGL video driver. */
 class FVideoDriver_Win32OpenGL : public DriverFactoryBase {
 public:
-	FVideoDriver_Win32OpenGL() : DriverFactoryBase(Driver::DT_VIDEO, 10, "win32-opengl", "Win32 OpenGL Video Driver") {}
-	/* virtual */ Driver *CreateInstance() const override { return new VideoDriver_Win32OpenGL(); }
+	FVideoDriver_Win32OpenGL() : DriverFactoryBase(Driver::Type::Video, 10, "win32-opengl", "Win32 OpenGL Video Driver") {}
+	std::unique_ptr<Driver> CreateInstance() const override { return std::make_unique<VideoDriver_Win32OpenGL>(); }
 
 protected:
 	bool UsesHardwareAcceleration() const override { return true; }

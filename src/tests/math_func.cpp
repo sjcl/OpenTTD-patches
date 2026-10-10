@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file math_func.cpp Test functionality from core/math_func. */
@@ -12,6 +12,8 @@
 #include "../3rdparty/catch2/catch.hpp"
 
 #include "../core/math_func.hpp"
+
+#include "../safeguards.h"
 
 TEST_CASE("DivideApproxTest - Negative")
 {
@@ -35,10 +37,29 @@ TEST_CASE("IntSqrtTest - Zero")
 
 TEST_CASE("IntSqrtTest - FindSqRt")
 {
+	CHECK(1 == IntSqrt(1));
+	CHECK(1 == IntSqrt(2));
+	CHECK(2 == IntSqrt(3));
+	CHECK(2 == IntSqrt(4));
 	CHECK(5 == IntSqrt(25));
 	CHECK(10 == IntSqrt(100));
 	CHECK(9 == IntSqrt(88));
 	CHECK(1696 == IntSqrt(2876278));
+	CHECK(0x10000 == IntSqrt(std::numeric_limits<uint32_t>::max()));
+}
+
+TEST_CASE("IntSqrt64Test - FindSqRt")
+{
+	CHECK(1 == IntSqrt64(1));
+	CHECK(1 == IntSqrt64(2));
+	CHECK(2 == IntSqrt64(3));
+	CHECK(2 == IntSqrt64(4));
+	CHECK(5 == IntSqrt64(25));
+	CHECK(10 == IntSqrt64(100));
+	CHECK(9 == IntSqrt64(88));
+	CHECK(1696 == IntSqrt64(2876278));
+	CHECK(0x10000 == IntSqrt64(std::numeric_limits<uint32_t>::max()));
+	CHECK(0x100000000ULL == IntSqrt64(std::numeric_limits<uint64_t>::max()));
 }
 
 

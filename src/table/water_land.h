@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file water_land.h Sprites to use and how to display them for water tiles (depots/locks). */
@@ -19,144 +19,148 @@
  */
 #define TILE_SEQ_LINE(dx, dy, dz, sx, sy, sz, img) { dx, dy, dz, sx, sy, sz, {img, PAL_NONE} },
 
-/** Constructor macro for a terminating DrawTileSeqStruct entry in an array */
-#define TILE_SEQ_END() { (int8_t)0x80, 0, 0, 0, 0, 0, {0, 0} }
+constexpr DrawTileSeqStruct DrawTileSeqStructWithOffset(DrawTileSeqStruct dtss, int8_t ox, int8_t oy, int8_t oz)
+{
+	dtss.offset = { ox, oy, oz };
+	return dtss;
+}
+
+#define TILE_SEQ_LINE_OFFSET(dx, dy, dz, sx, sy, sz, ox, oy, oz, img) DrawTileSeqStructWithOffset(DrawTileSeqStruct{ dx, dy, dz, sx, sy, sz, {img, PAL_NONE} }, ox, oy, oz),
 
 /**
- * Constructor macro of a DrawTileSprites structure
+ * Constructor macro of a DrawTileSpriteSpan structure
  * @param img   Ground sprite without palette of the tile
  * @param dtss  Sequence child sprites of the tile
  */
 #define TILE_SPRITE_LINE(img, dtss) { {img, PAL_NONE}, dtss },
 
-static const DrawTileSeqStruct _shipdepot_display_seq_1[] = {
+static const DrawTileSeqStruct _shipdepot_display_ne_seq[] = {
 	TILE_SEQ_LINE( 0, 15, 0, 16, 1, 0x14, 0xFE8 | (1 << PALETTE_MODIFIER_COLOUR))
-	TILE_SEQ_END()
 };
 
-static const DrawTileSeqStruct _shipdepot_display_seq_2[] = {
+static const DrawTileSeqStruct _shipdepot_display_sw_seq[] = {
 	TILE_SEQ_LINE( 0,  0, 0, 16, 1, 0x14, 0xFEA)
 	TILE_SEQ_LINE( 0, 15, 0, 16, 1, 0x14, 0xFE6 | (1 << PALETTE_MODIFIER_COLOUR))
-	TILE_SEQ_END()
 };
 
-static const DrawTileSeqStruct _shipdepot_display_seq_3[] = {
+static const DrawTileSeqStruct _shipdepot_display_nw_seq[] = {
 	TILE_SEQ_LINE( 15, 0, 0, 1, 0x10, 0x14, 0xFE9 | (1 << PALETTE_MODIFIER_COLOUR))
-	TILE_SEQ_END()
 };
 
-static const DrawTileSeqStruct _shipdepot_display_seq_4[] = {
+static const DrawTileSeqStruct _shipdepot_display_se_seq[] = {
 	TILE_SEQ_LINE(  0, 0, 0, 1, 16, 0x14, 0xFEB)
 	TILE_SEQ_LINE( 15, 0, 0, 1, 16, 0x14, 0xFE7 | (1 << PALETTE_MODIFIER_COLOUR))
-	TILE_SEQ_END()
 };
 
-static const DrawTileSprites _shipdepot_display_data[][DEPOT_PART_END] = {
-	{ // AXIS_X
-		TILE_SPRITE_LINE(0xFDD, _shipdepot_display_seq_1) // DEPOT_PART_NORTH
-		TILE_SPRITE_LINE(0xFDD, _shipdepot_display_seq_2) // DEPOT_PART_SOUTH
-	},
-	{ // AXIS_Y
-		TILE_SPRITE_LINE(0xFDD, _shipdepot_display_seq_3) // DEPOT_PART_NORTH
-		TILE_SPRITE_LINE(0xFDD, _shipdepot_display_seq_4) // DEPOT_PART_SOUTH
-	},
+static const DrawTileSeqStruct _shipdepot_display_sw_bridge_above_seq[] = {
+	TILE_SEQ_LINE( 0,  0, 0, 16, 1, 0x14, 0xFEA)
+	TILE_SEQ_LINE_OFFSET( -8, 15, 0, 16 + 8, 1, 0x14, 8, 0, 0, 0xFE6 | (1 << PALETTE_MODIFIER_COLOUR))
 };
 
-static const DrawTileSeqStruct _lock_display_seq_0[] = {
+static const DrawTileSeqStruct _shipdepot_display_se_bridge_above_seq[] = {
+	TILE_SEQ_LINE(  0, 0, 0, 1, 16, 0x14, 0xFEB)
+	TILE_SEQ_LINE_OFFSET( 15, -8, 0, 1, 16 + 8, 0x14, 0, 8, 0, 0xFE7 | (1 << PALETTE_MODIFIER_COLOUR))
+};
+
+/** Data for drawing ship depots by Axis and DepotPart. */
+static const AxisIndexArray<EnumIndexArray<DrawTileSpriteSpan, DepotPart, DepotPart::End>> _shipdepot_display_data{{{
+	{{{ // Axis::X
+		TILE_SPRITE_LINE(0xFDD, _shipdepot_display_ne_seq) // DepotPart::North
+		TILE_SPRITE_LINE(0xFDD, _shipdepot_display_sw_seq) // DepotPart::South
+	}}},
+	{{{ // Axis::Y
+		TILE_SPRITE_LINE(0xFDD, _shipdepot_display_nw_seq) // DepotPart::North
+		TILE_SPRITE_LINE(0xFDD, _shipdepot_display_se_seq) // DepotPart::South
+	}}},
+}}};
+
+/** Data for drawing ship depots by Axis and DepotPart. */
+static const AxisIndexArray<DrawTileSpriteSpan> _shipdepot_display_data_south_bridge_above{{{
+	TILE_SPRITE_LINE(0xFDD, _shipdepot_display_sw_bridge_above_seq) // Axis::X
+	TILE_SPRITE_LINE(0xFDD, _shipdepot_display_se_bridge_above_seq) // Axis::Y
+}}};
+
+static const DrawTileSeqStruct _lock_display_middle_ne_seq[] = {
 	TILE_SEQ_LINE( 0,   0, 0, 0x10, 1, 0x14, 0 + 1)
 	TILE_SEQ_LINE( 0, 0xF, 0, 0x10, 1, 0x14, 4 + 1)
-	TILE_SEQ_END()
 };
 
-static const DrawTileSeqStruct _lock_display_seq_1[] = {
+static const DrawTileSeqStruct _lock_display_middle_se_seq[] = {
 	TILE_SEQ_LINE(   0, 0, 0, 1, 0x10, 0x14, 0)
 	TILE_SEQ_LINE( 0xF, 0, 0, 1, 0x10, 0x14, 4)
-	TILE_SEQ_END()
 };
 
-static const DrawTileSeqStruct _lock_display_seq_2[] = {
+static const DrawTileSeqStruct _lock_display_middle_sw_seq[] = {
 	TILE_SEQ_LINE( 0,   0, 0, 0x10, 1, 0x14, 0 + 2)
 	TILE_SEQ_LINE( 0, 0xF, 0, 0x10, 1, 0x14, 4 + 2)
-	TILE_SEQ_END()
 };
 
-static const DrawTileSeqStruct _lock_display_seq_3[] = {
+static const DrawTileSeqStruct _lock_display_middle_nw_seq[] = {
 	TILE_SEQ_LINE(   0, 0, 0, 1, 0x10, 0x14, 0 + 3)
 	TILE_SEQ_LINE( 0xF, 0, 0, 1, 0x10, 0x14, 4 + 3)
-	TILE_SEQ_END()
 };
 
-static const DrawTileSeqStruct _lock_display_seq_0b[] = {
+static const DrawTileSeqStruct _lock_display_lower_ne_seq[] = {
 	TILE_SEQ_LINE( 0,   0, 0, 0x10, 1, 0x14, 8 + 1)
 	TILE_SEQ_LINE( 0, 0xF, 0, 0x10, 1, 0x14, 12 + 1)
-	TILE_SEQ_END()
 };
 
-static const DrawTileSeqStruct _lock_display_seq_1b[] = {
+static const DrawTileSeqStruct _lock_display_lower_se_seq[] = {
 	TILE_SEQ_LINE(   0, 0, 0, 0x1, 0x10, 0x14, 8)
 	TILE_SEQ_LINE( 0xF, 0, 0, 0x1, 0x10, 0x14, 12)
-	TILE_SEQ_END()
 };
 
-static const DrawTileSeqStruct _lock_display_seq_2b[] = {
+static const DrawTileSeqStruct _lock_display_lower_sw_seq[] = {
 	TILE_SEQ_LINE( 0,   0, 0, 0x10, 1, 0x14, 8 + 2)
 	TILE_SEQ_LINE( 0, 0xF, 0, 0x10, 1, 0x14, 12 + 2)
-	TILE_SEQ_END()
 };
 
-static const DrawTileSeqStruct _lock_display_seq_3b[] = {
+static const DrawTileSeqStruct _lock_display_lower_nw_seq[] = {
 	TILE_SEQ_LINE(   0, 0, 0, 1, 0x10, 0x14, 8 + 3)
 	TILE_SEQ_LINE( 0xF, 0, 0, 1, 0x10, 0x14, 12 + 3)
-	TILE_SEQ_END()
 };
 
-static const DrawTileSeqStruct _lock_display_seq_0t[] = {
+static const DrawTileSeqStruct _lock_display_upper_ne_seq[] = {
 	TILE_SEQ_LINE( 0,   0, 0, 0x10, 1, 0x14, 16 + 1)
 	TILE_SEQ_LINE( 0, 0xF, 0, 0x10, 1, 0x14, 20 + 1)
-	TILE_SEQ_END()
 };
 
-static const DrawTileSeqStruct _lock_display_seq_1t[] = {
+static const DrawTileSeqStruct _lock_display_upper_se_seq[] = {
 	TILE_SEQ_LINE(   0, 0, 0, 0x1, 0x10, 0x14, 16)
 	TILE_SEQ_LINE( 0xF, 0, 0, 0x1, 0x10, 0x14, 20)
-	TILE_SEQ_END()
 };
 
-static const DrawTileSeqStruct _lock_display_seq_2t[] = {
+static const DrawTileSeqStruct _lock_display_upper_sw_seq[] = {
 	TILE_SEQ_LINE( 0,   0, 0, 0x10, 1, 0x14, 16 + 2)
 	TILE_SEQ_LINE( 0, 0xF, 0, 0x10, 1, 0x14, 20 + 2)
-	TILE_SEQ_END()
 };
 
-static const DrawTileSeqStruct _lock_display_seq_3t[] = {
+static const DrawTileSeqStruct _lock_display_upper_nw_seq[] = {
 	TILE_SEQ_LINE(   0, 0, 0, 1, 0x10, 0x14, 16 + 3)
 	TILE_SEQ_LINE( 0xF, 0, 0, 1, 0x10, 0x14, 20 + 3)
-	TILE_SEQ_END()
 };
 
-static const DrawTileSprites _lock_display_data[][DIAGDIR_END] = {
-	{ // LOCK_PART_MIDDLE
-		TILE_SPRITE_LINE(1, _lock_display_seq_0) // NE
-		TILE_SPRITE_LINE(0, _lock_display_seq_1) // SE
-		TILE_SPRITE_LINE(2, _lock_display_seq_2) // SW
-		TILE_SPRITE_LINE(3, _lock_display_seq_3) // NW
-	},
-
-	{ // LOCK_PART_LOWER
-		TILE_SPRITE_LINE(0xFDD, _lock_display_seq_0b) // NE
-		TILE_SPRITE_LINE(0xFDD, _lock_display_seq_1b) // SE
-		TILE_SPRITE_LINE(0xFDD, _lock_display_seq_2b) // SW
-		TILE_SPRITE_LINE(0xFDD, _lock_display_seq_3b) // NW
-	},
-
-	{ // LOCK_PART_UPPER
-		TILE_SPRITE_LINE(0xFDD, _lock_display_seq_0t) // NE
-		TILE_SPRITE_LINE(0xFDD, _lock_display_seq_1t) // SE
-		TILE_SPRITE_LINE(0xFDD, _lock_display_seq_2t) // SW
-		TILE_SPRITE_LINE(0xFDD, _lock_display_seq_3t) // NW
-	},
-};
+/** Sprite layout of a lock for each lock part and direction. */
+static const EnumIndexArray<DiagDirectionIndexArray<DrawTileSpriteSpan>, LockPart, LockPart::End> _lock_display_data{{{
+	{{{ // LockPart::Middle
+		TILE_SPRITE_LINE(1, _lock_display_middle_ne_seq) // NE
+		TILE_SPRITE_LINE(0, _lock_display_middle_se_seq) // SE
+		TILE_SPRITE_LINE(2, _lock_display_middle_sw_seq) // SW
+		TILE_SPRITE_LINE(3, _lock_display_middle_nw_seq) // NW
+	}}},
+	{{{ // LockPart::Lower
+		TILE_SPRITE_LINE(0xFDD, _lock_display_lower_ne_seq) // NE
+		TILE_SPRITE_LINE(0xFDD, _lock_display_lower_se_seq) // SE
+		TILE_SPRITE_LINE(0xFDD, _lock_display_lower_sw_seq) // SW
+		TILE_SPRITE_LINE(0xFDD, _lock_display_lower_nw_seq) // NW
+	}}},
+	{{{ // LockPart::Upper
+		TILE_SPRITE_LINE(0xFDD, _lock_display_upper_ne_seq) // NE
+		TILE_SPRITE_LINE(0xFDD, _lock_display_upper_se_seq) // SE
+		TILE_SPRITE_LINE(0xFDD, _lock_display_upper_sw_seq) // SW
+		TILE_SPRITE_LINE(0xFDD, _lock_display_upper_nw_seq) // NW
+	}}},
+}}};
 
 #undef TILE_SEQ_LINE
-#undef TILE_SEQ_END
 #undef TILE_SPRITE_LINE

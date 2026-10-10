@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file script_objecttype.hpp Everything to query and build industries. */
@@ -47,7 +47,7 @@ public:
 	/**
 	 * Build an object of the specified type.
 	 * @param object_type The type of the object to build.
-	 * @param view The view for teh object.
+	 * @param view The view for the object.
 	 * @param tile The tile to build the object on.
 	 * @pre IsValidObjectType(object_type).
 	 * @return True if the object was successfully build.

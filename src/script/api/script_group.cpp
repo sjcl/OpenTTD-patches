@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file script_group.cpp Implementation of ScriptGroup. */
@@ -13,9 +13,12 @@
 #include "../script_instance.hpp"
 #include "../../string_func.h"
 #include "../../strings_func.h"
+#include "../../autoreplace_cmd.h"
 #include "../../autoreplace_func.h"
-#include "../../settings_func.h"
+#include "../../group_cmd.h"
+#include "../../settings_cmd.h"
 #include "../../vehicle_base.h"
+
 #include "table/strings.h"
 
 #include "../../safeguards.h"
@@ -27,13 +30,13 @@
 	return g != nullptr && g->owner == ScriptObject::GetCompany();
 }
 
-/* static */ ScriptGroup::GroupID ScriptGroup::CreateGroup(ScriptVehicle::VehicleType vehicle_type, GroupID parent_group_id)
+/* static */ GroupID ScriptGroup::CreateGroup(ScriptVehicle::VehicleType vehicle_type, GroupID parent_group_id)
 {
 	EnforceCompanyModeValid(GROUP_INVALID);
-	if (!ScriptObject::DoCommand(0, (::VehicleType)vehicle_type, parent_group_id, CMD_CREATE_GROUP, nullptr, &ScriptInstance::DoCommandReturnGroupID)) return GROUP_INVALID;
+	if (!ScriptObject::Command<Commands::CreateGroup>::Do(&ScriptInstance::DoCommandReturnGroupID, (::VehicleType)vehicle_type, parent_group_id)) return GROUP_INVALID;
 
 	/* In case of test-mode, we return GroupID 0 */
-	return (ScriptGroup::GroupID)0;
+	return GroupID::Begin();
 }
 
 /* static */ bool ScriptGroup::DeleteGroup(GroupID group_id)
@@ -41,7 +44,7 @@
 	EnforceCompanyModeValid(false);
 	EnforcePrecondition(false, IsValidGroup(group_id));
 
-	return ScriptObject::DoCommand(0, group_id, 0, CMD_DELETE_GROUP);
+	return ScriptObject::Command<Commands::DeleteGroup>::Do(group_id);
 }
 
 /* static */ ScriptVehicle::VehicleType ScriptGroup::GetVehicleType(GroupID group_id)
@@ -62,15 +65,14 @@
 	EnforcePreconditionEncodedText(false, text);
 	EnforcePreconditionCustomError(false, ::Utf8StringLength(text) < MAX_LENGTH_GROUP_NAME_CHARS, ScriptError::ERR_PRECONDITION_STRING_TOO_LONG);
 
-	return ScriptObject::DoCommand(0, group_id, 0, CMD_ALTER_GROUP, text);
+	return ScriptObject::Command<Commands::AlterGroup>::Do(AlterGroupMode::Rename, group_id, ::GroupID::Invalid(), text);
 }
 
 /* static */ std::optional<std::string> ScriptGroup::GetName(GroupID group_id)
 {
 	if (!IsValidGroup(group_id)) return std::nullopt;
 
-	::SetDParam(0, group_id);
-	return GetString(STR_GROUP_NAME);
+	return ::StrMakeValid(::GetString(STR_GROUP_NAME, group_id), {});
 }
 
 /* static */ bool ScriptGroup::SetParent(GroupID group_id, GroupID parent_group_id)
@@ -79,15 +81,15 @@
 	EnforcePrecondition(false, IsValidGroup(group_id));
 	EnforcePrecondition(false, IsValidGroup(parent_group_id));
 
-	return ScriptObject::DoCommand(0, group_id | 1 << 16, parent_group_id, CMD_ALTER_GROUP);
+	return ScriptObject::Command<Commands::AlterGroup>::Do(AlterGroupMode::SetParent, group_id, parent_group_id, {});
 }
 
-/* static */ ScriptGroup::GroupID ScriptGroup::GetParent(GroupID group_id)
+/* static */ GroupID ScriptGroup::GetParent(GroupID group_id)
 {
-	EnforcePrecondition((ScriptGroup::GroupID)INVALID_GROUP, IsValidGroup(group_id));
+	EnforcePrecondition(::GroupID::Invalid(), IsValidGroup(group_id));
 
-	const Group *g = ::Group::GetIfValid(group_id);
-	return (ScriptGroup::GroupID)g->parent;
+	const Group *g = ::Group::Get(group_id);
+	return g->parent;
 }
 
 /* static */ bool ScriptGroup::EnableAutoReplaceProtection(GroupID group_id, bool enable)
@@ -95,14 +97,14 @@
 	EnforceCompanyModeValid(false);
 	EnforcePrecondition(false, IsValidGroup(group_id));
 
-	return ScriptObject::DoCommand(0, group_id | static_cast<uint32_t>(GroupFlags::GF_REPLACE_PROTECTION), enable ? 1 : 0, CMD_SET_GROUP_FLAG);
+	return ScriptObject::Command<Commands::SetGroupFlag>::Do(group_id, GroupFlag::ReplaceProtection, enable, false);
 }
 
 /* static */ bool ScriptGroup::GetAutoReplaceProtection(GroupID group_id)
 {
 	if (!IsValidGroup(group_id)) return false;
 
-	return HasBit(::Group::Get(group_id)->flags, GroupFlags::GF_REPLACE_PROTECTION);
+	return ::Group::Get(group_id)->flags.Test(GroupFlag::ReplaceProtection);
 }
 
 /* static */ SQInteger ScriptGroup::GetNumEngines(GroupID group_id, EngineID engine_id)
@@ -132,7 +134,7 @@
 	EnforcePrecondition(false, IsValidGroup(group_id) || group_id == GROUP_DEFAULT);
 	EnforcePrecondition(false, ScriptVehicle::IsPrimaryVehicle(vehicle_id));
 
-	return ScriptObject::DoCommand(0, group_id, vehicle_id, CMD_ADD_VEHICLE_GROUP);
+	return ScriptObject::Command<Commands::AddVehicleToGroup>::Do(group_id, vehicle_id, false);
 }
 
 /* static */ bool ScriptGroup::EnableWagonRemoval(bool enable_removal)
@@ -140,7 +142,7 @@
 	EnforceCompanyModeValid(false);
 	if (HasWagonRemoval() == enable_removal) return true;
 
-	return ScriptObject::DoCommand(0, 0, enable_removal ? 1 : 0, CMD_CHANGE_COMPANY_SETTING, "company.renew_keep_length");
+	return ScriptObject::Command<Commands::ChangeCompanySetting>::Do("company.renew_keep_length", enable_removal ? 1 : 0);
 }
 
 /* static */ bool ScriptGroup::HasWagonRemoval()
@@ -155,13 +157,13 @@
 	EnforcePrecondition(false, IsValidGroup(group_id) || group_id == GROUP_DEFAULT || group_id == GROUP_ALL);
 	EnforcePrecondition(false, ScriptEngine::IsBuildable(engine_id_new));
 
-	return ScriptObject::DoCommand(0, group_id << 16, (engine_id_new << 16) | engine_id_old, CMD_SET_AUTOREPLACE);
+	return ScriptObject::Command<Commands::SetAutoreplace>::Do(group_id, engine_id_old, engine_id_new, false);
 }
 
 /* static */ EngineID ScriptGroup::GetEngineReplacement(GroupID group_id, EngineID engine_id)
 {
-	EnforceCompanyModeValid(::INVALID_ENGINE);
-	if (!IsValidGroup(group_id) && group_id != GROUP_DEFAULT && group_id != GROUP_ALL) return ::INVALID_ENGINE;
+	EnforceCompanyModeValid(::EngineID::Invalid());
+	if (!IsValidGroup(group_id) && group_id != GROUP_DEFAULT && group_id != GROUP_ALL) return ::EngineID::Invalid();
 
 	return ::EngineReplacementForCompany(Company::Get(ScriptObject::GetCompany()), engine_id, group_id);
 }
@@ -171,7 +173,7 @@
 	EnforceCompanyModeValid(false);
 	EnforcePrecondition(false, IsValidGroup(group_id) || group_id == GROUP_DEFAULT || group_id == GROUP_ALL);
 
-	return ScriptObject::DoCommand(0, group_id << 16, (::INVALID_ENGINE << 16) | engine_id, CMD_SET_AUTOREPLACE);
+	return ScriptObject::Command<Commands::SetAutoreplace>::Do(group_id, engine_id, ::EngineID::Invalid(), false);
 }
 
 /* static */ Money ScriptGroup::GetProfitThisYear(GroupID group_id)
@@ -222,7 +224,7 @@
 	EnforceCompanyModeValid(false);
 	EnforcePrecondition(false, IsValidGroup(group_id));
 
-	return ScriptObject::DoCommand(0, group_id, colour << 16, CMD_SET_GROUP_LIVERY);
+	return ScriptObject::Command<Commands::SetGroupLivery>::Do(group_id, true, (::Colours)colour);
 }
 
 /* static */ bool ScriptGroup::SetSecondaryColour(GroupID group_id, ScriptCompany::Colours colour)
@@ -230,15 +232,15 @@
 	EnforceCompanyModeValid(false);
 	EnforcePrecondition(false, IsValidGroup(group_id));
 
-	return ScriptObject::DoCommand(0, group_id, (1 << 8) | (colour << 16), CMD_SET_GROUP_LIVERY);
+	return ScriptObject::Command<Commands::SetGroupLivery>::Do(group_id, false, (::Colours)colour);
 }
 
 /* static */ ScriptCompany::Colours ScriptGroup::GetPrimaryColour(GroupID group_id)
 {
 	EnforcePrecondition(ScriptCompany::Colours::COLOUR_INVALID, IsValidGroup(group_id));
 
-	const Group *g = ::Group::GetIfValid(group_id);
-	if (!HasBit(g->livery.in_use, 0)) return ScriptCompany::Colours::COLOUR_INVALID;
+	const Group *g = ::Group::Get(group_id);
+	if (!g->livery.in_use.Test(Livery::Flag::Primary)) return ScriptCompany::Colours::COLOUR_INVALID;
 	return (ScriptCompany::Colours)g->livery.colour1;
 }
 
@@ -246,7 +248,7 @@
 {
 	EnforcePrecondition(ScriptCompany::Colours::COLOUR_INVALID, IsValidGroup(group_id));
 
-	const Group *g = ::Group::GetIfValid(group_id);
-	if (!HasBit(g->livery.in_use, 1)) return ScriptCompany::Colours::COLOUR_INVALID;
+	const Group *g = ::Group::Get(group_id);
+	if (!g->livery.in_use.Test(Livery::Flag::Secondary)) return ScriptCompany::Colours::COLOUR_INVALID;
 	return (ScriptCompany::Colours)g->livery.colour2;
 }

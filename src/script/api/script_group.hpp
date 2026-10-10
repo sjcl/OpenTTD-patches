@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file script_group.hpp Everything to put vehicles into groups. */
@@ -20,15 +20,9 @@
  */
 class ScriptGroup : public ScriptObject {
 public:
-	/**
-	 * The group IDs of some special groups.
-	 */
-	enum GroupID {
-		/* Note: these values represent part of the in-game static values */
-		GROUP_ALL     = ::ALL_GROUP,     ///< All vehicles are in this group.
-		GROUP_DEFAULT = ::DEFAULT_GROUP, ///< Vehicles not put in any other group are in this one.
-		GROUP_INVALID = ::INVALID_GROUP, ///< An invalid group id.
-	};
+	static constexpr GroupID GROUP_ALL = ::ALL_GROUP; ///< All vehicles are in this group.
+	static constexpr GroupID GROUP_DEFAULT = ::DEFAULT_GROUP; ///< Vehicles not put in any other group are in this one.
+	static constexpr GroupID GROUP_INVALID = ::GroupID::Invalid(); ///< An invalid group id.
 
 	/**
 	 * Checks whether the given group is valid.

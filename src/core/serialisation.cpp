@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file serialisation.cpp Implementation related to (de)serialisation of buffers. */
@@ -99,6 +99,43 @@ void BufferSend_uint64(std::vector<uint8_t> &buffer, size_t limit, uint64_t data
 }
 
 /**
+ * Package a variable-size encoded 64 bits integer in the packet.
+ *
+ * 0xxxxxxx 7 bits
+ * 10xxxxxx xxxxxxxx 14 bits
+ * 110xxxxx xxxxxxxx xxxxxxxx 21 bits
+ * 1110xxxx xxxxxxxx xxxxxxxx xxxxxxxx 28 bits
+ * 11110xxx xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx 35 bits
+ * 111110xx xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx 42 bits
+ * 1111110x xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx 49 bits
+ * 11111110 xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx 56 bits
+ * 11111111 xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx 64 bits
+ *
+ * @param data The data to send.
+ */
+void BufferSend_varuint(std::vector<uint8_t> &buffer, size_t limit, uint64_t data)
+{
+	const uint8_t data_bits = std::min<uint8_t>(62, FindLastBit(data)); // Limit to 62, as we don't need a 0 bit spacer for 64 bits (bit 63 set)
+
+	uint8_t extra_bytes = data_bits / 7;
+	assert(BufferCanWriteToPacket(buffer, limit, 1 + extra_bytes));
+	buffer.resize(buffer.size() + 1 + extra_bytes);
+	uint8_t *b = buffer.data() + buffer.size();
+
+	uint8_t first_byte = 0;
+	while (extra_bytes > 0) {
+		first_byte >>= 1;
+		first_byte |= 0x80;
+		extra_bytes--;
+		b--;
+		*b = (uint8_t)data;
+		data >>= 8;
+	}
+	b--;
+	*b = first_byte | (uint8_t)data;
+}
+
+/**
  * Sends a string over the network. It sends out
  * the string + '\0'. No size-byte or something.
  * @param data The string to send
@@ -131,7 +168,7 @@ size_t BufferSend_binary_until_full(std::vector<uint8_t> &buffer, size_t limit, 
  */
 void BufferSend_binary(std::vector<uint8_t> &buffer, size_t limit, const uint8_t *data, const size_t size)
 {
-	assert(data != nullptr);
+	if (size == 0) return;
 	assert(BufferCanWriteToPacket(buffer, limit, size));
 	buffer.insert(buffer.end(), data, data + size);
 }
@@ -167,3 +204,6 @@ void BufferRecvStringValidate(std::string &buffer, StringValidationSettings sett
 {
 	StrMakeValidInPlace(buffer, settings);
 }
+
+template struct BufferDeserialisationHelper<DeserialisationBuffer>;
+template struct BufferSerialisationHelper<BufferSerialisationRef>;

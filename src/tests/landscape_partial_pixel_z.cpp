@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file landscape_partial_pixel_z.cpp Tests for consistency/validity of the results of GetPartialPixelZ. */
@@ -14,6 +14,8 @@
 #include "../landscape.h"
 #include "../slope_func.h"
 #include <array>
+
+#include "../safeguards.h"
 
 /**
  * Check whether the addition of two slope's GetPartialPixelZ values results in
@@ -86,7 +88,7 @@ TEST_CASE("PartialPixelSlopeAdditionTest - A half tile steep slope is a one corn
  * @param expected The expect partial pixels Z values.
  * @return True iff at all GetPartialPixelZ results are the same as the expected Z-coordinates.
  */
-bool CheckPartialPixelZ(Slope slope, std::array<int, TILE_SIZE * TILE_SIZE> expected)
+bool CheckPartialPixelZ(Slope slope, const std::array<int, TILE_SIZE * TILE_SIZE> &expected)
 {
 	for (uint i = 0; i < expected.size(); i++) {
 		int actual = GetPartialPixelZ(GB(i, 4, 4), GB(i, 0, 4), slope);

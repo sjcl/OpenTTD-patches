@@ -88,6 +88,18 @@ class safe_btree_map : public btree_map_container<
                  const allocator_type &alloc = allocator_type())
       : super_type(b, e, comp, alloc) {
   }
+
+  using super_type::swap;
+
+  // Swap with equivalent normal btree map
+  void swap(btree_map<Key, Value, Compare, Alloc, TargetNodeSize> &x) {
+    this->tree_.swap(x.tree_);
+  }
+
+  // Unprotected read-only view
+  auto unprotected_view() const {
+    return safe_btree_unprotected_view(*this->tree_.internal_btree());
+  }
 };
 
 template <typename K, typename V, typename C, typename A, int N>

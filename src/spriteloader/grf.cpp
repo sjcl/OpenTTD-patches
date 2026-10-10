@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file grf.cpp Reading graphics data from (New)GRF files. */
@@ -12,13 +12,11 @@
 #include "../debug.h"
 #include "../settings_type.h"
 #include "../strings_func.h"
-#include "table/strings.h"
 #include "../error.h"
-#include "../core/math_func.hpp"
-#include "../core/alloc_type.hpp"
-#include "../core/bitmath_func.hpp"
 #include "../spritecache.h"
 #include "grf.hpp"
+
+#include "table/strings.h"
 
 #include "../safeguards.h"
 
@@ -27,7 +25,7 @@ extern const uint8_t _palmap_w2d[];
 /**
  * We found a corrupted sprite. This means that the sprite itself
  * contains invalid data or is too small for the given dimensions.
- * @param file_slot the file the errored sprite is in
+ * @param file The file the errored sprite is in.
  * @param file_pos the location in the file of the errored sprite
  * @param line the line where the error occurs.
  * @return always false (to tell loading the sprite failed)
@@ -36,8 +34,7 @@ static bool WarnCorruptSprite(const SpriteFile &file, size_t file_pos, int line)
 {
 	static uint8_t warning_level = 0;
 	if (warning_level == 0) {
-		SetDParamStr(0, file.GetSimplifiedFilename());
-		ShowErrorMessage(STR_NEWGRF_ERROR_CORRUPT_SPRITE, INVALID_STRING_ID, WL_ERROR);
+		ShowErrorMessage(GetEncodedString(STR_NEWGRF_ERROR_CORRUPT_SPRITE, file.GetSimplifiedFilename()), {}, WarningLevel::Error);
 	}
 	Debug(sprite, warning_level, "[{}] Loading corrupted sprite from {} at position {}", line, file.GetSimplifiedFilename(), file_pos);
 	warning_level = 6;
@@ -57,7 +54,7 @@ static bool WarnCorruptSprite(const SpriteFile &file, size_t file_pos, int line)
  * @param container_format Container format of the GRF this sprite is in.
  * @return True if the sprite was successfully loaded.
  */
-bool DecodeSingleSprite(SpriteLoader::Sprite *sprite, SpriteFile &file, size_t file_pos, SpriteType sprite_type, int64_t num, uint8_t type, ZoomLevel zoom_lvl, uint8_t colour_fmt, uint8_t container_format)
+bool DecodeSingleSprite(SpriteLoader::Sprite *sprite, SpriteFile &file, size_t file_pos, SpriteType sprite_type, int64_t num, uint8_t type, ZoomLevel zoom_lvl, SpriteComponents colour_fmt, uint8_t container_format)
 {
 	/*
 	 * Original sprite height was max 255 pixels, with 4x extra zoom => 1020 pixels.
@@ -105,9 +102,9 @@ bool DecodeSingleSprite(SpriteLoader::Sprite *sprite, SpriteFile &file, size_t f
 
 	/* Convert colour depth to pixel size. */
 	int bpp = 0;
-	if (colour_fmt & SCC_RGB)   bpp += 3; // Has RGB data.
-	if (colour_fmt & SCC_ALPHA) bpp++;    // Has alpha data.
-	if (colour_fmt & SCC_PAL)   bpp++;    // Has palette data.
+	if (colour_fmt.Test(SpriteComponent::RGB))     bpp += 3; // Has RGB data.
+	if (colour_fmt.Test(SpriteComponent::Alpha))   bpp++;    // Has alpha data.
+	if (colour_fmt.Test(SpriteComponent::Palette)) bpp++;    // Has palette data.
 
 	/* When there are transparency pixels, this format has another trick.. decode it */
 	if (type & 0x08) {
@@ -156,20 +153,20 @@ bool DecodeSingleSprite(SpriteLoader::Sprite *sprite, SpriteFile &file, size_t f
 				}
 
 				for (int x = 0; x < length; x++) {
-					if (colour_fmt & SCC_RGB) {
+					if (colour_fmt.Test(SpriteComponent::RGB)) {
 						data->r = *dest++;
 						data->g = *dest++;
 						data->b = *dest++;
 					}
-					data->a = (colour_fmt & SCC_ALPHA) ? *dest++ : 0xFF;
-					if (colour_fmt & SCC_PAL) {
+					data->a = colour_fmt.Test(SpriteComponent::Alpha) ? *dest++ : 0xFF;
+					if (colour_fmt.Test(SpriteComponent::Palette)) {
 						switch (sprite_type) {
 							case SpriteType::Normal: data->m = file.NeedsPaletteRemap() ? _palmap_w2d[*dest] : *dest; break;
 							case SpriteType::Font:   data->m = std::min<uint8_t>(*dest, 2u); break;
 							default:        data->m = *dest; break;
 						}
 						/* Magic blue. */
-						if (colour_fmt == SCC_PAL && *dest == 0) data->a = 0x00;
+						if (colour_fmt == SpriteComponent::Palette && *dest == 0) data->a = 0x00;
 						dest++;
 					}
 					data++;
@@ -193,20 +190,20 @@ bool DecodeSingleSprite(SpriteLoader::Sprite *sprite, SpriteFile &file, size_t f
 		for (int i = 0; i < sprite->width * sprite->height; i++) {
 			uint8_t *pixel = &dest[i * bpp];
 
-			if (colour_fmt & SCC_RGB) {
+			if (colour_fmt.Test(SpriteComponent::RGB)) {
 				sprite->data[i].r = *pixel++;
 				sprite->data[i].g = *pixel++;
 				sprite->data[i].b = *pixel++;
 			}
-			sprite->data[i].a = (colour_fmt & SCC_ALPHA) ? *pixel++ : 0xFF;
-			if (colour_fmt & SCC_PAL) {
+			sprite->data[i].a = colour_fmt.Test(SpriteComponent::Alpha) ? *pixel++ : 0xFF;
+			if (colour_fmt.Test(SpriteComponent::Palette)) {
 				switch (sprite_type) {
 					case SpriteType::Normal: sprite->data[i].m = file.NeedsPaletteRemap() ? _palmap_w2d[*pixel] : *pixel; break;
 					case SpriteType::Font:   sprite->data[i].m = std::min<uint8_t>(*pixel, 2u); break;
 					default:        sprite->data[i].m = *pixel; break;
 				}
 				/* Magic blue. */
-				if (colour_fmt == SCC_PAL && *pixel == 0) sprite->data[i].a = 0x00;
+				if (colour_fmt == SpriteComponent::Palette && *pixel == 0) sprite->data[i].a = 0x00;
 				pixel++;
 			}
 		}
@@ -215,10 +212,10 @@ bool DecodeSingleSprite(SpriteLoader::Sprite *sprite, SpriteFile &file, size_t f
 	return true;
 }
 
-uint8_t LoadSpriteV1(SpriteLoader::SpriteCollection &sprite, SpriteFile &file, size_t file_pos, SpriteType sprite_type, bool load_32bpp)
+static LowZoomLevels LoadSpriteV1(SpriteLoader::SpriteCollection &sprite, SpriteFile &file, size_t file_pos, SpriteType sprite_type, bool load_32bpp, LowZoomLevels &avail_8bpp)
 {
 	/* Check the requested colour depth. */
-	if (load_32bpp) return 0;
+	if (load_32bpp) return {};
 
 	/* Open the right file and go to the correct position */
 	file.SeekTo(file_pos, SEEK_SET);
@@ -228,103 +225,117 @@ uint8_t LoadSpriteV1(SpriteLoader::SpriteCollection &sprite, SpriteFile &file, s
 	uint8_t type = file.ReadByte();
 
 	/* Type 0xFF indicates either a colourmap or some other non-sprite info; we do not handle them here */
-	if (type == 0xFF) return 0;
+	if (type == 0xFF) return {};
 
-	ZoomLevel zoom_lvl = (sprite_type != SpriteType::MapGen) ? ZOOM_LVL_NORMAL : ZOOM_LVL_MIN;
+	const ZoomLevel zoom_lvl = (sprite_type != SpriteType::MapGen) ? ZoomLevel::Normal : ZoomLevel::Min;
+	auto &dest_sprite = sprite[zoom_lvl];
 
-	sprite[zoom_lvl].height = file.ReadByte();
-	sprite[zoom_lvl].width  = file.ReadWord();
-	sprite[zoom_lvl].x_offs = file.ReadWord();
-	sprite[zoom_lvl].y_offs = file.ReadWord();
-	sprite[zoom_lvl].colours = SCC_PAL;
+	dest_sprite.height = file.ReadByte();
+	dest_sprite.width  = file.ReadWord();
+	dest_sprite.x_offs = file.ReadWord();
+	dest_sprite.y_offs = file.ReadWord();
+	dest_sprite.colours = SpriteComponent::Palette;
 
-	if (sprite[zoom_lvl].width > INT16_MAX) {
+	if (dest_sprite.width > INT16_MAX) {
 		WarnCorruptSprite(file, file_pos, __LINE__);
-		return 0;
+		return {};
 	}
 
 	/* 0x02 indicates it is a compressed sprite, so we can't rely on 'num' to be valid.
 	 * In case it is uncompressed, the size is 'num' - 8 (header-size). */
-	num = (type & 0x02) ? sprite[zoom_lvl].width * sprite[zoom_lvl].height : num - 8;
+	num = (type & 0x02) ? dest_sprite.width * dest_sprite.height : num - 8;
 	if (num < 0) {
 		WarnCorruptSprite(file, file_pos, __LINE__);
-		return 0;
+		return {};
 	}
 
-	if (DecodeSingleSprite(&sprite[zoom_lvl], file, file_pos, sprite_type, num, type, zoom_lvl, SCC_PAL, 1)) return 1 << zoom_lvl;
+	if (DecodeSingleSprite(&dest_sprite, file, file_pos, sprite_type, num, type, zoom_lvl, SpriteComponent::Palette, 1)) {
+		avail_8bpp.Set(zoom_lvl);
+		return avail_8bpp;
+	}
 
-	return 0;
+	return {};
 }
 
-uint8_t LoadSpriteV2(SpriteLoader::SpriteCollection &sprite, SpriteFile &file, size_t file_pos, SpriteType sprite_type, bool load_32bpp, uint count, uint16_t control_flags, uint8_t zoom_levels)
+SpriteLoaderResult LoadSpriteV2(SpriteLoader::SpriteCollection &sprite, SpriteFile &file, size_t file_pos, SpriteType sprite_type, bool load_32bpp, uint count, uint16_t control_flags, LowZoomLevels zoom_levels)
 {
-	static const ZoomLevel zoom_lvl_map[6] = {ZOOM_LVL_NORMAL, ZOOM_LVL_IN_4X, ZOOM_LVL_IN_2X, ZOOM_LVL_OUT_2X, ZOOM_LVL_OUT_4X, ZOOM_LVL_OUT_8X};
+	static_assert(ZOOM_SPRITE_RENDER_MASK.base() == 0x3F);
+
+	static const ZoomLevel zoom_lvl_map[6] = {ZoomLevel::Normal, ZoomLevel::In4x, ZoomLevel::In2x, ZoomLevel::Out2x, ZoomLevel::Out4x, ZoomLevel::Out8x};
 
 	/* Is the sprite not present/stripped in the GRF? */
-	if (file_pos == SIZE_MAX) return 0;
+	if (file_pos == SIZE_MAX) return {};
 
 	/* clamp to first 6 zoom levels, as in zoom_lvl_map */
-	zoom_levels &= 0x3F;
+	zoom_levels &= ZOOM_SPRITE_RENDER_MASK;
 
-	uint8_t available_levels = GB(control_flags, load_32bpp ? SCC_32BPP_ZOOM_START : SCC_PAL_ZOOM_START, 6);
-	uint8_t skip_levels = 0;
-	ZoomLevel zoom_min = sprite_type == SpriteType::Font ? ZOOM_LVL_MIN : _settings_client.gui.sprite_zoom_min;
+	LowZoomLevels available_levels = static_cast<LowZoomLevels>(GB(control_flags, load_32bpp ? SCC_32BPP_ZOOM_START : SCC_PAL_ZOOM_START, 6));
+	LowZoomLevels skip_levels{};
+	ZoomLevel zoom_min = sprite_type == SpriteType::Font ? ZoomLevel::Min : _settings_client.gui.sprite_zoom_min;
 
 	if (unlikely(sprite_type == SpriteType::MapGen)) {
-		available_levels = UINT8_MAX;
-		zoom_levels = 0x3F;
-	} else if (available_levels != 0) {
-		if (zoom_min >= ZOOM_LVL_IN_2X && (HasBit(available_levels, ZOOM_LVL_IN_2X) || HasBit(available_levels, ZOOM_LVL_NORMAL))) {
-			ClrBit(available_levels, ZOOM_LVL_IN_4X);
+		available_levels = LOW_ZOOM_ALL_BITS;
+		zoom_levels = ZOOM_SPRITE_RENDER_MASK;
+	} else if (available_levels.Any()) {
+		if (zoom_min >= ZoomLevel::In2x && (available_levels.Test(ZoomLevel::In2x) || available_levels.Test(ZoomLevel::Normal))) {
+			available_levels.Reset(ZoomLevel::In4x);
 		}
-		if (zoom_min >= ZOOM_LVL_NORMAL && HasBit(available_levels, ZOOM_LVL_NORMAL)) {
-			ClrBit(available_levels, ZOOM_LVL_IN_4X);
-			ClrBit(available_levels, ZOOM_LVL_IN_2X);
+		if (zoom_min >= ZoomLevel::Normal && available_levels.Test(ZoomLevel::Normal)) {
+			available_levels.Reset(ZoomLevel::In4x);
+			available_levels.Reset(ZoomLevel::In2x);
 		}
-		if (zoom_levels == 0) {
+		if (zoom_levels.None()) {
 			skip_levels = available_levels;
-		} else if (zoom_levels != 0x3F) {
-			uint8_t keep_levels = 0;
-			for (uint8_t bit : SetBitIterator(zoom_levels)) {
-				if (HasBit(available_levels, bit)) {
-					SetBit(keep_levels, bit);
+		} else if (zoom_levels != ZOOM_SPRITE_RENDER_MASK) {
+			LowZoomLevels keep_levels{};
+			for (ZoomLevel bit : zoom_levels.IterateSetBits()) {
+				if (available_levels.Test(bit)) {
+					keep_levels.Set(bit);
 					continue;
 				}
 
-				uint8_t below = ((1 << bit) - 1) & available_levels;
+				uint8_t below = ((1 << to_underlying(bit)) - 1) & available_levels.base();
 				if (below != 0) {
-					SetBit(keep_levels, FindLastBit(below));
+					SetBit(keep_levels.edit_base(), FindLastBit(below));
 				} else {
-					SetBit(keep_levels, FindFirstBit<uint8_t>((~below) & available_levels));
+					SetBit(keep_levels.edit_base(), FindFirstBit<uint8_t>((~below) & available_levels.base()));
 				}
 			}
-			skip_levels = available_levels & (~keep_levels);
+			skip_levels.edit_base() = available_levels.base() & (~keep_levels.base());
 		}
 	}
 
 	/* Open the right file and go to the correct position */
 	file.SeekTo(file_pos, SEEK_SET);
 
+	SpriteLoaderResult result{};
+
 	uint32_t id = file.ReadDword();
 
-	uint8_t loaded_sprites = 0;
+	LowZoomLevels loaded_sprites{};
 	do {
 		int64_t num = file.ReadDword();
 		size_t start_pos = file.GetPos();
 		uint8_t type = file.ReadByte();
 
 		/* Type 0xFF indicates either a colourmap or some other non-sprite info; we do not handle them here. */
-		if (type == 0xFF) return 0;
+		if (type == 0xFF) return {};
 
-		uint8_t colour = type & SCC_MASK;
+		SpriteComponents colour{type};
+		/* Mask out colour component information from type. */
+		type &= ~SpriteComponents::MASK;
+
 		uint8_t zoom = file.ReadByte();
 
-		bool is_wanted_colour_depth = (colour != 0 && (load_32bpp ? colour != SCC_PAL : colour == SCC_PAL));
+		bool is_wanted_colour_depth = (colour.Any() && (load_32bpp ? colour != SpriteComponent::Palette : colour == SpriteComponent::Palette));
 		bool is_wanted_zoom_lvl;
 
 		if (sprite_type != SpriteType::MapGen) {
 			if (zoom < lengthof(zoom_lvl_map)) {
-				is_wanted_zoom_lvl = HasBit(available_levels, zoom_lvl_map[zoom]);
+				is_wanted_zoom_lvl = available_levels.Test(zoom_lvl_map[zoom]);
+
+				if (colour == SpriteComponent::Palette) result.avail_8bpp.Set(zoom_lvl_map[zoom]);
+				if (colour != SpriteComponent::Palette) result.avail_32bpp.Set(zoom_lvl_map[zoom]);
 			} else {
 				is_wanted_zoom_lvl = false;
 			}
@@ -333,33 +344,34 @@ uint8_t LoadSpriteV2(SpriteLoader::SpriteCollection &sprite, SpriteFile &file, s
 		}
 
 		if (is_wanted_colour_depth && is_wanted_zoom_lvl) {
-			ZoomLevel zoom_lvl = (sprite_type != SpriteType::MapGen) ? zoom_lvl_map[zoom] : ZOOM_LVL_MIN;
+			const ZoomLevel zoom_lvl = (sprite_type != SpriteType::MapGen) ? zoom_lvl_map[zoom] : ZoomLevel::Min;
 
-			if (HasBit(loaded_sprites, zoom_lvl)) {
+			if (loaded_sprites.Test(zoom_lvl)) {
 				/* We already have this zoom level, skip sprite. */
 				Debug(sprite, 1, "Ignoring duplicate zoom level sprite {} from {}", id, file.GetSimplifiedFilename());
 				file.SkipBytes(num - 2);
 				continue;
 			}
 
-			sprite[zoom_lvl].height = file.ReadWord();
-			sprite[zoom_lvl].width  = file.ReadWord();
-			sprite[zoom_lvl].x_offs = file.ReadWord();
-			sprite[zoom_lvl].y_offs = file.ReadWord();
-			sprite[zoom_lvl].colours = (SpriteColourComponent)colour;
+			auto &cur_sprite = sprite[zoom_lvl];
+			cur_sprite.height = file.ReadWord();
+			cur_sprite.width  = file.ReadWord();
+			cur_sprite.x_offs = file.ReadWord();
+			cur_sprite.y_offs = file.ReadWord();
+			cur_sprite.colours = colour;
 
-			if (sprite[zoom_lvl].width > INT16_MAX || sprite[zoom_lvl].height > INT16_MAX) {
+			if (cur_sprite.width > INT16_MAX || cur_sprite.height > INT16_MAX) {
 				WarnCorruptSprite(file, file_pos, __LINE__);
-				return 0;
+				return {};
 			}
 
-			ClrBit(available_levels, zoom_lvl);
+			available_levels.Reset(zoom_lvl);
 
-			if (HasBit(skip_levels, zoom_lvl)) {
-				sprite[zoom_lvl].data = nullptr;
-				SetBit(loaded_sprites, zoom_lvl);
+			if (skip_levels.Test(zoom_lvl)) {
+				cur_sprite.data = nullptr;
+				result.loaded_sprites.Set(zoom_lvl);
 
-				if (available_levels == 0) {
+				if (available_levels.None()) {
 					/* nothing more to do */
 					break;
 				}
@@ -368,28 +380,25 @@ uint8_t LoadSpriteV2(SpriteLoader::SpriteCollection &sprite, SpriteFile &file, s
 				continue;
 			}
 
-			/* Mask out colour information. */
-			type = type & ~SCC_MASK;
-
-			/* Convert colour depth to pixel size. */
+			/* Convert colour components to pixel size. */
 			int bpp = 0;
-			if (colour & SCC_RGB)   bpp += 3; // Has RGB data.
-			if (colour & SCC_ALPHA) bpp++;    // Has alpha data.
-			if (colour & SCC_PAL)   bpp++;    // Has palette data.
+			if (colour.Test(SpriteComponent::RGB)) bpp += 3;
+			if (colour.Test(SpriteComponent::Alpha)) bpp++;
+			if (colour.Test(SpriteComponent::Palette)) bpp++;
 
 			/* For chunked encoding we store the decompressed size in the file,
 			 * otherwise we can calculate it from the image dimensions. */
-			uint decomp_size = (type & 0x08) ? file.ReadDword() : sprite[zoom_lvl].width * sprite[zoom_lvl].height * bpp;
+			uint decomp_size = (type & 0x08) ? file.ReadDword() : cur_sprite.width * cur_sprite.height * bpp;
 
-			bool valid = DecodeSingleSprite(&sprite[zoom_lvl], file, file_pos, sprite_type, decomp_size, type, zoom_lvl, colour, 2);
+			bool valid = DecodeSingleSprite(&cur_sprite, file, file_pos, sprite_type, decomp_size, type, zoom_lvl, colour, 2);
 			if (file.GetPos() != start_pos + num) {
 				WarnCorruptSprite(file, file_pos, __LINE__);
-				return 0;
+				return {};
 			}
 
-			if (valid) SetBit(loaded_sprites, zoom_lvl);
+			if (valid) result.loaded_sprites.Set(zoom_lvl);
 			if (--count == 0) break;
-			if (available_levels == 0) {
+			if (available_levels.None()) {
 				/* nothing more to do */
 				break;
 			}
@@ -401,14 +410,16 @@ uint8_t LoadSpriteV2(SpriteLoader::SpriteCollection &sprite, SpriteFile &file, s
 
 	} while (file.ReadDword() == id);
 
-	return loaded_sprites;
+	return result;
 }
 
-uint8_t SpriteLoaderGrf::LoadSprite(SpriteLoader::SpriteCollection &sprite, SpriteFile &file, size_t file_pos, SpriteType sprite_type, bool load_32bpp, uint count, uint16_t control_flags, uint8_t zoom_levels)
+SpriteLoaderResult SpriteLoaderGrf::LoadSprite(SpriteLoader::SpriteCollection &sprite, SpriteFile &file, size_t file_pos, SpriteType sprite_type, bool load_32bpp, uint count, uint16_t control_flags, LowZoomLevels zoom_levels)
 {
+	SpriteLoaderResult result{};
 	if (this->container_ver >= 2) {
-		return LoadSpriteV2(sprite, file, file_pos, sprite_type, load_32bpp, count, control_flags, zoom_levels);
+		result = LoadSpriteV2(sprite, file, file_pos, sprite_type, load_32bpp, count, control_flags, zoom_levels);
 	} else {
-		return LoadSpriteV1(sprite, file, file_pos, sprite_type, load_32bpp);
+		result.loaded_sprites = LoadSpriteV1(sprite, file, file_pos, sprite_type, load_32bpp, result.avail_8bpp);
 	}
+	return result;
 }

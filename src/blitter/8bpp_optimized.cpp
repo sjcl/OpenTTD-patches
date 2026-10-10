@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file 8bpp_optimized.cpp Implementation of the optimized 8 bpp blitter. */
@@ -84,9 +84,9 @@ void Blitter_8bppOptimized::Draw(Blitter::BlitterParams *bp, BlitterMode mode, Z
 			width -= pixels;
 
 			switch (mode) {
-				case BM_COLOUR_REMAP:
-				case BM_CRASH_REMAP:
-				case BM_COLOUR_REMAP_WITH_BRIGHTNESS: {
+				case BlitterMode::ColourRemap:
+				case BlitterMode::CrashRemap:
+				case BlitterMode::ColourRemapWithBrightness: {
 					const uint8_t *remap = bp->remap;
 					do {
 						uint m = remap[*src];
@@ -96,13 +96,13 @@ void Blitter_8bppOptimized::Draw(Blitter::BlitterParams *bp, BlitterMode mode, Z
 					break;
 				}
 
-				case BM_BLACK_REMAP:
+				case BlitterMode::BlackRemap:
 					MemSetT(dst, 0, pixels);
 					dst += pixels;
 					break;
 
-				case BM_TRANSPARENT:
-				case BM_TRANSPARENT_REMAP: {
+				case BlitterMode::Transparent:
+				case BlitterMode::TransparentRemap: {
 					const uint8_t *remap = bp->remap;
 					src += pixels;
 					do {
@@ -121,7 +121,7 @@ void Blitter_8bppOptimized::Draw(Blitter::BlitterParams *bp, BlitterMode mode, Z
 	}
 }
 
-Sprite *Blitter_8bppOptimized::Encode(const SpriteLoader::SpriteCollection &sprite, SpriteAllocator &allocator)
+Sprite *Blitter_8bppOptimized::Encode(SpriteType sprite_type, const SpriteLoader::SpriteCollection &sprite, SpriteAllocator &allocator)
 {
 	/* Make memory for all zoom-levels */
 	uint memory = sizeof(SpriteData);
@@ -129,13 +129,13 @@ Sprite *Blitter_8bppOptimized::Encode(const SpriteLoader::SpriteCollection &spri
 	ZoomLevel zoom_min;
 	ZoomLevel zoom_max;
 
-	if (sprite[ZOOM_LVL_MIN].type == SpriteType::Font) {
-		zoom_min = ZOOM_LVL_MIN;
-		zoom_max = ZOOM_LVL_MIN;
+	if (sprite_type == SpriteType::Font) {
+		zoom_min = ZoomLevel::Min;
+		zoom_max = ZoomLevel::Min;
 	} else {
 		zoom_min = _settings_client.gui.zoom_min;
-		zoom_max = (ZoomLevel) std::min(_settings_client.gui.zoom_max, ZOOM_LVL_DRAW_SPR);
-		if (zoom_max == zoom_min) zoom_max = ZOOM_LVL_DRAW_SPR;
+		zoom_max = (ZoomLevel) std::min<ZoomLevel>(_settings_client.gui.zoom_max, ZoomLevel::SpriteMax);
+		if (zoom_max == zoom_min) zoom_max = ZoomLevel::SpriteMax;
 	}
 
 	for (ZoomLevel i = zoom_min; i <= zoom_max; i++) {
@@ -149,8 +149,7 @@ Sprite *Blitter_8bppOptimized::Encode(const SpriteLoader::SpriteCollection &spri
 	 * memory around as this function is called quite often
 	 * and the memory usage is quite low. */
 	static ReusableBuffer<uint8_t> temp_buffer;
-	SpriteData *temp_dst = (SpriteData *)temp_buffer.Allocate(memory);
-	memset(temp_dst, 0, sizeof(*temp_dst));
+	SpriteData *temp_dst = reinterpret_cast<SpriteData *>(temp_buffer.ZeroAllocate(memory));
 	uint8_t *dst = temp_dst->data;
 
 	/* Make the sprites per zoom-level */
@@ -222,12 +221,13 @@ Sprite *Blitter_8bppOptimized::Encode(const SpriteLoader::SpriteCollection &spri
 	/* Allocate the exact amount of memory we need */
 	Sprite *dest_sprite = allocator.Allocate<Sprite>(sizeof(*dest_sprite) + size);
 
-	dest_sprite->height = sprite[ZOOM_LVL_MIN].height;
-	dest_sprite->width  = sprite[ZOOM_LVL_MIN].width;
-	dest_sprite->x_offs = sprite[ZOOM_LVL_MIN].x_offs;
-	dest_sprite->y_offs = sprite[ZOOM_LVL_MIN].y_offs;
+	const auto &root_sprite = sprite.Root();
+	dest_sprite->height = root_sprite.height;
+	dest_sprite->width  = root_sprite.width;
+	dest_sprite->x_offs = root_sprite.x_offs;
+	dest_sprite->y_offs = root_sprite.y_offs;
 	dest_sprite->next = nullptr;
-	dest_sprite->missing_zoom_levels = 0;
+	dest_sprite->missing_zoom_levels = {};
 	memcpy(dest_sprite->data, temp_dst, size);
 
 	return dest_sprite;

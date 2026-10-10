@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file newgrf_spritegroup.cpp Handling of primarily NewGRF action 2. */
@@ -10,7 +10,8 @@
 #include "stdafx.h"
 #include "debug.h"
 #include "newgrf_spritegroup.h"
-#include "newgrf_internal.h"
+#include "newgrf/newgrf_internal.h"
+#include "newgrf/newgrf_optimiser_internal.h"
 #include "newgrf_profiling.h"
 #include "core/pool_func.hpp"
 #include "vehicle_type.h"
@@ -38,16 +39,16 @@ bool _grfs_loaded_with_sg_shadow_enable = false;
 GrfSpecFeature GetGrfSpecFeatureForParentScope(GrfSpecFeature feature)
 {
 	switch (feature) {
-		case GSF_STATIONS:
-		case GSF_BRIDGES:
-		case GSF_HOUSES:
-		case GSF_INDUSTRIES:
-		case GSF_OBJECTS:
-		case GSF_ROADSTOPS:
-			return GSF_FAKE_TOWNS;
+		case GrfSpecFeature::Stations:
+		case GrfSpecFeature::Bridges:
+		case GrfSpecFeature::Houses:
+		case GrfSpecFeature::Industries:
+		case GrfSpecFeature::Objects:
+		case GrfSpecFeature::RoadStops:
+			return GrfSpecFeature::FakeTowns;
 
-		case GSF_INDUSTRYTILES:
-			return GSF_INDUSTRIES;
+		case GrfSpecFeature::IndustryTiles:
+			return GrfSpecFeature::Industries;
 
 		default:
 			return feature;
@@ -96,7 +97,7 @@ static inline uint32_t GetVariable(const ResolverObject &object, ScopeResolver *
 		case 0x1A: return UINT_MAX;
 		case 0x1C: return object.last_value;
 
-		case 0x5F: return (scope->GetRandomBits() << 8) | scope->GetTriggers();
+		case 0x5F: return (scope->GetRandomBits() << 8) | scope->GetRandomTriggers();
 
 		case 0x7D: return _temp_store.GetValue(parameter);
 
@@ -125,7 +126,7 @@ static inline uint32_t GetVariable(const ResolverObject &object, ScopeResolver *
  * Get the triggers. Base class returns \c 0 to prevent trouble.
  * @return The triggers.
  */
-/* virtual */ uint32_t ScopeResolver::GetTriggers() const
+/* virtual */ uint32_t ScopeResolver::GetRandomTriggers() const
 {
 	return 0;
 }
@@ -146,6 +147,8 @@ static inline uint32_t GetVariable(const ResolverObject &object, ScopeResolver *
 
 /**
  * Store a value into the persistent storage area (PSA). Default implementation does nothing (for newgrf classes without storage).
+ * @param pos The position into the storage area.
+ * @param value The new value to store.
  */
 /* virtual */ void ScopeResolver::StorePSA(uint reg, int32_t value) {}
 
@@ -154,16 +157,18 @@ static inline uint32_t GetVariable(const ResolverObject &object, ScopeResolver *
  * @param group Group to get.
  * @return The available sprite group.
  */
-/* virtual */ const SpriteGroup *ResolverObject::ResolveReal(const RealSpriteGroup *group) const
+/* virtual */ const SpriteGroup *ResolverObject::ResolveReal(const RealSpriteGroup &group) const
 {
-	if (!group->loaded.empty())  return group->loaded[0];
-	if (!group->loading.empty()) return group->loading[0];
+	if (!group.loaded.empty()) return group.loaded[0];
+	if (!group.loading.empty()) return group.loading[0];
 
 	return nullptr;
 }
 
 /**
  * Get a resolver for the \a scope.
+ * @param scope The scope to resolve.
+ * @param relative The relative in case of a #VarSpriteGroupScope::Relative.
  * @return The resolver for the requested scope.
  */
 /* virtual */ ScopeResolver *ResolverObject::GetScope(VarSpriteGroupScope scope, VarSpriteGroupScopeOffset relative)
@@ -243,9 +248,9 @@ static U EvalAdjustT(const DeterministicSpriteGroupAdjust &adjust, ScopeResolver
 uint32_t EvaluateDeterministicSpriteGroupAdjust(DeterministicSpriteGroupSize size, const DeterministicSpriteGroupAdjust &adjust, ScopeResolver *scope, uint32_t last_value, uint32_t value)
 {
 	switch (size) {
-		case DSG_SIZE_BYTE:  return EvalAdjustT<uint8_t,  int8_t> (adjust, scope, last_value, value); break;
-		case DSG_SIZE_WORD:  return EvalAdjustT<uint16_t, int16_t>(adjust, scope, last_value, value); break;
-		case DSG_SIZE_DWORD: return EvalAdjustT<uint32_t, int32_t>(adjust, scope, last_value, value); break;
+		case DeterministicSpriteGroupSize::Byte:  return EvalAdjustT<uint8_t,  int8_t> (adjust, scope, last_value, value); break;
+		case DeterministicSpriteGroupSize::Word:  return EvalAdjustT<uint16_t, int16_t>(adjust, scope, last_value, value); break;
+		case DeterministicSpriteGroupSize::DWord: return EvalAdjustT<uint32_t, int32_t>(adjust, scope, last_value, value); break;
 		default: NOT_REACHED();
 	}
 }
@@ -253,6 +258,17 @@ uint32_t EvaluateDeterministicSpriteGroupAdjust(DeterministicSpriteGroupSize siz
 static bool RangeHighComparator(const DeterministicSpriteGroupRange &range, uint32_t value)
 {
 	return range.high < value;
+}
+
+const SpriteGroup *DeterministicSpriteGroup::HandleResultGroup(const SpriteGroup *group, ResolverObject &object) const
+{
+	if (group != nullptr && group->type == SGT_CALCULATED_RESULT) {
+		static CallbackResultSpriteGroup nvarzero(0);
+		nvarzero.result = GB(object.last_value, 0, 15);
+		return &nvarzero;
+	}
+
+	return SpriteGroup::Resolve(group, object, false);
 }
 
 const SpriteGroup *DeterministicSpriteGroup::Resolve(ResolverObject &object) const
@@ -279,7 +295,7 @@ const SpriteGroup *DeterministicSpriteGroup::Resolve(ResolverObject &object) con
 		if (adjust.variable == 0x7E) {
 			const Vehicle *relative_scope_vehicle = nullptr;
 			VarSpriteGroupScopeOffset relative_scope_cached_count = 0;
-			if (this->var_scope == VSG_SCOPE_RELATIVE) {
+			if (this->var_scope == VarSpriteGroupScope::Relative) {
 				/* Save relative scope vehicle in case it will be changed during the procedure */
 				VehicleResolverObject *veh_object = dynamic_cast<VehicleResolverObject *>(&object);
 				if (veh_object != nullptr) {
@@ -290,9 +306,10 @@ const SpriteGroup *DeterministicSpriteGroup::Resolve(ResolverObject &object) con
 
 			const SpriteGroup *subgroup = SpriteGroup::Resolve(adjust.subroutine, object, false);
 			if (subgroup == nullptr) {
-				value = CALLBACK_FAILED;
+				value = UINT16_MAX;
 			} else {
 				value = subgroup->GetCallbackResult();
+				if (value == CALLBACK_FAILED) value = UINT16_MAX;
 			}
 
 			if (relative_scope_vehicle != nullptr) {
@@ -317,9 +334,9 @@ const SpriteGroup *DeterministicSpriteGroup::Resolve(ResolverObject &object) con
 		}
 
 		switch (this->size) {
-			case DSG_SIZE_BYTE:  value = EvalAdjustT<uint8_t,  int8_t> (adjust, scope, last_value, value, &iter); break;
-			case DSG_SIZE_WORD:  value = EvalAdjustT<uint16_t, int16_t>(adjust, scope, last_value, value, &iter); break;
-			case DSG_SIZE_DWORD: value = EvalAdjustT<uint32_t, int32_t>(adjust, scope, last_value, value, &iter); break;
+			case DeterministicSpriteGroupSize::Byte:  value = EvalAdjustT<uint8_t,  int8_t> (adjust, scope, last_value, value, &iter); break;
+			case DeterministicSpriteGroupSize::Word:  value = EvalAdjustT<uint16_t, int16_t>(adjust, scope, last_value, value, &iter); break;
+			case DeterministicSpriteGroupSize::DWord: value = EvalAdjustT<uint32_t, int32_t>(adjust, scope, last_value, value, &iter); break;
 			default: NOT_REACHED();
 		}
 		last_value = value;
@@ -329,9 +346,8 @@ const SpriteGroup *DeterministicSpriteGroup::Resolve(ResolverObject &object) con
 
 	if (this->IsCalculatedResult()) {
 		/* nvar == 0 is a special case -- we turn our value into a callback result */
-		if (value != CALLBACK_FAILED) value = GB(value, 0, 15);
 		static CallbackResultSpriteGroup nvarzero(0);
-		nvarzero.result = value;
+		nvarzero.result = GB(value, 0, 15);
 		return &nvarzero;
 	}
 
@@ -339,25 +355,47 @@ const SpriteGroup *DeterministicSpriteGroup::Resolve(ResolverObject &object) con
 		const auto &lower = std::lower_bound(this->ranges.begin(), this->ranges.end(), value, RangeHighComparator);
 		if (lower != this->ranges.end() && lower->low <= value) {
 			assert(lower->low <= value && value <= lower->high);
-			return SpriteGroup::Resolve(lower->group, object, false);
+			return this->HandleResultGroup(lower->group, object);
 		}
 	} else {
 		for (const auto &range : this->ranges) {
 			if (range.low <= value && value <= range.high) {
-				return SpriteGroup::Resolve(range.group, object, false);
+				return this->HandleResultGroup(range.group, object);
 			}
 		}
 	}
 
-	return SpriteGroup::Resolve(this->default_group, object, false);
+	return this->HandleResultGroup(this->default_group, object);
 }
 
 bool DeterministicSpriteGroup::GroupMayBeBypassed() const
 {
-	if (this->IsCalculatedResult()) return false;
 	if (this->adjusts.size() == 0) return true;
 	if ((this->adjusts.size() == 1 && this->adjusts[0].variable == 0x1A && (this->adjusts[0].operation == DSGA_OP_ADD || this->adjusts[0].operation == DSGA_OP_RST))) return true;
 	return false;
+}
+
+const SpriteGroup *DeterministicSpriteGroup::GetBypassGroupForValue(uint32_t value) const
+{
+	extern const CallbackResultSpriteGroup *NewCallbackResultSpriteGroupNoTransform(uint16_t result);
+
+	if (this->IsCalculatedResult()) {
+		return NewCallbackResultSpriteGroupNoTransform(GB(value, 0, 15));
+	}
+
+	const SpriteGroup *group = this->default_group;
+	for (const auto &range : this->ranges) {
+		if (range.low <= value && value <= range.high) {
+			group = range.group;
+			break;
+		}
+	}
+
+	if (group != nullptr && group->type == SGT_CALCULATED_RESULT) {
+		return NewCallbackResultSpriteGroupNoTransform(GB(value, 0, 15));
+	}
+
+	return group;
 }
 
 const SpriteGroup *RandomizedSpriteGroup::Resolve(ResolverObject &object) const
@@ -365,11 +403,11 @@ const SpriteGroup *RandomizedSpriteGroup::Resolve(ResolverObject &object) const
 	ScopeResolver *scope = object.GetScope(this->var_scope, this->var_scope_count);
 	if (object.callback == CBID_RANDOM_TRIGGER) {
 		/* Handle triggers */
-		uint8_t match = this->triggers & object.waiting_triggers;
-		bool res = (this->cmp_mode == RSG_CMP_ANY) ? (match != 0) : (match == this->triggers);
+		uint8_t match = this->triggers & object.GetWaitingRandomTriggers();
+		bool res = (this->cmp_mode == RandomizedSpriteGroupCompareMode::Any) ? (match != 0) : (match == this->triggers);
 
 		if (res) {
-			object.used_triggers |= match;
+			object.AddUsedRandomTriggers(match);
 			object.reseed[this->var_scope] |= (this->groups.size() - 1) << this->lowest_randbit;
 		}
 	}
@@ -382,7 +420,7 @@ const SpriteGroup *RandomizedSpriteGroup::Resolve(ResolverObject &object) const
 
 const SpriteGroup *RealSpriteGroup::Resolve(ResolverObject &object) const
 {
-	return object.ResolveReal(this);
+	return object.ResolveReal(*this);
 }
 
 /**
@@ -392,23 +430,21 @@ const SpriteGroup *RealSpriteGroup::Resolve(ResolverObject &object) const
  * @param[in,out] stage Construction stage (0-3), or nullptr if not applicable.
  * @return sprite layout to draw.
  */
-const DrawTileSprites *TileLayoutSpriteGroup::ProcessRegisters(uint8_t *stage) const
+SpriteLayoutProcessor TileLayoutSpriteGroup::ProcessRegisters(uint8_t *stage) const
 {
 	if (!this->dts.NeedsPreprocessing()) {
 		if (stage != nullptr && this->dts.consistent_max_offset > 0) *stage = GetConstructionStageOffset(*stage, this->dts.consistent_max_offset);
-		return &this->dts;
+		return SpriteLayoutProcessor(this->dts);
 	}
 
-	static DrawTileSprites result;
 	uint8_t actual_stage = stage != nullptr ? *stage : 0;
-	this->dts.PrepareLayout(0, 0, 0, actual_stage, false);
-	this->dts.ProcessRegisters(0, 0, false);
-	result.seq = this->dts.GetLayout(&result.ground);
+	SpriteLayoutProcessor result(this->dts, 0, 0, 0, actual_stage, false);
+	result.ProcessRegisters(0, 0);
 
 	/* Stage has been processed by PrepareLayout(), set it to zero. */
 	if (stage != nullptr) *stage = 0;
 
-	return &result;
+	return result;
 }
 
 static const char *_dsg_op_names[] {
@@ -456,14 +492,13 @@ static const char *_dsg_op_special_names[] {
 };
 static_assert(lengthof(_dsg_op_special_names) == DSGA_OP_SPECIAL_END - DSGA_OP_TERNARY);
 
-static const char *_sg_scope_names[] {
+static EnumIndexArray<const char *, VarSpriteGroupScope, VarSpriteGroupScope::End> _sg_scope_names{
 	"SELF",
 	"PARENT",
 	"RELATIVE",
 };
-static_assert(lengthof(_sg_scope_names) == VSG_END);
 
-static const char *_sg_size_names[] {
+static EnumIndexArray<const char *, DeterministicSpriteGroupSize, static_cast<DeterministicSpriteGroupSize>(3)> _sg_size_names{
 	"BYTE",
 	"WORD",
 	"DWORD",
@@ -648,7 +683,7 @@ void SpriteGroupDumper::DumpSpriteGroup(format_buffer &buffer, const SpriteGroup
 	});
 
 	auto get_scope_name = format_lambda([&](format_target &out, VarSpriteGroupScope var_scope, VarSpriteGroupScopeOffset var_scope_count) {
-		if (var_scope == VSG_SCOPE_RELATIVE) {
+		if (var_scope == VarSpriteGroupScope::Relative) {
 			out.format("{}[{}, ", _sg_scope_names[var_scope], _sg_relative_scope_modes[GB(var_scope_count, 8, 2)]);
 			uint8_t offset = GB(var_scope_count, 0, 8);
 			if (HasBit(var_scope_count, 15)) {
@@ -817,7 +852,7 @@ void SpriteGroupDumper::DumpSpriteGroup(format_buffer &buffer, const SpriteGroup
 			}
 
 			print("Random ({}, {}, triggers: {:X}, lowest_randbit: {:X}, groups: {}){} [{}]",
-					get_scope_name(rsg->var_scope, rsg->var_scope_count), rsg->cmp_mode == RSG_CMP_ANY ? "ANY" : "ALL",
+					get_scope_name(rsg->var_scope, rsg->var_scope_count), rsg->cmp_mode == RandomizedSpriteGroupCompareMode::Any ? "ANY" : "ALL",
 					rsg->triggers, rsg->lowest_randbit, rsg->groups.size(), extra_info(), rsg->nfo_line);
 			emit_start();
 			std::string sub_padding(padding);
@@ -846,6 +881,9 @@ void SpriteGroupDumper::DumpSpriteGroup(format_buffer &buffer, const SpriteGroup
 		case SGT_CALLBACK:
 			print("Callback Result: {:X}", ((const CallbackResultSpriteGroup *) sg)->result);
 			break;
+		case SGT_CALCULATED_RESULT:
+			print("Calculated Result");
+			break;
 		case SGT_RESULT:
 			print("Sprite Result: SpriteID: {}, num: {}",
 					((const ResultSpriteGroup *) sg)->sprite, ((const ResultSpriteGroup *) sg)->num_sprites);
@@ -855,7 +893,7 @@ void SpriteGroupDumper::DumpSpriteGroup(format_buffer &buffer, const SpriteGroup
 			print("Tile Layout{} [{}]", extra_info(), sg->nfo_line);
 			emit_start();
 
-			const TileLayoutRegisters *registers = tlsg->dts.registers;
+			const TileLayoutRegisters *registers = tlsg->dts.registers.empty() ? nullptr : tlsg->dts.registers.data();
 			auto print_reg_info = [&](uint i, bool is_parent) {
 				if (registers == nullptr) {
 					finish_print();
@@ -899,21 +937,20 @@ void SpriteGroupDumper::DumpSpriteGroup(format_buffer &buffer, const SpriteGroup
 			print_reg_info(0, false);
 
 			uint offset = 0; // offset 0 is the ground sprite
-			const DrawTileSeqStruct *element;
-			foreach_draw_tile_seq(element, tlsg->dts.seq) {
+			for (const DrawTileSeqStruct &element : tlsg->dts.seq) {
 				offset++;
 				start_print();
-				if (element->IsParentSprite()) {
+				if (element.IsParentSprite()) {
 					buffer.format("  section: {:X}, image: ({:X}, {:X}), d: ({}, {}, {}), s: ({}, {}, {})",
-							offset, element->image.sprite, element->image.pal,
-							element->delta_x, element->delta_y, element->delta_z,
-							element->size_x, element->size_y, element->size_z);
+							offset, element.image.sprite, element.image.pal,
+							element.origin.x, element.origin.y, element.origin.z,
+							element.extent.x, element.extent.y, element.extent.z);
 				} else {
 					buffer.format("  section: {:X}, image: ({:X}, {:X}), d: ({}, {})",
-							offset, element->image.sprite, element->image.pal,
-							element->delta_x, element->delta_y);
+							offset, element.image.sprite, element.image.pal,
+							element.origin.x, element.origin.y);
 				}
-				print_reg_info(offset, element->IsParentSprite());
+				print_reg_info(offset, element.IsParentSprite());
 			}
 			break;
 		}
@@ -921,7 +958,7 @@ void SpriteGroupDumper::DumpSpriteGroup(format_buffer &buffer, const SpriteGroup
 			const IndustryProductionSpriteGroup *ipsg = (const IndustryProductionSpriteGroup*)sg;
 			print("Industry Production (version {:X}) [{}]", ipsg->version, ipsg->nfo_line);
 			emit_start();
-			auto log_io = [&](const char *prefix, int i, int quantity, CargoID cargo) {
+			auto log_io = [&](const char *prefix, int i, int quantity, CargoType cargo) {
 				if (ipsg->version >= 1) highlight_tag = (1 << 16) | quantity;
 				if (ipsg->version >= 2) {
 					print("  {} {:X}: reg {:X}, cargo ID: {:X}", prefix, i, quantity, cargo);
@@ -941,4 +978,25 @@ void SpriteGroupDumper::DumpSpriteGroup(format_buffer &buffer, const SpriteGroup
 			break;
 		}
 	}
+}
+
+void SpriteGroupDumper::DumpStandardGRFFileProps(const StandardGRFFileProps &grf_prop)
+{
+	bool written_group = false;
+
+	auto write_group = [&](StandardSpriteGroup ssg, const char *label) {
+		const SpriteGroup *sg = grf_prop.spritegroups[static_cast<size_t>(ssg)];
+		if (sg == nullptr) return;
+
+		if (written_group) {
+			this->Print("");
+		} else {
+			written_group = true;
+		}
+		this->Print(label);
+		this->DumpSpriteGroup(sg, 0);
+	};
+
+	write_group(StandardSpriteGroup::Default, "Default:");
+	write_group(StandardSpriteGroup::Purchase, "Purchase:");
 }

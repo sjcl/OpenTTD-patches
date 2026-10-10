@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file linkgraph_gui.h Declaration of linkgraph overlay GUI. */
@@ -15,7 +15,6 @@
 #include "../widget_type.h"
 #include "../window_gui.h"
 #include "linkgraph_base.h"
-#include <map>
 #include <vector>
 
 /**
@@ -23,17 +22,15 @@
  * Only the cargo type of the most saturated linkgraph is taken into account.
  */
 struct LinkProperties {
-	LinkProperties() : capacity(0), usage(0), planned(0), cargo(INVALID_CARGO), time(0), shared(false) {}
-
 	/** Return the usage of the link to display. */
 	uint Usage() const { return std::max(this->usage, this->planned); }
 
-	uint capacity; ///< Capacity of the link.
-	uint usage;    ///< Actual usage of the link.
-	uint planned;  ///< Planned usage of the link.
-	CargoID cargo; ///< Cargo type of the link.
-	uint32_t time; ///< Travel time of the link.
-	bool shared;   ///< If this is a shared link to be drawn dashed.
+	uint capacity = 0;               ///< Capacity of the link.
+	uint usage = 0;                  ///< Actual usage of the link.
+	uint planned = 0;                ///< Planned usage of the link.
+	CargoType cargo = INVALID_CARGO; ///< Cargo type of the link.
+	uint32_t time = 0;               ///< Travel time of the link.
+	bool shared = false;             ///< If this is a shared link to be drawn dashed.
 
 	bool operator==(const LinkProperties&) const = default;
 };
@@ -65,7 +62,7 @@ public:
 	typedef std::vector<StationSupplyInfo> StationSupplyList;
 	typedef std::vector<LinkInfo> LinkList;
 
-	static const uint8_t LINK_COLOURS[][12];
+	static const PixelColour LINK_COLOURS[][12];
 
 	/**
 	 * Create a link graph overlay for the specified window.
@@ -124,8 +121,8 @@ protected:
 	bool IsPointVisible(Point pt, const DrawPixelInfo *dpi, int padding = 0) const;
 	void GetWidgetDpi(DrawPixelInfo *dpi, uint margin = 0) const;
 
-	static void AddStats(CargoID new_cargo, uint new_cap, uint new_usg, uint new_plan, uint32_t time, bool new_shared, LinkProperties &cargo);
-	static void DrawVertex(class Blitter *blitter, const DrawPixelInfo *dpi, int x, int y, int size, int colour, int border_colour);
+	static void AddStats(CargoType new_cargo, uint new_cap, uint new_usg, uint new_plan, uint32_t time, bool new_shared, LinkProperties &cargo);
+	static void DrawVertex(class Blitter *blitter, const DrawPixelInfo *dpi, int x, int y, int size, PixelColour colour, PixelColour border_colour);
 };
 
 void ShowLinkGraphLegend();
@@ -145,8 +142,8 @@ public:
 	void OnInvalidateData(int data = 0, bool gui_scope = true) override;
 
 private:
-	LinkGraphOverlay *overlay;
-	size_t num_cargo;
+	LinkGraphOverlay *overlay = nullptr;
+	size_t num_cargo = 0;
 
 	void UpdateOverlayCompanies();
 	void UpdateOverlayCargoes();

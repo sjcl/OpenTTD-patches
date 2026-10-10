@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file tbtr_template_vehicle.cpp Template-based train replacement: template vehicle. */
@@ -34,19 +34,17 @@
 #include "vehicle_type.h"
 
 #include "3rdparty/robin_hood/robin_hood.h"
-
-#include <functional>
+#include "3rdparty/svector/svector.h"
 
 #include "safeguards.h"
 
 TemplatePool _template_pool("TemplatePool");
 INSTANTIATE_POOL_METHODS(Template)
 
-TemplateReplacementPool _template_replacement_pool("TemplateReplacementPool");
-INSTANTIATE_POOL_METHODS(TemplateReplacement)
-
-robin_hood::unordered_flat_map<GroupID, TemplateID> _template_replacement_index;
+robin_hood::unordered_flat_map<GroupID, TemplateID> _template_replacements;
 robin_hood::unordered_flat_map<GroupID, TemplateID> _template_replacement_index_recursive;
+static ankerl::svector<GroupID, 16> _template_replacement_pending_group_updates;
+static constexpr uint32_t INDEX_RECURSIVE_GUARD_REINDEX_PENDING = 0x80000000;
 static uint32_t _template_replacement_index_recursive_guard = 0;
 
 static void MarkTrainsInGroupAsPendingTemplateReplacement(GroupID gid, const TemplateVehicle *tv);
@@ -58,40 +56,25 @@ void TemplateVehicleImageDimensions::SetFromTrain(const Train *t)
 	this->cached_veh_length = t->gcache.cached_veh_length;
 
 	const Engine *e = t->GetEngine();
-	if (e->GetGRF() != nullptr && is_custom_sprite(e->u.rail.image_index)) {
+	if (e->GetGRF() != nullptr && IsCustomVehicleSpriteNum(e->VehInfo<RailVehicleInfo>().image_index)) {
 		this->reference_width = e->GetGRF()->traininfo_vehicle_width;
 		this->vehicle_pitch = e->GetGRF()->traininfo_vehicle_pitch;
 	}
-	if (t->gcache.cached_veh_length != 8 && HasBit(t->flags, VRF_REVERSE_DIRECTION) && !HasBit(EngInfo(t->engine_type)->misc_flags, EF_RAIL_FLIPS)) {
+	if (t->gcache.cached_veh_length != 8 && t->flags.Test(VehicleRailFlag::Flipped) && !EngInfo(t->engine_type)->misc_flags.Test(EngineMiscFlag::RailFlips)) {
 		this->vehicle_flip_length = t->gcache.cached_veh_length;
 	} else {
 		this->vehicle_flip_length = -1;
 	}
 }
 
-TemplateVehicle::TemplateVehicle(VehicleType type, EngineID eid, Owner current_owner)
+TemplateVehicle::TemplateVehicle(TemplateID index, VehicleType type, EngineID eid, Owner current_owner) :
+	PoolItemBase(index), BaseVehicle(type), first(this), owner(current_owner), engine_type(eid)
 {
-	this->type = type;
-	this->engine_type = eid;
-
-	this->reuse_depot_vehicles = false;
-	this->keep_remaining_vehicles = false;
-	this->refit_as_template = true;
-	this->replace_old_only = false;
-
-	this->first = this;
-	this->next = 0x0;
-	this->previous = 0x0;
-
 	this->sprite_seq.Set(SPR_IMG_QUERY);
-
-	this->owner = current_owner;
-
-	this->real_consist_length = 0;
-	this->ctrl_flags = 0;
 }
 
-TemplateVehicle::~TemplateVehicle() {
+TemplateVehicle::~TemplateVehicle()
+{
 	TemplateVehicle *v = this->Next();
 	this->SetNext(nullptr);
 
@@ -103,52 +86,21 @@ void TemplateVehicle::SetNext(TemplateVehicle *v) { this->next = v; }
 void TemplateVehicle::SetPrev(TemplateVehicle *v) { this->previous = v; }
 void TemplateVehicle::SetFirst(TemplateVehicle *v) { this->first = v; }
 
-TemplateVehicle* TemplateVehicle::GetNextUnit() const
+TemplateVehicle *TemplateVehicle::GetNextUnit() const
 {
 		TemplateVehicle *tv = this->Next();
-		while (tv && HasBit(tv->subtype, GVSF_ARTICULATED_PART)) {
+		while (tv != nullptr && HasBit(tv->subtype, GVSF_ARTICULATED_PART)) {
 			tv = tv->Next();
 		}
-		if (tv && HasBit(tv->subtype, GVSF_MULTIHEADED) && !HasBit(tv->subtype, GVSF_ENGINE)) tv = tv->Next();
+		if (tv != nullptr && HasBit(tv->subtype, GVSF_MULTIHEADED) && !HasBit(tv->subtype, GVSF_ENGINE)) {
+			tv = tv->Next();
+		}
 		return tv;
 }
 
-TemplateVehicle* TemplateVehicle::GetPrevUnit()
+void ClearTemplateReplacements()
 {
-	TemplateVehicle *tv = this->Prev();
-	while (tv && HasBit(tv->subtype, GVSF_ARTICULATED_PART|GVSF_ENGINE)) {
-		tv = tv->Prev();
-	}
-	if (tv && HasBit(tv->subtype, GVSF_MULTIHEADED|GVSF_ENGINE)) tv = tv->Prev();
-	return tv;
-}
-
-/** Length()
- * @return: length of vehicle, including current part
- */
-int TemplateVehicle::Length() const
-{
-	int l = 1;
-	const TemplateVehicle *tmp = this;
-	while (tmp->Next()) {
-		tmp = tmp->Next();
-		l++;
-	}
-	return l;
-}
-
-TemplateReplacement::~TemplateReplacement()
-{
-	if (CleaningPool()) return;
-
-	_template_replacement_index.erase(this->Group());
-	ReindexTemplateReplacementsRecursive();
-	MarkTrainsInGroupAsPendingTemplateReplacement(this->Group(), nullptr);
-}
-
-void TemplateReplacement::PreCleanPool()
-{
-	_template_replacement_index.clear();
+	_template_replacements.clear();
 	_template_replacement_index_recursive.clear();
 }
 
@@ -157,14 +109,14 @@ bool ShouldServiceTrainForTemplateReplacement(const Train *t, const TemplateVehi
 	const Company *c = Company::Get(t->owner);
 	if (tv->IsReplaceOldOnly() && !t->NeedsAutorenewing(c, false)) return false;
 	Money needed_money = c->settings.engine_renew_money;
-	if (needed_money > c->money) return false;
+	if (needed_money > GetAvailableMoney(c->index)) return false;
 	TBTRDiffFlags diff = TrainTemplateDifference(t, tv);
 	if (diff & TBTRDF_CONSIST) {
 		if (_settings_game.difficulty.infinite_money) return true;
 		/* Check money.
 		 * We want 2*(the price of the whole template) without looking at the value of the vehicle(s) we are going to sell, or not need to buy. */
 		for (const TemplateVehicle *tv_unit = tv; tv_unit != nullptr; tv_unit = tv_unit->GetNextUnit()) {
-			if (!HasBit(Engine::Get(tv->engine_type)->company_avail, t->owner)) return false;
+			if (!Engine::Get(tv->engine_type)->company_avail.Test(t->owner)) return false;
 			needed_money += 2 * Engine::Get(tv->engine_type)->GetCost();
 		}
 		return needed_money <= c->money;
@@ -183,14 +135,14 @@ static void MarkTrainsInGroupAsPendingTemplateReplacement(GroupID gid, const Tem
 	Owner owner = Group::Get(gid)->owner;
 
 	for (const Group *group : Group::Iterate()) {
-		if (group->vehicle_type != VEH_TRAIN || group->owner != owner || group->index == gid) continue;
+		if (group->vehicle_type != VehicleType::Train || group->owner != owner || group->index == gid) continue;
 
 		auto is_descendant = [gid](const Group *g) -> bool {
 			while (true) {
-				if (g->parent == INVALID_GROUP) return false;
+				if (g->parent == GroupID::Invalid()) return false;
 				if (g->parent == gid) {
 					/* If this group has its own template defined, it's not a descendant for template inheriting purposes */
-					if (_template_replacement_index.find(g->index) != _template_replacement_index.end()) return false;
+					if (_template_replacements.find(g->index) != _template_replacements.end()) return false;
 					return true;
 				}
 				g = Group::Get(g->parent);
@@ -209,7 +161,7 @@ static void MarkTrainsInGroupAsPendingTemplateReplacement(GroupID gid, const Tem
 		if (!t->IsFrontEngine() || t->owner != owner || t->group_id >= NEW_GROUP) continue;
 
 		if (std::binary_search(groups.begin(), groups.end(), t->group_id)) {
-			AssignBit(t->vehicle_flags, VF_REPLACEMENT_PENDING, tv != nullptr && ShouldServiceTrainForTemplateReplacement(t, tv));
+			t->vehicle_flags.Set(VehicleFlag::ReplacementPending, tv != nullptr && ShouldServiceTrainForTemplateReplacement(t, tv));
 		}
 	}
 }
@@ -222,27 +174,15 @@ void MarkTrainsUsingTemplateAsPendingTemplateReplacement(const TemplateVehicle *
 		if (!t->IsFrontEngine() || t->owner != owner || t->group_id >= NEW_GROUP) continue;
 
 		if (GetTemplateIDByGroupIDRecursive(t->group_id) == tv->index) {
-			AssignBit(t->vehicle_flags, VF_REPLACEMENT_PENDING, ShouldServiceTrainForTemplateReplacement(t, tv));
+			t->vehicle_flags.Set(VehicleFlag::ReplacementPending, ShouldServiceTrainForTemplateReplacement(t, tv));
 		}
 	}
-}
-
-TemplateReplacement *GetTemplateReplacementByGroupID(GroupID gid)
-{
-	if (GetTemplateIDByGroupID(gid) == INVALID_TEMPLATE) return nullptr;
-
-	for (TemplateReplacement *tr : TemplateReplacement::Iterate()) {
-		if (tr->Group() == gid) {
-			return tr;
-		}
-	}
-	return nullptr;
 }
 
 TemplateID GetTemplateIDByGroupID(GroupID gid)
 {
-	auto iter = _template_replacement_index.find(gid);
-	if (iter == _template_replacement_index.end()) return INVALID_TEMPLATE;
+	auto iter = _template_replacements.find(gid);
+	if (iter == _template_replacements.end()) return INVALID_TEMPLATE;
 	return iter->second;
 }
 
@@ -253,91 +193,93 @@ TemplateID GetTemplateIDByGroupIDRecursive(GroupID gid)
 	return iter->second;
 }
 
-bool IssueTemplateReplacement(GroupID gid, TemplateID tid)
+void RemoveTemplateReplacement(GroupID gid)
 {
-	TemplateReplacement *tr = GetTemplateReplacementByGroupID(gid);
-
-	if (tr) {
-		/* Then set the new TemplateVehicle and return */
-		tr->SetTemplate(tid);
-		_template_replacement_index[gid] = tid;
-		ReindexTemplateReplacementsRecursive();
-		MarkTrainsInGroupAsPendingTemplateReplacement(gid, TemplateVehicle::Get(tid));
-		return true;
-	} else if (TemplateReplacement::CanAllocateItem()) {
-		tr = new TemplateReplacement(gid, tid);
-		_template_replacement_index[gid] = tid;
-		ReindexTemplateReplacementsRecursive();
-		MarkTrainsInGroupAsPendingTemplateReplacement(gid, TemplateVehicle::Get(tid));
-		return true;
-	} else {
-		return false;
+	if (_template_replacements.erase(gid) > 0) {
+		ReindexTemplateReplacementsForGroup(gid);
 	}
+}
+
+void IssueTemplateReplacement(GroupID gid, TemplateID tid)
+{
+	_template_replacements[gid] = tid;
+	ReindexTemplateReplacements();
+	MarkTrainsInGroupAsPendingTemplateReplacement(gid, TemplateVehicle::Get(tid));
+}
+
+void RemoveTemplateReplacementsReferencingTemplate(TemplateID tid)
+{
+	bool update = false;
+	for (auto it = _template_replacements.begin(); it != _template_replacements.end();) {
+		if (it->second == tid) {
+			_template_replacement_pending_group_updates.push_back(it->first);
+			it = _template_replacements.erase(it);
+			update = true;
+		} else {
+			++it;
+		}
+	}
+	if (update) ReindexTemplateReplacements();
 }
 
 uint TemplateVehicle::NumGroupsUsingTemplate() const
 {
 	uint amount = 0;
-	for (const TemplateReplacement *tr : TemplateReplacement::Iterate()) {
-		if (tr->sel_template == this->index) {
+	for (const auto &it : _template_replacements) {
+		if (it.second == this->index) {
 			amount++;
 		}
 	}
 	return amount;
 }
 
-uint DeleteTemplateReplacementsByGroupID(const Group *g)
+/*
+ * A group which is about to be deleted is empty and has no children,
+ * so no additional work to update child groups or vehicles is required.
+ */
+void RemoveTemplateReplacementsFromGroupToBeDeleted(const Group *g)
 {
-	if (g->vehicle_type != VEH_TRAIN) return 0;
+	if (g->vehicle_type != VehicleType::Train) return;
 
-	if (g->parent != INVALID_GROUP) {
-		/* Erase any inherited replacement */
-		_template_replacement_index_recursive.erase(g->index);
-	}
+	_template_replacements.erase(g->index);
+	_template_replacement_index_recursive.erase(g->index);
+}
 
-	if (GetTemplateIDByGroupID(g->index) == INVALID_TEMPLATE) return 0;
-
-	uint del_amount = 0;
-	for (const TemplateReplacement *tr : TemplateReplacement::Iterate()) {
-		if (tr->group == g->index) {
-			delete tr;
-			del_amount++;
-		}
-	}
-	return del_amount;
+void ReindexTemplateReplacementsForGroup(GroupID gid)
+{
+	_template_replacement_pending_group_updates.push_back(gid);
+	ReindexTemplateReplacements();
 }
 
 void ReindexTemplateReplacements()
 {
-	_template_replacement_index.clear();
-	for (const TemplateReplacement *tr : TemplateReplacement::Iterate()) {
-		_template_replacement_index[tr->group] = tr->sel_template;
-	}
-	ReindexTemplateReplacementsRecursive();
-}
-
-void ReindexTemplateReplacementsRecursive()
-{
 	if (_template_replacement_index_recursive_guard != 0) {
-		_template_replacement_index_recursive_guard |= 0x80000000;
+		/* Perform the reindex later when the refcount falls to zero */
+		_template_replacement_index_recursive_guard |= INDEX_RECURSIVE_GUARD_REINDEX_PENDING;
 		return;
 	}
 
 	_template_replacement_index_recursive.clear();
 	for (const Group *group : Group::Iterate()) {
-		if (group->vehicle_type != VEH_TRAIN) continue;
+		if (group->vehicle_type != VehicleType::Train) continue;
 
 		const Group *g = group;
 		while (true) {
-			auto iter = _template_replacement_index.find(g->index);
-			if (iter != _template_replacement_index.end()) {
+			auto iter = _template_replacements.find(g->index);
+			if (iter != _template_replacements.end()) {
 				_template_replacement_index_recursive[group->index] = iter->second;
 				break;
 			}
-			if (g->parent == INVALID_GROUP) break;
+			if (g->parent == GroupID::Invalid()) break;
 			g = Group::Get(g->parent);
 		}
 	}
+
+	for (GroupID gid : _template_replacement_pending_group_updates) {
+		MarkTrainsInGroupAsPendingTemplateReplacement(gid, TemplateVehicle::GetIfValid(GetTemplateIDByGroupIDRecursive(gid)));
+	}
+	_template_replacement_pending_group_updates.clear();
+	_template_replacement_pending_group_updates.shrink_to_fit();
 }
 
 ReindexTemplateReplacementsRecursiveGuard::ReindexTemplateReplacementsRecursiveGuard()
@@ -348,9 +290,10 @@ ReindexTemplateReplacementsRecursiveGuard::ReindexTemplateReplacementsRecursiveG
 ReindexTemplateReplacementsRecursiveGuard::~ReindexTemplateReplacementsRecursiveGuard()
 {
 	_template_replacement_index_recursive_guard--;
-	if (_template_replacement_index_recursive_guard == 0x80000000) {
+	if (_template_replacement_index_recursive_guard == INDEX_RECURSIVE_GUARD_REINDEX_PENDING) {
+		/* The refcount is now 0 | the reindex pending bit, clear the bit and do the reindex. */
 		_template_replacement_index_recursive_guard = 0;
-		ReindexTemplateReplacementsRecursive();
+		ReindexTemplateReplacements();
 	}
 }
 
@@ -358,17 +301,13 @@ std::string ValidateTemplateReplacementCaches()
 {
 	assert(_template_replacement_index_recursive_guard == 0);
 
-	robin_hood::unordered_flat_map<GroupID, TemplateID> saved_template_replacement_index = std::move(_template_replacement_index);
 	robin_hood::unordered_flat_map<GroupID, TemplateID> saved_template_replacement_index_recursive = std::move(_template_replacement_index_recursive);
 
 	ReindexTemplateReplacements();
 
-	bool match = (saved_template_replacement_index == _template_replacement_index);
 	bool match_recursive = (saved_template_replacement_index_recursive == _template_replacement_index_recursive);
-	_template_replacement_index = std::move(saved_template_replacement_index);
 	_template_replacement_index_recursive = std::move(saved_template_replacement_index_recursive);
 
-	if (!match) return "Index cache does not match";
 	if (!match_recursive) return "Recursive index cache does not match";
 
 	return "";

@@ -2,75 +2,66 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
-/** @file order_cmd.h Functions related to order commands. */
+/** @file order_cmd.h Command definitions related to orders. */
 
 #ifndef ORDER_CMD_H
 #define ORDER_CMD_H
 
+#include "command_type.h"
 #include "order_base.h"
-#include "order_func.h"
-#include "vehicle_base.h"
+#include "order_type.h"
 
-void UpdateOrderDestinationRefcount(const Order *order, VehicleType type, Owner owner, int delta);
+enum class ReverseOrderOperation : uint8_t {
+	Reverse,
+	AppendReversed,
+};
 
-inline void RegisterOrderDestination(const Order *order, VehicleType type, Owner owner)
-{
-	if (_order_destination_refcount_map_valid) UpdateOrderDestinationRefcount(order, type, owner, 1);
-}
+struct InsertOrderCmdData final : public CommandPayloadSerialisable<InsertOrderCmdData> {
+	static constexpr bool HasStringSanitiser = false;
 
-inline void UnregisterOrderDestination(const Order *order, VehicleType type, Owner owner)
-{
-	if (_order_destination_refcount_map_valid) UpdateOrderDestinationRefcount(order, type, owner, -1);
-}
+	using OrderFields = MemberPtrTupleTypeAdapter<decltype(Order::GetCmdRefFields())>;
 
-/**
- * Removes all orders from a vehicle for which order_predicate returns true.
- * Handles timetable updating, removing implicit orders correctly, etc.
- * @param v The vehicle.
- * @param order_predicate Functor with signature: bool (const Order *)
- */
-template <typename F> void RemoveVehicleOrdersIf(Vehicle * const v, F order_predicate) {
-	/* Clear the order from the order-list */
+	VehicleID veh;
+	VehicleOrderID sel_ord; // This may be INVALID_VEH_ORDER_ID to append to the end of the order list
+	OrderFields::Value new_order;
 
-	for (VehicleOrderID id = 0; id < v->GetNumOrders(); id++) {
-		Order *order = v->GetOrder(id);
+	InsertOrderCmdData() = default;
+	InsertOrderCmdData(VehicleID veh, VehicleOrderID sel_ord, const Order &order) :
+			veh(veh), sel_ord(sel_ord), new_order(MemberPtrsTie(order, Order::GetCmdRefFields())) {}
 
-		if (order_predicate(const_cast<const Order *>(order))) {
-			/* We want to clear implicit orders, but we don't want to make them
-			 * dummy orders. They should just vanish. Also check the actual order
-			 * type as ot is currently OT_GOTO_STATION. */
-			if (order->IsType(OT_IMPLICIT)) {
-				DeleteOrder(v, id);
-				id--; // Process this ID again, following orders have been moved down
-				continue;
-			}
+	void SerialisePayload(BufferSerialisationRef buffer) const;
+	bool Deserialise(DeserialisationBuffer &buffer, StringValidationSettings default_string_validation);
+	void FormatDebugSummary(struct format_target &) const;
+};
 
-			order->InvalidateGuiOnRemove();
-			UnregisterOrderDestination(order, v->type, v->owner);
+DEF_CMD_TUPLE_LT (Commands::ModifyOrder,            CmdModifyOrder,                     {}, CommandType::RouteManagement, CmdDataT<VehicleID, VehicleOrderID, ModifyOrderFlags, uint16_t, CargoType, std::string>)
+DEF_CMD_TUPLE_LT (Commands::SkipToOrder,            CmdSkipToOrder,                     {}, CommandType::RouteManagement, CmdDataT<VehicleID, VehicleOrderID>)
+DEF_CMD_TUPLE_LT (Commands::DeleteOrder,            CmdDeleteOrder,                     {}, CommandType::RouteManagement, CmdDataT<VehicleID, VehicleOrderID>)
+DEF_CMD_DIRECT_LT(Commands::InsertOrder,            CmdInsertOrder,                     {}, CommandType::RouteManagement, InsertOrderCmdData)
+DEF_CMD_TUPLE_LT (Commands::OrderRefit,             CmdOrderRefit,                      {}, CommandType::RouteManagement, CmdDataT<VehicleID, VehicleOrderID, CargoType>)
+DEF_CMD_TUPLE_LT (Commands::CloneOrder,             CmdCloneOrder,                      {}, CommandType::RouteManagement, CmdDataT<CloneOptions, VehicleID, VehicleID>)
+DEF_CMD_TUPLE_LT (Commands::InsertOrdersFromVeh,    CmdInsertOrdersFromVehicle,         {}, CommandType::RouteManagement, CmdDataT<VehicleID, VehicleID, VehicleOrderID>)
+DEF_CMD_TUPLE_LT (Commands::MoveOrder,              CmdMoveOrder,                       {}, CommandType::RouteManagement, CmdDataT<VehicleID, VehicleOrderID, VehicleOrderID, uint16_t>)
+DEF_CMD_TUPLE_LT (Commands::ReverseOrderList,       CmdReverseOrderList,                {}, CommandType::RouteManagement, CmdDataT<VehicleID, ReverseOrderOperation>)
+DEF_CMD_TUPLE_LT (Commands::DuplicateOrder,         CmdDuplicateOrder,                  {}, CommandType::RouteManagement, CmdDataT<VehicleID, VehicleOrderID>)
+DEF_CMD_TUPLE_LT (Commands::SetRouteOverlayColour,  CmdSetRouteOverlayColour,           {}, CommandType::RouteManagement, CmdDataT<VehicleID, Colours>)
+DEF_CMD_TUPLE_NT (Commands::MassChangeOrder,        CmdMassChangeOrder,                 {}, CommandType::RouteManagement, CmdDataT<DestinationID, VehicleType, OrderType, CargoType, DestinationID>)
+DEF_CMD_TUPLE    (Commands::ClearOrderBackup,       CmdClearOrderBackup,     CMD_CLIENT_ID, CommandType::ServerSetting,   CmdDataT<ClientID>)
 
-			/* Clear wait time */
-			if (!order->IsType(OT_CONDITIONAL)) v->orders->UpdateTotalDuration(-static_cast<Ticks>(order->GetWaitTime()));
-			if (order->IsWaitTimetabled()) {
-				if (!order->IsType(OT_CONDITIONAL)) v->orders->UpdateTimetableDuration(-static_cast<Ticks>(order->GetTimetabledWait()));
-				order->SetWaitTimetabled(false);
-			}
-			order->SetWaitTime(0);
+struct BulkOrderCmdData final : public CommandPayloadSerialisable<BulkOrderCmdData> {
+	static constexpr bool HasStringSanitiser = false;
 
-			/* Clear order, preserving travel time */
-			bool travel_timetabled = order->IsTravelTimetabled();
-			order->MakeDummy();
-			order->SetTravelTimetabled(travel_timetabled);
+	VehicleID veh;
+	std::vector<uint8_t> cmds;
 
-			for (const Vehicle *w = v->FirstShared(); w != nullptr; w = w->NextShared()) {
-				/* In GUI, simulate by removing the order and adding it back */
-				InvalidateVehicleOrder(w, id | (INVALID_VEH_ORDER_ID << 16));
-				InvalidateVehicleOrder(w, (INVALID_VEH_ORDER_ID << 16) | id);
-			}
-		}
-	}
-}
+	void SerialisePayload(BufferSerialisationRef buffer) const;
+	bool Deserialise(DeserialisationBuffer &buffer, StringValidationSettings default_string_validation);
+	void FormatDebugSummary(format_target &output) const;
+};
+
+DEF_CMD_DIRECT_NT(Commands::BulkOrder,         CmdBulkOrder,              CMD_NO_TEST, CommandType::RouteManagement, BulkOrderCmdData)
 
 #endif /* ORDER_CMD_H */

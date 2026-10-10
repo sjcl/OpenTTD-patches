@@ -2,10 +2,10 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
-/** @file track_type.h All types related to tracks */
+/** @file track_type.h All types related to tracks. */
 
 #ifndef TRACK_TYPE_H
 #define TRACK_TYPE_H
@@ -29,10 +29,14 @@ enum Track : uint8_t {
 };
 
 /** Allow incrementing of Track variables */
-DECLARE_POSTFIX_INCREMENT(Track)
-/** Define basic enum properties */
-template <> struct EnumPropsT<Track> : MakeEnumPropsT<Track, uint8_t, TRACK_BEGIN, TRACK_END, INVALID_TRACK, 3> {};
+DECLARE_INCREMENT_DECREMENT_OPERATORS(Track)
 
+/**
+ * Array with \c Track as index.
+ * @tparam T the type contained within the array.
+ */
+template <typename T>
+using TrackIndexArray = EnumIndexArray<T, Track, TRACK_END>;
 
 /** Bitfield corresponding to Track */
 enum TrackBits : uint8_t {
@@ -56,7 +60,6 @@ enum TrackBits : uint8_t {
 	TRACK_BIT_MASK    = 0x3FU,                                              ///< Bitmask for the first 6 bits
 	TRACK_BIT_WORMHOLE = 0x40U,                                             ///< Bitflag for a wormhole (used for tunnels)
 	TRACK_BIT_DEPOT   = 0x80U,                                              ///< Bitflag for a depot
-	INVALID_TRACK_BIT = 0xFF,                                               ///< Flag for an invalid trackbits value
 };
 DECLARE_ENUM_AS_BIT_SET(TrackBits)
 
@@ -92,9 +95,14 @@ enum Trackdir : uint8_t {
 };
 
 /** Allow incrementing of Trackdir variables */
-DECLARE_POSTFIX_INCREMENT(Trackdir)
-/** Define basic enum properties */
-template <> struct EnumPropsT<Trackdir> : MakeEnumPropsT<Trackdir, uint8_t, TRACKDIR_BEGIN, TRACKDIR_END, INVALID_TRACKDIR, 4> {};
+DECLARE_INCREMENT_DECREMENT_OPERATORS(Trackdir)
+
+/**
+ * Array with \c Trackdir as index.
+ * @tparam T the type contained within the array.
+ */
+template <typename T>
+using TrackdirIndexArray = EnumIndexArray<T, Trackdir, TRACKDIR_END>;
 
 /**
  * Enumeration of bitmasks for the TrackDirs
@@ -122,6 +130,10 @@ enum TrackdirBits : uint16_t {
 };
 DECLARE_ENUM_AS_BIT_SET(TrackdirBits)
 
-typedef uint32_t TrackStatus;
+/** Track status of a tile. */
+struct TrackStatus {
+	TrackdirBits trackdirs; ///< Trackdirs present on the tile.
+	TrackdirBits signals; ///< Red signals on the tile.
+};
 
 #endif /* TRACK_TYPE_H */

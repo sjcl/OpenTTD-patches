@@ -2,13 +2,14 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file ground_vehicle.cpp Implementation of GroundVehicle. */
 
 #include "stdafx.h"
 #include "train.h"
+#include "train_settings.h"
 #include "roadveh.h"
 #include "depot_map.h"
 #include "tunnel_base.h"
@@ -59,12 +60,12 @@ void GroundVehicle<T, Type>::PowerChanged()
 
 	if (this->gcache.cached_power != total_power || this->gcache.cached_max_te != max_te) {
 		/* Stop the vehicle if it has no power. */
-		if (total_power == 0) this->vehstatus |= VS_STOPPED;
+		if (total_power == 0) this->vehstatus.Set(VehState::Stopped);
 
 		this->gcache.cached_power = total_power;
 		this->gcache.cached_max_te = max_te;
-		SetWindowDirty(WC_VEHICLE_DETAILS, this->index);
-		SetWindowWidgetDirty(WC_VEHICLE_VIEW, this->index, WID_VV_START_STOP);
+		SetWindowDirty(WindowClass::VehicleDetails, this->index);
+		SetWindowWidgetDirty(WindowClass::VehicleView, this->index, WID_VV_START_STOP);
 	}
 
 	this->gcache.cached_max_track_speed = max_track_speed;
@@ -79,7 +80,7 @@ void GroundVehicle<T, Type>::CalculatePower(uint32_t &total_power, uint32_t &max
 	const T *v = T::From(this);
 
 	for (const T *u = v; u != nullptr; u = u->Next()) {
-		uint32_t current_power = u->GetPower() + u->GetPoweredPartPower(u);
+		uint32_t current_power = u->GetPower() + u->GetPoweredPartPower();
 
 		if (breakdowns && u->breakdown_ctr == 1 && u->breakdown_type == BREAKDOWN_LOW_POWER) {
 			current_power = current_power * u->breakdown_severity / 256;
@@ -118,18 +119,19 @@ void GroundVehicle<T, Type>::CargoChanged()
 			articulated_weight = engine_weight / part_count;
 			current_weight += articulated_weight + (engine_weight % part_count);
 		}
-		if (Type == VEH_TRAIN) {
+		if (Type == VehicleType::Train) {
 			Train::From(u)->tcache.cached_veh_weight = current_weight;
 			mass_offset += current_weight * (veh_offset + (Train::From(u)->gcache.cached_veh_length / 2));
 			veh_offset += Train::From(u)->gcache.cached_veh_length;
 		}
 		weight += current_weight;
 		/* Slope steepness is in percent, result in N. */
-		u->gcache.cached_slope_resistance = current_weight * u->GetSlopeSteepness() * 100;
+		uint32_t slope_steepness = (Type == VehicleType::Train) ? _settings_game.vehicle.train_slope_steepness : _settings_game.vehicle.roadveh_slope_steepness;
+		u->gcache.cached_slope_resistance = current_weight * slope_steepness * 100;
 		u->InvalidateImageCache();
 	}
 	ClrBit(this->vcache.cached_veh_flags, VCF_GV_ZERO_SLOPE_RESIST);
-	if (Type == VEH_TRAIN) {
+	if (Type == VehicleType::Train) {
 		Train::From(this)->tcache.cached_centre_mass = (weight != 0) ? (mass_offset / weight) : (this->gcache.cached_total_length / 2);
 	}
 
@@ -155,7 +157,7 @@ GroundVehicleAcceleration GroundVehicle<T, Type>::GetAcceleration()
 	int64_t speed = v->GetCurrentSpeed(); // [km/h-ish]
 
 	/* Weight is stored in tonnes. */
-	int32_t mass = this->gcache.cached_weight;
+	int64_t mass = this->gcache.cached_weight;
 
 	/* Power is stored in HP, we need it in watts.
 	 * Each vehicle can have U16 power, 128 vehicles, HP -> watt
@@ -176,8 +178,8 @@ GroundVehicleAcceleration GroundVehicle<T, Type>::GetAcceleration()
 	 */
 	int64_t resistance = 0;
 
-	int acceleration_type = v->GetAccelerationType();
-	bool maglev = (acceleration_type == 2);
+	VehicleAccelerationModel acceleration_type = v->GetAccelerationType();
+	bool maglev = (acceleration_type == VehicleAccelerationModel::Maglev);
 
 	const int area = v->GetAirDragArea();
 	if (!maglev) {
@@ -198,7 +200,7 @@ GroundVehicleAcceleration GroundVehicle<T, Type>::GetAcceleration()
 
 	/* handle breakdown power reduction */
 	uint32_t max_te = this->gcache.cached_max_te; // [N]
-	if (Type == VEH_TRAIN && mode == AS_ACCEL && HasBit(Train::From(this)->flags, VRF_BREAKDOWN_POWER)) {
+	if (Type == VehicleType::Train && mode == AS_ACCEL && Train::From(this)->flags.Test(VehicleRailFlag::BreakdownPower)) {
 		/* We'd like to cache this, but changing cached_power has too many unwanted side-effects */
 		uint32_t power_temp;
 		this->CalculatePower(power_temp, max_te, true);
@@ -206,7 +208,7 @@ GroundVehicleAcceleration GroundVehicle<T, Type>::GetAcceleration()
 	}
 
 
-	/* Constructued from power, with need to multiply by 18 and assuming
+	/* Constructed from power, with need to multiply by 18 and assuming
 	 * low speed, it needs to be a 64 bit integer too. */
 	int64_t force;
 	int64_t braking_force;
@@ -227,12 +229,12 @@ GroundVehicleAcceleration GroundVehicle<T, Type>::GetAcceleration()
 		braking_force = force;
 	}
 
-	if (Type == VEH_TRAIN && Train::From(this)->UsingRealisticBraking()) {
+	if (Type == VehicleType::Train && Train::From(this)->UsingRealisticBraking()) {
 		braking_power += (Train::From(this)->tcache.cached_braking_length * (int64_t)RBC_BRAKE_POWER_PER_LENGTH);
 	}
 
 	/* If power is 0 because of a breakdown, we make the force 0 if accelerating */
-	if (Type == VEH_TRAIN && mode == AS_ACCEL && HasBit(Train::From(this)->flags, VRF_BREAKDOWN_POWER) && power == 0) {
+	if (Type == VehicleType::Train && mode == AS_ACCEL && Train::From(this)->flags.Test(VehicleRailFlag::BreakdownPower) && power == 0) {
 		force = 0;
 	}
 
@@ -257,7 +259,7 @@ GroundVehicleAcceleration GroundVehicle<T, Type>::GetAcceleration()
 		uint64_t breakdown_factor = (uint64_t)abs(resistance) * (uint64_t)(this->cur_speed << 16);
 		breakdown_factor /= (std::max(force, (int64_t)100) * this->gcache.cached_max_track_speed);
 		breakdown_factor = std::min<uint64_t>((64 << 16) + (breakdown_factor * 128), 255 << 16);
-		if (Type == VEH_TRAIN && Train::From(this)->tcache.cached_num_engines > 1) {
+		if (Type == VehicleType::Train && Train::From(this)->tcache.cached_num_engines > 1) {
 			/* For multiengine trains, breakdown chance is multiplied by 3 / (num_engines + 2) */
 			breakdown_factor *= 3;
 			breakdown_factor /= (Train::From(this)->tcache.cached_num_engines + 2);
@@ -267,7 +269,7 @@ GroundVehicleAcceleration GroundVehicle<T, Type>::GetAcceleration()
 	}
 
 	int braking_accel;
-	if (Type == VEH_TRAIN && Train::From(this)->UsingRealisticBraking()) {
+	if (Type == VehicleType::Train && Train::From(this)->UsingRealisticBraking()) {
 		/* Assume that every part of a train is braked, not just the engine.
 		 * Exceptionally heavy freight trains should still have a sensible braking distance.
 		 * The total braking force is generally larger than the total tractive force. */
@@ -291,9 +293,9 @@ GroundVehicleAcceleration GroundVehicle<T, Type>::GetAcceleration()
 		 * same (maximum) speed. */
 		int accel = ClampTo<int32_t>((force - resistance) / (mass * 4));
 		accel = force < resistance ? std::min(-1, accel) : std::max(1, accel);
-		if (this->type == VEH_TRAIN) {
-			if (_settings_game.vehicle.train_acceleration_model == AM_ORIGINAL &&
-					HasBit(Train::From(this)->flags, VRF_BREAKDOWN_POWER)) {
+		if (this->type == VehicleType::Train) {
+			if (_settings_game.vehicle.train_acceleration_model == AccelerationModel::Original &&
+					Train::From(this)->flags.Test(VehicleRailFlag::BreakdownPower)) {
 				/* We need to apply the power reducation for non-realistic acceleration here */
 				uint32_t power;
 				CalculatePower(power, max_te, true);
@@ -304,7 +306,7 @@ GroundVehicleAcceleration GroundVehicle<T, Type>::GetAcceleration()
 			if (this->cur_speed < 3 && accel < 5 &&
 					this->IsFrontEngine() && !(this->current_order_time & 0x3FF) &&
 					!(this->current_order.IsType(OT_LOADING)) &&
-					!(Train::From(this)->flags & (VRF_IS_BROKEN | (1 << VRF_TRAIN_STUCK))) &&
+					!(Train::From(this)->flags.Any(VehicleRailFlagsIsBroken | VehicleRailFlags{VehicleRailFlag::Stuck})) &&
 					this->owner == _local_company) {
 				ShowTrainTooHeavyAdviceMessage(this);
 			}
@@ -335,8 +337,8 @@ bool GroundVehicle<T, Type>::IsChainInDepot() const
 {
 	const T *v = this->First();
 	/* Is the front engine stationary in the depot? */
-	static_assert((int)TRANSPORT_RAIL == (int)VEH_TRAIN);
-	static_assert((int)TRANSPORT_ROAD == (int)VEH_ROAD);
+	static_assert(to_underlying(TransportType::Rail) == to_underlying(VehicleType::Train));
+	static_assert(to_underlying(TransportType::Road) == to_underlying(VehicleType::Road));
 	if (!IsDepotTypeTile(v->tile, (TransportType)Type) || v->cur_speed != 0) return false;
 
 	/* Check whether the rest is also already trying to enter the depot. */
@@ -360,8 +362,8 @@ void GroundVehicle<T, Type>::UpdateZPositionInWormhole()
 
 	TileIndex pos_tile = TileVirtXY(this->x_pos, this->y_pos);
 
-	ClrBit(this->gv_flags, GVF_GOINGUP_BIT);
-	ClrBit(this->gv_flags, GVF_GOINGDOWN_BIT);
+	this->gv_flags.Reset(GroundVehicleFlag::GoingUp);
+	this->gv_flags.Reset(GroundVehicleFlag::GoingDown);
 
 	if (pos_tile == t->tile_n || pos_tile == t->tile_s) {
 		this->z_pos = 0;
@@ -371,19 +373,19 @@ void GroundVehicle<T, Type>::UpdateZPositionInWormhole()
 	int north_coord, south_coord, pos_coord;
 	bool going_north;
 	Slope slope_north;
-	if (t->tile_s - t->tile_n > MapMaxX()) {
-		// tunnel extends along Y axis (DIAGDIR_SE from north end), has same X values
+	if (t->tile_s - t->tile_n > (TileIndexDiff)Map::MaxX()) {
+		// tunnel extends along Y axis (DiagDirection::SE from north end), has same X values
 		north_coord = TileY(t->tile_n);
 		south_coord = TileY(t->tile_s);
 		pos_coord = TileY(pos_tile);
-		going_north = (this->direction == DIR_NW);
+		going_north = (this->direction == Direction::NW);
 		slope_north = SLOPE_NW;
 	} else {
-		// tunnel extends along X axis (DIAGDIR_SW from north end), has same Y values
+		// tunnel extends along X axis (DiagDirection::SW from north end), has same Y values
 		north_coord = TileX(t->tile_n);
 		south_coord = TileX(t->tile_s);
 		pos_coord = TileX(pos_tile);
-		going_north = (this->direction == DIR_NE);
+		going_north = (this->direction == Direction::NE);
 		slope_north = SLOPE_NE;
 	}
 
@@ -394,14 +396,14 @@ void GroundVehicle<T, Type>::UpdateZPositionInWormhole()
 		this->z_pos = TILE_HEIGHT * (delta == 3 ? -2 : -1);
 		if (delta != 2) {
 			slope = slope_north;
-			SetBit(this->gv_flags, going_north ? GVF_GOINGUP_BIT : GVF_GOINGDOWN_BIT);
+			this->gv_flags.Set(going_north ? GroundVehicleFlag::GoingUp : GroundVehicleFlag::GoingDown);
 			ClrBit(this->First()->vcache.cached_veh_flags, VCF_GV_ZERO_SLOPE_RESIST);
 		}
 	} else if ((delta = south_coord - pos_coord) <= 3) {
 		this->z_pos = TILE_HEIGHT * (delta == 3 ? -2 : -1);
 		if (delta != 2) {
 			slope = SLOPE_ELEVATED ^ slope_north;
-			SetBit(this->gv_flags, going_north ? GVF_GOINGDOWN_BIT : GVF_GOINGUP_BIT);
+			this->gv_flags.Set(going_north ? GroundVehicleFlag::GoingDown : GroundVehicleFlag::GoingUp);
 			ClrBit(this->First()->vcache.cached_veh_flags, VCF_GV_ZERO_SLOPE_RESIST);
 		}
 	}
@@ -441,7 +443,7 @@ uint GroundVehicle<T, Type>::DoUpdateSpeed(GroundVehicleAcceleration accel, int 
 	 * somewhat gradually. But never lower than the maximum speed. */
 	if (this->breakdown_ctr == 1) {
 		if (this->breakdown_type == BREAKDOWN_LOW_POWER) {
-			if ((this->tick_counter & 0x7) == 0 && _settings_game.vehicle.train_acceleration_model == AM_ORIGINAL) {
+			if ((this->tick_counter & 0x7) == 0 && _settings_game.vehicle.train_acceleration_model == AccelerationModel::Original) {
 				if (this->cur_speed > (this->breakdown_severity * max_speed) >> 8) {
 					tempmax = this->cur_speed - (this->cur_speed / 10) - 1;
 				} else {
@@ -497,6 +499,6 @@ uint GroundVehicle<T, Type>::DoUpdateSpeed(GroundVehicleAcceleration accel, int 
 }
 
 /* Instantiation for Train */
-template struct GroundVehicle<Train, VEH_TRAIN>;
+template struct GroundVehicle<Train, VehicleType::Train>;
 /* Instantiation for RoadVehicle */
-template struct GroundVehicle<RoadVehicle, VEH_ROAD>;
+template struct GroundVehicle<RoadVehicle, VehicleType::Road>;

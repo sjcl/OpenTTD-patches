@@ -87,3 +87,9 @@ STR_COMPANY_PASSWORD_MAKE_DEFAULT_TOOLTIP                       :{BLACK}Gunakan 
 STR_COMPANY_VIEW_PASSWORD                                       :{BLACK}Kata laluan
 STR_COMPANY_VIEW_PASSWORD_TOOLTIP                               :{BLACK}Lindungi syarikat anda dengan kata laluan untuk mengelak daripada penyertaan pengguna tanpa izin.
 STR_COMPANY_VIEW_SET_PASSWORD                                   :{BLACK}Tetapkan kata laluan syarikat
+
+# JSON messages
+
+STR_INTRO_NEWGRF_SETTINGS                                       :{BLACK}Tetapan NewGRF
+STR_INTRO_TOOLTIP_NEWGRF_SETTINGS                               :{BLACK}Paparkan tetapan NewGRF
+STR_INTRO_CAPTION_TRADITIONAL                                   :{WHITE}OpenTTD {REV}
