@@ -2,9 +2,9 @@
 
 * * *
 
-### Unreleased
+### v0.73.3+1 (2026-10-11)
 * Update base JGRPP to 270709121ef173f82f8345ac042081ae05327440 (0.73.3 branch)
-* Preserve the jgrpp-ya version and fork-specific gameplay changes
+* Match the upstream version while preserving the jgrpp-ya prefix, +1 suffix, and fork-specific gameplay changes
 * Adapt the create_town console command and Japanese translations to upstream changes
 
 ### v0.64.1+1 (2025-02-08)
