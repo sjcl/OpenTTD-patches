@@ -2,6 +2,14 @@
 
 * * *
 
+### v0.73.3+2 (2026-10-11)
+* Add optional timetable-aware passenger train transfers, comparing arrival times, connection waits, and transfer penalties while retaining CargoDist flow choices
+* Cache service lookups and arrival estimates per unloading operation, with bounded work and conservative fallback for uncertain orders and timings
+* Import per-shared-order-list CargoDist cost scale/addition controls and same-mode/mode-change transfer penalties from ns2091/OpenTTD-patches
+* Import near-end stopping for trains longer than their platforms and fix MSVC SSE4 blitter name lookup
+* Add passenger routing and route penalty tests; the full unit suite and all four script regression tests pass
+* Existing saves remain loadable; saves written by this build require support for the linkgraph_route_penalty save feature
+
 ### v0.73.3+1 (2026-10-11)
 * Update base JGRPP to 270709121ef173f82f8345ac042081ae05327440 (0.73.3 branch)
 * Match the upstream version while preserving the jgrpp-ya prefix, +1 suffix, and fork-specific gameplay changes
