@@ -18,19 +18,19 @@ jobs:
         include:
         - container_image: "ubuntu:22.04"
           bundle_name: "jammy"
-          compiler: "clang++"
-          c_compiler: "clang"
-          compiler_package: "clang"
+          compiler: "clang++-21"
+          c_compiler: "clang-21"
+          linker_flags: "-fuse-ld=/usr/bin/ld.lld-21"
         - container_image: "docker.io/ubuntu:24.04"
           bundle_name: "noble"
           compiler: "g++"
           c_compiler: "gcc"
-          compiler_package: "g++"
+          linker_flags: ""
         - container_image: "docker.io/debian:bookworm"
           bundle_name: "bookworm"
-          compiler: "clang++"
-          c_compiler: "clang"
-          compiler_package: "clang"
+          compiler: "clang++-21"
+          c_compiler: "clang-21"
+          linker_flags: "-fuse-ld=/usr/bin/ld.lld-21"
 
     runs-on: ubuntu-latest
     container:
@@ -58,8 +58,10 @@ jobs:
           zip \
           cmake \
           debhelper \
-          ${{ matrix.compiler_package }} \
-          ${{ matrix.c_compiler }} \
+          g++ \
+          gcc \
+          ca-certificates \
+          curl \
           git \
           make \
           openssl \
@@ -79,6 +81,16 @@ jobs:
       env:
         DEBIAN_FRONTEND: noninteractive
 
+    - name: Install LLVM compiler
+      if: matrix.compiler == 'clang++-21'
+      run: |
+        curl -fsSL https://apt.llvm.org/llvm-snapshot.gpg.key -o /usr/share/keyrings/llvm.asc
+        echo "deb [signed-by=/usr/share/keyrings/llvm.asc] https://apt.llvm.org/${{ matrix.bundle_name }}/ llvm-toolchain-${{ matrix.bundle_name }}-21 main" > /etc/apt/sources.list.d/llvm.list
+        apt-get update
+        apt-get install -y --no-install-recommends clang-21 lld-21
+      env:
+        DEBIAN_FRONTEND: noninteractive
+
     - name: Unpack source
       run: |
         tar -xf source.tar.gz --strip-components=1
@@ -94,6 +106,7 @@ jobs:
         echo "::group::CMake"
         CXX=${{ matrix.compiler }} CC=${{ matrix.c_compiler }} cmake ${GITHUB_WORKSPACE} \
           -DCMAKE_BUILD_TYPE=Release \
+          "-DCMAKE_EXE_LINKER_FLAGS=${{ matrix.linker_flags }}" \
           -DOPTION_COMPRESS_DEBUG=ON \
           -DOPTION_LTO=ON \
           -DOPTION_TRIM_PATH_PREFIX=ON \
