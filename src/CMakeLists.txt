@@ -52,6 +52,8 @@ add_files(
 )
 
 add_files(
+    passenger_routing.cpp
+    passenger_routing.h
     aircraft.h
     aircraft_cmd.cpp
     aircraft_gui.cpp

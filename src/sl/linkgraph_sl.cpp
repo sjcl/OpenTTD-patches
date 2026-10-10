@@ -204,6 +204,10 @@ NamedSaveLoadTable GetLinkGraphJobDesc()
 
 		const SettingTable &linkgraph_table = GetLinkGraphSettingTable();
 		for (const auto &desc : linkgraph_table) {
+			/* Passenger transfer predictions run only during cargo staging. They are not job
+			 * settings, and adding them here would also change the layout of legacy RIFF jobs. */
+			const std::string_view name = desc->name;
+			if (name == "linkgraph.passenger_transfer_timetables" || name == "linkgraph.passenger_transfer_penalty") continue;
 			SaveLoad sl = desc->save;
 			if (sl.conv.mem != SLE_VAR_NULL) {
 				char *&address = reinterpret_cast<char *&>(sl.address);

@@ -13,16 +13,19 @@
 #include "order_base.h"
 #include "order_func.h"
 #include "vehicle_base.h"
+#include "passenger_routing.h"
 
 void UpdateOrderDestinationRefcount(const Order *order, VehicleType type, Owner owner, int delta);
 
 inline void RegisterOrderDestination(const Order *order, VehicleType type, Owner owner)
 {
+	InvalidatePassengerServiceIndex();
 	if (_order_destination_refcount_map_valid) UpdateOrderDestinationRefcount(order, type, owner, 1);
 }
 
 inline void UnregisterOrderDestination(const Order *order, VehicleType type, Owner owner)
 {
+	InvalidatePassengerServiceIndex();
 	if (_order_destination_refcount_map_valid) UpdateOrderDestinationRefcount(order, type, owner, -1);
 }
 

@@ -38,6 +38,7 @@ using CargoPacketPool = Pool<CargoPacket, CargoPacketID, 1024, PoolType::Normal,
 extern CargoPacketPool _cargopacket_pool;
 
 struct GoodsEntry; // forward-declare for Stage() and RerouteStalePackets()
+class PassengerRoutingContext;
 
 template <class Tinst, class Tcont> class CargoList;
 class StationCargoList; // forward-declare, so we can use it in VehicleCargoList.
@@ -70,6 +71,7 @@ private:
 	uint8_t flags = 0;                              ///< NOSAVE: temporary flags
 	StationID first_station = StationID::Invalid(); ///< The station where the cargo came from first.
 	StationID next_hop = StationID::Invalid();      ///< Station where the cargo wants to go next.
+	StationID passenger_via = StationID::Invalid(); ///< CargoDist via retained during a predicted through journey.
 
 	/** Cargo packet flag bits in CargoPacket::flags. */
 	enum CargoPacketFlags {
@@ -155,6 +157,7 @@ public:
 
 		this->travelled.x -= TileX(tile);
 		this->travelled.y -= TileY(tile);
+		this->passenger_via = StationID::Invalid();
 	}
 
 	/**
@@ -513,7 +516,7 @@ public:
 
 	void InvalidateCache();
 
-	bool Stage(bool accepted, StationID current_station, std::span<const StationID> next_station, OrderUnloadType unload_type, const GoodsEntry *ge, CargoType cargo, CargoPayment *payment, TileIndex current_tile);
+	bool Stage(bool accepted, StationID current_station, std::span<const StationID> next_station, OrderUnloadType unload_type, const GoodsEntry *ge, CargoType cargo, CargoPayment *payment, TileIndex current_tile, PassengerRoutingContext *routing = nullptr);
 
 	/**
 	 * Marks all cargo in the vehicle as to be kept. This is mostly useful for
@@ -553,7 +556,8 @@ public:
 		return cp1->source_xy           == cp2->source_xy &&
 				cp1->periods_in_transit == cp2->periods_in_transit &&
 				cp1->first_station      == cp2->first_station &&
-				cp1->source             == cp2->source;
+				cp1->source             == cp2->source &&
+				cp1->passenger_via      == cp2->passenger_via;
 	}
 };
 

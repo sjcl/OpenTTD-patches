@@ -21,6 +21,7 @@
 #include "string_func.h"
 #include "strings_func.h"
 #include "settings_type.h"
+#include "passenger_routing.h"
 #include "3rdparty/cpp-btree/btree_map.h"
 
 #include "table/strings.h"
@@ -167,7 +168,8 @@ CargoPacket::CargoPacket(CargoPacketID index, uint16_t count, Money feeder_share
 		travelled(original.travelled),
 		source(original.source),
 		first_station(original.first_station),
-		next_hop(original.next_hop)
+		next_hop(original.next_hop),
+		passenger_via(original.passenger_via)
 {
 	dbg_assert(count != 0);
 #ifdef WITH_FULL_ASSERTS
@@ -299,6 +301,7 @@ void CargoPacket::PayDeferredPayments()
 {
 	for (CargoPacket *cp : CargoPacket::Iterate()) {
 		if (cp->first_station == sid) cp->first_station = StationID::Invalid();
+		if (cp->passenger_via == sid) cp->passenger_via = StationID::Invalid();
 	}
 }
 
@@ -641,9 +644,10 @@ void VehicleCargoList::AgeCargo()
  * @param cargo The cargo type of the cargo.
  * @param payment Payment object for registering transfers.
  * @param current_tile Current tile the cargo handling is happening on.
+ * @param routing Arrival-scoped passenger prediction cache, or nullptr for original behaviour.
  * @return \c true iff any cargo will be unloaded.
  */
-bool VehicleCargoList::Stage(bool accepted, StationID current_station, std::span<const StationID> next_station, OrderUnloadType unload_type, const GoodsEntry *ge, CargoType cargo, CargoPayment *payment, TileIndex current_tile)
+bool VehicleCargoList::Stage(bool accepted, StationID current_station, std::span<const StationID> next_station, OrderUnloadType unload_type, const GoodsEntry *ge, CargoType cargo, CargoPayment *payment, TileIndex current_tile, PassengerRoutingContext *routing)
 {
 	this->AssertCountConsistency();
 	dbg_assert(this->action_counts[MoveToAction::Load] == 0);
@@ -652,6 +656,7 @@ bool VehicleCargoList::Stage(bool accepted, StationID current_station, std::span
 	uint sum = 0;
 	CargoPacketList transfer_deliver;
 	std::vector<CargoPacket *> keep;
+	std::map<std::pair<StationID, StationID>, bool> transfer_permissions;
 
 	const FlowStatMap &flows = ge->ConstFlows();
 
@@ -659,9 +664,15 @@ bool VehicleCargoList::Stage(bool accepted, StationID current_station, std::span
 	bool force_unload = (unload_type == OrderUnloadType::Unload);
 	bool force_transfer = (unload_type == OrderUnloadType::Transfer) || (unload_type == OrderUnloadType::Unload);
 	bool transfer_cargodist_mode = force_transfer && _settings_game.linkgraph.GetDistributionType(cargo) != DistributionType::Manual;
+	const bool predict_passengers = routing != nullptr && routing->IsEnabled(cargo) && !force_transfer && !force_keep;
 	dbg_assert(this->count > 0 || it == this->packets.end());
 	while (sum < this->count) {
 		CargoPacket *cp = *it;
+		/* Commit only while the same train still has a predictable journey to the chosen via.
+		 * At the via, normal flow selection resumes; orders/settings changing cancel the commitment. */
+		const bool committed = predict_passengers && cp->passenger_via != StationID::Invalid() &&
+				cp->passenger_via != current_station && routing->CanContinue(cargo, cp->passenger_via);
+		if (!committed) cp->passenger_via = StationID::Invalid();
 
 		it = this->packets.erase(it);
 		StationID cargo_next = StationID::Invalid();
@@ -703,17 +714,43 @@ bool VehicleCargoList::Stage(bool accepted, StationID current_station, std::span
 			}
 			bool restricted = false;
 			FlowStatMap::const_iterator flow_it(flows.find(cp->first_station));
-			if (flow_it == flows.end()) {
+			if (committed) {
+				cargo_next = cp->passenger_via;
+				/* Retaining a via does not grant permission to transfer onto a restricted flow. */
+				auto [permission, inserted] = transfer_permissions.try_emplace(std::pair(cp->first_station, cargo_next), false);
+				if (inserted && flow_it != flows.end()) {
+					for (const auto &share_entry : *flow_it) {
+						if (share_entry.second == cargo_next && share_entry.first <= flow_it->GetUnrestricted()) permission->second = true;
+					}
+				}
+				restricted = !permission->second;
+			} else if (flow_it == flows.end()) {
 				cargo_next = StationID::Invalid();
 			} else {
 				cargo_next = flow_it->GetViaWithRestricted(restricted);
 			}
 			action = VehicleCargoList::ChooseAction(cp, cargo_next, current_station, accepted, next_station);
-			if (restricted && action == MoveToAction::Transfer) {
+			if (!committed && restricted && action == MoveToAction::Transfer) {
 				/* If the flow is restricted we can't transfer to it. Choose an
 				 * unrestricted one instead. */
 				cargo_next = flow_it->GetVia();
+				restricted = false;
 				action = VehicleCargoList::ChooseAction(cp, cargo_next, current_station, accepted, next_station);
+			}
+			if (predict_passengers && cargo_next != StationID::Invalid() && cargo_next != current_station) {
+				const PassengerTransferDecision decision = routing->Decide(cargo, cargo_next);
+				if (decision == PassengerTransferDecision::Stay || (committed && (decision == PassengerTransferDecision::Unknown || restricted))) {
+					/* Revalidate reachability at every stop, but don't redraw this via at intermediate stations. */
+					if (routing->CanContinue(cargo, cargo_next)) {
+						action = MoveToAction::Keep;
+						cp->passenger_via = cargo_next;
+					}
+				} else if (decision == PassengerTransferDecision::Transfer && !restricted && action == MoveToAction::Transfer) {
+					/* Only permit a transfer already required by the selected via. If the train's
+					 * next cargo stop is this via, the station loader could immediately reload it. */
+					action = MoveToAction::Transfer;
+					cp->passenger_via = StationID::Invalid();
+				}
 			}
 			if (transfer_cargodist_mode && action == MoveToAction::Keep) {
 				handle_forced_transfer();

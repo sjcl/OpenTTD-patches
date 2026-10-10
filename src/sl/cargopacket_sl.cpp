@@ -162,6 +162,7 @@ NamedSaveLoadTable GetCargoPacketDesc()
 		NSL("source",             SLE_VAR(CargoPacket, first_station,            SLE_UINT16)),
 		NSL("source_xy",          SLE_VAR(CargoPacket, source_xy,                SLE_UINT32)),
 		NSL("loaded_at_xy",       SLE_VAR(CargoPacket, next_hop,                 SLE_FILE_U32 | SLE_VAR_U16)),
+		NSL("passenger_via",      SLE_CONDVAR_X(CargoPacket, passenger_via,      SLE_UINT16, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_PASSENGER_VIA))),
 		NSL("count",              SLE_VAR(CargoPacket, count,                    SLE_UINT16)),
 		NSL("periods_in_transit", SLE_CONDVAR_X(CargoPacket, periods_in_transit, SLE_FILE_U8 | SLE_VAR_U16, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_MORE_CARGO_AGE, 0, 0))),
 		NSL("periods_in_transit", SLE_CONDVAR_X(CargoPacket, periods_in_transit, SLE_UINT16, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_MORE_CARGO_AGE))),

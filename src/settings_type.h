@@ -962,6 +962,8 @@ struct LinkGraphSettings {
 	uint8_t demand_distance;                            ///< influence of distance between stations on the demand function
 	uint8_t short_path_saturation;                      ///< percentage up to which short paths are saturated before saturating most capacious paths
 	uint16_t aircraft_link_scale;                       ///< scale effective distance of aircraft links
+	bool passenger_transfer_timetables;                 ///< compare train passenger arrivals before transferring
+	uint16_t passenger_transfer_penalty;                ///< minimum connection time and transfer cost, in ticks
 
 	inline DistributionType GetDistributionType(CargoType cargo) const
 	{

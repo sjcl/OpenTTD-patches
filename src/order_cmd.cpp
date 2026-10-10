@@ -36,6 +36,7 @@
 #include "cheat_type.h"
 #include "viewport_func.h"
 #include "order_dest_func.h"
+#include "passenger_routing.h"
 #include "vehiclelist.h"
 #include "tracerestrict.h"
 #include "train.h"
@@ -97,12 +98,14 @@ void IntialiseOrderDestinationRefcountMap()
 
 void ClearOrderDestinationRefcountMap()
 {
+	InvalidatePassengerServiceIndex();
 	_order_destination_refcount_map.clear();
 	_order_destination_refcount_map_valid = false;
 }
 
 void UpdateOrderDestinationRefcount(const Order *order, VehicleType type, Owner owner, int delta)
 {
+	InvalidatePassengerServiceIndex();
 	if (order->IsType(OT_GOTO_STATION) || order->IsType(OT_GOTO_WAYPOINT) || order->IsType(OT_IMPLICIT)) {
 		_order_destination_refcount_map[OrderDestinationRefcountMapKey(order->GetDestination().ToStationID(), owner, order->GetType(), type)] += delta;
 	}
@@ -484,6 +487,7 @@ void CargoStationIDVectorSet::FillNextStoppingStation(const Vehicle *v, const Or
 
 void OrderList::CopyOrderListContents(const OrderList &other)
 {
+	InvalidatePassengerServiceIndex();
 	this->orders = other.orders;
 	this->route_overlay_colour = other.route_overlay_colour;
 	this->num_manual_orders = other.num_manual_orders;
@@ -500,6 +504,7 @@ void OrderList::CopyOrderListContents(const OrderList &other)
  */
 void OrderList::Initialize(Vehicle *v)
 {
+	InvalidatePassengerServiceIndex();
 	this->first_shared = v;
 
 	this->num_manual_orders = 0;

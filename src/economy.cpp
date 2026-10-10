@@ -52,6 +52,7 @@
 #include "goal_base.h"
 #include "story_base.h"
 #include "linkgraph/refresh.h"
+#include "passenger_routing.h"
 #include "tracerestrict.h"
 #include "tbtr_template_vehicle.h"
 #include "tbtr_template_vehicle_func.h"
@@ -1543,6 +1544,7 @@ void PrepareUnload(Vehicle *front_v)
 	front_v->cargo_payment = CargoPayment::Create(front_v);
 
 	CargoStationIDVectorSet next_station = front_v->GetNextStoppingStation();
+	PassengerRoutingContext passenger_routing(front_v, front_v->last_station_visited);
 	if (front_v->orders == nullptr || (front_v->current_order.GetUnloadType() != OrderUnloadType::NoUnload)) {
 		Station *st = Station::Get(front_v->last_station_visited);
 		for (Vehicle *v = front_v; v != nullptr; v = v->Next()) {
@@ -1554,7 +1556,7 @@ void PrepareUnload(Vehicle *front_v)
 						front_v->last_station_visited, next_station.Get(v->cargo_type),
 						GetUnloadType(v), ge,
 						v->cargo_type, front_v->cargo_payment,
-						v->GetMovingFront()->GetCargoTile());
+						v->GetMovingFront()->GetCargoTile(), &passenger_routing);
 				if (v->cargo.UnloadCount() > 0) v->vehicle_flags.Set(VehicleFlag::CargoUnloading);
 			}
 		}
