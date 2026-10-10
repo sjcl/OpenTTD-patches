@@ -18,7 +18,7 @@ jobs:
   source:
     name: Source
 
-    runs-on: arc-runner-linux
+    runs-on: ubuntu-latest
     container:
       image: "docker.io/buildpack-deps:jammy-scm"
 
@@ -59,7 +59,7 @@ jobs:
 
     - name: Checkout (Push)
       if: github.event_name == 'push'
-      uses: actions/checkout@v3
+      uses: actions/checkout@v7
       with:
         ref: ${{ github.event.ref }}
         # We generate a changelog; for this we need the full git log.
@@ -121,6 +121,8 @@ jobs:
       run: |
         echo "::group::Prepare metadata files"
         cmake -DGENERATE_OTTDREV=.ottdrev -P cmake/scripts/FindVersion.cmake
+        cat .ottdrev > .ottdrev-vc
+        ./version_utils.sh -s >> .ottdrev-vc
         TZ='UTC' date +"%Y-%m-%d %H:%M UTC" > .release_date
         head -1 .ottdrev | cut -f 1 -d$'\t' > .version
 
@@ -131,7 +133,12 @@ jobs:
           FOLDER="${{ env.FOLDER_RELEASES }}"
           TRIGGER_TYPE="new-tag"
 
-          python3 ./.github/changelog.py "$(cat .version)" > .changelog
+          VERSION=$(cat .version)
+          awk -v version="v${VERSION#jgrpp-ya-}" '
+            $1 == "###" { if (found) exit; found = ($2 == version) }
+            found
+          ' jgrpp-ya-changelog.md > .changelog
+          test -s .changelog
         else
           IS_TAG="false"
 
