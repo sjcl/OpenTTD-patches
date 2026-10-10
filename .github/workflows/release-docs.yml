@@ -33,6 +33,7 @@ jobs:
 
         echo "::group::Install dependencies"
         apt install -y --no-install-recommends \
+          build-essential \
           doxygen \
           cmake \
           xz-utils\

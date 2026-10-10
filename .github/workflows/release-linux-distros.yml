@@ -18,16 +18,19 @@ jobs:
         include:
         - container_image: "ubuntu:22.04"
           bundle_name: "jammy"
-          compiler: "g++"
-          c_compiler: "gcc"
+          compiler: "clang++"
+          c_compiler: "clang"
+          compiler_package: "clang"
         - container_image: "docker.io/ubuntu:24.04"
           bundle_name: "noble"
           compiler: "g++"
           c_compiler: "gcc"
+          compiler_package: "g++"
         - container_image: "docker.io/debian:bookworm"
           bundle_name: "bookworm"
-          compiler: "g++"
-          c_compiler: "gcc"
+          compiler: "clang++"
+          c_compiler: "clang"
+          compiler_package: "clang"
 
     runs-on: ubuntu-latest
     container:
@@ -55,7 +58,7 @@ jobs:
           zip \
           cmake \
           debhelper \
-          ${{ matrix.compiler }} \
+          ${{ matrix.compiler_package }} \
           ${{ matrix.c_compiler }} \
           git \
           make \
