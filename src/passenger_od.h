@@ -31,8 +31,9 @@ struct PassengerOdEntry {
 	bool operator==(const PassengerOdEntry &) const = default;
 };
 
-/** Global budget for retained sparse records (2 GiB of destination payload). */
-static constexpr size_t MAX_PASSENGER_OD_ENTRIES = size_t{2} * 1024 * 1024 * 1024 / sizeof(PassengerOdEntry);
+/** Synchronized logical record limit; approximately 2 GiB on x64.
+ * Never derive simulation policy from ABI sizes or allocation capacities. */
+static constexpr uint32_t MAX_PASSENGER_OD_ENTRIES = 134217728;
 
 /** Only allocated for passenger goods entries with a usable distribution. */
 struct PassengerOdDistribution {

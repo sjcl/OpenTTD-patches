@@ -702,7 +702,7 @@ TEST_CASE("National passenger demand keeps high weights and saves omitted demand
 	std::vector<LinkGraphJob::DemandAnnotation> demand;
 	for (NodeID i = 1; i <= 8000; ++i) demand.push_back({i, i > 7000 ? 20U : 1U, 0});
 	/* Exercise the production admission policy without allocating gigabytes in CI. */
-	const size_t budget = 32 * 1024 * 1024 / sizeof(PassengerOdEntry);
+	const size_t budget = 2097152;
 	f.Install(demand, 600, budget);
 	const size_t retained = budget / 600;
 	REQUIRE(f.Od().entries.size() == retained);
@@ -710,11 +710,11 @@ TEST_CASE("National passenger demand keeps high weights and saves omitted demand
 	CHECK(f.Od().total_weight == 27000);
 	CHECK(f.Od().unassigned_weight == 8000 - retained);
 	CHECK(std::count_if(f.Od().entries.begin(), f.Od().entries.end(), [](const auto &entry) { return entry.weight == 20; }) == 1000);
-	size_t capacity = 0;
+	size_t records = 0;
 	for (const Station *st : Station::Iterate()) {
-		if (st->goods[PAX].data != nullptr && st->goods[PAX].data->passenger_od != nullptr) capacity += st->goods[PAX].data->passenger_od->entries.capacity();
+		if (st->goods[PAX].data != nullptr && st->goods[PAX].data->passenger_od != nullptr) records += st->goods[PAX].data->passenger_od->entries.size();
 	}
-	CHECK(capacity <= budget);
+	CHECK(records == budget);
 	auto counts = f.Od().Allocate(27000);
 	for (size_t i = 0; i < retained; ++i) CHECK(counts[i] == f.Od().entries[i].weight);
 	CHECK(counts.back() == f.Od().unassigned_weight);
@@ -731,6 +731,7 @@ TEST_CASE("National passenger demand keeps high weights and saves omitted demand
 
 TEST_CASE("A sparse national hub retains all eight thousand valid destinations", "[passenger][od_assignment][large_network]")
 {
+	CHECK(MAX_PASSENGER_OD_ENTRIES == 134217728);
 	CHECK(MAX_PASSENGER_OD_ENTRIES >= size_t{10000} * 8000);
 	OdAssignmentFixture f(8001);
 	std::vector<LinkGraphJob::DemandAnnotation> demand;
@@ -740,6 +741,105 @@ TEST_CASE("A sparse national hub retains all eight thousand valid destinations",
 	CHECK(f.Od().unassigned_weight == 0);
 	CHECK(f.Od().total_weight == 8000);
 	CHECK(ValidatePassengerOd(*Station::Get(A), PAX, f.Od()));
+	/* Exercise the complete generation path, including destination validation,
+	 * allocation and the packet limit, rather than only measuring Allocate(). */
+	std::vector<uint32_t> totals(8001, 0);
+	int64_t generation_us = 0;
+	GameRandomSeedChecker seeds;
+	for (uint batch = 0; batch < 400; ++batch) {
+		const auto start = std::chrono::steady_clock::now();
+		GenerateStationCargo(*Station::Get(A), PAX, 512, SOURCE);
+		generation_us += std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - start).count();
+		REQUIRE(f.Goods().CargoAvailableCount() == 512);
+		REQUIRE(f.Goods().data->cargo.Packets()->size() <= MAX_PASSENGER_OD_PACKETS);
+		for (StationCargoList::ConstIterator it = f.Goods().data->cargo.Packets()->begin(); it != f.Goods().data->cargo.Packets()->end(); ++it) {
+			const StationID dest = (*it)->GetPassengerDestination();
+			totals[dest == StationID::Invalid() ? 0 : dest.base()] += (*it)->Count();
+		}
+		f.Goods().data->cargo.Truncate();
+	}
+	CHECK(std::accumulate(totals.begin(), totals.end(), uint64_t{0}) == 400 * 512);
+	for (size_t i = 1; i < totals.size(); ++i) CHECK(totals[i] > 0);
+	CHECK(f.Od().Validate());
+	CHECK(seeds.Check());
+	WARN("National OD generation: " << generation_us << " us / 400 batches; destinations=8000; passengers=512 per batch");
+}
+
+TEST_CASE("Passenger OD budgets depend on record contents rather than reserved capacity", "[passenger][od_assignment]")
+{
+	OdAssignmentFixture f;
+	LinkGraph *other = LinkGraph::Create(PAX);
+	for (uint16_t i = 4; i < 6; ++i) {
+		Station *st = Station::CreateAtIndex(StationID{i}, TileIndex{i});
+		st->owner = OWNER_NONE;
+		auto &ge = st->goods[PAX];
+		ge.link_graph = other->index;
+		ge.node = other->AddNode(st);
+	}
+	auto &other_od = Station::Get(StationID{4})->goods[PAX].CreateData().passenger_od;
+	other_od = std::make_unique<PassengerOdDistribution>();
+	other_od->graph = other->index;
+	other_od->source_node = 0;
+	other_od->revision = other->PassengerOdRevision();
+	other_od->total_weight = 1;
+	other_od->entries.push_back({StationID{5}, 1, 1, 0});
+	REQUIRE(ValidatePassengerOd(*Station::Get(StationID{4}), PAX, *other_od));
+	std::array<LinkGraphJob::DemandAnnotation, 3> demand{{ {1, 10, 0}, {2, 20, 0}, {3, 30, 0} }};
+	f.Install(demand, 1, 3);
+	REQUIRE(f.Od().entries.size() == 2);
+	f.Od().Allocate(7);
+	f.Od().cursor = 1;
+	auto expected = f.Od();
+	other_od->entries.reserve(1024);
+	REQUIRE(other_od->entries.capacity() >= 1024);
+	f.Install(demand, 1, 3);
+	CHECK(f.Od() == expected);
+	CHECK(f.Od().unassigned_weight == 10);
+}
+
+TEST_CASE("Passenger OD redistributes unused origin budgets and retains original weights", "[passenger][od_assignment]")
+{
+	OdAssignmentFixture f(202);
+	LinkGraphJob job(LinkGraphJobID::Invalid(), *f.graph, 1);
+	job.Init();
+	std::array<LinkGraphJob::DemandAnnotation, 1> small{{ {1, 5, 0} }};
+	std::vector<LinkGraphJob::DemandAnnotation> large;
+	for (NodeID i = 2; i < 202; ++i) large.push_back({i, 1, 0});
+	job[0].SetDemandAnnotations(small);
+	job[1].SetDemandAnnotations(large);
+	ApplyPassengerOd(job, 100);
+	CHECK(f.Od().entries.size() == 1);
+	CHECK(f.Od().unassigned_weight == 0);
+	const auto &large_od = *Station::Get(B)->goods[PAX].data->passenger_od;
+	CHECK(large_od.entries.size() == 99);
+	CHECK(large_od.total_weight == 200);
+	CHECK(large_od.unassigned_weight == 101);
+	CHECK(large_od.entries.front().destination == StationID{2});
+	CHECK(large_od.entries.back().destination == StationID{100});
+}
+
+TEST_CASE("Passenger OD budget remainders have deterministic origin ordering", "[passenger][od_assignment]")
+{
+	OdAssignmentFixture f(7);
+	LinkGraphJob job(LinkGraphJobID::Invalid(), *f.graph, 1);
+	job.Init();
+	std::array<LinkGraphJob::DemandAnnotation, 4> demand{{ {3, 1, 0}, {4, 1, 0}, {5, 1, 0}, {6, 1, 0} }};
+	for (NodeID i = 0; i < 3; ++i) job[i].SetDemandAnnotations(demand);
+	size_t budget = 5;
+	SECTION("Partial budget") {}
+	SECTION("No records available") { budget = 0; }
+	SECTION("Entire job fits") { budget = 12; }
+	ApplyPassengerOd(job, budget);
+	size_t records = 0;
+	for (NodeID i = 0; i < 3; ++i) {
+		const auto &od = *Station::Get(StationID{i})->goods[PAX].data->passenger_od;
+		CHECK(od.Validate());
+		CHECK(od.entries.size() == (budget == 5 ? (i < 2 ? 2 : 1) : budget / 3));
+		CHECK(od.total_weight == 4);
+		CHECK(od.unassigned_weight == 4 - od.entries.size());
+		records += od.entries.size();
+	}
+	CHECK(records == budget);
 }
 
 TEST_CASE("Passenger OD wide unknown weights allocate maximum batches without integer overflow", "[passenger][od_assignment]")

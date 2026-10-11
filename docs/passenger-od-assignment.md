@@ -101,16 +101,22 @@ the sparse job fits the remaining global record budget. An 8,000-destination hub
 with no other demand origins therefore keeps all 8,000 records. The only absolute
 per-origin list limit is the physical NodeID range (65,534 destinations).
 
-All permanent destination-vector payloads together have a 2 GiB budget
-(134,217,728 records on x64). For example, 10,000 origins with 8,000 eligible
+All graphs share a fixed logical budget of 134,217,728 destination records,
+approximately 2 GiB of vector payload on x64. The synchronized limit does not
+depend on `sizeof`, vector capacity, standard library or allocation history.
+For example, 10,000 origins with 8,000 eligible
 destinations each use approximately 1.28 GB of destination records and fit this
 budget. Construction counts actual eligible records rather than
 reserving an all-station matrix. If a job would exceed the remaining budget, it
-shares that budget among its active demand origins, retaining their largest
+fulfils small origins first and shares every remaining record among the other
+active origins. Candidate-count ties use NodeID order, including when distributing
+the remainder of an equal share. Thus origins with 1 and 200 candidates retain
+1 and 99 records with a budget of 100. Each origin retains its largest
 original demands, with StationID as a deterministic tie break. Omitted demand
 is saved in a weighted unknown bucket. The denominator is still the original
 total; retained destinations are never renormalised to absorb omitted demand.
-Other graphs' vector capacities count against the budget. Distribution objects
+Other graphs' logical vector sizes count against the budget. Capacity is only
+a diagnostic of physical memory use. Distribution objects
 and construction scratch are additional; replacing a graph can temporarily retain
 both old and new vectors. The policy can yield different retention budgets
 between graphs according to their existing allocations.
@@ -156,7 +162,7 @@ the global identity counter so subsequent topology changes agree after a
 multiplayer join. `XSLFI_PASSENGER_DESTINATION` is unchanged.
 
 Station tables allow at most one distribution per goods entry. Physical node
-limits and a cumulative 2 GiB record load budget are checked before resizing;
+limits and the same cumulative logical record budget are checked before resizing;
 weights, ordering, duplicate destinations, total weight, credit ranges and credit
 sums are checked before adopting loaded data. Invalid station/membership data
 invalidates the entire distribution rather than reallocating its weight to
@@ -200,17 +206,27 @@ Ninja, existing vcpkg dependencies; both `openttd` and `openttd_test` built.
 The configure used `/Od` for compiler-probe Debug flags to avoid a local MSVC
 debug-database error; the actual targets used the Release optimization flags.
 
-- OD assignment tests: 28 cases passed, including actual SLXI identity-counter
+- OD assignment tests: 31 cases passed, including actual SLXI identity-counter
   callback round trips, unsigned-wrap rejection, packet rotation for 256 and
   1,000 destinations, mixed large/tiny demands, an 8,000-destination hub, earlier extension versions, and
-  partial retention using a smaller budget to avoid gigabyte allocations in CI.
+  partial retention using a smaller budget to avoid gigabyte allocations in CI,
+  unequal candidate counts, deterministic budget remainders and identical retained
+  distributions/rounding state despite different `reserve()` histories in another
+  graph.
 - Passenger tests together (OD lifecycle, routing, service graph and assignment):
-  65 cases, 38,979 assertions, passed in one process.
-- CTest: 263 tests passed: 262 unit cases plus the production load integration.
+  68 cases, 47,849 assertions, passed in one process.
+- CTest: 266 tests passed: 265 unit cases plus the production load integration.
   The integration loads a legacy save, then saves and loads current-format games
   with OD enabled and disabled, checking the validation hook and saved setting.
 - Maximum-batch allocation benchmark: approximately 20 ms for 10,000 batches of
   256 destinations (about 2 microseconds per batch), with UINT32_MAX batch sizes.
+- Full generation for a sparse 8,000-destination hub: approximately 91 ms for
+  400 batches of 512 passengers (about 228 microseconds per batch), including
+  destination validation, allocation and packet creation. Every destination is
+  served, batch totals are conserved, and the 32-packet limit is maintained.
+  Packet inspection and queue clearing are outside the timed interval. This
+  synthetic measurement ran while the real-save benchmark was warming up; it
+  has no timing threshold in CI and is not a whole-game speed measurement.
 - `git diff --check`: passed.
 
 During earlier validation of commit `6e9bd46fb8`, the four bundled AI/GS scenario
@@ -223,8 +239,66 @@ this implementation with the option disabled. That existing executable's
 revision label is `jgrpp-ya-0.73.3+2-3-gde9bfeac8-m`; it is a previously built
 base-worktree binary, not a new clean build of immutable commit `a17ab057ad`.
 These scenario tests are recorded as failing reference comparisons and were
-excluded from the current 263-test run. They have not been rerun for this revision.
+excluded from the current 266-test run. They have not been rerun for this revision.
 
-No live multiplayer server/client session or production-sized real map was run.
+No live multiplayer server/client session was run.
 Determinism was checked through integer allocation, random-state comparisons
 and real serialization followed by the next generated passenger batch.
+
+## Real-save performance measurement (2026-10-11)
+
+The user-provided regional railway save contains 4,797 stations and a loaded
+4,660-node LinkGraph job. Its original file was read only; its SHA-256 remained
+`bdef0140b653f00853e4fbfcc1e4ea52727ba7863d2dbd75dc7f4c48110a4eda`.
+Existing NewGRF files were used from a disposable workspace copy. Neither the
+save nor the assets are included in the repository.
+
+The measurement used the same Release build and original save for each setting,
+with null video, sound and music drivers, configuration saving and autosaving
+disabled. CargoDist settings remained those of the save (passenger distribution
+asymmetric, recalculation interval 8 and recalculation time 32). After enabling
+or disabling OD through the normal setting command, each run advanced 30,000
+actual scaled simulation ticks. This lets loaded jobs finish and new jobs publish
+OD state. The next 2,000 ticks were timed around GameLoop, InputLoop and
+UpdateWindows, excluding save loading, warmup and the final diagnostic scan.
+Both windows start at scaled tick 3,009,627,300 and end at 3,009,629,300.
+Warmup preparation overlapped; the other benchmark process, including its worker
+threads, was suspended before the disabled timing window and resumed afterwards.
+The final tests also finished before the enabled timing window started.
+
+| Measurement | OD disabled | OD enabled |
+| --- | ---: | ---: |
+| Time for 2,000 ticks | 36.243305 s | 36.414771 s |
+| Time per tick | 18.121653 ms | 18.207386 ms |
+| Stations at end | 4,797 | 4,797 |
+| Vehicle pool objects at end | 20,871 | 20,843 |
+| Retained distributions | 0 | 3,521 |
+| Retained destination records | 0 | 112,380 |
+| Destination-vector capacity bytes | 0 | 1,798,080 |
+| Largest retained destination list | 0 | 712 |
+
+The enabled window also recorded 10,881 microseconds building distributions,
+360,455 microseconds allocating/generating cargo, 126,961 newly allocated packets
+and one unassigned passenger. These counters cover only the timed window; the
+retained-state scan describes its end. Allocation timing excludes the preceding
+destination validation, whereas whole-loop timing includes it. Physical capacity
+is diagnostic only and does not determine retention. The vehicle counts differ
+because packet splitting changes later per-packet random draw granularity, as
+documented above; the two simulations do not have identical future random states.
+
+This single paired window was about 0.47% slower with OD enabled. It is an
+exploratory result for this save, not a statistically established overhead or an
+8,000-destination whole-network measurement. Generation still validates and scans
+retained destinations per batch, and publication still scans station goods for
+the logical budget. No validation cache or scratch-buffer reuse was introduced
+based on this small observed difference; the separate synthetic generation test
+covers the 8,000-destination path.
+
+The supplied save emitted existing JP+ Multiple Units vehicle-capacity warnings
+and entered error pause on load with the locally available NewGRFs. Both
+disposable loaded states acknowledged that pause before warmup; subsequent
+stderr warning output was sent to NUL in both runs. This is a condition of the
+measurement and does not establish warning-free compatibility of the real save.
+The temporary measurement harness was removed before the final normal build and
+production save/load integration check. Raw measurement logs remain local in
+`build-od/od-performance/off-final-1.log` and `on-final-1.log`.

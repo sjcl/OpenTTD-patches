@@ -162,7 +162,7 @@ void ApplyPassengerOd(LinkGraphJob &job)
 
 void ApplyPassengerOd(LinkGraphJob &job, size_t entry_budget)
 {
-	entry_budget = std::min(entry_budget, MAX_PASSENGER_OD_ENTRIES);
+	entry_budget = std::min<size_t>(entry_budget, MAX_PASSENGER_OD_ENTRIES);
 	const CargoType cargo = job.Cargo();
 	if (!IsPassengerOdEnabled(cargo)) return;
 	const LinkGraph &snapshot = job.Graph();
@@ -195,13 +195,12 @@ void ApplyPassengerOd(LinkGraphJob &job, size_t entry_budget)
 				}
 				bool replacing = goods.data->passenger_od->graph == graph->index && &goods == &st->goods[cargo] &&
 					goods.node < graph->Size() && (*graph)[goods.node].Station() == st->index;
-				if (!replacing) occupied += goods.data->passenger_od->entries.capacity();
+				if (!replacing) occupied += goods.data->passenger_od->entries.size();
 			}
 		}
 	}
 	const size_t available = occupied >= entry_budget ? 0 : entry_budget - occupied;
 	uint64_t candidates = 0;
-	size_t origins = 0;
 	std::vector<size_t> eligible_counts(graph->Size(), 0);
 	auto eligible = [&](const auto &demand, NodeID node) {
 		return demand.dest < graph->Size() && demand.dest != node && demand.demand != 0 && demand.unsatisfied_demand < demand.demand;
@@ -210,11 +209,32 @@ void ApplyPassengerOd(LinkGraphJob &job, size_t entry_budget)
 		for (const auto &demand : job[node].GetDemandAnnotations()) {
 			if (eligible(demand, node)) { ++candidates; ++eligible_counts[node]; }
 		}
-		origins += eligible_counts[node] != 0;
 	}
 	/* Sparse jobs that fit retain every candidate, even when one hub reaches
-	 * thousands of stations. Only a genuinely oversized job shares a budget. */
-	const size_t allowance = candidates <= available ? PASSENGER_OD_NODE_LIMIT : (origins == 0 ? 0 : available / origins);
+	 * thousands of stations. For oversized jobs, satisfy small origins first,
+	 * then share all remaining records; no small origin strands its unused share. */
+	std::vector<size_t> allowances = eligible_counts;
+	if (candidates > available) {
+		std::vector<NodeID> origins;
+		for (NodeID node = 0; node < graph->Size(); ++node) {
+			if (eligible_counts[node] != 0) origins.push_back(node);
+		}
+		std::sort(origins.begin(), origins.end(), [&](NodeID a, NodeID b) {
+			return eligible_counts[a] != eligible_counts[b] ? eligible_counts[a] < eligible_counts[b] : a < b;
+		});
+		size_t remaining = available;
+		for (size_t i = 0; i < origins.size(); ++i) {
+			const size_t active = origins.size() - i;
+			const size_t share = remaining / active;
+			if (eligible_counts[origins[i]] <= share) {
+				remaining -= eligible_counts[origins[i]];
+				continue;
+			}
+			const size_t extra = remaining % active;
+			for (size_t j = i; j < origins.size(); ++j) allowances[origins[j]] = share + (j - i < extra);
+			break;
+		}
+	}
 	auto better = [](const PassengerOdEntry &a, const PassengerOdEntry &b) {
 		return a.weight != b.weight ? a.weight > b.weight : a.destination < b.destination;
 	};
@@ -224,7 +244,7 @@ void ApplyPassengerOd(LinkGraphJob &job, size_t entry_budget)
 		od->graph = graph->index;
 		od->source_node = node;
 		od->revision = graph->PassengerOdRevision();
-		const size_t capacity = std::min(allowance, eligible_counts[node]);
+		const size_t capacity = allowances[node];
 		od->entries.reserve(capacity);
 		for (const auto &demand : job[node].GetDemandAnnotations()) {
 			if (!eligible(demand, node)) continue;
