@@ -4572,6 +4572,7 @@ static bool ConPassengerJourneyStats(std::span<std::string_view> argv)
 	static_assert(reasons.size() == static_cast<size_t>(PassengerJourneyFallbackReason::End));
 	IConsolePrint(CC_DEFAULT, "Fair waiting shares: claims={}; releases={}; admission_scan_work={}; retained_rides={}",
 			stats.fair_share_claims, stats.fair_share_releases, stats.fair_share_work, stats.retained_rides);
+	IConsolePrint(CC_DEFAULT, "OD fallback: work={}; path_searches={}", stats.od_fallback_work, stats.od_fallback_searches);
 	for (size_t i = 0; i < reasons.size(); ++i) IConsolePrint(CC_DEFAULT, "Fallback {}: {} packets; deferred={} packets", reasons[i], stats.fallbacks[i], stats.deferred[i]);
 	return true;
 }

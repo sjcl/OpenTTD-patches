@@ -19,6 +19,7 @@
 #include "../core/random_func.hpp"
 #include "../date_func.h"
 #include "../sl/saveload.h"
+#include "../linkgraph/linkgraph.h"
 #include <deque>
 
 extern std::vector<uint8_t> SlTestSaveLoadTable(void *, void *, const NamedSaveLoadTable &);
@@ -107,6 +108,31 @@ struct FinalDeliveryFixture {
 	Town *town = Town::Create(TileIndex{0});
 	FinalDeliveryFixture() { Station::Get(D)->town = this->town; Station::Get(D)->always_accepted.Set(PAX); }
 	~FinalDeliveryFixture() { Station::Get(D)->town = nullptr; _town_pool.CleanPool(); _company_pool.CleanPool(); }
+};
+
+struct FallbackLinks {
+	LinkGraph *graph = LinkGraph::Create(PAX);
+	FallbackLinks()
+	{
+		for (StationID id : {A, B, C, D}) {
+			Station *station = Station::Get(id);
+			station->goods[PAX].link_graph = this->graph->index;
+			station->goods[PAX].node = this->graph->AddNode(station);
+		}
+	}
+	~FallbackLinks()
+	{
+		for (StationID id : {A, B, C, D}) {
+			Station::Get(id)->goods[PAX].link_graph = LinkGraphID::Invalid();
+			Station::Get(id)->goods[PAX].node = INVALID_NODE;
+		}
+		_link_graph_pool.CleanPool();
+	}
+	void Edge(StationID from, StationID to, bool restricted = false)
+	{
+		graph->UpdateEdge(Station::Get(from)->goods[PAX].node, Station::Get(to)->goods[PAX].node,
+				100, 0, 100, {EdgeUpdateMode::Refresh, restricted ? EdgeUpdateMode::Restricted : EdgeUpdateMode::Unrestricted});
+	}
 };
 
 /** A zero-capacity real road vehicle exercises the complete station countdown
@@ -290,7 +316,8 @@ TEST_CASE("Exhausted searches retain valid onboard rides and cannot deliver at i
 	PassengerJourneyActiveContext context(&train, B);
 	train.cargo.Stage(true, B, next, unload, &goods, PAX, &payment, TileIndex{0}, nullptr, nullptr, &context);
 	CHECK(train.cargo.ActionCount(Action::Deliver) == 0);
-	CHECK(train.cargo.ActionCount(valid ? Action::Keep : Action::Transfer) == 10);
+	const bool transfer = unload == OrderUnloadType::Transfer;
+	CHECK(train.cargo.ActionCount(transfer ? Action::Transfer : Action::Keep) == 10);
 	CHECK(packet->GetPassengerDestination() == D);
 	CHECK(packet->GetFeederShare() == 100);
 	CHECK(delivery.company->cur_economy.delivered_cargo[PAX] == 0);
@@ -308,14 +335,14 @@ TEST_CASE("Exhausted searches retain valid onboard rides and cannot deliver at i
 		CHECK(delivery.company->cur_economy.delivered_cargo[PAX] == 10);
 	} else {
 		CHECK(packet->GetPassengerRoutingMode() != PassengerRoutingMode::Journey);
-		CHECK(train.cargo.Unload(10, &fixture.Waiting(B), PAX, &payment, TileIndex{0}) == 10);
-		CHECK(fixture.Waiting(B).AvailableCount() == 10);
+		CHECK(train.cargo.Unload(10, &fixture.Waiting(B), PAX, &payment, TileIndex{0}) == (transfer ? 10 : 0));
+		CHECK(fixture.Waiting(B).AvailableCount() == (transfer ? 10 : 0));
 		CHECK(packet->GetPassengerDestination() == D);
 		CHECK(delivery.company->cur_economy.delivered_cargo[PAX] == 0);
 	}
 }
 
-TEST_CASE("Fallback and deferred OD passengers can finish only at their accepting destination", "[passenger][active][delivery]")
+TEST_CASE("Fallback and deferred OD passengers stay on a direct ride through CargoDist destinations", "[passenger][active][delivery][fallback]")
 {
 	ActiveFixture fixture;
 	FinalDeliveryFixture delivery;
@@ -333,14 +360,18 @@ TEST_CASE("Fallback and deferred OD passengers can finish only at their acceptin
 		GoodsEntry &goods = Station::Get(station)->goods[PAX];
 		goods.CreateData().flows.insert(FlowStat(A, station, 10)); // CargoDist says Deliver even when accepted.
 		CargoPayment payment(CargoPaymentID::Invalid(), &train);
-		train.cargo.Stage(true, station, next, OrderUnloadType::UnloadIfPossible, &goods, PAX, &payment, TileIndex{0});
-		CHECK(train.cargo.ActionCount(Action::Deliver) == 0);
-		CHECK(train.cargo.ActionCount(Action::Transfer) == 10);
-		CHECK(train.cargo.Unload(10, &fixture.Waiting(station), PAX, &payment, TileIndex{0}) == 10);
+		for (uint pass = 0; pass < 3; ++pass) {
+			train.cargo.Stage(true, station, next, OrderUnloadType::UnloadIfPossible, &goods, PAX, &payment, TileIndex{0});
+			CHECK(train.cargo.ActionCount(Action::Deliver) == 0);
+			CHECK(train.cargo.ActionCount(Action::Transfer) == 0);
+			CHECK(train.cargo.ActionCount(Action::Keep) == 10);
+			CHECK(train.cargo.Unload(10, &fixture.Waiting(station), PAX, &payment, TileIndex{0}) == 0);
+			CHECK(fixture.Waiting(station).AvailableCount() == 0);
+			CHECK(fixture.Waiting(station).Load(10, &train.cargo, next, TileIndex{0}, &train) == 0);
+		}
 		CHECK(packet->GetPassengerDestination() == D);
 		CHECK(packet->GetFeederShare() == 100);
 		CHECK(delivery.company->cur_economy.delivered_cargo[PAX] == 0);
-		REQUIRE(fixture.Waiting(station).Load(10, &train.cargo, next, TileIndex{0}, &train) == 10);
 	}
 	train.LoadAt(2);
 	GoodsEntry &goods = Station::Get(D)->goods[PAX];
@@ -351,6 +382,152 @@ TEST_CASE("Fallback and deferred OD passengers can finish only at their acceptin
 	CHECK(train.cargo.Unload(10, &fixture.Waiting(D), PAX, &payment, TileIndex{0}) == 10);
 	CHECK(train.cargo.TotalCount() == 0);
 	CHECK(delivery.company->cur_economy.delivered_cargo[PAX] == 10);
+}
+
+TEST_CASE("OD fallback chooses a progressing interchange instead of unrelated CargoDist flows", "[passenger][active][fallback]")
+{
+	ActiveFixture fixture;
+	FinalDeliveryFixture delivery;
+	FallbackLinks links;
+	links.Edge(B, A); links.Edge(A, B); // A cycle and an accepting dead end must not attract the OD.
+	links.Edge(B, C); links.Edge(C, D);
+	ActiveTrain wrong({ActiveStop(B), ActiveStop(A)});
+	ActiveTrain onward({ActiveStop(B), ActiveStop(C)}, VehicleID{101});
+	ActiveTrain last({ActiveStop(C), ActiveStop(D)}, VehicleID{102});
+	wrong.owner = onward.owner = last.owner = delivery.company->index;
+	auto *packet = fixture.Packet();
+	packet->FallbackPassengerJourney(B, NOW);
+	wrong.cargo.Append(packet);
+	GoodsEntry &goods = Station::Get(B)->goods[PAX]; goods.CreateData().flows.insert(FlowStat(A, B, 10));
+	std::array wrong_next{A}, onward_next{C}, last_next{D};
+	GameRandomSeedChecker seeds;
+	CargoPayment payment(CargoPaymentID::Invalid(), &wrong);
+	PassengerJourneyActiveContext context(&wrong, B);
+	wrong.cargo.Stage(true, B, wrong_next, OrderUnloadType::UnloadIfPossible, &goods, PAX, &payment, TileIndex{0}, nullptr, nullptr, &context);
+	REQUIRE(wrong.cargo.ActionCount(Action::Transfer) == 10);
+	REQUIRE(wrong.cargo.Unload(10, &fixture.Waiting(B), PAX, &payment, TileIndex{0}) == 10);
+	PassengerJourneyLoadingContext loading;
+	CHECK_FALSE(fixture.Waiting(B).HasCargoFor(wrong_next, &wrong, &loading));
+	CHECK(fixture.Waiting(B).Reserve(10, &wrong.cargo, wrong_next, TileIndex{0}, &wrong, &loading) == 0);
+	CHECK(fixture.Waiting(B).Load(10, &wrong.cargo, wrong_next, TileIndex{0}, &wrong, &loading) == 0);
+	REQUIRE(fixture.Waiting(B).Reserve(10, &onward.cargo, onward_next, TileIndex{0}, &onward, &loading) == 10);
+	REQUIRE(fixture.Waiting(B).Load(10, &onward.cargo, onward_next, TileIndex{0}, &onward, &loading) == 10);
+	CHECK(packet->GetPassengerVia() == C);
+	onward.LoadAt(1);
+	CargoPayment transfer(CargoPaymentID::Invalid(), &onward);
+	onward.cargo.Stage(true, C, wrong_next, OrderUnloadType::UnloadIfPossible, &Station::Get(C)->goods[PAX], PAX, &transfer, TileIndex{0});
+	REQUIRE(onward.cargo.ActionCount(Action::Transfer) == 10);
+	REQUIRE(onward.cargo.Unload(10, &fixture.Waiting(C), PAX, &transfer, TileIndex{0}) == 10);
+	CHECK(fixture.Waiting(C).Load(10, &onward.cargo, wrong_next, TileIndex{0}, &onward) == 0);
+	REQUIRE(fixture.Waiting(C).Load(10, &last.cargo, last_next, TileIndex{0}, &last) == 10);
+	last.LoadAt(1);
+	CargoPayment final_payment(CargoPaymentID::Invalid(), &last);
+	last.cargo.Stage(true, D, wrong_next, OrderUnloadType::UnloadIfPossible, &Station::Get(D)->goods[PAX], PAX, &final_payment, TileIndex{0});
+	CHECK(last.cargo.Unload(10, &fixture.Waiting(D), PAX, &final_payment, TileIndex{0}) == 10);
+	CHECK(delivery.company->cur_economy.delivered_cargo[PAX] == 10);
+	CHECK(seeds.Check());
+}
+
+TEST_CASE("Unreachable OD fallback waits without reboarding a circulating train and can recover", "[passenger][active][fallback]")
+{
+	ActiveFixture fixture;
+	FallbackLinks links; links.Edge(B, C); links.Edge(C, B); links.Edge(C, D);
+	ActiveTrain train({ActiveStop(B), ActiveStop(C)});
+	auto *packet = fixture.Packet(); packet->FallbackPassengerJourney(B, NOW); train.cargo.Append(packet);
+	links.graph->RemoveEdge(Station::Get(C)->goods[PAX].node, Station::Get(D)->goods[PAX].node);
+	std::array next{C};
+	CargoPayment payment(CargoPaymentID::Invalid(), &train);
+	train.cargo.Stage(true, B, next, OrderUnloadType::UnloadIfPossible, &Station::Get(B)->goods[PAX], PAX, &payment, TileIndex{0});
+	REQUIRE(train.cargo.Unload(10, &fixture.Waiting(B), PAX, &payment, TileIndex{0}) == 10);
+	for (uint pass = 0; pass < 5; ++pass) {
+		_state_ticks += 1; BeginPassengerJourneyTick();
+		PassengerJourneyLoadingContext loading;
+		fixture.Waiting(B).RoutePassengerJourneys(PAX, B, true, &loading);
+		CHECK_FALSE(fixture.Waiting(B).HasCargoFor(next, &train, &loading));
+		CHECK(fixture.Waiting(B).Reserve(10, &train.cargo, next, TileIndex{0}, &train, &loading) == 0);
+		CHECK(fixture.Waiting(B).Load(10, &train.cargo, next, TileIndex{0}, &train, &loading) == 0);
+		CHECK(train.cargo.TotalCount() == 0);
+		CHECK(fixture.Waiting(B).AvailableCount() == 10);
+		CHECK(packet->GetPassengerDestination() == D);
+		CHECK(packet->GetFeederShare() == 100);
+	}
+	links.Edge(C, D);
+	PassengerJourneyLoadingContext restored;
+	REQUIRE(fixture.Waiting(B).Load(10, &train.cargo, next, TileIndex{0}, &train, &restored) == 10);
+	CHECK(packet->GetPassengerVia() == C);
+}
+
+TEST_CASE("OD fallback boarding validates live prefixes and restricted links", "[passenger][active][fallback]")
+{
+	ActiveFixture fixture;
+	FallbackLinks links; links.Edge(B, C); links.Edge(C, D);
+	ActiveTrain train({ActiveStop(B), ActiveStop(C)});
+	auto *packet = fixture.Packet(300); packet->FallbackPassengerJourney(B, NOW);
+	fixture.Waiting(B).Append(packet, StationID::Invalid());
+	std::array next{C};
+	SECTION("Restricted onward link cannot certify an interchange") {
+		links.graph->RemoveEdge(2, 3); links.Edge(C, D, true);
+		CHECK(fixture.Waiting(B).Load(10, &train.cargo, next, TileIndex{0}, &train) == 0);
+	}
+	SECTION("Stale station node identity cannot grant OD boarding") {
+		links.Edge(A, C);
+		Station::Get(B)->goods[PAX].node = Station::Get(A)->goods[PAX].node;
+		CHECK(fixture.Waiting(B).Load(10, &train.cargo, next, TileIndex{0}, &train) == 0);
+	}
+	SECTION("A changed route returns reserved cargo and blocks repeated reloads") {
+		PassengerJourneyLoadingContext loading;
+		REQUIRE(fixture.Waiting(B).Reserve(100, &train.cargo, next, TileIndex{0}, &train, &loading) == 100);
+		train.GetOrder(1)->MakeGoToStation(A); loading.Invalidate(&train);
+		CHECK(fixture.Waiting(B).Load(100, &train.cargo, next, TileIndex{0}, &train, &loading) == 0);
+		CHECK(fixture.Waiting(B).ReservedCount() == 0);
+		CHECK(fixture.Waiting(B).AvailableCount() == 300);
+		CHECK(train.cargo.TotalCount() == 0);
+	}
+	SECTION("Untimed but deterministic orders still transport OD fallback") {
+		train.GetOrder(0)->SetWaitTimetabled(false);
+		REQUIRE(fixture.Waiting(B).Load(100, &train.cargo, next, TileIndex{0}, &train) == 100);
+		CHECK(train.cargo.StoredCount() == 100); CHECK(fixture.Waiting(B).AvailableCount() == 200);
+		CHECK(train.cargo.Packets()->front()->GetPassengerVia() == C);
+		CHECK(train.cargo.Packets()->front()->GetFeederShare() + packet->GetFeederShare() == 100);
+	}
+	SECTION("Conditional path cannot certify reaching the OD hop") {
+		train.GetOrder(1)->MakeConditional(0);
+		CHECK(fixture.Waiting(B).Load(10, &train.cargo, next, TileIndex{0}, &train) == 0);
+	}
+	SECTION("Forced interchange cannot immediately reload the same passengers") {
+		train.current_order.SetUnloadType(OrderUnloadType::Transfer);
+		CHECK(fixture.Waiting(B).Reserve(10, &train.cargo, next, TileIndex{0}, &train) == 0);
+		CHECK(fixture.Waiting(B).Load(10, &train.cargo, next, TileIndex{0}, &train) == 0);
+	}
+}
+
+TEST_CASE("OD fallback work is shared bounded deterministic and reusable until the next tick", "[passenger][active][fallback][budget]")
+{
+	ActiveFixture fixture;
+	std::vector<Order> orders(4096);
+	orders.front() = ActiveStop(B); orders.back() = ActiveStop(D);
+	for (size_t i = 1; i + 1 < orders.size(); ++i) orders[i].MakeGoToWaypoint(C);
+	ActiveTrain train(std::move(orders));
+	auto *packet = fixture.Packet(); packet->FallbackPassengerJourney(B, NOW);
+	fixture.Waiting(B).Append(packet, StationID::Invalid());
+	GameRandomSeedChecker seeds;
+	for (uint i = 0; i < 64; ++i) {
+		PassengerJourneyLoadingContext loading;
+		CHECK(loading.CanBoard(*packet, &train));
+		size_t used = GetPassengerJourneyTickDiagnostic().od_fallback_work;
+		CHECK(loading.CanBoard(*packet, &train)); // Same event reuses the exact result without charging again.
+		CHECK(GetPassengerJourneyTickDiagnostic().od_fallback_work == used);
+	}
+	PassengerJourneyLoadingContext exhausted;
+	std::array next{D};
+	CHECK(fixture.Waiting(B).Reserve(10, &train.cargo, next, TileIndex{0}, &train, &exhausted) == 0);
+	CHECK(fixture.Waiting(B).Load(10, &train.cargo, next, TileIndex{0}, &train, &exhausted) == 0);
+	CHECK(GetPassengerJourneyTickDiagnostic().od_fallback_work == 4 * 1024 * 1024);
+	CHECK(fixture.Waiting(B).AvailableCount() == 10);
+	_state_ticks += 1; BeginPassengerJourneyTick();
+	CHECK(fixture.Waiting(B).Load(10, &train.cargo, next, TileIndex{0}, &train) == 10);
+	CHECK(packet->GetPassengerDestination() == D);
+	CHECK(seeds.Check());
 }
 
 TEST_CASE("Destination enforcement preserves disabled and unknown OD CargoDist delivery", "[passenger][active][delivery]")
@@ -373,29 +550,29 @@ TEST_CASE("Destination enforcement preserves disabled and unknown OD CargoDist d
 	Station::Get(B)->town = nullptr;
 }
 
-TEST_CASE("Journey failure and unsupported passengers use CargoDist", "[passenger][active]")
+TEST_CASE("Journey failure uses validated OD fallback while unsupported passengers retain CargoDist", "[passenger][active]")
 {
 	ActiveFixture fixture;
 	ActiveTrain train({ActiveStop(A), ActiveStop(D, 100)});
-	bool fallback = true;
+	bool fallback = true, can_board = true;
 	std::optional<ActiveTrain> uncertain;
 	auto *packet = fixture.Packet();
-	SECTION("Missing destination route") { train.GetOrder(1)->MakeGoToStation(B); }
+	SECTION("Missing destination route") { train.GetOrder(1)->MakeGoToStation(B); can_board = false; }
 	SECTION("Incomplete timetable") { train.GetOrder(0)->SetWaitTimetabled(false); }
 	SECTION("A known path cannot hide an incomplete alternative") {
 		Order untimed = ActiveStop(A); untimed.SetWaitTimetabled(false);
 		uncertain.emplace(std::vector<Order>{untimed, ActiveStop(D, 50)}, VehicleID{101});
 	}
-	SECTION("Conditional service") { train.GetOrder(1)->MakeConditional(0); }
+	SECTION("Conditional service") { train.GetOrder(1)->MakeConditional(0); can_board = false; }
 	SECTION("Manual distribution") { _settings_game.linkgraph.distribution_per_cargo[PAX] = DistributionType::Manual; fallback = false; }
 	SECTION("Unknown OD") { delete packet; packet = fixture.Packet(10, StationID::Invalid()); fallback = false; }
 	SECTION("Disabled") { _settings_game.linkgraph.passenger_journey_routing = false; fallback = false; }
-	SECTION("Unsupported vehicle types fall back") { train.type = VehicleType::Effect; }
+	SECTION("Unsupported vehicle types cannot certify OD boarding") { train.type = VehicleType::Effect; can_board = false; }
 	fixture.Waiting().Append(packet, D);
 	fixture.Waiting().RoutePassengerJourneys(PAX, A);
 	CHECK(packet->GetPassengerRoutingMode() == (fallback ? PassengerRoutingMode::Fallback : PassengerRoutingMode::Legacy));
 	std::array next{D};
-	CHECK(fixture.Waiting().Load(10, &train.cargo, next, TileIndex{0}, &train) == 10);
+	CHECK(fixture.Waiting().Load(10, &train.cargo, next, TileIndex{0}, &train) == (can_board ? 10 : 0));
 }
 
 TEST_CASE("Missed departure invalidates a leg and cooldown prevents routing oscillation", "[passenger][active]")

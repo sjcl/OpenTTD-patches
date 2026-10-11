@@ -139,6 +139,8 @@ void LinkGraphSchedule::JoinNext()
 		LinkGraphID id = next->LinkGraphIndex();
 		next->FinaliseJob(); // joins the thread and finalises the job
 		assert(!next->IsJobAborted());
+		Debug(linkgraph, 3, "LinkGraphSchedule::JoinNext(): Finalised graph: {}, cargo: {}, nodes: {}, start: {}, join: {}, now: {}",
+				id, next->Cargo(), next->Graph().Size(), next->StartTick(), next->JoinTick(), _scaled_tick_counter);
 		next.reset();
 		if (LinkGraph::IsValidID(id)) {
 			LinkGraph *lg = LinkGraph::Get(id);

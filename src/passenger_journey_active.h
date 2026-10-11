@@ -37,6 +37,7 @@ struct PassengerJourneyTickDiagnostic {
 	std::array<size_t, static_cast<size_t>(PassengerJourneyFallbackReason::End)> deferred{};
 	size_t fair_share_work = 0, fair_share_claims = 0;
 	size_t fair_share_releases = 0, retained_rides = 0;
+	size_t od_fallback_work = 0, od_fallback_searches = 0;
 };
 
 /** Reset at the simulation tick boundary, including the first tick after network join/load.
@@ -66,12 +67,33 @@ public:
 	size_t GetPredictionCount() const { return this->predictions; }
 };
 
+/** Untimed OD fallback, local to one arrival/loading pass. LinkGraph paths use
+ * unrestricted directed links; boarding also requires a live order prefix.
+ * No timing, optimum, future capacity or permanent unreachability is asserted. */
+class PassengerOdFallbackContext {
+	std::map<std::tuple<CargoType, StationID, StationID>, StationID> hops;
+	std::map<std::pair<VehicleID, CargoType>, std::vector<StationID>> stops;
+	size_t work_left = 65536;
+	bool Spend(size_t amount = 1);
+	bool CanReach(const Vehicle *vehicle, CargoType cargo, StationID target);
+	StationID NextHop(CargoType cargo, StationID origin, StationID destination);
+	StationID BoardingVia(const Vehicle *vehicle, CargoType cargo, StationID destination);
+public:
+	bool CanBoard(const CargoPacket &packet, const Vehicle *vehicle, CargoType cargo);
+	void PrepareBoard(CargoPacket &packet, const Vehicle *vehicle, CargoType cargo);
+	void Invalidate(const Vehicle *vehicle);
+	std::optional<VehicleCargoList::MoveToAction> Decide(CargoPacket &packet, const Vehicle *vehicle,
+			CargoType cargo, StationID station, bool accepted, OrderUnloadType unload);
+};
+
 /** Owned by LoadUnloadStation, shared by validation, refit queries, reservations and all coaches.
  * Refit invalidates the affected consist; nothing is retained across simulation events. */
 class PassengerJourneyLoadingContext {
 	std::map<std::pair<VehicleID, CargoType>, PassengerJourneyBoardingContext> boarding;
+	PassengerOdFallbackContext fallback;
 public:
 	bool CanBoard(const CargoPacket &packet, const Vehicle *vehicle, CargoType cargo = INVALID_CARGO);
+	void PrepareBoard(CargoPacket &packet, const Vehicle *vehicle);
 	void Invalidate(const Vehicle *vehicle);
 	size_t GetPredictionCount() const;
 };
@@ -83,6 +105,7 @@ class PassengerJourneyActiveContext {
 	StationID station;
 	std::map<std::pair<CargoType, StationID>, std::unique_ptr<Snapshot>> snapshots;
 	std::map<CargoType, PassengerJourneyBoardingContext> continuation;
+	PassengerOdFallbackContext fallback;
 	size_t work_left = 4194304;
 	size_t memory_left = 256 * 1024 * 1024;
 	size_t queries_left = 128;

@@ -2,9 +2,9 @@
 
 Active journeys now capture an OD corridor instead of predicting every train.
 Only the untimed structural index survives a simulation event. Stored leg,
-reservation and packet/save layouts are unchanged. CargoDist continues
-transporting fallback and deferred packets, with the final-OD delivery guard
-described below.
+reservation and packet/save layouts are unchanged. Fallback and deferred
+packets use existing cargo loading/payment actions with destination-aware
+untimed routing and the final-OD delivery guard described below.
 
 ## Corridor and completeness
 
@@ -125,6 +125,7 @@ silently choose a poorer train based on pool order.
 | Per-snapshot planner cache | 2 entries / 256 KiB |
 | Tick graph Work / query-and-signature Work | 16 Mi / 1 Mi |
 | Tick snapshot constructions | 16 |
+| OD fallback event / tick Work (independent ledger) | 65,536 / 4 Mi |
 
 Graph and query/signature counters are simulation state, reset at the tick
 boundary in `StateGameLoop`, and consumed in simulation order. Afterload resets
@@ -136,8 +137,8 @@ an exhausted search, unknown prediction or unreachable OD. The packet retains
 its OD and CargoDist queue key, uses Legacy mode plus the existing saved retry
 station/deadline, and retries from the next tick without the Fallback cooldown
 or station cohort delay. Split, merge and current saves preserve this state;
-there is no new enum value, field, packet size or save feature. CargoDist can
-continue transporting deferred passengers.
+there is no new enum value, field, packet size or save feature. The filtered
+OD queue allows destination-aware fallback transport while a timed query waits.
 
 Before the station loading loop changes any countdowns or queues, a census
 selects up to four searchable loading origins in a rotating pool-ID window.
@@ -176,9 +177,32 @@ Matching train/service/orders and the absolute alighting occurrence preserves
 the Journey leg and returns Keep; it does not certify a newly optimized route.
 Forced unload/transfer and invalid rides cannot use this continuation. Stage
 also protects the known final OD after a fallback or deferral and on later
-arrivals: an intermediate CargoDist Deliver returns invalid rides to a waiting
-queue, and only the accepting final OD can finish delivery. NoUnload remains
-effective. Disabled/manual routing and unknown ODs retain legacy behavior.
+arrivals: a verified direct ride or committed OD interchange returns Keep
+through intermediate CargoDist destinations; only the accepting final OD can
+finish delivery. NoUnload remains effective. Disabled/manual routing and unknown
+ODs retain legacy behavior.
+
+Untimed fallback prefers a validated direct vehicle prefix to the OD. Otherwise
+it selects the first hop of a shortest directed, unrestricted positive-capacity
+cargo LinkGraph path to the final destination. With stable topology, completed
+interchanges reduce remaining hop count. A vehicle must reach that hop before
+returning to its boarding station or encountering an unsupported/forced order.
+Load, Reserve and HasCargoFor enforce the same condition, including returned
+gradual-loading reservations. When no progressing ride can be verified,
+passengers wait in the filtered OD bucket; an Invalid key cannot permit blind
+reboarding. Route removal blocks cycling trains, and a restored path is checked
+in the next loading pass. Stale historical links cannot guarantee future service
+or seats, and unsupported prefixes/work exhaustion do not establish permanent
+unreachability. This policy supplies no timed-completeness certificate.
+
+Each arrival/loading pass caches at most 128 hop queries and 128 vehicle/cargo
+prefixes, examines at most 4,096 orders per prefix, and shares a 65,536-unit
+allowance across traversal/sorting/BFS. The independent tick ledger caps this
+work at 4 Mi; it never replenishes or spends timed JourneyPlanner allowance.
+BFS uses under 256 KiB of transient NodeID vectors, validates station/node
+identity and retains no graph pointers across events. Refit invalidates live
+prefixes. Existing saved passenger_via stores the validated through target,
+leaving packet size/save schema unchanged. Diagnostics report work and searches.
 
 Traversal no longer spends memory for every Work unit. Admission reserves,
 before allocation, 256 bytes per discovered fleet and 128 bytes per temporary
@@ -316,6 +340,9 @@ state and diagnostic-reset purity,
 actual loading countdowns/unused-share release, bounded census exhaustion,
 onboard budget exhaustion with valid/stale occurrences, forced transfers,
 accepted intermediate CargoDist delivery and final-OD payment,
+OD-aware fallback interchanges, no intermediate unload/reload, unreachable and
+restored destination links, restricted/stale graph identities, stale fallback
+reservations and bounded fallback work,
 8,001 real stations and actual active execution. Existing suites additionally
 exercise high-frequency detours, local-only access, unknown national networks,
 shared orders, deletion, departure changes, loading/reservations, save/load,
@@ -327,10 +354,10 @@ Work cannot certify the alternatives and it safely remains inconclusive.
 Conditional/refit/untimetabled/contended-dispatch predictions remain conservative;
 they are not made artificially complete. Static invalidation still has a cold
 rebuild cost, and live fleet classification is not shared between events.
-Validation on MSVC x64 Release (assertions enabled): all 348 default unit cases
-with 111,499 assertions passed, and the explicit passenger selection passed 153
-cases with 120,467 assertions, including hidden national performance fixtures.
-The complete CTest run passed all 355 entries (19.98 seconds), including
+Validation on MSVC x64 Release (assertions enabled): all 352 default unit cases
+with 111,868 assertions passed, and the explicit passenger selection passed 157
+cases with 120,836 assertions, including hidden national performance fixtures.
+The complete CTest run passed all 359 entries (18.62 seconds), including
 production legacy/current saves, GUI/diagnostic save-hash purity, disabled-mode
 parity and shadow execution. On this Visual Studio build,
 `lang` and `baseset` were copied alongside the `Release` executable for the

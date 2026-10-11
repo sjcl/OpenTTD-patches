@@ -190,6 +190,40 @@ TEST_CASE("Every mode returns only the stale reserved suffix after gradual loadi
 	CHECK(feeder == 100);
 }
 
+TEST_CASE("Multimodal OD fallback boards only progressing rides and respects forced transfers", "[passenger][multimodal][active][fallback]")
+{
+	MultimodalFixture f;
+	VehicleType type = GENERATE(VehicleType::Train, VehicleType::Road, VehicleType::Ship, VehicleType::Aircraft);
+	Vehicle *through = f.Service(type, {MultiStop(A), MultiStop(B, 100), MultiStop(E, 100)});
+	Vehicle *wrong = f.Service(type, {MultiStop(A), MultiStop(C, 100)});
+	through->GetOrder(0)->SetWaitTimetabled(false); // Untimed direct OD transport remains possible.
+	auto *packet = f.Packet();
+	packet->FallbackPassengerJourney(A, NOW);
+	f.Waiting().Append(packet, StationID::Invalid());
+	std::array next{B};
+	PassengerJourneyLoadingContext loading;
+	CHECK_FALSE(f.Waiting().HasCargoFor(next, wrong, &loading));
+	CHECK(f.Waiting().Reserve(10, &wrong->cargo, next, wrong->tile, wrong, &loading) == 0);
+	REQUIRE(f.Waiting().Reserve(10, &through->cargo, next, through->tile, through, &loading) == 10);
+	REQUIRE(f.Waiting().Load(10, &through->cargo, next, through->tile, through, &loading) == 10);
+	CHECK(packet->GetPassengerVia() == E);
+	Company *company = Company::Create(); through->owner = company->index;
+	f.LoadAt(through, 1);
+	bool forced = GENERATE(false, true);
+	OrderUnloadType unload = forced ? OrderUnloadType::Transfer : OrderUnloadType::UnloadIfPossible;
+	through->current_order.SetUnloadType(unload);
+	CargoPayment payment(CargoPaymentID::Invalid(), through);
+	PassengerJourneyActiveContext context(through, B);
+	through->cargo.Stage(true, B, next, unload, &Station::Get(B)->goods[PAX], PAX, &payment,
+			through->tile, nullptr, nullptr, &context);
+	CHECK(through->cargo.ActionCount(Action::Deliver) == 0);
+	CHECK(through->cargo.ActionCount(forced ? Action::Transfer : Action::Keep) == 10);
+	CHECK(through->cargo.Unload(10, &f.Waiting(B), PAX, &payment, through->tile) == (forced ? 10 : 0));
+	if (forced) CHECK(f.Waiting(B).Load(10, &through->cargo, next, through->tile, through) == 0);
+	CHECK(packet->GetPassengerDestination() == E);
+	CHECK(packet->GetFeederShare() == 100);
+}
+
 TEST_CASE("Freight-only and zero-capacity vehicles never become passenger trips", "[passenger][multimodal][prediction]")
 {
 	MultimodalFixture f;
@@ -490,7 +524,7 @@ TEST_CASE("Multimodal onboard rides survive exhausted search budgets", "[passeng
 	PassengerJourneyActiveContext context(vehicle, B);
 	const auto action = context.Decide(*packet, PAX, true, unload);
 	if (unload == OrderUnloadType::Transfer) {
-		CHECK_FALSE(action);
+		CHECK(action == Action::Transfer);
 		CHECK(packet->GetPassengerRoutingMode() != PassengerRoutingMode::Journey);
 	} else {
 		CHECK(action == Action::Keep);
@@ -537,7 +571,9 @@ TEST_CASE("Multimodal vehicle destruction invalidates indexed journeys before po
 	CHECK(replacement->index == old);
 	CHECK_FALSE(packet->CanRetryPassengerJourney(A, NOW));
 	f.Waiting().RoutePassengerJourneys(PAX, A, false);
-	CHECK(f.Waiting().AvailableViaCount(E) == 10);
+	CHECK(f.Waiting().AvailableViaCount(StationID::Invalid()) == 10);
+	std::array next{E};
+	CHECK(f.Waiting().Load(10, &replacement->cargo, next, replacement->tile, replacement) == 10);
 }
 
 TEST_CASE("Multimodal execution preserves the existing save extension and validates afterload", "[passenger][multimodal][saveload]")
