@@ -19,6 +19,32 @@ void AfterLoadPassengerJourneys();
 size_t InvalidatePassengerJourneyVehicle(VehicleID vehicle);
 void RebuildPassengerJourneyVehicleIndex();
 
+enum class PassengerJourneyFallbackReason : uint8_t {
+	GraphWork, GraphMemory, SnapshotLimit, QueryWork, QueryLimit, QueryMemory, PredictionIncomplete, PredictionHorizon, NoJourney, InvalidLeg,
+	StaleLeg, Disabled, VehicleDeleted, End,
+};
+
+struct PassengerJourneyTickDiagnostic {
+	size_t builds = 0, static_cache_hits = 0, queries = 0, query_cache_hits = 0;
+	size_t trains = 0, cargo_capable = 0, possible_refit = 0, predicted = 0, visits = 0;
+	size_t excluded_cargo = 0, excluded_scope = 0, inactive = 0, omitted_trains = 0, truncated_predictions = 0;
+	size_t graph_work = 0, query_work = 0, maximum_graph_work = 0;
+	size_t reused_graph_work = 0, static_allocation_bytes = 0, query_scratch_bytes = 0, query_cache_bytes = 0;
+	size_t journeys = 0, passengers = 0, graph_memory_bound = 0, graph_allocation_bytes = 0;
+	uint64_t build_microseconds = 0, maximum_build_microseconds = 0;
+	uint64_t query_microseconds = 0, maximum_tick_microseconds = 0;
+	std::array<size_t, static_cast<size_t>(PassengerJourneyFallbackReason::End)> fallbacks{};
+};
+
+/** Reset at the simulation tick boundary, including the first tick after network join/load.
+ * Budget counters are simulation state; cache residency and elapsed diagnostics never affect them. */
+void BeginPassengerJourneyTick();
+const PassengerJourneyTickDiagnostic &GetPassengerJourneyTickDiagnostic();
+PassengerJourneyTickDiagnostic GetPassengerJourneyTotalDiagnostic();
+void ResetPassengerJourneyDiagnostic(); ///< Local observations only; never resets simulation allowances.
+void RecordPassengerJourneyFallback(PassengerJourneyFallbackReason reason); ///< Simulation-only lifecycle observations.
+PassengerServiceGraphLimits ActivePassengerServiceGraphLimits();
+
 /** Lazy prediction for one primary train/cargo in one loading pass. */
 class PassengerJourneyBoardingContext {
 	const Vehicle *vehicle;
@@ -49,15 +75,18 @@ class PassengerJourneyActiveContext {
 	struct Snapshot;
 	const Vehicle *vehicle;
 	StationID station;
-	std::map<CargoType, std::unique_ptr<Snapshot>> snapshots;
-	size_t work_left = 2097152;
+	std::map<std::pair<CargoType, StationID>, std::unique_ptr<Snapshot>> snapshots;
+	size_t work_left = 4194304;
+	size_t memory_left = 256 * 1024 * 1024;
 	size_t queries_left = 128;
-	Snapshot *GetSnapshot(CargoType cargo);
-	std::optional<PassengerJourneyExecution> Execute(CargoType cargo, const PassengerJourneyLeg &leg);
+	PassengerJourneyFallbackReason failure = PassengerJourneyFallbackReason::GraphWork;
+	Snapshot *GetSnapshot(CargoType cargo, StationID destination);
+	std::optional<PassengerJourneyExecution> Execute(Snapshot &snapshot, CargoType cargo, const PassengerJourneyLeg &leg);
+	bool AdmitQuery();
 public:
 	PassengerJourneyActiveContext(const Vehicle *vehicle, StationID station);
 	~PassengerJourneyActiveContext();
-	size_t GetWorkAllowanceUsed() const { return 2097152 - this->work_left; }
+	size_t GetWorkAllowanceUsed() const { return 4194304 - this->work_left; }
 	bool PlanWaiting(CargoPacket &packet, CargoType cargo, StationID legacy_hop);
 	std::optional<VehicleCargoList::MoveToAction> Decide(CargoPacket &packet, CargoType cargo, bool accepted, OrderUnloadType unload);
 };

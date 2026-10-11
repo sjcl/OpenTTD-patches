@@ -51,6 +51,12 @@ file(SHA256 "${WORK_DIR}/with-window.sav" with_window)
 if(NOT without_window STREQUAL with_window)
     message(FATAL_ERROR "Opening the station GUI changed the saved game state")
 endif()
+load_game(diagnostics "${WORK_DIR}/enabled.sav" false 1 true
+    "passenger_journey_stats total\npassenger_journey_stats tick\npassenger_journey_stats reset\nsave \"${WORK_DIR}/with-diagnostics\"")
+file(SHA256 "${WORK_DIR}/with-diagnostics.sav" with_diagnostics)
+if(NOT without_window STREQUAL with_diagnostics)
+    message(FATAL_ERROR "Reading/resetting passenger diagnostics changed the saved game state")
+endif()
 load_game(planned "${WORK_DIR}/enabled.sav" false 1 true
     "show_station_window 0\nsave \"${WORK_DIR}/planned-window\""
     "station_gui_sort_by = 3\nstation_gui_sort_order = 1\nstation_gui_group_order = 5\n")

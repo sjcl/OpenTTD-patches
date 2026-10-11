@@ -9,6 +9,7 @@
 
 #include "stdafx.h"
 #include "passenger_journey_shadow.h"
+#include "passenger_journey_active.h"
 #include "core/string_consumer.hpp"
 #include "console_internal.h"
 #include "crashlog.h"
@@ -4502,6 +4503,33 @@ static bool ConCreateTown(std::span<std::string_view> argv)
 }
 
 /** Console command registration. */
+static bool ConPassengerJourneyStats(std::span<std::string_view> argv)
+{
+	if (argv.empty()) {
+		IConsolePrint(CC_HELP, "passenger_journey_stats [total|tick|reset]: local active journey diagnostics; reset clears observations only");
+		return true;
+	}
+	if (argv.size() > 2) return false;
+	auto operation = argv.size() == 1 ? std::string_view("total") : argv[1];
+	if (operation == "reset") { ResetPassengerJourneyDiagnostic(); return true; }
+	if (operation != "total" && operation != "tick") return false;
+	const auto stats = operation == "tick" ? GetPassengerJourneyTickDiagnostic() : GetPassengerJourneyTotalDiagnostic();
+	IConsolePrint(CC_DEFAULT, "Active journey {}: applied={} packets/{} passengers; builds={}; static_hits={}; searches={}; OD_hits={}",
+			operation, stats.journeys, stats.passengers, stats.builds, stats.static_cache_hits, stats.queries, stats.query_cache_hits);
+	IConsolePrint(CC_DEFAULT, "Train observations={}; cargo_capable={}; possible_refit={}; predicted={}; inactive={}; excluded_cargo={}; excluded_scope={}; visits={}; omitted_trains_at_least={}; truncated_predictions={} (uncaptured visit count unknown)",
+			stats.trains, stats.cargo_capable, stats.possible_refit, stats.predicted, stats.inactive, stats.excluded_cargo, stats.excluded_scope, stats.visits, stats.omitted_trains, stats.truncated_predictions);
+	IConsolePrint(CC_DEFAULT, "Graph work={}; mean={}; max={}; cached_index_allowance_avoided={}; query_allowance={}; build_us={}; mean_us={}; max_us={}; search_us={}; max_tick_graph_search_us={}",
+			stats.graph_work, stats.builds == 0 ? 0 : stats.graph_work / stats.builds, stats.maximum_graph_work, stats.reused_graph_work, stats.query_work,
+			stats.build_microseconds, stats.builds == 0 ? 0 : stats.build_microseconds / stats.builds, stats.maximum_build_microseconds, stats.query_microseconds,
+			std::max(stats.maximum_tick_microseconds, operation == "tick" ? stats.build_microseconds + stats.query_microseconds : uint64_t{0}));
+	IConsolePrint(CC_DEFAULT, "Peak graph retained_estimate={}; static retained_estimate={}; conservative_graph_envelope_including_index={}; query_scratch={}; query_cache={}",
+			stats.graph_allocation_bytes, stats.static_allocation_bytes, stats.graph_memory_bound, stats.query_scratch_bytes, stats.query_cache_bytes);
+	static constexpr std::array reasons{"GraphWork", "GraphMemory", "SnapshotLimit", "QueryWork", "QueryLimit", "QueryMemory", "PredictionIncomplete", "PredictionHorizon", "NoJourney", "InvalidLeg", "StaleLeg", "Disabled", "VehicleDeleted"};
+	static_assert(reasons.size() == static_cast<size_t>(PassengerJourneyFallbackReason::End));
+	for (size_t i = 0; i < reasons.size(); ++i) IConsolePrint(CC_DEFAULT, "Fallback {}: {} packets", reasons[i], stats.fallbacks[i]);
+	return true;
+}
+
 static bool ConPassengerJourneyShadow(std::span<std::string_view> argv)
 {
 	if (argv.empty()) {
@@ -4744,6 +4772,7 @@ void IConsoleStdLibRegister()
 #endif
 	IConsole::CmdRegister("fps",                     ConFramerate);
 	IConsole::CmdRegister("passenger_journey_shadow", ConPassengerJourneyShadow);
+	IConsole::CmdRegister("passenger_journey_stats", ConPassengerJourneyStats);
 	IConsole::CmdRegister("fps_wnd",                 ConFramerateWindow);
 
 	IConsole::CmdRegister("find_non_realistic_braking_signal", ConFindNonRealisticBrakingSignal);

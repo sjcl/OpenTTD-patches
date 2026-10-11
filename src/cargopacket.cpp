@@ -67,7 +67,10 @@ size_t InvalidatePassengerJourneyVehicle(VehicleID vehicle)
 	 * visited in the same order as the old whole-pool scan, before vehicle ID reuse. */
 	auto packets = std::move(found->second);
 	_passenger_journey_vehicle_packets.erase(found);
-	for (CargoPacketID id : packets) CargoPacket::Get(id)->FallbackPassengerJourney(StationID::Invalid(), _state_ticks);
+	for (CargoPacketID id : packets) {
+		RecordPassengerJourneyFallback(PassengerJourneyFallbackReason::VehicleDeleted);
+		CargoPacket::Get(id)->FallbackPassengerJourney(StationID::Invalid(), _state_ticks);
+	}
 	return packets.size();
 }
 

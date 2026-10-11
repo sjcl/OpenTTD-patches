@@ -13,6 +13,7 @@
 #include "passenger_routing.h"
 #include "direction_type.h"
 #include "tile_type.h"
+#include "passenger_service_index.h"
 
 /** Limits include discovery, consist traversal, timetable traversal and dispatch slot searches. */
 struct PassengerServiceGraphLimits {
@@ -23,7 +24,25 @@ struct PassengerServiceGraphLimits {
 	size_t visits_per_trip = 128;
 	size_t steps_per_trip = 4096;
 	Ticks horizon = 65536; ///< State ticks, independent of GUI time/date settings; hard cap is 2^24.
-	size_t memory_bytes = 1024 * 1024 * 1024; ///< Conservative allocation envelope: at most 1024 bytes per admitted capture work unit.
+	size_t memory_bytes = 1024 * 1024 * 1024; ///< Deterministic allocation envelope, independent of traversal work.
+};
+
+struct PassengerServiceGraphDiagnostic {
+	size_t trains = 0;
+	size_t cargo_capable = 0;
+	size_t possible_refit = 0;
+	size_t predicted = 0;
+	size_t visits = 0;
+	size_t excluded_cargo = 0;
+	size_t excluded_scope = 0;
+	size_t inactive = 0;
+	size_t omitted_trains = 0; ///< Lower bound if discovery itself exhausted its allowance.
+	size_t truncated_predictions = 0; ///< Missing visit counts are unknown without doing the omitted prediction work.
+	size_t allocation_bytes = 0; ///< Retained sizeof/capacity/map-node estimate, never used for admission.
+	size_t static_allocation_bytes = 0; ///< Shared structural index, including capacity observations.
+	size_t reused_work = 0; ///< Logical preprocessing allowance avoided by a resident index, diagnostic only.
+	uint64_t build_microseconds = 0; ///< Development diagnostics only.
+	bool static_cache_hit = false;
 };
 
 /**
@@ -34,7 +53,8 @@ struct PassengerServiceGraphLimits {
  * is O(O + V + D + P), plus ordered index insertion/lookup costs. Storage is bounded by copied
  * orders/schedules and total visits. Queries inspect only the station's indexed services/visits,
  * plus the selected trips' downstream occurrences, with their own shared work allowance.
- * No live pointers, caches, random sampling, NewGRF callbacks or LinkGraph workers are involved.
+ * The optional shared cache owns structural IDs only. No live pointers, random sampling,
+ * NewGRF callbacks or LinkGraph workers are retained in a snapshot.
  */
 class PassengerServiceGraph {
 public:
@@ -103,14 +123,21 @@ public:
 	};
 
 	/** Call on the simulation thread, while vehicle/order pools are stable. Queries need no game state. */
-	static PassengerServiceGraph Build(CargoType cargo, StateTicks now, PassengerServiceGraphLimits limits = {});
+	static PassengerServiceGraph Build(CargoType cargo, StateTicks now, PassengerServiceGraphLimits limits = {},
+			std::optional<PassengerServiceScope> scope = {});
 	CargoType GetCargo() const { return this->cargo; }
 	StateTicks GetStart() const { return this->start; }
 	StateTicks GetEnd() const { return this->end; }
 	/** Completeness of fleet discovery/capture. Prediction completeness is also reported on each Trip and query. */
-	PassengerPredictionStatus GetStatus() const { return this->status; }
+	PassengerPredictionStatus GetStatus() const;
+	/** Scoped capture certifies alternatives only for this OD with unweighted waiting;
+	 * trip timing uncertainty is checked separately by the planner. */
+	PassengerPredictionStatus GetQueryStatus(StationID origin, StationID destination, bool weighted_waiting = false) const;
+	enum class Coverage : uint8_t { GlobalComplete, ScopedComplete, Incomplete };
+	Coverage GetCoverage(StationID origin, StationID destination) const;
 	size_t GetWork() const { return this->work; }
-	size_t GetMemoryBound() const { return this->work * 1024; }
+	size_t GetMemoryBound() const { return this->memory_bound; }
+	const PassengerServiceGraphDiagnostic &GetDiagnostic() const { return this->diagnostic; }
 	/** Unique currently loading occurrence, never a later circuit through the same station. */
 	std::optional<VisitID> FindOnboardVisit(VehicleID vehicle, StationID station, VehicleOrderID order) const;
 	std::span<const Service> GetServices() const { return this->services; }
@@ -140,7 +167,7 @@ public:
 		PassengerPredictionStatus status;
 	};
 	/** Allocation-free O(log stations + log departures) lookup; conservative coverage for the full snapshot horizon. */
-	Departures GetDepartures(StationID station, StateTicks from, StateTicks to) const;
+	Departures GetDepartures(StationID station, StateTicks from, StateTicks to, bool scoped_query = false) const;
 	/** Capture-order occurrences for reverse reachability; flags/times must still be checked. */
 	std::span<const VisitID> GetStationVisits(StationID station) const;
 	/** Declared stations whose services have incomplete prediction coverage, including missing visits. */
@@ -157,6 +184,10 @@ private:
 	StateTicks end{};
 	PassengerPredictionStatus status = PassengerPredictionStatus::Complete;
 	size_t work = 0;
+	size_t memory_bound = 0;
+	std::optional<PassengerServiceScope> scope;
+	bool scoped_omissions = false;
+	PassengerServiceGraphDiagnostic diagnostic;
 	std::vector<Service> services;
 	std::vector<Trip> trips;
 	std::map<OrderListID, size_t> service_index;

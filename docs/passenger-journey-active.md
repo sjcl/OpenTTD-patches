@@ -56,7 +56,8 @@ before its pool ID can be reused. The final OD survives fallback; the existing
 station-removal policy clears an OD when that station itself is removed.
 
 Fallback packets have a 256-state-tick cooldown at the same station. Retries
-are staggered by station ID every 64 ticks, or may occur at a later station.
+are staggered by station ID every 64 ticks (1024 ticks above 512 stations), or may
+occur at a later station.
 New Legacy OD packets can be considered immediately before boarding. Packets
 waiting beyond their chosen departure can fall back and board legacy services.
 Disabling the setting cancels Journey execution and returns only Journey
@@ -86,13 +87,19 @@ Loading does not perform journey searches or consume RNG.
 
 All routing happens on the simulation thread, in existing station/consist/packet
 order. There is no wall-time limit, random sampling, GUI-dependent state or
-shared shadow quota. Scratch snapshots and caches belong to one simulation
-event and are reconstructed on subsequent events; joining/loading therefore
-does not introduce different persistent cache or quota state.
+shared shadow quota. Dynamic snapshots and OD results belong to one simulation
+event. Only a structural station/service index is shared between events; its
+logical preprocessing allowance is identical when cold and warm. Global work
+allowances reset at the simulation tick boundary, including after a join/load.
 
 ## Work and storage
 
-One arrival context shares one snapshot per requested cargo across coaches.
+One arrival context shares one scoped snapshot per requested cargo/destination
+across coaches. A shared, untimed station/service index prunes excursions that
+cannot improve an OD journey with unweighted waiting. Freight with no current
+capacity or possible refit is excluded before detailed prediction. See
+[service graph scaling](passenger-service-graph-scaling.md) for the completeness
+proof, cache lifecycle, budgets and measured comparison.
 One station/cargo pass shares OD results across packets, including failed
 searches. A discovery build is lazy: validating an existing leg or cooling down
 fallback packets does not rebuild the national graph. There is no per-packet
@@ -115,13 +122,15 @@ only packets whose queue keys changed; there is no whole-map reconstruction.
 The 4,096 inspection allowance is charged only after mode, OD and cooldown
 eligibility checks. Existing Journey packets cannot starve ready Fallback retries.
 
-An event has 2,097,152 work units, at most 128 destination cache entries and
-queries, and at most four graph capture allowances. Each graph is capped at
-524,288 work units, a 128 MiB conservative allocation envelope, 65,536 visits
+An event has 4,194,304 work units, at most 128 destination cache entries and
+queries, and a 256 MiB snapshot envelope. Each graph is capped at
+2,097,152 work units, a 128 MiB conservative allocation envelope, 262,144 visits
 and 128 visits per train. Each distinct query has 65,536 work units, 8,192
-labels, an 8 MiB scratch envelope and one selected candidate. Fixed capture and
-query allowances are charged independent of cache timing; signature traversal
-is bounded and charged too. Identical OD packets reuse the same result.
+labels, an 8 MiB scratch envelope and one selected candidate. Graph work is
+charged deterministically, with identical static-index allowances when warm;
+each distinct query reserves 65,536 units. Signature traversal is charged too.
+A state tick permits 16 Mi work units for graphs, 1 Mi for queries/signatures,
+and 16 snapshot constructions. Identical OD packets reuse the same result.
 Waiting-pass searches admit at most 4,096 packets; excess packets remain on
 CargoDist. Validation caches at most 128 train/cargo pairs and has a separate
 bounded signature allowance. List rekeying/counting remains O(packet count).
@@ -131,11 +140,12 @@ partial-load/reserve actions split packets. The packet pool maximum is unchanged
 adding execution metadata increases each packet's storage, including Legacy
 packets. On the Windows x64 Release build, `sizeof(CargoPacket)` is 104 bytes
 and the executable next leg is 40 bytes. A 4,096-packet identical-OD test uses
-one graph/search and 590,144 fixed work allowance units; routing creates no
+one graph/search and about 65,931 work allowance units; routing creates no
 additional packets. A partial 300-person load creates the existing 100/200
 split and preserves total feeder share and OD.
-Worst-case event snapshot envelopes total 512 MiB, though actual
-allocation depends on the captured network. Large/truncated captures safely
+An event's graph envelopes total at most 256 MiB, plus at most 4 MiB of planner
+result caches and 8 MiB of current query scratch. Actual allocation depends on
+the captured network. Large/truncated captures safely
 fall back rather than declaring an OD permanently unreachable.
 
 ## Station GUI

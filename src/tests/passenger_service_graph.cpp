@@ -12,6 +12,7 @@
 #include "../passenger_service_graph.h"
 #include "../vehicle_base.h"
 #include "../core/random_func.hpp"
+#include <deque>
 
 static constexpr StationID A{0}, B{1}, C{2}, D{3};
 static constexpr CargoType PAX{0};
@@ -90,6 +91,103 @@ static const PassengerServiceGraph::Trip &GraphTrip(const PassengerServiceGraph 
 	auto it = std::find_if(trips.begin(), trips.end(), [&](const auto &trip) { return trip.vehicle == id; });
 	REQUIRE(it != trips.end());
 	return *it;
+}
+
+TEST_CASE("Graph discovery excludes definite freight before timetable capture", "[passenger][service_graph][performance]")
+{
+	std::deque<GraphVehicle> freight;
+	for (uint32_t i = 0; i < 5000; ++i) { freight.emplace_back(std::vector<Order>{GraphStop(A), GraphStop(B)}, VehicleID{1000 + i}); freight.back().cargo_type = CargoType{1}; }
+	GraphVehicle passenger({GraphStop(A), GraphStop(D)}, VehicleID{9000});
+	auto limits = GraphLimits(); limits.work = 32768; limits.memory_bytes = 1024 * 1024;
+	GameRandomSeedChecker random;
+	const auto graph = PassengerServiceGraph::Build(PAX, NOW, limits);
+	REQUIRE(graph.GetStatus() == PassengerPredictionStatus::Complete);
+	CHECK(graph.GetTrips().size() == 1);
+	CHECK(graph.GetDiagnostic().trains == 5001);
+	CHECK(graph.GetDiagnostic().cargo_capable == 1);
+	CHECK(graph.GetDiagnostic().excluded_cargo == 5000);
+	CHECK(graph.GetDiagnostic().predicted == 1);
+	CHECK(graph.GetWork() < limits.work);
+	CHECK(graph.GetMemoryBound() <= limits.memory_bytes);
+	CHECK(random.Check());
+}
+
+TEST_CASE("Graph allocation allowance is independent of traversal work", "[passenger][service_graph]")
+{
+	std::vector<Order> orders;
+	for (uint16_t i = 0; i < 400; ++i) orders.push_back(GraphStop(StationID{i}, 1, 1));
+	GraphVehicle train(std::move(orders));
+	auto limits = GraphLimits(1000); limits.memory_bytes = 1024 * 1024;
+	const auto graph = PassengerServiceGraph::Build(PAX, NOW, limits);
+	CHECK(graph.GetStatus() == PassengerPredictionStatus::Complete);
+	CHECK(graph.GetWork() > limits.memory_bytes / 1024);
+	CHECK(graph.GetMemoryBound() <= limits.memory_bytes);
+	CHECK(graph.GetDiagnostic().allocation_bytes < graph.GetMemoryBound());
+	limits.memory_bytes = 100;
+	CHECK(PassengerServiceGraph::Build(PAX, NOW, limits).GetStatus() == PassengerPredictionStatus::LimitReached);
+}
+
+TEST_CASE("Freight topology cannot expand a passenger corridor and live refits rebuild its view", "[passenger][service_graph][cache]")
+{
+	GraphVehicle direct({GraphStop(A), GraphStop(D)});
+	GraphVehicle branch({GraphStop(A), GraphStop(B)}, VehicleID{101});
+	GraphVehicle bridge({GraphStop(B), GraphStop(D)}, VehicleID{102});
+	bridge.cargo_type = CargoType{1};
+	const PassengerServiceScope scope{A, D};
+	const auto cold = PassengerServiceGraph::Build(PAX, NOW, GraphLimits(), scope);
+	REQUIRE(cold.GetQueryStatus(A, D) == PassengerPredictionStatus::Complete);
+	CHECK(cold.GetTrips().size() == 1);
+	CHECK(cold.GetDiagnostic().excluded_cargo == 1);
+	CHECK(cold.GetDiagnostic().excluded_scope == 1);
+	const auto warm = PassengerServiceGraph::Build(PAX, NOW, GraphLimits(), scope);
+	CHECK(warm.GetDiagnostic().static_cache_hit);
+	CHECK(warm.GetWork() == cold.GetWork());
+	/* No topology hook is called: the exact live eligibility set must invalidate reuse. */
+	bridge.cargo_type = PAX;
+	const auto refitted = PassengerServiceGraph::Build(PAX, NOW, GraphLimits(), scope);
+	CHECK_FALSE(refitted.GetDiagnostic().static_cache_hit);
+	CHECK(refitted.GetTrips().size() == 3); // The branch is now a real alternative via B.
+	CHECK(refitted.GetQueryStatus(A, D) == PassengerPredictionStatus::Complete);
+}
+
+TEST_CASE("Scoped graph cache residency cannot change capture or logical allowances", "[passenger][service_graph][cache]")
+{
+	GraphVehicle direct({GraphStop(A), GraphStop(D)});
+	GraphVehicle branch({GraphStop(A), GraphStop(B), GraphStop(C)}, VehicleID{101});
+	InvalidatePassengerServiceIndex();
+	const auto cold = PassengerServiceGraph::Build(PAX, NOW, GraphLimits(), PassengerServiceScope{A, D});
+	const auto warm = PassengerServiceGraph::Build(PAX, NOW, GraphLimits(), PassengerServiceScope{A, D});
+	REQUIRE(cold.GetTrips().size() == 1);
+	CHECK(cold.GetCoverage(A, D) == PassengerServiceGraph::Coverage::ScopedComplete);
+	CHECK(cold.GetStatus() == PassengerPredictionStatus::Unknown);
+	CHECK(cold.GetQueryStatus(B, D) == PassengerPredictionStatus::Unknown);
+	CHECK(cold.GetVisits(B, NOW, NOW + 1000).status == PassengerPredictionStatus::Unknown);
+	CHECK(cold.GetDepartures(A, NOW, NOW + 1000).status == PassengerPredictionStatus::Unknown);
+	CHECK_FALSE(cold.GetDiagnostic().static_cache_hit);
+	CHECK(warm.GetDiagnostic().static_cache_hit);
+	CHECK(cold.GetWork() == warm.GetWork());
+	CHECK(cold.GetMemoryBound() == warm.GetMemoryBound());
+	CHECK(cold.GetDiagnostic().visits == warm.GetDiagnostic().visits);
+	CHECK(cold.GetTrips().front().vehicle == warm.GetTrips().front().vehicle);
+	/* Destination edits use the same invalidation hook as insert/delete/clone/free/afterload. */
+	branch.GetOrder(2)->SetDestination(D); InvalidatePassengerServiceIndex();
+	const auto changed = PassengerServiceGraph::Build(PAX, NOW, GraphLimits(), PassengerServiceScope{A, D});
+	CHECK_FALSE(changed.GetDiagnostic().static_cache_hit);
+	CHECK(changed.GetTrips().size() == 2);
+}
+
+TEST_CASE("Implicit freight and unavailable trains cannot poison a passenger scope", "[passenger][service_graph][scope]")
+{
+	GraphVehicle direct({GraphStop(A), GraphStop(D)});
+	GraphVehicle irrelevant({GraphStop(A), GraphStop(B)}, VehicleID{101});
+	irrelevant.GetOrder(1)->MakeImplicit(B); InvalidatePassengerServiceIndex();
+	SECTION("Definite freight") { irrelevant.cargo_type = CargoType{1}; }
+	SECTION("Stopped passenger train") { irrelevant.vehstatus.Set(VehState::Stopped); }
+	SECTION("Crashed passenger train") { irrelevant.vehstatus.Set(VehState::Crashed); }
+	const auto graph = PassengerServiceGraph::Build(PAX, NOW, GraphLimits(), PassengerServiceScope{A, D});
+	CHECK(graph.GetQueryStatus(A, D) == PassengerPredictionStatus::Complete);
+	CHECK(graph.GetTrips().size() == 1);
+	CHECK(graph.GetDiagnostic().predicted == 1);
 }
 
 TEST_CASE("Passenger graph separates local and express services and shared trips", "[passenger][service_graph]")

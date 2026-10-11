@@ -14,6 +14,7 @@
 #include "settings_type.h"
 #include "timetable.h"
 #include "date_func.h"
+#include "passenger_service_index.h"
 
 #include "safeguards.h"
 
@@ -283,6 +284,7 @@ static size_t _passenger_service_index_work = 0;
 
 void InvalidatePassengerServiceIndex()
 {
+	InvalidatePassengerGraphServiceIndex();
 	if (!_passenger_service_index_valid) return;
 	_passenger_service_index_valid = false;
 	_passenger_service_index.clear();

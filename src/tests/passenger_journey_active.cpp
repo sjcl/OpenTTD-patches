@@ -16,6 +16,7 @@
 #include "../core/random_func.hpp"
 #include "../date_func.h"
 #include "../sl/saveload.h"
+#include <deque>
 
 extern std::vector<uint8_t> SlTestSaveLoadTable(void *, void *, const NamedSaveLoadTable &);
 extern SaveLoadVersion _sl_version;
@@ -68,6 +69,7 @@ struct ActiveFixture {
 		_settings_game.linkgraph.passenger_od_assignment = false; // Independent from the routing switch.
 		_settings_game.linkgraph.passenger_transfer_timetables = false;
 		_settings_game.linkgraph.passenger_transfer_penalty = 20;
+		BeginPassengerJourneyTick();
 	}
 	~ActiveFixture() { _station_pool.CleanPool(); _cargopacket_pool.CleanPool(); ClearCargoPacketDeferredPayments(); }
 	StationCargoList &Waiting(StationID station = A) { return Station::Get(station)->goods[PAX].CreateData().cargo; }
@@ -431,9 +433,102 @@ TEST_CASE("Distinct OD searches stop at the deterministic batch work allowance",
 		if (!context.PlanWaiting(*packet, PAX, D)) ++unsuccessful;
 	}
 	CHECK(unsuccessful == 96);
-	CHECK(context.GetWorkAllowanceUsed() <= 2097152);
+	CHECK(context.GetWorkAllowanceUsed() <= 4194304);
 	auto reachable = std::unique_ptr<CargoPacket>(fixture.Packet());
 	CHECK_FALSE(context.PlanWaiting(*reachable, PAX, D)); // Budget exhaustion is inconclusive.
+}
+
+TEST_CASE("Event snapshots refresh delays timetables capacity and position within the same tick", "[passenger][active][cache]")
+{
+	ActiveFixture fixture;
+	ActiveTrain local({ActiveStop(A), ActiveStop(D, 500)});
+	ActiveTrain express({ActiveStop(A, 10000, 120), ActiveStop(D, 10)}, VehicleID{101});
+	auto before = std::unique_ptr<CargoPacket>(fixture.Packet()); fixture.Plan(*before);
+	REQUIRE(before->GetPassengerJourney().vehicle == express.index);
+	SECTION("Delay") { express.lateness_counter = -1000; }
+	SECTION("Timetable edit") { express.GetOrder(1)->SetTravelTime(2000); }
+	bool changed_eligibility = false;
+	SECTION("Refit consist") { express.cargo_type = CargoType{1}; changed_eligibility = true; }
+	SECTION("Position and current order") { express.LoadAt(1); }
+	auto after = std::unique_ptr<CargoPacket>(fixture.Packet()); fixture.Plan(*after);
+	CHECK(after->GetPassengerJourney().vehicle == local.index);
+	CHECK(after->GetPassengerJourney().arrival == NOW + 600);
+	CHECK(_state_ticks == NOW);
+	CHECK(GetPassengerJourneyTickDiagnostic().builds == 2);
+	CHECK(GetPassengerJourneyTickDiagnostic().static_cache_hits == (changed_eligibility ? 0 : 1));
+}
+
+TEST_CASE("A current off corridor trip is captured for an immediate transfer", "[passenger][active][scope]")
+{
+	ActiveFixture fixture;
+	ActiveTrain branch({ActiveStop(A), ActiveStop(B, 10000)});
+	ActiveTrain direct({ActiveStop(A, 10000, 120), ActiveStop(D, 10)}, VehicleID{101});
+	auto packet = std::unique_ptr<CargoPacket>(fixture.Packet()); fixture.Plan(*packet);
+	auto leg = packet->GetPassengerJourney(); leg.vehicle = branch.index; leg.service = branch.orders->index;
+	packet->SetPassengerJourney(leg, B);
+	PassengerJourneyActiveContext context(&branch, A);
+	CHECK(context.Decide(*packet, PAX, false, OrderUnloadType::UnloadIfPossible) == Action::Transfer);
+	CHECK(packet->GetPassengerJourney().vehicle == direct.index);
+}
+
+TEST_CASE("Tick allowances survive local cache and diagnostic resets deterministically", "[passenger][active][determinism][budget]")
+{
+	ActiveFixture fixture;
+	ActiveTrain train({ActiveStop(A), ActiveStop(D, 100)});
+	std::vector<bool> previous;
+	GameRandomSeedChecker random;
+	for (bool cold : {true, false}) {
+		BeginPassengerJourneyTick(); ResetPassengerJourneyDiagnostic();
+		std::vector<bool> decisions;
+		for (uint i = 0; i < 40; ++i) {
+			if (cold) InvalidatePassengerServiceIndex();
+			auto packet = std::unique_ptr<CargoPacket>(fixture.Packet());
+			PassengerJourneyActiveContext context(nullptr, A);
+			decisions.push_back(context.PlanWaiting(*packet, PAX, D));
+		}
+		if (cold) previous = decisions; else CHECK(decisions == previous);
+		CHECK(std::count(decisions.begin(), decisions.end(), true) > 0);
+		CHECK(std::count(decisions.begin(), decisions.end(), false) > 0);
+		const auto diagnostic = GetPassengerJourneyTickDiagnostic();
+		CHECK(diagnostic.builds <= 16);
+		CHECK(diagnostic.graph_work <= 16 * 1024 * 1024);
+		CHECK(diagnostic.query_work <= 1024 * 1024);
+		CHECK(diagnostic.fallbacks[static_cast<size_t>(PassengerJourneyFallbackReason::QueryWork)] > 0);
+		ResetPassengerJourneyDiagnostic(); // This is local UI state, not a new allowance.
+		auto packet = std::unique_ptr<CargoPacket>(fixture.Packet());
+		CHECK_FALSE(PassengerJourneyActiveContext(nullptr, A).PlanWaiting(*packet, PAX, D));
+	}
+	++_state_ticks; BeginPassengerJourneyTick();
+	auto packet = std::unique_ptr<CargoPacket>(fixture.Packet());
+	CHECK(PassengerJourneyActiveContext(nullptr, A).PlanWaiting(*packet, PAX, D));
+	CHECK(random.Check());
+}
+
+TEST_CASE("Production journey execution covers eight thousand stations at standard budgets", "[passenger][active][performance][scope]")
+{
+	ActiveFixture fixture;
+	for (uint16_t station = 4; station <= 8000; ++station) Station::CreateAtIndex(StationID{station}, TileIndex{0})->owner = OWNER_NONE;
+	std::deque<ActiveTrain> fleet;
+	for (uint16_t route = 0; route < 80; ++route) {
+		std::vector<Order> orders{ActiveStop(A, 100000, 1)};
+		for (uint16_t station = 1; station <= 100; ++station) orders.push_back(ActiveStop(StationID{static_cast<uint16_t>(route * 100 + station)}, 1, 1));
+		for (uint16_t train = 0; train < 10; ++train) fleet.emplace_back(orders, VehicleID{1000u + route * 10u + train});
+	}
+	InvalidatePassengerServiceIndex(); ResetPassengerJourneyDiagnostic();
+	PassengerJourneyActiveContext context(nullptr, A);
+	for (uint i = 0; i < 64; ++i) {
+		auto packet = std::unique_ptr<CargoPacket>(fixture.Packet(10, StationID{8000}));
+		REQUIRE(context.PlanWaiting(*packet, PAX, D));
+		CHECK(packet->GetPassengerJourney().arrival == NOW + 200);
+	}
+	const auto diagnostic = GetPassengerJourneyTickDiagnostic();
+	CHECK(diagnostic.builds == 1);
+	CHECK(diagnostic.queries == 1);
+	CHECK(diagnostic.query_cache_hits == 63);
+	CHECK(diagnostic.journeys == 64);
+	CHECK(diagnostic.visits == 1010);
+	CHECK(std::accumulate(diagnostic.fallbacks.begin(), diagnostic.fallbacks.end(), size_t{0}) == 0);
+	WARN("Production national: stations=" << Station::GetNumItems() << "; journey packets=" << diagnostic.journeys << "; builds=" << diagnostic.builds << "; work=" << diagnostic.graph_work << "; build us=" << diagnostic.build_microseconds << "; retained=" << diagnostic.graph_allocation_bytes << "; static=" << diagnostic.static_allocation_bytes << "; cache hits=" << diagnostic.query_cache_hits);
 }
 
 TEST_CASE("A primary engine with different cargo preserves the passenger coach journey after load", "[passenger][active][saveload]")

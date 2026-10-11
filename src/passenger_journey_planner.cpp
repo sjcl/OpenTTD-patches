@@ -223,7 +223,7 @@ PassengerJourneyResult PassengerJourneyPlanner::Search(StationID origin, Station
 {
 	PassengerJourneyResult result;
 	result.prediction_end = this->graph.GetEnd();
-	result.status = this->graph.GetStatus();
+	result.status = this->graph.GetQueryStatus(origin, destination, evaluation.waiting_weight != 0);
 	auto limit = [&](PassengerJourneyStopReason reason) {
 		result.status = MergeJourneyStatus(result.status, PassengerPredictionStatus::LimitReached);
 		if (result.stop_reason == PassengerJourneyStopReason::Exhausted) result.stop_reason = reason;
@@ -341,7 +341,7 @@ PassengerJourneyResult PassengerJourneyPlanner::Search(StationID origin, Station
 				if (parent.arrival.base() > this->graph.GetEnd().base() - interchange) continue;
 				StateTicks earliest{ parent.arrival.base() + interchange };
 				if (earliest >= this->graph.GetEnd()) continue;
-				auto departures = this->graph.GetDepartures(station, earliest, this->graph.GetEnd());
+				auto departures = this->graph.GetDepartures(station, earliest, this->graph.GetEnd(), true);
 				result.status = MergeJourneyStatus(result.status, departures.status);
 				/* The onboard occurrence can be NoLoad and is deliberately absent from the
 				 * departure index. Scan it through the same engine as ordinary boardings. */
@@ -545,7 +545,7 @@ PassengerJourneyResult PassengerJourneyPlanner::Plan(CargoType cargo, StationID 
 	/* Between two origin departure events the catchable services, future legs and their order are
 	 * identical. Search at the next event; add initial waiting/elapsed costs back for this caller.
 	 * No rounding into a time bucket can invent a missed departure. Unknown coverage remains unknown. */
-	auto departures = this->graph.GetDepartures(origin, ready, this->graph.GetEnd());
+	auto departures = this->graph.GetDepartures(origin, ready, this->graph.GetEnd(), true);
 	/* Fractional waiting weights can change integer tie rounding across readiness ticks. Keep those
 	 * queries exact instead of reusing an event interval whose preference ranking could differ. */
 	StateTicks anchor = departures.timed.empty() || evaluation.waiting_weight % 1000 != 0 ? ready :

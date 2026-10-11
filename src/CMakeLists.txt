@@ -58,6 +58,8 @@ add_files(
     passenger_od.h
     passenger_service_graph.cpp
     passenger_service_graph.h
+    passenger_service_index.cpp
+    passenger_service_index.h
     passenger_journey_planner.cpp
     passenger_journey_planner.h
     passenger_journey_shadow.cpp

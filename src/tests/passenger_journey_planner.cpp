@@ -8,6 +8,7 @@
 #include "../stdafx.h"
 #include "../3rdparty/catch2/catch.hpp"
 #include "../passenger_journey_planner.h"
+#include "../passenger_journey_active.h"
 #include "../vehicle_base.h"
 #include "../core/random_func.hpp"
 #include <chrono>
@@ -81,6 +82,190 @@ static void CheckSameJourneyResult(const PassengerJourneyResult &a, const Passen
 	CHECK(a.diagnostic.extensions == b.diagnostic.extensions);
 	CHECK(a.diagnostic.labels == b.diagnostic.labels);
 	CHECK(a.diagnostic.scratch_bytes == b.diagnostic.scratch_bytes);
+}
+
+TEST_CASE("Scoped alternatives preserve local express returns and cyclic detours", "[passenger][journey][scope]")
+{
+	JourneyVehicle local({JourneyStop(A), JourneyStop(B, 100), JourneyStop(C, 1000), JourneyStop(D, 1000)});
+	JourneyVehicle express({JourneyStop(B, 10000, 120), JourneyStop(C, 20)}, VehicleID{101});
+	JourneyVehicle onward({JourneyStop(C, 10000, 160), JourneyStop(D, 20)}, VehicleID{102});
+	JourneyVehicle branch({JourneyStop(A), JourneyStop(StationID{99}, 20)}, VehicleID{103});
+	auto limits = ActivePassengerServiceGraphLimits(); limits.horizon = 3000;
+	const auto full = PassengerServiceGraph::Build(PAX, NOW, limits);
+	const auto scoped = PassengerServiceGraph::Build(PAX, NOW, limits, PassengerServiceScope{A, D});
+	REQUIRE(scoped.GetTrips().size() == 3);
+	PassengerJourneyPlanner reference(full), planner(scoped);
+	auto expected = reference.Plan(PAX, A, D, NOW), actual = planner.Plan(PAX, A, D, NOW);
+	REQUIRE(actual.HasJourney());
+	CHECK(actual.status == PassengerPredictionStatus::Complete);
+	CHECK(actual.journeys.front().arrival == expected.journeys.front().arrival);
+	CHECK(actual.journeys.front().generalized_time == expected.journeys.front().generalized_time);
+	CHECK(actual.journeys.front().legs.size() == 3);
+	CHECK(planner.Plan(PAX, StationID{99}, D, NOW).status == PassengerPredictionStatus::Unknown);
+}
+
+TEST_CASE("Scoped uncertainty retains future refits and conditional alternatives", "[passenger][journey][scope]")
+{
+	JourneyVehicle local({JourneyStop(A), JourneyStop(D, 1000)});
+	JourneyVehicle alternative({JourneyStop(A), JourneyStop(D, 10)}, VehicleID{101});
+	SECTION("A zero-capacity consist can become passenger capable") { alternative.cargo_type = CargoType{1}; alternative.GetOrder(1)->SetRefit(PAX); }
+	SECTION("A current refit outside the declared pattern is unknown") { alternative.cargo_type = CargoType{1}; alternative.current_order.SetRefit(PAX); }
+	SECTION("A conditional branch is not an exclusion certificate") {
+		Order conditional; conditional.MakeConditional(1); conditional.SetConditionVariable(OrderConditionVariable::LoadPercentage);
+		alternative.orders->InsertOrderAt(std::move(conditional), 1);
+	}
+	const auto graph = PassengerServiceGraph::Build(PAX, NOW, ActivePassengerServiceGraphLimits(), PassengerServiceScope{A, D});
+	PassengerJourneyPlanner planner(graph);
+	auto result = planner.Plan(PAX, A, D, NOW);
+	CHECK(result.HasJourney());
+	CHECK(result.status != PassengerPredictionStatus::Complete);
+	CHECK_FALSE(result.IsUnreachable());
+	CHECK(graph.GetTrips().size() == 2);
+}
+
+TEST_CASE("Weighted waiting never certifies a scoped graph that omitted riding excursions", "[passenger][journey][scope]")
+{
+	JourneyVehicle direct({JourneyStop(A, 10000, 100), JourneyStop(D, 10, 0)});
+	JourneyVehicle excursion({JourneyStop(A, 10000, 0), JourneyStop(B, 10, 0), JourneyStop(A, 10, 0)}, VehicleID{101});
+	auto limits = ActivePassengerServiceGraphLimits(); limits.horizon = 200;
+	const auto full = PassengerServiceGraph::Build(PAX, NOW, limits);
+	const auto scoped = PassengerServiceGraph::Build(PAX, NOW, limits, PassengerServiceScope{A, D});
+	PassengerJourneyPlanner reference(full), planner(scoped);
+	PassengerJourneyEvaluation evaluation; evaluation.waiting_weight = 1000;
+	PassengerJourneyLimits query; query.candidates = 1;
+	auto better = reference.Plan(PAX, A, D, NOW, query, evaluation), partial = planner.Plan(PAX, A, D, NOW, query, evaluation);
+	REQUIRE(better.HasJourney()); REQUIRE(partial.HasJourney());
+	CHECK(better.journeys.front().generalized_time < partial.journeys.front().generalized_time);
+	CHECK(partial.status == PassengerPredictionStatus::Unknown);
+	CHECK(planner.Plan(PAX, A, D, NOW, query).status == PassengerPredictionStatus::Complete);
+}
+
+struct NationalCoach : Vehicle {
+	explicit NationalCoach(VehicleID id) : Vehicle(id, VehicleType::Train) { this->cargo_type = CargoType{1}; this->cargo_cap = 100; }
+	bool IsPrimaryVehicle() const override { return false; }
+};
+
+struct NationalServiceFleet {
+	std::deque<JourneyVehicle> passengers, freight;
+	std::vector<NationalCoach *> coaches;
+	NationalServiceFleet()
+	{
+		for (uint16_t route = 0; route < 80; ++route) {
+			std::vector<Order> orders{JourneyStop(A, 100000, 1)};
+			for (uint16_t station = 1; station <= 100; ++station) orders.push_back(JourneyStop(StationID{static_cast<uint16_t>(route * 100 + station)}, 1, 1));
+			for (uint16_t train = 0; train < 10; ++train) this->passengers.emplace_back(orders, VehicleID{1000u + route * 10u + train});
+		}
+		for (uint32_t i = 0; i < 3840; ++i) {
+			this->freight.emplace_back(std::vector<Order>{JourneyStop(A, 100000, 1), JourneyStop(StationID{static_cast<uint16_t>(9000 + i)}, 1, 1)}, VehicleID{3000 + i});
+			this->freight.back().cargo_type = CargoType{1};
+			Vehicle *tail = &this->freight.back();
+			for (uint32_t part = 0; part < 4; ++part) {
+				this->coaches.push_back(Vehicle::Create<NationalCoach>());
+				tail->SetNext(this->coaches.back()); tail = this->coaches.back();
+			}
+		}
+	}
+	~NationalServiceFleet()
+	{
+		for (auto &train : this->freight) train.SetNext(nullptr);
+		for (auto *coach : this->coaches) coach->SetNext(nullptr);
+		for (auto *coach : this->coaches) delete coach;
+	}
+};
+
+TEST_CASE("Standard scoped capture serves an 80800 visit twenty thousand object network", "[passenger][journey][scope][performance]")
+{
+	NationalServiceFleet fleet;
+	REQUIRE(fleet.passengers.size() + fleet.freight.size() + fleet.coaches.size() == 20000);
+	auto limits = ActivePassengerServiceGraphLimits();
+	InvalidatePassengerServiceIndex();
+	GameRandomSeedChecker random;
+	const auto cold = PassengerServiceGraph::Build(PAX, NOW, limits, PassengerServiceScope{A, StationID{8000}});
+	const auto warm = PassengerServiceGraph::Build(PAX, NOW, limits, PassengerServiceScope{A, StationID{8000}});
+	REQUIRE(cold.GetQueryStatus(A, StationID{8000}) == PassengerPredictionStatus::Complete);
+	REQUIRE(cold.GetTrips().size() == 10);
+	CHECK(cold.GetDiagnostic().visits == 1010);
+	CHECK(cold.GetDiagnostic().trains == 4640);
+	CHECK(cold.GetDiagnostic().excluded_cargo == 3840);
+	CHECK(cold.GetDiagnostic().excluded_scope == 790);
+	CHECK(cold.GetWork() == warm.GetWork());
+	CHECK(cold.GetWork() < limits.work);
+	CHECK(cold.GetMemoryBound() <= limits.memory_bytes);
+	PassengerJourneyLimits query; query.candidates = 1; query.work = 65536; query.labels = 8192; query.memory_bytes = 8 * 1024 * 1024;
+	PassengerJourneyPlanner planner(warm), uncached(warm, nullptr, {0, 0});
+	auto journey = planner.Plan(PAX, A, StationID{8000}, NOW, query);
+	REQUIRE(journey.HasJourney());
+	CHECK(journey.status == PassengerPredictionStatus::Complete);
+	CHECK(journey.journeys.front().arrival == NOW + 200);
+	CheckSameJourneyResult(journey, uncached.Plan(PAX, A, StationID{8000}, NOW, query));
+	for (uint i = 0; i < 128; ++i) CHECK(planner.Plan(PAX, A, StationID{8000}, NOW, query).diagnostic.cache_hit);
+	CHECK(random.Check());
+	WARN("Scoped national standard: cold=" << cold.GetDiagnostic().build_microseconds << " us; warm=" << warm.GetDiagnostic().build_microseconds << " us; visits=" << cold.GetDiagnostic().visits << "; logical work=" << cold.GetWork() << "; retained bytes=" << cold.GetDiagnostic().allocation_bytes << "; memory bound=" << cold.GetMemoryBound() << "; query work=" << journey.diagnostic.work);
+}
+
+TEST_CASE("Dense national cycles remain incomplete when query allowances cannot certify alternatives", "[passenger][journey][scope][performance]")
+{
+	NationalServiceFleet fleet;
+	std::deque<JourneyVehicle> connectors;
+	for (uint16_t route = 0; route < 80; ++route) {
+		StationID from{static_cast<uint16_t>(route * 100 + 100)}, to{static_cast<uint16_t>(((route + 1) % 80) * 100 + 1)};
+		connectors.emplace_back(std::vector<Order>{JourneyStop(from, 100000, 1), JourneyStop(to, 1, 1)}, VehicleID{30000u + route});
+	}
+	const auto graph = PassengerServiceGraph::Build(PAX, NOW, ActivePassengerServiceGraphLimits(), PassengerServiceScope{A, StationID{8000}});
+	REQUIRE(graph.GetQueryStatus(A, StationID{8000}) == PassengerPredictionStatus::Complete);
+	CHECK(graph.GetDiagnostic().visits >= 80800);
+	CHECK(graph.GetMemoryBound() <= 128 * 1024 * 1024);
+	PassengerJourneyLimits limits; limits.work = 65536; limits.candidates = 1; limits.labels = 8192; limits.memory_bytes = 8 * 1024 * 1024;
+	PassengerJourneyPlanner planner(graph);
+	auto result = planner.Plan(PAX, A, StationID{8000}, NOW, limits);
+	CHECK(result.status != PassengerPredictionStatus::Complete);
+	CHECK_FALSE(result.IsUnreachable());
+	CHECK(result.diagnostic.work <= limits.work);
+}
+
+TEST_CASE("Scoped standard work permits three hundred actual transfers", "[passenger][journey][scope]")
+{
+	JourneyChain chain(300);
+	for (auto &train : chain.trains) train.GetOrder(0)->SetTravelTime(100000);
+	const auto graph = PassengerServiceGraph::Build(PAX, NOW, ActivePassengerServiceGraphLimits(), PassengerServiceScope{A, StationID{301}});
+	PassengerJourneyLimits limits; limits.work = 65536; limits.candidates = 1; limits.labels = 8192; limits.memory_bytes = 8 * 1024 * 1024;
+	PassengerJourneyPlanner planner(graph);
+	auto result = planner.Plan(PAX, A, StationID{301}, NOW, limits);
+	REQUIRE(result.HasJourney());
+	CHECK(result.status == PassengerPredictionStatus::Complete);
+	CHECK(result.journeys.front().transfers == 300);
+}
+
+TEST_CASE("Service graph national comparison report", "[.service_graph_benchmark]")
+{
+	NationalServiceFleet fleet;
+	for (bool roomy : {false, true}) {
+		auto limits = ActivePassengerServiceGraphLimits();
+		if (roomy) limits.memory_bytes = 1024 * 1024 * 1024;
+		InvalidatePassengerServiceIndex();
+		uint64_t total_us = 0, max_us = 0, first_us = 0;
+		size_t work = 0, max_work = 0, visits = 0, predictions = 0, retained = 0, bound = 0, static_bytes = 0, index_hits = 0, hits = 0, applied = 0;
+		const auto start = std::chrono::steady_clock::now();
+		for (uint iteration = 0; iteration < 10; ++iteration) {
+			const auto graph = PassengerServiceGraph::Build(PAX, NOW, limits, PassengerServiceScope{A, StationID{8000}});
+			const auto &diagnostic = graph.GetDiagnostic();
+			total_us += diagnostic.build_microseconds; max_us = std::max(max_us, diagnostic.build_microseconds);
+			if (iteration == 0) first_us = diagnostic.build_microseconds;
+			work += graph.GetWork(); max_work = std::max(max_work, graph.GetWork());
+			for (const auto &trip : graph.GetTrips()) { visits += trip.prediction.visits.size(); ++predictions; }
+			retained = std::max(retained, diagnostic.allocation_bytes); bound = std::max(bound, graph.GetMemoryBound()); static_bytes = std::max(static_bytes, diagnostic.static_allocation_bytes);
+			index_hits += diagnostic.static_cache_hit;
+			PassengerJourneyPlanner planner(graph);
+			PassengerJourneyLimits query; query.work = 65536; query.candidates = 1; query.labels = 8192; query.memory_bytes = 8 * 1024 * 1024;
+			for (uint repeat = 0; repeat < 16; ++repeat) {
+				auto result = planner.Plan(PAX, A, StationID{8000}, NOW, query);
+				hits += result.diagnostic.cache_hit;
+				applied += result.HasJourney() && result.status == PassengerPredictionStatus::Complete;
+			}
+		}
+		const auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - start).count();
+		WARN("National comparison: roomy=" << roomy << "; objects=20000; network passenger visits=80800; builds=10; applied=" << applied << "/160; predictions/build=" << predictions / 10 << "; visits/build=" << visits / 10 << "; mean_work=" << work / 10 << "; max_work=" << max_work << "; cold_us=" << first_us << "; mean_us=" << total_us / 10 << "; max_us=" << max_us << "; total_graph_search_us=" << elapsed << "; retained=" << retained << "; static=" << static_bytes << "; bound=" << bound << "; index_hits=" << index_hits << "; OD_hits=" << hits << "/160");
+	}
 }
 
 struct JourneyCapacity : PassengerJourneyCapacityProvider {
