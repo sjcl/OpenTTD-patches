@@ -121,10 +121,14 @@ public:
 	void SetPassengerLegacyHop(StationID next) { this->passenger_legacy_hop = next; }
 	bool CanRetryPassengerJourney(StationID station, StateTicks now) const
 	{
-		return this->passenger_routing_mode != PassengerRoutingMode::Fallback || station != this->passenger_retry_station || now >= this->passenger_retry_after;
+		return (this->passenger_routing_mode != PassengerRoutingMode::Fallback && !this->IsPassengerJourneyDeferred()) ||
+				station != this->passenger_retry_station || now >= this->passenger_retry_after;
 	}
+	/** Budget wait uses existing saved Legacy/retry fields; CargoDist can still transport it. */
+	bool IsPassengerJourneyDeferred() const { return this->passenger_routing_mode == PassengerRoutingMode::Legacy && this->passenger_retry_station != StationID::Invalid(); }
 	void SetPassengerJourney(PassengerJourneyExecution journey, StationID legacy_hop);
 	void FallbackPassengerJourney(StationID station, StateTicks now);
+	void DeferPassengerJourney(StationID station, StateTicks now);
 	bool HasSamePassengerRouting(const CargoPacket &other) const
 	{
 		return this->passenger_routing_mode == other.passenger_routing_mode && this->passenger_journey == other.passenger_journey &&

@@ -190,6 +190,52 @@ TEST_CASE("Implicit freight and unavailable trains cannot poison a passenger sco
 	CHECK(graph.GetDiagnostic().predicted == 1);
 }
 
+TEST_CASE("Known implicit stops isolate unrelated scopes and retain possible connections", "[passenger][service_graph][scope][cache]")
+{
+	GraphVehicle direct({GraphStop(A), GraphStop(D)});
+	Order implicit; implicit.MakeImplicit(StationID{12});
+	GraphVehicle remote({GraphStop(StationID{10}), implicit, GraphStop(StationID{11})}, VehicleID{101});
+	SECTION("Disconnected running passengers do not poison the OD") {
+		const auto cold = PassengerServiceGraph::Build(PAX, NOW, GraphLimits(), PassengerServiceScope{A, D});
+		const auto warm = PassengerServiceGraph::Build(PAX, NOW, GraphLimits(), PassengerServiceScope{A, D});
+		CHECK(cold.GetQueryStatus(A, D) == PassengerPredictionStatus::Complete);
+		CHECK(cold.GetCoverage(A, D) == PassengerServiceGraph::Coverage::ScopedComplete);
+		CHECK(cold.GetTrips().size() == 1);
+		CHECK(cold.GetDiagnostic().excluded_scope == 1);
+		CHECK(warm.GetQueryStatus(A, D) == cold.GetQueryStatus(A, D));
+		CHECK(warm.GetWork() == cold.GetWork());
+	}
+	SECTION("Implicit stops themselves connect a possible alternative") {
+		remote.GetOrder(1)->MakeImplicit(A);
+		remote.GetOrder(2)->MakeGoToStation(D);
+		InvalidatePassengerServiceIndex();
+		const auto graph = PassengerServiceGraph::Build(PAX, NOW, GraphLimits(), PassengerServiceScope{A, D});
+		CHECK(graph.GetTrips().size() == 2);
+		CHECK(graph.GetQueryStatus(A, D) == PassengerPredictionStatus::Unknown);
+		CHECK(graph.GetServicesAtStation(A).size() == 2);
+		CHECK(graph.GetCoverage(A, D) == PassengerServiceGraph::Coverage::Incomplete);
+	}
+	SECTION("An unknown implicit station cannot certify disconnection") {
+		remote.GetOrder(1)->MakeImplicit(StationID::Invalid()); InvalidatePassengerServiceIndex();
+		const auto graph = PassengerServiceGraph::Build(PAX, NOW, GraphLimits(), PassengerServiceScope{A, D});
+		CHECK(graph.GetQueryStatus(A, D) == PassengerPredictionStatus::Unknown);
+		CHECK(graph.GetTrips().size() == 2);
+	}
+	SECTION("A known implicit order after the proven horizon is harmless") {
+		Order later_implicit; later_implicit.MakeImplicit(StationID{22});
+		GraphVehicle late({GraphStop(A), GraphStop(D), GraphStop(StationID{21}, 100000), later_implicit}, VehicleID{102});
+		const auto graph = PassengerServiceGraph::Build(PAX, NOW, GraphLimits(), PassengerServiceScope{A, D});
+		CHECK(graph.GetTrips().size() == 2);
+		CHECK(graph.GetQueryStatus(A, D) == PassengerPredictionStatus::Complete);
+		CHECK(graph.GetCoverage(A, D) == PassengerServiceGraph::Coverage::ScopedComplete);
+	}
+	SECTION("Implicit only wandering cannot bound its route") {
+		remote.GetOrder(0)->MakeImplicit(StationID{10}); remote.GetOrder(2)->MakeImplicit(StationID{11});
+		InvalidatePassengerServiceIndex();
+		CHECK(PassengerServiceGraph::Build(PAX, NOW, GraphLimits(), PassengerServiceScope{A, D}).GetQueryStatus(A, D) == PassengerPredictionStatus::Unknown);
+	}
+}
+
 TEST_CASE("Passenger graph separates local and express services and shared trips", "[passenger][service_graph]")
 {
 	GraphVehicle local({ GraphStop(A), GraphStop(B, 200), GraphStop(C, 300), GraphStop(D, 400) });

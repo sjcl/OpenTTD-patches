@@ -35,8 +35,10 @@ namespace {
 			edges.emplace_back();
 			result.services.emplace(service, list->index);
 			for (const Order &order : list->GetOrderVector()) {
-				/* Include pass-through stops too: changing stop flags needs no index invalidation. */
-				if (!order.IsType(OT_GOTO_STATION)) continue;
+				/* Known implicit stops can connect otherwise separate declared services.
+				 * Timing stays unknown; topology must retain those possible transfers. */
+				if (!order.IsType(OT_GOTO_STATION) && !order.IsType(OT_IMPLICIT)) continue;
+				if (order.GetDestination().ToStationID() == StationID::Invalid()) continue;
 				auto [station, inserted] = result.stations.try_emplace(order.GetDestination().ToStationID(), edges.size());
 				if (inserted) edges.emplace_back();
 				edges[service].push_back(station->second);

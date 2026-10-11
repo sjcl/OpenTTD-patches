@@ -303,12 +303,20 @@ TEST_CASE("Routing state and leg have an independent versioned save round trip",
 	PassengerRoutingMode expected = PassengerRoutingMode::Journey;
 	SECTION("Journey survives") {}
 	SECTION("Fallback survives") { packet->FallbackPassengerJourney(A, NOW); expected = PassengerRoutingMode::Fallback; }
+	SECTION("Budget wait survives without a new save feature") {
+		packet->DeferPassengerJourney(A, NOW); expected = PassengerRoutingMode::Legacy;
+	}
 	SECTION("Old save defaults to Legacy") { _sl_xv_feature_versions[XSLFI_PASSENGER_JOURNEY_ROUTING] = 0; expected = PassengerRoutingMode::Legacy; }
 	auto loaded = std::unique_ptr<CargoPacket>(CargoPacket::Create());
 	REQUIRE_FALSE(SlTestSaveLoadTable(packet.get(), loaded.get(), GetCargoPacketDesc()).empty());
 	CHECK(loaded->GetPassengerRoutingMode() == expected); CHECK(loaded->GetPassengerDestination() == D);
 	CHECK(loaded->Count() == 10); CHECK(loaded->GetFeederShare() == 100);
 	if (expected == PassengerRoutingMode::Journey) CHECK(loaded->GetPassengerJourney() == packet->GetPassengerJourney());
+	if (packet->IsPassengerJourneyDeferred()) {
+		CHECK(loaded->IsPassengerJourneyDeferred());
+		CHECK_FALSE(loaded->CanRetryPassengerJourney(A, NOW));
+		CHECK(loaded->CanRetryPassengerJourney(A, NOW + 1));
+	}
 	SECTION("Invalid vehicle becomes fallback during lifecycle validation") {
 		AfterLoadPassengerJourneys(); CHECK(loaded->GetPassengerRoutingMode() == PassengerRoutingMode::Fallback);
 	}
@@ -491,9 +499,9 @@ TEST_CASE("Tick allowances survive local cache and diagnostic resets determinist
 		CHECK(std::count(decisions.begin(), decisions.end(), false) > 0);
 		const auto diagnostic = GetPassengerJourneyTickDiagnostic();
 		CHECK(diagnostic.builds <= 16);
-		CHECK(diagnostic.graph_work <= 16 * 1024 * 1024);
+		CHECK(diagnostic.graph_work + diagnostic.fair_share_work <= 16 * 1024 * 1024);
 		CHECK(diagnostic.query_work <= 1024 * 1024);
-		CHECK(diagnostic.fallbacks[static_cast<size_t>(PassengerJourneyFallbackReason::QueryWork)] > 0);
+		CHECK(diagnostic.deferred[static_cast<size_t>(PassengerJourneyFallbackReason::QueryWork)] > 0);
 		ResetPassengerJourneyDiagnostic(); // This is local UI state, not a new allowance.
 		auto packet = std::unique_ptr<CargoPacket>(fixture.Packet());
 		CHECK_FALSE(PassengerJourneyActiveContext(nullptr, A).PlanWaiting(*packet, PAX, D));
@@ -502,6 +510,149 @@ TEST_CASE("Tick allowances survive local cache and diagnostic resets determinist
 	auto packet = std::unique_ptr<CargoPacket>(fixture.Packet());
 	CHECK(PassengerJourneyActiveContext(nullptr, A).PlanWaiting(*packet, PAX, D));
 	CHECK(random.Check());
+}
+
+TEST_CASE("An unrelated running implicit service leaves active journey routing complete", "[passenger][active][scope]")
+{
+	ActiveFixture fixture;
+	for (uint16_t station = 4; station <= 6; ++station) Station::CreateAtIndex(StationID{station}, TileIndex{0})->owner = OWNER_NONE;
+	ActiveTrain direct({ActiveStop(A), ActiveStop(D, 100)});
+	Order implicit; implicit.MakeImplicit(StationID{6});
+	ActiveTrain remote({ActiveStop(StationID{4}), implicit, ActiveStop(StationID{5})}, VehicleID{101});
+	auto packet = std::unique_ptr<CargoPacket>(fixture.Packet());
+	fixture.Plan(*packet);
+	CHECK(packet->GetPassengerJourney().vehicle == direct.index);
+	CHECK(packet->GetPassengerRoutingMode() == PassengerRoutingMode::Journey);
+}
+
+TEST_CASE("Distinct OD budget waits retry next tick and remain normal failures when unreachable", "[passenger][active][budget]")
+{
+	ActiveFixture fixture;
+	std::vector<Order> orders{ActiveStop(A, 100000, 100)};
+	for (uint16_t station = 1; station <= 32; ++station) {
+		if (station >= 4) Station::CreateAtIndex(StationID{station}, TileIndex{0})->owner = OWNER_NONE;
+		orders.push_back(ActiveStop(StationID{station}, 1, 1));
+	}
+	auto train = std::unique_ptr<ActiveTrain>(Vehicle::Create<ActiveTrain>(std::move(orders)));
+	std::vector<CargoPacket *> packets;
+	for (uint16_t destination = 1; destination <= 32; ++destination) {
+		packets.push_back(fixture.Packet(1, StationID{destination}));
+		fixture.Waiting().Append(packets.back(), D);
+	}
+	ResetPassengerJourneyDiagnostic();
+	fixture.Waiting().RoutePassengerJourneys(PAX, A);
+	REQUIRE(std::count_if(packets.begin(), packets.end(), [](const auto *p) { return p->IsPassengerJourneyDeferred(); }) > 0);
+	for (auto *packet : packets) if (packet->IsPassengerJourneyDeferred()) {
+		CHECK(packet->GetPassengerRoutingMode() == PassengerRoutingMode::Legacy);
+		CHECK_FALSE(packet->CanRetryPassengerJourney(A, _state_ticks));
+		CHECK(packet->CanRetryPassengerJourney(A, _state_ticks + 1));
+	}
+	CHECK(std::accumulate(GetPassengerJourneyTickDiagnostic().fallbacks.begin(), GetPassengerJourneyTickDiagnostic().fallbacks.end(), size_t{0}) == 0);
+	for (uint tick = 0; tick < 3; ++tick) {
+		++_state_ticks; ++train->current_order_time; BeginPassengerJourneyTick();
+		fixture.Waiting().RoutePassengerJourneys(PAX, A);
+	}
+	for (auto *packet : packets) CHECK(packet->GetPassengerRoutingMode() == PassengerRoutingMode::Journey);
+	Station::CreateAtIndex(StationID{33}, TileIndex{0})->owner = OWNER_NONE;
+	auto *unreachable = fixture.Packet(1, StationID{33}); fixture.Waiting().Append(unreachable, D);
+	unreachable->DeferPassengerJourney(A, _state_ticks);
+	++_state_ticks; ++train->current_order_time; BeginPassengerJourneyTick();
+	fixture.Waiting().RoutePassengerJourneys(PAX, A);
+	CHECK(unreachable->GetPassengerRoutingMode() == PassengerRoutingMode::Fallback);
+	CHECK_FALSE(unreachable->IsPassengerJourneyDeferred());
+	CHECK_FALSE(unreachable->CanRetryPassengerJourney(A, _state_ticks + 1));
+}
+
+TEST_CASE("Rotating waiting shares survive a hot origin and local resets", "[passenger][active][budget][determinism]")
+{
+	ActiveFixture fixture;
+	std::vector<Order> orders{ActiveStop(A, 100000, 100)};
+	for (uint16_t station = 1; station <= 32; ++station) {
+		if (station >= 4) Station::CreateAtIndex(StationID{station}, TileIndex{0})->owner = OWNER_NONE;
+		orders.push_back(ActiveStop(StationID{station}, 1, 1));
+	}
+	ActiveTrain train(std::move(orders));
+	std::array<CargoPacket *, 32> packets;
+	for (uint16_t station = 0; station < packets.size(); ++station) {
+		packets[station] = fixture.Packet(1, StationID{32});
+		fixture.Waiting(StationID{station}).Append(packets[station], D);
+	}
+	GameRandomSeedChecker random;
+	std::vector<bool> previous;
+	for (bool cold : {true, false}) {
+		_state_ticks = NOW;
+		std::array<bool, 32> served{};
+		std::vector<bool> decisions;
+		for (uint16_t station = 0; station < packets.size(); ++station) {
+			packets[station]->DeferPassengerJourney(StationID{station}, NOW - 1);
+			packets[station]->SetPassengerLegacyHop(D);
+		}
+		auto plan = [&](CargoPacket &packet, StationID origin, StationID legacy) {
+			if (cold) InvalidatePassengerServiceIndex();
+			const bool applied = PassengerJourneyActiveContext(nullptr, origin).PlanWaiting(packet, PAX, legacy);
+			decisions.push_back(applied); return applied;
+		};
+		for (uint tick = 0; tick < 8; ++tick) {
+			BeginPassengerJourneyTick();
+			/* A consumes every ordinary admission it can before other origins run. */
+			for (uint repeat = 0; repeat < 40; ++repeat) {
+				auto hot = std::unique_ptr<CargoPacket>(fixture.Packet(1, StationID{static_cast<uint16_t>(1 + repeat % 32)}));
+				plan(*hot, A, D);
+			}
+			for (uint16_t station = 1; station < packets.size(); ++station) if (!served[station]) {
+				served[station] = plan(*packets[station], StationID{station}, D);
+			}
+			const auto &diagnostic = GetPassengerJourneyTickDiagnostic();
+			CHECK(diagnostic.graph_work + diagnostic.fair_share_work <= 16 * 1024 * 1024);
+			CHECK(diagnostic.query_work <= 1024 * 1024);
+			CHECK(diagnostic.builds <= 16);
+			/* Claimed shares release their unused headroom to ordinary searches. */
+			for (uint repeat = 0; repeat < 40; ++repeat) {
+				auto hot = std::unique_ptr<CargoPacket>(fixture.Packet());
+				plan(*hot, A, D);
+			}
+			ResetPassengerJourneyDiagnostic(); // Does not release reserved or consumed admissions.
+			auto hot = std::unique_ptr<CargoPacket>(fixture.Packet());
+			CHECK_FALSE(plan(*hot, A, D));
+			++_state_ticks;
+		}
+		for (size_t station = 1; station < packets.size(); ++station) CHECK(served[station]);
+		if (cold) previous = decisions; else CHECK(decisions == previous);
+	}
+	CHECK(random.Check());
+}
+
+TEST_CASE("Two thousand distinct destinations drain a deferred budget queue", "[passenger][active][budget][.performance]")
+{
+	ActiveFixture fixture;
+	std::deque<ActiveTrain> fleet;
+	std::vector<CargoPacket *> packets;
+	for (uint16_t destination = 1; destination <= 2000; ++destination) {
+		if (destination >= 4) Station::CreateAtIndex(StationID{destination}, TileIndex{0})->owner = OWNER_NONE;
+		fleet.emplace_back(std::vector<Order>{ActiveStop(A, 100000, 1), ActiveStop(StationID{destination}, 1, 1)}, VehicleID{1000u + destination});
+		packets.push_back(fixture.Packet(1, StationID{destination}));
+		fixture.Waiting().Append(packets.back(), D);
+	}
+	size_t served = 0, first_applied = 0, first_deferred = 0, ticks = 0;
+	while (served != packets.size() && ticks < 160) {
+		BeginPassengerJourneyTick();
+		PassengerJourneyActiveContext context(nullptr, A);
+		for (CargoPacket *packet : packets) if (packet->GetPassengerRoutingMode() != PassengerRoutingMode::Journey) served += context.PlanWaiting(*packet, PAX, D);
+		if (ticks == 0) {
+			first_applied = served;
+			first_deferred = std::count_if(packets.begin(), packets.end(), [](const auto *p) { return p->IsPassengerJourneyDeferred(); });
+			CHECK(first_applied > 0); CHECK(first_applied <= 16);
+			CHECK(first_applied + first_deferred == packets.size());
+		}
+		const auto &stats = GetPassengerJourneyTickDiagnostic();
+		CHECK(stats.builds <= 16);
+		CHECK(stats.query_work <= 1024 * 1024);
+		CHECK(stats.graph_work + stats.fair_share_work <= 16 * 1024 * 1024);
+		CHECK(std::accumulate(stats.fallbacks.begin(), stats.fallbacks.end(), size_t{0}) == 0);
+		++ticks; ++_state_ticks;
+	}
+	CHECK(served == packets.size());
+	WARN("Distinct OD admission: first applied=" << first_applied << "; deferred=" << first_deferred << "; total=" << served << "; ticks=" << ticks);
 }
 
 TEST_CASE("Production journey execution covers eight thousand stations at standard budgets", "[passenger][active][performance][scope]")

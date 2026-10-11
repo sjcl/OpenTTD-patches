@@ -86,6 +86,8 @@ void CargoPacket::SetPassengerJourney(PassengerJourneyExecution journey, Station
 	this->passenger_routing_mode = PassengerRoutingMode::Journey;
 	this->passenger_journey = journey;
 	this->passenger_legacy_hop = legacy_hop;
+	this->passenger_retry_station = StationID::Invalid();
+	this->passenger_retry_after = {};
 	this->passenger_via = StationID::Invalid();
 	if (!same_vehicle) RegisterPassengerJourneyPacket(*this);
 }
@@ -98,6 +100,16 @@ void CargoPacket::FallbackPassengerJourney(StationID station, StateTicks now)
 	this->passenger_via = StationID::Invalid();
 	this->passenger_retry_station = station;
 	this->passenger_retry_after = now + 256;
+}
+
+void CargoPacket::DeferPassengerJourney(StationID station, StateTicks now)
+{
+	UnregisterPassengerJourneyPacket(*this);
+	this->passenger_routing_mode = PassengerRoutingMode::Legacy;
+	this->passenger_journey = {};
+	this->passenger_via = StationID::Invalid();
+	this->passenger_retry_station = station;
+	this->passenger_retry_after = now + 1;
 }
 
 /* Initialize the cargopacket-pool */

@@ -50,14 +50,16 @@ rather than deleted.
 
 Every loading pass validates waiting Journey packets. Order/timetable/dispatch
 changes, refits, NoLoad, stopped/deleted trains, missed/changed occurrences,
-removed stations and incomplete/budget-limited searches clear execution and
+removed stations and incomplete searches clear execution and
 restore the CargoDist queue key. Vehicle deletion invalidates matching legs
 before its pool ID can be reused. The final OD survives fallback; the existing
 station-removal policy clears an OD when that station itself is removed.
 
 Fallback packets have a 256-state-tick cooldown at the same station. Retries
 are staggered by station ID every 64 ticks (1024 ticks above 512 stations), or may
-occur at a later station.
+occur at a later station. Admission budget waits use Legacy mode and the existing
+saved retry fields, preserve CargoDist transport, and retry from the next tick;
+they are counted separately from route failures and bypass Fallback cohorts.
 New Legacy OD packets can be considered immediately before boarding. Packets
 waiting beyond their chosen departure can fall back and board legacy services.
 Disabling the setting cancels Journey execution and returns only Journey
@@ -130,7 +132,9 @@ labels, an 8 MiB scratch envelope and one selected candidate. Graph work is
 charged deterministically, with identical static-index allowances when warm;
 each distinct query reserves 65,536 units. Signature traversal is charged too.
 A state tick permits 16 Mi work units for graphs, 1 Mi for queries/signatures,
-and 16 snapshot constructions. Identical OD packets reuse the same result.
+and 16 snapshot constructions. Up to four rotating waiting origins have a
+protected first snapshot/query share; its two pool scans are charged to the
+graph ledger. Identical OD packets reuse the same result.
 Waiting-pass searches admit at most 4,096 packets; excess packets remain on
 CargoDist. Validation caches at most 128 train/cargo pairs and has a separate
 bounded signature allowance. List rekeying/counting remains O(packet count).

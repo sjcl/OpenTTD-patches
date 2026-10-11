@@ -34,6 +34,8 @@ struct PassengerJourneyTickDiagnostic {
 	uint64_t build_microseconds = 0, maximum_build_microseconds = 0;
 	uint64_t query_microseconds = 0, maximum_tick_microseconds = 0;
 	std::array<size_t, static_cast<size_t>(PassengerJourneyFallbackReason::End)> fallbacks{};
+	std::array<size_t, static_cast<size_t>(PassengerJourneyFallbackReason::End)> deferred{};
+	size_t fair_share_work = 0, fair_share_claims = 0;
 };
 
 /** Reset at the simulation tick boundary, including the first tick after network join/load.
@@ -80,6 +82,7 @@ class PassengerJourneyActiveContext {
 	size_t memory_left = 256 * 1024 * 1024;
 	size_t queries_left = 128;
 	PassengerJourneyFallbackReason failure = PassengerJourneyFallbackReason::GraphWork;
+	bool deferred = false;
 	Snapshot *GetSnapshot(CargoType cargo, StationID destination);
 	std::optional<PassengerJourneyExecution> Execute(Snapshot &snapshot, CargoType cargo, const PassengerJourneyLeg &leg);
 	bool AdmitQuery();

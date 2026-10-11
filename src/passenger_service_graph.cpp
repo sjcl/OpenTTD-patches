@@ -60,7 +60,7 @@ PassengerServiceGraph PassengerServiceGraph::Build(CargoType cargo, StateTicks n
 		return true;
 	};
 	struct Candidate { const Vehicle *vehicle; uint64_t capacity; uint64_t occupants; };
-	struct FleetService { const OrderList *list; bool opaque; std::vector<Candidate> candidates; };
+	struct FleetService { const OrderList *list; bool implicit; bool unbounded; std::vector<Candidate> candidates; };
 	std::vector<FleetService> fleets;
 	std::vector<OrderListID> eligible;
 	bool opaque_scope = false;
@@ -70,14 +70,16 @@ PassengerServiceGraph PassengerServiceGraph::Build(CargoType cargo, StateTicks n
 		if (!SpendGraphWork(budget)) { graph.status = PassengerPredictionStatus::BudgetExhausted; break; }
 		const Vehicle *first = list->GetFirstSharedVehicle();
 		if (first == nullptr || first->type != VehicleType::Train) continue;
-		bool may_refit = false, opaque = false;
+		bool may_refit = false, implicit = false, unbounded = false, manual_stops = false;
 		if (!SpendGraphWork(budget, list->GetNumOrders())) { graph.status = PassengerPredictionStatus::BudgetExhausted; break; }
 		for (const Order &order : list->GetOrderVector()) {
 			may_refit |= order.IsRefit();
-			/* An implicit station need not be in the declared-stop supergraph. Never
-			 * certify pruning an undisclosed path, even if a known candidate exists. */
-			opaque |= order.IsType(OT_IMPLICIT);
+			manual_stops |= order.IsType(OT_GOTO_STATION);
+			implicit |= order.IsType(OT_IMPLICIT);
+			unbounded |= order.IsType(OT_IMPLICIT) && order.GetDestination().ToStationID() == StationID::Invalid();
 		}
+		/* Implicit-only wandering has no declared route to bound future stops. */
+		unbounded |= implicit && !manual_stops;
 		std::vector<Candidate> candidates;
 		for (const Vehicle *v = first; v != nullptr; v = v->NextShared()) {
 			if (!SpendGraphWork(budget)) { graph.status = PassengerPredictionStatus::BudgetExhausted; break; }
@@ -94,7 +96,6 @@ PassengerServiceGraph PassengerServiceGraph::Build(CargoType cargo, StateTicks n
 			else if (may_refit || v->current_order.IsRefit()) ++graph.diagnostic.possible_refit;
 			else { ++graph.diagnostic.excluded_cargo; continue; }
 			if (scope && v->vehstatus.Any({VehState::Stopped, VehState::Crashed})) { ++graph.diagnostic.inactive; continue; }
-			opaque_scope |= scope.has_value() && opaque;
 			if (!admit(128)) break; // Temporary candidate vector, including geometric growth.
 			candidates.push_back({v, capacity, occupants});
 		}
@@ -102,7 +103,7 @@ PassengerServiceGraph PassengerServiceGraph::Build(CargoType cargo, StateTicks n
 		if (candidates.empty()) continue;
 		if (!admit(256)) break; // Fleet discovery metadata, vector growth and eligible IDs.
 		eligible.push_back(list->index);
-		fleets.push_back({list, opaque, std::move(candidates)});
+		fleets.push_back({list, implicit, unbounded, std::move(candidates)});
 	}
 	PassengerServiceSelection selection;
 	if (scope && graph.status == PassengerPredictionStatus::Complete) {
@@ -121,11 +122,14 @@ PassengerServiceGraph PassengerServiceGraph::Build(CargoType cargo, StateTicks n
 	if (graph.status == PassengerPredictionStatus::Complete) for (FleetService &fleet : fleets) {
 		const OrderList *list = fleet.list;
 		auto &candidates = fleet.candidates;
-		if (scope && !fleet.opaque && !selection.services.contains(list->index)) {
+		if (scope && !fleet.unbounded && !selection.services.contains(list->index)) {
 			graph.scoped_omissions = true;
 			graph.diagnostic.excluded_scope += candidates.size();
 			continue;
 		}
+		/* A bounded, disconnected implicit service was pruned above. Unknown stops
+		 * and implicit-only wandering cannot establish that separation. */
+		opaque_scope |= scope.has_value() && fleet.unbounded;
 		if (graph.services.size() >= limits.services) { graph.status = PassengerPredictionStatus::LimitReached; graph.diagnostic.omitted_trains += candidates.size(); break; }
 		if (!SpendGraphWork(budget, 3 * static_cast<size_t>(list->GetNumOrders()))) { graph.status = PassengerPredictionStatus::BudgetExhausted; graph.diagnostic.omitted_trains += candidates.size(); break; }
 		if (!admit(512 + 1024 * static_cast<size_t>(list->GetNumOrders()))) break;
@@ -148,6 +152,10 @@ PassengerServiceGraph PassengerServiceGraph::Build(CargoType cargo, StateTicks n
 		if (!copied_schedules) break;
 		for (VehicleOrderID i = 0; i < orders.size(); ++i) {
 			const Order &order = orders[i];
+			if (order.IsType(OT_IMPLICIT)) {
+				if (order.GetDestination().ToStationID() != StationID::Invalid()) service.stops.push_back({order.GetDestination().ToStationID(), i, true, true, false, std::nullopt, -1});
+				continue;
+			}
 			if (order.IsType(OT_GOTO_WAYPOINT) && order.GetWaypointFlags().Test(OrderWaypointFlag::Reverse)) service.reverse_waypoints.push_back(i);
 			if (!order.IsType(OT_GOTO_STATION) || (order.GetNonStopType() & ONSF_NO_STOP_AT_DESTINATION_STATION)) continue;
 			const OrderUnloadType unload = order.GetCargoUnloadType(cargo);
@@ -211,6 +219,9 @@ PassengerServiceGraph PassengerServiceGraph::Build(CargoType cargo, StateTicks n
 			const size_t trip_index = graph.trips.size();
 			stored.trips.push_back(trip_index); graph.trips.push_back(std::move(trip));
 			const Trip &saved = graph.trips.back();
+			/* A known implicit order outside the proven horizon (or an unreachable
+			 * unconditional branch) does not invalidate already complete coverage. */
+			opaque_scope |= scope.has_value() && fleet.implicit && !saved.prediction.Covers(graph.start, graph.end);
 			for (size_t i = 0; i < saved.prediction.visits.size(); ++i) graph.station_visits[graph.GetStop(saved, saved.prediction.visits[i].order).station].push_back({trip_index, i});
 			if (saved.prediction.status == PassengerPredictionStatus::BudgetExhausted) { graph.status = saved.prediction.status; graph.diagnostic.omitted_trains += candidates.size() - c - 1; break; }
 		}

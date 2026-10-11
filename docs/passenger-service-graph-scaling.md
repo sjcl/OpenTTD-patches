@@ -1,9 +1,9 @@
 # Passenger ServiceGraph scaling
 
 Active journeys now capture an OD corridor instead of predicting every train.
-Only the untimed structural index survives a simulation event. CargoPacket
-execution, reservations, gradual loading, CargoDist fallback, shadow mode and
-the save extension are unchanged.
+Only the untimed structural index survives a simulation event. Journey leg
+execution, reservations, gradual loading, shadow mode and packet/save layouts
+are unchanged. CargoDist continues transporting fallback and deferred packets.
 
 ## Corridor and completeness
 
@@ -30,9 +30,15 @@ component filtering; all 80 routes of the national fixture are connected.
 Weighted waiting can make riding a circuit preferable to waiting. Such scoped
 queries return `Unknown` when services were omitted; callers need an unscoped
 snapshot for a completeness certificate. Active execution uses zero waiting
-weight. Implicit orders on a potentially passenger-capable running train can
-disclose stops outside the static supergraph: those services are captured and
-the scoped capture remains uncertain. Implicit freight with no capacity/refit
+weight. Known implicit StationIDs are included in both static topology and
+captured service stops. A bounded implicit service that is disconnected or an
+irrelevant articulation excursion can be excluded without poisoning the OD.
+A retained implicit service makes the scope Unknown when its prediction cannot
+cover the requested horizon. Known implicit orders beyond a proven horizon or
+skipped by an unconditional branch do not invalidate complete timing coverage.
+Invalid implicit StationIDs and implicit-only wandering have no bounded declared
+route: they stay captured and make the scope Unknown even if their currently
+known stops appear disconnected. Implicit freight with no capacity/refit
 possibility, and unavailable stopped/crashed trains, do not poison a scope.
 
 `GetStatus()` describes global capture. `GetQueryStatus(origin, destination)`
@@ -124,8 +130,33 @@ boundary in `StateGameLoop`, and consumed in simulation order. Afterload resets
 derived state before the next tick. A depleted query allowance prevents an
 unnecessary new graph. Fallback retries use 64-tick station cohorts on smaller
 maps and 1024-tick cohorts above 512 stations, reducing simultaneous competition.
-Overloaded cohorts/arrivals still fall back in simulation order; this is not a
-proof of perfect fairness between every origin under sustained overload.
+Admission exhaustion is now a deferred budget wait, separately counted from
+an exhausted search, unknown prediction or unreachable OD. The packet retains
+its OD and CargoDist queue key, uses Legacy mode plus the existing saved retry
+station/deadline, and retries from the next tick without the Fallback cooldown
+or station cohort delay. Split, merge and current saves preserve this state;
+there is no new enum value, field, packet size or save feature. CargoDist can
+continue transporting deferred passengers.
+
+At the first simulation search each tick, two station-pool passes select up to
+four waiting origins in a rotating pool-ID window. Each gets a protected first
+waiting snapshot: 2 Mi graph Work, 128 Ki query/signature Work and one snapshot
+slot. Ordinary waiting searches and onboard arrivals cannot spend those unused
+shares. Claiming a share releases its unused headroom; no dynamic snapshot is
+shared across events. The scan is O(stations * passenger cargo types), examines
+available counts rather than packets, and consumes the same 16 Mi graph ledger.
+Only four IDs and claim bits are retained until the next tick. Diagnostics reset
+cannot change admission or release a share.
+
+For a stable set of N waiting origins with four shares, each origin is selected
+within ceil(N/4) ticks, independent of simulation visitation order. Progress
+still requires a complete graph/query within its ordinary per-search limits.
+The coarse waiting count can include passengers with no assigned OD or an
+already valid journey; unused shares stay reserved until the next tick. Rapidly
+changing demand and multiple ODs inside one origin have no strict latency bound.
+The hard maximum remains 16 new snapshots/queries per tick, and signatures can
+reduce that count. This change schedules overload fairly rather than claiming
+that thousands of distinct ODs fit in a single tick.
 
 Traversal no longer spends memory for every Work unit. Admission reserves,
 before allocation, 256 bytes per discovered fleet and 128 bytes per temporary
@@ -154,7 +185,8 @@ visits, omitted trains, truncated predictions, Work, construction/search times,
 retained/static/cache/scratch estimates and conservative envelopes. It separates
 GraphWork, GraphMemory, SnapshotLimit, QueryWork, QueryLimit, QueryMemory,
 PredictionIncomplete, PredictionHorizon, NoJourney, InvalidLeg, StaleLeg,
-Disabled and VehicleDeleted fallbacks.
+Disabled and VehicleDeleted fallbacks, admission deferrals per reason, and
+fair-share claims/scan Work.
 Observations are summed over builds, not unique fleet inventory. Exact omitted
 visit counts cannot be known without doing the omitted prediction work; the
 command explicitly reports that those suffix counts are unknown.
@@ -213,6 +245,15 @@ The production-context sample applies all 64 packets, builds/searches once and
 hits its execution cache 63 times. The existing 4,096-packet reuse regression
 still builds/searches once and consumes no RNG.
 
+A separate admission fixture queues 2,000 different destinations at one origin,
+with one direct train per OD. The first tick applies 15 journeys and defers the
+remaining 1,985 packets. All 2,000 obtain a plan within 134 ticks, with no route
+failure fallbacks and no tick quota exceeded. This fixture holds train positions
+fixed and measures admission/retry behavior, not a full game with boarding or
+moving trains. A 32-origin fixture puts a busy origin first on every tick and
+checks that protected rotating shares still admit the other origins; complete
+cold/warm replays produce identical decisions.
+
 The explicit benchmark can be rerun with:
 
 ```powershell
@@ -223,10 +264,15 @@ build-service-graph/Release/openttd_test.exe 'Service graph national comparison 
 
 New tests cover freight-first discovery, independent memory/Work, cold/warm
 logical equivalence, destination-edit invalidation, wrong-OD/station-global
-coverage, freight bridge/refit view invalidation, implicit/inactive exclusions,
+coverage, freight bridge/refit view invalidation, disconnected/relevant/invalid
+implicit stops, complete coverage before a later implicit order, implicit-only
+wandering and inactive exclusions,
 local/express/local alternatives, future/current refits, conditionals, weighted-wait excursions, 20,000 objects,
 80,800 visits, dense connected cycles, 300 transfers, same-tick dynamic changes,
-onboard off-corridor transfers, global tick limits, diagnostic-reset purity,
+onboard off-corridor transfers, global tick limits, 32 distinct queued ODs,
+2,000 distinct destinations, next-tick deferrals and completed retries that
+establish a route failure, rotating waiting shares under a hot origin, saved deferred
+state and diagnostic-reset purity,
 8,001 real stations and actual active execution. Existing suites additionally
 exercise high-frequency detours, local-only access, unknown national networks,
 shared orders, deletion, departure changes, loading/reservations, save/load,
@@ -238,10 +284,10 @@ Work cannot certify the alternatives and it safely remains inconclusive.
 Conditional/refit/untimetabled/contended-dispatch predictions remain conservative;
 they are not made artificially complete. Static invalidation still has a cold
 rebuild cost, and live fleet classification is not shared between events.
-Validation on MSVC x64 Release (assertions enabled): all 339 default unit cases
-with 104,655 assertions passed, and the explicit passenger selection passed 142
-cases with 111,034 assertions, including hidden national performance fixtures.
-The complete CTest run passed all 346 entries (21.19 seconds), including
+Validation on MSVC x64 Release (assertions enabled): all 343 default unit cases
+with 106,270 assertions passed, and the explicit passenger selection passed 147
+cases with 115,190 assertions, including hidden national performance fixtures.
+The complete CTest run passed all 350 entries (19.73 seconds), including
 production legacy/current saves, GUI/diagnostic save-hash purity, disabled-mode
 parity and shadow execution. On this Visual Studio build,
 `lang` and `baseset` were copied alongside the `Release` executable for the

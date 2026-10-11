@@ -4526,7 +4526,8 @@ static bool ConPassengerJourneyStats(std::span<std::string_view> argv)
 			stats.graph_allocation_bytes, stats.static_allocation_bytes, stats.graph_memory_bound, stats.query_scratch_bytes, stats.query_cache_bytes);
 	static constexpr std::array reasons{"GraphWork", "GraphMemory", "SnapshotLimit", "QueryWork", "QueryLimit", "QueryMemory", "PredictionIncomplete", "PredictionHorizon", "NoJourney", "InvalidLeg", "StaleLeg", "Disabled", "VehicleDeleted"};
 	static_assert(reasons.size() == static_cast<size_t>(PassengerJourneyFallbackReason::End));
-	for (size_t i = 0; i < reasons.size(); ++i) IConsolePrint(CC_DEFAULT, "Fallback {}: {} packets", reasons[i], stats.fallbacks[i]);
+	IConsolePrint(CC_DEFAULT, "Fair waiting shares: claims={}; admission_scan_work={}", stats.fair_share_claims, stats.fair_share_work);
+	for (size_t i = 0; i < reasons.size(); ++i) IConsolePrint(CC_DEFAULT, "Fallback {}: {} packets; deferred={} packets", reasons[i], stats.fallbacks[i], stats.deferred[i]);
 	return true;
 }
 
