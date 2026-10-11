@@ -94,9 +94,81 @@ namespace {
 
 	static auto LabelOrder(const JourneyLabel &label)
 	{
-		return std::tuple(label.score, label.arrival, label.boardings, label.waiting, label.leg.vehicle,
+		/* After time/preferences tie, prefer a path with usable confirmed free seats on every leg.
+		 * Estimated and unknown capacity stay tied: neither promises seats to this passenger group. */
+		return std::tuple(label.score, label.arrival, label.boardings, label.waiting, label.capacity_uncertain, label.leg.vehicle,
 				label.leg.boarding.trip, label.leg.boarding.visit, label.leg.alighting.visit, label.previous);
 	}
+
+	/** A relaxed reverse boarding graph: ignore readiness, interchange time and capacity forecasts.
+	 * Station distances count necessary boardings; suffix distances count boardings after the current ride.
+	 * FIFO station layers and memoized trip suffixes scan each occurrence at most once, even for long routes.
+	 * Allocate a trip's byte array only when a connected alighting occurrence actually reaches it. */
+	struct JourneyReachability {
+		static constexpr uint8_t UNREACHABLE = UINT8_MAX;
+		std::map<StationID, uint8_t> stations;
+		std::map<size_t, std::vector<uint8_t>> suffixes;
+		std::optional<StateTicks> earliest_destination;
+
+		uint8_t Boardings(StationID station) const
+		{
+			auto found = this->stations.find(station);
+			return found == this->stations.end() ? UNREACHABLE : found->second;
+		}
+
+		uint8_t AfterBoarding(PassengerServiceGraph::VisitID id) const
+		{
+			auto found = this->suffixes.find(id.trip);
+			return found == this->suffixes.end() ? UNREACHABLE : found->second[id.visit];
+		}
+
+		template <typename Spend, typename Admit>
+		bool Build(const PassengerServiceGraph &graph, std::span<const StationID> seeds, uint8_t seed_distance,
+				uint8_t max_boardings, Spend &spend, Admit &admit)
+		{
+			std::vector<StationID> queue;
+			auto add = [&](StationID station, uint8_t distance) {
+				if (this->stations.contains(station)) return true;
+				/* Map node, allocator overhead and up to two queue slots per station. */
+				if (!spend() || !admit(128)) return false;
+				this->stations.emplace(station, distance);
+				queue.push_back(station);
+				return true;
+			};
+			for (StationID station : seeds) if (!add(station, seed_distance)) return false;
+			for (size_t q = 0; q < queue.size(); ++q) {
+				uint8_t distance = this->Boardings(queue[q]);
+				if (distance >= max_boardings) continue;
+				for (auto alighting : graph.GetStationVisits(queue[q])) {
+					if (!spend()) return false;
+					const auto &trip = graph.GetTrips()[alighting.trip];
+					const auto &visits = trip.prediction.visits;
+					if (trip.operation != PassengerServiceGraph::Operation::Running || trip.capacity == 0 ||
+							!graph.GetVisitStop(alighting).can_alight || !visits[alighting.visit].arrival) continue;
+					if (distance == 0 && (!this->earliest_destination || *visits[alighting.visit].arrival < *this->earliest_destination)) {
+						this->earliest_destination = visits[alighting.visit].arrival;
+					}
+					if (alighting.visit == 0) continue;
+					auto found = this->suffixes.find(alighting.trip);
+					if (found == this->suffixes.end()) {
+						if (!spend(visits.size()) || !admit(128 + visits.size())) return false;
+						found = this->suffixes.emplace(alighting.trip, std::vector<uint8_t>(visits.size(), UNREACHABLE)).first;
+					}
+					auto &suffix = found->second;
+					for (size_t i = alighting.visit; i-- > 0;) {
+						if (!spend()) return false;
+						if (suffix[i] != UNREACHABLE) break; // An earlier BFS layer already owns this suffix.
+						if (!visits[i].departure || !visits[i + 1].arrival) break;
+						suffix[i] = distance;
+						const auto &stop = graph.GetVisitStop({alighting.trip, i});
+						if (stop.can_board && !add(stop.station, distance + 1)) return false;
+						if (stop.forced_transfer) break; // Boarding here is allowed; through riding is not.
+					}
+				}
+			}
+			return true;
+		}
+	};
 }
 
 PassengerJourneyResult PassengerJourneyPlanner::Search(StationID origin, StationID destination, StateTicks ready, uint64_t passengers,
@@ -127,8 +199,41 @@ PassengerJourneyResult PassengerJourneyPlanner::Search(StationID origin, Station
 		result.diagnostic.work += amount;
 		return true;
 	};
+	size_t reachability_bytes = 0;
+	auto admit = [&](size_t bytes) {
+		if (bytes > limits.memory_bytes - reachability_bytes) {
+			result.status = MergeJourneyStatus(result.status, PassengerPredictionStatus::LimitReached);
+			return false;
+		}
+		reachability_bytes += bytes;
+		result.diagnostic.scratch_bytes = reachability_bytes;
+		return true;
+	};
+	auto reverse_spend = [&](size_t amount = 1) {
+		if (!spend(amount)) return false;
+		result.diagnostic.reverse_work += amount;
+		return true;
+	};
+	JourneyReachability reachable, uncertain;
+	const std::array<StationID, 1> target{destination};
+	if (!reachable.Build(this->graph, target, 0, limits.max_transfers + 1, reverse_spend, admit) ||
+			!uncertain.Build(this->graph, this->graph.GetUncertainStations(), 1, limits.max_transfers + 1, reverse_spend, admit)) return result;
+	/* Incomplete services seed a second reverse search, even if their dynamic branch captured no
+	 * destination visit. Pruning cannot turn a potentially reachable unknown suffix into absence. */
+	if (uncertain.Boardings(origin) <= limits.max_transfers + 1) result.status = MergeJourneyStatus(result.status, this->graph.GetUncertainStatus());
+	auto boardings_left = [&](StationID station) { return std::min(reachable.Boardings(station), uncertain.Boardings(station)); };
+	auto can_finish_ride = [&](PassengerServiceGraph::VisitID id, uint8_t remaining) {
+		return std::min(reachable.AfterBoarding(id), uncertain.AfterBoarding(id)) <= remaining ||
+				!this->graph.GetTrips()[id.trip].prediction.Covers(this->graph.GetStart(), this->graph.GetEnd());
+	};
+	if (boardings_left(origin) > limits.max_transfers + 1) return result;
+	limits.labels = std::min(limits.labels, (limits.memory_bytes - reachability_bytes) / LABEL_BYTES);
+	if (limits.labels == 0) {
+		result.status = MergeJourneyStatus(result.status, PassengerPredictionStatus::LimitReached);
+		return result;
+	}
 	std::vector<JourneyLabel> labels;
-	labels.reserve(limits.labels);
+	labels.reserve(std::min<size_t>(limits.labels, 32));
 	labels.push_back(JourneyLabel{});
 	labels.back().arrival = ready;
 	std::map<StationID, std::vector<size_t>> frontier{ { origin, { 0 } } };
@@ -140,6 +245,23 @@ PassengerJourneyResult PassengerJourneyPlanner::Search(StationID origin, Station
 			for (size_t previous : active) {
 				if (!spend()) { stopped = true; break; }
 				const JourneyLabel parent = labels[previous];
+				/* Every completion must pay the accumulated costs and at least the relaxed boarding
+				 * distance. Once K candidates exist, a strictly worse (score, arrival, boardings)
+				 * lower bound cannot alter their order, including the later capacity/ID tie-breaks. */
+				if (destinations.size() == limits.candidates && reachable.earliest_destination) {
+					uint8_t boardings = parent.boardings + boardings_left(station);
+					StateTicks arrival = std::max(parent.arrival, *reachable.earliest_destination);
+					int64_t transfers = boardings - 1;
+					int64_t score = JourneyAdd(arrival.base() - ready.base(), parent.penalty);
+					score = JourneyAdd(score, JourneyScale(transfers, evaluation.transfer_penalty, 1));
+					score = JourneyAdd(score, JourneyScale(parent.waiting, evaluation.waiting_weight, 1000));
+					score = JourneyAdd(score, JourneyScale(transfers * evaluation.minimum_transfer, evaluation.transfer_time_weight, 1000));
+					const auto &worst = labels[destinations.back()];
+					if (std::tuple(score, arrival, boardings) > std::tuple(worst.score, worst.arrival, worst.boardings)) {
+						++result.diagnostic.pruned_labels;
+						continue;
+					}
+				}
 				const int64_t interchange = parent.boardings == 0 ? 0 : evaluation.minimum_transfer;
 				if (parent.arrival.base() > this->graph.GetEnd().base() - interchange) continue;
 				StateTicks earliest{ parent.arrival.base() + interchange };
@@ -148,6 +270,10 @@ PassengerJourneyResult PassengerJourneyPlanner::Search(StationID origin, Station
 				result.status = MergeJourneyStatus(result.status, departures.status);
 				for (auto boarding : departures.timed) {
 					if (!spend()) { stopped = true; break; }
+					if (!can_finish_ride(boarding, limits.max_transfers - round)) {
+						++result.diagnostic.pruned_boardings;
+						continue;
+					}
 					++result.diagnostic.boardings;
 					const auto &trip = this->graph.GetTrips()[boarding.trip];
 					/* Through travel is scanned in one round, including all intermediate dwell. At the same
@@ -169,7 +295,7 @@ PassengerJourneyResult PassengerJourneyPlanner::Search(StationID origin, Station
 							result.status = MergeJourneyStatus(result.status, PassengerPredictionStatus::Unknown);
 							break;
 						}
-						if (stop.can_alight) {
+						if (stop.can_alight && boardings_left(stop.station) <= limits.max_transfers - round) {
 							PassengerJourneyCapacity capacity;
 							if (this->capacity_provider != nullptr) {
 								if (!spend()) { stopped = true; break; }
@@ -230,12 +356,13 @@ PassengerJourneyResult PassengerJourneyPlanner::Search(StationID origin, Station
 									if (!dominated) {
 										if (labels.size() == limits.labels) { result.status = MergeJourneyStatus(result.status, PassengerPredictionStatus::LimitReached); stopped = true; break; }
 										bucket.push_back(labels.size());
+										if (labels.size() == labels.capacity()) labels.reserve(std::min(limits.labels, labels.capacity() * 2));
 										labels.push_back(std::move(label));
 									}
 								}
 							}
 						}
-						if (stop.forced_transfer || !visit.departure) break;
+						if (stop.forced_transfer || !visit.departure || !can_finish_ride(alighting, limits.max_transfers - round)) break;
 					}
 					if (stopped) break;
 				}
@@ -248,10 +375,10 @@ PassengerJourneyResult PassengerJourneyPlanner::Search(StationID origin, Station
 			destinations.insert(destinations.end(), reached->second.begin(), reached->second.end());
 			next.erase(reached); // A journey ends at its final destination.
 		}
+		std::sort(destinations.begin(), destinations.end(), [&](size_t a, size_t b) { return LabelOrder(labels[a]) < LabelOrder(labels[b]); });
+		if (destinations.size() > limits.candidates) destinations.resize(limits.candidates);
 		frontier = std::move(next);
 	}
-	std::sort(destinations.begin(), destinations.end(), [&](size_t a, size_t b) { return LabelOrder(labels[a]) < LabelOrder(labels[b]); });
-	if (destinations.size() > limits.candidates) destinations.resize(limits.candidates);
 	for (size_t id : destinations) {
 		const JourneyLabel &label = labels[id];
 		PassengerPlannedJourney journey;
@@ -269,7 +396,8 @@ PassengerJourneyResult PassengerJourneyPlanner::Search(StationID origin, Station
 		result.journeys.push_back(std::move(journey));
 	}
 	result.diagnostic.labels = labels.size();
-	result.diagnostic.scratch_bytes = limits.labels * LABEL_BYTES;
+	result.diagnostic.label_capacity = labels.capacity();
+	result.diagnostic.scratch_bytes = reachability_bytes + labels.capacity() * LABEL_BYTES;
 	return result;
 }
 

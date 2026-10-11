@@ -39,6 +39,31 @@ interchange time; it is not represented as uninterrupted riding.
 If that departure is missed, a later predicted circuit of the same vehicle
 remains an actual reboarding candidate.
 
+Before boarding rounds, a reverse search starts from captured alighting visits
+at the destination. Station layers count minimum necessary boardings; shared
+backward trip scans propagate these distances up to a forced unload or unknown
+time. Each trip occurrence is marked once, rather than scanning its entire
+suffix separately for every possible alighting stop. Readiness, minimum
+interchange and forecasts are relaxed, so these distances are lower bounds,
+never a claim that a train can actually be caught. A departure is skipped if its
+suffix cannot reach the destination with the remaining boardings. Intermediate
+labels are retained only at stations that can still complete the journey.
+
+Incomplete predictions require a second conservative reverse search, seeded at
+declared stations of those services even when their dynamic branch captured no
+visit there. Such suffixes remain possible, and an origin connected to them
+retains incomplete status. Prediction uncertainty cannot become certified
+unreachability merely because destination pruning removed a captured prefix.
+
+Once the requested number of final candidates exists, a frontier is skipped
+only when a lower bound on `(score, arrival, boardings)` is strictly worse than
+the current last candidate. The bound includes accumulated waiting/capacity
+costs, minimum remaining boardings and the earliest captured destination arrival.
+Equal bounds continue searching, preserving capacity and deterministic ID
+tie-breaks. This avoids needless transfers between synchronized trains after
+enough better direct candidates have already arrived, while retaining express
+interchanges that can improve the requested results.
+
 There is no 256-station frontier limit. Per-station, per-round labels retain
 different vehicle paths, including slower direct trains, faster express
 interchanges and longer corridors. Pareto pruning applies within the same
@@ -53,7 +78,7 @@ In that case deterministic cost ordering keeps the best labels and the result
 reports `LimitReached`. This bounded search is not an unbounded enumeration of
 every Pareto path. Defaults return up to eight final candidates, retain up to
 16 labels per station/round, and allow 1,048,576 work units and 65,536 stored
-labels, further constrained by a 32 MiB conservative scratch allowance. The
+labels, further constrained by a 128 MiB conservative scratch allowance. The
 public limits are independently adjustable in tests. Defensive hard caps are
 eight transfers, 64 final candidates, 256 labels per station, 2^20 stored labels
 and 2^24 work units.
@@ -84,21 +109,34 @@ boardable visit, plus station containers and vector capacity. Sorting is snapsho
 postprocessing, bounded by the graph's total visit limit; it does not consume a
 journey query's allowance.
 
-Query work is proportional to the indexed boarding candidates and their
-downstream visits reached from retained labels, plus comparisons of labels.
+Reverse queries use the existing station occurrence index. They allocate one
+byte per occurrence only for connected trips, plus bounded station/queue and
+trip-map storage. Each of the two reverse searches costs
+O((P_c + S_c) log(S_c + T_c)), including byte-array initialization, for P_c visits
+in connected trips, S_c reached stations and T_c reached trips. Their work and
+memory count against the same query allowances as forward routing. Complete
+snapshots require no uncertainty search and no scan of unrelated trip arrays.
+
+Forward query work is proportional to the indexed boarding candidates and their
+relevant downstream visits reached from retained labels, plus label comparisons.
 If Q station labels inspect B boardings and expand V downstream visits, L is
 the per-station label limit and R the maximum boarding count, search work is
 O(Q (log S + log P_s) + B + V (log S + L R)), including frontier-map insertion
 and label comparison. Bounded final candidate sorting/reconstruction add
 O(K log K + C R), for K retained destination labels and C returned journeys.
-This variant can scan a trip suffix from several boarding
+The forward variant can scan a trip suffix from several boarding
 occurrences, rather than guaranteeing one route scan per round. Explicit work
 limits bound dense-network worst cases and report incomplete results. Diagnostics
-count work, boarding candidates, visited occurrences, stored labels, capacity
-rejections and the conservative scratch allowance. Back pointers avoid copying
+count total/reverse work, expanded/pruned boarding candidates, pruned frontiers,
+visited occurrences, stored labels, allocated label slots, capacity rejections
+and a conservative peak allocated scratch estimate. Back pointers avoid copying
 whole paths into every label; final reconstruction is bounded by candidates * R.
-Frontier/map bookkeeping and vector growth are covered by the per-label scratch
-allowance `2 * sizeof(internal label) + 256`, in addition to the hard record caps.
+Labels start with at most 32 slots and grow by doubling, clipped to the remaining
+memory/record cap. Short cache misses therefore do not reserve tens of thousands
+of labels. Frontier/map bookkeeping and transient vector growth are covered by
+`2 * sizeof(internal label) + 256` per allocated slot, plus reverse-search
+storage. The diagnostic reports this estimate for actual allocated slots,
+rather than reporting the entire configured maximum as a reservation.
 
 The planner cache belongs to one graph instance, with defaults of 128 entries
 and an 8 MiB retained-payload allowance. Keys include OD, cargo, ready departure
@@ -136,6 +174,15 @@ passenger count; later real trains remain searchable. Estimated rejection also
 makes the result uncertain, so it cannot certify infeasibility. No reservation
 or assignment is made. Unknown free seats permit a time-valid candidate with
 `capacity_uncertain`, not a confirmed available seat.
+
+Candidate ordering first compares generalized time, arrival, boarding count and
+waiting. When those tie, a journey with usable confirmed free seats on every
+leg precedes an uncertain journey, before vehicle/occurrence ID tie-breaks.
+`Confirmed` without a free-seat value stays uncertain. `Estimated` and `Unknown`
+have equal priority at this tie-break: neither confirms seats for the passenger
+group. Estimates still affect feasibility and configured crowding/throughput
+costs. Confirmation never overrides a better time/preference score, and one
+confirmed leg does not confirm the entire journey.
 
 Generalized time is elapsed arrival minus ready time, plus transfer count times
 the transfer penalty, additional weighted waiting, additional weighted minimum
@@ -197,23 +244,33 @@ time. None of these clocks/counters affect simulation decisions or save data.
 ## Validation on 2026-10-11
 
 Windows x64 Release builds with assertions enabled passed with GCC 16.1 and
-MSVC 19.44. GCC passed all 277 unit cases (59,477 assertions). The MSVC CTest
-suite passed 282 cases, including all unit cases, the four AI/GameScript
+MSVC 19.44. GCC passed all 281 unit cases (59,564 assertions). The MSVC CTest
+suite passed 286 cases, including all unit cases, the four AI/GameScript
 regressions, and production legacy/current OD save/load migration. The
 multi-configuration MSVC build needed language/baseset assets beside the
 Release executable for the production runner; these are build resources, not
 source changes. Neither the save schema nor existing boarding code changed.
 
-The national planner fixture uses 8,001 stations, 800 physical trains and
-80,800 predicted visits. Its hub query completed in approximately 12-26 ms
-on this machine, consuming 2,320,801 counted work units. This deliberately
-large full-hub test uses zero transfers, 100,000 label records, 128 MiB scratch
-and 2^24 work allowances; the reported conservative scratch reservation is
-81,600,000 bytes. These allowances are larger than defaults. Default allowances
-may truncate such a hub query and correctly report the limit rather than
-unreachability. Leaf queries inspect fewer than 2,000 downstream visits;
-repeated hub queries hit the bounded cache. Timings are diagnostics, not test
-thresholds or simulation inputs.
+The national fixture keeps the same 8,001 stations, 800 physical trains and
+80,800 predicted visits. It now runs entirely with default limits: four transfers,
+65,536 labels, 1,048,576 work units and a 128 MiB memory ceiling. The hub query
+to station 8,000 returns `Complete`, expanding only the ten trains on its route
+and 1,000 downstream visits; 790 unrelated departures are discarded. It consumes
+35,692 work units, including 4,901 reverse work units, stores 1,001 labels in
+1,024 slots, and reports 850,802 bytes of conservative peak scratch. The previous
+unfiltered hub query needed 2,320,801 work units with zero transfers and raised
+limits. Initial cold-query timings are about 0.5 ms on this machine.
+
+A second national case adds an actual feeder to the hub (8,002 stations, 801
+trains, 80,802 visits). With the same defaults it finds the required interchange
+to the final route with `Complete`, consuming 49,203 work units and reporting
+851,060 bytes of scratch. Leaf queries also complete under defaults and inspect
+fewer than 2,000 downstream visits. Repeated hub/feeder queries hit the cache.
+Tests additionally compare bounded best-candidate searches with full candidate
+searches for faster expresses, transfer penalties, weighted waits and missed
+interchanges. Timings are diagnostics, not test thresholds or simulation inputs.
+Dense connected networks can still exhaust explicit work/label/memory limits;
+these fixtures do not promise complete enumeration for arbitrary networks.
 
 The 8,000-destination OD generation fixture produced 400 batches of 512 people
 with zero unknown destinations. Total generation time was approximately

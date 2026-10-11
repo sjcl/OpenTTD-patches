@@ -234,6 +234,141 @@ TEST_CASE("Capacity preference ratios avoid intermediate overflow and unknown gu
 	CHECK(unknown.journeys[0].capacity_penalty == StateTicksDelta{1000});
 }
 
+TEST_CASE("Capacity tie breaks prefer usable confirmations without ranking estimates as guarantees", "[passenger][journey][capacity]")
+{
+	JourneyVehicle unknown({JourneyStop(A), JourneyStop(D, 100)}, VehicleID{100});
+	JourneyVehicle estimated({JourneyStop(A), JourneyStop(D, 100)}, VehicleID{101});
+	JourneyVehicle confirmed({JourneyStop(A), JourneyStop(D, 100)}, VehicleID{102});
+	JourneyCapacity provider;
+	provider.estimates[estimated.index].certainty = PassengerCapacityCertainty::Estimated;
+	provider.estimates[estimated.index].future_free = 80;
+	provider.estimates[confirmed.index].certainty = PassengerCapacityCertainty::Confirmed;
+	provider.estimates[confirmed.index].future_free = 80;
+	SECTION("A usable confirmation precedes tied unknown/estimated paths") {
+		const auto graph = JourneyGraph();
+		PassengerJourneyPlanner planner(graph, &provider);
+		auto result = planner.Plan(PAX, A, D, NOW);
+		REQUIRE(result.journeys.size() == 3);
+		CHECK(result.journeys[0].legs[0].vehicle == confirmed.index);
+		CHECK_FALSE(result.journeys[0].capacity_uncertain);
+		CHECK(result.journeys[1].legs[0].vehicle == unknown.index);
+		CHECK(result.journeys[2].legs[0].vehicle == estimated.index);
+		PassengerJourneyLimits limits;
+		limits.labels_per_station = 1;
+		auto pruned = planner.Plan(PAX, A, D, NOW, limits);
+		REQUIRE(pruned.journeys.size() == 1);
+		CHECK(pruned.journeys[0].legs[0].vehicle == confirmed.index);
+		CHECK(pruned.status == PassengerPredictionStatus::LimitReached);
+	}
+	SECTION("Confirmed without a seat count stays uncertain") {
+		provider.estimates[unknown.index].certainty = PassengerCapacityCertainty::Confirmed;
+		provider.estimates[confirmed.index].future_free.reset();
+		const auto graph = JourneyGraph();
+		PassengerJourneyPlanner planner(graph, &provider);
+		auto result = planner.Plan(PAX, A, D, NOW);
+		REQUIRE(result.journeys.size() == 3);
+		CHECK(result.journeys[0].legs[0].vehicle == unknown.index);
+		for (const auto &journey : result.journeys) CHECK(journey.capacity_uncertain);
+	}
+	SECTION("A faster estimate retains its time preference") {
+		estimated.GetOrder(1)->SetTravelTime(90);
+		const auto graph = JourneyGraph();
+		PassengerJourneyPlanner planner(graph, &provider);
+		auto result = planner.Plan(PAX, A, D, NOW);
+		REQUIRE(result.journeys.size() == 3);
+		CHECK(result.journeys[0].legs[0].vehicle == estimated.index);
+		CHECK(result.journeys[1].legs[0].vehicle == confirmed.index);
+	}
+}
+
+TEST_CASE("Journey labels allocate incrementally within their caps", "[passenger][journey]")
+{
+	SECTION("A short query reserves a small label vector") {
+		JourneyVehicle train({JourneyStop(A), JourneyStop(D, 100)});
+		const auto graph = JourneyGraph();
+		PassengerJourneyPlanner planner(graph, nullptr, {0, 0});
+		auto result = planner.Plan(PAX, A, D, NOW);
+		REQUIRE(result.journeys.size() == 1);
+		CHECK(result.diagnostic.labels == 2);
+		CHECK(result.diagnostic.label_capacity == 32);
+		CHECK(result.diagnostic.scratch_bytes < 64 * 1024);
+	}
+	SECTION("Longer searches grow instead of reserving the full cap") {
+		std::vector<Order> stops{JourneyStop(A)};
+		for (uint16_t i = 1; i <= 100; ++i) stops.push_back(JourneyStop(StationID{i}, 1, 1));
+		JourneyVehicle train(stops);
+		const auto graph = JourneyGraph();
+		PassengerJourneyPlanner planner(graph);
+		auto result = planner.Plan(PAX, A, StationID{100}, NOW);
+		REQUIRE(result.journeys.size() == 1);
+		CHECK(result.diagnostic.labels == 101);
+		CHECK(result.diagnostic.label_capacity == 128);
+		PassengerJourneyLimits limits;
+		limits.labels = 50;
+		auto limited = planner.Plan(PAX, A, StationID{100}, NOW, limits);
+		CHECK(limited.status == PassengerPredictionStatus::LimitReached);
+		CHECK(limited.diagnostic.labels == 50);
+		CHECK(limited.diagnostic.label_capacity <= limits.labels);
+		CHECK_FALSE(limited.IsUnreachable());
+		limits = {};
+		limits.memory_bytes = 4096;
+		auto memory_limited = planner.Plan(PAX, A, StationID{100}, NOW, limits);
+		CHECK(memory_limited.status == PassengerPredictionStatus::LimitReached);
+		CHECK(memory_limited.diagnostic.labels == 0); // Reverse reachability shares the same memory budget.
+		CHECK(memory_limited.diagnostic.scratch_bytes <= limits.memory_bytes);
+		CHECK_FALSE(memory_limited.IsUnreachable());
+	}
+}
+
+TEST_CASE("Reverse journey pruning preserves unknown connections beyond captured visits", "[passenger][journey]")
+{
+	JourneyVehicle feeder({JourneyStop(A), JourneyStop(B, 100)});
+	Order unknown = JourneyStop(C, 100);
+	unknown.SetWaitTimetabled(false);
+	JourneyVehicle branch({JourneyStop(B, 10000, 120), unknown, JourneyStop(D, 100)}, VehicleID{101});
+	const auto graph = JourneyGraph();
+	PassengerJourneyPlanner planner(graph);
+	auto result = planner.Plan(PAX, A, D, NOW);
+	CHECK(result.status == PassengerPredictionStatus::Unknown);
+	CHECK_FALSE(result.IsUnreachable());
+	CHECK(result.journeys.empty());
+	/* A complete feeder cannot reach D without an interchange, despite the unknown branch. */
+	PassengerJourneyLimits limits;
+	limits.max_transfers = 0;
+	CHECK(planner.Plan(PAX, A, D, NOW, limits).IsUnreachable());
+}
+
+TEST_CASE("Journey destination lower bounds retain faster interchanges and honor preference costs", "[passenger][journey]")
+{
+	std::deque<JourneyVehicle> direct;
+	for (uint32_t i = 0; i < 8; ++i) direct.emplace_back(std::vector<Order>{JourneyStop(A), JourneyStop(D, 300)}, VehicleID{100 + i});
+	JourneyVehicle feeder({JourneyStop(A), JourneyStop(B, 40)}, VehicleID{200});
+	JourneyVehicle express({JourneyStop(B, 10000, 70), JourneyStop(D, 50)}, VehicleID{201});
+	PassengerJourneyEvaluation evaluation;
+	SECTION("A faster interchange displaces an already complete direct frontier") {}
+	SECTION("Transfer costs make direct travel preferable") { evaluation.transfer_penalty = 300; }
+	SECTION("Weighted waiting participates in the lower bound") { evaluation.waiting_weight = 10000; }
+	SECTION("Minimum interchange prevents catching the express") { evaluation.minimum_transfer = 30; }
+	const auto graph = JourneyGraph();
+	PassengerJourneyPlanner planner(graph, nullptr, {0, 0});
+	PassengerJourneyLimits all_limits;
+	all_limits.candidates = 64; // This fixture has fewer candidates; the completed-frontier bound cannot prune.
+	auto all = planner.Plan(PAX, A, D, NOW, all_limits, evaluation);
+	PassengerJourneyLimits limits;
+	limits.candidates = 1;
+	auto best = planner.Plan(PAX, A, D, NOW, limits, evaluation);
+	REQUIRE_FALSE(all.journeys.empty());
+	REQUIRE(best.journeys.size() == 1);
+	CHECK(best.status == PassengerPredictionStatus::Complete);
+	CHECK(best.journeys[0] == all.journeys[0]);
+	if (evaluation.minimum_transfer == 0 && evaluation.transfer_penalty == 0 && evaluation.waiting_weight == 0) {
+		CHECK(best.journeys[0].transfers == 1);
+		CHECK(best.journeys[0].arrival == NOW + 120);
+	} else {
+		CHECK(best.journeys[0].transfers == 0);
+	}
+}
+
 TEST_CASE("Journey boarding and alighting restrictions and repeated station occurrences", "[passenger][journey]")
 {
 	Order middle = JourneyStop(B, 100);
@@ -393,7 +528,7 @@ TEST_CASE("Journey partial candidates and route diversity are retained under exp
 	PassengerJourneyLimits limits;
 	limits.max_transfers = 0;
 	SECTION("Insufficient work after finding a valid journey") {
-		limits.work = 5;
+		limits.work = uncached.Plan(PAX, A, D, NOW, limits).diagnostic.reverse_work + 5;
 		auto result = planner.Plan(PAX, A, D, NOW, limits);
 		CHECK(result.status == PassengerPredictionStatus::BudgetExhausted);
 		REQUIRE(result.journeys.size() == 1);
@@ -474,32 +609,45 @@ TEST_CASE("National journey queries reach eight thousand stations without whole 
 		for (uint16_t station = 1; station <= 100; ++station) orders.push_back(JourneyStop(StationID{static_cast<uint16_t>(route * 100 + station)}, 1, 1));
 		for (uint16_t train = 0; train < 10; ++train) fleet.emplace_back(orders, VehicleID{static_cast<uint32_t>(1000 + route * 10 + train)});
 	}
+	StationID origin = A;
+	std::optional<JourneyVehicle> feeder;
+	SECTION("Hub query") {}
+	SECTION("A feeder interchange into the last hub route") {
+		origin = StationID{8001};
+		feeder.emplace(std::vector<Order>{JourneyStop(origin, 100000, 0), JourneyStop(A, 1, 1)}, VehicleID{2000});
+	}
 	PassengerServiceGraphLimits graph_limits;
 	graph_limits.horizon = 1000;
 	const auto graph = PassengerServiceGraph::Build(PAX, NOW, graph_limits);
-	REQUIRE(graph.GetTrips().size() == 800);
+	REQUIRE(graph.GetTrips().size() == (feeder ? 801 : 800));
 	size_t visits = 0;
 	for (const auto &trip : graph.GetTrips()) visits += trip.prediction.visits.size();
 	REQUIRE(visits >= 80000);
-	PassengerJourneyLimits limits;
-	limits.max_transfers = 0;
-	limits.labels = 100000;
-	limits.memory_bytes = 128 * 1024 * 1024;
-	limits.work = 1 << 24;
+	PassengerJourneyLimits limits; // All defaults, including four transfers and the original work/label caps.
 	PassengerJourneyPlanner planner(graph);
 	const auto start = std::chrono::steady_clock::now();
-	auto result = planner.Plan(PAX, A, StationID{8000}, NOW, limits);
+	auto result = planner.Plan(PAX, origin, StationID{8000}, NOW);
 	const auto us = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - start).count();
 	REQUIRE_FALSE(result.journeys.empty());
 	CHECK(result.status == PassengerPredictionStatus::Complete);
 	CHECK(result.journeys[0].arrival == NOW + 200);
-	CHECK(result.diagnostic.labels > 8000);
+	CHECK(result.journeys[0].transfers == (feeder ? 1 : 0));
+	CHECK(result.diagnostic.labels <= (feeder ? 1002 : 1001));
+	CHECK(result.diagnostic.label_capacity <= 1024);
+	CHECK(result.diagnostic.boardings == (feeder ? 11 : 10));
+	CHECK(result.diagnostic.pruned_boardings == (feeder ? 791 : 790));
+	CHECK(result.diagnostic.pruned_labels > 0);
+	CHECK(result.diagnostic.visits == (feeder ? 1001 : 1000));
+	CHECK(result.diagnostic.reverse_work < 10000);
+	CHECK(result.diagnostic.work < 65536);
 	CHECK(result.diagnostic.work <= limits.work);
 	CHECK(result.diagnostic.scratch_bytes <= limits.memory_bytes);
-	CHECK(planner.Plan(PAX, A, StationID{8000}, NOW, limits).diagnostic.cache_hit);
+	CHECK(result.diagnostic.scratch_bytes < 2 * 1024 * 1024);
+	CHECK(planner.Plan(PAX, origin, StationID{8000}, NOW).diagnostic.cache_hit);
 	/* A leaf query examines one route, not 80000 unrelated visits. */
-	auto leaf = planner.Plan(PAX, StationID{7901}, StationID{8000}, NOW, limits);
+	auto leaf = planner.Plan(PAX, StationID{7901}, StationID{8000}, NOW);
 	REQUIRE_FALSE(leaf.journeys.empty());
+	CHECK(leaf.status == PassengerPredictionStatus::Complete);
 	CHECK(leaf.diagnostic.visits < 2000);
-	WARN("National journey: " << us << " us; stations=8001; trips=800; visits=" << visits << "; work=" << result.diagnostic.work << "; scratch allowance=" << result.diagnostic.scratch_bytes);
+	WARN("National journey defaults: " << us << " us; trips=" << graph.GetTrips().size() << "; visits=" << visits << "; work=" << result.diagnostic.work << "; reverse work=" << result.diagnostic.reverse_work << "; scratch peak=" << result.diagnostic.scratch_bytes);
 }

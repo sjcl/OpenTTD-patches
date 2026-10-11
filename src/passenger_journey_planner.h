@@ -17,7 +17,7 @@ struct PassengerJourneyLimits {
 	size_t labels_per_station = 16; ///< Per round; preserve distinct vehicle paths even when slower.
 	size_t labels = 65536;
 	size_t work = 1048576;
-	size_t memory_bytes = 32 * 1024 * 1024; ///< Conservative scratch allowance, also bounded by labels.
+	size_t memory_bytes = 128 * 1024 * 1024; ///< Upper bound, allocated incrementally for reachability and labels.
 	auto operator<=>(const PassengerJourneyLimits &) const = default;
 };
 
@@ -89,11 +89,15 @@ struct PassengerPlannedJourney {
 
 struct PassengerJourneyWork {
 	size_t work = 0;
+	size_t reverse_work = 0; ///< Included in work, not a separate allowance.
 	size_t boardings = 0;
+	size_t pruned_boardings = 0; ///< Departures excluded by destination reachability.
+	size_t pruned_labels = 0; ///< Frontiers whose lower bound cannot improve the requested candidates.
 	size_t visits = 0;
 	size_t labels = 0;
+	size_t label_capacity = 0; ///< Peak allocated label slots, independent of the configured cap.
 	size_t capacity_rejections = 0;
-	size_t scratch_bytes = 0; ///< Conservative reserved scratch allowance, diagnostic only.
+	size_t scratch_bytes = 0; ///< Conservative peak allocated scratch estimate, diagnostic only.
 	bool cache_hit = false;
 };
 
@@ -113,7 +117,7 @@ struct PassengerJourneyCacheLimits {
 /**
  * RAPTOR boarding rounds over an immutable train snapshot, with Pareto labels per vehicle path.
  * Slower corridors survive dominance by faster, different corridors, up to explicit label limits.
- * No global vehicle/station scan per query; no calls to live order prediction or cargo staging.
+ * Reverse reachability visits only destination/uncertainty-connected occurrences. No live prediction or cargo staging.
  * The graph and optional provider must outlive this object and remain immutable during each query.
  * Cache eviction affects performance only. Search allowances are per query, including cache misses.
  */

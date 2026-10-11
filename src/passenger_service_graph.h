@@ -136,6 +136,11 @@ public:
 	};
 	/** Allocation-free O(log stations + log departures) lookup; conservative coverage for the full snapshot horizon. */
 	Departures GetDepartures(StationID station, StateTicks from, StateTicks to) const;
+	/** Capture-order occurrences for reverse reachability; flags/times must still be checked. */
+	std::span<const VisitID> GetStationVisits(StationID station) const;
+	/** Declared stations whose services have incomplete prediction coverage, including missing visits. */
+	std::span<const StationID> GetUncertainStations() const { return this->uncertain_stations; }
+	PassengerPredictionStatus GetUncertainStatus() const { return this->uncertain_status; }
 	const Stop &GetVisitStop(VisitID id) const { return this->GetStop(this->trips[id.trip], this->trips[id.trip].prediction.visits[id.visit].order); }
 
 private:
@@ -154,6 +159,8 @@ private:
 		PassengerPredictionStatus status = PassengerPredictionStatus::Complete;
 	};
 	std::map<StationID, DepartureIndex> station_departures;
+	std::vector<StationID> uncertain_stations;
+	PassengerPredictionStatus uncertain_status = PassengerPredictionStatus::Complete;
 	void BuildDepartureIndex();
 	const Stop &GetStop(const Trip &trip, VehicleOrderID order) const;
 	QueryResult<VisitID> SelectVisits(StationID station, StateTicks from, StateTicks to, size_t &budget) const;

@@ -184,6 +184,18 @@ void PassengerServiceGraph::BuildDepartureIndex()
 					std::tuple(*tb.prediction.visits[b.visit].departure, tb.vehicle, b.trip, b.visit);
 		});
 	}
+	for (const auto &[station, index] : this->station_departures) {
+		auto status = index.unknown.empty() ? index.status : MergeGraphStatus(index.status, PassengerPredictionStatus::Unknown);
+		if (status == PassengerPredictionStatus::Complete) continue;
+		this->uncertain_stations.push_back(station);
+		this->uncertain_status = MergeGraphStatus(this->uncertain_status, status);
+	}
+}
+
+std::span<const PassengerServiceGraph::VisitID> PassengerServiceGraph::GetStationVisits(StationID station) const
+{
+	auto it = this->station_visits.find(station);
+	return it == this->station_visits.end() ? std::span<const VisitID>{} : it->second;
 }
 
 PassengerServiceGraph::Departures PassengerServiceGraph::GetDepartures(StationID station, StateTicks from, StateTicks to) const
