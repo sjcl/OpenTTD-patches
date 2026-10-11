@@ -9,6 +9,13 @@ actual passenger-class cargo compartments and their current capacity. Effects,
 aircraft shadows/rotors, wagons and articulated parts are not separate trips;
 their passenger compartments contribute to their primary vehicle's capacity.
 Freight-only and zero-passenger-capacity vehicles have no passenger trips.
+Before constructing a Service, a bounded scan of the shared vehicles and their
+actual compartments checks for capacity of the requested CargoType. Lists with
+no such capacity skip order/dispatch copying, nominal prediction and all service
+index entries; they consume no Service slots. The scan stops at its first match,
+so a passenger vehicle later in a shared chain keeps the service eligible. Trip
+limits are checked only after confirming a vehicle's positive passenger capacity.
+Discovery itself still consumes bounded Work; an exhausted scan remains incomplete.
 
 The synchronized Active setting remains disabled by default. Automatic passenger
 distribution and an explicit `passenger_destination` are still required. The
@@ -151,21 +158,30 @@ MSVC 19.44, Windows x64 Release, dedicated build with assertions enabled and LTO
 disabled. Both `openttd` and `openttd_test` build successfully. The static dependency
 configuration reports the existing CRT linker warning LNK4098.
 
-- Explicit `[passenger]` selection: **143 test cases, 111,728 assertions passed**,
+- Explicit `[passenger]` selection: **145 test cases, 111,825 assertions passed**,
   including hidden passenger performance cases.
-- Default unit selection: **340 cases, 105,349 assertions passed**. Its assertion
+- Default unit selection: **342 cases, 105,446 assertions passed**. Its assertion
   total is lower because the default selection excludes hidden performance cases.
-- Full CTest: **347/347 passed**, including all registered unit tests and the
-  existing four AI/GS regressions (17.43 seconds on the final run).
+- Full CTest: **349/349 passed**, including all registered unit tests and the
+  existing four AI/GS regressions (17.24 seconds on the final run).
 - Production load/Active/Shadow tests pass, including old-save migration,
   save/reload of the synchronized setting, late afterload, GUI aggregation
   non-interference and byte-identical Shadow-on/off saves.
 
-`src/tests/passenger_multimodal.cpp` adds 16 cases with generated vehicle types
+`src/tests/passenger_multimodal.cpp` adds 18 cases with generated vehicle types
 and sections. Fixtures allocate real Train/RoadVehicle/Ship/Aircraft objects,
 actual map stops/docks/airports and actual cargo queues/actions; tests do not
 substitute a generic Vehicle object for a specialized vehicle layout. Earlier
 pure prediction fixtures now create station facilities needed by live validation.
+
+The freight-budget regression places 1,024 freight-only OrderLists before the
+passenger service, each with 64 orders and 256 dispatch slots. The passenger
+service is captured and searchable within 4,096 Work, also with only one Service
+and Trip slot. Removing the excluded dispatch data leaves capture Work and chosen
+journeys identical. A smaller discovery allowance reports BudgetExhausted and an
+inconclusive search. Each mode also tests a shared freight/passenger/freight chain
+at the one-Trip limit, then removes its only passenger capacity and rebuilds to an
+empty graph. Both new regressions fail against the original implementation.
 
 | Requested scenarios | Regression coverage |
 | --- | --- |
@@ -202,11 +218,11 @@ reporting elapsed time:
 | Stations / physical trips | 2,402 / 480 (120 of each mode) |
 | Stopping orders | 21 per physical trip |
 | Capture horizon | 1,000 state ticks |
-| Graph build | 6,734 microseconds |
-| Active-style query | 89 microseconds |
-| Graph work / query work | 75,480 / 2,262 |
+| Graph build | 6,892 microseconds |
+| Active-style query | 101 microseconds |
+| Graph work / query work | 76,440 / 2,262 |
 | Query scratch envelope | 114,320 bytes |
-| Graph conservative allocation envelope | 77,291,520 bytes (73.7 MiB) |
+| Graph conservative allocation envelope | 78,274,560 bytes (74.6 MiB) |
 | Query cache | Identical OD query hits the shared cache |
 
 The query selects one candidate with the Active 65,536-work and 8 MiB scratch

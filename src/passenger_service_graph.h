@@ -29,7 +29,8 @@ struct PassengerServiceGraphLimits {
 /**
  * Immutable after construction. All IDs, flags, durations and schedules are owned values.
  * Services describe declared order patterns; only Trip predictions certify future visit occurrences.
- * Build scans order lists once, their physical fleets once, then runs bounded predictions per vehicle.
+ * Build checks capacity before copying an order list, then captures its eligible physical fleet
+ * and runs bounded predictions per vehicle. Freight-only lists skip pattern construction entirely.
  * With O orders, V consist parts, D dispatch slots inspected and P predicted order steps, build work
  * is O(O + V + D + P), plus ordered index insertion/lookup costs. Storage is bounded by copied
  * orders/schedules and total visits. Queries inspect only the station's indexed services/visits,

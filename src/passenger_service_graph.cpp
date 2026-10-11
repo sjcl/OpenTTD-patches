@@ -55,6 +55,18 @@ PassengerServiceGraph PassengerServiceGraph::Build(CargoType cargo, StateTicks n
 		if (!SpendGraphWork(budget)) { graph.status = PassengerPredictionStatus::BudgetExhausted; break; }
 		const Vehicle *first = list->GetFirstSharedVehicle();
 		if (!IsPassengerServiceVehicle(first)) continue;
+		/* Freight-only fleets need no owned orders, dispatch slots, nominal prediction
+		 * or service/index entries. A later shared vehicle or consist compartment can
+		 * carry this cargo even when the first vehicle cannot. Charge this cheap scan
+		 * too, so incomplete discovery still reports an exhausted capture budget. */
+		bool passenger_service = false;
+		for (const Vehicle *v = first; v != nullptr; v = v->NextShared()) {
+			if (!SpendGraphWork(budget)) break;
+			if (HasPassengerVehicleCapacity(v, cargo, budget)) { passenger_service = true; break; }
+			if (budget == 0) break;
+		}
+		if (budget == 0) { graph.status = PassengerPredictionStatus::BudgetExhausted; break; }
+		if (!passenger_service) continue;
 		if (graph.services.size() >= limits.services) { graph.status = PassengerPredictionStatus::LimitReached; break; }
 		/* Order owns its extra cargo/dispatch flags. Copy only timing fields from schedules:
 		 * GUI strings are irrelevant and cannot consume unbounded copying work. */
@@ -115,7 +127,6 @@ PassengerServiceGraph PassengerServiceGraph::Build(CargoType cargo, StateTicks n
 		for (const Vehicle *v = first; v != nullptr; v = v->NextShared()) {
 			if (!SpendGraphWork(budget)) { graph.status = PassengerPredictionStatus::BudgetExhausted; break; }
 			if (!IsPassengerServiceVehicle(v)) continue;
-			if (graph.trips.size() >= limits.trips) { graph.status = PassengerPredictionStatus::LimitReached; break; }
 			uint64_t capacity = 0, occupants = 0;
 			for (const Vehicle *u = v; u != nullptr; u = u->Next()) {
 				if (!SpendGraphWork(budget)) break;
@@ -126,6 +137,7 @@ PassengerServiceGraph PassengerServiceGraph::Build(CargoType cargo, StateTicks n
 			}
 			if (budget == 0) { graph.status = PassengerPredictionStatus::BudgetExhausted; break; }
 			if (capacity == 0) continue; // Exclude freight-only consists and mail-only aircraft.
+			if (graph.trips.size() >= limits.trips) { graph.status = PassengerPredictionStatus::LimitReached; break; }
 			Operation operation = v->vehstatus.Test(VehState::Crashed) ? Operation::Crashed :
 					v->vehstatus.Test(VehState::Stopped) ? Operation::Stopped : Operation::Running;
 			Trip trip{ v->index, stored.id, v->tile, v->GetMovingDirection(), v->cur_real_order_index, v->cur_implicit_order_index,

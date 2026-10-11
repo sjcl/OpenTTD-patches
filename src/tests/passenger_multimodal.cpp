@@ -197,7 +197,82 @@ TEST_CASE("Freight-only and zero-capacity vehicles never become passenger trips"
 	size_t work = 4096;
 	CHECK_FALSE(HasPassengerVehicleCapacity(v, PAX, work));
 	const auto graph = f.Graph(); CHECK(graph.GetTrips().empty());
+	CHECK(graph.GetServices().empty());
+	CHECK(graph.GetServicesAtStation(A).empty());
 	PassengerJourneyPlanner planner(graph); CHECK_FALSE(planner.Plan(PAX, A, E, NOW).HasJourney());
+}
+
+TEST_CASE("Freight-only fleets leave capture work and service slots for passenger services", "[passenger][multimodal][service_graph][freight]")
+{
+	MultimodalFixture f;
+	constexpr size_t freight_count = 1024;
+	std::array modes{VehicleType::Train, VehicleType::Road, VehicleType::Ship, VehicleType::Aircraft};
+	std::vector<Order> freight_orders(64, MultiStop(B, 10, 10));
+	freight_orders.front() = MultiStop(A, 10, 10);
+	std::vector<Vehicle *> freight;
+	for (size_t i = 0; i < freight_count; ++i) {
+		Vehicle *v = f.Service(modes[i % modes.size()], freight_orders); v->cargo_type = MAIL;
+		v->orders->GetScheduledDispatchScheduleSet().resize(1);
+		auto &schedule = v->orders->GetDispatchScheduleByIndex(0);
+		schedule.SetScheduledDispatchStartTick(NOW); schedule.SetScheduledDispatchDuration(1000);
+		for (uint32_t slot = 0; slot < 256; ++slot) schedule.GetScheduledDispatchMutable().push_back({slot, 0, {}});
+		freight.push_back(v);
+	}
+	/* Created last so every irrelevant OrderList is encountered before this service. */
+	Vehicle *passenger = f.Service(VehicleType::Train, {MultiStop(A), MultiStop(E, 100)});
+	PassengerServiceGraphLimits limits; limits.horizon = 1000; limits.work = 4096;
+	SECTION("Work-limited capture") {}
+	SECTION("Only one Service and Trip slot") { limits.services = limits.trips = 1; }
+	SECTION("Preflight itself is bounded and never certifies an incomplete fleet") {
+		limits.work = freight_count;
+		const auto graph = PassengerServiceGraph::Build(PAX, NOW, limits);
+		CHECK(graph.GetStatus() == PassengerPredictionStatus::BudgetExhausted);
+		CHECK(graph.GetWork() == limits.work);
+		CHECK(graph.GetServices().empty()); CHECK(graph.GetTrips().empty());
+		PassengerJourneyPlanner planner(graph); CHECK(planner.Plan(PAX, A, E, NOW).IsInconclusive());
+		return;
+	}
+	GameRandomSeedChecker seeds;
+	const auto graph = PassengerServiceGraph::Build(PAX, NOW, limits);
+	REQUIRE(graph.GetStatus() == PassengerPredictionStatus::Complete);
+	REQUIRE(graph.GetServices().size() == 1); REQUIRE(graph.GetTrips().size() == 1);
+	CHECK(graph.GetServices().front().id == passenger->orders->index);
+	CHECK(graph.GetTrips().front().vehicle == passenger->index);
+	CHECK(graph.GetServicesAtStation(B).empty());
+	CHECK(graph.GetWork() < limits.work); CHECK(graph.GetMemoryBound() <= limits.memory_bytes);
+	PassengerJourneyPlanner planner(graph); CHECK(planner.Plan(PAX, A, E, NOW).HasJourney());
+	/* Dispatch length on excluded services has no effect on graph work or snapshots. */
+	for (Vehicle *v : freight) v->orders->GetScheduledDispatchScheduleSet().clear();
+	const auto without_slots = PassengerServiceGraph::Build(PAX, NOW, limits);
+	CHECK(without_slots.GetStatus() == PassengerPredictionStatus::Complete);
+	CHECK(without_slots.GetWork() == graph.GetWork());
+	PassengerJourneyPlanner without_slots_planner(without_slots);
+	CHECK(without_slots_planner.Plan(PAX, A, E, NOW).journeys == planner.Plan(PAX, A, E, NOW).journeys);
+	CHECK(seeds.Check());
+}
+
+TEST_CASE("Shared orders retain passenger members among freight-only vehicles", "[passenger][multimodal][service_graph][freight]")
+{
+	MultimodalFixture f;
+	VehicleType type = GENERATE(VehicleType::Train, VehicleType::Road, VehicleType::Ship, VehicleType::Aircraft);
+	Vehicle *first = f.Service(type, {MultiStop(A), MultiStop(E, 100)}); first->cargo_type = MAIL;
+	Vehicle *passenger = f.Service(type, {MultiStop(A), MultiStop(E, 100)});
+	passenger->orders->FreeChain(); passenger->orders = first->orders; passenger->AddToShared(first);
+	Vehicle *last = f.Service(type, {MultiStop(A), MultiStop(E, 100)}); last->cargo_type = MAIL;
+	last->orders->FreeChain(); last->orders = first->orders; last->AddToShared(passenger);
+	PassengerServiceGraphLimits limits; limits.horizon = 1000; limits.services = limits.trips = 1;
+	const auto graph = PassengerServiceGraph::Build(PAX, NOW, limits);
+	REQUIRE(graph.GetStatus() == PassengerPredictionStatus::Complete);
+	REQUIRE(graph.GetServices().size() == 1); REQUIRE(graph.GetTrips().size() == 1);
+	CHECK(graph.GetServices().front().id == first->orders->index);
+	CHECK(graph.GetTrips().front().vehicle == passenger->index);
+	PassengerJourneyPlanner planner(graph); CHECK(planner.Plan(PAX, A, E, NOW).HasJourney());
+	/* Rebuild from current capacity; no stale service-level eligibility cache. */
+	passenger->cargo_cap = 0;
+	limits.services = limits.trips = 0;
+	const auto no_passengers = PassengerServiceGraph::Build(PAX, NOW, limits);
+	CHECK(no_passengers.GetStatus() == PassengerPredictionStatus::Complete);
+	CHECK(no_passengers.GetServices().empty()); CHECK(no_passengers.GetTrips().empty());
 }
 
 TEST_CASE("A road direction edit invalidates execution even when the stop is still usable", "[passenger][multimodal][active]")
