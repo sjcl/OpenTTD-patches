@@ -30,8 +30,17 @@ vehicle/order pointers are never consulted during queries.
 
 The initial frontier is the origin at the ready time. A round boards one actual
 predicted vehicle occurrence and scans its downstream visits. Labels produced
-by that round become the next round's station frontier; defaults permit four
-transfers, meaning five boarding rounds. The search ends at the destination.
+by that round become the next round's station frontier. The default
+`initial_max_transfers = 4` first searches five boarding rounds. If no destination
+candidate exists, the stage grows to 8, 16, 32, 64, and so on, bounded by
+`max_transfers` (default and internal safety ceiling: 65,535), work, labels,
+memory and the immutable prediction horizon. A stage resumes the existing
+frontier: labels, back pointers, destination candidates, capacity evaluations,
+uncertainty and spent work are never reset. Once a candidate exists, alternatives
+are searched through the current stage, without another extension. An exhausted
+frontier can finish earlier. Explicit `max_transfers = 0` searches direct rides
+only; `initial_max_transfers = 0` with a larger safety ceiling may extend.
+The search ends at the destination.
 Through riding scans across intermediate stops in the same round and does not
 add transfers. A forced unload ends the leg. Reboarding the same physical train
 at that exact occurrence is an explicit interchange, subject to the same minimum
@@ -45,9 +54,13 @@ backward trip scans propagate these distances up to a forced unload or unknown
 time. Each trip occurrence is marked once, rather than scanning its entire
 suffix separately for every possible alighting stop. Readiness, minimum
 interchange and forecasts are relaxed, so these distances are lower bounds,
-never a claim that a train can actually be caught. A departure is skipped if its
-suffix cannot reach the destination with the remaining boardings. Intermediate
-labels are retained only at stations that can still complete the journey.
+never a claim that a train can actually be caught. This reverse search computes
+all connected layers once under the same budgets, independent of the initial
+forward stage; a deep corridor must not be discarded before extension. A
+departure is skipped if its suffix cannot reach the destination or an uncertain
+service. Intermediate labels are retained at stations that can still complete
+the journey, including beyond the current stage. Reverse work can therefore
+increase for a destination connected to many distant interchange layers.
 
 Incomplete predictions require a second conservative reverse search, seeded at
 declared stations of those services even when their dynamic branch captured no
@@ -72,6 +85,12 @@ generalized cost, capacity penalty, prediction quality, capacity uncertainty
 and minimum forecast free seats. It never lets the fastest arrival alone erase
 all other corridors. Different transfer rounds also preserve fewer-transfer
 alternatives. Same-path occurrences with incomparable capacity forecasts survive.
+With unweighted waiting, returning to a previous interchange is excluded: waiting
+there can catch the same actual onward departure with no worse preference cost.
+With a positive waiting weight, a positive-time circuit can reduce the waiting
+penalty and remains eligible; zero-time return cycles are still excluded. Each
+ancestor comparison consumes work. Through rides across repeated stations and
+forced unloading followed by a later real train occurrence remain supported.
 
 Distinct physical train paths can still exceed the explicit label allowance.
 In that case deterministic cost ordering keeps the best labels and the result
@@ -80,8 +99,12 @@ every Pareto path. Defaults return up to eight final candidates, retain up to
 16 labels per station/round, and allow 1,048,576 work units and 65,536 stored
 labels, further constrained by a 128 MiB conservative scratch allowance. The
 public limits are independently adjustable in tests. Defensive hard caps are
-eight transfers, 64 final candidates, 256 labels per station, 2^20 stored labels
+65,535 transfers, 64 final candidates, 256 labels per station, 2^20 stored labels
 and 2^24 work units.
+Boarding rounds, reverse distances and public journey transfer counts use
+`uint32_t`; the safety ceiling is applied before incrementing or doubling stages.
+The initial stage was appended to the limits struct to preserve existing positional
+limit arguments. There are no production consumers or persisted journey fields.
 
 The predictor remains `PredictPassengerVisits`; it is not duplicated. NoLoad,
 NoUnload and forced unloading come from the captured service stops. Repeated
@@ -109,10 +132,10 @@ boardable visit, plus station containers and vector capacity. Sorting is snapsho
 postprocessing, bounded by the graph's total visit limit; it does not consume a
 journey query's allowance.
 
-Reverse queries use the existing station occurrence index. They allocate one
-byte per occurrence only for connected trips, plus bounded station/queue and
+Reverse queries use the existing station occurrence index. They allocate four
+bytes per occurrence only for connected trips, plus bounded station/queue and
 trip-map storage. Each of the two reverse searches costs
-O((P_c + S_c) log(S_c + T_c)), including byte-array initialization, for P_c visits
+O((P_c + S_c) log(S_c + T_c)), including distance-array initialization, for P_c visits
 in connected trips, S_c reached stations and T_c reached trips. Their work and
 memory count against the same query allowances as forward routing. Complete
 snapshots require no uncertainty search and no scan of unrelated trip arrays.
@@ -127,22 +150,29 @@ O(K log K + C R), for K retained destination labels and C returned journeys.
 The forward variant can scan a trip suffix from several boarding
 occurrences, rather than guaranteeing one route scan per round. Explicit work
 limits bound dense-network worst cases and report incomplete results. Diagnostics
-count total/reverse work, expanded/pruned boarding candidates, pruned frontiers,
+count entered rounds, stage extensions, total/reverse work, expanded/pruned boarding candidates, pruned frontiers,
 visited occurrences, stored labels, allocated label slots, capacity rejections
-and a conservative peak allocated scratch estimate. Back pointers avoid copying
+and cycle rejections, and a conservative peak storage allowance. Back pointers avoid copying
 whole paths into every label; final reconstruction is bounded by candidates * R.
+Final path reconstruction work and storage are reserved when a destination label
+is admitted. This covers paths sharing a long prefix, whose returned leg arrays
+can be much larger than the prefix's stored labels. A failed replacement leaves
+the previously admitted candidate available. Storage reservations for discarded
+destination alternatives remain charged conservatively for the query.
 Labels start with at most 32 slots and grow by doubling, clipped to the remaining
 memory/record cap. Short cache misses therefore do not reserve tens of thousands
 of labels. Frontier/map bookkeeping and transient vector growth are covered by
 `2 * sizeof(internal label) + 256` per allocated slot, plus reverse-search
-storage. The diagnostic reports this estimate for actual allocated slots,
+storage and returned-path reservations. The diagnostic reports this estimate for actual allocated slots,
 rather than reporting the entire configured maximum as a reservation.
 
 The planner cache belongs to one graph instance, with defaults of 128 entries
 and an 8 MiB retained-payload allowance. Keys include OD, cargo, ready departure
 event, passenger count, all search/evaluation parameters and capacity-provider
 revision. The provider must increment its revision when forecasts change.
-Cached partial results use exactly the same allowances as misses.
+Both initial and safety transfer ceilings are included in the limits key.
+Cached partial results retain their stop reason and horizon and use exactly the
+same allowances as misses.
 
 Readiness ticks between consecutive origin departures have identical catchable
 services. The search uses the next actual departure as its anchor and adds the
@@ -197,9 +227,24 @@ overflowing or changing real times. For a 500-person window, a shortcut serving
 ## Completeness and future boarding integration
 
 Result status distinguishes `Complete`, `Unknown`, `LimitReached` and
-`BudgetExhausted`, preserving graph and query uncertainty. Valid prefix journeys
-can be returned with incomplete status. `IsUnreachable()` is true only for an
-empty complete search, within the snapshot horizon and configured transfer range.
+`BudgetExhausted`, preserving graph and query uncertainty. Every returned journey
+reaches the requested final destination with validated leg times. `HasJourney()`
+reports these usable candidates even if alternatives could not be fully searched.
+`stop_reason` separately distinguishes exhausted frontiers, transfer ceilings,
+work, label or memory exhaustion, incomplete predictions, insufficient horizon,
+and invalid queries. Reaching the initial/current stage with remaining frontiers
+reports `TransferLimit` even if a candidate was found: deeper alternatives may
+improve it. Reaching a safety ceiling without a candidate is always inconclusive.
+
+For an empty otherwise complete search, a budgeted reverse check of operational
+declared stop patterns conservatively distinguishes disconnected OD from a
+corridor that may require predictions beyond this snapshot. This check never
+generates a timed journey or a synthetic departure. A possible corridor reports
+`PredictionHorizon` / `Unknown`; a disconnected origin can report
+`Exhausted` / `Complete`. `IsUnreachable()` requires an empty, complete, exhausted
+result and applies only within the exclusive `prediction_end` and supplied
+conditions. It never certifies permanent disconnection. `IsInconclusive()`
+identifies empty uncertain/limited/invalid results for CargoDist fallback.
 Prediction suffix status is also retained on individual legs/journeys; reaching
 a destination before an uncertain suffix does not make the suffix known.
 
@@ -208,7 +253,10 @@ epoch, group packets by OD and readiness event, and select a time-valid candidat
 before separately verifying live loading rules and available capacity. It should
 reserve seats by physical vehicle and segment, update the capacity-provider
 revision, and replan after missed/full departures. OD-unknown packets and
-inconclusive results should keep the CargoDist fallback. Never persist these
+inconclusive results should keep the CargoDist fallback. Never clear
+`passenger_destination` after a limited search or replace it with an intermediate
+station. This change does not connect the planner to loading or modify packets.
+Never persist these
 snapshot IDs or use current observations as future reservations.
 
 ## OD packet limit
@@ -271,6 +319,48 @@ searches for faster expresses, transfer penalties, weighted waits and missed
 interchanges. Timings are diagnostics, not test thresholds or simulation inputs.
 Dense connected networks can still exhaust explicit work/label/memory limits;
 these fixtures do not promise complete enumeration for arbitrary networks.
+
+## Transfer-limit validation on 2026-10-11
+
+The transfer-limit change builds with Windows x64 GCC 16.1, Release and assertions
+enabled. `cmake --build build-transfer --target openttd_test -j 8` succeeded;
+`build-transfer/openttd_test.exe` passed all 291 unit cases (62,091 assertions),
+including the existing JourneyPlanner, PassengerServiceGraph, routing and OD
+cases. No loading/staging or save-format source was changed. Ten new cases use
+actual order timetables and test the requested depths, stage continuation,
+direct-only limits, partial candidate retention, each resource stop reason,
+short horizons, disconnected stations, invalid OD, zero-time/circular/reversing
+services, useful weighted-wait circuits, wide counters, and capacity/prediction
+state carried into later stages. Cache hits and disabled caches agree on routes,
+status, stop reason, horizon and diagnostic counts; random seeds remain unchanged.
+
+With one actual train per connection, the default search reports:
+
+| Transfers | Boarding rounds | Stage extensions | Work | Stored labels | Conservative storage allowance (bytes) |
+| ---: | ---: | ---: | ---: | ---: | ---: |
+| 0 | 1 | 0 | 12 | 2 | 27,064 |
+| 4 | 5 | 0 | 70 | 6 | 29,720 |
+| 5 | 6 | 1 | 87 | 7 | 30,384 |
+| 9 | 10 | 2 | 165 | 11 | 33,040 |
+| 15 | 16 | 2 | 312 | 17 | 37,024 |
+| 33 | 34 | 4 | 969 | 35 | 75,088 |
+| 300 | 301 | 7 | 48,762 | 302 | 617,944 |
+
+For every depth, starting with the final wide stage consumes exactly the same
+work, reverse work, labels and storage allowance as geometric extension. The
+deep chain's quadratic ancestor checks remain inside the default work budget;
+very deep/dense queries may still stop inconclusively when budgets run out.
+
+The existing 8,000-station hub query still stores 1,001 labels in 1,024 slots and
+expands 10 physical trains / 1,000 downstream visits. Compared with the base
+branch's existing executable, work changes from 35,692 to 35,702 and the storage
+allowance from 850,802 to 859,432 bytes (+1.0%). The feeder variant still stores
+1,002 labels in 1,024 slots and expands 11 trains / 1,001 visits; work changes
+from 49,203 to 50,223 (+2.1%) and storage from 851,060 to 863,696 bytes (+1.5%).
+Both finish under unchanged default work/label/memory budgets. Added work pays
+for cycle checks and final reconstruction; added storage accounts for four-byte
+reverse distances and returned-path reservations. Cold fixture times remained
+approximately 0.45-0.64 ms across these runs, without timing thresholds.
 
 The 8,000-destination OD generation fixture produced 400 batches of 512 people
 with zero unknown destinations. Total generation time was approximately

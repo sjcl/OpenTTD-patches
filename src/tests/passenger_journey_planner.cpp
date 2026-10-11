@@ -54,6 +54,35 @@ static PassengerServiceGraph JourneyGraph(Ticks horizon = 1000)
 	return PassengerServiceGraph::Build(PAX, NOW, limits);
 }
 
+/** One physical train per connection, with actual timetabled departures at NOW + 10 + 20*i.
+ * The 10000-tick return leg keeps subsequent circuits outside these test horizons. */
+struct JourneyChain {
+	std::deque<JourneyVehicle> trains;
+	explicit JourneyChain(uint32_t transfers)
+	{
+		for (uint32_t i = 0; i <= transfers; ++i) {
+			this->trains.emplace_back(std::vector<Order>{JourneyStop(StationID{static_cast<uint16_t>(i)}, 10000, 10 + 20 * i),
+					JourneyStop(StationID{static_cast<uint16_t>(i + 1)}, 10)}, VehicleID{1000 + i});
+		}
+	}
+};
+
+static void CheckSameJourneyResult(const PassengerJourneyResult &a, const PassengerJourneyResult &b)
+{
+	CHECK(a.journeys == b.journeys);
+	CHECK(a.status == b.status);
+	CHECK(a.stop_reason == b.stop_reason);
+	CHECK(a.prediction_end == b.prediction_end);
+	CHECK(a.IsUnreachable() == b.IsUnreachable());
+	CHECK(a.IsInconclusive() == b.IsInconclusive());
+	CHECK(a.diagnostic.work == b.diagnostic.work);
+	CHECK(a.diagnostic.reverse_work == b.diagnostic.reverse_work);
+	CHECK(a.diagnostic.rounds == b.diagnostic.rounds);
+	CHECK(a.diagnostic.extensions == b.diagnostic.extensions);
+	CHECK(a.diagnostic.labels == b.diagnostic.labels);
+	CHECK(a.diagnostic.scratch_bytes == b.diagnostic.scratch_bytes);
+}
+
 struct JourneyCapacity : PassengerJourneyCapacityProvider {
 	std::map<VehicleID, PassengerJourneyCapacity> estimates;
 	uint64_t revision = 1;
@@ -332,10 +361,12 @@ TEST_CASE("Reverse journey pruning preserves unknown connections beyond captured
 	CHECK(result.status == PassengerPredictionStatus::Unknown);
 	CHECK_FALSE(result.IsUnreachable());
 	CHECK(result.journeys.empty());
-	/* A complete feeder cannot reach D without an interchange, despite the unknown branch. */
+	/* Direct-only pruning must not turn a possible interchange into certified absence. */
 	PassengerJourneyLimits limits;
 	limits.max_transfers = 0;
-	CHECK(planner.Plan(PAX, A, D, NOW, limits).IsUnreachable());
+	auto direct = planner.Plan(PAX, A, D, NOW, limits);
+	CHECK(direct.IsInconclusive());
+	CHECK(direct.stop_reason == PassengerJourneyStopReason::TransferLimit);
 }
 
 TEST_CASE("Journey destination lower bounds retain faster interchanges and honor preference costs", "[passenger][journey]")
@@ -402,7 +433,7 @@ TEST_CASE("Journey boarding and alighting restrictions and repeated station occu
 		CHECK(result.journeys[0].legs[0].alighting == result.journeys[0].legs[1].boarding);
 		PassengerJourneyEvaluation evaluation;
 		evaluation.minimum_transfer = 11;
-		CHECK(planner.Plan(PAX, A, D, NOW, {}, evaluation).IsUnreachable());
+		CHECK(planner.Plan(PAX, A, D, NOW, {}, evaluation).IsInconclusive());
 	}
 	SECTION("Reversal and revisit retain distinct snapshot VisitIDs") {
 		Order reversal;
@@ -528,7 +559,7 @@ TEST_CASE("Journey partial candidates and route diversity are retained under exp
 	PassengerJourneyLimits limits;
 	limits.max_transfers = 0;
 	SECTION("Insufficient work after finding a valid journey") {
-		limits.work = uncached.Plan(PAX, A, D, NOW, limits).diagnostic.reverse_work + 5;
+		limits.work = uncached.Plan(PAX, A, D, NOW, limits).diagnostic.reverse_work + 6;
 		auto result = planner.Plan(PAX, A, D, NOW, limits);
 		CHECK(result.status == PassengerPredictionStatus::BudgetExhausted);
 		REQUIRE(result.journeys.size() == 1);
@@ -623,7 +654,7 @@ TEST_CASE("National journey queries reach eight thousand stations without whole 
 	size_t visits = 0;
 	for (const auto &trip : graph.GetTrips()) visits += trip.prediction.visits.size();
 	REQUIRE(visits >= 80000);
-	PassengerJourneyLimits limits; // All defaults, including four transfers and the original work/label caps.
+	PassengerJourneyLimits limits; // Initial four transfers and the original work/label caps.
 	PassengerJourneyPlanner planner(graph);
 	const auto start = std::chrono::steady_clock::now();
 	auto result = planner.Plan(PAX, origin, StationID{8000}, NOW);
@@ -650,4 +681,294 @@ TEST_CASE("National journey queries reach eight thousand stations without whole 
 	CHECK(leaf.status == PassengerPredictionStatus::Complete);
 	CHECK(leaf.diagnostic.visits < 2000);
 	WARN("National journey defaults: " << us << " us; trips=" << graph.GetTrips().size() << "; visits=" << visits << "; work=" << result.diagnostic.work << "; reverse work=" << result.diagnostic.reverse_work << "; scratch peak=" << result.diagnostic.scratch_bytes);
+}
+
+TEST_CASE("Journey stages continue actual train chains without replaying earlier rounds", "[passenger][journey][transfer-limits]")
+{
+	const uint32_t transfers = GENERATE(0u, 4u, 5u, 9u, 15u, 33u, 300u);
+	CAPTURE(transfers);
+	JourneyChain chain(transfers);
+	const auto graph = JourneyGraph(20 * (transfers + 2));
+	const StationID destination{static_cast<uint16_t>(transfers + 1)};
+	PassengerJourneyPlanner planner(graph), uncached(graph, nullptr, {0, 0});
+	GameRandomSeedChecker seeds;
+	auto result = planner.Plan(PAX, A, destination, NOW);
+	REQUIRE(result.HasJourney());
+	REQUIRE(result.journeys.size() == 1);
+	CHECK(result.status == PassengerPredictionStatus::Complete);
+	CHECK(result.stop_reason == PassengerJourneyStopReason::Exhausted);
+	const auto &journey = result.journeys[0];
+	CHECK(journey.transfers == transfers);
+	CHECK(journey.arrival == NOW + 20 * (transfers + 1));
+	REQUIRE(journey.legs.size() == transfers + 1);
+	for (uint32_t i = 0; i <= transfers; ++i) {
+		const auto &leg = journey.legs[i];
+		CHECK(leg.vehicle == chain.trains[i].index);
+		CHECK(leg.departure == NOW + 10 + 20 * i);
+		CHECK(leg.arrival == NOW + 20 * (i + 1));
+		CHECK(graph.GetTrips()[leg.boarding.trip].prediction.visits[leg.boarding.visit].departure == leg.departure);
+		CHECK(graph.GetTrips()[leg.alighting.trip].prediction.visits[leg.alighting.visit].arrival == leg.arrival);
+	}
+	CHECK(result.diagnostic.rounds == transfers + 1);
+	CHECK(result.diagnostic.labels == transfers + 2);
+	CHECK(result.diagnostic.boardings == transfers + 1);
+	uint32_t expected_extensions = 0, stage = 4;
+	while (stage < transfers) { stage *= 2; ++expected_extensions; }
+	CHECK(result.diagnostic.extensions == expected_extensions);
+	PassengerJourneyLimits single_stage;
+	single_stage.initial_max_transfers = stage;
+	auto single = uncached.Plan(PAX, A, destination, NOW, single_stage);
+	CHECK(single.journeys == result.journeys);
+	CHECK(single.diagnostic.extensions == 0);
+	/* Equal accounting proves that extending the frontier did not recalculate the prefix. */
+	CHECK(single.diagnostic.work == result.diagnostic.work);
+	CHECK(single.diagnostic.reverse_work == result.diagnostic.reverse_work);
+	CHECK(single.diagnostic.labels == result.diagnostic.labels);
+	CHECK(single.diagnostic.scratch_bytes == result.diagnostic.scratch_bytes);
+	CHECK(result.diagnostic.work <= PassengerJourneyLimits{}.work);
+	CHECK(result.diagnostic.scratch_bytes <= PassengerJourneyLimits{}.memory_bytes);
+	auto cached = planner.Plan(PAX, A, destination, NOW);
+	CHECK(cached.diagnostic.cache_hit);
+	CheckSameJourneyResult(result, cached);
+	CheckSameJourneyResult(result, uncached.Plan(PAX, A, destination, NOW));
+	CHECK(seeds.Check());
+	WARN("Transfer chain: transfers=" << transfers << "; rounds=" << result.diagnostic.rounds << "; extensions=" << result.diagnostic.extensions
+			<< "; work=" << result.diagnostic.work << "; labels=" << result.diagnostic.labels << "; scratch=" << result.diagnostic.scratch_bytes);
+}
+
+TEST_CASE("Journey candidates stop extension at the current stage and disclose unsearched alternatives", "[passenger][journey][transfer-limits]")
+{
+	JourneyChain chain(5);
+	const StationID destination{6};
+	JourneyVehicle direct({JourneyStop(A), JourneyStop(destination, 500)}, VehicleID{2000});
+	const auto graph = JourneyGraph();
+	PassengerJourneyPlanner planner(graph);
+	auto result = planner.Plan(PAX, A, destination, NOW);
+	REQUIRE(result.journeys.size() == 1);
+	CHECK(result.journeys[0].transfers == 0);
+	CHECK(result.diagnostic.rounds == 5);
+	CHECK(result.diagnostic.extensions == 0);
+	CHECK(result.status == PassengerPredictionStatus::LimitReached);
+	CHECK(result.stop_reason == PassengerJourneyStopReason::TransferLimit);
+	CHECK_FALSE(result.IsInconclusive()); // An end-to-end candidate remains usable, despite incomplete alternatives.
+	PassengerJourneyLimits limits;
+	limits.initial_max_transfers = 8;
+	auto wider = planner.Plan(PAX, A, destination, NOW, limits);
+	REQUIRE(wider.journeys.size() == 2);
+	CHECK(wider.journeys[0].transfers == 5);
+	CHECK_FALSE(wider.diagnostic.cache_hit);
+	limits.max_transfers = 0;
+	auto only_direct = planner.Plan(PAX, A, destination, NOW, limits);
+	REQUIRE(only_direct.journeys.size() == 1);
+	CHECK(only_direct.journeys[0].transfers == 0);
+	CHECK(only_direct.diagnostic.rounds == 1);
+}
+
+TEST_CASE("Journey safety ceilings and resource limits remain inconclusive and cache consistently", "[passenger][journey][transfer-limits]")
+{
+	JourneyChain chain(9);
+	const auto graph = JourneyGraph();
+	const StationID destination{10};
+	PassengerJourneyPlanner planner(graph), uncached(graph, nullptr, {0, 0});
+	PassengerJourneyLimits limits;
+	PassengerJourneyStopReason reason;
+	SECTION("Explicit direct-only request") { limits.max_transfers = 0; reason = PassengerJourneyStopReason::TransferLimit; }
+	SECTION("Transfer safety ceiling") { limits.max_transfers = 8; reason = PassengerJourneyStopReason::TransferLimit; }
+	SECTION("Work exhaustion") { limits.work = 100; reason = PassengerJourneyStopReason::WorkLimit; }
+	SECTION("Label exhaustion") { limits.labels = 4; reason = PassengerJourneyStopReason::LabelLimit; }
+	SECTION("Memory exhaustion") { limits.memory_bytes = 4096; reason = PassengerJourneyStopReason::MemoryLimit; }
+	auto result = planner.Plan(PAX, A, destination, NOW, limits);
+	CHECK(result.journeys.empty());
+	CHECK_FALSE(result.IsUnreachable());
+	CHECK(result.IsInconclusive());
+	CHECK(result.stop_reason == reason);
+	CHECK(result.diagnostic.work <= limits.work);
+	CHECK(result.diagnostic.scratch_bytes <= limits.memory_bytes);
+	CheckSameJourneyResult(result, planner.Plan(PAX, A, destination, NOW, limits));
+	CheckSameJourneyResult(result, uncached.Plan(PAX, A, destination, NOW, limits));
+	auto complete = planner.Plan(PAX, A, destination, NOW);
+	CHECK_FALSE(complete.diagnostic.cache_hit);
+	CHECK(complete.HasJourney());
+	CHECK(complete.status == PassengerPredictionStatus::Complete);
+}
+
+TEST_CASE("Journey expanded stages preserve candidates when subsequent work or labels run out", "[passenger][journey][transfer-limits]")
+{
+	JourneyChain chain(5);
+	JourneyVehicle branch({JourneyStop(StationID{5}, 10000, 110), JourneyStop(StationID{20}, 10)}, VehicleID{2000});
+	JourneyVehicle onward({JourneyStop(StationID{20}, 10000, 150), JourneyStop(StationID{6}, 10)}, VehicleID{2001});
+	const auto graph = JourneyGraph();
+	PassengerJourneyPlanner planner(graph), uncached(graph, nullptr, {0, 0});
+	PassengerJourneyLimits limits;
+	auto full = uncached.Plan(PAX, A, StationID{6}, NOW);
+	REQUIRE(full.journeys.size() == 2);
+	SECTION("Work exhaustion after the first expanded-stage candidate") { limits.work = full.diagnostic.work - 1; }
+	SECTION("Label exhaustion after the first expanded-stage candidate") { limits.labels = 7; }
+	auto result = planner.Plan(PAX, A, StationID{6}, NOW, limits);
+	REQUIRE(result.journeys.size() == 1);
+	CHECK(result.journeys[0] == full.journeys[0]);
+	CHECK(result.journeys[0].transfers == 5);
+	CHECK(result.journeys[0].legs.back().alighting_station == StationID{6});
+	CHECK(result.diagnostic.extensions == 1);
+	CHECK(result.status != PassengerPredictionStatus::Complete);
+	CHECK_FALSE(result.IsUnreachable());
+	CheckSameJourneyResult(result, planner.Plan(PAX, A, StationID{6}, NOW, limits));
+	CheckSameJourneyResult(result, uncached.Plan(PAX, A, StationID{6}, NOW, limits));
+}
+
+TEST_CASE("Journey absence distinguishes disconnection, a short horizon and invalid OD", "[passenger][journey][transfer-limits]")
+{
+	JourneyVehicle train({JourneyStop(A), JourneyStop(B, 10), JourneyStop(D, 200)});
+	const auto short_graph = JourneyGraph(50);
+	PassengerJourneyPlanner short_planner(short_graph), uncached(short_graph, nullptr, {0, 0});
+	auto short_result = short_planner.Plan(PAX, A, D, NOW);
+	CHECK(short_result.journeys.empty());
+	CHECK(short_result.IsInconclusive());
+	CHECK_FALSE(short_result.IsUnreachable());
+	CHECK(short_result.stop_reason == PassengerJourneyStopReason::PredictionHorizon);
+	CHECK(short_result.prediction_end == NOW + 50);
+	CheckSameJourneyResult(short_result, short_planner.Plan(PAX, A, D, NOW));
+	CheckSameJourneyResult(short_result, uncached.Plan(PAX, A, D, NOW));
+	const auto long_graph = JourneyGraph(500);
+	PassengerJourneyPlanner long_planner(long_graph);
+	CHECK(long_planner.Plan(PAX, A, D, NOW).HasJourney());
+	auto isolated = long_planner.Plan(PAX, A, StationID{999}, NOW);
+	CHECK(isolated.IsUnreachable());
+	CHECK(isolated.status == PassengerPredictionStatus::Complete);
+	CHECK(isolated.stop_reason == PassengerJourneyStopReason::Exhausted);
+	CHECK(isolated.prediction_end == NOW + 500);
+	auto invalid = long_planner.Plan(PAX, A, StationID::Invalid(), NOW);
+	CHECK(invalid.IsInconclusive());
+	CHECK(invalid.stop_reason == PassengerJourneyStopReason::InvalidQuery);
+	CHECK_FALSE(invalid.IsUnreachable());
+}
+
+TEST_CASE("Journey station cycles and zero-time reversals terminate without losing real onward trips", "[passenger][journey][transfer-limits]")
+{
+	TimetableTicks duration = 1;
+	SECTION("Timed circular service") {}
+	SECTION("Zero-time circular service") { duration = 0; }
+	Order a = JourneyStop(A, duration, duration), b = JourneyStop(B, duration, duration), c = JourneyStop(C, duration, duration);
+	for (Order *stop : {&a, &b, &c}) stop->SetUnloadType(OrderUnloadType::Transfer);
+	Order reversal;
+	reversal.MakeGoToWaypoint(StationID{20});
+	reversal.SetWaypointFlags(OrderWaypointFlags{OrderWaypointFlag::Reverse});
+	reversal.SetTravelTime(duration);
+	reversal.SetTravelTimetabled(true);
+	JourneyVehicle circle({a, b, c, reversal});
+	JourneyVehicle onward({JourneyStop(C, 10000, 20), JourneyStop(D, 1)}, VehicleID{101});
+	PassengerServiceGraphLimits graph_limits;
+	graph_limits.horizon = 40;
+	graph_limits.visits_per_trip = 32;
+	const auto graph = PassengerServiceGraph::Build(PAX, NOW, graph_limits);
+	PassengerJourneyPlanner planner(graph);
+	PassengerJourneyLimits limits;
+	limits.initial_max_transfers = UINT32_MAX;
+	limits.max_transfers = UINT32_MAX;
+	auto result = planner.Plan(PAX, A, D, NOW, limits);
+	REQUIRE(result.HasJourney());
+	CHECK(result.journeys[0].legs.back().alighting_station == D);
+	CHECK(result.diagnostic.rounds <= 4);
+	CHECK(result.diagnostic.cycle_rejections > 0);
+	CHECK(result.diagnostic.work <= limits.work);
+	CHECK(result.diagnostic.scratch_bytes <= limits.memory_bytes);
+}
+
+TEST_CASE("Journey boarding and reverse counters exceed eight bits and clamp extreme caller limits safely", "[passenger][journey][transfer-limits]")
+{
+	JourneyChain chain(300);
+	const auto graph = JourneyGraph(7000);
+	PassengerJourneyPlanner planner(graph);
+	PassengerJourneyLimits limits;
+	limits.max_transfers = UINT32_MAX;
+	limits.initial_max_transfers = UINT32_MAX;
+	auto result = planner.Plan(PAX, A, StationID{301}, NOW, limits);
+	REQUIRE(result.journeys.size() == 1);
+	CHECK(result.journeys[0].transfers == 300);
+	CHECK(result.journeys[0].legs.size() == 301);
+	CHECK(result.diagnostic.rounds == 301);
+	CHECK(result.status == PassengerPredictionStatus::Complete);
+	CHECK(result.diagnostic.extensions == 0);
+}
+
+TEST_CASE("Journey cycle suppression preserves a useful ride when waiting has a preference penalty", "[passenger][journey][transfer-limits]")
+{
+	JourneyVehicle out({JourneyStop(A), JourneyStop(B, 10)});
+	JourneyVehicle back({JourneyStop(B, 10000, 30), JourneyStop(A, 10)}, VehicleID{101});
+	JourneyVehicle onward({JourneyStop(A, 10000, 50), JourneyStop(D, 10)}, VehicleID{102});
+	const auto graph = JourneyGraph(100);
+	PassengerJourneyPlanner planner(graph);
+	PassengerJourneyEvaluation evaluation;
+	SECTION("Waiting can replace the loop at equal elapsed cost") {
+		auto result = planner.Plan(PAX, A, D, NOW);
+		REQUIRE(result.journeys.size() == 1);
+		CHECK(result.journeys[0].transfers == 0);
+		CHECK(result.diagnostic.cycle_rejections == 1);
+	}
+	SECTION("Weighted waiting permits a positive-time circuit") {
+		evaluation.waiting_weight = 1000;
+		auto result = planner.Plan(PAX, A, D, NOW, {}, evaluation);
+		REQUIRE(result.journeys.size() == 2);
+		CHECK(result.journeys[0].transfers == 2);
+		CHECK(result.journeys[0].arrival == NOW + 60);
+		CHECK(result.journeys[0].waiting == StateTicksDelta{30});
+		CHECK(result.journeys[0].generalized_time == StateTicksDelta{90});
+		CHECK(result.journeys[1].generalized_time == StateTicksDelta{110});
+	}
+}
+
+TEST_CASE("Journey resource exhaustion preserves the candidate before a better bucket replacement", "[passenger][journey][transfer-limits]")
+{
+	JourneyVehicle slow({JourneyStop(A), JourneyStop(D, 500)});
+	JourneyVehicle fast({JourneyStop(A, 10000, 30), JourneyStop(D, 50)}, VehicleID{101});
+	const auto graph = JourneyGraph();
+	PassengerJourneyPlanner planner(graph);
+	PassengerJourneyLimits limits;
+	limits.max_transfers = 0;
+	limits.labels = 2;
+	limits.labels_per_station = 1;
+	auto result = planner.Plan(PAX, A, D, NOW, limits);
+	REQUIRE(result.journeys.size() == 1);
+	CHECK(result.journeys[0].legs[0].vehicle == slow.index);
+	CHECK(result.stop_reason == PassengerJourneyStopReason::LabelLimit);
+	CHECK(result.status == PassengerPredictionStatus::LimitReached);
+	CHECK_FALSE(result.IsUnreachable());
+}
+
+TEST_CASE("Journey extension preserves capacity forecasts and an incomplete prediction suffix", "[passenger][journey][transfer-limits]")
+{
+	JourneyChain chain(8);
+	Order unknown = JourneyStop(StationID{11}, 10);
+	unknown.SetWaitTimetabled(false);
+	JourneyVehicle tail({JourneyStop(StationID{9}, 10000, 190), JourneyStop(StationID{10}, 10), unknown}, VehicleID{1009});
+	JourneyCapacity capacity;
+	for (const auto &train : chain.trains) {
+		auto &estimate = capacity.estimates[train.index];
+		estimate.future_total = 80;
+		estimate.future_free = 80;
+		estimate.certainty = PassengerCapacityCertainty::Confirmed;
+	}
+	capacity.estimates[tail.index].future_total = 80;
+	capacity.estimates[tail.index].future_free = 40;
+	capacity.estimates[tail.index].certainty = PassengerCapacityCertainty::Estimated;
+	PassengerJourneyEvaluation evaluation;
+	evaluation.crowding_penalty = 100;
+	evaluation.transfer_penalty = 3;
+	const auto graph = JourneyGraph();
+	PassengerJourneyPlanner planner(graph, &capacity), uncached(graph, &capacity, {0, 0});
+	auto result = planner.Plan(PAX, A, StationID{10}, NOW, {}, evaluation);
+	REQUIRE(result.journeys.size() == 1);
+	CHECK(result.diagnostic.extensions == 2);
+	CHECK(result.status == PassengerPredictionStatus::Unknown);
+	CHECK(result.stop_reason == PassengerJourneyStopReason::PredictionIncomplete);
+	const auto &journey = result.journeys[0];
+	CHECK(journey.transfers == 9);
+	CHECK(journey.capacity_uncertain);
+	CHECK(journey.capacity_penalty == StateTicksDelta{50});
+	CHECK(journey.generalized_time == StateTicksDelta{277});
+	CHECK(journey.prediction_status == PassengerPredictionStatus::Unknown);
+	CHECK(journey.legs.back().capacity.future_free == 40);
+	CHECK(journey.legs.back().alighting_station == StationID{10});
+	CheckSameJourneyResult(result, planner.Plan(PAX, A, StationID{10}, NOW, {}, evaluation));
+	CheckSameJourneyResult(result, uncached.Plan(PAX, A, StationID{10}, NOW, {}, evaluation));
 }
