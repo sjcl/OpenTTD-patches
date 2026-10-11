@@ -169,7 +169,8 @@ CargoPacket::CargoPacket(CargoPacketID index, uint16_t count, Money feeder_share
 		source(original.source),
 		first_station(original.first_station),
 		next_hop(original.next_hop),
-		passenger_via(original.passenger_via)
+		passenger_via(original.passenger_via),
+		passenger_destination(original.passenger_destination)
 {
 	dbg_assert(count != 0);
 #ifdef WITH_FULL_ASSERTS
@@ -220,9 +221,12 @@ CargoPacket *CargoPacket::Split(uint new_size)
 /**
  * Merge another packet into this one.
  * @param cp Packet to be merged in.
+ * @return False if final destinations differ; both packets remain unchanged.
+ * @pre Other merge attributes and the combined count have been checked by the caller.
  */
-void CargoPacket::Merge(CargoPacket *cp)
+bool CargoPacket::Merge(CargoPacket *cp)
 {
+	if (this->passenger_destination != cp->passenger_destination) return false;
 	this->count += cp->count;
 	this->feeder_share += cp->feeder_share;
 
@@ -240,6 +244,18 @@ void CargoPacket::Merge(CargoPacket *cp)
 	}
 
 	delete cp;
+	return true;
+}
+
+bool CargoPacket::SetPassengerDestination(CargoType cargo, StationID destination)
+{
+	if (cargo >= NUM_CARGO) return false;
+	const CargoSpec *cs = CargoSpec::Get(cargo);
+	if (!cs->IsValid() || !cs->classes.Test(CargoClass::Passengers)) return false;
+	if (destination != StationID::Invalid() && !Station::IsValidID(destination)) return false;
+	if (this->passenger_destination != StationID::Invalid() && this->passenger_destination != destination) return false;
+	this->passenger_destination = destination;
+	return true;
 }
 
 /**
@@ -294,7 +310,7 @@ void CargoPacket::PayDeferredPayments()
 }
 
 /**
- * Invalidates (sets source to StationID::Invalid()) all cargo packets from given station.
+ * Invalidates the origin, passenger commitment and final destination referencing a removed station.
  * @param sid Station that gets removed.
  */
 /* static */ void CargoPacket::InvalidateAllFrom(StationID sid)
@@ -302,6 +318,7 @@ void CargoPacket::PayDeferredPayments()
 	for (CargoPacket *cp : CargoPacket::Iterate()) {
 		if (cp->first_station == sid) cp->first_station = StationID::Invalid();
 		if (cp->passenger_via == sid) cp->passenger_via = StationID::Invalid();
+		if (cp->passenger_destination == sid) cp->passenger_destination = StationID::Invalid();
 	}
 }
 
@@ -393,8 +410,7 @@ template <class Tinst, class Tcont>
 {
 	if (Tinst::AreMergable(icp, cp) &&
 			icp->count + cp->count <= CargoPacket::MAX_COUNT) {
-		icp->Merge(cp);
-		return true;
+		return icp->Merge(cp);
 	} else {
 		return false;
 	}

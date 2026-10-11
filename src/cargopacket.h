@@ -72,6 +72,7 @@ private:
 	StationID first_station = StationID::Invalid(); ///< The station where the cargo came from first.
 	StationID next_hop = StationID::Invalid();      ///< Station where the cargo wants to go next.
 	StationID passenger_via = StationID::Invalid(); ///< CargoDist via retained during a predicted through journey.
+	StationID passenger_destination = StationID::Invalid(); ///< Final passenger destination; independent of CargoDist hops and commitments.
 
 	/** Cargo packet flag bits in CargoPacket::flags. */
 	enum CargoPacketFlags {
@@ -98,8 +99,24 @@ public:
 	~CargoPacket();
 
 	CargoPacket *Split(uint new_size);
-	void Merge(CargoPacket *cp);
+	[[nodiscard]] bool Merge(CargoPacket *cp);
 	void Reduce(uint count);
+
+	/** Get the final passenger destination, or Invalid if no OD has been assigned. */
+	StationID GetPassengerDestination() const { return this->passenger_destination; }
+
+	/**
+	 * Assign an explicit final destination to an unassigned passenger packet.
+	 * The caller must supply the actual cargo type of the owning list and assign
+	 * OD before appending the packet: CargoPacket does not store its cargo type,
+	 * and appending may merge and delete it. Never infer OD from GetVia(), next_hop
+	 * or passenger_via. Repeating the same assignment is allowed; changing an
+	 * assigned destination is rejected. Station removal clears it internally.
+	 * @param cargo Actual cargo type, checked for the passenger class.
+	 * @param destination Existing final station, or Invalid for unassigned OD.
+	 * @return True if the assignment is valid; otherwise the packet is unchanged.
+	 */
+	[[nodiscard]] bool SetPassengerDestination(CargoType cargo, StationID destination);
 
 	/**
 	 * Sets the station where the packet is supposed to go next.
@@ -557,7 +574,8 @@ public:
 				cp1->periods_in_transit == cp2->periods_in_transit &&
 				cp1->first_station      == cp2->first_station &&
 				cp1->source             == cp2->source &&
-				cp1->passenger_via      == cp2->passenger_via;
+				cp1->passenger_via      == cp2->passenger_via &&
+				cp1->passenger_destination == cp2->passenger_destination;
 	}
 };
 
@@ -691,7 +709,8 @@ public:
 		return cp1->source_xy           == cp2->source_xy &&
 				cp1->periods_in_transit == cp2->periods_in_transit &&
 				cp1->first_station      == cp2->first_station &&
-				cp1->source             == cp2->source;
+				cp1->source             == cp2->source &&
+				cp1->passenger_destination == cp2->passenger_destination;
 	}
 };
 

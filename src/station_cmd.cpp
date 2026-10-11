@@ -4834,6 +4834,7 @@ static uint UpdateStationWaiting(Station *st, CargoType cargo, uint amount, Sour
 	if (amount == 0) return 0;
 
 	StationID next = ge.GetVia(st->index);
+	/* CargoDist flows only identify a next hop. Legacy generation leaves final passenger OD unassigned. */
 	ge.CreateData().cargo.Append(CargoPacket::Create(st->index, amount, source), next);
 	LinkGraph *lg = nullptr;
 	if (ge.link_graph == LinkGraphID::Invalid()) {

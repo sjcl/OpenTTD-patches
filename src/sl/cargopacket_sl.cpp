@@ -25,6 +25,14 @@ extern btree::btree_map<uint64_t, Money> _cargo_packet_deferred_payments;
  */
 /* static */ void CargoPacket::AfterLoad()
 {
+	/* Stations are now available. Old saves have no OD; malformed or stale IDs
+	 * must not survive loading or become references to subsequently reused IDs. */
+	for (CargoPacket *cp : CargoPacket::Iterate()) {
+		if (SlXvIsFeatureMissing(XSLFI_PASSENGER_DESTINATION) || !Station::IsValidID(cp->passenger_destination)) {
+			cp->passenger_destination = StationID::Invalid();
+		}
+	}
+
 	if (IsSavegameVersionBefore(SLV_44)) {
 		/* If we remove a station while cargo from it is still en route, payment calculation will assume
 		 * 0, 0 to be the first_station of the cargo, resulting in very high payments usually. v->source_xy
@@ -163,6 +171,7 @@ NamedSaveLoadTable GetCargoPacketDesc()
 		NSL("source_xy",          SLE_VAR(CargoPacket, source_xy,                SLE_UINT32)),
 		NSL("loaded_at_xy",       SLE_VAR(CargoPacket, next_hop,                 SLE_FILE_U32 | SLE_VAR_U16)),
 		NSL("passenger_via",      SLE_CONDVAR_X(CargoPacket, passenger_via,      SLE_UINT16, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_PASSENGER_VIA))),
+		NSL("passenger_destination", SLE_CONDVAR_X(CargoPacket, passenger_destination, SLE_UINT16, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_PASSENGER_DESTINATION))),
 		NSL("count",              SLE_VAR(CargoPacket, count,                    SLE_UINT16)),
 		NSL("periods_in_transit", SLE_CONDVAR_X(CargoPacket, periods_in_transit, SLE_FILE_U8 | SLE_VAR_U16, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_MORE_CARGO_AGE, 0, 0))),
 		NSL("periods_in_transit", SLE_CONDVAR_X(CargoPacket, periods_in_transit, SLE_UINT16, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_MORE_CARGO_AGE))),

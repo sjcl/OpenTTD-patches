@@ -608,6 +608,47 @@ TEST_CASE("Passenger Stage retains a CargoDist via across intermediate stops", "
 		local.cargo.Stage(true, D, next, OrderUnloadType::UnloadIfPossible, &ge, PAX, &payment, TileIndex{0}, &at_d);
 		CHECK(local.cargo.ActionCount(VehicleCargoList::MoveToAction::Deliver) == 6);
 	}
+	SECTION("Explicit OD remains independent of through riding commitments and arrival decisions") {
+		AutoRestoreBackup bitnum_backup(CargoSpec::Get(PAX)->bitnum, uint8_t{0});
+		REQUIRE(Station::GetNumItems() == 0);
+		Station::CreateAtIndex(C, TileIndex{0});
+		auto stations_guard = scope_guard([]() { _station_pool.CleanPool(); });
+		local.cargo.Truncate();
+		CargoPacket *cp = CargoPacket::Create(A, 10, Source{Source::Invalid, SourceType::Industry});
+		REQUIRE(cp->SetPassengerDestination(PAX, C));
+		cp->UpdateLoadingTile(TileIndex{0});
+		local.cargo.Append(cp);
+		PassengerRoutingContext at_b(&local, B);
+		local.cargo.Stage(false, B, next, OrderUnloadType::UnloadIfPossible, &ge, PAX, &payment, TileIndex{0}, &at_b);
+		REQUIRE(local.cargo.ActionCount(VehicleCargoList::MoveToAction::Keep) == 10);
+		const SaveLoad *via_field = nullptr;
+		for (const NamedSaveLoad &field : GetCargoPacketDesc()) {
+			if (std::string_view(field.name) == "passenger_via") via_field = &field.save_load;
+		}
+		REQUIRE(via_field != nullptr);
+		auto split = std::unique_ptr<CargoPacket>(cp->Split(4));
+		REQUIRE(split != nullptr);
+		CHECK(ReadValue(GetVariableAddress(split.get(), *via_field), via_field->conv.mem) == D.base());
+		CHECK(split->GetPassengerDestination() == C);
+		split->UpdateUnloadingTile(TileIndex{0});
+		CHECK(ReadValue(GetVariableAddress(split.get(), *via_field), via_field->conv.mem) == StationID::Invalid().base());
+		CHECK(split->GetPassengerDestination() == C);
+		local.cargo.InvalidateCache();
+		local.cargo.KeepAll();
+		local.cur_real_order_index = local.cur_implicit_order_index = local.cur_timetable_order_index = 1;
+		local.last_station_visited = C;
+		PassengerRoutingContext at_c(&local, C);
+		std::array next_d{D};
+		local.cargo.Stage(true, C, next_d, OrderUnloadType::UnloadIfPossible, &ge, PAX, &payment, TileIndex{0}, &at_c);
+		CHECK(local.cargo.ActionCount(VehicleCargoList::MoveToAction::Keep) == 6);
+		CHECK(cp->GetPassengerDestination() == C);
+		local.cur_real_order_index = local.cur_implicit_order_index = local.cur_timetable_order_index = 2;
+		local.last_station_visited = D;
+		PassengerRoutingContext at_d(&local, D);
+		local.cargo.Stage(true, D, next, OrderUnloadType::UnloadIfPossible, &ge, PAX, &payment, TileIndex{0}, &at_d);
+		CHECK(local.cargo.ActionCount(VehicleCargoList::MoveToAction::Deliver) == 6);
+		CHECK(cp->GetPassengerDestination() == C);
+	}
 	local.cargo.KeepAll();
 	local.cargo.Truncate();
 	express.cargo.KeepAll();

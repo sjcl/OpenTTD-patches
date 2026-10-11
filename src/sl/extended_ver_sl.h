@@ -210,6 +210,7 @@ enum SlXvFeatureIndex {
 	XSLFI_CHILLPP,                                ///< This is a ChillPP game, use this for loading some settings
 
 	XSLFI_PASSENGER_VIA,                         ///< Persistent via for timetable-based through riding
+	XSLFI_PASSENGER_DESTINATION,                 ///< Explicit final passenger destination in cargo packets
 	XSLFI_SIZE,                                   ///< Total count of features, including null feature
 };
 
