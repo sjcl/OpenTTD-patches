@@ -13,6 +13,7 @@ add_test_files(
     passenger_od.cpp
     passenger_od_assignment.cpp
     passenger_service_graph.cpp
+    passenger_journey_planner.cpp
     mock_environment.h
     mock_fontcache.h
     mock_spritecache.cpp

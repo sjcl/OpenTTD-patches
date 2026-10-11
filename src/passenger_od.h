@@ -21,7 +21,7 @@ struct Source;
 
 /** The physical NodeID limit, not a policy limit on OD candidates. */
 static constexpr size_t PASSENGER_OD_NODE_LIMIT = INVALID_NODE - 1;
-static constexpr size_t MAX_PASSENGER_OD_PACKETS = 32;
+static constexpr size_t MAX_PASSENGER_OD_PACKETS = 4096;
 
 struct PassengerOdEntry {
 	StationID destination = StationID::Invalid();
@@ -59,6 +59,11 @@ struct PassengerOdStats {
 	uint64_t build_microseconds = 0;
 	uint64_t allocation_microseconds = 0;
 	uint64_t packets = 0;
+	uint64_t batches = 0;
+	uint64_t generated_passengers = 0;
+	uint64_t max_batch_packets = 0;
+	uint64_t max_station_packets = 0; ///< Retained after append/merge at a generating station.
+	uint64_t peak_pool_packets = 0;
 	uint64_t fallback_passengers = 0;
 };
 extern PassengerOdStats _passenger_od_stats;

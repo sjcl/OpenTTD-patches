@@ -112,10 +112,13 @@ PassengerServiceGraph PassengerServiceGraph::Build(CargoType cargo, StateTicks n
 			if (!SpendGraphWork(budget)) { graph.status = PassengerPredictionStatus::BudgetExhausted; break; }
 			if (!v->IsPrimaryVehicle() || v->type != VehicleType::Train) continue;
 			if (graph.trips.size() >= limits.trips) { graph.status = PassengerPredictionStatus::LimitReached; break; }
-			uint64_t capacity = 0;
+			uint64_t capacity = 0, occupants = 0;
 			for (const Vehicle *u = v; u != nullptr; u = u->Next()) {
 				if (!SpendGraphWork(budget)) break;
-				if (u->cargo_type == cargo) capacity += u->cargo_cap;
+				if (u->cargo_type == cargo) {
+					capacity += u->cargo_cap;
+					occupants += u->cargo.TotalCount();
+				}
 			}
 			if (budget == 0) { graph.status = PassengerPredictionStatus::BudgetExhausted; break; }
 			Operation operation = v->vehstatus.Test(VehState::Crashed) ? Operation::Crashed :
@@ -123,6 +126,8 @@ PassengerServiceGraph PassengerServiceGraph::Build(CargoType cargo, StateTicks n
 			Trip trip{ v->index, stored.id, v->tile, v->GetMovingDirection(), v->cur_real_order_index, v->cur_implicit_order_index,
 					v->cur_timetable_order_index, v->current_order_time, v->lateness_counter, v->current_order.IsAnyLoadingType(),
 					v->vehicle_flags.Test(VehicleFlag::ScheduledDispatch), capacity, operation, {} };
+			trip.occupants = occupants;
+			trip.current_free = capacity - std::min(capacity, occupants);
 			trip.prediction.start = trip.prediction.complete_until = now;
 			if (operation == Operation::Running) {
 				auto state = GetPassengerRouteState(v);
@@ -150,7 +155,57 @@ PassengerServiceGraph PassengerServiceGraph::Build(CargoType cargo, StateTicks n
 		}
 		if (graph.status != PassengerPredictionStatus::Complete) break;
 	}
+	graph.BuildDepartureIndex();
 	return graph;
+}
+
+/** Build once, without changing capture-order VisitIDs or legacy query ordering. */
+void PassengerServiceGraph::BuildDepartureIndex()
+{
+	for (const auto &[station, services] : this->station_services) {
+		auto &index = this->station_departures[station];
+		for (OrderListID service : services) {
+			for (size_t id : this->GetService(service)->trips) {
+				const auto &prediction = this->trips[id].prediction;
+				if (!prediction.Covers(this->start, this->end)) index.status = MergeGraphStatus(index.status, prediction.status);
+			}
+		}
+	}
+	for (const auto &[station, visits] : this->station_visits) {
+		auto &index = this->station_departures[station];
+		for (VisitID id : visits) {
+			const Trip &trip = this->trips[id.trip];
+			if (trip.operation != Operation::Running || !this->GetVisitStop(id).can_board || trip.capacity == 0) continue;
+			(trip.prediction.visits[id.visit].departure ? index.timed : index.unknown).push_back(id);
+		}
+		std::sort(index.timed.begin(), index.timed.end(), [&](VisitID a, VisitID b) {
+			const Trip &ta = this->trips[a.trip], &tb = this->trips[b.trip];
+			return std::tuple(*ta.prediction.visits[a.visit].departure, ta.vehicle, a.trip, a.visit) <
+					std::tuple(*tb.prediction.visits[b.visit].departure, tb.vehicle, b.trip, b.visit);
+		});
+	}
+}
+
+PassengerServiceGraph::Departures PassengerServiceGraph::GetDepartures(StationID station, StateTicks from, StateTicks to) const
+{
+	Departures result{ {}, {}, this->status };
+	if (from < this->start || to > this->end || from >= to) {
+		result.status = MergeGraphStatus(result.status, PassengerPredictionStatus::Unknown);
+		return result;
+	}
+	auto it = this->station_departures.find(station);
+	if (it == this->station_departures.end()) return result;
+	const auto &index = it->second;
+	result.status = MergeGraphStatus(result.status, index.status);
+	result.unknown = index.unknown;
+	if (!index.unknown.empty()) result.status = MergeGraphStatus(result.status, PassengerPredictionStatus::Unknown);
+	auto lower = [&](StateTicks time) {
+		return std::lower_bound(index.timed.begin(), index.timed.end(), time, [&](VisitID id, StateTicks tick) {
+			return *this->trips[id.trip].prediction.visits[id.visit].departure < tick;
+		});
+	};
+	result.timed = std::span<const VisitID>(lower(from), lower(to));
+	return result;
 }
 
 const PassengerServiceGraph::Service *PassengerServiceGraph::GetService(OrderListID id) const

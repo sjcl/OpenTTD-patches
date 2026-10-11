@@ -102,6 +102,16 @@ static PassengerOdDistribution Distribution(std::initializer_list<uint32_t> weig
 	return od;
 }
 
+/** Restrict spare pool records without allocating millions of actual packets. */
+static void GenerateWithPacketSlots(uint amount, size_t slots)
+{
+	const size_t original = _cargopacket_pool.items;
+	const size_t fake = CargoPacketPool::MAX_SIZE - slots;
+	_cargopacket_pool.items = fake;
+	auto restore = scope_guard([&]() { _cargopacket_pool.items = original + (_cargopacket_pool.items - fake); });
+	GenerateStationCargo(*Station::Get(A), PAX, amount, SOURCE);
+}
+
 static std::array<uint32_t, 4> WaitingOd(const GoodsEntry &ge)
 {
 	std::array<uint32_t, 4> counts{};
@@ -544,8 +554,15 @@ TEST_CASE("Passenger OD bounds destination memory packet growth and exhausted po
 	SECTION("Packet bound") {
 		GenerateStationCargo(*Station::Get(A), PAX, 512, SOURCE);
 		CHECK(f.Goods().CargoAvailableCount() == 512);
-		CHECK(f.Goods().data->cargo.Packets()->size() == MAX_PASSENGER_OD_PACKETS);
-		CHECK(_passenger_od_stats.fallback_passengers == 512 - 2 * (MAX_PASSENGER_OD_PACKETS - 1));
+		CHECK(f.Goods().data->cargo.Packets()->size() == 256);
+		CHECK(_passenger_od_stats.fallback_passengers == 0);
+		CHECK(_passenger_od_stats.generated_passengers == 512);
+		CHECK(_passenger_od_stats.max_batch_packets == 256);
+		CHECK(_passenger_od_stats.max_station_packets == 256);
+		for (StationCargoList::ConstIterator it = f.Goods().data->cargo.Packets()->begin(); it != f.Goods().data->cargo.Packets()->end(); ++it) {
+			CHECK((*it)->GetPassengerDestination() != StationID::Invalid());
+			CHECK((*it)->Count() == 2);
+		}
 	}
 	SECTION("Only the legacy packet fits the pool") {
 		f.Od().Allocate(7);
@@ -588,16 +605,16 @@ TEST_CASE("Packet limited passenger OD rotates through all destinations and only
 	for (NodeID i = 1; i <= TEST_OD_DESTINATIONS; ++i) demand.push_back({i, 1, 0});
 	f.Install(demand);
 	auto expected = f.Od();
-	expected.Allocate(2 * (MAX_PASSENGER_OD_PACKETS - 1));
+	expected.Allocate(2 * (32 - 1));
 	GameRandomSeedChecker seeds;
-	GenerateStationCargo(*Station::Get(A), PAX, 512, SOURCE);
+	GenerateWithPacketSlots(512, 32);
 	CHECK(f.Od().entries == expected.entries);
-	CHECK(f.Od().cursor == MAX_PASSENGER_OD_PACKETS - 1);
+	CHECK(f.Od().cursor == 32 - 1);
 	CHECK(_passenger_od_stats.fallback_passengers == 450);
 	CHECK(seeds.Check());
 	for (uint batch = 1; batch < 32; ++batch) {
 		uint64_t packets = _passenger_od_stats.packets;
-		GenerateStationCargo(*Station::Get(A), PAX, 512, SOURCE);
+		GenerateWithPacketSlots(512, 32);
 		CHECK(_passenger_od_stats.packets - packets <= MAX_PASSENGER_OD_PACKETS);
 		CHECK(f.Od().Validate());
 	}
@@ -624,7 +641,7 @@ TEST_CASE("Passenger OD packet cursor and limited residuals survive save and the
 	std::vector<LinkGraphJob::DemandAnnotation> demand;
 	for (NodeID i = 1; i <= TEST_OD_DESTINATIONS; ++i) demand.push_back({i, 1, 0});
 	f.Install(demand);
-	GenerateStationCargo(*Station::Get(A), PAX, 512, SOURCE);
+	GenerateWithPacketSlots(512, 32);
 	f.Goods().data->cargo.Truncate();
 	GoodsEntry loaded;
 	loaded.CreateData();
@@ -633,7 +650,7 @@ TEST_CASE("Passenger OD packet cursor and limited residuals survive save and the
 	CHECK(*loaded.data->passenger_od == f.Od());
 	auto batch = [&]() {
 		std::array<uint32_t, TEST_OD_DESTINATIONS + 1> counts{};
-		GenerateStationCargo(*Station::Get(A), PAX, 512, SOURCE);
+		GenerateWithPacketSlots(512, 32);
 		for (StationCargoList::ConstIterator it = f.Goods().data->cargo.Packets()->begin(); it != f.Goods().data->cargo.Packets()->end(); ++it) {
 			StationID dest = (*it)->GetPassengerDestination();
 			counts[dest == StationID::Invalid() ? 0 : dest.base()] += (*it)->Count();
@@ -657,7 +674,7 @@ TEST_CASE("Packet limits cannot consume rounding awards of tiny passenger demand
 	GameRandomSeedChecker seeds;
 	for (uint batch = 0; batch < 10000; ++batch) {
 		uint64_t packets = _passenger_od_stats.packets;
-		GenerateStationCargo(*Station::Get(A), PAX, 100, SOURCE);
+		GenerateWithPacketSlots(100, 32);
 		REQUIRE(_passenger_od_stats.packets - packets <= MAX_PASSENGER_OD_PACKETS);
 	}
 	std::array<uint64_t, TEST_OD_DESTINATIONS + 1> totals{};
@@ -752,6 +769,8 @@ TEST_CASE("A sparse national hub retains all eight thousand valid destinations",
 		generation_us += std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - start).count();
 		REQUIRE(f.Goods().CargoAvailableCount() == 512);
 		REQUIRE(f.Goods().data->cargo.Packets()->size() <= MAX_PASSENGER_OD_PACKETS);
+		CHECK(_passenger_od_stats.fallback_passengers == 0);
+		CHECK(f.Goods().data->cargo.Packets()->size() == 512);
 		for (StationCargoList::ConstIterator it = f.Goods().data->cargo.Packets()->begin(); it != f.Goods().data->cargo.Packets()->end(); ++it) {
 			const StationID dest = (*it)->GetPassengerDestination();
 			totals[dest == StationID::Invalid() ? 0 : dest.base()] += (*it)->Count();
@@ -763,6 +782,50 @@ TEST_CASE("A sparse national hub retains all eight thousand valid destinations",
 	CHECK(f.Od().Validate());
 	CHECK(seeds.Check());
 	WARN("National OD generation: " << generation_us << " us / 400 batches; destinations=8000; passengers=512 per batch");
+}
+
+TEST_CASE("4096 passenger OD packets cap only excess destinations and rotate fairly", "[passenger][od_assignment][large_network]")
+{
+	constexpr size_t destinations = MAX_PASSENGER_OD_PACKETS + 128;
+	OdAssignmentFixture f(destinations + 1);
+	std::vector<LinkGraphJob::DemandAnnotation> demand;
+	for (NodeID i = 1; i <= destinations; ++i) demand.push_back({i, 1, 0});
+	f.Install(demand);
+	std::vector<uint64_t> totals(destinations + 1, 0);
+	for (uint batch = 0; batch < 3; ++batch) {
+		uint64_t previous_packets = _passenger_od_stats.packets;
+		GenerateStationCargo(*Station::Get(A), PAX, destinations * 2, SOURCE);
+		CHECK(f.Goods().CargoAvailableCount() == destinations * 2);
+		CHECK(_passenger_od_stats.packets - previous_packets == 4096);
+		CHECK(f.Goods().data->cargo.Packets()->size() == 4096);
+		uint64_t unknown = 0;
+		for (StationCargoList::ConstIterator it = f.Goods().data->cargo.Packets()->begin(); it != f.Goods().data->cargo.Packets()->end(); ++it) {
+			const auto *packet = *it;
+			StationID dest = packet->GetPassengerDestination();
+			CHECK(packet->Count() <= uint{CargoPacket::MAX_COUNT});
+			if (dest == StationID::Invalid()) unknown += packet->Count();
+			else totals[dest.base()] += packet->Count();
+		}
+		CHECK(unknown == 2 * (destinations - (4096 - 1)));
+		CHECK(f.Od().Validate());
+		f.Goods().data->cargo.Truncate();
+	}
+	for (size_t i = 1; i <= destinations; ++i) CHECK(totals[i] > 0);
+	CHECK(_passenger_od_stats.max_batch_packets == 4096);
+	CHECK(_passenger_od_stats.generated_passengers == 3 * destinations * 2);
+}
+
+TEST_CASE("OD generation preserves the maximum legacy CargoPacket count", "[passenger][od_assignment]")
+{
+	OdAssignmentFixture f;
+	std::array<LinkGraphJob::DemandAnnotation, 1> demand{{ {1, 1, 0} }};
+	f.Install(demand);
+	GenerateStationCargo(*Station::Get(A), PAX, CargoPacket::MAX_COUNT, SOURCE);
+	CHECK(f.Goods().CargoAvailableCount() == uint{CargoPacket::MAX_COUNT});
+	REQUIRE(f.Goods().data->cargo.Packets()->size() == 1);
+	StationCargoList::ConstIterator packet = f.Goods().data->cargo.Packets()->begin();
+	CHECK((*packet)->Count() == uint{CargoPacket::MAX_COUNT});
+	CHECK(_passenger_od_stats.fallback_passengers == 0);
 }
 
 TEST_CASE("Passenger OD budgets depend on record contents rather than reserved capacity", "[passenger][od_assignment]")

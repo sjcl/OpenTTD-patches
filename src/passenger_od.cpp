@@ -337,16 +337,28 @@ void GenerateStationCargo(Station &st, CargoType cargo, uint amount, Source sour
 		ge.CreateData().cargo.Append(CargoPacket::Create(st.index, amount, source), next);
 		return;
 	}
+	/* UpdateStationWaiting supplies one legacy-sized generation batch. Avoid narrowing Count on
+	 * this path; increasing the destination packet limit does not increase Count's physical limit. */
+	assert(amount != 0 && amount <= CargoPacket::MAX_COUNT);
+	++_passenger_od_stats.batches;
+	_passenger_od_stats.generated_passengers += amount;
+	const auto start = std::chrono::steady_clock::now();
+	auto diagnose = [&](size_t packets) {
+		_passenger_od_stats.packets += packets;
+		_passenger_od_stats.max_batch_packets = std::max<uint64_t>(_passenger_od_stats.max_batch_packets, packets);
+		_passenger_od_stats.max_station_packets = std::max<uint64_t>(_passenger_od_stats.max_station_packets, ge.data->cargo.Packets()->size());
+		_passenger_od_stats.peak_pool_packets = std::max<uint64_t>(_passenger_od_stats.peak_pool_packets, CargoPacket::GetNumItems());
+		_passenger_od_stats.allocation_microseconds += std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - start).count();
+	};
 	auto &ged = ge.CreateData();
 	auto &od = ged.passenger_od;
 	if (od == nullptr || !ValidatePassengerOd(st, cargo, *od)) {
 		od.reset();
 		ged.cargo.Append(CargoPacket::Create(st.index, amount, source), next);
-		++_passenger_od_stats.packets;
+		diagnose(1);
 		_passenger_od_stats.fallback_passengers += amount;
 		return;
 	}
-	const auto start = std::chrono::steady_clock::now();
 	/* Quotas are tentative until packets have been emitted. Advance the rounding
 	 * phase for emitted destinations and the natural weighted unknown quota. */
 	std::vector<int64_t> previous_credits(od->entries.size());
@@ -403,7 +415,9 @@ void GenerateStationCargo(Station &st, CargoType cargo, uint amount, Source sour
 		}
 	}
 	ged.cargo.Append(remainder, next);
-	_passenger_od_stats.packets += packets;
-	_passenger_od_stats.allocation_microseconds += std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - start).count();
-	Debug(misc, 4, "Passenger OD: {} packets, {} unassigned passengers, {} us allocating", _passenger_od_stats.packets, _passenger_od_stats.fallback_passengers, _passenger_od_stats.allocation_microseconds);
+	diagnose(packets);
+	Debug(misc, 4, "Passenger OD: {} passengers / {} batches, {} packets, peak batch {} / station {} / pool {}, {} unassigned passengers, {} us allocating",
+			_passenger_od_stats.generated_passengers, _passenger_od_stats.batches, _passenger_od_stats.packets,
+			_passenger_od_stats.max_batch_packets, _passenger_od_stats.max_station_packets, _passenger_od_stats.peak_pool_packets,
+			_passenger_od_stats.fallback_passengers, _passenger_od_stats.allocation_microseconds);
 }

@@ -80,6 +80,8 @@ public:
 		uint64_t capacity; ///< Current total capacity for GetCargo(), not a promise of future free seats/refits.
 		Operation operation;
 		PassengerVisitPrediction prediction;
+		std::optional<uint64_t> occupants; ///< Observed cargo count at capture, including passengers staged for unloading.
+		std::optional<uint64_t> current_free; ///< Free at capture only; never a future seat guarantee.
 	};
 
 	struct VisitID {
@@ -127,6 +129,15 @@ public:
 	 */
 	QueryResult<BoardableTrip> GetBoardableTrips(StationID station, StateTicks from, StateTicks to, size_t budget = 32768) const;
 
+	struct Departures {
+		std::span<const VisitID> timed; ///< Known departures in [from, to), sorted by time, vehicle, then VisitID.
+		std::span<const VisitID> unknown; ///< Untimed boardable occurrences; never certified as catchable.
+		PassengerPredictionStatus status;
+	};
+	/** Allocation-free O(log stations + log departures) lookup; conservative coverage for the full snapshot horizon. */
+	Departures GetDepartures(StationID station, StateTicks from, StateTicks to) const;
+	const Stop &GetVisitStop(VisitID id) const { return this->GetStop(this->trips[id.trip], this->trips[id.trip].prediction.visits[id.visit].order); }
+
 private:
 	CargoType cargo = INVALID_CARGO;
 	StateTicks start{};
@@ -137,6 +148,13 @@ private:
 	std::map<OrderListID, size_t> service_index;
 	std::map<StationID, std::vector<OrderListID>> station_services;
 	std::map<StationID, std::vector<VisitID>> station_visits; ///< Capture-order index; VisitIDs can also back a future time index.
+	struct DepartureIndex {
+		std::vector<VisitID> timed;
+		std::vector<VisitID> unknown;
+		PassengerPredictionStatus status = PassengerPredictionStatus::Complete;
+	};
+	std::map<StationID, DepartureIndex> station_departures;
+	void BuildDepartureIndex();
 	const Stop &GetStop(const Trip &trip, VehicleOrderID order) const;
 	QueryResult<VisitID> SelectVisits(StationID station, StateTicks from, StateTicks to, size_t &budget) const;
 };

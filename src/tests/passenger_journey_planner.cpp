@@ -1,0 +1,505 @@
+/*
+ * This file is part of OpenTTD.
+ * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
+ */
+
+/** @file passenger_journey_planner.cpp Actual-order journey, capacity, cache and national-network regressions. */
+
+#include "../stdafx.h"
+#include "../3rdparty/catch2/catch.hpp"
+#include "../passenger_journey_planner.h"
+#include "../vehicle_base.h"
+#include "../core/random_func.hpp"
+#include <chrono>
+#include <deque>
+
+static constexpr CargoType PAX{0};
+static constexpr StationID A{0}, B{1}, C{2}, D{3};
+static constexpr StateTicks NOW{10000};
+
+static Order JourneyStop(StationID station, TimetableTicks travel = 10000, TimetableTicks wait = 10)
+{
+	Order order;
+	order.MakeGoToStation(station);
+	order.SetTravelTime(travel);
+	order.SetTravelTimetabled(true);
+	order.SetWaitTime(wait);
+	order.SetWaitTimetabled(true);
+	return order;
+}
+
+struct JourneyVehicle : Vehicle {
+	explicit JourneyVehicle(std::vector<Order> orders, VehicleID id = VehicleID{100}) : Vehicle(id, VehicleType::Train)
+	{
+		this->orders = OrderList::Create(std::move(orders), this);
+		this->cur_timetable_order_index = INVALID_VEH_ORDER_ID;
+		this->current_order.MakeLoading(false);
+		this->last_station_visited = this->GetOrder(0)->GetDestination().ToStationID();
+		this->cargo_type = PAX;
+		this->cargo_cap = 80;
+		this->direction = Direction::NE;
+	}
+	~JourneyVehicle()
+	{
+		this->orders->FreeChain();
+		this->orders = nullptr;
+	}
+	bool IsPrimaryVehicle() const override { return true; }
+};
+
+static PassengerServiceGraph JourneyGraph(Ticks horizon = 1000)
+{
+	PassengerServiceGraphLimits limits;
+	limits.horizon = horizon;
+	return PassengerServiceGraph::Build(PAX, NOW, limits);
+}
+
+struct JourneyCapacity : PassengerJourneyCapacityProvider {
+	std::map<VehicleID, PassengerJourneyCapacity> estimates;
+	uint64_t revision = 1;
+	uint64_t Revision() const override { return this->revision; }
+	PassengerJourneyCapacity Estimate(const PassengerServiceGraph &graph, PassengerServiceGraph::VisitID board,
+			PassengerServiceGraph::VisitID) const override
+	{
+		auto found = this->estimates.find(graph.GetTrips()[board.trip].vehicle);
+		return found == this->estimates.end() ? PassengerJourneyCapacity{} : found->second;
+	}
+};
+
+TEST_CASE("Passenger journeys retain direct local and express interchange alternatives", "[passenger][journey]")
+{
+	JourneyVehicle local({ JourneyStop(A), JourneyStop(B, 100), JourneyStop(D, 200) });
+	JourneyVehicle express({ JourneyStop(B, 10000, 130), JourneyStop(D, 40) }, VehicleID{101});
+	PassengerJourneyEvaluation evaluation;
+	SECTION("Actual departure wait and distinct preference costs") {
+		const auto graph = JourneyGraph();
+		PassengerJourneyPlanner planner(graph);
+		auto result = planner.Plan(PAX, A, D, NOW);
+		REQUIRE(result.journeys.size() == 2);
+		CHECK(result.status == PassengerPredictionStatus::Complete);
+		CHECK(result.journeys[0].arrival == NOW + 170);
+		CHECK(result.journeys[0].waiting == StateTicksDelta{30});
+		CHECK(result.journeys[0].riding == StateTicksDelta{140});
+		CHECK(result.journeys[0].transfers == 1);
+		CHECK(result.journeys[1].arrival == NOW + 320);
+		CHECK(result.journeys[1].transfers == 0);
+		REQUIRE(result.journeys[1].legs.size() == 1);
+		CHECK(result.journeys[1].legs[0].vehicle == local.index);
+		evaluation.transfer_penalty = 200;
+		auto preferred = planner.Plan(PAX, A, D, NOW, {}, evaluation);
+		REQUIRE(preferred.journeys.size() == 2);
+		CHECK(preferred.journeys[0].transfers == 0);
+		CHECK(preferred.journeys[1].arrival == NOW + 170);
+		CHECK(preferred.journeys[1].generalized_time == StateTicksDelta{370});
+	}
+	SECTION("Through local travel is faster than the express") {
+		express.GetOrder(1)->SetTravelTime(400);
+		const auto graph = JourneyGraph();
+		PassengerJourneyPlanner planner(graph);
+		auto result = planner.Plan(PAX, A, D, NOW);
+		REQUIRE(result.journeys.size() == 2);
+		CHECK(result.journeys.front().legs.size() == 1);
+		CHECK(result.journeys.front().transfers == 0);
+		CHECK(result.journeys.front().arrival == NOW + 320);
+	}
+	SECTION("Minimum interchange and maximum transfer count") {
+		const auto graph = JourneyGraph();
+		PassengerJourneyPlanner planner(graph);
+		evaluation.minimum_transfer = 40;
+		auto missed = planner.Plan(PAX, A, D, NOW, {}, evaluation);
+		REQUIRE(missed.journeys.size() == 1);
+		CHECK(missed.journeys[0].transfers == 0);
+		evaluation.minimum_transfer = 20;
+		evaluation.transfer_time_weight = 1000;
+		auto caught = planner.Plan(PAX, A, D, NOW, {}, evaluation);
+		REQUIRE(caught.journeys.size() == 2);
+		CHECK(caught.journeys[0].transfer_time == StateTicksDelta{20});
+		CHECK(caught.journeys[0].generalized_time == StateTicksDelta{190});
+		PassengerJourneyLimits limits;
+		limits.max_transfers = 0;
+		auto direct = planner.Plan(PAX, A, D, NOW, limits);
+		REQUIRE(direct.journeys.size() == 1);
+		CHECK(direct.journeys[0].transfers == 0);
+	}
+}
+
+TEST_CASE("Passenger journeys compare low frequency shortcut and high capacity trunk", "[passenger][journey][capacity]")
+{
+	JourneyVehicle local({ JourneyStop(A, 10000, 5500), JourneyStop(D, 1500) });
+	JourneyVehicle trunk1({ JourneyStop(A, 10000, 500), JourneyStop(B, 1200) }, VehicleID{101});
+	JourneyVehicle trunk2({ JourneyStop(B, 10000, 2000), JourneyStop(D, 1300) }, VehicleID{102});
+	SECTION("Long wait makes the longer trunk journey faster") {
+		const auto graph = JourneyGraph(8000);
+		PassengerJourneyPlanner planner(graph);
+		auto result = planner.Plan(PAX, A, D, NOW);
+		REQUIRE(result.journeys.size() == 2);
+		CHECK(result.journeys[0].arrival == NOW + 3300);
+		CHECK(result.journeys[0].riding == StateTicksDelta{2500});
+		CHECK(result.journeys[0].waiting == StateTicksDelta{800});
+		CHECK(result.journeys[1].arrival == NOW + 7000);
+	}
+	SECTION("An imminent local train wins on time but loses with demand and real service capacity") {
+		local.GetOrder(0)->SetWaitTime(100);
+		const auto graph = JourneyGraph(8000);
+		PassengerJourneyPlanner ordinary(graph);
+		auto fastest = ordinary.Plan(PAX, A, D, NOW);
+		REQUIRE(fastest.journeys.size() == 2);
+		CHECK(fastest.journeys[0].legs[0].vehicle == local.index);
+		JourneyCapacity provider;
+		for (VehicleID vehicle : { local.index, trunk1.index, trunk2.index }) {
+			auto &estimate = provider.estimates[vehicle];
+			estimate.future_total = vehicle == local.index ? 80 : 100;
+			estimate.future_free = *estimate.future_total;
+			estimate.certainty = PassengerCapacityCertainty::Estimated;
+			estimate.departures_in_window = vehicle == local.index ? 1 : 20;
+			estimate.seats_per_departure = *estimate.future_total;
+			estimate.demand_in_window = 500;
+			estimate.window_ticks = StateTicksDelta{6000};
+		}
+		PassengerJourneyEvaluation evaluation;
+		evaluation.capacity_shortfall_penalty = 6000;
+		PassengerJourneyPlanner planner(graph, &provider);
+		auto result = planner.Plan(PAX, A, D, NOW, {}, evaluation);
+		REQUIRE(result.journeys.size() == 2);
+		CHECK(result.journeys[0].legs[0].vehicle == trunk1.index);
+		CHECK(result.journeys[1].capacity_penalty == StateTicksDelta{5040});
+		CHECK(result.journeys[1].arrival == NOW + 1600);
+		CHECK(result.journeys[0].capacity_uncertain); // Estimate, not a seat reservation.
+		provider.estimates[local.index].certainty = PassengerCapacityCertainty::Unknown;
+		provider.estimates[local.index].future_free.reset();
+		++provider.revision;
+		auto revised = planner.Plan(PAX, A, D, NOW, {}, evaluation);
+		CHECK_FALSE(revised.diagnostic.cache_hit);
+	}
+}
+
+TEST_CASE("Unknown future seats remain unknown and full predictions require a later physical train", "[passenger][journey][capacity]")
+{
+	JourneyVehicle first({ JourneyStop(A), JourneyStop(D, 200) });
+	JourneyVehicle next({ JourneyStop(A, 10000, 100), JourneyStop(D, 200) }, VehicleID{101});
+	const auto graph = JourneyGraph();
+	PassengerJourneyPlanner unknown(graph);
+	auto uncertain = unknown.Plan(PAX, A, D, NOW);
+	REQUIRE(uncertain.journeys.size() == 2);
+	for (const auto &journey : uncertain.journeys) {
+		CHECK(journey.capacity_uncertain);
+		CHECK(journey.legs[0].capacity.observed_total == 80);
+		CHECK(journey.legs[0].capacity.observed_occupants == 0);
+		CHECK(journey.legs[0].capacity.current_free == 80);
+		CHECK_FALSE(journey.legs[0].capacity.future_free.has_value());
+		CHECK(journey.legs[0].capacity.certainty == PassengerCapacityCertainty::Unknown);
+	}
+	JourneyCapacity provider;
+	provider.estimates[first.index].future_total = 80;
+	provider.estimates[first.index].future_free = 0;
+	provider.estimates[first.index].certainty = PassengerCapacityCertainty::Confirmed;
+	provider.estimates[next.index].future_total = 80;
+	provider.estimates[next.index].future_free = 20;
+	provider.estimates[next.index].certainty = PassengerCapacityCertainty::Estimated;
+	PassengerJourneyPlanner planner(graph, &provider);
+	auto result = planner.Plan(PAX, A, D, NOW);
+	REQUIRE(result.journeys.size() == 1);
+	CHECK(result.journeys[0].legs[0].vehicle == next.index);
+	CHECK(result.journeys[0].arrival == NOW + 300);
+	CHECK(result.diagnostic.capacity_rejections > 0);
+}
+
+TEST_CASE("Capacity preference ratios avoid intermediate overflow and unknown guarantees", "[passenger][journey][capacity]")
+{
+	JourneyVehicle train({JourneyStop(A), JourneyStop(D, 100)});
+	const auto graph = JourneyGraph();
+	JourneyCapacity provider;
+	auto &estimate = provider.estimates[train.index];
+	estimate.future_total = UINT64_MAX;
+	estimate.future_free = UINT64_MAX / 2;
+	estimate.certainty = PassengerCapacityCertainty::Estimated;
+	estimate.window_ticks = StateTicksDelta{1000};
+	estimate.departures_in_window = 0;
+	estimate.seats_per_departure = 80;
+	estimate.demand_in_window = UINT64_MAX;
+	PassengerJourneyEvaluation evaluation;
+	evaluation.crowding_penalty = 1000;
+	evaluation.capacity_shortfall_penalty = 1000;
+	PassengerJourneyPlanner planner(graph, &provider);
+	auto result = planner.Plan(PAX, A, D, NOW, {}, evaluation);
+	REQUIRE(result.journeys.size() == 1);
+	CHECK(result.journeys[0].capacity_penalty == StateTicksDelta{1500});
+	CHECK(result.journeys[0].generalized_time == StateTicksDelta{1610});
+	estimate.certainty = PassengerCapacityCertainty::Unknown;
+	++provider.revision;
+	auto unknown = planner.Plan(PAX, A, D, NOW, {}, evaluation);
+	REQUIRE(unknown.journeys.size() == 1);
+	CHECK_FALSE(unknown.journeys[0].legs[0].capacity.future_free.has_value());
+	CHECK(unknown.journeys[0].capacity_uncertain);
+	CHECK(unknown.journeys[0].capacity_penalty == StateTicksDelta{1000});
+}
+
+TEST_CASE("Journey boarding and alighting restrictions and repeated station occurrences", "[passenger][journey]")
+{
+	Order middle = JourneyStop(B, 100);
+	SECTION("NoLoad at the origin") {
+		Order origin = JourneyStop(A);
+		origin.SetLoadType(OrderLoadType::NoLoad);
+		JourneyVehicle train({ origin, middle, JourneyStop(D, 100) });
+		const auto graph = JourneyGraph();
+		PassengerJourneyPlanner planner(graph);
+		CHECK(planner.Plan(PAX, A, D, NOW).IsUnreachable());
+	}
+	SECTION("NoUnload prevents a destination but permits through riding") {
+		middle.SetUnloadType(OrderUnloadType::NoUnload);
+		JourneyVehicle train({ JourneyStop(A), middle, JourneyStop(D, 100) });
+		const auto graph = JourneyGraph();
+		PassengerJourneyPlanner planner(graph);
+		CHECK(planner.Plan(PAX, A, B, NOW).IsUnreachable());
+		auto through = planner.Plan(PAX, A, D, NOW);
+		REQUIRE(through.journeys.size() == 1);
+		CHECK(through.journeys[0].legs.size() == 1);
+		CHECK(through.journeys[0].transfers == 0);
+	}
+	SECTION("Forced transfer ends a leg and requires explicit catchable reboarding") {
+		middle.SetUnloadType(OrderUnloadType::Transfer);
+		JourneyVehicle train({ JourneyStop(A), middle, JourneyStop(D, 100) });
+		const auto graph = JourneyGraph();
+		PassengerJourneyPlanner planner(graph);
+		auto result = planner.Plan(PAX, A, D, NOW);
+		REQUIRE(result.journeys.size() == 1);
+		CHECK(result.journeys[0].legs.size() == 2);
+		CHECK(result.journeys[0].legs[0].alighting == result.journeys[0].legs[1].boarding);
+		PassengerJourneyEvaluation evaluation;
+		evaluation.minimum_transfer = 11;
+		CHECK(planner.Plan(PAX, A, D, NOW, {}, evaluation).IsUnreachable());
+	}
+	SECTION("Reversal and revisit retain distinct snapshot VisitIDs") {
+		Order reversal;
+		reversal.MakeGoToWaypoint(StationID{20});
+		reversal.SetWaypointFlags(OrderWaypointFlags{OrderWaypointFlag::Reverse});
+		reversal.SetTravelTime(10);
+		reversal.SetTravelTimetabled(true);
+		JourneyVehicle train({ JourneyStop(A), middle, reversal, JourneyStop(A, 100), JourneyStop(D, 100) });
+		const auto graph = JourneyGraph();
+		PassengerJourneyPlanner planner(graph);
+		auto result = planner.Plan(PAX, A, D, NOW);
+		REQUIRE_FALSE(result.journeys.empty());
+		CHECK(result.journeys[0].transfers == 0);
+		CHECK(result.journeys[0].legs[0].alighting.visit == 3);
+		CHECK(result.journeys[0].legs[0].boarding.visit < 3);
+	}
+}
+
+TEST_CASE("Journey uncertainty and exhausted searches never certify unreachable", "[passenger][journey]")
+{
+	JourneyVehicle train({ JourneyStop(A), JourneyStop(B, 100), JourneyStop(D, 100) });
+	SECTION("Unknown origin departure") { train.GetOrder(0)->SetWaitTimetabled(false); }
+	SECTION("Unknown intermediate dwell") { train.GetOrder(1)->SetWaitTimetabled(false); }
+	SECTION("Dynamic condition") {
+		train.GetOrder(1)->MakeConditional(2);
+		train.GetOrder(1)->SetConditionVariable(OrderConditionVariable::LoadPercentage);
+	}
+	SECTION("Refit") { train.GetOrder(1)->SetRefit(CargoType{1}); }
+	SECTION("Stopped trains do not generate synthetic services") {
+		train.vehstatus.Set(VehState::Stopped);
+		const auto graph = JourneyGraph();
+		PassengerJourneyPlanner planner(graph);
+		CHECK(planner.Plan(PAX, A, D, NOW).IsUnreachable());
+		return;
+	}
+	SECTION("Work exhaustion") {
+		const auto graph = JourneyGraph();
+		PassengerJourneyPlanner planner(graph);
+		PassengerJourneyLimits limits;
+		limits.work = 1;
+		auto result = planner.Plan(PAX, A, D, NOW, limits);
+		CHECK(result.status == PassengerPredictionStatus::BudgetExhausted);
+		CHECK_FALSE(result.IsUnreachable());
+		CHECK(result.diagnostic.work <= limits.work);
+		return;
+	}
+	SECTION("Label memory exhaustion") {
+		const auto graph = JourneyGraph();
+		PassengerJourneyPlanner planner(graph);
+		PassengerJourneyLimits limits;
+		limits.memory_bytes = 1;
+		auto result = planner.Plan(PAX, A, D, NOW, limits);
+		CHECK(result.status == PassengerPredictionStatus::LimitReached);
+		CHECK_FALSE(result.IsUnreachable());
+		return;
+	}
+	SECTION("Prediction visit limit") {
+		PassengerServiceGraphLimits limits;
+		limits.visits_per_trip = 1;
+		const auto graph = PassengerServiceGraph::Build(PAX, NOW, limits);
+		PassengerJourneyPlanner planner(graph);
+		auto result = planner.Plan(PAX, A, D, NOW);
+		CHECK(result.status == PassengerPredictionStatus::LimitReached);
+		CHECK_FALSE(result.IsUnreachable());
+		return;
+	}
+	const auto graph = JourneyGraph();
+	PassengerJourneyPlanner planner(graph);
+	auto result = planner.Plan(PAX, A, D, NOW);
+	CHECK_FALSE(result.IsUnreachable());
+	CHECK(result.status == PassengerPredictionStatus::Unknown);
+}
+
+TEST_CASE("Journey event interval cache and departure index preserve deterministic routing", "[passenger][journey]")
+{
+	JourneyVehicle later({ JourneyStop(A, 10000, 30), JourneyStop(D, 100) }, VehicleID{102});
+	JourneyVehicle earlier({ JourneyStop(A, 10000, 10), JourneyStop(D, 200) }, VehicleID{101});
+	JourneyVehicle tied({ JourneyStop(A, 10000, 10), JourneyStop(D, 200) }, VehicleID{100});
+	const auto graph = JourneyGraph();
+	auto departures = graph.GetDepartures(A, NOW, graph.GetEnd());
+	REQUIRE(departures.timed.size() == 3);
+	CHECK(graph.GetTrips()[departures.timed[0].trip].vehicle == tied.index);
+	CHECK(graph.GetTrips()[departures.timed[1].trip].vehicle == earlier.index);
+	CHECK(graph.GetTrips()[departures.timed[2].trip].vehicle == later.index);
+	PassengerJourneyPlanner planner(graph), uncached(graph, nullptr, {0, 0});
+	GameRandomSeedChecker seeds;
+	auto first = planner.Plan(PAX, A, D, NOW);
+	auto cached = planner.Plan(PAX, A, D, NOW);
+	CHECK(cached.diagnostic.cache_hit);
+	CHECK(first.journeys == cached.journeys);
+	auto shifted = planner.Plan(PAX, A, D, NOW + 5);
+	CHECK(shifted.diagnostic.cache_hit);
+	CHECK(shifted.journeys == uncached.Plan(PAX, A, D, NOW + 5).journeys);
+	CHECK(first.journeys[0].waiting - StateTicksDelta{5} == shifted.journeys[0].waiting);
+	auto missed = planner.Plan(PAX, A, D, NOW + 11);
+	CHECK_FALSE(missed.diagnostic.cache_hit);
+	REQUIRE(missed.journeys.size() == 1);
+	CHECK(missed.journeys[0].legs[0].vehicle == later.index);
+	planner.ClearCache();
+	CHECK(planner.Plan(PAX, A, D, NOW).journeys == first.journeys);
+	CHECK(seeds.Check());
+	CHECK(planner.Plan(PAX, A, A, NOW).journeys[0].arrival == NOW);
+	CHECK(planner.Plan(PAX, A, D, NOW - 1).status == PassengerPredictionStatus::Unknown);
+	CHECK(planner.Plan(CargoType{1}, A, D, NOW).status == PassengerPredictionStatus::Unknown);
+	PassengerJourneyEvaluation fractional;
+	fractional.waiting_weight = 333;
+	CHECK(planner.Plan(PAX, A, D, NOW, {}, fractional).journeys == uncached.Plan(PAX, A, D, NOW, {}, fractional).journeys);
+	CHECK(planner.Plan(PAX, A, D, NOW + 5, {}, fractional).journeys == uncached.Plan(PAX, A, D, NOW + 5, {}, fractional).journeys);
+	PassengerJourneyPlanner tiny_cache(graph, nullptr, {1, 4096});
+	CHECK(tiny_cache.Plan(PAX, A, D, NOW).journeys == first.journeys);
+	tiny_cache.Plan(PAX, A, D, NOW + 11);
+	CHECK(tiny_cache.GetCacheEntries() <= 1);
+	CHECK(tiny_cache.GetCacheBytes() <= 4096);
+	CHECK(tiny_cache.Plan(PAX, A, D, NOW).journeys == first.journeys);
+}
+
+TEST_CASE("Journey partial candidates and route diversity are retained under explicit limits", "[passenger][journey]")
+{
+	JourneyVehicle first({JourneyStop(A), JourneyStop(D, 100)});
+	JourneyVehicle second({JourneyStop(A, 10000, 30), JourneyStop(D, 200)}, VehicleID{101});
+	const auto graph = JourneyGraph();
+	PassengerJourneyPlanner planner(graph), uncached(graph, nullptr, {0, 0});
+	PassengerJourneyLimits limits;
+	limits.max_transfers = 0;
+	SECTION("Insufficient work after finding a valid journey") {
+		limits.work = 5;
+		auto result = planner.Plan(PAX, A, D, NOW, limits);
+		CHECK(result.status == PassengerPredictionStatus::BudgetExhausted);
+		REQUIRE(result.journeys.size() == 1);
+		CHECK(result.journeys[0].arrival == NOW + 110);
+		CHECK(planner.Plan(PAX, A, D, NOW, limits).journeys == result.journeys);
+		CHECK(uncached.Plan(PAX, A, D, NOW, limits).journeys == result.journeys);
+	}
+	SECTION("A label cap explicitly reports pruned alternatives") {
+		limits.labels_per_station = 1;
+		auto result = planner.Plan(PAX, A, D, NOW, limits);
+		CHECK(result.status == PassengerPredictionStatus::LimitReached);
+		REQUIRE(result.journeys.size() == 1);
+		CHECK(result.journeys[0].legs[0].vehicle == first.index);
+	}
+}
+
+TEST_CASE("Journey circular trains and scheduled dispatch use real future occurrences", "[passenger][journey]")
+{
+	SECTION("Forced unloading can wait for the same physical train on its next circuit") {
+		Order transfer = JourneyStop(B, 100, 10);
+		transfer.SetUnloadType(OrderUnloadType::Transfer);
+		JourneyVehicle train({JourneyStop(A, 100, 10), transfer, JourneyStop(D, 100, 10)});
+		const auto graph = JourneyGraph(1000);
+		PassengerJourneyPlanner planner(graph);
+		PassengerJourneyEvaluation evaluation;
+		evaluation.minimum_transfer = 11;
+		auto result = planner.Plan(PAX, A, D, NOW, {}, evaluation);
+		REQUIRE_FALSE(result.journeys.empty());
+		CHECK(result.journeys[0].arrival == NOW + 550);
+		REQUIRE(result.journeys[0].legs.size() == 2);
+		CHECK(result.journeys[0].legs[0].alighting.visit == 1);
+		CHECK(result.journeys[0].legs[1].boarding.visit == 4);
+		CHECK(result.journeys[0].transfers == 1);
+	}
+	SECTION("Next circular visit is distinct and staying aboard adds no transfer") {
+		JourneyVehicle train({ JourneyStop(A, 100, 10), JourneyStop(B, 100, 10), JourneyStop(D, 100, 10) });
+		const auto graph = JourneyGraph(1000);
+		PassengerJourneyPlanner planner(graph);
+		auto result = planner.Plan(PAX, A, D, NOW + 250);
+		REQUIRE_FALSE(result.journeys.empty());
+		CHECK(result.journeys[0].arrival == NOW + 550);
+		CHECK(result.journeys[0].transfers == 0);
+		CHECK(result.journeys[0].legs[0].boarding.visit == 3);
+		CHECK(result.journeys[0].legs[0].alighting.visit == 5);
+		CHECK(result.journeys[0].waiting == StateTicksDelta{90});
+	}
+	SECTION("Scheduled dispatch delays the actual departure and through ride") {
+		JourneyVehicle train({ JourneyStop(A, 10000, 0), JourneyStop(B, 10, 0), JourneyStop(D, 10, 0) });
+		train.GetOrder(1)->SetDispatchScheduleIndex(0);
+		train.vehicle_flags.Set(VehicleFlag::ScheduledDispatch);
+		train.orders->GetScheduledDispatchScheduleSet().resize(1);
+		auto &schedule = train.orders->GetDispatchScheduleByIndex(0);
+		schedule.SetScheduledDispatchStartTick(NOW);
+		schedule.SetScheduledDispatchDuration(1000);
+		schedule.GetScheduledDispatchMutable() = { {100, 0, {}}, {350, 0, {}} };
+		const auto graph = JourneyGraph(500);
+		PassengerJourneyPlanner planner(graph);
+		auto through = planner.Plan(PAX, A, D, NOW);
+		REQUIRE(through.journeys.size() == 1);
+		CHECK(through.journeys[0].arrival == NOW + 110);
+		CHECK(through.journeys[0].riding == StateTicksDelta{110});
+		CHECK(through.journeys[0].transfers == 0);
+		auto boarding = planner.Plan(PAX, B, D, NOW);
+		REQUIRE(boarding.journeys.size() == 1);
+		CHECK(boarding.journeys[0].legs[0].departure == NOW + 100);
+		CHECK(boarding.journeys[0].waiting == StateTicksDelta{100});
+		CHECK(schedule.GetScheduledDispatchLastDispatch() == INVALID_SCHEDULED_DISPATCH_OFFSET);
+	}
+}
+
+TEST_CASE("National journey queries reach eight thousand stations without whole network rescans", "[passenger][journey][performance]")
+{
+	/* 80 routes of 100 stations, each with 10 physical trains: 8000 stations and 80000 visits.
+	 * The station-0 hub reaches every route in one boarding round. No synthetic headway expansion. */
+	std::deque<JourneyVehicle> fleet;
+	for (uint16_t route = 0; route < 80; ++route) {
+		std::vector<Order> orders{JourneyStop(A, 100000, 1)};
+		for (uint16_t station = 1; station <= 100; ++station) orders.push_back(JourneyStop(StationID{static_cast<uint16_t>(route * 100 + station)}, 1, 1));
+		for (uint16_t train = 0; train < 10; ++train) fleet.emplace_back(orders, VehicleID{static_cast<uint32_t>(1000 + route * 10 + train)});
+	}
+	PassengerServiceGraphLimits graph_limits;
+	graph_limits.horizon = 1000;
+	const auto graph = PassengerServiceGraph::Build(PAX, NOW, graph_limits);
+	REQUIRE(graph.GetTrips().size() == 800);
+	size_t visits = 0;
+	for (const auto &trip : graph.GetTrips()) visits += trip.prediction.visits.size();
+	REQUIRE(visits >= 80000);
+	PassengerJourneyLimits limits;
+	limits.max_transfers = 0;
+	limits.labels = 100000;
+	limits.memory_bytes = 128 * 1024 * 1024;
+	limits.work = 1 << 24;
+	PassengerJourneyPlanner planner(graph);
+	const auto start = std::chrono::steady_clock::now();
+	auto result = planner.Plan(PAX, A, StationID{8000}, NOW, limits);
+	const auto us = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - start).count();
+	REQUIRE_FALSE(result.journeys.empty());
+	CHECK(result.status == PassengerPredictionStatus::Complete);
+	CHECK(result.journeys[0].arrival == NOW + 200);
+	CHECK(result.diagnostic.labels > 8000);
+	CHECK(result.diagnostic.work <= limits.work);
+	CHECK(result.diagnostic.scratch_bytes <= limits.memory_bytes);
+	CHECK(planner.Plan(PAX, A, StationID{8000}, NOW, limits).diagnostic.cache_hit);
+	/* A leaf query examines one route, not 80000 unrelated visits. */
+	auto leaf = planner.Plan(PAX, StationID{7901}, StationID{8000}, NOW, limits);
+	REQUIRE_FALSE(leaf.journeys.empty());
+	CHECK(leaf.diagnostic.visits < 2000);
+	WARN("National journey: " << us << " us; stations=8001; trips=800; visits=" << visits << "; work=" << result.diagnostic.work << "; scratch allowance=" << result.diagnostic.scratch_bytes);
+}

@@ -67,15 +67,16 @@ are set exclusively through `SetPassengerDestination()`.
 
 A whole unassigned packet is allocated first. OD portions are split from it;
 pool exhaustion leaves the remaining passengers in that packet. There are at
-most 32 newly allocated packets per batch. Counts beyond that budget remain
+most 4,096 newly allocated packets per batch. Counts beyond that budget remain
 unassigned, with no reassignment to another destination. Merge rules already
 require equal final destinations.
 
 A saved, validated cursor rotates packet emission through StationID order. Each
 successful destination advances it; exhaustion leaves the next turn pending.
-Thus a repeated 512-passenger batch with 256 equal demands still emits 62
-assigned and 450 unassigned passengers, but subsequent batches visit the other
-destinations. Identical job recalculation preserves the cursor.
+Thus a 512-passenger batch with 256 equal demands emits 256 packets, with two
+assigned passengers per destination and none unassigned. Packet-limited batches
+visit other destinations on subsequent turns. Identical job recalculation
+preserves the cursor.
 
 Quota calculation is tentative. If packet capacity leaves passengers unassigned,
 the allocator restores the previous credits and advances its fractional rounding
@@ -134,14 +135,15 @@ GoodsEntryData gains one pointer (8 bytes on x64), and each LinkGraph gains an
 
 `_passenger_od_stats` exposes cumulative accepted distribution/entry counts,
 build time, allocation time, newly allocated packets and unassigned passenger
-counts. `misc=3` logs distribution statistics and `misc=4` also logs allocation
+counts, batch/passenger totals and peak batch, retained-station and live-pool
+packet counts. `misc=3` logs distribution statistics and `misc=4` also logs allocation
 statistics. Diagnostic clocks/counters never control simulation decisions and
 are not saved. The performance test reports bytes and time directly.
 
 For 100 passengers and three destinations, the test measures three packets
 instead of the legacy one. For 512 passengers and 256 equal destinations it
-measures 32 packets: 62 passengers have explicit destinations and 450 remain
-unassigned. When only one pool slot remains, all 100 passengers fit in one
+measures 256 packets: all 512 passengers have explicit destinations. When only
+one pool slot remains, all 100 passengers fit in one
 unassigned packet.
 
 Splitting affects later probability granularity: existing cargo staging draws a
@@ -223,7 +225,7 @@ debug-database error; the actual targets used the Release optimization flags.
 - Full generation for a sparse 8,000-destination hub: approximately 91 ms for
   400 batches of 512 passengers (about 228 microseconds per batch), including
   destination validation, allocation and packet creation. Every destination is
-  served, batch totals are conserved, and the 32-packet limit is maintained.
+  served, batch totals are conserved, and the 4,096-packet limit is maintained.
   Packet inspection and queue clearing are outside the timed interval. This
   synthetic measurement ran while the real-save benchmark was warming up; it
   has no timing threshold in CI and is not a whole-game speed measurement.
