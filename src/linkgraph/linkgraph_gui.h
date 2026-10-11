@@ -62,6 +62,26 @@ public:
 	typedef std::vector<StationSupplyInfo> StationSupplyList;
 	typedef std::vector<LinkInfo> LinkList;
 
+	/** Link of the estimated routes of the passengers waiting at a station. */
+	struct RouteLinkInfo {
+		StationID from_id;
+		StationID to_id;
+		Point from_pt;
+		Point to_pt;
+		uint volume; ///< Estimated number of passengers travelling over this link.
+
+		bool operator==(const RouteLinkInfo&) const = default;
+	};
+
+	/** Station along the estimated routes of the passengers waiting at a station. */
+	struct RouteStationInfo {
+		StationID id;
+		Point pt;
+		uint volume; ///< Estimated number of passengers alighting at this station.
+
+		bool operator==(const RouteStationInfo&) const = default;
+	};
+
 	static const PixelColour LINK_COLOURS[][12];
 
 	/**
@@ -96,6 +116,17 @@ public:
 	/** Get a bitmask of the currently shown companies. */
 	CompanyMask GetCompanyMask() const { return this->company_mask; }
 
+	void SetRouteStation(StationID station);
+
+	/** Get the station whose waiting passengers' routes are shown, or StationID::Invalid() if none. */
+	StationID GetRouteStation() const { return this->route_station; }
+
+	/** Whether the overlay has anything to show. */
+	bool IsActive() const
+	{
+		return this->route_station != StationID::Invalid() || (this->cargo_mask.Any() && this->company_mask.Any());
+	}
+
 	uint64_t GetRebuildCounter() const { return this->rebuild_counter; }
 
 protected:
@@ -110,6 +141,15 @@ protected:
 	bool dirty;                        ///< Set if overlay should be rebuilt.
 	uint64_t last_update_number = 0;   ///< Last window update number
 	uint64_t rebuild_counter = 0;      ///< Rebuild counter
+
+	StationID route_station = StationID::Invalid(); ///< Station whose waiting passengers' routes are shown instead of the link graph.
+	std::vector<RouteLinkInfo> route_links;         ///< Cache of the links of the estimated passenger routes.
+	std::vector<RouteStationInfo> route_stations;   ///< Cache of the stations of the estimated passenger routes.
+	uint route_max_volume = 0;                      ///< Maximum volume of route_links.
+
+	void RebuildRouteCache();
+	void DrawRoutes(class Blitter *blitter, const DrawPixelInfo *dpi) const;
+	bool ShowRouteTooltip(Point pt, TooltipCloseCondition close_cond);
 
 	Point GetStationMiddle(const Station *st) const;
 

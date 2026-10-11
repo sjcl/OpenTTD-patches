@@ -208,3 +208,7 @@ STR_VEHICLE_VIEW_CARGODIST_COST_SCALE_QUERY                     :{WHITE}この�
 STR_VEHICLE_VIEW_CARGODIST_COST_ADD_QUERY                       :{WHITE}この路線（共有オーダー）の区間ごとの貨物分配経路コスト加算（日数、0～365）
 STR_DEPARTURES_GROUP_FILTER_ALL                                 :全てのグループ
 STR_DEPARTURES_GROUP_FILTER_TOOLTIP                             :{BLACK}特定の車両グループ（サブグループを含む）に属する車両の発着のみを表示します
+STR_STATION_VIEW_PAX_ROUTES_BUTTON                              :{BLACK}経路
+STR_STATION_VIEW_PAX_ROUTES_TOOLTIP                             :{BLACK}この駅で待っている旅客の推定経路をメイン画面に表示します。{}線の太さは区間を通る旅客数、駅の印の大きさはその駅で降りる旅客数を表します。
+STR_STATION_ROUTE_OVERLAY_LINK_TOOLTIP                          :{STATION} {RIGHT_ARROW} {STATION}: {COMMA}人
+STR_STATION_ROUTE_OVERLAY_ALIGHTING_TOOLTIP                     :{STATION}: {COMMA}人が降車

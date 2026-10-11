@@ -937,9 +937,7 @@ static void SetViewportPosition(Window *w, int x, int y, bool force_update_overl
 	vp->virtual_top = y;
 	UpdateViewportDirtyBlockLeftMargin(vp);
 
-	bool have_overlay = w->viewport->overlay != nullptr &&
-			w->viewport->overlay->GetCompanyMask().Any() &&
-			w->viewport->overlay->GetCargoMask().Any();
+	bool have_overlay = w->viewport->overlay != nullptr && w->viewport->overlay->IsActive();
 
 	if (have_overlay && (force_update_overlay || !w->viewport->overlay->CacheStillValid())) RebuildViewportOverlay(w, true);
 
@@ -4151,7 +4149,7 @@ void ViewportDoDraw(Viewport *vp, int left, int top, int right, int bottom, NWid
 
 	AutoRestoreBackup dpi_backup(_cur_dpi, &_vdd->dpi);
 
-	if (vp->overlay != nullptr && vp->overlay->GetCargoMask().Any() && vp->overlay->GetCompanyMask().Any()) {
+	if (vp->overlay != nullptr && vp->overlay->IsActive()) {
 		vp->overlay->PrepareDraw();
 
 		if (vp->zoom >= ZoomLevel::DrawMap && (vp->overlay_pixel_cache.empty() || vp->last_overlay_rebuild_counter != vp->overlay->GetRebuildCounter())) {
@@ -4337,7 +4335,7 @@ static void ViewportDoDrawPhase2(Viewport *vp, ViewportDrawerDynamic *vdd)
 		ViewportDrawDirtyBlocks(&vdd->dpi, HasBit(_viewport_debug_flags, VDF_DIRTY_BLOCK_PER_DRAW));
 	}
 
-	if (vp->overlay != nullptr && vp->overlay->GetCargoMask().Any() && vp->overlay->GetCompanyMask().Any()) {
+	if (vp->overlay != nullptr && vp->overlay->IsActive()) {
 		if (vp->zoom < ZoomLevel::DrawMap) {
 			/* translate to window coordinates */
 			DrawPixelInfo dp = vdd->dpi;
@@ -5513,9 +5511,7 @@ HandleViewportClickedResult HandleViewportClicked(const Viewport *vp, int x, int
 
 void RebuildViewportOverlay(Window *w, bool incremental)
 {
-	if (w->viewport->overlay != nullptr &&
-			w->viewport->overlay->GetCompanyMask().Any() &&
-			w->viewport->overlay->GetCargoMask().Any()) {
+	if (w->viewport->overlay != nullptr && w->viewport->overlay->IsActive()) {
 		w->viewport->overlay->RebuildCache(incremental);
 		if (!incremental) w->SetDirty();
 	}
