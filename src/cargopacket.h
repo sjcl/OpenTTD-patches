@@ -15,6 +15,7 @@
 #include "money_type.h"
 #include "station_type.h"
 #include "order_type.h"
+#include "passenger_journey_type.h"
 #include "cargo_type.h"
 #include "source_type.h"
 #include "vehicle_type.h"
@@ -24,6 +25,7 @@
 #include "sl/saveload_common_type.h"
 #include "3rdparty/cpp-ring-buffer/ring_buffer.hpp"
 #include "3rdparty/cpp-btree/btree_map.h"
+#include <functional>
 
 struct CargoPayment;
 
@@ -38,7 +40,10 @@ using CargoPacketPool = Pool<CargoPacket, CargoPacketID, 1024, PoolType::Normal,
 extern CargoPacketPool _cargopacket_pool;
 
 struct GoodsEntry; // forward-declare for Stage() and RerouteStalePackets()
+class PassengerJourneyShadowContext;
 class PassengerRoutingContext;
+class PassengerJourneyActiveContext;
+class PassengerJourneyLoadingContext;
 
 template <class Tinst, class Tcont> class CargoList;
 class StationCargoList; // forward-declare, so we can use it in VehicleCargoList.
@@ -72,6 +77,12 @@ private:
 	StationID first_station = StationID::Invalid(); ///< The station where the cargo came from first.
 	StationID next_hop = StationID::Invalid();      ///< Station where the cargo wants to go next.
 	StationID passenger_via = StationID::Invalid(); ///< CargoDist via retained during a predicted through journey.
+	StationID passenger_destination = StationID::Invalid(); ///< Final passenger destination; independent of CargoDist hops and commitments.
+	PassengerRoutingMode passenger_routing_mode = PassengerRoutingMode::Legacy;
+	PassengerJourneyExecution passenger_journey{};
+	StationID passenger_legacy_hop = StationID::Invalid(); ///< Queue key to restore when a waiting journey expires.
+	StationID passenger_retry_station = StationID::Invalid();
+	StateTicks passenger_retry_after{}; ///< Deterministic cooldown, shared by split packets.
 
 	/** Cargo packet flag bits in CargoPacket::flags. */
 	enum CargoPacketFlags {
@@ -96,10 +107,47 @@ public:
 	CargoPacket(CargoPacketID index, uint16_t count, uint16_t periods_in_transit, StationID first_station, TileIndex source_xy, Money feeder_share);
 	CargoPacket(CargoPacketID index, uint16_t count, Money feeder_share, const CargoPacket &original);
 	~CargoPacket();
+	static void PreCleanPool();
 
 	CargoPacket *Split(uint new_size);
-	void Merge(CargoPacket *cp);
+	[[nodiscard]] bool Merge(CargoPacket *cp);
 	void Reduce(uint count);
+
+	/** Get the final passenger destination, or Invalid if no OD has been assigned. */
+	StationID GetPassengerDestination() const { return this->passenger_destination; }
+	PassengerRoutingMode GetPassengerRoutingMode() const { return this->passenger_routing_mode; }
+	const PassengerJourneyExecution &GetPassengerJourney() const { return this->passenger_journey; }
+	StationID GetPassengerLegacyHop() const { return this->passenger_legacy_hop; }
+	void SetPassengerLegacyHop(StationID next) { this->passenger_legacy_hop = next; }
+	bool CanRetryPassengerJourney(StationID station, StateTicks now) const
+	{
+		return (this->passenger_routing_mode != PassengerRoutingMode::Fallback && !this->IsPassengerJourneyDeferred()) ||
+				station != this->passenger_retry_station || now >= this->passenger_retry_after;
+	}
+	/** Budget wait uses existing saved Legacy/retry fields; CargoDist can still transport it. */
+	bool IsPassengerJourneyDeferred() const { return this->passenger_routing_mode == PassengerRoutingMode::Legacy && this->passenger_retry_station != StationID::Invalid(); }
+	void SetPassengerJourney(PassengerJourneyExecution journey, StationID legacy_hop);
+	void FallbackPassengerJourney(StationID station, StateTicks now);
+	void DeferPassengerJourney(StationID station, StateTicks now);
+	bool HasSamePassengerRouting(const CargoPacket &other) const
+	{
+		return this->passenger_routing_mode == other.passenger_routing_mode && this->passenger_journey == other.passenger_journey &&
+				this->passenger_legacy_hop == other.passenger_legacy_hop && this->passenger_retry_station == other.passenger_retry_station &&
+				this->passenger_retry_after == other.passenger_retry_after;
+	}
+
+	/**
+	 * Assign an explicit final destination to an unassigned passenger packet.
+	 * The caller must supply the actual cargo type of the owning list and assign
+	 * OD before appending the packet: CargoPacket does not store its cargo type,
+	 * and appending may merge and delete it. Never infer OD from GetVia(), next_hop
+	 * or passenger_via. Repeating the same assignment is allowed; changing an
+	 * assigned destination is rejected. Station removal clears it internally.
+	 * @param cargo Actual cargo type, checked for the passenger class.
+	 * @param destination Existing final station, or Invalid for unassigned OD.
+	 * @return True if the assignment is valid; otherwise the packet is unchanged.
+	 */
+	[[nodiscard]] bool SetPassengerDestination(CargoType cargo, StationID destination);
 
 	/**
 	 * Sets the station where the packet is supposed to go next.
@@ -516,7 +564,7 @@ public:
 
 	void InvalidateCache();
 
-	bool Stage(bool accepted, StationID current_station, std::span<const StationID> next_station, OrderUnloadType unload_type, const GoodsEntry *ge, CargoType cargo, CargoPayment *payment, TileIndex current_tile, PassengerRoutingContext *routing = nullptr);
+	bool Stage(bool accepted, StationID current_station, std::span<const StationID> next_station, OrderUnloadType unload_type, const GoodsEntry *ge, CargoType cargo, CargoPayment *payment, TileIndex current_tile, PassengerRoutingContext *routing = nullptr, PassengerJourneyShadowContext *shadow = nullptr, PassengerJourneyActiveContext *active = nullptr);
 
 	/**
 	 * Marks all cargo in the vehicle as to be kept. This is mostly useful for
@@ -538,6 +586,8 @@ public:
 	template <MoveToAction Tfrom, MoveToAction Tto>
 	uint Reassign(uint max_move);
 	uint Return(uint max_move, StationCargoList *dest, StationID next_station, TileIndex current_tile);
+	/** Return selected reserved portions only, preserving all stored cargo and other reservations. */
+	uint ReturnReserved(StationCargoList *dest, StationID next_station, TileIndex current_tile, const std::function<bool(const CargoPacket &)> &select);
 	uint Unload(uint max_move, StationCargoList *dest, CargoType cargo, CargoPayment *payment, TileIndex current_tile);
 	uint Shift(uint max_move, VehicleCargoList *dest);
 	uint Truncate(uint max_move = UINT_MAX);
@@ -557,7 +607,8 @@ public:
 				cp1->periods_in_transit == cp2->periods_in_transit &&
 				cp1->first_station      == cp2->first_station &&
 				cp1->source             == cp2->source &&
-				cp1->passenger_via      == cp2->passenger_via;
+				cp1->passenger_via      == cp2->passenger_via &&
+				cp1->passenger_destination == cp2->passenger_destination && cp1->HasSamePassengerRouting(*cp2);
 	}
 };
 
@@ -596,6 +647,8 @@ public:
 
 	template <class Taction>
 	uint ShiftCargo(Taction action, std::span<const StationID> next, bool include_invalid);
+	template <class Taction>
+	uint ShiftJourneyCargo(Taction action, std::span<const StationID> next, const Vehicle *vehicle, PassengerJourneyLoadingContext &loading);
 
 	template <class Taction>
 	bool ShiftCargoFromSource(Taction &action, StationID source, StationID next);
@@ -610,14 +663,9 @@ public:
 	 * @param next Station the cargo is headed for.
 	 * @return If there is any cargo for that station.
 	 */
-	inline bool HasCargoFor(std::span<const StationID> next) const
-	{
-		for (StationID station : next) {
-			if (this->packets.find(station) != this->packets.end()) return true;
-		}
-		/* Packets for StationID::Invalid() can go anywhere. */
-		return this->packets.find(StationID::Invalid()) != this->packets.end();
-	}
+	bool HasCargoFor(std::span<const StationID> next, const Vehicle *vehicle = nullptr, PassengerJourneyLoadingContext *loading = nullptr, CargoType cargo = INVALID_CARGO) const;
+	/** Re-key waiting packets without touching count/payment caches or splitting them. */
+	size_t RoutePassengerJourneys(CargoType cargo, StationID station, bool allow_search = true, PassengerJourneyLoadingContext *loading = nullptr);
 
 	/**
 	 * Returns first station of the first cargo packet in this list.
@@ -663,8 +711,8 @@ public:
 	 * amount of cargo to be moved. Second parameter is destination (if
 	 * applicable), return value is amount of cargo actually moved. */
 
-	uint Reserve(uint max_move, VehicleCargoList *dest, std::span<const StationID> next, TileIndex current_tile);
-	uint Load(uint max_move, VehicleCargoList *dest, std::span<const StationID> next, TileIndex current_tile);
+	uint Reserve(uint max_move, VehicleCargoList *dest, std::span<const StationID> next, TileIndex current_tile, const Vehicle *vehicle = nullptr, PassengerJourneyLoadingContext *loading = nullptr);
+	uint Load(uint max_move, VehicleCargoList *dest, std::span<const StationID> next, TileIndex current_tile, const Vehicle *vehicle = nullptr, PassengerJourneyLoadingContext *loading = nullptr);
 	uint Truncate(uint max_move = UINT_MAX, StationCargoAmountMap *cargo_per_source = nullptr);
 	uint Reroute(uint max_move, StationCargoList *dest, StationID avoid, StationID avoid2, const GoodsEntry *ge);
 	uint RerouteFromSource(uint max_move, StationCargoList *dest, StationID source, StationID avoid, StationID avoid2, const GoodsEntry *ge);
@@ -691,7 +739,8 @@ public:
 		return cp1->source_xy           == cp2->source_xy &&
 				cp1->periods_in_transit == cp2->periods_in_transit &&
 				cp1->first_station      == cp2->first_station &&
-				cp1->source             == cp2->source;
+				cp1->source             == cp2->source &&
+				cp1->passenger_destination == cp2->passenger_destination && cp1->HasSamePassengerRouting(*cp2);
 	}
 };
 

@@ -8,6 +8,7 @@
 /** @file vehicle.cpp Base implementations of all vehicles. */
 
 #include "stdafx.h"
+#include "passenger_journey_active.h"
 #include "error.h"
 #include "roadveh.h"
 #include "ship.h"
@@ -1247,6 +1248,7 @@ Vehicle::~Vehicle()
 	}
 
 	if (this->index == VehicleID::Invalid()) return; // Temporary instances which were never added to the pool
+	if (this->type == VehicleType::Train) InvalidatePassengerJourneyVehicle(this->index);
 
 	if (this->type != VehicleType::Effect) InvalidateVehicleTickCaches();
 
@@ -1636,6 +1638,7 @@ void CallVehicleTicks()
 		PerformanceMeasurer framerate(PerformanceElement::GameLoopEconomy);
 		Station *si_st = nullptr;
 		SCOPE_INFO_FMT([&si_st], "CallVehicleTicks: LoadUnloadStation: {}", StationInfoDumper(si_st));
+		PreparePassengerJourneyLoading();
 		for (Station *st : Station::Iterate()) {
 			si_st = st;
 			LoadUnloadStation(st);

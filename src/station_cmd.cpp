@@ -4858,8 +4858,7 @@ static uint UpdateStationWaiting(Station *st, CargoType cargo, uint amount, Sour
 	/* No new "real" cargo item yet. */
 	if (amount == 0) return 0;
 
-	StationID next = ge.GetVia(st->index);
-	ge.CreateData().cargo.Append(CargoPacket::Create(st->index, amount, source), next);
+	GenerateStationCargo(*st, cargo, amount, source);
 	LinkGraph *lg = nullptr;
 	if (ge.link_graph == LinkGraphID::Invalid()) {
 		if (LinkGraph::CanAllocateItem()) {

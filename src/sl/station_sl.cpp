@@ -416,11 +416,69 @@ struct StationGoodsCargoStructHandler final : public TypedSaveLoadStructHandler<
 	}
 };
 
-/**
- * Wrapper function to get the GoodsEntry's internal structure while
- * some of the variables itself are private.
- * @return the saveload description for GoodsEntry.
- */
+struct PassengerOdEntryStructHandler final : public TypedSaveLoadStructHandler<PassengerOdEntryStructHandler, PassengerOdDistribution> {
+	NamedSaveLoadTable GetDescription() const override
+	{
+		static const NamedSaveLoad fields[] = {
+			NSL("destination", SLE_VAR(PassengerOdEntry, destination, SLE_UINT16)),
+			NSL("node", SLE_VAR(PassengerOdEntry, node, SLE_UINT16)),
+			NSL("weight", SLE_VAR(PassengerOdEntry, weight, SLE_UINT32)),
+			NSL("credit", SLE_VAR(PassengerOdEntry, credit, SLE_INT64)),
+		};
+		return fields;
+	}
+
+	void Save(PassengerOdDistribution *od) const override
+	{
+		SlSetStructListLength(od->entries.size());
+		for (auto &entry : od->entries) SlObjectSaveFiltered(&entry, this->GetLoadDescription());
+	}
+
+	void Load(PassengerOdDistribution *od) const override
+	{
+		/* Check before resizing, including saves whose length fields are forged. */
+		size_t count = SlGetStructListLength(PASSENGER_OD_NODE_LIMIT);
+		SlCheckPassengerOdEntryBudget(count);
+		od->entries.resize(count);
+		for (auto &entry : od->entries) SlObjectLoadFiltered(&entry, this->GetLoadDescription());
+	}
+};
+
+struct PassengerOdStructHandler final : public TypedSaveLoadStructHandler<PassengerOdStructHandler, GoodsEntry> {
+	NamedSaveLoadTable GetDescription() const override
+	{
+		static const NamedSaveLoad fields[] = {
+			NSL("graph", SLE_VAR(PassengerOdDistribution, graph, SLE_UINT16)),
+			NSL("source_node", SLE_VAR(PassengerOdDistribution, source_node, SLE_UINT16)),
+			NSL("revision", SLE_VAR(PassengerOdDistribution, revision, SLE_UINT64)),
+			NSL("total_weight", SLE_VAR(PassengerOdDistribution, total_weight, SLE_UINT64)),
+			NSL("cursor", SLE_CONDVAR_X(PassengerOdDistribution, cursor, SLE_UINT16, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_PASSENGER_OD_ASSIGNMENT, 2))),
+			NSL("unassigned_weight", SLE_CONDVAR_X(PassengerOdDistribution, unassigned_weight, SLE_UINT64, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_PASSENGER_OD_ASSIGNMENT, 3))),
+			NSL("unassigned_credit", SLE_CONDVAR_X(PassengerOdDistribution, unassigned_credit, SLE_INT64, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_PASSENGER_OD_ASSIGNMENT, 3))),
+			NSLT_STRUCTLIST<PassengerOdEntryStructHandler>("entries"),
+		};
+		return fields;
+	}
+
+	void Save(GoodsEntry *ge) const override
+	{
+		auto *od = ge->data != nullptr ? ge->data->passenger_od.get() : nullptr;
+		SlSetStructListLength(od != nullptr ? 1 : 0);
+		if (od != nullptr) SlObjectSaveFiltered(od, this->GetLoadDescription());
+	}
+
+	void Load(GoodsEntry *ge) const override
+	{
+		size_t count = SlGetStructListLength(1);
+		if (count == 0) return;
+		auto od = std::make_unique<PassengerOdDistribution>();
+		SlObjectLoadFiltered(od.get(), this->GetLoadDescription());
+		if (!od->Validate()) SlErrorCorrupt("Invalid passenger OD weights or allocation state");
+		ge->CreateData().passenger_od = std::move(od);
+	}
+};
+
+/** Get the save/load description for a station's goods entry. */
 NamedSaveLoadTable GetGoodsDesc()
 {
 	static const NamedSaveLoad goods_desc[] = {
@@ -451,6 +509,7 @@ NamedSaveLoadTable GetGoodsDesc()
 
 		NSLT_STRUCTLIST<StationGoodsFlowStructHandler>("flow"),
 		NSLT_STRUCTLIST<StationGoodsCargoStructHandler>("cargo"),
+		NSLT_STRUCTLIST<PassengerOdStructHandler>("passenger_od", SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_PASSENGER_OD_ASSIGNMENT)),
 	};
 
 	return goods_desc;

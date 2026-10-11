@@ -18,6 +18,7 @@ enum StationViewWidgets : WidgetID {
 	WID_SV_SORT_ORDER,         ///< 'Sort order' button
 	WID_SV_SORT_BY,            ///< 'Sort by' button
 	WID_SV_WAITING,            ///< List of waiting cargo.
+	WID_SV_PASSENGER_ROUTING,  ///< Actual passenger modes, separate from planned CargoDist flows.
 	WID_SV_SCROLLBAR,          ///< Scrollbar.
 	WID_SV_ACCEPT_RATING_LIST, ///< List of accepted cargoes / rating of cargoes.
 	WID_SV_LOCATION,           ///< 'Location' button.

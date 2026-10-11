@@ -54,6 +54,19 @@ add_files(
 add_files(
     passenger_routing.cpp
     passenger_routing.h
+    passenger_od.cpp
+    passenger_od.h
+    passenger_service_graph.cpp
+    passenger_service_graph.h
+    passenger_service_index.cpp
+    passenger_service_index.h
+    passenger_journey_planner.cpp
+    passenger_journey_planner.h
+    passenger_journey_shadow.cpp
+    passenger_journey_shadow.h
+    passenger_journey_active.cpp
+    passenger_journey_active.h
+    passenger_journey_type.h
     aircraft.h
     aircraft_cmd.cpp
     aircraft_gui.cpp

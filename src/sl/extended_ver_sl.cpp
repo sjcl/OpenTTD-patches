@@ -45,6 +45,7 @@
 #include "../rev.h"
 #include "../strings_func.h"
 #include "../company_func.h"
+#include "../passenger_od.h"
 #include "../3rdparty/robin_hood/robin_hood.h"
 #include "table/strings.h"
 
@@ -64,6 +65,19 @@ std::string _sl_xv_version_label;                                ///< optional S
 SaveLoadVersion _sl_xv_upstream_version;                         ///< optional SLXI upstream version
 
 static const uint32_t _sl_xv_slxi_chunk_version = 0;             ///< current version of SLXI chunk
+
+uint32_t SavePassengerOdRevision(const SlxiSubChunkInfo &, bool dry_run)
+{
+	if (!dry_run) SlWriteUint64(_passenger_od_revision);
+	return 8;
+}
+
+void LoadPassengerOdRevision(const SlxiSubChunkInfo &, uint32_t length)
+{
+	if (length != 8) SlErrorCorrupt("Invalid passenger OD revision length");
+	_passenger_od_revision = SlReadUint64();
+	if (_passenger_od_revision == UINT64_MAX) SlErrorCorrupt("Invalid passenger OD revision");
+}
 
 static void loadVL(const SlxiSubChunkInfo &info, uint32_t length);
 static uint32_t saveVL(const SlxiSubChunkInfo &info, bool dry_run);
@@ -244,6 +258,9 @@ const std::initializer_list<SlxiSubChunkInfo> _sl_xv_sub_chunk_infos = {
 	{ XSLFI_TABLE_LINKGRAPH_SL,               XSCF_NULL,                1,   1, "table_linkgraph_sl",               nullptr, nullptr, nullptr          },
 	{ XSLFI_TABLE_VEHICLE_SL,                 XSCF_NULL,                1,   1, "table_vehicle_sl",                 nullptr, nullptr, nullptr          },
 	{ XSLFI_PASSENGER_VIA,                    XSCF_IGNORABLE_UNKNOWN,   1,   1, "passenger_via",                    nullptr, nullptr, nullptr          },
+	{ XSLFI_PASSENGER_DESTINATION,            XSCF_IGNORABLE_UNKNOWN,   1,   1, "passenger_destination",            nullptr, nullptr, nullptr          },
+	{ XSLFI_PASSENGER_OD_ASSIGNMENT,          XSCF_NULL,                3,   3, "passenger_od_assignment",          SavePassengerOdRevision, LoadPassengerOdRevision, nullptr },
+	{ XSLFI_PASSENGER_JOURNEY_ROUTING,        XSCF_NULL,                1,   1, "passenger_journey_routing",        nullptr, nullptr, nullptr },
 };
 
 /**

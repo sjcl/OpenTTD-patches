@@ -8,6 +8,7 @@
 /** @file settings_table.cpp The tables of all the settings as well as the implementation of most of their callbacks. */
 
 #include "stdafx.h"
+#include "passenger_journey_active.h"
 #include "aircraft.h"
 #include "base_media_base.h"
 #include "base_media_music.h"
@@ -1357,6 +1358,12 @@ static bool OrderTownGrowthRate(SettingOnGuiCtrlData &data)
 		default:
 			return false;
 	}
+}
+
+static void PassengerOdSettingsChanged(int32_t)
+{
+	ClearPassengerOdDistributions();
+	PassengerJourneySettingsChanged(0);
 }
 
 static bool LinkGraphDistributionSettingGUI(SettingOnGuiCtrlData &data)

@@ -155,7 +155,10 @@ bool CargoReturn::operator()(CargoPacket *cp)
 	cp_new->UpdateUnloadingTile(this->current_tile);
 	this->source->RemoveFromMeta(cp_new, VehicleCargoList::MoveToAction::Load, cp_new->Count());
 	this->destination->reserved_count -= cp_new->Count();
-	this->destination->Append(cp_new, this->next);
+	StationID next = this->next;
+	if (cp_new->GetPassengerRoutingMode() == PassengerRoutingMode::Journey) next = StationID::Invalid();
+	else if (cp_new->GetPassengerRoutingMode() == PassengerRoutingMode::Fallback) next = cp_new->GetPassengerLegacyHop();
+	this->destination->Append(cp_new, next);
 	return cp_new == cp;
 }
 

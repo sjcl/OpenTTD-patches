@@ -8,6 +8,7 @@
 /** @file openttd.cpp Functions related to starting OpenTTD. */
 
 #include "stdafx.h"
+#include "passenger_journey_active.h"
 
 #include "blitter/factory.hpp"
 #include "sound/sound_driver.hpp"
@@ -424,6 +425,8 @@ static void ShutdownGame()
 	ClearCargoPacketDeferredPayments();
 	ClearTemplateReplacements();
 	PoolBase::Clean(PT_ALL);
+	_passenger_od_revision = 0;
+	_passenger_od_stats = {};
 
 	FreeSignalPrograms();
 	FreeSignalDependencies();
@@ -1570,6 +1573,7 @@ void StateGameLoop()
 		 */
 		_state_ticks++;
 		DateDetail::_state_ticks_offset++;
+		BeginPassengerJourneyTick();
 
 		RunTileLoop();
 		CallVehicleTicks();
@@ -1599,6 +1603,7 @@ void StateGameLoop()
 		if (_game_mode != GameMode::Bootstrap) {
 			_state_ticks++;   // This must update in lock-step with _tick_skip_counter, such that _state_ticks_offset doesn't need to be changed.
 		}
+		BeginPassengerJourneyTick();
 
 		if (!(_game_mode == GameMode::Menu || _game_mode == GameMode::Bootstrap) && !_settings_client.gui.autosave_realtime && _settings_client.gui.autosave_interval != 0 &&
 				(_state_ticks.base() % (_settings_client.gui.autosave_interval * (60000 / MILLISECONDS_PER_TICK))) == 0) {

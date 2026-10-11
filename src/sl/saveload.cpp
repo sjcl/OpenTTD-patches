@@ -303,6 +303,7 @@ struct SaveLoadParams {
 
 	bool saveinprogress;                 ///< Whether there is currently a save in progress.
 	SaveModeFlags save_flags;            ///< Save mode flags
+	size_t passenger_od_entries = 0;     ///< Destination records accepted during this load.
 };
 
 static SaveLoadParams _sl; ///< Parameters used for/at saveload.
@@ -2331,6 +2332,31 @@ bool SlIsTableChunk()
 	return (_sl.chunk_type == ChunkType::Table || _sl.chunk_type == ChunkType::SparseTable);
 }
 
+#ifdef WITH_SAVELOAD_TESTS
+/** Exercise the real table header and object serializers in an isolated test context. */
+std::vector<uint8_t> SlTestSaveLoadTable(void *saved_object, void *loaded_object, const NamedSaveLoadTable &table)
+{
+	SaveLoadParams original = std::move(_sl);
+	auto guard = scope_guard([&]() { _sl = std::move(original); });
+	_sl = {};
+	_sl.action = SaveLoadAction::Save;
+	_sl.chunk_type = ChunkType::Table;
+	_sl.dumper = std::make_unique<MemoryDumper>();
+	_sl.dumper->AllocateBuffer();
+	std::vector<uint8_t> bytes = SlSaveToVector([&]() {
+		SaveLoadTableData fields = SlTableHeader(table);
+		SlObjectSaveFiltered(saved_object, fields);
+	});
+	_sl.action = SaveLoadAction::Load;
+	_sl.reader = std::make_unique<ReadBuffer>(nullptr);
+	SlLoadFromBuffer(bytes.data(), bytes.size(), [&]() {
+		SaveLoadTableData fields = SlTableHeader(table);
+		SlObjectLoadFiltered(loaded_object, fields);
+	});
+	return bytes;
+}
+#endif
+
 void SlSkipTableHeader()
 {
 	uint sub_tables = 0;
@@ -2650,6 +2676,13 @@ size_t SlGetStructListLength(size_t limit)
 	if (limit >= UINT32_MAX && length > SlGetFieldLength()) SlErrorCorrupt("List size is implausibly large");
 
 	return length;
+}
+
+/** Bound all loaded OD vectors together, before any destination-vector resize. */
+void SlCheckPassengerOdEntryBudget(size_t count)
+{
+	if (count > MAX_PASSENGER_OD_ENTRIES - _sl.passenger_od_entries) SlErrorCorrupt("Passenger OD entry budget exceeded");
+	_sl.passenger_od_entries += count;
 }
 
 /**
@@ -3921,6 +3954,7 @@ static inline void ClearSaveLoadState()
 	_sl.save_flags = SMF_NONE;
 	_sl.current_chunk_id = 0;
 	_sl.chunk_block_modes.clear();
+	_sl.passenger_od_entries = 0;
 
 	GamelogStopAnyAction();
 }

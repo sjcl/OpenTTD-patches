@@ -24,6 +24,7 @@
 #include "core/alloc_func.hpp"
 #include "strings_id_type.h"
 #include "vehicle_type.h"
+#include "passenger_od.h"
 #include <vector>
 #include <array>
 #include <iterator>
@@ -519,10 +520,11 @@ public:
 struct GoodsEntryData {
 	StationCargoList cargo{}; ///< The cargo packets of cargo waiting in this station
 	FlowStatMap flows{};      ///< Planned flows through this station.
+	std::unique_ptr<PassengerOdDistribution> passenger_od; ///< Sparse final destinations; only present for passengers.
 
 	bool MayBeRemoved() const
 	{
-		return this->cargo.Packets()->MapSize() == 0 && this->cargo.ReservedCount() == 0 && this->flows.empty();
+		return this->cargo.Packets()->MapSize() == 0 && this->cargo.ReservedCount() == 0 && this->flows.empty() && this->passenger_od == nullptr;
 	}
 };
 

@@ -132,6 +132,7 @@ void LinkGraph::Compress()
  */
 void LinkGraph::Merge(LinkGraph *other)
 {
+	this->InvalidatePassengerOd();
 	uint32_t age = ClampTo<uint32_t>(CeilDivT<int64_t>(_scaled_tick_counter - this->last_compression + 1, DAY_TICKS));
 	uint32_t other_age = ClampTo<uint32_t>(CeilDivT<int64_t>(_scaled_tick_counter - other->last_compression + 1, DAY_TICKS));
 	NodeID first = this->Size();
@@ -166,6 +167,7 @@ void LinkGraph::Merge(LinkGraph *other)
 void LinkGraph::RemoveNode(NodeID id)
 {
 	assert(id < this->Size());
+	this->InvalidatePassengerOd();
 
 	std::vector<std::pair<std::pair<NodeID, NodeID>, BaseEdge>> saved_nodes;
 
@@ -204,6 +206,7 @@ void LinkGraph::RemoveNode(NodeID id)
  */
 NodeID LinkGraph::AddNode(const Station *st)
 {
+	this->InvalidatePassengerOd();
 	const GoodsEntry &good = st->goods[this->cargo];
 
 	NodeID new_node = this->Size();
@@ -245,6 +248,7 @@ void LinkGraph::UpdateEdge(NodeID from, NodeID to, uint capacity, uint usage, ui
 {
 	assert(capacity > 0);
 	assert(usage <= capacity);
+	if (this->edges.find(std::make_pair(from, to)) == this->edges.end()) this->InvalidatePassengerOd();
 	BaseEdge &edge = this->edges[std::make_pair(from, to)];
 	if (edge.capacity == 0) {
 		assert(from != to);
@@ -263,6 +267,7 @@ void LinkGraph::UpdateEdge(NodeID from, NodeID to, uint capacity, uint usage, ui
 void LinkGraph::RemoveEdge(NodeID from, NodeID to)
 {
 	if (from == to) return;
+	if (this->edges.find(std::make_pair(from, to)) != this->edges.end()) this->InvalidatePassengerOd();
 	this->edges.erase(std::make_pair(from, to));
 }
 
