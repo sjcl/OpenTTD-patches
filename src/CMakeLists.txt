@@ -54,6 +54,8 @@ add_files(
 add_files(
     passenger_routing.cpp
     passenger_routing.h
+    passenger_od.cpp
+    passenger_od.h
     passenger_service_graph.cpp
     passenger_service_graph.h
     aircraft.h

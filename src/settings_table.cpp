@@ -1359,6 +1359,11 @@ static bool OrderTownGrowthRate(SettingOnGuiCtrlData &data)
 	}
 }
 
+static void PassengerOdSettingsChanged(int32_t)
+{
+	ClearPassengerOdDistributions();
+}
+
 static bool LinkGraphDistributionSettingGUI(SettingOnGuiCtrlData &data)
 {
 	switch (data.type) {

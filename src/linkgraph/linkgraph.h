@@ -385,6 +385,9 @@ public:
 	 */
 	inline CargoType Cargo() const { return this->cargo; }
 
+	uint64_t PassengerOdRevision() const { return this->passenger_od_revision; }
+	void InvalidatePassengerOd() { this->passenger_od_revision = NextPassengerOdRevision(); }
+
 	/**
 	 * Scale a value to its monthly equivalent, based on last compression.
 	 * @param base Value to be scaled.
@@ -422,6 +425,7 @@ protected:
 	friend void LinkGraphFixupAfterLoad(bool compression_was_date);
 
 	CargoType cargo = INVALID_CARGO;      ///< Cargo of this component's link graph.
+	uint64_t passenger_od_revision = 0;   ///< Saved topology identity, also copied into running jobs.
 	ScaledTickCounter last_compression{}; ///< Last time the capacities and supplies were compressed.
 	NodeVector nodes{};                   ///< Nodes in the component.
 	EdgeMatrix edges{};                   ///< Edges in the component.
@@ -503,6 +507,7 @@ public:
 					++iter;
 					break;
 				case EdgeIterationResult::EraseEdge:
+					this->InvalidatePassengerOd();
 					iter = this->edges.erase(iter);
 					break;
 			}

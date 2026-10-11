@@ -424,6 +424,8 @@ static void ShutdownGame()
 	ClearCargoPacketDeferredPayments();
 	ClearTemplateReplacements();
 	PoolBase::Clean(PT_ALL);
+	_passenger_od_revision = 0;
+	_passenger_od_stats = {};
 
 	FreeSignalPrograms();
 	FreeSignalDependencies();

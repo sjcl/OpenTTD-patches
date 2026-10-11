@@ -963,6 +963,7 @@ struct LinkGraphSettings {
 	uint8_t short_path_saturation;                      ///< percentage up to which short paths are saturated before saturating most capacious paths
 	uint16_t aircraft_link_scale;                       ///< scale effective distance of aircraft links
 	bool passenger_transfer_timetables;                 ///< compare train passenger arrivals before transferring
+	bool passenger_od_assignment = false;              ///< assign final passenger destinations from CargoDist demand
 	uint16_t passenger_transfer_penalty;                ///< minimum connection time and transfer cost, in ticks
 	uint16_t transfer_penalty_same_mode;                ///< path cost penalty (in days) for transferring between routes of the same vehicle type
 	uint16_t transfer_penalty_mode_change;              ///< path cost penalty (in days) for transferring between routes of different vehicle types

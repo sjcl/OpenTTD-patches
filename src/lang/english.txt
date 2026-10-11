@@ -2151,6 +2151,8 @@ STR_CONFIG_SETTING_DEMAND_SIZE                                  :Amount of retur
 STR_CONFIG_SETTING_DEMAND_SIZE_HELPTEXT                         :Setting this to less than 100% makes the symmetric distribution behave more like the asymmetric one. Less cargo will be forcibly sent back if a certain amount is sent to a station. If you set it to 0% the symmetric distribution behaves just like the asymmetric one
 
 STR_CONFIG_SETTING_PASSENGER_TRANSFER_TIMETABLES                :Use timetables for passenger train transfers: {STRING2}
+STR_CONFIG_SETTING_PASSENGER_OD_ASSIGNMENT                      :Assign final passenger destinations from CargoDist demand: {STRING2}
+STR_CONFIG_SETTING_PASSENGER_OD_ASSIGNMENT_HELPTEXT             :Record final destinations for newly generated passengers using CargoDist demand. Requires automatic passenger distribution. Destination metadata does not control boarding or transfers. Splitting cargo packets can change subsequent random routing choices
 STR_CONFIG_SETTING_PASSENGER_TRANSFER_TIMETABLES_HELPTEXT       :Compare predicted arrival times on the current train and connecting trains to the next CargoDist via. Passengers can remain on a train through intermediate stops when it arrives sooner. Incomplete or unpredictable journeys use the original CargoDist behaviour. Requires automatic passenger distribution
 STR_CONFIG_SETTING_PASSENGER_TRANSFER_PENALTY                  :Passenger train connection time and transfer penalty (ticks): {STRING2}
 STR_CONFIG_SETTING_PASSENGER_TRANSFER_PENALTY_HELPTEXT          :Minimum time needed to catch a connecting train, and additional cost applied to its predicted arrival when comparing passenger transfers

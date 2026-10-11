@@ -195,6 +195,7 @@ struct LinkGraphEdgeRoutesStructHandler final : public TypedSaveLoadStructHandle
 NamedSaveLoadTable GetLinkGraphDesc()
 {
 	static const NamedSaveLoad link_graph_desc[] = {
+		NSL("passenger_od_revision", SLE_CONDVAR_X(LinkGraph, passenger_od_revision, SLE_UINT64, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_PASSENGER_OD_ASSIGNMENT))),
 		NSL("last_compression",     SLE_CONDVAR_X(LinkGraph, last_compression, SLE_VAR_I64 | SLE_FILE_I32, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_LINKGRAPH_DAY_SCALE, 0, 3))),
 		NSL("last_compression",     SLE_CONDVAR_X(LinkGraph, last_compression,                  SLE_INT64, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_LINKGRAPH_DAY_SCALE, 4, 5))),
 		NSL("last_compression",     SLE_CONDVAR_X(LinkGraph, last_compression,                 SLE_UINT64, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_LINKGRAPH_DAY_SCALE, 6))),
@@ -262,7 +263,7 @@ NamedSaveLoadTable GetLinkGraphJobDesc()
 			/* Passenger transfer predictions run only during cargo staging. They are not job
 			 * settings, and adding them here would also change the layout of legacy RIFF jobs. */
 			const std::string_view name = desc->name;
-			if (name == "linkgraph.passenger_transfer_timetables" || name == "linkgraph.passenger_transfer_penalty") continue;
+			if (name == "linkgraph.passenger_transfer_timetables" || name == "linkgraph.passenger_transfer_penalty" || name == "linkgraph.passenger_od_assignment") continue;
 			SaveLoad sl = desc->save;
 			if (sl.conv.mem != SLE_VAR_NULL) {
 				char *&address = reinterpret_cast<char *&>(sl.address);
@@ -450,6 +451,7 @@ void AfterLoadLinkGraphs()
 		}
 	}
 
+	AfterLoadPassengerOd();
 	LinkGraphSchedule::instance.SpawnAll();
 
 	if (!_networking || _network_server) {

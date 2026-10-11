@@ -11,6 +11,7 @@ add_test_files(
     math_func.cpp
     passenger_routing.cpp
     passenger_od.cpp
+    passenger_od_assignment.cpp
     passenger_service_graph.cpp
     mock_environment.h
     mock_fontcache.h
