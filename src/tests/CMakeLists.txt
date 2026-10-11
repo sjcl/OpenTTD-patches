@@ -10,6 +10,7 @@ add_test_files(
     linkgraph_route_penalties.cpp
     math_func.cpp
     passenger_routing.cpp
+    passenger_service_graph.cpp
     mock_environment.h
     mock_fontcache.h
     mock_spritecache.cpp

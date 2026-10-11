@@ -26,6 +26,30 @@ struct PassengerRouteState {
 	uint shared_vehicles;
 };
 
+/** Validate the live order progress. The returned spans are only for immediate simulation-thread use. */
+std::optional<PassengerRouteState> GetPassengerRouteState(const Vehicle *vehicle);
+
+/** Why a bounded prediction ended. Unknown never certifies the unvisited suffix of a route. */
+enum class PassengerPredictionStatus : uint8_t { Complete, Unknown, LimitReached, BudgetExhausted };
+
+/** One actual stop occurrence; vector position distinguishes subsequent circuits and repeated stations. */
+struct PassengerPredictedVisit {
+	VehicleOrderID order;
+	std::optional<StateTicks> arrival;
+	std::optional<StateTicks> departure;
+	bool loading_now = false;
+	std::optional<StateTicksDelta> travel_from_previous; ///< Recorded leg duration can be known even when absolute times are not.
+};
+
+struct PassengerVisitPrediction {
+	std::vector<PassengerPredictedVisit> visits;
+	PassengerPredictionStatus status = PassengerPredictionStatus::Unknown;
+};
+
+/** Same traversal/timing engine as journeys and connections, without the CargoDist boarding contract. */
+PassengerVisitPrediction PredictPassengerVisits(const PassengerRouteState &state, CargoType cargo, StateTicks now,
+		StateTicks end, size_t max_visits, size_t max_steps, size_t &budget);
+
 /** A journey to a selected CargoDist via, on one vehicle and one boarding order. */
 struct PassengerJourney {
 	bool reachable = false;
