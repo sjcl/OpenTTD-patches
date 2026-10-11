@@ -9,6 +9,7 @@
 #include "../3rdparty/catch2/catch.hpp"
 #include "../passenger_journey_planner.h"
 #include "../vehicle_base.h"
+#include "passenger_test_stations.h"
 #include "../core/random_func.hpp"
 #include <chrono>
 #include <deque>
@@ -32,6 +33,7 @@ struct JourneyVehicle : Vehicle {
 	explicit JourneyVehicle(std::vector<Order> orders, VehicleID id = VehicleID{100}) : Vehicle(id, VehicleType::Train)
 	{
 		this->orders = OrderList::Create(std::move(orders), this);
+		EnsurePassengerTestStations(this->orders->GetOrderVector());
 		this->cur_timetable_order_index = INVALID_VEH_ORDER_ID;
 		this->current_order.MakeLoading(false);
 		this->last_station_visited = this->GetOrder(0)->GetDestination().ToStationID();
@@ -97,6 +99,7 @@ struct JourneyCapacity : PassengerJourneyCapacityProvider {
 
 TEST_CASE("Passenger journeys retain direct local and express interchange alternatives", "[passenger][journey]")
 {
+	PassengerTestStations stations;
 	JourneyVehicle local({ JourneyStop(A), JourneyStop(B, 100), JourneyStop(D, 200) });
 	JourneyVehicle express({ JourneyStop(B, 10000, 130), JourneyStop(D, 40) }, VehicleID{101});
 	PassengerJourneyEvaluation evaluation;
@@ -154,6 +157,7 @@ TEST_CASE("Passenger journeys retain direct local and express interchange altern
 
 TEST_CASE("Passenger journeys compare low frequency shortcut and high capacity trunk", "[passenger][journey][capacity]")
 {
+	PassengerTestStations stations;
 	JourneyVehicle local({ JourneyStop(A, 10000, 5500), JourneyStop(D, 1500) });
 	JourneyVehicle trunk1({ JourneyStop(A, 10000, 500), JourneyStop(B, 1200) }, VehicleID{101});
 	JourneyVehicle trunk2({ JourneyStop(B, 10000, 2000), JourneyStop(D, 1300) }, VehicleID{102});
@@ -204,6 +208,7 @@ TEST_CASE("Passenger journeys compare low frequency shortcut and high capacity t
 
 TEST_CASE("Unknown future seats remain unknown and full predictions require a later physical train", "[passenger][journey][capacity]")
 {
+	PassengerTestStations stations;
 	JourneyVehicle first({ JourneyStop(A), JourneyStop(D, 200) });
 	JourneyVehicle next({ JourneyStop(A, 10000, 100), JourneyStop(D, 200) }, VehicleID{101});
 	const auto graph = JourneyGraph();
@@ -235,6 +240,7 @@ TEST_CASE("Unknown future seats remain unknown and full predictions require a la
 
 TEST_CASE("Capacity preference ratios avoid intermediate overflow and unknown guarantees", "[passenger][journey][capacity]")
 {
+	PassengerTestStations stations;
 	JourneyVehicle train({JourneyStop(A), JourneyStop(D, 100)});
 	const auto graph = JourneyGraph();
 	JourneyCapacity provider;
@@ -265,6 +271,7 @@ TEST_CASE("Capacity preference ratios avoid intermediate overflow and unknown gu
 
 TEST_CASE("Capacity tie breaks prefer usable confirmations without ranking estimates as guarantees", "[passenger][journey][capacity]")
 {
+	PassengerTestStations stations;
 	JourneyVehicle unknown({JourneyStop(A), JourneyStop(D, 100)}, VehicleID{100});
 	JourneyVehicle estimated({JourneyStop(A), JourneyStop(D, 100)}, VehicleID{101});
 	JourneyVehicle confirmed({JourneyStop(A), JourneyStop(D, 100)}, VehicleID{102});
@@ -312,6 +319,7 @@ TEST_CASE("Capacity tie breaks prefer usable confirmations without ranking estim
 
 TEST_CASE("Journey labels allocate incrementally within their caps", "[passenger][journey]")
 {
+	PassengerTestStations stations;
 	SECTION("A short query reserves a small label vector") {
 		JourneyVehicle train({JourneyStop(A), JourneyStop(D, 100)});
 		const auto graph = JourneyGraph();
@@ -351,6 +359,7 @@ TEST_CASE("Journey labels allocate incrementally within their caps", "[passenger
 
 TEST_CASE("Reverse journey pruning preserves unknown connections beyond captured visits", "[passenger][journey]")
 {
+	PassengerTestStations stations;
 	JourneyVehicle feeder({JourneyStop(A), JourneyStop(B, 100)});
 	Order unknown = JourneyStop(C, 100);
 	unknown.SetWaitTimetabled(false);
@@ -371,6 +380,7 @@ TEST_CASE("Reverse journey pruning preserves unknown connections beyond captured
 
 TEST_CASE("Journey destination lower bounds retain faster interchanges and honor preference costs", "[passenger][journey]")
 {
+	PassengerTestStations stations;
 	std::deque<JourneyVehicle> direct;
 	for (uint32_t i = 0; i < 8; ++i) direct.emplace_back(std::vector<Order>{JourneyStop(A), JourneyStop(D, 300)}, VehicleID{100 + i});
 	JourneyVehicle feeder({JourneyStop(A), JourneyStop(B, 40)}, VehicleID{200});
@@ -402,6 +412,7 @@ TEST_CASE("Journey destination lower bounds retain faster interchanges and honor
 
 TEST_CASE("Journey boarding and alighting restrictions and repeated station occurrences", "[passenger][journey]")
 {
+	PassengerTestStations stations;
 	Order middle = JourneyStop(B, 100);
 	SECTION("NoLoad at the origin") {
 		Order origin = JourneyStop(A);
@@ -454,6 +465,7 @@ TEST_CASE("Journey boarding and alighting restrictions and repeated station occu
 
 TEST_CASE("Journey uncertainty and exhausted searches never certify unreachable", "[passenger][journey]")
 {
+	PassengerTestStations stations;
 	JourneyVehicle train({ JourneyStop(A), JourneyStop(B, 100), JourneyStop(D, 100) });
 	SECTION("Unknown origin departure") { train.GetOrder(0)->SetWaitTimetabled(false); }
 	SECTION("Unknown intermediate dwell") { train.GetOrder(1)->SetWaitTimetabled(false); }
@@ -509,6 +521,7 @@ TEST_CASE("Journey uncertainty and exhausted searches never certify unreachable"
 
 TEST_CASE("Journey event interval cache and departure index preserve deterministic routing", "[passenger][journey]")
 {
+	PassengerTestStations stations;
 	JourneyVehicle later({ JourneyStop(A, 10000, 30), JourneyStop(D, 100) }, VehicleID{102});
 	JourneyVehicle earlier({ JourneyStop(A, 10000, 10), JourneyStop(D, 200) }, VehicleID{101});
 	JourneyVehicle tied({ JourneyStop(A, 10000, 10), JourneyStop(D, 200) }, VehicleID{100});
@@ -552,6 +565,7 @@ TEST_CASE("Journey event interval cache and departure index preserve determinist
 
 TEST_CASE("Journey partial candidates and route diversity are retained under explicit limits", "[passenger][journey]")
 {
+	PassengerTestStations stations;
 	JourneyVehicle first({JourneyStop(A), JourneyStop(D, 100)});
 	JourneyVehicle second({JourneyStop(A, 10000, 30), JourneyStop(D, 200)}, VehicleID{101});
 	const auto graph = JourneyGraph();
@@ -578,6 +592,7 @@ TEST_CASE("Journey partial candidates and route diversity are retained under exp
 
 TEST_CASE("Journey circular trains and scheduled dispatch use real future occurrences", "[passenger][journey]")
 {
+	PassengerTestStations stations;
 	SECTION("Forced unloading can wait for the same physical train on its next circuit") {
 		Order transfer = JourneyStop(B, 100, 10);
 		transfer.SetUnloadType(OrderUnloadType::Transfer);
@@ -632,6 +647,7 @@ TEST_CASE("Journey circular trains and scheduled dispatch use real future occurr
 
 TEST_CASE("National journey queries reach eight thousand stations without whole network rescans", "[passenger][journey][performance]")
 {
+	PassengerTestStations stations;
 	/* 80 routes of 100 stations, each with 10 physical trains: 8000 stations and 80000 visits.
 	 * The station-0 hub reaches every route in one boarding round. No synthetic headway expansion. */
 	std::deque<JourneyVehicle> fleet;
@@ -685,6 +701,7 @@ TEST_CASE("National journey queries reach eight thousand stations without whole 
 
 TEST_CASE("Journey stages continue actual train chains without replaying earlier rounds", "[passenger][journey][transfer-limits]")
 {
+	PassengerTestStations stations;
 	const uint32_t transfers = GENERATE(0u, 4u, 5u, 9u, 15u, 33u, 300u);
 	CAPTURE(transfers);
 	JourneyChain chain(transfers);
@@ -738,6 +755,7 @@ TEST_CASE("Journey stages continue actual train chains without replaying earlier
 
 TEST_CASE("Journey candidates stop extension at the current stage and disclose unsearched alternatives", "[passenger][journey][transfer-limits]")
 {
+	PassengerTestStations stations;
 	JourneyChain chain(5);
 	const StationID destination{6};
 	JourneyVehicle direct({JourneyStop(A), JourneyStop(destination, 500)}, VehicleID{2000});
@@ -766,6 +784,7 @@ TEST_CASE("Journey candidates stop extension at the current stage and disclose u
 
 TEST_CASE("Journey safety ceilings and resource limits remain inconclusive and cache consistently", "[passenger][journey][transfer-limits]")
 {
+	PassengerTestStations stations;
 	JourneyChain chain(9);
 	const auto graph = JourneyGraph();
 	const StationID destination{10};
@@ -794,6 +813,7 @@ TEST_CASE("Journey safety ceilings and resource limits remain inconclusive and c
 
 TEST_CASE("Journey expanded stages preserve candidates when subsequent work or labels run out", "[passenger][journey][transfer-limits]")
 {
+	PassengerTestStations stations;
 	JourneyChain chain(5);
 	JourneyVehicle branch({JourneyStop(StationID{5}, 10000, 110), JourneyStop(StationID{20}, 10)}, VehicleID{2000});
 	JourneyVehicle onward({JourneyStop(StationID{20}, 10000, 150), JourneyStop(StationID{6}, 10)}, VehicleID{2001});
@@ -818,6 +838,7 @@ TEST_CASE("Journey expanded stages preserve candidates when subsequent work or l
 
 TEST_CASE("Journey absence distinguishes disconnection, a short horizon and invalid OD", "[passenger][journey][transfer-limits]")
 {
+	PassengerTestStations stations;
 	JourneyVehicle train({JourneyStop(A), JourneyStop(B, 10), JourneyStop(D, 200)});
 	const auto short_graph = JourneyGraph(50);
 	PassengerJourneyPlanner short_planner(short_graph), uncached(short_graph, nullptr, {0, 0});
@@ -845,6 +866,7 @@ TEST_CASE("Journey absence distinguishes disconnection, a short horizon and inva
 
 TEST_CASE("Journey station cycles and zero-time reversals terminate without losing real onward trips", "[passenger][journey][transfer-limits]")
 {
+	PassengerTestStations stations;
 	TimetableTicks duration = 1;
 	SECTION("Timed circular service") {}
 	SECTION("Zero-time circular service") { duration = 0; }
@@ -876,6 +898,7 @@ TEST_CASE("Journey station cycles and zero-time reversals terminate without losi
 
 TEST_CASE("Journey boarding and reverse counters exceed eight bits and clamp extreme caller limits safely", "[passenger][journey][transfer-limits]")
 {
+	PassengerTestStations stations;
 	JourneyChain chain(300);
 	const auto graph = JourneyGraph(7000);
 	PassengerJourneyPlanner planner(graph);
@@ -893,6 +916,7 @@ TEST_CASE("Journey boarding and reverse counters exceed eight bits and clamp ext
 
 TEST_CASE("Journey cycle suppression preserves a useful ride when waiting has a preference penalty", "[passenger][journey][transfer-limits]")
 {
+	PassengerTestStations stations;
 	JourneyVehicle out({JourneyStop(A), JourneyStop(B, 10)});
 	JourneyVehicle back({JourneyStop(B, 10000, 30), JourneyStop(A, 10)}, VehicleID{101});
 	JourneyVehicle onward({JourneyStop(A, 10000, 50), JourneyStop(D, 10)}, VehicleID{102});
@@ -919,6 +943,7 @@ TEST_CASE("Journey cycle suppression preserves a useful ride when waiting has a 
 
 TEST_CASE("Journey resource exhaustion preserves the candidate before a better bucket replacement", "[passenger][journey][transfer-limits]")
 {
+	PassengerTestStations stations;
 	JourneyVehicle slow({JourneyStop(A), JourneyStop(D, 500)});
 	JourneyVehicle fast({JourneyStop(A, 10000, 30), JourneyStop(D, 50)}, VehicleID{101});
 	const auto graph = JourneyGraph();
@@ -937,6 +962,7 @@ TEST_CASE("Journey resource exhaustion preserves the candidate before a better b
 
 TEST_CASE("Journey extension preserves capacity forecasts and an incomplete prediction suffix", "[passenger][journey][transfer-limits]")
 {
+	PassengerTestStations stations;
 	JourneyChain chain(8);
 	Order unknown = JourneyStop(StationID{11}, 10);
 	unknown.SetWaitTimetabled(false);

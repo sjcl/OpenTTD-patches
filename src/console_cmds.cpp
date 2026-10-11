@@ -4560,11 +4560,18 @@ static bool ConPassengerJourneyShadow(std::span<std::string_view> argv)
 			IsPassengerJourneyShadowEnabled() ? "on" : "off", stats.observed.passengers, stats.observed.packets,
 			stats.known_od.passengers, stats.known_od.packets, stats.evaluated.passengers, stats.evaluated.packets,
 			percent(stats.evaluated.passengers, stats.known_od.passengers));
-	IConsolePrint(CC_DEFAULT, "Eligible train OD={} people/{} packets; evaluated={} of eligible; excluded non-train OD={} people/{} packets; manual train OD={} people/{} packets; eligible without snapshot={} people/{} packets",
+	IConsolePrint(CC_DEFAULT, "Eligible passenger OD={} people/{} packets; evaluated={} of eligible; excluded unsupported OD={} people/{} packets; manual OD={} people/{} packets; eligible without snapshot={} people/{} packets",
 			stats.eligible_od.passengers, stats.eligible_od.packets, percent(stats.evaluated.passengers, stats.eligible_od.passengers),
-			stats.non_train_od.passengers, stats.non_train_od.packets, stats.manual_od.passengers, stats.manual_od.packets,
+			stats.unsupported_od.passengers, stats.unsupported_od.packets, stats.manual_od.passengers, stats.manual_od.packets,
 			stats.uncaptured_od.passengers, stats.uncaptured_od.packets);
 	uint64_t matches = 0, comparable = 0;
+	static constexpr std::array modes{"train", "road", "ship", "aircraft"};
+	for (size_t i = 0; i < stats.modes.size(); ++i) {
+		const auto &mode = stats.modes[i];
+		IConsolePrint(CC_DEFAULT, "{}: evaluated={} journeys={} fallback={} mixed_transfers={}; predictions: complete={} state={} progress={} facilities={} order/timing={} budget={}",
+				modes[i], mode.evaluated.packets, mode.journeys.packets, mode.fallback.packets, mode.mixed_transfers,
+				mode.prediction_reasons[0], mode.prediction_reasons[1], mode.prediction_reasons[2], mode.prediction_reasons[3], mode.prediction_reasons[4], mode.prediction_reasons[5]);
+	}
 	for (size_t index = 0; index < stats.categories.size(); ++index) {
 		const auto &count = stats.categories[index];
 		IConsolePrint(CC_DEFAULT, "{}: {} people / {} packets", PassengerShadowCategoryName(static_cast<PassengerShadowCategory>(index)), count.passengers, count.packets);

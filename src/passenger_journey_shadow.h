@@ -25,14 +25,20 @@ struct PassengerShadowCount {
 
 struct PassengerJourneyShadowStats {
 	PassengerShadowCount observed, known_od, evaluated, unknown, decidable, budget_exhausted, limit_reached, horizon_incomplete;
-	PassengerShadowCount eligible_od, non_train_od, manual_od, uncaptured_od;
+	PassengerShadowCount eligible_od, unsupported_od, manual_od, uncaptured_od;
+	struct Mode {
+		PassengerShadowCount evaluated, journeys, fallback;
+		uint64_t mixed_transfers = 0;
+		std::array<uint64_t, to_underlying(PassengerPredictionReason::End)> prediction_reasons{};
+	};
+	std::array<Mode, to_underlying(VehicleType::CompanyEnd)> modes{};
 	std::array<PassengerShadowCount, to_underlying(PassengerShadowCategory::End)> categories{};
 	uint64_t builds = 0, queries = 0, cache_hits = 0, work = 0, max_work = 0;
 	uint64_t graph_us = 0, search_us = 0, cpu_ns = 0; ///< Accumulate sub-microsecond skipped observations as well as capture/search/destruction.
 	size_t scratch_peak = 0, graph_memory_bound = 0, cache_peak = 0;
 };
 
-/** Shared quota per 64 state ticks, across all trains/cargoes on this client.
+/** Shared quota per 64 state ticks, across all vehicles/cargoes on this client.
  * Smaller limits are useful for tests; constructor clamps every allowance to these hard defaults. */
 struct PassengerJourneyShadowLimits {
 	size_t builds = 1;

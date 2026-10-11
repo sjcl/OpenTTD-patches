@@ -11,6 +11,7 @@
 #include "../3rdparty/catch2/catch.hpp"
 #include "../passenger_routing.h"
 #include "../vehicle_base.h"
+#include "passenger_test_stations.h"
 #include "../station_base.h"
 #include "../economy_base.h"
 #include "../settings_type.h"
@@ -321,6 +322,8 @@ static void DetachPassengerTestVehicle(PassengerTestVehicle &v)
 
 TEST_CASE("Passenger Stage retains a CargoDist via across intermediate stops", "[passenger]")
 {
+	PassengerTestStations stations;
+	EnsurePassengerTestStations(std::array{Stop(A, 0), Stop(B, 0), Stop(C, 0), Stop(D, 0)});
 	AllocateMap(64, 64);
 	AutoRestoreBackup linkgraph_backup(_settings_game.linkgraph, AutoRestoreBackupNoNewValueTag{});
 	AutoRestoreBackup classes_backup(CargoSpec::Get(PAX)->classes, CargoClasses{CargoClass::Passengers});
@@ -537,6 +540,7 @@ TEST_CASE("Passenger Stage retains a CargoDist via across intermediate stops", "
 		local.orders->FreeChain();
 		constexpr StationID E{4};
 		local.orders = OrderList::Create(std::vector<Order>{ Stop(B, 100), Stop(C, 600), Stop(E, 300), Stop(D, 300) }, &local);
+		EnsurePassengerTestStations(local.orders->GetOrderVector());
 		PassengerRoutingContext routing(&local, B);
 		local.cargo.Stage(false, B, next, OrderUnloadType::UnloadIfPossible, &ge, PAX, &payment, TileIndex{0}, &routing);
 		REQUIRE(local.cargo.ActionCount(VehicleCargoList::MoveToAction::Keep) == 10);
@@ -610,9 +614,7 @@ TEST_CASE("Passenger Stage retains a CargoDist via across intermediate stops", "
 	}
 	SECTION("Explicit OD remains independent of through riding commitments and arrival decisions") {
 		AutoRestoreBackup bitnum_backup(CargoSpec::Get(PAX)->bitnum, uint8_t{0});
-		REQUIRE(Station::GetNumItems() == 0);
-		Station::CreateAtIndex(C, TileIndex{0});
-		auto stations_guard = scope_guard([]() { _station_pool.CleanPool(); });
+		REQUIRE(Station::IsValidID(C));
 		local.cargo.Truncate();
 		CargoPacket *cp = CargoPacket::Create(A, 10, Source{Source::Invalid, SourceType::Industry});
 		REQUIRE(cp->SetPassengerDestination(PAX, C));
@@ -669,6 +671,7 @@ TEST_CASE("Passenger seat snapshots account for eligible waiting queues and the 
 	_settings_game.linkgraph.distribution_per_cargo[PAX] = DistributionType::Asymmetric;
 	REQUIRE(Station::GetNumItems() == 0);
 	Station *station = Station::CreateAtIndex(B, TileIndex{0});
+	EnsurePassengerTestStations(std::array{Stop(A, 0), Stop(B, 0), Stop(C, 0), Stop(D, 0)});
 	PassengerTestVehicle local, express;
 	PassengerTestVehicle *coach = nullptr;
 	local.orders = OrderList::Create(std::vector<Order>{ Stop(B, 100), Stop(C, 600), Stop(D, 600) }, &local);
@@ -724,6 +727,8 @@ TEST_CASE("Passenger seat snapshots account for eligible waiting queues and the 
 
 TEST_CASE("Passenger terminal comparisons are bounded and independent of index warmth", "[passenger]")
 {
+	PassengerTestStations stations;
+	EnsurePassengerTestStations(std::array{Stop(A, 0), Stop(B, 0), Stop(C, 0), Stop(D, 0)});
 	AutoRestoreBackup settings_backup(_settings_game.linkgraph, AutoRestoreBackupNoNewValueTag{});
 	AutoRestoreBackup classes_backup(CargoSpec::Get(PAX)->classes, CargoClasses{CargoClass::Passengers});
 	AutoRestoreBackup ticks_backup(_state_ticks, NOW);

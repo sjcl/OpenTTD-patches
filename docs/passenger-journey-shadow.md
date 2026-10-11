@@ -1,6 +1,9 @@
 # Passenger journey shadow diagnostics
 
-Branch: `feat/passenger-journey-shadow`, based on `feat/passenger-journey-planner`.
+Originally introduced on `feat/passenger-journey-shadow`, based on
+`feat/passenger-journey-planner`. The current
+[multimodal implementation](passenger-journey-multimodal.md) extends capture
+and observation to all four primary passenger vehicle types.
 
 The shadow observes the final CargoDist/timetable decision in `Stage`, before
 payment or cargo movement. It does not apply the planner's result. The legacy
@@ -11,13 +14,13 @@ routing bug.
 ## Capture and onboard search
 
 `PrepareUnload` creates `PassengerJourneyShadowContext` before inserting the
-train into the station's loading list, changing consist flags or creating a
+vehicle into the station's loading list, changing consist flags or creating a
 `CargoPayment`. Passenger coaches share its value-owned graph and planner.
 NoUnload bypasses Stage; its actual Keep action is observed at this same point.
 Stage passes the already selected final Keep/Transfer/Deliver action to the
 observer. The observer never repeats flow selection or writes to a packet.
 
-Only passenger-class, known-OD, non-Manual train cargo can be evaluated. Fleet
+Only passenger-class, known-OD, non-Manual primary-vehicle cargo can be evaluated. Fleet
 capture is sampled at the first eligible arrival/cargo in each 64-state-tick
 epoch. Discovery examines at most 256 coaches and 512 packets. Other arrivals
 are counted as skipped. This sample is deterministic and consumes no RNG.
@@ -28,9 +31,9 @@ estimate for all passengers on the map.
 and station in the captured graph. An ambiguous or missing event is Unknown.
 It reuses the ordinary journey engine, with these root-state differences:
 
-- Continuing the current train needs no new seat, waiting or transfer charge.
+- Continuing the current vehicle needs no new seat, waiting or transfer charge.
   Remaining dwell is riding time. NoLoad does not reject passengers already aboard.
-- Another train requires permission to alight, its boarding rules, minimum
+- Another vehicle requires permission to alight, its boarding rules, minimum
   connection time, capacity checks and one transfer. Forced unloading stops
   through riding; NoUnload prevents an initial interchange.
 - The cache includes onboard trip/visit indices, OD, count and evaluation limits.
@@ -39,7 +42,7 @@ It reuses the ordinary journey engine, with these root-state differences:
 
 The shadow has no future capacity provider. Transfer candidates with unknown
 future free seats remain timetable comparisons, not promised seats. Continuing
-the occupied train does not require such a forecast.
+the occupied vehicle does not require such a forecast.
 
 ## Console and statistics
 
@@ -47,7 +50,11 @@ the occupied train does not require such a forecast.
 `stats` prints weighted passenger counts and packet counts; `reset` clears
 statistics/details without resetting the current resource quota. `details` prints
 at most 64 retained nonmatching, constrained or incomplete observations. The
-default is off. No synchronized setting, GUI setting, save field or multiplayer
+default is off. Per-mode counts include evaluated/journey/fallback packets,
+mixed-mode connections in the selected itinerary and snapshot prediction reasons
+(vehicle state, order progress, facilities, order/timing and budget). These are
+sampled diagnostics; the fallback counter does not mutate packet routing mode.
+No synchronized setting, GUI setting, save field or multiplayer
 command is added. A fresh process loading a save starts disabled with empty stats.
 `inventory` performs an explicitly requested read-only count of current known-OD
 passenger holdings by vehicle mode, capped at 1,048,576 vehicle/packet inspections.

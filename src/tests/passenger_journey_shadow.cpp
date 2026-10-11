@@ -9,6 +9,7 @@
 #include "../passenger_journey_shadow.h"
 #include "../passenger_od.h"
 #include "../vehicle_base.h"
+#include "passenger_test_stations.h"
 #include "../station_base.h"
 #include "../economy_base.h"
 #include "../core/backup_type.hpp"
@@ -40,6 +41,7 @@ struct ShadowVehicle : Vehicle {
 	explicit ShadowVehicle(std::vector<Order> orders, VehicleID id = VehicleID{100}) : Vehicle(id, VehicleType::Train)
 	{
 		this->orders = OrderList::Create(std::move(orders), this);
+		EnsurePassengerTestStations(this->orders->GetOrderVector());
 		this->cur_timetable_order_index = INVALID_VEH_ORDER_ID;
 		this->current_order.MakeLoading(false);
 		this->last_station_visited = this->GetOrder(0)->GetDestination().ToStationID();
@@ -229,8 +231,8 @@ TEST_CASE("Shadow compares the final legacy action with the complete destination
 		_settings_game.linkgraph.distribution_per_cargo[PAX] = DistributionType::Manual;
 		expected = PassengerShadowCategory::Skipped;
 	}
-	SECTION("Known OD on another vehicle mode is skipped") {
-		local.type = VehicleType::Road;
+	SECTION("Known OD on an unsupported vehicle is skipped") {
+		local.type = VehicleType::Effect;
 		expected = PassengerShadowCategory::Skipped;
 	}
 	local.cargo.Append(fixture.Packet(destination), Action::Keep);

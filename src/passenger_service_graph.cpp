@@ -5,7 +5,7 @@
  * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
-/** @file passenger_service_graph.cpp Value-owned train services and predictions; no routing policy changes. */
+/** @file passenger_service_graph.cpp Value-owned multimodal passenger services and predictions. */
 
 #include "stdafx.h"
 #include "passenger_service_graph.h"
@@ -40,7 +40,7 @@ PassengerServiceGraph PassengerServiceGraph::Build(CargoType cargo, StateTicks n
 	limits.steps_per_trip = std::min<size_t>(limits.steps_per_trip, 65536);
 	limits.horizon = std::clamp<Ticks>(limits.horizon, 0, 1 << 24);
 	graph.end = now;
-	if (cargo >= NUM_CARGO || now.base() < 0 || now.base() > INT64_MAX - (int64_t{1} << 50)) {
+	if (cargo >= NUM_CARGO || !IsCargoInClass(cargo, CargoClass::Passengers) || now.base() < 0 || now.base() > INT64_MAX - (int64_t{1} << 50)) {
 		graph.status = PassengerPredictionStatus::Unknown;
 		return graph;
 	}
@@ -54,7 +54,7 @@ PassengerServiceGraph PassengerServiceGraph::Build(CargoType cargo, StateTicks n
 	for (const OrderList *list : OrderList::Iterate()) {
 		if (!SpendGraphWork(budget)) { graph.status = PassengerPredictionStatus::BudgetExhausted; break; }
 		const Vehicle *first = list->GetFirstSharedVehicle();
-		if (first == nullptr || first->type != VehicleType::Train) continue;
+		if (!IsPassengerServiceVehicle(first)) continue;
 		if (graph.services.size() >= limits.services) { graph.status = PassengerPredictionStatus::LimitReached; break; }
 		/* Order owns its extra cargo/dispatch flags. Copy only timing fields from schedules:
 		 * GUI strings are irrelevant and cannot consume unbounded copying work. */
@@ -114,7 +114,7 @@ PassengerServiceGraph PassengerServiceGraph::Build(CargoType cargo, StateTicks n
 		/* Pool order, shared-chain order, then prediction order: stable on all multiplayer peers. */
 		for (const Vehicle *v = first; v != nullptr; v = v->NextShared()) {
 			if (!SpendGraphWork(budget)) { graph.status = PassengerPredictionStatus::BudgetExhausted; break; }
-			if (!v->IsPrimaryVehicle() || v->type != VehicleType::Train) continue;
+			if (!IsPassengerServiceVehicle(v)) continue;
 			if (graph.trips.size() >= limits.trips) { graph.status = PassengerPredictionStatus::LimitReached; break; }
 			uint64_t capacity = 0, occupants = 0;
 			for (const Vehicle *u = v; u != nullptr; u = u->Next()) {
@@ -125,23 +125,29 @@ PassengerServiceGraph PassengerServiceGraph::Build(CargoType cargo, StateTicks n
 				}
 			}
 			if (budget == 0) { graph.status = PassengerPredictionStatus::BudgetExhausted; break; }
+			if (capacity == 0) continue; // Exclude freight-only consists and mail-only aircraft.
 			Operation operation = v->vehstatus.Test(VehState::Crashed) ? Operation::Crashed :
 					v->vehstatus.Test(VehState::Stopped) ? Operation::Stopped : Operation::Running;
 			Trip trip{ v->index, stored.id, v->tile, v->GetMovingDirection(), v->cur_real_order_index, v->cur_implicit_order_index,
 					v->cur_timetable_order_index, v->current_order_time, v->lateness_counter, v->current_order.IsAnyLoadingType(),
 					v->vehicle_flags.Test(VehicleFlag::ScheduledDispatch), capacity, operation, {} };
 			trip.occupants = occupants;
+			trip.type = v->type;
 			trip.current_free = capacity - std::min(capacity, occupants);
 			trip.prediction.start = trip.prediction.complete_until = now;
 			if (operation == Operation::Running) {
-				auto state = GetPassengerRouteState(v);
+				auto state = GetPassengerRouteState(v, &budget, &trip.prediction_reason);
 				if (state) {
 					state->orders = orders;
 					state->schedules = stored.schedules;
 					trip.prediction = PredictPassengerVisits(*state, cargo, now, graph.end,
 							std::min(remaining_visits, limits.visits_per_trip), limits.steps_per_trip, budget);
+					if (trip.prediction.status != PassengerPredictionStatus::Complete && trip.prediction_reason == PassengerPredictionReason::None) {
+						trip.prediction_reason = PassengerPredictionReason::OrderOrTiming;
+					}
 				} else {
 					trip.operation = Operation::Unknown;
+					if (budget == 0) trip.prediction.status = PassengerPredictionStatus::BudgetExhausted;
 				}
 			} else {
 				trip.prediction.status = PassengerPredictionStatus::Complete;

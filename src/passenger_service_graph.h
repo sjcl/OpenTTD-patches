@@ -5,7 +5,7 @@
  * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
-/** @file passenger_service_graph.h Read-only, bounded train service snapshot for future timetable routers. */
+/** @file passenger_service_graph.h Read-only, bounded multimodal passenger service snapshot. */
 
 #ifndef PASSENGER_SERVICE_GRAPH_H
 #define PASSENGER_SERVICE_GRAPH_H
@@ -29,7 +29,7 @@ struct PassengerServiceGraphLimits {
 /**
  * Immutable after construction. All IDs, flags, durations and schedules are owned values.
  * Services describe declared order patterns; only Trip predictions certify future visit occurrences.
- * Build scans order lists once, their train fleets once, then runs bounded predictions per vehicle.
+ * Build scans order lists once, their physical fleets once, then runs bounded predictions per vehicle.
  * With O orders, V consist parts, D dispatch slots inspected and P predicted order steps, build work
  * is O(O + V + D + P), plus ordered index insertion/lookup costs. Storage is bounded by copied
  * orders/schedules and total visits. Queries inspect only the station's indexed services/visits,
@@ -83,6 +83,8 @@ public:
 		PassengerVisitPrediction prediction;
 		std::optional<uint64_t> occupants; ///< Observed cargo count at capture, including passengers staged for unloading.
 		std::optional<uint64_t> current_free; ///< Free at capture only; never a future seat guarantee.
+		VehicleType type = VehicleType::Invalid; ///< Diagnostics and connection evaluation; traversal uses the common visit contract.
+		PassengerPredictionReason prediction_reason = PassengerPredictionReason::None;
 	};
 
 	struct VisitID {

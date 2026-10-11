@@ -19,7 +19,7 @@ void AfterLoadPassengerJourneys();
 size_t InvalidatePassengerJourneyVehicle(VehicleID vehicle);
 void RebuildPassengerJourneyVehicleIndex();
 
-/** Lazy prediction for one primary train/cargo in one loading pass. */
+/** Lazy prediction for one physical passenger service/cargo in one loading pass. */
 class PassengerJourneyBoardingContext {
 	const Vehicle *vehicle;
 	CargoType cargo;

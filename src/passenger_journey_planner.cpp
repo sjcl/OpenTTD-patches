@@ -66,6 +66,7 @@ namespace {
 		StateTicks arrival{};
 		int64_t waiting = 0;
 		int64_t riding = 0;
+		int64_t transfer_time = 0;
 		int64_t penalty = 0;
 		int64_t score = 0;
 		uint32_t boardings = 0;
@@ -351,10 +352,15 @@ PassengerJourneyResult PassengerJourneyPlanner::Search(StationID origin, Station
 					const bool continuing = initial_onboard && boarding == *onboard;
 					if (initial_onboard && candidate != 0 && boarding == *onboard) continue;
 					const auto &boarding_stop = this->graph.GetVisitStop(boarding);
-					const auto &start = this->graph.GetTrips()[boarding.trip].prediction.visits[boarding.visit];
+					const auto &trip = this->graph.GetTrips()[boarding.trip];
+					const auto &start = trip.prediction.visits[boarding.visit];
+					const auto from_type = parent.boardings != 0 ? this->graph.GetTrips()[parent.leg.alighting.trip].type :
+							onboard ? this->graph.GetTrips()[onboard->trip].type : VehicleType::Invalid;
+					const int64_t connection = continuing || from_type == VehicleType::Invalid ? 0 : evaluation.MinimumTransfer(from_type, trip.type, station);
+					if (start.departure && *start.departure < parent.arrival + connection) continue;
 					if (!start.departure) { result.status = MergeJourneyStatus(result.status, PassengerPredictionStatus::Unknown); continue; }
 					if (continuing ? boarding_stop.forced_transfer : initial_onboard &&
-							(!this->graph.GetVisitStop(*onboard).can_alight || *start.departure < ready + evaluation.minimum_transfer)) continue;
+							!this->graph.GetVisitStop(*onboard).can_alight) continue;
 					const uint32_t transfers = parent.transfers + (continuing || (!onboard && parent.boardings == 0) ? 0 : 1);
 					if (transfers > limits.max_transfers) continue;
 					if (!can_finish_ride(boarding)) {
@@ -362,7 +368,6 @@ PassengerJourneyResult PassengerJourneyPlanner::Search(StationID origin, Station
 						continue;
 					}
 					++result.diagnostic.boardings;
-					const auto &trip = this->graph.GetTrips()[boarding.trip];
 					/* Through travel is scanned in one round, including all intermediate dwell. At the same
 					 * occurrence only forced unloading requires reboarding. A later circuit is a new,
 					 * real boarding opportunity, including when the immediate departure was missed. */
@@ -426,6 +431,7 @@ PassengerJourneyResult PassengerJourneyPlanner::Search(StationID origin, Station
 								label.arrival = *visit.arrival;
 								label.boardings = parent.boardings + 1;
 								label.transfers = transfers;
+								label.transfer_time = JourneyAdd(parent.transfer_time, connection);
 								label.waiting = parent.waiting + (continuing ? 0 : start.departure->base() - parent.arrival.base());
 								label.riding = parent.riding + visit.arrival->base() - (continuing ? ready.base() : start.departure->base());
 								label.penalty = JourneyAdd(parent.penalty, continuing ? 0 : CapacityPenalty(capacity, evaluation));
@@ -437,7 +443,7 @@ PassengerJourneyResult PassengerJourneyPlanner::Search(StationID origin, Station
 								label.score = JourneyAdd(label.arrival.base() - ready.base(), label.penalty);
 								label.score = JourneyAdd(label.score, JourneyScale(transfers, evaluation.transfer_penalty, 1));
 								label.score = JourneyAdd(label.score, JourneyScale(label.waiting, evaluation.waiting_weight, 1000));
-								label.score = JourneyAdd(label.score, JourneyScale(transfers * evaluation.minimum_transfer, evaluation.transfer_time_weight, 1000));
+								label.score = JourneyAdd(label.score, JourneyScale(label.transfer_time, evaluation.transfer_time_weight, 1000));
 								if (!spend()) { stopped = true; break; }
 								auto &bucket = next[stop.station];
 								bool dominated = false;
@@ -509,7 +515,7 @@ PassengerJourneyResult PassengerJourneyPlanner::Search(StationID origin, Station
 		journey.generalized_time = StateTicksDelta{label.score};
 		journey.capacity_penalty = StateTicksDelta{label.penalty};
 		journey.transfers = label.transfers;
-		journey.transfer_time = StateTicksDelta{int64_t{journey.transfers} * evaluation.minimum_transfer};
+		journey.transfer_time = StateTicksDelta{label.transfer_time};
 		journey.capacity_uncertain = label.capacity_uncertain;
 		journey.prediction_status = label.prediction_status;
 		journey.legs.reserve(label.boardings);
