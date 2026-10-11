@@ -12,12 +12,13 @@
 #include <tuple>
 
 struct PassengerJourneyLimits {
-	uint8_t max_transfers = 4;
+	uint32_t max_transfers = 65535; ///< Safety ceiling, never a certificate of unreachability. Zero requests direct travel only.
 	size_t candidates = 8;
 	size_t labels_per_station = 16; ///< Per round; preserve distinct vehicle paths even when slower.
 	size_t labels = 65536;
 	size_t work = 1048576;
 	size_t memory_bytes = 128 * 1024 * 1024; ///< Upper bound, allocated incrementally for reachability and labels.
+	uint32_t initial_max_transfers = 4; ///< Search this range for alternatives; extend geometrically if no journey is found.
 	auto operator<=>(const PassengerJourneyLimits &) const = default;
 };
 
@@ -81,13 +82,15 @@ struct PassengerPlannedJourney {
 	StateTicksDelta riding{}; ///< Includes intermediate dwell while remaining aboard.
 	StateTicksDelta generalized_time{};
 	StateTicksDelta capacity_penalty{};
-	uint8_t transfers = 0;
+	uint32_t transfers = 0;
 	PassengerPredictionStatus prediction_status = PassengerPredictionStatus::Complete;
 	bool capacity_uncertain = false;
 	bool operator==(const PassengerPlannedJourney &) const = default;
 };
 
 struct PassengerJourneyWork {
+	uint32_t rounds = 0; ///< Boarding rounds actually entered, including the initial ride.
+	uint32_t extensions = 0; ///< Stage increases; previous rounds are never replayed.
 	size_t work = 0;
 	size_t reverse_work = 0; ///< Included in work, not a separate allowance.
 	size_t boardings = 0;
@@ -97,16 +100,35 @@ struct PassengerJourneyWork {
 	size_t labels = 0;
 	size_t label_capacity = 0; ///< Peak allocated label slots, independent of the configured cap.
 	size_t capacity_rejections = 0;
-	size_t scratch_bytes = 0; ///< Conservative peak allocated scratch estimate, diagnostic only.
+	size_t cycle_rejections = 0; ///< Station revisits excluded from transfer paths; through rides retain real occurrences.
+	size_t scratch_bytes = 0; ///< Conservative peak scratch/returned-path allowance, diagnostic only.
 	bool cache_hit = false;
+};
+
+enum class PassengerJourneyStopReason : uint8_t {
+	Exhausted, ///< All relevant frontiers exhausted within the snapshot horizon.
+	TransferLimit, ///< A stage/safety ceiling leaves possible onward paths.
+	WorkLimit,
+	LabelLimit,
+	MemoryLimit,
+	PredictionIncomplete,
+	PredictionHorizon, ///< A declared operational corridor exists, but no timed journey fits in this snapshot.
+	InvalidQuery,
 };
 
 struct PassengerJourneyResult {
 	std::vector<PassengerPlannedJourney> journeys;
 	PassengerPredictionStatus status = PassengerPredictionStatus::Complete;
+	PassengerJourneyStopReason stop_reason = PassengerJourneyStopReason::Exhausted;
+	StateTicks prediction_end{}; ///< Exclusive horizon: absence never certifies permanent disconnection.
 	PassengerJourneyWork diagnostic;
-	/** Absence is certified only inside a completely searched prediction horizon and configured transfer range. */
-	bool IsUnreachable() const { return this->journeys.empty() && this->status == PassengerPredictionStatus::Complete; }
+	/** Every returned candidate reaches the requested destination with validated times; no partial paths are returned.
+	 * Incomplete search status concerns alternatives, independently of a usable end-to-end candidate. */
+	bool HasJourney() const { return !this->journeys.empty(); }
+	/** Absence is certified only for an exhausted search within prediction_end and the supplied conditions. */
+	bool IsUnreachable() const { return !this->HasJourney() && this->status == PassengerPredictionStatus::Complete && this->stop_reason == PassengerJourneyStopReason::Exhausted; }
+	/** Includes invalid/unknown OD: callers may use CargoDist without altering the passenger destination. */
+	bool IsInconclusive() const { return !this->HasJourney() && !this->IsUnreachable(); }
 };
 
 struct PassengerJourneyCacheLimits {

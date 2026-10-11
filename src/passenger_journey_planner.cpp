@@ -68,8 +68,8 @@ namespace {
 		int64_t riding = 0;
 		int64_t penalty = 0;
 		int64_t score = 0;
-		uint8_t boardings = 0;
-		uint8_t transfers = 0;
+		uint32_t boardings = 0;
+		uint32_t transfers = 0;
 		bool capacity_uncertain = false;
 		std::optional<uint64_t> minimum_free;
 		PassengerPredictionStatus prediction_status = PassengerPredictionStatus::Complete;
@@ -104,31 +104,32 @@ namespace {
 	/** A relaxed reverse boarding graph: ignore readiness, interchange time and capacity forecasts.
 	 * Station distances count necessary boardings; suffix distances count boardings after the current ride.
 	 * FIFO station layers and memoized trip suffixes scan each occurrence at most once, even for long routes.
-	 * Allocate a trip's byte array only when a connected alighting occurrence actually reaches it. */
+	 * Allocate a trip's distance array only when a connected alighting occurrence actually reaches it.
+	 * Search all connected layers once: a stage ceiling must not erase frontiers needed by later stages. */
 	struct JourneyReachability {
-		static constexpr uint8_t UNREACHABLE = UINT8_MAX;
-		std::map<StationID, uint8_t> stations;
-		std::map<size_t, std::vector<uint8_t>> suffixes;
+		static constexpr uint32_t UNREACHABLE = UINT32_MAX;
+		std::map<StationID, uint32_t> stations;
+		std::map<size_t, std::vector<uint32_t>> suffixes;
 		std::optional<StateTicks> earliest_destination;
 
-		uint8_t Boardings(StationID station) const
+		uint32_t Boardings(StationID station) const
 		{
 			auto found = this->stations.find(station);
 			return found == this->stations.end() ? UNREACHABLE : found->second;
 		}
 
-		uint8_t AfterBoarding(PassengerServiceGraph::VisitID id) const
+		uint32_t AfterBoarding(PassengerServiceGraph::VisitID id) const
 		{
 			auto found = this->suffixes.find(id.trip);
 			return found == this->suffixes.end() ? UNREACHABLE : found->second[id.visit];
 		}
 
 		template <typename Spend, typename Admit>
-		bool Build(const PassengerServiceGraph &graph, std::span<const StationID> seeds, uint8_t seed_distance,
-				uint8_t max_boardings, Spend &spend, Admit &admit)
+		bool Build(const PassengerServiceGraph &graph, std::span<const StationID> seeds, uint32_t seed_distance,
+				Spend &spend, Admit &admit)
 		{
 			std::vector<StationID> queue;
-			auto add = [&](StationID station, uint8_t distance) {
+			auto add = [&](StationID station, uint32_t distance) {
 				if (this->stations.contains(station)) return true;
 				/* Map node, allocator overhead and up to two queue slots per station. */
 				if (!spend() || !admit(128)) return false;
@@ -138,8 +139,7 @@ namespace {
 			};
 			for (StationID station : seeds) if (!add(station, seed_distance)) return false;
 			for (size_t q = 0; q < queue.size(); ++q) {
-				uint8_t distance = this->Boardings(queue[q]);
-				if (distance >= max_boardings) continue;
+				uint32_t distance = this->Boardings(queue[q]);
 				for (auto alighting : graph.GetStationVisits(queue[q])) {
 					if (!spend()) return false;
 					const auto &trip = graph.GetTrips()[alighting.trip];
@@ -152,8 +152,8 @@ namespace {
 					if (alighting.visit == 0) continue;
 					auto found = this->suffixes.find(alighting.trip);
 					if (found == this->suffixes.end()) {
-						if (!spend(visits.size()) || !admit(128 + visits.size())) return false;
-						found = this->suffixes.emplace(alighting.trip, std::vector<uint8_t>(visits.size(), UNREACHABLE)).first;
+						if (!spend(visits.size()) || !admit(128 + visits.size() * sizeof(uint32_t))) return false;
+						found = this->suffixes.emplace(alighting.trip, std::vector<uint32_t>(visits.size(), UNREACHABLE)).first;
 					}
 					auto &suffix = found->second;
 					for (size_t i = alighting.visit; i-- > 0;) {
@@ -170,44 +170,100 @@ namespace {
 			return true;
 		}
 	};
+
+	/** Only empty, otherwise complete searches need this conservative, untimed corridor check.
+	 * Declared stops cannot create a journey, but can show that a longer horizon may be needed.
+	 * Each loop/entry pays the same query's work/memory budgets; even cyclic patterns terminate. */
+	template <typename Spend, typename Admit>
+	static std::optional<bool> HasJourneyCorridor(const PassengerServiceGraph &graph, StationID origin, StationID destination,
+			Spend &spend, Admit &admit)
+	{
+		std::map<StationID, bool> seen;
+		std::vector<StationID> queue;
+		auto add = [&](StationID station) {
+			if (seen.contains(station)) return true;
+			if (!spend() || !admit(128)) return false;
+			seen.emplace(station, true);
+			queue.push_back(station);
+			return true;
+		};
+		if (!add(destination)) return std::nullopt;
+		for (size_t q = 0; q < queue.size(); ++q) {
+			for (OrderListID id : graph.GetServicesAtStation(queue[q])) {
+				if (!spend()) return std::nullopt;
+				const auto &service = *graph.GetService(id);
+				bool operational = false;
+				for (size_t trip : service.trips) {
+					if (!spend()) return std::nullopt;
+					const auto &vehicle = graph.GetTrips()[trip];
+					if (vehicle.operation == PassengerServiceGraph::Operation::Running && vehicle.capacity != 0) { operational = true; break; }
+				}
+				if (!operational) continue;
+				for (size_t end = 0; end < service.stops.size(); ++end) {
+					if (!spend()) return std::nullopt;
+					if (service.stops[end].station != queue[q] || !service.stops[end].can_alight) continue;
+					for (size_t step = 1; step < service.stops.size(); ++step) {
+						if (!spend()) return std::nullopt;
+						const auto &stop = service.stops[(end + service.stops.size() - step) % service.stops.size()];
+						if (stop.can_board) {
+							if (stop.station == origin) return true;
+							if (!add(stop.station)) return std::nullopt;
+						}
+						if (stop.forced_transfer) break;
+					}
+				}
+			}
+		}
+		return false;
+	}
 }
 
 PassengerJourneyResult PassengerJourneyPlanner::Search(StationID origin, StationID destination, StateTicks ready, uint64_t passengers,
 		PassengerJourneyLimits limits, const PassengerJourneyEvaluation &evaluation, std::optional<PassengerServiceGraph::VisitID> onboard) const
 {
 	PassengerJourneyResult result;
+	result.prediction_end = this->graph.GetEnd();
 	result.status = this->graph.GetStatus();
-	if (limits.max_transfers > 8 || limits.candidates > 64) result.status = MergeJourneyStatus(result.status, PassengerPredictionStatus::LimitReached);
+	auto limit = [&](PassengerJourneyStopReason reason) {
+		result.status = MergeJourneyStatus(result.status, PassengerPredictionStatus::LimitReached);
+		if (result.stop_reason == PassengerJourneyStopReason::Exhausted) result.stop_reason = reason;
+	};
+	if (limits.candidates > 64) limit(PassengerJourneyStopReason::LabelLimit);
 	/* Each stored label pays for vector growth, two frontier index entries, and conservative map-node overhead.
 	 * Hard caps protect callers as well as defaults; station IDs never set an arbitrary 256-station limit. */
 	constexpr size_t LABEL_BYTES = 2 * sizeof(JourneyLabel) + 256;
+	const size_t requested_labels = std::min(limits.labels, size_t{1} << 20);
 	limits.labels = std::min({ limits.labels, limits.memory_bytes / LABEL_BYTES, size_t{1} << 20 });
 	limits.labels_per_station = std::min<size_t>(limits.labels_per_station, 256);
-	limits.max_transfers = std::min<uint8_t>(limits.max_transfers, 8);
+	/* Wide counters and a bounded addition below protect UINT32_MAX caller inputs too. */
+	limits.max_transfers = std::min<uint32_t>(limits.max_transfers, 65535);
+	uint32_t stage = std::min(limits.initial_max_transfers, limits.max_transfers);
 	limits.work = std::min<size_t>(limits.work, 1 << 24);
 	limits.candidates = std::min<size_t>(limits.candidates, 64);
 	if (limits.labels == 0 || limits.labels_per_station == 0 || limits.candidates == 0) {
-		result.status = MergeJourneyStatus(result.status, PassengerPredictionStatus::LimitReached);
+		limit(limits.memory_bytes < LABEL_BYTES ? PassengerJourneyStopReason::MemoryLimit : PassengerJourneyStopReason::LabelLimit);
 		return result;
 	}
 	size_t remaining_work = limits.work;
 	auto spend = [&](size_t amount = 1) {
 		if (amount > remaining_work) {
 			result.status = PassengerPredictionStatus::BudgetExhausted;
+			result.stop_reason = PassengerJourneyStopReason::WorkLimit;
 			return false;
 		}
 		remaining_work -= amount;
 		result.diagnostic.work += amount;
 		return true;
 	};
-	size_t reachability_bytes = 0;
+	/* Auxiliary storage includes reverse maps and reservations for returned journey paths. */
+	size_t auxiliary_bytes = 0, label_bytes = 0;
 	auto admit = [&](size_t bytes) {
-		if (bytes > limits.memory_bytes - reachability_bytes) {
-			result.status = MergeJourneyStatus(result.status, PassengerPredictionStatus::LimitReached);
+		if (bytes > limits.memory_bytes - auxiliary_bytes - label_bytes) {
+			limit(PassengerJourneyStopReason::MemoryLimit);
 			return false;
 		}
-		reachability_bytes += bytes;
-		result.diagnostic.scratch_bytes = reachability_bytes;
+		auxiliary_bytes += bytes;
+		result.diagnostic.scratch_bytes = auxiliary_bytes + label_bytes;
 		return true;
 	};
 	auto reverse_spend = [&](size_t amount = 1) {
@@ -217,30 +273,47 @@ PassengerJourneyResult PassengerJourneyPlanner::Search(StationID origin, Station
 	};
 	JourneyReachability reachable, uncertain;
 	const std::array<StationID, 1> target{destination};
-	if (!reachable.Build(this->graph, target, 0, limits.max_transfers + 1, reverse_spend, admit) ||
-			!uncertain.Build(this->graph, this->graph.GetUncertainStations(destination), 1, limits.max_transfers + 1, reverse_spend, admit)) return result;
+	if (!reachable.Build(this->graph, target, 0, reverse_spend, admit) ||
+			!uncertain.Build(this->graph, this->graph.GetUncertainStations(destination), 1, reverse_spend, admit)) return result;
 	/* Incomplete services seed a second reverse search, even if their dynamic branch captured no
 	 * destination visit. Pruning cannot turn a potentially reachable unknown suffix into absence. */
-	if (uncertain.Boardings(origin) <= limits.max_transfers + 1) result.status = MergeJourneyStatus(result.status, this->graph.GetUncertainStatus(destination));
+	if (uncertain.Boardings(origin) != JourneyReachability::UNREACHABLE) result.status = MergeJourneyStatus(result.status, this->graph.GetUncertainStatus(destination));
 	auto boardings_left = [&](StationID station) { return std::min(reachable.Boardings(station), uncertain.Boardings(station)); };
-	auto can_finish_ride = [&](PassengerServiceGraph::VisitID id, uint8_t remaining) {
-		return std::min(reachable.AfterBoarding(id), uncertain.AfterBoarding(id)) <= remaining ||
+	auto can_finish_ride = [&](PassengerServiceGraph::VisitID id) {
+		return std::min(reachable.AfterBoarding(id), uncertain.AfterBoarding(id)) != JourneyReachability::UNREACHABLE ||
 				!this->graph.GetTrips()[id.trip].prediction.Covers(this->graph.GetStart(), this->graph.GetEnd());
 	};
-	if (boardings_left(origin) > limits.max_transfers + 1 && (!onboard || !can_finish_ride(*onboard, limits.max_transfers))) return result;
-	limits.labels = std::min(limits.labels, (limits.memory_bytes - reachability_bytes) / LABEL_BYTES);
+	auto finish = [&]() {
+		if (result.stop_reason == PassengerJourneyStopReason::Exhausted && result.status == PassengerPredictionStatus::Complete && result.journeys.empty()) {
+			auto corridor = HasJourneyCorridor(this->graph, origin, destination, reverse_spend, admit);
+			if (corridor && *corridor) {
+				result.status = PassengerPredictionStatus::Unknown;
+				result.stop_reason = PassengerJourneyStopReason::PredictionHorizon;
+			}
+		}
+		if (result.stop_reason == PassengerJourneyStopReason::Exhausted && result.status != PassengerPredictionStatus::Complete) result.stop_reason = PassengerJourneyStopReason::PredictionIncomplete;
+	};
+	if (boardings_left(origin) == JourneyReachability::UNREACHABLE && (!onboard || !can_finish_ride(*onboard))) { finish(); return result; }
+	if (boardings_left(origin) > limits.max_transfers + 1 && (!onboard || !can_finish_ride(*onboard))) { limit(PassengerJourneyStopReason::TransferLimit); return result; }
+	limits.labels = std::min(limits.labels, (limits.memory_bytes - auxiliary_bytes) / LABEL_BYTES);
 	if (limits.labels == 0) {
-		result.status = MergeJourneyStatus(result.status, PassengerPredictionStatus::LimitReached);
+		limit(PassengerJourneyStopReason::MemoryLimit);
 		return result;
 	}
+	auto label_limit_reason = [&]() {
+		return (limits.memory_bytes - auxiliary_bytes) / LABEL_BYTES <= requested_labels ?
+				PassengerJourneyStopReason::MemoryLimit : PassengerJourneyStopReason::LabelLimit;
+	};
 	std::vector<JourneyLabel> labels;
 	labels.reserve(std::min<size_t>(limits.labels, 32));
+	label_bytes = labels.capacity() * LABEL_BYTES;
 	labels.push_back(JourneyLabel{});
 	labels.back().arrival = ready;
 	std::map<StationID, std::vector<size_t>> frontier{ { origin, { 0 } } };
 	std::vector<size_t> destinations;
 	bool stopped = false;
-	for (uint8_t round = 0; round <= limits.max_transfers && !frontier.empty() && !stopped; ++round) {
+	for (uint32_t round = 0; round <= stage && !frontier.empty() && !stopped; ++round) {
+		++result.diagnostic.rounds;
 		std::map<StationID, std::vector<size_t>> next;
 		for (const auto &[station, active] : frontier) {
 			for (size_t previous : active) {
@@ -250,7 +323,7 @@ PassengerJourneyResult PassengerJourneyPlanner::Search(StationID origin, Station
 				 * distance. Once K candidates exist, a strictly worse (score, arrival, boardings)
 				 * lower bound cannot alter their order, including the later capacity/ID tie-breaks. */
 				if (parent.boardings != 0 && destinations.size() == limits.candidates && reachable.earliest_destination) {
-					uint8_t boardings = parent.boardings + boardings_left(station);
+					uint32_t boardings = parent.boardings + boardings_left(station);
 					StateTicks arrival = std::max(parent.arrival, *reachable.earliest_destination);
 					int64_t transfers = parent.transfers + boardings_left(station);
 					int64_t score = JourneyAdd(arrival.base() - ready.base(), parent.penalty);
@@ -282,10 +355,9 @@ PassengerJourneyResult PassengerJourneyPlanner::Search(StationID origin, Station
 					if (!start.departure) { result.status = MergeJourneyStatus(result.status, PassengerPredictionStatus::Unknown); continue; }
 					if (continuing ? boarding_stop.forced_transfer : initial_onboard &&
 							(!this->graph.GetVisitStop(*onboard).can_alight || *start.departure < ready + evaluation.minimum_transfer)) continue;
-					const uint8_t transfers = parent.transfers + (continuing || (!onboard && parent.boardings == 0) ? 0 : 1);
+					const uint32_t transfers = parent.transfers + (continuing || (!onboard && parent.boardings == 0) ? 0 : 1);
 					if (transfers > limits.max_transfers) continue;
-					const uint8_t remaining = limits.max_transfers - transfers;
-					if (!can_finish_ride(boarding, remaining)) {
+					if (!can_finish_ride(boarding)) {
 						++result.diagnostic.pruned_boardings;
 						continue;
 					}
@@ -309,7 +381,22 @@ PassengerJourneyResult PassengerJourneyPlanner::Search(StationID origin, Station
 							result.status = MergeJourneyStatus(result.status, PassengerPredictionStatus::Unknown);
 							break;
 						}
-						if (stop.can_alight && boardings_left(stop.station) <= remaining) {
+						if (stop.can_alight && boardings_left(stop.station) != JourneyReachability::UNREACHABLE) {
+							/* Waiting at a previous interchange can replace a loop. With weighted waiting,
+							 * riding a positive-time circuit can be preferable, so only suppress its zero-time
+							 * cycles. Through rides and later physical occurrences remain valid in either case. */
+							bool cycle = stop.station == origin && (evaluation.waiting_weight == 0 || *visit.arrival <= ready);
+							for (size_t ancestor = previous; !cycle && labels[ancestor].boardings != 0; ancestor = labels[ancestor].previous) {
+								if (!spend()) { stopped = true; break; }
+								cycle = labels[ancestor].leg.alighting_station == stop.station &&
+										(evaluation.waiting_weight == 0 || *visit.arrival <= labels[ancestor].arrival);
+							}
+							if (stopped) break;
+							if (cycle) {
+								++result.diagnostic.cycle_rejections;
+								if (stop.forced_transfer || !visit.departure) break;
+								continue;
+							}
 							PassengerJourneyCapacity capacity;
 							if (this->capacity_provider != nullptr) {
 								if (!spend()) { stopped = true; break; }
@@ -360,24 +447,34 @@ PassengerJourneyResult PassengerJourneyPlanner::Search(StationID origin, Station
 								}
 								if (stopped) break;
 								if (!dominated) {
+									/* Do not erase an already found candidate before knowing that its replacement
+									 * can be stored. Reconstruction storage/work is reserved on admission too. */
+									if (labels.size() == limits.labels) { limit(label_limit_reason()); stopped = true; break; }
 									if (!spend(bucket.size() * (2 + 2 * label.boardings))) { stopped = true; break; }
+									if (stop.station == destination) {
+										if (!spend(label.boardings) || !admit(2 * sizeof(PassengerPlannedJourney) + 2 * label.boardings * sizeof(PassengerJourneyLeg))) { stopped = true; break; }
+										limits.labels = std::min(limits.labels, (limits.memory_bytes - auxiliary_bytes) / LABEL_BYTES);
+										if (labels.size() == limits.labels) { limit(PassengerJourneyStopReason::MemoryLimit); stopped = true; break; }
+									}
 									std::erase_if(bucket, [&](size_t id) { return SamePath(label, labels[id], labels) && Dominates(label, labels[id]); });
 									if (bucket.size() >= limits.labels_per_station) {
-										result.status = MergeJourneyStatus(result.status, PassengerPredictionStatus::LimitReached);
+									limit(PassengerJourneyStopReason::LabelLimit);
 										auto worst = std::max_element(bucket.begin(), bucket.end(), [&](size_t a, size_t b) { return LabelOrder(labels[a]) < LabelOrder(labels[b]); });
 										if (LabelOrder(label) >= LabelOrder(labels[*worst])) dominated = true;
 										else bucket.erase(worst);
 									}
 									if (!dominated) {
-										if (labels.size() == limits.labels) { result.status = MergeJourneyStatus(result.status, PassengerPredictionStatus::LimitReached); stopped = true; break; }
 										bucket.push_back(labels.size());
-										if (labels.size() == labels.capacity()) labels.reserve(std::min(limits.labels, labels.capacity() * 2));
+										if (labels.size() == labels.capacity()) {
+											labels.reserve(std::min(limits.labels, labels.capacity() * 2));
+											label_bytes = labels.capacity() * LABEL_BYTES;
+										}
 										labels.push_back(std::move(label));
 									}
 								}
 							}
 						}
-						if (stop.forced_transfer || !visit.departure || !can_finish_ride(alighting, remaining)) break;
+						if (stop.forced_transfer || !visit.departure || !can_finish_ride(alighting)) break;
 					}
 					if (stopped) break;
 				}
@@ -393,7 +490,16 @@ PassengerJourneyResult PassengerJourneyPlanner::Search(StationID origin, Station
 		std::sort(destinations.begin(), destinations.end(), [&](size_t a, size_t b) { return LabelOrder(labels[a]) < LabelOrder(labels[b]); });
 		if (destinations.size() > limits.candidates) destinations.resize(limits.candidates);
 		frontier = std::move(next);
+		if (round == stage && !frontier.empty() && !stopped) {
+			if (!destinations.empty() || stage == limits.max_transfers) {
+				limit(PassengerJourneyStopReason::TransferLimit);
+			} else {
+				stage = std::min(limits.max_transfers, std::max(stage + 1, stage * 2));
+				++result.diagnostic.extensions;
+			}
+		}
 	}
+	result.journeys.reserve(destinations.size());
 	for (size_t id : destinations) {
 		const JourneyLabel &label = labels[id];
 		PassengerPlannedJourney journey;
@@ -406,13 +512,15 @@ PassengerJourneyResult PassengerJourneyPlanner::Search(StationID origin, Station
 		journey.transfer_time = StateTicksDelta{int64_t{journey.transfers} * evaluation.minimum_transfer};
 		journey.capacity_uncertain = label.capacity_uncertain;
 		journey.prediction_status = label.prediction_status;
+		journey.legs.reserve(label.boardings);
 		for (size_t current = id; labels[current].boardings != 0; current = labels[current].previous) journey.legs.push_back(labels[current].leg);
 		std::reverse(journey.legs.begin(), journey.legs.end());
 		result.journeys.push_back(std::move(journey));
 	}
 	result.diagnostic.labels = labels.size();
 	result.diagnostic.label_capacity = labels.capacity();
-	result.diagnostic.scratch_bytes = reachability_bytes + labels.capacity() * LABEL_BYTES;
+	finish();
+	result.diagnostic.scratch_bytes = auxiliary_bytes + labels.capacity() * LABEL_BYTES;
 	return result;
 }
 
@@ -420,10 +528,12 @@ PassengerJourneyResult PassengerJourneyPlanner::Plan(CargoType cargo, StationID 
 		PassengerJourneyLimits limits, PassengerJourneyEvaluation evaluation, uint64_t passengers)
 {
 	PassengerJourneyResult result;
+	result.prediction_end = this->graph.GetEnd();
 	if (cargo != this->graph.GetCargo() || origin == StationID::Invalid() || destination == StationID::Invalid() ||
 			ready < this->graph.GetStart() || ready >= this->graph.GetEnd() || passengers == 0 ||
 			evaluation.minimum_transfer < 0 || evaluation.transfer_penalty < 0 || evaluation.crowding_penalty < 0 || evaluation.capacity_shortfall_penalty < 0) {
 		result.status = PassengerPredictionStatus::Unknown;
+		result.stop_reason = PassengerJourneyStopReason::InvalidQuery;
 		return result;
 	}
 	if (origin == destination) {
@@ -450,6 +560,7 @@ PassengerJourneyResult PassengerJourneyPlanner::Plan(CargoType cargo, StationID 
 		this->Retain(std::move(key), result);
 	}
 	result.status = MergeJourneyStatus(result.status, departures.status);
+	if (result.stop_reason == PassengerJourneyStopReason::Exhausted && result.status != PassengerPredictionStatus::Complete) result.stop_reason = PassengerJourneyStopReason::PredictionIncomplete;
 	int64_t initial_wait = anchor.base() - ready.base();
 	for (auto &journey : result.journeys) {
 		journey.waiting += StateTicksDelta{initial_wait};
