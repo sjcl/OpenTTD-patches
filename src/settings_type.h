@@ -962,6 +962,7 @@ struct LinkGraphSettings {
 	uint8_t demand_distance;                            ///< influence of distance between stations on the demand function
 	uint8_t short_path_saturation;                      ///< percentage up to which short paths are saturated before saturating most capacious paths
 	uint16_t aircraft_link_scale;                       ///< scale effective distance of aircraft links
+	uint16_t aircraft_link_add;                         ///< path cost addition (in days) of aircraft links
 	uint16_t transfer_penalty_same_mode;                ///< path cost penalty (in days) for transferring between routes of the same vehicle type
 	uint16_t transfer_penalty_mode_change;              ///< path cost penalty (in days) for transferring between routes of different vehicle types
 

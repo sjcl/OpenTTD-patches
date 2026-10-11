@@ -218,3 +218,7 @@ STR_STATION_ROUTE_OVERLAY_ALIGHTING_TOOLTIP_MONTHLY             :{STATION}: 月{
 STR_STATION_VIEW_PAX_ROUTES_WAITING                             :待っている旅客の経路を表示
 STR_STATION_VIEW_PAX_ROUTES_MONTHLY                             :出発する旅客の月あたりの経路を表示（計画）
 STR_STATION_VIEW_PAX_ROUTES_HIDE                                :経路を非表示
+STR_CONFIG_SETTING_AIRCRAFT_PATH_COST                           :航空機を使う経路の距離の倍率: {STRING2}
+STR_CONFIG_SETTING_AIRCRAFT_PATH_COST_HELPTEXT                  :航空機を使う経路のコスト（距離）にこの倍率をかけ、実際より遠回りに（100%未満なら近く）見せます。航空機の直行便に旅客が集中しすぎるのを抑えられます。
+STR_CONFIG_SETTING_AIRCRAFT_PATH_COST_ADD                       :航空機を使う区間ごとの経路コスト加算: {STRING2}
+STR_CONFIG_SETTING_AIRCRAFT_PATH_COST_ADD_HELPTEXT              :航空機を使う区間のコストに、倍率をかけた後、距離に関係なくこの日数を加算します。空港での手続きなどの固定的な時間を表すのに使えます。

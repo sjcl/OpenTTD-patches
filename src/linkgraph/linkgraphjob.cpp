@@ -208,6 +208,7 @@ void LinkGraphJob::Init()
 	 * In-between stops are punished with a 1 tile or 1 day penalty. */
 	const bool express = IsLinkGraphCargoExpress(this->Cargo());
 	const uint16_t aircraft_link_scale = this->Settings().aircraft_link_scale;
+	const uint16_t aircraft_link_add = this->Settings().aircraft_link_add;
 
 	/* Route cost additions and transfer penalties are given in days.
 	 * For express cargo the path cost is in ticks, otherwise it is in tiles, assuming an average speed of 1 tile/day. */
@@ -252,9 +253,13 @@ void LinkGraphJob::Init()
 			distance_anno = calculate_distance();
 		}
 
-		if (edge.LastAircraftUpdate() != EconTime::INVALID_DATE && aircraft_link_scale > 100) {
-			distance_anno *= aircraft_link_scale;
-			distance_anno /= 100;
+		if (edge.LastAircraftUpdate() != EconTime::INVALID_DATE) {
+			if (aircraft_link_scale != 100) {
+				distance_anno = ClampTo<uint>(std::max<uint64_t>(1, static_cast<uint64_t>(distance_anno) * aircraft_link_scale / 100));
+			}
+			if (aircraft_link_add != 0) {
+				distance_anno = ClampTo<uint>(static_cast<uint64_t>(distance_anno) + static_cast<uint64_t>(aircraft_link_add) * day_cost);
+			}
 		}
 
 		/* Apply the per-route cost scale and addition, weighted by the capacity each route contributes. */

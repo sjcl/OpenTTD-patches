@@ -181,6 +181,7 @@ enum SlXvFeatureIndex {
 	XSLFI_PR_13745_APPLIED,                       ///< Tag to indicate that the fix in PR #13745 has been already applied
 	XSLFI_SIGNAL_STATE_FIX,                       ///< Tag for signal state fixes
 	XSLFI_LINKGRAPH_ROUTE_PENALTY,                ///< Link graph per-route cost penalties and transfer penalties
+	                                              ///<     v2: Aircraft link cost addition setting
 
 	XSLFI_TABLE_PATS,                             ///< Use upstream table format for PATS
 	XSLFI_TABLE_PLYR,                             ///< Use table format for PLYR
