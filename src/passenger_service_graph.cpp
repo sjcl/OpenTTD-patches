@@ -5,7 +5,7 @@
  * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
-/** @file passenger_service_graph.cpp Value-owned train services and predictions; no routing policy changes. */
+/** @file passenger_service_graph.cpp Value-owned multimodal passenger services and predictions. */
 
 #include "stdafx.h"
 #include "passenger_service_graph.h"
@@ -40,7 +40,7 @@ PassengerServiceGraph PassengerServiceGraph::Build(CargoType cargo, StateTicks n
 	limits.visits_per_trip = std::min<size_t>(limits.visits_per_trip, 4096);
 	limits.steps_per_trip = std::min<size_t>(limits.steps_per_trip, 65536);
 	limits.horizon = std::clamp<Ticks>(limits.horizon, 0, 1 << 24);
-	if (cargo >= NUM_CARGO || now.base() < 0 || now.base() > INT64_MAX - (int64_t{1} << 50)) {
+	if (cargo >= NUM_CARGO || !IsCargoInClass(cargo, CargoClass::Passengers) || now.base() < 0 || now.base() > INT64_MAX - (int64_t{1} << 50)) {
 		graph.status = PassengerPredictionStatus::Unknown;
 		return graph;
 	}
@@ -69,7 +69,27 @@ PassengerServiceGraph PassengerServiceGraph::Build(CargoType cargo, StateTicks n
 	for (const OrderList *list : OrderList::Iterate()) {
 		if (!SpendGraphWork(budget)) { graph.status = PassengerPredictionStatus::BudgetExhausted; break; }
 		const Vehicle *first = list->GetFirstSharedVehicle();
-		if (first == nullptr || first->type != VehicleType::Train) continue;
+		if (!IsPassengerServiceVehicle(first)) continue;
+		/* Unscoped snapshots expose actual capacity only. Exclude freight before
+		 * reading orders or dispatch slots; scoped routing must also retain future
+		 * refits as uncertain alternatives, so it checks the declared pattern below. */
+		if (!scope) {
+			bool passenger_service = false;
+			size_t excluded = 0;
+			for (const Vehicle *v = first; v != nullptr; v = v->NextShared()) {
+				if (!SpendGraphWork(budget)) break;
+				if (!IsPassengerServiceVehicle(v)) continue;
+				if (HasPassengerVehicleCapacity(v, cargo, budget)) { passenger_service = true; break; }
+				++excluded;
+				if (budget == 0) break;
+			}
+			if (budget == 0) { graph.status = PassengerPredictionStatus::BudgetExhausted; break; }
+			if (!passenger_service) {
+				graph.diagnostic.trains += excluded;
+				graph.diagnostic.excluded_cargo += excluded;
+				continue;
+			}
+		}
 		bool may_refit = false, implicit = false, unbounded = false, manual_stops = false;
 		if (!SpendGraphWork(budget, list->GetNumOrders())) { graph.status = PassengerPredictionStatus::BudgetExhausted; break; }
 		for (const Order &order : list->GetOrderVector()) {
@@ -83,7 +103,7 @@ PassengerServiceGraph PassengerServiceGraph::Build(CargoType cargo, StateTicks n
 		std::vector<Candidate> candidates;
 		for (const Vehicle *v = first; v != nullptr; v = v->NextShared()) {
 			if (!SpendGraphWork(budget)) { graph.status = PassengerPredictionStatus::BudgetExhausted; break; }
-			if (!v->IsPrimaryVehicle() || v->type != VehicleType::Train) continue;
+			if (!IsPassengerServiceVehicle(v)) continue;
 			++graph.diagnostic.trains;
 			uint64_t capacity = 0, occupants = 0;
 			bool captured = true;
@@ -93,7 +113,7 @@ PassengerServiceGraph PassengerServiceGraph::Build(CargoType cargo, StateTicks n
 			}
 			if (!captured) { graph.status = PassengerPredictionStatus::BudgetExhausted; ++graph.diagnostic.omitted_trains; break; }
 			if (capacity != 0) ++graph.diagnostic.cargo_capable;
-			else if (may_refit || v->current_order.IsRefit()) ++graph.diagnostic.possible_refit;
+			else if (scope && (may_refit || v->current_order.IsRefit())) ++graph.diagnostic.possible_refit;
 			else { ++graph.diagnostic.excluded_cargo; continue; }
 			if (scope && v->vehstatus.Any({VehState::Stopped, VehState::Crashed})) { ++graph.diagnostic.inactive; continue; }
 			if (!admit(128)) break; // Temporary candidate vector, including geometric growth.
@@ -198,17 +218,24 @@ PassengerServiceGraph PassengerServiceGraph::Build(CargoType cargo, StateTicks n
 					v->cur_timetable_order_index, v->current_order_time, v->lateness_counter, v->current_order.IsAnyLoadingType(),
 					v->vehicle_flags.Test(VehicleFlag::ScheduledDispatch), capacity, operation, {} };
 			trip.occupants = occupants; trip.current_free = capacity - std::min(capacity, occupants);
+			trip.type = v->type;
 			trip.prediction.start = trip.prediction.complete_until = now;
 			if (operation == Operation::Running && capacity == 0 && v->current_order.IsRefit()) {
 				/* A current refit outside the declared pattern can create seats before
 				 * departure. Capture uncertainty instead of certifying zero future capacity. */
 			} else if (operation == Operation::Running) {
-				auto state = GetPassengerRouteState(v);
+				auto state = GetPassengerRouteState(v, &budget, &trip.prediction_reason);
 				if (state) {
 					state->orders = orders; state->schedules = stored.schedules;
 					++graph.diagnostic.predicted;
 					trip.prediction = PredictPassengerVisits(*state, cargo, now, graph.end, visit_limit, limits.steps_per_trip, budget);
-				} else trip.operation = Operation::Unknown;
+					if (trip.prediction.status != PassengerPredictionStatus::Complete && trip.prediction_reason == PassengerPredictionReason::None) {
+						trip.prediction_reason = PassengerPredictionReason::OrderOrTiming;
+					}
+				} else {
+					trip.operation = Operation::Unknown;
+					if (budget == 0) trip.prediction.status = PassengerPredictionStatus::BudgetExhausted;
+				}
 			} else {
 				++graph.diagnostic.inactive;
 				trip.prediction.status = PassengerPredictionStatus::Complete; trip.prediction.complete_until = graph.end;

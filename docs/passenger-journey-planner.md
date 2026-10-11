@@ -1,11 +1,13 @@
 # Passenger journey planner
 
 `PassengerJourneyPlanner` searches an immutable `PassengerServiceGraph` for
-train journeys. Its read-only [shadow integration](passenger-journey-shadow.md)
+train, road, ship and aircraft journeys in one network. Its read-only
+[shadow integration](passenger-journey-shadow.md)
 observes `VehicleCargoList::Stage` without changing loading/unloading decisions,
-freight routing, or savegame structures. Unknown OD
-and inconclusive journey searches continue to use the existing CargoDist path
-when the planner is eventually connected to boarding.
+freight routing, or savegame structures. The [Active integration](passenger-journey-active.md)
+controls real boarding and unloading. Unknown OD and inconclusive searches use
+the existing CargoDist path. See [multimodal support](passenger-journey-multimodal.md)
+for vehicle adapters and the latest validation results.
 
 ## API and snapshot ownership
 

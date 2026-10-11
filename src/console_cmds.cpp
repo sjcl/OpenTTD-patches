@@ -3320,10 +3320,13 @@ static bool ConDumpLinkgraphJobs(std::span<std::string_view> argv)
 
 	IConsolePrint(CC_DEFAULT, "{} link graph jobs", LinkGraphJob::GetNumItems());
 	for (const LinkGraphJob *lgj : LinkGraphJob::Iterate()) {
-		IConsolePrint(CC_DEFAULT, "  Job: {:5}, nodes: {}, cost: {}, started: {}, ends in: {}, duration: {}",
-				lgj->index, lgj->Graph().Size(), lgj->Graph().CalculateCostEstimate(),
+		IConsolePrint(CC_DEFAULT, "  Job: {:5}, graph: {}, cargo: {}, completed: {}, nodes: {}, cost: {}, started: {}, ends in: {}, duration: {}",
+				lgj->index, lgj->LinkGraphIndex(), lgj->Cargo(), lgj->IsJobCompleted(), lgj->Graph().Size(), lgj->Graph().CalculateCostEstimate(),
 				(int64_t)(lgj->StartTick() - _scaled_tick_counter), (int64_t)(lgj->JoinTick() - _scaled_tick_counter), (lgj->JoinTick() - lgj->StartTick()));
 	 }
+	for (const LinkGraph *graph : LinkGraph::Iterate()) {
+		IConsolePrint(CC_DEFAULT, "  Graph: {}, cargo: {}, nodes: {}, OD_revision: {}", graph->index, graph->Cargo(), graph->Size(), graph->PassengerOdRevision());
+	}
 	return true;
 }
 
@@ -4506,11 +4509,52 @@ static bool ConCreateTown(std::span<std::string_view> argv)
 static bool ConPassengerJourneyStats(std::span<std::string_view> argv)
 {
 	if (argv.empty()) {
-		IConsolePrint(CC_HELP, "passenger_journey_stats [total|tick|reset]: local active journey diagnostics; reset clears observations only");
+		IConsolePrint(CC_HELP, "passenger_journey_stats [total|tick|inventory|reset]: local active journey diagnostics; reset clears observations only");
 		return true;
 	}
 	if (argv.size() > 2) return false;
 	auto operation = argv.size() == 1 ? std::string_view("total") : argv[1];
+	if (operation == "inventory") {
+		/* Explicit read-only census. Reserved station cargo is held in vehicle
+		 * lists, so count each packet there exactly once for the global rates. */
+		std::array<uint64_t, 3> people{}, packets{}, known{};
+		uint64_t available = 0, reserved = 0, deferred = 0;
+		size_t work = 0;
+		bool complete = true;
+		auto inspect = [&](const CargoPacket *packet) {
+			if (++work > 16777216) { complete = false; return false; }
+			size_t mode = to_underlying(packet->GetPassengerRoutingMode());
+			people[mode] += packet->Count();
+			++packets[mode];
+			if (packet->GetPassengerDestination() != StationID::Invalid()) known[mode] += packet->Count();
+			if (packet->IsPassengerJourneyDeferred()) deferred += packet->Count();
+			return true;
+		};
+		for (const Station *station : Station::Iterate()) {
+			if (++work > 16777216) { complete = false; break; }
+			for (CargoType cargo{}; cargo < NUM_CARGO && complete; ++cargo) {
+				if (!IsCargoInClass(cargo, CargoClass::Passengers)) continue;
+				const auto &list = station->goods[cargo].ConstCargoList();
+				available += list.AvailableCount();
+				reserved += list.ReservedCount();
+				for (StationCargoList::ConstIterator it(list.Packets()->begin()); it != list.Packets()->end(); ++it) {
+					if (!inspect(*it)) break;
+				}
+			}
+			if (!complete) break;
+		}
+		if (complete) for (const Vehicle *vehicle : Vehicle::Iterate()) {
+			if (++work > 16777216) { complete = false; break; }
+			if (vehicle->cargo_type >= NUM_CARGO || !IsCargoInClass(vehicle->cargo_type, CargoClass::Passengers)) continue;
+			for (const CargoPacket *packet : *vehicle->cargo.Packets()) if (!inspect(packet)) break;
+			if (!complete) break;
+		}
+		IConsolePrint(CC_DEFAULT, "Passenger inventory: {}; waiting={} people (available={}, reserved={}); deferred={} people; state_ticks={}; scaled_ticks={}",
+				complete ? "complete" : "truncated", available + reserved, available, reserved, deferred, _state_ticks.base(), _scaled_tick_counter);
+		static constexpr std::array modes{"Legacy", "Journey", "Fallback"};
+		for (size_t mode = 0; mode < modes.size(); ++mode) IConsolePrint(CC_DEFAULT, "Inventory {}: {} people/{} packets; known_OD={} people", modes[mode], people[mode], packets[mode], known[mode]);
+		return true;
+	}
 	if (operation == "reset") { ResetPassengerJourneyDiagnostic(); return true; }
 	if (operation != "total" && operation != "tick") return false;
 	const auto stats = operation == "tick" ? GetPassengerJourneyTickDiagnostic() : GetPassengerJourneyTotalDiagnostic();
@@ -4590,11 +4634,18 @@ static bool ConPassengerJourneyShadow(std::span<std::string_view> argv)
 			IsPassengerJourneyShadowEnabled() ? "on" : "off", stats.observed.passengers, stats.observed.packets,
 			stats.known_od.passengers, stats.known_od.packets, stats.evaluated.passengers, stats.evaluated.packets,
 			percent(stats.evaluated.passengers, stats.known_od.passengers));
-	IConsolePrint(CC_DEFAULT, "Eligible train OD={} people/{} packets; evaluated={} of eligible; excluded non-train OD={} people/{} packets; manual train OD={} people/{} packets; eligible without snapshot={} people/{} packets",
+	IConsolePrint(CC_DEFAULT, "Eligible passenger OD={} people/{} packets; evaluated={} of eligible; excluded unsupported OD={} people/{} packets; manual OD={} people/{} packets; eligible without snapshot={} people/{} packets",
 			stats.eligible_od.passengers, stats.eligible_od.packets, percent(stats.evaluated.passengers, stats.eligible_od.passengers),
-			stats.non_train_od.passengers, stats.non_train_od.packets, stats.manual_od.passengers, stats.manual_od.packets,
+			stats.unsupported_od.passengers, stats.unsupported_od.packets, stats.manual_od.passengers, stats.manual_od.packets,
 			stats.uncaptured_od.passengers, stats.uncaptured_od.packets);
 	uint64_t matches = 0, comparable = 0;
+	static constexpr std::array modes{"train", "road", "ship", "aircraft"};
+	for (size_t i = 0; i < stats.modes.size(); ++i) {
+		const auto &mode = stats.modes[i];
+		IConsolePrint(CC_DEFAULT, "{}: evaluated={} journeys={} fallback={} mixed_transfers={}; predictions: complete={} state={} progress={} facilities={} order/timing={} budget={}",
+				modes[i], mode.evaluated.packets, mode.journeys.packets, mode.fallback.packets, mode.mixed_transfers,
+				mode.prediction_reasons[0], mode.prediction_reasons[1], mode.prediction_reasons[2], mode.prediction_reasons[3], mode.prediction_reasons[4], mode.prediction_reasons[5]);
+	}
 	for (size_t index = 0; index < stats.categories.size(); ++index) {
 		const auto &count = stats.categories[index];
 		IConsolePrint(CC_DEFAULT, "{}: {} people / {} packets", PassengerShadowCategoryName(static_cast<PassengerShadowCategory>(index)), count.passengers, count.packets);

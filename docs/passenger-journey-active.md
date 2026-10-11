@@ -3,8 +3,10 @@
 `linkgraph.passenger_journey_routing` is an experimental, synchronized game
 setting, disabled by default. Enable automatic passenger distribution first.
 `linkgraph.passenger_od_assignment` is independent: routing only considers
-packets that already have an explicit final destination. Only train journeys
-are predicted; unassigned passengers and unsupported journeys use CargoDist.
+packets that already have an explicit final destination. Train, road, ship and
+aircraft journeys share one planner; unassigned passengers and unsupported
+journeys use CargoDist. See [multimodal support](passenger-journey-multimodal.md)
+for physical-stop adapters, compatibility, uncertainty and validation results.
 The console-only shadow diagnostics remain independent and read-only.
 
 ## Execution and real capacity
@@ -20,7 +22,7 @@ execution/mode/cooldown as well as the existing payment/source attributes.
 Journey queues use the Invalid station bucket, with the previous CargoDist key
 stored separately. `StationCargoList::Load`, `Reserve` and `HasCargoFor` filter
 Journey packets against a live boarding context. Matching the next station
-alone cannot board a packet onto a different ordinary/express train.
+alone cannot board a packet onto a different physical service.
 
 The boarding context checks primary vehicle, shared orders, current station,
 boarding order, order/dispatch signature, NoLoad, a currently loading occurrence
@@ -29,7 +31,7 @@ the same order cannot reuse an old boarding. Prediction uncertainty never
 creates permission to board. Invalid reserved suffixes are returned through
 CargoReturn before loading is attempted again.
 
-Forecast capacity is only the physical train's total-seat upper bound. Queries
+Forecast capacity is only the physical vehicle's total-seat upper bound. Queries
 use demand 1 so a 300-person packet is not rejected just because only 100 seats
 are currently available. The existing per-coach free-capacity calculation,
 CargoLoad/CargoReservation actions and CargoPacket::Split assign real seats.
@@ -62,7 +64,7 @@ applies. A failed validation uses the OD-preserving fallback protected above.
 ## Expiry and fallback
 
 Every loading pass validates waiting Journey packets. Order/timetable/dispatch
-changes, refits, NoLoad, stopped/deleted trains, missed/changed occurrences,
+changes, refits, NoLoad, stopped/deleted vehicles, missed/changed occurrences,
 removed stations and incomplete searches clear execution and
 restore the CargoDist queue key. Vehicle deletion invalidates matching legs
 before its pool ID can be reused. The final OD survives fallback; the existing
@@ -87,7 +89,7 @@ Vehicle deletion uses a derived VehicleID-to-Journey-packet-ID reverse index.
 Split, merge, mode/vehicle changes and packet destruction maintain it; pool
 cleanup clears it and afterload reconstructs it before lifecycle validation.
 Deleting an unreferenced wagon requires a map lookup, while invalidating a
-selected train visits only its referring Journey packets in packet-ID order.
+selected vehicle visits only its referring Journey packets in packet-ID order.
 The index is not saved, owns no packet pointers and uses O(Journey packet count)
 additional memory; Legacy/Fallback packets consume no entries.
 
@@ -140,7 +142,7 @@ eligibility checks. Existing Journey packets cannot starve ready Fallback retrie
 An event has 4,194,304 work units, at most 128 destination cache entries and
 queries, and a 256 MiB snapshot envelope. Each graph is capped at
 2,097,152 work units, a 128 MiB conservative allocation envelope, 262,144 visits
-and 128 visits per train. Each distinct query has 65,536 work units, 8,192
+and 128 visits per vehicle. Each distinct query has 65,536 work units, 8,192
 labels, an 8 MiB scratch envelope and one selected candidate. Graph work is
 charged deterministically, with identical static-index allowances when warm;
 each distinct query reserves 65,536 units. Signature traversal is charged too.
@@ -153,7 +155,7 @@ of the graph ledger. A skipped or completed waiting pass releases any unused
 share in the same tick; an unfinished census reserves none. Identical OD packets
 reuse the same result.
 Waiting-pass searches admit at most 4,096 packets; excess packets remain on
-CargoDist. Validation caches at most 128 train/cargo pairs and has a separate
+CargoDist. Validation caches at most 128 vehicle/cargo pairs and has a separate
 bounded signature allowance. List rekeying/counting remains O(packet count).
 
 No new packets are created by route selection/rekeying. Only the existing
@@ -195,7 +197,8 @@ Existing planner/service/shadow tests cover
 national networks, dispatch, repeated occurrences and the integrated gradual
 transfer-limit expansion.
 
-MSVC x64 Release builds of `openttd` and `openttd_test` succeeded. The complete
+On the original Active branch, MSVC x64 Release builds of `openttd` and
+`openttd_test` succeeded. The complete
 CTest suite passed: **331/331**, including the existing game/AI/GS regressions
 and shadow production test. The active production test loads an old save in a
 fresh game process, toggles/saves/reloads the synchronized setting, verifies
@@ -214,7 +217,8 @@ the CargoPacket structure size are unchanged by these fixes.
 
 The predictor deliberately falls back for unresolved conditional orders,
 unknown full-load departure times, refits and competing future dispatch slots.
-There is no guaranteed future-seat reservation or multimodal prediction.
+There is no guaranteed future-seat reservation. Multimodal prediction uses
+the same uncertainty and actual-capacity rules described above.
 Snapshots are shared within an event; a fresh arrival can still require a
 national capture. Real-map throughput and a live multiplayer session need
 separate validation. GUI count tests do not substitute for visual window QA.

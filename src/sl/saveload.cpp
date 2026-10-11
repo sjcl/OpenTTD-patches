@@ -2333,6 +2333,8 @@ bool SlIsTableChunk()
 }
 
 #ifdef WITH_SAVELOAD_TESTS
+void SlTestResetLinkGraphLoadBudget();
+
 /** Exercise the real table header and object serializers in an isolated test context. */
 std::vector<uint8_t> SlTestSaveLoadTable(void *saved_object, void *loaded_object, const NamedSaveLoadTable &table)
 {
@@ -2349,6 +2351,8 @@ std::vector<uint8_t> SlTestSaveLoadTable(void *saved_object, void *loaded_object
 	});
 	_sl.action = SaveLoadAction::Load;
 	_sl.reader = std::make_unique<ReadBuffer>(nullptr);
+	/* Individual table tests bypass the chunk handlers which normally reset these limits. */
+	SlTestResetLinkGraphLoadBudget();
 	SlLoadFromBuffer(bytes.data(), bytes.size(), [&]() {
 		SaveLoadTableData fields = SlTableHeader(table);
 		SlObjectLoadFiltered(loaded_object, fields);

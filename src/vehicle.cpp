@@ -1248,7 +1248,7 @@ Vehicle::~Vehicle()
 	}
 
 	if (this->index == VehicleID::Invalid()) return; // Temporary instances which were never added to the pool
-	if (this->type == VehicleType::Train) InvalidatePassengerJourneyVehicle(this->index);
+	if (this->type < VehicleType::CompanyEnd) InvalidatePassengerJourneyVehicle(this->index);
 
 	if (this->type != VehicleType::Effect) InvalidateVehicleTickCaches();
 

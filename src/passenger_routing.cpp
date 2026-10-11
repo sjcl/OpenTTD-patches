@@ -15,6 +15,12 @@
 #include "timetable.h"
 #include "date_func.h"
 #include "passenger_service_index.h"
+#include "roadveh.h"
+#include "roadstop_base.h"
+#include "ship.h"
+#include "aircraft.h"
+#include "airport.h"
+#include "infrastructure_func.h"
 
 #include "safeguards.h"
 
@@ -44,6 +50,7 @@ static PassengerJourney PredictPassengerJourneyImpl(const PassengerRouteState &s
 {
 	PassengerJourney result;
 	if (state.orders.empty() || state.current_order >= state.orders.size() || boarding_order >= state.orders.size()) return result;
+	if (!state.usable_stops.empty() && state.usable_stops.size() != state.orders.size()) return result;
 	const Order &boarding = state.orders[boarding_order];
 	if (!visits && !IsPassengerStop(boarding)) return result;
 	if (!visits && !allow_intermediate && boarding.GetCargoLoadType(cargo) == OrderLoadType::NoLoad) return result;
@@ -124,6 +131,9 @@ static PassengerJourney PredictPassengerJourneyImpl(const PassengerRouteState &s
 			continue;
 		}
 		if (!order.IsType(OT_GOTO_STATION) && !order.IsType(OT_GOTO_WAYPOINT)) return uncertain();
+		/* A removed/incompatible facility changes the actual path (the controller may skip
+		 * this order). Keep the certified prefix, but never invent the skipped leg's time. */
+		if (IsPassengerStop(order) && !state.usable_stops.empty() && !state.usable_stops[index]) return uncertain();
 
 		if (!skip_travel) {
 			if (order.GetTravelTime() == 0 && !order.IsTravelTimetabled()) timing_known = false;
@@ -324,27 +334,121 @@ static const std::vector<OrderListID> &GetPassengerServices(StationID station)
 
 bool PassengerRoutingContext::IsEnabled(CargoType cargo) const
 {
-	return _settings_game.linkgraph.passenger_transfer_timetables && this->vehicle->type == VehicleType::Train &&
+	return _settings_game.linkgraph.passenger_transfer_timetables && IsPassengerServiceVehicle(this->vehicle) &&
 			IsCargoInClass(cargo, CargoClass::Passengers) && _settings_game.linkgraph.GetDistributionType(cargo) != DistributionType::Manual;
 }
 
-std::optional<PassengerRouteState> GetPassengerRouteState(const Vehicle *v)
+bool IsPassengerServiceVehicle(const Vehicle *v)
 {
-	if (v->orders == nullptr || v->GetNumOrders() == 0 || v->vehstatus.Any({VehState::Stopped, VehState::Crashed})) return {};
-	if (v->cur_implicit_order_index != v->cur_real_order_index || v->cur_real_order_index >= v->GetNumOrders()) return {};
-	if (v->cur_timetable_order_index != INVALID_VEH_ORDER_ID && v->cur_timetable_order_index != v->cur_real_order_index) return {};
+	return v != nullptr && v->type < VehicleType::CompanyEnd && v->IsPrimaryVehicle();
+}
+
+bool HasPassengerVehicleCapacity(const Vehicle *v, CargoType cargo, size_t &budget)
+{
+	if (!IsPassengerServiceVehicle(v) || cargo >= NUM_CARGO || !IsCargoInClass(cargo, CargoClass::Passengers)) return false;
+	for (const Vehicle *part = v; part != nullptr; part = part->Next()) {
+		if (!ConsumePassengerWork(budget)) return false;
+		if (part->cargo_type == cargo && part->cargo_cap > 0) return true;
+	}
+	return false;
+}
+
+bool CanPassengerVehicleUseStation(const Vehicle *v, StationID station, const Order *order, size_t &budget)
+{
+	if (!ConsumePassengerWork(budget) || !IsPassengerServiceVehicle(v)) return false;
+	const Station *st = Station::GetIfValid(station);
+	if (st == nullptr || (order != nullptr && !IsPassengerStop(*order)) || !IsInfraUsageAllowed(v->type, v->owner, st->owner)) return false;
+	switch (v->type) {
+		case VehicleType::Train: return st->facilities.Test(StationFacility::Train);
+		case VehicleType::Road: {
+			const RoadVehicle *rv = RoadVehicle::From(v);
+			/* The controller chooses facilities from the front compartment's actual cargo
+			 * class; a mixed articulated truck can carry passengers at a truck stop too. */
+			RoadStopType type = IsCargoInClass(v->cargo_type, CargoClass::Passengers) ? RoadStopType::Bus : RoadStopType::Truck;
+			for (const RoadStop *rs = st->GetPrimaryRoadStop(type); rs != nullptr; rs = rs->next) {
+				if (!ConsumePassengerWork(budget)) return false;
+				if (!IsValidTile(rs->xy) || !IsStationRoadStopTile(rs->xy) || GetStationIndex(rs->xy) != station ||
+						!HasTileAnyRoadType(rs->xy, rv->compatible_roadtypes) || !IsInfraTileUsageAllowed(v->type, v->owner, rs->xy)) continue;
+				if (IsBayRoadStopTile(rs->xy) && rv->HasArticulatedPart()) continue;
+				if (order != nullptr && order->GetRoadVehTravelDirection() != DiagDirection::Invalid &&
+						IsDriveThroughStopTile(rs->xy) && DiagDirToAxis(order->GetRoadVehTravelDirection()) != GetDriveThroughStopAxis(rs->xy)) continue;
+				if (order != nullptr && order->GetRoadVehTravelDirection() != DiagDirection::Invalid &&
+						IsBayRoadStopTile(rs->xy) && order->GetRoadVehTravelDirection() != ReverseDiagDir(GetBayRoadStopDir(rs->xy))) continue;
+				return true;
+			}
+			return false;
+		}
+		case VehicleType::Ship: return st->facilities.Test(StationFacility::Dock);
+		case VehicleType::Aircraft: {
+			if (!st->facilities.Test(StationFacility::Airport) || st->airport.tile == INVALID_TILE || st->airport.blocks.Test(AirportBlock::AirportClosed)) return false;
+			const Aircraft *aircraft = Aircraft::From(v);
+			return st->airport.GetFTA()->flags.Test(aircraft->subtype == AIR_HELICOPTER ? AirportFTAClass::Flag::Helicopters : AirportFTAClass::Flag::Airplanes);
+		}
+		default: return false;
+	}
+}
+
+/** Loading is a physical stop, rather than a direction or an aircraft movement heading.
+ * Taxi/landing/holding time belongs to the current travel order until BeginLoading. */
+static bool IsPassengerVehicleLoadingAtStop(const Vehicle *v, const Order &order)
+{
+	if (!v->current_order.IsAnyLoadingType() || v->IsInDepot()) return false;
+	switch (v->type) {
+		case VehicleType::Train: return true; // Train platform/reversal checks remain in LoadUnloadVehicle.
+		case VehicleType::Road: {
+			const RoadVehicle *rv = RoadVehicle::From(v);
+			return (IsInsideMM(rv->state, RVSB_IN_ROAD_STOP, RVSB_IN_ROAD_STOP_END) ||
+					(IsInsideMM(rv->state, RVSB_IN_DT_ROAD_STOP, RVSB_IN_DT_ROAD_STOP_END) && HasBit(rv->state, RVS_ENTERED_STOP))) &&
+					IsStationRoadStopTile(v->tile) && GetStationIndex(v->tile) == v->last_station_visited &&
+					HasTileAnyRoadType(v->tile, rv->compatible_roadtypes) && IsInfraTileUsageAllowed(v->type, v->owner, v->tile) &&
+					GetRoadStopType(v->tile) == (IsCargoInClass(v->cargo_type, CargoClass::Passengers) ? RoadStopType::Bus : RoadStopType::Truck) &&
+					(order.GetRoadVehTravelDirection() == DiagDirection::Invalid || order.GetRoadVehTravelDirection() == DirToDiagDir(v->direction));
+		}
+		case VehicleType::Ship: {
+			const Station *st = Station::GetIfValid(v->last_station_visited);
+			return st != nullptr && IsDockingTile(v->tile) && st->docking_station.Contains(v->tile) && IsShipDestinationTile(v->tile, st->index);
+		}
+		case VehicleType::Aircraft: {
+			const Aircraft *a = Aircraft::From(v);
+			return a->targetairport == v->last_station_visited && ((a->state >= TERM1 && a->state <= TERM6) ||
+					a->state == TERM7 || a->state == TERM8 || a->state == HELIPAD1 || a->state == HELIPAD2 || a->state == HELIPAD3);
+		}
+		default: return false;
+	}
+}
+
+std::optional<PassengerRouteState> GetPassengerRouteState(const Vehicle *v, size_t *budget, PassengerPredictionReason *reason)
+{
+	size_t local_budget = 65536;
+	if (budget == nullptr) budget = &local_budget;
+	auto fail = [&](PassengerPredictionReason why) -> std::optional<PassengerRouteState> { if (reason != nullptr) *reason = why; return {}; };
+	if (!IsPassengerServiceVehicle(v) || v->orders == nullptr || v->GetNumOrders() == 0 ||
+			v->vehstatus.Any({VehState::Stopped, VehState::Crashed}) || v->IsInDepot()) return fail(PassengerPredictionReason::VehicleState);
+	if (v->type == VehicleType::Aircraft && Aircraft::From(v)->flags.Test(VehicleAirFlag::DestinationTooFar)) return fail(PassengerPredictionReason::VehicleState);
+	if (v->cur_implicit_order_index != v->cur_real_order_index || v->cur_real_order_index >= v->GetNumOrders()) return fail(PassengerPredictionReason::OrderProgress);
+	if (v->cur_timetable_order_index != INVALID_VEH_ORDER_ID && v->cur_timetable_order_index != v->cur_real_order_index) return fail(PassengerPredictionReason::OrderProgress);
 	const Order *order = v->GetOrder(v->cur_real_order_index);
 	bool loading = v->current_order.IsAnyLoadingType();
 	if (loading ? (!IsPassengerStop(*order) || order->GetDestination() != v->last_station_visited) :
-			(v->current_order.GetType() != order->GetType() || v->current_order.GetDestination() != order->GetDestination())) return {};
-	return PassengerRouteState{ v->orders->GetOrderVector(), v->orders->GetScheduledDispatchScheduleSet(), v->cur_real_order_index,
+			(v->current_order.GetType() != order->GetType() || v->current_order.GetDestination() != order->GetDestination())) return fail(PassengerPredictionReason::OrderProgress);
+	if (loading && !IsPassengerVehicleLoadingAtStop(v, *order)) return fail(PassengerPredictionReason::VehicleState);
+	PassengerRouteState state{ v->orders->GetOrderVector(), v->orders->GetScheduledDispatchScheduleSet(), v->cur_real_order_index,
 			v->current_order_time, v->lateness_counter, loading, v->vehicle_flags.Test(VehicleFlag::ScheduledDispatch), v->orders->GetNumVehicles() };
+	if (!ConsumePassengerWork(*budget, state.orders.size())) return fail(PassengerPredictionReason::Budget);
+	state.usable_stops.reserve(state.orders.size());
+	for (const Order &stop : state.orders) {
+		bool usable = !IsPassengerStop(stop) || CanPassengerVehicleUseStation(v, stop.GetDestination().ToStationID(), &stop, *budget);
+		state.usable_stops.push_back(usable);
+		if (!usable && reason != nullptr) *reason = PassengerPredictionReason::StationFacilities;
+	}
+	if (*budget == 0) return fail(PassengerPredictionReason::Budget);
+	return state;
 }
 
 const std::optional<PassengerRouteState> &PassengerRoutingContext::GetState(const Vehicle *v)
 {
 	auto [it, inserted] = this->states.try_emplace(v);
-	if (inserted) it->second = GetPassengerRouteState(v);
+	if (inserted) it->second = GetPassengerRouteState(v, &this->prediction_budget);
 	return it->second;
 }
 
@@ -458,7 +562,7 @@ PassengerTransferDecision PassengerRoutingContext::Decide(CargoType cargo, Stati
 		if (boarding_orders.empty()) continue;
 		for (const Vehicle *v = list->GetFirstSharedVehicle(); v != nullptr; v = v->NextShared()) {
 			if (!ConsumePassengerWork(this->prediction_budget)) return it->second;
-			if (v == this->vehicle || !v->IsPrimaryVehicle()) continue;
+			if (v == this->vehicle || !IsPassengerServiceVehicle(v)) continue;
 			if (v->vehstatus.Any({VehState::Stopped, VehState::Crashed})) continue;
 			const Capacity &capacity = this->GetCapacity(v, cargo);
 			if (this->prediction_budget == 0) return it->second;
@@ -470,7 +574,7 @@ PassengerTransferDecision PassengerRoutingContext::Decide(CargoType cargo, Stati
 			evaluated_connection = true;
 			auto state = this->GetState(v);
 			for (VehicleOrderID index : boarding_orders) {
-				if (!state || v->type != VehicleType::Train) {
+				if (!state) {
 					return it->second;
 				}
 				const bool full_here = state->loading && state->current_order == index && capacity.free == 0;

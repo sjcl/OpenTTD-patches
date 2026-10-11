@@ -69,7 +69,11 @@ size_t InvalidatePassengerJourneyVehicle(VehicleID vehicle)
 	_passenger_journey_vehicle_packets.erase(found);
 	for (CargoPacketID id : packets) {
 		RecordPassengerJourneyFallback(PassengerJourneyFallbackReason::VehicleDeleted);
-		CargoPacket::Get(id)->FallbackPassengerJourney(StationID::Invalid(), _state_ticks);
+		CargoPacket *packet = CargoPacket::Get(id);
+		/* Waiting/reserved passengers must observe the existing station cooldown even
+		 * if another vehicle immediately reuses this pool ID. A different interchange
+		 * can still retry, as with other journey failures. */
+		packet->FallbackPassengerJourney(packet->GetPassengerJourney().boarding, _state_ticks);
 	}
 	return packets.size();
 }
@@ -1355,7 +1359,7 @@ uint StationCargoList::Load(uint max_move, VehicleCargoList *dest, std::span<con
 	}
 }
 
-/** Skip other trains' journey packets even when they share a CargoDist next-hop bucket.
+/** Skip other vehicles' journey packets even when they share a CargoDist next-hop bucket.
  * Legacy iteration/order and the real split/reservation actions are kept unchanged. */
 template <class Taction>
 uint StationCargoList::ShiftJourneyCargo(Taction action, std::span<const StationID> next, const Vehicle *vehicle, PassengerJourneyLoadingContext &loading)

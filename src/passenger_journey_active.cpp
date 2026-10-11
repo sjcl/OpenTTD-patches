@@ -219,7 +219,9 @@ uint64_t PassengerJourneyServiceSignature(const OrderList &orders, CargoType car
 		add(order.GetXData()); add(order.GetXData2()); add(order.GetNonStopType());
 		add(order.GetWaitTime()); add(order.GetTravelTime()); add(order.IsWaitTimetabled()); add(order.IsTravelTimetabled());
 		add(order.GetRefitCargo()); add(order.GetDispatchScheduleIndex()); add(order.GetLeaveType());
-		/* A full load of another cargo can delay this train too. */
+		/* Preserve existing train hashes; only road direction constraints add a field. */
+		if (order.GetRoadVehTravelDirection() != DiagDirection::Invalid) { add(0x524F4144); add(to_underlying(order.GetRoadVehTravelDirection())); }
+		/* A full load of another cargo can delay this vehicle too. */
 		for (CargoType cid : EnumRange(NUM_CARGO)) { add(to_underlying(order.GetCargoLoadType(cid))); add(to_underlying(order.GetCargoUnloadType(cid))); }
 	}
 	for (const DispatchSchedule &schedule : orders.GetScheduledDispatchScheduleSet()) {
@@ -419,11 +421,12 @@ void PassengerJourneyBoardingContext::Initialize() const
 	if (this->initialized) return;
 	this->initialized = true;
 	if (this->vehicle == nullptr) return;
-	if (this->vehicle->type != VehicleType::Train || !IsPassengerJourneyRoutingEnabled(this->cargo)) return;
-	auto state = GetPassengerRouteState(this->vehicle);
+	size_t budget = 4096;
+	if (!IsPassengerServiceVehicle(this->vehicle) || !IsPassengerJourneyRoutingEnabled(this->cargo) ||
+			!HasPassengerVehicleCapacity(this->vehicle, this->cargo, budget)) return;
+	auto state = GetPassengerRouteState(this->vehicle, &budget);
 	if (!state || !state->loading) return;
 	this->signature = PassengerJourneyServiceSignature(*this->vehicle->orders, this->cargo);
-	size_t budget = 4096;
 	++this->predictions;
 	this->prediction = PredictPassengerVisits(*state, this->cargo, _state_ticks, _state_ticks + 65536, 128, 4096, budget);
 }
@@ -432,8 +435,8 @@ bool PassengerJourneyBoardingContext::CanBoard(const CargoPacket &packet) const
 {
 	if (packet.GetPassengerRoutingMode() != PassengerRoutingMode::Journey) return true;
 	const auto &leg = packet.GetPassengerJourney();
-	/* Reject other trains and unsupported loading without capturing anything. */
-	if (this->vehicle == nullptr || this->vehicle->type != VehicleType::Train || this->vehicle->orders == nullptr ||
+	/* Reject other physical services and unsupported loading without capturing anything. */
+	if (!IsPassengerServiceVehicle(this->vehicle) || this->vehicle->orders == nullptr ||
 			!IsPassengerJourneyRoutingEnabled(this->cargo) || this->vehicle->vehstatus.Any({VehState::Stopped, VehState::Crashed}) ||
 			this->vehicle->current_order.GetCargoLoadType(this->cargo) == OrderLoadType::NoLoad ||
 			leg.vehicle != this->vehicle->index || leg.service != this->vehicle->orders->index ||
@@ -445,7 +448,11 @@ bool PassengerJourneyBoardingContext::CanBoard(const CargoPacket &packet) const
 			leg.boarding != this->vehicle->last_station_visited || leg.boarding_order != this->vehicle->cur_real_order_index ||
 			!first.loading_now || !first.departure || *first.departure != leg.departure) return false;
 	for (const auto &visit : this->prediction.visits) {
-		if (visit.order == leg.alighting_order && visit.arrival == leg.arrival) return true;
+		const Order *order = this->vehicle->GetOrder(visit.order);
+		if (visit.order == leg.alighting_order && visit.arrival == leg.arrival && order->GetDestination() == leg.alighting &&
+				order->GetCargoUnloadType(this->cargo) != OrderUnloadType::NoUnload) return true;
+		if (!visit.loading_now && (order->GetCargoUnloadType(this->cargo) == OrderUnloadType::Unload ||
+				order->GetCargoUnloadType(this->cargo) == OrderUnloadType::Transfer)) break;
 	}
 	return false;
 }
@@ -456,7 +463,7 @@ bool PassengerJourneyBoardingContext::CanContinue(const CargoPacket &packet) con
 {
 	if (packet.GetPassengerRoutingMode() != PassengerRoutingMode::Journey) return false;
 	const auto &leg = packet.GetPassengerJourney();
-	if (this->vehicle == nullptr || this->vehicle->type != VehicleType::Train || this->vehicle->orders == nullptr ||
+	if (!IsPassengerServiceVehicle(this->vehicle) || this->vehicle->orders == nullptr ||
 			!IsPassengerJourneyRoutingEnabled(this->cargo) || this->vehicle->vehstatus.Any({VehState::Stopped, VehState::Crashed}) ||
 			!this->vehicle->current_order.IsAnyLoadingType() || leg.vehicle != this->vehicle->index || leg.service != this->vehicle->orders->index ||
 			!Station::IsValidID(leg.alighting) || leg.alighting == this->vehicle->last_station_visited ||
@@ -517,7 +524,7 @@ std::optional<VehicleCargoList::MoveToAction> PassengerJourneyActiveContext::Dec
 		else { CountJourneyFallback(this->failure); packet.FallbackPassengerJourney(this->station, _state_ticks); }
 		return {};
 	};
-	if (!IsPassengerJourneyRoutingEnabled(cargo) || this->vehicle == nullptr || this->vehicle->type != VehicleType::Train ||
+	if (!IsPassengerJourneyRoutingEnabled(cargo) || !IsPassengerServiceVehicle(this->vehicle) ||
 			!Station::IsValidID(packet.GetPassengerDestination())) return fallback();
 	if (unload == OrderUnloadType::NoUnload) return Action::Keep;
 	if (packet.GetPassengerDestination() == this->station) return accepted ? std::optional(Action::Deliver) : fallback();
@@ -574,6 +581,7 @@ size_t StationCargoList::RoutePassengerJourneys(CargoType cargo, StationID stati
 	const bool search = IsJourneyRetryTick(station);
 	std::vector<std::pair<StationID, CargoPacket *>> moved;
 	std::map<OrderListID, uint64_t> signatures;
+	std::map<std::tuple<VehicleID, VehicleOrderID, VehicleOrderID, StationID>, bool> usable;
 	size_t validation_work = 524288;
 	size_t inspected = 0;
 	bool changed = false;
@@ -588,10 +596,28 @@ size_t StationCargoList::RoutePassengerJourneys(CargoType cargo, StationID stati
 			if (packet->GetPassengerRoutingMode() == PassengerRoutingMode::Journey) {
 				const auto &leg = packet->GetPassengerJourney();
 				const Vehicle *vehicle = Vehicle::GetIfValid(leg.vehicle);
-				bool valid = IsPassengerJourneyRoutingEnabled(cargo) && vehicle != nullptr && vehicle->type == VehicleType::Train &&
+				bool valid = IsPassengerJourneyRoutingEnabled(cargo) && IsPassengerServiceVehicle(vehicle) &&
 						!vehicle->vehstatus.Any({VehState::Stopped, VehState::Crashed}) && Station::IsValidID(packet->GetPassengerDestination()) &&
 						vehicle->orders != nullptr && vehicle->orders->index == leg.service && leg.boarding == station &&
 						Station::IsValidID(leg.alighting);
+				if (valid) {
+					auto key = std::tuple(leg.vehicle, leg.boarding_order, leg.alighting_order, leg.alighting);
+					auto entry = usable.find(key);
+					bool inserted = false;
+					if (entry == usable.end() && usable.size() < 4096 && validation_work >= 16) {
+						validation_work -= 16; // Bound unique validation records as well as facility traversal.
+						std::tie(entry, inserted) = usable.try_emplace(key, false);
+					}
+					if (inserted && leg.boarding_order < vehicle->GetNumOrders() && leg.alighting_order < vehicle->GetNumOrders()) {
+						const Order *board = vehicle->GetOrder(leg.boarding_order), *alight = vehicle->GetOrder(leg.alighting_order);
+						entry->second = board->GetDestination() == station && alight->GetDestination() == leg.alighting &&
+								board->GetCargoLoadType(cargo) != OrderLoadType::NoLoad && alight->GetCargoUnloadType(cargo) != OrderUnloadType::NoUnload &&
+								HasPassengerVehicleCapacity(vehicle, cargo, validation_work) &&
+								CanPassengerVehicleUseStation(vehicle, station, board, validation_work) &&
+								CanPassengerVehicleUseStation(vehicle, leg.alighting, alight, validation_work);
+					}
+					valid = entry != usable.end() && entry->second;
+				}
 				if (valid && vehicle->current_order.IsAnyLoadingType() && vehicle->last_station_visited == station) {
 					valid = loading->CanBoard(*packet, vehicle, cargo);
 				} else if (valid) {
@@ -705,7 +731,7 @@ void AfterLoadPassengerJourneys()
 		if (packet->GetPassengerRoutingMode() != PassengerRoutingMode::Journey) continue;
 		const auto &leg = packet->GetPassengerJourney();
 		const Vehicle *vehicle = Vehicle::GetIfValid(leg.vehicle);
-		if (vehicle == nullptr || vehicle->type != VehicleType::Train || vehicle->orders == nullptr || vehicle->orders->index != leg.service ||
+		if (!IsPassengerServiceVehicle(vehicle) || vehicle->orders == nullptr || vehicle->orders->index != leg.service ||
 				!Station::IsValidID(leg.boarding) || !Station::IsValidID(leg.alighting) || !Station::IsValidID(packet->GetPassengerDestination()) ||
 				leg.boarding_order >= vehicle->GetNumOrders() || leg.alighting_order >= vehicle->GetNumOrders() || !_settings_game.linkgraph.passenger_journey_routing) {
 			CountJourneyFallback(PassengerJourneyFallbackReason::StaleLeg);
@@ -726,7 +752,25 @@ void AfterLoadPassengerJourneys()
 	for (Vehicle *v : Vehicle::Iterate()) {
 		const Vehicle *front = v->First();
 		bool invalid = false;
+		std::map<std::tuple<VehicleOrderID, VehicleOrderID, StationID, StationID>, bool> usable;
+		size_t validation_work = 65536;
 		for (CargoPacket *packet : *v->cargo.Packets()) {
+			if (packet->GetPassengerRoutingMode() == PassengerRoutingMode::Journey && front->orders != nullptr) {
+				const auto &leg = packet->GetPassengerJourney();
+				auto key = std::tuple(leg.boarding_order, leg.alighting_order, leg.boarding, leg.alighting);
+				auto entry = usable.find(key);
+				bool inserted = false;
+				if (entry == usable.end() && usable.size() < 4096 && validation_work >= 16) {
+					validation_work -= 16;
+					std::tie(entry, inserted) = usable.try_emplace(key, false);
+				}
+				if (inserted && leg.boarding_order < front->GetNumOrders() && leg.alighting_order < front->GetNumOrders()) {
+					entry->second = HasPassengerVehicleCapacity(front, v->cargo_type, validation_work) &&
+							CanPassengerVehicleUseStation(front, leg.boarding, front->GetOrder(leg.boarding_order), validation_work) &&
+							CanPassengerVehicleUseStation(front, leg.alighting, front->GetOrder(leg.alighting_order), validation_work);
+				}
+				if (entry == usable.end() || !entry->second) { packet->FallbackPassengerJourney(front->last_station_visited, _state_ticks); invalidated.insert(packet->index); }
+			}
 			if (packet->GetPassengerRoutingMode() == PassengerRoutingMode::Journey && (!IsPassengerJourneyRoutingEnabled(v->cargo_type) ||
 					front->orders == nullptr || packet->GetPassengerJourney().vehicle != front->index ||
 					packet->GetPassengerJourney().signature != PassengerJourneyServiceSignature(*front->orders, v->cargo_type))) {

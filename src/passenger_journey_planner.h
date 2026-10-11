@@ -30,6 +30,9 @@ struct PassengerJourneyEvaluation {
 	uint32_t transfer_time_weight = 0; ///< Additional weight on the minimum interchange time.
 	Ticks crowding_penalty = 0; ///< Penalty at 100% occupancy.
 	Ticks capacity_shortfall_penalty = 0; ///< Penalty scaled by unmet demand / demand in a supplied window.
+	/** Evaluation boundary for future station/mode-specific connections. The common
+	 * minimum_transfer remains a lower bound for departure indexing and pruning. */
+	Ticks MinimumTransfer(VehicleType from, VehicleType to, StationID station) const { return this->minimum_transfer; }
 	auto operator<=>(const PassengerJourneyEvaluation &) const = default;
 };
 
@@ -137,7 +140,7 @@ struct PassengerJourneyCacheLimits {
 };
 
 /**
- * RAPTOR boarding rounds over an immutable train snapshot, with Pareto labels per vehicle path.
+ * RAPTOR boarding rounds over an immutable multimodal snapshot, with Pareto labels per vehicle path.
  * Slower corridors survive dominance by faster, different corridors, up to explicit label limits.
  * Reverse reachability visits only destination/uncertainty-connected occurrences. No live prediction or cargo staging.
  * The graph and optional provider must outlive this object and remain immutable during each query.
@@ -163,7 +166,7 @@ public:
 	PassengerJourneyResult Plan(CargoType cargo, StationID origin, StationID destination, StateTicks ready,
 			PassengerJourneyLimits limits = {}, PassengerJourneyEvaluation evaluation = {}, uint64_t passengers = 1);
 	/** Existing passenger at this snapshot's unique loading occurrence. Staying neither boards nor needs free seats.
-	 * Other trains require alighting here and the normal interchange, boarding and capacity rules. */
+	 * Other vehicles require alighting here and the normal interchange, boarding and capacity rules. */
 	PassengerJourneyResult PlanOnboard(CargoType cargo, PassengerServiceGraph::VisitID onboard, StationID destination,
 			PassengerJourneyLimits limits = {}, PassengerJourneyEvaluation evaluation = {}, uint64_t passengers = 1);
 	void ClearCache() { this->cache.clear(); this->cache_bytes = 0; }

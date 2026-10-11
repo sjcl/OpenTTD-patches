@@ -52,7 +52,7 @@ if(NOT without_window STREQUAL with_window)
     message(FATAL_ERROR "Opening the station GUI changed the saved game state")
 endif()
 load_game(diagnostics "${WORK_DIR}/enabled.sav" false 1 true
-    "passenger_journey_stats total\npassenger_journey_stats tick\npassenger_journey_stats reset\nsave \"${WORK_DIR}/with-diagnostics\"")
+    "passenger_journey_stats total\npassenger_journey_stats tick\npassenger_journey_stats inventory\ndump_linkgraph_jobs\npassenger_journey_stats reset\nsave \"${WORK_DIR}/with-diagnostics\"")
 file(SHA256 "${WORK_DIR}/with-diagnostics.sav" with_diagnostics)
 if(NOT without_window STREQUAL with_diagnostics)
     message(FATAL_ERROR "Reading/resetting passenger diagnostics changed the saved game state")

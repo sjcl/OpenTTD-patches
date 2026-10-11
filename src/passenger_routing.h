@@ -24,10 +24,20 @@ struct PassengerRouteState {
 	bool loading;
 	bool scheduled_dispatch;
 	uint shared_vehicles;
+	std::vector<uint8_t> usable_stops; ///< Owned facility checks, indexed by order. Empty for nominal/test traversal.
 };
 
+enum class PassengerPredictionReason : uint8_t { None, VehicleState, OrderProgress, StationFacilities, OrderOrTiming, Budget, End };
+
+/** Physical services only; effects, rotors and articulated parts are never independent trips. */
+bool IsPassengerServiceVehicle(const Vehicle *vehicle);
+/** Use actual cargo compartments, not the engine's advertised/default cargo. Work is bounded. */
+bool HasPassengerVehicleCapacity(const Vehicle *vehicle, CargoType cargo, size_t &budget);
+/** Shared by forecasting and execution. Road compatibility includes all stops at this StationID. */
+bool CanPassengerVehicleUseStation(const Vehicle *vehicle, StationID station, const Order *order, size_t &budget);
+
 /** Validate the live order progress. The returned spans are only for immediate simulation-thread use. */
-std::optional<PassengerRouteState> GetPassengerRouteState(const Vehicle *vehicle);
+std::optional<PassengerRouteState> GetPassengerRouteState(const Vehicle *vehicle, size_t *budget = nullptr, PassengerPredictionReason *reason = nullptr);
 
 /** Why a bounded prediction ended. Unknown never certifies the unvisited suffix of a route. */
 enum class PassengerPredictionStatus : uint8_t { Complete, Unknown, LimitReached, BudgetExhausted };
@@ -80,7 +90,7 @@ PassengerTransferDecision ComparePassengerJourneys(const PassengerJourney &stay,
 void InvalidatePassengerServiceIndex();
 
 /**
- * Cache for one PrepareUnload call. Shared by all coaches and packets of a train.
+ * Cache for one PrepareUnload call. Shared by all compartments and packets of a vehicle.
  * Destruction invalidates all time estimates; no mutable state is read by LinkGraph jobs.
  */
 class PassengerRoutingContext {

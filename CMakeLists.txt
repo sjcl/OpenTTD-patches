@@ -272,7 +272,7 @@ else()
     add_executable(openttd_test)
     set_target_properties(openttd_test PROPERTIES EXCLUDE_FROM_ALL TRUE)
     # Isolated table serialisation for the test target, without initialising a whole game.
-    set_property(SOURCE src/sl/saveload.cpp APPEND PROPERTY COMPILE_DEFINITIONS WITH_SAVELOAD_TESTS)
+    set_property(SOURCE src/sl/saveload.cpp src/sl/linkgraph_sl.cpp APPEND PROPERTY COMPILE_DEFINITIONS WITH_SAVELOAD_TESTS)
 endif()
 
 set_target_properties(openttd PROPERTIES OUTPUT_NAME "${BINARY_NAME}")

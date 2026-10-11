@@ -42,6 +42,10 @@ static void ResetLinkGraphLoadBudget()
 	_linkgraph_routes_left = 4 * 1024 * 1024;
 }
 
+#ifdef WITH_SAVELOAD_TESTS
+void SlTestResetLinkGraphLoadBudget() { ResetLinkGraphLoadBudget(); }
+#endif
+
 /* Edges and nodes are saved in the correct order, so we don't need to save their IDs. */
 
 /**

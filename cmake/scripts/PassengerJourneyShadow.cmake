@@ -41,6 +41,7 @@ endif()
 
 # Migrate once before forking. Legacy loads generate a fresh savegame UID and
 # generation_unique_id, independently of diagnostics; both runs must share them.
+# -d also initializes the Windows console, keeping font notices out of modal dialogs.
 set(initial "${WORK_DIR}/initial")
 file(MAKE_DIRECTORY "${initial}/scripts")
 prepare_newgrfs("${initial}")
@@ -50,7 +51,7 @@ file(WRITE "${initial}/openttd.cfg"
 file(WRITE "${initial}/scripts/game_start.scr"
     "script \"${initial}/console.log\"\ngetfulldate\ndump_veh_stats\nsave \"${initial}/current\"\nunpause\nquit\n")
 execute_process(COMMAND "${OPENTTD_EXECUTABLE}" -x ${scan_options} -c "${initial}/openttd.cfg" -g "${LEGACY_SAVE}"
-    -vnull:ticks=10 -snull -mnull WORKING_DIRECTORY "${initial}"
+    -vnull:ticks=10 -snull -mnull -d 0 WORKING_DIRECTORY "${initial}"
     RESULT_VARIABLE result OUTPUT_VARIABLE output ERROR_VARIABLE diagnostics TIMEOUT 30)
 file(WRITE "${initial}/process.log" "${output}\n${diagnostics}")
 if(NOT result EQUAL 0 OR NOT EXISTS "${initial}/current.sav" OR diagnostics MATCHES "not found; checksum|Removing [0-9]+ vehicles found to be uncorrectably invalid")
@@ -102,7 +103,7 @@ foreach(mode IN ITEMS off on)
         endif()
     else()
         execute_process(COMMAND "${OPENTTD_EXECUTABLE}" -x ${scan_options} -c "${run}/openttd.cfg" -g "${input_save}"
-            "-v${VIDEO_DRIVER}" -snull -mnull WORKING_DIRECTORY "${run}"
+            "-v${VIDEO_DRIVER}" -snull -mnull -d 0 WORKING_DIRECTORY "${run}"
             RESULT_VARIABLE result OUTPUT_VARIABLE output ERROR_VARIABLE diagnostics TIMEOUT ${RUN_TIMEOUT})
     endif()
     string(TIMESTAMP finished "%s" UTC)
@@ -129,7 +130,7 @@ file(WRITE "${reload}/console.log" "")
 file(WRITE "${reload}/scripts/game_start.scr"
     "script \"${reload}/console.log\"\npassenger_journey_shadow stats\nquit\n")
 execute_process(COMMAND "${OPENTTD_EXECUTABLE}" -x ${scan_options} -c "${reload}/openttd.cfg"
-    -g "${WORK_DIR}/on/result.sav" -vnull:ticks=10 -snull -mnull WORKING_DIRECTORY "${reload}"
+    -g "${WORK_DIR}/on/result.sav" -vnull:ticks=10 -snull -mnull -d 0 WORKING_DIRECTORY "${reload}"
     RESULT_VARIABLE result OUTPUT_VARIABLE output ERROR_VARIABLE diagnostics TIMEOUT 30)
 file(WRITE "${reload}/process.log" "${output}\n${diagnostics}")
 file(READ "${reload}/console.log" console)

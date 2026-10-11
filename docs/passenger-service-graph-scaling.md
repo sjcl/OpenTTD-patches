@@ -201,7 +201,7 @@ unobserved transient heap peak.
 
 ## Diagnostics
 
-`passenger_journey_stats [total|tick|reset]` reports active decisions/passengers,
+`passenger_journey_stats [total|tick|inventory|reset]` reports active decisions/passengers,
 build/search/OD-cache counts, train/cargo/refit/inactive observations, predictions,
 visits, omitted trains, truncated predictions, Work, construction/search times,
 retained/static/cache/scratch estimates and conservative envelopes. It separates
@@ -212,6 +212,17 @@ fair-share claims/releases/scan Work and validated retained onboard rides.
 Observations are summed over builds, not unique fleet inventory. Exact omitted
 visit counts cannot be known without doing the omitted prediction work; the
 command explicitly reports that those suffix counts are unknown.
+
+`inventory` takes a read-only census of current passenger holdings, reporting
+people and packets in Legacy, Journey and Fallback modes and the known-OD
+subset of each mode. Global holdings include station-available and vehicle-held
+packets once; reserved cargo is already held in vehicle lists. Waiting people
+are station-available plus station-reserved cargo. Deferred people are also
+reported. The census stops after 16,777,216 station/vehicle/packet inspections
+and labels incomplete output as truncated. Rates derived from complete output
+are current inventory shares, not probabilities of a search succeeding.
+`dump_linkgraph_jobs` includes graph/cargo identities, worker completion flags,
+timing and current graph inventories to distinguish successive recalculations.
 
 Times are diagnostic only. `reset` clears observations, never simulation quotas
 or caches. Production save hashes are compared after reading/resetting these

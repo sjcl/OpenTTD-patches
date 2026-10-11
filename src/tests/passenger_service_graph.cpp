@@ -11,6 +11,7 @@
 #include "../3rdparty/catch2/catch.hpp"
 #include "../passenger_service_graph.h"
 #include "../vehicle_base.h"
+#include "passenger_test_stations.h"
 #include "../core/random_func.hpp"
 #include <deque>
 
@@ -34,6 +35,7 @@ struct GraphVehicle : Vehicle {
 	explicit GraphVehicle(std::vector<Order> orders, VehicleID id = VehicleID{100}) : Vehicle(id, VehicleType::Train)
 	{
 		this->orders = OrderList::Create(std::move(orders), this);
+		EnsurePassengerTestStations(this->orders->GetOrderVector());
 		this->LoadAt(0);
 		this->cargo_type = PAX;
 		this->cargo_cap = 80;
@@ -95,6 +97,7 @@ static const PassengerServiceGraph::Trip &GraphTrip(const PassengerServiceGraph 
 
 TEST_CASE("Graph discovery excludes definite freight before timetable capture", "[passenger][service_graph][performance]")
 {
+	PassengerTestStations stations;
 	std::deque<GraphVehicle> freight;
 	for (uint32_t i = 0; i < 5000; ++i) { freight.emplace_back(std::vector<Order>{GraphStop(A), GraphStop(B)}, VehicleID{1000 + i}); freight.back().cargo_type = CargoType{1}; }
 	GraphVehicle passenger({GraphStop(A), GraphStop(D)}, VehicleID{9000});
@@ -114,6 +117,7 @@ TEST_CASE("Graph discovery excludes definite freight before timetable capture", 
 
 TEST_CASE("Graph allocation allowance is independent of traversal work", "[passenger][service_graph]")
 {
+	PassengerTestStations stations;
 	std::vector<Order> orders;
 	for (uint16_t i = 0; i < 400; ++i) orders.push_back(GraphStop(StationID{i}, 1, 1));
 	GraphVehicle train(std::move(orders));
@@ -129,6 +133,7 @@ TEST_CASE("Graph allocation allowance is independent of traversal work", "[passe
 
 TEST_CASE("Freight topology cannot expand a passenger corridor and live refits rebuild its view", "[passenger][service_graph][cache]")
 {
+	PassengerTestStations stations;
 	GraphVehicle direct({GraphStop(A), GraphStop(D)});
 	GraphVehicle branch({GraphStop(A), GraphStop(B)}, VehicleID{101});
 	GraphVehicle bridge({GraphStop(B), GraphStop(D)}, VehicleID{102});
@@ -152,6 +157,7 @@ TEST_CASE("Freight topology cannot expand a passenger corridor and live refits r
 
 TEST_CASE("Scoped graph cache residency cannot change capture or logical allowances", "[passenger][service_graph][cache]")
 {
+	PassengerTestStations stations;
 	GraphVehicle direct({GraphStop(A), GraphStop(D)});
 	GraphVehicle branch({GraphStop(A), GraphStop(B), GraphStop(C)}, VehicleID{101});
 	InvalidatePassengerServiceIndex();
@@ -178,6 +184,7 @@ TEST_CASE("Scoped graph cache residency cannot change capture or logical allowan
 
 TEST_CASE("Implicit freight and unavailable trains cannot poison a passenger scope", "[passenger][service_graph][scope]")
 {
+	PassengerTestStations stations;
 	GraphVehicle direct({GraphStop(A), GraphStop(D)});
 	GraphVehicle irrelevant({GraphStop(A), GraphStop(B)}, VehicleID{101});
 	irrelevant.GetOrder(1)->MakeImplicit(B); InvalidatePassengerServiceIndex();
@@ -192,6 +199,7 @@ TEST_CASE("Implicit freight and unavailable trains cannot poison a passenger sco
 
 TEST_CASE("Known implicit stops isolate unrelated scopes and retain possible connections", "[passenger][service_graph][scope][cache]")
 {
+	PassengerTestStations stations;
 	GraphVehicle direct({GraphStop(A), GraphStop(D)});
 	Order implicit; implicit.MakeImplicit(StationID{12});
 	GraphVehicle remote({GraphStop(StationID{10}), implicit, GraphStop(StationID{11})}, VehicleID{101});
@@ -238,6 +246,7 @@ TEST_CASE("Known implicit stops isolate unrelated scopes and retain possible con
 
 TEST_CASE("Passenger graph separates local and express services and shared trips", "[passenger][service_graph]")
 {
+	PassengerTestStations stations;
 	GraphVehicle local({ GraphStop(A), GraphStop(B, 200), GraphStop(C, 300), GraphStop(D, 400) });
 	GraphVehicle express({ GraphStop(B, 100, 40), GraphStop(D, 100) }, VehicleID{101});
 	GraphVehicle second(express, VehicleID{102});
@@ -277,6 +286,7 @@ TEST_CASE("Passenger graph separates local and express services and shared trips
 
 TEST_CASE("Passenger graph stop permissions and forced unloading bound through rides", "[passenger][service_graph]")
 {
+	PassengerTestStations stations;
 	auto a = GraphStop(A), b = GraphStop(B), c = GraphStop(C), d = GraphStop(D);
 	b.SetNonStopType(ONSF_NO_STOP_AT_DESTINATION_STATION);
 	c.SetLoadType(OrderLoadType::NoLoad);
@@ -312,6 +322,7 @@ TEST_CASE("Passenger graph stop permissions and forced unloading bound through r
 
 TEST_CASE("Passenger graph capacity includes only the requested cargo across a consist", "[passenger][service_graph]")
 {
+	PassengerTestStations stations;
 	GraphVehicle train({ GraphStop(A), GraphStop(B) });
 	/* SetNext updates tagged pool pointers, so consist parts must be real pool entries. */
 	GraphCoach *passengers = Vehicle::Create<GraphCoach>();
@@ -332,6 +343,7 @@ TEST_CASE("Passenger graph capacity includes only the requested cargo across a c
 
 TEST_CASE("Passenger graph retains partial times and reuses journey timing", "[passenger][service_graph]")
 {
+	PassengerTestStations stations;
 	GraphVehicle train({ GraphStop(A, 100, 10), GraphStop(B, 600, 100), GraphStop(D, 600) });
 	train.LoadAt(1);
 	train.current_order = *train.GetOrder(1);
@@ -385,6 +397,7 @@ TEST_CASE("Passenger graph retains partial times and reuses journey timing", "[p
 
 TEST_CASE("Passenger graph waypoint segments, cargo flags and direction are copied", "[passenger][service_graph]")
 {
+	PassengerTestStations stations;
 	Order waypoint;
 	waypoint.MakeGoToWaypoint(StationID{4});
 	waypoint.SetTravelTime(40);
@@ -413,6 +426,7 @@ TEST_CASE("Passenger graph waypoint segments, cargo flags and direction are copi
 
 TEST_CASE("Passenger graph unknown branches, depots and refits never certify a path", "[passenger][service_graph]")
 {
+	PassengerTestStations stations;
 	Order barrier;
 	barrier.MakeConditional(3);
 	barrier.SetConditionVariable(OrderConditionVariable::LoadPercentage);
@@ -433,6 +447,7 @@ TEST_CASE("Passenger graph unknown branches, depots and refits never certify a p
 
 TEST_CASE("Passenger graph handles repeated stops, unconditional jumps and bounded cycles", "[passenger][service_graph]")
 {
+	PassengerTestStations stations;
 	GraphVehicle train({ GraphStop(A), GraphStop(B), GraphStop(A), GraphStop(D) });
 	SECTION("Repeated station orders and circuits") {
 		const auto graph = PassengerServiceGraph::Build(PAX, NOW, GraphLimits());
@@ -477,6 +492,7 @@ TEST_CASE("Passenger graph handles repeated stops, unconditional jumps and bound
 
 TEST_CASE("Passenger graph dispatch is independent per vehicle and owns its snapshot", "[passenger][service_graph]")
 {
+	PassengerTestStations stations;
 	GraphVehicle train({ GraphStop(A, 10, 0), GraphStop(B, 10, 0), GraphStop(D, 10, 0) });
 	train.orders->GetOrderAt(1)->SetDispatchScheduleIndex(0);
 	train.vehicle_flags.Set(VehicleFlag::ScheduledDispatch);
@@ -546,6 +562,7 @@ TEST_CASE("Passenger graph dispatch is independent per vehicle and owns its snap
 
 TEST_CASE("Passenger graph distinguishes inactive trains and exhausted budgets from no service", "[passenger][service_graph]")
 {
+	PassengerTestStations stations;
 	GraphVehicle train({ GraphStop(A), GraphStop(B) });
 	SECTION("Stopped or crashed trains have no usable departures") {
 		for (auto flag : { VehState::Stopped, VehState::Crashed }) {
@@ -587,6 +604,7 @@ TEST_CASE("Passenger graph distinguishes inactive trains and exhausted budgets f
 
 TEST_CASE("Passenger graph reports unfinished boarding candidates at the exact budget boundary", "[passenger][service_graph]")
 {
+	PassengerTestStations stations;
 	GraphVehicle first({ GraphStop(A) });
 	GraphVehicle second(first, VehicleID{101});
 	const auto graph = PassengerServiceGraph::Build(PAX, NOW, GraphLimits(50));
@@ -617,6 +635,7 @@ TEST_CASE("Passenger graph reports unfinished boarding candidates at the exact b
 
 TEST_CASE("Passenger graph certifies only the known time prefix of a truncated prediction", "[passenger][service_graph]")
 {
+	PassengerTestStations stations;
 	GraphVehicle train({ GraphStop(A), GraphStop(B) });
 	auto limits = GraphLimits();
 	SECTION("Visit limit preserves complete earlier station windows") {
@@ -680,6 +699,7 @@ TEST_CASE("Passenger graph certifies only the known time prefix of a truncated p
 
 TEST_CASE("Passenger graph keeps uncertainty beyond the certified prefix out of early queries", "[passenger][service_graph]")
 {
+	PassengerTestStations stations;
 	GraphVehicle train({ GraphStop(A), GraphStop(B), GraphStop(D) });
 	SECTION("Unknown dwell and later unknown visits do not fall inside earlier windows") {
 		train.orders->GetOrderAt(1)->SetWaitTimetabled(false);
@@ -727,6 +747,7 @@ TEST_CASE("Passenger graph keeps uncertainty beyond the certified prefix out of 
 
 TEST_CASE("Passenger graph station queries retain occurrence order rather than departure order", "[passenger][service_graph]")
 {
+	PassengerTestStations stations;
 	GraphVehicle first({ GraphStop(A, 100, 20) });
 	GraphVehicle second(first, VehicleID{101});
 	first.lateness_counter = -100;
@@ -748,6 +769,7 @@ TEST_CASE("Passenger graph station queries retain occurrence order rather than d
 
 TEST_CASE("Passenger graph construction and queries are deterministic and leave live state unchanged", "[passenger][service_graph]")
 {
+	PassengerTestStations stations;
 	GraphVehicle train({ GraphStop(A), GraphStop(B), GraphStop(D) });
 	GraphVehicle second(train, VehicleID{101});
 	second.current_order_time = 3;

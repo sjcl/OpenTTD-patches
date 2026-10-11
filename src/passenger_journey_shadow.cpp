@@ -86,7 +86,7 @@ PassengerJourneyShadowContext::PassengerJourneyShadowContext(const Vehicle *vehi
 	this->limits.journey.candidates = 1;
 	/* Fleet discovery is expensive. Select the first eligible cargo in consist order, once
 	 * per epoch. This deterministic sampling consumes no game or interactive random state. */
-	if (vehicle->type == VehicleType::Train && station != StationID::Invalid() && vehicle->current_order.IsAnyLoadingType()) {
+	if (IsPassengerServiceVehicle(vehicle) && station != StationID::Invalid() && vehicle->current_order.IsAnyLoadingType()) {
 		size_t coaches = 0;
 		size_t inspected_packets = 0;
 		for (const Vehicle *v = vehicle; v != nullptr && coaches++ < 256; v = v->Next()) {
@@ -105,6 +105,9 @@ PassengerJourneyShadowContext::PassengerJourneyShadowContext(const Vehicle *vehi
 			graph_limits.memory_bytes = std::min(graph_limits.memory_bytes, hard.graph.memory_bytes);
 			const auto graph_start = ShadowClock::now();
 			auto graph = PassengerServiceGraph::Build(cargo, this->capture, graph_limits);
+			for (const auto &trip : graph.GetTrips()) {
+				if (trip.type < VehicleType::CompanyEnd) ++_passenger_shadow_stats.modes[to_underlying(trip.type)].prediction_reasons[to_underlying(trip.prediction_reason)];
+			}
 			_passenger_shadow_stats.graph_us += ShadowMicros(graph_start);
 			_passenger_shadow_stats.graph_memory_bound = std::max(_passenger_shadow_stats.graph_memory_bound, graph.GetMemoryBound());
 			_passenger_shadow_work += graph.GetWork();
@@ -133,10 +136,10 @@ void PassengerJourneyShadowContext::Observe(const CargoPacket &packet, CargoType
 	stats.observed.Add(packet.Count());
 	const bool known_od = packet.GetPassengerDestination() != StationID::Invalid();
 	if (known_od) stats.known_od.Add(packet.Count());
-	const bool train = this->vehicle->type == VehicleType::Train;
+	const bool supported = IsPassengerServiceVehicle(this->vehicle);
 	const bool manual = _settings_game.linkgraph.GetDistributionType(cargo) == DistributionType::Manual;
-	const bool eligible = known_od && train && !manual;
-	if (known_od && !train) stats.non_train_od.Add(packet.Count());
+	const bool eligible = known_od && supported && !manual;
+	if (known_od && !supported) stats.unsupported_od.Add(packet.Count());
 	else if (known_od && manual) stats.manual_od.Add(packet.Count());
 	if (eligible) stats.eligible_od.Add(packet.Count());
 	PassengerShadowCategory category = PassengerShadowCategory::Skipped;
@@ -177,6 +180,17 @@ void PassengerJourneyShadowContext::Observe(const CargoPacket &packet, CargoType
 			stats.cache_peak = std::max(stats.cache_peak, snapshot.planner.GetCacheBytes());
 		} else if (result.status == PassengerPredictionStatus::Complete) result.status = PassengerPredictionStatus::Unknown;
 		stats.evaluated.Add(packet.Count());
+		auto &mode = stats.modes[to_underlying(this->vehicle->type)];
+		mode.evaluated.Add(packet.Count());
+		if (result.HasJourney()) {
+			mode.journeys.Add(packet.Count());
+			VehicleType previous = this->vehicle->type;
+			for (const auto &leg : result.journeys.front().legs) {
+				VehicleType current = snapshot.graph.GetTrips()[leg.boarding.trip].type;
+				if (current != previous) ++mode.mixed_transfers;
+				previous = current;
+			}
+		} else mode.fallback.Add(packet.Count()); // Diagnostics only; no packet mutation.
 		if (result.status == PassengerPredictionStatus::BudgetExhausted) stats.budget_exhausted.Add(packet.Count());
 		if (result.status == PassengerPredictionStatus::LimitReached) stats.limit_reached.Add(packet.Count());
 		if (result.status == PassengerPredictionStatus::Unknown) stats.horizon_incomplete.Add(packet.Count());

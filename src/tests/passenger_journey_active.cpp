@@ -8,6 +8,7 @@
 #include "../3rdparty/catch2/catch.hpp"
 #include "../passenger_journey_active.h"
 #include "../vehicle_base.h"
+#include "passenger_test_stations.h"
 #include "../station_base.h"
 #include "../economy_base.h"
 #include "../economy_func.h"
@@ -41,6 +42,7 @@ struct ActiveTrain : Vehicle {
 	explicit ActiveTrain(std::vector<Order> orders, VehicleID id = VehicleID{100}) : Vehicle(id, VehicleType::Train)
 	{
 		this->orders = OrderList::Create(std::move(orders), this);
+		EnsurePassengerTestStations(this->orders->GetOrderVector());
 		this->cargo_type = PAX; this->cargo_cap = 100; this->direction = Direction::NE;
 		this->LoadAt(0);
 	}
@@ -388,7 +390,7 @@ TEST_CASE("Journey failure and unsupported passengers use CargoDist", "[passenge
 	SECTION("Manual distribution") { _settings_game.linkgraph.distribution_per_cargo[PAX] = DistributionType::Manual; fallback = false; }
 	SECTION("Unknown OD") { delete packet; packet = fixture.Packet(10, StationID::Invalid()); fallback = false; }
 	SECTION("Disabled") { _settings_game.linkgraph.passenger_journey_routing = false; fallback = false; }
-	SECTION("Other transport modes remain legacy") { train.type = VehicleType::Road; }
+	SECTION("Unsupported vehicle types fall back") { train.type = VehicleType::Effect; }
 	fixture.Waiting().Append(packet, D);
 	fixture.Waiting().RoutePassengerJourneys(PAX, A);
 	CHECK(packet->GetPassengerRoutingMode() == (fallback ? PassengerRoutingMode::Fallback : PassengerRoutingMode::Legacy));
