@@ -1150,6 +1150,7 @@ void SlLoadTableWithArrayLengthPrefixesMissing();
 
 void SlSetStructListLength(size_t length);
 size_t SlGetStructListLength(size_t limit);
+void SlCheckPassengerOdEntryBudget(size_t count);
 uint32_t SlReadUint32LengthField();
 
 void SlSkipChunkContents();

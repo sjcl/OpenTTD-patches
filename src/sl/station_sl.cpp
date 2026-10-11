@@ -437,7 +437,9 @@ struct PassengerOdEntryStructHandler final : public TypedSaveLoadStructHandler<P
 	void Load(PassengerOdDistribution *od) const override
 	{
 		/* Check before resizing, including saves whose length fields are forged. */
-		od->entries.resize(SlGetStructListLength(MAX_PASSENGER_OD_DESTINATIONS));
+		size_t count = SlGetStructListLength(PASSENGER_OD_NODE_LIMIT);
+		SlCheckPassengerOdEntryBudget(count);
+		od->entries.resize(count);
 		for (auto &entry : od->entries) SlObjectLoadFiltered(&entry, this->GetLoadDescription());
 	}
 };
@@ -450,6 +452,9 @@ struct PassengerOdStructHandler final : public TypedSaveLoadStructHandler<Passen
 			NSL("source_node", SLE_VAR(PassengerOdDistribution, source_node, SLE_UINT16)),
 			NSL("revision", SLE_VAR(PassengerOdDistribution, revision, SLE_UINT64)),
 			NSL("total_weight", SLE_VAR(PassengerOdDistribution, total_weight, SLE_UINT64)),
+			NSL("cursor", SLE_CONDVAR_X(PassengerOdDistribution, cursor, SLE_UINT16, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_PASSENGER_OD_ASSIGNMENT, 2))),
+			NSL("unassigned_weight", SLE_CONDVAR_X(PassengerOdDistribution, unassigned_weight, SLE_UINT64, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_PASSENGER_OD_ASSIGNMENT, 3))),
+			NSL("unassigned_credit", SLE_CONDVAR_X(PassengerOdDistribution, unassigned_credit, SLE_INT64, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_PASSENGER_OD_ASSIGNMENT, 3))),
 			NSLT_STRUCTLIST<PassengerOdEntryStructHandler>("entries"),
 		};
 		return fields;

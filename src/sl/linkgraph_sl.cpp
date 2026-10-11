@@ -451,7 +451,6 @@ void AfterLoadLinkGraphs()
 		}
 	}
 
-	AfterLoadPassengerOd();
 	LinkGraphSchedule::instance.SpawnAll();
 
 	if (!_networking || _network_server) {

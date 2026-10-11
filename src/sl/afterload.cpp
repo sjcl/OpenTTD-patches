@@ -29,6 +29,7 @@
 #include "../roadveh.h"
 #include "../train.h"
 #include "../station_base.h"
+#include "../passenger_od.h"
 #include "../waypoint_base.h"
 #include "../roadstop_base.h"
 #include "../tunnelbridge.h"
@@ -4628,6 +4629,9 @@ bool AfterLoadGame()
 	/* Restore the signals */
 	ResetSignalHandlers();
 
+	/* Stations, graph membership and CargoSpecs are now converted. Validate OD
+	 * state and migrate old saves before AfterLoadLinkGraphs resumes any jobs. */
+	AfterLoadPassengerOd();
 	AfterLoadLinkGraphs();
 
 	AfterLoadTraceRestrict();

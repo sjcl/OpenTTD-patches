@@ -303,6 +303,7 @@ struct SaveLoadParams {
 
 	bool saveinprogress;                 ///< Whether there is currently a save in progress.
 	SaveModeFlags save_flags;            ///< Save mode flags
+	size_t passenger_od_entries = 0;     ///< Destination records accepted during this load.
 };
 
 static SaveLoadParams _sl; ///< Parameters used for/at saveload.
@@ -2677,6 +2678,13 @@ size_t SlGetStructListLength(size_t limit)
 	return length;
 }
 
+/** Bound all loaded OD vectors together, before any destination-vector resize. */
+void SlCheckPassengerOdEntryBudget(size_t count)
+{
+	if (count > MAX_PASSENGER_OD_ENTRIES - _sl.passenger_od_entries) SlErrorCorrupt("Passenger OD entry budget exceeded");
+	_sl.passenger_od_entries += count;
+}
+
 /**
  * Read a uint32_t length field and validate that it is plausible for the current chunk/sub-chunk.
  * @return The length value.
@@ -3946,6 +3954,7 @@ static inline void ClearSaveLoadState()
 	_sl.save_flags = SMF_NONE;
 	_sl.current_chunk_id = 0;
 	_sl.chunk_block_modes.clear();
+	_sl.passenger_od_entries = 0;
 
 	GamelogStopAnyAction();
 }

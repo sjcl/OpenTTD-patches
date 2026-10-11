@@ -28,6 +28,7 @@ extern std::vector<uint8_t> SlTestSaveLoadTable(void *, void *, const NamedSaveL
 extern uint32_t SavePassengerOdRevision(const SlxiSubChunkInfo &, bool);
 extern void LoadPassengerOdRevision(const SlxiSubChunkInfo &, uint32_t);
 
+static constexpr size_t TEST_OD_DESTINATIONS = 256;
 static constexpr CargoType PAX{0};
 static constexpr StationID A{0}, B{1}, C{2}, D{3};
 static constexpr Source SOURCE{Source::Invalid, SourceType::Industry};
@@ -47,7 +48,7 @@ struct OdAssignmentFixture {
 		REQUIRE(Station::GetNumItems() == 0);
 		REQUIRE(LinkGraph::GetNumItems() == 0);
 		REQUIRE(CargoPacket::GetNumItems() == 0);
-		AllocateMap(64, 64);
+		AllocateMap(stations > 4096 ? 256 : 64, stations > 4096 ? 256 : 64);
 		_settings_game.linkgraph.passenger_od_assignment = true;
 		_settings_game.linkgraph.passenger_transfer_timetables = false;
 		_settings_game.linkgraph.distribution_per_cargo[PAX] = DistributionType::Asymmetric;
@@ -76,12 +77,16 @@ struct OdAssignmentFixture {
 	GoodsEntry &Goods() { return Station::Get(A)->goods[PAX]; }
 	PassengerOdDistribution &Od() { return *Goods().data->passenger_od; }
 
-	void Install(std::span<LinkGraphJob::DemandAnnotation> demands)
+	void Install(std::span<LinkGraphJob::DemandAnnotation> demands, size_t origins = 1, size_t budget = MAX_PASSENGER_OD_ENTRIES)
 	{
 		LinkGraphJob job(LinkGraphJobID::Invalid(), *graph, 1);
 		job.Init();
-		job[0].SetDemandAnnotations(demands);
-		job.FinaliseJob();
+		for (NodeID node = 0; node < origins; ++node) job[node].SetDemandAnnotations(demands);
+		if (budget == MAX_PASSENGER_OD_ENTRIES) {
+			job.FinaliseJob();
+		} else {
+			ApplyPassengerOd(job, budget);
+		}
 	}
 };
 
@@ -187,7 +192,7 @@ TEST_CASE("Passenger OD integer bounds and irregular batches keep bounded residu
 		CHECK(std::accumulate(counts.begin(), counts.end(), uint64_t{0}) == amount);
 		CHECK(od.Validate());
 	}
-	CHECK(od.Allocate(0) == std::array<uint32_t, MAX_PASSENGER_OD_DESTINATIONS>{});
+	CHECK(od.Allocate(0) == std::vector<uint32_t>(od.entries.size() + 1, 0));
 }
 
 TEST_CASE("Passenger generation splits OD while preserving next hop source and random state", "[passenger][od_assignment]")
@@ -352,6 +357,7 @@ TEST_CASE("Passenger OD save table restores distribution residuals and the next 
 	std::array<LinkGraphJob::DemandAnnotation, 3> demand{{ {1, 600, 0}, {2, 300, 0}, {3, 100, 0} }};
 	f.Install(demand);
 	f.Od().Allocate(7);
+	f.Od().cursor = 2;
 	GoodsEntry loaded;
 	loaded.CreateData();
 	auto bytes = SlTestSaveLoadTable(&f.Goods(), &loaded, GetGoodsDesc());
@@ -403,6 +409,30 @@ TEST_CASE("Passenger OD legacy saves omit distribution and load safely", "[passe
 	CHECK_FALSE(_settings_game.linkgraph.passenger_od_assignment);
 	GenerateStationCargo(*Station::Get(A), PAX, 10, SOURCE);
 	CHECK(WaitingOd(f.Goods())[0] == 10);
+}
+
+TEST_CASE("Earlier passenger OD saves initialise absent cursor and unknown state", "[passenger][od_assignment][saveload]")
+{
+	OdAssignmentFixture f;
+	AutoRestoreBackup version{_sl_version, SAVEGAME_VERSION};
+	AutoRestoreBackup features{_sl_xv_feature_versions, AutoRestoreBackupNoNewValueTag{}};
+	AutoRestoreBackup static_features{_sl_xv_feature_static_versions, AutoRestoreBackupNoNewValueTag{}};
+	SlXvSetStaticCurrentVersions();
+	_sl_xv_feature_versions = _sl_xv_feature_static_versions;
+	SECTION("Version one") { _sl_xv_feature_versions[XSLFI_PASSENGER_OD_ASSIGNMENT] = 1; }
+	SECTION("Version two") { _sl_xv_feature_versions[XSLFI_PASSENGER_OD_ASSIGNMENT] = 2; }
+	std::array<LinkGraphJob::DemandAnnotation, 2> demand{{ {1, 90, 0}, {2, 10, 0} }};
+	f.Install(demand);
+	f.Od().Allocate(7);
+	f.Od().cursor = 1;
+	GoodsEntry loaded;
+	loaded.CreateData();
+	SlTestSaveLoadTable(&f.Goods(), &loaded, GetGoodsDesc());
+	REQUIRE(loaded.data->passenger_od != nullptr);
+	CHECK(loaded.data->passenger_od->cursor == (_sl_xv_feature_versions[XSLFI_PASSENGER_OD_ASSIGNMENT] == 1 ? 0 : 1));
+	CHECK(loaded.data->passenger_od->unassigned_weight == 0);
+	CHECK(loaded.data->passenger_od->unassigned_credit == 0);
+	CHECK(loaded.data->passenger_od->entries == f.Od().entries);
 }
 
 struct PassengerOdRevisionTestState { uint64_t revision = 0; };
@@ -467,7 +497,8 @@ TEST_CASE("Passenger OD save validation rejects corrupt counts weights ordering 
 	SECTION("Residual overflow") { f.Od().entries[0].credit = INT64_MAX; }
 	SECTION("Residual sum mismatch") { f.Od().entries[0].credit = 1; }
 	SECTION("Duplicate destination") { f.Od().entries[1].destination = B; }
-	SECTION("Oversized list") { f.Od().entries.resize(MAX_PASSENGER_OD_DESTINATIONS + 1); }
+	SECTION("Cursor past the end") { f.Od().cursor = static_cast<uint16_t>(f.Od().entries.size()); }
+	SECTION("Oversized list") { f.Od().entries.resize(PASSENGER_OD_NODE_LIMIT + 1); }
 	GoodsEntry loaded;
 	loaded.CreateData();
 	CHECK_THROWS(SlTestSaveLoadTable(&f.Goods(), &loaded, GetGoodsDesc()));
@@ -488,13 +519,28 @@ TEST_CASE("Passenger OD load removes invalid destinations and ignores manual and
 	CHECK(f.Goods().data->passenger_od == nullptr);
 }
 
+TEST_CASE("Passenger OD afterload rejects graph and pending job revisions beyond the saved counter", "[passenger][od_assignment][saveload]")
+{
+	OdAssignmentFixture f;
+	AutoRestoreBackup features{_sl_xv_feature_versions, AutoRestoreBackupNoNewValueTag{}};
+	_sl_xv_feature_versions[XSLFI_PASSENGER_OD_ASSIGNMENT] = 2;
+	std::unique_ptr<LinkGraphJob> pending(LinkGraphJob::Create(*f.graph, 1));
+	SECTION("Live graph") { _passenger_od_revision = f.graph->PassengerOdRevision() - 1; }
+	SECTION("Pending snapshot") {
+		uint64_t saved_revision = _passenger_od_revision;
+		const_cast<LinkGraph &>(pending->Graph()).InvalidatePassengerOd();
+		_passenger_od_revision = saved_revision;
+	}
+	CHECK_THROWS(AfterLoadPassengerOd());
+}
+
 TEST_CASE("Passenger OD bounds destination memory packet growth and exhausted pool fallback", "[passenger][od_assignment][performance]")
 {
-	OdAssignmentFixture f(MAX_PASSENGER_OD_DESTINATIONS + 2);
+	OdAssignmentFixture f(TEST_OD_DESTINATIONS + 2);
 	std::vector<LinkGraphJob::DemandAnnotation> demand;
-	for (NodeID i = 1; i <= MAX_PASSENGER_OD_DESTINATIONS; ++i) demand.push_back({i, 1, 0});
+	for (NodeID i = 1; i <= TEST_OD_DESTINATIONS; ++i) demand.push_back({i, 1, 0});
 	f.Install(demand);
-	REQUIRE(f.Od().entries.size() == MAX_PASSENGER_OD_DESTINATIONS);
+	REQUIRE(f.Od().entries.size() == TEST_OD_DESTINATIONS);
 	SECTION("Packet bound") {
 		GenerateStationCargo(*Station::Get(A), PAX, 512, SOURCE);
 		CHECK(f.Goods().CargoAvailableCount() == 512);
@@ -502,6 +548,8 @@ TEST_CASE("Passenger OD bounds destination memory packet growth and exhausted po
 		CHECK(_passenger_od_stats.fallback_passengers == 512 - 2 * (MAX_PASSENGER_OD_PACKETS - 1));
 	}
 	SECTION("Only the legacy packet fits the pool") {
+		f.Od().Allocate(7);
+		auto previous = f.Od();
 		const size_t original = _cargopacket_pool.items;
 		const size_t fake = CargoPacketPool::MAX_SIZE - 1;
 		_cargopacket_pool.items = fake;
@@ -510,14 +558,16 @@ TEST_CASE("Passenger OD bounds destination memory packet growth and exhausted po
 		CHECK(f.Goods().CargoAvailableCount() == 100);
 		CHECK(f.Goods().data->cargo.Packets()->size() == 1);
 		CHECK(_passenger_od_stats.fallback_passengers == 100);
+		CHECK(f.Od() == previous);
 	}
-	SECTION("Over the destination limit uses only unassigned cargo") {
-		demand.push_back({MAX_PASSENGER_OD_DESTINATIONS + 1, 1, 0});
+	SECTION("More than 256 destinations retains a valid distribution") {
+		demand.push_back({TEST_OD_DESTINATIONS + 1, 1, 0});
 		f.Install(demand);
-		CHECK((f.Goods().data == nullptr || f.Goods().data->passenger_od == nullptr));
+		REQUIRE(f.Goods().data->passenger_od != nullptr);
+		CHECK(f.Od().entries.size() == TEST_OD_DESTINATIONS + 1);
 		GenerateStationCargo(*Station::Get(A), PAX, 100, SOURCE);
-		CHECK(f.Goods().data->cargo.Packets()->size() == 1);
-		CHECK(_passenger_od_stats.fallback_passengers == 100);
+		CHECK(f.Goods().data->cargo.Packets()->size() <= MAX_PASSENGER_OD_PACKETS);
+		CHECK(_passenger_od_stats.fallback_passengers < 100);
 	}
 	SECTION("Batch time depends on destinations rather than passenger count") {
 		auto od = f.Od();
@@ -529,4 +579,245 @@ TEST_CASE("Passenger OD bounds destination memory packet growth and exhausted po
 		const auto us = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - start).count();
 		WARN("OD benchmark: " << us << " us / 10000 batches; entries=" << od.entries.size() << "; bytes=" << sizeof(od) + od.entries.capacity() * sizeof(PassengerOdEntry));
 	}
+}
+
+TEST_CASE("Packet limited passenger OD rotates through all destinations and only commits served rounding", "[passenger][od_assignment]")
+{
+	OdAssignmentFixture f(TEST_OD_DESTINATIONS + 1);
+	std::vector<LinkGraphJob::DemandAnnotation> demand;
+	for (NodeID i = 1; i <= TEST_OD_DESTINATIONS; ++i) demand.push_back({i, 1, 0});
+	f.Install(demand);
+	auto expected = f.Od();
+	expected.Allocate(2 * (MAX_PASSENGER_OD_PACKETS - 1));
+	GameRandomSeedChecker seeds;
+	GenerateStationCargo(*Station::Get(A), PAX, 512, SOURCE);
+	CHECK(f.Od().entries == expected.entries);
+	CHECK(f.Od().cursor == MAX_PASSENGER_OD_PACKETS - 1);
+	CHECK(_passenger_od_stats.fallback_passengers == 450);
+	CHECK(seeds.Check());
+	for (uint batch = 1; batch < 32; ++batch) {
+		uint64_t packets = _passenger_od_stats.packets;
+		GenerateStationCargo(*Station::Get(A), PAX, 512, SOURCE);
+		CHECK(_passenger_od_stats.packets - packets <= MAX_PASSENGER_OD_PACKETS);
+		CHECK(f.Od().Validate());
+	}
+	std::array<uint64_t, TEST_OD_DESTINATIONS + 1> totals{};
+	for (StationCargoList::ConstIterator it = f.Goods().data->cargo.Packets()->begin(); it != f.Goods().data->cargo.Packets()->end(); ++it) {
+		StationID dest = (*it)->GetPassengerDestination();
+		totals[dest == StationID::Invalid() ? 0 : dest.base()] += (*it)->Count();
+	}
+	CHECK(std::accumulate(totals.begin(), totals.end(), uint64_t{0}) == 32 * 512);
+	for (size_t i = 1; i < totals.size(); ++i) CHECK(totals[i] > 0);
+	auto previous = f.Od();
+	f.Install(demand);
+	CHECK(f.Od() == previous);
+}
+
+TEST_CASE("Passenger OD packet cursor and limited residuals survive save and the next batch", "[passenger][od_assignment][saveload]")
+{
+	OdAssignmentFixture f(TEST_OD_DESTINATIONS + 1);
+	AutoRestoreBackup version{_sl_version, SAVEGAME_VERSION};
+	AutoRestoreBackup features{_sl_xv_feature_versions, AutoRestoreBackupNoNewValueTag{}};
+	AutoRestoreBackup static_features{_sl_xv_feature_static_versions, AutoRestoreBackupNoNewValueTag{}};
+	SlXvSetStaticCurrentVersions();
+	_sl_xv_feature_versions = _sl_xv_feature_static_versions;
+	std::vector<LinkGraphJob::DemandAnnotation> demand;
+	for (NodeID i = 1; i <= TEST_OD_DESTINATIONS; ++i) demand.push_back({i, 1, 0});
+	f.Install(demand);
+	GenerateStationCargo(*Station::Get(A), PAX, 512, SOURCE);
+	f.Goods().data->cargo.Truncate();
+	GoodsEntry loaded;
+	loaded.CreateData();
+	SlTestSaveLoadTable(&f.Goods(), &loaded, GetGoodsDesc());
+	REQUIRE(loaded.data->passenger_od != nullptr);
+	CHECK(*loaded.data->passenger_od == f.Od());
+	auto batch = [&]() {
+		std::array<uint32_t, TEST_OD_DESTINATIONS + 1> counts{};
+		GenerateStationCargo(*Station::Get(A), PAX, 512, SOURCE);
+		for (StationCargoList::ConstIterator it = f.Goods().data->cargo.Packets()->begin(); it != f.Goods().data->cargo.Packets()->end(); ++it) {
+			StationID dest = (*it)->GetPassengerDestination();
+			counts[dest == StationID::Invalid() ? 0 : dest.base()] += (*it)->Count();
+		}
+		return counts;
+	};
+	auto expected_counts = batch();
+	auto expected_od = f.Od();
+	f.Goods().data = std::move(loaded.data);
+	AfterLoadPassengerOd();
+	CHECK(batch() == expected_counts);
+	CHECK(f.Od() == expected_od);
+}
+
+TEST_CASE("Packet limits cannot consume rounding awards of tiny passenger demands", "[passenger][od_assignment]")
+{
+	OdAssignmentFixture f(TEST_OD_DESTINATIONS + 1);
+	std::vector<LinkGraphJob::DemandAnnotation> demand;
+	for (NodeID i = 1; i <= TEST_OD_DESTINATIONS; ++i) demand.push_back({i, i <= 32 ? 1000U : 1U, 0});
+	f.Install(demand);
+	GameRandomSeedChecker seeds;
+	for (uint batch = 0; batch < 10000; ++batch) {
+		uint64_t packets = _passenger_od_stats.packets;
+		GenerateStationCargo(*Station::Get(A), PAX, 100, SOURCE);
+		REQUIRE(_passenger_od_stats.packets - packets <= MAX_PASSENGER_OD_PACKETS);
+	}
+	std::array<uint64_t, TEST_OD_DESTINATIONS + 1> totals{};
+	for (StationCargoList::ConstIterator it = f.Goods().data->cargo.Packets()->begin(); it != f.Goods().data->cargo.Packets()->end(); ++it) {
+		StationID dest = (*it)->GetPassengerDestination();
+		totals[dest == StationID::Invalid() ? 0 : dest.base()] += (*it)->Count();
+	}
+	CHECK(std::accumulate(totals.begin(), totals.end(), uint64_t{0}) == 1000000);
+	for (size_t i = 1; i < totals.size(); ++i) CHECK(totals[i] > 0);
+	CHECK(f.Od().Validate());
+	CHECK(seeds.Check());
+}
+
+TEST_CASE("A thousand passenger destinations remain sparse and all receive packet turns", "[passenger][od_assignment][large_network]")
+{
+	OdAssignmentFixture f(1001);
+	std::vector<LinkGraphJob::DemandAnnotation> demand;
+	for (NodeID i = 1; i <= 1000; ++i) demand.push_back({i, 1, 0});
+	f.Install(demand);
+	REQUIRE(f.Od().entries.size() == 1000);
+	CHECK(f.Od().unassigned_weight == 0);
+	CHECK(f.Od().total_weight == 1000);
+	for (uint batch = 0; batch < 40; ++batch) GenerateStationCargo(*Station::Get(A), PAX, 2000, SOURCE);
+	std::vector<uint32_t> totals(1001, 0);
+	for (StationCargoList::ConstIterator it = f.Goods().data->cargo.Packets()->begin(); it != f.Goods().data->cargo.Packets()->end(); ++it) {
+		StationID dest = (*it)->GetPassengerDestination();
+		totals[dest == StationID::Invalid() ? 0 : dest.base()] += (*it)->Count();
+	}
+	CHECK(std::accumulate(totals.begin(), totals.end(), uint64_t{0}) == 80000);
+	for (size_t i = 1; i < totals.size(); ++i) CHECK(totals[i] > 0);
+	CHECK(_passenger_od_stats.packets <= 40 * MAX_PASSENGER_OD_PACKETS);
+}
+
+TEST_CASE("National passenger demand keeps high weights and saves omitted demand without renormalisation", "[passenger][od_assignment][large_network][saveload]")
+{
+	OdAssignmentFixture f(8001);
+	AutoRestoreBackup version{_sl_version, SAVEGAME_VERSION};
+	AutoRestoreBackup features{_sl_xv_feature_versions, AutoRestoreBackupNoNewValueTag{}};
+	AutoRestoreBackup static_features{_sl_xv_feature_static_versions, AutoRestoreBackupNoNewValueTag{}};
+	SlXvSetStaticCurrentVersions();
+	_sl_xv_feature_versions = _sl_xv_feature_static_versions;
+	std::vector<LinkGraphJob::DemandAnnotation> demand;
+	for (NodeID i = 1; i <= 8000; ++i) demand.push_back({i, i > 7000 ? 20U : 1U, 0});
+	/* Exercise the production admission policy without allocating gigabytes in CI. */
+	const size_t budget = 32 * 1024 * 1024 / sizeof(PassengerOdEntry);
+	f.Install(demand, 600, budget);
+	const size_t retained = budget / 600;
+	REQUIRE(f.Od().entries.size() == retained);
+	CHECK(retained > 256);
+	CHECK(f.Od().total_weight == 27000);
+	CHECK(f.Od().unassigned_weight == 8000 - retained);
+	CHECK(std::count_if(f.Od().entries.begin(), f.Od().entries.end(), [](const auto &entry) { return entry.weight == 20; }) == 1000);
+	size_t capacity = 0;
+	for (const Station *st : Station::Iterate()) {
+		if (st->goods[PAX].data != nullptr && st->goods[PAX].data->passenger_od != nullptr) capacity += st->goods[PAX].data->passenger_od->entries.capacity();
+	}
+	CHECK(capacity <= budget);
+	auto counts = f.Od().Allocate(27000);
+	for (size_t i = 0; i < retained; ++i) CHECK(counts[i] == f.Od().entries[i].weight);
+	CHECK(counts.back() == f.Od().unassigned_weight);
+	f.Od().Allocate(123);
+	f.Od().cursor = 31;
+	GoodsEntry loaded;
+	loaded.CreateData();
+	SlTestSaveLoadTable(&f.Goods(), &loaded, GetGoodsDesc());
+	REQUIRE(loaded.data->passenger_od != nullptr);
+	CHECK(*loaded.data->passenger_od == f.Od());
+	CHECK(loaded.data->passenger_od->Allocate(234) == f.Od().Allocate(234));
+	CHECK(*loaded.data->passenger_od == f.Od());
+}
+
+TEST_CASE("A sparse national hub retains all eight thousand valid destinations", "[passenger][od_assignment][large_network]")
+{
+	CHECK(MAX_PASSENGER_OD_ENTRIES >= size_t{10000} * 8000);
+	OdAssignmentFixture f(8001);
+	std::vector<LinkGraphJob::DemandAnnotation> demand;
+	for (NodeID i = 1; i <= 8000; ++i) demand.push_back({i, 1, 0});
+	f.Install(demand);
+	REQUIRE(f.Od().entries.size() == 8000);
+	CHECK(f.Od().unassigned_weight == 0);
+	CHECK(f.Od().total_weight == 8000);
+	CHECK(ValidatePassengerOd(*Station::Get(A), PAX, f.Od()));
+}
+
+TEST_CASE("Passenger OD wide unknown weights allocate maximum batches without integer overflow", "[passenger][od_assignment]")
+{
+	auto od = Distribution({UINT32_MAX, 1});
+	od.unassigned_weight = uint64_t{60000} * UINT32_MAX;
+	od.total_weight += od.unassigned_weight;
+	for (uint i = 0; i < 100; ++i) {
+		auto counts = od.Allocate(UINT32_MAX);
+		CHECK(std::accumulate(counts.begin(), counts.end(), uint64_t{0}) == UINT32_MAX);
+		CHECK(od.Validate());
+	}
+	auto unknown = PassengerOdDistribution{};
+	unknown.total_weight = unknown.unassigned_weight = uint64_t{60000} * UINT32_MAX;
+	CHECK(unknown.Validate());
+	CHECK(unknown.Allocate(UINT32_MAX) == std::vector<uint32_t>{UINT32_MAX});
+}
+
+TEST_CASE("Passenger OD weighted unknown demand never increases retained destination ratios", "[passenger][od_assignment]")
+{
+	OdAssignmentFixture f;
+	std::array<LinkGraphJob::DemandAnnotation, 2> demand{{ {1, 90, 0}, {2, 10, 0} }};
+	f.Install(demand);
+	f.Od().unassigned_weight = 900;
+	f.Od().total_weight = 1000;
+	GenerateStationCargo(*Station::Get(A), PAX, 100, SOURCE);
+	CHECK(WaitingOd(f.Goods()) == std::array<uint32_t, 4>{90, 9, 1, 0});
+	CHECK(f.Goods().CargoAvailableCount() == 100);
+	CHECK(f.Od().Validate());
+}
+
+TEST_CASE("Passenger OD storage is proportional to eligible demand rather than raw annotations", "[passenger][od_assignment][large_network]")
+{
+	OdAssignmentFixture f(1001);
+	std::vector<LinkGraphJob::DemandAnnotation> demand;
+	for (NodeID i = 1; i <= 1000; ++i) demand.push_back({i, 1, i == 1000 ? 0U : 1U});
+	f.Install(demand, 100);
+	size_t records = 0, capacity = 0;
+	for (const Station *st : Station::Iterate()) {
+		if (st->goods[PAX].data != nullptr && st->goods[PAX].data->passenger_od != nullptr) {
+			records += st->goods[PAX].data->passenger_od->entries.size();
+			capacity += st->goods[PAX].data->passenger_od->entries.capacity();
+		}
+	}
+	CHECK(records == 100);
+	CHECK(capacity == 100);
+}
+
+struct PassengerOdBudgetTestState { uint32_t first = 0, second = 0; };
+struct PassengerOdBudgetTestHandler final : public TypedSaveLoadStructHandler<PassengerOdBudgetTestHandler, PassengerOdBudgetTestState> {
+	NamedSaveLoadTable GetDescription() const override
+	{
+		static const NamedSaveLoad fields[]{
+			NSL("first", SLE_VAR(PassengerOdBudgetTestState, first, SLE_UINT32)),
+			NSL("second", SLE_VAR(PassengerOdBudgetTestState, second, SLE_UINT32)),
+		};
+		return fields;
+	}
+	void Save(PassengerOdBudgetTestState *state) const override
+	{
+		SlObjectSaveFiltered(state, this->GetLoadDescription());
+	}
+	void Load(PassengerOdBudgetTestState *state) const override
+	{
+		SlObjectLoadFiltered(state, this->GetLoadDescription());
+		SlCheckPassengerOdEntryBudget(state->first);
+		SlCheckPassengerOdEntryBudget(state->second);
+	}
+};
+
+TEST_CASE("Passenger OD load bounds aggregate entry storage before resizing", "[passenger][od_assignment][saveload]")
+{
+	AutoRestoreBackup version{_sl_version, SAVEGAME_VERSION};
+	static const NamedSaveLoad fields[]{ NSLT_STRUCT<PassengerOdBudgetTestHandler>("budget") };
+	PassengerOdBudgetTestState saved{static_cast<uint32_t>(MAX_PASSENGER_OD_ENTRIES), 0}, loaded;
+	CHECK_NOTHROW(SlTestSaveLoadTable(&saved, &loaded, fields));
+	CHECK(loaded.first == saved.first);
+	CHECK(loaded.second == 0);
+	saved.second = 1;
+	CHECK_THROWS(SlTestSaveLoadTable(&saved, &loaded, fields));
 }

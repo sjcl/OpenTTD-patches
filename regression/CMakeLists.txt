@@ -24,3 +24,14 @@
     add_subdirectory(stationlist)
     add_subdirectory(gs)
     add_subdirectory(gs_compat)
+
+    # Exercise the production load path, including migration and a current-format save.
+    add_test(NAME passenger_od_load
+        COMMAND ${CMAKE_COMMAND}
+            -DOPENTTD_EXECUTABLE=$<TARGET_FILE:openttd>
+            -DEDITBIN_EXECUTABLE=${EDITBIN_EXECUTABLE}
+            -DLEGACY_SAVE=${CMAKE_CURRENT_SOURCE_DIR}/stationlist/test.sav
+            -DWORK_DIR=${CMAKE_CURRENT_BINARY_DIR}/passenger_od_load
+            -P ${CMAKE_SOURCE_DIR}/cmake/scripts/PassengerOdLoad.cmake
+    )
+    set_tests_properties(passenger_od_load PROPERTIES TIMEOUT 60)

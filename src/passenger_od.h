@@ -19,8 +19,8 @@ struct Station;
 struct GoodsEntry;
 struct Source;
 
-/** Bounds apply independently of station count and passenger batch size. */
-static constexpr size_t MAX_PASSENGER_OD_DESTINATIONS = 256;
+/** The physical NodeID limit, not a policy limit on OD candidates. */
+static constexpr size_t PASSENGER_OD_NODE_LIMIT = INVALID_NODE - 1;
 static constexpr size_t MAX_PASSENGER_OD_PACKETS = 32;
 
 struct PassengerOdEntry {
@@ -31,16 +31,23 @@ struct PassengerOdEntry {
 	bool operator==(const PassengerOdEntry &) const = default;
 };
 
+/** Global budget for retained sparse records (2 GiB of destination payload). */
+static constexpr size_t MAX_PASSENGER_OD_ENTRIES = size_t{2} * 1024 * 1024 * 1024 / sizeof(PassengerOdEntry);
+
 /** Only allocated for passenger goods entries with a usable distribution. */
 struct PassengerOdDistribution {
 	LinkGraphID graph = LinkGraphID::Invalid();
 	NodeID source_node = INVALID_NODE;
 	uint64_t revision = 0; ///< Identity of the graph topology that produced this distribution.
 	uint64_t total_weight = 0;
+	uint64_t unassigned_weight = 0; ///< Original demand omitted to respect the global memory budget.
+	int64_t unassigned_credit = 0;
+	uint16_t cursor = 0; ///< First destination considered for the next packet-limited batch.
 	std::vector<PassengerOdEntry> entries;
 
 	bool Validate() const;
-	std::array<uint32_t, MAX_PASSENGER_OD_DESTINATIONS> Allocate(uint32_t amount);
+	/** Final element is the weighted unassigned bucket; preceding elements match entries. */
+	std::vector<uint32_t> Allocate(uint32_t amount);
 	bool operator==(const PassengerOdDistribution &) const = default;
 };
 
@@ -60,6 +67,8 @@ uint64_t NextPassengerOdRevision();
 bool IsPassengerOdEnabled(CargoType cargo);
 bool ValidatePassengerOd(const Station &source, CargoType cargo, const PassengerOdDistribution &od);
 void ApplyPassengerOd(LinkGraphJob &job);
+/** Apply with a smaller record budget, allowing bounded-memory policy tests. */
+void ApplyPassengerOd(LinkGraphJob &job, size_t entry_budget);
 void ClearPassengerOdDistributions();
 void AfterLoadPassengerOd();
 void GenerateStationCargo(Station &st, CargoType cargo, uint amount, Source source);

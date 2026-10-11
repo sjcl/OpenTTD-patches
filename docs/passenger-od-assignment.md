@@ -28,24 +28,28 @@ pool IDs are reused or a topology is changed and later restored. Splitting a
 component by deleting links also invalidates its distributions. Normal capacity
 updates and compression do not invalidate them.
 
-An identical recalculation retains its rounding residuals. Changed weights or
-membership start with zero residuals. Generation validates the distribution and
-its destinations again; invalid, absent or oversized distributions generate
+An identical recalculation retains its rounding residuals, weighted unknown state
+and packet cursor. Changed weights or membership start with zero residuals and
+cursor. Generation validates the distribution and its destinations again; invalid or absent distributions generate
 only unassigned packets until a usable job completes.
 
 ## Deterministic allocation
 
 Each destination retains a signed credit in units of total demand weight.
 For each batch the allocator adds its integer quota and fractional remainder,
-then corrects rounded totals using a heap of destination indices. Ties use
-StationID order. The correction requires fewer than the number of destinations
-in rounded units, independent of the number of passengers. Credits sum to zero
+then corrects rounded totals using partial selection of destination indices.
+Excess quotas remove whole rounds using a bounded histogram, followed by one
+selection; deficits use one selection. Ties use StationID order. The correction
+visits only the sparse entries, independent of the number of passengers. Credits sum to zero
 and remain between `-W` and `N * W`, exclusively. Thus accumulated allocation
-error is bounded and small destinations are not permanently rounded away.
+error is bounded when all proposed quotas can be emitted, and small destinations
+are not permanently rounded away.
 
 The allocator uses no game random calls and guarantees that all assigned counts
 sum exactly to the input batch. Products are `uint32_t * uint32_t` widened to
-`uint64_t`. Total weight and signed-credit bounds are validated before use;
+`uint64_t`. An aggregate unknown bucket can exceed a 32-bit weight; its quota and
+remainder are derived from the complement of retained products to avoid a wider
+multiplication. Total weight and signed-credit bounds are validated before use;
 temporary quotas are also 64-bit, including for `UINT32_MAX` input batches.
 
 The tests verify 600:300:100 demand gives 60:30:10 for 100 passengers, and 90:10
@@ -67,14 +71,57 @@ most 32 newly allocated packets per batch. Counts beyond that budget remain
 unassigned, with no reassignment to another destination. Merge rules already
 require equal final destinations.
 
-There are at most 256 destinations per station/cargo distribution. A distribution
-with more eligible destinations is discarded in full: a truncated distribution
-would incorrectly renormalise its demand. Storage is sparse, with no permanent
-all-station matrix. Allocation and validation use O(N) scratch, with O(N log N)
-allocation time; distribution construction is O(V + D + sum(N log N)), with a
-bounded destination vector per origin. No heap allocation occurs per passenger.
+A saved, validated cursor rotates packet emission through StationID order. Each
+successful destination advances it; exhaustion leaves the next turn pending.
+Thus a repeated 512-passenger batch with 256 equal demands still emits 62
+assigned and 450 unassigned passengers, but subsequent batches visit the other
+destinations. Identical job recalculation preserves the cursor.
 
-On this x64 build, a distribution with 256 entries occupies 4,144 bytes, including
+Quota calculation is tentative. If packet capacity leaves passengers unassigned,
+the allocator restores the previous credits and advances its fractional rounding
+phase for only the number given explicit destinations plus the natural weighted
+unknown quota. Whole quotas suppressed by packet capacity
+are not counted as served demand or accumulated as debt. With no spare pool slot,
+the explicit rounding state and cursor stay unchanged when no weighted unknown
+bucket is present. Packet-limited allocation does not
+claim the uncapped allocator's bound on error per destination; the cursor ensures
+rotation while the generated quotas retain the original demand weights.
+
+When tentative quotas contain zeroes and exceed available packet capacity, the
+allocator instead proposes at most `available_packets - 1` passengers and leaves
+the rest unassigned. That plan fits in its entirety: every nonzero rounding award
+is emitted. This prevents small demands from losing awards between a tentative
+large batch and its reduced rounding phase. It may assign fewer passengers in a
+mixed-demand batch, while preserving the original weighted unknown proportion
+within the committed plan. The test with 32 large demands and 224 tiny demands
+confirms that every destination receives passengers across 10,000 batches.
+
+There is no 256-destination policy limit. Every eligible demand is retained when
+the sparse job fits the remaining global record budget. An 8,000-destination hub
+with no other demand origins therefore keeps all 8,000 records. The only absolute
+per-origin list limit is the physical NodeID range (65,534 destinations).
+
+All permanent destination-vector payloads together have a 2 GiB budget
+(134,217,728 records on x64). For example, 10,000 origins with 8,000 eligible
+destinations each use approximately 1.28 GB of destination records and fit this
+budget. Construction counts actual eligible records rather than
+reserving an all-station matrix. If a job would exceed the remaining budget, it
+shares that budget among its active demand origins, retaining their largest
+original demands, with StationID as a deterministic tie break. Omitted demand
+is saved in a weighted unknown bucket. The denominator is still the original
+total; retained destinations are never renormalised to absorb omitted demand.
+Other graphs' vector capacities count against the budget. Distribution objects
+and construction scratch are additional; replacing a graph can temporarily retain
+both old and new vectors. The policy can yield different retention budgets
+between graphs according to their existing allocations.
+
+Generation and validation visit only retained destinations, with O(N) scratch;
+quota scans and corrections are linear, using expected-linear `nth_element`
+selection. Construction reads demand spans twice and uses bounded heaps and
+sorting (O(D log N)) when choosing retained entries. No allocation occurs per
+passenger and no persistent all-station matrix is introduced.
+
+On this x64 build, a distribution with 256 entries occupies 4,168 bytes, including
 its vector storage; each entry is 16 bytes. GoodsEntry itself does not grow.
 GoodsEntryData gains one pointer (8 bytes on x64), and each LinkGraph gains an
 8-byte topology identity. Freight never gets an OD vector.
@@ -100,18 +147,23 @@ packet counts and random states directly.
 
 ## Save compatibility
 
-Independent feature `XSLFI_PASSENGER_OD_ASSIGNMENT`, version 1, saves the setting,
+Independent feature `XSLFI_PASSENGER_OD_ASSIGNMENT`, version 3, saves the setting,
 graph identities (including job snapshots), sparse station distributions,
-original weights and every signed rounding credit. Its SLXI extra data saves
+original weights, every signed rounding credit, the packet cursor and the
+weighted unknown bucket. Versions 1 and 2 remain readable; missing cursor or
+unknown state starts at zero. Its SLXI extra data saves
 the global identity counter so subsequent topology changes agree after a
 multiplayer join. `XSLFI_PASSENGER_DESTINATION` is unchanged.
 
-Station tables use bounded lists: at most one distribution per goods entry and
-256 destination records per distribution. Counts are checked before resizing;
+Station tables allow at most one distribution per goods entry. Physical node
+limits and a cumulative 2 GiB record load budget are checked before resizing;
 weights, ordering, duplicate destinations, total weight, credit ranges and credit
 sums are checked before adopting loaded data. Invalid station/membership data
 invalidates the entire distribution rather than reallocating its weight to
-another destination. Validation runs before loaded CargoDist workers start.
+another destination. `AfterLoadGame()` calls `AfterLoadPassengerOd()` after
+station/graph/cargo conversion, immediately before `AfterLoadLinkGraphs()` starts
+loaded CargoDist workers. Previously the call was inside `AfterLoadLinkGraphs()`;
+it was already reachable, and is now explicit at the game-load boundary.
 
 Old saves omit these fields and load with OD assignment disabled and no
 distribution. New saves require a build that understands the new extension;
@@ -131,12 +183,15 @@ generated destinations after restoring station state.
   `src/table/settings/linkgraph_settings.ini`, `src/lang/english.txt`: synchronized
   opt-in setting, invalidation callback and GUI text.
 - `src/sl/station_sl.cpp`, `src/sl/linkgraph_sl.cpp`,
-  `src/sl/extended_ver_sl.h`, `src/sl/extended_ver_sl.cpp`: independent extension
+  `src/sl/afterload.cpp`, `src/sl/extended_ver_sl.h`, `src/sl/extended_ver_sl.cpp`: independent extension
   and bounded serialization.
 - `src/openttd.cpp`: reset identity and diagnostic state for a new game.
 - `src/CMakeLists.txt`, `src/tests/CMakeLists.txt`,
   `src/tests/passenger_od_assignment.cpp`: build registration and regression tests.
 - `docs/passenger-od-assignment.md`: implementation and verification report.
+- `cmake/scripts/PassengerOdLoad.cmake`, `regression/CMakeLists.txt`: production
+  load integration using the null video driver, a legacy save, and new enabled
+  and disabled saves. No server or GUI is started.
 
 ## Verification
 
@@ -145,16 +200,21 @@ Ninja, existing vcpkg dependencies; both `openttd` and `openttd_test` built.
 The configure used `/Od` for compiler-probe Debug flags to avoid a local MSVC
 debug-database error; the actual targets used the Release optimization flags.
 
-- New OD assignment tests: 16 cases, 12,366 assertions, passed, including actual
-  SLXI identity-counter callback round trips and unsigned-wrap rejection.
+- OD assignment tests: 28 cases passed, including actual SLXI identity-counter
+  callback round trips, unsigned-wrap rejection, packet rotation for 256 and
+  1,000 destinations, mixed large/tiny demands, an 8,000-destination hub, earlier extension versions, and
+  partial retention using a smaller budget to avoid gigabyte allocations in CI.
 - Passenger tests together (OD lifecycle, routing, service graph and assignment):
-  53 cases, 23,611 assertions, passed.
-- Full unit suite: 250 cases passed, both through CTest and in one process.
-- Maximum-size allocation benchmark: approximately 50 ms for 10,000 batches of
-  256 destinations (about 5 microseconds per batch), with UINT32_MAX batch sizes.
+  65 cases, 38,979 assertions, passed in one process.
+- CTest: 263 tests passed: 262 unit cases plus the production load integration.
+  The integration loads a legacy save, then saves and loads current-format games
+  with OD enabled and disabled, checking the validation hook and saved setting.
+- Maximum-batch allocation benchmark: approximately 20 ms for 10,000 batches of
+  256 destinations (about 2 microseconds per batch), with UINT32_MAX batch sizes.
 - `git diff --check`: passed.
 
-The four bundled AI/GS scenario regressions were also executed after building
+During earlier validation of commit `6e9bd46fb8`, the four bundled AI/GS scenario
+regressions were executed after building
 `regression_files`. Their expected-output comparisons fail in this Windows
 environment, including font-loading warnings. Each scenario's normalized output
 was compared by SHA-256 with the existing `build-passenger-od-model/build-od`
@@ -162,8 +222,8 @@ executable: all four outputs are byte-identical between that base build and
 this implementation with the option disabled. That existing executable's
 revision label is `jgrpp-ya-0.73.3+2-3-gde9bfeac8-m`; it is a previously built
 base-worktree binary, not a new clean build of immutable commit `a17ab057ad`.
-These scenario tests are therefore recorded as failing reference comparisons,
-not as passing tests.
+These scenario tests are recorded as failing reference comparisons and were
+excluded from the current 263-test run. They have not been rerun for this revision.
 
 No live multiplayer server/client session or production-sized real map was run.
 Determinism was checked through integer allocation, random-state comparisons
