@@ -123,6 +123,7 @@ PassengerServiceGraph PassengerServiceGraph::Build(CargoType cargo, StateTicks n
 			Trip trip{ v->index, stored.id, v->tile, v->GetMovingDirection(), v->cur_real_order_index, v->cur_implicit_order_index,
 					v->cur_timetable_order_index, v->current_order_time, v->lateness_counter, v->current_order.IsAnyLoadingType(),
 					v->vehicle_flags.Test(VehicleFlag::ScheduledDispatch), capacity, operation, {} };
+			trip.prediction.start = trip.prediction.complete_until = now;
 			if (operation == Operation::Running) {
 				auto state = GetPassengerRouteState(v);
 				if (state) {
@@ -135,6 +136,7 @@ PassengerServiceGraph PassengerServiceGraph::Build(CargoType cargo, StateTicks n
 				}
 			} else {
 				trip.prediction.status = PassengerPredictionStatus::Complete;
+				trip.prediction.complete_until = graph.end;
 			}
 			remaining_visits -= trip.prediction.visits.size();
 			const size_t trip_index = graph.trips.size();
@@ -192,21 +194,25 @@ PassengerServiceGraph::QueryResult<PassengerServiceGraph::VisitID> PassengerServ
 		if (!SpendGraphWork(budget)) { result.status = PassengerPredictionStatus::BudgetExhausted; return result; }
 		for (size_t index : this->GetService(id)->trips) {
 			if (!SpendGraphWork(budget)) { result.status = PassengerPredictionStatus::BudgetExhausted; return result; }
-			result.status = MergeGraphStatus(result.status, this->trips[index].prediction.status);
+			const auto &prediction = this->trips[index].prediction;
+			if (!prediction.Covers(from, to)) result.status = MergeGraphStatus(result.status, prediction.status);
 		}
 	}
 	auto it = this->station_visits.find(station);
 	if (it == this->station_visits.end()) return result;
 	for (VisitID id : it->second) {
 		if (!SpendGraphWork(budget)) { result.status = PassengerPredictionStatus::BudgetExhausted; return result; }
-		const auto &visit = this->trips[id.trip].prediction.visits[id.visit];
+		const auto &prediction = this->trips[id.trip].prediction;
+		const auto &visit = prediction.visits[id.visit];
+		const bool covered = prediction.Covers(from, to);
 		/* A currently loading arrival happened before the snapshot. Its absent historical
 		 * timestamp does not create a possible future arrival in every query window. */
-		const bool unknown_arrival = !visit.arrival && !visit.loading_now;
-		if (unknown_arrival || !visit.departure || (visit.arrival && *visit.arrival >= from && *visit.arrival < to) ||
+		const bool unknown_arrival = !covered && !visit.arrival && !visit.loading_now;
+		const bool unknown_departure = !covered && !visit.departure;
+		if (unknown_arrival || unknown_departure || (visit.arrival && *visit.arrival >= from && *visit.arrival < to) ||
 				(visit.departure && *visit.departure >= from && *visit.departure < to)) {
 			result.items.push_back(id);
-			if (unknown_arrival || !visit.departure) result.status = MergeGraphStatus(result.status, PassengerPredictionStatus::Unknown);
+			if (unknown_arrival || unknown_departure) result.status = MergeGraphStatus(result.status, PassengerPredictionStatus::Unknown);
 		}
 	}
 	return result;
@@ -235,9 +241,10 @@ PassengerServiceGraph::QueryResult<PassengerServiceGraph::BoardableTrip> Passeng
 			if (!next.arrival) boarding.status = MergeGraphStatus(boarding.status, PassengerPredictionStatus::Unknown);
 			if (stop.forced_transfer) break;
 		}
-		result.status = MergeGraphStatus(result.status, boarding.status);
+		/* A truncated future suffix does not invalidate complete boarding-window coverage.
+		 * Its status stays on the candidate, but unfinished query work affects the whole result. */
+		if (boarding.status == PassengerPredictionStatus::BudgetExhausted) result.status = boarding.status;
 		result.items.push_back(std::move(boarding));
-		if (budget == 0) break;
 	}
 	return result;
 }

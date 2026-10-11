@@ -441,6 +441,167 @@ TEST_CASE("Passenger graph distinguishes inactive trains and exhausted budgets f
 	}
 }
 
+TEST_CASE("Passenger graph reports unfinished boarding candidates at the exact budget boundary", "[passenger][service_graph]")
+{
+	GraphVehicle first({ GraphStop(A) });
+	GraphVehicle second(first, VehicleID{101});
+	const auto graph = PassengerServiceGraph::Build(PAX, NOW, GraphLimits(50));
+	REQUIRE(graph.GetTrips().size() == 2);
+	for (const auto &trip : graph.GetTrips()) {
+		REQUIRE(trip.prediction.status == PassengerPredictionStatus::Complete);
+		REQUIRE(trip.prediction.visits.size() == 1); // No downstream visits consume extra work.
+	}
+	/* Selection costs one service, two trips and two visits. Each candidate costs one more. */
+	SECTION("Only the first candidate fits") {
+		const auto result = graph.GetBoardableTrips(A, NOW, NOW + 50, 6);
+		REQUIRE(result.items.size() == 1);
+		CHECK(result.items[0].reachable.empty());
+		CHECK(result.items[0].status == PassengerPredictionStatus::Complete);
+		CHECK(result.status == PassengerPredictionStatus::BudgetExhausted);
+	}
+	SECTION("The last candidate uses the final unit of work") {
+		const auto result = graph.GetBoardableTrips(A, NOW, NOW + 50, 7);
+		CHECK(result.items.size() == 2);
+		CHECK(result.status == PassengerPredictionStatus::Complete);
+	}
+	SECTION("Selection uses the final unit before any candidate can be processed") {
+		const auto result = graph.GetBoardableTrips(A, NOW, NOW + 50, 5);
+		CHECK(result.items.empty());
+		CHECK(result.status == PassengerPredictionStatus::BudgetExhausted);
+	}
+}
+
+TEST_CASE("Passenger graph certifies only the known time prefix of a truncated prediction", "[passenger][service_graph]")
+{
+	GraphVehicle train({ GraphStop(A), GraphStop(B) });
+	auto limits = GraphLimits();
+	SECTION("Visit limit preserves complete earlier station windows") {
+		limits.visits_per_trip = 3;
+		const auto graph = PassengerServiceGraph::Build(PAX, NOW, limits);
+		const auto &prediction = GraphTrip(graph, train.index).prediction;
+		CHECK(prediction.status == PassengerPredictionStatus::LimitReached);
+		CHECK(prediction.start == NOW);
+		CHECK(prediction.complete_until == NOW + 230);
+		CHECK(prediction.Covers(NOW, NOW + 230));
+		CHECK_FALSE(prediction.Covers(NOW + 230, NOW + 231));
+		CHECK(graph.GetVisits(A, NOW, NOW + 230).status == PassengerPredictionStatus::Complete);
+		CHECK(graph.GetVisits(A, NOW + 230, NOW + 231).status == PassengerPredictionStatus::LimitReached);
+		const auto absent = graph.GetVisits(B, NOW, NOW + 100);
+		CHECK(absent.items.empty());
+		CHECK(absent.status == PassengerPredictionStatus::Complete);
+		const auto boarding = graph.GetBoardableTrips(A, NOW, NOW + 200);
+		REQUIRE(boarding.items.size() == 1);
+		CHECK(boarding.status == PassengerPredictionStatus::Complete);
+		CHECK(boarding.items[0].reachable.size() == 2);
+		CHECK(boarding.items[0].status == PassengerPredictionStatus::LimitReached);
+		CHECK(graph.GetBoardableTrips(A, NOW, NOW + 100, 6).status == PassengerPredictionStatus::BudgetExhausted);
+		CHECK(graph.GetBoardableTrips(A, NOW, NOW + 100, 7).status == PassengerPredictionStatus::Complete);
+		CHECK(graph.GetBoardableTrips(A, NOW, NOW + 1000).status == PassengerPredictionStatus::LimitReached);
+	}
+	SECTION("Step limit preserves the same prefix contract") {
+		limits.steps_per_trip = 2;
+		const auto graph = PassengerServiceGraph::Build(PAX, NOW, limits);
+		const auto &prediction = GraphTrip(graph, train.index).prediction;
+		CHECK(prediction.status == PassengerPredictionStatus::LimitReached);
+		CHECK(prediction.complete_until == NOW + 120);
+		CHECK(graph.GetVisits(B, NOW, NOW + 120).status == PassengerPredictionStatus::Complete);
+		CHECK(graph.GetVisits(B, NOW, NOW + 121).status == PassengerPredictionStatus::LimitReached);
+	}
+	SECTION("Zero-time occurrences at the cutoff remain uncertified") {
+		for (Order *order : train.orders->Orders()) { order->SetWaitTime(0); order->SetTravelTime(0); }
+		limits.visits_per_trip = 3;
+		const auto graph = PassengerServiceGraph::Build(PAX, NOW, limits);
+		const auto &prediction = GraphTrip(graph, train.index).prediction;
+		CHECK(prediction.complete_until == NOW);
+		CHECK_FALSE(prediction.Covers(NOW, NOW + 1));
+		CHECK(graph.GetVisits(A, NOW, NOW + 1).status == PassengerPredictionStatus::LimitReached);
+	}
+	SECTION("Prediction work exhaustion preserves only the already processed prefix") {
+		size_t budget = 1;
+		const auto prediction = PredictPassengerVisits(*GetPassengerRouteState(&train), PAX, NOW, NOW + 1000, 128, 4096, budget);
+		CHECK(budget == 0);
+		CHECK(prediction.status == PassengerPredictionStatus::BudgetExhausted);
+		CHECK(prediction.complete_until == NOW + 10);
+		CHECK(prediction.Covers(NOW, NOW + 10));
+		CHECK_FALSE(prediction.Covers(NOW, NOW + 11));
+	}
+	SECTION("Full horizon coverage includes empty intervals between events") {
+		const auto graph = PassengerServiceGraph::Build(PAX, NOW, limits);
+		const auto &prediction = GraphTrip(graph, train.index).prediction;
+		CHECK(prediction.status == PassengerPredictionStatus::Complete);
+		CHECK(prediction.complete_until == graph.GetEnd());
+		CHECK(prediction.Covers(graph.GetStart(), graph.GetEnd()));
+	}
+}
+
+TEST_CASE("Passenger graph keeps uncertainty beyond the certified prefix out of early queries", "[passenger][service_graph]")
+{
+	GraphVehicle train({ GraphStop(A), GraphStop(B), GraphStop(D) });
+	SECTION("Unknown dwell and later unknown visits do not fall inside earlier windows") {
+		train.orders->GetOrderAt(1)->SetWaitTimetabled(false);
+		const auto graph = PassengerServiceGraph::Build(PAX, NOW, GraphLimits());
+		const auto &prediction = GraphTrip(graph, train.index).prediction;
+		CHECK(prediction.status == PassengerPredictionStatus::Unknown);
+		CHECK(prediction.complete_until == NOW + 110);
+		for (StationID station : { B, D }) {
+			const auto early = graph.GetVisits(station, NOW, NOW + 110);
+			CHECK(early.items.empty());
+			CHECK(early.status == PassengerPredictionStatus::Complete);
+			CHECK(graph.GetVisits(station, NOW, NOW + 111).status == PassengerPredictionStatus::Unknown);
+		}
+		const auto boarding = graph.GetBoardableTrips(A, NOW, NOW + 110);
+		REQUIRE(boarding.items.size() == 1);
+		CHECK(boarding.status == PassengerPredictionStatus::Complete);
+		CHECK(boarding.items[0].status == PassengerPredictionStatus::Unknown);
+	}
+	SECTION("Dynamic branches stop coverage at the last known departure") {
+		Order *branch = train.orders->GetOrderAt(1);
+		branch->MakeConditional(2);
+		branch->SetConditionVariable(OrderConditionVariable::LoadPercentage);
+		const auto graph = PassengerServiceGraph::Build(PAX, NOW, GraphLimits());
+		CHECK(GraphTrip(graph, train.index).prediction.complete_until == NOW + 10);
+		CHECK(graph.GetVisits(D, NOW, NOW + 10).status == PassengerPredictionStatus::Complete);
+		CHECK(graph.GetVisits(D, NOW, NOW + 11).status == PassengerPredictionStatus::Unknown);
+	}
+	SECTION("An unresolved dispatch does not certify its nominal dwell") {
+		Order *order = train.orders->GetOrderAt(1);
+		order->SetWaitTime(50);
+		order->SetDispatchScheduleIndex(0);
+		train.vehicle_flags.Set(VehicleFlag::ScheduledDispatch);
+		train.orders->GetScheduledDispatchScheduleSet().resize(1);
+		auto &schedule = train.orders->GetDispatchScheduleByIndex(0);
+		schedule.SetScheduledDispatchStartTick(NOW);
+		schedule.SetScheduledDispatchDuration(1000);
+		schedule.GetScheduledDispatchMutable() = { { 200, 0, {} }, { 400, 0, {} } };
+		size_t budget = 2; // Orders fit; the dispatch slot search does not.
+		const auto prediction = PredictPassengerVisits(*GetPassengerRouteState(&train), PAX, NOW, NOW + 1000, 128, 4096, budget);
+		CHECK(prediction.status == PassengerPredictionStatus::BudgetExhausted);
+		CHECK(prediction.complete_until == NOW + 110);
+		CHECK_FALSE(prediction.visits.back().departure);
+	}
+}
+
+TEST_CASE("Passenger graph station queries retain occurrence order rather than departure order", "[passenger][service_graph]")
+{
+	GraphVehicle first({ GraphStop(A, 100, 20) });
+	GraphVehicle second(first, VehicleID{101});
+	first.lateness_counter = -100;
+	const auto graph = PassengerServiceGraph::Build(PAX, NOW, GraphLimits(50));
+	const auto visits = graph.GetVisits(A, NOW, NOW + 50);
+	REQUIRE(visits.items.size() == 1); // The first trip's later departure lies outside this window.
+	CHECK(visits.items[0].trip == 1);
+	const auto extended = PassengerServiceGraph::Build(PAX, NOW, GraphLimits(150));
+	const auto all = extended.GetVisits(A, NOW, NOW + 150);
+	REQUIRE(all.items.size() == 3);
+	CHECK(all.items[0] == PassengerServiceGraph::VisitID{0, 0});
+	CHECK(all.items[1] == PassengerServiceGraph::VisitID{1, 0});
+	CHECK(all.items[2] == PassengerServiceGraph::VisitID{1, 1});
+	CHECK(*extended.GetTrips()[0].prediction.visits[0].departure > *extended.GetTrips()[1].prediction.visits[0].departure);
+	const auto boarding = extended.GetBoardableTrips(A, NOW, NOW + 150);
+	REQUIRE(boarding.items.size() == all.items.size());
+	for (size_t i = 0; i < all.items.size(); ++i) CHECK(boarding.items[i].boarding == all.items[i]);
+}
+
 TEST_CASE("Passenger graph construction and queries are deterministic and leave live state unchanged", "[passenger][service_graph]")
 {
 	GraphVehicle train({ GraphStop(A), GraphStop(B), GraphStop(D) });
@@ -461,6 +622,8 @@ TEST_CASE("Passenger graph construction and queries are deterministic and leave 
 		CHECK(a.vehicle == b.vehicle);
 		CHECK(a.service == b.service);
 		CHECK(a.prediction.status == b.prediction.status);
+		CHECK(a.prediction.start == b.prediction.start);
+		CHECK(a.prediction.complete_until == b.prediction.complete_until);
 		REQUIRE(a.prediction.visits.size() == b.prediction.visits.size());
 		for (size_t j = 0; j < a.prediction.visits.size(); ++j) {
 			CHECK(a.prediction.visits[j].order == b.prediction.visits[j].order);

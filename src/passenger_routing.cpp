@@ -52,7 +52,10 @@ static PassengerJourney PredictPassengerJourneyImpl(const PassengerRouteState &s
 		return { true, std::nullopt, std::nullopt };
 	};
 	auto horizon = [&]() -> PassengerJourney {
-		if (visits) visits->status = PassengerPredictionStatus::Complete;
+		if (visits) {
+			visits->status = PassengerPredictionStatus::Complete;
+			visits->complete_until = *arrival_limit;
+		}
 		return {};
 	};
 
@@ -81,6 +84,11 @@ static PassengerJourney PredictPassengerJourneyImpl(const PassengerRouteState &s
 	StateTicksDelta leg_time{0};
 	bool leg_known = true;
 	bool have_previous_stop = false;
+	/* Certify only the prefix before the next possible event. Never advance through an
+	 * unknown dwell, dispatch assignment or path, nor include unprocessed events at tick. */
+	auto cover_prefix = [&]() {
+		if (visits && timing_known) visits->complete_until = std::min(tick, *arrival_limit);
+	};
 	/* Collect independent segment durations while advancing the common timing engine.
 	 * An unknown absolute arrival must not hide recorded times on later individual legs. */
 	auto advance_leg = [&](int64_t duration, bool known) {
@@ -101,6 +109,7 @@ static PassengerJourney PredictPassengerJourneyImpl(const PassengerRouteState &s
 			if (order.GetConditionVariable() != OrderConditionVariable::Unconditionally) return uncertain();
 			if (!order.IsWaitTimetabled()) timing_known = false;
 			advance_leg(order.GetWaitTime(), order.IsWaitTimetabled());
+			cover_prefix();
 			index = order.GetConditionSkipToOrder();
 			if (index >= state.orders.size()) return uncertain();
 			skip_travel = true; // Branch time replaces the destination's travel time.
@@ -129,6 +138,7 @@ static PassengerJourney PredictPassengerJourneyImpl(const PassengerRouteState &s
 		skip_travel = false;
 
 		const bool stop = IsPassengerStop(order);
+		cover_prefix();
 		if (arrival_limit && timing_known && tick >= *arrival_limit) return horizon();
 		if (visits && stop) {
 			visits->visits.push_back({ index, timing_known && !(steps == 0 && state.loading) ? std::optional(tick) : std::nullopt,
@@ -195,6 +205,7 @@ static PassengerJourney PredictPassengerJourneyImpl(const PassengerRouteState &s
 			if (order.GetWaitTime() > 0 && !order.IsWaitTimetabled()) timing_known = false;
 			advance_leg(order.GetWaitTime(), order.GetWaitTime() == 0 || order.IsWaitTimetabled());
 		}
+		cover_prefix();
 		if (visits && stop) {
 			if (timing_known) visits->visits.back().departure = tick;
 			/* With unknown times, one order circuit is enough to expose the known path prefix.
@@ -225,6 +236,7 @@ PassengerVisitPrediction PredictPassengerVisits(const PassengerRouteState &state
 		StateTicks end, size_t max_visits, size_t max_steps, size_t &budget)
 {
 	PassengerVisitPrediction result;
+	result.start = result.complete_until = now;
 	if (now >= end) { result.status = PassengerPredictionStatus::Complete; return result; }
 	if (cargo >= NUM_CARGO) return result;
 	PredictPassengerJourneyImpl(state, state.current_order, StationID::Invalid(), cargo, now, true, budget,

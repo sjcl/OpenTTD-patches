@@ -83,7 +83,7 @@ public:
 	};
 
 	struct VisitID {
-		size_t trip;
+		size_t trip; ///< Stable index within this snapshot; independent of any station/time index.
 		size_t visit; ///< Occurrence within Trip::prediction.visits, including repeated circuits.
 		bool operator==(const VisitID &) const = default;
 	};
@@ -91,7 +91,7 @@ public:
 	struct BoardableTrip {
 		VisitID boarding;
 		std::vector<VisitID> reachable; ///< Proven downstream alighting occurrences, up to forced unloading.
-		PassengerPredictionStatus status; ///< Unknown/limits mean the suffix may contain additional destinations.
+		PassengerPredictionStatus status; ///< Completeness of the captured downstream suffix within the prediction horizon, independently of the station query window.
 	};
 
 	template <typename T> struct QueryResult {
@@ -112,8 +112,19 @@ public:
 	/** Declared stops, with no timing/path guarantee. Check GetStatus() when discovery was truncated. */
 	std::span<const OrderListID> GetServicesAtStation(StationID station) const;
 
-	/** Half-open [from, to); unknown times remain candidates. Outside the captured window returns Unknown. */
+	/**
+	 * Half-open [from, to); unknown times remain candidates outside the certified prediction prefix.
+	 * Outside the captured window returns Unknown. Status describes coverage of the requested window.
+	 * Results retain capture order: ascending (VisitID::trip, VisitID::visit). Departure-time order is not guaranteed.
+	 * Trip indices follow order-list pool order, then shared vehicle chain order. IDs remain stable
+	 * for the snapshot's lifetime, allowing a future time-sorted index without changing occurrences.
+	 */
 	QueryResult<VisitID> GetVisits(StationID station, StateTicks from, StateTicks to, size_t budget = 32768) const;
+	/**
+	 * Same window and ordering contract as GetVisits; reachable occurrences are in visit order.
+	 * Query status covers boarding candidates and query work; inspect each BoardableTrip::status
+	 * for completeness beyond the window. Query work exhaustion always returns BudgetExhausted.
+	 */
 	QueryResult<BoardableTrip> GetBoardableTrips(StationID station, StateTicks from, StateTicks to, size_t budget = 32768) const;
 
 private:
@@ -125,7 +136,7 @@ private:
 	std::vector<Trip> trips;
 	std::map<OrderListID, size_t> service_index;
 	std::map<StationID, std::vector<OrderListID>> station_services;
-	std::map<StationID, std::vector<VisitID>> station_visits;
+	std::map<StationID, std::vector<VisitID>> station_visits; ///< Capture-order index; VisitIDs can also back a future time index.
 	const Stop &GetStop(const Trip &trip, VehicleOrderID order) const;
 	QueryResult<VisitID> SelectVisits(StationID station, StateTicks from, StateTicks to, size_t &budget) const;
 };

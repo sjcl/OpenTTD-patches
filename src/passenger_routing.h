@@ -44,6 +44,10 @@ struct PassengerPredictedVisit {
 struct PassengerVisitPrediction {
 	std::vector<PassengerPredictedVisit> visits;
 	PassengerPredictionStatus status = PassengerPredictionStatus::Unknown;
+	StateTicks start{};
+	StateTicks complete_until{}; ///< All arrival/departure occurrences in [start, complete_until) are captured, even if the suffix is incomplete.
+	/** The exclusive endpoint also excludes unprocessed zero-time events at the truncation tick. */
+	bool Covers(StateTicks from, StateTicks to) const { return this->start <= from && from < to && to <= this->complete_until; }
 };
 
 /** Same traversal/timing engine as journeys and connections, without the CargoDist boarding contract. */
