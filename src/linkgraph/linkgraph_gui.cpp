@@ -20,6 +20,8 @@
 #include "../landscape.h"
 #include "../strings_func.h"
 #include "../core/geometry_func.hpp"
+#include "../cargotype.h"
+#include "../core/enum_type.hpp"
 #include "../widgets/link_graph_legend_widget.h"
 
 #include "table/strings.h"
@@ -27,6 +29,8 @@
 #include "../3rdparty/cpp-btree/btree_map.h"
 
 #include <algorithm>
+#include <array>
+#include <tuple>
 
 #include "../safeguards.h"
 
@@ -71,6 +75,7 @@ void LinkGraphOverlay::GetWidgetDpi(DrawPixelInfo *dpi, uint margin) const
 
 bool LinkGraphOverlay::CacheStillValid() const
 {
+	if (this->route_station != StationID::Invalid()) return true; // Route caches are not limited to the visible region
 	if (this->window->viewport) {
 		const Viewport *vp = this->window->viewport;
 		Rect region { vp->virtual_left, vp->virtual_top,
@@ -117,6 +122,24 @@ bool LinkGraphOverlay::RebuildCacheCheckChanged()
 
 	uint64_t prev_rebuild_counter = this->rebuild_counter;
 
+	if (this->route_station != StationID::Invalid()) {
+		static std::vector<RouteLinkInfo> prev_route_links;
+		static std::vector<RouteStationInfo> prev_route_stations;
+
+		prev_route_links.swap(this->route_links);
+		prev_route_stations.swap(this->route_stations);
+
+		this->RebuildCache(false);
+
+		if (prev_route_links == this->route_links && prev_route_stations == this->route_stations) {
+			/* No change */
+			this->rebuild_counter = prev_rebuild_counter;
+			return false;
+		}
+
+		return true;
+	}
+
 	prev_cached_links.swap(this->cached_links);
 	prev_cached_stations.swap(this->cached_stations);
 
@@ -136,6 +159,18 @@ bool LinkGraphOverlay::RebuildCacheCheckChanged()
  */
 void LinkGraphOverlay::RebuildCache(bool incremental)
 {
+	if (this->route_station != StationID::Invalid()) {
+		/* Route caches are not limited to the visible region, so there is nothing to do for incremental updates */
+		if (incremental) return;
+		this->dirty = false;
+		this->cached_links.clear();
+		this->cached_stations.clear();
+		this->last_update_number = GetWindowUpdateNumber();
+		this->rebuild_counter++;
+		this->RebuildRouteCache();
+		return;
+	}
+
 	if (!incremental) {
 		this->dirty = false;
 		this->cached_links.clear();
@@ -422,6 +457,21 @@ void LinkGraphOverlay::RefreshDrawCache()
 {
 	static const Point INVALID_POINT = Point{ INT_MIN / 2, INT_MIN / 2 };
 
+	for (RouteStationInfo &i : this->route_stations) {
+		const Station *st = Station::GetIfValid(i.id);
+		i.pt = (st != nullptr) ? this->GetStationMiddle(st) : INVALID_POINT;
+	}
+	for (RouteLinkInfo &i : this->route_links) {
+		const Station *sta = Station::GetIfValid(i.from_id);
+		const Station *stb = Station::GetIfValid(i.to_id);
+		if (sta == nullptr || stb == nullptr) {
+			i.from_pt = i.to_pt = INVALID_POINT;
+			continue;
+		}
+		i.from_pt = this->GetStationMiddle(sta);
+		i.to_pt = this->GetStationMiddle(stb);
+	}
+
 	for (StationSupplyList::iterator i(this->cached_stations.begin()); i != this->cached_stations.end(); ++i) {
 		const Station *st = Station::GetIfValid(i->id);
 		if (st == nullptr) {
@@ -472,6 +522,10 @@ void LinkGraphOverlay::PrepareDraw()
  */
 void LinkGraphOverlay::Draw(Blitter *blitter, const DrawPixelInfo *dpi) const
 {
+	if (this->route_station != StationID::Invalid()) {
+		this->DrawRoutes(blitter, dpi);
+		return;
+	}
 	this->DrawLinks(blitter, dpi);
 	this->DrawStationDots(blitter, dpi);
 }
@@ -560,6 +614,8 @@ void LinkGraphOverlay::DrawStationDots(Blitter *blitter, const DrawPixelInfo *dp
 
 bool LinkGraphOverlay::ShowTooltip(Point pt, TooltipCloseCondition close_cond)
 {
+	if (this->route_station != StationID::Invalid()) return this->ShowRouteTooltip(pt, close_cond);
+
 	for (LinkList::const_reverse_iterator i(this->cached_links.rbegin()); i != this->cached_links.rend(); ++i) {
 		if (!Station::IsValidID(i->from_id)) continue;
 		if (!Station::IsValidID(i->to_id)) continue;
@@ -667,6 +723,291 @@ Point LinkGraphOverlay::GetStationMiddle(const Station *st) const
 		/* assume this is a smallmap */
 		return static_cast<const SmallMapWindow *>(this->window)->GetStationMiddle(st);
 	}
+}
+
+/** Colours assigned to the first hops of the passenger routes, in order of decreasing volume. */
+static constexpr std::array<Colours, 14> ROUTE_COLOURS = {
+	Colours::Red, Colours::Blue, Colours::Green, Colours::Yellow, Colours::Purple, Colours::Orange, Colours::LightBlue,
+	Colours::Pink, Colours::DarkGreen, Colours::Brown, Colours::Mauve, Colours::PaleGreen, Colours::DarkBlue, Colours::Cream,
+};
+
+/**
+ * Set the station whose passengers' estimated routes are shown instead of the link graph.
+ * @param station Station, or StationID::Invalid() to show the link graph again.
+ * @param mode Which passengers of the station to show the routes of.
+ */
+void LinkGraphOverlay::SetRouteStation(StationID station, RouteMode mode)
+{
+	if (this->route_station == station && this->route_mode == mode) return;
+	this->route_station = station;
+	this->route_mode = mode;
+	this->route_links.clear();
+	this->route_stations.clear();
+	this->route_max_volume = 0;
+	this->RebuildCache();
+	if (this->window->viewport != nullptr) this->window->viewport->overlay_pixel_cache.clear();
+	this->window->GetWidget<NWidgetBase>(this->widget_id)->SetDirty(this->window);
+}
+
+/**
+ * Rebuild the cache of the estimated routes of the passengers waiting at route_station.
+ * The routes are estimated in the same way as the destinations shown in the station window:
+ * starting from the next hop of the waiting cargo packets, the planned flows for the cargo's origin
+ * at each following station are used to split the passengers among the next hops, until they reach
+ * the station where the flows say that they will leave the network.
+ */
+void LinkGraphOverlay::RebuildRouteCache()
+{
+	this->route_links.clear();
+	this->route_stations.clear();
+	this->route_max_volume = 0;
+
+	const Station *st = Station::GetIfValid(this->route_station);
+	if (st == nullptr) return;
+
+	/* Links are keyed by first hop from the selected station, then from and to station */
+	btree::btree_map<std::tuple<StationID, StationID, StationID>, double> links;
+	btree::btree_map<StationID, double> alighting;
+	btree::btree_map<StationID, double> first_hop_volumes;
+
+	/* Amounts below this are dropped, to limit the work done for long or circular routes. */
+	static constexpr double MIN_AMOUNT = 0.05;
+	static constexpr uint MAX_DEPTH = 64;
+	uint budget = 1 << 18;
+
+	auto propagate = [&](auto &self, CargoType cargo, StationID origin, StationID first_hop, StationID from, StationID next, double amount, uint depth) -> void {
+		if (amount < MIN_AMOUNT || budget == 0) return;
+		budget--;
+		if (!Station::IsValidID(next) || next == from) return;
+
+		links[std::make_tuple(first_hop, from, next)] += amount;
+		if (depth == 0) first_hop_volumes[first_hop] += amount;
+
+		const GoodsEntry &ge = Station::Get(next)->goods[cargo];
+		if (ge.data == nullptr || depth >= MAX_DEPTH) {
+			alighting[next] += amount;
+			return;
+		}
+		const FlowStatMap &flowmap = ge.data->flows;
+		FlowStatMap::const_iterator map_it = flowmap.find(origin);
+		if (map_it == flowmap.end()) {
+			/* No planned flow onwards, assume the passengers leave here */
+			alighting[next] += amount;
+			return;
+		}
+
+		uint32_t total = 0;
+		for (FlowStat::const_iterator i = map_it->begin(); i != map_it->end(); ++i) {
+			total = i->first;
+		}
+		if (total == 0) {
+			alighting[next] += amount;
+			return;
+		}
+
+		uint32_t prev_count = 0;
+		for (FlowStat::const_iterator i = map_it->begin(); i != map_it->end(); ++i) {
+			const double part = amount * (i->first - prev_count) / total;
+			prev_count = i->first;
+			if (i->second == next) {
+				alighting[next] += part;
+			} else {
+				self(self, cargo, origin, first_hop, next, i->second, part, depth + 1);
+			}
+		}
+	};
+
+	for (CargoType cargo : EnumRange(NUM_CARGO)) {
+		const CargoSpec *cs = CargoSpec::Get(cargo);
+		if (!cs->IsValid() || !IsCargoInClass(cargo, CargoClass::Passengers)) continue;
+
+		const GoodsEntry &ge = st->goods[cargo];
+		if (ge.data == nullptr) continue;
+
+		/* Group the passengers by origin and next hop */
+		btree::btree_map<std::pair<StationID, StationID>, uint> groups;
+		if (this->route_mode == RouteMode::MonthlyPlanned) {
+			/* Planned monthly flows departing from this station, both originating here and transferring here */
+			for (const FlowStat &flow : ge.data->flows) {
+				if (flow.IsInvalid()) continue;
+				uint32_t prev_count = 0;
+				for (FlowStat::const_iterator i = flow.begin(); i != flow.end(); ++i) {
+					const uint32_t amount = i->first - prev_count;
+					prev_count = i->first;
+					if (i->second == st->index) continue; // Passengers leaving the network here
+					groups[std::make_pair(flow.GetOrigin(), i->second)] += amount;
+				}
+			}
+		} else {
+			/* Waiting passengers */
+			const StationCargoList &packets = ge.data->cargo;
+			for (StationCargoList::ConstIterator it = packets.Packets()->begin(); it != packets.Packets()->end(); it++) {
+				const CargoPacket *cp = *it;
+				groups[std::make_pair(cp->GetFirstStation(), it.GetKey())] += cp->Count();
+			}
+		}
+
+		for (const auto &it : groups) {
+			propagate(propagate, cargo, it.first.first, it.first.second, st->index, it.first.second, it.second, 0);
+		}
+	}
+
+	/* Assign colours to the first hops, in order of decreasing volume */
+	std::vector<std::pair<double, StationID>> first_hops;
+	for (const auto &it : first_hop_volumes) {
+		first_hops.emplace_back(it.second, it.first);
+	}
+	std::sort(first_hops.begin(), first_hops.end(), [](const auto &a, const auto &b) {
+		if (a.first != b.first) return a.first > b.first;
+		return a.second < b.second;
+	});
+	btree::btree_map<StationID, uint8_t> first_hop_colours;
+	for (size_t i = 0; i < first_hops.size(); i++) {
+		first_hop_colours[first_hops[i].second] = static_cast<uint8_t>(i % ROUTE_COLOURS.size());
+	}
+
+	for (const auto &it : links) {
+		const uint volume = static_cast<uint>(it.second + 0.5);
+		if (volume == 0) continue;
+		const auto [first_hop, from, to] = it.first;
+		const Station *sta = Station::GetIfValid(from);
+		const Station *stb = Station::GetIfValid(to);
+		if (sta == nullptr || stb == nullptr) continue;
+		this->route_links.push_back({ from, to, this->GetStationMiddle(sta), this->GetStationMiddle(stb), volume, first_hop, first_hop_colours[first_hop] });
+		this->route_max_volume = std::max(this->route_max_volume, volume);
+	}
+
+	/* Sort by link, then by colour, so that parallel lines on the same link are drawn in a consistent order */
+	std::sort(this->route_links.begin(), this->route_links.end(), [](const RouteLinkInfo &a, const RouteLinkInfo &b) {
+		return std::tie(a.from_id, a.to_id, a.colour_index) < std::tie(b.from_id, b.to_id, b.colour_index);
+	});
+
+	/* Always include the selected station */
+	this->route_stations.push_back({ st->index, this->GetStationMiddle(st), 0 });
+	for (const auto &it : alighting) {
+		const uint volume = static_cast<uint>(it.second + 0.5);
+		if (volume == 0) continue;
+		const Station *dest = Station::GetIfValid(it.first);
+		if (dest == nullptr || dest == st) continue;
+		this->route_stations.push_back({ it.first, this->GetStationMiddle(dest), volume });
+	}
+}
+
+/**
+ * Draw the estimated routes of the passengers waiting at route_station.
+ * The width of each link is proportional to the number of passengers using it, and the colour shows the first hop of the passengers from route_station.
+ * @param dpi Area to be drawn to.
+ */
+void LinkGraphOverlay::DrawRoutes(Blitter *blitter, const DrawPixelInfo *dpi) const
+{
+	static constexpr uint MAX_WIDTH = 10;
+	const uint max_volume = std::max<uint>(this->route_max_volume, 1);
+	const int side = _settings_game.vehicle.road_side == RoadVehicleDrivingSide::Right ? 1 : -1;
+	const PixelColour border_colour = GetColourGradient(Colours::Grey, Shade::Darkest);
+	const int gap = ScaleGUITrad(1);
+
+	auto get_width = [&](const RouteLinkInfo &i) -> int {
+		return ScaleGUITrad(1 + ((MAX_WIDTH - 1) * i.volume + max_volume / 2) / max_volume);
+	};
+
+	/* Links with the same from and to stations (but different first hops) are adjacent, draw them side by side. */
+	for (auto group_start = this->route_links.begin(); group_start != this->route_links.end();) {
+		auto group_end = std::find_if(group_start, this->route_links.end(), [&](const RouteLinkInfo &i) {
+			return i.from_id != group_start->from_id || i.to_id != group_start->to_id;
+		});
+
+		const Point from_pt = group_start->from_pt;
+		const Point to_pt = group_start->to_pt;
+
+		int total_width = 0;
+		for (auto it = group_start; it != group_end; ++it) total_width += get_width(*it) + gap;
+
+		if (this->IsLinkVisible(from_pt, to_pt, dpi, total_width + 2 * gap)) {
+			/* Offset the lines sideways, such that the links in both directions between two stations are visible. */
+			const bool vertical = abs(from_pt.x - to_pt.x) < abs(from_pt.y - to_pt.y);
+			const int direction = (vertical ? (from_pt.y > to_pt.y ? 1 : -1) : (from_pt.x < to_pt.x ? 1 : -1)) * side;
+
+			int offset = gap;
+			for (auto it = group_start; it != group_end; ++it) {
+				const int width = get_width(*it);
+				const int centre = direction * (offset + width / 2);
+				offset += width + gap;
+
+				const int offset_x = vertical ? centre : 0;
+				const int offset_y = vertical ? 0 : centre;
+				const PixelColour colour = GetColourGradient(ROUTE_COLOURS[it->colour_index], Shade::Light);
+				GfxDrawLine(blitter, dpi, from_pt.x + offset_x, from_pt.y + offset_y, to_pt.x + offset_x, to_pt.y + offset_y, border_colour, width + 2 * gap);
+				GfxDrawLine(blitter, dpi, from_pt.x + offset_x, from_pt.y + offset_y, to_pt.x + offset_x, to_pt.y + offset_y, colour, width);
+			}
+		}
+
+		group_start = group_end;
+	}
+
+	uint max_alighting = 1;
+	for (const RouteStationInfo &i : this->route_stations) {
+		max_alighting = std::max(max_alighting, i.volume);
+	}
+
+	const int base = ScaleGUITrad(this->scale);
+	for (const RouteStationInfo &i : this->route_stations) {
+		if (!this->IsPointVisible(i.pt, dpi, 6 * base)) continue;
+		const Station *st = Station::GetIfValid(i.id);
+		if (st == nullptr) continue;
+
+		if (i.id == this->route_station) {
+			/* Selected station */
+			LinkGraphOverlay::DrawVertex(blitter, dpi, i.pt.x, i.pt.y, base * 5, GetColourGradient(Colours::White, Shade::Lightest), border_colour);
+		} else {
+			/* Size by the number of passengers alighting here */
+			const int r = base * 2 + base * 3 * i.volume / max_alighting;
+			LinkGraphOverlay::DrawVertex(blitter, dpi, i.pt.x, i.pt.y, r,
+					GetColourGradient(st->owner != OWNER_NONE ? Company::Get(st->owner)->colour : Colours::Grey, Shade::Light), border_colour);
+		}
+	}
+}
+
+/**
+ * Show a tooltip for the estimated passenger route link or alighting station under the cursor.
+ * @param pt Cursor position.
+ * @param close_cond Tooltip close condition.
+ * @return True if a tooltip was shown.
+ */
+bool LinkGraphOverlay::ShowRouteTooltip(Point pt, TooltipCloseCondition close_cond)
+{
+	for (const RouteStationInfo &i : this->route_stations) {
+		if (i.id == this->route_station || !Station::IsValidID(i.id)) continue;
+		if (abs(pt.x - i.pt.x) <= ScaleGUITrad(6) && abs(pt.y - i.pt.y) <= ScaleGUITrad(6)) {
+			GuiShowTooltips(this->window, GetEncodedString(this->route_mode == RouteMode::MonthlyPlanned ? STR_STATION_ROUTE_OVERLAY_ALIGHTING_TOOLTIP_MONTHLY : STR_STATION_ROUTE_OVERLAY_ALIGHTING_TOOLTIP, i.id, i.volume), close_cond);
+			return true;
+		}
+	}
+
+	for (auto i = this->route_links.rbegin(); i != this->route_links.rend(); ++i) {
+		if (!Station::IsValidID(i->from_id) || !Station::IsValidID(i->to_id)) continue;
+		Point pta = i->from_pt;
+		Point ptb = i->to_pt;
+		int64_t a = ((int64_t)(ptb.x - pta.x) * (int64_t)(pta.y - pt.y) - (int64_t)(pta.x - pt.x) * (int64_t)(ptb.y - pta.y));
+		int64_t b = ((int64_t)(ptb.x - pta.x) * (int64_t)(ptb.x - pta.x) + (int64_t)(ptb.y - pta.y) * (int64_t)(ptb.y - pta.y));
+		if (b == 0) continue;
+		const int64_t tolerance = ScaleGUITrad(6);
+		if (pt.x + tolerance >= std::min(pta.x, ptb.x) && pt.x - tolerance <= std::max(pta.x, ptb.x) &&
+				pt.y + tolerance >= std::min(pta.y, ptb.y) && pt.y - tolerance <= std::max(pta.y, ptb.y) &&
+				(a * a) / b <= tolerance * tolerance) {
+			format_buffer buf;
+			uint total = 0;
+			for (const RouteLinkInfo &j : this->route_links) {
+				if (j.from_id != i->from_id || j.to_id != i->to_id) continue;
+				total += j.volume;
+				if (Station::IsValidID(j.first_hop)) AppendStringInPlace(buf, STR_STATION_ROUTE_OVERLAY_LINK_TOOLTIP_FIRST_HOP, j.first_hop, j.volume);
+			}
+			GuiShowTooltips(this->window, GetEncodedString(this->route_mode == RouteMode::MonthlyPlanned ? STR_STATION_ROUTE_OVERLAY_LINK_TOOLTIP_MONTHLY : STR_STATION_ROUTE_OVERLAY_LINK_TOOLTIP, i->from_id, i->to_id, total, (std::string_view)buf), close_cond);
+			return true;
+		}
+	}
+
+	GuiShowTooltips(this->window, {}, close_cond);
+	return false;
 }
 
 /**

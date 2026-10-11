@@ -1214,6 +1214,7 @@ SettingsContainer &GetSettingsTree()
 				cdist->Add(new SettingEntry("linkgraph.demand_size"));
 				cdist->Add(new SettingEntry("linkgraph.short_path_saturation"));
 				cdist->Add(new SettingEntry("linkgraph.aircraft_link_scale"));
+				cdist->Add(new SettingEntry("linkgraph.aircraft_link_add"));
 				cdist->Add(new SettingEntry("linkgraph.passenger_transfer_timetables"));
 				cdist->Add(new SettingEntry("linkgraph.passenger_transfer_penalty"));
 				cdist->Add(new SettingEntry("linkgraph.transfer_penalty_same_mode"));

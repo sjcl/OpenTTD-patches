@@ -266,10 +266,7 @@ struct MainWindow : Window
 
 		this->refresh.SetInterval(LINKGRAPH_REFRESH_PERIOD);
 
-		if (this->viewport->overlay->GetCargoMask().None() ||
-				this->viewport->overlay->GetCompanyMask().None()) {
-			return;
-		}
+		if (!this->viewport->overlay->IsActive()) return;
 
 		if (this->viewport->overlay->RebuildCacheCheckChanged()) {
 			this->GetWidget<NWidgetBase>(WID_M_VIEWPORT)->SetDirty(this);

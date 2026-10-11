@@ -17,6 +17,7 @@
 #include "vehicle_gui.h"
 #include "cargotype.h"
 #include "station_gui.h"
+#include "linkgraph/linkgraph_gui.h"
 #include "strings_func.h"
 #include "string_func.h"
 #include "window_func.h"
@@ -954,6 +955,8 @@ static constexpr std::initializer_list<NWidgetPart> _nested_station_view_widgets
 				SetStringTip(STR_STATION_VIEW_HISTORY_BUTTON, STR_STATION_VIEW_HISTORY_TOOLTIP),
 		NWidget(WWT_PUSHTXTBTN, Colours::Grey, WID_SV_DEPARTURES), SetMinimalSize(46, 12), SetResize(1, 0), SetFill(1, 1),
 				SetStringTip(STR_STATION_VIEW_DEPARTURES_BUTTON, STR_STATION_VIEW_DEPARTURES_TOOLTIP),
+		NWidget(WWT_TEXTBTN, Colours::Grey, WID_SV_PAX_ROUTES), SetMinimalSize(46, 12), SetResize(1, 0), SetFill(1, 1),
+				SetStringTip(STR_STATION_VIEW_PAX_ROUTES_BUTTON, STR_STATION_VIEW_PAX_ROUTES_TOOLTIP),
 		NWidget(NWID_SELECTION, Colours::Invalid, WID_SV_CLOSE_AIRPORT_SEL),
 			NWidget(WWT_TEXTBTN, Colours::Grey, WID_SV_CLOSE_AIRPORT), SetMinimalSize(45, 12), SetResize(1, 0), SetFill(1, 1),
 					SetStringTip(STR_STATION_VIEW_CLOSE_AIRPORT, STR_STATION_VIEW_CLOSE_AIRPORT_TOOLTIP),
@@ -1343,6 +1346,48 @@ bool CargoSorter::SortStation(StationID st1, StationID st2) const
 /**
  * The StationView window
  */
+/**
+ * Get the link graph overlay of the main viewport.
+ * @return Overlay, or nullptr if none.
+ */
+static LinkGraphOverlay *GetMainViewportLinkGraphOverlay()
+{
+	Window *w = GetMainWindow();
+	if (w == nullptr || w->viewport == nullptr) return nullptr;
+	return w->viewport->overlay;
+}
+
+/**
+ * Get whether the routes of the passengers waiting at the given station are shown in the main viewport.
+ * @param station Station.
+ * @return True if the routes are shown.
+ */
+static bool IsStationPaxRoutesShown(StationID station)
+{
+	const LinkGraphOverlay *overlay = GetMainViewportLinkGraphOverlay();
+	return overlay != nullptr && overlay->GetRouteStation() == station;
+}
+
+/**
+ * Show or hide the routes of the passengers of the given station in the main viewport.
+ * @param station Station, or StationID::Invalid() to hide.
+ * @param mode Which passengers of the station to show the routes of.
+ */
+static void SetStationPaxRoutesShown(StationID station, LinkGraphOverlay::RouteMode mode = LinkGraphOverlay::RouteMode::Waiting)
+{
+	LinkGraphOverlay *overlay = GetMainViewportLinkGraphOverlay();
+	if (overlay == nullptr) return;
+	overlay->SetRouteStation(station, mode);
+	SetWindowClassesDirty(WindowClass::StationView);
+}
+
+/** Items of the passenger routes dropdown in the station window. */
+enum StationPaxRoutesDropDownItems : int {
+	SPRDD_HIDE,           ///< Hide the routes.
+	SPRDD_WAITING,        ///< Show the routes of the waiting passengers.
+	SPRDD_MONTHLY,        ///< Show the routes of the planned monthly flow of departing passengers.
+};
+
 struct StationViewWindow : public Window {
 	/**
 	 * A row being displayed in the cargo view (as opposed to being "hidden" behind a plus sign).
@@ -1487,6 +1532,7 @@ struct StationViewWindow : public Window {
 		CloseWindowById(WindowClass::AircraftList,    VehicleListIdentifier(VehicleListType::Station, VehicleType::Aircraft, this->owner, this->window_number).ToWindowNumber(), false);
 
 		SetViewportCatchmentStation(Station::Get(this->window_number), false);
+		if (IsStationPaxRoutesShown(static_cast<StationID>(this->window_number))) SetStationPaxRoutesShown(StationID::Invalid());
 		this->Window::Close();
 	}
 
@@ -1618,6 +1664,7 @@ struct StationViewWindow : public Window {
 		extern const Station *_viewport_highlight_station;
 		this->SetWidgetDisabledState(WID_SV_CATCHMENT, st->facilities.None());
 		this->SetWidgetLoweredState(WID_SV_CATCHMENT, _viewport_highlight_station == st);
+		this->SetWidgetLoweredState(WID_SV_PAX_ROUTES, IsStationPaxRoutesShown(st->index));
 
 		this->DrawWidgets();
 
@@ -2255,6 +2302,21 @@ struct StationViewWindow : public Window {
 				break;
 			}
 
+			case WID_SV_PAX_ROUTES: {
+				const StationID station = static_cast<StationID>(this->window_number);
+				const LinkGraphOverlay *overlay = GetMainViewportLinkGraphOverlay();
+				if (overlay == nullptr) break;
+				const bool shown = IsStationPaxRoutesShown(station);
+				const LinkGraphOverlay::RouteMode mode = overlay->GetRouteMode();
+
+				DropDownList list;
+				list.push_back(MakeDropDownListCheckedItem(shown && mode == LinkGraphOverlay::RouteMode::Waiting, STR_STATION_VIEW_PAX_ROUTES_WAITING, SPRDD_WAITING));
+				list.push_back(MakeDropDownListCheckedItem(shown && mode == LinkGraphOverlay::RouteMode::MonthlyPlanned, STR_STATION_VIEW_PAX_ROUTES_MONTHLY, SPRDD_MONTHLY));
+				list.push_back(MakeDropDownListStringItem(STR_STATION_VIEW_PAX_ROUTES_HIDE, SPRDD_HIDE, !shown));
+				ShowDropDownList(this, std::move(list), -1, widget);
+				break;
+			}
+
 			case WID_SV_ACCEPT_RATING_LIST: {
 				if (this->owner != _local_company || !_ctrl_pressed || this->GetWidget<NWidgetCore>(WID_SV_ACCEPTS_RATINGS)->GetString() == STR_STATION_VIEW_RATINGS_BUTTON) break;
 				int row = this->GetRowFromWidget(pt.y, WID_SV_ACCEPT_RATING_LIST, WidgetDimensions::scaled.framerect.top, GetCharacterHeight(FontSize::Normal));
@@ -2385,7 +2447,20 @@ struct StationViewWindow : public Window {
 
 	void OnDropdownSelect(WidgetID widget, int index, int) override
 	{
-		if (widget == WID_SV_SORT_BY) {
+		if (widget == WID_SV_PAX_ROUTES) {
+			const StationID station = static_cast<StationID>(this->window_number);
+			switch (index) {
+				case SPRDD_HIDE:
+					if (IsStationPaxRoutesShown(station)) SetStationPaxRoutesShown(StationID::Invalid());
+					break;
+				case SPRDD_WAITING:
+					SetStationPaxRoutesShown(station, LinkGraphOverlay::RouteMode::Waiting);
+					break;
+				case SPRDD_MONTHLY:
+					SetStationPaxRoutesShown(station, LinkGraphOverlay::RouteMode::MonthlyPlanned);
+					break;
+			}
+		} else if (widget == WID_SV_SORT_BY) {
 			this->SelectSortBy(index);
 		} else {
 			this->SelectGroupBy(index);

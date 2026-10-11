@@ -90,12 +90,60 @@ struct RoutePenaltySettings {
 	RoutePenaltySettings()
 	{
 		_settings_game.linkgraph.aircraft_link_scale = 100;
+		_settings_game.linkgraph.aircraft_link_add = 0;
 		_settings_game.linkgraph.accuracy = 16;
 		_settings_game.linkgraph.short_path_saturation = 100;
 		_settings_game.linkgraph.transfer_penalty_same_mode = 100;
 		_settings_game.linkgraph.transfer_penalty_mode_change = 100;
 	}
 };
+
+TEST_CASE("Aircraft cost settings change the preferred passenger and freight journey", "[linkgraph][route_penalties]")
+{
+	RoutePenaltyTestMap map;
+	RoutePenaltySettings settings;
+	_settings_game.linkgraph.transfer_penalty_same_mode = 0;
+	_settings_game.linkgraph.transfer_penalty_mode_change = 0;
+	bool use_aircraft = true;
+	SECTION("Default passenger costs") {}
+	SECTION("Airport overhead favours the ground connection") {
+		_settings_game.linkgraph.aircraft_link_add = 2;
+		use_aircraft = false;
+	}
+	SECTION("Discounted flight overcomes the airport overhead") {
+		_settings_game.linkgraph.aircraft_link_scale = 50;
+		_settings_game.linkgraph.aircraft_link_add = 2;
+	}
+	SECTION("Passenger airport overhead follows the day length") {
+		DateDetail::_effective_day_length = 2;
+		_settings_game.linkgraph.aircraft_link_add = 1;
+		use_aircraft = false;
+	}
+	SECTION("Freight airport overhead uses distance units") {
+		CargoSpec::Get(CargoType{0})->classes = {};
+		_settings_game.linkgraph.aircraft_link_add = 2;
+		use_aircraft = false;
+	}
+	SECTION("A heavily discounted freight link keeps a positive cost") {
+		CargoSpec::Get(CargoType{0})->classes = {};
+		_settings_game.linkgraph.aircraft_link_scale = 10;
+	}
+	RoutePenaltyGraph graph(3);
+	graph[0].UpdateSupply(1);
+	graph.UpdateEdge(0, 2, 100, 0, 100, {EdgeUpdateMode::Refresh, EdgeUpdateMode::Aircraft});
+	graph.UpdateEdge(0, 1, 100, 0, 80, {EdgeUpdateMode::Refresh});
+	graph.UpdateEdge(1, 2, 100, 0, 80, {EdgeUpdateMode::Refresh});
+	LinkGraphJob job(LinkGraphJobID::Invalid(), graph, 1);
+	job.Init();
+	CHECK(job[0].GetEdgeTo(2).DistanceAnno() > 0);
+	std::array<LinkGraphJob::DemandAnnotation, 1> demand{{{2, 1, 1}}};
+	job[0].SetDemandAnnotations(demand);
+	MCF1stPass solver(job);
+	CHECK(demand[0].unsatisfied_demand == 0);
+	CHECK(job[0].GetEdgeTo(2).Flow() == (use_aircraft ? 1 : 0));
+	CHECK(job[0].GetEdgeTo(1).Flow() == (use_aircraft ? 0 : 1));
+	CHECK(job[1].GetEdgeTo(2).Flow() == (use_aircraft ? 0 : 1));
+}
 
 TEST_CASE("MCF keeps a more expensive arrival on the continuing service in both passes", "[linkgraph][route_penalties]")
 {
