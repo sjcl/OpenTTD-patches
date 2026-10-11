@@ -42,9 +42,22 @@ load, refit, platform and exclusive-rights checks still apply.
 CargoDist flow selection: a continuation keeps the passenger's existing seat;
 a different first boarding transfers through the existing payment/unloading
 actions; an accepted final station delivers through CargoPayment. Intermediate
-CargoDist destination/via matches cannot deliver an active Journey. If the
-final station does not accept the cargo, the packet falls back and is kept
-rather than deleted.
+CargoDist destination/via matches cannot deliver an active Journey. With routing
+enabled, Stage enforces the known final OD for Legacy, deferred and Fallback
+packets as well, including later arrivals after execution was cleared. An
+intermediate CargoDist Deliver becomes a transfer back to a station queue when
+the ride has fallen back. An accepting final OD delivers even if CargoDist has
+a stale onward flow; NoUnload still keeps the packet. An unaccepted final OD
+keeps passengers rather than deleting them. Disabled/manual routing and unknown
+ODs retain the original CargoDist delivery behavior.
+
+An exhausted network-search/admission budget does not cancel a still-valid
+onboard ride. A lazy, arrival-local continuation check reuses the boarding
+validator's bounded order signature and visit prediction: the physical train,
+service, loading order and saved absolute alighting occurrence must still match.
+It keeps the original Journey/leg without asserting a new optimum. NoLoad does
+not prevent existing passengers from staying; forced unload/transfer still
+applies. A failed validation uses the OD-preserving fallback protected above.
 
 ## Expiry and fallback
 
@@ -133,8 +146,12 @@ charged deterministically, with identical static-index allowances when warm;
 each distinct query reserves 65,536 units. Signature traversal is charged too.
 A state tick permits 16 Mi work units for graphs, 1 Mi for queries/signatures,
 and 16 snapshot constructions. Up to four rotating waiting origins have a
-protected first snapshot/query share; its two pool scans are charged to the
-graph ledger. Identical OD packets reuse the same result.
+protected first snapshot/query share. Before station countdowns change, a bounded
+census checks due loading passes and searchable OD packets with the same
+retry/cohort predicate as the waiting router. It consumes at most 65,536 units
+of the graph ledger. A skipped or completed waiting pass releases any unused
+share in the same tick; an unfinished census reserves none. Identical OD packets
+reuse the same result.
 Waiting-pass searches admit at most 4,096 packets; excess packets remain on
 CargoDist. Validation caches at most 128 train/cargo pairs and has a separate
 bounded signature allowance. List rekeying/counting remains O(packet count).

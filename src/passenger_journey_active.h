@@ -36,11 +36,14 @@ struct PassengerJourneyTickDiagnostic {
 	std::array<size_t, static_cast<size_t>(PassengerJourneyFallbackReason::End)> fallbacks{};
 	std::array<size_t, static_cast<size_t>(PassengerJourneyFallbackReason::End)> deferred{};
 	size_t fair_share_work = 0, fair_share_claims = 0;
+	size_t fair_share_releases = 0, retained_rides = 0;
 };
 
 /** Reset at the simulation tick boundary, including the first tick after network join/load.
  * Budget counters are simulation state; cache residency and elapsed diagnostics never affect them. */
 void BeginPassengerJourneyTick();
+void PreparePassengerJourneyLoading(); ///< Before any station countdowns/queues change this tick.
+void ReleasePassengerJourneyWaitingShare(StationID station); ///< End of this station's waiting pass, including skipped passes.
 const PassengerJourneyTickDiagnostic &GetPassengerJourneyTickDiagnostic();
 PassengerJourneyTickDiagnostic GetPassengerJourneyTotalDiagnostic();
 void ResetPassengerJourneyDiagnostic(); ///< Local observations only; never resets simulation allowances.
@@ -59,6 +62,7 @@ class PassengerJourneyBoardingContext {
 public:
 	explicit PassengerJourneyBoardingContext(const Vehicle *vehicle, CargoType cargo = INVALID_CARGO);
 	bool CanBoard(const CargoPacket &packet) const;
+	bool CanContinue(const CargoPacket &packet) const;
 	size_t GetPredictionCount() const { return this->predictions; }
 };
 
@@ -78,6 +82,7 @@ class PassengerJourneyActiveContext {
 	const Vehicle *vehicle;
 	StationID station;
 	std::map<std::pair<CargoType, StationID>, std::unique_ptr<Snapshot>> snapshots;
+	std::map<CargoType, PassengerJourneyBoardingContext> continuation;
 	size_t work_left = 4194304;
 	size_t memory_left = 256 * 1024 * 1024;
 	size_t queries_left = 128;

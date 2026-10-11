@@ -2466,7 +2466,7 @@ static void LoadUnloadVehicle(Vehicle *front, PassengerJourneyLoadingContext &lo
 void LoadUnloadStation(Station *st)
 {
 	/* No vehicle is here... */
-	if (st->loading_vehicles.empty()) return;
+	if (st->loading_vehicles.empty()) { ReleasePassengerJourneyWaitingShare(st->index); return; }
 
 	Vehicle *last_loading = nullptr;
 
@@ -2485,9 +2485,10 @@ void LoadUnloadStation(Station *st)
 	 * consist in a station which is not allowed to load yet because its
 	 * load_unload_ticks is still not 0.
 	 */
-	if (last_loading == nullptr) return;
+	if (last_loading == nullptr) { ReleasePassengerJourneyWaitingShare(st->index); return; }
 	PassengerJourneyLoadingContext loading;
 	RouteWaitingPassengerJourneys(st, &loading);
+	ReleasePassengerJourneyWaitingShare(st->index);
 
 	for (Vehicle *v : st->loading_vehicles) {
 		if (!v->vehstatus.Any({VehState::Stopped, VehState::Crashed}) && !v->current_order.IsType(OT_LOADING_ADVANCE)) LoadUnloadVehicle(v, loading);

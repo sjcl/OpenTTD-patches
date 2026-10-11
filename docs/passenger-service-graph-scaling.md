@@ -1,9 +1,10 @@
 # Passenger ServiceGraph scaling
 
 Active journeys now capture an OD corridor instead of predicting every train.
-Only the untimed structural index survives a simulation event. Journey leg
-execution, reservations, gradual loading, shadow mode and packet/save layouts
-are unchanged. CargoDist continues transporting fallback and deferred packets.
+Only the untimed structural index survives a simulation event. Stored leg,
+reservation and packet/save layouts are unchanged. CargoDist continues
+transporting fallback and deferred packets, with the final-OD delivery guard
+described below.
 
 ## Corridor and completeness
 
@@ -138,25 +139,46 @@ or station cohort delay. Split, merge and current saves preserve this state;
 there is no new enum value, field, packet size or save feature. CargoDist can
 continue transporting deferred passengers.
 
-At the first simulation search each tick, two station-pool passes select up to
-four waiting origins in a rotating pool-ID window. Each gets a protected first
-waiting snapshot: 2 Mi graph Work, 128 Ki query/signature Work and one snapshot
-slot. Ordinary waiting searches and onboard arrivals cannot spend those unused
-shares. Claiming a share releases its unused headroom; no dynamic snapshot is
-shared across events. The scan is O(stations * passenger cargo types), examines
-available counts rather than packets, and consumes the same 16 Mi graph ledger.
-Only four IDs and claim bits are retained until the next tick. Diagnostics reset
-cannot change admission or release a share.
+Before the station loading loop changes any countdowns or queues, a census
+selects up to four searchable loading origins in a rotating pool-ID window.
+An origin needs a running loading vehicle whose countdown is due this tick and
+a waiting passenger with a valid OD, eligible mode and elapsed retry deadline.
+The same retry/cohort predicate is used by the waiting router. Idle stations,
+unknown ODs, existing Journey packets, cooldowns, stopped/crashed vehicles and
+advance-loading orders cannot acquire a share merely by having waiting cargo.
+Each selected origin gets a protected first waiting snapshot: 2 Mi graph Work,
+128 Ki query/signature Work and one snapshot slot. Ordinary waiting searches
+and onboard arrivals cannot spend those unused shares. A claim releases unused
+headroom, and a completed or skipped LoadUnloadStation waiting pass releases
+any unclaimed share immediately, before its onboard searches. No dynamic
+snapshot is shared across events.
 
-For a stable set of N waiting origins with four shares, each origin is selected
-within ceil(N/4) ticks, independent of simulation visitation order. Progress
-still requires a complete graph/query within its ordinary per-search limits.
-The coarse waiting count can include passengers with no assigned OD or an
-already valid journey; unused shares stay reserved until the next tick. Rapidly
-changing demand and multiple ODs inside one origin have no strict latency bound.
+The census examines stations, loading vehicles, passenger cargo types and
+waiting packets until it finds an eligible packet at each due origin. Its
+combined traversal is bounded by 65,536 Work, charged to the same 16 Mi graph
+ledger. If it cannot finish, it reserves no shares and leaves all remaining
+credits for ordinary searches. The transient origin vector stores at most one
+StationID per station; only four IDs and claim bits survive until the next tick.
+Diagnostics reset cannot rerun the census, change admission or release shares.
+
+For a stable set of N searchable loading origins, a completed census and four
+shares, each origin is selected within ceil(N/4) ticks, independent of simulation
+visitation order. Progress still requires a complete graph/query within its
+ordinary per-search limits. Rapidly changing demand, census overload and multiple
+ODs inside one origin have no strict latency bound.
 The hard maximum remains 16 new snapshots/queries per tick, and signatures can
 reduce that count. This change schedules overload fairly rather than claiming
 that thousands of distinct ODs fit in a single tick.
+
+When an onboard network search cannot run within its admission/search limits,
+an arrival-local bounded signature and visit prediction validate the saved ride.
+Matching train/service/orders and the absolute alighting occurrence preserves
+the Journey leg and returns Keep; it does not certify a newly optimized route.
+Forced unload/transfer and invalid rides cannot use this continuation. Stage
+also protects the known final OD after a fallback or deferral and on later
+arrivals: an intermediate CargoDist Deliver returns invalid rides to a waiting
+queue, and only the accepting final OD can finish delivery. NoUnload remains
+effective. Disabled/manual routing and unknown ODs retain legacy behavior.
 
 Traversal no longer spends memory for every Work unit. Admission reserves,
 before allocation, 256 bytes per discovered fleet and 128 bytes per temporary
@@ -186,7 +208,7 @@ retained/static/cache/scratch estimates and conservative envelopes. It separates
 GraphWork, GraphMemory, SnapshotLimit, QueryWork, QueryLimit, QueryMemory,
 PredictionIncomplete, PredictionHorizon, NoJourney, InvalidLeg, StaleLeg,
 Disabled and VehicleDeleted fallbacks, admission deferrals per reason, and
-fair-share claims/scan Work.
+fair-share claims/releases/scan Work and validated retained onboard rides.
 Observations are summed over builds, not unique fleet inventory. Exact omitted
 visit counts cannot be known without doing the omitted prediction work; the
 command explicitly reports that those suffix counts are unknown.
@@ -252,7 +274,14 @@ failure fallbacks and no tick quota exceeded. This fixture holds train positions
 fixed and measures admission/retry behavior, not a full game with boarding or
 moving trains. A 32-origin fixture puts a busy origin first on every tick and
 checks that protected rotating shares still admit the other origins; complete
-cold/warm replays produce identical decisions.
+cold/warm replays through LoadUnloadStation produce identical decisions. Another
+loading fixture uses 4,801 stations with waiting cargo but only one due,
+searchable origin; its first waiting pass admits 14 queries and claims one share.
+Idle stations, unknown ODs, delayed loading, inactive vehicles and cooldowns do
+not withhold half the query allowance. Changed demand after the
+census releases all four unused shares in the same tick, allowing 15 subsequent
+ordinary queries. A 70,000-packet unknown-OD fixture exhausts the bounded census
+and still permits 15 ordinary queries, with no reservations.
 
 The explicit benchmark can be rerun with:
 
@@ -273,6 +302,9 @@ onboard off-corridor transfers, global tick limits, 32 distinct queued ODs,
 2,000 distinct destinations, next-tick deferrals and completed retries that
 establish a route failure, rotating waiting shares under a hot origin, saved deferred
 state and diagnostic-reset purity,
+actual loading countdowns/unused-share release, bounded census exhaustion,
+onboard budget exhaustion with valid/stale occurrences, forced transfers,
+accepted intermediate CargoDist delivery and final-OD payment,
 8,001 real stations and actual active execution. Existing suites additionally
 exercise high-frequency detours, local-only access, unknown national networks,
 shared orders, deletion, departure changes, loading/reservations, save/load,
@@ -284,10 +316,10 @@ Work cannot certify the alternatives and it safely remains inconclusive.
 Conditional/refit/untimetabled/contended-dispatch predictions remain conservative;
 they are not made artificially complete. Static invalidation still has a cold
 rebuild cost, and live fleet classification is not shared between events.
-Validation on MSVC x64 Release (assertions enabled): all 343 default unit cases
-with 106,270 assertions passed, and the explicit passenger selection passed 147
-cases with 115,190 assertions, including hidden national performance fixtures.
-The complete CTest run passed all 350 entries (19.73 seconds), including
+Validation on MSVC x64 Release (assertions enabled): all 348 default unit cases
+with 111,499 assertions passed, and the explicit passenger selection passed 153
+cases with 120,467 assertions, including hidden national performance fixtures.
+The complete CTest run passed all 355 entries (19.98 seconds), including
 production legacy/current saves, GUI/diagnostic save-hash purity, disabled-mode
 parity and shadow execution. On this Visual Studio build,
 `lang` and `baseset` were copied alongside the `Release` executable for the

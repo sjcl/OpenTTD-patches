@@ -10,6 +10,8 @@
 #include "../vehicle_base.h"
 #include "../station_base.h"
 #include "../economy_base.h"
+#include "../economy_func.h"
+#include "../roadveh.h"
 #include "../company_base.h"
 #include "../town.h"
 #include "../core/backup_type.hpp"
@@ -104,6 +106,34 @@ struct FinalDeliveryFixture {
 	FinalDeliveryFixture() { Station::Get(D)->town = this->town; Station::Get(D)->always_accepted.Set(PAX); }
 	~FinalDeliveryFixture() { Station::Get(D)->town = nullptr; _town_pool.CleanPool(); _company_pool.CleanPool(); }
 };
+
+/** A zero-capacity real road vehicle exercises the complete station countdown
+ * and waiting pass without railway geometry or engine/cargo loading setup. */
+static RoadVehicle *DueLoadingVehicle(StationID station, uint ticks = 1)
+{
+	RoadVehicle *vehicle = Vehicle::Create<RoadVehicle>();
+	vehicle->last_station_visited = station;
+	vehicle->current_order.MakeLoading(false);
+	vehicle->load_unload_ticks = ticks;
+	vehicle->tile = TileIndex{0};
+	Station::Get(station)->loading_vehicles.push_back(vehicle);
+	return vehicle;
+}
+
+static void CleanLoadingVehicles()
+{
+	for (Station *station : Station::Iterate()) station->loading_vehicles.clear();
+	_vehicle_pool.CleanPool();
+}
+
+static void ExhaustJourneyAdmission(ActiveFixture &fixture)
+{
+	for (uint i = 0; i < 40; ++i) {
+		auto packet = std::unique_ptr<CargoPacket>(fixture.Packet(1));
+		PassengerJourneyActiveContext(nullptr, A).PlanWaiting(*packet, PAX, D);
+	}
+	CHECK(GetPassengerJourneyTickDiagnostic().query_work >= 15 * 65536);
+}
 
 TEST_CASE("Journey boarding selects a physical train even with the same next stop", "[passenger][active]")
 {
@@ -229,6 +259,116 @@ TEST_CASE("Onboard journey stages keep transfer and final delivery in production
 		CHECK(fixture.Waiting(D).TotalCount() == 0);
 		CHECK(delivery.company->cur_economy.delivered_cargo[PAX] == 10);
 	}
+}
+
+TEST_CASE("Exhausted searches retain valid onboard rides and cannot deliver at intermediate stations", "[passenger][active][budget][delivery]")
+{
+	ActiveFixture fixture;
+	FinalDeliveryFixture delivery;
+	ActiveTrain train({ActiveStop(A), ActiveStop(B, 100), ActiveStop(C, 100), ActiveStop(D, 100)});
+	train.owner = delivery.company->index;
+	bool valid = true, changed_timetable = false, changed_occurrence = false, no_load = false;
+	OrderUnloadType unload = OrderUnloadType::UnloadIfPossible;
+	SECTION("Normal continuation") {}
+	SECTION("NoLoad still permits existing passengers to stay") { train.GetOrder(1)->SetLoadType(OrderLoadType::NoLoad); no_load = true; }
+	SECTION("Changed timetable invalidates the saved ride") { valid = false; changed_timetable = true; }
+	SECTION("Changed occurrence invalidates the saved ride") { valid = false; changed_occurrence = true; }
+	SECTION("Forced transfer is respected") { valid = false; unload = OrderUnloadType::Transfer; }
+	auto *packet = fixture.Packet(); fixture.Plan(*packet); train.cargo.Append(packet);
+	const auto saved = packet->GetPassengerJourney();
+	train.LoadAt(1); _state_ticks = NOW + 200;
+	if (no_load) train.current_order.SetLoadType(OrderLoadType::NoLoad);
+	if (changed_timetable) train.GetOrder(3)->SetTravelTime(200);
+	if (changed_occurrence) train.current_order_time = 10;
+	BeginPassengerJourneyTick(); ExhaustJourneyAdmission(fixture);
+	GoodsEntry &goods = Station::Get(B)->goods[PAX];
+	goods.CreateData().flows.insert(FlowStat(A, B, 10));
+	CargoPayment payment(CargoPaymentID::Invalid(), &train);
+	std::array next{C};
+	PassengerJourneyActiveContext context(&train, B);
+	train.cargo.Stage(true, B, next, unload, &goods, PAX, &payment, TileIndex{0}, nullptr, nullptr, &context);
+	CHECK(train.cargo.ActionCount(Action::Deliver) == 0);
+	CHECK(train.cargo.ActionCount(valid ? Action::Keep : Action::Transfer) == 10);
+	CHECK(packet->GetPassengerDestination() == D);
+	CHECK(packet->GetFeederShare() == 100);
+	CHECK(delivery.company->cur_economy.delivered_cargo[PAX] == 0);
+	if (valid) {
+		CHECK(packet->GetPassengerRoutingMode() == PassengerRoutingMode::Journey);
+		CHECK(packet->GetPassengerJourney() == saved);
+		CHECK(GetPassengerJourneyTickDiagnostic().retained_rides == 1);
+		train.LoadAt(3); _state_ticks = saved.arrival;
+		CargoPayment final_payment(CargoPaymentID::Invalid(), &train);
+		PassengerJourneyActiveContext final_context(&train, D);
+		train.cargo.Stage(true, D, next, OrderUnloadType::UnloadIfPossible, &Station::Get(D)->goods[PAX], PAX,
+				&final_payment, TileIndex{0}, nullptr, nullptr, &final_context);
+		CHECK(train.cargo.ActionCount(Action::Deliver) == 10);
+		CHECK(train.cargo.Unload(10, &fixture.Waiting(D), PAX, &final_payment, TileIndex{0}) == 10);
+		CHECK(delivery.company->cur_economy.delivered_cargo[PAX] == 10);
+	} else {
+		CHECK(packet->GetPassengerRoutingMode() != PassengerRoutingMode::Journey);
+		CHECK(train.cargo.Unload(10, &fixture.Waiting(B), PAX, &payment, TileIndex{0}) == 10);
+		CHECK(fixture.Waiting(B).AvailableCount() == 10);
+		CHECK(packet->GetPassengerDestination() == D);
+		CHECK(delivery.company->cur_economy.delivered_cargo[PAX] == 0);
+	}
+}
+
+TEST_CASE("Fallback and deferred OD passengers can finish only at their accepting destination", "[passenger][active][delivery]")
+{
+	ActiveFixture fixture;
+	FinalDeliveryFixture delivery;
+	ActiveTrain train({ActiveStop(B), ActiveStop(C), ActiveStop(D)});
+	train.owner = delivery.company->index;
+	auto *packet = fixture.Packet();
+	SECTION("Ordinary fallback") { packet->FallbackPassengerJourney(A, NOW); }
+	SECTION("Deferred budget wait") { packet->DeferPassengerJourney(A, NOW); }
+	SECTION("Legacy with a known OD") {}
+	train.cargo.Append(packet);
+	std::array next{D};
+	for (VehicleOrderID index : {VehicleOrderID{0}, VehicleOrderID{1}}) {
+		train.LoadAt(index);
+		const StationID station = train.last_station_visited;
+		GoodsEntry &goods = Station::Get(station)->goods[PAX];
+		goods.CreateData().flows.insert(FlowStat(A, station, 10)); // CargoDist says Deliver even when accepted.
+		CargoPayment payment(CargoPaymentID::Invalid(), &train);
+		train.cargo.Stage(true, station, next, OrderUnloadType::UnloadIfPossible, &goods, PAX, &payment, TileIndex{0});
+		CHECK(train.cargo.ActionCount(Action::Deliver) == 0);
+		CHECK(train.cargo.ActionCount(Action::Transfer) == 10);
+		CHECK(train.cargo.Unload(10, &fixture.Waiting(station), PAX, &payment, TileIndex{0}) == 10);
+		CHECK(packet->GetPassengerDestination() == D);
+		CHECK(packet->GetFeederShare() == 100);
+		CHECK(delivery.company->cur_economy.delivered_cargo[PAX] == 0);
+		REQUIRE(fixture.Waiting(station).Load(10, &train.cargo, next, TileIndex{0}, &train) == 10);
+	}
+	train.LoadAt(2);
+	GoodsEntry &goods = Station::Get(D)->goods[PAX];
+	goods.CreateData().flows.insert(FlowStat(A, B, 10)); // A stale CargoDist flow would transfer it away again.
+	CargoPayment payment(CargoPaymentID::Invalid(), &train);
+	train.cargo.Stage(true, D, next, OrderUnloadType::UnloadIfPossible, &goods, PAX, &payment, TileIndex{0});
+	CHECK(train.cargo.ActionCount(Action::Deliver) == 10);
+	CHECK(train.cargo.Unload(10, &fixture.Waiting(D), PAX, &payment, TileIndex{0}) == 10);
+	CHECK(train.cargo.TotalCount() == 0);
+	CHECK(delivery.company->cur_economy.delivered_cargo[PAX] == 10);
+}
+
+TEST_CASE("Destination enforcement preserves disabled and unknown OD CargoDist delivery", "[passenger][active][delivery]")
+{
+	ActiveFixture fixture;
+	FinalDeliveryFixture delivery;
+	Station::Get(B)->town = delivery.town; Station::Get(B)->always_accepted.Set(PAX);
+	ActiveTrain train({ActiveStop(B), ActiveStop(D)}); train.owner = delivery.company->index;
+	auto *packet = fixture.Packet();
+	SECTION("Known OD with routing disabled") { _settings_game.linkgraph.passenger_journey_routing = false; }
+	SECTION("Unknown OD with routing enabled") { delete packet; packet = fixture.Packet(10, StationID::Invalid()); }
+	train.cargo.Append(packet);
+	GoodsEntry &goods = Station::Get(B)->goods[PAX]; goods.CreateData().flows.insert(FlowStat(A, B, 10));
+	CargoPayment payment(CargoPaymentID::Invalid(), &train);
+	std::array next{D};
+	train.cargo.Stage(true, B, next, OrderUnloadType::UnloadIfPossible, &goods, PAX, &payment, TileIndex{0});
+	CHECK(train.cargo.ActionCount(Action::Deliver) == 10);
+	CHECK(train.cargo.Unload(10, &fixture.Waiting(B), PAX, &payment, TileIndex{0}) == 10);
+	CHECK(delivery.company->cur_economy.delivered_cargo[PAX] == 10);
+	Station::Get(B)->town = nullptr;
 }
 
 TEST_CASE("Journey failure and unsupported passengers use CargoDist", "[passenger][active]")
@@ -563,7 +703,7 @@ TEST_CASE("Distinct OD budget waits retry next tick and remain normal failures w
 	CHECK_FALSE(unreachable->CanRetryPassengerJourney(A, _state_ticks + 1));
 }
 
-TEST_CASE("Rotating waiting shares survive a hot origin and local resets", "[passenger][active][budget][determinism]")
+TEST_CASE("Rotating loading shares survive a hot origin through LoadUnloadStation", "[passenger][active][budget][determinism]")
 {
 	ActiveFixture fixture;
 	std::vector<Order> orders{ActiveStop(A, 100000, 100)};
@@ -571,11 +711,13 @@ TEST_CASE("Rotating waiting shares survive a hot origin and local resets", "[pas
 		if (station >= 4) Station::CreateAtIndex(StationID{station}, TileIndex{0})->owner = OWNER_NONE;
 		orders.push_back(ActiveStop(StationID{station}, 1, 1));
 	}
-	ActiveTrain train(std::move(orders));
+	Vehicle::Create<ActiveTrain>(std::move(orders));
 	std::array<CargoPacket *, 32> packets;
+	std::array<RoadVehicle *, 32> loaders;
 	for (uint16_t station = 0; station < packets.size(); ++station) {
 		packets[station] = fixture.Packet(1, StationID{32});
 		fixture.Waiting(StationID{station}).Append(packets[station], D);
+		loaders[station] = DueLoadingVehicle(StationID{station});
 	}
 	GameRandomSeedChecker random;
 	std::vector<bool> previous;
@@ -594,13 +736,18 @@ TEST_CASE("Rotating waiting shares survive a hot origin and local resets", "[pas
 		};
 		for (uint tick = 0; tick < 8; ++tick) {
 			BeginPassengerJourneyTick();
+			for (RoadVehicle *loader : loaders) loader->load_unload_ticks = 1;
+			PreparePassengerJourneyLoading();
 			/* A consumes every ordinary admission it can before other origins run. */
 			for (uint repeat = 0; repeat < 40; ++repeat) {
 				auto hot = std::unique_ptr<CargoPacket>(fixture.Packet(1, StationID{static_cast<uint16_t>(1 + repeat % 32)}));
 				plan(*hot, A, D);
 			}
-			for (uint16_t station = 1; station < packets.size(); ++station) if (!served[station]) {
-				served[station] = plan(*packets[station], StationID{station}, D);
+			for (uint16_t station = 0; station < packets.size(); ++station) {
+				if (cold) InvalidatePassengerServiceIndex();
+				LoadUnloadStation(Station::Get(StationID{station}));
+				served[station] = packets[station]->GetPassengerRoutingMode() == PassengerRoutingMode::Journey;
+				decisions.push_back(served[station]);
 			}
 			const auto &diagnostic = GetPassengerJourneyTickDiagnostic();
 			CHECK(diagnostic.graph_work + diagnostic.fair_share_work <= 16 * 1024 * 1024);
@@ -620,6 +767,103 @@ TEST_CASE("Rotating waiting shares survive a hot origin and local resets", "[pas
 		if (cold) previous = decisions; else CHECK(decisions == previous);
 	}
 	CHECK(random.Check());
+	CleanLoadingVehicles();
+}
+
+TEST_CASE("Fair shares exclude idle stations unknown ODs and sleeping loading passes", "[passenger][active][budget][loading]")
+{
+	ActiveFixture fixture;
+	for (uint16_t station = 4; station <= 4800; ++station) Station::CreateAtIndex(StationID{station}, TileIndex{0})->owner = OWNER_NONE;
+	std::vector<Order> orders{ActiveStop(A, 100000, 100)};
+	std::vector<CargoPacket *> packets;
+	for (uint16_t destination = 10; destination < 42; ++destination) {
+		orders.push_back(ActiveStop(StationID{destination}, 1, 1));
+		packets.push_back(fixture.Packet(1, StationID{destination})); fixture.Waiting().Append(packets.back(), D);
+	}
+	Vehicle::Create<ActiveTrain>(std::move(orders));
+	DueLoadingVehicle(A);
+	/* The former available-count census would reserve shares for these idle origins. */
+	for (uint16_t station = 1; station <= 4800; ++station) {
+		fixture.Waiting(StationID{station}).Append(fixture.Packet(1, station == B.base() ? StationID::Invalid() : D), D);
+	}
+	DueLoadingVehicle(B); // Due, but no assigned OD.
+	DueLoadingVehicle(C, 2); // Has an OD, but the loading countdown is not due.
+	DueLoadingVehicle(D); // Its only packet has already reached its OD.
+	DueLoadingVehicle(StationID{4})->vehstatus.Set(VehState::Stopped);
+	DueLoadingVehicle(StationID{5})->vehstatus.Set(VehState::Crashed);
+	DueLoadingVehicle(StationID{6})->current_order.MakeLoadingAdvance(StationID{6});
+	DueLoadingVehicle(StationID{7});
+	StationCargoList::ConstIterator cooled(fixture.Waiting(StationID{7}).Packets()->begin());
+	(*cooled)->FallbackPassengerJourney(StationID{7}, _state_ticks); // Cooldown.
+	BeginPassengerJourneyTick(); ResetPassengerJourneyDiagnostic();
+	PreparePassengerJourneyLoading();
+	LoadUnloadStation(Station::Get(A));
+	const size_t applied = std::count_if(packets.begin(), packets.end(), [](const CargoPacket *p) { return p->GetPassengerRoutingMode() == PassengerRoutingMode::Journey; });
+	CHECK(applied > 8); // Ordinary work was not halved by unsearchable stations.
+	WARN("Due loading admission: stations=4801; applied=" << applied << "; waiting-share claims=" << GetPassengerJourneyTickDiagnostic().fair_share_claims);
+	CHECK(GetPassengerJourneyTickDiagnostic().fair_share_claims == 1);
+	CHECK(GetPassengerJourneyTickDiagnostic().fair_share_releases == 0);
+	const size_t builds = GetPassengerJourneyTickDiagnostic().builds;
+	for (Station *station : Station::Iterate()) if (station->index != A) LoadUnloadStation(station);
+	CHECK(GetPassengerJourneyTickDiagnostic().builds == builds);
+	CHECK(GetPassengerJourneyTickDiagnostic().query_work <= 1024 * 1024);
+	CHECK(GetPassengerJourneyTickDiagnostic().graph_work + GetPassengerJourneyTickDiagnostic().fair_share_work <= 16 * 1024 * 1024);
+	CleanLoadingVehicles();
+}
+
+TEST_CASE("Unused loading shares are released before later searches in the same tick", "[passenger][active][budget][loading]")
+{
+	ActiveFixture fixture;
+	ActiveTrain train({ActiveStop(A), ActiveStop(D, 100)});
+	std::array<CargoPacket *, 4> waiting;
+	for (uint16_t i = 0; i < waiting.size(); ++i) {
+		StationID station{static_cast<uint16_t>(4 + i)};
+		Station::CreateAtIndex(station, TileIndex{0})->owner = OWNER_NONE;
+		waiting[i] = fixture.Packet(1); fixture.Waiting(station).Append(waiting[i], D);
+		DueLoadingVehicle(station);
+	}
+	BeginPassengerJourneyTick(); ResetPassengerJourneyDiagnostic();
+	PreparePassengerJourneyLoading();
+	/* Demand becomes ineligible after the census. The real waiting passes still
+	 * run, release their shares, and don't admit any searches. */
+	for (uint16_t i = 0; i < waiting.size(); ++i) {
+		StationID station{static_cast<uint16_t>(4 + i)};
+		waiting[i]->FallbackPassengerJourney(station, _state_ticks);
+		LoadUnloadStation(Station::Get(station));
+	}
+	CHECK(GetPassengerJourneyTickDiagnostic().builds == 0);
+	CHECK(GetPassengerJourneyTickDiagnostic().fair_share_claims == 0);
+	CHECK(GetPassengerJourneyTickDiagnostic().fair_share_releases == 4);
+	size_t applied = 0;
+	for (uint i = 0; i < 40; ++i) {
+		auto packet = std::unique_ptr<CargoPacket>(fixture.Packet(1));
+		applied += PassengerJourneyActiveContext(nullptr, A).PlanWaiting(*packet, PAX, D);
+	}
+	CHECK(applied == 15); // All query Work is available again, in this same tick.
+	CleanLoadingVehicles();
+}
+
+TEST_CASE("An exhausted fair-share census leaves ordinary search credits available", "[passenger][active][budget][loading][.performance]")
+{
+	ActiveFixture fixture;
+	ActiveTrain train({ActiveStop(A), ActiveStop(D, 100)});
+	DueLoadingVehicle(A); fixture.Waiting().Append(fixture.Packet(1), D);
+	DueLoadingVehicle(B);
+	for (uint i = 0; i < 70000; ++i) fixture.Waiting(B).Append(fixture.Packet(1, StationID::Invalid(), static_cast<uint16_t>(i)), D);
+	BeginPassengerJourneyTick(); ResetPassengerJourneyDiagnostic();
+	PreparePassengerJourneyLoading();
+	CHECK(GetPassengerJourneyTickDiagnostic().fair_share_work == 65536);
+	CHECK(GetPassengerJourneyTickDiagnostic().fair_share_claims == 0);
+	size_t applied = 0;
+	for (uint i = 0; i < 40; ++i) {
+		auto packet = std::unique_ptr<CargoPacket>(fixture.Packet(1));
+		applied += PassengerJourneyActiveContext(nullptr, A).PlanWaiting(*packet, PAX, D);
+	}
+	CHECK(applied == 15);
+	CHECK(GetPassengerJourneyTickDiagnostic().fair_share_claims == 0);
+	CHECK(GetPassengerJourneyTickDiagnostic().fair_share_releases == 0);
+	CHECK(GetPassengerJourneyTickDiagnostic().graph_work + GetPassengerJourneyTickDiagnostic().fair_share_work <= 16 * 1024 * 1024);
+	CleanLoadingVehicles();
 }
 
 TEST_CASE("Two thousand distinct destinations drain a deferred budget queue", "[passenger][active][budget][.performance]")

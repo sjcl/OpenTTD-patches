@@ -811,6 +811,7 @@ bool VehicleCargoList::Stage(bool accepted, StationID current_station, std::span
 		};
 
 		const bool was_journey = cp->GetPassengerRoutingMode() == PassengerRoutingMode::Journey;
+		const bool destination_bound = IsPassengerJourneyRoutingEnabled(cargo) && Station::IsValidID(cp->GetPassengerDestination());
 		auto journey_action = active == nullptr ? std::optional<MoveToAction>{} : active->Decide(*cp, cargo, accepted, unload_type);
 		if (journey_action) {
 			action = *journey_action;
@@ -871,8 +872,19 @@ bool VehicleCargoList::Stage(bool accepted, StationID current_station, std::span
 				handle_forced_transfer();
 			}
 		}
-		/* Observe the final action without repeating flow selection/prediction or modifying cargo. */
+		/* A routing/admission failure must not turn a known final OD into delivery
+		 * at a CargoDist intermediate destination, including on subsequent arrivals.
+		 * Invalid rides return to a station queue for retry; valid rides can stay. */
+		if (destination_bound) {
+			if (current_station == cp->GetPassengerDestination() && accepted && !force_keep) action = MoveToAction::Deliver;
+			else if (action == MoveToAction::Deliver && current_station != cp->GetPassengerDestination()) {
+				if (cp->GetPassengerRoutingMode() != PassengerRoutingMode::Journey || force_transfer) handle_forced_transfer();
+				else action = MoveToAction::Keep;
+			}
+		}
+		/* Observe the final action without repeating prediction. */
 		if (was_journey && !accepted && action == MoveToAction::Deliver) action = MoveToAction::Keep;
+		if (destination_bound && !accepted && action == MoveToAction::Deliver) action = MoveToAction::Keep;
 		if (shadow != nullptr) shadow->Observe(*cp, cargo, action, cargo_next, unload_type);
 		Money share;
 		switch (action) {

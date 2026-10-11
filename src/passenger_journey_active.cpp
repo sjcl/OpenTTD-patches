@@ -52,6 +52,7 @@ namespace {
 		a.maximum_build_microseconds = std::max(a.maximum_build_microseconds, b.maximum_build_microseconds);
 		a.query_microseconds += b.query_microseconds;
 		a.fair_share_work += b.fair_share_work; a.fair_share_claims += b.fair_share_claims;
+		a.fair_share_releases += b.fair_share_releases; a.retained_rides += b.retained_rides;
 		a.maximum_tick_microseconds = std::max({a.maximum_tick_microseconds, b.maximum_tick_microseconds, b.build_microseconds + b.query_microseconds});
 		for (size_t i = 0; i < a.fallbacks.size(); ++i) { a.fallbacks[i] += b.fallbacks[i]; a.deferred[i] += b.deferred[i]; }
 	}
@@ -60,35 +61,71 @@ namespace {
 		return std::count_if(global.fair_shares.begin(), global.fair_shares.end(), [](const auto &share) { return share.station != StationID::Invalid() && !share.claimed; });
 	}
 	static size_t Unreserved(size_t remaining, size_t reserved) { return remaining > reserved ? remaining - reserved : 0; }
-	/** Stateless rotation over waiting origins. Rebuilt at the first simulation search
-	 * each tick; neither local diagnostics nor cache residency can change the tickets.
-	 * Two pool passes, no packet scan or growing persistent scheduling queue. */
+	static bool IsJourneyRetryTick(StationID station)
+	{
+		const bool turn = Station::GetNumItems() <= 512 || ((station.base() >> 6) & 15) == ((_state_ticks.base() >> 6) & 15);
+		return turn && (_state_ticks.base() & 63) == (station.base() & 63);
+	}
+	static bool CanSearchWaitingJourney(const CargoPacket &packet, StationID station, bool retry_tick)
+	{
+		return packet.GetPassengerRoutingMode() != PassengerRoutingMode::Journey &&
+				(retry_tick || packet.GetPassengerRoutingMode() == PassengerRoutingMode::Legacy) &&
+				Station::IsValidID(packet.GetPassengerDestination()) && packet.GetPassengerDestination() != station &&
+				packet.CanRetryPassengerJourney(station, _state_ticks);
+	}
+	/** Called before the station loading loop mutates countdowns or waiting queues.
+	 * Reserve only for due loading passes containing an actually searchable OD.
+	 * A bounded census avoids replacing a routing bottleneck with a packet scan. */
 	static void InitializeFairShares(JourneyTickBudget &global)
 	{
 		if (global.fair_shares_initialized) return;
 		global.fair_shares_initialized = true;
+		if (!_settings_game.linkgraph.passenger_journey_routing) return;
+		size_t budget = std::min<size_t>(65536, global.graph), allowance = budget;
+		auto spend = [&]() { if (budget == 0) return false; --budget; return true; };
 		std::array<CargoType, NUM_CARGO> cargos;
 		size_t count = 0;
-		for (CargoType cargo : EnumRange(NUM_CARGO)) if (IsPassengerJourneyRoutingEnabled(cargo)) cargos[count++] = cargo;
-		const size_t work = NUM_CARGO + 2 * Station::GetNumItems() * (1 + count);
-		const size_t spent = std::min(work, global.graph);
-		global.graph -= spent; global.diagnostic.fair_share_work += spent;
-		if (spent != work) return;
-		auto waiting = [&](const Station *station) {
-			for (size_t i = 0; i < count; ++i) if (station->goods[cargos[i]].CargoAvailableCount() != 0) return true;
+		for (CargoType cargo : EnumRange(NUM_CARGO)) {
+			if (!spend()) break;
+			if (IsPassengerJourneyRoutingEnabled(cargo)) cargos[count++] = cargo;
+		}
+		if (count == 0) {
+			global.graph -= allowance - budget; global.diagnostic.fair_share_work += allowance - budget;
+			return;
+		}
+		std::vector<StationID> origins;
+		origins.reserve(Station::GetNumItems()); // At most one ID per station; transient, never saved.
+		auto searchable = [&](const Station *station) {
+			bool due = false;
+			for (const Vehicle *vehicle : station->loading_vehicles) {
+				if (!spend()) return false;
+				if (vehicle->load_unload_ticks == 1 && !vehicle->vehstatus.Any({VehState::Stopped, VehState::Crashed}) &&
+						!vehicle->current_order.IsType(OT_LOADING_ADVANCE)) { due = true; break; }
+			}
+			if (!due) return false;
+			for (size_t i = 0; i < count; ++i) {
+				if (!spend()) return false;
+				const GoodsEntry &goods = station->goods[cargos[i]];
+				if (goods.data == nullptr || goods.CargoAvailableCount() == 0) continue;
+				for (StationCargoList::ConstIterator it(goods.data->cargo.Packets()->begin()); it != goods.data->cargo.Packets()->end(); ++it) {
+					if (!spend()) return false;
+					if (CanSearchWaitingJourney(**it, station->index, IsJourneyRetryTick(station->index))) return true;
+				}
+			}
 			return false;
 		};
-		size_t origins = 0;
-		for (const Station *station : Station::Iterate()) origins += waiting(station);
-		const size_t shares = std::min({global.fair_shares.size(), origins, global.graph / FAIR_GRAPH_WORK, global.query / FAIR_QUERY_WORK, global.snapshots});
-		if (shares == 0) return;
-		const size_t first = (static_cast<uint64_t>(_state_ticks.base()) * shares) % origins;
-		size_t ordinal = 0;
 		for (const Station *station : Station::Iterate()) {
-			if (!waiting(station)) continue;
-			const size_t offset = (ordinal++ + origins - first) % origins;
-			if (offset < shares) global.fair_shares[offset].station = station->index;
+			if (!spend()) break;
+			if (searchable(station)) origins.push_back(station->index);
 		}
+		global.graph -= allowance - budget; global.diagnostic.fair_share_work += allowance - budget;
+		/* If the census cannot finish, reserve nothing. Ordinary queries retain all
+		 * remaining allowance rather than losing half to unverified stations. */
+		if (budget == 0 || origins.empty()) return;
+		const size_t shares = std::min({global.fair_shares.size(), origins.size(), global.graph / FAIR_GRAPH_WORK, global.query / FAIR_QUERY_WORK, global.snapshots});
+		if (shares == 0) return;
+		const size_t first = (static_cast<uint64_t>(_state_ticks.base()) * shares) % origins.size();
+		for (size_t i = 0; i < shares; ++i) global.fair_shares[i].station = origins[(first + i) % origins.size()];
 	}
 	static JourneyTickBudget &TickBudget()
 	{
@@ -127,6 +164,16 @@ void BeginPassengerJourneyTick()
 {
 	AddDiagnostic(total_diagnostic, tick_budget.diagnostic);
 	tick_budget = {}; tick_budget.tick = _state_ticks;
+}
+void PreparePassengerJourneyLoading() { InitializeFairShares(TickBudget()); }
+void ReleasePassengerJourneyWaitingShare(StationID station)
+{
+	if (!_settings_game.linkgraph.passenger_journey_routing) return;
+	auto &global = TickBudget();
+	for (auto &share : global.fair_shares) if (share.station == station && !share.claimed) {
+		share.claimed = true;
+		++global.diagnostic.fair_share_releases;
+	}
 }
 const PassengerJourneyTickDiagnostic &GetPassengerJourneyTickDiagnostic() { return tick_budget.diagnostic; }
 PassengerJourneyTickDiagnostic GetPassengerJourneyTotalDiagnostic()
@@ -220,7 +267,6 @@ PassengerJourneyActiveContext::Snapshot *PassengerJourneyActiveContext::GetSnaps
 	auto found = this->snapshots.find(key);
 	if (found != this->snapshots.end()) return found->second.get();
 	auto &global = TickBudget();
-	InitializeFairShares(global);
 	JourneyFairShare *ticket = nullptr;
 	if (this->vehicle == nullptr) for (auto &share : global.fair_shares) if (share.station != StationID::Invalid() && share.station == this->station && !share.claimed) { ticket = &share; break; }
 	const size_t reserved = UnclaimedShares(global) - (ticket != nullptr);
@@ -373,8 +419,7 @@ void PassengerJourneyBoardingContext::Initialize() const
 	if (this->initialized) return;
 	this->initialized = true;
 	if (this->vehicle == nullptr) return;
-	if (this->vehicle->type != VehicleType::Train || !IsPassengerJourneyRoutingEnabled(this->cargo) ||
-			this->vehicle->current_order.GetCargoLoadType(this->cargo) == OrderLoadType::NoLoad) return;
+	if (this->vehicle->type != VehicleType::Train || !IsPassengerJourneyRoutingEnabled(this->cargo)) return;
 	auto state = GetPassengerRouteState(this->vehicle);
 	if (!state || !state->loading) return;
 	this->signature = PassengerJourneyServiceSignature(*this->vehicle->orders, this->cargo);
@@ -399,6 +444,28 @@ bool PassengerJourneyBoardingContext::CanBoard(const CargoPacket &packet) const
 	if (leg.vehicle != this->vehicle->index || leg.service != this->vehicle->orders->index || leg.signature != this->signature ||
 			leg.boarding != this->vehicle->last_station_visited || leg.boarding_order != this->vehicle->cur_real_order_index ||
 			!first.loading_now || !first.departure || *first.departure != leg.departure) return false;
+	for (const auto &visit : this->prediction.visits) {
+		if (visit.order == leg.alighting_order && visit.arrival == leg.arrival) return true;
+	}
+	return false;
+}
+
+/** Validate the previously admitted ride, without admitting another network search.
+ * Matching an absolute arrival certifies the same occurrence at an intermediate stop. */
+bool PassengerJourneyBoardingContext::CanContinue(const CargoPacket &packet) const
+{
+	if (packet.GetPassengerRoutingMode() != PassengerRoutingMode::Journey) return false;
+	const auto &leg = packet.GetPassengerJourney();
+	if (this->vehicle == nullptr || this->vehicle->type != VehicleType::Train || this->vehicle->orders == nullptr ||
+			!IsPassengerJourneyRoutingEnabled(this->cargo) || this->vehicle->vehstatus.Any({VehState::Stopped, VehState::Crashed}) ||
+			!this->vehicle->current_order.IsAnyLoadingType() || leg.vehicle != this->vehicle->index || leg.service != this->vehicle->orders->index ||
+			!Station::IsValidID(leg.alighting) || leg.alighting == this->vehicle->last_station_visited ||
+			leg.departure > _state_ticks || leg.arrival <= _state_ticks || leg.alighting_order >= this->vehicle->GetNumOrders()) return false;
+	const Order *alight = this->vehicle->GetOrder(leg.alighting_order);
+	if (!alight->IsType(OT_GOTO_STATION) || alight->GetDestination() != leg.alighting ||
+			(alight->GetNonStopType() & ONSF_NO_STOP_AT_DESTINATION_STATION) || alight->GetCargoUnloadType(this->cargo) == OrderUnloadType::NoUnload) return false;
+	this->Initialize();
+	if (this->signature == 0 || this->signature != leg.signature || this->prediction.visits.empty() || !this->prediction.visits.front().loading_now) return false;
 	for (const auto &visit : this->prediction.visits) {
 		if (visit.order == leg.alighting_order && visit.arrival == leg.arrival) return true;
 	}
@@ -437,6 +504,15 @@ std::optional<VehicleCargoList::MoveToAction> PassengerJourneyActiveContext::Dec
 	this->deferred = false;
 	auto fallback = [&]() -> std::optional<Action> {
 		if (snapshot != nullptr) { snapshot->failure = this->failure; snapshot->deferred = this->deferred; }
+		const bool budget_failure = this->deferred || this->failure == PassengerJourneyFallbackReason::GraphWork ||
+				this->failure == PassengerJourneyFallbackReason::GraphMemory || this->failure == PassengerJourneyFallbackReason::QueryWork ||
+				this->failure == PassengerJourneyFallbackReason::QueryMemory || this->failure == PassengerJourneyFallbackReason::QueryLimit;
+		if (budget_failure && unload != OrderUnloadType::Unload && unload != OrderUnloadType::Transfer &&
+				this->continuation.try_emplace(cargo, this->vehicle, cargo).first->second.CanContinue(packet)) {
+			CountJourneyDeferral(this->failure);
+			++TickBudget().diagnostic.retained_rides;
+			return Action::Keep;
+		}
 		if (this->deferred) { CountJourneyDeferral(this->failure); packet.DeferPassengerJourney(this->station, _state_ticks); }
 		else { CountJourneyFallback(this->failure); packet.FallbackPassengerJourney(this->station, _state_ticks); }
 		return {};
@@ -495,8 +571,7 @@ size_t StationCargoList::RoutePassengerJourneys(CargoType cargo, StationID stati
 	/* Spread national-map waiting cohorts across 1024 ticks instead of 64.
 	 * Each station receives a search opportunity; an overloaded cohort still
 	 * consumes the shared allowance in deterministic simulation order. */
-	const bool turn = Station::GetNumItems() <= 512 || ((station.base() >> 6) & 15) == ((_state_ticks.base() >> 6) & 15);
-	const bool search = allow_search && turn && IsPassengerJourneyRoutingEnabled(cargo) && (_state_ticks.base() & 63) == (station.base() & 63);
+	const bool search = IsJourneyRetryTick(station);
 	std::vector<std::pair<StationID, CargoPacket *>> moved;
 	std::map<OrderListID, uint64_t> signatures;
 	size_t validation_work = 524288;
@@ -530,10 +605,7 @@ size_t StationCargoList::RoutePassengerJourneys(CargoType cargo, StationID stati
 				}
 				else key = StationID::Invalid();
 			}
-			if (IsPassengerJourneyRoutingEnabled(cargo) && allow_search && (search || packet->GetPassengerRoutingMode() == PassengerRoutingMode::Legacy) &&
-					packet->GetPassengerRoutingMode() != PassengerRoutingMode::Journey &&
-					Station::IsValidID(packet->GetPassengerDestination()) && packet->GetPassengerDestination() != station &&
-					packet->CanRetryPassengerJourney(station, _state_ticks) && inspected < 4096) {
+			if (IsPassengerJourneyRoutingEnabled(cargo) && allow_search && CanSearchWaitingJourney(*packet, station, search) && inspected < 4096) {
 				++inspected;
 				if (context.PlanWaiting(*packet, cargo, key)) key = StationID::Invalid();
 				else if (!packet->IsPassengerJourneyDeferred()) packet->FallbackPassengerJourney(station, _state_ticks);
