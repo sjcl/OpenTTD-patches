@@ -4264,6 +4264,31 @@ static void TruncateCargo(const CargoSpec *cs, GoodsEntry *ge, uint amount = UIN
 	}
 }
 
+/**
+ * Cheat: remove all cargo (including passengers) waiting at all stations.
+ * Cargo already reserved for loading onto vehicles is not removed.
+ * @param flags operation to perform
+ * @return the cost of this operation or an error
+ */
+CommandCost CmdClearAllStationCargoCheat(DoCommandFlags flags)
+{
+	if (flags.Test(DoCommandFlag::Execute)) {
+		for (Station *st : Station::Iterate()) {
+			bool changed = false;
+			for (CargoType cargo : EnumRange(NUM_CARGO)) {
+				GoodsEntry &ge = st->goods[cargo];
+				if (ge.data == nullptr || ge.data->cargo.AvailableCount() == 0) continue;
+				ge.data->cargo.Truncate();
+				InvalidateWindowData(WindowClass::StationView, st->index, cargo);
+				changed = true;
+			}
+			if (changed) st->MarkTilesDirty(true);
+		}
+		SetWindowClassesDirty(WindowClass::StationList);
+	}
+	return CommandCost();
+}
+
 bool GetNewGrfRating(const Station *st, const CargoSpec *cs, const GoodsEntry *ge, int *new_grf_rating)
 {
 	*new_grf_rating = 0;

@@ -38,6 +38,7 @@
 #include "settings_type.h"
 #include "settings_internal.h"
 #include "misc_cmd.h"
+#include "station_cmd.h"
 
 #include "widgets/cheat_widget.h"
 
@@ -255,6 +256,7 @@ static constexpr std::initializer_list<NWidgetPart> _nested_cheat_widgets = {
 			NWidget(WWT_EMPTY, Colours::Invalid, WID_C_SETTINGS),
 		EndContainer(),
 	EndContainer(),
+	NWidget(WWT_PUSHTXTBTN, Colours::Grey, WID_C_CLEAR_STATION_CARGO), SetFill(1, 0), SetStringTip(STR_CHEAT_CLEAR_STATION_CARGO, STR_CHEAT_CLEAR_STATION_CARGO_TOOLTIP),
 };
 
 /** GUI for the cheats. */
@@ -482,7 +484,20 @@ struct CheatWindow : Window {
 		switch (widget) {
 			case WID_C_PANEL: CheatPanelClick(pt); break;
 			case WID_C_SETTINGS: SettingsPanelClick(pt); break;
+			case WID_C_CLEAR_STATION_CARGO:
+				if (!IsCheatAllowed(CNM_ALL)) break;
+				ShowQuery(GetEncodedString(STR_CHEAT_CLEAR_STATION_CARGO_QUERY_CAPTION), GetEncodedString(STR_CHEAT_CLEAR_STATION_CARGO_QUERY), this,
+						[](Window *, bool confirmed) {
+							if (confirmed) Command<Commands::ClearAllStationCargoCheat>::Post();
+						});
+				break;
 		}
+	}
+
+	void OnPaint() override
+	{
+		this->SetWidgetDisabledState(WID_C_CLEAR_STATION_CARGO, !IsCheatAllowed(CNM_ALL));
+		this->DrawWidgets();
 	}
 
 	void CheatPanelClick(Point pt)

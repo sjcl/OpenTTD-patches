@@ -2639,3 +2639,7 @@ STR_CONFIG_SETTING_NEWS_CARGO_FLOW                              :Overflowing car
 STR_CONFIG_SETTING_NEWS_CARGO_FLOW_HELPTEXT                     :Warn about stations where cargo is accumulating.{}The detection is based on shape of the cargo history graph, not on specific amount threshold.
 
 STR_STATION_CARGO_OVERFLOW                                      :{WHITE}{CARGO_LIST} overflowing at {STATION}
+STR_CHEAT_CLEAR_STATION_CARGO                                   :{BLACK}Remove all waiting cargo at all stations
+STR_CHEAT_CLEAR_STATION_CARGO_TOOLTIP                           :{BLACK}Remove all cargo (including passengers) waiting at all stations of all companies. Cargo already reserved for loading onto vehicles is not removed.
+STR_CHEAT_CLEAR_STATION_CARGO_QUERY_CAPTION                     :{WHITE}Remove waiting cargo
+STR_CHEAT_CLEAR_STATION_CARGO_QUERY                             :{YELLOW}Are you sure you want to remove all cargo waiting at all stations?

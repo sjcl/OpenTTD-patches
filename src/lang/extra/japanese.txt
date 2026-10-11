@@ -222,3 +222,7 @@ STR_CONFIG_SETTING_AIRCRAFT_PATH_COST                           :航空機を使
 STR_CONFIG_SETTING_AIRCRAFT_PATH_COST_HELPTEXT                  :航空機を使う経路のコスト（距離）にこの倍率をかけ、実際より遠回りに（100%未満なら近く）見せます。航空機の直行便に旅客が集中しすぎるのを抑えられます。
 STR_CONFIG_SETTING_AIRCRAFT_PATH_COST_ADD                       :航空機を使う区間ごとの経路コスト加算: {STRING2}
 STR_CONFIG_SETTING_AIRCRAFT_PATH_COST_ADD_HELPTEXT              :航空機を使う区間のコストに、倍率をかけた後、距離に関係なくこの日数を加算します。空港での手続きなどの固定的な時間を表すのに使えます。
+STR_CHEAT_CLEAR_STATION_CARGO                                   :{BLACK}全ての停留所の待ち貨物を削除
+STR_CHEAT_CLEAR_STATION_CARGO_TOOLTIP                           :{BLACK}全ての会社の全ての停留所で待っている貨物（旅客を含む）を削除します。車両への積み込みのために予約済みの貨物は削除されません。
+STR_CHEAT_CLEAR_STATION_CARGO_QUERY_CAPTION                     :{WHITE}待ち貨物の削除
+STR_CHEAT_CLEAR_STATION_CARGO_QUERY                             :{YELLOW}全ての停留所の待ち貨物を削除してもよろしいですか？

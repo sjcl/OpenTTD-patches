@@ -626,6 +626,7 @@ enum class Commands : uint8_t {
 	MoneyCheatAdmin,                        ///< do the money cheat (admin mode)
 	ChangeBankBalance,                      ///< change bank balance to charge costs or give money from a GS
 	CheatSetting,                           ///< change a cheat setting
+	ClearAllStationCargoCheat,              ///< cheat: remove all cargo waiting at all stations
 	BuildCanal,                             ///< build a canal
 
 	CreateSubsidy,                          ///< create a new subsidy
