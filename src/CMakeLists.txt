@@ -62,6 +62,9 @@ add_files(
     passenger_journey_planner.h
     passenger_journey_shadow.cpp
     passenger_journey_shadow.h
+    passenger_journey_active.cpp
+    passenger_journey_active.h
+    passenger_journey_type.h
     aircraft.h
     aircraft_cmd.cpp
     aircraft_gui.cpp

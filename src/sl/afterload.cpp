@@ -8,6 +8,7 @@
 /** @file afterload.cpp Code updating data after game load. */
 
 #include "../stdafx.h"
+#include "../passenger_journey_active.h"
 #include "../void_map.h"
 #include "../signs_base.h"
 #include "../depot_base.h"
@@ -4632,6 +4633,7 @@ bool AfterLoadGame()
 	/* Stations, graph membership and CargoSpecs are now converted. Validate OD
 	 * state and migrate old saves before AfterLoadLinkGraphs resumes any jobs. */
 	AfterLoadPassengerOd();
+	AfterLoadPassengerJourneys();
 	AfterLoadLinkGraphs();
 
 	AfterLoadTraceRestrict();

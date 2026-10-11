@@ -28,6 +28,12 @@ extern btree::btree_map<uint64_t, Money> _cargo_packet_deferred_payments;
 	/* Stations are now available. Old saves have no OD; malformed or stale IDs
 	 * must not survive loading or become references to subsequently reused IDs. */
 	for (CargoPacket *cp : CargoPacket::Iterate()) {
+		if (SlXvIsFeatureMissing(XSLFI_PASSENGER_JOURNEY_ROUTING)) {
+			cp->passenger_routing_mode = PassengerRoutingMode::Legacy;
+			cp->passenger_journey = {};
+		} else if (to_underlying(cp->passenger_routing_mode) > to_underlying(PassengerRoutingMode::Fallback)) {
+			SlErrorCorrupt("Invalid passenger routing mode");
+		}
 		if (SlXvIsFeatureMissing(XSLFI_PASSENGER_DESTINATION) || !Station::IsValidID(cp->passenger_destination)) {
 			cp->passenger_destination = StationID::Invalid();
 		}
@@ -172,6 +178,19 @@ NamedSaveLoadTable GetCargoPacketDesc()
 		NSL("loaded_at_xy",       SLE_VAR(CargoPacket, next_hop,                 SLE_FILE_U32 | SLE_VAR_U16)),
 		NSL("passenger_via",      SLE_CONDVAR_X(CargoPacket, passenger_via,      SLE_UINT16, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_PASSENGER_VIA))),
 		NSL("passenger_destination", SLE_CONDVAR_X(CargoPacket, passenger_destination, SLE_UINT16, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_PASSENGER_DESTINATION))),
+		NSL("passenger_routing_mode", SLE_CONDVAR_X(CargoPacket, passenger_routing_mode, SLE_UINT8, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_PASSENGER_JOURNEY_ROUTING))),
+		NSL("passenger_journey.vehicle", SLE_CONDVAR_X(CargoPacket, passenger_journey.vehicle, SLE_UINT32, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_PASSENGER_JOURNEY_ROUTING))),
+		NSL("passenger_journey.service", SLE_CONDVAR_X(CargoPacket, passenger_journey.service, SLE_UINT16, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_PASSENGER_JOURNEY_ROUTING))),
+		NSL("passenger_journey.boarding", SLE_CONDVAR_X(CargoPacket, passenger_journey.boarding, SLE_UINT16, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_PASSENGER_JOURNEY_ROUTING))),
+		NSL("passenger_journey.alighting", SLE_CONDVAR_X(CargoPacket, passenger_journey.alighting, SLE_UINT16, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_PASSENGER_JOURNEY_ROUTING))),
+		NSL("passenger_journey.boarding_order", SLE_CONDVAR_X(CargoPacket, passenger_journey.boarding_order, SLE_UINT16, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_PASSENGER_JOURNEY_ROUTING))),
+		NSL("passenger_journey.alighting_order", SLE_CONDVAR_X(CargoPacket, passenger_journey.alighting_order, SLE_UINT16, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_PASSENGER_JOURNEY_ROUTING))),
+		NSL("passenger_journey.departure", SLE_CONDVAR_X(CargoPacket, passenger_journey.departure, SLE_INT64, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_PASSENGER_JOURNEY_ROUTING))),
+		NSL("passenger_journey.arrival", SLE_CONDVAR_X(CargoPacket, passenger_journey.arrival, SLE_INT64, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_PASSENGER_JOURNEY_ROUTING))),
+		NSL("passenger_journey.signature", SLE_CONDVAR_X(CargoPacket, passenger_journey.signature, SLE_UINT64, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_PASSENGER_JOURNEY_ROUTING))),
+		NSL("passenger_legacy_hop", SLE_CONDVAR_X(CargoPacket, passenger_legacy_hop, SLE_UINT16, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_PASSENGER_JOURNEY_ROUTING))),
+		NSL("passenger_retry_station", SLE_CONDVAR_X(CargoPacket, passenger_retry_station, SLE_UINT16, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_PASSENGER_JOURNEY_ROUTING))),
+		NSL("passenger_retry_after", SLE_CONDVAR_X(CargoPacket, passenger_retry_after, SLE_INT64, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_PASSENGER_JOURNEY_ROUTING))),
 		NSL("count",              SLE_VAR(CargoPacket, count,                    SLE_UINT16)),
 		NSL("periods_in_transit", SLE_CONDVAR_X(CargoPacket, periods_in_transit, SLE_FILE_U8 | SLE_VAR_U16, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_MORE_CARGO_AGE, 0, 0))),
 		NSL("periods_in_transit", SLE_CONDVAR_X(CargoPacket, periods_in_transit, SLE_UINT16, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_MORE_CARGO_AGE))),

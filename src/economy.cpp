@@ -8,6 +8,7 @@
 /** @file economy.cpp Handling of the economy. */
 
 #include "stdafx.h"
+#include "passenger_journey_active.h"
 #include "passenger_journey_shadow.h"
 #include "company_cmd.h"
 #include "company_func.h"
@@ -1558,6 +1559,7 @@ void PrepareUnload(Vehicle *front_v)
 
 	CargoStationIDVectorSet next_station = front_v->GetNextStoppingStation();
 	PassengerRoutingContext passenger_routing(front_v, front_v->last_station_visited);
+	PassengerJourneyActiveContext journey_routing(front_v, front_v->last_station_visited);
 	if (front_v->orders == nullptr || (front_v->current_order.GetUnloadType() != OrderUnloadType::NoUnload)) {
 		Station *st = Station::Get(front_v->last_station_visited);
 		for (Vehicle *v = front_v; v != nullptr; v = v->Next()) {
@@ -1569,7 +1571,7 @@ void PrepareUnload(Vehicle *front_v)
 						front_v->last_station_visited, next_station.Get(v->cargo_type),
 						GetUnloadType(v), ge,
 						v->cargo_type, front_v->cargo_payment,
-						v->GetMovingFront()->GetCargoTile(), &passenger_routing, IsPassengerJourneyShadowEnabled() ? &shadow : nullptr);
+						v->GetMovingFront()->GetCargoTile(), &passenger_routing, IsPassengerJourneyShadowEnabled() ? &shadow : nullptr, &journey_routing);
 				if (v->cargo.UnloadCount() > 0) v->vehicle_flags.Set(VehicleFlag::CargoUnloading);
 			}
 		}
@@ -1781,7 +1783,7 @@ struct FinalizeRefitAction
 	{
 		if (this->do_reserve || (cargo_type_loading == nullptr || IsFullLoadOrderLoadType(cargo_type_loading->current_order.GetCargoLoadTypeRaw(v->cargo_type)))) {
 			this->st->goods[v->cargo_type].CreateData().cargo.Reserve(v->cargo_cap - v->cargo.RemainingCount(),
-					&v->cargo, this->next_station.Get(v->cargo_type), v->GetCargoTile());
+					&v->cargo, this->next_station.Get(v->cargo_type), v->GetCargoTile(), v);
 		}
 		this->consist_capleft[v->cargo_type] += v->cargo_cap - v->cargo.RemainingCount();
 		return true;
@@ -1816,7 +1818,7 @@ static void HandleStationRefit(Vehicle *v, Vehicle *v_start, CargoArray &consist
 		new_cid = v_start->cargo_type;
 		for (CargoType cid : refit_mask) {
 			if (check_order && v->First()->current_order.GetCargoLoadType(cid) == OrderLoadType::NoLoad) continue;
-			if (st->goods[cid].data != nullptr && st->goods[cid].data->cargo.HasCargoFor(next_station.Get(cid))) {
+			if (st->goods[cid].data != nullptr && st->goods[cid].data->cargo.HasCargoFor(next_station.Get(cid), v)) {
 				/* Try to find out if auto-refitting would succeed. In case the refit is allowed,
 				 * the returned refit capacity will be greater than zero. */
 				Command<Commands::RefitVehicle>::Do(DoCommandFlag::QueryCost, v_start->index, cid, 0xFF, true, false, 1); // Auto-refit and only this vehicle including artic parts.
@@ -1884,7 +1886,7 @@ struct ReserveCargoAction {
 		}
 		if (v->cargo_cap > v->cargo.RemainingCount() && MayLoadUnderExclusiveRights(st, v)) {
 			st->goods[v->cargo_type].CreateData().cargo.Reserve(v->cargo_cap - v->cargo.RemainingCount(),
-					&v->cargo, next_station.Get(v->cargo_type), v->GetCargoTile());
+					&v->cargo, next_station.Get(v->cargo_type), v->GetCargoTile(), v);
 		}
 
 		return true;
@@ -2127,6 +2129,11 @@ static void LoadUnloadVehicle(Vehicle *front)
 
 			if (!ge->status.Test(GoodsEntry::State::Acceptance) && v->cargo.ActionCount(VehicleCargoList::MoveToAction::Deliver) > 0) {
 				/* The station does not accept our goods anymore. */
+				for (CargoPacket *packet : *v->cargo.Packets()) {
+					if (packet->GetPassengerRoutingMode() == PassengerRoutingMode::Journey && packet->GetPassengerDestination() == st->index) {
+						packet->FallbackPassengerJourney(st->index, _state_ticks);
+					}
+				}
 				OrderUnloadType unload_type = GetUnloadType(v);
 				if (unload_type == OrderUnloadType::Transfer || unload_type == OrderUnloadType::Unload) {
 					/* Transfer instead of delivering. */
@@ -2249,7 +2256,7 @@ static void LoadUnloadVehicle(Vehicle *front)
 				if (v->cargo.StoredCount() == 0) TriggerVehicleRandomisation(v, VehicleRandomTrigger::NewCargo);
 				if (_settings_game.order.gradual_loading) cap_left = std::min(cap_left, GetLoadAmount(v));
 
-				uint loaded = ged->cargo.Load(cap_left, &v->cargo, next_station.Get(v->cargo_type), v->GetCargoTile());
+				uint loaded = ged->cargo.Load(cap_left, &v->cargo, next_station.Get(v->cargo_type), v->GetCargoTile(), v);
 				if (v->cargo.ActionCount(VehicleCargoList::MoveToAction::Load) > 0) {
 					/* Remember if there are reservations left so that we don't stop
 					 * loading before they're loaded. */
@@ -2457,6 +2464,7 @@ void LoadUnloadStation(Station *st)
 {
 	/* No vehicle is here... */
 	if (st->loading_vehicles.empty()) return;
+	RouteWaitingPassengerJourneys(st);
 
 	Vehicle *last_loading = nullptr;
 

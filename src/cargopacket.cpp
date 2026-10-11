@@ -8,6 +8,7 @@
 /** @file cargopacket.cpp Implementation of the cargo packets. */
 
 #include "stdafx.h"
+#include "passenger_journey_active.h"
 #include "passenger_journey_shadow.h"
 #include "command_type.h"
 #include "debug.h"
@@ -22,6 +23,7 @@
 #include "string_func.h"
 #include "strings_func.h"
 #include "settings_type.h"
+#include "date_func.h"
 #include "passenger_routing.h"
 #include "3rdparty/cpp-btree/btree_map.h"
 
@@ -171,7 +173,12 @@ CargoPacket::CargoPacket(CargoPacketID index, uint16_t count, Money feeder_share
 		first_station(original.first_station),
 		next_hop(original.next_hop),
 		passenger_via(original.passenger_via),
-		passenger_destination(original.passenger_destination)
+		passenger_destination(original.passenger_destination),
+		passenger_routing_mode(original.passenger_routing_mode),
+		passenger_journey(original.passenger_journey),
+		passenger_legacy_hop(original.passenger_legacy_hop),
+		passenger_retry_station(original.passenger_retry_station),
+		passenger_retry_after(original.passenger_retry_after)
 {
 	dbg_assert(count != 0);
 #ifdef WITH_FULL_ASSERTS
@@ -227,7 +234,7 @@ CargoPacket *CargoPacket::Split(uint new_size)
  */
 bool CargoPacket::Merge(CargoPacket *cp)
 {
-	if (this->passenger_destination != cp->passenger_destination) return false;
+	if (this->passenger_destination != cp->passenger_destination || !this->HasSamePassengerRouting(*cp)) return false;
 	this->count += cp->count;
 	this->feeder_share += cp->feeder_share;
 
@@ -319,7 +326,12 @@ void CargoPacket::PayDeferredPayments()
 	for (CargoPacket *cp : CargoPacket::Iterate()) {
 		if (cp->first_station == sid) cp->first_station = StationID::Invalid();
 		if (cp->passenger_via == sid) cp->passenger_via = StationID::Invalid();
+		if (cp->passenger_legacy_hop == sid) cp->passenger_legacy_hop = StationID::Invalid();
 		if (cp->passenger_destination == sid) cp->passenger_destination = StationID::Invalid();
+		if (cp->passenger_routing_mode == PassengerRoutingMode::Journey &&
+				(cp->passenger_journey.boarding == sid || cp->passenger_journey.alighting == sid || cp->passenger_destination == StationID::Invalid())) {
+			cp->FallbackPassengerJourney(StationID::Invalid(), _state_ticks);
+		}
 	}
 }
 
@@ -664,7 +676,7 @@ void VehicleCargoList::AgeCargo()
  * @param routing Arrival-scoped passenger prediction cache, or nullptr for original behaviour.
  * @return \c true iff any cargo will be unloaded.
  */
-bool VehicleCargoList::Stage(bool accepted, StationID current_station, std::span<const StationID> next_station, OrderUnloadType unload_type, const GoodsEntry *ge, CargoType cargo, CargoPayment *payment, TileIndex current_tile, PassengerRoutingContext *routing, PassengerJourneyShadowContext *shadow)
+bool VehicleCargoList::Stage(bool accepted, StationID current_station, std::span<const StationID> next_station, OrderUnloadType unload_type, const GoodsEntry *ge, CargoType cargo, CargoPayment *payment, TileIndex current_tile, PassengerRoutingContext *routing, PassengerJourneyShadowContext *shadow, PassengerJourneyActiveContext *active)
 {
 	this->AssertCountConsistency();
 	dbg_assert(this->action_counts[MoveToAction::Load] == 0);
@@ -717,7 +729,12 @@ bool VehicleCargoList::Stage(bool accepted, StationID current_station, std::span
 			}
 		};
 
-		if (force_keep) {
+		const bool was_journey = cp->GetPassengerRoutingMode() == PassengerRoutingMode::Journey;
+		auto journey_action = active == nullptr ? std::optional<MoveToAction>{} : active->Decide(*cp, cargo, accepted, unload_type);
+		if (journey_action) {
+			action = *journey_action;
+			cargo_next = cp->GetNextHop();
+		} else if (force_keep) {
 			action = MoveToAction::Keep;
 		} else if (force_unload && !transfer_cargodist_mode && accepted && cp->first_station != current_station) {
 			action = MoveToAction::Deliver;
@@ -774,6 +791,7 @@ bool VehicleCargoList::Stage(bool accepted, StationID current_station, std::span
 			}
 		}
 		/* Observe the final action without repeating flow selection/prediction or modifying cargo. */
+		if (was_journey && !accepted && action == MoveToAction::Deliver) action = MoveToAction::Keep;
 		if (shadow != nullptr) shadow->Observe(*cp, cargo, action, cargo_next, unload_type);
 		Money share;
 		switch (action) {
@@ -984,6 +1002,8 @@ uint VehicleCargoList::RerouteFromSource(uint max_move, VehicleCargoList *dest, 
 void StationCargoList::Append(CargoPacket *cp, StationID next)
 {
 	dbg_assert(cp != nullptr);
+	if (cp->GetPassengerRoutingMode() == PassengerRoutingMode::Journey) next = StationID::Invalid();
+	if (cp->GetPassengerRoutingMode() == PassengerRoutingMode::Fallback) cp->SetPassengerLegacyHop(next);
 	this->AddToCache(cp);
 
 	StationCargoPacketMap::List &list = this->packets[next];
@@ -1183,9 +1203,9 @@ uint StationCargoList::Truncate(uint max_move, StationCargoAmountMap *cargo_per_
  * @param current_tile Current tile the cargo handling is happening on.
  * @return Amount of cargo actually reserved.
  */
-uint StationCargoList::Reserve(uint max_move, VehicleCargoList *dest, std::span<const StationID> next_station, TileIndex current_tile)
+uint StationCargoList::Reserve(uint max_move, VehicleCargoList *dest, std::span<const StationID> next_station, TileIndex current_tile, const Vehicle *vehicle)
 {
-	return this->ShiftCargo(CargoReservation(this, dest, max_move, current_tile), next_station, true);
+	return this->ShiftJourneyCargo(CargoReservation(this, dest, max_move, current_tile), next_station, vehicle);
 }
 
 /**
@@ -1200,16 +1220,60 @@ uint StationCargoList::Reserve(uint max_move, VehicleCargoList *dest, std::span<
  *       modes of loading are exclusive, though. If cargo is reserved we don't
  *       need to load unreserved cargo.
  */
-uint StationCargoList::Load(uint max_move, VehicleCargoList *dest, std::span<const StationID> next_station, TileIndex current_tile)
+uint StationCargoList::Load(uint max_move, VehicleCargoList *dest, std::span<const StationID> next_station, TileIndex current_tile, const Vehicle *vehicle)
 {
+	/* Orders/settings may change while gradual loading has reservations. Return the whole
+	 * reserved suffix using the existing action/count bookkeeping before selecting again. */
+	PassengerJourneyBoardingContext boarding(vehicle);
+	if (dest->ReservedCount() > 0) {
+		uint reserved = dest->ReservedCount();
+		uint skip = dest->StoredCount();
+		bool invalid = false;
+		for (const CargoPacket *packet : *dest->Packets()) {
+			if (skip >= packet->Count()) { skip -= packet->Count(); continue; }
+			if (!boarding.CanBoard(*packet)) { invalid = true; break; }
+		}
+		if (invalid) dest->Return(reserved, this, StationID::Invalid(), current_tile);
+	}
 	uint move = std::min(dest->ActionCount(VehicleCargoList::MoveToAction::Load), max_move);
 	if (move > 0) {
 		this->reserved_count -= move;
 		dest->Reassign<VehicleCargoList::MoveToAction::Load, VehicleCargoList::MoveToAction::Keep>(move);
 		return move;
 	} else {
-		return this->ShiftCargo(CargoLoad{this, dest, max_move, current_tile}, next_station, true);
+		return this->ShiftJourneyCargo(CargoLoad{this, dest, max_move, current_tile}, next_station, vehicle);
 	}
+}
+
+/** Skip other trains' journey packets even when they share a CargoDist next-hop bucket.
+ * Legacy iteration/order and the real split/reservation actions are kept unchanged. */
+template <class Taction>
+uint StationCargoList::ShiftJourneyCargo(Taction action, std::span<const StationID> next, const Vehicle *vehicle)
+{
+	PassengerJourneyBoardingContext boarding(vehicle);
+	uint maximum = action.MaxMove();
+	auto shift = [&](StationID key) {
+		for (Iterator it(this->packets.lower_bound(key)); it != this->packets.end() && it.GetKey() == key && action.MaxMove() > 0;) {
+			CargoPacket *packet = *it;
+			if (!boarding.CanBoard(*packet)) { ++it; continue; }
+			if (action(packet)) it = this->packets.erase(it);
+			else break;
+		}
+	};
+	for (StationID key : next) { shift(key); if (action.MaxMove() == 0) break; }
+	if (action.MaxMove() > 0) shift(StationID::Invalid());
+	return maximum - action.MaxMove();
+}
+
+bool StationCargoList::HasCargoFor(std::span<const StationID> next, const Vehicle *vehicle) const
+{
+	PassengerJourneyBoardingContext boarding(vehicle);
+	auto has = [&](StationID key) {
+		for (ConstIterator it(this->packets.lower_bound(key)); it != this->packets.end() && it.GetKey() == key; ++it) if (boarding.CanBoard(**it)) return true;
+		return false;
+	};
+	for (StationID key : next) if (has(key)) return true;
+	return has(StationID::Invalid());
 }
 
 /**

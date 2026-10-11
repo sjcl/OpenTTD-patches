@@ -8,6 +8,7 @@
 /** @file station_gui.cpp The GUI for stations. */
 
 #include "stdafx.h"
+#include "passenger_journey_active.h"
 #include "debug.h"
 #include "gui.h"
 #include "querystring_gui.h"
@@ -947,6 +948,7 @@ static constexpr std::initializer_list<NWidgetPart> _nested_station_view_widgets
 		NWidget(NWID_VSCROLLBAR, Colours::Grey, WID_SV_SCROLLBAR),
 	EndContainer(),
 	NWidget(WWT_PANEL, Colours::Grey, WID_SV_ACCEPT_RATING_LIST), SetMinimalSize(249, 23), SetResize(1, 0), EndContainer(),
+	NWidget(WWT_PANEL, Colours::Grey, WID_SV_PASSENGER_ROUTING), SetResize(1, 0), EndContainer(),
 	NWidget(NWID_HORIZONTAL, NWidContainerFlag::EqualSize),
 		NWidget(WWT_PUSHTXTBTN, Colours::Grey, WID_SV_ACCEPTS_RATINGS), SetMinimalSize(46, 12), SetResize(1, 0), SetFill(1, 1),
 				SetStringTip(STR_STATION_VIEW_RATINGS_BUTTON, STR_STATION_VIEW_RATINGS_TOOLTIP),
@@ -1401,6 +1403,8 @@ struct StationViewWindow : public Window {
 	uint expand_shrink_width = 0; ///< The width allocated to the expand/shrink 'button'
 	int rating_lines = RATING_LINES; ///< Number of lines in the cargo ratings view.
 	int accepts_lines = ACCEPTS_LINES; ///< Number of lines in the accepted cargo view.
+	int passenger_routing_lines = 1;
+	std::array<std::array<uint, 3>, NUM_CARGO> passenger_routing_counts{};
 	int line_height = 0; ///< Height of a cargo line.
 	Dimension cargo_icon_size{}; ///< Size of largest cargo icon.
 	Scrollbar *vscroll = nullptr;
@@ -1543,6 +1547,10 @@ struct StationViewWindow : public Window {
 				fill.height = resize.height = this->line_height;
 				size.height = 4 * resize.height + padding.height;
 				break;
+			case WID_SV_PASSENGER_ROUTING:
+				size.height = this->passenger_routing_lines * GetCharacterHeight(FontSize::Small) + padding.height;
+				size.width = GetStringBoundingBox(GetString(STR_STATION_VIEW_PASSENGER_ROUTING_DETAIL, 88888, 88888, 88888), FontSize::Small).width + padding.width;
+				break;
 
 			case WID_SV_ACCEPT_RATING_LIST:
 				size.height = ((this->GetWidget<NWidgetCore>(WID_SV_ACCEPTS_RATINGS)->GetString() == STR_STATION_VIEW_RATINGS_BUTTON) ? this->accepts_lines : this->rating_lines) * GetCharacterHeight(FontSize::Normal) + padding.height;
@@ -1597,6 +1605,11 @@ struct StationViewWindow : public Window {
 		const Station *st = Station::Get(this->window_number);
 		CargoDataEntry cargo;
 		BuildCargoList(&cargo, st);
+		int routing_lines = 1;
+		for (CargoType cid : EnumRange(NUM_CARGO)) {
+			if (IsCargoInClass(cid, CargoClass::Passengers) && st->goods[cid].CargoTotalCount() > 0) routing_lines += 3;
+		}
+		if (routing_lines != this->passenger_routing_lines) { this->passenger_routing_lines = routing_lines; this->ReInit(); return; }
 
 		this->vscroll->SetCount(cargo.GetNumChildren()); // update scrollbar
 
@@ -1622,6 +1635,25 @@ struct StationViewWindow : public Window {
 		this->DrawWidgets();
 
 		if (!this->IsShaded()) {
+			Rect routing_rect = this->GetWidget<NWidgetBase>(WID_SV_PASSENGER_ROUTING)->GetCurrentRect().Shrink(WidgetDimensions::scaled.framerect);
+			int routing_y = routing_rect.top;
+			const int routing_height = GetCharacterHeight(FontSize::Small);
+			DrawString(routing_rect.left, routing_rect.right, routing_y, STR_STATION_VIEW_PASSENGER_ROUTING_TITLE, TextColour::Black, AlignmentH::Start, false, FontSize::Small);
+			routing_y += routing_height;
+			for (const CargoSpec *cs : _sorted_cargo_specs) {
+				CargoType cid = cs->Index();
+				if (!IsCargoInClass(cid, CargoClass::Passengers) || st->goods[cid].CargoTotalCount() == 0) continue;
+				const auto &counts = this->passenger_routing_counts[cid];
+				DrawString(routing_rect.left, routing_rect.right, routing_y, GetString(STR_STATION_VIEW_PASSENGER_ROUTING_TOTAL,
+						cs->name, st->goods[cid].CargoTotalCount()), TextColour::Black, AlignmentH::Start, false, FontSize::Small);
+				routing_y += routing_height;
+				DrawString(routing_rect.left, routing_rect.right, routing_y, GetString(STR_STATION_VIEW_PASSENGER_ROUTING_DETAIL,
+						counts[1], counts[0], counts[2]), TextColour::Black, AlignmentH::Start, false, FontSize::Small);
+				routing_y += routing_height;
+				DrawString(routing_rect.left, routing_rect.right, routing_y, GetString(STR_STATION_VIEW_PASSENGER_ROUTING_RESERVED,
+						st->goods[cid].CargoAvailableCount(), st->goods[cid].CargoReservedCount()), TextColour::Black, AlignmentH::Start, false, FontSize::Small);
+				routing_y += routing_height;
+			}
 			/* Draw 'accepted cargo' or 'cargo ratings'. */
 			const NWidgetBase *wid = this->GetWidget<NWidgetBase>(WID_SV_ACCEPT_RATING_LIST);
 			const Rect r = wid->GetCurrentRect();
@@ -1793,6 +1825,11 @@ struct StationViewWindow : public Window {
 		for (StationCargoList::ConstIterator it = packets.Packets()->begin(); it != packets.Packets()->end(); it++) {
 			const CargoPacket *cp = *it;
 			StationID next = it.GetKey();
+			if (IsCargoInClass(cargo, CargoClass::Passengers)) this->passenger_routing_counts[cargo][to_underlying(cp->GetPassengerRoutingMode())] += cp->Count();
+			if (cp->GetPassengerDestination() != StationID::Invalid()) {
+				this->ShowCargo(entry, cargo, cp->GetFirstStation(), next, cp->GetPassengerDestination(), cp->Count());
+				continue;
+			}
 
 			const CargoDataEntry *source_entry = source_dest->Retrieve(cp->GetFirstStation());
 			if (source_entry == nullptr) {
@@ -1837,6 +1874,7 @@ struct StationViewWindow : public Window {
 	void BuildCargoList(CargoDataEntry *entry, const Station *st)
 	{
 		for (CargoType cargo : EnumRange(NUM_CARGO)) {
+			this->passenger_routing_counts[cargo] = {};
 			if (this->cached_destinations.Retrieve(cargo) == nullptr) {
 				this->RecalcDestinations(cargo);
 			}
@@ -1845,6 +1883,11 @@ struct StationViewWindow : public Window {
 				this->BuildCargoList(cargo, st->goods[cargo].ConstCargoList(), entry);
 			} else {
 				this->BuildFlowList(cargo, st->goods[cargo].ConstFlows(), entry);
+				if (IsCargoInClass(cargo, CargoClass::Passengers)) this->passenger_routing_counts[cargo] = CountPassengerRoutingModes(st->goods[cargo].ConstCargoList());
+			}
+			if (IsCargoInClass(cargo, CargoClass::Passengers)) {
+				auto reserved = CountReservedPassengerRoutingModes(*st, cargo);
+				for (size_t mode = 0; mode < reserved.size(); ++mode) this->passenger_routing_counts[cargo][mode] += reserved[mode];
 			}
 		}
 	}

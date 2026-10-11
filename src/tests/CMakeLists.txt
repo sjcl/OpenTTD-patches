@@ -15,6 +15,7 @@ add_test_files(
     passenger_service_graph.cpp
     passenger_journey_planner.cpp
     passenger_journey_shadow.cpp
+    passenger_journey_active.cpp
     mock_environment.h
     mock_fontcache.h
     mock_spritecache.cpp
