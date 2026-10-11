@@ -732,13 +732,15 @@ static constexpr std::array<Colours, 14> ROUTE_COLOURS = {
 };
 
 /**
- * Set the station whose waiting passengers' estimated routes are shown instead of the link graph.
+ * Set the station whose passengers' estimated routes are shown instead of the link graph.
  * @param station Station, or StationID::Invalid() to show the link graph again.
+ * @param mode Which passengers of the station to show the routes of.
  */
-void LinkGraphOverlay::SetRouteStation(StationID station)
+void LinkGraphOverlay::SetRouteStation(StationID station, RouteMode mode)
 {
-	if (this->route_station == station) return;
+	if (this->route_station == station && this->route_mode == mode) return;
 	this->route_station = station;
+	this->route_mode = mode;
 	this->route_links.clear();
 	this->route_stations.clear();
 	this->route_max_volume = 0;
@@ -822,12 +824,27 @@ void LinkGraphOverlay::RebuildRouteCache()
 		const GoodsEntry &ge = st->goods[cargo];
 		if (ge.data == nullptr) continue;
 
-		/* Group the waiting passengers by origin and next hop */
+		/* Group the passengers by origin and next hop */
 		btree::btree_map<std::pair<StationID, StationID>, uint> groups;
-		const StationCargoList &packets = ge.data->cargo;
-		for (StationCargoList::ConstIterator it = packets.Packets()->begin(); it != packets.Packets()->end(); it++) {
-			const CargoPacket *cp = *it;
-			groups[std::make_pair(cp->GetFirstStation(), it.GetKey())] += cp->Count();
+		if (this->route_mode == RouteMode::MonthlyPlanned) {
+			/* Planned monthly flows departing from this station, both originating here and transferring here */
+			for (const FlowStat &flow : ge.data->flows) {
+				if (flow.IsInvalid()) continue;
+				uint32_t prev_count = 0;
+				for (FlowStat::const_iterator i = flow.begin(); i != flow.end(); ++i) {
+					const uint32_t amount = i->first - prev_count;
+					prev_count = i->first;
+					if (i->second == st->index) continue; // Passengers leaving the network here
+					groups[std::make_pair(flow.GetOrigin(), i->second)] += amount;
+				}
+			}
+		} else {
+			/* Waiting passengers */
+			const StationCargoList &packets = ge.data->cargo;
+			for (StationCargoList::ConstIterator it = packets.Packets()->begin(); it != packets.Packets()->end(); it++) {
+				const CargoPacket *cp = *it;
+				groups[std::make_pair(cp->GetFirstStation(), it.GetKey())] += cp->Count();
+			}
 		}
 
 		for (const auto &it : groups) {
@@ -961,7 +978,7 @@ bool LinkGraphOverlay::ShowRouteTooltip(Point pt, TooltipCloseCondition close_co
 	for (const RouteStationInfo &i : this->route_stations) {
 		if (i.id == this->route_station || !Station::IsValidID(i.id)) continue;
 		if (abs(pt.x - i.pt.x) <= ScaleGUITrad(6) && abs(pt.y - i.pt.y) <= ScaleGUITrad(6)) {
-			GuiShowTooltips(this->window, GetEncodedString(STR_STATION_ROUTE_OVERLAY_ALIGHTING_TOOLTIP, i.id, i.volume), close_cond);
+			GuiShowTooltips(this->window, GetEncodedString(this->route_mode == RouteMode::MonthlyPlanned ? STR_STATION_ROUTE_OVERLAY_ALIGHTING_TOOLTIP_MONTHLY : STR_STATION_ROUTE_OVERLAY_ALIGHTING_TOOLTIP, i.id, i.volume), close_cond);
 			return true;
 		}
 	}
@@ -984,7 +1001,7 @@ bool LinkGraphOverlay::ShowRouteTooltip(Point pt, TooltipCloseCondition close_co
 				total += j.volume;
 				if (Station::IsValidID(j.first_hop)) AppendStringInPlace(buf, STR_STATION_ROUTE_OVERLAY_LINK_TOOLTIP_FIRST_HOP, j.first_hop, j.volume);
 			}
-			GuiShowTooltips(this->window, GetEncodedString(STR_STATION_ROUTE_OVERLAY_LINK_TOOLTIP, i->from_id, i->to_id, total, (std::string_view)buf), close_cond);
+			GuiShowTooltips(this->window, GetEncodedString(this->route_mode == RouteMode::MonthlyPlanned ? STR_STATION_ROUTE_OVERLAY_LINK_TOOLTIP_MONTHLY : STR_STATION_ROUTE_OVERLAY_LINK_TOOLTIP, i->from_id, i->to_id, total, (std::string_view)buf), close_cond);
 			return true;
 		}
 	}

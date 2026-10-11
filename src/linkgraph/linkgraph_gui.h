@@ -118,10 +118,19 @@ public:
 	/** Get a bitmask of the currently shown companies. */
 	CompanyMask GetCompanyMask() const { return this->company_mask; }
 
-	void SetRouteStation(StationID station);
+	/** Which passengers of the selected station to show the routes of. */
+	enum class RouteMode : uint8_t {
+		Waiting,        ///< Passengers currently waiting at the station.
+		MonthlyPlanned, ///< Planned monthly flow of passengers departing from the station.
+	};
 
-	/** Get the station whose waiting passengers' routes are shown, or StationID::Invalid() if none. */
+	void SetRouteStation(StationID station, RouteMode mode = RouteMode::Waiting);
+
+	/** Get the station whose passengers' routes are shown, or StationID::Invalid() if none. */
 	StationID GetRouteStation() const { return this->route_station; }
+
+	/** Get which passengers of the selected station the routes are shown of. */
+	RouteMode GetRouteMode() const { return this->route_mode; }
 
 	/** Whether the overlay has anything to show. */
 	bool IsActive() const
@@ -145,6 +154,7 @@ protected:
 	uint64_t rebuild_counter = 0;      ///< Rebuild counter
 
 	StationID route_station = StationID::Invalid(); ///< Station whose waiting passengers' routes are shown instead of the link graph.
+	RouteMode route_mode = RouteMode::Waiting;      ///< Which passengers of route_station to show the routes of.
 	std::vector<RouteLinkInfo> route_links;         ///< Cache of the links of the estimated passenger routes.
 	std::vector<RouteStationInfo> route_stations;   ///< Cache of the stations of the estimated passenger routes.
 	uint route_max_volume = 0;                      ///< Maximum volume of route_links.

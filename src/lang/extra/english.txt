@@ -1414,10 +1414,15 @@ STR_LOCAL_AUTHORITY_SETTING_OVERRIDE_TOOLTIP                    :{BLACK}Change s
 STR_STATION_VIEW_DEPARTURES_BUTTON                              :{BLACK}Departures
 STR_STATION_VIEW_DEPARTURES_TOOLTIP                             :{BLACK}Show list of scheduled departures
 STR_STATION_VIEW_PAX_ROUTES_BUTTON                              :{BLACK}Routes
-STR_STATION_VIEW_PAX_ROUTES_TOOLTIP                             :{BLACK}Show the estimated routes of the passengers waiting at this station in the main view.{}The width of each line shows the number of passengers travelling over it, and the size of each station marker shows the number of passengers alighting there.
+STR_STATION_VIEW_PAX_ROUTES_TOOLTIP                             :{BLACK}Show the estimated routes of the passengers waiting at, or the planned monthly flow of passengers departing from, this station in the main view. Lines are coloured by the first stop after this station.{}The width of each line shows the number of passengers travelling over it, and the size of each station marker shows the number of passengers alighting there.
 STR_STATION_ROUTE_OVERLAY_LINK_TOOLTIP                          :{STATION} {RIGHT_ARROW} {STATION}: {COMMA} passenger{P "" s}{RAW_STRING}
 STR_STATION_ROUTE_OVERLAY_LINK_TOOLTIP_FIRST_HOP                :{}  First stop {STATION}: {COMMA}
 STR_STATION_ROUTE_OVERLAY_ALIGHTING_TOOLTIP                     :{STATION}: {COMMA} passenger{P "" s} alighting
+STR_STATION_ROUTE_OVERLAY_LINK_TOOLTIP_MONTHLY                  :{STATION} {RIGHT_ARROW} {STATION}: {COMMA} passenger{P "" s} per month (planned){RAW_STRING}
+STR_STATION_ROUTE_OVERLAY_ALIGHTING_TOOLTIP_MONTHLY             :{STATION}: {COMMA} passenger{P "" s} alighting per month (planned)
+STR_STATION_VIEW_PAX_ROUTES_WAITING                             :Show routes of waiting passengers
+STR_STATION_VIEW_PAX_ROUTES_MONTHLY                             :Show routes of departing passengers per month (planned)
+STR_STATION_VIEW_PAX_ROUTES_HIDE                                :Hide routes
 
 STR_STATION_VIEW_HISTORY_BUTTON                                 :{BLACK}History
 STR_STATION_VIEW_HISTORY_TOOLTIP                                :{BLACK}Show waiting cargo history
