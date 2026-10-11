@@ -4,7 +4,8 @@
 setting, disabled by default. Enable automatic passenger distribution first.
 `linkgraph.passenger_od_assignment` is independent: routing only considers
 packets that already have an explicit final destination. Only train journeys
-are predicted; unassigned passengers and unsupported journeys use CargoDist.
+are timed; unassigned passengers use CargoDist. Known-OD fallback uses the
+untimed, destination-aware policy below.
 The console-only shadow diagnostics remain independent and read-only.
 
 ## Execution and real capacity
@@ -17,9 +18,9 @@ never saved. Splits copy execution, OD and cooldown; merges require equal
 execution/mode/cooldown as well as the existing payment/source attributes.
 
 `LoadUnloadStation` routes new OD packets before reservations/loading.
-Journey queues use the Invalid station bucket, with the previous CargoDist key
-stored separately. `StationCargoList::Load`, `Reserve` and `HasCargoFor` filter
-Journey packets against a live boarding context. Matching the next station
+Journey and enabled known-OD fallback queues use the Invalid station bucket,
+with the previous CargoDist key stored separately. `StationCargoList::Load`,
+`Reserve` and `HasCargoFor` filter them against a live boarding context. Matching the next station
 alone cannot board a packet onto a different ordinary/express train.
 
 The boarding context checks primary vehicle, shared orders, current station,
@@ -44,9 +45,10 @@ a different first boarding transfers through the existing payment/unloading
 actions; an accepted final station delivers through CargoPayment. Intermediate
 CargoDist destination/via matches cannot deliver an active Journey. With routing
 enabled, Stage enforces the known final OD for Legacy, deferred and Fallback
-packets as well, including later arrivals after execution was cleared. An
-intermediate CargoDist Deliver becomes a transfer back to a station queue when
-the ride has fallen back. An accepting final OD delivers even if CargoDist has
+packets as well, including later arrivals after execution was cleared. A
+fallback ride stays aboard through intermediate CargoDist destinations when
+the live order prefix still reaches its OD or chosen interchange. An accepting
+final OD delivers even if CargoDist has
 a stale onward flow; NoUnload still keeps the packet. An unaccepted final OD
 keeps passengers rather than deleting them. Disabled/manual routing and unknown
 ODs retain the original CargoDist delivery behavior.
@@ -64,22 +66,59 @@ applies. A failed validation uses the OD-preserving fallback protected above.
 Every loading pass validates waiting Journey packets. Order/timetable/dispatch
 changes, refits, NoLoad, stopped/deleted trains, missed/changed occurrences,
 removed stations and incomplete searches clear execution and
-restore the CargoDist queue key. Vehicle deletion invalidates matching legs
+switch to the filtered OD queue while routing remains enabled. Disabling/manual
+distribution restores the CargoDist queue key. Vehicle deletion invalidates
+matching legs
 before its pool ID can be reused. The final OD survives fallback; the existing
 station-removal policy clears an OD when that station itself is removed.
+
+Legacy, deferred and Fallback packets with a known OD prefer a verified direct
+ride to their destination. Otherwise a bounded breadth-first search of the live
+cargo LinkGraph selects the first hop of a shortest directed path to that OD,
+using positive-capacity unrestricted links only. With unchanged links, completed
+interchanges strictly reduce remaining hop count. Source-based CargoDist flows
+do not select these hops. The current vehicle's executed order prefix must reach
+the chosen hop before returning to its boarding station or encountering an
+unresolved conditional, implicit stop, refit/depot detour or forced interchange.
+Untimetabled deterministic prefixes remain usable, without asserting timing or
+JourneyPlanner completeness. An admitted through target is kept until its
+interchange and revalidated on every arrival.
+
+When no progressing ride can be verified, onboard passengers transfer to the
+filtered OD queue. Load, Reserve, HasCargoFor and gradual-loading reservation
+validation apply the same test. An Invalid queue key grants no blanket boarding
+permission. Missing/restricted links, unsupported prefixes and exhausted work
+leave passengers waiting for a later pass or network repair, without clearing
+OD or declaring permanent unreachability. Forced unload/transfer is respected;
+fallback packets cannot board vehicles performing that forced interchange at
+the current stop, preventing immediate unload/reload there. Stale historical
+LinkGraph links can still delay a transfer; this policy does not guarantee that
+a future connecting vehicle will operate or have seats. Direct rides and each
+boarding are checked against live orders. Other vehicle types can use this
+untimed fallback if their loading order prefix can be validated.
+
+Fallback caches belong only to an arrival/loading pass, with at most 128 hop
+queries and 128 vehicle/cargo prefixes. Refit invalidates the affected prefix.
+They use an independent deterministic 65,536-work event allowance and 4 Mi-work
+tick allowance, including prefix sorting and graph scratch initialization. A
+prefix examines at most 4,096 orders; BFS scratch is at most two 65,535-element
+NodeID vectors (under 256 KiB). No extra packet fields, saved itineraries, RNG,
+cross-event route cache or worker-thread mutation are introduced. Diagnostics
+report fallback work and path searches separately from timed journey work.
 
 Fallback packets have a 256-state-tick cooldown at the same station. Retries
 are staggered by station ID every 64 ticks (1024 ticks above 512 stations), or may
 occur at a later station. Admission budget waits use Legacy mode and the existing
-saved retry fields, preserve CargoDist transport, and retry from the next tick;
+saved retry fields, use OD-aware fallback transport, and retry from the next tick;
 they are counted separately from route failures and bypass Fallback cohorts.
 New Legacy OD packets can be considered immediately before boarding. Packets
 waiting beyond their chosen departure can fall back and board legacy services.
 Disabling the setting cancels Journey execution and returns only Journey
 reservations using the existing bookkeeping. Legacy reservations keep their
-order, counts and payment shares. Invalid reserved Journey portions are also
-selected individually during loading/afterload; gradual loading can leave a
-packet spanning stored and reserved cargo, so only its reserved portion is
+order, counts and payment shares. Invalid reserved Journey portions are selected
+individually during loading/afterload; loading also returns OD fallback
+reservations whose live prefix no longer reaches a progressing hop. Gradual
+loading can leave a packet spanning stored and reserved cargo, so only its reserved portion is
 split/returned. At the packet pool limit, an unsplittable boundary reservation
 is retained and its mode can fall back rather than returning stored passengers.
 
@@ -152,8 +191,8 @@ retry/cohort predicate as the waiting router. It consumes at most 65,536 units
 of the graph ledger. A skipped or completed waiting pass releases any unused
 share in the same tick; an unfinished census reserves none. Identical OD packets
 reuse the same result.
-Waiting-pass searches admit at most 4,096 packets; excess packets remain on
-CargoDist. Validation caches at most 128 train/cargo pairs and has a separate
+Waiting-pass searches admit at most 4,096 packets; excess known-OD packets use
+the filtered fallback policy. Validation caches at most 128 train/cargo pairs and has a separate
 bounded signature allowance. List rekeying/counting remains O(packet count).
 
 No new packets are created by route selection/rekeying. Only the existing
@@ -211,6 +250,15 @@ unchanged queue storage, retry eligibility after 4,096 existing Journey packets,
 mixed Legacy/Journey reservations at a gradual-loading boundary, and selective
 afterload validation with unchanged RNG. Existing save extension version 1 and
 the CargoPacket structure size are unchanged by these fixes.
+
+OD fallback regressions cover repeated staging at accepting intermediate
+stations without unloading/reloading, destination-aware interchanges around a
+CargoDist dead end/cycle with real final delivery, loss and restoration of an
+onward destination link, restricted/stale LinkGraph nodes, changed reservations,
+untimed/conditional prefixes, forced-interchange reloading, and deterministic
+tick-budget exhaustion/recovery without RNG use. On the final MSVC x64 Release
+build, 352 default unit cases (111,868 assertions), 157 explicitly selected
+passenger cases (120,836 assertions) and all 359 CTest entries passed.
 
 The predictor deliberately falls back for unresolved conditional orders,
 unknown full-load departure times, refits and competing future dispatch slots.

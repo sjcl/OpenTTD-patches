@@ -76,7 +76,7 @@ private:
 	uint8_t flags = 0;                              ///< NOSAVE: temporary flags
 	StationID first_station = StationID::Invalid(); ///< The station where the cargo came from first.
 	StationID next_hop = StationID::Invalid();      ///< Station where the cargo wants to go next.
-	StationID passenger_via = StationID::Invalid(); ///< CargoDist via retained during a predicted through journey.
+	StationID passenger_via = StationID::Invalid(); ///< Validated through-ride target (CargoDist or OD fallback).
 	StationID passenger_destination = StationID::Invalid(); ///< Final passenger destination; independent of CargoDist hops and commitments.
 	PassengerRoutingMode passenger_routing_mode = PassengerRoutingMode::Legacy;
 	PassengerJourneyExecution passenger_journey{};
@@ -119,6 +119,8 @@ public:
 	const PassengerJourneyExecution &GetPassengerJourney() const { return this->passenger_journey; }
 	StationID GetPassengerLegacyHop() const { return this->passenger_legacy_hop; }
 	void SetPassengerLegacyHop(StationID next) { this->passenger_legacy_hop = next; }
+	StationID GetPassengerVia() const { return this->passenger_via; }
+	void SetPassengerVia(StationID via) { this->passenger_via = via; }
 	bool CanRetryPassengerJourney(StationID station, StateTicks now) const
 	{
 		return (this->passenger_routing_mode != PassengerRoutingMode::Fallback && !this->IsPassengerJourneyDeferred()) ||

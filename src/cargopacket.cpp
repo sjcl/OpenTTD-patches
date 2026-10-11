@@ -767,6 +767,7 @@ bool VehicleCargoList::Stage(bool accepted, StationID current_station, std::span
 	CargoPacketList transfer_deliver;
 	std::vector<CargoPacket *> keep;
 	std::map<std::pair<StationID, StationID>, bool> transfer_permissions;
+	PassengerOdFallbackContext od_fallback;
 
 	const FlowStatMap &flows = ge->ConstFlows();
 
@@ -778,11 +779,12 @@ bool VehicleCargoList::Stage(bool accepted, StationID current_station, std::span
 	dbg_assert(this->count > 0 || it == this->packets.end());
 	while (sum < this->count) {
 		CargoPacket *cp = *it;
+		const bool destination_bound = IsPassengerJourneyRoutingEnabled(cargo) && Station::IsValidID(cp->GetPassengerDestination());
 		/* Commit only while the same train still has a predictable journey to the chosen via.
 		 * At the via, normal flow selection resumes; orders/settings changing cancel the commitment. */
-		const bool committed = predict_passengers && cp->passenger_via != StationID::Invalid() &&
+		const bool committed = !destination_bound && predict_passengers && cp->passenger_via != StationID::Invalid() &&
 				cp->passenger_via != current_station && routing->CanContinue(cargo, cp->passenger_via);
-		if (!committed) cp->passenger_via = StationID::Invalid();
+		if (!committed && !destination_bound) cp->passenger_via = StationID::Invalid();
 
 		it = this->packets.erase(it);
 		StationID cargo_next = StationID::Invalid();
@@ -811,8 +813,8 @@ bool VehicleCargoList::Stage(bool accepted, StationID current_station, std::span
 		};
 
 		const bool was_journey = cp->GetPassengerRoutingMode() == PassengerRoutingMode::Journey;
-		const bool destination_bound = IsPassengerJourneyRoutingEnabled(cargo) && Station::IsValidID(cp->GetPassengerDestination());
 		auto journey_action = active == nullptr ? std::optional<MoveToAction>{} : active->Decide(*cp, cargo, accepted, unload_type);
+		if (!journey_action) journey_action = od_fallback.Decide(*cp, payment->front, cargo, current_station, accepted, unload_type);
 		if (journey_action) {
 			action = *journey_action;
 			cargo_next = cp->GetNextHop();
@@ -872,9 +874,7 @@ bool VehicleCargoList::Stage(bool accepted, StationID current_station, std::span
 				handle_forced_transfer();
 			}
 		}
-		/* A routing/admission failure must not turn a known final OD into delivery
-		 * at a CargoDist intermediate destination, including on subsequent arrivals.
-		 * Invalid rides return to a station queue for retry; valid rides can stay. */
+		/* Final OD remains authoritative even when no active context was supplied. */
 		if (destination_bound) {
 			if (current_station == cp->GetPassengerDestination() && accepted && !force_keep) action = MoveToAction::Deliver;
 			else if (action == MoveToAction::Deliver && current_station != cp->GetPassengerDestination()) {
@@ -1365,6 +1365,7 @@ uint StationCargoList::ShiftJourneyCargo(Taction action, std::span<const Station
 		for (Iterator it(this->packets.lower_bound(key)); it != this->packets.end() && it.GetKey() == key && action.MaxMove() > 0;) {
 			CargoPacket *packet = *it;
 			if (!loading.CanBoard(*packet, vehicle)) { ++it; continue; }
+			loading.PrepareBoard(*packet, vehicle);
 			if (action(packet)) it = this->packets.erase(it);
 			else break;
 		}

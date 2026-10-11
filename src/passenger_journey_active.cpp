@@ -13,6 +13,7 @@
 #include "window_func.h"
 #include "sl/saveload.h"
 #include "debug.h"
+#include "linkgraph/linkgraph.h"
 #include <set>
 #include <chrono>
 
@@ -29,6 +30,7 @@ namespace {
 		size_t graph = 16 * 1024 * 1024;
 		size_t query = 1024 * 1024;
 		size_t snapshots = 16;
+		size_t od_fallback = 4 * 1024 * 1024;
 		PassengerJourneyTickDiagnostic diagnostic;
 		std::array<JourneyFairShare, 4> fair_shares;
 		bool fair_shares_initialized = false;
@@ -53,6 +55,7 @@ namespace {
 		a.query_microseconds += b.query_microseconds;
 		a.fair_share_work += b.fair_share_work; a.fair_share_claims += b.fair_share_claims;
 		a.fair_share_releases += b.fair_share_releases; a.retained_rides += b.retained_rides;
+		a.od_fallback_work += b.od_fallback_work; a.od_fallback_searches += b.od_fallback_searches;
 		a.maximum_tick_microseconds = std::max({a.maximum_tick_microseconds, b.maximum_tick_microseconds, b.build_microseconds + b.query_microseconds});
 		for (size_t i = 0; i < a.fallbacks.size(); ++i) { a.fallbacks[i] += b.fallbacks[i]; a.deferred[i] += b.deferred[i]; }
 	}
@@ -408,6 +411,154 @@ bool PassengerJourneyActiveContext::PlanWaiting(CargoPacket &packet, CargoType c
 	return true;
 }
 
+bool PassengerOdFallbackContext::Spend(size_t amount)
+{
+	auto &global = TickBudget();
+	if (amount > this->work_left || amount > global.od_fallback) return false;
+	this->work_left -= amount; global.od_fallback -= amount;
+	global.diagnostic.od_fallback_work += amount;
+	return true;
+}
+
+/** Certify only the executed order prefix, stopping before a return to this station,
+ * an unresolved branch/refit/detour or a forced interchange. Timings may be absent. */
+bool PassengerOdFallbackContext::CanReach(const Vehicle *vehicle, CargoType cargo, StationID target)
+{
+	if (vehicle == nullptr || !Station::IsValidID(target)) return false;
+	vehicle = vehicle->First();
+	const auto key = std::pair(vehicle->index, cargo);
+	if (!this->stops.contains(key) && this->stops.size() >= 128) return false;
+	auto [cached, inserted] = this->stops.try_emplace(key);
+	if (inserted) {
+		auto state = GetPassengerRouteState(vehicle);
+		if (!state || !state->loading || state->orders.size() > 4096) return false;
+		std::array<bool, 4096> seen{};
+		VehicleOrderID index = (state->current_order + 1) % state->orders.size();
+		seen[state->current_order] = true;
+		while (!seen[index]) {
+			/* Includes traversal, station validation and sorting the retained prefix. */
+			if (!this->Spend(16)) break;
+			seen[index] = true;
+			const Order &order = state->orders[index];
+			if (order.IsType(OT_CONDITIONAL)) {
+				if (order.GetConditionVariable() != OrderConditionVariable::Unconditionally ||
+						order.GetConditionSkipToOrder() >= state->orders.size()) break;
+				index = order.GetConditionSkipToOrder();
+				continue;
+			}
+			if (order.IsRefit() || order.IsSlotCounterOrder() || order.IsType(OT_GOTO_DEPOT) ||
+					order.IsType(OT_IMPLICIT) || order.IsType(OT_DUMMY)) break;
+			if (order.IsType(OT_GOTO_STATION) && !(order.GetNonStopType() & ONSF_NO_STOP_AT_DESTINATION_STATION)) {
+				StationID station = order.GetDestination().ToStationID();
+				if (station == vehicle->last_station_visited) break;
+				if (!Station::IsValidID(station)) break;
+				if (order.GetCargoUnloadType(cargo) != OrderUnloadType::NoUnload) cached->second.push_back(station);
+				if (order.GetCargoUnloadType(cargo) == OrderUnloadType::Unload || order.GetCargoUnloadType(cargo) == OrderUnloadType::Transfer) break;
+			} else if (!order.IsType(OT_GOTO_STATION) && !order.IsType(OT_GOTO_WAYPOINT) && !order.IsType(OT_LABEL)) break;
+			index = (index + 1) % state->orders.size();
+		}
+		std::sort(cached->second.begin(), cached->second.end());
+	}
+	return std::binary_search(cached->second.begin(), cached->second.end(), target);
+}
+
+/** The first hop of a shortest directed path to the actual OD, never a source flow.
+ * With unchanged links, each completed hop strictly reduces the remaining hop count.
+ * Missing/restricted links and work exhaustion supply no boarding permission. */
+StationID PassengerOdFallbackContext::NextHop(CargoType cargo, StationID origin, StationID destination)
+{
+	const auto key = std::tuple(cargo, origin, destination);
+	if (!this->hops.contains(key) && this->hops.size() >= 128) return StationID::Invalid();
+	auto [cached, inserted] = this->hops.try_emplace(key, StationID::Invalid());
+	if (!inserted) return cached->second;
+	if (!this->Spend()) return StationID::Invalid();
+	const Station *source = Station::GetIfValid(origin), *target = Station::GetIfValid(destination);
+	if (source == nullptr || target == nullptr || source == target) return StationID::Invalid();
+	const GoodsEntry &from = source->goods[cargo], &to = target->goods[cargo];
+	const LinkGraph *graph = LinkGraph::GetIfValid(from.link_graph);
+	if (graph == nullptr || graph->Cargo() != cargo || to.link_graph != graph->index) return StationID::Invalid();
+	auto valid_node = [&](NodeID node) {
+		if (node >= graph->Size()) return false;
+		const Station *station = Station::GetIfValid((*graph)[node].Station());
+		return station != nullptr && station->goods[cargo].link_graph == graph->index && station->goods[cargo].node == node;
+	};
+	if (!valid_node(from.node) || !valid_node(to.node) || (*graph)[from.node].Station() != origin ||
+			(*graph)[to.node].Station() != destination || !this->Spend(graph->Size())) return StationID::Invalid();
+	++TickBudget().diagnostic.od_fallback_searches;
+	std::vector<NodeID> first(graph->Size(), INVALID_NODE), queue;
+	queue.reserve(graph->Size()); // At most 2 * 65535 NodeIDs of scratch, never retained.
+	first[from.node] = from.node; queue.push_back(from.node);
+	for (size_t head = 0; head < queue.size(); ++head) {
+		if (!this->Spend()) return StationID::Invalid();
+		NodeID node = queue[head];
+		const auto &edges = graph->GetEdges();
+		for (auto edge = edges.lower_bound({node, NodeID{0}}); edge != edges.end() && edge->first.first == node; ++edge) {
+			if (!this->Spend()) return StationID::Invalid();
+			NodeID next = edge->first.second;
+			if (!valid_node(next) || first[next] != INVALID_NODE || edge->second.capacity == 0 ||
+					edge->second.last_unrestricted_update == EconTime::INVALID_DATE) continue;
+			first[next] = node == from.node ? next : first[node];
+			if (next == to.node) { cached->second = (*graph)[first[next]].Station(); return cached->second; }
+			queue.push_back(next);
+		}
+	}
+	return StationID::Invalid();
+}
+
+StationID PassengerOdFallbackContext::BoardingVia(const Vehicle *vehicle, CargoType cargo, StationID destination)
+{
+	if (vehicle == nullptr) return StationID::Invalid();
+	vehicle = vehicle->First();
+	if (destination == vehicle->last_station_visited || !vehicle->current_order.IsAnyLoadingType() ||
+			vehicle->vehstatus.Any({VehState::Stopped, VehState::Crashed}) ||
+			vehicle->current_order.GetCargoLoadType(cargo) == OrderLoadType::NoLoad ||
+			vehicle->current_order.GetCargoUnloadType(cargo) == OrderUnloadType::Unload ||
+			vehicle->current_order.GetCargoUnloadType(cargo) == OrderUnloadType::Transfer) return StationID::Invalid();
+	if (this->CanReach(vehicle, cargo, destination)) return destination;
+	StationID hop = this->NextHop(cargo, vehicle->last_station_visited, destination);
+	return this->CanReach(vehicle, cargo, hop) ? hop : StationID::Invalid();
+}
+
+bool PassengerOdFallbackContext::CanBoard(const CargoPacket &packet, const Vehicle *vehicle, CargoType cargo)
+{
+	return this->BoardingVia(vehicle, cargo, packet.GetPassengerDestination()) != StationID::Invalid();
+}
+
+void PassengerOdFallbackContext::PrepareBoard(CargoPacket &packet, const Vehicle *vehicle, CargoType cargo)
+{
+	packet.SetPassengerVia(this->BoardingVia(vehicle, cargo, packet.GetPassengerDestination()));
+}
+
+void PassengerOdFallbackContext::Invalidate(const Vehicle *vehicle)
+{
+	VehicleID id = vehicle->First()->index;
+	for (auto it = this->stops.lower_bound({id, CargoType{0}}); it != this->stops.end() && it->first.first == id;) it = this->stops.erase(it);
+	this->hops.clear();
+}
+
+std::optional<VehicleCargoList::MoveToAction> PassengerOdFallbackContext::Decide(CargoPacket &packet, const Vehicle *vehicle,
+		CargoType cargo, StationID station, bool accepted, OrderUnloadType unload)
+{
+	using Action = VehicleCargoList::MoveToAction;
+	if (packet.GetPassengerRoutingMode() == PassengerRoutingMode::Journey || !IsPassengerJourneyRoutingEnabled(cargo) ||
+			!Station::IsValidID(packet.GetPassengerDestination())) return {};
+	if (unload == OrderUnloadType::NoUnload) return Action::Keep;
+	if (packet.GetPassengerDestination() == station) return accepted ? Action::Deliver : Action::Keep;
+	if (unload != OrderUnloadType::Unload && unload != OrderUnloadType::Transfer) {
+		StationID via = packet.GetPassengerVia();
+		/* Keep the validated ride to its interchange; intermediate CargoDist flows
+		 * cannot redraw it. Validate the live prefix and onward OD on every arrival. */
+		if (via != station && this->CanReach(vehicle, cargo, via) &&
+				(via == packet.GetPassengerDestination() || this->NextHop(cargo, via, packet.GetPassengerDestination()) != StationID::Invalid())) return Action::Keep;
+		via = this->CanReach(vehicle, cargo, packet.GetPassengerDestination()) ? packet.GetPassengerDestination() :
+				this->NextHop(cargo, station, packet.GetPassengerDestination());
+		if (this->CanReach(vehicle, cargo, via)) { packet.SetPassengerVia(via); return Action::Keep; }
+	}
+	packet.SetPassengerVia(StationID::Invalid());
+	packet.SetNextHop(StationID::Invalid()); // OD queue: boarding requires an independently verified progressing ride.
+	return Action::Transfer;
+}
+
 PassengerJourneyBoardingContext::PassengerJourneyBoardingContext(const Vehicle *vehicle, CargoType cargo) : vehicle(vehicle),
 		cargo(cargo != INVALID_CARGO ? cargo : vehicle == nullptr ? INVALID_CARGO : vehicle->cargo_type)
 {
@@ -474,16 +625,28 @@ bool PassengerJourneyBoardingContext::CanContinue(const CargoPacket &packet) con
 
 bool PassengerJourneyLoadingContext::CanBoard(const CargoPacket &packet, const Vehicle *vehicle, CargoType cargo)
 {
-	if (packet.GetPassengerRoutingMode() != PassengerRoutingMode::Journey) return true;
-	if (vehicle == nullptr || packet.GetPassengerJourney().vehicle != vehicle->First()->index) return false;
+	if (vehicle == nullptr) return packet.GetPassengerRoutingMode() != PassengerRoutingMode::Journey;
 	if (cargo == INVALID_CARGO) cargo = vehicle->cargo_type;
+	if (packet.GetPassengerRoutingMode() != PassengerRoutingMode::Journey) {
+		return !IsPassengerJourneyRoutingEnabled(cargo) || !Station::IsValidID(packet.GetPassengerDestination()) || this->fallback.CanBoard(packet, vehicle, cargo);
+	}
+	if (packet.GetPassengerJourney().vehicle != vehicle->First()->index) return false;
 	auto key = std::pair(vehicle->First()->index, cargo);
 	if (!this->boarding.contains(key) && this->boarding.size() >= 128) return false;
 	return this->boarding.try_emplace(key, vehicle, cargo).first->second.CanBoard(packet);
 }
 
+void PassengerJourneyLoadingContext::PrepareBoard(CargoPacket &packet, const Vehicle *vehicle)
+{
+	if (vehicle != nullptr && packet.GetPassengerRoutingMode() != PassengerRoutingMode::Journey &&
+			IsPassengerJourneyRoutingEnabled(vehicle->cargo_type) && Station::IsValidID(packet.GetPassengerDestination())) {
+		this->fallback.PrepareBoard(packet, vehicle, vehicle->cargo_type);
+	}
+}
+
 void PassengerJourneyLoadingContext::Invalidate(const Vehicle *vehicle)
 {
+	this->fallback.Invalidate(vehicle);
 	VehicleID id = vehicle->First()->index;
 	for (auto it = this->boarding.lower_bound({id, CargoType{0}}); it != this->boarding.end() && it->first.first == id;) it = this->boarding.erase(it);
 }
@@ -498,7 +661,7 @@ size_t PassengerJourneyLoadingContext::GetPredictionCount() const
 std::optional<VehicleCargoList::MoveToAction> PassengerJourneyActiveContext::Decide(CargoPacket &packet, CargoType cargo, bool accepted, OrderUnloadType unload)
 {
 	using Action = VehicleCargoList::MoveToAction;
-	if (packet.GetPassengerRoutingMode() != PassengerRoutingMode::Journey) return {};
+	if (packet.GetPassengerRoutingMode() != PassengerRoutingMode::Journey) return this->fallback.Decide(packet, this->vehicle, cargo, this->station, accepted, unload);
 	Snapshot *snapshot = nullptr;
 	this->failure = PassengerJourneyFallbackReason::InvalidLeg;
 	this->deferred = false;
@@ -515,7 +678,7 @@ std::optional<VehicleCargoList::MoveToAction> PassengerJourneyActiveContext::Dec
 		}
 		if (this->deferred) { CountJourneyDeferral(this->failure); packet.DeferPassengerJourney(this->station, _state_ticks); }
 		else { CountJourneyFallback(this->failure); packet.FallbackPassengerJourney(this->station, _state_ticks); }
-		return {};
+		return this->fallback.Decide(packet, this->vehicle, cargo, this->station, accepted, unload);
 	};
 	if (!IsPassengerJourneyRoutingEnabled(cargo) || this->vehicle == nullptr || this->vehicle->type != VehicleType::Train ||
 			!Station::IsValidID(packet.GetPassengerDestination())) return fallback();
@@ -566,8 +729,8 @@ size_t StationCargoList::RoutePassengerJourneys(CargoType cargo, StationID stati
 	PassengerJourneyActiveContext context(nullptr, station);
 	PassengerJourneyLoadingContext local_loading;
 	if (loading == nullptr) loading = &local_loading;
-	/* New OD packets are considered before boarding. Fallback retries are staggered every
-	 * 64 ticks after the cooldown; expired packets immediately regain their CargoDist key. */
+	/* New OD packets are considered before boarding. OD fallback/deferred queues
+	 * share the filtered bucket, allowing a verified through ride past intermediate stops. */
 	/* Spread national-map waiting cohorts across 1024 ticks instead of 64.
 	 * Each station receives a search opportunity; an overloaded cohort still
 	 * consumes the shared allowance in deterministic simulation order. */
@@ -584,7 +747,7 @@ size_t StationCargoList::RoutePassengerJourneys(CargoType cargo, StationID stati
 		for (CargoPacket *packet : list) {
 			StationID key = bucket->first;
 			PassengerRoutingMode previous_mode = packet->GetPassengerRoutingMode();
-			if (packet->GetPassengerRoutingMode() == PassengerRoutingMode::Fallback && key == StationID::Invalid()) key = packet->GetPassengerLegacyHop();
+			if (packet->GetPassengerRoutingMode() != PassengerRoutingMode::Journey && key == StationID::Invalid()) key = packet->GetPassengerLegacyHop();
 			if (packet->GetPassengerRoutingMode() == PassengerRoutingMode::Journey) {
 				const auto &leg = packet->GetPassengerJourney();
 				const Vehicle *vehicle = Vehicle::GetIfValid(leg.vehicle);
@@ -609,6 +772,11 @@ size_t StationCargoList::RoutePassengerJourneys(CargoType cargo, StationID stati
 				++inspected;
 				if (context.PlanWaiting(*packet, cargo, key)) key = StationID::Invalid();
 				else if (!packet->IsPassengerJourneyDeferred()) packet->FallbackPassengerJourney(station, _state_ticks);
+			}
+			if (IsPassengerJourneyRoutingEnabled(cargo) && Station::IsValidID(packet->GetPassengerDestination()) &&
+					packet->GetPassengerRoutingMode() != PassengerRoutingMode::Journey) {
+				packet->SetPassengerLegacyHop(key);
+				key = StationID::Invalid(); // CanBoard checks OD progression, including reservations and refits.
 			}
 			changed |= key != bucket->first || previous_mode != packet->GetPassengerRoutingMode();
 			if (key != bucket->first) {
