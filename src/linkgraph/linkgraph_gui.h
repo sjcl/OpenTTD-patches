@@ -69,6 +69,8 @@ public:
 		Point from_pt;
 		Point to_pt;
 		uint volume; ///< Estimated number of passengers travelling over this link.
+		StationID first_hop; ///< First hop from the selected station of the passengers travelling over this link.
+		uint8_t colour_index; ///< Index of the colour of first_hop.
 
 		bool operator==(const RouteLinkInfo&) const = default;
 	};

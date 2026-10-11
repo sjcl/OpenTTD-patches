@@ -29,6 +29,8 @@
 #include "../3rdparty/cpp-btree/btree_map.h"
 
 #include <algorithm>
+#include <array>
+#include <tuple>
 
 #include "../safeguards.h"
 
@@ -723,6 +725,12 @@ Point LinkGraphOverlay::GetStationMiddle(const Station *st) const
 	}
 }
 
+/** Colours assigned to the first hops of the passenger routes, in order of decreasing volume. */
+static constexpr std::array<Colours, 14> ROUTE_COLOURS = {
+	Colours::Red, Colours::Blue, Colours::Green, Colours::Yellow, Colours::Purple, Colours::Orange, Colours::LightBlue,
+	Colours::Pink, Colours::DarkGreen, Colours::Brown, Colours::Mauve, Colours::PaleGreen, Colours::DarkBlue, Colours::Cream,
+};
+
 /**
  * Set the station whose waiting passengers' estimated routes are shown instead of the link graph.
  * @param station Station, or StationID::Invalid() to show the link graph again.
@@ -755,20 +763,23 @@ void LinkGraphOverlay::RebuildRouteCache()
 	const Station *st = Station::GetIfValid(this->route_station);
 	if (st == nullptr) return;
 
-	btree::btree_map<std::pair<StationID, StationID>, double> links;
+	/* Links are keyed by first hop from the selected station, then from and to station */
+	btree::btree_map<std::tuple<StationID, StationID, StationID>, double> links;
 	btree::btree_map<StationID, double> alighting;
+	btree::btree_map<StationID, double> first_hop_volumes;
 
 	/* Amounts below this are dropped, to limit the work done for long or circular routes. */
 	static constexpr double MIN_AMOUNT = 0.05;
 	static constexpr uint MAX_DEPTH = 64;
 	uint budget = 1 << 18;
 
-	auto propagate = [&](auto &self, CargoType cargo, StationID origin, StationID from, StationID next, double amount, uint depth) -> void {
+	auto propagate = [&](auto &self, CargoType cargo, StationID origin, StationID first_hop, StationID from, StationID next, double amount, uint depth) -> void {
 		if (amount < MIN_AMOUNT || budget == 0) return;
 		budget--;
 		if (!Station::IsValidID(next) || next == from) return;
 
-		links[std::make_pair(from, next)] += amount;
+		links[std::make_tuple(first_hop, from, next)] += amount;
+		if (depth == 0) first_hop_volumes[first_hop] += amount;
 
 		const GoodsEntry &ge = Station::Get(next)->goods[cargo];
 		if (ge.data == nullptr || depth >= MAX_DEPTH) {
@@ -799,7 +810,7 @@ void LinkGraphOverlay::RebuildRouteCache()
 			if (i->second == next) {
 				alighting[next] += part;
 			} else {
-				self(self, cargo, origin, next, i->second, part, depth + 1);
+				self(self, cargo, origin, first_hop, next, i->second, part, depth + 1);
 			}
 		}
 	};
@@ -820,19 +831,39 @@ void LinkGraphOverlay::RebuildRouteCache()
 		}
 
 		for (const auto &it : groups) {
-			propagate(propagate, cargo, it.first.first, st->index, it.first.second, it.second, 0);
+			propagate(propagate, cargo, it.first.first, it.first.second, st->index, it.first.second, it.second, 0);
 		}
+	}
+
+	/* Assign colours to the first hops, in order of decreasing volume */
+	std::vector<std::pair<double, StationID>> first_hops;
+	for (const auto &it : first_hop_volumes) {
+		first_hops.emplace_back(it.second, it.first);
+	}
+	std::sort(first_hops.begin(), first_hops.end(), [](const auto &a, const auto &b) {
+		if (a.first != b.first) return a.first > b.first;
+		return a.second < b.second;
+	});
+	btree::btree_map<StationID, uint8_t> first_hop_colours;
+	for (size_t i = 0; i < first_hops.size(); i++) {
+		first_hop_colours[first_hops[i].second] = static_cast<uint8_t>(i % ROUTE_COLOURS.size());
 	}
 
 	for (const auto &it : links) {
 		const uint volume = static_cast<uint>(it.second + 0.5);
 		if (volume == 0) continue;
-		const Station *sta = Station::GetIfValid(it.first.first);
-		const Station *stb = Station::GetIfValid(it.first.second);
+		const auto [first_hop, from, to] = it.first;
+		const Station *sta = Station::GetIfValid(from);
+		const Station *stb = Station::GetIfValid(to);
 		if (sta == nullptr || stb == nullptr) continue;
-		this->route_links.push_back({ it.first.first, it.first.second, this->GetStationMiddle(sta), this->GetStationMiddle(stb), volume });
+		this->route_links.push_back({ from, to, this->GetStationMiddle(sta), this->GetStationMiddle(stb), volume, first_hop, first_hop_colours[first_hop] });
 		this->route_max_volume = std::max(this->route_max_volume, volume);
 	}
+
+	/* Sort by link, then by colour, so that parallel lines on the same link are drawn in a consistent order */
+	std::sort(this->route_links.begin(), this->route_links.end(), [](const RouteLinkInfo &a, const RouteLinkInfo &b) {
+		return std::tie(a.from_id, a.to_id, a.colour_index) < std::tie(b.from_id, b.to_id, b.colour_index);
+	});
 
 	/* Always include the selected station */
 	this->route_stations.push_back({ st->index, this->GetStationMiddle(st), 0 });
@@ -847,7 +878,7 @@ void LinkGraphOverlay::RebuildRouteCache()
 
 /**
  * Draw the estimated routes of the passengers waiting at route_station.
- * The width of each link is proportional to the number of passengers using it, and the colour shows it relative to the busiest link.
+ * The width of each link is proportional to the number of passengers using it, and the colour shows the first hop of the passengers from route_station.
  * @param dpi Area to be drawn to.
  */
 void LinkGraphOverlay::DrawRoutes(Blitter *blitter, const DrawPixelInfo *dpi) const
@@ -856,25 +887,44 @@ void LinkGraphOverlay::DrawRoutes(Blitter *blitter, const DrawPixelInfo *dpi) co
 	const uint max_volume = std::max<uint>(this->route_max_volume, 1);
 	const int side = _settings_game.vehicle.road_side == RoadVehicleDrivingSide::Right ? 1 : -1;
 	const PixelColour border_colour = GetColourGradient(Colours::Grey, Shade::Darkest);
+	const int gap = ScaleGUITrad(1);
 
-	for (const RouteLinkInfo &i : this->route_links) {
-		const int width = ScaleGUITrad(1 + ((MAX_WIDTH - 1) * i.volume + max_volume / 2) / max_volume);
-		if (!this->IsLinkVisible(i.from_pt, i.to_pt, dpi, 2 * width + 2)) continue;
+	auto get_width = [&](const RouteLinkInfo &i) -> int {
+		return ScaleGUITrad(1 + ((MAX_WIDTH - 1) * i.volume + max_volume / 2) / max_volume);
+	};
 
-		const uint colour_count = lengthof(LinkGraphOverlay::LINK_COLOURS[0]);
-		const PixelColour colour = LinkGraphOverlay::LINK_COLOURS[_settings_client.gui.linkgraph_colours][std::min<uint>(colour_count - 1, i.volume * colour_count / max_volume)];
+	/* Links with the same from and to stations (but different first hops) are adjacent, draw them side by side. */
+	for (auto group_start = this->route_links.begin(); group_start != this->route_links.end();) {
+		auto group_end = std::find_if(group_start, this->route_links.end(), [&](const RouteLinkInfo &i) {
+			return i.from_id != group_start->from_id || i.to_id != group_start->to_id;
+		});
 
-		/* Offset the line sideways, such that the links in both directions between two stations are visible. */
-		int offset_x = 0;
-		int offset_y = 0;
-		const int offset = width / 2 + ScaleGUITrad(1);
-		if (abs(i.from_pt.x - i.to_pt.x) < abs(i.from_pt.y - i.to_pt.y)) {
-			offset_x = (i.from_pt.y > i.to_pt.y ? 1 : -1) * side * offset;
-		} else {
-			offset_y = (i.from_pt.x < i.to_pt.x ? 1 : -1) * side * offset;
+		const Point from_pt = group_start->from_pt;
+		const Point to_pt = group_start->to_pt;
+
+		int total_width = 0;
+		for (auto it = group_start; it != group_end; ++it) total_width += get_width(*it) + gap;
+
+		if (this->IsLinkVisible(from_pt, to_pt, dpi, total_width + 2 * gap)) {
+			/* Offset the lines sideways, such that the links in both directions between two stations are visible. */
+			const bool vertical = abs(from_pt.x - to_pt.x) < abs(from_pt.y - to_pt.y);
+			const int direction = (vertical ? (from_pt.y > to_pt.y ? 1 : -1) : (from_pt.x < to_pt.x ? 1 : -1)) * side;
+
+			int offset = gap;
+			for (auto it = group_start; it != group_end; ++it) {
+				const int width = get_width(*it);
+				const int centre = direction * (offset + width / 2);
+				offset += width + gap;
+
+				const int offset_x = vertical ? centre : 0;
+				const int offset_y = vertical ? 0 : centre;
+				const PixelColour colour = GetColourGradient(ROUTE_COLOURS[it->colour_index], Shade::Light);
+				GfxDrawLine(blitter, dpi, from_pt.x + offset_x, from_pt.y + offset_y, to_pt.x + offset_x, to_pt.y + offset_y, border_colour, width + 2 * gap);
+				GfxDrawLine(blitter, dpi, from_pt.x + offset_x, from_pt.y + offset_y, to_pt.x + offset_x, to_pt.y + offset_y, colour, width);
+			}
 		}
-		GfxDrawLine(blitter, dpi, i.from_pt.x + offset_x, i.from_pt.y + offset_y, i.to_pt.x + offset_x, i.to_pt.y + offset_y, border_colour, width + ScaleGUITrad(2));
-		GfxDrawLine(blitter, dpi, i.from_pt.x + offset_x, i.from_pt.y + offset_y, i.to_pt.x + offset_x, i.to_pt.y + offset_y, colour, width);
+
+		group_start = group_end;
 	}
 
 	uint max_alighting = 1;
@@ -927,7 +977,14 @@ bool LinkGraphOverlay::ShowRouteTooltip(Point pt, TooltipCloseCondition close_co
 		if (pt.x + tolerance >= std::min(pta.x, ptb.x) && pt.x - tolerance <= std::max(pta.x, ptb.x) &&
 				pt.y + tolerance >= std::min(pta.y, ptb.y) && pt.y - tolerance <= std::max(pta.y, ptb.y) &&
 				(a * a) / b <= tolerance * tolerance) {
-			GuiShowTooltips(this->window, GetEncodedString(STR_STATION_ROUTE_OVERLAY_LINK_TOOLTIP, i->from_id, i->to_id, i->volume), close_cond);
+			format_buffer buf;
+			uint total = 0;
+			for (const RouteLinkInfo &j : this->route_links) {
+				if (j.from_id != i->from_id || j.to_id != i->to_id) continue;
+				total += j.volume;
+				if (Station::IsValidID(j.first_hop)) AppendStringInPlace(buf, STR_STATION_ROUTE_OVERLAY_LINK_TOOLTIP_FIRST_HOP, j.first_hop, j.volume);
+			}
+			GuiShowTooltips(this->window, GetEncodedString(STR_STATION_ROUTE_OVERLAY_LINK_TOOLTIP, i->from_id, i->to_id, total, (std::string_view)buf), close_cond);
 			return true;
 		}
 	}
