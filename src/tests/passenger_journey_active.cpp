@@ -148,17 +148,20 @@ TEST_CASE("Reservations and gradual loading allocate seats only once", "[passeng
 	Vehicle &coach = *attached.coach;
 	auto *packet = fixture.Packet(300); fixture.Plan(*packet); fixture.Waiting().Append(packet, D);
 	std::array next{D};
-	CHECK(fixture.Waiting().Reserve(100, &train.cargo, next, TileIndex{0}, &train) == 100);
-	CHECK(fixture.Waiting().Reserve(100, &coach.cargo, next, TileIndex{0}, &coach) == 100);
+	PassengerJourneyLoadingContext loading;
+	CHECK(fixture.Waiting().HasCargoFor(next, &train, &loading));
+	CHECK(fixture.Waiting().Reserve(100, &train.cargo, next, TileIndex{0}, &train, &loading) == 100);
+	CHECK(fixture.Waiting().Reserve(100, &coach.cargo, next, TileIndex{0}, &coach, &loading) == 100);
 	CHECK(fixture.Waiting().AvailableCount() == 100);
 	CHECK(fixture.Waiting().ReservedCount() == 200);
 	for (uint i = 0; i < 5; ++i) {
-		CHECK(fixture.Waiting().Load(20, &train.cargo, next, TileIndex{0}, &train) == 20);
-		CHECK(fixture.Waiting().Load(20, &coach.cargo, next, TileIndex{0}, &coach) == 20);
+		CHECK(fixture.Waiting().Load(20, &train.cargo, next, TileIndex{0}, &train, &loading) == 20);
+		CHECK(fixture.Waiting().Load(20, &coach.cargo, next, TileIndex{0}, &coach, &loading) == 20);
 	}
 	CHECK(train.cargo.StoredCount() == 100); CHECK(coach.cargo.StoredCount() == 100);
 	CHECK(fixture.Waiting().ReservedCount() == 0);
 	CHECK(fixture.Waiting().AvailableCount() == 100);
+	CHECK(loading.GetPredictionCount() == 1);
 	train.SetNext(nullptr);
 }
 
@@ -457,4 +460,198 @@ TEST_CASE("A primary engine with different cargo preserves the passenger coach j
 	CHECK(fixture.Waiting().Load(10, &coach->cargo, next, TileIndex{0}, coach) == 10);
 	train->SetNext(nullptr);
 	_vehicle_pool.CleanPool(); // Pool cleanup avoids unrelated engine/GUI destruction for these mock trains.
+}
+
+TEST_CASE("Boarding prediction is lazy for Legacy and other trains", "[passenger][active][performance]")
+{
+	ActiveFixture fixture;
+	ActiveTrain train({ActiveStop(A), ActiveStop(D, 100)});
+	PassengerJourneyLoadingContext loading;
+	PassengerJourneyBoardingContext boarding(&train);
+	auto legacy = std::unique_ptr<CargoPacket>(fixture.Packet(30, StationID::Invalid()));
+	CHECK(boarding.CanBoard(*legacy));
+	CHECK(boarding.GetPredictionCount() == 0);
+	fixture.Waiting().Append(legacy.release(), D);
+	std::array next{D};
+	CHECK(fixture.Waiting().HasCargoFor(next, &train, &loading));
+	CHECK(fixture.Waiting().Reserve(20, &train.cargo, next, TileIndex{0}, &train, &loading) == 20);
+	CHECK(fixture.Waiting().Load(30, &train.cargo, next, TileIndex{0}, &train, &loading) == 20);
+	CHECK(fixture.Waiting().Load(10, &train.cargo, next, TileIndex{0}, &train, &loading) == 10);
+	CHECK(loading.GetPredictionCount() == 0);
+	auto journey = std::unique_ptr<CargoPacket>(fixture.Packet()); fixture.Plan(*journey);
+	ActiveTrain other({ActiveStop(A), ActiveStop(D, 100)}, VehicleID{101});
+	CHECK_FALSE(loading.CanBoard(*journey, &other));
+	CHECK(loading.GetPredictionCount() == 0);
+	CHECK(loading.CanBoard(*journey, &train));
+	CHECK(loading.GetPredictionCount() == 1);
+	train.GetOrder(1)->SetTravelTime(200);
+	loading.Invalidate(&train);
+	CHECK_FALSE(loading.CanBoard(*journey, &train));
+	CHECK_FALSE(PassengerJourneyLoadingContext().CanBoard(*journey, &train));
+}
+
+TEST_CASE("Vehicle invalidation indexes only referring journeys through packet lifecycle", "[passenger][active][performance]")
+{
+	ActiveFixture fixture;
+	ActiveTrain train({ActiveStop(A), ActiveStop(D, 100)});
+	auto first = std::unique_ptr<CargoPacket>(fixture.Packet()); fixture.Plan(*first);
+	auto split = std::unique_ptr<CargoPacket>(first->Split(4));
+	REQUIRE(split != nullptr);
+	ActiveTrain other({ActiveStop(A), ActiveStop(D, 100)}, VehicleID{101});
+	auto other_packet = std::unique_ptr<CargoPacket>(fixture.Packet());
+	auto other_leg = first->GetPassengerJourney(); other_leg.vehicle = other.index; other_leg.service = other.orders->index;
+	other_packet->SetPassengerJourney(other_leg, D);
+	std::vector<std::unique_ptr<CargoPacket>> legacy;
+	for (uint i = 0; i < 4096; ++i) legacy.emplace_back(fixture.Packet(1, StationID::Invalid()));
+	size_t expected = 2, other_expected = 1;
+	SECTION("Split entries are both indexed") {}
+	SECTION("Merge removes the consumed entry") { REQUIRE(first->Merge(split.release())); expected = 1; }
+	SECTION("Fallback removes its entry") { split->FallbackPassengerJourney(A, NOW); expected = 1; }
+	SECTION("Packet deletion removes its entry") { split.reset(); expected = 1; }
+	SECTION("Selecting another physical train moves its entry") { split->SetPassengerJourney(other_leg, D); expected = 1; other_expected = 2; }
+	CHECK(InvalidatePassengerJourneyVehicle(VehicleID{102}) == 0);
+	CHECK(InvalidatePassengerJourneyVehicle(train.index) == expected);
+	CHECK(first->GetPassengerRoutingMode() == PassengerRoutingMode::Fallback);
+	CHECK(other_packet->GetPassengerRoutingMode() == PassengerRoutingMode::Journey);
+	CHECK(InvalidatePassengerJourneyVehicle(train.index) == 0);
+	CHECK(InvalidatePassengerJourneyVehicle(other.index) == other_expected);
+	for (const auto &packet : legacy) CHECK(packet->GetPassengerRoutingMode() == PassengerRoutingMode::Legacy);
+}
+
+TEST_CASE("Unchanged waiting queues retain their buckets and packet storage", "[passenger][active][performance]")
+{
+	ActiveFixture fixture;
+	ActiveTrain *train = Vehicle::Create<ActiveTrain>(std::vector<Order>{ActiveStop(A), ActiveStop(D, 100)});
+	fixture.Waiting().Append(fixture.Packet(30, StationID::Invalid()), B);
+	fixture.Waiting().Append(fixture.Packet(), D);
+	const auto *bucket = &*fixture.Waiting().Packets()->find(B);
+	const auto *storage = &bucket->second.front();
+	PassengerJourneyLoadingContext loading;
+	CHECK(fixture.Waiting().RoutePassengerJourneys(PAX, A, true, &loading) == 1);
+	CHECK(&*fixture.Waiting().Packets()->find(B) == bucket);
+	CHECK(&fixture.Waiting().Packets()->find(B)->second.front() == storage);
+	CHECK(fixture.Waiting().RoutePassengerJourneys(PAX, A, true, &loading) == 0);
+	CHECK(&*fixture.Waiting().Packets()->find(B) == bucket);
+	CHECK(&fixture.Waiting().Packets()->find(B)->second.front() == storage);
+	std::array next{D};
+	CHECK(fixture.Waiting().Load(10, &train->cargo, next, TileIndex{0}, train, &loading) == 10);
+	CHECK(loading.GetPredictionCount() == 1); // Waiting validation and loading share the capture.
+	_vehicle_pool.CleanPool();
+}
+
+TEST_CASE("Existing Journey packets do not consume the Fallback retry inspection allowance", "[passenger][active][performance]")
+{
+	ActiveFixture fixture;
+	ActiveTrain *train = Vehicle::Create<ActiveTrain>(std::vector<Order>{ActiveStop(A), ActiveStop(D, 100)});
+	auto example = std::unique_ptr<CargoPacket>(fixture.Packet()); fixture.Plan(*example, A, StationID::Invalid());
+	for (uint16_t i = 1; i <= 4096; ++i) {
+		auto *packet = fixture.Packet(1, D, i);
+		packet->SetPassengerJourney(example->GetPassengerJourney(), StationID::Invalid());
+		fixture.Waiting().Append(packet, StationID::Invalid());
+	}
+	auto *retry = fixture.Packet(1, D, 5000);
+	retry->FallbackPassengerJourney(A, NOW - 256);
+	fixture.Waiting().Append(retry, StationID::Invalid());
+	PassengerJourneyLoadingContext loading;
+	CHECK(fixture.Waiting().RoutePassengerJourneys(PAX, A, true, &loading) == 0);
+	CHECK(retry->GetPassengerRoutingMode() == PassengerRoutingMode::Journey);
+	CHECK(loading.GetPredictionCount() == 1);
+	CHECK(fixture.Waiting().AvailableCount() == 4097);
+	_vehicle_pool.CleanPool();
+}
+
+TEST_CASE("Disabling Journey returns only its reservations including a gradual-loading boundary", "[passenger][active]")
+{
+	ActiveFixture fixture;
+	ActiveTrain train({ActiveStop(A), ActiveStop(D, 100)});
+	Station::Get(A)->loading_vehicles.push_back(&train);
+	std::array next{D};
+	auto *first = fixture.Packet(10); fixture.Plan(*first); fixture.Waiting().Append(first, D);
+	REQUIRE(fixture.Waiting().Reserve(10, &train.cargo, next, TileIndex{0}, &train) == 10);
+	auto *legacy = fixture.Packet(30, StationID::Invalid()); fixture.Waiting().Append(legacy, D);
+	REQUIRE(fixture.Waiting().Reserve(30, &train.cargo, next, TileIndex{0}, &train) == 30);
+	auto *last = fixture.Packet(20, D, 8); fixture.Plan(*last); fixture.Waiting().Append(last, D);
+	REQUIRE(fixture.Waiting().Reserve(20, &train.cargo, next, TileIndex{0}, &train) == 20);
+	REQUIRE(fixture.Waiting().Load(5, &train.cargo, next, TileIndex{0}, &train) == 5);
+	SECTION("Routing disabled") { _settings_game.linkgraph.passenger_journey_routing = false; }
+	SECTION("CargoDist changed to Manual") { _settings_game.linkgraph.distribution_per_cargo[PAX] = DistributionType::Manual; }
+	PassengerJourneySettingsChanged(0);
+	CHECK(train.cargo.StoredCount() == 5);
+	CHECK(train.cargo.ReservedCount() == 30);
+	CHECK(fixture.Waiting().ReservedCount() == 30);
+	CHECK(fixture.Waiting().AvailableCount() == 25);
+	CHECK(train.cargo.Packets()->back() == legacy);
+	CHECK(legacy->Count() == 30);
+	CHECK(legacy->GetPassengerRoutingMode() == PassengerRoutingMode::Legacy);
+	CHECK(legacy->GetFeederShare() == 100);
+	Money share = train.cargo.GetFeederShare();
+	for (StationCargoList::ConstIterator it(fixture.Waiting().Packets()->begin()); it != fixture.Waiting().Packets()->end(); ++it) share += (*it)->GetFeederShare();
+	CHECK(share == 300);
+	CHECK(CountPassengerRoutingModes(fixture.Waiting())[2] == 25);
+	CHECK(fixture.Waiting().Load(30, &train.cargo, next, TileIndex{0}, &train) == 30);
+	CHECK(train.cargo.StoredCount() == 35);
+}
+
+TEST_CASE("A stale Journey reservation preserves adjacent Legacy reservations", "[passenger][active]")
+{
+	ActiveFixture fixture;
+	ActiveTrain train({ActiveStop(A), ActiveStop(D, 100)});
+	std::array next{D};
+	auto *legacy = fixture.Packet(30, StationID::Invalid()); fixture.Waiting().Append(legacy, D);
+	REQUIRE(fixture.Waiting().Reserve(30, &train.cargo, next, TileIndex{0}, &train) == 30);
+	auto *journey = fixture.Packet(20); fixture.Plan(*journey); fixture.Waiting().Append(journey, D);
+	REQUIRE(fixture.Waiting().Reserve(20, &train.cargo, next, TileIndex{0}, &train) == 20);
+	train.GetOrder(0)->SetWaitTime(200);
+	CHECK(fixture.Waiting().Load(10, &train.cargo, next, TileIndex{0}, &train) == 10);
+	CHECK(train.cargo.StoredCount() == 10);
+	CHECK(train.cargo.ReservedCount() == 20);
+	CHECK(fixture.Waiting().ReservedCount() == 20);
+	CHECK(fixture.Waiting().AvailableCount() == 20);
+	CHECK(train.cargo.Packets()->front() == legacy);
+	CHECK(legacy->Count() == 30);
+}
+
+TEST_CASE("Afterload returns invalid Journey reservations without disturbing Legacy", "[passenger][active][saveload]")
+{
+	ActiveFixture fixture;
+	ActiveTrain *train = Vehicle::Create<ActiveTrain>(std::vector<Order>{ActiveStop(A), ActiveStop(D, 100)});
+	Station::Get(A)->loading_vehicles.push_back(train);
+	std::array next{D};
+	auto *legacy = fixture.Packet(30, StationID::Invalid()); fixture.Waiting().Append(legacy, D);
+	auto *journey = fixture.Packet(20); fixture.Plan(*journey); fixture.Waiting().Append(journey, D);
+	REQUIRE(fixture.Waiting().Reserve(50, &train->cargo, next, TileIndex{0}, train) == 50);
+	AutoRestoreBackup version{_sl_version, SAVEGAME_VERSION};
+	AutoRestoreBackup features{_sl_xv_feature_versions, AutoRestoreBackupNoNewValueTag{}};
+	AutoRestoreBackup static_features{_sl_xv_feature_static_versions, AutoRestoreBackupNoNewValueTag{}};
+	SlXvSetStaticCurrentVersions(); _sl_xv_feature_versions = _sl_xv_feature_static_versions;
+	bool invalid = true;
+	SECTION("Changed orders") { train->GetOrder(0)->SetWaitTime(200); }
+	SECTION("Invalid saved vehicle") {
+		auto leg = journey->GetPassengerJourney(); leg.vehicle = VehicleID{999}; journey->SetPassengerJourney(leg, D);
+	}
+	SECTION("Valid Journey and Legacy reservations survive") { invalid = false; }
+	GameRandomSeedChecker random;
+	AfterLoadPassengerJourneys();
+	CHECK(random.Check());
+	CHECK(train->cargo.ReservedCount() == (invalid ? 30 : 50));
+	CHECK(fixture.Waiting().ReservedCount() == (invalid ? 30 : 50));
+	CHECK(fixture.Waiting().AvailableCount() == (invalid ? 20 : 0));
+	CHECK(train->cargo.Packets()->front() == legacy);
+	CHECK(legacy->Count() == 30);
+	CHECK(legacy->GetPassengerRoutingMode() == PassengerRoutingMode::Legacy);
+	CHECK(InvalidatePassengerJourneyVehicle(train->index) == (invalid ? 0 : 1));
+	_vehicle_pool.CleanPool();
+}
+
+TEST_CASE("Cleaning the packet pool discards the reverse index before packet ID reuse", "[passenger][active]")
+{
+	ActiveFixture fixture;
+	ActiveTrain train({ActiveStop(A), ActiveStop(D, 100)});
+	auto *packet = fixture.Packet(); fixture.Plan(*packet);
+	CargoPacketID original = packet->index;
+	_cargopacket_pool.CleanPool();
+	auto replacement = std::unique_ptr<CargoPacket>(fixture.Packet(10, StationID::Invalid()));
+	CHECK(replacement->index == original);
+	CHECK(InvalidatePassengerJourneyVehicle(train.index) == 0);
+	CHECK(replacement->GetPassengerRoutingMode() == PassengerRoutingMode::Legacy);
 }

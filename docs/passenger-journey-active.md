@@ -59,8 +59,21 @@ Fallback packets have a 256-state-tick cooldown at the same station. Retries
 are staggered by station ID every 64 ticks, or may occur at a later station.
 New Legacy OD packets can be considered immediately before boarding. Packets
 waiting beyond their chosen departure can fall back and board legacy services.
-Disabling the setting cancels Journey execution and returns reserved cargo
-using the existing bookkeeping.
+Disabling the setting cancels Journey execution and returns only Journey
+reservations using the existing bookkeeping. Legacy reservations keep their
+order, counts and payment shares. Invalid reserved Journey portions are also
+selected individually during loading/afterload; gradual loading can leave a
+packet spanning stored and reserved cargo, so only its reserved portion is
+split/returned. At the packet pool limit, an unsplittable boundary reservation
+is retained and its mode can fall back rather than returning stored passengers.
+
+Vehicle deletion uses a derived VehicleID-to-Journey-packet-ID reverse index.
+Split, merge, mode/vehicle changes and packet destruction maintain it; pool
+cleanup clears it and afterload reconstructs it before lifecycle validation.
+Deleting an unreferenced wagon requires a map lookup, while invalidating a
+selected train visits only its referring Journey packets in packet-ID order.
+The index is not saved, owns no packet pointers and uses O(Journey packet count)
+additional memory; Legacy/Fallback packets consume no entries.
 
 ## Save/load and determinism
 
@@ -86,6 +99,22 @@ fallback packets does not rebuild the national graph. There is no per-packet
 graph construction. Snapshots are discarded at the end of the event rather
 than reusing predictions after fleet/order/timing state changes.
 
+The station loading pass also owns one bounded boarding-context cache keyed by
+primary VehicleID and actual CargoType. Waiting validation, HasCargoFor, Reserve
+and Load share it across coaches. Context construction is cheap; signatures and
+visit prediction are initialized only for a matching Journey packet. Legacy-only
+loading and other trains' packets never trigger boarding prediction. Refit
+invalidates the consist's entries; the cache is discarded after the pass, so
+later ticks/stops cannot reuse old timing state. A two-coach reservation and ten
+gradual-load calls exercise exactly one boarding prediction in the regression.
+
+Waiting routing runs only when a station actually has a due loading vehicle.
+It validates the available packets but keeps unchanged queue nodes, ring-buffer
+storage and order. Changed buckets compact in place in linear time, then append
+only packets whose queue keys changed; there is no whole-map reconstruction.
+The 4,096 inspection allowance is charged only after mode, OD and cooldown
+eligibility checks. Existing Journey packets cannot starve ready Fallback retries.
+
 An event has 2,097,152 work units, at most 128 destination cache entries and
 queries, and at most four graph capture allowances. Each graph is capped at
 524,288 work units, a 128 MiB conservative allocation envelope, 65,536 visits
@@ -94,7 +123,7 @@ labels, an 8 MiB scratch envelope and one selected candidate. Fixed capture and
 query allowances are charged independent of cache timing; signature traversal
 is bounded and charged too. Identical OD packets reuse the same result.
 Waiting-pass searches admit at most 4,096 packets; excess packets remain on
-CargoDist. Validation caches at most 128 loading trains and has a separate
+CargoDist. Validation caches at most 128 train/cargo pairs and has a separate
 bounded signature allowance. List rekeying/counting remains O(packet count).
 
 No new packets are created by route selection/rekeying. Only the existing
@@ -136,7 +165,7 @@ national networks, dispatch, repeated occurrences and the integrated gradual
 transfer-limit expansion.
 
 MSVC x64 Release builds of `openttd` and `openttd_test` succeeded. The complete
-CTest suite passed: **323/323**, including the existing game/AI/GS regressions
+CTest suite passed: **331/331**, including the existing game/AI/GS regressions
 and shadow production test. The active production test loads an old save in a
 fresh game process, toggles/saves/reloads the synchronized setting, verifies
 the late afterload hook and compares byte-identical saves with the station
@@ -144,6 +173,13 @@ window absent, present and initialized in a different grouping/sort/Planned
 mode. These runs use the null video driver; they do not exercise mouse clicks
 or visually render the window. The build reports the existing Windows CRT
 linker warning LNK4098.
+
+The loading performance fixes add regressions for lazy/shared prediction,
+refit invalidation, reverse-index split/merge/mode/deletion/pool-ID lifecycle,
+unchanged queue storage, retry eligibility after 4,096 existing Journey packets,
+mixed Legacy/Journey reservations at a gradual-loading boundary, and selective
+afterload validation with unchanged RNG. Existing save extension version 1 and
+the CargoPacket structure size are unchanged by these fixes.
 
 The predictor deliberately falls back for unresolved conditional orders,
 unknown full-load departure times, refits and competing future dispatch slots.

@@ -13,19 +13,35 @@
 bool IsPassengerJourneyRoutingEnabled(CargoType cargo);
 uint64_t PassengerJourneyServiceSignature(const OrderList &orders, CargoType cargo, size_t *budget = nullptr);
 void PassengerJourneySettingsChanged(int32_t);
-void RouteWaitingPassengerJourneys(Station *station);
+class PassengerJourneyLoadingContext;
+void RouteWaitingPassengerJourneys(Station *station, PassengerJourneyLoadingContext *loading = nullptr);
 void AfterLoadPassengerJourneys();
-void InvalidatePassengerJourneyVehicle(VehicleID vehicle);
+size_t InvalidatePassengerJourneyVehicle(VehicleID vehicle);
+void RebuildPassengerJourneyVehicleIndex();
 
-/** Evaluate once per coach loading operation; packets only compare the captured execution. */
+/** Lazy prediction for one primary train/cargo in one loading pass. */
 class PassengerJourneyBoardingContext {
 	const Vehicle *vehicle;
 	CargoType cargo;
-	uint64_t signature = 0;
-	PassengerVisitPrediction prediction;
+	mutable bool initialized = false;
+	mutable uint64_t signature = 0;
+	mutable PassengerVisitPrediction prediction;
+	mutable size_t predictions = 0;
+	void Initialize() const;
 public:
 	explicit PassengerJourneyBoardingContext(const Vehicle *vehicle, CargoType cargo = INVALID_CARGO);
 	bool CanBoard(const CargoPacket &packet) const;
+	size_t GetPredictionCount() const { return this->predictions; }
+};
+
+/** Owned by LoadUnloadStation, shared by validation, refit queries, reservations and all coaches.
+ * Refit invalidates the affected consist; nothing is retained across simulation events. */
+class PassengerJourneyLoadingContext {
+	std::map<std::pair<VehicleID, CargoType>, PassengerJourneyBoardingContext> boarding;
+public:
+	bool CanBoard(const CargoPacket &packet, const Vehicle *vehicle, CargoType cargo = INVALID_CARGO);
+	void Invalidate(const Vehicle *vehicle);
+	size_t GetPredictionCount() const;
 };
 
 /** Shares snapshots/query caches across all coaches and packets at an arrival. */
