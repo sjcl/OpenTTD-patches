@@ -126,17 +126,23 @@ class PassengerJourneyPlanner {
 	const PassengerJourneyCapacityProvider *capacity_provider;
 	PassengerJourneyCacheLimits cache_limits;
 	using CacheKey = std::tuple<CargoType, StationID, StationID, StateTicks, uint64_t, uint64_t,
-			PassengerJourneyLimits, PassengerJourneyEvaluation>;
+			PassengerJourneyLimits, PassengerJourneyEvaluation, size_t, size_t>;
 	std::map<CacheKey, PassengerJourneyResult> cache;
 	size_t cache_bytes = 0;
 	PassengerJourneyResult Search(StationID origin, StationID destination, StateTicks ready, uint64_t passengers,
-			PassengerJourneyLimits limits, const PassengerJourneyEvaluation &evaluation) const;
+			PassengerJourneyLimits limits, const PassengerJourneyEvaluation &evaluation,
+			std::optional<PassengerServiceGraph::VisitID> onboard = {}) const;
+	void Retain(CacheKey key, const PassengerJourneyResult &result);
 
 public:
 	explicit PassengerJourneyPlanner(const PassengerServiceGraph &graph,
 			const PassengerJourneyCapacityProvider *capacity_provider = nullptr, PassengerJourneyCacheLimits cache_limits = {}) :
 			graph(graph), capacity_provider(capacity_provider), cache_limits(cache_limits) {}
 	PassengerJourneyResult Plan(CargoType cargo, StationID origin, StationID destination, StateTicks ready,
+			PassengerJourneyLimits limits = {}, PassengerJourneyEvaluation evaluation = {}, uint64_t passengers = 1);
+	/** Existing passenger at this snapshot's unique loading occurrence. Staying neither boards nor needs free seats.
+	 * Other trains require alighting here and the normal interchange, boarding and capacity rules. */
+	PassengerJourneyResult PlanOnboard(CargoType cargo, PassengerServiceGraph::VisitID onboard, StationID destination,
 			PassengerJourneyLimits limits = {}, PassengerJourneyEvaluation evaluation = {}, uint64_t passengers = 1);
 	void ClearCache() { this->cache.clear(); this->cache_bytes = 0; }
 	size_t GetCacheEntries() const { return this->cache.size(); }

@@ -1,8 +1,9 @@
 # Passenger journey planner
 
 `PassengerJourneyPlanner` searches an immutable `PassengerServiceGraph` for
-train journeys. This implementation does not change `VehicleCargoList::Stage`,
-loading/unloading decisions, freight routing, or savegame structures. Unknown OD
+train journeys. Its read-only [shadow integration](passenger-journey-shadow.md)
+observes `VehicleCargoList::Stage` without changing loading/unloading decisions,
+freight routing, or savegame structures. Unknown OD
 and inconclusive journey searches continue to use the existing CargoDist path
 when the planner is eventually connected to boarding.
 
@@ -13,6 +14,15 @@ Construct a planner referring to that graph, optionally with a capacity provider
 Both objects must outlive the planner. Call `Plan(cargo, origin, destination,
 ready, limits, evaluation, passengers)`; the cargo must match the snapshot.
 Inputs and all costs use simulation state ticks, independent of GUI time units.
+
+`PlanOnboard(cargo, onboard_visit, destination, limits, evaluation, passengers)`
+uses the same search with a unique currently loading occurrence as its root.
+Continuing that ride requires no new seats or boarding/transfer cost, including
+at a NoLoad stop. Its remaining dwell counts as riding. An initial interchange
+requires permission to alight, minimum connection time and one transfer; forced
+unloading prohibits uninterrupted riding. Find the root with
+`FindOnboardVisit(vehicle, station, current_order)` on that same graph. Missing
+or ambiguous events return Unknown. The onboard cache key includes both indices.
 
 The result contains ordered `PassengerPlannedJourney` values. Each leg identifies
 the physical vehicle, boarding/alighting stations, actual predicted departure
@@ -54,6 +64,10 @@ declared stations of those services even when their dynamic branch captured no
 visit there. Such suffixes remain possible, and an origin connected to them
 retains incomplete status. Prediction uncertainty cannot become certified
 unreachability merely because destination pruning removed a captured prefix.
+Uncertainty seeds are restricted to the destination's undirected component of
+declared service stops. This deliberately includes unresolved conditional
+branches and ignores timing/direction/restrictions. Disconnected untimed lines
+cannot affect the query; connected uncertainty remains conservative.
 
 Once the requested number of final candidates exists, a frontier is skipped
 only when a lower bound on `(score, arrival, boardings)` is strictly worse than

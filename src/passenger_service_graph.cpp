@@ -45,7 +45,11 @@ PassengerServiceGraph PassengerServiceGraph::Build(CargoType cargo, StateTicks n
 		return graph;
 	}
 	graph.end += limits.horizon;
-	size_t budget = limits.work;
+	/* Each capture step admits at most one order/slot/vehicle/visit. 1024 bytes covers
+	 * owned values, geometric vector growth, all three station indices and map nodes.
+	 * The transient copied orders/schedules are admitted before allocation as well. */
+	const size_t admitted_work = std::min(limits.work, limits.memory_bytes / 1024);
+	size_t budget = admitted_work;
 	size_t remaining_visits = limits.total_visits;
 	for (const OrderList *list : OrderList::Iterate()) {
 		if (!SpendGraphWork(budget)) { graph.status = PassengerPredictionStatus::BudgetExhausted; break; }
@@ -155,13 +159,56 @@ PassengerServiceGraph PassengerServiceGraph::Build(CargoType cargo, StateTicks n
 		}
 		if (graph.status != PassengerPredictionStatus::Complete) break;
 	}
+	graph.work = admitted_work - budget;
+	if (graph.status == PassengerPredictionStatus::BudgetExhausted && admitted_work < limits.work) graph.status = PassengerPredictionStatus::LimitReached;
 	graph.BuildDepartureIndex();
 	return graph;
+}
+
+std::optional<PassengerServiceGraph::VisitID> PassengerServiceGraph::FindOnboardVisit(VehicleID vehicle, StationID station, VehicleOrderID order) const
+{
+	auto found = this->loading_visits.find(vehicle);
+	if (found == this->loading_visits.end() || !found->second) return {};
+	VisitID id = *found->second;
+	const Trip &trip = this->trips[id.trip];
+	const auto &visit = trip.prediction.visits[id.visit];
+	if (trip.operation != Operation::Running || !trip.loading || trip.current_order != order ||
+			visit.order != order || this->GetVisitStop(id).station != station) return {};
+	return id;
 }
 
 /** Build once, without changing capture-order VisitIDs or legacy query ordering. */
 void PassengerServiceGraph::BuildDepartureIndex()
 {
+	/* Union declared stops, ignoring direction, load/unload rules and times. This is
+	 * an overapproximation, including unresolved conditional branches; it can only
+	 * remove uncertainty on physically disconnected services, never infer a time. */
+	std::map<StationID, size_t> ranks;
+	auto root = [&](StationID station) {
+		StationID id = station;
+		while (this->component_roots.at(id) != id) id = this->component_roots.at(id);
+		while (station != id) {
+			StationID parent = this->component_roots.at(station);
+			this->component_roots.at(station) = id;
+			station = parent;
+		}
+		return id;
+	};
+	for (const auto &service : this->services) {
+		for (const auto &stop : service.stops) {
+			this->component_roots.try_emplace(stop.station, stop.station);
+			ranks.try_emplace(stop.station, 0);
+		}
+		if (service.stops.empty()) continue;
+		for (const auto &stop : service.stops) {
+			StationID a = root(service.stops.front().station), b = root(stop.station);
+			if (a == b) continue;
+			if (ranks[a] < ranks[b]) std::swap(a, b);
+			this->component_roots[b] = a;
+			if (ranks[a] == ranks[b]) ++ranks[a];
+		}
+	}
+	for (auto &[station, parent] : this->component_roots) parent = root(station);
 	for (const auto &[station, services] : this->station_services) {
 		auto &index = this->station_departures[station];
 		for (OrderListID service : services) {
@@ -175,6 +222,10 @@ void PassengerServiceGraph::BuildDepartureIndex()
 		auto &index = this->station_departures[station];
 		for (VisitID id : visits) {
 			const Trip &trip = this->trips[id.trip];
+			if (trip.prediction.visits[id.visit].loading_now) {
+				auto [loading, inserted] = this->loading_visits.try_emplace(trip.vehicle, id);
+				if (!inserted) loading->second.reset(); // Multiple current events are ambiguous.
+			}
 			if (trip.operation != Operation::Running || !this->GetVisitStop(id).can_board || trip.capacity == 0) continue;
 			(trip.prediction.visits[id.visit].departure ? index.timed : index.unknown).push_back(id);
 		}
@@ -189,7 +240,26 @@ void PassengerServiceGraph::BuildDepartureIndex()
 		if (status == PassengerPredictionStatus::Complete) continue;
 		this->uncertain_stations.push_back(station);
 		this->uncertain_status = MergeGraphStatus(this->uncertain_status, status);
+		auto &component = this->uncertain_components[this->component_roots.at(station)];
+		component.stations.push_back(station);
+		component.status = MergeGraphStatus(component.status, status);
 	}
+}
+
+std::span<const StationID> PassengerServiceGraph::GetUncertainStations(StationID destination) const
+{
+	auto root = this->component_roots.find(destination);
+	if (root == this->component_roots.end()) return {};
+	auto component = this->uncertain_components.find(root->second);
+	return component == this->uncertain_components.end() ? std::span<const StationID>{} : component->second.stations;
+}
+
+PassengerPredictionStatus PassengerServiceGraph::GetUncertainStatus(StationID destination) const
+{
+	auto root = this->component_roots.find(destination);
+	if (root == this->component_roots.end()) return PassengerPredictionStatus::Complete;
+	auto component = this->uncertain_components.find(root->second);
+	return component == this->uncertain_components.end() ? PassengerPredictionStatus::Complete : component->second.status;
 }
 
 std::span<const PassengerServiceGraph::VisitID> PassengerServiceGraph::GetStationVisits(StationID station) const

@@ -38,6 +38,7 @@ using CargoPacketPool = Pool<CargoPacket, CargoPacketID, 1024, PoolType::Normal,
 extern CargoPacketPool _cargopacket_pool;
 
 struct GoodsEntry; // forward-declare for Stage() and RerouteStalePackets()
+class PassengerJourneyShadowContext;
 class PassengerRoutingContext;
 
 template <class Tinst, class Tcont> class CargoList;
@@ -533,7 +534,7 @@ public:
 
 	void InvalidateCache();
 
-	bool Stage(bool accepted, StationID current_station, std::span<const StationID> next_station, OrderUnloadType unload_type, const GoodsEntry *ge, CargoType cargo, CargoPayment *payment, TileIndex current_tile, PassengerRoutingContext *routing = nullptr);
+	bool Stage(bool accepted, StationID current_station, std::span<const StationID> next_station, OrderUnloadType unload_type, const GoodsEntry *ge, CargoType cargo, CargoPayment *payment, TileIndex current_tile, PassengerRoutingContext *routing = nullptr, PassengerJourneyShadowContext *shadow = nullptr);
 
 	/**
 	 * Marks all cargo in the vehicle as to be kept. This is mostly useful for

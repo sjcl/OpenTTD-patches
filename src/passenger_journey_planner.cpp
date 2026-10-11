@@ -69,6 +69,7 @@ namespace {
 		int64_t penalty = 0;
 		int64_t score = 0;
 		uint8_t boardings = 0;
+		uint8_t transfers = 0;
 		bool capacity_uncertain = false;
 		std::optional<uint64_t> minimum_free;
 		PassengerPredictionStatus prediction_status = PassengerPredictionStatus::Complete;
@@ -87,7 +88,7 @@ namespace {
 
 	static bool Dominates(const JourneyLabel &a, const JourneyLabel &b)
 	{
-		return a.arrival <= b.arrival && a.waiting <= b.waiting && a.score <= b.score && a.penalty <= b.penalty &&
+		return a.arrival <= b.arrival && a.waiting <= b.waiting && a.score <= b.score && a.penalty <= b.penalty && a.transfers <= b.transfers &&
 				a.prediction_status <= b.prediction_status && a.capacity_uncertain <= b.capacity_uncertain &&
 				(a.minimum_free.has_value() == b.minimum_free.has_value()) && (!a.minimum_free || *a.minimum_free >= *b.minimum_free);
 	}
@@ -96,7 +97,7 @@ namespace {
 	{
 		/* After time/preferences tie, prefer a path with usable confirmed free seats on every leg.
 		 * Estimated and unknown capacity stay tied: neither promises seats to this passenger group. */
-		return std::tuple(label.score, label.arrival, label.boardings, label.waiting, label.capacity_uncertain, label.leg.vehicle,
+		return std::tuple(label.score, label.arrival, label.transfers, label.boardings, label.waiting, label.capacity_uncertain, label.leg.vehicle,
 				label.leg.boarding.trip, label.leg.boarding.visit, label.leg.alighting.visit, label.previous);
 	}
 
@@ -172,7 +173,7 @@ namespace {
 }
 
 PassengerJourneyResult PassengerJourneyPlanner::Search(StationID origin, StationID destination, StateTicks ready, uint64_t passengers,
-		PassengerJourneyLimits limits, const PassengerJourneyEvaluation &evaluation) const
+		PassengerJourneyLimits limits, const PassengerJourneyEvaluation &evaluation, std::optional<PassengerServiceGraph::VisitID> onboard) const
 {
 	PassengerJourneyResult result;
 	result.status = this->graph.GetStatus();
@@ -217,16 +218,16 @@ PassengerJourneyResult PassengerJourneyPlanner::Search(StationID origin, Station
 	JourneyReachability reachable, uncertain;
 	const std::array<StationID, 1> target{destination};
 	if (!reachable.Build(this->graph, target, 0, limits.max_transfers + 1, reverse_spend, admit) ||
-			!uncertain.Build(this->graph, this->graph.GetUncertainStations(), 1, limits.max_transfers + 1, reverse_spend, admit)) return result;
+			!uncertain.Build(this->graph, this->graph.GetUncertainStations(destination), 1, limits.max_transfers + 1, reverse_spend, admit)) return result;
 	/* Incomplete services seed a second reverse search, even if their dynamic branch captured no
 	 * destination visit. Pruning cannot turn a potentially reachable unknown suffix into absence. */
-	if (uncertain.Boardings(origin) <= limits.max_transfers + 1) result.status = MergeJourneyStatus(result.status, this->graph.GetUncertainStatus());
+	if (uncertain.Boardings(origin) <= limits.max_transfers + 1) result.status = MergeJourneyStatus(result.status, this->graph.GetUncertainStatus(destination));
 	auto boardings_left = [&](StationID station) { return std::min(reachable.Boardings(station), uncertain.Boardings(station)); };
 	auto can_finish_ride = [&](PassengerServiceGraph::VisitID id, uint8_t remaining) {
 		return std::min(reachable.AfterBoarding(id), uncertain.AfterBoarding(id)) <= remaining ||
 				!this->graph.GetTrips()[id.trip].prediction.Covers(this->graph.GetStart(), this->graph.GetEnd());
 	};
-	if (boardings_left(origin) > limits.max_transfers + 1) return result;
+	if (boardings_left(origin) > limits.max_transfers + 1 && (!onboard || !can_finish_ride(*onboard, limits.max_transfers))) return result;
 	limits.labels = std::min(limits.labels, (limits.memory_bytes - reachability_bytes) / LABEL_BYTES);
 	if (limits.labels == 0) {
 		result.status = MergeJourneyStatus(result.status, PassengerPredictionStatus::LimitReached);
@@ -248,10 +249,10 @@ PassengerJourneyResult PassengerJourneyPlanner::Search(StationID origin, Station
 				/* Every completion must pay the accumulated costs and at least the relaxed boarding
 				 * distance. Once K candidates exist, a strictly worse (score, arrival, boardings)
 				 * lower bound cannot alter their order, including the later capacity/ID tie-breaks. */
-				if (destinations.size() == limits.candidates && reachable.earliest_destination) {
+				if (parent.boardings != 0 && destinations.size() == limits.candidates && reachable.earliest_destination) {
 					uint8_t boardings = parent.boardings + boardings_left(station);
 					StateTicks arrival = std::max(parent.arrival, *reachable.earliest_destination);
-					int64_t transfers = boardings - 1;
+					int64_t transfers = parent.transfers + boardings_left(station);
 					int64_t score = JourneyAdd(arrival.base() - ready.base(), parent.penalty);
 					score = JourneyAdd(score, JourneyScale(transfers, evaluation.transfer_penalty, 1));
 					score = JourneyAdd(score, JourneyScale(parent.waiting, evaluation.waiting_weight, 1000));
@@ -262,15 +263,29 @@ PassengerJourneyResult PassengerJourneyPlanner::Search(StationID origin, Station
 						continue;
 					}
 				}
+				const bool initial_onboard = onboard && parent.boardings == 0;
 				const int64_t interchange = parent.boardings == 0 ? 0 : evaluation.minimum_transfer;
 				if (parent.arrival.base() > this->graph.GetEnd().base() - interchange) continue;
 				StateTicks earliest{ parent.arrival.base() + interchange };
 				if (earliest >= this->graph.GetEnd()) continue;
 				auto departures = this->graph.GetDepartures(station, earliest, this->graph.GetEnd());
 				result.status = MergeJourneyStatus(result.status, departures.status);
-				for (auto boarding : departures.timed) {
+				/* The onboard occurrence can be NoLoad and is deliberately absent from the
+				 * departure index. Scan it through the same engine as ordinary boardings. */
+				for (size_t candidate = 0; candidate < departures.timed.size() + (initial_onboard ? 1 : 0); ++candidate) {
+					auto boarding = initial_onboard && candidate == 0 ? *onboard : departures.timed[candidate - (initial_onboard ? 1 : 0)];
 					if (!spend()) { stopped = true; break; }
-					if (!can_finish_ride(boarding, limits.max_transfers - round)) {
+					const bool continuing = initial_onboard && boarding == *onboard;
+					if (initial_onboard && candidate != 0 && boarding == *onboard) continue;
+					const auto &boarding_stop = this->graph.GetVisitStop(boarding);
+					const auto &start = this->graph.GetTrips()[boarding.trip].prediction.visits[boarding.visit];
+					if (!start.departure) { result.status = MergeJourneyStatus(result.status, PassengerPredictionStatus::Unknown); continue; }
+					if (continuing ? boarding_stop.forced_transfer : initial_onboard &&
+							(!this->graph.GetVisitStop(*onboard).can_alight || *start.departure < ready + evaluation.minimum_transfer)) continue;
+					const uint8_t transfers = parent.transfers + (continuing || (!onboard && parent.boardings == 0) ? 0 : 1);
+					if (transfers > limits.max_transfers) continue;
+					const uint8_t remaining = limits.max_transfers - transfers;
+					if (!can_finish_ride(boarding, remaining)) {
 						++result.diagnostic.pruned_boardings;
 						continue;
 					}
@@ -282,7 +297,6 @@ PassengerJourneyResult PassengerJourneyPlanner::Search(StationID origin, Station
 					bool reboard = parent.boardings != 0 && parent.leg.vehicle == trip.vehicle;
 					if (reboard && (boarding.visit < parent.leg.alighting.visit ||
 							(boarding.visit == parent.leg.alighting.visit && !this->graph.GetVisitStop(boarding).forced_transfer))) continue;
-					const auto &start = trip.prediction.visits[boarding.visit];
 					for (size_t i = boarding.visit + 1; i < trip.prediction.visits.size(); ++i) {
 						if (!spend()) { stopped = true; break; }
 						++result.diagnostic.visits;
@@ -295,7 +309,7 @@ PassengerJourneyResult PassengerJourneyPlanner::Search(StationID origin, Station
 							result.status = MergeJourneyStatus(result.status, PassengerPredictionStatus::Unknown);
 							break;
 						}
-						if (stop.can_alight && boardings_left(stop.station) <= limits.max_transfers - round) {
+						if (stop.can_alight && boardings_left(stop.station) <= remaining) {
 							PassengerJourneyCapacity capacity;
 							if (this->capacity_provider != nullptr) {
 								if (!spend()) { stopped = true; break; }
@@ -314,7 +328,7 @@ PassengerJourneyResult PassengerJourneyPlanner::Search(StationID origin, Station
 								capacity.certainty = PassengerCapacityCertainty::Confirmed;
 							}
 							bool unknown_capacity = capacity.certainty == PassengerCapacityCertainty::Unknown || !capacity.future_free;
-							if (!unknown_capacity && *capacity.future_free < passengers) {
+							if (!continuing && !unknown_capacity && *capacity.future_free < passengers) {
 								++result.diagnostic.capacity_rejections;
 								if (capacity.certainty != PassengerCapacityCertainty::Confirmed) result.status = MergeJourneyStatus(result.status, PassengerPredictionStatus::Unknown);
 							} else {
@@ -324,14 +338,15 @@ PassengerJourneyResult PassengerJourneyPlanner::Search(StationID origin, Station
 										trip.prediction.status, capacity };
 								label.arrival = *visit.arrival;
 								label.boardings = parent.boardings + 1;
-								label.waiting = parent.waiting + start.departure->base() - parent.arrival.base();
-								label.riding = parent.riding + visit.arrival->base() - start.departure->base();
-								label.penalty = JourneyAdd(parent.penalty, CapacityPenalty(capacity, evaluation));
-								label.capacity_uncertain = parent.capacity_uncertain || unknown_capacity || capacity.certainty != PassengerCapacityCertainty::Confirmed;
-								if (!unknown_capacity && (parent.boardings == 0 || parent.minimum_free)) label.minimum_free =
+								label.transfers = transfers;
+								label.waiting = parent.waiting + (continuing ? 0 : start.departure->base() - parent.arrival.base());
+								label.riding = parent.riding + visit.arrival->base() - (continuing ? ready.base() : start.departure->base());
+								label.penalty = JourneyAdd(parent.penalty, continuing ? 0 : CapacityPenalty(capacity, evaluation));
+								label.capacity_uncertain = parent.capacity_uncertain || (!continuing && (unknown_capacity || capacity.certainty != PassengerCapacityCertainty::Confirmed));
+								if (continuing) label.minimum_free = UINT64_MAX; // Already seated; no new seats required.
+								else if (!unknown_capacity && (parent.boardings == 0 || parent.minimum_free)) label.minimum_free =
 										parent.boardings == 0 ? *capacity.future_free : std::min(*parent.minimum_free, *capacity.future_free);
 								label.prediction_status = MergeJourneyStatus(parent.prediction_status, trip.prediction.status);
-								int64_t transfers = label.boardings - 1;
 								label.score = JourneyAdd(label.arrival.base() - ready.base(), label.penalty);
 								label.score = JourneyAdd(label.score, JourneyScale(transfers, evaluation.transfer_penalty, 1));
 								label.score = JourneyAdd(label.score, JourneyScale(label.waiting, evaluation.waiting_weight, 1000));
@@ -362,7 +377,7 @@ PassengerJourneyResult PassengerJourneyPlanner::Search(StationID origin, Station
 								}
 							}
 						}
-						if (stop.forced_transfer || !visit.departure || !can_finish_ride(alighting, limits.max_transfers - round)) break;
+						if (stop.forced_transfer || !visit.departure || !can_finish_ride(alighting, remaining)) break;
 					}
 					if (stopped) break;
 				}
@@ -387,7 +402,7 @@ PassengerJourneyResult PassengerJourneyPlanner::Search(StationID origin, Station
 		journey.riding = StateTicksDelta{label.riding};
 		journey.generalized_time = StateTicksDelta{label.score};
 		journey.capacity_penalty = StateTicksDelta{label.penalty};
-		journey.transfers = label.boardings - 1;
+		journey.transfers = label.transfers;
 		journey.transfer_time = StateTicksDelta{int64_t{journey.transfers} * evaluation.minimum_transfer};
 		journey.capacity_uncertain = label.capacity_uncertain;
 		journey.prediction_status = label.prediction_status;
@@ -425,21 +440,14 @@ PassengerJourneyResult PassengerJourneyPlanner::Plan(CargoType cargo, StationID 
 	 * queries exact instead of reusing an event interval whose preference ranking could differ. */
 	StateTicks anchor = departures.timed.empty() || evaluation.waiting_weight % 1000 != 0 ? ready :
 			*this->graph.GetTrips()[departures.timed.front().trip].prediction.visits[departures.timed.front().visit].departure;
-	CacheKey key{ cargo, origin, destination, anchor, passengers, this->capacity_provider == nullptr ? 0 : this->capacity_provider->Revision(), limits, evaluation };
+	CacheKey key{ cargo, origin, destination, anchor, passengers, this->capacity_provider == nullptr ? 0 : this->capacity_provider->Revision(), limits, evaluation, SIZE_MAX, SIZE_MAX };
 	auto cached = this->cache.find(key);
 	if (cached != this->cache.end()) {
 		result = cached->second;
 		result.diagnostic.cache_hit = true;
 	} else {
 		result = this->Search(origin, destination, anchor, passengers, limits, evaluation);
-		/* A bounded cache stores partial searches too: warm/cold query budgets produce the same journeys. */
-		size_t bytes = sizeof(CacheKey) + sizeof(PassengerJourneyResult) + 128 + result.journeys.capacity() * sizeof(PassengerPlannedJourney);
-		for (const auto &journey : result.journeys) bytes += journey.legs.capacity() * sizeof(PassengerJourneyLeg);
-		if (this->cache_limits.entries != 0 && bytes <= this->cache_limits.bytes) {
-			if (this->cache.size() >= this->cache_limits.entries || bytes > this->cache_limits.bytes - this->cache_bytes) this->ClearCache();
-			this->cache.emplace(std::move(key), result);
-			this->cache_bytes += bytes;
-		}
+		this->Retain(std::move(key), result);
 	}
 	result.status = MergeJourneyStatus(result.status, departures.status);
 	int64_t initial_wait = anchor.base() - ready.base();
@@ -447,5 +455,48 @@ PassengerJourneyResult PassengerJourneyPlanner::Plan(CargoType cargo, StationID 
 		journey.waiting += StateTicksDelta{initial_wait};
 		journey.generalized_time = StateTicksDelta{JourneyAdd(journey.generalized_time.base(), JourneyAdd(initial_wait, JourneyScale(initial_wait, evaluation.waiting_weight, 1000)))};
 	}
+	return result;
+}
+
+void PassengerJourneyPlanner::Retain(CacheKey key, const PassengerJourneyResult &result)
+{
+	size_t bytes = sizeof(CacheKey) + sizeof(PassengerJourneyResult) + 128 + result.journeys.capacity() * sizeof(PassengerPlannedJourney);
+	for (const auto &journey : result.journeys) bytes += journey.legs.capacity() * sizeof(PassengerJourneyLeg);
+	if (this->cache_limits.entries != 0 && bytes <= this->cache_limits.bytes) {
+		if (this->cache.size() >= this->cache_limits.entries || bytes > this->cache_limits.bytes - this->cache_bytes) this->ClearCache();
+		this->cache.emplace(std::move(key), result);
+		this->cache_bytes += bytes;
+	}
+}
+
+PassengerJourneyResult PassengerJourneyPlanner::PlanOnboard(CargoType cargo, PassengerServiceGraph::VisitID onboard, StationID destination,
+		PassengerJourneyLimits limits, PassengerJourneyEvaluation evaluation, uint64_t passengers)
+{
+	PassengerJourneyResult result;
+	result.status = PassengerPredictionStatus::Unknown;
+	if (cargo != this->graph.GetCargo() || destination == StationID::Invalid() || passengers == 0 ||
+			onboard.trip >= this->graph.GetTrips().size() || evaluation.minimum_transfer < 0 || evaluation.transfer_penalty < 0 ||
+			evaluation.crowding_penalty < 0 || evaluation.capacity_shortfall_penalty < 0) return result;
+	const auto &trip = this->graph.GetTrips()[onboard.trip];
+	if (onboard.visit >= trip.prediction.visits.size()) return result;
+	StationID origin = this->graph.GetVisitStop(onboard).station;
+	if (this->graph.FindOnboardVisit(trip.vehicle, origin, trip.current_order) != onboard) return result;
+	if (origin == destination) {
+		result.status = PassengerPredictionStatus::Complete;
+		PassengerPlannedJourney journey;
+		journey.arrival = this->graph.GetStart();
+		result.journeys.push_back(journey);
+		return result;
+	}
+	CacheKey key{ cargo, origin, destination, this->graph.GetStart(), passengers,
+			this->capacity_provider == nullptr ? 0 : this->capacity_provider->Revision(), limits, evaluation, onboard.trip, onboard.visit };
+	auto found = this->cache.find(key);
+	if (found != this->cache.end()) {
+		result = found->second;
+		result.diagnostic.cache_hit = true;
+		return result;
+	}
+	result = this->Search(origin, destination, this->graph.GetStart(), passengers, limits, evaluation, onboard);
+	this->Retain(std::move(key), result);
 	return result;
 }

@@ -8,6 +8,7 @@
 /** @file console_cmds.cpp Implementation of the console hooks. */
 
 #include "stdafx.h"
+#include "passenger_journey_shadow.h"
 #include "core/string_consumer.hpp"
 #include "console_internal.h"
 #include "crashlog.h"
@@ -4501,6 +4502,86 @@ static bool ConCreateTown(std::span<std::string_view> argv)
 }
 
 /** Console command registration. */
+static bool ConPassengerJourneyShadow(std::span<std::string_view> argv)
+{
+	if (argv.empty()) {
+		IConsolePrint(CC_HELP, "passenger_journey_shadow [on|off|stats|reset|details|inventory]: local read-only train journey diagnostics (default off)");
+		return true;
+	}
+	if (argv.size() > 2) return false;
+	std::string_view operation = argv.size() == 1 ? "stats" : argv[1];
+	if (operation == "on" || operation == "off") {
+		SetPassengerJourneyShadowEnabled(operation == "on");
+		IConsolePrint(CC_DEFAULT, "Passenger journey shadow: {}", IsPassengerJourneyShadowEnabled() ? "on" : "off");
+		return true;
+	}
+	if (operation == "reset") { ResetPassengerJourneyShadowStats(); return true; }
+	if (operation == "inventory") {
+		/* Explicit, bounded inspection explains low coverage without advancing or
+		 * generating OD/cargo. These are current packet holdings, not arrival stats. */
+		std::array<PassengerShadowCount, 4> known{}, automatic{};
+		size_t work = 0;
+		bool complete = true;
+		for (const Vehicle *v : Vehicle::Iterate()) {
+			if (++work > 1048576) { complete = false; break; }
+			size_t mode = to_underlying(v->type);
+			if (mode >= known.size() || v->cargo_type >= NUM_CARGO || !IsCargoInClass(v->cargo_type, CargoClass::Passengers)) continue;
+			for (const CargoPacket *packet : *v->cargo.Packets()) {
+				if (++work > 1048576) { complete = false; break; }
+				if (packet->GetPassengerDestination() == StationID::Invalid()) continue;
+				known[mode].Add(packet->Count());
+				if (_settings_game.linkgraph.GetDistributionType(v->cargo_type) != DistributionType::Manual) automatic[mode].Add(packet->Count());
+			}
+			if (!complete) break;
+		}
+		static constexpr std::array modes{ "train", "road", "ship", "aircraft" };
+		IConsolePrint(CC_DEFAULT, "Current known-OD passenger packet inventory ({}; at most 1048576 vehicle/packet inspections):", complete ? "complete" : "truncated");
+		for (size_t mode = 0; mode < modes.size(); ++mode) IConsolePrint(CC_DEFAULT, "{}: known={} people/{} packets; non-Manual={} people/{} packets",
+				modes[mode], known[mode].passengers, known[mode].packets, automatic[mode].passengers, automatic[mode].packets);
+		return true;
+	}
+	if (operation == "details") {
+		static constexpr std::array decisions{ "Stay", "Transfer", "Arrived", "Unknown", "Unreachable" };
+		static constexpr std::array statuses{ "Complete", "Unknown", "LimitReached", "BudgetExhausted" };
+		for (const auto &detail : GetPassengerJourneyShadowDetails()) {
+			const char *legacy = detail.legacy == VehicleCargoList::MoveToAction::Keep ? "Keep" :
+					detail.legacy == VehicleCargoList::MoveToAction::Transfer ? "Transfer" : "Deliver";
+			IConsolePrint(CC_DEFAULT, "station={} vehicle={} OD={}->{} via={} people={} legacy={} planner={} status={} category={} arrival={} transfers={} generalized_ticks={}",
+					detail.station, detail.vehicle, detail.origin, detail.destination, detail.via, detail.count, legacy,
+					decisions[to_underlying(detail.planner)], statuses[to_underlying(detail.status)], PassengerShadowCategoryName(detail.category),
+					detail.arrival.base(), detail.transfers, detail.generalized_time.base());
+		}
+		return true;
+	}
+	if (operation != "stats") return false;
+	const auto &stats = GetPassengerJourneyShadowStats();
+	auto percent = [](uint64_t numerator, uint64_t denominator) { return denominator == 0 ? std::string("n/a") : fmt::format("{:.2f}%", 100.0 * numerator / denominator); };
+	IConsolePrint(CC_DEFAULT, "Passenger journey shadow: {}; observations={} people/{} packets; known OD={} people/{} packets; evaluated={} people/{} packets ({} of known OD)",
+			IsPassengerJourneyShadowEnabled() ? "on" : "off", stats.observed.passengers, stats.observed.packets,
+			stats.known_od.passengers, stats.known_od.packets, stats.evaluated.passengers, stats.evaluated.packets,
+			percent(stats.evaluated.passengers, stats.known_od.passengers));
+	IConsolePrint(CC_DEFAULT, "Eligible train OD={} people/{} packets; evaluated={} of eligible; excluded non-train OD={} people/{} packets; manual train OD={} people/{} packets; eligible without snapshot={} people/{} packets",
+			stats.eligible_od.passengers, stats.eligible_od.packets, percent(stats.evaluated.passengers, stats.eligible_od.passengers),
+			stats.non_train_od.passengers, stats.non_train_od.packets, stats.manual_od.passengers, stats.manual_od.packets,
+			stats.uncaptured_od.passengers, stats.uncaptured_od.packets);
+	uint64_t matches = 0, comparable = 0;
+	for (size_t index = 0; index < stats.categories.size(); ++index) {
+		const auto &count = stats.categories[index];
+		IConsolePrint(CC_DEFAULT, "{}: {} people / {} packets", PassengerShadowCategoryName(static_cast<PassengerShadowCategory>(index)), count.passengers, count.packets);
+		if (index < 4) comparable += count.passengers;
+		if (index < 2) matches += count.passengers;
+	}
+	IConsolePrint(CC_DEFAULT, "Complete decisions={} of known OD; Stay/Transfer agreement={}; Unknown={}; PredictionUnknown={}; BudgetExhausted={}; LimitReached={} (evaluated people)",
+			percent(stats.decidable.passengers, stats.known_od.passengers), percent(matches, comparable), percent(stats.unknown.passengers, stats.evaluated.passengers), percent(stats.horizon_incomplete.passengers, stats.evaluated.passengers),
+			percent(stats.budget_exhausted.passengers, stats.evaluated.passengers), percent(stats.limit_reached.passengers, stats.evaluated.passengers));
+	IConsolePrint(CC_DEFAULT, "builds={} graph_us={} query_calls={} search_us={} cache_hits={} ({}) mean_work={:.1f} max_work={} scratch_peak={} graph_memory_bound={} cache_peak={} additional_cpu_us={}",
+			stats.builds, stats.graph_us, stats.queries, stats.search_us, stats.cache_hits, percent(stats.cache_hits, stats.queries),
+			stats.queries == stats.cache_hits ? 0.0 : double(stats.work) / (stats.queries - stats.cache_hits), stats.max_work,
+			stats.scratch_peak, stats.graph_memory_bound, stats.cache_peak, stats.cpu_ns / 1000);
+	IConsolePrint(CC_DEFAULT, "Hard quota / 64 state ticks: 1 graph (1048576 work, 1 GiB conservative envelope), 32 cache misses, 512 observations, 2097152 combined work; query 65536 work / 8 MiB scratch; 1 MiB cache; 64 detail records. Horizon/range absence is not global unreachability.");
+	return true;
+}
+
 void IConsoleStdLibRegister()
 {
 	IConsole::CmdRegister("debug_level",             ConDebugLevel);
@@ -4662,6 +4743,7 @@ void IConsoleStdLibRegister()
 	IConsoleDebugLibRegister();
 #endif
 	IConsole::CmdRegister("fps",                     ConFramerate);
+	IConsole::CmdRegister("passenger_journey_shadow", ConPassengerJourneyShadow);
 	IConsole::CmdRegister("fps_wnd",                 ConFramerateWindow);
 
 	IConsole::CmdRegister("find_non_realistic_braking_signal", ConFindNonRealisticBrakingSignal);

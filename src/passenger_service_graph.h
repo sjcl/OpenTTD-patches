@@ -23,6 +23,7 @@ struct PassengerServiceGraphLimits {
 	size_t visits_per_trip = 128;
 	size_t steps_per_trip = 4096;
 	Ticks horizon = 65536; ///< State ticks, independent of GUI time/date settings; hard cap is 2^24.
+	size_t memory_bytes = 1024 * 1024 * 1024; ///< Conservative allocation envelope: at most 1024 bytes per admitted capture work unit.
 };
 
 /**
@@ -108,6 +109,10 @@ public:
 	StateTicks GetEnd() const { return this->end; }
 	/** Completeness of fleet discovery/capture. Prediction completeness is also reported on each Trip and query. */
 	PassengerPredictionStatus GetStatus() const { return this->status; }
+	size_t GetWork() const { return this->work; }
+	size_t GetMemoryBound() const { return this->work * 1024; }
+	/** Unique currently loading occurrence, never a later circuit through the same station. */
+	std::optional<VisitID> FindOnboardVisit(VehicleID vehicle, StationID station, VehicleOrderID order) const;
 	std::span<const Service> GetServices() const { return this->services; }
 	std::span<const Trip> GetTrips() const { return this->trips; }
 	const Service *GetService(OrderListID id) const;
@@ -141,6 +146,9 @@ public:
 	/** Declared stations whose services have incomplete prediction coverage, including missing visits. */
 	std::span<const StationID> GetUncertainStations() const { return this->uncertain_stations; }
 	PassengerPredictionStatus GetUncertainStatus() const { return this->uncertain_status; }
+	/** Conservative declared-service component: disconnected uncertain lines cannot affect this destination. */
+	std::span<const StationID> GetUncertainStations(StationID destination) const;
+	PassengerPredictionStatus GetUncertainStatus(StationID destination) const;
 	const Stop &GetVisitStop(VisitID id) const { return this->GetStop(this->trips[id.trip], this->trips[id.trip].prediction.visits[id.visit].order); }
 
 private:
@@ -148,11 +156,13 @@ private:
 	StateTicks start{};
 	StateTicks end{};
 	PassengerPredictionStatus status = PassengerPredictionStatus::Complete;
+	size_t work = 0;
 	std::vector<Service> services;
 	std::vector<Trip> trips;
 	std::map<OrderListID, size_t> service_index;
 	std::map<StationID, std::vector<OrderListID>> station_services;
 	std::map<StationID, std::vector<VisitID>> station_visits; ///< Capture-order index; VisitIDs can also back a future time index.
+	std::map<VehicleID, std::optional<VisitID>> loading_visits; ///< Unique current occurrence, O(log trips) lookup even at national hubs.
 	struct DepartureIndex {
 		std::vector<VisitID> timed;
 		std::vector<VisitID> unknown;
@@ -161,6 +171,12 @@ private:
 	std::map<StationID, DepartureIndex> station_departures;
 	std::vector<StationID> uncertain_stations;
 	PassengerPredictionStatus uncertain_status = PassengerPredictionStatus::Complete;
+	std::map<StationID, StationID> component_roots;
+	struct UncertainComponent {
+		std::vector<StationID> stations;
+		PassengerPredictionStatus status = PassengerPredictionStatus::Complete;
+	};
+	std::map<StationID, UncertainComponent> uncertain_components;
 	void BuildDepartureIndex();
 	const Stop &GetStop(const Trip &trip, VehicleOrderID order) const;
 	QueryResult<VisitID> SelectVisits(StationID station, StateTicks from, StateTicks to, size_t &budget) const;

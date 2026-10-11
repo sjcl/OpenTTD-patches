@@ -8,6 +8,7 @@
 /** @file cargopacket.cpp Implementation of the cargo packets. */
 
 #include "stdafx.h"
+#include "passenger_journey_shadow.h"
 #include "command_type.h"
 #include "debug.h"
 #include "station_base.h"
@@ -663,7 +664,7 @@ void VehicleCargoList::AgeCargo()
  * @param routing Arrival-scoped passenger prediction cache, or nullptr for original behaviour.
  * @return \c true iff any cargo will be unloaded.
  */
-bool VehicleCargoList::Stage(bool accepted, StationID current_station, std::span<const StationID> next_station, OrderUnloadType unload_type, const GoodsEntry *ge, CargoType cargo, CargoPayment *payment, TileIndex current_tile, PassengerRoutingContext *routing)
+bool VehicleCargoList::Stage(bool accepted, StationID current_station, std::span<const StationID> next_station, OrderUnloadType unload_type, const GoodsEntry *ge, CargoType cargo, CargoPayment *payment, TileIndex current_tile, PassengerRoutingContext *routing, PassengerJourneyShadowContext *shadow)
 {
 	this->AssertCountConsistency();
 	dbg_assert(this->action_counts[MoveToAction::Load] == 0);
@@ -772,6 +773,8 @@ bool VehicleCargoList::Stage(bool accepted, StationID current_station, std::span
 				handle_forced_transfer();
 			}
 		}
+		/* Observe the final action without repeating flow selection/prediction or modifying cargo. */
+		if (shadow != nullptr) shadow->Observe(*cp, cargo, action, cargo_next, unload_type);
 		Money share;
 		switch (action) {
 			case MoveToAction::Keep:

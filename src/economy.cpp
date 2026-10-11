@@ -8,6 +8,7 @@
 /** @file economy.cpp Handling of the economy. */
 
 #include "stdafx.h"
+#include "passenger_journey_shadow.h"
 #include "company_cmd.h"
 #include "company_func.h"
 #include "command_func.h"
@@ -1527,6 +1528,18 @@ static OrderUnloadType GetUnloadType(const Vehicle *v)
  */
 void PrepareUnload(Vehicle *front_v)
 {
+	PassengerJourneyShadowContext shadow(front_v, front_v->last_station_visited);
+	/* NoUnload bypasses Stage entirely. Observe its actual Keep decision at the same
+	 * pre-payment capture point, including cargo-specific unload restrictions. */
+	if (IsPassengerJourneyShadowEnabled()) {
+		for (const Vehicle *v = front_v; v != nullptr; v = v->Next()) {
+			if ((front_v->orders != nullptr && front_v->current_order.GetUnloadType() == OrderUnloadType::NoUnload) ||
+					GetUnloadType(v) == OrderUnloadType::NoUnload) {
+				for (const CargoPacket *cp : *v->cargo.Packets()) shadow.Observe(*cp, v->cargo_type, VehicleCargoList::MoveToAction::Keep,
+						StationID::Invalid(), OrderUnloadType::NoUnload);
+			}
+		}
+	}
 	Station *curr_station = Station::Get(front_v->last_station_visited);
 	curr_station->loading_vehicles.push_back(front_v);
 
@@ -1556,7 +1569,7 @@ void PrepareUnload(Vehicle *front_v)
 						front_v->last_station_visited, next_station.Get(v->cargo_type),
 						GetUnloadType(v), ge,
 						v->cargo_type, front_v->cargo_payment,
-						v->GetMovingFront()->GetCargoTile(), &passenger_routing);
+						v->GetMovingFront()->GetCargoTile(), &passenger_routing, IsPassengerJourneyShadowEnabled() ? &shadow : nullptr);
 				if (v->cargo.UnloadCount() > 0) v->vehicle_flags.Set(VehicleFlag::CargoUnloading);
 			}
 		}

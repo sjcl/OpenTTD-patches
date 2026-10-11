@@ -60,6 +60,8 @@ add_files(
     passenger_service_graph.h
     passenger_journey_planner.cpp
     passenger_journey_planner.h
+    passenger_journey_shadow.cpp
+    passenger_journey_shadow.h
     aircraft.h
     aircraft_cmd.cpp
     aircraft_gui.cpp
