@@ -65,6 +65,7 @@ struct LinkGraphRouteInfo {
 	uint8_t vehicle_type; ///< Vehicle type of the route.
 	uint16_t cost_scale; ///< Cost scale of the route, in percent.
 	uint16_t cost_add;   ///< Cost addition of the route, in days.
+	uint64_t generation = 0; ///< Persistent identity independent of recycled order-list IDs.
 };
 
 #endif /* LINKGRAPH_TYPE_H */

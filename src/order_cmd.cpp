@@ -54,6 +54,36 @@
 
 #include "safeguards.h"
 
+static uint64_t _cargodist_route_generation = 0;
+uint64_t _saved_cargodist_route_generation = 0;
+
+/** Simulation-thread identities, monotonic within a game and saved for network joins. */
+uint64_t AllocateCargoDistRouteGeneration()
+{
+	assert(_cargodist_route_generation != UINT64_MAX);
+	return ++_cargodist_route_generation;
+}
+
+uint64_t GetCargoDistRouteGenerationCounter()
+{
+	return _cargodist_route_generation;
+}
+
+void OrderList::PreCleanPool()
+{
+	_cargodist_route_generation = _saved_cargodist_route_generation = 0;
+}
+
+/** Discard temporary constructor allocations during load. Server and client
+ * must resume from the same counter, including identities of deleted lists. */
+void RestoreCargoDistRouteGenerationCounter()
+{
+	_cargodist_route_generation = _saved_cargodist_route_generation;
+	for (const OrderList *list : OrderList::Iterate()) {
+		_cargodist_route_generation = std::max(_cargodist_route_generation, list->GetCargoDistRouteGeneration());
+	}
+}
+
 /* DestinationID must be at least as large as every these below, because it can
  * be any of them
  */

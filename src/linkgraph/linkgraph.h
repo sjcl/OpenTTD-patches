@@ -79,10 +79,14 @@ public:
 		uint16_t cost_add = 0;                     ///< Cost addition of the route, in days.
 		uint capacity = 0;                         ///< Capacity contributed by the route.
 		EconTime::Date last_update{};              ///< When the route was last updated.
+		uint64_t generation = 0;                  ///< Order-list identity, zero in legacy saves.
+
+		bool IsValid() const;
+		bool IsCurrent() const;
 	};
 
 	/** Maximum number of routes tracked per edge. */
-	static constexpr uint MAX_EDGE_ROUTES = 16;
+	static constexpr uint MAX_EDGE_ROUTES = 64000; // OrderList pool bound; no lossy eviction.
 
 	struct BaseEdge {
 		uint capacity = 0;                         ///< Capacity of the link.
@@ -143,7 +147,7 @@ public:
 		 * Get edge's average travel time.
 		 * @return Travel time, in ticks.
 		 */
-		uint32_t TravelTime() const { return this->edge->travel_time_sum / this->edge->capacity; }
+		uint32_t TravelTime() const { return this->edge->capacity == 0 ? 0 : ClampTo<uint32_t>(this->edge->travel_time_sum / this->edge->capacity); }
 
 		/**
 		 * Get the date of the last update to the edge's unrestricted capacity.
@@ -327,9 +331,17 @@ public:
 	 * @param orig_age Age of the original link graph.
 	 * @return scaled value.
 	 */
-	static inline uint Scale(uint val, uint target_age, uint orig_age)
+	template <typename Tvalue>
+	static inline Tvalue Scale(Tvalue val, uint target_age, uint orig_age)
 	{
-		return val > 0 ? std::max(1U, val * target_age / orig_age) : 0;
+		if (val == 0) return 0;
+		const uint divisor = std::max(1U, orig_age);
+		const uint64_t limit = std::numeric_limits<Tvalue>::max();
+		const uint64_t quotient = val / divisor;
+		if (target_age != 0 && quotient > limit / target_age) return static_cast<Tvalue>(limit);
+		const uint64_t whole = quotient * target_age;
+		const uint64_t fraction = static_cast<uint64_t>(val % divisor) * target_age / divisor;
+		return static_cast<Tvalue>(std::max<uint64_t>(1, whole + std::min(fraction, limit - whole)));
 	}
 
 	/**
@@ -400,6 +412,8 @@ public:
 
 	void UpdateEdge(NodeID from, NodeID to, uint capacity, uint usage, uint32_t time, EdgeUpdateModes modes, const LinkGraphRouteInfo *route = nullptr);
 	void RemoveEdge(NodeID from, NodeID to);
+
+	void RefreshRouteMetadata(bool after_load = false, bool update_costs = true);
 
 	inline uint32_t CalculateCostEstimate() const {
 		return (uint32_t)this->Size() * (uint32_t)this->Size();

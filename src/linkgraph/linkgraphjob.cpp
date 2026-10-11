@@ -10,6 +10,7 @@
 #include "../stdafx.h"
 #include "../core/pool_func.hpp"
 #include "../window_func.h"
+#include "../order_base.h"
 #include "linkgraphjob.h"
 #include "linkgraphschedule.h"
 
@@ -32,6 +33,14 @@ static ScaledTickCounter GetLinkGraphJobJoinTick(uint duration_multiplier)
 	return ticks + _scaled_tick_counter;
 }
 
+/** Called on the simulation thread; workers never access the live order-list pool. */
+static LinkGraph SnapshotLinkGraph(const LinkGraph &orig)
+{
+	LinkGraph copy(orig);
+	copy.RefreshRouteMetadata();
+	return copy;
+}
+
 /**
  * Create a link graph job from a link graph. The link graph will be copied so
  * that the calculations don't interfere with the normal operations on the
@@ -43,7 +52,7 @@ LinkGraphJob::LinkGraphJob(LinkGraphJobID index, const LinkGraph &orig, uint dur
 		PoolItemBase(index),
 		/* Copying the link graph here also copies its index member.
 		 * This is on purpose. */
-		link_graph(orig),
+		link_graph(SnapshotLinkGraph(orig)),
 		settings(_settings_game.linkgraph),
 		join_tick(GetLinkGraphJobJoinTick(duration_multiplier)),
 		start_tick(_scaled_tick_counter),
@@ -244,10 +253,10 @@ void LinkGraphJob::Init()
 			return DistanceMaxPlusManhattan((*this)[it.first.first].XY(), (*this)[it.first.second].XY()) + 1;
 		};
 
-		uint distance_anno;
+		LinkGraphCost distance_anno;
 		if (express) {
 			/* Compute a default travel time from the distance and an average speed of 1 tile/day. */
-			distance_anno = (edge.TravelTime() != 0) ? edge.TravelTime() + DAY_TICKS : calculate_distance() * DAY_TICKS;
+			distance_anno = (edge.TravelTime() != 0) ? static_cast<LinkGraphCost>(edge.TravelTime()) + DAY_TICKS : static_cast<LinkGraphCost>(calculate_distance()) * DAY_TICKS;
 		} else {
 			distance_anno = calculate_distance();
 		}
@@ -270,8 +279,9 @@ void LinkGraphJob::Init()
 		}
 		if (route_capacity > 0) {
 			const uint64_t scale = weighted_scale / route_capacity;
-			const uint64_t add = weighted_add * day_cost / route_capacity;
-			distance_anno = ClampTo<uint>(std::max<uint64_t>(1, (distance_anno * scale / 100) + add));
+			/* Divide before multiplying the fractional remainder; do not truncate fractional days. */
+			const uint64_t add = (weighted_add / route_capacity) * day_cost + (weighted_add % route_capacity) * day_cost / route_capacity;
+			distance_anno = std::max<LinkGraphCost>(1, AddPathCost(distance_anno * scale / 100, add));
 		}
 
 		this->edges[idx].InitEdge(it.first.first, it.first.second, edge.Capacity(), distance_anno, routes);
@@ -299,11 +309,11 @@ void LinkGraphJob::NodeAnnotation::Init(uint supply)
  * @param free_cap Remaining free capacity of the new leg.
  * @param dist Distance of the new leg.
  */
-void Path::Fork(Path *base, uint cap, int free_cap, uint dist)
+void Path::Fork(Path *base, uint cap, int free_cap, LinkGraphCost dist)
 {
 	this->capacity = std::min(base->capacity, cap);
 	this->free_capacity = std::min(base->free_capacity, free_cap);
-	this->distance = base->distance + dist;
+	this->distance = AddPathCost(base->distance, dist);
 	assert(this->distance > 0);
 	if (this->GetParent() != base) {
 		this->Detach();
@@ -326,7 +336,7 @@ uint Path::AddFlow(uint new_flow, LinkGraphJob &job, uint max_saturation)
 	if (this->GetParent() != nullptr) {
 		LinkGraphJob::Edge &edge = job[this->GetParent()->node].GetEdgeTo(this->node);
 		if (max_saturation != UINT_MAX) {
-			uint usable_cap = edge.Capacity() * max_saturation / 100;
+			uint usable_cap = ClampTo<uint>(static_cast<uint64_t>(edge.Capacity()) * max_saturation / 100);
 			if (usable_cap > edge.Flow()) {
 				new_flow = std::min(new_flow, usable_cap - edge.Flow());
 			} else {
@@ -349,7 +359,7 @@ uint Path::AddFlow(uint new_flow, LinkGraphJob &job, uint max_saturation)
  * @param source If true, this is the first leg of the path.
  */
 Path::Path(NodeID n, bool source) :
-	distance(source ? 0 : UINT_MAX),
+	distance(source ? 0 : INVALID_PATH_COST),
 	capacity(source ? UINT_MAX : 0),
 	free_capacity(source ? INT_MAX : INT_MIN),
 	flow(0), node(n), origin(source ? n : INVALID_NODE),

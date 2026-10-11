@@ -11,12 +11,59 @@
 #include "../core/pool_func.hpp"
 #include "linkgraph.h"
 #include "linkgraphjob.h"
+#include "../order_base.h"
 
 #include "../safeguards.h"
 
 /* Initialize the link-graph-pool */
 LinkGraphPool _link_graph_pool("LinkGraph");
 INSTANTIATE_POOL_METHODS(LinkGraph)
+
+bool LinkGraph::EdgeRoute::IsValid() const
+{
+	return this->route < MAX_EDGE_ROUTES && this->vehicle_type < 4 &&
+			this->cost_scale >= MIN_ROUTE_CARGODIST_COST_SCALE && this->cost_scale <= MAX_ROUTE_CARGODIST_COST_SCALE &&
+			this->cost_add <= MAX_ROUTE_CARGODIST_COST_ADD && this->capacity != 0 &&
+			this->last_update >= EconTime::MIN_DATE && this->last_update <= EconTime::MAX_DATE;
+}
+
+bool LinkGraph::EdgeRoute::IsCurrent() const
+{
+	const OrderList *list = OrderList::GetIfValid(OrderListID{this->route});
+	return list != nullptr && this->generation == list->GetCargoDistRouteGeneration();
+}
+
+/** Lazy invalidation avoids scanning every graph when an order list is deleted. Main thread only. */
+void LinkGraph::RefreshRouteMetadata(bool after_load, bool update_costs)
+{
+	/* Future timestamps are representable, but would otherwise prevent expiry
+	 * and violate the stale-link checks after a corrupt or edited save. */
+	if (after_load) for (BaseNode &node : this->nodes) node.last_update = std::min(node.last_update, EconTime::CurDate());
+	for (auto &it : this->edges) {
+		if (after_load) {
+			it.second.last_unrestricted_update = std::min(it.second.last_unrestricted_update, EconTime::CurDate());
+			it.second.last_restricted_update = std::min(it.second.last_restricted_update, EconTime::CurDate());
+			it.second.last_aircraft_update = std::min(it.second.last_aircraft_update, EconTime::CurDate());
+		}
+		std::erase_if(it.second.routes, [&](EdgeRoute &route) {
+			if (!route.IsValid()) return true;
+			if (after_load) route.last_update = std::min(route.last_update, EconTime::CurDate());
+			/* Unbound records are used by synthetic graphs; real loaded records are bound below. */
+			if (!after_load && route.generation == 0) return false;
+			const OrderList *list = OrderList::GetIfValid(OrderListID{route.route});
+			/* Published v1 saves have no generation. Their records may already
+			 * contain a recycled ID, so discard those observations and relearn
+			 * them from vehicles. Order-list cost settings remain intact. */
+			if (list == nullptr || !route.IsCurrent()) return true;
+			route.generation = list->GetCargoDistRouteGeneration();
+			if (update_costs) {
+				route.cost_scale = list->GetCargoDistCostScale();
+				route.cost_add = list->GetCargoDistCostAdd();
+			}
+			return false;
+		});
+	}
+}
 
 /**
  * Create a node or clear it.
@@ -102,9 +149,9 @@ void LinkGraph::Merge(LinkGraph *other)
 		if (key.first != key.second) {
 			edge.capacity = LinkGraph::Scale(edge.capacity, age, other_age);
 			edge.usage = LinkGraph::Scale(edge.usage, age, other_age);
-			edge.travel_time_sum = LinkGraph::Scale(edge.travel_time_sum, age, other_age);
+			edge.travel_time_sum = std::min(LinkGraph::Scale(edge.travel_time_sum, age, other_age), static_cast<uint64_t>(edge.capacity) * UINT32_MAX);
 			for (EdgeRoute &route : edge.routes) {
-				route.capacity = LinkGraph::Scale(route.capacity, age, other_age);
+				route.capacity = std::max(1U, LinkGraph::Scale(route.capacity, age, other_age));
 			}
 		}
 		this->edges[key] = edge;
@@ -236,15 +283,19 @@ void LinkGraph::Edge::Update(uint capacity, uint usage, uint32_t travel_time, Ed
 	assert(capacity >= usage);
 
 	if (modes.Test(EdgeUpdateMode::Increase)) {
+		/* Count only representable capacity, so neither capacity nor its weighted
+		 * travel sum wraps when accumulated observations reach the storage bound. */
+		capacity = std::min(capacity, UINT_MAX - edge.capacity);
+		edge.travel_time_sum = std::min(edge.travel_time_sum, static_cast<uint64_t>(edge.capacity) * UINT32_MAX);
 		if (edge.travel_time_sum == 0) {
-			edge.travel_time_sum = static_cast<uint64_t>(edge.capacity + capacity) * travel_time;
+			edge.travel_time_sum = (static_cast<uint64_t>(edge.capacity) + capacity) * travel_time;
 		} else if (travel_time == 0) {
 			edge.travel_time_sum += (edge.travel_time_sum / edge.capacity) * capacity;
 		} else {
 			edge.travel_time_sum += static_cast<uint64_t>(travel_time) * capacity;
 		}
 		edge.capacity += capacity;
-		edge.usage += usage;
+		edge.usage = ClampTo<uint>(std::min<uint64_t>(static_cast<uint64_t>(edge.usage) + usage, edge.capacity));
 	} else if (modes.Test(EdgeUpdateMode::Refresh)) {
 		/* If travel time is not provided, we scale the stored time based on
 		 * the capacity increase. */
@@ -267,7 +318,7 @@ void LinkGraph::Edge::Update(uint capacity, uint usage, uint32_t travel_time, Ed
 
 /**
  * Update the entry of the given route in the edge's route list, or add one if
- * none exists yet. If the list is full, the least recently updated entry is replaced.
+ * none exists yet. Recycled IDs replace only their own stale record, never another service.
  * @param info Route to be updated.
  * @param capacity Capacity to be added/updated.
  * @param modes Update modes to be applied.
@@ -275,23 +326,22 @@ void LinkGraph::Edge::Update(uint capacity, uint usage, uint32_t travel_time, Ed
 void LinkGraph::Edge::UpdateRoute(const LinkGraphRouteInfo &info, uint capacity, EdgeUpdateModes modes)
 {
 	std::vector<EdgeRoute> &routes = this->edge->routes;
-	auto it = std::find_if(routes.begin(), routes.end(), [&](const EdgeRoute &r) { return r.route == info.route; });
-	if (it == routes.end()) {
-		if (routes.size() < MAX_EDGE_ROUTES) {
-			it = routes.emplace(routes.end());
-		} else {
-			it = std::min_element(routes.begin(), routes.end(), [](const EdgeRoute &a, const EdgeRoute &b) {
-				return std::tie(a.last_update, a.capacity) < std::tie(b.last_update, b.capacity);
-			});
-		}
+	if (info.route >= MAX_EDGE_ROUTES || info.vehicle_type >= 4 ||
+			info.cost_scale < MIN_ROUTE_CARGODIST_COST_SCALE || info.cost_scale > MAX_ROUTE_CARGODIST_COST_SCALE ||
+			info.cost_add > MAX_ROUTE_CARGODIST_COST_ADD || capacity == 0) return;
+	auto it = std::lower_bound(routes.begin(), routes.end(), info.route, [](const EdgeRoute &r, uint16_t id) { return r.route < id; });
+	if (it == routes.end() || it->route != info.route) {
+		it = routes.emplace(it);
 		*it = {};
 		it->route = info.route;
 	}
+	if (it->generation != info.generation) it->capacity = 0;
+	it->generation = info.generation;
 	it->vehicle_type = info.vehicle_type;
 	it->cost_scale = info.cost_scale;
 	it->cost_add = info.cost_add;
 	if (modes.Test(EdgeUpdateMode::Increase)) {
-		it->capacity += capacity;
+		it->capacity = ClampTo<uint>(static_cast<uint64_t>(it->capacity) + capacity);
 	} else {
 		it->capacity = std::max(it->capacity, capacity);
 	}
@@ -306,7 +356,7 @@ void LinkGraph::Edge::PruneRoutes(EconTime::DateDelta timeout)
 {
 	const EconTime::Date now = EconTime::CurDate();
 	std::erase_if(this->edge->routes, [&](const EdgeRoute &r) {
-		return r.last_update == EconTime::INVALID_DATE || (now - r.last_update) > timeout;
+		return !r.IsValid() || (r.generation != 0 && !r.IsCurrent()) || static_cast<int64_t>(now.base()) - r.last_update.base() > timeout.base();
 	});
 }
 

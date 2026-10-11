@@ -1185,6 +1185,11 @@ static const uint16_t MIN_ROUTE_CARGODIST_COST_SCALE = 10;   ///< Minimum cargo 
 static const uint16_t MAX_ROUTE_CARGODIST_COST_SCALE = 1000; ///< Maximum cargo distribution route cost scale, in percent.
 static const uint16_t MAX_ROUTE_CARGODIST_COST_ADD = 365;    ///< Maximum cargo distribution route cost addition, in days.
 
+uint64_t AllocateCargoDistRouteGeneration();
+uint64_t GetCargoDistRouteGenerationCounter();
+void RestoreCargoDistRouteGenerationCounter();
+extern uint64_t _saved_cargodist_route_generation;
+
 struct OrderList : OrderListPool::PoolItem<&_orderlist_pool> {
 private:
 	friend void AfterLoadVehiclesPhase1(bool part_of_load); ///< For instantiating the shared vehicle chain
@@ -1200,6 +1205,7 @@ private:
 
 	uint16_t cargodist_cost_scale = 100;  ///< Cargo distribution route cost scale, in percent.
 	uint16_t cargodist_cost_add = 0;      ///< Cargo distribution route cost addition, in days.
+	uint64_t cargodist_route_generation = this->index == OrderListID::Invalid() ? 0 : AllocateCargoDistRouteGeneration(); ///< Only pooled lists participate in synchronized route identity.
 
 	VehicleOrderID num_manual_orders = 0; ///< NOSAVE: How many manually added orders are there in the list.
 	uint num_vehicles = 0;                ///< NOSAVE: Number of vehicles that share this order list.
@@ -1211,6 +1217,8 @@ private:
 	std::vector<DispatchSchedule> dispatch_schedules{}; ///< Scheduled dispatch schedules
 
 public:
+	static void PreCleanPool();
+
 	/**
 	 * Default constructor producing an invalid order list.
 	 * @param index index of the list within the order list pool
@@ -1448,6 +1456,7 @@ public:
 
 	/** Get the cargo distribution route cost addition, in days. */
 	uint16_t GetCargoDistCostAdd() const { return this->cargodist_cost_add; }
+	uint64_t GetCargoDistRouteGeneration() const { return this->cargodist_route_generation; }
 
 	void SetCargoDistCostScale(uint16_t scale) { this->cargodist_cost_scale = scale; }
 
@@ -1460,7 +1469,7 @@ public:
 	 */
 	LinkGraphRouteInfo GetLinkGraphRouteInfo(VehicleType type) const
 	{
-		return { this->index.base(), static_cast<uint8_t>(type), this->cargodist_cost_scale, this->cargodist_cost_add };
+		return { this->index.base(), static_cast<uint8_t>(type), this->cargodist_cost_scale, this->cargodist_cost_add, this->cargodist_route_generation };
 	}
 
 	/**

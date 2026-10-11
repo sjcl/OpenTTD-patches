@@ -123,10 +123,16 @@ zero days; both global penalties default to zero days.
 
 These controls adjust background CargoDist path costs. They do not estimate
 waiting time or replace the onboard passenger predictor. Per-edge route costs
-are capacity-weighted, and transfers are inferred from the overlap of routes
-serving the incoming and outgoing edges. At most 16 route records are tracked
-per edge. Missing route metadata suppresses the corresponding transfer penalty.
+are capacity-weighted. With nonzero penalties, background searches retain
+arrival-service states and compare the actual arriving/departing services.
+All observed services are retained up to the OrderList pool bound, without
+the former 16-record eviction. Missing metadata suppresses the transfer penalty.
 Job snapshots contain their own copies of route records and settings.
+
+The capacity pass and final station/via flow allocation remain aggregate
+heuristics, without independent per-service capacity constraints. See
+[the route hardening report](cargodist-route-hardening.md) for correctness
+boundaries, save migration, regression results and CPU/memory measurements.
 
 The imported controls extend the LinkGraph and OrderList save data under the
 `linkgraph_route_penalty` feature. Saves made with the combined build require
@@ -161,7 +167,7 @@ can be inaccurate when these differ from recorded running times. Final-destinati
 optimization and changing the CargoDist allocation of demand among services
 remain outside this implementation.
 
-On the local Windows Release build, 10,000 predictions across 1,024 orders took
+During the initial integration, on the local Windows Release build, 10,000 predictions across 1,024 orders took
 70–123 ms (73 ms on the final run), and staging 2,001 separate packets took
 1–4 ms. These are synthetic
 measurements, not national-map frame-time estimates. Both executable targets

@@ -59,6 +59,8 @@ OrderBackup::OrderBackup(OrderBackupID index, const Vehicle *v, ClientID user) :
 
 		if (v->orders != nullptr) {
 			this->dispatch_schedules = v->orders->GetScheduledDispatchScheduleSet();
+			this->cargodist_cost_scale = v->orders->GetCargoDistCostScale();
+			this->cargodist_cost_add = v->orders->GetCargoDistCostAdd();
 		}
 	}
 
@@ -79,6 +81,8 @@ void OrderBackup::DoRestore(Vehicle *v)
 		this->orders.clear();
 
 		v->orders->GetScheduledDispatchScheduleSet() = std::move(this->dispatch_schedules);
+		v->orders->SetCargoDistCostScale(this->cargodist_cost_scale);
+		v->orders->SetCargoDistCostAdd(this->cargodist_cost_add);
 
 		/* Make sure buoys/oil rigs are updated in the station list. */
 		InvalidateWindowClassesData(WindowClass::StationList, 0);

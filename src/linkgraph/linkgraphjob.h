@@ -22,6 +22,17 @@ class Path;
 class LinkGraphJobGroup;
 typedef std::vector<Path *> PathList;
 
+/** Path costs have a separate unreachable sentinel, never a valid 32-bit cost. */
+using LinkGraphCost = uint64_t;
+static constexpr LinkGraphCost INVALID_PATH_COST = UINT64_MAX;
+static constexpr LinkGraphCost MAX_PATH_COST = INVALID_PATH_COST - 1;
+
+inline LinkGraphCost AddPathCost(LinkGraphCost a, LinkGraphCost b)
+{
+	if (a == INVALID_PATH_COST || b == INVALID_PATH_COST) return INVALID_PATH_COST;
+	return a > MAX_PATH_COST - b ? MAX_PATH_COST : a + b;
+}
+
 /** Type of the pool for link graph jobs. */
 using LinkGraphJobPool = Pool<LinkGraphJob, LinkGraphJobID, 32>;
 /** The actual pool with link graph jobs. */
@@ -49,7 +60,7 @@ public:
 		NodeID from = INVALID_NODE;  ///< From Node.
 		NodeID to = INVALID_NODE;    ///< To Node.
 		uint capacity = 0;           ///< Capacity of the link.
-		uint distance_anno = 0;      ///< Pre-computed distance annotation.
+		LinkGraphCost distance_anno = 0; ///< Pre-computed distance annotation.
 
 		uint flow = 0;               ///< Planned flow over this edge.
 
@@ -79,7 +90,7 @@ public:
 		 * Get edge's distance annotation.
 		 * @return Distance annotation.
 		 */
-		uint DistanceAnno() const { return this->distance_anno; }
+		LinkGraphCost DistanceAnno() const { return this->distance_anno; }
 
 		/**
 		 * Get the total flow on the edge.
@@ -115,7 +126,7 @@ public:
 		 */
 		uint8_t VehicleTypeMask() const { return this->vehicle_type_mask; }
 
-		void InitEdge(NodeID from, NodeID to, uint capacity, uint distance_anno, std::span<const LinkGraph::EdgeRoute> routes)
+		void InitEdge(NodeID from, NodeID to, uint capacity, LinkGraphCost distance_anno, std::span<const LinkGraph::EdgeRoute> routes)
 		{
 			this->from = from;
 			this->to = to;
@@ -125,7 +136,7 @@ public:
 			this->routes = routes;
 			this->vehicle_type_mask = 0;
 			for (const LinkGraph::EdgeRoute &route : routes) {
-				SetBit(this->vehicle_type_mask, route.vehicle_type);
+				if (route.vehicle_type < 4) SetBit(this->vehicle_type_mask, route.vehicle_type);
 			}
 		}
 	};
@@ -183,6 +194,13 @@ public:
 	std::vector<DemandAnnotation> demand_annotation_store;        ///< Demand annotation store.
 
 	DynUniformArenaAllocator path_allocator; ///< Arena allocator used for paths
+
+	struct RouteSearchStats {
+		size_t states = 0;
+		size_t labels = 0;
+		size_t queue = 0;
+		size_t scratch_bytes = 0;
+	} route_search_stats; ///< NOSAVE: high-water diagnostics for service-state searches.
 
 	/**
 	 * Link graph job node. Wraps a constant link graph node and a modifiable
@@ -381,6 +399,17 @@ public:
 		return this->transfer_penalty_mode_change;
 	}
 
+	bool HasTransferPenalties() const { return this->transfer_penalty_same_mode != 0 || this->transfer_penalty_mode_change != 0; }
+
+	/** Penalty for the actual arriving/departing service. Unknown metadata preserves legacy behaviour. */
+	uint GetRouteTransferPenalty(uint32_t in, uint32_t out) const
+	{
+		if (in == UINT32_MAX || out == UINT32_MAX || in == out) return 0;
+		return (in >> 16) == (out >> 16) ? this->transfer_penalty_same_mode : this->transfer_penalty_mode_change;
+	}
+
+	std::span<Edge> GetEdges() { return this->edges; }
+
 	/**
 	 * Get a node abstraction with the specified id.
 	 * @param num ID of the node.
@@ -467,7 +496,7 @@ public:
 	 */
 	static inline int GetCapacityRatio(int free, uint total)
 	{
-		return Clamp(free, PATH_CAP_MIN_FREE, PATH_CAP_MAX_FREE) * PATH_CAP_MULTIPLIER / std::max(total, 1U);
+		return static_cast<int>(static_cast<int64_t>(Clamp(free, PATH_CAP_MIN_FREE, PATH_CAP_MAX_FREE)) * PATH_CAP_MULTIPLIER / std::max(total, 1U));
 	}
 
 	/**
@@ -483,7 +512,7 @@ public:
 	 * Get the overall distance of the path.
 	 * @return The path's length.
 	 */
-	inline uint GetDistance() const { return this->distance; }
+	inline LinkGraphCost GetDistance() const { return this->distance; }
 
 	/**
 	 * Reduce the flow on this leg only by the specified amount.
@@ -521,7 +550,7 @@ public:
 	}
 
 	uint AddFlow(uint f, LinkGraphJob &job, uint max_saturation);
-	void Fork(Path *base, uint cap, int free_cap, uint dist);
+	void Fork(Path *base, uint cap, int free_cap, LinkGraphCost dist);
 
 	/**
 	 * Get the edge used to arrive at this leg's node.
@@ -548,7 +577,7 @@ protected:
 	static constexpr int PATH_CAP_MAX_FREE = (INT_MAX - 1) / PATH_CAP_MULTIPLIER;
 	/** @} */
 
-	uint distance = 0;            ///< Sum(distance of all legs up to this one).
+	LinkGraphCost distance = 0;   ///< Sum of costs, INVALID_PATH_COST only for unreachable paths.
 	uint capacity = 0;            ///< This capacity is min(capacity) of all edges.
 	int free_capacity = 0;        ///< This capacity is min(edge.capacity - edge.flow) for the current run of Dijkstra.
 	uint flow = 0;                ///< Flow the current run of the mcf solver assigns.

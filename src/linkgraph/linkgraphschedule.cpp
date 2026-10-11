@@ -8,6 +8,7 @@
 /** @file linkgraphschedule.cpp Definition of link graph schedule used for cargo distribution. */
 
 #include "../stdafx.h"
+#include "../order_base.h"
 #include "linkgraphschedule.h"
 #include "init.h"
 #include "demands.h"
@@ -177,8 +178,12 @@ void LinkGraphSchedule::JoinNext()
  */
 void LinkGraphSchedule::SpawnAll()
 {
+	RestoreCargoDistRouteGenerationCounter();
+	/* All order lists have been loaded. Validate identities before starting any worker. */
+	for (LinkGraph *graph : LinkGraph::Iterate()) graph->RefreshRouteMetadata(true, false);
 	std::vector<LinkGraphJobGroup::JobInfo> jobs_to_execute;
 	for (auto &it : this->running) {
+		const_cast<LinkGraph &>(it->Graph()).RefreshRouteMetadata(true, false);
 		jobs_to_execute.emplace_back(it.get());
 	}
 	LinkGraphJobGroup::ExecuteJobSet(std::move(jobs_to_execute));

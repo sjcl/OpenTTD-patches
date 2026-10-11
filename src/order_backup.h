@@ -60,6 +60,8 @@ private:
 	std::vector<Order> orders;            ///< The actual orders if the vehicle was not a clone.
 
 	std::vector<DispatchSchedule> dispatch_schedules; ///< Scheduled dispatch schedules
+	uint16_t cargodist_cost_scale = 100;
+	uint16_t cargodist_cost_add = 0;
 
 	static uint update_counter;
 

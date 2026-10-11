@@ -521,6 +521,7 @@ NamedSaveLoadTable GetOrderListDescription()
 		NSLT("route_overlay_colour", SLE_VAR(OrderList, route_overlay_colour, SLE_UINT8)),
 		NSLT("cargodist_cost_scale", SLE_VAR(OrderList, cargodist_cost_scale, SLE_UINT16)),
 		NSLT("cargodist_cost_add",   SLE_VAR(OrderList, cargodist_cost_add,   SLE_UINT16)),
+		NSLT("cargodist_route_generation", SLE_VAR(OrderList, cargodist_route_generation, SLE_UINT64)),
 
 		NSLT_STRUCTLIST<OrderListDispatchScheduleStructHandler>("dispatch_schedule"),
 		NSLT_STRUCTLIST<OrderListOrderVectorStructHandler>("order_vector"),
@@ -558,6 +559,8 @@ NamedSaveLoadTable GetOrderBackupDescription()
 		NSLT_STRUCTLIST<OrderBackupDispatchScheduleStructHandler>("dispatch_schedule"),
 		NSLT_STRUCTLIST<OrderBackupDispatchRecordsStructHandlerBase>("dispatch_records"),
 		NSLT_STRUCTLIST<OrderBackupOrderVectorStructHandler>("order_vector"),
+		NSLT("cargodist_cost_scale", SLE_VAR(OrderBackup, cargodist_cost_scale, SLE_UINT16)),
+		NSLT("cargodist_cost_add", SLE_VAR(OrderBackup, cargodist_cost_add, SLE_UINT16)),
 	};
 
 	return _order_backup_desc;
@@ -594,6 +597,9 @@ static void Load_ORDL()
 		/* set num_orders to 0 so it's a valid OrderList */
 		OrderList *list = OrderList::CreateAtIndex(OrderListID(index));
 		SlObjectLoadFiltered(list, slt);
+		if (list->GetCargoDistCostScale() < MIN_ROUTE_CARGODIST_COST_SCALE || list->GetCargoDistCostScale() > MAX_ROUTE_CARGODIST_COST_SCALE ||
+				list->GetCargoDistCostAdd() > MAX_ROUTE_CARGODIST_COST_ADD) SlErrorCorrupt("Invalid order list CargoDist cost");
+		if (list->GetCargoDistRouteGeneration() == 0 || list->GetCargoDistRouteGeneration() > UINT64_MAX / 2) SlErrorCorrupt("Invalid CargoDist route generation");
 		if (SlXvIsFeaturePresent(XSLFI_JOKERPP)) {
 			if (_jokerpp_separation_mode == 0) {
 				_jokerpp_auto_separation.push_back(list);
@@ -653,6 +659,8 @@ void Load_BKOR()
 			/* set num_orders to 0 so it's a valid OrderList */
 			OrderBackup *ob = OrderBackup::CreateAtIndex(OrderBackupID(index));
 			SlObjectLoadFiltered(ob, slt);
+			if (ob->cargodist_cost_scale < MIN_ROUTE_CARGODIST_COST_SCALE || ob->cargodist_cost_scale > MAX_ROUTE_CARGODIST_COST_SCALE ||
+					ob->cargodist_cost_add > MAX_ROUTE_CARGODIST_COST_ADD) SlErrorCorrupt("Invalid backup CargoDist cost");
 		}
 		return;
 	}

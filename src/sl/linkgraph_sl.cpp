@@ -13,6 +13,7 @@
 #include "../linkgraph/linkgraphschedule.h"
 #include "../network/network.h"
 #include "../settings_internal.h"
+#include "../order_base.h"
 #include "saveload.h"
 
 #include "../safeguards.h"
@@ -22,6 +23,24 @@ typedef LinkGraph::BaseEdge Edge;
 
 static uint16_t _num_nodes;
 static uint16_t _to_node;
+
+/* Separate limits for live graphs and job snapshots. Bound aggregate allocation
+ * in a chunk as well as each individual array. Normal sparse maps are far smaller. */
+static size_t _linkgraph_nodes_left;
+static size_t _linkgraph_edges_left;
+static size_t _linkgraph_routes_left;
+
+static bool IsValidLinkGraphDate(EconTime::Date date)
+{
+	return date == EconTime::INVALID_DATE || (date >= EconTime::MIN_DATE && date <= EconTime::MAX_DATE);
+}
+
+static void ResetLinkGraphLoadBudget()
+{
+	_linkgraph_nodes_left = 1024 * 1024;
+	_linkgraph_edges_left = 1024 * 1024;
+	_linkgraph_routes_left = 4 * 1024 * 1024;
+}
 
 /* Edges and nodes are saved in the correct order, so we don't need to save their IDs. */
 
@@ -97,16 +116,27 @@ struct LinkGraphNodeStructHandler final : public TypedSaveLoadStructHandler<Link
 	void Load(LinkGraph *lg) const override
 	{
 		NodeID num_nodes = static_cast<NodeID>(SlGetStructListLength(UINT16_MAX));
+		if (num_nodes > _linkgraph_nodes_left) SlErrorCorrupt("Too many link graph nodes");
+		_linkgraph_nodes_left -= num_nodes;
 		lg->Init(num_nodes);
 
 		for (NodeID from = 0; from < num_nodes; ++from) {
 			Node *node = &lg->nodes[from];
 			SlObjectLoadFiltered(node, this->GetLoadDescription());
+			if (!IsValidLinkGraphDate(node->last_update)) SlErrorCorrupt("Invalid link graph node update date");
 
 			uint num_edges = static_cast<uint>(SlGetStructListLength(UINT16_MAX));
+			if (num_edges > num_nodes || num_edges > _linkgraph_edges_left) SlErrorCorrupt("Too many link graph edges");
+			_linkgraph_edges_left -= num_edges;
 			for (uint i = 0; i < num_edges; i++) {
 				NodeID to = SlReadUint16();
-				SlObjectLoadFiltered(&lg->edges[std::make_pair(from, to)], this->edge_description);
+				if (to >= num_nodes) SlErrorCorrupt("Invalid link graph edge destination");
+				auto [it, inserted] = lg->edges.try_emplace(std::make_pair(from, to));
+				if (!inserted) SlErrorCorrupt("Duplicate link graph edge");
+				SlObjectLoadFiltered(&it->second, this->edge_description);
+				if (from != to && (it->second.capacity == 0 || it->second.usage > it->second.capacity ||
+						it->second.travel_time_sum / it->second.capacity > UINT32_MAX)) SlErrorCorrupt("Invalid link graph capacity or travel time");
+				if (!IsValidLinkGraphDate(it->second.last_unrestricted_update) || !IsValidLinkGraphDate(it->second.last_restricted_update) || !IsValidLinkGraphDate(it->second.last_aircraft_update)) SlErrorCorrupt("Invalid link graph update date");
 			}
 		}
 	}
@@ -117,9 +147,9 @@ struct LinkGraphNodeStructHandler final : public TypedSaveLoadStructHandler<Link
 			SlErrorCorrupt("XSLFI_LINKGRAPH_SPARSE_EDGES v2 unexpectedly not present");
 		}
 
-		assert(!this->table_data.empty() && this->table_data.back().label_tag == SLTAG_CUSTOM_0);
+		if (this->table_data.empty() || this->table_data.back().label_tag != SLTAG_CUSTOM_0) SlErrorCorrupt("Link graph node format not as expected");
 		this->edge_description = this->table_data.back().struct_handler->GetLoadDescription();
-		assert (!this->edge_description.empty() && this->edge_description.front().label_tag == SLTAG_CUSTOM_0);
+		if (this->edge_description.empty() || this->edge_description.front().label_tag != SLTAG_CUSTOM_0) SlErrorCorrupt("Link graph edge format not as expected");
 		this->edge_description = this->edge_description.subspan(1);
 		this->table_data.pop_back();
 	}
@@ -149,6 +179,7 @@ static const NamedSaveLoad _edge_route_desc[] = {
 	NSL("cost_add",         SLE_VAR(LinkGraph::EdgeRoute, cost_add,     SLE_UINT16)),
 	NSL("capacity",         SLE_VAR(LinkGraph::EdgeRoute, capacity,     SLE_UINT32)),
 	NSL("last_update",      SLE_VAR(LinkGraph::EdgeRoute, last_update,  SLE_INT32)),
+	NSL("generation",       SLE_VAR(LinkGraph::EdgeRoute, generation,   SLE_UINT64)),
 };
 
 struct LinkGraphEdgeRoutesStructHandler final : public TypedSaveLoadStructHandler<LinkGraphEdgeRoutesStructHandler, LinkGraph> {
@@ -161,7 +192,9 @@ struct LinkGraphEdgeRoutesStructHandler final : public TypedSaveLoadStructHandle
 	{
 		size_t count = 0;
 		for (const auto &it : lg->edges) {
-			count += it.second.routes.size();
+			for (const LinkGraph::EdgeRoute &route : it.second.routes) {
+				if (route.IsValid() && route.IsCurrent()) count++;
+			}
 		}
 		SlSetStructListLength(count);
 
@@ -169,6 +202,7 @@ struct LinkGraphEdgeRoutesStructHandler final : public TypedSaveLoadStructHandle
 			_edge_route_from = it.first.first;
 			_edge_route_to = it.first.second;
 			for (LinkGraph::EdgeRoute &route : it.second.routes) {
+				if (!route.IsValid() || !route.IsCurrent()) continue;
 				SlObjectSaveFiltered(&route, this->GetLoadDescription());
 			}
 		}
@@ -176,14 +210,26 @@ struct LinkGraphEdgeRoutesStructHandler final : public TypedSaveLoadStructHandle
 
 	void Load(LinkGraph *lg) const override
 	{
-		size_t count = SlGetStructListLength(UINT32_MAX);
+		/* Bound work and memory before reading records, including records for missing edges. */
+		size_t count = SlGetStructListLength(std::min<uint64_t>(_linkgraph_routes_left, static_cast<uint64_t>(lg->edges.size()) * LinkGraph::MAX_EDGE_ROUTES));
+		_linkgraph_routes_left -= count;
+		std::vector<uint64_t> seen;
+		seen.reserve(count);
 		for (size_t i = 0; i < count; i++) {
 			LinkGraph::EdgeRoute route;
 			SlObjectLoadFiltered(&route, this->GetLoadDescription());
+			if (_edge_route_from >= lg->Size() || _edge_route_to >= lg->Size() || _edge_route_from == _edge_route_to) SlErrorCorrupt("Invalid link graph route nodes");
+			if (!route.IsValid()) SlErrorCorrupt("Invalid link graph route metadata");
+			seen.push_back((static_cast<uint64_t>(_edge_route_from) << 32) | (static_cast<uint64_t>(_edge_route_to) << 16) | route.route);
 			auto it = lg->edges.find(std::make_pair(_edge_route_from, _edge_route_to));
-			if (it != lg->edges.end() && it->second.routes.size() < LinkGraph::MAX_EDGE_ROUTES) {
-				it->second.routes.push_back(route);
-			}
+			if (it == lg->edges.end()) SlErrorCorrupt("Link graph route references a missing edge");
+			if (it->second.routes.size() >= LinkGraph::MAX_EDGE_ROUTES) SlErrorCorrupt("Too many routes on a link graph edge");
+			it->second.routes.push_back(route);
+		}
+		std::sort(seen.begin(), seen.end());
+		if (std::adjacent_find(seen.begin(), seen.end()) != seen.end()) SlErrorCorrupt("Duplicate link graph route");
+		for (auto &entry : lg->edges) {
+			std::sort(entry.second.routes.begin(), entry.second.routes.end(), [](const LinkGraph::EdgeRoute &a, const LinkGraph::EdgeRoute &b) { return a.route < b.route; });
 		}
 	}
 };
@@ -301,6 +347,7 @@ NamedSaveLoadTable GetLinkGraphScheduleDesc()
 	static const NamedSaveLoad schedule_desc[] = {
 		NSL("schedule", SLE_REFRING(LinkGraphSchedule, schedule, REF_LINK_GRAPH)),
 		NSL("running",  SLE_REFRING(LinkGraphSchedule, running,  REF_LINK_GRAPH_JOB)),
+		NSLT("cargodist_route_generation", SLEG_VAR(_saved_cargodist_route_generation, SLE_UINT64)),
 	};
 	return schedule_desc;
 }
@@ -374,6 +421,7 @@ void LinkGraphNonTableHelper::Load_LinkGraph(LinkGraph &lg)
  */
 static void Load_LGRP()
 {
+	ResetLinkGraphLoadBudget();
 	SaveLoadTableData slt = SlTableHeaderOrRiff(GetLinkGraphDesc());
 	const bool is_table = SlIsTableChunk();
 
@@ -400,6 +448,7 @@ static void Load_LGRP()
  */
 static void Load_LGRJ()
 {
+	ResetLinkGraphLoadBudget();
 	SaveLoadTableData slt = SlTableHeaderOrRiff(GetLinkGraphJobDesc());
 	const bool is_table = SlIsTableChunk();
 
@@ -489,6 +538,7 @@ static void Save_LGRJ()
 static void Load_LGRS()
 {
 	SlLoadTableOrRiffFiltered(GetLinkGraphScheduleDesc(), &LinkGraphSchedule::instance);
+	if (_saved_cargodist_route_generation > UINT64_MAX / 2) SlErrorCorrupt("Invalid CargoDist generation counter");
 }
 
 /**
@@ -496,6 +546,7 @@ static void Load_LGRS()
  */
 static void Save_LGRS()
 {
+	_saved_cargodist_route_generation = GetCargoDistRouteGenerationCounter();
 	SlSaveTableObjectChunk(GetLinkGraphScheduleDesc(), &LinkGraphSchedule::instance);
 }
 
