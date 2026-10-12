@@ -27,7 +27,35 @@ struct PassengerServiceGraphLimits {
 	size_t memory_bytes = 1024 * 1024 * 1024; ///< Deterministic allocation envelope, independent of traversal work.
 };
 
+enum class PassengerGraphFailure : uint8_t { None, Work, Memory, Services, Trips, TotalVisits, Index, Opaque, End };
+enum class PassengerGraphStage : uint8_t { Discovery, Structure, Orders, Schedules, Pattern, Trips, Prediction, Indices };
+
+struct PassengerGraphFailureDetail {
+	PassengerGraphFailure reason = PassengerGraphFailure::None;
+	PassengerGraphStage stage = PassengerGraphStage::Discovery;
+	size_t work = 0, memory = 0, trips = 0, visits = 0;
+};
+
+struct PassengerTripPredictionDetail {
+	PassengerPredictionStop reason = PassengerPredictionStop::None;
+	VehicleID vehicle = VehicleID::Invalid();
+	size_t work = 0, memory = 0, trips = 0, visits = 0;
+	StateTicks stopped_at{}, complete_until{}, required_until{};
+	VehicleOrderID stopped_order = INVALID_VEH_ORDER_ID, uncertain_order = INVALID_VEH_ORDER_ID;
+	PassengerPredictionStop uncertain_reason = PassengerPredictionStop::None;
+	TileIndex tile{};
+	VehicleOrderID current_order = INVALID_VEH_ORDER_ID;
+};
+
 struct PassengerServiceGraphDiagnostic {
+	PassengerGraphFailureDetail first_failure;
+	PassengerTripPredictionDetail first_prediction_failure;
+	OrderListID opaque_service = OrderListID::Invalid();
+	VehicleID opaque_vehicle = VehicleID::Invalid();
+	std::array<size_t, static_cast<size_t>(PassengerPredictionStop::End)> prediction_stops{};
+	size_t eligible_services = 0, selected_services = 0, selected_trips = 0, largest_block_services = 0;
+	size_t admitted_visits = 0; ///< Logical reservations, made immediately before generating each visit.
+	Ticks maximum_unpredicted_ticks = 0;
 	size_t trains = 0;
 	size_t cargo_capable = 0;
 	size_t possible_refit = 0;
@@ -43,6 +71,7 @@ struct PassengerServiceGraphDiagnostic {
 	size_t reused_work = 0; ///< Logical preprocessing allowance avoided by a resident index, diagnostic only.
 	uint64_t build_microseconds = 0; ///< Development diagnostics only.
 	bool static_cache_hit = false;
+	size_t timing_uncertainty = 0, path_uncertainty = 0;
 };
 
 /**
@@ -84,6 +113,8 @@ public:
 		std::vector<VehicleOrderID> reverse_waypoints; ///< Explicit reversals; out-and-back station visits retain distinct order IDs.
 		std::vector<DispatchSchedule> schedules; ///< Timing/slot data only, without GUI names.
 		std::vector<size_t> trips; ///< Indices into GetTrips().
+		std::optional<StateTicks> uncertain_from; ///< Earliest uncertified event across the fleet; never the nominal prediction cursor.
+		PassengerPredictionStatus coverage_status = PassengerPredictionStatus::Complete; ///< Fleet coverage, computed once rather than once per station.
 	};
 
 	enum class Operation : uint8_t { Running, Stopped, Crashed, Unknown };
@@ -133,8 +164,8 @@ public:
 	StateTicks GetEnd() const { return this->end; }
 	/** Completeness of fleet discovery/capture. Prediction completeness is also reported on each Trip and query. */
 	PassengerPredictionStatus GetStatus() const;
-	/** Scoped capture certifies alternatives only for this OD with unweighted waiting;
-	 * trip timing uncertainty is checked separately by the planner. */
+	/** Capture completeness for this OD. Complete inventories unknown alternatives too;
+	 * it does not certify their timings or a winning journey. The planner proves optimality separately. */
 	PassengerPredictionStatus GetQueryStatus(StationID origin, StationID destination, bool weighted_waiting = false) const;
 	enum class Coverage : uint8_t { GlobalComplete, ScopedComplete, Incomplete };
 	Coverage GetCoverage(StationID origin, StationID destination) const;

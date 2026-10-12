@@ -150,11 +150,13 @@ journey query's allowance.
 
 Reverse queries use the existing station occurrence index. They allocate four
 bytes per occurrence only for connected trips, plus bounded station/queue and
-trip-map storage. Each of the two reverse searches costs
+trip-map storage. The destination reverse search costs
 O((P_c + S_c) log(S_c + T_c)), including distance-array initialization, for P_c visits
 in connected trips, S_c reached stations and T_c reached trips. Their work and
 memory count against the same query allowances as forward routing. Complete
 snapshots require no uncertainty search and no scan of unrelated trip arrays.
+Partial snapshots use a separate two-state earliest-time relaxation to bound
+unknown alternatives; it shares the same query work and memory allowances.
 
 Forward query work is proportional to the indexed boarding candidates and their
 relevant downstream visits reached from retained labels, plus label comparisons.
@@ -261,8 +263,16 @@ generates a timed journey or a synthetic departure. A possible corridor reports
 result and applies only within the exclusive `prediction_end` and supplied
 conditions. It never certifies permanent disconnection. `IsInconclusive()`
 identifies empty uncertain/limited/invalid results for CargoDist fallback.
-Prediction suffix status is also retained on individual legs/journeys; reaching
-a destination before an uncertain suffix does not make the suffix known.
+Leg/journey prediction status describes the selected physical timed interval;
+a certified prefix can be Complete while its trip's later suffix stays Unknown.
+The result separately certifies all alternatives: historical implicit orders
+are skipped consistently under the explicit-instruction operating model, and
+unknown suffixes optimistically connect all declared stops at zero travel time
+after their certified-prefix endpoint. The unknown arrival bound must be
+strictly worse than the full generalized score of every requested candidate,
+or the unknown destination must be unreachable in the relaxation. Equal scores,
+missing K slots with reachable unknowns and exhausted proof budgets remain
+inconclusive. See the [OD uncertainty follow-up](passenger-journey-scoped-uncertainty-2026-10-12.md).
 
 The next stage should construct/reuse a snapshot and planner for a simulation
 epoch, group packets by OD and readiness event, and select a time-valid candidate

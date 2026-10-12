@@ -181,6 +181,63 @@ TEST_CASE("Journey boarding selects a physical train even with the same next sto
 	CHECK(express.cargo.StoredCount() == 10);
 }
 
+TEST_CASE("Active horizons certify short frequent journeys and extend long ODs", "[passenger][active][scaling]")
+{
+	ActiveFixture fixture;
+	ActiveTrain train({ActiveStop(A, 10, 1), ActiveStop(D, 10, 1)});
+	SECTION("High frequency loading and repeated packets") {
+		ResetPassengerJourneyDiagnostic();
+		PassengerJourneyActiveContext context(nullptr, A);
+		for (uint i = 0; i < 4096; ++i) {
+			auto *packet = fixture.Packet(1);
+			REQUIRE(context.PlanWaiting(*packet, PAX, D));
+			REQUIRE(packet->GetPassengerJourney().arrival == NOW + 11);
+			fixture.Waiting().Append(packet, D);
+		}
+		const auto diagnostic = GetPassengerJourneyTickDiagnostic();
+		CHECK(diagnostic.builds == 1); CHECK(diagnostic.queries == 1);
+		CHECK(diagnostic.query_cache_hits == 4095);
+		CHECK(diagnostic.visits > 128);
+		std::array next{D};
+		CHECK(fixture.Waiting().Load(100, &train.cargo, next, TileIndex{0}, &train) == 100);
+		CHECK(GetPassengerJourneyTickDiagnostic().boarded_passengers == 100);
+	}
+	SECTION("Long destination extends only after a certified horizon miss") {
+		train.GetOrder(1)->SetTravelTime(20000);
+		ResetPassengerJourneyDiagnostic();
+		auto *packet = fixture.Packet(); fixture.Plan(*packet);
+		CHECK(packet->GetPassengerJourney().arrival == NOW + 20001);
+		CHECK(GetPassengerJourneyTickDiagnostic().builds == 3);
+		CHECK(GetPassengerJourneyTickDiagnostic().queries == 3);
+	}
+	SECTION("Unknown timetable cannot be certified by a partial path") {
+		train.GetOrder(1)->SetWaitTimetabled(false);
+		PassengerJourneyActiveContext context(nullptr, A);
+		auto *packet = fixture.Packet();
+		CHECK_FALSE(context.PlanWaiting(*packet, PAX, D));
+		CHECK(packet->GetPassengerRoutingMode() != PassengerRoutingMode::Journey);
+	}
+	SECTION("A later unknown stop cannot affect the certified earlier optimum") {
+		Order unknown = ActiveStop(B, 10000, 10); unknown.SetWaitTimetabled(false);
+		train.orders->FreeChain();
+		train.orders = OrderList::Create(std::vector<Order>{ActiveStop(A, 10000, 10), ActiveStop(D, 100, 10), unknown}, &train);
+		EnsurePassengerTestStations(train.orders->GetOrderVector());
+		auto *packet = fixture.Packet(); fixture.Plan(*packet);
+		CHECK(packet->GetPassengerJourney().arrival == NOW + 110);
+	}
+}
+
+TEST_CASE("A short horizon cannot hide a cheaper later direct service", "[passenger][active][scaling]")
+{
+	ActiveFixture fixture;
+	_settings_game.linkgraph.passenger_transfer_penalty = 2000;
+	ActiveTrain feeder({ActiveStop(A, 100000, 10), ActiveStop(B, 100, 10)});
+	ActiveTrain connection({ActiveStop(B, 100000, 2200), ActiveStop(D, 100, 10)}, VehicleID{101});
+	ActiveTrain direct({ActiveStop(A, 100000, 4100), ActiveStop(D, 100, 10)}, VehicleID{102});
+	auto *packet = fixture.Packet(); fixture.Plan(*packet);
+	CHECK(packet->GetPassengerJourney().vehicle == direct.index);
+}
+
 TEST_CASE("A chosen ordinary train boards and partial loading preserves OD and money", "[passenger][active]")
 {
 	ActiveFixture fixture;
@@ -209,11 +266,13 @@ TEST_CASE("Reservations and gradual loading allocate seats only once", "[passeng
 	auto *packet = fixture.Packet(300); fixture.Plan(*packet); fixture.Waiting().Append(packet, D);
 	std::array next{D};
 	PassengerJourneyLoadingContext loading;
+	ResetPassengerJourneyDiagnostic();
 	CHECK(fixture.Waiting().HasCargoFor(next, &train, &loading));
 	CHECK(fixture.Waiting().Reserve(100, &train.cargo, next, TileIndex{0}, &train, &loading) == 100);
 	CHECK(fixture.Waiting().Reserve(100, &coach.cargo, next, TileIndex{0}, &coach, &loading) == 100);
 	CHECK(fixture.Waiting().AvailableCount() == 100);
 	CHECK(fixture.Waiting().ReservedCount() == 200);
+	CHECK(GetPassengerJourneyTickDiagnostic().boarded_passengers == 0);
 	for (uint i = 0; i < 5; ++i) {
 		CHECK(fixture.Waiting().Load(20, &train.cargo, next, TileIndex{0}, &train, &loading) == 20);
 		CHECK(fixture.Waiting().Load(20, &coach.cargo, next, TileIndex{0}, &coach, &loading) == 20);
@@ -221,6 +280,7 @@ TEST_CASE("Reservations and gradual loading allocate seats only once", "[passeng
 	CHECK(train.cargo.StoredCount() == 100); CHECK(coach.cargo.StoredCount() == 100);
 	CHECK(fixture.Waiting().ReservedCount() == 0);
 	CHECK(fixture.Waiting().AvailableCount() == 100);
+	CHECK(GetPassengerJourneyTickDiagnostic().boarded_passengers == 200);
 	CHECK(loading.GetPredictionCount() == 1);
 	train.SetNext(nullptr);
 }
@@ -267,11 +327,14 @@ TEST_CASE("Onboard journey stages keep transfer and final delivery in production
 	CHECK(local.cargo.TotalCount() == 10);
 	CHECK(packet->GetPassengerDestination() == D);
 	if (expected == Action::Transfer) {
+		ResetPassengerJourneyDiagnostic();
 		CHECK(packet->GetPassengerJourney().vehicle == express.index);
 		REQUIRE(local.cargo.Unload(10, &fixture.Waiting(B), PAX, &payment, TileIndex{0}) == 10);
+		CHECK(GetPassengerJourneyTickDiagnostic().transferred_passengers == 10);
 		CHECK(fixture.Waiting(B).Load(10, &local.cargo, next, TileIndex{0}, &local) == 0);
 		std::array express_next{D};
 		CHECK(fixture.Waiting(B).Load(10, &express.cargo, express_next, TileIndex{0}, &express) == 10);
+		CHECK(GetPassengerJourneyTickDiagnostic().boarded_passengers == 10);
 		/* Run the selected connection through the real final-delivery action too. */
 		FinalDeliveryFixture delivery;
 		express.owner = delivery.company->index;
@@ -282,6 +345,7 @@ TEST_CASE("Onboard journey stages keep transfer and final delivery in production
 				&final_payment, TileIndex{0}, nullptr, nullptr, &final_context);
 		CHECK(express.cargo.ActionCount(Action::Deliver) == 10);
 		CHECK(express.cargo.Unload(10, &fixture.Waiting(D), PAX, &final_payment, TileIndex{0}) == 10);
+		CHECK(GetPassengerJourneyTickDiagnostic().delivered_passengers == 10);
 		CHECK(express.cargo.TotalCount() == 0);
 		CHECK(fixture.Waiting(B).TotalCount() == 0);
 		CHECK(fixture.Waiting(D).TotalCount() == 0);
@@ -842,6 +906,62 @@ TEST_CASE("An unrelated running implicit service leaves active journey routing c
 	fixture.Plan(*packet);
 	CHECK(packet->GetPassengerJourney().vehicle == direct.index);
 	CHECK(packet->GetPassengerRoutingMode() == PassengerRoutingMode::Journey);
+}
+
+TEST_CASE("A certified physical prefix of an incomplete trip is applied reserved and loaded", "[passenger][active][uncertainty]")
+{
+	ActiveFixture fixture;
+	Order later = ActiveStop(B, 1000); later.SetWaitTimetabled(false);
+	ActiveTrain *train = Vehicle::Create<ActiveTrain>(std::vector<Order>{ActiveStop(A), ActiveStop(D, 100), later});
+	auto *packet = fixture.Packet(10);
+	PassengerJourneyActiveContext context(nullptr, A);
+	REQUIRE(context.PlanWaiting(*packet, PAX, D));
+	CHECK(GetPassengerJourneyTickDiagnostic().complete_graphs == 0);
+	CHECK(GetPassengerJourneyTickDiagnostic().uncertainty_resolved == 1);
+	fixture.Waiting().Append(packet, D);
+	std::array next{D};
+	PassengerJourneyLoadingContext loading;
+	CHECK(fixture.Waiting().Reserve(10, &train->cargo, next, TileIndex{0}, train, &loading) == 10);
+	CHECK(GetPassengerJourneyTickDiagnostic().boarded_passengers == 0);
+	CHECK(fixture.Waiting().Load(4, &train->cargo, next, TileIndex{0}, train, &loading) == 4);
+	CHECK(fixture.Waiting().Load(6, &train->cargo, next, TileIndex{0}, train, &loading) == 6);
+	CHECK(GetPassengerJourneyTickDiagnostic().boarded_passengers == 10);
+	CHECK(train->cargo.Packets()->front()->GetPassengerDestination() == D);
+	_vehicle_pool.CleanPool();
+}
+
+TEST_CASE("Actual incidental stops and implicit index changes invalidate stored journeys without wrong delivery", "[passenger][active][uncertainty][implicit]")
+{
+	ActiveFixture fixture;
+	ActiveTrain *train = Vehicle::Create<ActiveTrain>(std::vector<Order>{ActiveStop(A), ActiveStop(D, 100)});
+	auto *packet = fixture.Packet(10);
+	fixture.Plan(*packet);
+	const auto original = packet->GetPassengerJourney();
+	CHECK(original.alighting_order == 1);
+	fixture.Waiting().Append(packet, D);
+	std::array next{D};
+	CHECK(fixture.Waiting().Load(10, &train->cargo, next, TileIndex{0}, train) == 10);
+	Order historic; historic.MakeImplicit(B);
+	train->orders->InsertOrderAt(std::move(historic), 1);
+	CHECK(PassengerJourneyServiceSignature(*train->orders, PAX) != original.signature);
+	/* This is a REAL extra stop, distinct from merely skipping a historical record
+	 * during forecasting. Live progress no longer matches the stored physical leg. */
+	train->LoadAt(1); train->cur_real_order_index = 2;
+	PassengerJourneyActiveContext incidental(train, B);
+	const auto action = incidental.Decide(*packet, PAX, true, OrderUnloadType::UnloadIfPossible);
+	CHECK(action != Action::Deliver);
+	CHECK(packet->GetPassengerRoutingMode() == PassengerRoutingMode::Fallback);
+	CHECK(packet->GetPassengerDestination() == D);
+	train->LoadAt(0);
+	auto fresh = std::unique_ptr<CargoPacket>(fixture.Packet(1));
+	PassengerJourneyActiveContext replan(nullptr, A);
+	REQUIRE(replan.PlanWaiting(*fresh, PAX, D));
+	CHECK(fresh->GetPassengerJourney().alighting_order == 2);
+	CHECK(fresh->GetPassengerJourney().signature != original.signature);
+	train->LoadAt(2);
+	PassengerJourneyActiveContext arrived(train, D);
+	CHECK(arrived.Decide(*packet, PAX, true, OrderUnloadType::UnloadIfPossible) == Action::Deliver);
+	_vehicle_pool.CleanPool();
 }
 
 TEST_CASE("Distinct OD budget waits retry next tick and remain normal failures when unreachable", "[passenger][active][budget]")

@@ -473,7 +473,7 @@ TEST_CASE("All modes safely fallback on changed facilities orders capacity and u
 	SECTION("Changed loading occurrence") { v->current_order_time = 10; }
 	SECTION("Full load leaves departure unknown") { v->GetOrder(0)->SetLoadType(OrderLoadType::FullLoad); }
 	SECTION("Conditional skips stops and never certifies unreachable") { v->GetOrder(1)->MakeConditional(0); const auto graph = f.Graph(); PassengerJourneyPlanner planner(graph); CHECK(planner.Plan(PAX, A, E, NOW).IsInconclusive()); }
-	SECTION("Implicit order remains unknown") { v->GetOrder(1)->MakeImplicit(E); }
+	SECTION("A changed implicit record invalidates the previous signature") { v->GetOrder(1)->MakeImplicit(E); }
 	SECTION("Removed stopping facilities") { Station::Get(E)->facilities = {}; Station::Get(E)->bus_stops = nullptr; }
 	SECTION("Stopped") { v->vehstatus.Set(VehState::Stopped); }
 	CHECK_FALSE(PassengerJourneyBoardingContext(v).CanBoard(*packet));

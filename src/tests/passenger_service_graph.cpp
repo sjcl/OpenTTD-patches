@@ -11,6 +11,8 @@
 #include "../3rdparty/catch2/catch.hpp"
 #include "../passenger_service_graph.h"
 #include "../vehicle_base.h"
+#include "../passenger_journey_planner.h"
+#include "../passenger_journey_active.h"
 #include "passenger_test_stations.h"
 #include "../core/random_func.hpp"
 #include <deque>
@@ -93,6 +95,322 @@ static const PassengerServiceGraph::Trip &GraphTrip(const PassengerServiceGraph 
 	auto it = std::find_if(trips.begin(), trips.end(), [&](const auto &trip) { return trip.vehicle == id; });
 	REQUIRE(it != trips.end());
 	return *it;
+}
+
+TEST_CASE("Historic implicit orders do not hide the fastest explicit train or invent transfers", "[passenger][journey][uncertainty][implicit]")
+{
+	PassengerTestStations stations;
+	GraphVehicle slow({GraphStop(A, 100000, 0), GraphStop(D, 200, 0)}, VehicleID{200});
+	Order historic; historic.MakeImplicit(B);
+	GraphVehicle fast({GraphStop(A, 100000, 0), historic, GraphStop(D, 50, 0)}, VehicleID{100});
+	const auto graph = PassengerServiceGraph::Build(PAX, NOW, GraphLimits(), PassengerServiceScope{A, D});
+	CHECK(graph.GetCoverage(A, D) == PassengerServiceGraph::Coverage::GlobalComplete);
+	CHECK(graph.GetServicesAtStation(B).empty());
+	CHECK(graph.GetService(fast.orders->index)->stops.size() == 2);
+	CHECK(graph.GetService(fast.orders->index)->pattern_status == PassengerPredictionStatus::Complete);
+	CHECK(graph.GetDiagnostic().prediction_stops[static_cast<size_t>(PassengerPredictionStop::Implicit)] == 0);
+	PassengerJourneyPlanner planner(graph);
+	PassengerJourneyLimits query; query.candidates = 1;
+	const auto result = planner.Plan(PAX, A, D, NOW, query);
+	REQUIRE(result.HasJourney());
+	CHECK(result.status == PassengerPredictionStatus::Complete);
+	CHECK(result.journeys.front().arrival == NOW + 50);
+	const auto &leg = result.journeys.front().legs.front();
+	CHECK(leg.vehicle == fast.index);
+	CHECK(graph.GetTrips()[leg.alighting.trip].prediction.visits[leg.alighting.visit].order == 2);
+}
+
+TEST_CASE("OD uncertainty uses a strict score bound and retains physical prefix journeys", "[passenger][journey][uncertainty]")
+{
+	PassengerTestStations stations;
+	GraphVehicle direct({GraphStop(A, 100000, 0), GraphStop(D, 100, 0)}, VehicleID{200});
+	Order unknown = GraphStop(B, 0, 0); unknown.SetWaitTimetabled(false);
+	GraphVehicle alternative({GraphStop(A, 100000, 200), unknown, GraphStop(D, 0, 0)}, VehicleID{100});
+	PassengerJourneyLimits query; query.candidates = 1;
+	auto limits = ActivePassengerServiceGraphLimits(); limits.horizon = 1000;
+	SECTION("An untimed corridor starting after the winning score is harmless") {
+		const auto graph = PassengerServiceGraph::Build(PAX, NOW, limits, PassengerServiceScope{A, D});
+		CHECK(graph.GetCoverage(A, D) == PassengerServiceGraph::Coverage::Incomplete);
+		CHECK(graph.GetQueryStatus(A, D) == PassengerPredictionStatus::Complete);
+		CHECK(GraphTrip(graph, alternative.index).prediction.complete_until == NOW + 200);
+		PassengerJourneyPlanner planner(graph);
+		const auto actual = planner.Plan(PAX, A, D, NOW, query);
+		REQUIRE(actual.HasJourney());
+		CHECK(actual.status == PassengerPredictionStatus::Complete);
+		CHECK(actual.diagnostic.uncertainty_resolved);
+		CHECK(actual.diagnostic.unknown_arrival_bound == NOW + 200);
+		CHECK(actual.journeys.front().legs.front().vehicle == direct.index);
+		*alternative.GetOrder(1) = GraphStop(B, 0, 0);
+		EnsurePassengerTestStations(alternative.orders->GetOrderVector()); InvalidatePassengerServiceIndex();
+		const auto full = PassengerServiceGraph::Build(PAX, NOW, limits);
+		PassengerJourneyPlanner reference(full);
+		CHECK(actual.journeys.front() == reference.Plan(PAX, A, D, NOW, query).journeys.front());
+	}
+	SECTION("An unknown train could arrive faster") {
+		alternative.GetOrder(0)->SetWaitTime(50);
+		const auto graph = PassengerServiceGraph::Build(PAX, NOW, limits, PassengerServiceScope{A, D});
+		PassengerJourneyPlanner planner(graph);
+		const auto result = planner.Plan(PAX, A, D, NOW, query);
+		REQUIRE(result.HasJourney());
+		CHECK(result.status == PassengerPredictionStatus::Unknown);
+		CHECK(result.diagnostic.unknown_arrival_bound == NOW + 50);
+		CHECK_FALSE(result.diagnostic.uncertainty_resolved);
+	}
+	SECTION("Equal scores cannot ignore vehicle and capacity tie breaks") {
+		alternative.GetOrder(0)->SetWaitTime(100);
+		const auto graph = PassengerServiceGraph::Build(PAX, NOW, limits, PassengerServiceScope{A, D});
+		PassengerJourneyPlanner planner(graph);
+		const auto result = planner.Plan(PAX, A, D, NOW, query);
+		REQUIRE(result.HasJourney());
+		CHECK(result.status == PassengerPredictionStatus::Unknown);
+		CHECK(result.diagnostic.unknown_arrival_bound == NOW + 100);
+	}
+	SECTION("Certification of K alternatives requires every requested slot") {
+		query.candidates = 2;
+		const auto graph = PassengerServiceGraph::Build(PAX, NOW, limits, PassengerServiceScope{A, D});
+		PassengerJourneyPlanner planner(graph);
+		CHECK(planner.Plan(PAX, A, D, NOW, query).status == PassengerPredictionStatus::Unknown);
+	}
+	SECTION("Timing becomes unknown before the implicit order is reached") {
+		alternative.GetOrder(0)->SetWaitTimetabled(false);
+		Order implicit; implicit.MakeImplicit(C); alternative.orders->InsertOrderAt(std::move(implicit), 1);
+		const auto graph = PassengerServiceGraph::Build(PAX, NOW, limits, PassengerServiceScope{A, D});
+		const auto &prediction = GraphTrip(graph, alternative.index).prediction;
+		CHECK(prediction.stop == PassengerPredictionStop::Timing);
+		CHECK(prediction.stopped_order == 0);
+		CHECK(prediction.uncertain_order == 0);
+		CHECK(prediction.uncertain_reason == PassengerPredictionStop::Timing);
+		CHECK(prediction.complete_until == NOW);
+		CHECK(prediction.visits.size() == 1); // No nominal untimed suffix was allocated.
+		CHECK(graph.GetDiagnostic().timing_uncertainty == 1);
+		PassengerJourneyPlanner planner(graph);
+		CHECK(planner.Plan(PAX, A, D, NOW, query).status == PassengerPredictionStatus::Unknown);
+	}
+	SECTION("A certified physical ride survives an unknown later dwell") {
+		alternative.GetOrder(0)->SetWaitTime(0);
+		*alternative.GetOrder(1) = GraphStop(D, 100, 0);
+		*alternative.GetOrder(2) = GraphStop(B, 200, 0);
+		alternative.GetOrder(2)->SetWaitTimetabled(false);
+		EnsurePassengerTestStations(alternative.orders->GetOrderVector()); InvalidatePassengerServiceIndex();
+		const auto graph = PassengerServiceGraph::Build(PAX, NOW, limits, PassengerServiceScope{A, D});
+		PassengerJourneyPlanner planner(graph);
+		const auto result = planner.Plan(PAX, A, D, NOW, query);
+		REQUIRE(result.HasJourney());
+		CHECK(GraphTrip(graph, alternative.index).prediction.status == PassengerPredictionStatus::Unknown);
+		CHECK(result.status == PassengerPredictionStatus::Complete);
+		CHECK(result.journeys.front().prediction_status == PassengerPredictionStatus::Complete);
+		CHECK(result.journeys.front().legs.front().prediction_status == PassengerPredictionStatus::Complete);
+		CHECK(result.journeys.front().legs.front().vehicle == alternative.index);
+	}
+}
+
+TEST_CASE("Bounded route controls remain unknown until a fresh live state can certify them", "[passenger][journey][uncertainty][cache]")
+{
+	PassengerTestStations stations;
+	GraphVehicle direct({GraphStop(A, 100000, 0), GraphStop(D, 100, 0)}, VehicleID{200});
+	Order control;
+	SECTION("Conditional") { control.MakeConditional(2); control.SetConditionVariable(OrderConditionVariable::LoadPercentage); }
+	SECTION("Depot") { control.MakeGoToDepot(DestinationID{0}, {}); }
+	SECTION("Slot") { control.MakeTryAcquireSlot(); }
+	SECTION("Counter") { control.MakeChangeCounter(); }
+	SECTION("Refit") { control = GraphStop(B, 0, 0); control.SetRefit(PAX); }
+	GraphVehicle alternative({GraphStop(A, 100000, 50), control, GraphStop(D, 0, 0)}, VehicleID{100});
+	auto limits = ActivePassengerServiceGraphLimits(); limits.horizon = 1000;
+	PassengerJourneyLimits query; query.candidates = 1;
+	GameRandomSeedChecker seeds;
+	const auto cold = PassengerServiceGraph::Build(PAX, NOW, limits, PassengerServiceScope{A, D});
+	const auto warm = PassengerServiceGraph::Build(PAX, NOW, limits, PassengerServiceScope{A, D});
+	PassengerJourneyPlanner planner(cold), other(warm);
+	const auto before = planner.Plan(PAX, A, D, NOW, query), repeated = other.Plan(PAX, A, D, NOW, query);
+	CHECK(before.status == PassengerPredictionStatus::Unknown);
+	CHECK(before.journeys == repeated.journeys);
+	CHECK(before.diagnostic.work == repeated.diagnostic.work);
+	CHECK(cold.GetWork() == warm.GetWork());
+	CHECK(cold.GetMemoryBound() == warm.GetMemoryBound());
+	*alternative.GetOrder(1) = GraphStop(B, 0, 0);
+	EnsurePassengerTestStations(alternative.orders->GetOrderVector()); InvalidatePassengerServiceIndex();
+	const auto changed = PassengerServiceGraph::Build(PAX, NOW + 1, limits, PassengerServiceScope{A, D});
+	PassengerJourneyPlanner repaired(changed);
+	const auto after = repaired.Plan(PAX, A, D, NOW + 1, query);
+	REQUIRE(after.HasJourney());
+	CHECK(after.status == PassengerPredictionStatus::Complete);
+	CHECK(after.journeys.front().legs.front().vehicle == alternative.index);
+	CHECK(seeds.Check());
+}
+
+TEST_CASE("Unknown arrival bounds include known access times and generalised costs", "[passenger][journey][uncertainty]")
+{
+	PassengerTestStations stations;
+	GraphVehicle direct({GraphStop(A, 100000, 0), GraphStop(D, 100, 0)}, VehicleID{200});
+	GraphVehicle access({GraphStop(A, 100000, 0), GraphStop(B, 200, 0)}, VehicleID{201});
+	Order missing = GraphStop(C, 0, 0); missing.SetWaitTimetabled(false);
+	GraphVehicle unknown({GraphStop(B, 100000, 50), missing, GraphStop(D, 0, 0)}, VehicleID{100});
+	auto limits = ActivePassengerServiceGraphLimits(); limits.horizon = 1000;
+	PassengerJourneyLimits query; query.candidates = 1;
+	SECTION("An early unknown train cannot be accessed before the direct train arrives") {
+		const auto graph = PassengerServiceGraph::Build(PAX, NOW, limits, PassengerServiceScope{A, D});
+		PassengerJourneyPlanner planner(graph);
+		const auto result = planner.Plan(PAX, A, D, NOW, query);
+		REQUIRE(result.HasJourney());
+		CHECK(result.status == PassengerPredictionStatus::Complete);
+		CHECK(result.diagnostic.unknown_arrival_bound == NOW + 200);
+	}
+	SECTION("A late unknown arrival may still beat a penalised known journey") {
+		direct.GetOrder(0)->SetWaitTime(90); direct.GetOrder(1)->SetTravelTime(10);
+		access.GetOrder(1)->SetTravelTime(150);
+		PassengerJourneyEvaluation evaluation; evaluation.waiting_weight = 1000;
+		const auto graph = PassengerServiceGraph::Build(PAX, NOW, limits); // No excluded weighted excursions.
+		PassengerJourneyPlanner planner(graph);
+		const auto result = planner.Plan(PAX, A, D, NOW, query, evaluation);
+		REQUIRE(result.HasJourney());
+		CHECK(result.journeys.front().arrival == NOW + 100);
+		CHECK(result.journeys.front().generalized_time == StateTicksDelta{190});
+		CHECK(result.diagnostic.unknown_arrival_bound == NOW + 150);
+		CHECK(result.status == PassengerPredictionStatus::Unknown);
+	}
+}
+
+TEST_CASE("Partial fleet timing and uncertainty proof budgets never certify missing alternatives", "[passenger][journey][uncertainty][limits]")
+{
+	PassengerTestStations stations;
+	GraphVehicle first({GraphStop(A, 100000, 200), GraphStop(D, 100, 0)});
+	GraphVehicle second(first, VehicleID{101});
+	first.GetOrder(1)->SetWaitTimetabled(false);
+	second.current_order.MakeGoToStation(A); second.current_order_time = 0;
+	const auto graph = PassengerServiceGraph::Build(PAX, NOW, GraphLimits(250), PassengerServiceScope{A, D});
+	CHECK(GraphTrip(graph, first.index).prediction.status == PassengerPredictionStatus::Complete);
+	CHECK(GraphTrip(graph, second.index).prediction.status == PassengerPredictionStatus::Complete);
+	/* Move this physical sibling to a station with unknown dwell, without editing orders. */
+	second.LoadAt(1);
+	const auto moved = PassengerServiceGraph::Build(PAX, NOW, GraphLimits(250), PassengerServiceScope{A, D});
+	CHECK(GraphTrip(moved, first.index).prediction.status == PassengerPredictionStatus::Complete);
+	CHECK(GraphTrip(moved, second.index).prediction.status == PassengerPredictionStatus::Unknown);
+	PassengerJourneyLimits query; query.candidates = 1;
+	PassengerJourneyPlanner planner(moved);
+	CHECK(planner.Plan(PAX, A, D, NOW, query).status == PassengerPredictionStatus::Unknown);
+	query.work = 1;
+	CHECK(planner.Plan(PAX, A, D, NOW, query).status == PassengerPredictionStatus::BudgetExhausted);
+	query.work = 1048576; query.memory_bytes = 1;
+	CHECK(planner.Plan(PAX, A, D, NOW, query).status == PassengerPredictionStatus::LimitReached);
+	first.GetOrder(1)->SetWaitTimetabled(true);
+	const auto updated = PassengerServiceGraph::Build(PAX, NOW + 1, GraphLimits(500), PassengerServiceScope{A, D});
+	CHECK(updated.GetCoverage(A, D) == PassengerServiceGraph::Coverage::GlobalComplete);
+	query.memory_bytes = 128 * 1024 * 1024;
+	PassengerJourneyPlanner recovered(updated);
+	CHECK(recovered.Plan(PAX, A, D, NOW + 1, query).status == PassengerPredictionStatus::Complete);
+}
+
+TEST_CASE("Every certified partial result matches its complete network reference", "[passenger][journey][uncertainty][reference]")
+{
+	PassengerTestStations stations;
+	GraphVehicle direct({GraphStop(A, 100000, 0), GraphStop(D, 100, 0)}, VehicleID{200});
+	GraphVehicle alternative({GraphStop(A, 100000, 0), GraphStop(B, 0, 0), GraphStop(D, 0, 0)}, VehicleID{100});
+	PassengerJourneyLimits query; query.candidates = 1;
+	auto limits = ActivePassengerServiceGraphLimits(); limits.horizon = 1000;
+	size_t certified = 0;
+	for (TimetableTicks delay : {0, 50, 100, 150, 200}) for (TimetableTicks duration : {0, 10, 100}) {
+		CAPTURE(delay, duration);
+		alternative.GetOrder(0)->SetWaitTime(delay);
+		alternative.GetOrder(2)->SetTravelTime(duration);
+		alternative.GetOrder(1)->SetWaitTimetabled(false);
+		const auto partial = PassengerServiceGraph::Build(PAX, NOW, limits, PassengerServiceScope{A, D});
+		PassengerJourneyPlanner planner(partial);
+		const auto actual = planner.Plan(PAX, A, D, NOW, query);
+		alternative.GetOrder(1)->SetWaitTimetabled(true);
+		const auto complete = PassengerServiceGraph::Build(PAX, NOW, limits);
+		PassengerJourneyPlanner reference(complete);
+		const auto expected = reference.Plan(PAX, A, D, NOW, query);
+		REQUIRE(expected.status == PassengerPredictionStatus::Complete);
+		REQUIRE(expected.HasJourney());
+		if (actual.status == PassengerPredictionStatus::Complete) {
+			++certified;
+			REQUIRE(actual.HasJourney());
+			CHECK(actual.journeys.front() == expected.journeys.front());
+		} else {
+			CHECK(actual.status == PassengerPredictionStatus::Unknown);
+			CHECK(delay <= 100); // Even a zero-duration unknown ride is safely late otherwise.
+		}
+	}
+	CHECK(certified == 6);
+}
+
+TEST_CASE("Graph admission pays for generated visits rather than maximum trip reservations", "[passenger][service_graph][scaling]")
+{
+	PassengerTestStations stations;
+	GraphVehicle first({GraphStop(A, 10, 0), GraphStop(D, 10, 0)});
+	std::deque<GraphVehicle> fleet;
+	for (uint32_t i = 1; i < 4000; ++i) fleet.emplace_back(first, VehicleID{1000 + i});
+	auto limits = ActivePassengerServiceGraphLimits(); limits.horizon = 260;
+	const auto cold = PassengerServiceGraph::Build(PAX, NOW, limits, PassengerServiceScope{A, D});
+	const auto warm = PassengerServiceGraph::Build(PAX, NOW, limits, PassengerServiceScope{A, D});
+	REQUIRE(cold.GetTrips().size() == 4000);
+	CHECK(cold.GetCoverage(A, D) != PassengerServiceGraph::Coverage::Incomplete);
+	CHECK(cold.GetDiagnostic().visits >= 100000);
+	CHECK(cold.GetDiagnostic().admitted_visits == cold.GetDiagnostic().visits);
+	CHECK(cold.GetMemoryBound() < 64 * 1024 * 1024);
+	CHECK(cold.GetMemoryBound() == warm.GetMemoryBound());
+	CHECK(cold.GetWork() == warm.GetWork());
+	CHECK(cold.GetDiagnostic().allocation_bytes + cold.GetDiagnostic().static_allocation_bytes < cold.GetMemoryBound());
+	/* The previous 128-visit reservation alone exhausted standard memory at this fleet size. */
+	CHECK(4000 * (1024 + 320 * 128) > limits.memory_bytes);
+	PassengerJourneyPlanner planner(cold);
+	PassengerJourneyLimits query; query.work = 4 * 1024 * 1024; query.candidates = 1;
+	auto result = planner.Plan(PAX, A, D, NOW, query);
+	CHECK(result.status == PassengerPredictionStatus::Complete);
+	CHECK(result.HasJourney());
+	WARN("Actual-visit fleet: trips=" << cold.GetTrips().size() << "; visits=" << cold.GetDiagnostic().visits << "; work=" << cold.GetWork()
+			<< "; bound=" << cold.GetMemoryBound() << "; retained=" << cold.GetDiagnostic().allocation_bytes << "; cold_us=" << cold.GetDiagnostic().build_microseconds
+			<< "; warm_us=" << warm.GetDiagnostic().build_microseconds);
+}
+
+TEST_CASE("High frequency prediction extends past 128 occurrences without hiding limits", "[passenger][service_graph][scaling]")
+{
+	PassengerTestStations stations;
+	GraphVehicle train({GraphStop(A, 10, 0), GraphStop(D, 10, 0)});
+	auto limits = GraphLimits(4000);
+	const auto limited = PassengerServiceGraph::Build(PAX, NOW, limits);
+	CHECK(GraphTrip(limited, train.index).prediction.stop == PassengerPredictionStop::Visits);
+	CHECK(limited.GetCoverage(A, D) == PassengerServiceGraph::Coverage::Incomplete);
+	CHECK(limited.GetDiagnostic().prediction_stops[static_cast<size_t>(PassengerPredictionStop::Visits)] == 1);
+	const auto &first_failure = limited.GetDiagnostic().first_prediction_failure;
+	CHECK(first_failure.reason == PassengerPredictionStop::Visits);
+	CHECK(first_failure.vehicle == train.index);
+	CHECK(first_failure.work >= 128);
+	CHECK(first_failure.visits == 128);
+	CHECK(first_failure.complete_until == GraphTrip(limited, train.index).prediction.complete_until);
+	CHECK(first_failure.required_until == NOW + 4000);
+	limits.visits_per_trip = 4096;
+	const auto complete = PassengerServiceGraph::Build(PAX, NOW, limits);
+	CHECK(GraphTrip(complete, train.index).prediction.visits.size() > 128);
+	CHECK(complete.GetCoverage(A, D) == PassengerServiceGraph::Coverage::GlobalComplete);
+	CHECK(complete.GetMemoryBound() <= limits.memory_bytes);
+}
+
+TEST_CASE("Graph failure diagnostics distinguish independent resource and prediction ceilings", "[passenger][service_graph][scaling]")
+{
+	PassengerTestStations stations;
+	GraphVehicle train({GraphStop(A, 10, 0), GraphStop(D, 10, 0)});
+	GraphVehicle second({GraphStop(A, 10, 0), GraphStop(D, 10, 0)}, VehicleID{101});
+	auto limits = GraphLimits(4000);
+	SECTION("Memory") { limits.memory_bytes = 10000; }
+	SECTION("Work") { limits.work = 1; }
+	SECTION("Services") { limits.services = 1; }
+	SECTION("Trips") { limits.trips = 1; }
+	SECTION("Total visits") { limits.total_visits = 3; }
+	SECTION("Prediction steps") { limits.steps_per_trip = 2; }
+	SECTION("Timing") { train.GetOrder(1)->SetWaitTimetabled(false); }
+	const auto graph = PassengerServiceGraph::Build(PAX, NOW, limits);
+	CHECK(graph.GetCoverage(A, D) == PassengerServiceGraph::Coverage::Incomplete);
+	CHECK(graph.GetMemoryBound() <= limits.memory_bytes);
+	CHECK(graph.GetWork() <= limits.work);
+	const auto reason = graph.GetDiagnostic().first_failure.reason;
+	if (limits.memory_bytes == 10000) CHECK(reason == PassengerGraphFailure::Memory);
+	if (limits.work == 1) CHECK(reason == PassengerGraphFailure::Work);
+	if (limits.services == 1) CHECK(reason == PassengerGraphFailure::Services);
+	if (limits.trips == 1) CHECK(reason == PassengerGraphFailure::Trips);
+	if (limits.total_visits == 3) CHECK(reason == PassengerGraphFailure::TotalVisits);
+	if (limits.steps_per_trip == 2) CHECK(graph.GetDiagnostic().prediction_stops[static_cast<size_t>(PassengerPredictionStop::Steps)] == 2);
+	if (!train.GetOrder(1)->IsWaitTimetabled()) CHECK(GraphTrip(graph, train.index).prediction.stop == PassengerPredictionStop::Timing);
 }
 
 TEST_CASE("Graph discovery excludes definite freight before timetable capture", "[passenger][service_graph][performance]")
@@ -197,7 +515,7 @@ TEST_CASE("Implicit freight and unavailable trains cannot poison a passenger sco
 	CHECK(graph.GetDiagnostic().predicted == 1);
 }
 
-TEST_CASE("Known implicit stops isolate unrelated scopes and retain possible connections", "[passenger][service_graph][scope][cache]")
+TEST_CASE("Historic implicit stops are skipped consistently by scoped forecasts and topology", "[passenger][service_graph][scope][cache]")
 {
 	PassengerTestStations stations;
 	GraphVehicle direct({GraphStop(A), GraphStop(D)});
@@ -213,21 +531,47 @@ TEST_CASE("Known implicit stops isolate unrelated scopes and retain possible con
 		CHECK(warm.GetQueryStatus(A, D) == cold.GetQueryStatus(A, D));
 		CHECK(warm.GetWork() == cold.GetWork());
 	}
-	SECTION("Implicit stops themselves connect a possible alternative") {
+	SECTION("Historic implicit stops do not create a possible transfer") {
 		remote.GetOrder(1)->MakeImplicit(A);
 		remote.GetOrder(2)->MakeGoToStation(D);
 		InvalidatePassengerServiceIndex();
 		const auto graph = PassengerServiceGraph::Build(PAX, NOW, GraphLimits(), PassengerServiceScope{A, D});
-		CHECK(graph.GetTrips().size() == 2);
-		CHECK(graph.GetQueryStatus(A, D) == PassengerPredictionStatus::Unknown);
-		CHECK(graph.GetServicesAtStation(A).size() == 2);
-		CHECK(graph.GetCoverage(A, D) == PassengerServiceGraph::Coverage::Incomplete);
+		CHECK(graph.GetTrips().size() == 1);
+		CHECK(graph.GetQueryStatus(A, D) == PassengerPredictionStatus::Complete); // The unknown alternative is inventoried.
+		PassengerJourneyPlanner planner(graph);
+		CHECK(planner.Plan(PAX, A, D, NOW).status == PassengerPredictionStatus::Complete);
+		CHECK(graph.GetServicesAtStation(A).size() == 1);
+		CHECK(graph.GetCoverage(A, D) == PassengerServiceGraph::Coverage::ScopedComplete);
 	}
-	SECTION("An unknown implicit station cannot certify disconnection") {
+	SECTION("An unknown implicit station does not invent an additional stop") {
 		remote.GetOrder(1)->MakeImplicit(StationID::Invalid()); InvalidatePassengerServiceIndex();
 		const auto graph = PassengerServiceGraph::Build(PAX, NOW, GraphLimits(), PassengerServiceScope{A, D});
-		CHECK(graph.GetQueryStatus(A, D) == PassengerPredictionStatus::Unknown);
-		CHECK(graph.GetTrips().size() == 2);
+		CHECK(graph.GetQueryStatus(A, D) == PassengerPredictionStatus::Complete);
+		CHECK(graph.GetTrips().size() == 1);
+	}
+	SECTION("Implicit-only history does not create a forecast passenger service") {
+		remote.GetOrder(0)->MakeImplicit(StationID{10}); remote.GetOrder(2)->MakeImplicit(StationID{11});
+		remote.current_order.Free(); remote.cur_implicit_order_index = 1;
+		InvalidatePassengerServiceIndex();
+		const auto graph = PassengerServiceGraph::Build(PAX, NOW, GraphLimits(), PassengerServiceScope{A, D});
+		CHECK(graph.GetQueryStatus(A, D) == PassengerPredictionStatus::Complete);
+		CHECK(graph.GetTrips().size() == 1);
+		PassengerJourneyPlanner planner(graph);
+		CHECK(planner.Plan(PAX, A, D, NOW).status == PassengerPredictionStatus::Complete);
+	}
+	SECTION("An implicit-only history at this OD has no forecast boarding") {
+		remote.GetOrder(0)->MakeImplicit(A); remote.GetOrder(2)->MakeImplicit(D);
+		remote.current_order.Free(); remote.cur_implicit_order_index = 1;
+		InvalidatePassengerServiceIndex();
+		const auto graph = PassengerServiceGraph::Build(PAX, NOW, GraphLimits(), PassengerServiceScope{A, D});
+		CHECK(graph.GetTrips().size() == 1);
+		CHECK(graph.GetQueryStatus(A, D) == PassengerPredictionStatus::Complete);
+		PassengerJourneyPlanner planner(graph);
+		PassengerJourneyLimits query; query.candidates = 1;
+		const auto result = planner.Plan(PAX, A, D, NOW, query);
+		CHECK(result.HasJourney());
+		CHECK(result.status == PassengerPredictionStatus::Complete);
+		CHECK(graph.GetService(remote.orders->index) == nullptr);
 	}
 	SECTION("A known implicit order after the proven horizon is harmless") {
 		Order later_implicit; later_implicit.MakeImplicit(StationID{22});
@@ -237,11 +581,46 @@ TEST_CASE("Known implicit stops isolate unrelated scopes and retain possible con
 		CHECK(graph.GetQueryStatus(A, D) == PassengerPredictionStatus::Complete);
 		CHECK(graph.GetCoverage(A, D) == PassengerServiceGraph::Coverage::ScopedComplete);
 	}
-	SECTION("Implicit only wandering cannot bound its route") {
+	SECTION("Only explicit instructions define the operational model") {
 		remote.GetOrder(0)->MakeImplicit(StationID{10}); remote.GetOrder(2)->MakeImplicit(StationID{11});
 		InvalidatePassengerServiceIndex();
-		CHECK(PassengerServiceGraph::Build(PAX, NOW, GraphLimits(), PassengerServiceScope{A, D}).GetQueryStatus(A, D) == PassengerPredictionStatus::Unknown);
+		CHECK(PassengerServiceGraph::Build(PAX, NOW, GraphLimits(), PassengerServiceScope{A, D}).GetQueryStatus(A, D) == PassengerPredictionStatus::Complete);
 	}
+}
+
+TEST_CASE("Scoped capture stops at the first unknown dwell and recovers after an order edit", "[passenger][service_graph][scope][scaling]")
+{
+	PassengerTestStations stations;
+	Order implicit; implicit.MakeImplicit(B);
+	GraphVehicle head({GraphStop(A), implicit, GraphStop(D)});
+	head.GetOrder(0)->SetWaitTimetabled(false);
+	std::deque<GraphVehicle> fleet;
+	for (uint i = 0; i < 1000; ++i) fleet.emplace_back(head, VehicleID{1000 + i});
+	auto limits = ActivePassengerServiceGraphLimits(); limits.horizon = 4096;
+	GameRandomSeedChecker seeds;
+	const auto cold = PassengerServiceGraph::Build(PAX, NOW, limits, PassengerServiceScope{A, D});
+	const auto warm = PassengerServiceGraph::Build(PAX, NOW, limits, PassengerServiceScope{A, D});
+	CHECK(cold.GetQueryStatus(A, D) == PassengerPredictionStatus::Complete);
+	CHECK(cold.GetCoverage(A, D) == PassengerServiceGraph::Coverage::Incomplete);
+	CHECK(cold.GetDiagnostic().selected_trips == 1001);
+	CHECK(cold.GetTrips().size() == 1001);
+	CHECK(cold.GetDiagnostic().predicted == 1001);
+	CHECK(cold.GetDiagnostic().omitted_trains == 0);
+	CHECK(cold.GetDiagnostic().first_failure.reason == PassengerGraphFailure::None);
+	CHECK(cold.GetDiagnostic().timing_uncertainty == 1001);
+	PassengerJourneyPlanner planner(cold);
+	CHECK(planner.Plan(PAX, A, D, NOW).status == PassengerPredictionStatus::Unknown);
+	CHECK(warm.GetWork() == cold.GetWork());
+	CHECK(warm.GetMemoryBound() == cold.GetMemoryBound());
+	*head.GetOrder(1) = GraphStop(B);
+	head.GetOrder(0)->SetWaitTimetabled(true);
+	EnsurePassengerTestStations(head.orders->GetOrderVector());
+	InvalidatePassengerServiceIndex();
+	const auto repaired = PassengerServiceGraph::Build(PAX, NOW, limits, PassengerServiceScope{A, D});
+	CHECK(repaired.GetQueryStatus(A, D) == PassengerPredictionStatus::Complete);
+	CHECK(repaired.GetCoverage(A, D) == PassengerServiceGraph::Coverage::GlobalComplete);
+	CHECK(repaired.GetTrips().size() == 1001);
+	CHECK(seeds.Check());
 }
 
 TEST_CASE("Passenger graph separates local and express services and shared trips", "[passenger][service_graph]")

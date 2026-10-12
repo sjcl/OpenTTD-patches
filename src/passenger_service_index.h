@@ -25,6 +25,7 @@ struct PassengerServiceSelection {
 	size_t allocation_bytes = 0;
 	size_t reused_work = 0;
 	bool cache_hit = false;
+	size_t largest_block_services = 0; ///< Diagnostic count; does not select or rank routes.
 };
 
 /** Includes every service on any OD corridor in the undirected declared-stop supergraph.
@@ -36,6 +37,8 @@ struct PassengerServiceSelection {
  * All cycles on the corridor are retained.
  * Flags, consists, refits and timings are deliberately read live by the graph builder.
  * Eligible IDs are canonical pool order and are compared exactly before cache reuse. */
+/* Prediction policy: explicit instructions only. Historical implicit stops are
+ * skipped, and future implicit order creation is not forecast. */
 PassengerServiceSelection SelectPassengerServices(PassengerServiceScope scope, std::span<const OrderListID> eligible, size_t &work, size_t memory_bytes);
 void InvalidatePassengerGraphServiceIndex();
 

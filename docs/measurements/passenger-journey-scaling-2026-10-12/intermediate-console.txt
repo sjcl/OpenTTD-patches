@@ -1,0 +1,143 @@
+Console log output started to 'C:/Users/bebe/.codex/worktrees/c660/OpenTTD-patches/build-real-map-scaling/run/after-console.txt'.
+Calendar Date: 117528-03-11 (42926290), fract: 27, sub_fract: 0
+Economy Date: 117528-03-11 (42926290), fract: 27, tick skip: 0
+Period display offset: 0
+Elapsed years: 117527
+Tick counter: 3010946389
+Tick counter (scaled): 3010946389
+State ticks: 3176545487 (offset: 0)
+Effective economy speed reduction factor: 1
+Ticks per calendar day: 74
+Timetable time: 22:10 + 27 ticks
+Passenger inventory: complete; waiting=200450 people (available=200450, reserved=0); deferred=36501 people; state_ticks=3176545487; scaled_ticks=3010946389
+Inventory Legacy: 425187 people/64228 packets; known_OD=65674 people
+Inventory Journey: 0 people/0 packets; known_OD=0 people
+Inventory Fallback: 50423 people/26847 packets; known_OD=50423 people
+15 link graph jobs
+  Job:     0, graph: 1, cargo: 0, completed: false, nodes: 4726, cost: 22335076, started: -2125, ends in: 9715, duration: 11840
+  Job:     1, graph: 14, cargo: 0, completed: true, nodes: 2, cost: 4, started: -349, ends in: 835, duration: 1184
+  Job:     2, graph: 16, cargo: 0, completed: true, nodes: 2, cost: 4, started: -349, ends in: 835, duration: 1184
+  Job:     3, graph: 12, cargo: 9, completed: true, nodes: 7, cost: 49, started: -349, ends in: 835, duration: 1184
+  Job:     4, graph: 7, cargo: 0, completed: true, nodes: 2, cost: 4, started: -349, ends in: 835, duration: 1184
+  Job:     5, graph: 5, cargo: 0, completed: true, nodes: 9, cost: 81, started: -349, ends in: 835, duration: 1184
+  Job:     6, graph: 2, cargo: 0, completed: true, nodes: 2, cost: 4, started: -349, ends in: 835, duration: 1184
+  Job:     7, graph: 3, cargo: 0, completed: true, nodes: 15, cost: 225, started: -349, ends in: 835, duration: 1184
+  Job:     8, graph: 4, cargo: 0, completed: true, nodes: 12, cost: 144, started: -349, ends in: 835, duration: 1184
+  Job:     9, graph: 10, cargo: 5, completed: true, nodes: 23, cost: 529, started: -349, ends in: 835, duration: 1184
+  Job:    10, graph: 11, cargo: 5, completed: true, nodes: 5, cost: 25, started: -349, ends in: 835, duration: 1184
+  Job:    11, graph: 8, cargo: 4, completed: true, nodes: 3, cost: 9, started: -349, ends in: 835, duration: 1184
+  Job:    12, graph: 6, cargo: 7, completed: true, nodes: 4, cost: 16, started: -349, ends in: 835, duration: 1184
+  Job:    13, graph: 13, cargo: 0, completed: true, nodes: 3, cost: 9, started: -349, ends in: 835, duration: 1184
+  Job:    14, graph: 0, cargo: 2, completed: false, nodes: 107, cost: 11449, started: -349, ends in: 835, duration: 1184
+  Graph: 0, cargo: 2, nodes: 107, OD_revision: 0
+  Graph: 1, cargo: 0, nodes: 4726, OD_revision: 1
+  Graph: 2, cargo: 0, nodes: 2, OD_revision: 2
+  Graph: 3, cargo: 0, nodes: 15, OD_revision: 3
+  Graph: 4, cargo: 0, nodes: 12, OD_revision: 4
+  Graph: 5, cargo: 0, nodes: 9, OD_revision: 5
+  Graph: 6, cargo: 7, nodes: 4, OD_revision: 0
+  Graph: 7, cargo: 0, nodes: 2, OD_revision: 6
+  Graph: 8, cargo: 4, nodes: 3, OD_revision: 0
+  Graph: 9, cargo: 0, nodes: 1, OD_revision: 7
+  Graph: 10, cargo: 5, nodes: 23, OD_revision: 20
+  Graph: 11, cargo: 5, nodes: 5, OD_revision: 0
+  Graph: 12, cargo: 9, nodes: 7, OD_revision: 0
+  Graph: 13, cargo: 0, nodes: 3, OD_revision: 8
+  Graph: 14, cargo: 0, nodes: 2, OD_revision: 9
+  Graph: 16, cargo: 0, nodes: 2, OD_revision: 10
+Game unpaused.
+Script file 'C:/Users/bebe/.codex/worktrees/c660/OpenTTD-patches/build-real-map-scaling/run/scripts/after-finish.scr' scheduled to execute at the start of next calendar month.
+Executing scheduled script file 'C:/Users/bebe/.codex/worktrees/c660/OpenTTD-patches/build-real-map-scaling/run/scripts/after-finish.scr'...
+Calendar Date: 117528-04-01 (42926311), fract: 0, sub_fract: 0
+Economy Date: 117528-03-31 (42926310), fract: 73, tick skip: 0
+Period display offset: 0
+Elapsed years: 117527
+Tick counter: 3010947916
+Tick counter (scaled): 3010947916
+State ticks: 3176547014 (offset: 0)
+Effective economy speed reduction factor: 1
+Ticks per calendar day: 74
+Timetable time: 22:31 + 0 ticks
+Passenger inventory: complete; waiting=204299 people (available=204299, reserved=0); deferred=49340 people; state_ticks=3176547014; scaled_ticks=3010947916
+Inventory Legacy: 387667 people/68093 packets; known_OD=78497 people
+Inventory Journey: 0 people/0 packets; known_OD=0 people
+Inventory Fallback: 83785 people/47822 packets; known_OD=83785 people
+Graph coverage: complete=0; eligible_services=18579846; selected_services=15324354; selected_trips=75500885; largest_block_services=643; admitted_visits=800274299; max_unpredicted_ticks=4096
+Graph failure None: 0 builds
+Graph failure Work: 1151 builds
+Graph failure Memory: 0 builds
+Graph failure Services: 0 builds
+Graph failure Trips: 0 builds
+Graph failure TotalVisits: 0 builds
+Graph failure Index: 0 builds
+Graph failure Opaque: 23232 builds
+Trip stop None: 0 predictions
+Trip stop Work: 843 predictions
+Trip stop Memory: 0 predictions
+Trip stop Visits: 0 predictions
+Trip stop Steps: 0 predictions
+Trip stop Timing: 13034796 predictions
+Trip stop Conditional: 0 predictions
+Trip stop Refit: 0 predictions
+Trip stop Implicit: 0 predictions
+Trip stop Unsupported: 9656916 predictions
+Trip stop Dispatch: 0 predictions
+Trip stop Facilities: 0 predictions
+Trip stop VehicleState: 326101 predictions
+Trip stop OrderProgress: 121474 predictions
+First graph failure: reason=Opaque; stage=Orders; work=607055; memory=32975424; trips=3173; visits=33959
+Active journey total: applied=0 packets/0 passengers; builds=24383; static_hits=24371; searches=0; OD_hits=0
+Train observations=100360428; cargo_capable=90485313; possible_refit=243830; predicted=73874906; inactive=3730599; excluded_cargo=9631285; excluded_scope=11267144; visits=800274299; omitted_trains_at_least=3132; truncated_predictions=843 (uncaptured visit count unknown)
+Graph work=14577748536; mean=597865; max=610671; cached_index_allowance_avoided=6812718082; query_allowance=0; build_us=647536354; mean_us=26556; max_us=52819; search_us=0; max_tick_graph_search_us=718472
+Peak graph retained_estimate=7375128; static retained_estimate=897396; conservative_graph_envelope_including_index=33423808; query_scratch=0; query_cache=0
+Fair waiting shares: claims=6101; releases=0; admission_scan_work=8806554; retained_rides=0
+OD fallback: work=858276077; path_searches=127145
+Journey transport: boarded=0; transferred=0; delivered=0 people
+Fallback GraphWork: 0 packets; deferred=1446 packets
+Fallback GraphMemory: 0 packets; deferred=0 packets
+Fallback SnapshotLimit: 0 packets; deferred=362111 packets
+Fallback QueryWork: 0 packets; deferred=26994 packets
+Fallback QueryLimit: 0 packets; deferred=0 packets
+Fallback QueryMemory: 0 packets; deferred=0 packets
+Fallback PredictionIncomplete: 33792 packets; deferred=0 packets
+Fallback PredictionHorizon: 0 packets; deferred=0 packets
+Fallback NoJourney: 0 packets; deferred=0 packets
+Fallback InvalidLeg: 0 packets; deferred=0 packets
+Fallback StaleLeg: 0 packets; deferred=0 packets
+Fallback Disabled: 0 packets; deferred=0 packets
+Fallback VehicleDeleted: 0 packets; deferred=0 packets
+15 link graph jobs
+  Job:     0, graph: 1, cargo: 0, completed: true, nodes: 4726, cost: 22335076, started: -3652, ends in: 8188, duration: 11840
+  Job:     1, graph: 14, cargo: 0, completed: true, nodes: 2, cost: 4, started: -396, ends in: 788, duration: 1184
+  Job:     2, graph: 16, cargo: 0, completed: true, nodes: 2, cost: 4, started: -396, ends in: 788, duration: 1184
+  Job:     3, graph: 12, cargo: 9, completed: true, nodes: 7, cost: 49, started: -396, ends in: 788, duration: 1184
+  Job:     4, graph: 7, cargo: 0, completed: true, nodes: 2, cost: 4, started: -396, ends in: 788, duration: 1184
+  Job:     5, graph: 5, cargo: 0, completed: true, nodes: 9, cost: 81, started: -396, ends in: 788, duration: 1184
+  Job:     6, graph: 2, cargo: 0, completed: true, nodes: 2, cost: 4, started: -396, ends in: 788, duration: 1184
+  Job:     7, graph: 3, cargo: 0, completed: true, nodes: 15, cost: 225, started: -396, ends in: 788, duration: 1184
+  Job:     8, graph: 4, cargo: 0, completed: true, nodes: 12, cost: 144, started: -396, ends in: 788, duration: 1184
+  Job:     9, graph: 10, cargo: 5, completed: true, nodes: 23, cost: 529, started: -396, ends in: 788, duration: 1184
+  Job:    10, graph: 11, cargo: 5, completed: true, nodes: 5, cost: 25, started: -396, ends in: 788, duration: 1184
+  Job:    11, graph: 8, cargo: 4, completed: true, nodes: 3, cost: 9, started: -396, ends in: 788, duration: 1184
+  Job:    12, graph: 6, cargo: 7, completed: true, nodes: 4, cost: 16, started: -396, ends in: 788, duration: 1184
+  Job:    13, graph: 13, cargo: 0, completed: true, nodes: 3, cost: 9, started: -396, ends in: 788, duration: 1184
+  Job:    14, graph: 0, cargo: 2, completed: true, nodes: 107, cost: 11449, started: -396, ends in: 788, duration: 1184
+  Graph: 0, cargo: 2, nodes: 107, OD_revision: 0
+  Graph: 1, cargo: 0, nodes: 4726, OD_revision: 1
+  Graph: 2, cargo: 0, nodes: 2, OD_revision: 2
+  Graph: 3, cargo: 0, nodes: 15, OD_revision: 3
+  Graph: 4, cargo: 0, nodes: 12, OD_revision: 4
+  Graph: 5, cargo: 0, nodes: 9, OD_revision: 5
+  Graph: 6, cargo: 7, nodes: 4, OD_revision: 0
+  Graph: 7, cargo: 0, nodes: 2, OD_revision: 6
+  Graph: 8, cargo: 4, nodes: 3, OD_revision: 0
+  Graph: 9, cargo: 0, nodes: 1, OD_revision: 7
+  Graph: 10, cargo: 5, nodes: 23, OD_revision: 20
+  Graph: 11, cargo: 5, nodes: 5, OD_revision: 0
+  Graph: 12, cargo: 9, nodes: 7, OD_revision: 0
+  Graph: 13, cargo: 0, nodes: 3, OD_revision: 8
+  Graph: 14, cargo: 0, nodes: 2, OD_revision: 9
+  Graph: 16, cargo: 0, nodes: 2, OD_revision: 10
+Saving map...
+Map successfully saved to 'C:/Users/bebe/.codex/worktrees/c660/OpenTTD-patches/build-real-map-scaling/run/after-result.sav'.
+Console log file closed.

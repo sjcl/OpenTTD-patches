@@ -1,0 +1,32 @@
+Console log output started to 'C:/Users/bebe/CLionProjects/OpenTTD-patches/build-scoped-uncertainty/run/inspect-final-console.txt'.
+Calendar Date: 117528-03-11 (42926290), fract: 27, sub_fract: 0
+Economy Date: 117528-03-11 (42926290), fract: 27, tick skip: 0
+Period display offset: 0
+Elapsed years: 117527
+Tick counter: 3010946389
+Tick counter (scaled): 3010946389
+State ticks: 3176545487 (offset: 0)
+Effective economy speed reduction factor: 1
+Ticks per calendar day: 74
+Timetable time: 22:10 + 27 ticks
+Service 714 vehicle 16563: type=1; tile=41025910; current_type=OT_NOTHING; real_order=0; implicit_order=1; timetable_order=65535; elapsed=1397523164; lateness=0; last_station=4323
+Order 0: type=OT_IMPLICIT; destination=4323; nonstop=0; travel=0/false; wait=0/false; load=0; unload=0; refit=false; leave=0; pax_load=0; dispatch=-1
+Order 1: type=OT_IMPLICIT; destination=4320; nonstop=0; travel=0/false; wait=0/false; load=0; unload=0; refit=false; leave=0; pax_load=0; dispatch=-1
+Route state unavailable: reason=2
+Service 1 vehicle 3355: type=0; tile=22301316; current_type=OT_GOTO_STATION; real_order=7; implicit_order=7; timetable_order=7; elapsed=276; lateness=-7; last_station=43
+Order 0: type=OT_GOTO_STATION; destination=13; nonstop=1; travel=1/true; wait=46/true; load=0; unload=0; refit=false; leave=1; pax_load=0; dispatch=-1
+Order 1: type=OT_GOTO_STATION; destination=20; nonstop=1; travel=1845/true; wait=73/true; load=0; unload=0; refit=false; leave=1; pax_load=0; dispatch=-1
+Order 2: type=OT_GOTO_STATION; destination=35; nonstop=1; travel=1098/true; wait=69/true; load=0; unload=0; refit=false; leave=0; pax_load=0; dispatch=-1
+Order 3: type=OT_GOTO_STATION; destination=37; nonstop=1; travel=1137/true; wait=99/true; load=0; unload=0; refit=false; leave=1; pax_load=0; dispatch=-1
+Order 4: type=OT_GOTO_STATION; destination=39; nonstop=1; travel=883/true; wait=118/true; load=0; unload=0; refit=false; leave=0; pax_load=0; dispatch=-1
+Order 5: type=OT_GOTO_STATION; destination=42; nonstop=1; travel=472/true; wait=57/true; load=0; unload=0; refit=false; leave=0; pax_load=0; dispatch=-1
+Order 6: type=OT_GOTO_STATION; destination=43; nonstop=1; travel=498/true; wait=289/true; load=0; unload=0; refit=false; leave=0; pax_load=0; dispatch=-1
+Order 7: type=OT_GOTO_STATION; destination=42; nonstop=1; travel=529/true; wait=120/true; load=0; unload=0; refit=false; leave=0; pax_load=0; dispatch=-1
+Order 8: type=OT_GOTO_STATION; destination=39; nonstop=1; travel=468/true; wait=89/true; load=0; unload=0; refit=false; leave=0; pax_load=0; dispatch=-1
+Order 9: type=OT_GOTO_STATION; destination=37; nonstop=1; travel=984/true; wait=77/true; load=0; unload=0; refit=false; leave=1; pax_load=0; dispatch=-1
+Order 10: type=OT_GOTO_STATION; destination=35; nonstop=1; travel=1137/true; wait=115/true; load=0; unload=0; refit=false; leave=0; pax_load=0; dispatch=-1
+Order 11: type=OT_GOTO_STATION; destination=20; nonstop=1; travel=1148/true; wait=87/true; load=0; unload=0; refit=false; leave=1; pax_load=0; dispatch=-1
+Order 12: type=OT_GOTO_STATION; destination=13; nonstop=1; travel=1718/true; wait=49/true; load=0; unload=0; refit=false; leave=1; pax_load=0; dispatch=-1
+Prediction prefix_only=false: status=1; stop=5; stopped_order=6; first_unknown_order=9; first_unknown_reason=5; cursor=3176558424; certified_until=3176547408; visits=13
+Prediction prefix_only=true: status=1; stop=5; stopped_order=9; first_unknown_order=9; first_unknown_reason=5; cursor=3176547408; certified_until=3176547408; visits=3
+Console log file closed.

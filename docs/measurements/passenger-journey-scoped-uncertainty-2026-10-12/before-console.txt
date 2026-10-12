@@ -1,0 +1,118 @@
+Console log output started to 'C:/Users/bebe/CLionProjects/OpenTTD-patches/build-scoped-uncertainty/run/before-console.txt'.
+System Date: 2026-10-12 15:43:44
+Calendar Date: 117528-03-11 (42926290), fract: 27, sub_fract: 0
+Economy Date: 117528-03-11 (42926290), fract: 27, tick skip: 0
+Period display offset: 0
+Elapsed years: 117527
+Tick counter: 3010946389
+Tick counter (scaled): 3010946389
+State ticks: 3176545487 (offset: 0)
+Effective economy speed reduction factor: 1
+Ticks per calendar day: 74
+Timetable time: 22:10 + 27 ticks
+Passenger inventory: complete; waiting=200450 people (available=200450, reserved=0); deferred=36501 people; state_ticks=3176545487; scaled_ticks=3010946389
+Inventory Legacy: 425187 people/64228 packets; known_OD=65674 people
+Inventory Journey: 0 people/0 packets; known_OD=0 people
+Inventory Fallback: 50423 people/26847 packets; known_OD=50423 people
+Measurement copy: scripted equivalent of accepting the NewGRF continuation dialog
+Game unpaused.
+Script file 'C:/Users/bebe/CLionProjects/OpenTTD-patches/build-scoped-uncertainty/run/scripts/before-finish.scr' scheduled to execute at the start of next calendar month.
+Console log file closed.
+Console log output started to 'C:/Users/bebe/CLionProjects/OpenTTD-patches/build-scoped-uncertainty/run/before-console.txt'.
+Executing scheduled script file 'C:/Users/bebe/CLionProjects/OpenTTD-patches/build-scoped-uncertainty/run/scripts/before-finish.scr'...
+System Date: 2026-10-12 15:49:58
+Calendar Date: 117528-04-01 (42926311), fract: 0, sub_fract: 0
+Economy Date: 117528-03-31 (42926310), fract: 73, tick skip: 0
+Period display offset: 0
+Elapsed years: 117527
+Tick counter: 3010947916
+Tick counter (scaled): 3010947916
+State ticks: 3176547014 (offset: 0)
+Effective economy speed reduction factor: 1
+Ticks per calendar day: 74
+Timetable time: 22:31 + 0 ticks
+Passenger inventory: complete; waiting=203731 people (available=203731, reserved=0); deferred=48452 people; state_ticks=3176547014; scaled_ticks=3010947916
+Inventory Legacy: 385775 people/67476 packets; known_OD=77201 people
+Inventory Journey: 0 people/0 packets; known_OD=0 people
+Inventory Fallback: 84522 people/48101 packets; known_OD=84522 people
+Graph coverage: complete=0; eligible_services=18569178; selected_services=14768533; selected_trips=72762064; largest_block_services=643; admitted_visits=696078843; max_unpredicted_ticks=4096
+Graph failure None: 0 builds
+Graph failure Work: 862 builds
+Graph failure Memory: 0 builds
+Graph failure Services: 0 builds
+Graph failure Trips: 0 builds
+Graph failure TotalVisits: 0 builds
+Graph failure Index: 0 builds
+Graph failure Opaque: 23507 builds
+Trip stop None: 0 predictions
+Trip stop Work: 5 predictions
+Trip stop Memory: 0 predictions
+Trip stop Visits: 0 predictions
+Trip stop Steps: 0 predictions
+Trip stop Timing: 11018262 predictions
+Trip stop Conditional: 0 predictions
+Trip stop Refit: 0 predictions
+Trip stop Implicit: 0 predictions
+Trip stop Unsupported: 8406452 predictions
+Trip stop Dispatch: 0 predictions
+Trip stop Facilities: 0 predictions
+Trip stop VehicleState: 223396 predictions
+Trip stop OrderProgress: 95629 predictions
+First graph failure: reason=Opaque; stage=Prediction; work=585459; memory=30102080; trips=2679; visits=30311
+First opaque scope: service=714; vehicle=16563
+First trip failure: reason=Timing; stage=Prediction; vehicle=3355; work=328498; memory=2591040; trips=4; visits=40; cursor=3176558425; certified_until=3176547409; required_until=3176549584
+Active journey total: applied=0 packets/0 passengers; builds=24369; static_hits=23517; searches=0; OD_hits=0
+Train observations=100302804; cargo_capable=90433359; possible_refit=243690; predicted=61086999; inactive=3728457; excluded_cargo=9625755; excluded_scope=8060474; visits=696078843; omitted_trains_at_least=51; truncated_predictions=5 (uncaptured visit count unknown)
+Graph work=13697260849; mean=562077; max=588818; cached_index_allowance_avoided=6573989214; query_allowance=0; build_us=293345901; mean_us=12037; max_us=29808; search_us=0; max_tick_graph_search_us=295929
+Peak graph retained_estimate=5491614; static retained_estimate=897396; conservative_graph_envelope_including_index=30564480; query_scratch=0; query_cache=0
+Fair waiting shares: claims=6099; releases=0; admission_scan_work=8814296; retained_rides=0
+OD fallback: work=858549893; path_searches=127147
+Journey transport: boarded=0; transferred=0; delivered=0 people
+Fallback GraphWork: 0 packets; deferred=1086 packets
+Fallback GraphMemory: 0 packets; deferred=0 packets
+Fallback SnapshotLimit: 0 packets; deferred=362323 packets
+Fallback QueryWork: 0 packets; deferred=21439 packets
+Fallback QueryLimit: 0 packets; deferred=0 packets
+Fallback QueryMemory: 0 packets; deferred=0 packets
+Fallback PredictionIncomplete: 34161 packets; deferred=0 packets
+Fallback PredictionHorizon: 0 packets; deferred=0 packets
+Fallback NoJourney: 0 packets; deferred=0 packets
+Fallback InvalidLeg: 0 packets; deferred=0 packets
+Fallback StaleLeg: 0 packets; deferred=0 packets
+Fallback Disabled: 0 packets; deferred=0 packets
+Fallback VehicleDeleted: 0 packets; deferred=0 packets
+15 link graph jobs
+  Job:     0, graph: 1, cargo: 0, completed: true, nodes: 4726, cost: 22335076, started: -3652, ends in: 8188, duration: 11840
+  Job:     1, graph: 14, cargo: 0, completed: true, nodes: 2, cost: 4, started: -396, ends in: 788, duration: 1184
+  Job:     2, graph: 16, cargo: 0, completed: true, nodes: 2, cost: 4, started: -396, ends in: 788, duration: 1184
+  Job:     3, graph: 12, cargo: 9, completed: true, nodes: 7, cost: 49, started: -396, ends in: 788, duration: 1184
+  Job:     4, graph: 7, cargo: 0, completed: true, nodes: 2, cost: 4, started: -396, ends in: 788, duration: 1184
+  Job:     5, graph: 5, cargo: 0, completed: true, nodes: 9, cost: 81, started: -396, ends in: 788, duration: 1184
+  Job:     6, graph: 2, cargo: 0, completed: true, nodes: 2, cost: 4, started: -396, ends in: 788, duration: 1184
+  Job:     7, graph: 3, cargo: 0, completed: true, nodes: 15, cost: 225, started: -396, ends in: 788, duration: 1184
+  Job:     8, graph: 4, cargo: 0, completed: true, nodes: 12, cost: 144, started: -396, ends in: 788, duration: 1184
+  Job:     9, graph: 10, cargo: 5, completed: true, nodes: 23, cost: 529, started: -396, ends in: 788, duration: 1184
+  Job:    10, graph: 11, cargo: 5, completed: true, nodes: 5, cost: 25, started: -396, ends in: 788, duration: 1184
+  Job:    11, graph: 8, cargo: 4, completed: true, nodes: 3, cost: 9, started: -396, ends in: 788, duration: 1184
+  Job:    12, graph: 6, cargo: 7, completed: true, nodes: 4, cost: 16, started: -396, ends in: 788, duration: 1184
+  Job:    13, graph: 13, cargo: 0, completed: true, nodes: 3, cost: 9, started: -396, ends in: 788, duration: 1184
+  Job:    14, graph: 0, cargo: 2, completed: true, nodes: 107, cost: 11449, started: -396, ends in: 788, duration: 1184
+  Graph: 0, cargo: 2, nodes: 107, OD_revision: 0
+  Graph: 1, cargo: 0, nodes: 4726, OD_revision: 1
+  Graph: 2, cargo: 0, nodes: 2, OD_revision: 2
+  Graph: 3, cargo: 0, nodes: 15, OD_revision: 3
+  Graph: 4, cargo: 0, nodes: 12, OD_revision: 4
+  Graph: 5, cargo: 0, nodes: 9, OD_revision: 5
+  Graph: 6, cargo: 7, nodes: 4, OD_revision: 0
+  Graph: 7, cargo: 0, nodes: 2, OD_revision: 6
+  Graph: 8, cargo: 4, nodes: 3, OD_revision: 0
+  Graph: 9, cargo: 0, nodes: 1, OD_revision: 7
+  Graph: 10, cargo: 5, nodes: 23, OD_revision: 20
+  Graph: 11, cargo: 5, nodes: 5, OD_revision: 0
+  Graph: 12, cargo: 9, nodes: 7, OD_revision: 0
+  Graph: 13, cargo: 0, nodes: 3, OD_revision: 8
+  Graph: 14, cargo: 0, nodes: 2, OD_revision: 9
+  Graph: 16, cargo: 0, nodes: 2, OD_revision: 10
+Saving map...
+Map successfully saved to 'C:/Users/bebe/CLionProjects/OpenTTD-patches/build-scoped-uncertainty/run/before-result.sav'.
+Console log file closed.

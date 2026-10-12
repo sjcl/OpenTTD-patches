@@ -4506,6 +4506,43 @@ static bool ConCreateTown(std::span<std::string_view> argv)
 }
 
 /** Console command registration. */
+static bool ConPassengerServiceInspect(std::span<std::string_view> argv)
+{
+	if (argv.empty()) {
+		IConsolePrint(CC_HELP, "passenger_service_inspect <vehicle>: read-only order/progress/prediction diagnostics");
+		return true;
+	}
+	if (argv.size() != 2) return false;
+	auto id = ParseInteger<uint32_t>(argv[1]);
+	if (!id) return false;
+	const Vehicle *vehicle = Vehicle::GetIfValid(VehicleID{*id});
+	if (vehicle == nullptr || vehicle->orders == nullptr) return false;
+	IConsolePrint(CC_DEFAULT, "Service {} vehicle {}: type={}; tile={}; current_type={}; real_order={}; implicit_order={}; timetable_order={}; elapsed={}; lateness={}; last_station={}",
+			vehicle->orders->index, vehicle->index, to_underlying(vehicle->type), vehicle->tile.base(), GetOrderTypeName(vehicle->current_order.GetType()),
+			vehicle->cur_real_order_index, vehicle->cur_implicit_order_index, vehicle->cur_timetable_order_index, vehicle->current_order_time, vehicle->lateness_counter, vehicle->last_station_visited);
+	VehicleOrderID index = 0;
+	for (const Order &order : vehicle->orders->GetOrderVector()) {
+		IConsolePrint(CC_DEFAULT, "Order {}: type={}; destination={}; nonstop={}; travel={}/{}; wait={}/{}; load={}; unload={}; refit={}; leave={}; pax_load={}; dispatch={}",
+				index++, GetOrderTypeName(order.GetType()), order.GetDestination().value, order.GetNonStopType(), order.GetTravelTime(), order.IsTravelTimetabled(),
+				order.GetWaitTime(), order.IsWaitTimetabled(), to_underlying(order.GetLoadType()), to_underlying(order.GetUnloadType()), order.IsRefit(),
+				order.GetLeaveType(), to_underlying(order.GetCargoLoadType(CargoType{0})), order.GetDispatchScheduleIndex());
+	}
+	size_t work = 1048576;
+	PassengerPredictionReason reason{};
+	auto state = GetPassengerRouteState(vehicle, &work, &reason);
+	if (!state) {
+		IConsolePrint(CC_DEFAULT, "Route state unavailable: reason={}", to_underlying(reason));
+		return true;
+	}
+	for (bool prefix : {false, true}) {
+		auto prediction = PredictPassengerVisits(*state, CargoType{0}, _state_ticks, _state_ticks + 4096, 4096, 4096, work, {}, prefix);
+		IConsolePrint(CC_DEFAULT, "Prediction prefix_only={}: status={}; stop={}; stopped_order={}; first_unknown_order={}; first_unknown_reason={}; cursor={}; certified_until={}; visits={}",
+				prefix, to_underlying(prediction.status), to_underlying(prediction.stop), prediction.stopped_order, prediction.uncertain_order,
+				to_underlying(prediction.uncertain_reason), prediction.stopped_at.base(), prediction.complete_until.base(), prediction.visits.size());
+	}
+	return true;
+}
+
 static bool ConPassengerJourneyStats(std::span<std::string_view> argv)
 {
 	if (argv.empty()) {
@@ -4558,6 +4595,34 @@ static bool ConPassengerJourneyStats(std::span<std::string_view> argv)
 	if (operation == "reset") { ResetPassengerJourneyDiagnostic(); return true; }
 	if (operation != "total" && operation != "tick") return false;
 	const auto stats = operation == "tick" ? GetPassengerJourneyTickDiagnostic() : GetPassengerJourneyTotalDiagnostic();
+	static constexpr std::array graph_reasons{"None", "Work", "Memory", "Services", "Trips", "TotalVisits", "Index", "Opaque"};
+	static constexpr std::array prediction_stops{"None", "Work", "Memory", "Visits", "Steps", "Timing", "Conditional", "Refit", "Implicit", "Unsupported", "Dispatch", "Facilities", "VehicleState", "OrderProgress"};
+	static constexpr std::array graph_stages{"Discovery", "Structure", "Orders", "Schedules", "Pattern", "Trips", "Prediction", "Indices"};
+	static_assert(graph_reasons.size() == static_cast<size_t>(PassengerGraphFailure::End));
+	static_assert(prediction_stops.size() == static_cast<size_t>(PassengerPredictionStop::End));
+	IConsolePrint(CC_DEFAULT, "Graph coverage: complete={}; eligible_services={}; selected_services={}; selected_trips={}; largest_block_services={}; admitted_visits={}; max_unpredicted_ticks={}",
+			stats.complete_graphs, stats.eligible_services, stats.selected_services, stats.selected_trips, stats.largest_block_services, stats.admitted_visits, stats.maximum_unpredicted_ticks);
+	for (size_t i = 0; i < graph_reasons.size(); ++i) IConsolePrint(CC_DEFAULT, "Graph failure {}: {} builds", graph_reasons[i], stats.graph_failures[i]);
+	for (size_t i = 0; i < prediction_stops.size(); ++i) IConsolePrint(CC_DEFAULT, "Trip stop {}: {} predictions", prediction_stops[i], stats.prediction_stops[i]);
+	const auto &first = stats.first_graph_failure;
+	IConsolePrint(CC_DEFAULT, "First graph failure: reason={}; stage={}; work={}; memory={}; trips={}; visits={}",
+			graph_reasons[static_cast<size_t>(first.reason)], graph_stages[static_cast<size_t>(first.stage)], first.work, first.memory, first.trips, first.visits);
+	const auto &prediction = stats.first_prediction_failure;
+	IConsolePrint(CC_DEFAULT, "First opaque scope: service={}; vehicle={}", stats.opaque_service, stats.opaque_vehicle);
+	IConsolePrint(CC_DEFAULT, "First trip failure: reason={}; stage=Prediction; vehicle={}; work={}; memory={}; trips={}; visits={}; cursor={}; certified_until={}; required_until={}",
+			prediction_stops[static_cast<size_t>(prediction.reason)], prediction.vehicle, prediction.work, prediction.memory, prediction.trips, prediction.visits,
+			prediction.stopped_at.base(), prediction.complete_until.base(), prediction.required_until.base());
+	IConsolePrint(CC_DEFAULT, "Uncertainty: timing={} trips; path={} trips; OD_resolved={} searches; first_order={}; first_unknown_order={}; first_unknown_reason={}; tile={}; current_order={}",
+			stats.timing_uncertainty, stats.path_uncertainty, stats.uncertainty_resolved, prediction.stopped_order, prediction.uncertain_order,
+			prediction_stops[static_cast<size_t>(prediction.uncertain_reason)], prediction.tile.base(), prediction.current_order);
+	IConsolePrint(CC_DEFAULT, "Simulation tick time: completed_ticks={}; total_us={}; mean_us={}; max_us={}", stats.simulation_ticks,
+			stats.simulation_microseconds, stats.simulation_ticks == 0 ? 0 : stats.simulation_microseconds / stats.simulation_ticks, stats.maximum_simulation_microseconds);
+	for (size_t i = 0; i < stats.query_sample_count; ++i) {
+		const auto &sample = stats.query_samples[i];
+		IConsolePrint(CC_DEFAULT, "OD proof sample: origin={}; destination={}; tick={}; status={}; stop={}; candidates={}; best_score={}; unknown_arrival_bound={}; unknown_service={}",
+				sample.origin, sample.destination, sample.at.base(), to_underlying(sample.status), to_underlying(sample.stop), sample.candidates,
+				sample.score ? sample.score->base() : -1, sample.unknown_arrival_bound ? sample.unknown_arrival_bound->base() : -1, sample.unknown_service);
+	}
 	IConsolePrint(CC_DEFAULT, "Active journey {}: applied={} packets/{} passengers; builds={}; static_hits={}; searches={}; OD_hits={}",
 			operation, stats.journeys, stats.passengers, stats.builds, stats.static_cache_hits, stats.queries, stats.query_cache_hits);
 	IConsolePrint(CC_DEFAULT, "Train observations={}; cargo_capable={}; possible_refit={}; predicted={}; inactive={}; excluded_cargo={}; excluded_scope={}; visits={}; omitted_trains_at_least={}; truncated_predictions={} (uncaptured visit count unknown)",
@@ -4573,6 +4638,7 @@ static bool ConPassengerJourneyStats(std::span<std::string_view> argv)
 	IConsolePrint(CC_DEFAULT, "Fair waiting shares: claims={}; releases={}; admission_scan_work={}; retained_rides={}",
 			stats.fair_share_claims, stats.fair_share_releases, stats.fair_share_work, stats.retained_rides);
 	IConsolePrint(CC_DEFAULT, "OD fallback: work={}; path_searches={}", stats.od_fallback_work, stats.od_fallback_searches);
+	IConsolePrint(CC_DEFAULT, "Journey transport: boarded={}; transferred={}; delivered={} people", stats.boarded_passengers, stats.transferred_passengers, stats.delivered_passengers);
 	for (size_t i = 0; i < reasons.size(); ++i) IConsolePrint(CC_DEFAULT, "Fallback {}: {} packets; deferred={} packets", reasons[i], stats.fallbacks[i], stats.deferred[i]);
 	return true;
 }
@@ -4827,6 +4893,7 @@ void IConsoleStdLibRegister()
 	IConsole::CmdRegister("fps",                     ConFramerate);
 	IConsole::CmdRegister("passenger_journey_shadow", ConPassengerJourneyShadow);
 	IConsole::CmdRegister("passenger_journey_stats", ConPassengerJourneyStats);
+	IConsole::CmdRegister("passenger_service_inspect", ConPassengerServiceInspect);
 	IConsole::CmdRegister("fps_wnd",                 ConFramerateWindow);
 
 	IConsole::CmdRegister("find_non_realistic_braking_signal", ConFindNonRealisticBrakingSignal);

@@ -1184,7 +1184,7 @@ TEST_CASE("Journey extension preserves capacity forecasts and an incomplete pred
 	CHECK(journey.capacity_uncertain);
 	CHECK(journey.capacity_penalty == StateTicksDelta{50});
 	CHECK(journey.generalized_time == StateTicksDelta{277});
-	CHECK(journey.prediction_status == PassengerPredictionStatus::Unknown);
+	CHECK(journey.prediction_status == PassengerPredictionStatus::Complete); // Its executed physical segments have validated times.
 	CHECK(journey.legs.back().capacity.future_free == 40);
 	CHECK(journey.legs.back().alighting_station == StationID{10});
 	CheckSameJourneyResult(result, planner.Plan(PAX, A, StationID{10}, NOW, {}, evaluation));

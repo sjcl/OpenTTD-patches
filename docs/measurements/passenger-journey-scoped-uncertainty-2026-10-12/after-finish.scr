@@ -1,0 +1,8 @@
+getsysdate
+getfulldate
+passenger_journey_stats inventory
+passenger_journey_stats total
+dump_linkgraph_jobs
+save C:/Users/bebe/CLionProjects/OpenTTD-patches/build-scoped-uncertainty/run/after-result
+script
+quit

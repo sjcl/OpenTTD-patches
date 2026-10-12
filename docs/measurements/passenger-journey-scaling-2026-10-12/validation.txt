@@ -1,0 +1,6 @@
+# CTest final run, MSVC x64 Release /MT, assertions enabled
+100% tests passed, 0 tests failed out of 400
+Total Test time (real) = 53.22 sec
+
+# Explicit passenger tag selection, including hidden performance cases
+Passed all 183 test cases with 135341 assertions.
