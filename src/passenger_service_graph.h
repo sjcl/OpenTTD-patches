@@ -213,6 +213,7 @@ public:
 	const Stop &GetVisitStop(VisitID id) const { return this->GetStop(this->trips[id.trip], this->trips[id.trip].prediction.visits[id.visit].order); }
 
 private:
+	friend struct PassengerServiceGraphTestAccess;
 	CargoType cargo = INVALID_CARGO;
 	StateTicks start{};
 	StateTicks end{};
@@ -226,23 +227,33 @@ private:
 	std::vector<Trip> trips;
 	std::map<OrderListID, size_t> service_index;
 	std::map<StationID, std::vector<OrderListID>> station_services;
-	std::map<StationID, std::vector<VisitID>> station_visits; ///< Capture-order index; VisitIDs can also back a future time index.
-	std::map<VehicleID, std::optional<VisitID>> loading_visits; ///< Unique current occurrence, O(log trips) lookup even at national hubs.
-	struct DepartureIndex {
-		std::vector<VisitID> timed;
-		std::vector<VisitID> unknown;
+	struct IndexRange {
+		size_t begin = 0;
+		size_t count = 0;
+	};
+	struct StationIndex {
+		StationID station;
+		IndexRange visits, timed, unknown;
+		size_t component = 0; ///< Dense union root during construction; uncertain-component row or SIZE_MAX afterwards.
 		PassengerPredictionStatus status = PassengerPredictionStatus::Complete;
 	};
-	std::map<StationID, DepartureIndex> station_departures;
+	std::vector<StationIndex> station_index; ///< Sorted occupied IDs only; no allocation proportional to the largest StationID.
+	std::vector<VisitID> station_visits; ///< Contiguous station slices, each in capture order.
+	std::vector<VisitID> timed_departures, unknown_departures;
+	std::vector<std::pair<VehicleID, std::optional<VisitID>>> loading_visits; ///< Sorted by vehicle; duplicates remain ambiguous.
 	std::vector<StationID> uncertain_stations;
 	PassengerPredictionStatus uncertain_status = PassengerPredictionStatus::Complete;
-	std::map<StationID, StationID> component_roots;
 	struct UncertainComponent {
-		std::vector<StationID> stations;
+		IndexRange stations;
 		PassengerPredictionStatus status = PassengerPredictionStatus::Complete;
 	};
-	std::map<StationID, UncertainComponent> uncertain_components;
-	void BuildDepartureIndex();
+	std::vector<UncertainComponent> uncertain_components; ///< Only components containing uncertain stations.
+	std::vector<StationID> component_stations;
+	/** Optional observer for the allocation/timing benchmark; absent in normal builds. */
+	enum class IndexStage { Visits, Departures, Sort, Loading, Components, Uncertain, End };
+	using IndexObserver = void (*)(IndexStage, bool);
+	void BuildDepartureIndex(bool departures = true, IndexObserver observer = nullptr);
+	const StationIndex *FindStationIndex(StationID station) const;
 	const Stop &GetStop(const Trip &trip, VehicleOrderID order) const;
 	QueryResult<VisitID> SelectVisits(StationID station, StateTicks from, StateTicks to, size_t &budget) const;
 };
