@@ -1,0 +1,273 @@
+{
+  "minimum_seconds": 1800,
+  "video_driver": "win32",
+  "distribution_pax": 2,
+  "passenger_od_assignment": true,
+  "passenger_journey_routing": true,
+  "original_settings": {
+    "distribution_pax": 2,
+    "passenger_od_assignment": false,
+    "passenger_journey_routing": false
+  },
+  "rates": "current passenger inventories across station-available and all vehicle-held cargo, including reserved once",
+  "waiting": "station available plus reserved",
+  "commit": "cf2ae8e992",
+  "verification_started_utc": "2026-10-11 19:08:41 UTC",
+  "verification_ended_utc": "2026-10-11 19:39:04 UTC",
+  "verified_running_seconds": 1823,
+  "running_duration_is_conservative": true,
+  "final_inventory_sampled_while_paused": true,
+  "final_sample_local_time": "2026-10-12 04:41:52",
+  "final_save": "verified-result.sav",
+  "final_all_inventory_complete": true,
+  "original_save_unchanged": true,
+  "tests": {
+    "ctest_passed": 394,
+    "passenger_cases_passed": 177,
+    "passenger_assertions": 122939
+  },
+  "newgrf_warning_confirmed": true,
+  "original_sha256": "ec93a76ebfeac52d55eccff2734bdf9fa3cdfb49021e5322e057bc048b744ba9",
+  "binary_sha256": "3b3137f7363f891e8017614796f5cf0775c15c9441bf87ac3eb3bea3903718b7",
+  "all_existing_nontrivial_graphs_refreshed_confirmed_utc": "2026-10-11 19:15:26 UTC",
+  "nontrivial_graphs": 15,
+  "singleton_graphs_excluded_from_recalculation": [
+    9
+  ],
+  "input_save_file": "西日本旅客鉄道近畿、中国、山陽新幹線統括本.sav",
+  "source_commit_full": "cf2ae8e992ec296f932c994646d20a804fd10491",
+  "local_timezone": "Asia/Tokyo (UTC+09:00)",
+  "build": "MSVC 19.44, toolset 14.44, x64 Release",
+  "binary_version": "jgrpp-ya-0.73.3+2-31-gcf2ae8e99-m",
+  "preexisting_vcpkg_git_blob": "460a53a8388211b335e05166a5a5b3fbe6ad7d1f",
+  "original_file_bytes": 26219444,
+  "migrated_file_bytes": 26175444,
+  "migrated_save_sha256": "bc7fdeef945ac909f85aac120e8a86dbae93b0cb0d666bd187794a580e4880dd",
+  "final_save_sha256": "14d68c82911b9dcfc5ef7291e9697c5bbd67f44ffcc79d7575a144405edf6390",
+  "linkgraph_recalc_interval": 8,
+  "linkgraph_recalc_time": 32,
+  "all_existing_graph_ids": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    16
+  ],
+  "initial_nontrivial_graph_ids": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    10,
+    11,
+    12,
+    13,
+    14,
+    16
+  ],
+  "fresh_completion_counts": {
+    "0": 8,
+    "1": 1,
+    "2": 8,
+    "3": 8,
+    "4": 8,
+    "5": 8,
+    "6": 8,
+    "7": 8,
+    "8": 8,
+    "10": 8,
+    "11": 8,
+    "12": 8,
+    "13": 8,
+    "14": 8,
+    "16": 8
+  },
+  "pending_initial_nontrivial_graphs": [],
+  "simulation_tick_delta": 14810,
+  "final_sample": {
+    "system_date": "2026-10-12 04:41:52",
+    "complete": true,
+    "elapsed_wall_minutes": 33.18333333333333,
+    "elapsed_running_minutes": 30.383333333333333,
+    "waiting": 200450,
+    "available": 200450,
+    "reserved": 0,
+    "deferred": 36501,
+    "state_ticks": 3176545487,
+    "scaled_ticks": 3010946389,
+    "calendar_date": "117528-03-11",
+    "legacy": 425187,
+    "legacy_packets": 64228,
+    "legacy_known_od": 65674,
+    "journey": 0,
+    "journey_packets": 0,
+    "journey_known_od": 0,
+    "fallback": 50423,
+    "fallback_packets": 26847,
+    "fallback_known_od": 50423,
+    "all_passengers": 475610,
+    "known_od": 116097,
+    "journey_percent_all": 0.0,
+    "journey_percent_known_od": 0.0,
+    "fallback_percent_all": 10.601753537562288,
+    "fallback_percent_known_od": 43.4317854897198,
+    "applied_packets": 0,
+    "applied_passengers": 0,
+    "builds": 36201,
+    "static_hits": 26430,
+    "searches": 0,
+    "od_hits": 0,
+    "failures": {
+      "GraphWork": {
+        "packets": 0,
+        "deferred_packets": 3
+      },
+      "GraphMemory": {
+        "packets": 33325,
+        "deferred_packets": 75927
+      },
+      "SnapshotLimit": {
+        "packets": 0,
+        "deferred_packets": 233615
+      },
+      "QueryWork": {
+        "packets": 0,
+        "deferred_packets": 0
+      },
+      "QueryLimit": {
+        "packets": 0,
+        "deferred_packets": 0
+      },
+      "QueryMemory": {
+        "packets": 0,
+        "deferred_packets": 0
+      },
+      "PredictionIncomplete": {
+        "packets": 2275,
+        "deferred_packets": 0
+      },
+      "PredictionHorizon": {
+        "packets": 0,
+        "deferred_packets": 0
+      },
+      "NoJourney": {
+        "packets": 0,
+        "deferred_packets": 0
+      },
+      "InvalidLeg": {
+        "packets": 0,
+        "deferred_packets": 0
+      },
+      "StaleLeg": {
+        "packets": 0,
+        "deferred_packets": 0
+      },
+      "Disabled": {
+        "packets": 0,
+        "deferred_packets": 0
+      },
+      "VehicleDeleted": {
+        "packets": 0,
+        "deferred_packets": 0
+      }
+    },
+    "graphs": {
+      "0": {
+        "cargo": 2,
+        "nodes": 107,
+        "od_revision": 0
+      },
+      "1": {
+        "cargo": 0,
+        "nodes": 4726,
+        "od_revision": 1
+      },
+      "2": {
+        "cargo": 0,
+        "nodes": 2,
+        "od_revision": 2
+      },
+      "3": {
+        "cargo": 0,
+        "nodes": 15,
+        "od_revision": 3
+      },
+      "4": {
+        "cargo": 0,
+        "nodes": 12,
+        "od_revision": 4
+      },
+      "5": {
+        "cargo": 0,
+        "nodes": 9,
+        "od_revision": 5
+      },
+      "6": {
+        "cargo": 7,
+        "nodes": 4,
+        "od_revision": 0
+      },
+      "7": {
+        "cargo": 0,
+        "nodes": 2,
+        "od_revision": 6
+      },
+      "8": {
+        "cargo": 4,
+        "nodes": 3,
+        "od_revision": 0
+      },
+      "9": {
+        "cargo": 0,
+        "nodes": 1,
+        "od_revision": 7
+      },
+      "10": {
+        "cargo": 5,
+        "nodes": 23,
+        "od_revision": 20
+      },
+      "11": {
+        "cargo": 5,
+        "nodes": 5,
+        "od_revision": 0
+      },
+      "12": {
+        "cargo": 9,
+        "nodes": 7,
+        "od_revision": 0
+      },
+      "13": {
+        "cargo": 0,
+        "nodes": 3,
+        "od_revision": 8
+      },
+      "14": {
+        "cargo": 0,
+        "nodes": 2,
+        "od_revision": 9
+      },
+      "16": {
+        "cargo": 0,
+        "nodes": 2,
+        "od_revision": 10
+      }
+    }
+  }
+}

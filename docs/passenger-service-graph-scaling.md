@@ -255,9 +255,12 @@ the measured graph/search functions can be inspected with the existing FPS tools
 
 ## Synthetic comparison
 
-No 4,800-station real save was provided or measured. The comparison uses 80 hub
-routes of 100 stations, ten actual primary train instances per route (80,800
-passenger visits), 3,840 freight trains with four pooled coaches each, and 20,000
+The comparison below is synthetic. A subsequent
+[real-map measurement on 12 October 2026](passenger-journey-real-map-2026-10-12.md)
+used a 4,726-node passenger LinkGraph and recorded no successful timed Journey
+applications after all existing graphs had refreshed. The synthetic comparison
+uses 80 hub routes of 100 stations, ten actual primary train instances per route
+(80,800 passenger visits), 3,840 freight trains with four pooled coaches each, and 20,000
 vehicle objects in total. A separate production-context test creates 8,001 real
 Station pool entries and routes 64 destination packets at standard settings.
 
