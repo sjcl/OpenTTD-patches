@@ -154,7 +154,7 @@ stopごとのretention見積りを192→512byteへ保守化した。データ構
 
 ## 最終回帰と同期
 
-`OPTION_PASSENGER_BENCHMARK=OFF`の製品構成でビルドし、
+初回実装時は`OPTION_PASSENGER_BENCHMARK=OFF`の製品構成でビルドし、
 **CTest 475件すべて成功**、`[passenger]` **262ケース / 966,155 assertions成功**。
 周期関連は43ケースで、無限繰返し、異周期乗換、並行便、個別共有位相、Dispatch競合、
 明示/未設定0、条件/Depot/Refit/Unbunching、遅延、暗黙停車、プールID再利用、
@@ -164,12 +164,64 @@ stopごとのretention見積りを192→512byteへ保守化した。データ構
 Windowsのフォント登録が制限される実行環境では既存の文字出力回帰が環境警告で失敗したため、
 最終チェックは通常のMSVC/Windows実行環境で行った。golden出力は変更していない。
 
-実マップでは、初期参加の後に途中参加したクライアントが**再開1tick後のSTATION乱数不一致**を検出した。
+初回の実マップ検証では、初期参加の後に途中参加したクライアントが**再開1tick後のSTATION乱数不一致**を検出した。
 元コミットの比較バイナリでも同じ形の不一致を再現した。
 [新方式の抜粋](measurements/passenger-journey-periodic-2026-10-12/mp-real-periodic-desync-excerpt.txt)と
 [元方式の抜粋](measurements/passenger-journey-periodic-2026-10-12/mp-real-original-desync-excerpt.txt)を残した。
 これだけで原因をNewGRFに断定したり、新方式の全同期条件を証明したりはできない。
-**この実セーブで途中参加が成功することは未確認**で、既存問題の切り分け・修正は残る。
+この時点では、この実セーブで途中参加が成功することは未確認だった。
+
+### 10月13日：CPU条件を揃えた再現と修正
+
+公開リリース`jgrpp-ya-0.73.3+2`（コミット`9a3484bc78750e6ae1df5d58bba36761fe23d948`）と
+現行コミット`7d914aa6f2`を区別して再検証した。元の測定セーブは`linkgraph_route_penalty=2`のため、
+上限1の公開リリースでは読み込めない。ユーザーが同リリースで保存した別の実セーブ
+（SHA256 `abc6c1ebdd48da042cc65159e0d57db5d89a88330e897bd590f2f00c3a80a276`）では、
+公開Windows x64版が3,754tick・途中参加後90秒の同期を維持した。
+現行版でも同じ提供セーブ・CPU制限なしで3,692tick・途中参加後90秒の同期を維持した。
+1コア制限の公開版試行はタイムアウトであり、同期成功の根拠には含めない。
+
+CPU制限なし、`network.sync_freq=1`、接続猶予32,000tick、同じ元の測定セーブに揃えると、
+**現行の製品ビルドでも途中参加の1tick後にSTATION乱数不一致を再現**した。
+したがってCPU速度差だけが原因ではなかった。
+読み取り専用の診断ログで駅評価の入力を比較すると、読み込み時の
+`AfterLoadPassengerJourneys()`が待機旅客を再分類し、ホストと異なる次ホップ別キュー数にしていた。
+例えば駅3186の旅客は、待機9人・評価48・処理前の乱数seedが同じでも、
+ホストは3キュー、途中参加側は1キューだった。直後の駅3245では乱数seedが分岐していた。
+駅評価の削減量はキュー数を使い、`StationCargoList::Truncate()`はpacket単位に乱数を引くため、
+この再分類が乱数列を変える。最初の参加者はホストと同じ初期キューを読むため同期していた。
+
+修正は読み込み時の待機キュー再分類を取り除き、保存されたキーとpacket順序を維持する。
+通常の経路更新・乗車処理が全peerで同じ時点に検証と再分類を行う。
+実乗車の適格性検証は維持し、乱数比較や同期検出を無効にする変更はしていない。
+追加のpacket保存・読み込み回帰は修正前に6箇所で失敗し、修正後は23 assertionsすべて成功した。
+
+同じ元セーブ、製品構成（`OPTION_PASSENGER_BENCHMARK=OFF`）、CPU制限なしで再試験すると、
+修正後はstate ticks `3176545487→3176547993`の2,506tickを進め、途中参加後90秒の同期を維持した。
+初期／途中参加のクライアントは終了確認時も接続し、同期ACKをそれぞれ34回／27回送信した。
+同期不一致・タイムアウトは0件だった。
+ユーザー提供の公開版セーブでも、OD割当とJourney Routingを有効にして90秒進め、
+**Journey旅客104人／37packet**が存在する状態で途中参加させた。
+修正後の製品ビルドでstate ticks `3179509022→3179514778`の5,756tickを進め、
+途中参加後さらに90秒、初期／途中参加のクライアントはそれぞれ82回／42回の同期ACKを送信した。
+両方のCPU affinity maskは`4294967295`（制限なし）で、終了確認時にも接続していた。
+同期不一致・タイムアウトは0件だった。
+修正後の全回帰は**CTest 476件すべて成功**（51.86秒）。
+全4交通手段の施設変更ケースも、保存状態をロード時に維持し、不適格な乗車は拒否して
+通常の経路更新でFallbackへ移ることを検査するよう更新した。
+ここまでの性能表は修正前コミットの測定値であり、このロード修正後の性能再測定値ではない。
+
+[修正前の元セーブ再現](measurements/passenger-journey-periodic-2026-10-12/mp-unrestricted-original-before-result.json)、
+[不一致の抜粋](measurements/passenger-journey-periodic-2026-10-12/mp-unrestricted-original-before-desync-excerpt.txt)、
+[駅評価入力の差](measurements/passenger-journey-periodic-2026-10-12/mp-station-rating-differences.json)、
+[修正後の元セーブ](measurements/passenger-journey-periodic-2026-10-12/mp-unrestricted-original-after-result.json)、
+[修正後の提供セーブ](measurements/passenger-journey-periodic-2026-10-12/mp-unrestricted-supplied-after-result.json)、
+[検証バイナリ・セーブ・ソースの識別](measurements/passenger-journey-periodic-2026-10-12/mp-sync-fix-metadata.json)、
+[全回帰ログ](measurements/passenger-journey-periodic-2026-10-12/mp-ctest-final.log)。
+再実行ハーネスは`--cpu-mode unrestricted --timeout-ticks 32000 --net-debug 7 --duration 90`で
+速度条件を揃え、接続数だけでなく終了時の接続維持・同期ACK・desync reportを確認する。
+実行ファイルはログ取得のためPEのconsole指定だけを変更した複製で、実行コードは製品版と同じ。
+元のユーザーセーブとNewGRFは変更していない。
 
 別途、NewGRFなしの回帰マップへ所有会社、実道路・depot・bus stop、実バス、
 明示ダイヤ、50人のOD旅客を準備して私設loopback serverを起動した。

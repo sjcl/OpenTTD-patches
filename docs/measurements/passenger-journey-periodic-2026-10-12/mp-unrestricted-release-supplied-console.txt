@@ -1,0 +1,45 @@
+Console log output started to 'C:/Users/bebe/.codex/worktrees/9276/OpenTTD-patches/build-periodic/release-0.73.3-plus2/mp-supplied-2/server/console.txt'.
+Calendar Date: 117637-11-02 (42966338), fract: 10, sub_fract: 0
+Economy Date: 117637-11-02 (42966338), fract: 10, tick skip: 0
+Period display offset: 0
+Elapsed years: 117636
+Tick counter: 3013909924
+Tick counter (scaled): 3013909924
+State ticks: 3179509022 (offset: 0)
+Effective economy speed reduction factor: 1
+Ticks per calendar day: 74
+Timetable time: 17:38 + 10 ticks
+Current value for 'linkgraph.passenger_transfer_timetables' is: 'true' (min: 0, max: 1, def: 0)
+Current value for 'linkgraph.distribution_pax' is: '2' (def: 0)
+Current value for 'linkgraph.recalc_interval' is: '8' (min: 4, max: 90, def: 8)
+Current value for 'linkgraph.recalc_time' is: '32' (min: 1, max: 9000, def: 32)
+Console log file closed.
+Console log output started to 'C:/Users/bebe/.codex/worktrees/9276/OpenTTD-patches/build-periodic/release-0.73.3-plus2/mp-supplied-2/server/console.txt'.
+Calendar Date: 117637-11-08 (42966344), fract: 12, sub_fract: 0
+Economy Date: 117637-11-08 (42966344), fract: 12, tick skip: 0
+Period display offset: 0
+Elapsed years: 117636
+Tick counter: 3013910370
+Tick counter (scaled): 3013910370
+State ticks: 3179509468 (offset: 0)
+Effective economy speed reduction factor: 1
+Ticks per calendar day: 74
+Timetable time: 17:44 + 12 ticks
+Client #1  name: 'release-server'  company: 255  IP: server  pubkey:
+Client #2  name: 'release-client-initial'  company: 255  IP: 127.0.0.1  pubkey: 0A039C2C48DEB05E22DD296DE19C9BAF2BC368EA0F38E1A54E2689407E78D220
+Console log file closed.
+Console log output started to 'C:/Users/bebe/.codex/worktrees/9276/OpenTTD-patches/build-periodic/release-0.73.3-plus2/mp-supplied-2/server/console.txt'.
+Calendar Date: 117637-12-22 (42966388), fract: 64, sub_fract: 0
+Economy Date: 117637-12-22 (42966388), fract: 64, tick skip: 0
+Period display offset: 0
+Elapsed years: 117636
+Tick counter: 3013913678
+Tick counter (scaled): 3013913678
+State ticks: 3179512776 (offset: 0)
+Effective economy speed reduction factor: 1
+Ticks per calendar day: 74
+Timetable time: 18:28 + 64 ticks
+Client #1  name: 'release-server'  company: 255  IP: server  pubkey:
+Client #2  name: 'release-client-initial'  company: 255  IP: 127.0.0.1  pubkey: 0A039C2C48DEB05E22DD296DE19C9BAF2BC368EA0F38E1A54E2689407E78D220
+Client #3  name: 'release-client-late'  company: 255  IP: 127.0.0.1  pubkey: 53FF4DD8B6F43AEE6C51E636675F9889DB75DB949797B535147CB4D3B6B3E70C
+Console log file closed.

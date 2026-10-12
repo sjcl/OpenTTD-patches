@@ -886,6 +886,48 @@ TEST_CASE("Routing state and leg have an independent versioned save round trip",
 	}
 }
 
+TEST_CASE("Loading passenger packets preserves the queues used by station rating", "[passenger][active][saveload][determinism]")
+{
+	ActiveFixture fixture;
+	_settings_game.linkgraph.passenger_journey_periodic = true;
+	AutoRestoreBackup version{_sl_version, SAVEGAME_VERSION};
+	AutoRestoreBackup features{_sl_xv_feature_versions, AutoRestoreBackupNoNewValueTag{}};
+	AutoRestoreBackup static_features{_sl_xv_feature_static_versions, AutoRestoreBackupNoNewValueTag{}};
+	SlXvSetStaticCurrentVersions(); _sl_xv_feature_versions = _sl_xv_feature_static_versions;
+	std::array hops{B, C, D};
+	std::array<CargoPacket *, 3> packets;
+	for (size_t i = 0; i < hops.size(); ++i) {
+		auto original = std::unique_ptr<CargoPacket>(fixture.Packet(3));
+		if (i == 2) original->FallbackPassengerJourney(A, NOW);
+		auto *loaded = CargoPacket::Create();
+		REQUIRE_FALSE(SlTestSaveLoadTable(original.get(), loaded, GetCargoPacketDesc()).empty());
+		fixture.Waiting().Append(loaded, hops[i]);
+		packets[i] = loaded;
+	}
+	REQUIRE(fixture.Waiting().Packets()->MapSize() == 3);
+	REQUIRE_FALSE(packets[2]->CanRetryPassengerJourney(A, NOW));
+	{
+		GameRandomSeedChecker random;
+		AfterLoadPassengerJourneys();
+	}
+	/* Generated OD packets can retain their CargoDist hop until a normal routing
+	 * event. Station rating and randomized truncation must see the saved queues
+	 * on a joining client, just as they do on the continuing host. */
+	CHECK(fixture.Waiting().Packets()->MapSize() == 3);
+	CHECK(fixture.Waiting().AvailableCount() == 9);
+	CHECK(fixture.Waiting().ReservedCount() == 0);
+	for (StationID hop : hops) CHECK(fixture.Waiting().AvailableViaCount(hop) == 3);
+	CHECK(packets[0]->GetPassengerRoutingMode() == PassengerRoutingMode::Legacy);
+	CHECK(packets[0]->GetPassengerLegacyHop() == StationID::Invalid());
+	CHECK(packets[1]->GetPassengerLegacyHop() == StationID::Invalid());
+	CHECK(packets[2]->GetPassengerRoutingMode() == PassengerRoutingMode::Fallback);
+	CHECK(packets[2]->GetPassengerLegacyHop() == D);
+	CHECK_FALSE(packets[2]->CanRetryPassengerJourney(A, NOW));
+	fixture.Waiting().RoutePassengerJourneys(PAX, A, false);
+	CHECK(fixture.Waiting().Packets()->MapSize() == 1);
+	CHECK(fixture.Waiting().AvailableCount() == 9);
+}
+
 TEST_CASE("GUI counts available modes separately from reserved passengers without changing RNG", "[passenger][active][determinism]")
 {
 	ActiveFixture fixture;

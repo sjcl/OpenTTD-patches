@@ -108,6 +108,10 @@ saved publication state. Policies, fallback arrays, allocator capacities and wal
 diagnostics are derived and unsaved. Loading restores publication state before ticks
 resume. Saved service intents, including those awaiting a dirty service, retain their
 state until the normal simulation event; loading does not accelerate their retry.
+Saved station cargo queue keys and packet order are also preserved. Reclassifying
+queues on load changes the next-hop counts used by station rating and randomized
+cargo truncation, and can desynchronize a joining client. Normal routing and
+boarding events perform that reclassification on every peer.
 Cargo execution extension version 2 carries the explicit kind, generation and boarding
 deadline. Version 1 vehicle snapshots keep their original meaning. State tick rebasing
 adjusts database phases, packet times and retry deadlines.

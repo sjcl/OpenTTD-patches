@@ -6,6 +6,7 @@ keeps the server private on 127.0.0.1. No chat messages or external services.
 """
 import argparse
 import ctypes
+import hashlib
 import json
 import pathlib
 import re
@@ -20,6 +21,11 @@ p.add_argument("--backend", choices=["periodic", "legacy", "off"], default="peri
 p.add_argument("--duration", type=float, default=35)
 p.add_argument("--input-save", default="input.sav")
 p.add_argument("--fixture", action="store_true")
+p.add_argument("--cpu-mode", choices=["single-core", "unrestricted"], default="single-core")
+p.add_argument("--timeout-ticks", type=int, default=500)
+p.add_argument("--late-delay", type=float, default=12)
+p.add_argument("--net-debug", type=int, default=3)
+p.add_argument("--require-journeys-before-late", action="store_true")
 a = p.parse_args()
 run, root = a.run.resolve(), a.root.resolve()
 root.mkdir(parents=True, exist_ok=True)
@@ -49,6 +55,7 @@ def prepare(name):
         f"[misc]\nlanguage = english.lng\nautosave = off\nthreaded_saves = false\n"
         f"[network]\nclient_name = periodic-{name}\nserver_game_type = local\n"
         "server_port = 17492\npause_on_join = true\nmin_active_clients = 0\n"
+        f"max_lag_time = {a.timeout_ticks}\nmax_join_time = {a.timeout_ticks}\nmax_download_time = {a.timeout_ticks}\n"
         "[graphicsset]\nname = OpenGFX\n", encoding="utf-8")
     return directory
 
@@ -60,7 +67,7 @@ def start(directory, args):
     startup.dwFlags |= subprocess.STARTF_USESHOWWINDOW
     startup.wShowWindow = 0
     proc = subprocess.Popen([str(binary), "-c", "openttd.cfg", "-s", "null", "-m", "null",
-                             "-x", "-d", "net=3,desync=1", *args], cwd=directory,
+                             "-x", "-d", f"net={a.net_debug},desync=1", *args], cwd=directory,
                             stdin=subprocess.PIPE, stdout=out, stderr=err,
                             startupinfo=startup, creationflags=subprocess.CREATE_NEW_CONSOLE,
                             text=True, encoding="utf-8")
@@ -70,6 +77,17 @@ def start(directory, args):
 def command(proc, line):
     proc.stdin.write(line + "\n")
     proc.stdin.flush()
+
+def snapshot(proc, directory):
+    command(proc, f"script {(directory / 'console.txt').as_posix()}")
+    command(proc, "getfulldate")
+    command(proc, "clients")
+    command(proc, "setting linkgraph.passenger_od_assignment")
+    command(proc, "setting linkgraph.passenger_journey_routing")
+    command(proc, "setting linkgraph.passenger_journey_periodic")
+    command(proc, "passenger_journey_stats inventory")
+    command(proc, "passenger_journey_stats total")
+    command(proc, "script")
 
 def client(name):
     directory = prepare(name)
@@ -83,7 +101,7 @@ def client(name):
         f"script {log}\ngetfulldate\npassenger_journey_stats inventory\n"
         "passenger_journey_stats total\nscript\n", encoding="utf-8")
     proc = start(directory, ["-v", "null:until_exit", "-n", "127.0.0.1:17492#255"])
-    # A single core deliberately differs from the unrestricted host's speed.
+    # Record the actual mask even when matching the unrestricted host's speed.
     kernel = ctypes.windll.kernel32
     kernel.OpenProcess.restype = ctypes.c_void_p
     handle = kernel.OpenProcess(0x200 | 0x400, False, proc.pid)
@@ -91,10 +109,12 @@ def client(name):
     applied = False
     mask = 0
     if handle and kernel.GetProcessAffinityMask(ctypes.c_void_p(handle), ctypes.byref(process_mask), ctypes.byref(system_mask)):
-        mask = process_mask.value & -process_mask.value
-        applied = bool(kernel.SetProcessAffinityMask(ctypes.c_void_p(handle), ctypes.c_size_t(mask)))
+        mask = process_mask.value
+        if a.cpu_mode == "single-core":
+            mask &= -mask
+            applied = bool(kernel.SetProcessAffinityMask(ctypes.c_void_p(handle), ctypes.c_size_t(mask)))
         kernel.CloseHandle(ctypes.c_void_p(handle))
-    affinities[name] = {"mask": mask, "applied": applied}
+    affinities[name] = {"mask": mask, "applied": applied, "restricted": a.cpu_mode == "single-core"}
     return proc, directory
 
 try:
@@ -114,38 +134,59 @@ try:
     wait_for(lambda: "Simulation tick time:" in text(server_log), "server loaded")
     if a.fixture and not re.search(r"Periodic test fixture: services=[1-9]", text(server_log)):
         raise RuntimeError("No active passenger fixture was prepared")
+    print("Server loaded; joining initial client", flush=True)
     first, first_dir = client("client-initial")
     wait_for(lambda: "Client #2" in text(server_dir / "stderr.txt") and "joined as" in text(server_dir / "stderr.txt"), "first join")
     command(server, "unpause")
     # Join the second client after initial discovery has had time to publish.
-    time.sleep(12)
+    time.sleep(a.late_delay)
+    snapshot(server, server_dir)
+    wait_for(lambda: len(re.findall(r"State ticks: (\d+)", text(server_log))) >= 2, "pre-join checkpoint")
+    if a.require_journeys_before_late:
+        inventory = re.findall(r"Inventory Journey: (\d+) people", text(server_log))
+        if not inventory or int(inventory[-1]) == 0:
+            raise RuntimeError("No live passenger journeys before late join")
+    print("Server advanced; joining late client", flush=True)
     second, second_dir = client("client-late")
     wait_for(lambda: "Client #3" in text(server_dir / "stderr.txt") and text(server_dir / "stderr.txt").count("joined as") >= 2, "late join")
+    print("Late client joined; observing synchronization", flush=True)
     # Leave both clients active for at least ten sync intervals.
     time.sleep(a.duration)
     command(server, "pause")
     time.sleep(2)
+    snapshot(server, server_dir)
+    wait_for(lambda: len(re.findall(r"State ticks: (\d+)", text(server_log))) >= 3, "final checkpoint")
     command(server, f"script {server_log.as_posix()}")
-    command(server, "getfulldate")
-    command(server, "clients")
-    command(server, "passenger_journey_stats inventory")
-    command(server, "passenger_journey_stats total")
     command(server, f"save {server_dir.as_posix()}/final")
     command(server, "script")
     time.sleep(4)
     logs = [text(directory / "stderr.txt") for directory in [server_dir, first_dir, second_dir]]
     bad = any(re.search(r"Sync error|sync_err:|Assertion failed|desync detected", log, re.I) for log in logs)
+    reports = [str(path.relative_to(root)) for name in ["server", "client-initial", "client-late"] for path in (root / name).glob("desync-*.log")]
+    bad |= bool(reports)
+    final_snapshot = text(server_log).rsplit("Console log output started", 1)[-1]
+    connected = re.findall(r"Client #(\d+)\s+name: '([^']+)'", final_snapshot)
+    # The final save log can follow the checkpoint without another clients query.
+    if not connected:
+        connected = re.findall(r"Client #(\d+)\s+name: '([^']+)'", text(server_log).rsplit("Console log output started", 2)[-2])
+    acknowledgements = {name: [int(v) for v in re.findall(r"Sent ACK at (\d+)", text(root / name / "stderr.txt"))] for name in ["client-initial", "client-late"]}
     result = {"joined_clients": text(server_dir / "stderr.txt").count("joined as"),
               "backend": a.backend, "binary": a.binary,
               "input_save": a.input_save, "fixture": a.fixture,
+              "input_save_sha256": hashlib.sha256((run / a.input_save).read_bytes()).hexdigest(),
+              "binary_sha256": hashlib.sha256(binary.read_bytes()).hexdigest(),
               "detected_sync_failure": bad, "client_exit_codes": [first.poll(), second.poll()],
               "server_state_ticks": re.findall(r"State ticks: (\d+)", text(server_log)),
               "single_core_clients": len(affinities) == 2 and all(value["applied"] for value in affinities.values()),
               "affinity": affinities, "sync_frequency": 1,
+              "cpu_mode": a.cpu_mode, "timeout_ticks": a.timeout_ticks,
+              "late_join_delay_seconds": a.late_delay, "late_join_observation_seconds": a.duration,
+              "desync_reports": reports, "connected_at_checkpoint": connected,
+              "client_ack_frames": acknowledgements,
               "loopback_address": "127.0.0.1:17492"}
     (root / "result.json").write_text(json.dumps(result, indent=2), encoding="utf-8")
     print(json.dumps(result, indent=2), flush=True)
-    if bad or result["joined_clients"] < 2:
+    if bad or result["joined_clients"] < 2 or not {"2", "3"}.issubset({value[0] for value in connected}) or (a.net_debug >= 7 and not all(acknowledgements.values())):
         raise RuntimeError("multiplayer verification failed")
 finally:
     for proc in processes:

@@ -1,0 +1,50 @@
+build-periodic/desync-investigation\current-original-before\server\desync-server-20261012T172220Z.log
+*** OpenTTD Multiplayer Server Desync Report ***
+
+Desync at: 2026-10-12 17:22:20 (UTC)
+Desync subframe mismatch: 00000287, STATION, seed
+In game date: 117528-03-16 (46, 0) (DL: 1), 00000290
+Calendar date: 117528-03-16 (46, 0)
+Game loaded at: 117528-03-11 (27, 0), (389 state ticks ago), 2026-10-12 17:21:57
+Client #3, "release-client-late"
+
+OpenTTD version:
+ Version:     jgrpp-ya-0.73.3+2-47-g3373f64f8-m (2)
+ Release ver: 0.73.3+2
+ NewGRF ver:  20006d64
+ Bits:        64
+ Endian:      little
+ Dedicated:   no
+ Build date:  Oct 12 2026 20:42:26
+ Defines:     WITH_PNG WITH_ZLIB WITH_LIBLZMA WITH_LZO WITH_ZSTD WITH_OPUSFILE WITH_OPENGL WITH_PERSONAL_DIR WITH_SSE WITH_ASSERT UNICODE _UNICODE WITH_UNISCRIBE PSAPI_VERSION=1 POINTER_IS_64BIT
+
+Operating system:
+ Name:     Windows
+ Release:  10.0.26200 ()
+ Compiler: MSVC 1944
+
+
+build-periodic/desync-investigation\current-original-before\client-late\desync-client-20261012T172220Z.log
+*** OpenTTD Multiplayer Client Desync Report ***
+
+Desync at: 2026-10-12 17:22:20 (UTC)
+Flags: R
+In game date: 117528-03-16 (37, 0) (DL: 1), 00000287
+Calendar date: 117528-03-16 (37, 0)
+Game loaded at: 117528-03-16 (36, 0), (1 state ticks ago), 2026-10-12 17:22:20
+Last sync at: 117528-03-16 (36, 0), 00000286
+
+OpenTTD version:
+ Version:     jgrpp-ya-0.73.3+2-47-g3373f64f8-m (2)
+ Release ver: 0.73.3+2
+ NewGRF ver:  20006d64
+ Bits:        64
+ Endian:      little
+ Dedicated:   no
+ Build date:  Oct 12 2026 20:42:26
+ Defines:     WITH_PNG WITH_ZLIB WITH_LIBLZMA WITH_LZO WITH_ZSTD WITH_OPUSFILE WITH_OPENGL WITH_PERSONAL_DIR WITH_SSE WITH_ASSERT UNICODE _UNICODE WITH_UNISCRIBE PSAPI_VERSION=1 POINTER_IS_64BIT
+
+Operating system:
+ Name:     Windows
+ Release:  10.0.26200 ()
+ Compiler: MSVC 1944

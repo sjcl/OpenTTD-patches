@@ -1,0 +1,45 @@
+Filters: Loading passenger packets preserves the queues used by station rating
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+openttd_test.exe is a Catch v2.13.10 host application.
+Run with -? for options
+
+-------------------------------------------------------------------------------
+Loading passenger packets preserves the queues used by station rating
+-------------------------------------------------------------------------------
+C:\Users\bebe\.codex\worktrees\9276\OpenTTD-patches\src\tests\passenger_journey_active.cpp(889)
+...............................................................................
+
+C:\Users\bebe\.codex\worktrees\9276\OpenTTD-patches\src\tests\passenger_journey_active.cpp(916): FAILED:
+  CHECK( fixture.Waiting().Packets()->MapSize() == 3 )
+with expansion:
+  1 == 3
+
+C:\Users\bebe\.codex\worktrees\9276\OpenTTD-patches\src\tests\passenger_journey_active.cpp(919): FAILED:
+  CHECK( fixture.Waiting().AvailableViaCount(hop) == 3 )
+with expansion:
+  0 == 3
+
+C:\Users\bebe\.codex\worktrees\9276\OpenTTD-patches\src\tests\passenger_journey_active.cpp(919): FAILED:
+  CHECK( fixture.Waiting().AvailableViaCount(hop) == 3 )
+with expansion:
+  0 == 3
+
+C:\Users\bebe\.codex\worktrees\9276\OpenTTD-patches\src\tests\passenger_journey_active.cpp(919): FAILED:
+  CHECK( fixture.Waiting().AvailableViaCount(hop) == 3 )
+with expansion:
+  0 == 3
+
+C:\Users\bebe\.codex\worktrees\9276\OpenTTD-patches\src\tests\passenger_journey_active.cpp(921): FAILED:
+  CHECK( packets[0]->GetPassengerLegacyHop() == StationID::Invalid() )
+with expansion:
+  {?} == {?}
+
+C:\Users\bebe\.codex\worktrees\9276\OpenTTD-patches\src\tests\passenger_journey_active.cpp(922): FAILED:
+  CHECK( packets[1]->GetPassengerLegacyHop() == StationID::Invalid() )
+with expansion:
+  {?} == {?}
+
+===============================================================================
+test cases:  1 |  0 passed | 1 failed
+assertions: 23 | 17 passed | 6 failed

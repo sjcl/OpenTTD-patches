@@ -1348,12 +1348,9 @@ void AfterLoadPassengerJourneys()
 				&station->goods[v->cargo_type].CreateData().cargo, StationID::Invalid(), v->GetCargoTile(),
 				[&](const CargoPacket &packet) { return invalidated.contains(packet.index); });
 	}
-	/* Rekey without searching: loading a game must never route or consume RNG. */
-	for (Station *station : Station::Iterate()) {
-		for (CargoType cargo : EnumRange(NUM_CARGO)) {
-			if (station->goods[cargo].data != nullptr) station->goods[cargo].data->cargo.RoutePassengerJourneys(cargo, station->index, false);
-		}
-	}
+	/* Preserve saved waiting queue keys and packet order. Reclassifying here
+	 * changes station rating/truncation RNG on a joining client. Ordinary
+	 * routing and boarding events validate and rekey packets on all peers. */
 	Debug(sl, 2, "Passenger journey afterload: feature {}, enabled {}", _sl_xv_feature_versions[XSLFI_PASSENGER_JOURNEY_ROUTING],
 			_settings_game.linkgraph.passenger_journey_routing);
 }

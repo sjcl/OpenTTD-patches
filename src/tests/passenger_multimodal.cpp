@@ -662,10 +662,11 @@ TEST_CASE("Multimodal execution preserves the existing save extension and valida
 	auto *packet = f.Packet(); PassengerJourneyActiveContext context(nullptr, A); REQUIRE(context.PlanWaiting(*packet, PAX, E));
 	PassengerJourneyExecution leg = packet->GetPassengerJourney();
 	PassengerRoutingMode expected = PassengerRoutingMode::Journey;
+	bool changed_facilities = false;
 	SECTION("Current execution") {}
 	SECTION("Saved fallback and cooldown") { packet->FallbackPassengerJourney(A, NOW); expected = PassengerRoutingMode::Fallback; }
 	SECTION("Old save without execution fields") { _sl_xv_feature_versions[XSLFI_PASSENGER_JOURNEY_ROUTING] = 0; expected = PassengerRoutingMode::Legacy; }
-	SECTION("Invalid facilities afterload") { Station::Get(E)->facilities = {}; Station::Get(E)->bus_stops = nullptr; expected = PassengerRoutingMode::Fallback; }
+	SECTION("Saved facility changes are validated by the normal routing event") { Station::Get(E)->facilities = {}; Station::Get(E)->bus_stops = nullptr; changed_facilities = true; }
 	auto *loaded = CargoPacket::Create();
 	CHECK_FALSE(SlTestSaveLoadTable(packet, loaded, GetCargoPacketDesc()).empty());
 	f.Waiting().Append(loaded, StationID::Invalid());
@@ -675,8 +676,16 @@ TEST_CASE("Multimodal execution preserves the existing save extension and valida
 	CHECK(loaded->Count() == 10); CHECK(loaded->GetFeederShare() == 100);
 	if (expected == PassengerRoutingMode::Journey) {
 		CHECK(loaded->GetPassengerJourney() == leg);
-		CHECK(PassengerJourneyBoardingContext(v).CanBoard(*loaded));
-		CHECK(InvalidatePassengerJourneyVehicle(v->index) >= 1); // Rebuilt reverse index contains restored packets.
+		if (changed_facilities) {
+			CHECK_FALSE(PassengerJourneyBoardingContext(v).CanBoard(*loaded));
+			f.Waiting().RoutePassengerJourneys(PAX, A, false);
+			CHECK(loaded->GetPassengerRoutingMode() == PassengerRoutingMode::Fallback);
+			CHECK(loaded->GetPassengerDestination() == E);
+			CHECK(loaded->Count() == 10);
+		} else {
+			CHECK(PassengerJourneyBoardingContext(v).CanBoard(*loaded));
+			CHECK(InvalidatePassengerJourneyVehicle(v->index) >= 1); // Rebuilt reverse index contains restored packets.
+		}
 	}
 	CHECK(random.Check());
 }
