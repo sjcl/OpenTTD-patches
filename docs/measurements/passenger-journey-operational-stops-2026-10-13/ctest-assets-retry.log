@@ -1,0 +1,11 @@
+Test project C:/Users/bebe/.codex/worktrees/2ca2/OpenTTD-patches/build-operational
+    Start 477: passenger_od_load
+1/3 Test #477: passenger_od_load .....................   Passed    3.64 sec
+    Start 478: passenger_journey_active_production
+2/3 Test #478: passenger_journey_active_production ...   Passed    8.05 sec
+    Start 479: passenger_journey_shadow_production
+3/3 Test #479: passenger_journey_shadow_production ...   Passed    4.72 sec
+
+100% tests passed, 0 tests failed out of 3
+
+Total Test time (real) =  16.43 sec

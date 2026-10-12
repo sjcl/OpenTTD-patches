@@ -15,6 +15,23 @@
 #include <optional>
 #include <functional>
 
+/** Physical station events remain in timing/occurrence vectors even without cargo exchange. */
+inline bool IsPassengerStationStop(const Order &order)
+{
+	return order.IsType(OT_GOTO_STATION) && !(order.GetNonStopType() & ONSF_NO_STOP_AT_DESTINATION_STATION);
+}
+
+inline bool HasPassengerExchange(const Order &order, CargoType cargo)
+{
+	return IsPassengerStationStop(order) && (order.GetCargoLoadType(cargo) != OrderLoadType::NoLoad ||
+			order.GetCargoUnloadType(cargo) != OrderUnloadType::NoUnload);
+}
+
+/** Depot entry keeps cargo unless it refits, stops or sells. Optional servicing,
+ * nearest-depot selection and unbunching preserve the suffix but cannot promise its time. */
+enum class PassengerDepotTraversal : uint8_t { Blocked, Untimed, Timed };
+PassengerDepotTraversal ClassifyPassengerDepot(const Order &order);
+
 /** The simulation state needed to predict an individual service, independent of GUI settings. */
 struct PassengerRouteState {
 	std::span<const Order> orders;

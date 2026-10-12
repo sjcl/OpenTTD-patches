@@ -1,0 +1,38 @@
+{
+  "server/stdout.txt": {
+    "sha256": "5d7888c924b148075ecb65f0420b28f5030a4de511b425c92472d598305d3a2f",
+    "bytes": 19214
+  },
+  "server/stderr.txt": {
+    "sha256": "faa7dd4325d293501d566f6d33d66335ac8e4a05d4f9331eca8fc174b30df468",
+    "bytes": 6213332
+  },
+  "server/console.txt": {
+    "sha256": "eed3fef13af1ae78e894b9e25f26bcf33bfd06f369d8ea73cec842c77021aaaa",
+    "bytes": 17799
+  },
+  "client-initial/stdout.txt": {
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0
+  },
+  "client-initial/stderr.txt": {
+    "sha256": "b000eec162f3c7372bb062fc27c45d572bed611a16c96785e6aefd7cd07ef23e",
+    "bytes": 7027835
+  },
+  "client-initial/console.txt": {
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0
+  },
+  "client-late/stdout.txt": {
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0
+  },
+  "client-late/stderr.txt": {
+    "sha256": "33597ca3b9f7939971bfd76b26b9753d5e04c711351270fbe100f694aa74f8cf",
+    "bytes": 6528878
+  },
+  "client-late/console.txt": {
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0
+  }
+}

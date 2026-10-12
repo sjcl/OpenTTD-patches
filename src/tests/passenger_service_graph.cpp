@@ -1130,6 +1130,8 @@ TEST_CASE("Passenger graph stop permissions and forced unloading bound through r
 		const auto *service = graph.GetService(train.orders->index);
 		REQUIRE(service->stops.size() == 3);
 		CHECK(graph.GetServicesAtStation(B).empty());
+		CHECK(graph.GetServicesAtStation(C).empty());
+		CHECK(graph.GetStationVisits(C).empty());
 		CHECK_FALSE(service->stops[1].can_board);
 		CHECK_FALSE(service->stops[1].can_alight);
 		CHECK(graph.GetBoardableTrips(C, NOW, NOW + 400).items.empty());

@@ -1,0 +1,35 @@
+{
+  "compiler": "MSVC 19.44",
+  "configuration": "Release, assertions ON, LTO OFF, static vcpkg dependencies",
+  "benchmark_option_product": "OFF",
+  "benchmark_option_measurements": "ON",
+  "base_commit": "4bf419c4bf4dd4b0610b4ef403411c33013ace1f",
+  "product_binary_sha256": "331b627e290ff5feb66fe006154e5d788f8ca6f61d29aa2527200578c0eed4e1",
+  "console_binary_sha256": "5f8d44bc35a1ab0105ded789d23b859755106ed4419569c873a04ac9f1c99e7c",
+  "test_binary_sha256": "8a732422b815fbafffa664d5fb5c9ff2c5efa80d97ce6bfb10345f752e247c87",
+  "ctest": {
+    "passed": 483,
+    "failed": 0,
+    "exit_code": 0,
+    "seconds": 63.98
+  },
+  "operational_tests": {
+    "cases": 7,
+    "assertions": 593,
+    "exit_code": 0
+  },
+  "multiplayer_scope": "Private loopback, preserved saved routing/publication state, two unrestricted clients, 90 seconds after late join",
+  "multiplayer_state_ticks_progressed": 2794,
+  "multiplayer_acks": {
+    "client-initial": 36,
+    "client-late": 32
+  },
+  "test_source_sha256": {
+    "passenger_service_database.cpp": "10b845e05665aa4c587de25d9e6b60312350c63216813bde48a9b9bfd03b606b",
+    "passenger_multimodal.cpp": "8257ad6ce95abc6b703f083c07eb20215f7e96ec62cb49435871c3482f10e7a4",
+    "passenger_service_graph.cpp": "a66d84915839b627ff97466e7da9b711b121f85311adc1fa0c97038b047c0b1e",
+    "passenger_service_graph_index.cpp": "a0c8f4c9bf2f5def0717cf2c836e3f8d6cb26c5f658bc9f5bce31c1d7fd683dc"
+  },
+  "archive_text_normalization": "Trailing whitespace and excess final empty lines removed; original streams retained in ignored build directory",
+  "console_source_sha256": "8fd9c8ccf3636f4eb0b17473a84427141f87bc23f79a05897f77d56684ae933b"
+}

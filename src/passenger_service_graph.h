@@ -101,7 +101,7 @@ class PassengerServiceGraph {
 public:
 	struct Stop {
 		StationID station;
-		VehicleOrderID order; ///< Identifies a stop even if another order visits the same station.
+		VehicleOrderID order; ///< Physical occurrence, retained even without exchange; VisitIDs resolve through this order.
 		bool can_board;
 		bool can_alight;
 		bool forced_transfer; ///< Both forced unload and transfer end a through journey.

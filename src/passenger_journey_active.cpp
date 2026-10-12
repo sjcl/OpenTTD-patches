@@ -632,10 +632,15 @@ bool PassengerOdFallbackContext::CanReach(const Vehicle *vehicle, CargoType carg
 				continue;
 			}
 			if (order.IsType(OT_IMPLICIT)) { index = (index + 1) % state->orders.size(); continue; }
-			if (order.IsRefit() || order.IsSlotCounterOrder() || order.IsType(OT_GOTO_DEPOT) || order.IsType(OT_DUMMY)) break;
+			if (order.IsType(OT_GOTO_DEPOT)) {
+				if (ClassifyPassengerDepot(order) == PassengerDepotTraversal::Blocked) break;
+				index = (index + 1) % state->orders.size();
+				continue;
+			}
+			if (order.IsRefit() || order.IsSlotCounterOrder() || order.IsType(OT_DUMMY)) break;
 			if (order.IsType(OT_GOTO_STATION) && !(order.GetNonStopType() & ONSF_NO_STOP_AT_DESTINATION_STATION)) {
 				StationID station = order.GetDestination().ToStationID();
-				if (station == vehicle->last_station_visited) break;
+				if (station == vehicle->last_station_visited && order.GetCargoUnloadType(cargo) != OrderUnloadType::NoUnload) break;
 				if (!Station::IsValidID(station) || !state->usable_stops[index]) break;
 				if (order.GetCargoUnloadType(cargo) != OrderUnloadType::NoUnload) cached->second.push_back(station);
 				if (order.GetCargoUnloadType(cargo) == OrderUnloadType::Unload || order.GetCargoUnloadType(cargo) == OrderUnloadType::Transfer) break;

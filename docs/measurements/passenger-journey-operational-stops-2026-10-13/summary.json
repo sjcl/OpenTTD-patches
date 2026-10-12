@@ -1,0 +1,816 @@
+{
+  "base": {
+    "process": {
+      "backend": "periodic",
+      "exit_code": 0,
+      "wall_seconds": 76.5685878,
+      "cpu_seconds": 144.4375,
+      "peak_working_set": 1995067392,
+      "sampled_peak_private": 1993969664,
+      "input_save": "input.sav",
+      "resumed": false,
+      "requested_driver_loops": 0,
+      "input_sha256": "14D68C82911B9DCFC5EF7291E9697C5BBD67F44FFCC79D7575A144405EDF6390",
+      "binary_sha256": "C9F2E13F64AC7C9375FEE851310021BB8B4CA1CC4B0181B4838871FC3767C4FB",
+      "sample_ms": 100
+    },
+    "state_ticks": [
+      3176545487,
+      3176547014
+    ],
+    "waiting": [
+      {
+        "timed": 0,
+        "CargoDist_or_deferred": 176060,
+        "OD_fallback_or_waiting": 24390
+      },
+      {
+        "timed": 1563,
+        "CargoDist_or_deferred": 193047,
+        "OD_fallback_or_waiting": 18058
+      }
+    ],
+    "simulation": {
+      "completed_ticks": 1526,
+      "total_us": 59298971,
+      "mean_us": 38859,
+      "max_us": 87340
+    },
+    "histogram": {
+      "simulation_p95_us": 53000,
+      "simulation_p99_us": 58000,
+      "journey_mean_us": 14181,
+      "journey_p95_us": 26000,
+      "journey_p99_us": 29000,
+      "journey_max_us": 39572
+    },
+    "inclusive_scopes": {
+      "waiting_us": 16315199,
+      "fallback_distance_us": 4865288,
+      "boarding_us": 3928936
+    },
+    "pending_age": {
+      "ticks": 390
+    },
+    "fallback_cache": {
+      "hits": 19667,
+      "bytes": 16871860,
+      "work": 2546663949,
+      "searches": 53099
+    },
+    "database": {
+      "services": 837,
+      "timed": 509,
+      "vehicles": 2835,
+      "bytes": 8498064,
+      "policies_bytes": 118096,
+      "pending": 558,
+      "builds": 5413,
+      "work": 19775343,
+      "build_us": 275561,
+      "searches": 24416,
+      "query_us": 15970636,
+      "next_departures": 217713,
+      "policy_hits": 7440,
+      "policy_misses": 16976,
+      "invalidations": 46,
+      "rejected_work": 0,
+      "rejected_memory": 0
+    },
+    "global_invalidations": 5,
+    "known_vehicle_phases": 2481,
+    "active": {
+      "applied": 4016,
+      "builds": 0,
+      "static_hits": 0,
+      "searches": 24416,
+      "OD_hits": 21679,
+      "applied_packets": 4016,
+      "applied_passengers": 8727
+    },
+    "prediction": {
+      "executions": 0,
+      "hits": 0,
+      "logical_work": 0,
+      "executed_visits": 0,
+      "predictor_ns": 0,
+      "cache_bytes": 0
+    },
+    "graph": {
+      "work": 0,
+      "mean": 0,
+      "max": 0,
+      "cached_index_allowance_avoided": 0,
+      "query_allowance": 1600126976,
+      "build_us": 0,
+      "mean_us": 0,
+      "max_us": 0,
+      "search_us": 0,
+      "max_tick_graph_search_us": 0
+    },
+    "graph_phases": {
+      "discovery": 0,
+      "capacity": 0,
+      "selection": 0,
+      "orders_dispatch": 0,
+      "pattern": 0,
+      "prediction": 0,
+      "departures": 0
+    },
+    "fallback": {
+      "work": 2546663949,
+      "path_searches": 53099
+    },
+    "timed_transport": {
+      "boarded": 2458,
+      "transferred": 0,
+      "delivered": 534
+    },
+    "pragmatic": {
+      "timed": 4016,
+      "timed_ignoring_unknown": 0,
+      "timed_budget_deferred": 0,
+      "untimed": 24533,
+      "untimed_no_route": 33299,
+      "untimed_budget_deferred": 625716
+    },
+    "untimed_transport": {
+      "boarded": 86582,
+      "transferred": 39236,
+      "delivered": 31822
+    },
+    "fallback_reasons": {
+      "GraphWork": {
+        "fallback": 0,
+        "deferred": 0
+      },
+      "GraphMemory": {
+        "fallback": 0,
+        "deferred": 0
+      },
+      "SnapshotLimit": {
+        "fallback": 0,
+        "deferred": 0
+      },
+      "QueryWork": {
+        "fallback": 0,
+        "deferred": 830623
+      },
+      "QueryLimit": {
+        "fallback": 0,
+        "deferred": 0
+      },
+      "QueryMemory": {
+        "fallback": 0,
+        "deferred": 0
+      },
+      "PredictionIncomplete": {
+        "fallback": 5975,
+        "deferred": 0
+      },
+      "PredictionHorizon": {
+        "fallback": 0,
+        "deferred": 0
+      },
+      "NoJourney": {
+        "fallback": 0,
+        "deferred": 0
+      },
+      "InvalidLeg": {
+        "fallback": 0,
+        "deferred": 0
+      },
+      "StaleLeg": {
+        "fallback": 2181,
+        "deferred": 0
+      },
+      "Disabled": {
+        "fallback": 0,
+        "deferred": 0
+      },
+      "VehicleDeleted": {
+        "fallback": 0,
+        "deferred": 0
+      }
+    },
+    "stderr": {
+      "sha256": "33bf08d495def49d835f1314a414e5cd647008fbfe7ff6b2d83496238270f8fe",
+      "bytes": 2084497,
+      "lines": 20253
+    }
+  },
+  "base2": {
+    "process": {
+      "backend": "periodic",
+      "exit_code": 0,
+      "wall_seconds": 68.4870404,
+      "cpu_seconds": 130.15625,
+      "peak_working_set": 1998680064,
+      "sampled_peak_private": 1998409728,
+      "input_save": "input.sav",
+      "resumed": false,
+      "requested_driver_loops": 0,
+      "input_sha256": "14D68C82911B9DCFC5EF7291E9697C5BBD67F44FFCC79D7575A144405EDF6390",
+      "binary_sha256": "C9F2E13F64AC7C9375FEE851310021BB8B4CA1CC4B0181B4838871FC3767C4FB",
+      "sample_ms": 100
+    },
+    "state_ticks": [
+      3176545487,
+      3176547014
+    ],
+    "waiting": [
+      {
+        "timed": 0,
+        "CargoDist_or_deferred": 176060,
+        "OD_fallback_or_waiting": 24390
+      },
+      {
+        "timed": 1563,
+        "CargoDist_or_deferred": 193047,
+        "OD_fallback_or_waiting": 18058
+      }
+    ],
+    "simulation": {
+      "completed_ticks": 1526,
+      "total_us": 51043257,
+      "mean_us": 33449,
+      "max_us": 76420
+    },
+    "histogram": {
+      "simulation_p95_us": 54000,
+      "simulation_p99_us": 60000,
+      "journey_mean_us": 11834,
+      "journey_p95_us": 26000,
+      "journey_p99_us": 30000,
+      "journey_max_us": 37566
+    },
+    "inclusive_scopes": {
+      "waiting_us": 13322643,
+      "fallback_distance_us": 4331652,
+      "boarding_us": 3483657
+    },
+    "pending_age": {
+      "ticks": 390
+    },
+    "fallback_cache": {
+      "hits": 19667,
+      "bytes": 16871860,
+      "work": 2546663949,
+      "searches": 53099
+    },
+    "database": {
+      "services": 837,
+      "timed": 509,
+      "vehicles": 2835,
+      "bytes": 8498064,
+      "policies_bytes": 118096,
+      "pending": 558,
+      "builds": 5413,
+      "work": 19775343,
+      "build_us": 249005,
+      "searches": 24416,
+      "query_us": 13009785,
+      "next_departures": 217713,
+      "policy_hits": 7440,
+      "policy_misses": 16976,
+      "invalidations": 46,
+      "rejected_work": 0,
+      "rejected_memory": 0
+    },
+    "global_invalidations": 5,
+    "known_vehicle_phases": 2481,
+    "active": {
+      "applied": 4016,
+      "builds": 0,
+      "static_hits": 0,
+      "searches": 24416,
+      "OD_hits": 21679,
+      "applied_packets": 4016,
+      "applied_passengers": 8727
+    },
+    "prediction": {
+      "executions": 0,
+      "hits": 0,
+      "logical_work": 0,
+      "executed_visits": 0,
+      "predictor_ns": 0,
+      "cache_bytes": 0
+    },
+    "graph": {
+      "work": 0,
+      "mean": 0,
+      "max": 0,
+      "cached_index_allowance_avoided": 0,
+      "query_allowance": 1600126976,
+      "build_us": 0,
+      "mean_us": 0,
+      "max_us": 0,
+      "search_us": 0,
+      "max_tick_graph_search_us": 0
+    },
+    "graph_phases": {
+      "discovery": 0,
+      "capacity": 0,
+      "selection": 0,
+      "orders_dispatch": 0,
+      "pattern": 0,
+      "prediction": 0,
+      "departures": 0
+    },
+    "fallback": {
+      "work": 2546663949,
+      "path_searches": 53099
+    },
+    "timed_transport": {
+      "boarded": 2458,
+      "transferred": 0,
+      "delivered": 534
+    },
+    "pragmatic": {
+      "timed": 4016,
+      "timed_ignoring_unknown": 0,
+      "timed_budget_deferred": 0,
+      "untimed": 24533,
+      "untimed_no_route": 33299,
+      "untimed_budget_deferred": 625716
+    },
+    "untimed_transport": {
+      "boarded": 86582,
+      "transferred": 39236,
+      "delivered": 31822
+    },
+    "fallback_reasons": {
+      "GraphWork": {
+        "fallback": 0,
+        "deferred": 0
+      },
+      "GraphMemory": {
+        "fallback": 0,
+        "deferred": 0
+      },
+      "SnapshotLimit": {
+        "fallback": 0,
+        "deferred": 0
+      },
+      "QueryWork": {
+        "fallback": 0,
+        "deferred": 830623
+      },
+      "QueryLimit": {
+        "fallback": 0,
+        "deferred": 0
+      },
+      "QueryMemory": {
+        "fallback": 0,
+        "deferred": 0
+      },
+      "PredictionIncomplete": {
+        "fallback": 5975,
+        "deferred": 0
+      },
+      "PredictionHorizon": {
+        "fallback": 0,
+        "deferred": 0
+      },
+      "NoJourney": {
+        "fallback": 0,
+        "deferred": 0
+      },
+      "InvalidLeg": {
+        "fallback": 0,
+        "deferred": 0
+      },
+      "StaleLeg": {
+        "fallback": 2181,
+        "deferred": 0
+      },
+      "Disabled": {
+        "fallback": 0,
+        "deferred": 0
+      },
+      "VehicleDeleted": {
+        "fallback": 0,
+        "deferred": 0
+      }
+    },
+    "stderr": {
+      "sha256": "33bf08d495def49d835f1314a414e5cd647008fbfe7ff6b2d83496238270f8fe",
+      "bytes": 2084497,
+      "lines": 20253
+    }
+  },
+  "after": {
+    "process": {
+      "backend": "periodic",
+      "exit_code": 0,
+      "wall_seconds": 70.5693575,
+      "cpu_seconds": 134.234375,
+      "peak_working_set": 1998372864,
+      "sampled_peak_private": 1997209600,
+      "input_save": "input.sav",
+      "resumed": false,
+      "requested_driver_loops": 0,
+      "input_sha256": "14D68C82911B9DCFC5EF7291E9697C5BBD67F44FFCC79D7575A144405EDF6390",
+      "binary_sha256": "9361B6EE96D463F04D56D2531FD1465425608B434FB001266080CEEDA6179D60",
+      "sample_ms": 100
+    },
+    "state_ticks": [
+      3176545487,
+      3176547014
+    ],
+    "waiting": [
+      {
+        "timed": 0,
+        "CargoDist_or_deferred": 176060,
+        "OD_fallback_or_waiting": 24390
+      },
+      {
+        "timed": 1893,
+        "CargoDist_or_deferred": 194111,
+        "OD_fallback_or_waiting": 17743
+      }
+    ],
+    "simulation": {
+      "completed_ticks": 1526,
+      "total_us": 52926988,
+      "mean_us": 34683,
+      "max_us": 83147
+    },
+    "histogram": {
+      "simulation_p95_us": 51000,
+      "simulation_p99_us": 59000,
+      "journey_mean_us": 12110,
+      "journey_p95_us": 25000,
+      "journey_p99_us": 29000,
+      "journey_max_us": 57251
+    },
+    "inclusive_scopes": {
+      "waiting_us": 13485485,
+      "fallback_distance_us": 4544480,
+      "boarding_us": 3602067
+    },
+    "pending_age": {
+      "ticks": 703
+    },
+    "fallback_cache": {
+      "hits": 19774,
+      "bytes": 16871860,
+      "work": 2534191324,
+      "searches": 52617
+    },
+    "database": {
+      "services": 837,
+      "timed": 509,
+      "vehicles": 2835,
+      "bytes": 8498064,
+      "policies_bytes": 82720,
+      "pending": 559,
+      "builds": 3188,
+      "work": 12015015,
+      "build_us": 279949,
+      "searches": 24416,
+      "query_us": 13153075,
+      "next_departures": 215568,
+      "policy_hits": 9298,
+      "policy_misses": 15118,
+      "invalidations": 34,
+      "rejected_work": 0,
+      "rejected_memory": 0
+    },
+    "global_invalidations": 2,
+    "known_vehicle_phases": 2492,
+    "active": {
+      "applied": 3821,
+      "builds": 0,
+      "static_hits": 0,
+      "searches": 24416,
+      "OD_hits": 24163,
+      "applied_packets": 3821,
+      "applied_passengers": 8476
+    },
+    "prediction": {
+      "executions": 0,
+      "hits": 0,
+      "logical_work": 0,
+      "executed_visits": 0,
+      "predictor_ns": 0,
+      "cache_bytes": 0
+    },
+    "graph": {
+      "work": 0,
+      "mean": 0,
+      "max": 0,
+      "cached_index_allowance_avoided": 0,
+      "query_allowance": 1600126976,
+      "build_us": 0,
+      "mean_us": 0,
+      "max_us": 0,
+      "search_us": 0,
+      "max_tick_graph_search_us": 0
+    },
+    "graph_phases": {
+      "discovery": 0,
+      "capacity": 0,
+      "selection": 0,
+      "orders_dispatch": 0,
+      "pattern": 0,
+      "prediction": 0,
+      "departures": 0
+    },
+    "fallback": {
+      "work": 2534191324,
+      "path_searches": 52617
+    },
+    "timed_transport": {
+      "boarded": 2818,
+      "transferred": 0,
+      "delivered": 779
+    },
+    "pragmatic": {
+      "timed": 3821,
+      "timed_ignoring_unknown": 0,
+      "timed_budget_deferred": 0,
+      "untimed": 24324,
+      "untimed_no_route": 33131,
+      "untimed_budget_deferred": 620652
+    },
+    "untimed_transport": {
+      "boarded": 85033,
+      "transferred": 39029,
+      "delivered": 31568
+    },
+    "fallback_reasons": {
+      "GraphWork": {
+        "fallback": 0,
+        "deferred": 0
+      },
+      "GraphMemory": {
+        "fallback": 0,
+        "deferred": 0
+      },
+      "SnapshotLimit": {
+        "fallback": 0,
+        "deferred": 0
+      },
+      "QueryWork": {
+        "fallback": 0,
+        "deferred": 842080
+      },
+      "QueryLimit": {
+        "fallback": 0,
+        "deferred": 0
+      },
+      "QueryMemory": {
+        "fallback": 0,
+        "deferred": 0
+      },
+      "PredictionIncomplete": {
+        "fallback": 5352,
+        "deferred": 0
+      },
+      "PredictionHorizon": {
+        "fallback": 0,
+        "deferred": 0
+      },
+      "NoJourney": {
+        "fallback": 0,
+        "deferred": 0
+      },
+      "InvalidLeg": {
+        "fallback": 0,
+        "deferred": 0
+      },
+      "StaleLeg": {
+        "fallback": 1866,
+        "deferred": 0
+      },
+      "Disabled": {
+        "fallback": 0,
+        "deferred": 0
+      },
+      "VehicleDeleted": {
+        "fallback": 0,
+        "deferred": 0
+      }
+    },
+    "stderr": {
+      "sha256": "f3c598e225526f849d909db56c0d25e542172939a55550472973a516e9c20b13",
+      "bytes": 2068733,
+      "lines": 20099
+    },
+    "operating_events": {
+      "physical_passenger_occurrences": 9825,
+      "exchange_passenger_occurrences": 9807,
+      "depot_timed": 0,
+      "depot_untimed": 196,
+      "depot_blocked": 0
+    }
+  },
+  "after2": {
+    "process": {
+      "backend": "periodic",
+      "exit_code": 0,
+      "wall_seconds": 75.6473982,
+      "cpu_seconds": 143.015625,
+      "peak_working_set": 2002182144,
+      "sampled_peak_private": 2001915904,
+      "input_save": "input.sav",
+      "resumed": false,
+      "requested_driver_loops": 0,
+      "input_sha256": "14D68C82911B9DCFC5EF7291E9697C5BBD67F44FFCC79D7575A144405EDF6390",
+      "binary_sha256": "9361B6EE96D463F04D56D2531FD1465425608B434FB001266080CEEDA6179D60",
+      "sample_ms": 100
+    },
+    "state_ticks": [
+      3176545487,
+      3176547014
+    ],
+    "waiting": [
+      {
+        "timed": 0,
+        "CargoDist_or_deferred": 176060,
+        "OD_fallback_or_waiting": 24390
+      },
+      {
+        "timed": 1893,
+        "CargoDist_or_deferred": 194111,
+        "OD_fallback_or_waiting": 17743
+      }
+    ],
+    "simulation": {
+      "completed_ticks": 1526,
+      "total_us": 61536403,
+      "mean_us": 40325,
+      "max_us": 87519
+    },
+    "histogram": {
+      "simulation_p95_us": 57000,
+      "simulation_p99_us": 66000,
+      "journey_mean_us": 14338,
+      "journey_p95_us": 28000,
+      "journey_p99_us": 32000,
+      "journey_max_us": 46804
+    },
+    "inclusive_scopes": {
+      "waiting_us": 16135072,
+      "fallback_distance_us": 5239961,
+      "boarding_us": 4078035
+    },
+    "pending_age": {
+      "ticks": 703
+    },
+    "fallback_cache": {
+      "hits": 19774,
+      "bytes": 16871860,
+      "work": 2534191324,
+      "searches": 52617
+    },
+    "database": {
+      "services": 837,
+      "timed": 509,
+      "vehicles": 2835,
+      "bytes": 8498064,
+      "policies_bytes": 82720,
+      "pending": 559,
+      "builds": 3188,
+      "work": 12015015,
+      "build_us": 305146,
+      "searches": 24416,
+      "query_us": 15754796,
+      "next_departures": 215568,
+      "policy_hits": 9298,
+      "policy_misses": 15118,
+      "invalidations": 34,
+      "rejected_work": 0,
+      "rejected_memory": 0
+    },
+    "global_invalidations": 2,
+    "known_vehicle_phases": 2492,
+    "active": {
+      "applied": 3821,
+      "builds": 0,
+      "static_hits": 0,
+      "searches": 24416,
+      "OD_hits": 24163,
+      "applied_packets": 3821,
+      "applied_passengers": 8476
+    },
+    "prediction": {
+      "executions": 0,
+      "hits": 0,
+      "logical_work": 0,
+      "executed_visits": 0,
+      "predictor_ns": 0,
+      "cache_bytes": 0
+    },
+    "graph": {
+      "work": 0,
+      "mean": 0,
+      "max": 0,
+      "cached_index_allowance_avoided": 0,
+      "query_allowance": 1600126976,
+      "build_us": 0,
+      "mean_us": 0,
+      "max_us": 0,
+      "search_us": 0,
+      "max_tick_graph_search_us": 0
+    },
+    "graph_phases": {
+      "discovery": 0,
+      "capacity": 0,
+      "selection": 0,
+      "orders_dispatch": 0,
+      "pattern": 0,
+      "prediction": 0,
+      "departures": 0
+    },
+    "fallback": {
+      "work": 2534191324,
+      "path_searches": 52617
+    },
+    "timed_transport": {
+      "boarded": 2818,
+      "transferred": 0,
+      "delivered": 779
+    },
+    "pragmatic": {
+      "timed": 3821,
+      "timed_ignoring_unknown": 0,
+      "timed_budget_deferred": 0,
+      "untimed": 24324,
+      "untimed_no_route": 33131,
+      "untimed_budget_deferred": 620652
+    },
+    "untimed_transport": {
+      "boarded": 85033,
+      "transferred": 39029,
+      "delivered": 31568
+    },
+    "fallback_reasons": {
+      "GraphWork": {
+        "fallback": 0,
+        "deferred": 0
+      },
+      "GraphMemory": {
+        "fallback": 0,
+        "deferred": 0
+      },
+      "SnapshotLimit": {
+        "fallback": 0,
+        "deferred": 0
+      },
+      "QueryWork": {
+        "fallback": 0,
+        "deferred": 842080
+      },
+      "QueryLimit": {
+        "fallback": 0,
+        "deferred": 0
+      },
+      "QueryMemory": {
+        "fallback": 0,
+        "deferred": 0
+      },
+      "PredictionIncomplete": {
+        "fallback": 5352,
+        "deferred": 0
+      },
+      "PredictionHorizon": {
+        "fallback": 0,
+        "deferred": 0
+      },
+      "NoJourney": {
+        "fallback": 0,
+        "deferred": 0
+      },
+      "InvalidLeg": {
+        "fallback": 0,
+        "deferred": 0
+      },
+      "StaleLeg": {
+        "fallback": 1866,
+        "deferred": 0
+      },
+      "Disabled": {
+        "fallback": 0,
+        "deferred": 0
+      },
+      "VehicleDeleted": {
+        "fallback": 0,
+        "deferred": 0
+      }
+    },
+    "stderr": {
+      "sha256": "f3c598e225526f849d909db56c0d25e542172939a55550472973a516e9c20b13",
+      "bytes": 2068733,
+      "lines": 20099
+    },
+    "operating_events": {
+      "physical_passenger_occurrences": 9825,
+      "exchange_passenger_occurrences": 9807,
+      "depot_timed": 0,
+      "depot_untimed": 196,
+      "depot_blocked": 0
+    }
+  }
+}

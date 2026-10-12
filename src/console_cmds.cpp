@@ -4632,7 +4632,7 @@ static bool ConPassengerServiceCaptureBenchmark(std::span<std::string_view> argv
 static bool ConPassengerPeriodicFixture(std::span<std::string_view> argv)
 {
 	if (argv.size() != 1) return false;
-	if (_networking) for (const NetworkClientInfo *client : NetworkClientInfo::Iterate()) if (client->index != ClientID::Server) return false;
+	if (_networking) for (const NetworkClientInfo *client : NetworkClientInfo::Iterate()) if (client->client_id != ClientID::Server) return false;
 	Company *fixture_company = DoStartupNewCompany(DSNC_NONE);
 	if (fixture_company == nullptr || Map::SizeX() < 64 || Map::SizeY() < 64) return false;
 	{
@@ -4833,6 +4833,8 @@ static bool ConPassengerJourneyStats(std::span<std::string_view> argv)
 			periodic.invalidations, periodic.rejected_work, periodic.rejected_memory);
 	IConsolePrint(CC_DEFAULT, "Periodic global invalidations: {}", periodic.global_invalidations);
 	IConsolePrint(CC_DEFAULT, "Periodic known vehicle phases: {}", periodic.known_phase_vehicles);
+	IConsolePrint(CC_DEFAULT, "Periodic operating events: physical_passenger_occurrences={}; exchange_passenger_occurrences={}; depot_timed={}; depot_untimed={}; depot_blocked={}",
+			periodic.physical_passenger_occurrences, periodic.exchange_passenger_occurrences, periodic.depot_timed, periodic.depot_untimed, periodic.depot_blocked);
 	for (size_t i = 0; i < stats.query_sample_count; ++i) {
 		const auto &sample = stats.query_samples[i];
 		IConsolePrint(CC_DEFAULT, "OD proof sample: origin={}; destination={}; tick={}; status={}; stop={}; candidates={}; best_score={}; unknown_arrival_bound={}; unknown_service={}",
