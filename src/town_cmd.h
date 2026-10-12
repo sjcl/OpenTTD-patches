@@ -45,5 +45,6 @@ DEF_CMD_TUPLE   (Commands::PlaceHouse,                    CmdPlaceHouse,        
 DEF_CMD_TUPLE   (Commands::PlaceHouseArea,                CmdPlaceHouseArea,                             CMD_DEITY, CommandType::OtherManagement,       CmdDataT<TileIndex, HouseIDCmdVector, bool, TownID, bool, bool>)
 DEF_CMD_TUPLE_NT(Commands::TownSettingOverride,           CmdOverrideTownSetting,           CMD_DEITY | CMD_SERVER, CommandType::OtherManagement,       CmdDataT<TownID, TownSettingOverrideFlags, bool, uint8_t>)
 DEF_CMD_TUPLE_NT(Commands::TownSettingOverrideNonAdmin,   CmdOverrideTownSettingNonAdmin,                       {}, CommandType::OtherManagement,       CmdDataT<TownID, TownSettingOverrideFlags, bool, uint8_t>)
+DEF_CMD_TUPLE_NT(Commands::TownAutoFundBuildings,         CmdTownAutoFundBuildings,                             {}, CommandType::OtherManagement,       CmdDataT<TownID, bool>)
 
 #endif /* TOWN_CMD_H */

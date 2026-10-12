@@ -4246,6 +4246,48 @@ CommandCost CmdOverrideTownSettingNonAdmin(DoCommandFlags flags, TownID town, To
 	return CmdOverrideTownSetting(flags, town, setting, is_override, value);
 }
 
+/**
+ * Enable or disable automatic renewal of the "fund new buildings" town action for the current company.
+ * @param flags type of operation
+ * @param town_id town to change the automatic renewal for
+ * @param enable whether to renew the funding automatically whenever it expires
+ * @return the cost of this operation or an error
+ */
+CommandCost CmdTownAutoFundBuildings(DoCommandFlags flags, TownID town_id, bool enable)
+{
+	Town *t = Town::GetIfValid(town_id);
+	if (t == nullptr || !Company::IsValidID(_current_company)) return CMD_ERROR;
+
+	/* Disabling is always allowed, enabling only if funding buildings is allowed at all. */
+	if (enable && !_settings_game.economy.fund_buildings) return CMD_ERROR;
+
+	if (flags.Test(DoCommandFlag::Execute)) {
+		t->fund_buildings_auto.Set(_current_company, enable);
+		SetWindowDirty(WindowClass::TownAuthority, town_id);
+	}
+
+	return CommandCost();
+}
+
+/**
+ * Renew the "fund new buildings" town action on behalf of the first company which
+ * requested automatic renewal and is currently able to pay for it.
+ * @param t The town in which the funding has expired.
+ */
+static void TownAutoFundBuildings(Town *t)
+{
+	for (CompanyID cid : t->fund_buildings_auto.IterateSetBits()) {
+		if (!Company::IsValidID(cid)) continue;
+
+		Backup<CompanyID> cur_company(_current_company, cid, FILE_LINE);
+		/* As this is a top level command, this also checks that the company has enough money, and pays for it. */
+		Command<Commands::TownAction>::Do(DoCommandFlag::Execute, t->index, TownAction::FundBuildings);
+		cur_company.Restore();
+
+		if (t->fund_buildings_months != 0) return;
+	}
+}
+
 template <typename Func>
 static void ForAllStationsNearTown(Town *t, Func func)
 {
@@ -4719,6 +4761,9 @@ void TownsMonthlyLoop()
 		/* Check for active town actions and decrement their counters. */
 		if (t->road_build_months != 0) t->road_build_months--;
 		if (t->fund_buildings_months != 0) t->fund_buildings_months--;
+
+		/* Renew funding of new buildings when it has expired, if requested. */
+		if (t->fund_buildings_months == 0 && t->fund_buildings_auto.Any()) TownAutoFundBuildings(t);
 
 		if (t->exclusive_counter != 0) {
 			if (--t->exclusive_counter == 0) t->exclusivity = CompanyID::Invalid();

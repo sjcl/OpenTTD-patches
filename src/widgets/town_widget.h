@@ -31,6 +31,7 @@ enum TownAuthorityWidgets : WidgetID {
 	WID_TA_EXECUTE,      ///< Do-it button.
 	WID_TA_SETTING,      ///< Setting drop-down.
 	WID_TA_BTN_SEL,      ///< Button selector.
+	WID_TA_AUTO_FUND_BUILDINGS, ///< Toggle automatic funding of new buildings.
 };
 
 /** Widgets of the #TownViewWindow class. */

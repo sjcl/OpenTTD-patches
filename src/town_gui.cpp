@@ -75,9 +75,10 @@ static constexpr std::initializer_list<NWidgetPart> _nested_town_authority_widge
 	NWidget(WWT_PANEL, Colours::Brown, WID_TA_ACTION_INFO), SetMinimalSize(317, 52), SetResize(1, 0), EndContainer(),
 	NWidget(NWID_HORIZONTAL),
 		NWidget(NWID_SELECTION, Colours::Invalid, WID_TA_BTN_SEL),
-			NWidget(WWT_PUSHTXTBTN, Colours::Brown, WID_TA_EXECUTE),  SetMinimalSize(317, 12), SetResize(1, 0), SetFill(1, 0), SetStringTip(STR_LOCAL_AUTHORITY_DO_IT_BUTTON, STR_LOCAL_AUTHORITY_DO_IT_TOOLTIP),
-			NWidget(WWT_DROPDOWN, Colours::Brown, WID_TA_SETTING),  SetMinimalSize(317, 12), SetResize(1, 0), SetFill(1, 0), SetToolTip(STR_LOCAL_AUTHORITY_SETTING_OVERRIDE_TOOLTIP),
+			NWidget(WWT_PUSHTXTBTN, Colours::Brown, WID_TA_EXECUTE),  SetMinimalSize(200, 12), SetResize(1, 0), SetFill(1, 0), SetStringTip(STR_LOCAL_AUTHORITY_DO_IT_BUTTON, STR_LOCAL_AUTHORITY_DO_IT_TOOLTIP),
+			NWidget(WWT_DROPDOWN, Colours::Brown, WID_TA_SETTING),  SetMinimalSize(200, 12), SetResize(1, 0), SetFill(1, 0), SetToolTip(STR_LOCAL_AUTHORITY_SETTING_OVERRIDE_TOOLTIP),
 		EndContainer(),
+		NWidget(WWT_TEXTBTN, Colours::Brown, WID_TA_AUTO_FUND_BUILDINGS), SetMinimalSize(105, 12), SetFill(0, 1), SetStringTip(STR_LOCAL_AUTHORITY_AUTO_FUND_BUILDINGS_BUTTON, STR_LOCAL_AUTHORITY_AUTO_FUND_BUILDINGS_TOOLTIP),
 		NWidget(WWT_RESIZEBOX, Colours::Brown),
 	EndContainer()
 };
@@ -163,6 +164,12 @@ public:
 		this->SetWidgetDisabledState(WID_TA_EXECUTE, this->sel_index == -1 || this->sel_index >= 0x100);
 		this->SetWidgetDisabledState(WID_TA_SETTING, ChangeSettingsDisabled());
 		this->GetWidget<NWidgetStacked>(WID_TA_BTN_SEL)->SetDisplayedPlane(this->sel_index >= 0x100 ? 1 : 0);
+
+		/* Automatic funding can always be switched off, but only be switched on when funding buildings is allowed. */
+		const bool is_company = Company::IsValidID(_local_company);
+		const bool auto_fund = is_company && this->town->fund_buildings_auto.Test(_local_company);
+		this->SetWidgetLoweredState(WID_TA_AUTO_FUND_BUILDINGS, auto_fund);
+		this->SetWidgetDisabledState(WID_TA_AUTO_FUND_BUILDINGS, !is_company || (!auto_fund && !_settings_game.economy.fund_buildings));
 
 		this->DrawWidgets();
 		if (!this->IsShaded()) this->DrawRatings();
@@ -461,6 +468,11 @@ public:
 
 			case WID_TA_EXECUTE:
 				Command<Commands::TownAction>::Post(STR_ERROR_CAN_T_DO_THIS, this->town->xy, static_cast<TownID>(this->window_number), static_cast<TownAction>(this->sel_index));
+				break;
+
+			case WID_TA_AUTO_FUND_BUILDINGS:
+				if (!Company::IsValidID(_local_company)) break;
+				Command<Commands::TownAutoFundBuildings>::Post(STR_ERROR_CAN_T_DO_THIS, static_cast<TownID>(this->window_number), !this->town->fund_buildings_auto.Test(_local_company));
 				break;
 
 			case WID_TA_SETTING: {

@@ -204,6 +204,7 @@ The TT-Forums thread for this patchpack can be found [here](https://www.tt-forum
 * Allow overriding town road construction settings and whether town growth is enabled on a per-town basis, add setting to enable this for multiplayer clients.
 * Allow NewGRFs to set town zone radii.
 * Show town count in town directory window.
+* Allow the "fund new buildings" town action to be automatically renewed whenever it expires, until switched off (per company, in the local authority window).
 
 #### Industries
 

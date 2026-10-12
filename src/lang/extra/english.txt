@@ -1413,6 +1413,9 @@ STR_LOCAL_AUTHORITY_SETTING_OVERRIDE_STR                        :{STRING}: {PUSH
 STR_LOCAL_AUTHORITY_SETTING_OVERRIDE_TEXT                       :{YELLOW}Override the following setting for this individual town:{}{STRING}{}{STRING}
 STR_LOCAL_AUTHORITY_SETTING_OVERRIDE_TOOLTIP                    :{BLACK}Change setting override
 
+STR_LOCAL_AUTHORITY_AUTO_FUND_BUILDINGS_BUTTON                  :{BLACK}Auto-fund
+STR_LOCAL_AUTHORITY_AUTO_FUND_BUILDINGS_TOOLTIP                 :{BLACK}Repeatedly fund new buildings in this town until switched off.{}Whenever the funding of new buildings expires, it is automatically renewed at the usual cost, provided that your company has enough cash.
+
 STR_STATION_VIEW_DEPARTURES_BUTTON                              :{BLACK}Departures
 STR_STATION_VIEW_DEPARTURES_TOOLTIP                             :{BLACK}Show list of scheduled departures
 STR_STATION_VIEW_PAX_ROUTES_BUTTON                              :{BLACK}Routes

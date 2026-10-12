@@ -456,6 +456,9 @@ void ChangeOwnershipOfCompanyItems(Owner old_owner, Owner new_owner)
 		t->ratings[old_owner] = RATING_INITIAL;
 		t->have_ratings.Reset(old_owner);
 
+		/* Stop automatic funding of new buildings by the old owner */
+		t->fund_buildings_auto.Reset(old_owner);
+
 		/* Transfer exclusive rights */
 		if (t->exclusive_counter > 0 && t->exclusivity == old_owner) {
 			if (new_owner != INVALID_OWNER) {
