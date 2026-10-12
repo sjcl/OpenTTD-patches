@@ -1,0 +1,15 @@
+{
+  "joined_clients": 2,
+  "detected_sync_failure": true,
+  "client_exit_codes": [
+    null,
+    null
+  ],
+  "server_state_ticks": [
+    "3176545487",
+    "3176545754"
+  ],
+  "single_core_clients": true,
+  "sync_frequency": 1,
+  "loopback_address": "127.0.0.1:17492"
+}

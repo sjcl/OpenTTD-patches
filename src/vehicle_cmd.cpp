@@ -8,6 +8,7 @@
 /** @file vehicle_cmd.cpp Commands for vehicles. */
 
 #include "stdafx.h"
+#include "passenger_service_database.h"
 #include "roadveh.h"
 #include "news_func.h"
 #include "airport.h"
@@ -599,6 +600,7 @@ CommandCost CmdRefitVehicle(DoCommandFlags flags, VehicleID veh_id, CargoType ne
 			default: NOT_REACHED();
 		}
 		front->MarkDirty();
+		ObservePassengerPeriodicVehicle(front);
 
 		if (!free_wagon) {
 			InvalidateWindowData(WindowClass::VehicleDetails, front->index);

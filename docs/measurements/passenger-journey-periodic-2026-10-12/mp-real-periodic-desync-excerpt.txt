@@ -1,0 +1,21 @@
+*** OpenTTD Multiplayer Client Desync Report ***
+
+Desync at: 2026-10-12 15:17:35 (UTC)
+Flags: R
+In game date: 117528-03-12 (69, 0) (DL: 1), 00000201
+Calendar date: 117528-03-12 (69, 0)
+Game loaded at: 117528-03-12 (68, 0), (1 state ticks ago), 2026-10-12 15:17:34
+Last sync at: 117528-03-12 (68, 0), 00000200
+
+OpenTTD version:
+
+*** OpenTTD Multiplayer Server Desync Report ***
+
+Desync at: 2026-10-12 15:17:36 (UTC)
+Desync subframe mismatch: 00000201, STATION, seed
+In game date: 117528-03-13 (4, 0) (DL: 1), 0000020A
+Calendar date: 117528-03-13 (4, 0)
+Game loaded at: 117528-03-11 (27, 0), (125 state ticks ago), 2026-10-12 15:16:56
+Client #3, "periodic-client-late"
+
+OpenTTD version:

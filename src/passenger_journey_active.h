@@ -18,6 +18,7 @@ void RouteWaitingPassengerJourneys(Station *station, PassengerJourneyLoadingCont
 void AfterLoadPassengerJourneys();
 size_t InvalidatePassengerJourneyVehicle(VehicleID vehicle);
 void RebuildPassengerJourneyVehicleIndex();
+void ClearPassengerOdFallbackCache(); ///< Derived only; cold/warm admission and decisions are identical.
 
 enum class PassengerJourneyFallbackReason : uint8_t {
 	GraphWork, GraphMemory, SnapshotLimit, QueryWork, QueryLimit, QueryMemory, PredictionIncomplete, PredictionHorizon, NoJourney, InvalidLeg,
@@ -61,6 +62,7 @@ struct PassengerJourneyTickDiagnostic {
 	size_t fair_share_work = 0, fair_share_claims = 0;
 	size_t fair_share_releases = 0, retained_rides = 0;
 	size_t od_fallback_work = 0, od_fallback_searches = 0;
+	size_t od_fallback_cache_hits = 0, od_fallback_cache_bytes = 0;
 	size_t boarded_passengers = 0, transferred_passengers = 0, delivered_passengers = 0;
 	size_t timing_uncertainty = 0, path_uncertainty = 0, uncertainty_resolved = 0;
 	size_t timed_routes_ignoring_unknown = 0, timed_budget_deferred = 0;
@@ -69,6 +71,17 @@ struct PassengerJourneyTickDiagnostic {
 	std::array<PassengerJourneyQueryDetail, 16> query_samples{};
 	size_t query_sample_count = 0;
 	uint64_t simulation_ticks = 0, simulation_microseconds = 0, maximum_simulation_microseconds = 0;
+	uint64_t journey_microseconds = 0, maximum_journey_microseconds = 0;
+	uint64_t waiting_microseconds = 0, fallback_distance_microseconds = 0, boarding_microseconds = 0; ///< Inclusive diagnostic scopes; do not sum them.
+	std::array<uint64_t, 2048> simulation_histogram{}, journey_histogram{}; ///< 1 ms buckets; last bucket includes overflow.
+};
+
+/** Nested observations count elapsed time only at the outermost Journey call. */
+class PassengerJourneyWorkTimer {
+	uint64_t started;
+public:
+	PassengerJourneyWorkTimer();
+	~PassengerJourneyWorkTimer();
 };
 
 /** Reset at the simulation tick boundary, including the first tick after network join/load.
@@ -94,7 +107,9 @@ class PassengerJourneyBoardingContext {
 	mutable uint64_t signature = 0;
 	mutable PassengerVisitPrediction prediction;
 	mutable size_t predictions = 0;
+	mutable std::map<std::tuple<OrderListID, uint64_t, VehicleOrderID, VehicleOrderID, StationID, StationID, bool>, bool> service_rides;
 	void Initialize() const;
+	bool ValidateServiceRide(const PassengerJourneyExecution &ride, bool boarding) const;
 public:
 	explicit PassengerJourneyBoardingContext(const Vehicle *vehicle, CargoType cargo = INVALID_CARGO);
 	bool CanBoard(const CargoPacket &packet) const;
@@ -106,9 +121,12 @@ public:
  * unrestricted directed links; boarding also requires a live order prefix.
  * No timing, optimum, future capacity or permanent unreachability is asserted. */
 class PassengerOdFallbackContext {
+	using BindingNodes = std::vector<std::pair<StationID, bool>>;
+	struct Binding { std::shared_ptr<const BindingNodes> nodes; uint64_t token; };
+	std::map<std::pair<LinkGraphID, uint64_t>, Binding> bindings;
 	struct Distances {
 		LinkGraphID graph = LinkGraphID::Invalid();
-		std::vector<uint32_t> hops;
+		std::shared_ptr<const std::vector<uint32_t>> hops;
 	};
 	std::map<std::pair<CargoType, StationID>, Distances> distances;
 	std::map<std::pair<VehicleID, CargoType>, std::vector<StationID>> stops;
@@ -149,6 +167,8 @@ class PassengerJourneyActiveContext {
 	StationID station;
 	std::map<std::tuple<CargoType, StationID, Ticks>, std::unique_ptr<Snapshot>> snapshots;
 	std::map<CargoType, PassengerJourneyBoardingContext> continuation;
+	struct PeriodicWaiting { std::optional<PassengerJourneyExecution> ride; bool deferred; };
+	std::map<std::pair<CargoType, StationID>, PeriodicWaiting> periodic_waiting;
 	PassengerOdFallbackContext fallback;
 	size_t work_left = 4194304;
 	size_t memory_left = 256 * 1024 * 1024;

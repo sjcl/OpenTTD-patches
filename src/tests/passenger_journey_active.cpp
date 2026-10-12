@@ -72,6 +72,7 @@ struct ActiveFixture {
 		for (StationID station : {A, B, C, D}) Station::CreateAtIndex(station, TileIndex{0})->owner = OWNER_NONE;
 		_settings_game.linkgraph.distribution_per_cargo[PAX] = DistributionType::Asymmetric;
 		_settings_game.linkgraph.passenger_journey_routing = true;
+		_settings_game.linkgraph.passenger_journey_periodic = false; // Reference snapshot backend.
 		_settings_game.linkgraph.passenger_od_assignment = false; // Independent from the routing switch.
 		_settings_game.linkgraph.passenger_transfer_timetables = false;
 		_settings_game.linkgraph.passenger_transfer_penalty = 20;
@@ -135,6 +136,24 @@ struct FallbackLinks {
 				100, 0, 100, {EdgeUpdateMode::Refresh, restricted ? EdgeUpdateMode::Restricted : EdgeUpdateMode::Unrestricted});
 	}
 };
+
+TEST_CASE("Resident OD fallback distances replay cold work and invalidate restricted edges", "[passenger][periodic][fallback][determinism]")
+{
+	ActiveFixture f; FallbackLinks links; links.Edge(A, B); links.Edge(B, D);
+	ActiveTrain train({ActiveStop(A), ActiveStop(B, 10)}); auto *packet = f.Packet();
+	ClearPassengerOdFallbackCache();
+	auto before = GetPassengerJourneyTickDiagnostic().od_fallback_work;
+	PassengerOdFallbackContext cold; CHECK(cold.CanBoard(*packet, &train, PAX));
+	auto first = GetPassengerJourneyTickDiagnostic().od_fallback_work - before;
+	before = GetPassengerJourneyTickDiagnostic().od_fallback_work;
+	PassengerOdFallbackContext warm; CHECK(warm.CanBoard(*packet, &train, PAX));
+	CHECK(GetPassengerJourneyTickDiagnostic().od_fallback_work - before == first);
+	CHECK(GetPassengerJourneyTickDiagnostic().od_fallback_cache_hits > 0);
+	links.graph->MutableIterateEdgesFromNode(Station::Get(B)->goods[PAX].node, [](LinkGraph::EdgeIterationHelper helper) {
+		helper.GetEdge().Restrict(); return LinkGraph::EdgeIterationResult::None;
+	});
+	PassengerOdFallbackContext changed; CHECK_FALSE(changed.CanBoard(*packet, &train, PAX));
+}
 
 TEST_CASE("Timed ordinary journeys win over an untimed express without any bound proof", "[passenger][active][pragmatic]")
 {
@@ -839,7 +858,7 @@ TEST_CASE("Routing state and leg have an independent versioned save round trip",
 	AutoRestoreBackup features{_sl_xv_feature_versions, AutoRestoreBackupNoNewValueTag{}};
 	AutoRestoreBackup static_features{_sl_xv_feature_static_versions, AutoRestoreBackupNoNewValueTag{}};
 	SlXvSetStaticCurrentVersions(); _sl_xv_feature_versions = _sl_xv_feature_static_versions;
-	REQUIRE(_sl_xv_feature_versions[XSLFI_PASSENGER_JOURNEY_ROUTING] == 1);
+	REQUIRE(_sl_xv_feature_versions[XSLFI_PASSENGER_JOURNEY_ROUTING] == 2);
 	auto packet = std::unique_ptr<CargoPacket>(fixture.Packet()); fixture.Plan(*packet);
 	PassengerRoutingMode expected = PassengerRoutingMode::Journey;
 	SECTION("Journey survives") {}

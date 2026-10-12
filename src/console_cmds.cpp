@@ -8,6 +8,7 @@
 /** @file console_cmds.cpp Implementation of the console hooks. */
 
 #include "stdafx.h"
+#include "passenger_service_database.h"
 #include "passenger_journey_shadow.h"
 #include "passenger_journey_active.h"
 #include "core/string_consumer.hpp"
@@ -77,6 +78,14 @@
 #include "core/backup_type.hpp"
 #include "company_cmd.h"
 #include "misc_cmd.h"
+#ifdef WITH_PASSENGER_BENCHMARK
+#include "order_cmd.h"
+#include "timetable_cmd.h"
+#include "vehicle_cmd.h"
+#include "road_map.h"
+#include "road_cmd.h"
+#include "station_cmd.h"
+#endif
 #include "order_backup.h"
 #include "cheat_func.h"
 #include "walltime_func.h"
@@ -968,6 +977,10 @@ static bool ConUnpauseGame(std::span<std::string_view> argv)
 		return true;
 	}
 
+#ifdef WITH_PASSENGER_BENCHMARK
+	/* Opt-in measurement build only, used with isolated inputs. */
+	if (_pause_mode.Test(PauseMode::Error)) Command<Commands::Pause>::Post(PauseMode::Error, false);
+#endif
 	if (_pause_mode.Test(PauseMode::Normal)) {
 		Command<Commands::Pause>::Post(PauseMode::Normal, false);
 		if (!_networking) IConsolePrint(CC_DEFAULT, "Game unpaused.");
@@ -4614,6 +4627,114 @@ static bool ConPassengerServiceCaptureBenchmark(std::span<std::string_view> argv
 	return true;
 }
 
+#ifdef WITH_PASSENGER_BENCHMARK
+/** Test setup on an isolated no-NewGRF map, before clients connect. */
+static bool ConPassengerPeriodicFixture(std::span<std::string_view> argv)
+{
+	if (argv.size() != 1) return false;
+	if (_networking) for (const NetworkClientInfo *client : NetworkClientInfo::Iterate()) if (client->index != ClientID::Server) return false;
+	Company *fixture_company = DoStartupNewCompany(DSNC_NONE);
+	if (fixture_company == nullptr || Map::SizeX() < 64 || Map::SizeY() < 64) return false;
+	{
+		AutoRestoreBackup company{_current_company, fixture_company->index};
+		RoadType road{0};
+		TileIndex start = INVALID_TILE;
+		for (uint y = 20; y + 20 < Map::SizeY() && start == INVALID_TILE; ++y) for (uint x = 20; x + 20 < Map::SizeX() && start == INVALID_TILE; ++x) {
+			bool clear = true;
+			for (uint dx = 0; dx <= 10 && clear; ++dx) for (uint dy = 0; dy < 2; ++dy) {
+				TileIndex tile = TileXY(x + dx, y + dy);
+				if (!IsTileType(tile, TileType::Clear) || GetTileSlope(tile) != SLOPE_FLAT) { clear = false; break; }
+			}
+			if (clear) start = TileXY(x, y);
+		}
+		if (start == INVALID_TILE) { IConsolePrint(CC_ERROR, "Periodic fixture: no flat construction strip"); return false; }
+		uint roads = 0, stops = 0;
+		for (uint dx = 0; dx <= 10; ++dx) {
+			RoadBits bits = ROAD_X;
+			if (dx == 0 || dx == 2 || dx == 8) bits.Set(RoadBit::SE);
+			roads += CmdBuildRoad({DoCommandFlag::Execute}, TileXY(TileX(start) + dx, TileY(start)), bits, road, DRD_NONE, TownID::Invalid(), BuildRoadFlags::None).Succeeded();
+		}
+		bool depot = CmdBuildRoadDepot({DoCommandFlag::Execute}, TileXY(TileX(start), TileY(start) + 1), road, DiagDirection::NW).Succeeded();
+		for (uint dx : {2, 8}) stops += CmdBuildRoadStop({DoCommandFlag::Execute}, TileXY(TileX(start) + dx, TileY(start) + 1), 1, 1, RoadStopType::Bus, false,
+				DiagDirection::NW, road, RoadStopClassID{0}, 0, NEW_STATION, false).Succeeded();
+		IConsolePrint(CC_DEFAULT, "Periodic test infrastructure: roads={}; depot={}; stops={}", roads, depot, stops);
+		if (roads != 11 || !depot || stops != 2) return false;
+	}
+	/* Use a real base-set bus, existing road depot and two owned bus stations.
+	 * The regression map otherwise contains mostly freight vehicles. */
+	bool built_bus = false;
+	uint depots = 0, pax_engines = 0, buildable_engines = 0;
+	for (TileIndex tile{0}; tile < Map::Size() && !built_bus; ++tile) {
+		if (!IsTileType(tile, TileType::Road) || !IsRoadDepotTile(tile) || !Company::IsValidID(GetTileOwner(tile))) continue;
+		CompanyID owner = GetTileOwner(tile);
+		++depots;
+		std::vector<std::pair<uint, StationID>> stops;
+		for (const Station *station : Station::Iterate()) if (station->owner == owner && station->bus_stops != nullptr) {
+			uint distance = abs(int(TileX(tile)) - int(TileX(station->bus_stops->xy))) + abs(int(TileY(tile)) - int(TileY(station->bus_stops->xy)));
+			stops.emplace_back(distance, station->index);
+		}
+		if (stops.size() < 2) continue;
+		std::sort(stops.begin(), stops.end());
+		AutoRestoreBackup company{_current_company, owner};
+		for (const Engine *engine : Engine::Iterate()) {
+			CargoType cargo = engine->GetDefaultCargoType();
+			if (engine->type != VehicleType::Road || cargo >= NUM_CARGO || !IsCargoInClass(cargo, CargoClass::Passengers)) continue;
+			++pax_engines;
+			if (!IsEngineBuildable(engine->index, VehicleType::Road, owner)) continue;
+			++buildable_engines;
+			auto result = CmdBuildVehicle({DoCommandFlag::Execute}, tile, engine->index, false, cargo, ClientID::Invalid);
+			auto vehicle = result.GetResultData<VehicleID>();
+			if (result.Failed() || !vehicle) { if (buildable_engines < 5) IConsolePrint(CC_DEFAULT, "Periodic bus build: engine={}; failed={}; result={}", engine->index, result.Failed(), vehicle.has_value()); continue; }
+			for (uint i = 0; i < 2; ++i) {
+				Order order; order.MakeGoToStation(stops[i].second);
+				order.SetStopLocation(OrderStopLocation::FarEnd);
+				order.SetNonStopType(ONSF_NO_STOP_AT_INTERMEDIATE_STATIONS);
+				auto inserted = CmdInsertOrder({DoCommandFlag::Execute}, InsertOrderCmdData{*vehicle, static_cast<VehicleOrderID>(i), order});
+				IConsolePrint(CC_DEFAULT, "Periodic bus order: inserted={}; orders={}; capacity={}; primary={}", inserted.Succeeded(), Vehicle::Get(*vehicle)->GetNumOrders(), Vehicle::Get(*vehicle)->cargo_cap, Vehicle::Get(*vehicle)->IsPrimaryVehicle());
+			}
+			built_bus = true; break;
+		}
+	}
+	IConsolePrint(CC_DEFAULT, "Periodic bus setup: depots={}; pax_engines={}; buildable_engines={}; built={}", depots, pax_engines, buildable_engines, built_bus);
+	std::set<OrderListID> prepared;
+	uint services = 0, passengers = 0;
+	for (Vehicle *v : Vehicle::Iterate()) {
+		if (!IsPassengerServiceVehicle(v) || v->orders == nullptr || prepared.contains(v->orders->index) || v->vehstatus.Test(VehState::Crashed)) continue;
+		CargoType cargo = INVALID_CARGO;
+		for (const Vehicle *part = v; part != nullptr; part = part->Next()) if (part->cargo_cap && part->cargo_type < NUM_CARGO && IsCargoInClass(part->cargo_type, CargoClass::Passengers)) { cargo = part->cargo_type; break; }
+		if (cargo == INVALID_CARGO || !Company::IsValidID(v->owner)) continue;
+		uint stations = 0;
+		for (const Order *order : v->Orders()) stations += order->IsType(OT_GOTO_STATION);
+		if (stations < 2) continue;
+		prepared.insert(v->orders->index);
+		AutoRestoreBackup company{_current_company, v->owner};
+		for (VehicleOrderID i = v->GetNumOrders(); i > 0; --i) {
+			const Order *order = v->GetOrder(i - 1);
+			if (!order->IsType(OT_GOTO_STATION) && !order->IsType(OT_GOTO_WAYPOINT)) CmdDeleteOrder({DoCommandFlag::Execute}, v->index, i - 1);
+		}
+		std::vector<StationID> stops;
+		for (VehicleOrderID i = 0; i < v->GetNumOrders(); ++i) {
+			CmdChangeTimetable({DoCommandFlag::Execute}, v->index, i, MTF_TRAVEL_TIME, 100, {});
+			if (v->GetOrder(i)->IsType(OT_GOTO_STATION)) {
+				CmdChangeTimetable({DoCommandFlag::Execute}, v->index, i, MTF_WAIT_TIME, 25, {});
+				stops.push_back(v->GetOrder(i)->GetDestination().ToStationID());
+			}
+		}
+		if (stops.size() < 2 || stops.front() == stops.back()) continue;
+		Station *origin = Station::GetIfValid(stops.front());
+		if (origin == nullptr) continue;
+		for (StationID stop : stops) if (Station *station = Station::GetIfValid(stop)) station->always_accepted.Set(cargo);
+		auto *packet = CargoPacket::Create(50, 0, origin->index, origin->xy, Money{0});
+		if (!packet->SetPassengerDestination(cargo, stops.back())) { delete packet; continue; }
+		origin->goods[cargo].CreateData().cargo.Append(packet, StationID::Invalid());
+		if (v->vehstatus.Test(VehState::Stopped)) CmdStartStopVehicle({DoCommandFlag::Execute}, v->index, false);
+		++services; passengers += 50;
+	}
+	IConsolePrint(CC_DEFAULT, "Periodic test fixture: services={}; injected_passengers={}", services, passengers);
+	return true;
+}
+#endif
+
 static bool ConPassengerJourneyStats(std::span<std::string_view> argv)
 {
 	if (argv.empty()) {
@@ -4693,6 +4814,25 @@ static bool ConPassengerJourneyStats(std::span<std::string_view> argv)
 			prediction_stops[static_cast<size_t>(prediction.uncertain_reason)], prediction.tile.base(), prediction.current_order);
 	IConsolePrint(CC_DEFAULT, "Simulation tick time: completed_ticks={}; total_us={}; mean_us={}; max_us={}", stats.simulation_ticks,
 			stats.simulation_microseconds, stats.simulation_ticks == 0 ? 0 : stats.simulation_microseconds / stats.simulation_ticks, stats.maximum_simulation_microseconds);
+	auto quantile = [](const auto &histogram, uint percentile) {
+		uint64_t count = 0; for (uint64_t n : histogram) count += n;
+		uint64_t rank = (count * percentile + 99) / 100, cumulative = 0;
+		for (size_t i = 0; i < histogram.size(); ++i) { cumulative += histogram[i]; if (cumulative >= rank) return (i + 1) * 1000; }
+		return size_t{0};
+	};
+	IConsolePrint(CC_DEFAULT, "Tick histogram (1ms upper bounds): simulation_p95_us={}; simulation_p99_us={}; journey_mean_us={}; journey_p95_us={}; journey_p99_us={}; journey_max_us={}",
+			quantile(stats.simulation_histogram, 95), quantile(stats.simulation_histogram, 99), stats.simulation_ticks == 0 ? 0 : stats.journey_microseconds / stats.simulation_ticks,
+			quantile(stats.journey_histogram, 95), quantile(stats.journey_histogram, 99), stats.maximum_journey_microseconds);
+	const auto periodic = GetPassengerServiceDatabase().GetDiagnostic();
+	IConsolePrint(CC_DEFAULT, "Journey inclusive scopes: waiting_us={}; fallback_distance_us={}; boarding_us={}", stats.waiting_microseconds, stats.fallback_distance_microseconds, stats.boarding_microseconds);
+	IConsolePrint(CC_DEFAULT, "Periodic pending age: ticks={}", periodic.maximum_pending_ticks);
+	IConsolePrint(CC_DEFAULT, "OD fallback cache: hits={}; bytes={}; work={}; searches={}", stats.od_fallback_cache_hits, stats.od_fallback_cache_bytes, stats.od_fallback_work, stats.od_fallback_searches);
+	IConsolePrint(CC_DEFAULT, "Periodic database: services={}; timed={}; vehicles={}; bytes={}; policies_bytes={}; pending={}; builds={}; work={}; build_us={}; searches={}; query_us={}; next_departures={}; policy_hits={}; policy_misses={}; invalidations={}; rejected_work={}; rejected_memory={}",
+			periodic.services, periodic.timed_services, periodic.vehicles, periodic.bytes, periodic.policy_bytes, periodic.pending, periodic.builds, periodic.build_work,
+			periodic.build_microseconds, periodic.searches, periodic.query_microseconds, periodic.next_departures, periodic.policy_hits, periodic.policy_misses,
+			periodic.invalidations, periodic.rejected_work, periodic.rejected_memory);
+	IConsolePrint(CC_DEFAULT, "Periodic global invalidations: {}", periodic.global_invalidations);
+	IConsolePrint(CC_DEFAULT, "Periodic known vehicle phases: {}", periodic.known_phase_vehicles);
 	for (size_t i = 0; i < stats.query_sample_count; ++i) {
 		const auto &sample = stats.query_samples[i];
 		IConsolePrint(CC_DEFAULT, "OD proof sample: origin={}; destination={}; tick={}; status={}; stop={}; candidates={}; best_score={}; unknown_arrival_bound={}; unknown_service={}",
@@ -4979,6 +5119,9 @@ void IConsoleStdLibRegister()
 	IConsole::CmdRegister("fps",                     ConFramerate);
 	IConsole::CmdRegister("passenger_journey_shadow", ConPassengerJourneyShadow);
 	IConsole::CmdRegister("passenger_journey_stats", ConPassengerJourneyStats);
+#ifdef WITH_PASSENGER_BENCHMARK
+	IConsole::CmdRegister("passenger_periodic_fixture", ConPassengerPeriodicFixture, ConHookServerOrNoNetwork);
+#endif
 	IConsole::CmdRegister("passenger_service_inspect", ConPassengerServiceInspect);
 	IConsole::CmdRegister("passenger_service_capture_benchmark", ConPassengerServiceCaptureBenchmark);
 	IConsole::CmdRegister("fps_wnd",                 ConFramerateWindow);

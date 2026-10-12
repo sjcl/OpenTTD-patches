@@ -9,6 +9,7 @@
 
 #include "stdafx.h"
 #include "passenger_journey_active.h"
+#include "passenger_service_database.h"
 
 #include "blitter/factory.hpp"
 #include "sound/sound_driver.hpp"
@@ -1575,6 +1576,7 @@ void StateGameLoop()
 		_state_ticks++;
 		DateDetail::_state_ticks_offset++;
 		BeginPassengerJourneyTick();
+		GetPassengerServiceDatabase().Tick();
 
 		RunTileLoop();
 		CallVehicleTicks();
@@ -1605,6 +1607,7 @@ void StateGameLoop()
 			_state_ticks++;   // This must update in lock-step with _tick_skip_counter, such that _state_ticks_offset doesn't need to be changed.
 		}
 		BeginPassengerJourneyTick();
+		GetPassengerServiceDatabase().Tick();
 
 		if (!(_game_mode == GameMode::Menu || _game_mode == GameMode::Bootstrap) && !_settings_client.gui.autosave_realtime && _settings_client.gui.autosave_interval != 0 &&
 				(_state_ticks.base() % (_settings_client.gui.autosave_interval * (60000 / MILLISECONDS_PER_TICK))) == 0) {

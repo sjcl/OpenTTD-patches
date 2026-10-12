@@ -8,6 +8,7 @@
 /** @file station.cpp Implementation of the station base class. */
 
 #include "stdafx.h"
+#include "passenger_service_database.h"
 #include "company_func.h"
 #include "company_base.h"
 #include "roadveh.h"
@@ -103,6 +104,7 @@ Station::~Station()
 		return;
 	}
 
+	InvalidatePassengerServiceDatabase();
 	while (!this->loading_vehicles.empty()) {
 		this->loading_vehicles.front()->LeaveStation();
 	}

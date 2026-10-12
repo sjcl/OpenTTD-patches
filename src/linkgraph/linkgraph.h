@@ -398,6 +398,7 @@ public:
 	inline CargoType Cargo() const { return this->cargo; }
 
 	uint64_t PassengerOdRevision() const { return this->passenger_od_revision; }
+	uint64_t PassengerRoutingRevision() const { return this->passenger_routing_revision; } ///< NOSAVE; derived-cache eligibility identity only.
 	void InvalidatePassengerOd() { this->passenger_od_revision = NextPassengerOdRevision(); }
 
 	/**
@@ -440,6 +441,7 @@ protected:
 
 	CargoType cargo = INVALID_CARGO;      ///< Cargo of this component's link graph.
 	uint64_t passenger_od_revision = 0;   ///< Saved topology identity, also copied into running jobs.
+	uint64_t passenger_routing_revision = 0; ///< Changes only when an existing edge becomes restricted/unrestricted.
 	ScaledTickCounter last_compression{}; ///< Last time the capacities and supplies were compressed.
 	NodeVector nodes{};                   ///< Nodes in the component.
 	EdgeMatrix edges{};                   ///< Edges in the component.
@@ -514,7 +516,9 @@ public:
 			if (from != from_id) return;
 			EdgeIterationResult result = EdgeIterationResult::None;
 			if (from != to) {
+				bool open = iter->second.capacity != 0 && iter->second.last_unrestricted_update != EconTime::INVALID_DATE;
 				result = proc(EdgeIterationHelper(this->edges, iter, from, to));
+				if (result == EdgeIterationResult::None && open != (iter->second.capacity != 0 && iter->second.last_unrestricted_update != EconTime::INVALID_DATE)) ++this->passenger_routing_revision;
 			}
 			switch (result) {
 				case EdgeIterationResult::None:

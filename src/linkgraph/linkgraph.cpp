@@ -250,6 +250,7 @@ void LinkGraph::UpdateEdge(NodeID from, NodeID to, uint capacity, uint usage, ui
 	assert(usage <= capacity);
 	if (this->edges.find(std::make_pair(from, to)) == this->edges.end()) this->InvalidatePassengerOd();
 	BaseEdge &edge = this->edges[std::make_pair(from, to)];
+	bool open = edge.capacity != 0 && edge.last_unrestricted_update != EconTime::INVALID_DATE;
 	if (edge.capacity == 0) {
 		assert(from != to);
 		AddEdge(edge, capacity, usage, travel_time, modes);
@@ -257,6 +258,7 @@ void LinkGraph::UpdateEdge(NodeID from, NodeID to, uint capacity, uint usage, ui
 		Edge(edge).Update(capacity, usage, travel_time, modes);
 	}
 	if (route != nullptr) Edge(edge).UpdateRoute(*route, capacity, modes);
+	if (open != (edge.capacity != 0 && edge.last_unrestricted_update != EconTime::INVALID_DATE)) ++this->passenger_routing_revision;
 }
 
 /**

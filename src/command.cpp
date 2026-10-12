@@ -8,6 +8,7 @@
 /** @file command.cpp Handling of commands. */
 
 #include "stdafx.h"
+#include "passenger_service_database.h"
 #include "landscape.h"
 #include "error.h"
 #include "gui.h"
@@ -45,6 +46,22 @@
 #include "safeguards.h"
 
 ClientID _cmd_client_id = ClientID::Invalid;
+
+static bool PassengerConstructionChangesRouting(CommandType type, Commands cmd, TileIndex tile)
+{
+	if (cmd == Commands::RefitVehicle) return false; // Auto-refit is frequent; CmdRefitVehicle checks its actual affected consist.
+	/* Town growth and landscape maintenance clear thousands of unrelated tiles.
+	 * Inspect the original tile, before the command removes its transport type. */
+	if (cmd == Commands::LandscapeClear) {
+		return tile < Map::Size() && (IsTileType(tile, TileType::Station) || IsTileType(tile, TileType::Railway) ||
+				IsTileType(tile, TileType::Road) || IsTileType(tile, TileType::TunnelBridge) || IsTileType(tile, TileType::Water));
+	}
+	/* Explicit route/timetable edits and actual refits have local hooks. Construction and
+	 * operating-state commands conservatively invalidate all affected facilities
+	 * and fleet membership until narrower notifications are available. */
+	return type == CommandType::LandscapeConstruction || type == CommandType::VehicleConstruction ||
+			type == CommandType::VehicleManagement || type == CommandType::Cheat;
+}
 
 /**
  * List of flags for a command log entry
@@ -317,7 +334,9 @@ CommandCost DoCommandImplementation(Commands cmd, TileIndex tile, const CommandP
 	/* Execute the command here. All cost-relevant functions set the expenses type
 	 * themselves to the cost object at some point */
 	if (_docommand_recursive == 1) _cleared_object_areas.clear();
+	const bool passenger_changed = PassengerConstructionChangesRouting(command.type, cmd, tile);
 	res = command.exec({ tile, flags, payload });
+	if (res.Succeeded() && passenger_changed) InvalidatePassengerServiceDatabase();
 	if (res.Failed()) {
 		_docommand_recursive--;
 		return res;
@@ -679,7 +698,9 @@ CommandCost DoCommandPInternal(Commands cmd, TileIndex tile, const CommandPayloa
 	 * use the construction one */
 	_cleared_object_areas.clear();
 	BasePersistentStorageArray::SwitchMode(PSM_ENTER_COMMAND);
+	const bool passenger_changed = PassengerConstructionChangesRouting(command.type, cmd, tile);
 	CommandCost res2 = command.exec({ tile, flags | DoCommandFlag::Execute, payload });
+	if (res2.Succeeded() && passenger_changed) InvalidatePassengerServiceDatabase();
 	BasePersistentStorageArray::SwitchMode(PSM_LEAVE_COMMAND);
 
 	if (cmd == Commands::CompanyControl) {

@@ -1,0 +1,14 @@
+{
+  "backend": "periodic",
+  "exit_code": 0,
+  "wall_seconds": 103.0406403,
+  "cpu_seconds": 196.5,
+  "peak_working_set": 2011668480,
+  "sampled_peak_private": 2011017216,
+  "input_save": "periodic-final-result.sav",
+  "resumed": true,
+  "requested_driver_loops": 0,
+  "input_sha256": "762806C7F5B856A6FE064421591D23261D81481C7C280B7A980E86E2FE1830F5",
+  "binary_sha256": "00D48D292444FADB18CB89DBE54937FA25AB11669762C4BDC1CD1A505CC3ABF2",
+  "sample_ms": 100
+}
