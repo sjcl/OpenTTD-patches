@@ -21,6 +21,7 @@
 #include "../sl/saveload.h"
 #include "../linkgraph/linkgraph.h"
 #include <deque>
+#include <chrono>
 
 extern std::vector<uint8_t> SlTestSaveLoadTable(void *, void *, const NamedSaveLoadTable &);
 extern SaveLoadVersion _sl_version;
@@ -886,6 +887,88 @@ TEST_CASE("4096 OD packets reuse one search and consume no random numbers", "[pa
 	WARN("Active routing: CargoPacket=" << sizeof(CargoPacket) << " bytes; leg=" << sizeof(PassengerJourneyExecution) <<
 			" bytes; 4096 identical OD queries use=" << context.GetWorkAllowanceUsed() << " work allowance; pool=" << CargoPacket::GetNumItems());
 	CHECK(random.Check());
+}
+
+TEST_CASE("Trip cache peers preserve execution save bytes and tick allowances", "[passenger][active][trip_cache][determinism][saveload]")
+{
+	ActiveFixture fixture;
+	std::vector<Order> orders{ActiveStop(A, 100000, 0)};
+	for (uint16_t id = 1; id < 16; ++id) orders.push_back(ActiveStop(StationID{id}, 10, 0));
+	ActiveTrain train(orders);
+	AutoRestoreBackup version{_sl_version, SAVEGAME_VERSION};
+	AutoRestoreBackup features{_sl_xv_feature_versions, AutoRestoreBackupNoNewValueTag{}};
+	AutoRestoreBackup static_features{_sl_xv_feature_static_versions, AutoRestoreBackupNoNewValueTag{}};
+	SlXvSetStaticCurrentVersions(); _sl_xv_feature_versions = _sl_xv_feature_static_versions;
+	std::vector<std::vector<uint8_t>> expected;
+	PassengerJourneyTickDiagnostic baseline;
+	size_t baseline_work = 0;
+	GameRandomSeedChecker random;
+	for (size_t bytes : {size_t{0}, size_t{8 * 1024 * 1024}, size_t{1}}) {
+		BeginPassengerJourneyTick();
+		PassengerJourneyActiveContext context(nullptr, A, bytes);
+		for (uint16_t id = 4; id < 12; ++id) {
+			auto packet = std::unique_ptr<CargoPacket>(fixture.Packet(10, StationID{id}));
+			REQUIRE(context.PlanWaiting(*packet, PAX, B));
+			auto loaded = std::unique_ptr<CargoPacket>(CargoPacket::Create());
+			const auto saved = SlTestSaveLoadTable(packet.get(), loaded.get(), GetCargoPacketDesc());
+			REQUIRE_FALSE(saved.empty());
+			CHECK(packet->GetPassengerJourney() == loaded->GetPassengerJourney());
+			if (bytes == 0) expected.push_back(saved); else CHECK(saved == expected[id - 4]);
+		}
+		const auto diagnostic = GetPassengerJourneyTickDiagnostic();
+		if (bytes == 0) { baseline = diagnostic; baseline_work = context.GetWorkAllowanceUsed(); }
+		else {
+			CHECK(context.GetWorkAllowanceUsed() == baseline_work);
+			CHECK(std::tie(diagnostic.builds, diagnostic.queries, diagnostic.journeys, diagnostic.passengers, diagnostic.graph_work, diagnostic.query_work,
+					diagnostic.graph_memory_bound, diagnostic.admitted_visits, diagnostic.deferred, diagnostic.fallbacks) ==
+					std::tie(baseline.builds, baseline.queries, baseline.journeys, baseline.passengers, baseline.graph_work, baseline.query_work,
+					baseline.graph_memory_bound, baseline.admitted_visits, baseline.deferred, baseline.fallbacks));
+			if (bytes > 1) { CHECK(diagnostic.prediction_cache_hits == 7); CHECK(diagnostic.prediction_executions == 1); }
+		}
+	}
+	CHECK(random.Check());
+}
+
+TEST_CASE("Trip cache synthetic tick routing benchmark over 4800 stations", "[passenger][active][trip_cache][.performance]")
+{
+	ActiveFixture fixture;
+	std::deque<ActiveTrain> fleet;
+	for (uint32_t i = 0; i < 2399; ++i) {
+		fleet.emplace_back(std::vector<Order>{ActiveStop(A, 100000, 0), ActiveStop(B, 100, 0),
+				ActiveStop(StationID{static_cast<uint16_t>(2 + 2 * i)}, 100, 0), ActiveStop(StationID{static_cast<uint16_t>(3 + 2 * i)}, 100, 0)}, VehicleID{1000 + i});
+	}
+	REQUIRE(Station::GetNumItems() == 4800);
+	for (size_t run = 0; run < 3; ++run) {
+		PassengerJourneyTickDiagnostic baseline;
+		size_t baseline_applied = 0;
+		for (size_t bytes : {size_t{0}, size_t{8 * 1024 * 1024}}) {
+			BeginPassengerJourneyTick();
+			GameRandomSeedChecker random;
+			const auto started = std::chrono::steady_clock::now();
+			size_t applied = 0;
+			{
+				PassengerJourneyActiveContext context(nullptr, A, bytes);
+				for (uint16_t id = 4; id < 12; ++id) {
+					auto packet = std::unique_ptr<CargoPacket>(fixture.Packet(10, StationID{id}));
+					if (context.PlanWaiting(*packet, PAX, B)) applied += packet->Count();
+				}
+			}
+			const auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - started).count();
+			const auto d = GetPassengerJourneyTickDiagnostic();
+			CHECK(random.Check());
+			if (bytes == 0) { baseline = d; baseline_applied = applied; }
+			else {
+				CHECK(applied == baseline_applied);
+				CHECK(std::tie(d.builds, d.queries, d.graph_work, d.query_work, d.visits, d.journeys, d.passengers, d.deferred, d.fallbacks) ==
+						std::tie(baseline.builds, baseline.queries, baseline.graph_work, baseline.query_work, baseline.visits, baseline.journeys, baseline.passengers, baseline.deferred, baseline.fallbacks));
+				CHECK(d.prediction_executions < baseline.prediction_executions);
+			}
+			WARN("Trip synthetic routing tick: run=" << run << "; enabled=" << (bytes != 0) << "; stations=4800; vehicles=2399; routing_tick_us=" << elapsed
+					<< "; builds=" << d.builds << "; build_us=" << d.build_microseconds << "; executions=" << d.prediction_executions << "; hits=" << d.prediction_cache_hits
+					<< "; visits=" << d.visits << "; searches=" << d.queries << "; applied_passengers=" << applied << "; graph_work=" << d.graph_work << "; query_work=" << d.query_work
+					<< "; prediction_bytes=" << d.prediction_cache_bytes << "; graph_memory_bound=" << d.graph_memory_bound);
+		}
+	}
 }
 
 TEST_CASE("Order dispatch refit and loading restrictions invalidate boarding", "[passenger][active]")

@@ -1,0 +1,12 @@
+C:\Users\bebe\.codex\worktrees\5350\OpenTTD-patches\src\tests\passenger_od_assignment.cpp(784): warning: 'National OD generation: 155582 us / 400 batches; destinations=8000; passengers=512 per batch'
+C:\Users\bebe\.codex\worktrees\5350\OpenTTD-patches\src\tests\passenger_service_graph.cpp(783): warning: 'Actual-visit fleet: trips=4000; visits=104000; work=132058; bound=37896128; retained=12685708; cold_us=42911; warm_us=53910'
+C:\Users\bebe\.codex\worktrees\5350\OpenTTD-patches\src\tests\passenger_journey_planner.cpp(946): warning: 'transfers := 0' with 1 message: 'Transfer chain: transfers=0; rounds=1; extensions=0; work=12; labels=2; scratch=28088'
+C:\Users\bebe\.codex\worktrees\5350\OpenTTD-patches\src\tests\passenger_journey_planner.cpp(946): warning: 'transfers := 4' with 1 message: 'Transfer chain: transfers=4; rounds=5; extensions=0; work=70; labels=6; scratch=30744'
+C:\Users\bebe\.codex\worktrees\5350\OpenTTD-patches\src\tests\passenger_journey_planner.cpp(946): warning: 'transfers := 5' with 1 message: 'Transfer chain: transfers=5; rounds=6; extensions=1; work=87; labels=7; scratch=31408'
+C:\Users\bebe\.codex\worktrees\5350\OpenTTD-patches\src\tests\passenger_journey_planner.cpp(946): warning: 'transfers := 9' with 1 message: 'Transfer chain: transfers=9; rounds=10; extensions=2; work=165; labels=11; scratch=34064'
+C:\Users\bebe\.codex\worktrees\5350\OpenTTD-patches\src\tests\passenger_journey_planner.cpp(946): warning: 'transfers := 15' with 1 message: 'Transfer chain: transfers=15; rounds=16; extensions=2; work=312; labels=17; scratch=38048'
+C:\Users\bebe\.codex\worktrees\5350\OpenTTD-patches\src\tests\passenger_journey_planner.cpp(946): warning: 'transfers := 33' with 1 message: 'Transfer chain: transfers=33; rounds=34; extensions=4; work=969; labels=35; scratch=77136'
+C:\Users\bebe\.codex\worktrees\5350\OpenTTD-patches\src\tests\passenger_journey_planner.cpp(946): warning: 'transfers := 300 (0x12c)' with 1 message: 'Transfer chain: transfers=300; rounds=301; extensions=7; work=48762; labels=302; scratch=634328'
+C:\Users\bebe\.codex\worktrees\5350\OpenTTD-patches\src\tests\passenger_journey_active.cpp(1329): warning: 'Due loading admission: stations=4801; applied=14; waiting-share claims=1'
+Passed all 188 test cases with 876408 assertions.
+

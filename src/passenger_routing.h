@@ -55,6 +55,7 @@ struct PassengerPredictedVisit {
 	std::optional<StateTicks> departure;
 	bool loading_now = false;
 	std::optional<StateTicksDelta> travel_from_previous; ///< Recorded leg duration can be known even when absolute times are not.
+	bool operator==(const PassengerPredictedVisit &) const = default;
 };
 
 struct PassengerVisitPrediction {
@@ -67,6 +68,7 @@ struct PassengerVisitPrediction {
 	VehicleOrderID stopped_order = INVALID_VEH_ORDER_ID; ///< Diagnostic only: cursor order at termination.
 	VehicleOrderID uncertain_order = INVALID_VEH_ORDER_ID; ///< Diagnostic only: first unknown timing/path order.
 	PassengerPredictionStop uncertain_reason = PassengerPredictionStop::None; ///< Diagnostic only.
+	bool operator==(const PassengerVisitPrediction &) const = default;
 	/** The exclusive endpoint also excludes unprocessed zero-time events at the truncation tick. */
 	bool Covers(StateTicks from, StateTicks to) const { return this->start <= from && from < to && to <= this->complete_until; }
 };

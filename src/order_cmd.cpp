@@ -355,6 +355,18 @@ bool Order::Equals(const Order &other) const
 	return this->type == other.type && this->flags == other.flags && this->dest == other.dest;
 }
 
+bool Order::EqualsForPassengerPrediction(const Order &other) const
+{
+	if (std::tie(this->type, this->flags, this->dest, this->refit_cargo, this->wait_time, this->travel_time, this->max_speed) !=
+			std::tie(other.type, other.flags, other.dest, other.refit_cargo, other.wait_time, other.travel_time, other.max_speed)) return false;
+	/* Missing extra data has the same semantics as all-zero extra data. Occupancy
+	 * estimates and order colours are presentation/observations, never predictor inputs. */
+	const OrderExtraInfo empty;
+	const auto &a = this->extra ? *this->extra : empty, &b = other.extra ? *other.extra : empty;
+	return std::tie(a.xdata, a.xdata2, a.dispatch_index, a.xflags) == std::tie(b.xdata, b.xdata2, b.dispatch_index, b.xflags) &&
+			std::equal(std::begin(a.cargo_type_flags), std::end(a.cargo_type_flags), std::begin(b.cargo_type_flags));
+}
+
 /**
  * Is this order derived from another order.
  * @param other the second order to compare to.

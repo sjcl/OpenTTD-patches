@@ -4547,7 +4547,7 @@ static bool ConPassengerServiceInspect(std::span<std::string_view> argv)
 static bool ConPassengerServiceCaptureBenchmark(std::span<std::string_view> argv)
 {
 	if (argv.empty()) {
-		IConsolePrint(CC_HELP, "passenger_service_capture_benchmark <cargo> <origin> [OD count=100]: read-only paired graph measurements");
+		IConsolePrint(CC_HELP, "passenger_service_capture_benchmark <cargo> <origin> [OD count=100]: paired Trip-cache measurements, preprocessing cached on both sides");
 		return true;
 	}
 	if (argv.size() < 3 || argv.size() > 4) return false;
@@ -4555,32 +4555,41 @@ static bool ConPassengerServiceCaptureBenchmark(std::span<std::string_view> argv
 	auto count = argv.size() == 4 ? ParseInteger<uint32_t>(argv[3]) : std::optional<uint32_t>{100};
 	if (!cargo || *cargo >= NUM_CARGO || !origin || *origin >= StationID::Invalid().base() || !Station::IsValidID(StationID{static_cast<uint16_t>(*origin)}) || !count || *count == 0 || *count > 100) return false;
 	PassengerServiceCapture capture;
+	PassengerServiceCapture prediction_disabled(16 * 1024 * 1024, 0);
 	PassengerGraphPhaseTimes cold_phases{}, warm_phases{};
 	uint64_t cold_us = 0, warm_us = 0;
 	size_t builds = 0, discovery_hits = 0, service_hits = 0, service_requests = 0, work = 0, maximum_memory = 0, maximum_allocation = 0, maximum_visits = 0, mismatches = 0;
+	struct PredictionObservation { size_t requests = 0, executions = 0, hits = 0, visits = 0, work = 0; uint64_t nanoseconds = 0; };
+	std::map<std::tuple<VehicleID, CargoType, StateTicks>, PredictionObservation> observations;
+	size_t cold_predictions = 0, warm_predictions = 0, prediction_hits = 0, prediction_requests = 0, prediction_work = 0;
 	for (const Station *station : Station::Iterate()) {
 		if (station->index.base() == *origin) continue;
 		const PassengerServiceScope scope{StationID{static_cast<uint16_t>(*origin)}, station->index};
 		auto limits = ActivePassengerServiceGraphLimits();
 		PassengerServiceGraph a, b;
 		if (builds % 2 == 0) {
-			a = PassengerServiceGraph::Build(static_cast<CargoType>(*cargo), _state_ticks, limits, scope);
+			a = PassengerServiceGraph::Build(static_cast<CargoType>(*cargo), _state_ticks, limits, scope, &prediction_disabled);
 			b = PassengerServiceGraph::Build(static_cast<CargoType>(*cargo), _state_ticks, limits, scope, &capture);
 		} else {
 			b = PassengerServiceGraph::Build(static_cast<CargoType>(*cargo), _state_ticks, limits, scope, &capture);
-			a = PassengerServiceGraph::Build(static_cast<CargoType>(*cargo), _state_ticks, limits, scope);
+			a = PassengerServiceGraph::Build(static_cast<CargoType>(*cargo), _state_ticks, limits, scope, &prediction_disabled);
 		}
 		bool same = a.GetWork() == b.GetWork() && a.GetMemoryBound() == b.GetMemoryBound() && a.GetQueryStatus(scope.origin, scope.destination) == b.GetQueryStatus(scope.origin, scope.destination) &&
 				a.GetServices().size() == b.GetServices().size() && a.GetTrips().size() == b.GetTrips().size();
 		if (same) for (size_t i = 0; i < a.GetTrips().size(); ++i) {
 			const auto &p = a.GetTrips()[i], &q = b.GetTrips()[i];
-			same &= std::tuple(p.vehicle, p.service, p.capacity, p.occupants, p.prediction.status, p.prediction.complete_until, p.prediction.stop) ==
-					std::tuple(q.vehicle, q.service, q.capacity, q.occupants, q.prediction.status, q.prediction.complete_until, q.prediction.stop);
-			same &= std::equal(p.prediction.visits.begin(), p.prediction.visits.end(), q.prediction.visits.begin(), q.prediction.visits.end(), [](const auto &s, const auto &t) {
-				return std::tuple(s.order, s.arrival, s.departure, s.loading_now, s.travel_from_previous) == std::tuple(t.order, t.arrival, t.departure, t.loading_now, t.travel_from_previous);
-			});
+			same &= std::tuple(p.vehicle, p.service, p.capacity, p.occupants, p.current_order, p.implicit_order, p.timetable_order, p.elapsed, p.lateness, p.prediction_reason) ==
+					std::tuple(q.vehicle, q.service, q.capacity, q.occupants, q.current_order, q.implicit_order, q.timetable_order, q.elapsed, q.lateness, q.prediction_reason);
+			same &= p.prediction == q.prediction;
 		}
 		mismatches += !same;
+		cold_predictions += a.GetDiagnostic().prediction_executions; warm_predictions += b.GetDiagnostic().prediction_executions;
+		prediction_hits += b.GetDiagnostic().prediction_cache_hits; prediction_requests += b.GetDiagnostic().predicted; prediction_work += b.GetDiagnostic().prediction_work;
+		for (const auto &trip : b.GetTrips()) if (trip.prediction_executed || trip.prediction_cache_hit) {
+			auto &o = observations[std::tuple(trip.vehicle, b.GetCargo(), b.GetStart())];
+			++o.requests; o.executions += trip.prediction_executed; o.hits += trip.prediction_cache_hit;
+			o.visits += trip.prediction.visits.size(); o.work += trip.prediction_work; o.nanoseconds += trip.prediction_nanoseconds;
+		}
 		cold_us += a.GetDiagnostic().build_microseconds; warm_us += b.GetDiagnostic().build_microseconds;
 		discovery_hits += b.GetDiagnostic().capture_discovery_hit; service_hits += b.GetDiagnostic().capture_service_hits; work += b.GetWork();
 		service_requests += b.GetServices().size();
@@ -4592,6 +4601,15 @@ static bool ConPassengerServiceCaptureBenchmark(std::span<std::string_view> argv
 	IConsolePrint(CC_DEFAULT, "Capture benchmark: OD={}; uncached_us={}; captured_us={}; mismatches={}; discovery_hits={}; service_hits={}; service_requests={}; work={}; graph_bound={}; graph_estimate={}; capture_estimate={}; maximum_visits={}",
 			builds, cold_us, warm_us, mismatches, discovery_hits, service_hits, service_requests, work, maximum_memory, maximum_allocation, capture.GetAllocationBytes(), maximum_visits);
 	for (size_t i = 0; i < cold_phases.size(); ++i) IConsolePrint(CC_DEFAULT, "Capture phase {}: uncached_us={}; captured_us={}", i, cold_phases[i], warm_phases[i]);
+	size_t repeated = 0;
+	for (const auto &[key, o] : observations) {
+		repeated += o.requests - 1;
+		IConsolePrint(CC_DEFAULT, "Trip prediction vehicle={} cargo={} at={}: occurrences={}; executions={}; hits={}; visits={}; logical_work={}; predictor_ns={}",
+				std::get<0>(key), std::get<1>(key), std::get<2>(key).base(), o.requests, o.executions, o.hits, o.visits, o.work, o.nanoseconds);
+	}
+	IConsolePrint(CC_DEFAULT, "Trip cache: disabled_executions={}; enabled_executions={}; requests={}; hits={}; hit_percent={:.2f}; repeated_vehicle_cargo_start={}; repeated_percent={:.2f}; logical_work={}; bytes={}",
+			cold_predictions, warm_predictions, prediction_requests, prediction_hits, prediction_requests ? 100.0 * prediction_hits / prediction_requests : 0.0,
+			repeated, prediction_requests ? 100.0 * repeated / prediction_requests : 0.0, prediction_work, capture.GetPredictionBytes());
 	return true;
 }
 
@@ -4684,6 +4702,8 @@ static bool ConPassengerJourneyStats(std::span<std::string_view> argv)
 			operation, stats.journeys, stats.passengers, stats.builds, stats.static_cache_hits, stats.queries, stats.query_cache_hits);
 	IConsolePrint(CC_DEFAULT, "Train observations={}; cargo_capable={}; possible_refit={}; predicted={}; inactive={}; excluded_cargo={}; excluded_scope={}; visits={}; omitted_trains_at_least={}; truncated_predictions={} (uncaptured visit count unknown)",
 			stats.trains, stats.cargo_capable, stats.possible_refit, stats.predicted, stats.inactive, stats.excluded_cargo, stats.excluded_scope, stats.visits, stats.omitted_trains, stats.truncated_predictions);
+	IConsolePrint(CC_DEFAULT, "Trip prediction: executions={}; hits={}; logical_work={}; executed_visits={}; predictor_ns={}; cache_bytes={}",
+			stats.prediction_executions, stats.prediction_cache_hits, stats.prediction_work, stats.prediction_executed_visits, stats.prediction_nanoseconds, stats.prediction_cache_bytes);
 	IConsolePrint(CC_DEFAULT, "Graph work={}; mean={}; max={}; cached_index_allowance_avoided={}; query_allowance={}; build_us={}; mean_us={}; max_us={}; search_us={}; max_tick_graph_search_us={}",
 			stats.graph_work, stats.builds == 0 ? 0 : stats.graph_work / stats.builds, stats.maximum_graph_work, stats.reused_graph_work, stats.query_work,
 			stats.build_microseconds, stats.builds == 0 ? 0 : stats.build_microseconds / stats.builds, stats.maximum_build_microseconds, stats.query_microseconds,

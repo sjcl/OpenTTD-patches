@@ -53,6 +53,8 @@ struct PassengerJourneyTickDiagnostic {
 	uint64_t build_microseconds = 0, maximum_build_microseconds = 0;
 	PassengerGraphPhaseTimes graph_phase_microseconds{};
 	size_t capture_discovery_hits = 0, capture_service_hits = 0, capture_reused_work = 0, capture_allocation_bytes = 0;
+	size_t prediction_executions = 0, prediction_cache_hits = 0, prediction_work = 0, prediction_executed_visits = 0, prediction_cache_bytes = 0;
+	uint64_t prediction_nanoseconds = 0;
 	uint64_t query_microseconds = 0, maximum_tick_microseconds = 0;
 	std::array<size_t, static_cast<size_t>(PassengerJourneyFallbackReason::End)> fallbacks{};
 	std::array<size_t, static_cast<size_t>(PassengerJourneyFallbackReason::End)> deferred{};
@@ -157,7 +159,8 @@ class PassengerJourneyActiveContext {
 	std::optional<PassengerJourneyExecution> Execute(Snapshot &snapshot, CargoType cargo, const PassengerJourneyLeg &leg);
 	bool AdmitQuery();
 public:
-	PassengerJourneyActiveContext(const Vehicle *vehicle, StationID station);
+	/** A zero prediction cache allowance supports paired diagnostics; logical allowances stay identical. */
+	PassengerJourneyActiveContext(const Vehicle *vehicle, StationID station, size_t prediction_cache_bytes = 8 * 1024 * 1024);
 	~PassengerJourneyActiveContext();
 	size_t GetWorkAllowanceUsed() const { return 4194304 - this->work_left; }
 	bool PlanWaiting(CargoPacket &packet, CargoType cargo, StationID legacy_hop);

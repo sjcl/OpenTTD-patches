@@ -72,6 +72,9 @@ namespace {
 		for (size_t i = 0; i < a.graph_phase_microseconds.size(); ++i) a.graph_phase_microseconds[i] += b.graph_phase_microseconds[i];
 		a.capture_discovery_hits += b.capture_discovery_hits; a.capture_service_hits += b.capture_service_hits; a.capture_reused_work += b.capture_reused_work;
 		a.capture_allocation_bytes = std::max(a.capture_allocation_bytes, b.capture_allocation_bytes);
+		a.prediction_executions += b.prediction_executions; a.prediction_cache_hits += b.prediction_cache_hits;
+		a.prediction_work += b.prediction_work; a.prediction_executed_visits += b.prediction_executed_visits;
+		a.prediction_nanoseconds += b.prediction_nanoseconds; a.prediction_cache_bytes = std::max(a.prediction_cache_bytes, b.prediction_cache_bytes);
 		a.maximum_build_microseconds = std::max(a.maximum_build_microseconds, b.maximum_build_microseconds);
 		a.query_microseconds += b.query_microseconds;
 		a.fair_share_work += b.fair_share_work; a.fair_share_claims += b.fair_share_claims;
@@ -321,7 +324,8 @@ struct PassengerJourneyActiveContext::Snapshot {
 	Snapshot(PassengerServiceGraph graph) : graph(std::move(graph)), planner(this->graph, &this->capacity, {2, 256 * 1024}) {}
 };
 
-PassengerJourneyActiveContext::PassengerJourneyActiveContext(const Vehicle *vehicle, StationID station) : vehicle(vehicle), station(station) {}
+PassengerJourneyActiveContext::PassengerJourneyActiveContext(const Vehicle *vehicle, StationID station, size_t prediction_cache_bytes) :
+		capture(16 * 1024 * 1024, prediction_cache_bytes), vehicle(vehicle), station(station) {}
 PassengerJourneyActiveContext::~PassengerJourneyActiveContext() = default;
 
 PassengerJourneyActiveContext::Snapshot *PassengerJourneyActiveContext::GetSnapshot(CargoType cargo, StationID destination, Ticks horizon)
@@ -366,6 +370,9 @@ PassengerJourneyActiveContext::Snapshot *PassengerJourneyActiveContext::GetSnaps
 	diagnostic.capture_discovery_hits += capture.capture_discovery_hit; diagnostic.capture_service_hits += capture.capture_service_hits;
 	diagnostic.capture_reused_work += capture.capture_reused_work;
 	diagnostic.capture_allocation_bytes = std::max(diagnostic.capture_allocation_bytes, capture.capture_allocation_bytes);
+	diagnostic.prediction_executions += capture.prediction_executions; diagnostic.prediction_cache_hits += capture.prediction_cache_hits;
+	diagnostic.prediction_work += capture.prediction_work; diagnostic.prediction_executed_visits += capture.prediction_executed_visits;
+	diagnostic.prediction_nanoseconds += capture.prediction_nanoseconds; diagnostic.prediction_cache_bytes = std::max(diagnostic.prediction_cache_bytes, capture.prediction_cache_bytes);
 	diagnostic.timing_uncertainty += capture.timing_uncertainty;
 	diagnostic.path_uncertainty += capture.path_uncertainty;
 	++diagnostic.graph_failures[static_cast<size_t>(capture.first_failure.reason)];

@@ -1,0 +1,21 @@
+--- a/src/passenger_journey_active.cpp
++++ b/src/passenger_journey_active.cpp
+@@
+-        capture(16 * 1024 * 1024, prediction_cache_bytes), vehicle(vehicle), station(station) {}
++        capture(16 * 1024 * 1024, std::getenv("PASSENGER_TRIP_MEASURE_DISABLED") ? 0 : prediction_cache_bytes), vehicle(vehicle), station(station) {}
+--- a/src/video/null_v.cpp
++++ b/src/video/null_v.cpp
+@@
+ #include "../thread.h"
++#include "../openttd.h"
++#include "../console_func.h"
+@@
+         for (int i = 0; i < this->ticks; i++) {
++            if (std::getenv("PASSENGER_TRIP_MEASURE_RESULT")) { _pause_mode.Reset(PauseMode::Error); _pause_mode.Reset(PauseMode::Normal); }
+@@
++    if (const char *result = std::getenv("PASSENGER_TRIP_MEASURE_RESULT")) {
++        IConsoleCmdExec("passenger_journey_stats total");
++        IConsoleCmdExec("passenger_journey_stats inventory");
++        IConsoleCmdExec(std::string("save \"") + result + "\"");
++    }
+     if (_settings_client.gui.autosave_on_exit) {
