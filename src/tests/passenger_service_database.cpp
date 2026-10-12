@@ -132,7 +132,7 @@ TEST_CASE("Shared periodic vehicles retain individually observed phases", "[pass
 	auto *second = Vehicle::Create<PeriodicTrain>(first); second->current_order_time = 40;
 	auto &db = f.Build(); auto *service = db.Get(first->orders->index); REQUIRE(service != nullptr);
 	REQUIRE(service->vehicles.size() == 2); CHECK(service->vehicles[0].base != service->vehicles[1].base);
-	auto plan = db.Plan(PAX, A, D, NOW + 11); REQUIRE(plan.ride); CHECK(plan.ride->departure == NOW + 190);
+	auto plan = db.Plan(PAX, A, D, NOW + 11); REQUIRE(plan.ride); CHECK(plan.ride->departure == NOW + 220);
 	CHECK(plan.ride->vehicle == VehicleID::Invalid()); CHECK(plan.ride->kind == PassengerRideKind::ServiceIntent);
 }
 
@@ -287,6 +287,12 @@ TEST_CASE("Periodic and snapshot planners agree on complete small timetable netw
 		auto old = planner.Plan(PAX, A, D, NOW + ready); auto periodic = db.Plan(PAX, A, D, NOW + ready);
 		REQUIRE(old.HasJourney()); REQUIRE(periodic.ride);
 		CHECK(periodic.arrival == old.journeys.front().arrival); CHECK(periodic.cost == old.journeys.front().generalized_time.base());
+		REQUIRE(periodic.route.size() == old.journeys.front().legs.size());
+		for (size_t i = 0; i < periodic.route.size(); ++i) {
+			const auto &leg = old.journeys.front().legs[i];
+			CHECK(periodic.route[i].service == graph.GetTrips()[leg.boarding.trip].service);
+			CHECK(periodic.route[i].boarding == leg.boarding_station); CHECK(periodic.route[i].alighting == leg.alighting_station);
+		}
 	}
 }
 
@@ -375,7 +381,13 @@ TEST_CASE("Expired periodic intents choose an alternative while a delayed live r
 	auto *packet = f.Packet(); PassengerJourneyActiveContext context(nullptr, A); REQUIRE(context.PlanWaiting(*packet, PAX, D));
 	CHECK(packet->GetPassengerJourney().service == original->orders->index);
 	Station::Get(A)->goods[PAX].CreateData().cargo.Append(packet, StationID::Invalid()); _state_ticks = NOW + 190; BeginPassengerJourneyTick();
-	SECTION("Missed original vehicle") { Station::Get(A)->loading_vehicles.push_back(express); }
+	SECTION("Missed original vehicle") {
+		/* It has actually left; a vehicle still in OT_LOADING at A is a
+		 * catchable live departure, even if its published time has passed. */
+		original->cur_real_order_index = original->cur_implicit_order_index = 1;
+		original->current_order = *original->GetOrder(1);
+		Station::Get(A)->loading_vehicles.push_back(express);
+	}
 	SECTION("Actual delayed original vehicle") { Station::Get(A)->loading_vehicles.push_back(original); }
 	Station::Get(A)->goods[PAX].data->cargo.RoutePassengerJourneys(PAX, A);
 	REQUIRE(packet->GetPassengerRoutingMode() == PassengerRoutingMode::Journey);
@@ -494,4 +506,223 @@ TEST_CASE("Timing publication epochs use floor division for negative state ticks
 	auto generation = db.Get(train->orders->index)->generation;
 	db.TimetableChanged(train->orders->index); db.Tick(); CHECK(db.Get(train->orders->index)->generation == generation);
 	_state_ticks = StateTicks{0}; db.Tick(); CHECK(db.Get(train->orders->index)->generation > generation);
+}
+
+TEST_CASE("Eight slow direct lines cannot consume the timed transfer candidate budget", "[passenger][periodic][comparison]")
+{
+	Fixture f;
+	std::vector<PeriodicTrain *> direct;
+	for (int i = 0; i < 10; ++i) direct.push_back(f.Train({Stop(A, 100, 0), Stop(D, 1000, 0)}));
+	auto *feeder = f.Train({Stop(A, 1900, 0), Stop(B, 100, 0)});
+	f.Train({Stop(B, 1900, 100), Stop(D, 100, 0)});
+	auto &db = f.Build();
+	for (size_t count : {size_t{1}, size_t{8}, size_t{16}}) {
+		PassengerJourneyLimits limits; limits.candidates = count;
+		auto early = db.Plan(PAX, A, D, NOW, limits);
+		REQUIRE(early.ride); CHECK_FALSE(early.deferred);
+		CHECK(early.ride->service == feeder->orders->index); CHECK(early.arrival == NOW + 200);
+		REQUIRE(early.route.size() == 2); CHECK(early.route.front().alighting == B);
+		auto late = db.Plan(PAX, A, D, NOW + 1, limits);
+		REQUIRE(late.ride); CHECK_FALSE(late.deferred);
+		CHECK(late.ride->service == direct.front()->orders->index); CHECK(late.arrival == NOW + 2100);
+	}
+	auto paired = ComparePassengerPlanners(db, PAX, A, D, NOW); REQUIRE(paired.periodic.ride); REQUIRE_FALSE(paired.legacy_route.empty()); REQUIRE(paired.legacy_found); CHECK(paired.periodic.arrival == paired.legacy_arrival);
+}
+
+TEST_CASE("Periodic timed search retains a nominally slower express with an earlier phase", "[passenger][periodic]")
+{
+	Fixture f;
+	for (int i = 0; i < 10; ++i) f.Train({Stop(A, 1000, 500), Stop(D, 1, 0)});
+	auto *express = f.Train({Stop(A, 1000, 0), Stop(D, 100, 0)});
+	auto &db = f.Build(); auto plan = db.Plan(PAX, A, D, NOW);
+	REQUIRE(plan.ride); CHECK_FALSE(plan.deferred); CHECK(plan.ride->service == express->orders->index);
+	CHECK(plan.arrival == NOW + 100);
+}
+
+TEST_CASE("Periodic local express and multiple interchange paths compete by actual arrival", "[passenger][periodic]")
+{
+	Fixture f;
+	auto *local = f.Train({Stop(A, 900, 0), Stop(B, 100, 0), Stop(D, 900, 0)});
+	f.Train({Stop(B, 900, 100), Stop(C, 50, 0)});
+	f.Train({Stop(C, 900, 160), Stop(D, 40, 0)});
+	auto &db = f.Build(); auto plan = db.Plan(PAX, A, D, NOW);
+	REQUIRE(plan.ride); CHECK_FALSE(plan.deferred); CHECK(plan.arrival == NOW + 200);
+	CHECK(plan.transfers == 2); REQUIRE(plan.route.size() == 3);
+	CHECK(plan.route[0].service == local->orders->index); CHECK(plan.route[0].alighting == B); CHECK(plan.route[1].alighting == C);
+}
+
+TEST_CASE("Periodic exhausted search and resource truncation have distinct diagnoses", "[passenger][periodic][determinism]")
+{
+	Fixture f; f.Train({Stop(A), Stop(B)}); f.Train({Stop(B), Stop(D)}); auto &db = f.Build();
+	PassengerJourneyLimits limits;
+	SECTION("Work") { limits.work = 1; }
+	SECTION("Zero work") { limits.work = 0; }
+	SECTION("Labels") { limits.labels = 1; }
+	SECTION("Memory") { limits.memory_bytes = 256; }
+	SECTION("Zero memory") { limits.memory_bytes = 0; }
+	SECTION("Transfer safety ceiling") { limits.max_transfers = 0; }
+	auto cold = db.Plan(PAX, A, D, NOW, limits), warm = db.Plan(PAX, A, D, NOW, limits);
+	CHECK_FALSE(cold.ride); CHECK(cold.deferred); CHECK(cold.reason != PassengerPeriodicPlan::Reason::NoCandidate);
+	CHECK(cold.reason == warm.reason); CHECK(cold.work == warm.work); CHECK(cold.work <= limits.work);
+	CHECK(cold.memory <= limits.memory_bytes); CHECK(cold.labels <= limits.labels);
+}
+
+TEST_CASE("Periodic candidate capacity is observed without certifying a false absence", "[passenger][periodic]")
+{
+	Fixture f; for (int i = 0; i < 12; ++i) f.Train({Stop(A), Stop(D)}); auto &db = f.Build();
+	PassengerJourneyLimits limits; limits.candidates = 8;
+	auto plan = db.Plan(PAX, A, D, NOW, limits); REQUIRE(plan.ride); CHECK_FALSE(plan.deferred);
+	CHECK(plan.candidates == 8); CHECK(plan.observations[static_cast<size_t>(PassengerPeriodicPlan::Reason::Candidates)]);
+}
+
+TEST_CASE("Periodic overdue loading aligns with snapshot remaining dwell rather than another circuit", "[passenger][periodic][comparison]")
+{
+	Fixture f; auto *train = f.Train({Stop(A), Stop(D)}); train->current_order_time = 40; train->lateness_counter = 500;
+	auto &db = f.Build(); auto plan = db.Plan(PAX, A, D, NOW);
+	REQUIRE(plan.ride); CHECK(plan.ride->departure == NOW); CHECK(plan.arrival == NOW + 100);
+
+}
+
+TEST_CASE("Periodic capture supports an actual waypoint phase without inventing overdue travel", "[passenger][periodic]")
+{
+	Fixture f; Order waypoint; waypoint.MakeGoToWaypoint(StationID{5}); waypoint.SetTravelTime(40); waypoint.SetTravelTimetabled(true);
+	auto *train = f.Train({Stop(A, 100, 0), waypoint, Stop(D, 60, 0)});
+	train->cur_real_order_index = train->cur_implicit_order_index = 1; train->current_order = waypoint;
+	train->current_order_time = 10;
+	SECTION("Known current travel") {
+		auto &db = f.Build(); auto *service = db.Get(train->orders->index); REQUIRE(service); CHECK(service->vehicles[0].phase_known);
+		CHECK(service->vehicles[0].base == NOW - 10);
+		auto plan = db.Plan(PAX, D, A, NOW); REQUIRE(plan.ride); CHECK(plan.ride->departure == NOW + 90);
+	}
+	SECTION("Elapsed travel exceeds declared arrival") {
+		train->current_order_time = 41; auto &db = f.Build(); REQUIRE(db.Get(train->orders->index));
+		CHECK_FALSE(db.Get(train->orders->index)->vehicles[0].phase_known);
+		train->LoadAt(2); ObservePassengerPeriodicVehicle(train); db.Tick(); CHECK(db.Get(train->orders->index)->vehicles[0].phase_known);
+	}
+}
+
+TEST_CASE("Actual explicit arrival recaptures a drifted periodic phase", "[passenger][periodic][determinism]")
+{
+	Fixture f; auto *train = f.Train({Stop(A), Stop(D)}); auto &db = f.Build();
+	auto generation = db.Get(train->orders->index)->generation;
+	_state_ticks += 500; train->LoadAt(1); ObservePassengerPeriodicVehicle(train);
+	CHECK(db.Get(train->orders->index) == nullptr); db.Tick();
+	CHECK(db.Get(train->orders->index)->generation > generation);
+	auto plan = db.Plan(PAX, D, A, _state_ticks); REQUIRE(plan.ride); CHECK(plan.ride->departure == _state_ticks + 10);
+}
+
+TEST_CASE("Paired periodic snapshot diagnostic cannot change publication packets or RNG", "[passenger][periodic][comparison][save][determinism]")
+{
+	Fixture f; f.Train({Stop(A), Stop(B)}); f.Train({Stop(B), Stop(D)}); auto &db = f.Build();
+
+	auto saved = db.Save(); auto before = db.GetDiagnostic(); auto *packet = f.Packet(); auto mode = packet->GetPassengerRoutingMode();
+	GameRandomSeedChecker seeds;
+	auto paired = ComparePassengerPlanners(db, PAX, A, D, NOW);
+	REQUIRE(paired.periodic.ride); REQUIRE_FALSE(paired.legacy_route.empty()); REQUIRE(paired.legacy_found);
+	CHECK(paired.periodic.arrival == paired.legacy_arrival); CHECK(paired.periodic.cost == paired.legacy_cost);
+	CHECK(db.Save() == saved); CHECK(db.GetDiagnostic().searches == before.searches);
+	CHECK(packet->GetPassengerRoutingMode() == mode); CHECK(_state_ticks == NOW); CHECK(seeds.Check());
+}
+
+TEST_CASE("Periodic passenger denominator excludes cargo-only order lists", "[passenger][periodic]")
+{
+	Fixture f; f.Train({Stop(A), Stop(D)});
+	auto *freight = f.Train({Stop(A), Stop(D)}); freight->cargo_type = CargoType{1};
+	AutoRestoreBackup<CargoClasses> freight_class{CargoSpec::Get(CargoType{1})->classes, CargoClasses{CargoClass::Bulk}};
+	auto *unknown = f.Train({Stop(A), Stop(D)}); unknown->GetOrder(1)->SetTravelTimetabled(false);
+	auto &db = f.Build(); auto census = db.GetDiagnostic();
+	CHECK(census.orderlists == 3); CHECK(census.passenger_orderlists == 2); CHECK(census.complete_timetables == 1);
+	CHECK(census.declared_complete_timetables == 1); CHECK(census.published_passenger == 2); CHECK(census.compile_success == 1); CHECK(census.compile_failure == 1);
+	CHECK(census.compile_failures[static_cast<size_t>(PassengerPeriodicTimetable::Failure::Travel)] == 1);
+}
+TEST_CASE("A tick ending during facility capture retries before publishing Unknown", "[passenger][periodic][determinism]")
+{
+	Fixture f; auto *train = f.Train({Stop(A), Stop(D)}); auto &db = GetPassengerServiceDatabase();
+	const size_t task_work = 64 + 2 * (NUM_CARGO + 32) + 3 * NUM_CARGO + 32 + 4;
+	db.Tick(task_work); CHECK(db.Get(train->orders->index) == nullptr);
+	CHECK(db.GetPublication(train->orders->index) == PassengerServiceDatabase::Publication::Dirty);
+	auto wire = db.Save(); PassengerServiceDatabase joined; REQUIRE(joined.Load(wire)); joined.FinishLoad(true);
+	db.Tick(); joined.Tick(); CHECK(db.Save() == joined.Save());
+	auto plan = db.Plan(PAX, A, D, NOW); REQUIRE(plan.ride); CHECK_FALSE(plan.deferred);
+	CHECK(db.GetDiagnostic().rejected_work == 1);
+}
+
+TEST_CASE("Periodic search obeys load unload and mandatory interchange permissions", "[passenger][periodic]")
+{
+	Fixture f; auto *train = f.Train({Stop(A), Stop(B), Stop(D)});
+	SECTION("No load") {
+		train->GetOrder(0)->SetLoadType(OrderLoadType::NoLoad); auto &db = f.Build();
+		auto plan = db.Plan(PAX, A, D, NOW); CHECK_FALSE(plan.ride); CHECK_FALSE(plan.deferred); CHECK(plan.reason == PassengerPeriodicPlan::Reason::NoCandidate);
+	}
+	SECTION("No unloading destination") {
+		train->GetOrder(2)->SetUnloadType(OrderUnloadType::NoUnload); auto &db = f.Build();
+		auto plan = db.Plan(PAX, A, D, NOW); CHECK_FALSE(plan.ride); CHECK_FALSE(plan.deferred); CHECK(plan.reason == PassengerPeriodicPlan::Reason::NoAlighting);
+	}
+	SECTION("Forced transfer to an express") {
+		train->GetOrder(1)->SetUnloadType(OrderUnloadType::Transfer); f.Train({Stop(B, 500, 120), Stop(D, 10, 0)});
+		auto &db = f.Build(); auto plan = db.Plan(PAX, A, D, NOW); REQUIRE(plan.ride); CHECK_FALSE(plan.deferred);
+		CHECK(plan.transfers == 1); CHECK(plan.ride->alighting == B);
+	}
+}
+TEST_CASE("A phase-only interchange gap is distinct from disconnected published components", "[passenger][periodic]")
+{
+	Fixture f; f.Train({Stop(A), Stop(B)}); auto *unknown = f.Train({Stop(B), Stop(C)}); unknown->current_order.Free();
+	f.Train({Stop(C), Stop(D)}); auto &db = f.Build();
+	auto plan = db.Plan(PAX, A, D, NOW); CHECK_FALSE(plan.ride); CHECK_FALSE(plan.deferred);
+	CHECK(plan.reason == PassengerPeriodicPlan::Reason::UnknownPhase);
+	unknown->LoadAt(0); ObservePassengerPeriodicVehicle(unknown); db.Tick();
+	plan = db.Plan(PAX, A, D, NOW); REQUIRE(plan.ride); CHECK_FALSE(plan.deferred);
+}
+TEST_CASE("Periodic journeys can use more than the initial four transfer rounds", "[passenger][periodic]")
+{
+	Fixture f;
+	for (uint16_t i = 0; i < 12; ++i) f.Train({Stop(StationID{i}, 1000, i * 10), Stop(StationID{static_cast<uint16_t>(i + 1)}, 10, 0)});
+	auto &db = f.Build(); auto plan = db.Plan(PAX, A, StationID{12}, NOW);
+	REQUIRE(plan.ride); CHECK_FALSE(plan.deferred); CHECK(plan.transfers == 11); CHECK(plan.arrival == NOW + 120);
+}
+
+TEST_CASE("Arrival phase comparison normalizes cycles across negative state ticks", "[passenger][periodic][save][determinism]")
+{
+	Fixture f; auto *train = f.Train({Stop(A), Stop(D)}); auto &db = f.Build(); auto generation = db.Get(train->orders->index)->generation;
+	StateTicksDelta delta{-64100}; db.ShiftTicks(delta); _state_ticks += delta;
+	_state_ticks += 220; train->LoadAt(0); ObservePassengerPeriodicVehicle(train);
+	REQUIRE(db.Get(train->orders->index)); CHECK(db.Get(train->orders->index)->generation == generation);
+	auto plan = db.Plan(PAX, A, D, _state_ticks); REQUIRE(plan.ride); CHECK(plan.ride->departure == _state_ticks + 10);
+}
+TEST_CASE("A new periodic query can board a live vehicle overdue since phase publication", "[passenger][periodic][comparison][determinism]")
+{
+	Fixture f; auto *train = f.Train({Stop(A), Stop(D)}); auto &db = f.Build(); auto saved = db.Save();
+	_state_ticks += 40; train->current_order_time = 40; train->lateness_counter = 400;
+	auto current = db.Plan(PAX, A, D, _state_ticks); REQUIRE(current.ride); CHECK_FALSE(current.deferred);
+	CHECK(current.ride->departure == _state_ticks); CHECK(current.arrival == _state_ticks + 100);
+	CHECK(db.Save() == saved);
+	auto future = db.Plan(PAX, A, D, _state_ticks + 1); REQUIRE(future.ride); CHECK(future.ride->departure == _state_ticks + 220);
+	auto paired = ComparePassengerPlanners(db, PAX, A, D, _state_ticks);
+	REQUIRE(paired.legacy_found); CHECK(paired.periodic.arrival == paired.legacy_arrival);
+}
+
+TEST_CASE("A slower prefix survives when a common connection restores the canonical tie", "[passenger][periodic]")
+{
+	Fixture f;
+	f.Train({Stop(A, 900, 10), Stop(B, 40, 0)});
+	auto *local = f.Train({Stop(A, 900, 0), Stop(B, 60, 0)});
+	f.Train({Stop(B, 900, 70), Stop(D, 30, 0)});
+	auto &db = f.Build(); auto plan = db.Plan(PAX, A, D, NOW);
+	REQUIRE(plan.ride); CHECK_FALSE(plan.deferred); CHECK(plan.arrival == NOW + 100);
+	CHECK(plan.ride->service == local->orders->index); CHECK(plan.ride->departure == NOW);
+}
+
+TEST_CASE("A fleet larger than a full phase capture tick cannot stall publication", "[passenger][periodic][scaling][determinism]")
+{
+	Fixture f; std::vector<Order> orders;
+	for (uint16_t i = 0; i < 100; ++i) orders.push_back(Stop(StationID{i}));
+	auto *first = f.Train(orders);
+	for (int i = 1; i < 150; ++i) Vehicle::Create<PeriodicTrain>(first);
+	auto &db = f.Build(); const auto *service = db.Get(first->orders->index); REQUIRE(service);
+	CHECK(service->vehicles.size() == 150);
+	size_t known = std::count_if(service->vehicles.begin(), service->vehicles.end(), [](const auto &v) { return v.phase_known; });
+	CHECK(known > 0); CHECK(known < 150); CHECK(db.GetDiagnostic().phase_capture_work > 0);
+	CHECK(db.GetPublication(first->orders->index) == PassengerServiceDatabase::Publication::Published);
+	db.Tick(); CHECK_FALSE(db.IsBuilding());
+	auto plan = db.Plan(PAX, A, StationID{99}, NOW); REQUIRE(plan.ride); CHECK_FALSE(plan.deferred);
 }

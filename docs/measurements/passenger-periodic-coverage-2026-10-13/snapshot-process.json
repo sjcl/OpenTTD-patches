@@ -1,0 +1,14 @@
+{
+  "backend": "legacy",
+  "exit_code": 0,
+  "wall_seconds": 421.2454508,
+  "cpu_seconds": 488.90625,
+  "peak_working_set": 2015424512,
+  "sampled_peak_private": 2016227328,
+  "input_save": "input.sav",
+  "resumed": false,
+  "requested_driver_loops": 0,
+  "input_sha256": "14D68C82911B9DCFC5EF7291E9697C5BBD67F44FFCC79D7575A144405EDF6390",
+  "binary_sha256": "66022742D49A033EC4BA7C201DCF1F3B6254DFAAD29B5026D2D343A0BED9A8C3",
+  "sample_ms": 100
+}

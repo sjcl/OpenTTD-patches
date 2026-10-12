@@ -1,0 +1,27 @@
+{
+  "base_commit": "7d914aa6f28293abb406becee2cec5fbb11e1d17",
+  "branch": "fix/passenger-periodic-timed-coverage",
+  "compiler": "MSVC 19.44 x64 Release /MT; assertions ON; LTO OFF",
+  "benchmark_option_in_product": "OFF",
+  "benchmark_binary_sha256": "E4ACA9A700464795C8450A19E8B18BE56B31F49740854EEF08219F6938BB2BAD",
+  "product_binary_sha256": "837E0BD4C8544D4A115FC4343E1F838BFC1A227C79EAAF8C395AB7D528C0E988",
+  "network_console_copy_sha256": "B461177569F771C315C7375B642C8BFE2C4F9551096F44DBFB1CD7DACBC33D5B",
+  "input_sha256": "14D68C82911B9DCFC5EF7291E9697C5BBD67F44FFCC79D7575A144405EDF6390",
+  "original_input_sha256_after": "14D68C82911B9DCFC5EF7291E9697C5BBD67F44FFCC79D7575A144405EDF6390",
+  "paired_save_sha256": "B4D70580074CDC28F118145FA27307A292A12294C28A1824E4730A1F10FAB17B",
+  "paired_state_ticks": 3176547014,
+  "main_interval": [
+    3176545487,
+    3176547014
+  ],
+  "completed_tick_samples": 1526,
+  "selected_measurement_label": "publication-final",
+  "old_snapshot_measurement_label": "snapshot",
+  "passenger_cases": 280,
+  "passenger_assertions": 966413,
+  "periodic_cases": 61,
+  "periodic_assertions": 12874,
+  "ctest_passed": 493,
+  "ctest_total": 493,
+  "observed_jst": "2026-10-13T04:49:13.1557302+09:00"
+}

@@ -884,7 +884,9 @@ bool PassengerJourneyBoardingContext::ValidateServiceRide(const PassengerJourney
 	auto found = this->service_rides.find(key);
 	if (found != this->service_rides.end()) return found->second;
 	if (this->service_rides.size() >= 128) return false;
-	return this->service_rides.emplace(key, ValidatePassengerServiceRide(ride, this->vehicle, this->cargo, boarding)).first->second;
+	bool valid = ValidatePassengerServiceRide(ride, this->vehicle, this->cargo, boarding);
+	if (boarding && !valid && this->vehicle->orders != nullptr && this->vehicle->orders->index == ride.service) GetPassengerServiceDatabase().RecordBoardingFailure();
+	return this->service_rides.emplace(key, valid).first->second;
 }
 
 bool PassengerJourneyBoardingContext::CanBoard(const CargoPacket &packet) const
@@ -1107,6 +1109,7 @@ size_t StationCargoList::RoutePassengerJourneys(CargoType cargo, StationID stati
 					if (!IsPassengerJourneyRoutingEnabled(cargo) || !Station::IsValidID(packet->GetPassengerDestination()) || leg.boarding != station ||
 							!Station::IsValidID(leg.alighting) || (allow_search && !GetPassengerServiceDatabase().IsCurrent(leg))) {
 						CountJourneyFallback(PassengerJourneyFallbackReason::StaleLeg);
+						GetPassengerServiceDatabase().RecordExpiry(packet->Count());
 						key = packet->GetPassengerLegacyHop(); packet->FallbackPassengerJourney(station, _state_ticks);
 					} else {
 						key = StationID::Invalid();
@@ -1133,6 +1136,7 @@ size_t StationCargoList::RoutePassengerJourneys(CargoType cargo, StationID stati
 							}
 							if (available == periodic_available.end() || !available->second) {
 								key = packet->GetPassengerLegacyHop(); CountJourneyFallback(PassengerJourneyFallbackReason::StaleLeg);
+								GetPassengerServiceDatabase().RecordExpiry(packet->Count());
 								packet->DeferPassengerJourney(station, _state_ticks + StateTicksDelta{-1}); // Expiry is an immediate routing event.
 							}
 						}

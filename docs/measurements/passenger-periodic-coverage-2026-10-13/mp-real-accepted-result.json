@@ -1,0 +1,29 @@
+{
+  "joined_clients": 2,
+  "backend": "periodic",
+  "binary": "openttd-accepted-network.exe",
+  "input_save": "input.sav",
+  "fixture": false,
+  "detected_sync_failure": true,
+  "client_exit_codes": [
+    null,
+    null
+  ],
+  "server_state_ticks": [
+    "3176545487",
+    "3176546645"
+  ],
+  "single_core_clients": true,
+  "affinity": {
+    "client-initial": {
+      "mask": 1,
+      "applied": true
+    },
+    "client-late": {
+      "mask": 1,
+      "applied": true
+    }
+  },
+  "sync_frequency": 1,
+  "loopback_address": "127.0.0.1:17496"
+}

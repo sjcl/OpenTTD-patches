@@ -1,0 +1,2 @@
+server: dbg: [net:1] 'periodic-client-late' reported an error and is closing its connection (desync error) (1, 9, 33)
+client-late: dbg: [net:0] Sync error detected!

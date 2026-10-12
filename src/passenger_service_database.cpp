@@ -33,6 +33,31 @@ namespace {
 		return 512 + 512 * s.timetable.stops.size() + 2 * (
 				s.vehicles.size() * sizeof(PassengerPeriodicVehicle) + s.dispatch_slots.size() * sizeof(uint32_t));
 	}
+	/** Actual progress in a complete explicit cycle. Waypoints and non-stopping
+	 * station orders have a timing offset too. Overdue travel has no certified
+	 * arrival; an already loading vehicle can depart now after its declared wait. */
+	std::optional<StateTicks> CapturePeriodicBase(const Vehicle *v, const PassengerPeriodicTimetable &table)
+	{
+		if (v->orders == nullptr || table.period == 0 || v->cur_real_order_index >= v->GetNumOrders()) return {};
+		const bool loading = v->current_order.IsAnyLoadingType();
+		const Order *current = v->GetOrder(v->cur_real_order_index);
+		if (!loading && (!current->IsTravelTimetabled() || v->current_order_time > current->GetTravelTime())) return {};
+		int64_t offset = 0, origin = 0, arrival = 0;
+		bool first = true;
+		for (size_t i = 0; i < v->GetNumOrders(); ++i) {
+			const Order &order = *v->GetOrder(static_cast<VehicleOrderID>(i));
+			if (order.IsType(OT_IMPLICIT) || order.IsType(OT_LABEL)) continue;
+			if (!first && !AddTicks(offset, order.GetTravelTime())) return {};
+			first = false;
+			if (i == table.stops.front().order) origin = offset;
+			if (i == v->cur_real_order_index) arrival = offset;
+			if (!AddTicks(offset, order.GetWaitTime())) return {};
+		}
+		int64_t elapsed = loading ? std::min<uint32_t>(v->current_order_time, current->GetWaitTime()) : v->current_order_time;
+		int64_t delta = arrival - origin + elapsed - (loading ? 0 : current->GetTravelTime());
+		if ((delta > 0 && _state_ticks.base() < INT64_MIN + delta) || (delta < 0 && _state_ticks.base() > INT64_MAX + delta)) return {};
+		return StateTicks{_state_ticks.base() - delta};
+	}
 }
 
 PassengerServiceDatabase &GetPassengerServiceDatabase() { return database; }
@@ -53,12 +78,18 @@ void ObservePassengerPeriodicVehicle(const Vehicle *vehicle)
 		if (part->cargo_type < NUM_CARGO) capacity[part->cargo_type] += part->cargo_cap;
 	}
 	if (capacity != phase->capacity) { database.Invalidate(service->id); return; }
-	if (service->timetable.period == 0 || phase->phase_known || vehicle->vehicle_flags.Test(VehicleFlag::ScheduledDispatch)) return;
+	if (service->timetable.period == 0 || vehicle->vehicle_flags.Test(VehicleFlag::ScheduledDispatch)) return;
+	if (database.GetPublication(service->id) == PassengerServiceDatabase::Publication::TimingDirty) return;
+	if (phase->phase_known && vehicle->current_order_time != 0) return;
 	if (std::none_of(service->timetable.stops.begin(), service->timetable.stops.end(), [&](const auto &stop) { return stop.order == vehicle->cur_real_order_index && stop.station == vehicle->last_station_visited; })) return;
 	if (vehicle->HasUnbunchingOrder()) return;
 	size_t work = 4096;
 	auto state = GetPassengerRouteState(vehicle, &work);
-	if (state && state->loading && std::all_of(state->usable_stops.begin(), state->usable_stops.end(), [](uint8_t usable) { return usable != 0; })) database.Invalidate(service->id);
+	if (state && state->loading && std::all_of(state->usable_stops.begin(), state->usable_stops.end(), [](uint8_t usable) { return usable != 0; })) {
+		auto observed = CapturePeriodicBase(vehicle, service->timetable);
+		auto modulo = [&](StateTicks ticks) { int64_t value = ticks.base() % service->timetable.period; return value < 0 ? value + service->timetable.period : value; };
+		if (observed && (!phase->phase_known || modulo(*observed) != modulo(phase->base))) database.Invalidate(service->id);
+	}
 }
 
 void PassengerServiceDatabase::ShiftTicks(StateTicksDelta delta)
@@ -72,25 +103,28 @@ void PassengerServiceDatabase::ShiftTicks(StateTicksDelta delta)
 	for (auto &[id, since] : this->dirty_since) since += delta;
 }
 
-PassengerPeriodicTimetable PassengerPeriodicTimetable::Compile(std::span<const Order> orders)
+PassengerPeriodicTimetable PassengerPeriodicTimetable::Compile(std::span<const Order> orders, Failure *failure)
 {
+	if (failure != nullptr) *failure = Failure::None;
+	auto fail = [&](Failure why) { if (failure != nullptr) *failure = why; return PassengerPeriodicTimetable{}; };
 	PassengerPeriodicTimetable result;
 	int64_t cursor = 0, first_travel = 0;
 	bool first = true;
 	for (size_t i = 0; i < orders.size(); ++i) {
 		const Order &order = orders[i];
 		if (order.IsType(OT_IMPLICIT) || order.IsType(OT_LABEL)) continue;
-		if ((!order.IsType(OT_GOTO_STATION) && !order.IsType(OT_GOTO_WAYPOINT)) || order.IsRefit() ||
-				!order.IsTravelTimetabled()) return {};
+		if (!order.IsType(OT_GOTO_STATION) && !order.IsType(OT_GOTO_WAYPOINT)) return fail(Failure::Control);
+		if (order.IsRefit()) return fail(Failure::Refit);
+		if (!order.IsTravelTimetabled()) return fail(Failure::Travel);
 		if (first) { first_travel = order.GetTravelTime(); first = false; }
-		else if (!AddTicks(cursor, order.GetTravelTime())) return {};
+		else if (!AddTicks(cursor, order.GetTravelTime())) return fail(Failure::Overflow);
 		bool stopping = order.IsType(OT_GOTO_STATION) && !(order.GetNonStopType() & ONSF_NO_STOP_AT_DESTINATION_STATION);
 		if (stopping) {
-			if (!order.IsWaitTimetabled()) return {};
+			if (!order.IsWaitTimetabled()) return fail(Failure::Wait);
 			PassengerPeriodicStop stop;
 			stop.station = order.GetDestination().ToStationID(); stop.order = static_cast<VehicleOrderID>(i);
 			stop.arrival = cursor;
-			if (!AddTicks(cursor, order.GetWaitTime())) return {};
+			if (!AddTicks(cursor, order.GetWaitTime())) return fail(Failure::Overflow);
 			stop.departure = cursor;
 			for (CargoType cargo : EnumRange(NUM_CARGO)) {
 				OrderUnloadType unload = order.GetCargoUnloadType(cargo);
@@ -100,11 +134,14 @@ PassengerPeriodicTimetable PassengerPeriodicTimetable::Compile(std::span<const O
 			}
 			result.stops.push_back(stop);
 		} else if (order.GetWaitTime() != 0) {
-			if (!order.IsWaitTimetabled() || !AddTicks(cursor, order.GetWaitTime())) return {};
+			if (!order.IsWaitTimetabled()) return fail(Failure::Wait);
+			if (!AddTicks(cursor, order.GetWaitTime())) return fail(Failure::Overflow);
 		}
-		if (cursor > MAX_PERIOD) return {};
+		if (cursor > MAX_PERIOD) return fail(Failure::Overflow);
 	}
-	if (!AddTicks(cursor, first_travel) || cursor == 0 || cursor > MAX_PERIOD || result.stops.size() < 2) return {};
+	if (!AddTicks(cursor, first_travel) || cursor > MAX_PERIOD) return fail(Failure::Overflow);
+	if (cursor == 0) return fail(Failure::ZeroPeriod);
+	if (result.stops.size() < 2) return fail(Failure::TooFewStops);
 	/* The phase origin is the arrival at the first explicit stopping order. */
 	int64_t origin = result.stops.front().arrival;
 	for (auto &stop : result.stops) { stop.arrival -= origin; stop.departure -= origin; }
@@ -227,6 +264,8 @@ void PassengerServiceDatabase::Tick(size_t allowance)
 		/* Atomic service tasks have a fixed upper envelope. A pathological list
 		 * cannot stall the queue or allocate outside the per-service ceiling. */
 		std::vector<const Vehicle *> fleet;
+		bool passenger_fleet = false;
+		size_t facility_envelope = 0;
 		size_t work = 64 + list->GetNumOrders() * (NUM_CARGO + 32);
 		size_t preflight_work = 64;
 		if (work <= BUILD_WORK) for (const DispatchSchedule &schedule : list->GetScheduledDispatchScheduleSet()) {
@@ -236,9 +275,15 @@ void PassengerServiceDatabase::Tick(size_t allowance)
 		if (work <= BUILD_WORK) {
 			for (const Vehicle *v = list->GetFirstSharedVehicle(); v != nullptr; v = v->NextShared()) {
 				fleet.push_back(v);
+				if (IsPassengerServiceVehicle(v) && !v->vehstatus.Any({VehState::Stopped, VehState::Crashed})) {
+					facility_envelope += v->type == VehicleType::Train ? 2 * list->GetNumOrders() + 1 : 4096;
+				}
 				preflight_work += 32;
 				work += 3 * NUM_CARGO + 32;
-				for (const Vehicle *part = v; part != nullptr && work <= BUILD_WORK; part = part->Next()) { work += 4; preflight_work += 4; }
+				for (const Vehicle *part = v; part != nullptr && work <= BUILD_WORK; part = part->Next()) {
+					work += 4; preflight_work += 4;
+					passenger_fleet |= part->cargo_type < NUM_CARGO && part->cargo_cap != 0 && IsCargoInClass(part->cargo_type, CargoClass::Passengers);
+				}
 				if (work > BUILD_WORK) break;
 			}
 		}
@@ -252,7 +297,16 @@ void PassengerServiceDatabase::Tick(size_t allowance)
 		if (work > BUILD_WORK) { ++this->diagnostic.rejected_work; allowance -= charged_work; }
 		else {
 			allowance -= work;
-			service.timetable = PassengerPeriodicTimetable::Compile(list->GetOrderVector());
+			bool retry_facilities = false;
+			bool capture_work_limited = false;
+			const bool facilities_fit_tick = facility_envelope <= BUILD_WORK - work;
+			PassengerPeriodicTimetable::Failure failure;
+			service.timetable = PassengerPeriodicTimetable::Compile(list->GetOrderVector(), &failure);
+			if (passenger_fleet) {
+				++this->diagnostic.compilation_attempts;
+				this->diagnostic.compilation_successes += service.timetable.period != 0;
+				++this->diagnostic.compilation_stops[static_cast<size_t>(failure)];
+			}
 			if (ServiceBytes(service) + this->bytes > MAX_BYTES) { service.timetable = {}; ++this->diagnostic.rejected_memory; }
 			for (const Vehicle *v : fleet) {
 				if (service.timetable.stops.empty()) break;
@@ -263,28 +317,34 @@ void PassengerServiceDatabase::Tick(size_t allowance)
 				}
 				/* Capture an actual known order phase once. Subsequent movement,
 				 * occupancy and lateness do not regenerate a future Visit column. */
-				auto stops = std::span(service.timetable.stops);
-				auto stop = std::find_if(stops.begin(), stops.end(), [&](const auto &s) { return s.order == v->cur_real_order_index; });
-				if (stop != stops.end() && v->current_order_time <= static_cast<uint64_t>(INT64_MAX) &&
-						(v->current_order.IsAnyLoadingType() || v->current_order.IsType(OT_GOTO_STATION))) {
-					int64_t delta = int64_t(v->current_order_time) + stop->arrival;
-					if (_state_ticks.base() >= INT64_MIN + delta) {
-						int64_t base = _state_ticks.base() - delta;
-						if (v->current_order.IsAnyLoadingType() || AddTicks(base, list->GetOrderAt(stop->order)->GetTravelTime())) {
-							phase.base = StateTicks{base}; phase.phase_known = true;
-						}
-					}
-				}
+				if (auto base = CapturePeriodicBase(v, service.timetable)) { phase.base = *base; phase.phase_known = true; }
 				if (v->HasUnbunchingOrder()) phase.phase_known = false;
 				/* A phase is trusted only for a certified live explicit order state.
 				 * Facility checks are bounded and never forecast implicit stops. */
 				size_t facility_work = std::min<size_t>(allowance, 4096);
 				const size_t facility_allowance = facility_work;
-				auto state = GetPassengerRouteState(v, &facility_work);
+				PassengerPredictionReason capture_reason{};
+				auto state = GetPassengerRouteState(v, &facility_work, &capture_reason);
 				allowance -= facility_allowance - facility_work;
+				if (capture_reason == PassengerPredictionReason::Budget) {
+					++this->diagnostic.phase_capture_work; capture_work_limited = true;
+					if (facilities_fit_tick && facility_allowance < 4096) retry_facilities = true;
+				}
 				if (!state || !std::all_of(state->usable_stops.begin(), state->usable_stops.end(), [](uint8_t usable) { return usable != 0; })) phase.phase_known = false;
 				service.vehicles.push_back(phase);
 			}
+			if (retry_facilities) {
+				/* A task started near the end of a tick must not permanently
+				 * publish Unknown phases just because previous tasks used its
+				 * facility allowance. Retry before publishing, with a fresh tick. */
+				++this->diagnostic.rejected_work;
+				this->dirty.insert(id); this->dirty_since.try_emplace(id, _state_ticks);
+				break;
+			}
+			/* A fleet exceeding a full tick's certified envelope must not retry
+			 * forever and starve discovery. Publish only individually verified
+			 * phases; the remaining vehicles stay explicitly unknown. */
+			if (capture_work_limited) ++this->diagnostic.rejected_work;
 			std::sort(service.vehicles.begin(), service.vehicles.end(), [](const auto &a, const auto &b) { return a.id < b.id; });
 			bool dispatch = false;
 			for (const Vehicle *v = list->GetFirstSharedVehicle(); v != nullptr; v = v->NextShared()) dispatch |= v->vehicle_flags.Test(VehicleFlag::ScheduledDispatch);
@@ -351,6 +411,13 @@ const PassengerPeriodicService *PassengerServiceDatabase::Get(OrderListID id) co
 	return found == this->services.end() ? nullptr : &found->second;
 }
 
+PassengerServiceDatabase::Publication PassengerServiceDatabase::GetPublication(OrderListID id) const
+{
+	if (this->dirty.contains(id)) return this->services.contains(id) ? Publication::TimingDirty : Publication::Dirty;
+	if (this->services.contains(id)) return Publication::Published;
+	return this->sweeping && id.base() >= this->cursor ? Publication::SweepPending : Publication::Unpublished;
+}
+
 bool PassengerServiceDatabase::IsCurrent(const PassengerJourneyExecution &ride) const
 {
 	const auto *service = this->Get(ride.service);
@@ -360,204 +427,337 @@ bool PassengerServiceDatabase::IsCurrent(const PassengerJourneyExecution &ride) 
 PassengerServiceDatabase::JourneyPolicy PassengerServiceDatabase::CompilePolicy(CargoType cargo, StationID origin,
 		StationID destination, PassengerJourneyLimits limits, PassengerJourneyEvaluation evaluation) const
 {
+	using Reason = PassengerPeriodicPlan::Reason;
 	JourneyPolicy policy;
 	policy.bytes = 256;
-	auto spend = [&]() { if (policy.work >= limits.work) { policy.limited = true; return false; } ++policy.work; return true; };
-	/* A destination absent from the published timed station index cannot have a
-	 * timed candidate. Do not expand the national timed network for that OD.
-	 * This says nothing about untimed services or later published generations. */
-	if (!spend() || !this->stations.contains(origin) || !this->stations.contains(destination)) return policy;
-	bool known_alighting = false;
+	auto spend = [&]() { if (policy.work >= limits.work) { policy.limited = true; policy.reason = Reason::Work; return false; } ++policy.work; return true; };
+	if (!spend()) return policy;
+	if (!this->stations.contains(origin)) { policy.reason = Reason::OriginMissing; return policy; }
+	if (!this->stations.contains(destination)) { policy.reason = Reason::DestinationMissing; return policy; }
+	bool alighting = false, known = false;
 	for (const auto &ref : this->stations.at(destination)) {
 		if (!spend()) return policy;
 		const auto &service = this->services.at(ref.service);
 		if (!(service.timetable.stops[ref.stop].alight & (uint64_t{1} << cargo))) continue;
-		for (const auto &vehicle : service.vehicles) {
+		alighting = true;
+		for (const auto &v : service.vehicles) {
 			if (!spend()) return policy;
-			if (vehicle.phase_known && vehicle.capacity[cargo] != 0) { known_alighting = true; break; }
+			if (v.phase_known && v.capacity[cargo]) { known = true; break; }
 		}
-		if (known_alighting) break;
+		if (known) break;
 	}
-	if (!known_alighting) return policy;
-	/* Cheap connectivity over the station/service incidence index rejects isolated
-	 * timed components before the more expensive alternative-path queue. Ignoring
-	 * load restrictions here only broadens reachability; it cannot invent a route.
-	 * This is part of cold policy work and is replayed identically on cache hits. */
-	constexpr size_t FLOOD_BITS = sizeof(std::bitset<65536>) * 2;
-	if (256 + FLOOD_BITS + 4 * this->stations.size() <= limits.memory_bytes) {
-		std::bitset<65536> visited_stations, visited_services;
-		std::vector<StationID> frontier; frontier.reserve(this->stations.size());
-		frontier.push_back(origin); visited_stations.set(origin.base());
-		bool reached = origin == destination;
-		for (size_t i = 0; i < frontier.size() && !reached; ++i) {
-			if (!spend()) return policy;
-			for (const auto &ref : this->stations.at(frontier[i])) {
-				if (!spend()) return policy;
-				if (visited_services.test(ref.service.base())) continue;
-				visited_services.set(ref.service.base());
-				const auto &service = this->services.at(ref.service);
-				bool timed = false;
-				for (const auto &vehicle : service.vehicles) {
-					if (!spend()) return policy;
-					if (vehicle.phase_known && vehicle.capacity[cargo]) { timed = true; break; }
-				}
-				if (!timed) continue;
-				for (const auto &stop : service.timetable.stops) {
-					if (!spend()) return policy;
-					if (stop.station == destination) { reached = true; break; }
-					if (visited_stations.test(stop.station.base())) continue;
-					visited_stations.set(stop.station.base()); frontier.push_back(stop.station);
-				}
-				if (reached) break;
-			}
-		}
-		if (!reached) return policy;
-	}
-	/* Candidates are timeless service occurrences. Absolute departures, physical
-	 * vehicle IDs and a previously winning route are never cached here. */
-	struct Path { StationID station; int64_t cost; std::vector<PolicyRide> rides; };
-	std::vector<Path> paths{{origin, 0, {}}};
-	using QueueItem = std::tuple<int64_t, StationID, size_t>;
-	std::priority_queue<QueueItem, std::vector<QueueItem>, std::greater<QueueItem>> queue;
-	queue.emplace(0, origin, 0);
-	std::map<StationID, size_t> visits;
+	if (!known) { policy.reason = alighting ? Reason::UnknownPhase : Reason::NoAlighting; return policy; }
+	/* Relaxed reverse Dijkstra on adjacent periodic stops. Dwell, boarding,
+	 * transfer restrictions and waiting are omitted, so these are admissible
+	 * time lower bounds, never candidates or nominally selected winners.
+	 * No edges or physical visits are materialised. O(stop incidences), even
+	 * for a long line whose through ride has hundreds of intermediate stops. */
+	using Item = std::pair<int64_t, StationID>;
+	std::priority_queue<Item, std::vector<Item>, std::greater<Item>> queue;
+	std::map<StationID, int64_t> distances;
 	size_t memory = 256;
-	const size_t candidates = std::clamp<size_t>(limits.candidates, 1, 16);
-	while (!queue.empty() && !policy.limited && policy.routes.size() < candidates) {
-		if (!spend()) break;
-		auto [cost, station, index] = queue.top(); queue.pop();
-		Path current = paths[index];
-		if (station == destination) {
-			if (std::find(policy.routes.begin(), policy.routes.end(), current.rides) == policy.routes.end()) policy.routes.push_back(std::move(current.rides));
-			continue;
+	auto insert = [&](StationID station, int64_t distance) {
+		auto it = distances.find(station);
+		if (it != distances.end() && it->second <= distance) return true;
+		size_t extra = 64 + (it == distances.end() ? 192 : 0);
+		if (memory > limits.memory_bytes || extra > limits.memory_bytes - memory) {
+			policy.limited = true; policy.reason = Reason::Memory; return false;
 		}
-		if (current.rides.size() > limits.max_transfers) continue;
-		if (++visits[station] > limits.labels_per_station) continue;
-		auto row = this->stations.find(station);
-		if (row == this->stations.end()) continue;
-		for (const auto &ref : row->second) {
+		memory += extra;
+		distances[station] = distance; queue.emplace(distance, station);
+		return true;
+	};
+	if (!insert(destination, 0)) return policy;
+	while (!queue.empty() && !policy.limited) {
+		if (!spend()) break;
+		auto [distance, station] = queue.top(); queue.pop();
+		if (distances.at(station) != distance || policy.lower_bounds.contains(station)) continue;
+		policy.lower_bounds.emplace(station, distance);
+		policy.unsettled_bound = distance;
+		/* Settled distances are safe even in a partial reverse search. Once
+		 * the origin is settled, further national expansion is unnecessary:
+		 * every unsettled station has distance at least this frontier value. */
+		if (station == origin) break;
+		for (const auto &ref : this->stations.at(station)) {
 			if (!spend()) break;
 			const auto &service = this->services.at(ref.service);
-			const auto &pattern = service.timetable;
-			const auto &board = pattern.stops[ref.stop];
-			if (!current.rides.empty() && current.rides.back().service == service.id && service.vehicles.size() == 1) continue;
-			if (!(board.board & (uint64_t{1} << cargo)) || !std::any_of(service.vehicles.begin(), service.vehicles.end(),
-					[&](const auto &v) { return v.phase_known && v.capacity[cargo] != 0; })) continue;
-			for (size_t step = 1; step < pattern.stops.size(); ++step) {
+			bool timed = false;
+			for (const auto &v : service.vehicles) {
 				if (!spend()) break;
-				size_t stop_index = (ref.stop + step) % pattern.stops.size();
-				const auto &alight = pattern.stops[stop_index];
-				bool cycle = alight.station == origin;
-				for (auto previous = current.rides.rbegin(); !cycle && previous != current.rides.rend(); ++previous) {
-					if (!spend()) break;
-					cycle = this->services.at(previous->service).timetable.stops[previous->alight].station == alight.station;
-				}
-				if (!cycle && (alight.alight & (uint64_t{1} << cargo))) {
-					int64_t duration = alight.arrival - board.departure;
-					if (stop_index <= ref.stop) duration += pattern.period;
-					int64_t next_cost = cost;
-					if (!AddTicks(next_cost, duration) || (!current.rides.empty() && !AddTicks(next_cost, evaluation.transfer_penalty))) continue;
-					size_t bytes = 512 + (current.rides.size() + 1) * sizeof(PolicyRide) * 2;
-					if (paths.size() >= limits.labels || memory + bytes > limits.memory_bytes) { policy.limited = true; break; }
-					memory += bytes;
-					auto rides = current.rides; rides.push_back({service.id, ref.stop, stop_index});
-					/* Retain a proven direct alternative before expanding transfer
-					 * combinations. A long line must not lose its through ride to a
-					 * combinatorial collection of shorter nominal transfer prefixes. */
-					if (current.rides.empty() && alight.station == destination && policy.routes.size() < candidates &&
-							std::find(policy.routes.begin(), policy.routes.end(), rides) == policy.routes.end()) policy.routes.push_back(rides);
-					queue.emplace(next_cost, alight.station, paths.size());
-					paths.push_back({alight.station, next_cost, std::move(rides)});
-				}
-				if (alight.forced & (uint64_t{1} << cargo)) break;
+				policy.unknown_phase |= !v.phase_known && v.capacity[cargo] != 0;
+				if (v.phase_known && v.capacity[cargo]) { timed = true; break; }
 			}
+			if (policy.limited) break;
+			if (!timed) continue;
+			const auto &stops = service.timetable.stops;
+			size_t previous = (ref.stop + stops.size() - 1) % stops.size();
+			int64_t duration = stops[ref.stop].arrival - stops[previous].departure;
+			if (ref.stop == 0) duration += service.timetable.period;
+			int64_t next = distance;
+			if (AddTicks(next, duration) && !insert(stops[previous].station, next)) break;
 		}
 	}
-	policy.bytes = 256;
-	for (const auto &route : policy.routes) policy.bytes += 64 + 2 * route.size() * sizeof(PolicyRide);
+	policy.complete = queue.empty() && !policy.limited && !policy.lower_bounds.contains(origin);
+	if (!policy.limited) policy.reason = policy.complete ? Reason::Unreachable : Reason::NoCandidate;
+	if (policy.complete && policy.unknown_phase) {
+		/* Only after proving no known-phase connection, check the same stop
+		 * permissions with phase omitted. This identifies phase-only gaps,
+		 * rather than labelling every disconnected OD as a timing problem.
+		 * Diagnostic truncation cannot undo the known-phase absence proof. */
+		std::set<StationID> seen;
+		std::vector<StationID> frontier;
+		auto diagnostic_spend = [&]() {
+			if (policy.work >= limits.work) { policy.diagnostic_limit = Reason::Work; return false; }
+			++policy.work; return true;
+		};
+		auto visit = [&](StationID station) {
+			if (seen.contains(station)) return true;
+			if (memory > limits.memory_bytes || 192 > limits.memory_bytes - memory) { policy.diagnostic_limit = Reason::Memory; return false; }
+			memory += 192; seen.insert(station); frontier.push_back(station); return true;
+		};
+		visit(origin);
+		bool reached = false;
+		for (size_t i = 0; i < frontier.size() && !reached && policy.diagnostic_limit == Reason::NoCandidate; ++i) {
+			if (!diagnostic_spend()) break;
+			for (const auto &ref : this->stations.at(frontier[i])) {
+				if (!diagnostic_spend()) break;
+				const auto &service = this->services.at(ref.service);
+				const auto &stops = service.timetable.stops;
+				if (!(stops[ref.stop].board & (uint64_t{1} << cargo))) continue;
+				bool capable = false;
+				for (const auto &v : service.vehicles) { if (!diagnostic_spend()) break; capable |= v.capacity[cargo] != 0; }
+				if (!capable || policy.diagnostic_limit != Reason::NoCandidate) continue;
+				for (size_t step = 1; step < stops.size(); ++step) {
+					if (!diagnostic_spend()) break;
+					const auto &stop = stops[(ref.stop + step) % stops.size()];
+					if (stop.alight & (uint64_t{1} << cargo)) {
+						if (stop.station == destination) { reached = true; break; }
+						if (!visit(stop.station)) break;
+					}
+					if (stop.forced & (uint64_t{1} << cargo)) break;
+				}
+				if (reached || policy.diagnostic_limit != Reason::NoCandidate) break;
+			}
+		}
+		if (reached) policy.reason = Reason::UnknownPhase;
+	}
+	policy.bytes = 256 + 128 * policy.lower_bounds.size();
+	policy.scratch_bytes = memory;
 	return policy;
 }
 
 PassengerPeriodicPlan PassengerServiceDatabase::Plan(CargoType cargo, StationID origin, StationID destination, StateTicks ready,
 		PassengerJourneyLimits limits, PassengerJourneyEvaluation evaluation)
 {
+	using Reason = PassengerPeriodicPlan::Reason;
 	PassengerPeriodicPlan result;
-	if (cargo >= NUM_CARGO || origin == destination || !Station::IsValidID(origin) || !Station::IsValidID(destination) ||
-			evaluation.minimum_transfer < 0 || evaluation.transfer_penalty < 0) return result;
-	/* Active uses a capacity upper bound and demand of one, with no occupancy
-	 * forecast penalty. Unsupported provider evaluations remain explicitly unknown. */
-	if (evaluation.crowding_penalty != 0 || evaluation.capacity_shortfall_penalty != 0) { result.deferred = true; return result; }
 	const auto started = std::chrono::steady_clock::now(); ++this->diagnostic.searches;
+	auto observe = [&](Reason reason) { result.observations[static_cast<size_t>(reason)] = true; };
+	auto finish = [&]() {
+		observe(result.reason);
+		++this->diagnostic.outcomes[static_cast<size_t>(result.reason)];
+		for (size_t i = 0; i < result.observations.size(); ++i) this->diagnostic.observations[i] += result.observations[i];
+		this->diagnostic.query_microseconds += std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - started).count();
+		return result;
+	};
+	if (cargo >= NUM_CARGO || origin == destination || !Station::IsValidID(origin) || !Station::IsValidID(destination) ||
+			evaluation.minimum_transfer < 0 || evaluation.transfer_penalty < 0) return finish();
+	if (evaluation.crowding_penalty != 0 || evaluation.capacity_shortfall_penalty != 0) {
+		result.deferred = true; result.reason = Reason::Evaluation; return finish();
+	}
+	if (limits.work == 0 || limits.memory_bytes < 256) {
+		result.deferred = true; result.reason = limits.work == 0 ? Reason::Work : Reason::Memory; return finish();
+	}
 	PolicyKey key{cargo, origin, destination, limits, evaluation};
 	auto cached = this->journey_policies.find(key);
 	JourneyPolicy temporary;
 	const JourneyPolicy *policy;
 	if (cached != this->journey_policies.end()) { cached->second.last_used = ++this->policy_clock; policy = &cached->second; ++this->diagnostic.policy_hits; }
 	else {
-		auto compilation = limits; compilation.work /= 2; // Reserve bounded work for evaluating retained alternatives.
+		auto compilation = limits; compilation.work /= 2;
 		temporary = this->CompilePolicy(cargo, origin, destination, compilation, evaluation); policy = &temporary; ++this->diagnostic.policy_misses;
 	}
-	result.work = policy->work;
-	/* Replay compilation work on hits. Optional cache residency/eviction and
-	 * unsaved policies cannot alter admission, budgets, ties or the candidates. */
-	auto spend = [&]() { if (result.work >= limits.work) { result.deferred = true; return false; } ++result.work; return true; };
-	for (const auto &route : policy->routes) {
-		StateTicks time = ready;
-		int64_t cost = 0;
-		bool usable = true;
-		PassengerJourneyExecution first;
-		for (size_t i = 0; i < route.size(); ++i) {
-			if (!spend()) { usable = false; break; }
-			const auto &ref = route[i];
-			const auto &service = this->services.at(ref.service);
-			const auto &pattern = service.timetable;
-			const auto &board = pattern.stops[ref.board], &alight = pattern.stops[ref.alight];
-			int64_t earliest = time.base();
-			if (i && !AddTicks(earliest, evaluation.minimum_transfer)) { usable = false; break; }
-			std::optional<StateTicks> departure;
-			for (const auto &vehicle : service.vehicles) {
-				if (!spend()) { usable = false; break; }
-				if (!vehicle.phase_known || vehicle.capacity[cargo] == 0) continue;
-				if (service.dispatch_period > 0) {
-					int64_t offset = board.departure - pattern.stops[service.dispatch_stop].departure;
-					if (offset < 0) offset += pattern.period;
-					for (uint32_t slot : service.dispatch_slots) {
-						if (!spend()) { usable = false; break; }
-						int64_t floor = service.dispatch_floor.base();
-						if (!AddTicks(floor, offset)) continue;
+	result.work = policy->work; result.memory = policy->bytes;
+	result.reason = policy->reason;
+	/* Replaying the same reverse work keeps optional residency irrelevant to
+	 * admission, including cold/warm/evicted caches and network joins. */
+	if (policy->limited) observe(policy->reason);
+	if (policy->unknown_phase) observe(Reason::UnknownPhase);
+	if (policy->diagnostic_limit != Reason::NoCandidate) observe(policy->diagnostic_limit);
+	if (!policy->limited && policy->reason != Reason::NoCandidate) {
+		// No timed route in the published generation, independently of dirty work.
+	} else {
+		struct Label {
+			StationID station;
+			StateTicks time;
+			int64_t cost;
+			size_t parent, rides;
+			PassengerJourneyExecution leg, first;
+			bool active = true;
+		};
+		static_assert(sizeof(Label) <= 512);
+		std::vector<Label> labels;
+		std::map<StationID, std::vector<size_t>> frontiers;
+		using Item = std::tuple<int64_t, int64_t, StateTicks, size_t, StateTicks, OrderListID, VehicleOrderID, VehicleOrderID, size_t>;
+		std::priority_queue<Item, std::vector<Item>, std::greater<Item>> queue;
+		int64_t omitted_bound = INT64_MAX;
+		auto bound = [&](StationID station, int64_t cost) {
+			auto it = policy->lower_bounds.find(station);
+			int64_t distance = it != policy->lower_bounds.end() ? it->second : policy->unsettled_bound;
+			if (!AddTicks(cost, distance)) return INT64_MAX;
+			return cost;
+		};
+		auto limited = [&](Reason reason, int64_t lower) {
+			observe(reason); omitted_bound = std::min(omitted_bound, lower);
+			if (result.reason == Reason::NoCandidate || result.reason == Reason::Work || result.reason == Reason::Memory) result.reason = reason;
+		};
+		auto spend = [&]() {
+			if (result.work >= limits.work) { limited(Reason::Work, 0); return false; }
+			++result.work; return true;
+		};
+		auto first_key = [](const Label &a) { return std::tie(a.first.departure, a.first.service, a.first.boarding_order, a.first.alighting_order); };
+		auto insert = [&](Label next) {
+			int64_t lower = bound(next.station, next.cost);
+			if (result.ride && lower > result.cost) return;
+			auto found = frontiers.find(next.station);
+			size_t retained = 0;
+			if (found != frontiers.end() && next.station != destination) for (size_t index : found->second) {
+				if (!spend()) return;
+				const auto &other = labels[index];
+				if (!other.active) continue;
+				++retained;
+				/* Earliest arrival dominates only when the extra wait has no
+				 * preference cost. Weighted waits retain different arrival times.
+				 * Continuations allow any service, so no path-history assumption
+				 * or forbidden-station set makes this dominance unsound. */
+				bool times = evaluation.waiting_weight == 0 ? other.time <= next.time : other.time == next.time;
+				if (times && other.cost <= next.cost && other.rides <= next.rides &&
+						(other.rides < next.rides || first_key(other) <= first_key(next) ||
+						(evaluation.waiting_weight != 0 && other.cost < next.cost))) return;
+			}
+			if (next.station != destination && retained >= limits.labels_per_station) { limited(Reason::Labels, lower); return; }
+			if (labels.size() >= limits.labels) { limited(Reason::Labels, lower); return; }
+			constexpr size_t LABEL_BYTES = 1536; // vector overlap, queue, frontier map/vectors, reconstruction
+			if (result.memory > limits.memory_bytes || LABEL_BYTES > limits.memory_bytes - result.memory) { limited(Reason::Memory, lower); return; }
+			result.memory += LABEL_BYTES;
+			queue.emplace(lower, next.cost, next.time, next.rides, next.first.departure, next.first.service,
+				next.first.boarding_order, next.first.alighting_order, labels.size());
+			frontiers[next.station].push_back(labels.size()); labels.push_back(std::move(next));
+		};
+		insert({origin, ready, 0, SIZE_MAX, 0, {}, {}});
+		size_t winner = SIZE_MAX;
+		const size_t candidates = std::clamp<size_t>(limits.candidates, 1, 16);
+		while (!queue.empty()) {
+			if (result.ride && std::get<0>(queue.top()) > result.cost) break;
+			if (!spend()) break;
+			size_t index = std::get<8>(queue.top()); queue.pop();
+			Label current = labels[index];
+			if (!current.active) continue;
+			if (current.station == destination) {
+				/* Completion only when popped by actual cost plus time lower bound.
+				 * A full candidate list never prevents a better transfer prefix. */
+				if (result.candidates < candidates) ++result.candidates; else observe(Reason::Candidates);
+				if (!result.ride || std::tie(current.cost, current.time, current.rides, current.first.departure, current.first.service,
+						current.first.boarding_order, current.first.alighting_order) < std::tie(result.cost, result.arrival, labels[winner].rides,
+						result.ride->departure, result.ride->service, result.ride->boarding_order, result.ride->alighting_order)) {
+					result.ride = current.first; result.arrival = current.time; result.cost = current.cost;
+					result.transfers = current.rides - 1; winner = index;
+				}
+				continue;
+			}
+			if (current.rides > limits.max_transfers) { limited(Reason::Transfers, bound(current.station, current.cost)); continue; }
+			auto row = this->stations.find(current.station);
+			if (row == this->stations.end()) continue;
+			for (const auto &ref : row->second) {
+				if (!spend()) break;
+				const auto &service = this->services.at(ref.service);
+				const auto &pattern = service.timetable;
+				const auto &board = pattern.stops[ref.stop];
+				if (!(board.board & (uint64_t{1} << cargo))) continue;
+				int64_t earliest = current.time.base();
+				if (current.rides && !AddTicks(earliest, evaluation.minimum_transfer)) { observe(Reason::Evaluation); continue; }
+				std::optional<StateTicks> departure;
+				for (const auto &vehicle : service.vehicles) {
+					if (!spend()) break;
+					if (!vehicle.capacity[cargo]) continue;
+					if (!vehicle.phase_known) { observe(Reason::UnknownPhase); continue; }
+					if (service.dispatch_period > 0) {
+						int64_t offset = board.departure - pattern.stops[service.dispatch_stop].departure;
+						if (offset < 0) offset += pattern.period;
+						for (uint32_t slot : service.dispatch_slots) {
+							if (!spend()) break;
+							int64_t floor = service.dispatch_floor.base();
+							if (!AddTicks(floor, offset)) continue;
+							++this->diagnostic.next_departures;
+							auto next = PassengerPeriodicTimetable::NextDeparture(service.dispatch_base, slot + offset, service.dispatch_period, StateTicks{std::max(earliest, floor)});
+							if (next && (!departure || *next < *departure)) departure = next;
+						}
+					} else {
 						++this->diagnostic.next_departures;
-						auto next = PassengerPeriodicTimetable::NextDeparture(service.dispatch_base, slot + offset, service.dispatch_period, StateTicks{std::max(earliest, floor)});
+						StateTicks base = vehicle.base;
+						const Vehicle *live = Vehicle::GetIfValid(vehicle.id);
+						/* A published phase must not make an actually loading,
+						 * overdue vehicle wait a whole circuit in a new query. This
+						 * constant-size live observation changes no saved phase or
+						 * cache: use the remaining published dwell at this occurrence.
+						 * Future-ready queries still require the next real cycle. */
+						if (live != nullptr && live->orders != nullptr && live->orders->index == service.id &&
+								live->orders->GetCargoDistRouteGeneration() == service.incarnation &&
+								!live->vehstatus.Any({VehState::Stopped, VehState::Crashed}) && !live->vehicle_flags.Test(VehicleFlag::ScheduledDispatch) &&
+								live->current_order.IsAnyLoadingType() && !live->current_order.IsType(OT_LOADING_ADVANCE) &&
+								live->cur_real_order_index == board.order && live->cur_implicit_order_index == board.order && live->last_station_visited == board.station &&
+								(live->cur_timetable_order_index == INVALID_VEH_ORDER_ID || live->cur_timetable_order_index == board.order)) {
+							int64_t departure_now = _state_ticks.base();
+							int64_t remaining = std::max<int64_t>(0, board.departure - board.arrival - live->current_order_time);
+							if (AddTicks(departure_now, remaining) && departure_now >= INT64_MIN + board.departure) base = StateTicks{departure_now - board.departure};
+						}
+						auto next = PassengerPeriodicTimetable::NextDeparture(base, board.departure, pattern.period, StateTicks{earliest});
 						if (next && (!departure || *next < *departure)) departure = next;
 					}
-				} else {
-					++this->diagnostic.next_departures;
-					auto next = PassengerPeriodicTimetable::NextDeparture(vehicle.base, board.departure, pattern.period, StateTicks{earliest});
-					if (next && (!departure || *next < *departure)) departure = next;
 				}
+				if (result.work >= limits.work) { limited(Reason::Work, 0); break; }
+				if (!departure) { observe(Reason::Evaluation); continue; }
+				if (current.rides && current.leg.service == service.id && current.leg.alighting_order == board.order &&
+						!(board.forced & (uint64_t{1} << cargo))) {
+					int64_t through = current.time.base();
+					/* Staying aboard was already enumerated by the parent. Only a
+					 * genuinely earlier shared-vehicle departure can improve it. */
+					if (AddTicks(through, board.departure - board.arrival) && departure->base() >= through) continue;
+				}
+				for (size_t step = 1; step < pattern.stops.size(); ++step) {
+					if (!spend()) break;
+					size_t stop_index = (ref.stop + step) % pattern.stops.size();
+					const auto &alight = pattern.stops[stop_index];
+					if ((alight.alight & (uint64_t{1} << cargo)) && (!policy->complete || policy->lower_bounds.contains(alight.station))) {
+						int64_t duration = alight.arrival - board.departure;
+						if (stop_index <= ref.stop) duration += pattern.period;
+						int64_t end = departure->base(), cost = current.cost;
+						if (!AddTicks(end, duration) || end < current.time.base() || uint64_t(end) - uint64_t(current.time.base()) > INT64_MAX) { observe(Reason::Evaluation); continue; }
+						int64_t elapsed = end - current.time.base(), wait = departure->base() - current.time.base();
+						if (!AddTicks(cost, elapsed) || (current.rides && !AddTicks(cost, evaluation.transfer_penalty)) ||
+								(evaluation.waiting_weight && (wait > INT64_MAX / evaluation.waiting_weight || !AddTicks(cost, wait * evaluation.waiting_weight / 1000))) ||
+								(current.rides && !AddTicks(cost, int64_t(evaluation.minimum_transfer) * evaluation.transfer_time_weight / 1000))) { observe(Reason::Evaluation); continue; }
+						PassengerJourneyExecution leg{VehicleID::Invalid(), service.id, board.station, alight.station, board.order, alight.order, *departure, StateTicks{end}, service.incarnation};
+						leg.kind = PassengerRideKind::ServiceIntent; leg.generation = service.generation; leg.not_before = StateTicks{earliest};
+						insert({alight.station, StateTicks{end}, cost, index, current.rides + 1, leg, current.rides ? current.first : leg});
+					}
+					if (alight.forced & (uint64_t{1} << cargo)) break;
+				}
+				if (result.work >= limits.work) break;
 			}
-			if (!usable || !departure) { usable = false; break; }
-			int64_t duration = alight.arrival - board.departure;
-			if (ref.alight <= ref.board) duration += pattern.period;
-			int64_t end = departure->base();
-			if (!AddTicks(end, duration) || end < time.base() || uint64_t(end) - uint64_t(time.base()) > INT64_MAX) { usable = false; break; }
-			int64_t elapsed = end - time.base(), wait = departure->base() - time.base();
-			if (!AddTicks(cost, elapsed) || (i && !AddTicks(cost, evaluation.transfer_penalty)) ||
-					(evaluation.waiting_weight && (wait > INT64_MAX / evaluation.waiting_weight || !AddTicks(cost, wait * evaluation.waiting_weight / 1000))) ||
-					(i && !AddTicks(cost, int64_t(evaluation.minimum_transfer) * evaluation.transfer_time_weight / 1000))) { usable = false; break; }
-			if (i == 0) {
-				first = {VehicleID::Invalid(), service.id, board.station, alight.station, board.order, alight.order, *departure, StateTicks{end}, service.incarnation};
-				first.kind = PassengerRideKind::ServiceIntent; first.generation = service.generation;
-				first.not_before = ready;
-			}
-			time = StateTicks{end};
 		}
-		size_t transfers = route.size() - 1;
-		if (usable && (!result.ride || std::tie(cost, time, transfers, first.departure, first.service, first.boarding_order, first.alighting_order) <
-				std::tie(result.cost, result.arrival, result.transfers, result.ride->departure, result.ride->service, result.ride->boarding_order, result.ride->alighting_order))) {
-			result.ride = first; result.arrival = time; result.cost = cost; result.transfers = transfers;
+		result.labels = labels.size();
+		if (result.ride) {
+			for (size_t index = winner; labels[index].parent != SIZE_MAX; index = labels[index].parent) result.route.push_back(labels[index].leg);
+			std::reverse(result.route.begin(), result.route.end());
+			result.deferred = omitted_bound <= result.cost;
+			if (!result.deferred) result.reason = Reason::Found;
+		} else {
+			result.deferred = omitted_bound != INT64_MAX;
+			if (!result.deferred) result.reason = result.observations[static_cast<size_t>(Reason::UnknownPhase)] ? Reason::UnknownPhase :
+					result.observations[static_cast<size_t>(Reason::Evaluation)] ? Reason::Evaluation : Reason::NoCandidate;
 		}
 	}
-	result.deferred |= policy->limited && !result.ride;
 	if (cached == this->journey_policies.end() && temporary.bytes <= POLICY_BYTES) {
 		while (!this->journey_policies.empty() && (this->journey_policies.size() >= POLICY_ENTRIES || this->policy_bytes + temporary.bytes > POLICY_BYTES)) {
 			auto oldest = std::min_element(this->journey_policies.begin(), this->journey_policies.end(), [](const auto &a, const auto &b) { return a.second.last_used < b.second.last_used; });
@@ -566,8 +766,65 @@ PassengerPeriodicPlan PassengerServiceDatabase::Plan(CargoType cargo, StationID 
 		temporary.last_used = ++this->policy_clock;
 		this->policy_bytes += temporary.bytes; this->journey_policies.emplace(key, std::move(temporary));
 	}
-	this->diagnostic.query_microseconds += std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - started).count();
-	return result;
+	result.memory = std::max(result.memory, policy->scratch_bytes);
+	return finish();
+}
+PassengerPlannerComparison ComparePassengerPlanners(const PassengerServiceDatabase &source, CargoType cargo,
+		StationID origin, StationID destination, StateTicks ready, PassengerJourneyLimits limits, PassengerJourneyEvaluation evaluation)
+{
+	PassengerPlannerComparison comparison;
+	PassengerServiceDatabase isolated;
+	if (!isolated.Load(source.Save())) return comparison;
+	isolated.FinishLoad(true);
+	comparison.periodic = isolated.Plan(cargo, origin, destination, ready, limits, evaluation);
+	PassengerServiceCapture capture;
+	for (Ticks horizon = 4096;; horizon = std::min<Ticks>(65536, horizon * 4)) {
+		auto graph_limits = ActivePassengerServiceGraphLimits(); graph_limits.horizon = horizon;
+		auto graph = PassengerServiceGraph::Build(cargo, _state_ticks, graph_limits, PassengerServiceScope{origin, destination}, &capture, PassengerTimingPolicy::AssumeTimetable);
+		PassengerJourneyPlanner planner(graph);
+		auto old_limits = limits; old_limits.candidates = 1; // Match the old Active path's admission and K.
+		auto legacy = planner.Plan(cargo, origin, destination, ready, old_limits, evaluation);
+		comparison.legacy_found = legacy.GetOutcome() == PassengerJourneyOutcome::TimedRouteFound &&
+				legacy.journeys.front().generalized_time.base() < horizon && graph.GetQueryStatus(origin, destination) < PassengerPredictionStatus::LimitReached;
+		comparison.horizon = horizon; comparison.legacy_stop = legacy.stop_reason; comparison.legacy_status = legacy.status;
+		comparison.legacy_graph_work += graph.GetWork(); comparison.legacy_search_work += legacy.diagnostic.work;
+		comparison.legacy_route.clear();
+		if (legacy.HasJourney()) {
+			const auto &journey = legacy.journeys.front();
+			comparison.legacy_arrival = journey.arrival; comparison.legacy_cost = journey.generalized_time.base();
+			for (const auto &leg : journey.legs) {
+				const auto &trip = graph.GetTrips()[leg.boarding.trip];
+				comparison.legacy_route.push_back({leg.vehicle, trip.service, leg.boarding_station, leg.alighting_station,
+						trip.prediction.visits[leg.boarding.visit].order, trip.prediction.visits[leg.alighting.visit].order,
+						leg.departure, leg.arrival, 0});
+			}
+			if (comparison.legacy_cost < horizon || legacy.GetOutcome() != PassengerJourneyOutcome::TimedRouteFound) break;
+		} else if (legacy.stop_reason != PassengerJourneyStopReason::PredictionHorizon) break;
+		if (horizon == 65536) break;
+	}
+	return comparison;
+}
+
+PassengerDatabaseDiagnostic::Phase PassengerServiceDatabase::ExplainPhase(const Vehicle *v, const PassengerPeriodicService &service) const
+{
+	using Phase = PassengerDatabaseDiagnostic::Phase;
+	if (v == nullptr || !IsPassengerServiceVehicle(v) || v->vehstatus.Any({VehState::Stopped, VehState::Crashed}) || v->IsInDepot()) return Phase::VehicleState;
+	if (service.timetable.period == 0) return Phase::NoTimetable;
+	if (v->HasUnbunchingOrder()) return Phase::Unbunching;
+	if (v->vehicle_flags.Test(VehicleFlag::ScheduledDispatch)) {
+		if (v->orders->GetNumVehicles() > 1) return Phase::DispatchCompetition;
+		if (service.dispatch_period == 0) return Phase::DispatchUnsupported;
+	}
+	size_t budget = 4096;
+	PassengerPredictionReason reason{};
+	auto state = GetPassengerRouteState(v, &budget, &reason);
+	if (!state) {
+		if (reason == PassengerPredictionReason::Budget) return Phase::Work;
+		return reason == PassengerPredictionReason::VehicleState ? Phase::VehicleState : Phase::OrderProgress;
+	}
+	if (!std::all_of(state->usable_stops.begin(), state->usable_stops.end(), [](uint8_t usable) { return usable != 0; })) return Phase::Facilities;
+	if (!state->loading && state->elapsed > state->orders[state->current_order].GetTravelTime()) return Phase::ElapsedTravel;
+	return CapturePeriodicBase(v, service.timetable) ? Phase::AwaitCapture : Phase::Overflow;
 }
 
 PassengerDatabaseDiagnostic PassengerServiceDatabase::GetDiagnostic() const
@@ -581,8 +838,48 @@ PassengerDatabaseDiagnostic PassengerServiceDatabase::GetDiagnostic() const
 	if (this->sweeping && d.pending > this->dirty.size()) d.maximum_pending_ticks = std::max(d.maximum_pending_ticks, age(this->sweeping_since));
 	for (const auto &[id, service] : this->services) {
 		d.vehicles += service.vehicles.size();
-		d.known_phase_vehicles += std::count_if(service.vehicles.begin(), service.vehicles.end(), [](const auto &v) { return v.phase_known; });
-		d.timed_services += std::any_of(service.vehicles.begin(), service.vehicles.end(), [](const auto &v) { return v.phase_known; });
+		auto passenger_phase = [](const auto &v) {
+			if (!v.phase_known) return false;
+			for (CargoType cargo : EnumRange(NUM_CARGO)) if (v.capacity[cargo] != 0 && IsCargoInClass(cargo, CargoClass::Passengers)) return true;
+			return false;
+		};
+		d.known_phase_vehicles += std::count_if(service.vehicles.begin(), service.vehicles.end(), passenger_phase);
+		d.timed_services += std::any_of(service.vehicles.begin(), service.vehicles.end(), passenger_phase);
+	}
+	/* Explicit diagnostic census only. Cargo-only lists never enter passenger
+	 * denominators. Counts below describe live eligibility; published timing
+	 * can intentionally lag automatic timing edits until its saved epoch. */
+	for (const OrderList *list : OrderList::Iterate()) {
+		++d.orderlists;
+		bool passengers = false;
+		for (const Vehicle *v = list->GetFirstSharedVehicle(); v != nullptr; v = v->NextShared()) {
+			if (!IsPassengerServiceVehicle(v)) continue;
+			for (const Vehicle *part = v; part != nullptr; part = part->Next()) passengers |= part->cargo_type < NUM_CARGO && part->cargo_cap != 0 && IsCargoInClass(part->cargo_type, CargoClass::Passengers);
+		}
+		if (!passengers) continue;
+		++d.passenger_orderlists;
+		d.declared_complete_timetables += list->IsCompleteTimetable();
+		PassengerPeriodicTimetable::Failure failure;
+		auto table = PassengerPeriodicTimetable::Compile(list->GetOrderVector(), &failure);
+		++d.compile_failures[static_cast<size_t>(failure)];
+		if (table.period) { ++d.complete_timetables; ++d.compile_success; } else ++d.compile_failure;
+		const auto *published = this->Get(list->index);
+		d.published_passenger += published != nullptr;
+		d.published_cycles += published != nullptr && published->timetable.period != 0;
+		d.unpublished += published == nullptr;
+		d.dirty_services += this->dirty.contains(list->index);
+		d.pending_passenger += this->dirty.contains(list->index) || (this->sweeping && list->index.base() >= this->cursor && published == nullptr);
+		PassengerPeriodicService live; live.timetable = std::move(table);
+		for (const Vehicle *v = list->GetFirstSharedVehicle(); v != nullptr; v = v->NextShared()) {
+			bool capable = false;
+			if (!IsPassengerServiceVehicle(v)) continue;
+			for (const Vehicle *part = v; part != nullptr; part = part->Next()) capable |= part->cargo_type < NUM_CARGO && part->cargo_cap != 0 && IsCargoInClass(part->cargo_type, CargoClass::Passengers);
+			if (!capable) continue;
+			bool known = published != nullptr && std::any_of(published->vehicles.begin(), published->vehicles.end(), [&](const auto &p) { return p.id == v->index && p.phase_known; });
+			auto reason = known ? PassengerDatabaseDiagnostic::Phase::Known : this->ExplainPhase(v, published == nullptr ? live : *published);
+			++d.phases[static_cast<size_t>(reason)];
+			d.unknown_phase_vehicles += !known;
+		}
 	}
 	return d;
 }
