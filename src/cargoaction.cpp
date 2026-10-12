@@ -11,6 +11,7 @@
 #include "economy_base.h"
 #include "cargoaction.h"
 #include "station_base.h"
+#include "passenger_journey_active.h"
 
 #include "safeguards.h"
 
@@ -106,6 +107,7 @@ bool CargoRemoval<VehicleCargoList>::operator()(CargoPacket *cp)
 bool CargoDelivery::operator()(CargoPacket *cp)
 {
 	uint remove = this->Preprocess(cp);
+	if (cp->GetPassengerRoutingMode() == PassengerRoutingMode::Journey) RecordPassengerJourneyMovement(PassengerJourneyMovement::Deliver, remove);
 	this->source->RemoveFromMeta(cp, VehicleCargoList::MoveToAction::Deliver, remove);
 	this->payment->PayFinalDelivery(this->cargo, cp, remove, this->current_tile);
 	return this->Postprocess(cp, remove);
@@ -120,6 +122,7 @@ bool CargoLoad::operator()(CargoPacket *cp)
 {
 	CargoPacket *cp_new = this->Preprocess(cp);
 	if (cp_new == nullptr) return false;
+	if (cp_new->GetPassengerRoutingMode() == PassengerRoutingMode::Journey) RecordPassengerJourneyMovement(PassengerJourneyMovement::Board, cp_new->Count());
 	cp_new->UpdateLoadingTile(this->current_tile);
 	this->source->RemoveFromCache(cp_new, cp_new->Count());
 	this->destination->Append(cp_new, VehicleCargoList::MoveToAction::Keep);
@@ -171,6 +174,7 @@ bool CargoTransfer::operator()(CargoPacket *cp)
 {
 	CargoPacket *cp_new = this->Preprocess(cp);
 	if (cp_new == nullptr) return false;
+	if (cp_new->GetPassengerRoutingMode() == PassengerRoutingMode::Journey) RecordPassengerJourneyMovement(PassengerJourneyMovement::Transfer, cp_new->Count());
 	cp_new->UpdateUnloadingTile(this->current_tile);
 	this->source->RemoveFromMeta(cp_new, VehicleCargoList::MoveToAction::Transfer, cp_new->Count());
 	/* No transfer credits here as they were already granted during Stage(). */

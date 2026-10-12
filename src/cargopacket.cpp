@@ -944,6 +944,18 @@ uint VehicleCargoList::Reassign(uint max_move)
 	static_assert(Tfrom != MoveToAction::Transfer && Tto != MoveToAction::Transfer);
 	static_assert(to_underlying(Tfrom) - to_underlying(Tto) == 1 || to_underlying(Tto) - to_underlying(Tfrom) == 1);
 	max_move = std::min(this->action_counts[Tfrom], max_move);
+	if constexpr (Tfrom == MoveToAction::Load && Tto == MoveToAction::Keep) {
+		/* Count only the reserved prefix actually becoming loaded. Observe before
+		 * changing counts; mixed Legacy/Journey cargo and partial loads stay exact. */
+		uint skip = this->count - this->action_counts[MoveToAction::Load], remaining = max_move;
+		for (const CargoPacket *packet : this->packets) {
+			if (remaining == 0) break;
+			if (skip >= packet->Count()) { skip -= packet->Count(); continue; }
+			uint count = std::min<uint>(remaining, packet->Count() - skip);
+			if (packet->GetPassengerRoutingMode() == PassengerRoutingMode::Journey) RecordPassengerJourneyMovement(PassengerJourneyMovement::Board, count);
+			remaining -= count; skip = 0;
+		}
+	}
 	this->action_counts[Tfrom] -= max_move;
 	this->action_counts[Tto] += max_move;
 	return max_move;

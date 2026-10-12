@@ -117,8 +117,8 @@ silently choose a poorer train based on pool order.
 |---|---:|
 | One graph Work | 2,097,152 |
 | One graph allocation envelope | 128 MiB |
-| Total / per-trip visits | 262,144 / 128 |
-| Prediction horizon / per-trip steps | 65,536 ticks / 4,096 |
+| Total / per-trip visits | 262,144 / 4,096 |
+| Active prediction horizon / per-trip steps | 4,096, then 16,384 and 65,536 ticks / 4,096 |
 | Event Work / graph envelopes | 4,194,304 / 256 MiB |
 | Event destination entries / searches | 128 / 128 |
 | One query Work / labels / scratch | 65,536 / 8,192 / 8 MiB |
@@ -208,7 +208,9 @@ Traversal no longer spends memory for every Work unit. Admission reserves,
 before allocation, 256 bytes per discovered fleet and 128 bytes per temporary
 candidate, 512 + 1024 bytes/order per
 captured service, 512 bytes/schedule + 64 bytes/slot, and 1024 bytes/trip + 320
-bytes/allowed visit. These envelopes cover order extra data, geometric vector
+bytes/generated visit. Visit admission takes place immediately before allocation,
+including explicit geometric prediction-buffer growth and its old/new overlap.
+These envelopes cover order extra data, geometric vector
 growth, nominal prediction, trip visits, loading/station/departure/component
 indices, and scratch maps. Inactive legacy trips do not reserve visit storage.
 
@@ -320,6 +322,11 @@ not withhold half the query allowance. Changed demand after the
 census releases all four unused shares in the same tick, allowing 15 subsequent
 ordinary queries. A 70,000-packet unknown-OD fixture exhausts the bounded census
 and still permits 15 ordinary queries, with no reservations.
+
+The comparison above describes the previous scoped implementation. The subsequent
+[real-map scaling follow-up](passenger-journey-real-map-scaling-2026-10-12.md)
+documents incremental visit admission, bounded horizon extension, exact completed
+candidate pruning, detailed stop diagnostics and further validation.
 
 The explicit benchmark can be rerun with:
 

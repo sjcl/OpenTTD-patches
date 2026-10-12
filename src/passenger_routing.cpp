@@ -46,7 +46,8 @@ static bool ConsumePassengerWork(size_t &budget, size_t work = 1)
 static PassengerJourney PredictPassengerJourneyImpl(const PassengerRouteState &state, VehicleOrderID boarding_order, StationID target,
 		CargoType cargo, StateTicks now, bool allow_intermediate, size_t &budget,
 		std::optional<StateTicks> earliest_boarding = {}, std::optional<StateTicks> arrival_limit = {}, bool skip_current_departure = false,
-		PassengerVisitPrediction *visits = nullptr, size_t max_visits = 0, size_t max_steps = 0)
+		PassengerVisitPrediction *visits = nullptr, size_t max_visits = 0, size_t max_steps = 0,
+		const std::function<bool()> &admit_visit = {})
 {
 	PassengerJourney result;
 	if (state.orders.empty() || state.current_order >= state.orders.size() || boarding_order >= state.orders.size()) return result;
@@ -56,7 +57,7 @@ static PassengerJourney PredictPassengerJourneyImpl(const PassengerRouteState &s
 	if (!visits && !allow_intermediate && boarding.GetCargoLoadType(cargo) == OrderLoadType::NoLoad) return result;
 
 	auto exhausted = [&]() -> PassengerJourney {
-		if (visits) visits->status = PassengerPredictionStatus::BudgetExhausted;
+		if (visits) { visits->status = PassengerPredictionStatus::BudgetExhausted; visits->stop = PassengerPredictionStop::Work; }
 		return { true, std::nullopt, std::nullopt };
 	};
 	auto horizon = [&]() -> PassengerJourney {
@@ -69,8 +70,8 @@ static PassengerJourney PredictPassengerJourneyImpl(const PassengerRouteState &s
 
 	/* Unsupported orders may change the path. Report uncertainty if the target occurs anywhere,
 	 * so a known slow service cannot conceal an unpredicted faster alternative. */
-	auto uncertain = [&]() -> PassengerJourney {
-		if (visits) return {};
+	auto uncertain = [&](PassengerPredictionStop why = PassengerPredictionStop::Unsupported) -> PassengerJourney {
+		if (visits) { visits->stop = why; return {}; }
 		if (earliest_boarding) return { true, std::nullopt, std::nullopt };
 		for (const Order &order : state.orders) {
 			if (!ConsumePassengerWork(budget)) return { true, std::nullopt, std::nullopt };
@@ -95,6 +96,7 @@ static PassengerJourney PredictPassengerJourneyImpl(const PassengerRouteState &s
 	/* Certify only the prefix before the next possible event. Never advance through an
 	 * unknown dwell, dispatch assignment or path, nor include unprocessed events at tick. */
 	auto cover_prefix = [&]() {
+		if (visits) visits->stopped_at = tick;
 		if (visits && timing_known) visits->complete_until = std::min(tick, *arrival_limit);
 	};
 	/* Collect independent segment durations while advancing the common timing engine.
@@ -106,15 +108,17 @@ static PassengerJourney PredictPassengerJourneyImpl(const PassengerRouteState &s
 	/* Connections may repeat the actual vehicle's circuit, never an averaged fleet headway.
 	 * The time horizon and shared work budget also bound zero-time loops and conditional jumps. */
 	for (size_t steps = 0; visits || earliest_boarding || steps < state.orders.size() * 2; ++steps) {
+		if (visits) visits->stopped_at = tick;
 		if (arrival_limit && timing_known && tick >= *arrival_limit) return horizon();
 		if (visits && (steps >= max_steps || visits->visits.size() >= max_visits)) {
 			visits->status = PassengerPredictionStatus::LimitReached;
+			visits->stop = steps >= max_steps ? PassengerPredictionStop::Steps : PassengerPredictionStop::Visits;
 			return {};
 		}
 		if (!ConsumePassengerWork(budget)) return exhausted();
 		const Order &order = state.orders[index];
 		if (order.IsType(OT_CONDITIONAL)) {
-			if (order.GetConditionVariable() != OrderConditionVariable::Unconditionally) return uncertain();
+			if (order.GetConditionVariable() != OrderConditionVariable::Unconditionally) return uncertain(PassengerPredictionStop::Conditional);
 			if (!order.IsWaitTimetabled()) timing_known = false;
 			advance_leg(order.GetWaitTime(), order.IsWaitTimetabled());
 			cover_prefix();
@@ -124,7 +128,9 @@ static PassengerJourney PredictPassengerJourneyImpl(const PassengerRouteState &s
 			continue;
 		}
 		/* Depot detours, implicit stops, refits and slot/counter operations are not predictable here. */
-		if (order.IsType(OT_GOTO_DEPOT) || order.IsType(OT_IMPLICIT) || order.IsRefit() || order.IsSlotCounterOrder() || order.IsType(OT_DUMMY)) return uncertain();
+		if (order.IsRefit()) return uncertain(PassengerPredictionStop::Refit);
+		if (order.IsType(OT_IMPLICIT)) return uncertain(PassengerPredictionStop::Implicit);
+		if (order.IsType(OT_GOTO_DEPOT) || order.IsSlotCounterOrder() || order.IsType(OT_DUMMY)) return uncertain();
 		if (order.IsType(OT_LABEL)) {
 			skip_travel = false;
 			index = (index + 1) % state.orders.size();
@@ -133,7 +139,7 @@ static PassengerJourney PredictPassengerJourneyImpl(const PassengerRouteState &s
 		if (!order.IsType(OT_GOTO_STATION) && !order.IsType(OT_GOTO_WAYPOINT)) return uncertain();
 		/* A removed/incompatible facility changes the actual path (the controller may skip
 		 * this order). Keep the certified prefix, but never invent the skipped leg's time. */
-		if (IsPassengerStop(order) && !state.usable_stops.empty() && !state.usable_stops[index]) return uncertain();
+		if (IsPassengerStop(order) && !state.usable_stops.empty() && !state.usable_stops[index]) return uncertain(PassengerPredictionStop::Facilities);
 
 		if (!skip_travel) {
 			if (order.GetTravelTime() == 0 && !order.IsTravelTimetabled()) timing_known = false;
@@ -152,6 +158,18 @@ static PassengerJourney PredictPassengerJourneyImpl(const PassengerRouteState &s
 		cover_prefix();
 		if (arrival_limit && timing_known && tick >= *arrival_limit) return horizon();
 		if (visits && stop) {
+			/* Reserve before vector growth. The caller covers owned visits and all their indices;
+			 * allocator capacity and measured RSS never participate in admission. */
+			if (admit_visit && !admit_visit()) {
+				visits->status = PassengerPredictionStatus::LimitReached;
+				visits->stop = PassengerPredictionStop::Memory;
+				visits->stopped_at = tick;
+				return {};
+			}
+			/* Explicit geometric requests bound the old/new buffer overlap. Grow
+			 * from the logical visit count, never from observed allocator capacity. */
+			const size_t count = visits->visits.size();
+			if (count == 0 || (count & (count - 1)) == 0) visits->visits.reserve(std::min(max_visits, std::max<size_t>(1, count * 2)));
 			visits->visits.push_back({ index, timing_known && !(steps == 0 && state.loading) ? std::optional(tick) : std::nullopt,
 					std::nullopt, steps == 0 && state.loading, have_previous_stop && leg_known ? std::optional(leg_time) : std::nullopt });
 			leg_time = StateTicksDelta{0};
@@ -175,7 +193,7 @@ static PassengerJourney PredictPassengerJourneyImpl(const PassengerRouteState &s
 			if (state.scheduled_dispatch && order.IsScheduledDispatchOrder(true)) {
 				const int schedule_index = order.GetDispatchScheduleIndex();
 				if (schedule_index < 0 || static_cast<size_t>(schedule_index) >= state.schedules.size() ||
-						state.schedules[schedule_index].GetScheduledDispatchDuration() == 0 || state.schedules[schedule_index].GetScheduledDispatch().empty()) return uncertain();
+						state.schedules[schedule_index].GetScheduledDispatchDuration() == 0 || state.schedules[schedule_index].GetScheduledDispatch().empty()) return uncertain(PassengerPredictionStop::Dispatch);
 			}
 			const OrderLoadType load = order.GetCargoLoadType(cargo);
 			if (IsFullLoadOrderLoadType(load) || order.GetLeaveType() != OLT_NORMAL) timing_known = false;
@@ -191,28 +209,29 @@ static PassengerJourney PredictPassengerJourneyImpl(const PassengerRouteState &s
 			int64_t wait = future_dispatch ? order.GetTimetabledWait() : std::max<int64_t>(0, static_cast<int64_t>(order.GetWaitTime()) - lateness);
 			if (steps == 0 && state.loading) wait = std::max<int64_t>(0, wait - state.elapsed);
 			tick += wait;
+			if (visits) visits->stopped_at = tick;
 			lateness = std::max<int64_t>(0, lateness - order.GetWaitTime());
 
 			if (future_dispatch) {
 				const int schedule_index = order.GetDispatchScheduleIndex();
-				if (schedule_index < 0 || static_cast<size_t>(schedule_index) >= state.schedules.size()) return uncertain();
+				if (schedule_index < 0 || static_cast<size_t>(schedule_index) >= state.schedules.size()) return uncertain(PassengerPredictionStop::Dispatch);
 				const DispatchSchedule &schedule = state.schedules[schedule_index];
 				/* Multiple vehicles can compete for the same future slot. Until a slot is assigned,
 				 * don't guess their booking order. Already assigned loading departures remain usable. */
-				if (schedule.GetScheduledDispatchDuration() == 0 || (state.shared_vehicles > 1 && !schedule.GetScheduledDispatchReuseSlots())) return uncertain();
+				if (schedule.GetScheduledDispatchDuration() == 0 || (state.shared_vehicles > 1 && !schedule.GetScheduledDispatchReuseSlots())) return uncertain(PassengerPredictionStop::Dispatch);
 				/* Slot search is linear in the dispatch slot count, not just the order count. */
 				if (!ConsumePassengerWork(budget, schedule.GetScheduledDispatch().size())) return exhausted();
 				auto history = dispatch_history.try_emplace(schedule_index, schedule.GetScheduledDispatchLastDispatch()).first;
 				const StateTicks slot = GetScheduledDispatchTime(schedule, tick, history->second).first;
-				if (slot == INVALID_STATE_TICKS) return uncertain();
+				if (slot == INVALID_STATE_TICKS) return uncertain(PassengerPredictionStop::Dispatch);
 				const auto offset = (slot - schedule.GetScheduledDispatchStartTick()).base();
-				if (offset < INT32_MIN || offset > INT32_MAX) return uncertain();
+				if (offset < INT32_MIN || offset > INT32_MAX) return uncertain(PassengerPredictionStop::Dispatch);
 				history->second = static_cast<int32_t>(offset);
 				tick = std::max(tick, slot);
 				lateness = 0;
 			}
 		} else if (order.IsType(OT_GOTO_WAYPOINT)) {
-			if (state.scheduled_dispatch && order.IsScheduledDispatchOrder(true)) return uncertain();
+			if (state.scheduled_dispatch && order.IsScheduledDispatchOrder(true)) return uncertain(PassengerPredictionStop::Dispatch);
 			if (order.GetWaitTime() > 0 && !order.IsWaitTimetabled()) timing_known = false;
 			advance_leg(order.GetWaitTime(), order.GetWaitTime() == 0 || order.IsWaitTimetabled());
 		}
@@ -221,7 +240,7 @@ static PassengerJourney PredictPassengerJourneyImpl(const PassengerRouteState &s
 			if (timing_known) visits->visits.back().departure = tick;
 			/* With unknown times, one order circuit is enough to expose the known path prefix.
 			 * Subsequent occurrences cannot be assigned to a time window. */
-			if (!timing_known && steps + 1 >= state.orders.size()) return {};
+			if (!timing_known && steps + 1 >= state.orders.size()) return uncertain(PassengerPredictionStop::Timing);
 		}
 		if (!visits && !boarded && index == boarding_order) {
 			if (earliest_boarding) {
@@ -244,14 +263,14 @@ static PassengerJourney PredictPassengerJourneyImpl(const PassengerRouteState &s
 }
 
 PassengerVisitPrediction PredictPassengerVisits(const PassengerRouteState &state, CargoType cargo, StateTicks now,
-		StateTicks end, size_t max_visits, size_t max_steps, size_t &budget)
+		StateTicks end, size_t max_visits, size_t max_steps, size_t &budget, const std::function<bool()> &admit_visit)
 {
 	PassengerVisitPrediction result;
-	result.start = result.complete_until = now;
+	result.start = result.complete_until = result.stopped_at = now;
 	if (now >= end) { result.status = PassengerPredictionStatus::Complete; return result; }
 	if (cargo >= NUM_CARGO) return result;
 	PredictPassengerJourneyImpl(state, state.current_order, StationID::Invalid(), cargo, now, true, budget,
-			{}, end, false, &result, max_visits, max_steps);
+			{}, end, false, &result, max_visits, max_steps, admit_visit);
 	return result;
 }
 

@@ -27,7 +27,31 @@ struct PassengerServiceGraphLimits {
 	size_t memory_bytes = 1024 * 1024 * 1024; ///< Deterministic allocation envelope, independent of traversal work.
 };
 
+enum class PassengerGraphFailure : uint8_t { None, Work, Memory, Services, Trips, TotalVisits, Index, Opaque, End };
+enum class PassengerGraphStage : uint8_t { Discovery, Structure, Orders, Schedules, Pattern, Trips, Prediction, Indices };
+
+struct PassengerGraphFailureDetail {
+	PassengerGraphFailure reason = PassengerGraphFailure::None;
+	PassengerGraphStage stage = PassengerGraphStage::Discovery;
+	size_t work = 0, memory = 0, trips = 0, visits = 0;
+};
+
+struct PassengerTripPredictionDetail {
+	PassengerPredictionStop reason = PassengerPredictionStop::None;
+	VehicleID vehicle = VehicleID::Invalid();
+	size_t work = 0, memory = 0, trips = 0, visits = 0;
+	StateTicks stopped_at{}, complete_until{}, required_until{};
+};
+
 struct PassengerServiceGraphDiagnostic {
+	PassengerGraphFailureDetail first_failure;
+	PassengerTripPredictionDetail first_prediction_failure;
+	OrderListID opaque_service = OrderListID::Invalid();
+	VehicleID opaque_vehicle = VehicleID::Invalid();
+	std::array<size_t, static_cast<size_t>(PassengerPredictionStop::End)> prediction_stops{};
+	size_t eligible_services = 0, selected_services = 0, selected_trips = 0, largest_block_services = 0;
+	size_t admitted_visits = 0; ///< Logical reservations, made immediately before generating each visit.
+	Ticks maximum_unpredicted_ticks = 0;
 	size_t trains = 0;
 	size_t cargo_capable = 0;
 	size_t possible_refit = 0;

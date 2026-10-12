@@ -16,6 +16,7 @@ namespace {
 		size_t vertices = 0;
 		size_t allocation_bytes = 0;
 		size_t resident_bound = 0;
+		size_t largest_block_services = 0;
 		std::map<StationID, size_t> stations;
 		std::map<size_t, OrderListID> services;
 		std::vector<std::vector<size_t>> tree;
@@ -120,6 +121,9 @@ namespace {
 			auto &members = contracted[block];
 			std::sort(members.begin(), members.end());
 			members.erase(std::unique(members.begin(), members.end()), members.end());
+			size_t service_count = 0;
+			for (size_t member : members) service_count += result.services.contains(member);
+			result.largest_block_services = std::max(result.largest_block_services, service_count);
 			for (size_t member : members) contracted[member].push_back(block);
 		}
 		result.tree = std::move(contracted);
@@ -185,6 +189,7 @@ PassengerServiceSelection SelectPassengerServices(PassengerServiceScope scope, s
 	}
 	result.allocation_bytes = index->allocation_bytes;
 	result.resident_bound = index->resident_bound;
+	result.largest_block_services = index->largest_block_services;
 	auto from = index->stations.find(scope.origin), to = index->stations.find(scope.destination);
 	if (from == index->stations.end() || to == index->stations.end() || index->root[from->second] != index->root[to->second]) return result;
 	auto include = [&](size_t node) {

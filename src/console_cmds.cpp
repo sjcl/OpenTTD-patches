@@ -4558,6 +4558,23 @@ static bool ConPassengerJourneyStats(std::span<std::string_view> argv)
 	if (operation == "reset") { ResetPassengerJourneyDiagnostic(); return true; }
 	if (operation != "total" && operation != "tick") return false;
 	const auto stats = operation == "tick" ? GetPassengerJourneyTickDiagnostic() : GetPassengerJourneyTotalDiagnostic();
+	static constexpr std::array graph_reasons{"None", "Work", "Memory", "Services", "Trips", "TotalVisits", "Index", "Opaque"};
+	static constexpr std::array prediction_stops{"None", "Work", "Memory", "Visits", "Steps", "Timing", "Conditional", "Refit", "Implicit", "Unsupported", "Dispatch", "Facilities", "VehicleState", "OrderProgress"};
+	static constexpr std::array graph_stages{"Discovery", "Structure", "Orders", "Schedules", "Pattern", "Trips", "Prediction", "Indices"};
+	static_assert(graph_reasons.size() == static_cast<size_t>(PassengerGraphFailure::End));
+	static_assert(prediction_stops.size() == static_cast<size_t>(PassengerPredictionStop::End));
+	IConsolePrint(CC_DEFAULT, "Graph coverage: complete={}; eligible_services={}; selected_services={}; selected_trips={}; largest_block_services={}; admitted_visits={}; max_unpredicted_ticks={}",
+			stats.complete_graphs, stats.eligible_services, stats.selected_services, stats.selected_trips, stats.largest_block_services, stats.admitted_visits, stats.maximum_unpredicted_ticks);
+	for (size_t i = 0; i < graph_reasons.size(); ++i) IConsolePrint(CC_DEFAULT, "Graph failure {}: {} builds", graph_reasons[i], stats.graph_failures[i]);
+	for (size_t i = 0; i < prediction_stops.size(); ++i) IConsolePrint(CC_DEFAULT, "Trip stop {}: {} predictions", prediction_stops[i], stats.prediction_stops[i]);
+	const auto &first = stats.first_graph_failure;
+	IConsolePrint(CC_DEFAULT, "First graph failure: reason={}; stage={}; work={}; memory={}; trips={}; visits={}",
+			graph_reasons[static_cast<size_t>(first.reason)], graph_stages[static_cast<size_t>(first.stage)], first.work, first.memory, first.trips, first.visits);
+	const auto &prediction = stats.first_prediction_failure;
+	IConsolePrint(CC_DEFAULT, "First opaque scope: service={}; vehicle={}", stats.opaque_service, stats.opaque_vehicle);
+	IConsolePrint(CC_DEFAULT, "First trip failure: reason={}; stage=Prediction; vehicle={}; work={}; memory={}; trips={}; visits={}; cursor={}; certified_until={}; required_until={}",
+			prediction_stops[static_cast<size_t>(prediction.reason)], prediction.vehicle, prediction.work, prediction.memory, prediction.trips, prediction.visits,
+			prediction.stopped_at.base(), prediction.complete_until.base(), prediction.required_until.base());
 	IConsolePrint(CC_DEFAULT, "Active journey {}: applied={} packets/{} passengers; builds={}; static_hits={}; searches={}; OD_hits={}",
 			operation, stats.journeys, stats.passengers, stats.builds, stats.static_cache_hits, stats.queries, stats.query_cache_hits);
 	IConsolePrint(CC_DEFAULT, "Train observations={}; cargo_capable={}; possible_refit={}; predicted={}; inactive={}; excluded_cargo={}; excluded_scope={}; visits={}; omitted_trains_at_least={}; truncated_predictions={} (uncaptured visit count unknown)",
@@ -4573,6 +4590,7 @@ static bool ConPassengerJourneyStats(std::span<std::string_view> argv)
 	IConsolePrint(CC_DEFAULT, "Fair waiting shares: claims={}; releases={}; admission_scan_work={}; retained_rides={}",
 			stats.fair_share_claims, stats.fair_share_releases, stats.fair_share_work, stats.retained_rides);
 	IConsolePrint(CC_DEFAULT, "OD fallback: work={}; path_searches={}", stats.od_fallback_work, stats.od_fallback_searches);
+	IConsolePrint(CC_DEFAULT, "Journey transport: boarded={}; transferred={}; delivered={} people", stats.boarded_passengers, stats.transferred_passengers, stats.delivered_passengers);
 	for (size_t i = 0; i < reasons.size(); ++i) IConsolePrint(CC_DEFAULT, "Fallback {}: {} packets; deferred={} packets", reasons[i], stats.fallbacks[i], stats.deferred[i]);
 	return true;
 }

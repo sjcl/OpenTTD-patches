@@ -25,6 +25,7 @@ struct PassengerServiceSelection {
 	size_t allocation_bytes = 0;
 	size_t reused_work = 0;
 	bool cache_hit = false;
+	size_t largest_block_services = 0; ///< Diagnostic count; does not select or rank routes.
 };
 
 /** Includes every service on any OD corridor in the undirected declared-stop supergraph.

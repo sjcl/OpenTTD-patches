@@ -316,6 +316,17 @@ PassengerJourneyResult PassengerJourneyPlanner::Search(StationID origin, Station
 	for (uint32_t round = 0; round <= stage && !frontier.empty() && !stopped; ++round) {
 		++result.diagnostic.rounds;
 		std::map<StationID, std::vector<size_t>> next;
+		/* Completed paths need only the requested K results. Keeping every physical
+		 * fleet copy/circuit can hit a label limit before certifying an obvious direct
+		 * optimum. Strict score bounds preserve capacity and occurrence tie-breaks. */
+		auto worse_than_completed = [&](int64_t score) {
+			size_t count = destinations.size();
+			int64_t worst = 0;
+			for (size_t id : destinations) worst = std::max(worst, labels[id].score);
+			auto pending = next.find(destination);
+			if (pending != next.end()) for (size_t id : pending->second) { ++count; worst = std::max(worst, labels[id].score); }
+			return count >= limits.candidates && score > worst;
+		};
 		for (const auto &[station, active] : frontier) {
 			for (size_t previous : active) {
 				if (!spend()) { stopped = true; break; }
@@ -363,6 +374,11 @@ PassengerJourneyResult PassengerJourneyPlanner::Search(StationID origin, Station
 							!this->graph.GetVisitStop(*onboard).can_alight) continue;
 					const uint32_t transfers = parent.transfers + (continuing || (!onboard && parent.boardings == 0) ? 0 : 1);
 					if (transfers > limits.max_transfers) continue;
+					int64_t minimum_penalty = JourneyAdd(parent.penalty, JourneyScale(transfers, evaluation.transfer_penalty, 1));
+					const int64_t waiting = parent.waiting + (continuing ? 0 : start.departure->base() - parent.arrival.base());
+					minimum_penalty = JourneyAdd(minimum_penalty, JourneyScale(waiting, evaluation.waiting_weight, 1000));
+					minimum_penalty = JourneyAdd(minimum_penalty, JourneyScale(JourneyAdd(parent.transfer_time, connection), evaluation.transfer_time_weight, 1000));
+					if (worse_than_completed(JourneyAdd(start.departure->base() - ready.base(), minimum_penalty))) { ++result.diagnostic.pruned_boardings; continue; }
 					if (!can_finish_ride(boarding)) {
 						++result.diagnostic.pruned_boardings;
 						continue;
@@ -386,6 +402,7 @@ PassengerJourneyResult PassengerJourneyPlanner::Search(StationID origin, Station
 							result.status = MergeJourneyStatus(result.status, PassengerPredictionStatus::Unknown);
 							break;
 						}
+						if (worse_than_completed(JourneyAdd(visit.arrival->base() - ready.base(), minimum_penalty))) break;
 						if (stop.can_alight && boardings_left(stop.station) != JourneyReachability::UNREACHABLE) {
 							/* Waiting at a previous interchange can replace a loop. With weighted waiting,
 							 * riding a positive-time circuit can be preferable, so only suppress its zero-time
@@ -447,11 +464,17 @@ PassengerJourneyResult PassengerJourneyPlanner::Search(StationID origin, Station
 								if (!spend()) { stopped = true; break; }
 								auto &bucket = next[stop.station];
 								bool dominated = false;
+								std::optional<size_t> completed_to_replace;
 								for (size_t id : bucket) {
 									if (!spend(1 + label.boardings)) { stopped = true; break; }
 									if (SamePath(labels[id], label, labels) && Dominates(labels[id], label)) { dominated = true; break; }
 								}
 								if (stopped) break;
+								if (!dominated && stop.station == destination && bucket.size() >= limits.candidates) {
+									auto worst = std::max_element(bucket.begin(), bucket.end(), [&](size_t a, size_t b) { return LabelOrder(labels[a]) < LabelOrder(labels[b]); });
+									if (LabelOrder(label) >= LabelOrder(labels[*worst])) dominated = true;
+									else completed_to_replace = *worst;
+								}
 								if (!dominated) {
 									/* Do not erase an already found candidate before knowing that its replacement
 									 * can be stored. Reconstruction storage/work is reserved on admission too. */
@@ -462,7 +485,7 @@ PassengerJourneyResult PassengerJourneyPlanner::Search(StationID origin, Station
 										limits.labels = std::min(limits.labels, (limits.memory_bytes - auxiliary_bytes) / LABEL_BYTES);
 										if (labels.size() == limits.labels) { limit(PassengerJourneyStopReason::MemoryLimit); stopped = true; break; }
 									}
-									std::erase_if(bucket, [&](size_t id) { return SamePath(label, labels[id], labels) && Dominates(label, labels[id]); });
+									std::erase_if(bucket, [&](size_t id) { return id == completed_to_replace || (SamePath(label, labels[id], labels) && Dominates(label, labels[id])); });
 									if (bucket.size() >= limits.labels_per_station) {
 									limit(PassengerJourneyStopReason::LabelLimit);
 										auto worst = std::max_element(bucket.begin(), bucket.end(), [&](size_t a, size_t b) { return LabelOrder(labels[a]) < LabelOrder(labels[b]); });

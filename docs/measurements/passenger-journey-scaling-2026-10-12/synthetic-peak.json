@@ -1,0 +1,7 @@
+{
+  "sampling_ms": 1,
+  "scope": "whole synthetic-test process, two graph snapshots plus planner",
+  "sampled_peak_private": 37494784,
+  "exit_code": 0,
+  "peak_working_set": 45613056
+}

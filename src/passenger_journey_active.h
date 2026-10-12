@@ -25,6 +25,14 @@ enum class PassengerJourneyFallbackReason : uint8_t {
 };
 
 struct PassengerJourneyTickDiagnostic {
+	std::array<size_t, static_cast<size_t>(PassengerGraphFailure::End)> graph_failures{};
+	std::array<size_t, static_cast<size_t>(PassengerPredictionStop::End)> prediction_stops{};
+	PassengerGraphFailureDetail first_graph_failure;
+	PassengerTripPredictionDetail first_prediction_failure;
+	OrderListID opaque_service = OrderListID::Invalid();
+	VehicleID opaque_vehicle = VehicleID::Invalid();
+	size_t complete_graphs = 0, admitted_visits = 0, eligible_services = 0, selected_services = 0, selected_trips = 0, largest_block_services = 0;
+	Ticks maximum_unpredicted_ticks = 0;
 	size_t builds = 0, static_cache_hits = 0, queries = 0, query_cache_hits = 0;
 	size_t trains = 0, cargo_capable = 0, possible_refit = 0, predicted = 0, visits = 0;
 	size_t excluded_cargo = 0, excluded_scope = 0, inactive = 0, omitted_trains = 0, truncated_predictions = 0;
@@ -38,6 +46,7 @@ struct PassengerJourneyTickDiagnostic {
 	size_t fair_share_work = 0, fair_share_claims = 0;
 	size_t fair_share_releases = 0, retained_rides = 0;
 	size_t od_fallback_work = 0, od_fallback_searches = 0;
+	size_t boarded_passengers = 0, transferred_passengers = 0, delivered_passengers = 0;
 };
 
 /** Reset at the simulation tick boundary, including the first tick after network join/load.
@@ -49,6 +58,8 @@ const PassengerJourneyTickDiagnostic &GetPassengerJourneyTickDiagnostic();
 PassengerJourneyTickDiagnostic GetPassengerJourneyTotalDiagnostic();
 void ResetPassengerJourneyDiagnostic(); ///< Local observations only; never resets simulation allowances.
 void RecordPassengerJourneyFallback(PassengerJourneyFallbackReason reason); ///< Simulation-only lifecycle observations.
+enum class PassengerJourneyMovement : uint8_t { Board, Transfer, Deliver };
+void RecordPassengerJourneyMovement(PassengerJourneyMovement movement, uint count); ///< Actual cargo moves only, never reservations/staging.
 PassengerServiceGraphLimits ActivePassengerServiceGraphLimits();
 
 /** Lazy prediction for one physical passenger service/cargo in one loading pass. */
@@ -103,7 +114,7 @@ class PassengerJourneyActiveContext {
 	struct Snapshot;
 	const Vehicle *vehicle;
 	StationID station;
-	std::map<std::pair<CargoType, StationID>, std::unique_ptr<Snapshot>> snapshots;
+	std::map<std::tuple<CargoType, StationID, Ticks>, std::unique_ptr<Snapshot>> snapshots;
 	std::map<CargoType, PassengerJourneyBoardingContext> continuation;
 	PassengerOdFallbackContext fallback;
 	size_t work_left = 4194304;
@@ -111,7 +122,7 @@ class PassengerJourneyActiveContext {
 	size_t queries_left = 128;
 	PassengerJourneyFallbackReason failure = PassengerJourneyFallbackReason::GraphWork;
 	bool deferred = false;
-	Snapshot *GetSnapshot(CargoType cargo, StationID destination);
+	Snapshot *GetSnapshot(CargoType cargo, StationID destination, Ticks horizon = 4096);
 	std::optional<PassengerJourneyExecution> Execute(Snapshot &snapshot, CargoType cargo, const PassengerJourneyLeg &leg);
 	bool AdmitQuery();
 public:

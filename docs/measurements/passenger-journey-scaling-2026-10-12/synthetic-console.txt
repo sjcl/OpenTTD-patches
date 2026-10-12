@@ -1,0 +1,2 @@
+C:\Users\bebe\.codex\worktrees\c660\OpenTTD-patches\src\tests\passenger_service_graph.cpp(126): warning: 'Actual-visit fleet: trips=4000; visits=104000; work=132058; bound=37896128; retained=13245444; cold_us=17066; warm_us=16160'
+Passed 1 test case with 12 assertions.
