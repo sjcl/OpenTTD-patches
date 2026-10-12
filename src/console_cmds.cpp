@@ -4543,6 +4543,58 @@ static bool ConPassengerServiceInspect(std::span<std::string_view> argv)
 	return true;
 }
 
+/** Paired, simulation-thread measurements on the currently loaded map, without moving cargo. */
+static bool ConPassengerServiceCaptureBenchmark(std::span<std::string_view> argv)
+{
+	if (argv.empty()) {
+		IConsolePrint(CC_HELP, "passenger_service_capture_benchmark <cargo> <origin> [OD count=100]: read-only paired graph measurements");
+		return true;
+	}
+	if (argv.size() < 3 || argv.size() > 4) return false;
+	auto cargo = ParseInteger<uint32_t>(argv[1]), origin = ParseInteger<uint32_t>(argv[2]);
+	auto count = argv.size() == 4 ? ParseInteger<uint32_t>(argv[3]) : std::optional<uint32_t>{100};
+	if (!cargo || *cargo >= NUM_CARGO || !origin || *origin >= StationID::Invalid().base() || !Station::IsValidID(StationID{static_cast<uint16_t>(*origin)}) || !count || *count == 0 || *count > 100) return false;
+	PassengerServiceCapture capture;
+	PassengerGraphPhaseTimes cold_phases{}, warm_phases{};
+	uint64_t cold_us = 0, warm_us = 0;
+	size_t builds = 0, discovery_hits = 0, service_hits = 0, service_requests = 0, work = 0, maximum_memory = 0, maximum_allocation = 0, maximum_visits = 0, mismatches = 0;
+	for (const Station *station : Station::Iterate()) {
+		if (station->index.base() == *origin) continue;
+		const PassengerServiceScope scope{StationID{static_cast<uint16_t>(*origin)}, station->index};
+		auto limits = ActivePassengerServiceGraphLimits();
+		PassengerServiceGraph a, b;
+		if (builds % 2 == 0) {
+			a = PassengerServiceGraph::Build(static_cast<CargoType>(*cargo), _state_ticks, limits, scope);
+			b = PassengerServiceGraph::Build(static_cast<CargoType>(*cargo), _state_ticks, limits, scope, &capture);
+		} else {
+			b = PassengerServiceGraph::Build(static_cast<CargoType>(*cargo), _state_ticks, limits, scope, &capture);
+			a = PassengerServiceGraph::Build(static_cast<CargoType>(*cargo), _state_ticks, limits, scope);
+		}
+		bool same = a.GetWork() == b.GetWork() && a.GetMemoryBound() == b.GetMemoryBound() && a.GetQueryStatus(scope.origin, scope.destination) == b.GetQueryStatus(scope.origin, scope.destination) &&
+				a.GetServices().size() == b.GetServices().size() && a.GetTrips().size() == b.GetTrips().size();
+		if (same) for (size_t i = 0; i < a.GetTrips().size(); ++i) {
+			const auto &p = a.GetTrips()[i], &q = b.GetTrips()[i];
+			same &= std::tuple(p.vehicle, p.service, p.capacity, p.occupants, p.prediction.status, p.prediction.complete_until, p.prediction.stop) ==
+					std::tuple(q.vehicle, q.service, q.capacity, q.occupants, q.prediction.status, q.prediction.complete_until, q.prediction.stop);
+			same &= std::equal(p.prediction.visits.begin(), p.prediction.visits.end(), q.prediction.visits.begin(), q.prediction.visits.end(), [](const auto &s, const auto &t) {
+				return std::tuple(s.order, s.arrival, s.departure, s.loading_now, s.travel_from_previous) == std::tuple(t.order, t.arrival, t.departure, t.loading_now, t.travel_from_previous);
+			});
+		}
+		mismatches += !same;
+		cold_us += a.GetDiagnostic().build_microseconds; warm_us += b.GetDiagnostic().build_microseconds;
+		discovery_hits += b.GetDiagnostic().capture_discovery_hit; service_hits += b.GetDiagnostic().capture_service_hits; work += b.GetWork();
+		service_requests += b.GetServices().size();
+		maximum_memory = std::max(maximum_memory, b.GetMemoryBound()); maximum_allocation = std::max(maximum_allocation, b.GetDiagnostic().allocation_bytes);
+		maximum_visits = std::max(maximum_visits, b.GetDiagnostic().visits);
+		for (size_t i = 0; i < cold_phases.size(); ++i) { cold_phases[i] += a.GetDiagnostic().phase_microseconds[i]; warm_phases[i] += b.GetDiagnostic().phase_microseconds[i]; }
+		if (++builds == *count) break;
+	}
+	IConsolePrint(CC_DEFAULT, "Capture benchmark: OD={}; uncached_us={}; captured_us={}; mismatches={}; discovery_hits={}; service_hits={}; service_requests={}; work={}; graph_bound={}; graph_estimate={}; capture_estimate={}; maximum_visits={}",
+			builds, cold_us, warm_us, mismatches, discovery_hits, service_hits, service_requests, work, maximum_memory, maximum_allocation, capture.GetAllocationBytes(), maximum_visits);
+	for (size_t i = 0; i < cold_phases.size(); ++i) IConsolePrint(CC_DEFAULT, "Capture phase {}: uncached_us={}; captured_us={}", i, cold_phases[i], warm_phases[i]);
+	return true;
+}
+
 static bool ConPassengerJourneyStats(std::span<std::string_view> argv)
 {
 	if (argv.empty()) {
@@ -4633,6 +4685,11 @@ static bool ConPassengerJourneyStats(std::span<std::string_view> argv)
 			std::max(stats.maximum_tick_microseconds, operation == "tick" ? stats.build_microseconds + stats.query_microseconds : uint64_t{0}));
 	IConsolePrint(CC_DEFAULT, "Peak graph retained_estimate={}; static retained_estimate={}; conservative_graph_envelope_including_index={}; query_scratch={}; query_cache={}",
 			stats.graph_allocation_bytes, stats.static_allocation_bytes, stats.graph_memory_bound, stats.query_scratch_bytes, stats.query_cache_bytes);
+	IConsolePrint(CC_DEFAULT, "Graph phase_us: discovery={}; capacity={}; selection={}; orders_dispatch={}; pattern={}; prediction={}; departures={}",
+			stats.graph_phase_microseconds[0], stats.graph_phase_microseconds[1], stats.graph_phase_microseconds[2], stats.graph_phase_microseconds[3],
+			stats.graph_phase_microseconds[4], stats.graph_phase_microseconds[5], stats.graph_phase_microseconds[6]);
+	IConsolePrint(CC_DEFAULT, "Event capture: discovery_hits={}; service_hits={}; logical_work_replayed={}; retained_estimate_including_shared_patterns={}",
+			stats.capture_discovery_hits, stats.capture_service_hits, stats.capture_reused_work, stats.capture_allocation_bytes);
 	static constexpr std::array reasons{"GraphWork", "GraphMemory", "SnapshotLimit", "QueryWork", "QueryLimit", "QueryMemory", "PredictionIncomplete", "PredictionHorizon", "NoJourney", "InvalidLeg", "StaleLeg", "Disabled", "VehicleDeleted"};
 	static_assert(reasons.size() == static_cast<size_t>(PassengerJourneyFallbackReason::End));
 	IConsolePrint(CC_DEFAULT, "Fair waiting shares: claims={}; releases={}; admission_scan_work={}; retained_rides={}",
@@ -4894,6 +4951,7 @@ void IConsoleStdLibRegister()
 	IConsole::CmdRegister("passenger_journey_shadow", ConPassengerJourneyShadow);
 	IConsole::CmdRegister("passenger_journey_stats", ConPassengerJourneyStats);
 	IConsole::CmdRegister("passenger_service_inspect", ConPassengerServiceInspect);
+	IConsole::CmdRegister("passenger_service_capture_benchmark", ConPassengerServiceCaptureBenchmark);
 	IConsole::CmdRegister("fps_wnd",                 ConFramerateWindow);
 
 	IConsole::CmdRegister("find_non_realistic_braking_signal", ConFindNonRealisticBrakingSignal);
