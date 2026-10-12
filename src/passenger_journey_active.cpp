@@ -45,6 +45,10 @@ namespace {
 		if (a.first_prediction_failure.reason == PassengerPredictionStop::None) a.first_prediction_failure = b.first_prediction_failure;
 		if (a.opaque_service == OrderListID::Invalid()) { a.opaque_service = b.opaque_service; a.opaque_vehicle = b.opaque_vehicle; }
 		a.complete_graphs += b.complete_graphs; a.admitted_visits += b.admitted_visits;
+		a.timing_uncertainty += b.timing_uncertainty; a.path_uncertainty += b.path_uncertainty; a.uncertainty_resolved += b.uncertainty_resolved;
+		for (size_t i = 0; i < b.query_sample_count && a.query_sample_count < a.query_samples.size(); ++i) a.query_samples[a.query_sample_count++] = b.query_samples[i];
+		a.simulation_ticks += b.simulation_ticks; a.simulation_microseconds += b.simulation_microseconds;
+		a.maximum_simulation_microseconds = std::max(a.maximum_simulation_microseconds, b.maximum_simulation_microseconds);
 		a.eligible_services += b.eligible_services; a.selected_services += b.selected_services; a.selected_trips += b.selected_trips;
 		a.largest_block_services = std::max(a.largest_block_services, b.largest_block_services);
 		a.maximum_unpredicted_ticks = std::max(a.maximum_unpredicted_ticks, b.maximum_unpredicted_ticks);
@@ -164,11 +168,16 @@ namespace {
 			default: return result.status == PassengerPredictionStatus::Complete ? PassengerJourneyFallbackReason::NoJourney : PassengerJourneyFallbackReason::PredictionIncomplete;
 		}
 	}
-	static void CountJourneySearch(const PassengerJourneyResult &result, const PassengerJourneyPlanner &planner, std::chrono::steady_clock::time_point start)
+	static void CountJourneySearch(const PassengerJourneyResult &result, const PassengerJourneyPlanner &planner, std::chrono::steady_clock::time_point start, StationID origin, StationID destination)
 	{
 		auto &diagnostic = TickBudget().diagnostic;
 		diagnostic.query_scratch_bytes = std::max(diagnostic.query_scratch_bytes, result.diagnostic.scratch_bytes);
 		diagnostic.query_cache_bytes = std::max(diagnostic.query_cache_bytes, planner.GetCacheBytes());
+		diagnostic.uncertainty_resolved += result.diagnostic.uncertainty_resolved;
+		if (diagnostic.query_sample_count < diagnostic.query_samples.size()) {
+			diagnostic.query_samples[diagnostic.query_sample_count++] = {origin, destination, _state_ticks, result.status, result.stop_reason, result.journeys.size(),
+					result.HasJourney() ? std::optional(result.journeys.front().generalized_time) : std::nullopt, result.diagnostic.unknown_arrival_bound, result.diagnostic.unknown_service};
+		}
 		diagnostic.query_microseconds += std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - start).count();
 	}
 }
@@ -177,6 +186,15 @@ void BeginPassengerJourneyTick()
 {
 	AddDiagnostic(total_diagnostic, tick_budget.diagnostic);
 	tick_budget = {}; tick_budget.tick = _state_ticks;
+}
+
+void RecordPassengerJourneySimulationTick(uint64_t microseconds)
+{
+	if (!_settings_game.linkgraph.passenger_journey_routing) return;
+	auto &diagnostic = TickBudget().diagnostic;
+	++diagnostic.simulation_ticks;
+	diagnostic.simulation_microseconds += microseconds;
+	diagnostic.maximum_simulation_microseconds = std::max(diagnostic.maximum_simulation_microseconds, microseconds);
 }
 void PreparePassengerJourneyLoading() { InitializeFairShares(TickBudget()); }
 void ReleasePassengerJourneyWaitingShare(StationID station)
@@ -323,6 +341,8 @@ PassengerJourneyActiveContext::Snapshot *PassengerJourneyActiveContext::GetSnaps
 	diagnostic.build_microseconds += graph.GetDiagnostic().build_microseconds;
 	diagnostic.maximum_build_microseconds = std::max(diagnostic.maximum_build_microseconds, graph.GetDiagnostic().build_microseconds);
 	const auto &capture = graph.GetDiagnostic();
+	diagnostic.timing_uncertainty += capture.timing_uncertainty;
+	diagnostic.path_uncertainty += capture.path_uncertainty;
 	++diagnostic.graph_failures[static_cast<size_t>(capture.first_failure.reason)];
 	if (diagnostic.first_graph_failure.reason == PassengerGraphFailure::None) diagnostic.first_graph_failure = capture.first_failure;
 	if (diagnostic.first_prediction_failure.reason == PassengerPredictionStop::None) diagnostic.first_prediction_failure = capture.first_prediction_failure;
@@ -440,7 +460,7 @@ bool PassengerJourneyActiveContext::PlanWaiting(CargoPacket &packet, CargoType c
 		if (!this->AdmitQuery()) return reject(this->failure);
 		const auto query_start = std::chrono::steady_clock::now();
 		auto result = snapshot->planner.Plan(cargo, this->station, packet.GetPassengerDestination(), _state_ticks, limits, ActiveJourneyEvaluation(), 1);
-		CountJourneySearch(result, snapshot->planner, query_start);
+		CountJourneySearch(result, snapshot->planner, query_start, this->station, packet.GetPassengerDestination());
 		if (result.stop_reason == PassengerJourneyStopReason::PredictionHorizon ||
 				(result.status == PassengerPredictionStatus::Complete && result.HasJourney() && result.journeys.front().generalized_time.base() >= horizon)) {
 			snapshot->failure = PassengerJourneyFallbackReason::PredictionHorizon;
@@ -493,8 +513,8 @@ bool PassengerOdFallbackContext::CanReach(const Vehicle *vehicle, CargoType carg
 				index = order.GetConditionSkipToOrder();
 				continue;
 			}
-			if (order.IsRefit() || order.IsSlotCounterOrder() || order.IsType(OT_GOTO_DEPOT) ||
-					order.IsType(OT_IMPLICIT) || order.IsType(OT_DUMMY)) break;
+			if (order.IsType(OT_IMPLICIT)) { index = (index + 1) % state->orders.size(); continue; }
+			if (order.IsRefit() || order.IsSlotCounterOrder() || order.IsType(OT_GOTO_DEPOT) || order.IsType(OT_DUMMY)) break;
 			if (order.IsType(OT_GOTO_STATION) && !(order.GetNonStopType() & ONSF_NO_STOP_AT_DESTINATION_STATION)) {
 				StationID station = order.GetDestination().ToStationID();
 				if (station == vehicle->last_station_visited) break;
@@ -764,7 +784,7 @@ std::optional<VehicleCargoList::MoveToAction> PassengerJourneyActiveContext::Dec
 		if (!this->AdmitQuery()) return fallback();
 		const auto query_start = std::chrono::steady_clock::now();
 		auto result = snapshot->planner.PlanOnboard(cargo, *onboard, packet.GetPassengerDestination(), limits, ActiveJourneyEvaluation(), 1);
-		CountJourneySearch(result, snapshot->planner, query_start);
+		CountJourneySearch(result, snapshot->planner, query_start, this->station, packet.GetPassengerDestination());
 		if (result.stop_reason == PassengerJourneyStopReason::PredictionHorizon ||
 				(result.status == PassengerPredictionStatus::Complete && result.HasJourney() && result.journeys.front().generalized_time.base() >= horizon)) {
 			snapshot->failure = PassengerJourneyFallbackReason::PredictionHorizon;

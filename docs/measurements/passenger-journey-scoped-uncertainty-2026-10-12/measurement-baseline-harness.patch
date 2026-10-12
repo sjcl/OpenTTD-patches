@@ -1,0 +1,12 @@
+--- a/src/console_cmds.cpp
++++ b/src/console_cmds.cpp
+@@ -970,0 +971,3 @@
++	/* Measurement harness only: equivalent to accepting the NewGRF continuation
++	 * dialog on the isolated copy when this script explicitly requests unpause. */
++	if (_pause_mode.Test(PauseMode::Error)) Command<Commands::Pause>::Post(PauseMode::Error, false);
+--- a/src/openttd.cpp
++++ b/src/openttd.cpp
+@@ -1563,0 +1564 @@
++	const auto passenger_tick_started = std::chrono::steady_clock::now();
+@@ -1692,0 +1694 @@
++	if (_game_mode == GameMode::Normal) Debug(misc, 0, "Passenger measurement tick: state={}; us={}", _state_ticks.base(), std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - passenger_tick_started).count());

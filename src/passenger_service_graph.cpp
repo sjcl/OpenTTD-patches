@@ -70,10 +70,9 @@ PassengerServiceGraph PassengerServiceGraph::Build(CargoType cargo, StateTicks n
 		return true;
 	};
 	struct Candidate { const Vehicle *vehicle; uint64_t capacity; uint64_t occupants; };
-	struct FleetService { const OrderList *list; bool implicit; bool unbounded; std::vector<Candidate> candidates; };
+	struct FleetService { const OrderList *list; std::vector<Candidate> candidates; };
 	std::vector<FleetService> fleets;
 	std::vector<OrderListID> eligible;
-	bool opaque_scope = false;
 	/* Read cargo/refit eligibility before building topology: freight must not join
 	 * otherwise unrelated passenger corridors. These pointers live only in Build. */
 	for (const OrderList *list : OrderList::Iterate()) {
@@ -100,16 +99,11 @@ PassengerServiceGraph PassengerServiceGraph::Build(CargoType cargo, StateTicks n
 				continue;
 			}
 		}
-		bool may_refit = false, implicit = false, unbounded = false, manual_stops = false;
+		bool may_refit = false;
 		if (!SpendGraphWork(budget, list->GetNumOrders())) { fail(PassengerGraphFailure::Work, PassengerPredictionStatus::BudgetExhausted); break; }
 		for (const Order &order : list->GetOrderVector()) {
 			may_refit |= order.IsRefit();
-			manual_stops |= order.IsType(OT_GOTO_STATION);
-			implicit |= order.IsType(OT_IMPLICIT);
-			unbounded |= order.IsType(OT_IMPLICIT) && order.GetDestination().ToStationID() == StationID::Invalid();
 		}
-		/* Implicit-only wandering has no declared route to bound future stops. */
-		unbounded |= implicit && !manual_stops;
 		std::vector<Candidate> candidates;
 		for (const Vehicle *v = first; v != nullptr; v = v->NextShared()) {
 			if (!SpendGraphWork(budget)) { fail(PassengerGraphFailure::Work, PassengerPredictionStatus::BudgetExhausted); break; }
@@ -133,7 +127,7 @@ PassengerServiceGraph PassengerServiceGraph::Build(CargoType cargo, StateTicks n
 		if (candidates.empty()) continue;
 		if (!admit(256)) break; // Fleet discovery metadata, vector growth and eligible IDs.
 		eligible.push_back(list->index);
-		fleets.push_back({list, implicit, unbounded, std::move(candidates)});
+		fleets.push_back({list, std::move(candidates)});
 	}
 	PassengerServiceSelection selection;
 	graph.diagnostic.eligible_services = eligible.size();
@@ -155,7 +149,7 @@ PassengerServiceGraph PassengerServiceGraph::Build(CargoType cargo, StateTicks n
 		}
 	}
 	if (graph.status == PassengerPredictionStatus::Complete) for (const FleetService &fleet : fleets) {
-		if (!scope || fleet.unbounded || selection.services.contains(fleet.list->index)) {
+		if (!scope || selection.services.contains(fleet.list->index)) {
 			++graph.diagnostic.selected_services;
 			graph.diagnostic.selected_trips += fleet.candidates.size();
 		}
@@ -164,14 +158,13 @@ PassengerServiceGraph PassengerServiceGraph::Build(CargoType cargo, StateTicks n
 		stage = PassengerGraphStage::Orders;
 		const OrderList *list = fleet.list;
 		auto &candidates = fleet.candidates;
-		if (scope && !fleet.unbounded && !selection.services.contains(list->index)) {
+		if (scope && !selection.services.contains(list->index)) {
 			graph.scoped_omissions = true;
 			graph.diagnostic.excluded_scope += candidates.size();
 			continue;
 		}
-		/* A bounded, disconnected implicit service was pruned above. Unknown stops
-		 * and implicit-only wandering cannot establish that separation. */
-		opaque_scope |= scope.has_value() && fleet.unbounded;
+		/* Implicit orders are historical records. Follow explicit instructions;
+		 * real deviations and order-index changes are checked at execution. */
 		if (graph.services.size() >= limits.services) { fail(PassengerGraphFailure::Services, PassengerPredictionStatus::LimitReached); graph.diagnostic.omitted_trains += candidates.size(); break; }
 		if (!SpendGraphWork(budget, 3 * static_cast<size_t>(list->GetNumOrders()))) { fail(PassengerGraphFailure::Work, PassengerPredictionStatus::BudgetExhausted); graph.diagnostic.omitted_trains += candidates.size(); break; }
 		if (!admit(512 + 1024 * static_cast<size_t>(list->GetNumOrders()))) break;
@@ -195,10 +188,6 @@ PassengerServiceGraph PassengerServiceGraph::Build(CargoType cargo, StateTicks n
 		if (!copied_schedules) break;
 		for (VehicleOrderID i = 0; i < orders.size(); ++i) {
 			const Order &order = orders[i];
-			if (order.IsType(OT_IMPLICIT)) {
-				if (order.GetDestination().ToStationID() != StationID::Invalid()) service.stops.push_back({order.GetDestination().ToStationID(), i, true, true, false, std::nullopt, -1});
-				continue;
-			}
 			if (order.IsType(OT_GOTO_WAYPOINT) && order.GetWaypointFlags().Test(OrderWaypointFlag::Reverse)) service.reverse_waypoints.push_back(i);
 			if (!order.IsType(OT_GOTO_STATION) || (order.GetNonStopType() & ONSF_NO_STOP_AT_DESTINATION_STATION)) continue;
 			const OrderUnloadType unload = order.GetCargoUnloadType(cargo);
@@ -261,7 +250,7 @@ PassengerServiceGraph PassengerServiceGraph::Build(CargoType cargo, StateTicks n
 						++graph.diagnostic.admitted_visits;
 						++predicting_visits;
 						return true;
-					});
+					}, scope.has_value());
 					if (trip.prediction.status == PassengerPredictionStatus::LimitReached && trip.prediction.visits.size() == visit_limit && visit_limit < limits.visits_per_trip) {
 						fail(PassengerGraphFailure::TotalVisits, PassengerPredictionStatus::LimitReached);
 					}
@@ -285,7 +274,8 @@ PassengerServiceGraph PassengerServiceGraph::Build(CargoType cargo, StateTicks n
 			if (trip.prediction.status != PassengerPredictionStatus::Complete) {
 				if (graph.diagnostic.first_prediction_failure.reason == PassengerPredictionStop::None) {
 					graph.diagnostic.first_prediction_failure = {trip.prediction.stop, trip.vehicle, limits.work - budget, resident_bound,
-							graph.trips.size() + 1, graph.diagnostic.visits, trip.prediction.stopped_at, trip.prediction.complete_until, graph.end};
+							graph.trips.size() + 1, graph.diagnostic.visits, trip.prediction.stopped_at, trip.prediction.complete_until, graph.end,
+							trip.prediction.stopped_order, trip.prediction.uncertain_order, trip.prediction.uncertain_reason, trip.tile, trip.current_order};
 				}
 				++graph.diagnostic.prediction_stops[static_cast<size_t>(trip.prediction.stop)];
 				graph.diagnostic.maximum_unpredicted_ticks = std::max<Ticks>(graph.diagnostic.maximum_unpredicted_ticks, (graph.end - trip.prediction.complete_until).base());
@@ -293,30 +283,24 @@ PassengerServiceGraph PassengerServiceGraph::Build(CargoType cargo, StateTicks n
 			const size_t trip_index = graph.trips.size();
 			stored.trips.push_back(trip_index); graph.trips.push_back(std::move(trip));
 			const Trip &saved = graph.trips.back();
-			/* A known implicit order outside the proven horizon (or an unreachable
-			 * unconditional branch) does not invalidate already complete coverage. */
-			opaque_scope |= scope.has_value() && fleet.implicit && !saved.prediction.Covers(graph.start, graph.end);
+			/* Bounded missing timings/branches belong to this physical trip, not to
+			 * every OD. Retain the certified prefix and inventory its missing suffix. */
+			if (!saved.prediction.Covers(graph.start, graph.end)) {
+				stored.coverage_status = MergeGraphStatus(stored.coverage_status, saved.prediction.status);
+				if (!stored.uncertain_from || saved.prediction.complete_until < *stored.uncertain_from) stored.uncertain_from = saved.prediction.complete_until;
+				if (saved.prediction.uncertain_reason == PassengerPredictionStop::Timing) ++graph.diagnostic.timing_uncertainty;
+				else ++graph.diagnostic.path_uncertainty;
+			}
 			for (size_t i = 0; i < saved.prediction.visits.size(); ++i) graph.station_visits[graph.GetStop(saved, saved.prediction.visits[i].order).station].push_back({trip_index, i});
 			if (saved.prediction.status == PassengerPredictionStatus::BudgetExhausted) { fail(PassengerGraphFailure::Work, saved.prediction.status); graph.diagnostic.omitted_trains += candidates.size() - c - 1; break; }
-			/* This scoped capture already cannot certify any query. Do not predict the
-			 * rest of the fleet/network merely to rediscover that fact. No failure is
-			 * retained across events: the next build reads orders and progress afresh. */
-			if (opaque_scope) {
-				graph.diagnostic.opaque_service = stored.id;
-				graph.diagnostic.opaque_vehicle = saved.vehicle;
-				fail(PassengerGraphFailure::Opaque, PassengerPredictionStatus::Unknown);
-				graph.diagnostic.omitted_trains += candidates.size() - c - 1;
-				break;
-			}
 		}
 		if (graph.status != PassengerPredictionStatus::Complete) break;
 	}
-	graph.work = limits.work - budget;
-	if (opaque_scope) fail(PassengerGraphFailure::Opaque, PassengerPredictionStatus::Unknown);
 	stage = PassengerGraphStage::Indices;
 	/* Failed capture cannot certify any query. Avoid sorting/indexing its prefix;
 	 * declared stops and capture-order visits remain available for diagnostics. */
-	if (!opaque_scope && graph.status < PassengerPredictionStatus::LimitReached) graph.BuildDepartureIndex();
+	if (graph.status < PassengerPredictionStatus::LimitReached) graph.BuildDepartureIndex();
+	graph.work = limits.work - budget;
 	/* Allocation observations and elapsed time are diagnostics, excluded from all decisions. */
 	graph.diagnostic.allocation_bytes = sizeof(graph) + graph.services.capacity() * sizeof(Service) + graph.trips.capacity() * sizeof(Trip);
 	for (const auto &service : graph.services) {
@@ -355,7 +339,7 @@ PassengerPredictionStatus PassengerServiceGraph::GetQueryStatus(StationID origin
 PassengerServiceGraph::Coverage PassengerServiceGraph::GetCoverage(StationID origin, StationID destination) const
 {
 	if (this->GetQueryStatus(origin, destination) != PassengerPredictionStatus::Complete || this->GetUncertainStatus(destination) != PassengerPredictionStatus::Complete) return Coverage::Incomplete;
-	return this->GetStatus() == PassengerPredictionStatus::Complete ? Coverage::GlobalComplete : Coverage::ScopedComplete;
+	return this->GetStatus() == PassengerPredictionStatus::Complete && this->uncertain_status == PassengerPredictionStatus::Complete ? Coverage::GlobalComplete : Coverage::ScopedComplete;
 }
 
 std::optional<PassengerServiceGraph::VisitID> PassengerServiceGraph::FindOnboardVisit(VehicleID vehicle, StationID station, VehicleOrderID order) const
@@ -393,8 +377,10 @@ void PassengerServiceGraph::BuildDepartureIndex()
 			ranks.try_emplace(stop.station, 0);
 		}
 		if (service.stops.empty()) continue;
+		StationID anchor = service.stops.front().station;
+		this->component_roots.try_emplace(anchor, anchor); ranks.try_emplace(anchor, 0);
 		for (const auto &stop : service.stops) {
-			StationID a = root(service.stops.front().station), b = root(stop.station);
+			StationID a = root(anchor), b = root(stop.station);
 			if (a == b) continue;
 			if (ranks[a] < ranks[b]) std::swap(a, b);
 			this->component_roots[b] = a;
@@ -405,10 +391,7 @@ void PassengerServiceGraph::BuildDepartureIndex()
 	for (const auto &[station, services] : this->station_services) {
 		auto &index = this->station_departures[station];
 		for (OrderListID service : services) {
-			for (size_t id : this->GetService(service)->trips) {
-				const auto &prediction = this->trips[id].prediction;
-				if (!prediction.Covers(this->start, this->end)) index.status = MergeGraphStatus(index.status, prediction.status);
-			}
+			index.status = MergeGraphStatus(index.status, this->GetService(service)->coverage_status);
 		}
 	}
 	for (const auto &[station, visits] : this->station_visits) {

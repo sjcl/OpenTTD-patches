@@ -24,6 +24,17 @@ enum class PassengerJourneyFallbackReason : uint8_t {
 	StaleLeg, Disabled, VehicleDeleted, End,
 };
 
+struct PassengerJourneyQueryDetail {
+	StationID origin = StationID::Invalid(), destination = StationID::Invalid();
+	StateTicks at{};
+	PassengerPredictionStatus status{};
+	PassengerJourneyStopReason stop{};
+	size_t candidates = 0;
+	std::optional<StateTicksDelta> score;
+	std::optional<StateTicks> unknown_arrival_bound;
+	OrderListID unknown_service = OrderListID::Invalid();
+};
+
 struct PassengerJourneyTickDiagnostic {
 	std::array<size_t, static_cast<size_t>(PassengerGraphFailure::End)> graph_failures{};
 	std::array<size_t, static_cast<size_t>(PassengerPredictionStop::End)> prediction_stops{};
@@ -47,6 +58,10 @@ struct PassengerJourneyTickDiagnostic {
 	size_t fair_share_releases = 0, retained_rides = 0;
 	size_t od_fallback_work = 0, od_fallback_searches = 0;
 	size_t boarded_passengers = 0, transferred_passengers = 0, delivered_passengers = 0;
+	size_t timing_uncertainty = 0, path_uncertainty = 0, uncertainty_resolved = 0;
+	std::array<PassengerJourneyQueryDetail, 16> query_samples{};
+	size_t query_sample_count = 0;
+	uint64_t simulation_ticks = 0, simulation_microseconds = 0, maximum_simulation_microseconds = 0;
 };
 
 /** Reset at the simulation tick boundary, including the first tick after network join/load.
@@ -60,6 +75,7 @@ void ResetPassengerJourneyDiagnostic(); ///< Local observations only; never rese
 void RecordPassengerJourneyFallback(PassengerJourneyFallbackReason reason); ///< Simulation-only lifecycle observations.
 enum class PassengerJourneyMovement : uint8_t { Board, Transfer, Deliver };
 void RecordPassengerJourneyMovement(PassengerJourneyMovement movement, uint count); ///< Actual cargo moves only, never reservations/staging.
+void RecordPassengerJourneySimulationTick(uint64_t microseconds); ///< Read-only elapsed CPU-thread time, outside all routing budgets.
 PassengerServiceGraphLimits ActivePassengerServiceGraphLimits();
 
 /** Lazy prediction for one physical passenger service/cargo in one loading pass. */

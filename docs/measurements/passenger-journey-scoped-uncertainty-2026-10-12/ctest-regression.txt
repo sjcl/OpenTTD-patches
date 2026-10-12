@@ -1,0 +1,13 @@
+Test project C:/Users/bebe/CLionProjects/OpenTTD-patches/build-scoped-uncertainty
+    Start 405: regression_regression
+1/4 Test #405: regression_regression ............   Passed    1.48 sec
+    Start 406: regression_stationlist
+2/4 Test #406: regression_stationlist ...........   Passed    1.35 sec
+    Start 407: regression_gs
+3/4 Test #407: regression_gs ....................   Passed    1.30 sec
+    Start 408: regression_gs_compat
+4/4 Test #408: regression_gs_compat .............   Passed    1.21 sec
+
+100% tests passed, 0 tests failed out of 4
+
+Total Test time (real) =   5.37 sec

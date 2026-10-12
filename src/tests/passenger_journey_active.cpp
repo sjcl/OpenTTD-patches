@@ -908,6 +908,62 @@ TEST_CASE("An unrelated running implicit service leaves active journey routing c
 	CHECK(packet->GetPassengerRoutingMode() == PassengerRoutingMode::Journey);
 }
 
+TEST_CASE("A certified physical prefix of an incomplete trip is applied reserved and loaded", "[passenger][active][uncertainty]")
+{
+	ActiveFixture fixture;
+	Order later = ActiveStop(B, 1000); later.SetWaitTimetabled(false);
+	ActiveTrain *train = Vehicle::Create<ActiveTrain>(std::vector<Order>{ActiveStop(A), ActiveStop(D, 100), later});
+	auto *packet = fixture.Packet(10);
+	PassengerJourneyActiveContext context(nullptr, A);
+	REQUIRE(context.PlanWaiting(*packet, PAX, D));
+	CHECK(GetPassengerJourneyTickDiagnostic().complete_graphs == 0);
+	CHECK(GetPassengerJourneyTickDiagnostic().uncertainty_resolved == 1);
+	fixture.Waiting().Append(packet, D);
+	std::array next{D};
+	PassengerJourneyLoadingContext loading;
+	CHECK(fixture.Waiting().Reserve(10, &train->cargo, next, TileIndex{0}, train, &loading) == 10);
+	CHECK(GetPassengerJourneyTickDiagnostic().boarded_passengers == 0);
+	CHECK(fixture.Waiting().Load(4, &train->cargo, next, TileIndex{0}, train, &loading) == 4);
+	CHECK(fixture.Waiting().Load(6, &train->cargo, next, TileIndex{0}, train, &loading) == 6);
+	CHECK(GetPassengerJourneyTickDiagnostic().boarded_passengers == 10);
+	CHECK(train->cargo.Packets()->front()->GetPassengerDestination() == D);
+	_vehicle_pool.CleanPool();
+}
+
+TEST_CASE("Actual incidental stops and implicit index changes invalidate stored journeys without wrong delivery", "[passenger][active][uncertainty][implicit]")
+{
+	ActiveFixture fixture;
+	ActiveTrain *train = Vehicle::Create<ActiveTrain>(std::vector<Order>{ActiveStop(A), ActiveStop(D, 100)});
+	auto *packet = fixture.Packet(10);
+	fixture.Plan(*packet);
+	const auto original = packet->GetPassengerJourney();
+	CHECK(original.alighting_order == 1);
+	fixture.Waiting().Append(packet, D);
+	std::array next{D};
+	CHECK(fixture.Waiting().Load(10, &train->cargo, next, TileIndex{0}, train) == 10);
+	Order historic; historic.MakeImplicit(B);
+	train->orders->InsertOrderAt(std::move(historic), 1);
+	CHECK(PassengerJourneyServiceSignature(*train->orders, PAX) != original.signature);
+	/* This is a REAL extra stop, distinct from merely skipping a historical record
+	 * during forecasting. Live progress no longer matches the stored physical leg. */
+	train->LoadAt(1); train->cur_real_order_index = 2;
+	PassengerJourneyActiveContext incidental(train, B);
+	const auto action = incidental.Decide(*packet, PAX, true, OrderUnloadType::UnloadIfPossible);
+	CHECK(action != Action::Deliver);
+	CHECK(packet->GetPassengerRoutingMode() == PassengerRoutingMode::Fallback);
+	CHECK(packet->GetPassengerDestination() == D);
+	train->LoadAt(0);
+	auto fresh = std::unique_ptr<CargoPacket>(fixture.Packet(1));
+	PassengerJourneyActiveContext replan(nullptr, A);
+	REQUIRE(replan.PlanWaiting(*fresh, PAX, D));
+	CHECK(fresh->GetPassengerJourney().alighting_order == 2);
+	CHECK(fresh->GetPassengerJourney().signature != original.signature);
+	train->LoadAt(2);
+	PassengerJourneyActiveContext arrived(train, D);
+	CHECK(arrived.Decide(*packet, PAX, true, OrderUnloadType::UnloadIfPossible) == Action::Deliver);
+	_vehicle_pool.CleanPool();
+}
+
 TEST_CASE("Distinct OD budget waits retry next tick and remain normal failures when unreachable", "[passenger][active][budget]")
 {
 	ActiveFixture fixture;

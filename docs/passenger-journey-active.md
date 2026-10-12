@@ -80,7 +80,10 @@ using positive-capacity unrestricted links only. With unchanged links, completed
 interchanges strictly reduce remaining hop count. Source-based CargoDist flows
 do not select these hops. The current vehicle's executed order prefix must reach
 the chosen hop before returning to its boarding station or encountering an
-unresolved conditional, implicit stop, refit/depot detour or forced interchange.
+unresolved conditional, refit/depot detour or forced interchange. Historical
+implicit orders are skipped consistently with the timed planner's explicit
+instruction model. Actual extra stops and raw order-index changes retain live
+leg validation and signature invalidation.
 Untimetabled deterministic prefixes remain usable, without asserting timing or
 JourneyPlanner completeness. An admitted through target is kept until its
 interchange and revalidated on every arrival.

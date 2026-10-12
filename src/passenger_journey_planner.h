@@ -106,6 +106,9 @@ struct PassengerJourneyWork {
 	size_t cycle_rejections = 0; ///< Station revisits excluded from transfer paths; through rides retain real occurrences.
 	size_t scratch_bytes = 0; ///< Conservative peak scratch/returned-path allowance, diagnostic only.
 	bool cache_hit = false;
+	bool uncertainty_resolved = false; ///< Diagnostic: alternatives proved irrelevant to the requested K candidates.
+	std::optional<StateTicks> unknown_arrival_bound; ///< Diagnostic: optimistic arrival using at least one uncertified event.
+	OrderListID unknown_service = OrderListID::Invalid(); ///< Diagnostic witness for the optimistic bound.
 };
 
 enum class PassengerJourneyStopReason : uint8_t {

@@ -64,13 +64,16 @@ struct PassengerVisitPrediction {
 	StateTicks complete_until{}; ///< All arrival/departure occurrences in [start, complete_until) are captured, even if the suffix is incomplete.
 	PassengerPredictionStop stop = PassengerPredictionStop::None;
 	StateTicks stopped_at{}; ///< Prediction cursor, which can exceed complete_until when timing is unknown.
+	VehicleOrderID stopped_order = INVALID_VEH_ORDER_ID; ///< Diagnostic only: cursor order at termination.
+	VehicleOrderID uncertain_order = INVALID_VEH_ORDER_ID; ///< Diagnostic only: first unknown timing/path order.
+	PassengerPredictionStop uncertain_reason = PassengerPredictionStop::None; ///< Diagnostic only.
 	/** The exclusive endpoint also excludes unprocessed zero-time events at the truncation tick. */
 	bool Covers(StateTicks from, StateTicks to) const { return this->start <= from && from < to && to <= this->complete_until; }
 };
 
 /** Same traversal/timing engine as journeys and connections, without the CargoDist boarding contract. */
 PassengerVisitPrediction PredictPassengerVisits(const PassengerRouteState &state, CargoType cargo, StateTicks now,
-		StateTicks end, size_t max_visits, size_t max_steps, size_t &budget, const std::function<bool()> &admit_visit = {});
+		StateTicks end, size_t max_visits, size_t max_steps, size_t &budget, const std::function<bool()> &admit_visit = {}, bool prefix_only = false);
 
 /** A journey to a selected CargoDist via, on one vehicle and one boarding order. */
 struct PassengerJourney {

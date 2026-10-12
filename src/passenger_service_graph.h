@@ -41,6 +41,10 @@ struct PassengerTripPredictionDetail {
 	VehicleID vehicle = VehicleID::Invalid();
 	size_t work = 0, memory = 0, trips = 0, visits = 0;
 	StateTicks stopped_at{}, complete_until{}, required_until{};
+	VehicleOrderID stopped_order = INVALID_VEH_ORDER_ID, uncertain_order = INVALID_VEH_ORDER_ID;
+	PassengerPredictionStop uncertain_reason = PassengerPredictionStop::None;
+	TileIndex tile{};
+	VehicleOrderID current_order = INVALID_VEH_ORDER_ID;
 };
 
 struct PassengerServiceGraphDiagnostic {
@@ -67,6 +71,7 @@ struct PassengerServiceGraphDiagnostic {
 	size_t reused_work = 0; ///< Logical preprocessing allowance avoided by a resident index, diagnostic only.
 	uint64_t build_microseconds = 0; ///< Development diagnostics only.
 	bool static_cache_hit = false;
+	size_t timing_uncertainty = 0, path_uncertainty = 0;
 };
 
 /**
@@ -108,6 +113,8 @@ public:
 		std::vector<VehicleOrderID> reverse_waypoints; ///< Explicit reversals; out-and-back station visits retain distinct order IDs.
 		std::vector<DispatchSchedule> schedules; ///< Timing/slot data only, without GUI names.
 		std::vector<size_t> trips; ///< Indices into GetTrips().
+		std::optional<StateTicks> uncertain_from; ///< Earliest uncertified event across the fleet; never the nominal prediction cursor.
+		PassengerPredictionStatus coverage_status = PassengerPredictionStatus::Complete; ///< Fleet coverage, computed once rather than once per station.
 	};
 
 	enum class Operation : uint8_t { Running, Stopped, Crashed, Unknown };
@@ -157,8 +164,8 @@ public:
 	StateTicks GetEnd() const { return this->end; }
 	/** Completeness of fleet discovery/capture. Prediction completeness is also reported on each Trip and query. */
 	PassengerPredictionStatus GetStatus() const;
-	/** Scoped capture certifies alternatives only for this OD with unweighted waiting;
-	 * trip timing uncertainty is checked separately by the planner. */
+	/** Capture completeness for this OD. Complete inventories unknown alternatives too;
+	 * it does not certify their timings or a winning journey. The planner proves optimality separately. */
 	PassengerPredictionStatus GetQueryStatus(StationID origin, StationID destination, bool weighted_waiting = false) const;
 	enum class Coverage : uint8_t { GlobalComplete, ScopedComplete, Incomplete };
 	Coverage GetCoverage(StationID origin, StationID destination) const;

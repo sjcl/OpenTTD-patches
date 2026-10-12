@@ -1,0 +1,610 @@
+{
+  "date": "2026-10-12",
+  "timezone": "Asia/Tokyo",
+  "branch": "fix/passenger-journey-scoped-uncertainty",
+  "base_commit": "06350758d2b91cd2e74ee2da23a8dd08f4fb98b0",
+  "source_patch_sha256": "ffd818fcd79aab800cf97b8f652e52912b3516ffb06af6cb127ba707f01ba761",
+  "source_patch_encoding": "PowerShell git diff -- src output saved with Set-Content -Encoding utf8 before commit; no measurement unpause helper",
+  "input_sha256": "14d68c82911b9dcfc5ef7291e9697c5bbd67f44ffcc79d7575a144405edf6390",
+  "build": "MSVC 19.44 / VS 2022 14.44, x64 Release, /MT, asserts enabled, LTO disabled, x64-windows-static cached dependencies",
+  "video_driver": "null:until_exit",
+  "sound_driver": "null",
+  "music_driver": "null",
+  "command_args": "-c openttd.cfg -g input.sav -v null:until_exit -s null -m null -x",
+  "measurement_harness": "Both binaries only add scripted PauseMode::Error continuation on isolated copy; baseline also logs full StateGameLoop microseconds; final product source has no continuation helper.",
+  "production_binary_sha256": "e8025e07b1e6f989d070f8d1952c8dd2f6dcde62585aaadeb14ed625bea325d6",
+  "original_input_unchanged": true,
+  "newgrf_missing_and_capacity_warnings": true,
+  "settings": {
+    "distribution_pax": 2,
+    "passenger_od_assignment": true,
+    "passenger_journey_routing": true,
+    "recalc_interval": 8,
+    "recalc_time": 32
+  },
+  "interval": {
+    "initial_state_ticks": 3176545487,
+    "final_state_ticks": 3176547014,
+    "state_ticks": 1527,
+    "initial_scaled_ticks": 3010946389,
+    "final_scaled_ticks": 3010947916,
+    "initial_date": "117528-03-11",
+    "final_date": "117528-04-01",
+    "completed_tick_timing_samples": 1526,
+    "boundary_note": "finish script runs during IncreaseDate in final tick, before vehicle processing and its timing observation; final partial tick includes reporting/save and is excluded"
+  },
+  "counter_semantics": {
+    "graph_complete": "GetCoverage != Incomplete (fully timed OD component)",
+    "graph_failure_none": "complete OD inventory even when trip timing is unknown",
+    "OD_resolved": "partial prediction uncertainty certified irrelevant to this query; queries, not unique ODs",
+    "applied_passengers": "sum of packet counts at assignment, can include replans",
+    "transport": "Journey-mode passenger movement events, not unique individuals",
+    "query_allowance": "fixed admission debit, not actual query work"
+  },
+  "validation": {
+    "passenger_cases": 191,
+    "passenger_assertions": 135563,
+    "ctest_total_passed": 408,
+    "ctest_initial_passed": 404,
+    "regression_retries_passed": 4,
+    "live_multiplayer_soak": false
+  },
+  "before": {
+    "process": {
+      "exit_code": 0,
+      "wall_seconds": 390.5435125,
+      "cpu_seconds": 488.34375,
+      "peak_working_set": 2015232000,
+      "sampled_peak_private": 2016366592,
+      "sample_ms": 100
+    },
+    "state_ticks": [
+      3176545487,
+      3176547014
+    ],
+    "graph": {
+      "complete": 0,
+      "eligible_services": 18569178,
+      "selected_services": 14768533,
+      "selected_trips": 72762064,
+      "largest_block_services": 643,
+      "admitted_visits": 696078843,
+      "max_unpredicted_ticks": 4096,
+      "raw": "Graph coverage: complete=0; eligible_services=18569178; selected_services=14768533; selected_trips=72762064; largest_block_services=643; admitted_visits=696078843; max_unpredicted_ticks=4096"
+    },
+    "active": {
+      "applied": 0,
+      "builds": 24369,
+      "static_hits": 23517,
+      "searches": 0,
+      "OD_hits": 0,
+      "raw": "Active journey total: applied=0 packets/0 passengers; builds=24369; static_hits=23517; searches=0; OD_hits=0",
+      "applied_packets": 0,
+      "applied_passengers": 0
+    },
+    "work_time": {
+      "mean": 562077,
+      "max": 588818,
+      "cached_index_allowance_avoided": 6573989214,
+      "query_allowance": 0,
+      "build_us": 293345901,
+      "mean_us": 12037,
+      "max_us": 29808,
+      "search_us": 0,
+      "max_tick_graph_search_us": 295929,
+      "raw": "Graph work=13697260849; mean=562077; max=588818; cached_index_allowance_avoided=6573989214; query_allowance=0; build_us=293345901; mean_us=12037; max_us=29808; search_us=0; max_tick_graph_search_us=295929",
+      "graph_work": 13697260849
+    },
+    "memory": {
+      "conservative_graph_envelope_including_index": 30564480,
+      "query_scratch": 0,
+      "query_cache": 0,
+      "raw": "Peak graph retained_estimate=5491614; static retained_estimate=897396; conservative_graph_envelope_including_index=30564480; query_scratch=0; query_cache=0",
+      "graph_retained_estimate": 5491614,
+      "static_retained_estimate": 897396
+    },
+    "transport": {
+      "boarded": 0,
+      "transferred": 0,
+      "delivered": 0,
+      "raw": "Journey transport: boarded=0; transferred=0; delivered=0 people"
+    },
+    "observations": {
+      "cargo_capable": 90433359,
+      "possible_refit": 243690,
+      "predicted": 61086999,
+      "inactive": 3728457,
+      "excluded_cargo": 9625755,
+      "excluded_scope": 8060474,
+      "visits": 696078843,
+      "omitted_trains_at_least": 51,
+      "truncated_predictions": 5,
+      "raw": "Train observations=100302804; cargo_capable=90433359; possible_refit=243690; predicted=61086999; inactive=3728457; excluded_cargo=9625755; excluded_scope=8060474; visits=696078843; omitted_trains_at_least=51; truncated_predictions=5 (uncaptured visit count unknown)",
+      "trains": 100302804
+    },
+    "shares": {
+      "claims": 6099,
+      "releases": 0,
+      "admission_scan_work": 8814296,
+      "retained_rides": 0,
+      "raw": "Fair waiting shares: claims=6099; releases=0; admission_scan_work=8814296; retained_rides=0"
+    },
+    "fallback_work": {
+      "work": 858549893,
+      "path_searches": 127147,
+      "raw": "OD fallback: work=858549893; path_searches=127147"
+    },
+    "graph_failures": {
+      "None": 0,
+      "Work": 862,
+      "Memory": 0,
+      "Services": 0,
+      "Trips": 0,
+      "TotalVisits": 0,
+      "Index": 0,
+      "Opaque": 23507
+    },
+    "prediction_stops": {
+      "None": 0,
+      "Work": 5,
+      "Memory": 0,
+      "Visits": 0,
+      "Steps": 0,
+      "Timing": 11018262,
+      "Conditional": 0,
+      "Refit": 0,
+      "Implicit": 0,
+      "Unsupported": 8406452,
+      "Dispatch": 0,
+      "Facilities": 0,
+      "VehicleState": 223396,
+      "OrderProgress": 95629
+    },
+    "fallbacks": {
+      "GraphWork": {
+        "packets": 0,
+        "deferred_packets": 1086
+      },
+      "GraphMemory": {
+        "packets": 0,
+        "deferred_packets": 0
+      },
+      "SnapshotLimit": {
+        "packets": 0,
+        "deferred_packets": 362323
+      },
+      "QueryWork": {
+        "packets": 0,
+        "deferred_packets": 21439
+      },
+      "QueryLimit": {
+        "packets": 0,
+        "deferred_packets": 0
+      },
+      "QueryMemory": {
+        "packets": 0,
+        "deferred_packets": 0
+      },
+      "PredictionIncomplete": {
+        "packets": 34161,
+        "deferred_packets": 0
+      },
+      "PredictionHorizon": {
+        "packets": 0,
+        "deferred_packets": 0
+      },
+      "NoJourney": {
+        "packets": 0,
+        "deferred_packets": 0
+      },
+      "InvalidLeg": {
+        "packets": 0,
+        "deferred_packets": 0
+      },
+      "StaleLeg": {
+        "packets": 0,
+        "deferred_packets": 0
+      },
+      "Disabled": {
+        "packets": 0,
+        "deferred_packets": 0
+      },
+      "VehicleDeleted": {
+        "packets": 0,
+        "deferred_packets": 0
+      }
+    },
+    "inventory": [
+      "Passenger inventory: complete; waiting=200450 people (available=200450, reserved=0); deferred=36501 people; state_ticks=3176545487; scaled_ticks=3010946389",
+      "Inventory Legacy: 425187 people/64228 packets; known_OD=65674 people",
+      "Inventory Journey: 0 people/0 packets; known_OD=0 people",
+      "Inventory Fallback: 50423 people/26847 packets; known_OD=50423 people",
+      "Passenger inventory: complete; waiting=203731 people (available=203731, reserved=0); deferred=48452 people; state_ticks=3176547014; scaled_ticks=3010947916",
+      "Inventory Legacy: 385775 people/67476 packets; known_OD=77201 people",
+      "Inventory Journey: 0 people/0 packets; known_OD=0 people",
+      "Inventory Fallback: 84522 people/48101 packets; known_OD=84522 people"
+    ],
+    "query_samples": [],
+    "binary_sha256": "7f688fdddab3580b3b280e3d1a01824ae871c7496369a1ae18eb22c5673e27dc",
+    "save_sha256": "0355f64137fe351307d5d068ab27cd263a47763e8dc5465bd79486779a8f0454",
+    "simulation_tick_time": {
+      "completed_ticks": 1526,
+      "total_us": 369013506,
+      "mean_us": 241817.500655308,
+      "max_us": 375992
+    }
+  },
+  "after": {
+    "process": {
+      "exit_code": 0,
+      "wall_seconds": 628.0889358,
+      "cpu_seconds": 750.734375,
+      "peak_working_set": 2013106176,
+      "sampled_peak_private": 2014384128,
+      "sample_ms": 100
+    },
+    "state_ticks": [
+      3176545487,
+      3176547014
+    ],
+    "graph": {
+      "complete": 278,
+      "eligible_services": 18241518,
+      "selected_services": 14481610,
+      "selected_trips": 71439267,
+      "largest_block_services": 643,
+      "admitted_visits": 346534836,
+      "max_unpredicted_ticks": 16384,
+      "raw": "Graph coverage: complete=278; eligible_services=18241518; selected_services=14481610; selected_trips=71439267; largest_block_services=643; admitted_visits=346534836; max_unpredicted_ticks=16384"
+    },
+    "active": {
+      "applied": 1580,
+      "builds": 23939,
+      "static_hits": 23164,
+      "searches": 23157,
+      "OD_hits": 11587,
+      "raw": "Active journey total: applied=1580 packets/3850 passengers; builds=23939; static_hits=23164; searches=23157; OD_hits=11587",
+      "applied_packets": 1580,
+      "applied_passengers": 3850
+    },
+    "work_time": {
+      "mean": 571078,
+      "max": 626957,
+      "cached_index_allowance_avoided": 6475310888,
+      "query_allowance": 1522851232,
+      "build_us": 472144421,
+      "mean_us": 19722,
+      "max_us": 43410,
+      "search_us": 51715457,
+      "max_tick_graph_search_us": 519068,
+      "raw": "Graph work=13671037171; mean=571078; max=626957; cached_index_allowance_avoided=6475310888; query_allowance=1522851232; build_us=472144421; mean_us=19722; max_us=43410; search_us=51715457; max_tick_graph_search_us=519068",
+      "graph_work": 13671037171
+    },
+    "memory": {
+      "conservative_graph_envelope_including_index": 38815488,
+      "query_scratch": 1828419,
+      "query_cache": 1520,
+      "raw": "Peak graph retained_estimate=9577508; static retained_estimate=897036; conservative_graph_envelope_including_index=38815488; query_scratch=1828419; query_cache=1520",
+      "graph_retained_estimate": 9577508,
+      "static_retained_estimate": 897036
+    },
+    "uncertainty": {
+      "timing": 19262659,
+      "path": 3122723,
+      "OD_resolved": 1708,
+      "first_order": 9,
+      "first_unknown_order": 9,
+      "tile": 22301316,
+      "current_order": 7,
+      "raw": "Uncertainty: timing=19262659 trips; path=3122723 trips; OD_resolved=1708 searches; first_order=9; first_unknown_order=9; first_unknown_reason=Timing; tile=22301316; current_order=7"
+    },
+    "simulation_tick_time": {
+      "completed_ticks": 1526,
+      "total_us": 613787968,
+      "mean_us": 402220,
+      "max_us": 614933,
+      "raw": "Simulation tick time: completed_ticks=1526; total_us=613787968; mean_us=402220; max_us=614933"
+    },
+    "transport": {
+      "boarded": 1659,
+      "transferred": 0,
+      "delivered": 604,
+      "raw": "Journey transport: boarded=1659; transferred=0; delivered=604 people"
+    },
+    "observations": {
+      "cargo_capable": 88837629,
+      "possible_refit": 239390,
+      "predicted": 71024393,
+      "inactive": 3662667,
+      "excluded_cargo": 9455905,
+      "excluded_scope": 11211915,
+      "visits": 346534836,
+      "omitted_trains_at_least": 19,
+      "truncated_predictions": 5,
+      "raw": "Train observations=98532924; cargo_capable=88837629; possible_refit=239390; predicted=71024393; inactive=3662667; excluded_cargo=9455905; excluded_scope=11211915; visits=346534836; omitted_trains_at_least=19; truncated_predictions=5 (uncaptured visit count unknown)",
+      "trains": 98532924
+    },
+    "shares": {
+      "claims": 6104,
+      "releases": 0,
+      "admission_scan_work": 8799163,
+      "retained_rides": 0,
+      "raw": "Fair waiting shares: claims=6104; releases=0; admission_scan_work=8799163; retained_rides=0"
+    },
+    "fallback_work": {
+      "work": 859217725,
+      "path_searches": 126954,
+      "raw": "OD fallback: work=859217725; path_searches=126954"
+    },
+    "graph_failures": {
+      "None": 23157,
+      "Work": 782,
+      "Memory": 0,
+      "Services": 0,
+      "Trips": 0,
+      "TotalVisits": 0,
+      "Index": 0,
+      "Opaque": 0
+    },
+    "prediction_stops": {
+      "None": 0,
+      "Work": 5,
+      "Memory": 0,
+      "Visits": 0,
+      "Steps": 0,
+      "Timing": 19262659,
+      "Conditional": 0,
+      "Refit": 0,
+      "Implicit": 0,
+      "Unsupported": 2717692,
+      "Dispatch": 0,
+      "Facilities": 0,
+      "VehicleState": 310640,
+      "OrderProgress": 94386
+    },
+    "fallbacks": {
+      "GraphWork": {
+        "packets": 0,
+        "deferred_packets": 967
+      },
+      "GraphMemory": {
+        "packets": 0,
+        "deferred_packets": 0
+      },
+      "SnapshotLimit": {
+        "packets": 0,
+        "deferred_packets": 67879
+      },
+      "QueryWork": {
+        "packets": 5050,
+        "deferred_packets": 320086
+      },
+      "QueryLimit": {
+        "packets": 2252,
+        "deferred_packets": 0
+      },
+      "QueryMemory": {
+        "packets": 0,
+        "deferred_packets": 0
+      },
+      "PredictionIncomplete": {
+        "packets": 24883,
+        "deferred_packets": 0
+      },
+      "PredictionHorizon": {
+        "packets": 0,
+        "deferred_packets": 0
+      },
+      "NoJourney": {
+        "packets": 0,
+        "deferred_packets": 0
+      },
+      "InvalidLeg": {
+        "packets": 0,
+        "deferred_packets": 0
+      },
+      "StaleLeg": {
+        "packets": 772,
+        "deferred_packets": 0
+      },
+      "Disabled": {
+        "packets": 0,
+        "deferred_packets": 0
+      },
+      "VehicleDeleted": {
+        "packets": 0,
+        "deferred_packets": 0
+      }
+    },
+    "inventory": [
+      "Passenger inventory: complete; waiting=200450 people (available=200450, reserved=0); deferred=36501 people; state_ticks=3176545487; scaled_ticks=3010946389",
+      "Inventory Legacy: 425187 people/64228 packets; known_OD=65674 people",
+      "Inventory Journey: 0 people/0 packets; known_OD=0 people",
+      "Inventory Fallback: 50423 people/26847 packets; known_OD=50423 people",
+      "Passenger inventory: complete; waiting=203008 people (available=203008, reserved=0); deferred=49173 people; state_ticks=3176547014; scaled_ticks=3010947916",
+      "Inventory Legacy: 386012 people/68992 packets; known_OD=77621 people",
+      "Inventory Journey: 1067 people/338 packets; known_OD=1067 people",
+      "Inventory Fallback: 83176 people/46806 packets; known_OD=83176 people"
+    ],
+    "query_samples": [
+      {
+        "origin": 43,
+        "destination": 823,
+        "tick": 3176545488,
+        "status": 1,
+        "stop": 5,
+        "candidates": 0,
+        "best_score": -1,
+        "unknown_arrival_bound": 3176547968,
+        "unknown_service": 1
+      },
+      {
+        "origin": 43,
+        "destination": 102,
+        "tick": 3176545488,
+        "status": 1,
+        "stop": 5,
+        "candidates": 0,
+        "best_score": -1,
+        "unknown_arrival_bound": 3176545488,
+        "unknown_service": 41
+      },
+      {
+        "origin": 43,
+        "destination": 3871,
+        "tick": 3176545488,
+        "status": 1,
+        "stop": 6,
+        "candidates": 0,
+        "best_score": -1,
+        "unknown_arrival_bound": -1,
+        "unknown_service": 65535
+      },
+      {
+        "origin": 43,
+        "destination": 3871,
+        "tick": 3176545488,
+        "status": 3,
+        "stop": 2,
+        "candidates": 0,
+        "best_score": -1,
+        "unknown_arrival_bound": -1,
+        "unknown_service": 65535
+      },
+      {
+        "origin": 43,
+        "destination": 111,
+        "tick": 3176545488,
+        "status": 1,
+        "stop": 5,
+        "candidates": 0,
+        "best_score": -1,
+        "unknown_arrival_bound": 3176545488,
+        "unknown_service": 41
+      },
+      {
+        "origin": 43,
+        "destination": 844,
+        "tick": 3176545488,
+        "status": 1,
+        "stop": 5,
+        "candidates": 0,
+        "best_score": -1,
+        "unknown_arrival_bound": 3176548160,
+        "unknown_service": 1
+      },
+      {
+        "origin": 860,
+        "destination": 1014,
+        "tick": 3176545488,
+        "status": 1,
+        "stop": 6,
+        "candidates": 0,
+        "best_score": -1,
+        "unknown_arrival_bound": -1,
+        "unknown_service": 65535
+      },
+      {
+        "origin": 860,
+        "destination": 1014,
+        "tick": 3176545488,
+        "status": 3,
+        "stop": 2,
+        "candidates": 0,
+        "best_score": -1,
+        "unknown_arrival_bound": -1,
+        "unknown_service": 65535
+      },
+      {
+        "origin": 860,
+        "destination": 1087,
+        "tick": 3176545488,
+        "status": 1,
+        "stop": 6,
+        "candidates": 0,
+        "best_score": -1,
+        "unknown_arrival_bound": -1,
+        "unknown_service": 65535
+      },
+      {
+        "origin": 860,
+        "destination": 1087,
+        "tick": 3176545488,
+        "status": 3,
+        "stop": 2,
+        "candidates": 0,
+        "best_score": -1,
+        "unknown_arrival_bound": -1,
+        "unknown_service": 65535
+      },
+      {
+        "origin": 860,
+        "destination": 1092,
+        "tick": 3176545488,
+        "status": 1,
+        "stop": 6,
+        "candidates": 0,
+        "best_score": -1,
+        "unknown_arrival_bound": -1,
+        "unknown_service": 65535
+      },
+      {
+        "origin": 860,
+        "destination": 1092,
+        "tick": 3176545488,
+        "status": 3,
+        "stop": 2,
+        "candidates": 0,
+        "best_score": -1,
+        "unknown_arrival_bound": -1,
+        "unknown_service": 65535
+      },
+      {
+        "origin": 1361,
+        "destination": 3664,
+        "tick": 3176545488,
+        "status": 3,
+        "stop": 2,
+        "candidates": 0,
+        "best_score": -1,
+        "unknown_arrival_bound": -1,
+        "unknown_service": 65535
+      },
+      {
+        "origin": 1361,
+        "destination": 3668,
+        "tick": 3176545488,
+        "status": 3,
+        "stop": 2,
+        "candidates": 0,
+        "best_score": -1,
+        "unknown_arrival_bound": -1,
+        "unknown_service": 65535
+      },
+      {
+        "origin": 1716,
+        "destination": 1869,
+        "tick": 3176545488,
+        "status": 1,
+        "stop": 5,
+        "candidates": 0,
+        "best_score": -1,
+        "unknown_arrival_bound": 3176545488,
+        "unknown_service": 254
+      },
+      {
+        "origin": 120,
+        "destination": 115,
+        "tick": 3176545489,
+        "status": 1,
+        "stop": 5,
+        "candidates": 1,
+        "best_score": 1112,
+        "unknown_arrival_bound": 3176545489,
+        "unknown_service": 4
+      }
+    ],
+    "binary_sha256": "da56e5c5443cf46d89da078b7e37a0b7a7d0c796852670ecad278e09d7ffe9db",
+    "save_sha256": "0fcea761b2fa17fd6a2024caf4968325affb1eb4240996deed1c55e6bbcfba5f"
+  }
+}

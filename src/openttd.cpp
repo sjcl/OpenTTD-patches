@@ -1561,6 +1561,7 @@ void StateGameLoop()
 	}
 
 	PerformanceMeasurer framerate(PerformanceElement::GameLoop);
+	const auto passenger_tick_started = std::chrono::steady_clock::now();
 	PerformanceAccumulator::Reset(PerformanceElement::GameLoopLandscape);
 
 	if (_game_mode == GameMode::Editor) {
@@ -1690,6 +1691,7 @@ void StateGameLoop()
 	}
 
 	dbg_assert(IsLocalCompany());
+	if (_game_mode == GameMode::Normal) RecordPassengerJourneySimulationTick(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - passenger_tick_started).count());
 }
 
 FiosNumberedSaveName &GetAutoSaveFiosNumberedSaveName()

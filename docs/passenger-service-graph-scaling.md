@@ -31,27 +31,31 @@ component filtering; all 80 routes of the national fixture are connected.
 Weighted waiting can make riding a circuit preferable to waiting. Such scoped
 queries return `Unknown` when services were omitted; callers need an unscoped
 snapshot for a completeness certificate. Active execution uses zero waiting
-weight. Known implicit StationIDs are included in both static topology and
-captured service stops. A bounded implicit service that is disconnected or an
-irrelevant articulation excursion can be excluded without poisoning the OD.
-A retained implicit service makes the scope Unknown when its prediction cannot
-cover the requested horizon. Known implicit orders beyond a proven horizon or
-skipped by an unconditional branch do not invalidate complete timing coverage.
-Invalid implicit StationIDs and implicit-only wandering have no bounded declared
-route: they stay captured and make the scope Unknown even if their currently
-known stops appear disconnected. Implicit freight with no capacity/refit
-possibility, and unavailable stopped/crashed trains, do not poison a scope.
+weight. The operating model follows explicit instructions: historical
+`OT_IMPLICIT` records are skipped by prediction, captured stops, the structural
+index and untimed fallback. Future incidental stops are not predicted.
+Implicit-only services therefore have no declared OD connection. Actual extra
+stops and automatic order insertion/deletion still undergo loading-event leg
+validation and signature invalidation; a planning certificate is relative to
+this operating model.
 
 `GetStatus()` describes global capture. `GetQueryStatus(origin, destination)`
-permits complete capture only for the requested OD. `GetCoverage()` additionally
+permits complete inventory only for the requested OD. `GetCoverage()` additionally
 checks timing uncertainty in the destination component and distinguishes
 GlobalComplete, ScopedComplete and Incomplete. Legacy station-wide visit and
 departure queries remain globally incomplete on pruned snapshots. The planner
 uses scoped departure coverage after checking its OD/evaluation contract.
-Trip timing uncertainty and query work/label/transfer limits still propagate to
-the journey result. Finding a valid destination candidate does not certify
-that the alternatives were exhausted. Active execution accepts only complete
-results; the dense cyclic fixture deliberately falls back at its query limit.
+An incomplete trip retains its certified timed prefix and a conservative
+unknown suffix. The planner first searches timed candidates, then relaxes all
+unknown alternatives with zero travel/interchange time, unlimited capacity,
+all declared stops and zero penalties. The earliest unknown arrival is bounded
+by the certified-prefix endpoint, never by nominal unknown travel. A query can
+be Complete only when the unknown destination is unreachable in this relaxation,
+or all requested K candidates exist and its elapsed arrival bound is strictly
+greater than the worst returned generalized score. Equality remains Unknown,
+protecting all existing tie-breaks. Work, memory, label and transfer limits
+still prevent certification. Finding a valid destination candidate alone does
+not certify the result. Active execution accepts only complete results.
 
 ## Live capture and cache lifetime
 
@@ -101,7 +105,13 @@ A warm corridor query walks its block-forest path and retained block members.
 Live classification still costs O(O + V); detailed prediction costs O(P + D)
 only for retained potentially capable trains. Prediction and departure indices
 retain their existing sorting costs. The RAPTOR query's independent budget and
-reverse reachability remain unchanged.
+reverse reachability retain their existing caps. Unknown-suffix proof uses a
+two-state earliest-time relaxation (before/after using uncertainty), expanding
+each service once and each timed downstream occurrence at most once per state.
+Its maps, heap improvements and scans share the same query Work/memory ledger.
+Scoped prediction stops at the first unknown time instead of generating an
+untimed nominal suffix. Fleet coverage is aggregated once per captured trip,
+avoiding a repeated fleet scan for every declared stop.
 
 Every scoped build charges the same conservative index allowance
 `sum(8 + 16 * order_count)` over eligible services on cold and warm calls, plus
@@ -252,8 +262,12 @@ timing and current graph inventories to distinguish successive recalculations.
 
 Times are diagnostic only. `reset` clears observations, never simulation quotas
 or caches. Production save hashes are compared after reading/resetting these
-diagnostics and after opening/changing station GUI views. Game tick time outside
-the measured graph/search functions can be inspected with the existing FPS tools.
+diagnostics and after opening/changing station GUI views. The command also
+reports full simulation-tick count/sum/maximum, timing-versus-control/path
+uncertainty, certified OD counts and bounded query witness samples.
+`passenger_service_inspect <vehicle>` reads raw orders, progress and both normal
+and certified-prefix forecasts. These observations never affect admission,
+simulation decisions or save data.
 
 ## Synthetic comparison
 
@@ -327,6 +341,9 @@ The comparison above describes the previous scoped implementation. The subsequen
 [real-map scaling follow-up](passenger-journey-real-map-scaling-2026-10-12.md)
 documents incremental visit admission, bounded horizon extension, exact completed
 candidate pruning, detailed stop diagnostics and further validation.
+The [OD uncertainty follow-up](passenger-journey-scoped-uncertainty-2026-10-12.md)
+documents the explicit-order operating model, partial-trip certification and
+paired real-map measurements.
 
 The explicit benchmark can be rerun with:
 
