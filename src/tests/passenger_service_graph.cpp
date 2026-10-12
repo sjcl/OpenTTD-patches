@@ -177,7 +177,7 @@ TEST_CASE("Event capture shares services across 100 distinct OD searches", "[pas
 				std::tie(actual.diagnostic.work, actual.diagnostic.reverse_work, actual.diagnostic.rounds, actual.diagnostic.labels, actual.diagnostic.scratch_bytes));
 	}
 	CHECK(local_executions == 1); CHECK(local_hits == 99);
-	CHECK(capture.GetAllocationBytes() < 16 * 1024 * 1024);
+	CHECK(capture.GetAllocationBytes() < PassengerServiceCapture::MAXIMUM_BYTES);
 	CHECK(seeds.Check());
 }
 
@@ -310,7 +310,7 @@ TEST_CASE("Trip cache is bounded and never shares predictions between shared veh
 		CheckCaptureEquivalent(base, PassengerServiceGraph::Build(PAX, NOW, GraphLimits(), scope, peer));
 		CheckCaptureEquivalent(hit, PassengerServiceGraph::Build(PAX, NOW, GraphLimits(), scope, peer));
 	}
-	CHECK(disabled.GetPredictionBytes() == 0); CHECK(tiny.GetPredictionBytes() <= 2000); CHECK(warm.GetPredictionBytes() <= 8 * 1024 * 1024);
+	CHECK(disabled.GetPredictionBytes() == 0); CHECK(tiny.GetPredictionBytes() <= 2000); CHECK(warm.GetPredictionBytes() <= PassengerServiceCapture::MAXIMUM_PREDICTION_BYTES);
 	CHECK(random.Check());
 }
 
@@ -335,6 +335,29 @@ TEST_CASE("Trip capture notices newly eligible refits and shared fleet changes",
 		passenger.SetNext(nullptr);
 	}
 	CheckCaptureEquivalent(PassengerServiceGraph::Build(PAX, NOW, GraphLimits(), scope), PassengerServiceGraph::Build(PAX, NOW, GraphLimits(), scope, &capture));
+}
+
+TEST_CASE("Expanded Trip cache retains visits beyond the former eight MiB ceiling", "[passenger][service_graph][trip_cache][budget]")
+{
+	PassengerTestStations stations;
+	GraphVehicle first({GraphStop(A, 10, 0), GraphStop(B, 10, 0), GraphStop(D, 10, 0)}, VehicleID{1000});
+	std::deque<GraphVehicle> fleet;
+	for (uint32_t i = 1001; i < 1256; ++i) fleet.emplace_back(first, VehicleID{i});
+	auto limits = GraphLimits(2560); limits.visits_per_trip = 512;
+	const PassengerServiceScope scope{A, D};
+	PassengerServiceCapture old_limit(16 * 1024 * 1024, 8 * 1024 * 1024), expanded;
+	const auto prime = PassengerServiceGraph::Build(PAX, NOW, limits, scope, &expanded);
+	REQUIRE(prime.GetDiagnostic().prediction_executions == 256);
+	REQUIRE(expanded.GetPredictionBytes() > 8 * 1024 * 1024);
+	CHECK(expanded.GetPredictionBytes() <= PassengerServiceCapture::MAXIMUM_PREDICTION_BYTES);
+	CheckCaptureEquivalent(prime, PassengerServiceGraph::Build(PAX, NOW, limits, scope, &old_limit));
+	const auto old = PassengerServiceGraph::Build(PAX, NOW, limits, scope, &old_limit);
+	const auto hit = PassengerServiceGraph::Build(PAX, NOW, limits, scope, &expanded);
+	CHECK(old.GetDiagnostic().prediction_executions > 0);
+	CHECK(old_limit.GetPredictionBytes() <= 8 * 1024 * 1024);
+	CHECK(hit.GetDiagnostic().prediction_executions == 0);
+	CHECK(hit.GetDiagnostic().prediction_cache_hits == 256);
+	CheckCaptureEquivalent(old, hit);
 }
 
 TEST_CASE("Event capture preserves every small work boundary and memory admission", "[passenger][service_graph][capture][budget]")

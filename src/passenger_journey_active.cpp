@@ -325,7 +325,7 @@ struct PassengerJourneyActiveContext::Snapshot {
 };
 
 PassengerJourneyActiveContext::PassengerJourneyActiveContext(const Vehicle *vehicle, StationID station, size_t prediction_cache_bytes) :
-		capture(16 * 1024 * 1024, prediction_cache_bytes), vehicle(vehicle), station(station) {}
+		capture(PassengerServiceCapture::MAXIMUM_BYTES, prediction_cache_bytes), vehicle(vehicle), station(station) {}
 PassengerJourneyActiveContext::~PassengerJourneyActiveContext() = default;
 
 PassengerJourneyActiveContext::Snapshot *PassengerJourneyActiveContext::GetSnapshot(CargoType cargo, StationID destination, Ticks horizon)

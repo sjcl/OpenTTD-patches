@@ -160,7 +160,7 @@ class PassengerJourneyActiveContext {
 	bool AdmitQuery();
 public:
 	/** A zero prediction cache allowance supports paired diagnostics; logical allowances stay identical. */
-	PassengerJourneyActiveContext(const Vehicle *vehicle, StationID station, size_t prediction_cache_bytes = 8 * 1024 * 1024);
+	PassengerJourneyActiveContext(const Vehicle *vehicle, StationID station, size_t prediction_cache_bytes = PassengerServiceCapture::MAXIMUM_PREDICTION_BYTES);
 	~PassengerJourneyActiveContext();
 	size_t GetWorkAllowanceUsed() const { return 4194304 - this->work_left; }
 	bool PlanWaiting(CargoPacket &packet, CargoType cargo, StationID legacy_hop);

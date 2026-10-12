@@ -5,6 +5,9 @@
 再利用する。pragmatic routingの選択・Fallback・乗降・保存形式は変更していない。
 実マップの予測実行は約60%減ったが、全tick時間の改善は確認できなかった。
 
+後続のメモリ上限変更で、現在の既定値はTrip 128 MiB、Capture全体256 MiB
+（それぞれ16倍）になった。以下の性能数値は変更前の8/16 MiBによる測定である。
+
 所有者は既存の `PassengerJourneyActiveContext` 内の `PassengerServiceCapture`。
 BeginLoadingまたは待機列の同期的な経路探索イベントが終わると破棄される。
 別イベントは同じtickでも別所有者を作る。外部からBuildを直接呼ぶ場合も、
@@ -49,7 +52,8 @@ Visit配列は順序・到着/出発・loading_now・leg duration・不確実性
 変更も再計算する。境界を切り出したり、短い結果を長い完全予測として扱ったりしない。
 継続計算や別の時刻予測エンジンは追加していない。
 
-Tripの保持枠は最大8 MiBで、既存Capture全体の16 MiB枠にも含める。
+現在のTrip保持枠は最大128 MiBで、Capture全体の256 MiB枠にも含める。
+以下の旧測定ではそれぞれ8 MiB・16 MiBを使用した。
 Visit/usable_stopsのコピーと交換、入力・コンテナの固定費を含む保守的な保持
 envelopeで、容量観測やRSSをadmissionに使わない。VehicleID/CargoType当たり
 期間・制限variantは1件まで。満杯なら格納を断り、通常予測へ戻る。

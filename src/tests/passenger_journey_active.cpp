@@ -903,7 +903,7 @@ TEST_CASE("Trip cache peers preserve execution save bytes and tick allowances", 
 	PassengerJourneyTickDiagnostic baseline;
 	size_t baseline_work = 0;
 	GameRandomSeedChecker random;
-	for (size_t bytes : {size_t{0}, size_t{8 * 1024 * 1024}, size_t{1}}) {
+	for (size_t bytes : {size_t{0}, PassengerServiceCapture::MAXIMUM_PREDICTION_BYTES, size_t{1}}) {
 		BeginPassengerJourneyTick();
 		PassengerJourneyActiveContext context(nullptr, A, bytes);
 		for (uint16_t id = 4; id < 12; ++id) {

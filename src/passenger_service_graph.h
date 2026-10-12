@@ -299,8 +299,10 @@ class PassengerServiceCapture {
 	size_t maximum_bytes;
 	size_t prediction_maximum_bytes;
 public:
+	static constexpr size_t MAXIMUM_BYTES = 256 * 1024 * 1024;
+	static constexpr size_t MAXIMUM_PREDICTION_BYTES = 128 * 1024 * 1024;
 	/** The second allowance is part of the first. Zero disables only Trip reuse for paired measurements. */
-	explicit PassengerServiceCapture(size_t maximum_bytes = 16 * 1024 * 1024, size_t prediction_maximum_bytes = 8 * 1024 * 1024);
+	explicit PassengerServiceCapture(size_t maximum_bytes = MAXIMUM_BYTES, size_t prediction_maximum_bytes = MAXIMUM_PREDICTION_BYTES);
 	~PassengerServiceCapture();
 	void Clear();
 	size_t GetAllocationBytes() const;

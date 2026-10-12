@@ -4555,7 +4555,7 @@ static bool ConPassengerServiceCaptureBenchmark(std::span<std::string_view> argv
 	auto count = argv.size() == 4 ? ParseInteger<uint32_t>(argv[3]) : std::optional<uint32_t>{100};
 	if (!cargo || *cargo >= NUM_CARGO || !origin || *origin >= StationID::Invalid().base() || !Station::IsValidID(StationID{static_cast<uint16_t>(*origin)}) || !count || *count == 0 || *count > 100) return false;
 	PassengerServiceCapture capture;
-	PassengerServiceCapture prediction_disabled(16 * 1024 * 1024, 0);
+	PassengerServiceCapture prediction_disabled(PassengerServiceCapture::MAXIMUM_BYTES, 0);
 	PassengerGraphPhaseTimes cold_phases{}, warm_phases{};
 	uint64_t cold_us = 0, warm_us = 0;
 	size_t builds = 0, discovery_hits = 0, service_hits = 0, service_requests = 0, work = 0, maximum_memory = 0, maximum_allocation = 0, maximum_visits = 0, mismatches = 0;

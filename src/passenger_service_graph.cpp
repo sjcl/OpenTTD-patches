@@ -119,7 +119,7 @@ struct PassengerServiceCapture::Data {
 };
 
 PassengerServiceCapture::PassengerServiceCapture(size_t maximum_bytes, size_t prediction_maximum_bytes) :
-		maximum_bytes(std::min<size_t>(maximum_bytes, 16 * 1024 * 1024)), prediction_maximum_bytes(std::min<size_t>(prediction_maximum_bytes, 8 * 1024 * 1024)) {}
+		maximum_bytes(std::min(maximum_bytes, MAXIMUM_BYTES)), prediction_maximum_bytes(std::min(prediction_maximum_bytes, MAXIMUM_PREDICTION_BYTES)) {}
 PassengerServiceCapture::~PassengerServiceCapture() = default;
 void PassengerServiceCapture::Clear() { this->data.reset(); }
 size_t PassengerServiceCapture::GetPredictionBytes() const { return this->data ? this->data->prediction_bytes : 0; }
