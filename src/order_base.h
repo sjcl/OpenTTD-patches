@@ -850,6 +850,8 @@ public:
 
 	void AssignOrder(const Order &other);
 	bool Equals(const Order &other) const;
+	/** Exact owned instruction/timetable values, including cargo flags; no pointer or padding comparison. */
+	bool EqualsForPassengerPrediction(const Order &other) const;
 	bool IsDerivedFrom(const Order &other) const;
 
 	uint16_t MapOldOrder() const;

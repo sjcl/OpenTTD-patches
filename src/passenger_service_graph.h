@@ -65,6 +65,9 @@ struct PassengerServiceGraphDiagnostic {
 	size_t cargo_capable = 0;
 	size_t possible_refit = 0;
 	size_t predicted = 0;
+	size_t prediction_executions = 0, prediction_cache_hits = 0, prediction_work = 0, prediction_executed_visits = 0;
+	uint64_t prediction_nanoseconds = 0; ///< Physical predictor time only; diagnostics never affect admission.
+	size_t prediction_cache_bytes = 0; ///< Conservative retained envelope, independently bounded.
 	size_t visits = 0;
 	size_t excluded_cargo = 0;
 	size_t excluded_scope = 0;
@@ -156,6 +159,10 @@ public:
 		std::optional<uint64_t> current_free; ///< Free at capture only; never a future seat guarantee.
 		VehicleType type = VehicleType::Invalid; ///< Diagnostics and connection evaluation; traversal uses the common visit contract.
 		PassengerPredictionReason prediction_reason = PassengerPredictionReason::None;
+		size_t prediction_work = 0; ///< Logical predictor debit, identical on a hit.
+		uint64_t prediction_nanoseconds = 0; ///< Zero on a hit; live validation is in the build phase time.
+		bool prediction_cache_hit = false; ///< Per-vehicle/cargo/start observation; aggregate across OD builds to count duplicates.
+		bool prediction_executed = false;
 	};
 
 	struct VisitID {
@@ -282,17 +289,24 @@ private:
  * that pass (as they are in BeginLoading and RoutePassengerJourneys). Never share across
  * events, even within one tick. Clear before any caller-induced game-state mutation.
  * Only IDs and owned values are retained. Trip progress/facilities are always read live.
+ * Predictions use exactly matching owned/live inputs, period and traversal limits.
+ * Resource-stopped results are never resident; hits replay work and visit admissions.
  * Storage is optional and bounded; admission always pays the original logical envelope. */
 class PassengerServiceCapture {
 	friend class PassengerServiceGraph;
 	struct Data;
 	std::unique_ptr<Data> data;
 	size_t maximum_bytes;
+	size_t prediction_maximum_bytes;
 public:
-	explicit PassengerServiceCapture(size_t maximum_bytes = 16 * 1024 * 1024);
+	static constexpr size_t MAXIMUM_BYTES = 256 * 1024 * 1024;
+	static constexpr size_t MAXIMUM_PREDICTION_BYTES = 128 * 1024 * 1024;
+	/** The second allowance is part of the first. Zero disables only Trip reuse for paired measurements. */
+	explicit PassengerServiceCapture(size_t maximum_bytes = MAXIMUM_BYTES, size_t prediction_maximum_bytes = MAXIMUM_PREDICTION_BYTES);
 	~PassengerServiceCapture();
 	void Clear();
 	size_t GetAllocationBytes() const;
+	size_t GetPredictionBytes() const;
 };
 
 #endif /* PASSENGER_SERVICE_GRAPH_H */

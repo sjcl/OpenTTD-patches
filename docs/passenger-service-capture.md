@@ -1,5 +1,10 @@
 # Event-local passenger service capture
 
+The subsequent [Trip prediction cache](passenger-trip-prediction-cache-2026-10-12.md)
+extends this same event owner with exact-input prediction reuse. The console
+benchmark now isolates Trip reuse, retaining preprocessing on both sides. The
+measurements below describe the earlier implementation, before that extension.
+
 Implemented on `perf/passenger-service-capture`, based on
 `fix/passenger-journey-scoped-uncertainty` at
 `eab176fa0a539bbe83dddd36648a3fe28a4e63b3`. This change does not include

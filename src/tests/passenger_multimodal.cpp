@@ -164,6 +164,30 @@ TEST_CASE("Every passenger transport uses the same planner and production boardi
 	CHECK(chosen->cargo.TotalCount() == 0); CHECK(f.Waiting(E).TotalCount() == 0);
 }
 
+TEST_CASE("Trip cache validates every real transport adapter", "[passenger][multimodal][trip_cache][determinism]")
+{
+	MultimodalFixture f;
+	VehicleType type = GENERATE(VehicleType::Train, VehicleType::Road, VehicleType::Ship, VehicleType::Aircraft);
+	Vehicle *v = f.Service(type, {MultiStop(A), MultiStop(E, 100)});
+	PassengerServiceCapture capture;
+	PassengerServiceGraphLimits limits; limits.horizon = 1000;
+	const auto first = PassengerServiceGraph::Build(PAX, NOW, limits, {}, &capture);
+	const auto hit = PassengerServiceGraph::Build(PAX, NOW, limits, {}, &capture);
+	REQUIRE(hit.GetDiagnostic().prediction_cache_hits == 1);
+	CHECK(first.GetTrips()[0].prediction == hit.GetTrips()[0].prediction); CHECK(first.GetWork() == hit.GetWork());
+	SECTION("Direction changed in the same tick") { v->direction = Direction::SE; }
+	SECTION("Facilities changed in the same tick") { Station::Get(E)->facilities = {}; Station::Get(E)->bus_stops = nullptr; }
+	SECTION("Refit changed cargo in the same tick") { v->cargo_type = MAIL; }
+	GameRandomSeedChecker random;
+	const auto fresh = PassengerServiceGraph::Build(PAX, NOW, limits);
+	const auto changed = PassengerServiceGraph::Build(PAX, NOW, limits, {}, &capture);
+	CHECK(changed.GetDiagnostic().prediction_cache_hits == 0);
+	CHECK(fresh.GetWork() == changed.GetWork()); CHECK(fresh.GetMemoryBound() == changed.GetMemoryBound());
+	REQUIRE(fresh.GetTrips().size() == changed.GetTrips().size());
+	if (!fresh.GetTrips().empty()) CHECK(fresh.GetTrips()[0].prediction == changed.GetTrips()[0].prediction);
+	CHECK(random.Check());
+}
+
 TEST_CASE("Every mode returns only the stale reserved suffix after gradual loading", "[passenger][multimodal][active]")
 {
 	MultimodalFixture f;

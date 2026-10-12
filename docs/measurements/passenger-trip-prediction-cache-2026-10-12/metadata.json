@@ -1,0 +1,46 @@
+{
+  "date_jst": "2026-10-12",
+  "branch": "perf/passenger-trip-prediction-cache",
+  "base_commit": "1556b330cd9360d1e2f6b0ad50e45b70b86c6341",
+  "build": "MSVC 19.44.35227, x64 Release, assertions enabled, LTO disabled",
+  "comparison": "same binary; event preprocessing enabled in both modes; only Trip retention differs",
+  "capture_limit_bytes": 16777216,
+  "trip_limit_bytes": 8388608,
+  "input_sha256": "14d68c82911b9dcfc5ef7291e9697c5bbd67f44ffcc79d7575a144405edf6390",
+  "measurement_binary_sha256": "72c726bd5553ea16aac7ccf8ef70e260fcc1c16f20f4ab8db92e1a45e38be8a8",
+  "product_binary_sha256": "ddadf45162f6a9693c6621178df9969f932e0ba9851349b2d18eecf4918eac72",
+  "test_binary_sha256": "8cba4d1502b71422f07c2d0b02785fb8cbba63799d85fabf084b16379b4b1efc",
+  "interval": {
+    "initial_tick": 3176545487,
+    "final_tick": 3176545519,
+    "completed_ticks_per_run": 32,
+    "paired_runs": 3
+  },
+  "all_six_saves_sha256": "9e396742c4f4f49f4f3263564f7284a0d19f68a73b4778c6b886005b7bff88db",
+  "newgrf_or_tar_assets": 122,
+  "missing_grfs": 0,
+  "removed_invalid_vehicles": 0,
+  "newgrf_capacity_warnings": true,
+  "temporary_harness": "Explicit Error/Normal pause continuation in isolated null-driver runs, env-controlled Trip disable, end-of-run diagnostic/save. Removed before final product tests.",
+  "console_logs": "Latest process session extracted from appended console logs; stderr/stdout retained in full for that process.",
+  "ctest": {
+    "passed": 426,
+    "seconds": 22.4
+  },
+  "passenger": {
+    "cases": 188,
+    "assertions": 876408
+  },
+  "trip_focus": {
+    "cases": 10,
+    "assertions": 53851
+  },
+  "benchmarks": {
+    "cases": 2,
+    "assertions": 4899,
+    "synthetic_stations": 4800,
+    "synthetic_vehicles": 2399
+  },
+  "memory_measurement": "Conservative retained cache envelope and sizeof/capacity estimates; RSS not measured",
+  "live_network_join_or_soak_tested": false
+}
