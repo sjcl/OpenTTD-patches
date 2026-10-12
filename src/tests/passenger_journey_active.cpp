@@ -7,6 +7,7 @@
 #include "../stdafx.h"
 #include "../3rdparty/catch2/catch.hpp"
 #include "../passenger_journey_active.h"
+#include "../passenger_service_database.h"
 #include "../vehicle_base.h"
 #include "passenger_test_stations.h"
 #include "../station_base.h"
@@ -136,6 +137,19 @@ struct FallbackLinks {
 				100, 0, 100, {EdgeUpdateMode::Refresh, restricted ? EdgeUpdateMode::Restricted : EdgeUpdateMode::Unrestricted});
 	}
 };
+
+TEST_CASE("Missing complete schedules retain live untimed OD boarding", "[passenger][schedule][fallback]")
+{
+	ActiveFixture f; FallbackLinks links; links.Edge(A, D); _settings_game.linkgraph.passenger_journey_periodic = true;
+	Order missing = ActiveStop(A); missing.SetWaitTimetabled(false); ActiveTrain train({missing, ActiveStop(D)});
+	ResetPassengerServiceDatabase(); GetPassengerServiceDatabase().Tick(); auto *packet = f.Packet();
+	CHECK_FALSE(PassengerJourneyActiveContext(nullptr, A).PlanWaiting(*packet, PAX, D));
+	CHECK_FALSE(GetPassengerServiceDatabase().PlanEstimated(PAX, A, D, NOW).ride);
+	f.Waiting().Append(packet, StationID::Invalid()); std::array next{D};
+	CHECK(f.Waiting().Load(10, &train.cargo, next, TileIndex{0}, &train) == 10);
+	CHECK(GetPassengerJourneyTickDiagnostic().untimed_boarded_passengers == 10);
+	CHECK(GetPassengerJourneyTickDiagnostic().schedule_boarded_passengers == 0);
+}
 
 TEST_CASE("Resident OD fallback distances replay cold work and invalidate restricted edges", "[passenger][periodic][fallback][determinism]")
 {
@@ -858,7 +872,7 @@ TEST_CASE("Routing state and leg have an independent versioned save round trip",
 	AutoRestoreBackup features{_sl_xv_feature_versions, AutoRestoreBackupNoNewValueTag{}};
 	AutoRestoreBackup static_features{_sl_xv_feature_static_versions, AutoRestoreBackupNoNewValueTag{}};
 	SlXvSetStaticCurrentVersions(); _sl_xv_feature_versions = _sl_xv_feature_static_versions;
-	REQUIRE(_sl_xv_feature_versions[XSLFI_PASSENGER_JOURNEY_ROUTING] == 2);
+	REQUIRE(_sl_xv_feature_versions[XSLFI_PASSENGER_JOURNEY_ROUTING] == 3);
 	auto packet = std::unique_ptr<CargoPacket>(fixture.Packet()); fixture.Plan(*packet);
 	PassengerRoutingMode expected = PassengerRoutingMode::Journey;
 	SECTION("Journey survives") {}
@@ -1492,9 +1506,11 @@ TEST_CASE("Production journey execution covers eight thousand stations at standa
 TEST_CASE("A primary engine with different cargo preserves the passenger coach journey after load", "[passenger][active][saveload]")
 {
 	ActiveFixture fixture;
+	bool estimated = GENERATE(false, true); _settings_game.linkgraph.passenger_journey_periodic = estimated;
 	ActiveTrain *train = Vehicle::Create<ActiveTrain>(std::vector<Order>{ActiveStop(A), ActiveStop(D, 100)});
 	ActiveCoach *coach = Vehicle::Create<ActiveCoach>();
 	train->cargo_type = CargoType{1}; train->SetNext(coach);
+	if (estimated) { train->current_order.Free(); ResetPassengerServiceDatabase(); GetPassengerServiceDatabase().Tick(); train->LoadAt(0); }
 	auto *packet = fixture.Packet();
 	fixture.Waiting().Append(packet, D);
 	fixture.Waiting().RoutePassengerJourneys(PAX, A);
@@ -1509,6 +1525,8 @@ TEST_CASE("A primary engine with different cargo preserves the passenger coach j
 	AfterLoadPassengerJourneys();
 	CHECK(packet->GetPassengerRoutingMode() == PassengerRoutingMode::Journey);
 	CHECK(packet->GetPassengerJourney() == execution);
+	PassengerJourneyLoadingContext loading; REQUIRE(loading.CanBoard(*packet, train, PAX)); loading.PrepareBoard(*packet, train);
+	CHECK(packet->GetPassengerTransport() == (estimated ? PassengerTransportKind::Schedule : PassengerTransportKind::Timed));
 	std::array next{D};
 	CHECK(fixture.Waiting().Load(10, &coach->cargo, next, TileIndex{0}, coach) == 10);
 	train->SetNext(nullptr);

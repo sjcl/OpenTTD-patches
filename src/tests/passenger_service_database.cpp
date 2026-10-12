@@ -477,7 +477,8 @@ TEST_CASE("An unknown destination phase stays untimed without expanding other ti
 	Fixture f; f.Train({Stop(A), Stop(B)}); auto *unknown = f.Train({Stop(B), Stop(D)});
 	unknown->current_order.Free(); auto &db = f.Build();
 	auto plan = db.Plan(PAX, A, D, NOW); CHECK_FALSE(plan.ride); CHECK_FALSE(plan.deferred); CHECK(plan.work < 10);
-	unknown->LoadAt(1); ObservePassengerPeriodicVehicle(unknown); db.Tick();
+	unknown->LoadAt(1); ObservePassengerPeriodicVehicle(unknown);
+	_state_ticks += PassengerServiceDatabase::TIMETABLE_EPOCH; db.Tick();
 	CHECK(db.Plan(PAX, A, D, NOW).ride.has_value());
 }
 
@@ -494,4 +495,233 @@ TEST_CASE("Timing publication epochs use floor division for negative state ticks
 	auto generation = db.Get(train->orders->index)->generation;
 	db.TimetableChanged(train->orders->index); db.Tick(); CHECK(db.Get(train->orders->index)->generation == generation);
 	_state_ticks = StateTicks{0}; db.Tick(); CHECK(db.Get(train->orders->index)->generation > generation);
+}
+
+TEST_CASE("Schedule duration-only direct policies retain no invented absolute times", "[passenger][schedule]")
+{
+	Fixture f; auto *v = f.Train({Stop(A, 80, 10), Stop(B, 120, 20), Stop(D, 80, 0)}); v->current_order.Free(); auto &db = f.Build();
+	CHECK_FALSE(db.Plan(PAX, A, D, NOW).ride);
+	auto plan = db.PlanEstimated(PAX, A, D, NOW); REQUIRE(plan.ride);
+	CHECK(plan.riding == 220); CHECK(plan.waiting == 155); CHECK(plan.transfers == 0);
+	CHECK(plan.ride->kind == PassengerRideKind::EstimatedServiceIntent); CHECK(plan.ride->vehicle == VehicleID::Invalid());
+	CHECK(plan.ride->departure == StateTicks{}); CHECK(plan.ride->arrival == StateTicks{}); CHECK(plan.ride->not_before == NOW);
+	v->LoadAt(0); PassengerJourneyLoadingContext loading; auto *packet = f.Packet(); packet->SetPassengerJourney(*plan.ride, D);
+	REQUIRE(loading.CanBoard(*packet, v)); loading.PrepareBoard(*packet, v);
+	CHECK(packet->GetPassengerJourney().kind == PassengerRideKind::EstimatedBoundService);
+	v->LoadAt(1); PassengerJourneyActiveContext arrived(v, B); CHECK(arrived.Decide(*packet, PAX, false, OrderUnloadType::UnloadIfPossible) == VehicleCargoList::MoveToAction::Keep);
+}
+
+TEST_CASE("Schedule routes compare frequency capacity direct and transfer costs", "[passenger][schedule]")
+{
+	Fixture f; auto *local = f.Train({Stop(A, 100, 0), Stop(B, 50, 20), Stop(D, 50, 0)});
+	auto *express = f.Train({Stop(A, 1000, 0), Stop(D, 10, 0)});
+	local->current_order.Free(); express->current_order.Free();
+	SECTION("Infrequent express loses despite short riding time") {}
+	SECTION("Frequent express wins") { express->GetOrder(0)->SetTravelTime(50); }
+	SECTION("Low capacity express loses") { express->GetOrder(0)->SetTravelTime(200); express->cargo_cap = 1; }
+	auto &db = f.Build(); auto plan = db.PlanEstimated(PAX, A, D, NOW); REQUIRE(plan.ride);
+	CHECK(plan.ride->service == (express->GetOrder(0)->GetTravelTime() == 50 ? express : local)->orders->index);
+}
+
+TEST_CASE("Schedule compares multiple interchange corridors including known phases", "[passenger][schedule]")
+{
+	Fixture f;
+	auto *ab = f.Train({Stop(A, 50, 0), Stop(B, 50, 0)}); auto *bd = f.Train({Stop(B, 50, 0), Stop(D, 50, 0)});
+	auto *ac = f.Train({Stop(A, 900, 0), Stop(C, 25, 0)}); auto *cd = f.Train({Stop(C, 900, 0), Stop(D, 25, 0)});
+	auto *direct = f.Train({Stop(A, 250, 0), Stop(D, 250, 0)});
+	for (auto *v : {ab, bd, ac, cd, direct}) v->current_order.Free();
+	SECTION("Both interchange legs unknown") {}
+	SECTION("Downstream timing known does not promise a connection") { bd->LoadAt(0); }
+	SECTION("Upstream timing known still produces a duration policy") { ab->LoadAt(0); }
+	auto &db = f.Build(); PassengerJourneyEvaluation evaluation; evaluation.minimum_transfer = 10; evaluation.transfer_penalty = 10;
+	auto plan = db.PlanEstimated(PAX, A, D, NOW, {}, evaluation); REQUIRE(plan.ride);
+	CHECK(plan.ride->service == ab->orders->index); CHECK(plan.ride->alighting == B); CHECK(plan.transfers == 1);
+	PassengerJourneyLimits limits; limits.max_transfers = 0;
+	auto no_transfer = db.PlanEstimated(PAX, A, D, NOW, limits, evaluation); REQUIRE(no_transfer.ride); CHECK(no_transfer.ride->service == direct->orders->index);
+}
+
+TEST_CASE("Schedule fleet frequency never fabricates evenly spaced unknown phases", "[passenger][schedule]")
+{
+	Fixture f; auto *v = f.Train({Stop(A), Stop(D)}); auto *shared = Vehicle::Create<PeriodicTrain>(v);
+	v->current_order.Free(); shared->current_order.Free(); auto &db = f.Build();
+	auto unknown = db.PlanEstimated(PAX, A, D, NOW); REQUIRE(unknown.ride); CHECK(unknown.ride->estimated_wait == 220);
+	v->LoadAt(0); shared->LoadAt(0); shared->current_order_time = 110;
+	db.Invalidate(v->orders->index); db.Tick();
+	auto known = db.PlanEstimated(PAX, A, D, NOW); REQUIRE(known.ride); CHECK(known.ride->estimated_wait == 55);
+}
+
+TEST_CASE("Schedule active selection gives timed OD routes priority", "[passenger][schedule][active]")
+{
+	Fixture f; auto *timed = f.Train({Stop(A, 500, 0), Stop(D, 500, 0)});
+	auto *unknown = f.Train({Stop(A, 10, 0), Stop(D, 10, 0)}); unknown->current_order.Free(); auto &db = f.Build();
+	auto *packet = f.Packet(); PassengerJourneyActiveContext context(nullptr, A); REQUIRE(context.PlanWaiting(*packet, PAX, D));
+	CHECK(packet->GetPassengerJourney().service == timed->orders->index); CHECK(packet->GetPassengerJourney().kind == PassengerRideKind::ServiceIntent);
+	CHECK(db.GetScheduleDiagnostic().misses == 0);
+}
+
+TEST_CASE("Schedule work admission is identical across hits eviction saved DB and peers", "[passenger][schedule][determinism][save]")
+{
+	Fixture f; auto *ab = f.Train({Stop(A), Stop(B)}); auto *bd = f.Train({Stop(B), Stop(D)});
+	ab->current_order.Free(); bd->current_order.Free(); auto &db = f.Build(); GameRandomSeedChecker seeds;
+	auto cold = db.PlanEstimated(PAX, A, D, NOW); auto hot = db.PlanEstimated(PAX, A, D, NOW);
+	REQUIRE(cold.ride); CHECK(cold.ride == hot.ride); CHECK(cold.work == hot.work);
+	db.ClearPolicies(); CHECK(db.PlanEstimated(PAX, A, D, NOW).ride == cold.ride);
+	auto wire = db.Save(); PassengerServiceDatabase peer; REQUIRE(peer.Load(wire)); peer.FinishLoad(true);
+	CHECK(peer.PlanEstimated(PAX, A, D, NOW).ride == cold.ride); CHECK(peer.PlanEstimated(PAX, A, D, NOW).work == cold.work); CHECK(db.Save() == wire);
+	PassengerJourneyLimits limits; limits.work = cold.work - 1;
+	auto limited = db.PlanEstimated(PAX, A, D, NOW, limits); CHECK_FALSE(limited.ride); CHECK(limited.deferred); CHECK(limited.work <= limits.work);
+	CHECK(db.PlanEstimated(PAX, A, D, NOW, limits).work == limited.work); CHECK(seeds.Check());
+	limits = {}; limits.memory_bytes = 0; CHECK(db.PlanEstimated(PAX, A, D, NOW, limits).deferred);
+	limits = {}; limits.labels = 0; CHECK(db.PlanEstimated(PAX, A, D, NOW, limits).deferred);
+}
+
+TEST_CASE("Schedule actual shared carriers use reservations splits and saved independent intents", "[passenger][schedule][active][save]")
+{
+	Fixture f; auto *v = f.Train({Stop(A), Stop(D)}); auto *shared = Vehicle::Create<PeriodicTrain>(v);
+	v->current_order.Free(); shared->current_order.Free(); f.Build(); auto *packet = f.Packet(200);
+	PassengerJourneyActiveContext context(nullptr, A); REQUIRE(context.PlanWaiting(*packet, PAX, D));
+	auto intent = packet->GetPassengerJourney();
+	AutoRestoreBackup version{_sl_version, SAVEGAME_VERSION}; AutoRestoreBackup features{_sl_xv_feature_versions, AutoRestoreBackupNoNewValueTag{}};
+	AutoRestoreBackup static_features{_sl_xv_feature_static_versions, AutoRestoreBackupNoNewValueTag{}};
+	SlXvSetStaticCurrentVersions(); _sl_xv_feature_versions = _sl_xv_feature_static_versions;
+	auto *loaded = CargoPacket::Create(); REQUIRE_FALSE(SlTestSaveLoadTable(packet, loaded, GetCargoPacketDesc()).empty()); CHECK(loaded->GetPassengerJourney() == intent);
+	v->LoadAt(0); shared->LoadAt(0); auto &waiting = Station::Get(A)->goods[PAX].CreateData().cargo; waiting.Append(packet, StationID::Invalid());
+	PassengerJourneyLoadingContext loading; std::array next{D};
+	CHECK(waiting.Reserve(70, &shared->cargo, next, TileIndex{0}, shared, &loading) == 70);
+	CHECK(packet->GetPassengerJourney() == intent); CHECK(shared->cargo.Packets()->front()->GetPassengerJourney().vehicle == shared->index);
+	CHECK(waiting.Load(35, &shared->cargo, next, TileIndex{0}, shared, &loading) == 35);
+	CHECK(waiting.Load(35, &shared->cargo, next, TileIndex{0}, shared, &loading) == 35);
+	CHECK(GetPassengerJourneyTickDiagnostic().schedule_boarded_passengers == 70); CHECK(GetPassengerJourneyTickDiagnostic().boarded_passengers == 0);
+	CHECK(waiting.Load(100, &v->cargo, next, TileIndex{0}, v, &loading) == 100);
+	CHECK(packet->Count() == 30); CHECK(packet->GetPassengerJourney() == intent);
+	CHECK(packet->GetPassengerTransport() == PassengerTransportKind::None);
+	REQUIRE(packet->Merge(loaded)); CHECK(packet->Count() == 230);
+	auto *different = packet->Split(10); auto changed = different->GetPassengerJourney(); ++changed.generation;
+	different->SetPassengerJourney(changed, D); CHECK_FALSE(packet->Merge(different));
+}
+
+TEST_CASE("Schedule boarding enforces live restrictions incarnation and generation", "[passenger][schedule][active]")
+{
+	Fixture f; auto *v = f.Train({Stop(A), Stop(B), Stop(D)}); v->current_order.Free(); auto &db = f.Build();
+	auto plan = db.PlanEstimated(PAX, A, D, NOW); REQUIRE(plan.ride); v->LoadAt(0); CHECK(ValidatePassengerServiceRide(*plan.ride, v, PAX, true));
+	SECTION("NoLoad") { v->GetOrder(0)->SetLoadType(OrderLoadType::NoLoad); }
+	SECTION("NoUnload") { v->GetOrder(2)->SetUnloadType(OrderUnloadType::NoUnload); }
+	SECTION("Forced unload") { v->GetOrder(1)->SetUnloadType(OrderUnloadType::Unload); }
+	SECTION("Forced transfer") { v->GetOrder(1)->SetUnloadType(OrderUnloadType::Transfer); }
+	SECTION("Capacity removed") { v->cargo_cap = 0; }
+	SECTION("Facilities removed") { Station::Get(D)->facilities = {}; }
+	SECTION("Vehicle stopped") { v->vehstatus.Set(VehState::Stopped); }
+	SECTION("Generation changed") { db.Invalidate(v->orders->index); db.Tick(); }
+	SECTION("Incarnation changed") { plan.ride->signature++; }
+	SECTION("Wrong occurrence") { plan.ride->boarding_order = 1; }
+	CHECK_FALSE(ValidatePassengerServiceRide(*plan.ride, v, PAX, true));
+}
+
+TEST_CASE("Schedule transfer constraints survive replanning fallback and packet save", "[passenger][schedule][active][save]")
+{
+	Fixture f; auto *ab = f.Train({Stop(A), Stop(B)}); auto *bd = f.Train({Stop(B), Stop(D)});
+	ab->current_order.Free(); bd->current_order.Free(); auto &db = f.Build(); auto *packet = f.Packet();
+	REQUIRE(PassengerJourneyActiveContext(nullptr, A).PlanWaiting(*packet, PAX, D));
+	ab->LoadAt(0); PassengerJourneyLoadingContext loading; REQUIRE(loading.CanBoard(*packet, ab)); loading.PrepareBoard(*packet, ab);
+	_state_ticks += 100; ab->LoadAt(1); _settings_game.linkgraph.passenger_transfer_penalty = 20;
+	PassengerJourneyActiveContext arrived(ab, B); CHECK(arrived.Decide(*packet, PAX, false, OrderUnloadType::UnloadIfPossible) == VehicleCargoList::MoveToAction::Transfer);
+	REQUIRE(packet->GetPassengerJourney().kind == PassengerRideKind::EstimatedServiceIntent); CHECK(packet->GetPassengerJourney().service == bd->orders->index);
+	bd->LoadAt(0); CHECK_FALSE(loading.CanBoard(*packet, bd)); CHECK_FALSE(loading.CanBoard(*packet, ab));
+	_state_ticks += 20; CHECK(loading.CanBoard(*packet, bd));
+	packet->FallbackPassengerJourney(B, _state_ticks); CHECK_FALSE(loading.CanBoard(*packet, ab));
+	CHECK(packet->GetPassengerInterchangeReady() == NOW + 120); CHECK(packet->GetPassengerArrivingService() == ab->orders->index);
+	CHECK(db.GetScheduleDiagnostic().misses >= 2);
+	AutoRestoreBackup version{_sl_version, SAVEGAME_VERSION}; AutoRestoreBackup features{_sl_xv_feature_versions, AutoRestoreBackupNoNewValueTag{}};
+	AutoRestoreBackup static_features{_sl_xv_feature_static_versions, AutoRestoreBackupNoNewValueTag{}};
+	SlXvSetStaticCurrentVersions(); _sl_xv_feature_versions = _sl_xv_feature_static_versions;
+	auto *loaded = CargoPacket::Create(); REQUIRE_FALSE(SlTestSaveLoadTable(packet, loaded, GetCargoPacketDesc()).empty());
+	CHECK(loaded->HasSamePassengerRouting(*packet));
+}
+
+TEST_CASE("Schedule expiry and timetable deletion safely trigger another OD policy", "[passenger][schedule][active]")
+{
+	Fixture f; auto *v = f.Train({Stop(A), Stop(D)}); v->current_order.Free(); auto &db = f.Build(); auto *packet = f.Packet();
+	REQUIRE(PassengerJourneyActiveContext(nullptr, A).PlanWaiting(*packet, PAX, D));
+	Station::Get(A)->goods[PAX].CreateData().cargo.Append(packet, StationID::Invalid());
+	SECTION("Long wait") { _state_ticks += 441; }
+	SECTION("Generation") { db.Invalidate(v->orders->index); db.Tick(); _state_ticks++; }
+	BeginPassengerJourneyTick(); Station::Get(A)->goods[PAX].data->cargo.RoutePassengerJourneys(PAX, A);
+	CHECK(packet->GetPassengerDestination() == D); CHECK(packet->GetPassengerJourney().departure == StateTicks{});
+	CHECK(GetPassengerJourneyTickDiagnostic().schedule_expired + GetPassengerJourneyTickDiagnostic().schedule_stale == 1);
+}
+
+TEST_CASE("Schedule 8000 station network caches OD policies without physical visit expansion", "[passenger][schedule][scaling]")
+{
+	Fixture f;
+	for (uint16_t i = 0; i < 4000; ++i) f.Train({Stop(StationID{static_cast<uint16_t>(2 * i)}), Stop(StationID{static_cast<uint16_t>(2 * i + 1)})})->current_order.Free();
+	auto &db = GetPassengerServiceDatabase(); for (int i = 0; i < 100; ++i) { _state_ticks++; db.Tick(); }
+	REQUIRE(db.GetDiagnostic().vehicles == 4000); auto cold = db.PlanEstimated(PAX, A, B, _state_ticks); REQUIRE(cold.ride);
+	for (int i = 0; i < 4096; ++i) CHECK(db.PlanEstimated(PAX, A, B, _state_ticks).work == cold.work);
+	CHECK(db.GetScheduleDiagnostic().hits == 4096); CHECK(cold.work < 64);
+	CHECK(GetPassengerJourneyTickDiagnostic().builds == 0); CHECK(GetPassengerJourneyTickDiagnostic().prediction_executions == 0);
+	auto d = db.GetScheduleDiagnostic();
+	WARN("Schedule 8000-station benchmark: queries=" << d.hits + d.misses << "; work_per_query=" << cold.work << "; total_query_us=" << d.query_microseconds << "; policy_bytes=" << d.bytes);
+}
+
+TEST_CASE("Schedule reads old periodic wire state and unresolved dispatch circuits conservatively", "[passenger][schedule][save][dispatch]")
+{
+	Fixture f; auto *v = f.Train({Stop(A), Stop(D)}); v->vehicle_flags.Set(VehicleFlag::ScheduledDispatch);
+	v->orders->GetScheduledDispatchScheduleSet().emplace_back(); auto &schedule = v->orders->GetDispatchScheduleByIndex(0);
+	schedule.SetScheduledDispatchStartTick(NOW); schedule.SetScheduledDispatchDuration(2000);
+	schedule.GetScheduledDispatchMutable().push_back({10, 0}); v->GetOrder(0)->SetDispatchScheduleIndex(0);
+	Vehicle::Create<PeriodicTrain>(v)->vehicle_flags.Set(VehicleFlag::ScheduledDispatch);
+	auto &db = f.Build(); auto plan = db.PlanEstimated(PAX, A, D, NOW); REQUIRE(plan.ride); CHECK(plan.ride->estimated_wait == 2000);
+	auto wire = db.Save(); PassengerServiceDatabase peer; REQUIRE(peer.Load(wire)); peer.FinishLoad(true);
+	CHECK(peer.PlanEstimated(PAX, A, D, NOW).ride == plan.ride);
+	/* Version one had the same record prefix without the final dispatch estimate. */
+	wire[0] = 1; wire.resize(wire.size() - 8); REQUIRE(peer.Load(wire)); peer.FinishLoad(true);
+	CHECK(peer.Get(v->orders->index) == nullptr); CHECK(peer.GetDiagnostic().pending != 0);
+	peer.Tick(); REQUIRE(peer.Get(v->orders->index) != nullptr);
+	CHECK(peer.Get(v->orders->index)->uncertain_dispatch_period == 2000); CHECK(peer.PlanEstimated(PAX, A, D, NOW).ride.has_value());
+}
+
+TEST_CASE("Schedule forced alighting replans without boarding the arriving service", "[passenger][schedule][active]")
+{
+	Fixture f; auto *v = f.Train({Stop(A), Stop(B), Stop(D)}); auto *next = f.Train({Stop(B), Stop(D)});
+	v->current_order.Free(); next->current_order.Free(); auto &db = f.Build();
+	auto *packet = f.Packet(); auto plan = db.PlanEstimated(PAX, A, D, NOW); REQUIRE(plan.ride);
+	packet->SetPassengerJourney(*plan.ride, D); v->LoadAt(0); PassengerJourneyLoadingContext loading; loading.PrepareBoard(*packet, v);
+	v->LoadAt(1); _state_ticks += 100; _settings_game.linkgraph.passenger_transfer_penalty = 20;
+	OrderUnloadType unload = GENERATE(OrderUnloadType::Unload, OrderUnloadType::Transfer);
+	PassengerJourneyActiveContext arrived(v, B); CHECK(arrived.Decide(*packet, PAX, true, unload) == VehicleCargoList::MoveToAction::Transfer);
+	CHECK(packet->GetPassengerDestination() == D); CHECK(packet->GetPassengerJourney().service == next->orders->index);
+	CHECK(packet->GetPassengerJourney().not_before == _state_ticks + 20);
+}
+
+TEST_CASE("Schedule interchange exclusion distinguishes recycled order list incarnations", "[passenger][schedule][active]")
+{
+	Fixture f; auto *v = f.Train({Stop(A), Stop(D)}); auto &db = f.Build(); auto *packet = f.Packet();
+	OrderListID id = v->orders->index; uint64_t incarnation = v->orders->GetCargoDistRouteGeneration();
+	packet->SetPassengerInterchange(NOW + 20, id, incarnation);
+	v->orders->FreeChain(); v->orders = OrderList::Create(std::vector<Order>{Stop(A), Stop(D)}, v); v->LoadAt(0); db.Tick();
+	REQUIRE(v->orders->index == id); REQUIRE(v->orders->GetCargoDistRouteGeneration() != incarnation);
+	_state_ticks += 20; PassengerJourneyActiveContext waiting(nullptr, A); REQUIRE(waiting.PlanWaiting(*packet, PAX, D));
+	CHECK(PassengerJourneyLoadingContext().CanBoard(*packet, v));
+}
+
+TEST_CASE("Former schedule journeys refresh constraints on a later fallback transfer", "[passenger][schedule][active][fallback]")
+{
+	Fixture f; auto *old = f.Train({Stop(A), Stop(B)}); auto *v = f.Train({Stop(B), Stop(D)}); f.Build(); auto *packet = f.Packet();
+	packet->SetPassengerInterchange(NOW, old->orders->index, old->orders->GetCargoDistRouteGeneration());
+	packet->FallbackPassengerJourney(B, NOW); _settings_game.linkgraph.passenger_transfer_penalty = 20;
+	PassengerJourneyActiveContext arrived(v, B); REQUIRE(arrived.Decide(*packet, PAX, false, OrderUnloadType::Transfer) == VehicleCargoList::MoveToAction::Transfer);
+	CHECK(packet->GetPassengerArrivingService() == v->orders->index); CHECK(packet->GetPassengerInterchangeReady() == NOW + 20);
+}
+
+TEST_CASE("Schedule bindings continue from a real implicit stop without forecasting it", "[passenger][schedule][active]")
+{
+	Fixture f; Order implicit; implicit.MakeImplicit(B); auto *v = f.Train({Stop(A), implicit, Stop(D)});
+	EnsurePassengerTestStations(std::vector<Order>{Stop(B)}); v->current_order.Free(); auto &db = f.Build();
+	auto plan = db.PlanEstimated(PAX, A, D, NOW); REQUIRE(plan.ride); CHECK(db.Get(v->orders->index)->timetable.stops.size() == 2);
+	auto *packet = f.Packet(); packet->SetPassengerJourney(*plan.ride, D); v->LoadAt(0);
+	PassengerJourneyLoadingContext loading; REQUIRE(loading.CanBoard(*packet, v)); loading.PrepareBoard(*packet, v);
+	v->LoadAt(1); v->cur_real_order_index = 2;
+	CHECK_FALSE(GetPassengerRouteState(v)); // Forecasters still reject this undeclared current occurrence.
+	PassengerJourneyActiveContext arrived(v, B); CHECK(arrived.Decide(*packet, PAX, false, OrderUnloadType::UnloadIfPossible) == VehicleCargoList::MoveToAction::Keep);
+	CHECK(packet->GetPassengerJourney().kind == PassengerRideKind::EstimatedBoundService);
 }

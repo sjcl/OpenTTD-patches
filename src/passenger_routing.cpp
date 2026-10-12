@@ -465,7 +465,7 @@ static bool IsPassengerVehicleLoadingAtStop(const Vehicle *v, const Order &order
 	}
 }
 
-std::optional<PassengerRouteState> GetPassengerRouteState(const Vehicle *v, size_t *budget, PassengerPredictionReason *reason)
+std::optional<PassengerRouteState> GetPassengerRouteState(const Vehicle *v, size_t *budget, PassengerPredictionReason *reason, bool allow_implicit_current)
 {
 	size_t local_budget = 65536;
 	if (budget == nullptr) budget = &local_budget;
@@ -473,14 +473,17 @@ std::optional<PassengerRouteState> GetPassengerRouteState(const Vehicle *v, size
 	if (!IsPassengerServiceVehicle(v) || v->orders == nullptr || v->GetNumOrders() == 0 ||
 			v->vehstatus.Any({VehState::Stopped, VehState::Crashed}) || v->IsInDepot()) return fail(PassengerPredictionReason::VehicleState);
 	if (v->type == VehicleType::Aircraft && Aircraft::From(v)->flags.Test(VehicleAirFlag::DestinationTooFar)) return fail(PassengerPredictionReason::VehicleState);
-	if (v->cur_implicit_order_index != v->cur_real_order_index || v->cur_real_order_index >= v->GetNumOrders()) return fail(PassengerPredictionReason::OrderProgress);
-	if (v->cur_timetable_order_index != INVALID_VEH_ORDER_ID && v->cur_timetable_order_index != v->cur_real_order_index) return fail(PassengerPredictionReason::OrderProgress);
-	const Order *order = v->GetOrder(v->cur_real_order_index);
 	bool loading = v->current_order.IsAnyLoadingType();
-	if (loading ? (!IsPassengerStop(*order) || order->GetDestination() != v->last_station_visited) :
+	bool implicit_current = allow_implicit_current && loading && v->cur_implicit_order_index < v->GetNumOrders() &&
+			v->GetOrder(v->cur_implicit_order_index)->IsType(OT_IMPLICIT);
+	if (v->cur_real_order_index >= v->GetNumOrders() || (!implicit_current && v->cur_implicit_order_index != v->cur_real_order_index)) return fail(PassengerPredictionReason::OrderProgress);
+	if (!implicit_current && v->cur_timetable_order_index != INVALID_VEH_ORDER_ID && v->cur_timetable_order_index != v->cur_real_order_index) return fail(PassengerPredictionReason::OrderProgress);
+	VehicleOrderID current = implicit_current ? v->cur_implicit_order_index : v->cur_real_order_index;
+	const Order *order = v->GetOrder(current);
+	if (loading ? ((!implicit_current && !IsPassengerStop(*order)) || order->GetDestination() != v->last_station_visited) :
 			(v->current_order.GetType() != order->GetType() || v->current_order.GetDestination() != order->GetDestination())) return fail(PassengerPredictionReason::OrderProgress);
 	if (loading && !IsPassengerVehicleLoadingAtStop(v, *order)) return fail(PassengerPredictionReason::VehicleState);
-	PassengerRouteState state{ v->orders->GetOrderVector(), v->orders->GetScheduledDispatchScheduleSet(), v->cur_real_order_index,
+	PassengerRouteState state{ v->orders->GetOrderVector(), v->orders->GetScheduledDispatchScheduleSet(), current,
 			v->current_order_time, v->lateness_counter, loading, v->vehicle_flags.Test(VehicleFlag::ScheduledDispatch), v->orders->GetNumVehicles() };
 	if (!ConsumePassengerWork(*budget, state.orders.size())) return fail(PassengerPredictionReason::Budget);
 	state.usable_stops.reserve(state.orders.size());

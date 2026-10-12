@@ -1,0 +1,93 @@
+{
+  "base_commit": "7d914aa6f28293abb406becee2cec5fbb11e1d17",
+  "branch": "feat/passenger-journey-schedule-aware",
+  "compiler": "MSVC 19.44.35227 x64 Release /MT asserts ON LTO OFF",
+  "product_benchmark": "OFF",
+  "measurement_benchmark": "ON",
+  "baseline_fixture_only_fix": "client->client_id != ClientID::Server",
+  "source_files": [
+    {
+      "path": "src/CMakeLists.txt",
+      "sha256": "9567D2643A0666466D4DA63D805BFC439B7E4DC86B34E409620AC5B31BFE00EE"
+    },
+    {
+      "path": "src/cargoaction.cpp",
+      "sha256": "FCB96D1EE488128DCB4AC66F40032D2962423DBC9C68A5D5F3203F01F5EBC08F"
+    },
+    {
+      "path": "src/cargopacket.cpp",
+      "sha256": "B2B8812DDE1B49AA611375E9E3F2E4131FCFE11FF9075ED28B5B070CA20A26F1"
+    },
+    {
+      "path": "src/cargopacket.h",
+      "sha256": "8684D07225E57B020BAE372DE90E6DE49D87178D16627059EC74AAC6ED9C71EA"
+    },
+    {
+      "path": "src/console_cmds.cpp",
+      "sha256": "D49B73BAA73516130280B22D29714A0D6D87F80977DF2A3636A7FF3060B1527B"
+    },
+    {
+      "path": "src/passenger_journey_active.cpp",
+      "sha256": "D65A7939D5BE59E51CD85D82F8B384B6C1CD41C1CC86E982544B480F75BC808F"
+    },
+    {
+      "path": "src/passenger_journey_active.h",
+      "sha256": "D204F059A911D90EBA07049F3AE46B8C3B111E04C61EE53A2559237B76B18D4B"
+    },
+    {
+      "path": "src/passenger_journey_type.h",
+      "sha256": "B1DAA618CDBF12FD2630E0B0885BD8396853C20DBBB53FA167671DC31966BA85"
+    },
+    {
+      "path": "src/passenger_routing.cpp",
+      "sha256": "D98E476C66FB89CBBEB789275B945E7F0248B3E0CBF84DAD9D2EC108C36B34C0"
+    },
+    {
+      "path": "src/passenger_routing.h",
+      "sha256": "F724DEFDEE89F7FD50E6F10C24B3D133F0463FEA45F32E7C99F51C0FC8D15CDE"
+    },
+    {
+      "path": "src/passenger_service_database.cpp",
+      "sha256": "A64F442E544ABA213CCE4FEA502C10947459AC8A7AB3C538DFE87A7CDC71140F"
+    },
+    {
+      "path": "src/passenger_service_database.h",
+      "sha256": "E4256346DBF68A78BEE74575AFF9048529A56C517FED260433916E49DDDF6739"
+    },
+    {
+      "path": "src/sl/cargopacket_sl.cpp",
+      "sha256": "FD40C682675D6EA2A49B5EFE41395AF905B4A618B4C900BF47E5AB62DAC92BA1"
+    },
+    {
+      "path": "src/sl/extended_ver_sl.cpp",
+      "sha256": "A9F8B618D3BED04A654DA5F83110226C624D71E08DE0C4456B38264E637D38E9"
+    },
+    {
+      "path": "src/tests/passenger_journey_active.cpp",
+      "sha256": "AE2AE00547527A296558E9D32E70C71AD0023D27E154D21A43662A76D5889F3B"
+    },
+    {
+      "path": "src/tests/passenger_multimodal.cpp",
+      "sha256": "67FB29B703EFABE2FCE3F76B61A68AEB9E42751C388C351E06993DCF5B8792FA"
+    },
+    {
+      "path": "src/tests/passenger_service_database.cpp",
+      "sha256": "BB9599629575CC65E99710FBAE1748AEE493A0B6ACC8207E9282D61BF7BC637C"
+    },
+    {
+      "path": "src/passenger_journey_schedule.cpp",
+      "sha256": "F20DA0D44685348B6462527F2DEC93742601D4AC10F118F6ED9ED298EBC695A0"
+    },
+    {
+      "path": "src/passenger_journey_schedule.h",
+      "sha256": "00A0D1B260D7BF042A22E87E23C63E4C5D210B2D63CFF50BDE1FA057A1FE2AAB"
+    }
+  ],
+  "product_binary_sha256": "5E83B45978B6192F921EB874CB11057FE508CE29D54E53A869F140077BBAB9CE",
+  "measured_binary_sha256": "422900A1E4FDDDC5211165E1E40EB2E90CF8736C8B3E6B8649AEBD45FB1A3CCC",
+  "input_sha256": "14D68C82911B9DCFC5EF7291E9697C5BBD67F44FFCC79D7575A144405EDF6390",
+  "tests_ctest": 495,
+  "tests_passenger": 282,
+  "assertions_passenger": 970671,
+  "measured_loops": 8000
+}

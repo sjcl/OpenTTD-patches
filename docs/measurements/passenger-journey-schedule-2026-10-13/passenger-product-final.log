@@ -1,0 +1,1312 @@
+Filters: [passenger]
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+openttd_test.exe is a Catch v2.13.10 host application.
+Run with -? for options
+
+-------------------------------------------------------------------------------
+Passenger predictor scales linearly with the order horizon
+-------------------------------------------------------------------------------
+C:\Users\bebe\.codex\worktrees\b338\OpenTTD-patches\src\tests\passenger_routing.cpp(871)
+...............................................................................
+
+C:\Users\bebe\.codex\worktrees\b338\OpenTTD-patches\src\tests\passenger_routing.cpp(881): warning:
+  10,000 predictions of 1,024 orders: 98 ms
+
+-------------------------------------------------------------------------------
+Passenger OD bounds destination memory packet growth and exhausted pool
+fallback
+  Batch time depends on destinations rather than passenger count
+-------------------------------------------------------------------------------
+C:\Users\bebe\.codex\worktrees\b338\OpenTTD-patches\src\tests\passenger_od_assignment.cpp(589)
+...............................................................................
+
+C:\Users\bebe\.codex\worktrees\b338\OpenTTD-patches\src\tests\passenger_od_assignment.cpp(597): warning:
+  OD benchmark: 16437 us / 10000 batches; entries=256; bytes=4168
+
+-------------------------------------------------------------------------------
+A sparse national hub retains all eight thousand valid destinations
+-------------------------------------------------------------------------------
+C:\Users\bebe\.codex\worktrees\b338\OpenTTD-patches\src\tests\passenger_od_assignment.cpp(749)
+...............................................................................
+
+C:\Users\bebe\.codex\worktrees\b338\OpenTTD-patches\src\tests\passenger_od_assignment.cpp(784): warning:
+  National OD generation: 85986 us / 400 batches; destinations=8000;
+  passengers=512 per batch
+
+-------------------------------------------------------------------------------
+Event capture benchmark has thousands of services and one hundred thousand
+visits
+-------------------------------------------------------------------------------
+C:\Users\bebe\.codex\worktrees\b338\OpenTTD-patches\src\tests\passenger_service_graph.cpp(448)
+...............................................................................
+
+C:\Users\bebe\.codex\worktrees\b338\OpenTTD-patches\src\tests\passenger_service_graph.cpp(486): warning:
+  Capture 100 OD: services=2500; orders=3; visits=105000; uncached_us=1731547;
+  cached_us=1397631; service_hits=247500; replayed_work=4702500; graph_bound=
+  47236864; graph_estimate=12997836; capture_estimate=18263944
+
+C:\Users\bebe\.codex\worktrees\b338\OpenTTD-patches\src\tests\passenger_service_graph.cpp(487): warning:
+  Phase 0: uncached_us=35313; cached_us=72266
+
+C:\Users\bebe\.codex\worktrees\b338\OpenTTD-patches\src\tests\passenger_service_graph.cpp(487): warning:
+  Phase 1: uncached_us=46938; cached_us=33424
+
+C:\Users\bebe\.codex\worktrees\b338\OpenTTD-patches\src\tests\passenger_service_graph.cpp(487): warning:
+  Phase 2: uncached_us=39606; cached_us=38729
+
+C:\Users\bebe\.codex\worktrees\b338\OpenTTD-patches\src\tests\passenger_service_graph.cpp(487): warning:
+  Phase 3: uncached_us=67984; cached_us=41025
+
+C:\Users\bebe\.codex\worktrees\b338\OpenTTD-patches\src\tests\passenger_service_graph.cpp(487): warning:
+  Phase 4: uncached_us=98842; cached_us=25023
+
+C:\Users\bebe\.codex\worktrees\b338\OpenTTD-patches\src\tests\passenger_service_graph.cpp(487): warning:
+  Phase 5: uncached_us=525097; cached_us=342790
+
+C:\Users\bebe\.codex\worktrees\b338\OpenTTD-patches\src\tests\passenger_service_graph.cpp(487): warning:
+  Phase 6: uncached_us=908922; cached_us=823547
+
+-------------------------------------------------------------------------------
+Event capture benchmark has thousands of services and one hundred thousand
+visits
+-------------------------------------------------------------------------------
+C:\Users\bebe\.codex\worktrees\b338\OpenTTD-patches\src\tests\passenger_service_graph.cpp(448)
+...............................................................................
+
+C:\Users\bebe\.codex\worktrees\b338\OpenTTD-patches\src\tests\passenger_service_graph.cpp(486): warning:
+  Capture 100 OD: services=2500; orders=20; visits=105000; uncached_us=1931894;
+  cached_us=1382642; service_hits=247500; replayed_work=25740000; graph_bound=
+  90756864; graph_estimate=20427036; capture_estimate=25688944
+
+C:\Users\bebe\.codex\worktrees\b338\OpenTTD-patches\src\tests\passenger_service_graph.cpp(487): warning:
+  Phase 0: uncached_us=48276; cached_us=131720
+
+C:\Users\bebe\.codex\worktrees\b338\OpenTTD-patches\src\tests\passenger_service_graph.cpp(487): warning:
+  Phase 1: uncached_us=64069; cached_us=32984
+
+C:\Users\bebe\.codex\worktrees\b338\OpenTTD-patches\src\tests\passenger_service_graph.cpp(487): warning:
+  Phase 2: uncached_us=45719; cached_us=39981
+
+C:\Users\bebe\.codex\worktrees\b338\OpenTTD-patches\src\tests\passenger_service_graph.cpp(487): warning:
+  Phase 3: uncached_us=105155; cached_us=49906
+
+C:\Users\bebe\.codex\worktrees\b338\OpenTTD-patches\src\tests\passenger_service_graph.cpp(487): warning:
+  Phase 4: uncached_us=384688; cached_us=31339
+
+C:\Users\bebe\.codex\worktrees\b338\OpenTTD-patches\src\tests\passenger_service_graph.cpp(487): warning:
+  Phase 5: uncached_us=518359; cached_us=401762
+
+C:\Users\bebe\.codex\worktrees\b338\OpenTTD-patches\src\tests\passenger_service_graph.cpp(487): warning:
+  Phase 6: uncached_us=756254; cached_us=673165
+
+-------------------------------------------------------------------------------
+Trip prediction benchmark over 4800 stations and 100 ODs
+-------------------------------------------------------------------------------
+C:\Users\bebe\.codex\worktrees\b338\OpenTTD-patches\src\tests\passenger_service_graph.cpp(490)
+...............................................................................
+
+C:\Users\bebe\.codex\worktrees\b338\OpenTTD-patches\src\tests\passenger_service_graph.cpp(540): warning:
+  Trip benchmark: run=0; stations=4800; vehicles=2399; builds=100;
+  cache_ceiling=8388608; disabled_calls=239900; enabled_calls=2399; hits=
+  237501; requests=239900; disabled_build_us=567759; enabled_build_us=542546;
+  disabled_predictor_ns=79265700; enabled_predictor_ns=641000; logical_work=
+  26869300; logical_visits=959600; searches=100; timed_routes=100;
+  disabled_query_us=431925; enabled_query_us=444777; prediction_bytes=3704056;
+  capture_bytes=6239878
+
+C:\Users\bebe\.codex\worktrees\b338\OpenTTD-patches\src\tests\passenger_service_graph.cpp(540): warning:
+  Trip benchmark: run=1; stations=4800; vehicles=2399; builds=100;
+  cache_ceiling=8388608; disabled_calls=239900; enabled_calls=2399; hits=
+  237501; requests=239900; disabled_build_us=563256; enabled_build_us=527712;
+  disabled_predictor_ns=78272600; enabled_predictor_ns=627800; logical_work=
+  26869300; logical_visits=959600; searches=100; timed_routes=100;
+  disabled_query_us=423399; enabled_query_us=440202; prediction_bytes=3704056;
+  capture_bytes=6239878
+
+C:\Users\bebe\.codex\worktrees\b338\OpenTTD-patches\src\tests\passenger_service_graph.cpp(540): warning:
+  Trip benchmark: run=2; stations=4800; vehicles=2399; builds=100;
+  cache_ceiling=8388608; disabled_calls=239900; enabled_calls=2399; hits=
+  237501; requests=239900; disabled_build_us=615023; enabled_build_us=582298;
+  disabled_predictor_ns=83271700; enabled_predictor_ns=622500; logical_work=
+  26869300; logical_visits=959600; searches=100; timed_routes=100;
+  disabled_query_us=466728; enabled_query_us=481657; prediction_bytes=3704056;
+  capture_bytes=6239878
+
+-------------------------------------------------------------------------------
+Trip prediction benchmark over 4800 stations and 100 ODs
+-------------------------------------------------------------------------------
+C:\Users\bebe\.codex\worktrees\b338\OpenTTD-patches\src\tests\passenger_service_graph.cpp(490)
+...............................................................................
+
+C:\Users\bebe\.codex\worktrees\b338\OpenTTD-patches\src\tests\passenger_service_graph.cpp(540): warning:
+  Trip benchmark: run=0; stations=4800; vehicles=2399; builds=100;
+  cache_ceiling=131072; disabled_calls=239900; enabled_calls=231584; hits=8316;
+  requests=239900; disabled_build_us=605710; enabled_build_us=589671;
+  disabled_predictor_ns=79340800; enabled_predictor_ns=76078400; logical_work=
+  26869300; logical_visits=959600; searches=100; timed_routes=100;
+  disabled_query_us=446802; enabled_query_us=475482; prediction_bytes=129696;
+  capture_bytes=2665518
+
+C:\Users\bebe\.codex\worktrees\b338\OpenTTD-patches\src\tests\passenger_service_graph.cpp(540): warning:
+  Trip benchmark: run=1; stations=4800; vehicles=2399; builds=100;
+  cache_ceiling=131072; disabled_calls=239900; enabled_calls=231584; hits=8316;
+  requests=239900; disabled_build_us=659405; enabled_build_us=648055;
+  disabled_predictor_ns=89712200; enabled_predictor_ns=86252700; logical_work=
+  26869300; logical_visits=959600; searches=100; timed_routes=100;
+  disabled_query_us=489492; enabled_query_us=505516; prediction_bytes=129696;
+  capture_bytes=2665518
+
+C:\Users\bebe\.codex\worktrees\b338\OpenTTD-patches\src\tests\passenger_service_graph.cpp(540): warning:
+  Trip benchmark: run=2; stations=4800; vehicles=2399; builds=100;
+  cache_ceiling=131072; disabled_calls=239900; enabled_calls=231584; hits=8316;
+  requests=239900; disabled_build_us=696871; enabled_build_us=687263;
+  disabled_predictor_ns=95842300; enabled_predictor_ns=91176000; logical_work=
+  26869300; logical_visits=959600; searches=100; timed_routes=100;
+  disabled_query_us=520690; enabled_query_us=537145; prediction_bytes=129696;
+  capture_bytes=2665518
+
+-------------------------------------------------------------------------------
+Graph admission pays for generated visits rather than maximum trip reservations
+-------------------------------------------------------------------------------
+C:\Users\bebe\.codex\worktrees\b338\OpenTTD-patches\src\tests\passenger_service_graph.cpp(791)
+...............................................................................
+
+C:\Users\bebe\.codex\worktrees\b338\OpenTTD-patches\src\tests\passenger_service_graph.cpp(817): warning:
+  Actual-visit fleet: trips=4000; visits=104000; work=132058; bound=37896128;
+  retained=12685708; cold_us=22321; warm_us=19826
+
+-------------------------------------------------------------------------------
+Schedule 8000 station network caches OD policies without physical visit
+expansion
+-------------------------------------------------------------------------------
+C:\Users\bebe\.codex\worktrees\b338\OpenTTD-patches\src\tests\passenger_service_database.cpp(653)
+...............................................................................
+
+C:\Users\bebe\.codex\worktrees\b338\OpenTTD-patches\src\tests\passenger_service_database.cpp(663): warning:
+  Schedule 8000-station benchmark: queries=4097; work_per_query=7;
+  total_query_us=5; policy_bytes=1024
+
+-------------------------------------------------------------------------------
+Service index stage allocation comparison report
+-------------------------------------------------------------------------------
+C:\Users\bebe\.codex\worktrees\b338\OpenTTD-patches\src\tests\passenger_service_graph_index.cpp(414)
+...............................................................................
+
+C:\Users\bebe\.codex\worktrees\b338\OpenTTD-patches\src\tests\passenger_service_graph_index.cpp(417): warning:
+  Allocation counters are unavailable: configure MSVC with
+  OPTION_SERVICE_INDEX_ALLOCATIONS=ON to measure them.
+
+INDEX_CSV,fixture,cache,algorithm,run,stage,ns,allocations,allocated_bytes,retained_bytes,peak_bytes
+INDEX_CAPTURE_CSV,components,0,0,0,0
+INDEX_CSV,components,cold,legacy,0,station_visits,12475900,0,0,0,0
+INDEX_CSV,components,cold,legacy,0,station_departures,13585700,0,0,0,0
+INDEX_CSV,components,cold,legacy,0,departure_sort,2935000,0,0,0,0
+INDEX_CSV,components,cold,legacy,0,loading_visits,2347800,0,0,0,0
+INDEX_CSV,components,cold,legacy,0,components,6911800,0,0,0,0
+INDEX_CSV,components,cold,legacy,0,uncertain_components,880400,0,0,0,0
+INDEX_CSV,components,cold,legacy,0,total,39558400,0,0,0,0
+INDEX_CSV,components,cold,legacy,0,station_visits_untracked,13617300,0,0,0,0
+INDEX_CSV,components,cold,legacy,0,station_departures_untracked,14779400,0,0,0,0
+INDEX_CSV,components,cold,legacy,0,departure_sort_untracked,3154500,0,0,0,0
+INDEX_CSV,components,cold,legacy,0,loading_visits_untracked,2550200,0,0,0,0
+INDEX_CSV,components,cold,legacy,0,components_untracked,8099000,0,0,0,0
+INDEX_CSV,components,cold,legacy,0,uncertain_components_untracked,938300,0,0,0,0
+INDEX_CSV,components,cold,legacy,0,total_exact,32954000,0,0,0,0
+INDEX_CSV,components,cold,legacy,0,total_untracked,40031300,0,0,0,0
+INDEX_CSV,components,cold,legacy,0,get_departures_100000,17673200,0,0,0,0
+INDEX_CSV,components,cold,flat,0,station_visits,3411200,0,0,0,0
+INDEX_CSV,components,cold,flat,0,station_departures,437300,0,0,0,0
+INDEX_CSV,components,cold,flat,0,departure_sort,1577500,0,0,0,0
+INDEX_CSV,components,cold,flat,0,loading_visits,385800,0,0,0,0
+INDEX_CSV,components,cold,flat,0,components,39700,0,0,0,0
+INDEX_CSV,components,cold,flat,0,uncertain_components,32200,0,0,0,0
+INDEX_CSV,components,cold,flat,0,total,5886800,0,0,0,0
+INDEX_CSV,components,cold,flat,0,station_visits_untracked,3725700,0,0,0,0
+INDEX_CSV,components,cold,flat,0,station_departures_untracked,399200,0,0,0,0
+INDEX_CSV,components,cold,flat,0,departure_sort_untracked,1665200,0,0,0,0
+INDEX_CSV,components,cold,flat,0,loading_visits_untracked,457400,0,0,0,0
+INDEX_CSV,components,cold,flat,0,components_untracked,52700,0,0,0,0
+INDEX_CSV,components,cold,flat,0,uncertain_components_untracked,37800,0,0,0,0
+INDEX_CSV,components,cold,flat,0,total_exact,6445700,0,0,0,0
+INDEX_CSV,components,cold,flat,0,total_untracked,7471400,0,0,0,0
+INDEX_CSV,components,cold,flat,0,get_departures_100000,18228700,0,0,0,0
+INDEX_CSV,components,cold,flat,1,station_visits,4176500,0,0,0,0
+INDEX_CSV,components,cold,flat,1,station_departures,556400,0,0,0,0
+INDEX_CSV,components,cold,flat,1,departure_sort,1870100,0,0,0,0
+INDEX_CSV,components,cold,flat,1,loading_visits,459000,0,0,0,0
+INDEX_CSV,components,cold,flat,1,components,62400,0,0,0,0
+INDEX_CSV,components,cold,flat,1,uncertain_components,39000,0,0,0,0
+INDEX_CSV,components,cold,flat,1,total,7166200,0,0,0,0
+INDEX_CSV,components,cold,flat,1,station_visits_untracked,4495100,0,0,0,0
+INDEX_CSV,components,cold,flat,1,station_departures_untracked,521400,0,0,0,0
+INDEX_CSV,components,cold,flat,1,departure_sort_untracked,1810500,0,0,0,0
+INDEX_CSV,components,cold,flat,1,loading_visits_untracked,436100,0,0,0,0
+INDEX_CSV,components,cold,flat,1,components_untracked,52500,0,0,0,0
+INDEX_CSV,components,cold,flat,1,uncertain_components_untracked,33600,0,0,0,0
+INDEX_CSV,components,cold,flat,1,total_exact,5659500,0,0,0,0
+INDEX_CSV,components,cold,flat,1,total_untracked,5972200,0,0,0,0
+INDEX_CSV,components,cold,flat,1,get_departures_100000,11838200,0,0,0,0
+INDEX_CSV,components,cold,legacy,1,station_visits,10498200,0,0,0,0
+INDEX_CSV,components,cold,legacy,1,station_departures,13560300,0,0,0,0
+INDEX_CSV,components,cold,legacy,1,departure_sort,2916900,0,0,0,0
+INDEX_CSV,components,cold,legacy,1,loading_visits,1749700,0,0,0,0
+INDEX_CSV,components,cold,legacy,1,components,6614900,0,0,0,0
+INDEX_CSV,components,cold,legacy,1,uncertain_components,722400,0,0,0,0
+INDEX_CSV,components,cold,legacy,1,total,36444800,0,0,0,0
+INDEX_CSV,components,cold,legacy,1,station_visits_untracked,11015000,0,0,0,0
+INDEX_CSV,components,cold,legacy,1,station_departures_untracked,11113100,0,0,0,0
+INDEX_CSV,components,cold,legacy,1,departure_sort_untracked,2213500,0,0,0,0
+INDEX_CSV,components,cold,legacy,1,loading_visits_untracked,1709000,0,0,0,0
+INDEX_CSV,components,cold,legacy,1,components_untracked,6652800,0,0,0,0
+INDEX_CSV,components,cold,legacy,1,uncertain_components_untracked,691200,0,0,0,0
+INDEX_CSV,components,cold,legacy,1,total_exact,30441900,0,0,0,0
+INDEX_CSV,components,cold,legacy,1,total_untracked,32772200,0,0,0,0
+INDEX_CSV,components,cold,legacy,1,get_departures_100000,17552700,0,0,0,0
+INDEX_CSV,components,cold,legacy,2,station_visits,14083300,0,0,0,0
+INDEX_CSV,components,cold,legacy,2,station_departures,16818400,0,0,0,0
+INDEX_CSV,components,cold,legacy,2,departure_sort,3977000,0,0,0,0
+INDEX_CSV,components,cold,legacy,2,loading_visits,2582000,0,0,0,0
+INDEX_CSV,components,cold,legacy,2,components,7821100,0,0,0,0
+INDEX_CSV,components,cold,legacy,2,uncertain_components,979600,0,0,0,0
+INDEX_CSV,components,cold,legacy,2,total,46793200,0,0,0,0
+INDEX_CSV,components,cold,legacy,2,station_visits_untracked,14285000,0,0,0,0
+INDEX_CSV,components,cold,legacy,2,station_departures_untracked,15787400,0,0,0,0
+INDEX_CSV,components,cold,legacy,2,departure_sort_untracked,3633900,0,0,0,0
+INDEX_CSV,components,cold,legacy,2,loading_visits_untracked,2505100,0,0,0,0
+INDEX_CSV,components,cold,legacy,2,components_untracked,8403100,0,0,0,0
+INDEX_CSV,components,cold,legacy,2,uncertain_components_untracked,961200,0,0,0,0
+INDEX_CSV,components,cold,legacy,2,total_exact,38701300,0,0,0,0
+INDEX_CSV,components,cold,legacy,2,total_untracked,38700800,0,0,0,0
+INDEX_CSV,components,cold,legacy,2,get_departures_100000,15825400,0,0,0,0
+INDEX_CSV,components,cold,flat,2,station_visits,4229100,0,0,0,0
+INDEX_CSV,components,cold,flat,2,station_departures,583500,0,0,0,0
+INDEX_CSV,components,cold,flat,2,departure_sort,1952400,0,0,0,0
+INDEX_CSV,components,cold,flat,2,loading_visits,459200,0,0,0,0
+INDEX_CSV,components,cold,flat,2,components,68100,0,0,0,0
+INDEX_CSV,components,cold,flat,2,uncertain_components,40000,0,0,0,0
+INDEX_CSV,components,cold,flat,2,total,7335100,0,0,0,0
+INDEX_CSV,components,cold,flat,2,station_visits_untracked,3594800,0,0,0,0
+INDEX_CSV,components,cold,flat,2,station_departures_untracked,692600,0,0,0,0
+INDEX_CSV,components,cold,flat,2,departure_sort_untracked,1893900,0,0,0,0
+INDEX_CSV,components,cold,flat,2,loading_visits_untracked,477900,0,0,0,0
+INDEX_CSV,components,cold,flat,2,components_untracked,71100,0,0,0,0
+INDEX_CSV,components,cold,flat,2,uncertain_components_untracked,41000,0,0,0,0
+INDEX_CSV,components,cold,flat,2,total_exact,7040900,0,0,0,0
+INDEX_CSV,components,cold,flat,2,total_untracked,7093800,0,0,0,0
+INDEX_CSV,components,cold,flat,2,get_departures_100000,13416200,0,0,0,0
+INDEX_CSV,components,cold,flat,3,station_visits,4077100,0,0,0,0
+INDEX_CSV,components,cold,flat,3,station_departures,564000,0,0,0,0
+INDEX_CSV,components,cold,flat,3,departure_sort,1982800,0,0,0,0
+INDEX_CSV,components,cold,flat,3,loading_visits,484700,0,0,0,0
+INDEX_CSV,components,cold,flat,3,components,68600,0,0,0,0
+INDEX_CSV,components,cold,flat,3,uncertain_components,37300,0,0,0,0
+INDEX_CSV,components,cold,flat,3,total,7217600,0,0,0,0
+INDEX_CSV,components,cold,flat,3,station_visits_untracked,4230300,0,0,0,0
+INDEX_CSV,components,cold,flat,3,station_departures_untracked,458900,0,0,0,0
+INDEX_CSV,components,cold,flat,3,departure_sort_untracked,1796700,0,0,0,0
+INDEX_CSV,components,cold,flat,3,loading_visits_untracked,411800,0,0,0,0
+INDEX_CSV,components,cold,flat,3,components_untracked,71100,0,0,0,0
+INDEX_CSV,components,cold,flat,3,uncertain_components_untracked,35900,0,0,0,0
+INDEX_CSV,components,cold,flat,3,total_exact,6448400,0,0,0,0
+INDEX_CSV,components,cold,flat,3,total_untracked,6422800,0,0,0,0
+INDEX_CSV,components,cold,flat,3,get_departures_100000,13843900,0,0,0,0
+INDEX_CSV,components,cold,legacy,3,station_visits,11960400,0,0,0,0
+INDEX_CSV,components,cold,legacy,3,station_departures,14095300,0,0,0,0
+INDEX_CSV,components,cold,legacy,3,departure_sort,3329000,0,0,0,0
+INDEX_CSV,components,cold,legacy,3,loading_visits,2511900,0,0,0,0
+INDEX_CSV,components,cold,legacy,3,components,6502400,0,0,0,0
+INDEX_CSV,components,cold,legacy,3,uncertain_components,940900,0,0,0,0
+INDEX_CSV,components,cold,legacy,3,total,39980600,0,0,0,0
+INDEX_CSV,components,cold,legacy,3,station_visits_untracked,12789200,0,0,0,0
+INDEX_CSV,components,cold,legacy,3,station_departures_untracked,15808100,0,0,0,0
+INDEX_CSV,components,cold,legacy,3,departure_sort_untracked,4044900,0,0,0,0
+INDEX_CSV,components,cold,legacy,3,loading_visits_untracked,2511500,0,0,0,0
+INDEX_CSV,components,cold,legacy,3,components_untracked,7459800,0,0,0,0
+INDEX_CSV,components,cold,legacy,3,uncertain_components_untracked,1956300,0,0,0,0
+INDEX_CSV,components,cold,legacy,3,total_exact,44879500,0,0,0,0
+INDEX_CSV,components,cold,legacy,3,total_untracked,36565000,0,0,0,0
+INDEX_CSV,components,cold,legacy,3,get_departures_100000,15515400,0,0,0,0
+INDEX_CSV,components,cold,legacy,4,station_visits,16854400,0,0,0,0
+INDEX_CSV,components,cold,legacy,4,station_departures,11978400,0,0,0,0
+INDEX_CSV,components,cold,legacy,4,departure_sort,2883100,0,0,0,0
+INDEX_CSV,components,cold,legacy,4,loading_visits,2107200,0,0,0,0
+INDEX_CSV,components,cold,legacy,4,components,7439100,0,0,0,0
+INDEX_CSV,components,cold,legacy,4,uncertain_components,616800,0,0,0,0
+INDEX_CSV,components,cold,legacy,4,total,42251900,0,0,0,0
+INDEX_CSV,components,cold,legacy,4,station_visits_untracked,18260800,0,0,0,0
+INDEX_CSV,components,cold,legacy,4,station_departures_untracked,20034500,0,0,0,0
+INDEX_CSV,components,cold,legacy,4,departure_sort_untracked,4211700,0,0,0,0
+INDEX_CSV,components,cold,legacy,4,loading_visits_untracked,2981100,0,0,0,0
+INDEX_CSV,components,cold,legacy,4,components_untracked,9429800,0,0,0,0
+INDEX_CSV,components,cold,legacy,4,uncertain_components_untracked,1711600,0,0,0,0
+INDEX_CSV,components,cold,legacy,4,total_exact,38370700,0,0,0,0
+INDEX_CSV,components,cold,legacy,4,total_untracked,31301400,0,0,0,0
+INDEX_CSV,components,cold,legacy,4,get_departures_100000,13803800,0,0,0,0
+INDEX_CSV,components,cold,flat,4,station_visits,3272500,0,0,0,0
+INDEX_CSV,components,cold,flat,4,station_departures,515200,0,0,0,0
+INDEX_CSV,components,cold,flat,4,departure_sort,1655100,0,0,0,0
+INDEX_CSV,components,cold,flat,4,loading_visits,418500,0,0,0,0
+INDEX_CSV,components,cold,flat,4,components,47300,0,0,0,0
+INDEX_CSV,components,cold,flat,4,uncertain_components,30100,0,0,0,0
+INDEX_CSV,components,cold,flat,4,total,5941100,0,0,0,0
+INDEX_CSV,components,cold,flat,4,station_visits_untracked,3314700,0,0,0,0
+INDEX_CSV,components,cold,flat,4,station_departures_untracked,531100,0,0,0,0
+INDEX_CSV,components,cold,flat,4,departure_sort_untracked,1533600,0,0,0,0
+INDEX_CSV,components,cold,flat,4,loading_visits_untracked,469600,0,0,0,0
+INDEX_CSV,components,cold,flat,4,components_untracked,64000,0,0,0,0
+INDEX_CSV,components,cold,flat,4,uncertain_components_untracked,36900,0,0,0,0
+INDEX_CSV,components,cold,flat,4,total_exact,5760000,0,0,0,0
+INDEX_CSV,components,cold,flat,4,total_untracked,5521600,0,0,0,0
+INDEX_CSV,components,cold,flat,4,get_departures_100000,11331600,0,0,0,0
+INDEX_CSV,components,cold,flat,5,station_visits,3534100,0,0,0,0
+INDEX_CSV,components,cold,flat,5,station_departures,403800,0,0,0,0
+INDEX_CSV,components,cold,flat,5,departure_sort,1358200,0,0,0,0
+INDEX_CSV,components,cold,flat,5,loading_visits,379100,0,0,0,0
+INDEX_CSV,components,cold,flat,5,components,57300,0,0,0,0
+INDEX_CSV,components,cold,flat,5,uncertain_components,27000,0,0,0,0
+INDEX_CSV,components,cold,flat,5,total,5761700,0,0,0,0
+INDEX_CSV,components,cold,flat,5,station_visits_untracked,3685700,0,0,0,0
+INDEX_CSV,components,cold,flat,5,station_departures_untracked,353900,0,0,0,0
+INDEX_CSV,components,cold,flat,5,departure_sort_untracked,1539900,0,0,0,0
+INDEX_CSV,components,cold,flat,5,loading_visits_untracked,438300,0,0,0,0
+INDEX_CSV,components,cold,flat,5,components_untracked,41000,0,0,0,0
+INDEX_CSV,components,cold,flat,5,uncertain_components_untracked,27600,0,0,0,0
+INDEX_CSV,components,cold,flat,5,total_exact,5633200,0,0,0,0
+INDEX_CSV,components,cold,flat,5,total_untracked,6270600,0,0,0,0
+INDEX_CSV,components,cold,flat,5,get_departures_100000,12275800,0,0,0,0
+INDEX_CSV,components,cold,legacy,5,station_visits,12854700,0,0,0,0
+INDEX_CSV,components,cold,legacy,5,station_departures,13362900,0,0,0,0
+INDEX_CSV,components,cold,legacy,5,departure_sort,2953200,0,0,0,0
+INDEX_CSV,components,cold,legacy,5,loading_visits,2048100,0,0,0,0
+INDEX_CSV,components,cold,legacy,5,components,7137600,0,0,0,0
+INDEX_CSV,components,cold,legacy,5,uncertain_components,662100,0,0,0,0
+INDEX_CSV,components,cold,legacy,5,total,39497300,0,0,0,0
+INDEX_CSV,components,cold,legacy,5,station_visits_untracked,12504400,0,0,0,0
+INDEX_CSV,components,cold,legacy,5,station_departures_untracked,13362700,0,0,0,0
+INDEX_CSV,components,cold,legacy,5,departure_sort_untracked,2295300,0,0,0,0
+INDEX_CSV,components,cold,legacy,5,loading_visits_untracked,1806600,0,0,0,0
+INDEX_CSV,components,cold,legacy,5,components_untracked,7280900,0,0,0,0
+INDEX_CSV,components,cold,legacy,5,uncertain_components_untracked,658400,0,0,0,0
+INDEX_CSV,components,cold,legacy,5,total_exact,27266900,0,0,0,0
+INDEX_CSV,components,cold,legacy,5,total_untracked,31277600,0,0,0,0
+INDEX_CSV,components,cold,legacy,5,get_departures_100000,11741200,0,0,0,0
+INDEX_CSV,components,cold,legacy,6,station_visits,10987000,0,0,0,0
+INDEX_CSV,components,cold,legacy,6,station_departures,10988000,0,0,0,0
+INDEX_CSV,components,cold,legacy,6,departure_sort,2626700,0,0,0,0
+INDEX_CSV,components,cold,legacy,6,loading_visits,1565100,0,0,0,0
+INDEX_CSV,components,cold,legacy,6,components,6116400,0,0,0,0
+INDEX_CSV,components,cold,legacy,6,uncertain_components,600100,0,0,0,0
+INDEX_CSV,components,cold,legacy,6,total,33282200,0,0,0,0
+INDEX_CSV,components,cold,legacy,6,station_visits_untracked,10530700,0,0,0,0
+INDEX_CSV,components,cold,legacy,6,station_departures_untracked,11965900,0,0,0,0
+INDEX_CSV,components,cold,legacy,6,departure_sort_untracked,2203500,0,0,0,0
+INDEX_CSV,components,cold,legacy,6,loading_visits_untracked,1580700,0,0,0,0
+INDEX_CSV,components,cold,legacy,6,components_untracked,7365400,0,0,0,0
+INDEX_CSV,components,cold,legacy,6,uncertain_components_untracked,487700,0,0,0,0
+INDEX_CSV,components,cold,legacy,6,total_exact,28789300,0,0,0,0
+INDEX_CSV,components,cold,legacy,6,total_untracked,31106800,0,0,0,0
+INDEX_CSV,components,cold,legacy,6,get_departures_100000,14601000,0,0,0,0
+INDEX_CSV,components,cold,flat,6,station_visits,3962800,0,0,0,0
+INDEX_CSV,components,cold,flat,6,station_departures,487600,0,0,0,0
+INDEX_CSV,components,cold,flat,6,departure_sort,2044400,0,0,0,0
+INDEX_CSV,components,cold,flat,6,loading_visits,695500,0,0,0,0
+INDEX_CSV,components,cold,flat,6,components,65600,0,0,0,0
+INDEX_CSV,components,cold,flat,6,uncertain_components,36800,0,0,0,0
+INDEX_CSV,components,cold,flat,6,total,7298300,0,0,0,0
+INDEX_CSV,components,cold,flat,6,station_visits_untracked,3273800,0,0,0,0
+INDEX_CSV,components,cold,flat,6,station_departures_untracked,387800,0,0,0,0
+INDEX_CSV,components,cold,flat,6,departure_sort_untracked,1453800,0,0,0,0
+INDEX_CSV,components,cold,flat,6,loading_visits_untracked,518700,0,0,0,0
+INDEX_CSV,components,cold,flat,6,components_untracked,41800,0,0,0,0
+INDEX_CSV,components,cold,flat,6,uncertain_components_untracked,27200,0,0,0,0
+INDEX_CSV,components,cold,flat,6,total_exact,6133800,0,0,0,0
+INDEX_CSV,components,cold,flat,6,total_untracked,6274600,0,0,0,0
+INDEX_CSV,components,cold,flat,6,get_departures_100000,13522900,0,0,0,0
+INDEX_CSV,components,warm,legacy,0,station_visits,10296400,0,0,0,0
+INDEX_CSV,components,warm,legacy,0,station_departures,11624300,0,0,0,0
+INDEX_CSV,components,warm,legacy,0,departure_sort,2704000,0,0,0,0
+INDEX_CSV,components,warm,legacy,0,loading_visits,1745700,0,0,0,0
+INDEX_CSV,components,warm,legacy,0,components,7174800,0,0,0,0
+INDEX_CSV,components,warm,legacy,0,uncertain_components,719300,0,0,0,0
+INDEX_CSV,components,warm,legacy,0,total,34587600,0,0,0,0
+INDEX_CSV,components,warm,legacy,0,station_visits_untracked,11684600,0,0,0,0
+INDEX_CSV,components,warm,legacy,0,station_departures_untracked,12019600,0,0,0,0
+INDEX_CSV,components,warm,legacy,0,departure_sort_untracked,2612200,0,0,0,0
+INDEX_CSV,components,warm,legacy,0,loading_visits_untracked,1904400,0,0,0,0
+INDEX_CSV,components,warm,legacy,0,components_untracked,6848700,0,0,0,0
+INDEX_CSV,components,warm,legacy,0,uncertain_components_untracked,815000,0,0,0,0
+INDEX_CSV,components,warm,legacy,0,total_exact,30101900,0,0,0,0
+INDEX_CSV,components,warm,legacy,0,total_untracked,30098500,0,0,0,0
+INDEX_CSV,components,warm,legacy,0,get_departures_100000,12577700,0,0,0,0
+INDEX_CSV,components,warm,flat,0,station_visits,2765400,0,0,0,0
+INDEX_CSV,components,warm,flat,0,station_departures,378000,0,0,0,0
+INDEX_CSV,components,warm,flat,0,departure_sort,1729400,0,0,0,0
+INDEX_CSV,components,warm,flat,0,loading_visits,629900,0,0,0,0
+INDEX_CSV,components,warm,flat,0,components,54400,0,0,0,0
+INDEX_CSV,components,warm,flat,0,uncertain_components,29200,0,0,0,0
+INDEX_CSV,components,warm,flat,0,total,5588800,0,0,0,0
+INDEX_CSV,components,warm,flat,0,station_visits_untracked,3420200,0,0,0,0
+INDEX_CSV,components,warm,flat,0,station_departures_untracked,404200,0,0,0,0
+INDEX_CSV,components,warm,flat,0,departure_sort_untracked,1513700,0,0,0,0
+INDEX_CSV,components,warm,flat,0,loading_visits_untracked,541600,0,0,0,0
+INDEX_CSV,components,warm,flat,0,components_untracked,65100,0,0,0,0
+INDEX_CSV,components,warm,flat,0,uncertain_components_untracked,36900,0,0,0,0
+INDEX_CSV,components,warm,flat,0,total_exact,4906300,0,0,0,0
+INDEX_CSV,components,warm,flat,0,total_untracked,5379400,0,0,0,0
+INDEX_CSV,components,warm,flat,0,get_departures_100000,12092000,0,0,0,0
+INDEX_CSV,components,warm,flat,1,station_visits,2798600,0,0,0,0
+INDEX_CSV,components,warm,flat,1,station_departures,419900,0,0,0,0
+INDEX_CSV,components,warm,flat,1,departure_sort,1253400,0,0,0,0
+INDEX_CSV,components,warm,flat,1,loading_visits,389100,0,0,0,0
+INDEX_CSV,components,warm,flat,1,components,46800,0,0,0,0
+INDEX_CSV,components,warm,flat,1,uncertain_components,25900,0,0,0,0
+INDEX_CSV,components,warm,flat,1,total,4935400,0,0,0,0
+INDEX_CSV,components,warm,flat,1,station_visits_untracked,3081000,0,0,0,0
+INDEX_CSV,components,warm,flat,1,station_departures_untracked,496000,0,0,0,0
+INDEX_CSV,components,warm,flat,1,departure_sort_untracked,2510900,0,0,0,0
+INDEX_CSV,components,warm,flat,1,loading_visits_untracked,853600,0,0,0,0
+INDEX_CSV,components,warm,flat,1,components_untracked,65200,0,0,0,0
+INDEX_CSV,components,warm,flat,1,uncertain_components_untracked,29300,0,0,0,0
+INDEX_CSV,components,warm,flat,1,total_exact,8761500,0,0,0,0
+INDEX_CSV,components,warm,flat,1,total_untracked,6703500,0,0,0,0
+INDEX_CSV,components,warm,flat,1,get_departures_100000,67188100,0,0,0,0
+INDEX_CSV,components,warm,legacy,1,station_visits,24303300,0,0,0,0
+INDEX_CSV,components,warm,legacy,1,station_departures,25032900,0,0,0,0
+INDEX_CSV,components,warm,legacy,1,departure_sort,6591700,0,0,0,0
+INDEX_CSV,components,warm,legacy,1,loading_visits,7600600,0,0,0,0
+INDEX_CSV,components,warm,legacy,1,components,12108700,0,0,0,0
+INDEX_CSV,components,warm,legacy,1,uncertain_components,1605600,0,0,0,0
+INDEX_CSV,components,warm,legacy,1,total,78355800,0,0,0,0
+INDEX_CSV,components,warm,legacy,1,station_visits_untracked,24937600,0,0,0,0
+INDEX_CSV,components,warm,legacy,1,station_departures_untracked,13627800,0,0,0,0
+INDEX_CSV,components,warm,legacy,1,departure_sort_untracked,2309800,0,0,0,0
+INDEX_CSV,components,warm,legacy,1,loading_visits_untracked,2411500,0,0,0,0
+INDEX_CSV,components,warm,legacy,1,components_untracked,8915300,0,0,0,0
+INDEX_CSV,components,warm,legacy,1,uncertain_components_untracked,721100,0,0,0,0
+INDEX_CSV,components,warm,legacy,1,total_exact,35688900,0,0,0,0
+INDEX_CSV,components,warm,legacy,1,total_untracked,39898300,0,0,0,0
+INDEX_CSV,components,warm,legacy,1,get_departures_100000,16773200,0,0,0,0
+INDEX_CSV,components,warm,legacy,2,station_visits,14606100,0,0,0,0
+INDEX_CSV,components,warm,legacy,2,station_departures,13481000,0,0,0,0
+INDEX_CSV,components,warm,legacy,2,departure_sort,4442800,0,0,0,0
+INDEX_CSV,components,warm,legacy,2,loading_visits,2911200,0,0,0,0
+INDEX_CSV,components,warm,legacy,2,components,8551100,0,0,0,0
+INDEX_CSV,components,warm,legacy,2,uncertain_components,892400,0,0,0,0
+INDEX_CSV,components,warm,legacy,2,total,45266400,0,0,0,0
+INDEX_CSV,components,warm,legacy,2,station_visits_untracked,9833700,0,0,0,0
+INDEX_CSV,components,warm,legacy,2,station_departures_untracked,12288200,0,0,0,0
+INDEX_CSV,components,warm,legacy,2,departure_sort_untracked,3757700,0,0,0,0
+INDEX_CSV,components,warm,legacy,2,loading_visits_untracked,3593300,0,0,0,0
+INDEX_CSV,components,warm,legacy,2,components_untracked,6561000,0,0,0,0
+INDEX_CSV,components,warm,legacy,2,uncertain_components_untracked,1004300,0,0,0,0
+INDEX_CSV,components,warm,legacy,2,total_exact,30674600,0,0,0,0
+INDEX_CSV,components,warm,legacy,2,total_untracked,33753400,0,0,0,0
+INDEX_CSV,components,warm,legacy,2,get_departures_100000,13098500,0,0,0,0
+INDEX_CSV,components,warm,flat,2,station_visits,2656200,0,0,0,0
+INDEX_CSV,components,warm,flat,2,station_departures,393400,0,0,0,0
+INDEX_CSV,components,warm,flat,2,departure_sort,1681300,0,0,0,0
+INDEX_CSV,components,warm,flat,2,loading_visits,678700,0,0,0,0
+INDEX_CSV,components,warm,flat,2,components,61400,0,0,0,0
+INDEX_CSV,components,warm,flat,2,uncertain_components,26700,0,0,0,0
+INDEX_CSV,components,warm,flat,2,total,5499700,0,0,0,0
+INDEX_CSV,components,warm,flat,2,station_visits_untracked,3992300,0,0,0,0
+INDEX_CSV,components,warm,flat,2,station_departures_untracked,534000,0,0,0,0
+INDEX_CSV,components,warm,flat,2,departure_sort_untracked,1786100,0,0,0,0
+INDEX_CSV,components,warm,flat,2,loading_visits_untracked,674300,0,0,0,0
+INDEX_CSV,components,warm,flat,2,components_untracked,44800,0,0,0,0
+INDEX_CSV,components,warm,flat,2,uncertain_components_untracked,27100,0,0,0,0
+INDEX_CSV,components,warm,flat,2,total_exact,9789300,0,0,0,0
+INDEX_CSV,components,warm,flat,2,total_untracked,7400700,0,0,0,0
+INDEX_CSV,components,warm,flat,2,get_departures_100000,13175500,0,0,0,0
+INDEX_CSV,components,warm,flat,3,station_visits,4465100,0,0,0,0
+INDEX_CSV,components,warm,flat,3,station_departures,624300,0,0,0,0
+INDEX_CSV,components,warm,flat,3,departure_sort,1875000,0,0,0,0
+INDEX_CSV,components,warm,flat,3,loading_visits,412400,0,0,0,0
+INDEX_CSV,components,warm,flat,3,components,47500,0,0,0,0
+INDEX_CSV,components,warm,flat,3,uncertain_components,32400,0,0,0,0
+INDEX_CSV,components,warm,flat,3,total,7460000,0,0,0,0
+INDEX_CSV,components,warm,flat,3,station_visits_untracked,6894800,0,0,0,0
+INDEX_CSV,components,warm,flat,3,station_departures_untracked,722000,0,0,0,0
+INDEX_CSV,components,warm,flat,3,departure_sort_untracked,2718700,0,0,0,0
+INDEX_CSV,components,warm,flat,3,loading_visits_untracked,796400,0,0,0,0
+INDEX_CSV,components,warm,flat,3,components_untracked,90500,0,0,0,0
+INDEX_CSV,components,warm,flat,3,uncertain_components_untracked,50800,0,0,0,0
+INDEX_CSV,components,warm,flat,3,total_exact,13278200,0,0,0,0
+INDEX_CSV,components,warm,flat,3,total_untracked,7460000,0,0,0,0
+INDEX_CSV,components,warm,flat,3,get_departures_100000,21980100,0,0,0,0
+INDEX_CSV,components,warm,legacy,3,station_visits,11654000,0,0,0,0
+INDEX_CSV,components,warm,legacy,3,station_departures,15992000,0,0,0,0
+INDEX_CSV,components,warm,legacy,3,departure_sort,4678800,0,0,0,0
+INDEX_CSV,components,warm,legacy,3,loading_visits,3051400,0,0,0,0
+INDEX_CSV,components,warm,legacy,3,components,7243800,0,0,0,0
+INDEX_CSV,components,warm,legacy,3,uncertain_components,1279000,0,0,0,0
+INDEX_CSV,components,warm,legacy,3,total,44461500,0,0,0,0
+INDEX_CSV,components,warm,legacy,3,station_visits_untracked,10401000,0,0,0,0
+INDEX_CSV,components,warm,legacy,3,station_departures_untracked,12572700,0,0,0,0
+INDEX_CSV,components,warm,legacy,3,departure_sort_untracked,2693300,0,0,0,0
+INDEX_CSV,components,warm,legacy,3,loading_visits_untracked,1658400,0,0,0,0
+INDEX_CSV,components,warm,legacy,3,components_untracked,7195100,0,0,0,0
+INDEX_CSV,components,warm,legacy,3,uncertain_components_untracked,701300,0,0,0,0
+INDEX_CSV,components,warm,legacy,3,total_exact,30803500,0,0,0,0
+INDEX_CSV,components,warm,legacy,3,total_untracked,29500700,0,0,0,0
+INDEX_CSV,components,warm,legacy,3,get_departures_100000,11953200,0,0,0,0
+INDEX_CSV,components,warm,legacy,4,station_visits,9503800,0,0,0,0
+INDEX_CSV,components,warm,legacy,4,station_departures,10892200,0,0,0,0
+INDEX_CSV,components,warm,legacy,4,departure_sort,2491800,0,0,0,0
+INDEX_CSV,components,warm,legacy,4,loading_visits,1721500,0,0,0,0
+INDEX_CSV,components,warm,legacy,4,components,6068700,0,0,0,0
+INDEX_CSV,components,warm,legacy,4,uncertain_components,703600,0,0,0,0
+INDEX_CSV,components,warm,legacy,4,total,31682300,0,0,0,0
+INDEX_CSV,components,warm,legacy,4,station_visits_untracked,11422500,0,0,0,0
+INDEX_CSV,components,warm,legacy,4,station_departures_untracked,14727600,0,0,0,0
+INDEX_CSV,components,warm,legacy,4,departure_sort_untracked,2688400,0,0,0,0
+INDEX_CSV,components,warm,legacy,4,loading_visits_untracked,1823800,0,0,0,0
+INDEX_CSV,components,warm,legacy,4,components_untracked,6707900,0,0,0,0
+INDEX_CSV,components,warm,legacy,4,uncertain_components_untracked,769800,0,0,0,0
+INDEX_CSV,components,warm,legacy,4,total_exact,30299000,0,0,0,0
+INDEX_CSV,components,warm,legacy,4,total_untracked,31368100,0,0,0,0
+INDEX_CSV,components,warm,legacy,4,get_departures_100000,17884600,0,0,0,0
+INDEX_CSV,components,warm,flat,4,station_visits,3156600,0,0,0,0
+INDEX_CSV,components,warm,flat,4,station_departures,417000,0,0,0,0
+INDEX_CSV,components,warm,flat,4,departure_sort,1435600,0,0,0,0
+INDEX_CSV,components,warm,flat,4,loading_visits,531700,0,0,0,0
+INDEX_CSV,components,warm,flat,4,components,61600,0,0,0,0
+INDEX_CSV,components,warm,flat,4,uncertain_components,31400,0,0,0,0
+INDEX_CSV,components,warm,flat,4,total,5636500,0,0,0,0
+INDEX_CSV,components,warm,flat,4,station_visits_untracked,2848100,0,0,0,0
+INDEX_CSV,components,warm,flat,4,station_departures_untracked,427900,0,0,0,0
+INDEX_CSV,components,warm,flat,4,departure_sort_untracked,1597000,0,0,0,0
+INDEX_CSV,components,warm,flat,4,loading_visits_untracked,520000,0,0,0,0
+INDEX_CSV,components,warm,flat,4,components_untracked,47700,0,0,0,0
+INDEX_CSV,components,warm,flat,4,uncertain_components_untracked,33100,0,0,0,0
+INDEX_CSV,components,warm,flat,4,total_exact,6199600,0,0,0,0
+INDEX_CSV,components,warm,flat,4,total_untracked,4683600,0,0,0,0
+INDEX_CSV,components,warm,flat,4,get_departures_100000,11004000,0,0,0,0
+INDEX_CSV,components,warm,flat,5,station_visits,3076300,0,0,0,0
+INDEX_CSV,components,warm,flat,5,station_departures,425500,0,0,0,0
+INDEX_CSV,components,warm,flat,5,departure_sort,1501300,0,0,0,0
+INDEX_CSV,components,warm,flat,5,loading_visits,499300,0,0,0,0
+INDEX_CSV,components,warm,flat,5,components,58100,0,0,0,0
+INDEX_CSV,components,warm,flat,5,uncertain_components,29200,0,0,0,0
+INDEX_CSV,components,warm,flat,5,total,5592400,0,0,0,0
+INDEX_CSV,components,warm,flat,5,station_visits_untracked,2759700,0,0,0,0
+INDEX_CSV,components,warm,flat,5,station_departures_untracked,414800,0,0,0,0
+INDEX_CSV,components,warm,flat,5,departure_sort_untracked,1346200,0,0,0,0
+INDEX_CSV,components,warm,flat,5,loading_visits_untracked,472000,0,0,0,0
+INDEX_CSV,components,warm,flat,5,components_untracked,44200,0,0,0,0
+INDEX_CSV,components,warm,flat,5,uncertain_components_untracked,34100,0,0,0,0
+INDEX_CSV,components,warm,flat,5,total_exact,4760500,0,0,0,0
+INDEX_CSV,components,warm,flat,5,total_untracked,4960800,0,0,0,0
+INDEX_CSV,components,warm,flat,5,get_departures_100000,10605200,0,0,0,0
+INDEX_CSV,components,warm,legacy,5,station_visits,9724300,0,0,0,0
+INDEX_CSV,components,warm,legacy,5,station_departures,10856800,0,0,0,0
+INDEX_CSV,components,warm,legacy,5,departure_sort,2295400,0,0,0,0
+INDEX_CSV,components,warm,legacy,5,loading_visits,1697500,0,0,0,0
+INDEX_CSV,components,warm,legacy,5,components,6108100,0,0,0,0
+INDEX_CSV,components,warm,legacy,5,uncertain_components,657400,0,0,0,0
+INDEX_CSV,components,warm,legacy,5,total,31705100,0,0,0,0
+INDEX_CSV,components,warm,legacy,5,station_visits_untracked,10113700,0,0,0,0
+INDEX_CSV,components,warm,legacy,5,station_departures_untracked,11307600,0,0,0,0
+INDEX_CSV,components,warm,legacy,5,departure_sort_untracked,2400600,0,0,0,0
+INDEX_CSV,components,warm,legacy,5,loading_visits_untracked,1690700,0,0,0,0
+INDEX_CSV,components,warm,legacy,5,components_untracked,6317700,0,0,0,0
+INDEX_CSV,components,warm,legacy,5,uncertain_components_untracked,675900,0,0,0,0
+INDEX_CSV,components,warm,legacy,5,total_exact,28833600,0,0,0,0
+INDEX_CSV,components,warm,legacy,5,total_untracked,30105300,0,0,0,0
+INDEX_CSV,components,warm,legacy,5,get_departures_100000,14405300,0,0,0,0
+INDEX_CSV,components,warm,legacy,6,station_visits,10714700,0,0,0,0
+INDEX_CSV,components,warm,legacy,6,station_departures,11210800,0,0,0,0
+INDEX_CSV,components,warm,legacy,6,departure_sort,2936900,0,0,0,0
+INDEX_CSV,components,warm,legacy,6,loading_visits,1882600,0,0,0,0
+INDEX_CSV,components,warm,legacy,6,components,7152600,0,0,0,0
+INDEX_CSV,components,warm,legacy,6,uncertain_components,708500,0,0,0,0
+INDEX_CSV,components,warm,legacy,6,total,35027600,0,0,0,0
+INDEX_CSV,components,warm,legacy,6,station_visits_untracked,10000400,0,0,0,0
+INDEX_CSV,components,warm,legacy,6,station_departures_untracked,11835600,0,0,0,0
+INDEX_CSV,components,warm,legacy,6,departure_sort_untracked,2615900,0,0,0,0
+INDEX_CSV,components,warm,legacy,6,loading_visits_untracked,1732800,0,0,0,0
+INDEX_CSV,components,warm,legacy,6,components_untracked,5932200,0,0,0,0
+INDEX_CSV,components,warm,legacy,6,uncertain_components_untracked,1044600,0,0,0,0
+INDEX_CSV,components,warm,legacy,6,total_exact,29049300,0,0,0,0
+INDEX_CSV,components,warm,legacy,6,total_untracked,28009900,0,0,0,0
+INDEX_CSV,components,warm,legacy,6,get_departures_100000,13518100,0,0,0,0
+INDEX_CSV,components,warm,flat,6,station_visits,2728900,0,0,0,0
+INDEX_CSV,components,warm,flat,6,station_departures,439400,0,0,0,0
+INDEX_CSV,components,warm,flat,6,departure_sort,2009900,0,0,0,0
+INDEX_CSV,components,warm,flat,6,loading_visits,595900,0,0,0,0
+INDEX_CSV,components,warm,flat,6,components,80800,0,0,0,0
+INDEX_CSV,components,warm,flat,6,uncertain_components,42000,0,0,0,0
+INDEX_CSV,components,warm,flat,6,total,5900300,0,0,0,0
+INDEX_CSV,components,warm,flat,6,station_visits_untracked,3154200,0,0,0,0
+INDEX_CSV,components,warm,flat,6,station_departures_untracked,470400,0,0,0,0
+INDEX_CSV,components,warm,flat,6,departure_sort_untracked,1560400,0,0,0,0
+INDEX_CSV,components,warm,flat,6,loading_visits_untracked,513800,0,0,0,0
+INDEX_CSV,components,warm,flat,6,components_untracked,52400,0,0,0,0
+INDEX_CSV,components,warm,flat,6,uncertain_components_untracked,36400,0,0,0,0
+INDEX_CSV,components,warm,flat,6,total_exact,5426300,0,0,0,0
+INDEX_CSV,components,warm,flat,6,total_untracked,4737100,0,0,0,0
+INDEX_CSV,components,warm,flat,6,get_departures_100000,10922700,0,0,0,0
+INDEX_CAPTURE_CSV,hub,0,0,0,0
+INDEX_CSV,hub,cold,legacy,0,station_visits,7946600,0,0,0,0
+INDEX_CSV,hub,cold,legacy,0,station_departures,8047000,0,0,0,0
+INDEX_CSV,hub,cold,legacy,0,departure_sort,3977500,0,0,0,0
+INDEX_CSV,hub,cold,legacy,0,loading_visits,965500,0,0,0,0
+INDEX_CSV,hub,cold,legacy,0,components,1941200,0,0,0,0
+INDEX_CSV,hub,cold,legacy,0,uncertain_components,324800,0,0,0,0
+INDEX_CSV,hub,cold,legacy,0,total,23384200,0,0,0,0
+INDEX_CSV,hub,cold,legacy,0,station_visits_untracked,7181700,0,0,0,0
+INDEX_CSV,hub,cold,legacy,0,station_departures_untracked,6702300,0,0,0,0
+INDEX_CSV,hub,cold,legacy,0,departure_sort_untracked,3397200,0,0,0,0
+INDEX_CSV,hub,cold,legacy,0,loading_visits_untracked,1067000,0,0,0,0
+INDEX_CSV,hub,cold,legacy,0,components_untracked,2037300,0,0,0,0
+INDEX_CSV,hub,cold,legacy,0,uncertain_components_untracked,192700,0,0,0,0
+INDEX_CSV,hub,cold,legacy,0,total_exact,20854900,0,0,0,0
+INDEX_CSV,hub,cold,legacy,0,total_untracked,18636700,0,0,0,0
+INDEX_CSV,hub,cold,legacy,0,get_departures_100000,4977000,0,0,0,0
+INDEX_CSV,hub,cold,flat,0,station_visits,2622600,0,0,0,0
+INDEX_CSV,hub,cold,flat,0,station_departures,462800,0,0,0,0
+INDEX_CSV,hub,cold,flat,0,departure_sort,3941300,0,0,0,0
+INDEX_CSV,hub,cold,flat,0,loading_visits,437400,0,0,0,0
+INDEX_CSV,hub,cold,flat,0,components,74600,0,0,0,0
+INDEX_CSV,hub,cold,flat,0,uncertain_components,24500,0,0,0,0
+INDEX_CSV,hub,cold,flat,0,total,7567500,0,0,0,0
+INDEX_CSV,hub,cold,flat,0,station_visits_untracked,3749200,0,0,0,0
+INDEX_CSV,hub,cold,flat,0,station_departures_untracked,428000,0,0,0,0
+INDEX_CSV,hub,cold,flat,0,departure_sort_untracked,3074100,0,0,0,0
+INDEX_CSV,hub,cold,flat,0,loading_visits_untracked,332600,0,0,0,0
+INDEX_CSV,hub,cold,flat,0,components_untracked,47000,0,0,0,0
+INDEX_CSV,hub,cold,flat,0,uncertain_components_untracked,11600,0,0,0,0
+INDEX_CSV,hub,cold,flat,0,total_exact,7737800,0,0,0,0
+INDEX_CSV,hub,cold,flat,0,total_untracked,6555700,0,0,0,0
+INDEX_CSV,hub,cold,flat,0,get_departures_100000,3408300,0,0,0,0
+INDEX_CSV,hub,cold,flat,1,station_visits,3021800,0,0,0,0
+INDEX_CSV,hub,cold,flat,1,station_departures,451300,0,0,0,0
+INDEX_CSV,hub,cold,flat,1,departure_sort,2760800,0,0,0,0
+INDEX_CSV,hub,cold,flat,1,loading_visits,179300,0,0,0,0
+INDEX_CSV,hub,cold,flat,1,components,37200,0,0,0,0
+INDEX_CSV,hub,cold,flat,1,uncertain_components,10400,0,0,0,0
+INDEX_CSV,hub,cold,flat,1,total,6463500,0,0,0,0
+INDEX_CSV,hub,cold,flat,1,station_visits_untracked,2780500,0,0,0,0
+INDEX_CSV,hub,cold,flat,1,station_departures_untracked,420400,0,0,0,0
+INDEX_CSV,hub,cold,flat,1,departure_sort_untracked,2719100,0,0,0,0
+INDEX_CSV,hub,cold,flat,1,loading_visits_untracked,226300,0,0,0,0
+INDEX_CSV,hub,cold,flat,1,components_untracked,35400,0,0,0,0
+INDEX_CSV,hub,cold,flat,1,uncertain_components_untracked,11600,0,0,0,0
+INDEX_CSV,hub,cold,flat,1,total_exact,5823200,0,0,0,0
+INDEX_CSV,hub,cold,flat,1,total_untracked,8450300,0,0,0,0
+INDEX_CSV,hub,cold,flat,1,get_departures_100000,3768000,0,0,0,0
+INDEX_CSV,hub,cold,legacy,1,station_visits,6802800,0,0,0,0
+INDEX_CSV,hub,cold,legacy,1,station_departures,6305600,0,0,0,0
+INDEX_CSV,hub,cold,legacy,1,departure_sort,4112000,0,0,0,0
+INDEX_CSV,hub,cold,legacy,1,loading_visits,1276900,0,0,0,0
+INDEX_CSV,hub,cold,legacy,1,components,2690400,0,0,0,0
+INDEX_CSV,hub,cold,legacy,1,uncertain_components,213400,0,0,0,0
+INDEX_CSV,hub,cold,legacy,1,total,21564400,0,0,0,0
+INDEX_CSV,hub,cold,legacy,1,station_visits_untracked,7639400,0,0,0,0
+INDEX_CSV,hub,cold,legacy,1,station_departures_untracked,6951900,0,0,0,0
+INDEX_CSV,hub,cold,legacy,1,departure_sort_untracked,5040300,0,0,0,0
+INDEX_CSV,hub,cold,legacy,1,loading_visits_untracked,1189200,0,0,0,0
+INDEX_CSV,hub,cold,legacy,1,components_untracked,2141300,0,0,0,0
+INDEX_CSV,hub,cold,legacy,1,uncertain_components_untracked,378600,0,0,0,0
+INDEX_CSV,hub,cold,legacy,1,total_exact,16696500,0,0,0,0
+INDEX_CSV,hub,cold,legacy,1,total_untracked,16528400,0,0,0,0
+INDEX_CSV,hub,cold,legacy,1,get_departures_100000,3951600,0,0,0,0
+INDEX_CSV,hub,cold,legacy,2,station_visits,6313200,0,0,0,0
+INDEX_CSV,hub,cold,legacy,2,station_departures,5614700,0,0,0,0
+INDEX_CSV,hub,cold,legacy,2,departure_sort,2731800,0,0,0,0
+INDEX_CSV,hub,cold,legacy,2,loading_visits,729500,0,0,0,0
+INDEX_CSV,hub,cold,legacy,2,components,1859100,0,0,0,0
+INDEX_CSV,hub,cold,legacy,2,uncertain_components,132100,0,0,0,0
+INDEX_CSV,hub,cold,legacy,2,total,17508600,0,0,0,0
+INDEX_CSV,hub,cold,legacy,2,station_visits_untracked,6751000,0,0,0,0
+INDEX_CSV,hub,cold,legacy,2,station_departures_untracked,5958700,0,0,0,0
+INDEX_CSV,hub,cold,legacy,2,departure_sort_untracked,5922200,0,0,0,0
+INDEX_CSV,hub,cold,legacy,2,loading_visits_untracked,1119900,0,0,0,0
+INDEX_CSV,hub,cold,legacy,2,components_untracked,1742100,0,0,0,0
+INDEX_CSV,hub,cold,legacy,2,uncertain_components_untracked,193700,0,0,0,0
+INDEX_CSV,hub,cold,legacy,2,total_exact,18279300,0,0,0,0
+INDEX_CSV,hub,cold,legacy,2,total_untracked,18461900,0,0,0,0
+INDEX_CSV,hub,cold,legacy,2,get_departures_100000,4051500,0,0,0,0
+INDEX_CSV,hub,cold,flat,2,station_visits,2390700,0,0,0,0
+INDEX_CSV,hub,cold,flat,2,station_departures,385200,0,0,0,0
+INDEX_CSV,hub,cold,flat,2,departure_sort,3414600,0,0,0,0
+INDEX_CSV,hub,cold,flat,2,loading_visits,330500,0,0,0,0
+INDEX_CSV,hub,cold,flat,2,components,34500,0,0,0,0
+INDEX_CSV,hub,cold,flat,2,uncertain_components,13100,0,0,0,0
+INDEX_CSV,hub,cold,flat,2,total,6571500,0,0,0,0
+INDEX_CSV,hub,cold,flat,2,station_visits_untracked,3442800,0,0,0,0
+INDEX_CSV,hub,cold,flat,2,station_departures_untracked,445200,0,0,0,0
+INDEX_CSV,hub,cold,flat,2,departure_sort_untracked,3100100,0,0,0,0
+INDEX_CSV,hub,cold,flat,2,loading_visits_untracked,231200,0,0,0,0
+INDEX_CSV,hub,cold,flat,2,components_untracked,49200,0,0,0,0
+INDEX_CSV,hub,cold,flat,2,uncertain_components_untracked,11100,0,0,0,0
+INDEX_CSV,hub,cold,flat,2,total_exact,6409200,0,0,0,0
+INDEX_CSV,hub,cold,flat,2,total_untracked,8428300,0,0,0,0
+INDEX_CSV,hub,cold,flat,2,get_departures_100000,3852900,0,0,0,0
+INDEX_CSV,hub,cold,flat,3,station_visits,3175700,0,0,0,0
+INDEX_CSV,hub,cold,flat,3,station_departures,466500,0,0,0,0
+INDEX_CSV,hub,cold,flat,3,departure_sort,3489200,0,0,0,0
+INDEX_CSV,hub,cold,flat,3,loading_visits,504600,0,0,0,0
+INDEX_CSV,hub,cold,flat,3,components,61000,0,0,0,0
+INDEX_CSV,hub,cold,flat,3,uncertain_components,19300,0,0,0,0
+INDEX_CSV,hub,cold,flat,3,total,7721100,0,0,0,0
+INDEX_CSV,hub,cold,flat,3,station_visits_untracked,2685200,0,0,0,0
+INDEX_CSV,hub,cold,flat,3,station_departures_untracked,440300,0,0,0,0
+INDEX_CSV,hub,cold,flat,3,departure_sort_untracked,3878200,0,0,0,0
+INDEX_CSV,hub,cold,flat,3,loading_visits_untracked,292400,0,0,0,0
+INDEX_CSV,hub,cold,flat,3,components_untracked,39600,0,0,0,0
+INDEX_CSV,hub,cold,flat,3,uncertain_components_untracked,12900,0,0,0,0
+INDEX_CSV,hub,cold,flat,3,total_exact,7017300,0,0,0,0
+INDEX_CSV,hub,cold,flat,3,total_untracked,7594300,0,0,0,0
+INDEX_CSV,hub,cold,flat,3,get_departures_100000,5613000,0,0,0,0
+INDEX_CSV,hub,cold,legacy,3,station_visits,8498200,0,0,0,0
+INDEX_CSV,hub,cold,legacy,3,station_departures,9824800,0,0,0,0
+INDEX_CSV,hub,cold,legacy,3,departure_sort,4841000,0,0,0,0
+INDEX_CSV,hub,cold,legacy,3,loading_visits,1277700,0,0,0,0
+INDEX_CSV,hub,cold,legacy,3,components,3125500,0,0,0,0
+INDEX_CSV,hub,cold,legacy,3,uncertain_components,399100,0,0,0,0
+INDEX_CSV,hub,cold,legacy,3,total,28193900,0,0,0,0
+INDEX_CSV,hub,cold,legacy,3,station_visits_untracked,9920200,0,0,0,0
+INDEX_CSV,hub,cold,legacy,3,station_departures_untracked,10656800,0,0,0,0
+INDEX_CSV,hub,cold,legacy,3,departure_sort_untracked,4777800,0,0,0,0
+INDEX_CSV,hub,cold,legacy,3,loading_visits_untracked,1483200,0,0,0,0
+INDEX_CSV,hub,cold,legacy,3,components_untracked,4746100,0,0,0,0
+INDEX_CSV,hub,cold,legacy,3,uncertain_components_untracked,157000,0,0,0,0
+INDEX_CSV,hub,cold,legacy,3,total_exact,20362900,0,0,0,0
+INDEX_CSV,hub,cold,legacy,3,total_untracked,17720100,0,0,0,0
+INDEX_CSV,hub,cold,legacy,3,get_departures_100000,4612300,0,0,0,0
+INDEX_CSV,hub,cold,legacy,4,station_visits,6398400,0,0,0,0
+INDEX_CSV,hub,cold,legacy,4,station_departures,6411600,0,0,0,0
+INDEX_CSV,hub,cold,legacy,4,departure_sort,3730000,0,0,0,0
+INDEX_CSV,hub,cold,legacy,4,loading_visits,1176300,0,0,0,0
+INDEX_CSV,hub,cold,legacy,4,components,2260300,0,0,0,0
+INDEX_CSV,hub,cold,legacy,4,uncertain_components,224700,0,0,0,0
+INDEX_CSV,hub,cold,legacy,4,total,20351100,0,0,0,0
+INDEX_CSV,hub,cold,legacy,4,station_visits_untracked,6587700,0,0,0,0
+INDEX_CSV,hub,cold,legacy,4,station_departures_untracked,5800900,0,0,0,0
+INDEX_CSV,hub,cold,legacy,4,departure_sort_untracked,2776100,0,0,0,0
+INDEX_CSV,hub,cold,legacy,4,loading_visits_untracked,801300,0,0,0,0
+INDEX_CSV,hub,cold,legacy,4,components_untracked,2437900,0,0,0,0
+INDEX_CSV,hub,cold,legacy,4,uncertain_components_untracked,125900,0,0,0,0
+INDEX_CSV,hub,cold,legacy,4,total_exact,16568100,0,0,0,0
+INDEX_CSV,hub,cold,legacy,4,total_untracked,16985000,0,0,0,0
+INDEX_CSV,hub,cold,legacy,4,get_departures_100000,4503800,0,0,0,0
+INDEX_CSV,hub,cold,flat,4,station_visits,2558200,0,0,0,0
+INDEX_CSV,hub,cold,flat,4,station_departures,387800,0,0,0,0
+INDEX_CSV,hub,cold,flat,4,departure_sort,2816700,0,0,0,0
+INDEX_CSV,hub,cold,flat,4,loading_visits,295800,0,0,0,0
+INDEX_CSV,hub,cold,flat,4,components,51000,0,0,0,0
+INDEX_CSV,hub,cold,flat,4,uncertain_components,19100,0,0,0,0
+INDEX_CSV,hub,cold,flat,4,total,6136100,0,0,0,0
+INDEX_CSV,hub,cold,flat,4,station_visits_untracked,2566300,0,0,0,0
+INDEX_CSV,hub,cold,flat,4,station_departures_untracked,383800,0,0,0,0
+INDEX_CSV,hub,cold,flat,4,departure_sort_untracked,2635300,0,0,0,0
+INDEX_CSV,hub,cold,flat,4,loading_visits_untracked,247400,0,0,0,0
+INDEX_CSV,hub,cold,flat,4,components_untracked,50900,0,0,0,0
+INDEX_CSV,hub,cold,flat,4,uncertain_components_untracked,17500,0,0,0,0
+INDEX_CSV,hub,cold,flat,4,total_exact,6413000,0,0,0,0
+INDEX_CSV,hub,cold,flat,4,total_untracked,6447400,0,0,0,0
+INDEX_CSV,hub,cold,flat,4,get_departures_100000,3535100,0,0,0,0
+INDEX_CSV,hub,cold,flat,5,station_visits,2632300,0,0,0,0
+INDEX_CSV,hub,cold,flat,5,station_departures,377000,0,0,0,0
+INDEX_CSV,hub,cold,flat,5,departure_sort,2768900,0,0,0,0
+INDEX_CSV,hub,cold,flat,5,loading_visits,226600,0,0,0,0
+INDEX_CSV,hub,cold,flat,5,components,37700,0,0,0,0
+INDEX_CSV,hub,cold,flat,5,uncertain_components,12700,0,0,0,0
+INDEX_CSV,hub,cold,flat,5,total,6058100,0,0,0,0
+INDEX_CSV,hub,cold,flat,5,station_visits_untracked,2628000,0,0,0,0
+INDEX_CSV,hub,cold,flat,5,station_departures_untracked,418100,0,0,0,0
+INDEX_CSV,hub,cold,flat,5,departure_sort_untracked,3080100,0,0,0,0
+INDEX_CSV,hub,cold,flat,5,loading_visits_untracked,291100,0,0,0,0
+INDEX_CSV,hub,cold,flat,5,components_untracked,39000,0,0,0,0
+INDEX_CSV,hub,cold,flat,5,uncertain_components_untracked,13400,0,0,0,0
+INDEX_CSV,hub,cold,flat,5,total_exact,6391300,0,0,0,0
+INDEX_CSV,hub,cold,flat,5,total_untracked,6518900,0,0,0,0
+INDEX_CSV,hub,cold,flat,5,get_departures_100000,3555600,0,0,0,0
+INDEX_CSV,hub,cold,legacy,5,station_visits,6437600,0,0,0,0
+INDEX_CSV,hub,cold,legacy,5,station_departures,6311900,0,0,0,0
+INDEX_CSV,hub,cold,legacy,5,departure_sort,3071700,0,0,0,0
+INDEX_CSV,hub,cold,legacy,5,loading_visits,862800,0,0,0,0
+INDEX_CSV,hub,cold,legacy,5,components,2866700,0,0,0,0
+INDEX_CSV,hub,cold,legacy,5,uncertain_components,176800,0,0,0,0
+INDEX_CSV,hub,cold,legacy,5,total,19870400,0,0,0,0
+INDEX_CSV,hub,cold,legacy,5,station_visits_untracked,5831500,0,0,0,0
+INDEX_CSV,hub,cold,legacy,5,station_departures_untracked,6637400,0,0,0,0
+INDEX_CSV,hub,cold,legacy,5,departure_sort_untracked,3668300,0,0,0,0
+INDEX_CSV,hub,cold,legacy,5,loading_visits_untracked,738600,0,0,0,0
+INDEX_CSV,hub,cold,legacy,5,components_untracked,1748500,0,0,0,0
+INDEX_CSV,hub,cold,legacy,5,uncertain_components_untracked,156700,0,0,0,0
+INDEX_CSV,hub,cold,legacy,5,total_exact,17622600,0,0,0,0
+INDEX_CSV,hub,cold,legacy,5,total_untracked,18110300,0,0,0,0
+INDEX_CSV,hub,cold,legacy,5,get_departures_100000,4229700,0,0,0,0
+INDEX_CSV,hub,cold,legacy,6,station_visits,6728900,0,0,0,0
+INDEX_CSV,hub,cold,legacy,6,station_departures,7193600,0,0,0,0
+INDEX_CSV,hub,cold,legacy,6,departure_sort,3197400,0,0,0,0
+INDEX_CSV,hub,cold,legacy,6,loading_visits,816200,0,0,0,0
+INDEX_CSV,hub,cold,legacy,6,components,1727000,0,0,0,0
+INDEX_CSV,hub,cold,legacy,6,uncertain_components,188200,0,0,0,0
+INDEX_CSV,hub,cold,legacy,6,total,19996700,0,0,0,0
+INDEX_CSV,hub,cold,legacy,6,station_visits_untracked,6402100,0,0,0,0
+INDEX_CSV,hub,cold,legacy,6,station_departures_untracked,5897100,0,0,0,0
+INDEX_CSV,hub,cold,legacy,6,departure_sort_untracked,4783200,0,0,0,0
+INDEX_CSV,hub,cold,legacy,6,loading_visits_untracked,1226000,0,0,0,0
+INDEX_CSV,hub,cold,legacy,6,components_untracked,1807900,0,0,0,0
+INDEX_CSV,hub,cold,legacy,6,uncertain_components_untracked,260700,0,0,0,0
+INDEX_CSV,hub,cold,legacy,6,total_exact,16901600,0,0,0,0
+INDEX_CSV,hub,cold,legacy,6,total_untracked,17473700,0,0,0,0
+INDEX_CSV,hub,cold,legacy,6,get_departures_100000,4084400,0,0,0,0
+INDEX_CSV,hub,cold,flat,6,station_visits,2366700,0,0,0,0
+INDEX_CSV,hub,cold,flat,6,station_departures,369500,0,0,0,0
+INDEX_CSV,hub,cold,flat,6,departure_sort,2537800,0,0,0,0
+INDEX_CSV,hub,cold,flat,6,loading_visits,227600,0,0,0,0
+INDEX_CSV,hub,cold,flat,6,components,30300,0,0,0,0
+INDEX_CSV,hub,cold,flat,6,uncertain_components,12900,0,0,0,0
+INDEX_CSV,hub,cold,flat,6,total,5550000,0,0,0,0
+INDEX_CSV,hub,cold,flat,6,station_visits_untracked,3766800,0,0,0,0
+INDEX_CSV,hub,cold,flat,6,station_departures_untracked,477100,0,0,0,0
+INDEX_CSV,hub,cold,flat,6,departure_sort_untracked,4067700,0,0,0,0
+INDEX_CSV,hub,cold,flat,6,loading_visits_untracked,470500,0,0,0,0
+INDEX_CSV,hub,cold,flat,6,components_untracked,45100,0,0,0,0
+INDEX_CSV,hub,cold,flat,6,uncertain_components_untracked,12500,0,0,0,0
+INDEX_CSV,hub,cold,flat,6,total_exact,5200100,0,0,0,0
+INDEX_CSV,hub,cold,flat,6,total_untracked,6125100,0,0,0,0
+INDEX_CSV,hub,cold,flat,6,get_departures_100000,3376100,0,0,0,0
+INDEX_CSV,hub,warm,legacy,0,station_visits,5519200,0,0,0,0
+INDEX_CSV,hub,warm,legacy,0,station_departures,5921100,0,0,0,0
+INDEX_CSV,hub,warm,legacy,0,departure_sort,2797700,0,0,0,0
+INDEX_CSV,hub,warm,legacy,0,loading_visits,752400,0,0,0,0
+INDEX_CSV,hub,warm,legacy,0,components,1757100,0,0,0,0
+INDEX_CSV,hub,warm,legacy,0,uncertain_components,145300,0,0,0,0
+INDEX_CSV,hub,warm,legacy,0,total,17060200,0,0,0,0
+INDEX_CSV,hub,warm,legacy,0,station_visits_untracked,5393900,0,0,0,0
+INDEX_CSV,hub,warm,legacy,0,station_departures_untracked,5167700,0,0,0,0
+INDEX_CSV,hub,warm,legacy,0,departure_sort_untracked,3850100,0,0,0,0
+INDEX_CSV,hub,warm,legacy,0,loading_visits_untracked,792300,0,0,0,0
+INDEX_CSV,hub,warm,legacy,0,components_untracked,1848400,0,0,0,0
+INDEX_CSV,hub,warm,legacy,0,uncertain_components_untracked,213200,0,0,0,0
+INDEX_CSV,hub,warm,legacy,0,total_exact,16151100,0,0,0,0
+INDEX_CSV,hub,warm,legacy,0,total_untracked,15737100,0,0,0,0
+INDEX_CSV,hub,warm,legacy,0,get_departures_100000,3954400,0,0,0,0
+INDEX_CSV,hub,warm,flat,0,station_visits,2126200,0,0,0,0
+INDEX_CSV,hub,warm,flat,0,station_departures,442100,0,0,0,0
+INDEX_CSV,hub,warm,flat,0,departure_sort,3366600,0,0,0,0
+INDEX_CSV,hub,warm,flat,0,loading_visits,232500,0,0,0,0
+INDEX_CSV,hub,warm,flat,0,components,45100,0,0,0,0
+INDEX_CSV,hub,warm,flat,0,uncertain_components,17600,0,0,0,0
+INDEX_CSV,hub,warm,flat,0,total,6233200,0,0,0,0
+INDEX_CSV,hub,warm,flat,0,station_visits_untracked,2082400,0,0,0,0
+INDEX_CSV,hub,warm,flat,0,station_departures_untracked,404400,0,0,0,0
+INDEX_CSV,hub,warm,flat,0,departure_sort_untracked,2463200,0,0,0,0
+INDEX_CSV,hub,warm,flat,0,loading_visits_untracked,198200,0,0,0,0
+INDEX_CSV,hub,warm,flat,0,components_untracked,36500,0,0,0,0
+INDEX_CSV,hub,warm,flat,0,uncertain_components_untracked,11900,0,0,0,0
+INDEX_CSV,hub,warm,flat,0,total_exact,5006700,0,0,0,0
+INDEX_CSV,hub,warm,flat,0,total_untracked,5561700,0,0,0,0
+INDEX_CSV,hub,warm,flat,0,get_departures_100000,3253100,0,0,0,0
+INDEX_CSV,hub,warm,flat,1,station_visits,3776200,0,0,0,0
+INDEX_CSV,hub,warm,flat,1,station_departures,436500,0,0,0,0
+INDEX_CSV,hub,warm,flat,1,departure_sort,3392400,0,0,0,0
+INDEX_CSV,hub,warm,flat,1,loading_visits,525100,0,0,0,0
+INDEX_CSV,hub,warm,flat,1,components,34300,0,0,0,0
+INDEX_CSV,hub,warm,flat,1,uncertain_components,14400,0,0,0,0
+INDEX_CSV,hub,warm,flat,1,total,8182100,0,0,0,0
+INDEX_CSV,hub,warm,flat,1,station_visits_untracked,2277900,0,0,0,0
+INDEX_CSV,hub,warm,flat,1,station_departures_untracked,370500,0,0,0,0
+INDEX_CSV,hub,warm,flat,1,departure_sort_untracked,2849700,0,0,0,0
+INDEX_CSV,hub,warm,flat,1,loading_visits_untracked,344300,0,0,0,0
+INDEX_CSV,hub,warm,flat,1,components_untracked,39300,0,0,0,0
+INDEX_CSV,hub,warm,flat,1,uncertain_components_untracked,12200,0,0,0,0
+INDEX_CSV,hub,warm,flat,1,total_exact,6629900,0,0,0,0
+INDEX_CSV,hub,warm,flat,1,total_untracked,6091200,0,0,0,0
+INDEX_CSV,hub,warm,flat,1,get_departures_100000,3415100,0,0,0,0
+INDEX_CSV,hub,warm,legacy,1,station_visits,6385400,0,0,0,0
+INDEX_CSV,hub,warm,legacy,1,station_departures,6830200,0,0,0,0
+INDEX_CSV,hub,warm,legacy,1,departure_sort,3039400,0,0,0,0
+INDEX_CSV,hub,warm,legacy,1,loading_visits,850300,0,0,0,0
+INDEX_CSV,hub,warm,legacy,1,components,1868900,0,0,0,0
+INDEX_CSV,hub,warm,legacy,1,uncertain_components,192900,0,0,0,0
+INDEX_CSV,hub,warm,legacy,1,total,19285100,0,0,0,0
+INDEX_CSV,hub,warm,legacy,1,station_visits_untracked,5791700,0,0,0,0
+INDEX_CSV,hub,warm,legacy,1,station_departures_untracked,5860400,0,0,0,0
+INDEX_CSV,hub,warm,legacy,1,departure_sort_untracked,2935600,0,0,0,0
+INDEX_CSV,hub,warm,legacy,1,loading_visits_untracked,735500,0,0,0,0
+INDEX_CSV,hub,warm,legacy,1,components_untracked,1783700,0,0,0,0
+INDEX_CSV,hub,warm,legacy,1,uncertain_components_untracked,164200,0,0,0,0
+INDEX_CSV,hub,warm,legacy,1,total_exact,18001800,0,0,0,0
+INDEX_CSV,hub,warm,legacy,1,total_untracked,16399100,0,0,0,0
+INDEX_CSV,hub,warm,legacy,1,get_departures_100000,3959400,0,0,0,0
+INDEX_CSV,hub,warm,legacy,2,station_visits,6580100,0,0,0,0
+INDEX_CSV,hub,warm,legacy,2,station_departures,5818600,0,0,0,0
+INDEX_CSV,hub,warm,legacy,2,departure_sort,3933600,0,0,0,0
+INDEX_CSV,hub,warm,legacy,2,loading_visits,961100,0,0,0,0
+INDEX_CSV,hub,warm,legacy,2,components,1898700,0,0,0,0
+INDEX_CSV,hub,warm,legacy,2,uncertain_components,238700,0,0,0,0
+INDEX_CSV,hub,warm,legacy,2,total,19559500,0,0,0,0
+INDEX_CSV,hub,warm,legacy,2,station_visits_untracked,5901800,0,0,0,0
+INDEX_CSV,hub,warm,legacy,2,station_departures_untracked,8210900,0,0,0,0
+INDEX_CSV,hub,warm,legacy,2,departure_sort_untracked,3571500,0,0,0,0
+INDEX_CSV,hub,warm,legacy,2,loading_visits_untracked,830900,0,0,0,0
+INDEX_CSV,hub,warm,legacy,2,components_untracked,1885000,0,0,0,0
+INDEX_CSV,hub,warm,legacy,2,uncertain_components_untracked,172700,0,0,0,0
+INDEX_CSV,hub,warm,legacy,2,total_exact,19251000,0,0,0,0
+INDEX_CSV,hub,warm,legacy,2,total_untracked,19458100,0,0,0,0
+INDEX_CSV,hub,warm,legacy,2,get_departures_100000,3899800,0,0,0,0
+INDEX_CSV,hub,warm,flat,2,station_visits,2239300,0,0,0,0
+INDEX_CSV,hub,warm,flat,2,station_departures,389300,0,0,0,0
+INDEX_CSV,hub,warm,flat,2,departure_sort,2605400,0,0,0,0
+INDEX_CSV,hub,warm,flat,2,loading_visits,213100,0,0,0,0
+INDEX_CSV,hub,warm,flat,2,components,34000,0,0,0,0
+INDEX_CSV,hub,warm,flat,2,uncertain_components,11700,0,0,0,0
+INDEX_CSV,hub,warm,flat,2,total,5495100,0,0,0,0
+INDEX_CSV,hub,warm,flat,2,station_visits_untracked,1970600,0,0,0,0
+INDEX_CSV,hub,warm,flat,2,station_departures_untracked,362700,0,0,0,0
+INDEX_CSV,hub,warm,flat,2,departure_sort_untracked,2372100,0,0,0,0
+INDEX_CSV,hub,warm,flat,2,loading_visits_untracked,179200,0,0,0,0
+INDEX_CSV,hub,warm,flat,2,components_untracked,28800,0,0,0,0
+INDEX_CSV,hub,warm,flat,2,uncertain_components_untracked,11400,0,0,0,0
+INDEX_CSV,hub,warm,flat,2,total_exact,4649800,0,0,0,0
+INDEX_CSV,hub,warm,flat,2,total_untracked,4533500,0,0,0,0
+INDEX_CSV,hub,warm,flat,2,get_departures_100000,3266300,0,0,0,0
+INDEX_CSV,hub,warm,flat,3,station_visits,2156700,0,0,0,0
+INDEX_CSV,hub,warm,flat,3,station_departures,384800,0,0,0,0
+INDEX_CSV,hub,warm,flat,3,departure_sort,2688600,0,0,0,0
+INDEX_CSV,hub,warm,flat,3,loading_visits,219500,0,0,0,0
+INDEX_CSV,hub,warm,flat,3,components,38600,0,0,0,0
+INDEX_CSV,hub,warm,flat,3,uncertain_components,12400,0,0,0,0
+INDEX_CSV,hub,warm,flat,3,total,5503600,0,0,0,0
+INDEX_CSV,hub,warm,flat,3,station_visits_untracked,2009700,0,0,0,0
+INDEX_CSV,hub,warm,flat,3,station_departures_untracked,390800,0,0,0,0
+INDEX_CSV,hub,warm,flat,3,departure_sort_untracked,2392800,0,0,0,0
+INDEX_CSV,hub,warm,flat,3,loading_visits_untracked,164000,0,0,0,0
+INDEX_CSV,hub,warm,flat,3,components_untracked,33500,0,0,0,0
+INDEX_CSV,hub,warm,flat,3,uncertain_components_untracked,10800,0,0,0,0
+INDEX_CSV,hub,warm,flat,3,total_exact,5197600,0,0,0,0
+INDEX_CSV,hub,warm,flat,3,total_untracked,5201500,0,0,0,0
+INDEX_CSV,hub,warm,flat,3,get_departures_100000,4686300,0,0,0,0
+INDEX_CSV,hub,warm,legacy,3,station_visits,5462500,0,0,0,0
+INDEX_CSV,hub,warm,legacy,3,station_departures,5722700,0,0,0,0
+INDEX_CSV,hub,warm,legacy,3,departure_sort,3228300,0,0,0,0
+INDEX_CSV,hub,warm,legacy,3,loading_visits,781500,0,0,0,0
+INDEX_CSV,hub,warm,legacy,3,components,1833000,0,0,0,0
+INDEX_CSV,hub,warm,legacy,3,uncertain_components,144800,0,0,0,0
+INDEX_CSV,hub,warm,legacy,3,total,17310200,0,0,0,0
+INDEX_CSV,hub,warm,legacy,3,station_visits_untracked,5663500,0,0,0,0
+INDEX_CSV,hub,warm,legacy,3,station_departures_untracked,6460400,0,0,0,0
+INDEX_CSV,hub,warm,legacy,3,departure_sort_untracked,3059800,0,0,0,0
+INDEX_CSV,hub,warm,legacy,3,loading_visits_untracked,723600,0,0,0,0
+INDEX_CSV,hub,warm,legacy,3,components_untracked,2851800,0,0,0,0
+INDEX_CSV,hub,warm,legacy,3,uncertain_components_untracked,132500,0,0,0,0
+INDEX_CSV,hub,warm,legacy,3,total_exact,17350300,0,0,0,0
+INDEX_CSV,hub,warm,legacy,3,total_untracked,18162700,0,0,0,0
+INDEX_CSV,hub,warm,legacy,3,get_departures_100000,4730100,0,0,0,0
+INDEX_CSV,hub,warm,legacy,4,station_visits,6368900,0,0,0,0
+INDEX_CSV,hub,warm,legacy,4,station_departures,8214400,0,0,0,0
+INDEX_CSV,hub,warm,legacy,4,departure_sort,3950000,0,0,0,0
+INDEX_CSV,hub,warm,legacy,4,loading_visits,921300,0,0,0,0
+INDEX_CSV,hub,warm,legacy,4,components,2826700,0,0,0,0
+INDEX_CSV,hub,warm,legacy,4,uncertain_components,153800,0,0,0,0
+INDEX_CSV,hub,warm,legacy,4,total,22564100,0,0,0,0
+INDEX_CSV,hub,warm,legacy,4,station_visits_untracked,8482900,0,0,0,0
+INDEX_CSV,hub,warm,legacy,4,station_departures_untracked,7880100,0,0,0,0
+INDEX_CSV,hub,warm,legacy,4,departure_sort_untracked,3181300,0,0,0,0
+INDEX_CSV,hub,warm,legacy,4,loading_visits_untracked,902500,0,0,0,0
+INDEX_CSV,hub,warm,legacy,4,components_untracked,2538900,0,0,0,0
+INDEX_CSV,hub,warm,legacy,4,uncertain_components_untracked,172000,0,0,0,0
+INDEX_CSV,hub,warm,legacy,4,total_exact,17127600,0,0,0,0
+INDEX_CSV,hub,warm,legacy,4,total_untracked,19124600,0,0,0,0
+INDEX_CSV,hub,warm,legacy,4,get_departures_100000,5048100,0,0,0,0
+INDEX_CSV,hub,warm,flat,4,station_visits,2541900,0,0,0,0
+INDEX_CSV,hub,warm,flat,4,station_departures,446000,0,0,0,0
+INDEX_CSV,hub,warm,flat,4,departure_sort,3116300,0,0,0,0
+INDEX_CSV,hub,warm,flat,4,loading_visits,422600,0,0,0,0
+INDEX_CSV,hub,warm,flat,4,components,38800,0,0,0,0
+INDEX_CSV,hub,warm,flat,4,uncertain_components,15600,0,0,0,0
+INDEX_CSV,hub,warm,flat,4,total,6583700,0,0,0,0
+INDEX_CSV,hub,warm,flat,4,station_visits_untracked,2169200,0,0,0,0
+INDEX_CSV,hub,warm,flat,4,station_departures_untracked,505500,0,0,0,0
+INDEX_CSV,hub,warm,flat,4,departure_sort_untracked,3329600,0,0,0,0
+INDEX_CSV,hub,warm,flat,4,loading_visits_untracked,768700,0,0,0,0
+INDEX_CSV,hub,warm,flat,4,components_untracked,40200,0,0,0,0
+INDEX_CSV,hub,warm,flat,4,uncertain_components_untracked,16100,0,0,0,0
+INDEX_CSV,hub,warm,flat,4,total_exact,5855500,0,0,0,0
+INDEX_CSV,hub,warm,flat,4,total_untracked,5885400,0,0,0,0
+INDEX_CSV,hub,warm,flat,4,get_departures_100000,3603000,0,0,0,0
+INDEX_CSV,hub,warm,flat,5,station_visits,2156700,0,0,0,0
+INDEX_CSV,hub,warm,flat,5,station_departures,394700,0,0,0,0
+INDEX_CSV,hub,warm,flat,5,departure_sort,3229400,0,0,0,0
+INDEX_CSV,hub,warm,flat,5,loading_visits,330900,0,0,0,0
+INDEX_CSV,hub,warm,flat,5,components,38600,0,0,0,0
+INDEX_CSV,hub,warm,flat,5,uncertain_components,12400,0,0,0,0
+INDEX_CSV,hub,warm,flat,5,total,6166000,0,0,0,0
+INDEX_CSV,hub,warm,flat,5,station_visits_untracked,2081600,0,0,0,0
+INDEX_CSV,hub,warm,flat,5,station_departures_untracked,362600,0,0,0,0
+INDEX_CSV,hub,warm,flat,5,departure_sort_untracked,2823200,0,0,0,0
+INDEX_CSV,hub,warm,flat,5,loading_visits_untracked,339000,0,0,0,0
+INDEX_CSV,hub,warm,flat,5,components_untracked,37000,0,0,0,0
+INDEX_CSV,hub,warm,flat,5,uncertain_components_untracked,11500,0,0,0,0
+INDEX_CSV,hub,warm,flat,5,total_exact,5084900,0,0,0,0
+INDEX_CSV,hub,warm,flat,5,total_untracked,5562800,0,0,0,0
+INDEX_CSV,hub,warm,flat,5,get_departures_100000,3624800,0,0,0,0
+INDEX_CSV,hub,warm,legacy,5,station_visits,5950500,0,0,0,0
+INDEX_CSV,hub,warm,legacy,5,station_departures,7473600,0,0,0,0
+INDEX_CSV,hub,warm,legacy,5,departure_sort,5902600,0,0,0,0
+INDEX_CSV,hub,warm,legacy,5,loading_visits,1624300,0,0,0,0
+INDEX_CSV,hub,warm,legacy,5,components,1906400,0,0,0,0
+INDEX_CSV,hub,warm,legacy,5,uncertain_components,275400,0,0,0,0
+INDEX_CSV,hub,warm,legacy,5,total,23435100,0,0,0,0
+INDEX_CSV,hub,warm,legacy,5,station_visits_untracked,6235400,0,0,0,0
+INDEX_CSV,hub,warm,legacy,5,station_departures_untracked,8161300,0,0,0,0
+INDEX_CSV,hub,warm,legacy,5,departure_sort_untracked,2913900,0,0,0,0
+INDEX_CSV,hub,warm,legacy,5,loading_visits_untracked,719100,0,0,0,0
+INDEX_CSV,hub,warm,legacy,5,components_untracked,1891900,0,0,0,0
+INDEX_CSV,hub,warm,legacy,5,uncertain_components_untracked,126700,0,0,0,0
+INDEX_CSV,hub,warm,legacy,5,total_exact,17555200,0,0,0,0
+INDEX_CSV,hub,warm,legacy,5,total_untracked,17248300,0,0,0,0
+INDEX_CSV,hub,warm,legacy,5,get_departures_100000,4078800,0,0,0,0
+INDEX_CSV,hub,warm,legacy,6,station_visits,6115100,0,0,0,0
+INDEX_CSV,hub,warm,legacy,6,station_departures,7264300,0,0,0,0
+INDEX_CSV,hub,warm,legacy,6,departure_sort,2899800,0,0,0,0
+INDEX_CSV,hub,warm,legacy,6,loading_visits,855100,0,0,0,0
+INDEX_CSV,hub,warm,legacy,6,components,1854000,0,0,0,0
+INDEX_CSV,hub,warm,legacy,6,uncertain_components,253500,0,0,0,0
+INDEX_CSV,hub,warm,legacy,6,total,19484100,0,0,0,0
+INDEX_CSV,hub,warm,legacy,6,station_visits_untracked,5625400,0,0,0,0
+INDEX_CSV,hub,warm,legacy,6,station_departures_untracked,8707800,0,0,0,0
+INDEX_CSV,hub,warm,legacy,6,departure_sort_untracked,3889900,0,0,0,0
+INDEX_CSV,hub,warm,legacy,6,loading_visits_untracked,822000,0,0,0,0
+INDEX_CSV,hub,warm,legacy,6,components_untracked,2478300,0,0,0,0
+INDEX_CSV,hub,warm,legacy,6,uncertain_components_untracked,151400,0,0,0,0
+INDEX_CSV,hub,warm,legacy,6,total_exact,17593900,0,0,0,0
+INDEX_CSV,hub,warm,legacy,6,total_untracked,16439800,0,0,0,0
+INDEX_CSV,hub,warm,legacy,6,get_departures_100000,3969300,0,0,0,0
+INDEX_CSV,hub,warm,flat,6,station_visits,2176000,0,0,0,0
+INDEX_CSV,hub,warm,flat,6,station_departures,363800,0,0,0,0
+INDEX_CSV,hub,warm,flat,6,departure_sort,2456900,0,0,0,0
+INDEX_CSV,hub,warm,flat,6,loading_visits,196800,0,0,0,0
+INDEX_CSV,hub,warm,flat,6,components,34900,0,0,0,0
+INDEX_CSV,hub,warm,flat,6,uncertain_components,11100,0,0,0,0
+INDEX_CSV,hub,warm,flat,6,total,5241800,0,0,0,0
+INDEX_CSV,hub,warm,flat,6,station_visits_untracked,1949700,0,0,0,0
+INDEX_CSV,hub,warm,flat,6,station_departures_untracked,366600,0,0,0,0
+INDEX_CSV,hub,warm,flat,6,departure_sort_untracked,2263100,0,0,0,0
+INDEX_CSV,hub,warm,flat,6,loading_visits_untracked,176900,0,0,0,0
+INDEX_CSV,hub,warm,flat,6,components_untracked,58700,0,0,0,0
+INDEX_CSV,hub,warm,flat,6,uncertain_components_untracked,17300,0,0,0,0
+INDEX_CSV,hub,warm,flat,6,total_exact,5534200,0,0,0,0
+INDEX_CSV,hub,warm,flat,6,total_untracked,4362200,0,0,0,0
+INDEX_CSV,hub,warm,flat,6,get_departures_100000,3598300,0,0,0,0
+-------------------------------------------------------------------------------
+Standard scoped capture serves an 80800 visit twenty thousand object network
+-------------------------------------------------------------------------------
+C:\Users\bebe\.codex\worktrees\b338\OpenTTD-patches\src\tests\passenger_journey_planner.cpp(181)
+...............................................................................
+
+C:\Users\bebe\.codex\worktrees\b338\OpenTTD-patches\src\tests\passenger_journey_planner.cpp(209): warning:
+  Scoped national standard: cold=10230 us; warm=3062 us; visits=1010; logical
+  work=1424164; retained bytes=312354; memory bound=42500096; query work=33861
+
+-------------------------------------------------------------------------------
+National journey queries reach eight thousand stations without whole network
+rescans
+-------------------------------------------------------------------------------
+C:\Users\bebe\.codex\worktrees\b338\OpenTTD-patches\src\tests\passenger_journey_planner.cpp(841)
+...............................................................................
+
+C:\Users\bebe\.codex\worktrees\b338\OpenTTD-patches\src\tests\passenger_journey_planner.cpp(892): warning:
+  National journey defaults: 544 us; trips=800; visits=80800; work=35630;
+  reverse work=4901; scratch peak=891080
+
+-------------------------------------------------------------------------------
+National journey queries reach eight thousand stations without whole network
+rescans
+-------------------------------------------------------------------------------
+C:\Users\bebe\.codex\worktrees\b338\OpenTTD-patches\src\tests\passenger_journey_planner.cpp(841)
+...............................................................................
+
+C:\Users\bebe\.codex\worktrees\b338\OpenTTD-patches\src\tests\passenger_journey_planner.cpp(892): warning:
+  National journey defaults: 517 us; trips=801; visits=80802; work=50114;
+  reverse work=4907; scratch peak=894544
+
+-------------------------------------------------------------------------------
+Journey stages continue actual train chains without replaying earlier rounds
+-------------------------------------------------------------------------------
+C:\Users\bebe\.codex\worktrees\b338\OpenTTD-patches\src\tests\passenger_journey_planner.cpp(895)
+...............................................................................
+
+C:\Users\bebe\.codex\worktrees\b338\OpenTTD-patches\src\tests\passenger_journey_planner.cpp(946): warning:
+  Transfer chain: transfers=0; rounds=1; extensions=0; work=12; labels=2;
+  scratch=28088
+
+-------------------------------------------------------------------------------
+Journey stages continue actual train chains without replaying earlier rounds
+-------------------------------------------------------------------------------
+C:\Users\bebe\.codex\worktrees\b338\OpenTTD-patches\src\tests\passenger_journey_planner.cpp(895)
+...............................................................................
+
+C:\Users\bebe\.codex\worktrees\b338\OpenTTD-patches\src\tests\passenger_journey_planner.cpp(946): warning:
+  Transfer chain: transfers=4; rounds=5; extensions=0; work=70; labels=6;
+  scratch=30744
+
+-------------------------------------------------------------------------------
+Journey stages continue actual train chains without replaying earlier rounds
+-------------------------------------------------------------------------------
+C:\Users\bebe\.codex\worktrees\b338\OpenTTD-patches\src\tests\passenger_journey_planner.cpp(895)
+...............................................................................
+
+C:\Users\bebe\.codex\worktrees\b338\OpenTTD-patches\src\tests\passenger_journey_planner.cpp(946): warning:
+  Transfer chain: transfers=5; rounds=6; extensions=1; work=87; labels=7;
+  scratch=31408
+
+-------------------------------------------------------------------------------
+Journey stages continue actual train chains without replaying earlier rounds
+-------------------------------------------------------------------------------
+C:\Users\bebe\.codex\worktrees\b338\OpenTTD-patches\src\tests\passenger_journey_planner.cpp(895)
+...............................................................................
+
+C:\Users\bebe\.codex\worktrees\b338\OpenTTD-patches\src\tests\passenger_journey_planner.cpp(946): warning:
+  Transfer chain: transfers=9; rounds=10; extensions=2; work=165; labels=11;
+  scratch=34064
+
+-------------------------------------------------------------------------------
+Journey stages continue actual train chains without replaying earlier rounds
+-------------------------------------------------------------------------------
+C:\Users\bebe\.codex\worktrees\b338\OpenTTD-patches\src\tests\passenger_journey_planner.cpp(895)
+...............................................................................
+
+C:\Users\bebe\.codex\worktrees\b338\OpenTTD-patches\src\tests\passenger_journey_planner.cpp(946): warning:
+  Transfer chain: transfers=15; rounds=16; extensions=2; work=312; labels=17;
+  scratch=38048
+
+-------------------------------------------------------------------------------
+Journey stages continue actual train chains without replaying earlier rounds
+-------------------------------------------------------------------------------
+C:\Users\bebe\.codex\worktrees\b338\OpenTTD-patches\src\tests\passenger_journey_planner.cpp(895)
+...............................................................................
+
+C:\Users\bebe\.codex\worktrees\b338\OpenTTD-patches\src\tests\passenger_journey_planner.cpp(946): warning:
+  Transfer chain: transfers=33; rounds=34; extensions=4; work=969; labels=35;
+  scratch=77136
+
+-------------------------------------------------------------------------------
+Journey stages continue actual train chains without replaying earlier rounds
+-------------------------------------------------------------------------------
+C:\Users\bebe\.codex\worktrees\b338\OpenTTD-patches\src\tests\passenger_journey_planner.cpp(895)
+...............................................................................
+
+C:\Users\bebe\.codex\worktrees\b338\OpenTTD-patches\src\tests\passenger_journey_planner.cpp(946): warning:
+  Transfer chain: transfers=300; rounds=301; extensions=7; work=48762; labels=
+  302; scratch=634328
+
+-------------------------------------------------------------------------------
+Thousands of disconnected untimed lines do not poison a complete trunk journey
+-------------------------------------------------------------------------------
+C:\Users\bebe\.codex\worktrees\b338\OpenTTD-patches\src\tests\passenger_journey_shadow.cpp(396)
+...............................................................................
+
+C:\Users\bebe\.codex\worktrees\b338\OpenTTD-patches\src\tests\passenger_journey_shadow.cpp(427): warning:
+  Untimed national fixture: 8004 declared stations, 4001 trains; trunk reverse
+  work=7; graph memory envelope=18436608
+
+-------------------------------------------------------------------------------
+Shadow measures a complete 8001 station fleet within its production quotas
+-------------------------------------------------------------------------------
+C:\Users\bebe\.codex\worktrees\b338\OpenTTD-patches\src\tests\passenger_journey_shadow.cpp(430)
+...............................................................................
+
+C:\Users\bebe\.codex\worktrees\b338\OpenTTD-patches\src\tests\passenger_journey_shadow.cpp(453): warning:
+  National shadow: 17962 us total; graph=17647 us; search=298 us; work=6003;
+  scratch=127352; graph envelope=110131200
+
+-------------------------------------------------------------------------------
+4096 OD packets reuse one search and consume no random numbers
+-------------------------------------------------------------------------------
+C:\Users\bebe\.codex\worktrees\b338\OpenTTD-patches\src\tests\passenger_journey_active.cpp(926)
+...............................................................................
+
+C:\Users\bebe\.codex\worktrees\b338\OpenTTD-patches\src\tests\passenger_journey_active.cpp(939): warning:
+  Active routing: CargoPacket=192 bytes; leg=96 bytes; 4096 identical OD
+  queries use=65923 work allowance; pool=0
+
+-------------------------------------------------------------------------------
+Trip cache synthetic tick routing benchmark over 4800 stations
+-------------------------------------------------------------------------------
+C:\Users\bebe\.codex\worktrees\b338\OpenTTD-patches\src\tests\passenger_journey_active.cpp(983)
+...............................................................................
+
+C:\Users\bebe\.codex\worktrees\b338\OpenTTD-patches\src\tests\passenger_journey_active.cpp(1020): warning:
+  Trip synthetic routing tick: run=0; enabled=0; stations=4800; vehicles=2399;
+  routing_tick_us=58402; builds=8; build_us=44669; executions=19192; hits=0;
+  visits=76768; searches=8; applied_passengers=0; graph_work=2149544;
+  query_work=524288; prediction_bytes=0; graph_memory_bound=20118080
+
+C:\Users\bebe\.codex\worktrees\b338\OpenTTD-patches\src\tests\passenger_journey_active.cpp(1020): warning:
+  Trip synthetic routing tick: run=0; enabled=1; stations=4800; vehicles=2399;
+  routing_tick_us=73607; builds=8; build_us=60445; executions=2399; hits=16793;
+  visits=76768; searches=8; applied_passengers=0; graph_work=2149544;
+  query_work=524288; prediction_bytes=3704056; graph_memory_bound=20118080
+
+C:\Users\bebe\.codex\worktrees\b338\OpenTTD-patches\src\tests\passenger_journey_active.cpp(1020): warning:
+  Trip synthetic routing tick: run=1; enabled=0; stations=4800; vehicles=2399;
+  routing_tick_us=59279; builds=8; build_us=48407; executions=19192; hits=0;
+  visits=76768; searches=8; applied_passengers=0; graph_work=2149544;
+  query_work=524288; prediction_bytes=0; graph_memory_bound=20118080
+
+C:\Users\bebe\.codex\worktrees\b338\OpenTTD-patches\src\tests\passenger_journey_active.cpp(1020): warning:
+  Trip synthetic routing tick: run=1; enabled=1; stations=4800; vehicles=2399;
+  routing_tick_us=62745; builds=8; build_us=49467; executions=2399; hits=16793;
+  visits=76768; searches=8; applied_passengers=0; graph_work=2149544;
+  query_work=524288; prediction_bytes=3704056; graph_memory_bound=20118080
+
+C:\Users\bebe\.codex\worktrees\b338\OpenTTD-patches\src\tests\passenger_journey_active.cpp(1020): warning:
+  Trip synthetic routing tick: run=2; enabled=0; stations=4800; vehicles=2399;
+  routing_tick_us=51240; builds=8; build_us=40006; executions=19192; hits=0;
+  visits=76768; searches=8; applied_passengers=0; graph_work=2149544;
+  query_work=524288; prediction_bytes=0; graph_memory_bound=20118080
+
+C:\Users\bebe\.codex\worktrees\b338\OpenTTD-patches\src\tests\passenger_journey_active.cpp(1020): warning:
+  Trip synthetic routing tick: run=2; enabled=1; stations=4800; vehicles=2399;
+  routing_tick_us=61124; builds=8; build_us=49052; executions=2399; hits=16793;
+  visits=76768; searches=8; applied_passengers=0; graph_work=2149544;
+  query_work=524288; prediction_bytes=3704056; graph_memory_bound=20118080
+
+-------------------------------------------------------------------------------
+Fair shares exclude idle stations unknown ODs and sleeping loading passes
+-------------------------------------------------------------------------------
+C:\Users\bebe\.codex\worktrees\b338\OpenTTD-patches\src\tests\passenger_journey_active.cpp(1350)
+...............................................................................
+
+C:\Users\bebe\.codex\worktrees\b338\OpenTTD-patches\src\tests\passenger_journey_active.cpp(1380): warning:
+  Due loading admission: stations=4801; applied=14; waiting-share claims=1
+
+-------------------------------------------------------------------------------
+Two thousand distinct destinations drain a deferred budget queue
+-------------------------------------------------------------------------------
+C:\Users\bebe\.codex\worktrees\b338\OpenTTD-patches\src\tests\passenger_journey_active.cpp(1446)
+...............................................................................
+
+C:\Users\bebe\.codex\worktrees\b338\OpenTTD-patches\src\tests\passenger_journey_active.cpp(1476): warning:
+  Distinct OD admission: first applied=15; deferred=1985; total=2000; ticks=134
+
+-------------------------------------------------------------------------------
+Production journey execution covers eight thousand stations at standard budgets
+-------------------------------------------------------------------------------
+C:\Users\bebe\.codex\worktrees\b338\OpenTTD-patches\src\tests\passenger_journey_active.cpp(1479)
+...............................................................................
+
+C:\Users\bebe\.codex\worktrees\b338\OpenTTD-patches\src\tests\passenger_journey_active.cpp(1503): warning:
+  Production national: stations=8001; journey packets=64; builds=1; work=
+  1389604; build us=6481; retained=312354; static=1397224; cache hits=63
+
+-------------------------------------------------------------------------------
+National mixed fleet shares snapshots and keeps graph query and cache bounds
+-------------------------------------------------------------------------------
+C:\Users\bebe\.codex\worktrees\b338\OpenTTD-patches\src\tests\passenger_multimodal.cpp(773)
+...............................................................................
+
+C:\Users\bebe\.codex\worktrees\b338\OpenTTD-patches\src\tests\passenger_multimodal.cpp(801): warning:
+  Mixed national network: stations=2402; trips=480; graph_us=2872; query_us=83;
+  graph_work=86520; query_work=2229; scratch=112640; envelope=14469120
+
+===============================================================================
+All tests passed (970671 assertions in 282 test cases)

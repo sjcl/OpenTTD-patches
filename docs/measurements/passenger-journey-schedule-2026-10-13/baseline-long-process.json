@@ -1,0 +1,115 @@
+{
+  "label": "baseline-long",
+  "exit_code": 0,
+  "wall_seconds": 322.0319968,
+  "cpu_seconds": 443.53125,
+  "peak_working_set": 2038820864,
+  "sampled_peak_private": 2039439360,
+  "requested_driver_loops": 8000,
+  "input_save": "input.sav",
+  "input_sha256": "14D68C82911B9DCFC5EF7291E9697C5BBD67F44FFCC79D7575A144405EDF6390",
+  "binary_sha256": "12B09CFEDA861848448F5E3DA00A7D11832429C8952DE207EC81B932CA5BBBF7",
+  "sample_ms": 100,
+  "simulation": {
+    "completed_ticks": 8000,
+    "total_us": 304561735,
+    "mean_us": 38070,
+    "max_us": 118532
+  },
+  "tick_histogram": {
+    "simulation_p95_us": 55000,
+    "simulation_p99_us": 65000,
+    "journey_mean_us": 13248,
+    "journey_p95_us": 26000,
+    "journey_p99_us": 32000,
+    "journey_max_us": 55926
+  },
+  "timed": {
+    "boarded": 11607,
+    "transferred": 0,
+    "delivered": 7497
+  },
+  "schedule": {},
+  "untimed": {
+    "boarded": 562737,
+    "transferred": 288508,
+    "delivered": 225076
+  },
+  "schedule_routing": {},
+  "periodic": {
+    "services": 836,
+    "timed": 508,
+    "vehicles": 2829,
+    "bytes": 8455280,
+    "policies_bytes": 4544,
+    "pending": 465,
+    "builds": 18695,
+    "work": 71182077,
+    "build_us": 1640401,
+    "searches": 128000,
+    "query_us": 73051793,
+    "next_departures": 775422,
+    "policy_hits": 48971,
+    "policy_misses": 79029,
+    "invalidations": 214,
+    "rejected_work": 0,
+    "rejected_memory": 0
+  },
+  "inventory": {
+    "waiting": 272312,
+    "available": 272312,
+    "reserved": 0,
+    "deferred": 236853,
+    "state_ticks": 3176553487,
+    "scaled_ticks": 3010954389
+  },
+  "schedule_inventory": {},
+  "waiting": {
+    "timed": 2382,
+    "CargoDist_or_deferred": 256028,
+    "OD_fallback_or_waiting": 13902
+  },
+  "completed_interchanges": {},
+  "schedule_assisted": {},
+  "initial_tick": 3176545487,
+  "final_tick": 3176553487,
+  "samples": [
+    {
+      "simulation": {
+        "completed_ticks": 1526,
+        "total_us": 57296935,
+        "mean_us": 37547,
+        "max_us": 64369
+      }
+    },
+    {
+      "simulation": {
+        "completed_ticks": 3746,
+        "total_us": 144766020,
+        "mean_us": 38645,
+        "max_us": 86263
+      }
+    },
+    {
+      "simulation": {
+        "completed_ticks": 6040,
+        "total_us": 234875914,
+        "mean_us": 38886,
+        "max_us": 86263
+      }
+    },
+    {
+      "simulation": {
+        "completed_ticks": 8000,
+        "total_us": 304561735,
+        "mean_us": 38070,
+        "max_us": 118532
+      }
+    }
+  ],
+  "stderr": {
+    "sha256": "0cd68359e525ec71602ffd996f4c25e8fe31f7ae16ff4c103c7380710442220c",
+    "bytes": 7767420,
+    "lines": 75665
+  }
+}

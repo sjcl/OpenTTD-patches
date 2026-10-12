@@ -1,0 +1,25 @@
+dbg: [grf:0] [4a4b4735-jp_bridges-0.8.tar\jp_bridges-0.8\jpbridge.grf:572] SpriteReplace: [Set 0] Changing 68 sprites, beginning with 7596, above limit of 4896 and not within reserved range, ignoring.
+dbg: [grf:0] [4a4b4735-jp_bridges-0.8.tar\jp_bridges-0.8\jpbridge.grf:1060] SpriteReplace: [Set 0] Changing 68 sprites, beginning with 7812, above limit of 4896 and not within reserved range, ignoring.
+dbg: [grf:0] [4a4b4735-jp_bridges-0.8.tar\jp_bridges-0.8\jpbridge.grf:1580] SpriteReplace: [Set 0] Changing 68 sprites, beginning with 8036, above limit of 4896 and not within reserved range, ignoring.
+dbg: [grf:0] Behaviour of NewGRF 'JP+ Multiple Units' is likely to cause desyncs and/or crashes
+dbg: [grf:0] It changed vehicle capacity for '303 Series (EMU)' when not inside a depot or refitting
+dbg: [grf:0] Behaviour of NewGRF 'JP+ Multiple Units' is likely to cause desyncs and/or crashes
+dbg: [grf:0] It changed vehicle capacity for 'JP+ MU Car (MU)' when not inside a depot or refitting
+dbg: [grf:0] Behaviour of NewGRF 'JP+ Multiple Units' is likely to cause desyncs and/or crashes
+dbg: [grf:0] It changed vehicle capacity for 'JP+ MU Car (MU)' when not inside a depot or refitting
+dbg: [grf:0] Behaviour of NewGRF 'JP+ Multiple Units' is likely to cause desyncs and/or crashes
+dbg: [grf:0] It changed vehicle capacity for 'JP+ MU Car (MU)' when not inside a depot or refitting
+dbg: [grf:0] Behaviour of NewGRF 'JP+ Multiple Units' is likely to cause desyncs and/or crashes
+... repeated diagnostics omitted ...
+dbg: [grf:0] Behaviour of NewGRF 'JP+ Multiple Units' is likely to cause desyncs and/or crashes
+dbg: [grf:0] It changed vehicle capacity for 'JP+ MU Car (MU)' when not inside a depot or refitting
+dbg: [grf:0] Behaviour of NewGRF 'JP+ Multiple Units' is likely to cause desyncs and/or crashes
+dbg: [grf:0] It changed vehicle capacity for 'JP+ MU Car (MU)' when not inside a depot or refitting
+dbg: [grf:0] Behaviour of NewGRF 'JP+ Multiple Units' is likely to cause desyncs and/or crashes
+dbg: [grf:0] It changed vehicle capacity for 'JP+ MU Car (MU)' when not inside a depot or refitting
+dbg: [grf:0] Behaviour of NewGRF 'JP+ Multiple Units' is likely to cause desyncs and/or crashes
+dbg: [grf:0] It changed vehicle capacity for 'JP+ MU Car (MU)' when not inside a depot or refitting
+dbg: [grf:0] Behaviour of NewGRF 'JP+ Multiple Units' is likely to cause desyncs and/or crashes
+dbg: [grf:0] It changed vehicle capacity for 'JP+ MU Car (MU)' when not inside a depot or refitting
+dbg: [grf:0] Behaviour of NewGRF 'JP+ Multiple Units' is likely to cause desyncs and/or crashes
+dbg: [grf:0] It changed vehicle capacity for 'E233 Series (EMU)' when not inside a depot or refitting

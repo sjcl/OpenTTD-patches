@@ -38,7 +38,7 @@ bool HasPassengerVehicleCapacity(const Vehicle *vehicle, CargoType cargo, size_t
 bool CanPassengerVehicleUseStation(const Vehicle *vehicle, StationID station, const Order *order, size_t &budget);
 
 /** Validate the live order progress. The returned spans are only for immediate simulation-thread use. */
-std::optional<PassengerRouteState> GetPassengerRouteState(const Vehicle *vehicle, size_t *budget = nullptr, PassengerPredictionReason *reason = nullptr);
+std::optional<PassengerRouteState> GetPassengerRouteState(const Vehicle *vehicle, size_t *budget = nullptr, PassengerPredictionReason *reason = nullptr, bool allow_implicit_current = false);
 
 /** Why a bounded prediction ended. Unknown never certifies the unvisited suffix of a route. */
 enum class PassengerPredictionStatus : uint8_t { Complete, Unknown, LimitReached, BudgetExhausted };

@@ -14,7 +14,10 @@
 
 enum class PassengerRoutingMode : uint8_t { Legacy, Journey, Fallback };
 
-enum class PassengerRideKind : uint8_t { VehicleSnapshot, ServiceIntent, BoundService };
+enum class PassengerRideKind : uint8_t { VehicleSnapshot, ServiceIntent, BoundService, EstimatedServiceIntent, EstimatedBoundService };
+enum class PassengerTransportKind : uint8_t { None, Timed, Schedule, Untimed };
+inline bool IsEstimatedPassengerRide(PassengerRideKind kind) { return kind == PassengerRideKind::EstimatedServiceIntent || kind == PassengerRideKind::EstimatedBoundService; }
+inline bool IsBoundPassengerRide(PassengerRideKind kind) { return kind == PassengerRideKind::BoundService || kind == PassengerRideKind::EstimatedBoundService; }
 
 /** Only the next ride is stored. The kind distinguishes old absolute vehicle visits
  * from recurring service intentions and their actual bound carrier. New intentions
@@ -33,6 +36,10 @@ struct PassengerJourneyExecution {
 	PassengerRideKind kind = PassengerRideKind::VehicleSnapshot;
 	uint64_t generation = 0;
 	StateTicks not_before{}; ///< Earliest real boarding, including an actual interchange's minimum transfer time.
+	StateTicks planned_at{}; ///< Real decision time, used only for observing waiting/expiry.
+	int64_t estimated_wait = 0; ///< Duration in ticks; never an absolute departure.
+	int64_t waiting_limit = 0; ///< Re-evaluate after two conservative service circuits.
+	bool timed_deferred = false; ///< Timed work was insufficient; absence of a timed route is not asserted.
 	bool operator==(const PassengerJourneyExecution &) const = default;
 };
 

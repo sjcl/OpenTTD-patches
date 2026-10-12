@@ -161,8 +161,8 @@ bool CargoReturn::operator()(CargoPacket *cp)
 	StationID next = this->next;
 	if (cp_new->GetPassengerRoutingMode() == PassengerRoutingMode::Journey) {
 		next = StationID::Invalid();
-		if (cp_new->GetPassengerJourney().kind == PassengerRideKind::BoundService) {
-			auto ride = cp_new->GetPassengerJourney(); ride.kind = PassengerRideKind::ServiceIntent; ride.vehicle = VehicleID::Invalid();
+		if (IsBoundPassengerRide(cp_new->GetPassengerJourney().kind)) {
+			auto ride = cp_new->GetPassengerJourney(); ride.kind = IsEstimatedPassengerRide(ride.kind) ? PassengerRideKind::EstimatedServiceIntent : PassengerRideKind::ServiceIntent; ride.vehicle = VehicleID::Invalid();
 			cp_new->SetPassengerJourney(ride, cp_new->GetPassengerLegacyHop());
 		}
 	}

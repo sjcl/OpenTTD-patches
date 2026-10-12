@@ -9,6 +9,7 @@
 
 #include "passenger_journey_planner.h"
 #include "passenger_journey_type.h"
+#include "passenger_journey_schedule.h"
 #include <set>
 
 struct PassengerPeriodicStop {
@@ -48,6 +49,7 @@ struct PassengerPeriodicService {
 	int64_t dispatch_period = 0;
 	size_t dispatch_stop = 0;
 	std::vector<uint32_t> dispatch_slots; ///< Certified only for a single physical vehicle with enough turnaround time.
+	int64_t uncertain_dispatch_period = 0; ///< Declared dispatch circuit, without claiming slots/fleet ownership.
 	bool operator==(const PassengerPeriodicService &) const = default;
 };
 
@@ -75,14 +77,20 @@ struct PassengerDatabaseDiagnostic {
 class PassengerServiceDatabase {
 public:
 	static constexpr size_t BUILD_WORK = 65536, MAX_BYTES = 64 * 1024 * 1024;
-	static constexpr size_t POLICY_BYTES = 16 * 1024 * 1024, POLICY_ENTRIES = 4096;
+	static constexpr size_t POLICY_BYTES = 12 * 1024 * 1024, POLICY_ENTRIES = 4096; ///< Plus 4 MiB schedule policies: unchanged 16 MiB combined ceiling.
 	static constexpr int64_t TIMETABLE_EPOCH = 1024;
 	void Reset();
 	void Invalidate(OrderListID id = OrderListID::Invalid());
 	void TimetableChanged(OrderListID id); ///< Keep safe published timing until the next deterministic update epoch.
 	void Tick(size_t allowance = BUILD_WORK);
 	PassengerPeriodicPlan Plan(CargoType cargo, StationID origin, StationID destination, StateTicks ready,
-			PassengerJourneyLimits limits = {}, PassengerJourneyEvaluation evaluation = {});
+			PassengerJourneyLimits limits = {}, PassengerJourneyEvaluation evaluation = {}, OrderListID excluded = OrderListID::Invalid());
+	PassengerSchedulePlan PlanEstimated(CargoType cargo, StationID origin, StationID destination, StateTicks ready,
+			PassengerJourneyLimits limits = {}, PassengerJourneyEvaluation evaluation = {}, OrderListID excluded = OrderListID::Invalid())
+	{ return this->schedule.Plan(*this, cargo, origin, destination, ready, excluded, limits, evaluation); }
+	PassengerScheduleDiagnostic GetScheduleDiagnostic() const { return this->schedule.GetDiagnostic(); }
+	struct StopRef { OrderListID service; size_t stop; auto operator<=>(const StopRef &) const = default; };
+	const std::set<StopRef> &StopsAt(StationID station) const;
 	const PassengerPeriodicService *Get(OrderListID id) const;
 	bool IsCurrent(const PassengerJourneyExecution &ride) const;
 	bool IsBuilding() const { return this->sweeping || !this->dirty.empty(); }
@@ -90,11 +98,11 @@ public:
 	bool Load(std::span<const uint8_t> bytes);
 	void FinishLoad(bool present);
 	PassengerDatabaseDiagnostic GetDiagnostic() const;
-	void ResetDiagnostic() { this->diagnostic = {}; }
+	void ResetDiagnostic() { this->diagnostic = {}; this->schedule.ResetDiagnostic(); }
 	void ClearPolicies(); ///< Residency must never change search admission or its result.
 	void ShiftTicks(StateTicksDelta delta);
 private:
-	struct StopRef { OrderListID service; size_t stop; auto operator<=>(const StopRef &) const = default; };
+	PassengerSchedulePlanner schedule;
 	struct PolicyRide { OrderListID service; size_t board, alight; bool operator==(const PolicyRide &) const = default; };
 	struct JourneyPolicy {
 		std::vector<std::vector<PolicyRide>> routes;

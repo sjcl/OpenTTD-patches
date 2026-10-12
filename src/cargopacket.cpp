@@ -70,6 +70,7 @@ size_t InvalidatePassengerJourneyVehicle(VehicleID vehicle)
 	for (CargoPacketID id : packets) {
 		RecordPassengerJourneyFallback(PassengerJourneyFallbackReason::VehicleDeleted);
 		CargoPacket *packet = CargoPacket::Get(id);
+		if (IsEstimatedPassengerRide(packet->GetPassengerJourney().kind)) RecordPassengerScheduleInvalidation(PassengerScheduleInvalidation::VehicleDeleted);
 		/* Waiting/reserved passengers must observe the existing station cooldown even
 		 * if another vehicle immediately reuses this pool ID. A different interchange
 		 * can still retry, as with other journey failures. */
@@ -119,8 +120,10 @@ void CargoPacket::DeferPassengerJourney(StationID station, StateTicks now)
 void CargoPacket::ShiftPassengerJourneyTicks(StateTicksDelta delta)
 {
 	if (this->passenger_retry_after != StateTicks{0}) this->passenger_retry_after += delta;
+	if (this->passenger_arriving_service != OrderListID::Invalid()) this->passenger_interchange_ready += delta;
 	if (this->passenger_routing_mode == PassengerRoutingMode::Journey) {
-		this->passenger_journey.departure += delta; this->passenger_journey.arrival += delta;
+		if (!IsEstimatedPassengerRide(this->passenger_journey.kind)) { this->passenger_journey.departure += delta; this->passenger_journey.arrival += delta; }
+		if (IsEstimatedPassengerRide(this->passenger_journey.kind)) this->passenger_journey.planned_at += delta;
 		if (this->passenger_journey.kind != PassengerRideKind::VehicleSnapshot) this->passenger_journey.not_before += delta;
 	}
 }
@@ -270,7 +273,13 @@ CargoPacket::CargoPacket(CargoPacketID index, uint16_t count, Money feeder_share
 		passenger_journey(original.passenger_journey),
 		passenger_legacy_hop(original.passenger_legacy_hop),
 		passenger_retry_station(original.passenger_retry_station),
-		passenger_retry_after(original.passenger_retry_after)
+		passenger_retry_after(original.passenger_retry_after),
+		passenger_interchange_ready(original.passenger_interchange_ready),
+		passenger_arriving_service(original.passenger_arriving_service),
+		passenger_arriving_incarnation(original.passenger_arriving_incarnation),
+		passenger_transport(original.passenger_transport),
+		passenger_interchange_transport(original.passenger_interchange_transport),
+		passenger_schedule_used(original.passenger_schedule_used)
 {
 	dbg_assert(count != 0);
 	RegisterPassengerJourneyPacket(*this);
@@ -826,6 +835,10 @@ bool VehicleCargoList::Stage(bool accepted, StationID current_station, std::span
 		};
 
 		const bool was_journey = cp->GetPassengerRoutingMode() == PassengerRoutingMode::Journey;
+		/* Stage contains stored cargo only (the reserved suffix is asserted empty
+		 * above). Mark actual schedule use here, after real loading and before the
+		 * next intent can replace the carrier. Returned reservations stay unmarked. */
+		if (cp->passenger_transport == PassengerTransportKind::Schedule) cp->passenger_schedule_used = true;
 		auto journey_action = active == nullptr ? std::optional<MoveToAction>{} : active->Decide(*cp, cargo, accepted, unload_type);
 		if (!journey_action) journey_action = od_fallback.Decide(*cp, payment->front, cargo, current_station, accepted, unload_type);
 		if (journey_action) {
@@ -1392,12 +1405,14 @@ uint StationCargoList::ShiftJourneyCargo(Taction action, std::span<const Station
 			if (!loading.CanBoard(*packet, vehicle)) { ++it; continue; }
 			const auto intent = packet->GetPassengerJourney();
 			const StationID legacy = packet->GetPassengerLegacyHop();
+			const auto previous_transport = packet->GetPassengerTransport();
 			loading.PrepareBoard(*packet, vehicle);
 			if (action(packet)) it = this->packets.erase(it);
 			else {
 				/* A split copies the bound ride into the moved suffix. Passengers
 				 * remaining at the station can still board another shared vehicle. */
-				if (intent.kind == PassengerRideKind::ServiceIntent) packet->SetPassengerJourney(intent, legacy);
+				if (intent.kind == PassengerRideKind::ServiceIntent || intent.kind == PassengerRideKind::EstimatedServiceIntent) packet->SetPassengerJourney(intent, legacy);
+				packet->SetPassengerTransport(previous_transport);
 				break;
 			}
 		}

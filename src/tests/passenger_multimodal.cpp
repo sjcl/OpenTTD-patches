@@ -169,16 +169,19 @@ TEST_CASE("Every passenger transport uses the same planner and production boardi
 TEST_CASE("Periodic service intents use all real transport adapters and gradual reservations", "[passenger][periodic][multimodal][active]")
 {
 	MultimodalFixture f; _settings_game.linkgraph.passenger_journey_periodic = true;
+	bool estimated = GENERATE(false, true);
 	VehicleType type = GENERATE(VehicleType::Train, VehicleType::Road, VehicleType::Ship, VehicleType::Aircraft);
 	Vehicle *vehicle = f.Service(type, {MultiStop(A), MultiStop(E, 100)});
+	if (estimated) vehicle->current_order.Free();
 	ResetPassengerServiceDatabase(); GetPassengerServiceDatabase().Tick();
 	auto *packet = f.Packet(250); PassengerJourneyActiveContext context(nullptr, A); REQUIRE(context.PlanWaiting(*packet, PAX, E));
+	if (estimated) f.LoadAt(vehicle, 0);
 	f.Waiting().Append(packet, StationID::Invalid()); _state_ticks += 5000; vehicle->current_order_time += 5000;
 	std::array next{E}; PassengerJourneyLoadingContext loading;
 	REQUIRE(f.Waiting().Reserve(100, &vehicle->cargo, next, vehicle->tile, vehicle, &loading) == 100);
 	for (int i = 0; i < 5; ++i) CHECK(f.Waiting().Load(20, &vehicle->cargo, next, vehicle->tile, vehicle, &loading) == 20);
 	CHECK(loading.GetPredictionCount() == 0); CHECK(vehicle->cargo.StoredCount() == 100);
-	CHECK(f.Waiting().AvailableCount() == 150); CHECK(packet->GetPassengerJourney().kind == PassengerRideKind::ServiceIntent);
+	CHECK(f.Waiting().AvailableCount() == 150); CHECK(packet->GetPassengerJourney().kind == (estimated ? PassengerRideKind::EstimatedServiceIntent : PassengerRideKind::ServiceIntent));
 	Company *company = Company::Create(); Town *town = Town::Create(TileIndex{0});
 	vehicle->owner = company->index; Station::Get(E)->town = town; Station::Get(E)->always_accepted.Set(PAX);
 	f.LoadAt(vehicle, 1); CargoPayment payment(CargoPaymentID::Invalid(), vehicle);
@@ -188,20 +191,26 @@ TEST_CASE("Periodic service intents use all real transport adapters and gradual 
 	CHECK(vehicle->cargo.ActionCount(Action::Deliver) == 100);
 	CHECK(vehicle->cargo.Unload(100, &f.Waiting(E), PAX, &payment, vehicle->tile) == 100);
 	CHECK(company->cur_economy.delivered_cargo[PAX] == 100); CHECK(GetPassengerJourneyTickDiagnostic().builds == 0);
+	CHECK(GetPassengerJourneyTickDiagnostic().schedule_boarded_passengers == (estimated ? 100 : 0));
+	CHECK(GetPassengerJourneyTickDiagnostic().schedule_delivered_passengers == (estimated ? 100 : 0));
 }
 
 TEST_CASE("Periodic transfers through all four modes retain the final destination", "[passenger][periodic][multimodal][delivery]")
 {
 	MultimodalFixture f; _settings_game.linkgraph.passenger_journey_periodic = true; _settings_game.linkgraph.passenger_transfer_penalty = 0;
+	ResetPassengerJourneyDiagnostic();
+	bool estimated = GENERATE(false, true);
 	std::array modes{VehicleType::Train, VehicleType::Road, VehicleType::Ship, VehicleType::Aircraft};
 	std::array<Vehicle *, 4> services;
 	for (size_t i = 0; i < services.size(); ++i) services[i] = f.Service(modes[i], {MultiStop(StationID{static_cast<uint16_t>(i)}, 10000, static_cast<TimetableTicks>(100 + 100 * i)), MultiStop(StationID{static_cast<uint16_t>(i + 1)}, 10)});
+	if (estimated) for (auto *v : services) v->current_order.Free();
 	ResetPassengerServiceDatabase(); GetPassengerServiceDatabase().Tick();
 	auto *packet = f.Packet(); PassengerJourneyActiveContext planned(nullptr, A); REQUIRE(planned.PlanWaiting(*packet, PAX, B)); f.Waiting(A).Append(packet, StationID::Invalid());
 	Company *company = Company::Create(); Town *town = Town::Create(TileIndex{0}); Station::Get(E)->town = town; Station::Get(E)->always_accepted.Set(PAX);
 	for (size_t i = 0; i < services.size(); ++i) {
 		Vehicle *v = services[i]; StationID to{static_cast<uint16_t>(i + 1)}; std::array next{to};
-		REQUIRE(packet->GetPassengerJourney().kind == PassengerRideKind::ServiceIntent); REQUIRE(packet->GetPassengerJourney().service == v->orders->index);
+		REQUIRE(packet->GetPassengerJourney().kind == (estimated ? PassengerRideKind::EstimatedServiceIntent : PassengerRideKind::ServiceIntent)); REQUIRE(packet->GetPassengerJourney().service == v->orders->index);
+		if (estimated) f.LoadAt(v, 0);
 		CHECK(f.Waiting(StationID{static_cast<uint16_t>(i)}).Load(10, &v->cargo, next, v->tile, v) == 10);
 		_state_ticks = NOW + 110 + 100 * i; f.LoadAt(v, 1); v->owner = company->index; CargoPayment payment(CargoPaymentID::Invalid(), v);
 		PassengerJourneyActiveContext arrived(v, to);
@@ -211,6 +220,67 @@ TEST_CASE("Periodic transfers through all four modes retain the final destinatio
 		if (to != E) CHECK(packet->GetPassengerDestination() == E);
 	}
 	CHECK(company->cur_economy.delivered_cargo[PAX] == 10); CHECK(GetPassengerJourneyTickDiagnostic().builds == 0);
+	CHECK(GetPassengerJourneyTotalDiagnostic().schedule_transferred_passengers == (estimated ? 30 : 0));
+	CHECK(GetPassengerJourneyTotalDiagnostic().schedule_delivered_passengers == (estimated ? 10 : 0));
+	CHECK(GetPassengerJourneyTotalDiagnostic().schedule_connected_passengers == (estimated ? 30 : 0));
+	CHECK(GetPassengerJourneyTotalDiagnostic().timed_connected_passengers == (estimated ? 0 : 30));
+	CHECK(GetPassengerJourneyTotalDiagnostic().schedule_assisted_delivered_passengers == (estimated ? 10 : 0));
+}
+
+TEST_CASE("A schedule leg connects to a timed carrier and reaches the final OD", "[passenger][schedule][multimodal][delivery]")
+{
+	MultimodalFixture f; _settings_game.linkgraph.passenger_journey_periodic = true; ResetPassengerJourneyDiagnostic();
+	auto *first = f.Service(VehicleType::Train, {MultiStop(A), MultiStop(B, 100)});
+	auto *next = f.Service(VehicleType::Road, {MultiStop(B), MultiStop(E, 100)});
+	first->current_order.Free(); ResetPassengerServiceDatabase(); GetPassengerServiceDatabase().Tick();
+	auto *packet = f.Packet(); REQUIRE(PassengerJourneyActiveContext(nullptr, A).PlanWaiting(*packet, PAX, B));
+	REQUIRE(packet->GetPassengerJourney().kind == PassengerRideKind::EstimatedServiceIntent);
+	f.Waiting(A).Append(packet, StationID::Invalid()); f.LoadAt(first, 0); std::array hop{B};
+	REQUIRE(f.Waiting(A).Load(10, &first->cargo, hop, first->tile, first) == 10);
+	Company *company = Company::Create(); Town *town = Town::Create(TileIndex{0});
+	first->owner = next->owner = company->index; Station::Get(E)->town = town; Station::Get(E)->always_accepted.Set(PAX);
+	_state_ticks += 120; f.LoadAt(first, 1); CargoPayment transfer(CargoPaymentID::Invalid(), first);
+	PassengerJourneyActiveContext interchange(first, B); std::array destination{E};
+	first->cargo.Stage(false, B, destination, OrderUnloadType::UnloadIfPossible, &Station::Get(B)->goods[PAX], PAX, &transfer, first->tile, nullptr, nullptr, &interchange);
+	REQUIRE(first->cargo.Unload(10, &f.Waiting(B), PAX, &transfer, first->tile) == 10);
+	REQUIRE(packet->GetPassengerJourney().kind == PassengerRideKind::ServiceIntent); CHECK(packet->HasUsedPassengerSchedule());
+	{
+		AutoRestoreBackup version{_sl_version, SAVEGAME_VERSION}; AutoRestoreBackup features{_sl_xv_feature_versions, AutoRestoreBackupNoNewValueTag{}};
+		AutoRestoreBackup static_features{_sl_xv_feature_static_versions, AutoRestoreBackupNoNewValueTag{}};
+		SlXvSetStaticCurrentVersions(); _sl_xv_feature_versions = _sl_xv_feature_static_versions;
+		auto *loaded = CargoPacket::Create(); REQUIRE_FALSE(SlTestSaveLoadTable(packet, loaded, GetCargoPacketDesc()).empty()); CHECK(loaded->HasUsedPassengerSchedule()); CHECK(loaded->HasSamePassengerRouting(*packet));
+	}
+	CHECK(f.Waiting(B).Load(10, &next->cargo, destination, next->tile, next) == 0); _state_ticks += 20;
+	REQUIRE(f.Waiting(B).Load(10, &next->cargo, destination, next->tile, next) == 10);
+	f.LoadAt(next, 1); _state_ticks += 100; CargoPayment final_payment(CargoPaymentID::Invalid(), next);
+	PassengerJourneyActiveContext arrived(next, E);
+	next->cargo.Stage(true, E, destination, OrderUnloadType::UnloadIfPossible, &Station::Get(E)->goods[PAX], PAX, &final_payment, next->tile, nullptr, nullptr, &arrived);
+	REQUIRE(next->cargo.Unload(10, &f.Waiting(E), PAX, &final_payment, next->tile) == 10);
+	auto d = GetPassengerJourneyTotalDiagnostic(); CHECK(d.schedule_connected_passengers == 10);
+	CHECK(d.schedule_delivered_passengers == 0); CHECK(d.delivered_passengers == 10); CHECK(d.schedule_assisted_delivered_passengers == 10);
+	CHECK(company->cur_economy.delivered_cargo[PAX] == 10);
+}
+
+TEST_CASE("An unknown phase cannot advertise an incompatible physical facility", "[passenger][schedule][multimodal]")
+{
+	MultimodalFixture f; _settings_game.linkgraph.passenger_journey_periodic = true;
+	auto *train = f.Service(VehicleType::Train, {MultiStop(A), MultiStop(E, 1)});
+	auto *road = f.Service(VehicleType::Road, {MultiStop(A), MultiStop(E, 100)});
+	train->current_order.Free(); road->current_order.Free(); Station::Get(E)->facilities.Reset(StationFacility::Train);
+	ResetPassengerServiceDatabase(); auto &db = GetPassengerServiceDatabase(); db.Tick();
+	CHECK(db.Get(train->orders->index)->vehicles.empty());
+	auto plan = db.PlanEstimated(PAX, A, E, NOW); REQUIRE(plan.ride); CHECK(plan.ride->service == road->orders->index);
+}
+
+TEST_CASE("An unknown aircraft phase cannot conceal a known range restriction", "[passenger][schedule][multimodal]")
+{
+	MultimodalFixture f; _settings_game.linkgraph.passenger_journey_periodic = true;
+	auto *air = f.Service(VehicleType::Aircraft, {MultiStop(A), MultiStop(E, 1)});
+	auto *road = f.Service(VehicleType::Road, {MultiStop(A), MultiStop(E, 100)});
+	Aircraft::From(air)->flags.Set(VehicleAirFlag::DestinationTooFar); road->current_order.Free();
+	ResetPassengerServiceDatabase(); auto &db = GetPassengerServiceDatabase(); db.Tick();
+	CHECK(db.Get(air->orders->index)->vehicles.empty());
+	auto plan = db.PlanEstimated(PAX, A, E, NOW); REQUIRE(plan.ride); CHECK(plan.ride->service == road->orders->index);
 }
 
 TEST_CASE("Trip cache validates every real transport adapter", "[passenger][multimodal][trip_cache][determinism]")
@@ -658,7 +728,7 @@ TEST_CASE("Multimodal execution preserves the existing save extension and valida
 	AutoRestoreBackup features{_sl_xv_feature_versions, AutoRestoreBackupNoNewValueTag{}};
 	AutoRestoreBackup static_features{_sl_xv_feature_static_versions, AutoRestoreBackupNoNewValueTag{}};
 	SlXvSetStaticCurrentVersions(); _sl_xv_feature_versions = _sl_xv_feature_static_versions;
-		REQUIRE(_sl_xv_feature_versions[XSLFI_PASSENGER_JOURNEY_ROUTING] == 2);
+	REQUIRE(_sl_xv_feature_versions[XSLFI_PASSENGER_JOURNEY_ROUTING] == 3);
 	auto *packet = f.Packet(); PassengerJourneyActiveContext context(nullptr, A); REQUIRE(context.PlanWaiting(*packet, PAX, E));
 	PassengerJourneyExecution leg = packet->GetPassengerJourney();
 	PassengerRoutingMode expected = PassengerRoutingMode::Journey;
