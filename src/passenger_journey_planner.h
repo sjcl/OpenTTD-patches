@@ -106,9 +106,10 @@ struct PassengerJourneyWork {
 	size_t cycle_rejections = 0; ///< Station revisits excluded from transfer paths; through rides retain real occurrences.
 	size_t scratch_bytes = 0; ///< Conservative peak scratch/returned-path allowance, diagnostic only.
 	bool cache_hit = false;
-	bool uncertainty_resolved = false; ///< Diagnostic: alternatives proved irrelevant to the requested K candidates.
-	std::optional<StateTicks> unknown_arrival_bound; ///< Diagnostic: optimistic arrival using at least one uncertified event.
-	OrderListID unknown_service = OrderListID::Invalid(); ///< Diagnostic witness for the optimistic bound.
+	bool unknown_alternatives_ignored = false; ///< A timed candidate exists despite incomplete prediction.
+	bool uncertainty_resolved = false; ///< Retired proof diagnostic; retained as zero for measurement compatibility.
+	std::optional<StateTicks> unknown_arrival_bound; ///< Retired proof diagnostic; always absent.
+	OrderListID unknown_service = OrderListID::Invalid(); ///< Retired proof diagnostic; always invalid.
 };
 
 enum class PassengerJourneyStopReason : uint8_t {
@@ -122,6 +123,9 @@ enum class PassengerJourneyStopReason : uint8_t {
 	InvalidQuery,
 };
 
+/** Timed search outcome, independent of prediction completeness and live untimed fallback. */
+enum class PassengerJourneyOutcome : uint8_t { TimedRouteFound, NoTimedRoute, BudgetDeferred, InvalidQuery };
+
 struct PassengerJourneyResult {
 	std::vector<PassengerPlannedJourney> journeys;
 	PassengerPredictionStatus status = PassengerPredictionStatus::Complete;
@@ -131,6 +135,14 @@ struct PassengerJourneyResult {
 	/** Every returned candidate reaches the requested destination with validated times; no partial paths are returned.
 	 * Incomplete search status concerns alternatives, independently of a usable end-to-end candidate. */
 	bool HasJourney() const { return !this->journeys.empty(); }
+	PassengerJourneyOutcome GetOutcome() const
+	{
+		if (this->stop_reason == PassengerJourneyStopReason::InvalidQuery) return PassengerJourneyOutcome::InvalidQuery;
+		if (this->status >= PassengerPredictionStatus::LimitReached || this->stop_reason == PassengerJourneyStopReason::TransferLimit ||
+				this->stop_reason == PassengerJourneyStopReason::WorkLimit || this->stop_reason == PassengerJourneyStopReason::LabelLimit ||
+				this->stop_reason == PassengerJourneyStopReason::MemoryLimit) return PassengerJourneyOutcome::BudgetDeferred;
+		return this->HasJourney() ? PassengerJourneyOutcome::TimedRouteFound : PassengerJourneyOutcome::NoTimedRoute;
+	}
 	/** Absence is certified only for an exhausted search within prediction_end and the supplied conditions. */
 	bool IsUnreachable() const { return !this->HasJourney() && this->status == PassengerPredictionStatus::Complete && this->stop_reason == PassengerJourneyStopReason::Exhausted; }
 	/** Includes invalid/unknown OD: callers may use CargoDist without altering the passenger destination. */
@@ -145,7 +157,7 @@ struct PassengerJourneyCacheLimits {
 /**
  * RAPTOR boarding rounds over an immutable multimodal snapshot, with Pareto labels per vehicle path.
  * Slower corridors survive dominance by faster, different corridors, up to explicit label limits.
- * Reverse reachability visits only destination/uncertainty-connected occurrences. No live prediction or cargo staging.
+ * Reverse reachability visits only timed destination-connected occurrences. No live prediction or cargo staging.
  * The graph and optional provider must outlive this object and remain immutable during each query.
  * Cache eviction affects performance only. Search allowances are per query, including cache misses.
  */

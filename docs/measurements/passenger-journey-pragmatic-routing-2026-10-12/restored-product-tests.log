@@ -1,0 +1,11 @@
+Test project C:/Users/bebe/.codex/worktrees/8228/OpenTTD-patches/build-pragmatic-routing
+    Start 407: passenger_od_load
+1/3 Test #407: passenger_od_load .....................   Passed    3.52 sec
+    Start 408: passenger_journey_active_production
+2/3 Test #408: passenger_journey_active_production ...   Passed    7.12 sec
+    Start 409: passenger_journey_shadow_production
+3/3 Test #409: passenger_journey_shadow_production ...   Passed    4.44 sec
+
+100% tests passed, 0 tests failed out of 3
+
+Total Test time (real) =  15.14 sec

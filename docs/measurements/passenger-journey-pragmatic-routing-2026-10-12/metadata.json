@@ -1,0 +1,296 @@
+{
+  "date": "2026-10-12",
+  "timezone": "Asia/Tokyo",
+  "branch": "feat/passenger-journey-pragmatic-routing",
+  "base_commit": "eab176fa0a539bbe83dddd36648a3fe28a4e63b3",
+  "input_sha256": "14d68c82911b9dcfc5ef7291e9697c5bbd67f44ffcc79d7575a144405edf6390",
+  "baseline_measure_binary_sha256": "da56e5c5443cf46d89da078b7e37a0b7a7d0c796852670ecad278e09d7ffe9db",
+  "interval": {
+    "initial_state_ticks": 3176545487,
+    "final_state_ticks": 3176547014,
+    "state_ticks": 1527,
+    "completed_tick_timing_samples": 1526
+  },
+  "conditions": {
+    "build": "MSVC 19.44, x64 Release, asserts enabled, LTO disabled, x64-windows-static cached dependencies",
+    "drivers": "null:until_exit / null / null",
+    "settings": {
+      "distribution_pax": 2,
+      "passenger_od_assignment": true,
+      "passenger_journey_routing": true,
+      "recalc_interval": 8,
+      "recalc_time": 32
+    },
+    "harness": "Each binary only adds explicit NewGRF PauseMode::Error continuation on an isolated copy. Final product source does not contain it.",
+    "sequential_runs": true,
+    "newgrf_capacity_warnings": true
+  },
+  "semantics": {
+    "timed_routes": "packet assignments, including replans",
+    "timed_ignoring_unknown": "packet assignments, subset of timed_routes",
+    "untimed_routes": "event-local live vehicle/cargo/OD decisions, including reservation choices",
+    "timed_budget_deferred": "packet rejection observations, includes reuse and pre-search admission",
+    "untimed_no_route": "completed live vehicle/OD decisions with no progressing ride",
+    "untimed_budget_deferred": "resource-limited live vehicle/OD decisions",
+    "transport": "people in actual movement events, not unique travelers; mixed itineraries may use both categories",
+    "OD_resolved": "retired proof counter, zero after this change",
+    "waiting": "available plus reserved; GUI fallback includes waiting without a route"
+  },
+  "validation": {
+    "passenger_cases": 196,
+    "passenger_assertions": 139658,
+    "ctest_total_passed": 413,
+    "live_multiplayer_soak": false,
+    "gui_visual_render": false,
+    "restored_product_save_load_passed": 3
+  },
+  "baseline": {
+    "process": {
+      "exit_code": 0,
+      "wall_seconds": 749.041081,
+      "cpu_seconds": 821.96875,
+      "peak_working_set": 2027155456,
+      "sampled_peak_private": 2029535232,
+      "sample_ms": 100
+    },
+    "active": {
+      "applied_packets": 1580,
+      "applied_passengers": 3850,
+      "builds": 23939,
+      "static_hits": 23164,
+      "searches": 23157,
+      "OD_hits": 11587
+    },
+    "work_time": {
+      "graph_work": 13671037171,
+      "mean_graph_work": 571078,
+      "max_graph_work": 626957,
+      "cached_index_work_avoided": 6475310888,
+      "query_allowance": 1522851232,
+      "build_us": 560278633,
+      "mean_build_us": 23404,
+      "max_build_us": 357817,
+      "search_us": 62553435,
+      "max_tick_graph_search_us": 1812919
+    },
+    "simulation_tick_time": {
+      "completed_ticks": 1526,
+      "total_us": 735828879,
+      "mean_us": 482194,
+      "max_us": 2081713
+    },
+    "timed_transport": {
+      "boarded": 1659,
+      "transferred": 0,
+      "delivered": 604
+    },
+    "fallbacks": {
+      "GraphWork": {
+        "packets": 0,
+        "deferred_packets": 967
+      },
+      "GraphMemory": {
+        "packets": 0,
+        "deferred_packets": 0
+      },
+      "SnapshotLimit": {
+        "packets": 0,
+        "deferred_packets": 67879
+      },
+      "QueryWork": {
+        "packets": 5050,
+        "deferred_packets": 320086
+      },
+      "QueryLimit": {
+        "packets": 2252,
+        "deferred_packets": 0
+      },
+      "QueryMemory": {
+        "packets": 0,
+        "deferred_packets": 0
+      },
+      "PredictionIncomplete": {
+        "packets": 24883,
+        "deferred_packets": 0
+      },
+      "PredictionHorizon": {
+        "packets": 0,
+        "deferred_packets": 0
+      },
+      "NoJourney": {
+        "packets": 0,
+        "deferred_packets": 0
+      },
+      "InvalidLeg": {
+        "packets": 0,
+        "deferred_packets": 0
+      },
+      "StaleLeg": {
+        "packets": 772,
+        "deferred_packets": 0
+      },
+      "Disabled": {
+        "packets": 0,
+        "deferred_packets": 0
+      },
+      "VehicleDeleted": {
+        "packets": 0,
+        "deferred_packets": 0
+      }
+    },
+    "inventory": [
+      "Passenger inventory: complete; waiting=200450 people (available=200450, reserved=0); deferred=36501 people; state_ticks=3176545487; scaled_ticks=3010946389",
+      "Inventory Legacy: 425187 people/64228 packets; known_OD=65674 people",
+      "Inventory Journey: 0 people/0 packets; known_OD=0 people",
+      "Inventory Fallback: 50423 people/26847 packets; known_OD=50423 people",
+      "Passenger inventory: complete; waiting=203008 people (available=203008, reserved=0); deferred=49173 people; state_ticks=3176547014; scaled_ticks=3010947916",
+      "Inventory Legacy: 386012 people/68992 packets; known_OD=77621 people",
+      "Inventory Journey: 1067 people/338 packets; known_OD=1067 people",
+      "Inventory Fallback: 83176 people/46806 packets; known_OD=83176 people"
+    ],
+    "state_ticks": [
+      3176545487,
+      3176547014
+    ],
+    "save_sha256": "0fcea761b2fa17fd6a2024caf4968325affb1eb4240996deed1c55e6bbcfba5f",
+    "od_fallback": {
+      "work": 859217725,
+      "path_searches": 126954
+    }
+  },
+  "source_patch_sha256": "a6ab5a102fdf60151bb35415e16481b0e055c9453335656d988e8dfd04b43582",
+  "production_binary_sha256": "0f7ca86d5b507d0e7a7566e3ea392348d2579c60b3edca29e48af9abfc802cda",
+  "pragmatic": {
+    "process": {
+      "exit_code": 0,
+      "wall_seconds": 546.5054479,
+      "cpu_seconds": 624.234375,
+      "peak_working_set": 2007314432,
+      "sampled_peak_private": 2008420352,
+      "sample_ms": 100
+    },
+    "active": {
+      "applied_packets": 9461,
+      "applied_passengers": 22414,
+      "builds": 23464,
+      "static_hits": 22815,
+      "searches": 22809,
+      "OD_hits": 12131
+    },
+    "work_time": {
+      "graph_work": 13413611618,
+      "mean_graph_work": 571667,
+      "max_graph_work": 623821,
+      "cached_index_work_avoided": 6377750730,
+      "query_allowance": 1524315024,
+      "build_us": 408304053,
+      "mean_build_us": 17401,
+      "max_build_us": 35818,
+      "search_us": 9346857,
+      "max_tick_graph_search_us": 348825
+    },
+    "simulation_tick_time": {
+      "completed_ticks": 1526,
+      "total_us": 532147053,
+      "mean_us": 348720,
+      "max_us": 655385
+    },
+    "timed_transport": {
+      "boarded": 7673,
+      "transferred": 1,
+      "delivered": 1731
+    },
+    "untimed_transport": {
+      "boarded": 81242,
+      "transferred": 39405,
+      "delivered": 31078
+    },
+    "routing": {
+      "timed_packets": 9461,
+      "timed_ignoring_unknown": 9050,
+      "timed_budget_deferred": 455583,
+      "untimed_routes": 23892,
+      "untimed_no_route": 32219,
+      "untimed_budget_deferred": 637053
+    },
+    "od_fallback": {
+      "work": 2509180773,
+      "path_searches": 76409
+    },
+    "fallbacks": {
+      "GraphWork": {
+        "packets": 0,
+        "deferred_packets": 788
+      },
+      "GraphMemory": {
+        "packets": 0,
+        "deferred_packets": 0
+      },
+      "SnapshotLimit": {
+        "packets": 0,
+        "deferred_packets": 9461
+      },
+      "QueryWork": {
+        "packets": 2332,
+        "deferred_packets": 440416
+      },
+      "QueryLimit": {
+        "packets": 2586,
+        "deferred_packets": 0
+      },
+      "QueryMemory": {
+        "packets": 0,
+        "deferred_packets": 0
+      },
+      "PredictionIncomplete": {
+        "packets": 20312,
+        "deferred_packets": 0
+      },
+      "PredictionHorizon": {
+        "packets": 0,
+        "deferred_packets": 0
+      },
+      "NoJourney": {
+        "packets": 1,
+        "deferred_packets": 0
+      },
+      "InvalidLeg": {
+        "packets": 0,
+        "deferred_packets": 0
+      },
+      "StaleLeg": {
+        "packets": 5292,
+        "deferred_packets": 0
+      },
+      "Disabled": {
+        "packets": 0,
+        "deferred_packets": 0
+      },
+      "VehicleDeleted": {
+        "packets": 0,
+        "deferred_packets": 0
+      }
+    },
+    "inventory": [
+      "Passenger inventory: complete; waiting=200450 people (available=200450, reserved=0); deferred=36501 people; state_ticks=3176545487; scaled_ticks=3010946389",
+      "Inventory Legacy: 425187 people/64228 packets; known_OD=65674 people",
+      "Inventory Journey: 0 people/0 packets; known_OD=0 people",
+      "Inventory Fallback: 50423 people/26847 packets; known_OD=50423 people",
+      "Waiting routing: timed=0; CargoDist_or_deferred=176060; OD_fallback_or_waiting=24390 people",
+      "Passenger inventory: complete; waiting=211069 people (available=211069, reserved=0); deferred=51460 people; state_ticks=3176547014; scaled_ticks=3010947916",
+      "Inventory Legacy: 389150 people/69239 packets; known_OD=79877 people",
+      "Inventory Journey: 6007 people/1997 packets; known_OD=6007 people",
+      "Inventory Fallback: 77291 people/44817 packets; known_OD=77291 people",
+      "Waiting routing: timed=2606; CargoDist_or_deferred=165846; OD_fallback_or_waiting=42617 people"
+    ],
+    "measure_binary_sha256": "b523fecfc1da99396549c09ad298c54ce05dafdb5f124eba40a143bf44dc1912",
+    "save_sha256": "74d1d2efe84dc9573d0da7fe6b8259043cfbd7a9acd787f17e33788123365d87",
+    "opaque_graph_builds": 0,
+    "state_ticks": [
+      3176545487,
+      3176547014
+    ]
+  },
+  "original_input_unchanged": true,
+  "final_product_binary_sha256": "c34849c27e1c7b703d5838f8359e7b0804c2060ba3357c69e1409cf95ff8183e"
+}

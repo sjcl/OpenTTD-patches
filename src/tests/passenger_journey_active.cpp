@@ -135,6 +135,139 @@ struct FallbackLinks {
 	}
 };
 
+TEST_CASE("Timed ordinary journeys win over an untimed express without any bound proof", "[passenger][active][pragmatic]")
+{
+	ActiveFixture fixture;
+	ActiveTrain local({ActiveStop(A, 10000, 0), ActiveStop(D, 100)});
+	Order unknown = ActiveStop(A); unknown.SetWaitTimetabled(false);
+	ActiveTrain express({unknown, ActiveStop(D, 1)}, VehicleID{101});
+	auto *packet = fixture.Packet(); fixture.Plan(*packet);
+	CHECK(packet->GetPassengerJourney().vehicle == local.index);
+	CHECK(packet->GetPassengerJourney().arrival == NOW + 100);
+	CHECK(GetPassengerJourneyTickDiagnostic().timed_routes_ignoring_unknown == 1);
+	CHECK(GetPassengerJourneyTickDiagnostic().od_fallback_searches == 0);
+	fixture.Waiting().Append(packet, D);
+	std::array next{D};
+	CHECK(fixture.Waiting().Load(10, &express.cargo, next, TileIndex{0}, &express) == 0);
+	CHECK(fixture.Waiting().Load(10, &local.cargo, next, TileIndex{0}, &local) == 10);
+}
+
+TEST_CASE("Untimed direct journeys share live decisions and count only actual gradual loads", "[passenger][active][pragmatic][determinism]")
+{
+	ActiveFixture fixture;
+	Order unknown = ActiveStop(A); unknown.SetWaitTimetabled(false);
+	ActiveTrain train({unknown, ActiveStop(D, 1)});
+	auto *packet = fixture.Packet(300);
+	fixture.Waiting().Append(packet, D);
+	fixture.Waiting().RoutePassengerJourneys(PAX, A);
+	CHECK(packet->GetPassengerRoutingMode() == PassengerRoutingMode::Fallback);
+	CHECK(packet->GetPassengerJourney() == PassengerJourneyExecution{});
+	std::array next{D};
+	PassengerJourneyLoadingContext loading;
+	GameRandomSeedChecker seeds;
+	CHECK(fixture.Waiting().Reserve(100, &train.cargo, next, TileIndex{0}, &train, &loading) == 100);
+	CHECK(GetPassengerJourneyTickDiagnostic().untimed_boarded_passengers == 0);
+	CHECK(fixture.Waiting().Load(40, &train.cargo, next, TileIndex{0}, &train, &loading) == 40);
+	CHECK(fixture.Waiting().Load(60, &train.cargo, next, TileIndex{0}, &train, &loading) == 60);
+	CHECK(GetPassengerJourneyTickDiagnostic().untimed_boarded_passengers == 100);
+	CHECK(GetPassengerJourneyTickDiagnostic().untimed_routes == 1);
+	CHECK(GetPassengerJourneyTickDiagnostic().boarded_passengers == 0);
+	CHECK(fixture.Waiting().AvailableCount() == 200);
+	CHECK(train.cargo.Packets()->front()->GetPassengerJourney() == PassengerJourneyExecution{});
+	CHECK(seeds.Check());
+}
+
+TEST_CASE("Mixed timed and untimed corridors transfer and deliver without invented execution times", "[passenger][active][pragmatic][delivery]")
+{
+	ActiveFixture fixture;
+	FinalDeliveryFixture delivery;
+	FallbackLinks links; links.Edge(A, B); links.Edge(B, D);
+	ActiveTrain feeder({ActiveStop(A), ActiveStop(B, 100)});
+	Order unknown = ActiveStop(B); unknown.SetWaitTimetabled(false);
+	ActiveTrain connection({unknown, ActiveStop(D, 1)}, VehicleID{101});
+	connection.owner = delivery.company->index;
+	std::optional<ActiveTrain> direct;
+	SECTION("No timed end-to-end route uses the mixed corridor") {}
+	SECTION("A complete timed route takes priority over the mixed corridor") {
+		direct.emplace(std::vector<Order>{ActiveStop(A, 10000, 250), ActiveStop(D, 100)}, VehicleID{102});
+	}
+	auto *packet = fixture.Packet();
+	fixture.Waiting().Append(packet, B);
+	fixture.Waiting().RoutePassengerJourneys(PAX, A);
+	if (direct) {
+		REQUIRE(packet->GetPassengerRoutingMode() == PassengerRoutingMode::Journey);
+		CHECK(packet->GetPassengerJourney().vehicle == direct->index);
+		std::array next{B};
+		CHECK(fixture.Waiting().Load(10, &feeder.cargo, next, TileIndex{0}, &feeder) == 0);
+		std::array destination{D};
+		CHECK(fixture.Waiting().Load(10, &direct->cargo, destination, TileIndex{0}, &*direct) == 10);
+		CHECK(GetPassengerJourneyTickDiagnostic().untimed_routes == 0);
+		return;
+	}
+	CHECK(packet->GetPassengerRoutingMode() == PassengerRoutingMode::Fallback);
+	std::array next{B};
+	REQUIRE(fixture.Waiting().Load(10, &feeder.cargo, next, TileIndex{0}, &feeder) == 10);
+	CHECK(packet->GetPassengerVia() == B);
+	CHECK(packet->GetPassengerJourney() == PassengerJourneyExecution{});
+	feeder.LoadAt(1);
+	CargoPayment payment(CargoPaymentID::Invalid(), &feeder);
+	PassengerJourneyActiveContext at_b(&feeder, B);
+	feeder.cargo.Stage(true, B, next, OrderUnloadType::UnloadIfPossible, &Station::Get(B)->goods[PAX], PAX,
+			&payment, TileIndex{0}, nullptr, nullptr, &at_b);
+	CHECK(feeder.cargo.ActionCount(Action::Deliver) == 0);
+	REQUIRE(feeder.cargo.Unload(10, &fixture.Waiting(B), PAX, &payment, TileIndex{0}) == 10);
+	std::array destination{D};
+	CHECK(fixture.Waiting(B).Load(10, &feeder.cargo, destination, TileIndex{0}, &feeder) == 0);
+	REQUIRE(fixture.Waiting(B).Load(10, &connection.cargo, destination, TileIndex{0}, &connection) == 10);
+	CHECK(packet->GetPassengerVia() == D);
+	CHECK(packet->GetPassengerJourney() == PassengerJourneyExecution{});
+	connection.LoadAt(1);
+	CargoPayment final_payment(CargoPaymentID::Invalid(), &connection);
+	PassengerJourneyActiveContext at_d(&connection, D);
+	connection.cargo.Stage(true, D, destination, OrderUnloadType::UnloadIfPossible, &Station::Get(D)->goods[PAX], PAX,
+			&final_payment, TileIndex{0}, nullptr, nullptr, &at_d);
+	REQUIRE(connection.cargo.Unload(10, &fixture.Waiting(D), PAX, &final_payment, TileIndex{0}) == 10);
+	CHECK(delivery.company->cur_economy.delivered_cargo[PAX] == 10);
+	CHECK(GetPassengerJourneyTickDiagnostic().untimed_boarded_passengers == 20);
+	CHECK(GetPassengerJourneyTickDiagnostic().untimed_transferred_passengers == 10);
+	CHECK(GetPassengerJourneyTickDiagnostic().untimed_delivered_passengers == 10);
+}
+
+TEST_CASE("Untimed interchanges consider every progressing live stop and reuse one OD search", "[passenger][active][pragmatic][performance]")
+{
+	ActiveFixture fixture;
+	FallbackLinks links; links.Edge(A, B); links.Edge(B, D); links.Edge(A, C); links.Edge(C, D);
+	ActiveTrain train({ActiveStop(A), ActiveStop(C)});
+	PassengerOdFallbackContext fallback;
+	GameRandomSeedChecker seeds;
+	auto *packet = fixture.Packet(); packet->FallbackPassengerJourney(A, NOW);
+	REQUIRE(fallback.CanBoard(*packet, &train, PAX));
+	fallback.PrepareBoard(*packet, &train, PAX);
+	CHECK(packet->GetPassengerVia() == C); // The old first hop B is not on this train.
+	const auto work = GetPassengerJourneyTickDiagnostic().od_fallback_work;
+	for (uint i = 0; i < 4096; ++i) CHECK(fallback.CanBoard(*packet, &train, PAX));
+	CHECK(GetPassengerJourneyTickDiagnostic().od_fallback_searches == 1);
+	CHECK(GetPassengerJourneyTickDiagnostic().od_fallback_work == work);
+	CHECK(GetPassengerJourneyTickDiagnostic().untimed_routes == 1);
+	CHECK(seeds.Check());
+	delete packet;
+}
+
+TEST_CASE("A stale saved interchange cannot poison another progressing live stop", "[passenger][active][pragmatic][fallback]")
+{
+	ActiveFixture fixture;
+	FallbackLinks links; links.Edge(A, B); links.Edge(B, D); links.Edge(A, C); links.Edge(C, D);
+	ActiveTrain train({ActiveStop(A), ActiveStop(B), ActiveStop(C)});
+	auto *packet = fixture.Packet(); packet->FallbackPassengerJourney(A, NOW); packet->SetPassengerVia(B);
+	Station::Get(B)->goods[PAX].node = INVALID_NODE;
+	PassengerOdFallbackContext fallback;
+	CHECK(fallback.Decide(*packet, &train, PAX, A, true, OrderUnloadType::UnloadIfPossible) == Action::Keep);
+	CHECK(packet->GetPassengerVia() == C);
+	CHECK(packet->GetPassengerDestination() == D);
+	CHECK(GetPassengerJourneyTickDiagnostic().od_fallback_searches == 1);
+	delete packet;
+}
+
 /** A zero-capacity real road vehicle exercises the complete station countdown
  * and waiting pass without railway geometry or engine/cargo loading setup. */
 static RoadVehicle *DueLoadingVehicle(StationID station, uint ticks = 1)
@@ -210,8 +343,8 @@ TEST_CASE("Active horizons certify short frequent journeys and extend long ODs",
 		CHECK(GetPassengerJourneyTickDiagnostic().builds == 3);
 		CHECK(GetPassengerJourneyTickDiagnostic().queries == 3);
 	}
-	SECTION("Unknown timetable cannot be certified by a partial path") {
-		train.GetOrder(1)->SetWaitTimetabled(false);
+	SECTION("Unknown boarding departure cannot be certified by a partial path") {
+		train.GetOrder(0)->SetWaitTimetabled(false);
 		PassengerJourneyActiveContext context(nullptr, A);
 		auto *packet = fixture.Packet();
 		CHECK_FALSE(context.PlanWaiting(*packet, PAX, D));
@@ -575,18 +708,23 @@ TEST_CASE("OD fallback work is shared bounded deterministic and reusable until t
 	auto *packet = fixture.Packet(); packet->FallbackPassengerJourney(B, NOW);
 	fixture.Waiting(B).Append(packet, StationID::Invalid());
 	GameRandomSeedChecker seeds;
+	uint successful = 0;
 	for (uint i = 0; i < 64; ++i) {
 		PassengerJourneyLoadingContext loading;
-		CHECK(loading.CanBoard(*packet, &train));
+		bool allowed = loading.CanBoard(*packet, &train);
+		successful += allowed;
 		size_t used = GetPassengerJourneyTickDiagnostic().od_fallback_work;
-		CHECK(loading.CanBoard(*packet, &train)); // Same event reuses the exact result without charging again.
+		CHECK(loading.CanBoard(*packet, &train) == allowed); // Both successes and failures are shared.
 		CHECK(GetPassengerJourneyTickDiagnostic().od_fallback_work == used);
 	}
+	CHECK(successful > 0);
+	CHECK(successful < 64);
 	PassengerJourneyLoadingContext exhausted;
 	std::array next{D};
 	CHECK(fixture.Waiting(B).Reserve(10, &train.cargo, next, TileIndex{0}, &train, &exhausted) == 0);
 	CHECK(fixture.Waiting(B).Load(10, &train.cargo, next, TileIndex{0}, &train, &exhausted) == 0);
-	CHECK(GetPassengerJourneyTickDiagnostic().od_fallback_work == 4 * 1024 * 1024);
+	CHECK(GetPassengerJourneyTickDiagnostic().od_fallback_work <= 4 * 1024 * 1024);
+	CHECK(GetPassengerJourneyTickDiagnostic().od_fallback_work > 4 * 1024 * 1024 - 16);
 	CHECK(fixture.Waiting(B).AvailableCount() == 10);
 	_state_ticks += 1; BeginPassengerJourneyTick();
 	CHECK(fixture.Waiting(B).Load(10, &train.cargo, next, TileIndex{0}, &train) == 10);
@@ -618,12 +756,13 @@ TEST_CASE("Journey failure uses validated OD fallback while unsupported passenge
 {
 	ActiveFixture fixture;
 	ActiveTrain train({ActiveStop(A), ActiveStop(D, 100)});
-	bool fallback = true, can_board = true;
+	bool fallback = true, can_board = true, timed = false;
 	std::optional<ActiveTrain> uncertain;
 	auto *packet = fixture.Packet();
 	SECTION("Missing destination route") { train.GetOrder(1)->MakeGoToStation(B); can_board = false; }
 	SECTION("Incomplete timetable") { train.GetOrder(0)->SetWaitTimetabled(false); }
-	SECTION("A known path cannot hide an incomplete alternative") {
+	SECTION("A known path is preferred to an incomplete alternative") {
+		timed = true;
 		Order untimed = ActiveStop(A); untimed.SetWaitTimetabled(false);
 		uncertain.emplace(std::vector<Order>{untimed, ActiveStop(D, 50)}, VehicleID{101});
 	}
@@ -634,7 +773,7 @@ TEST_CASE("Journey failure uses validated OD fallback while unsupported passenge
 	SECTION("Unsupported vehicle types cannot certify OD boarding") { train.type = VehicleType::Effect; can_board = false; }
 	fixture.Waiting().Append(packet, D);
 	fixture.Waiting().RoutePassengerJourneys(PAX, A);
-	CHECK(packet->GetPassengerRoutingMode() == (fallback ? PassengerRoutingMode::Fallback : PassengerRoutingMode::Legacy));
+	CHECK(packet->GetPassengerRoutingMode() == (timed ? PassengerRoutingMode::Journey : fallback ? PassengerRoutingMode::Fallback : PassengerRoutingMode::Legacy));
 	std::array next{D};
 	CHECK(fixture.Waiting().Load(10, &train.cargo, next, TileIndex{0}, &train) == (can_board ? 10 : 0));
 }
@@ -686,6 +825,9 @@ TEST_CASE("Routing state and leg have an independent versioned save round trip",
 	PassengerRoutingMode expected = PassengerRoutingMode::Journey;
 	SECTION("Journey survives") {}
 	SECTION("Fallback survives") { packet->FallbackPassengerJourney(A, NOW); expected = PassengerRoutingMode::Fallback; }
+	SECTION("An untimed interchange survives without an executable timed leg") {
+		packet->FallbackPassengerJourney(A, NOW); packet->SetPassengerVia(B); expected = PassengerRoutingMode::Fallback;
+	}
 	SECTION("Budget wait survives without a new save feature") {
 		packet->DeferPassengerJourney(A, NOW); expected = PassengerRoutingMode::Legacy;
 	}
@@ -694,6 +836,7 @@ TEST_CASE("Routing state and leg have an independent versioned save round trip",
 	REQUIRE_FALSE(SlTestSaveLoadTable(packet.get(), loaded.get(), GetCargoPacketDesc()).empty());
 	CHECK(loaded->GetPassengerRoutingMode() == expected); CHECK(loaded->GetPassengerDestination() == D);
 	CHECK(loaded->Count() == 10); CHECK(loaded->GetFeederShare() == 100);
+	CHECK(loaded->GetPassengerVia() == packet->GetPassengerVia());
 	if (expected == PassengerRoutingMode::Journey) CHECK(loaded->GetPassengerJourney() == packet->GetPassengerJourney());
 	if (packet->IsPassengerJourneyDeferred()) {
 		CHECK(loaded->IsPassengerJourneyDeferred());
@@ -917,7 +1060,8 @@ TEST_CASE("A certified physical prefix of an incomplete trip is applied reserved
 	PassengerJourneyActiveContext context(nullptr, A);
 	REQUIRE(context.PlanWaiting(*packet, PAX, D));
 	CHECK(GetPassengerJourneyTickDiagnostic().complete_graphs == 0);
-	CHECK(GetPassengerJourneyTickDiagnostic().uncertainty_resolved == 1);
+	CHECK(GetPassengerJourneyTickDiagnostic().uncertainty_resolved == 0);
+	CHECK(GetPassengerJourneyTickDiagnostic().timed_routes_ignoring_unknown == 1);
 	fixture.Waiting().Append(packet, D);
 	std::array next{D};
 	PassengerJourneyLoadingContext loading;

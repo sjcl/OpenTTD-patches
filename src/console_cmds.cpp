@@ -4607,6 +4607,7 @@ static bool ConPassengerJourneyStats(std::span<std::string_view> argv)
 		/* Explicit read-only census. Reserved station cargo is held in vehicle
 		 * lists, so count each packet there exactly once for the global rates. */
 		std::array<uint64_t, 3> people{}, packets{}, known{};
+		std::array<uint64_t, 3> waiting_modes{};
 		uint64_t available = 0, reserved = 0, deferred = 0;
 		size_t work = 0;
 		bool complete = true;
@@ -4626,6 +4627,9 @@ static bool ConPassengerJourneyStats(std::span<std::string_view> argv)
 				const auto &list = station->goods[cargo].ConstCargoList();
 				available += list.AvailableCount();
 				reserved += list.ReservedCount();
+				const auto available_modes = CountPassengerRoutingModes(list);
+				const auto reserved_modes = CountReservedPassengerRoutingModes(*station, cargo);
+				for (size_t mode = 0; mode < waiting_modes.size(); ++mode) waiting_modes[mode] += available_modes[mode] + reserved_modes[mode];
 				for (StationCargoList::ConstIterator it(list.Packets()->begin()); it != list.Packets()->end(); ++it) {
 					if (!inspect(*it)) break;
 				}
@@ -4642,6 +4646,7 @@ static bool ConPassengerJourneyStats(std::span<std::string_view> argv)
 				complete ? "complete" : "truncated", available + reserved, available, reserved, deferred, _state_ticks.base(), _scaled_tick_counter);
 		static constexpr std::array modes{"Legacy", "Journey", "Fallback"};
 		for (size_t mode = 0; mode < modes.size(); ++mode) IConsolePrint(CC_DEFAULT, "Inventory {}: {} people/{} packets; known_OD={} people", modes[mode], people[mode], packets[mode], known[mode]);
+		IConsolePrint(CC_DEFAULT, "Waiting routing: timed={}; CargoDist_or_deferred={}; OD_fallback_or_waiting={} people", waiting_modes[1], waiting_modes[0], waiting_modes[2]);
 		return true;
 	}
 	if (operation == "reset") { ResetPassengerJourneyDiagnostic(); return true; }
@@ -4696,6 +4701,9 @@ static bool ConPassengerJourneyStats(std::span<std::string_view> argv)
 			stats.fair_share_claims, stats.fair_share_releases, stats.fair_share_work, stats.retained_rides);
 	IConsolePrint(CC_DEFAULT, "OD fallback: work={}; path_searches={}", stats.od_fallback_work, stats.od_fallback_searches);
 	IConsolePrint(CC_DEFAULT, "Journey transport: boarded={}; transferred={}; delivered={} people", stats.boarded_passengers, stats.transferred_passengers, stats.delivered_passengers);
+	IConsolePrint(CC_DEFAULT, "Pragmatic routing: timed={} packets; timed_ignoring_unknown={}; timed_budget_deferred={}; untimed={} live routes; untimed_no_route={}; untimed_budget_deferred={}",
+			stats.journeys, stats.timed_routes_ignoring_unknown, stats.timed_budget_deferred, stats.untimed_routes, stats.untimed_no_route, stats.untimed_budget_deferred);
+	IConsolePrint(CC_DEFAULT, "Untimed transport: boarded={}; transferred={}; delivered={} people", stats.untimed_boarded_passengers, stats.untimed_transferred_passengers, stats.untimed_delivered_passengers);
 	for (size_t i = 0; i < reasons.size(); ++i) IConsolePrint(CC_DEFAULT, "Fallback {}: {} packets; deferred={} packets", reasons[i], stats.fallbacks[i], stats.deferred[i]);
 	return true;
 }

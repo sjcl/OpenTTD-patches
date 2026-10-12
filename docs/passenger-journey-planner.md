@@ -5,8 +5,8 @@ train, road, ship and aircraft journeys in one network. Its read-only
 [shadow integration](passenger-journey-shadow.md)
 observes `VehicleCargoList::Stage` without changing loading/unloading decisions,
 freight routing, or savegame structures. The [Active integration](passenger-journey-active.md)
-controls real boarding and unloading. Unknown OD and inconclusive searches use
-the existing CargoDist path. See [multimodal support](passenger-journey-multimodal.md)
+controls real boarding and unloading. Unknown OD uses CargoDist; known OD uses
+live destination-aware fallback when no usable timed result is found. See [multimodal support](passenger-journey-multimodal.md)
 for vehicle adapters and the latest validation results.
 
 ## API and snapshot ownership
@@ -69,20 +69,20 @@ interchange and forecasts are relaxed, so these distances are lower bounds,
 never a claim that a train can actually be caught. This reverse search computes
 all connected layers once under the same budgets, independent of the initial
 forward stage; a deep corridor must not be discarded before extension. A
-departure is skipped if its suffix cannot reach the destination or an uncertain
-service. Intermediate labels are retained at stations that can still complete
+departure is skipped if its timed suffix cannot reach the destination. Intermediate labels are retained at stations that can still complete
 the journey, including beyond the current stage. Reverse work can therefore
 increase for a destination connected to many distant interchange layers.
 
-Incomplete predictions require a second conservative reverse search, seeded at
-declared stations of those services even when their dynamic branch captured no
-visit there. Such suffixes remain possible, and an origin connected to them
-retains incomplete status. Prediction uncertainty cannot become certified
-unreachability merely because destination pruning removed a captured prefix.
-Uncertainty seeds are restricted to the destination's undirected component of
-declared service stops. This deliberately includes unresolved conditional
-branches and ignores timing/direction/restrictions. Disconnected untimed lines
-cannot affect the query; connected uncertainty remains conservative.
+Prediction completeness and route usability are separate. `GetOutcome()` reports
+`TimedRouteFound`, `NoTimedRoute`, `BudgetDeferred` or `InvalidQuery`. A usable
+candidate consists entirely of validated departure/arrival occurrences, even
+when its trip becomes unknown after alighting. Graph/query prediction status
+remains Unknown when the relevant component has incomplete predictions.
+Unknown services add no score penalty and require no relaxed arrival-bound
+search. `BoundUnknownJourneys` has been removed. Disconnected uncertainty still
+cannot affect the query, and budget-limited searches remain explicitly deferred.
+The active caller uses live untimed fallback only when a timed outcome cannot
+be adopted; fallback never creates planner legs or synthetic timestamps.
 
 Once the requested number of final candidates exists, a frontier is skipped
 only when a lower bound on `(score, arrival, boardings)` is strictly worse than
@@ -265,25 +265,19 @@ conditions. It never certifies permanent disconnection. `IsInconclusive()`
 identifies empty uncertain/limited/invalid results for CargoDist fallback.
 Leg/journey prediction status describes the selected physical timed interval;
 a certified prefix can be Complete while its trip's later suffix stays Unknown.
-The result separately certifies all alternatives: historical implicit orders
-are skipped consistently under the explicit-instruction operating model, and
-unknown suffixes optimistically connect all declared stops at zero travel time
-after their certified-prefix endpoint. The unknown arrival bound must be
-strictly worse than the full generalized score of every requested candidate,
-or the unknown destination must be unreachable in the relaxation. Equal scores,
-missing K slots with reachable unknowns and exhausted proof budgets remain
-inconclusive. See the [OD uncertainty follow-up](passenger-journey-scoped-uncertainty-2026-10-12.md).
+`GetOutcome()` independently determines whether active routing can adopt that
+candidate. Unknown alternatives are ignored; prediction status does not certify
+their completeness or optimality. Historical implicit orders are still skipped
+under the explicit-instruction operating model. Work/memory/label and transfer
+ceilings remain `BudgetDeferred`, including when a validated candidate was found
+before truncation. See [pragmatic routing](passenger-journey-pragmatic-routing-2026-10-12.md).
 
-The next stage should construct/reuse a snapshot and planner for a simulation
-epoch, group packets by OD and readiness event, and select a time-valid candidate
-before separately verifying live loading rules and available capacity. It should
-reserve seats by physical vehicle and segment, update the capacity-provider
-revision, and replan after missed/full departures. OD-unknown packets and
-inconclusive results should keep the CargoDist fallback. Never clear
-`passenger_destination` after a limited search or replace it with an intermediate
-station. This change does not connect the planner to loading or modify packets.
-Never persist these
-snapshot IDs or use current observations as future reservations.
+The active integration groups packets by OD and readiness event in scoped snapshots,
+then verifies live loading rules and assigns real seats through existing cargo
+operations. Known-OD inconclusive results use destination-aware untimed fallback;
+unknown OD retains CargoDist. Never clear `passenger_destination` after a limited
+search or replace it with an intermediate station. Snapshot IDs and current free
+seats are never persisted as future reservations.
 
 ## OD packet limit
 

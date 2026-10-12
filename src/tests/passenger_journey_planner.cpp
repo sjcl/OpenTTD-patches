@@ -567,7 +567,8 @@ TEST_CASE("Reverse journey pruning preserves unknown connections beyond captured
 	limits.max_transfers = 0;
 	auto direct = planner.Plan(PAX, A, D, NOW, limits);
 	CHECK(direct.IsInconclusive());
-	CHECK(direct.stop_reason == PassengerJourneyStopReason::TransferLimit);
+	CHECK(direct.stop_reason == PassengerJourneyStopReason::PredictionIncomplete);
+	CHECK(direct.GetOutcome() == PassengerJourneyOutcome::NoTimedRoute);
 }
 
 TEST_CASE("Journey destination lower bounds retain faster interchanges and honor preference costs", "[passenger][journey]")

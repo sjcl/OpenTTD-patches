@@ -1,0 +1,5 @@
+--- a/src/console_cmds.cpp
++++ b/src/console_cmds.cpp
+@@ ConUnpauseGame
++	/* Measurement harness only: explicit continuation on an isolated NewGRF copy. */
++	if (_pause_mode.Test(PauseMode::Error)) Command<Commands::Pause>::Post(PauseMode::Error, false);

@@ -184,7 +184,7 @@ public:
 	/** Completeness of fleet discovery/capture. Prediction completeness is also reported on each Trip and query. */
 	PassengerPredictionStatus GetStatus() const;
 	/** Capture completeness for this OD. Complete inventories unknown alternatives too;
-	 * it does not certify their timings or a winning journey. The planner proves optimality separately. */
+	 * it does not certify their timings or a winning journey. The planner ranks validated timed routes separately. */
 	PassengerPredictionStatus GetQueryStatus(StationID origin, StationID destination, bool weighted_waiting = false) const;
 	enum class Coverage : uint8_t { GlobalComplete, ScopedComplete, Incomplete };
 	Coverage GetCoverage(StationID origin, StationID destination) const;
