@@ -13,6 +13,7 @@ add_test_files(
     passenger_od.cpp
     passenger_od_assignment.cpp
     passenger_service_graph.cpp
+    passenger_service_graph_index.cpp
     passenger_journey_planner.cpp
     passenger_journey_shadow.cpp
     passenger_journey_active.cpp
@@ -36,3 +37,11 @@ add_test_files(
     tilearea.cpp
     utf8.cpp
 )
+
+# Opt-in allocator instrumentation for the hidden service-index benchmark only.
+# It is never linked into the game and is disabled in ordinary test builds.
+option(OPTION_SERVICE_INDEX_ALLOCATIONS "Measure service index C++ allocations in openttd_test (MSVC)" OFF)
+if(OPTION_SERVICE_INDEX_ALLOCATIONS AND MSVC AND NOT OPTION_NO_SPLIT_LIB)
+    target_sources(openttd_test PRIVATE passenger_index_allocations.cpp)
+    target_compile_definitions(openttd_test PRIVATE WITH_SERVICE_INDEX_ALLOCATIONS)
+endif()
