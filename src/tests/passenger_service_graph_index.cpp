@@ -198,15 +198,19 @@ struct PassengerServiceGraphTestAccess {
 		graph.services.reserve(trip_count); graph.trips.reserve(trip_count);
 		for (size_t t = 0; t < trip_count; ++t) {
 			Graph::Service service{}; service.id = OrderListID{static_cast<uint16_t>(t)};
+			auto pattern = std::make_shared<Graph::ServicePattern>();
+			pattern->id = service.id;
 			service.coverage_status = t % 11 == 0 ? Status::Unknown : Status::Complete;
 			service.trips.push_back(t);
 			for (size_t v = 0; v < 8; ++v) {
 				const size_t raw = hub ? (v % 2 == 0 ? 0 : 1 + t % (station_count - 1)) : (t * 8 + v) % station_count;
 				const StationID station{static_cast<uint16_t>(sparse ? 63000 + raw : raw)};
-				service.stops.push_back({station, static_cast<VehicleOrderID>(v), v % 5 != 3, v % 5 != 2, v == 6, {}, -1});
+				pattern->stops.push_back({station, static_cast<VehicleOrderID>(v), v % 5 != 3, v % 5 != 2, v == 6, {}, -1});
 				auto &ids = graph.station_services[station];
 				if (ids.empty() || ids.back() != service.id) ids.push_back(service.id);
 			}
+			service.pattern = pattern;
+			service.stops = pattern->stops;
 			Graph::Trip trip{}; trip.service = service.id; trip.vehicle = VehicleID{static_cast<uint32_t>(trip_count - t)};
 			if (t != 0 && t % 41 == 0) trip.vehicle = graph.trips.back().vehicle; // Also exercise vehicle ties resolved by Trip/Visit.
 			trip.operation = t % 29 == 0 ? Graph::Operation::Stopped : Graph::Operation::Running;
