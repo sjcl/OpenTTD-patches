@@ -10,6 +10,31 @@ Known-OD fallback uses the untimed, destination-aware policy below. See
 compatibility, uncertainty and validation results.
 The console-only shadow diagnostics remain independent and read-only.
 
+## Timetable prediction policy
+
+Active scoped graphs, their nominal service patterns, boarding/continuation
+validation and planner shadow graphs use `PassengerTimingPolicy::AssumeTimetable`.
+All four leave types and full-load waits (including other cargo compartments)
+use the declared station dwell. Ordinary `lateness_counter` never changes it.
+Only the elapsed time of the current travel/loading order is subtracted; future
+travel and dwell use the explicit timetable flags, including explicitly set zero.
+Unflagged travel remains Unknown even when a measured nonzero value exists.
+
+An overdue vehicle still travelling has an unknown current arrival. Scoped
+prediction stops there; nominal traversal can retain downstream segment durations
+without assigning absolute times. No physical arrival is invented. Assigned
+loading dispatch departures retain their slot offset; future dispatch slots and
+competition keep the existing validation and uncertainty rules.
+
+Boarding validation uses the same 4,096 visits/steps and bounded graph work
+ceiling as planning. Vehicle/service IDs, signatures, live stops, load/unload
+flags and exact occurrence times still have to match. Ordinary lateness alone
+does not invalidate a leg. Actual early/late arrivals that change occurrences
+require live replanning or fallback, including stale gradual-loading reservations.
+Seat allocation and vehicle control remain unchanged. The default predictor
+policy is `Conservative`, preserving `PassengerRoutingContext` and disabled
+Journey routing. See the [implementation and measurement report](passenger-journey-timetable-assumption-2026-10-12.md).
+
 ## Execution and real capacity
 
 Each packet records Legacy, Journey or Fallback. A Journey stores only its next
@@ -183,7 +208,7 @@ eligibility checks. Existing Journey packets cannot starve ready Fallback retrie
 An event has 4,194,304 work units, at most 128 destination cache entries and
 queries, and a 256 MiB snapshot envelope. Each graph is capped at
 2,097,152 work units, a 128 MiB conservative allocation envelope, 262,144 visits
-and 128 visits per vehicle. Each distinct query has 65,536 work units, 8,192
+and 4,096 visits per vehicle. Each distinct query has 65,536 work units, 8,192
 labels, an 8 MiB scratch envelope and one selected candidate. Graph work is
 charged deterministically, with identical static-index allowances when warm;
 each distinct query reserves 65,536 units. Signature traversal is charged too.
@@ -266,8 +291,8 @@ tick-budget exhaustion/recovery without RNG use. On the fallback branch's MSVC x
 build, 352 default unit cases (111,868 assertions), 157 explicitly selected
 passenger cases (120,836 assertions) and all 359 CTest entries passed.
 
-The predictor deliberately falls back for unresolved conditional orders,
-unknown full-load departure times, refits and competing future dispatch slots.
+The planner deliberately falls back for unresolved conditional orders,
+missing timetable flags, overdue current travel, refits and competing future dispatch slots.
 There is no guaranteed future-seat reservation. Multimodal prediction uses
 the same uncertainty and actual-capacity rules described above.
 Snapshots are shared within an event; a fresh arrival can still require a

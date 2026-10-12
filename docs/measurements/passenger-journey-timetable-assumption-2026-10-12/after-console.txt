@@ -1,0 +1,158 @@
+Console log output started to 'C:/Users/bebe/.codex/worktrees/2c6d/OpenTTD-patches/build-timetable/run/after-console.txt'.
+System Date: 2026-10-12 19:37:52
+Calendar Date: 117528-03-11 (42926290), fract: 27, sub_fract: 0
+Economy Date: 117528-03-11 (42926290), fract: 27, tick skip: 0
+Period display offset: 0
+Elapsed years: 117527
+Tick counter: 3010946389
+Tick counter (scaled): 3010946389
+State ticks: 3176545487 (offset: 0)
+Effective economy speed reduction factor: 1
+Ticks per calendar day: 74
+Timetable time: 22:10 + 27 ticks
+Service 1 vehicle 3355: type=0; tile=22301316; current_type=OT_GOTO_STATION; real_order=7; implicit_order=7; timetable_order=7; elapsed=276; lateness=-7; last_station=43
+Order 0: type=OT_GOTO_STATION; destination=13; nonstop=1; travel=1/true; wait=46/true; load=0; unload=0; refit=false; leave=1; pax_load=0; dispatch=-1
+Order 1: type=OT_GOTO_STATION; destination=20; nonstop=1; travel=1845/true; wait=73/true; load=0; unload=0; refit=false; leave=1; pax_load=0; dispatch=-1
+Order 2: type=OT_GOTO_STATION; destination=35; nonstop=1; travel=1098/true; wait=69/true; load=0; unload=0; refit=false; leave=0; pax_load=0; dispatch=-1
+Order 3: type=OT_GOTO_STATION; destination=37; nonstop=1; travel=1137/true; wait=99/true; load=0; unload=0; refit=false; leave=1; pax_load=0; dispatch=-1
+Order 4: type=OT_GOTO_STATION; destination=39; nonstop=1; travel=883/true; wait=118/true; load=0; unload=0; refit=false; leave=0; pax_load=0; dispatch=-1
+Order 5: type=OT_GOTO_STATION; destination=42; nonstop=1; travel=472/true; wait=57/true; load=0; unload=0; refit=false; leave=0; pax_load=0; dispatch=-1
+Order 6: type=OT_GOTO_STATION; destination=43; nonstop=1; travel=498/true; wait=289/true; load=0; unload=0; refit=false; leave=0; pax_load=0; dispatch=-1
+Order 7: type=OT_GOTO_STATION; destination=42; nonstop=1; travel=529/true; wait=120/true; load=0; unload=0; refit=false; leave=0; pax_load=0; dispatch=-1
+Order 8: type=OT_GOTO_STATION; destination=39; nonstop=1; travel=468/true; wait=89/true; load=0; unload=0; refit=false; leave=0; pax_load=0; dispatch=-1
+Order 9: type=OT_GOTO_STATION; destination=37; nonstop=1; travel=984/true; wait=77/true; load=0; unload=0; refit=false; leave=1; pax_load=0; dispatch=-1
+Order 10: type=OT_GOTO_STATION; destination=35; nonstop=1; travel=1137/true; wait=115/true; load=0; unload=0; refit=false; leave=0; pax_load=0; dispatch=-1
+Order 11: type=OT_GOTO_STATION; destination=20; nonstop=1; travel=1148/true; wait=87/true; load=0; unload=0; refit=false; leave=1; pax_load=0; dispatch=-1
+Order 12: type=OT_GOTO_STATION; destination=13; nonstop=1; travel=1718/true; wait=49/true; load=0; unload=0; refit=false; leave=1; pax_load=0; dispatch=-1
+Prediction timing=0 prefix_only=false: status=1; stop=5; stopped_order=6; first_unknown_order=9; first_unknown_reason=5; cursor=3176558424; certified_until=3176547408; visits=13
+Prediction timing=0 prefix_only=true: status=1; stop=5; stopped_order=9; first_unknown_order=9; first_unknown_reason=5; cursor=3176547408; certified_until=3176547408; visits=3
+Prediction timing=1 prefix_only=false: status=0; stop=0; stopped_order=11; first_unknown_order=65535; first_unknown_reason=0; cursor=3176549878; certified_until=3176549583; visits=4
+Prediction timing=1 prefix_only=true: status=0; stop=0; stopped_order=11; first_unknown_order=65535; first_unknown_reason=0; cursor=3176549878; certified_until=3176549583; visits=4
+Passenger inventory: complete; waiting=200450 people (available=200450, reserved=0); deferred=36501 people; state_ticks=3176545487; scaled_ticks=3010946389
+Inventory Legacy: 425187 people/64228 packets; known_OD=65674 people
+Inventory Journey: 0 people/0 packets; known_OD=0 people
+Inventory Fallback: 50423 people/26847 packets; known_OD=50423 people
+Waiting routing: timed=0; CargoDist_or_deferred=176060; OD_fallback_or_waiting=24390 people
+Game unpaused.
+Script file 'C:/Users/bebe/.codex/worktrees/2c6d/OpenTTD-patches/build-timetable/run/scripts/after-finish.scr' scheduled to execute at the start of next calendar month.
+Console log file closed.
+Console log output started to 'C:/Users/bebe/.codex/worktrees/2c6d/OpenTTD-patches/build-timetable/run/after-console.txt'.
+System Date: 2026-10-12 19:43:50
+Calendar Date: 117528-04-01 (42926311), fract: 0, sub_fract: 0
+Economy Date: 117528-03-31 (42926310), fract: 73, tick skip: 0
+Period display offset: 0
+Elapsed years: 117527
+Tick counter: 3010947916
+Tick counter (scaled): 3010947916
+State ticks: 3176547014 (offset: 0)
+Effective economy speed reduction factor: 1
+Ticks per calendar day: 74
+Timetable time: 22:31 + 0 ticks
+Passenger inventory: complete; waiting=211083 people (available=211083, reserved=0); deferred=52225 people; state_ticks=3176547014; scaled_ticks=3010947916
+Inventory Legacy: 390721 people/69679 packets; known_OD=80766 people
+Inventory Journey: 8286 people/2638 packets; known_OD=8286 people
+Inventory Fallback: 74162 people/43589 packets; known_OD=74162 people
+Waiting routing: timed=3688; CargoDist_or_deferred=166736; OD_fallback_or_waiting=40659 people
+Graph coverage: complete=401; eligible_services=17837658; selected_services=14256194; selected_trips=70327311; largest_block_services=643; admitted_visits=384249903; max_unpredicted_ticks=16384
+Graph failure None: 22783 builds
+Graph failure Work: 626 builds
+Graph failure Memory: 0 builds
+Graph failure Services: 0 builds
+Graph failure Trips: 0 builds
+Graph failure TotalVisits: 0 builds
+Graph failure Index: 0 builds
+Graph failure Opaque: 0 builds
+Trip stop None: 0 predictions
+Trip stop Work: 3 predictions
+Trip stop Memory: 0 predictions
+Trip stop Visits: 0 predictions
+Trip stop Steps: 0 predictions
+Trip stop Timing: 7152668 predictions
+Trip stop Conditional: 0 predictions
+Trip stop Refit: 0 predictions
+Trip stop Implicit: 0 predictions
+Trip stop Unsupported: 3461436 predictions
+Trip stop Dispatch: 0 predictions
+Trip stop Facilities: 0 predictions
+Trip stop VehicleState: 306633 predictions
+Trip stop OrderProgress: 85543 predictions
+First graph failure: reason=Work; stage=Structure; work=254859; memory=651776; trips=0; visits=0
+First opaque scope: service=65535; vehicle=1048575
+First trip failure: reason=Timing; stage=Prediction; vehicle=6669; work=328549; memory=2590976; trips=6; visits=36; cursor=3176545488; certified_until=3176545488; required_until=3176549584
+Uncertainty: timing=7152668 trips; path=3853615 trips; OD_resolved=0 searches; first_order=1; first_unknown_order=1; first_unknown_reason=Timing; tile=19466882; current_order=1
+Simulation tick time: completed_ticks=1526; total_us=357286365; mean_us=234132; max_us=448633
+OD proof sample: origin=43; destination=823; tick=3176545488; status=2; stop=3; candidates=0; best_score=-1; unknown_arrival_bound=-1; unknown_service=65535
+OD proof sample: origin=43; destination=102; tick=3176545488; status=1; stop=5; candidates=0; best_score=-1; unknown_arrival_bound=-1; unknown_service=65535
+OD proof sample: origin=43; destination=3871; tick=3176545488; status=1; stop=5; candidates=0; best_score=-1; unknown_arrival_bound=-1; unknown_service=65535
+OD proof sample: origin=43; destination=111; tick=3176545488; status=1; stop=5; candidates=0; best_score=-1; unknown_arrival_bound=-1; unknown_service=65535
+OD proof sample: origin=43; destination=844; tick=3176545488; status=2; stop=3; candidates=0; best_score=-1; unknown_arrival_bound=-1; unknown_service=65535
+OD proof sample: origin=43; destination=284; tick=3176545488; status=1; stop=5; candidates=0; best_score=-1; unknown_arrival_bound=-1; unknown_service=65535
+OD proof sample: origin=860; destination=1014; tick=3176545488; status=1; stop=5; candidates=0; best_score=-1; unknown_arrival_bound=-1; unknown_service=65535
+OD proof sample: origin=860; destination=1087; tick=3176545488; status=1; stop=5; candidates=0; best_score=-1; unknown_arrival_bound=-1; unknown_service=65535
+OD proof sample: origin=860; destination=1092; tick=3176545488; status=1; stop=5; candidates=0; best_score=-1; unknown_arrival_bound=-1; unknown_service=65535
+OD proof sample: origin=860; destination=1112; tick=3176545488; status=1; stop=5; candidates=0; best_score=-1; unknown_arrival_bound=-1; unknown_service=65535
+OD proof sample: origin=860; destination=1011; tick=3176545488; status=1; stop=5; candidates=0; best_score=-1; unknown_arrival_bound=-1; unknown_service=65535
+OD proof sample: origin=860; destination=862; tick=3176545488; status=1; stop=5; candidates=1; best_score=526; unknown_arrival_bound=-1; unknown_service=65535
+OD proof sample: origin=1361; destination=3664; tick=3176545488; status=3; stop=2; candidates=0; best_score=-1; unknown_arrival_bound=-1; unknown_service=65535
+OD proof sample: origin=1361; destination=3668; tick=3176545488; status=3; stop=2; candidates=0; best_score=-1; unknown_arrival_bound=-1; unknown_service=65535
+OD proof sample: origin=1716; destination=1869; tick=3176545488; status=1; stop=5; candidates=0; best_score=-1; unknown_arrival_bound=-1; unknown_service=65535
+OD proof sample: origin=120; destination=115; tick=3176545489; status=1; stop=5; candidates=1; best_score=1112; unknown_arrival_bound=-1; unknown_service=65535
+Active journey total: applied=12423 packets/30781 passengers; builds=23409; static_hits=22788; searches=22783; OD_hits=12231
+Train observations=96351444; cargo_capable=86870799; possible_refit=234090; predicted=69926243; inactive=3581577; excluded_cargo=9246555; excluded_scope=10982547; visits=384249903; omitted_trains_at_least=3; truncated_predictions=3 (uncaptured visit count unknown)
+Graph work=13463777302; mean=575153; max=637671; cached_index_allowance_avoided=6370203096; query_allowance=1529386216; build_us=224693143; mean_us=9598; max_us=35011; search_us=19340964; max_tick_graph_search_us=312436
+Peak graph retained_estimate=11676002; static retained_estimate=897036; conservative_graph_envelope_including_index=42324352; query_scratch=1256908; query_cache=1320
+Graph phase_us: discovery=1976948; capacity=47444809; selection=4558272; orders_dispatch=8756463; pattern=14107946; prediction=105078411; departures=39499683
+Event capture: discovery_hits=13964; service_hits=8349524; logical_work_replayed=1399991747; retained_estimate_including_shared_patterns=2739944
+Fair waiting shares: claims=6104; releases=0; admission_scan_work=8868422; retained_rides=0
+OD fallback: work=2489666516; path_searches=75805
+Journey transport: boarded=11226; transferred=21; delivered=2371 people
+Pragmatic routing: timed=12423 packets; timed_ignoring_unknown=11786; timed_budget_deferred=459840; untimed=23593 live routes; untimed_no_route=31737; untimed_budget_deferred=633930
+Untimed transport: boarded=78059; transferred=39653; delivered=29981 people
+Fallback GraphWork: 0 packets; deferred=783 packets
+Fallback GraphMemory: 0 packets; deferred=0 packets
+Fallback SnapshotLimit: 0 packets; deferred=7679 packets
+Fallback QueryWork: 3871 packets; deferred=444420 packets
+Fallback QueryLimit: 3087 packets; deferred=0 packets
+Fallback QueryMemory: 0 packets; deferred=0 packets
+Fallback PredictionIncomplete: 15317 packets; deferred=0 packets
+Fallback PredictionHorizon: 0 packets; deferred=0 packets
+Fallback NoJourney: 0 packets; deferred=0 packets
+Fallback InvalidLeg: 0 packets; deferred=0 packets
+Fallback StaleLeg: 6531 packets; deferred=0 packets
+Fallback Disabled: 0 packets; deferred=0 packets
+Fallback VehicleDeleted: 0 packets; deferred=0 packets
+15 link graph jobs
+  Job:     0, graph: 1, cargo: 0, completed: true, nodes: 4726, cost: 22335076, started: -3652, ends in: 8188, duration: 11840
+  Job:     1, graph: 14, cargo: 0, completed: true, nodes: 2, cost: 4, started: -396, ends in: 788, duration: 1184
+  Job:     2, graph: 16, cargo: 0, completed: true, nodes: 2, cost: 4, started: -396, ends in: 788, duration: 1184
+  Job:     3, graph: 12, cargo: 9, completed: true, nodes: 7, cost: 49, started: -396, ends in: 788, duration: 1184
+  Job:     4, graph: 7, cargo: 0, completed: true, nodes: 2, cost: 4, started: -396, ends in: 788, duration: 1184
+  Job:     5, graph: 5, cargo: 0, completed: true, nodes: 9, cost: 81, started: -396, ends in: 788, duration: 1184
+  Job:     6, graph: 2, cargo: 0, completed: true, nodes: 2, cost: 4, started: -396, ends in: 788, duration: 1184
+  Job:     7, graph: 3, cargo: 0, completed: true, nodes: 15, cost: 225, started: -396, ends in: 788, duration: 1184
+  Job:     8, graph: 4, cargo: 0, completed: true, nodes: 12, cost: 144, started: -396, ends in: 788, duration: 1184
+  Job:     9, graph: 10, cargo: 5, completed: true, nodes: 23, cost: 529, started: -396, ends in: 788, duration: 1184
+  Job:    10, graph: 11, cargo: 5, completed: true, nodes: 5, cost: 25, started: -396, ends in: 788, duration: 1184
+  Job:    11, graph: 8, cargo: 4, completed: true, nodes: 3, cost: 9, started: -396, ends in: 788, duration: 1184
+  Job:    12, graph: 6, cargo: 7, completed: true, nodes: 4, cost: 16, started: -396, ends in: 788, duration: 1184
+  Job:    13, graph: 13, cargo: 0, completed: true, nodes: 3, cost: 9, started: -396, ends in: 788, duration: 1184
+  Job:    14, graph: 0, cargo: 2, completed: true, nodes: 107, cost: 11449, started: -396, ends in: 788, duration: 1184
+  Graph: 0, cargo: 2, nodes: 107, OD_revision: 0
+  Graph: 1, cargo: 0, nodes: 4726, OD_revision: 1
+  Graph: 2, cargo: 0, nodes: 2, OD_revision: 2
+  Graph: 3, cargo: 0, nodes: 15, OD_revision: 3
+  Graph: 4, cargo: 0, nodes: 12, OD_revision: 4
+  Graph: 5, cargo: 0, nodes: 9, OD_revision: 5
+  Graph: 6, cargo: 7, nodes: 4, OD_revision: 0
+  Graph: 7, cargo: 0, nodes: 2, OD_revision: 6
+  Graph: 8, cargo: 4, nodes: 3, OD_revision: 0
+  Graph: 9, cargo: 0, nodes: 1, OD_revision: 7
+  Graph: 10, cargo: 5, nodes: 23, OD_revision: 20
+  Graph: 11, cargo: 5, nodes: 5, OD_revision: 0
+  Graph: 12, cargo: 9, nodes: 7, OD_revision: 0
+  Graph: 13, cargo: 0, nodes: 3, OD_revision: 8
+  Graph: 14, cargo: 0, nodes: 2, OD_revision: 9
+  Graph: 16, cargo: 0, nodes: 2, OD_revision: 10
+Saving map...
+Map successfully saved to 'C:/Users/bebe/.codex/worktrees/2c6d/OpenTTD-patches/build-timetable/run/after-result.sav'.
+Console log file closed.

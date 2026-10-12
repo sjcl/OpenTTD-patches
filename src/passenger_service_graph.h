@@ -184,7 +184,8 @@ public:
 
 	/** Call on the simulation thread, while vehicle/order pools are stable. Queries need no game state. */
 	static PassengerServiceGraph Build(CargoType cargo, StateTicks now, PassengerServiceGraphLimits limits = {},
-			std::optional<PassengerServiceScope> scope = {}, PassengerServiceCapture *capture = nullptr);
+			std::optional<PassengerServiceScope> scope = {}, PassengerServiceCapture *capture = nullptr,
+			PassengerTimingPolicy timing = PassengerTimingPolicy::Conservative);
 	CargoType GetCargo() const { return this->cargo; }
 	StateTicks GetStart() const { return this->start; }
 	StateTicks GetEnd() const { return this->end; }

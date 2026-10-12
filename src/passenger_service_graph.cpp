@@ -107,7 +107,7 @@ struct PassengerServiceCapture::Data {
 	size_t storage_bound = 0;
 	size_t prediction_bytes = 0;
 	std::optional<Discovery> discovery;
-	std::map<std::tuple<CargoType, OrderListID, size_t>, Pattern> patterns;
+	std::map<std::tuple<CargoType, OrderListID, size_t, PassengerTimingPolicy>, Pattern> patterns;
 	struct PredictionLookupHash {
 		size_t operator()(const std::pair<VehicleID, CargoType> &key) const { return std::hash<uint64_t>{}(static_cast<uint64_t>(key.first.base()) * NUM_CARGO + key.second); }
 	};
@@ -167,7 +167,7 @@ public:
 };
 
 PassengerServiceGraph PassengerServiceGraph::Build(CargoType cargo, StateTicks now, PassengerServiceGraphLimits limits,
-		std::optional<PassengerServiceScope> scope, PassengerServiceCapture *capture)
+		std::optional<PassengerServiceScope> scope, PassengerServiceCapture *capture, PassengerTimingPolicy timing)
 {
 	const auto started = std::chrono::steady_clock::now();
 	PassengerGraphBuildTimer timer;
@@ -391,7 +391,7 @@ PassengerServiceGraph PassengerServiceGraph::Build(CargoType cargo, StateTicks n
 		if (graph.services.size() >= limits.services) { fail(PassengerGraphFailure::Services, PassengerPredictionStatus::LimitReached); graph.diagnostic.omitted_trains += candidates.size(); break; }
 		if (!SpendGraphWork(budget, 3 * static_cast<size_t>(list->GetNumOrders()))) { fail(PassengerGraphFailure::Work, PassengerPredictionStatus::BudgetExhausted); graph.diagnostic.omitted_trains += candidates.size(); break; }
 		if (!admit(512 + 1024 * static_cast<size_t>(list->GetNumOrders()))) break;
-		const auto key = std::tuple(cargo, list->index, limits.steps_per_trip);
+		const auto key = std::tuple(cargo, list->index, limits.steps_per_trip, timing);
 		const PassengerServiceCapture::Data::Pattern *cached = nullptr;
 		if (capture) {
 			auto found = capture->data->patterns.find(key);
@@ -449,7 +449,7 @@ PassengerServiceGraph PassengerServiceGraph::Build(CargoType cargo, StateTicks n
 				stage = PassengerGraphStage::Pattern;
 				PassengerRouteState nominal{ orders, {}, service.stops.front().order, 0, 0, true, false, 1 };
 				auto pattern = PredictPassengerVisits(nominal, cargo, StateTicks{0}, StateTicks{int64_t{1} << 50}, service.stops.size() + 1,
-						limits.steps_per_trip, budget);
+						limits.steps_per_trip, budget, {}, false, timing);
 				service.pattern_status = pattern.status;
 				for (size_t i = 1; i < pattern.visits.size(); ++i) {
 					const auto &prev = pattern.visits[i - 1], &visit = pattern.visits[i];
@@ -538,7 +538,7 @@ PassengerServiceGraph PassengerServiceGraph::Build(CargoType cargo, StateTicks n
 						++graph.diagnostic.prediction_cache_hits;
 					} else {
 						const auto prediction_started = std::chrono::steady_clock::now();
-						trip.prediction = PredictPassengerVisits(*state, cargo, now, graph.end, visit_limit, limits.steps_per_trip, budget, admit_prediction_visit, scope.has_value());
+						trip.prediction = PredictPassengerVisits(*state, cargo, now, graph.end, visit_limit, limits.steps_per_trip, budget, admit_prediction_visit, scope.has_value(), timing);
 						trip.prediction_nanoseconds = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - prediction_started).count();
 						++graph.diagnostic.prediction_executions;
 						trip.prediction_executed = true;

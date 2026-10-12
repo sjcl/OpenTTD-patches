@@ -1,0 +1,9 @@
+script C:/Users/bebe/.codex/worktrees/2c6d/OpenTTD-patches/build-timetable/run/after-console.txt
+getsysdate
+getfulldate
+passenger_journey_stats inventory
+passenger_journey_stats total
+dump_linkgraph_jobs
+save C:/Users/bebe/.codex/worktrees/2c6d/OpenTTD-patches/build-timetable/run/after-result
+script
+quit

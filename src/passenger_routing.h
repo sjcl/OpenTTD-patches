@@ -43,6 +43,9 @@ std::optional<PassengerRouteState> GetPassengerRouteState(const Vehicle *vehicle
 /** Why a bounded prediction ended. Unknown never certifies the unvisited suffix of a route. */
 enum class PassengerPredictionStatus : uint8_t { Complete, Unknown, LimitReached, BudgetExhausted };
 
+/** JourneyPlanner can assume declared timings without changing live vehicle control. */
+enum class PassengerTimingPolicy : uint8_t { Conservative, AssumeTimetable };
+
 /** Diagnostic only; never replaces status or the certified time prefix. */
 enum class PassengerPredictionStop : uint8_t {
 	None, Work, Memory, Visits, Steps, Timing, Conditional, Refit, Implicit, Unsupported, Dispatch, Facilities, VehicleState, OrderProgress, End,
@@ -75,7 +78,8 @@ struct PassengerVisitPrediction {
 
 /** Same traversal/timing engine as journeys and connections, without the CargoDist boarding contract. */
 PassengerVisitPrediction PredictPassengerVisits(const PassengerRouteState &state, CargoType cargo, StateTicks now,
-		StateTicks end, size_t max_visits, size_t max_steps, size_t &budget, const std::function<bool()> &admit_visit = {}, bool prefix_only = false);
+		StateTicks end, size_t max_visits, size_t max_steps, size_t &budget, const std::function<bool()> &admit_visit = {}, bool prefix_only = false,
+		PassengerTimingPolicy timing = PassengerTimingPolicy::Conservative);
 
 /** A journey to a selected CargoDist via, on one vehicle and one boarding order. */
 struct PassengerJourney {
@@ -86,7 +90,7 @@ struct PassengerJourney {
 };
 
 PassengerJourney PredictPassengerJourney(const PassengerRouteState &state, VehicleOrderID boarding_order, StationID target,
-		CargoType cargo, StateTicks now, bool allow_intermediate);
+		CargoType cargo, StateTicks now, bool allow_intermediate, PassengerTimingPolicy timing = PassengerTimingPolicy::Conservative);
 
 /** Find the first catchable visit before arrival_limit. Exhaustion/unsupported predictions remain unknown. */
 PassengerJourney PredictPassengerConnection(const PassengerRouteState &state, VehicleOrderID boarding_order, StationID target,

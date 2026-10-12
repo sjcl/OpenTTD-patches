@@ -47,7 +47,8 @@ static PassengerJourney PredictPassengerJourneyImpl(const PassengerRouteState &s
 		CargoType cargo, StateTicks now, bool allow_intermediate, size_t &budget,
 		std::optional<StateTicks> earliest_boarding = {}, std::optional<StateTicks> arrival_limit = {}, bool skip_current_departure = false,
 		PassengerVisitPrediction *visits = nullptr, size_t max_visits = 0, size_t max_steps = 0,
-		const std::function<bool()> &admit_visit = {}, bool prefix_only = false)
+		const std::function<bool()> &admit_visit = {}, bool prefix_only = false,
+		PassengerTimingPolicy timing = PassengerTimingPolicy::Conservative)
 {
 	PassengerJourney result;
 	if (state.orders.empty() || state.current_order >= state.orders.size() || boarding_order >= state.orders.size()) return result;
@@ -90,6 +91,7 @@ static PassengerJourney PredictPassengerJourneyImpl(const PassengerRouteState &s
 	};
 
 	StateTicks tick = now;
+	const bool assume_timetable = timing == PassengerTimingPolicy::AssumeTimetable;
 	int64_t lateness = state.lateness;
 	bool timing_known = true;
 	bool boarded = false;
@@ -160,7 +162,8 @@ static PassengerJourney PredictPassengerJourneyImpl(const PassengerRouteState &s
 		if (IsPassengerStop(order) && !state.usable_stops.empty() && !state.usable_stops[index]) return uncertain(PassengerPredictionStop::Facilities);
 
 		if (!skip_travel) {
-			if (order.GetTravelTime() == 0 && !order.IsTravelTimetabled()) unknown_timing();
+			const bool travel_known = order.IsTravelTimetabled() || (!assume_timetable && order.GetTravelTime() != 0);
+			if (!travel_known) unknown_timing();
 			int64_t travel = order.GetTravelTime();
 			if (steps == 0) {
 				/* The recorded journey has already elapsed, but the train has not arrived.
@@ -169,7 +172,7 @@ static PassengerJourney PredictPassengerJourneyImpl(const PassengerRouteState &s
 				travel = std::max<int64_t>(0, travel - state.elapsed);
 			}
 			if (prefix_only && !timing_known) return uncertain(PassengerPredictionStop::Timing);
-			advance_leg(travel, order.GetTravelTime() != 0 || order.IsTravelTimetabled());
+			advance_leg(travel, travel_known);
 		}
 		skip_travel = false;
 
@@ -215,8 +218,8 @@ static PassengerJourney PredictPassengerJourneyImpl(const PassengerRouteState &s
 						state.schedules[schedule_index].GetScheduledDispatchDuration() == 0 || state.schedules[schedule_index].GetScheduledDispatch().empty()) return uncertain(PassengerPredictionStop::Dispatch);
 			}
 			const OrderLoadType load = order.GetCargoLoadType(cargo);
-			if (IsFullLoadOrderLoadType(load) || order.GetLeaveType() != OLT_NORMAL) unknown_timing();
-			if (order.GetLoadType() == OrderLoadType::CargoTypeLoad) {
+			if (!assume_timetable && (IsFullLoadOrderLoadType(load) || order.GetLeaveType() != OLT_NORMAL)) unknown_timing();
+			if (!assume_timetable && order.GetLoadType() == OrderLoadType::CargoTypeLoad) {
 				/* Full loading another cargo in this consist can also hold up the passenger coach. */
 				for (CargoType other{}; other < NUM_CARGO; ++other) {
 					if (!ConsumePassengerWork(budget)) return exhausted();
@@ -226,7 +229,11 @@ static PassengerJourney PredictPassengerJourneyImpl(const PassengerRouteState &s
 			if (!order.IsWaitTimetabled()) unknown_timing();
 			if (prefix_only && !timing_known) return uncertain(PassengerPredictionStop::Timing);
 			const bool future_dispatch = state.scheduled_dispatch && order.IsScheduledDispatchOrder(true) && !(steps == 0 && state.loading);
-			int64_t wait = future_dispatch ? order.GetTimetabledWait() : std::max<int64_t>(0, static_cast<int64_t>(order.GetWaitTime()) - lateness);
+			/* An assigned current dispatch departure is encoded by lateness. Preserve its
+			 * slot; ordinary lateness never shortens or extends the planner's dwell. */
+			const bool assigned_dispatch = state.scheduled_dispatch && order.IsScheduledDispatchOrder(true) && steps == 0 && state.loading;
+			int64_t wait = future_dispatch ? order.GetTimetabledWait() : assume_timetable && !assigned_dispatch ?
+					order.GetWaitTime() : std::max<int64_t>(0, static_cast<int64_t>(order.GetWaitTime()) - lateness);
 			if (steps == 0 && state.loading) wait = std::max<int64_t>(0, wait - state.elapsed);
 			tick += wait;
 			if (visits) visits->stopped_at = tick;
@@ -284,22 +291,23 @@ static PassengerJourney PredictPassengerJourneyImpl(const PassengerRouteState &s
 }
 
 PassengerVisitPrediction PredictPassengerVisits(const PassengerRouteState &state, CargoType cargo, StateTicks now,
-		StateTicks end, size_t max_visits, size_t max_steps, size_t &budget, const std::function<bool()> &admit_visit, bool prefix_only)
+		StateTicks end, size_t max_visits, size_t max_steps, size_t &budget, const std::function<bool()> &admit_visit, bool prefix_only, PassengerTimingPolicy timing)
 {
 	PassengerVisitPrediction result;
 	result.start = result.complete_until = result.stopped_at = now;
 	if (now >= end) { result.status = PassengerPredictionStatus::Complete; return result; }
 	if (cargo >= NUM_CARGO) return result;
 	PredictPassengerJourneyImpl(state, state.current_order, StationID::Invalid(), cargo, now, true, budget,
-			{}, end, false, &result, max_visits, max_steps, admit_visit, prefix_only);
+			{}, end, false, &result, max_visits, max_steps, admit_visit, prefix_only, timing);
 	return result;
 }
 
 PassengerJourney PredictPassengerJourney(const PassengerRouteState &state, VehicleOrderID boarding_order, StationID target,
-		CargoType cargo, StateTicks now, bool allow_intermediate)
+		CargoType cargo, StateTicks now, bool allow_intermediate, PassengerTimingPolicy timing)
 {
 	size_t budget = std::numeric_limits<size_t>::max();
-	return PredictPassengerJourneyImpl(state, boarding_order, target, cargo, now, allow_intermediate, budget);
+	return PredictPassengerJourneyImpl(state, boarding_order, target, cargo, now, allow_intermediate, budget,
+			{}, {}, false, nullptr, 0, 0, {}, false, timing);
 }
 
 PassengerJourney PredictPassengerConnection(const PassengerRouteState &state, VehicleOrderID boarding_order, StationID target,

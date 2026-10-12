@@ -239,6 +239,17 @@ TEST_CASE("Trip cache separates events periods limits and resource stops", "[pas
 			CheckCaptureEquivalent(fresh, hit);
 		}
 	}
+	SECTION("Timing policies never share physical predictions") {
+		for (PassengerTimingPolicy timing : {PassengerTimingPolicy::Conservative, PassengerTimingPolicy::AssumeTimetable,
+				PassengerTimingPolicy::Conservative, PassengerTimingPolicy::AssumeTimetable}) {
+			const auto fresh = PassengerServiceGraph::Build(PAX, NOW, limits, scope, &capture, timing);
+			CHECK(fresh.GetDiagnostic().prediction_cache_hits == 0);
+			CheckCaptureEquivalent(PassengerServiceGraph::Build(PAX, NOW, limits, scope, nullptr, timing), fresh);
+			const auto hit = PassengerServiceGraph::Build(PAX, NOW, limits, scope, &capture, timing);
+			CHECK(hit.GetDiagnostic().prediction_cache_hits == 1);
+			CheckCaptureEquivalent(fresh, hit);
+		}
+	}
 	SECTION("New event at same tick and next tick") {
 		PassengerServiceGraph::Build(PAX, NOW, limits, scope, &capture); capture.Clear();
 		CHECK(capture.GetPredictionBytes() == 0);
@@ -1635,4 +1646,32 @@ TEST_CASE("Passenger graph construction and queries are deterministic and leave 
 	CHECK(Vehicle::GetNumItems() == before_vehicles);
 	CHECK(OrderList::GetNumItems() == before_lists);
 	CHECK(seeds.Check());
+}
+
+TEST_CASE("Service pattern capture isolates timing policies and agrees with physical trips", "[passenger][service_graph][timetable]")
+{
+	PassengerTestStations stations;
+	GraphVehicle train({GraphStop(A, 100, 100), GraphStop(B, 200, 100), GraphStop(D, 300, 100)});
+	train.GetOrder(0)->SetLeaveType(OLT_LEAVE_EARLY);
+	train.GetOrder(1)->SetLoadType(OrderLoadType::FullLoadAny);
+	PassengerServiceCapture capture;
+	const auto conservative = PassengerServiceGraph::Build(PAX, NOW, GraphLimits(1000), {}, &capture);
+	CHECK_FALSE(GraphTrip(conservative, train.index).prediction.visits[0].departure);
+	const auto assumed = PassengerServiceGraph::Build(PAX, NOW, GraphLimits(1000), {}, &capture, PassengerTimingPolicy::AssumeTimetable);
+	const auto &prediction = GraphTrip(assumed, train.index).prediction;
+	REQUIRE(prediction.visits.size() >= 3);
+	CHECK(prediction.visits[0].departure == NOW + 100);
+	CHECK(prediction.visits[1].arrival == NOW + 300);
+	CHECK(prediction.visits[1].departure == NOW + 400);
+	const auto *pattern = assumed.GetService(train.orders->index);
+	REQUIRE(pattern->segments.size() >= 2);
+	CHECK(pattern->cycle_known);
+	CHECK(pattern->segments[0].travel == StateTicksDelta{200});
+	const auto scoped = PassengerServiceGraph::Build(PAX, NOW, GraphLimits(1000), PassengerServiceScope{A, D}, &capture, PassengerTimingPolicy::AssumeTimetable);
+	CHECK(GraphTrip(scoped, train.index).prediction.visits[1].departure == prediction.visits[1].departure);
+	const auto conservative_again = PassengerServiceGraph::Build(PAX, NOW, GraphLimits(1000), {}, &capture);
+	CHECK_FALSE(GraphTrip(conservative_again, train.index).prediction.visits[0].departure);
+	CHECK(train.GetOrder(0)->GetLeaveType() == OLT_LEAVE_EARLY);
+	CHECK(train.GetOrder(1)->GetLoadType() == OrderLoadType::FullLoadAny);
+	CHECK(train.current_order_time == 0);
 }

@@ -1,0 +1,345 @@
+{
+  "date": "2026-10-12",
+  "timezone": "Asia/Tokyo",
+  "branch": "feat/passenger-journey-timetable-assumption",
+  "base_commit": "1556b330cd9360d1e2f6b0ad50e45b70b86c6341",
+  "input_sha256": "14d68c82911b9dcfc5ef7291e9697c5bbd67f44ffcc79d7575a144405edf6390",
+  "conditions": {
+    "build": "MSVC 19.44 x64 Release; assertions ON; LTO OFF; static dependencies",
+    "drivers": "null:until_exit / null / null",
+    "sequential_runs": true,
+    "harness": "Console unpause clears existing NewGRF error pause on an isolated input copy only",
+    "distribution_pax": 2,
+    "passenger_od_assignment": true,
+    "passenger_journey_routing": true,
+    "recalc_interval": 8,
+    "recalc_time": 32
+  },
+  "validation": {
+    "passenger_cases": 209,
+    "passenger_assertions": 937813,
+    "ctest_passed": 424,
+    "initial_ctest_passed": 421,
+    "asset_repair_retest_passed": 3,
+    "live_multiplayer_soak": false,
+    "gui_visual_render": false,
+    "restored_product_save_load_passed": 3
+  },
+  "before": {
+    "process": {
+      "exit_code": 0,
+      "wall_seconds": 375.5067059,
+      "cpu_seconds": 491.0,
+      "peak_working_set": 2002792448,
+      "sampled_peak_private": 2003816448,
+      "sample_ms": 100
+    },
+    "inventory": [
+      {
+        "waiting": 200450,
+        "deferred": 36501,
+        "state_ticks": 3176545487,
+        "scaled_ticks": 3010946389
+      },
+      {
+        "waiting": 211069,
+        "deferred": 51460,
+        "state_ticks": 3176547014,
+        "scaled_ticks": 3010947916
+      }
+    ],
+    "waiting_routing": {
+      "timed": 2606,
+      "CargoDist_or_deferred": 165846,
+      "OD_fallback_or_waiting": 42617
+    },
+    "active": {
+      "applied_packets": 9461,
+      "applied_passengers": 22414,
+      "builds": 23464,
+      "static_hits": 22815,
+      "searches": 22809,
+      "OD_hits": 12131
+    },
+    "work_time": {
+      "graph_work": 13413611618,
+      "mean_graph_work": 571667,
+      "max_graph_work": 623821,
+      "cached_index_work_avoided": 6377750730,
+      "query_allowance": 1524315024,
+      "build_us": 229056788,
+      "mean_build_us": 9762,
+      "max_build_us": 32905,
+      "search_us": 10036996,
+      "max_tick_graph_search_us": 271297
+    },
+    "simulation": {
+      "completed_ticks": 1526,
+      "total_us": 359094473,
+      "mean_us": 235317,
+      "max_us": 420839
+    },
+    "graph_memory": {
+      "retained": 10080846,
+      "static_retained": 897036,
+      "envelope": 38288448,
+      "query_scratch": 1125128,
+      "query_cache": 1520
+    },
+    "timed_transport": {
+      "boarded": 7673,
+      "transferred": 1,
+      "delivered": 1731
+    },
+    "untimed_transport": {
+      "boarded": 81242,
+      "transferred": 39405,
+      "delivered": 31078
+    },
+    "routing": {
+      "timed_packets": 9461,
+      "timed_ignoring_unknown": 9050,
+      "timed_budget_deferred": 455583,
+      "untimed_routes": 23892,
+      "untimed_no_route": 32219,
+      "untimed_budget_deferred": 637053
+    },
+    "uncertainty": {
+      "timing": 18873731,
+      "path": 2976081
+    },
+    "timing_stops": {
+      "predictions": 18873731
+    },
+    "od_fallback": {
+      "work": 2509180773,
+      "path_searches": 76409
+    },
+    "fallbacks": {
+      "GraphWork": {
+        "packets": 0,
+        "deferred": 788
+      },
+      "GraphMemory": {
+        "packets": 0,
+        "deferred": 0
+      },
+      "SnapshotLimit": {
+        "packets": 0,
+        "deferred": 9461
+      },
+      "QueryWork": {
+        "packets": 2332,
+        "deferred": 440416
+      },
+      "QueryLimit": {
+        "packets": 2586,
+        "deferred": 0
+      },
+      "QueryMemory": {
+        "packets": 0,
+        "deferred": 0
+      },
+      "PredictionIncomplete": {
+        "packets": 20312,
+        "deferred": 0
+      },
+      "PredictionHorizon": {
+        "packets": 0,
+        "deferred": 0
+      },
+      "NoJourney": {
+        "packets": 1,
+        "deferred": 0
+      },
+      "InvalidLeg": {
+        "packets": 0,
+        "deferred": 0
+      },
+      "StaleLeg": {
+        "packets": 5292,
+        "deferred": 0
+      },
+      "Disabled": {
+        "packets": 0,
+        "deferred": 0
+      },
+      "VehicleDeleted": {
+        "packets": 0,
+        "deferred": 0
+      }
+    },
+    "inspect": [
+      "Prediction prefix_only=false: status=1; stop=5; stopped_order=6; first_unknown_order=9; first_unknown_reason=5; cursor=3176558424; certified_until=3176547408; visits=13",
+      "Prediction prefix_only=true: status=1; stop=5; stopped_order=9; first_unknown_order=9; first_unknown_reason=5; cursor=3176547408; certified_until=3176547408; visits=3"
+    ],
+    "save_sha256": "125ac6e3e5bbdc1f4fcfb576ce587c4f37f57cce6f8974844729cc0f824340ca",
+    "binary_sha256": "727b6f7e4a7321d6e447920ea89f12669e653b9490d31c6bc98ef7d9a10fd129"
+  },
+  "after": {
+    "process": {
+      "exit_code": 0,
+      "wall_seconds": 372.4276986,
+      "cpu_seconds": 465.75,
+      "peak_working_set": 2013822976,
+      "sampled_peak_private": 2014699520,
+      "sample_ms": 100
+    },
+    "inventory": [
+      {
+        "waiting": 200450,
+        "deferred": 36501,
+        "state_ticks": 3176545487,
+        "scaled_ticks": 3010946389
+      },
+      {
+        "waiting": 211083,
+        "deferred": 52225,
+        "state_ticks": 3176547014,
+        "scaled_ticks": 3010947916
+      }
+    ],
+    "waiting_routing": {
+      "timed": 3688,
+      "CargoDist_or_deferred": 166736,
+      "OD_fallback_or_waiting": 40659
+    },
+    "active": {
+      "applied_packets": 12423,
+      "applied_passengers": 30781,
+      "builds": 23409,
+      "static_hits": 22788,
+      "searches": 22783,
+      "OD_hits": 12231
+    },
+    "work_time": {
+      "graph_work": 13463777302,
+      "mean_graph_work": 575153,
+      "max_graph_work": 637671,
+      "cached_index_work_avoided": 6370203096,
+      "query_allowance": 1529386216,
+      "build_us": 224693143,
+      "mean_build_us": 9598,
+      "max_build_us": 35011,
+      "search_us": 19340964,
+      "max_tick_graph_search_us": 312436
+    },
+    "simulation": {
+      "completed_ticks": 1526,
+      "total_us": 357286365,
+      "mean_us": 234132,
+      "max_us": 448633
+    },
+    "graph_memory": {
+      "retained": 11676002,
+      "static_retained": 897036,
+      "envelope": 42324352,
+      "query_scratch": 1256908,
+      "query_cache": 1320
+    },
+    "timed_transport": {
+      "boarded": 11226,
+      "transferred": 21,
+      "delivered": 2371
+    },
+    "untimed_transport": {
+      "boarded": 78059,
+      "transferred": 39653,
+      "delivered": 29981
+    },
+    "routing": {
+      "timed_packets": 12423,
+      "timed_ignoring_unknown": 11786,
+      "timed_budget_deferred": 459840,
+      "untimed_routes": 23593,
+      "untimed_no_route": 31737,
+      "untimed_budget_deferred": 633930
+    },
+    "uncertainty": {
+      "timing": 7152668,
+      "path": 3853615
+    },
+    "timing_stops": {
+      "predictions": 7152668
+    },
+    "od_fallback": {
+      "work": 2489666516,
+      "path_searches": 75805
+    },
+    "fallbacks": {
+      "GraphWork": {
+        "packets": 0,
+        "deferred": 783
+      },
+      "GraphMemory": {
+        "packets": 0,
+        "deferred": 0
+      },
+      "SnapshotLimit": {
+        "packets": 0,
+        "deferred": 7679
+      },
+      "QueryWork": {
+        "packets": 3871,
+        "deferred": 444420
+      },
+      "QueryLimit": {
+        "packets": 3087,
+        "deferred": 0
+      },
+      "QueryMemory": {
+        "packets": 0,
+        "deferred": 0
+      },
+      "PredictionIncomplete": {
+        "packets": 15317,
+        "deferred": 0
+      },
+      "PredictionHorizon": {
+        "packets": 0,
+        "deferred": 0
+      },
+      "NoJourney": {
+        "packets": 0,
+        "deferred": 0
+      },
+      "InvalidLeg": {
+        "packets": 0,
+        "deferred": 0
+      },
+      "StaleLeg": {
+        "packets": 6531,
+        "deferred": 0
+      },
+      "Disabled": {
+        "packets": 0,
+        "deferred": 0
+      },
+      "VehicleDeleted": {
+        "packets": 0,
+        "deferred": 0
+      }
+    },
+    "inspect": [
+      "Prediction timing=0 prefix_only=false: status=1; stop=5; stopped_order=6; first_unknown_order=9; first_unknown_reason=5; cursor=3176558424; certified_until=3176547408; visits=13",
+      "Prediction timing=0 prefix_only=true: status=1; stop=5; stopped_order=9; first_unknown_order=9; first_unknown_reason=5; cursor=3176547408; certified_until=3176547408; visits=3",
+      "Prediction timing=1 prefix_only=false: status=0; stop=0; stopped_order=11; first_unknown_order=65535; first_unknown_reason=0; cursor=3176549878; certified_until=3176549583; visits=4",
+      "Prediction timing=1 prefix_only=true: status=0; stop=0; stopped_order=11; first_unknown_order=65535; first_unknown_reason=0; cursor=3176549878; certified_until=3176549583; visits=4"
+    ],
+    "save_sha256": "0cee89e484785860150cf33dfd336b02de19da3f249e18f898ff7ce25a4d8f10",
+    "binary_sha256": "29918ead4f5ef96119cf3fd536109765b9473d23d6d278847051f744975e4f49"
+  },
+  "source_restored": true,
+  "source_sha256": {
+    "src/console_cmds.cpp": "40bfe7145c3ae81324176af7807e772b7c04afcd80af5902b244083af9eb606d",
+    "src/passenger_journey_active.cpp": "355981f6515d4b1875b415df6259dd929ac3d6b29972734d09d19c22c3dba690",
+    "src/passenger_journey_shadow.cpp": "dba69fa80ef18363f456f8c8920476da2ec5734b3e3bde4cdf4ab09bb802fa0d",
+    "src/passenger_routing.cpp": "d744d87e4215dbbdd918b1db00a248abc792c6cc5bfcba600baaaf5aaf6e086a",
+    "src/passenger_routing.h": "b194d4bf12e5b397caee0d11658cc41b286fe03992cd73effc694ca879416cf6",
+    "src/passenger_service_graph.cpp": "739aff5436ed6ab2e516eebdc909200faf8c57abb9540b8dff62b66a38f6bf60",
+    "src/passenger_service_graph.h": "97a5f897406cef3960d7b3b1cee7b1a7039591e61f5c0476d32da8020988e76a"
+  },
+  "config_sha256": "bb9f97ff8504cbb287ef0976add7a33cb27440f5ecd9ccf4febf0aa4746fa122",
+  "final_product_binary_sha256": "198d9523b180aef73d5e88401606fcef8f4e4f774e01cf259080c9c8de4c8e57",
+  "original_input_unchanged": true
+}

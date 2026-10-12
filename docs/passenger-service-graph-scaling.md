@@ -63,6 +63,11 @@ a current refit outside the declared pattern, whose future seats are Unknown.
 Scoped stopped/crashed trains need no detailed capture. Invalid live progress
 and unsupported timing remain Unknown.
 
+Active scoped capture uses `PassengerTimingPolicy::AssumeTimetable` for both
+nominal service patterns and physical trips. Capture pattern cache keys include
+the timing policy, so conservative and timetable assumptions cannot share an
+incompatible pattern. Position, elapsed progress and dispatch remain live inputs.
+
 The shared index contains IDs and topology only. Order initialization, copy,
 insert/delete/destination registration/free, station-removal order edits, pool
 reset and afterload invalidate it through the existing service-index hook.

@@ -126,7 +126,10 @@ The predictor remains `PredictPassengerVisits`; it is not duplicated. NoLoad,
 NoUnload and forced unloading come from the captured service stops. Repeated
 station stops, circular trips and reversal orders retain occurrence IDs.
 Unknown arrival/departure times stop certified travel; unresolved conditions,
-refits, full loads and dispatch timing retain the predictor's uncertainty.
+refits and competing dispatch timing retain the predictor's uncertainty.
+Active and shadow graphs explicitly select `AssumeTimetable`: early departure,
+full loads and ordinary lateness do not change explicitly timetabled durations.
+Generic graph/predictor callers default to the legacy `Conservative` policy.
 Stopped/crashed trains do not become services. Scheduled dispatch uses its
 actual predicted departure slots. No headway produces fictional departures.
 

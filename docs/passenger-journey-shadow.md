@@ -11,6 +11,12 @@ decision still evaluates its next via station; the planner evaluates the packet'
 final `passenger_destination`. A disagreement is an observation, not proof of a
 routing bug.
 
+Shadow planner graphs select `PassengerTimingPolicy::AssumeTimetable`, matching
+active planning and boarding validation. The legacy CargoDist comparison keeps
+`Conservative`; observed differences can therefore include the declared timetable
+assumption for early departure, full loading and ordinary lateness. Neither
+prediction changes vehicle control or actual seat allocation.
+
 ## Capture and onboard search
 
 `PrepareUnload` creates `PassengerJourneyShadowContext` before inserting the
