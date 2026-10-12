@@ -1,0 +1,8 @@
+{
+  "exit_code": 0,
+  "wall_seconds": 375.5067059,
+  "cpu_seconds": 491.0,
+  "peak_working_set": 2002792448,
+  "sampled_peak_private": 2003816448,
+  "sample_ms": 100
+}

@@ -394,6 +394,16 @@ TEST_CASE("Reservations and gradual loading allocate seats only once", "[passeng
 {
 	ActiveFixture fixture;
 	ActiveTrain train({ActiveStop(A), ActiveStop(D, 100)});
+	SECTION("Ordinary loading") {}
+	SECTION("Timetabled early full loading") {
+		train.GetOrder(0)->SetLeaveType(OLT_LEAVE_EARLY_FULL_ANY);
+		train.GetOrder(0)->SetLoadType(OrderLoadType::FullLoad);
+		train.lateness_counter = 500;
+	}
+	SECTION("Another cargo waits for full loading") {
+		train.GetOrder(0)->SetLoadType(OrderLoadType::CargoTypeLoad);
+		train.GetOrder(0)->SetLoadType(OrderLoadType::FullLoad, CargoType{1});
+	}
 	AttachedCoach attached(train);
 	Vehicle &coach = *attached.coach;
 	auto *packet = fixture.Packet(300); fixture.Plan(*packet); fixture.Waiting().Append(packet, D);
@@ -442,6 +452,14 @@ TEST_CASE("Onboard journey stages keep transfer and final delivery in production
 	Action expected = Action::Keep;
 	SECTION("Continue ordinary train when faster") {}
 	SECTION("Transfer to a faster express") { express.GetOrder(0)->SetWaitTime(50); expected = Action::Transfer; }
+	SECTION("Timetabled early full load express transfers and delivers at transfer-only final OD") {
+		express.GetOrder(0)->SetWaitTime(50);
+		express.GetOrder(0)->SetLeaveType(OLT_LEAVE_EARLY_FULL_ALL);
+		express.GetOrder(0)->SetLoadType(OrderLoadType::FullLoadAny);
+		express.GetOrder(1)->SetUnloadType(OrderUnloadType::Transfer);
+		express.lateness_counter = 500;
+		expected = Action::Transfer;
+	}
 	SECTION("High frequency trunk beats the low frequency shortcut") { local.GetOrder(0)->SetWaitTime(600); expected = Action::Transfer; }
 	SECTION("Do not deliver at an intermediate CargoDist via") {}
 	SECTION("Deliver at the accepted final destination") { local.LoadAt(2); expected = Action::Deliver; }
@@ -474,7 +492,7 @@ TEST_CASE("Onboard journey stages keep transfer and final delivery in production
 		express.LoadAt(1);
 		CargoPayment final_payment(CargoPaymentID::Invalid(), &express);
 		PassengerJourneyActiveContext final_context(&express, D);
-		express.cargo.Stage(true, D, next, OrderUnloadType::UnloadIfPossible, &Station::Get(D)->goods[PAX], PAX,
+		express.cargo.Stage(true, D, next, express.GetOrder(1)->GetCargoUnloadType(PAX), &Station::Get(D)->goods[PAX], PAX,
 				&final_payment, TileIndex{0}, nullptr, nullptr, &final_context);
 		CHECK(express.cargo.ActionCount(Action::Deliver) == 10);
 		CHECK(express.cargo.Unload(10, &fixture.Waiting(D), PAX, &final_payment, TileIndex{0}) == 10);
@@ -979,7 +997,7 @@ TEST_CASE("Event snapshots refresh delays timetables capacity and position withi
 	ActiveTrain express({ActiveStop(A, 10000, 120), ActiveStop(D, 10)}, VehicleID{101});
 	auto before = std::unique_ptr<CargoPacket>(fixture.Packet()); fixture.Plan(*before);
 	REQUIRE(before->GetPassengerJourney().vehicle == express.index);
-	SECTION("Delay") { express.lateness_counter = -1000; }
+	SECTION("Overdue current travel") { express.current_order = *express.GetOrder(0); express.current_order_time = 10001; }
 	SECTION("Timetable edit") { express.GetOrder(1)->SetTravelTime(2000); }
 	bool changed_eligibility = false;
 	SECTION("Refit consist") { express.cargo_type = CargoType{1}; changed_eligibility = true; }
@@ -1587,4 +1605,49 @@ TEST_CASE("Cleaning the packet pool discards the reverse index before packet ID 
 	CHECK(replacement->index == original);
 	CHECK(InvalidatePassengerJourneyVehicle(train.index) == 0);
 	CHECK(replacement->GetPassengerRoutingMode() == PassengerRoutingMode::Legacy);
+}
+
+TEST_CASE("Planner and boarding validate the same long timetabled physical ride", "[passenger][active][timetable]")
+{
+	ActiveFixture fixture;
+	std::vector<Order> orders{ActiveStop(A, 100000, 100)};
+	for (size_t i = 0; i < 140; ++i) orders.push_back(ActiveStop(B, 1, 1));
+	orders.push_back(ActiveStop(D, 1, 0));
+	orders[0].SetLeaveType(OLT_LEAVE_EARLY);
+	ActiveTrain train(std::move(orders));
+	auto *packet = fixture.Packet(); fixture.Plan(*packet);
+	CHECK(packet->GetPassengerJourney().alighting_order == 141);
+	fixture.Waiting().Append(packet, D);
+	std::array next{B};
+	CHECK(fixture.Waiting().Load(10, &train.cargo, next, TileIndex{0}, &train) == 10);
+	CHECK(train.cargo.StoredCount() == 10);
+}
+
+TEST_CASE("Ordinary lateness does not invalidate a timetabled ride and actual deviations replan", "[passenger][active][timetable]")
+{
+	ActiveFixture fixture;
+	ActiveTrain train({ActiveStop(A), ActiveStop(B, 100), ActiveStop(D, 100)});
+	train.GetOrder(0)->SetLeaveType(OLT_LEAVE_EARLY);
+	auto packet = std::unique_ptr<CargoPacket>(fixture.Packet()); fixture.Plan(*packet);
+	const auto saved = packet->GetPassengerJourney();
+	for (Ticks lateness : {-500, 500}) {
+		train.lateness_counter = lateness;
+		CHECK(PassengerJourneyBoardingContext(&train).CanBoard(*packet));
+	}
+	train.LoadAt(1);
+	_state_ticks = NOW + 200;
+	train.lateness_counter = 500;
+	CHECK(PassengerJourneyBoardingContext(&train).CanContinue(*packet));
+	_state_ticks = NOW + 150; // Actual early departure moved this occurrence.
+	CHECK_FALSE(PassengerJourneyBoardingContext(&train).CanContinue(*packet));
+	BeginPassengerJourneyTick();
+	PassengerJourneyActiveContext early(&train, B);
+	CHECK(early.Decide(*packet, PAX, false, OrderUnloadType::UnloadIfPossible) == Action::Keep);
+	CHECK(packet->GetPassengerJourney().arrival == NOW + 350);
+	CHECK(packet->GetPassengerJourney().arrival != saved.arrival);
+	_state_ticks = NOW + 1000; // Actual delay requires another live replan, not a past arrival.
+	BeginPassengerJourneyTick();
+	PassengerJourneyActiveContext late(&train, B);
+	CHECK(late.Decide(*packet, PAX, false, OrderUnloadType::UnloadIfPossible) == Action::Keep);
+	CHECK(packet->GetPassengerJourney().arrival == NOW + 1200);
 }

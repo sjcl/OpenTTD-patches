@@ -132,6 +132,90 @@ TEST_CASE("Passenger transfers require a usable connection and complete predicti
 	CHECK_FALSE(PredictPassengerJourney(State(orders), 0, D, PAX, NOW, true).arrival.has_value());
 }
 
+TEST_CASE("Timetable assumption ignores early departure and full loading only in planner predictions", "[passenger][timetable]")
+{
+	std::vector<Order> orders{Stop(A, 100, 100), Stop(B, 200, 100), Stop(D, 300, 100)};
+	const auto predict = [&](PassengerTimingPolicy timing) {
+		size_t budget = 65536;
+		return PredictPassengerVisits(State(orders), PAX, NOW, NOW + 1500, 32, 128, budget, {}, true, timing);
+	};
+	const auto normal = predict(PassengerTimingPolicy::AssumeTimetable);
+	for (OrderLeaveType leave : {OLT_NORMAL, OLT_LEAVE_EARLY, OLT_LEAVE_EARLY_FULL_ANY, OLT_LEAVE_EARLY_FULL_ALL}) {
+		for (OrderLoadType load : {OrderLoadType::LoadIfPossible, OrderLoadType::FullLoad, OrderLoadType::FullLoadAny, OrderLoadType::CargoTypeLoad}) {
+			CAPTURE(leave, to_underlying(load));
+			for (Order &order : orders) {
+				order.SetLeaveType(leave);
+				order.SetLoadType(load);
+				if (load == OrderLoadType::CargoTypeLoad) order.SetLoadType(OrderLoadType::FullLoad, CargoType{1});
+			}
+			const auto assumed = predict(PassengerTimingPolicy::AssumeTimetable);
+			REQUIRE(assumed.status == PassengerPredictionStatus::Complete);
+			REQUIRE(assumed.visits.size() == normal.visits.size());
+			for (size_t i = 0; i < normal.visits.size(); ++i) {
+				CHECK(assumed.visits[i].arrival == normal.visits[i].arrival);
+				CHECK(assumed.visits[i].departure == normal.visits[i].departure);
+			}
+			CHECK(assumed.visits[3].order == 0); // Next circuit is timed too.
+			CHECK(assumed.visits[3].departure == NOW + 1000);
+			const auto conservative = predict(PassengerTimingPolicy::Conservative);
+			if (leave != OLT_NORMAL || load != OrderLoadType::LoadIfPossible) CHECK(conservative.status == PassengerPredictionStatus::Unknown);
+		}
+	}
+}
+
+TEST_CASE("Timetable assumption uses elapsed progress and explicit timing flags", "[passenger][timetable]")
+{
+	std::vector<Order> orders{Stop(A, 100, 100), Stop(B, 200, 100), Stop(D, 300, 100)};
+	auto state = State(orders);
+	const auto predict = [&](bool prefix = true) {
+		size_t budget = 65536;
+		return PredictPassengerVisits(state, PAX, NOW, NOW + 1500, 32, 128, budget, {}, prefix, PassengerTimingPolicy::AssumeTimetable);
+	};
+	SECTION("Early and late loading keep a full future dwell") {
+		for (Ticks lateness : {-500, 0, 500}) {
+			state.lateness = lateness; state.elapsed = 40;
+			const auto prediction = predict();
+			REQUIRE(prediction.visits.size() >= 3);
+			CHECK(prediction.visits[0].departure == NOW + 60);
+			CHECK(prediction.visits[1].arrival == NOW + 260);
+			CHECK(prediction.visits[1].departure == NOW + 360);
+		}
+		state.elapsed = 500;
+		CHECK(predict().visits[0].departure == NOW);
+	}
+	SECTION("Travelling subtracts only current elapsed time") {
+		state.loading = false; state.elapsed = 40; state.lateness = 500;
+		const auto prediction = predict();
+		CHECK(prediction.visits[0].arrival == NOW + 60);
+		CHECK(prediction.visits[0].departure == NOW + 160);
+	}
+	SECTION("Overdue travelling cannot invent an arrival but retains downstream durations") {
+		state.loading = false; state.elapsed = 101;
+		CHECK(predict().stop == PassengerPredictionStop::Timing);
+		CHECK(predict().visits.empty());
+		const auto prediction = predict(false);
+		REQUIRE(prediction.visits.size() >= 2);
+		CHECK_FALSE(prediction.visits[0].arrival);
+		CHECK_FALSE(prediction.visits[1].arrival);
+		CHECK(prediction.visits[1].travel_from_previous == StateTicksDelta{200});
+	}
+	SECTION("Unflagged nonzero travel remains unknown") {
+		orders[1].SetTravelTimetabled(false);
+		CHECK(predict().stop == PassengerPredictionStop::Timing);
+		CHECK(predict().visits.size() == 1);
+	}
+	SECTION("Unset dwell is unknown even with full loading") {
+		orders[0].SetWaitTimetabled(false); orders[0].SetLoadType(OrderLoadType::FullLoad);
+		CHECK_FALSE(predict().visits[0].departure);
+	}
+	SECTION("Explicit zero is timed; unset zero is unknown") {
+		orders[1].SetTravelTime(0); orders[1].SetWaitTime(0);
+		CHECK(predict().status == PassengerPredictionStatus::Complete);
+		orders[1].SetTravelTimetabled(false);
+		CHECK(predict().status == PassengerPredictionStatus::Unknown);
+	}
+}
+
 TEST_CASE("Passenger connections search actual repeated visits within the stay horizon", "[passenger]")
 {
 	std::vector<Order> express{ Stop(B, 400, 10), Stop(D, 100) };
@@ -238,46 +322,49 @@ TEST_CASE("Passenger repeated dispatch predictions use private slot history", "[
 
 TEST_CASE("Passenger predictions respect unloading, non-stop and route barriers", "[passenger]")
 {
+	const auto timing = GENERATE(PassengerTimingPolicy::Conservative, PassengerTimingPolicy::AssumeTimetable);
 	std::vector<Order> orders{ Stop(B, 100), Stop(C, 200), Stop(D, 300) };
 	SECTION("Forced transfer before the via") {
 		orders[1].SetUnloadType(OrderUnloadType::Transfer);
-		CHECK_FALSE(PredictPassengerJourney(State(orders), 0, D, PAX, NOW, true).reachable);
+		CHECK_FALSE(PredictPassengerJourney(State(orders), 0, D, PAX, NOW, true, timing).reachable);
 	}
 	SECTION("Forced unloading before the via") {
 		orders[1].SetUnloadType(OrderUnloadType::Unload);
-		CHECK_FALSE(PredictPassengerJourney(State(orders), 0, D, PAX, NOW, true).reachable);
+		CHECK_FALSE(PredictPassengerJourney(State(orders), 0, D, PAX, NOW, true, timing).reachable);
 	}
 	SECTION("Via cannot unload") {
 		orders[2].SetUnloadType(OrderUnloadType::NoUnload);
-		CHECK_FALSE(PredictPassengerJourney(State(orders), 0, D, PAX, NOW, true).reachable);
+		CHECK_FALSE(PredictPassengerJourney(State(orders), 0, D, PAX, NOW, true, timing).reachable);
 	}
 	SECTION("Passes the via without stopping") {
 		orders[2].SetNonStopType(ONSF_NO_STOP_AT_DESTINATION_STATION);
-		CHECK_FALSE(PredictPassengerJourney(State(orders), 0, D, PAX, NOW, true).reachable);
+		CHECK_FALSE(PredictPassengerJourney(State(orders), 0, D, PAX, NOW, true, timing).reachable);
 	}
 	SECTION("Depot detour") {
 		orders[1].MakeGoToDepot(DestinationID{0}, OrderDepotTypeFlags{});
-		CHECK_FALSE(PredictPassengerJourney(State(orders), 0, D, PAX, NOW, true).arrival.has_value());
+		CHECK_FALSE(PredictPassengerJourney(State(orders), 0, D, PAX, NOW, true, timing).arrival.has_value());
 	}
 }
 
 TEST_CASE("Passenger conditional prediction is bounded and conservative", "[passenger]")
 {
+	const auto timing = GENERATE(PassengerTimingPolicy::Conservative, PassengerTimingPolicy::AssumeTimetable);
 	std::vector<Order> orders{ Stop(B, 100), Order{}, Stop(C, 200), Stop(D, 300) };
 	orders[1].MakeConditional(3);
 	orders[1].SetConditionVariable(OrderConditionVariable::Unconditionally);
 	orders[1].SetWaitTime(500);
 	orders[1].SetWaitTimetabled(true);
-	CHECK(PredictPassengerJourney(State(orders), 0, D, PAX, NOW, true).arrival == NOW + 500);
+	CHECK(PredictPassengerJourney(State(orders), 0, D, PAX, NOW, true, timing).arrival == NOW + 500);
 	orders[1].SetConditionVariable(OrderConditionVariable::LoadPercentage);
-	CHECK_FALSE(PredictPassengerJourney(State(orders), 0, D, PAX, NOW, true).arrival.has_value());
+	CHECK_FALSE(PredictPassengerJourney(State(orders), 0, D, PAX, NOW, true, timing).arrival.has_value());
 	orders[1].SetConditionVariable(OrderConditionVariable::Unconditionally);
 	orders[1].SetConditionSkipToOrder(1);
-	CHECK_FALSE(PredictPassengerJourney(State(orders), 0, D, PAX, NOW, true).reachable);
+	CHECK_FALSE(PredictPassengerJourney(State(orders), 0, D, PAX, NOW, true, timing).reachable);
 }
 
 TEST_CASE("Passenger scheduled dispatch uses slots without modifying the schedule", "[passenger]")
 {
+	const auto timing = GENERATE(PassengerTimingPolicy::Conservative, PassengerTimingPolicy::AssumeTimetable);
 	std::vector<Order> orders{ Stop(A, 100), Stop(B, 100), Stop(D, 600) };
 	orders[1].SetDispatchScheduleIndex(0);
 	std::vector<DispatchSchedule> schedules(1);
@@ -288,20 +375,20 @@ TEST_CASE("Passenger scheduled dispatch uses slots without modifying the schedul
 	auto state = State(orders);
 	state.scheduled_dispatch = true;
 	state.schedules = schedules;
-	auto trip = PredictPassengerJourney(state, 1, D, PAX, NOW, false);
+	auto trip = PredictPassengerJourney(state, 1, D, PAX, NOW, false, timing);
 	CHECK(trip.departure == NOW + 3600);
 	CHECK(trip.arrival == NOW + 4200);
 	CHECK(schedule.GetScheduledDispatchLastDispatch() == INVALID_SCHEDULED_DISPATCH_OFFSET);
 	state.shared_vehicles = 2;
-	CHECK_FALSE(PredictPassengerJourney(state, 1, D, PAX, NOW, false).arrival.has_value());
+	CHECK_FALSE(PredictPassengerJourney(state, 1, D, PAX, NOW, false, timing).arrival.has_value());
 	state.current_order = 1; // Already assigned a departure at the dispatch stop.
 	state.lateness = -300;
-	trip = PredictPassengerJourney(state, 1, D, PAX, NOW, true);
+	trip = PredictPassengerJourney(state, 1, D, PAX, NOW, true, timing);
 	CHECK(trip.arrival == NOW + 900);
 	schedule.SetScheduledDispatchDuration(0);
-	CHECK_FALSE(PredictPassengerJourney(state, 1, D, PAX, NOW, true).arrival.has_value());
+	CHECK_FALSE(PredictPassengerJourney(state, 1, D, PAX, NOW, true, timing).arrival.has_value());
 	state.current_order = 0;
-	CHECK_FALSE(PredictPassengerJourney(state, 1, D, PAX, NOW, false).arrival.has_value());
+	CHECK_FALSE(PredictPassengerJourney(state, 1, D, PAX, NOW, false, timing).arrival.has_value());
 }
 
 /** Temporary vehicle avoids graphical/engine setup; all route and cargo processing uses real production code. */

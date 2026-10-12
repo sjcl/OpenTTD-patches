@@ -104,7 +104,7 @@ PassengerJourneyShadowContext::PassengerJourneyShadowContext(const Vehicle *vehi
 			graph_limits.work = std::min({graph_limits.work, hard.graph.work, this->limits.work - _passenger_shadow_work});
 			graph_limits.memory_bytes = std::min(graph_limits.memory_bytes, hard.graph.memory_bytes);
 			const auto graph_start = ShadowClock::now();
-			auto graph = PassengerServiceGraph::Build(cargo, this->capture, graph_limits);
+			auto graph = PassengerServiceGraph::Build(cargo, this->capture, graph_limits, {}, nullptr, PassengerTimingPolicy::AssumeTimetable);
 			for (const auto &trip : graph.GetTrips()) {
 				if (trip.type < VehicleType::CompanyEnd) ++_passenger_shadow_stats.modes[to_underlying(trip.type)].prediction_reasons[to_underlying(trip.prediction_reason)];
 			}

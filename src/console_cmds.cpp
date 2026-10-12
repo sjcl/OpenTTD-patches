@@ -4534,10 +4534,11 @@ static bool ConPassengerServiceInspect(std::span<std::string_view> argv)
 		IConsolePrint(CC_DEFAULT, "Route state unavailable: reason={}", to_underlying(reason));
 		return true;
 	}
-	for (bool prefix : {false, true}) {
-		auto prediction = PredictPassengerVisits(*state, CargoType{0}, _state_ticks, _state_ticks + 4096, 4096, 4096, work, {}, prefix);
-		IConsolePrint(CC_DEFAULT, "Prediction prefix_only={}: status={}; stop={}; stopped_order={}; first_unknown_order={}; first_unknown_reason={}; cursor={}; certified_until={}; visits={}",
-				prefix, to_underlying(prediction.status), to_underlying(prediction.stop), prediction.stopped_order, prediction.uncertain_order,
+	for (auto timing : {PassengerTimingPolicy::Conservative, PassengerTimingPolicy::AssumeTimetable}) for (bool prefix : {false, true}) {
+		size_t prediction_work = 65536;
+		auto prediction = PredictPassengerVisits(*state, CargoType{0}, _state_ticks, _state_ticks + 4096, 4096, 4096, prediction_work, {}, prefix, timing);
+		IConsolePrint(CC_DEFAULT, "Prediction timing={} prefix_only={}: status={}; stop={}; stopped_order={}; first_unknown_order={}; first_unknown_reason={}; cursor={}; certified_until={}; visits={}",
+				to_underlying(timing), prefix, to_underlying(prediction.status), to_underlying(prediction.stop), prediction.stopped_order, prediction.uncertain_order,
 				to_underlying(prediction.uncertain_reason), prediction.stopped_at.base(), prediction.complete_until.base(), prediction.visits.size());
 	}
 	return true;

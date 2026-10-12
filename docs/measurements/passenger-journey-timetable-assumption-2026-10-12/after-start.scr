@@ -1,0 +1,14 @@
+script C:/Users/bebe/.codex/worktrees/2c6d/OpenTTD-patches/build-timetable/run/after-console.txt
+getsysdate
+getfulldate
+passenger_service_inspect 3355
+passenger_journey_stats reset
+passenger_journey_stats inventory
+setting linkgraph.distribution_pax 2
+setting linkgraph.passenger_od_assignment true
+setting linkgraph.passenger_journey_routing true
+setting linkgraph.recalc_interval 8
+setting linkgraph.recalc_time 32
+unpause
+schedule on-next-calendar-month C:/Users/bebe/.codex/worktrees/2c6d/OpenTTD-patches/build-timetable/run/scripts/after-finish.scr
+script

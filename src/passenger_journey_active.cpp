@@ -350,7 +350,7 @@ PassengerJourneyActiveContext::Snapshot *PassengerJourneyActiveContext::GetSnaps
 	--global.snapshots;
 	PassengerServiceScope scope{this->station, destination};
 	if (this->vehicle != nullptr && this->vehicle->orders != nullptr) scope.onboard_service = this->vehicle->orders->index;
-	auto graph = PassengerServiceGraph::Build(cargo, _state_ticks, limits, scope, &this->capture);
+	auto graph = PassengerServiceGraph::Build(cargo, _state_ticks, limits, scope, &this->capture, PassengerTimingPolicy::AssumeTimetable);
 	this->work_left -= graph.GetWork(); global.graph -= graph.GetWork(); this->memory_left -= graph.GetMemoryBound();
 	auto &diagnostic = global.diagnostic;
 	++diagnostic.builds;
@@ -718,14 +718,18 @@ void PassengerJourneyBoardingContext::Initialize() const
 	if (this->initialized) return;
 	this->initialized = true;
 	if (this->vehicle == nullptr) return;
-	size_t budget = 4096;
+	const auto limits = ActivePassengerServiceGraphLimits();
+	/* Use planning's traversal and work ceilings, including live facility capture.
+	 * A separately truncated boarding prediction must not reject a planned leg. */
+	size_t budget = limits.work;
 	if (!IsPassengerServiceVehicle(this->vehicle) || !IsPassengerJourneyRoutingEnabled(this->cargo) ||
 			!HasPassengerVehicleCapacity(this->vehicle, this->cargo, budget)) return;
 	auto state = GetPassengerRouteState(this->vehicle, &budget);
 	if (!state || !state->loading) return;
-	this->signature = PassengerJourneyServiceSignature(*this->vehicle->orders, this->cargo);
+	this->signature = PassengerJourneyServiceSignature(*this->vehicle->orders, this->cargo, &budget);
 	++this->predictions;
-	this->prediction = PredictPassengerVisits(*state, this->cargo, _state_ticks, _state_ticks + 65536, 128, 4096, budget);
+	this->prediction = PredictPassengerVisits(*state, this->cargo, _state_ticks, _state_ticks + 65536,
+			limits.visits_per_trip, limits.steps_per_trip, budget, {}, true, PassengerTimingPolicy::AssumeTimetable);
 }
 
 bool PassengerJourneyBoardingContext::CanBoard(const CargoPacket &packet) const

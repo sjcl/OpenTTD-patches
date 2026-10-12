@@ -43,7 +43,7 @@ struct PassengerServiceCapture::Data {
 	uint64_t revision;
 	size_t storage_bound = 0;
 	std::optional<Discovery> discovery;
-	std::map<std::tuple<CargoType, OrderListID, size_t>, Pattern> patterns;
+	std::map<std::tuple<CargoType, OrderListID, size_t, PassengerTimingPolicy>, Pattern> patterns;
 	Data(StateTicks at) : at(at), revision(PassengerGraphServiceIndexRevision()) {}
 };
 
@@ -94,7 +94,7 @@ public:
 };
 
 PassengerServiceGraph PassengerServiceGraph::Build(CargoType cargo, StateTicks now, PassengerServiceGraphLimits limits,
-		std::optional<PassengerServiceScope> scope, PassengerServiceCapture *capture)
+		std::optional<PassengerServiceScope> scope, PassengerServiceCapture *capture, PassengerTimingPolicy timing)
 {
 	const auto started = std::chrono::steady_clock::now();
 	PassengerGraphBuildTimer timer;
@@ -304,7 +304,7 @@ PassengerServiceGraph PassengerServiceGraph::Build(CargoType cargo, StateTicks n
 		if (graph.services.size() >= limits.services) { fail(PassengerGraphFailure::Services, PassengerPredictionStatus::LimitReached); graph.diagnostic.omitted_trains += candidates.size(); break; }
 		if (!SpendGraphWork(budget, 3 * static_cast<size_t>(list->GetNumOrders()))) { fail(PassengerGraphFailure::Work, PassengerPredictionStatus::BudgetExhausted); graph.diagnostic.omitted_trains += candidates.size(); break; }
 		if (!admit(512 + 1024 * static_cast<size_t>(list->GetNumOrders()))) break;
-		const auto key = std::tuple(cargo, list->index, limits.steps_per_trip);
+		const auto key = std::tuple(cargo, list->index, limits.steps_per_trip, timing);
 		const PassengerServiceCapture::Data::Pattern *cached = nullptr;
 		if (capture) {
 			auto found = capture->data->patterns.find(key);
@@ -362,7 +362,7 @@ PassengerServiceGraph PassengerServiceGraph::Build(CargoType cargo, StateTicks n
 				stage = PassengerGraphStage::Pattern;
 				PassengerRouteState nominal{ orders, {}, service.stops.front().order, 0, 0, true, false, 1 };
 				auto pattern = PredictPassengerVisits(nominal, cargo, StateTicks{0}, StateTicks{int64_t{1} << 50}, service.stops.size() + 1,
-						limits.steps_per_trip, budget);
+						limits.steps_per_trip, budget, {}, false, timing);
 				service.pattern_status = pattern.status;
 				for (size_t i = 1; i < pattern.visits.size(); ++i) {
 					const auto &prev = pattern.visits[i - 1], &visit = pattern.visits[i];
@@ -423,7 +423,7 @@ PassengerServiceGraph PassengerServiceGraph::Build(CargoType cargo, StateTicks n
 						++graph.diagnostic.admitted_visits;
 						++predicting_visits;
 						return true;
-					}, scope.has_value());
+					}, scope.has_value(), timing);
 					if (trip.prediction.status == PassengerPredictionStatus::LimitReached && trip.prediction.visits.size() == visit_limit && visit_limit < limits.visits_per_trip) {
 						fail(PassengerGraphFailure::TotalVisits, PassengerPredictionStatus::LimitReached);
 					}
