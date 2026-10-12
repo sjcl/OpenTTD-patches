@@ -51,6 +51,8 @@ struct PassengerJourneyTickDiagnostic {
 	size_t reused_graph_work = 0, static_allocation_bytes = 0, query_scratch_bytes = 0, query_cache_bytes = 0;
 	size_t journeys = 0, passengers = 0, graph_memory_bound = 0, graph_allocation_bytes = 0;
 	uint64_t build_microseconds = 0, maximum_build_microseconds = 0;
+	PassengerGraphPhaseTimes graph_phase_microseconds{};
+	size_t capture_discovery_hits = 0, capture_service_hits = 0, capture_reused_work = 0, capture_allocation_bytes = 0;
 	uint64_t query_microseconds = 0, maximum_tick_microseconds = 0;
 	std::array<size_t, static_cast<size_t>(PassengerJourneyFallbackReason::End)> fallbacks{};
 	std::array<size_t, static_cast<size_t>(PassengerJourneyFallbackReason::End)> deferred{};
@@ -128,6 +130,7 @@ public:
 /** Shares snapshots/query caches across all coaches and packets at an arrival. */
 class PassengerJourneyActiveContext {
 	struct Snapshot;
+	PassengerServiceCapture capture;
 	const Vehicle *vehicle;
 	StationID station;
 	std::map<std::tuple<CargoType, StationID, Ticks>, std::unique_ptr<Snapshot>> snapshots;

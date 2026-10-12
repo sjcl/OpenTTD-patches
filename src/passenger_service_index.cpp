@@ -23,6 +23,7 @@ namespace {
 		std::vector<size_t> parent, depth, root;
 	};
 	static std::optional<ServiceIndex> index;
+	static uint64_t revision = 0;
 
 	/** O(orders + services) vertices/edges, no recursion even for national transfer chains. */
 	static ServiceIndex BuildIndex(std::span<const OrderListID> eligible)
@@ -154,7 +155,8 @@ namespace {
 	}
 }
 
-void InvalidatePassengerGraphServiceIndex() { index.reset(); }
+void InvalidatePassengerGraphServiceIndex() { index.reset(); ++revision; }
+uint64_t PassengerGraphServiceIndexRevision() { return revision; }
 
 PassengerServiceSelection SelectPassengerServices(PassengerServiceScope scope, std::span<const OrderListID> eligible, size_t &work, size_t memory_bytes)
 {

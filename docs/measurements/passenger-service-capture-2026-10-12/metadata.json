@@ -1,0 +1,32 @@
+{
+  "base_commit": "eab176fa0a539bbe83dddd36648a3fe28a4e63b3",
+  "branch": "perf/passenger-service-capture",
+  "date_jst": "2026-10-12",
+  "compiler": "MSVC 19.44.35227",
+  "configuration": "x64 Release, assertions on, LTO off",
+  "comparison": "same executable, capture=nullptr versus event capture, alternating pair order",
+  "source_runs": 3,
+  "real_map_runs": 3,
+  "capture_limit_bytes": 16777216,
+  "real_map_input": "verified-result.sav from build-real-map-journey-20261012",
+  "input_sha256": "14D68C82911B9DCFC5EF7291E9697C5BBD67F44FFCC79D7575A144405EDF6390",
+  "before_benchmark_sha256": "53956A9D3C983561E268F8254A051D2CE19D968255F48B649B849E01386C89BE",
+  "after_benchmark_sha256": "53956A9D3C983561E268F8254A051D2CE19D968255F48B649B849E01386C89BE",
+  "console_binary_sha256": "C849C12C50F2A0A3F72C037A92194E54C3C8DEEC130E9C0EC406B3DC0A2D9E82",
+  "grf_or_tar_assets": 115,
+  "missing_grfs_or_removed_vehicles": 0,
+  "ctest": {
+    "passed": 411,
+    "seconds": 19.74
+  },
+  "existing_passenger": {
+    "cases": 191,
+    "assertions": 135563
+  },
+  "capture": {
+    "cases": 4,
+    "assertions": 45953
+  },
+  "multiplayer_live_join_tested": false,
+  "rss_measured": false
+}

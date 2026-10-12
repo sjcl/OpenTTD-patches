@@ -64,6 +64,9 @@ namespace {
 		a.query_scratch_bytes = std::max(a.query_scratch_bytes, b.query_scratch_bytes);
 		a.query_cache_bytes = std::max(a.query_cache_bytes, b.query_cache_bytes);
 		a.build_microseconds += b.build_microseconds;
+		for (size_t i = 0; i < a.graph_phase_microseconds.size(); ++i) a.graph_phase_microseconds[i] += b.graph_phase_microseconds[i];
+		a.capture_discovery_hits += b.capture_discovery_hits; a.capture_service_hits += b.capture_service_hits; a.capture_reused_work += b.capture_reused_work;
+		a.capture_allocation_bytes = std::max(a.capture_allocation_bytes, b.capture_allocation_bytes);
 		a.maximum_build_microseconds = std::max(a.maximum_build_microseconds, b.maximum_build_microseconds);
 		a.query_microseconds += b.query_microseconds;
 		a.fair_share_work += b.fair_share_work; a.fair_share_claims += b.fair_share_claims;
@@ -329,7 +332,7 @@ PassengerJourneyActiveContext::Snapshot *PassengerJourneyActiveContext::GetSnaps
 	--global.snapshots;
 	PassengerServiceScope scope{this->station, destination};
 	if (this->vehicle != nullptr && this->vehicle->orders != nullptr) scope.onboard_service = this->vehicle->orders->index;
-	auto graph = PassengerServiceGraph::Build(cargo, _state_ticks, limits, scope);
+	auto graph = PassengerServiceGraph::Build(cargo, _state_ticks, limits, scope, &this->capture);
 	this->work_left -= graph.GetWork(); global.graph -= graph.GetWork(); this->memory_left -= graph.GetMemoryBound();
 	auto &diagnostic = global.diagnostic;
 	++diagnostic.builds;
@@ -341,6 +344,10 @@ PassengerJourneyActiveContext::Snapshot *PassengerJourneyActiveContext::GetSnaps
 	diagnostic.build_microseconds += graph.GetDiagnostic().build_microseconds;
 	diagnostic.maximum_build_microseconds = std::max(diagnostic.maximum_build_microseconds, graph.GetDiagnostic().build_microseconds);
 	const auto &capture = graph.GetDiagnostic();
+	for (size_t i = 0; i < diagnostic.graph_phase_microseconds.size(); ++i) diagnostic.graph_phase_microseconds[i] += capture.phase_microseconds[i];
+	diagnostic.capture_discovery_hits += capture.capture_discovery_hit; diagnostic.capture_service_hits += capture.capture_service_hits;
+	diagnostic.capture_reused_work += capture.capture_reused_work;
+	diagnostic.capture_allocation_bytes = std::max(diagnostic.capture_allocation_bytes, capture.capture_allocation_bytes);
 	diagnostic.timing_uncertainty += capture.timing_uncertainty;
 	diagnostic.path_uncertainty += capture.path_uncertainty;
 	++diagnostic.graph_failures[static_cast<size_t>(capture.first_failure.reason)];

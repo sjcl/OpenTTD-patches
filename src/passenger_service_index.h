@@ -41,5 +41,6 @@ struct PassengerServiceSelection {
  * skipped, and future implicit order creation is not forecast. */
 PassengerServiceSelection SelectPassengerServices(PassengerServiceScope scope, std::span<const OrderListID> eligible, size_t &work, size_t memory_bytes);
 void InvalidatePassengerGraphServiceIndex();
+uint64_t PassengerGraphServiceIndexRevision(); ///< Local cache invalidation only, never simulation state.
 
 #endif /* PASSENGER_SERVICE_INDEX_H */

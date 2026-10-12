@@ -30,6 +30,11 @@ struct PassengerServiceGraphLimits {
 enum class PassengerGraphFailure : uint8_t { None, Work, Memory, Services, Trips, TotalVisits, Index, Opaque, End };
 enum class PassengerGraphStage : uint8_t { Discovery, Structure, Orders, Schedules, Pattern, Trips, Prediction, Indices };
 
+/** Elapsed time only; these counters never enter simulation admission or routing. */
+enum class PassengerGraphBuildPhase : uint8_t { Discovery, Capacity, Selection, Orders, Pattern, Prediction, Departures, End };
+using PassengerGraphPhaseTimes = std::array<uint64_t, static_cast<size_t>(PassengerGraphBuildPhase::End)>;
+class PassengerServiceCapture;
+
 struct PassengerGraphFailureDetail {
 	PassengerGraphFailure reason = PassengerGraphFailure::None;
 	PassengerGraphStage stage = PassengerGraphStage::Discovery;
@@ -70,6 +75,9 @@ struct PassengerServiceGraphDiagnostic {
 	size_t static_allocation_bytes = 0; ///< Shared structural index, including capacity observations.
 	size_t reused_work = 0; ///< Logical preprocessing allowance avoided by a resident index, diagnostic only.
 	uint64_t build_microseconds = 0; ///< Development diagnostics only.
+	PassengerGraphPhaseTimes phase_microseconds{};
+	size_t capture_service_hits = 0, capture_reused_work = 0, capture_allocation_bytes = 0;
+	bool capture_discovery_hit = false;
 	bool static_cache_hit = false;
 	size_t timing_uncertainty = 0, path_uncertainty = 0;
 };
@@ -83,7 +91,7 @@ struct PassengerServiceGraphDiagnostic {
  * is O(O + V + D + P), plus ordered index insertion/lookup costs. Storage is bounded by copied
  * orders/schedules and total visits. Queries inspect only the station's indexed services/visits,
  * plus the selected trips' downstream occurrences, with their own shared work allowance.
- * The optional shared cache owns structural IDs only. No live pointers, random sampling,
+ * The optional event capture owns IDs, orders and patterns. No live pointers, random sampling,
  * NewGRF callbacks or LinkGraph workers are retained in a snapshot.
  */
 class PassengerServiceGraph {
@@ -104,14 +112,25 @@ public:
 		std::optional<StateTicksDelta> travel; ///< Includes intervening waypoint waits, excludes station dwell.
 	};
 
-	struct Service {
+	struct ServicePattern {
 		OrderListID id;
+		std::vector<Order> orders;
 		std::vector<Stop> stops; ///< Declared stopping orders, in order-list order; pass-through orders omitted.
 		std::vector<Segment> segments; ///< Only the path prefix verified by the common predictor.
 		PassengerPredictionStatus pattern_status = PassengerPredictionStatus::Unknown; ///< Complete means one nominal cycle was captured.
 		bool cycle_known = false; ///< True if traversal actually returned to its initial stop.
 		std::vector<VehicleOrderID> reverse_waypoints; ///< Explicit reversals; out-and-back station visits retain distinct order IDs.
 		std::vector<DispatchSchedule> schedules; ///< Timing/slot data only, without GUI names.
+	};
+	struct Service {
+		OrderListID id;
+		std::shared_ptr<const ServicePattern> pattern; ///< Shared owned values, independent of game pools and the event owner.
+		std::span<const Stop> stops;
+		std::span<const Segment> segments;
+		PassengerPredictionStatus pattern_status = PassengerPredictionStatus::Unknown;
+		bool cycle_known = false;
+		std::span<const VehicleOrderID> reverse_waypoints;
+		std::span<const DispatchSchedule> schedules;
 		std::vector<size_t> trips; ///< Indices into GetTrips().
 		std::optional<StateTicks> uncertain_from; ///< Earliest uncertified event across the fleet; never the nominal prediction cursor.
 		PassengerPredictionStatus coverage_status = PassengerPredictionStatus::Complete; ///< Fleet coverage, computed once rather than once per station.
@@ -158,7 +177,7 @@ public:
 
 	/** Call on the simulation thread, while vehicle/order pools are stable. Queries need no game state. */
 	static PassengerServiceGraph Build(CargoType cargo, StateTicks now, PassengerServiceGraphLimits limits = {},
-			std::optional<PassengerServiceScope> scope = {});
+			std::optional<PassengerServiceScope> scope = {}, PassengerServiceCapture *capture = nullptr);
 	CargoType GetCargo() const { return this->cargo; }
 	StateTicks GetStart() const { return this->start; }
 	StateTicks GetEnd() const { return this->end; }
@@ -245,6 +264,24 @@ private:
 	void BuildDepartureIndex();
 	const Stop &GetStop(const Trip &trip, VehicleOrderID order) const;
 	QueryResult<VisitID> SelectVisits(StationID station, StateTicks from, StateTicks to, size_t &budget) const;
+};
+
+/** One synchronous arrival or waiting-queue routing pass, owned by ActiveContext.
+ * Vehicle/order pools, consists, refits and dispatch settings must be stable throughout
+ * that pass (as they are in BeginLoading and RoutePassengerJourneys). Never share across
+ * events, even within one tick. Clear before any caller-induced game-state mutation.
+ * Only IDs and owned values are retained. Trip progress/facilities are always read live.
+ * Storage is optional and bounded; admission always pays the original logical envelope. */
+class PassengerServiceCapture {
+	friend class PassengerServiceGraph;
+	struct Data;
+	std::unique_ptr<Data> data;
+	size_t maximum_bytes;
+public:
+	explicit PassengerServiceCapture(size_t maximum_bytes = 16 * 1024 * 1024);
+	~PassengerServiceCapture();
+	void Clear();
+	size_t GetAllocationBytes() const;
 };
 
 #endif /* PASSENGER_SERVICE_GRAPH_H */

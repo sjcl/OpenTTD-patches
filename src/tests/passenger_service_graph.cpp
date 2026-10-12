@@ -97,6 +97,195 @@ static const PassengerServiceGraph::Trip &GraphTrip(const PassengerServiceGraph 
 	return *it;
 }
 
+/** Compare semantic values and admission, excluding residency and elapsed observations. */
+static void CheckCaptureEquivalent(const PassengerServiceGraph &a, const PassengerServiceGraph &b, StationID destination = D)
+{
+	CHECK(a.GetStatus() == b.GetStatus());
+	CHECK(a.GetQueryStatus(A, destination) == b.GetQueryStatus(A, destination));
+	CHECK(a.GetCoverage(A, destination) == b.GetCoverage(A, destination));
+	CHECK(a.GetWork() == b.GetWork());
+	CHECK(a.GetMemoryBound() == b.GetMemoryBound());
+	const auto &x = a.GetDiagnostic(), &y = b.GetDiagnostic();
+	CHECK(std::tuple(x.trains, x.cargo_capable, x.possible_refit, x.inactive, x.excluded_cargo, x.excluded_scope, x.visits, x.omitted_trains, x.truncated_predictions) ==
+			std::tuple(y.trains, y.cargo_capable, y.possible_refit, y.inactive, y.excluded_cargo, y.excluded_scope, y.visits, y.omitted_trains, y.truncated_predictions));
+	CHECK(std::tuple(x.first_failure.reason, x.first_failure.stage, x.first_failure.work, x.first_failure.memory, x.first_failure.trips, x.first_failure.visits) ==
+			std::tuple(y.first_failure.reason, y.first_failure.stage, y.first_failure.work, y.first_failure.memory, y.first_failure.trips, y.first_failure.visits));
+	REQUIRE(a.GetServices().size() == b.GetServices().size());
+	for (size_t i = 0; i < a.GetServices().size(); ++i) {
+		const auto &p = a.GetServices()[i], &q = b.GetServices()[i];
+		CHECK(std::tuple(p.id, p.pattern_status, p.cycle_known, p.coverage_status, p.uncertain_from, p.trips) ==
+				std::tuple(q.id, q.pattern_status, q.cycle_known, q.coverage_status, q.uncertain_from, q.trips));
+		CHECK(std::equal(p.stops.begin(), p.stops.end(), q.stops.begin(), q.stops.end(), [](const auto &s, const auto &t) {
+			return std::tuple(s.station, s.order, s.can_board, s.can_alight, s.forced_transfer, s.dwell, s.dispatch_schedule) ==
+					std::tuple(t.station, t.order, t.can_board, t.can_alight, t.forced_transfer, t.dwell, t.dispatch_schedule);
+		}));
+		CHECK(std::equal(p.segments.begin(), p.segments.end(), q.segments.begin(), q.segments.end(), [](const auto &s, const auto &t) {
+			return std::tuple(s.from, s.to, s.travel) == std::tuple(t.from, t.to, t.travel);
+		}));
+	}
+	REQUIRE(a.GetTrips().size() == b.GetTrips().size());
+	for (size_t i = 0; i < a.GetTrips().size(); ++i) {
+		const auto &p = a.GetTrips()[i], &q = b.GetTrips()[i];
+		CHECK(std::tuple(p.vehicle, p.service, p.tile, p.direction, p.current_order, p.elapsed, p.lateness, p.capacity, p.occupants, p.current_free, p.operation, p.prediction_reason) ==
+				std::tuple(q.vehicle, q.service, q.tile, q.direction, q.current_order, q.elapsed, q.lateness, q.capacity, q.occupants, q.current_free, q.operation, q.prediction_reason));
+		CHECK(std::tuple(p.prediction.status, p.prediction.start, p.prediction.complete_until, p.prediction.stop, p.prediction.stopped_at, p.prediction.stopped_order, p.prediction.uncertain_order, p.prediction.uncertain_reason) ==
+				std::tuple(q.prediction.status, q.prediction.start, q.prediction.complete_until, q.prediction.stop, q.prediction.stopped_at, q.prediction.stopped_order, q.prediction.uncertain_order, q.prediction.uncertain_reason));
+		CHECK(std::equal(p.prediction.visits.begin(), p.prediction.visits.end(), q.prediction.visits.begin(), q.prediction.visits.end(), [](const auto &s, const auto &t) {
+			return std::tuple(s.order, s.arrival, s.departure, s.loading_now, s.travel_from_previous) == std::tuple(t.order, t.arrival, t.departure, t.loading_now, t.travel_from_previous);
+		}));
+	}
+	CHECK(a.GetVisits(A, a.GetStart(), a.GetEnd()).items == b.GetVisits(A, b.GetStart(), b.GetEnd()).items);
+}
+
+TEST_CASE("Event capture shares services across 100 distinct OD searches", "[passenger][service_graph][capture]")
+{
+	PassengerTestStations stations;
+	std::vector<Order> stops{GraphStop(A, 100000, 0), GraphStop(B, 5, 0), GraphStop(D, 5, 0)};
+	for (uint16_t i = 4; i < 104; ++i) stops.push_back(GraphStop(StationID{i}, 5, 0));
+	GraphVehicle local(stops), shared(local, VehicleID{101});
+	GraphVehicle express({GraphStop(A, 100000, 0), GraphStop(D, 2, 0), GraphStop(StationID{103}, 2, 0)}, VehicleID{102});
+	GraphVehicle shortcut({GraphStop(B, 100000, 0), GraphStop(StationID{52}, 1, 0)}, VehicleID{103});
+	GraphVehicle trunk({GraphStop(A, 100000, 0), GraphStop(StationID{40}, 50, 0), GraphStop(StationID{80}, 20, 0)}, VehicleID{104});
+	GraphVehicle unrelated({GraphStop(StationID{200}), GraphStop(StationID{201})}, VehicleID{105});
+	PassengerServiceCapture capture;
+	std::shared_ptr<const PassengerServiceGraph::ServicePattern> first;
+	GameRandomSeedChecker seeds;
+	for (uint16_t i = 4; i < 104; ++i) {
+		const StationID destination{i};
+		const PassengerServiceScope scope{A, destination};
+		const auto baseline = PassengerServiceGraph::Build(PAX, NOW, GraphLimits(1000), scope);
+		const auto cached = PassengerServiceGraph::Build(PAX, NOW, GraphLimits(1000), scope, &capture);
+		CheckCaptureEquivalent(baseline, cached, destination);
+		CHECK(cached.GetService(unrelated.orders->index) == nullptr);
+		const auto *service = cached.GetService(local.orders->index);
+		REQUIRE(service != nullptr);
+		if (!first) first = service->pattern;
+		else { CHECK(first == service->pattern); CHECK(cached.GetDiagnostic().capture_discovery_hit); CHECK(cached.GetDiagnostic().capture_service_hits > 0); }
+		PassengerJourneyPlanner p(baseline), q(cached);
+		const auto expected = p.Plan(PAX, A, destination, NOW), actual = q.Plan(PAX, A, destination, NOW);
+		CHECK(expected.status == actual.status);
+		CHECK(expected.journeys == actual.journeys);
+	}
+	CHECK(capture.GetAllocationBytes() < 16 * 1024 * 1024);
+	CHECK(seeds.Check());
+}
+
+TEST_CASE("Event capture preserves every small work boundary and memory admission", "[passenger][service_graph][capture][budget]")
+{
+	PassengerTestStations stations;
+	GraphVehicle train({GraphStop(A), GraphStop(B), GraphStop(D)}), shared(train, VehicleID{101});
+	SECTION("Incomplete timetable") { train.GetOrder(1)->SetTravelTimetabled(false); }
+	SECTION("Refit") { train.GetOrder(1)->SetRefit(CargoType{1}); }
+	SECTION("Conditional order") { train.GetOrder(1)->MakeConditional(2); train.GetOrder(1)->SetConditionVariable(OrderConditionVariable::LoadPercentage); }
+	SECTION("Dispatch") {
+		train.GetOrder(0)->SetDispatchScheduleIndex(0); train.vehicle_flags.Set(VehicleFlag::ScheduledDispatch);
+		train.orders->GetScheduledDispatchScheduleSet().resize(1);
+		auto &s = train.orders->GetDispatchScheduleByIndex(0);
+		s.SetScheduledDispatchStartTick(NOW); s.SetScheduledDispatchDuration(300); s.SetScheduledDispatchReuseSlots(true);
+		s.GetScheduledDispatchMutable() = {{40, 0, {}}, {100, 0, {}}};
+	}
+	PassengerServiceCapture capture;
+	const PassengerServiceScope scope{A, D};
+	const auto prime = PassengerServiceGraph::Build(PAX, NOW, GraphLimits(), scope, &capture);
+	for (size_t work = 0; work < 400; ++work) {
+		auto limits = GraphLimits(); limits.work = work;
+		INFO("work=" << work);
+		CheckCaptureEquivalent(PassengerServiceGraph::Build(PAX, NOW, limits, scope), PassengerServiceGraph::Build(PAX, NOW, limits, scope, &capture));
+	}
+	for (size_t bytes = 0; bytes <= prime.GetMemoryBound() + 512; bytes += 64) {
+		auto limits = GraphLimits(); limits.memory_bytes = bytes;
+		INFO("memory=" << bytes);
+		CheckCaptureEquivalent(PassengerServiceGraph::Build(PAX, NOW, limits, scope), PassengerServiceGraph::Build(PAX, NOW, limits, scope, &capture));
+	}
+	for (size_t steps : {size_t{0}, size_t{1}, size_t{2}, size_t{4}, size_t{4096}}) {
+		auto limits = GraphLimits(); limits.steps_per_trip = steps; limits.total_visits = 3;
+		CheckCaptureEquivalent(PassengerServiceGraph::Build(PAX, NOW, limits, scope), PassengerServiceGraph::Build(PAX, NOW, limits, scope, &capture));
+	}
+	PassengerServiceCapture evicted(0), tiny(1024);
+	CheckCaptureEquivalent(prime, PassengerServiceGraph::Build(PAX, NOW, GraphLimits(), scope, &evicted));
+	CheckCaptureEquivalent(prime, PassengerServiceGraph::Build(PAX, NOW, GraphLimits(), scope, &tiny));
+}
+
+TEST_CASE("Capture separates cargos and rereads progress and new events within one tick", "[passenger][service_graph][capture]")
+{
+	PassengerTestStations stations;
+	AutoRestoreBackup<CargoClasses> other{CargoSpec::Get(CargoType{1})->classes, CargoClasses{CargoClass::Passengers}};
+	GraphVehicle train({GraphStop(A), GraphStop(B), GraphStop(D)});
+	std::unique_ptr<GraphCoach> coach(Vehicle::Create<GraphCoach>());
+	coach->cargo_type = CargoType{1}; coach->cargo_cap = 50; train.SetNext(coach.get());
+	PassengerServiceCapture capture;
+	const PassengerServiceScope scope{A, D};
+	const auto first = PassengerServiceGraph::Build(PAX, NOW, GraphLimits(), scope, &capture);
+	for (CargoType cargo : {CargoType{1}, PAX, CargoType{1}}) {
+		CheckCaptureEquivalent(PassengerServiceGraph::Build(cargo, NOW, GraphLimits(), scope), PassengerServiceGraph::Build(cargo, NOW, GraphLimits(), scope, &capture));
+	}
+	train.LoadAt(1); train.current_order_time = 7; train.lateness_counter = 15;
+	CheckCaptureEquivalent(PassengerServiceGraph::Build(PAX, NOW, GraphLimits(), scope), PassengerServiceGraph::Build(PAX, NOW, GraphLimits(), scope, &capture));
+	train.cargo.Append(CargoPacket::Create(12, 0, A, TileIndex{0}, Money{0}));
+	const auto occupied = PassengerServiceGraph::Build(PAX, NOW, GraphLimits(), scope, &capture);
+	CHECK(GraphTrip(occupied, train.index).occupants == 12);
+	CheckCaptureEquivalent(PassengerServiceGraph::Build(PAX, NOW, GraphLimits(), scope), occupied);
+	train.cargo.Truncate();
+	Station::Get(B)->facilities.Reset(StationFacility::Train);
+	CheckCaptureEquivalent(PassengerServiceGraph::Build(PAX, NOW, GraphLimits(), scope), PassengerServiceGraph::Build(PAX, NOW, GraphLimits(), scope, &capture));
+	Station::Get(B)->facilities.Set(StationFacility::Train);
+	/* A game-state mutation is a new event, even at the same state tick. */
+	capture.Clear(); coach->cargo_type = PAX; train.GetOrder(1)->SetTravelTime(200);
+	train.orders->GetScheduledDispatchScheduleSet().resize(1);
+	CheckCaptureEquivalent(PassengerServiceGraph::Build(PAX, NOW, GraphLimits(), scope), PassengerServiceGraph::Build(PAX, NOW, GraphLimits(), scope, &capture));
+	CHECK(GraphTrip(first, train.index).capacity == 80);
+	CHECK(GraphTrip(PassengerServiceGraph::Build(PAX, NOW, GraphLimits(), scope, &capture), train.index).capacity == 130);
+	train.GetOrder(1)->SetDestination(D); InvalidatePassengerServiceIndex();
+	const auto changed = PassengerServiceGraph::Build(PAX, NOW, GraphLimits(), scope, &capture);
+	CHECK_FALSE(changed.GetDiagnostic().capture_discovery_hit);
+	CheckCaptureEquivalent(PassengerServiceGraph::Build(PAX, NOW, GraphLimits(), scope), changed);
+	const auto next_tick = PassengerServiceGraph::Build(PAX, NOW + 1, GraphLimits(), scope, &capture);
+	CHECK_FALSE(next_tick.GetDiagnostic().capture_discovery_hit);
+	train.SetNext(nullptr);
+}
+
+TEST_CASE("Event capture benchmark has thousands of services and one hundred thousand visits", "[passenger][service_graph][capture][.performance]")
+{
+	PassengerTestStations stations;
+	std::deque<GraphVehicle> fleet;
+	size_t orders = 3;
+	SECTION("Three orders") {}
+	SECTION("Twenty orders") { orders = 20; }
+	for (uint32_t i = 0; i < 2500; ++i) {
+		std::vector<Order> stops{GraphStop(A, 10, 0), GraphStop(D, 10, 0)};
+		for (size_t j = 2; j < orders; ++j) stops.push_back(GraphStop(StationID{static_cast<uint16_t>(4 + (i + j) % 100)}, 10, 0));
+		fleet.emplace_back(std::move(stops), VehicleID{1000 + i});
+	}
+	auto limits = ActivePassengerServiceGraphLimits(); limits.work = 16 * 1024 * 1024; limits.horizon = 420;
+	PassengerServiceCapture capture;
+	uint64_t uncached_us = 0, cached_us = 0;
+	PassengerGraphPhaseTimes cold_phases{}, warm_phases{};
+	size_t hits = 0, reused = 0, visits = 0, bound = 0, allocation = 0;
+	for (uint16_t od = 4; od < 104; ++od) {
+		const PassengerServiceScope scope{A, StationID{od}};
+		PassengerServiceGraph a, b;
+		/* Alternate pair order to reduce CPU-cache/thermal bias in elapsed diagnostics. */
+		if (od % 2 == 0) {
+			a = PassengerServiceGraph::Build(PAX, NOW, limits, scope);
+			b = PassengerServiceGraph::Build(PAX, NOW, limits, scope, &capture);
+		} else {
+			b = PassengerServiceGraph::Build(PAX, NOW, limits, scope, &capture);
+			a = PassengerServiceGraph::Build(PAX, NOW, limits, scope);
+		}
+		REQUIRE(a.GetQueryStatus(A, StationID{od}) == PassengerPredictionStatus::Complete);
+		CHECK(a.GetWork() == b.GetWork()); CHECK(a.GetMemoryBound() == b.GetMemoryBound());
+		CHECK(a.GetTrips().size() == b.GetTrips().size()); CHECK(a.GetDiagnostic().visits == b.GetDiagnostic().visits);
+		REQUIRE(b.GetDiagnostic().visits >= 100000);
+		uncached_us += a.GetDiagnostic().build_microseconds; cached_us += b.GetDiagnostic().build_microseconds;
+		hits += b.GetDiagnostic().capture_service_hits; reused += b.GetDiagnostic().capture_reused_work;
+		visits = b.GetDiagnostic().visits; bound = b.GetMemoryBound(); allocation = b.GetDiagnostic().allocation_bytes;
+		for (size_t i = 0; i < cold_phases.size(); ++i) { cold_phases[i] += a.GetDiagnostic().phase_microseconds[i]; warm_phases[i] += b.GetDiagnostic().phase_microseconds[i]; }
+	}
+	WARN("Capture 100 OD: services=2500; orders=" << orders << "; visits=" << visits << "; uncached_us=" << uncached_us << "; cached_us=" << cached_us << "; service_hits=" << hits
+			<< "; replayed_work=" << reused << "; graph_bound=" << bound << "; graph_estimate=" << allocation << "; capture_estimate=" << capture.GetAllocationBytes());
+	for (size_t i = 0; i < cold_phases.size(); ++i) WARN("Phase " << i << ": uncached_us=" << cold_phases[i] << "; cached_us=" << warm_phases[i]);
+}
+
 TEST_CASE("Historic implicit orders do not hide the fastest explicit train or invent transfers", "[passenger][journey][uncertainty][implicit]")
 {
 	PassengerTestStations stations;
