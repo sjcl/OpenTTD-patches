@@ -7,7 +7,6 @@
 
 #include "stdafx.h"
 #include "passenger_journey_planner.h"
-#include <queue>
 #include "safeguards.h"
 
 static PassengerPredictionStatus MergeJourneyStatus(PassengerPredictionStatus a, PassengerPredictionStatus b)
@@ -218,92 +217,6 @@ namespace {
 		}
 		return false;
 	}
-
-	struct UnknownJourneyBound {
-		std::optional<StateTicks> arrival;
-		OrderListID service = OrderListID::Invalid();
-	};
-
-	/** Earliest arrival in a relaxation containing EVERY unknown suffix.
-	 * State 0 has used only certified occurrences; state 1 has used an unknown event.
-	 * Unknown rides take zero ticks, have unlimited seats, and may connect ANY declared
-	 * stops, ignoring direction, NoLoad, forced unloading, interchange and all penalties.
-	 * Their activation is complete_until, never a nominal duration or stopped_at.
-	 * Boarding before that boundary and staying aboard is included by the same edge.
-	 * Known rides retain actual occurrence times, but ignore capacity/interchange costs.
-	 * These relaxations can only improve an alternative. Ties are deliberately inconclusive.
-	 * Each service expands once, and each timed suffix occurrence once per state. */
-	template <typename Spend, typename Admit>
-	static std::optional<UnknownJourneyBound> BoundUnknownJourneys(const PassengerServiceGraph &graph,
-			StationID origin, StationID destination, StateTicks ready,
-			std::optional<PassengerServiceGraph::VisitID> onboard, Spend &spend, Admit &admit)
-	{
-		using Event = std::tuple<StateTicks, StationID, uint8_t>;
-		std::priority_queue<Event, std::vector<Event>, std::greater<Event>> queue;
-		std::array<std::map<StationID, StateTicks>, 2> times;
-		std::map<StationID, OrderListID> witnesses;
-		std::set<OrderListID> expanded;
-		std::array<std::map<size_t, std::vector<bool>>, 2> scanned;
-		auto add = [&](StationID station, StateTicks time, uint8_t state, OrderListID witness = OrderListID::Invalid()) {
-			if (!spend()) return false;
-			if (time >= graph.GetEnd()) return true;
-			auto found = times[state].find(station);
-			if (found != times[state].end() && found->second <= time) return true;
-			/* Conservatively pay map and heap growth for every improvement. */
-			if (!admit(256)) return false;
-			times[state].insert_or_assign(station, time);
-			if (state == 1) witnesses.insert_or_assign(station, witness);
-			queue.emplace(time, station, state);
-			return true;
-		};
-		auto unknown = [&](const PassengerServiceGraph::Service &service, StateTicks time) {
-			if (!service.uncertain_from || expanded.contains(service.id)) return true;
-			if (!spend() || !admit(96)) return false;
-			expanded.insert(service.id);
-			for (const auto &stop : service.stops) {
-				if (!add(stop.station, std::max(time, *service.uncertain_from), 1, service.id)) return false;
-			}
-			return true;
-		};
-		auto ride = [&](PassengerServiceGraph::VisitID boarding, uint8_t state, OrderListID witness = OrderListID::Invalid()) {
-			if (!spend()) return false;
-			const auto &trip = graph.GetTrips()[boarding.trip];
-			const auto &visits = trip.prediction.visits;
-			auto found = scanned[state].find(boarding.trip);
-			if (found == scanned[state].end()) {
-				if (!admit(128 + visits.size())) return false;
-				found = scanned[state].emplace(boarding.trip, std::vector<bool>(visits.size())).first;
-			}
-			for (size_t i = boarding.visit + 1; i < visits.size(); ++i) {
-				if (!spend()) return false;
-				if (found->second[i] || !visits[i].arrival) break;
-				found->second[i] = true;
-				const auto &stop = graph.GetVisitStop({boarding.trip, i});
-				if (stop.can_alight && !add(stop.station, *visits[i].arrival, state, witness)) return false;
-				if (stop.forced_transfer || !visits[i].departure) break;
-			}
-			return true;
-		};
-		if (!add(origin, ready, 0)) return std::nullopt;
-		/* Through riding a NoLoad origin remains possible for an onboard passenger. */
-		if (onboard && (!ride(*onboard, 0) || !unknown(*graph.GetService(graph.GetTrips()[onboard->trip].service), ready))) return std::nullopt;
-		while (!queue.empty()) {
-			if (!spend()) return std::nullopt;
-			auto [time, station, state] = queue.top(); queue.pop();
-			if (times[state].at(station) != time) continue;
-			if (station == destination) {
-				if (state == 1) return UnknownJourneyBound{time, witnesses.at(station)};
-				continue; // A journey ends at its OD; an unknown excursion afterwards is irrelevant.
-			}
-			for (OrderListID id : graph.GetServicesAtStation(station)) {
-				if (!spend() || !unknown(*graph.GetService(id), time)) return std::nullopt;
-			}
-			for (auto boarding : graph.GetDepartures(station, time, graph.GetEnd(), true).timed) {
-				if (!ride(boarding, state, state == 1 ? witnesses.at(station) : OrderListID::Invalid())) return std::nullopt;
-			}
-		}
-		return UnknownJourneyBound{};
-	}
 }
 
 PassengerJourneyResult PassengerJourneyPlanner::Search(StationID origin, StationID destination, StateTicks ready, uint64_t passengers,
@@ -363,40 +276,17 @@ PassengerJourneyResult PassengerJourneyPlanner::Search(StationID origin, Station
 	bool prediction_uncertain = this->graph.GetUncertainStatus(destination) != PassengerPredictionStatus::Complete;
 	const std::array<StationID, 1> target{destination};
 	if (!reachable.Build(this->graph, target, 0, reverse_spend, admit)) return result;
-	/* Find certified candidates only. The independent relaxed proof below inventories
-	 * every unknown suffix, including services with no captured destination visit.
-	 * A blanket reverse search from all uncertain stations is unnecessary. */
+	/* Search only validated timed occurrences. Untimed routing is lazy and belongs
+	 * to the live OD fallback, independently of this search and its costs. */
 	auto boardings_left = [&](StationID station) { return reachable.Boardings(station); };
 	auto can_finish_ride = [&](PassengerServiceGraph::VisitID id) {
 		return reachable.AfterBoarding(id) != JourneyReachability::UNREACHABLE;
 	};
 	auto finish = [&]() {
-		if (prediction_uncertain && result.status == PassengerPredictionStatus::Complete) {
-			auto bound = BoundUnknownJourneys(this->graph, origin, destination, ready, onboard, spend, admit);
-			if (bound) {
-				result.diagnostic.unknown_arrival_bound = bound->arrival;
-				result.diagnostic.unknown_service = bound->service;
-				/* All score penalties are nonnegative. Strict inequality protects the
-				 * FULL existing arrival/transfer/capacity/vehicle/occurrence tie order.
-				 * For K results, a slower unknown could still fill a missing K slot. */
-				bool irrelevant = !bound->arrival || (result.journeys.size() == limits.candidates &&
-						bound->arrival->base() - ready.base() > result.journeys.back().generalized_time.base());
-				result.diagnostic.uncertainty_resolved = irrelevant;
-				if (!irrelevant) result.status = PassengerPredictionStatus::Unknown;
-				if (!irrelevant && result.journeys.empty() && limits.max_transfers == 0) {
-					/* Under the declared-stop model, a direct ride must belong to one
-					 * service incident to BOTH ends. Absence proves at least a transfer,
-					 * even when the intervening ride's times are unknown. */
-					bool direct = false;
-					const auto at_destination = this->graph.GetServicesAtStation(destination);
-					for (OrderListID id : this->graph.GetServicesAtStation(origin)) {
-						if (!spend()) break;
-						if (std::binary_search(at_destination.begin(), at_destination.end(), id)) { direct = true; break; }
-					}
-					if (!direct && result.status != PassengerPredictionStatus::BudgetExhausted) limit(PassengerJourneyStopReason::TransferLimit);
-				}
-			}
-		}
+		/* Prediction completeness describes the graph, not permission to execute a
+		 * validated timed path. Unknown alternatives never need an optimality proof. */
+		if (prediction_uncertain) result.status = MergeJourneyStatus(result.status, this->graph.GetUncertainStatus(destination));
+		result.diagnostic.unknown_alternatives_ignored = prediction_uncertain && result.HasJourney();
 		if (result.stop_reason == PassengerJourneyStopReason::Exhausted && result.status == PassengerPredictionStatus::Complete && result.journeys.empty()) {
 			auto corridor = HasJourneyCorridor(this->graph, origin, destination, reverse_spend, admit);
 			if (corridor && *corridor) {

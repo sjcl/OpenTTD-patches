@@ -1,0 +1,140 @@
+Console log output started to 'C:/Users/bebe/.codex/worktrees/8228/OpenTTD-patches/build-pragmatic-routing/run/pragmatic-console.txt'.
+System Date: 2026-10-12 17:33:57
+Calendar Date: 117528-03-11 (42926290), fract: 27, sub_fract: 0
+Economy Date: 117528-03-11 (42926290), fract: 27, tick skip: 0
+Period display offset: 0
+Elapsed years: 117527
+Tick counter: 3010946389
+Tick counter (scaled): 3010946389
+State ticks: 3176545487 (offset: 0)
+Effective economy speed reduction factor: 1
+Ticks per calendar day: 74
+Timetable time: 22:10 + 27 ticks
+Passenger inventory: complete; waiting=200450 people (available=200450, reserved=0); deferred=36501 people; state_ticks=3176545487; scaled_ticks=3010946389
+Inventory Legacy: 425187 people/64228 packets; known_OD=65674 people
+Inventory Journey: 0 people/0 packets; known_OD=0 people
+Inventory Fallback: 50423 people/26847 packets; known_OD=50423 people
+Waiting routing: timed=0; CargoDist_or_deferred=176060; OD_fallback_or_waiting=24390 people
+Measurement copy: scripted equivalent of accepting the NewGRF continuation dialog
+Game unpaused.
+Script file 'C:/Users/bebe/.codex/worktrees/8228/OpenTTD-patches/build-pragmatic-routing/run/scripts/pragmatic-finish.scr' scheduled to execute at the start of next calendar month.
+Console log file closed.
+Console log output started to 'C:/Users/bebe/.codex/worktrees/8228/OpenTTD-patches/build-pragmatic-routing/run/pragmatic-console.txt'.
+Executing scheduled script file 'C:/Users/bebe/.codex/worktrees/8228/OpenTTD-patches/build-pragmatic-routing/run/scripts/pragmatic-finish.scr'...
+System Date: 2026-10-12 17:42:50
+Calendar Date: 117528-04-01 (42926311), fract: 0, sub_fract: 0
+Economy Date: 117528-03-31 (42926310), fract: 73, tick skip: 0
+Period display offset: 0
+Elapsed years: 117527
+Tick counter: 3010947916
+Tick counter (scaled): 3010947916
+State ticks: 3176547014 (offset: 0)
+Effective economy speed reduction factor: 1
+Ticks per calendar day: 74
+Timetable time: 22:31 + 0 ticks
+Passenger inventory: complete; waiting=211069 people (available=211069, reserved=0); deferred=51460 people; state_ticks=3176547014; scaled_ticks=3010947916
+Inventory Legacy: 389150 people/69239 packets; known_OD=79877 people
+Inventory Journey: 6007 people/1997 packets; known_OD=6007 people
+Inventory Fallback: 77291 people/44817 packets; known_OD=77291 people
+Waiting routing: timed=2606; CargoDist_or_deferred=165846; OD_fallback_or_waiting=42617 people
+Graph coverage: complete=301; eligible_services=17879568; selected_services=14244144; selected_trips=70267904; largest_block_services=643; admitted_visits=325774455; max_unpredicted_ticks=16384
+Graph failure None: 22809 builds
+Graph failure Work: 655 builds
+Graph failure Memory: 0 builds
+Graph failure Services: 0 builds
+Graph failure Trips: 0 builds
+Graph failure TotalVisits: 0 builds
+Graph failure Index: 0 builds
+Graph failure Opaque: 0 builds
+Trip stop None: 0 predictions
+Trip stop Work: 4 predictions
+Trip stop Memory: 0 predictions
+Trip stop Visits: 0 predictions
+Trip stop Steps: 0 predictions
+Trip stop Timing: 18873731 predictions
+Trip stop Conditional: 0 predictions
+Trip stop Refit: 0 predictions
+Trip stop Implicit: 0 predictions
+Trip stop Unsupported: 2585386 predictions
+Trip stop Dispatch: 0 predictions
+Trip stop Facilities: 0 predictions
+Trip stop VehicleState: 302930 predictions
+Trip stop OrderProgress: 87761 predictions
+First graph failure: reason=Work; stage=Structure; work=275079; memory=651776; trips=0; visits=0
+First opaque scope: service=65535; vehicle=1048575
+First trip failure: reason=Timing; stage=Prediction; vehicle=3355; work=328488; memory=2587008; trips=4; visits=30; cursor=3176547409; certified_until=3176547409; required_until=3176549584
+Uncertainty: timing=18873731 trips; path=2976081 trips; OD_resolved=0 searches; first_order=9; first_unknown_order=9; first_unknown_reason=Timing; tile=22301316; current_order=7
+Simulation tick time: completed_ticks=1526; total_us=532147053; mean_us=348720; max_us=655385
+OD proof sample: origin=43; destination=823; tick=3176545488; status=1; stop=5; candidates=0; best_score=-1; unknown_arrival_bound=-1; unknown_service=65535
+OD proof sample: origin=43; destination=102; tick=3176545488; status=1; stop=5; candidates=0; best_score=-1; unknown_arrival_bound=-1; unknown_service=65535
+OD proof sample: origin=43; destination=3871; tick=3176545488; status=1; stop=5; candidates=0; best_score=-1; unknown_arrival_bound=-1; unknown_service=65535
+OD proof sample: origin=43; destination=111; tick=3176545488; status=1; stop=5; candidates=0; best_score=-1; unknown_arrival_bound=-1; unknown_service=65535
+OD proof sample: origin=43; destination=844; tick=3176545488; status=1; stop=5; candidates=0; best_score=-1; unknown_arrival_bound=-1; unknown_service=65535
+OD proof sample: origin=43; destination=284; tick=3176545488; status=1; stop=5; candidates=0; best_score=-1; unknown_arrival_bound=-1; unknown_service=65535
+OD proof sample: origin=860; destination=1014; tick=3176545488; status=1; stop=5; candidates=0; best_score=-1; unknown_arrival_bound=-1; unknown_service=65535
+OD proof sample: origin=860; destination=1087; tick=3176545488; status=1; stop=5; candidates=0; best_score=-1; unknown_arrival_bound=-1; unknown_service=65535
+OD proof sample: origin=860; destination=1092; tick=3176545488; status=1; stop=5; candidates=0; best_score=-1; unknown_arrival_bound=-1; unknown_service=65535
+OD proof sample: origin=860; destination=1112; tick=3176545488; status=1; stop=5; candidates=0; best_score=-1; unknown_arrival_bound=-1; unknown_service=65535
+OD proof sample: origin=860; destination=1011; tick=3176545488; status=1; stop=5; candidates=0; best_score=-1; unknown_arrival_bound=-1; unknown_service=65535
+OD proof sample: origin=860; destination=862; tick=3176545488; status=1; stop=5; candidates=1; best_score=411; unknown_arrival_bound=-1; unknown_service=65535
+OD proof sample: origin=1361; destination=3664; tick=3176545488; status=3; stop=2; candidates=0; best_score=-1; unknown_arrival_bound=-1; unknown_service=65535
+OD proof sample: origin=1361; destination=3668; tick=3176545488; status=3; stop=2; candidates=0; best_score=-1; unknown_arrival_bound=-1; unknown_service=65535
+OD proof sample: origin=1716; destination=1869; tick=3176545488; status=1; stop=5; candidates=0; best_score=-1; unknown_arrival_bound=-1; unknown_service=65535
+OD proof sample: origin=120; destination=115; tick=3176545489; status=1; stop=5; candidates=1; best_score=1112; unknown_arrival_bound=-1; unknown_service=65535
+Active journey total: applied=9461 packets/22414 passengers; builds=23464; static_hits=22815; searches=22809; OD_hits=12131
+Train observations=96577824; cargo_capable=87074904; possible_refit=234640; predicted=69869826; inactive=3589992; excluded_cargo=9268280; excluded_scope=11138370; visits=325774455; omitted_trains_at_least=25; truncated_predictions=4 (uncaptured visit count unknown)
+Graph work=13413611618; mean=571667; max=623821; cached_index_allowance_avoided=6377750730; query_allowance=1524315024; build_us=408304053; mean_us=17401; max_us=35818; search_us=9346857; max_tick_graph_search_us=348825
+Peak graph retained_estimate=9348674; static retained_estimate=897036; conservative_graph_envelope_including_index=38288448; query_scratch=1125128; query_cache=1520
+Fair waiting shares: claims=6104; releases=0; admission_scan_work=8859393; retained_rides=1
+OD fallback: work=2509180773; path_searches=76409
+Journey transport: boarded=7673; transferred=1; delivered=1731 people
+Pragmatic routing: timed=9461 packets; timed_ignoring_unknown=9050; timed_budget_deferred=455583; untimed=23892 live routes; untimed_no_route=32219; untimed_budget_deferred=637053
+Untimed transport: boarded=81242; transferred=39405; delivered=31078 people
+Fallback GraphWork: 0 packets; deferred=788 packets
+Fallback GraphMemory: 0 packets; deferred=0 packets
+Fallback SnapshotLimit: 0 packets; deferred=9461 packets
+Fallback QueryWork: 2332 packets; deferred=440416 packets
+Fallback QueryLimit: 2586 packets; deferred=0 packets
+Fallback QueryMemory: 0 packets; deferred=0 packets
+Fallback PredictionIncomplete: 20312 packets; deferred=0 packets
+Fallback PredictionHorizon: 0 packets; deferred=0 packets
+Fallback NoJourney: 1 packets; deferred=0 packets
+Fallback InvalidLeg: 0 packets; deferred=0 packets
+Fallback StaleLeg: 5292 packets; deferred=0 packets
+Fallback Disabled: 0 packets; deferred=0 packets
+Fallback VehicleDeleted: 0 packets; deferred=0 packets
+15 link graph jobs
+  Job:     0, graph: 1, cargo: 0, completed: true, nodes: 4726, cost: 22335076, started: -3652, ends in: 8188, duration: 11840
+  Job:     1, graph: 14, cargo: 0, completed: true, nodes: 2, cost: 4, started: -396, ends in: 788, duration: 1184
+  Job:     2, graph: 16, cargo: 0, completed: true, nodes: 2, cost: 4, started: -396, ends in: 788, duration: 1184
+  Job:     3, graph: 12, cargo: 9, completed: true, nodes: 7, cost: 49, started: -396, ends in: 788, duration: 1184
+  Job:     4, graph: 7, cargo: 0, completed: true, nodes: 2, cost: 4, started: -396, ends in: 788, duration: 1184
+  Job:     5, graph: 5, cargo: 0, completed: true, nodes: 9, cost: 81, started: -396, ends in: 788, duration: 1184
+  Job:     6, graph: 2, cargo: 0, completed: true, nodes: 2, cost: 4, started: -396, ends in: 788, duration: 1184
+  Job:     7, graph: 3, cargo: 0, completed: true, nodes: 15, cost: 225, started: -396, ends in: 788, duration: 1184
+  Job:     8, graph: 4, cargo: 0, completed: true, nodes: 12, cost: 144, started: -396, ends in: 788, duration: 1184
+  Job:     9, graph: 10, cargo: 5, completed: true, nodes: 23, cost: 529, started: -396, ends in: 788, duration: 1184
+  Job:    10, graph: 11, cargo: 5, completed: true, nodes: 5, cost: 25, started: -396, ends in: 788, duration: 1184
+  Job:    11, graph: 8, cargo: 4, completed: true, nodes: 3, cost: 9, started: -396, ends in: 788, duration: 1184
+  Job:    12, graph: 6, cargo: 7, completed: true, nodes: 4, cost: 16, started: -396, ends in: 788, duration: 1184
+  Job:    13, graph: 13, cargo: 0, completed: true, nodes: 3, cost: 9, started: -396, ends in: 788, duration: 1184
+  Job:    14, graph: 0, cargo: 2, completed: true, nodes: 107, cost: 11449, started: -396, ends in: 788, duration: 1184
+  Graph: 0, cargo: 2, nodes: 107, OD_revision: 0
+  Graph: 1, cargo: 0, nodes: 4726, OD_revision: 1
+  Graph: 2, cargo: 0, nodes: 2, OD_revision: 2
+  Graph: 3, cargo: 0, nodes: 15, OD_revision: 3
+  Graph: 4, cargo: 0, nodes: 12, OD_revision: 4
+  Graph: 5, cargo: 0, nodes: 9, OD_revision: 5
+  Graph: 6, cargo: 7, nodes: 4, OD_revision: 0
+  Graph: 7, cargo: 0, nodes: 2, OD_revision: 6
+  Graph: 8, cargo: 4, nodes: 3, OD_revision: 0
+  Graph: 9, cargo: 0, nodes: 1, OD_revision: 7
+  Graph: 10, cargo: 5, nodes: 23, OD_revision: 20
+  Graph: 11, cargo: 5, nodes: 5, OD_revision: 0
+  Graph: 12, cargo: 9, nodes: 7, OD_revision: 0
+  Graph: 13, cargo: 0, nodes: 3, OD_revision: 8
+  Graph: 14, cargo: 0, nodes: 2, OD_revision: 9
+  Graph: 16, cargo: 0, nodes: 2, OD_revision: 10
+Saving map...
+Map successfully saved to 'C:/Users/bebe/.codex/worktrees/8228/OpenTTD-patches/build-pragmatic-routing/run/pragmatic-result.sav'.
+Console log file closed.

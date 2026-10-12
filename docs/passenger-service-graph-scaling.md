@@ -45,17 +45,14 @@ checks timing uncertainty in the destination component and distinguishes
 GlobalComplete, ScopedComplete and Incomplete. Legacy station-wide visit and
 departure queries remain globally incomplete on pruned snapshots. The planner
 uses scoped departure coverage after checking its OD/evaluation contract.
-An incomplete trip retains its certified timed prefix and a conservative
-unknown suffix. The planner first searches timed candidates, then relaxes all
-unknown alternatives with zero travel/interchange time, unlimited capacity,
-all declared stops and zero penalties. The earliest unknown arrival is bounded
-by the certified-prefix endpoint, never by nominal unknown travel. A query can
-be Complete only when the unknown destination is unreachable in this relaxation,
-or all requested K candidates exist and its elapsed arrival bound is strictly
-greater than the worst returned generalized score. Equality remains Unknown,
-protecting all existing tie-breaks. Work, memory, label and transfer limits
-still prevent certification. Finding a valid destination candidate alone does
-not certify the result. Active execution accepts only complete results.
+An incomplete trip retains its validated timed prefix and an unknown suffix.
+The planner ranks only validated timed candidates; active execution can adopt
+`TimedRouteFound` while prediction status stays Unknown. Unknown alternatives
+add no penalties and trigger no optimality-bound search. Work, memory, label
+and transfer limits still report `BudgetDeferred`. A candidate found before
+truncation is not adopted as a fully searched timed result. No timed candidate
+leads to lazy live OD fallback, without inventing a timestamp or certifying
+permanent unreachability.
 
 ## Live capture and cache lifetime
 
@@ -105,10 +102,9 @@ A warm corridor query walks its block-forest path and retained block members.
 Live classification still costs O(O + V); detailed prediction costs O(P + D)
 only for retained potentially capable trains. Prediction and departure indices
 retain their existing sorting costs. The RAPTOR query's independent budget and
-reverse reachability retain their existing caps. Unknown-suffix proof uses a
-two-state earliest-time relaxation (before/after using uncertainty), expanding
-each service once and each timed downstream occurrence at most once per state.
-Its maps, heap improvements and scans share the same query Work/memory ledger.
+reverse reachability retain their existing caps. Unknown-suffix optimality proof
+has been removed. Live untimed routing uses separately bounded, event-local
+reverse hop distances only when a timed route cannot be adopted.
 Scoped prediction stops at the first unknown time instead of generating an
 untimed nominal suffix. Fleet coverage is aggregated once per captured trip,
 avoiding a repeated fleet scan for every declared stop.
@@ -174,7 +170,7 @@ Diagnostics reset cannot rerun the census, change admission or release shares.
 
 For a stable set of N searchable loading origins, a completed census and four
 shares, each origin is selected within ceil(N/4) ticks, independent of simulation
-visitation order. Progress still requires a complete graph/query within its
+visitation order. Progress still requires a sufficient graph/query allowance within its
 ordinary per-search limits. Rapidly changing demand, census overload and multiple
 ODs inside one origin have no strict latency bound.
 The hard maximum remains 16 new snapshots/queries per tick, and signatures can
@@ -193,8 +189,9 @@ finish delivery. NoUnload remains effective. Disabled/manual routing and unknown
 ODs retain legacy behavior.
 
 Untimed fallback prefers a validated direct vehicle prefix to the OD. Otherwise
-it selects the first hop of a shortest directed, unrestricted positive-capacity
-cargo LinkGraph path to the final destination. With stable topology, completed
+it chooses among all validated live prefix stops whose reverse hop distance
+through directed, unrestricted positive-capacity cargo links is smaller than
+the boarding station's distance, ordered by remaining distance and StationID. With stable topology, completed
 interchanges reduce remaining hop count. A vehicle must reach that hop before
 returning to its boarding station or encountering an unsupported/forced order.
 Load, Reserve and HasCargoFor enforce the same condition, including returned
@@ -205,9 +202,11 @@ in the next loading pass. Stale historical links cannot guarantee future service
 or seats, and unsupported prefixes/work exhaustion do not establish permanent
 unreachability. This policy supplies no timed-completeness certificate.
 
-Each arrival/loading pass caches at most 128 hop queries and 128 vehicle/cargo
-prefixes, examines at most 4,096 orders per prefix, and shares a 65,536-unit
-allowance across traversal/sorting/BFS. The independent tick ledger caps this
+Each arrival/loading pass caches at most 128 destination-distance and live
+vehicle/OD decisions and 128 vehicle/cargo prefixes, examines at most 4,096 orders
+per prefix, and shares a 128 Ki-unit allowance across live capture, facility
+checks, traversal, sorting and reverse BFS. Distance arrays retain at most
+1 MiB, with a 2 MiB adjacency scratch bound. The independent tick ledger caps this
 work at 4 Mi; it never replenishes or spends timed JourneyPlanner allowance.
 BFS uses under 256 KiB of transient NodeID vectors, validates station/node
 identity and retains no graph pointers across events. Refit invalidates live
@@ -342,8 +341,10 @@ The comparison above describes the previous scoped implementation. The subsequen
 documents incremental visit admission, bounded horizon extension, exact completed
 candidate pruning, detailed stop diagnostics and further validation.
 The [OD uncertainty follow-up](passenger-journey-scoped-uncertainty-2026-10-12.md)
-documents the explicit-order operating model, partial-trip certification and
-paired real-map measurements.
+documents the previous strict uncertainty proof and paired real-map measurements.
+The [pragmatic routing follow-up](passenger-journey-pragmatic-routing-2026-10-12.md)
+describes the current timed-first policy and live fallback, preserving the
+explicit-order operating model and validated physical prefixes.
 
 The explicit benchmark can be rerun with:
 

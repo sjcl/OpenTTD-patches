@@ -73,20 +73,28 @@ distribution restores the CargoDist queue key. Vehicle deletion invalidates
 matching legs before its pool ID can be reused. The final OD survives fallback; the existing
 station-removal policy clears an OD when that station itself is removed.
 
+Timed end-to-end candidates take priority over unknown services. Their arrival,
+waiting, transfer and capacity ranking is unchanged, but incomplete prediction
+alone no longer blocks a validated route. A stopped work/memory/label search is
+separate from a completed search with no timed route. No optimality claim is
+made against unknown services.
+
 Legacy, deferred and Fallback packets with a known OD prefer a verified direct
-ride to their destination. Otherwise a bounded breadth-first search of the live
-cargo LinkGraph selects the first hop of a shortest directed path to that OD,
-using positive-capacity unrestricted links only. With unchanged links, completed
-interchanges strictly reduce remaining hop count. Source-based CargoDist flows
-do not select these hops. The current vehicle's executed order prefix must reach
-the chosen hop before returning to its boarding station or encountering an
-unresolved conditional, refit/depot detour or forced interchange. Historical
-implicit orders are skipped consistently with the timed planner's explicit
-instruction model. Actual extra stops and raw order-index changes retain live
-leg validation and signature invalidation.
-Untimetabled deterministic prefixes remain usable, without asserting timing or
-JourneyPlanner completeness. An admitted through target is kept until its
-interchange and revalidated on every arrival.
+ride to their destination. Otherwise reverse hop distances in unrestricted,
+nonzero-capacity LinkGraph links identify every live prefix stop that strictly
+reduces the remaining distance. Choose the smallest distance, then StationID.
+A train can skip the graph's first hop or use a different shortest corridor.
+These links are progress hints: each boarding independently checks the actual
+vehicle orders, physical station facilities, NoLoad/NoUnload, forced interchange,
+branches, refits and current operation. A missing onward vehicle can leave the
+passenger waiting at an interchange, retaining its OD for later recovery.
+Destination arrays and live vehicle/OD decisions, including failures, are shared
+within one event and initialized only when needed. Retained distance arrays are
+capped at 1 MiB, adjacency scratch at 2 MiB and live prefix/decision entries at
+128. The event has 128 Ki work for fallback, including live capture; the tick
+has 4 Mi work. Refit invalidates live decisions. Nothing persists across events.
+Untimed execution uses the existing passenger via field and never writes a
+`PassengerJourneyExecution` or invented departure/arrival ticks.
 
 When no progressing ride can be verified, onboard passengers transfer to the
 filtered OD queue. Load, Reserve, HasCargoFor and gradual-loading reservation
@@ -101,14 +109,6 @@ a future connecting vehicle will operate or have seats. Direct rides and each
 boarding are checked against live orders. Other vehicle types can use this
 untimed fallback if their loading order prefix can be validated.
 
-Fallback caches belong only to an arrival/loading pass, with at most 128 hop
-queries and 128 vehicle/cargo prefixes. Refit invalidates the affected prefix.
-They use an independent deterministic 65,536-work event allowance and 4 Mi-work
-tick allowance, including prefix sorting and graph scratch initialization. A
-prefix examines at most 4,096 orders; BFS scratch is at most two 65,535-element
-NodeID vectors (under 256 KiB). No extra packet fields, saved itineraries, RNG,
-cross-event route cache or worker-thread mutation are introduced. Diagnostics
-report fallback work and path searches separately from timed journey work.
 
 Fallback packets have a 256-state-tick cooldown at the same station. Retries
 are staggered by station ID every 64 ticks (1024 ticks above 512 stations), or may
@@ -216,7 +216,8 @@ fall back rather than declaring an OD permanently unreachable.
 
 The existing waiting/planned hierarchy remains intact. Explicit OD packets show
 their actual final station in the waiting hierarchy. A separate panel shows,
-per passenger cargo, JourneyPlanner/CargoDist/Fallback totals plus available,
+per passenger cargo, Timed Journey/CargoDist or deferred/OD Fallback or waiting
+totals plus available,
 reserved and combined waiting totals. Mode totals include the reserved suffixes
 on station-loading vehicles exactly once; onboard stored passengers are excluded.
 Planned rows still represent CargoDist flow estimates. GUI aggregation performs
@@ -272,3 +273,20 @@ the same uncertainty and actual-capacity rules described above.
 Snapshots are shared within an event; a fresh arrival can still require a
 national capture. Real-map throughput and a live multiplayer session need
 separate validation. GUI count tests do not substitute for visual window QA.
+
+
+## Pragmatic routing diagnostics
+
+The existing applied packet/passenger and Journey transport counters are retained.
+`timed_ignoring_unknown` counts packet assignments despite incomplete prediction;
+`timed_budget_deferred` counts rejected packet observations, including cache reuse
+and graph/query admission. `untimed` counts successful event-local live vehicle/OD
+route decisions, which reservations may reuse; `untimed_no_route` and
+`untimed_budget_deferred` distinguish completed failures from resource limits.
+Untimed boarding counts only actual CargoLoad or reserved-to-loaded moves;
+transfer/delivery count actual unload actions. Counts are movement events, not
+unique passengers. Mixed trips can contribute to both transport categories.
+Retired uncertainty-proof fields remain zero/absent for historical comparisons.
+The GUI's OD Fallback/waiting count includes passengers with no route yet;
+it does not promise that every fallback packet has a secured untimed itinerary.
+See [the pragmatic routing measurement](passenger-journey-pragmatic-routing-2026-10-12.md).

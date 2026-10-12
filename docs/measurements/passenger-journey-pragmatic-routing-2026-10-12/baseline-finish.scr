@@ -1,0 +1,8 @@
+getsysdate
+getfulldate
+passenger_journey_stats inventory
+passenger_journey_stats total
+dump_linkgraph_jobs
+save C:/Users/bebe/.codex/worktrees/8228/OpenTTD-patches/build-pragmatic-routing/run/baseline-result
+script
+quit

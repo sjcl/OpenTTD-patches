@@ -59,6 +59,9 @@ struct PassengerJourneyTickDiagnostic {
 	size_t od_fallback_work = 0, od_fallback_searches = 0;
 	size_t boarded_passengers = 0, transferred_passengers = 0, delivered_passengers = 0;
 	size_t timing_uncertainty = 0, path_uncertainty = 0, uncertainty_resolved = 0;
+	size_t timed_routes_ignoring_unknown = 0, timed_budget_deferred = 0;
+	size_t untimed_routes = 0, untimed_no_route = 0, untimed_budget_deferred = 0;
+	size_t untimed_boarded_passengers = 0, untimed_transferred_passengers = 0, untimed_delivered_passengers = 0;
 	std::array<PassengerJourneyQueryDetail, 16> query_samples{};
 	size_t query_sample_count = 0;
 	uint64_t simulation_ticks = 0, simulation_microseconds = 0, maximum_simulation_microseconds = 0;
@@ -74,7 +77,8 @@ PassengerJourneyTickDiagnostic GetPassengerJourneyTotalDiagnostic();
 void ResetPassengerJourneyDiagnostic(); ///< Local observations only; never resets simulation allowances.
 void RecordPassengerJourneyFallback(PassengerJourneyFallbackReason reason); ///< Simulation-only lifecycle observations.
 enum class PassengerJourneyMovement : uint8_t { Board, Transfer, Deliver };
-void RecordPassengerJourneyMovement(PassengerJourneyMovement movement, uint count); ///< Actual cargo moves only, never reservations/staging.
+void RecordPassengerJourneyMovement(PassengerJourneyMovement movement, uint count, bool timed = true); ///< Actual cargo moves only, never reservations/staging.
+void RecordPassengerJourneyMovement(PassengerJourneyMovement movement, const CargoPacket &packet, uint count);
 void RecordPassengerJourneySimulationTick(uint64_t microseconds); ///< Read-only elapsed CPU-thread time, outside all routing budgets.
 PassengerServiceGraphLimits ActivePassengerServiceGraphLimits();
 
@@ -98,12 +102,20 @@ public:
  * unrestricted directed links; boarding also requires a live order prefix.
  * No timing, optimum, future capacity or permanent unreachability is asserted. */
 class PassengerOdFallbackContext {
-	std::map<std::tuple<CargoType, StationID, StationID>, StationID> hops;
+	struct Distances {
+		LinkGraphID graph = LinkGraphID::Invalid();
+		std::vector<uint32_t> hops;
+	};
+	std::map<std::pair<CargoType, StationID>, Distances> distances;
 	std::map<std::pair<VehicleID, CargoType>, std::vector<StationID>> stops;
-	size_t work_left = 65536;
+	std::map<std::tuple<VehicleID, CargoType, StationID>, StationID> routes;
+	size_t distance_bytes = 0;
+	size_t work_left = 128 * 1024; ///< Includes live state/facility capture and the 4096-order prefix.
+	bool resource_limited = false;
 	bool Spend(size_t amount = 1);
 	bool CanReach(const Vehicle *vehicle, CargoType cargo, StationID target);
-	StationID NextHop(CargoType cargo, StationID origin, StationID destination);
+	uint32_t Distance(CargoType cargo, StationID origin, StationID destination);
+	StationID ProgressingVia(const Vehicle *vehicle, CargoType cargo, StationID destination);
 	StationID BoardingVia(const Vehicle *vehicle, CargoType cargo, StationID destination);
 public:
 	bool CanBoard(const CargoPacket &packet, const Vehicle *vehicle, CargoType cargo);

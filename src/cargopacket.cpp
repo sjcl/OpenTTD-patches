@@ -952,7 +952,7 @@ uint VehicleCargoList::Reassign(uint max_move)
 			if (remaining == 0) break;
 			if (skip >= packet->Count()) { skip -= packet->Count(); continue; }
 			uint count = std::min<uint>(remaining, packet->Count() - skip);
-			if (packet->GetPassengerRoutingMode() == PassengerRoutingMode::Journey) RecordPassengerJourneyMovement(PassengerJourneyMovement::Board, count);
+			RecordPassengerJourneyMovement(PassengerJourneyMovement::Board, *packet, count);
 			remaining -= count; skip = 0;
 		}
 	}

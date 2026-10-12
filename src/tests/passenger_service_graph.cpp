@@ -120,7 +120,7 @@ TEST_CASE("Historic implicit orders do not hide the fastest explicit train or in
 	CHECK(graph.GetTrips()[leg.alighting.trip].prediction.visits[leg.alighting.visit].order == 2);
 }
 
-TEST_CASE("OD uncertainty uses a strict score bound and retains physical prefix journeys", "[passenger][journey][uncertainty]")
+TEST_CASE("Timed journeys ignore unknown alternatives and retain physical prefixes", "[passenger][journey][uncertainty]")
 {
 	PassengerTestStations stations;
 	GraphVehicle direct({GraphStop(A, 100000, 0), GraphStop(D, 100, 0)}, VehicleID{200});
@@ -136,9 +136,11 @@ TEST_CASE("OD uncertainty uses a strict score bound and retains physical prefix 
 		PassengerJourneyPlanner planner(graph);
 		const auto actual = planner.Plan(PAX, A, D, NOW, query);
 		REQUIRE(actual.HasJourney());
-		CHECK(actual.status == PassengerPredictionStatus::Complete);
-		CHECK(actual.diagnostic.uncertainty_resolved);
-		CHECK(actual.diagnostic.unknown_arrival_bound == NOW + 200);
+		CHECK(actual.status == PassengerPredictionStatus::Unknown);
+		CHECK(actual.GetOutcome() == PassengerJourneyOutcome::TimedRouteFound);
+		CHECK(actual.diagnostic.unknown_alternatives_ignored);
+		CHECK_FALSE(actual.diagnostic.uncertainty_resolved);
+		CHECK_FALSE(actual.diagnostic.unknown_arrival_bound);
 		CHECK(actual.journeys.front().legs.front().vehicle == direct.index);
 		*alternative.GetOrder(1) = GraphStop(B, 0, 0);
 		EnsurePassengerTestStations(alternative.orders->GetOrderVector()); InvalidatePassengerServiceIndex();
@@ -153,7 +155,8 @@ TEST_CASE("OD uncertainty uses a strict score bound and retains physical prefix 
 		const auto result = planner.Plan(PAX, A, D, NOW, query);
 		REQUIRE(result.HasJourney());
 		CHECK(result.status == PassengerPredictionStatus::Unknown);
-		CHECK(result.diagnostic.unknown_arrival_bound == NOW + 50);
+		CHECK_FALSE(result.diagnostic.unknown_arrival_bound);
+		CHECK(result.GetOutcome() == PassengerJourneyOutcome::TimedRouteFound);
 		CHECK_FALSE(result.diagnostic.uncertainty_resolved);
 	}
 	SECTION("Equal scores cannot ignore vehicle and capacity tie breaks") {
@@ -163,7 +166,8 @@ TEST_CASE("OD uncertainty uses a strict score bound and retains physical prefix 
 		const auto result = planner.Plan(PAX, A, D, NOW, query);
 		REQUIRE(result.HasJourney());
 		CHECK(result.status == PassengerPredictionStatus::Unknown);
-		CHECK(result.diagnostic.unknown_arrival_bound == NOW + 100);
+		CHECK_FALSE(result.diagnostic.unknown_arrival_bound);
+		CHECK(result.GetOutcome() == PassengerJourneyOutcome::TimedRouteFound);
 	}
 	SECTION("Certification of K alternatives requires every requested slot") {
 		query.candidates = 2;
@@ -197,7 +201,8 @@ TEST_CASE("OD uncertainty uses a strict score bound and retains physical prefix 
 		const auto result = planner.Plan(PAX, A, D, NOW, query);
 		REQUIRE(result.HasJourney());
 		CHECK(GraphTrip(graph, alternative.index).prediction.status == PassengerPredictionStatus::Unknown);
-		CHECK(result.status == PassengerPredictionStatus::Complete);
+		CHECK(result.status == PassengerPredictionStatus::Unknown);
+		CHECK(result.GetOutcome() == PassengerJourneyOutcome::TimedRouteFound);
 		CHECK(result.journeys.front().prediction_status == PassengerPredictionStatus::Complete);
 		CHECK(result.journeys.front().legs.front().prediction_status == PassengerPredictionStatus::Complete);
 		CHECK(result.journeys.front().legs.front().vehicle == alternative.index);
@@ -238,7 +243,7 @@ TEST_CASE("Bounded route controls remain unknown until a fresh live state can ce
 	CHECK(seeds.Check());
 }
 
-TEST_CASE("Unknown arrival bounds include known access times and generalised costs", "[passenger][journey][uncertainty]")
+TEST_CASE("Unknown alternatives leave timed access and generalised costs unchanged", "[passenger][journey][uncertainty]")
 {
 	PassengerTestStations stations;
 	GraphVehicle direct({GraphStop(A, 100000, 0), GraphStop(D, 100, 0)}, VehicleID{200});
@@ -252,8 +257,10 @@ TEST_CASE("Unknown arrival bounds include known access times and generalised cos
 		PassengerJourneyPlanner planner(graph);
 		const auto result = planner.Plan(PAX, A, D, NOW, query);
 		REQUIRE(result.HasJourney());
-		CHECK(result.status == PassengerPredictionStatus::Complete);
-		CHECK(result.diagnostic.unknown_arrival_bound == NOW + 200);
+		CHECK(result.status == PassengerPredictionStatus::Unknown);
+		CHECK(result.GetOutcome() == PassengerJourneyOutcome::TimedRouteFound);
+		CHECK_FALSE(result.diagnostic.unknown_arrival_bound);
+		CHECK(result.GetOutcome() == PassengerJourneyOutcome::TimedRouteFound);
 	}
 	SECTION("A late unknown arrival may still beat a penalised known journey") {
 		direct.GetOrder(0)->SetWaitTime(90); direct.GetOrder(1)->SetTravelTime(10);
@@ -265,12 +272,13 @@ TEST_CASE("Unknown arrival bounds include known access times and generalised cos
 		REQUIRE(result.HasJourney());
 		CHECK(result.journeys.front().arrival == NOW + 100);
 		CHECK(result.journeys.front().generalized_time == StateTicksDelta{190});
-		CHECK(result.diagnostic.unknown_arrival_bound == NOW + 150);
+		CHECK_FALSE(result.diagnostic.unknown_arrival_bound);
+		CHECK(result.GetOutcome() == PassengerJourneyOutcome::TimedRouteFound);
 		CHECK(result.status == PassengerPredictionStatus::Unknown);
 	}
 }
 
-TEST_CASE("Partial fleet timing and uncertainty proof budgets never certify missing alternatives", "[passenger][journey][uncertainty][limits]")
+TEST_CASE("Partial fleet timing and timed query budgets have separate outcomes", "[passenger][journey][uncertainty][limits]")
 {
 	PassengerTestStations stations;
 	GraphVehicle first({GraphStop(A, 100000, 200), GraphStop(D, 100, 0)});
@@ -300,38 +308,40 @@ TEST_CASE("Partial fleet timing and uncertainty proof budgets never certify miss
 	CHECK(recovered.Plan(PAX, A, D, NOW + 1, query).status == PassengerPredictionStatus::Complete);
 }
 
-TEST_CASE("Every certified partial result matches its complete network reference", "[passenger][journey][uncertainty][reference]")
+TEST_CASE("Timed choices match the timed-only network and perform no unknown bound search", "[passenger][journey][uncertainty][reference]")
 {
 	PassengerTestStations stations;
 	GraphVehicle direct({GraphStop(A, 100000, 0), GraphStop(D, 100, 0)}, VehicleID{200});
-	GraphVehicle alternative({GraphStop(A, 100000, 0), GraphStop(B, 0, 0), GraphStop(D, 0, 0)}, VehicleID{100});
+	GraphVehicle slower({GraphStop(A, 100000, 0), GraphStop(D, 150, 0)}, VehicleID{201});
 	PassengerJourneyLimits query; query.candidates = 1;
 	auto limits = ActivePassengerServiceGraphLimits(); limits.horizon = 1000;
-	size_t certified = 0;
-	for (TimetableTicks delay : {0, 50, 100, 150, 200}) for (TimetableTicks duration : {0, 10, 100}) {
-		CAPTURE(delay, duration);
+	const auto timed = PassengerServiceGraph::Build(PAX, NOW, limits, PassengerServiceScope{A, D});
+	PassengerJourneyPlanner reference(timed);
+	const auto expected = reference.Plan(PAX, A, D, NOW, query);
+	REQUIRE(expected.GetOutcome() == PassengerJourneyOutcome::TimedRouteFound);
+	GraphVehicle alternative({GraphStop(A, 100000, 0), GraphStop(B, 0, 0), GraphStop(D, 0, 0)}, VehicleID{100});
+	for (TimetableTicks delay : {0, 50, 100, 150, 200}) {
+		CAPTURE(delay);
 		alternative.GetOrder(0)->SetWaitTime(delay);
-		alternative.GetOrder(2)->SetTravelTime(duration);
 		alternative.GetOrder(1)->SetWaitTimetabled(false);
 		const auto partial = PassengerServiceGraph::Build(PAX, NOW, limits, PassengerServiceScope{A, D});
 		PassengerJourneyPlanner planner(partial);
 		const auto actual = planner.Plan(PAX, A, D, NOW, query);
-		alternative.GetOrder(1)->SetWaitTimetabled(true);
-		const auto complete = PassengerServiceGraph::Build(PAX, NOW, limits);
-		PassengerJourneyPlanner reference(complete);
-		const auto expected = reference.Plan(PAX, A, D, NOW, query);
-		REQUIRE(expected.status == PassengerPredictionStatus::Complete);
-		REQUIRE(expected.HasJourney());
-		if (actual.status == PassengerPredictionStatus::Complete) {
-			++certified;
-			REQUIRE(actual.HasJourney());
-			CHECK(actual.journeys.front() == expected.journeys.front());
-		} else {
-			CHECK(actual.status == PassengerPredictionStatus::Unknown);
-			CHECK(delay <= 100); // Even a zero-duration unknown ride is safely late otherwise.
-		}
+		REQUIRE(actual.GetOutcome() == PassengerJourneyOutcome::TimedRouteFound);
+		CHECK(actual.status == PassengerPredictionStatus::Unknown);
+		CHECK(actual.journeys.front() == expected.journeys.front());
+		CHECK_FALSE(actual.diagnostic.unknown_arrival_bound);
+		CHECK_FALSE(actual.diagnostic.uncertainty_resolved);
+		CHECK(actual.diagnostic.unknown_alternatives_ignored);
 	}
-	CHECK(certified == 6);
+	query.work = 1;
+	const auto limited = reference.Plan(PAX, A, D, NOW, query);
+	CHECK(limited.GetOutcome() == PassengerJourneyOutcome::BudgetDeferred);
+	CHECK_FALSE(limited.IsUnreachable());
+	query.work = 1048576; query.labels = 0;
+	CHECK(reference.Plan(PAX, A, D, NOW, query).GetOutcome() == PassengerJourneyOutcome::BudgetDeferred);
+	query.labels = 65536; query.memory_bytes = 1;
+	CHECK(reference.Plan(PAX, A, D, NOW, query).GetOutcome() == PassengerJourneyOutcome::BudgetDeferred);
 }
 
 TEST_CASE("Graph admission pays for generated visits rather than maximum trip reservations", "[passenger][service_graph][scaling]")

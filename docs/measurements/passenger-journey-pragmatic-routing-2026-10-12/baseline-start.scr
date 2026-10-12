@@ -1,0 +1,15 @@
+script C:/Users/bebe/.codex/worktrees/8228/OpenTTD-patches/build-pragmatic-routing/run/baseline-console.txt
+getsysdate
+getfulldate
+passenger_journey_stats reset
+passenger_journey_stats inventory
+setting linkgraph.distribution_pax 2
+setting linkgraph.passenger_od_assignment true
+setting linkgraph.passenger_journey_routing true
+setting linkgraph.recalc_interval 8
+setting linkgraph.recalc_time 32
+echo "Measurement copy: scripted equivalent of accepting the NewGRF continuation dialog"
+unpause
+schedule on-next-calendar-month C:/Users/bebe/.codex/worktrees/8228/OpenTTD-patches/build-pragmatic-routing/run/scripts/baseline-finish.scr
+script
+script C:/Users/bebe/.codex/worktrees/8228/OpenTTD-patches/build-pragmatic-routing/run/baseline-console.txt
