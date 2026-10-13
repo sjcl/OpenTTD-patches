@@ -60,11 +60,12 @@ namespace {
 }
 
 PassengerSchedulePlan PassengerSchedulePlanner::Search(const PassengerServiceDatabase &db, CargoType cargo, StationID origin,
-		StationID destination, OrderListID excluded, PassengerJourneyLimits limits, PassengerJourneyEvaluation evaluation) const
+		StationID destination, OrderListID excluded, PassengerJourneyLimits limits, PassengerJourneyEvaluation evaluation, std::map<StationID, uint64_t> &dependencies) const
 {
 	PassengerSchedulePlan result;
+	auto stops_at = [&](StationID station) -> const auto & { dependencies.try_emplace(station, db.StationRevision(station)); return db.StopsAt(station); };
 	auto spend = [&]() { if (result.work >= limits.work) { result.deferred = true; return false; } ++result.work; return true; };
-	if (!spend() || db.StopsAt(origin).empty() || db.StopsAt(destination).empty()) return result;
+	if (!spend() || stops_at(origin).empty() || stops_at(destination).empty()) return result;
 	if (limits.memory_bytes < 1024 || limits.labels == 0) { result.deferred = true; return result; }
 	struct Path {
 		StationID station; int64_t cost = 0, riding = 0, waiting = 0;
@@ -89,7 +90,7 @@ PassengerSchedulePlan PassengerSchedulePlanner::Search(const PassengerServiceDat
 		}
 		if (rounds > limits.max_transfers) continue;
 		if (++labels[{station, rounds}] > limits.labels_per_station) { result.deferred = true; continue; }
-		for (const auto &ref : db.StopsAt(station)) {
+		for (const auto &ref : stops_at(station)) {
 			if (!spend()) break;
 			if ((rounds == 0 && ref.service == excluded) || (!current.services.empty() && current.services.back() == ref.service)) continue;
 			const auto &s = *db.Get(ref.service); const auto &t = s.timetable;
@@ -143,20 +144,22 @@ PassengerSchedulePlan PassengerSchedulePlanner::Search(const PassengerServiceDat
 	return result;
 }
 
-PassengerSchedulePlan PassengerSchedulePlanner::Plan(const PassengerServiceDatabase &db, CargoType cargo, StationID origin,
+PassengerSchedulePlan PassengerSchedulePlanner::Plan(PassengerServiceDatabase &db, CargoType cargo, StationID origin,
 		StationID destination, StateTicks ready, OrderListID excluded, PassengerJourneyLimits limits, PassengerJourneyEvaluation evaluation)
 {
 	PassengerSchedulePlan result;
 	if (cargo >= NUM_CARGO || origin == destination || !Station::IsValidID(origin) || !Station::IsValidID(destination) ||
 			evaluation.minimum_transfer < 0 || evaluation.transfer_penalty < 0 || evaluation.crowding_penalty || evaluation.capacity_shortfall_penalty) return result;
 	const auto start = std::chrono::steady_clock::now();
-	Key key{cargo, origin, destination, excluded, limits, evaluation}; auto found = this->cache.find(key);
-	if (found != this->cache.end()) { result = found->second; ++this->diagnostic.hits; }
+	PassengerServiceDatabase::PolicyKey key{true, cargo, origin, destination, excluded, limits, evaluation};
+	auto *found = db.FindPolicy(key);
+	if (found != nullptr) { result = std::get<PassengerSchedulePlan>(found->value); ++this->diagnostic.hits; }
 	else {
-		result = this->Search(db, cargo, origin, destination, excluded, limits, evaluation); ++this->diagnostic.misses;
-		constexpr size_t ENTRY_BYTES = 1024, MAX_BYTES = 4 * 1024 * 1024;
-		if (this->bytes + ENTRY_BYTES > MAX_BYTES) { this->cache.erase(this->cache.begin()); this->bytes -= ENTRY_BYTES; }
-		this->cache.emplace(key, result); this->bytes += ENTRY_BYTES;
+		PassengerServiceDatabase::Dependencies dependencies;
+		const auto compile_start = std::chrono::steady_clock::now();
+		result = this->Search(db, cargo, origin, destination, excluded, limits, evaluation, dependencies); ++this->diagnostic.misses;
+		this->diagnostic.compile_microseconds += std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - compile_start).count();
+		db.StorePolicy(key, result, std::move(dependencies), 512);
 	}
 	this->diagnostic.work += result.work;
 	this->diagnostic.query_microseconds += std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - start).count();

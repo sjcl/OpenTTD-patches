@@ -18,26 +18,22 @@ struct PassengerSchedulePlan {
 	bool deferred = false;
 };
 struct PassengerScheduleDiagnostic {
-	uint64_t hits = 0, misses = 0, work = 0, query_microseconds = 0;
+	uint64_t hits = 0, misses = 0, work = 0, query_microseconds = 0, compile_microseconds = 0;
 	size_t bytes = 0;
 };
 
-/** Derived cache owned by the DB. Publication/invalidation clears it. Cache work
+/** Derived cache owned by the DB. Both planners share the DB residency and station revisions. Cache work
  * is replayed, so eviction and network-join cold caches cannot affect admission.
  * Stores OD policies only, never a separate service graph or physical binding. */
 class PassengerSchedulePlanner {
-	using Key = std::tuple<CargoType, StationID, StationID, OrderListID, PassengerJourneyLimits, PassengerJourneyEvaluation>;
-	std::map<Key, PassengerSchedulePlan> cache;
-	size_t bytes = 0;
 	PassengerScheduleDiagnostic diagnostic;
 	PassengerSchedulePlan Search(const PassengerServiceDatabase &db, CargoType cargo, StationID origin, StationID destination,
-			OrderListID excluded, PassengerJourneyLimits limits, PassengerJourneyEvaluation evaluation) const;
+			OrderListID excluded, PassengerJourneyLimits limits, PassengerJourneyEvaluation evaluation, std::map<StationID, uint64_t> &dependencies) const;
 public:
-	PassengerSchedulePlan Plan(const PassengerServiceDatabase &db, CargoType cargo, StationID origin, StationID destination,
+	PassengerSchedulePlan Plan(PassengerServiceDatabase &db, CargoType cargo, StationID origin, StationID destination,
 			StateTicks ready, OrderListID excluded, PassengerJourneyLimits limits, PassengerJourneyEvaluation evaluation);
-	void Clear() { this->cache.clear(); this->bytes = 0; }
 	void ResetDiagnostic() { this->diagnostic = {}; }
-	PassengerScheduleDiagnostic GetDiagnostic() const { auto d = this->diagnostic; d.bytes = this->bytes; return d; }
+	PassengerScheduleDiagnostic GetDiagnostic() const { return this->diagnostic; }
 };
 
 #endif

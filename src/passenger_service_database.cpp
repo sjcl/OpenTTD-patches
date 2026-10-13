@@ -80,7 +80,7 @@ void ObservePassengerPeriodicVehicle(const Vehicle *vehicle)
 	}
 	if (capacity != phase->capacity) { database.Invalidate(service->id); return; }
 	if (service->timetable.period == 0 || vehicle->vehicle_flags.Test(VehicleFlag::ScheduledDispatch)) return;
-	if (database.GetPublication(service->id) == PassengerServiceDatabase::Publication::TimingDirty) return;
+	if (database.GetPublication(service->id) != PassengerServiceDatabase::Publication::Published) return;
 	if (phase->phase_known && vehicle->current_order_time != 0) return;
 	if (std::none_of(service->timetable.stops.begin(), service->timetable.stops.end(), [&](const auto &stop) { return stop.order == vehicle->cur_real_order_index && stop.station == vehicle->last_station_visited; })) return;
 	if (vehicle->HasUnbunchingOrder()) return;
@@ -90,21 +90,26 @@ void ObservePassengerPeriodicVehicle(const Vehicle *vehicle)
 		auto observed = CapturePeriodicBase(vehicle, service->timetable);
 		auto modulo = [&](StateTicks ticks) { int64_t value = ticks.base() % service->timetable.period; return value < 0 ? value + service->timetable.period : value; };
 		if (observed && (!phase->phase_known || modulo(*observed) != modulo(phase->base))) {
-			/* Keep estimated intents valid while an unknown phase becomes known.
-			 * A drifted certified phase must instead invalidate stale timed rides. */
-			if (phase->phase_known) database.Invalidate(service->id);
-			else database.TimetableChanged(service->id);
+			/* Phase drift changes timing estimates, not the live boarding contract.
+			 * Coalesce it with timetable measurements instead of dropping the network. */
+			database.TimetableChanged(service->id);
 		}
 	}
 }
 
 void PassengerServiceDatabase::ShiftTicks(StateTicksDelta delta)
 {
-	for (auto &[id, service] : this->services) {
-		service.dispatch_base += delta;
-		service.dispatch_floor += delta;
-		for (auto &vehicle : service.vehicles) vehicle.base += delta;
-	}
+	auto shift = [&](auto &network) {
+		for (auto &[id, service] : network) {
+			service.dispatch_base += delta;
+			service.dispatch_floor += delta;
+			for (auto &vehicle : service.vehicles) vehicle.base += delta;
+		}
+	};
+	shift(this->services); shift(this->building);
+	this->batch_started += delta;
+	for (auto &[id, since] : this->build_since) since += delta;
+	for (auto &[id, since] : this->staged_since) since += delta;
 	this->sweeping_since += delta;
 	for (auto &[id, since] : this->dirty_since) since += delta;
 }
@@ -171,15 +176,72 @@ std::optional<StateTicks> PassengerPeriodicTimetable::NextDeparture(StateTicks b
 	return StateTicks{time};
 }
 
-void PassengerServiceDatabase::ClearPolicies() { this->journey_policies.clear(); this->policy_bytes = 0; this->policy_clock = 0; this->schedule.Clear(); }
+void PassengerServiceDatabase::ClearPolicies() { this->ClearPolicies(PassengerDatabaseDiagnostic::ClearReason::Explicit); }
+void PassengerServiceDatabase::ClearPolicies(PassengerDatabaseDiagnostic::ClearReason reason)
+{
+	++this->diagnostic.policy_clears; ++this->diagnostic.clear_reasons[static_cast<size_t>(reason)];
+	this->diagnostic.policies_cleared += this->policies.size();
+	this->diagnostic.maximum_policies_cleared = std::max<uint64_t>(this->diagnostic.maximum_policies_cleared, this->policies.size());
+	this->policies.clear(); this->policy_lru.clear(); this->policy_bytes = 0;
+}
+
+uint64_t PassengerServiceDatabase::StationRevision(StationID station) const
+{
+	return this->station_revisions.empty() ? 0 : this->station_revisions[station.base()];
+}
+void PassengerServiceDatabase::TouchStations(const PassengerPeriodicService &service)
+{
+	if (this->station_revisions.empty()) this->station_revisions.resize(StationID::Invalid().base());
+	for (const auto &stop : service.timetable.stops) if (stop.board | stop.alight) this->station_revisions[stop.station.base()] = this->published_revision;
+}
+void PassengerServiceDatabase::ErasePolicy(std::map<PolicyKey, CachedPolicy>::iterator it)
+{
+	this->policy_bytes -= it->second.bytes;
+	this->policy_lru.erase(it->second.lru); this->policies.erase(it);
+}
+PassengerServiceDatabase::CachedPolicy *PassengerServiceDatabase::FindPolicy(const PolicyKey &key)
+{
+	auto it = this->policies.find(key);
+	if (it == this->policies.end()) return nullptr;
+	const auto start = std::chrono::steady_clock::now();
+	bool current = std::all_of(it->second.dependencies.begin(), it->second.dependencies.end(), [&](const auto &d) { return this->StationRevision(d.first) == d.second; });
+	this->diagnostic.policy_validation_microseconds += std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - start).count();
+	if (!current) { ++this->diagnostic.policy_stale; this->ErasePolicy(it); return nullptr; }
+	this->policy_lru.splice(this->policy_lru.end(), this->policy_lru, it->second.lru);
+	return &it->second;
+}
+void PassengerServiceDatabase::StorePolicy(const PolicyKey &key, PolicyValue value, Dependencies dependencies, size_t bytes)
+{
+	/* A separate, bounded observation history measures repeated OD builds,
+	 * including changes in query limits. It never admits or orders searches. */
+	auto od = std::tuple{std::get<0>(key), std::get<1>(key), std::get<2>(key), std::get<3>(key)};
+	if (this->recent_policy_builds.contains(od)) ++this->diagnostic.policy_rebuilds;
+	else { if (this->recent_policy_builds.size() >= POLICY_ENTRIES) this->recent_policy_builds.erase(this->recent_policy_builds.begin()); this->recent_policy_builds.emplace(od, 0); }
+	++this->recent_policy_builds.at(od);
+	/* Map nodes, dependency nodes and the shared LRU list are included. */
+	bytes += 512 + sizeof(std::pair<StationID, uint64_t>) * dependencies.size();
+	if (!this->policy_cache_enabled || bytes > POLICY_STORAGE_BYTES) return;
+	const auto start = std::chrono::steady_clock::now();
+	while (!this->policies.empty() && (this->policies.size() >= POLICY_ENTRIES || this->policy_bytes + bytes > POLICY_STORAGE_BYTES)) {
+		this->ErasePolicy(this->policies.find(this->policy_lru.front())); ++this->diagnostic.policy_evictions;
+	}
+	this->diagnostic.policy_eviction_microseconds += std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - start).count();
+	this->policy_lru.push_back(key);
+	std::vector<std::pair<StationID, uint64_t>> stamps(dependencies.begin(), dependencies.end());
+	this->policies.emplace(key, CachedPolicy{std::move(value), std::move(stamps), bytes, std::prev(this->policy_lru.end())});
+	this->policy_bytes += bytes;
+}
+
 void PassengerServiceDatabase::Reset()
 {
 	ClearPassengerOdFallbackCache();
-	this->services.clear(); this->stations.clear(); this->dirty.clear(); this->dirty_since.clear(); this->ClearPolicies();
-	this->sweeping_since = _state_ticks;
-	this->cursor = 0; this->dirty_cursor = 65534; this->sweeping = true; this->restoring = false; this->generation = 0; this->bytes = 0;
-	this->diagnostic = {};
-	this->schedule.ResetDiagnostic();
+	this->ClearPolicies(PassengerDatabaseDiagnostic::ClearReason::Reset);
+	this->services.clear(); this->stations.clear(); this->dirty.clear(); this->dirty_since.clear();
+	this->building.clear(); this->build_queue.clear(); this->build_since.clear(); this->staged_since.clear(); this->unsafe.clear(); this->station_revisions.clear(); this->recent_policy_builds.clear();
+	this->sweeping_since = this->batch_started = _state_ticks;
+	this->cursor = 0; this->dirty_cursor = 65534; this->sweeping = true; this->publishing = false; this->bootstrap = true; this->restoring = false;
+	this->generation = this->published_revision = 0; this->bytes = this->building_bytes = 0;
+	this->diagnostic = {}; this->schedule.ResetDiagnostic();
 }
 
 void PassengerServiceDatabase::Remove(OrderListID id)
@@ -200,16 +262,18 @@ void PassengerServiceDatabase::Invalidate(OrderListID id)
 {
 	if (this->restoring) return;
 	++this->diagnostic.invalidations;
-	this->ClearPolicies();
 	if (id == OrderListID::Invalid()) {
 		++this->diagnostic.global_invalidations;
-		this->services.clear(); this->stations.clear(); this->dirty.clear(); this->dirty_since.clear(); this->bytes = 0;
-		this->sweeping_since = _state_ticks;
-		this->cursor = 0; this->sweeping = true;
+		this->building.clear(); this->build_queue.clear(); this->build_since.clear(); this->staged_since.clear(); this->building_bytes = 0;
+		/* Retain the immutable publication for planning, but reject real boarding
+		 * immediately while a facility/global mutation is being checked. */
+		for (const auto &[service_id, service] : this->services) { this->unsafe.insert(service_id); this->dirty.insert(service_id); this->dirty_since.try_emplace(service_id, _state_ticks); }
+		this->sweeping_since = _state_ticks; this->cursor = 0; this->sweeping = true; this->publishing = false;
 	} else {
-		this->Remove(id);
-		this->dirty.insert(id);
-		this->dirty_since.try_emplace(id, _state_ticks);
+		this->unsafe.insert(id);
+		if (auto it = this->building.find(id); it != this->building.end()) { this->building_bytes -= ServiceBytes(it->second); this->building.erase(it); this->staged_since.erase(id); }
+		this->build_queue.erase(id); this->build_since.erase(id);
+		this->dirty.insert(id); this->dirty_since.try_emplace(id, _state_ticks);
 	}
 }
 
@@ -228,9 +292,10 @@ void PassengerServiceDatabase::Index(const PassengerPeriodicService &service)
 void PassengerServiceDatabase::TimetableChanged(OrderListID id)
 {
 	if (this->restoring) return;
+	++this->diagnostic.timetable_notifications;
 	/* A timing edit changes estimates, not real load/unload permission. Preserve
 	 * the published cycle and policies while coalescing automatic measurements.
-	 * Order/facility/fleet mutations still remove their affected records at once. */
+	 * Order/facility/fleet mutations instead block real boarding immediately. */
 	this->dirty.insert(id);
 	this->dirty_since.try_emplace(id, _state_ticks);
 }
@@ -245,34 +310,41 @@ void PassengerServiceDatabase::Tick(size_t allowance)
 		if (_state_ticks >= since) this->diagnostic.maximum_pending_ticks = std::max(this->diagnostic.maximum_pending_ticks, uint64_t(_state_ticks.base()) - uint64_t(since.base()));
 	};
 	if (this->sweeping) observe_age(this->sweeping_since);
-	size_t deferred_examined = 0;
-	while (allowance > 0) {
-		OrderListID id;
-		bool from_dirty = !this->dirty.empty() && deferred_examined < this->dirty.size();
-		if (from_dirty) {
-			auto next = this->dirty.upper_bound(OrderListID{this->dirty_cursor});
-			if (next == this->dirty.end()) next = this->dirty.begin();
-			id = *next;
-			observe_age(this->dirty_since.at(id));
+	auto epoch = [](StateTicks ticks) { return ticks.base() / TIMETABLE_EPOCH - (ticks.base() % TIMETABLE_EPOCH < 0); };
+	/* Freeze each work queue at a StateTicks boundary. Later notifications go
+	 * to the next batch; continuous automatic measurements cannot starve it. */
+	if (!this->publishing && this->build_queue.empty() && this->building.empty()) {
+		if (this->sweeping || (!this->dirty.empty() && epoch(_state_ticks) > epoch(this->batch_started))) {
+			this->batch_started = _state_ticks;
+			this->build_queue.swap(this->dirty); this->build_since.swap(this->dirty_since);
 		}
-		else {
+	}
+	while (allowance > 0 && !this->publishing) {
+		OrderListID id;
+		bool from_dirty = !this->build_queue.empty();
+		if (from_dirty) {
+			auto next = this->build_queue.upper_bound(OrderListID{this->dirty_cursor});
+			if (next == this->build_queue.end()) next = this->build_queue.begin();
+			id = *next; observe_age(this->build_since.at(id));
+		} else {
 			if (!this->sweeping) break;
 			if (this->cursor >= OrderListID::Invalid().base()) { this->sweeping = false; break; }
 			id = OrderListID{static_cast<uint16_t>(this->cursor)};
 		}
 		const OrderList *list = OrderList::GetIfValid(id);
-		if (from_dirty && this->services.contains(id)) {
-			/* Publish coalesced timing in epochs, then finish the batch with the
-			 * ordinary build budget. Repeated edits never reset its first epoch. */
-			auto epoch = [](StateTicks ticks) { return ticks.base() / TIMETABLE_EPOCH - (ticks.base() % TIMETABLE_EPOCH < 0); };
-			if (epoch(_state_ticks) <= epoch(this->dirty_since.at(id))) {
-				--allowance; this->dirty_cursor = id.base(); ++deferred_examined; continue;
-			}
-			this->Remove(id); this->ClearPolicies();
-		}
-		if (list == nullptr || this->services.contains(id)) {
+		if (this->building.contains(id) || (!from_dirty && this->bootstrap && this->services.contains(id) && !this->unsafe.contains(id))) { --allowance; ++this->cursor; continue; }
+		StateTicks since = from_dirty ? this->build_since.at(id) : this->sweeping_since;
+		if (list == nullptr) {
 			--allowance;
-			if (from_dirty) { this->dirty.erase(id); this->dirty_since.erase(id); this->dirty_cursor = id.base(); } else ++this->cursor;
+			if (from_dirty) {
+				/* Deletions need staged tombstones too. Drain a full staging batch
+				 * before admitting another, so a mid-update save stays loadable. */
+				if (this->building_bytes + 512 > MAX_BYTES) { this->publishing = true; break; }
+				assert(this->generation != UINT64_MAX);
+				PassengerPeriodicService removed; removed.id = id; removed.generation = ++this->generation;
+				this->building_bytes += ServiceBytes(removed); this->building.emplace(id, std::move(removed)); this->staged_since.emplace(id, since);
+				this->build_queue.erase(id); this->build_since.erase(id); this->dirty_cursor = id.base();
+			} else ++this->cursor;
 			continue;
 		}
 		/* Atomic service tasks have a fixed upper envelope. A pathological list
@@ -304,7 +376,7 @@ void PassengerServiceDatabase::Tick(size_t allowance)
 		const size_t charged_work = work > BUILD_WORK ? std::min(BUILD_WORK, preflight_work) : work;
 		if (charged_work > allowance) break;
 		std::sort(fleet.begin(), fleet.end(), [](const auto *a, const auto *b) { return a->index < b->index; });
-		if (from_dirty) { this->dirty.erase(id); this->dirty_since.erase(id); this->dirty_cursor = id.base(); } else ++this->cursor;
+		if (from_dirty) { this->build_queue.erase(id); this->build_since.erase(id); this->dirty_cursor = id.base(); } else ++this->cursor;
 		PassengerPeriodicService service; service.id = id;
 		assert(this->generation != UINT64_MAX);
 		service.incarnation = list->GetCargoDistRouteGeneration(); service.generation = ++this->generation;
@@ -321,7 +393,7 @@ void PassengerServiceDatabase::Tick(size_t allowance)
 				this->diagnostic.compilation_successes += service.timetable.period != 0;
 				++this->diagnostic.compilation_stops[static_cast<size_t>(failure)];
 			}
-			if (ServiceBytes(service) + this->bytes > MAX_BYTES) { service.timetable = {}; ++this->diagnostic.rejected_memory; }
+			if (ServiceBytes(service) + this->building_bytes > MAX_BYTES) { service.timetable = {}; ++this->diagnostic.rejected_memory; }
 			for (const Vehicle *v : fleet) {
 				if (service.timetable.stops.empty()) break;
 				if (!IsPassengerServiceVehicle(v) || v->vehstatus.Any({VehState::Stopped, VehState::Crashed})) continue;
@@ -364,7 +436,7 @@ void PassengerServiceDatabase::Tick(size_t allowance)
 				 * publish Unknown phases just because previous tasks used its
 				 * facility allowance. Retry before publishing, with a fresh tick. */
 				++this->diagnostic.rejected_work;
-				this->dirty.insert(id); this->dirty_since.try_emplace(id, _state_ticks);
+				this->build_queue.insert(id); this->build_since.try_emplace(id, since);
 				break;
 			}
 			/* A fleet exceeding a full tick's certified envelope must not retry
@@ -430,13 +502,69 @@ void PassengerServiceDatabase::Tick(size_t allowance)
 				for (auto &vehicle : service.vehicles) vehicle.phase_known = false;
 			}
 		}
-		if (ServiceBytes(service) + this->bytes > MAX_BYTES) { ++this->diagnostic.rejected_memory; continue; }
-		this->bytes += ServiceBytes(service); this->Index(service);
-		this->services.emplace(id, std::move(service)); ++this->diagnostic.builds;
-		this->ClearPolicies();
+		if (ServiceBytes(service) + this->building_bytes > MAX_BYTES) { ++this->diagnostic.rejected_memory; continue; }
+		this->building_bytes += ServiceBytes(service);
+		this->building.emplace(id, std::move(service)); this->staged_since.emplace(id, since); ++this->diagnostic.builds;
+		/* Initial discovery must make the same usable prefixes available as the
+		 * previous scheduler. Later refreshes use the frozen publication barrier. */
+		if (this->bootstrap) this->Publish(allowance);
 	}
+	if (!this->sweeping && this->build_queue.empty()) { this->bootstrap = false; this->publishing = !this->building.empty(); }
+	if (this->publishing) this->Publish(allowance);
 	this->diagnostic.build_work += original - allowance;
 	this->diagnostic.build_microseconds += std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - started).count();
+}
+
+void PassengerServiceDatabase::Publish(size_t &allowance)
+{
+	const auto start = std::chrono::steady_clock::now();
+	bool changed = false;
+	while (!this->building.empty()) {
+		auto it = this->building.begin(); const OrderListID id = it->first;
+		auto &service = it->second; const size_t staged_bytes = ServiceBytes(service); auto old = this->services.find(id);
+		/* Fleet comparisons/copies and contiguous dispatch blocks have a fixed
+		 * publication charge, in addition to old/new station-index mutations. */
+		size_t work = 64 + 2 * (service.timetable.stops.size() + (old == this->services.end() ? 0 : old->second.timetable.stops.size())) +
+				4 * service.vehicles.size() + (service.dispatch_slots.size() + 15) / 16;
+		if (work > allowance) break;
+		allowance -= work;
+		/* Captures differing only by whole circuits are the same publication.
+		 * Keeping its generation also preserves already waiting intents. */
+		bool same = false;
+		if (old != this->services.end()) {
+			auto normalized = service;
+			normalized.generation = old->second.generation;
+			if (normalized.timetable.period > 0 && normalized.vehicles.size() == old->second.vehicles.size()) {
+				for (size_t i = 0; i < normalized.vehicles.size(); ++i) {
+					int64_t difference = normalized.vehicles[i].base.base() % normalized.timetable.period - old->second.vehicles[i].base.base() % normalized.timetable.period;
+					if (difference % normalized.timetable.period == 0) normalized.vehicles[i].base = old->second.vehicles[i].base;
+				}
+			}
+			same = normalized == old->second;
+		}
+		if (!same) {
+			if (!changed) { assert(this->published_revision != UINT64_MAX); ++this->published_revision; changed = true; }
+			if (old != this->services.end()) { this->TouchStations(old->second); this->diagnostic.service_updates += service.incarnation != 0; this->diagnostic.service_removals += service.incarnation == 0; }
+			else this->diagnostic.service_additions += service.incarnation != 0;
+			this->Remove(id);
+			if (service.incarnation != 0 && this->bytes + ServiceBytes(service) <= MAX_BYTES) {
+				this->TouchStations(service); this->bytes += ServiceBytes(service); this->Index(service);
+				this->services.emplace(id, std::move(service));
+			}
+		}
+		StateTicks since = this->staged_since.at(id);
+		if (_state_ticks >= since) {
+			uint64_t wait = uint64_t(_state_ticks.base()) - uint64_t(since.base());
+			this->diagnostic.published_wait_ticks += wait;
+			this->diagnostic.maximum_pending_ticks = std::max(this->diagnostic.maximum_pending_ticks, wait);
+		}
+		++this->diagnostic.published_wait_samples;
+		this->building_bytes -= staged_bytes;
+		this->unsafe.erase(id); this->staged_since.erase(id); this->building.erase(it);
+	}
+	if (changed) ++this->diagnostic.publications;
+	this->publishing = !this->building.empty();
+	this->diagnostic.publication_microseconds += std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - start).count();
 }
 
 const PassengerPeriodicService *PassengerServiceDatabase::Get(OrderListID id) const
@@ -454,7 +582,7 @@ const std::set<PassengerServiceDatabase::StopRef> &PassengerServiceDatabase::Sto
 
 PassengerServiceDatabase::Publication PassengerServiceDatabase::GetPublication(OrderListID id) const
 {
-	if (this->dirty.contains(id)) return this->services.contains(id) ? Publication::TimingDirty : Publication::Dirty;
+	if (this->unsafe.contains(id) || this->dirty.contains(id) || this->build_queue.contains(id) || this->building.contains(id)) return this->services.contains(id) && !this->unsafe.contains(id) ? Publication::TimingDirty : Publication::Dirty;
 	if (this->services.contains(id)) return Publication::Published;
 	return this->sweeping && id.base() >= this->cursor ? Publication::SweepPending : Publication::Unpublished;
 }
@@ -462,14 +590,17 @@ PassengerServiceDatabase::Publication PassengerServiceDatabase::GetPublication(O
 bool PassengerServiceDatabase::IsCurrent(const PassengerJourneyExecution &ride) const
 {
 	const auto *service = this->Get(ride.service);
-	return service != nullptr && service->incarnation == ride.signature && service->generation == ride.generation;
+	const auto *list = OrderList::GetIfValid(ride.service);
+	return !this->unsafe.contains(ride.service) && list != nullptr && service != nullptr && list->GetCargoDistRouteGeneration() == ride.signature && service->incarnation == ride.signature && service->generation == ride.generation;
 }
 
 PassengerServiceDatabase::JourneyPolicy PassengerServiceDatabase::CompilePolicy(CargoType cargo, StationID origin,
-		StationID destination, PassengerJourneyLimits limits, PassengerJourneyEvaluation evaluation) const
+		StationID destination, PassengerJourneyLimits limits, PassengerJourneyEvaluation evaluation, Dependencies &dependencies) const
 {
 	using Reason = PassengerPeriodicPlan::Reason;
 	JourneyPolicy policy;
+	auto depend = [&](StationID station) { dependencies.try_emplace(station, this->StationRevision(station)); };
+	depend(origin); depend(destination);
 	policy.bytes = 256;
 	auto spend = [&]() { if (policy.work >= limits.work) { policy.limited = true; policy.reason = Reason::Work; return false; } ++policy.work; return true; };
 	if (!spend()) return policy;
@@ -495,7 +626,7 @@ PassengerServiceDatabase::JourneyPolicy PassengerServiceDatabase::CompilePolicy(
 	 * for a long line whose through ride has hundreds of intermediate stops. */
 	using Item = std::pair<int64_t, StationID>;
 	std::priority_queue<Item, std::vector<Item>, std::greater<Item>> queue;
-	std::map<StationID, int64_t> distances;
+	std::map<StationID, int64_t> distances, settled;
 	size_t memory = 256;
 	auto insert = [&](StationID station, int64_t distance) {
 		auto it = distances.find(station);
@@ -512,8 +643,9 @@ PassengerServiceDatabase::JourneyPolicy PassengerServiceDatabase::CompilePolicy(
 	while (!queue.empty() && !policy.limited) {
 		if (!spend()) break;
 		auto [distance, station] = queue.top(); queue.pop();
-		if (distances.at(station) != distance || policy.lower_bounds.contains(station)) continue;
-		policy.lower_bounds.emplace(station, distance);
+		depend(station);
+		if (distances.at(station) != distance || settled.contains(station)) continue;
+		settled.emplace(station, distance);
 		policy.unsettled_bound = distance;
 		/* Settled distances are safe even in a partial reverse search. Once
 		 * the origin is settled, further national expansion is unnecessary:
@@ -545,7 +677,7 @@ PassengerServiceDatabase::JourneyPolicy PassengerServiceDatabase::CompilePolicy(
 			if (AddTicks(next, duration) && !insert(stops[previous].station, next)) break;
 		}
 	}
-	policy.complete = queue.empty() && !policy.limited && !policy.lower_bounds.contains(origin);
+	policy.complete = queue.empty() && !policy.limited && !settled.contains(origin);
 	if (!policy.limited) policy.reason = policy.complete ? Reason::Unreachable : Reason::NoCandidate;
 	if (policy.complete && policy.unknown_phase) {
 		/* Only after proving no known-phase connection, check the same stop
@@ -559,6 +691,7 @@ PassengerServiceDatabase::JourneyPolicy PassengerServiceDatabase::CompilePolicy(
 			++policy.work; return true;
 		};
 		auto visit = [&](StationID station) {
+			depend(station);
 			if (seen.contains(station)) return true;
 			if (memory > limits.memory_bytes || 192 > limits.memory_bytes - memory) { policy.diagnostic_limit = Reason::Memory; return false; }
 			memory += 192; seen.insert(station); frontier.push_back(station); return true;
@@ -589,7 +722,8 @@ PassengerServiceDatabase::JourneyPolicy PassengerServiceDatabase::CompilePolicy(
 		}
 		if (reached) policy.reason = Reason::UnknownPhase;
 	}
-	policy.bytes = 256 + 128 * policy.lower_bounds.size();
+	policy.lower_bounds.assign(settled.begin(), settled.end());
+	policy.bytes = 256 + 128 * settled.size();
 	policy.scratch_bytes = memory;
 	return policy;
 }
@@ -616,14 +750,17 @@ PassengerPeriodicPlan PassengerServiceDatabase::Plan(CargoType cargo, StationID 
 	if (limits.work == 0 || limits.memory_bytes < 256) {
 		result.deferred = true; result.reason = limits.work == 0 ? Reason::Work : Reason::Memory; return finish();
 	}
-	PolicyKey key{cargo, origin, destination, limits, evaluation};
-	auto cached = this->journey_policies.find(key);
+	PolicyKey key{false, cargo, origin, destination, OrderListID::Invalid(), limits, evaluation};
+	auto *cached = this->FindPolicy(key);
+	Dependencies dependencies;
 	JourneyPolicy temporary;
 	const JourneyPolicy *policy;
-	if (cached != this->journey_policies.end()) { cached->second.last_used = ++this->policy_clock; policy = &cached->second; ++this->diagnostic.policy_hits; }
+	if (cached != nullptr) { policy = &std::get<JourneyPolicy>(cached->value); ++this->diagnostic.policy_hits; }
 	else {
 		auto compilation = limits; compilation.work /= 2;
-		temporary = this->CompilePolicy(cargo, origin, destination, compilation, evaluation); policy = &temporary; ++this->diagnostic.policy_misses;
+		const auto compile_start = std::chrono::steady_clock::now();
+		temporary = this->CompilePolicy(cargo, origin, destination, compilation, evaluation, dependencies); policy = &temporary; ++this->diagnostic.policy_misses;
+		this->diagnostic.policy_compile_microseconds += std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - compile_start).count();
 	}
 	result.work = policy->work; result.memory = policy->bytes;
 	result.reason = policy->reason;
@@ -650,8 +787,8 @@ PassengerPeriodicPlan PassengerServiceDatabase::Plan(CargoType cargo, StationID 
 		std::priority_queue<Item, std::vector<Item>, std::greater<Item>> queue;
 		int64_t omitted_bound = INT64_MAX;
 		auto bound = [&](StationID station, int64_t cost) {
-			auto it = policy->lower_bounds.find(station);
-			int64_t distance = it != policy->lower_bounds.end() ? it->second : policy->unsettled_bound;
+			const int64_t *lower = policy->LowerBound(station);
+			int64_t distance = lower != nullptr ? *lower : policy->unsettled_bound;
 			if (!AddTicks(cost, distance)) return INT64_MAX;
 			return cost;
 		};
@@ -777,7 +914,7 @@ PassengerPeriodicPlan PassengerServiceDatabase::Plan(CargoType cargo, StationID 
 					if (!spend()) break;
 					size_t stop_index = (ref.stop + step) % pattern.stops.size();
 					const auto &alight = pattern.stops[stop_index];
-					if ((alight.alight & (uint64_t{1} << cargo)) && (!policy->complete || policy->lower_bounds.contains(alight.station))) {
+					if ((alight.alight & (uint64_t{1} << cargo)) && (!policy->complete || policy->LowerBound(alight.station) != nullptr)) {
 						int64_t duration = alight.arrival - board.departure;
 						if (stop_index <= ref.stop) duration += pattern.period;
 						int64_t end = departure->base(), cost = current.cost;
@@ -807,15 +944,8 @@ PassengerPeriodicPlan PassengerServiceDatabase::Plan(CargoType cargo, StationID 
 					result.observations[static_cast<size_t>(Reason::Evaluation)] ? Reason::Evaluation : Reason::NoCandidate;
 		}
 	}
-	if (cached == this->journey_policies.end() && temporary.bytes <= POLICY_BYTES) {
-		while (!this->journey_policies.empty() && (this->journey_policies.size() >= POLICY_ENTRIES || this->policy_bytes + temporary.bytes > POLICY_BYTES)) {
-			auto oldest = std::min_element(this->journey_policies.begin(), this->journey_policies.end(), [](const auto &a, const auto &b) { return a.second.last_used < b.second.last_used; });
-			this->policy_bytes -= oldest->second.bytes; this->journey_policies.erase(oldest);
-		}
-		temporary.last_used = ++this->policy_clock;
-		this->policy_bytes += temporary.bytes; this->journey_policies.emplace(key, std::move(temporary));
-	}
 	result.memory = std::max(result.memory, policy->scratch_bytes);
+	if (cached == nullptr) { const size_t bytes = 256 + sizeof(std::pair<StationID, int64_t>) * temporary.lower_bounds.size(); this->StorePolicy(key, std::move(temporary), std::move(dependencies), bytes); }
 	return finish();
 }
 PassengerPlannerComparison ComparePassengerPlanners(const PassengerServiceDatabase &source, CargoType cargo,
@@ -876,13 +1006,24 @@ PassengerDatabaseDiagnostic::Phase PassengerServiceDatabase::ExplainPhase(const 
 	return CapturePeriodicBase(v, service.timetable) ? Phase::AwaitCapture : Phase::Overflow;
 }
 
+PassengerScheduleDiagnostic PassengerServiceDatabase::GetScheduleDiagnostic() const
+{
+	auto d = this->schedule.GetDiagnostic();
+	/* Explicit diagnostic only, never part of a simulation tick. */
+	for (const auto &[key, policy] : this->policies) if (std::get<0>(key)) d.bytes += policy.bytes;
+	return d;
+}
+
 PassengerDatabaseDiagnostic PassengerServiceDatabase::GetDiagnostic() const
 {
 	auto d = this->diagnostic;
-	d.services = this->services.size(); d.bytes = this->bytes; d.policy_bytes = this->policy_bytes;
-	d.pending = this->dirty.size();
-	if (this->sweeping) for (const OrderList *list : OrderList::Iterate()) if (list->index.base() >= this->cursor && !this->services.contains(list->index) && !this->dirty.contains(list->index)) ++d.pending;
+	d.services = this->services.size(); d.bytes = this->bytes; d.policy_bytes = this->policy_bytes + this->station_revisions.capacity() * sizeof(uint64_t) + 96 * this->recent_policy_builds.size();
+	d.pending = this->dirty.size() + this->build_queue.size() + this->building.size();
+	d.staged = this->building.size(); d.staged_bytes = this->building_bytes; d.published_revision = this->published_revision; d.policy_entries = this->policies.size();
+	if (this->sweeping) for (const OrderList *list : OrderList::Iterate()) if (list->index.base() >= this->cursor && !this->services.contains(list->index) && !this->dirty.contains(list->index) && !this->build_queue.contains(list->index) && !this->building.contains(list->index)) ++d.pending;
 	auto age = [&](StateTicks since) { return _state_ticks >= since ? uint64_t(_state_ticks.base()) - uint64_t(since.base()) : uint64_t{0}; };
+	for (const auto &[id, since] : this->build_since) d.maximum_pending_ticks = std::max(d.maximum_pending_ticks, age(since));
+	for (const auto &[id, since] : this->staged_since) d.maximum_pending_ticks = std::max(d.maximum_pending_ticks, age(since));
 	for (const auto &[id, since] : this->dirty_since) d.maximum_pending_ticks = std::max(d.maximum_pending_ticks, age(since));
 	if (this->sweeping && d.pending > this->dirty.size()) d.maximum_pending_ticks = std::max(d.maximum_pending_ticks, age(this->sweeping_since));
 	uint64_t passenger_mask = 0;
@@ -933,8 +1074,8 @@ PassengerDatabaseDiagnostic PassengerServiceDatabase::GetDiagnostic() const
 		d.published_passenger += published != nullptr;
 		d.published_cycles += published != nullptr && published->timetable.period != 0;
 		d.unpublished += published == nullptr;
-		d.dirty_services += this->dirty.contains(list->index);
-		d.pending_passenger += this->dirty.contains(list->index) || (this->sweeping && list->index.base() >= this->cursor && published == nullptr);
+		d.dirty_services += this->GetPublication(list->index) != Publication::Published;
+		d.pending_passenger += this->dirty.contains(list->index) || this->build_queue.contains(list->index) || this->building.contains(list->index) || (this->sweeping && list->index.base() >= this->cursor && published == nullptr);
 		PassengerPeriodicService live; live.timetable = std::move(table);
 		for (const Vehicle *v = list->GetFirstSharedVehicle(); v != nullptr; v = v->NextShared()) {
 			bool capable = false;
@@ -996,12 +1137,11 @@ std::vector<uint8_t> PassengerServiceDatabase::Save() const
 {
 	std::vector<uint8_t> data;
 	auto put = [&](uint64_t value) { for (uint i = 0; i < 8; ++i) { data.push_back(value & 255); value >>= 8; } };
-	put(2); put(this->generation); put(this->cursor); put(this->sweeping); put(this->dirty_cursor);
+	put(3); put(this->generation); put(this->cursor); put(this->sweeping); put(this->dirty_cursor);
 	put(this->sweeping_since.base());
 	put(this->dirty.size()); for (OrderListID id : this->dirty) { put(id.base()); put(this->dirty_since.at(id).base()); }
-	put(this->services.size());
-	for (const auto &[id, service] : this->services) {
-		put(id.base()); put(service.incarnation); put(service.generation); put(service.timetable.period);
+	auto put_service = [&](const PassengerPeriodicService &service) {
+		put(service.id.base()); put(service.incarnation); put(service.generation); put(service.timetable.period);
 		put(service.timetable.stops.size());
 		for (const auto &stop : service.timetable.stops) {
 			put(stop.station.base()); put(stop.order); put(stop.arrival); put(stop.departure);
@@ -1015,13 +1155,18 @@ std::vector<uint8_t> PassengerServiceDatabase::Save() const
 		put(service.dispatch_base.base()); put(service.dispatch_floor.base()); put(service.dispatch_period); put(service.dispatch_stop);
 		put(service.dispatch_slots.size()); for (uint32_t slot : service.dispatch_slots) put(slot);
 		put(service.uncertain_dispatch_period);
-	}
+	};
+	put(this->services.size()); for (const auto &[id, service] : this->services) put_service(service);
+	put(this->published_revision); put(this->batch_started.base()); put(this->publishing); put(this->bootstrap);
+	put(this->build_queue.size()); for (OrderListID id : this->build_queue) { put(id.base()); put(this->build_since.at(id).base()); }
+	put(this->unsafe.size()); for (OrderListID id : this->unsafe) put(id.base());
+	put(this->building.size()); for (const auto &[id, service] : this->building) { put_service(service); put(this->staged_since.at(id).base()); }
 	return data;
 }
 
 bool PassengerServiceDatabase::Load(std::span<const uint8_t> data)
 {
-	if (data.size() > MAX_BYTES || data.size() % 8 != 0) return false;
+	if (data.size() > 2 * MAX_BYTES || data.size() % 8 != 0) return false;
 	size_t cursor = 0;
 	bool valid = true;
 	auto get = [&]() -> uint64_t {
@@ -1032,7 +1177,7 @@ bool PassengerServiceDatabase::Load(std::span<const uint8_t> data)
 	};
 	auto count = [&](size_t max) { uint64_t n = get(); if (n > max || n > (data.size() - cursor) / 8) { valid = false; return size_t{0}; } return static_cast<size_t>(n); };
 	PassengerServiceDatabase restored;
-	uint64_t version = get(); if (version != 1 && version != 2) return false;
+	uint64_t version = get(); if (version != 1 && version != 2 && version != 3) return false;
 	restored.generation = get();
 	uint64_t saved_cursor = get(); if (saved_cursor > OrderListID::Invalid().base()) return false;
 	restored.cursor = static_cast<uint32_t>(saved_cursor);
@@ -1045,10 +1190,11 @@ bool PassengerServiceDatabase::Load(std::span<const uint8_t> data)
 		uint64_t id = get(); if (id >= OrderListID::Invalid().base() || !restored.dirty.insert(OrderListID{static_cast<uint16_t>(id)}).second) return false;
 		restored.dirty_since.emplace(OrderListID{static_cast<uint16_t>(id)}, StateTicks{static_cast<int64_t>(get())});
 	}
-	for (size_t n = count(OrderListID::Invalid().base()); n > 0 && valid; --n) {
+	OrderListID loaded_id;
+	auto get_service = [&](auto &network, size_t &network_bytes) -> bool {
 		PassengerPeriodicService service;
 		uint64_t id = get(); if (id >= OrderListID::Invalid().base()) return false;
-		service.id = OrderListID{static_cast<uint16_t>(id)};
+		service.id = loaded_id = OrderListID{static_cast<uint16_t>(id)};
 		service.incarnation = get(); service.generation = get(); service.timetable.period = static_cast<int64_t>(get());
 		if (service.generation == 0 || service.generation > restored.generation || service.timetable.period < 0 || service.timetable.period > MAX_PERIOD) return false;
 		int64_t previous = 0;
@@ -1082,8 +1228,42 @@ bool PassengerServiceDatabase::Load(std::span<const uint8_t> data)
 		if (version >= 2) service.uncertain_dispatch_period = static_cast<int64_t>(get());
 		if (service.uncertain_dispatch_period < 0 || service.uncertain_dispatch_period > MAX_PERIOD) return false;
 		size_t bytes = ServiceBytes(service);
-		if (restored.bytes + bytes > MAX_BYTES || !restored.services.emplace(service.id, std::move(service)).second) return false;
-		restored.bytes += bytes;
+		if (network_bytes + bytes > MAX_BYTES || !network.emplace(service.id, std::move(service)).second) return false;
+		network_bytes += bytes; return valid;
+	};
+	for (size_t n = count(OrderListID::Invalid().base()); n > 0 && valid; --n) if (!get_service(restored.services, restored.bytes)) return false;
+	if (version >= 3) {
+		restored.published_revision = get(); restored.batch_started = StateTicks{static_cast<int64_t>(get())};
+		uint64_t publishing = get(); if (publishing > 1 || restored.published_revision == UINT64_MAX) return false;
+		restored.publishing = publishing != 0;
+		uint64_t bootstrap = get(); if (bootstrap > 1) return false; restored.bootstrap = bootstrap != 0;
+		for (size_t n = count(OrderListID::Invalid().base()); n > 0 && valid; --n) {
+			uint64_t id = get(); if (id >= OrderListID::Invalid().base()) return false;
+			OrderListID key{static_cast<uint16_t>(id)};
+			if (!restored.build_queue.insert(key).second) return false;
+			restored.build_since.emplace(key, StateTicks{static_cast<int64_t>(get())});
+		}
+		for (size_t n = count(OrderListID::Invalid().base()); n > 0 && valid; --n) {
+			uint64_t id = get(); if (id >= OrderListID::Invalid().base() || !restored.unsafe.insert(OrderListID{static_cast<uint16_t>(id)}).second) return false;
+		}
+		for (size_t n = count(OrderListID::Invalid().base()); n > 0 && valid; --n) {
+			size_t before = restored.building.size();
+			if (!get_service(restored.building, restored.building_bytes) || restored.building.size() != before + 1) return false;
+			/* The wire is ordered by service ID, independently of map allocation. */
+			OrderListID id = loaded_id;
+			if (restored.build_queue.contains(id)) return false;
+			const auto &staged = restored.building.at(id); const auto *old = restored.Get(id);
+			size_t publication_work = 64 + 2 * (staged.timetable.stops.size() + (old == nullptr ? 0 : old->timetable.stops.size())) +
+					4 * staged.vehicles.size() + (staged.dispatch_slots.size() + 15) / 16;
+			if (publication_work > BUILD_WORK) return false;
+			restored.staged_since.emplace(id, StateTicks{static_cast<int64_t>(get())});
+		}
+		if (restored.publishing && restored.building.empty()) return false;
+	} else {
+		restored.published_revision = restored.generation; restored.bootstrap = restored.services.empty();
+		restored.batch_started = restored.sweeping_since;
+		/* Version 1/2 dirty tasks already had admission to the old scheduler. */
+		restored.build_queue.swap(restored.dirty); restored.build_since.swap(restored.dirty_since);
 	}
 	if (!valid || cursor != data.size()) return false;
 	if (version == 1) {
@@ -1095,13 +1275,14 @@ bool PassengerServiceDatabase::Load(std::span<const uint8_t> data)
 			if (std::none_of(service.vehicles.begin(), service.vehicles.end(), [](const auto &v) { return !v.phase_known; })) { ++it; continue; }
 			restored.bytes -= ServiceBytes(service);
 			std::erase_if(service.vehicles, [](const auto &v) { return !v.phase_known; });
-			restored.dirty.insert(service.id); restored.dirty_since.try_emplace(service.id, restored.sweeping_since);
+			restored.build_queue.insert(service.id); restored.build_since.try_emplace(service.id, restored.sweeping_since);
 			if (service.vehicles.empty()) it = restored.services.erase(it);
 			else { restored.bytes += ServiceBytes(service); ++it; }
 		}
 	}
-	for (const auto &[id, service] : restored.services) restored.Index(service);
+	for (const auto &[id, service] : restored.services) { restored.Index(service); restored.TouchStations(service); }
 	restored.restoring = true;
+	restored.policy_cache_enabled = this->policy_cache_enabled; // Local optional preference survives loading; absent from simulation state.
 	*this = std::move(restored);
 	return true;
 }

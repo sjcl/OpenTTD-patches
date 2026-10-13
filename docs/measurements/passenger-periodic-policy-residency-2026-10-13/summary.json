@@ -1,0 +1,781 @@
+{
+  "baseline": {
+    "process": {
+      "backend": "periodic",
+      "exit_code": 0,
+      "wall_seconds": 372.7930567,
+      "cpu_seconds": 480.671875,
+      "peak_working_set": 2068860928,
+      "sampled_peak_private": 2065510400,
+      "input_save": "input.sav",
+      "resumed": false,
+      "requested_driver_loops": 8192,
+      "policy_cache_disabled": false,
+      "input_sha256": "14D68C82911B9DCFC5EF7291E9697C5BBD67F44FFCC79D7575A144405EDF6390",
+      "binary_sha256": "279D7FEA9211B442D317FA16C85E9C95DB89E84D3EB8B65EE73B87A08EC70E9C",
+      "sample_ms": 100
+    },
+    "state_ticks": [
+      3176545487,
+      3176553679
+    ],
+    "graph": {
+      "complete": 0,
+      "eligible_services": 0,
+      "selected_services": 0,
+      "selected_trips": 0,
+      "largest_block_services": 0,
+      "admitted_visits": 0,
+      "max_unpredicted_ticks": 0
+    },
+    "simulation": {
+      "completed_ticks": 8192,
+      "total_us": 354649942,
+      "mean_us": 43292,
+      "max_us": 98431
+    },
+    "histogram": {
+      "simulation_p95_us": 62000,
+      "simulation_p99_us": 72000,
+      "journey_mean_us": 20839,
+      "journey_p95_us": 39000,
+      "journey_p99_us": 45000,
+      "journey_max_us": 60969
+    },
+    "inclusive_scopes": {
+      "waiting_us": 141948477,
+      "fallback_distance_us": 26062027,
+      "boarding_us": 21033036
+    },
+    "pending_age": {
+      "ticks": 647
+    },
+    "fallback_cache": {
+      "hits": 114122,
+      "bytes": 16871860,
+      "work": 14890336090,
+      "searches": 311996
+    },
+    "database": {
+      "services": 837,
+      "timed": 504,
+      "vehicles": 2841,
+      "bytes": 8506544,
+      "policies_bytes": 673920,
+      "pending": 118,
+      "builds": 26256,
+      "work": 101057659,
+      "build_us": 1592238,
+      "searches": 131072,
+      "query_us": 77243044,
+      "next_departures": 139609444,
+      "policy_hits": 7819,
+      "policy_misses": 123253,
+      "invalidations": 4013,
+      "rejected_work": 58,
+      "rejected_memory": 0
+    },
+    "global_invalidations": 29,
+    "schedule": {
+      "packets": 66,
+      "passengers": 135,
+      "timed_deferred": 0,
+      "hits": 7452,
+      "misses": 87603,
+      "bytes": 13312,
+      "work": 1575923246,
+      "query_us": 61496472,
+      "stale": 47,
+      "expired": 0
+    },
+    "schedule_transport": {
+      "boarded": 35,
+      "transferred": 6,
+      "delivered": 0,
+      "expected_wait_person_ticks": 713967,
+      "actual_wait_person_ticks": 173,
+      "wait_people": 35
+    },
+    "eligibility": {
+      "declared_complete": 674,
+      "live_compiled_cycles": 513,
+      "published_lists": 771,
+      "published_cycles": 510,
+      "phase_known_lists": 504,
+      "denominator": 771
+    },
+    "active": {
+      "applied": 58230,
+      "builds": 0,
+      "static_hits": 0,
+      "searches": 131072,
+      "OD_hits": 160668,
+      "applied_packets": 58230,
+      "applied_passengers": 100333
+    },
+    "timed_transport": {
+      "boarded": 34696,
+      "transferred": 15812,
+      "delivered": 11395
+    },
+    "final_save_sha256": "d4ae2f1c256d2438f64b887887ca0ac358218af363bc29c6a58ab80c1bf4f25a",
+    "derived": {
+      "timed_hit_percent": 5.965423583984375,
+      "schedule_hit_percent": 7.839671768975856,
+      "timed_query_ms_per_tick": 9.42908251953125,
+      "schedule_query_ms_per_tick": 7.5068935546875,
+      "database_build_ms_per_tick": 0.194364990234375
+    },
+    "stderr": {
+      "sha256": "a3a8a9bd53df1d7f436a20dd509d67a6da9860ada06ab8b2d76a3c147b96bb53",
+      "bytes": 7995262
+    }
+  },
+  "resident": {
+    "process": {
+      "backend": "periodic",
+      "exit_code": 0,
+      "wall_seconds": 326.7560846,
+      "cpu_seconds": 433.328125,
+      "peak_working_set": 2082148352,
+      "sampled_peak_private": 2079817728,
+      "input_save": "input.sav",
+      "resumed": false,
+      "requested_driver_loops": 8192,
+      "policy_cache_disabled": false,
+      "input_sha256": "14D68C82911B9DCFC5EF7291E9697C5BBD67F44FFCC79D7575A144405EDF6390",
+      "binary_sha256": "AA45E5F3B601EA97E826B655C82101E2B989A309C88DE7DBCF97958D4ED70EA4",
+      "sample_ms": 100
+    },
+    "state_ticks": [
+      3176545487,
+      3176553679
+    ],
+    "graph": {
+      "complete": 0,
+      "eligible_services": 0,
+      "selected_services": 0,
+      "selected_trips": 0,
+      "largest_block_services": 0,
+      "admitted_visits": 0,
+      "max_unpredicted_ticks": 0
+    },
+    "simulation": {
+      "completed_ticks": 8192,
+      "total_us": 309710262,
+      "mean_us": 37806,
+      "max_us": 109467
+    },
+    "histogram": {
+      "simulation_p95_us": 59000,
+      "simulation_p99_us": 74000,
+      "journey_mean_us": 16611,
+      "journey_p95_us": 37000,
+      "journey_p99_us": 52000,
+      "journey_max_us": 86466
+    },
+    "inclusive_scopes": {
+      "waiting_us": 109476453,
+      "fallback_distance_us": 25255521,
+      "boarding_us": 20517223
+    },
+    "pending_age": {
+      "ticks": 1266
+    },
+    "fallback_cache": {
+      "hits": 114249,
+      "bytes": 16872236,
+      "work": 14957036928,
+      "searches": 314091
+    },
+    "database": {
+      "services": 837,
+      "timed": 506,
+      "vehicles": 2837,
+      "bytes": 8480752,
+      "policies_bytes": 16388584,
+      "pending": 416,
+      "builds": 19555,
+      "work": 73098752,
+      "build_us": 316283,
+      "searches": 131072,
+      "query_us": 90365651,
+      "next_departures": 179819090,
+      "policy_hits": 60243,
+      "policy_misses": 70829,
+      "invalidations": 39,
+      "rejected_work": 24,
+      "rejected_memory": 0
+    },
+    "global_invalidations": 27,
+    "residency": {
+      "entries": 453,
+      "revision": 1296,
+      "publications": 1296,
+      "staged": 0,
+      "staged_bytes": 0,
+      "additions": 837,
+      "removals": 0,
+      "updates": 9525,
+      "timetable_notifications": 52686
+    },
+    "cache_cost": {
+      "clears": 0,
+      "lost": 0,
+      "maximum_lost": 0,
+      "explicit": 0,
+      "reset": 0,
+      "global": 0,
+      "stale": 4039,
+      "evictions": 102401,
+      "rebuilds": 16382,
+      "compile_us": 30982559,
+      "validation_us": 31088,
+      "eviction_us": 2258122
+    },
+    "publication_cost": {
+      "publication_us": 107038,
+      "wait_ticks": 4601484,
+      "wait_samples": 19299
+    },
+    "schedule_compilation": {
+      "compile_us": 15897560
+    },
+    "schedule": {
+      "packets": 45,
+      "passengers": 66,
+      "timed_deferred": 0,
+      "hits": 58353,
+      "misses": 36064,
+      "bytes": 344272,
+      "work": 1367508622,
+      "query_us": 16110121,
+      "stale": 40,
+      "expired": 0
+    },
+    "schedule_transport": {
+      "boarded": 8,
+      "transferred": 6,
+      "delivered": 0,
+      "expected_wait_person_ticks": 1785,
+      "actual_wait_person_ticks": 16,
+      "wait_people": 8
+    },
+    "eligibility": {
+      "declared_complete": 673,
+      "live_compiled_cycles": 512,
+      "published_lists": 771,
+      "published_cycles": 509,
+      "phase_known_lists": 506,
+      "denominator": 771
+    },
+    "active": {
+      "applied": 59380,
+      "builds": 0,
+      "static_hits": 0,
+      "searches": 131072,
+      "OD_hits": 148542,
+      "applied_packets": 59380,
+      "applied_passengers": 101513
+    },
+    "timed_transport": {
+      "boarded": 33511,
+      "transferred": 14456,
+      "delivered": 10001
+    },
+    "final_save_sha256": "665316aa3de1b998a8b0ef13548c74f4948adce8bc0a599fe617be777da3d078",
+    "derived": {
+      "timed_hit_percent": 45.961761474609375,
+      "schedule_hit_percent": 61.80348877850387,
+      "timed_query_ms_per_tick": 11.030963256835937,
+      "schedule_query_ms_per_tick": 1.9665675048828124,
+      "database_build_ms_per_tick": 0.0386087646484375,
+      "timed_compile_ms_per_tick": 3.7820506591796876,
+      "timed_forward_and_other_ms_per_tick": 7.24891259765625,
+      "shared_eviction_ms_per_tick": 0.275649658203125,
+      "shared_validation_ms_per_tick": 0.003794921875,
+      "remaining_journey_ms_per_tick": 3.574860473632814
+    },
+    "stderr": {
+      "sha256": "6de4520793f117fef4aa984c28a929c2d5dce52f17f36b794dba6d6ca01aa494",
+      "bytes": 7841394
+    }
+  },
+  "cold": {
+    "process": {
+      "backend": "periodic",
+      "exit_code": 0,
+      "wall_seconds": 380.0916022,
+      "cpu_seconds": 489.203125,
+      "peak_working_set": 2068488192,
+      "sampled_peak_private": 2065252352,
+      "input_save": "input.sav",
+      "resumed": false,
+      "requested_driver_loops": 8192,
+      "policy_cache_disabled": true,
+      "input_sha256": "14D68C82911B9DCFC5EF7291E9697C5BBD67F44FFCC79D7575A144405EDF6390",
+      "binary_sha256": "AA45E5F3B601EA97E826B655C82101E2B989A309C88DE7DBCF97958D4ED70EA4",
+      "sample_ms": 100
+    },
+    "state_ticks": [
+      3176545487,
+      3176553679
+    ],
+    "graph": {
+      "complete": 0,
+      "eligible_services": 0,
+      "selected_services": 0,
+      "selected_trips": 0,
+      "largest_block_services": 0,
+      "admitted_visits": 0,
+      "max_unpredicted_ticks": 0
+    },
+    "simulation": {
+      "completed_ticks": 8192,
+      "total_us": 363343259,
+      "mean_us": 44353,
+      "max_us": 99465
+    },
+    "histogram": {
+      "simulation_p95_us": 65000,
+      "simulation_p99_us": 72000,
+      "journey_mean_us": 23584,
+      "journey_p95_us": 44000,
+      "journey_p99_us": 50000,
+      "journey_max_us": 72957
+    },
+    "inclusive_scopes": {
+      "waiting_us": 166729573,
+      "fallback_distance_us": 25145485,
+      "boarding_us": 20567472
+    },
+    "pending_age": {
+      "ticks": 1266
+    },
+    "fallback_cache": {
+      "hits": 114249,
+      "bytes": 16872236,
+      "work": 14957036928,
+      "searches": 314091
+    },
+    "database": {
+      "services": 837,
+      "timed": 506,
+      "vehicles": 2837,
+      "bytes": 8480752,
+      "policies_bytes": 917496,
+      "pending": 416,
+      "builds": 19555,
+      "work": 73098752,
+      "build_us": 292677,
+      "searches": 131072,
+      "query_us": 105454684,
+      "next_departures": 179819090,
+      "policy_hits": 0,
+      "policy_misses": 131072,
+      "invalidations": 39,
+      "rejected_work": 24,
+      "rejected_memory": 0
+    },
+    "global_invalidations": 27,
+    "residency": {
+      "entries": 0,
+      "revision": 1296,
+      "publications": 1296,
+      "staged": 0,
+      "staged_bytes": 0,
+      "additions": 837,
+      "removals": 0,
+      "updates": 9525,
+      "timetable_notifications": 52686
+    },
+    "cache_cost": {
+      "clears": 0,
+      "lost": 0,
+      "maximum_lost": 0,
+      "explicit": 0,
+      "reset": 0,
+      "global": 0,
+      "stale": 0,
+      "evictions": 0,
+      "rebuilds": 42165,
+      "compile_us": 48846078,
+      "validation_us": 0,
+      "eviction_us": 0
+    },
+    "publication_cost": {
+      "publication_us": 88678,
+      "wait_ticks": 4601484,
+      "wait_samples": 19299
+    },
+    "schedule_compilation": {
+      "compile_us": 58029470
+    },
+    "schedule": {
+      "packets": 45,
+      "passengers": 66,
+      "timed_deferred": 0,
+      "hits": 0,
+      "misses": 94417,
+      "bytes": 0,
+      "work": 1367508622,
+      "query_us": 58237416,
+      "stale": 40,
+      "expired": 0
+    },
+    "schedule_transport": {
+      "boarded": 8,
+      "transferred": 6,
+      "delivered": 0,
+      "expected_wait_person_ticks": 1785,
+      "actual_wait_person_ticks": 16,
+      "wait_people": 8
+    },
+    "eligibility": {
+      "declared_complete": 673,
+      "live_compiled_cycles": 512,
+      "published_lists": 771,
+      "published_cycles": 509,
+      "phase_known_lists": 506,
+      "denominator": 771
+    },
+    "active": {
+      "applied": 59380,
+      "builds": 0,
+      "static_hits": 0,
+      "searches": 131072,
+      "OD_hits": 148542,
+      "applied_packets": 59380,
+      "applied_passengers": 101513
+    },
+    "timed_transport": {
+      "boarded": 33511,
+      "transferred": 14456,
+      "delivered": 10001
+    },
+    "final_save_sha256": "665316aa3de1b998a8b0ef13548c74f4948adce8bc0a599fe617be777da3d078",
+    "derived": {
+      "timed_hit_percent": 0.0,
+      "schedule_hit_percent": 0.0,
+      "timed_query_ms_per_tick": 12.87288623046875,
+      "schedule_query_ms_per_tick": 7.1090595703125,
+      "database_build_ms_per_tick": 0.0357271728515625,
+      "timed_compile_ms_per_tick": 5.962656005859375,
+      "timed_forward_and_other_ms_per_tick": 6.910230224609375,
+      "shared_eviction_ms_per_tick": 0.0,
+      "shared_validation_ms_per_tick": 0.0,
+      "remaining_journey_ms_per_tick": 3.566327026367187
+    },
+    "stderr": {
+      "sha256": "6de4520793f117fef4aa984c28a929c2d5dce52f17f36b794dba6d6ca01aa494",
+      "bytes": 7841394
+    }
+  },
+  "compact": {
+    "process": {
+      "backend": "periodic",
+      "exit_code": 0,
+      "wall_seconds": 293.680448,
+      "cpu_seconds": 399.453125,
+      "peak_working_set": 2087849984,
+      "sampled_peak_private": 2084765696,
+      "input_save": "input.sav",
+      "resumed": false,
+      "requested_driver_loops": 8192,
+      "policy_cache_disabled": false,
+      "input_sha256": "14D68C82911B9DCFC5EF7291E9697C5BBD67F44FFCC79D7575A144405EDF6390",
+      "binary_sha256": "16C5188EA1C1AAB002145BB8628A3B5CFC262993BA47A6544C6E55FD0B4CE683",
+      "sample_ms": 100
+    },
+    "state_ticks": [
+      3176545487,
+      3176553679
+    ],
+    "graph": {
+      "complete": 0,
+      "eligible_services": 0,
+      "selected_services": 0,
+      "selected_trips": 0,
+      "largest_block_services": 0,
+      "admitted_visits": 0,
+      "max_unpredicted_ticks": 0
+    },
+    "simulation": {
+      "completed_ticks": 8192,
+      "total_us": 276660802,
+      "mean_us": 33772,
+      "max_us": 87944
+    },
+    "histogram": {
+      "simulation_p95_us": 49000,
+      "simulation_p99_us": 62000,
+      "journey_mean_us": 12861,
+      "journey_p95_us": 26000,
+      "journey_p99_us": 38000,
+      "journey_max_us": 63356
+    },
+    "inclusive_scopes": {
+      "waiting_us": 79543549,
+      "fallback_distance_us": 24526374,
+      "boarding_us": 19895433
+    },
+    "pending_age": {
+      "ticks": 1274
+    },
+    "fallback_cache": {
+      "hits": 114249,
+      "bytes": 16872236,
+      "work": 14957036928,
+      "searches": 314091
+    },
+    "database": {
+      "services": 837,
+      "timed": 506,
+      "vehicles": 2837,
+      "bytes": 8480752,
+      "policies_bytes": 16641752,
+      "pending": 416,
+      "builds": 19555,
+      "work": 73098752,
+      "build_us": 285967,
+      "searches": 131072,
+      "query_us": 68862775,
+      "next_departures": 179819090,
+      "policy_hits": 81165,
+      "policy_misses": 49907,
+      "invalidations": 39,
+      "rejected_work": 24,
+      "rejected_memory": 0
+    },
+    "global_invalidations": 27,
+    "residency": {
+      "entries": 2039,
+      "revision": 1296,
+      "publications": 1296,
+      "staged": 0,
+      "staged_bytes": 0,
+      "additions": 837,
+      "removals": 0,
+      "updates": 9525,
+      "timetable_notifications": 52686
+    },
+    "cache_cost": {
+      "clears": 0,
+      "lost": 0,
+      "maximum_lost": 0,
+      "explicit": 0,
+      "reset": 0,
+      "global": 0,
+      "stale": 10550,
+      "evictions": 56680,
+      "rebuilds": 7455,
+      "compile_us": 18307943,
+      "validation_us": 43684,
+      "eviction_us": 94996
+    },
+    "publication_cost": {
+      "publication_us": 86645,
+      "wait_ticks": 4601484,
+      "wait_samples": 19299
+    },
+    "schedule_compilation": {
+      "compile_us": 7625362
+    },
+    "schedule": {
+      "packets": 45,
+      "passengers": 66,
+      "timed_deferred": 0,
+      "hits": 75055,
+      "misses": 19362,
+      "bytes": 1025312,
+      "work": 1367508622,
+      "query_us": 7760863,
+      "stale": 40,
+      "expired": 0
+    },
+    "schedule_transport": {
+      "boarded": 8,
+      "transferred": 6,
+      "delivered": 0,
+      "expected_wait_person_ticks": 1785,
+      "actual_wait_person_ticks": 16,
+      "wait_people": 8
+    },
+    "eligibility": {
+      "declared_complete": 673,
+      "live_compiled_cycles": 512,
+      "published_lists": 771,
+      "published_cycles": 509,
+      "phase_known_lists": 506,
+      "denominator": 771
+    },
+    "active": {
+      "applied": 59380,
+      "builds": 0,
+      "static_hits": 0,
+      "searches": 131072,
+      "OD_hits": 148542,
+      "applied_packets": 59380,
+      "applied_passengers": 101513
+    },
+    "timed_transport": {
+      "boarded": 33511,
+      "transferred": 14456,
+      "delivered": 10001
+    },
+    "final_save_sha256": "665316aa3de1b998a8b0ef13548c74f4948adce8bc0a599fe617be777da3d078",
+    "derived": {
+      "timed_hit_percent": 61.923980712890625,
+      "schedule_hit_percent": 79.49309975957719,
+      "timed_query_ms_per_tick": 8.406100463867187,
+      "schedule_query_ms_per_tick": 0.9473709716796875,
+      "database_build_ms_per_tick": 0.0349080810546875,
+      "timed_compile_ms_per_tick": 2.2348563232421874,
+      "timed_forward_and_other_ms_per_tick": 6.171244140625,
+      "shared_eviction_ms_per_tick": 0.01159619140625,
+      "shared_validation_ms_per_tick": 0.00533251953125,
+      "remaining_journey_ms_per_tick": 3.4726204833984387
+    },
+    "stderr": {
+      "sha256": "6de4520793f117fef4aa984c28a929c2d5dce52f17f36b794dba6d6ca01aa494",
+      "bytes": 7841394
+    }
+  },
+  "baseline_clear_trace": {
+    "driver_ticks": 1530,
+    "includes_load": true,
+    "excluded_from_speed_comparison": true,
+    "reasons": {
+      "reset": {
+        "calls": 6,
+        "nonempty": 0,
+        "lost_timed": 0,
+        "lost_schedule": 0,
+        "maximum_lost": 0
+      },
+      "structure": {
+        "calls": 1769,
+        "nonempty": 640,
+        "lost_timed": 21041,
+        "lost_schedule": 12516,
+        "maximum_lost": 406
+      },
+      "global": {
+        "calls": 6,
+        "nonempty": 2,
+        "lost_timed": 170,
+        "lost_schedule": 81,
+        "maximum_lost": 128
+      },
+      "publication": {
+        "calls": 5612,
+        "nonempty": 145,
+        "lost_timed": 2316,
+        "lost_schedule": 1545,
+        "maximum_lost": 32
+      },
+      "timing": {
+        "calls": 547,
+        "nonempty": 3,
+        "lost_timed": 258,
+        "lost_schedule": 165,
+        "maximum_lost": 372
+      }
+    },
+    "stderr_sha256": "b2c153924b2a2303b811c44cb08f541e2de3ec849331eac65de18047e30e1763"
+  },
+  "mp_real": {
+    "joined_clients": 2,
+    "backend": "periodic",
+    "binary": "openttd-network-final.exe",
+    "input_save": "input.sav",
+    "fixture": false,
+    "detected_sync_failure": false,
+    "client_exit_codes": [
+      null,
+      null
+    ],
+    "server_state_ticks": [
+      "3176545487",
+      "3176547259"
+    ],
+    "single_core_clients": true,
+    "affinity": {
+      "client-initial": {
+        "mask": 1,
+        "applied": true
+      },
+      "client-late": {
+        "mask": 1,
+        "applied": true
+      }
+    },
+    "sync_frequency": 1,
+    "loopback_address": "127.0.0.1:17513",
+    "client_policy_cache_disabled": true,
+    "logs": {
+      "server": {
+        "sha256": "cb5a9ae9cc7e89b476c75f5cb96a3445bfd888c3a93f7217eee329d7eb9add87",
+        "bytes": 4630835,
+        "missed_sync_frames": 0
+      },
+      "client-initial": {
+        "sha256": "e128bcdc8598c47c11aa349fa5596fbb04490c4cf285dedd5dc12b65fd73f7a6",
+        "bytes": 2130042,
+        "missed_sync_frames": 0
+      },
+      "client-late": {
+        "sha256": "7285dd3fc2e1e153f4bc48316017c7530a3f4ecc63e5a01e294d075740488281",
+        "bytes": 815983,
+        "missed_sync_frames": 0
+      }
+    }
+  },
+  "mp_controlled": {
+    "joined_clients": 2,
+    "backend": "periodic",
+    "binary": "openttd-network-final.exe",
+    "input_save": "mp-clean.sav",
+    "fixture": true,
+    "detected_sync_failure": false,
+    "client_exit_codes": [
+      null,
+      null
+    ],
+    "server_state_ticks": [
+      "13639680",
+      "13641170"
+    ],
+    "single_core_clients": true,
+    "affinity": {
+      "client-initial": {
+        "mask": 1,
+        "applied": true
+      },
+      "client-late": {
+        "mask": 1,
+        "applied": true
+      }
+    },
+    "sync_frequency": 1,
+    "loopback_address": "127.0.0.1:17513",
+    "client_policy_cache_disabled": true,
+    "logs": {
+      "server": {
+        "sha256": "67e51189107ed1583f12f9f8caf52a208fb965a30d35a41549e47130ef22aa0d",
+        "bytes": 1692,
+        "missed_sync_frames": 0
+      },
+      "client-initial": {
+        "sha256": "bbc1553d319f25901eb1e7034628f1723f74b970e54135f721f4bfe152d516d1",
+        "bytes": 16057,
+        "missed_sync_frames": 296
+      },
+      "client-late": {
+        "sha256": "07d2aaac9bc09b55b004d1867e981e4ffd2372e07e4df6dd73082ecc5234afde",
+        "bytes": 556,
+        "missed_sync_frames": 0
+      }
+    }
+  }
+}
