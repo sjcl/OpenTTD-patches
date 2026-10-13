@@ -17,9 +17,12 @@
 #include "group.h"
 #include "sortlist_type.h"
 
+struct VehicleListIdentifier;
+
 void ShowCompanyGroup(CompanyID company, VehicleType veh, GroupID group = GroupID::Invalid());
 void ShowCompanyGroupForVehicle(const Vehicle *v);
 void DeleteGroupHighlightOfVehicle(const Vehicle *v);
+void GetGroupWindowSelectedGroups(std::vector<VehicleListIdentifier> &groups);
 
 struct GUIGroupListItem {
 	const Group *group;

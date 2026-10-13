@@ -1374,6 +1374,33 @@ public:
 	}
 };
 
+/**
+ * Get the groups which are selected in the open group windows.
+ * The vehicles of these groups are marked in the viewports.
+ * Selecting all vehicles is not included.
+ * @param[out] groups The selected groups.
+ */
+void GetGroupWindowSelectedGroups(std::vector<VehicleListIdentifier> &groups)
+{
+	groups.clear();
+	for (const Window *w : Window::Iterate()) {
+		switch (w->window_class) {
+			case WindowClass::TrainList:
+			case WindowClass::RoadVehicleList:
+			case WindowClass::ShipList:
+			case WindowClass::AircraftList:
+				break;
+
+			default:
+				continue;
+		}
+
+		const VehicleGroupWindow *gw = dynamic_cast<const VehicleGroupWindow *>(w);
+		if (gw == nullptr || IsAllGroupID(gw->vli.ToGroupID())) continue;
+		groups.push_back(gw->vli);
+	}
+}
+
 /** Window definitions for the vehicle group windows. */
 static WindowDesc _vehicle_group_desc[] = {
 	{
