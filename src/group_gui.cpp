@@ -1377,7 +1377,6 @@ public:
 /**
  * Get the groups which are selected in the open group windows.
  * The vehicles of these groups are marked in the viewports.
- * Selecting all vehicles is not included.
  * @param[out] groups The selected groups.
  */
 void GetGroupWindowSelectedGroups(std::vector<VehicleListIdentifier> &groups)
@@ -1396,8 +1395,7 @@ void GetGroupWindowSelectedGroups(std::vector<VehicleListIdentifier> &groups)
 		}
 
 		const VehicleGroupWindow *gw = dynamic_cast<const VehicleGroupWindow *>(w);
-		if (gw == nullptr || IsAllGroupID(gw->vli.ToGroupID())) continue;
-		groups.push_back(gw->vli);
+		if (gw != nullptr) groups.push_back(gw->vli);
 	}
 }
 

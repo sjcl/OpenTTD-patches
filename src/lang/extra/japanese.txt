@@ -2216,3 +2216,6 @@ STR_CHEAT_CLEAR_STATION_CARGO_QUERY                             :{YELLOW}全て�
 
 STR_LOCAL_AUTHORITY_AUTO_FUND_BUILDINGS_BUTTON                  :{BLACK}自動出資
 STR_LOCAL_AUTHORITY_AUTO_FUND_BUILDINGS_TOOLTIP                 :{BLACK}解除するまで、この街の市街地開発への出資を繰り返し行います{}出資の期間が終了するたびに、資金が足りていれば通常の費用で自動的に再び出資します
+
+STR_CONFIG_SETTING_SHOW_GROUP_VEHICLE_MARKERS                   :グループウィンドウで選択中のグループの輸送機器に目印を表示: {STRING2}
+STR_CONFIG_SETTING_SHOW_GROUP_VEHICLE_MARKERS_HELPTEXT          :有効にすると、グループウィンドウで選択しているグループに所属する輸送機器(サブグループを含む)の上に、ビューポート上でその輸送機器が所属するグループの色の目印を表示します。全車両を選択している場合は、その種類のすべての輸送機器に目印を表示します
