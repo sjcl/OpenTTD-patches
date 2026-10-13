@@ -1,0 +1,52 @@
+{
+  "joined_clients": 2,
+  "backend": "periodic",
+  "binary": "openttd-network.exe",
+  "input_save": "pruned-1-result.sav",
+  "fixture": false,
+  "detected_sync_failure": false,
+  "client_exit_codes": [
+    null,
+    null
+  ],
+  "server_state_ticks": [
+    "3176547535",
+    "3176548402"
+  ],
+  "single_core_clients": false,
+  "affinity": {
+    "client-initial": {
+      "mask": 0,
+      "applied": false
+    },
+    "client-late": {
+      "mask": 0,
+      "applied": false
+    }
+  },
+  "sync_frequency": 1,
+  "loopback_address": "127.0.0.1:17523",
+  "client_departure_index_disabled": true,
+  "client_policy_cache_disabled": true,
+  "client_fallback_cache_disabled": true,
+  "client_state_ticks": [
+    [
+      3176547535,
+      3176547721,
+      3176547904,
+      3176548241,
+      3176548402
+    ],
+    [
+      3176547858,
+      3176548030,
+      3176548266,
+      3176548402
+    ]
+  ],
+  "connected_clients_at_end": 2,
+  "max_lag_time": 32000,
+  "max_join_time": 32000,
+  "progress_observation_resolution_ticks": 128,
+  "unrestricted_clients": true
+}

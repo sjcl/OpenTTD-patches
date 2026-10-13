@@ -1,0 +1,6 @@
+dbg: [net:3] [server] Client #2 (127.0.0.1) joined as periodic-client-initial, pubkey: E07C27E7C2B5F6B9FD837EC9ED7331490D247FCA0EE3595B703F39282752E82C
+dbg: [net:1] 'periodic-client-initial' made an error and has been disconnected: general timeout
+dbg: [net:3] [server] Client #2 closed connection
+dbg: [net:3] [server] Client #3 (127.0.0.1) joined as periodic-client-late, pubkey: D432E9C843BEAE5E557483ACC19F1555DCEB6609DAADA7062A5EB75CCF92453B
+dbg: [net:1] 'periodic-client-late' made an error and has been disconnected: general timeout
+dbg: [net:3] [server] Client #3 closed connection
