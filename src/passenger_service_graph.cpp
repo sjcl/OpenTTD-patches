@@ -355,7 +355,7 @@ PassengerServiceGraph PassengerServiceGraph::Build(CargoType cargo, StateTicks n
 	graph.diagnostic.eligible_services = eligible.size();
 	if (scope && graph.status == PassengerPredictionStatus::Complete) {
 		stage = PassengerGraphStage::Structure;
-		selection = SelectPassengerServices(*scope, eligible, budget, limits.memory_bytes - resident_bound);
+		selection = SelectPassengerServices(cargo, *scope, eligible, budget, limits.memory_bytes - resident_bound);
 		graph.status = selection.status;
 		if (selection.status != PassengerPredictionStatus::Complete) fail(selection.status == PassengerPredictionStatus::BudgetExhausted ?
 				PassengerGraphFailure::Work : PassengerGraphFailure::Index, selection.status);
@@ -472,6 +472,7 @@ PassengerServiceGraph PassengerServiceGraph::Build(CargoType cargo, StateTicks n
 		graph.services.push_back(std::move(service));
 		Service &stored = graph.services.back();
 		for (const Stop &stop : stored.stops) {
+			if (!stop.can_board && !stop.can_alight) continue;
 			auto &ids = graph.station_services[stop.station];
 			if (ids.empty() || ids.back() != stored.id) ids.push_back(stored.id);
 		}
@@ -684,9 +685,10 @@ void PassengerServiceGraph::BuildDepartureIndex(bool departures, IndexObserver o
 	for (const auto &[station, services] : this->station_services) this->station_index.push_back({station});
 	std::vector<size_t> stop_offsets(this->services.size() + 1);
 	for (size_t s = 0; s < this->services.size(); ++s) stop_offsets[s + 1] = stop_offsets[s] + this->services[s].stops.size();
-	std::vector<size_t> stop_stations(stop_offsets.back());
+	std::vector<size_t> stop_stations(stop_offsets.back(), SIZE_MAX);
 	for (size_t s = 0; s < this->services.size(); ++s) {
 		for (size_t i = 0; i < this->services[s].stops.size(); ++i) {
+			if (!this->services[s].stops[i].can_board && !this->services[s].stops[i].can_alight) continue;
 			stop_stations[stop_offsets[s] + i] = this->FindStationIndex(this->services[s].stops[i].station) - this->station_index.data();
 		}
 	}
@@ -704,6 +706,10 @@ void PassengerServiceGraph::BuildDepartureIndex(bool departures, IndexObserver o
 			auto stop = std::lower_bound(stops.begin(), stops.end(), visit.order, [](const Stop &stop, VehicleOrderID id) { return stop.order < id; });
 			assert(stop != stops.end() && stop->order == visit.order);
 			const size_t station = stop_stations[stop_offsets[s] + (stop - stops.begin())];
+			/* Retain VisitIDs in each physical trip and the loading lookup, but
+			 * omit cargo-closed occurrences from passenger station tables. */
+			loading_count += visit.loading_now;
+			if (station == SIZE_MAX) { locations.push_back({UINT32_MAX, Kind::None}); continue; }
 			auto &index = this->station_index[station];
 			++index.visits.count;
 			Kind kind = Kind::None;
@@ -712,7 +718,6 @@ void PassengerServiceGraph::BuildDepartureIndex(bool departures, IndexObserver o
 				++(visit.departure ? index.timed : index.unknown).count;
 			}
 			locations.push_back({static_cast<uint32_t>(station), kind});
-			loading_count += visit.loading_now;
 		}
 	}
 	size_t timed_count = 0, unknown_count = 0, offset = 0;
@@ -721,12 +726,13 @@ void PassengerServiceGraph::BuildDepartureIndex(bool departures, IndexObserver o
 		index.timed.begin = timed_count; timed_count += index.timed.count;
 		index.unknown.begin = unknown_count; unknown_count += index.unknown.count;
 	}
-	this->station_visits.resize(visit_count);
+	this->station_visits.resize(offset);
 	std::vector<size_t> cursors(this->station_index.size());
 	size_t occurrence = 0;
 	for (size_t t = 0; t < this->trips.size(); ++t) {
 		for (size_t v = 0; v < this->trips[t].prediction.visits.size(); ++v) {
 			const size_t station = locations[occurrence++].station;
+			if (station == UINT32_MAX) continue;
 			this->station_visits[this->station_index[station].visits.begin + cursors[station]++] = {t, v};
 		}
 	}
@@ -737,6 +743,7 @@ void PassengerServiceGraph::BuildDepartureIndex(bool departures, IndexObserver o
 	if (observer != nullptr) observer(IndexStage::Departures, true);
 	for (size_t s = 0; s < this->services.size(); ++s) {
 		for (size_t i = stop_offsets[s]; i < stop_offsets[s + 1]; ++i) {
+			if (stop_stations[i] == SIZE_MAX) continue;
 			auto &index = this->station_index[stop_stations[i]];
 			index.status = MergeGraphStatus(index.status, this->services[s].coverage_status);
 		}
@@ -749,6 +756,7 @@ void PassengerServiceGraph::BuildDepartureIndex(bool departures, IndexObserver o
 	for (size_t t = 0; t < this->trips.size(); ++t) {
 		for (size_t v = 0; v < this->trips[t].prediction.visits.size(); ++v) {
 			const auto &location = locations[occurrence++];
+			if (location.station == UINT32_MAX) continue;
 			const auto &index = this->station_index[location.station];
 			if (location.kind == Kind::Timed) this->timed_departures[index.timed.begin + cursors[location.station]++] = {t, v};
 			if (location.kind == Kind::Unknown) this->unknown_departures[index.unknown.begin + unknown_cursors[location.station]++] = {t, v};
@@ -786,7 +794,7 @@ void PassengerServiceGraph::BuildDepartureIndex(bool departures, IndexObserver o
 	this->loading_visits.resize(unique);
 	if (observer != nullptr) observer(IndexStage::Loading, false);
 	if (observer != nullptr) observer(IndexStage::Components, true);
-	/* Union declared stops regardless of direction, load/unload rules or timing.
+	/* Union exchange stops regardless of direction or timing.
 	 * Array parents with path compression and rank retain the same overapproximation. */
 	std::vector<uint8_t> ranks(this->station_index.size());
 	for (size_t i = 0; i < this->station_index.size(); ++i) this->station_index[i].component = i;
@@ -801,9 +809,10 @@ void PassengerServiceGraph::BuildDepartureIndex(bool departures, IndexObserver o
 		return id;
 	};
 	for (size_t s = 0; s < this->services.size(); ++s) {
-		if (stop_offsets[s] == stop_offsets[s + 1]) continue;
-		const size_t anchor = stop_stations[stop_offsets[s]];
+		size_t anchor = SIZE_MAX;
 		for (size_t i = stop_offsets[s]; i < stop_offsets[s + 1]; ++i) {
+			if (stop_stations[i] == SIZE_MAX) continue;
+			if (anchor == SIZE_MAX) anchor = stop_stations[i];
 			size_t a = root(anchor), b = root(stop_stations[i]);
 			if (a == b) continue;
 			if (ranks[a] < ranks[b]) std::swap(a, b);

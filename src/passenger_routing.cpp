@@ -27,7 +27,19 @@
 /** Only actual station stops can carry or exchange passengers. */
 static bool IsPassengerStop(const Order &order)
 {
-	return order.IsType(OT_GOTO_STATION) && !(order.GetNonStopType() & ONSF_NO_STOP_AT_DESTINATION_STATION);
+	return IsPassengerStationStop(order);
+}
+
+PassengerDepotTraversal ClassifyPassengerDepot(const Order &order)
+{
+	/* Match VehicleEnterDepot and UpdateOrderDest: only a regular instruction
+	 * resumes the same order list, and a refit can discard passengers or fail. */
+	if (!order.IsType(OT_GOTO_DEPOT) || !order.GetDepotOrderType().Test(OrderDepotTypeFlag::PartOfOrders) ||
+			order.GetDepotOrderType().Test(OrderDepotTypeFlag::Breakdown) || order.IsRefit() ||
+			(order.GetDepotActionType() & (ODATFB_HALT | ODATFB_SELL))) return PassengerDepotTraversal::Blocked;
+	if (order.GetDepotOrderType().Test(OrderDepotTypeFlag::Service) ||
+			(order.GetDepotActionType() & (ODATFB_NEAREST_DEPOT | ODATFB_UNBUNCH))) return PassengerDepotTraversal::Untimed;
+	return PassengerDepotTraversal::Timed;
 }
 
 static bool ConsumePassengerWork(size_t &budget, size_t work = 1)
@@ -148,21 +160,26 @@ static PassengerJourney PredictPassengerJourneyImpl(const PassengerRouteState &s
 		 * The planner's operating model follows explicit instructions only. Real
 		 * deviations are validated at the next loading event, with signature invalidation. */
 		if (order.IsType(OT_IMPLICIT)) { index = (index + 1) % state.orders.size(); continue; }
-		/* Depot detours, refits and slot/counter operations are not predictable here. */
+		/* A depot is an operating event, never a passenger stop. Optional entry
+		 * and variable release times lose timing without losing the known suffix. */
 		if (order.IsRefit()) return uncertain(PassengerPredictionStop::Refit);
-		if (order.IsType(OT_GOTO_DEPOT) || order.IsSlotCounterOrder() || order.IsType(OT_DUMMY)) return uncertain();
+		const bool depot = order.IsType(OT_GOTO_DEPOT);
+		const auto depot_traversal = depot ? ClassifyPassengerDepot(order) : PassengerDepotTraversal::Blocked;
+		if ((depot && depot_traversal == PassengerDepotTraversal::Blocked) || order.IsSlotCounterOrder() || order.IsType(OT_DUMMY)) return uncertain();
+		if (depot_traversal == PassengerDepotTraversal::Untimed) unknown_timing();
 		if (order.IsType(OT_LABEL)) {
 			skip_travel = false;
 			index = (index + 1) % state.orders.size();
 			continue;
 		}
-		if (!order.IsType(OT_GOTO_STATION) && !order.IsType(OT_GOTO_WAYPOINT)) return uncertain();
+		if (!order.IsType(OT_GOTO_STATION) && !order.IsType(OT_GOTO_WAYPOINT) && !depot) return uncertain();
 		/* A removed/incompatible facility changes the actual path (the controller may skip
 		 * this order). Keep the certified prefix, but never invent the skipped leg's time. */
 		if (IsPassengerStop(order) && !state.usable_stops.empty() && !state.usable_stops[index]) return uncertain(PassengerPredictionStop::Facilities);
 
 		if (!skip_travel) {
-			const bool travel_known = order.IsTravelTimetabled() || (!assume_timetable && order.GetTravelTime() != 0);
+			const bool travel_known = depot_traversal != PassengerDepotTraversal::Untimed &&
+					(order.IsTravelTimetabled() || (!assume_timetable && order.GetTravelTime() != 0));
 			if (!travel_known) unknown_timing();
 			int64_t travel = order.GetTravelTime();
 			if (steps == 0) {
@@ -199,7 +216,7 @@ static PassengerJourney PredictPassengerJourneyImpl(const PassengerRouteState &s
 			have_previous_stop = true;
 		}
 		if (boarded && stop) {
-			if (order.GetDestination() == boarding.GetDestination()) return {};
+			if (order.GetDestination() == boarding.GetDestination() && order.GetCargoUnloadType(cargo) != OrderUnloadType::NoUnload) return {};
 			if (order.GetDestination() == target && order.GetCargoUnloadType(cargo) != OrderUnloadType::NoUnload) {
 				result.reachable = true;
 				if (timing_known) result.arrival = tick;
@@ -257,6 +274,14 @@ static PassengerJourney PredictPassengerJourneyImpl(const PassengerRouteState &s
 				tick = std::max(tick, slot);
 				lateness = 0;
 			}
+		} else if (depot) {
+			/* Even a zero depot wait needs an explicit flag. Unlike a passing
+			 * waypoint, an unset wait gives no certified depot departure. */
+			const bool wait_known = depot_traversal == PassengerDepotTraversal::Timed && order.IsWaitTimetabled();
+			if (!wait_known) unknown_timing();
+			if (state.scheduled_dispatch && order.IsScheduledDispatchOrder(true)) return uncertain(PassengerPredictionStop::Dispatch);
+			if (prefix_only && !timing_known) return uncertain(PassengerPredictionStop::Timing);
+			advance_leg(order.GetWaitTime(), wait_known);
 		} else if (order.IsType(OT_GOTO_WAYPOINT)) {
 			if (state.scheduled_dispatch && order.IsScheduledDispatchOrder(true)) return uncertain(PassengerPredictionStop::Dispatch);
 			if (order.GetWaitTime() > 0 && !order.IsWaitTimetabled()) unknown_timing();

@@ -80,7 +80,10 @@ PassengerPeriodicTimetable PassengerPeriodicTimetable::Compile(std::span<const O
 	for (size_t i = 0; i < orders.size(); ++i) {
 		const Order &order = orders[i];
 		if (order.IsType(OT_IMPLICIT) || order.IsType(OT_LABEL)) continue;
-		if ((!order.IsType(OT_GOTO_STATION) && !order.IsType(OT_GOTO_WAYPOINT)) || order.IsRefit() ||
+		const bool depot = order.IsType(OT_GOTO_DEPOT);
+		if (depot && order.IsScheduledDispatchOrder(true)) return {}; // No station occurrence can anchor this dispatch.
+		if ((depot ? ClassifyPassengerDepot(order) != PassengerDepotTraversal::Timed :
+				!order.IsType(OT_GOTO_STATION) && !order.IsType(OT_GOTO_WAYPOINT)) || order.IsRefit() ||
 				!order.IsTravelTimetabled()) return {};
 		if (first) { first_travel = order.GetTravelTime(); first = false; }
 		else if (!AddTicks(cursor, order.GetTravelTime())) return {};
@@ -99,7 +102,7 @@ PassengerPeriodicTimetable PassengerPeriodicTimetable::Compile(std::span<const O
 				if (order.GetCargoLoadType(cargo) != OrderLoadType::NoLoad && !(stop.forced & (uint64_t{1} << cargo))) stop.board |= uint64_t{1} << cargo;
 			}
 			result.stops.push_back(stop);
-		} else if (order.GetWaitTime() != 0) {
+		} else if (depot || order.GetWaitTime() != 0) {
 			if (!order.IsWaitTimetabled() || !AddTicks(cursor, order.GetWaitTime())) return {};
 		}
 		if (cursor > MAX_PERIOD) return {};
@@ -169,7 +172,11 @@ void PassengerServiceDatabase::Invalidate(OrderListID id)
 void PassengerServiceDatabase::Index(const PassengerPeriodicService &service)
 {
 	for (size_t i = 0; i < service.timetable.stops.size(); ++i) {
-		auto &row = this->stations[service.timetable.stops[i].station];
+		const auto &stop = service.timetable.stops[i];
+		/* Keep physical occurrences (including phase/dispatch anchors) in JPSD.
+		 * The shared index is a union over cargo; every query filters its own bit. */
+		if ((stop.board | stop.alight) == 0) continue;
+		auto &row = this->stations[stop.station];
 		row.insert({service.id, i});
 	}
 }
@@ -380,8 +387,8 @@ PassengerServiceDatabase::JourneyPolicy PassengerServiceDatabase::CompilePolicy(
 	}
 	if (!known_alighting) return policy;
 	/* Cheap connectivity over the station/service incidence index rejects isolated
-	 * timed components before the more expensive alternative-path queue. Ignoring
-	 * load restrictions here only broadens reachability; it cannot invent a route.
+	 * timed components before the more expensive alternative-path queue. Cargo
+	 * direction masks exclude operating-only events even from this overapproximation.
 	 * This is part of cold policy work and is replayed identically on cache hits. */
 	constexpr size_t FLOOD_BITS = sizeof(std::bitset<65536>) * 2;
 	if (256 + FLOOD_BITS + 4 * this->stations.size() <= limits.memory_bytes) {
@@ -393,9 +400,10 @@ PassengerServiceDatabase::JourneyPolicy PassengerServiceDatabase::CompilePolicy(
 			if (!spend()) return policy;
 			for (const auto &ref : this->stations.at(frontier[i])) {
 				if (!spend()) return policy;
+				const auto &service = this->services.at(ref.service);
+				if (!(service.timetable.stops[ref.stop].board & (uint64_t{1} << cargo))) continue;
 				if (visited_services.test(ref.service.base())) continue;
 				visited_services.set(ref.service.base());
-				const auto &service = this->services.at(ref.service);
 				bool timed = false;
 				for (const auto &vehicle : service.vehicles) {
 					if (!spend()) return policy;
@@ -404,6 +412,7 @@ PassengerServiceDatabase::JourneyPolicy PassengerServiceDatabase::CompilePolicy(
 				if (!timed) continue;
 				for (const auto &stop : service.timetable.stops) {
 					if (!spend()) return policy;
+					if (!(stop.alight & (uint64_t{1} << cargo))) continue;
 					if (stop.station == destination) { reached = true; break; }
 					if (visited_stations.test(stop.station.base())) continue;
 					visited_stations.set(stop.station.base()); frontier.push_back(stop.station);
@@ -447,6 +456,7 @@ PassengerServiceDatabase::JourneyPolicy PassengerServiceDatabase::CompilePolicy(
 				if (!spend()) break;
 				size_t stop_index = (ref.stop + step) % pattern.stops.size();
 				const auto &alight = pattern.stops[stop_index];
+				if (!(alight.alight & (uint64_t{1} << cargo))) continue;
 				bool cycle = alight.station == origin;
 				for (auto previous = current.rides.rbegin(); !cycle && previous != current.rides.rend(); ++previous) {
 					if (!spend()) break;
@@ -579,10 +589,27 @@ PassengerDatabaseDiagnostic PassengerServiceDatabase::GetDiagnostic() const
 	auto age = [&](StateTicks since) { return _state_ticks >= since ? uint64_t(_state_ticks.base()) - uint64_t(since.base()) : uint64_t{0}; };
 	for (const auto &[id, since] : this->dirty_since) d.maximum_pending_ticks = std::max(d.maximum_pending_ticks, age(since));
 	if (this->sweeping && d.pending > this->dirty.size()) d.maximum_pending_ticks = std::max(d.maximum_pending_ticks, age(this->sweeping_since));
+	uint64_t passenger_mask = 0;
+	for (CargoType cargo : EnumRange(NUM_CARGO)) if (IsCargoInClass(cargo, CargoClass::Passengers)) passenger_mask |= uint64_t{1} << cargo;
 	for (const auto &[id, service] : this->services) {
 		d.vehicles += service.vehicles.size();
 		d.known_phase_vehicles += std::count_if(service.vehicles.begin(), service.vehicles.end(), [](const auto &v) { return v.phase_known; });
 		d.timed_services += std::any_of(service.vehicles.begin(), service.vehicles.end(), [](const auto &v) { return v.phase_known; });
+		for (const auto &stop : service.timetable.stops) {
+			d.physical_passenger_occurrences += std::popcount(passenger_mask);
+			d.exchange_passenger_occurrences += std::popcount((stop.board | stop.alight) & passenger_mask);
+		}
+		if (const auto *list = OrderList::GetIfValid(id)) {
+			bool depot = false; auto traversal = PassengerDepotTraversal::Timed;
+			for (const auto &order : list->GetOrderVector()) if (order.IsType(OT_GOTO_DEPOT)) {
+				depot = true; traversal = std::min(traversal, ClassifyPassengerDepot(order));
+			}
+			if (depot) {
+				if (traversal == PassengerDepotTraversal::Blocked) ++d.depot_blocked;
+				else if (traversal == PassengerDepotTraversal::Timed && service.timetable.period != 0) ++d.depot_timed;
+				else ++d.depot_untimed;
+			}
+		}
 	}
 	return d;
 }
@@ -610,6 +637,10 @@ bool ValidatePassengerServiceRide(const PassengerJourneyExecution &ride, const V
 		VehicleOrderID index = static_cast<VehicleOrderID>((state->current_order + step) % count);
 		const Order &order = state->orders[index];
 		if (order.IsType(OT_IMPLICIT) || order.IsType(OT_LABEL)) continue;
+		if (order.IsType(OT_GOTO_DEPOT)) {
+			if (ClassifyPassengerDepot(order) == PassengerDepotTraversal::Blocked) return false;
+			continue;
+		}
 		if ((!order.IsType(OT_GOTO_STATION) && !order.IsType(OT_GOTO_WAYPOINT)) || order.IsRefit()) return false;
 		if (!order.IsType(OT_GOTO_STATION) || (order.GetNonStopType() & ONSF_NO_STOP_AT_DESTINATION_STATION)) continue;
 		if (!state->usable_stops[index]) return false;

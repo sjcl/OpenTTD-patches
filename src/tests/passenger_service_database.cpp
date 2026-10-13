@@ -12,6 +12,7 @@
 #include "../settings_type.h"
 #include "../date_func.h"
 #include "../order_func.h"
+#include "../order_cmd.h"
 #include "../vehicle_gui.h"
 #include "../landscape_cmd.h"
 #include "../command_func.h"
@@ -494,4 +495,197 @@ TEST_CASE("Timing publication epochs use floor division for negative state ticks
 	auto generation = db.Get(train->orders->index)->generation;
 	db.TimetableChanged(train->orders->index); db.Tick(); CHECK(db.Get(train->orders->index)->generation == generation);
 	_state_ticks = StateTicks{0}; db.Tick(); CHECK(db.Get(train->orders->index)->generation > generation);
+}
+
+TEST_CASE("Operating stops retain physical occurrences, dwell, phases and saved publication", "[passenger][periodic][operational][save][determinism]")
+{
+	Fixture f; _state_ticks = StateTicks{65536};
+	Order closed = Stop(B, 20, 30); closed.SetLoadType(OrderLoadType::NoLoad); closed.SetUnloadType(OrderUnloadType::NoUnload);
+	auto *train = f.Train({Stop(A, 100, 10), closed, Stop(D, 40, 10), closed});
+	auto &db = f.Build(); auto *service = db.Get(train->orders->index); REQUIRE(service);
+	REQUIRE(service->timetable.stops.size() == 4); CHECK(service->timetable.period == 260);
+	CHECK(service->timetable.stops[1].order == 1); CHECK(service->timetable.stops[3].order == 3);
+	CHECK(service->timetable.stops[1].board == 0); CHECK(service->timetable.stops[1].alight == 0);
+	GameRandomSeedChecker seed;
+	for (int64_t cycle : {int64_t{0}, int64_t{1}, int64_t{1000000}}) {
+		auto ready = _state_ticks + cycle * 260;
+		auto cold = db.Plan(PAX, A, D, ready), warm = db.Plan(PAX, A, D, ready);
+		REQUIRE(cold.ride); CHECK(cold.ride->departure == ready + 10); CHECK(cold.arrival == ready + 100);
+		CHECK(cold.ride == warm.ride); CHECK(cold.work == warm.work);
+		CHECK_FALSE(db.Plan(PAX, A, B, ready).ride); CHECK_FALSE(db.Plan(PAX, B, D, ready).ride);
+	}
+	PassengerServiceGraphLimits limits; limits.horizon = 1000;
+	auto graph = PassengerServiceGraph::Build(PAX, _state_ticks, limits, {}, nullptr, PassengerTimingPolicy::AssumeTimetable);
+	CHECK(graph.GetServicesAtStation(B).empty()); CHECK(graph.GetStationVisits(B).empty());
+	REQUIRE(graph.GetService(train->orders->index)->stops.size() == 4);
+	CHECK(graph.GetTrips()[0].prediction.visits[1].order == 1);
+	CHECK(graph.GetVisitStop({0, 1}).station == B);
+	PassengerJourneyPlanner planner(graph);
+	for (int64_t ready : {int64_t{0}, int64_t{11}, int64_t{270}}) {
+		auto old = planner.Plan(PAX, A, D, _state_ticks + ready); auto current = db.Plan(PAX, A, D, _state_ticks + ready);
+		REQUIRE(old.HasJourney()); REQUIRE(current.ride); CHECK(current.arrival == old.journeys.front().arrival);
+	}
+	auto generation = service->generation;
+	train->GetOrder(1)->SetWaitTime(50); db.TimetableChanged(train->orders->index);
+	auto wire = db.Save(); PassengerServiceDatabase joined; REQUIRE(joined.Load(wire)); joined.FinishLoad(true);
+	CHECK(joined.Save() == wire); CHECK(joined.Get(train->orders->index)->generation == generation);
+	_state_ticks += PassengerServiceDatabase::TIMETABLE_EPOCH; db.Tick(); joined.Tick();
+	CHECK(db.Save() == joined.Save()); CHECK(db.Get(train->orders->index)->timetable.period == 280);
+	auto updated = db.Plan(PAX, A, D, _state_ticks); REQUIRE(updated.ride);
+	CHECK(updated.arrival - updated.ride->departure == StateTicksDelta{110}); CHECK(seed.Check());
+	/* Removing passenger index entries must retain the physical loading lookup
+	 * used by the snapshot planner for passengers already onboard. */
+	train->LoadAt(1);
+	auto onboard_graph = PassengerServiceGraph::Build(PAX, _state_ticks, limits,
+			PassengerServiceScope{B, D, train->orders->index}, nullptr, PassengerTimingPolicy::AssumeTimetable);
+	CHECK(onboard_graph.GetStationVisits(B).empty());
+	auto visit = onboard_graph.FindOnboardVisit(train->index, B, 1); REQUIRE(visit);
+	CHECK(onboard_graph.GetVisitStop(*visit).order == 1);
+	PassengerJourneyPlanner onboard_planner(onboard_graph); auto onward = onboard_planner.PlanOnboard(PAX, *visit, D);
+	REQUIRE(onward.HasJourney()); CHECK(onward.journeys.front().arrival == _state_ticks + 90);
+	CHECK(onward.journeys.front().transfers == 0);
+}
+
+TEST_CASE("Cargo-specific operating stops cannot join passenger service components", "[passenger][periodic][operational][index]")
+{
+	Fixture f; constexpr CargoType OTHER{1};
+	AutoRestoreBackup classes{CargoSpec::Get(OTHER)->classes, CargoClasses{CargoClass::Passengers}};
+	AutoRestoreBackup distribution{_settings_game.linkgraph.distribution_per_cargo[OTHER], DistributionType::Asymmetric};
+	Order closed = Stop(B, 20, 30);
+	closed.SetLoadType(OrderLoadType::CargoTypeLoad); closed.SetLoadType(OrderLoadType::NoLoad, PAX);
+	closed.SetUnloadType(OrderUnloadType::CargoTypeUnload); closed.SetUnloadType(OrderUnloadType::NoUnload, PAX);
+	auto *first = f.Train({Stop(A), closed}); auto *second = f.Train({Stop(C), closed, Stop(D)});
+	for (auto *train : {first, second}) { auto *part = Vehicle::Create<PeriodicTrain>(train); part->cargo_type = OTHER; }
+	auto &db = f.Build(); CHECK_FALSE(db.Plan(PAX, A, D, _state_ticks).ride); REQUIRE(db.Plan(OTHER, A, D, _state_ticks).ride);
+	PassengerServiceGraphLimits limits; limits.horizon = 3000;
+	for (CargoType cargo : {PAX, OTHER, PAX}) {
+		auto graph = PassengerServiceGraph::Build(cargo, _state_ticks, limits, PassengerServiceScope{A, D}, nullptr, PassengerTimingPolicy::AssumeTimetable);
+		if (cargo == PAX) { CHECK(graph.GetServices().empty()); CHECK(graph.GetServicesAtStation(B).empty()); }
+		else { CHECK(graph.GetServices().size() == 2); CHECK(graph.GetServicesAtStation(B).size() == 2); }
+	}
+	/* Permission edits must invalidate a warm corridor even though neither the
+	 * destination stations nor the eligible fleet IDs changed. */
+	AutoRestoreBackup company{_current_company, OWNER_DEITY};
+	AutoRestoreBackup first_owner{first->owner, OWNER_DEITY}, second_owner{second->owner, OWNER_DEITY};
+	REQUIRE(Command<Commands::ModifyOrder>::Do({DoCommandFlag::Execute}, first->index, VehicleOrderID{1},
+			MOF_CARGO_TYPE_UNLOAD, static_cast<uint16_t>(OrderUnloadType::UnloadIfPossible), PAX, {}).Succeeded());
+	REQUIRE(Command<Commands::ModifyOrder>::Do({DoCommandFlag::Execute}, second->index, VehicleOrderID{1},
+			MOF_CARGO_TYPE_LOAD, static_cast<uint16_t>(OrderLoadType::LoadIfPossible), PAX, {}).Succeeded());
+	auto changed = PassengerServiceGraph::Build(PAX, _state_ticks, limits, PassengerServiceScope{A, D}, nullptr, PassengerTimingPolicy::AssumeTimetable);
+	CHECK(changed.GetServices().size() == 2); CHECK_FALSE(changed.GetDiagnostic().static_cache_hit);
+	PassengerJourneyPlanner planner(changed); REQUIRE(planner.Plan(PAX, A, D, _state_ticks).HasJourney());
+}
+
+TEST_CASE("Mixed passenger exchange stops keep directional permissions", "[passenger][periodic][operational]")
+{
+	Fixture f; Order board = Stop(A), alight = Stop(D), closed = Stop(C, 20, 30);
+	SECTION("Different operating station") {}
+	SECTION("Operating stop returns to the boarding StationID") { closed.SetDestination(A); }
+	board.SetUnloadType(OrderUnloadType::NoUnload); alight.SetLoadType(OrderLoadType::NoLoad);
+	closed.SetLoadType(OrderLoadType::NoLoad); closed.SetUnloadType(OrderUnloadType::NoUnload);
+	auto *train = f.Train({board, Stop(B), closed, alight}); auto &db = f.Build();
+	REQUIRE(db.Plan(PAX, A, D, NOW).ride); REQUIRE(db.Plan(PAX, B, D, NOW).ride);
+	CHECK_FALSE(db.Plan(PAX, B, A, NOW).ride); CHECK_FALSE(db.Plan(PAX, D, B, NOW).ride);
+	CHECK_FALSE(db.Plan(PAX, A, C, NOW).ride); CHECK_FALSE(db.Plan(PAX, C, D, NOW).ride);
+	PassengerServiceGraphLimits limits; limits.horizon = 2000;
+	auto graph = PassengerServiceGraph::Build(PAX, NOW, limits, {}, nullptr, PassengerTimingPolicy::AssumeTimetable);
+	PassengerJourneyPlanner planner(graph);
+	REQUIRE(planner.Plan(PAX, A, D, NOW).HasJourney()); CHECK_FALSE(planner.Plan(PAX, B, A, NOW).HasJourney());
+	CHECK_FALSE(planner.Plan(PAX, D, B, NOW).HasJourney()); CHECK(graph.GetServicesAtStation(C).empty());
+	PassengerRouteState state{train->orders->GetOrderVector(), {}, 0, 0, 0, true, false, 1};
+	auto prediction = PredictPassengerJourney(state, 0, D, PAX, NOW, true, PassengerTimingPolicy::AssumeTimetable);
+	CHECK(prediction.arrival == NOW + 270);
+	auto *packet = f.Packet(); PassengerOdFallbackContext fallback; CHECK(fallback.CanBoard(*packet, train, PAX));
+	auto ride = db.Plan(PAX, A, D, NOW).ride; REQUIRE(ride); CHECK(ValidatePassengerServiceRide(*ride, train, PAX, true));
+	train->LoadAt(2); train->current_order.SetLoadType(OrderLoadType::NoLoad); train->current_order.SetUnloadType(OrderUnloadType::NoUnload);
+	CHECK(ValidatePassengerServiceRide(*ride, train, PAX, false)); CHECK_FALSE(ValidatePassengerServiceRide(*ride, train, PAX, true));
+}
+
+TEST_CASE("Operating first stop remains a dispatch and phase anchor", "[passenger][periodic][operational][dispatch][save]")
+{
+	Fixture f; Order closed = Stop(B, 20, 30); closed.SetLoadType(OrderLoadType::NoLoad); closed.SetUnloadType(OrderUnloadType::NoUnload);
+	auto *train = f.Train({closed, Stop(A, 40, 0), Stop(D, 50, 0)});
+	train->vehicle_flags.Set(VehicleFlag::ScheduledDispatch);
+	train->orders->GetScheduledDispatchScheduleSet().emplace_back();
+	auto &schedule = train->orders->GetDispatchScheduleByIndex(0);
+	schedule.SetScheduledDispatchStartTick(NOW); schedule.SetScheduledDispatchDuration(300);
+	schedule.GetScheduledDispatchMutable().push_back({30, 0}); train->GetOrder(0)->SetDispatchScheduleIndex(0);
+	auto &db = f.Build(); auto *service = db.Get(train->orders->index); REQUIRE(service);
+	CHECK(service->dispatch_stop == 0); CHECK(service->timetable.stops[0].station == B);
+	for (int64_t cycle : {int64_t{0}, int64_t{1}, int64_t{1000}}) {
+		auto plan = db.Plan(PAX, A, D, NOW + 300 * cycle); REQUIRE(plan.ride);
+		CHECK(plan.ride->boarding_order == 1); CHECK(plan.ride->departure == NOW + 300 * cycle + 70); CHECK(plan.arrival == NOW + 300 * cycle + 120);
+	}
+	auto wire = db.Save(); PassengerServiceDatabase restored; REQUIRE(restored.Load(wire)); restored.FinishLoad(true);
+	CHECK(restored.Save() == wire); CHECK(restored.Plan(PAX, A, D, NOW).ride == db.Plan(PAX, A, D, NOW).ride);
+}
+
+TEST_CASE("Waypoint waits and reversals are operating events in periodic and snapshot cycles", "[passenger][periodic][operational][comparison]")
+{
+	Fixture f; Order waypoint; waypoint.MakeGoToWaypoint(C);
+	waypoint.SetWaypointFlags({OrderWaypointFlag::Reverse}); waypoint.SetTravelTime(20); waypoint.SetTravelTimetabled(true);
+	waypoint.SetWaitTime(30); waypoint.SetWaitTimetabled(true);
+	bool timed = true; int64_t dwell = 30;
+	SECTION("Declared dwell") {}
+	SECTION("Explicit zero dwell") { dwell = 0; waypoint.SetWaitTime(0); }
+	SECTION("Passing waypoint has no dwell instruction") { dwell = 0; waypoint.SetWaitTime(0); waypoint.SetWaitTimetabled(false); }
+	SECTION("Missing travel zero is unknown") { timed = false; waypoint.SetTravelTime(0); waypoint.SetTravelTimetabled(false); }
+	SECTION("Explicit travel zero") { waypoint.SetTravelTime(0); }
+	SECTION("Missing positive dwell is unknown") { timed = false; waypoint.SetWaitTimetabled(false); }
+	f.Train({Stop(A, 100, 10), waypoint, Stop(D, 40, 0)}); auto &db = f.Build();
+	auto plan = db.Plan(PAX, A, D, NOW); CHECK(plan.ride.has_value() == timed);
+	CHECK_FALSE(db.Plan(PAX, A, C, NOW).ride); CHECK_FALSE(db.Plan(PAX, C, D, NOW).ride);
+	PassengerServiceGraphLimits limits; limits.horizon = 2000;
+	auto graph = PassengerServiceGraph::Build(PAX, NOW, limits, {}, nullptr, PassengerTimingPolicy::AssumeTimetable);
+	CHECK(graph.GetServicesAtStation(C).empty()); CHECK(graph.GetServices()[0].reverse_waypoints.size() == 1);
+	if (timed) {
+		CHECK(plan.arrival == NOW + 10 + waypoint.GetTravelTime() + dwell + 40);
+		PassengerJourneyPlanner planner(graph); auto old = planner.Plan(PAX, A, D, NOW); REQUIRE(old.HasJourney()); CHECK(old.journeys.front().arrival == plan.arrival);
+	}
+}
+
+TEST_CASE("Depot traversal separates passenger continuity from timing certainty", "[passenger][periodic][operational][depot][active]")
+{
+	Fixture f; Order depot; depot.MakeGoToDepot(DepotID{0}, {OrderDepotTypeFlag::PartOfOrders});
+	depot.SetTravelTime(20); depot.SetTravelTimetabled(true); depot.SetWaitTime(30); depot.SetWaitTimetabled(true);
+	auto expected = PassengerDepotTraversal::Timed;
+	bool timed = true;
+	SECTION("Regular entry with declared dwell") {}
+	SECTION("Explicit zero travel and dwell") { depot.SetTravelTime(0); depot.SetWaitTime(0); }
+	SECTION("Missing travel") { timed = false; depot.SetTravelTime(0); depot.SetTravelTimetabled(false); }
+	SECTION("Missing dwell") { timed = false; depot.SetWaitTime(0); depot.SetWaitTimetabled(false); }
+	SECTION("Only when servicing is needed") { expected = PassengerDepotTraversal::Untimed; timed = false; depot.SetDepotOrderType({OrderDepotTypeFlag::PartOfOrders, OrderDepotTypeFlag::Service}); }
+	SECTION("Nearest depot") { expected = PassengerDepotTraversal::Untimed; timed = false; depot.SetDepotActionType(ODATFB_NEAREST_DEPOT); }
+	SECTION("Unbunching") { expected = PassengerDepotTraversal::Untimed; timed = false; depot.SetDepotActionType(ODATFB_UNBUNCH); }
+	SECTION("Halt") { expected = PassengerDepotTraversal::Blocked; timed = false; depot.SetDepotActionType(ODATFB_HALT); }
+	SECTION("Sell without halt bit") { expected = PassengerDepotTraversal::Blocked; timed = false; depot.SetDepotActionType(ODATFB_SELL); }
+	SECTION("Refit even to same cargo") { expected = PassengerDepotTraversal::Blocked; timed = false; depot.SetRefit(PAX); }
+	SECTION("Automatic depot instruction") { expected = PassengerDepotTraversal::Blocked; timed = false; depot.SetDepotOrderType({}); }
+	CHECK(ClassifyPassengerDepot(depot) == expected);
+	auto *train = f.Train({Stop(A, 100, 10), depot, Stop(B, 40, 5), Stop(D, 60, 0)}); auto &db = f.Build();
+	auto plan = db.Plan(PAX, A, D, NOW); CHECK(plan.ride.has_value() == timed);
+	auto *packet = f.Packet(); PassengerOdFallbackContext fallback;
+	const bool continuing = expected != PassengerDepotTraversal::Blocked;
+	CHECK(fallback.CanBoard(*packet, train, PAX) == continuing);
+	PassengerJourneyExecution ride; ride.kind = PassengerRideKind::ServiceIntent;
+	ride.service = train->orders->index; ride.signature = train->orders->GetCargoDistRouteGeneration();
+	ride.boarding = A; ride.alighting = D; ride.boarding_order = 0; ride.alighting_order = 3; ride.not_before = NOW;
+	CHECK(ValidatePassengerServiceRide(ride, train, PAX, true) == continuing);
+	PassengerRouteState state{train->orders->GetOrderVector(), {}, 0, 0, 0, true, false, 1};
+	auto predicted = PredictPassengerJourney(state, 0, D, PAX, NOW, true, PassengerTimingPolicy::AssumeTimetable);
+	CHECK(predicted.arrival.has_value() == timed);
+	if (timed) {
+		CHECK(plan.arrival == NOW + 10 + depot.GetTravelTime() + depot.GetWaitTime() + 40 + 5 + 60);
+		CHECK(predicted.arrival == plan.arrival);
+		PassengerServiceGraphLimits limits; limits.horizon = 2000;
+		auto graph = PassengerServiceGraph::Build(PAX, NOW, limits, {}, nullptr, PassengerTimingPolicy::AssumeTimetable);
+		CHECK(graph.GetService(train->orders->index)->stops.size() == 3);
+		PassengerJourneyPlanner planner(graph); auto old = planner.Plan(PAX, A, D, NOW); REQUIRE(old.HasJourney()); CHECK(old.journeys.front().arrival == plan.arrival);
+	} else if (continuing) { CHECK(predicted.reachable); CHECK_FALSE(predicted.arrival); }
+	if (continuing) {
+		train->GetOrder(2)->SetUnloadType(OrderUnloadType::Transfer);
+		auto *interchange = CargoPacket::Create(1, 0, A, TileIndex{0}, Money{0}); REQUIRE(interchange->SetPassengerDestination(PAX, B));
+		PassengerOdFallbackContext forced; CHECK(forced.CanBoard(*interchange, train, PAX)); CHECK_FALSE(forced.CanBoard(*packet, train, PAX));
+		CHECK_FALSE(ValidatePassengerServiceRide(ride, train, PAX, true));
+	}
 }

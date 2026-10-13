@@ -739,3 +739,37 @@ TEST_CASE("National mixed fleet shares snapshots and keeps graph query and cache
 			"; graph_us=" << build_us << "; query_us=" << query_us << "; graph_work=" << graph.GetWork() <<
 			"; query_work=" << result.diagnostic.work << "; scratch=" << result.diagnostic.scratch_bytes << "; envelope=" << graph.GetMemoryBound());
 }
+
+TEST_CASE("Every mode carries passengers through operating stops and continuing depots", "[passenger][operational][multimodal][active]")
+{
+	MultimodalFixture f;
+	VehicleType type = GENERATE(VehicleType::Train, VehicleType::Road, VehicleType::Ship, VehicleType::Aircraft);
+	bool periodic = GENERATE(false, true); bool optional_service = GENERATE(false, true);
+	_settings_game.linkgraph.passenger_journey_periodic = periodic;
+	Order closed = MultiStop(B, 20, 30); closed.SetLoadType(OrderLoadType::NoLoad); closed.SetUnloadType(OrderUnloadType::NoUnload);
+	Order depot; depot.MakeGoToDepot(DepotID{0}, {OrderDepotTypeFlag::PartOfOrders});
+	if (optional_service) depot.SetDepotOrderType({OrderDepotTypeFlag::PartOfOrders, OrderDepotTypeFlag::Service});
+	depot.SetTravelTime(20); depot.SetTravelTimetabled(true); depot.SetWaitTime(30); depot.SetWaitTimetabled(true);
+	Order final = MultiStop(E, 40, 0); final.SetUnloadType(OrderUnloadType::Transfer);
+	auto *vehicle = f.Service(type, {MultiStop(A, 10000, 10), closed, depot, final});
+	ResetPassengerServiceDatabase(); if (periodic) GetPassengerServiceDatabase().Tick();
+	auto *packet = f.Packet(25); PassengerJourneyActiveContext context(nullptr, A);
+	context.PlanWaiting(*packet, PAX, E);
+	CHECK((packet->GetPassengerRoutingMode() == PassengerRoutingMode::Journey) == !optional_service);
+	f.Waiting().Append(packet, E); std::array next{E}; PassengerJourneyLoadingContext loading;
+	REQUIRE(f.Waiting().Reserve(20, &vehicle->cargo, next, vehicle->tile, vehicle, &loading) == 20);
+	for (uint i = 0; i < 4; ++i) CHECK(f.Waiting().Load(5, &vehicle->cargo, next, vehicle->tile, vehicle, &loading) == 5);
+	CHECK(vehicle->cargo.StoredCount() == 20); CHECK(f.Waiting().AvailableCount() == 5); CHECK(f.Waiting().ReservedCount() == 0);
+	f.LoadAt(vehicle, 1); vehicle->current_order.SetLoadType(OrderLoadType::NoLoad); vehicle->current_order.SetUnloadType(OrderUnloadType::NoUnload);
+	BeginPassengerJourneyTick(); PassengerJourneyActiveContext operating(vehicle, B);
+	for (auto *onboard : *vehicle->cargo.Packets()) CHECK(operating.Decide(*onboard, PAX, true, OrderUnloadType::NoUnload) == Action::Keep);
+	Company *company = Company::Create(); Town *town = Town::Create(TileIndex{0});
+	vehicle->owner = company->index; Station::Get(E)->town = town; Station::Get(E)->always_accepted.Set(PAX);
+	f.LoadAt(vehicle, 3); vehicle->current_order.SetUnloadType(OrderUnloadType::Transfer);
+	CargoPayment payment(CargoPaymentID::Invalid(), vehicle); PassengerJourneyActiveContext arrived(vehicle, E);
+	vehicle->cargo.Stage(true, E, next, OrderUnloadType::Transfer, &Station::Get(E)->goods[PAX], PAX, &payment,
+			vehicle->tile, nullptr, nullptr, &arrived);
+	CHECK(vehicle->cargo.ActionCount(Action::Deliver) == 20);
+	CHECK(vehicle->cargo.Unload(20, &f.Waiting(E), PAX, &payment, vehicle->tile) == 20);
+	CHECK(company->cur_economy.delivered_cargo[PAX] == 20); CHECK(vehicle->cargo.TotalCount() == 0);
+}

@@ -58,7 +58,10 @@ struct LegacyPassengerIndex {
 		auto observe = [&](size_t stage, bool begin) { if (measure) ObserveIndexStage(stage, begin); };
 		observe(0, true);
 		for (size_t t = 0; t < graph.GetTrips().size(); ++t) {
-			for (size_t v = 0; v < graph.GetTrips()[t].prediction.visits.size(); ++v) visits[graph.GetVisitStop({t, v}).station].push_back({t, v});
+			for (size_t v = 0; v < graph.GetTrips()[t].prediction.visits.size(); ++v) {
+				const auto &stop = graph.GetVisitStop({t, v});
+				if (stop.can_board || stop.can_alight) visits[stop.station].push_back({t, v});
+			}
 		}
 		observe(0, false);
 		if (!enabled) return;
@@ -71,11 +74,13 @@ struct LegacyPassengerIndex {
 			return id;
 		};
 		for (const auto &service : graph.GetServices()) {
-			for (const auto &stop : service.stops) { roots.try_emplace(stop.station, stop.station); ranks.try_emplace(stop.station, 0); }
-			if (service.stops.empty()) continue;
-			StationID anchor = service.stops.front().station;
+			for (const auto &stop : service.stops) if (stop.can_board || stop.can_alight) { roots.try_emplace(stop.station, stop.station); ranks.try_emplace(stop.station, 0); }
+			auto first = std::find_if(service.stops.begin(), service.stops.end(), [](const auto &stop) { return stop.can_board || stop.can_alight; });
+			if (first == service.stops.end()) continue;
+			StationID anchor = first->station;
 			roots.try_emplace(anchor, anchor); ranks.try_emplace(anchor, 0);
 			for (const auto &stop : service.stops) {
+				if (!stop.can_board && !stop.can_alight) continue;
 				StationID a = root(anchor), b = root(stop.station);
 				if (a == b) continue;
 				if (ranks[a] < ranks[b]) std::swap(a, b);
@@ -100,10 +105,6 @@ struct LegacyPassengerIndex {
 			auto &index = departures[station];
 			for (VisitID id : ids) {
 				const auto &trip = graph.GetTrips()[id.trip];
-				if (!measure && trip.prediction.visits[id.visit].loading_now) {
-					auto [found, inserted] = loading.try_emplace(trip.vehicle, id);
-					if (!inserted) found->second.reset();
-				}
 				if (trip.operation != Graph::Operation::Running || !graph.GetVisitStop(id).can_board || trip.capacity == 0) continue;
 				(trip.prediction.visits[id.visit].departure ? index.timed : index.unknown).push_back(id);
 			}
@@ -114,9 +115,10 @@ struct LegacyPassengerIndex {
 		if (measure) for (auto &[station, index] : departures) sort(index);
 		observe(2, false);
 		observe(3, true);
-		if (measure) for (const auto &[station, ids] : visits) {
-			for (VisitID id : ids) {
-				const auto &trip = graph.GetTrips()[id.trip];
+		for (size_t t = 0; t < graph.GetTrips().size(); ++t) {
+			const auto &trip = graph.GetTrips()[t];
+			for (size_t v = 0; v < trip.prediction.visits.size(); ++v) {
+				VisitID id{t, v};
 				if (!trip.prediction.visits[id.visit].loading_now) continue;
 				auto [found, inserted] = loading.try_emplace(trip.vehicle, id);
 				if (!inserted) found->second.reset();

@@ -1,0 +1,132 @@
+{
+  "revision": "fix/passenger-journey-operational-stops",
+  "backend": "preserve",
+  "binary": "C:\\Users\\bebe\\.codex\\worktrees\\2ca2\\OpenTTD-patches\\build-operational\\run\\openttd-console.exe",
+  "started_at_utc": "2026-10-12T20:03:30.046407+00:00",
+  "binary_sha256": "5f8d44bc35a1ab0105ded789d23b859755106ed4419569c873a04ac9f1c99e7c",
+  "public_binary_sha256": "331b627e290ff5feb66fe006154e5d788f8ca6f61d29aa2527200578c0eed4e1",
+  "input_save_sha256": "5f7d68af78d613ddccb21ebd2c8ec7753c92165aeac9bb99192b952fbbcbbdc8",
+  "transfer_timetables": "preserve",
+  "loopback_address": "127.0.0.1:17493",
+  "sync_frequency": 1,
+  "late_join_delay_seconds": 12.0,
+  "late_join_observation_seconds": 90.0,
+  "ticks_before_late_join": [
+    "3176547014",
+    "3176547367"
+  ],
+  "client_exit_codes_at_checkpoint": [
+    null,
+    null
+  ],
+  "phase_completed": true,
+  "desync_reports": [],
+  "joined_clients": 2,
+  "detected_sync_failure": false,
+  "server_state_ticks": [
+    "3176547014",
+    "3176547367",
+    "3176549808"
+  ],
+  "affinity": {
+    "client-initial": {
+      "restricted": false
+    },
+    "client-late": {
+      "restricted": false
+    }
+  },
+  "single_core_clients": false,
+  "client_ack_frames": {
+    "client-initial": [
+      166,
+      242,
+      317,
+      393,
+      470,
+      548,
+      623,
+      698,
+      774,
+      850,
+      925,
+      1002,
+      1084,
+      1167,
+      1245,
+      1333,
+      1421,
+      1517,
+      1595,
+      1683,
+      1772,
+      1857,
+      1960,
+      2060,
+      2162,
+      2258,
+      2336,
+      2411,
+      2488,
+      2598,
+      2673,
+      2762,
+      2867,
+      2974,
+      3090,
+      3165
+    ],
+    "client-late": [
+      698,
+      773,
+      852,
+      932,
+      1007,
+      1088,
+      1167,
+      1244,
+      1320,
+      1400,
+      1481,
+      1560,
+      1636,
+      1717,
+      1797,
+      1874,
+      1953,
+      2031,
+      2109,
+      2196,
+      2273,
+      2354,
+      2440,
+      2517,
+      2595,
+      2672,
+      2754,
+      2829,
+      2911,
+      2997,
+      3074,
+      3149
+    ]
+  },
+  "connection_timeouts": [],
+  "connected_at_checkpoint": [
+    [
+      "1",
+      "release-server"
+    ],
+    [
+      "2",
+      "release-client-initial"
+    ],
+    [
+      "3",
+      "release-client-late"
+    ]
+  ],
+  "finished_at_utc": "2026-10-12T20:05:31.719947+00:00",
+  "verdict": "no sync failure observed in test interval",
+  "console_copy_change": "Only PE subsystem flag changed from GUI to console; executable code unchanged"
+}

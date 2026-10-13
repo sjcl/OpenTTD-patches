@@ -20,10 +20,31 @@ fleet/dispatch element bytes, including distinct station tree nodes and sentinel
 
 Compilation requires explicit travel flags and station dwell flags. An explicitly
 set zero is known; a missing flag remains unknown. Implicit stops and labels are
-skipped. Conditional, depot, refit and other unsupported control instructions leave
+skipped. Conditional, refit and other unsupported control instructions leave
 the service untimed. Full loading and leave-early controls use the declared dwell,
 without changing vehicle control. Zero-length cycles are rejected. Next departures
 use checked periodic arithmetic; no network-wide least common multiple is calculated.
+
+Physical station occurrences are retained even for NoLoad + NoUnload orders. Their
+travel/dwell contributes to the period, phase and dispatch anchor; their cargo masks
+exclude them from passenger connectivity and route alternatives. Boarding-only and
+alighting-only orders retain their respective direction. Snapshot Stop/Visit vectors
+also retain physical occurrences, while station visit, departure and component indexes
+contain only exchange occurrences for the queried cargo. Scoped service selection is
+cargo-specific. Loading occurrences remain available for onboard continuation.
+Revisiting the boarding StationID with NoUnload does not end the same physical ride.
+Actual order edits invalidate the derived service indexes even when only cargo
+permissions changed; timetable edits keep their existing coalesced publication.
+
+Regular depot orders with PartOfOrders, a fixed destination, no refit/stop/sell action
+and explicit travel/wait flags contribute to timed cycles without adding a passenger
+stop. Depot dispatch anchors remain untimed. Service-if-needed, nearest-depot and
+unbunching instructions permit live onward reachability but leave the cycle untimed;
+neither their possible detour nor release time is guessed. Halt, sell, refit and
+automatic/breakdown depot instructions cannot certify through rides. Periodic,
+snapshot and live fallback/execution checks share this classification. An unset depot
+wait (even zero) is unknown. A waypoint with no dwell instruction remains a passing
+event; a declared waypoint wait and travel are included, and it never exchanges cargo.
 
 Phases are captured from a verified explicit current order. Movement, cargo counts
 and ordinary lateness do not rebuild the database. An initially unknown phase can
@@ -136,5 +157,6 @@ networks are compared with the original snapshot planner. Production regressions
 old/current saves, settings, GUI/diagnostic save purity and Journey-disabled behavior.
 
 Performance and multiplayer evidence are recorded separately in
-`passenger-journey-periodic-2026-10-12.md`. Synthetic tests are not substituted for
+`passenger-journey-periodic-2026-10-12.md` and
+`passenger-journey-operational-stops-2026-10-13.md`. Synthetic tests are not substituted for
 real-map transport or live multiplayer measurements.

@@ -1,0 +1,44 @@
+{
+  "base_commit": "4bf419c4bf4dd4b0610b4ef403411c33013ace1f",
+  "base_instrumentation": "OPTION_PASSENGER_BENCHMARK=ON; fixture-only ClientPoolID comparison corrected to client_id; PE subsystem changed to console",
+  "comparison_run_order": [
+    "base",
+    "base2",
+    "after",
+    "after2"
+  ],
+  "earlier_runs": "Two intermediate after runs preceded base2; final after runs include the order-edit corridor invalidation hook",
+  "base_repeated_logical_equal": true,
+  "after_repeated_logical_equal": true,
+  "histogram_precision": "1 ms bucket upper bounds; two runs per binary, no confidence interval",
+  "runtime_source_sha256": {
+    "src/passenger_journey_active.cpp": "465eb57caee0f152266d9eac3600262686589940d06c606126f0a46c496dc8cb",
+    "src/passenger_journey_active.h": "9f036e6eff7ec6655ba92f420e942e728bb7288870abefa38545bf97b7468f75",
+    "src/passenger_journey_planner.cpp": "96326489917e3fb1435bbd63454461d338f48b50c50f817db116ef1e202ea849",
+    "src/passenger_journey_planner.h": "ad0050e565f521e0a1b95b713cb061ff2aba872bb897864d78bceb35382f7fe8",
+    "src/passenger_journey_shadow.cpp": "dba69fa80ef18363f456f8c8920476da2ec5734b3e3bde4cdf4ab09bb802fa0d",
+    "src/passenger_journey_shadow.h": "c3f885e90fea447da8539324e99fed6f1dc72f568872acf0142ac070476b35c9",
+    "src/passenger_journey_type.h": "1a96675c878ab3e8279c8adcc0e1e2ad78b6df04fd16a39ac5ba49525777567f",
+    "src/passenger_od.cpp": "e75e2940f6e8c487503b6872640c0f29ceb006a6c5718ce964201ef364cd8ee6",
+    "src/passenger_od.h": "375016da4001d8d5c6187faa70c092ec580159e9351d03e555a67ca7d4500898",
+    "src/passenger_routing.cpp": "105420c191b8ab44eaf435f24cae949d62e4f4602e34e2fcfc1237b30e0fe99d",
+    "src/passenger_routing.h": "6089e15f3840418fadc0026f5c1be6686ac2c83d7e7db6b6042d482a0fd0f140",
+    "src/passenger_service_database.cpp": "d1ac1d824f87350433d2561ac2c2d8ac2c3dc8f540ee9d2d34b2a6b8bb54d3a5",
+    "src/passenger_service_database.h": "1e78a0562b8364c08b14bed01aa581fe64036daf184ce05bdd998619bd962dad",
+    "src/passenger_service_graph.cpp": "29ca8e2b76dad08061991e8b4fdcc717f5027aa07b11af0859642f2c4d895b55",
+    "src/passenger_service_graph.h": "dcb3e19ec328028631802f88eeda5c567bbb8cccabe245129d5c0fd083d11a56",
+    "src/passenger_service_index.cpp": "12398c5b591734ed3f95c998f05db34cde3187ac421970cdd3e8f86b095eefeb",
+    "src/passenger_service_index.h": "e53158de8b2ac3302859573ff7f4695203451a2ab75d3336a1fbfe0d40ff772b",
+    "src/order_cmd.cpp": "cf6f3e0ec5689c269eaac3f79cef224af132babc49a060a15758a119ec890843"
+  },
+  "simulation": {
+    "base_mean_us": 36154.0,
+    "after_mean_us": 37504.0,
+    "increase_percent": 3.7340266637163166
+  },
+  "journey": {
+    "base_mean_us": 13007.5,
+    "after_mean_us": 13224.0,
+    "increase_percent": 1.6644243705554507
+  }
+}

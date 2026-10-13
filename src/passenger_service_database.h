@@ -22,7 +22,7 @@ struct PassengerPeriodicStop {
 /** Offsets cover exactly one circuit, including the travel back to the first order.
  * Missing flags, unsupported controls and zero-length circuits remain untimed. */
 struct PassengerPeriodicTimetable {
-	std::vector<PassengerPeriodicStop> stops;
+	std::vector<PassengerPeriodicStop> stops; ///< Physical station events; zero exchange masks stay for phases, dispatch and saved occurrence IDs.
 	int64_t period = 0;
 	static PassengerPeriodicTimetable Compile(std::span<const Order> orders);
 	static std::optional<StateTicks> NextDeparture(StateTicks base, int64_t offset, int64_t period, StateTicks ready);
@@ -65,6 +65,8 @@ struct PassengerDatabaseDiagnostic {
 	uint64_t searches = 0, query_microseconds = 0, next_departures = 0, policy_hits = 0, policy_misses = 0;
 	size_t services = 0, timed_services = 0, vehicles = 0, bytes = 0, policy_bytes = 0, pending = 0;
 	size_t known_phase_vehicles = 0;
+	size_t physical_passenger_occurrences = 0, exchange_passenger_occurrences = 0; ///< Per passenger cargo bit; observations only.
+	size_t depot_timed = 0, depot_untimed = 0, depot_blocked = 0; ///< Published lists containing depot orders, grouped by their most restrictive traversal.
 	uint64_t invalidations = 0, global_invalidations = 0, rejected_work = 0, rejected_memory = 0;
 	uint64_t maximum_pending_ticks = 0;
 };

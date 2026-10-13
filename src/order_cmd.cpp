@@ -441,6 +441,8 @@ void InvalidateVehicleOrder(const Vehicle *v, int data)
 static void InvalidatePassengerVehicleOrders(const Vehicle *v, int data)
 {
 	if (v->orders != nullptr) InvalidatePassengerServiceDatabase(v->orders->index);
+	/* Cargo exchange and non-stop edits also change the scoped passenger corridor. */
+	InvalidatePassengerServiceIndex();
 	InvalidateVehicleOrder(v, data);
 }
 

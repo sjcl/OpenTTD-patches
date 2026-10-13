@@ -12,6 +12,7 @@
 
 namespace {
 	struct ServiceIndex {
+		CargoType cargo;
 		std::vector<OrderListID> eligible;
 		size_t vertices = 0;
 		size_t allocation_bytes = 0;
@@ -26,9 +27,10 @@ namespace {
 	static uint64_t revision = 0;
 
 	/** O(orders + services) vertices/edges, no recursion even for national transfer chains. */
-	static ServiceIndex BuildIndex(std::span<const OrderListID> eligible)
+	static ServiceIndex BuildIndex(CargoType cargo, std::span<const OrderListID> eligible)
 	{
 		ServiceIndex result;
+		result.cargo = cargo;
 		result.eligible.assign(eligible.begin(), eligible.end());
 		std::vector<std::vector<size_t>> edges;
 		for (OrderListID id : eligible) {
@@ -39,7 +41,7 @@ namespace {
 			for (const Order &order : list->GetOrderVector()) {
 				/* Match the predictor: implicit orders record past, incidental stops.
 				 * They are skipped, and future incidental stops are not forecast. */
-				if (!order.IsType(OT_GOTO_STATION)) continue;
+				if (!HasPassengerExchange(order, cargo)) continue;
 				if (order.GetDestination().ToStationID() == StationID::Invalid()) continue;
 				auto [station, inserted] = result.stations.try_emplace(order.GetDestination().ToStationID(), edges.size());
 				if (inserted) edges.emplace_back();
@@ -158,7 +160,7 @@ namespace {
 void InvalidatePassengerGraphServiceIndex() { index.reset(); ++revision; }
 uint64_t PassengerGraphServiceIndexRevision() { return revision; }
 
-PassengerServiceSelection SelectPassengerServices(PassengerServiceScope scope, std::span<const OrderListID> eligible, size_t &work, size_t memory_bytes)
+PassengerServiceSelection SelectPassengerServices(CargoType cargo, PassengerServiceScope scope, std::span<const OrderListID> eligible, size_t &work, size_t memory_bytes)
 {
 	PassengerServiceSelection result;
 	/* Charge the same conservative linear preprocessing allowance on cold and warm calls.
@@ -182,12 +184,12 @@ PassengerServiceSelection SelectPassengerServices(PassengerServiceScope scope, s
 	}
 	work -= allowance;
 	if (scope.onboard_service != OrderListID::Invalid()) result.services.insert(scope.onboard_service);
-	result.cache_hit = index && std::equal(eligible.begin(), eligible.end(), index->eligible.begin(), index->eligible.end());
+	result.cache_hit = index && index->cargo == cargo && std::equal(eligible.begin(), eligible.end(), index->eligible.begin(), index->eligible.end());
 	if (result.cache_hit) result.reused_work = allowance - lists;
 	if (!result.cache_hit) {
 		/* Release the previous cargo/fleet view before allocating replacement scratch. */
 		index.reset();
-		index = BuildIndex(eligible);
+		index = BuildIndex(cargo, eligible);
 	}
 	result.allocation_bytes = index->allocation_bytes;
 	result.resident_bound = index->resident_bound;
