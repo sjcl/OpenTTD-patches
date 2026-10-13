@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "captured_utc": "2026-10-13T05:05:43.8228657Z",
+  "processes": [
+    {
+      "Name": "openttd.exe",
+      "ProcessId": 112532,
+      "CommandLine": "\"E:\\openttd-jgrpp-ya-0.73.3+2-62-ga58d47238-windows-win64\\openttd.exe\" "
+    }
+  ]
+}

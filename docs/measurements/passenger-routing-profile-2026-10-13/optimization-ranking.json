@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "status": "not_measured",
+  "results": [],
+  "notes": [
+    "NextDeparture call count alone does not establish CPU share.",
+    "Detail timers and counters perturb hot loops and never enter this ranking.",
+    "Database Tick includes publication time; publication_us is a child, not a disjoint ranked entry.",
+    "Fallback Distance and waiting/boarding scopes overlap the Journey parents and are not added as disjoint entries."
+  ]
+}

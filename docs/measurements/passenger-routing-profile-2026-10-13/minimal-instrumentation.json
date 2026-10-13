@@ -1,0 +1,12 @@
+{
+  "mode": "minimal",
+  "files": {
+    "console_cmds.cpp": {
+      "original": "3dfbe8c991441be5bd316ee62fe595dc567e5d1df4433826cc705fe2ba227903",
+      "copy": "6aede2a3a9236c095854fe6e80f08292516e823533be939af3e6c8b30f647138"
+    }
+  },
+  "source_revision": "a58d472382f85c63fe9114888d71d7d189c45572",
+  "source_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "instrumenter_sha256": "4ccd0c610f42dbeefd23fd1619ae2c07b4c943bb805b1c6161cf4b723eb6a06c"
+}
