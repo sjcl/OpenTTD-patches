@@ -30,6 +30,7 @@ add_test_files(
     strings_func.cpp
     test_bitset.cpp
     test_main.cpp
+    station_cargo_gui.cpp
     test_map.cpp
     test_network_crypto.cpp
     test_network_debug.cpp
