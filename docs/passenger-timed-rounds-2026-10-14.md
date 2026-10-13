@@ -12,6 +12,8 @@ Serviceは最初の影響Occurrenceから最大2周期弱を走査する。最�
 
 次発は既存DepartureIndex、NextDeparture、LoadingBaseの薄い公開ラッパー、認証済みDispatchスロットを使用する。車両の将来位置を展開せず、位相不明や未認証の操作から即時発車を作らない。探索後のServiceID・世代・Order・施設・容量・実乗降条件の検証は既存コードを使用する。
 
+乗車中にDispatch Occurrenceを越える場合、その到着後の最小dwellから認証済みの次スロットを求め、車内の待機時間を後続到着と費用に加える。Dispatch地点で降りる候補の到着は待機前の時刻を保つ。車内支配条件にも乗車数を明示し、後発でも乗換ペナルティが少ない経路をround間で残す回帰を持つ。
+
 乗換の次の乗車では直前Serviceを除外する。実際の `PlanWaiting()` と `CanBoard()` が同じincarnationへの再乗車を禁止するため、別Occurrenceや別共有車両への乗り直しも候補にしない。通し乗車は1つのService走査で残す。強制降車後に後続Occurrenceで同じServiceへ乗り直す経路を避け、実輸送へ接続する回帰で確認する。旧探索の参照経路にこの種類の接続があれば、実行条件が同じ参照として扱わない。
 
 StationのPareto比較は到着時刻・費用・乗車数・先頭Intent順位に加えて、直前Serviceと降車Occurrenceを保持する。待ち時間に追加の重みがある場合、異なる到着時刻を早着だけで支配しない。車内候補も先頭順位と残り継続区間を比較する。完成した目的地Labelは挿入時に保持し、Work終了後も親を辿って全経路と先頭Intentを返す。
@@ -57,7 +59,7 @@ Windowsの比較用ビルドだけで `GetThreadTimes` のkernel+user CPU差をO
 
 `openttd_test "[passenger]~[.benchmark]"` と `passenger_timed_rounds_production` を実行する。新規回帰は普通/特急、位相と頻度、直通と乗換、0/1/2/4/11乗換、異周期、共有Fleet、認証/競合Dispatch、循環・繰返しOccurrence、Cargo別禁止、強制降車、運用停車、Work/Label/Memory暫定採用、変更・保存・途中参加を含む。既存4モードの実乗車・3回乗換・最終配送回帰も両方式で実行する。
 
-`passenger_timed_compare 256` は同じ公開DBを3つの独立DBへ復元し、同じStateTicksで旧方式・新方式・大予算旧方式を比較する。通常65,536/8,192/8MiB、参照1,048,576/65,536/128MiB。待機Packetのreadyと直前Service除外も合わせ、最初の256個の異なる待機要求を使うため駅IDへの偏りがある。参照が延期、または連続するLegのServiceが同じなら、最適な実行可能参照とは呼ばない。結果・各Leg・処理件数をconsoleへ出す。実行は生産DB・Packet・RNG・simulationを変更しない。
+`passenger_timed_compare 256` は同じ公開DBを3つの独立DBへ復元し、同じStateTicksで旧方式・新方式・大予算旧方式を比較する。通常65,536/8,192/8MiB、参照1,048,576/65,536/128MiB。待機Packetのreadyと直前Service除外も合わせ、最初の256個の異なる待機要求を使うため駅IDへの偏りがある。参照が延期、連続するLegのServiceが同じ、またはLegの途中でDispatch地点を越えるなら、認証済みの実行可能参照とは呼ばない。旧方式の車内offsetはDispatch地点での次スロット待機を含まないため、この区間の参照は別途時刻を確認する必要がある。結果・各Leg・処理件数をconsoleへ出す。実行は生産DB・Packet・RNG・simulationを変更しない。
 
 `utils/passenger_timed_rounds_benchmark.py` は入力Save/資産を検証し、旧→新→新→旧を独立プロセスで同じ8,192 ticksに対して実行する。共有測定ロック、90秒のidle grace、5秒間隔の競合検出を使い、競合した測定は採用しない。言語ファイルは同じビルドのものを全条件で使用する。Workだけで優劣を判定せず、CPU、simulation分位点、実輸送、Fallback、メモリ、費用を報告する。
 

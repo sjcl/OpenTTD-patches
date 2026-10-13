@@ -309,6 +309,37 @@ TEST_CASE("Active waiting adopts timed rounds and validates existing physical ex
 	CHECK_FALSE(ValidatePassengerServiceRide(intent, v, PAX, true));
 }
 
+TEST_CASE("Timed round onboard profiles retain fewer-transfer later departures", "[passenger][rounds][evaluation]")
+{
+	Fixture f; constexpr StationID X{4}, Y{5};
+	f.Train({Stop(A, 90, 0), Stop(X, 10, 0)});
+	f.Train({Stop(X, 90, 10), Stop(Y, 10, 0)});
+	f.Train({Stop(Y, 80, 10), Stop(B, 10, 0)});
+	auto *later = f.Train({Stop(A, 10, 10), Stop(Y, 180, 0)});
+	f.Train({Stop(B, 10, 400), Stop(D, 10, 0)});
+	auto &db = f.Build(); PassengerJourneyEvaluation evaluation; evaluation.transfer_penalty = 50;
+	auto answer = db.PlanRounds(PAX, A, D, NOW, {}, evaluation);
+	REQUIRE(answer.plan.ride); CHECK(answer.plan.ride->service == later->orders->index);
+	CHECK(answer.plan.arrival == NOW + 410); CHECK(answer.plan.cost == 510); CHECK(answer.plan.transfers == 2);
+}
+
+TEST_CASE("Timed round wrapped rides retain certified dispatch holding time", "[passenger][rounds][dispatch][operational]")
+{
+	Fixture f; auto *train = f.Train({Stop(A, 20, 0), Stop(B, 20, 0), Stop(D, 20, 0)});
+	train->vehicle_flags.Set(VehicleFlag::ScheduledDispatch); train->GetOrder(0)->SetDispatchScheduleIndex(0);
+	train->orders->GetScheduledDispatchScheduleSet().emplace_back(); auto &schedule = train->orders->GetDispatchScheduleByIndex(0);
+	schedule.SetScheduledDispatchStartTick(NOW); schedule.SetScheduledDispatchDuration(200);
+	for (uint32_t offset : {10, 110}) schedule.GetScheduledDispatchMutable().push_back({offset, 0});
+	auto &db = f.Build(); REQUIRE(db.Get(train->orders->index)->dispatch_period == 200);
+	StateTicks ready = NOW + GENERATE(49, 51);
+	auto answer = db.PlanRounds(PAX, D, B, ready); REQUIRE(answer.plan.ride);
+	CHECK(answer.plan.transfers == 0); CHECK(answer.plan.ride->boarding_order == 2); CHECK(answer.plan.ride->alighting_order == 1);
+	CHECK(answer.plan.ride->departure == (ready == NOW + 49 ? NOW + 50 : NOW + 150));
+	CHECK(answer.plan.arrival == (ready == NOW + 49 ? NOW + 130 : NOW + 230));
+	PassengerServiceDatabase peer; REQUIRE(peer.Load(db.Save())); peer.FinishLoad(true); peer.SetDepartureIndexEnabled(false);
+	SameDeparturePlan(answer.plan, peer.PlanRounds(PAX, D, B, ready).plan);
+}
+
 TEST_CASE("Timed round selection is a saved synchronized game setting", "[passenger][rounds][save]")
 {
 	Fixture f;

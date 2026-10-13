@@ -327,6 +327,19 @@ PassengerTimedRoundResult PassengerTimedRounds::Plan(PassengerServiceDatabase &d
 			if (!spend(service.vehicles.size() + LogWork(service.vehicles.size()))) break;
 			const auto *phases = db.DepartureIndex(service, cargo);
 			onboard.clear();
+			auto dispatch_departure = [&](int64_t offset, int64_t earliest) {
+				std::optional<StateTicks> departure;
+				int64_t floor = service.dispatch_floor.base();
+				if (!Add(floor, offset)) { uncertain = true; observe(Reason::Evaluation); return departure; }
+				for (uint32_t slot : service.dispatch_slots) {
+					if (!spend()) break;
+					++db.diagnostic.departure_calculations;
+					auto time = PassengerPeriodicTimetable::NextDeparture(service.dispatch_base, int64_t(slot) + offset,
+						service.dispatch_period, StateTicks{std::max(earliest, floor)});
+					if (time && (!departure || *time < *departure)) departure = time;
+				}
+				return departure;
+			};
 			for (size_t occurrence = start; occurrence < start + 2 * count - 1 && !stopped; ++occurrence) {
 				if (!spend()) break;
 				++stats.occurrences;
@@ -359,6 +372,28 @@ PassengerTimedRoundResult PassengerTimedRounds::Plan(PassengerServiceDatabase &d
 					insert({stop.station, StateTicks{ride.time}, ride.cost, ride.parent, parent.rides + 1, leg, parent.rides == 0 ? leg : parent.first});
 				}
 				if (stop.forced & mask) onboard.clear();
+				if (stopped) break;
+				if (service.dispatch_period > 0 && stop_index == service.dispatch_stop) {
+					/* Arrival can precede the next certified slot. Alighting above
+					 * uses the actual arrival; through passengers retain the holding
+					 * time as a virtual arrival before the next adjacent segment. */
+					size_t retained = 0;
+					for (auto &ride : onboard) {
+						if (!spend()) break;
+						if (occurrence + 1 >= ride.expires || occurrence + 1 >= start + 2 * count - 1) continue;
+						++stats.departures;
+						int64_t earliest = ride.time;
+						if (!Add(earliest, stop.departure - stop.arrival)) { uncertain = true; observe(Reason::Evaluation); continue; }
+						auto departure = dispatch_departure(0, earliest);
+						if (stopped) break;
+						int64_t extra;
+						if (!departure || !Difference(departure->base(), earliest, extra) || !Add(ride.time, extra) || !Add(ride.cost, extra)) {
+							uncertain = true; observe(Reason::Evaluation); continue;
+						}
+						onboard[retained++] = ride;
+					}
+					onboard.resize(retained);
+				}
 				if (stopped) break;
 				/* Every physical boarding occurrence appears once; the second circuit
 				 * only carries passengers through the wrap, at most N-1 segments. */
@@ -410,14 +445,7 @@ PassengerTimedRoundResult PassengerTimedRounds::Plan(PassengerServiceDatabase &d
 							if (service.dispatch_period > 0) {
 								int64_t offset = stop.departure - pattern.stops[service.dispatch_stop].departure;
 								if (offset < 0) offset += pattern.period;
-								for (uint32_t slot : service.dispatch_slots) {
-									if (!spend()) break;
-									int64_t floor = service.dispatch_floor.base();
-									if (!Add(floor, offset)) { uncertain = true; continue; }
-									++db.diagnostic.departure_calculations;
-									consider(PassengerPeriodicTimetable::NextDeparture(service.dispatch_base, int64_t(slot) + offset,
-										service.dispatch_period, StateTicks{std::max(earliest, floor)}));
-								}
+								consider(dispatch_departure(offset, earliest));
 								if (stopped) break;
 								continue;
 							}
@@ -455,7 +483,7 @@ PassengerTimedRoundResult PassengerTimedRounds::Plan(PassengerServiceDatabase &d
 					auto onboard_dominates = [&](const Onboard &a, const Onboard &b) {
 						++stats.onboard_comparisons;
 						return (evaluation.waiting_weight == 0 ? a.time <= b.time : a.time == b.time) && a.cost <= b.cost &&
-							a.expires >= b.expires && FirstKey(a.first) <= FirstKey(b.first);
+							labels[a.parent].rides <= labels[b.parent].rides && a.expires >= b.expires && FirstKey(a.first) <= FirstKey(b.first);
 					};
 					bool dominated = false;
 					for (const auto &other : onboard) {

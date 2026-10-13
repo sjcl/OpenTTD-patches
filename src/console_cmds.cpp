@@ -4898,6 +4898,20 @@ static bool ConPassengerTimedCompare(std::span<std::string_view> argv)
 		auto high = reference.Plan(cargo, origin, destination, ready, larger, evaluation, excluded);
 		bool reference_executable = true;
 		for (size_t i = 1; i < high.route.size(); ++i) reference_executable &= high.route[i - 1].service != high.route[i].service;
+		/* The legacy ride offsets omit a dispatch hold when riding across its
+		 * dispatch occurrence. Exclude that reference unless separately checked. */
+		for (const auto &leg : high.route) {
+			const auto *service = reference.Get(leg.service);
+			if (service == nullptr || service->dispatch_period == 0) continue;
+			const auto &stops = service->timetable.stops;
+			auto board = std::find_if(stops.begin(), stops.end(), [&](const auto &stop) { return stop.order == leg.boarding_order; });
+			if (board == stops.end()) { reference_executable = false; continue; }
+			for (size_t step = 1; step < stops.size(); ++step) {
+				size_t index = (board - stops.begin() + step) % stops.size();
+				if (stops[index].order == leg.alighting_order) break;
+				if (index == service->dispatch_stop) { reference_executable = false; break; }
+			}
+		}
 		IConsolePrint(CC_DEFAULT, "Timed comparison input: ready={}; excluded={}; reference_executable={}", ready.base(), excluded, reference_executable);
 		IConsolePrint(CC_DEFAULT, "Timed comparison OD: cargo={}; origin={}; destination={}; tick={}; legacy_found={}; legacy_deferred={}; legacy_reason={}; legacy_cost={}; legacy_arrival={}; legacy_work={}; legacy_labels={}; legacy_us={}; round_outcome={}; round_cost={}; round_arrival={}; round_work={}; round_labels={}; round_us={}; reference_found={}; reference_deferred={}; reference_cost={}; reference_arrival={}",
 			cargo, origin, destination, _state_ticks.base(), old.ride.has_value(), old.deferred, to_underlying(old.reason), old.cost, old.arrival.base(), old.work, old.labels, old_us,
