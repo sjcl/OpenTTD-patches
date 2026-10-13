@@ -323,6 +323,19 @@ TEST_CASE("Timed round onboard profiles retain fewer-transfer later departures",
 	CHECK(answer.plan.arrival == NOW + 410); CHECK(answer.plan.cost == 510); CHECK(answer.plan.transfers == 2);
 }
 
+TEST_CASE("Timed round continuation partitions share the station-round label ceiling", "[passenger][rounds][limits]")
+{
+	Fixture f; f.Train({Stop(A), Stop(B)});
+	auto *faster = f.Train({Stop(A), Stop(B, 50)});
+	f.Train({Stop(B, 100, 70), Stop(D, 10, 0)});
+	auto &db = f.Build(); auto full = db.PlanRounds(PAX, A, D, NOW);
+	REQUIRE(full.plan.ride); CHECK(full.plan.ride->service == faster->orders->index); CHECK(full.plan.arrival == NOW + 80);
+	PassengerJourneyLimits limits; limits.labels_per_station = 1;
+	auto bounded = db.PlanRounds(PAX, A, D, NOW, limits);
+	REQUIRE(bounded.plan.ride); CHECK(bounded.plan.arrival == NOW + 260);
+	CHECK(bounded.plan.reason == PassengerPeriodicPlan::Reason::Labels); CHECK(bounded.outcome == PassengerTimedRoundOutcome::Provisional);
+}
+
 TEST_CASE("Timed round wrapped rides retain certified dispatch holding time", "[passenger][rounds][dispatch][operational]")
 {
 	Fixture f; auto *train = f.Train({Stop(A, 20, 0), Stop(B, 20, 0), Stop(D, 20, 0)});

@@ -171,7 +171,10 @@ PassengerTimedRoundResult PassengerTimedRounds::Plan(PassengerServiceDatabase &d
 	static_assert(sizeof(RoundLabel) < LABEL_BYTES / 2);
 	std::deque<RoundLabel> labels;
 	using Rows = std::map<StationID, std::vector<size_t>>;
-	Rows fronts, previous, next;
+	using FrontKey = std::tuple<StationID, OrderListID, VehicleOrderID>;
+	std::map<FrontKey, std::vector<size_t>> fronts;
+	std::map<std::pair<StationID, size_t>, size_t> round_counts;
+	Rows previous, next;
 	RoundBuffer<Onboard, 256> onboard;
 	RoundBuffer<VehicleID, 4> loading;
 	RoundBuffer<size_t, 8> ranked, dominated;
@@ -206,9 +209,13 @@ PassengerTimedRoundResult PassengerTimedRounds::Plan(PassengerServiceDatabase &d
 		++stats.label_attempts;
 		if (!spend()) return;
 		if (winner != SIZE_MAX && bound(candidate.station, candidate.cost) > labels[winner].cost) return;
-		auto row = fronts.find(candidate.station);
+		/* These continuation identities cannot dominate each other. Index them
+		 * separately, while preserving the shared Station x Round label ceiling. */
+		FrontKey key{candidate.station, candidate.leg.service, candidate.leg.alighting_order};
+		auto row = fronts.find(key);
 		dominated.clear();
-		size_t retained = 0;
+		auto count = round_counts.find({candidate.station, candidate.rides});
+		size_t retained = count == round_counts.end() ? 0 : count->second;
 		if (candidate.station != destination && row != fronts.end()) {
 			for (size_t id : row->second) {
 				if (!spend(2)) return;
@@ -217,7 +224,8 @@ PassengerTimedRoundResult PassengerTimedRounds::Plan(PassengerServiceDatabase &d
 				if (dominates(candidate, labels[id])) {
 					if (!reserve(dominated, dominated.size() + 1)) return;
 					dominated.push_back(id);
-				} else if (labels[id].rides == candidate.rides) ++retained;
+					if (labels[id].rides == candidate.rides) --retained;
+				}
 			}
 		}
 		if (labels.size() >= limits.labels || (candidate.station != destination && retained >= limits.labels_per_station)) { limit(Reason::Labels); return; }
@@ -225,7 +233,10 @@ PassengerTimedRoundResult PassengerTimedRounds::Plan(PassengerServiceDatabase &d
 		 * an admitted destination is usable even when the next operation stops. */
 		if (!spend(2) || !memory(LABEL_BYTES)) return;
 		/* Comparison work above prepays these flag mutations. */
-		for (size_t id : dominated) labels[id].active = false;
+		for (size_t id : dominated) {
+			labels[id].active = false;
+			--round_counts.at({labels[id].station, labels[id].rides});
+		}
 		size_t id = labels.size(); labels.push_back(std::move(candidate));
 		const auto &label = labels.back();
 		if (label.station == destination) {
@@ -233,7 +244,8 @@ PassengerTimedRoundResult PassengerTimedRounds::Plan(PassengerServiceDatabase &d
 			if (winner == SIZE_MAX || std::tuple(label.cost, label.time, label.rides, FirstKey(label.first)) <
 					std::tuple(labels[winner].cost, labels[winner].time, labels[winner].rides, FirstKey(labels[winner].first))) winner = id;
 		} else {
-			fronts[label.station].push_back(id); next[label.station].push_back(id);
+			fronts[key].push_back(id); next[label.station].push_back(id);
+			++round_counts[{label.station, label.rides}];
 		}
 	};
 	insert({origin, ready, 0, SIZE_MAX, 0, {}, {}});

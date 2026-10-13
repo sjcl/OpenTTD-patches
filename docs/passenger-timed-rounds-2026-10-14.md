@@ -18,6 +18,8 @@ Serviceは最初の影響Occurrenceから最大2周期弱を走査する。最�
 
 StationのPareto比較は到着時刻・費用・乗車数・先頭Intent順位に加えて、直前Serviceと降車Occurrenceを保持する。待ち時間に追加の重みがある場合、異なる到着時刻を早着だけで支配しない。車内候補も先頭順位と残り継続区間を比較する。完成した目的地Labelは挿入時に保持し、Work終了後も親を辿って全経路と先頭Intentを返す。
 
+Station frontierは `(StationID, 直前ServiceID, 降車Order Occurrence)` で分け、支配できない異なる継続状態の比較を省く。別のStation×Roundカウンターでactive Label数を管理し、索引を分けても元の駅ごとのLabel上限を緩めない。
+
 大きい予算では既存の逆向き緩和下界を再利用する。逆探索には全Workの1/4までを割り当て、実行可能な便時刻とは区別する。キャッシュキーは旧Timed=0、Schedule=1、round下界=2。下界のWork・冷状態のMemoryを再生するため、cache有無と途中参加で探索結果を変えない。
 
 広いroundは目的地下界・費用・時刻・先頭Intent順位による128 Labelの幅制限を使う。これは近似であり、省略が発生すると最良性を証明しない。固定の最初の数roundで終了せず、疎な経路は最大乗換数または資源制限まで進む。影響Serviceは目的地に降車できるServiceを優先し、その後に下界とServiceIDで走査する。Queueを全国のServiceから作らない。
@@ -45,7 +47,7 @@ StationのPareto比較は到着時刻・費用・乗車数・先頭Intent順位�
 - Frontier/Serviceのsort、filter、入力に比例するコピーを課金する。
 - Label格納の追加1単位で後の親経路復元を前払いし、完成候補を次のWork停止で失わない。
 
-基本4KiB、Labelごと1KiB、Queueノード128 bytesを保守的に見積もる。Labelの見積もりにはdequeのblock/map、3つの疎なStation map、ID vectorの余剰、返す経路を含む。車内候補・rank・発車除外などのvector capacityは追加課金する。逆探索の冷状態scratchと下界storageも計上する。Label/Memory制限による省略を明示する。Optional DBキャッシュの物理常駐容量と検索の論理メモリは別である。
+基本4KiB、Labelごと1KiB、Queueノード128 bytesを保守的に見積もる。Labelの見積もりにはdequeのblock/map、継続状態frontier、Station×Roundカウンター、2つの疎なStation frontier、ID vectorの余剰、返す経路を含む。車内候補・rank・発車除外などのvector capacityは追加課金する。逆探索の冷状態scratchと下界storageも計上する。Label/Memory制限による省略を明示する。Optional DBキャッシュの物理常駐容量と検索の論理メモリは別である。
 
 追加vectorも固定envelope（車内候補256、Service行64、Label ID 8、車両/Service ID 4 bytes）と明示的な論理capacityで課金する。ポインタ幅・STLのreserve実装・物理的な再利用でMemory停止や経路が変わらない。
 
