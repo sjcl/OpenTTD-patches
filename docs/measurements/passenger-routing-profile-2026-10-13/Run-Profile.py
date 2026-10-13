@@ -1,0 +1,243 @@
+"""Freeze assets, then replay the archived residency harness serially (Windows).
+
+Build/test before running this command. Each invocation has a cross-process lock
+and refuses competing builds, tests or OpenTTD processes before each game launch.
+"""
+import argparse
+import datetime
+import hashlib
+import json
+import os
+import pathlib
+import platform
+import shutil
+import subprocess
+import tempfile
+import time
+
+HERE = pathlib.Path(__file__).resolve().parent
+ROOT = HERE.parents[2]
+HARNESS = HERE.parent / "passenger-periodic-policy-residency-2026-10-13/Measure-Residency.ps1"
+INPUT_SHA256 = "14d68c82911b9dcfc5ef7291e9697c5bbd67f44ffcc79d7575a144405edf6390"
+ASSET_DIRS = ("baseset", "newgrf", "content_download", "ai", "game", "lang")
+
+
+def sha256(path):
+    with pathlib.Path(path).open("rb") as stream:
+        return hashlib.file_digest(stream, "sha256").hexdigest()
+
+
+def dump(path, data):
+    pathlib.Path(path).write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+
+
+def inventory(package):
+    return [{"path": p.relative_to(package).as_posix(), "bytes": p.stat().st_size, "sha256": sha256(p)}
+            for directory in ASSET_DIRS if (package / directory).exists()
+            for p in sorted((package / directory).rglob("*")) if p.is_file()]
+
+
+def freeze(args):
+    if args.package.exists():
+        raise ValueError("Package already exists; use the frozen package or choose a new path")
+    if sha256(args.save) != INPUT_SHA256 and not args.allow_different_input:
+        raise ValueError("Save does not match the archived real-map SHA-256")
+    args.package.mkdir(parents=True)
+    shutil.copy2(args.save, args.package / "input.sav")
+    shutil.copy2(args.config, args.package / "openttd.cfg")
+    for name in ASSET_DIRS:
+        original = args.assets / name
+        if original.exists():
+            shutil.copytree(original, args.package / name)
+    # Generated base sprites and language files from this exact source/build.
+    if args.build:
+        for name in ("baseset", "lang"):
+            if (args.build / name).exists():
+                shutil.copytree(args.build / name, args.package / name, dirs_exist_ok=True)
+    files = inventory(args.package)
+    dump(args.package / "package.json", {
+        "schema_version": 1, "input_sha256": sha256(args.package / "input.sav"),
+        "config_sha256": sha256(args.package / "openttd.cfg"), "assets": files,
+        "asset_manifest_sha256": hashlib.sha256(json.dumps(files, sort_keys=True).encode()).hexdigest(),
+        "asset_source": str(args.assets.resolve()),
+        "historical_assets_exact_match": None,
+        "historical_assets_note": "Archived run-resident asset junctions are dangling; current available assets frozen. Load warnings must be retained.",
+    })
+
+
+def powershell(script):
+    return subprocess.check_output(["powershell.exe", "-NoProfile", "-NonInteractive", "-Command", script],
+                                   encoding="utf-8", errors="replace")
+
+
+def competing_processes():
+    # Sandboxed process enumeration can silently expose only a few processes.
+    # A census must be visible before calling a run uncontaminated.
+    text = powershell("$taskProcesses = @(Get-CimInstance Win32_Process -ErrorAction Stop); "
+                      "if ($taskProcesses.Count -lt 10) { throw 'Host process census unavailable; run outside the restricted sandbox' }; "
+                      "$taskProcesses | Where-Object { $_.Name -match '^(openttd.*|cmake|MSBuild|ninja|cl|ctest|vstest.*|clang.*|gcc|g\\+\\+)\\.exe$' -and $_.CommandLine -notmatch '/nodemode:' } | "
+                      "ForEach-Object { [IO.Path]::GetFileNameWithoutExtension($_.Name) + ':' + $_.ProcessId }")
+    return [line.strip() for line in text.splitlines() if line.strip()]
+
+
+def compiler_info(build):
+    cache = (build / "CMakeCache.txt").read_text(encoding="utf-8")
+    keys = ("CMAKE_GENERATOR", "CMAKE_GENERATOR_PLATFORM", "CMAKE_MSVC_RUNTIME_LIBRARY", "CMAKE_C_FLAGS", "CMAKE_C_FLAGS_RELEASE", "CMAKE_CXX_FLAGS", "CMAKE_CXX_FLAGS_RELEASE", "CMAKE_INTERPROCEDURAL_OPTIMIZATION", "OPTION_USE_ASSERTS", "OPTION_NO_LTO", "OPTION_PASSENGER_BENCHMARK", "CMAKE_PREFIX_PATH")
+    values = {}
+    for line in cache.splitlines():
+        if ":" in line and "=" in line:
+            key, tail = line.split(":", 1)
+            if key in keys:
+                values[key] = tail.split("=", 1)[1]
+    compiler_files = list((build / "CMakeFiles").glob("*/CMakeCXXCompiler.cmake"))
+    if compiler_files:
+        import re
+        text = compiler_files[0].read_text(encoding="utf-8")
+        values.update(dict(re.findall(r'set\((CMAKE_CXX_COMPILER(?:_ID|_VERSION)?) "([^"]*)"\)', text)))
+    libraries = sorted(set(line.split("=", 1)[1] for line in cache.splitlines()
+                           if ":FILEPATH=" in line and line.endswith(".lib")))
+    values["library_sha256"] = {pathlib.Path(p).name: sha256(p) for p in libraries if pathlib.Path(p).is_file()}
+    return values
+
+
+def hardlink_or_copy(source, target):
+    try:
+        os.link(source, target)
+    except OSError:
+        shutil.copy2(source, target)
+
+
+def abort_own_game(pid_file, directory, parent_pid):
+    """Stop only the benchmark executable launched in this new run directory."""
+    if not pid_file.exists():
+        return
+    pid = int(pid_file.read_text(encoding='utf-8-sig').strip())
+    binary = os.path.abspath(directory / 'openttd.exe').replace("'", "''")
+    powershell(f"$taskGame = Get-CimInstance Win32_Process -Filter 'ProcessId={pid}'; "
+               f"if ($taskGame -and $taskGame.ExecutablePath -eq '{binary}' -and $taskGame.ParentProcessId -eq {parent_pid}) {{ Stop-Process -Id {pid} -Force -ErrorAction Stop }}")
+
+
+def run(args):
+    package = json.loads((args.package / "package.json").read_text(encoding="utf-8"))
+    if package["input_sha256"] != sha256(args.package / "input.sav") or package["config_sha256"] != sha256(args.package / "openttd.cfg"):
+        raise ValueError("Frozen save/config changed")
+    if inventory(args.package) != package["assets"]:
+        raise ValueError("Frozen assets changed")
+    instrumentation_path = args.binary.with_suffix('.instrumentation.json')
+    if not instrumentation_path.exists():
+        instrumentation_path = args.build / "journey-profile/instrumentation.json"
+    instrumentation = json.loads(instrumentation_path.read_text(encoding="utf-8"))
+    if instrumentation["mode"] != args.kind:
+        raise ValueError("Binary instrumentation mode does not match requested kind")
+    if instrumentation.get("source_revision") and instrumentation["source_revision"] != args.revision:
+        raise ValueError("Revision does not match instrumentation build metadata")
+    args.output.mkdir(parents=True, exist_ok=True)
+    if any(c.isspace() for c in os.path.abspath(args.output)):
+        raise ValueError('Archived console harness requires an output directory without whitespace')
+    manifest_path = args.output / "manifest.json"
+    if manifest_path.exists():
+        raise ValueError("Output already contains a manifest; choose a new directory")
+    manifest = {"schema_version": 1, "label": args.label, "revision": args.revision,
+                "kind": args.kind, "ticks": args.ticks, "phase": args.phase,
+                "package": package, "compiler": compiler_info(args.build),
+                "binary_sha256": sha256(args.binary), "instrumentation": instrumentation,
+                "harness_sha256": sha256(HARNESS), "runner_sha256": sha256(__file__),
+                "host": {"platform": platform.platform(), "machine": platform.machine(),
+                         "cpu": powershell("Get-CimInstance Win32_Processor | ForEach-Object { $_.Name }").strip()},
+                "settings": {"source": "input_save_preserved" if args.resume_settings else "archived_harness_reapplied",
+                             "distribution_pax": 2, "passenger_od_assignment": True,
+                             "passenger_journey_periodic": True, "recalc_interval": 8, "recalc_time": 32},
+                "cache_off_scope": "Timed and Schedule shared OD policies; fallback/Trip caches retain product behavior",
+                "runs": [], "status": "running"}
+    dump(manifest_path, manifest)
+    lock_path = pathlib.Path(tempfile.gettempdir()) / "openttd-passenger-routing-measurement.lock"
+    lock = os.open(lock_path, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+    try:
+        os.write(lock, json.dumps({"pid": os.getpid(), "output": str(args.output.resolve())}).encode())
+        # Rotate order on the second repetition to expose drift without overlap.
+        for repetition in range(args.repetitions):
+            modes = args.modes if repetition % 2 == 0 else list(reversed(args.modes))
+            for mode in modes:
+                busy = competing_processes()
+                if busy:
+                    raise RuntimeError("Measurement blocked by competing processes: " + ", ".join(busy))
+                label = f"{mode}-{repetition + 1}"
+                directory = args.output / label
+                directory.mkdir()
+                for name in ASSET_DIRS:
+                    if (args.package / name).exists():
+                        shutil.copytree(args.package / name, directory / name, copy_function=hardlink_or_copy)
+                shutil.copy2(args.package / "input.sav", directory / "input.sav")
+                shutil.copy2(args.package / "openttd.cfg", directory / "openttd.cfg")
+                shutil.copy2(args.binary, directory / "openttd.exe")
+                started = datetime.datetime.now(datetime.timezone.utc).isoformat()
+                command = ["powershell.exe", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File", str(HARNESS),
+                           "-RunDirectory", str(directory.resolve()), "-Binary", "openttd.exe", "-Label", label,
+                           "-Backend", "off" if mode == "off" else "periodic", "-Ticks", str(args.ticks)]
+                if mode == "cold":
+                    command.append("-DisablePolicies")
+                if args.resume_settings:
+                    command.append("-Resume")
+                print(f"{args.label}: {label} ({args.kind}, {args.ticks} driver loops)", flush=True)
+                with (directory / "harness-output.txt").open("w", encoding="utf-8") as output:
+                    process = subprocess.Popen(command, stdout=output, stderr=subprocess.STDOUT)
+                    # Fail, rather than accept timings, if a competing build/game starts later.
+                    contamination = []
+                    while process.poll() is None:
+                        time.sleep(5)
+                        pid_file = directory / f"{label}.pid"
+                        expected = "openttd:" + pid_file.read_text(encoding="utf-8-sig").strip() if pid_file.exists() else None
+                        busy = [p for p in competing_processes() if p.lower() != expected]
+                        if busy:
+                            contamination.append({"utc": datetime.datetime.now(datetime.timezone.utc).isoformat(), "processes": busy})
+                            abort_own_game(pid_file, directory, process.pid)
+                    returncode = process.returncode
+                result = directory / f"{label}-result.sav"
+                record = {"id": label, "mode": mode, "repetition": repetition + 1, "directory": label,
+                          "started_utc": started, "returncode": returncode, "contamination": contamination,
+                          "final_save_sha256": sha256(result) if result.exists() else None}
+                manifest["runs"].append(record)
+                dump(manifest_path, manifest)
+                if returncode or contamination:
+                    raise RuntimeError(f"Invalid run {label}; see manifest and harness-output.txt")
+        if inventory(args.package) != package["assets"]:
+            raise RuntimeError("Frozen assets changed during measurement")
+        manifest["status"] = "complete"
+        dump(manifest_path, manifest)
+    except Exception as error:
+        manifest["status"] = "failed"
+        manifest["error"] = str(error)
+        dump(manifest_path, manifest)
+        raise
+    finally:
+        os.close(lock)
+        lock_path.unlink()
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description=__doc__)
+    commands = parser.add_subparsers(dest="command", required=True)
+    freeze_parser = commands.add_parser("freeze", help="Copy and hash input/config/assets once")
+    freeze_parser.add_argument("--package", type=pathlib.Path, required=True)
+    freeze_parser.add_argument("--save", type=pathlib.Path, required=True)
+    freeze_parser.add_argument("--config", type=pathlib.Path, required=True)
+    freeze_parser.add_argument("--assets", type=pathlib.Path, required=True)
+    freeze_parser.add_argument("--build", type=pathlib.Path)
+    freeze_parser.add_argument("--allow-different-input", action="store_true")
+    run_parser = commands.add_parser("run", help="Replay all modes without simultaneous games/builds/tests")
+    for name in ("package", "binary", "build", "output"):
+        run_parser.add_argument("--" + name, type=pathlib.Path, required=True)
+    run_parser.add_argument("--label", required=True)
+    run_parser.add_argument("--revision", required=True)
+    run_parser.add_argument("--kind", choices=["minimal", "detail"], default="minimal")
+    run_parser.add_argument("--phase", default="initial_8192")
+    run_parser.add_argument("--ticks", type=int, default=8192)
+    run_parser.add_argument("--repetitions", type=int, default=2)
+    run_parser.add_argument("--resume-settings", action="store_true", help="Preserve a known periodic-on checkpoint's settings; on/cold modes only")
+    run_parser.add_argument("--modes", choices=["off", "on", "cold"], nargs="+", default=["off", "on", "cold"])
+    args = parser.parse_args()
+    if args.command == "run" and (args.ticks <= 0 or args.repetitions <= 0):
+        parser.error("ticks and repetitions must be positive")
+    if args.command == 'run' and args.resume_settings and 'off' in args.modes:
+        parser.error('resume-settings requires an already configured periodic-on checkpoint and on/cold modes')
+    freeze(args) if args.command == "freeze" else run(args)

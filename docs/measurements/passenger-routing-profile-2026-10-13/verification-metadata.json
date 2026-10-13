@@ -1,0 +1,83 @@
+{
+  "schema_version": 1,
+  "base_commit": "a58d472382f85c63fe9114888d71d7d189c45572",
+  "branch": "test/passenger-routing-profile",
+  "captured_utc": "2026-10-13T13:58:42.058521+09:00",
+  "measurement_status": "blocked_by_other_game",
+  "completed_real_map_runs": 0,
+  "requested_ticks": 8192,
+  "requested_repetitions": 2,
+  "requested_modes": [
+    "off",
+    "on",
+    "cold"
+  ],
+  "input_sha256": "14d68c82911b9dcfc5ef7291e9697c5bbd67f44ffcc79d7575a144405edf6390",
+  "input_source": "C:/Users/bebe/CLionProjects/OpenTTD-patches/build-real-map-journey-20261012/verified-result.sav",
+  "documented_map_dimensions": [
+    16384,
+    4096
+  ],
+  "documented_main_interval": [
+    3176545487,
+    3176553679
+  ],
+  "new_run_map_dimensions_verified": false,
+  "requested_save_newgrfs_all_available": null,
+  "historical_assets_exact_match": null,
+  "historical_asset_junctions_available": false,
+  "asset_files": 247,
+  "asset_bytes": 693832662,
+  "asset_manifest_sha256": "b2b2322c16887cc25cd9d3d7e8cb85eebc366fd2721094d47baab6d40817827a",
+  "config_sha256": "bb9f97ff8504cbb287ef0976add7a33cb27440f5ecd9ccf4febf0aa4746fa122",
+  "compiler": {
+    "CMAKE_CXX_FLAGS": "/DWIN32 /D_WINDOWS /GR /EHsc",
+    "CMAKE_CXX_FLAGS_RELEASE": "/O2 /Ob2 /DNDEBUG",
+    "CMAKE_C_FLAGS": "/DWIN32 /D_WINDOWS",
+    "CMAKE_C_FLAGS_RELEASE": "/O2 /Ob2 /DNDEBUG",
+    "CMAKE_MSVC_RUNTIME_LIBRARY": "MultiThreaded",
+    "CMAKE_PREFIX_PATH": "C:/Users/bebe/CLionProjects/OpenTTD-patches/cmake-build-release-visual-studio/vcpkg_installed/x64-windows-static",
+    "OPTION_NO_LTO": "ON",
+    "OPTION_PASSENGER_BENCHMARK": "ON",
+    "OPTION_USE_ASSERTS": "ON",
+    "CMAKE_GENERATOR": "Visual Studio 17 2022",
+    "CMAKE_GENERATOR_PLATFORM": "x64",
+    "CMAKE_CXX_COMPILER": "C:/Program Files (x86)/Microsoft Visual Studio/2022/BuildTools/VC/Tools/MSVC/14.44.35207/bin/Hostx64/x64/cl.exe",
+    "CMAKE_CXX_COMPILER_ID": "MSVC",
+    "CMAKE_CXX_COMPILER_VERSION": "19.44.35227.0",
+    "library_sha256": {
+      "libpng16.lib": "2b3e07b20b3a1c48e8d7c0a299c700721dd82c1499269e019a6cd8459774ec3d",
+      "lzma.lib": "14a38a5ef1d68e67c80e96faba4d7bf5d2cde00de7257bdb396d4801e7160c6b",
+      "lzo2.lib": "851b503360b8747a20344cf9fac72b9a9d4067894220d32ed25465616b94515e",
+      "ogg.lib": "027feab8bec33c3cd0e9f286d630c3ccfa0d39d74005c723913a4061c73b5b67",
+      "opus.lib": "7670e882d03cd26214da63a7d0d8de5ba9ae7c5a6b91a2bcba7b350c4bc4a6e8",
+      "opusfile.lib": "472c9c7a425ba4d30c918d272cb7535c685c3b4d88736c9b8888b67be0e97a5a",
+      "zlib.lib": "0d3ce92e180e325c2eaa1f0c39dde62fb4153ebfbec078d740590fd12f0be3f9",
+      "zstd.lib": "9ca9d4b5df6591751b4ccb35dcea0d771601c89aa9528a7a2af430b0e71586ac"
+    }
+  },
+  "binary_sha256": {
+    "minimal": "b86128344220bc33b5f9ac2a3a0246246ae72e5b5ca0df534f266691b5b98ac9",
+    "detail": "33f88a6cd2623f398992b74780a2a15d30fff166c59bf9f80b02098fcb63c1a1"
+  },
+  "product_source_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "passenger_tests": {
+    "cases": 321,
+    "assertions": 977976,
+    "observer_enabled": true,
+    "log_sha256": "b31cf48436ab0f394304f59f92fb167a0aeae95a2f865064d6a63ba02796e32d",
+    "raw_log_sha256": "a697e678bc2a7df20a8aab6ef0fde4256a5b3a9f1b4f6680df90452a01edd6f7",
+    "archival_normalization": "Trailing empty lines removed; test output lines unchanged"
+  },
+  "python_tests": {
+    "passed": 11
+  },
+  "baseline": null,
+  "cache_invariance": null,
+  "optimization_ranking": null,
+  "historical_reference": {
+    "simulation_mean_ms": 33.772,
+    "valid_as_current_baseline": false,
+    "source": "../passenger-periodic-policy-residency-2026-10-13/summary.json"
+  }
+}

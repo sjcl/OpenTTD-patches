@@ -1,0 +1,32 @@
+{
+  "mode": "detail",
+  "files": {
+    "console_cmds.cpp": {
+      "original": "3dfbe8c991441be5bd316ee62fe595dc567e5d1df4433826cc705fe2ba227903",
+      "copy": "eb476aecefc7c455a3416af063815cb2203a1504d7fcde4dc591261a477dec4d"
+    },
+    "passenger_service_database.cpp": {
+      "original": "ebfcfca5ab3ba9f746f4e3212b5026fd8ec81b9071d54d820560c5234845094b",
+      "copy": "58a91ece058274f786e9aff95e0a671549ed3dfabfdeb5666cf53f52626bc0fd"
+    },
+    "passenger_journey_active.cpp": {
+      "original": "98527ffe62aa97674320b37cc034c9728f08348250cc001ceb212eac575526a9",
+      "copy": "06865e5d67a6c351125a211d0521725050a1592b7d74231130bc156a120440bc"
+    },
+    "cargopacket.cpp": {
+      "original": "b2b8812dde1b49aa611375e9e3f2e4131fcfe11ff9075ed28b5b070ca20a26f1",
+      "copy": "bff41df8c627df8da8b1d7f8933c46f6e84366e2c61b35e501053dcd8484baf0"
+    },
+    "passenger_journey_schedule.cpp": {
+      "original": "61859394288bed6e633cc12cc57906ccacc9a5ee52495aecbc4f31787329ed09",
+      "copy": "b9134e5ef261b10d5a442d34b2db1c5a1712b53d0c4d0afb9c6efe733446c1e8"
+    },
+    "passenger_routing.cpp": {
+      "original": "98c9bac82c91a2f7b64e2bdfeae789e7b72cc8cc87afc8382a5957a511facace",
+      "copy": "46c8ff6d9f6aaddd8a90d7ea725c22809b54ef46b9e611522352de2af5b80dea"
+    }
+  },
+  "source_revision": "a58d472382f85c63fe9114888d71d7d189c45572",
+  "source_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "instrumenter_sha256": "e42687ec6fa7a416a09af25874a718fd087870dfa8b07c6f71b82e9e184d3513"
+}
