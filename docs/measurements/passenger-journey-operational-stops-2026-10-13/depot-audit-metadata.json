@@ -1,0 +1,13 @@
+{
+  "prior_commit": "957ebfdc75132e1ac215f4431450aaa64c5d8dec",
+  "build": "MSVC Release, asserts ON, OPTION_PASSENGER_BENCHMARK OFF",
+  "input_save": "after-result.sav",
+  "input_sha256": "5f7d68af78d613ddccb21ebd2c8ec7753c92165aeac9bb99192b952fbbcbbdc8",
+  "console_binary_sha256": "b88e27e09e6211c56d7280ebd658f0064ad61d774c667af14f1211122c357d1c",
+  "source_sha256": "b1f35449443e3ec7440bd34b618b407ae59bf31f8cc3a38df08fcc78e3a13d87",
+  "console_sha256": "f9bccd885aea0bb929825ba0365163c59d52599a08485b5cadb8db104b2880e6",
+  "state_ticks": 3176547014,
+  "progressed": false,
+  "saved": false,
+  "scope": "Read-only depot orders and live cycle compilation; no depot-specific transport measurement"
+}

@@ -27,6 +27,23 @@ namespace {
 		value += delta;
 		return true;
 	}
+
+	/** The depot controller advances the order on entry unless a wait is declared.
+	 * Its departure/acceleration belongs to the next order's recorded travel. */
+	std::optional<int64_t> TimetableEventWait(const Order &order, PassengerPeriodicTimetable::Failure *failure = nullptr)
+	{
+		using Failure = PassengerPeriodicTimetable::Failure;
+		auto fail = [&](Failure why) { if (failure != nullptr) *failure = why; return std::optional<int64_t>{}; };
+		const bool depot = order.IsType(OT_GOTO_DEPOT);
+		if (depot && order.IsScheduledDispatchOrder(true)) return fail(Failure::Control);
+		if (order.IsRefit()) return fail(Failure::Refit);
+		if (depot ? ClassifyPassengerDepot(order) != PassengerDepotTraversal::Timed :
+				!order.IsType(OT_GOTO_STATION) && !order.IsType(OT_GOTO_WAYPOINT)) return fail(Failure::Control);
+		if (!order.IsTravelTimetabled()) return fail(Failure::Travel);
+		if (depot) return order.GetTimetabledWait();
+		if ((IsPassengerStationStop(order) || order.GetWaitTime() != 0) && !order.IsWaitTimetabled()) return fail(Failure::Wait);
+		return order.GetWaitTime();
+	}
 	size_t ServiceBytes(const PassengerPeriodicService &s)
 	{
 		/* Include vector slack, station map/set nodes and each set's sentinel even
@@ -52,7 +69,8 @@ namespace {
 			first = false;
 			if (i == table.stops.front().order) origin = offset;
 			if (i == v->cur_real_order_index) arrival = offset;
-			if (!AddTicks(offset, order.GetWaitTime())) return {};
+			auto wait = TimetableEventWait(order);
+			if (!wait || !AddTicks(offset, *wait)) return {};
 		}
 		int64_t elapsed = loading ? std::min<uint32_t>(v->current_order_time, current->GetWaitTime()) : v->current_order_time;
 		int64_t delta = arrival - origin + elapsed - (loading ? 0 : current->GetTravelTime());
@@ -71,16 +89,41 @@ void ObservePassengerPeriodicVehicle(const Vehicle *vehicle)
 	const auto *service = database.Get(vehicle->orders->index);
 	if (service == nullptr) return;
 	auto phase = std::find_if(service->vehicles.begin(), service->vehicles.end(), [&](const auto &v) { return v.id == vehicle->index; });
-	if (phase == service->vehicles.end()) return;
+	if (phase == service->vehicles.end() && service->timetable.period != 0) return;
 	std::array<uint64_t, NUM_CARGO> capacity{};
+	bool passengers = false;
 	size_t parts = 4096;
 	for (const Vehicle *part = vehicle; part != nullptr; part = part->Next()) {
 		if (parts-- == 0) return;
-		if (part->cargo_type < NUM_CARGO) capacity[part->cargo_type] += part->cargo_cap;
+		if (part->cargo_type < NUM_CARGO) {
+			capacity[part->cargo_type] += part->cargo_cap;
+			passengers |= part->cargo_cap > 0 && IsCargoInClass(part->cargo_type, CargoClass::Passengers);
+		}
 	}
-	if (capacity != phase->capacity) { database.Invalidate(service->id); return; }
-	if (service->timetable.period == 0 || vehicle->vehicle_flags.Test(VehicleFlag::ScheduledDispatch)) return;
+	if (phase != service->vehicles.end() && capacity != phase->capacity) { database.Invalidate(service->id); return; }
 	if (database.GetPublication(service->id) != PassengerServiceDatabase::Publication::Published) return;
+	if (service->timetable.period == 0) {
+		/* Old JPSD records may have rejected a regular depot with no wait. Do
+		 * not rewrite publication or queues on load/join: reconsider only at a
+		 * real loading event, using the normal coalesced, saved build queue.
+		 * This bounded flag/duration pass allocates no stop or cargo-mask vector. */
+		if (!vehicle->current_order.IsAnyLoadingType() || vehicle->vehstatus.Any({VehState::Stopped, VehState::Crashed}) ||
+				vehicle->GetNumOrders() > 4096) return;
+		if (!passengers) return;
+		bool depot = false;
+		size_t stops = 0;
+		int64_t period = 0;
+		for (const Order &order : vehicle->orders->GetOrderVector()) {
+			if (order.IsType(OT_IMPLICIT) || order.IsType(OT_LABEL)) continue;
+			auto wait = TimetableEventWait(order);
+			if (!wait || !AddTicks(period, order.GetTravelTime()) || !AddTicks(period, *wait) || period > MAX_PERIOD) return;
+			depot |= order.IsType(OT_GOTO_DEPOT);
+			stops += IsPassengerStationStop(order);
+		}
+		if (depot && stops >= 2 && period > 0) database.TimetableChanged(service->id);
+		return;
+	}
+	if (vehicle->vehicle_flags.Test(VehicleFlag::ScheduledDispatch)) return;
 	if (phase->phase_known && vehicle->current_order_time != 0) return;
 	if (std::none_of(service->timetable.stops.begin(), service->timetable.stops.end(), [&](const auto &stop) { return stop.order == vehicle->cur_real_order_index && stop.station == vehicle->last_station_visited; })) return;
 	if (vehicle->HasUnbunchingOrder()) return;
@@ -124,21 +167,16 @@ PassengerPeriodicTimetable PassengerPeriodicTimetable::Compile(std::span<const O
 	for (size_t i = 0; i < orders.size(); ++i) {
 		const Order &order = orders[i];
 		if (order.IsType(OT_IMPLICIT) || order.IsType(OT_LABEL)) continue;
-		const bool depot = order.IsType(OT_GOTO_DEPOT);
-		if (depot && order.IsScheduledDispatchOrder(true)) return fail(Failure::Control);
-		if (order.IsRefit()) return fail(Failure::Refit);
-		if (depot ? ClassifyPassengerDepot(order) != PassengerDepotTraversal::Timed :
-				!order.IsType(OT_GOTO_STATION) && !order.IsType(OT_GOTO_WAYPOINT)) return fail(Failure::Control);
-		if (!order.IsTravelTimetabled()) return fail(Failure::Travel);
+		auto wait = TimetableEventWait(order, failure);
+		if (!wait) return {};
 		if (first) { first_travel = order.GetTravelTime(); first = false; }
 		else if (!AddTicks(cursor, order.GetTravelTime())) return fail(Failure::Overflow);
 		bool stopping = order.IsType(OT_GOTO_STATION) && !(order.GetNonStopType() & ONSF_NO_STOP_AT_DESTINATION_STATION);
 		if (stopping) {
-			if (!order.IsWaitTimetabled()) return fail(Failure::Wait);
 			PassengerPeriodicStop stop;
 			stop.station = order.GetDestination().ToStationID(); stop.order = static_cast<VehicleOrderID>(i);
 			stop.arrival = cursor;
-			if (!AddTicks(cursor, order.GetWaitTime())) return fail(Failure::Overflow);
+			if (!AddTicks(cursor, *wait)) return fail(Failure::Overflow);
 			stop.departure = cursor;
 			for (CargoType cargo : EnumRange(NUM_CARGO)) {
 				OrderUnloadType unload = order.GetCargoUnloadType(cargo);
@@ -147,10 +185,7 @@ PassengerPeriodicTimetable PassengerPeriodicTimetable::Compile(std::span<const O
 				if (order.GetCargoLoadType(cargo) != OrderLoadType::NoLoad && !(stop.forced & (uint64_t{1} << cargo))) stop.board |= uint64_t{1} << cargo;
 			}
 			result.stops.push_back(stop);
-		} else if (depot || order.GetWaitTime() != 0) {
-			if (!order.IsWaitTimetabled()) return fail(Failure::Wait);
-			if (!AddTicks(cursor, order.GetWaitTime())) return fail(Failure::Overflow);
-		}
+		} else if (!AddTicks(cursor, *wait)) return fail(Failure::Overflow);
 		if (cursor > MAX_PERIOD) return fail(Failure::Overflow);
 	}
 	if (!AddTicks(cursor, first_travel) || cursor > MAX_PERIOD) return fail(Failure::Overflow);

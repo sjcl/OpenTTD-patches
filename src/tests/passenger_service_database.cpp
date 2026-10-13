@@ -428,6 +428,8 @@ TEST_CASE("Periodic capacity changes invalidate only the affected service while 
 	train->cargo.Append(f.Packet()); ObservePassengerPeriodicVehicle(train); CHECK(db.Get(train->orders->index)->generation == generation);
 	train->cargo_cap = 0; ObservePassengerPeriodicVehicle(train); CHECK(db.GetPublication(train->orders->index) == PassengerServiceDatabase::Publication::Dirty); f.PublishUpdates(db);
 	CHECK_FALSE(db.Plan(PAX, A, D, NOW).ride);
+	train->cargo_cap = 100; ObservePassengerPeriodicVehicle(train); CHECK(db.GetPublication(train->orders->index) == PassengerServiceDatabase::Publication::Dirty); f.PublishUpdates(db);
+	CHECK(db.Plan(PAX, A, D, NOW).ride.has_value());
 }
 
 TEST_CASE("Periodic round trips prefer the earlier equivalent boarding occurrence", "[passenger][periodic]")
@@ -668,7 +670,8 @@ TEST_CASE("Depot traversal separates passenger continuity from timing certainty"
 	SECTION("Regular entry with declared dwell") {}
 	SECTION("Explicit zero travel and dwell") { depot.SetTravelTime(0); depot.SetWaitTime(0); }
 	SECTION("Missing travel") { timed = false; depot.SetTravelTime(0); depot.SetTravelTimetabled(false); }
-	SECTION("Missing dwell") { timed = false; depot.SetWaitTime(0); depot.SetWaitTimetabled(false); }
+	SECTION("No depot wait instruction") { depot.SetWaitTime(0); depot.SetWaitTimetabled(false); }
+	SECTION("Unconfirmed depot wait is not executed") { depot.SetWaitTimetabled(false); }
 	SECTION("Only when servicing is needed") { expected = PassengerDepotTraversal::Untimed; timed = false; depot.SetDepotOrderType({OrderDepotTypeFlag::PartOfOrders, OrderDepotTypeFlag::Service}); }
 	SECTION("Nearest depot") { expected = PassengerDepotTraversal::Untimed; timed = false; depot.SetDepotActionType(ODATFB_NEAREST_DEPOT); }
 	SECTION("Unbunching") { expected = PassengerDepotTraversal::Untimed; timed = false; depot.SetDepotActionType(ODATFB_UNBUNCH); }
@@ -691,7 +694,7 @@ TEST_CASE("Depot traversal separates passenger continuity from timing certainty"
 	auto predicted = PredictPassengerJourney(state, 0, D, PAX, NOW, true, PassengerTimingPolicy::AssumeTimetable);
 	CHECK(predicted.arrival.has_value() == timed);
 	if (timed) {
-		CHECK(plan.arrival == NOW + 10 + depot.GetTravelTime() + depot.GetWaitTime() + 40 + 5 + 60);
+		CHECK(plan.arrival == NOW + 10 + depot.GetTravelTime() + depot.GetTimetabledWait() + 40 + 5 + 60);
 		CHECK(predicted.arrival == plan.arrival);
 		PassengerServiceGraphLimits limits; limits.horizon = 2000;
 		auto graph = PassengerServiceGraph::Build(PAX, NOW, limits, {}, nullptr, PassengerTimingPolicy::AssumeTimetable);
@@ -1326,4 +1329,54 @@ TEST_CASE("A staging memory boundary remains bounded and loadable during deletio
 	auto partial = db.Save(); PassengerServiceDatabase peer; REQUIRE(peer.Load(partial)); peer.FinishLoad(true); CHECK(peer.Save() == partial);
 	for (int i = 0; i < 16 && db.IsBuilding(); ++i) { db.Tick(); peer.Tick(); CHECK(db.Save() == peer.Save()); CHECK(db.GetDiagnostic().staged_bytes <= PassengerServiceDatabase::MAX_BYTES); }
 	CHECK_FALSE(db.IsBuilding()); CHECK_FALSE(peer.IsBuilding());
+}
+TEST_CASE("Depot entry without a wait preserves full cycles and queued saved publication", "[passenger][periodic][operational][depot][save][determinism]")
+{
+	Fixture f;
+	Order depot; depot.MakeGoToDepot(DepotID{0}, {OrderDepotTypeFlag::PartOfOrders});
+	depot.SetTravelTime(20); depot.SetTravelTimetabled(true);
+	depot.SetWaitTime(77); // An unconfirmed raw value is not a depot waiting instruction.
+	CHECK_FALSE(depot.IsWaitTimetabled());
+	auto *train = f.Train({depot, Stop(A, 120, 10), depot, Stop(D, 40, 5)});
+	train->LoadAt(1);
+	SECTION("Known cycles include both depot travels, with no invented waiting") {
+		auto &db = f.Build(); auto *service = db.Get(train->orders->index); REQUIRE(service);
+		REQUIRE(service->timetable.period == 215); REQUIRE(service->timetable.stops.size() == 2);
+		CHECK(service->timetable.stops[0].order == 1); CHECK(service->timetable.stops[1].order == 3);
+		GameRandomSeedChecker seed;
+		for (int64_t cycle : {int64_t{0}, int64_t{1}, int64_t{1000000}}) {
+			auto ready = NOW + cycle * 215;
+			auto cold = db.Plan(PAX, A, D, ready), warm = db.Plan(PAX, A, D, ready);
+			REQUIRE(cold.ride); CHECK(cold.ride->departure == ready + 10); CHECK(cold.arrival == ready + 70);
+			CHECK(cold.ride == warm.ride); CHECK(cold.work == warm.work);
+		}
+		auto wire = db.Save(); PassengerServiceDatabase joined; REQUIRE(joined.Load(wire)); joined.FinishLoad(true);
+		CHECK(joined.Save() == wire);
+	}
+	SECTION("An actual downstream arrival ignores the unconfirmed depot wait") {
+		train->LoadAt(3); auto &db = f.Build();
+		auto plan = db.Plan(PAX, D, A, NOW); REQUIRE(plan.ride);
+		CHECK(plan.ride->departure == NOW + 5); CHECK(plan.arrival == NOW + 145);
+	}
+	SECTION("A formerly untimed saved depot record refreshes at a real loading event") {
+		train->GetOrder(2)->SetTravelTimetabled(false);
+		auto &db = f.Build(); REQUIRE(db.Get(train->orders->index)->timetable.period == 0);
+		/* Reproduce the old published empty record with fully known live orders.
+		 * A setter alone does not invoke any invalidation or timetable command. */
+		train->GetOrder(2)->SetTravelTimetabled(true);
+		auto wire = db.Save(); auto generation = db.Get(train->orders->index)->generation;
+		REQUIRE(db.Load(wire)); db.FinishLoad(true); CHECK(db.Save() == wire);
+		ObservePassengerPeriodicVehicle(train); db.Tick();
+		CHECK(db.Get(train->orders->index)->generation == generation);
+		CHECK(db.Get(train->orders->index)->timetable.period == 0);
+		auto queued = db.Save(); REQUIRE(queued != wire);
+		PassengerServiceDatabase joined; REQUIRE(joined.Load(queued)); joined.FinishLoad(true);
+		CHECK(joined.Save() == queued);
+		_state_ticks += PassengerServiceDatabase::TIMETABLE_EPOCH;
+		for (int i = 0; i < 128 && (db.IsBuilding() || joined.IsBuilding()); ++i) { db.Tick(); joined.Tick(); CHECK(db.Save() == joined.Save()); }
+		REQUIRE_FALSE(db.IsBuilding()); REQUIRE_FALSE(joined.IsBuilding());
+		REQUIRE(db.Get(train->orders->index)->timetable.period == 215);
+		REQUIRE(db.Plan(PAX, A, D, _state_ticks).ride);
+		auto published = db.Save(); ObservePassengerPeriodicVehicle(train); db.Tick(); CHECK(db.Save() == published);
+	}
 }

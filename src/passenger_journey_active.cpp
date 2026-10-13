@@ -117,6 +117,8 @@ namespace {
 		a.od_fallback_work += b.od_fallback_work; a.od_fallback_searches += b.od_fallback_searches;
 		a.od_fallback_cache_hits += b.od_fallback_cache_hits; a.od_fallback_cache_bytes = std::max(a.od_fallback_cache_bytes, b.od_fallback_cache_bytes);
 		a.boarded_passengers += b.boarded_passengers; a.transferred_passengers += b.transferred_passengers; a.delivered_passengers += b.delivered_passengers;
+		a.depot_service_boarded_passengers += b.depot_service_boarded_passengers; a.depot_service_delivered_passengers += b.depot_service_delivered_passengers;
+		a.depot_crossing_boarded_passengers += b.depot_crossing_boarded_passengers; a.depot_crossing_delivered_passengers += b.depot_crossing_delivered_passengers;
 		a.maximum_tick_microseconds = std::max({a.maximum_tick_microseconds, b.maximum_tick_microseconds, b.build_microseconds + b.query_microseconds});
 		for (size_t i = 0; i < a.fallbacks.size(); ++i) { a.fallbacks[i] += b.fallbacks[i]; a.deferred[i] += b.deferred[i]; }
 	}
@@ -318,10 +320,27 @@ void RecordPassengerJourneyMovement(PassengerJourneyMovement movement, const Car
 		}
 		return;
 	}
-	if (kind == PassengerTransportKind::Timed) { RecordPassengerJourneyMovement(movement, count, true); return; }
 	if (kind == PassengerTransportKind::Untimed) { RecordPassengerJourneyMovement(movement, count, false); return; }
-	if (packet.GetPassengerRoutingMode() == PassengerRoutingMode::Journey) {
+	if (kind == PassengerTransportKind::Timed || packet.GetPassengerRoutingMode() == PassengerRoutingMode::Journey) {
 		RecordPassengerJourneyMovement(movement, count, true);
+		/* Observe actual loading/delivery, not reservations or plan adoption.
+		 * This bounded read changes no execution, routing budget or saved state. */
+		if (movement != PassengerJourneyMovement::Board && movement != PassengerJourneyMovement::Deliver) return;
+		const auto &ride = packet.GetPassengerJourney();
+		const OrderList *list = OrderList::GetIfValid(ride.service);
+		if (list == nullptr || (ride.kind != PassengerRideKind::VehicleSnapshot && list->GetCargoDistRouteGeneration() != ride.signature) || list->GetNumOrders() > 4096 ||
+				ride.boarding_order >= list->GetNumOrders() || ride.alighting_order >= list->GetNumOrders()) return;
+		const size_t count_orders = list->GetNumOrders();
+		const size_t end = (ride.alighting_order + count_orders - ride.boarding_order) % count_orders;
+		bool depot_service = false, crossing = false;
+		for (size_t i = 0; i < count_orders; ++i) if (list->GetOrderAt(i)->IsType(OT_GOTO_DEPOT)) {
+			depot_service = true;
+			const size_t offset = (i + count_orders - ride.boarding_order) % count_orders;
+			crossing |= offset > 0 && offset <= end;
+		}
+		auto &diagnostic = TickBudget().diagnostic;
+		if (depot_service) (movement == PassengerJourneyMovement::Board ? diagnostic.depot_service_boarded_passengers : diagnostic.depot_service_delivered_passengers) += count;
+		if (crossing) (movement == PassengerJourneyMovement::Board ? diagnostic.depot_crossing_boarded_passengers : diagnostic.depot_crossing_delivered_passengers) += count;
 	} else if (_settings_game.linkgraph.passenger_journey_routing && Station::IsValidID(packet.GetPassengerDestination()) &&
 			(movement != PassengerJourneyMovement::Board || Station::IsValidID(packet.GetPassengerVia()))) {
 		RecordPassengerJourneyMovement(movement, count, false);
