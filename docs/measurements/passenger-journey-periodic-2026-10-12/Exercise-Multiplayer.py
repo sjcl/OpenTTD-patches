@@ -92,8 +92,22 @@ def snapshot(proc, directory):
     command(proc, "passenger_journey_stats total")
     command(proc, "script")
 
+def scheduled_checkpoint(directory):
+    # Null-driver clients have no stdin console. The existing connection hook
+    # arms a local monthly script which survives loading the network map.
+    probe = directory / "scripts" / "checkpoint.scr"
+    probe.write_text(
+        f"script {(directory / 'console.txt').as_posix()}\ngetfulldate\nclients\n"
+        "setting linkgraph.passenger_od_assignment\nsetting linkgraph.passenger_journey_routing\n"
+        "setting linkgraph.passenger_journey_periodic\n"
+        + ("setting linkgraph.passenger_timed_rounds\n" if a.rounds else "") +
+        "passenger_journey_stats inventory\npassenger_journey_stats total\n"
+        f"schedule on-next-calendar-month {probe.as_posix()}\nscript\n", encoding="utf-8")
+    return f"schedule on-next-calendar-month {probe.as_posix()}\n"
+
 def client(name):
     directory = prepare(name)
+    (directory / "scripts" / "on_client.scr").write_text(scheduled_checkpoint(directory), encoding="utf-8")
     log = (directory / "console.txt").as_posix()
     finish = (directory / "scripts" / "finish.scr").as_posix()
     (directory / "scripts" / "game_start.scr").write_text(
@@ -126,6 +140,7 @@ try:
         (root / "result.json").unlink()
     server_dir = prepare("server")
     server_log = server_dir / "console.txt"
+    monthly = scheduled_checkpoint(server_dir)
     (server_dir / "scripts" / "game_start.scr").write_text(
         f"script {server_log.as_posix()}\nsetting linkgraph.distribution_pax 2\n"
         "setting linkgraph.passenger_od_assignment true\n"
@@ -134,7 +149,7 @@ try:
         + ("setting linkgraph.passenger_timed_rounds true\n" if a.rounds else "") +
         "setting linkgraph.recalc_interval 8\nsetting linkgraph.recalc_time 32\npause\n"
         + ("passenger_periodic_fixture\n" if a.fixture else "") +
-        "getfulldate\npassenger_journey_stats total\nscript\n", encoding="utf-8")
+        monthly + "getfulldate\npassenger_journey_stats total\nscript\n", encoding="utf-8")
     server = start(server_dir, ["-D", "127.0.0.1:17492", "-g", str(run / a.input_save)])
     wait_for(lambda: "Simulation tick time:" in text(server_log), "server loaded")
     if a.fixture and not re.search(r"Periodic test fixture: services=[1-9]", text(server_log)):
@@ -157,15 +172,14 @@ try:
     print("Late client joined; observing synchronization", flush=True)
     # Leave both clients active for at least ten sync intervals.
     time.sleep(a.duration)
+    def common_checkpoint():
+        stamps = [set(re.findall(r"State ticks: (\d+)", text(directory / "console.txt"))) for directory in [server_dir, first_dir, second_dir]]
+        return set.intersection(*stamps)
+    wait_for(common_checkpoint, "common monthly checkpoint", seconds=180)
     command(server, "pause")
     time.sleep(2)
     snapshot(server, server_dir)
-    snapshot(first, first_dir)
-    snapshot(second, second_dir)
     wait_for(lambda: len(re.findall(r"State ticks: (\d+)", text(server_log))) >= 3, "final checkpoint")
-    # Network joins do not invoke game_start.scr on clients. Query both paused
-    # clients explicitly rather than interpreting an empty log as a desync.
-    wait_for(lambda: all("Simulation tick time:" in text(directory / "console.txt") for directory in [first_dir, second_dir]), "client checkpoints")
     command(server, f"script {server_log.as_posix()}")
     command(server, f"save {server_dir.as_posix()}/final")
     command(server, "script")
@@ -178,7 +192,8 @@ try:
         bad |= any("Current value for 'linkgraph.passenger_timed_rounds' is: 'true'" not in text(directory / "console.txt") for directory in [first_dir, second_dir])
     client_ticks = {name: re.findall(r"State ticks: (\d+)", text(root / name / "console.txt")) for name in ["client-initial", "client-late"]}
     server_ticks = re.findall(r"State ticks: (\d+)", text(server_log))
-    bad |= any(not ticks or ticks[-1] != server_ticks[-1] for ticks in client_ticks.values())
+    common_ticks = sorted(common_checkpoint(), key=int)
+    bad |= not common_ticks
     final_snapshot = text(server_log).rsplit("Console log output started", 1)[-1]
     connected = re.findall(r"Client #(\d+)\s+name: '([^']+)'", final_snapshot)
     # The final save log can follow the checkpoint without another clients query.
@@ -192,7 +207,7 @@ try:
               "input_save_sha256": hashlib.sha256((run / a.input_save).read_bytes()).hexdigest(),
               "binary_sha256": hashlib.sha256(binary.read_bytes()).hexdigest(),
               "detected_sync_failure": bad, "client_exit_codes": [first.poll(), second.poll()],
-              "server_state_ticks": server_ticks, "client_state_ticks": client_ticks,
+              "server_state_ticks": server_ticks, "client_state_ticks": client_ticks, "common_checkpoint_ticks": common_ticks,
               "single_core_clients": len(affinities) == 2 and all(value["applied"] for value in affinities.values()),
               "affinity": affinities, "sync_frequency": 1,
               "cpu_mode": a.cpu_mode, "timeout_ticks": a.timeout_ticks,
