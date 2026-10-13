@@ -59,6 +59,17 @@ struct PassengerPeriodicService {
 };
 
 struct PassengerPeriodicPlan {
+	enum class WorkStop : uint8_t { None, Admission, Queue, Service, Vehicle, Dispatch, Departure, Alighting, Dominance, End };
+	struct SearchDiagnostic {
+		size_t reverse_work = 0, forward_work = 0;
+		size_t complete_labels = 0, queued_complete = 0, popped_complete = 0;
+		std::optional<int64_t> best_complete_cost;
+		StateTicks best_complete_arrival{};
+		int64_t remaining_lower_bound = INT64_MAX;
+		bool improvement_possible = false;
+		WorkStop first_work_stop = WorkStop::None;
+		std::array<size_t, static_cast<size_t>(WorkStop::End)> work_stops{};
+	} search;
 	std::optional<PassengerJourneyExecution> ride;
 	StateTicks arrival{};
 	int64_t cost = 0;
@@ -74,6 +85,12 @@ struct PassengerPeriodicPlan {
 };
 
 struct PassengerDatabaseDiagnostic {
+	uint64_t work_with_complete = 0, work_without_complete = 0, work_with_queued_complete = 0, work_with_popped_complete = 0, work_with_improvement = 0;
+	uint64_t work_reverse = 0, work_forward = 0;
+	std::array<uint64_t, static_cast<size_t>(PassengerPeriodicPlan::WorkStop::End)> work_stop_calls{}, work_stop_observations{};
+	std::array<uint64_t, 65> search_work_histogram{}; ///< 1024-work upper bounds, last bucket includes overflow.
+	std::array<PassengerPeriodicPlan::SearchDiagnostic, 16> work_samples{};
+	size_t work_sample_count = 0;
 	uint64_t builds = 0, build_work = 0, build_microseconds = 0;
 	uint64_t searches = 0, query_microseconds = 0, policy_hits = 0, policy_misses = 0;
 	uint64_t next_departures = 0; ///< Logical NextDeparture evaluations in the original scan, including skipped indexed candidates.

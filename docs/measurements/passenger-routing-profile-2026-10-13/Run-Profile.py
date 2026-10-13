@@ -20,6 +20,7 @@ ROOT = HERE.parents[2]
 HARNESS = HERE.parent / "passenger-periodic-policy-residency-2026-10-13/Measure-Residency.ps1"
 INPUT_SHA256 = "14d68c82911b9dcfc5ef7291e9697c5bbd67f44ffcc79d7575a144405edf6390"
 ASSET_DIRS = ("baseset", "newgrf", "content_download", "ai", "game", "lang")
+POWERSHELL = shutil.which('pwsh.exe') or shutil.which('powershell.exe') or 'powershell.exe'
 
 
 def sha256(path):
@@ -66,7 +67,7 @@ def freeze(args):
 
 
 def powershell(script):
-    return subprocess.check_output(["powershell.exe", "-NoProfile", "-NonInteractive", "-Command", script],
+    return subprocess.check_output([POWERSHELL, "-NoProfile", "-NonInteractive", "-Command", script],
                                    encoding="utf-8", errors="replace")
 
 
@@ -75,9 +76,44 @@ def competing_processes():
     # A census must be visible before calling a run uncontaminated.
     text = powershell("$taskProcesses = @(Get-CimInstance Win32_Process -ErrorAction Stop); "
                       "if ($taskProcesses.Count -lt 10) { throw 'Host process census unavailable; run outside the restricted sandbox' }; "
-                      "$taskProcesses | Where-Object { $_.Name -match '^(openttd.*|cmake|MSBuild|ninja|cl|ctest|vstest.*|clang.*|gcc|g\\+\\+)\\.exe$' -and $_.CommandLine -notmatch '/nodemode:' } | "
+                      "$taskProcesses | Where-Object { $_.Name -match '^(openttd.*|regression_.*|passenger_.*|cmake|MSBuild|ninja|cl|ctest|vstest.*|clang.*|gcc|g\\+\\+)\\.exe$' -and $_.CommandLine -notmatch '/nodemode:' } | "
                       "ForEach-Object { [IO.Path]::GetFileNameWithoutExtension($_.Name) + ':' + $_.ProcessId }")
     return [line.strip() for line in text.splitlines() if line.strip()]
+
+
+def wait_for_idle(timeout, grace=0):
+    """Require a quiet interval without interrupting existing executions."""
+    deadline, idle_since, previous = time.monotonic() + timeout, None, None
+    while True:
+        busy, now = competing_processes(), time.monotonic()
+        if busy:
+            idle_since = None
+        elif idle_since is None:
+            idle_since = now
+        if not busy and now - idle_since >= grace:
+            return
+        if now >= deadline:
+            raise RuntimeError('Measurement blocked: host did not remain idle; ' + ', '.join(busy))
+        if busy != previous:
+            print('Waiting for idle host: ' + (', '.join(busy) if busy else f'quiet interval ({grace}s)'), flush=True)
+            previous = busy
+        time.sleep(min(10, deadline - now))
+
+
+def acquire_measurement_lock(path, timeout):
+    """Wait for the owner's release; never remove or steal an existing lock."""
+    deadline, announced = time.monotonic() + timeout, False
+    while True:
+        try:
+            return os.open(path, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+        except FileExistsError:
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                raise RuntimeError('Measurement blocked: another process owns the measurement lock; existing execution was not stopped')
+            if not announced:
+                print('Waiting for the existing measurement lock to be released', flush=True)
+                announced = True
+            time.sleep(min(5, remaining))
 
 
 def compiler_info(build):
@@ -118,6 +154,18 @@ def abort_own_game(pid_file, directory, parent_pid):
 
 
 def run(args):
+    lock_path = pathlib.Path(tempfile.gettempdir()) / "openttd-passenger-routing-measurement.lock"
+    lock = acquire_measurement_lock(lock_path, args.wait_idle_seconds)
+    try:
+        os.write(lock, json.dumps({"pid": os.getpid(), "output": str(args.output.resolve())}).encode())
+        run_locked(args)
+    finally:
+        os.close(lock)
+        lock_path.unlink()
+
+
+def run_locked(args):
+    # Validate/hash the large package only after another measurement has ended.
     package = json.loads((args.package / "package.json").read_text(encoding="utf-8"))
     if package["input_sha256"] != sha256(args.package / "input.sav") or package["config_sha256"] != sha256(args.package / "openttd.cfg"):
         raise ValueError("Frozen save/config changed")
@@ -137,30 +185,36 @@ def run(args):
     manifest_path = args.output / "manifest.json"
     if manifest_path.exists():
         raise ValueError("Output already contains a manifest; choose a new directory")
+    harness = HARNESS
+    if args.cache_off_scope == 'all':
+        original = HARNESS.read_text(encoding='utf-8-sig')
+        anchor = '$(if ($DisablePolicies) { "passenger_journey_stats cache_off" })'
+        if original.count(anchor) != 1:
+            raise ValueError('Archived cache-off harness anchor changed')
+        harness = args.output / 'Measure-Residency-AllCaches.ps1'
+        harness.write_text(original.replace(anchor,
+            '$(if ($DisablePolicies) { "passenger_journey_stats cache_off`npassenger_journey_stats departures_off`npassenger_journey_stats fallback_cache_off" })'), encoding='utf-8')
     manifest = {"schema_version": 1, "label": args.label, "revision": args.revision,
                 "kind": args.kind, "ticks": args.ticks, "phase": args.phase,
                 "package": package, "compiler": compiler_info(args.build),
                 "binary_sha256": sha256(args.binary), "instrumentation": instrumentation,
-                "harness_sha256": sha256(HARNESS), "runner_sha256": sha256(__file__),
+                "harness_sha256": sha256(harness), "original_harness_sha256": sha256(HARNESS), "runner_sha256": sha256(__file__),
                 "host": {"platform": platform.platform(), "machine": platform.machine(),
-                         "cpu": powershell("Get-CimInstance Win32_Processor | ForEach-Object { $_.Name }").strip()},
+                         "cpu": powershell("Get-CimInstance Win32_Processor | ForEach-Object { $_.Name }").strip(),
+                         "powershell_version": powershell('$PSVersionTable.PSVersion.ToString()').strip()},
                 "settings": {"source": "input_save_preserved" if args.resume_settings else "archived_harness_reapplied",
                              "distribution_pax": 2, "passenger_od_assignment": True,
                              "passenger_journey_periodic": True, "recalc_interval": 8, "recalc_time": 32},
-                "cache_off_scope": "Timed and Schedule shared OD policies; fallback/Trip caches retain product behavior",
+                "cache_off_scope": "Timed/Schedule shared OD policies, departure index, resident fallback bindings/reverse/distances" if args.cache_off_scope == 'all' else "Timed and Schedule shared OD policies; fallback/Trip caches retain product behavior",
+                "idle_control": {"wait_timeout_seconds": args.wait_idle_seconds, "quiet_interval_seconds": args.idle_grace_seconds},
                 "runs": [], "status": "running"}
     dump(manifest_path, manifest)
-    lock_path = pathlib.Path(tempfile.gettempdir()) / "openttd-passenger-routing-measurement.lock"
-    lock = os.open(lock_path, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
     try:
-        os.write(lock, json.dumps({"pid": os.getpid(), "output": str(args.output.resolve())}).encode())
         # Rotate order on the second repetition to expose drift without overlap.
         for repetition in range(args.repetitions):
             modes = args.modes if repetition % 2 == 0 else list(reversed(args.modes))
             for mode in modes:
-                busy = competing_processes()
-                if busy:
-                    raise RuntimeError("Measurement blocked by competing processes: " + ", ".join(busy))
+                wait_for_idle(args.wait_idle_seconds, args.idle_grace_seconds)
                 label = f"{mode}-{repetition + 1}"
                 directory = args.output / label
                 directory.mkdir()
@@ -171,7 +225,7 @@ def run(args):
                 shutil.copy2(args.package / "openttd.cfg", directory / "openttd.cfg")
                 shutil.copy2(args.binary, directory / "openttd.exe")
                 started = datetime.datetime.now(datetime.timezone.utc).isoformat()
-                command = ["powershell.exe", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File", str(HARNESS),
+                command = [POWERSHELL, "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File", str(harness),
                            "-RunDirectory", str(directory.resolve()), "-Binary", "openttd.exe", "-Label", label,
                            "-Backend", "off" if mode == "off" else "periodic", "-Ticks", str(args.ticks)]
                 if mode == "cold":
@@ -209,9 +263,6 @@ def run(args):
         manifest["error"] = str(error)
         dump(manifest_path, manifest)
         raise
-    finally:
-        os.close(lock)
-        lock_path.unlink()
 
 
 if __name__ == "__main__":
@@ -233,6 +284,9 @@ if __name__ == "__main__":
     run_parser.add_argument("--phase", default="initial_8192")
     run_parser.add_argument("--ticks", type=int, default=8192)
     run_parser.add_argument("--repetitions", type=int, default=2)
+    run_parser.add_argument('--cache-off-scope', choices=['policy', 'all'], default='policy', help='all requires merged departures_off and fallback_cache_off console controls')
+    run_parser.add_argument('--wait-idle-seconds', type=int, default=0, help='Wait for an existing measurement lock and before each run for builds/tests/games to exit; never stop another process')
+    run_parser.add_argument('--idle-grace-seconds', type=int, default=0, help='Require this consecutive quiet interval within wait-idle-seconds before launching')
     run_parser.add_argument("--resume-settings", action="store_true", help="Preserve a known periodic-on checkpoint's settings; on/cold modes only")
     run_parser.add_argument("--modes", choices=["off", "on", "cold"], nargs="+", default=["off", "on", "cold"])
     args = parser.parse_args()
@@ -240,4 +294,6 @@ if __name__ == "__main__":
         parser.error("ticks and repetitions must be positive")
     if args.command == 'run' and args.resume_settings and 'off' in args.modes:
         parser.error('resume-settings requires an already configured periodic-on checkpoint and on/cold modes')
+    if args.command == 'run' and (args.wait_idle_seconds < 0 or args.idle_grace_seconds < 0 or args.idle_grace_seconds > args.wait_idle_seconds):
+        parser.error('idle grace and wait must be nonnegative, and grace must not exceed wait')
     freeze(args) if args.command == "freeze" else run(args)

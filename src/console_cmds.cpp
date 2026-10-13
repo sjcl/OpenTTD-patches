@@ -4986,6 +4986,19 @@ static bool ConPassengerJourneyStats(std::span<std::string_view> argv)
 	IConsolePrint(CC_DEFAULT, "Periodic global invalidations: {}", periodic.global_invalidations);
 	IConsolePrint(CC_DEFAULT, "Timed search storage: labels={}; frontier_lookups={}; queue_pushes={}; queue_pops={}; scratch_bytes={}; scratch_peak_bytes={}",
 		periodic.timed_labels, periodic.frontier_lookups, periodic.queue_pushes, periodic.queue_pops, periodic.search_scratch_bytes, periodic.search_scratch_peak_bytes);
+	IConsolePrint(CC_DEFAULT, "Timed Work completion: with_complete={}; without_complete={}; with_queued={}; with_popped={}; improvement_possible={}; reverse_work={}; forward_work={}",
+		periodic.work_with_complete, periodic.work_without_complete, periodic.work_with_queued_complete, periodic.work_with_popped_complete,
+		periodic.work_with_improvement, periodic.work_reverse, periodic.work_forward);
+	static constexpr std::array work_stop_names{"None", "Admission", "Queue", "Service", "Vehicle", "Dispatch", "Departure", "Alighting", "Dominance"};
+	static_assert(work_stop_names.size() == static_cast<size_t>(PassengerPeriodicPlan::WorkStop::End));
+	for (size_t i = 0; i < work_stop_names.size(); ++i) IConsolePrint(CC_DEFAULT, "Timed Work stop {}: calls={}; observations={}", work_stop_names[i], periodic.work_stop_calls[i], periodic.work_stop_observations[i]);
+	for (size_t i = 0; i < periodic.work_sample_count; ++i) {
+		const auto &sample = periodic.work_samples[i];
+		IConsolePrint(CC_DEFAULT, "Timed Work sample {}: complete={}; queued={}; popped={}; cost={}; arrival={}; lower={}; reverse={}; forward={}; first_stop={}",
+			i, sample.complete_labels, sample.queued_complete, sample.popped_complete, sample.best_complete_cost.value_or(-1), sample.best_complete_arrival.base(),
+			sample.remaining_lower_bound, sample.reverse_work, sample.forward_work, work_stop_names[static_cast<size_t>(sample.first_work_stop)]);
+	}
+	for (size_t i = 0; i < periodic.search_work_histogram.size(); ++i) IConsolePrint(CC_DEFAULT, "Timed Work histogram: upper={}; count={}", i * 1024, periodic.search_work_histogram[i]);
 	IConsolePrint(CC_DEFAULT, "Periodic service pruning: bound_checks={}; bound_stops={}; pruned_services={}; skipped_vehicle_visits={}",
 			periodic.service_bound_checks, periodic.service_bound_stops, periodic.pruned_services, periodic.pruned_vehicle_visits);
 	IConsolePrint(CC_DEFAULT, "Periodic residency: entries={}; revision={}; publications={}; staged={}; staged_bytes={}; additions={}; removals={}; updates={}; timetable_notifications={}",

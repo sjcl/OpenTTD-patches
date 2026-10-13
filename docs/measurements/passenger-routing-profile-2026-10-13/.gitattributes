@@ -1,0 +1,5 @@
+*.py text eol=lf
+*.json text eol=lf
+*.txt text eol=lf
+# Preserve the test reporter's final blank line as evidence.
+*.log text eol=lf whitespace=-blank-at-eof

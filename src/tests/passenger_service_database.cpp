@@ -115,6 +115,36 @@ namespace {
 	}
 }
 
+TEST_CASE("Timed completion diagnostics preserve the legacy Work boundaries", "[passenger][periodic][anytime][determinism]")
+{
+	Fixture f;
+	f.Train({Stop(A, 1000, 0), Stop(D, 100, 0)});
+	f.Train({Stop(A, 1000, 0), Stop(D, 50, 0)});
+	f.Train({Stop(A, 1000, 0), Stop(D, 50, 0)});
+	f.Train({Stop(A, 1000, 0), Stop(B, 20, 0)});
+	f.Train({Stop(B, 1000, 30), Stop(D, 20, 0)});
+	auto &db = f.Build(); auto wire = db.Save(); GameRandomSeedChecker seeds;
+	PassengerServiceDatabase peer; REQUIRE(peer.Load(wire)); peer.FinishLoad(true);
+	peer.SetPolicyCacheEnabled(false); peer.SetDepartureIndexEnabled(false); peer.SetTimedSearchScratchEnabled(false);
+	size_t queued_only = 0, missing = 0, popped = 0;
+	for (size_t work = 0; work <= 160; ++work) {
+		PassengerJourneyLimits limits; limits.work = work;
+		auto plan = db.Plan(PAX, A, D, NOW, limits);
+		auto cold = peer.Plan(PAX, A, D, NOW, limits); SameDeparturePlan(plan, cold);
+		CHECK(plan.search.reverse_work + plan.search.forward_work == plan.work);
+		CHECK(plan.search.complete_labels == plan.search.queued_complete + plan.search.popped_complete);
+		CHECK(plan.search.best_complete_cost.has_value() == (plan.search.complete_labels != 0));
+		CHECK(plan.search.work_stops == cold.search.work_stops);
+		if (plan.reason != PassengerPeriodicPlan::Reason::Work) continue;
+		queued_only += plan.search.queued_complete != 0 && plan.search.popped_complete == 0;
+		missing += plan.search.complete_labels == 0;
+		popped += plan.search.popped_complete != 0;
+	}
+	CHECK(queued_only > 0); CHECK(missing > 0); CHECK(popped > 0);
+	CHECK(db.GetDiagnostic().work_with_complete + db.GetDiagnostic().work_without_complete == db.GetDiagnostic().outcomes[static_cast<size_t>(PassengerPeriodicPlan::Reason::Work)]);
+	CHECK(db.Save() == wire); CHECK(peer.Save() == wire); CHECK(seeds.Check());
+}
+
 TEST_CASE("Departure index respects first starts duplicate phases cargo and signed tick boundaries", "[passenger][periodic][departure-index][determinism]")
 {
 	uint64_t seed = 1729;
