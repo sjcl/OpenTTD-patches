@@ -1,0 +1,292 @@
+{
+  "layout": [
+    "ARENA_LAYOUT,label_bytes=248; item_bytes=72; fixed_scratch_bytes=8312; page_bytes=1024"
+  ],
+  "summary": {
+    "hub8000": {
+      "cold": {
+        "legacy": {
+          "samples": 30,
+          "mean_us": 55638.03,
+          "median_us": 53668.2,
+          "p95_us": 70703.4,
+          "p99_us": 71990.9,
+          "forward_mean_us": 55622.86666666667,
+          "allocations_median": 32254.0,
+          "allocated_bytes_median": 8973479.0,
+          "physical_peak_bytes": 4758741,
+          "retained_peak_bytes": 0,
+          "labels_max": 5461,
+          "frontier_lookups_max": 23996
+        },
+        "arena": {
+          "samples": 30,
+          "mean_us": 52027.776666666665,
+          "median_us": 49475.45,
+          "p95_us": 65250.4,
+          "p99_us": 65304.4,
+          "forward_mean_us": 52012.833333333336,
+          "allocations_median": 20128.0,
+          "allocated_bytes_median": 8783839.0,
+          "physical_peak_bytes": 4469134,
+          "retained_peak_bytes": 2694716,
+          "labels_max": 5461,
+          "frontier_lookups_max": 23996
+        },
+        "mean_improvement_percent": 6.488823082580986
+      },
+      "warm": {
+        "legacy": {
+          "samples": 30,
+          "mean_us": 55257.806666666664,
+          "median_us": 51896.05,
+          "p95_us": 72277.4,
+          "p99_us": 74367.0,
+          "forward_mean_us": 55253.433333333334,
+          "allocations_median": 12239.0,
+          "allocated_bytes_median": 8028431.0,
+          "physical_peak_bytes": 4121885,
+          "retained_peak_bytes": 0,
+          "labels_max": 5461,
+          "frontier_lookups_max": 23996
+        },
+        "arena": {
+          "samples": 30,
+          "mean_us": 50020.21,
+          "median_us": 48422.55,
+          "p95_us": 62075.6,
+          "p99_us": 64129.6,
+          "forward_mean_us": 50014.4,
+          "allocations_median": 1.0,
+          "allocated_bytes_median": 48.0,
+          "physical_peak_bytes": 2694764,
+          "retained_peak_bytes": 2694716,
+          "labels_max": 5461,
+          "frontier_lookups_max": 23996
+        },
+        "mean_improvement_percent": 9.478473690173006
+      },
+      "disabled": {
+        "legacy": {
+          "samples": 30,
+          "mean_us": 5268.053333333333,
+          "median_us": 5234.05,
+          "p95_us": 6940.1,
+          "p99_us": 7026.0,
+          "forward_mean_us": 5255.933333333333,
+          "allocations_median": 8252.0,
+          "allocated_bytes_median": 8012963.0,
+          "physical_peak_bytes": 4122013,
+          "retained_peak_bytes": 0,
+          "labels_max": 5461,
+          "frontier_lookups_max": 23996
+        },
+        "arena": {
+          "samples": 30,
+          "mean_us": 4417.423333333333,
+          "median_us": 4439.05,
+          "p95_us": 5653.2,
+          "p99_us": 5685.5,
+          "forward_mean_us": 4405.333333333333,
+          "allocations_median": 124.0,
+          "allocated_bytes_median": 7839315.0,
+          "physical_peak_bytes": 3832402,
+          "retained_peak_bytes": 0,
+          "labels_max": 5461,
+          "frontier_lookups_max": 23996
+        },
+        "mean_improvement_percent": 16.14695118247348
+      }
+    },
+    "lines8000": {
+      "cold": {
+        "legacy": {
+          "samples": 30,
+          "mean_us": 122.91666666666667,
+          "median_us": 117.55000000000001,
+          "p95_us": 155.1,
+          "p99_us": 205.5,
+          "forward_mean_us": 67.1,
+          "allocations_median": 1299.0,
+          "allocated_bytes_median": 368387.0,
+          "physical_peak_bytes": 177545,
+          "retained_peak_bytes": 0,
+          "labels_max": 250,
+          "frontier_lookups_max": 250
+        },
+        "arena": {
+          "samples": 30,
+          "mean_us": 95.11333333333333,
+          "median_us": 93.94999999999999,
+          "p95_us": 103.1,
+          "p99_us": 112.9,
+          "forward_mean_us": 42.1,
+          "allocations_median": 817.0,
+          "allocated_bytes_median": 356323.0,
+          "physical_peak_bytes": 166811,
+          "retained_peak_bytes": 105852,
+          "labels_max": 250,
+          "frontier_lookups_max": 250
+        },
+        "mean_improvement_percent": 22.619661016949156
+      },
+      "warm": {
+        "legacy": {
+          "samples": 30,
+          "mean_us": 66.11666666666666,
+          "median_us": 59.4,
+          "p95_us": 94.3,
+          "p99_us": 181.6,
+          "forward_mean_us": 65.13333333333334,
+          "allocations_median": 535.0,
+          "allocated_bytes_median": 323455.0,
+          "physical_peak_bytes": 161309,
+          "retained_peak_bytes": 0,
+          "labels_max": 250,
+          "frontier_lookups_max": 250
+        },
+        "arena": {
+          "samples": 30,
+          "mean_us": 32.35666666666667,
+          "median_us": 30.7,
+          "p95_us": 40.1,
+          "p99_us": 54.9,
+          "forward_mean_us": 31.3,
+          "allocations_median": 3.0,
+          "allocated_bytes_median": 240.0,
+          "physical_peak_bytes": 106092,
+          "retained_peak_bytes": 105852,
+          "labels_max": 250,
+          "frontier_lookups_max": 250
+        },
+        "mean_improvement_percent": 51.061255356692705
+      },
+      "disabled": {
+        "legacy": {
+          "samples": 30,
+          "mean_us": 111.51666666666667,
+          "median_us": 106.85,
+          "p95_us": 146.1,
+          "p99_us": 158.0,
+          "forward_mean_us": 62.36666666666667,
+          "allocations_median": 1290.0,
+          "allocated_bytes_median": 363659.0,
+          "physical_peak_bytes": 177309,
+          "retained_peak_bytes": 0,
+          "labels_max": 250,
+          "frontier_lookups_max": 250
+        },
+        "arena": {
+          "samples": 30,
+          "mean_us": 92.66333333333333,
+          "median_us": 87.45,
+          "p95_us": 113.3,
+          "p99_us": 140.2,
+          "forward_mean_us": 42.93333333333333,
+          "allocations_median": 808.0,
+          "allocated_bytes_median": 351595.0,
+          "physical_peak_bytes": 166571,
+          "retained_peak_bytes": 0,
+          "labels_max": 250,
+          "frontier_lookups_max": 250
+        },
+        "mean_improvement_percent": 16.906292034075634
+      }
+    },
+    "pairs8000": {
+      "cold": {
+        "legacy": {
+          "samples": 30,
+          "mean_us": 7.696666666666666,
+          "median_us": 6.05,
+          "p95_us": 18.0,
+          "p99_us": 28.1,
+          "forward_mean_us": 3.3666666666666667,
+          "allocations_median": 32.0,
+          "allocated_bytes_median": 2552.0,
+          "physical_peak_bytes": 1364,
+          "retained_peak_bytes": 0,
+          "labels_max": 2,
+          "frontier_lookups_max": 2
+        },
+        "arena": {
+          "samples": 30,
+          "mean_us": 5.98,
+          "median_us": 5.5,
+          "p95_us": 10.1,
+          "p99_us": 10.6,
+          "forward_mean_us": 2.7333333333333334,
+          "allocations_median": 30.0,
+          "allocated_bytes_median": 3374.0,
+          "physical_peak_bytes": 2724,
+          "retained_peak_bytes": 1600,
+          "labels_max": 2,
+          "frontier_lookups_max": 2
+        },
+        "mean_improvement_percent": 22.304027717626674
+      },
+      "warm": {
+        "legacy": {
+          "samples": 30,
+          "mean_us": 3.26,
+          "median_us": 2.8,
+          "p95_us": 6.8,
+          "p99_us": 9.5,
+          "forward_mean_us": 2.2666666666666666,
+          "allocations_median": 12.0,
+          "allocated_bytes_median": 1268.0,
+          "physical_peak_bytes": 1000,
+          "retained_peak_bytes": 0,
+          "labels_max": 2,
+          "frontier_lookups_max": 2
+        },
+        "arena": {
+          "samples": 30,
+          "mean_us": 1.7633333333333334,
+          "median_us": 1.6,
+          "p95_us": 3.1,
+          "p99_us": 4.4,
+          "forward_mean_us": 0.8333333333333334,
+          "allocations_median": 3.0,
+          "allocated_bytes_median": 240.0,
+          "physical_peak_bytes": 1840,
+          "retained_peak_bytes": 1600,
+          "labels_max": 2,
+          "frontier_lookups_max": 2
+        },
+        "mean_improvement_percent": 45.91002044989775
+      },
+      "disabled": {
+        "legacy": {
+          "samples": 30,
+          "mean_us": 4.1033333333333335,
+          "median_us": 3.3,
+          "p95_us": 6.5,
+          "p99_us": 16.6,
+          "forward_mean_us": 1.7333333333333334,
+          "allocations_median": 23.0,
+          "allocated_bytes_median": 1792.0,
+          "physical_peak_bytes": 1128,
+          "retained_peak_bytes": 0,
+          "labels_max": 2,
+          "frontier_lookups_max": 2
+        },
+        "arena": {
+          "samples": 30,
+          "mean_us": 5.216666666666667,
+          "median_us": 4.35,
+          "p95_us": 9.4,
+          "p99_us": 9.9,
+          "forward_mean_us": 2.9,
+          "allocations_median": 21.0,
+          "allocated_bytes_median": 2614.0,
+          "physical_peak_bytes": 2018,
+          "retained_peak_bytes": 0,
+          "labels_max": 2,
+          "frontier_lookups_max": 2
+        },
+        "mean_improvement_percent": -27.13241267262387
+      }
+    }
+  }
+}

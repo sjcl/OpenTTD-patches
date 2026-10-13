@@ -11,6 +11,7 @@
 #include "passenger_journey_type.h"
 #include "passenger_journey_schedule.h"
 #include "passenger_departure_index.h"
+#include "passenger_timed_search.h"
 #include <set>
 #include <list>
 #include <variant>
@@ -79,6 +80,8 @@ struct PassengerDatabaseDiagnostic {
 	uint64_t vehicle_candidates = 0, departure_calculations = 0, departure_index_hits = 0, departure_index_fallbacks = 0;
 	uint64_t departure_index_builds = 0, departure_index_build_nanoseconds = 0, forward_microseconds = 0, search_work = 0;
 	uint64_t service_bound_checks = 0, service_bound_stops = 0, pruned_services = 0, pruned_vehicle_visits = 0;
+	uint64_t timed_labels = 0, frontier_lookups = 0, queue_pushes = 0, queue_pops = 0;
+	size_t search_scratch_bytes = 0, search_scratch_peak_bytes = 0; ///< Physical capacity, separate from logical admission.
 	size_t departure_index_bytes = 0, departure_index_peak_bytes = 0;
 	size_t services = 0, timed_services = 0, vehicles = 0, bytes = 0, policy_bytes = 0, pending = 0;
 	size_t known_phase_vehicles = 0;
@@ -125,6 +128,15 @@ public:
 	/** Explicit read-only algorithm comparison, never a local cache preference or simulation setting. */
 	PassengerPeriodicPlan PlanWithoutServicePruning(CargoType cargo, StationID origin, StationID destination, StateTicks ready,
 			PassengerJourneyLimits limits = {}, PassengerJourneyEvaluation evaluation = {}, OrderListID excluded = OrderListID::Invalid());
+	/** Read-only data-structure comparison; retains service pruning and all logical budgets. */
+	PassengerPeriodicPlan PlanWithLegacySearchStructures(CargoType cargo, StationID origin, StationID destination, StateTicks ready,
+			PassengerJourneyLimits limits = {}, PassengerJourneyEvaluation evaluation = {}, OrderListID excluded = OrderListID::Invalid());
+	void SetTimedSearchScratchEnabled(bool enabled)
+	{
+		if (this->timed_scratch_enabled == enabled) return;
+		this->timed_scratch_enabled = enabled;
+		if (!enabled) this->timed_scratch.Release();
+	}
 	PassengerSchedulePlan PlanEstimated(CargoType cargo, StationID origin, StationID destination, StateTicks ready,
 			PassengerJourneyLimits limits = {}, PassengerJourneyEvaluation evaluation = {}, OrderListID excluded = OrderListID::Invalid())
 	{ return this->schedule.Plan(*this, cargo, origin, destination, ready, excluded, limits, evaluation); }
@@ -213,6 +225,8 @@ private:
 	std::map<PolicyKey, CachedPolicy> policies;
 	std::map<std::tuple<bool, CargoType, StationID, StationID>, uint64_t> recent_policy_builds; ///< Bounded diagnostic history, never simulation input.
 	PassengerDatabaseDiagnostic diagnostic;
+	PassengerTimedSearchScratch timed_scratch;
+	bool timed_scratch_enabled = true; ///< Local storage reuse preference, never routing input or saved state.
 	static constexpr size_t DEPARTURE_INDEX_BYTES = 8 * 1024 * 1024;
 	std::map<std::pair<OrderListID, CargoType>, PassengerDepartureIndex> departure_indices;
 	size_t departure_index_bytes = 0;
@@ -222,7 +236,7 @@ private:
 	void Index(const PassengerPeriodicService &service);
 	JourneyPolicy CompilePolicy(CargoType cargo, StationID origin, StationID destination, PassengerJourneyLimits limits, PassengerJourneyEvaluation evaluation, Dependencies &dependencies) const;
 	PassengerPeriodicPlan PlanInternal(CargoType cargo, StationID origin, StationID destination, StateTicks ready,
-			PassengerJourneyLimits limits, PassengerJourneyEvaluation evaluation, OrderListID excluded, bool prune_services);
+			PassengerJourneyLimits limits, PassengerJourneyEvaluation evaluation, OrderListID excluded, bool prune_services, bool legacy_structures = false);
 	bool ServiceCannotImprove(const PassengerPeriodicTimetable &pattern, size_t boarding, CargoType cargo,
 			StationID destination, int64_t cost, bool transfer, int64_t best, const JourneyPolicy &policy, PassengerJourneyEvaluation evaluation);
 };

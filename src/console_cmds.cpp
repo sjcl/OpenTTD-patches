@@ -4850,11 +4850,16 @@ static bool ConPassengerPeriodicCompare(std::span<std::string_view> argv)
 static bool ConPassengerJourneyStats(std::span<std::string_view> argv)
 {
 	if (argv.empty()) {
-		IConsolePrint(CC_HELP, "passenger_journey_stats [total|tick|inventory|reset|cache_on|cache_off|departures_on|departures_off|fallback_cache_on|fallback_cache_off|fallback_validate_on|fallback_validate_off]: local diagnostics and derived cache preferences");
+		IConsolePrint(CC_HELP, "passenger_journey_stats [total|tick|inventory|reset|cache_on|cache_off|departures_on|departures_off|scratch_on|scratch_off|fallback_cache_on|fallback_cache_off|fallback_validate_on|fallback_validate_off]: local diagnostics and derived cache preferences");
 		return true;
 	}
 	if (argv.size() > 2) return false;
 	auto operation = argv.size() == 1 ? std::string_view("total") : argv[1];
+	if (operation == "scratch_on" || operation == "scratch_off") {
+		GetPassengerServiceDatabase().SetTimedSearchScratchEnabled(operation == "scratch_on");
+		IConsolePrint(CC_DEFAULT, "Timed search scratch: {}; logical query work unchanged", operation == "scratch_on" ? "enabled" : "disabled");
+		return true;
+	}
 	if (operation == "departures_on" || operation == "departures_off") {
 		GetPassengerServiceDatabase().SetDepartureIndexEnabled(operation == "departures_on");
 		IConsolePrint(CC_DEFAULT, "Periodic departure index: {}; logical query work unchanged", operation == "departures_on" ? "enabled" : "disabled");
@@ -4979,6 +4984,8 @@ static bool ConPassengerJourneyStats(std::span<std::string_view> argv)
 			periodic.vehicle_candidates, periodic.next_departures, periodic.departure_calculations, periodic.departure_index_hits, periodic.departure_index_fallbacks,
 			periodic.departure_index_builds, periodic.departure_index_build_nanoseconds, periodic.departure_index_bytes, periodic.departure_index_peak_bytes, periodic.forward_microseconds, periodic.search_work);
 	IConsolePrint(CC_DEFAULT, "Periodic global invalidations: {}", periodic.global_invalidations);
+	IConsolePrint(CC_DEFAULT, "Timed search storage: labels={}; frontier_lookups={}; queue_pushes={}; queue_pops={}; scratch_bytes={}; scratch_peak_bytes={}",
+		periodic.timed_labels, periodic.frontier_lookups, periodic.queue_pushes, periodic.queue_pops, periodic.search_scratch_bytes, periodic.search_scratch_peak_bytes);
 	IConsolePrint(CC_DEFAULT, "Periodic service pruning: bound_checks={}; bound_stops={}; pruned_services={}; skipped_vehicle_visits={}",
 			periodic.service_bound_checks, periodic.service_bound_stops, periodic.pruned_services, periodic.pruned_vehicle_visits);
 	IConsolePrint(CC_DEFAULT, "Periodic residency: entries={}; revision={}; publications={}; staged={}; staged_bytes={}; additions={}; removals={}; updates={}; timetable_notifications={}",
