@@ -9,6 +9,7 @@ import importlib.util
 import json
 import os
 import pathlib
+import platform
 import re
 import shutil
 import subprocess
@@ -35,6 +36,8 @@ def run(args):
     package = json.loads((args.package / "package.json").read_text(encoding="utf-8"))
     if profile.sha256(args.package / "input.sav") != package["input_sha256"]:
         raise ValueError("Input save changed")
+    if profile.sha256(args.package / "openttd.cfg") != package["config_sha256"]:
+        raise ValueError("Frozen configuration changed")
     if profile.inventory(args.package) != package["assets"]:
         raise ValueError("Frozen assets changed")
     manifest = {"input": package, "binary_sha256": profile.sha256(args.binary), "ticks": args.ticks,
@@ -42,6 +45,12 @@ def run(args):
                 "runner_sha256": profile.sha256(__file__), "harness_sha256": profile.sha256(profile.HARNESS),
                 "revision": subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip(),
                 "source_files": {p.name: profile.sha256(p) for p in (ROOT / "src").glob("passenger*.*")},
+                "language_files": {p.name: profile.sha256(p) for p in (args.build / "lang").glob("*.lng")},
+                "host": {"platform": platform.platform(), "machine": platform.machine(),
+                         "cpu": profile.powershell("Get-CimInstance Win32_Processor | ForEach-Object { $_.Name }").strip()},
+                "settings": {"distribution_pax": 2, "passenger_od_assignment": True,
+                             "passenger_journey_routing": True, "passenger_journey_periodic": True,
+                             "recalc_interval": 8, "recalc_time": 32},
                 "budgets": {"work": 65536, "labels": 8192, "memory": 8388608},
                 "status": "running"}
     lock_path = pathlib.Path(tempfile.gettempdir()) / "openttd-passenger-routing-measurement.lock"
@@ -111,10 +120,21 @@ def run(args):
                 row["stderr_unique_lines"] = sorted(set(stderr.splitlines()))
                 if row["derived"]["completed_ticks"] != args.ticks:
                     raise RuntimeError("Incorrect simulation interval")
+                interval = parsed["state_ticks"]
+                if len(interval) != 2 or interval[1] - interval[0] != args.ticks:
+                    raise RuntimeError("Incorrect StateTicks interval")
+                if row["process"]["exit_code"] != 0 or row["process"]["input_sha256"].lower() != package["input_sha256"]:
+                    raise RuntimeError("Process/input verification failed")
+                if row["process"]["binary_sha256"].lower() != manifest["binary_sha256"]:
+                    raise RuntimeError("Benchmark binary changed")
                 manifest["runs"].append(row)
                 profile.dump(args.output / "manifest.json", manifest)
                 print(f"Completed {label}: {row['derived']['simulation_mean_ms']:.3f} ms/tick", flush=True)
         manifest["status"] = "complete"
+    except BaseException as error:
+        manifest["status"] = "failed"
+        manifest["error"] = str(error)
+        raise
     finally:
         profile.dump(args.output / "manifest.json", manifest)
         os.close(lock)
