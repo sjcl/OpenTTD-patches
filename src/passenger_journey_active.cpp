@@ -49,9 +49,16 @@ namespace {
 		size_t work, bytes;
 		uint64_t used;
 	};
+	struct NanosecondTimer {
+		uint64_t &counter;
+		std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
+		~NanosecondTimer() { this->counter += std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - this->start).count(); }
+	};
 	using BindingNodes = std::vector<std::pair<StationID, bool>>;
 	struct ResidentBinding { std::shared_ptr<const BindingNodes> nodes; uint64_t token; size_t bytes; };
-	static std::map<std::pair<LinkGraphID, uint64_t>, ResidentBinding> resident_bindings;
+	using BindingKey = std::tuple<LinkGraphID, uint64_t, uint64_t, NodeID, CargoType>;
+	static std::map<BindingKey, ResidentBinding> resident_bindings;
+	static bool resident_fallback_enabled = true, validate_resident_bindings = false;
 	static size_t resident_binding_bytes = 0;
 	static uint64_t binding_token = 0, distance_use = 0;
 	using ReverseKey = std::tuple<LinkGraphID, uint64_t, uint64_t, uint64_t>;
@@ -116,6 +123,12 @@ namespace {
 		a.fair_share_releases += b.fair_share_releases; a.retained_rides += b.retained_rides;
 		a.od_fallback_work += b.od_fallback_work; a.od_fallback_searches += b.od_fallback_searches;
 		a.od_fallback_cache_hits += b.od_fallback_cache_hits; a.od_fallback_cache_bytes = std::max(a.od_fallback_cache_bytes, b.od_fallback_cache_bytes);
+		a.od_fallback_binding_hits += b.od_fallback_binding_hits; a.od_fallback_binding_builds += b.od_fallback_binding_builds;
+		a.od_fallback_binding_nodes += b.od_fallback_binding_nodes;
+		a.od_fallback_reverse_hits += b.od_fallback_reverse_hits; a.od_fallback_reverse_builds += b.od_fallback_reverse_builds;
+		a.od_fallback_binding_validation_nanoseconds += b.od_fallback_binding_validation_nanoseconds;
+		a.od_fallback_binding_build_nanoseconds += b.od_fallback_binding_build_nanoseconds;
+		a.od_fallback_reverse_build_nanoseconds += b.od_fallback_reverse_build_nanoseconds;
 		a.boarded_passengers += b.boarded_passengers; a.transferred_passengers += b.transferred_passengers; a.delivered_passengers += b.delivered_passengers;
 		a.depot_service_boarded_passengers += b.depot_service_boarded_passengers; a.depot_service_delivered_passengers += b.depot_service_delivered_passengers;
 		a.depot_crossing_boarded_passengers += b.depot_crossing_boarded_passengers; a.depot_crossing_delivered_passengers += b.depot_crossing_delivered_passengers;
@@ -278,6 +291,12 @@ void ClearPassengerOdFallbackCache()
 	resident_distances.clear(); resident_distance_bytes = 0; resident_bindings.clear(); resident_binding_bytes = 0;
 	reverse_indices.clear(); reverse_bytes = 0; binding_token = distance_use = 0;
 }
+void SetPassengerOdFallbackCacheEnabled(bool enabled)
+{
+	resident_fallback_enabled = enabled;
+	ClearPassengerOdFallbackCache();
+}
+void SetPassengerOdFallbackBindingValidation(bool enabled) { validate_resident_bindings = enabled; }
 void RecordPassengerJourneyFallback(PassengerJourneyFallbackReason reason) { CountJourneyFallback(reason); }
 void RecordPassengerScheduleInvalidation(PassengerScheduleInvalidation reason) { ++TickBudget().diagnostic.schedule_invalidations[static_cast<size_t>(reason)]; }
 void RecordPassengerJourneyMovement(PassengerJourneyMovement movement, uint count, bool timed)
@@ -764,13 +783,28 @@ uint32_t PassengerOdFallbackContext::Distance(CargoType cargo, StationID origin,
 			if (amount > available) { this->Spend(available); this->Spend(); return false; }
 			return this->Spend(amount);
 		};
-		const auto binding_key = std::pair(graph->index, graph->PassengerOdRevision());
+		/* All runtime goods assignments invalidate the affected graph's derived
+		 * binding revision. Station lifetime changes have a separate generation.
+		 * Both counters are NOSAVE and never reset; loaded/reused graph IDs cannot
+		 * alias a prior binding. Edge edits need no station rescan. Endpoint checks
+		 * above remain live, and the original size debit is paid on every path. */
+		const BindingKey binding_key{graph->index, graph->PassengerBindingRevision(), PassengerStationBindingGeneration(), graph->Size(), cargo};
 		auto event_binding = this->bindings.find(binding_key);
 		if (event_binding == this->bindings.end()) {
-			auto resident_binding = resident_bindings.find(binding_key);
+			auto resident_binding = resident_fallback_enabled ? resident_bindings.find(binding_key) : resident_bindings.end();
 			bool matches = resident_binding != resident_bindings.end() && resident_binding->second.nodes->size() == graph->Size();
-			for (NodeID node = 0; matches && node < graph->Size(); ++node) matches = (*resident_binding->second.nodes)[node] == std::pair((*graph)[node].Station(), valid_node(node));
+			if (matches && validate_resident_bindings) {
+				NanosecondTimer validation_timer{TickBudget().diagnostic.od_fallback_binding_validation_nanoseconds};
+				size_t checked = 0;
+				for (NodeID node = 0; matches && node < graph->Size(); ++node) {
+					++checked;
+					matches = (*resident_binding->second.nodes)[node] == std::pair((*graph)[node].Station(), valid_node(node));
+				}
+				TickBudget().diagnostic.od_fallback_binding_nodes += checked;
+			}
 			if (!matches) {
+				NanosecondTimer build_timer{TickBudget().diagnostic.od_fallback_binding_build_nanoseconds};
+				++TickBudget().diagnostic.od_fallback_binding_builds;
 				if (resident_binding != resident_bindings.end()) { resident_binding_bytes -= resident_binding->second.bytes; resident_bindings.erase(resident_binding); }
 				auto nodes = std::make_shared<BindingNodes>(); nodes->reserve(graph->Size());
 				for (NodeID node = 0; node < graph->Size(); ++node) nodes->emplace_back((*graph)[node].Station(), valid_node(node));
@@ -779,13 +813,19 @@ uint32_t PassengerOdFallbackContext::Distance(CargoType cargo, StationID origin,
 					resident_binding_bytes -= resident_bindings.begin()->second.bytes; resident_bindings.erase(resident_bindings.begin());
 				}
 				assert(binding_token != UINT64_MAX);
-				resident_binding = resident_bindings.emplace(binding_key, ResidentBinding{nodes, ++binding_token, binding_bytes}).first; resident_binding_bytes += binding_bytes;
+				const uint64_t token = ++binding_token;
+				event_binding = this->bindings.emplace(binding_key, Binding{nodes, token}).first;
+				if (resident_fallback_enabled) {
+					resident_bindings.emplace(binding_key, ResidentBinding{nodes, token, binding_bytes}); resident_binding_bytes += binding_bytes;
+				}
+			} else {
+				++TickBudget().diagnostic.od_fallback_binding_hits;
+				event_binding = this->bindings.emplace(binding_key, Binding{resident_binding->second.nodes, resident_binding->second.token}).first;
 			}
-			event_binding = this->bindings.emplace(binding_key, Binding{resident_binding->second.nodes, resident_binding->second.token}).first;
 		}
 		const auto &node_bindings = *event_binding->second.nodes;
 		DistanceKey resident_key{cargo, destination, graph->index, graph->PassengerOdRevision(), graph->PassengerRoutingRevision(), event_binding->second.token, to.node};
-		auto resident = resident_distances.find(resident_key);
+		auto resident = resident_fallback_enabled ? resident_distances.find(resident_key) : resident_distances.end();
 		if (resident != resident_distances.end()) {
 			/* A cache hit replays the complete cold debit, including a failed
 			 * prefix when this event has less remaining work. */
@@ -800,10 +840,12 @@ uint32_t PassengerOdFallbackContext::Distance(CargoType cargo, StationID origin,
 		++TickBudget().diagnostic.od_fallback_searches;
 		if (!spend_prefix(graph->GetEdges().size())) return UNREACHABLE;
 		ReverseKey reverse_key{graph->index, graph->PassengerOdRevision(), graph->PassengerRoutingRevision(), event_binding->second.token};
-		auto reverse = reverse_indices.find(reverse_key);
+		auto reverse = resident_fallback_enabled ? reverse_indices.find(reverse_key) : reverse_indices.end();
 		std::shared_ptr<const ReverseIndex> index;
-		if (reverse != reverse_indices.end()) index = reverse->second;
+		if (reverse != reverse_indices.end()) { index = reverse->second; ++TickBudget().diagnostic.od_fallback_reverse_hits; }
 		else {
+			NanosecondTimer reverse_timer{TickBudget().diagnostic.od_fallback_reverse_build_nanoseconds};
+			++TickBudget().diagnostic.od_fallback_reverse_builds;
 			auto built = std::make_shared<ReverseIndex>(); built->offsets.resize(graph->Size() + 1);
 			auto eligible = [&](const auto &edge, const auto &info) {
 				return edge.first < node_bindings.size() && edge.second < node_bindings.size() && node_bindings[edge.first].second && node_bindings[edge.second].second &&
@@ -817,7 +859,8 @@ uint32_t PassengerOdFallbackContext::Distance(CargoType cargo, StationID origin,
 			while (!reverse_indices.empty() && (reverse_indices.size() >= 32 || reverse_bytes + built->bytes > 8 * 1024 * 1024)) {
 				reverse_bytes -= reverse_indices.begin()->second->bytes; reverse_indices.erase(reverse_indices.begin());
 			}
-			index = built; reverse_indices.emplace(reverse_key, built); reverse_bytes += built->bytes;
+			index = built;
+			if (resident_fallback_enabled) { reverse_indices.emplace(reverse_key, built); reverse_bytes += built->bytes; }
 		}
 		std::vector<uint32_t> hops(graph->Size(), UNREACHABLE);
 		std::vector<NodeID> queue; queue.reserve(graph->Size());
@@ -835,13 +878,14 @@ uint32_t PassengerOdFallbackContext::Distance(CargoType cargo, StationID origin,
 		cached->second.hops = std::make_shared<const std::vector<uint32_t>>(std::move(hops)); this->distance_bytes += bytes;
 		const size_t resident_bytes = bytes * 2 + 256;
 		constexpr size_t MAX_RESIDENT_BYTES = 16 * 1024 * 1024;
-		if (resident_bytes <= MAX_RESIDENT_BYTES) {
+		if (resident_fallback_enabled && resident_bytes <= MAX_RESIDENT_BYTES) {
 			while (!resident_distances.empty() && (resident_distances.size() >= 512 || resident_distance_bytes + resident_bytes > MAX_RESIDENT_BYTES)) {
 				auto oldest = std::min_element(resident_distances.begin(), resident_distances.end(), [](const auto &a, const auto &b) { return a.second.used < b.second.used; });
 				resident_distance_bytes -= oldest->second.bytes; resident_distances.erase(oldest);
 			}
 			resident_distances.emplace(resident_key, ResidentDistances{cached->second.hops, original_work - this->work_left, resident_bytes, ++distance_use}); resident_distance_bytes += resident_bytes;
 		}
+		TickBudget().diagnostic.od_fallback_cache_bytes = resident_distance_bytes + resident_binding_bytes + reverse_bytes;
 	}
 	return cached->second.graph == graph->index && cached->second.hops != nullptr && cached->second.hops->size() == graph->Size() ? (*cached->second.hops)[from.node] : UNREACHABLE;
 }

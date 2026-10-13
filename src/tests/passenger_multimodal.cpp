@@ -20,6 +20,7 @@
 #include "../core/backup_type.hpp"
 #include "../core/random_func.hpp"
 #include "../sl/saveload.h"
+#include "../linkgraph/linkgraph.h"
 #include <chrono>
 
 static constexpr CargoType PAX{0}, MAIL{1};
@@ -365,6 +366,50 @@ TEST_CASE("Multimodal OD fallback boards only progressing rides and respects for
 	if (forced) CHECK(f.Waiting(B).Load(10, &through->cargo, next, through->tile, through) == 0);
 	CHECK(packet->GetPassengerDestination() == E);
 	CHECK(packet->GetFeederShare() == 100);
+}
+
+TEST_CASE("Every mode uses resident OD bindings through reservation transfer and final delivery", "[passenger][multimodal][fallback][bindings][determinism]")
+{
+	MultimodalFixture f;
+	VehicleType type = GENERATE(VehicleType::Train, VehicleType::Road, VehicleType::Ship, VehicleType::Aircraft);
+	bool residency = GENERATE(true, false);
+	struct Cleanup {
+		~Cleanup() { SetPassengerOdFallbackCacheEnabled(true); SetPassengerOdFallbackBindingValidation(false); _link_graph_pool.CleanPool(); }
+	} cleanup;
+	SetPassengerOdFallbackCacheEnabled(residency); ClearPassengerOdFallbackCache();
+	LinkGraph *graph = LinkGraph::Create(PAX);
+	for (StationID station : {A, B, C, D, E}) {
+		Station *st = Station::Get(station); st->goods[PAX].SetLinkGraph(graph->index, graph->AddNode(st));
+	}
+	graph->UpdateEdge(0, 1, 100, 0, 100, {EdgeUpdateMode::Refresh, EdgeUpdateMode::Unrestricted});
+	graph->UpdateEdge(1, 4, 100, 0, 100, {EdgeUpdateMode::Refresh, EdgeUpdateMode::Unrestricted});
+	Vehicle *feeder = f.Service(type, {MultiStop(A), MultiStop(B, 100)});
+	Vehicle *connection = f.Service(type, {MultiStop(B), MultiStop(E, 100)});
+	auto *packet = f.Packet(20); packet->FallbackPassengerJourney(A, NOW);
+	auto observe = [&]() {
+		const size_t before = GetPassengerJourneyTickDiagnostic().od_fallback_work;
+		PassengerOdFallbackContext context; REQUIRE(context.CanBoard(*packet, feeder, PAX)); context.PrepareBoard(*packet, feeder, PAX);
+		return std::pair(packet->GetPassengerVia(), GetPassengerJourneyTickDiagnostic().od_fallback_work - before);
+	};
+	const auto cold = observe(); REQUIRE(cold.first == B); CHECK(observe() == cold);
+	SetPassengerOdFallbackBindingValidation(true); CHECK(observe() == cold); SetPassengerOdFallbackBindingValidation(false);
+	f.Waiting().Append(packet, StationID::Invalid()); std::array next{B}; PassengerJourneyLoadingContext loading;
+	REQUIRE(f.Waiting().Reserve(20, &feeder->cargo, next, feeder->tile, feeder, &loading) == 20);
+	CHECK(f.Waiting().Load(5, &feeder->cargo, next, feeder->tile, feeder, &loading) == 5);
+	CHECK(f.Waiting().Load(15, &feeder->cargo, next, feeder->tile, feeder, &loading) == 15);
+	f.LoadAt(feeder, 1); CargoPayment payment(CargoPaymentID::Invalid(), feeder); PassengerJourneyActiveContext at_b(feeder, B);
+	feeder->cargo.Stage(true, B, next, OrderUnloadType::Transfer, &Station::Get(B)->goods[PAX], PAX, &payment, feeder->tile, nullptr, nullptr, &at_b);
+	REQUIRE(feeder->cargo.Unload(20, &f.Waiting(B), PAX, &payment, feeder->tile) == 20);
+	std::array final{E}; REQUIRE(f.Waiting(B).Load(20, &connection->cargo, final, connection->tile, connection) == 20);
+	Company *company = Company::Create(); connection->owner = company->index;
+	Town *town = Town::Create(TileIndex{0}); Station::Get(E)->town = town; Station::Get(E)->always_accepted.Set(PAX);
+	f.LoadAt(connection, 1); CargoPayment final_payment(CargoPaymentID::Invalid(), connection); PassengerJourneyActiveContext at_e(connection, E);
+	connection->cargo.Stage(true, E, final, OrderUnloadType::UnloadIfPossible, &Station::Get(E)->goods[PAX], PAX, &final_payment, connection->tile, nullptr, nullptr, &at_e);
+	CHECK(connection->cargo.Unload(20, &f.Waiting(E), PAX, &final_payment, connection->tile) == 20);
+	CHECK(company->cur_economy.delivered_cargo[PAX] == 20);
+	CHECK(GetPassengerJourneyTickDiagnostic().untimed_boarded_passengers == 40);
+	CHECK(GetPassengerJourneyTickDiagnostic().untimed_transferred_passengers == 20);
+	CHECK(GetPassengerJourneyTickDiagnostic().untimed_delivered_passengers == 20);
 }
 
 TEST_CASE("Freight-only and zero-capacity vehicles never become passenger trips", "[passenger][multimodal][prediction]")

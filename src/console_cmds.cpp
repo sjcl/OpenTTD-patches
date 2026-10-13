@@ -4850,11 +4850,21 @@ static bool ConPassengerPeriodicCompare(std::span<std::string_view> argv)
 static bool ConPassengerJourneyStats(std::span<std::string_view> argv)
 {
 	if (argv.empty()) {
-		IConsolePrint(CC_HELP, "passenger_journey_stats [total|tick|inventory|reset|cache_on|cache_off]: local diagnostics and optional derived policy residency");
+		IConsolePrint(CC_HELP, "passenger_journey_stats [total|tick|inventory|reset|cache_on|cache_off|fallback_cache_on|fallback_cache_off|fallback_validate_on|fallback_validate_off]: local diagnostics and derived cache preferences");
 		return true;
 	}
 	if (argv.size() > 2) return false;
 	auto operation = argv.size() == 1 ? std::string_view("total") : argv[1];
+	if (operation == "fallback_cache_on" || operation == "fallback_cache_off") {
+		SetPassengerOdFallbackCacheEnabled(operation == "fallback_cache_on");
+		IConsolePrint(CC_DEFAULT, "OD fallback residency: {}; logical work unchanged", operation == "fallback_cache_on" ? "enabled" : "disabled");
+		return true;
+	}
+	if (operation == "fallback_validate_on" || operation == "fallback_validate_off") {
+		SetPassengerOdFallbackBindingValidation(operation == "fallback_validate_on");
+		IConsolePrint(CC_DEFAULT, "OD fallback physical binding validation: {}", operation == "fallback_validate_on" ? "enabled" : "disabled");
+		return true;
+	}
 	if (operation == "cache_on" || operation == "cache_off") {
 		GetPassengerServiceDatabase().SetPolicyCacheEnabled(operation == "cache_on");
 		IConsolePrint(CC_DEFAULT, "Periodic policy residency: {}; logical query work unchanged", operation == "cache_on" ? "enabled" : "disabled");
@@ -4953,6 +4963,9 @@ static bool ConPassengerJourneyStats(std::span<std::string_view> argv)
 	IConsolePrint(CC_DEFAULT, "Journey inclusive scopes: waiting_us={}; fallback_distance_us={}; boarding_us={}", stats.waiting_microseconds, stats.fallback_distance_microseconds, stats.boarding_microseconds);
 	IConsolePrint(CC_DEFAULT, "Periodic pending age: ticks={}", periodic.maximum_pending_ticks);
 	IConsolePrint(CC_DEFAULT, "OD fallback cache: hits={}; bytes={}; work={}; searches={}", stats.od_fallback_cache_hits, stats.od_fallback_cache_bytes, stats.od_fallback_work, stats.od_fallback_searches);
+	IConsolePrint(CC_DEFAULT, "OD fallback bindings: hits={}; builds={}; validation_nodes={}; validation_ns={}; build_ns={}; reverse_hits={}; reverse_builds={}; reverse_build_ns={}",
+			stats.od_fallback_binding_hits, stats.od_fallback_binding_builds, stats.od_fallback_binding_nodes, stats.od_fallback_binding_validation_nanoseconds,
+			stats.od_fallback_binding_build_nanoseconds, stats.od_fallback_reverse_hits, stats.od_fallback_reverse_builds, stats.od_fallback_reverse_build_nanoseconds);
 	IConsolePrint(CC_DEFAULT, "Periodic database: services={}; timed={}; vehicles={}; bytes={}; policies_bytes={}; pending={}; builds={}; work={}; build_us={}; searches={}; query_us={}; next_departures={}; policy_hits={}; policy_misses={}; invalidations={}; rejected_work={}; rejected_memory={}",
 			periodic.services, periodic.timed_services, periodic.vehicles, periodic.bytes, periodic.policy_bytes, periodic.pending, periodic.builds, periodic.build_work,
 			periodic.build_microseconds, periodic.searches, periodic.query_microseconds, periodic.next_departures, periodic.policy_hits, periodic.policy_misses,

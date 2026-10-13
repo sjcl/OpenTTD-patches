@@ -4724,8 +4724,7 @@ void IncreaseStats(Station *st, CargoType cargo, StationID next_station_id, uint
 			if (LinkGraph::CanAllocateItem()) {
 				lg = LinkGraph::Create(cargo);
 				LinkGraphSchedule::instance.Queue(lg);
-				ge2.link_graph = lg->index;
-				ge2.node = lg->AddNode(st2);
+				ge2.SetLinkGraph(lg->index, lg->AddNode(st2));
 			} else {
 				Debug(misc, 0, "Can't allocate link graph");
 			}
@@ -4733,13 +4732,11 @@ void IncreaseStats(Station *st, CargoType cargo, StationID next_station_id, uint
 			lg = LinkGraph::Get(ge2.link_graph);
 		}
 		if (lg) {
-			ge1.link_graph = lg->index;
-			ge1.node = lg->AddNode(st);
+			ge1.SetLinkGraph(lg->index, lg->AddNode(st));
 		}
 	} else if (ge2.link_graph == LinkGraphID::Invalid()) {
 		lg = LinkGraph::Get(ge1.link_graph);
-		ge2.link_graph = lg->index;
-		ge2.node = lg->AddNode(st2);
+		ge2.SetLinkGraph(lg->index, lg->AddNode(st2));
 	} else {
 		lg = LinkGraph::Get(ge1.link_graph);
 		if (ge1.link_graph != ge2.link_graph) {
@@ -4864,8 +4861,7 @@ static uint UpdateStationWaiting(Station *st, CargoType cargo, uint amount, Sour
 		if (LinkGraph::CanAllocateItem()) {
 			lg = LinkGraph::Create(cargo);
 			LinkGraphSchedule::instance.Queue(lg);
-			ge.link_graph = lg->index;
-			ge.node = lg->AddNode(st);
+			ge.SetLinkGraph(lg->index, lg->AddNode(st));
 		} else {
 			Debug(misc, 0, "Can't allocate link graph");
 		}

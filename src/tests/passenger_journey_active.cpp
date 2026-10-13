@@ -25,6 +25,7 @@
 #include <chrono>
 
 extern std::vector<uint8_t> SlTestSaveLoadTable(void *, void *, const NamedSaveLoadTable &);
+extern NamedSaveLoadTable GetLinkGraphDesc();
 extern SaveLoadVersion _sl_version;
 static constexpr CargoType PAX{0};
 static constexpr StationID A{0}, B{1}, C{2}, D{3};
@@ -119,15 +120,13 @@ struct FallbackLinks {
 	{
 		for (StationID id : {A, B, C, D}) {
 			Station *station = Station::Get(id);
-			station->goods[PAX].link_graph = this->graph->index;
-			station->goods[PAX].node = this->graph->AddNode(station);
+			station->goods[PAX].SetLinkGraph(this->graph->index, this->graph->AddNode(station));
 		}
 	}
 	~FallbackLinks()
 	{
 		for (StationID id : {A, B, C, D}) {
-			Station::Get(id)->goods[PAX].link_graph = LinkGraphID::Invalid();
-			Station::Get(id)->goods[PAX].node = INVALID_NODE;
+			if (Station *station = Station::GetIfValid(id)) station->goods[PAX].SetLinkGraph(LinkGraphID::Invalid(), INVALID_NODE);
 		}
 		_link_graph_pool.CleanPool();
 	}
@@ -167,6 +166,234 @@ TEST_CASE("Resident OD fallback distances replay cold work and invalidate restri
 		helper.GetEdge().Restrict(); return LinkGraph::EdgeIterationResult::None;
 	});
 	PassengerOdFallbackContext changed; CHECK_FALSE(changed.CanBoard(*packet, &train, PAX));
+}
+
+struct FallbackCachePreferences {
+	~FallbackCachePreferences() { SetPassengerOdFallbackCacheEnabled(true); SetPassengerOdFallbackBindingValidation(false); }
+};
+
+/** A fresh arrival context, including the live prefix and the logical distance debit. */
+static std::pair<StationID, size_t> ObserveFallback(CargoPacket &packet, const Vehicle *vehicle)
+{
+	const size_t before = GetPassengerJourneyTickDiagnostic().od_fallback_work;
+	PassengerOdFallbackContext context;
+	const bool board = context.CanBoard(packet, vehicle, PAX);
+	if (board) context.PrepareBoard(packet, vehicle, PAX);
+	return {board ? packet.GetPassengerVia() : StationID::Invalid(), GetPassengerJourneyTickDiagnostic().od_fallback_work - before};
+}
+
+TEST_CASE("OD fallback binding residency avoids node scans and preserves cold decisions", "[passenger][fallback][bindings][determinism]")
+{
+	ActiveFixture f; FallbackLinks links; FallbackCachePreferences preferences;
+	links.Edge(A, B); links.Edge(B, D);
+	ActiveTrain train({ActiveStop(A), ActiveStop(B)}); auto packet = std::unique_ptr<CargoPacket>(f.Packet());
+	ClearPassengerOdFallbackCache();
+	const auto cold = ObserveFallback(*packet, &train);
+	REQUIRE(cold.first == B);
+	const auto builds = GetPassengerJourneyTickDiagnostic().od_fallback_binding_builds;
+	for (uint i = 0; i < 128; ++i) CHECK(ObserveFallback(*packet, &train) == cold);
+	CHECK(GetPassengerJourneyTickDiagnostic().od_fallback_binding_builds == builds);
+	CHECK(GetPassengerJourneyTickDiagnostic().od_fallback_binding_nodes == 0);
+	CHECK(GetPassengerJourneyTickDiagnostic().od_fallback_binding_hits >= 128);
+	SetPassengerOdFallbackBindingValidation(true);
+	CHECK(ObserveFallback(*packet, &train) == cold);
+	CHECK(GetPassengerJourneyTickDiagnostic().od_fallback_binding_nodes == links.graph->Size());
+	SetPassengerOdFallbackCacheEnabled(false);
+	CHECK(ObserveFallback(*packet, &train) == cold);
+	CHECK(ObserveFallback(*packet, &train) == cold);
+}
+
+TEST_CASE("OD fallback detects changed intermediate goods bindings without an OD topology edit", "[passenger][fallback][bindings]")
+{
+	ActiveFixture f; FallbackLinks links;
+	links.Edge(A, B); links.Edge(B, C); links.Edge(C, D);
+	ActiveTrain train({ActiveStop(A), ActiveStop(B)}); auto packet = std::unique_ptr<CargoPacket>(f.Packet());
+	ClearPassengerOdFallbackCache(); REQUIRE(ObserveFallback(*packet, &train).first == B);
+	const auto revision = links.graph->PassengerOdRevision();
+	GoodsEntry &goods = Station::Get(C)->goods[PAX]; const NodeID node = goods.node;
+	SECTION("Node assignment") { goods.SetLinkGraph(goods.link_graph, INVALID_NODE); }
+	SECTION("Cargo graph assignment") { goods.SetLinkGraph(LinkGraphID::Invalid(), node); }
+	CHECK(links.graph->PassengerOdRevision() == revision); // Derived identity never changes saved OD allocation.
+	CHECK(ObserveFallback(*packet, &train).first == StationID::Invalid());
+	goods.SetLinkGraph(links.graph->index, node);
+	CHECK(ObserveFallback(*packet, &train).first == B);
+}
+
+TEST_CASE("OD fallback edge eligibility edits reuse station bindings and refresh directed reachability", "[passenger][fallback][bindings]")
+{
+	ActiveFixture f; FallbackLinks links;
+	links.Edge(A, B); links.Edge(B, D);
+	ActiveTrain train({ActiveStop(A), ActiveStop(B)}); auto packet = std::unique_ptr<CargoPacket>(f.Packet());
+	ClearPassengerOdFallbackCache(); REQUIRE(ObserveFallback(*packet, &train).first == B);
+	const uint64_t binding = links.graph->PassengerBindingRevision();
+	SECTION("Restrictions and reopening") {
+		links.graph->MutableIterateEdgesFromNode(1, [](LinkGraph::EdgeIterationHelper helper) {
+			helper.GetEdge().Restrict(); return LinkGraph::EdgeIterationResult::None;
+		});
+		CHECK(ObserveFallback(*packet, &train).first == StationID::Invalid());
+		links.Edge(B, D); CHECK(ObserveFallback(*packet, &train).first == B);
+	}
+	SECTION("Removal and new OD path") {
+		links.graph->RemoveEdge(1, 3); CHECK(ObserveFallback(*packet, &train).first == StationID::Invalid());
+		links.Edge(B, C); links.Edge(C, D); CHECK(ObserveFallback(*packet, &train).first == B);
+	}
+	SECTION("Station facilities are checked in the live prefix") {
+		const auto facilities = Station::Get(B)->facilities;
+		Station::Get(B)->facilities = {};
+		CHECK(ObserveFallback(*packet, &train).first == StationID::Invalid());
+		Station::Get(B)->facilities = facilities;
+		CHECK(ObserveFallback(*packet, &train).first == B);
+	}
+	CHECK(links.graph->PassengerBindingRevision() == binding);
+	CHECK(GetPassengerJourneyTickDiagnostic().od_fallback_binding_builds == 1);
+	CHECK(GetPassengerJourneyTickDiagnostic().od_fallback_binding_nodes == 0);
+}
+
+TEST_CASE("OD fallback station pool reinitialization invalidates resident node validity", "[passenger][fallback][bindings][lifecycle]")
+{
+	ActiveFixture f; FallbackLinks links;
+	links.Edge(A, B); links.Edge(B, C); links.Edge(C, D);
+	ActiveTrain train({ActiveStop(A), ActiveStop(B)}); auto packet = std::unique_ptr<CargoPacket>(f.Packet());
+	ClearPassengerOdFallbackCache(); REQUIRE(ObserveFallback(*packet, &train).first == B);
+	const uint64_t revision = links.graph->PassengerOdRevision(), generation = PassengerStationBindingGeneration();
+	_station_pool.CleanPool();
+	for (StationID id : {A, B, C, D}) {
+		Station *st = Station::CreateAtIndex(id, TileIndex{0}); st->owner = OWNER_NONE;
+		// Direct restoration models the raw save/load table, without runtime setters.
+		st->goods[PAX].link_graph = links.graph->index; st->goods[PAX].node = id.base();
+	}
+	EnsurePassengerTestStations(train.orders->GetOrderVector());
+	CHECK(PassengerStationBindingGeneration() != generation);
+	CHECK(links.graph->PassengerOdRevision() == revision);
+	CHECK(ObserveFallback(*packet, &train).first == B);
+	CHECK(GetPassengerJourneyTickDiagnostic().od_fallback_binding_builds == 2);
+}
+
+TEST_CASE("OD fallback follows tail-swapped nodes and reused station IDs", "[passenger][fallback][bindings][lifecycle]")
+{
+	ActiveFixture f; FallbackLinks links;
+	links.Edge(A, B); links.Edge(B, D);
+	ActiveTrain train({ActiveStop(A), ActiveStop(B)}); auto packet = std::unique_ptr<CargoPacket>(f.Packet());
+	ClearPassengerOdFallbackCache(); const auto cold = ObserveFallback(*packet, &train); REQUIRE(cold.first == B);
+	delete Station::Get(C); // D moves from the tail into C's node index.
+	CHECK(Station::Get(D)->goods[PAX].node == 2);
+	CHECK(ObserveFallback(*packet, &train).first == B);
+	Station *replacement = Station::CreateAtIndex(C, TileIndex{0}); replacement->owner = OWNER_NONE;
+	replacement->goods[PAX].SetLinkGraph(links.graph->index, links.graph->AddNode(replacement));
+	links.graph->RemoveEdge(Station::Get(B)->goods[PAX].node, Station::Get(D)->goods[PAX].node);
+	CHECK(ObserveFallback(*packet, &train).first == StationID::Invalid());
+	links.Edge(B, C); links.Edge(C, D);
+	CHECK(ObserveFallback(*packet, &train).first == B);
+}
+
+TEST_CASE("OD fallback rebuilds bindings across graph merges and graph pool reuse", "[passenger][fallback][bindings][lifecycle]")
+{
+	ActiveFixture f; FallbackLinks links;
+	links.Edge(A, B); links.Edge(B, D);
+	ActiveTrain train({ActiveStop(A), ActiveStop(B)}); auto packet = std::unique_ptr<CargoPacket>(f.Packet());
+	ClearPassengerOdFallbackCache(); REQUIRE(ObserveFallback(*packet, &train).first == B);
+	SECTION("Merge into another graph") {
+		LinkGraph *other = LinkGraph::Create(PAX); other->Merge(links.graph); links.graph = other;
+		CHECK(ObserveFallback(*packet, &train).first == B);
+		links.graph->RemoveEdge(Station::Get(B)->goods[PAX].node, Station::Get(D)->goods[PAX].node);
+		CHECK(ObserveFallback(*packet, &train).first == StationID::Invalid());
+	}
+	SECTION("Reused LinkGraphID with the same saved topology revision") {
+		const LinkGraphID id = links.graph->index;
+		const uint64_t old_binding = links.graph->PassengerBindingRevision();
+		const uint64_t old_revision = links.graph->PassengerOdRevision();
+		AutoRestoreBackup revision{_passenger_od_revision, old_revision - 6};
+		_link_graph_pool.CleanPool();
+		links.graph = LinkGraph::Create(PAX); REQUIRE(links.graph->index == id);
+		for (StationID station : {A, B, C, D}) {
+			Station *st = Station::Get(station); st->goods[PAX].SetLinkGraph(id, links.graph->AddNode(st));
+		}
+		links.Edge(A, C); links.Edge(C, D);
+		CHECK(links.graph->PassengerOdRevision() == old_revision);
+		CHECK(links.graph->PassengerBindingRevision() != old_binding);
+		CHECK(ObserveFallback(*packet, &train).first == StationID::Invalid());
+	}
+}
+
+TEST_CASE("OD fallback resident capacity eviction preserves results and logical work", "[passenger][fallback][bindings][determinism]")
+{
+	ActiveFixture f; FallbackLinks links; FallbackCachePreferences preferences;
+	links.Edge(A, B); links.Edge(B, D);
+	for (uint16_t id = 4; id < 525; ++id) {
+		Station *st = Station::CreateAtIndex(StationID{id}, TileIndex{0}); st->owner = OWNER_NONE;
+		st->goods[PAX].SetLinkGraph(links.graph->index, links.graph->AddNode(st));
+		links.Edge(B, st->index);
+	}
+	ActiveTrain train({ActiveStop(A), ActiveStop(B)}); auto packet = std::unique_ptr<CargoPacket>(f.Packet());
+	ClearPassengerOdFallbackCache(); const auto cold = ObserveFallback(*packet, &train); REQUIRE(cold.first == B);
+	for (uint16_t id = 4; id < 525; ++id) {
+		auto other = std::unique_ptr<CargoPacket>(f.Packet(10, StationID{id}));
+		CHECK(ObserveFallback(*other, &train).first == B);
+	}
+	const size_t searches = GetPassengerJourneyTickDiagnostic().od_fallback_searches;
+	CHECK(ObserveFallback(*packet, &train) == cold);
+	CHECK(GetPassengerJourneyTickDiagnostic().od_fallback_searches == searches + 1);
+	CHECK(GetPassengerJourneyTickDiagnostic().od_fallback_cache_bytes <= 32 * 1024 * 1024);
+	SetPassengerOdFallbackCacheEnabled(false);
+	CHECK(ObserveFallback(*packet, &train) == cold);
+}
+
+TEST_CASE("OD fallback binding identity is derived across save load and pool reinitialization", "[passenger][fallback][bindings][saveload]")
+{
+	ActiveFixture f; FallbackLinks links;
+	links.Edge(A, B); links.Edge(B, D);
+	ActiveTrain train({ActiveStop(A), ActiveStop(B)}); auto packet = std::unique_ptr<CargoPacket>(f.Packet());
+	AutoRestoreBackup version{_sl_version, SAVEGAME_VERSION};
+	AutoRestoreBackup features{_sl_xv_feature_versions, AutoRestoreBackupNoNewValueTag{}};
+	AutoRestoreBackup static_features{_sl_xv_feature_static_versions, AutoRestoreBackupNoNewValueTag{}};
+	SlXvSetStaticCurrentVersions(); _sl_xv_feature_versions = _sl_xv_feature_static_versions;
+	LinkGraph saved(LinkGraphID::Invalid());
+	const auto bytes = SlTestSaveLoadTable(links.graph, &saved, GetLinkGraphDesc());
+	ClearPassengerOdFallbackCache(); const auto cold = ObserveFallback(*packet, &train); REQUIRE(cold.first == B);
+	LinkGraph warm_copy(LinkGraphID::Invalid());
+	CHECK(SlTestSaveLoadTable(links.graph, &warm_copy, GetLinkGraphDesc()) == bytes);
+	CHECK(saved.PassengerOdRevision() == links.graph->PassengerOdRevision());
+	CHECK(saved.PassengerBindingRevision() != links.graph->PassengerBindingRevision());
+	const auto old_binding = links.graph->PassengerBindingRevision();
+	const LinkGraphID id = links.graph->index;
+	_link_graph_pool.CleanPool(); links.graph = LinkGraph::CreateAtIndex(id, PAX);
+	CHECK(SlTestSaveLoadTable(&saved, links.graph, GetLinkGraphDesc()) == bytes);
+	CHECK(links.graph->PassengerBindingRevision() != old_binding);
+	CHECK(ObserveFallback(*packet, &train) == cold);
+	AfterLoadPassengerJourneys(); // A joining client starts with no resident derived state.
+	CHECK(ObserveFallback(*packet, &train) == cold);
+	CHECK(GetPassengerJourneyTickDiagnostic().od_fallback_binding_nodes == 0);
+}
+
+TEST_CASE("OD fallback binding and reverse index eviction cannot change logical work", "[passenger][fallback][bindings][determinism]")
+{
+	ActiveFixture f; FallbackLinks links;
+	links.Edge(A, B); links.Edge(B, D);
+	ActiveTrain train({ActiveStop(A), ActiveStop(B)}); auto packet = std::unique_ptr<CargoPacket>(f.Packet());
+	// Prepare all stations first, so station lifetime invalidation does not mask capacity eviction.
+	for (uint16_t id = 4; id < 124; ++id) Station::CreateAtIndex(StationID{id}, TileIndex{0})->owner = OWNER_NONE;
+	std::vector<LinkGraph *> graphs;
+	for (uint16_t group = 0; group < 40; ++group) {
+		LinkGraph *graph = LinkGraph::Create(PAX); graphs.push_back(graph);
+		for (uint16_t offset = 0; offset < 3; ++offset) {
+			Station *st = Station::Get(StationID{static_cast<uint16_t>(4 + group * 3 + offset)});
+			st->goods[PAX].SetLinkGraph(graph->index, graph->AddNode(st));
+		}
+		graph->UpdateEdge(0, 1, 100, 0, 100, {EdgeUpdateMode::Refresh, EdgeUpdateMode::Unrestricted});
+		graph->UpdateEdge(1, 2, 100, 0, 100, {EdgeUpdateMode::Refresh, EdgeUpdateMode::Unrestricted});
+	}
+	ClearPassengerOdFallbackCache(); const auto cold = ObserveFallback(*packet, &train); REQUIRE(cold.first == B);
+	for (uint16_t group = 0; group < 40; ++group) {
+		StationID source{static_cast<uint16_t>(4 + group * 3)}, via{static_cast<uint16_t>(5 + group * 3)}, target{static_cast<uint16_t>(6 + group * 3)};
+		ActiveTrain other({ActiveStop(source), ActiveStop(via)}, VehicleID{101});
+		auto other_packet = std::unique_ptr<CargoPacket>(f.Packet(10, target));
+		CHECK(ObserveFallback(*other_packet, &other).first == via);
+	}
+	const size_t builds = GetPassengerJourneyTickDiagnostic().od_fallback_binding_builds;
+	const size_t reverse_builds = GetPassengerJourneyTickDiagnostic().od_fallback_reverse_builds;
+	CHECK(ObserveFallback(*packet, &train) == cold);
+	CHECK(GetPassengerJourneyTickDiagnostic().od_fallback_binding_builds == builds + 1);
+	CHECK(GetPassengerJourneyTickDiagnostic().od_fallback_reverse_builds == reverse_builds + 1);
 }
 
 TEST_CASE("Timed ordinary journeys win over an untimed express without any bound proof", "[passenger][active][pragmatic]")
@@ -293,7 +520,7 @@ TEST_CASE("A stale saved interchange cannot poison another progressing live stop
 	FallbackLinks links; links.Edge(A, B); links.Edge(B, D); links.Edge(A, C); links.Edge(C, D);
 	ActiveTrain train({ActiveStop(A), ActiveStop(B), ActiveStop(C)});
 	auto *packet = fixture.Packet(); packet->FallbackPassengerJourney(A, NOW); packet->SetPassengerVia(B);
-	Station::Get(B)->goods[PAX].node = INVALID_NODE;
+	Station::Get(B)->goods[PAX].SetLinkGraph(links.graph->index, INVALID_NODE);
 	PassengerOdFallbackContext fallback;
 	CHECK(fallback.Decide(*packet, &train, PAX, A, true, OrderUnloadType::UnloadIfPossible) == Action::Keep);
 	CHECK(packet->GetPassengerVia() == C);
@@ -720,7 +947,7 @@ TEST_CASE("OD fallback boarding validates live prefixes and restricted links", "
 	}
 	SECTION("Stale station node identity cannot grant OD boarding") {
 		links.Edge(A, C);
-		Station::Get(B)->goods[PAX].node = Station::Get(A)->goods[PAX].node;
+		Station::Get(B)->goods[PAX].SetLinkGraph(links.graph->index, Station::Get(A)->goods[PAX].node);
 		CHECK(fixture.Waiting(B).Load(10, &train.cargo, next, TileIndex{0}, &train) == 0);
 	}
 	SECTION("A changed route returns reserved cargo and blocks repeated reloads") {

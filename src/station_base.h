@@ -630,8 +630,9 @@ struct GoodsEntry {
 
 	std::unique_ptr<GoodsEntryData> data;
 
-	LinkGraphID link_graph; ///< Link graph this station belongs to.
-	NodeID node;            ///< ID of node in link graph referring to this goods entry.
+	LinkGraphID link_graph; ///< Link graph this station belongs to. Runtime writes must use SetLinkGraph; save/load writes directly.
+	NodeID node;            ///< ID of node in link graph referring to this goods entry. Runtime writes must use SetLinkGraph.
+	void SetLinkGraph(LinkGraphID graph, NodeID node); ///< Invalidate derived bindings of both affected graphs; saved OD state is unchanged.
 
 	uint max_waiting_cargo; ///< Max cargo from this station waiting at any station.
 

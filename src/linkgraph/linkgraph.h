@@ -32,6 +32,9 @@ using LinkGraphPool = Pool<LinkGraph, LinkGraphID, 32>;
 /** The actual pool with link graphs. */
 extern LinkGraphPool _link_graph_pool;
 
+uint64_t NextPassengerBindingRevision(); ///< Main thread; NOSAVE identity, never reset on pool cleanup/load.
+uint64_t PassengerStationBindingGeneration(); ///< Station lifetime changes, including pool cleanup and ID reuse.
+
 namespace upstream_sl {
 	SaveLoadTable GetLinkGraphDesc();
 	SaveLoadTable GetLinkGraphJobDesc();
@@ -398,6 +401,8 @@ public:
 	inline CargoType Cargo() const { return this->cargo; }
 
 	uint64_t PassengerOdRevision() const { return this->passenger_od_revision; }
+	uint64_t PassengerBindingRevision() const { return this->passenger_binding_revision; }
+	void InvalidatePassengerBindings() { this->passenger_binding_revision = NextPassengerBindingRevision(); }
 	uint64_t PassengerRoutingRevision() const { return this->passenger_routing_revision; } ///< NOSAVE; derived-cache eligibility identity only.
 	void InvalidatePassengerOd() { this->passenger_od_revision = NextPassengerOdRevision(); }
 
@@ -441,6 +446,7 @@ protected:
 
 	CargoType cargo = INVALID_CARGO;      ///< Cargo of this component's link graph.
 	uint64_t passenger_od_revision = 0;   ///< Saved topology identity, also copied into running jobs.
+	uint64_t passenger_binding_revision = NextPassengerBindingRevision(); ///< NOSAVE node/station correspondence and graph incarnation. Copies into immutable jobs only.
 	uint64_t passenger_routing_revision = 0; ///< Changes only when an existing edge becomes restricted/unrestricted.
 	ScaledTickCounter last_compression{}; ///< Last time the capacities and supplies were compressed.
 	NodeVector nodes{};                   ///< Nodes in the component.

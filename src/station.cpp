@@ -43,6 +43,26 @@
 StationPool _station_pool("Station");
 INSTANTIATE_POOL_METHODS(Station)
 
+/** Main-thread-only, NOSAVE station lifetime identity. Never reset on pool cleanup/load. */
+static uint64_t _passenger_station_binding_generation = 0;
+uint64_t PassengerStationBindingGeneration() { return _passenger_station_binding_generation; }
+static void InvalidatePassengerStationBindings()
+{
+	assert(_passenger_station_binding_generation != UINT64_MAX);
+	++_passenger_station_binding_generation;
+}
+
+void GoodsEntry::SetLinkGraph(LinkGraphID graph, NodeID node)
+{
+	if (this->link_graph == graph && this->node == node) return;
+	if (LinkGraph *old = LinkGraph::GetIfValid(this->link_graph)) old->InvalidatePassengerBindings();
+	if (graph != this->link_graph) {
+		if (LinkGraph *next = LinkGraph::GetIfValid(graph)) next->InvalidatePassengerBindings();
+	}
+	this->link_graph = graph;
+	this->node = node;
+}
+
 std::vector<ExtraStationNameInfo> _extra_station_names;
 uint8_t _extra_station_names_probability;
 
@@ -86,6 +106,7 @@ Station::Station(StationID index, TileIndex tile) :
 	time_since_unload(255)
 {
 	/* this->random_bits is set in Station::AddFacility() */
+	InvalidatePassengerStationBindings();
 }
 
 /**
@@ -97,6 +118,7 @@ Station::Station(StationID index, TileIndex tile) :
  */
 Station::~Station()
 {
+	InvalidatePassengerStationBindings(); // Also covers CleaningPool and subsequent StationID reuse.
 	if (CleaningPool()) {
 		for (GoodsEntry &ge : this->goods) {
 			if (ge.data != nullptr) ge.data->cargo.OnCleanPool();

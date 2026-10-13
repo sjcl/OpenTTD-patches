@@ -1,0 +1,84 @@
+{
+  "joined_clients": 2,
+  "backend": "preserve",
+  "binary": "product-console.exe",
+  "input_save": "optimized1-result.sav",
+  "fixture": false,
+  "detected_sync_failure": false,
+  "client_exit_codes": [
+    null,
+    null
+  ],
+  "desync_reports": [],
+  "client_ack_frames": {
+    "client-initial": [
+      181,
+      257,
+      333,
+      419,
+      494,
+      571,
+      646,
+      734,
+      821,
+      916,
+      998,
+      1101,
+      1206,
+      1328,
+      1485,
+      1566,
+      1659,
+      1773,
+      1889
+    ],
+    "client-late": [
+      538,
+      614,
+      694,
+      778,
+      866,
+      947,
+      1044,
+      1154,
+      1272,
+      1417,
+      1503,
+      1589,
+      1689,
+      1811
+    ]
+  },
+  "connected_at_checkpoint": [
+    [
+      "1",
+      "periodic-server"
+    ],
+    [
+      "2",
+      "periodic-client-initial"
+    ],
+    [
+      "3",
+      "periodic-client-late"
+    ]
+  ],
+  "cpu_restriction_requested": false,
+  "server_state_ticks": [
+    3176553679,
+    3176555349
+  ],
+  "progressed_ticks": 1670,
+  "single_core_clients": false,
+  "affinity": {
+    "client-initial": {
+      "restricted": false
+    },
+    "client-late": {
+      "restricted": false
+    }
+  },
+  "sync_frequency": 1,
+  "loopback_address": "127.0.0.1:17523",
+  "client_fallback_cache_disabled": true
+}

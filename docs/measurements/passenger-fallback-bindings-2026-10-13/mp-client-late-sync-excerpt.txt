@@ -1,0 +1,16 @@
+dbg: [net:7] Sent ACK at 538
+dbg: [net:7] Sent ACK at 614
+dbg: [net:7] Sent ACK at 694
+dbg: [net:7] Sent ACK at 778
+dbg: [net:7] Sent ACK at 866
+dbg: [net:7] Sent ACK at 947
+dbg: [net:7] Sent ACK at 1044
+dbg: [net:7] Sent ACK at 1154
+dbg: [net:7] Sent ACK at 1272
+dbg: [net:7] Sent ACK at 1417
+dbg: [net:7] Sent ACK at 1503
+dbg: [net:7] Sent ACK at 1589
+dbg: [net:7] Sent ACK at 1689
+dbg: [net:7] Sent ACK at 1811
+dbg: [net:7] Sent ACK at 1933
+dbg: [net:7] Sent ACK at 2049

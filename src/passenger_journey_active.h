@@ -19,6 +19,8 @@ void AfterLoadPassengerJourneys();
 size_t InvalidatePassengerJourneyVehicle(VehicleID vehicle);
 void RebuildPassengerJourneyVehicleIndex();
 void ClearPassengerOdFallbackCache(); ///< Derived only; cold/warm admission and decisions are identical.
+void SetPassengerOdFallbackCacheEnabled(bool enabled); ///< Local derived-cache preference; never saved or synchronized.
+void SetPassengerOdFallbackBindingValidation(bool enabled); ///< Diagnostic reference path: physically check resident nodes.
 
 enum class PassengerJourneyFallbackReason : uint8_t {
 	GraphWork, GraphMemory, SnapshotLimit, QueryWork, QueryLimit, QueryMemory, PredictionIncomplete, PredictionHorizon, NoJourney, InvalidLeg,
@@ -66,6 +68,9 @@ struct PassengerJourneyTickDiagnostic {
 	size_t fair_share_releases = 0, retained_rides = 0;
 	size_t od_fallback_work = 0, od_fallback_searches = 0;
 	size_t od_fallback_cache_hits = 0, od_fallback_cache_bytes = 0;
+	size_t od_fallback_binding_hits = 0, od_fallback_binding_builds = 0, od_fallback_binding_nodes = 0;
+	size_t od_fallback_reverse_hits = 0, od_fallback_reverse_builds = 0;
+	uint64_t od_fallback_binding_validation_nanoseconds = 0, od_fallback_binding_build_nanoseconds = 0, od_fallback_reverse_build_nanoseconds = 0;
 	size_t boarded_passengers = 0, transferred_passengers = 0, delivered_passengers = 0;
 	size_t depot_service_boarded_passengers = 0, depot_service_delivered_passengers = 0;
 	size_t depot_crossing_boarded_passengers = 0, depot_crossing_delivered_passengers = 0; ///< Actual timed moves on a leg whose order suffix includes a depot.
@@ -135,7 +140,7 @@ public:
 class PassengerOdFallbackContext {
 	using BindingNodes = std::vector<std::pair<StationID, bool>>;
 	struct Binding { std::shared_ptr<const BindingNodes> nodes; uint64_t token; };
-	std::map<std::pair<LinkGraphID, uint64_t>, Binding> bindings;
+	std::map<std::tuple<LinkGraphID, uint64_t, uint64_t, NodeID, CargoType>, Binding> bindings;
 	struct Distances {
 		LinkGraphID graph = LinkGraphID::Invalid();
 		std::shared_ptr<const std::vector<uint32_t>> hops;

@@ -1,0 +1,474 @@
+{
+  "baseline1": {
+    "process": {
+      "backend": "periodic",
+      "exit_code": 0,
+      "wall_seconds": 561.455068,
+      "cpu_seconds": 642.875,
+      "peak_working_set": 2094088192,
+      "sampled_peak_private": 2090291200,
+      "input_save": "input.sav",
+      "resumed": false,
+      "requested_driver_loops": 8192,
+      "policy_cache_disabled": false,
+      "fallback_cache_disabled": false,
+      "binding_validation": false,
+      "input_sha256": "14D68C82911B9DCFC5EF7291E9697C5BBD67F44FFCC79D7575A144405EDF6390",
+      "binary_sha256": "058B8A3E1A01BBFD113A82A52E4D0E4A5D6771E77F45795506485090330CDE6D",
+      "sample_ms": 100
+    },
+    "state_ticks": [
+      3176545487,
+      3176553679
+    ],
+    "simulation": {
+      "completed_ticks": 8192,
+      "total_us": 531317796,
+      "mean_us": 64858,
+      "max_us": 994408
+    },
+    "histogram": {
+      "simulation_p95_us": 128000,
+      "simulation_p99_us": 275000,
+      "journey_mean_us": 31036,
+      "journey_p95_us": 63000,
+      "journey_p99_us": 126000,
+      "journey_max_us": 657819
+    },
+    "inclusive_scopes": {
+      "waiting_us": 213478147,
+      "fallback_distance_us": 38313208,
+      "boarding_us": 29620693
+    },
+    "fallback_cache": {
+      "hits": 114041,
+      "bytes": 16871860,
+      "work": 14790064347,
+      "searches": 309182
+    },
+    "bindings": {
+      "hits": 134916,
+      "builds": 4,
+      "validation_nodes": 635246744,
+      "validation_ns": 14522889300,
+      "build_ns": 196400,
+      "reverse_hits": 309178,
+      "reverse_builds": 4,
+      "reverse_build_ns": 688400
+    },
+    "database": {
+      "services": 837,
+      "timed": 652,
+      "vehicles": 3664,
+      "bytes": 11987712,
+      "policies_bytes": 16645016,
+      "pending": 740,
+      "builds": 18282,
+      "work": 70724562,
+      "build_us": 447978,
+      "searches": 131072,
+      "query_us": 207878768,
+      "next_departures": 355283103,
+      "policy_hits": 75194,
+      "policy_misses": 55878,
+      "invalidations": 38,
+      "rejected_work": 71,
+      "rejected_memory": 0
+    },
+    "schedule": {
+      "packets": 6,
+      "passengers": 8,
+      "timed_deferred": 0,
+      "hits": 68270,
+      "misses": 16206,
+      "bytes": 391568,
+      "work": 108411484,
+      "query_us": 1333140,
+      "stale": 4,
+      "expired": 0
+    },
+    "active": {
+      "applied": 74944,
+      "builds": 0,
+      "static_hits": 0,
+      "searches": 131072,
+      "OD_hits": 61311
+    },
+    "timed_transport": {
+      "boarded": 49655,
+      "transferred": 20896,
+      "delivered": 15311
+    },
+    "untimed": {
+      "boarded": 552990,
+      "transferred": 274926,
+      "delivered": 226209
+    },
+    "save_sha256": "1bae3398586e1abfac6d305d9af825a2d26e76cbc69fc21369d2549f5a61c590",
+    "derived": {
+      "distance_ms_per_tick": 4.6769052734375,
+      "binding_validation_ms_per_tick": 1.7728136352539063,
+      "reverse_build_ms_per_tick": 8.4033203125e-05,
+      "distance_hit_percent": 26.94584179026187,
+      "binding_hit_percent": 99.99703528016603
+    },
+    "stderr": {
+      "bytes": 7971274,
+      "sha256": "831ee72bf50d1c2f532404c5d81e538939b3aed618c3524b2667626e3a1e8c31"
+    }
+  },
+  "optimized1": {
+    "process": {
+      "backend": "periodic",
+      "exit_code": 0,
+      "wall_seconds": 429.9133667,
+      "cpu_seconds": 542.28125,
+      "peak_working_set": 2089836544,
+      "sampled_peak_private": 2086563840,
+      "input_save": "input.sav",
+      "resumed": false,
+      "requested_driver_loops": 8192,
+      "policy_cache_disabled": false,
+      "fallback_cache_disabled": false,
+      "binding_validation": false,
+      "input_sha256": "14D68C82911B9DCFC5EF7291E9697C5BBD67F44FFCC79D7575A144405EDF6390",
+      "binary_sha256": "BD2E788B4E43E984D7B19AD8FDB647B41FF8B481FEFD3EB158616E41288A7570",
+      "sample_ms": 100
+    },
+    "state_ticks": [
+      3176545487,
+      3176553679
+    ],
+    "simulation": {
+      "completed_ticks": 8192,
+      "total_us": 408396608,
+      "mean_us": 49853,
+      "max_us": 143994
+    },
+    "histogram": {
+      "simulation_p95_us": 71000,
+      "simulation_p99_us": 96000,
+      "journey_mean_us": 24407,
+      "journey_p95_us": 43000,
+      "journey_p99_us": 68000,
+      "journey_max_us": 117034
+    },
+    "inclusive_scopes": {
+      "waiting_us": 177999719,
+      "fallback_distance_us": 20084047,
+      "boarding_us": 17096500
+    },
+    "fallback_cache": {
+      "hits": 114041,
+      "bytes": 16871860,
+      "work": 14790064347,
+      "searches": 309182
+    },
+    "bindings": {
+      "hits": 134916,
+      "builds": 4,
+      "validation_nodes": 0,
+      "validation_ns": 0,
+      "build_ns": 239600,
+      "reverse_hits": 309178,
+      "reverse_builds": 4,
+      "reverse_build_ns": 448700
+    },
+    "database": {
+      "services": 837,
+      "timed": 652,
+      "vehicles": 3664,
+      "bytes": 11987712,
+      "policies_bytes": 16645016,
+      "pending": 740,
+      "builds": 18282,
+      "work": 70724562,
+      "build_us": 364834,
+      "searches": 131072,
+      "query_us": 172905207,
+      "next_departures": 355283103,
+      "policy_hits": 75194,
+      "policy_misses": 55878,
+      "invalidations": 38,
+      "rejected_work": 71,
+      "rejected_memory": 0
+    },
+    "schedule": {
+      "packets": 6,
+      "passengers": 8,
+      "timed_deferred": 0,
+      "hits": 68270,
+      "misses": 16206,
+      "bytes": 391568,
+      "work": 108411484,
+      "query_us": 1132007,
+      "stale": 4,
+      "expired": 0
+    },
+    "active": {
+      "applied": 74944,
+      "builds": 0,
+      "static_hits": 0,
+      "searches": 131072,
+      "OD_hits": 61311
+    },
+    "timed_transport": {
+      "boarded": 49655,
+      "transferred": 20896,
+      "delivered": 15311
+    },
+    "untimed": {
+      "boarded": 552990,
+      "transferred": 274926,
+      "delivered": 226209
+    },
+    "save_sha256": "1bae3398586e1abfac6d305d9af825a2d26e76cbc69fc21369d2549f5a61c590",
+    "derived": {
+      "distance_ms_per_tick": 2.4516658935546873,
+      "binding_validation_ms_per_tick": 0.0,
+      "reverse_build_ms_per_tick": 5.477294921875e-05,
+      "distance_hit_percent": 26.94584179026187,
+      "binding_hit_percent": 99.99703528016603
+    },
+    "stderr": {
+      "bytes": 7971274,
+      "sha256": "831ee72bf50d1c2f532404c5d81e538939b3aed618c3524b2667626e3a1e8c31"
+    }
+  },
+  "baseline2": {
+    "process": {
+      "backend": "periodic",
+      "exit_code": 0,
+      "wall_seconds": 418.8599128,
+      "cpu_seconds": 536.59375,
+      "peak_working_set": 2090831872,
+      "sampled_peak_private": 2087432192,
+      "input_save": "input.sav",
+      "resumed": false,
+      "requested_driver_loops": 8192,
+      "policy_cache_disabled": false,
+      "fallback_cache_disabled": false,
+      "binding_validation": false,
+      "input_sha256": "14D68C82911B9DCFC5EF7291E9697C5BBD67F44FFCC79D7575A144405EDF6390",
+      "binary_sha256": "058B8A3E1A01BBFD113A82A52E4D0E4A5D6771E77F45795506485090330CDE6D",
+      "sample_ms": 100
+    },
+    "state_ticks": [
+      3176545487,
+      3176553679
+    ],
+    "simulation": {
+      "completed_ticks": 8192,
+      "total_us": 399051188,
+      "mean_us": 48712,
+      "max_us": 184942
+    },
+    "histogram": {
+      "simulation_p95_us": 69000,
+      "simulation_p99_us": 92000,
+      "journey_mean_us": 24551,
+      "journey_p95_us": 42000,
+      "journey_p99_us": 65000,
+      "journey_max_us": 150521
+    },
+    "inclusive_scopes": {
+      "waiting_us": 170665065,
+      "fallback_distance_us": 28836129,
+      "boarding_us": 22932073
+    },
+    "fallback_cache": {
+      "hits": 114041,
+      "bytes": 16871860,
+      "work": 14790064347,
+      "searches": 309182
+    },
+    "bindings": {
+      "hits": 134916,
+      "builds": 4,
+      "validation_nodes": 635246744,
+      "validation_ns": 9890402200,
+      "build_ns": 199700,
+      "reverse_hits": 309178,
+      "reverse_builds": 4,
+      "reverse_build_ns": 456400
+    },
+    "database": {
+      "services": 837,
+      "timed": 652,
+      "vehicles": 3664,
+      "bytes": 11987712,
+      "policies_bytes": 16645016,
+      "pending": 740,
+      "builds": 18282,
+      "work": 70724562,
+      "build_us": 368741,
+      "searches": 131072,
+      "query_us": 166169677,
+      "next_departures": 355283103,
+      "policy_hits": 75194,
+      "policy_misses": 55878,
+      "invalidations": 38,
+      "rejected_work": 71,
+      "rejected_memory": 0
+    },
+    "schedule": {
+      "packets": 6,
+      "passengers": 8,
+      "timed_deferred": 0,
+      "hits": 68270,
+      "misses": 16206,
+      "bytes": 391568,
+      "work": 108411484,
+      "query_us": 1072835,
+      "stale": 4,
+      "expired": 0
+    },
+    "active": {
+      "applied": 74944,
+      "builds": 0,
+      "static_hits": 0,
+      "searches": 131072,
+      "OD_hits": 61311
+    },
+    "timed_transport": {
+      "boarded": 49655,
+      "transferred": 20896,
+      "delivered": 15311
+    },
+    "untimed": {
+      "boarded": 552990,
+      "transferred": 274926,
+      "delivered": 226209
+    },
+    "save_sha256": "1bae3398586e1abfac6d305d9af825a2d26e76cbc69fc21369d2549f5a61c590",
+    "derived": {
+      "distance_ms_per_tick": 3.5200352783203126,
+      "binding_validation_ms_per_tick": 1.2073244873046876,
+      "reverse_build_ms_per_tick": 5.5712890625e-05,
+      "distance_hit_percent": 26.94584179026187,
+      "binding_hit_percent": 99.99703528016603
+    },
+    "stderr": {
+      "bytes": 7971274,
+      "sha256": "831ee72bf50d1c2f532404c5d81e538939b3aed618c3524b2667626e3a1e8c31"
+    }
+  },
+  "cold1": {
+    "process": {
+      "backend": "periodic",
+      "exit_code": 0,
+      "wall_seconds": 509.392891,
+      "cpu_seconds": 635.5625,
+      "peak_working_set": 2084720640,
+      "sampled_peak_private": 2080808960,
+      "input_save": "input.sav",
+      "resumed": false,
+      "requested_driver_loops": 8192,
+      "policy_cache_disabled": false,
+      "fallback_cache_disabled": true,
+      "binding_validation": false,
+      "input_sha256": "14D68C82911B9DCFC5EF7291E9697C5BBD67F44FFCC79D7575A144405EDF6390",
+      "binary_sha256": "BD2E788B4E43E984D7B19AD8FDB647B41FF8B481FEFD3EB158616E41288A7570",
+      "sample_ms": 100
+    },
+    "state_ticks": [
+      3176545487,
+      3176553679
+    ],
+    "simulation": {
+      "completed_ticks": 8192,
+      "total_us": 489872863,
+      "mean_us": 59798,
+      "max_us": 143548
+    },
+    "histogram": {
+      "simulation_p95_us": 81000,
+      "simulation_p99_us": 103000,
+      "journey_mean_us": 34929,
+      "journey_p95_us": 53000,
+      "journey_p99_us": 77000,
+      "journey_max_us": 114199
+    },
+    "inclusive_scopes": {
+      "waiting_us": 175355577,
+      "fallback_distance_us": 108797463,
+      "boarding_us": 87561771
+    },
+    "fallback_cache": {
+      "hits": 0,
+      "bytes": 0,
+      "work": 14790064347,
+      "searches": 450576
+    },
+    "bindings": {
+      "hits": 0,
+      "builds": 134920,
+      "validation_nodes": 0,
+      "validation_ns": 0,
+      "build_ns": 12252134300,
+      "reverse_hits": 0,
+      "reverse_builds": 450576,
+      "reverse_build_ns": 69910686900
+    },
+    "database": {
+      "services": 837,
+      "timed": 652,
+      "vehicles": 3664,
+      "bytes": 11987712,
+      "policies_bytes": 16645016,
+      "pending": 740,
+      "builds": 18282,
+      "work": 70724562,
+      "build_us": 385786,
+      "searches": 131072,
+      "query_us": 170515693,
+      "next_departures": 355283103,
+      "policy_hits": 75194,
+      "policy_misses": 55878,
+      "invalidations": 38,
+      "rejected_work": 71,
+      "rejected_memory": 0
+    },
+    "schedule": {
+      "packets": 6,
+      "passengers": 8,
+      "timed_deferred": 0,
+      "hits": 68270,
+      "misses": 16206,
+      "bytes": 391568,
+      "work": 108411484,
+      "query_us": 1122587,
+      "stale": 4,
+      "expired": 0
+    },
+    "active": {
+      "applied": 74944,
+      "builds": 0,
+      "static_hits": 0,
+      "searches": 131072,
+      "OD_hits": 61311
+    },
+    "timed_transport": {
+      "boarded": 49655,
+      "transferred": 20896,
+      "delivered": 15311
+    },
+    "untimed": {
+      "boarded": 552990,
+      "transferred": 274926,
+      "delivered": 226209
+    },
+    "save_sha256": "1bae3398586e1abfac6d305d9af825a2d26e76cbc69fc21369d2549f5a61c590",
+    "derived": {
+      "distance_ms_per_tick": 13.280940307617188,
+      "binding_validation_ms_per_tick": 0.0,
+      "reverse_build_ms_per_tick": 8.534019396972656,
+      "distance_hit_percent": 0.0,
+      "binding_hit_percent": 0.0
+    },
+    "stderr": {
+      "bytes": 7971274,
+      "sha256": "831ee72bf50d1c2f532404c5d81e538939b3aed618c3524b2667626e3a1e8c31"
+    }
+  }
+}
