@@ -1,0 +1,656 @@
+{
+  "console_sha256": "f9bccd885aea0bb929825ba0365163c59d52599a08485b5cadb8db104b2880e6",
+  "cargo_permission_columns": "CargoType 0; passenger fleet uses CargoClass::Passengers",
+  "all_depot_lists": {
+    "services": 196,
+    "passenger_vehicles": 836,
+    "published": 196,
+    "live_timed": 0,
+    "rejection_combinations": {
+      "missing_wait_OT_GOTO_DEPOT": 171,
+      "missing_travel_OT_GOTO_DEPOT,missing_wait_OT_GOTO_DEPOT": 2,
+      "missing_travel_OT_GOTO_DEPOT,missing_travel_OT_GOTO_STATION,missing_wait_OT_GOTO_DEPOT,missing_wait_OT_GOTO_STATION": 14,
+      "depot_traversal_1,missing_wait_OT_GOTO_DEPOT": 4,
+      "depot_traversal_1,missing_travel_OT_GOTO_DEPOT,missing_travel_OT_GOTO_STATION,missing_wait_OT_GOTO_DEPOT,missing_wait_OT_GOTO_STATION": 1,
+      "missing_travel_OT_GOTO_DEPOT,missing_travel_OT_GOTO_STATION,missing_travel_OT_GOTO_WAYPOINT,missing_wait_OT_GOTO_DEPOT,missing_wait_OT_GOTO_STATION": 1,
+      "missing_travel_OT_GOTO_STATION,missing_wait_OT_GOTO_DEPOT": 3
+    },
+    "depot_orders": 336,
+    "depot_flags": {
+      "{\"action\": \"0\", \"breakdown\": \"false\", \"regular\": \"true\", \"service_only\": \"false\", \"traversal\": \"2\"}": 331,
+      "{\"action\": \"8\", \"breakdown\": \"false\", \"regular\": \"true\", \"service_only\": \"false\", \"traversal\": \"1\"}": 1,
+      "{\"action\": \"0\", \"breakdown\": \"false\", \"regular\": \"true\", \"service_only\": \"true\", \"traversal\": \"1\"}": 3,
+      "{\"action\": \"2\", \"breakdown\": \"false\", \"regular\": \"true\", \"service_only\": \"false\", \"traversal\": \"1\"}": 1
+    },
+    "depot_travel_set": 316,
+    "depot_wait_set": 0,
+    "preceding_order_types": {
+      "OT_GOTO_STATION": 266,
+      "OT_GOTO_DEPOT": 62,
+      "OT_GOTO_WAYPOINT": 8
+    },
+    "preceding_station_cargo_flags": {
+      "load=4,unload=1": 85,
+      "load=0,unload=0": 170,
+      "load=4,unload=0": 9,
+      "load=4,unload=4": 2
+    },
+    "examples": [
+      {
+        "id": 2,
+        "vehicle": "16114",
+        "passenger_vehicles": "3",
+        "rejections": [
+          "missing_wait_OT_GOTO_DEPOT"
+        ]
+      },
+      {
+        "id": 7,
+        "vehicle": "15577",
+        "passenger_vehicles": "6",
+        "rejections": [
+          "missing_wait_OT_GOTO_DEPOT"
+        ]
+      },
+      {
+        "id": 8,
+        "vehicle": "15054",
+        "passenger_vehicles": "6",
+        "rejections": [
+          "missing_wait_OT_GOTO_DEPOT"
+        ]
+      },
+      {
+        "id": 11,
+        "vehicle": "15638",
+        "passenger_vehicles": "10",
+        "rejections": [
+          "missing_wait_OT_GOTO_DEPOT"
+        ]
+      },
+      {
+        "id": 13,
+        "vehicle": "5964",
+        "passenger_vehicles": "8",
+        "rejections": [
+          "missing_wait_OT_GOTO_DEPOT"
+        ]
+      },
+      {
+        "id": 16,
+        "vehicle": "1686",
+        "passenger_vehicles": "3",
+        "rejections": [
+          "missing_wait_OT_GOTO_DEPOT"
+        ]
+      },
+      {
+        "id": 17,
+        "vehicle": "17283",
+        "passenger_vehicles": "0",
+        "rejections": [
+          "missing_wait_OT_GOTO_DEPOT"
+        ]
+      },
+      {
+        "id": 18,
+        "vehicle": "1410",
+        "passenger_vehicles": "8",
+        "rejections": [
+          "missing_wait_OT_GOTO_DEPOT"
+        ]
+      },
+      {
+        "id": 23,
+        "vehicle": "15399",
+        "passenger_vehicles": "6",
+        "rejections": [
+          "missing_wait_OT_GOTO_DEPOT"
+        ]
+      },
+      {
+        "id": 25,
+        "vehicle": "5790",
+        "passenger_vehicles": "6",
+        "rejections": [
+          "missing_wait_OT_GOTO_DEPOT"
+        ]
+      }
+    ]
+  },
+  "published_depot_lists": {
+    "services": 196,
+    "passenger_vehicles": 836,
+    "published": 196,
+    "live_timed": 0,
+    "rejection_combinations": {
+      "missing_wait_OT_GOTO_DEPOT": 171,
+      "missing_travel_OT_GOTO_DEPOT,missing_wait_OT_GOTO_DEPOT": 2,
+      "missing_travel_OT_GOTO_DEPOT,missing_travel_OT_GOTO_STATION,missing_wait_OT_GOTO_DEPOT,missing_wait_OT_GOTO_STATION": 14,
+      "depot_traversal_1,missing_wait_OT_GOTO_DEPOT": 4,
+      "depot_traversal_1,missing_travel_OT_GOTO_DEPOT,missing_travel_OT_GOTO_STATION,missing_wait_OT_GOTO_DEPOT,missing_wait_OT_GOTO_STATION": 1,
+      "missing_travel_OT_GOTO_DEPOT,missing_travel_OT_GOTO_STATION,missing_travel_OT_GOTO_WAYPOINT,missing_wait_OT_GOTO_DEPOT,missing_wait_OT_GOTO_STATION": 1,
+      "missing_travel_OT_GOTO_STATION,missing_wait_OT_GOTO_DEPOT": 3
+    },
+    "depot_orders": 336,
+    "depot_flags": {
+      "{\"action\": \"0\", \"breakdown\": \"false\", \"regular\": \"true\", \"service_only\": \"false\", \"traversal\": \"2\"}": 331,
+      "{\"action\": \"8\", \"breakdown\": \"false\", \"regular\": \"true\", \"service_only\": \"false\", \"traversal\": \"1\"}": 1,
+      "{\"action\": \"0\", \"breakdown\": \"false\", \"regular\": \"true\", \"service_only\": \"true\", \"traversal\": \"1\"}": 3,
+      "{\"action\": \"2\", \"breakdown\": \"false\", \"regular\": \"true\", \"service_only\": \"false\", \"traversal\": \"1\"}": 1
+    },
+    "depot_travel_set": 316,
+    "depot_wait_set": 0,
+    "preceding_order_types": {
+      "OT_GOTO_STATION": 266,
+      "OT_GOTO_DEPOT": 62,
+      "OT_GOTO_WAYPOINT": 8
+    },
+    "preceding_station_cargo_flags": {
+      "load=4,unload=1": 85,
+      "load=0,unload=0": 170,
+      "load=4,unload=0": 9,
+      "load=4,unload=4": 2
+    },
+    "examples": [
+      {
+        "id": 2,
+        "vehicle": "16114",
+        "passenger_vehicles": "3",
+        "rejections": [
+          "missing_wait_OT_GOTO_DEPOT"
+        ]
+      },
+      {
+        "id": 7,
+        "vehicle": "15577",
+        "passenger_vehicles": "6",
+        "rejections": [
+          "missing_wait_OT_GOTO_DEPOT"
+        ]
+      },
+      {
+        "id": 8,
+        "vehicle": "15054",
+        "passenger_vehicles": "6",
+        "rejections": [
+          "missing_wait_OT_GOTO_DEPOT"
+        ]
+      },
+      {
+        "id": 11,
+        "vehicle": "15638",
+        "passenger_vehicles": "10",
+        "rejections": [
+          "missing_wait_OT_GOTO_DEPOT"
+        ]
+      },
+      {
+        "id": 13,
+        "vehicle": "5964",
+        "passenger_vehicles": "8",
+        "rejections": [
+          "missing_wait_OT_GOTO_DEPOT"
+        ]
+      },
+      {
+        "id": 16,
+        "vehicle": "1686",
+        "passenger_vehicles": "3",
+        "rejections": [
+          "missing_wait_OT_GOTO_DEPOT"
+        ]
+      },
+      {
+        "id": 17,
+        "vehicle": "17283",
+        "passenger_vehicles": "0",
+        "rejections": [
+          "missing_wait_OT_GOTO_DEPOT"
+        ]
+      },
+      {
+        "id": 18,
+        "vehicle": "1410",
+        "passenger_vehicles": "8",
+        "rejections": [
+          "missing_wait_OT_GOTO_DEPOT"
+        ]
+      },
+      {
+        "id": 23,
+        "vehicle": "15399",
+        "passenger_vehicles": "6",
+        "rejections": [
+          "missing_wait_OT_GOTO_DEPOT"
+        ]
+      },
+      {
+        "id": 25,
+        "vehicle": "5790",
+        "passenger_vehicles": "6",
+        "rejections": [
+          "missing_wait_OT_GOTO_DEPOT"
+        ]
+      }
+    ]
+  },
+  "passenger_depot_lists": {
+    "services": 175,
+    "passenger_vehicles": 836,
+    "published": 175,
+    "live_timed": 0,
+    "rejection_combinations": {
+      "missing_wait_OT_GOTO_DEPOT": 150,
+      "missing_travel_OT_GOTO_DEPOT,missing_wait_OT_GOTO_DEPOT": 2,
+      "missing_travel_OT_GOTO_DEPOT,missing_travel_OT_GOTO_STATION,missing_wait_OT_GOTO_DEPOT,missing_wait_OT_GOTO_STATION": 14,
+      "depot_traversal_1,missing_wait_OT_GOTO_DEPOT": 4,
+      "depot_traversal_1,missing_travel_OT_GOTO_DEPOT,missing_travel_OT_GOTO_STATION,missing_wait_OT_GOTO_DEPOT,missing_wait_OT_GOTO_STATION": 1,
+      "missing_travel_OT_GOTO_DEPOT,missing_travel_OT_GOTO_STATION,missing_travel_OT_GOTO_WAYPOINT,missing_wait_OT_GOTO_DEPOT,missing_wait_OT_GOTO_STATION": 1,
+      "missing_travel_OT_GOTO_STATION,missing_wait_OT_GOTO_DEPOT": 3
+    },
+    "depot_orders": 185,
+    "depot_flags": {
+      "{\"action\": \"0\", \"breakdown\": \"false\", \"regular\": \"true\", \"service_only\": \"false\", \"traversal\": \"2\"}": 180,
+      "{\"action\": \"8\", \"breakdown\": \"false\", \"regular\": \"true\", \"service_only\": \"false\", \"traversal\": \"1\"}": 1,
+      "{\"action\": \"0\", \"breakdown\": \"false\", \"regular\": \"true\", \"service_only\": \"true\", \"traversal\": \"1\"}": 3,
+      "{\"action\": \"2\", \"breakdown\": \"false\", \"regular\": \"true\", \"service_only\": \"false\", \"traversal\": \"1\"}": 1
+    },
+    "depot_travel_set": 165,
+    "depot_wait_set": 0,
+    "preceding_order_types": {
+      "OT_GOTO_STATION": 183,
+      "OT_GOTO_DEPOT": 2
+    },
+    "preceding_station_cargo_flags": {
+      "load=4,unload=1": 85,
+      "load=0,unload=0": 89,
+      "load=4,unload=0": 9
+    },
+    "examples": [
+      {
+        "id": 2,
+        "vehicle": "16114",
+        "passenger_vehicles": "3",
+        "rejections": [
+          "missing_wait_OT_GOTO_DEPOT"
+        ]
+      },
+      {
+        "id": 7,
+        "vehicle": "15577",
+        "passenger_vehicles": "6",
+        "rejections": [
+          "missing_wait_OT_GOTO_DEPOT"
+        ]
+      },
+      {
+        "id": 8,
+        "vehicle": "15054",
+        "passenger_vehicles": "6",
+        "rejections": [
+          "missing_wait_OT_GOTO_DEPOT"
+        ]
+      },
+      {
+        "id": 11,
+        "vehicle": "15638",
+        "passenger_vehicles": "10",
+        "rejections": [
+          "missing_wait_OT_GOTO_DEPOT"
+        ]
+      },
+      {
+        "id": 13,
+        "vehicle": "5964",
+        "passenger_vehicles": "8",
+        "rejections": [
+          "missing_wait_OT_GOTO_DEPOT"
+        ]
+      },
+      {
+        "id": 16,
+        "vehicle": "1686",
+        "passenger_vehicles": "3",
+        "rejections": [
+          "missing_wait_OT_GOTO_DEPOT"
+        ]
+      },
+      {
+        "id": 18,
+        "vehicle": "1410",
+        "passenger_vehicles": "8",
+        "rejections": [
+          "missing_wait_OT_GOTO_DEPOT"
+        ]
+      },
+      {
+        "id": 23,
+        "vehicle": "15399",
+        "passenger_vehicles": "6",
+        "rejections": [
+          "missing_wait_OT_GOTO_DEPOT"
+        ]
+      },
+      {
+        "id": 25,
+        "vehicle": "5790",
+        "passenger_vehicles": "6",
+        "rejections": [
+          "missing_wait_OT_GOTO_DEPOT"
+        ]
+      },
+      {
+        "id": 26,
+        "vehicle": "10274",
+        "passenger_vehicles": "8",
+        "rejections": [
+          "missing_wait_OT_GOTO_DEPOT"
+        ]
+      }
+    ]
+  },
+  "published_passenger_depot_lists": {
+    "services": 175,
+    "passenger_vehicles": 836,
+    "published": 175,
+    "live_timed": 0,
+    "rejection_combinations": {
+      "missing_wait_OT_GOTO_DEPOT": 150,
+      "missing_travel_OT_GOTO_DEPOT,missing_wait_OT_GOTO_DEPOT": 2,
+      "missing_travel_OT_GOTO_DEPOT,missing_travel_OT_GOTO_STATION,missing_wait_OT_GOTO_DEPOT,missing_wait_OT_GOTO_STATION": 14,
+      "depot_traversal_1,missing_wait_OT_GOTO_DEPOT": 4,
+      "depot_traversal_1,missing_travel_OT_GOTO_DEPOT,missing_travel_OT_GOTO_STATION,missing_wait_OT_GOTO_DEPOT,missing_wait_OT_GOTO_STATION": 1,
+      "missing_travel_OT_GOTO_DEPOT,missing_travel_OT_GOTO_STATION,missing_travel_OT_GOTO_WAYPOINT,missing_wait_OT_GOTO_DEPOT,missing_wait_OT_GOTO_STATION": 1,
+      "missing_travel_OT_GOTO_STATION,missing_wait_OT_GOTO_DEPOT": 3
+    },
+    "depot_orders": 185,
+    "depot_flags": {
+      "{\"action\": \"0\", \"breakdown\": \"false\", \"regular\": \"true\", \"service_only\": \"false\", \"traversal\": \"2\"}": 180,
+      "{\"action\": \"8\", \"breakdown\": \"false\", \"regular\": \"true\", \"service_only\": \"false\", \"traversal\": \"1\"}": 1,
+      "{\"action\": \"0\", \"breakdown\": \"false\", \"regular\": \"true\", \"service_only\": \"true\", \"traversal\": \"1\"}": 3,
+      "{\"action\": \"2\", \"breakdown\": \"false\", \"regular\": \"true\", \"service_only\": \"false\", \"traversal\": \"1\"}": 1
+    },
+    "depot_travel_set": 165,
+    "depot_wait_set": 0,
+    "preceding_order_types": {
+      "OT_GOTO_STATION": 183,
+      "OT_GOTO_DEPOT": 2
+    },
+    "preceding_station_cargo_flags": {
+      "load=4,unload=1": 85,
+      "load=0,unload=0": 89,
+      "load=4,unload=0": 9
+    },
+    "examples": [
+      {
+        "id": 2,
+        "vehicle": "16114",
+        "passenger_vehicles": "3",
+        "rejections": [
+          "missing_wait_OT_GOTO_DEPOT"
+        ]
+      },
+      {
+        "id": 7,
+        "vehicle": "15577",
+        "passenger_vehicles": "6",
+        "rejections": [
+          "missing_wait_OT_GOTO_DEPOT"
+        ]
+      },
+      {
+        "id": 8,
+        "vehicle": "15054",
+        "passenger_vehicles": "6",
+        "rejections": [
+          "missing_wait_OT_GOTO_DEPOT"
+        ]
+      },
+      {
+        "id": 11,
+        "vehicle": "15638",
+        "passenger_vehicles": "10",
+        "rejections": [
+          "missing_wait_OT_GOTO_DEPOT"
+        ]
+      },
+      {
+        "id": 13,
+        "vehicle": "5964",
+        "passenger_vehicles": "8",
+        "rejections": [
+          "missing_wait_OT_GOTO_DEPOT"
+        ]
+      },
+      {
+        "id": 16,
+        "vehicle": "1686",
+        "passenger_vehicles": "3",
+        "rejections": [
+          "missing_wait_OT_GOTO_DEPOT"
+        ]
+      },
+      {
+        "id": 18,
+        "vehicle": "1410",
+        "passenger_vehicles": "8",
+        "rejections": [
+          "missing_wait_OT_GOTO_DEPOT"
+        ]
+      },
+      {
+        "id": 23,
+        "vehicle": "15399",
+        "passenger_vehicles": "6",
+        "rejections": [
+          "missing_wait_OT_GOTO_DEPOT"
+        ]
+      },
+      {
+        "id": 25,
+        "vehicle": "5790",
+        "passenger_vehicles": "6",
+        "rejections": [
+          "missing_wait_OT_GOTO_DEPOT"
+        ]
+      },
+      {
+        "id": 26,
+        "vehicle": "10274",
+        "passenger_vehicles": "8",
+        "rejections": [
+          "missing_wait_OT_GOTO_DEPOT"
+        ]
+      }
+    ]
+  },
+  "non_depot_problem_examples": [
+    {
+      "id": 103,
+      "vehicle": "10620",
+      "rejections": [
+        "missing_travel_OT_GOTO_DEPOT",
+        "missing_travel_OT_GOTO_STATION",
+        "missing_wait_OT_GOTO_DEPOT",
+        "missing_wait_OT_GOTO_STATION"
+      ]
+    },
+    {
+      "id": 210,
+      "vehicle": "11012",
+      "rejections": [
+        "depot_traversal_1",
+        "missing_travel_OT_GOTO_DEPOT",
+        "missing_travel_OT_GOTO_STATION",
+        "missing_wait_OT_GOTO_DEPOT",
+        "missing_wait_OT_GOTO_STATION"
+      ]
+    },
+    {
+      "id": 212,
+      "vehicle": "942",
+      "rejections": [
+        "missing_travel_OT_GOTO_DEPOT",
+        "missing_travel_OT_GOTO_STATION",
+        "missing_wait_OT_GOTO_DEPOT",
+        "missing_wait_OT_GOTO_STATION"
+      ]
+    },
+    {
+      "id": 253,
+      "vehicle": "2541",
+      "rejections": [
+        "missing_travel_OT_GOTO_DEPOT",
+        "missing_travel_OT_GOTO_STATION",
+        "missing_wait_OT_GOTO_DEPOT",
+        "missing_wait_OT_GOTO_STATION"
+      ]
+    },
+    {
+      "id": 256,
+      "vehicle": "3980",
+      "rejections": [
+        "missing_travel_OT_GOTO_DEPOT",
+        "missing_travel_OT_GOTO_STATION",
+        "missing_wait_OT_GOTO_DEPOT",
+        "missing_wait_OT_GOTO_STATION"
+      ]
+    },
+    {
+      "id": 259,
+      "vehicle": "15455",
+      "rejections": [
+        "missing_travel_OT_GOTO_DEPOT",
+        "missing_travel_OT_GOTO_STATION",
+        "missing_wait_OT_GOTO_DEPOT",
+        "missing_wait_OT_GOTO_STATION"
+      ]
+    },
+    {
+      "id": 268,
+      "vehicle": "13556",
+      "rejections": [
+        "missing_travel_OT_GOTO_DEPOT",
+        "missing_travel_OT_GOTO_STATION",
+        "missing_wait_OT_GOTO_DEPOT",
+        "missing_wait_OT_GOTO_STATION"
+      ]
+    },
+    {
+      "id": 337,
+      "vehicle": "1113",
+      "rejections": [
+        "missing_travel_OT_GOTO_DEPOT",
+        "missing_travel_OT_GOTO_STATION",
+        "missing_wait_OT_GOTO_DEPOT",
+        "missing_wait_OT_GOTO_STATION"
+      ]
+    },
+    {
+      "id": 338,
+      "vehicle": "16438",
+      "rejections": [
+        "missing_travel_OT_GOTO_DEPOT",
+        "missing_travel_OT_GOTO_STATION",
+        "missing_wait_OT_GOTO_DEPOT",
+        "missing_wait_OT_GOTO_STATION"
+      ]
+    },
+    {
+      "id": 474,
+      "vehicle": "1157",
+      "rejections": [
+        "missing_travel_OT_GOTO_DEPOT",
+        "missing_travel_OT_GOTO_STATION",
+        "missing_wait_OT_GOTO_DEPOT",
+        "missing_wait_OT_GOTO_STATION"
+      ]
+    },
+    {
+      "id": 505,
+      "vehicle": "16332",
+      "rejections": [
+        "missing_travel_OT_GOTO_DEPOT",
+        "missing_travel_OT_GOTO_STATION",
+        "missing_wait_OT_GOTO_DEPOT",
+        "missing_wait_OT_GOTO_STATION"
+      ]
+    },
+    {
+      "id": 517,
+      "vehicle": "19067",
+      "rejections": [
+        "missing_travel_OT_GOTO_DEPOT",
+        "missing_travel_OT_GOTO_STATION",
+        "missing_wait_OT_GOTO_DEPOT",
+        "missing_wait_OT_GOTO_STATION"
+      ]
+    },
+    {
+      "id": 524,
+      "vehicle": "4575",
+      "rejections": [
+        "missing_travel_OT_GOTO_DEPOT",
+        "missing_travel_OT_GOTO_STATION",
+        "missing_wait_OT_GOTO_DEPOT",
+        "missing_wait_OT_GOTO_STATION"
+      ]
+    },
+    {
+      "id": 526,
+      "vehicle": "8794",
+      "rejections": [
+        "missing_travel_OT_GOTO_DEPOT",
+        "missing_travel_OT_GOTO_STATION",
+        "missing_wait_OT_GOTO_DEPOT",
+        "missing_wait_OT_GOTO_STATION"
+      ]
+    },
+    {
+      "id": 528,
+      "vehicle": "4272",
+      "rejections": [
+        "missing_travel_OT_GOTO_DEPOT",
+        "missing_travel_OT_GOTO_STATION",
+        "missing_travel_OT_GOTO_WAYPOINT",
+        "missing_wait_OT_GOTO_DEPOT",
+        "missing_wait_OT_GOTO_STATION"
+      ]
+    },
+    {
+      "id": 638,
+      "vehicle": "14632",
+      "rejections": [
+        "missing_travel_OT_GOTO_DEPOT",
+        "missing_travel_OT_GOTO_STATION",
+        "missing_wait_OT_GOTO_DEPOT",
+        "missing_wait_OT_GOTO_STATION"
+      ]
+    },
+    {
+      "id": 659,
+      "vehicle": "13835",
+      "rejections": [
+        "missing_travel_OT_GOTO_STATION",
+        "missing_wait_OT_GOTO_DEPOT"
+      ]
+    },
+    {
+      "id": 660,
+      "vehicle": "11689",
+      "rejections": [
+        "missing_travel_OT_GOTO_STATION",
+        "missing_wait_OT_GOTO_DEPOT"
+      ]
+    },
+    {
+      "id": 816,
+      "vehicle": "17163",
+      "rejections": [
+        "missing_travel_OT_GOTO_STATION",
+        "missing_wait_OT_GOTO_DEPOT"
+      ]
+    }
+  ]
+}

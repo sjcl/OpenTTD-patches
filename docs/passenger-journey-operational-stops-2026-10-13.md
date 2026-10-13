@@ -133,6 +133,48 @@ Timed分類は0個だった。このマップはTimed車庫の性能検証例に
 車庫対応だけによる経路採用数を、他の経路選択変更と切り分けて帰属させる計測はしていない。
 ServiceGraph構築と物理Trip予測は引き続き0回。
 
+### 実マップの車庫系統に対する追加調査
+
+上の196系統は旅客を運ぶ系統だけの数ではない。最終セーブ`after-result.sav`を進行・保存せずに読み、
+`passenger_service_inspect depots`で全車庫系統のライブ指令、車庫フラグ、時間設定フラグ、
+保存済み周期と現コードでの再コンパイル周期を取得した。
+旅客容量を持つ車両があるのは175系統、836車両で、残り21系統は旅客容量を持たない。
+保存済み周期もライブ指令の再コンパイル周期も、196系統すべて0だった。
+
+| 旅客の車庫付き系統の除外理由 | 系統数 |
+|---|---:|
+| 車庫Wait未設定だけで除外 | 150 |
+| 車庫Wait未設定に加え、Travel/駅Waitの欠落 | 20 |
+| 車庫Wait未設定に加え、必要時整備・Unbunch・最寄り車庫 | 5 |
+
+理由は重複する。時間欠落と動的車庫の両方を持つ1系統があり、合計は175系統。
+旅客系統の車庫指令185個はすべて`wait=0/false`だった。
+180個は通常の運行継続指令、3個は必要時整備、1個はUnbunch、1個は最寄り車庫。
+車庫Travelの設定済みは165個で、停止・売却・Refitによる遮断はなかった。
+
+主因は`PassengerPeriodicTimetable::Compile()`で、車庫にはゼロでもWaitの明示フラグを要求し、
+未設定の車庫が一つあれば`return {}`で全停車と一周周期を捨てる実装である。
+例えば系統7・車両15577の車庫指令11は`travel=1753/true; wait=0/false`で、
+通常の継続整備かつ他の駅の時間も設定済みだが、このWait条件だけで系統全体がUntimedになる。
+同じ条件だけで150旅客系統が除外されている。
+
+実車制御の`VehicleEnterDepot()`はWaitが未設定なら指令を進め、明示Waitがあれば待機する。
+現行の旅客予測は未設定Waitを未知の出庫時刻と扱う。車庫時間を根拠なくゼロにしないことと、
+車庫を含む全旅客区間の時刻情報を捨てることを同一視したため、実マップへのTimed適用が不足した。
+今後の機能修正では、車庫での時刻処理と次指令のTravelとの境界を実車に照らして確認し、
+時刻が確定しない車庫区間が残る場合も、確定した旅客区間を利用できるようにする必要がある。
+今回の追加変更は読み取り診断のみで、この機能上の制限は解消していない。
+
+既存回帰は車庫Waitを明示したTimed例と、未設定をUntimedとする例を検証していた。
+実マップの通常車庫付き系統をTimedで利用できることは検証できていなかった。
+Untimed Fallbackの全体輸送カウンターも、車庫を越えた乗車・配送を切り分けた証明にはならない。
+
+[車庫指令の生ログ](measurements/passenger-journey-operational-stops-2026-10-13/depot-audit-console.txt)、
+[原因集計](measurements/passenger-journey-operational-stops-2026-10-13/depot-audit-summary.json)、
+[再集計](measurements/passenger-journey-operational-stops-2026-10-13/Analyze-Depot-Audit.py)。
+ゲーム内で`script <log>`、`passenger_service_inspect depots`、`script`を実行し、
+`python Analyze-Depot-Audit.py <log>`で再集計できる。
+
 [測定カウンター](measurements/passenger-journey-operational-stops-2026-10-13/summary.json)、
 [比較とソース識別](measurements/passenger-journey-operational-stops-2026-10-13/comparison.json)、
 [再測定用スクリプト](measurements/passenger-journey-operational-stops-2026-10-13/Measure-Operational.ps1)、

@@ -4518,14 +4518,45 @@ static bool ConCreateTown(std::span<std::string_view> argv)
 	return false;
 }
 
-/** Console command registration. */
+/** Read-only live order, compiled-cycle and vehicle prediction diagnostics. */
 static bool ConPassengerServiceInspect(std::span<std::string_view> argv)
 {
 	if (argv.empty()) {
-		IConsolePrint(CC_HELP, "passenger_service_inspect <vehicle>: read-only order/progress/prediction diagnostics");
+		IConsolePrint(CC_HELP, "passenger_service_inspect <vehicle>|depots: read-only order/progress/prediction diagnostics");
 		return true;
 	}
 	if (argv.size() != 2) return false;
+	if (argv[1] == "depots") {
+		for (const OrderList *list : OrderList::Iterate()) {
+			const auto &orders = list->GetOrderVector();
+			if (std::none_of(orders.begin(), orders.end(), [](const Order &order) { return order.IsType(OT_GOTO_DEPOT); })) continue;
+			const Vehicle *first = list->GetFirstSharedVehicle();
+			if (first == nullptr) continue;
+			size_t passenger_vehicles = 0;
+			for (const Vehicle *vehicle = first; vehicle != nullptr; vehicle = vehicle->NextShared()) {
+				if (!IsPassengerServiceVehicle(vehicle)) continue;
+				for (const Vehicle *part = vehicle; part != nullptr; part = part->Next()) {
+					if (part->cargo_type < NUM_CARGO && part->cargo_cap > 0 && IsCargoInClass(part->cargo_type, CargoClass::Passengers)) { ++passenger_vehicles; break; }
+				}
+			}
+			const auto *published = GetPassengerServiceDatabase().Get(list->index);
+			auto live = PassengerPeriodicTimetable::Compile(orders);
+			IConsolePrint(CC_DEFAULT, "Depot service {}: vehicle={}; type={}; passenger_vehicles={}; published={}; published_period={}; live_period={}",
+					list->index, first->index, to_underlying(first->type), passenger_vehicles, published != nullptr,
+					published == nullptr ? 0 : published->timetable.period, live.period);
+			VehicleOrderID index = 0;
+			for (const Order &order : orders) {
+				IConsolePrint(CC_DEFAULT, "Depot audit order {}: type={}; destination={}; nonstop={}; travel={}/{}; wait={}/{}; pax_load={}; pax_unload={}; refit={}; dispatch={}",
+						index++, GetOrderTypeName(order.GetType()), order.GetDestination().value, order.GetNonStopType(), order.GetTravelTime(), order.IsTravelTimetabled(),
+						order.GetWaitTime(), order.IsWaitTimetabled(), to_underlying(order.GetCargoLoadType(CargoType{0})), to_underlying(order.GetCargoUnloadType(CargoType{0})),
+						order.IsRefit(), order.GetDispatchScheduleIndex());
+				if (order.IsType(OT_GOTO_DEPOT)) IConsolePrint(CC_DEFAULT, "Depot flags: regular={}; service_only={}; breakdown={}; action={}; traversal={}",
+						order.GetDepotOrderType().Test(OrderDepotTypeFlag::PartOfOrders), order.GetDepotOrderType().Test(OrderDepotTypeFlag::Service),
+						order.GetDepotOrderType().Test(OrderDepotTypeFlag::Breakdown), to_underlying(order.GetDepotActionType()), to_underlying(ClassifyPassengerDepot(order)));
+			}
+		}
+		return true;
+	}
 	auto id = ParseInteger<uint32_t>(argv[1]);
 	if (!id) return false;
 	const Vehicle *vehicle = Vehicle::GetIfValid(VehicleID{*id});
