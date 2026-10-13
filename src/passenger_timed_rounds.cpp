@@ -164,7 +164,8 @@ PassengerTimedRoundResult PassengerTimedRounds::Plan(PassengerServiceDatabase &d
 		if (policy != nullptr && !Add(cost, policy->DistanceLowerBound(station))) return INT64_MAX;
 		return cost;
 	};
-	/* The logical envelope covers deque blocks, all three sparse station maps,
+	/* The logical envelope covers deque blocks, continuation/round-count maps,
+	 * both sparse station frontiers,
 	 * geometric index vectors, parent paths and the returned route. It does not
 	 * discount warm storage or optional departure-index residency. */
 	constexpr size_t LABEL_BYTES = 1024, SERVICE_BYTES = 128;

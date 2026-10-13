@@ -98,7 +98,7 @@ def run(args):
                     shutil.copy2(args.package / name, directory / name)
                 shutil.copy2(args.binary, directory / "openttd.exe")
                 print(f"Starting {label}: {args.ticks} ticks", flush=True)
-                command = ["powershell.exe", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File", str(profile.HARNESS),
+                command = ["pwsh.exe", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File", str(profile.HARNESS),
                            "-RunDirectory", str(directory.resolve()), "-Binary", "openttd.exe", "-Label", label,
                            "-Backend", "periodic", "-Ticks", str(args.ticks), "-TimedMethod", method]
                 with (directory / "harness.log").open("w", encoding="utf-8") as log:
