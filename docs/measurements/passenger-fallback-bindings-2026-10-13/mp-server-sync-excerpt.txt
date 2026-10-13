@@ -1,0 +1,2 @@
+dbg: [net:3] [server] Client #2 (127.0.0.1) joined as periodic-client-initial, pubkey: 5BA25D45A9C6CA0DE563A92EE966EDF6BBCED74E9673117972BBB32DB0DDB555
+dbg: [net:3] [server] Client #3 (127.0.0.1) joined as periodic-client-late, pubkey: 6F33D805266FC84BB286365FEF8C4467BACBEF177B680A7DBE3E957059228D5C

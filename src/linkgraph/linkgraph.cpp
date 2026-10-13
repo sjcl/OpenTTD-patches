@@ -19,6 +19,13 @@
 LinkGraphPool _link_graph_pool("LinkGraph");
 INSTANTIATE_POOL_METHODS(LinkGraph)
 
+uint64_t NextPassengerBindingRevision()
+{
+	static uint64_t revision = 0;
+	assert(revision != UINT64_MAX);
+	return ++revision;
+}
+
 bool LinkGraph::EdgeRoute::IsValid() const
 {
 	return this->route < MAX_EDGE_ROUTES && this->vehicle_type < 4 &&
@@ -133,6 +140,7 @@ void LinkGraph::Compress()
 void LinkGraph::Merge(LinkGraph *other)
 {
 	this->InvalidatePassengerOd();
+	this->InvalidatePassengerBindings();
 	uint32_t age = ClampTo<uint32_t>(CeilDivT<int64_t>(_scaled_tick_counter - this->last_compression + 1, DAY_TICKS));
 	uint32_t other_age = ClampTo<uint32_t>(CeilDivT<int64_t>(_scaled_tick_counter - other->last_compression + 1, DAY_TICKS));
 	NodeID first = this->Size();
@@ -141,8 +149,7 @@ void LinkGraph::Merge(LinkGraph *other)
 		Station *st = Station::Get(other->nodes[node1].station);
 		NodeID new_node = this->AddNode(st);
 		this->nodes[new_node].supply = LinkGraph::Scale(other->nodes[node1].supply, age, other_age);
-		st->goods[this->cargo].link_graph = this->index;
-		st->goods[this->cargo].node = new_node;
+		st->goods[this->cargo].SetLinkGraph(this->index, new_node);
 	}
 	for (const auto &iter : other->edges) {
 		std::pair<NodeID, NodeID> key = std::make_pair(iter.first.first + first, iter.first.second + first);
@@ -168,6 +175,7 @@ void LinkGraph::RemoveNode(NodeID id)
 {
 	assert(id < this->Size());
 	this->InvalidatePassengerOd();
+	this->InvalidatePassengerBindings();
 
 	std::vector<std::pair<std::pair<NodeID, NodeID>, BaseEdge>> saved_nodes;
 
@@ -189,7 +197,8 @@ void LinkGraph::RemoveNode(NodeID id)
 		this->edges.insert(it);
 	}
 
-	Station::Get(this->nodes[last_node].station)->goods[this->cargo].node = id;
+	GoodsEntry &goods = Station::Get(this->nodes[last_node].station)->goods[this->cargo];
+	goods.SetLinkGraph(goods.link_graph, id);
 	/* Erase node by swapping with the last element. Node index is referenced
 	 * directly from station goods entries so the order and position must remain. */
 	this->nodes[id] = this->nodes.back();
@@ -207,6 +216,7 @@ void LinkGraph::RemoveNode(NodeID id)
 NodeID LinkGraph::AddNode(const Station *st)
 {
 	this->InvalidatePassengerOd();
+	this->InvalidatePassengerBindings();
 	const GoodsEntry &good = st->goods[this->cargo];
 
 	NodeID new_node = this->Size();
@@ -375,6 +385,7 @@ void LinkGraph::Edge::PruneRoutes(EconTime::DateDelta timeout)
 void LinkGraph::Init(uint size)
 {
 	assert(this->Size() == 0);
+	this->InvalidatePassengerBindings(); // Saved OD revisions may repeat after load/join.
 	this->nodes.resize(size);
 }
 

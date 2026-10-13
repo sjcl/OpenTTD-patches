@@ -1,0 +1,56 @@
+diff --git a/src/console_cmds.cpp b/src/console_cmds.cpp
+index 968ab39a57..51c4d932b9 100644
+--- a/src/console_cmds.cpp
++++ b/src/console_cmds.cpp
+@@ -4955,0 +4956,3 @@ static bool ConPassengerJourneyStats(std::span<std::string_view> argv)
++	IConsolePrint(CC_DEFAULT, "OD fallback bindings: hits={}; builds={}; validation_nodes={}; validation_ns={}; build_ns={}; reverse_hits={}; reverse_builds={}; reverse_build_ns={}",
++			stats.od_fallback_binding_hits, stats.od_fallback_binding_builds, stats.od_fallback_binding_nodes, stats.od_fallback_binding_validation_nanoseconds,
++			stats.od_fallback_binding_build_nanoseconds, stats.od_fallback_reverse_hits, stats.od_fallback_reverse_builds, stats.od_fallback_reverse_build_nanoseconds);
+diff --git a/src/passenger_journey_active.cpp b/src/passenger_journey_active.cpp
+index 5e7b893a73..0e316b9345 100644
+--- a/src/passenger_journey_active.cpp
++++ b/src/passenger_journey_active.cpp
+@@ -51,0 +52,5 @@ namespace {
++	struct NanosecondTimer {
++		uint64_t &counter;
++		std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
++		~NanosecondTimer() { this->counter += std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - this->start).count(); }
++	};
+@@ -118,0 +124,6 @@ namespace {
++		a.od_fallback_binding_hits += b.od_fallback_binding_hits; a.od_fallback_binding_builds += b.od_fallback_binding_builds;
++		a.od_fallback_binding_nodes += b.od_fallback_binding_nodes;
++		a.od_fallback_reverse_hits += b.od_fallback_reverse_hits; a.od_fallback_reverse_builds += b.od_fallback_reverse_builds;
++		a.od_fallback_binding_validation_nanoseconds += b.od_fallback_binding_validation_nanoseconds;
++		a.od_fallback_binding_build_nanoseconds += b.od_fallback_binding_build_nanoseconds;
++		a.od_fallback_reverse_build_nanoseconds += b.od_fallback_reverse_build_nanoseconds;
+@@ -772,1 +783,9 @@ uint32_t PassengerOdFallbackContext::Distance(CargoType cargo, StationID origin,
+-			for (NodeID node = 0; matches && node < graph->Size(); ++node) matches = (*resident_binding->second.nodes)[node] == std::pair((*graph)[node].Station(), valid_node(node));
++			if (matches) {
++				NanosecondTimer validation_timer{TickBudget().diagnostic.od_fallback_binding_validation_nanoseconds};
++				size_t checked = 0;
++				for (NodeID node = 0; matches && node < graph->Size(); ++node) {
++					++checked;
++					matches = (*resident_binding->second.nodes)[node] == std::pair((*graph)[node].Station(), valid_node(node));
++				}
++				TickBudget().diagnostic.od_fallback_binding_nodes += checked;
++			}
+@@ -773,0 +793,2 @@ uint32_t PassengerOdFallbackContext::Distance(CargoType cargo, StationID origin,
++				NanosecondTimer build_timer{TickBudget().diagnostic.od_fallback_binding_build_nanoseconds};
++				++TickBudget().diagnostic.od_fallback_binding_builds;
+@@ -783,1 +804,1 @@ uint32_t PassengerOdFallbackContext::Distance(CargoType cargo, StationID origin,
+-			}
++			} else ++TickBudget().diagnostic.od_fallback_binding_hits;
+@@ -805,1 +826,1 @@ uint32_t PassengerOdFallbackContext::Distance(CargoType cargo, StationID origin,
+-		if (reverse != reverse_indices.end()) index = reverse->second;
++		if (reverse != reverse_indices.end()) { index = reverse->second; ++TickBudget().diagnostic.od_fallback_reverse_hits; }
+@@ -806,0 +828,2 @@ uint32_t PassengerOdFallbackContext::Distance(CargoType cargo, StationID origin,
++			NanosecondTimer reverse_timer{TickBudget().diagnostic.od_fallback_reverse_build_nanoseconds};
++			++TickBudget().diagnostic.od_fallback_reverse_builds;
+diff --git a/src/passenger_journey_active.h b/src/passenger_journey_active.h
+index e543a47424..58374c8c70 100644
+--- a/src/passenger_journey_active.h
++++ b/src/passenger_journey_active.h
+@@ -68,0 +69,3 @@ struct PassengerJourneyTickDiagnostic {
++	size_t od_fallback_binding_hits = 0, od_fallback_binding_builds = 0, od_fallback_binding_nodes = 0;
++	size_t od_fallback_reverse_hits = 0, od_fallback_reverse_builds = 0;
++	uint64_t od_fallback_binding_validation_nanoseconds = 0, od_fallback_binding_build_nanoseconds = 0, od_fallback_reverse_build_nanoseconds = 0;

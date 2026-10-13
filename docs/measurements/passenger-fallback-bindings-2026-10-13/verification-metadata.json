@@ -1,0 +1,99 @@
+{
+  "base_commit": "a58d472382f85c63fe9114888d71d7d189c45572",
+  "branch": "perf/passenger-fallback-bindings",
+  "compiler": "MSVC 19.44 x64 Release /MT; assertions ON; LTO OFF",
+  "measurement_option": "ON",
+  "product_option": "OFF",
+  "baseline_sha256": "058B8A3E1A01BBFD113A82A52E4D0E4A5D6771E77F45795506485090330CDE6D",
+  "measurement_sha256": "BD2E788B4E43E984D7B19AD8FDB647B41FF8B481FEFD3EB158616E41288A7570",
+  "ctest_product_sha256": "0ECE614EBECA968CD904049537B815A15BB82D86BA17A57841561BEE6DADCA5A",
+  "network_sha256": "CA3026EFEB87514A1C993FAFAB24A289D18DC92A9F5C603EA3C1FB2D6FB0D398",
+  "network_code_change": "Only PE subsystem field GUI (2) to console (3); executable code unchanged",
+  "final_test_sha256": "9BB62393351569A069DA62271E52EE565BB2F366210C1B144923DE66613B6282",
+  "input_sha256": "14D68C82911B9DCFC5EF7291E9697C5BBD67F44FFCC79D7575A144405EDF6390",
+  "original_input_sha256_after": "14D68C82911B9DCFC5EF7291E9697C5BBD67F44FFCC79D7575A144405EDF6390",
+  "tick_interval": [
+    3176545487,
+    3176553679
+  ],
+  "ticks": 8192,
+  "compared_runs": [
+    "baseline1",
+    "optimized1",
+    "baseline2",
+    "cold1"
+  ],
+  "speed_comparison": [
+    "baseline2",
+    "optimized1"
+  ],
+  "timing_limitations": "baseline1 overlaps builds and is excluded from the speed ratio; a separate OpenTTD process was present during the later sequential measurements",
+  "full_save_identical": true,
+  "save_sha256": "1BAE3398586E1ABFAC6D305D9AF825A2D26E76CBC69FC21369D2549F5A61C590",
+  "ctest": {
+    "passed": 544,
+    "total": 544,
+    "seconds": 98.81
+  },
+  "final_bindings": {
+    "cases": 10,
+    "assertions": 1498
+  },
+  "final_passenger": {
+    "cases": 331,
+    "assertions": 979474
+  },
+  "forbidden_database_files_changed": false,
+  "multiplayer": {
+    "passed": true,
+    "scope": "Private loopback; saved periodic state preserved; server residency ON and both client residencies OFF; unrestricted CPU; 90 seconds after late join",
+    "progressed_ticks": 1670,
+    "ack_counts": {
+      "client-initial": 19,
+      "client-late": 14
+    },
+    "detected_sync_failure": false,
+    "connected": [
+      [
+        "1",
+        "periodic-server"
+      ],
+      [
+        "2",
+        "periodic-client-initial"
+      ],
+      [
+        "3",
+        "periodic-client-late"
+      ]
+    ],
+    "logs": {
+      "server": {
+        "sha256": "C525ED9D056E0D5569A122A3C63FBBB9765A9308816B09181DDB58296681FBCB",
+        "bytes": 3535299
+      },
+      "client-initial": {
+        "sha256": "22DBC1CD3D39D08F8FA627027928700CBBF593ADF6A44DDFFCB532F02D8B256E",
+        "bytes": 4087212
+      },
+      "client-late": {
+        "sha256": "FF9E18D1A601D296E860E0E089FF77B02C9ADEBB2E82351C77D7D12BFE777441",
+        "bytes": 3852209
+      }
+    },
+    "initial_single_core_attempt": "Inconclusive: both clients lost the connection; no sync mismatch observed; failed run retained separately"
+  },
+  "source_sha256": {
+    "src/passenger_journey_active.cpp": "475E753ECBECAB3FC52209820BA0A0116B2985E061A10AA41BC8E15BDBDC1979",
+    "src/passenger_journey_active.h": "A3E5EA82770B2FB590FE186FE66F7A13CFEFBD3F9913A15A004DE5D116F5D7C7",
+    "src/linkgraph/linkgraph.cpp": "17674D17236C009E0FAE6435A78E371CC4402D49876840D05DDC5FC34A40CFBC",
+    "src/linkgraph/linkgraph.h": "6EAD8AB82809063CEDA8A6DAB7816C7A4FE7DFCF2A3DC35EF669EEDAE76DFD04",
+    "src/station.cpp": "B05FD1CC77A40DDC4EA719BAAABC63271FB6D67651B95DDAAFB04197C18FFF2A",
+    "src/station_base.h": "E55460B2D4F0796D2E16340C90EA29CAED9CE6217F07556693A33F9D88B52F5D",
+    "src/station_cmd.cpp": "A383EE96583E43654F6AC6B0A42758CAE19E9AA4218BCAFA1CA92B14E0FAB54E",
+    "src/console_cmds.cpp": "A82DCD309EDD3914E7F4243C21AD0F2D886BD707DDA0EFA8E76B474EFA3744B9",
+    "src/tests/passenger_journey_active.cpp": "25791F3031BF807C04224A3E6E053205ED549B06C5A04EB7C1C232B13D519629",
+    "src/tests/passenger_multimodal.cpp": "C9D267997049031235FDB3580A7A44D941C2B7E56628C300F26281CC405BFC83"
+  },
+  "archive_text_normalization": "Trailing whitespace and excess blank EOF lines removed from log copies; raw streams retained under the ignored build directory. Context-free baseline patch verified to reproduce the full-context transformation; apply with --unidiff-zero."
+}
