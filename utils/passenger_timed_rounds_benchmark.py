@@ -54,14 +54,23 @@ def run(args):
                 "budgets": {"work": 65536, "labels": 8192, "memory": 8388608},
                 "status": "running"}
     lock_path = pathlib.Path(tempfile.gettempdir()) / "openttd-passenger-routing-measurement.lock"
-    while True:
-        try:
-            lock = os.open(lock_path, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
-            break
-        except FileExistsError:
-            time.sleep(5)
+    lock = None
+    if args.parent_lock_pid is not None:
+        owner = json.loads(lock_path.read_text(encoding="utf-8"))
+        parent = int(profile.powershell(f"(Get-CimInstance Win32_Process -Filter 'ProcessId = {os.getpid()}').ParentProcessId").strip())
+        if owner["pid"] != args.parent_lock_pid or parent != args.parent_lock_pid:
+            raise ValueError("Shared CPU lock does not belong to this process's parent")
+    else:
+        while True:
+            try:
+                lock = os.open(lock_path, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+                break
+            except FileExistsError:
+                time.sleep(5)
+    manifest["lock_owner_pid"] = args.parent_lock_pid or os.getpid()
     try:
-        os.write(lock, json.dumps({"pid": os.getpid(), "output": str(args.output.resolve())}).encode())
+        if lock is not None:
+            os.write(lock, json.dumps({"pid": os.getpid(), "output": str(args.output.resolve())}).encode())
         for repetition in range(args.repetitions):
             methods = ["legacy", "rounds"] if repetition % 2 == 0 else ["rounds", "legacy"]
             for method in methods:
@@ -137,9 +146,10 @@ def run(args):
         raise
     finally:
         profile.dump(args.output / "manifest.json", manifest)
-        os.close(lock)
-        if lock_path.exists() and json.loads(lock_path.read_text(encoding="utf-8"))["pid"] == os.getpid():
-            lock_path.unlink()
+        if lock is not None:
+            os.close(lock)
+            if lock_path.exists() and json.loads(lock_path.read_text(encoding="utf-8"))["pid"] == os.getpid():
+                lock_path.unlink()
 
 
 if __name__ == "__main__":
@@ -148,4 +158,5 @@ if __name__ == "__main__":
         parser.add_argument("--" + name, type=pathlib.Path, required=True)
     parser.add_argument("--ticks", type=int, default=8192)
     parser.add_argument("--repetitions", type=int, default=2)
+    parser.add_argument("--parent-lock-pid", type=int, help="Reuse a CPU reservation held by the actual parent process; do not release it")
     run(parser.parse_args())
