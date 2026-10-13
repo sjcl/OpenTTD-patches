@@ -342,6 +342,12 @@ endif()
 add_dependencies(openttd
     find_version)
 
+option(OPTION_PASSENGER_BENCHMARK "Enable the isolated passenger real-map measurement harness" OFF)
+if(OPTION_PASSENGER_BENCHMARK)
+    set_source_files_properties("${CMAKE_SOURCE_DIR}/src/console_cmds.cpp" PROPERTIES COMPILE_DEFINITIONS WITH_PASSENGER_BENCHMARK)
+    set_source_files_properties("${CMAKE_SOURCE_DIR}/src/video/null_v.cpp" PROPERTIES COMPILE_DEFINITIONS WITH_PASSENGER_BENCHMARK)
+endif()
+
 if(NOT OPTION_NO_SPLIT_LIB)
     target_link_libraries(openttd openttd_lib)
 

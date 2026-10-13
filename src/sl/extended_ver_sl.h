@@ -214,6 +214,7 @@ enum SlXvFeatureIndex {
 	XSLFI_PASSENGER_DESTINATION,                 ///< Explicit final passenger destination in cargo packets
 	XSLFI_PASSENGER_OD_ASSIGNMENT,               ///< Sparse passenger demand and deterministic assignment state
 	XSLFI_PASSENGER_JOURNEY_ROUTING,             ///< Persistent execution of explicit-OD passenger train journeys
+	XSLFI_PASSENGER_PERIODIC,                    ///< Periodic service generations and deterministic build progress
 	XSLFI_SIZE,                                   ///< Total count of features, including null feature
 };
 

@@ -9,6 +9,7 @@
 
 #include "stdafx.h"
 #include "passenger_journey_active.h"
+#include "passenger_service_database.h"
 #include "error.h"
 #include "roadveh.h"
 #include "ship.h"
@@ -387,6 +388,7 @@ bool Vehicle::NeedsAutomaticServicing() const
 
 uint Vehicle::Crash(bool)
 {
+	if (this->orders != nullptr) InvalidatePassengerServiceDatabase(this->orders->index);
 	assert(!this->vehstatus.Test(VehState::Crashed));
 	assert(this->Previous() == nullptr); // IsPrimaryVehicle fails for free-wagon-chains
 
@@ -1248,7 +1250,10 @@ Vehicle::~Vehicle()
 	}
 
 	if (this->index == VehicleID::Invalid()) return; // Temporary instances which were never added to the pool
-	if (this->type < VehicleType::CompanyEnd) InvalidatePassengerJourneyVehicle(this->index);
+	if (this->type < VehicleType::CompanyEnd) {
+		InvalidatePassengerJourneyVehicle(this->index);
+		if (this->orders != nullptr) InvalidatePassengerServiceDatabase(this->orders->index);
+	}
 
 	if (this->type != VehicleType::Effect) InvalidateVehicleTickCaches();
 

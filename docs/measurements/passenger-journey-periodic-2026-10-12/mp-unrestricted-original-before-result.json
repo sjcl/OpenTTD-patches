@@ -1,0 +1,119 @@
+{
+  "tag": "current-7d914aa6f2",
+  "backend": "periodic",
+  "binary": "openttd-console.exe",
+  "started_at_utc": "2026-10-12T17:21:54.292931+00:00",
+  "binary_sha256": "d2df6a91d9c04f5d06c0b52d1e8faeb8373f3b1516d5b2ff1e6c921444a045b7",
+  "public_binary_sha256": "1761a245e45abf0fe939313c4c394f50a576d35f58dea0b0bf787e98aef66787",
+  "input_save_sha256": "14d68c82911b9dcfc5ef7291e9697c5bbd67f44ffcc79d7575a144405edf6390",
+  "transfer_timetables": "preserve",
+  "loopback_address": "127.0.0.1:17493",
+  "sync_frequency": 1,
+  "ticks_before_late_join": [
+    "3176545487",
+    "3176545801"
+  ],
+  "client_exit_codes_at_checkpoint": [
+    null,
+    null
+  ],
+  "phase_completed": true,
+  "desync_reports": [
+    {
+      "path": "current-original-before\\server\\desync-server-20261012T172220Z.log",
+      "bytes": 511564,
+      "sha256": "6078abc23cf384405bd53b7e224761b1c711200936e2dcb66c7f47b0a5220542",
+      "flags": [
+        "R"
+      ],
+      "subframe_mismatches": [
+        "00000287, STATION, seed"
+      ],
+      "game_loaded_at": [
+        "117528-03-11 (27, 0), (389 state ticks ago), 2026-10-12 17:21:57",
+        "117528-03-16 (36, 0), (1 state ticks ago), 2026-10-12 17:22:20"
+      ]
+    },
+    {
+      "path": "current-original-before\\client-late\\desync-client-20261012T172220Z.log",
+      "bytes": 511564,
+      "sha256": "04006afae0d78bf039faa4f667f9569ea78dfd63c2dc28e32e5e9dce8e038a0c",
+      "flags": [
+        "R"
+      ],
+      "subframe_mismatches": [
+        "00000287, STATION, seed"
+      ],
+      "game_loaded_at": [
+        "117528-03-16 (36, 0), (1 state ticks ago), 2026-10-12 17:22:20",
+        "117528-03-11 (27, 0), (389 state ticks ago), 2026-10-12 17:21:57"
+      ]
+    }
+  ],
+  "joined_clients": 2,
+  "detected_sync_failure": true,
+  "server_state_ticks": [
+    "3176545487",
+    "3176545801",
+    "3176548263"
+  ],
+  "affinity": {
+    "client-initial": {
+      "restricted": false
+    },
+    "client-late": {
+      "restricted": false
+    }
+  },
+  "single_core_clients": false,
+  "client_ack_frames": {
+    "client-initial": [
+      167,
+      242,
+      321,
+      402,
+      477,
+      552,
+      627,
+      702,
+      780,
+      857,
+      935,
+      1011,
+      1086,
+      1161,
+      1236,
+      1313,
+      1391,
+      1472,
+      1550,
+      1627,
+      1704,
+      1780,
+      1862,
+      1945,
+      2026,
+      2103,
+      2186,
+      2263,
+      2348,
+      2426,
+      2508,
+      2588,
+      2666,
+      2749,
+      2832,
+      2929,
+      3017,
+      3092,
+      3167
+    ],
+    "client-late": [
+      646
+    ]
+  },
+  "connection_timeouts": [],
+  "finished_at_utc": "2026-10-12T17:23:54.761292+00:00",
+  "verdict": "sync failure observed",
+  "console_copy_change": "Only PE subsystem flag changed from GUI to console; executable code unchanged"
+}

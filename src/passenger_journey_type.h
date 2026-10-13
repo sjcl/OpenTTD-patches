@@ -14,7 +14,11 @@
 
 enum class PassengerRoutingMode : uint8_t { Legacy, Journey, Fallback };
 
-/** Only the next ride is stored. Absolute times distinguish repeated visits to an order.
+enum class PassengerRideKind : uint8_t { VehicleSnapshot, ServiceIntent, BoundService };
+
+/** Only the next ride is stored. The kind distinguishes old absolute vehicle visits
+ * from recurring service intentions and their actual bound carrier. New intentions
+ * retain occurrences and a boarding deadline, without requiring a matching forecast time.
  * No snapshot indices, live pointers, forecast reservations or complete itineraries. */
 struct PassengerJourneyExecution {
 	VehicleID vehicle = VehicleID::Invalid();
@@ -26,6 +30,9 @@ struct PassengerJourneyExecution {
 	StateTicks departure{};
 	StateTicks arrival{};
 	uint64_t signature = 0;
+	PassengerRideKind kind = PassengerRideKind::VehicleSnapshot;
+	uint64_t generation = 0;
+	StateTicks not_before{}; ///< Earliest real boarding, including an actual interchange's minimum transfer time.
 	bool operator==(const PassengerJourneyExecution &) const = default;
 };
 

@@ -131,6 +131,7 @@ public:
 	void SetPassengerJourney(PassengerJourneyExecution journey, StationID legacy_hop);
 	void FallbackPassengerJourney(StationID station, StateTicks now);
 	void DeferPassengerJourney(StationID station, StateTicks now);
+	void ShiftPassengerJourneyTicks(StateTicksDelta delta);
 	bool HasSamePassengerRouting(const CargoPacket &other) const
 	{
 		return this->passenger_routing_mode == other.passenger_routing_mode && this->passenger_journey == other.passenger_journey &&

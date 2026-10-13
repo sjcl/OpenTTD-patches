@@ -1,0 +1,13 @@
+{
+  "backend": "periodic",
+  "exit_code": 0,
+  "wall_seconds": 73.3396957,
+  "cpu_seconds": 139.15625,
+  "peak_working_set": 2000289792,
+  "sampled_peak_private": 1999273984,
+  "input_save": "input.sav",
+  "resumed": false,
+  "input_sha256": "14D68C82911B9DCFC5EF7291E9697C5BBD67F44FFCC79D7575A144405EDF6390",
+  "binary_sha256": "ECABA64B39DE69856D7E29DD4C5395C16B7E6C76F7EF8D2625B96ED561CB419F",
+  "sample_ms": 100
+}

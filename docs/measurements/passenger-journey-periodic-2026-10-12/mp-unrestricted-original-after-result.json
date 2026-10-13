@@ -1,0 +1,125 @@
+{
+  "revision": "7d914aa6f2+station-queue-fix",
+  "backend": "periodic",
+  "binary": "openttd-console.exe",
+  "started_at_utc": "2026-10-12T17:37:28.630955+00:00",
+  "binary_sha256": "4418675906c3352f73bc5c3ba1593d60526cb2ef856b6ec681bca301ff7aaaf0",
+  "input_save_sha256": "14d68c82911b9dcfc5ef7291e9697c5bbd67f44ffcc79d7575a144405edf6390",
+  "transfer_timetables": "preserve",
+  "loopback_address": "127.0.0.1:17493",
+  "sync_frequency": 1,
+  "late_join_delay_seconds": 12,
+  "late_join_observation_seconds": 90.0,
+  "ticks_before_late_join": [
+    "3176545487",
+    "3176545759"
+  ],
+  "client_exit_codes_at_checkpoint": [
+    null,
+    null
+  ],
+  "phase_completed": true,
+  "desync_reports": [],
+  "joined_clients": 2,
+  "detected_sync_failure": false,
+  "server_state_ticks": [
+    "3176545487",
+    "3176545759",
+    "3176547993"
+  ],
+  "affinity": {
+    "client-initial": {
+      "restricted": false
+    },
+    "client-late": {
+      "restricted": false
+    }
+  },
+  "single_core_clients": false,
+  "client_ack_frames": {
+    "client-initial": [
+      177,
+      258,
+      340,
+      423,
+      504,
+      579,
+      656,
+      732,
+      812,
+      890,
+      975,
+      1061,
+      1150,
+      1225,
+      1302,
+      1383,
+      1465,
+      1544,
+      1630,
+      1708,
+      1786,
+      1881,
+      1972,
+      2056,
+      2145,
+      2220,
+      2301,
+      2392,
+      2470,
+      2555,
+      2633,
+      2720,
+      2813,
+      2888
+    ],
+    "client-late": [
+      603,
+      682,
+      760,
+      844,
+      930,
+      1014,
+      1106,
+      1185,
+      1262,
+      1347,
+      1445,
+      1530,
+      1626,
+      1717,
+      1792,
+      1903,
+      2003,
+      2104,
+      2188,
+      2276,
+      2355,
+      2455,
+      2558,
+      2640,
+      2729,
+      2833,
+      2908
+    ]
+  },
+  "connection_timeouts": [],
+  "connected_at_checkpoint": [
+    [
+      "1",
+      "release-server"
+    ],
+    [
+      "2",
+      "release-client-initial"
+    ],
+    [
+      "3",
+      "release-client-late"
+    ]
+  ],
+  "finished_at_utc": "2026-10-12T17:39:28.256384+00:00",
+  "verdict": "no sync failure observed in test interval",
+  "console_copy_change": "Only PE subsystem flag changed from GUI to console; executable code unchanged",
+  "product_binary_sha256": "54f831878a5d2d38fdde549fa3ce33420bdbf99335545fef2259930dd9333632"
+}

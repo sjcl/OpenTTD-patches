@@ -1,0 +1,243 @@
+Console log output started to 'C:/Users/bebe/.codex/worktrees/9276/OpenTTD-patches/build-periodic/desync-investigation/current-original-before/server/console.txt'.
+Game is already paused.
+Calendar Date: 117528-03-11 (42926290), fract: 27, sub_fract: 0
+Economy Date: 117528-03-11 (42926290), fract: 27, tick skip: 0
+Period display offset: 0
+Elapsed years: 117527
+Tick counter: 3010946389
+Tick counter (scaled): 3010946389
+State ticks: 3176545487 (offset: 0)
+Effective economy speed reduction factor: 1
+Ticks per calendar day: 74
+Timetable time: 22:10 + 27 ticks
+Current value for 'linkgraph.passenger_transfer_timetables' is: 'true' (min: 0, max: 1, def: 0)
+Current value for 'linkgraph.distribution_pax' is: '2' (def: 0)
+Current value for 'linkgraph.recalc_interval' is: '8' (min: 4, max: 90, def: 8)
+Current value for 'linkgraph.recalc_time' is: '32' (min: 1, max: 9000, def: 32)
+Current value for 'linkgraph.passenger_od_assignment' is: 'true' (min: 0, max: 1, def: 0)
+Current value for 'linkgraph.passenger_journey_routing' is: 'true' (min: 0, max: 1, def: 0)
+Current value for 'linkgraph.passenger_journey_periodic' is: 'true' (min: 0, max: 1, def: 1)
+Passenger inventory: complete; waiting=200450 people (available=200450, reserved=0); deferred=36501 people; state_ticks=3176545487; scaled_ticks=3010946389
+Inventory Legacy: 425187 people/64228 packets; known_OD=65674 people
+Inventory Journey: 0 people/0 packets; known_OD=0 people
+Inventory Fallback: 50423 people/26847 packets; known_OD=50423 people
+Waiting routing: timed=0; CargoDist_or_deferred=176060; OD_fallback_or_waiting=24390 people
+Graph coverage: complete=0; eligible_services=0; selected_services=0; selected_trips=0; largest_block_services=0; admitted_visits=0; max_unpredicted_ticks=0
+Graph failure None: 0 builds
+Graph failure Work: 0 builds
+Graph failure Memory: 0 builds
+Graph failure Services: 0 builds
+Graph failure Trips: 0 builds
+Graph failure TotalVisits: 0 builds
+Graph failure Index: 0 builds
+Graph failure Opaque: 0 builds
+Trip stop None: 0 predictions
+Trip stop Work: 0 predictions
+Trip stop Memory: 0 predictions
+Trip stop Visits: 0 predictions
+Trip stop Steps: 0 predictions
+Trip stop Timing: 0 predictions
+Trip stop Conditional: 0 predictions
+Trip stop Refit: 0 predictions
+Trip stop Implicit: 0 predictions
+Trip stop Unsupported: 0 predictions
+Trip stop Dispatch: 0 predictions
+Trip stop Facilities: 0 predictions
+Trip stop VehicleState: 0 predictions
+Trip stop OrderProgress: 0 predictions
+First graph failure: reason=None; stage=Discovery; work=0; memory=0; trips=0; visits=0
+First opaque scope: service=65535; vehicle=1048575
+First trip failure: reason=None; stage=Prediction; vehicle=1048575; work=0; memory=0; trips=0; visits=0; cursor=0; certified_until=0; required_until=0
+Uncertainty: timing=0 trips; path=0 trips; OD_resolved=0 searches; first_order=65535; first_unknown_order=65535; first_unknown_reason=None; tile=0; current_order=65535
+Simulation tick time: completed_ticks=0; total_us=0; mean_us=0; max_us=0
+Tick histogram (1ms upper bounds): simulation_p95_us=1000; simulation_p99_us=1000; journey_mean_us=0; journey_p95_us=1000; journey_p99_us=1000; journey_max_us=0
+Journey inclusive scopes: waiting_us=5793; fallback_distance_us=0; boarding_us=0
+Periodic pending age: ticks=0
+OD fallback cache: hits=0; bytes=0; work=0; searches=0
+Periodic database: services=0; timed=0; vehicles=0; bytes=0; policies_bytes=0; pending=837; builds=0; work=0; build_us=0; searches=0; query_us=0; next_departures=0; policy_hits=0; policy_misses=0; invalidations=0; rejected_work=0; rejected_memory=0
+Periodic global invalidations: 0
+Periodic known vehicle phases: 0
+Active journey total: applied=0 packets/0 passengers; builds=0; static_hits=0; searches=0; OD_hits=0
+Train observations=0; cargo_capable=0; possible_refit=0; predicted=0; inactive=0; excluded_cargo=0; excluded_scope=0; visits=0; omitted_trains_at_least=0; truncated_predictions=0 (uncaptured visit count unknown)
+Trip prediction: executions=0; hits=0; logical_work=0; executed_visits=0; predictor_ns=0; cache_bytes=0
+Graph work=0; mean=0; max=0; cached_index_allowance_avoided=0; query_allowance=0; build_us=0; mean_us=0; max_us=0; search_us=0; max_tick_graph_search_us=0
+Peak graph retained_estimate=0; static retained_estimate=0; conservative_graph_envelope_including_index=0; query_scratch=0; query_cache=0
+Graph phase_us: discovery=0; capacity=0; selection=0; orders_dispatch=0; pattern=0; prediction=0; departures=0
+Event capture: discovery_hits=0; service_hits=0; logical_work_replayed=0; retained_estimate_including_shared_patterns=0
+Fair waiting shares: claims=0; releases=0; admission_scan_work=0; retained_rides=0
+OD fallback: work=0; path_searches=0
+Journey transport: boarded=0; transferred=0; delivered=0 people
+Pragmatic routing: timed=0 packets; timed_ignoring_unknown=0; timed_budget_deferred=0; untimed=0 live routes; untimed_no_route=0; untimed_budget_deferred=0
+Untimed transport: boarded=0; transferred=0; delivered=0 people
+Fallback GraphWork: 0 packets; deferred=0 packets
+Fallback GraphMemory: 0 packets; deferred=0 packets
+Fallback SnapshotLimit: 0 packets; deferred=0 packets
+Fallback QueryWork: 0 packets; deferred=0 packets
+Fallback QueryLimit: 0 packets; deferred=0 packets
+Fallback QueryMemory: 0 packets; deferred=0 packets
+Fallback PredictionIncomplete: 0 packets; deferred=0 packets
+Fallback PredictionHorizon: 0 packets; deferred=0 packets
+Fallback NoJourney: 0 packets; deferred=0 packets
+Fallback InvalidLeg: 0 packets; deferred=0 packets
+Fallback StaleLeg: 0 packets; deferred=0 packets
+Fallback Disabled: 0 packets; deferred=0 packets
+Fallback VehicleDeleted: 0 packets; deferred=0 packets
+Console log file closed.
+Console log output started to 'C:/Users/bebe/.codex/worktrees/9276/OpenTTD-patches/build-periodic/desync-investigation/current-original-before/server/console.txt'.
+Calendar Date: 117528-03-15 (42926294), fract: 45, sub_fract: 0
+Economy Date: 117528-03-15 (42926294), fract: 45, tick skip: 0
+Period display offset: 0
+Elapsed years: 117527
+Tick counter: 3010946703
+Tick counter (scaled): 3010946703
+State ticks: 3176545801 (offset: 0)
+Effective economy speed reduction factor: 1
+Ticks per calendar day: 74
+Timetable time: 22:14 + 45 ticks
+Client #1  name: 'release-server'  company: 255  IP: server  pubkey:
+Client #2  name: 'release-client-initial'  company: 255  IP: 127.0.0.1  pubkey: 416870F7A06F958C3011249C242696B6497ED0C3F2A8BC783B0EC3A645E61760
+Passenger inventory: complete; waiting=203769 people (available=203769, reserved=0); deferred=49779 people; state_ticks=3176545803; scaled_ticks=3010946705
+Inventory Legacy: 428512 people/73118 packets; known_OD=79337 people
+Inventory Journey: 929 people/507 packets; known_OD=929 people
+Inventory Fallback: 47676 people/25722 packets; known_OD=47676 people
+Waiting routing: timed=466; CargoDist_or_deferred=180594; OD_fallback_or_waiting=22709 people
+Graph coverage: complete=0; eligible_services=0; selected_services=0; selected_trips=0; largest_block_services=0; admitted_visits=0; max_unpredicted_ticks=0
+Graph failure None: 0 builds
+Graph failure Work: 0 builds
+Graph failure Memory: 0 builds
+Graph failure Services: 0 builds
+Graph failure Trips: 0 builds
+Graph failure TotalVisits: 0 builds
+Graph failure Index: 0 builds
+Graph failure Opaque: 0 builds
+Trip stop None: 0 predictions
+Trip stop Work: 0 predictions
+Trip stop Memory: 0 predictions
+Trip stop Visits: 0 predictions
+Trip stop Steps: 0 predictions
+Trip stop Timing: 0 predictions
+Trip stop Conditional: 0 predictions
+Trip stop Refit: 0 predictions
+Trip stop Implicit: 0 predictions
+Trip stop Unsupported: 0 predictions
+Trip stop Dispatch: 0 predictions
+Trip stop Facilities: 0 predictions
+Trip stop VehicleState: 0 predictions
+Trip stop OrderProgress: 0 predictions
+First graph failure: reason=None; stage=Discovery; work=0; memory=0; trips=0; visits=0
+First opaque scope: service=65535; vehicle=1048575
+First trip failure: reason=None; stage=Prediction; vehicle=1048575; work=0; memory=0; trips=0; visits=0; cursor=0; certified_until=0; required_until=0
+Uncertainty: timing=0 trips; path=0 trips; OD_resolved=0 searches; first_order=65535; first_unknown_order=65535; first_unknown_reason=None; tile=0; current_order=65535
+Simulation tick time: completed_ticks=317; total_us=11874317; mean_us=37458; max_us=315462
+Tick histogram (1ms upper bounds): simulation_p95_us=49000; simulation_p99_us=52000; journey_mean_us=14284; journey_p95_us=27000; journey_p99_us=29000; journey_max_us=30183
+Journey inclusive scopes: waiting_us=3439988; fallback_distance_us=998468; boarding_us=834221
+Periodic pending age: ticks=164
+OD fallback cache: hits=3851; bytes=16872236; work=512520135; searches=10816
+Periodic database: services=837; timed=509; vehicles=2835; bytes=8498064; policies_bytes=48128; pending=388; builds=2515; work=8880856; build_us=59597; searches=5072; query_us=3377126; next_departures=66472; policy_hits=1159; policy_misses=3913; invalidations=6; rejected_work=0; rejected_memory=0
+Periodic global invalidations: 2
+Periodic known vehicle phases: 2480
+Active journey total: applied=956 packets/1620 passengers; builds=0; static_hits=0; searches=5072; OD_hits=2626
+Train observations=0; cargo_capable=0; possible_refit=0; predicted=0; inactive=0; excluded_cargo=0; excluded_scope=0; visits=0; omitted_trains_at_least=0; truncated_predictions=0 (uncaptured visit count unknown)
+Trip prediction: executions=0; hits=0; logical_work=0; executed_visits=0; predictor_ns=0; cache_bytes=0
+Graph work=0; mean=0; max=0; cached_index_allowance_avoided=0; query_allowance=332398592; build_us=0; mean_us=0; max_us=0; search_us=0; max_tick_graph_search_us=0
+Peak graph retained_estimate=0; static retained_estimate=0; conservative_graph_envelope_including_index=0; query_scratch=0; query_cache=0
+Graph phase_us: discovery=0; capacity=0; selection=0; orders_dispatch=0; pattern=0; prediction=0; departures=0
+Event capture: discovery_hits=0; service_hits=0; logical_work_replayed=0; retained_estimate_including_shared_patterns=0
+Fair waiting shares: claims=0; releases=0; admission_scan_work=0; retained_rides=0
+OD fallback: work=512520135; path_searches=10816
+Journey transport: boarded=475; transferred=0; delivered=12 people
+Pragmatic routing: timed=956 packets; timed_ignoring_unknown=0; timed_budget_deferred=0; untimed=4785 live routes; untimed_no_route=7115; untimed_budget_deferred=87432
+Untimed transport: boarded=16532; transferred=9048; delivered=5088 people
+Fallback GraphWork: 0 packets; deferred=0 packets
+Fallback GraphMemory: 0 packets; deferred=0 packets
+Fallback SnapshotLimit: 0 packets; deferred=0 packets
+Fallback QueryWork: 0 packets; deferred=113195 packets
+Fallback QueryLimit: 0 packets; deferred=0 packets
+Fallback QueryMemory: 0 packets; deferred=0 packets
+Fallback PredictionIncomplete: 1539 packets; deferred=0 packets
+Fallback PredictionHorizon: 0 packets; deferred=0 packets
+Fallback NoJourney: 0 packets; deferred=0 packets
+Fallback InvalidLeg: 0 packets; deferred=0 packets
+Fallback StaleLeg: 399 packets; deferred=0 packets
+Fallback Disabled: 0 packets; deferred=0 packets
+Fallback VehicleDeleted: 0 packets; deferred=0 packets
+Console log file closed.
+Console log output started to 'C:/Users/bebe/.codex/worktrees/9276/OpenTTD-patches/build-periodic/desync-investigation/current-original-before/server/console.txt'.
+Calendar Date: 117528-04-17 (42926327), fract: 65, sub_fract: 0
+Economy Date: 117528-04-17 (42926327), fract: 65, tick skip: 0
+Period display offset: 0
+Elapsed years: 117527
+Tick counter: 3010949165
+Tick counter (scaled): 3010949165
+State ticks: 3176548263 (offset: 0)
+Effective economy speed reduction factor: 1
+Ticks per calendar day: 74
+Timetable time: 22:47 + 65 ticks
+Client #1  name: 'release-server'  company: 255  IP: server  pubkey:
+Client #2  name: 'release-client-initial'  company: 255  IP: 127.0.0.1  pubkey: 416870F7A06F958C3011249C242696B6497ED0C3F2A8BC783B0EC3A645E61760
+Passenger inventory: complete; waiting=223183 people (available=223183, reserved=0); deferred=128264 people; state_ticks=3176548263; scaled_ticks=3010949165
+Inventory Legacy: 434682 people/109382 packets; known_OD=157238 people
+Inventory Journey: 4474 people/1905 packets; known_OD=4474 people
+Inventory Fallback: 31112 people/18263 packets; known_OD=31112 people
+Waiting routing: timed=2447; CargoDist_or_deferred=204684; OD_fallback_or_waiting=16052 people
+Graph coverage: complete=0; eligible_services=0; selected_services=0; selected_trips=0; largest_block_services=0; admitted_visits=0; max_unpredicted_ticks=0
+Graph failure None: 0 builds
+Graph failure Work: 0 builds
+Graph failure Memory: 0 builds
+Graph failure Services: 0 builds
+Graph failure Trips: 0 builds
+Graph failure TotalVisits: 0 builds
+Graph failure Index: 0 builds
+Graph failure Opaque: 0 builds
+Trip stop None: 0 predictions
+Trip stop Work: 0 predictions
+Trip stop Memory: 0 predictions
+Trip stop Visits: 0 predictions
+Trip stop Steps: 0 predictions
+Trip stop Timing: 0 predictions
+Trip stop Conditional: 0 predictions
+Trip stop Refit: 0 predictions
+Trip stop Implicit: 0 predictions
+Trip stop Unsupported: 0 predictions
+Trip stop Dispatch: 0 predictions
+Trip stop Facilities: 0 predictions
+Trip stop VehicleState: 0 predictions
+Trip stop OrderProgress: 0 predictions
+First graph failure: reason=None; stage=Discovery; work=0; memory=0; trips=0; visits=0
+First opaque scope: service=65535; vehicle=1048575
+First trip failure: reason=None; stage=Prediction; vehicle=1048575; work=0; memory=0; trips=0; visits=0; cursor=0; certified_until=0; required_until=0
+Uncertainty: timing=0 trips; path=0 trips; OD_resolved=0 searches; first_order=65535; first_unknown_order=65535; first_unknown_reason=None; tile=0; current_order=65535
+Simulation tick time: completed_ticks=2776; total_us=101614001; mean_us=36604; max_us=365380
+Tick histogram (1ms upper bounds): simulation_p95_us=53000; simulation_p99_us=60000; journey_mean_us=13493; journey_p95_us=28000; journey_p99_us=32000; journey_max_us=94478
+Journey inclusive scopes: waiting_us=27323441; fallback_distance_us=9221356; boarding_us=7220485
+Periodic pending age: ticks=747
+OD fallback cache: hits=37426; bytes=16872236; work=4768908899; searches=98979
+Periodic database: services=837; timed=507; vehicles=2831; bytes=8485584; policies_bytes=403488; pending=652; builds=6378; work=24165408; build_us=570845; searches=44416; query_us=26595773; next_departures=346996; policy_hits=17386; policy_misses=27030; invalidations=68; rejected_work=0; rejected_memory=0
+Periodic global invalidations: 5
+Periodic known vehicle phases: 2487
+Active journey total: applied=6825 packets/14009 passengers; builds=0; static_hits=0; searches=44416; OD_hits=63247
+Train observations=0; cargo_capable=0; possible_refit=0; predicted=0; inactive=0; excluded_cargo=0; excluded_scope=0; visits=0; omitted_trains_at_least=0; truncated_predictions=0 (uncaptured visit count unknown)
+Trip prediction: executions=0; hits=0; logical_work=0; executed_visits=0; predictor_ns=0; cache_bytes=0
+Graph work=0; mean=0; max=0; cached_index_allowance_avoided=0; query_allowance=2910846976; build_us=0; mean_us=0; max_us=0; search_us=0; max_tick_graph_search_us=0
+Peak graph retained_estimate=0; static retained_estimate=0; conservative_graph_envelope_including_index=0; query_scratch=0; query_cache=0
+Graph phase_us: discovery=0; capacity=0; selection=0; orders_dispatch=0; pattern=0; prediction=0; departures=0
+Event capture: discovery_hits=0; service_hits=0; logical_work_replayed=0; retained_estimate_including_shared_patterns=0
+Fair waiting shares: claims=0; releases=0; admission_scan_work=0; retained_rides=0
+OD fallback: work=4768908899; path_searches=98979
+Journey transport: boarded=4638; transferred=0; delivered=2082 people
+Pragmatic routing: timed=6825 packets; timed_ignoring_unknown=0; timed_budget_deferred=0; untimed=46741 live routes; untimed_no_route=60395; untimed_budget_deferred=1689674
+Untimed transport: boarded=164024; transferred=77466; delivered=64854 people
+Fallback GraphWork: 0 packets; deferred=0 packets
+Fallback GraphMemory: 0 packets; deferred=0 packets
+Fallback SnapshotLimit: 0 packets; deferred=0 packets
+Fallback QueryWork: 0 packets; deferred=2090444 packets
+Fallback QueryLimit: 0 packets; deferred=0 packets
+Fallback QueryMemory: 0 packets; deferred=0 packets
+Fallback PredictionIncomplete: 10158 packets; deferred=0 packets
+Fallback PredictionHorizon: 0 packets; deferred=0 packets
+Fallback NoJourney: 0 packets; deferred=0 packets
+Fallback InvalidLeg: 0 packets; deferred=0 packets
+Fallback StaleLeg: 3420 packets; deferred=0 packets
+Fallback Disabled: 0 packets; deferred=0 packets
+Fallback VehicleDeleted: 0 packets; deferred=0 packets
+Console log file closed.

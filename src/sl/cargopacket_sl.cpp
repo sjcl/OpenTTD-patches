@@ -11,6 +11,7 @@
 #include "../debug.h"
 #include "../vehicle_base.h"
 #include "../station_base.h"
+#include "../passenger_service_database.h"
 #include "../scope_info.h"
 #include "../3rdparty/cpp-btree/btree_map.h"
 
@@ -28,6 +29,10 @@ extern btree::btree_map<uint64_t, Money> _cargo_packet_deferred_payments;
 	/* Stations are now available. Old saves have no OD; malformed or stale IDs
 	 * must not survive loading or become references to subsequently reused IDs. */
 	for (CargoPacket *cp : CargoPacket::Iterate()) {
+		if (to_underlying(cp->passenger_journey.kind) > to_underlying(PassengerRideKind::BoundService)) SlErrorCorrupt("Invalid passenger ride kind");
+		if (cp->passenger_journey.kind != PassengerRideKind::VehicleSnapshot &&
+				(cp->passenger_routing_mode != PassengerRoutingMode::Journey || cp->passenger_journey.signature == 0 || cp->passenger_journey.generation == 0 ||
+					cp->passenger_journey.arrival < cp->passenger_journey.departure || cp->passenger_journey.not_before > cp->passenger_journey.departure)) SlErrorCorrupt("Invalid passenger service intent");
 		if (SlXvIsFeatureMissing(XSLFI_PASSENGER_JOURNEY_ROUTING)) {
 			cp->passenger_routing_mode = PassengerRoutingMode::Legacy;
 			cp->passenger_journey = {};
@@ -188,6 +193,9 @@ NamedSaveLoadTable GetCargoPacketDesc()
 		NSL("passenger_journey.departure", SLE_CONDVAR_X(CargoPacket, passenger_journey.departure, SLE_INT64, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_PASSENGER_JOURNEY_ROUTING))),
 		NSL("passenger_journey.arrival", SLE_CONDVAR_X(CargoPacket, passenger_journey.arrival, SLE_INT64, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_PASSENGER_JOURNEY_ROUTING))),
 		NSL("passenger_journey.signature", SLE_CONDVAR_X(CargoPacket, passenger_journey.signature, SLE_UINT64, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_PASSENGER_JOURNEY_ROUTING))),
+		NSL("passenger_journey.kind", SLE_CONDVAR_X(CargoPacket, passenger_journey.kind, SLE_UINT8, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_PASSENGER_JOURNEY_ROUTING, 2))),
+		NSL("passenger_journey.generation", SLE_CONDVAR_X(CargoPacket, passenger_journey.generation, SLE_UINT64, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_PASSENGER_JOURNEY_ROUTING, 2))),
+		NSL("passenger_journey.not_before", SLE_CONDVAR_X(CargoPacket, passenger_journey.not_before, SLE_INT64, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_PASSENGER_JOURNEY_ROUTING, 2))),
 		NSL("passenger_legacy_hop", SLE_CONDVAR_X(CargoPacket, passenger_legacy_hop, SLE_UINT16, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_PASSENGER_JOURNEY_ROUTING))),
 		NSL("passenger_retry_station", SLE_CONDVAR_X(CargoPacket, passenger_retry_station, SLE_UINT16, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_PASSENGER_JOURNEY_ROUTING))),
 		NSL("passenger_retry_after", SLE_CONDVAR_X(CargoPacket, passenger_retry_after, SLE_INT64, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_PASSENGER_JOURNEY_ROUTING))),
@@ -268,9 +276,26 @@ void Load_CPDP()
 
 
 /** Chunk handlers related to cargo packets. */
+static void Save_JPSD()
+{
+	auto bytes = GetPassengerServiceDatabase().Save();
+	SlSetLength(bytes.size());
+	for (uint8_t value : bytes) SlWriteByte(value);
+}
+
+static void Load_JPSD()
+{
+	size_t length = SlGetFieldLength();
+	if (length > PassengerServiceDatabase::MAX_BYTES) SlErrorCorrupt("Passenger database exceeds memory limit");
+	std::vector<uint8_t> bytes(length);
+	for (uint8_t &value : bytes) value = SlReadByte();
+	if (!GetPassengerServiceDatabase().Load(bytes)) SlErrorCorrupt("Invalid passenger periodic database");
+}
+
 static const ChunkHandler cargopacket_chunk_handlers[] = {
 	{ 'CAPA', Save_CAPA, Load_CAPA, nullptr, nullptr, ChunkType::Table },
 	{ 'CPDP', Save_CPDP, Load_CPDP, nullptr, nullptr, ChunkType::Riff  },
+	{ 'JPSD', Save_JPSD, Load_JPSD, nullptr, nullptr, ChunkType::Riff  },
 };
 
 extern const ChunkHandlerTable _cargopacket_chunk_handlers(cargopacket_chunk_handlers);

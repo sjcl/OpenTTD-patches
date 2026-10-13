@@ -39,7 +39,7 @@ static std::map<VehicleID, std::set<CargoPacketID>> _passenger_journey_vehicle_p
 
 static void RegisterPassengerJourneyPacket(const CargoPacket &packet)
 {
-	if (packet.GetPassengerRoutingMode() == PassengerRoutingMode::Journey && packet.index != CargoPacketID::Invalid()) {
+	if (packet.GetPassengerRoutingMode() == PassengerRoutingMode::Journey && packet.index != CargoPacketID::Invalid() && packet.GetPassengerJourney().vehicle != VehicleID::Invalid()) {
 		_passenger_journey_vehicle_packets[packet.GetPassengerJourney().vehicle].insert(packet.index);
 	}
 }
@@ -114,6 +114,15 @@ void CargoPacket::DeferPassengerJourney(StationID station, StateTicks now)
 	this->passenger_via = StationID::Invalid();
 	this->passenger_retry_station = station;
 	this->passenger_retry_after = now + 1;
+}
+
+void CargoPacket::ShiftPassengerJourneyTicks(StateTicksDelta delta)
+{
+	if (this->passenger_retry_after != StateTicks{0}) this->passenger_retry_after += delta;
+	if (this->passenger_routing_mode == PassengerRoutingMode::Journey) {
+		this->passenger_journey.departure += delta; this->passenger_journey.arrival += delta;
+		if (this->passenger_journey.kind != PassengerRideKind::VehicleSnapshot) this->passenger_journey.not_before += delta;
+	}
 }
 
 /* Initialize the cargopacket-pool */
@@ -1381,9 +1390,16 @@ uint StationCargoList::ShiftJourneyCargo(Taction action, std::span<const Station
 		for (Iterator it(this->packets.lower_bound(key)); it != this->packets.end() && it.GetKey() == key && action.MaxMove() > 0;) {
 			CargoPacket *packet = *it;
 			if (!loading.CanBoard(*packet, vehicle)) { ++it; continue; }
+			const auto intent = packet->GetPassengerJourney();
+			const StationID legacy = packet->GetPassengerLegacyHop();
 			loading.PrepareBoard(*packet, vehicle);
 			if (action(packet)) it = this->packets.erase(it);
-			else break;
+			else {
+				/* A split copies the bound ride into the moved suffix. Passengers
+				 * remaining at the station can still board another shared vehicle. */
+				if (intent.kind == PassengerRideKind::ServiceIntent) packet->SetPassengerJourney(intent, legacy);
+				break;
+			}
 		}
 	};
 	for (StationID key : next) { shift(key); if (action.MaxMove() == 0) break; }

@@ -37,6 +37,7 @@
 #include "viewport_func.h"
 #include "order_dest_func.h"
 #include "passenger_routing.h"
+#include "passenger_service_database.h"
 #include "vehiclelist.h"
 #include "tracerestrict.h"
 #include "train.h"
@@ -71,6 +72,7 @@ uint64_t GetCargoDistRouteGenerationCounter()
 
 void OrderList::PreCleanPool()
 {
+	ResetPassengerServiceDatabase();
 	_cargodist_route_generation = _saved_cargodist_route_generation = 0;
 }
 
@@ -435,6 +437,13 @@ void InvalidateVehicleOrder(const Vehicle *v, int data)
 	SetWindowDirty(WindowClass::VehicleTimetable, v->index);
 }
 
+/** An actual order edit, separate from notifications as a vehicle advances its order. */
+static void InvalidatePassengerVehicleOrders(const Vehicle *v, int data)
+{
+	if (v->orders != nullptr) InvalidatePassengerServiceDatabase(v->orders->index);
+	InvalidateVehicleOrder(v, data);
+}
+
 /**
  *
  * Updates the widgets of a vehicle which contains the order-data
@@ -442,6 +451,7 @@ void InvalidateVehicleOrder(const Vehicle *v, int data)
  */
 void InvalidateVehicleOrderOnMove(const Vehicle *v, VehicleOrderID from, VehicleOrderID to, uint16_t count)
 {
+	if (v->orders != nullptr) InvalidatePassengerServiceDatabase(v->orders->index);
 	SetWindowDirty(WindowClass::VehicleView, v->index);
 	SetWindowDirty(WindowClass::ScheduledDispatchSlots, v->index);
 
@@ -529,6 +539,7 @@ void CargoStationIDVectorSet::FillNextStoppingStation(const Vehicle *v, const Or
 
 void OrderList::CopyOrderListContents(const OrderList &other)
 {
+	InvalidatePassengerServiceDatabase(this->index);
 	InvalidatePassengerServiceIndex();
 	this->orders = other.orders;
 	this->route_overlay_colour = other.route_overlay_colour;
@@ -548,6 +559,7 @@ void OrderList::CopyOrderListContents(const OrderList &other)
  */
 void OrderList::Initialize(Vehicle *v)
 {
+	InvalidatePassengerServiceDatabase(this->index);
 	InvalidatePassengerServiceIndex();
 	this->first_shared = v;
 
@@ -597,6 +609,7 @@ void OrderList::RecalculateTimetableDuration()
  */
 void OrderList::FreeChain(bool keep_orderlist)
 {
+	InvalidatePassengerServiceDatabase(this->index);
 	VehicleType type = this->GetFirstSharedVehicle()->type;
 	Owner owner = this->GetFirstSharedVehicle()->owner;
 	for (Order *o : this->Orders()) {
@@ -768,6 +781,7 @@ CargoMaskedStationIDVector OrderList::GetNextStoppingStation(const Vehicle *v, C
  */
 void OrderList::InsertOrderAt(Order &&ins_order, VehicleOrderID index)
 {
+	InvalidatePassengerServiceDatabase(this->index);
 	if (index >= this->orders.size()) {
 		index = (VehicleOrderID)this->orders.size();
 	}
@@ -797,6 +811,7 @@ void OrderList::InsertOrderAt(Order &&ins_order, VehicleOrderID index)
  */
 void OrderList::DeleteOrderAt(VehicleOrderID index)
 {
+	InvalidatePassengerServiceDatabase(this->index);
 	if (index >= this->GetNumOrders()) return;
 
 	Order *to_remove = &(this->orders[index]);
@@ -821,6 +836,7 @@ void OrderList::DeleteOrderAt(VehicleOrderID index)
  */
 void OrderList::MoveOrders(VehicleOrderID from, VehicleOrderID to, uint16_t count)
 {
+	InvalidatePassengerServiceDatabase(this->index);
 	if (count == 0 || from >= this->GetNumOrders() || to >= this->GetNumOrders() || from == to) return;
 
 	if (from < to) {
@@ -843,6 +859,7 @@ void OrderList::MoveOrders(VehicleOrderID from, VehicleOrderID to, uint16_t coun
  */
 void OrderList::RemoveVehicle(Vehicle *v)
 {
+	InvalidatePassengerServiceDatabase(this->index);
 	--this->num_vehicles;
 	if (v == this->first_shared) this->first_shared = v->NextShared();
 }
@@ -1547,7 +1564,7 @@ void InsertOrder(Vehicle *v, Order &&new_o, VehicleOrderID sel_ord)
 		u->ResetDepotUnbunching();
 
 		/* Update any possible open window of the vehicle */
-		InvalidateVehicleOrder(u, INVALID_VEH_ORDER_ID | (sel_ord << 16));
+		InvalidatePassengerVehicleOrders(u, INVALID_VEH_ORDER_ID | (sel_ord << 16));
 	}
 
 	/* As we insert an order, the order to skip to will be 'wrong'. */
@@ -1589,7 +1606,7 @@ static CommandCost DecloneOrder(Vehicle *dst, DoCommandFlags flags)
 		}
 
 		DeleteVehicleOrders(dst);
-		InvalidateVehicleOrder(dst, VIWD_REMOVE_ALL_ORDERS);
+		InvalidatePassengerVehicleOrders(dst, VIWD_REMOVE_ALL_ORDERS);
 		InvalidateWindowClassesData(GetWindowClassForVehicleType(dst->type));
 		InvalidateWindowClassesData(WindowClass::DepartureBoard);
 	}
@@ -1703,7 +1720,7 @@ void DeleteOrder(Vehicle *v, VehicleOrderID sel_ord)
 		}
 
 		/* Update any possible open window of the vehicle */
-		InvalidateVehicleOrder(u, sel_ord | (INVALID_VEH_ORDER_ID << 16));
+		InvalidatePassengerVehicleOrders(u, sel_ord | (INVALID_VEH_ORDER_ID << 16));
 	}
 
 	/* As we delete an order, the order to skip to will be 'wrong'. */
@@ -1759,7 +1776,7 @@ CommandCost CmdSkipToOrder(DoCommandFlags flags, VehicleID veh_id, VehicleOrderI
 		/* Unbunching data is no longer valid. */
 		v->ResetDepotUnbunching();
 
-		InvalidateVehicleOrder(v, VIWD_MODIFY_ORDERS);
+		InvalidatePassengerVehicleOrders(v, VIWD_MODIFY_ORDERS);
 
 		v->StopSeparation();
 
@@ -1961,7 +1978,7 @@ CommandCost CmdReverseOrderList(DoCommandFlags flags, VehicleID veh, ReverseOrde
 					u->cur_implicit_order_index = map_order_id(u->cur_implicit_order_index);
 					u->cur_timetable_order_index = INVALID_VEH_ORDER_ID;
 					u->ResetDepotUnbunching();
-					InvalidateVehicleOrder(u, VIWD_REMOVE_ALL_ORDERS); // All orders have moved/been modified, deselect
+					InvalidatePassengerVehicleOrders(u, VIWD_REMOVE_ALL_ORDERS); // All orders have moved/been modified, deselect
 				}
 			}
 			break;
@@ -1994,7 +2011,7 @@ CommandCost CmdReverseOrderList(DoCommandFlags flags, VehicleID veh, ReverseOrde
 				DeleteOrderWarnings(u);
 				for (; u != nullptr; u = u->NextShared()) {
 					u->ResetDepotUnbunching();
-					InvalidateVehicleOrder(u, VIWD_MODIFY_ORDERS);
+					InvalidatePassengerVehicleOrders(u, VIWD_MODIFY_ORDERS);
 				}
 			}
 			break;
@@ -2789,7 +2806,7 @@ CommandCost CmdModifyOrder(DoCommandFlags flags, VehicleID veh, VehicleOrderID s
 			/* Unbunching data is no longer valid. */
 			u->ResetDepotUnbunching();
 
-			InvalidateVehicleOrder(u, VIWD_MODIFY_ORDERS);
+			InvalidatePassengerVehicleOrders(u, VIWD_MODIFY_ORDERS);
 		}
 	}
 
@@ -2961,8 +2978,8 @@ CommandCost CmdCloneOrder(DoCommandFlags flags, CloneOptions action, VehicleID v
 
 				dst->StopSeparation();
 
-				InvalidateVehicleOrder(dst, VIWD_REMOVE_ALL_ORDERS);
-				InvalidateVehicleOrder(src, VIWD_MODIFY_ORDERS);
+				InvalidatePassengerVehicleOrders(dst, VIWD_REMOVE_ALL_ORDERS);
+				InvalidatePassengerVehicleOrders(src, VIWD_MODIFY_ORDERS);
 
 				InvalidateWindowClassesData(GetWindowClassForVehicleType(dst->type));
 				InvalidateWindowClassesData(WindowClass::DepartureBoard);
@@ -3061,7 +3078,7 @@ CommandCost CmdCloneOrder(DoCommandFlags flags, CloneOptions action, VehicleID v
 					dst->vehicle_flags.Reset(VehicleFlag::ScheduledDispatch);
 				}
 
-				InvalidateVehicleOrder(dst, VIWD_REMOVE_ALL_ORDERS);
+				InvalidatePassengerVehicleOrders(dst, VIWD_REMOVE_ALL_ORDERS);
 
 				InvalidateWindowClassesData(GetWindowClassForVehicleType(dst->type));
 				InvalidateWindowClassesData(WindowClass::DepartureBoard);
@@ -3173,7 +3190,7 @@ CommandCost CmdInsertOrdersFromVehicle(DoCommandFlags flags, VehicleID veh_dst, 
 		for (Vehicle *u = dst->FirstShared(); u != nullptr; u = u->NextShared()) {
 			u->ResetDepotUnbunching();
 
-			InvalidateVehicleOrder(u, VIWD_MODIFY_ORDERS);
+			InvalidatePassengerVehicleOrders(u, VIWD_MODIFY_ORDERS);
 		}
 		InvalidateWindowClassesData(GetWindowClassForVehicleType(dst->type));
 		InvalidateWindowClassesData(WindowClass::DepartureBoard);
@@ -3221,7 +3238,7 @@ CommandCost CmdOrderRefit(DoCommandFlags flags, VehicleID veh, VehicleOrderID or
 
 		for (Vehicle *u = v->FirstShared(); u != nullptr; u = u->NextShared()) {
 			/* Update any possible open window of the vehicle */
-			InvalidateVehicleOrder(u, VIWD_MODIFY_ORDERS);
+			InvalidatePassengerVehicleOrders(u, VIWD_MODIFY_ORDERS);
 
 			/* If the vehicle has already got the order to modify as the current order, then update the current order as well */
 			if (u->cur_real_order_index == order_number && (!order->IsType(OT_GOTO_DEPOT) || u->current_order.GetDepotOrderType().Test(OrderDepotTypeFlag::PartOfOrders))) {
@@ -4720,7 +4737,7 @@ CommandCost CmdBulkOrder(DoCommandFlags flags, const BulkOrderCmdData &cmd_data)
 						std::vector<Order> &orders = v->orders->GetOrderVector();
 						AdjustTravelAfterOrderReverse(std::span<Order>(orders).subspan(start, count));
 						for (Vehicle *u = v->FirstShared(); u != nullptr; u = u->NextShared()) {
-							InvalidateVehicleOrder(u, VIWD_MODIFY_ORDERS);
+							InvalidatePassengerVehicleOrders(u, VIWD_MODIFY_ORDERS);
 						}
 					}
 					insert_pos = INVALID_VEH_ORDER_ID;

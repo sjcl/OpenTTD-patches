@@ -8,6 +8,7 @@
 /** @file date.cpp Handling of dates in our native format and transforming them to something human readable. */
 
 #include "stdafx.h"
+#include "passenger_service_database.h"
 #include "network/network.h"
 #include "network/network_func.h"
 #include "network/network_sync.h"
@@ -72,6 +73,8 @@ void CheckStateTicksWrap()
 
 	extern void AdjustVehicleStateTicksBase(StateTicksDelta delta);
 	AdjustVehicleStateTicksBase(-tick_adjust);
+	GetPassengerServiceDatabase().ShiftTicks(-tick_adjust);
+	for (CargoPacket *packet : CargoPacket::Iterate()) packet->ShiftPassengerJourneyTicks(-tick_adjust);
 }
 
 /**

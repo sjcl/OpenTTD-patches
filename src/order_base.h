@@ -1188,6 +1188,7 @@ static const uint16_t MAX_ROUTE_CARGODIST_COST_SCALE = 1000; ///< Maximum cargo 
 static const uint16_t MAX_ROUTE_CARGODIST_COST_ADD = 365;    ///< Maximum cargo distribution route cost addition, in days.
 
 uint64_t AllocateCargoDistRouteGeneration();
+void InvalidatePassengerServiceDatabase(OrderListID id);
 uint64_t GetCargoDistRouteGenerationCounter();
 void RestoreCargoDistRouteGenerationCounter();
 extern uint64_t _saved_cargodist_route_generation;
@@ -1393,7 +1394,7 @@ public:
 	 *       into the shared vehicle chain.
 	 * @param v vehicle to add to the list
 	 */
-	inline void AddVehicle([[maybe_unused]] Vehicle *v) { ++this->num_vehicles; }
+	inline void AddVehicle(Vehicle *v) { ++this->num_vehicles; if (v != nullptr) InvalidatePassengerServiceDatabase(this->index); }
 
 	void RemoveVehicle(Vehicle *v);
 

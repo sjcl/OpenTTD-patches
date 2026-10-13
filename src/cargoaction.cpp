@@ -159,7 +159,13 @@ bool CargoReturn::operator()(CargoPacket *cp)
 	this->source->RemoveFromMeta(cp_new, VehicleCargoList::MoveToAction::Load, cp_new->Count());
 	this->destination->reserved_count -= cp_new->Count();
 	StationID next = this->next;
-	if (cp_new->GetPassengerRoutingMode() == PassengerRoutingMode::Journey) next = StationID::Invalid();
+	if (cp_new->GetPassengerRoutingMode() == PassengerRoutingMode::Journey) {
+		next = StationID::Invalid();
+		if (cp_new->GetPassengerJourney().kind == PassengerRideKind::BoundService) {
+			auto ride = cp_new->GetPassengerJourney(); ride.kind = PassengerRideKind::ServiceIntent; ride.vehicle = VehicleID::Invalid();
+			cp_new->SetPassengerJourney(ride, cp_new->GetPassengerLegacyHop());
+		}
+	}
 	else if (cp_new->GetPassengerRoutingMode() == PassengerRoutingMode::Fallback) next = cp_new->GetPassengerLegacyHop();
 	this->destination->Append(cp_new, next);
 	return cp_new == cp;

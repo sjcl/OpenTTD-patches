@@ -14,6 +14,9 @@
 #include "../window_func.h"
 #include "../thread.h"
 #include "null_v.h"
+#ifdef WITH_PASSENGER_BENCHMARK
+#include "../console_func.h"
+#endif
 
 #include <atomic>
 
@@ -74,6 +77,11 @@ void VideoDriver_Null::MainLoop()
 	if (_settings_client.gui.autosave_on_exit) {
 		DoExitSave();
 	}
+#ifdef WITH_PASSENGER_BENCHMARK
+	if (!this->until_exit) {
+		IConsoleCmdExec("exec scripts/passenger_benchmark_end.scr 0");
+	}
+#endif
 }
 
 bool VideoDriver_Null::ChangeResolution(int, int) { return false; }

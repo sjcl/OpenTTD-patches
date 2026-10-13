@@ -1,0 +1,90 @@
+{
+  "diagnostic_build_only": true,
+  "changes": "Read-only station rating inputs and afterload queue changes; no routing/RNG changes",
+  "first_differences": [
+    {
+      "tick": 3176545862,
+      "station": 64,
+      "cargo": 0,
+      "host": "waiting 5 reserved 0 dests 2 rating 51 target 51 seed 0C7E2888",
+      "joining_client": "waiting 5 reserved 0 dests 1 rating 51 target 51 seed 0C7E2888"
+    },
+    {
+      "tick": 3176545862,
+      "station": 804,
+      "cargo": 0,
+      "host": "waiting 4 reserved 0 dests 3 rating 98 target 178 seed CA021F29",
+      "joining_client": "waiting 4 reserved 0 dests 1 rating 98 target 178 seed CA021F29"
+    },
+    {
+      "tick": 3176545862,
+      "station": 1113,
+      "cargo": 0,
+      "host": "waiting 5350 reserved 0 dests 6 rating 154 target 83 seed CAA0BD2F",
+      "joining_client": "waiting 5350 reserved 0 dests 5 rating 154 target 83 seed CAA0BD2F"
+    },
+    {
+      "tick": 3176545862,
+      "station": 1235,
+      "cargo": 0,
+      "host": "waiting 32 reserved 0 dests 3 rating 101 target 93 seed CAA0BD2F",
+      "joining_client": "waiting 32 reserved 0 dests 1 rating 101 target 93 seed CAA0BD2F"
+    },
+    {
+      "tick": 3176545862,
+      "station": 1439,
+      "cargo": 0,
+      "host": "waiting 13 reserved 0 dests 2 rating 65 target 96 seed 00F7A55B",
+      "joining_client": "waiting 13 reserved 0 dests 1 rating 65 target 96 seed 00F7A55B"
+    },
+    {
+      "tick": 3176545862,
+      "station": 2402,
+      "cargo": 0,
+      "host": "waiting 12 reserved 0 dests 2 rating 52 target 46 seed B8CE65DF",
+      "joining_client": "waiting 12 reserved 0 dests 1 rating 52 target 46 seed B8CE65DF"
+    },
+    {
+      "tick": 3176545862,
+      "station": 2529,
+      "cargo": 0,
+      "host": "waiting 32 reserved 0 dests 3 rating 111 target 214 seed 45AD2D92",
+      "joining_client": "waiting 32 reserved 0 dests 2 rating 111 target 214 seed 45AD2D92"
+    },
+    {
+      "tick": 3176545862,
+      "station": 2743,
+      "cargo": 0,
+      "host": "waiting 443 reserved 0 dests 8 rating 174 target 178 seed 176FBDCF",
+      "joining_client": "waiting 443 reserved 0 dests 7 rating 174 target 178 seed 176FBDCF"
+    },
+    {
+      "tick": 3176545862,
+      "station": 3186,
+      "cargo": 0,
+      "host": "waiting 9 reserved 0 dests 3 rating 48 target 48 seed B424C1B7",
+      "joining_client": "waiting 9 reserved 0 dests 1 rating 48 target 48 seed B424C1B7"
+    },
+    {
+      "tick": 3176545862,
+      "station": 3245,
+      "cargo": 0,
+      "host": "waiting 0 reserved 0 dests 0 rating 48 target 48 seed 887FEFAF",
+      "joining_client": "waiting 0 reserved 0 dests 0 rating 48 target 48 seed BE941EC5"
+    },
+    {
+      "tick": 3176545862,
+      "station": 3307,
+      "cargo": 0,
+      "host": "waiting 1 reserved 0 dests 1 rating 145 target 176 seed 887FEFAF",
+      "joining_client": "waiting 1 reserved 0 dests 1 rating 145 target 176 seed BE941EC5"
+    },
+    {
+      "tick": 3176545862,
+      "station": 3352,
+      "cargo": 0,
+      "host": "waiting 0 reserved 0 dests 0 rating 73 target 48 seed 887FEFAF",
+      "joining_client": "waiting 0 reserved 0 dests 0 rating 73 target 48 seed BE941EC5"
+    }
+  ]
+}

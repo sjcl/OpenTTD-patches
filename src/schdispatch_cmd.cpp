@@ -19,6 +19,7 @@
 #include "company_base.h"
 #include "settings_type.h"
 #include "schdispatch.h"
+#include "passenger_service_database.h"
 #include "vehicle_gui.h"
 #include "timetable_cmd.h"
 #include "core/format.hpp"
@@ -50,6 +51,7 @@ CommandCost CmdSchDispatchSetEnabled(DoCommandFlags flags, VehicleID veh, bool e
 		for (Vehicle *v2 = v->FirstShared(); v2 != nullptr; v2 = v2->NextShared()) {
 			v2->vehicle_flags.Set(VehicleFlag::ScheduledDispatch, enable);
 		}
+		InvalidatePassengerServiceDatabase(v->orders == nullptr ? OrderListID::Invalid() : v->orders->index);
 		SetTimetableWindowsDirty(v, STWDF_SCHEDULED_DISPATCH);
 	}
 
@@ -96,6 +98,7 @@ CommandCost CmdSchDispatchAdd(DoCommandFlags flags, VehicleID veh, uint32_t sche
 			ds.AddScheduledDispatch(time, slot_flags, route_id);
 		}
 		ds.UpdateScheduledDispatch(nullptr);
+		InvalidatePassengerServiceDatabase(v->orders == nullptr ? OrderListID::Invalid() : v->orders->index);
 		SetTimetableWindowsDirty(v, STWDF_SCHEDULED_DISPATCH);
 	}
 
@@ -124,6 +127,7 @@ CommandCost CmdSchDispatchRemove(DoCommandFlags flags, VehicleID veh, uint32_t s
 
 	if (flags.Test(DoCommandFlag::Execute)) {
 		v->orders->GetDispatchScheduleByIndex(schedule_index).RemoveScheduledDispatch(time);
+		InvalidatePassengerServiceDatabase(v->orders == nullptr ? OrderListID::Invalid() : v->orders->index);
 		SetTimetableWindowsDirty(v, STWDF_SCHEDULED_DISPATCH);
 	}
 
@@ -155,6 +159,7 @@ CommandCost CmdSchDispatchSetDuration(DoCommandFlags flags, VehicleID veh, uint3
 		DispatchSchedule &ds = v->orders->GetDispatchScheduleByIndex(schedule_index);
 		ds.SetScheduledDispatchDuration(duration);
 		ds.UpdateScheduledDispatch(nullptr);
+		InvalidatePassengerServiceDatabase(v->orders == nullptr ? OrderListID::Invalid() : v->orders->index);
 		SetTimetableWindowsDirty(v, STWDF_SCHEDULED_DISPATCH);
 	}
 
@@ -186,6 +191,7 @@ CommandCost CmdSchDispatchSetStartDate(DoCommandFlags flags, VehicleID veh, uint
 		DispatchSchedule &ds = v->orders->GetDispatchScheduleByIndex(schedule_index);
 		ds.SetScheduledDispatchStartTick(start_tick);
 		ds.UpdateScheduledDispatch(nullptr);
+		InvalidatePassengerServiceDatabase(v->orders == nullptr ? OrderListID::Invalid() : v->orders->index);
 		SetTimetableWindowsDirty(v, STWDF_SCHEDULED_DISPATCH);
 	}
 
@@ -215,6 +221,7 @@ CommandCost CmdSchDispatchSetDelay(DoCommandFlags flags, VehicleID veh, uint32_t
 
 	if (flags.Test(DoCommandFlag::Execute)) {
 		v->orders->GetDispatchScheduleByIndex(schedule_index).SetScheduledDispatchDelay(max_delay);
+		InvalidatePassengerServiceDatabase(v->orders == nullptr ? OrderListID::Invalid() : v->orders->index);
 		SetTimetableWindowsDirty(v, STWDF_SCHEDULED_DISPATCH);
 	}
 
@@ -244,6 +251,7 @@ CommandCost CmdSchDispatchSetReuseSlots(DoCommandFlags flags, VehicleID veh, uin
 
 	if (flags.Test(DoCommandFlag::Execute)) {
 		v->orders->GetDispatchScheduleByIndex(schedule_index).SetScheduledDispatchReuseSlots(re_use_slots);
+		InvalidatePassengerServiceDatabase(v->orders == nullptr ? OrderListID::Invalid() : v->orders->index);
 		SetTimetableWindowsDirty(v, STWDF_SCHEDULED_DISPATCH);
 	}
 
@@ -277,6 +285,7 @@ CommandCost CmdSchDispatchResetLastDispatch(DoCommandFlags flags, VehicleID veh,
 
 	if (flags.Test(DoCommandFlag::Execute)) {
 		v->orders->GetDispatchScheduleByIndex(schedule_index).SetScheduledDispatchLastDispatch(INVALID_SCHEDULED_DISPATCH_OFFSET);
+		InvalidatePassengerServiceDatabase(v->orders == nullptr ? OrderListID::Invalid() : v->orders->index);
 		SetTimetableWindowsDirty(v, STWDF_SCHEDULED_DISPATCH);
 	}
 
@@ -310,6 +319,7 @@ CommandCost CmdSchDispatchSetLastDispatch(DoCommandFlags flags, VehicleID veh, u
 
 	if (flags.Test(DoCommandFlag::Execute)) {
 		ds.SetScheduledDispatchLastDispatch(last_dispatched_offset);
+		InvalidatePassengerServiceDatabase(v->orders == nullptr ? OrderListID::Invalid() : v->orders->index);
 		SetTimetableWindowsDirty(v, STWDF_SCHEDULED_DISPATCH);
 	}
 
@@ -338,6 +348,7 @@ CommandCost CmdSchDispatchClear(DoCommandFlags flags, VehicleID veh, uint32_t sc
 
 	if (flags.Test(DoCommandFlag::Execute)) {
 		v->orders->GetDispatchScheduleByIndex(schedule_index).ClearScheduledDispatch();
+		InvalidatePassengerServiceDatabase(v->orders == nullptr ? OrderListID::Invalid() : v->orders->index);
 		SetTimetableWindowsDirty(v, STWDF_SCHEDULED_DISPATCH);
 	}
 
@@ -374,6 +385,7 @@ CommandCost CmdSchDispatchAddNewSchedule(DoCommandFlags flags, VehicleID veh, St
 		ds.SetScheduledDispatchDuration(duration);
 		ds.SetScheduledDispatchStartTick(start_tick);
 		ds.UpdateScheduledDispatch(nullptr);
+		InvalidatePassengerServiceDatabase(v->orders == nullptr ? OrderListID::Invalid() : v->orders->index);
 		SetTimetableWindowsDirty(v, STWDF_SCHEDULED_DISPATCH);
 	}
 
@@ -643,6 +655,7 @@ CommandCost CmdSchDispatchDuplicateSchedule(DoCommandFlags flags, VehicleID veh,
 	if (flags.Test(DoCommandFlag::Execute)) {
 		DispatchSchedule &ds = v->orders->GetScheduledDispatchScheduleSet().emplace_back(v->orders->GetDispatchScheduleByIndex(schedule_index));
 		ds.ResetStateAfterClone();
+		InvalidatePassengerServiceDatabase(v->orders == nullptr ? OrderListID::Invalid() : v->orders->index);
 		SetTimetableWindowsDirty(v, STWDF_SCHEDULED_DISPATCH);
 	}
 
@@ -711,6 +724,7 @@ CommandCost CmdSchDispatchAdjust(DoCommandFlags flags, VehicleID veh, uint32_t s
 	if (flags.Test(DoCommandFlag::Execute)) {
 		ds.AdjustScheduledDispatch(adjustment);
 		ds.UpdateScheduledDispatch(nullptr);
+		InvalidatePassengerServiceDatabase(v->orders == nullptr ? OrderListID::Invalid() : v->orders->index);
 		SetTimetableWindowsDirty(v, STWDF_SCHEDULED_DISPATCH);
 	}
 
@@ -826,6 +840,7 @@ CommandCost CmdSchDispatchAdjustSlot(DoCommandFlags flags, VehicleID veh, uint32
 	if (flags.Test(DoCommandFlag::Execute)) {
 		ds.GetScheduledDispatchMutable() = std::move(schedule);
 		ds.UpdateScheduledDispatch(nullptr);
+		InvalidatePassengerServiceDatabase(v->orders == nullptr ? OrderListID::Invalid() : v->orders->index);
 		SetTimetableWindowsDirty(v, STWDF_SCHEDULED_DISPATCH);
 	}
 	CommandCost cost;
@@ -892,6 +907,7 @@ CommandCost CmdSchDispatchSwapSchedules(DoCommandFlags flags, VehicleID veh, uin
 			}
 		}
 		SchdispatchInvalidateWindows(v);
+		InvalidatePassengerServiceDatabase(v->orders == nullptr ? OrderListID::Invalid() : v->orders->index);
 		SetTimetableWindowsDirty(v, STWDF_SCHEDULED_DISPATCH);
 	}
 
@@ -937,6 +953,7 @@ CommandCost CmdSchDispatchSetSlotFlags(DoCommandFlags flags, VehicleID veh, uint
 
 	if (flags.Test(DoCommandFlag::Execute)) {
 		SchdispatchInvalidateWindows(v);
+		InvalidatePassengerServiceDatabase(v->orders == nullptr ? OrderListID::Invalid() : v->orders->index);
 		SetTimetableWindowsDirty(v, STWDF_SCHEDULED_DISPATCH);
 	}
 	return CommandCost();
@@ -980,6 +997,7 @@ CommandCost CmdSchDispatchSetSlotRoute(DoCommandFlags flags, VehicleID veh, uint
 
 	if (flags.Test(DoCommandFlag::Execute)) {
 		SchdispatchInvalidateWindows(v);
+		InvalidatePassengerServiceDatabase(v->orders == nullptr ? OrderListID::Invalid() : v->orders->index);
 		SetTimetableWindowsDirty(v, STWDF_SCHEDULED_DISPATCH);
 	}
 	return CommandCost();
@@ -1081,6 +1099,7 @@ bool DispatchSchedule::UpdateScheduledDispatchToDate(StateTicks now)
 void DispatchSchedule::UpdateScheduledDispatch(const Vehicle *v)
 {
 	if (this->UpdateScheduledDispatchToDate(_state_ticks) && v != nullptr) {
+		InvalidatePassengerServiceDatabase(v->orders == nullptr ? OrderListID::Invalid() : v->orders->index);
 		SetTimetableWindowsDirty(v, STWDF_SCHEDULED_DISPATCH);
 	}
 }

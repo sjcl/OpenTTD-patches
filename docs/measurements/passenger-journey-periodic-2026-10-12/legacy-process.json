@@ -1,0 +1,11 @@
+{
+    "backend":  "legacy",
+    "exit_code":  null,
+    "wall_seconds":  466.029703,
+    "cpu_seconds":  572.578125,
+    "peak_working_set":  2001809408,
+    "sampled_peak_private":  2001571840,
+    "input_sha256":  "14D68C82911B9DCFC5EF7291E9697C5BBD67F44FFCC79D7575A144405EDF6390",
+    "binary_sha256":  "82C8F2396D43AEE9B0327CBBF8AA602A816DEE5AB027DB761C2651D836C7F147",
+    "sample_ms":  100
+}

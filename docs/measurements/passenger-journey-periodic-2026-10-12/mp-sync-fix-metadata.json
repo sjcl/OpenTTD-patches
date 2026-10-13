@@ -1,0 +1,48 @@
+{
+  "parent_commit": "7d914aa6f28293abb406becee2cec5fbb11e1d17",
+  "fix": "Preserve saved station cargo queue keys and packet order instead of reclassifying them during AfterLoadPassengerJourneys",
+  "product_configuration": {
+    "OPTION_PASSENGER_BENCHMARK": "OFF",
+    "compiler": "MSVC 19.44"
+  },
+  "fixed_product_binary_sha256": "54f831878a5d2d38fdde549fa3ce33420bdbf99335545fef2259930dd9333632",
+  "fixed_console_binary_sha256": "4418675906c3352f73bc5c3ba1593d60526cb2ef856b6ec681bca301ff7aaaf0",
+  "provided_save_sha256": "abc6c1ebdd48da042cc65159e0d57db5d89a88330e897bd590f2f00c3a80a276",
+  "original_save_sha256": "14d68c82911b9dcfc5ef7291e9697c5bbd67f44ffcc79d7575a144405edf6390",
+  "fixed_supplied_simulation_ticks": 5756,
+  "fixed_original_simulation_ticks": 2506,
+  "fixed_original_acks": {
+    "initial": 34,
+    "late": 27
+  },
+  "fixed_supplied_acks": {
+    "client-initial": 82,
+    "client-late": 42
+  },
+  "source_sha256": {
+    "src/passenger_journey_active.cpp": "496c96bf120a1a3f1d18d8c6dbfeb868ca547513de53516bf667b0dee439d04d",
+    "src/tests/passenger_journey_active.cpp": "819ca6d17e5962209b78e666525d9d394c094f91c8b9b10d3c7fbd66939b58f9",
+    "src/tests/passenger_multimodal.cpp": "99a908f16ace3ae992baf5eb3cb412ff3be9bbe784ae138e4b34765ba8c3adef"
+  },
+  "scope": "Finite private loopback tests; both initial and late clients remain connected at checkpoint; no affinity restrictions in compared cases",
+  "release_console_copy_change": "Only PE subsystem byte 388: GUI 2 to console 3",
+  "current_console_copy_change": "Only PE subsystem byte 364: GUI 2 to console 3",
+  "provided_after_journey_inventory": {
+    "before_late_join": [
+      "104",
+      "37"
+    ],
+    "after": [
+      "86",
+      "46"
+    ]
+  },
+  "ctest": {
+    "passed": 476,
+    "failed": 0,
+    "elapsed_seconds": 51.86,
+    "exit_code": 0,
+    "log_sha256": "31c399be2a7675606d770e2c646e458bb1b5b8f674ee3b87bd1bb8fb97d88880"
+  },
+  "exported_text_normalization": "Trailing whitespace and excess final blank lines removed; raw logs retained under ignored build-periodic/desync-investigation"
+}

@@ -1,0 +1,125 @@
+--- a/src/passenger_journey_active.h
++++ b/src/passenger_journey_active.h
+@@ -69,6 +69,16 @@
+ 	std::array<PassengerJourneyQueryDetail, 16> query_samples{};
+ 	size_t query_sample_count = 0;
+ 	uint64_t simulation_ticks = 0, simulation_microseconds = 0, maximum_simulation_microseconds = 0;
++	uint64_t journey_microseconds = 0, maximum_journey_microseconds = 0;
++	std::array<uint64_t, 2048> simulation_histogram{}, journey_histogram{}; ///< 1 ms buckets; last bucket includes overflow.
++};
++
++/** Nested observations count elapsed time only at the outermost Journey call. */
++class PassengerJourneyWorkTimer {
++	uint64_t started;
++public:
++	PassengerJourneyWorkTimer();
++	~PassengerJourneyWorkTimer();
+ };
+ 
+ /** Reset at the simulation tick boundary, including the first tick after network join/load.
+--- a/src/passenger_journey_active.cpp
++++ b/src/passenger_journey_active.cpp
+@@ -37,6 +37,7 @@
+ 	};
+ 	static JourneyTickBudget tick_budget;
+ 	static PassengerJourneyTickDiagnostic total_diagnostic;
++	static size_t journey_timer_depth = 0;
+ 	static void AddDiagnostic(PassengerJourneyTickDiagnostic &a, const PassengerJourneyTickDiagnostic &b)
+ 	{
+ 		for (size_t i = 0; i < a.graph_failures.size(); ++i) a.graph_failures[i] += b.graph_failures[i];
+@@ -54,6 +55,9 @@
+ 		for (size_t i = 0; i < b.query_sample_count && a.query_sample_count < a.query_samples.size(); ++i) a.query_samples[a.query_sample_count++] = b.query_samples[i];
+ 		a.simulation_ticks += b.simulation_ticks; a.simulation_microseconds += b.simulation_microseconds;
+ 		a.maximum_simulation_microseconds = std::max(a.maximum_simulation_microseconds, b.maximum_simulation_microseconds);
++		a.journey_microseconds += b.journey_microseconds;
++		a.maximum_journey_microseconds = std::max(a.maximum_journey_microseconds, b.journey_microseconds);
++		for (size_t i = 0; i < a.simulation_histogram.size(); ++i) { a.simulation_histogram[i] += b.simulation_histogram[i]; a.journey_histogram[i] += b.journey_histogram[i]; }
+ 		a.eligible_services += b.eligible_services; a.selected_services += b.selected_services; a.selected_trips += b.selected_trips;
+ 		a.largest_block_services = std::max(a.largest_block_services, b.largest_block_services);
+ 		a.maximum_unpredicted_ticks = std::max(a.maximum_unpredicted_ticks, b.maximum_unpredicted_ticks);
+@@ -201,13 +205,23 @@
+ 
+ void RecordPassengerJourneySimulationTick(uint64_t microseconds)
+ {
+-	if (!_settings_game.linkgraph.passenger_journey_routing) return;
+ 	auto &diagnostic = TickBudget().diagnostic;
+ 	++diagnostic.simulation_ticks;
+ 	diagnostic.simulation_microseconds += microseconds;
+ 	diagnostic.maximum_simulation_microseconds = std::max(diagnostic.maximum_simulation_microseconds, microseconds);
+-}
+-void PreparePassengerJourneyLoading() { InitializeFairShares(TickBudget()); }
++	++diagnostic.simulation_histogram[std::min<size_t>(2047, microseconds / 1000)];
++	++diagnostic.journey_histogram[std::min<size_t>(2047, diagnostic.journey_microseconds / 1000)];
++}
++PassengerJourneyWorkTimer::PassengerJourneyWorkTimer() : started(0)
++{
++	if (journey_timer_depth++ == 0) this->started = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now().time_since_epoch()).count();
++}
++PassengerJourneyWorkTimer::~PassengerJourneyWorkTimer()
++{
++	assert(journey_timer_depth > 0);
++	if (--journey_timer_depth == 0) TickBudget().diagnostic.journey_microseconds += (std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now().time_since_epoch()).count() - this->started) / 1000;
++}
++void PreparePassengerJourneyLoading() { PassengerJourneyWorkTimer timer; InitializeFairShares(TickBudget()); }
+ void ReleasePassengerJourneyWaitingShare(StationID station)
+ {
+ 	if (!_settings_game.linkgraph.passenger_journey_routing) return;
+@@ -449,6 +463,7 @@
+ 
+ bool PassengerJourneyActiveContext::PlanWaiting(CargoPacket &packet, CargoType cargo, StationID legacy_hop)
+ {
++	PassengerJourneyWorkTimer timer;
+ 	this->deferred = false;
+ 	if (!IsPassengerJourneyRoutingEnabled(cargo) || !Station::IsValidID(packet.GetPassengerDestination()) ||
+ 			packet.GetPassengerDestination() == this->station || !packet.CanRetryPassengerJourney(this->station, _state_ticks)) return false;
+@@ -789,6 +804,7 @@
+ 
+ bool PassengerJourneyLoadingContext::CanBoard(const CargoPacket &packet, const Vehicle *vehicle, CargoType cargo)
+ {
++	PassengerJourneyWorkTimer timer;
+ 	if (vehicle == nullptr) return packet.GetPassengerRoutingMode() != PassengerRoutingMode::Journey;
+ 	if (cargo == INVALID_CARGO) cargo = vehicle->cargo_type;
+ 	if (packet.GetPassengerRoutingMode() != PassengerRoutingMode::Journey) {
+@@ -824,6 +840,7 @@
+ 
+ std::optional<VehicleCargoList::MoveToAction> PassengerJourneyActiveContext::Decide(CargoPacket &packet, CargoType cargo, bool accepted, OrderUnloadType unload)
+ {
++	PassengerJourneyWorkTimer timer;
+ 	using Action = VehicleCargoList::MoveToAction;
+ 	if (packet.GetPassengerRoutingMode() != PassengerRoutingMode::Journey) return this->fallback.Decide(packet, this->vehicle, cargo, this->station, accepted, unload);
+ 	Snapshot *snapshot = nullptr;
+@@ -999,6 +1016,7 @@
+ 
+ void RouteWaitingPassengerJourneys(Station *station, PassengerJourneyLoadingContext *loading)
+ {
++	PassengerJourneyWorkTimer timer;
+ 	if (!_settings_game.linkgraph.passenger_journey_routing) return;
+ 	for (CargoType cargo : EnumRange(NUM_CARGO)) {
+ 		if (!IsCargoInClass(cargo, CargoClass::Passengers) || station->goods[cargo].data == nullptr) continue;
+--- a/src/console_cmds.cpp
++++ b/src/console_cmds.cpp
+@@ -968,6 +968,8 @@
+ 		return true;
+ 	}
+ 
++	/* Measurement build only: isolated NewGRF input continuation. */
++	if (_pause_mode.Test(PauseMode::Error)) Command<Commands::Pause>::Post(PauseMode::Error, false);
+ 	if (_pause_mode.Test(PauseMode::Normal)) {
+ 		Command<Commands::Pause>::Post(PauseMode::Normal, false);
+ 		if (!_networking) IConsolePrint(CC_DEFAULT, "Game unpaused.");
+@@ -4693,6 +4695,15 @@
+ 			prediction_stops[static_cast<size_t>(prediction.uncertain_reason)], prediction.tile.base(), prediction.current_order);
+ 	IConsolePrint(CC_DEFAULT, "Simulation tick time: completed_ticks={}; total_us={}; mean_us={}; max_us={}", stats.simulation_ticks,
+ 			stats.simulation_microseconds, stats.simulation_ticks == 0 ? 0 : stats.simulation_microseconds / stats.simulation_ticks, stats.maximum_simulation_microseconds);
++	auto quantile = [](const auto &histogram, uint percentile) {
++		uint64_t count = 0; for (uint64_t n : histogram) count += n;
++		uint64_t rank = (count * percentile + 99) / 100, cumulative = 0;
++		for (size_t i = 0; i < histogram.size(); ++i) { cumulative += histogram[i]; if (cumulative >= rank) return (i + 1) * 1000; }
++		return size_t{0};
++	};
++	IConsolePrint(CC_DEFAULT, "Tick histogram (1ms upper bounds): simulation_p95_us={}; simulation_p99_us={}; journey_mean_us={}; journey_p95_us={}; journey_p99_us={}; journey_max_us={}",
++			quantile(stats.simulation_histogram, 95), quantile(stats.simulation_histogram, 99), stats.simulation_ticks == 0 ? 0 : stats.journey_microseconds / stats.simulation_ticks,
++			quantile(stats.journey_histogram, 95), quantile(stats.journey_histogram, 99), stats.maximum_journey_microseconds);
+ 	for (size_t i = 0; i < stats.query_sample_count; ++i) {
+ 		const auto &sample = stats.query_samples[i];
+ 		IConsolePrint(CC_DEFAULT, "OD proof sample: origin={}; destination={}; tick={}; status={}; stop={}; candidates={}; best_score={}; unknown_arrival_bound={}; unknown_service={}",

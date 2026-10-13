@@ -21,6 +21,7 @@
 #include "settings_type.h"
 #include "scope.h"
 #include "timetable_cmd.h"
+#include "passenger_service_database.h"
 
 #include "widgets/vehicle_widget.h"
 
@@ -42,6 +43,8 @@ static void ChangeTimetable(Vehicle *v, VehicleOrderID order_number, uint32_t va
 	Order *order = v->GetOrder(order_number);
 	assert(order != nullptr);
 	if (order->HasNoTimetableTimes()) return;
+	bool changed = mtf == MTF_WAIT_TIME ? order->GetWaitTime() != val || order->IsWaitTimetabled() != timetabled :
+			mtf == MTF_TRAVEL_TIME ? order->GetTravelTime() != val || order->IsTravelTimetabled() != timetabled : true;
 
 	int total_delta = 0;
 	int timetable_delta = 0;
@@ -107,6 +110,10 @@ static void ChangeTimetable(Vehicle *v, VehicleOrderID order_number, uint32_t va
 			NOT_REACHED();
 	}
 	v->orders->UpdateTotalDuration(total_delta);
+	if (changed) {
+		if (mtf == MTF_WAIT_TIME || mtf == MTF_TRAVEL_TIME) GetPassengerServiceDatabase().TimetableChanged(v->orders->index);
+		else InvalidatePassengerServiceDatabase(v->orders->index);
+	}
 	v->orders->UpdateTimetableDuration(timetable_delta);
 
 	SetTimetableWindowsDirty(v, (mtf == MTF_ASSIGN_SCHEDULE) ? STWDF_SCHEDULED_DISPATCH : STWDF_NONE);
@@ -273,6 +280,7 @@ CommandCost CmdChangeTimetable(DoCommandFlags flags, VehicleID veh, VehicleOrder
 	if (leave_type != order->GetLeaveType() && order->IsType(OT_CONDITIONAL)) return CMD_ERROR;
 
 	if (flags.Test(DoCommandFlag::Execute)) {
+		if (v->orders != nullptr) InvalidatePassengerServiceDatabase(v->orders->index);
 		switch (mtf) {
 			case MTF_WAIT_TIME:
 				/* Set time if changing the value or confirming an estimated time as timetabled. */
@@ -355,6 +363,7 @@ CommandCost CmdBulkChangeTimetable(DoCommandFlags flags, VehicleID veh, ModifyTi
 	if (v->GetNumOrders() == 0) return CMD_ERROR;
 
 	if (flags.Test(DoCommandFlag::Execute)) {
+		if (v->orders != nullptr) InvalidatePassengerServiceDatabase(v->orders->index);
 		for (VehicleOrderID order_number = 0; order_number < v->GetNumOrders(); order_number++) {
 			Order *order = v->GetOrder(order_number);
 			if (order == nullptr || order->IsType(OT_IMPLICIT)) continue;
@@ -390,6 +399,7 @@ CommandCost CmdSetVehicleOnTime(DoCommandFlags flags, VehicleID veh, bool apply_
 	if (ret.Failed()) return ret;
 
 	if (flags.Test(DoCommandFlag::Execute)) {
+		if (v->orders != nullptr) InvalidatePassengerServiceDatabase(v->orders->index);
 		if (apply_to_group) {
 			int32_t most_late = 0;
 			for (Vehicle *u = v->FirstShared(); u != nullptr; u = u->NextShared()) {
@@ -485,6 +495,7 @@ CommandCost CmdSetTimetableStart(DoCommandFlags flags, VehicleID veh, bool timet
 	if (timetable_all && !v->orders->IsCompleteTimetable()) return CommandCost(STR_ERROR_TIMETABLE_INCOMPLETE);
 
 	if (flags.Test(DoCommandFlag::Execute)) {
+		if (v->orders != nullptr) InvalidatePassengerServiceDatabase(v->orders->index);
 		std::vector<Vehicle *> vehs;
 
 		if (timetable_all) {
@@ -543,6 +554,7 @@ CommandCost CmdAutofillTimetable(DoCommandFlags flags, VehicleID veh, bool autof
 	if (ret.Failed()) return ret;
 
 	if (flags.Test(DoCommandFlag::Execute)) {
+		if (v->orders != nullptr) InvalidatePassengerServiceDatabase(v->orders->index);
 		if (autofill) {
 			/* Start autofilling the timetable, which clears the
 			 * "timetable has started" bit. Times are not cleared anymore, but are
@@ -589,6 +601,7 @@ CommandCost CmdAutomateTimetable(DoCommandFlags flags, VehicleID veh, bool autom
 	if (ret.Failed()) return ret;
 
 	if (flags.Test(DoCommandFlag::Execute)) {
+		if (v->orders != nullptr) InvalidatePassengerServiceDatabase(v->orders->index);
 		for (Vehicle *v2 = v->FirstShared(); v2 != nullptr; v2 = v2->NextShared()) {
 			if (automate) {
 				/* Automated timetable. Set flags and clear current times if also auto-separating. */
@@ -629,6 +642,7 @@ CommandCost CmdTimetableSeparation(DoCommandFlags flags, VehicleID veh, bool sep
 	if (separation && (v->vehicle_flags.Test(VehicleFlag::ScheduledDispatch) || v->HasUnbunchingOrder())) return CommandCost(STR_ERROR_SEPARATION_MUTUALLY_EXCLUSIVE);
 
 	if (flags.Test(DoCommandFlag::Execute)) {
+		if (v->orders != nullptr) InvalidatePassengerServiceDatabase(v->orders->index);
 		for (Vehicle *v2 = v->FirstShared(); v2 != nullptr; v2 = v2->NextShared()) {
 			if (separation) {
 				v2->vehicle_flags.Set(VehicleFlag::TimetableSeparation);
