@@ -1,0 +1,11 @@
+Test project C:/Users/bebe/.codex/worktrees/005e/OpenTTD-patches/build-rounds
+    Start 584: passenger_od_load
+1/3 Test #584: passenger_od_load .....................   Passed    4.46 sec
+    Start 585: passenger_journey_active_production
+2/3 Test #585: passenger_journey_active_production ...   Passed    8.81 sec
+    Start 586: passenger_timed_rounds_production
+3/3 Test #586: passenger_timed_rounds_production .....   Passed    6.42 sec
+
+100% tests passed, 0 tests failed out of 3
+
+Total Test time (real) =  19.73 sec

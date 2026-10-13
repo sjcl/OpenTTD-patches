@@ -1,0 +1,4221 @@
+{
+  "input": {
+    "schema_version": 1,
+    "input_sha256": "14d68c82911b9dcfc5ef7291e9697c5bbd67f44ffcc79d7575a144405edf6390",
+    "config_sha256": "bb9f97ff8504cbb287ef0976add7a33cb27440f5ecd9ccf4febf0aa4746fa122",
+    "assets": [
+      {
+        "path": "baseset/extra_signals.grf",
+        "bytes": 1571,
+        "sha256": "831a1a4b0efc3a1b4a44c5f45afe107caabae7d09a4e5d3c913e800096df01c9"
+      },
+      {
+        "path": "baseset/innerhighlight.grf",
+        "bytes": 7733,
+        "sha256": "a5e9ff63ee469072ef4167a7c894335b1484a6af288287c1534bd85535ac1913"
+      },
+      {
+        "path": "baseset/misc_gui.grf",
+        "bytes": 314,
+        "sha256": "494d10b6435dbe8f4f6657215df36f4c601e1fe515f43b23726d317be580119a"
+      },
+      {
+        "path": "baseset/no_music.obm",
+        "bytes": 4174,
+        "sha256": "192282777c8c5877ce8ab79b6a39d06363df99e5c444f3f705c141d5b2fa94d4"
+      },
+      {
+        "path": "baseset/no_sound.obs",
+        "bytes": 3766,
+        "sha256": "127652b32944b714de887d75897d1964c8e9043f26023aa6f01fae0cefef59db"
+      },
+      {
+        "path": "baseset/OpenTTD-Mono.ttf",
+        "bytes": 72056,
+        "sha256": "7ec9e91093167e140193633cff861c3f7a3ce5a36f9fcaa24e02366ee13f66b0"
+      },
+      {
+        "path": "baseset/OpenTTD-Sans.ttf",
+        "bytes": 77404,
+        "sha256": "f10d200b4769e31302d949326f0cd3a3f697a34788892f7180d813600693afe2"
+      },
+      {
+        "path": "baseset/OpenTTD-Serif.ttf",
+        "bytes": 93120,
+        "sha256": "c299f2d912a4f78a85f2633adad11450a1186b8f63d5adc0999fdc3a4a536266"
+      },
+      {
+        "path": "baseset/OpenTTD-Small.ttf",
+        "bytes": 68308,
+        "sha256": "cfbd78b80bfecff188eae4c23447073e781c60741d39d16af2ca81a3920cbb5f"
+      },
+      {
+        "path": "baseset/openttd.grf",
+        "bytes": 676074,
+        "sha256": "b96cdc70ccabe75479aecb30b46d593c6189b7cbe04cd52fa726963c54c13b96"
+      },
+      {
+        "path": "baseset/opntitle.dat",
+        "bytes": 138710,
+        "sha256": "1645d6bd627df06986b1884c57f1e328f3ab606aa32549ed88a9220b1b1230fa"
+      },
+      {
+        "path": "baseset/orig_dos.obg",
+        "bytes": 5916,
+        "sha256": "c4deb5c9c225980a0986c66e7156192e6719e0ca5d78e366d254bf6e085ec835"
+      },
+      {
+        "path": "baseset/orig_dos.obm",
+        "bytes": 5429,
+        "sha256": "6aeb9e58c7033f9fc2d3bef1ceb679d951da6cc7fd78fba901e73482d8b6461c"
+      },
+      {
+        "path": "baseset/orig_dos.obs",
+        "bytes": 5266,
+        "sha256": "e348e5cd12cb71e6eccd3931db824fedb92aa61132273935443b4b0299cf7992"
+      },
+      {
+        "path": "baseset/orig_dos_de.obg",
+        "bytes": 6534,
+        "sha256": "8ce6b0a1963e80ce8fd3e0546f32fd90885a29e2b18de914a55b971bbe5f311c"
+      },
+      {
+        "path": "baseset/orig_extra.grf",
+        "bytes": 445288,
+        "sha256": "0017cf6f5c8cbbf724c03f4af7c222c21022b156c584b62da5b5154d12d12b14"
+      },
+      {
+        "path": "baseset/orig_tto.obm",
+        "bytes": 6233,
+        "sha256": "0f1980fc9fb9f356803063ed4696050ac31f90a09060e1abb26c080dd65ebae7"
+      },
+      {
+        "path": "baseset/orig_win.obg",
+        "bytes": 6086,
+        "sha256": "43a070699495438bb657f31e33be9d10406164611873cfdb92d4111350dfe075"
+      },
+      {
+        "path": "baseset/orig_win.obm",
+        "bytes": 8246,
+        "sha256": "cba749d51eff8c8007ac4fffdf2e4de519f0caff693b93e68a78405509dbf07f"
+      },
+      {
+        "path": "baseset/orig_win.obs",
+        "bytes": 5820,
+        "sha256": "61b727d357a1175207fead09de2a5a816cc4a7753e98779231c97da8af53f38a"
+      },
+      {
+        "path": "baseset/progsignals.grf",
+        "bytes": 3203,
+        "sha256": "0c3aa0b68fc45891645cbfb2d17927d864bd2c1675d999c2f64b03bd46c3225c"
+      },
+      {
+        "path": "baseset/route_step.grf",
+        "bytes": 255,
+        "sha256": "ad7df2cdc0b7463e0652d2fd9c8f445d22ba3d00b7b19d1636bd834963f5a61a"
+      },
+      {
+        "path": "baseset/tracerestrict.grf",
+        "bytes": 786,
+        "sha256": "5423c92865def95d79777afe8b5a1ea2f7ac01a986618d69971d787f81b707fc"
+      },
+      {
+        "path": "newgrf/53_SusmonNRT_Alpha.grf",
+        "bytes": 131095,
+        "sha256": "e35e81215aa252e1cde29593f388590b7eff7ebb3a7e1994eba2fe22ca99356d"
+      },
+      {
+        "path": "newgrf/archive/jplw.grf",
+        "bytes": 2603343,
+        "sha256": "caf5e858121c6afb161ae5f22f677794993c838b5a6073f0fe597eec5ab986c6"
+      },
+      {
+        "path": "newgrf/jplw_ab7621c.grf",
+        "bytes": 2898656,
+        "sha256": "c6384b02f8241c020aeb82e1a4eda728beb0dd42b87eb5219b9b44d57889e10c"
+      },
+      {
+        "path": "newgrf/jpobjects.grf",
+        "bytes": 337024,
+        "sha256": "9ebadc62e62daafd2b1269b2a9790724a1891ea2f88676ef2e4ff155809445b0"
+      },
+      {
+        "path": "newgrf/JPplus._v044grf",
+        "bytes": 12490632,
+        "sha256": "d1a5adf682469568603d6c4234350d4882ccae8eb02af0c907e2de81ab1fdbaa"
+      },
+      {
+        "path": "newgrf/JPplus.grf",
+        "bytes": 14380721,
+        "sha256": "f72bbff56c799701a3eaded7473f4dd2013b6820ac4d4370888531469adda156"
+      },
+      {
+        "path": "newgrf/JPplus_v042.grf",
+        "bytes": 13260895,
+        "sha256": "9c6794d7f271052a01be8175ab6a4a267beb3b578754ec080e781522827180c9"
+      },
+      {
+        "path": "newgrf/JPplusShinkansen.grf",
+        "bytes": 1064057,
+        "sha256": "d38296ec424f0bf27a44a8809b1f5bd95e7a2feadbcf1127146efe29c403264d"
+      },
+      {
+        "path": "newgrf/JPplusShinkansen_cec6e29.grf",
+        "bytes": 1998104,
+        "sha256": "f7c81c9fcb8a44af8f78d5ec158671456af91c90ee129fa54b429ed9047804a8"
+      },
+      {
+        "path": "newgrf/JPplusShinkansen_v0.1.5.grf",
+        "bytes": 1064273,
+        "sha256": "a62dd485582acc0e92f1434a583651469ff23379d03ef9659245ce2a604d67a8"
+      },
+      {
+        "path": "newgrf/JPplusShinkansen_v0.2.0.grf",
+        "bytes": 1131838,
+        "sha256": "2c28988f4db75e3a071c5a393f6c9aab30fcb2a9def3f1d817fd765f8d3a2d32"
+      },
+      {
+        "path": "newgrf/JPplusShinkansen_v0.4.0.grf",
+        "bytes": 2465442,
+        "sha256": "97ba0bde58f1e2b42b85696f8710a053a306231cc4389834b591d5ff081c7e85"
+      },
+      {
+        "path": "newgrf/JPplusShinkansen_v2.4.3.grf",
+        "bytes": 3345850,
+        "sha256": "cb88413eaf9fdbf71dae60fb52b52b4b3081df3ba0d9b121b543f5f73d0937f5"
+      },
+      {
+        "path": "newgrf/JPprivate.grf",
+        "bytes": 7594076,
+        "sha256": "6222eadf3dc6a7bcb97f6dd9959c941ab57b8095f1b58a96aa0a82b0996b625d"
+      },
+      {
+        "path": "newgrf/jpstationsAddonsv0.2.2.grf",
+        "bytes": 1157553,
+        "sha256": "a0c28d4a481ccd18a1ce567e4eb329ed7c7cfee80dace06401a968969e9d673c"
+      },
+      {
+        "path": "newgrf/Nagoya_Area_Train_set_0.5.1.grf",
+        "bytes": 768152,
+        "sha256": "e1599e33859db0fe6e27502ef2a4820e4740d3e6c759f49f9349aa3c59ce14f9"
+      },
+      {
+        "path": "newgrf/ogfx-airports.grf",
+        "bytes": 1418267,
+        "sha256": "eee51e40b08bb4a91f44b53650fd9375e7b653d61428d4d64bb4bf4865453902"
+      },
+      {
+        "path": "newgrf/tias-all-climate.grf",
+        "bytes": 2406900,
+        "sha256": "a026be41c8e6cb66ce9711dac293aaedc619fffe4268d31976e51e678d8369fc"
+      },
+      {
+        "path": "content_download/ai/41444d4c-AdmiralAI-25.tar",
+        "bytes": 399360,
+        "sha256": "4aad1bff4e30f93fb5e54f6d70cb4a7a370b8cb8ed086b1300c0329f34f2f8e1"
+      },
+      {
+        "path": "content_download/ai/library/51554648-Queue.FibonacciHeap-2.tar",
+        "bytes": 30720,
+        "sha256": "4fa6c4ebfe8baba27985038e4c243cbfeff97741fafcf7cd7c0379f0e8dfd6d6"
+      },
+      {
+        "path": "content_download/ai/library/51554648-Queue.FibonacciHeap-3.tar",
+        "bytes": 30720,
+        "sha256": "c3c80ad59a0cf43b67a7d769484ba10f316b7a0b4a83a28efe5ce82e96066c9b"
+      },
+      {
+        "path": "content_download/baseset/4f474658-OpenGFX-0.6.1.tar",
+        "bytes": 5335040,
+        "sha256": "1bb11473aca5f5e5fe5c12577c3baa6780c58c3f4a0bf6689f7f0fb10fe890ce"
+      },
+      {
+        "path": "content_download/baseset/4f534658-OpenSFX-1.0.1.tar",
+        "bytes": 13291520,
+        "sha256": "bc192af5de1116e3448712f2dce71e21634b61a3298cc9397f1ba27c77f41924"
+      },
+      {
+        "path": "content_download/baseset/4f534658-OpenSFX-1.0.3.tar",
+        "bytes": 13291520,
+        "sha256": "fd51f6aca26e96eb6ea412002b5a9e60352f20eb53e831f013224deb55951682"
+      },
+      {
+        "path": "content_download/baseset/7a423332-zBase-v5588.tar",
+        "bytes": 328161280,
+        "sha256": "73357bc2f147db5b424fa4bc29705be98f9a9c57be1df1d1ae69c844f172e08d"
+      },
+      {
+        "path": "content_download/baseset/openmsx-0.4.0/5432gone_redfarn.mid",
+        "bytes": 10978,
+        "sha256": "33df6aa075057c5a909ef626392057ef1d2e582ccd15b7e6c98e0f7b3fc4eb63"
+      },
+      {
+        "path": "content_download/baseset/openmsx-0.4.0/be_sharp_bw_redfarn.mid",
+        "bytes": 30674,
+        "sha256": "cc6b04dcac510645a078e299b54694ae981e098a6b415d2323a70af91fe79662"
+      },
+      {
+        "path": "content_download/baseset/openmsx-0.4.0/boogi_marabi_redfarn.mid",
+        "bytes": 26515,
+        "sha256": "f71b52c041f7f01c8925d03b1e598b0968bc189d3f0a37071585c5707eb91bbb"
+      },
+      {
+        "path": "content_download/baseset/openmsx-0.4.0/busy_schedule.mid",
+        "bytes": 27377,
+        "sha256": "e73a46e79cfe4912e706edd7919bf4a09b1bfeb7abdada39d43ce20a8eed4fc6"
+      },
+      {
+        "path": "content_download/baseset/openmsx-0.4.0/careless_perc_redfarn.mid",
+        "bytes": 14726,
+        "sha256": "5b6aa1cb0819b3b3b17593631292117db037bd3853394dced852b5160d44d197"
+      },
+      {
+        "path": "content_download/baseset/openmsx-0.4.0/changelog.txt",
+        "bytes": 3345,
+        "sha256": "cb20af8da7a8d047fc38dcecbfe897d6f07c0ab7562b7a9b394261f9a6171f3e"
+      },
+      {
+        "path": "content_download/baseset/openmsx-0.4.0/chemistry_lab.mid",
+        "bytes": 14769,
+        "sha256": "bdd4c9345e080177ef6caae2e0ef4c6b153337505b998492977f3c5cb4e32463"
+      },
+      {
+        "path": "content_download/baseset/openmsx-0.4.0/chuggachugga.mid",
+        "bytes": 13241,
+        "sha256": "61ca73b32288aa55bbd45a2d5e9c0adcc7f1a787a6c3353fa6025399cb85a2e0"
+      },
+      {
+        "path": "content_download/baseset/openmsx-0.4.0/city_blues_redfarn.mid",
+        "bytes": 17082,
+        "sha256": "3a321160043bce6babf5ae9d73620fafdd2788e62f7579eb9e8e1b539521ec45"
+      },
+      {
+        "path": "content_download/baseset/openmsx-0.4.0/coconut_run2.mid",
+        "bytes": 8654,
+        "sha256": "b6f46d9cc9ba2ae4c902b9546b5cfb0873e2c680c66aa2012342478d239b191e"
+      },
+      {
+        "path": "content_download/baseset/openmsx-0.4.0/flying_scotsman.mid",
+        "bytes": 19309,
+        "sha256": "9ecd6ae907e0941b20116a84d16564645629ee92f00676fd19c0451da5a01670"
+      },
+      {
+        "path": "content_download/baseset/openmsx-0.4.0/harp_harmony.mid",
+        "bytes": 18390,
+        "sha256": "50fea24be39606b69d2d158b98da72dde31076833e55d95282860f6a7f150d07"
+      },
+      {
+        "path": "content_download/baseset/openmsx-0.4.0/keep_on_rolling.mid",
+        "bytes": 53213,
+        "sha256": "10418b9ee95137663c18e37d2a8a856829e650e29b8157f0ca006c7a856973df"
+      },
+      {
+        "path": "content_download/baseset/openmsx-0.4.0/license.txt",
+        "bytes": 17987,
+        "sha256": "ab15fd526bd8dd18a9e77ebc139656bf4d33e97fc7238cd11bf60e2b9b8666c6"
+      },
+      {
+        "path": "content_download/baseset/openmsx-0.4.0/linns_basket.mid",
+        "bytes": 40575,
+        "sha256": "fceec03c88eab1e57516d3ca1dc5d6486921b518950fc05bd9b078f459b3e23e"
+      },
+      {
+        "path": "content_download/baseset/openmsx-0.4.0/midnight_snow_run.mid",
+        "bytes": 22102,
+        "sha256": "a4c4e59cda05c2aee24bc909dc6f7743ddb75630fc11a9a0bb07e983d61a6db1"
+      },
+      {
+        "path": "content_download/baseset/openmsx-0.4.0/mighty_giant_run.mid",
+        "bytes": 21260,
+        "sha256": "8ed5579b55f27bd752fdd73ab83817b5d9eb7f79a463e6e3a32a1a7c94c551ea"
+      },
+      {
+        "path": "content_download/baseset/openmsx-0.4.0/modern_motion.mid",
+        "bytes": 30007,
+        "sha256": "3e71692481f90cdb71533e19bfdd3121fe7b2ac931980120b0383b56c9141afa"
+      },
+      {
+        "path": "content_download/baseset/openmsx-0.4.0/moo_redfarn.mid",
+        "bytes": 21870,
+        "sha256": "90b1a26f7aeca22178448596d386bea0a22aa42c9070c5a8464e07067b8aecf2"
+      },
+      {
+        "path": "content_download/baseset/openmsx-0.4.0/mosey_along_redfarn.mid",
+        "bytes": 20206,
+        "sha256": "9a2ef7782a37e5dee8d36ec91bf1e088dfc53e7bea4c2269d5667e497e09211d"
+      },
+      {
+        "path": "content_download/baseset/openmsx-0.4.0/no_work_song_redfarn.mid",
+        "bytes": 30174,
+        "sha256": "b10c6205e3d47c45071c35bfa06e5596b7684fdfd224dfc4921068e75b142e46"
+      },
+      {
+        "path": "content_download/baseset/openmsx-0.4.0/openmsx.obm",
+        "bytes": 13221,
+        "sha256": "d4a6b28ee42ccb6376d80f43238e5dcb86f85ea2f31f786b68b776573ac5944a"
+      },
+      {
+        "path": "content_download/baseset/openmsx-0.4.0/readme.txt",
+        "bytes": 7230,
+        "sha256": "7b386cb379ee5c423b40031325c59d3c416cc33131c90e95e6b6d239554a2a5b"
+      },
+      {
+        "path": "content_download/baseset/openmsx-0.4.0/relax_song.mid",
+        "bytes": 40070,
+        "sha256": "e7894f4d73e11fe6511a4c66597c7ef2e36c7a5b44a72494885cdf44b547ff97"
+      },
+      {
+        "path": "content_download/baseset/openmsx-0.4.0/run_for_your_life.mid",
+        "bytes": 39889,
+        "sha256": "654f402855dd82d00a7b6ec596fa0aeb8906431224e79a57f115db8c2fb9a4d0"
+      },
+      {
+        "path": "content_download/baseset/openmsx-0.4.0/say_what_redfarn.mid",
+        "bytes": 18803,
+        "sha256": "ffa6906657b807e99087246eb972440517d9fc91034ed25cb8e2cf987688c587"
+      },
+      {
+        "path": "content_download/baseset/openmsx-0.4.0/slow_neasy_redfarn.mid",
+        "bytes": 15232,
+        "sha256": "03b453a5dc11541b1d3cf8205dd8754225b3fe717db77af0dd67b6349c0fd55a"
+      },
+      {
+        "path": "content_download/baseset/openmsx-0.4.0/the_fast_route.mid",
+        "bytes": 29888,
+        "sha256": "4887b02ce648b0d0507325d0d8a24070b7bc9008de82cb86d0e7fbe5ae1275af"
+      },
+      {
+        "path": "content_download/baseset/openmsx-0.4.0/the_hobo_redfarn.mid",
+        "bytes": 24845,
+        "sha256": "dac97430710472bbfa8583783d2fd5c98ca7eb1881bee76c57ddf4701e6fbd7d"
+      },
+      {
+        "path": "content_download/baseset/openmsx-0.4.0/train_filled_with_cash.mid",
+        "bytes": 7890,
+        "sha256": "f935d8ccf870cf1f55c717fc48d895c99e54d08150eee4bbc9120f0fc895eca4"
+      },
+      {
+        "path": "content_download/baseset/openmsx-0.4.0/ttsong_iii_imuh3.mid",
+        "bytes": 15560,
+        "sha256": "c567b8b05040d836f4397cf9e3d3acd48629febe725d3119d5bd58f3cb35a267"
+      },
+      {
+        "path": "content_download/baseset/openmsx-0.4.0/ttsong_iv_imuh3.mid",
+        "bytes": 20207,
+        "sha256": "4857e4c1d446a7076e623ea6c6d753faf4df7dccf52dc9e1cebf106121d75876"
+      },
+      {
+        "path": "content_download/baseset/openmsx-0.4.0/tttheme2.mid",
+        "bytes": 46447,
+        "sha256": "0641a227115d374cbeba338d0798840ca61a323c4044ce717d67fa1d2d01cdb4"
+      },
+      {
+        "path": "content_download/baseset/openmsx-0.4.0/ultimate_run.mid",
+        "bytes": 9717,
+        "sha256": "b1b8745f04e3f16e4924d6b1b9a489ead889001343fde3ed947fda2921199ded"
+      },
+      {
+        "path": "content_download/baseset/openmsx-0.4.0/wood_whistles.mid",
+        "bytes": 13381,
+        "sha256": "4f53b905fde24b37ee2e2344c0adc6dda96452997d7d834c90f3aa7c95f3b2b5"
+      },
+      {
+        "path": "content_download/newgrf/1560b248-redFISH-0.4.tar",
+        "bytes": 2017280,
+        "sha256": "54dd5f0db1b8821dd3238d80c08c8161226a25fc9b691b19db95291c1d28c919"
+      },
+      {
+        "path": "content_download/newgrf/2c320a01-Japanese_Signals-3.0.tar",
+        "bytes": 112640,
+        "sha256": "65787c53173f95d0ed27c1a283a9ba47570ab310886bc341cb681ba87fd0cf4e"
+      },
+      {
+        "path": "content_download/newgrf/414e0101-FISH_1_Ships-0.9.2.tar",
+        "bytes": 1914880,
+        "sha256": "7f8dda18df312dc1625bc10cd130d4f6bb1bf45164642167143baaae212c4df2"
+      },
+      {
+        "path": "content_download/newgrf/414e0201-Squid_Ate_FISH_FISH_2_Ships-2.0.3.tar",
+        "bytes": 1290240,
+        "sha256": "bbca24a526c87cb0364eb139144377c21869fc37491f586ce082c0fcef0754cd"
+      },
+      {
+        "path": "content_download/newgrf/41501202-HEQS_Heavy_Equipment_Set-1.5.2.tar",
+        "bytes": 696320,
+        "sha256": "27f26602f9648ed8ce7ee1e00103bff9162c4f55a7857efadb8f2ee1f8692fa5"
+      },
+      {
+        "path": "content_download/newgrf/41570101-2CC_Cargo_Trams-0.8o.tar",
+        "bytes": 122880,
+        "sha256": "e699588590ed2b16067e71578a739c2799207a772f78fea3e8d9580fd8b12e3a"
+      },
+      {
+        "path": "content_download/newgrf/41570101-2CC_Cargo_Trams-0.8r.tar",
+        "bytes": 122880,
+        "sha256": "4fc1d1421bd6b2b2dbc2628a0950b9b10acda0267c1a10561aac7da3f17664d8"
+      },
+      {
+        "path": "content_download/newgrf/41570102-Modern_Waypoint-3.tar",
+        "bytes": 30720,
+        "sha256": "a0bf5a9c4c4bb07fbd7a45cb23b7687a34e88081368c93d815f7b7aae635a760"
+      },
+      {
+        "path": "content_download/newgrf/42530720-JP_NATS_Duplicates_Disabler-1.0.tar",
+        "bytes": 30720,
+        "sha256": "a19cee053789e5c4fd3f1d8f07f4b20d78d364644e8832e962390697d63d93cc"
+      },
+      {
+        "path": "content_download/newgrf/42531320-JP_Multiple_Units-0.5.4.tar",
+        "bytes": 18657280,
+        "sha256": "6eb82e7a5f9f4d5c0d3c32cf71d28d85d37b05b37790cbfd4c634818c05155a1"
+      },
+      {
+        "path": "content_download/newgrf/42531320-JP_Multiple_Units_JGR_JNR_JR-0.4.1.tar",
+        "bytes": 12513280,
+        "sha256": "7d1f281de7805188e2ddce93c1b8b274959a8d24d5cfd4ee805167fd08f3c54c"
+      },
+      {
+        "path": "content_download/newgrf/42531320-JP_Multiple_Units_JGR_JNR_JR-0.4.4.tar",
+        "bytes": 13557760,
+        "sha256": "5319210ad9d6d6add5593daa8827f341adc4756a7db70d997630d8546d13d091"
+      },
+      {
+        "path": "content_download/newgrf/42531320-JP_Multiple_Units_JGR_JNR_JR-0.4.5.tar",
+        "bytes": 16885760,
+        "sha256": "d6e68092cbb87e09dc6d60f7a7ec062d2698a41acf290d4d05abf93ab7604fe9"
+      },
+      {
+        "path": "content_download/newgrf/425f0101-Very_large_ships-0.1.tar",
+        "bytes": 20480,
+        "sha256": "86cbffd11a31e8132516004d2fdfe6f4ecfab060a31f78f783dea3ac52d2d782"
+      },
+      {
+        "path": "content_download/newgrf/43415000-OpenGFX_Airports-0.3.0.tar",
+        "bytes": 942080,
+        "sha256": "1335e1b66773daca2f7163c89cc485250be8534aee980242f8616a7dab682672"
+      },
+      {
+        "path": "content_download/newgrf/44440a01-av8_Aviators_Aircraft_Set-1.81.tar",
+        "bytes": 1873920,
+        "sha256": "4cb1396da5a2bedb8253608c4f87d9495760a64b6d51948a813e02a1e09f49ac"
+      },
+      {
+        "path": "content_download/newgrf/44440a01-av8_Aviators_Aircraft_Set-2.0.tar",
+        "bytes": 2283520,
+        "sha256": "c93e6d30eb84c2abd6d883671e37a0fb12dae9e96e3341b68c90d86c22e6053a"
+      },
+      {
+        "path": "content_download/newgrf/44440a01-av8_Aviators_Aircraft_Set-2.21.tar",
+        "bytes": 2498560,
+        "sha256": "e874f93b45e2413a5fcea177e5cd0db852b6ede14c2f93bed56386e14fea3e4c"
+      },
+      {
+        "path": "content_download/newgrf/44483031-JNR_ED75-1.0.tar",
+        "bytes": 51200,
+        "sha256": "80ffb8b912af7d3a051755bbffd244a4a42eb52332047cca543d9b503465d6f1"
+      },
+      {
+        "path": "content_download/newgrf/444e0400-VAST_Station_Tiles-0.2.0.tar",
+        "bytes": 102400,
+        "sha256": "a1da8784876a10ded1fde5b2e8c67e78d000c2176e8c840fc1514d8120b0a783"
+      },
+      {
+        "path": "content_download/newgrf/44501401-Japanese_Maglevs-3.1.tar",
+        "bytes": 184320,
+        "sha256": "6d68da50e47a972f00b73e5058917d1c570264aed5f0682e6934c6146aa5b461"
+      },
+      {
+        "path": "content_download/newgrf/44503000-Japanese_Tracks-3.2.tar",
+        "bytes": 1546240,
+        "sha256": "0dc998b4b94d350f3e27a0f20f2759515858ec9ac06e64a60ddfdf95dbba51eb"
+      },
+      {
+        "path": "content_download/newgrf/454e0202-Maglev_Track_Set_v2-2.5.tar",
+        "bytes": 225280,
+        "sha256": "da97653e166fad40cc12bb975878d55d65871e3d77aba1f114ea89ec5d88c5cf"
+      },
+      {
+        "path": "content_download/newgrf/454e0202-Maglev_Track_Set_v2-2.6.tar",
+        "bytes": 204800,
+        "sha256": "c7b9cd98329a0d7ce3ce85ea52e2b7980a338cf3d6d5531715b36b205aa22b27"
+      },
+      {
+        "path": "content_download/newgrf/454e0801-E001_Train_Suite_Shiki_shima-1.2.tar",
+        "bytes": 40960,
+        "sha256": "2a89d96ecf536eb57e549919c4d5fb2c71a76e12f74d9804194a206018684e0c"
+      },
+      {
+        "path": "content_download/newgrf/454e0e01-Industrial_Trackset-1.3.tar",
+        "bytes": 778240,
+        "sha256": "04b50f5f94fad849f5b6e01ddd96a2a0e30dc48e09512f3f0cdbb27bd450388e"
+      },
+      {
+        "path": "content_download/newgrf/454e0e01-Industrial_Trackset-1.5.tar",
+        "bytes": 757760,
+        "sha256": "e139f990c4611c227d3679e4935b23aa242862313673fd175e3bf692fded30f0"
+      },
+      {
+        "path": "content_download/newgrf/454e1301-Japanese_SusMon_Obsolete-1.02.tar",
+        "bytes": 102400,
+        "sha256": "4a41f3bf2d0b88db0a0dca777112e6d8807b0c3c645b0f094818a8be4a544c29"
+      },
+      {
+        "path": "content_download/newgrf/454e1301-Japanese_Suspended_Monorail_Set-1.0.tar",
+        "bytes": 112640,
+        "sha256": "64c9cce8cfe91540c4e153e645b1156546b517c99b05875eb61fd08379479d38"
+      },
+      {
+        "path": "content_download/newgrf/454e1302-Japanese_Suspended_Monorail_Set-1.1.tar",
+        "bytes": 102400,
+        "sha256": "6d1c780e1b5dd1c05034bfeab247eea3c7a47c802931539762c12fe9f060a483"
+      },
+      {
+        "path": "content_download/newgrf/454e1302-JP_Suspended_Monorails-1.2.1.tar",
+        "bytes": 143360,
+        "sha256": "6178e356691e1e707d4668328b3244a6d7099ffa05740ee294bbaae1fb668d12"
+      },
+      {
+        "path": "content_download/newgrf/454e1901-Future_Reality_Inspired_Maglevs-1.3.tar",
+        "bytes": 399360,
+        "sha256": "ec2ac8d0fbe00848c46de11886121d2b093cea1a83218df440e0621bb668e0aa"
+      },
+      {
+        "path": "content_download/newgrf/454e2001-Real_International_Maglev_Set-1.6.tar",
+        "bytes": 378880,
+        "sha256": "c086a6e024ecf620193e02d10681aba2ff78e01c697adcb863fabfa0f7c7cbc8"
+      },
+      {
+        "path": "content_download/newgrf/454e2201-Okinawa_Trainset-1.3.1.tar",
+        "bytes": 71680,
+        "sha256": "7982bf5605507e60757502be5127819083a115b8b17c1b7dc268e7672d6b387a"
+      },
+      {
+        "path": "content_download/newgrf/454e3701-Trackless_Trackset-1.2.tar",
+        "bytes": 184320,
+        "sha256": "b04f86c8db78a596bc1d635ee2859a76462435f1874e0d1b32691150dfacfdab"
+      },
+      {
+        "path": "content_download/newgrf/45520c00-Japanese_Town_Names-0.6.tar",
+        "bytes": 40960,
+        "sha256": "645f359354713e2519dd75ab95db38119f85144e8cea9712d1e2464768ad977f"
+      },
+      {
+        "path": "content_download/newgrf/45530500-Japanese_Stations-3.6.tar",
+        "bytes": 6287360,
+        "sha256": "bf894914a1b9be34140c45ba3d48931c1478545902095fbe136e3a295a56e291"
+      },
+      {
+        "path": "content_download/newgrf/474c0000-Japanese_Faces-3.0.tar",
+        "bytes": 163840,
+        "sha256": "fcdce113a86c198f14064389327655d2dc01d8497151ddb024ce192c8afba76a"
+      },
+      {
+        "path": "content_download/newgrf/4a430002-Industrial_Stations_Renewal-0.8.1.tar",
+        "bytes": 1484800,
+        "sha256": "fdd529bf783f046b3b09fa27259d6f20b5b70144e73d9f2f3e88c6d7768da296"
+      },
+      {
+        "path": "content_download/newgrf/4a430002-Industrial_Stations_Renewal-1.0.2.tar",
+        "bytes": 1218560,
+        "sha256": "17dc152e473c824754193c6ded5c246b166c13b828d60b22dde705c6ab3daf07"
+      },
+      {
+        "path": "content_download/newgrf/4a448807-Extreme_Industry_Set-0.6.2.tar",
+        "bytes": 5314560,
+        "sha256": "cc2f1c839563f8a4ef1ba8510a79eeac09ea2671ef5fcc028b2067b026887fae"
+      },
+      {
+        "path": "content_download/newgrf/4a44a1e1-JP_Engines_Wagons-0.12.3.tar",
+        "bytes": 2816000,
+        "sha256": "b58db73dfc6b7bd5990ef19c0200ed9844c118843c3188ffa3504109e389e918"
+      },
+      {
+        "path": "content_download/newgrf/4a44a1e1-JP_Engines_Wagons-0.12.4.tar",
+        "bytes": 3287040,
+        "sha256": "2a6d7d65851bcdfd26bb39645c240b1b17529d7845de51afc584217cb1e41f28"
+      },
+      {
+        "path": "content_download/newgrf/4a475281-Multi_Aspect_Signals-5.tar",
+        "bytes": 92160,
+        "sha256": "f2060955fe08e65759e77fa59cf052430a66804e7c333120311fbc7542b2f182"
+      },
+      {
+        "path": "content_download/newgrf/4a485401-Hokkaido_Trainset-1.0.tar",
+        "bytes": 1372160,
+        "sha256": "f18c53dd2ea3643ce014271d9cd3728e2c6ae4a150179a7696046a351a55a24d"
+      },
+      {
+        "path": "content_download/newgrf/4a4b4353-JP_Cargo_Stations-0.1.0.tar",
+        "bytes": 901120,
+        "sha256": "9d56389db2bcd63965b50aa47f5e50fc3fde3b3db7df8dd616ca4177e71d52a2"
+      },
+      {
+        "path": "content_download/newgrf/4a4b4735-JP_Bridges-0.7.tar",
+        "bytes": 870400,
+        "sha256": "4b222f7dc289fab66ba448f707d9520908cbaea76b183e6b9f9892d013007ceb"
+      },
+      {
+        "path": "content_download/newgrf/4a4b4735-JP_Bridges-0.8.tar",
+        "bytes": 870400,
+        "sha256": "862d2953d4d06befdeaa482d623ebf2482dac9d955fca13e5ab717d55c3f0cdc"
+      },
+      {
+        "path": "content_download/newgrf/4a505053-JP_Signal_Extension-1_0_0.tar",
+        "bytes": 92160,
+        "sha256": "516a08da4c2234a82b0c2b2364929484c562941e2092316c33e9df13bd827a35"
+      },
+      {
+        "path": "content_download/newgrf/4a544e45-Japanese_Town_Names_Extended-0.1.tar",
+        "bytes": 30720,
+        "sha256": "4daa6b3d664386429a6be716e776da2635e387824db5389f62ddafe981fa8921"
+      },
+      {
+        "path": "content_download/newgrf/4a545350-Japanese_Train_Set_Addon-1.4.0.tar",
+        "bytes": 378880,
+        "sha256": "0ebcd278578ccdffe45149697bd9d8c27275b5131d15ba5deee8f5a200951a31"
+      },
+      {
+        "path": "content_download/newgrf/4a595001-2CC_Bus_Set-v1_0.tar",
+        "bytes": 307200,
+        "sha256": "b76e66f7ec3caefb2cebd223c7af2eb153e80cf95d760427a24b74a54b80fdf2"
+      },
+      {
+        "path": "content_download/newgrf/4b523033-JP_Shinkansen-0.3.2.tar",
+        "bytes": 2027520,
+        "sha256": "5d2a06a0a9c255ba1b94a3e0b857b29765604b96acf78ce9d3b89e8179b008e3"
+      },
+      {
+        "path": "content_download/newgrf/4b523033-JP_Shinkansen-0.3.3.tar",
+        "bytes": 2191360,
+        "sha256": "58cf045b46bcae19f12558a398e75093b54e5e3446b6eab9244c6ca09e8104c7"
+      },
+      {
+        "path": "content_download/newgrf/4b523033-JP_Shinkansen-0.6.1.tar",
+        "bytes": 3010560,
+        "sha256": "7eb6b8ad8de525dee1bbf31c8dbcb3e1a9b1ee9fc5b8c3401c466b9de28094fa"
+      },
+      {
+        "path": "content_download/newgrf/4b523034-JP_Buildings-0.1.1.tar",
+        "bytes": 3850240,
+        "sha256": "5a2f20e943a2a6fa338750ed7feb3b6b31adc8661bcc773e42248980cc4de071"
+      },
+      {
+        "path": "content_download/newgrf/4b523036-JP_Trams-0.1.1.tar",
+        "bytes": 256000,
+        "sha256": "2bce024b4618d4cc470fdcdc37048cfa23e5914dc25bad04c98a70bc40675c4d"
+      },
+      {
+        "path": "content_download/newgrf/4b570101-KEIO_Railway_Set-3.0_beta_2.tar",
+        "bytes": 665600,
+        "sha256": "a7ac55cd53f57f35522d87e94e7e43f278ac17ce0544fd59930e4528ed0a7030"
+      },
+      {
+        "path": "content_download/newgrf/4d50006a-Ore_Unloader_Station-0.1.tar",
+        "bytes": 143360,
+        "sha256": "9b699d2f44334075d75e870fa2295d4fbfd1d3b9eb5aec1fe0cfe4a806df940e"
+      },
+      {
+        "path": "content_download/newgrf/4e434d41-NML_CAT_MARINE-1.tar",
+        "bytes": 30720,
+        "sha256": "a069d01023292158be53ebda9562ee65f577012aa556ceffa33e1b4722bd0df4"
+      },
+      {
+        "path": "content_download/newgrf/4e4d0324-2cc_Wagons_in_NML_2ccWIN-1.tar",
+        "bytes": 3604480,
+        "sha256": "3c6a75dadd89e896f0fdd590c602b6c9e58fe2f0d9dc91cc25c86b226968fcdf"
+      },
+      {
+        "path": "content_download/newgrf/4e4d0325-2cc_Rapid_Transit_For_Me-1.tar",
+        "bytes": 409600,
+        "sha256": "84ee717e92e3e96154adeee717e7608b96f8cae6352573aaeb32556a102860ee"
+      },
+      {
+        "path": "content_download/newgrf/51420101-Modular_Wider_Bridges_Set-003.tar",
+        "bytes": 225280,
+        "sha256": "fb2a68cdf677a7539ba77a304e3317109bbe8cf7cdbf740804f3e133c02930d2"
+      },
+      {
+        "path": "content_download/newgrf/52415608-RAV8_Rangless_Av8-1.00.tar",
+        "bytes": 2519040,
+        "sha256": "9168b7a6be81c8c610d5b0fadb7dcc0768c8d68d960a847eb0f20965456bee30"
+      },
+      {
+        "path": "content_download/newgrf/52453200-JapanSet_Landscape-3.1.tar",
+        "bytes": 675840,
+        "sha256": "a194ea92d21e88b8be3ad0c84bf6ad566bf4c99b5abe7285eea578ab991d5132"
+      },
+      {
+        "path": "content_download/newgrf/52453200-JapanSet_Landscape-3.2.tar",
+        "bytes": 757760,
+        "sha256": "5f7c644bedd7114c5ffddf847248183b719e8414c36c40e4c2fc1141fe00dff1"
+      },
+      {
+        "path": "content_download/newgrf/52453300-Japanese_Trees-3.0.tar",
+        "bytes": 235520,
+        "sha256": "7e26be8a30229ec6ca302f57c1da1456578bf6ca663d8b42327f8708dcbb63c7"
+      },
+      {
+        "path": "content_download/newgrf/52453400-Japanese_Buildings-3.1.tar",
+        "bytes": 1761280,
+        "sha256": "866f97f966b8c167dee70df4caef8c100ec32bee9202df118b06f740f9072893"
+      },
+      {
+        "path": "content_download/newgrf/52455400-City_stations-1.tar",
+        "bytes": 61440,
+        "sha256": "c02a5c4de8f8e5a3f9ca3ab1788aaa3b926576131a5d7aced546e68199b7b101"
+      },
+      {
+        "path": "content_download/newgrf/52571203-eGRVTS2-188.tar",
+        "bytes": 8550400,
+        "sha256": "ae1eb963e6c7638cdc0386c54c46eec3c97241ed334412bf048e1cc49aa920db"
+      },
+      {
+        "path": "content_download/newgrf/52571203-eGRVTS2-202.tar",
+        "bytes": 8529920,
+        "sha256": "ff57662b0a1f056b941038623e12f3a07aa99496b5dbdbe280f6a1b018dfdd2c"
+      },
+      {
+        "path": "content_download/newgrf/535a0d00-Japanese_Train_Set-2.1a.tar",
+        "bytes": 2037760,
+        "sha256": "13b25b608295514b92274d174e377e6409275e1714f26d163aaa7f03bca201bc"
+      },
+      {
+        "path": "content_download/newgrf/535a0d00-Japanese_Train_Set-3.3.tar",
+        "bytes": 3082240,
+        "sha256": "ce5d9f7fc6de1293ea6e10be4507f048221bae8c3a4620d0865616ef8efe465b"
+      },
+      {
+        "path": "content_download/newgrf/535a1000-Hankyu_Railway_Set-0.04.tar",
+        "bytes": 174080,
+        "sha256": "cc6d510e85763325c50fc1f5680e04a347dfe586dd508d01be553c0390e34c5f"
+      },
+      {
+        "path": "content_download/newgrf/54420101-Toei_Inter_connection_Add_on_Se-1.7_al.tar",
+        "bytes": 2406400,
+        "sha256": "b7d2e6e7c066136e375d7edb3c079118681e5274414acef6d0b5532b55b96f3c"
+      },
+      {
+        "path": "content_download/newgrf/544d0101-2cc_TrainsInNML-3.1.tar",
+        "bytes": 7464960,
+        "sha256": "7a0c04b7ab9c3fe0b239873ea61b131382496dcacb6628fa4ee82eabdac5d2fd"
+      },
+      {
+        "path": "content_download/newgrf/55464901-U_Bridges-1.5.tar",
+        "bytes": 788480,
+        "sha256": "d2638ec3c36c1843224f40f324496576c3aecb70cc4d74b86dfe3e4396017edf"
+      },
+      {
+        "path": "content_download/newgrf/55464989-U_RaTT-0.6.tar",
+        "bytes": 3399680,
+        "sha256": "e764a5bd43d315cf0c8e9c081e05d02b44b1b2d8986586b0d5f9a8dd11c2dfae"
+      },
+      {
+        "path": "content_download/newgrf/55464989-U_RaTT-0.8.tar",
+        "bytes": 3778560,
+        "sha256": "521814565287d615fdc50a7a8c2b935a9c9ce2adb5e0d0feb68a14ef3c620cf6"
+      },
+      {
+        "path": "content_download/newgrf/55464990-U_ReRMM_2-1.4a.tar",
+        "bytes": 4628480,
+        "sha256": "edfaa69655a233c9a4703523de4dc9ad0d8bdb03a85bca64e8c8334ce1a63a2a"
+      },
+      {
+        "path": "content_download/newgrf/55464990-U_ReRMM_2-1.6.tar",
+        "bytes": 4556800,
+        "sha256": "408433753020ed8455cb2ca77df490468c2d44c4c6dd618464bac7ed8227b97d"
+      },
+      {
+        "path": "content_download/newgrf/5753544e-Tokyo_Train_Stations_Names-2.tar",
+        "bytes": 40960,
+        "sha256": "9cfe9f0766409916554846de997657a96eddaf0d9617c505b6f02cda4c2c3249"
+      },
+      {
+        "path": "content_download/newgrf/57a50001-WAS_World_Airliners_Set-0.1.tar",
+        "bytes": 11264000,
+        "sha256": "d7cd04d82e9282647ae1fedb4a4e14669234bd5d0155e999e15a93778ab2461f"
+      },
+      {
+        "path": "content_download/newgrf/595aaa01-JP_Major_Private_Companies-2.0.3.tar",
+        "bytes": 5048320,
+        "sha256": "28a9ce40114ac48d5304de09ef39edb68ebdc9a92f0c38464b79af72989a9060"
+      },
+      {
+        "path": "content_download/newgrf/595aaa01-JP_Major_Private_Companies-2.1.1.tar",
+        "bytes": 7618560,
+        "sha256": "87b98777fcc62b6ce7260cd6308ca4f064092520cd0b65f5cbab3a5728296fb7"
+      },
+      {
+        "path": "content_download/newgrf/595aaa01-JP_Major_Private_Companies-2.3.0.tar",
+        "bytes": 9963520,
+        "sha256": "d73f99d5bf647178b893e5ce42cc32d7ab553189c53757bcabd169f521402308"
+      },
+      {
+        "path": "content_download/newgrf/595aaa01-JP_Major_Private_Companies-2.3.1.tar",
+        "bytes": 9963520,
+        "sha256": "50ca63eb57578e759444709821ba91718c41bdb5c6f05d78eab6ddd55b0ee480"
+      },
+      {
+        "path": "content_download/newgrf/595aaa01-JP_Metro-3.0.tar",
+        "bytes": 614400,
+        "sha256": "25b868e01f8099bf8ad70886ca73c82a067383dc94f20891655ec256d7190aa7"
+      },
+      {
+        "path": "content_download/newgrf/595aaa01-JP_Private_Companies-2.6.1.tar",
+        "bytes": 12072960,
+        "sha256": "01d55d55861774ad828fb707434af99ad729866b00be83ed254e762d549f065f"
+      },
+      {
+        "path": "content_download/newgrf/595aaa02-JP_Tracks-0.3.10.tar",
+        "bytes": 4044800,
+        "sha256": "1e7215dc5d7d52d538676decad9b6e9094730c2716ab38f0662044680276702e"
+      },
+      {
+        "path": "content_download/newgrf/5f5f0404-TIAS_All_Climate_Fix-0.1.tar",
+        "bytes": 40960,
+        "sha256": "a7d50637fb35ebf4071696a03df381793cb202f9b5f6372521ed02aec6cc636d"
+      },
+      {
+        "path": "content_download/newgrf/5f5f0409-JF_Japan_Themed_DualGauge_Rails-0.1.1.tar",
+        "bytes": 92160,
+        "sha256": "3b7ed33fa096d9f48ad976d3438d6313a7db2aa8c7f1d71f45c3b0090f7f661d"
+      },
+      {
+        "path": "content_download/newgrf/66724d49-Manual_Industries-2_r5.tar",
+        "bytes": 40960,
+        "sha256": "529ea85d8693f1987f06e007bb540cd352a5fff815b7657ba8bb6912aefdee66"
+      },
+      {
+        "path": "content_download/newgrf/6d6b77e0-Tokyo_Metro_Set-3.tar",
+        "bytes": 92160,
+        "sha256": "92b7439e316c628dfbaaf3235e7c37580180dab249d248e5f431f981ac1568ae"
+      },
+      {
+        "path": "content_download/newgrf/736c6602-Japanese_City_Names-1.tar",
+        "bytes": 61440,
+        "sha256": "eb8c5302aaf1097c67ddcf07aa90e61398028519d6ca86d4887dd871952f5ddc"
+      },
+      {
+        "path": "content_download/newgrf/74677563-Total_Bridge_Renewal_Japan-1.12.tar",
+        "bytes": 942080,
+        "sha256": "9af4ba175f7aef90263e06b74089df417282b89c5836f46888afdc2f990983bf"
+      },
+      {
+        "path": "content_download/newgrf/fbfb0010-2CC_Trams-0.9b.tar",
+        "bytes": 532480,
+        "sha256": "92d24c376b05bf9afaa0b161b35aa6b9618869604b0eddd8dca8141e18914d07"
+      },
+      {
+        "path": "content_download/newgrf/fbfb0010-2CC_Trams-0.9c.tar",
+        "bytes": 532480,
+        "sha256": "1c30db5ed8a91415ec97995bd667f5c6328cd52908364bb6525a9d6072e0a193"
+      },
+      {
+        "path": "lang/afrikaans.lng",
+        "bytes": 253034,
+        "sha256": "e3b47f16707dce854146faf6f00ddda15277ee50ba3ece52743ace3c6258406b"
+      },
+      {
+        "path": "lang/arabic_egypt.lng",
+        "bytes": 297654,
+        "sha256": "a07d2bf22e7c3e242f00f342dc6ffd5c3ed20b2ca0b8ed9b0bb9af329143d815"
+      },
+      {
+        "path": "lang/basque.lng",
+        "bytes": 260252,
+        "sha256": "ca8e956c86f9595d1b1bf137d6d9faf61d04216c98bc4f54f5ba641984cc3ff0"
+      },
+      {
+        "path": "lang/belarusian.lng",
+        "bytes": 401141,
+        "sha256": "ca77b82d1393564e83badb16c4297dd35cf786b3e1ee9c9f2c9f79c47ae6fd31"
+      },
+      {
+        "path": "lang/brazilian_portuguese.lng",
+        "bytes": 287129,
+        "sha256": "55d1be827023ad3aa22c03bdbd190eabfa2405dc9d132ad7998db34d409725f9"
+      },
+      {
+        "path": "lang/bulgarian.lng",
+        "bytes": 402828,
+        "sha256": "63794db4d2f495cb9dfcb3f35c4f9171a26a4bd35ab09f56f206433d3311ed59"
+      },
+      {
+        "path": "lang/catalan.lng",
+        "bytes": 289962,
+        "sha256": "fcd5f3dbda9e5e6ee45abfacea618ea35fd705511b54ef32860cce7636ffe0bb"
+      },
+      {
+        "path": "lang/chuvash.lng",
+        "bytes": 254068,
+        "sha256": "46b2b99b8e2d70b57f6cf529fd5d01ace5c29cbe0b0251527157fdc497766e10"
+      },
+      {
+        "path": "lang/croatian.lng",
+        "bytes": 265626,
+        "sha256": "cb418221a9ded0e518924db8271a31d3cc4b6ee25b79efb2484f3d75145d13c7"
+      },
+      {
+        "path": "lang/czech.lng",
+        "bytes": 284235,
+        "sha256": "36a89fe42726c38a1a29c356e73dbc15d6a81fe12eb188513e527d8c3d39e96e"
+      },
+      {
+        "path": "lang/danish.lng",
+        "bytes": 260748,
+        "sha256": "e978bdef9405b12c8b763f54738699568f085ab667a01159998db3cfd01e8441"
+      },
+      {
+        "path": "lang/dutch.lng",
+        "bytes": 269914,
+        "sha256": "4a24685331761a18fcb7d262bafb31dfa9b7b5c718b8bd5008e3ea2fa0ba81dd"
+      },
+      {
+        "path": "lang/english.lng",
+        "bytes": 250607,
+        "sha256": "a2004d77aaa603a01842c0c65f5344b0e02bfd6af1b17c90f474e99e5a93bc85"
+      },
+      {
+        "path": "lang/english_AU.lng",
+        "bytes": 250200,
+        "sha256": "76ecf420388dc7b94711be7eab734b207308fbc8346dc254550dc53be8606100"
+      },
+      {
+        "path": "lang/english_US.lng",
+        "bytes": 250863,
+        "sha256": "3f83c2f1f972b2575420c33430144e5ca975c75307e4e912b25d2f531135a1cd"
+      },
+      {
+        "path": "lang/esperanto.lng",
+        "bytes": 266985,
+        "sha256": "5209645cd59b74ced0c47eb1016ccf971063eccd257f139c546481240b3a368c"
+      },
+      {
+        "path": "lang/estonian.lng",
+        "bytes": 255749,
+        "sha256": "98277d65e29f62fa37fe49e2530bdee031ed3ec023bc239e464bc1dc92910e83"
+      },
+      {
+        "path": "lang/faroese.lng",
+        "bytes": 260548,
+        "sha256": "de7493dd78f5ae2c2c56cd9b53b0f2aa463b5b20010927ad893cf2b7108e9fea"
+      },
+      {
+        "path": "lang/finnish.lng",
+        "bytes": 271672,
+        "sha256": "6c708b4b9c3ba2bd3f710417d59da9f6874cc98d8bad023c88bd546c944bdeaf"
+      },
+      {
+        "path": "lang/french.lng",
+        "bytes": 288867,
+        "sha256": "89ee3ab9c347e36e4f650638cc8f7c15b04f6d72be54bcf15fbad18aedd32372"
+      },
+      {
+        "path": "lang/frisian.lng",
+        "bytes": 254073,
+        "sha256": "97be753aa9ec0d8c713bd4a0f316fa5272ba6dd5a283c1edc17d9cda33b549d6"
+      },
+      {
+        "path": "lang/gaelic.lng",
+        "bytes": 295862,
+        "sha256": "4adb9bb4bfe45d395f167392432715886916dd20c9048b85c0b78f94cd351d41"
+      },
+      {
+        "path": "lang/galician.lng",
+        "bytes": 293412,
+        "sha256": "f6b6afde2f2e8c086f1035ab3b1ab141a9aa2d395bb02d184a3753f746721d52"
+      },
+      {
+        "path": "lang/german.lng",
+        "bytes": 289491,
+        "sha256": "c3f7375392a3a5b315526523cff7c488349d2593dc34a87748cc1c8668ee002a"
+      },
+      {
+        "path": "lang/greek.lng",
+        "bytes": 445133,
+        "sha256": "17b888a55076715dd876071a3a68fe137d61d89680b7f0d1436a9a98749c3b3e"
+      },
+      {
+        "path": "lang/hebrew.lng",
+        "bytes": 308298,
+        "sha256": "8efd53bc871e2f7a5141eec385642a2e8dd2b4798192be16719eca1b4b8abecf"
+      },
+      {
+        "path": "lang/hindi.lng",
+        "bytes": 266355,
+        "sha256": "53ee155c0a7b44f7ee04a6141a4ab8802146c19b52596afaf1127b255ac3a6b5"
+      },
+      {
+        "path": "lang/hungarian.lng",
+        "bytes": 290072,
+        "sha256": "d78ff33962fe0ca775c8bfc8b1f8883f1478a0bfa614d985d5f844783fe450b6"
+      },
+      {
+        "path": "lang/icelandic.lng",
+        "bytes": 259364,
+        "sha256": "925c459bf3522b1c3fd51f55c0a533505e5ec0ee12a11ec8e77dede38cf5dda1"
+      },
+      {
+        "path": "lang/ido.lng",
+        "bytes": 250512,
+        "sha256": "4d0ca8a9da83f4db3879fe8dd72efc4a1a6263eb7e1717cb89722328018293a3"
+      },
+      {
+        "path": "lang/indonesian.lng",
+        "bytes": 266881,
+        "sha256": "74b3fdfc97e2da589388925ddd41a40a15f6dba0ffbf2547506bf44675a21fc4"
+      },
+      {
+        "path": "lang/irish.lng",
+        "bytes": 285152,
+        "sha256": "3d6494d422f63eff252ffeb25005647adbdb7a20bcded5236d49c8fa4900a2a3"
+      },
+      {
+        "path": "lang/italian.lng",
+        "bytes": 285967,
+        "sha256": "27d95d46213b980ff774d251bf16e9525a6a1ffae94dfd5e183c5c23ae6e7de2"
+      },
+      {
+        "path": "lang/japanese.lng",
+        "bytes": 313546,
+        "sha256": "d080843bb922672c2545119fe2e114696610c82f1f515482d983ca1db1ee91f0"
+      },
+      {
+        "path": "lang/korean.lng",
+        "bytes": 319026,
+        "sha256": "30f020d3a6932e19d71465eedcc6a60d20c86e6c0ca0ca59fe347552ef47073d"
+      },
+      {
+        "path": "lang/latin.lng",
+        "bytes": 265230,
+        "sha256": "6aef75c5048cb5809ccc54a61cc501ee0319c9e8fd7c800124abe2f3039bdeb1"
+      },
+      {
+        "path": "lang/latvian.lng",
+        "bytes": 282110,
+        "sha256": "bfe042e1258c8a92e575e5cd521bf60f3a880d349d09b96d6baae0cc9a7f0d78"
+      },
+      {
+        "path": "lang/lithuanian.lng",
+        "bytes": 292315,
+        "sha256": "329a5077714f2675981bfcaed07865e8fe90eb7cff320b47938abd893b33c362"
+      },
+      {
+        "path": "lang/luxembourgish.lng",
+        "bytes": 262295,
+        "sha256": "853f74f54fb13da4f91a977eed68fe8df28e8b21de3feabae8ff5587f0221018"
+      },
+      {
+        "path": "lang/macedonian.lng",
+        "bytes": 266726,
+        "sha256": "d0555e60a18e29ebca9b000206455ef2d2da0108c8adcbbb43ceb122c8eda267"
+      },
+      {
+        "path": "lang/malay.lng",
+        "bytes": 262076,
+        "sha256": "bb501446fef6ca3243a8b5c12fbafd21b83e01b8125f2ed8b7747a31fba33fcb"
+      },
+      {
+        "path": "lang/maltese.lng",
+        "bytes": 252464,
+        "sha256": "6200d19b77180d24eec34d4c51d736d9bcab667c5e04c34ca9c4fd7805036c36"
+      },
+      {
+        "path": "lang/maori.lng",
+        "bytes": 283085,
+        "sha256": "2e237c41ce367eba13d825bbfebd0f169c236fec2220da459d0aa9a23ef90291"
+      },
+      {
+        "path": "lang/marathi.lng",
+        "bytes": 265203,
+        "sha256": "b5930c9d3d1318fa2ed2b51f7603c31543da31832469887de60b44dc900eed21"
+      },
+      {
+        "path": "lang/norwegian_bokmal.lng",
+        "bytes": 260361,
+        "sha256": "36b4fd3856d27059e1e26a1ef949c3759a83136e59339cbbc0659dcf5edbd883"
+      },
+      {
+        "path": "lang/norwegian_nynorsk.lng",
+        "bytes": 252453,
+        "sha256": "5c798c5900bcf8f0cffaabfdf33f3429eddfe4eaa7b64519a461f4decaf9e41e"
+      },
+      {
+        "path": "lang/persian.lng",
+        "bytes": 311448,
+        "sha256": "23963fb1c988ee2cd01bee7c7006462b3dcce6c5679f39910d9cfbdf69e51233"
+      },
+      {
+        "path": "lang/polish.lng",
+        "bytes": 285925,
+        "sha256": "166c977573de627f63e364ec73edec166b98d3150f80d193f94cc3c6e2e01f05"
+      },
+      {
+        "path": "lang/portuguese.lng",
+        "bytes": 290490,
+        "sha256": "87d8d626acccc1dd8469c7b921f6c06fae6926b9695dc861f700ea881e44c8fa"
+      },
+      {
+        "path": "lang/romanian.lng",
+        "bytes": 283925,
+        "sha256": "a151bfc9470e7e32fbb03e4a5c248ca3a25209d9a49604ced8f59d4accdad1ba"
+      },
+      {
+        "path": "lang/russian.lng",
+        "bytes": 490202,
+        "sha256": "3de674209a7193083d994f69ff664537f1f8c5645408d4ce0f81f9f5ddcfc27e"
+      },
+      {
+        "path": "lang/serbian.lng",
+        "bytes": 267652,
+        "sha256": "28aa25c6447e7f585d8af0be9e4195d8dbd9c72e04457cd384e3819af19ea17c"
+      },
+      {
+        "path": "lang/simplified_chinese.lng",
+        "bytes": 227977,
+        "sha256": "defe3dcbd4efae0ee0263ae254ae1951d81d75a36a21248d1b33824d5a8a9f94"
+      },
+      {
+        "path": "lang/slovak.lng",
+        "bytes": 269956,
+        "sha256": "85c3625ae04a88a6205e513f1f8cb68c1b3256abd4005d3303a36088ead88036"
+      },
+      {
+        "path": "lang/slovenian.lng",
+        "bytes": 254760,
+        "sha256": "46decbb908b0b2518cada4ab1e1ca4a9f515723268bb71fe67d75755081f70f7"
+      },
+      {
+        "path": "lang/spanish.lng",
+        "bytes": 287989,
+        "sha256": "fdfdf20f72ee8e0d699bf4afac3a5405b34016918b38db02104bb78b34b5031d"
+      },
+      {
+        "path": "lang/spanish_MX.lng",
+        "bytes": 274352,
+        "sha256": "b15de70934d17dce1a5207c54bef8b2b1f7ca277ed7fc4c751d0cc550ca2937f"
+      },
+      {
+        "path": "lang/swedish.lng",
+        "bytes": 265933,
+        "sha256": "604061d92e46f736c02c9ef3060d11c43ba9d01b7a915fa4e88eb4d602dbe3bf"
+      },
+      {
+        "path": "lang/tamil.lng",
+        "bytes": 466560,
+        "sha256": "4bd2f200b8caa18227c28f560b191a9c7a03a2754d394fee4f612fc21345e005"
+      },
+      {
+        "path": "lang/thai.lng",
+        "bytes": 412865,
+        "sha256": "b78ba8c6ce299d6738cb20381e9806fe60dfca4f53aec3bdd0c11674ecd0c91a"
+      },
+      {
+        "path": "lang/traditional_chinese.lng",
+        "bytes": 233408,
+        "sha256": "c17c6706413b110bbb5353f31623ba2b8ec3b23d83731ff5c028a0c8f5d571a6"
+      },
+      {
+        "path": "lang/turkish.lng",
+        "bytes": 270925,
+        "sha256": "17a02002b13c978438e3affc34b663d5e7a8fccb8009687b219eab6a05bee920"
+      },
+      {
+        "path": "lang/ukrainian.lng",
+        "bytes": 395121,
+        "sha256": "9eb9075af2c213b14193921f7793191ba83ec4d56f6aab6dc635719d21e1b658"
+      },
+      {
+        "path": "lang/urdu.lng",
+        "bytes": 281584,
+        "sha256": "3cad77c2a85820044983c824ec29df88a4557041f9bdb72215eebad7f2cb4cde"
+      },
+      {
+        "path": "lang/vietnamese.lng",
+        "bytes": 297503,
+        "sha256": "692db816eddffee1e0aa2f3ac1ef2b39a8e8ee0e40ff6983be04b85cb37dc347"
+      },
+      {
+        "path": "lang/welsh.lng",
+        "bytes": 261635,
+        "sha256": "328ebc54c2a2dd1a0e65e4867ef667edc16b39eaafc7a496b9a77c3599418631"
+      }
+    ],
+    "asset_manifest_sha256": "4cc97bdfe228d3aef094847612cf28a7d8ce904ca5f6dc20f4761d768ab1ec1b",
+    "asset_source": "C:\\Users\\bebe\\.codex\\worktrees\\428c\\OpenTTD-patches\\build-journey-profile\\package",
+    "historical_assets_exact_match": null,
+    "historical_assets_note": "Archived run-resident asset junctions are dangling; current available assets frozen. Load warnings must be retained."
+  },
+  "binary_sha256": "ca5ca26e231710e177a3b7255ff89653ca5f606ea129f7c30df785f3cd779595",
+  "ticks": 8192,
+  "compiler": {
+    "CMAKE_CXX_FLAGS": "/DWIN32 /D_WINDOWS /GR /EHsc",
+    "CMAKE_CXX_FLAGS_RELEASE": "/O2 /Ob2 /DNDEBUG",
+    "CMAKE_C_FLAGS": "/DWIN32 /D_WINDOWS",
+    "CMAKE_C_FLAGS_RELEASE": "/O2 /Ob2 /DNDEBUG",
+    "CMAKE_MSVC_RUNTIME_LIBRARY": "MultiThreaded",
+    "CMAKE_PREFIX_PATH": "C:/Users/bebe/CLionProjects/OpenTTD-patches/cmake-build-release-visual-studio/vcpkg_installed/x64-windows-static",
+    "OPTION_NO_LTO": "ON",
+    "OPTION_PASSENGER_BENCHMARK": "ON",
+    "OPTION_USE_ASSERTS": "ON",
+    "CMAKE_GENERATOR": "Visual Studio 17 2022",
+    "CMAKE_GENERATOR_PLATFORM": "x64",
+    "CMAKE_CXX_COMPILER": "C:/Program Files (x86)/Microsoft Visual Studio/2022/BuildTools/VC/Tools/MSVC/14.44.35207/bin/Hostx64/x64/cl.exe",
+    "CMAKE_CXX_COMPILER_ID": "MSVC",
+    "CMAKE_CXX_COMPILER_VERSION": "19.44.35227.0",
+    "library_sha256": {
+      "libpng16.lib": "2b3e07b20b3a1c48e8d7c0a299c700721dd82c1499269e019a6cd8459774ec3d",
+      "lzma.lib": "14a38a5ef1d68e67c80e96faba4d7bf5d2cde00de7257bdb396d4801e7160c6b",
+      "lzo2.lib": "851b503360b8747a20344cf9fac72b9a9d4067894220d32ed25465616b94515e",
+      "ogg.lib": "027feab8bec33c3cd0e9f286d630c3ccfa0d39d74005c723913a4061c73b5b67",
+      "opus.lib": "7670e882d03cd26214da63a7d0d8de5ba9ae7c5a6b91a2bcba7b350c4bc4a6e8",
+      "opusfile.lib": "472c9c7a425ba4d30c918d272cb7535c685c3b4d88736c9b8888b67be0e97a5a",
+      "zlib.lib": "0d3ce92e180e325c2eaa1f0c39dde62fb4153ebfbec078d740590fd12f0be3f9",
+      "zstd.lib": "9ca9d4b5df6591751b4ccb35dcea0d771601c89aa9528a7a2af430b0e71586ac"
+    }
+  },
+  "runs": [
+    {
+      "label": "legacy-1",
+      "method": "legacy",
+      "parsed": {
+        "state_ticks": [
+          3176545487,
+          3176553679
+        ],
+        "records": {
+          "Passenger inventory": {
+            "waiting": 263290,
+            "deferred": 203283,
+            "state_ticks": 3176553679,
+            "scaled_ticks": 3010954581
+          },
+          "Inventory Legacy": {
+            "known_OD": 234094
+          },
+          "Inventory Journey": {
+            "known_OD": 14933
+          },
+          "Inventory Fallback": {
+            "known_OD": 51888
+          },
+          "Waiting routing": {
+            "timed": 4843,
+            "schedule": 6,
+            "CargoDist_or_deferred": 228415,
+            "OD_fallback_or_waiting": 30026
+          },
+          "Schedule inventory": {
+            "people": 6,
+            "packets": 1,
+            "waiting": 6,
+            "timed_waiting": 4843
+          },
+          "Graph coverage": {
+            "complete": 0,
+            "eligible_services": 0,
+            "selected_services": 0,
+            "selected_trips": 0,
+            "largest_block_services": 0,
+            "admitted_visits": 0,
+            "max_unpredicted_ticks": 0
+          },
+          "First graph failure": {
+            "work": 0,
+            "memory": 0,
+            "trips": 0,
+            "visits": 0
+          },
+          "First opaque scope": {
+            "service": 65535,
+            "vehicle": 1048575
+          },
+          "First trip failure": {
+            "vehicle": 1048575,
+            "work": 0,
+            "memory": 0,
+            "trips": 0,
+            "visits": 0,
+            "cursor": 0,
+            "certified_until": 0,
+            "required_until": 0
+          },
+          "Uncertainty": {
+            "timing": 0,
+            "path": 0,
+            "OD_resolved": 0,
+            "first_order": 65535,
+            "first_unknown_order": 65535,
+            "tile": 0,
+            "current_order": 65535
+          },
+          "Simulation tick time": {
+            "completed_ticks": 8192,
+            "total_us": 349119436,
+            "mean_us": 42617,
+            "max_us": 138427
+          },
+          "Tick histogram (1ms upper bounds)": {
+            "simulation_p95_us": 61000,
+            "simulation_p99_us": 83000,
+            "journey_mean_us": 18127,
+            "journey_p95_us": 34000,
+            "journey_p99_us": 56000,
+            "journey_max_us": 89442
+          },
+          "Journey inclusive scopes": {
+            "waiting_us": 126662752,
+            "fallback_distance_us": 19916740,
+            "boarding_us": 17191452
+          },
+          "Periodic pending age": {
+            "ticks": 803
+          },
+          "OD fallback cache": {
+            "hits": 114027,
+            "bytes": 16871860,
+            "work": 14837883320,
+            "searches": 310404
+          },
+          "OD fallback bindings": {
+            "hits": 135259,
+            "builds": 4,
+            "validation_nodes": 0,
+            "validation_ns": 0,
+            "build_ns": 240100,
+            "reverse_hits": 310400,
+            "reverse_builds": 4,
+            "reverse_build_ns": 448500
+          },
+          "Periodic database": {
+            "services": 837,
+            "timed": 650,
+            "vehicles": 3664,
+            "bytes": 11987712,
+            "policies_bytes": 16642152,
+            "pending": 628,
+            "builds": 25355,
+            "work": 98051349,
+            "build_us": 527335,
+            "searches": 131070,
+            "query_us": 121565791,
+            "next_departures": 320806378,
+            "policy_hits": 70342,
+            "policy_misses": 60728,
+            "invalidations": 45,
+            "rejected_work": 97,
+            "rejected_memory": 0
+          },
+          "Periodic departures": {
+            "logical_vehicles": 339158567,
+            "logical_departures": 320806378,
+            "physical_calculations": 76097302,
+            "hits": 52291611,
+            "fallbacks": 6008,
+            "builds": 12918,
+            "build_ns": 34916200,
+            "bytes": 402892,
+            "peak_bytes": 419264,
+            "forward_us": 80615300,
+            "search_work": 5037562007
+          },
+          "Timed search storage": {
+            "labels": 92489788,
+            "frontier_lookups": 1586055611,
+            "queue_pushes": 92489788,
+            "queue_pops": 6980559,
+            "scratch_bytes": 849430,
+            "scratch_peak_bytes": 849430
+          },
+          "Periodic query CPU (OS thread clock; aggregate only)": {
+            "samples": 131070,
+            "query_cpu_ns": 120265625000
+          },
+          "Legacy timed detail": {
+            "measured": true,
+            "attempts": 1586055611,
+            "comparisons": 2062786383,
+            "service_candidates": 57122976,
+            "service_scans": 52297619
+          },
+          "Periodic service pruning": {
+            "bound_checks": 22795826,
+            "bound_stops": 49889063,
+            "pruned_services": 4517925,
+            "skipped_vehicle_visits": 27305627
+          },
+          "Timed rounds": {
+            "queries": 0,
+            "query_us": 0,
+            "rounds": 0,
+            "stations": 0,
+            "service_candidates": 0,
+            "service_scans": 0,
+            "occurrences": 0,
+            "departures": 0,
+            "attempts": 0,
+            "comparisons": 0,
+            "onboard_comparisons": 0,
+            "labels": 0,
+            "work": 0,
+            "peak_memory": 0
+          },
+          "Periodic residency": {
+            "entries": 937,
+            "revision": 2400,
+            "publications": 2400,
+            "staged": 0,
+            "staged_bytes": 0,
+            "additions": 837,
+            "removals": 0,
+            "updates": 15537,
+            "timetable_notifications": 53699
+          },
+          "Periodic cache cost": {
+            "clears": 0,
+            "lost": 0,
+            "maximum_lost": 0,
+            "explicit": 0,
+            "reset": 0,
+            "global": 0,
+            "stale": 8479,
+            "evictions": 66503,
+            "rebuilds": 7128,
+            "compile_us": 39033119,
+            "validation_us": 96452,
+            "eviction_us": 143109
+          },
+          "Periodic publication cost": {
+            "publication_us": 197048,
+            "wait_ticks": 4358578,
+            "wait_samples": 25355
+          },
+          "Periodic operating events": {
+            "physical_passenger_occurrences": 14905,
+            "exchange_passenger_occurrences": 14885,
+            "depot_timed": 149,
+            "depot_untimed": 47,
+            "depot_blocked": 0
+          },
+          "Schedule policy compilation": {
+            "compile_us": 1387869,
+            "residency_shared": true
+          },
+          "Schedule routing": {
+            "packets": 44,
+            "passengers": 68,
+            "timed_deferred": 0,
+            "hits": 65561,
+            "misses": 15191,
+            "bytes": 331712,
+            "work": 135822634,
+            "query_us": 1495547,
+            "stale": 36,
+            "expired": 0
+          },
+          "Schedule transport": {
+            "boarded": 10,
+            "transferred": 10,
+            "delivered": 0,
+            "expected_wait_person_ticks": 8845,
+            "actual_wait_person_ticks": 5,
+            "wait_people": 10
+          },
+          "Completed interchanges": {
+            "from_schedule": 0,
+            "from_timed": 13613
+          },
+          "Schedule-assisted final OD": {
+            "delivered": 0
+          },
+          "Periodic passenger census (live OrderLists, cargo-only excluded)": {
+            "total": 837,
+            "passenger": 771,
+            "complete_cycles": 663,
+            "compile_success": 663,
+            "compile_failure": 108,
+            "unpublished": 0,
+            "dirty": 585,
+            "unknown_vehicles": 615
+          },
+          "Periodic passenger pending census": {
+            "observations": 23484
+          },
+          "Periodic passenger eligibility": {
+            "declared_complete": 674,
+            "live_compiled_cycles": 663,
+            "published_lists": 771,
+            "published_cycles": 658,
+            "phase_known_lists": 650,
+            "denominator": 771
+          },
+          "Periodic live compilation": {
+            "TooFewStops": 0
+          },
+          "Periodic compilation observations": {
+            "TooFewStops": 0
+          },
+          "Periodic passenger vehicle phase census": {
+            "AwaitCapture": 118
+          },
+          "Periodic execution observations": {
+            "expired": 48136,
+            "failed_same_service_boarding_checks": 7318,
+            "retries_overlap": true
+          },
+          "Active journey total": {
+            "applied": 77581,
+            "builds": 0,
+            "static_hits": 0,
+            "searches": 131070,
+            "OD_hits": 62824,
+            "applied_packets": 77581,
+            "applied_passengers": 133083
+          },
+          "Train observations": {
+            "observations": 0,
+            "cargo_capable": 0,
+            "possible_refit": 0,
+            "predicted": 0,
+            "inactive": 0,
+            "excluded_cargo": 0,
+            "excluded_scope": 0,
+            "visits": 0,
+            "omitted_trains_at_least": 0,
+            "truncated_predictions": 0
+          },
+          "Trip prediction": {
+            "executions": 0,
+            "hits": 0,
+            "logical_work": 0,
+            "executed_visits": 0,
+            "predictor_ns": 0,
+            "cache_bytes": 0
+          },
+          "Graph work": {
+            "work": 0,
+            "mean": 0,
+            "max": 0,
+            "cached_index_allowance_avoided": 0,
+            "query_allowance": 8589803520,
+            "build_us": 0,
+            "mean_us": 0,
+            "max_us": 0,
+            "search_us": 0,
+            "max_tick_graph_search_us": 0
+          },
+          "Peak graph retained_estimate": {
+            "retained_estimate": 0,
+            "conservative_graph_envelope_including_index": 0,
+            "query_scratch": 0,
+            "query_cache": 0
+          },
+          "Graph phase_us": {
+            "discovery": 0,
+            "capacity": 0,
+            "selection": 0,
+            "orders_dispatch": 0,
+            "pattern": 0,
+            "prediction": 0,
+            "departures": 0
+          },
+          "Event capture": {
+            "discovery_hits": 0,
+            "service_hits": 0,
+            "logical_work_replayed": 0,
+            "retained_estimate_including_shared_patterns": 0
+          },
+          "Fair waiting shares": {
+            "claims": 0,
+            "releases": 0,
+            "admission_scan_work": 0,
+            "retained_rides": 0
+          },
+          "OD fallback": {
+            "work": 14837883320,
+            "path_searches": 310404
+          },
+          "Journey transport": {
+            "boarded": 43837,
+            "transferred": 20724,
+            "delivered": 12998
+          },
+          "Timed depot transport": {
+            "service_boarded": 6722,
+            "service_delivered": 2070,
+            "crossing_boarded": 387,
+            "crossing_delivered": 116
+          },
+          "Pragmatic routing": {
+            "timed": 77581,
+            "timed_ignoring_unknown": 0,
+            "timed_budget_deferred": 66735,
+            "untimed": 150887,
+            "untimed_no_route": 177983,
+            "untimed_budget_deferred": 14177353
+          },
+          "Untimed transport": {
+            "boarded": 558057,
+            "transferred": 276375,
+            "delivered": 229971
+          }
+        },
+        "tick_histogram": [],
+        "periodic_outcomes": {
+          "Found": {
+            "outcomes": 50313,
+            "overlapping_observations": 50313
+          },
+          "Invalid": {
+            "outcomes": 0,
+            "overlapping_observations": 0
+          },
+          "OriginMissing": {
+            "outcomes": 838,
+            "overlapping_observations": 838
+          },
+          "DestinationMissing": {
+            "outcomes": 10133,
+            "overlapping_observations": 10133
+          },
+          "NoAlighting": {
+            "outcomes": 108,
+            "overlapping_observations": 108
+          },
+          "Unreachable": {
+            "outcomes": 1888,
+            "overlapping_observations": 1888
+          },
+          "NoCandidate": {
+            "outcomes": 383,
+            "overlapping_observations": 383
+          },
+          "UnknownPhase": {
+            "outcomes": 672,
+            "overlapping_observations": 113938
+          },
+          "Evaluation": {
+            "outcomes": 0,
+            "overlapping_observations": 23977
+          },
+          "Candidates": {
+            "outcomes": 0,
+            "overlapping_observations": 62
+          },
+          "Labels": {
+            "outcomes": 309,
+            "overlapping_observations": 323
+          },
+          "Work": {
+            "outcomes": 66426,
+            "overlapping_observations": 66832
+          },
+          "Memory": {
+            "outcomes": 0,
+            "overlapping_observations": 0
+          },
+          "Transfers": {
+            "outcomes": 0,
+            "overlapping_observations": 0
+          }
+        },
+        "fallbacks": {
+          "GraphWork": {
+            "fallback_packets": 0,
+            "deferred_packets": 0
+          },
+          "GraphMemory": {
+            "fallback_packets": 0,
+            "deferred_packets": 0
+          },
+          "SnapshotLimit": {
+            "fallback_packets": 0,
+            "deferred_packets": 0
+          },
+          "QueryWork": {
+            "fallback_packets": 0,
+            "deferred_packets": 8936027
+          },
+          "QueryLimit": {
+            "fallback_packets": 0,
+            "deferred_packets": 0
+          },
+          "QueryMemory": {
+            "fallback_packets": 0,
+            "deferred_packets": 0
+          },
+          "PredictionIncomplete": {
+            "fallback_packets": 11860,
+            "deferred_packets": 0
+          },
+          "PredictionHorizon": {
+            "fallback_packets": 0,
+            "deferred_packets": 0
+          },
+          "NoJourney": {
+            "fallback_packets": 0,
+            "deferred_packets": 0
+          },
+          "InvalidLeg": {
+            "fallback_packets": 0,
+            "deferred_packets": 0
+          },
+          "StaleLeg": {
+            "fallback_packets": 48136,
+            "deferred_packets": 0
+          },
+          "Disabled": {
+            "fallback_packets": 0,
+            "deferred_packets": 0
+          },
+          "VehicleDeleted": {
+            "fallback_packets": 0,
+            "deferred_packets": 0
+          }
+        },
+        "observations": {
+          "Graph failure": {
+            "None": 0,
+            "Work": 0,
+            "Memory": 0,
+            "Services": 0,
+            "Trips": 0,
+            "TotalVisits": 0,
+            "Index": 0,
+            "Opaque": 0
+          },
+          "Trip stop": {
+            "None": 0,
+            "Work": 0,
+            "Memory": 0,
+            "Visits": 0,
+            "Steps": 0,
+            "Timing": 0,
+            "Conditional": 0,
+            "Refit": 0,
+            "Implicit": 0,
+            "Unsupported": 0,
+            "Dispatch": 0,
+            "Facilities": 0,
+            "VehicleState": 0,
+            "OrderProgress": 0
+          },
+          "Schedule invalidation": {
+            "ServiceMissing": 0,
+            "Incarnation": 0,
+            "Generation": 36,
+            "Station": 0,
+            "Disabled": 0,
+            "VehicleDeleted": 0,
+            "LiveRide": 0,
+            "ForcedUnload": 0,
+            "WaitingExpired": 0
+          },
+          "phase_capture_work": 658
+        },
+        "round_outcomes": {
+          "Found": 0,
+          "Provisional": 0,
+          "BudgetDeferred": 0,
+          "Unreachable": 0,
+          "Indeterminate": 0,
+          "Invalid": 0
+        },
+        "round_work": {
+          "1": 0,
+          "2": 0,
+          "3": 0,
+          "4": 0,
+          "5": 0,
+          "6": 0,
+          "7": 0,
+          "8": 0,
+          "9": 0,
+          "10": 0,
+          "11": 0,
+          "12": 0,
+          "13": 0,
+          "14": 0,
+          "15": 0,
+          "16": 0,
+          "17": 0
+        }
+      },
+      "derived": {
+        "completed_ticks": 8192,
+        "simulation_mean_ms": 42.61711865234375,
+        "simulation_max_ms": 138.427,
+        "journey_mean_ms": 18.127,
+        "journey_max_ms": 89.442,
+        "quantile_resolution_us": 1000,
+        "quantiles": {
+          "simulation": {
+            "p50": null,
+            "p95": {
+              "upper_us": 61000,
+              "overflow": null,
+              "bucket_index": null
+            },
+            "p99": {
+              "upper_us": 83000,
+              "overflow": null,
+              "bucket_index": null
+            }
+          },
+          "journey": {
+            "p50": null,
+            "p95": {
+              "upper_us": 34000,
+              "overflow": null,
+              "bucket_index": null
+            },
+            "p99": {
+              "upper_us": 56000,
+              "overflow": null,
+              "bucket_index": null
+            }
+          }
+        },
+        "time_ms_per_tick": {
+          "timed_query_inclusive": 14.839574096679687,
+          "timed_reverse_cold": 4.764785034179687,
+          "timed_forward_and_cache_other": 10.0747890625,
+          "schedule_query_inclusive": 0.1825618896484375,
+          "schedule_compile": 0.1694176025390625,
+          "database_tick_inclusive": 0.0643719482421875,
+          "database_publication": 0.0240537109375,
+          "waiting_us": 15.46176171875,
+          "fallback_distance_us": 2.43124267578125,
+          "boarding_us": 2.09856591796875
+        },
+        "calls": {
+          "timed_od": 131070,
+          "next_departures": 320806378,
+          "schedule_od": 80752,
+          "fallback_cold_searches": 310404
+        },
+        "cache_hit_fraction": {
+          "timed": 0.5366750591287098,
+          "schedule": 0.8118808202892808
+        }
+      },
+      "process": {
+        "backend": "periodic",
+        "exit_code": 0,
+        "wall_seconds": 367.4880757,
+        "cpu_seconds": 489.234375,
+        "peak_working_set": 2091089920,
+        "sampled_peak_private": 2088390656,
+        "input_save": "input.sav",
+        "resumed": false,
+        "requested_driver_loops": 8192,
+        "policy_cache_disabled": false,
+        "input_sha256": "14D68C82911B9DCFC5EF7291E9697C5BBD67F44FFCC79D7575A144405EDF6390",
+        "binary_sha256": "CA5CA26E231710E177A3B7255FF89653CA5F606EA129F7C30DF785F3CD779595",
+        "sample_ms": 100
+      },
+      "final_save_sha256": "fedfac940d5af7d94baabc870ca6af2b140002d6bd51b8a641402c2c1c0cd758",
+      "console_sha256": "1e9b4c58f04ce36b4aafab87ed310b2d192fa6f66d867e55eab1f37cc03efee6",
+      "stderr_sha256": "94bcf89a196add5ab9bf2cf107dda572c114ef96cd2d0ecafd225647a00a09f8",
+      "stderr_unique_lines": [
+        "dbg: [grf:0] Behaviour of NewGRF 'JP+ Engines & Wagons v0.12.4' is likely to cause desyncs and/or crashes",
+        "dbg: [grf:0] Behaviour of NewGRF 'JP+ Multiple Units' is likely to cause desyncs and/or crashes",
+        "dbg: [grf:0] Behaviour of NewGRF 'JP+ Private Companies v2.6.1' is likely to cause desyncs and/or crashes",
+        "dbg: [grf:0] It changed vehicle capacity for 'Eidan 03 Series' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'Fukuoka 2000 Series' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'JP+ Private MU (1067mm)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'KOKI 100 / 101 Container Carrier' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'Seibu 10000 Series \"New Red Arrow\"' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'Seibu 20000 Series' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'Seibu 30000 Series \"Smile Train\"' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'Seibu 4000 Series' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'Seibu 9000 Series' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'TWR 70-000 Type' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'TX-2000 Series' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'Tobu 100 Series \"Spacia\"' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'Tobu 10000 Series' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'Tobu 20400 Series' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'Tobu 30000 Series' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'Tobu 500 Series \"Revaty\"' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'Tobu 50000/50050/50090 Series' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'Tobu 60000 Series' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'Tobu 6050 Series' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'Tobu 8000 Series' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'Tokyu 7000 Series' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'Tokyu 7200 Series' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'Tokyu 8000/8500 Series' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for '115 Series (EMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for '201 Series (EMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for '205 Series (EMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for '207 Series (EMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for '209 Series (EMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for '213 Series (EMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for '221 Series (EMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for '223-0/2500/5500/6000 Series (EMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for '223-1000/2000/5000 Series (EMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for '225-5000/5100/6000 Series (EMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for '303 Series (EMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for '313 Series (EMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for '315 Series (EMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for '321 Series (EMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for '323 Series (EMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for '415 Series (EMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for '415-1500 Series (EMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for '481/483/485/489 Series (EMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for '6000 Series (EMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for '701 Series (EMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for '701-5000/5500 Series (EMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for '811 Series (EMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for '813 Series (EMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'E231 Series (EMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'E233 Series (EMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'E235 Series (EMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'E331 Series (EMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'E531 Series (EMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'JP+ MU Car (MU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'KiHa 1000 Series (DMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'KiHa 40 Series (DMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'KiHa 54 Series (DMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] [4a4b4735-jp_bridges-0.8.tar\\jp_bridges-0.8\\jpbridge.grf:1060] SpriteReplace: [Set 0] Changing 68 sprites, beginning with 7812, above limit of 4896 and not within reserved range, ignoring.",
+        "dbg: [grf:0] [4a4b4735-jp_bridges-0.8.tar\\jp_bridges-0.8\\jpbridge.grf:1580] SpriteReplace: [Set 0] Changing 68 sprites, beginning with 8036, above limit of 4896 and not within reserved range, ignoring.",
+        "dbg: [grf:0] [4a4b4735-jp_bridges-0.8.tar\\jp_bridges-0.8\\jpbridge.grf:572] SpriteReplace: [Set 0] Changing 68 sprites, beginning with 7596, above limit of 4896 and not within reserved range, ignoring."
+      ]
+    },
+    {
+      "label": "rounds-1",
+      "method": "rounds",
+      "parsed": {
+        "state_ticks": [
+          3176545487,
+          3176553679
+        ],
+        "records": {
+          "Passenger inventory": {
+            "waiting": 264526,
+            "deferred": 214494,
+            "state_ticks": 3176553679,
+            "scaled_ticks": 3010954581
+          },
+          "Inventory Legacy": {
+            "known_OD": 244860
+          },
+          "Inventory Journey": {
+            "known_OD": 10998
+          },
+          "Inventory Fallback": {
+            "known_OD": 44544
+          },
+          "Waiting routing": {
+            "timed": 2252,
+            "schedule": 0,
+            "CargoDist_or_deferred": 236821,
+            "OD_fallback_or_waiting": 25453
+          },
+          "Schedule inventory": {
+            "people": 1,
+            "packets": 1,
+            "waiting": 0,
+            "timed_waiting": 2252
+          },
+          "Graph coverage": {
+            "complete": 0,
+            "eligible_services": 0,
+            "selected_services": 0,
+            "selected_trips": 0,
+            "largest_block_services": 0,
+            "admitted_visits": 0,
+            "max_unpredicted_ticks": 0
+          },
+          "First graph failure": {
+            "work": 0,
+            "memory": 0,
+            "trips": 0,
+            "visits": 0
+          },
+          "First opaque scope": {
+            "service": 65535,
+            "vehicle": 1048575
+          },
+          "First trip failure": {
+            "vehicle": 1048575,
+            "work": 0,
+            "memory": 0,
+            "trips": 0,
+            "visits": 0,
+            "cursor": 0,
+            "certified_until": 0,
+            "required_until": 0
+          },
+          "Uncertainty": {
+            "timing": 0,
+            "path": 0,
+            "OD_resolved": 0,
+            "first_order": 65535,
+            "first_unknown_order": 65535,
+            "tile": 0,
+            "current_order": 65535
+          },
+          "Simulation tick time": {
+            "completed_ticks": 8192,
+            "total_us": 411828652,
+            "mean_us": 50272,
+            "max_us": 122016
+          },
+          "Tick histogram (1ms upper bounds)": {
+            "simulation_p95_us": 68000,
+            "simulation_p99_us": 82000,
+            "journey_mean_us": 26094,
+            "journey_p95_us": 41000,
+            "journey_p99_us": 56000,
+            "journey_max_us": 98881
+          },
+          "Journey inclusive scopes": {
+            "waiting_us": 192378619,
+            "fallback_distance_us": 19698908,
+            "boarding_us": 16810367
+          },
+          "Periodic pending age": {
+            "ticks": 2314
+          },
+          "OD fallback cache": {
+            "hits": 115343,
+            "bytes": 16871860,
+            "work": 14862972005,
+            "searches": 309467
+          },
+          "OD fallback bindings": {
+            "hits": 135569,
+            "builds": 4,
+            "validation_nodes": 0,
+            "validation_ns": 0,
+            "build_ns": 217600,
+            "reverse_hits": 309463,
+            "reverse_builds": 4,
+            "reverse_build_ns": 503500
+          },
+          "Periodic database": {
+            "services": 837,
+            "timed": 648,
+            "vehicles": 3664,
+            "bytes": 11987712,
+            "policies_bytes": 16633176,
+            "pending": 1034,
+            "builds": 20104,
+            "work": 78022415,
+            "build_us": 401338,
+            "searches": 131062,
+            "query_us": 174087285,
+            "next_departures": 0,
+            "policy_hits": 80534,
+            "policy_misses": 50528,
+            "invalidations": 41,
+            "rejected_work": 72,
+            "rejected_memory": 0
+          },
+          "Periodic departures": {
+            "logical_vehicles": 0,
+            "logical_departures": 0,
+            "physical_calculations": 107628952,
+            "hits": 72865319,
+            "fallbacks": 0,
+            "builds": 8912,
+            "build_ns": 20627500,
+            "bytes": 337648,
+            "peak_bytes": 412432,
+            "forward_us": 144924865,
+            "search_work": 6148669842
+          },
+          "Timed search storage": {
+            "labels": 131964601,
+            "frontier_lookups": 0,
+            "queue_pushes": 0,
+            "queue_pops": 0,
+            "scratch_bytes": 0,
+            "scratch_peak_bytes": 0
+          },
+          "Periodic query CPU (OS thread clock; aggregate only)": {
+            "samples": 131062,
+            "query_cpu_ns": 172328125000
+          },
+          "Legacy timed detail": {
+            "measured": true,
+            "attempts": 0,
+            "comparisons": 0,
+            "service_candidates": 0,
+            "service_scans": 0
+          },
+          "Periodic service pruning": {
+            "bound_checks": 0,
+            "bound_stops": 0,
+            "pruned_services": 0,
+            "skipped_vehicle_visits": 0
+          },
+          "Timed rounds": {
+            "queries": 131062,
+            "query_us": 174087285,
+            "rounds": 398473,
+            "stations": 20215093,
+            "service_candidates": 58375191,
+            "service_scans": 8034390,
+            "occurrences": 227836128,
+            "departures": 72865319,
+            "attempts": 312959398,
+            "comparisons": 487401783,
+            "onboard_comparisons": 258646298,
+            "labels": 131964601,
+            "work": 6148669842,
+            "peak_memory": 4177436
+          },
+          "Periodic residency": {
+            "entries": 1989,
+            "revision": 2490,
+            "publications": 2490,
+            "staged": 834,
+            "staged_bytes": 11858880,
+            "additions": 837,
+            "removals": 0,
+            "updates": 11191,
+            "timetable_notifications": 52964
+          },
+          "Periodic cache cost": {
+            "clears": 0,
+            "lost": 0,
+            "maximum_lost": 0,
+            "explicit": 0,
+            "reset": 0,
+            "global": 0,
+            "stale": 8091,
+            "evictions": 87814,
+            "rebuilds": 6438,
+            "compile_us": 27476876,
+            "validation_us": 116205,
+            "eviction_us": 168604
+          },
+          "Periodic publication cost": {
+            "publication_us": 140545,
+            "wait_ticks": 2569540,
+            "wait_samples": 17234
+          },
+          "Periodic operating events": {
+            "physical_passenger_occurrences": 14905,
+            "exchange_passenger_occurrences": 14885,
+            "depot_timed": 149,
+            "depot_untimed": 47,
+            "depot_blocked": 0
+          },
+          "Schedule policy compilation": {
+            "compile_us": 6123516,
+            "residency_shared": true
+          },
+          "Schedule routing": {
+            "packets": 39,
+            "passengers": 63,
+            "timed_deferred": 4,
+            "hits": 45130,
+            "misses": 47366,
+            "bytes": 15715680,
+            "work": 176300406,
+            "query_us": 6386324,
+            "stale": 37,
+            "expired": 0
+          },
+          "Schedule transport": {
+            "boarded": 2,
+            "transferred": 1,
+            "delivered": 0,
+            "expected_wait_person_ticks": 2777,
+            "actual_wait_person_ticks": 0,
+            "wait_people": 2
+          },
+          "Completed interchanges": {
+            "from_schedule": 0,
+            "from_timed": 12340
+          },
+          "Schedule-assisted final OD": {
+            "delivered": 0
+          },
+          "Periodic passenger census (live OrderLists, cargo-only excluded)": {
+            "total": 837,
+            "passenger": 771,
+            "complete_cycles": 663,
+            "compile_success": 663,
+            "compile_failure": 108,
+            "unpublished": 0,
+            "dirty": 771,
+            "unknown_vehicles": 611
+          },
+          "Periodic passenger pending census": {
+            "observations": 18623
+          },
+          "Periodic passenger eligibility": {
+            "declared_complete": 674,
+            "live_compiled_cycles": 663,
+            "published_lists": 771,
+            "published_cycles": 658,
+            "phase_known_lists": 648,
+            "denominator": 771
+          },
+          "Periodic live compilation": {
+            "TooFewStops": 0
+          },
+          "Periodic compilation observations": {
+            "TooFewStops": 0
+          },
+          "Periodic passenger vehicle phase census": {
+            "AwaitCapture": 105
+          },
+          "Periodic execution observations": {
+            "expired": 37371,
+            "failed_same_service_boarding_checks": 7198,
+            "retries_overlap": true
+          },
+          "Active journey total": {
+            "applied": 63048,
+            "builds": 0,
+            "static_hits": 0,
+            "searches": 131062,
+            "OD_hits": 54967,
+            "applied_packets": 63048,
+            "applied_passengers": 110203
+          },
+          "Train observations": {
+            "observations": 0,
+            "cargo_capable": 0,
+            "possible_refit": 0,
+            "predicted": 0,
+            "inactive": 0,
+            "excluded_cargo": 0,
+            "excluded_scope": 0,
+            "visits": 0,
+            "omitted_trains_at_least": 0,
+            "truncated_predictions": 0
+          },
+          "Trip prediction": {
+            "executions": 0,
+            "hits": 0,
+            "logical_work": 0,
+            "executed_visits": 0,
+            "predictor_ns": 0,
+            "cache_bytes": 0
+          },
+          "Graph work": {
+            "work": 0,
+            "mean": 0,
+            "max": 0,
+            "cached_index_allowance_avoided": 0,
+            "query_allowance": 8589279232,
+            "build_us": 0,
+            "mean_us": 0,
+            "max_us": 0,
+            "search_us": 0,
+            "max_tick_graph_search_us": 0
+          },
+          "Peak graph retained_estimate": {
+            "retained_estimate": 0,
+            "conservative_graph_envelope_including_index": 0,
+            "query_scratch": 0,
+            "query_cache": 0
+          },
+          "Graph phase_us": {
+            "discovery": 0,
+            "capacity": 0,
+            "selection": 0,
+            "orders_dispatch": 0,
+            "pattern": 0,
+            "prediction": 0,
+            "departures": 0
+          },
+          "Event capture": {
+            "discovery_hits": 0,
+            "service_hits": 0,
+            "logical_work_replayed": 0,
+            "retained_estimate_including_shared_patterns": 0
+          },
+          "Fair waiting shares": {
+            "claims": 0,
+            "releases": 0,
+            "admission_scan_work": 0,
+            "retained_rides": 0
+          },
+          "OD fallback": {
+            "work": 14862972005,
+            "path_searches": 309467
+          },
+          "Journey transport": {
+            "boarded": 41637,
+            "transferred": 17907,
+            "delivered": 14985
+          },
+          "Timed depot transport": {
+            "service_boarded": 7168,
+            "service_delivered": 2790,
+            "crossing_boarded": 445,
+            "crossing_delivered": 194
+          },
+          "Pragmatic routing": {
+            "timed": 63048,
+            "timed_ignoring_unknown": 0,
+            "timed_budget_deferred": 99826,
+            "untimed": 151098,
+            "untimed_no_route": 178584,
+            "untimed_budget_deferred": 14226997
+          },
+          "Untimed transport": {
+            "boarded": 558307,
+            "transferred": 277796,
+            "delivered": 227786
+          }
+        },
+        "tick_histogram": [],
+        "periodic_outcomes": {
+          "Found": {
+            "outcomes": 22559,
+            "overlapping_observations": 22559
+          },
+          "Invalid": {
+            "outcomes": 0,
+            "overlapping_observations": 0
+          },
+          "OriginMissing": {
+            "outcomes": 453,
+            "overlapping_observations": 453
+          },
+          "DestinationMissing": {
+            "outcomes": 6220,
+            "overlapping_observations": 6220
+          },
+          "NoAlighting": {
+            "outcomes": 16,
+            "overlapping_observations": 16
+          },
+          "Unreachable": {
+            "outcomes": 1141,
+            "overlapping_observations": 1141
+          },
+          "NoCandidate": {
+            "outcomes": 0,
+            "overlapping_observations": 0
+          },
+          "UnknownPhase": {
+            "outcomes": 847,
+            "overlapping_observations": 120327
+          },
+          "Evaluation": {
+            "outcomes": 0,
+            "overlapping_observations": 0
+          },
+          "Candidates": {
+            "outcomes": 0,
+            "overlapping_observations": 0
+          },
+          "Labels": {
+            "outcomes": 11892,
+            "overlapping_observations": 99762
+          },
+          "Work": {
+            "outcomes": 87934,
+            "overlapping_observations": 87934
+          },
+          "Memory": {
+            "outcomes": 0,
+            "overlapping_observations": 0
+          },
+          "Transfers": {
+            "outcomes": 0,
+            "overlapping_observations": 0
+          }
+        },
+        "fallbacks": {
+          "GraphWork": {
+            "fallback_packets": 0,
+            "deferred_packets": 0
+          },
+          "GraphMemory": {
+            "fallback_packets": 0,
+            "deferred_packets": 0
+          },
+          "SnapshotLimit": {
+            "fallback_packets": 0,
+            "deferred_packets": 0
+          },
+          "QueryWork": {
+            "fallback_packets": 0,
+            "deferred_packets": 9593343
+          },
+          "QueryLimit": {
+            "fallback_packets": 0,
+            "deferred_packets": 0
+          },
+          "QueryMemory": {
+            "fallback_packets": 0,
+            "deferred_packets": 0
+          },
+          "PredictionIncomplete": {
+            "fallback_packets": 7360,
+            "deferred_packets": 0
+          },
+          "PredictionHorizon": {
+            "fallback_packets": 0,
+            "deferred_packets": 0
+          },
+          "NoJourney": {
+            "fallback_packets": 0,
+            "deferred_packets": 0
+          },
+          "InvalidLeg": {
+            "fallback_packets": 0,
+            "deferred_packets": 0
+          },
+          "StaleLeg": {
+            "fallback_packets": 37371,
+            "deferred_packets": 0
+          },
+          "Disabled": {
+            "fallback_packets": 0,
+            "deferred_packets": 0
+          },
+          "VehicleDeleted": {
+            "fallback_packets": 0,
+            "deferred_packets": 0
+          }
+        },
+        "observations": {
+          "Graph failure": {
+            "None": 0,
+            "Work": 0,
+            "Memory": 0,
+            "Services": 0,
+            "Trips": 0,
+            "TotalVisits": 0,
+            "Index": 0,
+            "Opaque": 0
+          },
+          "Trip stop": {
+            "None": 0,
+            "Work": 0,
+            "Memory": 0,
+            "Visits": 0,
+            "Steps": 0,
+            "Timing": 0,
+            "Conditional": 0,
+            "Refit": 0,
+            "Implicit": 0,
+            "Unsupported": 0,
+            "Dispatch": 0,
+            "Facilities": 0,
+            "VehicleState": 0,
+            "OrderProgress": 0
+          },
+          "Schedule invalidation": {
+            "ServiceMissing": 0,
+            "Incarnation": 0,
+            "Generation": 37,
+            "Station": 0,
+            "Disabled": 0,
+            "VehicleDeleted": 0,
+            "LiveRide": 0,
+            "ForcedUnload": 0,
+            "WaitingExpired": 0
+          },
+          "phase_capture_work": 485
+        },
+        "round_outcomes": {
+          "Found": 0,
+          "Provisional": 38566,
+          "BudgetDeferred": 83819,
+          "Unreachable": 0,
+          "Indeterminate": 8677,
+          "Invalid": 0
+        },
+        "round_work": {
+          "1": 266694392,
+          "2": 2737499299,
+          "3": 1782864956,
+          "4": 397131710,
+          "5": 71120767,
+          "6": 5123525,
+          "7": 503672,
+          "8": 23989,
+          "9": 570,
+          "10": 328,
+          "11": 0,
+          "12": 0,
+          "13": 0,
+          "14": 0,
+          "15": 0,
+          "16": 0,
+          "17": 0
+        }
+      },
+      "derived": {
+        "completed_ticks": 8192,
+        "simulation_mean_ms": 50.27205224609375,
+        "simulation_max_ms": 122.016,
+        "journey_mean_ms": 26.094,
+        "journey_max_ms": 98.881,
+        "quantile_resolution_us": 1000,
+        "quantiles": {
+          "simulation": {
+            "p50": null,
+            "p95": {
+              "upper_us": 68000,
+              "overflow": null,
+              "bucket_index": null
+            },
+            "p99": {
+              "upper_us": 82000,
+              "overflow": null,
+              "bucket_index": null
+            }
+          },
+          "journey": {
+            "p50": null,
+            "p95": {
+              "upper_us": 41000,
+              "overflow": null,
+              "bucket_index": null
+            },
+            "p99": {
+              "upper_us": 56000,
+              "overflow": null,
+              "bucket_index": null
+            }
+          }
+        },
+        "time_ms_per_tick": {
+          "timed_query_inclusive": 21.250889282226563,
+          "timed_reverse_cold": 3.35411083984375,
+          "timed_forward_and_cache_other": 17.896778442382814,
+          "schedule_query_inclusive": 0.77958056640625,
+          "schedule_compile": 0.74749951171875,
+          "database_tick_inclusive": 0.048991455078125,
+          "database_publication": 0.0171563720703125,
+          "waiting_us": 23.48371813964844,
+          "fallback_distance_us": 2.40465185546875,
+          "boarding_us": 2.0520467529296873
+        },
+        "calls": {
+          "timed_od": 131062,
+          "next_departures": 0,
+          "schedule_od": 92496,
+          "fallback_cold_searches": 309467
+        },
+        "cache_hit_fraction": {
+          "timed": 0.6144725397140285,
+          "schedule": 0.487912990832036
+        }
+      },
+      "process": {
+        "backend": "periodic",
+        "exit_code": 0,
+        "wall_seconds": 431.4311451,
+        "cpu_seconds": 550.609375,
+        "peak_working_set": 2088513536,
+        "sampled_peak_private": 2085908480,
+        "input_save": "input.sav",
+        "resumed": false,
+        "requested_driver_loops": 8192,
+        "policy_cache_disabled": false,
+        "input_sha256": "14D68C82911B9DCFC5EF7291E9697C5BBD67F44FFCC79D7575A144405EDF6390",
+        "binary_sha256": "CA5CA26E231710E177A3B7255FF89653CA5F606EA129F7C30DF785F3CD779595",
+        "sample_ms": 100
+      },
+      "final_save_sha256": "b2b16c223d30d74df81c912ab90f41922c077668696d8f8bb5d3f82aead35c88",
+      "console_sha256": "c722b9948e0c7ce54404ac504d18d7ac265c2368e1e44fc3172cb7a51332f1b7",
+      "stderr_sha256": "286f77c0a8289192304a20a5a09946fca18cf4a394dc4bcbecd2935af9d58879",
+      "stderr_unique_lines": [
+        "dbg: [grf:0] Behaviour of NewGRF 'JP+ Engines & Wagons v0.12.4' is likely to cause desyncs and/or crashes",
+        "dbg: [grf:0] Behaviour of NewGRF 'JP+ Multiple Units' is likely to cause desyncs and/or crashes",
+        "dbg: [grf:0] Behaviour of NewGRF 'JP+ Private Companies v2.6.1' is likely to cause desyncs and/or crashes",
+        "dbg: [grf:0] It changed vehicle capacity for 'Eidan 03 Series' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'Fukuoka 2000 Series' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'JP+ Private MU (1067mm)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'KOKI 100 / 101 Container Carrier' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'Seibu 10000 Series \"New Red Arrow\"' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'Seibu 20000 Series' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'Seibu 30000 Series \"Smile Train\"' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'Seibu 4000 Series' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'Seibu 9000 Series' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'TWR 70-000 Type' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'TX-2000 Series' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'Tobu 100 Series \"Spacia\"' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'Tobu 10000 Series' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'Tobu 20400 Series' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'Tobu 30000 Series' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'Tobu 500 Series \"Revaty\"' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'Tobu 50000/50050/50090 Series' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'Tobu 60000 Series' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'Tobu 6050 Series' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'Tobu 8000 Series' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'Tokyu 7000 Series' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'Tokyu 7200 Series' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'Tokyu 8000/8500 Series' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for '115 Series (EMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for '201 Series (EMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for '205 Series (EMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for '207 Series (EMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for '209 Series (EMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for '213 Series (EMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for '221 Series (EMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for '223-0/2500/5500/6000 Series (EMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for '223-1000/2000/5000 Series (EMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for '225-5000/5100/6000 Series (EMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for '303 Series (EMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for '313 Series (EMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for '315 Series (EMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for '321 Series (EMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for '323 Series (EMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for '415 Series (EMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for '415-1500 Series (EMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for '481/483/485/489 Series (EMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for '6000 Series (EMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for '701 Series (EMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for '701-5000/5500 Series (EMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for '811 Series (EMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for '813 Series (EMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'E231 Series (EMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'E233 Series (EMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'E235 Series (EMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'E331 Series (EMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'E531 Series (EMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'JP+ MU Car (MU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'KiHa 1000 Series (DMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'KiHa 40 Series (DMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'KiHa 54 Series (DMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] [4a4b4735-jp_bridges-0.8.tar\\jp_bridges-0.8\\jpbridge.grf:1060] SpriteReplace: [Set 0] Changing 68 sprites, beginning with 7812, above limit of 4896 and not within reserved range, ignoring.",
+        "dbg: [grf:0] [4a4b4735-jp_bridges-0.8.tar\\jp_bridges-0.8\\jpbridge.grf:1580] SpriteReplace: [Set 0] Changing 68 sprites, beginning with 8036, above limit of 4896 and not within reserved range, ignoring.",
+        "dbg: [grf:0] [4a4b4735-jp_bridges-0.8.tar\\jp_bridges-0.8\\jpbridge.grf:572] SpriteReplace: [Set 0] Changing 68 sprites, beginning with 7596, above limit of 4896 and not within reserved range, ignoring."
+      ]
+    },
+    {
+      "label": "rounds-2",
+      "method": "rounds",
+      "parsed": {
+        "state_ticks": [
+          3176545487,
+          3176553679
+        ],
+        "records": {
+          "Passenger inventory": {
+            "waiting": 264526,
+            "deferred": 214494,
+            "state_ticks": 3176553679,
+            "scaled_ticks": 3010954581
+          },
+          "Inventory Legacy": {
+            "known_OD": 244860
+          },
+          "Inventory Journey": {
+            "known_OD": 10998
+          },
+          "Inventory Fallback": {
+            "known_OD": 44544
+          },
+          "Waiting routing": {
+            "timed": 2252,
+            "schedule": 0,
+            "CargoDist_or_deferred": 236821,
+            "OD_fallback_or_waiting": 25453
+          },
+          "Schedule inventory": {
+            "people": 1,
+            "packets": 1,
+            "waiting": 0,
+            "timed_waiting": 2252
+          },
+          "Graph coverage": {
+            "complete": 0,
+            "eligible_services": 0,
+            "selected_services": 0,
+            "selected_trips": 0,
+            "largest_block_services": 0,
+            "admitted_visits": 0,
+            "max_unpredicted_ticks": 0
+          },
+          "First graph failure": {
+            "work": 0,
+            "memory": 0,
+            "trips": 0,
+            "visits": 0
+          },
+          "First opaque scope": {
+            "service": 65535,
+            "vehicle": 1048575
+          },
+          "First trip failure": {
+            "vehicle": 1048575,
+            "work": 0,
+            "memory": 0,
+            "trips": 0,
+            "visits": 0,
+            "cursor": 0,
+            "certified_until": 0,
+            "required_until": 0
+          },
+          "Uncertainty": {
+            "timing": 0,
+            "path": 0,
+            "OD_resolved": 0,
+            "first_order": 65535,
+            "first_unknown_order": 65535,
+            "tile": 0,
+            "current_order": 65535
+          },
+          "Simulation tick time": {
+            "completed_ticks": 8192,
+            "total_us": 416779637,
+            "mean_us": 50876,
+            "max_us": 126229
+          },
+          "Tick histogram (1ms upper bounds)": {
+            "simulation_p95_us": 69000,
+            "simulation_p99_us": 84000,
+            "journey_mean_us": 26387,
+            "journey_p95_us": 42000,
+            "journey_p99_us": 57000,
+            "journey_max_us": 99706
+          },
+          "Journey inclusive scopes": {
+            "waiting_us": 194694142,
+            "fallback_distance_us": 19772509,
+            "boarding_us": 16967177
+          },
+          "Periodic pending age": {
+            "ticks": 2314
+          },
+          "OD fallback cache": {
+            "hits": 115343,
+            "bytes": 16871860,
+            "work": 14862972005,
+            "searches": 309467
+          },
+          "OD fallback bindings": {
+            "hits": 135569,
+            "builds": 4,
+            "validation_nodes": 0,
+            "validation_ns": 0,
+            "build_ns": 219000,
+            "reverse_hits": 309463,
+            "reverse_builds": 4,
+            "reverse_build_ns": 561600
+          },
+          "Periodic database": {
+            "services": 837,
+            "timed": 648,
+            "vehicles": 3664,
+            "bytes": 11987712,
+            "policies_bytes": 16633176,
+            "pending": 1034,
+            "builds": 20104,
+            "work": 78022415,
+            "build_us": 409925,
+            "searches": 131062,
+            "query_us": 176079581,
+            "next_departures": 0,
+            "policy_hits": 80534,
+            "policy_misses": 50528,
+            "invalidations": 41,
+            "rejected_work": 72,
+            "rejected_memory": 0
+          },
+          "Periodic departures": {
+            "logical_vehicles": 0,
+            "logical_departures": 0,
+            "physical_calculations": 107628952,
+            "hits": 72865319,
+            "fallbacks": 0,
+            "builds": 8912,
+            "build_ns": 20712500,
+            "bytes": 337648,
+            "peak_bytes": 412432,
+            "forward_us": 146395238,
+            "search_work": 6148669842
+          },
+          "Timed search storage": {
+            "labels": 131964601,
+            "frontier_lookups": 0,
+            "queue_pushes": 0,
+            "queue_pops": 0,
+            "scratch_bytes": 0,
+            "scratch_peak_bytes": 0
+          },
+          "Periodic query CPU (OS thread clock; aggregate only)": {
+            "samples": 131062,
+            "query_cpu_ns": 175578125000
+          },
+          "Legacy timed detail": {
+            "measured": true,
+            "attempts": 0,
+            "comparisons": 0,
+            "service_candidates": 0,
+            "service_scans": 0
+          },
+          "Periodic service pruning": {
+            "bound_checks": 0,
+            "bound_stops": 0,
+            "pruned_services": 0,
+            "skipped_vehicle_visits": 0
+          },
+          "Timed rounds": {
+            "queries": 131062,
+            "query_us": 176079581,
+            "rounds": 398473,
+            "stations": 20215093,
+            "service_candidates": 58375191,
+            "service_scans": 8034390,
+            "occurrences": 227836128,
+            "departures": 72865319,
+            "attempts": 312959398,
+            "comparisons": 487401783,
+            "onboard_comparisons": 258646298,
+            "labels": 131964601,
+            "work": 6148669842,
+            "peak_memory": 4177436
+          },
+          "Periodic residency": {
+            "entries": 1989,
+            "revision": 2490,
+            "publications": 2490,
+            "staged": 834,
+            "staged_bytes": 11858880,
+            "additions": 837,
+            "removals": 0,
+            "updates": 11191,
+            "timetable_notifications": 52964
+          },
+          "Periodic cache cost": {
+            "clears": 0,
+            "lost": 0,
+            "maximum_lost": 0,
+            "explicit": 0,
+            "reset": 0,
+            "global": 0,
+            "stale": 8091,
+            "evictions": 87814,
+            "rebuilds": 6438,
+            "compile_us": 27986303,
+            "validation_us": 119919,
+            "eviction_us": 169252
+          },
+          "Periodic publication cost": {
+            "publication_us": 144523,
+            "wait_ticks": 2569540,
+            "wait_samples": 17234
+          },
+          "Periodic operating events": {
+            "physical_passenger_occurrences": 14905,
+            "exchange_passenger_occurrences": 14885,
+            "depot_timed": 149,
+            "depot_untimed": 47,
+            "depot_blocked": 0
+          },
+          "Schedule policy compilation": {
+            "compile_us": 6287163,
+            "residency_shared": true
+          },
+          "Schedule routing": {
+            "packets": 39,
+            "passengers": 63,
+            "timed_deferred": 4,
+            "hits": 45130,
+            "misses": 47366,
+            "bytes": 15715680,
+            "work": 176300406,
+            "query_us": 6551938,
+            "stale": 37,
+            "expired": 0
+          },
+          "Schedule transport": {
+            "boarded": 2,
+            "transferred": 1,
+            "delivered": 0,
+            "expected_wait_person_ticks": 2777,
+            "actual_wait_person_ticks": 0,
+            "wait_people": 2
+          },
+          "Completed interchanges": {
+            "from_schedule": 0,
+            "from_timed": 12340
+          },
+          "Schedule-assisted final OD": {
+            "delivered": 0
+          },
+          "Periodic passenger census (live OrderLists, cargo-only excluded)": {
+            "total": 837,
+            "passenger": 771,
+            "complete_cycles": 663,
+            "compile_success": 663,
+            "compile_failure": 108,
+            "unpublished": 0,
+            "dirty": 771,
+            "unknown_vehicles": 611
+          },
+          "Periodic passenger pending census": {
+            "observations": 18623
+          },
+          "Periodic passenger eligibility": {
+            "declared_complete": 674,
+            "live_compiled_cycles": 663,
+            "published_lists": 771,
+            "published_cycles": 658,
+            "phase_known_lists": 648,
+            "denominator": 771
+          },
+          "Periodic live compilation": {
+            "TooFewStops": 0
+          },
+          "Periodic compilation observations": {
+            "TooFewStops": 0
+          },
+          "Periodic passenger vehicle phase census": {
+            "AwaitCapture": 105
+          },
+          "Periodic execution observations": {
+            "expired": 37371,
+            "failed_same_service_boarding_checks": 7198,
+            "retries_overlap": true
+          },
+          "Active journey total": {
+            "applied": 63048,
+            "builds": 0,
+            "static_hits": 0,
+            "searches": 131062,
+            "OD_hits": 54967,
+            "applied_packets": 63048,
+            "applied_passengers": 110203
+          },
+          "Train observations": {
+            "observations": 0,
+            "cargo_capable": 0,
+            "possible_refit": 0,
+            "predicted": 0,
+            "inactive": 0,
+            "excluded_cargo": 0,
+            "excluded_scope": 0,
+            "visits": 0,
+            "omitted_trains_at_least": 0,
+            "truncated_predictions": 0
+          },
+          "Trip prediction": {
+            "executions": 0,
+            "hits": 0,
+            "logical_work": 0,
+            "executed_visits": 0,
+            "predictor_ns": 0,
+            "cache_bytes": 0
+          },
+          "Graph work": {
+            "work": 0,
+            "mean": 0,
+            "max": 0,
+            "cached_index_allowance_avoided": 0,
+            "query_allowance": 8589279232,
+            "build_us": 0,
+            "mean_us": 0,
+            "max_us": 0,
+            "search_us": 0,
+            "max_tick_graph_search_us": 0
+          },
+          "Peak graph retained_estimate": {
+            "retained_estimate": 0,
+            "conservative_graph_envelope_including_index": 0,
+            "query_scratch": 0,
+            "query_cache": 0
+          },
+          "Graph phase_us": {
+            "discovery": 0,
+            "capacity": 0,
+            "selection": 0,
+            "orders_dispatch": 0,
+            "pattern": 0,
+            "prediction": 0,
+            "departures": 0
+          },
+          "Event capture": {
+            "discovery_hits": 0,
+            "service_hits": 0,
+            "logical_work_replayed": 0,
+            "retained_estimate_including_shared_patterns": 0
+          },
+          "Fair waiting shares": {
+            "claims": 0,
+            "releases": 0,
+            "admission_scan_work": 0,
+            "retained_rides": 0
+          },
+          "OD fallback": {
+            "work": 14862972005,
+            "path_searches": 309467
+          },
+          "Journey transport": {
+            "boarded": 41637,
+            "transferred": 17907,
+            "delivered": 14985
+          },
+          "Timed depot transport": {
+            "service_boarded": 7168,
+            "service_delivered": 2790,
+            "crossing_boarded": 445,
+            "crossing_delivered": 194
+          },
+          "Pragmatic routing": {
+            "timed": 63048,
+            "timed_ignoring_unknown": 0,
+            "timed_budget_deferred": 99826,
+            "untimed": 151098,
+            "untimed_no_route": 178584,
+            "untimed_budget_deferred": 14226997
+          },
+          "Untimed transport": {
+            "boarded": 558307,
+            "transferred": 277796,
+            "delivered": 227786
+          }
+        },
+        "tick_histogram": [],
+        "periodic_outcomes": {
+          "Found": {
+            "outcomes": 22559,
+            "overlapping_observations": 22559
+          },
+          "Invalid": {
+            "outcomes": 0,
+            "overlapping_observations": 0
+          },
+          "OriginMissing": {
+            "outcomes": 453,
+            "overlapping_observations": 453
+          },
+          "DestinationMissing": {
+            "outcomes": 6220,
+            "overlapping_observations": 6220
+          },
+          "NoAlighting": {
+            "outcomes": 16,
+            "overlapping_observations": 16
+          },
+          "Unreachable": {
+            "outcomes": 1141,
+            "overlapping_observations": 1141
+          },
+          "NoCandidate": {
+            "outcomes": 0,
+            "overlapping_observations": 0
+          },
+          "UnknownPhase": {
+            "outcomes": 847,
+            "overlapping_observations": 120327
+          },
+          "Evaluation": {
+            "outcomes": 0,
+            "overlapping_observations": 0
+          },
+          "Candidates": {
+            "outcomes": 0,
+            "overlapping_observations": 0
+          },
+          "Labels": {
+            "outcomes": 11892,
+            "overlapping_observations": 99762
+          },
+          "Work": {
+            "outcomes": 87934,
+            "overlapping_observations": 87934
+          },
+          "Memory": {
+            "outcomes": 0,
+            "overlapping_observations": 0
+          },
+          "Transfers": {
+            "outcomes": 0,
+            "overlapping_observations": 0
+          }
+        },
+        "fallbacks": {
+          "GraphWork": {
+            "fallback_packets": 0,
+            "deferred_packets": 0
+          },
+          "GraphMemory": {
+            "fallback_packets": 0,
+            "deferred_packets": 0
+          },
+          "SnapshotLimit": {
+            "fallback_packets": 0,
+            "deferred_packets": 0
+          },
+          "QueryWork": {
+            "fallback_packets": 0,
+            "deferred_packets": 9593343
+          },
+          "QueryLimit": {
+            "fallback_packets": 0,
+            "deferred_packets": 0
+          },
+          "QueryMemory": {
+            "fallback_packets": 0,
+            "deferred_packets": 0
+          },
+          "PredictionIncomplete": {
+            "fallback_packets": 7360,
+            "deferred_packets": 0
+          },
+          "PredictionHorizon": {
+            "fallback_packets": 0,
+            "deferred_packets": 0
+          },
+          "NoJourney": {
+            "fallback_packets": 0,
+            "deferred_packets": 0
+          },
+          "InvalidLeg": {
+            "fallback_packets": 0,
+            "deferred_packets": 0
+          },
+          "StaleLeg": {
+            "fallback_packets": 37371,
+            "deferred_packets": 0
+          },
+          "Disabled": {
+            "fallback_packets": 0,
+            "deferred_packets": 0
+          },
+          "VehicleDeleted": {
+            "fallback_packets": 0,
+            "deferred_packets": 0
+          }
+        },
+        "observations": {
+          "Graph failure": {
+            "None": 0,
+            "Work": 0,
+            "Memory": 0,
+            "Services": 0,
+            "Trips": 0,
+            "TotalVisits": 0,
+            "Index": 0,
+            "Opaque": 0
+          },
+          "Trip stop": {
+            "None": 0,
+            "Work": 0,
+            "Memory": 0,
+            "Visits": 0,
+            "Steps": 0,
+            "Timing": 0,
+            "Conditional": 0,
+            "Refit": 0,
+            "Implicit": 0,
+            "Unsupported": 0,
+            "Dispatch": 0,
+            "Facilities": 0,
+            "VehicleState": 0,
+            "OrderProgress": 0
+          },
+          "Schedule invalidation": {
+            "ServiceMissing": 0,
+            "Incarnation": 0,
+            "Generation": 37,
+            "Station": 0,
+            "Disabled": 0,
+            "VehicleDeleted": 0,
+            "LiveRide": 0,
+            "ForcedUnload": 0,
+            "WaitingExpired": 0
+          },
+          "phase_capture_work": 485
+        },
+        "round_outcomes": {
+          "Found": 0,
+          "Provisional": 38566,
+          "BudgetDeferred": 83819,
+          "Unreachable": 0,
+          "Indeterminate": 8677,
+          "Invalid": 0
+        },
+        "round_work": {
+          "1": 266694392,
+          "2": 2737499299,
+          "3": 1782864956,
+          "4": 397131710,
+          "5": 71120767,
+          "6": 5123525,
+          "7": 503672,
+          "8": 23989,
+          "9": 570,
+          "10": 328,
+          "11": 0,
+          "12": 0,
+          "13": 0,
+          "14": 0,
+          "15": 0,
+          "16": 0,
+          "17": 0
+        }
+      },
+      "derived": {
+        "completed_ticks": 8192,
+        "simulation_mean_ms": 50.87642053222656,
+        "simulation_max_ms": 126.229,
+        "journey_mean_ms": 26.387,
+        "journey_max_ms": 99.706,
+        "quantile_resolution_us": 1000,
+        "quantiles": {
+          "simulation": {
+            "p50": null,
+            "p95": {
+              "upper_us": 69000,
+              "overflow": null,
+              "bucket_index": null
+            },
+            "p99": {
+              "upper_us": 84000,
+              "overflow": null,
+              "bucket_index": null
+            }
+          },
+          "journey": {
+            "p50": null,
+            "p95": {
+              "upper_us": 42000,
+              "overflow": null,
+              "bucket_index": null
+            },
+            "p99": {
+              "upper_us": 57000,
+              "overflow": null,
+              "bucket_index": null
+            }
+          }
+        },
+        "time_ms_per_tick": {
+          "timed_query_inclusive": 21.494089477539063,
+          "timed_reverse_cold": 3.4162967529296875,
+          "timed_forward_and_cache_other": 18.077792724609374,
+          "schedule_query_inclusive": 0.799797119140625,
+          "schedule_compile": 0.7674759521484374,
+          "database_tick_inclusive": 0.0500396728515625,
+          "database_publication": 0.0176419677734375,
+          "waiting_us": 23.766374755859374,
+          "fallback_distance_us": 2.4136363525390623,
+          "boarding_us": 2.0711885986328125
+        },
+        "calls": {
+          "timed_od": 131062,
+          "next_departures": 0,
+          "schedule_od": 92496,
+          "fallback_cold_searches": 309467
+        },
+        "cache_hit_fraction": {
+          "timed": 0.6144725397140285,
+          "schedule": 0.487912990832036
+        }
+      },
+      "process": {
+        "backend": "periodic",
+        "exit_code": 0,
+        "wall_seconds": 435.2267611,
+        "cpu_seconds": 554.4375,
+        "peak_working_set": 2094170112,
+        "sampled_peak_private": 2091220992,
+        "input_save": "input.sav",
+        "resumed": false,
+        "requested_driver_loops": 8192,
+        "policy_cache_disabled": false,
+        "input_sha256": "14D68C82911B9DCFC5EF7291E9697C5BBD67F44FFCC79D7575A144405EDF6390",
+        "binary_sha256": "CA5CA26E231710E177A3B7255FF89653CA5F606EA129F7C30DF785F3CD779595",
+        "sample_ms": 100
+      },
+      "final_save_sha256": "b2b16c223d30d74df81c912ab90f41922c077668696d8f8bb5d3f82aead35c88",
+      "console_sha256": "6c5761c6e12dd76098683f1bc42cfcbaec0be26ae64918f9dc8a2dcd4c393df3",
+      "stderr_sha256": "286f77c0a8289192304a20a5a09946fca18cf4a394dc4bcbecd2935af9d58879",
+      "stderr_unique_lines": [
+        "dbg: [grf:0] Behaviour of NewGRF 'JP+ Engines & Wagons v0.12.4' is likely to cause desyncs and/or crashes",
+        "dbg: [grf:0] Behaviour of NewGRF 'JP+ Multiple Units' is likely to cause desyncs and/or crashes",
+        "dbg: [grf:0] Behaviour of NewGRF 'JP+ Private Companies v2.6.1' is likely to cause desyncs and/or crashes",
+        "dbg: [grf:0] It changed vehicle capacity for 'Eidan 03 Series' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'Fukuoka 2000 Series' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'JP+ Private MU (1067mm)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'KOKI 100 / 101 Container Carrier' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'Seibu 10000 Series \"New Red Arrow\"' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'Seibu 20000 Series' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'Seibu 30000 Series \"Smile Train\"' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'Seibu 4000 Series' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'Seibu 9000 Series' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'TWR 70-000 Type' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'TX-2000 Series' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'Tobu 100 Series \"Spacia\"' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'Tobu 10000 Series' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'Tobu 20400 Series' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'Tobu 30000 Series' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'Tobu 500 Series \"Revaty\"' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'Tobu 50000/50050/50090 Series' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'Tobu 60000 Series' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'Tobu 6050 Series' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'Tobu 8000 Series' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'Tokyu 7000 Series' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'Tokyu 7200 Series' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'Tokyu 8000/8500 Series' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for '115 Series (EMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for '201 Series (EMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for '205 Series (EMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for '207 Series (EMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for '209 Series (EMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for '213 Series (EMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for '221 Series (EMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for '223-0/2500/5500/6000 Series (EMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for '223-1000/2000/5000 Series (EMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for '225-5000/5100/6000 Series (EMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for '303 Series (EMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for '313 Series (EMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for '315 Series (EMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for '321 Series (EMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for '323 Series (EMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for '415 Series (EMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for '415-1500 Series (EMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for '481/483/485/489 Series (EMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for '6000 Series (EMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for '701 Series (EMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for '701-5000/5500 Series (EMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for '811 Series (EMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for '813 Series (EMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'E231 Series (EMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'E233 Series (EMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'E235 Series (EMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'E331 Series (EMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'E531 Series (EMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'JP+ MU Car (MU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'KiHa 1000 Series (DMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'KiHa 40 Series (DMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'KiHa 54 Series (DMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] [4a4b4735-jp_bridges-0.8.tar\\jp_bridges-0.8\\jpbridge.grf:1060] SpriteReplace: [Set 0] Changing 68 sprites, beginning with 7812, above limit of 4896 and not within reserved range, ignoring.",
+        "dbg: [grf:0] [4a4b4735-jp_bridges-0.8.tar\\jp_bridges-0.8\\jpbridge.grf:1580] SpriteReplace: [Set 0] Changing 68 sprites, beginning with 8036, above limit of 4896 and not within reserved range, ignoring.",
+        "dbg: [grf:0] [4a4b4735-jp_bridges-0.8.tar\\jp_bridges-0.8\\jpbridge.grf:572] SpriteReplace: [Set 0] Changing 68 sprites, beginning with 7596, above limit of 4896 and not within reserved range, ignoring."
+      ]
+    },
+    {
+      "label": "legacy-2",
+      "method": "legacy",
+      "parsed": {
+        "state_ticks": [
+          3176545487,
+          3176553679
+        ],
+        "records": {
+          "Passenger inventory": {
+            "waiting": 263290,
+            "deferred": 203283,
+            "state_ticks": 3176553679,
+            "scaled_ticks": 3010954581
+          },
+          "Inventory Legacy": {
+            "known_OD": 234094
+          },
+          "Inventory Journey": {
+            "known_OD": 14933
+          },
+          "Inventory Fallback": {
+            "known_OD": 51888
+          },
+          "Waiting routing": {
+            "timed": 4843,
+            "schedule": 6,
+            "CargoDist_or_deferred": 228415,
+            "OD_fallback_or_waiting": 30026
+          },
+          "Schedule inventory": {
+            "people": 6,
+            "packets": 1,
+            "waiting": 6,
+            "timed_waiting": 4843
+          },
+          "Graph coverage": {
+            "complete": 0,
+            "eligible_services": 0,
+            "selected_services": 0,
+            "selected_trips": 0,
+            "largest_block_services": 0,
+            "admitted_visits": 0,
+            "max_unpredicted_ticks": 0
+          },
+          "First graph failure": {
+            "work": 0,
+            "memory": 0,
+            "trips": 0,
+            "visits": 0
+          },
+          "First opaque scope": {
+            "service": 65535,
+            "vehicle": 1048575
+          },
+          "First trip failure": {
+            "vehicle": 1048575,
+            "work": 0,
+            "memory": 0,
+            "trips": 0,
+            "visits": 0,
+            "cursor": 0,
+            "certified_until": 0,
+            "required_until": 0
+          },
+          "Uncertainty": {
+            "timing": 0,
+            "path": 0,
+            "OD_resolved": 0,
+            "first_order": 65535,
+            "first_unknown_order": 65535,
+            "tile": 0,
+            "current_order": 65535
+          },
+          "Simulation tick time": {
+            "completed_ticks": 8192,
+            "total_us": 349300445,
+            "mean_us": 42639,
+            "max_us": 140715
+          },
+          "Tick histogram (1ms upper bounds)": {
+            "simulation_p95_us": 61000,
+            "simulation_p99_us": 82000,
+            "journey_mean_us": 18117,
+            "journey_p95_us": 35000,
+            "journey_p99_us": 55000,
+            "journey_max_us": 102800
+          },
+          "Journey inclusive scopes": {
+            "waiting_us": 126649701,
+            "fallback_distance_us": 19853071,
+            "boarding_us": 17085070
+          },
+          "Periodic pending age": {
+            "ticks": 803
+          },
+          "OD fallback cache": {
+            "hits": 114027,
+            "bytes": 16871860,
+            "work": 14837883320,
+            "searches": 310404
+          },
+          "OD fallback bindings": {
+            "hits": 135259,
+            "builds": 4,
+            "validation_nodes": 0,
+            "validation_ns": 0,
+            "build_ns": 251500,
+            "reverse_hits": 310400,
+            "reverse_builds": 4,
+            "reverse_build_ns": 623700
+          },
+          "Periodic database": {
+            "services": 837,
+            "timed": 650,
+            "vehicles": 3664,
+            "bytes": 11987712,
+            "policies_bytes": 16642152,
+            "pending": 628,
+            "builds": 25355,
+            "work": 98051349,
+            "build_us": 544389,
+            "searches": 131070,
+            "query_us": 121560357,
+            "next_departures": 320806378,
+            "policy_hits": 70342,
+            "policy_misses": 60728,
+            "invalidations": 45,
+            "rejected_work": 97,
+            "rejected_memory": 0
+          },
+          "Periodic departures": {
+            "logical_vehicles": 339158567,
+            "logical_departures": 320806378,
+            "physical_calculations": 76097302,
+            "hits": 52291611,
+            "fallbacks": 6008,
+            "builds": 12918,
+            "build_ns": 34258200,
+            "bytes": 402892,
+            "peak_bytes": 419264,
+            "forward_us": 80416391,
+            "search_work": 5037562007
+          },
+          "Timed search storage": {
+            "labels": 92489788,
+            "frontier_lookups": 1586055611,
+            "queue_pushes": 92489788,
+            "queue_pops": 6980559,
+            "scratch_bytes": 849430,
+            "scratch_peak_bytes": 849430
+          },
+          "Periodic query CPU (OS thread clock; aggregate only)": {
+            "samples": 131070,
+            "query_cpu_ns": 119640625000
+          },
+          "Legacy timed detail": {
+            "measured": true,
+            "attempts": 1586055611,
+            "comparisons": 2062786383,
+            "service_candidates": 57122976,
+            "service_scans": 52297619
+          },
+          "Periodic service pruning": {
+            "bound_checks": 22795826,
+            "bound_stops": 49889063,
+            "pruned_services": 4517925,
+            "skipped_vehicle_visits": 27305627
+          },
+          "Timed rounds": {
+            "queries": 0,
+            "query_us": 0,
+            "rounds": 0,
+            "stations": 0,
+            "service_candidates": 0,
+            "service_scans": 0,
+            "occurrences": 0,
+            "departures": 0,
+            "attempts": 0,
+            "comparisons": 0,
+            "onboard_comparisons": 0,
+            "labels": 0,
+            "work": 0,
+            "peak_memory": 0
+          },
+          "Periodic residency": {
+            "entries": 937,
+            "revision": 2400,
+            "publications": 2400,
+            "staged": 0,
+            "staged_bytes": 0,
+            "additions": 837,
+            "removals": 0,
+            "updates": 15537,
+            "timetable_notifications": 53699
+          },
+          "Periodic cache cost": {
+            "clears": 0,
+            "lost": 0,
+            "maximum_lost": 0,
+            "explicit": 0,
+            "reset": 0,
+            "global": 0,
+            "stale": 8479,
+            "evictions": 66503,
+            "rebuilds": 7128,
+            "compile_us": 39229462,
+            "validation_us": 100897,
+            "eviction_us": 140566
+          },
+          "Periodic publication cost": {
+            "publication_us": 203948,
+            "wait_ticks": 4358578,
+            "wait_samples": 25355
+          },
+          "Periodic operating events": {
+            "physical_passenger_occurrences": 14905,
+            "exchange_passenger_occurrences": 14885,
+            "depot_timed": 149,
+            "depot_untimed": 47,
+            "depot_blocked": 0
+          },
+          "Schedule policy compilation": {
+            "compile_us": 1408047,
+            "residency_shared": true
+          },
+          "Schedule routing": {
+            "packets": 44,
+            "passengers": 68,
+            "timed_deferred": 0,
+            "hits": 65561,
+            "misses": 15191,
+            "bytes": 331712,
+            "work": 135822634,
+            "query_us": 1512089,
+            "stale": 36,
+            "expired": 0
+          },
+          "Schedule transport": {
+            "boarded": 10,
+            "transferred": 10,
+            "delivered": 0,
+            "expected_wait_person_ticks": 8845,
+            "actual_wait_person_ticks": 5,
+            "wait_people": 10
+          },
+          "Completed interchanges": {
+            "from_schedule": 0,
+            "from_timed": 13613
+          },
+          "Schedule-assisted final OD": {
+            "delivered": 0
+          },
+          "Periodic passenger census (live OrderLists, cargo-only excluded)": {
+            "total": 837,
+            "passenger": 771,
+            "complete_cycles": 663,
+            "compile_success": 663,
+            "compile_failure": 108,
+            "unpublished": 0,
+            "dirty": 585,
+            "unknown_vehicles": 615
+          },
+          "Periodic passenger pending census": {
+            "observations": 23484
+          },
+          "Periodic passenger eligibility": {
+            "declared_complete": 674,
+            "live_compiled_cycles": 663,
+            "published_lists": 771,
+            "published_cycles": 658,
+            "phase_known_lists": 650,
+            "denominator": 771
+          },
+          "Periodic live compilation": {
+            "TooFewStops": 0
+          },
+          "Periodic compilation observations": {
+            "TooFewStops": 0
+          },
+          "Periodic passenger vehicle phase census": {
+            "AwaitCapture": 118
+          },
+          "Periodic execution observations": {
+            "expired": 48136,
+            "failed_same_service_boarding_checks": 7318,
+            "retries_overlap": true
+          },
+          "Active journey total": {
+            "applied": 77581,
+            "builds": 0,
+            "static_hits": 0,
+            "searches": 131070,
+            "OD_hits": 62824,
+            "applied_packets": 77581,
+            "applied_passengers": 133083
+          },
+          "Train observations": {
+            "observations": 0,
+            "cargo_capable": 0,
+            "possible_refit": 0,
+            "predicted": 0,
+            "inactive": 0,
+            "excluded_cargo": 0,
+            "excluded_scope": 0,
+            "visits": 0,
+            "omitted_trains_at_least": 0,
+            "truncated_predictions": 0
+          },
+          "Trip prediction": {
+            "executions": 0,
+            "hits": 0,
+            "logical_work": 0,
+            "executed_visits": 0,
+            "predictor_ns": 0,
+            "cache_bytes": 0
+          },
+          "Graph work": {
+            "work": 0,
+            "mean": 0,
+            "max": 0,
+            "cached_index_allowance_avoided": 0,
+            "query_allowance": 8589803520,
+            "build_us": 0,
+            "mean_us": 0,
+            "max_us": 0,
+            "search_us": 0,
+            "max_tick_graph_search_us": 0
+          },
+          "Peak graph retained_estimate": {
+            "retained_estimate": 0,
+            "conservative_graph_envelope_including_index": 0,
+            "query_scratch": 0,
+            "query_cache": 0
+          },
+          "Graph phase_us": {
+            "discovery": 0,
+            "capacity": 0,
+            "selection": 0,
+            "orders_dispatch": 0,
+            "pattern": 0,
+            "prediction": 0,
+            "departures": 0
+          },
+          "Event capture": {
+            "discovery_hits": 0,
+            "service_hits": 0,
+            "logical_work_replayed": 0,
+            "retained_estimate_including_shared_patterns": 0
+          },
+          "Fair waiting shares": {
+            "claims": 0,
+            "releases": 0,
+            "admission_scan_work": 0,
+            "retained_rides": 0
+          },
+          "OD fallback": {
+            "work": 14837883320,
+            "path_searches": 310404
+          },
+          "Journey transport": {
+            "boarded": 43837,
+            "transferred": 20724,
+            "delivered": 12998
+          },
+          "Timed depot transport": {
+            "service_boarded": 6722,
+            "service_delivered": 2070,
+            "crossing_boarded": 387,
+            "crossing_delivered": 116
+          },
+          "Pragmatic routing": {
+            "timed": 77581,
+            "timed_ignoring_unknown": 0,
+            "timed_budget_deferred": 66735,
+            "untimed": 150887,
+            "untimed_no_route": 177983,
+            "untimed_budget_deferred": 14177353
+          },
+          "Untimed transport": {
+            "boarded": 558057,
+            "transferred": 276375,
+            "delivered": 229971
+          }
+        },
+        "tick_histogram": [],
+        "periodic_outcomes": {
+          "Found": {
+            "outcomes": 50313,
+            "overlapping_observations": 50313
+          },
+          "Invalid": {
+            "outcomes": 0,
+            "overlapping_observations": 0
+          },
+          "OriginMissing": {
+            "outcomes": 838,
+            "overlapping_observations": 838
+          },
+          "DestinationMissing": {
+            "outcomes": 10133,
+            "overlapping_observations": 10133
+          },
+          "NoAlighting": {
+            "outcomes": 108,
+            "overlapping_observations": 108
+          },
+          "Unreachable": {
+            "outcomes": 1888,
+            "overlapping_observations": 1888
+          },
+          "NoCandidate": {
+            "outcomes": 383,
+            "overlapping_observations": 383
+          },
+          "UnknownPhase": {
+            "outcomes": 672,
+            "overlapping_observations": 113938
+          },
+          "Evaluation": {
+            "outcomes": 0,
+            "overlapping_observations": 23977
+          },
+          "Candidates": {
+            "outcomes": 0,
+            "overlapping_observations": 62
+          },
+          "Labels": {
+            "outcomes": 309,
+            "overlapping_observations": 323
+          },
+          "Work": {
+            "outcomes": 66426,
+            "overlapping_observations": 66832
+          },
+          "Memory": {
+            "outcomes": 0,
+            "overlapping_observations": 0
+          },
+          "Transfers": {
+            "outcomes": 0,
+            "overlapping_observations": 0
+          }
+        },
+        "fallbacks": {
+          "GraphWork": {
+            "fallback_packets": 0,
+            "deferred_packets": 0
+          },
+          "GraphMemory": {
+            "fallback_packets": 0,
+            "deferred_packets": 0
+          },
+          "SnapshotLimit": {
+            "fallback_packets": 0,
+            "deferred_packets": 0
+          },
+          "QueryWork": {
+            "fallback_packets": 0,
+            "deferred_packets": 8936027
+          },
+          "QueryLimit": {
+            "fallback_packets": 0,
+            "deferred_packets": 0
+          },
+          "QueryMemory": {
+            "fallback_packets": 0,
+            "deferred_packets": 0
+          },
+          "PredictionIncomplete": {
+            "fallback_packets": 11860,
+            "deferred_packets": 0
+          },
+          "PredictionHorizon": {
+            "fallback_packets": 0,
+            "deferred_packets": 0
+          },
+          "NoJourney": {
+            "fallback_packets": 0,
+            "deferred_packets": 0
+          },
+          "InvalidLeg": {
+            "fallback_packets": 0,
+            "deferred_packets": 0
+          },
+          "StaleLeg": {
+            "fallback_packets": 48136,
+            "deferred_packets": 0
+          },
+          "Disabled": {
+            "fallback_packets": 0,
+            "deferred_packets": 0
+          },
+          "VehicleDeleted": {
+            "fallback_packets": 0,
+            "deferred_packets": 0
+          }
+        },
+        "observations": {
+          "Graph failure": {
+            "None": 0,
+            "Work": 0,
+            "Memory": 0,
+            "Services": 0,
+            "Trips": 0,
+            "TotalVisits": 0,
+            "Index": 0,
+            "Opaque": 0
+          },
+          "Trip stop": {
+            "None": 0,
+            "Work": 0,
+            "Memory": 0,
+            "Visits": 0,
+            "Steps": 0,
+            "Timing": 0,
+            "Conditional": 0,
+            "Refit": 0,
+            "Implicit": 0,
+            "Unsupported": 0,
+            "Dispatch": 0,
+            "Facilities": 0,
+            "VehicleState": 0,
+            "OrderProgress": 0
+          },
+          "Schedule invalidation": {
+            "ServiceMissing": 0,
+            "Incarnation": 0,
+            "Generation": 36,
+            "Station": 0,
+            "Disabled": 0,
+            "VehicleDeleted": 0,
+            "LiveRide": 0,
+            "ForcedUnload": 0,
+            "WaitingExpired": 0
+          },
+          "phase_capture_work": 658
+        },
+        "round_outcomes": {
+          "Found": 0,
+          "Provisional": 0,
+          "BudgetDeferred": 0,
+          "Unreachable": 0,
+          "Indeterminate": 0,
+          "Invalid": 0
+        },
+        "round_work": {
+          "1": 0,
+          "2": 0,
+          "3": 0,
+          "4": 0,
+          "5": 0,
+          "6": 0,
+          "7": 0,
+          "8": 0,
+          "9": 0,
+          "10": 0,
+          "11": 0,
+          "12": 0,
+          "13": 0,
+          "14": 0,
+          "15": 0,
+          "16": 0,
+          "17": 0
+        }
+      },
+      "derived": {
+        "completed_ticks": 8192,
+        "simulation_mean_ms": 42.63921447753906,
+        "simulation_max_ms": 140.715,
+        "journey_mean_ms": 18.117,
+        "journey_max_ms": 102.8,
+        "quantile_resolution_us": 1000,
+        "quantiles": {
+          "simulation": {
+            "p50": null,
+            "p95": {
+              "upper_us": 61000,
+              "overflow": null,
+              "bucket_index": null
+            },
+            "p99": {
+              "upper_us": 82000,
+              "overflow": null,
+              "bucket_index": null
+            }
+          },
+          "journey": {
+            "p50": null,
+            "p95": {
+              "upper_us": 35000,
+              "overflow": null,
+              "bucket_index": null
+            },
+            "p99": {
+              "upper_us": 55000,
+              "overflow": null,
+              "bucket_index": null
+            }
+          }
+        },
+        "time_ms_per_tick": {
+          "timed_query_inclusive": 14.838910766601563,
+          "timed_reverse_cold": 4.788752685546875,
+          "timed_forward_and_cache_other": 10.050158081054688,
+          "schedule_query_inclusive": 0.1845811767578125,
+          "schedule_compile": 0.1718807373046875,
+          "database_tick_inclusive": 0.0664537353515625,
+          "database_publication": 0.02489599609375,
+          "waiting_us": 15.460168579101563,
+          "fallback_distance_us": 2.4234705810546875,
+          "boarding_us": 2.085579833984375
+        },
+        "calls": {
+          "timed_od": 131070,
+          "next_departures": 320806378,
+          "schedule_od": 80752,
+          "fallback_cold_searches": 310404
+        },
+        "cache_hit_fraction": {
+          "timed": 0.5366750591287098,
+          "schedule": 0.8118808202892808
+        }
+      },
+      "process": {
+        "backend": "periodic",
+        "exit_code": 0,
+        "wall_seconds": 369.8731853,
+        "cpu_seconds": 496.6875,
+        "peak_working_set": 2086268928,
+        "sampled_peak_private": 2084384768,
+        "input_save": "input.sav",
+        "resumed": false,
+        "requested_driver_loops": 8192,
+        "policy_cache_disabled": false,
+        "input_sha256": "14D68C82911B9DCFC5EF7291E9697C5BBD67F44FFCC79D7575A144405EDF6390",
+        "binary_sha256": "CA5CA26E231710E177A3B7255FF89653CA5F606EA129F7C30DF785F3CD779595",
+        "sample_ms": 100
+      },
+      "final_save_sha256": "fedfac940d5af7d94baabc870ca6af2b140002d6bd51b8a641402c2c1c0cd758",
+      "console_sha256": "326cc323528707fa276c1eb44ccb14d0b97cfa8b4f2aa27d2147bb77a52669bf",
+      "stderr_sha256": "94bcf89a196add5ab9bf2cf107dda572c114ef96cd2d0ecafd225647a00a09f8",
+      "stderr_unique_lines": [
+        "dbg: [grf:0] Behaviour of NewGRF 'JP+ Engines & Wagons v0.12.4' is likely to cause desyncs and/or crashes",
+        "dbg: [grf:0] Behaviour of NewGRF 'JP+ Multiple Units' is likely to cause desyncs and/or crashes",
+        "dbg: [grf:0] Behaviour of NewGRF 'JP+ Private Companies v2.6.1' is likely to cause desyncs and/or crashes",
+        "dbg: [grf:0] It changed vehicle capacity for 'Eidan 03 Series' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'Fukuoka 2000 Series' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'JP+ Private MU (1067mm)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'KOKI 100 / 101 Container Carrier' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'Seibu 10000 Series \"New Red Arrow\"' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'Seibu 20000 Series' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'Seibu 30000 Series \"Smile Train\"' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'Seibu 4000 Series' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'Seibu 9000 Series' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'TWR 70-000 Type' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'TX-2000 Series' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'Tobu 100 Series \"Spacia\"' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'Tobu 10000 Series' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'Tobu 20400 Series' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'Tobu 30000 Series' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'Tobu 500 Series \"Revaty\"' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'Tobu 50000/50050/50090 Series' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'Tobu 60000 Series' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'Tobu 6050 Series' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'Tobu 8000 Series' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'Tokyu 7000 Series' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'Tokyu 7200 Series' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'Tokyu 8000/8500 Series' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for '115 Series (EMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for '201 Series (EMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for '205 Series (EMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for '207 Series (EMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for '209 Series (EMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for '213 Series (EMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for '221 Series (EMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for '223-0/2500/5500/6000 Series (EMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for '223-1000/2000/5000 Series (EMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for '225-5000/5100/6000 Series (EMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for '303 Series (EMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for '313 Series (EMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for '315 Series (EMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for '321 Series (EMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for '323 Series (EMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for '415 Series (EMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for '415-1500 Series (EMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for '481/483/485/489 Series (EMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for '6000 Series (EMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for '701 Series (EMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for '701-5000/5500 Series (EMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for '811 Series (EMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for '813 Series (EMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'E231 Series (EMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'E233 Series (EMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'E235 Series (EMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'E331 Series (EMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'E531 Series (EMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'JP+ MU Car (MU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'KiHa 1000 Series (DMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'KiHa 40 Series (DMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] It changed vehicle capacity for 'KiHa 54 Series (DMU)' when not inside a depot or refitting",
+        "dbg: [grf:0] [4a4b4735-jp_bridges-0.8.tar\\jp_bridges-0.8\\jpbridge.grf:1060] SpriteReplace: [Set 0] Changing 68 sprites, beginning with 7812, above limit of 4896 and not within reserved range, ignoring.",
+        "dbg: [grf:0] [4a4b4735-jp_bridges-0.8.tar\\jp_bridges-0.8\\jpbridge.grf:1580] SpriteReplace: [Set 0] Changing 68 sprites, beginning with 8036, above limit of 4896 and not within reserved range, ignoring.",
+        "dbg: [grf:0] [4a4b4735-jp_bridges-0.8.tar\\jp_bridges-0.8\\jpbridge.grf:572] SpriteReplace: [Set 0] Changing 68 sprites, beginning with 7596, above limit of 4896 and not within reserved range, ignoring."
+      ]
+    }
+  ],
+  "idle_grace_seconds": 90,
+  "runner_sha256": "d421cf5fb845109e9fde3b41cca215607527fb3a0ca8b73a4c2a6d296eb9e2fb",
+  "harness_sha256": "ea059e5a78766f513fdd424633224c827e58ffad841bd2146cf8e3e9661a6ca2",
+  "revision": "e61b9f75bf702b2c6fc2e281b9aa0c988b312f19",
+  "source_files": {
+    "passenger_departure_index.cpp": "40b0dee67a902ea1c8e07cc6c936abfcffbb5b425638ee884e3850198e11ea98",
+    "passenger_departure_index.h": "94d7cc6d9134912d2a314c61a8c33d1a9d64dd56b95e53ea7d96f7f72b1e2b48",
+    "passenger_journey_active.cpp": "474be4f9bb19fa4d289b4211fe09f798a4a334a62a6e566fbc94bf826d5dab46",
+    "passenger_journey_active.h": "a3e5ea82770b2fb590fe186fe66f7a13cfefbd3f9913a15a004de5d116f5d7c7",
+    "passenger_journey_planner.cpp": "96326489917e3fb1435bbd63454461d338f48b50c50f817db116ef1e202ea849",
+    "passenger_journey_planner.h": "ad0050e565f521e0a1b95b713cb061ff2aba872bb897864d78bceb35382f7fe8",
+    "passenger_journey_schedule.cpp": "61859394288bed6e633cc12cc57906ccacc9a5ee52495aecbc4f31787329ed09",
+    "passenger_journey_schedule.h": "c815c362d57ec6208a995e18663fcd623c7e526ba442626f00847f06c36fa0e7",
+    "passenger_journey_shadow.cpp": "dba69fa80ef18363f456f8c8920476da2ec5734b3e3bde4cdf4ab09bb802fa0d",
+    "passenger_journey_shadow.h": "c3f885e90fea447da8539324e99fed6f1dc72f568872acf0142ac070476b35c9",
+    "passenger_journey_type.h": "b1daa618cdbf12fd2630e0b0885bd8396853c20dbbb53fa167671dc31966ba85",
+    "passenger_od.cpp": "e75e2940f6e8c487503b6872640c0f29ceb006a6c5718ce964201ef364cd8ee6",
+    "passenger_od.h": "375016da4001d8d5c6187faa70c092ec580159e9351d03e555a67ca7d4500898",
+    "passenger_query_cpu.h": "4a9c0ed661256c58dba884f0b24ceed1349ccf5c583f85a2ab58c51c05d52766",
+    "passenger_routing.cpp": "98c9bac82c91a2f7b64e2bdfeae789e7b72cc8cc87afc8382a5957a511facace",
+    "passenger_routing.h": "9e9f4d1d610fa2db56786b9fe6bd8b46697fb8f904d2ac48a657d7ac45958269",
+    "passenger_service_database.cpp": "f06a5b5dada95fc18afd66bb79a6a4865129e6fbba559fa2af2ee5b0c4bafbdc",
+    "passenger_service_database.h": "9f22754c7c985a103579fa9ad2c9bfa3210a108ac1169730e3fa658c112a69f1",
+    "passenger_service_graph.cpp": "29ca8e2b76dad08061991e8b4fdcc717f5027aa07b11af0859642f2c4d895b55",
+    "passenger_service_graph.h": "dcb3e19ec328028631802f88eeda5c567bbb8cccabe245129d5c0fd083d11a56",
+    "passenger_service_index.cpp": "12398c5b591734ed3f95c998f05db34cde3187ac421970cdd3e8f86b095eefeb",
+    "passenger_service_index.h": "e53158de8b2ac3302859573ff7f4695203451a2ab75d3336a1fbfe0d40ff772b",
+    "passenger_timed_rounds.cpp": "b6d7c2c76038529ba7bae45e2e942e33091372366e5f55da6da937f6b1d62f15",
+    "passenger_timed_rounds.h": "3efe113797f799b4425a0a1d1188a091c8d099dcc01951a3bbff77e43f010b5f",
+    "passenger_timed_search.h": "3ff39d536d316e476ac935ac4fca2e4869e9099c4575d185706cceb2c3b9a656"
+  },
+  "language_files": {
+    "afrikaans.lng": "b2730c4b1e205793b635a6243500e9b9efa92c75ee4a73b92d412ee0a6dfc025",
+    "arabic_egypt.lng": "94e72bc5b84c7aecca1fca51a4678e81e833dc963665135806b4810e85261e9c",
+    "basque.lng": "06bf2cd3df0eec033b733b06c01313f430a4d2650ecbd9f7804e0db15a77237c",
+    "belarusian.lng": "029742c1b3654d67ae90706f51c70d60b22c1de1fcda83648ac7e28bbc5cc316",
+    "brazilian_portuguese.lng": "b0ad4b15104c47582c7c43c0bbf9069391424c400d57de50189000666e383a70",
+    "bulgarian.lng": "ef67766781784b40d2099cfa9c3471f1c9bc9a9beedc12c5dd0b1b7d3525712e",
+    "catalan.lng": "2e01b109af4ff75aee5ac6dfb5e87b56040a00e113196622c236595e3c7e5b1b",
+    "chuvash.lng": "9e07f9b08427c7790e4f14de01282ed7652808811a37f52a12c79ca961374756",
+    "croatian.lng": "2f14e2ead194e48e6b50393995234f31bb6d7e97be63ef6875c892e10a8a1007",
+    "czech.lng": "d4775df824c0277a4efa114c2cef419ba44f50751f44a801298ad38db3adad7f",
+    "danish.lng": "d4893a55467ad8aed53baeda4ae4e99f377a23856939d8065731480e4427c4d2",
+    "dutch.lng": "69c23f5fda4935d0a10a0bde65dcc28ae4ad8c9507ce5a01afcdac6f0c02d403",
+    "english.lng": "e4e48b6c9a8945aed2788dce963e39bd41106c473031830f874f30fa14e0231d",
+    "english_AU.lng": "fbe486ba2c84cffb020ffafe189d2184fce23a21a789268b27ce940567b1a04c",
+    "english_US.lng": "ac68bbfa2562de5506a2ab565a5c9aca5ba62adbeed874920c47bf08f7572a80",
+    "esperanto.lng": "772232315616e2b5dd1cbdaa78b844efad510b7f26cedf61f43a5a2cb3a0cb5d",
+    "estonian.lng": "99998b4beda39d73c293e0f58c3e1f29c4ef390c80909e64b9297ce3679c1a29",
+    "faroese.lng": "eb9a46d2c4adc42a46856e9643f3ed5c1e8abee0c9e0a77d5b519b023a4a84cc",
+    "finnish.lng": "a7c7bb8ecc0aafc8bd94e91b38d26318991eb870694912990a8403c0b90b69ed",
+    "french.lng": "a7cbd07816e980fd3e65b9f031f2810d1c6e47fb8c1236e1a1d909f2d888173d",
+    "frisian.lng": "b9f3afffdc9289d87970e24fca5f0c34d1a7a10747b907ffd16845f95365e43f",
+    "gaelic.lng": "81c7d23d9403efa89e050efbf1c56c7044dce370d57e110705bd64893eb32e4a",
+    "galician.lng": "9e7d789d0dfb892f5a85a153775657498f2866df469ec7f0ccc164f5bd2612eb",
+    "german.lng": "1ecfbb4fd4c03b232167e249d7df0a38547e06461c3a133753a2acc6a94507af",
+    "greek.lng": "cf3a586124b8e97ec71629849958f8028c36adea7312c073b9015d7e63daf330",
+    "hebrew.lng": "fcc077635643dff7f77cd5c6ec048b28ec7878f76e086aed7212d4328977bfe2",
+    "hindi.lng": "15a164268dd2233cb4f6e3e7c68d3d92497d16a1796ee627b5c69285ed40a9c7",
+    "hungarian.lng": "d8711f95c937638d35a6de84cb85cdcc240e7b019f4b9862d98489f1318dcc6d",
+    "icelandic.lng": "ed48626e29f146f098846ededecb48fa00fa13540eeedfa1dbdef4364baec093",
+    "ido.lng": "9b6d9d5c0329a33839cda5250525f045c209b2b972fe6811c5b2c690353072ec",
+    "indonesian.lng": "3f6c2e33adc99ff8cb00831ffe400c83ba2722128b682a15a4b5c49e9688a728",
+    "irish.lng": "a0eb0252f5e1a31addaf2d2561c54a1098ab58cb9523bd0ff19b16f77e514c1f",
+    "italian.lng": "b3d7716df5b2b3b28df67ac5c5e16fd9ad66f103a7de801e43012de4b63c857a",
+    "japanese.lng": "afc1aa0e3d579440e02c5af5dac6425afd62809c9e9a1c5e3d3dc9f532679404",
+    "korean.lng": "b7f2fe4644b98348dfde555af2c59204728f9fcbe342cb4f449bb049cdc5d172",
+    "latin.lng": "33773bd2970ffb1bb8f646d46da1b2f7f3215e22357c6a132a7319c3b9a6a3fb",
+    "latvian.lng": "3c39be229c6a62ec426486e85b12cde1aa4a948fe7abb34389716d5339f2f261",
+    "lithuanian.lng": "b9ef7388f320eadf627384aaad8ec046a1c28d12d2c96e1851e208e33add76d3",
+    "luxembourgish.lng": "1f9a03971f52f32943845263961233ef3d82867429c7ac1b3901014e21316df9",
+    "macedonian.lng": "666320b7b806086a5e6d9941ac89d7be4136357cc82413f8c82ce834973a7400",
+    "malay.lng": "52ccc103939c739c40f42231d4bc73877b41017691854f7810a688565ff6cc53",
+    "maltese.lng": "95bb0e236c4a31ef18e0e231f3f863ace1e9a416f5d74f008e35c1fb8262987a",
+    "maori.lng": "d633ccfc32be04b74eac1f82d7dd1d9ada89da233baeb649353551541ecddd63",
+    "marathi.lng": "4d2ea58316234aa3a667c2966531b7d53e172ce4b5bb9274baccbb8202970e42",
+    "norwegian_bokmal.lng": "951536d0d3040b9e99da2e94024b7bcc4a01a6de41ac88e63f783d23690bef67",
+    "norwegian_nynorsk.lng": "8389a06ee53dcc9e5ab9a6bf98e7996df232edd83916964fe1039dd2a710a0ed",
+    "persian.lng": "6d92c623c6d716a661541f106007b19d1a9fc652474d4a20e0a0fe4a997681a4",
+    "polish.lng": "c215fb4ff0b503a71e3b7e8102dbf3628cfa9ba2dd90b455fad84cbab3a3a4e1",
+    "portuguese.lng": "cce343486370f8e590da10852e7813cba8b2c289a4ef65944eed9527ace210e6",
+    "romanian.lng": "62f2481cf5a64b9ffb3425851b9899184028355a6995bd0ef20cac2291f950a1",
+    "russian.lng": "967e884c40107ae8ec9d09f6e250fd86477fed21817d8f5283ff6f3c2b7f3257",
+    "serbian.lng": "adf569c341acd461045d27325156a6d5aad03a05cc1f4974c236b01cf49cff1d",
+    "simplified_chinese.lng": "add355b3e0caaa3ef20d961b0e6a1d67901478aba571998fc69b025742516e47",
+    "slovak.lng": "0c74f5f7b0110cf5f3807d2e85e43fa9936d7d353549125710a48610ea49dc43",
+    "slovenian.lng": "3185abd5985dea7a76b9e2dbf7446811518fd0f1d1b1067fe21e35c97aded58e",
+    "spanish.lng": "bc9929a2ef0c97cc20df0d11aa8162f2d7fcaf91ec6384b8268638ae9ff11a91",
+    "spanish_MX.lng": "b0a95fac3a503f5be7cefd41cdba571fce53a841c500036496593fb97e26f7e1",
+    "swedish.lng": "2dbf597a3ef05231b0d4529f12e0202bd05052042786ce23219b841f1e9049f7",
+    "tamil.lng": "a7f2b5e58551f9a000b19ddd4567baaa3e6fba260e2335d1d8ea19a6248e1c93",
+    "thai.lng": "e3b70899be57471f3567a62ba5cb45adc0069b5d30177f0f0a15e181449c5f2c",
+    "traditional_chinese.lng": "f8fd5e7fc50bef9bdd84b82c1e093c98336d1c6019d0aeb8712fbcce039216de",
+    "turkish.lng": "b1dd5a8055cb39e19dc505291abdb4cb52fe03fc49e4c740a6addccecc348feb",
+    "ukrainian.lng": "dfcbc7551f03bc2a9b6bff4dae2d0e86f32fc550f3588fe28f560208cca7ba82",
+    "urdu.lng": "9cdfa4dc80f80168ab71d6103544dd462a8b94f5c9f77ba95cfea418637f6f96",
+    "vietnamese.lng": "d4d21812aa6b10022a0832e2ce108175a77f0c054311a7eb989df25a1281f43a",
+    "welsh.lng": "4f8c5b45bdc73cfef9248fa24ff6548e8a4a13fe0a8be4f8a6a95500856746a4"
+  },
+  "host": {
+    "platform": "Windows-11-10.0.26200-SP0",
+    "machine": "AMD64",
+    "cpu": "AMD Ryzen 9 9950X 16-Core Processor"
+  },
+  "settings": {
+    "distribution_pax": 2,
+    "passenger_od_assignment": true,
+    "passenger_journey_routing": true,
+    "passenger_journey_periodic": true,
+    "recalc_interval": 8,
+    "recalc_time": 32
+  },
+  "budgets": {
+    "work": 65536,
+    "labels": 8192,
+    "memory": 8388608
+  },
+  "status": "complete",
+  "lock_owner_pid": 129744
+}

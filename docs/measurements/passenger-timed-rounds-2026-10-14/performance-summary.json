@@ -1,0 +1,424 @@
+{
+  "status": "complete",
+  "groups": {
+    "legacy": {
+      "runs": 2,
+      "mean": {
+        "simulation_ms": 42.62816656494141,
+        "simulation_p95_upper_ms": 61.0,
+        "simulation_p99_upper_ms": 82.5,
+        "journey_ms": 18.122,
+        "process_cpu_seconds": 492.9609375,
+        "queries": 131070,
+        "query_elapsed_us": 121563074,
+        "query_elapsed_us_per_od": 927.4668039978637,
+        "query_cpu_ns": 119953125000,
+        "query_cpu_samples": 131070,
+        "query_cpu_ms_per_od": 0.9151836804760816,
+        "labels": 92489788,
+        "label_attempts": 1586055611,
+        "label_comparisons": 2062786383,
+        "onboard_comparisons": 0,
+        "service_candidates": 57122976,
+        "service_scans": 52297619,
+        "work_stops": 66426,
+        "work_stop_fraction": 0.5067978942549782,
+        "timed_applied_people": 133083,
+        "timed_boarded": 43837,
+        "timed_transferred": 20724,
+        "timed_delivered": 12998,
+        "schedule_boarded": 10,
+        "schedule_delivered": 0,
+        "untimed_boarded": 558057,
+        "untimed_delivered": 229971,
+        "total_delivered": 242969,
+        "peak_working_set": 2088679424,
+        "sampled_peak_private": 2086387712,
+        "round_peak_logical_memory": null,
+        "expired_packet_observations": 48136,
+        "failed_same_service_boarding_checks": 7318
+      },
+      "range": {
+        "simulation_ms": [
+          42.61711865234375,
+          42.63921447753906
+        ],
+        "simulation_p95_upper_ms": [
+          61.0,
+          61.0
+        ],
+        "simulation_p99_upper_ms": [
+          82.0,
+          83.0
+        ],
+        "journey_ms": [
+          18.117,
+          18.127
+        ],
+        "process_cpu_seconds": [
+          489.234375,
+          496.6875
+        ],
+        "queries": [
+          131070,
+          131070
+        ],
+        "query_elapsed_us": [
+          121560357,
+          121565791
+        ],
+        "query_elapsed_us_per_od": [
+          927.4460746166171,
+          927.4875333791103
+        ],
+        "query_cpu_ns": [
+          119640625000,
+          120265625000
+        ],
+        "query_cpu_samples": [
+          131070,
+          131070
+        ],
+        "query_cpu_ms_per_od": [
+          0.9127994583047226,
+          0.9175679026474404
+        ],
+        "labels": [
+          92489788,
+          92489788
+        ],
+        "label_attempts": [
+          1586055611,
+          1586055611
+        ],
+        "label_comparisons": [
+          2062786383,
+          2062786383
+        ],
+        "onboard_comparisons": [
+          0,
+          0
+        ],
+        "service_candidates": [
+          57122976,
+          57122976
+        ],
+        "service_scans": [
+          52297619,
+          52297619
+        ],
+        "work_stops": [
+          66426,
+          66426
+        ],
+        "work_stop_fraction": [
+          0.5067978942549782,
+          0.5067978942549782
+        ],
+        "timed_applied_people": [
+          133083,
+          133083
+        ],
+        "timed_boarded": [
+          43837,
+          43837
+        ],
+        "timed_transferred": [
+          20724,
+          20724
+        ],
+        "timed_delivered": [
+          12998,
+          12998
+        ],
+        "schedule_boarded": [
+          10,
+          10
+        ],
+        "schedule_delivered": [
+          0,
+          0
+        ],
+        "untimed_boarded": [
+          558057,
+          558057
+        ],
+        "untimed_delivered": [
+          229971,
+          229971
+        ],
+        "total_delivered": [
+          242969,
+          242969
+        ],
+        "peak_working_set": [
+          2086268928,
+          2091089920
+        ],
+        "sampled_peak_private": [
+          2084384768,
+          2088390656
+        ],
+        "round_peak_logical_memory": null,
+        "expired_packet_observations": [
+          48136,
+          48136
+        ],
+        "failed_same_service_boarding_checks": [
+          7318,
+          7318
+        ]
+      },
+      "save_hashes": [
+        "fedfac940d5af7d94baabc870ca6af2b140002d6bd51b8a641402c2c1c0cd758",
+        "fedfac940d5af7d94baabc870ca6af2b140002d6bd51b8a641402c2c1c0cd758"
+      ],
+      "repeat_save_identical": true,
+      "round_outcomes": [
+        {
+          "Found": 0,
+          "Provisional": 0,
+          "BudgetDeferred": 0,
+          "Unreachable": 0,
+          "Indeterminate": 0,
+          "Invalid": 0
+        },
+        {
+          "Found": 0,
+          "Provisional": 0,
+          "BudgetDeferred": 0,
+          "Unreachable": 0,
+          "Indeterminate": 0,
+          "Invalid": 0
+        }
+      ]
+    },
+    "rounds": {
+      "runs": 2,
+      "mean": {
+        "simulation_ms": 50.574236389160156,
+        "simulation_p95_upper_ms": 68.5,
+        "simulation_p99_upper_ms": 83.0,
+        "journey_ms": 26.2405,
+        "process_cpu_seconds": 552.5234375,
+        "queries": 131062,
+        "query_elapsed_us": 175083433,
+        "query_elapsed_us_per_od": 1335.8825059895316,
+        "query_cpu_ns": 173953125000,
+        "query_cpu_samples": 131062,
+        "query_cpu_ms_per_od": 1.327258282339656,
+        "labels": 131964601,
+        "label_attempts": 312959398,
+        "label_comparisons": 487401783,
+        "onboard_comparisons": 258646298,
+        "service_candidates": 58375191,
+        "service_scans": 8034390,
+        "work_stops": 87934,
+        "work_stop_fraction": 0.6709343669408372,
+        "timed_applied_people": 110203,
+        "timed_boarded": 41637,
+        "timed_transferred": 17907,
+        "timed_delivered": 14985,
+        "schedule_boarded": 2,
+        "schedule_delivered": 0,
+        "untimed_boarded": 558307,
+        "untimed_delivered": 227786,
+        "total_delivered": 242771,
+        "peak_working_set": 2091341824,
+        "sampled_peak_private": 2088564736,
+        "round_peak_logical_memory": 4177436,
+        "expired_packet_observations": 37371,
+        "failed_same_service_boarding_checks": 7198
+      },
+      "range": {
+        "simulation_ms": [
+          50.27205224609375,
+          50.87642053222656
+        ],
+        "simulation_p95_upper_ms": [
+          68.0,
+          69.0
+        ],
+        "simulation_p99_upper_ms": [
+          82.0,
+          84.0
+        ],
+        "journey_ms": [
+          26.094,
+          26.387
+        ],
+        "process_cpu_seconds": [
+          550.609375,
+          554.4375
+        ],
+        "queries": [
+          131062,
+          131062
+        ],
+        "query_elapsed_us": [
+          174087285,
+          176079581
+        ],
+        "query_elapsed_us_per_od": [
+          1328.2819200073247,
+          1343.4830919717385
+        ],
+        "query_cpu_ns": [
+          172328125000,
+          175578125000
+        ],
+        "query_cpu_samples": [
+          131062,
+          131062
+        ],
+        "query_cpu_ms_per_od": [
+          1.3148595702797148,
+          1.339656994399597
+        ],
+        "labels": [
+          131964601,
+          131964601
+        ],
+        "label_attempts": [
+          312959398,
+          312959398
+        ],
+        "label_comparisons": [
+          487401783,
+          487401783
+        ],
+        "onboard_comparisons": [
+          258646298,
+          258646298
+        ],
+        "service_candidates": [
+          58375191,
+          58375191
+        ],
+        "service_scans": [
+          8034390,
+          8034390
+        ],
+        "work_stops": [
+          87934,
+          87934
+        ],
+        "work_stop_fraction": [
+          0.6709343669408372,
+          0.6709343669408372
+        ],
+        "timed_applied_people": [
+          110203,
+          110203
+        ],
+        "timed_boarded": [
+          41637,
+          41637
+        ],
+        "timed_transferred": [
+          17907,
+          17907
+        ],
+        "timed_delivered": [
+          14985,
+          14985
+        ],
+        "schedule_boarded": [
+          2,
+          2
+        ],
+        "schedule_delivered": [
+          0,
+          0
+        ],
+        "untimed_boarded": [
+          558307,
+          558307
+        ],
+        "untimed_delivered": [
+          227786,
+          227786
+        ],
+        "total_delivered": [
+          242771,
+          242771
+        ],
+        "peak_working_set": [
+          2088513536,
+          2094170112
+        ],
+        "sampled_peak_private": [
+          2085908480,
+          2091220992
+        ],
+        "round_peak_logical_memory": [
+          4177436,
+          4177436
+        ],
+        "expired_packet_observations": [
+          37371,
+          37371
+        ],
+        "failed_same_service_boarding_checks": [
+          7198,
+          7198
+        ]
+      },
+      "save_hashes": [
+        "b2b16c223d30d74df81c912ab90f41922c077668696d8f8bb5d3f82aead35c88",
+        "b2b16c223d30d74df81c912ab90f41922c077668696d8f8bb5d3f82aead35c88"
+      ],
+      "repeat_save_identical": true,
+      "round_outcomes": [
+        {
+          "Found": 0,
+          "Provisional": 38566,
+          "BudgetDeferred": 83819,
+          "Unreachable": 0,
+          "Indeterminate": 8677,
+          "Invalid": 0
+        },
+        {
+          "Found": 0,
+          "Provisional": 38566,
+          "BudgetDeferred": 83819,
+          "Unreachable": 0,
+          "Indeterminate": 8677,
+          "Invalid": 0
+        }
+      ]
+    }
+  },
+  "relative_changes": {
+    "simulation_ms": 0.18640421262578566,
+    "simulation_p95_upper_ms": 0.12295081967213117,
+    "simulation_p99_upper_ms": 0.0060606060606061,
+    "journey_ms": 0.4479913916786227,
+    "process_cpu_seconds": 0.12082600358167328,
+    "queries": -6.103608758678547e-05,
+    "query_elapsed_us": 0.44026822651753617,
+    "query_elapsed_us_per_od": 0.4403561402210667,
+    "query_cpu_ns": 0.45017584994138327,
+    "query_cpu_samples": -6.103608758678547e-05,
+    "query_cpu_ms_per_od": 0.450264368404397,
+    "labels": 0.4268018540598233,
+    "label_attempts": -0.8026806904944016,
+    "label_comparisons": -0.7637167924818515,
+    "service_candidates": 0.021921389389796486,
+    "service_scans": -0.8463717822411763,
+    "work_stops": 0.323788877849035,
+    "work_stop_fraction": 0.3238696816748794,
+    "timed_applied_people": -0.1719227850288917,
+    "timed_boarded": -0.050185916007026043,
+    "timed_transferred": -0.1359293572669369,
+    "timed_delivered": 0.15286967225727044,
+    "schedule_boarded": -0.8,
+    "untimed_boarded": 0.00044798291213976604,
+    "untimed_delivered": -0.009501197977136222,
+    "total_delivered": -0.0008149187756463228,
+    "peak_working_set": 0.0012746810110770834,
+    "sampled_peak_private": 0.0010434417282456643,
+    "expired_packet_observations": -0.22363719461525677,
+    "failed_same_service_boarding_checks": -0.016397922929762276
+  }
+}

@@ -1,0 +1,104 @@
+{
+  "joined_clients": 2,
+  "backend": "periodic",
+  "binary": "openttd-mp-console.exe",
+  "rounds": true,
+  "input_save": "partition-quality-result.sav",
+  "fixture": false,
+  "input_save_sha256": "22bcaf53b98366b8ffbd82ffea04cc2eb213c7e33d0682c6164664e9f252a026",
+  "binary_sha256": "e4426285861f5ab4236355a426ecb71beb8b93dfb9556b424f5e6c0ea055864b",
+  "detected_sync_failure": false,
+  "client_exit_codes": [
+    null,
+    null
+  ],
+  "server_state_ticks": [
+    "3176545999",
+    "3176546174",
+    "3176547014",
+    "3176547018"
+  ],
+  "client_state_ticks": {
+    "client-initial": [
+      "3176547014"
+    ],
+    "client-late": [
+      "3176547014"
+    ]
+  },
+  "common_checkpoint_ticks": [
+    "3176547014"
+  ],
+  "single_core_clients": false,
+  "affinity": {
+    "client-initial": {
+      "mask": 4294967295,
+      "applied": false,
+      "restricted": false
+    },
+    "client-late": {
+      "mask": 4294967295,
+      "applied": false,
+      "restricted": false
+    }
+  },
+  "sync_frequency": 1,
+  "cpu_mode": "unrestricted",
+  "timeout_ticks": 3000,
+  "late_join_delay_seconds": 10.0,
+  "late_join_observation_seconds": 20.0,
+  "desync_reports": [],
+  "connected_at_checkpoint": [
+    [
+      "1",
+      "periodic-server"
+    ],
+    [
+      "2",
+      "periodic-client-initial"
+    ],
+    [
+      "3",
+      "periodic-client-late"
+    ]
+  ],
+  "client_ack_frames": {
+    "client-initial": [
+      181,
+      256,
+      331,
+      406,
+      481,
+      556,
+      631,
+      706,
+      781,
+      856,
+      931,
+      1006,
+      1081,
+      1156,
+      1231,
+      1308,
+      1383,
+      1458
+    ],
+    "client-late": [
+      508,
+      583,
+      658,
+      733,
+      810,
+      885,
+      960,
+      1035,
+      1110,
+      1185,
+      1260,
+      1335,
+      1410,
+      1485
+    ]
+  },
+  "loopback_address": "127.0.0.1:17492"
+}
