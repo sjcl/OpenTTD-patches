@@ -50,13 +50,16 @@ namespace {
 			this->orders = other->orders; this->AddToShared(other);
 			this->cargo_type = PAX; this->cargo_cap = 100; this->direction = Direction::NE; this->LoadAt(0);
 		}
+		~PeriodicTrain() { for (Station *station : Station::Iterate()) std::erase(station->loading_vehicles, this); }
 		bool IsPrimaryVehicle() const override { return true; }
 		void LoadAt(VehicleOrderID index)
 		{
+			for (Station *station : Station::Iterate()) std::erase(station->loading_vehicles, this);
 			this->cur_real_order_index = this->cur_implicit_order_index = index;
 			this->cur_timetable_order_index = INVALID_VEH_ORDER_ID;
 			this->last_station_visited = this->GetOrder(index)->GetDestination().ToStationID();
 			this->current_order.MakeLoading(false); this->current_order_time = 0;
+			Station::Get(this->last_station_visited)->loading_vehicles.push_back(this);
 		}
 	};
 	struct Fixture {
@@ -87,6 +90,201 @@ namespace {
 			auto *packet = CargoPacket::Create(count, 0, A, TileIndex{0}, Money{0}); REQUIRE(packet->SetPassengerDestination(PAX, D)); return packet;
 		}
 	};
+}
+
+namespace {
+	void SameDeparturePlan(const PassengerPeriodicPlan &a, const PassengerPeriodicPlan &b)
+	{
+		CHECK(a.ride == b.ride); CHECK(a.route == b.route); CHECK(a.arrival == b.arrival); CHECK(a.cost == b.cost);
+		CHECK(a.transfers == b.transfers); CHECK(a.deferred == b.deferred); CHECK(a.reason == b.reason);
+		CHECK(a.work == b.work); CHECK(a.memory == b.memory); CHECK(a.labels == b.labels); CHECK(a.candidates == b.candidates);
+		CHECK(a.observations == b.observations);
+	}
+
+	std::optional<StateTicks> ScannedDeparture(const PassengerPeriodicService &service, CargoType cargo, int64_t offset, StateTicks ready, std::span<const VehicleID> excluded)
+	{
+		std::optional<StateTicks> result;
+		for (const auto &v : service.vehicles) {
+			if (!v.phase_known || !v.capacity[cargo] || std::binary_search(excluded.begin(), excluded.end(), v.id)) continue;
+			auto next = PassengerPeriodicTimetable::NextDeparture(v.base, offset, service.timetable.period, ready);
+			if (next && (!result || *next < *result)) result = next;
+		}
+		return result;
+	}
+}
+
+TEST_CASE("Departure index respects first starts duplicate phases cargo and signed tick boundaries", "[passenger][periodic][departure-index][determinism]")
+{
+	uint64_t seed = 1729;
+	for (size_t fleet : {1, 2, 40, 150}) for (int64_t period : {int64_t{1}, int64_t{220}, int64_t{1} << 40}) {
+		PassengerPeriodicService service; service.incarnation = 7; service.generation = 9; service.timetable.period = period;
+		for (size_t i = 0; i < fleet; ++i) {
+			seed = seed * 6364136223846793005ULL + 1;
+			PassengerPeriodicVehicle v; v.id = VehicleID{static_cast<uint32_t>(i)};
+			v.base = StateTicks{int64_t(seed % 200000) - 100000};
+			if (i % 7 == 0) v.base = StateTicks{INT64_MIN};
+			if (i % 11 == 0) v.base = StateTicks{INT64_MAX};
+			if (i % 3 == 0 && i > 0) v.base = service.vehicles.front().base;
+			v.phase_known = i % 9 != 8; v.capacity[0] = i % 5 ? 100 : 0; v.capacity[1] = i % 4 ? 0 : 50;
+			service.vehicles.push_back(v);
+		}
+		for (CargoType cargo : {CargoType{0}, CargoType{1}}) {
+			PassengerDepartureIndex index(service, cargo); CHECK(index.Matches(service)); CHECK(index.Bytes() <= PassengerDepartureIndex::Envelope(fleet));
+			for (int64_t offset : {int64_t{0}, int64_t{1}, period, INT64_MAX}) {
+				for (int64_t ready : {INT64_MIN, INT64_MIN + 1, int64_t{-100001}, int64_t{-1}, int64_t{0}, int64_t{100001}, INT64_MAX - period, INT64_MAX}) {
+					for (int exclusions = 0; exclusions < 3; ++exclusions) {
+						std::vector<VehicleID> excluded;
+						for (size_t i = 0; i < fleet; ++i) if (exclusions == 2 || (exclusions == 1 && i % 2 == 0)) excluded.push_back(VehicleID{static_cast<uint32_t>(i)});
+						uint64_t calculations = 0;
+						CHECK(index.Next(offset, StateTicks{ready}, excluded, calculations) == ScannedDeparture(service, cargo, offset, StateTicks{ready}, excluded));
+						CHECK(calculations <= 2);
+					}
+				}
+			}
+		}
+	}
+	/* This would depart at 110 with remainder-only indexing, but the only
+	 * vehicle at that remainder first starts at 1000. The active other wins. */
+	PassengerPeriodicService s; s.timetable.period = 100;
+	PassengerPeriodicVehicle future, active; future.id = VehicleID{0}; active.id = VehicleID{1};
+	future.base = StateTicks{1000}; active.base = StateTicks{20}; future.phase_known = active.phase_known = true;
+	future.capacity[0] = active.capacity[0] = 100; s.vehicles = {future, active};
+	PassengerDepartureIndex index(s, CargoType{0}); uint64_t calculations = 0;
+	CHECK(index.Next(10, StateTicks{101}, {}, calculations) == StateTicks{130});
+}
+
+TEST_CASE("Indexed and scanned plans match every work boundary for physical fleets", "[passenger][periodic][departure-index][determinism][save]")
+{
+	Fixture f; size_t count = GENERATE(1, 2, 40, 150);
+	auto *first = f.Train({Stop(A), Stop(B), Stop(A), Stop(D)});
+	for (size_t i = 1; i < count; ++i) {
+		auto *v = Vehicle::Create<PeriodicTrain>(first); v->LoadAt(static_cast<VehicleOrderID>(i % 4));
+		v->current_order_time = static_cast<uint32_t>(i % 20);
+		if (i % 7 == 0) v->current_order.Free();
+		if (i % 11 == 0) v->cargo_cap = 0;
+	}
+	SECTION("Repeated occurrences") {}
+	SECTION("NoLoad NoUnload and forced interchange") {
+		first->GetOrder(1)->SetUnloadType(OrderUnloadType::Transfer);
+		first->GetOrder(2)->SetLoadType(OrderLoadType::NoLoad);
+		first->GetOrder(2)->SetUnloadType(OrderUnloadType::NoUnload);
+		f.Train({Stop(B), Stop(D)});
+	}
+	SECTION("Depot without Wait and waypoint preserve the cycle") {
+		Order depot; depot.MakeGoToDepot(DepotID{0}, {OrderDepotTypeFlag::PartOfOrders}); depot.SetTravelTime(20); depot.SetTravelTimetabled(true);
+		first->GetOrder(1)->AssignOrder(depot);
+		Order waypoint; waypoint.MakeGoToWaypoint(B); waypoint.SetTravelTime(20); waypoint.SetTravelTimetabled(true);
+		first->GetOrder(2)->AssignOrder(waypoint);
+		for (auto *v = first; v != nullptr; v = static_cast<PeriodicTrain *>(v->NextShared())) v->LoadAt(0);
+	}
+	auto &db = f.Build(); auto wire = db.Save();
+	PassengerServiceDatabase scanned, joined;
+	REQUIRE(scanned.Load(wire)); scanned.FinishLoad(true); scanned.SetDepartureIndexEnabled(false);
+	REQUIRE(joined.Load(wire)); joined.FinishLoad(true);
+	for (size_t work = 0; work < 700; ++work) {
+		PassengerJourneyLimits limits; limits.work = work;
+		StateTicks ready = NOW + int64_t(work % 13);
+		auto old = scanned.Plan(PAX, A, D, ready, limits);
+		SameDeparturePlan(old, db.Plan(PAX, A, D, ready, limits));
+		SameDeparturePlan(old, db.Plan(PAX, A, D, ready, limits));
+		joined.ClearDepartureIndices(); SameDeparturePlan(old, joined.Plan(PAX, A, D, ready, limits));
+	}
+	CHECK(db.GetDiagnostic().departure_index_hits > 0); CHECK(db.GetDiagnostic().departure_index_fallbacks > 0);
+	CHECK(db.GetDiagnostic().vehicle_candidates == 2 * scanned.GetDiagnostic().vehicle_candidates);
+	CHECK(db.GetDiagnostic().next_departures == 2 * scanned.GetDiagnostic().next_departures);
+	CHECK(db.Save() == wire); CHECK(joined.Save() == wire); CHECK(scanned.Save() == wire);
+}
+
+TEST_CASE("Live dwells replace indexed phases even after scheduled departure and for future queries", "[passenger][periodic][departure-index][determinism]")
+{
+	Fixture f; auto *train = f.Train({Stop(A), Stop(D)});
+	for (size_t i = 1; i < 40; ++i) { auto *v = Vehicle::Create<PeriodicTrain>(train); v->LoadAt(1); }
+	auto &db = f.Build(); auto wire = db.Save();
+	PassengerServiceDatabase scanned; REQUIRE(scanned.Load(wire)); scanned.FinishLoad(true); scanned.SetDepartureIndexEnabled(false);
+	_state_ticks += 40; train->current_order_time = 40;
+	SECTION("Delayed loading") {}
+	SECTION("Stopped") { train->vehstatus.Set(VehState::Stopped); }
+	SECTION("Crashed") { train->vehstatus.Set(VehState::Crashed); }
+	SECTION("Loading advance") { train->current_order.MakeLoadingAdvance(A); }
+	SECTION("Dispatch flag") { train->vehicle_flags.Set(VehicleFlag::ScheduledDispatch); }
+	SECTION("Implicit occurrence") { train->cur_implicit_order_index = 1; }
+	SECTION("Timetable occurrence") { train->cur_timetable_order_index = 1; }
+	SECTION("Already departed") { train->current_order.MakeLeaveStation(); Station::Get(A)->loading_vehicles.clear(); }
+	for (int64_t delay : {0, 1, 9, 10, 11, 219, 220, 221, 10000}) SameDeparturePlan(scanned.Plan(PAX, A, D, _state_ticks + delay), db.Plan(PAX, A, D, _state_ticks + delay));
+	CHECK(db.Save() == wire);
+}
+
+TEST_CASE("Departure indices follow publication reuse rebasing and cold peers", "[passenger][periodic][departure-index][determinism][save]")
+{
+	Fixture f; auto *v = f.Train({Stop(A), Stop(D)}); auto &db = f.Build();
+	db.Plan(PAX, A, D, NOW); auto builds = db.GetDiagnostic().departure_index_builds;
+	auto old_generation = db.Get(v->orders->index)->generation;
+	v->GetOrder(1)->SetTravelTime(200); db.TimetableChanged(v->orders->index);
+	db.Plan(PAX, A, D, NOW); CHECK(db.GetDiagnostic().departure_index_builds == builds); CHECK(db.Get(v->orders->index)->generation == old_generation);
+	auto queued = db.Save(); PassengerServiceDatabase peer; REQUIRE(peer.Load(queued)); peer.FinishLoad(true); peer.SetDepartureIndexEnabled(false);
+	SameDeparturePlan(peer.Plan(PAX, A, D, NOW), db.Plan(PAX, A, D, NOW));
+	_state_ticks += PassengerServiceDatabase::TIMETABLE_EPOCH;
+	for (size_t i = 0; i < 128 && (db.IsBuilding() || peer.IsBuilding()); ++i) { db.Tick(); peer.Tick(); CHECK(db.Save() == peer.Save()); }
+	SameDeparturePlan(peer.Plan(PAX, A, D, _state_ticks), db.Plan(PAX, A, D, _state_ticks)); CHECK(db.GetDiagnostic().departure_index_builds > builds);
+	StateTicksDelta delta{-100000}; db.ShiftTicks(delta); peer.ShiftTicks(delta); _state_ticks += delta;
+	CHECK(db.GetDiagnostic().departure_index_bytes == 0);
+	SameDeparturePlan(peer.Plan(PAX, A, D, _state_ticks), db.Plan(PAX, A, D, _state_ticks));
+	OrderListID id = v->orders->index; VehicleID vehicle_id = v->index;
+	db.Invalidate(id); v->orders->FreeChain(); v->orders = nullptr;
+	for (Station *station : Station::Iterate()) std::erase(station->loading_vehicles, v); delete v;
+	auto *replacement = f.Train({Stop(A, 100, 20), Stop(D, 100, 20)});
+	CHECK(replacement->index == vehicle_id); CHECK(replacement->orders->index == id);
+	f.PublishUpdates(db);
+	peer.SetDepartureIndexEnabled(false); REQUIRE(peer.Load(db.Save())); peer.FinishLoad(true);
+	SameDeparturePlan(peer.Plan(PAX, A, D, _state_ticks), db.Plan(PAX, A, D, _state_ticks));
+	CHECK(peer.GetDiagnostic().departure_index_hits == 0); CHECK(db.GetDiagnostic().departure_index_hits > 0);
+}
+
+TEST_CASE("Dispatch slot scans preserve each partial work prefix", "[passenger][periodic][departure-index][dispatch][determinism]")
+{
+	Fixture f; auto *train = f.Train({Stop(A, 20, 0), Stop(D, 20, 0)});
+	train->vehicle_flags.Set(VehicleFlag::ScheduledDispatch); train->GetOrder(0)->SetDispatchScheduleIndex(0);
+	train->orders->GetScheduledDispatchScheduleSet().emplace_back(); auto &schedule = train->orders->GetDispatchScheduleByIndex(0);
+	schedule.SetScheduledDispatchStartTick(NOW); schedule.SetScheduledDispatchDuration(200);
+	for (uint32_t offset : {10, 60, 110, 160}) schedule.GetScheduledDispatchMutable().push_back({offset, 0});
+	auto &db = f.Build(); REQUIRE(db.Get(train->orders->index)->dispatch_period > 0);
+	PassengerServiceDatabase scanned; REQUIRE(scanned.Load(db.Save())); scanned.FinishLoad(true); scanned.SetDepartureIndexEnabled(false);
+	for (size_t work = 0; work < 100; ++work) {
+		PassengerJourneyLimits limits; limits.work = work;
+		SameDeparturePlan(scanned.Plan(PAX, A, D, NOW + 11, limits), db.Plan(PAX, A, D, NOW + 11, limits));
+	}
+	CHECK(db.GetDiagnostic().departure_index_hits == 0); CHECK(db.GetDiagnostic().departure_index_fallbacks > 0);
+}
+
+TEST_CASE("Cargo-specific departure rows keep capacity and unknown observations separate", "[passenger][periodic][departure-index][determinism]")
+{
+	Fixture f; CargoType second{1};
+	AutoRestoreBackup classes{CargoSpec::Get(second)->classes, CargoClasses{CargoClass::Passengers}};
+	auto *first = f.Train({Stop(A), Stop(D)});
+	for (size_t i = 1; i < 40; ++i) {
+		auto *v = Vehicle::Create<PeriodicTrain>(first); v->LoadAt(1);
+		v->cargo_type = i % 2 ? PAX : second; v->cargo_cap = i % 5 ? 10 : 0;
+		if (i % 7 == 0) v->current_order.Free();
+	}
+	auto &db = f.Build(); PassengerServiceDatabase scanned; REQUIRE(scanned.Load(db.Save())); scanned.FinishLoad(true); scanned.SetDepartureIndexEnabled(false);
+	for (CargoType cargo : {PAX, second}) for (int64_t offset = 0; offset < 500; ++offset) SameDeparturePlan(scanned.Plan(cargo, A, D, NOW + offset), db.Plan(cargo, A, D, NOW + offset));
+	CHECK(db.GetDiagnostic().departure_index_hits > 0);
+}
+
+TEST_CASE("Departure successor trees agree with dense reference queries", "[passenger][periodic][departure-index][determinism]")
+{
+	PassengerPeriodicService service; service.timetable.period = 113;
+	for (uint32_t i = 0; i < 150; ++i) {
+		PassengerPeriodicVehicle v; v.id = VehicleID{i}; v.base = StateTicks{int64_t(i * 7919 % 3001) - 1500};
+		v.phase_known = true; v.capacity[0] = 100; service.vehicles.push_back(v);
+	}
+	PassengerDepartureIndex index(service, CargoType{0});
+	for (int64_t ready = -1700; ready < 1800; ++ready) {
+		std::vector<VehicleID> excluded;
+		for (uint32_t i = 0; i < 150; ++i) if ((i + uint64_t(ready)) % 17 == 0) excluded.push_back(VehicleID{i});
+		uint64_t calculations = 0; int64_t offset = (ready + 1700) % 114;
+		CHECK(index.Next(offset, StateTicks{ready}, excluded, calculations) == ScannedDeparture(service, CargoType{0}, offset, StateTicks{ready}, excluded));
+	}
 }
 
 TEST_CASE("Periodic round trips repeat without horizon expansion", "[passenger][periodic]")
@@ -380,7 +578,7 @@ TEST_CASE("Periodic long shared lines preserve their direct ride within a bounde
 
 TEST_CASE("Expired periodic intents choose an alternative while a delayed live ride remains usable", "[passenger][periodic][active]")
 {
-	Fixture f; auto *original = f.Train({Stop(A, 900, 0), Stop(D, 100, 0)}); auto *express = f.Train({Stop(A, 990, 200), Stop(D, 10, 0)}); f.Build();
+	Fixture f; auto *original = f.Train({Stop(A, 900, 0), Stop(D, 100, 0)}); f.Train({Stop(A, 990, 200), Stop(D, 10, 0)}); f.Build();
 	auto *packet = f.Packet(); PassengerJourneyActiveContext context(nullptr, A); REQUIRE(context.PlanWaiting(*packet, PAX, D));
 	CHECK(packet->GetPassengerJourney().service == original->orders->index);
 	Station::Get(A)->goods[PAX].CreateData().cargo.Append(packet, StationID::Invalid()); _state_ticks = NOW + 190; BeginPassengerJourneyTick();
@@ -389,9 +587,9 @@ TEST_CASE("Expired periodic intents choose an alternative while a delayed live r
 		 * catchable live departure, even if its published time has passed. */
 		original->cur_real_order_index = original->cur_implicit_order_index = 1;
 		original->current_order = *original->GetOrder(1);
-		Station::Get(A)->loading_vehicles.push_back(express);
+		std::erase(Station::Get(A)->loading_vehicles, original);
 	}
-	SECTION("Actual delayed original vehicle") { Station::Get(A)->loading_vehicles.push_back(original); }
+	SECTION("Actual delayed original vehicle") {}
 	Station::Get(A)->goods[PAX].data->cargo.RoutePassengerJourneys(PAX, A);
 	REQUIRE(packet->GetPassengerRoutingMode() == PassengerRoutingMode::Journey);
 	CHECK(packet->GetPassengerJourney().service == Station::Get(A)->loading_vehicles.front()->orders->index);

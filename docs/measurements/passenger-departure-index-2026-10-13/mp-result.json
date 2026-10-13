@@ -1,0 +1,31 @@
+{
+  "joined_clients": 2,
+  "backend": "periodic",
+  "binary": "openttd-console.exe",
+  "input_save": "indexed-result.sav",
+  "fixture": false,
+  "detected_sync_failure": false,
+  "client_exit_codes": [
+    null,
+    null
+  ],
+  "server_state_ticks": [
+    "3176553679",
+    "3176554634"
+  ],
+  "single_core_clients": true,
+  "affinity": {
+    "client-initial": {
+      "mask": 1,
+      "applied": true
+    },
+    "client-late": {
+      "mask": 1,
+      "applied": true
+    }
+  },
+  "sync_frequency": 1,
+  "loopback_address": "127.0.0.1:17523",
+  "client_departure_index_disabled": true,
+  "client_policy_cache_disabled": true
+}

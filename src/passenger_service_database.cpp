@@ -28,6 +28,23 @@ namespace {
 		return true;
 	}
 
+	/** A live dwell replaces (rather than supplements) this vehicle's static
+	 * phase, including for future-ready queries. These are the original scan's
+	 * safety conditions; production loading states belong to loading_vehicles. */
+	std::optional<StateTicks> LoadingBase(const Vehicle *live, const PassengerPeriodicService &service, const PassengerPeriodicStop &board)
+	{
+		if (live == nullptr || live->orders == nullptr || live->orders->index != service.id ||
+				live->orders->GetCargoDistRouteGeneration() != service.incarnation ||
+				live->vehstatus.Any({VehState::Stopped, VehState::Crashed}) || live->vehicle_flags.Test(VehicleFlag::ScheduledDispatch) ||
+				!live->current_order.IsAnyLoadingType() || live->current_order.IsType(OT_LOADING_ADVANCE) ||
+				live->cur_real_order_index != board.order || live->cur_implicit_order_index != board.order || live->last_station_visited != board.station ||
+				(live->cur_timetable_order_index != INVALID_VEH_ORDER_ID && live->cur_timetable_order_index != board.order)) return {};
+		int64_t departure_now = _state_ticks.base();
+		int64_t remaining = std::max<int64_t>(0, board.departure - board.arrival - live->current_order_time);
+		if (!AddTicks(departure_now, remaining) || departure_now < INT64_MIN + board.departure) return {};
+		return StateTicks{departure_now - board.departure};
+	}
+
 	/** The depot controller advances the order on entry unless a wait is declared.
 	 * Its departure/acceleration belongs to the next order's recorded travel. */
 	std::optional<int64_t> TimetableEventWait(const Order &order, PassengerPeriodicTimetable::Failure *failure = nullptr)
@@ -142,6 +159,7 @@ void ObservePassengerPeriodicVehicle(const Vehicle *vehicle)
 
 void PassengerServiceDatabase::ShiftTicks(StateTicksDelta delta)
 {
+	this->ClearDepartureIndices(); // Remainders and first-circuit bounds both move.
 	auto shift = [&](auto &network) {
 		for (auto &[id, service] : network) {
 			service.dispatch_base += delta;
@@ -212,6 +230,35 @@ std::optional<StateTicks> PassengerPeriodicTimetable::NextDeparture(StateTicks b
 }
 
 void PassengerServiceDatabase::ClearPolicies() { this->ClearPolicies(PassengerDatabaseDiagnostic::ClearReason::Explicit); }
+
+void PassengerServiceDatabase::ClearDepartureIndices()
+{
+	this->departure_indices.clear(); this->departure_index_bytes = 0;
+}
+
+const PassengerDepartureIndex *PassengerServiceDatabase::DepartureIndex(const PassengerPeriodicService &service, CargoType cargo)
+{
+	if (!this->departure_index_enabled || service.dispatch_period > 0 || service.timetable.period <= 0) return nullptr;
+	auto key = std::pair{service.id, cargo};
+	auto found = this->departure_indices.find(key);
+	if (found != this->departure_indices.end()) {
+		if (found->second.Matches(service)) return &found->second;
+		this->departure_index_bytes -= found->second.Bytes(); this->departure_indices.erase(found);
+	}
+	/* Check a conservative allocation envelope before building. Optional
+	 * residency never spends simulation work or changes query memory admission.
+	 * At the local cache ceiling use the original scan. */
+	if (PassengerDepartureIndex::Envelope(service.vehicles.size()) > DEPARTURE_INDEX_BYTES - this->departure_index_bytes) return nullptr;
+	const auto started = std::chrono::steady_clock::now();
+	auto [it, inserted] = this->departure_indices.try_emplace(key, service, cargo);
+	assert(inserted);
+	this->departure_index_bytes += it->second.Bytes();
+	assert(this->departure_index_bytes <= DEPARTURE_INDEX_BYTES);
+	++this->diagnostic.departure_index_builds;
+	this->diagnostic.departure_index_build_nanoseconds += std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - started).count();
+	this->diagnostic.departure_index_peak_bytes = std::max(this->diagnostic.departure_index_peak_bytes, this->departure_index_bytes);
+	return &it->second;
+}
 void PassengerServiceDatabase::ClearPolicies(PassengerDatabaseDiagnostic::ClearReason reason)
 {
 	++this->diagnostic.policy_clears; ++this->diagnostic.clear_reasons[static_cast<size_t>(reason)];
@@ -269,6 +316,7 @@ void PassengerServiceDatabase::StorePolicy(const PolicyKey &key, PolicyValue val
 
 void PassengerServiceDatabase::Reset()
 {
+	this->ClearDepartureIndices();
 	ClearPassengerOdFallbackCache();
 	this->ClearPolicies(PassengerDatabaseDiagnostic::ClearReason::Reset);
 	this->services.clear(); this->stations.clear(); this->dirty.clear(); this->dirty_since.clear();
@@ -281,6 +329,9 @@ void PassengerServiceDatabase::Reset()
 
 void PassengerServiceDatabase::Remove(OrderListID id)
 {
+	for (auto it = this->departure_indices.lower_bound({id, CargoType{0}}); it != this->departure_indices.end() && it->first.first == id;) {
+		this->departure_index_bytes -= it->second.Bytes(); it = this->departure_indices.erase(it);
+	}
 	auto found = this->services.find(id);
 	if (found == this->services.end()) return;
 	for (const auto &stop : found->second.timetable.stops) {
@@ -774,6 +825,7 @@ PassengerPeriodicPlan PassengerServiceDatabase::Plan(CargoType cargo, StationID 
 		observe(result.reason);
 		++this->diagnostic.outcomes[static_cast<size_t>(result.reason)];
 		for (size_t i = 0; i < result.observations.size(); ++i) this->diagnostic.observations[i] += result.observations[i];
+		this->diagnostic.search_work += result.work;
 		this->diagnostic.query_microseconds += std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - started).count();
 		return result;
 	};
@@ -804,6 +856,7 @@ PassengerPeriodicPlan PassengerServiceDatabase::Plan(CargoType cargo, StationID 
 	if (policy->limited) observe(policy->reason);
 	if (policy->unknown_phase) observe(Reason::UnknownPhase);
 	if (policy->diagnostic_limit != Reason::NoCandidate) observe(policy->diagnostic_limit);
+	const auto forward_started = std::chrono::steady_clock::now();
 	if (!policy->limited && policy->reason != Reason::NoCandidate) {
 		// No timed route in the published generation, independently of dirty work.
 	} else {
@@ -898,42 +951,64 @@ PassengerPeriodicPlan PassengerServiceDatabase::Plan(CargoType cargo, StationID 
 				int64_t earliest = current.time.base();
 				if (current.rides && !AddTicks(earliest, evaluation.minimum_transfer)) { observe(Reason::Evaluation); continue; }
 				std::optional<StateTicks> departure;
-				for (const auto &vehicle : service.vehicles) {
-					if (!spend()) break;
-					if (!vehicle.capacity[cargo]) continue;
-					if (!vehicle.phase_known) { observe(Reason::UnknownPhase); continue; }
-					if (service.dispatch_period > 0) {
-						int64_t offset = board.departure - pattern.stops[service.dispatch_stop].departure;
-						if (offset < 0) offset += pattern.period;
-						for (uint32_t slot : service.dispatch_slots) {
-							if (!spend()) break;
-							int64_t floor = service.dispatch_floor.base();
-							if (!AddTicks(floor, offset)) continue;
+				/* A full scan spends one unit per vehicle, in saved vehicle order.
+				 * Only batch when it finishes STRICTLY below the work limit: equality
+				 * also triggers the original post-scan Work stop. Otherwise preserve
+				 * every partial prefix and dispatch-slot spend with the old loop. */
+				const Station *loading_station = Station::GetIfValid(current.station);
+				const PassengerDepartureIndex *phases = loading_station != nullptr && result.work < limits.work && service.vehicles.size() < limits.work - result.work ? this->DepartureIndex(service, cargo) : nullptr;
+				if (phases != nullptr) {
+					++this->diagnostic.departure_index_hits;
+					result.work += service.vehicles.size(); this->diagnostic.vehicle_candidates += service.vehicles.size();
+					this->diagnostic.next_departures += phases->Known();
+					if (phases->Unknown()) observe(Reason::UnknownPhase);
+					std::vector<VehicleID> loading;
+					for (const Vehicle *live : loading_station->loading_vehicles) {
+						if (Vehicle::GetIfValid(live->index) != live) continue;
+						if (!phases->Contains(live->index)) continue;
+						auto base = LoadingBase(live, service, board);
+						if (!base) continue;
+						loading.push_back(live->index);
+						++this->diagnostic.departure_calculations;
+						auto next = PassengerPeriodicTimetable::NextDeparture(*base, board.departure, pattern.period, StateTicks{earliest});
+						if (next && (!departure || *next < *departure)) departure = next;
+					}
+					std::sort(loading.begin(), loading.end());
+					auto next = phases->Next(board.departure, StateTicks{earliest}, loading, this->diagnostic.departure_calculations);
+					if (next && (!departure || *next < *departure)) departure = next;
+				} else {
+					++this->diagnostic.departure_index_fallbacks;
+					for (const auto &vehicle : service.vehicles) {
+						if (!spend()) break;
+						++this->diagnostic.vehicle_candidates;
+						if (!vehicle.capacity[cargo]) continue;
+						if (!vehicle.phase_known) { observe(Reason::UnknownPhase); continue; }
+						if (service.dispatch_period > 0) {
+							int64_t offset = board.departure - pattern.stops[service.dispatch_stop].departure;
+							if (offset < 0) offset += pattern.period;
+							for (uint32_t slot : service.dispatch_slots) {
+								if (!spend()) break;
+								int64_t floor = service.dispatch_floor.base();
+								if (!AddTicks(floor, offset)) continue;
+								++this->diagnostic.next_departures;
+								++this->diagnostic.departure_calculations;
+								auto next = PassengerPeriodicTimetable::NextDeparture(service.dispatch_base, slot + offset, service.dispatch_period, StateTicks{std::max(earliest, floor)});
+								if (next && (!departure || *next < *departure)) departure = next;
+							}
+						} else {
 							++this->diagnostic.next_departures;
-							auto next = PassengerPeriodicTimetable::NextDeparture(service.dispatch_base, slot + offset, service.dispatch_period, StateTicks{std::max(earliest, floor)});
+							++this->diagnostic.departure_calculations;
+							StateTicks base = vehicle.base;
+							const Vehicle *live = Vehicle::GetIfValid(vehicle.id);
+							/* A published phase must not make an actually loading,
+							 * overdue vehicle wait a whole circuit in a new query. This
+							 * constant-size live observation changes no saved phase or
+							 * cache: use the remaining published dwell at this occurrence.
+							 * Future-ready queries still require the next real cycle. */
+							if (auto loading = LoadingBase(live, service, board)) base = *loading;
+							auto next = PassengerPeriodicTimetable::NextDeparture(base, board.departure, pattern.period, StateTicks{earliest});
 							if (next && (!departure || *next < *departure)) departure = next;
 						}
-					} else {
-						++this->diagnostic.next_departures;
-						StateTicks base = vehicle.base;
-						const Vehicle *live = Vehicle::GetIfValid(vehicle.id);
-						/* A published phase must not make an actually loading,
-						 * overdue vehicle wait a whole circuit in a new query. This
-						 * constant-size live observation changes no saved phase or
-						 * cache: use the remaining published dwell at this occurrence.
-						 * Future-ready queries still require the next real cycle. */
-						if (live != nullptr && live->orders != nullptr && live->orders->index == service.id &&
-								live->orders->GetCargoDistRouteGeneration() == service.incarnation &&
-								!live->vehstatus.Any({VehState::Stopped, VehState::Crashed}) && !live->vehicle_flags.Test(VehicleFlag::ScheduledDispatch) &&
-								live->current_order.IsAnyLoadingType() && !live->current_order.IsType(OT_LOADING_ADVANCE) &&
-								live->cur_real_order_index == board.order && live->cur_implicit_order_index == board.order && live->last_station_visited == board.station &&
-								(live->cur_timetable_order_index == INVALID_VEH_ORDER_ID || live->cur_timetable_order_index == board.order)) {
-							int64_t departure_now = _state_ticks.base();
-							int64_t remaining = std::max<int64_t>(0, board.departure - board.arrival - live->current_order_time);
-							if (AddTicks(departure_now, remaining) && departure_now >= INT64_MIN + board.departure) base = StateTicks{departure_now - board.departure};
-						}
-						auto next = PassengerPeriodicTimetable::NextDeparture(base, board.departure, pattern.period, StateTicks{earliest});
-						if (next && (!departure || *next < *departure)) departure = next;
 					}
 				}
 				if (result.work >= limits.work) { limited(Reason::Work, 0); break; }
@@ -979,6 +1054,7 @@ PassengerPeriodicPlan PassengerServiceDatabase::Plan(CargoType cargo, StationID 
 					result.observations[static_cast<size_t>(Reason::Evaluation)] ? Reason::Evaluation : Reason::NoCandidate;
 		}
 	}
+	this->diagnostic.forward_microseconds += std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - forward_started).count();
 	result.memory = std::max(result.memory, policy->scratch_bytes);
 	if (cached == nullptr) { const size_t bytes = 256 + sizeof(std::pair<StationID, int64_t>) * temporary.lower_bounds.size(); this->StorePolicy(key, std::move(temporary), std::move(dependencies), bytes); }
 	return finish();
@@ -1052,6 +1128,8 @@ PassengerScheduleDiagnostic PassengerServiceDatabase::GetScheduleDiagnostic() co
 PassengerDatabaseDiagnostic PassengerServiceDatabase::GetDiagnostic() const
 {
 	auto d = this->diagnostic;
+	d.departure_index_bytes = this->departure_index_bytes;
+	d.departure_index_peak_bytes = std::max(d.departure_index_peak_bytes, this->departure_index_bytes);
 	d.services = this->services.size(); d.bytes = this->bytes; d.policy_bytes = this->policy_bytes + this->station_revisions.capacity() * sizeof(uint64_t) + 96 * this->recent_policy_builds.size();
 	d.pending = this->dirty.size() + this->build_queue.size() + this->building.size();
 	d.staged = this->building.size(); d.staged_bytes = this->building_bytes; d.published_revision = this->published_revision; d.policy_entries = this->policies.size();
@@ -1318,6 +1396,7 @@ bool PassengerServiceDatabase::Load(std::span<const uint8_t> data)
 	for (const auto &[id, service] : restored.services) { restored.Index(service); restored.TouchStations(service); }
 	restored.restoring = true;
 	restored.policy_cache_enabled = this->policy_cache_enabled; // Local optional preference survives loading; absent from simulation state.
+	restored.departure_index_enabled = this->departure_index_enabled;
 	*this = std::move(restored);
 	return true;
 }

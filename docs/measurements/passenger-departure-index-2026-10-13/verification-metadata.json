@@ -1,0 +1,51 @@
+{
+  "base_commit": "a58d472382f85c63fe9114888d71d7d189c45572",
+  "branch": "perf/passenger-departure-index",
+  "compiler": "MSVC 19.44 x64 Release /MT; assertions ON; LTO OFF",
+  "product_benchmark_option": "OFF",
+  "product_sha256": "5e77ec00f12ebe0e3fd6bde2810deecc9a3c3583f17fec0d15c4565a6313aa0e",
+  "performance_gui_sha256": "42a8e94987e098ee1b74cddbae3fa0f54c18a2598b876472d57405f96a04f5f4",
+  "performance_console_sha256": "401e552a6418a041ed89aeae43fc578c0e34167699939aaec2886d4462ca4c7a",
+  "console_binary_change": "Only PE subsystem field GUI (2) to console (3); identical code",
+  "input_sha256": "14d68c82911b9dcfc5ef7291e9697c5bbd67f44ffcc79d7575a144405edf6390",
+  "original_input_sha256_after": "14d68c82911b9dcfc5ef7291e9697c5bbd67f44ffcc79d7575a144405edf6390",
+  "main_interval": [
+    3176545487,
+    3176553679
+  ],
+  "tick_samples": 8192,
+  "passenger_cases": 328,
+  "passenger_assertions": 1302856,
+  "ctest_total": 541,
+  "ctest_initial_passed": 538,
+  "ctest_retried_passed": 3,
+  "ctest_environment_repair": "Extract OpenGFX and expose baseset/lang in the Release executable search directory for -Q tests",
+  "performance_pairs": 1,
+  "real_map_final_save_identical": true,
+  "real_map_final_save_sha256": "1bae3398586e1abfac6d305d9af825a2d26e76cbc69fc21369d2549f5a61c590",
+  "logical_work_equal": true,
+  "logical_vehicles_equal": true,
+  "logical_departures_equal": true,
+  "outcomes_deferrals_transport_equal": true,
+  "multiplayer_initial_and_late_join_passed": true,
+  "network_binary": "Same performance console binary; private loopback; host indices ON, both clients indices and policies OFF",
+  "network_interval": [
+    3176553679,
+    3176554634
+  ],
+  "post_performance_source_changes": [
+    "Reindent the legacy fallback loop.",
+    "Clarify and reorder diagnostic counter fields and comments.",
+    "Diagnostic peak bytes is at least current residency after reset."
+  ],
+  "routing_changes_after_performance": "None",
+  "source_sha256": {
+    "src/passenger_departure_index.cpp": "5ec1f41baa156b3e061db37aec06d3ecad41fb4359cf94df3bf18b42ecf0e7fd",
+    "src/passenger_departure_index.h": "d3d38c0f582af48a3ba18172b15011dd4eab76506ab4be3685191ee53f4c3557",
+    "src/passenger_service_database.cpp": "8b5debc373a9e966fdafeb7c1988e4bd851165c9f0da69aa332064388d640a55",
+    "src/passenger_service_database.h": "b4a57d6e16da883cc82ee4466c87abd83ada6f2633ab378bbae94fbb8bd3ebee",
+    "src/tests/passenger_service_database.cpp": "42860efa0c4c562c6d34262558d9e527a5a4fff4de2ef7b37d3a1eda361813ba",
+    "src/console_cmds.cpp": "2828f987fe2b86e56c380c2bef4ee41633c2657c5d2031976dfb3d8ae169f710",
+    "src/CMakeLists.txt": "6af68531a12088f7ee2927af8bb83cd934af81a6323c6e6b73523c749630b558"
+  }
+}
