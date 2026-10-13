@@ -1,0 +1,91 @@
+{
+  "label": "baseline-short",
+  "exit_code": 0,
+  "wall_seconds": 67.3941895,
+  "cpu_seconds": 127.671875,
+  "peak_working_set": 1998376960,
+  "sampled_peak_private": 1997570048,
+  "requested_driver_loops": 1500,
+  "input_save": "input.sav",
+  "input_sha256": "14D68C82911B9DCFC5EF7291E9697C5BBD67F44FFCC79D7575A144405EDF6390",
+  "binary_sha256": "12B09CFEDA861848448F5E3DA00A7D11832429C8952DE207EC81B932CA5BBBF7",
+  "sample_ms": 100,
+  "simulation": {
+    "completed_ticks": 1500,
+    "total_us": 53077212,
+    "mean_us": 35384,
+    "max_us": 69272
+  },
+  "tick_histogram": {
+    "simulation_p95_us": 50000,
+    "simulation_p99_us": 55000,
+    "journey_mean_us": 12362,
+    "journey_p95_us": 25000,
+    "journey_p99_us": 28000,
+    "journey_max_us": 29290
+  },
+  "timed": {
+    "boarded": 2656,
+    "transferred": 0,
+    "delivered": 644
+  },
+  "schedule": {},
+  "untimed": {
+    "boarded": 82952,
+    "transferred": 38399,
+    "delivered": 30961
+  },
+  "schedule_routing": {},
+  "periodic": {
+    "services": 837,
+    "timed": 509,
+    "vehicles": 2835,
+    "bytes": 8498064,
+    "policies_bytes": 7712,
+    "pending": 545,
+    "builds": 4028,
+    "work": 15051805,
+    "build_us": 291631,
+    "searches": 24000,
+    "query_us": 13269177,
+    "next_departures": 220301,
+    "policy_hits": 8866,
+    "policy_misses": 15134,
+    "invalidations": 38,
+    "rejected_work": 0,
+    "rejected_memory": 0
+  },
+  "inventory": {
+    "waiting": 212609,
+    "available": 212609,
+    "reserved": 0,
+    "deferred": 92539,
+    "state_ticks": 3176546987,
+    "scaled_ticks": 3010947889
+  },
+  "schedule_inventory": {},
+  "waiting": {
+    "timed": 1653,
+    "CargoDist_or_deferred": 192854,
+    "OD_fallback_or_waiting": 18102
+  },
+  "completed_interchanges": {},
+  "schedule_assisted": {},
+  "initial_tick": 3176545487,
+  "final_tick": 3176546987,
+  "samples": [
+    {
+      "simulation": {
+        "completed_ticks": 1500,
+        "total_us": 53077212,
+        "mean_us": 35384,
+        "max_us": 69272
+      }
+    }
+  ],
+  "stderr": {
+    "sha256": "dad62af6dacbc0865489aa31e4746f98b4a3c73390512acf9b0106ca7388a2c1",
+    "bytes": 2046935,
+    "lines": 19887
+  }
+}

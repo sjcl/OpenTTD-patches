@@ -1,0 +1,29 @@
+Filters: [schedule],[periodic],[multimodal]
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+openttd_test.exe is a Catch v2.13.10 host application.
+Run with -? for options
+
+-------------------------------------------------------------------------------
+Schedule 8000 station network caches OD policies without physical visit
+expansion
+-------------------------------------------------------------------------------
+C:\Users\bebe\.codex\worktrees\b338\OpenTTD-patches\src\tests\passenger_service_database.cpp(653)
+...............................................................................
+
+C:\Users\bebe\.codex\worktrees\b338\OpenTTD-patches\src\tests\passenger_service_database.cpp(663): warning:
+  Schedule 8000-station benchmark: queries=4097; work_per_query=7;
+  total_query_us=4; policy_bytes=1024
+
+-------------------------------------------------------------------------------
+National mixed fleet shares snapshots and keeps graph query and cache bounds
+-------------------------------------------------------------------------------
+C:\Users\bebe\.codex\worktrees\b338\OpenTTD-patches\src\tests\passenger_multimodal.cpp(773)
+...............................................................................
+
+C:\Users\bebe\.codex\worktrees\b338\OpenTTD-patches\src\tests\passenger_multimodal.cpp(801): warning:
+  Mixed national network: stations=2402; trips=480; graph_us=3483; query_us=94;
+  graph_work=86520; query_work=2229; scratch=112640; envelope=14469120
+
+===============================================================================
+All tests passed (19201 assertions in 84 test cases)

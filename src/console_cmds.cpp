@@ -4631,7 +4631,7 @@ static bool ConPassengerServiceCaptureBenchmark(std::span<std::string_view> argv
 /** Test setup on an isolated no-NewGRF map, before clients connect. */
 static bool ConPassengerPeriodicFixture(std::span<std::string_view> argv)
 {
-	if (argv.size() != 1) return false;
+	if (argv.size() != 1 && (argv.size() != 2 || argv[1] != "estimated")) return false;
 	if (_networking) for (const NetworkClientInfo *client : NetworkClientInfo::Iterate()) if (client->client_id != ClientID::Server) return false;
 	Company *fixture_company = DoStartupNewCompany(DSNC_NONE);
 	if (fixture_company == nullptr || Map::SizeX() < 64 || Map::SizeY() < 64) return false;
@@ -4728,6 +4728,11 @@ static bool ConPassengerPeriodicFixture(std::span<std::string_view> argv)
 		if (!packet->SetPassengerDestination(cargo, stops.back())) { delete packet; continue; }
 		origin->goods[cargo].CreateData().cargo.Append(packet, StationID::Invalid());
 		if (v->vehstatus.Test(VehState::Stopped)) CmdStartStopVehicle({DoCommandFlag::Execute}, v->index, false);
+		if (argv.size() == 2) {
+			/* Dispatch enabled without assigned slots keeps the phase uncertified;
+			 * real orders/loaders still run normally. Controlled loopback only. */
+			v->vehicle_flags.Set(VehicleFlag::ScheduledDispatch); v->current_order.Free();
+		}
 		++services; passengers += 50;
 	}
 	IConsolePrint(CC_DEFAULT, "Periodic test fixture: services={}; injected_passengers={}", services, passengers);
@@ -4748,7 +4753,7 @@ static bool ConPassengerJourneyStats(std::span<std::string_view> argv)
 		 * lists, so count each packet there exactly once for the global rates. */
 		std::array<uint64_t, 3> people{}, packets{}, known{};
 		std::array<uint64_t, 3> waiting_modes{};
-		uint64_t available = 0, reserved = 0, deferred = 0;
+		uint64_t available = 0, reserved = 0, deferred = 0, schedule_people = 0, schedule_packets = 0, schedule_waiting = 0;
 		size_t work = 0;
 		bool complete = true;
 		auto inspect = [&](const CargoPacket *packet) {
@@ -4758,6 +4763,7 @@ static bool ConPassengerJourneyStats(std::span<std::string_view> argv)
 			++packets[mode];
 			if (packet->GetPassengerDestination() != StationID::Invalid()) known[mode] += packet->Count();
 			if (packet->IsPassengerJourneyDeferred()) deferred += packet->Count();
+			if (packet->GetPassengerRoutingMode() == PassengerRoutingMode::Journey && IsEstimatedPassengerRide(packet->GetPassengerJourney().kind)) { schedule_people += packet->Count(); ++schedule_packets; }
 			return true;
 		};
 		for (const Station *station : Station::Iterate()) {
@@ -4771,6 +4777,7 @@ static bool ConPassengerJourneyStats(std::span<std::string_view> argv)
 				const auto reserved_modes = CountReservedPassengerRoutingModes(*station, cargo);
 				for (size_t mode = 0; mode < waiting_modes.size(); ++mode) waiting_modes[mode] += available_modes[mode] + reserved_modes[mode];
 				for (StationCargoList::ConstIterator it(list.Packets()->begin()); it != list.Packets()->end(); ++it) {
+					if ((*it)->GetPassengerRoutingMode() == PassengerRoutingMode::Journey && IsEstimatedPassengerRide((*it)->GetPassengerJourney().kind)) schedule_waiting += (*it)->Count();
 					if (!inspect(*it)) break;
 				}
 			}
@@ -4780,13 +4787,20 @@ static bool ConPassengerJourneyStats(std::span<std::string_view> argv)
 			if (++work > 16777216) { complete = false; break; }
 			if (vehicle->cargo_type >= NUM_CARGO || !IsCargoInClass(vehicle->cargo_type, CargoClass::Passengers)) continue;
 			for (const CargoPacket *packet : *vehicle->cargo.Packets()) if (!inspect(packet)) break;
+			uint skip = vehicle->cargo.TotalCount() - vehicle->cargo.ReservedCount();
+			for (const CargoPacket *packet : *vehicle->cargo.Packets()) {
+				uint n = std::min<uint>(skip, packet->Count()); skip -= n;
+				if (packet->GetPassengerRoutingMode() == PassengerRoutingMode::Journey && IsEstimatedPassengerRide(packet->GetPassengerJourney().kind)) schedule_waiting += packet->Count() - n;
+			}
 			if (!complete) break;
 		}
 		IConsolePrint(CC_DEFAULT, "Passenger inventory: {}; waiting={} people (available={}, reserved={}); deferred={} people; state_ticks={}; scaled_ticks={}",
 				complete ? "complete" : "truncated", available + reserved, available, reserved, deferred, _state_ticks.base(), _scaled_tick_counter);
 		static constexpr std::array modes{"Legacy", "Journey", "Fallback"};
 		for (size_t mode = 0; mode < modes.size(); ++mode) IConsolePrint(CC_DEFAULT, "Inventory {}: {} people/{} packets; known_OD={} people", modes[mode], people[mode], packets[mode], known[mode]);
-		IConsolePrint(CC_DEFAULT, "Waiting routing: timed={}; CargoDist_or_deferred={}; OD_fallback_or_waiting={} people", waiting_modes[1], waiting_modes[0], waiting_modes[2]);
+		uint64_t timed_waiting = waiting_modes[1] > schedule_waiting ? waiting_modes[1] - schedule_waiting : 0;
+		IConsolePrint(CC_DEFAULT, "Waiting routing: timed={}; schedule={}; CargoDist_or_deferred={}; OD_fallback_or_waiting={} people", timed_waiting, schedule_waiting, waiting_modes[0], waiting_modes[2]);
+		IConsolePrint(CC_DEFAULT, "Schedule inventory: people={}; packets={}; waiting={}; timed_waiting={} people", schedule_people, schedule_packets, schedule_waiting, timed_waiting);
 		return true;
 	}
 	if (operation == "reset") { ResetPassengerJourneyDiagnostic(); return true; }
@@ -4835,6 +4849,16 @@ static bool ConPassengerJourneyStats(std::span<std::string_view> argv)
 	IConsolePrint(CC_DEFAULT, "Periodic known vehicle phases: {}", periodic.known_phase_vehicles);
 	IConsolePrint(CC_DEFAULT, "Periodic operating events: physical_passenger_occurrences={}; exchange_passenger_occurrences={}; depot_timed={}; depot_untimed={}; depot_blocked={}",
 			periodic.physical_passenger_occurrences, periodic.exchange_passenger_occurrences, periodic.depot_timed, periodic.depot_untimed, periodic.depot_blocked);
+	const auto schedule = GetPassengerServiceDatabase().GetScheduleDiagnostic();
+	static constexpr std::array schedule_reasons{"ServiceMissing", "Incarnation", "Generation", "Station", "Disabled", "VehicleDeleted", "LiveRide", "ForcedUnload", "WaitingExpired"};
+	static_assert(schedule_reasons.size() == static_cast<size_t>(PassengerScheduleInvalidation::End));
+	for (size_t i = 0; i < schedule_reasons.size(); ++i) IConsolePrint(CC_DEFAULT, "Schedule invalidation {}: {} packets", schedule_reasons[i], stats.schedule_invalidations[i]);
+	IConsolePrint(CC_DEFAULT, "Schedule routing: packets={}; passengers={}; timed_deferred={}; hits={}; misses={}; bytes={}; work={}; query_us={}; stale={}; expired={}",
+			stats.schedule_packets, stats.schedule_passengers, stats.schedule_deferred_packets, schedule.hits, schedule.misses, schedule.bytes, schedule.work, schedule.query_microseconds, stats.schedule_stale, stats.schedule_expired);
+	IConsolePrint(CC_DEFAULT, "Schedule transport: boarded={}; transferred={}; delivered={} people; expected_wait_person_ticks={}; actual_wait_person_ticks={}; wait_people={}",
+			stats.schedule_boarded_passengers, stats.schedule_transferred_passengers, stats.schedule_delivered_passengers, stats.schedule_expected_wait, stats.schedule_actual_wait, stats.schedule_wait_samples);
+	IConsolePrint(CC_DEFAULT, "Completed interchanges: from_schedule={}; from_timed={} people (next vehicle actually loaded)", stats.schedule_connected_passengers, stats.timed_connected_passengers);
+	IConsolePrint(CC_DEFAULT, "Schedule-assisted final OD: delivered={} people (any real schedule leg; overlaps final-carrier delivery counts)", stats.schedule_assisted_delivered_passengers);
 	for (size_t i = 0; i < stats.query_sample_count; ++i) {
 		const auto &sample = stats.query_samples[i];
 		IConsolePrint(CC_DEFAULT, "OD proof sample: origin={}; destination={}; tick={}; status={}; stop={}; candidates={}; best_score={}; unknown_arrival_bound={}; unknown_service={}",

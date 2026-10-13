@@ -8,6 +8,7 @@
 #include "passenger_service_database.h"
 #include "passenger_journey_active.h"
 #include "vehicle_base.h"
+#include "aircraft.h"
 #include "station_base.h"
 #include "date_func.h"
 #include "settings_type.h"
@@ -58,7 +59,10 @@ void ObservePassengerPeriodicVehicle(const Vehicle *vehicle)
 	if (vehicle->HasUnbunchingOrder()) return;
 	size_t work = 4096;
 	auto state = GetPassengerRouteState(vehicle, &work);
-	if (state && state->loading && std::all_of(state->usable_stops.begin(), state->usable_stops.end(), [](uint8_t usable) { return usable != 0; })) database.Invalidate(service->id);
+	/* Observing the phase must not remove a safe estimated intent just before
+	 * its real carrier boards. Publish the newly observed phase at the ordinary
+	 * timing epoch, retaining the live incarnation and occurrence permissions. */
+	if (state && state->loading && std::all_of(state->usable_stops.begin(), state->usable_stops.end(), [](uint8_t usable) { return usable != 0; })) database.TimetableChanged(service->id);
 }
 
 void PassengerServiceDatabase::ShiftTicks(StateTicksDelta delta)
@@ -128,7 +132,7 @@ std::optional<StateTicks> PassengerPeriodicTimetable::NextDeparture(StateTicks b
 	return StateTicks{time};
 }
 
-void PassengerServiceDatabase::ClearPolicies() { this->journey_policies.clear(); this->policy_bytes = 0; this->policy_clock = 0; }
+void PassengerServiceDatabase::ClearPolicies() { this->journey_policies.clear(); this->policy_bytes = 0; this->policy_clock = 0; this->schedule.Clear(); }
 void PassengerServiceDatabase::Reset()
 {
 	ClearPassengerOdFallbackCache();
@@ -136,6 +140,7 @@ void PassengerServiceDatabase::Reset()
 	this->sweeping_since = _state_ticks;
 	this->cursor = 0; this->dirty_cursor = 65534; this->sweeping = true; this->restoring = false; this->generation = 0; this->bytes = 0;
 	this->diagnostic = {};
+	this->schedule.ResetDiagnostic();
 }
 
 void PassengerServiceDatabase::Remove(OrderListID id)
@@ -264,6 +269,7 @@ void PassengerServiceDatabase::Tick(size_t allowance)
 			for (const Vehicle *v : fleet) {
 				if (service.timetable.stops.empty()) break;
 				if (!IsPassengerServiceVehicle(v) || v->vehstatus.Any({VehState::Stopped, VehState::Crashed})) continue;
+				if (v->type == VehicleType::Aircraft && Aircraft::From(v)->flags.Test(VehicleAirFlag::DestinationTooFar)) continue;
 				PassengerPeriodicVehicle phase; phase.id = v->index; phase.type = v->type;
 				for (const Vehicle *part = v; part != nullptr; part = part->Next()) {
 					if (part->cargo_type < NUM_CARGO) phase.capacity[part->cargo_type] += part->cargo_cap;
@@ -288,7 +294,18 @@ void PassengerServiceDatabase::Tick(size_t allowance)
 				size_t facility_work = std::min<size_t>(allowance, 4096);
 				const size_t facility_allowance = facility_work;
 				auto state = GetPassengerRouteState(v, &facility_work);
+				bool unusable = state && facility_work != 0 && std::any_of(state->usable_stops.begin(), state->usable_stops.end(), [](uint8_t usable) { return usable == 0; });
+				if (!state) {
+					/* An unknown current occurrence is not a promise that every declared
+					 * facility is usable. Check static vehicle/facility compatibility
+					 * without needing a current phase. Exhaustion remains uncertainty. */
+					for (const auto &stop : service.timetable.stops) {
+						if (facility_work == 0) break;
+						if (!CanPassengerVehicleUseStation(v, stop.station, list->GetOrderAt(stop.order), facility_work) && facility_work != 0) { unusable = true; break; }
+					}
+				}
 				allowance -= facility_allowance - facility_work;
+				if (unusable) continue;
 				if (!state || !std::all_of(state->usable_stops.begin(), state->usable_stops.end(), [](uint8_t usable) { return usable != 0; })) phase.phase_known = false;
 				service.vehicles.push_back(phase);
 			}
@@ -296,6 +313,14 @@ void PassengerServiceDatabase::Tick(size_t allowance)
 			bool dispatch = false;
 			for (const Vehicle *v = list->GetFirstSharedVehicle(); v != nullptr; v = v->NextShared()) dispatch |= v->vehicle_flags.Test(VehicleFlag::ScheduledDispatch);
 			if (dispatch) {
+				service.uncertain_dispatch_period = service.timetable.period;
+				for (const auto &stop : service.timetable.stops) {
+					int assigned = list->GetOrderAt(stop.order)->GetDispatchScheduleIndex();
+					if (assigned >= 0 && static_cast<size_t>(assigned) < list->GetScheduledDispatchScheduleCount()) {
+						int64_t duration = list->GetDispatchScheduleByIndex(assigned).GetScheduledDispatchDuration();
+						service.uncertain_dispatch_period = std::max(service.uncertain_dispatch_period, std::clamp<int64_t>(duration, 0, MAX_PERIOD));
+					}
+				}
 				bool physical_phase_known = service.vehicles.size() == 1 && service.vehicles[0].phase_known;
 				/* Multiple vehicles have unresolved slot ownership. No fleet headway,
 				 * synthetic vehicle or optimistic future dispatch is manufactured. */
@@ -356,6 +381,13 @@ const PassengerPeriodicService *PassengerServiceDatabase::Get(OrderListID id) co
 {
 	auto found = this->services.find(id);
 	return found == this->services.end() ? nullptr : &found->second;
+}
+
+const std::set<PassengerServiceDatabase::StopRef> &PassengerServiceDatabase::StopsAt(StationID station) const
+{
+	static const std::set<StopRef> empty;
+	auto row = this->stations.find(station);
+	return row == this->stations.end() ? empty : row->second;
 }
 
 bool PassengerServiceDatabase::IsCurrent(const PassengerJourneyExecution &ride) const
@@ -489,7 +521,7 @@ PassengerServiceDatabase::JourneyPolicy PassengerServiceDatabase::CompilePolicy(
 }
 
 PassengerPeriodicPlan PassengerServiceDatabase::Plan(CargoType cargo, StationID origin, StationID destination, StateTicks ready,
-		PassengerJourneyLimits limits, PassengerJourneyEvaluation evaluation)
+		PassengerJourneyLimits limits, PassengerJourneyEvaluation evaluation, OrderListID excluded)
 {
 	PassengerPeriodicPlan result;
 	if (cargo >= NUM_CARGO || origin == destination || !Station::IsValidID(origin) || !Station::IsValidID(destination) ||
@@ -512,6 +544,7 @@ PassengerPeriodicPlan PassengerServiceDatabase::Plan(CargoType cargo, StationID 
 	 * unsaved policies cannot alter admission, budgets, ties or the candidates. */
 	auto spend = [&]() { if (result.work >= limits.work) { result.deferred = true; return false; } ++result.work; return true; };
 	for (const auto &route : policy->routes) {
+		if (!route.empty() && route.front().service == excluded) continue;
 		StateTicks time = ready;
 		int64_t cost = 0;
 		bool usable = true;
@@ -619,7 +652,8 @@ bool ValidatePassengerServiceRide(const PassengerJourneyExecution &ride, const V
 	if (cargo >= NUM_CARGO || !IsPassengerJourneyRoutingEnabled(cargo) || !IsPassengerServiceVehicle(vehicle) || Vehicle::GetIfValid(vehicle->index) != vehicle || vehicle->orders == nullptr ||
 			vehicle->orders->index != ride.service || vehicle->orders->GetCargoDistRouteGeneration() != ride.signature ||
 			vehicle->vehstatus.Any({VehState::Stopped, VehState::Crashed}) || !vehicle->current_order.IsAnyLoadingType() || vehicle->current_order.IsType(OT_LOADING_ADVANCE) ||
-			(ride.kind == PassengerRideKind::BoundService && ride.vehicle != vehicle->index) ||
+			(IsBoundPassengerRide(ride.kind) && ride.vehicle != vehicle->index) ||
+			(boarding && !database.IsCurrent(ride)) ||
 			!Station::IsValidID(ride.alighting) || ride.alighting_order >= vehicle->GetNumOrders()) return false;
 	if (boarding && (_state_ticks < ride.not_before || ride.boarding != vehicle->last_station_visited || ride.boarding_order != vehicle->cur_real_order_index ||
 			vehicle->current_order.GetCargoLoadType(cargo) == OrderLoadType::NoLoad ||
@@ -627,7 +661,9 @@ bool ValidatePassengerServiceRide(const PassengerJourneyExecution &ride, const V
 			vehicle->current_order.GetCargoUnloadType(cargo) == OrderUnloadType::Transfer)) return false;
 	size_t budget = 65536;
 	if (!HasPassengerVehicleCapacity(vehicle, cargo, budget)) return false;
-	auto state = GetPassengerRouteState(vehicle, &budget);
+	/* A real implicit arrival may continue toward a declared explicit alighting.
+	 * This option is used only for live prefix validation, never forecasting. */
+	auto state = GetPassengerRouteState(vehicle, &budget, nullptr, !boarding);
 	if (!state || !state->loading) return false;
 	if (boarding && (!state->usable_stops[state->current_order] ||
 			state->orders[state->current_order].GetCargoLoadType(cargo) == OrderLoadType::NoLoad)) return false;
@@ -657,7 +693,7 @@ std::vector<uint8_t> PassengerServiceDatabase::Save() const
 {
 	std::vector<uint8_t> data;
 	auto put = [&](uint64_t value) { for (uint i = 0; i < 8; ++i) { data.push_back(value & 255); value >>= 8; } };
-	put(1); put(this->generation); put(this->cursor); put(this->sweeping); put(this->dirty_cursor);
+	put(2); put(this->generation); put(this->cursor); put(this->sweeping); put(this->dirty_cursor);
 	put(this->sweeping_since.base());
 	put(this->dirty.size()); for (OrderListID id : this->dirty) { put(id.base()); put(this->dirty_since.at(id).base()); }
 	put(this->services.size());
@@ -675,6 +711,7 @@ std::vector<uint8_t> PassengerServiceDatabase::Save() const
 		}
 		put(service.dispatch_base.base()); put(service.dispatch_floor.base()); put(service.dispatch_period); put(service.dispatch_stop);
 		put(service.dispatch_slots.size()); for (uint32_t slot : service.dispatch_slots) put(slot);
+		put(service.uncertain_dispatch_period);
 	}
 	return data;
 }
@@ -692,7 +729,7 @@ bool PassengerServiceDatabase::Load(std::span<const uint8_t> data)
 	};
 	auto count = [&](size_t max) { uint64_t n = get(); if (n > max || n > (data.size() - cursor) / 8) { valid = false; return size_t{0}; } return static_cast<size_t>(n); };
 	PassengerServiceDatabase restored;
-	if (get() != 1) return false;
+	uint64_t version = get(); if (version != 1 && version != 2) return false;
 	restored.generation = get();
 	uint64_t saved_cursor = get(); if (saved_cursor > OrderListID::Invalid().base()) return false;
 	restored.cursor = static_cast<uint32_t>(saved_cursor);
@@ -739,11 +776,27 @@ bool PassengerServiceDatabase::Load(std::span<const uint8_t> data)
 			service.dispatch_slots.push_back(static_cast<uint32_t>(slot));
 		}
 		if (service.dispatch_period && (service.dispatch_slots.empty() || service.vehicles.size() != 1 || service.dispatch_stop >= service.timetable.stops.size())) return false;
+		if (version >= 2) service.uncertain_dispatch_period = static_cast<int64_t>(get());
+		if (service.uncertain_dispatch_period < 0 || service.uncertain_dispatch_period > MAX_PERIOD) return false;
 		size_t bytes = ServiceBytes(service);
 		if (restored.bytes + bytes > MAX_BYTES || !restored.services.emplace(service.id, std::move(service)).second) return false;
 		restored.bytes += bytes;
 	}
 	if (!valid || cursor != data.size()) return false;
+	if (version == 1) {
+		/* Old publications used unknown phase for both timing uncertainty and
+		 * incompatible facilities. Recheck their uncertified fleet with ordinary
+		 * build admission. Certified vehicles and the saved sweep keep progress. */
+		for (auto it = restored.services.begin(); it != restored.services.end();) {
+			auto &service = it->second;
+			if (std::none_of(service.vehicles.begin(), service.vehicles.end(), [](const auto &v) { return !v.phase_known; })) { ++it; continue; }
+			restored.bytes -= ServiceBytes(service);
+			std::erase_if(service.vehicles, [](const auto &v) { return !v.phase_known; });
+			restored.dirty.insert(service.id); restored.dirty_since.try_emplace(service.id, restored.sweeping_since);
+			if (service.vehicles.empty()) it = restored.services.erase(it);
+			else { restored.bytes += ServiceBytes(service); ++it; }
+		}
+	}
 	for (const auto &[id, service] : restored.services) restored.Index(service);
 	restored.restoring = true;
 	*this = std::move(restored);

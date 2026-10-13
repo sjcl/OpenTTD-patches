@@ -36,6 +36,9 @@ struct PassengerJourneyQueryDetail {
 	OrderListID unknown_service = OrderListID::Invalid();
 };
 
+enum class PassengerScheduleInvalidation : uint8_t { ServiceMissing, Incarnation, Generation, Station, Disabled, VehicleDeleted, LiveRide, ForcedUnload, WaitingExpired, End };
+void RecordPassengerScheduleInvalidation(PassengerScheduleInvalidation reason);
+
 struct PassengerJourneyTickDiagnostic {
 	std::array<size_t, static_cast<size_t>(PassengerGraphFailure::End)> graph_failures{};
 	std::array<size_t, static_cast<size_t>(PassengerPredictionStop::End)> prediction_stops{};
@@ -68,6 +71,13 @@ struct PassengerJourneyTickDiagnostic {
 	size_t timed_routes_ignoring_unknown = 0, timed_budget_deferred = 0;
 	size_t untimed_routes = 0, untimed_no_route = 0, untimed_budget_deferred = 0;
 	size_t untimed_boarded_passengers = 0, untimed_transferred_passengers = 0, untimed_delivered_passengers = 0;
+	size_t schedule_packets = 0, schedule_passengers = 0, schedule_deferred_packets = 0;
+	size_t schedule_boarded_passengers = 0, schedule_transferred_passengers = 0, schedule_delivered_passengers = 0;
+	size_t schedule_connected_passengers = 0, timed_connected_passengers = 0; ///< Next actual boarding after an observed alighting, by previous carrier.
+	size_t schedule_assisted_delivered_passengers = 0; ///< Final OD delivery after any observed real schedule leg, including a Timed final carrier.
+	size_t schedule_expired = 0, schedule_stale = 0;
+	std::array<size_t, static_cast<size_t>(PassengerScheduleInvalidation::End)> schedule_invalidations{};
+	uint64_t schedule_expected_wait = 0, schedule_actual_wait = 0, schedule_wait_samples = 0; ///< Passenger-weighted tick durations.
 	std::array<PassengerJourneyQueryDetail, 16> query_samples{};
 	size_t query_sample_count = 0;
 	uint64_t simulation_ticks = 0, simulation_microseconds = 0, maximum_simulation_microseconds = 0;
@@ -168,7 +178,7 @@ class PassengerJourneyActiveContext {
 	std::map<std::tuple<CargoType, StationID, Ticks>, std::unique_ptr<Snapshot>> snapshots;
 	std::map<CargoType, PassengerJourneyBoardingContext> continuation;
 	struct PeriodicWaiting { std::optional<PassengerJourneyExecution> ride; bool deferred; };
-	std::map<std::pair<CargoType, StationID>, PeriodicWaiting> periodic_waiting;
+	std::map<std::tuple<CargoType, StationID, StateTicks, OrderListID>, PeriodicWaiting> periodic_waiting;
 	PassengerOdFallbackContext fallback;
 	size_t work_left = 4194304;
 	size_t memory_left = 256 * 1024 * 1024;

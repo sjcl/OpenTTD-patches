@@ -83,6 +83,12 @@ private:
 	StationID passenger_legacy_hop = StationID::Invalid(); ///< Queue key to restore when a waiting journey expires.
 	StationID passenger_retry_station = StationID::Invalid();
 	StateTicks passenger_retry_after{}; ///< Deterministic cooldown, shared by split packets.
+	StateTicks passenger_interchange_ready{};
+	OrderListID passenger_arriving_service = OrderListID::Invalid();
+	uint64_t passenger_arriving_incarnation = 0;
+	PassengerTransportKind passenger_transport = PassengerTransportKind::None; ///< Last carrier; survives next-intent staging.
+	PassengerTransportKind passenger_interchange_transport = PassengerTransportKind::None; ///< Carrier before the next actual boarding.
+	bool passenger_schedule_used = false; ///< A physically loaded schedule carrier was observed at an arrival.
 
 	/** Cargo packet flag bits in CargoPacket::flags. */
 	enum CargoPacketFlags {
@@ -120,6 +126,14 @@ public:
 	StationID GetPassengerLegacyHop() const { return this->passenger_legacy_hop; }
 	void SetPassengerLegacyHop(StationID next) { this->passenger_legacy_hop = next; }
 	StationID GetPassengerVia() const { return this->passenger_via; }
+	StateTicks GetPassengerInterchangeReady() const { return this->passenger_interchange_ready; }
+	OrderListID GetPassengerArrivingService() const { return this->passenger_arriving_service; }
+	uint64_t GetPassengerArrivingIncarnation() const { return this->passenger_arriving_incarnation; }
+	PassengerTransportKind GetPassengerTransport() const { return this->passenger_transport; }
+	PassengerTransportKind GetPassengerInterchangeTransport() const { return this->passenger_interchange_transport; }
+	bool HasUsedPassengerSchedule() const { return this->passenger_schedule_used; }
+	void SetPassengerTransport(PassengerTransportKind kind) { this->passenger_transport = kind; }
+	void SetPassengerInterchange(StateTicks ready, OrderListID arriving, uint64_t incarnation = 0) { this->passenger_interchange_ready = ready; this->passenger_arriving_service = arriving; this->passenger_arriving_incarnation = incarnation; this->passenger_interchange_transport = this->passenger_transport; }
 	void SetPassengerVia(StationID via) { this->passenger_via = via; }
 	bool CanRetryPassengerJourney(StationID station, StateTicks now) const
 	{
@@ -136,7 +150,9 @@ public:
 	{
 		return this->passenger_routing_mode == other.passenger_routing_mode && this->passenger_journey == other.passenger_journey &&
 				this->passenger_legacy_hop == other.passenger_legacy_hop && this->passenger_retry_station == other.passenger_retry_station &&
-				this->passenger_retry_after == other.passenger_retry_after;
+				this->passenger_retry_after == other.passenger_retry_after && this->passenger_interchange_ready == other.passenger_interchange_ready &&
+				this->passenger_arriving_service == other.passenger_arriving_service && this->passenger_arriving_incarnation == other.passenger_arriving_incarnation && this->passenger_transport == other.passenger_transport &&
+				this->passenger_interchange_transport == other.passenger_interchange_transport && this->passenger_schedule_used == other.passenger_schedule_used;
 	}
 
 	/**

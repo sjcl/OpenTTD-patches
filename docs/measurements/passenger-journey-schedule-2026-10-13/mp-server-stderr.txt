@@ -1,0 +1,26 @@
+dbg: [net:3] Starting dedicated server, version jgrpp-ya-0.73.3+2-48-g7d914aa6f-m
+dbg: [net:3] Starting network
+dbg: [net:3] Initializing UDP listeners
+dbg: [net:3] Network online, multiplayer available
+dbg: [net:3] Detected broadcast addresses:
+dbg: [net:3]   0) 172.25.15.255
+dbg: [net:3]   1) 192.168.1.255
+dbg: [net:3]   2) 169.254.255.255
+dbg: [net:3] Network revision name: jgrpp-ya-0.73.3+2-48-g7d914aa6f-
+dbg: [net:1] No "server_name" has been set, using "Unnamed Server" instead. Please set this now using the "server_name <new name>" command
+dbg: [net:3] Initializing UDP listeners
+dbg: [net:3] Initializing UDP listeners
+dbg: [net:3] Listening on 127.0.0.1:17493 (IPv4)
+dbg: [net:3] Listening on 127.0.0.1:17493 (IPv4)
+dbg: [script:0] The savegame has an AI by the name 'regression', version 1 which is no longer available.
+dbg: [script:0] Configuration switched to Random AI.
+dbg: [script:0] The savegame has an AI by the name 'regression', version 1 which is no longer available.
+dbg: [script:0] A random other AI will be loaded in its place.
+dbg: [net:3] [server] Client connected from 127.0.0.1 on frame 85
+dbg: [net:3] [server] Client #2 (127.0.0.1) joined as periodic-client-initial, pubkey: B4454521649771AF4457C7FDBAD76435515981B3849E1199E4B4DC2A1FF4127A
+dbg: [net:3] [server] Client connected from 127.0.0.1 on frame 776
+dbg: [net:3] [server] Client #3 (127.0.0.1) joined as periodic-client-late, pubkey: 63D24DAEF74475586423B6CB66E9B2B3B49B8E010776A1ADE03FDEAD77F1D42A
+dbg: [net:3] [server] Client #2 closed connection
+dbg: [net:3] [server] Client #3 closed connection
+dbg: [net:3] Initializing UDP listeners
+dbg: [net:3] Shutting down network

@@ -29,10 +29,14 @@ extern btree::btree_map<uint64_t, Money> _cargo_packet_deferred_payments;
 	/* Stations are now available. Old saves have no OD; malformed or stale IDs
 	 * must not survive loading or become references to subsequently reused IDs. */
 	for (CargoPacket *cp : CargoPacket::Iterate()) {
-		if (to_underlying(cp->passenger_journey.kind) > to_underlying(PassengerRideKind::BoundService)) SlErrorCorrupt("Invalid passenger ride kind");
+		if (to_underlying(cp->passenger_journey.kind) > to_underlying(PassengerRideKind::EstimatedBoundService) ||
+				to_underlying(cp->passenger_transport) > to_underlying(PassengerTransportKind::Untimed) ||
+				to_underlying(cp->passenger_interchange_transport) > to_underlying(PassengerTransportKind::Untimed)) SlErrorCorrupt("Invalid passenger ride kind");
 		if (cp->passenger_journey.kind != PassengerRideKind::VehicleSnapshot &&
 				(cp->passenger_routing_mode != PassengerRoutingMode::Journey || cp->passenger_journey.signature == 0 || cp->passenger_journey.generation == 0 ||
-					cp->passenger_journey.arrival < cp->passenger_journey.departure || cp->passenger_journey.not_before > cp->passenger_journey.departure)) SlErrorCorrupt("Invalid passenger service intent");
+					(!IsEstimatedPassengerRide(cp->passenger_journey.kind) && (cp->passenger_journey.arrival < cp->passenger_journey.departure || cp->passenger_journey.not_before > cp->passenger_journey.departure)))) SlErrorCorrupt("Invalid passenger service intent");
+		if (IsEstimatedPassengerRide(cp->passenger_journey.kind) && (cp->passenger_journey.departure != StateTicks{} || cp->passenger_journey.arrival != StateTicks{} ||
+				cp->passenger_journey.estimated_wait < 0 || cp->passenger_journey.waiting_limit <= 0 || cp->passenger_journey.waiting_limit > (int64_t{1} << 41))) SlErrorCorrupt("Invalid estimated passenger intent");
 		if (SlXvIsFeatureMissing(XSLFI_PASSENGER_JOURNEY_ROUTING)) {
 			cp->passenger_routing_mode = PassengerRoutingMode::Legacy;
 			cp->passenger_journey = {};
@@ -196,6 +200,16 @@ NamedSaveLoadTable GetCargoPacketDesc()
 		NSL("passenger_journey.kind", SLE_CONDVAR_X(CargoPacket, passenger_journey.kind, SLE_UINT8, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_PASSENGER_JOURNEY_ROUTING, 2))),
 		NSL("passenger_journey.generation", SLE_CONDVAR_X(CargoPacket, passenger_journey.generation, SLE_UINT64, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_PASSENGER_JOURNEY_ROUTING, 2))),
 		NSL("passenger_journey.not_before", SLE_CONDVAR_X(CargoPacket, passenger_journey.not_before, SLE_INT64, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_PASSENGER_JOURNEY_ROUTING, 2))),
+		NSL("passenger_journey.planned_at", SLE_CONDVAR_X(CargoPacket, passenger_journey.planned_at, SLE_INT64, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_PASSENGER_JOURNEY_ROUTING, 3))),
+		NSL("passenger_journey.estimated_wait", SLE_CONDVAR_X(CargoPacket, passenger_journey.estimated_wait, SLE_INT64, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_PASSENGER_JOURNEY_ROUTING, 3))),
+		NSL("passenger_journey.waiting_limit", SLE_CONDVAR_X(CargoPacket, passenger_journey.waiting_limit, SLE_INT64, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_PASSENGER_JOURNEY_ROUTING, 3))),
+		NSL("passenger_journey.timed_deferred", SLE_CONDVAR_X(CargoPacket, passenger_journey.timed_deferred, SLE_BOOL, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_PASSENGER_JOURNEY_ROUTING, 3))),
+		NSL("passenger_interchange_ready", SLE_CONDVAR_X(CargoPacket, passenger_interchange_ready, SLE_INT64, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_PASSENGER_JOURNEY_ROUTING, 3))),
+		NSL("passenger_arriving_service", SLE_CONDVAR_X(CargoPacket, passenger_arriving_service, SLE_UINT16, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_PASSENGER_JOURNEY_ROUTING, 3))),
+		NSL("passenger_arriving_incarnation", SLE_CONDVAR_X(CargoPacket, passenger_arriving_incarnation, SLE_UINT64, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_PASSENGER_JOURNEY_ROUTING, 3))),
+		NSL("passenger_transport", SLE_CONDVAR_X(CargoPacket, passenger_transport, SLE_UINT8, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_PASSENGER_JOURNEY_ROUTING, 3))),
+		NSL("passenger_interchange_transport", SLE_CONDVAR_X(CargoPacket, passenger_interchange_transport, SLE_UINT8, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_PASSENGER_JOURNEY_ROUTING, 3))),
+		NSL("passenger_schedule_used", SLE_CONDVAR_X(CargoPacket, passenger_schedule_used, SLE_BOOL, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_PASSENGER_JOURNEY_ROUTING, 3))),
 		NSL("passenger_legacy_hop", SLE_CONDVAR_X(CargoPacket, passenger_legacy_hop, SLE_UINT16, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_PASSENGER_JOURNEY_ROUTING))),
 		NSL("passenger_retry_station", SLE_CONDVAR_X(CargoPacket, passenger_retry_station, SLE_UINT16, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_PASSENGER_JOURNEY_ROUTING))),
 		NSL("passenger_retry_after", SLE_CONDVAR_X(CargoPacket, passenger_retry_after, SLE_INT64, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_PASSENGER_JOURNEY_ROUTING))),

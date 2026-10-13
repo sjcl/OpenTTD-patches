@@ -1,0 +1,115 @@
+{
+  "label": "schedule-short",
+  "exit_code": 0,
+  "wall_seconds": 86.6729609,
+  "cpu_seconds": 161.171875,
+  "peak_working_set": 2015981568,
+  "sampled_peak_private": 2016509952,
+  "requested_driver_loops": 1500,
+  "input_save": "input.sav",
+  "input_sha256": "14D68C82911B9DCFC5EF7291E9697C5BBD67F44FFCC79D7575A144405EDF6390",
+  "binary_sha256": "FD2BEE941DB4DA4E1E9BF20CF6A2855C5A39660F04ECAAEC57D90500C04904F1",
+  "sample_ms": 100,
+  "simulation": {
+    "completed_ticks": 1500,
+    "total_us": 69922547,
+    "mean_us": 46615,
+    "max_us": 162391
+  },
+  "tick_histogram": {
+    "simulation_p95_us": 87000,
+    "simulation_p99_us": 110000,
+    "journey_mean_us": 20519,
+    "journey_p95_us": 58000,
+    "journey_p99_us": 75000,
+    "journey_max_us": 122124
+  },
+  "timed": {
+    "boarded": 2898,
+    "transferred": 188,
+    "delivered": 942
+  },
+  "schedule": {
+    "boarded": 807,
+    "transferred": 194,
+    "delivered": 0,
+    "expected_wait_person_ticks": 1139320,
+    "actual_wait_person_ticks": 26211,
+    "wait_people": 807
+  },
+  "untimed": {
+    "boarded": 82203,
+    "transferred": 37617,
+    "delivered": 30644
+  },
+  "schedule_routing": {
+    "packets": 1976,
+    "passengers": 2821,
+    "timed_deferred": 1974,
+    "hits": 12211,
+    "misses": 9318,
+    "bytes": 1166336,
+    "work": 575015397,
+    "query_us": 12873451,
+    "stale": 1050,
+    "expired": 0,
+    "hit_fraction": 0.5671884434948209
+  },
+  "periodic": {
+    "services": 837,
+    "timed": 509,
+    "vehicles": 2835,
+    "bytes": 8498064,
+    "policies_bytes": 552800,
+    "pending": 537,
+    "builds": 4568,
+    "work": 16807078,
+    "build_us": 295525,
+    "searches": 24000,
+    "query_us": 11930286,
+    "next_departures": 239468,
+    "policy_hits": 12957,
+    "policy_misses": 11043,
+    "invalidations": 4,
+    "rejected_work": 0,
+    "rejected_memory": 0
+  },
+  "inventory": {
+    "waiting": 212098,
+    "available": 212098,
+    "reserved": 0,
+    "deferred": 89999,
+    "state_ticks": 3176546987,
+    "scaled_ticks": 3010947889
+  },
+  "schedule_inventory": {
+    "people": 1147,
+    "packets": 703,
+    "waiting": 547,
+    "timed_waiting": 1536
+  },
+  "waiting": {
+    "timed": 2083,
+    "CargoDist_or_deferred": 190869,
+    "OD_fallback_or_waiting": 19146
+  },
+  "completed_interchanges": {},
+  "schedule_assisted": {},
+  "initial_tick": 3176545487,
+  "final_tick": 3176546987,
+  "samples": [
+    {
+      "simulation": {
+        "completed_ticks": 1500,
+        "total_us": 69922547,
+        "mean_us": 46615,
+        "max_us": 162391
+      }
+    }
+  ],
+  "stderr": {
+    "sha256": "e0ca4bb775c6de93d847ee35096419141581c98a08b60c86c3b78fcd9ab5ba61",
+    "bytes": 2051235,
+    "lines": 19929
+  }
+}
