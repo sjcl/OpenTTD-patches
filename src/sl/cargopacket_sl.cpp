@@ -300,7 +300,7 @@ static void Save_JPSD()
 static void Load_JPSD()
 {
 	size_t length = SlGetFieldLength();
-	if (length > PassengerServiceDatabase::MAX_BYTES) SlErrorCorrupt("Passenger database exceeds memory limit");
+	if (length > 2 * PassengerServiceDatabase::MAX_BYTES) SlErrorCorrupt("Passenger database exceeds memory limit");
 	std::vector<uint8_t> bytes(length);
 	for (uint8_t &value : bytes) value = SlReadByte();
 	if (!GetPassengerServiceDatabase().Load(bytes)) SlErrorCorrupt("Invalid passenger periodic database");

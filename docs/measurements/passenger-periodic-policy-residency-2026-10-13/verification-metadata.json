@@ -1,0 +1,42 @@
+{
+  "base_commit": "208f7378a3",
+  "branch": "perf/passenger-periodic-policy-residency",
+  "timed_candidate_fix": "278044f85f",
+  "compiler": "MSVC 19.44 x64 Release /MT; assertions ON; LTO OFF",
+  "product_benchmark_option": "OFF",
+  "product_sha256": "ded3e3cc3b7e38c56c4403cfe32c254edda04556246fc635645061d3e3b0988e",
+  "performance_sha256": "16C5188EA1C1AAB002145BB8628A3B5CFC262993BA47A6544C6E55FD0B4CE683",
+  "network_source_sha256": "ad934f2f182d9abcfdc2d5885957c67aab4bb24e944b7677f09918518d827c95",
+  "network_sha256": "6fcee1551143394cf8f4ed7c03b975ffdf22ab0d3b3c633056818322b8cd5df3",
+  "network_code_change": "None; copied PE subsystem field GUI (2) -> console (3)",
+  "input_sha256": "14D68C82911B9DCFC5EF7291E9697C5BBD67F44FFCC79D7575A144405EDF6390",
+  "original_input_sha256_after": "14d68c82911b9dcfc5ef7291e9697c5bbd67f44ffcc79d7575a144405edf6390",
+  "main_interval": [
+    3176545487,
+    3176553679
+  ],
+  "tick_samples": 8192,
+  "passenger_cases": 320,
+  "passenger_assertions": 977501,
+  "ctest_passed": 533,
+  "ctest_total": 533,
+  "cache_invariance": {
+    "full_save_identical": true,
+    "sha256": "665316aa3de1b998a8b0ef13548c74f4948adce8bc0a599fe617be777da3d078",
+    "comparisons": [
+      "uncompressed residency enabled",
+      "residency disabled",
+      "compact residency enabled"
+    ]
+  },
+  "network_after_performance_change": "Only local optional cache preference retention across Load; query Work/results unchanged",
+  "real_map_initial_and_late_join_passed": true,
+  "controlled_initial_and_late_join_passed": true,
+  "followups_after_performance_binary": [
+    "Preserve the local optional cache preference across loading for cold-client join tests.",
+    "Drain a full staging batch before adding deletion tombstones; tested with a 64 MiB boundary snapshot."
+  ],
+  "followups_after_network_binary": [
+    "64 MiB staging/deletion boundary safeguard only; the tested real and controlled maps do not reach this boundary."
+  ]
+}

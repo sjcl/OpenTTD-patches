@@ -1,0 +1,160 @@
+Console log output started to 'C:/Users/bebe/CLionProjects/OpenTTD-patches/build-policy-residency/run-baseline/baseline-trace-console.txt'.
+Calendar Date: 117528-03-11 (42926290), fract: 27, sub_fract: 0
+Economy Date: 117528-03-11 (42926290), fract: 27, tick skip: 0
+Period display offset: 0
+Elapsed years: 117527
+Tick counter: 3010946389
+Tick counter (scaled): 3010946389
+State ticks: 3176545487 (offset: 0)
+Effective economy speed reduction factor: 1
+Ticks per calendar day: 74
+Timetable time: 22:10 + 27 ticks
+Passenger inventory: complete; waiting=200450 people (available=200450, reserved=0); deferred=36501 people; state_ticks=3176545487; scaled_ticks=3010946389
+Inventory Legacy: 425187 people/64228 packets; known_OD=65674 people
+Inventory Journey: 0 people/0 packets; known_OD=0 people
+Inventory Fallback: 50423 people/26847 packets; known_OD=50423 people
+Waiting routing: timed=0; schedule=0; CargoDist_or_deferred=176060; OD_fallback_or_waiting=24390 people
+Schedule inventory: people=0; packets=0; waiting=0; timed_waiting=0 people
+Game unpaused.
+Console log file closed.
+Console log output started to 'C:/Users/bebe/CLionProjects/OpenTTD-patches/build-policy-residency/run-baseline/baseline-trace-console.txt'.
+Calendar Date: 117528-04-01 (42926311), fract: 3, sub_fract: 0
+Economy Date: 117528-04-01 (42926311), fract: 3, tick skip: 0
+Period display offset: 0
+Elapsed years: 117527
+Tick counter: 3010947919
+Tick counter (scaled): 3010947919
+State ticks: 3176547017 (offset: 0)
+Effective economy speed reduction factor: 1
+Ticks per calendar day: 74
+Timetable time: 22:31 + 3 ticks
+Passenger inventory: complete; waiting=211434 people (available=211434, reserved=0); deferred=81833 people; state_ticks=3176547017; scaled_ticks=3010947919
+Inventory Legacy: 420319 people/83879 packets; known_OD=111016 people
+Inventory Journey: 8055 people/4488 packets; known_OD=8055 people
+Inventory Fallback: 45092 people/25942 packets; known_OD=45092 people
+Waiting routing: timed=3090; schedule=8; CargoDist_or_deferred=185939; OD_fallback_or_waiting=22397 people
+Schedule inventory: people=9; packets=4; waiting=8; timed_waiting=3090 people
+Graph coverage: complete=0; eligible_services=0; selected_services=0; selected_trips=0; largest_block_services=0; admitted_visits=0; max_unpredicted_ticks=0
+Graph failure None: 0 builds
+Graph failure Work: 0 builds
+Graph failure Memory: 0 builds
+Graph failure Services: 0 builds
+Graph failure Trips: 0 builds
+Graph failure TotalVisits: 0 builds
+Graph failure Index: 0 builds
+Graph failure Opaque: 0 builds
+Trip stop None: 0 predictions
+Trip stop Work: 0 predictions
+Trip stop Memory: 0 predictions
+Trip stop Visits: 0 predictions
+Trip stop Steps: 0 predictions
+Trip stop Timing: 0 predictions
+Trip stop Conditional: 0 predictions
+Trip stop Refit: 0 predictions
+Trip stop Implicit: 0 predictions
+Trip stop Unsupported: 0 predictions
+Trip stop Dispatch: 0 predictions
+Trip stop Facilities: 0 predictions
+Trip stop VehicleState: 0 predictions
+Trip stop OrderProgress: 0 predictions
+First graph failure: reason=None; stage=Discovery; work=0; memory=0; trips=0; visits=0
+First opaque scope: service=65535; vehicle=1048575
+First trip failure: reason=None; stage=Prediction; vehicle=1048575; work=0; memory=0; trips=0; visits=0; cursor=0; certified_until=0; required_until=0
+Uncertainty: timing=0 trips; path=0 trips; OD_resolved=0 searches; first_order=65535; first_unknown_order=65535; first_unknown_reason=None; tile=0; current_order=65535
+Simulation tick time: completed_ticks=1530; total_us=65348401; mean_us=42711; max_us=81981
+Tick histogram (1ms upper bounds): simulation_p95_us=62000; simulation_p99_us=71000; journey_mean_us=19496; journey_p95_us=38000; journey_p99_us=47000; journey_max_us=59950
+Journey inclusive scopes: waiting_us=23710280; fallback_distance_us=4654348; boarding_us=3723189
+Periodic pending age: ticks=367
+OD fallback cache: hits=18978; bytes=16871484; work=2477159377; searches=51870
+Periodic database: services=836; timed=501; vehicles=2831; bytes=8480976; policies_bytes=0; pending=472; builds=5612; work=21488306; build_us=1279958; searches=24480; query_us=14748658; next_departures=29138545; policy_hits=579; policy_misses=23901; invalidations=888; rejected_work=12; rejected_memory=0
+Periodic global invalidations: 4
+Periodic known vehicle phases: 2357
+Periodic operating events: physical_passenger_occurrences=9801; exchange_passenger_occurrences=9783; depot_timed=0; depot_untimed=196; depot_blocked=0
+Schedule invalidation ServiceMissing: 0 packets
+Schedule invalidation Incarnation: 0 packets
+Schedule invalidation Generation: 22 packets
+Schedule invalidation Station: 0 packets
+Schedule invalidation Disabled: 0 packets
+Schedule invalidation VehicleDeleted: 0 packets
+Schedule invalidation LiveRide: 0 packets
+Schedule invalidation ForcedUnload: 0 packets
+Schedule invalidation WaitingExpired: 0 packets
+Schedule routing: packets=27; passengers=41; timed_deferred=0; hits=551; misses=14307; bytes=0; work=199716262; query_us=8585595; stale=22; expired=0
+Schedule transport: boarded=2; transferred=1; delivered=0 people; expected_wait_person_ticks=9473; actual_wait_person_ticks=0; wait_people=2
+Completed interchanges: from_schedule=0; from_timed=305 people (next vehicle actually loaded)
+Schedule-assisted final OD: delivered=0 people (any real schedule leg; overlaps final-carrier delivery counts)
+Periodic passenger census (live OrderLists, cargo-only excluded): total=837; passenger=771; complete_cycles=512; compile_success=512; compile_failure=259; unpublished=1; dirty=441; unknown_vehicles=1354
+Periodic passenger pending census: 441 lists; compilation observations=5249 attempts/3809 successes (rebuilds overlap)
+Periodic phase work stops: 74 vehicle capture observations (retries overlap)
+Periodic passenger eligibility: declared_complete=673; live_compiled_cycles=512; published_lists=770; published_cycles=508; phase_known_lists=501; denominator=771
+Periodic live compilation: None=512
+Periodic live compilation: Control=4
+Periodic live compilation: Refit=0
+Periodic live compilation: Travel=97
+Periodic live compilation: Wait=151
+Periodic live compilation: Overflow=0
+Periodic live compilation: ZeroPeriod=7
+Periodic live compilation: TooFewStops=0
+Periodic compilation observations: None=3809
+Periodic compilation observations: Control=24
+Periodic compilation observations: Refit=0
+Periodic compilation observations: Travel=515
+Periodic compilation observations: Wait=866
+Periodic compilation observations: Overflow=0
+Periodic compilation observations: ZeroPeriod=35
+Periodic compilation observations: TooFewStops=0
+Periodic passenger vehicle phase census: Known=2357
+Periodic passenger vehicle phase census: NoTimetable=1033
+Periodic passenger vehicle phase census: VehicleState=166
+Periodic passenger vehicle phase census: OrderProgress=2
+Periodic passenger vehicle phase census: Facilities=0
+Periodic passenger vehicle phase census: Work=0
+Periodic passenger vehicle phase census: Unbunching=0
+Periodic passenger vehicle phase census: DispatchCompetition=0
+Periodic passenger vehicle phase census: DispatchUnsupported=0
+Periodic passenger vehicle phase census: Overflow=0
+Periodic passenger vehicle phase census: ElapsedTravel=69
+Periodic passenger vehicle phase census: AwaitCapture=84
+Periodic OD calls: Found outcomes=9622; overlapping_observations=9622
+Periodic OD calls: Invalid outcomes=0; overlapping_observations=0
+Periodic OD calls: OriginMissing outcomes=1607; overlapping_observations=1607
+Periodic OD calls: DestinationMissing outcomes=6068; overlapping_observations=6068
+Periodic OD calls: NoAlighting outcomes=0; overlapping_observations=0
+Periodic OD calls: Unreachable outcomes=3811; overlapping_observations=3811
+Periodic OD calls: NoCandidate outcomes=21; overlapping_observations=21
+Periodic OD calls: UnknownPhase outcomes=46; overlapping_observations=12700
+Periodic OD calls: Evaluation outcomes=0; overlapping_observations=1852
+Periodic OD calls: Candidates outcomes=0; overlapping_observations=27
+Periodic OD calls: Labels outcomes=1; overlapping_observations=1
+Periodic OD calls: Work outcomes=3304; overlapping_observations=3507
+Periodic OD calls: Memory outcomes=0; overlapping_observations=0
+Periodic OD calls: Transfers outcomes=0; overlapping_observations=0
+Periodic execution observations: expired=7087 packets/11520 passengers; failed_same_service_boarding_checks=1667; retries_overlap=true
+Active journey total: applied=13106 packets/21952 passengers; builds=0; static_hits=0; searches=24480; OD_hits=8947
+Train observations=0; cargo_capable=0; possible_refit=0; predicted=0; inactive=0; excluded_cargo=0; excluded_scope=0; visits=0; omitted_trains_at_least=0; truncated_predictions=0 (uncaptured visit count unknown)
+Trip prediction: executions=0; hits=0; logical_work=0; executed_visits=0; predictor_ns=0; cache_bytes=0
+Graph work=0; mean=0; max=0; cached_index_allowance_avoided=0; query_allowance=1604321280; build_us=0; mean_us=0; max_us=0; search_us=0; max_tick_graph_search_us=0
+Peak graph retained_estimate=0; static retained_estimate=0; conservative_graph_envelope_including_index=0; query_scratch=0; query_cache=0
+Graph phase_us: discovery=0; capacity=0; selection=0; orders_dispatch=0; pattern=0; prediction=0; departures=0
+Event capture: discovery_hits=0; service_hits=0; logical_work_replayed=0; retained_estimate_including_shared_patterns=0
+Fair waiting shares: claims=0; releases=0; admission_scan_work=0; retained_rides=0
+OD fallback: work=2477159377; path_searches=51870
+Journey transport: boarded=7115; transferred=1140; delivered=1019 people
+Pragmatic routing: timed=13106 packets; timed_ignoring_unknown=0; timed_budget_deferred=3305; untimed=23525 live routes; untimed_no_route=32382; untimed_budget_deferred=591425
+Untimed transport: boarded=82514; transferred=38086; delivered=31687 people
+Fallback GraphWork: 0 packets; deferred=0 packets
+Fallback GraphMemory: 0 packets; deferred=0 packets
+Fallback SnapshotLimit: 0 packets; deferred=0 packets
+Fallback QueryWork: 0 packets; deferred=659596 packets
+Fallback QueryLimit: 0 packets; deferred=0 packets
+Fallback QueryMemory: 0 packets; deferred=0 packets
+Fallback PredictionIncomplete: 8209 packets; deferred=0 packets
+Fallback PredictionHorizon: 0 packets; deferred=0 packets
+Fallback NoJourney: 0 packets; deferred=0 packets
+Fallback InvalidLeg: 0 packets; deferred=0 packets
+Fallback StaleLeg: 7087 packets; deferred=0 packets
+Fallback Disabled: 0 packets; deferred=0 packets
+Fallback VehicleDeleted: 0 packets; deferred=0 packets
+Saving map...
+Map successfully saved to 'C:/Users/bebe/CLionProjects/OpenTTD-patches/build-policy-residency/run-baseline/baseline-trace-result.sav'.
+Console log file closed.

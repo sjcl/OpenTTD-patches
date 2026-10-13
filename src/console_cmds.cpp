@@ -4819,11 +4819,16 @@ static bool ConPassengerPeriodicCompare(std::span<std::string_view> argv)
 static bool ConPassengerJourneyStats(std::span<std::string_view> argv)
 {
 	if (argv.empty()) {
-		IConsolePrint(CC_HELP, "passenger_journey_stats [total|tick|inventory|reset]: local active journey diagnostics; reset clears observations only");
+		IConsolePrint(CC_HELP, "passenger_journey_stats [total|tick|inventory|reset|cache_on|cache_off]: local diagnostics and optional derived policy residency");
 		return true;
 	}
 	if (argv.size() > 2) return false;
 	auto operation = argv.size() == 1 ? std::string_view("total") : argv[1];
+	if (operation == "cache_on" || operation == "cache_off") {
+		GetPassengerServiceDatabase().SetPolicyCacheEnabled(operation == "cache_on");
+		IConsolePrint(CC_DEFAULT, "Periodic policy residency: {}; logical query work unchanged", operation == "cache_on" ? "enabled" : "disabled");
+		return true;
+	}
 	if (operation == "inventory") {
 		/* Explicit read-only census. Reserved station cargo is held in vehicle
 		 * lists, so count each packet there exactly once for the global rates. */
@@ -4922,10 +4927,18 @@ static bool ConPassengerJourneyStats(std::span<std::string_view> argv)
 			periodic.build_microseconds, periodic.searches, periodic.query_microseconds, periodic.next_departures, periodic.policy_hits, periodic.policy_misses,
 			periodic.invalidations, periodic.rejected_work, periodic.rejected_memory);
 	IConsolePrint(CC_DEFAULT, "Periodic global invalidations: {}", periodic.global_invalidations);
+	IConsolePrint(CC_DEFAULT, "Periodic residency: entries={}; revision={}; publications={}; staged={}; staged_bytes={}; additions={}; removals={}; updates={}; timetable_notifications={}",
+			periodic.policy_entries, periodic.published_revision, periodic.publications, periodic.staged, periodic.staged_bytes,
+			periodic.service_additions, periodic.service_removals, periodic.service_updates, periodic.timetable_notifications);
+	IConsolePrint(CC_DEFAULT, "Periodic cache cost: clears={}; lost={}; maximum_lost={}; explicit={}; reset={}; global={}; stale={}; evictions={}; rebuilds={}; compile_us={}; validation_us={}; eviction_us={}",
+			periodic.policy_clears, periodic.policies_cleared, periodic.maximum_policies_cleared, periodic.clear_reasons[0], periodic.clear_reasons[1], periodic.clear_reasons[2],
+			periodic.policy_stale, periodic.policy_evictions, periodic.policy_rebuilds, periodic.policy_compile_microseconds, periodic.policy_validation_microseconds, periodic.policy_eviction_microseconds);
+	IConsolePrint(CC_DEFAULT, "Periodic publication cost: publication_us={}; wait_ticks={}; wait_samples={}", periodic.publication_microseconds, periodic.published_wait_ticks, periodic.published_wait_samples);
 	IConsolePrint(CC_DEFAULT, "Periodic known vehicle phases: {}", periodic.known_phase_vehicles);
 	IConsolePrint(CC_DEFAULT, "Periodic operating events: physical_passenger_occurrences={}; exchange_passenger_occurrences={}; depot_timed={}; depot_untimed={}; depot_blocked={}",
 			periodic.physical_passenger_occurrences, periodic.exchange_passenger_occurrences, periodic.depot_timed, periodic.depot_untimed, periodic.depot_blocked);
 	const auto schedule = GetPassengerServiceDatabase().GetScheduleDiagnostic();
+	IConsolePrint(CC_DEFAULT, "Schedule policy compilation: compile_us={}; residency_shared=true", schedule.compile_microseconds);
 	static constexpr std::array schedule_reasons{"ServiceMissing", "Incarnation", "Generation", "Station", "Disabled", "VehicleDeleted", "LiveRide", "ForcedUnload", "WaitingExpired"};
 	static_assert(schedule_reasons.size() == static_cast<size_t>(PassengerScheduleInvalidation::End));
 	for (size_t i = 0; i < schedule_reasons.size(); ++i) IConsolePrint(CC_DEFAULT, "Schedule invalidation {}: {} packets", schedule_reasons[i], stats.schedule_invalidations[i]);

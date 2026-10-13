@@ -80,7 +80,8 @@ namespace {
 			ResetPassengerServiceDatabase();
 		}
 		PeriodicTrain *Train(std::vector<Order> orders) { return Vehicle::Create<PeriodicTrain>(std::move(orders)); }
-		PassengerServiceDatabase &Build() { auto &db = GetPassengerServiceDatabase(); db.Tick(); return db; }
+		PassengerServiceDatabase &Build() { auto &db = GetPassengerServiceDatabase(); for (int i = 0; i < 128 && db.IsBuilding(); ++i) db.Tick(); REQUIRE_FALSE(db.IsBuilding()); return db; }
+		void PublishUpdates(PassengerServiceDatabase &db) { _state_ticks += PassengerServiceDatabase::TIMETABLE_EPOCH; for (int i = 0; i < 128 && db.IsBuilding(); ++i) db.Tick(); REQUIRE_FALSE(db.IsBuilding()); }
 		CargoPacket *Packet(uint16_t count = 10)
 		{
 			auto *packet = CargoPacket::Create(count, 0, A, TileIndex{0}, Money{0}); REQUIRE(packet->SetPassengerDestination(PAX, D)); return packet;
@@ -180,9 +181,9 @@ TEST_CASE("Periodic local invalidation preserves unrelated published services", 
 	Fixture f; auto *one = f.Train({Stop(A), Stop(B)}); auto *two = f.Train({Stop(C), Stop(D)});
 	auto &db = f.Build(); auto generation = db.Get(two->orders->index)->generation;
 	one->GetOrder(1)->SetTravelTime(50); db.Invalidate(one->orders->index);
-	CHECK(db.Get(one->orders->index) == nullptr); CHECK(db.Get(two->orders->index)->generation == generation);
-	db.Tick(1); CHECK(db.Get(one->orders->index) == nullptr);
-	db.Tick(); CHECK(db.Get(two->orders->index)->generation == generation); CHECK(db.Get(one->orders->index)->timetable.period == 170);
+	CHECK(db.GetPublication(one->orders->index) == PassengerServiceDatabase::Publication::Dirty); CHECK(db.Get(two->orders->index)->generation == generation);
+	db.Tick(1); CHECK(db.GetPublication(one->orders->index) == PassengerServiceDatabase::Publication::Dirty);
+	f.PublishUpdates(db); CHECK(db.Get(two->orders->index)->generation == generation); CHECK(db.Get(one->orders->index)->timetable.period == 170);
 }
 
 TEST_CASE("Periodic scheduler progress and captured phases survive save and join", "[passenger][periodic][save][determinism]")
@@ -208,7 +209,7 @@ TEST_CASE("Periodic rebuilding tolerates another edit and falls back before publ
 	Fixture f; auto *train = f.Train({Stop(A), Stop(D)}); auto &db = GetPassengerServiceDatabase();
 	CHECK_FALSE(db.Plan(PAX, A, D, NOW).ride); db.Tick(1);
 	train->GetOrder(1)->SetTravelTime(50); db.Invalidate(train->orders->index); db.Tick(1);
-	train->GetOrder(1)->SetTravelTime(25); db.Invalidate(train->orders->index); db.Tick();
+	train->GetOrder(1)->SetTravelTime(25); db.Invalidate(train->orders->index); f.Build();
 	auto plan = db.Plan(PAX, A, D, NOW); REQUIRE(plan.ride); CHECK(plan.arrival == NOW + 35);
 }
 
@@ -333,8 +334,9 @@ TEST_CASE("Periodic dirty queue rotation prevents repeated edits from starving o
 {
 	Fixture f; auto *one = f.Train({Stop(A), Stop(B)}); auto *two = f.Train({Stop(C), Stop(D)}); auto &db = f.Build();
 	db.Invalidate(one->orders->index); db.Invalidate(two->orders->index);
-	for (int i = 0; i < 10 && db.Get(two->orders->index) == nullptr; ++i) { db.Invalidate(one->orders->index); _state_ticks++; db.Tick(600); }
-	REQUIRE(db.Get(two->orders->index) != nullptr);
+	_state_ticks += PassengerServiceDatabase::TIMETABLE_EPOCH;
+	for (int i = 0; i < 10 && db.GetPublication(two->orders->index) != PassengerServiceDatabase::Publication::Published; ++i) { db.Invalidate(one->orders->index); _state_ticks++; db.Tick(600); }
+	REQUIRE(db.GetPublication(two->orders->index) == PassengerServiceDatabase::Publication::Published);
 }
 
 TEST_CASE("Periodic unplanned implicit stops never become forecast boarding occurrences", "[passenger][periodic]")
@@ -354,7 +356,7 @@ TEST_CASE("Periodic saved order list identities cannot bind to recycled pool IDs
 	train->orders->FreeChain(); train->orders = OrderList::Create(std::vector<Order>{Stop(A), Stop(D)}, train);
 	CHECK(train->orders->index == id); CHECK(train->orders->GetCargoDistRouteGeneration() != incarnation);
 	CHECK_FALSE(ValidatePassengerServiceRide(*plan.ride, train, PAX, true)); CHECK_FALSE(db.IsCurrent(*plan.ride));
-	db.Tick(); CHECK(db.Get(id)->incarnation != incarnation);
+	f.PublishUpdates(db); CHECK(db.Get(id)->incarnation != incarnation);
 }
 
 TEST_CASE("Periodic state tick rebasing preserves departures and packet retry intervals", "[passenger][periodic][save]")
@@ -424,7 +426,7 @@ TEST_CASE("Periodic capacity changes invalidate only the affected service while 
 {
 	Fixture f; auto *train = f.Train({Stop(A), Stop(D)}); auto &db = f.Build(); auto generation = db.Get(train->orders->index)->generation;
 	train->cargo.Append(f.Packet()); ObservePassengerPeriodicVehicle(train); CHECK(db.Get(train->orders->index)->generation == generation);
-	train->cargo_cap = 0; ObservePassengerPeriodicVehicle(train); CHECK(db.Get(train->orders->index) == nullptr); db.Tick();
+	train->cargo_cap = 0; ObservePassengerPeriodicVehicle(train); CHECK(db.GetPublication(train->orders->index) == PassengerServiceDatabase::Publication::Dirty); f.PublishUpdates(db);
 	CHECK_FALSE(db.Plan(PAX, A, D, NOW).ride);
 }
 
@@ -753,7 +755,7 @@ TEST_CASE("Schedule fleet frequency never fabricates evenly spaced unknown phase
 	v->current_order.Free(); shared->current_order.Free(); auto &db = f.Build();
 	auto unknown = db.PlanEstimated(PAX, A, D, NOW); REQUIRE(unknown.ride); CHECK(unknown.ride->estimated_wait == 220);
 	v->LoadAt(0); shared->LoadAt(1);
-	db.Invalidate(v->orders->index); db.Tick();
+	db.Invalidate(v->orders->index); f.PublishUpdates(db);
 	auto known = db.PlanEstimated(PAX, A, D, NOW); REQUIRE(known.ride); CHECK(known.ride->estimated_wait == 55);
 }
 
@@ -881,7 +883,7 @@ TEST_CASE("Schedule reads old periodic wire state and unresolved dispatch circui
 	auto wire = db.Save(); PassengerServiceDatabase peer; REQUIRE(peer.Load(wire)); peer.FinishLoad(true);
 	CHECK(peer.PlanEstimated(PAX, A, D, NOW).ride == plan.ride);
 	/* Version one had the same record prefix without the final dispatch estimate. */
-	wire[0] = 1; wire.resize(wire.size() - 8); REQUIRE(peer.Load(wire)); peer.FinishLoad(true);
+	wire.resize(wire.size() - 7 * 8); wire[0] = 1; wire.resize(wire.size() - 8); REQUIRE(peer.Load(wire)); peer.FinishLoad(true);
 	CHECK(peer.Get(v->orders->index) == nullptr); CHECK(peer.GetDiagnostic().pending != 0);
 	peer.Tick(); REQUIRE(peer.Get(v->orders->index) != nullptr);
 	CHECK(peer.Get(v->orders->index)->uncertain_dispatch_period == 2000); CHECK(peer.PlanEstimated(PAX, A, D, NOW).ride.has_value());
@@ -905,7 +907,7 @@ TEST_CASE("Schedule interchange exclusion distinguishes recycled order list inca
 	Fixture f; auto *v = f.Train({Stop(A), Stop(D)}); auto &db = f.Build(); auto *packet = f.Packet();
 	OrderListID id = v->orders->index; uint64_t incarnation = v->orders->GetCargoDistRouteGeneration();
 	packet->SetPassengerInterchange(NOW + 20, id, incarnation);
-	v->orders->FreeChain(); v->orders = OrderList::Create(std::vector<Order>{Stop(A), Stop(D)}, v); v->LoadAt(0); db.Tick();
+	v->orders->FreeChain(); v->orders = OrderList::Create(std::vector<Order>{Stop(A), Stop(D)}, v); v->LoadAt(0); f.PublishUpdates(db);
 	REQUIRE(v->orders->index == id); REQUIRE(v->orders->GetCargoDistRouteGeneration() != incarnation);
 	_state_ticks += 20; PassengerJourneyActiveContext waiting(nullptr, A); REQUIRE(waiting.PlanWaiting(*packet, PAX, D));
 	CHECK(PassengerJourneyLoadingContext().CanBoard(*packet, v));
@@ -1055,7 +1057,7 @@ TEST_CASE("Actual explicit arrival recaptures a drifted periodic phase", "[passe
 	Fixture f; auto *train = f.Train({Stop(A), Stop(D)}); auto &db = f.Build();
 	auto generation = db.Get(train->orders->index)->generation;
 	_state_ticks += 500; train->LoadAt(1); ObservePassengerPeriodicVehicle(train);
-	CHECK(db.Get(train->orders->index) == nullptr); db.Tick();
+	CHECK(db.Get(train->orders->index)->generation == generation); f.PublishUpdates(db);
 	CHECK(db.Get(train->orders->index)->generation > generation);
 	auto plan = db.Plan(PAX, D, A, _state_ticks); REQUIRE(plan.ride); CHECK(plan.ride->departure == _state_ticks + 10);
 }
@@ -1091,7 +1093,7 @@ TEST_CASE("A tick ending during facility capture retries before publishing Unkno
 	db.Tick(task_work); CHECK(db.Get(train->orders->index) == nullptr);
 	CHECK(db.GetPublication(train->orders->index) == PassengerServiceDatabase::Publication::Dirty);
 	auto wire = db.Save(); PassengerServiceDatabase joined; REQUIRE(joined.Load(wire)); joined.FinishLoad(true);
-	db.Tick(); joined.Tick(); CHECK(db.Save() == joined.Save());
+	f.Build(); for (int i = 0; i < 128 && joined.IsBuilding(); ++i) joined.Tick(); CHECK(db.Save() == joined.Save());
 	auto plan = db.Plan(PAX, A, D, NOW); REQUIRE(plan.ride); CHECK_FALSE(plan.deferred);
 	CHECK(db.GetDiagnostic().rejected_work == 1);
 }
@@ -1175,4 +1177,153 @@ TEST_CASE("A fleet larger than a full phase capture tick cannot stall publicatio
 	CHECK(db.GetPublication(first->orders->index) == PassengerServiceDatabase::Publication::Published);
 	db.Tick(); CHECK_FALSE(db.IsBuilding());
 	auto plan = db.Plan(PAX, A, StationID{99}, NOW); REQUIRE(plan.ride); CHECK_FALSE(plan.deferred);
+}
+
+
+TEST_CASE("Shared policies remain resident through thousands of unchanged ticks", "[passenger][periodic][schedule][residency][determinism]")
+{
+	Fixture f; f.Train({Stop(A), Stop(D)}); auto &db = f.Build(); GameRandomSeedChecker checker;
+	auto timed = db.Plan(PAX, A, D, NOW), warm = db.Plan(PAX, A, D, NOW);
+	auto estimated = db.PlanEstimated(PAX, A, D, NOW);
+	auto saved = db.Save(); auto builds = db.GetDiagnostic().builds;
+	for (int i = 0; i < 12000; ++i) { ++_state_ticks; db.Tick(); }
+	CHECK(db.GetDiagnostic().builds == builds); CHECK(db.Save() == saved);
+	CHECK(db.Plan(PAX, A, D, NOW).work == timed.work);
+	CHECK(db.PlanEstimated(PAX, A, D, NOW).work == estimated.work);
+	CHECK(db.GetDiagnostic().policy_hits == 2); CHECK(db.GetScheduleDiagnostic().hits == 1);
+	CHECK(db.GetDiagnostic().policy_clears == 0); CHECK(timed.ride == warm.ride); CHECK(checker.Check());
+}
+
+TEST_CASE("An unrelated publication preserves both policy kinds and their logical work", "[passenger][periodic][schedule][residency][determinism]")
+{
+	Fixture f; f.Train({Stop(A), Stop(B)}); auto *unrelated = f.Train({Stop(C), Stop(D)}); auto &db = f.Build();
+	auto timed = db.Plan(PAX, A, B, NOW); auto estimated = db.PlanEstimated(PAX, A, B, NOW); auto revision = db.GetDiagnostic().published_revision;
+	unrelated->GetOrder(1)->SetTravelTime(500); db.TimetableChanged(unrelated->orders->index); f.PublishUpdates(db);
+	CHECK(db.GetDiagnostic().published_revision > revision);
+	auto hit = db.Plan(PAX, A, B, NOW); CHECK(hit.work == timed.work); REQUIRE(hit.ride); CHECK(hit.ride->service == timed.ride->service); CHECK(hit.ride->generation == timed.ride->generation);
+	auto scheduled_hit = db.PlanEstimated(PAX, A, B, NOW); CHECK(scheduled_hit.work == estimated.work); CHECK(scheduled_hit.ride == estimated.ride);
+	CHECK(db.GetDiagnostic().policy_hits == 1); CHECK(db.GetScheduleDiagnostic().hits == 1); CHECK(db.GetDiagnostic().policy_stale == 0);
+}
+
+TEST_CASE("A new shortcut invalidates policies which never used its service", "[passenger][periodic][schedule][residency][determinism]")
+{
+	Fixture f; f.Train({Stop(A, 400, 0), Stop(B, 100, 0)}); f.Train({Stop(B, 400, 100), Stop(D, 100, 0)}); auto &db = f.Build();
+	StateTicks ready = NOW + 2 * PassengerServiceDatabase::TIMETABLE_EPOCH;
+	auto before = db.Plan(PAX, A, D, ready); auto scheduled_before = db.PlanEstimated(PAX, A, D, NOW); REQUIRE(before.ride); REQUIRE(scheduled_before.ride);
+	auto *shortcut = f.Train({Stop(A, 100, 0), Stop(D, 1, 0)}); db.Tick();
+	CHECK(db.Plan(PAX, A, D, ready).ride == before.ride); f.PublishUpdates(db);
+	auto after = db.Plan(PAX, A, D, ready); auto scheduled_after = db.PlanEstimated(PAX, A, D, NOW);
+	REQUIRE(after.ride); REQUIRE(scheduled_after.ride); CHECK(after.ride->service == shortcut->orders->index);
+	CHECK(after.arrival < before.arrival); CHECK(scheduled_after.cost < scheduled_before.cost); CHECK(db.GetDiagnostic().policy_stale == 2);
+	db.ClearPolicies(); auto cold = db.Plan(PAX, A, D, ready); auto schedule_cold = db.PlanEstimated(PAX, A, D, NOW);
+	CHECK(after.ride == cold.ride); CHECK(after.work == cold.work); CHECK(schedule_cold.ride == scheduled_after.ride); CHECK(schedule_cold.work == scheduled_after.work);
+}
+
+TEST_CASE("A frozen publication batch survives additional edits and a cold joining peer", "[passenger][periodic][schedule][residency][save][determinism]")
+{
+	Fixture f; auto *one = f.Train({Stop(A), Stop(B)}); auto *two = f.Train({Stop(C), Stop(D)}); auto &db = f.Build();
+	auto generation = db.Get(one->orders->index)->generation;
+	one->GetOrder(1)->SetTravelTime(200); two->GetOrder(1)->SetTravelTime(300);
+	db.TimetableChanged(one->orders->index); db.TimetableChanged(two->orders->index);
+	_state_ticks += PassengerServiceDatabase::TIMETABLE_EPOCH; db.Tick(500);
+	CHECK(db.Get(one->orders->index)->generation == generation); REQUIRE(db.GetDiagnostic().staged == 1);
+	one->GetOrder(1)->SetTravelTime(400); db.TimetableChanged(one->orders->index);
+	auto wire = db.Save(); PassengerServiceDatabase peer; REQUIRE(peer.Load(wire)); peer.FinishLoad(true); CHECK(peer.Save() == wire);
+	for (int i = 0; i < 8; ++i) { ++_state_ticks; db.Tick(500); peer.Tick(500); CHECK(db.Save() == peer.Save()); }
+	CHECK(db.Get(one->orders->index)->timetable.period == 320); CHECK(db.GetPublication(one->orders->index) == PassengerServiceDatabase::Publication::TimingDirty);
+	_state_ticks += PassengerServiceDatabase::TIMETABLE_EPOCH;
+	for (int i = 0; i < 8; ++i) { db.Tick(500); peer.Tick(500); CHECK(db.Save() == peer.Save()); }
+	CHECK(db.Get(one->orders->index)->timetable.period == 520);
+	auto hot = db.Plan(PAX, A, B, NOW); auto cold = peer.Plan(PAX, A, B, NOW); CHECK(hot.ride == cold.ride); CHECK(hot.work == cold.work);
+}
+
+TEST_CASE("Shared LRU evicts across Timed and Schedule-aware without changing routes", "[passenger][periodic][schedule][residency][scaling][determinism]")
+{
+	Fixture f; f.Train({Stop(A), Stop(D)}); auto &db = f.Build(); auto timed = db.Plan(PAX, A, D, NOW); auto schedule = db.PlanEstimated(PAX, A, D, NOW);
+	std::vector<Order> stations; for (uint16_t i = 4; i < 5004; ++i) stations.push_back(Stop(StationID{i})); EnsurePassengerTestStations(stations);
+	for (uint16_t i = 4; i < 5004; ++i) {
+		if (i % 2) db.Plan(PAX, A, StationID{i}, NOW); else db.PlanEstimated(PAX, A, StationID{i}, NOW);
+	}
+	auto d = db.GetDiagnostic(); CHECK(d.policy_entries <= PassengerServiceDatabase::POLICY_ENTRIES); CHECK(d.policy_bytes <= PassengerServiceDatabase::POLICY_BYTES); CHECK(d.policy_evictions > 0);
+	CHECK(db.Plan(PAX, A, D, NOW).ride == timed.ride); CHECK(db.Plan(PAX, A, D, NOW).work == timed.work);
+	CHECK(db.PlanEstimated(PAX, A, D, NOW).ride == schedule.ride); CHECK(db.PlanEstimated(PAX, A, D, NOW).work == schedule.work);
+	WARN("Shared LRU: evictions=" << d.policy_evictions << "; eviction_us=" << d.policy_eviction_microseconds << "; validation_us=" << d.policy_validation_microseconds << "; entries=" << d.policy_entries << "; bytes=" << d.policy_bytes);
+}
+
+TEST_CASE("Structural edits block real boarding while the old publication remains readable", "[passenger][periodic][schedule][residency][active]")
+{
+	Fixture f; auto *v = f.Train({Stop(A), Stop(D)}); auto &db = f.Build(); auto plan = db.Plan(PAX, A, D, NOW); REQUIRE(plan.ride);
+	auto generation = db.Get(v->orders->index)->generation;
+	v->GetOrder(0)->SetLoadType(OrderLoadType::NoLoad); db.Invalidate(v->orders->index);
+	CHECK(db.Get(v->orders->index)->generation == generation); CHECK_FALSE(db.IsCurrent(*plan.ride)); CHECK_FALSE(ValidatePassengerServiceRide(*plan.ride, v, PAX, true));
+	db.Tick(); CHECK(db.Get(v->orders->index)->generation == generation); f.PublishUpdates(db);
+	CHECK_FALSE(db.Plan(PAX, A, D, NOW).ride); CHECK_FALSE(db.PlanEstimated(PAX, A, D, NOW).ride);
+}
+
+
+TEST_CASE("Disabling shared residency preserves work outcomes and saved publication", "[passenger][periodic][schedule][residency][save][determinism]")
+{
+	Fixture f; f.Train({Stop(A), Stop(B), Stop(D)}); f.Train({Stop(B, 80, 0), Stop(D, 10, 0)}); auto &db = f.Build();
+	auto wire = db.Save(); PassengerServiceDatabase cold; REQUIRE(cold.Load(wire)); cold.FinishLoad(true); cold.SetPolicyCacheEnabled(false);
+	for (size_t work : {size_t{1}, size_t{10}, size_t{100}, size_t{65536}}) for (int i = 0; i < 64; ++i) {
+		PassengerJourneyLimits limits; limits.work = work; StateTicks ready = NOW + i * 17;
+		auto timed = db.Plan(PAX, A, D, ready, limits); auto uncached = cold.Plan(PAX, A, D, ready, limits);
+		CHECK(timed.ride == uncached.ride); CHECK(timed.route == uncached.route); CHECK(timed.work == uncached.work); CHECK(timed.reason == uncached.reason); CHECK(timed.deferred == uncached.deferred); CHECK(timed.memory == uncached.memory);
+		auto schedule = db.PlanEstimated(PAX, A, D, ready, limits); auto fresh = cold.PlanEstimated(PAX, A, D, ready, limits);
+		CHECK(schedule.ride == fresh.ride); CHECK(schedule.work == fresh.work); CHECK(schedule.cost == fresh.cost); CHECK(schedule.deferred == fresh.deferred);
+	}
+	CHECK(db.Save() == wire); CHECK(cold.Save() == wire); CHECK(cold.GetDiagnostic().policy_entries == 0);
+}
+
+
+TEST_CASE("Deleted station and vehicle IDs cannot board through a resident old publication", "[passenger][periodic][schedule][residency][active][save]")
+{
+	Fixture f; auto *v = f.Train({Stop(A), Stop(D)}); auto &db = f.Build(); auto timed = db.Plan(PAX, A, D, NOW); auto schedule = db.PlanEstimated(PAX, A, D, NOW); REQUIRE(timed.ride); REQUIRE(schedule.ride);
+	SECTION("Station pool removal") {
+		db.Invalidate(); _station_pool.CleanPool();
+		CHECK_FALSE(ValidatePassengerServiceRide(*timed.ride, v, PAX, true)); CHECK_FALSE(ValidatePassengerServiceRide(*schedule.ride, v, PAX, true));
+		CHECK_FALSE(db.Plan(PAX, A, D, NOW).ride); CHECK_FALSE(db.PlanEstimated(PAX, A, D, NOW).ride);
+	}
+	SECTION("Vehicle and order list deletion") {
+		VehicleID id = v->index; OrderListID service = v->orders->index;
+		db.Invalidate(service); v->orders->FreeChain(); v->orders = nullptr; delete v;
+		CHECK(Vehicle::GetIfValid(id) == nullptr); CHECK_FALSE(db.IsCurrent(*timed.ride)); CHECK_FALSE(db.IsCurrent(*schedule.ride));
+		CHECK_FALSE(ValidatePassengerServiceRide(*timed.ride, Vehicle::GetIfValid(id), PAX, true));
+		/* Planning and serialization use copied IDs and offsets, never freed pointers. */
+		db.Plan(PAX, A, D, NOW); db.PlanEstimated(PAX, A, D, NOW); auto wire = db.Save(); PassengerServiceDatabase peer; REQUIRE(peer.Load(wire)); peer.FinishLoad(true);
+		f.PublishUpdates(db); _state_ticks += PassengerServiceDatabase::TIMETABLE_EPOCH; for (int i = 0; i < 128 && peer.IsBuilding(); ++i) peer.Tick();
+		CHECK(db.Get(service) == nullptr); CHECK(peer.Get(service) == nullptr); CHECK_FALSE(db.Plan(PAX, A, D, NOW).ride); CHECK_FALSE(db.PlanEstimated(PAX, A, D, NOW).ride);
+	}
+}
+
+
+TEST_CASE("A local disabled policy cache stays disabled across loading and joining", "[passenger][periodic][schedule][residency][save][determinism]")
+{
+	Fixture f; f.Train({Stop(A), Stop(D)}); auto &db = f.Build(); auto wire = db.Save();
+	db.SetPolicyCacheEnabled(false); REQUIRE(db.Load(wire)); db.FinishLoad(true);
+	for (int i = 0; i < 3; ++i) { REQUIRE(db.Plan(PAX, A, D, NOW).ride); REQUIRE(db.PlanEstimated(PAX, A, D, NOW).ride); }
+	CHECK(db.GetDiagnostic().policy_entries == 0); CHECK(db.GetDiagnostic().policy_hits == 0); CHECK(db.GetScheduleDiagnostic().hits == 0); CHECK(db.Save() == wire);
+}
+
+
+TEST_CASE("A staging memory boundary remains bounded and loadable during deletions", "[passenger][periodic][residency][save][scaling][determinism]")
+{
+	Fixture f; f.Train({Stop(A), Stop(D)}); auto &db = f.Build(); auto wire = db.Save();
+	wire.resize(wire.size() - 7 * 8); // Replace the empty version-three staging suffix.
+	auto put = [&](uint64_t value) { for (uint i = 0; i < 8; ++i) { wire.push_back(value & 255); value >>= 8; } };
+	put(1); put(NOW.base()); put(0); put(0); // Published revision, batch tick, publishing, bootstrap.
+	put(3); for (uint16_t id : {60000, 60001, 60002}) { put(id); put(NOW.base()); }
+	put(0); put(32); // Unsafe set and staged records.
+	for (uint16_t index = 0; index < 32; ++index) {
+		put(1000 + index); put(1); put(1); put(1);
+		size_t stops = index == 31 ? 4062 : 4096; put(stops);
+		for (size_t i = 0; i < stops; ++i) { put(A.base()); put(0); put(0); put(0); put(1); put(1); put(0); }
+		put(0); put(0); put(0); put(0); put(0); put(0); put(0); put(NOW.base()); // Fleet, dispatch fields, estimate and staged age.
+	}
+	REQUIRE(db.Load(wire)); db.FinishLoad(true);
+	REQUIRE(db.GetDiagnostic().staged_bytes == PassengerServiceDatabase::MAX_BYTES - 1024);
+	db.Tick(); CHECK(db.GetDiagnostic().staged_bytes <= PassengerServiceDatabase::MAX_BYTES);
+	auto partial = db.Save(); PassengerServiceDatabase peer; REQUIRE(peer.Load(partial)); peer.FinishLoad(true); CHECK(peer.Save() == partial);
+	for (int i = 0; i < 16 && db.IsBuilding(); ++i) { db.Tick(); peer.Tick(); CHECK(db.Save() == peer.Save()); CHECK(db.GetDiagnostic().staged_bytes <= PassengerServiceDatabase::MAX_BYTES); }
+	CHECK_FALSE(db.IsBuilding()); CHECK_FALSE(peer.IsBuilding());
 }

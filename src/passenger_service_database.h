@@ -11,6 +11,8 @@
 #include "passenger_journey_type.h"
 #include "passenger_journey_schedule.h"
 #include <set>
+#include <list>
+#include <variant>
 
 struct PassengerPeriodicStop {
 	StationID station = StationID::Invalid();
@@ -78,6 +80,13 @@ struct PassengerDatabaseDiagnostic {
 	size_t depot_timed = 0, depot_untimed = 0, depot_blocked = 0; ///< Published lists containing depot orders, grouped by their most restrictive traversal.
 	uint64_t invalidations = 0, global_invalidations = 0, rejected_work = 0, rejected_memory = 0;
 	uint64_t maximum_pending_ticks = 0;
+	uint64_t publications = 0, published_revision = 0, service_additions = 0, service_removals = 0, service_updates = 0, timetable_notifications = 0;
+	uint64_t policy_clears = 0, policies_cleared = 0, maximum_policies_cleared = 0, policy_stale = 0, policy_evictions = 0;
+	uint64_t policy_compile_microseconds = 0, policy_validation_microseconds = 0, policy_eviction_microseconds = 0, policy_rebuilds = 0;
+	uint64_t publication_microseconds = 0, published_wait_ticks = 0, published_wait_samples = 0;
+	size_t policy_entries = 0, staged = 0, staged_bytes = 0;
+	enum class ClearReason : uint8_t { Explicit, Reset, Global, End };
+	std::array<uint64_t, static_cast<size_t>(ClearReason::End)> clear_reasons{};
 	size_t orderlists = 0, passenger_orderlists = 0, complete_timetables = 0, unpublished = 0, dirty_services = 0, pending_passenger = 0;
 	size_t declared_complete_timetables = 0, published_passenger = 0, published_cycles = 0;
 	size_t compile_success = 0, compile_failure = 0, unknown_phase_vehicles = 0;
@@ -98,8 +107,9 @@ struct PassengerDatabaseDiagnostic {
 class PassengerServiceDatabase {
 public:
 	static constexpr size_t BUILD_WORK = 65536, MAX_BYTES = 64 * 1024 * 1024;
-	static constexpr size_t POLICY_BYTES = 12 * 1024 * 1024, POLICY_ENTRIES = 4096; ///< Plus 4 MiB schedule policies: unchanged 16 MiB combined ceiling.
-	static constexpr int64_t TIMETABLE_EPOCH = 1024;
+	static constexpr size_t POLICY_BYTES = 16 * 1024 * 1024, POLICY_ENTRIES = 4096; ///< Shared by Timed and Schedule-aware, including dependency and LRU storage.
+	static constexpr size_t POLICY_STORAGE_BYTES = POLICY_BYTES - 1024 * 1024; ///< Reserve for station stamps and bounded rebuild diagnostics.
+	static constexpr int64_t TIMETABLE_EPOCH = 4096;
 	void Reset();
 	void Invalidate(OrderListID id = OrderListID::Invalid());
 	void TimetableChanged(OrderListID id); ///< Keep safe published timing until the next deterministic update epoch.
@@ -109,17 +119,18 @@ public:
 	PassengerSchedulePlan PlanEstimated(CargoType cargo, StationID origin, StationID destination, StateTicks ready,
 			PassengerJourneyLimits limits = {}, PassengerJourneyEvaluation evaluation = {}, OrderListID excluded = OrderListID::Invalid())
 	{ return this->schedule.Plan(*this, cargo, origin, destination, ready, excluded, limits, evaluation); }
-	PassengerScheduleDiagnostic GetScheduleDiagnostic() const { return this->schedule.GetDiagnostic(); }
+	PassengerScheduleDiagnostic GetScheduleDiagnostic() const;
 	struct StopRef { OrderListID service; size_t stop; auto operator<=>(const StopRef &) const = default; };
 	const std::set<StopRef> &StopsAt(StationID station) const;
 	const PassengerPeriodicService *Get(OrderListID id) const;
 	bool IsCurrent(const PassengerJourneyExecution &ride) const;
-	bool IsBuilding() const { return this->sweeping || !this->dirty.empty(); }
+	bool IsBuilding() const { return this->sweeping || !this->dirty.empty() || !this->build_queue.empty() || !this->building.empty(); }
 	std::vector<uint8_t> Save() const;
 	bool Load(std::span<const uint8_t> bytes);
 	void FinishLoad(bool present);
 	PassengerDatabaseDiagnostic GetDiagnostic() const;
-	void ResetDiagnostic() { this->diagnostic = {}; this->schedule.ResetDiagnostic(); }
+	void ResetDiagnostic() { this->diagnostic = {}; this->schedule.ResetDiagnostic(); this->recent_policy_builds.clear(); }
+	void SetPolicyCacheEnabled(bool enabled) { this->policy_cache_enabled = enabled; if (!enabled) this->ClearPolicies(); }
 	void ClearPolicies(); ///< Residency must never change search admission or its result.
 	void ShiftTicks(StateTicksDelta delta);
 	void RecordExpiry(uint16_t passengers) { ++this->diagnostic.expired_packets; this->diagnostic.expired_passengers += passengers; }
@@ -128,11 +139,17 @@ public:
 	enum class Publication : uint8_t { Published, TimingDirty, Dirty, SweepPending, Unpublished };
 	Publication GetPublication(OrderListID id) const;
 private:
+	friend class PassengerSchedulePlanner;
 	PassengerSchedulePlanner schedule;
+	using Dependencies = std::map<StationID, uint64_t>;
 	struct JourneyPolicy {
-		std::map<StationID, int64_t> lower_bounds; ///< Relaxed reverse adjacent-stop distances, never winning routes.
-		size_t work = 0, bytes = 0, scratch_bytes = 0;
-		uint64_t last_used = 0; ///< Optional residency, never admission or a saved simulation decision.
+		std::vector<std::pair<StationID, int64_t>> lower_bounds; ///< Relaxed reverse adjacent-stop distances, never winning routes.
+		size_t work = 0, bytes = 0, scratch_bytes = 0; ///< Replay the original cold tree search's logical memory, independently of compact residency.
+		const int64_t *LowerBound(StationID station) const
+		{
+			auto it = std::lower_bound(this->lower_bounds.begin(), this->lower_bounds.end(), station, [](const auto &bound, StationID id) { return bound.first < id; });
+			return it != this->lower_bounds.end() && it->first == station ? &it->second : nullptr;
+		}
 		bool limited = false;
 		bool complete = false;
 		int64_t unsettled_bound = 0;
@@ -140,8 +157,30 @@ private:
 		PassengerPeriodicPlan::Reason diagnostic_limit = PassengerPeriodicPlan::Reason::NoCandidate;
 		PassengerPeriodicPlan::Reason reason = PassengerPeriodicPlan::Reason::NoCandidate;
 	};
-	using PolicyKey = std::tuple<CargoType, StationID, StationID, PassengerJourneyLimits, PassengerJourneyEvaluation>;
-	std::map<OrderListID, PassengerPeriodicService> services;
+	using PolicyKey = std::tuple<bool, CargoType, StationID, StationID, OrderListID, PassengerJourneyLimits, PassengerJourneyEvaluation>;
+	using PolicyValue = std::variant<JourneyPolicy, PassengerSchedulePlan>;
+	struct CachedPolicy {
+		PolicyValue value;
+		std::vector<std::pair<StationID, uint64_t>> dependencies; ///< Sorted compact stamps; no second tree retained.
+		size_t bytes;
+		std::list<PolicyKey>::iterator lru;
+	};
+	CachedPolicy *FindPolicy(const PolicyKey &key);
+	void StorePolicy(const PolicyKey &key, PolicyValue value, Dependencies dependencies, size_t bytes);
+	void ErasePolicy(std::map<PolicyKey, CachedPolicy>::iterator it);
+	uint64_t StationRevision(StationID station) const;
+	void TouchStations(const PassengerPeriodicService &service);
+	void Publish(size_t &allowance);
+	void ClearPolicies(PassengerDatabaseDiagnostic::ClearReason reason);
+	std::map<OrderListID, PassengerPeriodicService> services; ///< Published network only.
+	std::map<OrderListID, PassengerPeriodicService> building; ///< Completed tasks awaiting the publication barrier.
+	std::set<OrderListID> build_queue, unsafe;
+	std::map<OrderListID, StateTicks> build_since, staged_since;
+	std::vector<uint64_t> station_revisions; ///< Optional derived policy stamps, cold after load.
+	StateTicks batch_started{};
+	bool publishing = false, bootstrap = true;
+	uint64_t published_revision = 0;
+	size_t building_bytes = 0;
 	std::map<StationID, std::set<StopRef>> stations;
 	std::set<OrderListID> dirty;
 	std::map<OrderListID, StateTicks> dirty_since;
@@ -151,12 +190,14 @@ private:
 	bool sweeping = true, restoring = false;
 	uint64_t generation = 0;
 	size_t bytes = 0, policy_bytes = 0;
-	uint64_t policy_clock = 0;
-	std::map<PolicyKey, JourneyPolicy> journey_policies;
+	bool policy_cache_enabled = true; ///< Local optional accelerator; absent from saves and routing admission.
+	std::list<PolicyKey> policy_lru;
+	std::map<PolicyKey, CachedPolicy> policies;
+	std::map<std::tuple<bool, CargoType, StationID, StationID>, uint64_t> recent_policy_builds; ///< Bounded diagnostic history, never simulation input.
 	PassengerDatabaseDiagnostic diagnostic;
 	void Remove(OrderListID id);
 	void Index(const PassengerPeriodicService &service);
-	JourneyPolicy CompilePolicy(CargoType cargo, StationID origin, StationID destination, PassengerJourneyLimits limits, PassengerJourneyEvaluation evaluation) const;
+	JourneyPolicy CompilePolicy(CargoType cargo, StationID origin, StationID destination, PassengerJourneyLimits limits, PassengerJourneyEvaluation evaluation, Dependencies &dependencies) const;
 };
 
 PassengerServiceDatabase &GetPassengerServiceDatabase();

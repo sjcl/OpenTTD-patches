@@ -1,0 +1,43 @@
+{
+  "driver_ticks": 1530,
+  "includes_load": true,
+  "excluded_from_speed_comparison": true,
+  "reasons": {
+    "reset": {
+      "calls": 6,
+      "nonempty": 0,
+      "lost_timed": 0,
+      "lost_schedule": 0,
+      "maximum_lost": 0
+    },
+    "structure": {
+      "calls": 1769,
+      "nonempty": 640,
+      "lost_timed": 21041,
+      "lost_schedule": 12516,
+      "maximum_lost": 406
+    },
+    "global": {
+      "calls": 6,
+      "nonempty": 2,
+      "lost_timed": 170,
+      "lost_schedule": 81,
+      "maximum_lost": 128
+    },
+    "publication": {
+      "calls": 5612,
+      "nonempty": 145,
+      "lost_timed": 2316,
+      "lost_schedule": 1545,
+      "maximum_lost": 32
+    },
+    "timing": {
+      "calls": 547,
+      "nonempty": 3,
+      "lost_timed": 258,
+      "lost_schedule": 165,
+      "maximum_lost": 372
+    }
+  },
+  "stderr_sha256": "b2c153924b2a2303b811c44cb08f541e2de3ec849331eac65de18047e30e1763"
+}
