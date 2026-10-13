@@ -3028,7 +3028,7 @@ static void ViewportDrawVehicleRouteSteps(const Viewport * const vp)
 struct ViewportGroupMarker {
 	VehicleID veh;      ///< Marked vehicle.
 	Point pt;           ///< Top centre of the vehicle sprite, in viewport coordinates.
-	PixelColour colour; ///< Colour of the group of the vehicle.
+	PixelColour colour; ///< Colour of the child group of the selected group which contains the vehicle.
 };
 static std::vector<ViewportGroupMarker> _vp_group_markers; ///< Current group markers, sorted by vehicle ID.
 
@@ -3052,12 +3052,22 @@ static Point GetGroupMarkerPosition(const Vehicle *v)
 
 /**
  * Get the colour of the group marker of a vehicle.
+ * This is the primary colour of the child group of the selected group which contains the vehicle,
+ * or of the selected group itself if the vehicle is directly in it.
+ * When all vehicles are selected, the child groups are the top level groups.
+ * Ungrouped vehicles use the primary colour of the company.
  * @param v The vehicle.
- * @return The primary colour of the group of the vehicle, or of the company for ungrouped vehicles.
+ * @param selected The selected group, which contains the vehicle.
+ * @return The marker colour.
  */
-static PixelColour GetGroupMarkerColour(const Vehicle *v)
+static PixelColour GetGroupMarkerColour(const Vehicle *v, GroupID selected)
 {
+	const GroupID child_parent = IsAllGroupID(selected) ? GroupID::Invalid() : selected;
 	const Group *g = Group::GetIfValid(v->group_id);
+	while (g != nullptr && g->index != selected && g->parent != child_parent) {
+		g = Group::GetIfValid(g->parent);
+	}
+
 	const Colours colour = (g != nullptr) ? g->livery.colour1 : Company::Get(v->owner)->livery[LiveryScheme::Default].colour1;
 	return GetColourGradient(colour, Shade::Lighter);
 }
@@ -3099,9 +3109,10 @@ void ViewportPrepareGroupMarkers()
 				if (v->type != vli.vtype || v->owner != vli.company) return false;
 				return IsAllGroupID(vli.ToGroupID()) || GroupIsInGroup(v->group_id, vli.ToGroupID());
 			};
-			if (std::ranges::none_of(groups, in_group)) continue;
+			auto selected = std::ranges::find_if(groups, in_group);
+			if (selected == groups.end()) continue;
 
-			markers.push_back({ v->index, GetGroupMarkerPosition(v), GetGroupMarkerColour(v) });
+			markers.push_back({ v->index, GetGroupMarkerPosition(v), GetGroupMarkerColour(v, selected->ToGroupID()) });
 		}
 	}
 
@@ -3133,7 +3144,7 @@ void ViewportPrepareGroupMarkers()
 /** Draw the markers above the vehicles of the groups which are selected in the group windows. */
 static void ViewportDrawGroupMarkers()
 {
-	/* The marker is a downward pointing triangle in the colour of the group, with a black outline. */
+	/* The marker is a downward pointing triangle in the colour of the child group, with a black outline. */
 	const int outer_half_width = GetGroupMarkerHalfWidth() + 1;
 	const int outer_height = GetGroupMarkerHeight() + 1;
 	const int gap = GetGroupMarkerGap();

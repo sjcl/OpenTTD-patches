@@ -435,7 +435,7 @@ STR_CONFIG_SETTING_SHOW_VEHICLE_ROUTE_STEPS                     :Show vehicle ro
 STR_CONFIG_SETTING_SHOW_VEHICLE_ROUTE_STEPS_HELPTEXT            :When enabled, and a vehicle window is focused, a marker with the order number and type is shown at the location of each order.
 
 STR_CONFIG_SETTING_SHOW_GROUP_VEHICLE_MARKERS                   :Show markers above the vehicles of the selected group in group windows: {STRING2}
-STR_CONFIG_SETTING_SHOW_GROUP_VEHICLE_MARKERS_HELPTEXT          :When enabled, a marker in the colour of the vehicle's group is shown in the viewports above each vehicle of the group which is selected in a group window (vehicles of sub-groups included). When all vehicles are selected, all vehicles of that type are marked.
+STR_CONFIG_SETTING_SHOW_GROUP_VEHICLE_MARKERS_HELPTEXT          :When enabled, a marker is shown in the viewports above each vehicle of the group which is selected in a group window (vehicles of sub-groups included). When all vehicles are selected, all vehicles of that type are marked.{}The marker has the colour of the sub-group directly below the selected group which contains the vehicle, or of the selected group itself if the vehicle is directly in it.
 
 STR_CONFIG_SETTING_SHOW_VEHICLE_LIST_COMPANY_COLOUR             :Mark other companies' vehicles in lists with their company colour: {STRING2}
 STR_CONFIG_SETTING_SHOW_VEHICLE_LIST_COMPANY_COLOUR_HELPTEXT    :Vehicles in a vehicle list window which are owned by a different company than the owner of the vehicle list are marked with a coloured square in the vehicle's company colour.

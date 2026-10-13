@@ -132,7 +132,7 @@ The TT-Forums thread for this patchpack can be found [here](https://www.tt-forum
   See the [guide on the wiki](https://github.com/JGRennison/OpenTTD-patches/wiki/Signalling) for more information.
 * Add cargo capacity / running cost sort mode to the build vehicle window.
 * Add client settings to show the full group hierarchy in group and vehicle names.
-* Add setting to show a marker in the group's colour in the viewports above each vehicle of the group which is selected in a group window (including sub-groups, the ungrouped vehicles and all vehicles).
+* Add setting to show a marker in the viewports above each vehicle of the group which is selected in a group window (including sub-groups, the ungrouped vehicles and all vehicles), in the colour of the sub-group directly below the selected group.
 
 #### Orders and Timetabling
 
