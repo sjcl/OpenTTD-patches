@@ -22,6 +22,8 @@
 #include "../core/random_func.hpp"
 #include "../sl/saveload.h"
 #include "passenger_test_stations.h"
+#include "passenger_index_allocations.h"
+#include <iostream>
 
 extern SaveLoadVersion _sl_version;
 extern std::vector<uint8_t> SlTestSaveLoadTable(void *, void *, const NamedSaveLoadTable &);
@@ -373,6 +375,175 @@ TEST_CASE("Timed service bounds skip slow fleets before computing departures", "
 	CHECK(plan.work < original.work); CHECK(pruned.departure_calculations < scanned.departure_calculations);
 }
 
+TEST_CASE("Timed arena preserves every partial work prefix and canonical tie", "[passenger][periodic][timed-arena][determinism][save]")
+{
+	Fixture f;
+	const bool weighted = GENERATE(false, true);
+	CargoType second{1}; AutoRestoreBackup classes{CargoSpec::Get(second)->classes, CargoClasses{CargoClass::Passengers}};
+	for (int i = 0; i < 12; ++i) {
+		Order forced = Stop(B, 20, 10); forced.SetUnloadType(OrderUnloadType::Transfer);
+		auto *v = f.Train({Stop(A, 1000, 0), forced, Stop(A, 20, 0), Stop(D, 200, 0)});
+		for (int n = 1; n < 5; ++n) {
+			auto *shared = Vehicle::Create<PeriodicTrain>(v); shared->LoadAt(1);
+			if (n == 1) shared->cargo_type = second;
+			if (n == 2) shared->current_order.Free();
+		}
+	}
+	f.Train({Stop(B, 1000, 20), Stop(C, 10, 0), Stop(D, 10, 0)});
+	auto &db = f.Build(); auto wire = db.Save();
+	PassengerServiceDatabase peer, unused;
+	REQUIRE(peer.Load(wire)); peer.FinishLoad(true);
+	REQUIRE(unused.Load(wire)); unused.FinishLoad(true);
+	unused.SetPolicyCacheEnabled(false); unused.SetDepartureIndexEnabled(false); unused.SetTimedSearchScratchEnabled(false);
+	PassengerJourneyEvaluation evaluation; evaluation.waiting_weight = weighted ? 500 : 0;
+	evaluation.minimum_transfer = 3; evaluation.transfer_penalty = 4;
+	for (size_t work = 0; work < 700; ++work) {
+		PassengerJourneyLimits limits; limits.work = work; limits.memory_bytes = 8 * 1024 * 1024; limits.labels = 8192;
+		CargoType cargo = work % 2 ? PAX : second;
+		StateTicks ready = NOW + int64_t(work % 31);
+		CAPTURE(work, cargo, weighted);
+		auto old = db.PlanWithLegacySearchStructures(cargo, A, D, ready, limits, evaluation);
+		SameDeparturePlan(old, db.Plan(cargo, A, D, ready, limits, evaluation));
+		SameDeparturePlan(old, db.Plan(cargo, A, D, ready, limits, evaluation));
+		SameDeparturePlan(old, peer.Plan(cargo, A, D, ready, limits, evaluation));
+		SameDeparturePlan(old, unused.Plan(cargo, A, D, ready, limits, evaluation));
+	}
+	for (size_t labels : {0, 1, 2, 16, 128, 8192}) for (size_t memory : {0, 255, 256, 1791, 1792, 3328, 32768, 8 * 1024 * 1024}) {
+		PassengerJourneyLimits limits; limits.labels = labels; limits.memory_bytes = memory;
+		limits.labels_per_station = labels % 5;
+		auto old = db.PlanWithLegacySearchStructures(PAX, A, D, NOW, limits, evaluation);
+		SameDeparturePlan(old, db.Plan(PAX, A, D, NOW, limits, evaluation));
+		SameDeparturePlan(old, unused.Plan(PAX, A, D, NOW, limits, evaluation));
+	}
+	CHECK(db.GetDiagnostic().search_scratch_bytes > 0);
+	CHECK(db.GetDiagnostic().search_scratch_bytes <= PassengerTimedSearchScratch::MAX_RETAINED_BYTES);
+	CHECK(unused.GetDiagnostic().search_scratch_bytes == 0);
+	CHECK(db.Save() == wire); CHECK(peer.Save() == wire); CHECK(unused.Save() == wire);
+	REQUIRE(db.Load(wire)); db.FinishLoad(true);
+	CHECK(db.GetDiagnostic().search_scratch_bytes == 0);
+	SameDeparturePlan(peer.PlanWithLegacySearchStructures(PAX, A, D, NOW), db.Plan(PAX, A, D, NOW));
+	db.Reset(); CHECK(db.GetDiagnostic().search_scratch_bytes == 0);
+}
+
+TEST_CASE("Timed arena standard heap keeps all equal-key insertion indices in order", "[passenger][periodic][timed-arena][determinism]")
+{
+	using Item = PassengerTimedQueueItem;
+	std::priority_queue<Item, std::vector<Item>, std::greater<Item>> old;
+	PassengerTimedQueue reused;
+	uint64_t seed = 1729;
+	for (size_t round = 0; round < 8; ++round) {
+		for (size_t i = 0; i < 2048; ++i) {
+			seed = seed * 6364136223846793005ULL + 1;
+			Item item{int64_t(seed % 3), int64_t(seed % 7), NOW + int64_t(seed % 5), seed % 3,
+				NOW + int64_t(seed % 11), OrderListID{uint16_t(seed % 3)}, VehicleOrderID(seed % 3), VehicleOrderID(seed % 5), i};
+			old.push(item); reused.push(item);
+			if (i % 7 == 0) { REQUIRE(old.top() == reused.top()); old.pop(); reused.pop(); }
+		}
+		while (!old.empty()) { REQUIRE_FALSE(reused.empty()); REQUIRE(old.top() == reused.top()); old.pop(); reused.pop(); }
+		CHECK(reused.empty()); reused.Clear(); CHECK(reused.CapacityBytes() > 0);
+	}
+}
+
+TEST_CASE("Timed arena resets touched high IDs and drops oversized retained storage", "[passenger][periodic][timed-arena][memory]")
+{
+	PassengerTimedSearchScratch scratch;
+	for (StationID station : {A, StationID{63999}, B, A}) {
+		scratch.labels.push_back({station, NOW, 1, SIZE_MAX, 0, {}, {}});
+		scratch.Append(station, scratch.labels.size() - 1);
+	}
+	std::vector<size_t> row;
+	for (size_t index : scratch.At(A)) row.push_back(index);
+	CHECK(row == std::vector<size_t>{0, 3});
+	scratch.Clear(); CHECK(scratch.labels.empty()); CHECK(scratch.queue.empty()); CHECK(scratch.touched.empty());
+	for (StationID station : {A, B, StationID{63999}}) for ([[maybe_unused]] size_t index : scratch.At(station)) FAIL("Old frontier survived clear");
+	scratch.labels.push_back({A, NOW + 10, 5, SIZE_MAX, 0, {}, {}}); scratch.Append(A, 0);
+	row.clear(); for (size_t index : scratch.At(A)) row.push_back(index); CHECK(row == std::vector<size_t>{0});
+	scratch.labels.reserve(PassengerTimedSearchScratch::MAX_RETAINED_BYTES / sizeof(PassengerTimedLabel) + 1);
+	CHECK(scratch.CapacityBytes() > PassengerTimedSearchScratch::MAX_RETAINED_BYTES);
+	scratch.Clear(); CHECK(scratch.CapacityBytes() == 0);
+}
+
+TEST_CASE("Timed search arena allocation and latency report", "[passenger][periodic][timed-arena][.benchmark]")
+{
+#ifndef WITH_SERVICE_INDEX_ALLOCATIONS
+	WARN("Configure OPTION_SERVICE_INDEX_ALLOCATIONS=ON on MSVC for allocation counts.");
+#endif
+	std::cout << "ARENA_CSV,fixture,cache,algorithm,run,ns,forward_us,labels,frontier_lookups,queue_pushes,queue_pops,allocations,allocated_bytes,peak_new_bytes,scratch_before,scratch_retained,work,memory\n";
+	std::cout << "ARENA_LAYOUT,label_bytes=" << sizeof(PassengerTimedLabel) << "; item_bytes=" << sizeof(PassengerTimedQueueItem)
+		<< "; fixed_scratch_bytes=" << sizeof(PassengerTimedSearchScratch) << "; page_bytes=" << sizeof(PassengerTimedSearchScratch::Page) << '\n';
+	for (int fixture = 0; fixture < 3; ++fixture) {
+		Fixture f;
+		StationID destination;
+		if (fixture == 0) {
+			for (uint16_t i = 0; i < 4000; ++i) f.Train({Stop(StationID{uint16_t(2 * i)}), Stop(StationID{uint16_t(2 * i + 1)})});
+			destination = B;
+		} else if (fixture == 1) {
+			for (uint16_t line = 0; line < 32; ++line) {
+				std::vector<Order> orders;
+				for (uint16_t i = 0; i < 250; ++i) orders.push_back(Stop(StationID{uint16_t(line * 250 + i)}, 10, 0));
+				f.Train(std::move(orders));
+			}
+			destination = StationID{249};
+		} else {
+			for (uint16_t i = 1; i < 4000; ++i) f.Train({Stop(A, 1000, 0), Stop(StationID{i}, 10, 0), Stop(A, 10, 0), Stop(StationID{uint16_t(i + 4000)}, 1000, 0)});
+			f.Train({Stop(StationID{4000}), Stop(A)});
+			destination = StationID{7999};
+		}
+		auto &db = f.Build(); REQUIRE(Station::GetNumItems() == 8000);
+		REQUIRE(db.GetDiagnostic().timed_services > 0); REQUIRE(db.GetDiagnostic().known_phase_vehicles > 0);
+		struct RestorePreferences {
+			PassengerServiceDatabase &db;
+			~RestorePreferences() { this->db.SetPolicyCacheEnabled(true); this->db.SetDepartureIndexEnabled(true); this->db.SetTimedSearchScratchEnabled(true); }
+		} restore{db};
+		PassengerJourneyLimits limits; limits.work = 65536; limits.labels = 8192; limits.memory_bytes = 8 * 1024 * 1024;
+		const char *name = fixture == 0 ? "pairs8000" : fixture == 1 ? "lines8000" : "hub8000";
+		for (int cache = 0; cache < 3; ++cache) {
+			db.SetPolicyCacheEnabled(cache != 2); db.SetDepartureIndexEnabled(cache != 2);
+			db.SetTimedSearchScratchEnabled(cache != 2);
+			for (size_t run = 0; run < 30; ++run) {
+				StateTicks ready = NOW + int64_t(run % 11);
+				for (bool legacy : {run % 2 == 0, run % 2 != 0}) {
+					db.SetTimedSearchScratchEnabled(!legacy && cache != 2);
+					if (cache == 0) {
+						db.ClearPolicies(); db.ClearDepartureIndices();
+						db.SetTimedSearchScratchEnabled(false); db.SetTimedSearchScratchEnabled(true);
+					} else if (cache == 1) {
+						if (legacy) db.PlanWithLegacySearchStructures(PAX, A, destination, ready, limits);
+						else db.Plan(PAX, A, destination, ready, limits); // Prime the same capacities outside measurement.
+					} else {
+						db.Plan(PAX, A, destination, ready, limits); // Prime bounded diagnostic history; caches remain disabled.
+					}
+					db.ResetDiagnostic(); const size_t resident = db.GetDiagnostic().search_scratch_bytes;
+					_passenger_index_allocations = {}; _passenger_index_tracking = true;
+					const auto started = std::chrono::steady_clock::now();
+					auto plan = legacy ? db.PlanWithLegacySearchStructures(PAX, A, destination, ready, limits) : db.Plan(PAX, A, destination, ready, limits);
+					const auto ns = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - started).count();
+					_passenger_index_tracking = false;
+					REQUIRE(plan.labels > 0); // A rejected publication is not a forward-search benchmark.
+					const auto allocations = _passenger_index_allocations;
+					auto d = db.GetDiagnostic();
+					std::cout << "ARENA_CSV," << name << ',' << (cache == 0 ? "cold" : cache == 1 ? "warm" : "disabled") << ',' << (legacy ? "legacy" : "arena") << ',' << run << ',' << ns << ',' << d.forward_microseconds << ',' << plan.labels << ',' << d.frontier_lookups << ',' << d.queue_pushes << ',' << d.queue_pops << ',' << allocations.calls << ',' << allocations.bytes << ',' << allocations.peak << ',' << resident << ',' << d.search_scratch_bytes << ',' << plan.work << ',' << plan.memory << '\n';
+					SameDeparturePlan(plan, legacy ? db.Plan(PAX, A, destination, ready, limits) : db.PlanWithLegacySearchStructures(PAX, A, destination, ready, limits));
+					/* Latency without the global allocator observer. Cold runs rebuild
+					 * both derived caches and scratch again before the timed query. */
+					if (cache == 0) {
+						db.ClearPolicies(); db.ClearDepartureIndices();
+						db.SetTimedSearchScratchEnabled(false); db.SetTimedSearchScratchEnabled(!legacy);
+					}
+					db.ResetDiagnostic();
+					const size_t plain_resident = db.GetDiagnostic().search_scratch_bytes;
+					const auto plain_start = std::chrono::steady_clock::now();
+					auto plain = legacy ? db.PlanWithLegacySearchStructures(PAX, A, destination, ready, limits) : db.Plan(PAX, A, destination, ready, limits);
+					const auto plain_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - plain_start).count();
+					d = db.GetDiagnostic();
+					std::cout << "ARENA_CSV," << name << ',' << (cache == 0 ? "cold" : cache == 1 ? "warm" : "disabled") << ',' << (legacy ? "legacy-untracked" : "arena-untracked") << ',' << run << ',' << plain_ns << ',' << d.forward_microseconds << ',' << plain.labels << ',' << d.frontier_lookups << ',' << d.queue_pushes << ',' << d.queue_pops << ",0,0,0," << plain_resident << ',' << d.search_scratch_bytes << ',' << plain.work << ',' << plain.memory << '\n';
+					SameDeparturePlan(plan, plain);
+				}
+			}
+		}
+	}
+}
+
 TEST_CASE("Timed pruning preserves cost ties phases transfers and boarding restrictions", "[passenger][periodic][timed-pruning]")
 {
 	Fixture f;
@@ -416,6 +587,7 @@ TEST_CASE("Timed pruning preserves cost ties phases transfers and boarding restr
 		CAPTURE(scenario, delay);
 		auto original = db.PlanWithoutServicePruning(PAX, A, D, NOW + delay, {}, evaluation);
 		auto plan = db.Plan(PAX, A, D, NOW + delay, {}, evaluation);
+		SameDeparturePlan(plan, db.PlanWithLegacySearchStructures(PAX, A, D, NOW + delay, {}, evaluation));
 		REQUIRE(plan.ride); CHECK_FALSE(plan.deferred); CHECK(plan.ride == original.ride); CHECK(plan.route == original.route);
 		CHECK(plan.arrival == original.arrival); CHECK(plan.cost == original.cost); CHECK(plan.transfers == original.transfers);
 		CHECK(plan.work <= original.work);
@@ -677,6 +849,13 @@ TEST_CASE("Periodic network scales to 8000 stations without expanded physical vi
 	auto diagnostic = db.GetDiagnostic(); CHECK(diagnostic.services == 4000); CHECK(diagnostic.vehicles == 4000);
 	CHECK(Station::GetNumItems() == 8000); CHECK(diagnostic.bytes < PassengerServiceDatabase::MAX_BYTES);
 	auto plan = db.Plan(PAX, A, B, _state_ticks); REQUIRE(plan.ride);
+	SameDeparturePlan(plan, db.PlanWithLegacySearchStructures(PAX, A, B, _state_ticks));
+	for (uint16_t origin : {uint16_t{0}, uint16_t{2000}, uint16_t{4000}, uint16_t{7998}}) {
+		StationID from{origin}, to{uint16_t(origin + 1)};
+		auto old = db.PlanWithLegacySearchStructures(PAX, from, to, _state_ticks);
+		SameDeparturePlan(old, db.Plan(PAX, from, to, _state_ticks));
+		SameDeparturePlan(old, db.Plan(PAX, from, to, _state_ticks));
+	}
 	CHECK(GetPassengerJourneyTickDiagnostic().builds == 0); CHECK(GetPassengerJourneyTickDiagnostic().prediction_executions == 0);
 }
 

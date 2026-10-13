@@ -1,0 +1,204 @@
+{
+  "schema_version": 1,
+  "base_commit": "604ce993892479656a2c5ba2fbd311cb19c5d896",
+  "branch": "perf/passenger-timed-search-arena",
+  "compiler": {
+    "CMAKE_CXX_FLAGS": "/DWIN32 /D_WINDOWS /GR /EHsc",
+    "CMAKE_CXX_FLAGS_RELEASE": "/O2 /Ob2 /DNDEBUG",
+    "CMAKE_C_FLAGS": "/DWIN32 /D_WINDOWS",
+    "CMAKE_C_FLAGS_RELEASE": "/O2 /Ob2 /DNDEBUG",
+    "CMAKE_MSVC_RUNTIME_LIBRARY": "MultiThreaded",
+    "CMAKE_PREFIX_PATH": "C:/Users/bebe/CLionProjects/OpenTTD-patches/cmake-build-release-visual-studio/vcpkg_installed/x64-windows-static",
+    "OPTION_NO_LTO": "ON",
+    "OPTION_PASSENGER_BENCHMARK": "OFF",
+    "OPTION_USE_ASSERTS": "ON",
+    "CMAKE_GENERATOR": "Visual Studio 17 2022",
+    "CMAKE_GENERATOR_PLATFORM": "x64",
+    "CMAKE_CXX_COMPILER": "C:/Program Files (x86)/Microsoft Visual Studio/2022/BuildTools/VC/Tools/MSVC/14.44.35207/bin/Hostx64/x64/cl.exe",
+    "CMAKE_CXX_COMPILER_ID": "MSVC",
+    "CMAKE_CXX_COMPILER_VERSION": "19.44.35227.0",
+    "library_sha256": {
+      "libpng16.lib": "2b3e07b20b3a1c48e8d7c0a299c700721dd82c1499269e019a6cd8459774ec3d",
+      "lzma.lib": "14a38a5ef1d68e67c80e96faba4d7bf5d2cde00de7257bdb396d4801e7160c6b",
+      "lzo2.lib": "851b503360b8747a20344cf9fac72b9a9d4067894220d32ed25465616b94515e",
+      "ogg.lib": "027feab8bec33c3cd0e9f286d630c3ccfa0d39d74005c723913a4061c73b5b67",
+      "opus.lib": "7670e882d03cd26214da63a7d0d8de5ba9ae7c5a6b91a2bcba7b350c4bc4a6e8",
+      "opusfile.lib": "472c9c7a425ba4d30c918d272cb7535c685c3b4d88736c9b8888b67be0e97a5a",
+      "zlib.lib": "0d3ce92e180e325c2eaa1f0c39dde62fb4153ebfbec078d740590fd12f0be3f9",
+      "zstd.lib": "9ca9d4b5df6591751b4ccb35dcea0d771601c89aa9528a7a2af430b0e71586ac"
+    }
+  },
+  "source_sha256": {
+    "src/passenger_service_database.cpp": "ce9e69ccf7e4577c6017ded5cd3a2ce678ce0b92017c160c07d17e20b3c391c4",
+    "src/passenger_service_database.h": "90721de9a79391d755083b8563ef33fc27f4c7e12354bc23cde64fc032fdfebd",
+    "src/passenger_timed_search.h": "bef8b4cd2acc11a43976e60486bee723027222bf4c07c2e579bae2fc8a3fcee9",
+    "src/console_cmds.cpp": "40a82b70b94a9e73d6d809a1eccdb2e016cbf55d381b1c6391aa32ebe04b0a72",
+    "src/tests/passenger_service_database.cpp": "bfcdaef6f8de51014a445427d8a682da3304294d34eddb8f305431c95825724d"
+  },
+  "variants": {
+    "legacy": {
+      "binary_sha256": "c221d58cfc7d18f8fdfb5644746508092118467f471a37d4c5093eabf44f8dc2",
+      "instrumentation": {
+        "mode": "minimal",
+        "files": {
+          "console_cmds.cpp": {
+            "original": "40a82b70b94a9e73d6d809a1eccdb2e016cbf55d381b1c6391aa32ebe04b0a72",
+            "copy": "7eff1bca849435786051428b8a5579d9457a3c020c7ca2dec9d55367d96088cd"
+          }
+        },
+        "source_revision": "604ce993892479656a2c5ba2fbd311cb19c5d896",
+        "source_diff_sha256": "54df49f291a7a5761e29fd9802c97f3398e265586c5f4d0e5f32f7741d396b68",
+        "instrumenter_sha256": "d5875d6e911a67a4eeca2f68b51240f103c1ef21371c99037a08512b0605751a",
+        "comparison_mode": "legacy",
+        "baseline_commit": "604ce993892479656a2c5ba2fbd311cb19c5d896",
+        "copies": {
+          "console_cmds.cpp": "7eff1bca849435786051428b8a5579d9457a3c020c7ca2dec9d55367d96088cd",
+          "passenger_service_database.cpp": "6c489c1115f102ede1fcf16f4662cf7eddf64aba8e611b36ca7f3d73fbcb739b"
+        },
+        "source_sha256": {
+          "passenger_service_database.cpp": "ce9e69ccf7e4577c6017ded5cd3a2ce678ce0b92017c160c07d17e20b3c391c4",
+          "passenger_service_database.h": "90721de9a79391d755083b8563ef33fc27f4c7e12354bc23cde64fc032fdfebd",
+          "passenger_timed_search.h": "bef8b4cd2acc11a43976e60486bee723027222bf4c07c2e579bae2fc8a3fcee9"
+        }
+      }
+    },
+    "arena": {
+      "binary_sha256": "4cacf808a3e544daec69978eda28fbb21bfcf1cef5bd144934aeb3653902a369",
+      "instrumentation": {
+        "mode": "minimal",
+        "files": {
+          "console_cmds.cpp": {
+            "original": "40a82b70b94a9e73d6d809a1eccdb2e016cbf55d381b1c6391aa32ebe04b0a72",
+            "copy": "7eff1bca849435786051428b8a5579d9457a3c020c7ca2dec9d55367d96088cd"
+          }
+        },
+        "source_revision": "604ce993892479656a2c5ba2fbd311cb19c5d896",
+        "source_diff_sha256": "54df49f291a7a5761e29fd9802c97f3398e265586c5f4d0e5f32f7741d396b68",
+        "instrumenter_sha256": "d5875d6e911a67a4eeca2f68b51240f103c1ef21371c99037a08512b0605751a",
+        "comparison_mode": "arena",
+        "copies": {
+          "console_cmds.cpp": "7eff1bca849435786051428b8a5579d9457a3c020c7ca2dec9d55367d96088cd",
+          "passenger_service_database.cpp": "67de33d9d5c56e86f42ea68210ec0ae9810a0a4c01d6446711abdae78eb57a8b"
+        },
+        "source_sha256": {
+          "passenger_service_database.cpp": "ce9e69ccf7e4577c6017ded5cd3a2ce678ce0b92017c160c07d17e20b3c391c4",
+          "passenger_service_database.h": "90721de9a79391d755083b8563ef33fc27f4c7e12354bc23cde64fc032fdfebd",
+          "passenger_timed_search.h": "bef8b4cd2acc11a43976e60486bee723027222bf4c07c2e579bae2fc8a3fcee9"
+        }
+      }
+    },
+    "disabled": {
+      "binary_sha256": "0bdbb9523524049373aa67ad6ee0663311af7780a56fa02b1571144e481d74e7",
+      "instrumentation": {
+        "mode": "minimal",
+        "files": {
+          "console_cmds.cpp": {
+            "original": "40a82b70b94a9e73d6d809a1eccdb2e016cbf55d381b1c6391aa32ebe04b0a72",
+            "copy": "7eff1bca849435786051428b8a5579d9457a3c020c7ca2dec9d55367d96088cd"
+          }
+        },
+        "source_revision": "604ce993892479656a2c5ba2fbd311cb19c5d896",
+        "source_diff_sha256": "54df49f291a7a5761e29fd9802c97f3398e265586c5f4d0e5f32f7741d396b68",
+        "instrumenter_sha256": "d5875d6e911a67a4eeca2f68b51240f103c1ef21371c99037a08512b0605751a",
+        "comparison_mode": "disabled",
+        "copies": {
+          "console_cmds.cpp": "7eff1bca849435786051428b8a5579d9457a3c020c7ca2dec9d55367d96088cd",
+          "passenger_service_database.cpp": "ee7b17a1068a0e9cab9be0fef7e67fca2e6c6e4eae6ebb1885ac6feecaa874b8"
+        },
+        "source_sha256": {
+          "passenger_service_database.cpp": "ce9e69ccf7e4577c6017ded5cd3a2ce678ce0b92017c160c07d17e20b3c391c4",
+          "passenger_service_database.h": "90721de9a79391d755083b8563ef33fc27f4c7e12354bc23cde64fc032fdfebd",
+          "passenger_timed_search.h": "bef8b4cd2acc11a43976e60486bee723027222bf4c07c2e579bae2fc8a3fcee9"
+        }
+      }
+    },
+    "legacy-detail": {
+      "binary_sha256": "80d92c72deeaee24eccf3d11f2f12d9cc430eec823cda54b959f1ad909a838ce",
+      "instrumentation": {
+        "mode": "detail",
+        "files": {
+          "console_cmds.cpp": {
+            "original": "40a82b70b94a9e73d6d809a1eccdb2e016cbf55d381b1c6391aa32ebe04b0a72",
+            "copy": "7eff1bca849435786051428b8a5579d9457a3c020c7ca2dec9d55367d96088cd"
+          }
+        },
+        "source_revision": "604ce993892479656a2c5ba2fbd311cb19c5d896",
+        "source_diff_sha256": "54df49f291a7a5761e29fd9802c97f3398e265586c5f4d0e5f32f7741d396b68",
+        "instrumenter_sha256": "d5875d6e911a67a4eeca2f68b51240f103c1ef21371c99037a08512b0605751a",
+        "comparison_mode": "legacy-detail",
+        "baseline_commit": "604ce993892479656a2c5ba2fbd311cb19c5d896",
+        "copies": {
+          "console_cmds.cpp": "b4215dc56adebbbc30b4710c5155f74aa65b89ddc079962f1a78cc4a0e0eba9f",
+          "passenger_service_database.cpp": "405332ecafa250de8a7481002a74d240f03b2c9eb487f85b63a8f48b8df3db14"
+        },
+        "source_sha256": {
+          "passenger_service_database.cpp": "ce9e69ccf7e4577c6017ded5cd3a2ce678ce0b92017c160c07d17e20b3c391c4",
+          "passenger_service_database.h": "90721de9a79391d755083b8563ef33fc27f4c7e12354bc23cde64fc032fdfebd",
+          "passenger_timed_search.h": "bef8b4cd2acc11a43976e60486bee723027222bf4c07c2e579bae2fc8a3fcee9"
+        }
+      }
+    },
+    "arena-detail": {
+      "binary_sha256": "7d6143fbbfd8ccc5361fa21e6ed14381e3c1251ad3561bd09a6b2aa71649603d",
+      "instrumentation": {
+        "mode": "detail",
+        "files": {
+          "console_cmds.cpp": {
+            "original": "40a82b70b94a9e73d6d809a1eccdb2e016cbf55d381b1c6391aa32ebe04b0a72",
+            "copy": "7eff1bca849435786051428b8a5579d9457a3c020c7ca2dec9d55367d96088cd"
+          }
+        },
+        "source_revision": "604ce993892479656a2c5ba2fbd311cb19c5d896",
+        "source_diff_sha256": "54df49f291a7a5761e29fd9802c97f3398e265586c5f4d0e5f32f7741d396b68",
+        "instrumenter_sha256": "d5875d6e911a67a4eeca2f68b51240f103c1ef21371c99037a08512b0605751a",
+        "comparison_mode": "arena-detail",
+        "copies": {
+          "console_cmds.cpp": "b4215dc56adebbbc30b4710c5155f74aa65b89ddc079962f1a78cc4a0e0eba9f",
+          "passenger_service_database.cpp": "132c4e87a3b42db348e3a5a7367670657829f5471e015c629c94da29cc26077e"
+        },
+        "source_sha256": {
+          "passenger_service_database.cpp": "ce9e69ccf7e4577c6017ded5cd3a2ce678ce0b92017c160c07d17e20b3c391c4",
+          "passenger_service_database.h": "90721de9a79391d755083b8563ef33fc27f4c7e12354bc23cde64fc032fdfebd",
+          "passenger_timed_search.h": "bef8b4cd2acc11a43976e60486bee723027222bf4c07c2e579bae2fc8a3fcee9"
+        }
+      }
+    },
+    "network": {
+      "binary_sha256": "5cf5a3c38ae999ab5fab149caf3c13f7752bbc661bafdaf03112136ef9d66ef3",
+      "instrumentation": {
+        "mode": "minimal",
+        "files": {
+          "console_cmds.cpp": {
+            "original": "40a82b70b94a9e73d6d809a1eccdb2e016cbf55d381b1c6391aa32ebe04b0a72",
+            "copy": "7eff1bca849435786051428b8a5579d9457a3c020c7ca2dec9d55367d96088cd"
+          }
+        },
+        "source_revision": "604ce993892479656a2c5ba2fbd311cb19c5d896",
+        "source_diff_sha256": "54df49f291a7a5761e29fd9802c97f3398e265586c5f4d0e5f32f7741d396b68",
+        "instrumenter_sha256": "d5875d6e911a67a4eeca2f68b51240f103c1ef21371c99037a08512b0605751a",
+        "comparison_mode": "network",
+        "copies": {
+          "console_cmds.cpp": "7eff1bca849435786051428b8a5579d9457a3c020c7ca2dec9d55367d96088cd",
+          "passenger_service_database.cpp": "67de33d9d5c56e86f42ea68210ec0ae9810a0a4c01d6446711abdae78eb57a8b"
+        },
+        "source_sha256": {
+          "passenger_service_database.cpp": "ce9e69ccf7e4577c6017ded5cd3a2ce678ce0b92017c160c07d17e20b3c391c4",
+          "passenger_service_database.h": "90721de9a79391d755083b8563ef33fc27f4c7e12354bc23cde64fc032fdfebd",
+          "passenger_timed_search.h": "bef8b4cd2acc11a43976e60486bee723027222bf4c07c2e579bae2fc8a3fcee9"
+        }
+      }
+    }
+  },
+  "final_product_binary_sha256": "bc0fbf808b3ffe59c07c688fa1afa80701de5e6340d13de36903442f688bb6bc",
+  "final_test_binary_sha256": "4a52152d05d8e2ff04849ab28515c96f78a6481a4ded768bb4c21f8ae54cf47d",
+  "network_probe_sha256": "e222ce9824818effc30f7a8ea3d072d00e40dd5bb393a3a13bcd3089e2293bbf",
+  "excluded_trials": [
+    "Initial full passenger run: benchmark leaked disabled cache preferences; fixed with RAII restoration.",
+    "Initial incomplete CTest invocation and unavailable root regression assets; final complete 570-test run passed.",
+    "Initial 1000-stop line fixture was rejected by the existing publication work ceiling; replaced by 32 certified 250-stop lines."
+  ],
+  "synthetic_allocator_in_game": false,
+  "synthetic_fixed_scratch_bytes": 8312,
+  "mp_client_progress_resolution_ticks": 128,
+  "mp_peer_missed_sync_frame_messages": 15
+}
