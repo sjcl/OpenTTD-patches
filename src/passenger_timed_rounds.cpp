@@ -150,9 +150,12 @@ PassengerTimedRoundResult PassengerTimedRounds::Plan(PassengerServiceDatabase &d
 			policy = &temporary; store_policy = true; ++db.diagnostic.policy_misses;
 		}
 		if (!spend(policy->work) || !memory(std::max(policy->bytes, policy->scratch_bytes))) { answer.outcome = Outcome::BudgetDeferred; return finish(); }
+		/* A known-phase relaxed tree cannot certify absence or optimality across
+		 * an unknown-phase gap, including a truncated phase-gap diagnostic. */
+		uncertain |= policy->unknown_phase;
 		if (!policy->limited && policy->reason != Reason::NoCandidate) {
 			result.reason = policy->reason;
-			answer.outcome = policy->reason == Reason::Unreachable || policy->reason == Reason::NoAlighting ? Outcome::Unreachable : Outcome::Indeterminate;
+			answer.outcome = !uncertain && !db.IsBuilding() && (policy->reason == Reason::Unreachable || policy->reason == Reason::NoAlighting) ? Outcome::Unreachable : Outcome::Indeterminate;
 			return finish();
 		}
 	}

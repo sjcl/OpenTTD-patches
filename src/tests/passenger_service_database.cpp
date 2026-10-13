@@ -254,6 +254,20 @@ TEST_CASE("Timed rounds replay identical work on warm cold and joining databases
 	f.PublishUpdates(db); auto absent = db.PlanRounds(PAX, A, D, _state_ticks); CHECK_FALSE(absent.plan.ride);
 }
 
+TEST_CASE("Timed rounds do not certify absence when phase-gap diagnostics truncate", "[passenger][rounds][limits]")
+{
+	Fixture f; f.Train({Stop(A), Stop(B)});
+	auto *unknown = f.Train({Stop(B), Stop(C)}); unknown->current_order.Free();
+	f.Train({Stop(C), Stop(D)});
+	/* Origin fan-out exhausts the reverse phase-gap diagnostic's 1/4 budget. */
+	for (uint16_t i = 4; i < 400; ++i) f.Train({Stop(A), Stop(StationID{i})});
+	auto &db = f.Build(); PassengerJourneyLimits limits; limits.work = 4096;
+	auto answer = db.PlanRounds(PAX, A, D, NOW, limits);
+	CHECK_FALSE(answer.plan.ride);
+	CHECK(answer.outcome == PassengerTimedRoundOutcome::Indeterminate);
+	CHECK(answer.plan.work <= limits.work);
+}
+
 TEST_CASE("Timed rounds retain certified dispatch slots and reject competing fleets", "[passenger][rounds][dispatch]")
 {
 	Fixture f; auto *train = f.Train({Stop(A, 20, 0), Stop(D, 20, 0)});
