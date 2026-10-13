@@ -279,7 +279,15 @@ TEST_CASE("Timed rounds retain certified dispatch slots and reject competing fle
 	if (competing) Vehicle::Create<PeriodicTrain>(train)->vehicle_flags.Set(VehicleFlag::ScheduledDispatch);
 	auto &db = f.Build(); auto answer = db.PlanRounds(PAX, A, D, NOW + 11);
 	if (competing) { CHECK_FALSE(answer.plan.ride); CHECK(answer.outcome == PassengerTimedRoundOutcome::Indeterminate); }
-	else { REQUIRE(answer.plan.ride); CHECK(answer.plan.ride->departure == NOW + 60); CHECK(answer.plan.arrival == NOW + 80); CHECK(answer.plan.ride == db.Plan(PAX, A, D, NOW + 11).ride); }
+	else {
+		REQUIRE(answer.plan.ride); CHECK(answer.plan.ride->departure == NOW + 60); CHECK(answer.plan.arrival == NOW + 80); CHECK(answer.plan.ride == db.Plan(PAX, A, D, NOW + 11).ride);
+		PassengerServiceDatabase peer; REQUIRE(peer.Load(db.Save())); peer.FinishLoad(true); peer.SetDepartureIndexEnabled(false);
+		for (size_t work = 0; work < 300; ++work) {
+			PassengerJourneyLimits limits; limits.work = work;
+			auto warm = db.PlanRounds(PAX, A, D, NOW + 11, limits); auto joining = peer.PlanRounds(PAX, A, D, NOW + 11, limits);
+			SameDeparturePlan(warm.plan, joining.plan); CHECK(warm.outcome == joining.outcome);
+		}
+	}
 }
 
 TEST_CASE("Active waiting adopts timed rounds and validates existing physical execution", "[passenger][rounds][active][save]")
