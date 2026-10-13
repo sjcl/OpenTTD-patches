@@ -160,7 +160,12 @@ try:
     command(server, "pause")
     time.sleep(2)
     snapshot(server, server_dir)
+    snapshot(first, first_dir)
+    snapshot(second, second_dir)
     wait_for(lambda: len(re.findall(r"State ticks: (\d+)", text(server_log))) >= 3, "final checkpoint")
+    # Network joins do not invoke game_start.scr on clients. Query both paused
+    # clients explicitly rather than interpreting an empty log as a desync.
+    wait_for(lambda: all("Simulation tick time:" in text(directory / "console.txt") for directory in [first_dir, second_dir]), "client checkpoints")
     command(server, f"script {server_log.as_posix()}")
     command(server, f"save {server_dir.as_posix()}/final")
     command(server, "script")
@@ -171,6 +176,9 @@ try:
     bad |= bool(reports)
     if a.rounds:
         bad |= any("Current value for 'linkgraph.passenger_timed_rounds' is: 'true'" not in text(directory / "console.txt") for directory in [first_dir, second_dir])
+    client_ticks = {name: re.findall(r"State ticks: (\d+)", text(root / name / "console.txt")) for name in ["client-initial", "client-late"]}
+    server_ticks = re.findall(r"State ticks: (\d+)", text(server_log))
+    bad |= any(not ticks or ticks[-1] != server_ticks[-1] for ticks in client_ticks.values())
     final_snapshot = text(server_log).rsplit("Console log output started", 1)[-1]
     connected = re.findall(r"Client #(\d+)\s+name: '([^']+)'", final_snapshot)
     # The final save log can follow the checkpoint without another clients query.
@@ -184,7 +192,7 @@ try:
               "input_save_sha256": hashlib.sha256((run / a.input_save).read_bytes()).hexdigest(),
               "binary_sha256": hashlib.sha256(binary.read_bytes()).hexdigest(),
               "detected_sync_failure": bad, "client_exit_codes": [first.poll(), second.poll()],
-              "server_state_ticks": re.findall(r"State ticks: (\d+)", text(server_log)),
+              "server_state_ticks": server_ticks, "client_state_ticks": client_ticks,
               "single_core_clients": len(affinities) == 2 and all(value["applied"] for value in affinities.values()),
               "affinity": affinities, "sync_frequency": 1,
               "cpu_mode": a.cpu_mode, "timeout_ticks": a.timeout_ticks,
