@@ -1,0 +1,17 @@
+{
+  "server": {
+    "sha256": "de89514159cf6d712f4837088ca9634647a7a6feaac5b63f5387fbf840b2045a",
+    "bytes": 1693,
+    "missed_sync_frames": 0
+  },
+  "client-initial": {
+    "sha256": "20562fb0089930d5d1f4b9dfd7316f22eb2688bb387488b28facbeb61f5a3768",
+    "bytes": 24594,
+    "missed_sync_frames": 458
+  },
+  "client-late": {
+    "sha256": "5c260521a1a57a618265cace16828e4c56f5bb0f1d7045f0180c523815717ad3",
+    "bytes": 513,
+    "missed_sync_frames": 0
+  }
+}

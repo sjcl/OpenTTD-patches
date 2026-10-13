@@ -1,0 +1,18 @@
+{
+  "periodic": {
+    "log": "desync-server-20261012T193413Z.log",
+    "sha256": "47893130fd9ddeff288c27ad19df183fb9d69b0267a1792a72709f69d74f90dd",
+    "bytes": 512535,
+    "mismatch": [
+      "Desync subframe mismatch: 0000032D, STATION, seed"
+    ]
+  },
+  "snapshot": {
+    "log": "desync-server-20261012T194318Z.log",
+    "sha256": "2ad2f834906116ff0bcc1144c65cf1a7a043c8781072295d4e8689100bfcd960",
+    "bytes": 512633,
+    "mismatch": [
+      "Desync subframe mismatch: 000001E9, STATION, seed"
+    ]
+  }
+}

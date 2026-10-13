@@ -4740,6 +4740,82 @@ static bool ConPassengerPeriodicFixture(std::span<std::string_view> argv)
 }
 #endif
 
+static bool ConPassengerPeriodicCompare(std::span<std::string_view> argv)
+{
+	if (argv.empty()) {
+		IConsolePrint(CC_HELP, "passenger_periodic_compare <cargo> <origin> <destination> | sample <count 1..256>: read-only paired planners at the current StateTicks; explicit diagnostic only");
+		return true;
+	}
+	auto parse = [](uint32_t *out, std::string_view arg) { auto value = ParseInteger<uint32_t>(arg); if (!value) return false; *out = *value; return true; };
+	static constexpr std::array reasons{"Found", "Invalid", "OriginMissing", "DestinationMissing", "NoAlighting", "Unreachable", "NoCandidate", "UnknownPhase", "Evaluation", "Candidates", "Labels", "Work", "Memory", "Transfers"};
+	static constexpr std::array phases{"Known", "NoTimetable", "VehicleState", "OrderProgress", "Facilities", "Work", "Unbunching", "DispatchCompetition", "DispatchUnsupported", "Overflow", "ElapsedTravel", "AwaitCapture"};
+	static constexpr std::array compilations{"None", "Control", "Refit", "Travel", "Wait", "Overflow", "ZeroPeriod", "TooFewStops"};
+	static constexpr std::array publications{"Published", "TimingDirty", "Dirty", "SweepPending", "Unpublished"};
+	using OD = std::tuple<CargoType, StationID, StationID>;
+	std::set<OD> queries;
+	if (argv.size() == 3 && argv[1] == "sample") {
+		uint32_t count;
+		if (!parse(&count, argv[2]) || count == 0 || count > 256) return false;
+		size_t work = 0;
+		for (const Station *station : Station::Iterate()) {
+			for (CargoType cargo : EnumRange(NUM_CARGO)) {
+				if (!IsCargoInClass(cargo, CargoClass::Passengers)) continue;
+				const auto &list = station->goods[cargo].ConstCargoList();
+				for (StationCargoList::ConstIterator it(list.Packets()->begin()); it != list.Packets()->end(); ++it) {
+					if (++work > 1048576) break;
+					StationID destination = (*it)->GetPassengerDestination();
+					if (Station::IsValidID(destination) && destination != station->index) queries.emplace(cargo, station->index, destination);
+					if (queries.size() >= count) break;
+				}
+				if (queries.size() >= count || work > 1048576) break;
+			}
+			if (queries.size() >= count || work > 1048576) break;
+		}
+	} else if (argv.size() == 4) {
+		uint32_t cargo, origin, destination;
+		if (!parse(&cargo, argv[1]) || !parse(&origin, argv[2]) || !parse(&destination, argv[3]) ||
+				cargo >= NUM_CARGO || origin >= StationID::Invalid().base() || destination >= StationID::Invalid().base()) return false;
+		queries.emplace(static_cast<CargoType>(cargo), StationID{static_cast<uint16_t>(origin)}, StationID{static_cast<uint16_t>(destination)});
+	} else return false;
+	PassengerJourneyLimits limits; limits.work = 65536; limits.labels = 8192; limits.memory_bytes = 8 * 1024 * 1024;
+	PassengerJourneyEvaluation evaluation; evaluation.minimum_transfer = evaluation.transfer_penalty = _settings_game.linkgraph.passenger_transfer_penalty;
+	const auto &db = GetPassengerServiceDatabase();
+	size_t old_only = 0, new_only = 0, both = 0, neither = 0;
+	for (const auto &[cargo, origin, destination] : queries) {
+		auto paired = ComparePassengerPlanners(db, cargo, origin, destination, _state_ticks, limits, evaluation);
+		bool old_found = paired.legacy_found, new_found = paired.periodic.ride.has_value() && !paired.periodic.deferred;
+		old_only += old_found && !new_found; new_only += new_found && !old_found; both += old_found && new_found; neither += !old_found && !new_found;
+		IConsolePrint(CC_DEFAULT, "Periodic paired OD: cargo={}; origin={}; destination={}; tick={}; old_found={}; new_found={}; old_arrival={}; new_arrival={}; old_cost={}; new_cost={}; new_reason={}; deferred={}; labels={}; candidates={}; new_work={}; new_memory={}; old_stop={}; old_status={}; old_graph_work={}; old_search_work={}; horizon={}",
+				cargo, origin, destination, _state_ticks.base(), old_found, new_found, paired.legacy_arrival.base(), paired.periodic.arrival.base(),
+				paired.legacy_cost, paired.periodic.cost, reasons[static_cast<size_t>(paired.periodic.reason)], paired.periodic.deferred, paired.periodic.labels,
+				paired.periodic.candidates, paired.periodic.work, paired.periodic.memory, to_underlying(paired.legacy_stop), to_underlying(paired.legacy_status),
+				paired.legacy_graph_work, paired.legacy_search_work, paired.horizon);
+		for (size_t i = 0; i < paired.periodic.observations.size(); ++i) if (paired.periodic.observations[i]) IConsolePrint(CC_DEFAULT, "Periodic paired observation: reason={}", reasons[i]);
+		auto print_route = [&](const char *backend, const auto &route) {
+			for (const auto &leg : route) {
+				const auto *service = db.Get(leg.service);
+				IConsolePrint(CC_DEFAULT, "Periodic paired leg: backend={}; service={}; vehicle={}; board={}/{}; alight={}/{}; departure={}; arrival={}; published={}; generation={}; period={}",
+						backend, leg.service, leg.vehicle, leg.boarding, leg.boarding_order, leg.alighting, leg.alighting_order, leg.departure.base(), leg.arrival.base(),
+						service != nullptr, service == nullptr ? 0 : service->generation, service == nullptr ? 0 : service->timetable.period);
+				const OrderList *list = OrderList::GetIfValid(leg.service);
+				if (list == nullptr) continue;
+				PassengerPeriodicTimetable::Failure failure;
+				auto table = PassengerPeriodicTimetable::Compile(list->GetOrderVector(), &failure);
+				PassengerPeriodicService live; live.timetable = std::move(table);
+				IConsolePrint(CC_DEFAULT, "Periodic paired publication: service={}; live_compile_reason={}; publication_state={}", leg.service, compilations[static_cast<size_t>(failure)], publications[static_cast<size_t>(db.GetPublication(leg.service))]);
+				for (const Vehicle *v = list->GetFirstSharedVehicle(); v != nullptr; v = v->NextShared()) {
+					bool known = service != nullptr && std::any_of(service->vehicles.begin(), service->vehicles.end(), [&](const auto &phase) { return phase.id == v->index && phase.phase_known; });
+					IConsolePrint(CC_DEFAULT, "Periodic paired phase: service={}; vehicle={}; known={}; live_unknown_reason={}; real_order={}; implicit_order={}; timetable_order={}; elapsed={}; lateness={}; dispatch={}",
+							leg.service, v->index, known, phases[known ? 0 : static_cast<size_t>(db.ExplainPhase(v, service == nullptr ? live : *service))], v->cur_real_order_index,
+							v->cur_implicit_order_index, v->cur_timetable_order_index, v->current_order_time, v->lateness_counter, v->vehicle_flags.Test(VehicleFlag::ScheduledDispatch));
+				}
+			}
+		};
+		print_route("snapshot", paired.legacy_route); print_route("periodic", paired.periodic.route);
+	}
+	IConsolePrint(CC_DEFAULT, "Periodic paired totals (unique OD calls, same live state, no simulation advanced): calls={}; old_only={}; new_only={}; both={}; neither={}", queries.size(), old_only, new_only, both, neither);
+	return true;
+}
 static bool ConPassengerJourneyStats(std::span<std::string_view> argv)
 {
 	if (argv.empty()) {
@@ -4859,6 +4935,22 @@ static bool ConPassengerJourneyStats(std::span<std::string_view> argv)
 			stats.schedule_boarded_passengers, stats.schedule_transferred_passengers, stats.schedule_delivered_passengers, stats.schedule_expected_wait, stats.schedule_actual_wait, stats.schedule_wait_samples);
 	IConsolePrint(CC_DEFAULT, "Completed interchanges: from_schedule={}; from_timed={} people (next vehicle actually loaded)", stats.schedule_connected_passengers, stats.timed_connected_passengers);
 	IConsolePrint(CC_DEFAULT, "Schedule-assisted final OD: delivered={} people (any real schedule leg; overlaps final-carrier delivery counts)", stats.schedule_assisted_delivered_passengers);
+	IConsolePrint(CC_DEFAULT, "Periodic passenger census (live OrderLists, cargo-only excluded): total={}; passenger={}; complete_cycles={}; compile_success={}; compile_failure={}; unpublished={}; dirty={}; unknown_vehicles={}",
+			periodic.orderlists, periodic.passenger_orderlists, periodic.complete_timetables, periodic.compile_success, periodic.compile_failure,
+			periodic.unpublished, periodic.dirty_services, periodic.unknown_phase_vehicles);
+	IConsolePrint(CC_DEFAULT, "Periodic passenger pending census: {} lists; compilation observations={} attempts/{} successes (rebuilds overlap)", periodic.pending_passenger, periodic.compilation_attempts, periodic.compilation_successes);
+	IConsolePrint(CC_DEFAULT, "Periodic phase work stops: {} vehicle capture observations (retries overlap)", periodic.phase_capture_work);
+	IConsolePrint(CC_DEFAULT, "Periodic passenger eligibility: declared_complete={}; live_compiled_cycles={}; published_lists={}; published_cycles={}; phase_known_lists={}; denominator={}",
+			periodic.declared_complete_timetables, periodic.complete_timetables, periodic.published_passenger, periodic.published_cycles, periodic.timed_services, periodic.passenger_orderlists);
+	static constexpr std::array compile_names{"None", "Control", "Refit", "Travel", "Wait", "Overflow", "ZeroPeriod", "TooFewStops"};
+	static constexpr std::array phase_names{"Known", "NoTimetable", "VehicleState", "OrderProgress", "Facilities", "Work", "Unbunching", "DispatchCompetition", "DispatchUnsupported", "Overflow", "ElapsedTravel", "AwaitCapture"};
+	static constexpr std::array query_names{"Found", "Invalid", "OriginMissing", "DestinationMissing", "NoAlighting", "Unreachable", "NoCandidate", "UnknownPhase", "Evaluation", "Candidates", "Labels", "Work", "Memory", "Transfers"};
+	for (size_t i = 0; i < periodic.compile_failures.size(); ++i) IConsolePrint(CC_DEFAULT, "Periodic live compilation: {}={}", compile_names[i], periodic.compile_failures[i]);
+	for (size_t i = 0; i < periodic.compilation_stops.size(); ++i) IConsolePrint(CC_DEFAULT, "Periodic compilation observations: {}={}", compile_names[i], periodic.compilation_stops[i]);
+	for (size_t i = 0; i < periodic.phases.size(); ++i) IConsolePrint(CC_DEFAULT, "Periodic passenger vehicle phase census: {}={}", phase_names[i], periodic.phases[i]);
+	for (size_t i = 0; i < periodic.outcomes.size(); ++i) IConsolePrint(CC_DEFAULT, "Periodic OD calls: {} outcomes={}; overlapping_observations={}", query_names[i], periodic.outcomes[i], periodic.observations[i]);
+	IConsolePrint(CC_DEFAULT, "Periodic execution observations: expired={} packets/{} passengers; failed_same_service_boarding_checks={}; retries_overlap=true",
+			periodic.expired_packets, periodic.expired_passengers, periodic.boarding_failures);
 	for (size_t i = 0; i < stats.query_sample_count; ++i) {
 		const auto &sample = stats.query_samples[i];
 		IConsolePrint(CC_DEFAULT, "OD proof sample: origin={}; destination={}; tick={}; status={}; stop={}; candidates={}; best_score={}; unknown_arrival_bound={}; unknown_service={}",
@@ -5145,6 +5237,7 @@ void IConsoleStdLibRegister()
 	IConsole::CmdRegister("fps",                     ConFramerate);
 	IConsole::CmdRegister("passenger_journey_shadow", ConPassengerJourneyShadow);
 	IConsole::CmdRegister("passenger_journey_stats", ConPassengerJourneyStats);
+	IConsole::CmdRegister("passenger_periodic_compare", ConPassengerPeriodicCompare);
 #ifdef WITH_PASSENGER_BENCHMARK
 	IConsole::CmdRegister("passenger_periodic_fixture", ConPassengerPeriodicFixture, ConHookServerOrNoNetwork);
 #endif

@@ -1,0 +1,27 @@
+*** OpenTTD Multiplayer Server Desync Report ***
+
+Desync at: 2026-10-12 19:43:18 (UTC)
+Desync subframe mismatch: 000001E9, STATION, seed
+In game date: 117528-03-12 (63, 0) (DL: 1), 000001F4
+Calendar date: 117528-03-12 (63, 0)
+Game loaded at: 117528-03-11 (27, 0), (110 state ticks ago), 2026-10-12 19:42:43
+Client #3, "periodic-client-late"
+OpenTTD version:
+ Version:     jgrpp-ya-0.73.3+2-48-g7d914aa6f-m (2)
+ Release ver: 0.73.3+2
+ NewGRF ver:  20006d64
+ Bits:        64
+ Endian:      little
+ Dedicated:   no
+ Build date:  Oct 13 2026 02:51:09
+ Defines:     WITH_PNG WITH_ZLIB WITH_LIBLZMA WITH_LZO WITH_ZSTD WITH_OPUSFILE WITH_OPENGL WITH_PERSONAL_DIR WITH_SSE WITH_ASSERT UNICODE _UNICODE WITH_UNISCRIBE PSAPI_VERSION=1 POINTER_IS_64BIT
+Operating system:
+ Name:     Windows
+ Release:  10.0.26200 ()
+ Compiler: MSVC 1944
+Configuration:
+ Blitter:      null
+ Graphics set: OpenGFX (7761)
+ Language:     english.lng
+ Music driver: null
+ Music set:    OpenMSX (7761)
