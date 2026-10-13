@@ -78,6 +78,8 @@ namespace {
 		a.complete_graphs += b.complete_graphs; a.admitted_visits += b.admitted_visits;
 		a.timing_uncertainty += b.timing_uncertainty; a.path_uncertainty += b.path_uncertainty; a.uncertainty_resolved += b.uncertainty_resolved;
 		a.timed_routes_ignoring_unknown += b.timed_routes_ignoring_unknown; a.timed_budget_deferred += b.timed_budget_deferred;
+		a.timed_certified_packets += b.timed_certified_packets; a.timed_provisional_packets += b.timed_provisional_packets;
+		a.timed_provisional_passengers += b.timed_provisional_passengers;
 		a.untimed_routes += b.untimed_routes; a.untimed_no_route += b.untimed_no_route; a.untimed_budget_deferred += b.untimed_budget_deferred;
 		a.untimed_boarded_passengers += b.untimed_boarded_passengers;
 		a.untimed_transferred_passengers += b.untimed_transferred_passengers;
@@ -577,21 +579,25 @@ bool PassengerJourneyActiveContext::PlanWaiting(CargoPacket &packet, CargoType c
 		const OrderList *arriving = OrderList::GetIfValid(packet.GetPassengerArrivingService());
 		OrderListID excluded = arriving != nullptr && arriving->GetCargoDistRouteGeneration() == packet.GetPassengerArrivingIncarnation() ? arriving->index : OrderListID::Invalid();
 		auto key = std::tuple(cargo, packet.GetPassengerDestination(), ready, excluded);
-		auto apply = [&](const PassengerJourneyExecution &ride) {
+		auto apply = [&](const PassengerJourneyExecution &ride, bool provisional) {
 			packet.SetPassengerJourney(ride, legacy_hop);
 			if (IsEstimatedPassengerRide(ride.kind)) {
 				++TickBudget().diagnostic.schedule_packets; TickBudget().diagnostic.schedule_passengers += packet.Count();
 				TickBudget().diagnostic.schedule_deferred_packets += ride.timed_deferred;
-			} else { ++TickBudget().diagnostic.journeys; TickBudget().diagnostic.passengers += packet.Count(); }
+			} else {
+				++TickBudget().diagnostic.journeys; TickBudget().diagnostic.passengers += packet.Count();
+				if (provisional) { ++TickBudget().diagnostic.timed_provisional_packets; TickBudget().diagnostic.timed_provisional_passengers += packet.Count(); }
+				else ++TickBudget().diagnostic.timed_certified_packets;
+			}
 		};
 		auto cached = this->periodic_waiting.find(key);
 		if (cached != this->periodic_waiting.end()) {
 			++TickBudget().diagnostic.query_cache_hits;
-			if (!cached->second.ride || cached->second.deferred) {
+			if (!cached->second.ride) {
 				if (cached->second.deferred) { CountJourneyDeferral(PassengerJourneyFallbackReason::QueryWork); packet.DeferPassengerJourney(this->station, _state_ticks); }
 				return false;
 			}
-			apply(*cached->second.ride);
+			apply(*cached->second.ride, cached->second.provisional);
 			return true;
 		}
 		if (this->periodic_waiting.size() >= 128) return false;
@@ -607,16 +613,21 @@ bool PassengerJourneyActiveContext::PlanWaiting(CargoPacket &packet, CargoType c
 			auto estimated = db.PlanEstimated(cargo, this->station, packet.GetPassengerDestination(), ready, estimated_limits, ActiveJourneyEvaluation(), excluded);
 			if (estimated.ride) {
 				estimated.ride->planned_at = _state_ticks; estimated.ride->timed_deferred = plan.deferred;
-				plan.ride = estimated.ride; plan.deferred = false;
+				plan.ride = estimated.ride;
 			} else plan.deferred |= estimated.deferred;
-		} else plan.deferred = false;
-		this->periodic_waiting.emplace(key, PeriodicWaiting{plan.ride, plan.deferred});
-		if (!plan.ride || plan.deferred) {
+		}
+		/* A full Timed path may be selected while search optimality is unproved.
+		 * Preserve the query status in this event cache; only absence of a usable
+		 * ride defers the packet. Persistent execution still stores one ordinary
+		 * ServiceIntent, with the same live boarding checks and transfer replan. */
+		const bool provisional = plan.state == PassengerPeriodicPlan::State::Provisional;
+		this->periodic_waiting.emplace(key, PeriodicWaiting{plan.ride, plan.deferred, provisional});
+		if (!plan.ride) {
 			if (plan.deferred) { CountJourneyDeferral(PassengerJourneyFallbackReason::QueryWork); packet.DeferPassengerJourney(this->station, _state_ticks); }
 			else CountJourneyFallback(GetPassengerServiceDatabase().IsBuilding() ? PassengerJourneyFallbackReason::PredictionIncomplete : PassengerJourneyFallbackReason::NoJourney);
 			return false;
 		}
-		apply(*plan.ride);
+		apply(*plan.ride, provisional);
 		return true;
 	}
 	Snapshot *snapshot = nullptr;

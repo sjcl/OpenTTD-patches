@@ -76,6 +76,7 @@ struct PassengerJourneyTickDiagnostic {
 	size_t depot_crossing_boarded_passengers = 0, depot_crossing_delivered_passengers = 0; ///< Actual timed moves on a leg whose order suffix includes a depot.
 	size_t timing_uncertainty = 0, path_uncertainty = 0, uncertainty_resolved = 0;
 	size_t timed_routes_ignoring_unknown = 0, timed_budget_deferred = 0;
+	size_t timed_certified_packets = 0, timed_provisional_packets = 0, timed_provisional_passengers = 0;
 	size_t untimed_routes = 0, untimed_no_route = 0, untimed_budget_deferred = 0;
 	size_t untimed_boarded_passengers = 0, untimed_transferred_passengers = 0, untimed_delivered_passengers = 0;
 	size_t schedule_packets = 0, schedule_passengers = 0, schedule_deferred_packets = 0;
@@ -184,7 +185,7 @@ class PassengerJourneyActiveContext {
 	StationID station;
 	std::map<std::tuple<CargoType, StationID, Ticks>, std::unique_ptr<Snapshot>> snapshots;
 	std::map<CargoType, PassengerJourneyBoardingContext> continuation;
-	struct PeriodicWaiting { std::optional<PassengerJourneyExecution> ride; bool deferred; };
+	struct PeriodicWaiting { std::optional<PassengerJourneyExecution> ride; bool deferred; bool provisional; };
 	std::map<std::tuple<CargoType, StationID, StateTicks, OrderListID>, PeriodicWaiting> periodic_waiting;
 	PassengerOdFallbackContext fallback;
 	size_t work_left = 4194304;

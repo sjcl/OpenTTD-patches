@@ -31,7 +31,8 @@ def completion(text):
     histogram = [fields(line) for line in lines if line.startswith("Timed Work histogram:")]
     # Inventory and total may both print diagnostics. Keep the last complete set.
     histogram = histogram[-65:]
-    samples = [fields(line) for line in lines if line.startswith("Timed Work sample ")][-16:]
+    samples = [{**fields(line), "first_stop": re.search(r"first_stop=(\w+)", line)[1]}
+               for line in lines if line.startswith("Timed Work sample ")][-16:]
     if summary is None or len(histogram) != 65:
         raise ValueError("Missing completion diagnostics or Work histogram")
     work_calls = summary["with_complete"] + summary["without_complete"]
@@ -41,7 +42,8 @@ def completion(text):
     for row in histogram:
         cumulative += row["count"]
         if cumulative >= rank:
-            p95 = row["upper"] if row["upper"] < 65536 else None
+            # These production runs reserve at most 65536 units per Timed call.
+            p95 = row["upper"]
             break
     summary.update(work_histogram=histogram, work_p95_upper=p95,
                    work_p95_overflow=p95 is None, samples=samples,
@@ -56,7 +58,6 @@ def main():
     parser.add_argument("manifests", nargs="+", type=pathlib.Path)
     parser.add_argument("--output", required=True, type=pathlib.Path)
     args = parser.parse_args()
-    summarize = load_module("profile", PROFILE / "Summarize-Profile.py")
     archive = load_module("archive", PROFILE / "Archive-Profile.py")
     # Keep the standard validation/comparison format and add our observations.
     import subprocess
@@ -66,7 +67,8 @@ def main():
                     *map(str, args.manifests), "--output", str(summary_file)], check=True)
     data = json.loads(summary_file.read_text(encoding="utf-8"))
     for run in data["runs"]:
-        manifest = next(m for m in data["manifests"] if m["label"] == run["label"] and m["revision"] == run["revision"])
+        manifest = next(m for m in data["manifests"] if (m["label"], m["revision"], m["kind"], m["phase"]) ==
+                        (run["label"], run["revision"], run["kind"], run["phase"]) and run["id"] in {r["id"] for r in m["runs"]})
         directory = pathlib.Path(manifest["path"]).parent / run["directory"]
         run["anytime"] = completion((directory / (run["id"] + "-console.txt")).read_text(encoding="utf-8-sig"))
         calls = run["anytime"]["with_complete"] + run["anytime"]["without_complete"]

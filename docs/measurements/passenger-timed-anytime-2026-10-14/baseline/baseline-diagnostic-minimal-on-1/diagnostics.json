@@ -1,0 +1,1318 @@
+{
+  "state_ticks": [
+    3176545487,
+    3176553679
+  ],
+  "records": {
+    "Passenger inventory": {
+      "waiting": 263290,
+      "deferred": 203283,
+      "state_ticks": 3176553679,
+      "scaled_ticks": 3010954581
+    },
+    "Inventory Legacy": {
+      "known_OD": 234094
+    },
+    "Inventory Journey": {
+      "known_OD": 14933
+    },
+    "Inventory Fallback": {
+      "known_OD": 51888
+    },
+    "Waiting routing": {
+      "timed": 4843,
+      "schedule": 6,
+      "CargoDist_or_deferred": 228415,
+      "OD_fallback_or_waiting": 30026
+    },
+    "Schedule inventory": {
+      "people": 6,
+      "packets": 1,
+      "waiting": 6,
+      "timed_waiting": 4843
+    },
+    "Graph coverage": {
+      "complete": 0,
+      "eligible_services": 0,
+      "selected_services": 0,
+      "selected_trips": 0,
+      "largest_block_services": 0,
+      "admitted_visits": 0,
+      "max_unpredicted_ticks": 0
+    },
+    "First graph failure": {
+      "work": 0,
+      "memory": 0,
+      "trips": 0,
+      "visits": 0
+    },
+    "First opaque scope": {
+      "service": 65535,
+      "vehicle": 1048575
+    },
+    "First trip failure": {
+      "vehicle": 1048575,
+      "work": 0,
+      "memory": 0,
+      "trips": 0,
+      "visits": 0,
+      "cursor": 0,
+      "certified_until": 0,
+      "required_until": 0
+    },
+    "Uncertainty": {
+      "timing": 0,
+      "path": 0,
+      "OD_resolved": 0,
+      "first_order": 65535,
+      "first_unknown_order": 65535,
+      "tile": 0,
+      "current_order": 65535
+    },
+    "Simulation tick time": {
+      "completed_ticks": 8192,
+      "total_us": 351216631,
+      "mean_us": 42873,
+      "max_us": 154070
+    },
+    "Tick histogram (1ms upper bounds)": {
+      "simulation_p95_us": 65000,
+      "simulation_p99_us": 89000,
+      "journey_mean_us": 18860,
+      "journey_p95_us": 36000,
+      "journey_p99_us": 60000,
+      "journey_max_us": 108807
+    },
+    "Profile tick quantiles": {
+      "simulation_p50_us": 41000,
+      "journey_p50_us": 18000
+    },
+    "Journey inclusive scopes": {
+      "waiting_us": 134432962,
+      "fallback_distance_us": 18209571,
+      "boarding_us": 15642208
+    },
+    "Periodic pending age": {
+      "ticks": 803
+    },
+    "OD fallback cache": {
+      "hits": 114027,
+      "bytes": 16871860,
+      "work": 14837883320,
+      "searches": 310404
+    },
+    "OD fallback bindings": {
+      "hits": 135259,
+      "builds": 4,
+      "validation_nodes": 0,
+      "validation_ns": 0,
+      "build_ns": 681800,
+      "reverse_hits": 310400,
+      "reverse_builds": 4,
+      "reverse_build_ns": 893300
+    },
+    "Periodic database": {
+      "services": 837,
+      "timed": 650,
+      "vehicles": 3664,
+      "bytes": 11987712,
+      "policies_bytes": 16642152,
+      "pending": 628,
+      "builds": 25355,
+      "work": 98051349,
+      "build_us": 530629,
+      "searches": 131070,
+      "query_us": 129412054,
+      "next_departures": 320806378,
+      "policy_hits": 70342,
+      "policy_misses": 60728,
+      "invalidations": 45,
+      "rejected_work": 97,
+      "rejected_memory": 0
+    },
+    "Periodic departures": {
+      "logical_vehicles": 339158567,
+      "logical_departures": 320806378,
+      "physical_calculations": 76097302,
+      "hits": 52291611,
+      "fallbacks": 6008,
+      "builds": 12918,
+      "build_ns": 35880600,
+      "bytes": 402892,
+      "peak_bytes": 419264,
+      "forward_us": 88719657,
+      "search_work": 5037562007
+    },
+    "Timed search storage": {
+      "labels": 92489788,
+      "frontier_lookups": 1586055611,
+      "queue_pushes": 92489788,
+      "queue_pops": 6980559,
+      "scratch_bytes": 849430,
+      "scratch_peak_bytes": 849430
+    },
+    "Timed Work completion": {
+      "with_complete": 37595,
+      "without_complete": 28831,
+      "with_queued": 37595,
+      "with_popped": 0,
+      "improvement_possible": 37595,
+      "reverse_work": 880957611,
+      "forward_work": 3472336725
+    },
+    "Timed Work stop None": {
+      "calls": 0,
+      "observations": 0
+    },
+    "Timed Work stop Admission": {
+      "calls": 0,
+      "observations": 0
+    },
+    "Timed Work stop Queue": {
+      "calls": 66731,
+      "observations": 66731
+    },
+    "Timed Work stop Service": {
+      "calls": 235,
+      "observations": 235
+    },
+    "Timed Work stop Vehicle": {
+      "calls": 5269,
+      "observations": 5269
+    },
+    "Timed Work stop Dispatch": {
+      "calls": 0,
+      "observations": 0
+    },
+    "Timed Work stop Departure": {
+      "calls": 6008,
+      "observations": 6008
+    },
+    "Timed Work stop Alighting": {
+      "calls": 58968,
+      "observations": 58968
+    },
+    "Timed Work stop Dominance": {
+      "calls": 35060,
+      "observations": 35060
+    },
+    "Timed Work sample 0": {
+      "complete": 2,
+      "queued": 2,
+      "popped": 0,
+      "cost": 20336,
+      "arrival": 3176565801,
+      "lower": 18255,
+      "reverse": 1240,
+      "forward": 64296
+    },
+    "Timed Work sample 1": {
+      "complete": 2,
+      "queued": 2,
+      "popped": 0,
+      "cost": 20334,
+      "arrival": 3176565801,
+      "lower": 18253,
+      "reverse": 1240,
+      "forward": 64296
+    },
+    "Timed Work sample 2": {
+      "complete": 2,
+      "queued": 2,
+      "popped": 0,
+      "cost": 20998,
+      "arrival": 3176566465,
+      "lower": 18769,
+      "reverse": 1255,
+      "forward": 64281
+    },
+    "Timed Work sample 3": {
+      "complete": 0,
+      "queued": 0,
+      "popped": 0,
+      "cost": -1,
+      "arrival": 0,
+      "lower": 53427,
+      "reverse": 9391,
+      "forward": 56145
+    },
+    "Timed Work sample 4": {
+      "complete": 13,
+      "queued": 13,
+      "popped": 0,
+      "cost": 58383,
+      "arrival": 3176603755,
+      "lower": 53785,
+      "reverse": 8262,
+      "forward": 57274
+    },
+    "Timed Work sample 5": {
+      "complete": 6,
+      "queued": 6,
+      "popped": 0,
+      "cost": 19120,
+      "arrival": 3176564593,
+      "lower": 18488,
+      "reverse": 1125,
+      "forward": 64411
+    },
+    "Timed Work sample 6": {
+      "complete": 0,
+      "queued": 0,
+      "popped": 0,
+      "cost": -1,
+      "arrival": 0,
+      "lower": 26856,
+      "reverse": 6131,
+      "forward": 59405
+    },
+    "Timed Work sample 7": {
+      "complete": 0,
+      "queued": 0,
+      "popped": 0,
+      "cost": -1,
+      "arrival": 0,
+      "lower": 51610,
+      "reverse": 10964,
+      "forward": 54572
+    },
+    "Timed Work sample 8": {
+      "complete": 0,
+      "queued": 0,
+      "popped": 0,
+      "cost": -1,
+      "arrival": 0,
+      "lower": 28460,
+      "reverse": 1527,
+      "forward": 64009
+    },
+    "Timed Work sample 9": {
+      "complete": 0,
+      "queued": 0,
+      "popped": 0,
+      "cost": -1,
+      "arrival": 0,
+      "lower": 28825,
+      "reverse": 1527,
+      "forward": 64009
+    },
+    "Timed Work sample 10": {
+      "complete": 0,
+      "queued": 0,
+      "popped": 0,
+      "cost": -1,
+      "arrival": 0,
+      "lower": 27551,
+      "reverse": 1527,
+      "forward": 64009
+    },
+    "Timed Work sample 11": {
+      "complete": 0,
+      "queued": 0,
+      "popped": 0,
+      "cost": -1,
+      "arrival": 0,
+      "lower": 28455,
+      "reverse": 1559,
+      "forward": 63977
+    },
+    "Timed Work sample 12": {
+      "complete": 0,
+      "queued": 0,
+      "popped": 0,
+      "cost": -1,
+      "arrival": 0,
+      "lower": 28820,
+      "reverse": 1569,
+      "forward": 63967
+    },
+    "Timed Work sample 13": {
+      "complete": 0,
+      "queued": 0,
+      "popped": 0,
+      "cost": -1,
+      "arrival": 0,
+      "lower": 27546,
+      "reverse": 1544,
+      "forward": 63992
+    },
+    "Timed Work sample 14": {
+      "complete": 0,
+      "queued": 0,
+      "popped": 0,
+      "cost": -1,
+      "arrival": 0,
+      "lower": 29179,
+      "reverse": 1579,
+      "forward": 63957
+    },
+    "Timed Work sample 15": {
+      "complete": 0,
+      "queued": 0,
+      "popped": 0,
+      "cost": -1,
+      "arrival": 0,
+      "lower": 39013,
+      "reverse": 1612,
+      "forward": 63924
+    },
+    "Timed Work histogram": {
+      "upper": 65536,
+      "count": 66931
+    },
+    "Periodic service pruning": {
+      "bound_checks": 22795826,
+      "bound_stops": 49889063,
+      "pruned_services": 4517925,
+      "skipped_vehicle_visits": 27305627
+    },
+    "Periodic residency": {
+      "entries": 937,
+      "revision": 2400,
+      "publications": 2400,
+      "staged": 0,
+      "staged_bytes": 0,
+      "additions": 837,
+      "removals": 0,
+      "updates": 15537,
+      "timetable_notifications": 53699
+    },
+    "Periodic cache cost": {
+      "clears": 0,
+      "lost": 0,
+      "maximum_lost": 0,
+      "explicit": 0,
+      "reset": 0,
+      "global": 0,
+      "stale": 8479,
+      "evictions": 66503,
+      "rebuilds": 7128,
+      "compile_us": 38879397,
+      "validation_us": 111237,
+      "eviction_us": 150771
+    },
+    "Periodic publication cost": {
+      "publication_us": 193785,
+      "wait_ticks": 4358578,
+      "wait_samples": 25355
+    },
+    "Periodic operating events": {
+      "physical_passenger_occurrences": 14905,
+      "exchange_passenger_occurrences": 14885,
+      "depot_timed": 149,
+      "depot_untimed": 47,
+      "depot_blocked": 0
+    },
+    "Schedule policy compilation": {
+      "compile_us": 1343856,
+      "residency_shared": true
+    },
+    "Schedule routing": {
+      "packets": 44,
+      "passengers": 68,
+      "timed_deferred": 0,
+      "hits": 65561,
+      "misses": 15191,
+      "bytes": 331712,
+      "work": 135822634,
+      "query_us": 1449349,
+      "stale": 36,
+      "expired": 0
+    },
+    "Schedule transport": {
+      "boarded": 10,
+      "transferred": 10,
+      "delivered": 0,
+      "expected_wait_person_ticks": 8845,
+      "actual_wait_person_ticks": 5,
+      "wait_people": 10
+    },
+    "Completed interchanges": {
+      "from_schedule": 0,
+      "from_timed": 13613
+    },
+    "Schedule-assisted final OD": {
+      "delivered": 0
+    },
+    "Periodic passenger census (live OrderLists, cargo-only excluded)": {
+      "total": 837,
+      "passenger": 771,
+      "complete_cycles": 663,
+      "compile_success": 663,
+      "compile_failure": 108,
+      "unpublished": 0,
+      "dirty": 585,
+      "unknown_vehicles": 615
+    },
+    "Periodic passenger pending census": {
+      "observations": 23484
+    },
+    "Periodic passenger eligibility": {
+      "declared_complete": 674,
+      "live_compiled_cycles": 663,
+      "published_lists": 771,
+      "published_cycles": 658,
+      "phase_known_lists": 650,
+      "denominator": 771
+    },
+    "Periodic live compilation": {
+      "TooFewStops": 0
+    },
+    "Periodic compilation observations": {
+      "TooFewStops": 0
+    },
+    "Periodic passenger vehicle phase census": {
+      "AwaitCapture": 118
+    },
+    "Periodic execution observations": {
+      "expired": 48136,
+      "failed_same_service_boarding_checks": 7318,
+      "retries_overlap": true
+    },
+    "Active journey total": {
+      "applied": 77581,
+      "builds": 0,
+      "static_hits": 0,
+      "searches": 131070,
+      "OD_hits": 62824,
+      "applied_packets": 77581,
+      "applied_passengers": 133083
+    },
+    "Train observations": {
+      "observations": 0,
+      "cargo_capable": 0,
+      "possible_refit": 0,
+      "predicted": 0,
+      "inactive": 0,
+      "excluded_cargo": 0,
+      "excluded_scope": 0,
+      "visits": 0,
+      "omitted_trains_at_least": 0,
+      "truncated_predictions": 0
+    },
+    "Trip prediction": {
+      "executions": 0,
+      "hits": 0,
+      "logical_work": 0,
+      "executed_visits": 0,
+      "predictor_ns": 0,
+      "cache_bytes": 0
+    },
+    "Graph work": {
+      "work": 0,
+      "mean": 0,
+      "max": 0,
+      "cached_index_allowance_avoided": 0,
+      "query_allowance": 8589803520,
+      "build_us": 0,
+      "mean_us": 0,
+      "max_us": 0,
+      "search_us": 0,
+      "max_tick_graph_search_us": 0
+    },
+    "Peak graph retained_estimate": {
+      "retained_estimate": 0,
+      "conservative_graph_envelope_including_index": 0,
+      "query_scratch": 0,
+      "query_cache": 0
+    },
+    "Graph phase_us": {
+      "discovery": 0,
+      "capacity": 0,
+      "selection": 0,
+      "orders_dispatch": 0,
+      "pattern": 0,
+      "prediction": 0,
+      "departures": 0
+    },
+    "Event capture": {
+      "discovery_hits": 0,
+      "service_hits": 0,
+      "logical_work_replayed": 0,
+      "retained_estimate_including_shared_patterns": 0
+    },
+    "Fair waiting shares": {
+      "claims": 0,
+      "releases": 0,
+      "admission_scan_work": 0,
+      "retained_rides": 0
+    },
+    "OD fallback": {
+      "work": 14837883320,
+      "path_searches": 310404
+    },
+    "Journey transport": {
+      "boarded": 43837,
+      "transferred": 20724,
+      "delivered": 12998
+    },
+    "Timed depot transport": {
+      "service_boarded": 6722,
+      "service_delivered": 2070,
+      "crossing_boarded": 387,
+      "crossing_delivered": 116
+    },
+    "Pragmatic routing": {
+      "timed": 77581,
+      "timed_ignoring_unknown": 0,
+      "timed_budget_deferred": 66735,
+      "untimed": 150887,
+      "untimed_no_route": 177983,
+      "untimed_budget_deferred": 14177353
+    },
+    "Untimed transport": {
+      "boarded": 558057,
+      "transferred": 276375,
+      "delivered": 229971
+    }
+  },
+  "tick_histogram": [
+    {
+      "index": 1,
+      "simulation": 0,
+      "journey": 1
+    },
+    {
+      "index": 2,
+      "simulation": 0,
+      "journey": 10
+    },
+    {
+      "index": 3,
+      "simulation": 0,
+      "journey": 28
+    },
+    {
+      "index": 4,
+      "simulation": 0,
+      "journey": 49
+    },
+    {
+      "index": 5,
+      "simulation": 0,
+      "journey": 83
+    },
+    {
+      "index": 6,
+      "simulation": 0,
+      "journey": 105
+    },
+    {
+      "index": 7,
+      "simulation": 0,
+      "journey": 143
+    },
+    {
+      "index": 8,
+      "simulation": 0,
+      "journey": 199
+    },
+    {
+      "index": 9,
+      "simulation": 0,
+      "journey": 235
+    },
+    {
+      "index": 10,
+      "simulation": 0,
+      "journey": 278
+    },
+    {
+      "index": 11,
+      "simulation": 0,
+      "journey": 342
+    },
+    {
+      "index": 12,
+      "simulation": 0,
+      "journey": 426
+    },
+    {
+      "index": 13,
+      "simulation": 0,
+      "journey": 451
+    },
+    {
+      "index": 14,
+      "simulation": 0,
+      "journey": 546
+    },
+    {
+      "index": 15,
+      "simulation": 0,
+      "journey": 576
+    },
+    {
+      "index": 16,
+      "simulation": 0,
+      "journey": 550
+    },
+    {
+      "index": 17,
+      "simulation": 0,
+      "journey": 510
+    },
+    {
+      "index": 18,
+      "simulation": 0,
+      "journey": 463
+    },
+    {
+      "index": 19,
+      "simulation": 0,
+      "journey": 440
+    },
+    {
+      "index": 20,
+      "simulation": 4,
+      "journey": 387
+    },
+    {
+      "index": 21,
+      "simulation": 8,
+      "journey": 350
+    },
+    {
+      "index": 22,
+      "simulation": 19,
+      "journey": 327
+    },
+    {
+      "index": 23,
+      "simulation": 28,
+      "journey": 267
+    },
+    {
+      "index": 24,
+      "simulation": 36,
+      "journey": 193
+    },
+    {
+      "index": 25,
+      "simulation": 54,
+      "journey": 138
+    },
+    {
+      "index": 26,
+      "simulation": 69,
+      "journey": 159
+    },
+    {
+      "index": 27,
+      "simulation": 87,
+      "journey": 108
+    },
+    {
+      "index": 28,
+      "simulation": 139,
+      "journey": 76
+    },
+    {
+      "index": 29,
+      "simulation": 151,
+      "journey": 86
+    },
+    {
+      "index": 30,
+      "simulation": 226,
+      "journey": 52
+    },
+    {
+      "index": 31,
+      "simulation": 274,
+      "journey": 55
+    },
+    {
+      "index": 32,
+      "simulation": 290,
+      "journey": 48
+    },
+    {
+      "index": 33,
+      "simulation": 309,
+      "journey": 33
+    },
+    {
+      "index": 34,
+      "simulation": 320,
+      "journey": 46
+    },
+    {
+      "index": 35,
+      "simulation": 359,
+      "journey": 35
+    },
+    {
+      "index": 36,
+      "simulation": 349,
+      "journey": 28
+    },
+    {
+      "index": 37,
+      "simulation": 381,
+      "journey": 28
+    },
+    {
+      "index": 38,
+      "simulation": 374,
+      "journey": 19
+    },
+    {
+      "index": 39,
+      "simulation": 342,
+      "journey": 28
+    },
+    {
+      "index": 40,
+      "simulation": 342,
+      "journey": 22
+    },
+    {
+      "index": 41,
+      "simulation": 292,
+      "journey": 24
+    },
+    {
+      "index": 42,
+      "simulation": 332,
+      "journey": 13
+    },
+    {
+      "index": 43,
+      "simulation": 320,
+      "journey": 13
+    },
+    {
+      "index": 44,
+      "simulation": 317,
+      "journey": 10
+    },
+    {
+      "index": 45,
+      "simulation": 282,
+      "journey": 18
+    },
+    {
+      "index": 46,
+      "simulation": 268,
+      "journey": 7
+    },
+    {
+      "index": 47,
+      "simulation": 247,
+      "journey": 10
+    },
+    {
+      "index": 48,
+      "simulation": 228,
+      "journey": 12
+    },
+    {
+      "index": 49,
+      "simulation": 201,
+      "journey": 14
+    },
+    {
+      "index": 50,
+      "simulation": 151,
+      "journey": 11
+    },
+    {
+      "index": 51,
+      "simulation": 160,
+      "journey": 11
+    },
+    {
+      "index": 52,
+      "simulation": 133,
+      "journey": 7
+    },
+    {
+      "index": 53,
+      "simulation": 118,
+      "journey": 8
+    },
+    {
+      "index": 54,
+      "simulation": 89,
+      "journey": 9
+    },
+    {
+      "index": 55,
+      "simulation": 82,
+      "journey": 3
+    },
+    {
+      "index": 56,
+      "simulation": 74,
+      "journey": 6
+    },
+    {
+      "index": 57,
+      "simulation": 60,
+      "journey": 9
+    },
+    {
+      "index": 58,
+      "simulation": 63,
+      "journey": 3
+    },
+    {
+      "index": 59,
+      "simulation": 53,
+      "journey": 8
+    },
+    {
+      "index": 60,
+      "simulation": 34,
+      "journey": 6
+    },
+    {
+      "index": 61,
+      "simulation": 37,
+      "journey": 5
+    },
+    {
+      "index": 62,
+      "simulation": 35,
+      "journey": 6
+    },
+    {
+      "index": 63,
+      "simulation": 41,
+      "journey": 5
+    },
+    {
+      "index": 64,
+      "simulation": 20,
+      "journey": 6
+    },
+    {
+      "index": 65,
+      "simulation": 26,
+      "journey": 2
+    },
+    {
+      "index": 66,
+      "simulation": 23,
+      "journey": 4
+    },
+    {
+      "index": 67,
+      "simulation": 19,
+      "journey": 3
+    },
+    {
+      "index": 68,
+      "simulation": 25,
+      "journey": 2
+    },
+    {
+      "index": 69,
+      "simulation": 16,
+      "journey": 1
+    },
+    {
+      "index": 70,
+      "simulation": 15,
+      "journey": 2
+    },
+    {
+      "index": 71,
+      "simulation": 16,
+      "journey": 2
+    },
+    {
+      "index": 72,
+      "simulation": 19,
+      "journey": 3
+    },
+    {
+      "index": 73,
+      "simulation": 15,
+      "journey": 2
+    },
+    {
+      "index": 74,
+      "simulation": 14,
+      "journey": 3
+    },
+    {
+      "index": 75,
+      "simulation": 15,
+      "journey": 2
+    },
+    {
+      "index": 76,
+      "simulation": 7,
+      "journey": 0
+    },
+    {
+      "index": 77,
+      "simulation": 7,
+      "journey": 4
+    },
+    {
+      "index": 78,
+      "simulation": 14,
+      "journey": 4
+    },
+    {
+      "index": 79,
+      "simulation": 10,
+      "journey": 2
+    },
+    {
+      "index": 80,
+      "simulation": 10,
+      "journey": 1
+    },
+    {
+      "index": 81,
+      "simulation": 6,
+      "journey": 1
+    },
+    {
+      "index": 82,
+      "simulation": 9,
+      "journey": 1
+    },
+    {
+      "index": 83,
+      "simulation": 12,
+      "journey": 0
+    },
+    {
+      "index": 84,
+      "simulation": 7,
+      "journey": 0
+    },
+    {
+      "index": 85,
+      "simulation": 9,
+      "journey": 0
+    },
+    {
+      "index": 86,
+      "simulation": 9,
+      "journey": 3
+    },
+    {
+      "index": 87,
+      "simulation": 4,
+      "journey": 2
+    },
+    {
+      "index": 88,
+      "simulation": 9,
+      "journey": 0
+    },
+    {
+      "index": 89,
+      "simulation": 5,
+      "journey": 0
+    },
+    {
+      "index": 90,
+      "simulation": 3,
+      "journey": 0
+    },
+    {
+      "index": 91,
+      "simulation": 6,
+      "journey": 0
+    },
+    {
+      "index": 92,
+      "simulation": 6,
+      "journey": 0
+    },
+    {
+      "index": 93,
+      "simulation": 2,
+      "journey": 0
+    },
+    {
+      "index": 94,
+      "simulation": 5,
+      "journey": 0
+    },
+    {
+      "index": 95,
+      "simulation": 4,
+      "journey": 0
+    },
+    {
+      "index": 96,
+      "simulation": 4,
+      "journey": 0
+    },
+    {
+      "index": 97,
+      "simulation": 2,
+      "journey": 1
+    },
+    {
+      "index": 98,
+      "simulation": 2,
+      "journey": 1
+    },
+    {
+      "index": 99,
+      "simulation": 1,
+      "journey": 0
+    },
+    {
+      "index": 100,
+      "simulation": 8,
+      "journey": 0
+    },
+    {
+      "index": 101,
+      "simulation": 3,
+      "journey": 0
+    },
+    {
+      "index": 102,
+      "simulation": 1,
+      "journey": 0
+    },
+    {
+      "index": 103,
+      "simulation": 1,
+      "journey": 0
+    },
+    {
+      "index": 104,
+      "simulation": 2,
+      "journey": 1
+    },
+    {
+      "index": 105,
+      "simulation": 3,
+      "journey": 0
+    },
+    {
+      "index": 106,
+      "simulation": 3,
+      "journey": 0
+    },
+    {
+      "index": 107,
+      "simulation": 2,
+      "journey": 0
+    },
+    {
+      "index": 108,
+      "simulation": 2,
+      "journey": 1
+    },
+    {
+      "index": 109,
+      "simulation": 1,
+      "journey": 0
+    },
+    {
+      "index": 110,
+      "simulation": 2,
+      "journey": 0
+    },
+    {
+      "index": 112,
+      "simulation": 2,
+      "journey": 0
+    },
+    {
+      "index": 113,
+      "simulation": 1,
+      "journey": 0
+    },
+    {
+      "index": 114,
+      "simulation": 1,
+      "journey": 0
+    },
+    {
+      "index": 116,
+      "simulation": 1,
+      "journey": 0
+    },
+    {
+      "index": 121,
+      "simulation": 1,
+      "journey": 0
+    },
+    {
+      "index": 124,
+      "simulation": 1,
+      "journey": 0
+    },
+    {
+      "index": 127,
+      "simulation": 1,
+      "journey": 0
+    },
+    {
+      "index": 129,
+      "simulation": 1,
+      "journey": 0
+    },
+    {
+      "index": 154,
+      "simulation": 1,
+      "journey": 0
+    }
+  ],
+  "periodic_outcomes": {
+    "Found": {
+      "outcomes": 50313,
+      "overlapping_observations": 50313
+    },
+    "Invalid": {
+      "outcomes": 0,
+      "overlapping_observations": 0
+    },
+    "OriginMissing": {
+      "outcomes": 838,
+      "overlapping_observations": 838
+    },
+    "DestinationMissing": {
+      "outcomes": 10133,
+      "overlapping_observations": 10133
+    },
+    "NoAlighting": {
+      "outcomes": 108,
+      "overlapping_observations": 108
+    },
+    "Unreachable": {
+      "outcomes": 1888,
+      "overlapping_observations": 1888
+    },
+    "NoCandidate": {
+      "outcomes": 383,
+      "overlapping_observations": 383
+    },
+    "UnknownPhase": {
+      "outcomes": 672,
+      "overlapping_observations": 113938
+    },
+    "Evaluation": {
+      "outcomes": 0,
+      "overlapping_observations": 23977
+    },
+    "Candidates": {
+      "outcomes": 0,
+      "overlapping_observations": 62
+    },
+    "Labels": {
+      "outcomes": 309,
+      "overlapping_observations": 323
+    },
+    "Work": {
+      "outcomes": 66426,
+      "overlapping_observations": 66832
+    },
+    "Memory": {
+      "outcomes": 0,
+      "overlapping_observations": 0
+    },
+    "Transfers": {
+      "outcomes": 0,
+      "overlapping_observations": 0
+    }
+  },
+  "fallbacks": {
+    "GraphWork": {
+      "fallback_packets": 0,
+      "deferred_packets": 0
+    },
+    "GraphMemory": {
+      "fallback_packets": 0,
+      "deferred_packets": 0
+    },
+    "SnapshotLimit": {
+      "fallback_packets": 0,
+      "deferred_packets": 0
+    },
+    "QueryWork": {
+      "fallback_packets": 0,
+      "deferred_packets": 8936027
+    },
+    "QueryLimit": {
+      "fallback_packets": 0,
+      "deferred_packets": 0
+    },
+    "QueryMemory": {
+      "fallback_packets": 0,
+      "deferred_packets": 0
+    },
+    "PredictionIncomplete": {
+      "fallback_packets": 11860,
+      "deferred_packets": 0
+    },
+    "PredictionHorizon": {
+      "fallback_packets": 0,
+      "deferred_packets": 0
+    },
+    "NoJourney": {
+      "fallback_packets": 0,
+      "deferred_packets": 0
+    },
+    "InvalidLeg": {
+      "fallback_packets": 0,
+      "deferred_packets": 0
+    },
+    "StaleLeg": {
+      "fallback_packets": 48136,
+      "deferred_packets": 0
+    },
+    "Disabled": {
+      "fallback_packets": 0,
+      "deferred_packets": 0
+    },
+    "VehicleDeleted": {
+      "fallback_packets": 0,
+      "deferred_packets": 0
+    }
+  },
+  "observations": {
+    "Graph failure": {
+      "None": 0,
+      "Work": 0,
+      "Memory": 0,
+      "Services": 0,
+      "Trips": 0,
+      "TotalVisits": 0,
+      "Index": 0,
+      "Opaque": 0
+    },
+    "Trip stop": {
+      "None": 0,
+      "Work": 0,
+      "Memory": 0,
+      "Visits": 0,
+      "Steps": 0,
+      "Timing": 0,
+      "Conditional": 0,
+      "Refit": 0,
+      "Implicit": 0,
+      "Unsupported": 0,
+      "Dispatch": 0,
+      "Facilities": 0,
+      "VehicleState": 0,
+      "OrderProgress": 0
+    },
+    "Schedule invalidation": {
+      "ServiceMissing": 0,
+      "Incarnation": 0,
+      "Generation": 36,
+      "Station": 0,
+      "Disabled": 0,
+      "VehicleDeleted": 0,
+      "LiveRide": 0,
+      "ForcedUnload": 0,
+      "WaitingExpired": 0
+    },
+    "phase_capture_work": 658
+  }
+}

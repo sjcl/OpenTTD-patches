@@ -4811,16 +4811,21 @@ static bool ConPassengerPeriodicCompare(std::span<std::string_view> argv)
 	PassengerJourneyLimits limits; limits.work = 65536; limits.labels = 8192; limits.memory_bytes = 8 * 1024 * 1024;
 	PassengerJourneyEvaluation evaluation; evaluation.minimum_transfer = evaluation.transfer_penalty = _settings_game.linkgraph.passenger_transfer_penalty;
 	const auto &db = GetPassengerServiceDatabase();
-	size_t old_only = 0, new_only = 0, both = 0, neither = 0;
+	size_t old_only = 0, new_only = 0, both = 0, neither = 0, provisional = 0;
+	static constexpr std::array state_names{"Unavailable", "Certified", "Provisional", "Deferred", "NoRoute"};
+	static_assert(state_names.size() == static_cast<size_t>(PassengerPeriodicPlan::State::End));
 	for (const auto &[cargo, origin, destination] : queries) {
 		auto paired = ComparePassengerPlanners(db, cargo, origin, destination, _state_ticks, limits, evaluation);
-		bool old_found = paired.legacy_found, new_found = paired.periodic.ride.has_value() && !paired.periodic.deferred;
+		bool old_found = paired.legacy_found, new_found = paired.periodic.state == PassengerPeriodicPlan::State::Certified;
+		provisional += paired.periodic.state == PassengerPeriodicPlan::State::Provisional;
 		old_only += old_found && !new_found; new_only += new_found && !old_found; both += old_found && new_found; neither += !old_found && !new_found;
 		IConsolePrint(CC_DEFAULT, "Periodic paired OD: cargo={}; origin={}; destination={}; tick={}; old_found={}; new_found={}; old_arrival={}; new_arrival={}; old_cost={}; new_cost={}; new_reason={}; deferred={}; labels={}; candidates={}; new_work={}; new_memory={}; old_stop={}; old_status={}; old_graph_work={}; old_search_work={}; horizon={}",
 				cargo, origin, destination, _state_ticks.base(), old_found, new_found, paired.legacy_arrival.base(), paired.periodic.arrival.base(),
 				paired.legacy_cost, paired.periodic.cost, reasons[static_cast<size_t>(paired.periodic.reason)], paired.periodic.deferred, paired.periodic.labels,
 				paired.periodic.candidates, paired.periodic.work, paired.periodic.memory, to_underlying(paired.legacy_stop), to_underlying(paired.legacy_status),
 				paired.legacy_graph_work, paired.legacy_search_work, paired.horizon);
+		IConsolePrint(CC_DEFAULT, "Periodic paired availability: available={}; state={}; new_found_means_certified=true",
+			paired.periodic.ride.has_value(), state_names[static_cast<size_t>(paired.periodic.state)]);
 		for (size_t i = 0; i < paired.periodic.observations.size(); ++i) if (paired.periodic.observations[i]) IConsolePrint(CC_DEFAULT, "Periodic paired observation: reason={}", reasons[i]);
 		auto print_route = [&](const char *backend, const auto &route) {
 			for (const auto &leg : route) {
@@ -4844,7 +4849,7 @@ static bool ConPassengerPeriodicCompare(std::span<std::string_view> argv)
 		};
 		print_route("snapshot", paired.legacy_route); print_route("periodic", paired.periodic.route);
 	}
-	IConsolePrint(CC_DEFAULT, "Periodic paired totals (unique OD calls, same live state, no simulation advanced): calls={}; old_only={}; new_only={}; both={}; neither={}", queries.size(), old_only, new_only, both, neither);
+	IConsolePrint(CC_DEFAULT, "Periodic paired totals (unique OD calls, same live state, no simulation advanced; found means certified): calls={}; old_only={}; new_only={}; both={}; neither={}; provisional={}", queries.size(), old_only, new_only, both, neither, provisional);
 	return true;
 }
 static bool ConPassengerJourneyStats(std::span<std::string_view> argv)
@@ -4989,6 +4994,10 @@ static bool ConPassengerJourneyStats(std::span<std::string_view> argv)
 	IConsolePrint(CC_DEFAULT, "Timed Work completion: with_complete={}; without_complete={}; with_queued={}; with_popped={}; improvement_possible={}; reverse_work={}; forward_work={}",
 		periodic.work_with_complete, periodic.work_without_complete, periodic.work_with_queued_complete, periodic.work_with_popped_complete,
 		periodic.work_with_improvement, periodic.work_reverse, periodic.work_forward);
+	IConsolePrint(CC_DEFAULT, "Timed result states: unavailable={}; certified={}; provisional={}; deferred={}; no_route={}; rescued_unpopped={}",
+		periodic.result_states[0], periodic.result_states[1], periodic.result_states[2], periodic.result_states[3], periodic.result_states[4], periodic.rescued_unpopped);
+	IConsolePrint(CC_DEFAULT, "Timed plan adoption: certified_packets={}; provisional_packets={}; provisional_passengers={}",
+		stats.timed_certified_packets, stats.timed_provisional_packets, stats.timed_provisional_passengers);
 	static constexpr std::array work_stop_names{"None", "Admission", "Queue", "Service", "Vehicle", "Dispatch", "Departure", "Alighting", "Dominance"};
 	static_assert(work_stop_names.size() == static_cast<size_t>(PassengerPeriodicPlan::WorkStop::End));
 	for (size_t i = 0; i < work_stop_names.size(); ++i) IConsolePrint(CC_DEFAULT, "Timed Work stop {}: calls={}; observations={}", work_stop_names[i], periodic.work_stop_calls[i], periodic.work_stop_observations[i]);
