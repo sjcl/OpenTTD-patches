@@ -95,7 +95,7 @@ State ticks: 3176549568 (offset: 2)
 Effective economy speed reduction factor: 1
 Ticks per calendar day: 74
 Timetable time: 23:05 + 38 ticks
-Client #1  name: 'release-server'  company: 255  IP: server  pubkey: 
+Client #1  name: 'release-server'  company: 255  IP: server  pubkey:
 Client #2  name: 'release-client-initial'  company: 255  IP: 127.0.0.1  pubkey: B4FAA3E431858B6D274B30B44EA78CBA6734A59AFA01881EB435BED520A5B338
 Current value for 'linkgraph.passenger_od_assignment' is: 'true' (min: 0, max: 1, def: 0)
 Current value for 'linkgraph.passenger_journey_routing' is: 'true' (min: 0, max: 1, def: 0)
@@ -179,7 +179,7 @@ State ticks: 3176554180 (offset: 2)
 Effective economy speed reduction factor: 1
 Ticks per calendar day: 74
 Timetable time: 00:07 + 62 ticks
-Client #1  name: 'release-server'  company: 255  IP: server  pubkey: 
+Client #1  name: 'release-server'  company: 255  IP: server  pubkey:
 Client #2  name: 'release-client-initial'  company: 255  IP: 127.0.0.1  pubkey: B4FAA3E431858B6D274B30B44EA78CBA6734A59AFA01881EB435BED520A5B338
 Client #3  name: 'release-client-late'  company: 255  IP: 127.0.0.1  pubkey: 648D6D5B0D154103370CDAF3E1956A847CA9D72C47594221489092DBFE5F2D49
 Current value for 'linkgraph.passenger_od_assignment' is: 'true' (min: 0, max: 1, def: 0)

@@ -67,5 +67,7 @@
     "console_cmds.cpp": "ab924f25403c1ac7e65872ad13a1a61bc352285fd13c4439b39f7302871bf633",
     "tests/passenger_service_database.cpp": "952443d91a565bd6666ddaf81c5859372fe8180f965d165e46442b1500d3d18d",
     "tests/passenger_multimodal.cpp": "84d0250cb1b02c1b6b31a49161b4e13eb762e0190af21728fc07c136d971aed3"
-  }
+  },
+  "archive_text_normalization": "Trailing whitespace and excess final blank lines removed from the archived server console and focused test log; original streams retained in the ignored build directory",
+  "archived_console_sha256": "468f4a9de4792366e7ef9a3b08beade776b73cd0200750ff14137bfb5ca188fa"
 }
