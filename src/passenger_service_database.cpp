@@ -948,6 +948,9 @@ PassengerPeriodicPlan PassengerServiceDatabase::PlanInternal(CargoType cargo, St
 			};
 			auto first_key = [](const Label &a) { return std::tie(a.first.departure, a.first.service, a.first.boarding_order, a.first.alighting_order); };
 			auto insert = [&](Label next) {
+#ifdef WITH_PASSENGER_BENCHMARK
+				++this->diagnostic.timed_label_attempts;
+#endif
 				int64_t lower = bound(next.station, next.cost);
 				if (result.ride && lower > result.cost) return;
 				++this->diagnostic.frontier_lookups;
@@ -955,6 +958,9 @@ PassengerPeriodicPlan PassengerServiceDatabase::PlanInternal(CargoType cargo, St
 				size_t retained = 0;
 				if (next.station != destination) for (size_t index : frontier) {
 					if (!spend()) return;
+#ifdef WITH_PASSENGER_BENCHMARK
+					++this->diagnostic.timed_label_comparisons;
+#endif
 					const auto &other = labels[index];
 					if (!other.active) continue;
 					++retained;
@@ -1005,6 +1011,9 @@ PassengerPeriodicPlan PassengerServiceDatabase::PlanInternal(CargoType cargo, St
 				if (row == this->stations.end()) continue;
 				for (const auto &ref : row->second) {
 					if (!spend()) break;
+#ifdef WITH_PASSENGER_BENCHMARK
+					++this->diagnostic.timed_service_candidates;
+#endif
 					if (current.rides == 0 && ref.service == excluded) continue;
 					const auto &service = this->services.at(ref.service);
 					const auto &pattern = service.timetable;
@@ -1020,6 +1029,9 @@ PassengerPeriodicPlan PassengerServiceDatabase::PlanInternal(CargoType cargo, St
 						continue;
 					}
 					int64_t earliest = current.time.base();
+#ifdef WITH_PASSENGER_BENCHMARK
+					++this->diagnostic.timed_service_scans;
+#endif
 					if (current.rides && !AddTicks(earliest, evaluation.minimum_transfer)) { observe(Reason::Evaluation); continue; }
 					std::optional<StateTicks> departure;
 					/* A full scan spends one unit per vehicle, in saved vehicle order.

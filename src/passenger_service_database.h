@@ -95,6 +95,7 @@ struct PassengerDatabaseDiagnostic {
 	uint64_t departure_index_builds = 0, departure_index_build_nanoseconds = 0, forward_microseconds = 0, search_work = 0;
 	uint64_t service_bound_checks = 0, service_bound_stops = 0, pruned_services = 0, pruned_vehicle_visits = 0;
 	uint64_t timed_labels = 0, frontier_lookups = 0, queue_pushes = 0, queue_pops = 0;
+	uint64_t timed_label_attempts = 0, timed_label_comparisons = 0, timed_service_candidates = 0, timed_service_scans = 0; ///< Opt-in benchmark counters for the legacy forward loop.
 	size_t search_scratch_bytes = 0, search_scratch_peak_bytes = 0; ///< Physical capacity, separate from logical admission.
 	size_t departure_index_bytes = 0, departure_index_peak_bytes = 0;
 	size_t services = 0, timed_services = 0, vehicles = 0, bytes = 0, policy_bytes = 0, pending = 0;

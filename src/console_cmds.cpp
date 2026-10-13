@@ -5053,6 +5053,10 @@ static bool ConPassengerJourneyStats(std::span<std::string_view> argv)
 	IConsolePrint(CC_DEFAULT, "Timed search storage: labels={}; frontier_lookups={}; queue_pushes={}; queue_pops={}; scratch_bytes={}; scratch_peak_bytes={}",
 		periodic.timed_labels, periodic.frontier_lookups, periodic.queue_pushes, periodic.queue_pops, periodic.search_scratch_bytes, periodic.search_scratch_peak_bytes);
 	IConsolePrint(CC_DEFAULT, "Periodic query CPU (OS thread clock; aggregate only): samples={}; query_cpu_ns={}", periodic.query_cpu_samples, periodic.query_cpu_nanoseconds);
+#ifdef WITH_PASSENGER_BENCHMARK
+	IConsolePrint(CC_DEFAULT, "Legacy timed detail: measured=true; attempts={}; comparisons={}; service_candidates={}; service_scans={}",
+		periodic.timed_label_attempts, periodic.timed_label_comparisons, periodic.timed_service_candidates, periodic.timed_service_scans);
+#endif
 	IConsolePrint(CC_DEFAULT, "Periodic service pruning: bound_checks={}; bound_stops={}; pruned_services={}; skipped_vehicle_visits={}",
 			periodic.service_bound_checks, periodic.service_bound_stops, periodic.pruned_services, periodic.pruned_vehicle_visits);
 	const auto rounds = GetPassengerServiceDatabase().GetRoundDiagnostic();

@@ -49,6 +49,8 @@ StationのPareto比較は到着時刻・費用・乗車数・先頭Intent順位�
 
 OS時計は診断のみ。検索の順序・許可・打切りには使用しない。
 
+比較用ビルドには旧方式の前向きLabel試行、frontier比較、Service候補列挙と時刻評価に入るService展開も追加する。通常ビルドでは追加カウンターを更新しない。旧方式の比較数はfrontier要素の訪問、新方式は両方向のStation支配predicateと車内支配predicateの呼出しであり、同じ単価のWorkとは扱わない。
+
 Windowsの比較用ビルドだけで `GetThreadTimes` のkernel+user CPU差をODごとに集計する。`Periodic query CPU` のsamplesが0なら未取得であり、CPU消費0とは扱わない。OSのCPU時計の粒度があるため、単一ODの値を順位付けせず多数ODの合計と平均を使う。`query_us` は経過時間、process CPUはロード・保存・workerを含む別の値である。通常ビルドではこの追加CPU時計を読まない。
 
 ## 検証・比較手順
