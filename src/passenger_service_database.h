@@ -10,6 +10,7 @@
 #include "passenger_journey_planner.h"
 #include "passenger_journey_type.h"
 #include "passenger_journey_schedule.h"
+#include "passenger_departure_index.h"
 #include <set>
 #include <list>
 #include <variant>
@@ -73,7 +74,11 @@ struct PassengerPeriodicPlan {
 
 struct PassengerDatabaseDiagnostic {
 	uint64_t builds = 0, build_work = 0, build_microseconds = 0;
-	uint64_t searches = 0, query_microseconds = 0, next_departures = 0, policy_hits = 0, policy_misses = 0;
+	uint64_t searches = 0, query_microseconds = 0, policy_hits = 0, policy_misses = 0;
+	uint64_t next_departures = 0; ///< Logical NextDeparture evaluations in the original scan, including skipped indexed candidates.
+	uint64_t vehicle_candidates = 0, departure_calculations = 0, departure_index_hits = 0, departure_index_fallbacks = 0;
+	uint64_t departure_index_builds = 0, departure_index_build_nanoseconds = 0, forward_microseconds = 0, search_work = 0;
+	size_t departure_index_bytes = 0, departure_index_peak_bytes = 0;
 	size_t services = 0, timed_services = 0, vehicles = 0, bytes = 0, policy_bytes = 0, pending = 0;
 	size_t known_phase_vehicles = 0;
 	size_t physical_passenger_occurrences = 0, exchange_passenger_occurrences = 0; ///< Per passenger cargo bit; observations only.
@@ -132,6 +137,8 @@ public:
 	void ResetDiagnostic() { this->diagnostic = {}; this->schedule.ResetDiagnostic(); this->recent_policy_builds.clear(); }
 	void SetPolicyCacheEnabled(bool enabled) { this->policy_cache_enabled = enabled; if (!enabled) this->ClearPolicies(); }
 	void ClearPolicies(); ///< Residency must never change search admission or its result.
+	void SetDepartureIndexEnabled(bool enabled) { this->departure_index_enabled = enabled; if (!enabled) this->ClearDepartureIndices(); }
+	void ClearDepartureIndices(); ///< Derived cache, absent from saved data and logical work/memory admission.
 	void ShiftTicks(StateTicksDelta delta);
 	void RecordExpiry(uint16_t passengers) { ++this->diagnostic.expired_packets; this->diagnostic.expired_passengers += passengers; }
 	void RecordBoardingFailure() { ++this->diagnostic.boarding_failures; }
@@ -195,6 +202,11 @@ private:
 	std::map<PolicyKey, CachedPolicy> policies;
 	std::map<std::tuple<bool, CargoType, StationID, StationID>, uint64_t> recent_policy_builds; ///< Bounded diagnostic history, never simulation input.
 	PassengerDatabaseDiagnostic diagnostic;
+	static constexpr size_t DEPARTURE_INDEX_BYTES = 8 * 1024 * 1024;
+	std::map<std::pair<OrderListID, CargoType>, PassengerDepartureIndex> departure_indices;
+	size_t departure_index_bytes = 0;
+	bool departure_index_enabled = true; ///< Local preference survives Load; neither preference nor derived rows are saved.
+	const PassengerDepartureIndex *DepartureIndex(const PassengerPeriodicService &service, CargoType cargo);
 	void Remove(OrderListID id);
 	void Index(const PassengerPeriodicService &service);
 	JourneyPolicy CompilePolicy(CargoType cargo, StationID origin, StationID destination, PassengerJourneyLimits limits, PassengerJourneyEvaluation evaluation, Dependencies &dependencies) const;

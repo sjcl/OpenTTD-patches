@@ -4850,11 +4850,16 @@ static bool ConPassengerPeriodicCompare(std::span<std::string_view> argv)
 static bool ConPassengerJourneyStats(std::span<std::string_view> argv)
 {
 	if (argv.empty()) {
-		IConsolePrint(CC_HELP, "passenger_journey_stats [total|tick|inventory|reset|cache_on|cache_off]: local diagnostics and optional derived policy residency");
+		IConsolePrint(CC_HELP, "passenger_journey_stats [total|tick|inventory|reset|cache_on|cache_off|departures_on|departures_off]: local diagnostics and optional derived caches");
 		return true;
 	}
 	if (argv.size() > 2) return false;
 	auto operation = argv.size() == 1 ? std::string_view("total") : argv[1];
+	if (operation == "departures_on" || operation == "departures_off") {
+		GetPassengerServiceDatabase().SetDepartureIndexEnabled(operation == "departures_on");
+		IConsolePrint(CC_DEFAULT, "Periodic departure index: {}; logical query work unchanged", operation == "departures_on" ? "enabled" : "disabled");
+		return true;
+	}
 	if (operation == "cache_on" || operation == "cache_off") {
 		GetPassengerServiceDatabase().SetPolicyCacheEnabled(operation == "cache_on");
 		IConsolePrint(CC_DEFAULT, "Periodic policy residency: {}; logical query work unchanged", operation == "cache_on" ? "enabled" : "disabled");
@@ -4957,6 +4962,9 @@ static bool ConPassengerJourneyStats(std::span<std::string_view> argv)
 			periodic.services, periodic.timed_services, periodic.vehicles, periodic.bytes, periodic.policy_bytes, periodic.pending, periodic.builds, periodic.build_work,
 			periodic.build_microseconds, periodic.searches, periodic.query_microseconds, periodic.next_departures, periodic.policy_hits, periodic.policy_misses,
 			periodic.invalidations, periodic.rejected_work, periodic.rejected_memory);
+	IConsolePrint(CC_DEFAULT, "Periodic departures: logical_vehicles={}; logical_departures={}; physical_calculations={}; hits={}; fallbacks={}; builds={}; build_ns={}; bytes={}; peak_bytes={}; forward_us={}; search_work={}",
+			periodic.vehicle_candidates, periodic.next_departures, periodic.departure_calculations, periodic.departure_index_hits, periodic.departure_index_fallbacks,
+			periodic.departure_index_builds, periodic.departure_index_build_nanoseconds, periodic.departure_index_bytes, periodic.departure_index_peak_bytes, periodic.forward_microseconds, periodic.search_work);
 	IConsolePrint(CC_DEFAULT, "Periodic global invalidations: {}", periodic.global_invalidations);
 	IConsolePrint(CC_DEFAULT, "Periodic residency: entries={}; revision={}; publications={}; staged={}; staged_bytes={}; additions={}; removals={}; updates={}; timetable_notifications={}",
 			periodic.policy_entries, periodic.published_revision, periodic.publications, periodic.staged, periodic.staged_bytes,

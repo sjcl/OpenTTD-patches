@@ -1,0 +1,382 @@
+{
+  "scanned": {
+    "process": {
+      "backend": "periodic",
+      "exit_code": 0,
+      "wall_seconds": 448.6978757,
+      "cpu_seconds": 584.53125,
+      "peak_working_set": 2091003904,
+      "sampled_peak_private": 2087739392,
+      "input_save": "input.sav",
+      "resumed": false,
+      "requested_driver_loops": 8192,
+      "policy_cache_disabled": false,
+      "departure_index_disabled": true,
+      "input_sha256": "14D68C82911B9DCFC5EF7291E9697C5BBD67F44FFCC79D7575A144405EDF6390",
+      "binary_sha256": "401E552A6418A041ED89AEAE43FC578C0E34167699939AAEC2886D4462CA4C7A",
+      "sample_ms": 100
+    },
+    "state_ticks": [
+      3176545487,
+      3176553679
+    ],
+    "simulation": {
+      "completed_ticks": 8192,
+      "total_us": 427993582,
+      "mean_us": 52245,
+      "max_us": 149921
+    },
+    "histogram": {
+      "simulation_p95_us": 75000,
+      "simulation_p99_us": 97000,
+      "journey_mean_us": 26327,
+      "journey_p95_us": 45000,
+      "journey_p99_us": 68000,
+      "journey_max_us": 121706
+    },
+    "database": {
+      "services": 837,
+      "timed": 652,
+      "vehicles": 3664,
+      "bytes": 11987712,
+      "policies_bytes": 16645016,
+      "pending": 740,
+      "builds": 18282,
+      "work": 70724562,
+      "build_us": 367047,
+      "searches": 131072,
+      "query_us": 177823024,
+      "next_departures": 355283103,
+      "policy_hits": 75194,
+      "policy_misses": 55878,
+      "invalidations": 38,
+      "rejected_work": 71,
+      "rejected_memory": 0
+    },
+    "departures": {
+      "logical_vehicles": 376416359,
+      "logical_departures": 355283103,
+      "physical_calculations": 355283103,
+      "hits": 0,
+      "fallbacks": 58368819,
+      "builds": 0,
+      "build_ns": 0,
+      "bytes": 0,
+      "peak_bytes": 0,
+      "forward_us": 134895547,
+      "search_work": 5469210334
+    },
+    "publication": {
+      "entries": 1075,
+      "revision": 2468,
+      "publications": 2468,
+      "staged": 0,
+      "staged_bytes": 0,
+      "additions": 837,
+      "removals": 0,
+      "updates": 9610,
+      "timetable_notifications": 52706
+    },
+    "policies": {
+      "clears": 0,
+      "lost": 0,
+      "maximum_lost": 0,
+      "explicit": 0,
+      "reset": 0,
+      "global": 0,
+      "stale": 5509,
+      "evictions": 65500,
+      "rebuilds": 7459,
+      "compile_us": 40768383,
+      "validation_us": 148132,
+      "eviction_us": 143244
+    },
+    "schedule": {
+      "packets": 6,
+      "passengers": 8,
+      "timed_deferred": 0,
+      "hits": 68270,
+      "misses": 16206,
+      "bytes": 391568,
+      "work": 108411484,
+      "query_us": 1116498,
+      "stale": 4,
+      "expired": 0
+    },
+    "schedule_transport": {
+      "boarded": 1,
+      "transferred": 1,
+      "delivered": 0,
+      "expected_wait_person_ticks": 1406,
+      "actual_wait_person_ticks": 0,
+      "wait_people": 1
+    },
+    "outcomes": [
+      "Periodic OD calls: Found outcomes=46595; overlapping_observations=46595",
+      "Periodic OD calls: Invalid outcomes=0; overlapping_observations=0",
+      "Periodic OD calls: OriginMissing outcomes=570; overlapping_observations=570",
+      "Periodic OD calls: DestinationMissing outcomes=7440; overlapping_observations=7440",
+      "Periodic OD calls: NoAlighting outcomes=48; overlapping_observations=48",
+      "Periodic OD calls: Unreachable outcomes=1506; overlapping_observations=1506",
+      "Periodic OD calls: NoCandidate outcomes=606; overlapping_observations=606",
+      "Periodic OD calls: UnknownPhase outcomes=1110; overlapping_observations=118175",
+      "Periodic OD calls: Evaluation outcomes=0; overlapping_observations=26414",
+      "Periodic OD calls: Candidates outcomes=0; overlapping_observations=47",
+      "Periodic OD calls: Labels outcomes=537; overlapping_observations=602",
+      "Periodic OD calls: Work outcomes=72660; overlapping_observations=73277",
+      "Periodic OD calls: Memory outcomes=0; overlapping_observations=0",
+      "Periodic OD calls: Transfers outcomes=0; overlapping_observations=0",
+      "Fallback GraphWork: 0 packets; deferred=0 packets",
+      "Fallback GraphMemory: 0 packets; deferred=0 packets",
+      "Fallback SnapshotLimit: 0 packets; deferred=0 packets",
+      "Fallback QueryWork: 0 packets; deferred=9411614 packets",
+      "Fallback QueryLimit: 0 packets; deferred=0 packets",
+      "Fallback QueryMemory: 0 packets; deferred=0 packets",
+      "Fallback PredictionIncomplete: 9568 packets; deferred=0 packets",
+      "Fallback PredictionHorizon: 0 packets; deferred=0 packets",
+      "Fallback NoJourney: 0 packets; deferred=0 packets",
+      "Fallback InvalidLeg: 0 packets; deferred=0 packets",
+      "Fallback StaleLeg: 40664 packets; deferred=0 packets",
+      "Fallback Disabled: 0 packets; deferred=0 packets",
+      "Fallback VehicleDeleted: 0 packets; deferred=0 packets"
+    ],
+    "active": {
+      "applied": 74944,
+      "builds": 0,
+      "static_hits": 0,
+      "searches": 131072,
+      "OD_hits": 61311,
+      "applied_packets": 74944,
+      "applied_passengers": 128271
+    },
+    "timed_transport": {
+      "boarded": 49655,
+      "transferred": 20896,
+      "delivered": 15311
+    },
+    "routing": {
+      "timed": 74944,
+      "timed_ignoring_unknown": 0,
+      "timed_budget_deferred": 73197,
+      "untimed": 150456,
+      "untimed_no_route": 177014,
+      "untimed_budget_deferred": 13577900
+    },
+    "untimed_transport": {
+      "boarded": 552990,
+      "transferred": 274926,
+      "delivered": 226209
+    },
+    "final_save_sha256": "1bae3398586e1abfac6d305d9af825a2d26e76cbc69fc21369d2549f5a61c590",
+    "derived": {
+      "forward_ms_per_tick": 16.466741577148436,
+      "timed_query_ms_per_tick": 21.706912109375,
+      "journey_ms_per_tick": 26.327,
+      "simulation_ms_per_tick": 52.245310302734374,
+      "index_build_ms_total": 0.0
+    },
+    "stderr": {
+      "sha256": "831ee72bf50d1c2f532404c5d81e538939b3aed618c3524b2667626e3a1e8c31",
+      "bytes": 7971274
+    }
+  },
+  "indexed": {
+    "process": {
+      "backend": "periodic",
+      "exit_code": 0,
+      "wall_seconds": 442.6100637,
+      "cpu_seconds": 561.984375,
+      "peak_working_set": 2094538752,
+      "sampled_peak_private": 2091040768,
+      "input_save": "input.sav",
+      "resumed": false,
+      "requested_driver_loops": 8192,
+      "policy_cache_disabled": false,
+      "departure_index_disabled": false,
+      "input_sha256": "14D68C82911B9DCFC5EF7291E9697C5BBD67F44FFCC79D7575A144405EDF6390",
+      "binary_sha256": "401E552A6418A041ED89AEAE43FC578C0E34167699939AAEC2886D4462CA4C7A",
+      "sample_ms": 100
+    },
+    "state_ticks": [
+      3176545487,
+      3176553679
+    ],
+    "simulation": {
+      "completed_ticks": 8192,
+      "total_us": 423047773,
+      "mean_us": 51641,
+      "max_us": 155032
+    },
+    "histogram": {
+      "simulation_p95_us": 73000,
+      "simulation_p99_us": 96000,
+      "journey_mean_us": 26264,
+      "journey_p95_us": 45000,
+      "journey_p99_us": 70000,
+      "journey_max_us": 125474
+    },
+    "database": {
+      "services": 837,
+      "timed": 652,
+      "vehicles": 3664,
+      "bytes": 11987712,
+      "policies_bytes": 16645016,
+      "pending": 740,
+      "builds": 18282,
+      "work": 70724562,
+      "build_us": 388301,
+      "searches": 131072,
+      "query_us": 177342020,
+      "next_departures": 355283103,
+      "policy_hits": 75194,
+      "policy_misses": 55878,
+      "invalidations": 38,
+      "rejected_work": 71,
+      "rejected_memory": 0
+    },
+    "departures": {
+      "logical_vehicles": 376416359,
+      "logical_departures": 355283103,
+      "physical_calculations": 84739772,
+      "hits": 58362003,
+      "fallbacks": 6816,
+      "builds": 8300,
+      "build_ns": 21453000,
+      "bytes": 419660,
+      "peak_bytes": 420800,
+      "forward_us": 134681449,
+      "search_work": 5469210334
+    },
+    "publication": {
+      "entries": 1075,
+      "revision": 2468,
+      "publications": 2468,
+      "staged": 0,
+      "staged_bytes": 0,
+      "additions": 837,
+      "removals": 0,
+      "updates": 9610,
+      "timetable_notifications": 52706
+    },
+    "policies": {
+      "clears": 0,
+      "lost": 0,
+      "maximum_lost": 0,
+      "explicit": 0,
+      "reset": 0,
+      "global": 0,
+      "stale": 5509,
+      "evictions": 65500,
+      "rebuilds": 7459,
+      "compile_us": 40587680,
+      "validation_us": 139327,
+      "eviction_us": 138474
+    },
+    "schedule": {
+      "packets": 6,
+      "passengers": 8,
+      "timed_deferred": 0,
+      "hits": 68270,
+      "misses": 16206,
+      "bytes": 391568,
+      "work": 108411484,
+      "query_us": 1178271,
+      "stale": 4,
+      "expired": 0
+    },
+    "schedule_transport": {
+      "boarded": 1,
+      "transferred": 1,
+      "delivered": 0,
+      "expected_wait_person_ticks": 1406,
+      "actual_wait_person_ticks": 0,
+      "wait_people": 1
+    },
+    "outcomes": [
+      "Periodic OD calls: Found outcomes=46595; overlapping_observations=46595",
+      "Periodic OD calls: Invalid outcomes=0; overlapping_observations=0",
+      "Periodic OD calls: OriginMissing outcomes=570; overlapping_observations=570",
+      "Periodic OD calls: DestinationMissing outcomes=7440; overlapping_observations=7440",
+      "Periodic OD calls: NoAlighting outcomes=48; overlapping_observations=48",
+      "Periodic OD calls: Unreachable outcomes=1506; overlapping_observations=1506",
+      "Periodic OD calls: NoCandidate outcomes=606; overlapping_observations=606",
+      "Periodic OD calls: UnknownPhase outcomes=1110; overlapping_observations=118175",
+      "Periodic OD calls: Evaluation outcomes=0; overlapping_observations=26414",
+      "Periodic OD calls: Candidates outcomes=0; overlapping_observations=47",
+      "Periodic OD calls: Labels outcomes=537; overlapping_observations=602",
+      "Periodic OD calls: Work outcomes=72660; overlapping_observations=73277",
+      "Periodic OD calls: Memory outcomes=0; overlapping_observations=0",
+      "Periodic OD calls: Transfers outcomes=0; overlapping_observations=0",
+      "Fallback GraphWork: 0 packets; deferred=0 packets",
+      "Fallback GraphMemory: 0 packets; deferred=0 packets",
+      "Fallback SnapshotLimit: 0 packets; deferred=0 packets",
+      "Fallback QueryWork: 0 packets; deferred=9411614 packets",
+      "Fallback QueryLimit: 0 packets; deferred=0 packets",
+      "Fallback QueryMemory: 0 packets; deferred=0 packets",
+      "Fallback PredictionIncomplete: 9568 packets; deferred=0 packets",
+      "Fallback PredictionHorizon: 0 packets; deferred=0 packets",
+      "Fallback NoJourney: 0 packets; deferred=0 packets",
+      "Fallback InvalidLeg: 0 packets; deferred=0 packets",
+      "Fallback StaleLeg: 40664 packets; deferred=0 packets",
+      "Fallback Disabled: 0 packets; deferred=0 packets",
+      "Fallback VehicleDeleted: 0 packets; deferred=0 packets"
+    ],
+    "active": {
+      "applied": 74944,
+      "builds": 0,
+      "static_hits": 0,
+      "searches": 131072,
+      "OD_hits": 61311,
+      "applied_packets": 74944,
+      "applied_passengers": 128271
+    },
+    "timed_transport": {
+      "boarded": 49655,
+      "transferred": 20896,
+      "delivered": 15311
+    },
+    "routing": {
+      "timed": 74944,
+      "timed_ignoring_unknown": 0,
+      "timed_budget_deferred": 73197,
+      "untimed": 150456,
+      "untimed_no_route": 177014,
+      "untimed_budget_deferred": 13577900
+    },
+    "untimed_transport": {
+      "boarded": 552990,
+      "transferred": 274926,
+      "delivered": 226209
+    },
+    "final_save_sha256": "1bae3398586e1abfac6d305d9af825a2d26e76cbc69fc21369d2549f5a61c590",
+    "derived": {
+      "forward_ms_per_tick": 16.44060656738281,
+      "timed_query_ms_per_tick": 21.64819580078125,
+      "journey_ms_per_tick": 26.264,
+      "simulation_ms_per_tick": 51.64157385253906,
+      "index_build_ms_total": 21.453
+    },
+    "stderr": {
+      "sha256": "831ee72bf50d1c2f532404c5d81e538939b3aed618c3524b2667626e3a1e8c31",
+      "bytes": 7971274
+    }
+  },
+  "equivalence": {
+    "input": true,
+    "binary": true,
+    "ticks": true,
+    "final_save": true,
+    "work": true,
+    "logical_vehicles": true,
+    "logical_departures": true,
+    "outcomes_and_deferrals": true,
+    "timed_transport": true,
+    "untimed_transport": true
+  },
+  "improvements_percent": {
+    "forward_ms_per_tick": 0.15871391217976427,
+    "timed_query_ms_per_tick": 0.27049590608695384,
+    "journey_ms_per_tick": 0.23929805902686008,
+    "simulation_ms_per_tick": 1.155580178770066
+  }
+}
