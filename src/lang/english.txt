@@ -3935,6 +3935,9 @@ STR_STATION_VIEW_PASSENGER_ROUTING_TITLE                        :Passenger routi
 STR_STATION_VIEW_PASSENGER_ROUTING_TOTAL                        :{STRING}: {COMMA} total
 STR_STATION_VIEW_PASSENGER_ROUTING_DETAIL                       :Timed Journey: {COMMA}  CargoDist/deferred: {COMMA}  OD Fallback/waiting: {COMMA}
 STR_STATION_VIEW_PASSENGER_ROUTING_RESERVED                     :{COMMA} available + {COMMA} reserved
+STR_STATION_VIEW_PASSENGER_SERVICE                             :{RAW_STRING}: {CARGO_SHORT}
+STR_STATION_VIEW_PASSENGER_SERVICE_MULTIPLE                    :Multiple services
+STR_STATION_VIEW_PASSENGER_SERVICE_UNKNOWN                     :Service undecided
 STR_STATION_VIEW_RESERVED                                       :{YELLOW}({CARGO_SHORT} reserved for loading)
 
 STR_STATION_VIEW_ACCEPTS_BUTTON                                 :{BLACK}Accepts

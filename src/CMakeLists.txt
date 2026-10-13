@@ -554,6 +554,7 @@ add_files(
     station_func.h
     station_gui.cpp
     station_gui.h
+    station_cargo_gui.h
     station_kdtree.h
     station_map.h
     station_type.h
