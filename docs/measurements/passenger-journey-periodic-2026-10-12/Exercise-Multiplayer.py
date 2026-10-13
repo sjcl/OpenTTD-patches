@@ -21,6 +21,7 @@ p.add_argument("--backend", choices=["periodic", "legacy", "off"], default="peri
 p.add_argument("--duration", type=float, default=35)
 p.add_argument("--input-save", default="input.sav")
 p.add_argument("--fixture", action="store_true")
+p.add_argument("--rounds", action="store_true", help="Use the saved and synchronized round-based periodic timed search")
 p.add_argument("--cpu-mode", choices=["single-core", "unrestricted"], default="single-core")
 p.add_argument("--timeout-ticks", type=int, default=500)
 p.add_argument("--late-delay", type=float, default=12)
@@ -85,6 +86,8 @@ def snapshot(proc, directory):
     command(proc, "setting linkgraph.passenger_od_assignment")
     command(proc, "setting linkgraph.passenger_journey_routing")
     command(proc, "setting linkgraph.passenger_journey_periodic")
+    if a.rounds:
+        command(proc, "setting linkgraph.passenger_timed_rounds")
     command(proc, "passenger_journey_stats inventory")
     command(proc, "passenger_journey_stats total")
     command(proc, "script")
@@ -95,6 +98,7 @@ def client(name):
     finish = (directory / "scripts" / "finish.scr").as_posix()
     (directory / "scripts" / "game_start.scr").write_text(
         f"script {log}\ngetfulldate\npassenger_journey_stats inventory\n"
+        + ("setting linkgraph.passenger_timed_rounds\n" if a.rounds else "") +
         f"passenger_journey_stats total\nsave {directory.as_posix()}/joined\n"
         f"schedule on-next-calendar-month {finish}\nscript\n", encoding="utf-8")
     (directory / "scripts" / "finish.scr").write_text(
@@ -127,6 +131,7 @@ try:
         "setting linkgraph.passenger_od_assignment true\n"
         f"setting linkgraph.passenger_journey_routing {'false' if a.backend == 'off' else 'true'}\n"
         f"setting linkgraph.passenger_journey_periodic {'true' if a.backend == 'periodic' else 'false'}\nsetting network.sync_freq 1\n"
+        + ("setting linkgraph.passenger_timed_rounds true\n" if a.rounds else "") +
         "setting linkgraph.recalc_interval 8\nsetting linkgraph.recalc_time 32\npause\n"
         + ("passenger_periodic_fixture\n" if a.fixture else "") +
         "getfulldate\npassenger_journey_stats total\nscript\n", encoding="utf-8")
@@ -164,6 +169,8 @@ try:
     bad = any(re.search(r"Sync error|sync_err:|Assertion failed|desync detected", log, re.I) for log in logs)
     reports = [str(path.relative_to(root)) for name in ["server", "client-initial", "client-late"] for path in (root / name).glob("desync-*.log")]
     bad |= bool(reports)
+    if a.rounds:
+        bad |= any("Current value for 'linkgraph.passenger_timed_rounds' is: 'true'" not in text(directory / "console.txt") for directory in [first_dir, second_dir])
     final_snapshot = text(server_log).rsplit("Console log output started", 1)[-1]
     connected = re.findall(r"Client #(\d+)\s+name: '([^']+)'", final_snapshot)
     # The final save log can follow the checkpoint without another clients query.
@@ -172,6 +179,7 @@ try:
     acknowledgements = {name: [int(v) for v in re.findall(r"Sent ACK at (\d+)", text(root / name / "stderr.txt"))] for name in ["client-initial", "client-late"]}
     result = {"joined_clients": text(server_dir / "stderr.txt").count("joined as"),
               "backend": a.backend, "binary": a.binary,
+              "rounds": a.rounds,
               "input_save": a.input_save, "fixture": a.fixture,
               "input_save_sha256": hashlib.sha256((run / a.input_save).read_bytes()).hexdigest(),
               "binary_sha256": hashlib.sha256(binary.read_bytes()).hexdigest(),

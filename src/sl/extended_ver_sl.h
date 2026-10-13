@@ -215,6 +215,7 @@ enum SlXvFeatureIndex {
 	XSLFI_PASSENGER_OD_ASSIGNMENT,               ///< Sparse passenger demand and deterministic assignment state
 	XSLFI_PASSENGER_JOURNEY_ROUTING,             ///< Persistent execution of explicit-OD passenger train journeys
 	XSLFI_PASSENGER_PERIODIC,                    ///< Periodic service generations and deterministic build progress
+	XSLFI_PASSENGER_TIMED_ROUNDS,                ///< Saved and synchronized periodic timed search selection
 	XSLFI_SIZE,                                   ///< Total count of features, including null feature
 };
 

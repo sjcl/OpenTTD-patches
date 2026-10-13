@@ -262,6 +262,7 @@ const std::initializer_list<SlxiSubChunkInfo> _sl_xv_sub_chunk_infos = {
 	{ XSLFI_PASSENGER_OD_ASSIGNMENT,          XSCF_NULL,                3,   3, "passenger_od_assignment",          SavePassengerOdRevision, LoadPassengerOdRevision, nullptr },
 	{ XSLFI_PASSENGER_JOURNEY_ROUTING,        XSCF_NULL,                3,   3, "passenger_journey_routing",        nullptr, nullptr, nullptr },
 	{ XSLFI_PASSENGER_PERIODIC,               XSCF_NULL,                3,   3, "passenger_periodic",               nullptr, nullptr, "JPSD" },
+	{ XSLFI_PASSENGER_TIMED_ROUNDS,           XSCF_NULL,                1,   1, "passenger_timed_rounds",           nullptr, nullptr, nullptr },
 };
 
 /**

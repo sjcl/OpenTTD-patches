@@ -72,6 +72,9 @@ add_files(
     passenger_journey_active.cpp
     passenger_journey_schedule.cpp
     passenger_journey_schedule.h
+    passenger_timed_rounds.cpp
+    passenger_timed_rounds.h
+    passenger_query_cpu.h
     passenger_journey_active.h
     passenger_journey_type.h
     aircraft.h

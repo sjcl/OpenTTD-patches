@@ -73,7 +73,21 @@ struct PassengerPeriodicPlan {
 	size_t labels = 0, candidates = 0, memory = 0;
 };
 
+/** Certificates concern the published timed network; unknown operations remain indeterminate. */
+enum class PassengerTimedRoundOutcome : uint8_t { Found, Provisional, BudgetDeferred, Unreachable, Indeterminate, Invalid, End };
+struct PassengerTimedRoundDiagnostic {
+	uint64_t query_cpu_nanoseconds = 0, query_cpu_samples = 0; ///< Optional OS thread CPU; resolution-dependent, aggregate only.
+	uint64_t queries = 0, query_microseconds = 0, rounds = 0, stations = 0, service_candidates = 0, service_scans = 0;
+	uint64_t occurrences = 0, departures = 0, label_attempts = 0, label_comparisons = 0, onboard_comparisons = 0;
+	uint64_t labels = 0, work = 0, reconstruction = 0;
+	size_t peak_memory = 0;
+	std::array<uint64_t, static_cast<size_t>(PassengerTimedRoundOutcome::End)> outcomes{};
+	std::array<uint64_t, 17> round_work{}; ///< Round 1..16, then all deeper rounds.
+};
+struct PassengerTimedRoundResult;
+
 struct PassengerDatabaseDiagnostic {
+	uint64_t query_cpu_nanoseconds = 0, query_cpu_samples = 0;
 	uint64_t builds = 0, build_work = 0, build_microseconds = 0;
 	uint64_t searches = 0, query_microseconds = 0, policy_hits = 0, policy_misses = 0;
 	uint64_t next_departures = 0; ///< Logical NextDeparture evaluations in the original scan, including skipped indexed candidates.
@@ -125,6 +139,10 @@ public:
 	void Tick(size_t allowance = BUILD_WORK);
 	PassengerPeriodicPlan Plan(CargoType cargo, StationID origin, StationID destination, StateTicks ready,
 			PassengerJourneyLimits limits = {}, PassengerJourneyEvaluation evaluation = {}, OrderListID excluded = OrderListID::Invalid());
+	PassengerTimedRoundResult PlanRounds(CargoType cargo, StationID origin, StationID destination, StateTicks ready,
+			PassengerJourneyLimits limits = {}, PassengerJourneyEvaluation evaluation = {}, OrderListID excluded = OrderListID::Invalid());
+	PassengerTimedRoundDiagnostic GetRoundDiagnostic() const { return this->round_diagnostic; }
+	static std::optional<StateTicks> LoadingPhase(const Vehicle *live, const PassengerPeriodicService &service, const PassengerPeriodicStop &board);
 	/** Explicit read-only algorithm comparison, never a local cache preference or simulation setting. */
 	PassengerPeriodicPlan PlanWithoutServicePruning(CargoType cargo, StationID origin, StationID destination, StateTicks ready,
 			PassengerJourneyLimits limits = {}, PassengerJourneyEvaluation evaluation = {}, OrderListID excluded = OrderListID::Invalid());
@@ -150,7 +168,7 @@ public:
 	bool Load(std::span<const uint8_t> bytes);
 	void FinishLoad(bool present);
 	PassengerDatabaseDiagnostic GetDiagnostic() const;
-	void ResetDiagnostic() { this->diagnostic = {}; this->schedule.ResetDiagnostic(); this->recent_policy_builds.clear(); }
+	void ResetDiagnostic() { this->diagnostic = {}; this->round_diagnostic = {}; this->schedule.ResetDiagnostic(); this->recent_policy_builds.clear(); }
 	void SetPolicyCacheEnabled(bool enabled) { this->policy_cache_enabled = enabled; if (!enabled) this->ClearPolicies(); }
 	void ClearPolicies(); ///< Residency must never change search admission or its result.
 	void SetDepartureIndexEnabled(bool enabled) { this->departure_index_enabled = enabled; if (!enabled) this->ClearDepartureIndices(); }
@@ -163,6 +181,7 @@ public:
 	Publication GetPublication(OrderListID id) const;
 private:
 	friend class PassengerSchedulePlanner;
+	friend class PassengerTimedRounds;
 	PassengerSchedulePlanner schedule;
 	using Dependencies = std::map<StationID, uint64_t>;
 	struct JourneyPolicy {
@@ -187,7 +206,7 @@ private:
 		PassengerPeriodicPlan::Reason diagnostic_limit = PassengerPeriodicPlan::Reason::NoCandidate;
 		PassengerPeriodicPlan::Reason reason = PassengerPeriodicPlan::Reason::NoCandidate;
 	};
-	using PolicyKey = std::tuple<bool, CargoType, StationID, StationID, OrderListID, PassengerJourneyLimits, PassengerJourneyEvaluation>;
+	using PolicyKey = std::tuple<uint8_t, CargoType, StationID, StationID, OrderListID, PassengerJourneyLimits, PassengerJourneyEvaluation>; ///< 0=legacy timed, 1=schedule, 2=round lower bounds.
 	using PolicyValue = std::variant<JourneyPolicy, PassengerSchedulePlan>;
 	struct CachedPolicy {
 		PolicyValue value;
@@ -223,8 +242,9 @@ private:
 	bool policy_cache_enabled = true; ///< Local optional accelerator; absent from saves and routing admission.
 	std::list<PolicyKey> policy_lru;
 	std::map<PolicyKey, CachedPolicy> policies;
-	std::map<std::tuple<bool, CargoType, StationID, StationID>, uint64_t> recent_policy_builds; ///< Bounded diagnostic history, never simulation input.
+	std::map<std::tuple<uint8_t, CargoType, StationID, StationID>, uint64_t> recent_policy_builds; ///< Bounded diagnostic history, never simulation input.
 	PassengerDatabaseDiagnostic diagnostic;
+	PassengerTimedRoundDiagnostic round_diagnostic;
 	PassengerTimedSearchScratch timed_scratch;
 	bool timed_scratch_enabled = true; ///< Local storage reuse preference, never routing input or saved state.
 	static constexpr size_t DEPARTURE_INDEX_BYTES = 8 * 1024 * 1024;

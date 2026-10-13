@@ -46,6 +46,16 @@
     )
     set_tests_properties(passenger_journey_active_production PROPERTIES TIMEOUT 90)
 
+    add_test(NAME passenger_timed_rounds_production
+        COMMAND ${CMAKE_COMMAND}
+            -DOPENTTD_EXECUTABLE=$<TARGET_FILE:openttd>
+            -DEDITBIN_EXECUTABLE=${EDITBIN_EXECUTABLE}
+            -DLEGACY_SAVE=${CMAKE_CURRENT_SOURCE_DIR}/stationlist/test.sav
+            -DWORK_DIR=${CMAKE_CURRENT_BINARY_DIR}/passenger_timed_rounds
+            -P ${CMAKE_SOURCE_DIR}/cmake/scripts/PassengerTimedRounds.cmake
+    )
+    set_tests_properties(passenger_timed_rounds_production PROPERTIES TIMEOUT 120 RUN_SERIAL TRUE)
+
     add_test(NAME passenger_journey_shadow_production
         COMMAND ${CMAKE_COMMAND}
             -DOPENTTD_EXECUTABLE=$<TARGET_FILE:openttd>

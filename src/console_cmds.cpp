@@ -9,6 +9,7 @@
 
 #include "stdafx.h"
 #include "passenger_service_database.h"
+#include "passenger_timed_rounds.h"
 #include "passenger_journey_shadow.h"
 #include "passenger_journey_active.h"
 #include "core/string_consumer.hpp"
@@ -4847,6 +4848,71 @@ static bool ConPassengerPeriodicCompare(std::span<std::string_view> argv)
 	IConsolePrint(CC_DEFAULT, "Periodic paired totals (unique OD calls, same live state, no simulation advanced): calls={}; old_only={}; new_only={}; both={}; neither={}", queries.size(), old_only, new_only, both, neither);
 	return true;
 }
+/** Explicit fixed-state comparison. Work, CPU and quality are separate measurements. */
+static bool ConPassengerTimedCompare(std::span<std::string_view> argv)
+{
+	if (argv.empty()) {
+		IConsolePrint(CC_HELP, "passenger_timed_compare <sample count 1..256>: compare legacy, rounds and a larger legacy budget on waiting ODs at exactly the current StateTicks");
+		return true;
+	}
+	if (argv.size() != 2) return false;
+	auto count = ParseInteger<uint32_t>(argv[1]);
+	if (!count || *count == 0 || *count > 256) return false;
+	std::set<std::tuple<CargoType, StationID, StationID, StateTicks, OrderListID>> queries;
+	size_t work = 0;
+	for (const Station *station : Station::Iterate()) {
+		for (CargoType cargo : EnumRange(NUM_CARGO)) {
+			if (!IsCargoInClass(cargo, CargoClass::Passengers)) continue;
+			const auto &list = station->goods[cargo].ConstCargoList();
+			for (StationCargoList::ConstIterator it(list.Packets()->begin()); it != list.Packets()->end(); ++it) {
+				if (++work > 1048576) break;
+				StationID destination = (*it)->GetPassengerDestination();
+				if (Station::IsValidID(destination) && destination != station->index) {
+					const auto *packet = *it;
+					StateTicks ready = packet->GetPassengerArrivingService() == OrderListID::Invalid() ? _state_ticks : std::max(_state_ticks, packet->GetPassengerInterchangeReady());
+					const OrderList *arriving = OrderList::GetIfValid(packet->GetPassengerArrivingService());
+					OrderListID excluded = arriving != nullptr && arriving->GetCargoDistRouteGeneration() == packet->GetPassengerArrivingIncarnation() ? arriving->index : OrderListID::Invalid();
+					queries.emplace(cargo, station->index, destination, ready, excluded);
+				}
+				if (queries.size() >= *count) break;
+			}
+			if (queries.size() >= *count || work > 1048576) break;
+		}
+		if (queries.size() >= *count || work > 1048576) break;
+	}
+	/* Save includes the publication barrier and phase captures; copies leave
+	 * production diagnostics, residency, packets and RNG untouched. */
+	auto saved = GetPassengerServiceDatabase().Save();
+	PassengerServiceDatabase legacy, rounds, reference;
+	if (!legacy.Load(saved) || !rounds.Load(saved) || !reference.Load(saved)) return false;
+	legacy.FinishLoad(true); rounds.FinishLoad(true); reference.FinishLoad(true);
+	PassengerJourneyLimits limits; limits.work = 65536; limits.labels = 8192; limits.memory_bytes = 8 * 1024 * 1024;
+	auto larger = limits; larger.work = 1048576; larger.labels = 65536; larger.memory_bytes = 128 * 1024 * 1024;
+	PassengerJourneyEvaluation evaluation; evaluation.minimum_transfer = evaluation.transfer_penalty = _settings_game.linkgraph.passenger_transfer_penalty;
+	static constexpr std::array outcomes{"Found", "Provisional", "BudgetDeferred", "Unreachable", "Indeterminate", "Invalid"};
+	for (const auto &[cargo, origin, destination, ready, excluded] : queries) {
+		auto before = legacy.GetDiagnostic().query_microseconds;
+		auto old = legacy.Plan(cargo, origin, destination, ready, limits, evaluation, excluded);
+		auto old_us = legacy.GetDiagnostic().query_microseconds - before;
+		auto current = rounds.PlanRounds(cargo, origin, destination, ready, limits, evaluation, excluded);
+		auto high = reference.Plan(cargo, origin, destination, ready, larger, evaluation, excluded);
+		bool reference_executable = true;
+		for (size_t i = 1; i < high.route.size(); ++i) reference_executable &= high.route[i - 1].service != high.route[i].service;
+		IConsolePrint(CC_DEFAULT, "Timed comparison input: ready={}; excluded={}; reference_executable={}", ready.base(), excluded, reference_executable);
+		IConsolePrint(CC_DEFAULT, "Timed comparison OD: cargo={}; origin={}; destination={}; tick={}; legacy_found={}; legacy_deferred={}; legacy_reason={}; legacy_cost={}; legacy_arrival={}; legacy_work={}; legacy_labels={}; legacy_us={}; round_outcome={}; round_cost={}; round_arrival={}; round_work={}; round_labels={}; round_us={}; reference_found={}; reference_deferred={}; reference_cost={}; reference_arrival={}",
+			cargo, origin, destination, _state_ticks.base(), old.ride.has_value(), old.deferred, to_underlying(old.reason), old.cost, old.arrival.base(), old.work, old.labels, old_us,
+			outcomes[static_cast<size_t>(current.outcome)], current.plan.cost, current.plan.arrival.base(), current.plan.work, current.plan.labels, current.diagnostic.query_microseconds,
+			high.ride.has_value(), high.deferred, high.cost, high.arrival.base());
+		IConsolePrint(CC_DEFAULT, "Timed comparison work: rounds={}; scans={}; occurrences={}; attempts={}; comparisons={}; onboard_comparisons={}; reason={}",
+			current.diagnostic.rounds, current.diagnostic.service_scans, current.diagnostic.occurrences, current.diagnostic.label_attempts,
+			current.diagnostic.label_comparisons, current.diagnostic.onboard_comparisons, to_underlying(current.plan.reason));
+		for (const auto &leg : current.plan.route) IConsolePrint(CC_DEFAULT, "Timed comparison leg: service={}; generation={}; board={}/{}; alight={}/{}; departure={}; arrival={}",
+			leg.service, leg.generation, leg.boarding, leg.boarding_order, leg.alighting, leg.alighting_order, leg.departure.base(), leg.arrival.base());
+	}
+	IConsolePrint(CC_DEFAULT, "Timed comparison complete: calls={}; tick={}; sample=first_unique_waiting_requests; production_state_unchanged=true", queries.size(), _state_ticks.base());
+	return true;
+}
+
 static bool ConPassengerJourneyStats(std::span<std::string_view> argv)
 {
 	if (argv.empty()) {
@@ -4986,8 +5052,17 @@ static bool ConPassengerJourneyStats(std::span<std::string_view> argv)
 	IConsolePrint(CC_DEFAULT, "Periodic global invalidations: {}", periodic.global_invalidations);
 	IConsolePrint(CC_DEFAULT, "Timed search storage: labels={}; frontier_lookups={}; queue_pushes={}; queue_pops={}; scratch_bytes={}; scratch_peak_bytes={}",
 		periodic.timed_labels, periodic.frontier_lookups, periodic.queue_pushes, periodic.queue_pops, periodic.search_scratch_bytes, periodic.search_scratch_peak_bytes);
+	IConsolePrint(CC_DEFAULT, "Periodic query CPU (OS thread clock; aggregate only): samples={}; query_cpu_ns={}", periodic.query_cpu_samples, periodic.query_cpu_nanoseconds);
 	IConsolePrint(CC_DEFAULT, "Periodic service pruning: bound_checks={}; bound_stops={}; pruned_services={}; skipped_vehicle_visits={}",
 			periodic.service_bound_checks, periodic.service_bound_stops, periodic.pruned_services, periodic.pruned_vehicle_visits);
+	const auto rounds = GetPassengerServiceDatabase().GetRoundDiagnostic();
+	IConsolePrint(CC_DEFAULT, "Timed rounds: queries={}; query_us={}; rounds={}; stations={}; service_candidates={}; service_scans={}; occurrences={}; departures={}; attempts={}; comparisons={}; onboard_comparisons={}; labels={}; work={}; peak_memory={}",
+		rounds.queries, rounds.query_microseconds, rounds.rounds, rounds.stations, rounds.service_candidates, rounds.service_scans, rounds.occurrences,
+		rounds.departures, rounds.label_attempts, rounds.label_comparisons, rounds.onboard_comparisons, rounds.labels, rounds.work, rounds.peak_memory);
+	static constexpr std::array round_outcomes{"Found", "Provisional", "BudgetDeferred", "Unreachable", "Indeterminate", "Invalid"};
+	static_assert(round_outcomes.size() == static_cast<size_t>(PassengerTimedRoundOutcome::End));
+	for (size_t i = 0; i < round_outcomes.size(); ++i) IConsolePrint(CC_DEFAULT, "Timed round outcome {}: {}", round_outcomes[i], rounds.outcomes[i]);
+	for (size_t i = 0; i < rounds.round_work.size(); ++i) IConsolePrint(CC_DEFAULT, "Timed round work {}: {}", i + 1, rounds.round_work[i]);
 	IConsolePrint(CC_DEFAULT, "Periodic residency: entries={}; revision={}; publications={}; staged={}; staged_bytes={}; additions={}; removals={}; updates={}; timetable_notifications={}",
 			periodic.policy_entries, periodic.published_revision, periodic.publications, periodic.staged, periodic.staged_bytes,
 			periodic.service_additions, periodic.service_removals, periodic.service_updates, periodic.timetable_notifications);
@@ -5314,6 +5389,7 @@ void IConsoleStdLibRegister()
 	IConsole::CmdRegister("passenger_journey_shadow", ConPassengerJourneyShadow);
 	IConsole::CmdRegister("passenger_journey_stats", ConPassengerJourneyStats);
 	IConsole::CmdRegister("passenger_periodic_compare", ConPassengerPeriodicCompare);
+	IConsole::CmdRegister("passenger_timed_compare", ConPassengerTimedCompare);
 #ifdef WITH_PASSENGER_BENCHMARK
 	IConsole::CmdRegister("passenger_periodic_fixture", ConPassengerPeriodicFixture, ConHookServerOrNoNetwork);
 #endif

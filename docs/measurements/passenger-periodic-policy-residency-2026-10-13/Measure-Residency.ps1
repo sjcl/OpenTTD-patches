@@ -7,7 +7,9 @@ param(
     [string]$InputSave = 'input.sav',
     [switch]$Resume,
     [int]$Ticks = 0,
-    [switch]$DisablePolicies
+    [switch]$DisablePolicies,
+    [ValidateSet('','legacy','rounds')][string]$TimedMethod = '',
+    [ValidateRange(0,256)][int]$CompareTimed = 0
 )
 $ErrorActionPreference = 'Stop'
 $taskRun = (Resolve-Path -LiteralPath $RunDirectory).Path
@@ -17,11 +19,13 @@ New-Item -ItemType Directory -Path $taskScripts -Force | Out-Null
 $taskJourney = if ($Backend -eq 'off') { 'false' } else { 'true' }
 $taskPeriodic = if ($Backend -eq 'periodic') { 'true' } else { 'false' }
 $taskPeriodicSetting = if ($Original) { '' } else { "setting linkgraph.passenger_journey_periodic $taskPeriodic" }
+$taskTimedSetting = if ($TimedMethod) { "setting linkgraph.passenger_timed_rounds " + $(if ($TimedMethod -eq 'rounds') { 'true' } else { 'false' }) } else { '' }
 $taskSettings = if ($Resume) { '' } else { @"
 setting linkgraph.distribution_pax 2
 setting linkgraph.passenger_od_assignment true
 setting linkgraph.passenger_journey_routing $taskJourney
 $taskPeriodicSetting
+$taskTimedSetting
 setting linkgraph.recalc_interval 8
 setting linkgraph.recalc_time 32
 "@ }
@@ -49,8 +53,9 @@ if ($Ticks -gt 0) { $taskStart = $taskStart.Replace("schedule on-next-calendar-m
 [IO.File]::WriteAllText((Join-Path $taskScripts 'game_start.scr'), (($taskStart -split '\r?\n' | Where-Object { ![string]::IsNullOrWhiteSpace($_) }) -join "`n"))
 [IO.File]::WriteAllText((Join-Path $taskScripts 'finish.scr'), $taskFinish)
 if ($Ticks -gt 0) {
+    $taskComparison = if ($CompareTimed -gt 0) { "passenger_timed_compare $CompareTimed`n" } else { '' }
     [IO.File]::WriteAllText((Join-Path $taskScripts 'passenger_benchmark_end.scr'),
-        "script $taskForwardRun/$Label-console.txt`ngetfulldate`npassenger_journey_stats inventory`npassenger_journey_stats total`nsave $taskForwardRun/$Label-result`nscript`n")
+        "script $taskForwardRun/$Label-console.txt`ngetfulldate`npassenger_journey_stats inventory`npassenger_journey_stats total`n${taskComparison}save $taskForwardRun/$Label-result`nscript`n")
 }
 $taskClock = [Diagnostics.Stopwatch]::StartNew()
 $taskDriver = if ($Ticks -gt 0) { "null:ticks=$Ticks" } else { 'null:until_exit' }

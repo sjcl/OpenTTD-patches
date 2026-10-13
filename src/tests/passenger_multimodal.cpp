@@ -199,6 +199,7 @@ TEST_CASE("Periodic service intents use all real transport adapters and gradual 
 TEST_CASE("Periodic transfers through all four modes retain the final destination", "[passenger][periodic][multimodal][delivery]")
 {
 	MultimodalFixture f; _settings_game.linkgraph.passenger_journey_periodic = true; _settings_game.linkgraph.passenger_transfer_penalty = 0;
+	_settings_game.linkgraph.passenger_timed_rounds = GENERATE(false, true);
 	ResetPassengerJourneyDiagnostic();
 	bool estimated = GENERATE(false, true);
 	std::array modes{VehicleType::Train, VehicleType::Road, VehicleType::Ship, VehicleType::Aircraft};

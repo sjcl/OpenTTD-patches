@@ -6,6 +6,8 @@
 /** @file passenger_service_database.cpp One-cycle compilation, bounded publication and on-demand policies. */
 #include "stdafx.h"
 #include "passenger_service_database.h"
+#include "passenger_timed_rounds.h"
+#include "passenger_query_cpu.h"
 #include "passenger_journey_active.h"
 #include "vehicle_base.h"
 #include "aircraft.h"
@@ -325,7 +327,7 @@ void PassengerServiceDatabase::Reset()
 	this->sweeping_since = this->batch_started = _state_ticks;
 	this->cursor = 0; this->dirty_cursor = 65534; this->sweeping = true; this->publishing = false; this->bootstrap = true; this->restoring = false;
 	this->generation = this->published_revision = 0; this->bytes = this->building_bytes = 0;
-	this->diagnostic = {}; this->schedule.ResetDiagnostic();
+	this->diagnostic = {}; this->round_diagnostic = {}; this->schedule.ResetDiagnostic();
 }
 
 void PassengerServiceDatabase::Remove(OrderListID id)
@@ -821,6 +823,11 @@ PassengerPeriodicPlan PassengerServiceDatabase::Plan(CargoType cargo, StationID 
 	return this->PlanInternal(cargo, origin, destination, ready, limits, evaluation, excluded, true);
 }
 
+std::optional<StateTicks> PassengerServiceDatabase::LoadingPhase(const Vehicle *live, const PassengerPeriodicService &service, const PassengerPeriodicStop &board)
+{
+	return LoadingBase(live, service, board);
+}
+
 PassengerPeriodicPlan PassengerServiceDatabase::PlanWithoutServicePruning(CargoType cargo, StationID origin, StationID destination, StateTicks ready,
 		PassengerJourneyLimits limits, PassengerJourneyEvaluation evaluation, OrderListID excluded)
 {
@@ -877,6 +884,7 @@ PassengerPeriodicPlan PassengerServiceDatabase::PlanInternal(CargoType cargo, St
 {
 	using Reason = PassengerPeriodicPlan::Reason;
 	PassengerPeriodicPlan result;
+	PassengerQueryCpuTimer cpu;
 	const auto started = std::chrono::steady_clock::now(); ++this->diagnostic.searches;
 	auto observe = [&](Reason reason) { result.observations[static_cast<size_t>(reason)] = true; };
 	auto finish = [&]() {
@@ -885,6 +893,7 @@ PassengerPeriodicPlan PassengerServiceDatabase::PlanInternal(CargoType cargo, St
 		for (size_t i = 0; i < result.observations.size(); ++i) this->diagnostic.observations[i] += result.observations[i];
 		this->diagnostic.search_work += result.work;
 		this->diagnostic.query_microseconds += std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - started).count();
+		if (auto elapsed = cpu.Elapsed()) { this->diagnostic.query_cpu_nanoseconds += *elapsed; ++this->diagnostic.query_cpu_samples; }
 		return result;
 	};
 	if (cargo >= NUM_CARGO || origin == destination || !Station::IsValidID(origin) || !Station::IsValidID(destination) ||

@@ -6,6 +6,7 @@
 /** @file passenger_journey_active.cpp Deterministic journey execution, without forecast seat bookings. */
 #include "stdafx.h"
 #include "passenger_journey_active.h"
+#include "passenger_timed_rounds.h"
 #include "passenger_service_database.h"
 #include "vehicle_base.h"
 #include "station_base.h"
@@ -598,7 +599,9 @@ bool PassengerJourneyActiveContext::PlanWaiting(CargoPacket &packet, CargoType c
 		if (!this->AdmitQuery()) { CountJourneyDeferral(this->failure); packet.DeferPassengerJourney(this->station, _state_ticks); return false; }
 		auto limits = ActiveJourneyLimits(); limits.candidates = 8;
 		auto &db = GetPassengerServiceDatabase();
-		auto plan = db.Plan(cargo, this->station, packet.GetPassengerDestination(), ready, limits, ActiveJourneyEvaluation(), excluded);
+		auto plan = _settings_game.linkgraph.passenger_timed_rounds ?
+			db.PlanRounds(cargo, this->station, packet.GetPassengerDestination(), ready, limits, ActiveJourneyEvaluation(), excluded).plan :
+			db.Plan(cargo, this->station, packet.GetPassengerDestination(), ready, limits, ActiveJourneyEvaluation(), excluded);
 		if (plan.deferred) ++TickBudget().diagnostic.timed_budget_deferred;
 		/* Timed winners always take priority. The two searches share the admitted
 		 * work envelope; cache hits replay the same logical work as cold peers. */
@@ -1436,6 +1439,7 @@ void AfterLoadPassengerJourneys()
 	ClearPassengerOdFallbackCache();
 	GetPassengerServiceDatabase().FinishLoad(SlXvIsFeaturePresent(XSLFI_PASSENGER_PERIODIC));
 	if (SlXvIsFeatureMissing(XSLFI_PASSENGER_PERIODIC)) _settings_game.linkgraph.passenger_journey_periodic = true;
+	if (SlXvIsFeatureMissing(XSLFI_PASSENGER_TIMED_ROUNDS)) _settings_game.linkgraph.passenger_timed_rounds = false;
 	InvalidatePassengerServiceIndex();
 	BeginPassengerJourneyTick();
 	/* Saveload writes packet fields directly; reconstruct the derived index before

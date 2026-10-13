@@ -346,6 +346,7 @@ option(OPTION_PASSENGER_BENCHMARK "Enable the isolated passenger real-map measur
 if(OPTION_PASSENGER_BENCHMARK)
     set_source_files_properties("${CMAKE_SOURCE_DIR}/src/console_cmds.cpp" PROPERTIES COMPILE_DEFINITIONS WITH_PASSENGER_BENCHMARK)
     set_source_files_properties("${CMAKE_SOURCE_DIR}/src/video/null_v.cpp" PROPERTIES COMPILE_DEFINITIONS WITH_PASSENGER_BENCHMARK)
+    set_source_files_properties("${CMAKE_SOURCE_DIR}/src/passenger_service_database.cpp" "${CMAKE_SOURCE_DIR}/src/passenger_timed_rounds.cpp" PROPERTIES COMPILE_DEFINITIONS WITH_PASSENGER_BENCHMARK)
 endif()
 
 if(NOT OPTION_NO_SPLIT_LIB)

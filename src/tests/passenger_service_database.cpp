@@ -6,10 +6,12 @@
 #include "../stdafx.h"
 #include "../3rdparty/catch2/catch.hpp"
 #include "../passenger_service_database.h"
+#include "../passenger_timed_rounds.h"
 #include "../passenger_journey_active.h"
 #include "../vehicle_base.h"
 #include "../station_base.h"
 #include "../settings_type.h"
+#include "../settings_internal.h"
 #include "../date_func.h"
 #include "../order_func.h"
 #include "../order_cmd.h"
@@ -112,6 +114,265 @@ namespace {
 			if (next && (!result || *next < *result)) result = next;
 		}
 		return result;
+	}
+}
+
+TEST_CASE("Timed rounds compare local express frequency and transfer alternatives", "[passenger][rounds]")
+{
+	Fixture f;
+	auto *local = f.Train({Stop(A, 100, 0), Stop(B, 50, 0), Stop(D, 50, 0)});
+	auto *express = f.Train({Stop(A, 1000, 150), Stop(D, 10, 0)});
+	SECTION("Low frequency express loses at this phase") {}
+	SECTION("Express wins at a later ready time") { _state_ticks += 149; express->current_order_time = 149; }
+	SECTION("Connection improves a direct ride") {
+		f.Train({Stop(A, 300, 0), Stop(C, 10, 0)});
+		f.Train({Stop(C, 500, 10), Stop(D, 10, 0)});
+	}
+	auto &db = f.Build(); auto old = db.Plan(PAX, A, D, _state_ticks); auto rounds = db.PlanRounds(PAX, A, D, _state_ticks);
+	REQUIRE(old.ride); REQUIRE(rounds.plan.ride);
+	CHECK(rounds.plan.cost == old.cost); CHECK(rounds.plan.arrival == old.arrival);
+	CHECK(rounds.plan.ride == old.ride); CHECK(rounds.outcome == PassengerTimedRoundOutcome::Found);
+	CHECK(rounds.diagnostic.service_scans > 0);
+	if (_state_ticks == NOW + 149) CHECK(rounds.plan.ride->service == express->orders->index);
+	else if (rounds.plan.transfers == 0) CHECK(rounds.plan.ride->service == local->orders->index);
+}
+
+TEST_CASE("Timed rounds continue through zero one two four and eleven transfers", "[passenger][rounds]")
+{
+	Fixture f; uint16_t rides = GENERATE(1, 2, 3, 5, 12);
+	for (uint16_t i = 0; i < rides; ++i) f.Train({Stop(StationID{i}, 1000 + i * 13, i * 10), Stop(StationID{static_cast<uint16_t>(i + 1)}, 10, 0)});
+	auto &db = f.Build(); PassengerJourneyLimits limits; limits.work = 65536; limits.labels = 8192; limits.memory_bytes = 8 * 1024 * 1024;
+	auto answer = db.PlanRounds(PAX, A, StationID{rides}, NOW, limits);
+	REQUIRE(answer.plan.ride); CHECK(answer.plan.transfers == rides - 1); CHECK(answer.plan.route.size() == rides);
+	CHECK(answer.plan.arrival == NOW + 10 * rides); CHECK(answer.outcome == PassengerTimedRoundOutcome::Found);
+	limits.max_transfers = rides - 1;
+	auto bounded = db.PlanRounds(PAX, A, StationID{rides}, NOW, limits); REQUIRE(bounded.plan.ride);
+	if (rides > 1) { limits.max_transfers--; auto absent = db.PlanRounds(PAX, A, StationID{rides}, NOW, limits); CHECK_FALSE(absent.plan.ride); CHECK(absent.outcome == PassengerTimedRoundOutcome::BudgetDeferred); CHECK(absent.plan.reason == PassengerPeriodicPlan::Reason::Transfers); }
+}
+
+TEST_CASE("Timed round circular scans preserve occurrence wrap and cargo restrictions", "[passenger][rounds][operational]")
+{
+	Fixture f; auto *train = f.Train({Stop(A, 100, 0), Stop(B, 20, 0), Stop(A, 30, 0), Stop(D, 40, 0)});
+	StationID origin = A, destination = D;
+	SECTION("Repeated origin has distinct orders") { train->LoadAt(2); }
+	SECTION("Ride crosses the period boundary") { origin = D; destination = B; train->LoadAt(3); }
+	SECTION("First origin cannot load") { train->GetOrder(0)->SetLoadType(OrderLoadType::NoLoad); train->LoadAt(2); }
+	SECTION("No unloading destination") { train->GetOrder(3)->SetUnloadType(OrderUnloadType::NoUnload); }
+	SECTION("Forced transfer") { train->GetOrder(1)->SetUnloadType(OrderUnloadType::Transfer); }
+	SECTION("Forced unload") { train->GetOrder(1)->SetUnloadType(OrderUnloadType::Unload); }
+	auto &db = f.Build(); auto old = db.Plan(PAX, origin, destination, NOW); auto answer = db.PlanRounds(PAX, origin, destination, NOW);
+	CHECK(answer.plan.ride == old.ride); CHECK(answer.plan.arrival == old.arrival); CHECK(answer.plan.cost == old.cost);
+	if (answer.plan.ride) {
+		CHECK(answer.plan.ride->boarding_order == old.ride->boarding_order); CHECK(answer.plan.route == old.route);
+		train->LoadAt(answer.plan.ride->boarding_order);
+		CHECK(ValidatePassengerServiceRide(*answer.plan.ride, train, PAX, true));
+	}
+}
+
+TEST_CASE("Timed round operating events retain depot waypoint and nonexchange dwell", "[passenger][rounds][operational]")
+{
+	Fixture f; Order depot; depot.MakeGoToDepot(DepotID{0}, {OrderDepotTypeFlag::PartOfOrders});
+	depot.SetTravelTime(70); depot.SetTravelTimetabled(true);
+	Order waypoint; waypoint.MakeGoToWaypoint(StationID{20}); waypoint.SetTravelTime(50); waypoint.SetTravelTimetabled(true); waypoint.SetWaitTime(30); waypoint.SetWaitTimetabled(true);
+	Order operating = Stop(B, 40, 60); operating.SetLoadType(OrderLoadType::NoLoad); operating.SetUnloadType(OrderUnloadType::NoUnload);
+	auto *v = f.Train({Stop(A, 10, 0), depot, waypoint, operating, Stop(D, 20, 0)});
+	auto &db = f.Build(); auto answer = db.PlanRounds(PAX, A, D, NOW);
+	REQUIRE(answer.plan.ride); CHECK(answer.plan.arrival == NOW + 270); CHECK(answer.plan.ride->alighting_order == 4);
+	CHECK(answer.plan.ride == db.Plan(PAX, A, D, NOW).ride); CHECK(answer.plan.ride->service == v->orders->index);
+}
+
+TEST_CASE("Timed rounds preserve weighted Pareto alternatives and canonical first service", "[passenger][rounds][evaluation]")
+{
+	Fixture f;
+	f.Train({Stop(A, 1000, 0), Stop(B, 10, 0)});
+	f.Train({Stop(A, 1000, 80), Stop(B, 10, 0)});
+	f.Train({Stop(B, 1000, 100), Stop(D, 10, 0)});
+	f.Train({Stop(A, 1000, 0), Stop(C, 50, 0)});
+	f.Train({Stop(C, 1000, 50), Stop(D, 60, 0)});
+	auto &db = f.Build(); PassengerJourneyEvaluation evaluation;
+	evaluation.minimum_transfer = GENERATE(0, 15); evaluation.transfer_penalty = 7;
+	evaluation.waiting_weight = GENERATE(0u, 1000u, 5000u); evaluation.transfer_time_weight = 2500;
+	auto old = db.Plan(PAX, A, D, NOW, {}, evaluation); auto answer = db.PlanRounds(PAX, A, D, NOW, {}, evaluation);
+	REQUIRE(old.ride); REQUIRE(answer.plan.ride); CHECK(answer.plan.cost == old.cost); CHECK(answer.plan.arrival == old.arrival); CHECK(answer.plan.ride == old.ride);
+}
+
+TEST_CASE("Timed rounds keep admitted destinations when later work stops", "[passenger][rounds][anytime]")
+{
+	Fixture f; f.Train({Stop(A, 1000, 0), Stop(D, 100, 0)});
+	f.Train({Stop(A, 1000, 0), Stop(B, 10, 0)}); f.Train({Stop(B, 1000, 10), Stop(D, 10, 0)});
+	auto &db = f.Build(); bool provisional = false, improved = false;
+	for (size_t work = 0; work < 200; ++work) {
+		PassengerJourneyLimits limits; limits.work = work;
+		auto answer = db.PlanRounds(PAX, A, D, NOW, limits); CHECK(answer.plan.work <= work);
+		if (answer.outcome == PassengerTimedRoundOutcome::Provisional) {
+			provisional = true; REQUIRE(answer.plan.ride); CHECK(answer.plan.route.front() == *answer.plan.ride);
+			CHECK(answer.plan.route.back().alighting == D); CHECK(answer.plan.deferred);
+			CHECK(answer.plan.cost >= 20); CHECK(answer.plan.cost <= 100);
+		}
+		if (answer.outcome == PassengerTimedRoundOutcome::Found) { improved = true; CHECK(answer.plan.arrival == NOW + 20); }
+	}
+	CHECK(provisional); CHECK(improved);
+}
+
+TEST_CASE("Timed round budgets and unknown phases cannot certify absence", "[passenger][rounds][limits]")
+{
+	Fixture f; auto *v = f.Train({Stop(A), Stop(B), Stop(D)}); PassengerJourneyLimits limits;
+	SECTION("No labels") { limits.labels = 0; }
+	SECTION("Per station labels") { limits.labels_per_station = 0; }
+	SECTION("Memory") { limits.memory_bytes = 5000; }
+	SECTION("Unknown phase") { v->current_order.Free(); }
+	SECTION("Unsupported control") { v->GetOrder(1)->SetTravelTimetabled(false); }
+	SECTION("Unreachable") { v->GetOrder(0)->SetLoadType(OrderLoadType::NoLoad); }
+	auto &db = f.Build(); auto answer = db.PlanRounds(PAX, A, D, NOW, limits);
+	CHECK(answer.plan.work <= limits.work); CHECK(answer.plan.memory <= limits.memory_bytes);
+	if (limits.labels == 0 || limits.labels_per_station == 0 || limits.memory_bytes == 5000) CHECK(answer.outcome == PassengerTimedRoundOutcome::BudgetDeferred);
+	else if (v->GetOrder(0)->GetLoadType() == OrderLoadType::NoLoad) CHECK(answer.outcome == PassengerTimedRoundOutcome::Unreachable);
+	else CHECK(answer.outcome == PassengerTimedRoundOutcome::Indeterminate);
+}
+
+TEST_CASE("Timed rounds replay identical work on warm cold and joining databases", "[passenger][rounds][determinism][save]")
+{
+	Fixture f; auto *first = f.Train({Stop(A), Stop(B), Stop(A), Stop(D)});
+	for (size_t i = 0; i < 12; ++i) { auto *v = Vehicle::Create<PeriodicTrain>(first); v->LoadAt(static_cast<VehicleOrderID>(i % 4)); v->current_order_time = static_cast<uint32_t>(i * 3); }
+	auto &db = f.Build(); auto saved = db.Save(); PassengerServiceDatabase peer; REQUIRE(peer.Load(saved)); peer.FinishLoad(true); peer.SetDepartureIndexEnabled(false);
+	for (size_t work = 0; work < 300; ++work) {
+		PassengerJourneyLimits limits; limits.work = work;
+		auto warm = db.PlanRounds(PAX, A, D, NOW + 25, limits); auto cold = peer.PlanRounds(PAX, A, D, NOW + 25, limits);
+		SameDeparturePlan(warm.plan, cold.plan); CHECK(warm.outcome == cold.outcome);
+	}
+	for (size_t work : {size_t{4096}, size_t{8192}, size_t{65536}}) {
+		PassengerJourneyLimits limits; limits.work = work;
+		auto legacy = db.Plan(PAX, A, D, NOW + 25, limits);
+		for (int repeat = 0; repeat < 3; ++repeat) {
+			auto warm = db.PlanRounds(PAX, A, D, NOW + 25, limits); auto cold = peer.PlanRounds(PAX, A, D, NOW + 25, limits);
+			SameDeparturePlan(warm.plan, cold.plan); CHECK(warm.outcome == cold.outcome);
+		}
+		SameDeparturePlan(legacy, db.Plan(PAX, A, D, NOW + 25, limits));
+	}
+	CHECK(db.Save() == saved);
+	first->GetOrder(3)->SetUnloadType(OrderUnloadType::NoUnload); db.Invalidate(first->orders->index);
+	f.PublishUpdates(db); auto absent = db.PlanRounds(PAX, A, D, _state_ticks); CHECK_FALSE(absent.plan.ride);
+}
+
+TEST_CASE("Timed rounds retain certified dispatch slots and reject competing fleets", "[passenger][rounds][dispatch]")
+{
+	Fixture f; auto *train = f.Train({Stop(A, 20, 0), Stop(D, 20, 0)});
+	train->vehicle_flags.Set(VehicleFlag::ScheduledDispatch); train->GetOrder(0)->SetDispatchScheduleIndex(0);
+	train->orders->GetScheduledDispatchScheduleSet().emplace_back(); auto &schedule = train->orders->GetDispatchScheduleByIndex(0);
+	schedule.SetScheduledDispatchStartTick(NOW); schedule.SetScheduledDispatchDuration(200);
+	for (uint32_t offset : {10, 60, 110, 160}) schedule.GetScheduledDispatchMutable().push_back({offset, 0});
+	bool competing = GENERATE(false, true);
+	if (competing) Vehicle::Create<PeriodicTrain>(train)->vehicle_flags.Set(VehicleFlag::ScheduledDispatch);
+	auto &db = f.Build(); auto answer = db.PlanRounds(PAX, A, D, NOW + 11);
+	if (competing) { CHECK_FALSE(answer.plan.ride); CHECK(answer.outcome == PassengerTimedRoundOutcome::Indeterminate); }
+	else { REQUIRE(answer.plan.ride); CHECK(answer.plan.ride->departure == NOW + 60); CHECK(answer.plan.arrival == NOW + 80); CHECK(answer.plan.ride == db.Plan(PAX, A, D, NOW + 11).ride); }
+}
+
+TEST_CASE("Active waiting adopts timed rounds and validates existing physical execution", "[passenger][rounds][active][save]")
+{
+	Fixture f; _settings_game.linkgraph.passenger_timed_rounds = true;
+	auto *v = f.Train({Stop(A), Stop(D)}); auto &db = f.Build(); auto *packet = f.Packet();
+	REQUIRE(PassengerJourneyActiveContext(nullptr, A).PlanWaiting(*packet, PAX, D));
+	CHECK(db.GetRoundDiagnostic().queries == 1); auto intent = packet->GetPassengerJourney();
+	REQUIRE(intent.kind == PassengerRideKind::ServiceIntent); CHECK(db.IsCurrent(intent));
+	PassengerJourneyLoadingContext loading; CHECK(loading.CanBoard(*packet, v)); loading.PrepareBoard(*packet, v);
+	CHECK(packet->GetPassengerJourney().vehicle == v->index);
+	AutoRestoreBackup version{_sl_version, SAVEGAME_VERSION}; AutoRestoreBackup features{_sl_xv_feature_versions, AutoRestoreBackupNoNewValueTag{}};
+	AutoRestoreBackup static_features{_sl_xv_feature_static_versions, AutoRestoreBackupNoNewValueTag{}};
+	SlXvSetStaticCurrentVersions(); _sl_xv_feature_versions = _sl_xv_feature_static_versions;
+	auto *loaded = CargoPacket::Create(); REQUIRE_FALSE(SlTestSaveLoadTable(packet, loaded, GetCargoPacketDesc()).empty()); CHECK(loaded->HasSamePassengerRouting(*packet));
+	SECTION("Order changed") { v->GetOrder(1)->SetUnloadType(OrderUnloadType::NoUnload); }
+	SECTION("Station changed") { Station::Get(D)->facilities = {}; }
+	SECTION("Capacity changed") { v->cargo_cap = 0; }
+	CHECK_FALSE(ValidatePassengerServiceRide(intent, v, PAX, true));
+}
+
+TEST_CASE("Timed round selection is a saved synchronized game setting", "[passenger][rounds][save]")
+{
+	Fixture f;
+	const SettingDesc *setting = nullptr;
+	for (const auto *entry : GetLinkGraphSettingTable()) if (std::string_view(entry->name) == "linkgraph.passenger_timed_rounds") setting = entry;
+	REQUIRE(setting != nullptr);
+	CHECK_FALSE(setting->flags.Test(SettingFlag::NotInSave)); CHECK_FALSE(setting->flags.Test(SettingFlag::NoNetworkSync));
+	CHECK(setting->IsIntSetting()); CHECK(setting->patx_name != nullptr);
+	std::array<uint16_t, XSLFI_SIZE> features{};
+	CHECK_FALSE(setting->save.ext_feature_test.IsFeaturePresent(features, SAVEGAME_VERSION, SL_MIN_VERSION, SL_MAX_VERSION));
+	features[XSLFI_PASSENGER_TIMED_ROUNDS] = 1;
+	CHECK(setting->save.ext_feature_test.IsFeaturePresent(features, SAVEGAME_VERSION, SL_MIN_VERSION, SL_MAX_VERSION));
+}
+
+TEST_CASE("Timed rounds model actual interchange exclusion at later occurrences", "[passenger][rounds][active][operational]")
+{
+	Fixture f; _settings_game.linkgraph.passenger_timed_rounds = true;
+	auto forced = Stop(B, 10, 0); forced.SetUnloadType(OrderUnloadType::Transfer);
+	auto *same = f.Train({Stop(A, 1000, 0), forced, Stop(B, 10, 0), Stop(D, 10, 0)});
+	auto *other = f.Train({Stop(B, 1000, 20), Stop(D, 15, 0)}); auto &db = f.Build();
+	auto answer = db.PlanRounds(PAX, A, D, NOW); REQUIRE(answer.plan.ride); REQUIRE(answer.plan.route.size() == 2);
+	CHECK(answer.plan.route[1].service == other->orders->index); CHECK(answer.plan.arrival == NOW + 35);
+	auto *packet = f.Packet(); REQUIRE(PassengerJourneyActiveContext(nullptr, A).PlanWaiting(*packet, PAX, D));
+	PassengerJourneyLoadingContext loading; REQUIRE(loading.CanBoard(*packet, same)); loading.PrepareBoard(*packet, same);
+	_state_ticks += 10; same->LoadAt(1); other->current_order_time = 10;
+	PassengerJourneyActiveContext arrived(same, B); CHECK(arrived.Decide(*packet, PAX, false, OrderUnloadType::Transfer) == VehicleCargoList::MoveToAction::Transfer);
+	CHECK(packet->GetPassengerJourney().service == other->orders->index);
+	same->LoadAt(2); CHECK_FALSE(loading.CanBoard(*packet, same)); CHECK(loading.CanBoard(*packet, other));
+}
+
+TEST_CASE("Timed rounds share services with cargo-specific exchange restrictions", "[passenger][rounds][cargo]")
+{
+	Fixture f; CargoType second{1};
+	AutoRestoreBackup classes{CargoSpec::Get(second)->classes, CargoClasses{CargoClass::Passengers}};
+	auto *first = f.Train({Stop(A), Stop(B), Stop(D)});
+	auto *other = Vehicle::Create<PeriodicTrain>(first); other->cargo_type = second; other->LoadAt(1);
+	first->GetOrder(0)->SetLoadType(OrderLoadType::CargoTypeLoad); first->GetOrder(0)->SetLoadType(OrderLoadType::NoLoad, second);
+	auto &db = f.Build(); auto pax = db.PlanRounds(PAX, A, D, NOW); auto prohibited = db.PlanRounds(second, A, D, NOW);
+	REQUIRE(pax.plan.ride); CHECK_FALSE(prohibited.plan.ride); CHECK(prohibited.outcome == PassengerTimedRoundOutcome::Unreachable);
+	auto allowed = db.PlanRounds(second, B, D, NOW); REQUIRE(allowed.plan.ride);
+	CHECK(allowed.plan.ride->service == pax.plan.ride->service); CHECK(allowed.plan.ride->boarding_order == 1);
+}
+
+TEST_CASE("Timed round label and memory truncation retain complete provisional paths", "[passenger][rounds][anytime]")
+{
+	Fixture f; f.Train({Stop(A, 1000, 0), Stop(D, 100, 0)}); f.Train({Stop(A, 1000, 0), Stop(B, 10, 0)});
+	f.Train({Stop(B, 1000, 10), Stop(D, 10, 0)}); auto &db = f.Build(); PassengerJourneyLimits limits;
+	SECTION("Labels") { limits.labels = 2; }
+	SECTION("Memory") { limits.memory_bytes = 7000; }
+	auto answer = db.PlanRounds(PAX, A, D, NOW, limits); REQUIRE(answer.plan.ride); CHECK(answer.outcome == PassengerTimedRoundOutcome::Provisional);
+	CHECK(answer.plan.route.size() == 1); CHECK(answer.plan.arrival == NOW + 100); CHECK(answer.plan.memory <= limits.memory_bytes);
+}
+
+TEST_CASE("Active waiting accepts round provisional paths at production work budgets", "[passenger][rounds][active][scaling]")
+{
+	Fixture f; _settings_game.linkgraph.passenger_timed_rounds = true;
+	f.Train({Stop(A, 1000, 0), Stop(D, 100, 0)});
+	for (uint16_t i = 4; i < 4000; ++i) f.Train({Stop(A, 1000, 0), Stop(StationID{i}, 10, 0)});
+	auto &db = f.Build(); auto *packet = f.Packet();
+	REQUIRE(PassengerJourneyActiveContext(nullptr, A).PlanWaiting(*packet, PAX, D));
+	CHECK(packet->GetPassengerJourney().kind == PassengerRideKind::ServiceIntent);
+	CHECK(db.GetRoundDiagnostic().outcomes[static_cast<size_t>(PassengerTimedRoundOutcome::Provisional)] == 1);
+	CHECK(db.GetRoundDiagnostic().work <= 65536);
+}
+
+TEST_CASE("Small periodic networks match a larger legacy reference over ready phases", "[passenger][rounds][reference]")
+{
+	Fixture f;
+	uint64_t seed = GENERATE(uint64_t{7}, uint64_t{1729}, uint64_t{314159});
+	for (size_t i = 0; i < 10; ++i) {
+		std::vector<Order> orders;
+		for (size_t j = 0; j < 4; ++j) {
+			seed = seed * 6364136223846793005ULL + 1;
+			orders.push_back(Stop(StationID{static_cast<uint16_t>((seed >> 32) % 6)}, 10 + (seed >> 16) % 50, seed % 20));
+		}
+		f.Train(orders);
+	}
+	auto &db = f.Build(); PassengerJourneyLimits limits; limits.labels_per_station = 256;
+	for (StationID from : {A, B, C}) for (StationID to : {D, StationID{4}, StationID{5}}) for (int64_t offset : {0, 19, 73, 201}) {
+		PassengerJourneyEvaluation evaluation; evaluation.waiting_weight = offset % 2 ? 1500 : 0;
+		evaluation.minimum_transfer = 3; evaluation.transfer_penalty = 7;
+		auto old = db.Plan(PAX, from, to, NOW + offset, limits, evaluation); auto current = db.PlanRounds(PAX, from, to, NOW + offset, limits, evaluation);
+		if (!old.deferred && current.outcome == PassengerTimedRoundOutcome::Found) {
+			REQUIRE(old.ride); CHECK(current.plan.cost == old.cost); CHECK(current.plan.arrival == old.arrival); CHECK(current.plan.ride == old.ride);
+		}
+		if (old.ride && !old.deferred) CHECK(current.plan.ride.has_value());
 	}
 }
 

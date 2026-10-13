@@ -2154,6 +2154,8 @@ STR_CONFIG_SETTING_PASSENGER_TRANSFER_TIMETABLES                :Use timetables 
 STR_CONFIG_SETTING_PASSENGER_OD_ASSIGNMENT                      :Assign final passenger destinations from CargoDist demand: {STRING2}
 STR_CONFIG_SETTING_PASSENGER_JOURNEY_ROUTING                    :Use JourneyPlanner for passengers (experimental): {STRING2}
 STR_CONFIG_SETTING_PASSENGER_JOURNEY_PERIODIC                   :Use periodic passenger services (experimental): {STRING2}
+STR_CONFIG_SETTING_PASSENGER_TIMED_ROUNDS                       :Use round-based timed passenger search (experimental): {STRING2}
+STR_CONFIG_SETTING_PASSENGER_TIMED_ROUNDS_HELPTEXT               :Scan affected recurring services by boarding round. Keep usable complete routes when the search budget is exhausted. Requires periodic passenger services. This choice is saved and shared by all multiplayer clients
 STR_CONFIG_SETTING_PASSENGER_JOURNEY_PERIODIC_HELPTEXT          :Keep recurring timetables and reuse destination routing policies. Trains with uncertain schedules use destination-aware fallback. Routes follow actual boarding and unloading restrictions
 STR_CONFIG_SETTING_PASSENGER_JOURNEY_ROUTING_HELPTEXT           :Prefer timed passenger journeys to known final destinations. If none is found, use live vehicle orders and destination-aware fallback. Requires automatic passenger distribution. Destination assignment is a separate setting
 STR_CONFIG_SETTING_PASSENGER_OD_ASSIGNMENT_HELPTEXT             :Record final destinations for newly generated passengers using CargoDist demand. Requires automatic passenger distribution. Destination metadata does not control boarding or transfers. Splitting cargo packets can change subsequent random routing choices
