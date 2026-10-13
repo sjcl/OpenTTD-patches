@@ -356,6 +356,158 @@ TEST_CASE("Periodic local express and direct services compare actual phases", "[
 	CHECK(plan.ride->service != local->orders->index);
 }
 
+TEST_CASE("Timed service bounds skip slow fleets before computing departures", "[passenger][periodic][timed-pruning]")
+{
+	Fixture f;
+	auto *fast = f.Train({Stop(A, 1000, 0), Stop(D, 100, 0)});
+	for (int i = 0; i < 10; ++i) {
+		auto *slow = f.Train({Stop(A, 1000, 0), Stop(D, 1000, 0)});
+		for (int n = 1; n < 40; ++n) { auto *v = Vehicle::Create<PeriodicTrain>(slow); v->LoadAt(1); }
+	}
+	auto &db = f.Build(); db.ResetDiagnostic();
+	auto plan = db.Plan(PAX, A, D, NOW); auto pruned = db.GetDiagnostic();
+	REQUIRE(plan.ride); CHECK_FALSE(plan.deferred); CHECK(plan.ride->service == fast->orders->index); CHECK(plan.arrival == NOW + 100);
+	CHECK(pruned.pruned_services == 10); CHECK(pruned.pruned_vehicle_visits == 400);
+	db.ResetDiagnostic(); auto original = db.PlanWithoutServicePruning(PAX, A, D, NOW); auto scanned = db.GetDiagnostic();
+	CHECK(plan.route == original.route); CHECK(plan.cost == original.cost); CHECK(plan.arrival == original.arrival);
+	CHECK(plan.work < original.work); CHECK(pruned.departure_calculations < scanned.departure_calculations);
+}
+
+TEST_CASE("Timed pruning preserves cost ties phases transfers and boarding restrictions", "[passenger][periodic][timed-pruning]")
+{
+	Fixture f;
+	const int scenario = GENERATE(0, 1, 2, 3, 4, 5, 6);
+	PassengerJourneyEvaluation evaluation;
+	if (scenario == 0) { // Equal cost, arrival, transfers and departure: ServiceID decides.
+		for (int i = 0; i < 12; ++i) f.Train({Stop(A, 1000, 0), Stop(D, 100, 0)});
+	} else if (scenario == 1) { // A less frequent express must lose when its next phase is late.
+		f.Train({Stop(A, 1900, 0), Stop(D, 100, 0)});
+		auto *local = f.Train({Stop(A, 100, 0), Stop(B, 50, 0), Stop(D, 50, 0)});
+		for (int i = 0; i < 5; ++i) { auto *v = Vehicle::Create<PeriodicTrain>(local); v->LoadAt(1); }
+	} else if (scenario == 2) { // Cheap prefix plus express beats more than eight direct services.
+		for (int i = 0; i < 10; ++i) f.Train({Stop(A, 100, 0), Stop(D, 1000, 0)});
+		f.Train({Stop(A, 1900, 0), Stop(B, 100, 0)}); f.Train({Stop(B, 1900, 100), Stop(D, 100, 0)});
+	} else if (scenario == 3) { // Repeated occurrences, NoLoad/NoUnload and forced unload.
+		f.Train({Stop(A, 900, 0), Stop(D, 200, 0)});
+		Order operating = Stop(B, 20, 80); operating.SetLoadType(OrderLoadType::NoLoad); operating.SetUnloadType(OrderUnloadType::NoUnload);
+		Order forced = Stop(C, 30, 0); forced.SetUnloadType(OrderUnloadType::Transfer);
+		f.Train({Stop(A, 1000, 0), operating, Stop(A, 20, 0), forced, Stop(D, 1, 0)});
+		f.Train({Stop(C, 1000, 50), Stop(D, 40, 0)});
+	} else if (scenario == 4) { // All minimum interchange costs are admissible, including weighted waiting.
+		f.Train({Stop(A, 1000, 0), Stop(D, 400, 0)});
+		f.Train({Stop(A, 1000, 0), Stop(B, 20, 0)}); f.Train({Stop(B, 1000, 40), Stop(D, 20, 0)});
+		evaluation.minimum_transfer = 10; evaluation.transfer_penalty = 20; evaluation.waiting_weight = 500; evaluation.transfer_time_weight = 1500;
+	} else if (scenario == 5) { // Same service reboarding on another physical vehicle remains possible.
+		auto *line = f.Train({Stop(A, 1000, 0), Stop(B, 20, 100), Stop(D, 20, 0)});
+		auto *other = Vehicle::Create<PeriodicTrain>(line); other->LoadAt(1); other->current_order_time = 70;
+		f.Train({Stop(A, 1000, 0), Stop(D, 200, 0)});
+	} else { // Scheduled dispatch and a mixture of known and unknown physical phases.
+		f.Train({Stop(A, 1000, 0), Stop(D, 100, 0)});
+		auto *dispatch = f.Train({Stop(A, 1000, 0), Stop(D, 200, 0)});
+		dispatch->vehicle_flags.Set(VehicleFlag::ScheduledDispatch); dispatch->GetOrder(0)->SetDispatchScheduleIndex(0);
+		dispatch->orders->GetScheduledDispatchScheduleSet().emplace_back(); auto &schedule = dispatch->orders->GetDispatchScheduleByIndex(0);
+		schedule.SetScheduledDispatchStartTick(NOW); schedule.SetScheduledDispatchDuration(2000);
+		for (uint32_t offset : {0, 500, 1000, 1500}) schedule.GetScheduledDispatchMutable().push_back({offset, 0});
+		auto *line = f.Train({Stop(A, 1000, 0), Stop(D, 300, 0)});
+		auto *unknown = Vehicle::Create<PeriodicTrain>(line); unknown->current_order.Free();
+	}
+	auto &db = f.Build();
+	for (int64_t delay : {0, 1, 10, 101, 501, 2100}) {
+		CAPTURE(scenario, delay);
+		auto original = db.PlanWithoutServicePruning(PAX, A, D, NOW + delay, {}, evaluation);
+		auto plan = db.Plan(PAX, A, D, NOW + delay, {}, evaluation);
+		REQUIRE(plan.ride); CHECK_FALSE(plan.deferred); CHECK(plan.ride == original.ride); CHECK(plan.route == original.route);
+		CHECK(plan.arrival == original.arrival); CHECK(plan.cost == original.cost); CHECK(plan.transfers == original.transfers);
+		CHECK(plan.work <= original.work);
+		if (scenario == 0) CHECK(plan.work == original.work);
+		if (scenario == 5 && delay == 0) {
+			REQUIRE(plan.route.size() == 2); CHECK(plan.route[0].service == plan.route[1].service);
+			CHECK(plan.arrival == NOW + 50); CHECK(plan.transfers == 1);
+		}
+	}
+}
+
+TEST_CASE("Timed pruning budgets are independent of caches save load and joining", "[passenger][periodic][timed-pruning][determinism][save]")
+{
+	Fixture f; f.Train({Stop(A, 1000, 0), Stop(D, 100, 0)});
+	for (int i = 0; i < 10; ++i) {
+		auto *slow = f.Train({Stop(A, 1000, 0), Stop(B, 100, 0), Stop(D, 900, 0)});
+		for (int n = 1; n < 8; ++n) { auto *v = Vehicle::Create<PeriodicTrain>(slow); v->LoadAt(1); if (n % 3 == 0) v->current_order.Free(); }
+	}
+	auto &db = f.Build(); auto wire = db.Save(); PassengerServiceDatabase cold, peer;
+	REQUIRE(cold.Load(wire)); cold.FinishLoad(true); cold.SetPolicyCacheEnabled(false); cold.SetDepartureIndexEnabled(false);
+	REQUIRE(peer.Load(wire)); peer.FinishLoad(true);
+	size_t improved = 0, old_admitted = 0, new_admitted = 0;
+	for (size_t work = 0; work < 500; ++work) {
+		CAPTURE(work);
+		PassengerJourneyLimits limits; limits.work = work;
+		auto plan = db.Plan(PAX, A, D, NOW, limits);
+		SameDeparturePlan(plan, db.Plan(PAX, A, D, NOW, limits));
+		SameDeparturePlan(plan, cold.Plan(PAX, A, D, NOW, limits));
+		peer.ClearPolicies(); peer.ClearDepartureIndices(); SameDeparturePlan(plan, peer.Plan(PAX, A, D, NOW, limits));
+		auto original = db.PlanWithoutServicePruning(PAX, A, D, NOW, limits);
+		old_admitted += original.ride && !original.deferred; new_admitted += plan.ride && !plan.deferred;
+		if (plan.ride && !plan.deferred && (!original.ride || original.deferred)) ++improved;
+		if (original.ride && !original.deferred) { REQUIRE(plan.ride); CHECK_FALSE(plan.deferred); CHECK(plan.cost <= original.cost); CHECK(plan.route == original.route); }
+	}
+	CHECK(improved > 0); CHECK(db.GetDiagnostic().pruned_services > 0);
+	WARN("Timed Work boundaries: old_admitted=" << old_admitted << "; new_admitted=" << new_admitted << "; newly_admitted=" << improved << "; route_quality_changes=0");
+	CHECK(db.Save() == wire); CHECK(cold.Save() == wire); CHECK(peer.Save() == wire);
+	// The same admitted complete label must survive Label/Memory admission boundaries.
+	for (size_t labels : {1, 2, 4, 8, 32}) for (size_t memory : {size_t{256}, size_t{1792}, size_t{4096}, size_t{65536}}) {
+		PassengerJourneyLimits limits; limits.labels = labels; limits.memory_bytes = memory;
+		SameDeparturePlan(db.Plan(PAX, A, D, NOW, limits), cold.Plan(PAX, A, D, NOW, limits));
+	}
+}
+
+TEST_CASE("Timed partial reverse bounds retain an eleven transfer journey", "[passenger][periodic][timed-pruning][determinism]")
+{
+	Fixture f;
+	for (uint16_t i = 0; i < 12; ++i) {
+		StationID from{i}, to{uint16_t(i + 1)};
+		f.Train({Stop(from, 1000, uint16_t(i * 20)), Stop(to, 10, 0)});
+	}
+	// A feasible direct incumbent must not make unsettled stations unreachable.
+	f.Train({Stop(A, 1000, 0), Stop(StationID{12}, 2000, 0)});
+	for (uint16_t i = 13; i < 43; ++i) f.Train({Stop(StationID{i}, 1000, 0), Stop(StationID{12}, 5000, 0)});
+	auto &db = f.Build(); PassengerJourneyLimits limits;
+	auto full = db.Plan(PAX, A, StationID{12}, NOW, limits);
+	REQUIRE(full.ride); CHECK_FALSE(full.deferred); CHECK(full.transfers == 11); CHECK(full.route.size() == 12); CHECK(full.arrival == NOW + 230);
+	bool partial_found = false;
+	for (size_t work = 40; work < 700; ++work) {
+		limits.work = work; auto plan = db.Plan(PAX, A, StationID{12}, NOW, limits);
+		auto original = db.PlanWithoutServicePruning(PAX, A, StationID{12}, NOW, limits);
+		if (plan.ride && !plan.deferred) {
+			CHECK(plan.cost == full.cost); CHECK(plan.route == full.route);
+			partial_found |= plan.observations[static_cast<size_t>(PassengerPeriodicPlan::Reason::Work)];
+		}
+		if (original.ride && !original.deferred) { REQUIRE(plan.ride); CHECK_FALSE(plan.deferred); CHECK(plan.cost <= original.cost); }
+	}
+	CHECK(partial_found);
+	limits = {}; limits.max_transfers = 10;
+	auto direct = db.Plan(PAX, A, StationID{12}, NOW, limits); REQUIRE(direct.ride); CHECK(direct.arrival == NOW + 2000);
+	CHECK(direct.deferred); // A safety ceiling cannot certify the slower direct route as optimal.
+}
+
+TEST_CASE("Timed service pruning follows cargo-specific exchange masks and capacities", "[passenger][periodic][timed-pruning]")
+{
+	Fixture f; CargoType second{1}; AutoRestoreBackup classes{CargoSpec::Get(second)->classes, CargoClasses{CargoClass::Passengers}};
+	auto *direct = f.Train({Stop(A, 1000, 0), Stop(D, 100, 0)});
+	auto *second_direct = Vehicle::Create<PeriodicTrain>(direct); second_direct->cargo_type = second;
+	Order restricted = Stop(B, 10, 0); restricted.SetLoadType(OrderLoadType::CargoTypeLoad); restricted.SetUnloadType(OrderUnloadType::CargoTypeUnload);
+	restricted.SetLoadType(OrderLoadType::NoLoad, PAX); restricted.SetUnloadType(OrderUnloadType::NoUnload, PAX);
+	auto *local = f.Train({Stop(A, 1000, 0), restricted, Stop(D, 1000, 0)});
+	auto *second_local = Vehicle::Create<PeriodicTrain>(local); second_local->cargo_type = second;
+	auto *express = f.Train({Stop(B, 1000, 10), Stop(D, 10, 0)}); express->cargo_type = second;
+	auto &db = f.Build();
+	for (CargoType cargo : {PAX, second}) {
+		auto original = db.PlanWithoutServicePruning(cargo, A, D, NOW);
+		auto plan = db.Plan(cargo, A, D, NOW); REQUIRE(plan.ride); CHECK_FALSE(plan.deferred);
+		CHECK(plan.route == original.route); CHECK(plan.cost == original.cost);
+		CHECK(plan.arrival == NOW + (cargo == PAX ? 100 : 20));
+	}
+}
+
 TEST_CASE("Periodic timed routes win while missing timetable services stay unknown", "[passenger][periodic]")
 {
 	Fixture f; auto *timed = f.Train({Stop(A, 200, 0), Stop(D, 100, 0)});

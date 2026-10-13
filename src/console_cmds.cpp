@@ -4979,6 +4979,8 @@ static bool ConPassengerJourneyStats(std::span<std::string_view> argv)
 			periodic.vehicle_candidates, periodic.next_departures, periodic.departure_calculations, periodic.departure_index_hits, periodic.departure_index_fallbacks,
 			periodic.departure_index_builds, periodic.departure_index_build_nanoseconds, periodic.departure_index_bytes, periodic.departure_index_peak_bytes, periodic.forward_microseconds, periodic.search_work);
 	IConsolePrint(CC_DEFAULT, "Periodic global invalidations: {}", periodic.global_invalidations);
+	IConsolePrint(CC_DEFAULT, "Periodic service pruning: bound_checks={}; bound_stops={}; pruned_services={}; skipped_vehicle_visits={}",
+			periodic.service_bound_checks, periodic.service_bound_stops, periodic.pruned_services, periodic.pruned_vehicle_visits);
 	IConsolePrint(CC_DEFAULT, "Periodic residency: entries={}; revision={}; publications={}; staged={}; staged_bytes={}; additions={}; removals={}; updates={}; timetable_notifications={}",
 			periodic.policy_entries, periodic.published_revision, periodic.publications, periodic.staged, periodic.staged_bytes,
 			periodic.service_additions, periodic.service_removals, periodic.service_updates, periodic.timetable_notifications);

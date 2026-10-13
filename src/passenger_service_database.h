@@ -78,6 +78,7 @@ struct PassengerDatabaseDiagnostic {
 	uint64_t next_departures = 0; ///< Logical NextDeparture evaluations in the original scan, including skipped indexed candidates.
 	uint64_t vehicle_candidates = 0, departure_calculations = 0, departure_index_hits = 0, departure_index_fallbacks = 0;
 	uint64_t departure_index_builds = 0, departure_index_build_nanoseconds = 0, forward_microseconds = 0, search_work = 0;
+	uint64_t service_bound_checks = 0, service_bound_stops = 0, pruned_services = 0, pruned_vehicle_visits = 0;
 	size_t departure_index_bytes = 0, departure_index_peak_bytes = 0;
 	size_t services = 0, timed_services = 0, vehicles = 0, bytes = 0, policy_bytes = 0, pending = 0;
 	size_t known_phase_vehicles = 0;
@@ -121,6 +122,9 @@ public:
 	void Tick(size_t allowance = BUILD_WORK);
 	PassengerPeriodicPlan Plan(CargoType cargo, StationID origin, StationID destination, StateTicks ready,
 			PassengerJourneyLimits limits = {}, PassengerJourneyEvaluation evaluation = {}, OrderListID excluded = OrderListID::Invalid());
+	/** Explicit read-only algorithm comparison, never a local cache preference or simulation setting. */
+	PassengerPeriodicPlan PlanWithoutServicePruning(CargoType cargo, StationID origin, StationID destination, StateTicks ready,
+			PassengerJourneyLimits limits = {}, PassengerJourneyEvaluation evaluation = {}, OrderListID excluded = OrderListID::Invalid());
 	PassengerSchedulePlan PlanEstimated(CargoType cargo, StationID origin, StationID destination, StateTicks ready,
 			PassengerJourneyLimits limits = {}, PassengerJourneyEvaluation evaluation = {}, OrderListID excluded = OrderListID::Invalid())
 	{ return this->schedule.Plan(*this, cargo, origin, destination, ready, excluded, limits, evaluation); }
@@ -160,6 +164,13 @@ private:
 		bool limited = false;
 		bool complete = false;
 		int64_t unsettled_bound = 0;
+		int64_t DistanceLowerBound(StationID station) const
+		{
+			if (const auto *lower = this->LowerBound(station)) return *lower;
+			/* The frontier is certified on the normal origin-settled exit.
+			 * A truncated expansion retains only settled station distances. */
+			return !this->limited && !this->complete ? this->unsettled_bound : 0;
+		}
 		bool unknown_phase = false;
 		PassengerPeriodicPlan::Reason diagnostic_limit = PassengerPeriodicPlan::Reason::NoCandidate;
 		PassengerPeriodicPlan::Reason reason = PassengerPeriodicPlan::Reason::NoCandidate;
@@ -210,6 +221,10 @@ private:
 	void Remove(OrderListID id);
 	void Index(const PassengerPeriodicService &service);
 	JourneyPolicy CompilePolicy(CargoType cargo, StationID origin, StationID destination, PassengerJourneyLimits limits, PassengerJourneyEvaluation evaluation, Dependencies &dependencies) const;
+	PassengerPeriodicPlan PlanInternal(CargoType cargo, StationID origin, StationID destination, StateTicks ready,
+			PassengerJourneyLimits limits, PassengerJourneyEvaluation evaluation, OrderListID excluded, bool prune_services);
+	bool ServiceCannotImprove(const PassengerPeriodicTimetable &pattern, size_t boarding, CargoType cargo,
+			StationID destination, int64_t cost, bool transfer, int64_t best, const JourneyPolicy &policy, PassengerJourneyEvaluation evaluation);
 };
 
 PassengerServiceDatabase &GetPassengerServiceDatabase();

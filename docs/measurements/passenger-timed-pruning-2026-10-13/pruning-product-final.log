@@ -1,0 +1,2 @@
+C:\Users\bebe\.codex\worktrees\b2f8\OpenTTD-patches\src\tests\passenger_service_database.cpp(454): warning: 'Timed Work boundaries: old_admitted=349; new_admitted=446; newly_admitted=97; route_quality_changes=0'
+Passed all 5 test cases with 22817 assertions.

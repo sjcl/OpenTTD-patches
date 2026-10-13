@@ -1,0 +1,1373 @@
+{
+  "base_commit": "56b0f287b013d4775cbd62c4ec5d5801c03f8e40",
+  "branch": "perf/passenger-timed-pruning",
+  "compiler": {
+    "CMAKE_CXX_FLAGS": "/DWIN32 /D_WINDOWS /GR /EHsc",
+    "CMAKE_CXX_FLAGS_RELEASE": "/O2 /Ob2 /DNDEBUG",
+    "CMAKE_C_FLAGS": "/DWIN32 /D_WINDOWS",
+    "CMAKE_C_FLAGS_RELEASE": "/O2 /Ob2 /DNDEBUG",
+    "CMAKE_MSVC_RUNTIME_LIBRARY": "MultiThreaded",
+    "CMAKE_PREFIX_PATH": "C:/Users/bebe/CLionProjects/OpenTTD-patches/cmake-build-release-visual-studio/vcpkg_installed/x64-windows-static",
+    "OPTION_NO_LTO": "ON",
+    "OPTION_PASSENGER_BENCHMARK": "ON",
+    "OPTION_USE_ASSERTS": "ON",
+    "CMAKE_GENERATOR": "Visual Studio 17 2022",
+    "CMAKE_GENERATOR_PLATFORM": "x64",
+    "CMAKE_CXX_COMPILER": "C:/Program Files (x86)/Microsoft Visual Studio/2022/BuildTools/VC/Tools/MSVC/14.44.35207/bin/Hostx64/x64/cl.exe",
+    "CMAKE_CXX_COMPILER_ID": "MSVC",
+    "CMAKE_CXX_COMPILER_VERSION": "19.44.35227.0",
+    "library_sha256": {
+      "libpng16.lib": "2b3e07b20b3a1c48e8d7c0a299c700721dd82c1499269e019a6cd8459774ec3d",
+      "lzma.lib": "14a38a5ef1d68e67c80e96faba4d7bf5d2cde00de7257bdb396d4801e7160c6b",
+      "lzo2.lib": "851b503360b8747a20344cf9fac72b9a9d4067894220d32ed25465616b94515e",
+      "ogg.lib": "027feab8bec33c3cd0e9f286d630c3ccfa0d39d74005c723913a4061c73b5b67",
+      "opus.lib": "7670e882d03cd26214da63a7d0d8de5ba9ae7c5a6b91a2bcba7b350c4bc4a6e8",
+      "opusfile.lib": "472c9c7a425ba4d30c918d272cb7535c685c3b4d88736c9b8888b67be0e97a5a",
+      "zlib.lib": "0d3ce92e180e325c2eaa1f0c39dde62fb4153ebfbec078d740590fd12f0be3f9",
+      "zstd.lib": "9ca9d4b5df6591751b4ccb35dcea0d771601c89aa9528a7a2af430b0e71586ac"
+    }
+  },
+  "performance_benchmark_option": "ON",
+  "product_benchmark_option": "OFF",
+  "host_cpu": "{\n    \"Name\":  \"AMD Ryzen 9 9950X 16-Core Processor            \",\n    \"NumberOfCores\":  16,\n    \"NumberOfLogicalProcessors\":  32\n}\n",
+  "binary_sha256": {
+    "openttd-baseline-detail.exe": "3df9d2cf4b1c7f305f1db4ab44a29c5dddb2842ab674e8b27e9df1a77b29536c",
+    "openttd-baseline.exe": "f683941c8e2e486c41e04d33e2e785a7c4fb687dae074760d65282b98b1071a5",
+    "openttd-detail.exe": "c4d88552eab09129c57109b7f2336707e79ced3e336c5f0d8d4070dc0452e5a5",
+    "openttd-network.exe": "2a4c26a9fc61e15fc3cd72e7387bbe66114ca8e57ed2dfd7ffaa3eb56480800e",
+    "openttd-product-final.exe": "145104483798a21c7d3ce1ad056b2054926f1a3ff8cddd197dc8da39ac3b2a03",
+    "openttd-product.exe": "06db30163569c2e6059120474fd0cf1eb1f8c21b753a0324a46054e737e8c1cc",
+    "openttd-pruned.exe": "543b65725661461124d0f516165733443af77e2a2d3b438eb0c4f190157dc460",
+    "openttd-quality.exe": "c60052c9b5783df12407ab2f6f0f4cc5853d20c8ca5e6b0377a8c291596b78f8"
+  },
+  "source_sha256": {
+    "src/passenger_service_database.cpp": "54d2697d5ad72555968b18145326360b7d6994655e1b7e90bc71254c9e51fc96",
+    "src/passenger_service_database.h": "b4675d58ca5e9659083b7e6e270eda2780bf4e700660764c72b5b2eb400c49d4",
+    "src/console_cmds.cpp": "da7ab92e5e761ff6db34f39029542d271e243a91195fcdec1010bc3a5330f44a",
+    "src/tests/passenger_service_database.cpp": "933c5e44e22dca811592091e7ec47dc51044cdfeb30a2038f14865585bcd94ae"
+  },
+  "network_probe_sha256": "4026954f09ec625dbf3666df5aceb8669a325225fe49bef4d18f2463ee3c960c",
+  "input_sha256": "14d68c82911b9dcfc5ef7291e9697c5bbd67f44ffcc79d7575a144405edf6390",
+  "package": {
+    "schema_version": 1,
+    "input_sha256": "14d68c82911b9dcfc5ef7291e9697c5bbd67f44ffcc79d7575a144405edf6390",
+    "config_sha256": "bb9f97ff8504cbb287ef0976add7a33cb27440f5ecd9ccf4febf0aa4746fa122",
+    "assets": [
+      {
+        "path": "baseset/extra_signals.grf",
+        "bytes": 1571,
+        "sha256": "831a1a4b0efc3a1b4a44c5f45afe107caabae7d09a4e5d3c913e800096df01c9"
+      },
+      {
+        "path": "baseset/innerhighlight.grf",
+        "bytes": 7733,
+        "sha256": "a5e9ff63ee469072ef4167a7c894335b1484a6af288287c1534bd85535ac1913"
+      },
+      {
+        "path": "baseset/misc_gui.grf",
+        "bytes": 314,
+        "sha256": "494d10b6435dbe8f4f6657215df36f4c601e1fe515f43b23726d317be580119a"
+      },
+      {
+        "path": "baseset/no_music.obm",
+        "bytes": 4174,
+        "sha256": "192282777c8c5877ce8ab79b6a39d06363df99e5c444f3f705c141d5b2fa94d4"
+      },
+      {
+        "path": "baseset/no_sound.obs",
+        "bytes": 3766,
+        "sha256": "127652b32944b714de887d75897d1964c8e9043f26023aa6f01fae0cefef59db"
+      },
+      {
+        "path": "baseset/OpenGFX-0.6.1/changelog.txt",
+        "bytes": 25942,
+        "sha256": "00dd49be38a730815ddbc26709d06ed8ecfb95ea1a85b1a9121222fd317ec9dd"
+      },
+      {
+        "path": "baseset/OpenGFX-0.6.1/license.txt",
+        "bytes": 17987,
+        "sha256": "ab15fd526bd8dd18a9e77ebc139656bf4d33e97fc7238cd11bf60e2b9b8666c6"
+      },
+      {
+        "path": "baseset/OpenGFX-0.6.1/ogfx1_base.grf",
+        "bytes": 2693605,
+        "sha256": "62e3aa4365b05316143d2dbf04acdec213d038d5a86a695618d8ca8fd5530a4b"
+      },
+      {
+        "path": "baseset/OpenGFX-0.6.1/ogfxc_arctic.grf",
+        "bytes": 287331,
+        "sha256": "17cf3be5a9410d6807347a13b5655cf534f3b10f19d1bb7a43080f7c226817ce"
+      },
+      {
+        "path": "baseset/OpenGFX-0.6.1/ogfxe_extra.grf",
+        "bytes": 926634,
+        "sha256": "2dd10c5bb5870aa0bb21835294ec72811cfa618ea92598ed168a30ce7e7c42b1"
+      },
+      {
+        "path": "baseset/OpenGFX-0.6.1/ogfxh_tropical.grf",
+        "bytes": 472020,
+        "sha256": "b9aa39877daccd417ee1b248010bc8891648accf1680d1443f58a8589189238c"
+      },
+      {
+        "path": "baseset/OpenGFX-0.6.1/ogfxi_logos.grf",
+        "bytes": 253846,
+        "sha256": "2c7139ca0e0b785cbf93125d96c250fda38399ea03ff54181654d0c19407bc82"
+      },
+      {
+        "path": "baseset/OpenGFX-0.6.1/ogfxt_toyland.grf",
+        "bytes": 622079,
+        "sha256": "d01320fdcfc94cf4ef637ec72e892314dc5dc682b949e6957c3fb72cb9385986"
+      },
+      {
+        "path": "baseset/OpenGFX-0.6.1/opengfx.obg",
+        "bytes": 8528,
+        "sha256": "c173c299baa19a0ae372713d82613d4fab60f62ce75619e440f977303ef2299d"
+      },
+      {
+        "path": "baseset/OpenGFX-0.6.1/readme.txt",
+        "bytes": 15120,
+        "sha256": "565f3cffa6d1f3ac9b11b19f134fc3867cb9192bbfa8bffb849b8137425083ef"
+      },
+      {
+        "path": "baseset/OpenTTD-Mono.ttf",
+        "bytes": 72056,
+        "sha256": "7ec9e91093167e140193633cff861c3f7a3ce5a36f9fcaa24e02366ee13f66b0"
+      },
+      {
+        "path": "baseset/OpenTTD-Sans.ttf",
+        "bytes": 77404,
+        "sha256": "f10d200b4769e31302d949326f0cd3a3f697a34788892f7180d813600693afe2"
+      },
+      {
+        "path": "baseset/OpenTTD-Serif.ttf",
+        "bytes": 93120,
+        "sha256": "c299f2d912a4f78a85f2633adad11450a1186b8f63d5adc0999fdc3a4a536266"
+      },
+      {
+        "path": "baseset/OpenTTD-Small.ttf",
+        "bytes": 68308,
+        "sha256": "cfbd78b80bfecff188eae4c23447073e781c60741d39d16af2ca81a3920cbb5f"
+      },
+      {
+        "path": "baseset/openttd.grf",
+        "bytes": 676074,
+        "sha256": "b96cdc70ccabe75479aecb30b46d593c6189b7cbe04cd52fa726963c54c13b96"
+      },
+      {
+        "path": "baseset/opntitle.dat",
+        "bytes": 138710,
+        "sha256": "1645d6bd627df06986b1884c57f1e328f3ab606aa32549ed88a9220b1b1230fa"
+      },
+      {
+        "path": "baseset/orig_dos.obg",
+        "bytes": 5916,
+        "sha256": "c4deb5c9c225980a0986c66e7156192e6719e0ca5d78e366d254bf6e085ec835"
+      },
+      {
+        "path": "baseset/orig_dos.obm",
+        "bytes": 5429,
+        "sha256": "6aeb9e58c7033f9fc2d3bef1ceb679d951da6cc7fd78fba901e73482d8b6461c"
+      },
+      {
+        "path": "baseset/orig_dos.obs",
+        "bytes": 5266,
+        "sha256": "e348e5cd12cb71e6eccd3931db824fedb92aa61132273935443b4b0299cf7992"
+      },
+      {
+        "path": "baseset/orig_dos_de.obg",
+        "bytes": 6534,
+        "sha256": "8ce6b0a1963e80ce8fd3e0546f32fd90885a29e2b18de914a55b971bbe5f311c"
+      },
+      {
+        "path": "baseset/orig_extra.grf",
+        "bytes": 445288,
+        "sha256": "0017cf6f5c8cbbf724c03f4af7c222c21022b156c584b62da5b5154d12d12b14"
+      },
+      {
+        "path": "baseset/orig_tto.obm",
+        "bytes": 6233,
+        "sha256": "0f1980fc9fb9f356803063ed4696050ac31f90a09060e1abb26c080dd65ebae7"
+      },
+      {
+        "path": "baseset/orig_win.obg",
+        "bytes": 6086,
+        "sha256": "43a070699495438bb657f31e33be9d10406164611873cfdb92d4111350dfe075"
+      },
+      {
+        "path": "baseset/orig_win.obm",
+        "bytes": 8246,
+        "sha256": "cba749d51eff8c8007ac4fffdf2e4de519f0caff693b93e68a78405509dbf07f"
+      },
+      {
+        "path": "baseset/orig_win.obs",
+        "bytes": 5820,
+        "sha256": "61b727d357a1175207fead09de2a5a816cc4a7753e98779231c97da8af53f38a"
+      },
+      {
+        "path": "baseset/progsignals.grf",
+        "bytes": 3203,
+        "sha256": "0c3aa0b68fc45891645cbfb2d17927d864bd2c1675d999c2f64b03bd46c3225c"
+      },
+      {
+        "path": "baseset/route_step.grf",
+        "bytes": 255,
+        "sha256": "ad7df2cdc0b7463e0652d2fd9c8f445d22ba3d00b7b19d1636bd834963f5a61a"
+      },
+      {
+        "path": "baseset/tracerestrict.grf",
+        "bytes": 786,
+        "sha256": "5423c92865def95d79777afe8b5a1ea2f7ac01a986618d69971d787f81b707fc"
+      },
+      {
+        "path": "newgrf/53_SusmonNRT_Alpha.grf",
+        "bytes": 131095,
+        "sha256": "e35e81215aa252e1cde29593f388590b7eff7ebb3a7e1994eba2fe22ca99356d"
+      },
+      {
+        "path": "newgrf/archive/jplw.grf",
+        "bytes": 2603343,
+        "sha256": "caf5e858121c6afb161ae5f22f677794993c838b5a6073f0fe597eec5ab986c6"
+      },
+      {
+        "path": "newgrf/jplw_ab7621c.grf",
+        "bytes": 2898656,
+        "sha256": "c6384b02f8241c020aeb82e1a4eda728beb0dd42b87eb5219b9b44d57889e10c"
+      },
+      {
+        "path": "newgrf/jpobjects.grf",
+        "bytes": 337024,
+        "sha256": "9ebadc62e62daafd2b1269b2a9790724a1891ea2f88676ef2e4ff155809445b0"
+      },
+      {
+        "path": "newgrf/JPplus._v044grf",
+        "bytes": 12490632,
+        "sha256": "d1a5adf682469568603d6c4234350d4882ccae8eb02af0c907e2de81ab1fdbaa"
+      },
+      {
+        "path": "newgrf/JPplus.grf",
+        "bytes": 14380721,
+        "sha256": "f72bbff56c799701a3eaded7473f4dd2013b6820ac4d4370888531469adda156"
+      },
+      {
+        "path": "newgrf/JPplus_v042.grf",
+        "bytes": 13260895,
+        "sha256": "9c6794d7f271052a01be8175ab6a4a267beb3b578754ec080e781522827180c9"
+      },
+      {
+        "path": "newgrf/JPplusShinkansen.grf",
+        "bytes": 1064057,
+        "sha256": "d38296ec424f0bf27a44a8809b1f5bd95e7a2feadbcf1127146efe29c403264d"
+      },
+      {
+        "path": "newgrf/JPplusShinkansen_cec6e29.grf",
+        "bytes": 1998104,
+        "sha256": "f7c81c9fcb8a44af8f78d5ec158671456af91c90ee129fa54b429ed9047804a8"
+      },
+      {
+        "path": "newgrf/JPplusShinkansen_v0.1.5.grf",
+        "bytes": 1064273,
+        "sha256": "a62dd485582acc0e92f1434a583651469ff23379d03ef9659245ce2a604d67a8"
+      },
+      {
+        "path": "newgrf/JPplusShinkansen_v0.2.0.grf",
+        "bytes": 1131838,
+        "sha256": "2c28988f4db75e3a071c5a393f6c9aab30fcb2a9def3f1d817fd765f8d3a2d32"
+      },
+      {
+        "path": "newgrf/JPplusShinkansen_v0.4.0.grf",
+        "bytes": 2465442,
+        "sha256": "97ba0bde58f1e2b42b85696f8710a053a306231cc4389834b591d5ff081c7e85"
+      },
+      {
+        "path": "newgrf/JPplusShinkansen_v2.4.3.grf",
+        "bytes": 3345850,
+        "sha256": "cb88413eaf9fdbf71dae60fb52b52b4b3081df3ba0d9b121b543f5f73d0937f5"
+      },
+      {
+        "path": "newgrf/JPprivate.grf",
+        "bytes": 7594076,
+        "sha256": "6222eadf3dc6a7bcb97f6dd9959c941ab57b8095f1b58a96aa0a82b0996b625d"
+      },
+      {
+        "path": "newgrf/jpstationsAddonsv0.2.2.grf",
+        "bytes": 1157553,
+        "sha256": "a0c28d4a481ccd18a1ce567e4eb329ed7c7cfee80dace06401a968969e9d673c"
+      },
+      {
+        "path": "newgrf/Nagoya_Area_Train_set_0.5.1.grf",
+        "bytes": 768152,
+        "sha256": "e1599e33859db0fe6e27502ef2a4820e4740d3e6c759f49f9349aa3c59ce14f9"
+      },
+      {
+        "path": "newgrf/ogfx-airports.grf",
+        "bytes": 1418267,
+        "sha256": "eee51e40b08bb4a91f44b53650fd9375e7b653d61428d4d64bb4bf4865453902"
+      },
+      {
+        "path": "newgrf/tias-all-climate.grf",
+        "bytes": 2406900,
+        "sha256": "a026be41c8e6cb66ce9711dac293aaedc619fffe4268d31976e51e678d8369fc"
+      },
+      {
+        "path": "content_download/ai/41444d4c-AdmiralAI-25.tar",
+        "bytes": 399360,
+        "sha256": "4aad1bff4e30f93fb5e54f6d70cb4a7a370b8cb8ed086b1300c0329f34f2f8e1"
+      },
+      {
+        "path": "content_download/ai/library/51554648-Queue.FibonacciHeap-2.tar",
+        "bytes": 30720,
+        "sha256": "4fa6c4ebfe8baba27985038e4c243cbfeff97741fafcf7cd7c0379f0e8dfd6d6"
+      },
+      {
+        "path": "content_download/ai/library/51554648-Queue.FibonacciHeap-3.tar",
+        "bytes": 30720,
+        "sha256": "c3c80ad59a0cf43b67a7d769484ba10f316b7a0b4a83a28efe5ce82e96066c9b"
+      },
+      {
+        "path": "content_download/baseset/4f474658-OpenGFX-0.6.1.tar",
+        "bytes": 5335040,
+        "sha256": "1bb11473aca5f5e5fe5c12577c3baa6780c58c3f4a0bf6689f7f0fb10fe890ce"
+      },
+      {
+        "path": "content_download/baseset/4f534658-OpenSFX-1.0.1.tar",
+        "bytes": 13291520,
+        "sha256": "bc192af5de1116e3448712f2dce71e21634b61a3298cc9397f1ba27c77f41924"
+      },
+      {
+        "path": "content_download/baseset/4f534658-OpenSFX-1.0.3.tar",
+        "bytes": 13291520,
+        "sha256": "fd51f6aca26e96eb6ea412002b5a9e60352f20eb53e831f013224deb55951682"
+      },
+      {
+        "path": "content_download/baseset/7a423332-zBase-v5588.tar",
+        "bytes": 328161280,
+        "sha256": "73357bc2f147db5b424fa4bc29705be98f9a9c57be1df1d1ae69c844f172e08d"
+      },
+      {
+        "path": "content_download/baseset/openmsx-0.4.0/5432gone_redfarn.mid",
+        "bytes": 10978,
+        "sha256": "33df6aa075057c5a909ef626392057ef1d2e582ccd15b7e6c98e0f7b3fc4eb63"
+      },
+      {
+        "path": "content_download/baseset/openmsx-0.4.0/be_sharp_bw_redfarn.mid",
+        "bytes": 30674,
+        "sha256": "cc6b04dcac510645a078e299b54694ae981e098a6b415d2323a70af91fe79662"
+      },
+      {
+        "path": "content_download/baseset/openmsx-0.4.0/boogi_marabi_redfarn.mid",
+        "bytes": 26515,
+        "sha256": "f71b52c041f7f01c8925d03b1e598b0968bc189d3f0a37071585c5707eb91bbb"
+      },
+      {
+        "path": "content_download/baseset/openmsx-0.4.0/busy_schedule.mid",
+        "bytes": 27377,
+        "sha256": "e73a46e79cfe4912e706edd7919bf4a09b1bfeb7abdada39d43ce20a8eed4fc6"
+      },
+      {
+        "path": "content_download/baseset/openmsx-0.4.0/careless_perc_redfarn.mid",
+        "bytes": 14726,
+        "sha256": "5b6aa1cb0819b3b3b17593631292117db037bd3853394dced852b5160d44d197"
+      },
+      {
+        "path": "content_download/baseset/openmsx-0.4.0/changelog.txt",
+        "bytes": 3345,
+        "sha256": "cb20af8da7a8d047fc38dcecbfe897d6f07c0ab7562b7a9b394261f9a6171f3e"
+      },
+      {
+        "path": "content_download/baseset/openmsx-0.4.0/chemistry_lab.mid",
+        "bytes": 14769,
+        "sha256": "bdd4c9345e080177ef6caae2e0ef4c6b153337505b998492977f3c5cb4e32463"
+      },
+      {
+        "path": "content_download/baseset/openmsx-0.4.0/chuggachugga.mid",
+        "bytes": 13241,
+        "sha256": "61ca73b32288aa55bbd45a2d5e9c0adcc7f1a787a6c3353fa6025399cb85a2e0"
+      },
+      {
+        "path": "content_download/baseset/openmsx-0.4.0/city_blues_redfarn.mid",
+        "bytes": 17082,
+        "sha256": "3a321160043bce6babf5ae9d73620fafdd2788e62f7579eb9e8e1b539521ec45"
+      },
+      {
+        "path": "content_download/baseset/openmsx-0.4.0/coconut_run2.mid",
+        "bytes": 8654,
+        "sha256": "b6f46d9cc9ba2ae4c902b9546b5cfb0873e2c680c66aa2012342478d239b191e"
+      },
+      {
+        "path": "content_download/baseset/openmsx-0.4.0/flying_scotsman.mid",
+        "bytes": 19309,
+        "sha256": "9ecd6ae907e0941b20116a84d16564645629ee92f00676fd19c0451da5a01670"
+      },
+      {
+        "path": "content_download/baseset/openmsx-0.4.0/harp_harmony.mid",
+        "bytes": 18390,
+        "sha256": "50fea24be39606b69d2d158b98da72dde31076833e55d95282860f6a7f150d07"
+      },
+      {
+        "path": "content_download/baseset/openmsx-0.4.0/keep_on_rolling.mid",
+        "bytes": 53213,
+        "sha256": "10418b9ee95137663c18e37d2a8a856829e650e29b8157f0ca006c7a856973df"
+      },
+      {
+        "path": "content_download/baseset/openmsx-0.4.0/license.txt",
+        "bytes": 17987,
+        "sha256": "ab15fd526bd8dd18a9e77ebc139656bf4d33e97fc7238cd11bf60e2b9b8666c6"
+      },
+      {
+        "path": "content_download/baseset/openmsx-0.4.0/linns_basket.mid",
+        "bytes": 40575,
+        "sha256": "fceec03c88eab1e57516d3ca1dc5d6486921b518950fc05bd9b078f459b3e23e"
+      },
+      {
+        "path": "content_download/baseset/openmsx-0.4.0/midnight_snow_run.mid",
+        "bytes": 22102,
+        "sha256": "a4c4e59cda05c2aee24bc909dc6f7743ddb75630fc11a9a0bb07e983d61a6db1"
+      },
+      {
+        "path": "content_download/baseset/openmsx-0.4.0/mighty_giant_run.mid",
+        "bytes": 21260,
+        "sha256": "8ed5579b55f27bd752fdd73ab83817b5d9eb7f79a463e6e3a32a1a7c94c551ea"
+      },
+      {
+        "path": "content_download/baseset/openmsx-0.4.0/modern_motion.mid",
+        "bytes": 30007,
+        "sha256": "3e71692481f90cdb71533e19bfdd3121fe7b2ac931980120b0383b56c9141afa"
+      },
+      {
+        "path": "content_download/baseset/openmsx-0.4.0/moo_redfarn.mid",
+        "bytes": 21870,
+        "sha256": "90b1a26f7aeca22178448596d386bea0a22aa42c9070c5a8464e07067b8aecf2"
+      },
+      {
+        "path": "content_download/baseset/openmsx-0.4.0/mosey_along_redfarn.mid",
+        "bytes": 20206,
+        "sha256": "9a2ef7782a37e5dee8d36ec91bf1e088dfc53e7bea4c2269d5667e497e09211d"
+      },
+      {
+        "path": "content_download/baseset/openmsx-0.4.0/no_work_song_redfarn.mid",
+        "bytes": 30174,
+        "sha256": "b10c6205e3d47c45071c35bfa06e5596b7684fdfd224dfc4921068e75b142e46"
+      },
+      {
+        "path": "content_download/baseset/openmsx-0.4.0/openmsx.obm",
+        "bytes": 13221,
+        "sha256": "d4a6b28ee42ccb6376d80f43238e5dcb86f85ea2f31f786b68b776573ac5944a"
+      },
+      {
+        "path": "content_download/baseset/openmsx-0.4.0/readme.txt",
+        "bytes": 7230,
+        "sha256": "7b386cb379ee5c423b40031325c59d3c416cc33131c90e95e6b6d239554a2a5b"
+      },
+      {
+        "path": "content_download/baseset/openmsx-0.4.0/relax_song.mid",
+        "bytes": 40070,
+        "sha256": "e7894f4d73e11fe6511a4c66597c7ef2e36c7a5b44a72494885cdf44b547ff97"
+      },
+      {
+        "path": "content_download/baseset/openmsx-0.4.0/run_for_your_life.mid",
+        "bytes": 39889,
+        "sha256": "654f402855dd82d00a7b6ec596fa0aeb8906431224e79a57f115db8c2fb9a4d0"
+      },
+      {
+        "path": "content_download/baseset/openmsx-0.4.0/say_what_redfarn.mid",
+        "bytes": 18803,
+        "sha256": "ffa6906657b807e99087246eb972440517d9fc91034ed25cb8e2cf987688c587"
+      },
+      {
+        "path": "content_download/baseset/openmsx-0.4.0/slow_neasy_redfarn.mid",
+        "bytes": 15232,
+        "sha256": "03b453a5dc11541b1d3cf8205dd8754225b3fe717db77af0dd67b6349c0fd55a"
+      },
+      {
+        "path": "content_download/baseset/openmsx-0.4.0/the_fast_route.mid",
+        "bytes": 29888,
+        "sha256": "4887b02ce648b0d0507325d0d8a24070b7bc9008de82cb86d0e7fbe5ae1275af"
+      },
+      {
+        "path": "content_download/baseset/openmsx-0.4.0/the_hobo_redfarn.mid",
+        "bytes": 24845,
+        "sha256": "dac97430710472bbfa8583783d2fd5c98ca7eb1881bee76c57ddf4701e6fbd7d"
+      },
+      {
+        "path": "content_download/baseset/openmsx-0.4.0/train_filled_with_cash.mid",
+        "bytes": 7890,
+        "sha256": "f935d8ccf870cf1f55c717fc48d895c99e54d08150eee4bbc9120f0fc895eca4"
+      },
+      {
+        "path": "content_download/baseset/openmsx-0.4.0/ttsong_iii_imuh3.mid",
+        "bytes": 15560,
+        "sha256": "c567b8b05040d836f4397cf9e3d3acd48629febe725d3119d5bd58f3cb35a267"
+      },
+      {
+        "path": "content_download/baseset/openmsx-0.4.0/ttsong_iv_imuh3.mid",
+        "bytes": 20207,
+        "sha256": "4857e4c1d446a7076e623ea6c6d753faf4df7dccf52dc9e1cebf106121d75876"
+      },
+      {
+        "path": "content_download/baseset/openmsx-0.4.0/tttheme2.mid",
+        "bytes": 46447,
+        "sha256": "0641a227115d374cbeba338d0798840ca61a323c4044ce717d67fa1d2d01cdb4"
+      },
+      {
+        "path": "content_download/baseset/openmsx-0.4.0/ultimate_run.mid",
+        "bytes": 9717,
+        "sha256": "b1b8745f04e3f16e4924d6b1b9a489ead889001343fde3ed947fda2921199ded"
+      },
+      {
+        "path": "content_download/baseset/openmsx-0.4.0/wood_whistles.mid",
+        "bytes": 13381,
+        "sha256": "4f53b905fde24b37ee2e2344c0adc6dda96452997d7d834c90f3aa7c95f3b2b5"
+      },
+      {
+        "path": "content_download/newgrf/1560b248-redFISH-0.4.tar",
+        "bytes": 2017280,
+        "sha256": "54dd5f0db1b8821dd3238d80c08c8161226a25fc9b691b19db95291c1d28c919"
+      },
+      {
+        "path": "content_download/newgrf/2c320a01-Japanese_Signals-3.0.tar",
+        "bytes": 112640,
+        "sha256": "65787c53173f95d0ed27c1a283a9ba47570ab310886bc341cb681ba87fd0cf4e"
+      },
+      {
+        "path": "content_download/newgrf/414e0101-FISH_1_Ships-0.9.2.tar",
+        "bytes": 1914880,
+        "sha256": "7f8dda18df312dc1625bc10cd130d4f6bb1bf45164642167143baaae212c4df2"
+      },
+      {
+        "path": "content_download/newgrf/414e0201-Squid_Ate_FISH_FISH_2_Ships-2.0.3.tar",
+        "bytes": 1290240,
+        "sha256": "bbca24a526c87cb0364eb139144377c21869fc37491f586ce082c0fcef0754cd"
+      },
+      {
+        "path": "content_download/newgrf/41501202-HEQS_Heavy_Equipment_Set-1.5.2.tar",
+        "bytes": 696320,
+        "sha256": "27f26602f9648ed8ce7ee1e00103bff9162c4f55a7857efadb8f2ee1f8692fa5"
+      },
+      {
+        "path": "content_download/newgrf/41570101-2CC_Cargo_Trams-0.8o.tar",
+        "bytes": 122880,
+        "sha256": "e699588590ed2b16067e71578a739c2799207a772f78fea3e8d9580fd8b12e3a"
+      },
+      {
+        "path": "content_download/newgrf/41570101-2CC_Cargo_Trams-0.8r.tar",
+        "bytes": 122880,
+        "sha256": "4fc1d1421bd6b2b2dbc2628a0950b9b10acda0267c1a10561aac7da3f17664d8"
+      },
+      {
+        "path": "content_download/newgrf/41570102-Modern_Waypoint-3.tar",
+        "bytes": 30720,
+        "sha256": "a0bf5a9c4c4bb07fbd7a45cb23b7687a34e88081368c93d815f7b7aae635a760"
+      },
+      {
+        "path": "content_download/newgrf/42530720-JP_NATS_Duplicates_Disabler-1.0.tar",
+        "bytes": 30720,
+        "sha256": "a19cee053789e5c4fd3f1d8f07f4b20d78d364644e8832e962390697d63d93cc"
+      },
+      {
+        "path": "content_download/newgrf/42531320-JP_Multiple_Units-0.5.4.tar",
+        "bytes": 18657280,
+        "sha256": "6eb82e7a5f9f4d5c0d3c32cf71d28d85d37b05b37790cbfd4c634818c05155a1"
+      },
+      {
+        "path": "content_download/newgrf/42531320-JP_Multiple_Units_JGR_JNR_JR-0.4.1.tar",
+        "bytes": 12513280,
+        "sha256": "7d1f281de7805188e2ddce93c1b8b274959a8d24d5cfd4ee805167fd08f3c54c"
+      },
+      {
+        "path": "content_download/newgrf/42531320-JP_Multiple_Units_JGR_JNR_JR-0.4.4.tar",
+        "bytes": 13557760,
+        "sha256": "5319210ad9d6d6add5593daa8827f341adc4756a7db70d997630d8546d13d091"
+      },
+      {
+        "path": "content_download/newgrf/42531320-JP_Multiple_Units_JGR_JNR_JR-0.4.5.tar",
+        "bytes": 16885760,
+        "sha256": "d6e68092cbb87e09dc6d60f7a7ec062d2698a41acf290d4d05abf93ab7604fe9"
+      },
+      {
+        "path": "content_download/newgrf/425f0101-Very_large_ships-0.1.tar",
+        "bytes": 20480,
+        "sha256": "86cbffd11a31e8132516004d2fdfe6f4ecfab060a31f78f783dea3ac52d2d782"
+      },
+      {
+        "path": "content_download/newgrf/43415000-OpenGFX_Airports-0.3.0.tar",
+        "bytes": 942080,
+        "sha256": "1335e1b66773daca2f7163c89cc485250be8534aee980242f8616a7dab682672"
+      },
+      {
+        "path": "content_download/newgrf/44440a01-av8_Aviators_Aircraft_Set-1.81.tar",
+        "bytes": 1873920,
+        "sha256": "4cb1396da5a2bedb8253608c4f87d9495760a64b6d51948a813e02a1e09f49ac"
+      },
+      {
+        "path": "content_download/newgrf/44440a01-av8_Aviators_Aircraft_Set-2.0.tar",
+        "bytes": 2283520,
+        "sha256": "c93e6d30eb84c2abd6d883671e37a0fb12dae9e96e3341b68c90d86c22e6053a"
+      },
+      {
+        "path": "content_download/newgrf/44440a01-av8_Aviators_Aircraft_Set-2.21.tar",
+        "bytes": 2498560,
+        "sha256": "e874f93b45e2413a5fcea177e5cd0db852b6ede14c2f93bed56386e14fea3e4c"
+      },
+      {
+        "path": "content_download/newgrf/44483031-JNR_ED75-1.0.tar",
+        "bytes": 51200,
+        "sha256": "80ffb8b912af7d3a051755bbffd244a4a42eb52332047cca543d9b503465d6f1"
+      },
+      {
+        "path": "content_download/newgrf/444e0400-VAST_Station_Tiles-0.2.0.tar",
+        "bytes": 102400,
+        "sha256": "a1da8784876a10ded1fde5b2e8c67e78d000c2176e8c840fc1514d8120b0a783"
+      },
+      {
+        "path": "content_download/newgrf/44501401-Japanese_Maglevs-3.1.tar",
+        "bytes": 184320,
+        "sha256": "6d68da50e47a972f00b73e5058917d1c570264aed5f0682e6934c6146aa5b461"
+      },
+      {
+        "path": "content_download/newgrf/44503000-Japanese_Tracks-3.2.tar",
+        "bytes": 1546240,
+        "sha256": "0dc998b4b94d350f3e27a0f20f2759515858ec9ac06e64a60ddfdf95dbba51eb"
+      },
+      {
+        "path": "content_download/newgrf/454e0202-Maglev_Track_Set_v2-2.5.tar",
+        "bytes": 225280,
+        "sha256": "da97653e166fad40cc12bb975878d55d65871e3d77aba1f114ea89ec5d88c5cf"
+      },
+      {
+        "path": "content_download/newgrf/454e0202-Maglev_Track_Set_v2-2.6.tar",
+        "bytes": 204800,
+        "sha256": "c7b9cd98329a0d7ce3ce85ea52e2b7980a338cf3d6d5531715b36b205aa22b27"
+      },
+      {
+        "path": "content_download/newgrf/454e0801-E001_Train_Suite_Shiki_shima-1.2.tar",
+        "bytes": 40960,
+        "sha256": "2a89d96ecf536eb57e549919c4d5fb2c71a76e12f74d9804194a206018684e0c"
+      },
+      {
+        "path": "content_download/newgrf/454e0e01-Industrial_Trackset-1.3.tar",
+        "bytes": 778240,
+        "sha256": "04b50f5f94fad849f5b6e01ddd96a2a0e30dc48e09512f3f0cdbb27bd450388e"
+      },
+      {
+        "path": "content_download/newgrf/454e0e01-Industrial_Trackset-1.5.tar",
+        "bytes": 757760,
+        "sha256": "e139f990c4611c227d3679e4935b23aa242862313673fd175e3bf692fded30f0"
+      },
+      {
+        "path": "content_download/newgrf/454e1301-Japanese_SusMon_Obsolete-1.02.tar",
+        "bytes": 102400,
+        "sha256": "4a41f3bf2d0b88db0a0dca777112e6d8807b0c3c645b0f094818a8be4a544c29"
+      },
+      {
+        "path": "content_download/newgrf/454e1301-Japanese_Suspended_Monorail_Set-1.0.tar",
+        "bytes": 112640,
+        "sha256": "64c9cce8cfe91540c4e153e645b1156546b517c99b05875eb61fd08379479d38"
+      },
+      {
+        "path": "content_download/newgrf/454e1302-Japanese_Suspended_Monorail_Set-1.1.tar",
+        "bytes": 102400,
+        "sha256": "6d1c780e1b5dd1c05034bfeab247eea3c7a47c802931539762c12fe9f060a483"
+      },
+      {
+        "path": "content_download/newgrf/454e1302-JP_Suspended_Monorails-1.2.1.tar",
+        "bytes": 143360,
+        "sha256": "6178e356691e1e707d4668328b3244a6d7099ffa05740ee294bbaae1fb668d12"
+      },
+      {
+        "path": "content_download/newgrf/454e1901-Future_Reality_Inspired_Maglevs-1.3.tar",
+        "bytes": 399360,
+        "sha256": "ec2ac8d0fbe00848c46de11886121d2b093cea1a83218df440e0621bb668e0aa"
+      },
+      {
+        "path": "content_download/newgrf/454e2001-Real_International_Maglev_Set-1.6.tar",
+        "bytes": 378880,
+        "sha256": "c086a6e024ecf620193e02d10681aba2ff78e01c697adcb863fabfa0f7c7cbc8"
+      },
+      {
+        "path": "content_download/newgrf/454e2201-Okinawa_Trainset-1.3.1.tar",
+        "bytes": 71680,
+        "sha256": "7982bf5605507e60757502be5127819083a115b8b17c1b7dc268e7672d6b387a"
+      },
+      {
+        "path": "content_download/newgrf/454e3701-Trackless_Trackset-1.2.tar",
+        "bytes": 184320,
+        "sha256": "b04f86c8db78a596bc1d635ee2859a76462435f1874e0d1b32691150dfacfdab"
+      },
+      {
+        "path": "content_download/newgrf/45520c00-Japanese_Town_Names-0.6.tar",
+        "bytes": 40960,
+        "sha256": "645f359354713e2519dd75ab95db38119f85144e8cea9712d1e2464768ad977f"
+      },
+      {
+        "path": "content_download/newgrf/45530500-Japanese_Stations-3.6.tar",
+        "bytes": 6287360,
+        "sha256": "bf894914a1b9be34140c45ba3d48931c1478545902095fbe136e3a295a56e291"
+      },
+      {
+        "path": "content_download/newgrf/474c0000-Japanese_Faces-3.0.tar",
+        "bytes": 163840,
+        "sha256": "fcdce113a86c198f14064389327655d2dc01d8497151ddb024ce192c8afba76a"
+      },
+      {
+        "path": "content_download/newgrf/4a430002-Industrial_Stations_Renewal-0.8.1.tar",
+        "bytes": 1484800,
+        "sha256": "fdd529bf783f046b3b09fa27259d6f20b5b70144e73d9f2f3e88c6d7768da296"
+      },
+      {
+        "path": "content_download/newgrf/4a430002-Industrial_Stations_Renewal-1.0.2.tar",
+        "bytes": 1218560,
+        "sha256": "17dc152e473c824754193c6ded5c246b166c13b828d60b22dde705c6ab3daf07"
+      },
+      {
+        "path": "content_download/newgrf/4a448807-Extreme_Industry_Set-0.6.2.tar",
+        "bytes": 5314560,
+        "sha256": "cc2f1c839563f8a4ef1ba8510a79eeac09ea2671ef5fcc028b2067b026887fae"
+      },
+      {
+        "path": "content_download/newgrf/4a44a1e1-JP_Engines_Wagons-0.12.3.tar",
+        "bytes": 2816000,
+        "sha256": "b58db73dfc6b7bd5990ef19c0200ed9844c118843c3188ffa3504109e389e918"
+      },
+      {
+        "path": "content_download/newgrf/4a44a1e1-JP_Engines_Wagons-0.12.4.tar",
+        "bytes": 3287040,
+        "sha256": "2a6d7d65851bcdfd26bb39645c240b1b17529d7845de51afc584217cb1e41f28"
+      },
+      {
+        "path": "content_download/newgrf/4a475281-Multi_Aspect_Signals-5.tar",
+        "bytes": 92160,
+        "sha256": "f2060955fe08e65759e77fa59cf052430a66804e7c333120311fbc7542b2f182"
+      },
+      {
+        "path": "content_download/newgrf/4a485401-Hokkaido_Trainset-1.0.tar",
+        "bytes": 1372160,
+        "sha256": "f18c53dd2ea3643ce014271d9cd3728e2c6ae4a150179a7696046a351a55a24d"
+      },
+      {
+        "path": "content_download/newgrf/4a4b4353-JP_Cargo_Stations-0.1.0.tar",
+        "bytes": 901120,
+        "sha256": "9d56389db2bcd63965b50aa47f5e50fc3fde3b3db7df8dd616ca4177e71d52a2"
+      },
+      {
+        "path": "content_download/newgrf/4a4b4735-JP_Bridges-0.7.tar",
+        "bytes": 870400,
+        "sha256": "4b222f7dc289fab66ba448f707d9520908cbaea76b183e6b9f9892d013007ceb"
+      },
+      {
+        "path": "content_download/newgrf/4a4b4735-JP_Bridges-0.8.tar",
+        "bytes": 870400,
+        "sha256": "862d2953d4d06befdeaa482d623ebf2482dac9d955fca13e5ab717d55c3f0cdc"
+      },
+      {
+        "path": "content_download/newgrf/4a505053-JP_Signal_Extension-1_0_0.tar",
+        "bytes": 92160,
+        "sha256": "516a08da4c2234a82b0c2b2364929484c562941e2092316c33e9df13bd827a35"
+      },
+      {
+        "path": "content_download/newgrf/4a544e45-Japanese_Town_Names_Extended-0.1.tar",
+        "bytes": 30720,
+        "sha256": "4daa6b3d664386429a6be716e776da2635e387824db5389f62ddafe981fa8921"
+      },
+      {
+        "path": "content_download/newgrf/4a545350-Japanese_Train_Set_Addon-1.4.0.tar",
+        "bytes": 378880,
+        "sha256": "0ebcd278578ccdffe45149697bd9d8c27275b5131d15ba5deee8f5a200951a31"
+      },
+      {
+        "path": "content_download/newgrf/4a595001-2CC_Bus_Set-v1_0.tar",
+        "bytes": 307200,
+        "sha256": "b76e66f7ec3caefb2cebd223c7af2eb153e80cf95d760427a24b74a54b80fdf2"
+      },
+      {
+        "path": "content_download/newgrf/4b523033-JP_Shinkansen-0.3.2.tar",
+        "bytes": 2027520,
+        "sha256": "5d2a06a0a9c255ba1b94a3e0b857b29765604b96acf78ce9d3b89e8179b008e3"
+      },
+      {
+        "path": "content_download/newgrf/4b523033-JP_Shinkansen-0.3.3.tar",
+        "bytes": 2191360,
+        "sha256": "58cf045b46bcae19f12558a398e75093b54e5e3446b6eab9244c6ca09e8104c7"
+      },
+      {
+        "path": "content_download/newgrf/4b523033-JP_Shinkansen-0.6.1.tar",
+        "bytes": 3010560,
+        "sha256": "7eb6b8ad8de525dee1bbf31c8dbcb3e1a9b1ee9fc5b8c3401c466b9de28094fa"
+      },
+      {
+        "path": "content_download/newgrf/4b523034-JP_Buildings-0.1.1.tar",
+        "bytes": 3850240,
+        "sha256": "5a2f20e943a2a6fa338750ed7feb3b6b31adc8661bcc773e42248980cc4de071"
+      },
+      {
+        "path": "content_download/newgrf/4b523036-JP_Trams-0.1.1.tar",
+        "bytes": 256000,
+        "sha256": "2bce024b4618d4cc470fdcdc37048cfa23e5914dc25bad04c98a70bc40675c4d"
+      },
+      {
+        "path": "content_download/newgrf/4b570101-KEIO_Railway_Set-3.0_beta_2.tar",
+        "bytes": 665600,
+        "sha256": "a7ac55cd53f57f35522d87e94e7e43f278ac17ce0544fd59930e4528ed0a7030"
+      },
+      {
+        "path": "content_download/newgrf/4d50006a-Ore_Unloader_Station-0.1.tar",
+        "bytes": 143360,
+        "sha256": "9b699d2f44334075d75e870fa2295d4fbfd1d3b9eb5aec1fe0cfe4a806df940e"
+      },
+      {
+        "path": "content_download/newgrf/4e434d41-NML_CAT_MARINE-1.tar",
+        "bytes": 30720,
+        "sha256": "a069d01023292158be53ebda9562ee65f577012aa556ceffa33e1b4722bd0df4"
+      },
+      {
+        "path": "content_download/newgrf/4e4d0324-2cc_Wagons_in_NML_2ccWIN-1.tar",
+        "bytes": 3604480,
+        "sha256": "3c6a75dadd89e896f0fdd590c602b6c9e58fe2f0d9dc91cc25c86b226968fcdf"
+      },
+      {
+        "path": "content_download/newgrf/4e4d0325-2cc_Rapid_Transit_For_Me-1.tar",
+        "bytes": 409600,
+        "sha256": "84ee717e92e3e96154adeee717e7608b96f8cae6352573aaeb32556a102860ee"
+      },
+      {
+        "path": "content_download/newgrf/51420101-Modular_Wider_Bridges_Set-003.tar",
+        "bytes": 225280,
+        "sha256": "fb2a68cdf677a7539ba77a304e3317109bbe8cf7cdbf740804f3e133c02930d2"
+      },
+      {
+        "path": "content_download/newgrf/52415608-RAV8_Rangless_Av8-1.00.tar",
+        "bytes": 2519040,
+        "sha256": "9168b7a6be81c8c610d5b0fadb7dcc0768c8d68d960a847eb0f20965456bee30"
+      },
+      {
+        "path": "content_download/newgrf/52453200-JapanSet_Landscape-3.1.tar",
+        "bytes": 675840,
+        "sha256": "a194ea92d21e88b8be3ad0c84bf6ad566bf4c99b5abe7285eea578ab991d5132"
+      },
+      {
+        "path": "content_download/newgrf/52453200-JapanSet_Landscape-3.2.tar",
+        "bytes": 757760,
+        "sha256": "5f7c644bedd7114c5ffddf847248183b719e8414c36c40e4c2fc1141fe00dff1"
+      },
+      {
+        "path": "content_download/newgrf/52453300-Japanese_Trees-3.0.tar",
+        "bytes": 235520,
+        "sha256": "7e26be8a30229ec6ca302f57c1da1456578bf6ca663d8b42327f8708dcbb63c7"
+      },
+      {
+        "path": "content_download/newgrf/52453400-Japanese_Buildings-3.1.tar",
+        "bytes": 1761280,
+        "sha256": "866f97f966b8c167dee70df4caef8c100ec32bee9202df118b06f740f9072893"
+      },
+      {
+        "path": "content_download/newgrf/52455400-City_stations-1.tar",
+        "bytes": 61440,
+        "sha256": "c02a5c4de8f8e5a3f9ca3ab1788aaa3b926576131a5d7aced546e68199b7b101"
+      },
+      {
+        "path": "content_download/newgrf/52571203-eGRVTS2-188.tar",
+        "bytes": 8550400,
+        "sha256": "ae1eb963e6c7638cdc0386c54c46eec3c97241ed334412bf048e1cc49aa920db"
+      },
+      {
+        "path": "content_download/newgrf/52571203-eGRVTS2-202.tar",
+        "bytes": 8529920,
+        "sha256": "ff57662b0a1f056b941038623e12f3a07aa99496b5dbdbe280f6a1b018dfdd2c"
+      },
+      {
+        "path": "content_download/newgrf/535a0d00-Japanese_Train_Set-2.1a.tar",
+        "bytes": 2037760,
+        "sha256": "13b25b608295514b92274d174e377e6409275e1714f26d163aaa7f03bca201bc"
+      },
+      {
+        "path": "content_download/newgrf/535a0d00-Japanese_Train_Set-3.3.tar",
+        "bytes": 3082240,
+        "sha256": "ce5d9f7fc6de1293ea6e10be4507f048221bae8c3a4620d0865616ef8efe465b"
+      },
+      {
+        "path": "content_download/newgrf/535a1000-Hankyu_Railway_Set-0.04.tar",
+        "bytes": 174080,
+        "sha256": "cc6d510e85763325c50fc1f5680e04a347dfe586dd508d01be553c0390e34c5f"
+      },
+      {
+        "path": "content_download/newgrf/54420101-Toei_Inter_connection_Add_on_Se-1.7_al.tar",
+        "bytes": 2406400,
+        "sha256": "b7d2e6e7c066136e375d7edb3c079118681e5274414acef6d0b5532b55b96f3c"
+      },
+      {
+        "path": "content_download/newgrf/544d0101-2cc_TrainsInNML-3.1.tar",
+        "bytes": 7464960,
+        "sha256": "7a0c04b7ab9c3fe0b239873ea61b131382496dcacb6628fa4ee82eabdac5d2fd"
+      },
+      {
+        "path": "content_download/newgrf/55464901-U_Bridges-1.5.tar",
+        "bytes": 788480,
+        "sha256": "d2638ec3c36c1843224f40f324496576c3aecb70cc4d74b86dfe3e4396017edf"
+      },
+      {
+        "path": "content_download/newgrf/55464989-U_RaTT-0.6.tar",
+        "bytes": 3399680,
+        "sha256": "e764a5bd43d315cf0c8e9c081e05d02b44b1b2d8986586b0d5f9a8dd11c2dfae"
+      },
+      {
+        "path": "content_download/newgrf/55464989-U_RaTT-0.8.tar",
+        "bytes": 3778560,
+        "sha256": "521814565287d615fdc50a7a8c2b935a9c9ce2adb5e0d0feb68a14ef3c620cf6"
+      },
+      {
+        "path": "content_download/newgrf/55464990-U_ReRMM_2-1.4a.tar",
+        "bytes": 4628480,
+        "sha256": "edfaa69655a233c9a4703523de4dc9ad0d8bdb03a85bca64e8c8334ce1a63a2a"
+      },
+      {
+        "path": "content_download/newgrf/55464990-U_ReRMM_2-1.6.tar",
+        "bytes": 4556800,
+        "sha256": "408433753020ed8455cb2ca77df490468c2d44c4c6dd618464bac7ed8227b97d"
+      },
+      {
+        "path": "content_download/newgrf/5753544e-Tokyo_Train_Stations_Names-2.tar",
+        "bytes": 40960,
+        "sha256": "9cfe9f0766409916554846de997657a96eddaf0d9617c505b6f02cda4c2c3249"
+      },
+      {
+        "path": "content_download/newgrf/57a50001-WAS_World_Airliners_Set-0.1.tar",
+        "bytes": 11264000,
+        "sha256": "d7cd04d82e9282647ae1fedb4a4e14669234bd5d0155e999e15a93778ab2461f"
+      },
+      {
+        "path": "content_download/newgrf/595aaa01-JP_Major_Private_Companies-2.0.3.tar",
+        "bytes": 5048320,
+        "sha256": "28a9ce40114ac48d5304de09ef39edb68ebdc9a92f0c38464b79af72989a9060"
+      },
+      {
+        "path": "content_download/newgrf/595aaa01-JP_Major_Private_Companies-2.1.1.tar",
+        "bytes": 7618560,
+        "sha256": "87b98777fcc62b6ce7260cd6308ca4f064092520cd0b65f5cbab3a5728296fb7"
+      },
+      {
+        "path": "content_download/newgrf/595aaa01-JP_Major_Private_Companies-2.3.0.tar",
+        "bytes": 9963520,
+        "sha256": "d73f99d5bf647178b893e5ce42cc32d7ab553189c53757bcabd169f521402308"
+      },
+      {
+        "path": "content_download/newgrf/595aaa01-JP_Major_Private_Companies-2.3.1.tar",
+        "bytes": 9963520,
+        "sha256": "50ca63eb57578e759444709821ba91718c41bdb5c6f05d78eab6ddd55b0ee480"
+      },
+      {
+        "path": "content_download/newgrf/595aaa01-JP_Metro-3.0.tar",
+        "bytes": 614400,
+        "sha256": "25b868e01f8099bf8ad70886ca73c82a067383dc94f20891655ec256d7190aa7"
+      },
+      {
+        "path": "content_download/newgrf/595aaa01-JP_Private_Companies-2.6.1.tar",
+        "bytes": 12072960,
+        "sha256": "01d55d55861774ad828fb707434af99ad729866b00be83ed254e762d549f065f"
+      },
+      {
+        "path": "content_download/newgrf/595aaa02-JP_Tracks-0.3.10.tar",
+        "bytes": 4044800,
+        "sha256": "1e7215dc5d7d52d538676decad9b6e9094730c2716ab38f0662044680276702e"
+      },
+      {
+        "path": "content_download/newgrf/5f5f0404-TIAS_All_Climate_Fix-0.1.tar",
+        "bytes": 40960,
+        "sha256": "a7d50637fb35ebf4071696a03df381793cb202f9b5f6372521ed02aec6cc636d"
+      },
+      {
+        "path": "content_download/newgrf/5f5f0409-JF_Japan_Themed_DualGauge_Rails-0.1.1.tar",
+        "bytes": 92160,
+        "sha256": "3b7ed33fa096d9f48ad976d3438d6313a7db2aa8c7f1d71f45c3b0090f7f661d"
+      },
+      {
+        "path": "content_download/newgrf/66724d49-Manual_Industries-2_r5.tar",
+        "bytes": 40960,
+        "sha256": "529ea85d8693f1987f06e007bb540cd352a5fff815b7657ba8bb6912aefdee66"
+      },
+      {
+        "path": "content_download/newgrf/6d6b77e0-Tokyo_Metro_Set-3.tar",
+        "bytes": 92160,
+        "sha256": "92b7439e316c628dfbaaf3235e7c37580180dab249d248e5f431f981ac1568ae"
+      },
+      {
+        "path": "content_download/newgrf/736c6602-Japanese_City_Names-1.tar",
+        "bytes": 61440,
+        "sha256": "eb8c5302aaf1097c67ddcf07aa90e61398028519d6ca86d4887dd871952f5ddc"
+      },
+      {
+        "path": "content_download/newgrf/74677563-Total_Bridge_Renewal_Japan-1.12.tar",
+        "bytes": 942080,
+        "sha256": "9af4ba175f7aef90263e06b74089df417282b89c5836f46888afdc2f990983bf"
+      },
+      {
+        "path": "content_download/newgrf/fbfb0010-2CC_Trams-0.9b.tar",
+        "bytes": 532480,
+        "sha256": "92d24c376b05bf9afaa0b161b35aa6b9618869604b0eddd8dca8141e18914d07"
+      },
+      {
+        "path": "content_download/newgrf/fbfb0010-2CC_Trams-0.9c.tar",
+        "bytes": 532480,
+        "sha256": "1c30db5ed8a91415ec97995bd667f5c6328cd52908364bb6525a9d6072e0a193"
+      },
+      {
+        "path": "lang/afrikaans.lng",
+        "bytes": 252638,
+        "sha256": "996231b9329156f05eaa1b362450fb82f7c45ea6bfa7bfd8c82cf8393c4af9ab"
+      },
+      {
+        "path": "lang/arabic_egypt.lng",
+        "bytes": 297258,
+        "sha256": "532d1374c95a892a065acdac8d65cbdc432406e3a09e9542853e3a413a55e776"
+      },
+      {
+        "path": "lang/basque.lng",
+        "bytes": 259856,
+        "sha256": "2993f50703764e3ef199139a0bf40c6514667c324cc74ce593a92773ff3daac1"
+      },
+      {
+        "path": "lang/belarusian.lng",
+        "bytes": 400745,
+        "sha256": "ba227ec3cf53d026aef7aaa60d0fc26386283f355702041a421ed254293c9e9c"
+      },
+      {
+        "path": "lang/brazilian_portuguese.lng",
+        "bytes": 286733,
+        "sha256": "2394038c7841e16e08270375990cf6e1a2504da0c6f9a172611b37c192f562ea"
+      },
+      {
+        "path": "lang/bulgarian.lng",
+        "bytes": 402432,
+        "sha256": "ddcdfc57720884d8e730df2471a6512050930f77cc1cc2a254ac4051af41d6ec"
+      },
+      {
+        "path": "lang/catalan.lng",
+        "bytes": 289566,
+        "sha256": "f9ad5c69c9b40f7da4e943e98ac606549f18d82fca266e20136929a1321b9552"
+      },
+      {
+        "path": "lang/chuvash.lng",
+        "bytes": 253672,
+        "sha256": "9a596fbada588198ddad1cf6af8882c3878dc17fcdd5f6c1c9f574c52f5c9676"
+      },
+      {
+        "path": "lang/croatian.lng",
+        "bytes": 265230,
+        "sha256": "06473345c77e14eaaf923bafaec2998100ae9f675797f5a322e81757c698f7ef"
+      },
+      {
+        "path": "lang/czech.lng",
+        "bytes": 283839,
+        "sha256": "254b515f994940d2208ae454693621652680551071419f16f775b5ac742e7f14"
+      },
+      {
+        "path": "lang/danish.lng",
+        "bytes": 260352,
+        "sha256": "6d3d062c993c7eaf5cb84b399e95a8418748aeec42824c2711c38e9af4053380"
+      },
+      {
+        "path": "lang/dutch.lng",
+        "bytes": 269518,
+        "sha256": "ddd64f14f60096e58c3086d154a65928440278da826208c1b8d6c248becaa012"
+      },
+      {
+        "path": "lang/english.lng",
+        "bytes": 250211,
+        "sha256": "6854ba4eae3b03f7be28194d1c8b91bf246f8b03bcadc42d315670d63ec6b09b"
+      },
+      {
+        "path": "lang/english_AU.lng",
+        "bytes": 249804,
+        "sha256": "56960f2a2e05b8202a47364d617a38db806631ac6fafcde95ad479ad40e24db2"
+      },
+      {
+        "path": "lang/english_US.lng",
+        "bytes": 250467,
+        "sha256": "f2eb458872a2d745f61f03ce3e84f7aaf7c55a21b8b6a6d1833d9c869162eca0"
+      },
+      {
+        "path": "lang/esperanto.lng",
+        "bytes": 266589,
+        "sha256": "cebb5141304e66b2dcaee8e1307e0880f0257b100859c3ac950b38ffb975a159"
+      },
+      {
+        "path": "lang/estonian.lng",
+        "bytes": 255353,
+        "sha256": "ba2fc4e6804d2355800cb13de92bc86e40848dd99b6d5c8570866975f715a59a"
+      },
+      {
+        "path": "lang/faroese.lng",
+        "bytes": 260152,
+        "sha256": "5f70a0a1328c36864f44d16778ef84b7abfdea7172882e7757f4900ab2d13fbb"
+      },
+      {
+        "path": "lang/finnish.lng",
+        "bytes": 271276,
+        "sha256": "55b7aced1264e81aeaf6a259755ca77bdb51d0659164d444e1b4cc8e3724f033"
+      },
+      {
+        "path": "lang/french.lng",
+        "bytes": 288471,
+        "sha256": "197e98bc612bc894c251578d7135ffc8233d4cfff8b4d4d00fdaa7c07e697488"
+      },
+      {
+        "path": "lang/frisian.lng",
+        "bytes": 253677,
+        "sha256": "e6b21941215b8d33d1cc7637c15232609d4369c9887b581fa9e8e15302fb5ca2"
+      },
+      {
+        "path": "lang/gaelic.lng",
+        "bytes": 295466,
+        "sha256": "8c035a963c264079058f21744c803f8ae9cb7be592148e88245f26846c2838e8"
+      },
+      {
+        "path": "lang/galician.lng",
+        "bytes": 293016,
+        "sha256": "87999b4929524c661250d3a646dc6a48d6ff3f6222b8c090a94377d744d8c668"
+      },
+      {
+        "path": "lang/german.lng",
+        "bytes": 289095,
+        "sha256": "610d9efd51aaa39ec0282d571c08bd192a34246d1981259f75a37f339193a61e"
+      },
+      {
+        "path": "lang/greek.lng",
+        "bytes": 444737,
+        "sha256": "ed727ba2e0ea790a451c625587244895b41bd0a6a8846c77532f6dc4c92a484d"
+      },
+      {
+        "path": "lang/hebrew.lng",
+        "bytes": 307902,
+        "sha256": "295dbca8a5cd8acac2a61998c4025a88df195a50d47142f9129e3ad9b5f4b2c4"
+      },
+      {
+        "path": "lang/hindi.lng",
+        "bytes": 265959,
+        "sha256": "aa5b4e7b2b74dd52fd71f4b209da097f9bdf06be875a95907820264e9bf50e15"
+      },
+      {
+        "path": "lang/hungarian.lng",
+        "bytes": 289676,
+        "sha256": "1229c185d0f4dbf5c5815d1b6120ea81a9d13ce875983fd76f25e920a4cf1073"
+      },
+      {
+        "path": "lang/icelandic.lng",
+        "bytes": 258968,
+        "sha256": "f4035d27135d95599b21e0236ad7d602bb9b59eca56767711a22d216265bee2c"
+      },
+      {
+        "path": "lang/ido.lng",
+        "bytes": 250116,
+        "sha256": "fce2c34bfbc59b89c0e2e64b7601f08df7d25b2839bedf71925a06ef7d0accd5"
+      },
+      {
+        "path": "lang/indonesian.lng",
+        "bytes": 266485,
+        "sha256": "939a10affcddca3e9c305c0fd2b6a2ef9a311069227ea59a0cb49ba658ebc98a"
+      },
+      {
+        "path": "lang/irish.lng",
+        "bytes": 284756,
+        "sha256": "062325f90164ce9febc977bcf746319bb9230b2dfae7ba4f8624b171d48d2c55"
+      },
+      {
+        "path": "lang/italian.lng",
+        "bytes": 285571,
+        "sha256": "d70c8edc3d1bdf9ebfa49aa73d639e03bf20b9eb8b841654c6b070c08393d956"
+      },
+      {
+        "path": "lang/japanese.lng",
+        "bytes": 313150,
+        "sha256": "0cc39a159b247a5f1a735ba00e8f2e7e9647e582651126b44e48d61ea5f51d95"
+      },
+      {
+        "path": "lang/korean.lng",
+        "bytes": 318630,
+        "sha256": "02b1f5820bae535b70bd8eb7c6a9a6688df063ab7558cd869df16224e2a7bc69"
+      },
+      {
+        "path": "lang/latin.lng",
+        "bytes": 264834,
+        "sha256": "d32415fec074524701440f6735c4183b22cbd5a5ff35d73dd2f83540e441ed00"
+      },
+      {
+        "path": "lang/latvian.lng",
+        "bytes": 281714,
+        "sha256": "b7c57cf5afdee56c9855cfac55424c987fdd0f6d36478b3827f4028df3f309b4"
+      },
+      {
+        "path": "lang/lithuanian.lng",
+        "bytes": 291919,
+        "sha256": "e70d6a4761d2befb556bd4c9077ff86ae36f461bd1db57885093153c25334463"
+      },
+      {
+        "path": "lang/luxembourgish.lng",
+        "bytes": 261899,
+        "sha256": "8a6c877a49dbf5d1aa98ba1566716d717964fbcb2f2749ca1bf2aa24a955cc5f"
+      },
+      {
+        "path": "lang/macedonian.lng",
+        "bytes": 266330,
+        "sha256": "150f5542653f6cbe5f6dcaa2debd999bbd001aa4ef2b445776115524f8748e7d"
+      },
+      {
+        "path": "lang/malay.lng",
+        "bytes": 261680,
+        "sha256": "e9036c7224cf010c7db2b15d460be89276b477ff3e02a411052316eca6f04a37"
+      },
+      {
+        "path": "lang/maltese.lng",
+        "bytes": 252068,
+        "sha256": "8506a41f76fa200850706483e325d14df3880da1a23ceff0bcb9478030e66fb9"
+      },
+      {
+        "path": "lang/maori.lng",
+        "bytes": 282689,
+        "sha256": "9be58621261b80e6573c7377cf57ec48983cbd5a94a87882a82b8c13897a06e2"
+      },
+      {
+        "path": "lang/marathi.lng",
+        "bytes": 264807,
+        "sha256": "c0c8a2805123ea632125d29ffff7bb5a5b856d4d64b3d09a4692f5c01e1ad1eb"
+      },
+      {
+        "path": "lang/norwegian_bokmal.lng",
+        "bytes": 259965,
+        "sha256": "4c833d28b11fe6d56e67cf7f2deefdc14ab19c7f05c2190fd35722edfab13025"
+      },
+      {
+        "path": "lang/norwegian_nynorsk.lng",
+        "bytes": 252057,
+        "sha256": "08e6174d5795a9e07d93fed05b3c74aa1a6be40baba4af30d14857f8f98bb345"
+      },
+      {
+        "path": "lang/persian.lng",
+        "bytes": 311052,
+        "sha256": "5e98e8b774e2f5e4141f0341f6f3c6df24a1e82b8e8e1dba434c1a31eca87de0"
+      },
+      {
+        "path": "lang/polish.lng",
+        "bytes": 285529,
+        "sha256": "a2f6c52969acc0cc07da92e51b65c9eab6287346b07736b26e7f51db46e8e390"
+      },
+      {
+        "path": "lang/portuguese.lng",
+        "bytes": 290094,
+        "sha256": "f6abde4d2510f357e92664016fd49ec1cd9999393b446369f97a608a8a72cb9c"
+      },
+      {
+        "path": "lang/romanian.lng",
+        "bytes": 283529,
+        "sha256": "8c2a6f1e506c45e5ab8994f723c7ac88a4367cdc18a5754a99fe51cf0189371f"
+      },
+      {
+        "path": "lang/russian.lng",
+        "bytes": 489806,
+        "sha256": "ef7ca25acd84161cd1817f08f4683f6a45c40953d2b4c5f04143b95146d6535e"
+      },
+      {
+        "path": "lang/serbian.lng",
+        "bytes": 267256,
+        "sha256": "7f4d897c917e488609fb360739e6496ce49bbb1b6ee6cb296e4eaf7ac6c7fae0"
+      },
+      {
+        "path": "lang/simplified_chinese.lng",
+        "bytes": 227581,
+        "sha256": "da1e1a155a265732fc70aa06b829a52e1edc32c003ebabde9ed1e2f82ec04553"
+      },
+      {
+        "path": "lang/slovak.lng",
+        "bytes": 269560,
+        "sha256": "171cf5175be9b81b8827c0115fbe9178f581798d9ee68c9ce5ad4e15f15c307e"
+      },
+      {
+        "path": "lang/slovenian.lng",
+        "bytes": 254364,
+        "sha256": "9ef4bcbe19f27f1be271eb80d53d592f0ac027e3f58a16109c66948f83064ca0"
+      },
+      {
+        "path": "lang/spanish.lng",
+        "bytes": 287593,
+        "sha256": "440f2a1f759b0ef2eefa73c299e15d17f7d66e904437a00a553bd941e0834815"
+      },
+      {
+        "path": "lang/spanish_MX.lng",
+        "bytes": 273956,
+        "sha256": "804d45d573cae15c05a0569b0be00e565e1156ece81086ccea6a73105df93ac1"
+      },
+      {
+        "path": "lang/swedish.lng",
+        "bytes": 265537,
+        "sha256": "b25099042e481270b8d3aff6dbaae2ad10b359734c714ca89af15d993752fb3d"
+      },
+      {
+        "path": "lang/tamil.lng",
+        "bytes": 466164,
+        "sha256": "1a295616204c7c96d5e09430b06497dc23926a2dbe6ae71b3d69f761bb25d6f8"
+      },
+      {
+        "path": "lang/thai.lng",
+        "bytes": 412469,
+        "sha256": "9f6430b89c1290931deae1d4aec553a0c7d2813410d382f92dfec48b20b5d581"
+      },
+      {
+        "path": "lang/traditional_chinese.lng",
+        "bytes": 233012,
+        "sha256": "384e7aa9bbf4e7af10cf5abff18b3ab242827c7b5439792175d345804d9ed745"
+      },
+      {
+        "path": "lang/turkish.lng",
+        "bytes": 270529,
+        "sha256": "05c8259e39e1627d82730967a2600fa2867f775e3d315e6b70995b3e0c72787e"
+      },
+      {
+        "path": "lang/ukrainian.lng",
+        "bytes": 394725,
+        "sha256": "f99b27664299f91bf0f44e1e9ffc4fd68e16844f9a2452db7e1712a0d250ce99"
+      },
+      {
+        "path": "lang/urdu.lng",
+        "bytes": 281188,
+        "sha256": "2432eb2babfdd0fb20ee9f024993683fb98b4dc0821459125010c39768132b89"
+      },
+      {
+        "path": "lang/vietnamese.lng",
+        "bytes": 297107,
+        "sha256": "09f1f0f94e0a6eca0a41a5e898281b8d66421a4697f72d381e7a330152bdff68"
+      },
+      {
+        "path": "lang/welsh.lng",
+        "bytes": 261239,
+        "sha256": "ed5bfc9b9403753aa48f90c1d8b3a00f3628e17d86ba2265c5eaa3ad3803506d"
+      }
+    ],
+    "asset_manifest_sha256": "d33950cb0b9ee328fc92db2877f55e55232df2a762941c18a10d9fd0573f68b5",
+    "asset_source": "C:\\Users\\bebe\\OneDrive\\\u30c9\u30ad\u30e5\u30e1\u30f3\u30c8\\OpenTTD",
+    "historical_assets_exact_match": null,
+    "historical_assets_note": "Archived run-resident asset junctions are dangling; current available assets frozen. Load warnings must be retained.",
+    "current_source_assets": true
+  },
+  "passenger_cases": 343,
+  "passenger_assertions": 1327171,
+  "product_ctest_passed": 556,
+  "product_ctest_total": 556,
+  "performance_runs": 7,
+  "performance_pair_ticks": 2048,
+  "detail_ticks": 512,
+  "routing_changes_after_performance": "None; only strengthen the same-service reboarding test and prepare copied diagnostic harnesses.",
+  "network_code_changes": "Copied null driver adds optional read-only progress diagnostics every 128 state ticks; identical routing code; GUI subsystem changed to console.",
+  "failed_attempts": [
+    "PowerShell 5 hash-recording failure after completion; excluded and all measurements restarted with PowerShell 7.",
+    "Initial loopback clients timed out under one-core/full-cache-off conditions; the inherited harness checked joins only and initially returned a false positive, which was rejected after reading connection logs.",
+    "Daily console schedule is unsupported; monthly schedule did not reach its trigger in the finite interval, so no client progress claim was accepted.",
+    "Read-only progress probe under one-core allocation reached the catch-up wait limit; not accepted as a pass."
+  ],
+  "metadata_note": "The first pruned build metadata listed an unused leftover baseline TU copy; its project compiled repository passenger_service_database.cpp. Source SHA above matches the detailed build and routing code used throughout.",
+  "archival_normalization": {
+    "description": "Trailing whitespace and final empty lines removed only; diagnostic values unchanged",
+    "original_sha256": {
+      "mp-server-console.txt": "d344e68feebddb0bf50f1fd7a35ee50ec696ed9603802a47a4e425d9127038d3",
+      "passenger-tests.log": "d4e09e91245979004fdcdf2e71f29ef7c474ab444eedd2903261b56fc20d0273",
+      "pruning-product-final.log": "12bb131d0b234ca323889277d2757685db123ad6c92f45cff3130dfebbd703e7"
+    }
+  },
+  "delivery_product_sha256": "3af0316dd1b27b0add49b2defc71e405e26a8797429d1357b2033f293a2f881c"
+}

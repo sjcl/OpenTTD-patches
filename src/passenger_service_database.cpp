@@ -817,6 +817,57 @@ PassengerServiceDatabase::JourneyPolicy PassengerServiceDatabase::CompilePolicy(
 PassengerPeriodicPlan PassengerServiceDatabase::Plan(CargoType cargo, StationID origin, StationID destination, StateTicks ready,
 		PassengerJourneyLimits limits, PassengerJourneyEvaluation evaluation, OrderListID excluded)
 {
+	return this->PlanInternal(cargo, origin, destination, ready, limits, evaluation, excluded, true);
+}
+
+PassengerPeriodicPlan PassengerServiceDatabase::PlanWithoutServicePruning(CargoType cargo, StationID origin, StationID destination, StateTicks ready,
+		PassengerJourneyLimits limits, PassengerJourneyEvaluation evaluation, OrderListID excluded)
+{
+	return this->PlanInternal(cargo, origin, destination, ready, limits, evaluation, excluded, false);
+}
+
+bool PassengerServiceDatabase::ServiceCannotImprove(const PassengerPeriodicTimetable &pattern, size_t boarding, CargoType cargo,
+		StationID destination, int64_t cost, bool transfer, int64_t best, const JourneyPolicy &policy, PassengerJourneyEvaluation evaluation)
+{
+	++this->diagnostic.service_bound_checks;
+	/* Waiting is relaxed to zero; a required interchange alone guarantees
+	 * minimum_transfer elapsed ticks and its nonnegative preference penalties.
+	 * These are cost bounds, never departure times or physical waiting claims. */
+	int64_t interchange = evaluation.minimum_transfer;
+	if (!AddTicks(interchange, evaluation.transfer_penalty) ||
+			!AddTicks(interchange, int64_t(evaluation.minimum_transfer) * evaluation.transfer_time_weight / 1000) ||
+			!AddTicks(interchange, int64_t(evaluation.minimum_transfer) * evaluation.waiting_weight / 1000)) return false;
+	if (transfer && !AddTicks(cost, interchange)) return true;
+	if (cost > best) return true;
+	const uint64_t mask = uint64_t{1} << cargo;
+	const auto &board = pattern.stops[boarding];
+	for (size_t step = 1; step < pattern.stops.size(); ++step) {
+		++this->diagnostic.service_bound_stops;
+		size_t index = (boarding + step) % pattern.stops.size();
+		const auto &alight = pattern.stops[index];
+		int64_t duration = alight.arrival - board.departure;
+		if (index <= boarding) duration += pattern.period;
+		int64_t lower = cost;
+		/* Arrival offsets increase around this one circuit. Once the ride
+		 * alone exceeds the incumbent, no later occurrence can improve it;
+		 * avoid both the remaining stop scan and reverse-bound lookups. */
+		if (!AddTicks(lower, duration) || lower > best) return true;
+		if (alight.alight & mask) {
+			/* The exact one-circuit ride includes intervening dwell, depots and
+			 * waypoints. Repeated stations remain distinct alighting occurrences.
+			 * Any continuation needs another ride, even onto the same service. */
+			if (AddTicks(lower, policy.DistanceLowerBound(alight.station)) &&
+					(alight.station == destination || AddTicks(lower, interchange)) && lower <= best) return false;
+		}
+		if (alight.forced & mask) break;
+	}
+	/* STRICT comparison: equal costs can still win the canonical tie. */
+	return true;
+}
+
+PassengerPeriodicPlan PassengerServiceDatabase::PlanInternal(CargoType cargo, StationID origin, StationID destination, StateTicks ready,
+		PassengerJourneyLimits limits, PassengerJourneyEvaluation evaluation, OrderListID excluded, bool prune_services)
+{
 	using Reason = PassengerPeriodicPlan::Reason;
 	PassengerPeriodicPlan result;
 	const auto started = std::chrono::steady_clock::now(); ++this->diagnostic.searches;
@@ -873,10 +924,10 @@ PassengerPeriodicPlan PassengerServiceDatabase::Plan(CargoType cargo, StationID 
 		std::map<StationID, std::vector<size_t>> frontiers;
 		using Item = std::tuple<int64_t, int64_t, StateTicks, size_t, StateTicks, OrderListID, VehicleOrderID, VehicleOrderID, size_t>;
 		std::priority_queue<Item, std::vector<Item>, std::greater<Item>> queue;
+		std::optional<int64_t> incumbent_cost; ///< Cost of an admitted complete label, independently of queue order.
 		int64_t omitted_bound = INT64_MAX;
 		auto bound = [&](StationID station, int64_t cost) {
-			const int64_t *lower = policy->LowerBound(station);
-			int64_t distance = lower != nullptr ? *lower : policy->unsettled_bound;
+			int64_t distance = policy->DistanceLowerBound(station);
 			if (!AddTicks(cost, distance)) return INT64_MAX;
 			return cost;
 		};
@@ -913,6 +964,7 @@ PassengerPeriodicPlan PassengerServiceDatabase::Plan(CargoType cargo, StationID 
 			constexpr size_t LABEL_BYTES = 1536; // vector overlap, queue, frontier map/vectors, reconstruction
 			if (result.memory > limits.memory_bytes || LABEL_BYTES > limits.memory_bytes - result.memory) { limited(Reason::Memory, lower); return; }
 			result.memory += LABEL_BYTES;
+			if (next.station == destination && (!incumbent_cost || next.cost < *incumbent_cost)) incumbent_cost = next.cost;
 			queue.emplace(lower, next.cost, next.time, next.rides, next.first.departure, next.first.service,
 				next.first.boarding_order, next.first.alighting_order, labels.size());
 			frontiers[next.station].push_back(labels.size()); labels.push_back(std::move(next));
@@ -948,6 +1000,15 @@ PassengerPeriodicPlan PassengerServiceDatabase::Plan(CargoType cargo, StationID 
 				const auto &pattern = service.timetable;
 				const auto &board = pattern.stops[ref.stop];
 				if (!(board.board & (uint64_t{1} << cargo))) continue;
+				/* Deterministic algorithmic work reduction. Bounds, like bound()
+				 * above, are not logical Work; skipped vehicle/slot/alighting visits
+				 * are not replayed. No cache presence or physical timing is consulted. */
+				if (prune_services && incumbent_cost && this->ServiceCannotImprove(pattern, ref.stop, cargo, destination,
+						current.cost, current.rides != 0, *incumbent_cost, *policy, evaluation)) {
+					++this->diagnostic.pruned_services;
+					this->diagnostic.pruned_vehicle_visits += service.vehicles.size();
+					continue;
+				}
 				int64_t earliest = current.time.base();
 				if (current.rides && !AddTicks(earliest, evaluation.minimum_transfer)) { observe(Reason::Evaluation); continue; }
 				std::optional<StateTicks> departure;
