@@ -38,7 +38,7 @@ def observe_calls(text, function, metric):
                 raise ValueError(f'Unclosed call to {function}')
             depth += (text[end] == '(') - (text[end] == ')')
             end += 1
-        wrapped = f'JourneyProfile::Observe("{metric}", {text[start:end]})'
+        wrapped = f'JourneyProfile::Observe<"{metric}">({text[start:end]})'
         text = text[:start] + wrapped + text[end:]
         cursor = start + len(wrapped)
 
@@ -50,6 +50,8 @@ def prepare(source, build, mode):
     texts = {name: (source / "src" / name).read_text(encoding="utf-8") for name in
              ["console_cmds.cpp", "passenger_service_database.cpp", "passenger_journey_active.cpp", "cargopacket.cpp",
               "passenger_journey_schedule.cpp", "passenger_routing.cpp"]}
+    if (source / 'src/passenger_departure_index.cpp').exists():
+        texts['passenger_departure_index.cpp'] = (source / 'src/passenger_departure_index.cpp').read_text(encoding='utf-8')
     console = texts["console_cmds.cpp"]
     # The opt-in benchmark already has the archived NewGRF continuation.
     if 'Command<Commands::Pause>::Post(PauseMode::Error, false);' not in console:
@@ -69,36 +71,87 @@ def prepare(source, build, mode):
 #include <map>
 #include <string>
 #include <cstdio>
+#include <vector>
 namespace JourneyProfile {
-struct Metric { uint64_t calls = 0, ns = 0; };
+struct Metric { uint64_t calls = 0, ns = 0, exclusive_ns = 0; };
 inline std::map<std::string, Metric, std::less<>> metrics;
+struct TickSample { uint64_t simulation_us, journey_us; };
+struct Checkpoint { size_t ticks; std::map<std::string, Metric, std::less<>> values; };
+inline std::vector<TickSample> samples;
+inline std::vector<Checkpoint> checkpoints;
 inline bool enabled = false;
+inline uint64_t generation = 0;
 inline Metric &Get(const char *name) {
     auto it = metrics.find(name);
     if (it == metrics.end()) it = metrics.emplace(name, Metric{}).first;
     return it->second;
 }
 inline void Count(const char *name) { if (enabled) ++Get(name).calls; }
-template <typename T> inline T Observe(const char *name, T value) { Count(name); return value; }
+template <size_t N> struct Name {
+    char value[N];
+    constexpr Name(const char (&text)[N]) { for (size_t i = 0; i < N; ++i) value[i] = text[i]; }
+};
+template <Name name> inline Metric &Site() {
+    static Metric *metric = nullptr;
+    static uint64_t epoch = UINT64_MAX;
+    if (epoch != generation) { metric = &Get(name.value); epoch = generation; }
+    return *metric;
+}
+template <Name name> inline void Count() { if (enabled) ++Site<name>().calls; }
+template <Name name, typename T> inline T Observe(T value) { Count<name>(); return value; }
+struct Scope;
+inline thread_local Scope *active_scope = nullptr;
 struct Scope {
     Metric *metric;
+    Scope *parent = nullptr;
+    uint64_t children_ns = 0;
     std::chrono::steady_clock::time_point start;
-    explicit Scope(const char *name) : metric(enabled ? &Get(name) : nullptr) {
-        if (metric) { ++metric->calls; start = std::chrono::steady_clock::now(); }
+    explicit Scope(Metric *value) : metric(value) {
+        if (metric) { ++metric->calls; parent = active_scope; active_scope = this; start = std::chrono::steady_clock::now(); }
     }
-    ~Scope() { if (metric) metric->ns += std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - start).count(); }
+    ~Scope() {
+        if (!metric) return;
+        uint64_t elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - start).count();
+        metric->ns += elapsed;
+        metric->exclusive_ns += elapsed - children_ns;
+        active_scope = parent;
+        if (parent) parent->children_ns += elapsed;
+    }
 };
-inline void Reset() { metrics.clear(); enabled = true; }
+template <Name name> struct FixedScope : Scope {
+    FixedScope() : Scope(enabled ? &Site<name>() : nullptr) {}
+};
+inline void Reset() { ++generation; metrics.clear(); samples.clear(); samples.reserve(8192); checkpoints.clear(); enabled = true; }
+inline void Tick(uint64_t simulation_us, uint64_t journey_us) {
+    if (!enabled) return;
+    samples.push_back({simulation_us, journey_us});
+    if (samples.size() % 1024 == 0) checkpoints.push_back({samples.size(), metrics});
+}
 inline void Dump() {
     FILE *f = std::fopen("detail-scopes.json", "w");
     if (f == nullptr) return;
-    std::fputs("{\"schema_version\":1,\"kind\":\"detail\",\"clock\":\"steady_clock elapsed on simulation thread\",\"metrics\":{", f);
+    std::fputs("{\"schema_version\":1,\"kind\":\"detail\",\"clock\":\"steady_clock elapsed on simulation thread\",\"exclusive_definition\":\"elapsed minus observed nested scopes; not OS CPU time\",\"metrics\":{", f);
     bool first = true;
     for (const auto &[name, metric] : metrics) {
-        std::fprintf(f, "%s\"%s\":{\"calls\":%llu,\"inclusive_ns\":%llu}", first ? "" : ",", name.c_str(),
-            static_cast<unsigned long long>(metric.calls), static_cast<unsigned long long>(metric.ns)); first = false;
+        std::fprintf(f, "%s\"%s\":{\"calls\":%llu,\"inclusive_ns\":%llu,\"exclusive_ns\":%llu}", first ? "" : ",", name.c_str(),
+            static_cast<unsigned long long>(metric.calls), static_cast<unsigned long long>(metric.ns), static_cast<unsigned long long>(metric.exclusive_ns)); first = false;
     }
-    std::fputs("}}\n", f); std::fclose(f);
+    std::fputs("},\"tick_samples\":[", f);
+    first = true;
+    for (const auto &sample : samples) {
+        std::fprintf(f, "%s[%llu,%llu]", first ? "" : ",", static_cast<unsigned long long>(sample.simulation_us), static_cast<unsigned long long>(sample.journey_us)); first = false;
+    }
+    std::fputs("],\"checkpoints\":[", f);
+    first = true;
+    for (const auto &checkpoint : checkpoints) {
+        std::fprintf(f, "%s{\"completed_ticks\":%llu,\"metrics\":{", first ? "" : ",", static_cast<unsigned long long>(checkpoint.ticks)); first = false;
+        bool initial = true;
+        for (const auto &[name, metric] : checkpoint.values) {
+            std::fprintf(f, "%s\"%s\":{\"calls\":%llu,\"inclusive_ns\":%llu,\"exclusive_ns\":%llu}", initial ? "" : ",", name.c_str(), static_cast<unsigned long long>(metric.calls), static_cast<unsigned long long>(metric.ns), static_cast<unsigned long long>(metric.exclusive_ns)); initial = false;
+        }
+        std::fputs("}}", f);
+    }
+    std::fputs("]}\n", f); std::fclose(f);
 }
 }
 '''
@@ -110,39 +163,66 @@ inline void Dump() {
             '\tconst auto stats = operation == "tick" ? GetPassengerJourneyTickDiagnostic() : GetPassengerJourneyTotalDiagnostic();',
             '\tJourneyProfile::Dump();\n\tconst auto stats = operation == "tick" ? GetPassengerJourneyTickDiagnostic() : GetPassengerJourneyTotalDiagnostic();')
         db = texts["passenger_service_database.cpp"]
-        db = function_scope(db, "PassengerPeriodicPlan PassengerServiceDatabase::Plan(", "timed.plan")
+        merged = 'PassengerPeriodicPlan PassengerServiceDatabase::PlanInternal(' in db
+        arena = '\t\tauto forward = [&](auto &scratch) {' in db
+        if arena:
+            # Whitespace only, in the measurement copy: the common search body
+            # moved into a generic lambda but keeps the same observation anchors.
+            begin = db.index('\t\tauto forward = [&](auto &scratch) {')
+            end = db.index('\n\t\t};\n\t\tif (legacy_structures)', begin)
+            lines = db[begin:end].splitlines()
+            if any(line and not line.startswith('\t\t\t') for line in lines[1:]):
+                raise ValueError('Arena forward body indentation changed')
+            db = db[:begin] + '\n'.join([lines[0], *(line[1:] if line else line for line in lines[1:])]) + db[end:]
+        signature = 'PassengerPeriodicPlan PassengerServiceDatabase::PlanInternal(' if merged else 'PassengerPeriodicPlan PassengerServiceDatabase::Plan('
+        db = function_scope(db, signature, "timed.plan")
+        if merged:
+            db = function_scope(db, 'const PassengerDepartureIndex *PassengerServiceDatabase::DepartureIndex(', 'timed.departure_index_access')
+            db = function_scope(db, 'bool PassengerServiceDatabase::ServiceCannotImprove(', 'timed.service_bound')
         db = function_scope(db, "PassengerServiceDatabase::JourneyPolicy PassengerServiceDatabase::CompilePolicy(", "timed.reverse_lower_bound")
         db = function_scope(db, "std::optional<StateTicks> PassengerPeriodicTimetable::NextDeparture(", "timed.next_departure")
         db = function_scope(db, "bool PassengerServiceDatabase::IsCurrent(", "loading.intent_current")
         db = function_scope(db, "bool ValidatePassengerServiceRide(", "loading.live_vehicle_validation")
+        db = function_scope(db, 'void PassengerServiceDatabase::Tick(', 'database.tick')
+        db = function_scope(db, 'void PassengerServiceDatabase::Publish(', 'database.publication')
         db = replace(db, '\t\tauto limited = [&](Reason reason, int64_t lower) {',
                      '\t\tauto limited = [&](Reason reason, int64_t lower) {\n'
                      '\t\t\tif (reason == Reason::Work) JourneyProfile::Count("timed.forward_work_stops");\n'
                      '\t\t\tif (reason == Reason::Labels) JourneyProfile::Count("timed.forward_label_stops");\n'
                      '\t\t\tif (reason == Reason::Memory) JourneyProfile::Count("timed.forward_memory_stops");')
-        db = replace(db, '\t\tstruct Label {', '\t\tJourneyProfile::Scope forward_scope{"timed.forward"};\n\t\tstruct Label {')
+        forward_anchor = '\t\tauto forward = [&](auto &scratch) {' if arena else '\t\tstruct Label {'
+        db = replace(db, forward_anchor, '\t\tJourneyProfile::Scope forward_scope{"timed.forward"};\n' + forward_anchor)
         db = replace(db, '\t\tauto insert = [&](Label next) {', '\t\tauto insert = [&](Label next) {\n\t\t\tJourneyProfile::Count("timed.label_attempts");')
         db = replace(db, '\t\t\t\tconst auto &other = labels[index];', '\t\t\t\tJourneyProfile::Count("timed.dominance_checks");\n\t\t\t\tconst auto &other = labels[index];')
         db = replace(db, '\t\t\tqueue.emplace(lower, next.cost,', '\t\t\tJourneyProfile::Count("timed.queue_push");\n\t\t\tqueue.emplace(lower, next.cost,')
         db = replace(db, '\t\t\tsize_t index = std::get<8>(queue.top()); queue.pop();', '\t\t\tJourneyProfile::Count("timed.queue_pop");\n\t\t\tsize_t index = std::get<8>(queue.top()); queue.pop();')
         db = replace(db, '\t\t\tfor (const auto &ref : row->second) {', '\t\t\tfor (const auto &ref : row->second) {\n\t\t\t\tJourneyProfile::Count("timed.candidate_service_visits");')
-        db = replace(db, '\t\t\t\tfor (const auto &vehicle : service.vehicles) {', '\t\t\t\tJourneyProfile::Scope phase_scope{"timed.vehicle_phase_scan"};\n\t\t\t\tfor (const auto &vehicle : service.vehicles) {\n\t\t\t\t\tJourneyProfile::Count("timed.vehicle_phase_visits");')
-        # Explicit scope boundary avoids counting the following alighting loop.
-        db = replace(db, '\t\t\t\tJourneyProfile::Scope phase_scope', '\t\t\t\t{ JourneyProfile::Scope phase_scope')
+        if merged:
+            db = replace(db, '\t\t\t\tstd::optional<StateTicks> departure;', '\t\t\t\tstd::optional<StateTicks> departure;\n\t\t\t\t{ JourneyProfile::Scope departure_scope{"timed.departure_evaluation"};')
+            db = replace(db, '\t\t\t\tif (phases != nullptr) {', '\t\t\t\tif (phases != nullptr) {\n\t\t\t\t\tJourneyProfile::Scope indexed_scope{"timed.departure_index_lookup"};')
+            db = replace(db, '\t\t\t\t\tfor (const Vehicle *live : loading_station->loading_vehicles) {', '\t\t\t\t\tfor (const Vehicle *live : loading_station->loading_vehicles) {\n\t\t\t\t\t\tJourneyProfile::Count("timed.index_loading_vehicle_visits");')
+            db = replace(db, '\t\t\t\t\t++this->diagnostic.departure_index_fallbacks;', '\t\t\t\t\t++this->diagnostic.departure_index_fallbacks;\n\t\t\t\t\tJourneyProfile::Scope phase_scope{"timed.vehicle_phase_scan"};')
+            db = replace(db, '\n\t\t\t\t\tfor (const auto &vehicle : service.vehicles) {', '\n\t\t\t\t\tfor (const auto &vehicle : service.vehicles) {\n\t\t\t\t\t\tJourneyProfile::Count("timed.vehicle_phase_visits");')
+            db = replace(db, '\t\t\t\t\t\t\tconst Vehicle *live = Vehicle::GetIfValid(vehicle.id);', '\t\t\t\t\t\t\tJourneyProfile::Count("timed.live_vehicle_reads");\n\t\t\t\t\t\t\tconst Vehicle *live = Vehicle::GetIfValid(vehicle.id);')
+        else:
+            db = replace(db, '\t\t\t\tfor (const auto &vehicle : service.vehicles) {', '\t\t\t\tJourneyProfile::Scope phase_scope{"timed.vehicle_phase_scan"};\n\t\t\t\tfor (const auto &vehicle : service.vehicles) {\n\t\t\t\t\tJourneyProfile::Count("timed.vehicle_phase_visits");')
+            db = replace(db, '\t\t\t\tJourneyProfile::Scope phase_scope', '\t\t\t\t{ JourneyProfile::Scope phase_scope')
+            db = replace(db, '\t\t\t\t\t\tconst Vehicle *live = Vehicle::GetIfValid(vehicle.id);', '\t\t\t\t\t\tJourneyProfile::Count("timed.live_vehicle_reads");\n\t\t\t\t\t\tconst Vehicle *live = Vehicle::GetIfValid(vehicle.id);')
+        # Explicit boundary excludes the subsequent alighting loop.
         db = replace(db, '\t\t\t\tif (result.work >= limits.work) { limited(Reason::Work, 0); break; }', '\t\t\t\t}\n\t\t\t\tif (result.work >= limits.work) { limited(Reason::Work, 0); break; }')
-        db = replace(db, '\t\t\t\t\t\tconst Vehicle *live = Vehicle::GetIfValid(vehicle.id);', '\t\t\t\t\t\tJourneyProfile::Count("timed.live_vehicle_reads");\n\t\t\t\t\t\tconst Vehicle *live = Vehicle::GetIfValid(vehicle.id);')
         # Count actual short-circuit evaluations, preserving the boolean expression.
-        start, end = db.index('PassengerPeriodicPlan PassengerServiceDatabase::Plan('), db.index('PassengerPlannerComparison ComparePassengerPlanners(')
+        start, end = db.index(signature), db.index('PassengerPlannerComparison ComparePassengerPlanners(')
         plan = db[start:end]
         plan = replace(plan, 'auto spend = [&]() {', 'auto spend = [&](const char *stage) {')
         plan = replace(plan, 'if (result.work >= limits.work) { limited(Reason::Work, 0); return false; }',
                        'if (result.work >= limits.work) { JourneyProfile::Count(stage); limited(Reason::Work, 0); return false; }')
         plan = replace(plan, 'if (!spend()) return;', 'if (!spend("timed.work_stop.dominance")) return;')
-        for indent, stage in [(3, 'queue'), (4, 'candidate_service'), (5, 'vehicle_phase'), (7, 'dispatch_slot'), (5, 'alighting')]:
+        for indent, stage in [(3, 'queue'), (4, 'candidate_service'), (6 if merged else 5, 'vehicle_phase'), (8 if merged else 7, 'dispatch_slot'), (5, 'alighting')]:
             # Vehicle and alighting have equal indentation; use their adjacent anchors.
             if stage == 'vehicle_phase':
-                old = 'if (!spend()) break;\n\t\t\t\t\tif (!vehicle.capacity[cargo])'
-                new = 'if (!spend("timed.work_stop.vehicle_phase")) break;\n\t\t\t\t\tif (!vehicle.capacity[cargo])'
+                following = '++this->diagnostic.vehicle_candidates;' if merged else 'if (!vehicle.capacity[cargo])'
+                old = 'if (!spend()) break;\n' + '\t' * indent + following
+                new = 'if (!spend("timed.work_stop.vehicle_phase")) break;\n' + '\t' * indent + following
             elif stage == 'alighting':
                 old = 'if (!spend()) break;\n\t\t\t\t\tsize_t stop_index'
                 new = 'if (!spend("timed.work_stop.alighting")) break;\n\t\t\t\t\tsize_t stop_index'
@@ -156,6 +236,8 @@ inline void Dump() {
         db = db[:start] + plan + db[end:]
         texts["passenger_service_database.cpp"] = db
         active = texts["passenger_journey_active.cpp"]
+        active = replace(active, '\t++diagnostic.journey_histogram[std::min<size_t>(2047, diagnostic.journey_microseconds / 1000)];',
+                         '\t++diagnostic.journey_histogram[std::min<size_t>(2047, diagnostic.journey_microseconds / 1000)];\n\tJourneyProfile::Tick(microseconds, diagnostic.journey_microseconds);')
         for signature, name in [
             ("uint32_t PassengerOdFallbackContext::Distance(", "fallback.distance"),
             ("bool PassengerJourneyBoardingContext::ValidateServiceRide(", "loading.intent_and_live_ride"),
@@ -163,8 +245,12 @@ inline void Dump() {
             ("size_t StationCargoList::RoutePassengerJourneys(", "loading.waiting_scan")]:
             active = function_scope(active, signature, name)
         active = replace(active, '\t\tif (event_binding == this->bindings.end()) {', '\t\tif (event_binding == this->bindings.end()) {\n\t\t\tJourneyProfile::Scope binding_scope{"fallback.node_binding"};')
-        active = replace(active, '\t\t\tfor (NodeID node = 0; matches && node < graph->Size(); ++node) matches = (*resident_binding->second.nodes)[node] == std::pair((*graph)[node].Station(), valid_node(node));',
-            '\t\t\t{ JourneyProfile::Scope validate_scope{"fallback.node_binding_validation"};\n\t\t\tfor (NodeID node = 0; matches && node < graph->Size(); ++node) { JourneyProfile::Count("fallback.node_binding_nodes"); matches = (*resident_binding->second.nodes)[node] == std::pair((*graph)[node].Station(), valid_node(node)); } }')
+        if 'if (matches && validate_resident_bindings)' in active:
+            active = replace(active, '\t\t\tif (matches && validate_resident_bindings) {', '\t\t\tif (matches && validate_resident_bindings) {\n\t\t\t\tJourneyProfile::Scope validate_scope{"fallback.node_binding_validation"};')
+            active = replace(active, '\t\t\t\t\t++checked;', '\t\t\t\t\tJourneyProfile::Count("fallback.node_binding_nodes");\n\t\t\t\t\t++checked;')
+        else:
+            active = replace(active, '\t\t\tfor (NodeID node = 0; matches && node < graph->Size(); ++node) matches = (*resident_binding->second.nodes)[node] == std::pair((*graph)[node].Station(), valid_node(node));',
+                '\t\t\t{ JourneyProfile::Scope validate_scope{"fallback.node_binding_validation"};\n\t\t\tfor (NodeID node = 0; matches && node < graph->Size(); ++node) { JourneyProfile::Count("fallback.node_binding_nodes"); matches = (*resident_binding->second.nodes)[node] == std::pair((*graph)[node].Station(), valid_node(node)); } }')
         active = replace(active, '\t\t\tif (!matches) {', '\t\t\tif (!matches) {\n\t\t\t\tJourneyProfile::Scope rebuild_scope{"fallback.node_binding_rebuild"};')
         active = replace(active, '\t\tif (resident != resident_distances.end()) {', '\t\tif (resident != resident_distances.end()) {\n\t\t\tJourneyProfile::Scope reuse_scope{"fallback.cache_reuse"};')
         active = replace(active, '\t\t\tauto built = std::make_shared<ReverseIndex>();', '\t\t\tJourneyProfile::Scope reverse_scope{"fallback.reverse_index"};\n\t\t\tauto built = std::make_shared<ReverseIndex>();')
@@ -192,6 +278,18 @@ inline void Dump() {
         routing = replace(routing, '\tconst Station *st = Station::GetIfValid(station);',
                           '\tJourneyProfile::Count("loading.live_station_reads");\n\tconst Station *st = Station::GetIfValid(station);')
         texts["passenger_routing.cpp"] = routing
+        if 'passenger_departure_index.cpp' in texts:
+            index = texts['passenger_departure_index.cpp']
+            index = function_scope(index, 'std::optional<StateTicks> PassengerDepartureIndex::Next(', 'timed.indexed_successor')
+            index = function_scope(index, 'PassengerDepartureIndex::PassengerDepartureIndex(', 'timed.departure_index_build')
+            index = replace(index, '\tfor (const auto &v : service.vehicles) {',
+                '\tfor (const auto &v : service.vehicles) {\n\t\tJourneyProfile::Count("timed.index_build_vehicle_visits");')
+            index = function_scope(index, 'size_t PassengerDepartureIndex::Find(', 'timed.index_tree_find')
+            index = replace(index, 'return phase.remainder < value;',
+                'JourneyProfile::Count("timed.index_remainder_comparisons"); return phase.remainder < value;')
+            index = replace(index, 'return value < this->phases[index].base;',
+                'JourneyProfile::Count("timed.index_start_comparisons"); return value < this->phases[index].base;')
+            texts['passenger_departure_index.cpp'] = index
         changed = list(texts)
     project = build / "openttd_lib.vcxproj"
     project_text = project.read_text(encoding="utf-8-sig")
@@ -202,6 +300,10 @@ inline void Dump() {
             for function, metric in [('Station::GetIfValid', 'live.station_get_if_valid'), ('Station::Get', 'live.station_get'),
                                      ('Station::IsValidID', 'live.station_is_valid')]:
                 text = observe_calls(text, function, metric)
+        if mode == 'detail':
+            text = re.sub(r'JourneyProfile::Count\("([^"]+)"\)', r'JourneyProfile::Count<"\1">()', text)
+            text = re.sub(r'JourneyProfile::Scope (\w+)\{"([^"]+)"\}', r'JourneyProfile::FixedScope<"\2"> \1', text)
+            text = re.sub(r'JourneyProfile::Observe\("([^"]+)", ', r'JourneyProfile::Observe<"\1">(', text)
         # Absolute includes let copied TUs keep the real source's relative includes.
         text = re.sub(r'#include "([^"]+)"',
                       lambda m: '#include "' + (source / "src" / m[1]).as_posix() + '"' if (source / "src" / m[1]).is_file() else m[0], text)
@@ -218,6 +320,7 @@ inline void Dump() {
     diff = subprocess.check_output(['git', '-C', str(source), 'diff', 'HEAD', '--', 'src', 'cmake', 'CMakeLists.txt'])
     (output / "instrumentation.json").write_text(json.dumps({"mode": mode, "files": hashes,
         "source_revision": revision, "source_diff_sha256": hashlib.sha256(diff).hexdigest(),
+        "profile_header_sha256": hashlib.sha256((output / 'profile.h').read_bytes()).hexdigest() if mode == 'detail' else None,
         "instrumenter_sha256": hashlib.sha256(pathlib.Path(__file__).read_bytes()).hexdigest()}, indent=2), encoding="utf-8")
 
 

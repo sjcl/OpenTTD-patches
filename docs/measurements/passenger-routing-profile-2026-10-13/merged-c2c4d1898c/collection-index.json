@@ -1,0 +1,138 @@
+{
+  "schema_version": 1,
+  "runs": [
+    {
+      "id": "off-1",
+      "label": "current",
+      "kind": "minimal",
+      "source_directory": "build-journey-profile\\merged-c2c4d1898c-minimal\\off-1",
+      "archive_directory": "current-minimal-off-1",
+      "raw_console_sha256": "26e5d16eaa55f9d15b2dcc7bce3f7402dfb66f1f79a0bc9cc406e818289553c2",
+      "archived_console_sha256": "26e5d16eaa55f9d15b2dcc7bce3f7402dfb66f1f79a0bc9cc406e818289553c2",
+      "final_save_sha256_verified_at_collection": "d0284173fc475efb46decfd621d9d3f417b21eb28fa68b0bc3b427ef117d95b7"
+    },
+    {
+      "id": "on-1",
+      "label": "current",
+      "kind": "minimal",
+      "source_directory": "build-journey-profile\\merged-c2c4d1898c-minimal\\on-1",
+      "archive_directory": "current-minimal-on-1",
+      "raw_console_sha256": "52936128d7682f12586d0b1471d4b52da54e8400f847a51d5f48a227559abd28",
+      "archived_console_sha256": "52936128d7682f12586d0b1471d4b52da54e8400f847a51d5f48a227559abd28",
+      "final_save_sha256_verified_at_collection": "c8d4323412fdf2e85e53d30eda98d7815a639691a62f25f47b2cfeb3c8c7f2a9"
+    },
+    {
+      "id": "cold-1",
+      "label": "current",
+      "kind": "minimal",
+      "source_directory": "build-journey-profile\\merged-c2c4d1898c-minimal\\cold-1",
+      "archive_directory": "current-minimal-cold-1",
+      "raw_console_sha256": "5b4965aa20d5d80f8ca497c2e8d5d1358e5c8b7678b447b0ec91698ad0ea18ad",
+      "archived_console_sha256": "5b4965aa20d5d80f8ca497c2e8d5d1358e5c8b7678b447b0ec91698ad0ea18ad",
+      "final_save_sha256_verified_at_collection": "c8d4323412fdf2e85e53d30eda98d7815a639691a62f25f47b2cfeb3c8c7f2a9"
+    },
+    {
+      "id": "cold-2",
+      "label": "current",
+      "kind": "minimal",
+      "source_directory": "build-journey-profile\\merged-c2c4d1898c-minimal\\cold-2",
+      "archive_directory": "current-minimal-cold-2",
+      "raw_console_sha256": "f6b8bb88ba26eaf7cb8f7528665fde0245d0ba94405cbbb386fc47e412203ee5",
+      "archived_console_sha256": "f6b8bb88ba26eaf7cb8f7528665fde0245d0ba94405cbbb386fc47e412203ee5",
+      "final_save_sha256_verified_at_collection": "c8d4323412fdf2e85e53d30eda98d7815a639691a62f25f47b2cfeb3c8c7f2a9"
+    },
+    {
+      "id": "on-2",
+      "label": "current",
+      "kind": "minimal",
+      "source_directory": "build-journey-profile\\merged-c2c4d1898c-minimal\\on-2",
+      "archive_directory": "current-minimal-on-2",
+      "raw_console_sha256": "c6f2f854dd9463f84110f9366d0be5b67f868728743316e91c6d08bf097bca63",
+      "archived_console_sha256": "c6f2f854dd9463f84110f9366d0be5b67f868728743316e91c6d08bf097bca63",
+      "final_save_sha256_verified_at_collection": "c8d4323412fdf2e85e53d30eda98d7815a639691a62f25f47b2cfeb3c8c7f2a9"
+    },
+    {
+      "id": "off-2",
+      "label": "current",
+      "kind": "minimal",
+      "source_directory": "build-journey-profile\\merged-c2c4d1898c-minimal\\off-2",
+      "archive_directory": "current-minimal-off-2",
+      "raw_console_sha256": "8506f28973e2fe428defd17125f7b18e340d491142128c4e5a4a650bfc36f250",
+      "archived_console_sha256": "8506f28973e2fe428defd17125f7b18e340d491142128c4e5a4a650bfc36f250",
+      "final_save_sha256_verified_at_collection": "d0284173fc475efb46decfd621d9d3f417b21eb28fa68b0bc3b427ef117d95b7"
+    },
+    {
+      "id": "on-1",
+      "label": "current",
+      "kind": "detail",
+      "source_directory": "build-journey-profile\\merged-c2c4d1898c-detail-exclusive\\on-1",
+      "archive_directory": "current-detail-on-1",
+      "raw_console_sha256": "8fac291d823efa7d59a880eb38805bf234282205233892ec99f093178c250163",
+      "archived_console_sha256": "8fac291d823efa7d59a880eb38805bf234282205233892ec99f093178c250163",
+      "final_save_sha256_verified_at_collection": "c8d4323412fdf2e85e53d30eda98d7815a639691a62f25f47b2cfeb3c8c7f2a9"
+    },
+    {
+      "id": "off-1",
+      "label": "current-repeat",
+      "kind": "minimal",
+      "source_directory": "build-journey-profile\\merged-c2c4d1898c-minimal-repeat\\off-1",
+      "archive_directory": "current-repeat-minimal-off-1",
+      "raw_console_sha256": "b0d099b917dd227c3e7321ad4481b36a5731e0b8b15ed7d93442f68ba682314b",
+      "archived_console_sha256": "b0d099b917dd227c3e7321ad4481b36a5731e0b8b15ed7d93442f68ba682314b",
+      "final_save_sha256_verified_at_collection": "d0284173fc475efb46decfd621d9d3f417b21eb28fa68b0bc3b427ef117d95b7"
+    },
+    {
+      "id": "on-1",
+      "label": "current-repeat",
+      "kind": "minimal",
+      "source_directory": "build-journey-profile\\merged-c2c4d1898c-minimal-repeat\\on-1",
+      "archive_directory": "current-repeat-minimal-on-1",
+      "raw_console_sha256": "c91d248bd19a5f14ba509da8a3cd94e2edde1ca33b910690c4f660d080c0c914",
+      "archived_console_sha256": "c91d248bd19a5f14ba509da8a3cd94e2edde1ca33b910690c4f660d080c0c914",
+      "final_save_sha256_verified_at_collection": "c8d4323412fdf2e85e53d30eda98d7815a639691a62f25f47b2cfeb3c8c7f2a9"
+    },
+    {
+      "id": "cold-1",
+      "label": "current-repeat",
+      "kind": "minimal",
+      "source_directory": "build-journey-profile\\merged-c2c4d1898c-minimal-repeat\\cold-1",
+      "archive_directory": "current-repeat-minimal-cold-1",
+      "raw_console_sha256": "16d60f649cbc53e168dc6b2b600616dd5a923cc2f2d7a7b0a81ace4745ddcf6f",
+      "archived_console_sha256": "16d60f649cbc53e168dc6b2b600616dd5a923cc2f2d7a7b0a81ace4745ddcf6f",
+      "final_save_sha256_verified_at_collection": "c8d4323412fdf2e85e53d30eda98d7815a639691a62f25f47b2cfeb3c8c7f2a9"
+    },
+    {
+      "id": "cold-2",
+      "label": "current-repeat",
+      "kind": "minimal",
+      "source_directory": "build-journey-profile\\merged-c2c4d1898c-minimal-repeat\\cold-2",
+      "archive_directory": "current-repeat-minimal-cold-2",
+      "raw_console_sha256": "78aa04b266df18cea0a0e08af84bdc487f3a3274f0733e299a035ed7c3e9941c",
+      "archived_console_sha256": "78aa04b266df18cea0a0e08af84bdc487f3a3274f0733e299a035ed7c3e9941c",
+      "final_save_sha256_verified_at_collection": "c8d4323412fdf2e85e53d30eda98d7815a639691a62f25f47b2cfeb3c8c7f2a9"
+    },
+    {
+      "id": "on-2",
+      "label": "current-repeat",
+      "kind": "minimal",
+      "source_directory": "build-journey-profile\\merged-c2c4d1898c-minimal-repeat\\on-2",
+      "archive_directory": "current-repeat-minimal-on-2",
+      "raw_console_sha256": "c5cd4186c0170b578515241988801ec7db9e74c7843dd28f07436b24cea3e395",
+      "archived_console_sha256": "c5cd4186c0170b578515241988801ec7db9e74c7843dd28f07436b24cea3e395",
+      "final_save_sha256_verified_at_collection": "c8d4323412fdf2e85e53d30eda98d7815a639691a62f25f47b2cfeb3c8c7f2a9"
+    },
+    {
+      "id": "off-2",
+      "label": "current-repeat",
+      "kind": "minimal",
+      "source_directory": "build-journey-profile\\merged-c2c4d1898c-minimal-repeat\\off-2",
+      "archive_directory": "current-repeat-minimal-off-2",
+      "raw_console_sha256": "ea8e4a40a10f07a405bb6cf5b42bf3d26939657d102456cca79f36d74356110d",
+      "archived_console_sha256": "ea8e4a40a10f07a405bb6cf5b42bf3d26939657d102456cca79f36d74356110d",
+      "final_save_sha256_verified_at_collection": "d0284173fc475efb46decfd621d9d3f417b21eb28fa68b0bc3b427ef117d95b7"
+    }
+  ],
+  "source_summary_sha256": "bf6289e25ce8a01b00b1bddfc5a19827f2c29a4e48e54e3694a3ba17039e4c83",
+  "note": "Save/asset/exe files remain outside Git. Text/JSON is LF normalized; raw source and archived summary/console hashes are distinct. --existing-summary reuses recorded validation.",
+  "archived_summary_sha256": "7ff543cca31bb748a062a4e902073b2984971413e2b17683dce77545591114d9"
+}

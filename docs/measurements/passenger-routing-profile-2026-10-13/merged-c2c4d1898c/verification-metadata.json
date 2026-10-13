@@ -1,0 +1,64 @@
+{
+  "schema_version": 1,
+  "source_revision": "c2c4d1898c3a38a091ff224c5be660ede72238f7",
+  "main_label": "current-repeat",
+  "accepted_runs": 13,
+  "main_runs": 6,
+  "all_runs_valid": true,
+  "all_manifests_complete": true,
+  "detail_matches_minimal_full_save_and_logical_signature": true,
+  "enabled_and_cold_save_sha256": "c8d4323412fdf2e85e53d30eda98d7815a639691a62f25f47b2cfeb3c8c7f2a9",
+  "enabled_and_cold_minimal_plus_detail_runs": 9,
+  "tick_samples": 8192,
+  "detail_windows": 8,
+  "cpp_validation": {
+    "cases": 351,
+    "assertions": 1429274,
+    "filter": "[passenger]~[.benchmark]"
+  },
+  "python_validation": {
+    "tests": 23,
+    "status": "passed"
+  },
+  "validation_logs": {
+    "passenger-detail-tests.log": {
+      "raw_source_sha256": "0eed1231b3c151808580ed10d85f8dbbb1c43994f88a6cd4123d6602bf014608",
+      "archived_lf_sha256": "73eb8c2ddadb7420ca86f8bc3ac86c5a9e2aa3303cb6db7d981a66d6e0055095"
+    },
+    "python-tests.log": {
+      "raw_source_sha256": "f083a6dcde7671aa98672da0d3a6a36fd6bb96a5464dffd16967d0259dcc5441",
+      "archived_lf_sha256": "57ebfe8866116d03fa0a48be0ee9a6e15bb686f59af7895fa61f2157038ef32f"
+    }
+  },
+  "runner_source_at_collection": {
+    "file": "runner-source-at-collection.txt",
+    "sha256": "ee872e88b91a5c2ad7261f3d322896b1c20146d6ba2f8b1add22c0f5d0d3f437",
+    "note": "Evidence snapshot, not a relocated runnable script. Delivered Run-Profile.py adds lock waiting before package hashing and records idle controls; simulation/harness behavior is unchanged."
+  },
+  "idle_control_at_collection": {
+    "wait_timeout_seconds": 3600,
+    "quiet_interval_seconds": 90,
+    "lock_wait_note": "PowerShell waited for the existing owner to release the lock before the detail and repeat launches. Existing executions were not stopped."
+  },
+  "work_stop_profile": {
+    "observed_forward_work_stops": 172271,
+    "observed_spend_failure_locations": {
+      "alighting": 58968,
+      "candidate_service": 235,
+      "dominance": 35060,
+      "queue": 66731,
+      "vehicle_phase": 5269,
+      "dispatch_slot": 0
+    },
+    "derived_post_departure_work_limit_check": 6008,
+    "derivation": "PlanInternal has two Work stop paths: spend() failure, and the post-departure work-limit check. Subtract observed spend locations from observed limited(Work) calls. Repeated stops are not unique OD outcomes or a partition of Work consumed.",
+    "source_file_sha256": "ee940b6b256de2ec3469d9eee839b1a51c06cda86c422efd95f255d4e0af9cac"
+  },
+  "limits": [
+    "CPU clock and power-state time series were not collected; early run means drifted by 20-23 percent.",
+    "Elapsed scopes are not OS exclusive CPU samples.",
+    "Node-binding full validation is disabled by default; zero is observed nonexecution.",
+    "Historical NewGRF package identity is unknown; identical frozen assets were used for the 604ce99389 and c2c4d1898c measurements.",
+    "Cross-commit full-save SHA differs; logical diagnostics match. Same-commit enabled/cold full-save SHA matches."
+  ]
+}

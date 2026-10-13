@@ -1,0 +1,80 @@
+{
+  "schema_version": 1,
+  "status": "measured",
+  "results": [
+    {
+      "label": "current",
+      "phase": "initial_8192",
+      "valid_runs": 2,
+      "ranking": [
+        {
+          "scope": "timed_forward_and_cache_other",
+          "mean_ms_per_tick": 8.387198669433594,
+          "rank": 1
+        },
+        {
+          "scope": "timed_reverse_cold",
+          "mean_ms_per_tick": 4.303744567871094,
+          "rank": 2
+        },
+        {
+          "scope": "remaining_journey",
+          "mean_ms_per_tick": 2.5989235839843747,
+          "rank": 3
+        },
+        {
+          "scope": "schedule_query_inclusive",
+          "mean_ms_per_tick": 0.1589019775390625,
+          "rank": 4
+        },
+        {
+          "scope": "database_tick_inclusive",
+          "mean_ms_per_tick": 0.058231201171875,
+          "rank": 5
+        }
+      ],
+      "attribution": "existing steady_clock elapsed scopes on simulation thread; corroborate fine-grained targets with detail/sampling",
+      "remaining_journey_note": "Residual of inclusive Journey minus disjoint top-level scopes, not a named function or exclusive CPU sample."
+    },
+    {
+      "label": "current-repeat",
+      "phase": "initial_8192",
+      "valid_runs": 2,
+      "ranking": [
+        {
+          "scope": "timed_forward_and_cache_other",
+          "mean_ms_per_tick": 7.405826538085938,
+          "rank": 1
+        },
+        {
+          "scope": "timed_reverse_cold",
+          "mean_ms_per_tick": 3.912754089355469,
+          "rank": 2
+        },
+        {
+          "scope": "remaining_journey",
+          "mean_ms_per_tick": 2.3090180664062485,
+          "rank": 3
+        },
+        {
+          "scope": "schedule_query_inclusive",
+          "mean_ms_per_tick": 0.13439111328125,
+          "rank": 4
+        },
+        {
+          "scope": "database_tick_inclusive",
+          "mean_ms_per_tick": 0.05251019287109375,
+          "rank": 5
+        }
+      ],
+      "attribution": "existing steady_clock elapsed scopes on simulation thread; corroborate fine-grained targets with detail/sampling",
+      "remaining_journey_note": "Residual of inclusive Journey minus disjoint top-level scopes, not a named function or exclusive CPU sample."
+    }
+  ],
+  "notes": [
+    "NextDeparture call count alone does not establish CPU share.",
+    "Detail timers and counters perturb hot loops and never enter this ranking.",
+    "Database Tick includes publication time; publication_us is a child, not a disjoint ranked entry.",
+    "Fallback Distance and waiting/boarding scopes overlap the Journey parents and are not added as disjoint entries."
+  ]
+}

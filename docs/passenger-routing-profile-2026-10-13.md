@@ -1,5 +1,11 @@
 # JourneyPlannerの再測定と比較基盤
 
+最新の `jgrpp-ya`（`c2c4d1898c`）の再測定は完了した。[統合後の報告](passenger-routing-profile-c2c4d1898c-2026-10-13.md)と[JSON集計](measurements/passenger-routing-profile-2026-10-13/merged-c2c4d1898c/summary.json)を参照。環境変動を確認した先行6ラン、追加6ラン、独立した詳細1ランを保存し、追加6ランの基準値はoff **17.244** / on **32.347** / cold **52.115 ms/tick**。以下の未測定記録は初回の基盤整備時点のもの。
+
+以下の測定未実施の記録は、初回の基盤整備時点（`a58d472382`）のもの。統合後の `604ce99389` を使う再測定では、同じ入力セーブと固定した資産を使用し、`--cache-off-scope all` で共有ODポリシー・次発インデックス・Fallback resident cacheを無効化する条件を追加した。`--wait-idle-seconds 3600 --idle-grace-seconds 90` は既存のビルド・テスト・ゲームを終了させずに待つ。測定中に競合が始まった場合は、こちらの測定だけを中断してそのランを除外する。
+
+`604ce99389` の再測定は6ラン完走し、[測定報告](passenger-routing-profile-604ce99389-2026-10-13.md)と[JSON集計](measurements/passenger-routing-profile-2026-10-13/merged-604ce99389/summary.json)へ保存した。
+
 ベースは `jgrpp-ya` の `a58d472382f85c63fe9114888d71d7d189c45572`、作業ブランチは `test/passenger-routing-profile`。通常車庫Wait修正を含む。製品ソース・経路選択・RNG・Work予算・保存形式の変更はない。変更はこの文書と `measurements/passenger-routing-profile-2026-10-13/` 内のスクリプト・診断証拠に限定した。
 
 **現時点の実マップ測定は0ラン。** 最小計測版と詳細計測版を構築し、最終詳細カウンターを有効にした旅客回帰は **321 cases / 977976 assertions** 成功した。Pythonの証拠解析・比較条件・順位付け・観測ラッパーの検証は11件成功した。
@@ -32,7 +38,7 @@
 
 `minimal` はconsoleのコピーへ既存1msヒストグラムのp50・bucket出力を追加する。シミュレーション中のタイマーやhot loopのカウンターを増やさない。既存の `passenger_journey_stats` の観測コストは含むので、診断を完全に除いた製品速度ではない。
 
-`detail` は独立したコピー6翻訳単位に観測を加え、`detail-scopes.json` を出力する。ロード後のconsole `reset` で観測を開始する。結果は以下の範囲で利用できる。
+`detail` は独立した翻訳単位のコピーに観測を加え、`detail-scopes.json` を出力する（旧ベース6個、次発インデックスを含む統合後7個）。ロード後のconsole `reset` で観測を開始する。統合後は各tickの時間サンプルと1024 ticksごとの累積カウンターも出力する。各区間の差分を集計するが、区間の番号だけで安定状態とは判定しない。結果は以下の範囲で利用できる。
 
 | 項目 | 取得元・範囲 |
 |---|---|
@@ -89,7 +95,7 @@ python "$taskTools/Run-Profile.py" run --package "$taskBuild/package" --binary "
 ```powershell
 python "$taskTools/Enable-Test-Observer.py" $taskBuild
 cmake --build $taskBuild --config Release --target openttd_test --parallel 8
-& "$taskBuild/Release/openttd_test.exe" '[passenger]' --reporter compact
+& "$taskBuild/Release/openttd_test.exe" '[passenger]~[.benchmark]' --reporter compact
 python "$taskTools/Test-Profile.py"
 ```
 

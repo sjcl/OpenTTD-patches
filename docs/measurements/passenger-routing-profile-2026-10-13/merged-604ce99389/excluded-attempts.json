@@ -1,0 +1,164 @@
+{
+  "schema_version": 1,
+  "attempts": [
+    {
+      "source_manifest": "build-journey-profile\\merged-604ce99389-minimal\\manifest.json",
+      "manifest_sha256": "49618bf4c71bf9800eee3b039536d37fcf1d2e48eeaca52b3d319c165a6160d4",
+      "revision": "604ce993892479656a2c5ba2fbd311cb19c5d896",
+      "status": "failed",
+      "error": "Invalid run off-1; see manifest and harness-output.txt",
+      "runs": [
+        {
+          "id": "off-1",
+          "mode": "off",
+          "repetition": 1,
+          "directory": "off-1",
+          "started_utc": "2026-10-13T07:56:01.418504+00:00",
+          "returncode": 1,
+          "contamination": [
+            {
+              "utc": "2026-10-13T07:58:02.275300+00:00",
+              "processes": [
+                "cmake:16468"
+              ]
+            },
+            {
+              "utc": "2026-10-13T07:58:10.893258+00:00",
+              "processes": [
+                "cmake:16468"
+              ]
+            }
+          ],
+          "final_save_sha256": null
+        }
+      ],
+      "timings_accepted": false
+    },
+    {
+      "source_manifest": "build-journey-profile\\merged-604ce99389-minimal-quiet\\manifest.json",
+      "manifest_sha256": "640d0a7c5e294d31f64729edfcee1267fc78e29f555b30767c015d67f42975bd",
+      "revision": "604ce993892479656a2c5ba2fbd311cb19c5d896",
+      "status": "failed",
+      "error": "Invalid run off-1; see manifest and harness-output.txt",
+      "runs": [
+        {
+          "id": "off-1",
+          "mode": "off",
+          "repetition": 1,
+          "directory": "off-1",
+          "started_utc": "2026-10-13T08:19:02.115094+00:00",
+          "returncode": 1,
+          "contamination": [
+            {
+              "utc": "2026-10-13T08:20:52.463283+00:00",
+              "processes": [
+                "cmake:2196",
+                "MSBuild:95428",
+                "cl:132084",
+                "cl:136468",
+                "cl:7444",
+                "cl:94032",
+                "cl:27572",
+                "cl:11884",
+                "cl:27260",
+                "cl:29312",
+                "cl:44844",
+                "cl:2896",
+                "cl:133500",
+                "cl:112564",
+                "cl:142228",
+                "cl:113564",
+                "cl:136024"
+              ]
+            },
+            {
+              "utc": "2026-10-13T08:21:01.753782+00:00",
+              "processes": [
+                "cmake:2196",
+                "MSBuild:95428",
+                "cl:25384"
+              ]
+            }
+          ],
+          "final_save_sha256": null
+        }
+      ],
+      "timings_accepted": false
+    },
+    {
+      "source_manifest": "build-journey-profile\\merged-604ce99389-minimal-final\\manifest.json",
+      "manifest_sha256": "0d47e1973d8ce017dcf2da456b476a62a0d45c79f02f93a0ae46612c5ed988c0",
+      "revision": "604ce993892479656a2c5ba2fbd311cb19c5d896",
+      "status": "failed",
+      "error": "Invalid run off-1; see manifest and harness-output.txt",
+      "runs": [
+        {
+          "id": "off-1",
+          "mode": "off",
+          "repetition": 1,
+          "directory": "off-1",
+          "started_utc": "2026-10-13T08:23:42.668971+00:00",
+          "returncode": 1,
+          "contamination": [
+            {
+              "utc": "2026-10-13T08:24:44.522712+00:00",
+              "processes": [
+                "cmake:7660",
+                "MSBuild:130980"
+              ]
+            },
+            {
+              "utc": "2026-10-13T08:24:53.531472+00:00",
+              "processes": [
+                "cmake:67288",
+                "MSBuild:127500"
+              ]
+            }
+          ],
+          "final_save_sha256": null
+        }
+      ],
+      "timings_accepted": false
+    },
+    {
+      "source_manifest": "build-journey-profile\\merged-604ce99389-minimal-exclusive\\manifest.json",
+      "manifest_sha256": "d1309a6d18653b1051e4bb84d926e7db39aba41d798f1379d155eca3729f4852",
+      "revision": "604ce993892479656a2c5ba2fbd311cb19c5d896",
+      "status": "failed",
+      "error": "Invalid run off-1; see manifest and harness-output.txt",
+      "runs": [
+        {
+          "id": "off-1",
+          "mode": "off",
+          "repetition": 1,
+          "directory": "off-1",
+          "started_utc": "2026-10-13T08:42:49.990788+00:00",
+          "returncode": 1,
+          "contamination": [
+            {
+              "utc": "2026-10-13T08:45:48.473492+00:00",
+              "processes": [
+                "cmake:28964",
+                "MSBuild:77120"
+              ]
+            },
+            {
+              "utc": "2026-10-13T08:45:57.302709+00:00",
+              "processes": [
+                "cmake:10224",
+                "MSBuild:116460",
+                "cl:104088",
+                "cl:113040",
+                "cl:77112",
+                "cl:54860"
+              ]
+            }
+          ],
+          "final_save_sha256": null
+        }
+      ],
+      "timings_accepted": false
+    }
+  ],
+  "note": "Competing process detected; partial timings were never accepted. Only our measurement game was aborted by the runner."
+}

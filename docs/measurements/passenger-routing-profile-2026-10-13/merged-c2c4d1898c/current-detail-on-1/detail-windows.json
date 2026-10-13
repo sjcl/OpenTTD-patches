@@ -1,0 +1,3418 @@
+[
+  {
+    "first_ordinal": 1,
+    "last_ordinal": 1024,
+    "kind": "detail",
+    "simulation": {
+      "mean_us": 44146.1416015625,
+      "max_us": 97707,
+      "p50_us": 43478,
+      "p95_us": 61495,
+      "p99_us": 73674
+    },
+    "journey": {
+      "mean_us": 18799.380859375,
+      "max_us": 72786,
+      "p50_us": 18065,
+      "p95_us": 34143,
+      "p99_us": 45106
+    },
+    "metrics": {
+      "loading.packet_stage": {
+        "calls": 10727,
+        "inclusive_ns": 605883500,
+        "inclusive_ms_per_tick": 0.59168310546875,
+        "exclusive_ns": 142221300,
+        "exclusive_ms_per_tick": 0.13888798828125
+      },
+      "timed.live_vehicle_reads": {
+        "calls": 3351,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.queue_push": {
+        "calls": 9808097,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.work_stop.candidate_service": {
+        "calls": 27,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "live.station_get": {
+        "calls": 351,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.vehicle_phase_visits": {
+        "calls": 3882,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.forward_work_stops": {
+        "calls": 14402,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "loading.waiting_reinserted_packets": {
+        "calls": 31765,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.reverse_lower_bound": {
+        "calls": 10831,
+        "inclusive_ns": 5150247700,
+        "inclusive_ms_per_tick": 5.02953876953125,
+        "exclusive_ns": 5150247700,
+        "exclusive_ms_per_tick": 5.02953876953125
+      },
+      "schedule.wait_estimate": {
+        "calls": 2398,
+        "inclusive_ns": 1857400,
+        "inclusive_ms_per_tick": 0.0018138671875,
+        "exclusive_ns": 1857400,
+        "exclusive_ms_per_tick": 0.0018138671875
+      },
+      "loading.waiting_scan": {
+        "calls": 21481,
+        "inclusive_ns": 16663235200,
+        "inclusive_ms_per_tick": 16.272690625,
+        "exclusive_ns": 285597800,
+        "exclusive_ms_per_tick": 0.2789041015625
+      },
+      "loading.can_board": {
+        "calls": 233678,
+        "inclusive_ns": 45440300,
+        "inclusive_ms_per_tick": 0.04437529296875,
+        "exclusive_ns": 10425500,
+        "exclusive_ms_per_tick": 0.01018115234375
+      },
+      "timed.forward_label_stops": {
+        "calls": 150,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "live.station_get_if_valid": {
+        "calls": 10512167,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "loading.station_facilities": {
+        "calls": 2047406,
+        "inclusive_ns": 91561600,
+        "inclusive_ms_per_tick": 0.089415625,
+        "exclusive_ns": 91561600,
+        "exclusive_ms_per_tick": 0.089415625
+      },
+      "live.station_is_valid": {
+        "calls": 8685226,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.work_stop.alighting": {
+        "calls": 4893,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "fallback.distance": {
+        "calls": 803056,
+        "inclusive_ns": 2371931600,
+        "inclusive_ms_per_tick": 2.316339453125,
+        "exclusive_ns": 423182200,
+        "exclusive_ms_per_tick": 0.4132638671875
+      },
+      "loading.live_vehicle_validation": {
+        "calls": 12299,
+        "inclusive_ns": 9427100,
+        "inclusive_ms_per_tick": 0.00920615234375,
+        "exclusive_ns": 4936400,
+        "exclusive_ms_per_tick": 0.004820703125
+      },
+      "timed.departure_index_lookup": {
+        "calls": 5245652,
+        "inclusive_ns": 1696750200,
+        "inclusive_ms_per_tick": 1.6569826171875,
+        "exclusive_ns": 410011800,
+        "exclusive_ms_per_tick": 0.4004021484375
+      },
+      "loading.waiting_packet_visits": {
+        "calls": 1017978,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.indexed_successor": {
+        "calls": 5245652,
+        "inclusive_ns": 1282539200,
+        "inclusive_ms_per_tick": 1.2524796875,
+        "exclusive_ns": 408435000,
+        "exclusive_ms_per_tick": 0.3988623046875
+      },
+      "loading.intent_current": {
+        "calls": 288930,
+        "inclusive_ns": 17328900,
+        "inclusive_ms_per_tick": 0.01692275390625,
+        "exclusive_ns": 17328900,
+        "exclusive_ms_per_tick": 0.01692275390625
+      },
+      "database.tick": {
+        "calls": 1024,
+        "inclusive_ns": 147169900,
+        "inclusive_ms_per_tick": 0.14372060546875,
+        "exclusive_ns": 77594500,
+        "exclusive_ms_per_tick": 0.07577587890625
+      },
+      "timed.live_station_checks": {
+        "calls": 32768,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.service_bound": {
+        "calls": 2725129,
+        "inclusive_ns": 219161500,
+        "inclusive_ms_per_tick": 0.21402490234375,
+        "exclusive_ns": 219161500,
+        "exclusive_ms_per_tick": 0.21402490234375
+      },
+      "timed.index_loading_vehicle_visits": {
+        "calls": 4209661,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.departure_index_build": {
+        "calls": 2371,
+        "inclusive_ns": 6704900,
+        "inclusive_ms_per_tick": 0.00654775390625,
+        "exclusive_ns": 6704900,
+        "exclusive_ms_per_tick": 0.00654775390625
+      },
+      "loading.waiting_reinsert": {
+        "calls": 21481,
+        "inclusive_ns": 3488700,
+        "inclusive_ms_per_tick": 0.00340693359375,
+        "exclusive_ns": 3488700,
+        "exclusive_ms_per_tick": 0.00340693359375
+      },
+      "timed.index_start_comparisons": {
+        "calls": 12407720,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "fallback.node_binding": {
+        "calls": 15177,
+        "inclusive_ns": 7045000,
+        "inclusive_ms_per_tick": 0.0068798828125,
+        "exclusive_ns": 6772100,
+        "exclusive_ms_per_tick": 0.00661337890625
+      },
+      "timed.candidate_service_visits": {
+        "calls": 5956797,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.forward": {
+        "calls": 14914,
+        "inclusive_ns": 10667526500,
+        "inclusive_ms_per_tick": 10.41750634765625,
+        "exclusive_ns": 7931248400,
+        "exclusive_ms_per_tick": 7.745359765625
+      },
+      "timed.next_departure": {
+        "calls": 179816,
+        "inclusive_ns": 4279200,
+        "inclusive_ms_per_tick": 0.00417890625,
+        "exclusive_ns": 4279200,
+        "exclusive_ms_per_tick": 0.00417890625
+      },
+      "loading.intent_and_live_ride": {
+        "calls": 235275,
+        "inclusive_ns": 37193000,
+        "inclusive_ms_per_tick": 0.0363212890625,
+        "exclusive_ns": 17421800,
+        "exclusive_ms_per_tick": 0.0170134765625
+      },
+      "timed.departure_evaluation": {
+        "calls": 5246164,
+        "inclusive_ns": 2517116600,
+        "inclusive_ms_per_tick": 2.4581216796875,
+        "exclusive_ns": 392038300,
+        "exclusive_ms_per_tick": 0.38284990234375
+      },
+      "schedule.plan": {
+        "calls": 7032,
+        "inclusive_ns": 296573300,
+        "inclusive_ms_per_tick": 0.28962236328125,
+        "exclusive_ns": 17319200,
+        "exclusive_ms_per_tick": 0.01691328125
+      },
+      "database.publication": {
+        "calls": 3365,
+        "inclusive_ns": 48163000,
+        "inclusive_ms_per_tick": 0.0470341796875,
+        "exclusive_ns": 48163000,
+        "exclusive_ms_per_tick": 0.0470341796875
+      },
+      "timed.plan": {
+        "calls": 16384,
+        "inclusive_ns": 16069557400,
+        "inclusive_ms_per_tick": 15.6929271484375,
+        "exclusive_ns": 251783200,
+        "exclusive_ms_per_tick": 0.24588203125
+      },
+      "fallback.cache_reuse": {
+        "calls": 15470,
+        "inclusive_ns": 5720000,
+        "inclusive_ms_per_tick": 0.0055859375,
+        "exclusive_ns": 5720000,
+        "exclusive_ms_per_tick": 0.0055859375
+      },
+      "loading.live_station_reads": {
+        "calls": 2047079,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "schedule.search": {
+        "calls": 2122,
+        "inclusive_ns": 279254100,
+        "inclusive_ms_per_tick": 0.27270908203125,
+        "exclusive_ns": 277396700,
+        "exclusive_ms_per_tick": 0.27089521484375
+      },
+      "timed.index_tree_find": {
+        "calls": 21999051,
+        "inclusive_ns": 2070637300,
+        "inclusive_ms_per_tick": 2.02210673828125,
+        "exclusive_ns": 874104200,
+        "exclusive_ms_per_tick": 0.8536173828125
+      },
+      "timed.vehicle_phase_scan": {
+        "calls": 512,
+        "inclusive_ns": 1989600,
+        "inclusive_ms_per_tick": 0.00194296875,
+        "exclusive_ns": 1909600,
+        "exclusive_ms_per_tick": 0.00186484375
+      },
+      "timed.index_build_vehicle_visits": {
+        "calls": 15999,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "loading.packet_append": {
+        "calls": 88199,
+        "inclusive_ns": 64215700,
+        "inclusive_ms_per_tick": 0.06271064453125,
+        "exclusive_ns": 64215700,
+        "exclusive_ms_per_tick": 0.06271064453125
+      },
+      "fallback.bfs": {
+        "calls": 33414,
+        "inclusive_ns": 1935502000,
+        "inclusive_ms_per_tick": 1.890138671875,
+        "exclusive_ns": 1935502000,
+        "exclusive_ms_per_tick": 1.890138671875
+      },
+      "timed.dominance_checks": {
+        "calls": 216890266,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.work_stop.vehicle_phase": {
+        "calls": 451,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.index_remainder_comparisons": {
+        "calls": 13517570,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.queue_pop": {
+        "calls": 822045,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.work_stop.dominance": {
+        "calls": 2959,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.work_stop.queue": {
+        "calls": 5560,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "fallback.node_binding_rebuild": {
+        "calls": 4,
+        "inclusive_ns": 272900,
+        "inclusive_ms_per_tick": 0.00026650390625,
+        "exclusive_ns": 272900,
+        "exclusive_ms_per_tick": 0.00026650390625
+      },
+      "fallback.reverse_index": {
+        "calls": 4,
+        "inclusive_ns": 482400,
+        "inclusive_ms_per_tick": 0.00047109375,
+        "exclusive_ns": 482400,
+        "exclusive_ms_per_tick": 0.00047109375
+      },
+      "timed.label_attempts": {
+        "calls": 162380466,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.departure_index_access": {
+        "calls": 5245652,
+        "inclusive_ns": 426338500,
+        "inclusive_ms_per_tick": 0.41634619140625,
+        "exclusive_ns": 419633600,
+        "exclusive_ms_per_tick": 0.4097984375
+      },
+      "loading.packet_load": {
+        "calls": 68162,
+        "inclusive_ns": 2563950200,
+        "inclusive_ms_per_tick": 2.5038576171875,
+        "exclusive_ns": 545116300,
+        "exclusive_ms_per_tick": 0.53234013671875
+      }
+    }
+  },
+  {
+    "first_ordinal": 1025,
+    "last_ordinal": 2048,
+    "kind": "detail",
+    "simulation": {
+      "mean_us": 39358.1044921875,
+      "max_us": 89026,
+      "p50_us": 38005,
+      "p95_us": 54565,
+      "p99_us": 74178
+    },
+    "journey": {
+      "mean_us": 17677.7216796875,
+      "max_us": 63766,
+      "p50_us": 16565,
+      "p95_us": 30313,
+      "p99_us": 52349
+    },
+    "metrics": {
+      "loading.packet_stage": {
+        "calls": 11229,
+        "inclusive_ns": 582295300,
+        "inclusive_ms_per_tick": 0.56864775390625,
+        "exclusive_ns": 128113000,
+        "exclusive_ms_per_tick": 0.1251103515625
+      },
+      "timed.live_vehicle_reads": {
+        "calls": 4766,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.queue_push": {
+        "calls": 11831019,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.work_stop.candidate_service": {
+        "calls": 23,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "live.station_get": {
+        "calls": 272,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.vehicle_phase_visits": {
+        "calls": 5524,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.forward_work_stops": {
+        "calls": 20632,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "loading.waiting_reinserted_packets": {
+        "calls": 31524,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.reverse_lower_bound": {
+        "calls": 7988,
+        "inclusive_ns": 4174716700,
+        "inclusive_ms_per_tick": 4.07687177734375,
+        "exclusive_ns": 4174716700,
+        "exclusive_ms_per_tick": 4.07687177734375
+      },
+      "schedule.wait_estimate": {
+        "calls": 1835,
+        "inclusive_ns": 1260900,
+        "inclusive_ms_per_tick": 0.00123134765625,
+        "exclusive_ns": 1260900,
+        "exclusive_ms_per_tick": 0.00123134765625
+      },
+      "loading.waiting_scan": {
+        "calls": 21806,
+        "inclusive_ns": 15819510200,
+        "inclusive_ms_per_tick": 15.4487404296875,
+        "exclusive_ns": 291556200,
+        "exclusive_ms_per_tick": 0.2847228515625
+      },
+      "loading.can_board": {
+        "calls": 123585,
+        "inclusive_ns": 23945600,
+        "inclusive_ms_per_tick": 0.023384375,
+        "exclusive_ns": 5267500,
+        "exclusive_ms_per_tick": 0.00514404296875
+      },
+      "timed.forward_label_stops": {
+        "calls": 208,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "live.station_get_if_valid": {
+        "calls": 11446458,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "loading.station_facilities": {
+        "calls": 1735207,
+        "inclusive_ns": 74437500,
+        "inclusive_ms_per_tick": 0.07269287109375,
+        "exclusive_ns": 74437500,
+        "exclusive_ms_per_tick": 0.07269287109375
+      },
+      "live.station_is_valid": {
+        "calls": 11339150,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.work_stop.alighting": {
+        "calls": 7018,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "fallback.distance": {
+        "calls": 847526,
+        "inclusive_ns": 2166563600,
+        "inclusive_ms_per_tick": 2.115784765625,
+        "exclusive_ns": 399873800,
+        "exclusive_ms_per_tick": 0.3905017578125
+      },
+      "loading.live_vehicle_validation": {
+        "calls": 9639,
+        "inclusive_ns": 9088200,
+        "inclusive_ms_per_tick": 0.0088751953125,
+        "exclusive_ns": 4582800,
+        "exclusive_ms_per_tick": 0.004475390625
+      },
+      "timed.departure_index_lookup": {
+        "calls": 6319101,
+        "inclusive_ns": 1764373300,
+        "inclusive_ms_per_tick": 1.72302080078125,
+        "exclusive_ns": 412174500,
+        "exclusive_ms_per_tick": 0.40251416015625
+      },
+      "loading.waiting_packet_visits": {
+        "calls": 1248732,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.indexed_successor": {
+        "calls": 6319101,
+        "inclusive_ns": 1348055800,
+        "inclusive_ms_per_tick": 1.3164607421875,
+        "exclusive_ns": 410449200,
+        "exclusive_ms_per_tick": 0.400829296875
+      },
+      "loading.intent_current": {
+        "calls": 163162,
+        "inclusive_ns": 10812000,
+        "inclusive_ms_per_tick": 0.01055859375,
+        "exclusive_ns": 10812000,
+        "exclusive_ms_per_tick": 0.01055859375
+      },
+      "database.tick": {
+        "calls": 1024,
+        "inclusive_ns": 80143000,
+        "inclusive_ms_per_tick": 0.0782646484375,
+        "exclusive_ns": 46673200,
+        "exclusive_ms_per_tick": 0.045579296875
+      },
+      "timed.live_station_checks": {
+        "calls": 32764,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.service_bound": {
+        "calls": 2728454,
+        "inclusive_ns": 179001500,
+        "inclusive_ms_per_tick": 0.17480615234375,
+        "exclusive_ns": 179001500,
+        "exclusive_ms_per_tick": 0.17480615234375
+      },
+      "timed.index_loading_vehicle_visits": {
+        "calls": 5060790,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.departure_index_build": {
+        "calls": 1694,
+        "inclusive_ns": 3317100,
+        "inclusive_ms_per_tick": 0.00323935546875,
+        "exclusive_ns": 3317100,
+        "exclusive_ms_per_tick": 0.00323935546875
+      },
+      "loading.waiting_reinsert": {
+        "calls": 21806,
+        "inclusive_ns": 2726400,
+        "inclusive_ms_per_tick": 0.0026625,
+        "exclusive_ns": 2726400,
+        "exclusive_ms_per_tick": 0.0026625
+      },
+      "timed.index_start_comparisons": {
+        "calls": 14966845,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "fallback.node_binding": {
+        "calls": 15948,
+        "inclusive_ns": 5545000,
+        "inclusive_ms_per_tick": 0.0054150390625,
+        "exclusive_ns": 5545000,
+        "exclusive_ms_per_tick": 0.0054150390625
+      },
+      "timed.candidate_service_visits": {
+        "calls": 6933285,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.forward": {
+        "calls": 15199,
+        "inclusive_ns": 10999865400,
+        "inclusive_ms_per_tick": 10.7420560546875,
+        "exclusive_ns": 8198312000,
+        "exclusive_ms_per_tick": 8.0061640625
+      },
+      "timed.next_departure": {
+        "calls": 198777,
+        "inclusive_ns": 4243300,
+        "inclusive_ms_per_tick": 0.00414384765625,
+        "exclusive_ns": 4243300,
+        "exclusive_ms_per_tick": 0.00414384765625
+      },
+      "loading.intent_and_live_ride": {
+        "calls": 128195,
+        "inclusive_ns": 23971900,
+        "inclusive_ms_per_tick": 0.02341005859375,
+        "exclusive_ns": 9484700,
+        "exclusive_ms_per_tick": 0.00926240234375
+      },
+      "timed.departure_evaluation": {
+        "calls": 6319792,
+        "inclusive_ns": 2622551900,
+        "inclusive_ms_per_tick": 2.56108583984375,
+        "exclusive_ns": 427471100,
+        "exclusive_ms_per_tick": 0.41745224609375
+      },
+      "schedule.plan": {
+        "calls": 9125,
+        "inclusive_ns": 144920500,
+        "inclusive_ms_per_tick": 0.14152392578125,
+        "exclusive_ns": 18586500,
+        "exclusive_ms_per_tick": 0.01815087890625
+      },
+      "database.publication": {
+        "calls": 12,
+        "inclusive_ns": 23148100,
+        "inclusive_ms_per_tick": 0.02260556640625,
+        "exclusive_ns": 23148100,
+        "exclusive_ms_per_tick": 0.02260556640625
+      },
+      "timed.plan": {
+        "calls": 16382,
+        "inclusive_ns": 15374213800,
+        "inclusive_ms_per_tick": 15.0138806640625,
+        "exclusive_ns": 199631700,
+        "exclusive_ms_per_tick": 0.19495283203125
+      },
+      "fallback.cache_reuse": {
+        "calls": 16796,
+        "inclusive_ns": 5958300,
+        "inclusive_ms_per_tick": 0.00581865234375,
+        "exclusive_ns": 5958300,
+        "exclusive_ms_per_tick": 0.00581865234375
+      },
+      "loading.live_station_reads": {
+        "calls": 1734887,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "schedule.search": {
+        "calls": 1656,
+        "inclusive_ns": 126334000,
+        "inclusive_ms_per_tick": 0.123373046875,
+        "exclusive_ns": 125073100,
+        "exclusive_ms_per_tick": 0.12214169921875
+      },
+      "timed.index_tree_find": {
+        "calls": 25435482,
+        "inclusive_ns": 2244967000,
+        "inclusive_ms_per_tick": 2.1923505859375,
+        "exclusive_ns": 937606600,
+        "exclusive_ms_per_tick": 0.9156314453125
+      },
+      "timed.vehicle_phase_scan": {
+        "calls": 691,
+        "inclusive_ns": 2476700,
+        "inclusive_ms_per_tick": 0.00241865234375,
+        "exclusive_ns": 2376400,
+        "exclusive_ms_per_tick": 0.002320703125
+      },
+      "timed.index_build_vehicle_visits": {
+        "calls": 9665,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "loading.packet_append": {
+        "calls": 88044,
+        "inclusive_ns": 61162200,
+        "inclusive_ms_per_tick": 0.0597287109375,
+        "exclusive_ns": 61162200,
+        "exclusive_ms_per_tick": 0.0597287109375
+      },
+      "fallback.bfs": {
+        "calls": 35266,
+        "inclusive_ns": 1755186500,
+        "inclusive_ms_per_tick": 1.71404931640625,
+        "exclusive_ns": 1755186500,
+        "exclusive_ms_per_tick": 1.71404931640625
+      },
+      "timed.dominance_checks": {
+        "calls": 260409930,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.work_stop.vehicle_phase": {
+        "calls": 610,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.index_remainder_comparisons": {
+        "calls": 16279874,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.queue_pop": {
+        "calls": 837865,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.work_stop.dominance": {
+        "calls": 4381,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.work_stop.queue": {
+        "calls": 7909,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "fallback.node_binding_rebuild": {
+        "calls": 0,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "fallback.reverse_index": {
+        "calls": 0,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.label_attempts": {
+        "calls": 195801257,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.departure_index_access": {
+        "calls": 6319101,
+        "inclusive_ns": 428230800,
+        "inclusive_ms_per_tick": 0.418194140625,
+        "exclusive_ns": 424913700,
+        "exclusive_ms_per_tick": 0.41495478515625
+      },
+      "loading.packet_load": {
+        "calls": 67771,
+        "inclusive_ns": 2393796300,
+        "inclusive_ms_per_tick": 2.33769169921875,
+        "exclusive_ns": 593940100,
+        "exclusive_ms_per_tick": 0.58001962890625
+      }
+    }
+  },
+  {
+    "first_ordinal": 2049,
+    "last_ordinal": 3072,
+    "kind": "detail",
+    "simulation": {
+      "mean_us": 35712.0673828125,
+      "max_us": 92881,
+      "p50_us": 34054,
+      "p95_us": 53061,
+      "p99_us": 73591
+    },
+    "journey": {
+      "mean_us": 16584.193359375,
+      "max_us": 74084,
+      "p50_us": 15445,
+      "p95_us": 30216,
+      "p99_us": 50763
+    },
+    "metrics": {
+      "loading.packet_stage": {
+        "calls": 11244,
+        "inclusive_ns": 529724300,
+        "inclusive_ms_per_tick": 0.51730888671875,
+        "exclusive_ns": 111203100,
+        "exclusive_ms_per_tick": 0.10859677734375
+      },
+      "timed.live_vehicle_reads": {
+        "calls": 4339,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.queue_push": {
+        "calls": 11864527,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.work_stop.candidate_service": {
+        "calls": 26,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "live.station_get": {
+        "calls": 214,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.vehicle_phase_visits": {
+        "calls": 5056,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.forward_work_stops": {
+        "calls": 21928,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "loading.waiting_reinserted_packets": {
+        "calls": 32571,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.reverse_lower_bound": {
+        "calls": 7798,
+        "inclusive_ns": 4341304300,
+        "inclusive_ms_per_tick": 4.23955498046875,
+        "exclusive_ns": 4341304300,
+        "exclusive_ms_per_tick": 4.23955498046875
+      },
+      "schedule.wait_estimate": {
+        "calls": 1463,
+        "inclusive_ns": 845600,
+        "inclusive_ms_per_tick": 0.00082578125,
+        "exclusive_ns": 845600,
+        "exclusive_ms_per_tick": 0.00082578125
+      },
+      "loading.waiting_scan": {
+        "calls": 22300,
+        "inclusive_ns": 14871866000,
+        "inclusive_ms_per_tick": 14.523306640625,
+        "exclusive_ns": 317718000,
+        "exclusive_ms_per_tick": 0.310271484375
+      },
+      "loading.can_board": {
+        "calls": 147623,
+        "inclusive_ns": 24098300,
+        "inclusive_ms_per_tick": 0.02353349609375,
+        "exclusive_ns": 5714700,
+        "exclusive_ms_per_tick": 0.00558076171875
+      },
+      "timed.forward_label_stops": {
+        "calls": 44,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "live.station_get_if_valid": {
+        "calls": 12019674,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "loading.station_facilities": {
+        "calls": 1585123,
+        "inclusive_ns": 67198100,
+        "inclusive_ms_per_tick": 0.06562314453125,
+        "exclusive_ns": 67198100,
+        "exclusive_ms_per_tick": 0.06562314453125
+      },
+      "live.station_is_valid": {
+        "calls": 15796064,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.work_stop.alighting": {
+        "calls": 7588,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "fallback.distance": {
+        "calls": 984150,
+        "inclusive_ns": 2029966000,
+        "inclusive_ms_per_tick": 1.982388671875,
+        "exclusive_ns": 383259900,
+        "exclusive_ms_per_tick": 0.37427724609375
+      },
+      "loading.live_vehicle_validation": {
+        "calls": 9629,
+        "inclusive_ns": 8490700,
+        "inclusive_ms_per_tick": 0.00829169921875,
+        "exclusive_ns": 4201700,
+        "exclusive_ms_per_tick": 0.00410322265625
+      },
+      "timed.departure_index_lookup": {
+        "calls": 6496019,
+        "inclusive_ns": 1630444400,
+        "inclusive_ms_per_tick": 1.592230859375,
+        "exclusive_ns": 384837800,
+        "exclusive_ms_per_tick": 0.3758181640625
+      },
+      "loading.waiting_packet_visits": {
+        "calls": 1561763,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.indexed_successor": {
+        "calls": 6496019,
+        "inclusive_ns": 1241673000,
+        "inclusive_ms_per_tick": 1.2125712890625,
+        "exclusive_ns": 373184100,
+        "exclusive_ms_per_tick": 0.36443759765625
+      },
+      "loading.intent_current": {
+        "calls": 192657,
+        "inclusive_ns": 10677900,
+        "inclusive_ms_per_tick": 0.01042763671875,
+        "exclusive_ns": 10677900,
+        "exclusive_ms_per_tick": 0.01042763671875
+      },
+      "database.tick": {
+        "calls": 1024,
+        "inclusive_ns": 64801400,
+        "inclusive_ms_per_tick": 0.0632826171875,
+        "exclusive_ns": 37686600,
+        "exclusive_ms_per_tick": 0.0368033203125
+      },
+      "timed.live_station_checks": {
+        "calls": 32768,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.service_bound": {
+        "calls": 2582584,
+        "inclusive_ns": 152606000,
+        "inclusive_ms_per_tick": 0.149029296875,
+        "exclusive_ns": 152606000,
+        "exclusive_ms_per_tick": 0.149029296875
+      },
+      "timed.index_loading_vehicle_visits": {
+        "calls": 5654322,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.departure_index_build": {
+        "calls": 1542,
+        "inclusive_ns": 2972100,
+        "inclusive_ms_per_tick": 0.00290244140625,
+        "exclusive_ns": 2972100,
+        "exclusive_ms_per_tick": 0.00290244140625
+      },
+      "loading.waiting_reinsert": {
+        "calls": 22300,
+        "inclusive_ns": 2391700,
+        "inclusive_ms_per_tick": 0.00233564453125,
+        "exclusive_ns": 2391700,
+        "exclusive_ms_per_tick": 0.00233564453125
+      },
+      "timed.index_start_comparisons": {
+        "calls": 15255289,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "fallback.node_binding": {
+        "calls": 16625,
+        "inclusive_ns": 4802300,
+        "inclusive_ms_per_tick": 0.00468974609375,
+        "exclusive_ns": 4802300,
+        "exclusive_ms_per_tick": 0.00468974609375
+      },
+      "timed.candidate_service_visits": {
+        "calls": 7051834,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.forward": {
+        "calls": 15113,
+        "inclusive_ns": 9931535000,
+        "inclusive_ms_per_tick": 9.6987646484375,
+        "exclusive_ns": 7341281300,
+        "exclusive_ms_per_tick": 7.16922001953125
+      },
+      "timed.next_departure": {
+        "calls": 198722,
+        "inclusive_ns": 4017300,
+        "inclusive_ms_per_tick": 0.00392314453125,
+        "exclusive_ns": 4017300,
+        "exclusive_ms_per_tick": 0.00392314453125
+      },
+      "loading.intent_and_live_ride": {
+        "calls": 152851,
+        "inclusive_ns": 24107100,
+        "inclusive_ms_per_tick": 0.02354208984375,
+        "exclusive_ns": 9784500,
+        "exclusive_ms_per_tick": 0.00955517578125
+      },
+      "timed.departure_evaluation": {
+        "calls": 6496719,
+        "inclusive_ns": 2437647700,
+        "inclusive_ms_per_tick": 2.38051533203125,
+        "exclusive_ns": 410157700,
+        "exclusive_ms_per_tick": 0.40054462890625
+      },
+      "schedule.plan": {
+        "calls": 9818,
+        "inclusive_ns": 86137200,
+        "inclusive_ms_per_tick": 0.084118359375,
+        "exclusive_ns": 15838800,
+        "exclusive_ms_per_tick": 0.015467578125
+      },
+      "database.publication": {
+        "calls": 12,
+        "inclusive_ns": 18665900,
+        "inclusive_ms_per_tick": 0.01822841796875,
+        "exclusive_ns": 18665900,
+        "exclusive_ms_per_tick": 0.01822841796875
+      },
+      "timed.plan": {
+        "calls": 16384,
+        "inclusive_ns": 14460247200,
+        "inclusive_ms_per_tick": 14.12133515625,
+        "exclusive_ns": 187407900,
+        "exclusive_ms_per_tick": 0.18301552734375
+      },
+      "fallback.cache_reuse": {
+        "calls": 17297,
+        "inclusive_ns": 5971300,
+        "inclusive_ms_per_tick": 0.00583134765625,
+        "exclusive_ns": 5971300,
+        "exclusive_ms_per_tick": 0.00583134765625
+      },
+      "loading.live_station_reads": {
+        "calls": 1584784,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "schedule.search": {
+        "calls": 1793,
+        "inclusive_ns": 70298400,
+        "inclusive_ms_per_tick": 0.06865078125,
+        "exclusive_ns": 69452800,
+        "exclusive_ms_per_tick": 0.067825
+      },
+      "timed.index_tree_find": {
+        "calls": 24984348,
+        "inclusive_ns": 2074387300,
+        "inclusive_ms_per_tick": 2.02576884765625,
+        "exclusive_ns": 868488900,
+        "exclusive_ms_per_tick": 0.84813369140625
+      },
+      "timed.vehicle_phase_scan": {
+        "calls": 700,
+        "inclusive_ns": 2123800,
+        "inclusive_ms_per_tick": 0.0020740234375,
+        "exclusive_ns": 2040100,
+        "exclusive_ms_per_tick": 0.00199228515625
+      },
+      "timed.index_build_vehicle_visits": {
+        "calls": 9156,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "loading.packet_append": {
+        "calls": 88523,
+        "inclusive_ns": 56790500,
+        "inclusive_ms_per_tick": 0.05545947265625,
+        "exclusive_ns": 56790500,
+        "exclusive_ms_per_tick": 0.05545947265625
+      },
+      "fallback.bfs": {
+        "calls": 37803,
+        "inclusive_ns": 1635932500,
+        "inclusive_ms_per_tick": 1.59759033203125,
+        "exclusive_ns": 1635932500,
+        "exclusive_ms_per_tick": 1.59759033203125
+      },
+      "timed.dominance_checks": {
+        "calls": 265775876,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.work_stop.vehicle_phase": {
+        "calls": 567,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.index_remainder_comparisons": {
+        "calls": 16753733,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.queue_pop": {
+        "calls": 807168,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.work_stop.dominance": {
+        "calls": 4579,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.work_stop.queue": {
+        "calls": 8468,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "fallback.node_binding_rebuild": {
+        "calls": 0,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "fallback.reverse_index": {
+        "calls": 0,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.label_attempts": {
+        "calls": 200711434,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.departure_index_access": {
+        "calls": 6496019,
+        "inclusive_ns": 394921800,
+        "inclusive_ms_per_tick": 0.3856658203125,
+        "exclusive_ns": 391949700,
+        "exclusive_ms_per_tick": 0.38276337890625
+      },
+      "loading.packet_load": {
+        "calls": 70551,
+        "inclusive_ns": 2435314200,
+        "inclusive_ms_per_tick": 2.3782365234375,
+        "exclusive_ns": 740808600,
+        "exclusive_ms_per_tick": 0.7234458984375
+      }
+    }
+  },
+  {
+    "first_ordinal": 3073,
+    "last_ordinal": 4096,
+    "kind": "detail",
+    "simulation": {
+      "mean_us": 37588.236328125,
+      "max_us": 116997,
+      "p50_us": 34817,
+      "p95_us": 60896,
+      "p99_us": 81030
+    },
+    "journey": {
+      "mean_us": 17442.068359375,
+      "max_us": 89210,
+      "p50_us": 15700,
+      "p95_us": 35950,
+      "p99_us": 53737
+    },
+    "metrics": {
+      "loading.packet_stage": {
+        "calls": 11411,
+        "inclusive_ns": 547874700,
+        "inclusive_ms_per_tick": 0.53503388671875,
+        "exclusive_ns": 117027000,
+        "exclusive_ms_per_tick": 0.1142841796875
+      },
+      "timed.live_vehicle_reads": {
+        "calls": 4982,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.queue_push": {
+        "calls": 11729878,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.work_stop.candidate_service": {
+        "calls": 40,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "live.station_get": {
+        "calls": 180,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.vehicle_phase_visits": {
+        "calls": 5796,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.forward_work_stops": {
+        "calls": 22821,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "loading.waiting_reinserted_packets": {
+        "calls": 32373,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.reverse_lower_bound": {
+        "calls": 7277,
+        "inclusive_ns": 4613964600,
+        "inclusive_ms_per_tick": 4.5058248046875,
+        "exclusive_ns": 4613964600,
+        "exclusive_ms_per_tick": 4.5058248046875
+      },
+      "schedule.wait_estimate": {
+        "calls": 2378,
+        "inclusive_ns": 1512200,
+        "inclusive_ms_per_tick": 0.0014767578125,
+        "exclusive_ns": 1512200,
+        "exclusive_ms_per_tick": 0.0014767578125
+      },
+      "loading.waiting_scan": {
+        "calls": 22355,
+        "inclusive_ns": 15677917900,
+        "inclusive_ms_per_tick": 15.31046669921875,
+        "exclusive_ns": 373757200,
+        "exclusive_ms_per_tick": 0.364997265625
+      },
+      "loading.can_board": {
+        "calls": 90340,
+        "inclusive_ns": 15906200,
+        "inclusive_ms_per_tick": 0.0155333984375,
+        "exclusive_ns": 3579700,
+        "exclusive_ms_per_tick": 0.00349580078125
+      },
+      "timed.forward_label_stops": {
+        "calls": 20,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "live.station_get_if_valid": {
+        "calls": 12568281,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "loading.station_facilities": {
+        "calls": 1637214,
+        "inclusive_ns": 70240800,
+        "inclusive_ms_per_tick": 0.06859453125,
+        "exclusive_ns": 70240800,
+        "exclusive_ms_per_tick": 0.06859453125
+      },
+      "live.station_is_valid": {
+        "calls": 18092488,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.work_stop.alighting": {
+        "calls": 7960,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "fallback.distance": {
+        "calls": 1034975,
+        "inclusive_ns": 2085217600,
+        "inclusive_ms_per_tick": 2.0363453125,
+        "exclusive_ns": 410151600,
+        "exclusive_ms_per_tick": 0.400538671875
+      },
+      "loading.live_vehicle_validation": {
+        "calls": 7315,
+        "inclusive_ns": 7331200,
+        "inclusive_ms_per_tick": 0.007159375,
+        "exclusive_ns": 3769900,
+        "exclusive_ms_per_tick": 0.00368154296875
+      },
+      "timed.departure_index_lookup": {
+        "calls": 6789379,
+        "inclusive_ns": 1745505000,
+        "inclusive_ms_per_tick": 1.7045947265625,
+        "exclusive_ns": 412665700,
+        "exclusive_ms_per_tick": 0.40299384765625
+      },
+      "loading.waiting_packet_visits": {
+        "calls": 1753186,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.indexed_successor": {
+        "calls": 6789379,
+        "inclusive_ns": 1328358100,
+        "inclusive_ms_per_tick": 1.29722470703125,
+        "exclusive_ns": 397528100,
+        "exclusive_ms_per_tick": 0.38821103515625
+      },
+      "loading.intent_current": {
+        "calls": 129120,
+        "inclusive_ns": 8148000,
+        "inclusive_ms_per_tick": 0.00795703125,
+        "exclusive_ns": 8148000,
+        "exclusive_ms_per_tick": 0.00795703125
+      },
+      "database.tick": {
+        "calls": 1024,
+        "inclusive_ns": 87324900,
+        "inclusive_ms_per_tick": 0.08527822265625,
+        "exclusive_ns": 51079200,
+        "exclusive_ms_per_tick": 0.04988203125
+      },
+      "timed.live_station_checks": {
+        "calls": 32768,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.service_bound": {
+        "calls": 2450067,
+        "inclusive_ns": 148180800,
+        "inclusive_ms_per_tick": 0.1447078125,
+        "exclusive_ns": 148180800,
+        "exclusive_ms_per_tick": 0.1447078125
+      },
+      "timed.index_loading_vehicle_visits": {
+        "calls": 6967548,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.departure_index_build": {
+        "calls": 2004,
+        "inclusive_ns": 3698200,
+        "inclusive_ms_per_tick": 0.0036115234375,
+        "exclusive_ns": 3698200,
+        "exclusive_ms_per_tick": 0.0036115234375
+      },
+      "loading.waiting_reinsert": {
+        "calls": 22355,
+        "inclusive_ns": 2355700,
+        "inclusive_ms_per_tick": 0.00230048828125,
+        "exclusive_ns": 2355700,
+        "exclusive_ms_per_tick": 0.00230048828125
+      },
+      "timed.index_start_comparisons": {
+        "calls": 16040494,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "fallback.node_binding": {
+        "calls": 16691,
+        "inclusive_ns": 5421300,
+        "inclusive_ms_per_tick": 0.00529423828125,
+        "exclusive_ns": 5421300,
+        "exclusive_ms_per_tick": 0.00529423828125
+      },
+      "timed.candidate_service_visits": {
+        "calls": 7331573,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.forward": {
+        "calls": 14579,
+        "inclusive_ns": 10293334900,
+        "inclusive_ms_per_tick": 10.05208486328125,
+        "exclusive_ns": 7557003400,
+        "exclusive_ms_per_tick": 7.3798861328125
+      },
+      "timed.next_departure": {
+        "calls": 219882,
+        "inclusive_ns": 4583400,
+        "inclusive_ms_per_tick": 0.0044759765625,
+        "exclusive_ns": 4583400,
+        "exclusive_ms_per_tick": 0.0044759765625
+      },
+      "loading.intent_and_live_ride": {
+        "calls": 95880,
+        "inclusive_ns": 17935500,
+        "inclusive_ms_per_tick": 0.01751513671875,
+        "exclusive_ns": 6704800,
+        "exclusive_ms_per_tick": 0.00654765625
+      },
+      "timed.departure_evaluation": {
+        "calls": 6790090,
+        "inclusive_ns": 2588150700,
+        "inclusive_ms_per_tick": 2.52749091796875,
+        "exclusive_ns": 428001100,
+        "exclusive_ms_per_tick": 0.41796982421875
+      },
+      "schedule.plan": {
+        "calls": 10833,
+        "inclusive_ns": 187156000,
+        "inclusive_ms_per_tick": 0.18276953125,
+        "exclusive_ns": 17454100,
+        "exclusive_ms_per_tick": 0.01704501953125
+      },
+      "database.publication": {
+        "calls": 15,
+        "inclusive_ns": 25000800,
+        "inclusive_ms_per_tick": 0.02441484375,
+        "exclusive_ns": 25000800,
+        "exclusive_ms_per_tick": 0.02441484375
+      },
+      "timed.plan": {
+        "calls": 16384,
+        "inclusive_ns": 15109987600,
+        "inclusive_ms_per_tick": 14.755847265625,
+        "exclusive_ns": 202688100,
+        "exclusive_ms_per_tick": 0.19793759765625
+      },
+      "fallback.cache_reuse": {
+        "calls": 17947,
+        "inclusive_ns": 6297600,
+        "inclusive_ms_per_tick": 0.00615,
+        "exclusive_ns": 6297600,
+        "exclusive_ms_per_tick": 0.00615
+      },
+      "loading.live_station_reads": {
+        "calls": 1636823,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "schedule.search": {
+        "calls": 2052,
+        "inclusive_ns": 169701900,
+        "inclusive_ms_per_tick": 0.16572451171875,
+        "exclusive_ns": 168189700,
+        "exclusive_ms_per_tick": 0.16424775390625
+      },
+      "timed.index_tree_find": {
+        "calls": 26806792,
+        "inclusive_ns": 2233018100,
+        "inclusive_ms_per_tick": 2.18068173828125,
+        "exclusive_ns": 930830000,
+        "exclusive_ms_per_tick": 0.909013671875
+      },
+      "timed.vehicle_phase_scan": {
+        "calls": 711,
+        "inclusive_ns": 2497800,
+        "inclusive_ms_per_tick": 0.0024392578125,
+        "exclusive_ns": 2395600,
+        "exclusive_ms_per_tick": 0.002339453125
+      },
+      "timed.index_build_vehicle_visits": {
+        "calls": 11506,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "loading.packet_append": {
+        "calls": 91544,
+        "inclusive_ns": 60635400,
+        "inclusive_ms_per_tick": 0.0592142578125,
+        "exclusive_ns": 60635400,
+        "exclusive_ms_per_tick": 0.0592142578125
+      },
+      "fallback.bfs": {
+        "calls": 37881,
+        "inclusive_ns": 1663347100,
+        "inclusive_ms_per_tick": 1.62436240234375,
+        "exclusive_ns": 1663347100,
+        "exclusive_ms_per_tick": 1.62436240234375
+      },
+      "timed.dominance_checks": {
+        "calls": 271672287,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.work_stop.vehicle_phase": {
+        "calls": 628,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.index_remainder_comparisons": {
+        "calls": 17516908,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.queue_pop": {
+        "calls": 821753,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.work_stop.dominance": {
+        "calls": 4593,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.work_stop.queue": {
+        "calls": 8889,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "fallback.node_binding_rebuild": {
+        "calls": 0,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "fallback.reverse_index": {
+        "calls": 0,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.label_attempts": {
+        "calls": 209184691,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.departure_index_access": {
+        "calls": 6789379,
+        "inclusive_ns": 412146800,
+        "inclusive_ms_per_tick": 0.402487109375,
+        "exclusive_ns": 408448600,
+        "exclusive_ms_per_tick": 0.3988755859375
+      },
+      "loading.packet_load": {
+        "calls": 69891,
+        "inclusive_ns": 2576624900,
+        "inclusive_ms_per_tick": 2.51623525390625,
+        "exclusive_ns": 846621100,
+        "exclusive_ms_per_tick": 0.82677841796875
+      }
+    }
+  },
+  {
+    "first_ordinal": 4097,
+    "last_ordinal": 5120,
+    "kind": "detail",
+    "simulation": {
+      "mean_us": 35376.63671875,
+      "max_us": 88205,
+      "p50_us": 33957,
+      "p95_us": 51301,
+      "p99_us": 71316
+    },
+    "journey": {
+      "mean_us": 16500.1494140625,
+      "max_us": 68900,
+      "p50_us": 15186,
+      "p95_us": 30117,
+      "p99_us": 51038
+    },
+    "metrics": {
+      "loading.packet_stage": {
+        "calls": 11433,
+        "inclusive_ns": 541780400,
+        "inclusive_ms_per_tick": 0.529082421875,
+        "exclusive_ns": 109399000,
+        "exclusive_ms_per_tick": 0.1068349609375
+      },
+      "timed.live_vehicle_reads": {
+        "calls": 4591,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.queue_push": {
+        "calls": 11425399,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.work_stop.candidate_service": {
+        "calls": 27,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "live.station_get": {
+        "calls": 227,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.vehicle_phase_visits": {
+        "calls": 5460,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.forward_work_stops": {
+        "calls": 22224,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "loading.waiting_reinserted_packets": {
+        "calls": 31451,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.reverse_lower_bound": {
+        "calls": 6972,
+        "inclusive_ns": 4007709500,
+        "inclusive_ms_per_tick": 3.91377880859375,
+        "exclusive_ns": 4007709500,
+        "exclusive_ms_per_tick": 3.91377880859375
+      },
+      "schedule.wait_estimate": {
+        "calls": 3778,
+        "inclusive_ns": 2186700,
+        "inclusive_ms_per_tick": 0.00213544921875,
+        "exclusive_ns": 2186700,
+        "exclusive_ms_per_tick": 0.00213544921875
+      },
+      "loading.waiting_scan": {
+        "calls": 22715,
+        "inclusive_ns": 14701979000,
+        "inclusive_ms_per_tick": 14.3574013671875,
+        "exclusive_ns": 390640200,
+        "exclusive_ms_per_tick": 0.3814845703125
+      },
+      "loading.can_board": {
+        "calls": 115732,
+        "inclusive_ns": 19558800,
+        "inclusive_ms_per_tick": 0.019100390625,
+        "exclusive_ns": 4639600,
+        "exclusive_ms_per_tick": 0.004530859375
+      },
+      "timed.forward_label_stops": {
+        "calls": 0,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "live.station_get_if_valid": {
+        "calls": 12496216,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "loading.station_facilities": {
+        "calls": 1482988,
+        "inclusive_ns": 65305300,
+        "inclusive_ms_per_tick": 0.06377470703125,
+        "exclusive_ns": 65305300,
+        "exclusive_ms_per_tick": 0.06377470703125
+      },
+      "live.station_is_valid": {
+        "calls": 21570322,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.work_stop.alighting": {
+        "calls": 7632,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "fallback.distance": {
+        "calls": 1093004,
+        "inclusive_ns": 2132171900,
+        "inclusive_ms_per_tick": 2.08219912109375,
+        "exclusive_ns": 406202400,
+        "exclusive_ms_per_tick": 0.39668203125
+      },
+      "loading.live_vehicle_validation": {
+        "calls": 8576,
+        "inclusive_ns": 7337100,
+        "inclusive_ms_per_tick": 0.00716513671875,
+        "exclusive_ns": 3823600,
+        "exclusive_ms_per_tick": 0.003733984375
+      },
+      "timed.departure_index_lookup": {
+        "calls": 6639415,
+        "inclusive_ns": 1627568900,
+        "inclusive_ms_per_tick": 1.58942275390625,
+        "exclusive_ns": 401422200,
+        "exclusive_ms_per_tick": 0.3920138671875
+      },
+      "loading.waiting_packet_visits": {
+        "calls": 1975419,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.indexed_successor": {
+        "calls": 6639415,
+        "inclusive_ns": 1221586300,
+        "inclusive_ms_per_tick": 1.19295537109375,
+        "exclusive_ns": 374923200,
+        "exclusive_ms_per_tick": 0.3661359375
+      },
+      "loading.intent_current": {
+        "calls": 158483,
+        "inclusive_ns": 8439400,
+        "inclusive_ms_per_tick": 0.0082416015625,
+        "exclusive_ns": 8439400,
+        "exclusive_ms_per_tick": 0.0082416015625
+      },
+      "database.tick": {
+        "calls": 1024,
+        "inclusive_ns": 61769700,
+        "inclusive_ms_per_tick": 0.06032197265625,
+        "exclusive_ns": 35285300,
+        "exclusive_ms_per_tick": 0.03445830078125
+      },
+      "timed.live_station_checks": {
+        "calls": 32768,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.service_bound": {
+        "calls": 2810112,
+        "inclusive_ns": 174739900,
+        "inclusive_ms_per_tick": 0.17064443359375,
+        "exclusive_ns": 174739900,
+        "exclusive_ms_per_tick": 0.17064443359375
+      },
+      "timed.index_loading_vehicle_visits": {
+        "calls": 6302336,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.departure_index_build": {
+        "calls": 1597,
+        "inclusive_ns": 3207700,
+        "inclusive_ms_per_tick": 0.00313251953125,
+        "exclusive_ns": 3207700,
+        "exclusive_ms_per_tick": 0.00313251953125
+      },
+      "loading.waiting_reinsert": {
+        "calls": 22715,
+        "inclusive_ns": 2234200,
+        "inclusive_ms_per_tick": 0.0021818359375,
+        "exclusive_ns": 2234200,
+        "exclusive_ms_per_tick": 0.0021818359375
+      },
+      "timed.index_start_comparisons": {
+        "calls": 15442682,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "fallback.node_binding": {
+        "calls": 17250,
+        "inclusive_ns": 4830000,
+        "inclusive_ms_per_tick": 0.004716796875,
+        "exclusive_ns": 4830000,
+        "exclusive_ms_per_tick": 0.004716796875
+      },
+      "timed.candidate_service_visits": {
+        "calls": 7249365,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.forward": {
+        "calls": 14295,
+        "inclusive_ns": 9888674300,
+        "inclusive_ms_per_tick": 9.65690849609375,
+        "exclusive_ns": 7271924800,
+        "exclusive_ms_per_tick": 7.1014890625
+      },
+      "timed.next_departure": {
+        "calls": 232065,
+        "inclusive_ns": 4652100,
+        "inclusive_ms_per_tick": 0.00454306640625,
+        "exclusive_ns": 4652100,
+        "exclusive_ms_per_tick": 0.00454306640625
+      },
+      "loading.intent_and_live_ride": {
+        "calls": 120790,
+        "inclusive_ns": 19889500,
+        "inclusive_ms_per_tick": 0.01942333984375,
+        "exclusive_ns": 8080500,
+        "exclusive_ms_per_tick": 0.00789111328125
+      },
+      "timed.departure_evaluation": {
+        "calls": 6640146,
+        "inclusive_ns": 2442009600,
+        "inclusive_ms_per_tick": 2.384775,
+        "exclusive_ns": 415413500,
+        "exclusive_ms_per_tick": 0.40567724609375
+      },
+      "schedule.plan": {
+        "calls": 10905,
+        "inclusive_ns": 233483800,
+        "inclusive_ms_per_tick": 0.2280115234375,
+        "exclusive_ns": 16431700,
+        "exclusive_ms_per_tick": 0.01604658203125
+      },
+      "database.publication": {
+        "calls": 12,
+        "inclusive_ns": 18283000,
+        "inclusive_ms_per_tick": 0.0178544921875,
+        "exclusive_ns": 18283000,
+        "exclusive_ms_per_tick": 0.0178544921875
+      },
+      "timed.plan": {
+        "calls": 16384,
+        "inclusive_ns": 14071089000,
+        "inclusive_ms_per_tick": 13.7412978515625,
+        "exclusive_ns": 174705200,
+        "exclusive_ms_per_tick": 0.170610546875
+      },
+      "fallback.cache_reuse": {
+        "calls": 17983,
+        "inclusive_ns": 5952900,
+        "inclusive_ms_per_tick": 0.00581337890625,
+        "exclusive_ns": 5952900,
+        "exclusive_ms_per_tick": 0.00581337890625
+      },
+      "loading.live_station_reads": {
+        "calls": 1482723,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "schedule.search": {
+        "calls": 2038,
+        "inclusive_ns": 217052100,
+        "inclusive_ms_per_tick": 0.21196494140625,
+        "exclusive_ns": 214865400,
+        "exclusive_ms_per_tick": 0.2098294921875
+      },
+      "timed.index_tree_find": {
+        "calls": 24422057,
+        "inclusive_ns": 2050761500,
+        "inclusive_ms_per_tick": 2.00269677734375,
+        "exclusive_ns": 846663100,
+        "exclusive_ms_per_tick": 0.82681943359375
+      },
+      "timed.vehicle_phase_scan": {
+        "calls": 731,
+        "inclusive_ns": 2231800,
+        "inclusive_ms_per_tick": 0.0021794921875,
+        "exclusive_ns": 2140100,
+        "exclusive_ms_per_tick": 0.00208994140625
+      },
+      "timed.index_build_vehicle_visits": {
+        "calls": 9422,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "loading.packet_append": {
+        "calls": 91347,
+        "inclusive_ns": 57664200,
+        "inclusive_ms_per_tick": 0.0563126953125,
+        "exclusive_ns": 57664200,
+        "exclusive_ms_per_tick": 0.0563126953125
+      },
+      "fallback.bfs": {
+        "calls": 39889,
+        "inclusive_ns": 1715186600,
+        "inclusive_ms_per_tick": 1.6749869140625,
+        "exclusive_ns": 1715186600,
+        "exclusive_ms_per_tick": 1.6749869140625
+      },
+      "timed.dominance_checks": {
+        "calls": 254651772,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.work_stop.vehicle_phase": {
+        "calls": 653,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.index_remainder_comparisons": {
+        "calls": 16994463,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.queue_pop": {
+        "calls": 894715,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.work_stop.dominance": {
+        "calls": 4607,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.work_stop.queue": {
+        "calls": 8574,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "fallback.node_binding_rebuild": {
+        "calls": 0,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "fallback.reverse_index": {
+        "calls": 0,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.label_attempts": {
+        "calls": 199769021,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.departure_index_access": {
+        "calls": 6639415,
+        "inclusive_ns": 396795400,
+        "inclusive_ms_per_tick": 0.3874955078125,
+        "exclusive_ns": 393587700,
+        "exclusive_ms_per_tick": 0.38436298828125
+      },
+      "loading.packet_load": {
+        "calls": 71582,
+        "inclusive_ns": 2763677600,
+        "inclusive_ms_per_tick": 2.69890390625,
+        "exclusive_ns": 987043400,
+        "exclusive_ms_per_tick": 0.9639095703125
+      }
+    }
+  },
+  {
+    "first_ordinal": 5121,
+    "last_ordinal": 6144,
+    "kind": "detail",
+    "simulation": {
+      "mean_us": 35218.484375,
+      "max_us": 100461,
+      "p50_us": 34069,
+      "p95_us": 49810,
+      "p99_us": 66202
+    },
+    "journey": {
+      "mean_us": 16550.5986328125,
+      "max_us": 75848,
+      "p50_us": 15604,
+      "p95_us": 28965,
+      "p99_us": 44256
+    },
+    "metrics": {
+      "loading.packet_stage": {
+        "calls": 11495,
+        "inclusive_ns": 532845000,
+        "inclusive_ms_per_tick": 0.5203564453125,
+        "exclusive_ns": 103180000,
+        "exclusive_ms_per_tick": 0.10076171875
+      },
+      "timed.live_vehicle_reads": {
+        "calls": 5254,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.queue_push": {
+        "calls": 11871795,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.work_stop.candidate_service": {
+        "calls": 24,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "live.station_get": {
+        "calls": 273,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.vehicle_phase_visits": {
+        "calls": 6098,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.forward_work_stops": {
+        "calls": 23065,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "loading.waiting_reinserted_packets": {
+        "calls": 32591,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.reverse_lower_bound": {
+        "calls": 6579,
+        "inclusive_ns": 3820899600,
+        "inclusive_ms_per_tick": 3.731347265625,
+        "exclusive_ns": 3820899600,
+        "exclusive_ms_per_tick": 3.731347265625
+      },
+      "schedule.wait_estimate": {
+        "calls": 1590,
+        "inclusive_ns": 1011000,
+        "inclusive_ms_per_tick": 0.0009873046875,
+        "exclusive_ns": 1011000,
+        "exclusive_ms_per_tick": 0.0009873046875
+      },
+      "loading.waiting_scan": {
+        "calls": 22703,
+        "inclusive_ns": 14770927000,
+        "inclusive_ms_per_tick": 14.4247333984375,
+        "exclusive_ns": 422883500,
+        "exclusive_ms_per_tick": 0.41297216796875
+      },
+      "loading.can_board": {
+        "calls": 169339,
+        "inclusive_ns": 26302900,
+        "inclusive_ms_per_tick": 0.02568642578125,
+        "exclusive_ns": 6665600,
+        "exclusive_ms_per_tick": 0.006509375
+      },
+      "timed.forward_label_stops": {
+        "calls": 765,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "live.station_get_if_valid": {
+        "calls": 12643856,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "loading.station_facilities": {
+        "calls": 1233188,
+        "inclusive_ns": 57080200,
+        "inclusive_ms_per_tick": 0.0557423828125,
+        "exclusive_ns": 57080200,
+        "exclusive_ms_per_tick": 0.0557423828125
+      },
+      "live.station_is_valid": {
+        "calls": 23720185,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.work_stop.alighting": {
+        "calls": 7876,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "fallback.distance": {
+        "calls": 1112706,
+        "inclusive_ns": 2152474800,
+        "inclusive_ms_per_tick": 2.102026171875,
+        "exclusive_ns": 410043900,
+        "exclusive_ms_per_tick": 0.40043349609375
+      },
+      "loading.live_vehicle_validation": {
+        "calls": 10146,
+        "inclusive_ns": 7629900,
+        "inclusive_ms_per_tick": 0.00745107421875,
+        "exclusive_ns": 4027600,
+        "exclusive_ms_per_tick": 0.003933203125
+      },
+      "timed.departure_index_lookup": {
+        "calls": 6957869,
+        "inclusive_ns": 1755153300,
+        "inclusive_ms_per_tick": 1.71401689453125,
+        "exclusive_ns": 414717000,
+        "exclusive_ms_per_tick": 0.4049970703125
+      },
+      "loading.waiting_packet_visits": {
+        "calls": 2211643,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.indexed_successor": {
+        "calls": 6957869,
+        "inclusive_ns": 1335477400,
+        "inclusive_ms_per_tick": 1.3041771484375,
+        "exclusive_ns": 394215300,
+        "exclusive_ms_per_tick": 0.38497587890625
+      },
+      "loading.intent_current": {
+        "calls": 230422,
+        "inclusive_ns": 11235100,
+        "inclusive_ms_per_tick": 0.01097177734375,
+        "exclusive_ns": 11235100,
+        "exclusive_ms_per_tick": 0.01097177734375
+      },
+      "database.tick": {
+        "calls": 1024,
+        "inclusive_ns": 33606400,
+        "inclusive_ms_per_tick": 0.03281875,
+        "exclusive_ns": 19115200,
+        "exclusive_ms_per_tick": 0.0186671875
+      },
+      "timed.live_station_checks": {
+        "calls": 32768,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.service_bound": {
+        "calls": 3187442,
+        "inclusive_ns": 192262900,
+        "inclusive_ms_per_tick": 0.18775673828125,
+        "exclusive_ns": 192262900,
+        "exclusive_ms_per_tick": 0.18775673828125
+      },
+      "timed.index_loading_vehicle_visits": {
+        "calls": 6812212,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.departure_index_build": {
+        "calls": 978,
+        "inclusive_ns": 1695600,
+        "inclusive_ms_per_tick": 0.001655859375,
+        "exclusive_ns": 1695600,
+        "exclusive_ms_per_tick": 0.001655859375
+      },
+      "loading.waiting_reinsert": {
+        "calls": 22703,
+        "inclusive_ns": 2090100,
+        "inclusive_ms_per_tick": 0.00204111328125,
+        "exclusive_ns": 2090100,
+        "exclusive_ms_per_tick": 0.00204111328125
+      },
+      "timed.index_start_comparisons": {
+        "calls": 16564581,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "fallback.node_binding": {
+        "calls": 17465,
+        "inclusive_ns": 4662900,
+        "inclusive_ms_per_tick": 0.00455361328125,
+        "exclusive_ns": 4662900,
+        "exclusive_ms_per_tick": 0.00455361328125
+      },
+      "timed.candidate_service_visits": {
+        "calls": 7611074,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.forward": {
+        "calls": 14742,
+        "inclusive_ns": 10257112600,
+        "inclusive_ms_per_tick": 10.0167115234375,
+        "exclusive_ns": 7464699100,
+        "exclusive_ms_per_tick": 7.28974521484375
+      },
+      "timed.next_departure": {
+        "calls": 256686,
+        "inclusive_ns": 5066200,
+        "inclusive_ms_per_tick": 0.0049474609375,
+        "exclusive_ns": 5066200,
+        "exclusive_ms_per_tick": 0.0049474609375
+      },
+      "loading.intent_and_live_ride": {
+        "calls": 174757,
+        "inclusive_ns": 24570000,
+        "inclusive_ms_per_tick": 0.023994140625,
+        "exclusive_ns": 10668600,
+        "exclusive_ms_per_tick": 0.0104185546875
+      },
+      "timed.departure_evaluation": {
+        "calls": 6958689,
+        "inclusive_ns": 2600150600,
+        "inclusive_ms_per_tick": 2.5392095703125,
+        "exclusive_ns": 431679700,
+        "exclusive_ms_per_tick": 0.42156220703125
+      },
+      "schedule.plan": {
+        "calls": 10741,
+        "inclusive_ns": 96417100,
+        "inclusive_ms_per_tick": 0.09415732421875,
+        "exclusive_ns": 14543500,
+        "exclusive_ms_per_tick": 0.01420263671875
+      },
+      "database.publication": {
+        "calls": 6,
+        "inclusive_ns": 10372800,
+        "inclusive_ms_per_tick": 0.0101296875,
+        "exclusive_ns": 10372800,
+        "exclusive_ms_per_tick": 0.0101296875
+      },
+      "timed.plan": {
+        "calls": 16384,
+        "inclusive_ns": 14243975200,
+        "inclusive_ms_per_tick": 13.91013203125,
+        "exclusive_ns": 165963000,
+        "exclusive_ms_per_tick": 0.1620732421875
+      },
+      "fallback.cache_reuse": {
+        "calls": 18383,
+        "inclusive_ns": 5969300,
+        "inclusive_ms_per_tick": 0.00582939453125,
+        "exclusive_ns": 5969300,
+        "exclusive_ms_per_tick": 0.00582939453125
+      },
+      "loading.live_station_reads": {
+        "calls": 1233131,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "schedule.search": {
+        "calls": 1828,
+        "inclusive_ns": 81873600,
+        "inclusive_ms_per_tick": 0.0799546875,
+        "exclusive_ns": 80862600,
+        "exclusive_ms_per_tick": 0.0789673828125
+      },
+      "timed.index_tree_find": {
+        "calls": 27329567,
+        "inclusive_ns": 2272233100,
+        "inclusive_ms_per_tick": 2.21897763671875,
+        "exclusive_ns": 941262100,
+        "exclusive_ms_per_tick": 0.91920126953125
+      },
+      "timed.vehicle_phase_scan": {
+        "calls": 820,
+        "inclusive_ns": 2352000,
+        "inclusive_ms_per_tick": 0.002296875,
+        "exclusive_ns": 2244700,
+        "exclusive_ms_per_tick": 0.00219208984375
+      },
+      "timed.index_build_vehicle_visits": {
+        "calls": 5392,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "loading.packet_append": {
+        "calls": 93225,
+        "inclusive_ns": 56797600,
+        "inclusive_ms_per_tick": 0.05546640625,
+        "exclusive_ns": 56797600,
+        "exclusive_ms_per_tick": 0.05546640625
+      },
+      "fallback.bfs": {
+        "calls": 40576,
+        "inclusive_ns": 1731798700,
+        "inclusive_ms_per_tick": 1.69120966796875,
+        "exclusive_ns": 1731798700,
+        "exclusive_ms_per_tick": 1.69120966796875
+      },
+      "timed.dominance_checks": {
+        "calls": 263866553,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.work_stop.vehicle_phase": {
+        "calls": 715,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.index_remainder_comparisons": {
+        "calls": 18195199,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.queue_pop": {
+        "calls": 954665,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.work_stop.dominance": {
+        "calls": 4632,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.work_stop.queue": {
+        "calls": 8998,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "fallback.node_binding_rebuild": {
+        "calls": 0,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "fallback.reverse_index": {
+        "calls": 0,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.label_attempts": {
+        "calls": 206674235,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.departure_index_access": {
+        "calls": 6957869,
+        "inclusive_ns": 410965600,
+        "inclusive_ms_per_tick": 0.40133359375,
+        "exclusive_ns": 409270000,
+        "exclusive_ms_per_tick": 0.399677734375
+      },
+      "loading.packet_load": {
+        "calls": 71719,
+        "inclusive_ns": 2875929600,
+        "inclusive_ms_per_tick": 2.808525,
+        "exclusive_ns": 1073511500,
+        "exclusive_ms_per_tick": 1.04835107421875
+      }
+    }
+  },
+  {
+    "first_ordinal": 6145,
+    "last_ordinal": 7168,
+    "kind": "detail",
+    "simulation": {
+      "mean_us": 37027.0439453125,
+      "max_us": 106854,
+      "p50_us": 34708,
+      "p95_us": 57204,
+      "p99_us": 79449
+    },
+    "journey": {
+      "mean_us": 17608.830078125,
+      "max_us": 77248,
+      "p50_us": 15874,
+      "p95_us": 33363,
+      "p99_us": 56814
+    },
+    "metrics": {
+      "loading.packet_stage": {
+        "calls": 11419,
+        "inclusive_ns": 552240000,
+        "inclusive_ms_per_tick": 0.539296875,
+        "exclusive_ns": 104391000,
+        "exclusive_ms_per_tick": 0.1019443359375
+      },
+      "timed.live_vehicle_reads": {
+        "calls": 6123,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.queue_push": {
+        "calls": 12379273,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.work_stop.candidate_service": {
+        "calls": 39,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "live.station_get": {
+        "calls": 254,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.vehicle_phase_visits": {
+        "calls": 7256,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.forward_work_stops": {
+        "calls": 24247,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "loading.waiting_reinserted_packets": {
+        "calls": 32657,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.reverse_lower_bound": {
+        "calls": 6549,
+        "inclusive_ns": 4247449600,
+        "inclusive_ms_per_tick": 4.1479,
+        "exclusive_ns": 4247449600,
+        "exclusive_ms_per_tick": 4.1479
+      },
+      "schedule.wait_estimate": {
+        "calls": 2056,
+        "inclusive_ns": 1352100,
+        "inclusive_ms_per_tick": 0.00132041015625,
+        "exclusive_ns": 1352100,
+        "exclusive_ms_per_tick": 0.00132041015625
+      },
+      "loading.waiting_scan": {
+        "calls": 23471,
+        "inclusive_ns": 15679883400,
+        "inclusive_ms_per_tick": 15.3123861328125,
+        "exclusive_ns": 511111100,
+        "exclusive_ms_per_tick": 0.49913193359375
+      },
+      "loading.can_board": {
+        "calls": 131724,
+        "inclusive_ns": 20277600,
+        "inclusive_ms_per_tick": 0.01980234375,
+        "exclusive_ns": 5027600,
+        "exclusive_ms_per_tick": 0.004909765625
+      },
+      "timed.forward_label_stops": {
+        "calls": 1165,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "live.station_get_if_valid": {
+        "calls": 13426423,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "loading.station_facilities": {
+        "calls": 1459935,
+        "inclusive_ns": 65143100,
+        "inclusive_ms_per_tick": 0.06361630859375,
+        "exclusive_ns": 65143100,
+        "exclusive_ms_per_tick": 0.06361630859375
+      },
+      "live.station_is_valid": {
+        "calls": 28596986,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.work_stop.alighting": {
+        "calls": 8185,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "fallback.distance": {
+        "calls": 1203537,
+        "inclusive_ns": 2297672400,
+        "inclusive_ms_per_tick": 2.243820703125,
+        "exclusive_ns": 438712600,
+        "exclusive_ms_per_tick": 0.4284302734375
+      },
+      "loading.live_vehicle_validation": {
+        "calls": 7253,
+        "inclusive_ns": 6931600,
+        "inclusive_ms_per_tick": 0.006769140625,
+        "exclusive_ns": 3547400,
+        "exclusive_ms_per_tick": 0.0034642578125
+      },
+      "timed.departure_index_lookup": {
+        "calls": 7150442,
+        "inclusive_ns": 1784470300,
+        "inclusive_ms_per_tick": 1.74264677734375,
+        "exclusive_ns": 427664200,
+        "exclusive_ms_per_tick": 0.4176408203125
+      },
+      "loading.waiting_packet_visits": {
+        "calls": 2774620,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.indexed_successor": {
+        "calls": 7150442,
+        "inclusive_ns": 1351616500,
+        "inclusive_ms_per_tick": 1.31993798828125,
+        "exclusive_ns": 406669800,
+        "exclusive_ms_per_tick": 0.3971384765625
+      },
+      "loading.intent_current": {
+        "calls": 169671,
+        "inclusive_ns": 8806100,
+        "inclusive_ms_per_tick": 0.00859970703125,
+        "exclusive_ns": 8806100,
+        "exclusive_ms_per_tick": 0.00859970703125
+      },
+      "database.tick": {
+        "calls": 1024,
+        "inclusive_ns": 73224200,
+        "inclusive_ms_per_tick": 0.0715080078125,
+        "exclusive_ns": 43346200,
+        "exclusive_ms_per_tick": 0.0423302734375
+      },
+      "timed.live_station_checks": {
+        "calls": 32768,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.service_bound": {
+        "calls": 3229887,
+        "inclusive_ns": 179665600,
+        "inclusive_ms_per_tick": 0.1754546875,
+        "exclusive_ns": 179665600,
+        "exclusive_ms_per_tick": 0.1754546875
+      },
+      "timed.index_loading_vehicle_visits": {
+        "calls": 6984375,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.departure_index_build": {
+        "calls": 1736,
+        "inclusive_ns": 3094300,
+        "inclusive_ms_per_tick": 0.00302177734375,
+        "exclusive_ns": 3094300,
+        "exclusive_ms_per_tick": 0.00302177734375
+      },
+      "loading.waiting_reinsert": {
+        "calls": 23471,
+        "inclusive_ns": 2175100,
+        "inclusive_ms_per_tick": 0.00212412109375,
+        "exclusive_ns": 2175100,
+        "exclusive_ms_per_tick": 0.00212412109375
+      },
+      "timed.index_start_comparisons": {
+        "calls": 16812238,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "fallback.node_binding": {
+        "calls": 18331,
+        "inclusive_ns": 4961200,
+        "inclusive_ms_per_tick": 0.004844921875,
+        "exclusive_ns": 4961200,
+        "exclusive_ms_per_tick": 0.004844921875
+      },
+      "timed.candidate_service_visits": {
+        "calls": 7734193,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.forward": {
+        "calls": 14639,
+        "inclusive_ns": 10593215500,
+        "inclusive_ms_per_tick": 10.34493701171875,
+        "exclusive_ns": 7752582500,
+        "exclusive_ms_per_tick": 7.57088134765625
+      },
+      "timed.next_departure": {
+        "calls": 258625,
+        "inclusive_ns": 5307500,
+        "inclusive_ms_per_tick": 0.00518310546875,
+        "exclusive_ns": 5307500,
+        "exclusive_ms_per_tick": 0.00518310546875
+      },
+      "loading.intent_and_live_ride": {
+        "calls": 137757,
+        "inclusive_ns": 20401200,
+        "inclusive_ms_per_tick": 0.019923046875,
+        "exclusive_ns": 8395300,
+        "exclusive_ms_per_tick": 0.00819853515625
+      },
+      "timed.departure_evaluation": {
+        "calls": 7151474,
+        "inclusive_ns": 2660967400,
+        "inclusive_ms_per_tick": 2.5986009765625,
+        "exclusive_ns": 447712600,
+        "exclusive_ms_per_tick": 0.4372193359375
+      },
+      "schedule.plan": {
+        "calls": 11390,
+        "inclusive_ns": 139301500,
+        "inclusive_ms_per_tick": 0.13603662109375,
+        "exclusive_ns": 15940200,
+        "exclusive_ms_per_tick": 0.0155666015625
+      },
+      "database.publication": {
+        "calls": 12,
+        "inclusive_ns": 20231600,
+        "inclusive_ms_per_tick": 0.019757421875,
+        "exclusive_ns": 20231600,
+        "exclusive_ms_per_tick": 0.019757421875
+      },
+      "timed.plan": {
+        "calls": 16384,
+        "inclusive_ns": 15022907700,
+        "inclusive_ms_per_tick": 14.67080830078125,
+        "exclusive_ns": 182242600,
+        "exclusive_ms_per_tick": 0.1779712890625
+      },
+      "fallback.cache_reuse": {
+        "calls": 19359,
+        "inclusive_ns": 6228100,
+        "inclusive_ms_per_tick": 0.00608212890625,
+        "exclusive_ns": 6228100,
+        "exclusive_ms_per_tick": 0.00608212890625
+      },
+      "loading.live_station_reads": {
+        "calls": 1459678,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "schedule.search": {
+        "calls": 1756,
+        "inclusive_ns": 123361300,
+        "inclusive_ms_per_tick": 0.12047001953125,
+        "exclusive_ns": 122009200,
+        "exclusive_ms_per_tick": 0.119149609375
+      },
+      "timed.index_tree_find": {
+        "calls": 27315296,
+        "inclusive_ns": 2249517600,
+        "inclusive_ms_per_tick": 2.19679453125,
+        "exclusive_ns": 944946700,
+        "exclusive_ms_per_tick": 0.92279951171875
+      },
+      "timed.vehicle_phase_scan": {
+        "calls": 1032,
+        "inclusive_ns": 2806500,
+        "inclusive_ms_per_tick": 0.00274072265625,
+        "exclusive_ns": 2688600,
+        "exclusive_ms_per_tick": 0.0026255859375
+      },
+      "timed.index_build_vehicle_visits": {
+        "calls": 9934,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "loading.packet_append": {
+        "calls": 94921,
+        "inclusive_ns": 59194000,
+        "inclusive_ms_per_tick": 0.057806640625,
+        "exclusive_ns": 59194000,
+        "exclusive_ms_per_tick": 0.057806640625
+      },
+      "fallback.bfs": {
+        "calls": 43235,
+        "inclusive_ns": 1847770500,
+        "inclusive_ms_per_tick": 1.80446337890625,
+        "exclusive_ns": 1847770500,
+        "exclusive_ms_per_tick": 1.80446337890625
+      },
+      "timed.dominance_checks": {
+        "calls": 269913121,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.work_stop.vehicle_phase": {
+        "calls": 907,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.index_remainder_comparisons": {
+        "calls": 18323312,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.queue_pop": {
+        "calls": 959453,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.work_stop.dominance": {
+        "calls": 4622,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.work_stop.queue": {
+        "calls": 9462,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "fallback.node_binding_rebuild": {
+        "calls": 0,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "fallback.reverse_index": {
+        "calls": 0,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.label_attempts": {
+        "calls": 210232330,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.departure_index_access": {
+        "calls": 7150442,
+        "inclusive_ns": 425978000,
+        "inclusive_ms_per_tick": 0.415994140625,
+        "exclusive_ns": 422883700,
+        "exclusive_ms_per_tick": 0.41297236328125
+      },
+      "loading.packet_load": {
+        "calls": 74698,
+        "inclusive_ns": 3197004300,
+        "inclusive_ms_per_tick": 3.12207451171875,
+        "exclusive_ns": 1270955700,
+        "exclusive_ms_per_tick": 1.24116767578125
+      }
+    }
+  },
+  {
+    "first_ordinal": 7169,
+    "last_ordinal": 8192,
+    "kind": "detail",
+    "simulation": {
+      "mean_us": 35441.2216796875,
+      "max_us": 93429,
+      "p50_us": 33987,
+      "p95_us": 50884,
+      "p99_us": 73010
+    },
+    "journey": {
+      "mean_us": 16588.560546875,
+      "max_us": 75229,
+      "p50_us": 15385,
+      "p95_us": 29907,
+      "p99_us": 49549
+    },
+    "metrics": {
+      "loading.packet_stage": {
+        "calls": 11300,
+        "inclusive_ns": 530007700,
+        "inclusive_ms_per_tick": 0.51758564453125,
+        "exclusive_ns": 100632000,
+        "exclusive_ms_per_tick": 0.0982734375
+      },
+      "timed.live_vehicle_reads": {
+        "calls": 4010,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.queue_push": {
+        "calls": 11579800,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.work_stop.candidate_service": {
+        "calls": 29,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "live.station_get": {
+        "calls": 264,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.vehicle_phase_visits": {
+        "calls": 4908,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.forward_work_stops": {
+        "calls": 22952,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "loading.waiting_reinserted_packets": {
+        "calls": 31876,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.reverse_lower_bound": {
+        "calls": 6734,
+        "inclusive_ns": 4036951800,
+        "inclusive_ms_per_tick": 3.9423357421875,
+        "exclusive_ns": 4036951800,
+        "exclusive_ms_per_tick": 3.9423357421875
+      },
+      "schedule.wait_estimate": {
+        "calls": 1982,
+        "inclusive_ns": 1204900,
+        "inclusive_ms_per_tick": 0.00117666015625,
+        "exclusive_ns": 1204900,
+        "exclusive_ms_per_tick": 0.00117666015625
+      },
+      "loading.waiting_scan": {
+        "calls": 22922,
+        "inclusive_ns": 14736736600,
+        "inclusive_ms_per_tick": 14.3913443359375,
+        "exclusive_ns": 501687200,
+        "exclusive_ms_per_tick": 0.48992890625
+      },
+      "loading.can_board": {
+        "calls": 228738,
+        "inclusive_ns": 32821600,
+        "inclusive_ms_per_tick": 0.03205234375,
+        "exclusive_ns": 8708300,
+        "exclusive_ms_per_tick": 0.00850419921875
+      },
+      "timed.forward_label_stops": {
+        "calls": 87,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "live.station_get_if_valid": {
+        "calls": 12715376,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "loading.station_facilities": {
+        "calls": 1172875,
+        "inclusive_ns": 56351700,
+        "inclusive_ms_per_tick": 0.05503095703125,
+        "exclusive_ns": 56351700,
+        "exclusive_ms_per_tick": 0.05503095703125
+      },
+      "live.station_is_valid": {
+        "calls": 31265514,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.work_stop.alighting": {
+        "calls": 7816,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "fallback.distance": {
+        "calls": 1211754,
+        "inclusive_ns": 2235708300,
+        "inclusive_ms_per_tick": 2.18330888671875,
+        "exclusive_ns": 426532300,
+        "exclusive_ms_per_tick": 0.41653544921875
+      },
+      "loading.live_vehicle_validation": {
+        "calls": 11068,
+        "inclusive_ns": 7177900,
+        "inclusive_ms_per_tick": 0.00700966796875,
+        "exclusive_ns": 3830200,
+        "exclusive_ms_per_tick": 0.0037404296875
+      },
+      "timed.departure_index_lookup": {
+        "calls": 6693734,
+        "inclusive_ns": 1606563400,
+        "inclusive_ms_per_tick": 1.5689095703125,
+        "exclusive_ns": 388878100,
+        "exclusive_ms_per_tick": 0.37976376953125
+      },
+      "loading.waiting_packet_visits": {
+        "calls": 2749550,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.indexed_successor": {
+        "calls": 6693734,
+        "inclusive_ns": 1213136600,
+        "inclusive_ms_per_tick": 1.1847037109375,
+        "exclusive_ns": 372188700,
+        "exclusive_ms_per_tick": 0.36346552734375
+      },
+      "loading.intent_current": {
+        "calls": 301592,
+        "inclusive_ns": 13088000,
+        "inclusive_ms_per_tick": 0.01278125,
+        "exclusive_ns": 13088000,
+        "exclusive_ms_per_tick": 0.01278125
+      },
+      "database.tick": {
+        "calls": 1024,
+        "inclusive_ns": 29704500,
+        "inclusive_ms_per_tick": 0.02900830078125,
+        "exclusive_ns": 16138600,
+        "exclusive_ms_per_tick": 0.0157603515625
+      },
+      "timed.live_station_checks": {
+        "calls": 32768,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.service_bound": {
+        "calls": 3082151,
+        "inclusive_ns": 173934300,
+        "inclusive_ms_per_tick": 0.16985771484375,
+        "exclusive_ns": 173934300,
+        "exclusive_ms_per_tick": 0.16985771484375
+      },
+      "timed.index_loading_vehicle_visits": {
+        "calls": 5975875,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.departure_index_build": {
+        "calls": 996,
+        "inclusive_ns": 1715500,
+        "inclusive_ms_per_tick": 0.00167529296875,
+        "exclusive_ns": 1715500,
+        "exclusive_ms_per_tick": 0.00167529296875
+      },
+      "loading.waiting_reinsert": {
+        "calls": 22922,
+        "inclusive_ns": 2024600,
+        "inclusive_ms_per_tick": 0.0019771484375,
+        "exclusive_ns": 2024600,
+        "exclusive_ms_per_tick": 0.0019771484375
+      },
+      "timed.index_start_comparisons": {
+        "calls": 15463423,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "fallback.node_binding": {
+        "calls": 17776,
+        "inclusive_ns": 4501100,
+        "inclusive_ms_per_tick": 0.00439560546875,
+        "exclusive_ns": 4501100,
+        "exclusive_ms_per_tick": 0.00439560546875
+      },
+      "timed.candidate_service_visits": {
+        "calls": 7255090,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.forward": {
+        "calls": 14485,
+        "inclusive_ns": 9899292400,
+        "inclusive_ms_per_tick": 9.667277734375,
+        "exclusive_ns": 7315529300,
+        "exclusive_ms_per_tick": 7.14407158203125
+      },
+      "timed.next_departure": {
+        "calls": 234695,
+        "inclusive_ns": 4622400,
+        "inclusive_ms_per_tick": 0.0045140625,
+        "exclusive_ns": 4622400,
+        "exclusive_ms_per_tick": 0.0045140625
+      },
+      "loading.intent_and_live_ride": {
+        "calls": 234063,
+        "inclusive_ns": 28722300,
+        "inclusive_ms_per_tick": 0.02804912109375,
+        "exclusive_ns": 13449800,
+        "exclusive_ms_per_tick": 0.0131345703125
+      },
+      "timed.departure_evaluation": {
+        "calls": 6694545,
+        "inclusive_ns": 2409828800,
+        "inclusive_ms_per_tick": 2.3533484375,
+        "exclusive_ns": 411426700,
+        "exclusive_ms_per_tick": 0.40178388671875
+      },
+      "schedule.plan": {
+        "calls": 10908,
+        "inclusive_ns": 119905200,
+        "inclusive_ms_per_tick": 0.117094921875,
+        "exclusive_ns": 13839100,
+        "exclusive_ms_per_tick": 0.01351474609375
+      },
+      "database.publication": {
+        "calls": 6,
+        "inclusive_ns": 10271100,
+        "inclusive_ms_per_tick": 0.01003037109375,
+        "exclusive_ns": 10271100,
+        "exclusive_ms_per_tick": 0.01003037109375
+      },
+      "timed.plan": {
+        "calls": 16384,
+        "inclusive_ns": 14107528500,
+        "inclusive_ms_per_tick": 13.77688330078125,
+        "exclusive_ns": 171284300,
+        "exclusive_ms_per_tick": 0.16726982421875
+      },
+      "fallback.cache_reuse": {
+        "calls": 18362,
+        "inclusive_ns": 5855300,
+        "inclusive_ms_per_tick": 0.00571806640625,
+        "exclusive_ns": 5855300,
+        "exclusive_ms_per_tick": 0.00571806640625
+      },
+      "loading.live_station_reads": {
+        "calls": 1172734,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "schedule.search": {
+        "calls": 1946,
+        "inclusive_ns": 106066100,
+        "inclusive_ms_per_tick": 0.10358017578125,
+        "exclusive_ns": 104861200,
+        "exclusive_ms_per_tick": 0.102403515625
+      },
+      "timed.index_tree_find": {
+        "calls": 24623719,
+        "inclusive_ns": 1998516300,
+        "inclusive_ms_per_tick": 1.95167607421875,
+        "exclusive_ns": 840947900,
+        "exclusive_ms_per_tick": 0.82123818359375
+      },
+      "timed.vehicle_phase_scan": {
+        "calls": 811,
+        "inclusive_ns": 2031000,
+        "inclusive_ms_per_tick": 0.0019833984375,
+        "exclusive_ns": 1957300,
+        "exclusive_ms_per_tick": 0.00191142578125
+      },
+      "timed.index_build_vehicle_visits": {
+        "calls": 5516,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "loading.packet_append": {
+        "calls": 94853,
+        "inclusive_ns": 57855700,
+        "inclusive_ms_per_tick": 0.05649970703125,
+        "exclusive_ns": 57855700,
+        "exclusive_ms_per_tick": 0.05649970703125
+      },
+      "fallback.bfs": {
+        "calls": 42340,
+        "inclusive_ns": 1798819600,
+        "inclusive_ms_per_tick": 1.756659765625,
+        "exclusive_ns": 1798819600,
+        "exclusive_ms_per_tick": 1.756659765625
+      },
+      "timed.dominance_checks": {
+        "calls": 259606578,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.work_stop.vehicle_phase": {
+        "calls": 738,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.index_remainder_comparisons": {
+        "calls": 16972110,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.queue_pop": {
+        "calls": 882895,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.work_stop.dominance": {
+        "calls": 4687,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.work_stop.queue": {
+        "calls": 8871,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "fallback.node_binding_rebuild": {
+        "calls": 0,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "fallback.reverse_index": {
+        "calls": 0,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.label_attempts": {
+        "calls": 201302177,
+        "inclusive_ns": 0,
+        "inclusive_ms_per_tick": 0.0,
+        "exclusive_ns": 0,
+        "exclusive_ms_per_tick": 0.0
+      },
+      "timed.departure_index_access": {
+        "calls": 6693734,
+        "inclusive_ns": 389807700,
+        "inclusive_ms_per_tick": 0.38067158203125,
+        "exclusive_ns": 388092200,
+        "exclusive_ms_per_tick": 0.3789962890625
+      },
+      "loading.packet_load": {
+        "calls": 71977,
+        "inclusive_ns": 3293380700,
+        "inclusive_ms_per_tick": 3.21619208984375,
+        "exclusive_ns": 1400903900,
+        "exclusive_ms_per_tick": 1.36807021484375
+      }
+    }
+  }
+]

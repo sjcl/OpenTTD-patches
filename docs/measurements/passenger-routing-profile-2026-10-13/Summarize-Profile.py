@@ -78,6 +78,9 @@ def derived(parsed):
     ticks = sim.get("completed_ticks", 0)
     db, cache = r.get("Periodic database", {}), r.get("Periodic cache cost", {})
     schedule = r.get("Schedule routing", {})
+    departures = r.get('Periodic departures', {})
+    storage = r.get('Timed search storage', {})
+    binding = r.get('OD fallback bindings', {})
     ms = lambda value: ratio(value, ticks * 1000)
     query, reverse = db.get("query_us"), cache.get("compile_us")
     buckets = parsed["tick_histogram"]
@@ -91,6 +94,11 @@ def derived(parsed):
               "time_ms_per_tick": {
                   "timed_query_inclusive": ms(query), "timed_reverse_cold": ms(reverse),
                   "timed_forward_and_cache_other": ms(query - reverse) if query is not None and reverse is not None else None,
+                  "timed_forward": ms(departures.get('forward_us')),
+                  "departure_index_build": ratio(departures.get('build_ns'), ticks * 1000000),
+                  "fallback_binding_validation": ratio(binding.get('validation_ns'), ticks * 1000000),
+                  "fallback_binding_build": ratio(binding.get('build_ns'), ticks * 1000000),
+                  "fallback_reverse_build": ratio(binding.get('reverse_build_ns'), ticks * 1000000),
                   "schedule_query_inclusive": ms(schedule.get("query_us")),
                   "schedule_compile": ms(r.get("Schedule policy compilation", {}).get("compile_us")),
                   "database_tick_inclusive": ms(db.get("build_us")),
@@ -98,8 +106,16 @@ def derived(parsed):
                   **{key: ms(value) for key, value in r.get("Journey inclusive scopes", {}).items()},
               },
               "calls": {"timed_od": db.get("searches"), "next_departures": db.get("next_departures"),
+                        "logical_vehicle_candidates": departures.get('logical_vehicles'),
+                        "physical_departure_calculations": departures.get('physical_calculations'),
+                        "pruned_services": r.get('Periodic service pruning', {}).get('pruned_services'),
+                        "labels_accepted": storage.get('labels'), "frontier_lookups": storage.get('frontier_lookups'),
+                        "queue_pushes": storage.get('queue_pushes'), "queue_pops": storage.get('queue_pops'),
                         "schedule_od": schedule.get("hits", 0) + schedule.get("misses", 0) if schedule else None,
                         "fallback_cold_searches": r.get("OD fallback cache", {}).get("searches")},
+              "memory_bytes": {"database_estimate": db.get('bytes'), "policy_and_residency_metadata_estimate": db.get('policies_bytes'),
+                               "departure_index_estimate": departures.get('bytes'), "departure_index_peak_estimate": departures.get('peak_bytes'),
+                               "search_scratch_retained": storage.get('scratch_bytes'), "search_scratch_peak": storage.get('scratch_peak_bytes')},
               "cache_hit_fraction": {"timed": ratio(db.get("policy_hits"), db.get("policy_hits", 0) + db.get("policy_misses", 0)),
                                      "schedule": ratio(schedule.get("hits"), schedule.get("hits", 0) + schedule.get("misses", 0))}}
     if not buckets:
@@ -119,10 +135,43 @@ def semantic_signature(parsed):
             "Pragmatic routing", "Completed interchanges", "Schedule-assisted final OD", "OD fallback", "Fair waiting shares"]
     return {"ticks": parsed["state_ticks"], "outcomes": parsed["periodic_outcomes"], "fallbacks": parsed["fallbacks"],
             "observations": parsed.get('observations', {}),
-            "transport_and_admission": {key: r.get(key) for key in keys},
+            "transport_and_admission": {key: ({'work': r[key].get('work')} if key == 'OD fallback' and key in r else r.get(key)) for key in keys},
             "database": {key: db.get(key) for key in ["builds", "work", "searches", "next_departures", "rejected_work", "rejected_memory"]},
+            "timed_search_work": r.get('Periodic departures', {}).get('search_work'),
             "schedule": {key: schedule.get(key) for key in ["packets", "passengers", "timed_deferred", "work"]},
             "schedule_searches": schedule.get("hits", 0) + schedule.get("misses", 0) if schedule else None}
+
+
+def detail_windows(detail):
+    """Observed consecutive intervals; never assume a steady-state boundary."""
+    samples, checkpoints = detail.get('tick_samples', []), detail.get('checkpoints', [])
+    windows, previous, start = [], {}, 0
+    for checkpoint in checkpoints:
+        end, current = checkpoint['completed_ticks'], checkpoint['metrics']
+        if end <= start or end > len(samples):
+            raise ValueError('Detail checkpoint is outside recorded simulation ticks')
+        subset = samples[start:end]
+        metrics = {}
+        for name in current.keys() | previous.keys():
+            now, old = current.get(name, {}), previous.get(name, {})
+            calls = now.get('calls', 0) - old.get('calls', 0)
+            ns = now.get('inclusive_ns', 0) - old.get('inclusive_ns', 0)
+            if calls < 0 or ns < 0:
+                raise ValueError('Detail cumulative counter decreased')
+            metrics[name] = {'calls': calls, 'inclusive_ns': ns, 'inclusive_ms_per_tick': ns / (end - start) / 1000000}
+            if 'exclusive_ns' in now:
+                exclusive = now['exclusive_ns'] - old.get('exclusive_ns', 0)
+                if exclusive < 0 or exclusive > ns:
+                    raise ValueError('Detail exclusive counter is invalid')
+                metrics[name].update(exclusive_ns=exclusive, exclusive_ms_per_tick=exclusive / (end - start) / 1000000)
+        def latency(column):
+            values = sorted(row[column] for row in subset)
+            return {'mean_us': statistics.mean(values), 'max_us': max(values),
+                    **{f'p{p}_us': values[math.ceil(len(values) * p / 100) - 1] for p in [50, 95, 99]}}
+        windows.append({'first_ordinal': start + 1, 'last_ordinal': end, 'kind': 'detail',
+                        'simulation': latency(0), 'journey': latency(1), 'metrics': metrics})
+        start, previous = end, current
+    return windows
 
 
 def read_manifest(path):
@@ -171,6 +220,10 @@ def read_manifest(path):
         detail = directory / "detail-scopes.json"
         if detail.exists():
             run["detail"] = json.loads(detail.read_text(encoding="utf-8"))
+            run['detail_windows'] = detail_windows(run['detail'])
+            if run['detail'].get('tick_samples') and len(run['detail']['tick_samples']) != stats['completed_ticks']:
+                errors.append('Detailed tick sample count mismatch')
+                run['valid'] = False
         if manifest["kind"] == "detail" and "detail" not in run:
             errors.append("Detailed scopes JSON missing")
             run["valid"] = False
@@ -186,11 +239,36 @@ def fingerprint(manifest, run):
             "harness": manifest["harness_sha256"], "phase": manifest["phase"], "cache_off_scope": manifest["cache_off_scope"]}
 
 
-def summarize(paths, baseline):
+def snapshot_datasets(path):
+    """Reuse recorded validation; do not pretend to recheck absent large saves."""
+    snapshot = json.loads(path.read_text(encoding='utf-8'))
+    if snapshot.get('schema_version') != 1:
+        raise ValueError('Unsupported archived summary schema')
+    assigned = set()
+    for manifest in snapshot['manifests']:
+        ids = {r['id'] for r in manifest['runs']}
+        runs = []
+        for index, run in enumerate(snapshot['runs']):
+            if (run['label'], run['kind'], run['phase'], run['revision']) == (manifest['label'], manifest['kind'], manifest['phase'], manifest['revision']) and run['id'] in ids:
+                if index in assigned:
+                    raise ValueError('Archived run matches multiple manifests')
+                assigned.add(index)
+                runs.append(run)
+        yield manifest, runs
+    if len(assigned) != len(snapshot['runs']):
+        raise ValueError('Archived run lacks matching manifest provenance')
+
+
+def summarize(paths, baseline, archived_summaries=()):
     manifests, all_runs, fingerprints = [], [], {}
+    datasets = []
+    for path in archived_summaries:
+        datasets.extend(snapshot_datasets(path))
     for path in paths:
         manifest, runs = read_manifest(path)
-        manifests.append({"path": str(path), **manifest})
+        datasets.append(({"path": str(path), **manifest}, runs))
+    for manifest, runs in datasets:
+        manifests.append(manifest)
         for run in runs:
             identity = (run["label"], run["id"], run["kind"], run["phase"])
             if identity in fingerprints:
@@ -229,23 +307,32 @@ def summarize(paths, baseline):
         compatible = all(value == values[0] for value in values)
         comparisons.append({"label": group["label"], "mode": group["mode"], "phase": group["phase"], "compatible": compatible,
                             "relative_change": group["mean_of_run_means_ms"] / reference["mean_of_run_means_ms"] - 1 if compatible else None,
+                            "run_mean_relative_ranges": {"baseline": reference["run_mean_relative_range"], "candidate": group["run_mean_relative_range"]},
                             "semantics_match_baseline": all(r["semantic_signature"] == reference_runs[0]["semantic_signature"] for r in candidate_runs) if compatible else None,
+                            "full_save_match_baseline": all(r["final_save_sha256"] == reference_runs[0]["final_save_sha256"] for r in candidate_runs + reference_runs) if compatible else None,
                             "reason": None if compatible else "input/assets/config/compiler/host/settings/interval/harness differ"})
     return {"schema_version": 1, "baseline_label": baseline, "manifests": manifests, "runs": all_runs,
+            "imported_summary_paths": [str(p) for p in archived_summaries],
             "groups": groups, "cache_invariance": invariance, "comparisons": comparisons,
             "scope_notes": ["Elapsed scopes are inclusive and overlap; never sum waiting/boarding/fallback with query times.",
                             "Database build_us spans Tick and includes Publish; publication_us is its child and is not added again.",
                             "Histograms have 1 ms upper bounds and an unbounded overflow bucket.",
                             "Detail runs are excluded from speed comparisons; process CPU includes load/save and worker threads.",
-                            "Run means compare matched intervals; repeat ranges are environment noise observations, not confidence intervals."]}
+                            "Detail exclusive_ns subtracts observed nested scopes only; it is elapsed time, not an OS exclusive CPU sample.",
+                            "Run means compare matched intervals; repeat ranges are environment noise observations, not confidence intervals.",
+                            "Compatible fingerprints do not establish stable CPU clocks or environmental conditions; relative_change is an observation, not causal attribution to a patch.",
+                            "Imported summaries retain validation recorded at collection; they do not rehash absent full saves."]}
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("manifests", nargs="+", type=pathlib.Path)
+    parser.add_argument("manifests", nargs="*", type=pathlib.Path)
+    parser.add_argument('--existing-summary', action='append', default=[], type=pathlib.Path, help='Reuse archived baseline diagnostics and their recorded validation; full saves are not rechecked')
     parser.add_argument("--output", required=True, type=pathlib.Path)
     parser.add_argument("--baseline", default="baseline")
     args = parser.parse_args()
-    result = summarize(args.manifests, args.baseline)
+    if not args.manifests and not args.existing_summary:
+        parser.error('Provide manifests or --existing-summary')
+    result = summarize(args.manifests, args.baseline, args.existing_summary)
     args.output.write_text(json.dumps(result, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     print(json.dumps({"groups": result["groups"], "cache_invariance": result["cache_invariance"], "comparisons": result["comparisons"]}, indent=2))

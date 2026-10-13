@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "attempts": [
+    {
+      "source_manifest": "C:\\Users\\bebe\\.codex\\worktrees\\428c\\OpenTTD-patches\\build-journey-profile\\merged-c2c4d1898c-detail\\manifest.json",
+      "source_manifest_sha256": "be975307b74869de2d62369c406c4b7d55568806a2b96cef837e5caf282cc801",
+      "original_manifest_status": "running",
+      "normalized_status": "not_started_lock_busy",
+      "benchmark_runs": 0,
+      "reason": "Another chat owned the global measurement lock. This launch exited before any game started. Retried after the owner finished; not included in timings."
+    }
+  ]
+}

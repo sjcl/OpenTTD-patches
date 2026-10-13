@@ -1,0 +1,68 @@
+{
+  "schema_version": 1,
+  "runs": [
+    {
+      "id": "off-1",
+      "label": "baseline",
+      "kind": "minimal",
+      "source_directory": "build-journey-profile\\merged-604ce99389-minimal-settled\\off-1",
+      "archive_directory": "baseline-minimal-off-1",
+      "raw_console_sha256": "e8fed8aeafbea64dd2110c92225bcaf248270a77b634ec560ab95070bf8fa3c9",
+      "archived_console_sha256": "e8fed8aeafbea64dd2110c92225bcaf248270a77b634ec560ab95070bf8fa3c9",
+      "final_save_sha256_verified_at_collection": "9f8a1ab4f03e9507dfd1cea9ee0ea45b9e7d4a5efd6dd7bc582a5866f4abda22"
+    },
+    {
+      "id": "on-1",
+      "label": "baseline",
+      "kind": "minimal",
+      "source_directory": "build-journey-profile\\merged-604ce99389-minimal-settled\\on-1",
+      "archive_directory": "baseline-minimal-on-1",
+      "raw_console_sha256": "e2d8f79a5d6db25ce5d5d5c0be85207349780a5b6d13cfc1f1516bcd80853bbd",
+      "archived_console_sha256": "e2d8f79a5d6db25ce5d5d5c0be85207349780a5b6d13cfc1f1516bcd80853bbd",
+      "final_save_sha256_verified_at_collection": "c1d766e16ba9d9d3b6b3a97eca1c98353cf48b6bd253bf9bedd3eeb41629e01a"
+    },
+    {
+      "id": "cold-1",
+      "label": "baseline",
+      "kind": "minimal",
+      "source_directory": "build-journey-profile\\merged-604ce99389-minimal-settled\\cold-1",
+      "archive_directory": "baseline-minimal-cold-1",
+      "raw_console_sha256": "ca9955cef6843f6f6f3fe052570722fd48db9b7a32dd284de99a58ecd0ec22d5",
+      "archived_console_sha256": "ca9955cef6843f6f6f3fe052570722fd48db9b7a32dd284de99a58ecd0ec22d5",
+      "final_save_sha256_verified_at_collection": "c1d766e16ba9d9d3b6b3a97eca1c98353cf48b6bd253bf9bedd3eeb41629e01a"
+    },
+    {
+      "id": "cold-2",
+      "label": "baseline",
+      "kind": "minimal",
+      "source_directory": "build-journey-profile\\merged-604ce99389-minimal-settled\\cold-2",
+      "archive_directory": "baseline-minimal-cold-2",
+      "raw_console_sha256": "4db63c3e45444fa76af693b117c0db3fc1a0b67046a1aaf04435134fa71d292a",
+      "archived_console_sha256": "4db63c3e45444fa76af693b117c0db3fc1a0b67046a1aaf04435134fa71d292a",
+      "final_save_sha256_verified_at_collection": "c1d766e16ba9d9d3b6b3a97eca1c98353cf48b6bd253bf9bedd3eeb41629e01a"
+    },
+    {
+      "id": "on-2",
+      "label": "baseline",
+      "kind": "minimal",
+      "source_directory": "build-journey-profile\\merged-604ce99389-minimal-settled\\on-2",
+      "archive_directory": "baseline-minimal-on-2",
+      "raw_console_sha256": "15692077ce0e4934814d983704db5bf3f6a3a3233c6a036baa845a1898fb0210",
+      "archived_console_sha256": "15692077ce0e4934814d983704db5bf3f6a3a3233c6a036baa845a1898fb0210",
+      "final_save_sha256_verified_at_collection": "c1d766e16ba9d9d3b6b3a97eca1c98353cf48b6bd253bf9bedd3eeb41629e01a"
+    },
+    {
+      "id": "off-2",
+      "label": "baseline",
+      "kind": "minimal",
+      "source_directory": "build-journey-profile\\merged-604ce99389-minimal-settled\\off-2",
+      "archive_directory": "baseline-minimal-off-2",
+      "raw_console_sha256": "eb39471a1a5ab1b4a364811fdb88de08ab32df84bf4980edef73ba5f43229b6f",
+      "archived_console_sha256": "eb39471a1a5ab1b4a364811fdb88de08ab32df84bf4980edef73ba5f43229b6f",
+      "final_save_sha256_verified_at_collection": "9f8a1ab4f03e9507dfd1cea9ee0ea45b9e7d4a5efd6dd7bc582a5866f4abda22"
+    }
+  ],
+  "source_summary_sha256": "f22ed96966e86d910516eb5b44161e3d5e900caa921d4c91276d0450715d6eea",
+  "note": "Save/asset/exe files remain outside Git. Text/JSON is LF normalized; raw source and archived summary/console hashes are distinct. --existing-summary reuses recorded validation.",
+  "archived_summary_sha256": "6be226489a434e9bc5c430b657fe779080aa8417c0022a8bd95c95ce41e570f9"
+}
