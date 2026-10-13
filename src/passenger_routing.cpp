@@ -275,13 +275,14 @@ static PassengerJourney PredictPassengerJourneyImpl(const PassengerRouteState &s
 				lateness = 0;
 			}
 		} else if (depot) {
-			/* Even a zero depot wait needs an explicit flag. Unlike a passing
-			 * waypoint, an unset wait gives no certified depot departure. */
-			const bool wait_known = depot_traversal == PassengerDepotTraversal::Timed && order.IsWaitTimetabled();
+			/* VehicleEnterDepot advances on entry when no wait is declared.
+			 * Raw unconfirmed waits do not hold the vehicle; departure from the
+			 * depot is included in the next order's recorded travel time. */
+			const bool wait_known = depot_traversal == PassengerDepotTraversal::Timed;
 			if (!wait_known) unknown_timing();
 			if (state.scheduled_dispatch && order.IsScheduledDispatchOrder(true)) return uncertain(PassengerPredictionStop::Dispatch);
 			if (prefix_only && !timing_known) return uncertain(PassengerPredictionStop::Timing);
-			advance_leg(order.GetWaitTime(), wait_known);
+			advance_leg(order.GetTimetabledWait(), wait_known);
 		} else if (order.IsType(OT_GOTO_WAYPOINT)) {
 			if (state.scheduled_dispatch && order.IsScheduledDispatchOrder(true)) return uncertain(PassengerPredictionStop::Dispatch);
 			if (order.GetWaitTime() > 0 && !order.IsWaitTimetabled()) unknown_timing();

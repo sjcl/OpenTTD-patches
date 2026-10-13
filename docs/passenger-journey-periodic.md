@@ -37,19 +37,26 @@ Actual order edits invalidate the derived service indexes even when only cargo
 permissions changed; timetable edits keep their existing coalesced publication.
 
 Regular depot orders with PartOfOrders, a fixed destination, no refit/stop/sell action
-and explicit travel/wait flags contribute to timed cycles without adding a passenger
-stop. Depot dispatch anchors remain untimed. Service-if-needed, nearest-depot and
+and explicit travel flags contribute to timed cycles without adding a passenger
+stop. A declared depot wait contributes its configured duration. An unset depot wait
+means no waiting instruction: VehicleEnterDepot advances the order on entry, and
+departure/acceleration is included in the next order's recorded travel. Unconfirmed
+raw depot wait values are ignored, matching the controller. Depot dispatch anchors
+remain untimed. Service-if-needed, nearest-depot and
 unbunching instructions permit live onward reachability but leave the cycle untimed;
 neither their possible detour nor release time is guessed. Halt, sell, refit and
 automatic/breakdown depot instructions cannot certify through rides. Periodic,
-snapshot and live fallback/execution checks share this classification. An unset depot
-wait (even zero) is unknown. A waypoint with no dwell instruction remains a passing
+snapshot and live fallback/execution checks share this classification. Missing travel
+or station dwell flags still mean unknown time. A waypoint with no dwell instruction remains a passing
 event; a declared waypoint wait and travel are included, and it never exchanges cargo.
 
 Phases are captured from a verified explicit current order. Movement, cargo counts
 and ordinary lateness do not rebuild the database. An initially unknown phase can
 be established by a later real explicit loading event. Capacity/refit changes seen
 at a real arrival invalidate the affected service; occupancy changes do not.
+An old saved untimed record whose depot cycle is now fully supported is reconsidered
+at a real loading event. A bounded flag/duration pass queues its normal coalesced
+update; load/join does not rewrite its publication, phase, queue or station cargo.
 
 Scheduled dispatch is timed only for a single physical shared vehicle, one dispatch
 anchor, and slots with sufficient time to complete a cycle between departures.
@@ -158,5 +165,6 @@ old/current saves, settings, GUI/diagnostic save purity and Journey-disabled beh
 
 Performance and multiplayer evidence are recorded separately in
 `passenger-journey-periodic-2026-10-12.md` and
-`passenger-journey-operational-stops-2026-10-13.md`. Synthetic tests are not substituted for
+`passenger-journey-operational-stops-2026-10-13.md`, with the depot no-wait follow-up in
+`passenger-journey-depot-no-wait-2026-10-13.md`. Synthetic tests are not substituted for
 real-map transport or live multiplayer measurements.

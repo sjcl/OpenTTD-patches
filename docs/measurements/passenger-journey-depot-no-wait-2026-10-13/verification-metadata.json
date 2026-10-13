@@ -1,0 +1,71 @@
+{
+  "configuration": "MSVC Release, asserts ON, LTO OFF, static vcpkg libraries",
+  "benchmark_option_product": "OFF",
+  "benchmark_option_measurements": "ON",
+  "measurement_base_runtime_commit": "957ebfdc75132e1ac215f4431450aaa64c5d8dec",
+  "prior_diagnostic_commit": "8c3ad1381a28b5517279e52071cdd84b693ed421",
+  "product_binary_sha256": "0e3fd9abc700b078b94e33a9dda0434c9dd68bb9d425699303cbd575a22dc8f7",
+  "console_binary_sha256": "c83bad5007b4a0f1dfed09b047bf7040bcd1c6a3659300f7c56c1011e10af8bb",
+  "test_binary_sha256": "c59090ea832551a8a4c78234b48237ca07fda65e2b23ee2e213cd8be0b5052dd",
+  "ctest": {
+    "passed": 484,
+    "failed": 0,
+    "seconds": 76.65
+  },
+  "operational_tests": {
+    "cases": 8,
+    "assertions": 1053
+  },
+  "multiplayer_ticks_progressed": 4946,
+  "multiplayer_ack_counts": {
+    "client-initial": 62,
+    "client-late": 56
+  },
+  "multiplayer_log_metadata": {
+    "server/stdout.txt": {
+      "sha256": "b3df354a6f9f3bb94d4b327cdd5e8e57bc435cc0d9f6be0b18bb3c35adaedfd8",
+      "bytes": 19708
+    },
+    "server/stderr.txt": {
+      "sha256": "9b721aac3114ce7436583c3f59b1cfb636564c08fafb1352ca242affda68789f",
+      "bytes": 10380385
+    },
+    "server/console.txt": {
+      "sha256": "94f5062f23e527c08c325f38252c9a4d99adb55dd44b6fdd835257911b46f37b",
+      "bytes": 18208
+    },
+    "client-initial/stdout.txt": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "client-initial/stderr.txt": {
+      "sha256": "6f527f98992eacea0775517c809f0fdcf34b43839141da58e29dab84170ceb85",
+      "bytes": 11687552
+    },
+    "client-initial/console.txt": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "client-late/stdout.txt": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "client-late/stderr.txt": {
+      "sha256": "239839dd0803101303676400b60ce7470ed5f369d96f1c7d568733ab48ae0548",
+      "bytes": 10697101
+    },
+    "client-late/console.txt": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    }
+  },
+  "source_sha256": {
+    "passenger_service_database.cpp": "370358a28f6eb3b8f5df7501cfe65618dae0f36dec279fdff792a561baaeb84a",
+    "passenger_routing.cpp": "a7dd3f7f80c1d19bd8ad455931e4c2775d01fbc29fcbf6ac424313668cc2f759",
+    "passenger_journey_active.cpp": "ca364ac1bd6670ce056fb73ab93b07b73bd338287fd7774593251557d9eb3834",
+    "passenger_journey_active.h": "10537a3ab6b7cb94d331b1309d771639336bbdcfb63941665334ab76805d2307",
+    "console_cmds.cpp": "ab924f25403c1ac7e65872ad13a1a61bc352285fd13c4439b39f7302871bf633",
+    "tests/passenger_service_database.cpp": "952443d91a565bd6666ddaf81c5859372fe8180f965d165e46442b1500d3d18d",
+    "tests/passenger_multimodal.cpp": "84d0250cb1b02c1b6b31a49161b4e13eb762e0190af21728fc07c136d971aed3"
+  }
+}

@@ -64,6 +64,8 @@ struct PassengerJourneyTickDiagnostic {
 	size_t od_fallback_work = 0, od_fallback_searches = 0;
 	size_t od_fallback_cache_hits = 0, od_fallback_cache_bytes = 0;
 	size_t boarded_passengers = 0, transferred_passengers = 0, delivered_passengers = 0;
+	size_t depot_service_boarded_passengers = 0, depot_service_delivered_passengers = 0;
+	size_t depot_crossing_boarded_passengers = 0, depot_crossing_delivered_passengers = 0; ///< Actual timed moves on a leg whose order suffix includes a depot.
 	size_t timing_uncertainty = 0, path_uncertainty = 0, uncertainty_resolved = 0;
 	size_t timed_routes_ignoring_unknown = 0, timed_budget_deferred = 0;
 	size_t untimed_routes = 0, untimed_no_route = 0, untimed_budget_deferred = 0;

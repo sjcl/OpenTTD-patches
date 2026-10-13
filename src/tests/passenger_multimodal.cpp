@@ -745,13 +745,16 @@ TEST_CASE("Every mode carries passengers through operating stops and continuing 
 	MultimodalFixture f;
 	VehicleType type = GENERATE(VehicleType::Train, VehicleType::Road, VehicleType::Ship, VehicleType::Aircraft);
 	bool periodic = GENERATE(false, true); bool optional_service = GENERATE(false, true);
+	bool declared_depot_wait = GENERATE(false, true);
 	_settings_game.linkgraph.passenger_journey_periodic = periodic;
 	Order closed = MultiStop(B, 20, 30); closed.SetLoadType(OrderLoadType::NoLoad); closed.SetUnloadType(OrderUnloadType::NoUnload);
 	Order depot; depot.MakeGoToDepot(DepotID{0}, {OrderDepotTypeFlag::PartOfOrders});
 	if (optional_service) depot.SetDepotOrderType({OrderDepotTypeFlag::PartOfOrders, OrderDepotTypeFlag::Service});
 	depot.SetTravelTime(20); depot.SetTravelTimetabled(true); depot.SetWaitTime(30); depot.SetWaitTimetabled(true);
+	if (!declared_depot_wait) { depot.SetWaitTime(0); depot.SetWaitTimetabled(false); }
 	Order final = MultiStop(E, 40, 0); final.SetUnloadType(OrderUnloadType::Transfer);
 	auto *vehicle = f.Service(type, {MultiStop(A, 10000, 10), closed, depot, final});
+	ResetPassengerJourneyDiagnostic();
 	ResetPassengerServiceDatabase(); if (periodic) GetPassengerServiceDatabase().Tick();
 	auto *packet = f.Packet(25); PassengerJourneyActiveContext context(nullptr, A);
 	context.PlanWaiting(*packet, PAX, E);
@@ -772,4 +775,9 @@ TEST_CASE("Every mode carries passengers through operating stops and continuing 
 	CHECK(vehicle->cargo.ActionCount(Action::Deliver) == 20);
 	CHECK(vehicle->cargo.Unload(20, &f.Waiting(E), PAX, &payment, vehicle->tile) == 20);
 	CHECK(company->cur_economy.delivered_cargo[PAX] == 20); CHECK(vehicle->cargo.TotalCount() == 0);
+	auto stats = GetPassengerJourneyTotalDiagnostic();
+	CHECK(stats.depot_service_boarded_passengers == (optional_service ? 0 : 20));
+	CHECK(stats.depot_crossing_boarded_passengers == (optional_service ? 0 : 20));
+	CHECK(stats.depot_service_delivered_passengers == (optional_service ? 0 : 20));
+	CHECK(stats.depot_crossing_delivered_passengers == (optional_service ? 0 : 20));
 }

@@ -1,0 +1,973 @@
+Test project C:/Users/bebe/.codex/worktrees/2ca2/OpenTTD-patches/build-operational
+        Start 479: passenger_journey_active_production
+        Start 478: passenger_od_load
+        Start 300: Depot entry without a wait preserves full cycles and queued saved publication
+        Start  38: RingBuffer - insert in middle (end) grow - uint32_t
+  1/484 Test #300: Depot entry without a wait preserves full cycles and queued saved publication ...................................................   Passed    0.32 sec
+        Start 452: EncodedString::ReplaceParam - negative
+  2/484 Test  #38: RingBuffer - insert in middle (end) grow - uint32_t .............................................................................   Passed    0.39 sec
+        Start 413: Multimodal snapshots and OD caches preserve deterministic ties and bounded work
+  3/484 Test #452: EncodedString::ReplaceParam - negative ..........................................................................................   Passed    0.39 sec
+        Start 301: Contiguous service indices match all legacy station and departure sequences
+  4/484 Test #413: Multimodal snapshots and OD caches preserve deterministic ties and bounded work .................................................   Passed    0.26 sec
+        Start 355: Onboard journey stages keep transfer and final delivery in production
+  5/484 Test #355: Onboard journey stages keep transfer and final delivery in production ...........................................................   Passed    0.23 sec
+        Start 409: Road adapters honor bay drive-through cargo direction and articulated capacity
+  6/484 Test #301: Contiguous service indices match all legacy station and departure sequences .....................................................   Passed    0.47 sec
+        Start 336: Shadow compares the final legacy action with the complete destination journey
+  7/484 Test #409: Road adapters honor bay drive-through cargo direction and articulated capacity ..................................................   Passed    0.23 sec
+        Start 214: Event capture shares services across 100 distinct OD searches
+  8/484 Test #336: Shadow compares the final legacy action with the complete destination journey ...................................................   Passed    0.23 sec
+        Start  81: AlternatingIterator tests
+  9/484 Test  #81: AlternatingIterator tests .......................................................................................................   Passed    0.26 sec
+        Start  37: RingBuffer - insert in middle (end) grow - uint8_t
+ 10/484 Test #214: Event capture shares services across 100 distinct OD searches ...................................................................   Passed    0.51 sec
+        Start 107: PartialPixelTest - Two corner up, diagonal slopes - SLOPE_NE
+ 11/484 Test  #37: RingBuffer - insert in middle (end) grow - uint8_t ..............................................................................   Passed    0.25 sec
+        Start 450: FixSCCEncoded
+ 12/484 Test #107: PartialPixelTest - Two corner up, diagonal slopes - SLOPE_NE ....................................................................   Passed    0.25 sec
+        Start 305: Scoped uncertainty retains future refits and conditional alternatives
+ 13/484 Test #450: FixSCCEncoded ...................................................................................................................   Passed    0.27 sec
+        Start 302: Live index capture preserves cold warm scoped and truncated query work
+ 14/484 Test #305: Scoped uncertainty retains future refits and conditional alternatives ...........................................................   Passed    0.27 sec
+        Start 204: A sparse national hub retains all eight thousand valid destinations
+ 15/484 Test #302: Live index capture preserves cold warm scoped and truncated query work ..........................................................   Passed    0.37 sec
+        Start 169: Passenger Stage retains a CargoDist via across intermediate stops
+ 16/484 Test #204: A sparse national hub retains all eight thousand valid destinations .............................................................   Passed    0.40 sec
+        Start  23: RingBuffer - insert in middle (begin) no grow - uint32_t
+ 17/484 Test #169: Passenger Stage retains a CargoDist via across intermediate stops ...............................................................   Passed    0.38 sec
+        Start  36: RingBuffer - insert in middle (begin) grow - NonTrivialTestType
+ 18/484 Test  #23: RingBuffer - insert in middle (begin) no grow - uint32_t ........................................................................   Passed    0.46 sec
+        Start 272: Cached periodic route alternatives change the winner with departure phase
+ 19/484 Test  #36: RingBuffer - insert in middle (begin) grow - NonTrivialTestType .................................................................   Passed    0.35 sec
+        Start  80: RingBuffer - insert with ref to existing element - NonTrivialTestType
+ 20/484 Test #272: Cached periodic route alternatives change the winner with departure phase .......................................................   Passed    0.26 sec
+        Start  51: RingBuffer - erase - NonTrivialTestType
+ 21/484 Test  #80: RingBuffer - insert with ref to existing element - NonTrivialTestType ...........................................................   Passed    0.29 sec
+        Start 201: Packet limits cannot consume rounding awards of tiny passenger demands
+ 22/484 Test  #51: RingBuffer - erase - NonTrivialTestType .........................................................................................   Passed    0.28 sec
+        Start 176: Passenger OD survives reservation return loading vehicle moves and station transfer
+ 23/484 Test #176: Passenger OD survives reservation return loading vehicle moves and station transfer .............................................   Passed    0.22 sec
+ 24/484 Test #201: Packet limits cannot consume rounding awards of tiny passenger demands ..........................................................   Passed    0.36 sec
+        Start 384: Unused loading shares are released before later searches in the same tick
+        Start 150: IntSqrtTest - Zero
+ 25/484 Test #384: Unused loading shares are released before later searches in the same tick .......................................................   Passed    0.24 sec
+        Start 123: PartialPixelTest - Steep slopes - SLOPE_STEEP_S
+ 26/484 Test #150: IntSqrtTest - Zero ..............................................................................................................   Passed    0.26 sec
+        Start 398: Periodic service intents use all real transport adapters and gradual reservations
+ 27/484 Test #123: PartialPixelTest - Steep slopes - SLOPE_STEEP_S .................................................................................   Passed    0.24 sec
+        Start 284: Dirty service intents retain their saved retry state until the next simulation event
+ 28/484 Test #398: Periodic service intents use all real transport adapters and gradual reservations ...............................................   Passed    0.23 sec
+        Start 306: Weighted waiting never certifies a scoped graph that omitted riding excursions
+ 29/484 Test #284: Dirty service intents retain their saved retry state until the next simulation event ............................................   Passed    0.24 sec
+        Start 203: National passenger demand keeps high weights and saves omitted demand without renormalisation
+ 30/484 Test #306: Weighted waiting never certifies a scoped graph that omitted riding excursions ..................................................   Passed    0.25 sec
+        Start  66: RingBuffer - basic move-only test - NonTrivialTestType
+ 31/484 Test #203: National passenger demand keeps high weights and saves omitted demand without renormalisation ...................................   Passed    0.36 sec
+ 32/484 Test  #66: RingBuffer - basic move-only test - NonTrivialTestType ..........................................................................   Passed    0.24 sec
+        Start 283: Periodic transfer intents enforce the actual minimum interchange time
+        Start 240: Passenger graph stop permissions and forced unloading bound through rides
+ 33/484 Test #283: Periodic transfer intents enforce the actual minimum interchange time ...........................................................   Passed    0.25 sec
+        Start 426: StringConsumer - binary32
+ 34/484 Test #240: Passenger graph stop permissions and forced unloading bound through rides .......................................................   Passed    0.27 sec
+        Start 309: Scoped standard work permits three hundred actual transfers
+ 35/484 Test #426: StringConsumer - binary32 .......................................................................................................   Passed    0.27 sec
+        Start  49: RingBuffer - erase - uint8_t
+ 36/484 Test #309: Scoped standard work permits three hundred actual transfers .....................................................................   Passed    0.26 sec
+        Start 381: Distinct OD budget waits retry next tick and remain normal failures when unreachable
+ 37/484 Test  #49: RingBuffer - erase - uint8_t ....................................................................................................   Passed    0.31 sec
+        Start 449: StrTrimView
+ 38/484 Test #381: Distinct OD budget waits retry next tick and remain normal failures when unreachable ............................................   Passed    0.34 sec
+        Start 377: Tick allowances survive local cache and diagnostic resets deterministically
+ 39/484 Test #449: StrTrimView .....................................................................................................................   Passed    0.26 sec
+        Start 281: Periodic long shared lines preserve their direct ride within a bounded policy search
+ 40/484 Test #377: Tick allowances survive local cache and diagnostic resets deterministically .....................................................   Passed    0.24 sec
+        Start 177: Passenger OD survives all station and vehicle reroute variants
+ 41/484 Test #281: Periodic long shared lines preserve their direct ride within a bounded policy search ............................................   Passed    0.25 sec
+        Start  60: RingBuffer - reserve - NonTrivialTestType
+ 42/484 Test #177: Passenger OD survives all station and vehicle reroute variants ..................................................................   Passed    0.25 sec
+        Start  61: RingBuffer - resize - uint8_t
+ 43/484 Test  #60: RingBuffer - reserve - NonTrivialTestType .......................................................................................   Passed    0.27 sec
+        Start 456: MayHaveRoad - Station
+ 44/484 Test  #61: RingBuffer - resize - uint8_t ...................................................................................................   Passed    0.33 sec
+        Start 412: All modes safely fallback on changed facilities orders capacity and unknown predictions
+ 45/484 Test #456: MayHaveRoad - Station ...........................................................................................................   Passed    0.45 sec
+        Start 261: Periodic timed routes win while missing timetable services stay unknown
+ 46/484 Test #478: passenger_od_load ...............................................................................................................   Passed    7.36 sec
+        Start 264: Periodic scheduler progress and captured phases survive save and join
+ 47/484 Test #412: All modes safely fallback on changed facilities orders capacity and unknown predictions .........................................   Passed    0.51 sec
+        Start 435: StrCompareIgnoreCase - char pointer
+ 48/484 Test #261: Periodic timed routes win while missing timetable services stay unknown .........................................................   Passed    0.37 sec
+        Start 367: Loading passenger packets preserves the queues used by station rating
+ 49/484 Test #264: Periodic scheduler progress and captured phases survive save and join ...........................................................   Passed    0.39 sec
+        Start 415: A frequent mixed trunk beats the infrequent direct train
+ 50/484 Test #435: StrCompareIgnoreCase - char pointer .............................................................................................   Passed    0.38 sec
+        Start 132: MCF keeps a more expensive arrival on the continuing service in both passes
+ 51/484 Test #367: Loading passenger packets preserves the queues used by station rating ...........................................................   Passed    0.39 sec
+        Start  19: RingBuffer - insert at ends shifted no grow - uint8_t
+ 52/484 Test #415: A frequent mixed trunk beats the infrequent direct train ........................................................................   Passed    0.38 sec
+        Start 184: Passenger OD integer bounds and irregular batches keep bounded residuals
+ 53/484 Test #132: MCF keeps a more expensive arrival on the continuing service in both passes .....................................................   Passed    0.43 sec
+        Start 391: Disabling Journey returns only its reservations including a gradual-loading boundary
+ 54/484 Test  #19: RingBuffer - insert at ends shifted no grow - uint8_t ...........................................................................   Passed    0.41 sec
+        Start 363: Journey failure uses validated OD fallback while unsupported passengers retain CargoDist
+ 55/484 Test #184: Passenger OD integer bounds and irregular batches keep bounded residuals ........................................................   Passed    0.40 sec
+        Start 256: Periodic compiler distinguishes explicit zero from missing zero
+ 56/484 Test #391: Disabling Journey returns only its reservations including a gradual-loading boundary ............................................   Passed    0.37 sec
+        Start  24: RingBuffer - insert in middle (begin) no grow - NonTrivialTestType
+ 57/484 Test #363: Journey failure uses validated OD fallback while unsupported passengers retain CargoDist ........................................   Passed    0.39 sec
+        Start 340: Shadow enabled and disabled produce identical production staging and saved packets
+ 58/484 Test #256: Periodic compiler distinguishes explicit zero from missing zero .................................................................   Passed    0.45 sec
+        Start 312: Unknown future seats remain unknown and full predictions require a later physical train
+ 59/484 Test  #24: RingBuffer - insert in middle (begin) no grow - NonTrivialTestType ..............................................................   Passed    0.50 sec
+        Start 403: Freight-only and zero-capacity vehicles never become passenger trips
+ 60/484 Test #340: Shadow enabled and disabled produce identical production staging and saved packets ..............................................   Passed    0.51 sec
+        Start 383: Fair shares exclude idle stations unknown ODs and sleeping loading passes
+ 61/484 Test #312: Unknown future seats remain unknown and full predictions require a later physical train .........................................   Passed    0.47 sec
+        Start 207: Passenger OD budgets depend on record contents rather than reserved capacity
+ 62/484 Test #403: Freight-only and zero-capacity vehicles never become passenger trips ............................................................   Passed    0.43 sec
+        Start 197: Passenger OD afterload rejects graph and pending job revisions beyond the saved counter
+ 63/484 Test #383: Fair shares exclude idle stations unknown ODs and sleeping loading passes .......................................................   Passed    0.42 sec
+        Start 185: Passenger generation splits OD while preserving next hop source and random state
+ 64/484 Test #207: Passenger OD budgets depend on record contents rather than reserved capacity ....................................................   Passed    0.48 sec
+        Start 327: Journey expanded stages preserve candidates when subsequent work or labels run out
+ 65/484 Test #197: Passenger OD afterload rejects graph and pending job revisions beyond the saved counter .........................................   Passed    0.53 sec
+        Start 392: A stale Journey reservation preserves adjacent Legacy reservations
+ 66/484 Test #185: Passenger generation splits OD while preserving next hop source and random state ................................................   Passed    0.55 sec
+        Start 420: Every mode carries passengers through operating stops and continuing depots
+ 67/484 Test #327: Journey expanded stages preserve candidates when subsequent work or labels run out ..............................................   Passed    0.64 sec
+        Start 371: Order dispatch refit and loading restrictions invalidate boarding
+ 68/484 Test #392: A stale Journey reservation preserves adjacent Legacy reservations ..............................................................   Passed    0.66 sec
+        Start 469: WindowDesc - NWidgetPart validity
+ 69/484 Test #420: Every mode carries passengers through operating stops and continuing depots .....................................................   Passed    0.93 sec
+        Start 470: SpiralTileSequence - minimum
+ 70/484 Test #371: Order dispatch refit and loading restrictions invalidate boarding ...............................................................   Passed    0.97 sec
+        Start 317: Journey destination lower bounds retain faster interchanges and honor preference costs
+ 71/484 Test #469: WindowDesc - NWidgetPart validity ...............................................................................................   Passed    1.03 sec
+        Start 277: Periodic dirty queue rotation prevents repeated edits from starving other lists
+ 72/484 Test #470: SpiralTileSequence - minimum ....................................................................................................   Passed    0.85 sec
+        Start 139: Graph compression and merging retain many services and 64-bit travel sums
+ 73/484 Test #317: Journey destination lower bounds retain faster interchanges and honor preference costs ..........................................   Passed    0.82 sec
+        Start 288: Unrelated landscape clearing preserves the published passenger network
+ 74/484 Test #277: Periodic dirty queue rotation prevents repeated edits from starving other lists .................................................   Passed    0.69 sec
+        Start  64: RingBuffer - basic move-only test - uint8_t
+ 75/484 Test #139: Graph compression and merging retain many services and 64-bit travel sums .......................................................   Passed    0.64 sec
+ 76/484 Test #479: passenger_journey_active_production .............................................................................................   Passed   12.83 sec
+        Start 191: Passenger OD save table restores distribution residuals and the next generated passengers
+        Start 206: OD generation preserves the maximum legacy CargoPacket count
+ 77/484 Test #288: Unrelated landscape clearing preserves the published passenger network ..........................................................   Passed    0.67 sec
+        Start 314: Capacity tie breaks prefer usable confirmations without ranking estimates as guarantees
+ 78/484 Test  #64: RingBuffer - basic move-only test - uint8_t .....................................................................................   Passed    0.69 sec
+ 79/484 Test #191: Passenger OD save table restores distribution residuals and the next generated passengers .......................................   Passed    0.50 sec
+        Start 156: GetBase10DigitsRequired
+        Start 346: Mixed timed and untimed corridors transfer and deliver without invented execution times
+ 80/484 Test #206: OD generation preserves the maximum legacy CargoPacket count ....................................................................   Passed    0.86 sec
+        Start 213: Passenger OD load bounds aggregate entry storage before resizing
+ 81/484 Test #314: Capacity tie breaks prefer usable confirmations without ranking estimates as guarantees .........................................   Passed    0.88 sec
+ 82/484 Test #156: GetBase10DigitsRequired .........................................................................................................   Passed    0.72 sec
+        Start 235: Scoped graph cache residency cannot change capture or logical allowances
+        Start 429: StringConsumer - conditions
+ 83/484 Test #346: Mixed timed and untimed corridors transfer and deliver without invented execution times .........................................   Passed    1.21 sec
+        Start 189: Passenger OD recalculation retains identical residuals and resets changed weights
+ 84/484 Test #213: Passenger OD load bounds aggregate entry storage before resizing ................................................................   Passed    1.03 sec
+ 85/484 Test #235: Scoped graph cache residency cannot change capture or logical allowances ........................................................   Passed    0.83 sec
+        Start 448: StrTrimInPlace
+        Start 418: Shadow diagnostics observe every transport without changing cargo or RNG
+ 86/484 Test #429: StringConsumer - conditions .....................................................................................................   Passed    0.98 sec
+        Start 227: Partial fleet timing and timed query budgets have separate outcomes
+ 87/484 Test #189: Passenger OD recalculation retains identical residuals and resets changed weights ...............................................   Passed    0.77 sec
+ 88/484 Test #448: StrTrimInPlace ..................................................................................................................   Passed    0.55 sec
+        Start  84: GetBitMaskSC tests
+        Start  53: RingBuffer - erase multi - uint32_t
+ 89/484 Test #418: Shadow diagnostics observe every transport without changing cargo or RNG ........................................................   Passed    0.52 sec
+        Start 257: Periodic control restrictions remain untimed and full load uses declared wait
+ 90/484 Test #227: Partial fleet timing and timed query budgets have separate outcomes .............................................................   Passed    0.61 sec
+ 91/484 Test  #84: GetBitMaskSC tests ..............................................................................................................   Passed    0.50 sec
+        Start  13: RingBuffer - back resize 2 - uint8_t
+        Start 380: Actual incidental stops and implicit index changes invalidate stored journeys without wrong delivery
+ 92/484 Test  #53: RingBuffer - erase multi - uint32_t .............................................................................................   Passed    0.73 sec
+        Start  20: RingBuffer - insert at ends shifted no grow - uint32_t
+ 93/484 Test #257: Periodic control restrictions remain untimed and full load uses declared wait ...................................................   Passed    0.72 sec
+ 94/484 Test  #13: RingBuffer - back resize 2 - uint8_t ............................................................................................   Passed    0.50 sec
+        Start 171: Passenger terminal comparisons are bounded and independent of index warmth
+        Start  74: RingBuffer - equality tests - uint8_t
+ 95/484 Test #380: Actual incidental stops and implicit index changes invalidate stored journeys without wrong delivery ............................   Passed    0.94 sec
+        Start  55: RingBuffer - shrink to fit - uint8_t
+ 96/484 Test  #20: RingBuffer - insert at ends shifted no grow - uint32_t ..........................................................................   Passed    0.92 sec
+ 97/484 Test #171: Passenger terminal comparisons are bounded and independent of index warmth ......................................................   Passed    0.78 sec
+        Start 218: Trip cache is bounded and never shares predictions between shared vehicles
+        Start 337: Shadow distinguishes unknown prediction, search budget and memory limits
+ 98/484 Test  #74: RingBuffer - equality tests - uint8_t ...........................................................................................   Passed    0.77 sec
+        Start 431: StringConsumer - parse int
+ 99/484 Test  #55: RingBuffer - shrink to fit - uint8_t ............................................................................................   Passed    0.56 sec
+100/484 Test #218: Trip cache is bounded and never shares predictions between shared vehicles ......................................................   Passed    0.41 sec
+        Start  39: RingBuffer - insert in middle (end) grow - NonTrivialTestType
+        Start 292: Separate timed components reject unreachable ODs with bounded incidence work
+101/484 Test #337: Shadow distinguishes unknown prediction, search budget and memory limits ........................................................   Passed    0.52 sec
+        Start 433: StringConsumer - most negative
+102/484 Test #431: StringConsumer - parse int ......................................................................................................   Passed    0.51 sec
+103/484 Test  #39: RingBuffer - insert in middle (end) grow - NonTrivialTestType ...................................................................   Passed    0.37 sec
+        Start 368: GUI counts available modes separately from reserved passengers without changing RNG
+        Start  68: RingBuffer - copy/move constructors and assignment - uint8_t
+104/484 Test #292: Separate timed components reject unreachable ODs with bounded incidence work ....................................................   Passed    0.48 sec
+        Start 234: Freight topology cannot expand a passenger corridor and live refits rebuild its view
+105/484 Test #433: StringConsumer - most negative ..................................................................................................   Passed    0.47 sec
+106/484 Test #368: GUI counts available modes separately from reserved passengers without changing RNG .............................................   Passed    0.35 sec
+        Start 187: OD packet splitting changes later per-packet CargoDist draws without changing cargo total
+        Start 401: Every mode returns only the stale reserved suffix after gradual loading
+107/484 Test  #68: RingBuffer - copy/move constructors and assignment - uint8_t ....................................................................   Passed    0.46 sec
+        Start 222: Capture separates cargos and rereads progress and new events within one tick
+108/484 Test #234: Freight topology cannot expand a passenger corridor and live refits rebuild its view ............................................   Passed    0.46 sec
+109/484 Test #187: OD packet splitting changes later per-packet CargoDist draws without changing cargo total .......................................   Passed    0.34 sec
+        Start 304: Scoped alternatives preserve local express returns and cyclic detours
+        Start 329: Journey station cycles and zero-time reversals terminate without losing real onward trips
+110/484 Test #401: Every mode returns only the stale reserved suffix after gradual loading .........................................................   Passed    0.47 sec
+        Start 373: Disabling journeys rekeys passengers and preserves legacy random routing
+111/484 Test #222: Capture separates cargos and rereads progress and new events within one tick ....................................................   Passed    0.46 sec
+112/484 Test #304: Scoped alternatives preserve local express returns and cyclic detours ...........................................................   Passed    0.35 sec
+        Start 372: Deleting the chosen train clears its leg before an ID can be reused
+        Start 200: Passenger OD packet cursor and limited residuals survive save and the next batch
+113/484 Test #329: Journey station cycles and zero-time reversals terminate without losing real onward trips .......................................   Passed    0.46 sec
+        Start 199: Packet limited passenger OD rotates through all destinations and only commits served rounding
+114/484 Test #373: Disabling journeys rekeys passengers and preserves legacy random routing ........................................................   Passed    0.46 sec
+115/484 Test #372: Deleting the chosen train clears its leg before an ID can be reused .............................................................   Passed    0.35 sec
+        Start  95: Test format_to_fixed_z
+        Start 182: Real CargoDist demand and both MCF passes produce final passenger destinations
+116/484 Test #200: Passenger OD packet cursor and limited residuals survive save and the next batch ................................................   Passed    0.50 sec
+        Start 170: Passenger seat snapshots account for eligible waiting queues and the entire consist
+117/484 Test #199: Packet limited passenger OD rotates through all destinations and only commits served rounding ...................................   Passed    0.52 sec
+118/484 Test  #95: Test format_to_fixed_z ..........................................................................................................   Passed    0.40 sec
+        Start 158: Passenger transfer compares local running time with express waiting time
+        Start 183: Passenger OD rounding carries small demand without changing batch totals
+119/484 Test #182: Real CargoDist demand and both MCF passes produce final passenger destinations ..................................................   Passed    0.54 sec
+        Start 225: Bounded route controls remain unknown until a fresh live state can certify them
+120/484 Test #170: Passenger seat snapshots account for eligible waiting queues and the entire consist .............................................   Passed    0.54 sec
+121/484 Test #158: Passenger transfer compares local running time with express waiting time ........................................................   Passed    0.42 sec
+        Start 247: Passenger graph distinguishes inactive trains and exhausted budgets from no service
+        Start 333: Journey extension preserves capacity forecasts and an incomplete prediction suffix
+122/484 Test #183: Passenger OD rounding carries small demand without changing batch totals ........................................................   Passed    0.55 sec
+        Start 193: Earlier passenger OD saves initialise absent cursor and unknown state
+123/484 Test #225: Bounded route controls remain unknown until a fresh live state can certify them .................................................   Passed    0.54 sec
+124/484 Test #247: Passenger graph distinguishes inactive trains and exhausted budgets from no service .............................................   Passed    0.40 sec
+        Start 331: Journey cycle suppression preserves a useful ride when waiting has a preference penalty
+        Start 157: Passenger settings do not alter the legacy LinkGraphJob save schema
+125/484 Test #333: Journey extension preserves capacity forecasts and an incomplete prediction suffix ..............................................   Passed    0.53 sec
+        Start  54: RingBuffer - erase multi - NonTrivialTestType
+126/484 Test #193: Earlier passenger OD saves initialise absent cursor and unknown state ...........................................................   Passed    0.51 sec
+127/484 Test #331: Journey cycle suppression preserves a useful ride when waiting has a preference penalty .........................................   Passed    0.38 sec
+        Start 212: Passenger OD storage is proportional to eligible demand rather than raw annotations
+        Start 178: Station deletion clears passenger destination without changing an unrelated OD
+128/484 Test #157: Passenger settings do not alter the legacy LinkGraphJob save schema .............................................................   Passed    0.48 sec
+        Start 356: Exhausted searches retain valid onboard rides and cannot deliver at intermediate stations
+129/484 Test  #54: RingBuffer - erase multi - NonTrivialTestType ...................................................................................   Passed    0.47 sec
+130/484 Test #212: Passenger OD storage is proportional to eligible demand rather than raw annotations .............................................   Passed    0.34 sec
+        Start 406: A road direction edit invalidates execution even when the stop is still usable
+        Start 464: Squirrel -> JSON conversion
+131/484 Test #178: Station deletion clears passenger destination without changing an unrelated OD ..................................................   Passed    0.46 sec
+        Start 407: Mixed transport chains transfer at shared StationIDs through the common rounds
+132/484 Test #356: Exhausted searches retain valid onboard rides and cannot deliver at intermediate stations .......................................   Passed    0.46 sec
+133/484 Test #406: A road direction edit invalidates execution even when the stop is still usable ..................................................   Passed    0.35 sec
+        Start 357: Fallback and deferred OD passengers stay on a direct ride through CargoDist destinations
+        Start 313: Capacity preference ratios avoid intermediate overflow and unknown guarantees
+134/484 Test #464: Squirrel -> JSON conversion .....................................................................................................   Passed    0.47 sec
+        Start 285: Periodic capacity changes invalidate only the affected service while occupancy does not
+135/484 Test #407: Mixed transport chains transfer at shared StationIDs through the common rounds ..................................................   Passed    0.47 sec
+136/484 Test #357: Fallback and deferred OD passengers stay on a direct ride through CargoDist destinations ........................................   Passed    0.35 sec
+        Start 330: Journey boarding and reverse counters exceed eight bits and clamp extreme caller limits safely
+        Start 351: A short horizon cannot hide a cheaper later direct service
+137/484 Test #313: Capacity preference ratios avoid intermediate overflow and unknown guarantees ...................................................   Passed    0.47 sec
+        Start 369: 4096 OD packets reuse one search and consume no random numbers
+138/484 Test #285: Periodic capacity changes invalidate only the affected service while occupancy does not .........................................   Passed    0.46 sec
+139/484 Test #330: Journey boarding and reverse counters exceed eight bits and clamp extreme caller limits safely ..................................   Passed    0.35 sec
+        Start 408: Active passengers execute train road aircraft ship transfers and settle the final delivery
+        Start  65: RingBuffer - basic move-only test - uint32_t
+140/484 Test #351: A short horizon cannot hide a cheaper later direct service ......................................................................   Passed    0.46 sec
+        Start 145: Long train near-end stop geometry agrees with the braking prediction
+141/484 Test #369: 4096 OD packets reuse one search and consume no random numbers ..................................................................   Passed    0.47 sec
+142/484 Test #408: Active passengers execute train road aircraft ship transfers and settle the final delivery ......................................   Passed    0.36 sec
+        Start  83: SetBitIterator tests
+        Start 397: Every passenger transport uses the same planner and production boarding
+143/484 Test  #65: RingBuffer - basic move-only test - uint32_t ....................................................................................   Passed    0.48 sec
+        Start 192: Passenger OD legacy saves omit distribution and load safely
+144/484 Test #145: Long train near-end stop geometry agrees with the braking prediction ............................................................   Passed    0.48 sec
+145/484 Test  #83: SetBitIterator tests ............................................................................................................   Passed    0.35 sec
+        Start   1: RingBuffer - basic tests - uint8_t
+        Start 454: AppendStringWithArgsInPlace - format_to_fixed_base
+146/484 Test #397: Every passenger transport uses the same planner and production boarding .........................................................   Passed    0.46 sec
+        Start 195: Passenger OD save validation rejects corrupt counts weights ordering and residuals
+147/484 Test #192: Passenger OD legacy saves omit distribution and load safely .....................................................................   Passed    0.47 sec
+148/484 Test   #1: RingBuffer - basic tests - uint8_t ..............................................................................................   Passed    0.35 sec
+        Start 137: Invalid and legacy service metadata are discarded before use
+        Start 138: Route identity allocator resumes the saved server counter after loading
+149/484 Test #454: AppendStringWithArgsInPlace - format_to_fixed_base ..............................................................................   Passed    0.47 sec
+        Start 453: FixSCCEncodedNegative
+150/484 Test #195: Passenger OD save validation rejects corrupt counts weights ordering and residuals ..............................................   Passed    0.47 sec
+151/484 Test #137: Invalid and legacy service metadata are discarded before use ....................................................................   Passed    0.35 sec
+        Start 120: PartialPixelTest - Normal half tile slopes - SLOPE/CORNER_W
+        Start 230: High frequency prediction extends past 128 occurrences without hiding limits
+152/484 Test #138: Route identity allocator resumes the saved server counter after loading .........................................................   Passed    0.48 sec
+        Start  16: RingBuffer - insert at ends no grow - uint8_t
+153/484 Test #453: FixSCCEncodedNegative ...........................................................................................................   Passed    0.48 sec
+154/484 Test #120: PartialPixelTest - Normal half tile slopes - SLOPE/CORNER_W .....................................................................   Passed    0.36 sec
+        Start 387: Boarding prediction is lazy for Legacy and other trains
+        Start 124: PartialPixelTest - Steep slopes - SLOPE_STEEP_W
+155/484 Test #230: High frequency prediction extends past 128 occurrences without hiding limits ....................................................   Passed    0.46 sec
+        Start  69: RingBuffer - copy/move constructors and assignment - uint32_t
+156/484 Test  #16: RingBuffer - insert at ends no grow - uint8_t ...................................................................................   Passed    0.45 sec
+157/484 Test #387: Boarding prediction is lazy for Legacy and other trains .........................................................................   Passed    0.34 sec
+        Start  75: RingBuffer - equality tests - uint32_t
+        Start 348: A stale saved interchange cannot poison another progressing live stop
+158/484 Test #124: PartialPixelTest - Steep slopes - SLOPE_STEEP_W .................................................................................   Passed    0.45 sec
+        Start 405: Shared orders retain passenger members among freight-only vehicles
+159/484 Test  #69: RingBuffer - copy/move constructors and assignment - uint32_t ...................................................................   Passed    0.45 sec
+160/484 Test  #75: RingBuffer - equality tests - uint32_t ..........................................................................................   Passed    0.33 sec
+        Start 440: StrStartsWithIgnoreCase - std::string
+        Start 475: Utf8View - empty
+161/484 Test #348: A stale saved interchange cannot poison another progressing live stop ...........................................................   Passed    0.46 sec
+        Start  41: RingBuffer - insert multi at start - uint32_t
+162/484 Test #405: Shared orders retain passenger members among freight-only vehicles ..............................................................   Passed    0.46 sec
+163/484 Test #440: StrStartsWithIgnoreCase - std::string ...........................................................................................   Passed    0.35 sec
+        Start 219: Trip capture notices newly eligible refits and shared fleet changes
+        Start 275: Periodic many packets share one event policy and never build service graphs
+164/484 Test #475: Utf8View - empty ................................................................................................................   Passed    0.46 sec
+        Start  86: GetBitMaskBN tests
+165/484 Test  #41: RingBuffer - insert multi at start - uint32_t ...................................................................................   Passed    0.46 sec
+166/484 Test #219: Trip capture notices newly eligible refits and shared fleet changes .............................................................   Passed    0.35 sec
+        Start 260: Periodic local express and direct services compare actual phases
+        Start 319: Journey uncertainty and exhausted searches never certify unreachable
+167/484 Test #275: Periodic many packets share one event policy and never build service graphs .....................................................   Passed    0.46 sec
+        Start 282: Expired periodic intents choose an alternative while a delayed live ride remains usable
+168/484 Test  #86: GetBitMaskBN tests ..............................................................................................................   Passed    0.46 sec
+169/484 Test #260: Periodic local express and direct services compare actual phases ................................................................   Passed    0.35 sec
+        Start 108: PartialPixelTest - Two corner up, diagonal slopes - SLOPE_SE
+        Start 364: Missed departure invalidates a leg and cooldown prevents routing oscillation
+170/484 Test #319: Journey uncertainty and exhausted searches never certify unreachable ............................................................   Passed    0.46 sec
+        Start   2: RingBuffer - basic tests - uint32_t
+171/484 Test #282: Expired periodic intents choose an alternative while a delayed live ride remains usable .........................................   Passed    0.46 sec
+172/484 Test #108: PartialPixelTest - Two corner up, diagonal slopes - SLOPE_SE ....................................................................   Passed    0.34 sec
+        Start 134: Path costs exceed UINT_MAX without wrapping or becoming unreachable
+        Start  44: RingBuffer - insert multi at end - uint32_t
+173/484 Test #364: Missed departure invalidates a leg and cooldown prevents routing oscillation ....................................................   Passed    0.45 sec
+        Start 425: StringConsumer - binary16
+174/484 Test   #2: RingBuffer - basic tests - uint32_t .............................................................................................   Passed    0.45 sec
+175/484 Test #134: Path costs exceed UINT_MAX without wrapping or becoming unreachable .............................................................   Passed    0.33 sec
+        Start 152: IntSqrt64Test - FindSqRt
+        Start 310: Passenger journeys retain direct local and express interchange alternatives
+176/484 Test  #44: RingBuffer - insert multi at end - uint32_t .....................................................................................   Passed    0.45 sec
+        Start 422: std::variant
+177/484 Test #425: StringConsumer - binary16 .......................................................................................................   Passed    0.46 sec
+178/484 Test #152: IntSqrt64Test - FindSqRt ........................................................................................................   Passed    0.34 sec
+        Start 144: Capacity service search keeps its ancestry guard for cyclic flow graphs
+        Start 326: Journey safety ceilings and resource limits remain inconclusive and cache consistently
+179/484 Test #310: Passenger journeys retain direct local and express interchange alternatives .....................................................   Passed    0.45 sec
+        Start 101: PartialPixelSlopeAdditionTest - A steep slope is a one corner slope on top of a three corner slope
+180/484 Test #422: std::variant ....................................................................................................................   Passed    0.45 sec
+181/484 Test #144: Capacity service search keeps its ancestry guard for cyclic flow graphs .........................................................   Passed    0.33 sec
+        Start 226: Unknown alternatives leave timed access and generalised costs unchanged
+        Start 242: Passenger graph retains partial times and reuses journey timing
+182/484 Test #326: Journey safety ceilings and resource limits remain inconclusive and cache consistently ..........................................   Passed    0.45 sec
+        Start 474: SpiralTileSequence - normal hole
+183/484 Test #101: PartialPixelSlopeAdditionTest - A steep slope is a one corner slope on top of a three corner slope ..............................   Passed    0.45 sec
+184/484 Test #226: Unknown alternatives leave timed access and generalised costs unchanged .........................................................   Passed    0.34 sec
+        Start  14: RingBuffer - back resize 2 - uint32_t
+        Start 279: Periodic saved order list identities cannot bind to recycled pool IDs
+185/484 Test #242: Passenger graph retains partial times and reuses journey timing .................................................................   Passed    0.45 sec
+        Start 444: StrEndsWithIgnoreCase - char pointer
+186/484 Test #474: SpiralTileSequence - normal hole ................................................................................................   Passed    0.50 sec
+187/484 Test  #14: RingBuffer - back resize 2 - uint32_t ...........................................................................................   Passed    0.39 sec
+        Start 361: OD fallback work is shared bounded deterministic and reusable until the next tick
+        Start  82: FindLastBit tests
+188/484 Test #279: Periodic saved order list identities cannot bind to recycled pool IDs ...........................................................   Passed    0.50 sec
+        Start 250: Passenger graph keeps uncertainty beyond the certified prefix out of early queries
+189/484 Test #444: StrEndsWithIgnoreCase - char pointer ............................................................................................   Passed    0.49 sec
+190/484 Test #361: OD fallback work is shared bounded deterministic and reusable until the next tick ...............................................   Passed    0.33 sec
+        Start  98: PartialPixelSlopeAdditionTest - Diagonal slopes with their opposite slope result in a flat but elevated slope
+        Start 221: Event capture preserves every small work boundary and memory admission
+191/484 Test  #82: FindLastBit tests ...............................................................................................................   Passed    0.44 sec
+        Start 318: Journey boarding and alighting restrictions and repeated station occurrences
+192/484 Test #250: Passenger graph keeps uncertainty beyond the certified prefix out of early queries ..............................................   Passed    0.47 sec
+193/484 Test  #98: PartialPixelSlopeAdditionTest - Diagonal slopes with their opposite slope result in a flat but elevated slope ...................   Passed    0.36 sec
+        Start  56: RingBuffer - shrink to fit - uint32_t
+        Start 376: A current off corridor trip is captured for an immediate transfer
+194/484 Test #221: Event capture preserves every small work boundary and memory admission ..........................................................   Passed    0.49 sec
+        Start 269: Periodic active journeys board a delayed actual vehicle with real empty seats
+195/484 Test #318: Journey boarding and alighting restrictions and repeated station occurrences ....................................................   Passed    0.49 sec
+196/484 Test  #56: RingBuffer - shrink to fit - uint32_t ...........................................................................................   Passed    0.35 sec
+        Start 146: LinkGraph jobs distinguish route transfers and snapshot weighted costs
+        Start 414: Multimodal onboard rides survive exhausted search budgets
+197/484 Test #376: A current off corridor trip is captured for an immediate transfer ...............................................................   Passed    0.46 sec
+        Start   6: RingBuffer - front resize - NonTrivialTestType
+198/484 Test #269: Periodic active journeys board a delayed actual vehicle with real empty seats ...................................................   Passed    0.45 sec
+199/484 Test #146: LinkGraph jobs distinguish route transfers and snapshot weighted costs ..........................................................   Passed    0.33 sec
+        Start  45: RingBuffer - insert multi at end - NonTrivialTestType
+        Start 438: StrEqualsIgnoreCase - char pointer
+200/484 Test #414: Multimodal onboard rides survive exhausted search budgets .......................................................................   Passed    0.45 sec
+        Start 267: Periodic shared dispatch competition never invents physical trips
+201/484 Test   #6: RingBuffer - front resize - NonTrivialTestType ..................................................................................   Passed    0.45 sec
+202/484 Test  #45: RingBuffer - insert multi at end - NonTrivialTestType ...........................................................................   Passed    0.33 sec
+        Start 400: Trip cache validates every real transport adapter
+        Start  63: RingBuffer - resize - NonTrivialTestType
+203/484 Test #438: StrEqualsIgnoreCase - char pointer ..............................................................................................   Passed    0.45 sec
+        Start  77: RingBuffer - operator <=> - uint32_t
+204/484 Test #267: Periodic shared dispatch competition never invents physical trips ...............................................................   Passed    0.45 sec
+205/484 Test #400: Trip cache validates every real transport adapter ...............................................................................   Passed    0.34 sec
+        Start 332: Journey resource exhaustion preserves the candidate before a better bucket replacement
+        Start 119: PartialPixelTest - Normal half tile slopes - SLOPE/CORNER_S
+206/484 Test  #63: RingBuffer - resize - NonTrivialTestType ........................................................................................   Passed    0.45 sec
+        Start 131: Aircraft cost settings change the preferred passenger and freight journey
+207/484 Test  #77: RingBuffer - operator <=> - uint32_t ............................................................................................   Passed    0.44 sec
+208/484 Test #332: Journey resource exhaustion preserves the candidate before a better bucket replacement ..........................................   Passed    0.33 sec
+        Start 268: Periodic single vehicle dispatch uses real slots with turnaround checks
+        Start 297: Operating first stop remains a dispatch and phase anchor
+209/484 Test #119: PartialPixelTest - Normal half tile slopes - SLOPE/CORNER_S .....................................................................   Passed    0.45 sec
+        Start  57: RingBuffer - shrink to fit - NonTrivialTestType
+210/484 Test #131: Aircraft cost settings change the preferred passenger and freight journey .......................................................   Passed    0.45 sec
+211/484 Test #268: Periodic single vehicle dispatch uses real slots with turnaround checks .........................................................   Passed    0.33 sec
+        Start 441: StrStartsWithIgnoreCase - char pointer
+        Start 274: Periodic split passengers can board a second real shared vehicle immediately
+212/484 Test #297: Operating first stop remains a dispatch and phase anchor ........................................................................   Passed    0.45 sec
+        Start 161: Passenger transfers require a usable connection and complete predictions
+213/484 Test  #57: RingBuffer - shrink to fit - NonTrivialTestType .................................................................................   Passed    0.45 sec
+214/484 Test #441: StrStartsWithIgnoreCase - char pointer ..........................................................................................   Passed    0.34 sec
+        Start 399: Periodic transfers through all four modes retain the final destination
+        Start 210: Passenger OD wide unknown weights allocate maximum batches without integer overflow
+215/484 Test #274: Periodic split passengers can board a second real shared vehicle immediately ....................................................   Passed    0.45 sec
+        Start 396: Ordinary lateness does not invalidate a timetabled ride and actual deviations replan
+216/484 Test #161: Passenger transfers require a usable connection and complete predictions ........................................................   Passed    0.44 sec
+217/484 Test #399: Periodic transfers through all four modes retain the final destination ..........................................................   Passed    0.33 sec
+        Start   8: RingBuffer - front resize 2 - uint32_t
+        Start 411: Aircraft distinguish terminals landing holding hangars helicopters and mail
+218/484 Test #210: Passenger OD wide unknown weights allocate maximum batches without integer overflow .............................................   Passed    0.44 sec
+        Start 194: Passenger OD identity counter survives SLXI data and prevents unsigned wrap
+219/484 Test #396: Ordinary lateness does not invalidate a timetabled ride and actual deviations replan ............................................   Passed    0.44 sec
+220/484 Test   #8: RingBuffer - front resize 2 - uint32_t ..........................................................................................   Passed    0.33 sec
+        Start 172: Passenger OD defaults to unassigned in every creation path
+        Start 141: Shared OrderBackup restores the surviving live route and its current costs
+221/484 Test #411: Aircraft distinguish terminals landing holding hangars helicopters and mail .....................................................   Passed    0.45 sec
+        Start 437: StrEqualsIgnoreCase - std::string
+222/484 Test #194: Passenger OD identity counter survives SLXI data and prevents unsigned wrap .....................................................   Passed    0.45 sec
+223/484 Test #172: Passenger OD defaults to unassigned in every creation path ......................................................................   Passed    0.34 sec
+        Start 362: Destination enforcement preserves disabled and unknown OD CargoDist delivery
+        Start 461: Authentication_Combined
+224/484 Test #141: Shared OrderBackup restores the surviving live route and its current costs ......................................................   Passed    0.45 sec
+        Start 460: Authentication_AuthorizedKey
+225/484 Test #437: StrEqualsIgnoreCase - std::string ...............................................................................................   Passed    0.44 sec
+226/484 Test #362: Destination enforcement preserves disabled and unknown OD CargoDist delivery ....................................................   Passed    0.33 sec
+        Start 349: Journey boarding selects a physical train even with the same next stop
+        Start 122: PartialPixelTest - Steep slopes - SLOPE_STEEP_E
+227/484 Test #461: Authentication_Combined .........................................................................................................   Passed    0.44 sec
+        Start 255: Periodic departure boundaries do not overflow state ticks
+228/484 Test #460: Authentication_AuthorizedKey ....................................................................................................   Passed    0.44 sec
+229/484 Test #349: Journey boarding selects a physical train even with the same next stop ..........................................................   Passed    0.33 sec
+        Start  52: RingBuffer - erase multi - uint8_t
+        Start 208: Passenger OD redistributes unused origin budgets and retains original weights
+230/484 Test #122: PartialPixelTest - Steep slopes - SLOPE_STEEP_E .................................................................................   Passed    0.45 sec
+        Start  85: GetBitMaskFL tests
+231/484 Test #255: Periodic departure boundaries do not overflow state ticks .......................................................................   Passed    0.51 sec
+232/484 Test  #52: RingBuffer - erase multi - uint8_t ..............................................................................................   Passed    0.40 sec
+        Start 324: Journey stages continue actual train chains without replaying earlier rounds
+        Start 374: Distinct OD searches stop at the deterministic batch work allowance
+233/484 Test #208: Passenger OD redistributes unused origin budgets and retains original weights ...................................................   Passed    0.51 sec
+        Start  42: RingBuffer - insert multi at start - NonTrivialTestType
+234/484 Test  #85: GetBitMaskFL tests ..............................................................................................................   Passed    0.51 sec
+        Start 163: Timetable assumption uses elapsed progress and explicit timing flags
+235/484 Test #324: Journey stages continue actual train chains without replaying earlier rounds ....................................................   Passed    0.44 sec
+236/484 Test #374: Distinct OD searches stop at the deterministic batch work allowance .............................................................   Passed    0.33 sec
+        Start 280: Periodic state tick rebasing preserves departures and packet retry intervals
+        Start 215: Trip cache rejects live input changes within the same tick
+237/484 Test  #42: RingBuffer - insert multi at start - NonTrivialTestType .........................................................................   Passed    0.44 sec
+        Start  47: RingBuffer - insert multi in middle - uint32_t
+238/484 Test #163: Timetable assumption uses elapsed progress and explicit timing flags ............................................................   Passed    0.45 sec
+239/484 Test #280: Periodic state tick rebasing preserves departures and packet retry intervals ....................................................   Passed    0.34 sec
+        Start 118: PartialPixelTest - Normal half tile slopes - SLOPE/CORNER_E
+        Start  59: RingBuffer - reserve - uint32_t
+240/484 Test #215: Trip cache rejects live input changes within the same tick ......................................................................   Passed    0.46 sec
+        Start 443: StrEndsWithIgnoreCase - std::string
+241/484 Test  #47: RingBuffer - insert multi in middle - uint32_t ..................................................................................   Passed    0.46 sec
+242/484 Test #118: PartialPixelTest - Normal half tile slopes - SLOPE/CORNER_E .....................................................................   Passed    0.35 sec
+        Start 471: SpiralTileSequence - odd
+        Start 419: National mixed fleet shares snapshots and keeps graph query and cache bounds
+243/484 Test  #59: RingBuffer - reserve - uint32_t .................................................................................................   Passed    0.46 sec
+        Start  21: RingBuffer - insert at ends shifted no grow - NonTrivialTestType
+244/484 Test #443: StrEndsWithIgnoreCase - std::string .............................................................................................   Passed    0.46 sec
+245/484 Test #471: SpiralTileSequence - odd ........................................................................................................   Passed    0.35 sec
+        Start 211: Passenger OD weighted unknown demand never increases retained destination ratios
+        Start 295: Cargo-specific operating stops cannot join passenger service components
+246/484 Test #419: National mixed fleet shares snapshots and keeps graph query and cache bounds ....................................................   Passed    0.46 sec
+        Start 188: Passenger OD topology identity rejects changed jobs and stale distributions
+247/484 Test  #21: RingBuffer - insert at ends shifted no grow - NonTrivialTestType ................................................................   Passed    0.47 sec
+248/484 Test #211: Passenger OD weighted unknown demand never increases retained destination ratios ................................................   Passed    0.35 sec
+        Start 325: Journey candidates stop extension at the current stage and disclose unsearched alternatives
+        Start 296: Mixed passenger exchange stops keep directional permissions
+249/484 Test #295: Cargo-specific operating stops cannot join passenger service components .........................................................   Passed    0.46 sec
+        Start 246: Passenger graph dispatch is independent per vehicle and owns its snapshot
+250/484 Test #188: Passenger OD topology identity rejects changed jobs and stale distributions .....................................................   Passed    0.46 sec
+251/484 Test #325: Journey candidates stop extension at the current stage and disclose unsearched alternatives .....................................   Passed    0.34 sec
+        Start 140: OrderBackup restores private route costs after the source list is deleted
+        Start 262: Periodic policies are inert across cold warm evicted and unused caches
+252/484 Test #296: Mixed passenger exchange stops keep directional permissions .....................................................................   Passed    0.45 sec
+        Start 354: A stale gradual-loading reservation is returned with consistent counts
+253/484 Test #246: Passenger graph dispatch is independent per vehicle and owns its snapshot .......................................................   Passed    0.45 sec
+254/484 Test #140: OrderBackup restores private route costs after the source list is deleted .......................................................   Passed    0.34 sec
+        Start 328: Journey absence distinguishes disconnection, a short horizon and invalid OD
+        Start 186: Passenger OD fallback preserves legacy generation when disabled manual freight or absent
+255/484 Test #262: Periodic policies are inert across cold warm evicted and unused caches ..........................................................   Passed    0.45 sec
+        Start  70: RingBuffer - copy/move constructors and assignment - NonTrivialTestType
+256/484 Test #354: A stale gradual-loading reservation is returned with consistent counts ..........................................................   Passed    0.45 sec
+257/484 Test #328: Journey absence distinguishes disconnection, a short horizon and invalid OD .....................................................   Passed    0.34 sec
+        Start 190: Passenger OD never includes wholly unsatisfied or nonpositive demands
+        Start 315: Journey labels allocate incrementally within their caps
+258/484 Test #186: Passenger OD fallback preserves legacy generation when disabled manual freight or absent ........................................   Passed    0.53 sec
+        Start 126: PartialPixelTest - Half tile on top of steep slopes - SLOPE_STEEP/CORNER_E
+259/484 Test  #70: RingBuffer - copy/move constructors and assignment - NonTrivialTestType .........................................................   Passed    0.52 sec
+260/484 Test #190: Passenger OD never includes wholly unsatisfied or nonpositive demands ...........................................................   Passed    0.40 sec
+        Start 457: MayHaveRoad - Tunnel/bridge
+        Start 416: Multimodal vehicle destruction invalidates indexed journeys before pool ID reuse
+261/484 Test #315: Journey labels allocate incrementally within their caps .........................................................................   Passed    0.51 sec
+        Start 424: StringConsumer - binary8
+262/484 Test #126: PartialPixelTest - Half tile on top of steep slopes - SLOPE_STEEP/CORNER_E ......................................................   Passed    0.44 sec
+263/484 Test #457: MayHaveRoad - Tunnel/bridge .....................................................................................................   Passed    0.33 sec
+        Start 388: Vehicle invalidation indexes only referring journeys through packet lifecycle
+        Start  11: RingBuffer - back resize - uint32_t
+264/484 Test #416: Multimodal vehicle destruction invalidates indexed journeys before pool ID reuse ................................................   Passed    0.45 sec
+        Start 289: Automatic timetable edits coalesce while safe old generations and policies survive
+265/484 Test #424: StringConsumer - binary8 ........................................................................................................   Passed    0.45 sec
+266/484 Test #388: Vehicle invalidation indexes only referring journeys through packet lifecycle ...................................................   Passed    0.34 sec
+        Start 243: Passenger graph waypoint segments, cargo flags and direction are copied
+        Start 466: WindowDesc - ini_key uniqueness
+267/484 Test  #11: RingBuffer - back resize - uint32_t .............................................................................................   Passed    0.45 sec
+        Start 263: Periodic local invalidation preserves unrelated published services
+268/484 Test #289: Automatic timetable edits coalesce while safe old generations and policies survive ..............................................   Passed    0.44 sec
+269/484 Test #243: Passenger graph waypoint segments, cargo flags and direction are copied .........................................................   Passed    0.33 sec
+        Start 477: Utf8View - iterate
+        Start 229: Graph admission pays for generated visits rather than maximum trip reservations
+270/484 Test #466: WindowDesc - ini_key uniqueness .................................................................................................   Passed    0.45 sec
+        Start  32: RingBuffer - insert at end grow - uint32_t
+271/484 Test #263: Periodic local invalidation preserves unrelated published services ..............................................................   Passed    0.45 sec
+272/484 Test #477: Utf8View - iterate ..............................................................................................................   Passed    0.34 sec
+        Start 241: Passenger graph capacity includes only the requested cargo across a consist
+        Start 467: WindowDesc - ini_key validity
+273/484 Test #229: Graph admission pays for generated visits rather than maximum trip reservations .................................................   Passed    0.46 sec
+        Start  67: RingBuffer - basic move-only test - MoveOnlyTestType
+274/484 Test  #32: RingBuffer - insert at end grow - uint32_t ......................................................................................   Passed    0.46 sec
+275/484 Test #241: Passenger graph capacity includes only the requested cargo across a consist .....................................................   Passed    0.34 sec
+        Start 245: Passenger graph handles repeated stops, unconditional jumps and bounded cycles
+        Start  28: RingBuffer - insert at beginning grow - uint8_t
+276/484 Test #467: WindowDesc - ini_key validity ...................................................................................................   Passed    0.52 sec
+        Start 252: Passenger graph construction and queries are deterministic and leave live state unchanged
+277/484 Test  #67: RingBuffer - basic move-only test - MoveOnlyTestType ............................................................................   Passed    0.51 sec
+278/484 Test #245: Passenger graph handles repeated stops, unconditional jumps and bounded cycles ..................................................   Passed    0.40 sec
+        Start  97: PartialPixelSlopeAdditionTest - A one corner slope, plus the opposite three corner slope results in a flat but elevated slope
+        Start 298: Waypoint waits and reversals are operating events in periodic and snapshot cycles
+279/484 Test  #28: RingBuffer - insert at beginning grow - uint8_t .................................................................................   Passed    0.44 sec
+        Start 347: Untimed interchanges consider every progressing live stop and reuse one OD search
+280/484 Test #252: Passenger graph construction and queries are deterministic and leave live state unchanged .......................................   Passed    0.44 sec
+281/484 Test  #97: PartialPixelSlopeAdditionTest - A one corner slope, plus the opposite three corner slope results in a flat but elevated slope ...   Passed    0.33 sec
+        Start 265: Periodic database rejects malformed and oversized saved state
+        Start 308: Dense national cycles remain incomplete when query allowances cannot certify alternatives
+282/484 Test #298: Waypoint waits and reversals are operating events in periodic and snapshot cycles ...............................................   Passed    0.47 sec
+        Start 430: StringConsumer - ascii
+283/484 Test #347: Untimed interchanges consider every progressing live stop and reuse one OD search ...............................................   Passed    0.47 sec
+284/484 Test #265: Periodic database rejects malformed and oversized saved state ...................................................................   Passed    0.36 sec
+        Start 472: SpiralTileSequence - even
+        Start 442: StrStartsWithIgnoreCase - std::string_view
+285/484 Test #308: Dense national cycles remain incomplete when query allowances cannot certify alternatives .......................................   Passed    0.46 sec
+        Start 271: Periodic routing disabled leaves the scheduler and cargo state untouched
+286/484 Test #430: StringConsumer - ascii ..........................................................................................................   Passed    0.45 sec
+287/484 Test #472: SpiralTileSequence - even .......................................................................................................   Passed    0.33 sec
+        Start  89: Command string sanitise tests
+        Start 389: Unchanged waiting queues retain their buckets and packet storage
+288/484 Test #442: StrStartsWithIgnoreCase - std::string_view ......................................................................................   Passed    0.44 sec
+        Start 338: Shadow arrival caches are shared across packets and never survive a new arrival
+289/484 Test #271: Periodic routing disabled leaves the scheduler and cargo state untouched ........................................................   Passed    0.45 sec
+290/484 Test  #89: Command string sanitise tests ...................................................................................................   Passed    0.33 sec
+        Start  92: EnumOverOptimisation_Bitmask
+        Start  17: RingBuffer - insert at ends no grow - uint32_t
+291/484 Test #389: Unchanged waiting queues retain their buckets and packet storage ................................................................   Passed    0.45 sec
+        Start 115: PartialPixelTest - Three corner up slopes - SLOPE_WSE
+292/484 Test #338: Shadow arrival caches are shared across packets and never survive a new arrival .................................................   Passed    0.45 sec
+293/484 Test  #92: EnumOverOptimisation_Bitmask ....................................................................................................   Passed    0.34 sec
+        Start 343: Resident OD fallback distances replay cold work and invalidate restricted edges
+        Start 458: Authentication_KeyExchangeOnly
+294/484 Test  #17: RingBuffer - insert at ends no grow - uint32_t ..................................................................................   Passed    0.44 sec
+        Start 404: Freight-only fleets leave capture work and service slots for passenger services
+295/484 Test #115: PartialPixelTest - Three corner up slopes - SLOPE_WSE ...........................................................................   Passed    0.44 sec
+296/484 Test #343: Resident OD fallback distances replay cold work and invalidate restricted edges .................................................   Passed    0.33 sec
+        Start 104: PartialPixelTest - One corner up slopes - SLOPE_E
+        Start   7: RingBuffer - front resize 2 - uint8_t
+297/484 Test #458: Authentication_KeyExchangeOnly ..................................................................................................   Passed    0.44 sec
+        Start 273: Periodic and snapshot planners agree on complete small timetable networks
+298/484 Test #404: Freight-only fleets leave capture work and service slots for passenger services .................................................   Passed    0.44 sec
+299/484 Test #104: PartialPixelTest - One corner up slopes - SLOPE_E ...............................................................................   Passed    0.33 sec
+        Start 100: PartialPixelSlopeAdditionTest - Two opposite one corner slopes result in the two corner slope with opposite corners
+        Start  31: RingBuffer - insert at end grow - uint8_t
+300/484 Test   #7: RingBuffer - front resize 2 - uint8_t ...........................................................................................   Passed    0.44 sec
+        Start 291: An unknown destination phase stays untimed without expanding other timed services
+301/484 Test #273: Periodic and snapshot planners agree on complete small timetable networks .......................................................   Passed    0.45 sec
+302/484 Test #100: PartialPixelSlopeAdditionTest - Two opposite one corner slopes result in the two corner slope with opposite corners .............   Passed    0.34 sec
+        Start 334: Onboard journeys reuse the search without new seats or a boarding cost
+        Start 421: Generic integer
+303/484 Test  #31: RingBuffer - insert at end grow - uint8_t .......................................................................................   Passed    0.44 sec
+        Start 143: Service-state distance search agrees with exhaustive DAG journeys
+304/484 Test #291: An unknown destination phase stays untimed without expanding other timed services ...............................................   Passed    0.44 sec
+305/484 Test #334: Onboard journeys reuse the search without new seats or a boarding cost ..........................................................   Passed    0.33 sec
+        Start 155: SaturatingAdd
+        Start 423: StringConsumer - basic
+306/484 Test #421: Generic integer .................................................................................................................   Passed    0.44 sec
+        Start  88: TupleRefCmdData tests
+307/484 Test #143: Service-state distance search agrees with exhaustive DAG journeys ...............................................................   Passed    0.44 sec
+308/484 Test #155: SaturatingAdd ...................................................................................................................   Passed    0.33 sec
+        Start  99: PartialPixelSlopeAdditionTest - Half tile slopes with their opposite half tile slope result in a flat but elevated slope
+        Start  40: RingBuffer - insert multi at start - uint8_t
+309/484 Test #423: StringConsumer - basic ..........................................................................................................   Passed    0.45 sec
+        Start 299: Depot traversal separates passenger continuity from timing certainty
+310/484 Test  #88: TupleRefCmdData tests ...........................................................................................................   Passed    0.45 sec
+311/484 Test  #99: PartialPixelSlopeAdditionTest - Half tile slopes with their opposite half tile slope result in a flat but elevated slope ........   Passed    0.34 sec
+        Start 165: Passenger repeated dispatch predictions use private slot history
+        Start 175: Passenger OD is a merge invariant for both station and vehicle cargo lists
+312/484 Test  #40: RingBuffer - insert multi at start - uint8_t ....................................................................................   Passed    0.44 sec
+        Start   3: RingBuffer - basic tests - NonTrivialTestType
+313/484 Test #299: Depot traversal separates passenger continuity from timing certainty ............................................................   Passed    0.44 sec
+314/484 Test #165: Passenger repeated dispatch predictions use private slot history ................................................................   Passed    0.33 sec
+        Start 162: Timetable assumption ignores early departure and full loading only in planner predictions
+        Start 148: DivideApproxTest - Negative
+315/484 Test #175: Passenger OD is a merge invariant for both station and vehicle cargo lists ......................................................   Passed    0.44 sec
+        Start  90: Command format debug summary
+316/484 Test   #3: RingBuffer - basic tests - NonTrivialTestType ...................................................................................   Passed    0.44 sec
+317/484 Test #162: Timetable assumption ignores early departure and full loading only in planner predictions .......................................   Passed    0.33 sec
+        Start 220: Expanded Trip cache retains visits beyond the former eight MiB ceiling
+        Start  87: CmdDataT simple tests
+318/484 Test #148: DivideApproxTest - Negative .....................................................................................................   Passed    0.45 sec
+        Start  18: RingBuffer - insert at ends no grow - NonTrivialTestType
+319/484 Test  #90: Command format debug summary ....................................................................................................   Passed    0.45 sec
+320/484 Test #220: Expanded Trip cache retains visits beyond the former eight MiB ceiling ..........................................................   Passed    0.34 sec
+        Start  22: RingBuffer - insert in middle (begin) no grow - uint8_t
+        Start  10: RingBuffer - back resize - uint8_t
+321/484 Test  #87: CmdDataT simple tests ...........................................................................................................   Passed    0.46 sec
+        Start  29: RingBuffer - insert at beginning grow - uint32_t
+322/484 Test  #18: RingBuffer - insert at ends no grow - NonTrivialTestType ........................................................................   Passed    0.45 sec
+323/484 Test  #22: RingBuffer - insert in middle (begin) no grow - uint8_t .........................................................................   Passed    0.34 sec
+        Start 276: Periodic network scales to 8000 stations without expanded physical visits
+        Start 135: An exhausted cheap prefix survives until a downstream exhausted edge
+324/484 Test  #10: RingBuffer - back resize - uint8_t ..............................................................................................   Passed    0.45 sec
+        Start 167: Passenger conditional prediction is bounded and conservative
+325/484 Test  #29: RingBuffer - insert at beginning grow - uint32_t ................................................................................   Passed    0.45 sec
+326/484 Test #276: Periodic network scales to 8000 stations without expanded physical visits .......................................................   Passed    0.34 sec
+        Start 244: Passenger graph unknown branches, depots and refits never certify a path
+        Start 382: Rotating loading shares survive a hot origin through LoadUnloadStation
+327/484 Test #135: An exhausted cheap prefix survives until a downstream exhausted edge ............................................................   Passed    0.46 sec
+        Start 473: SpiralTileSequence - zero hole
+328/484 Test #167: Passenger conditional prediction is bounded and conservative ....................................................................   Passed    0.46 sec
+329/484 Test #244: Passenger graph unknown branches, depots and refits never certify a path ........................................................   Passed    0.34 sec
+        Start 287: Routine order window notifications preserve periodic generations and policies
+        Start 468: WindowDesc - NWidgetParts properly closed
+330/484 Test #382: Rotating loading shares survive a hot origin through LoadUnloadStation ..........................................................   Passed    0.44 sec
+        Start 239: Passenger graph separates local and express services and shared trips
+331/484 Test #473: SpiralTileSequence - zero hole ..................................................................................................   Passed    0.44 sec
+332/484 Test #287: Routine order window notifications preserve periodic generations and policies ...................................................   Passed    0.33 sec
+        Start 341: Thousands of disconnected untimed lines do not poison a complete trunk journey
+        Start 462: Encryption handling
+333/484 Test #468: WindowDesc - NWidgetParts properly closed .......................................................................................   Passed    0.45 sec
+        Start 365: Journey merge checks include mode and the executable leg
+334/484 Test #239: Passenger graph separates local and express services and shared trips ...........................................................   Passed    0.45 sec
+335/484 Test #341: Thousands of disconnected untimed lines do not poison a complete trunk journey ..................................................   Passed    0.34 sec
+        Start 375: Event snapshots refresh delays timetables capacity and position within the same tick
+        Start  26: RingBuffer - insert in middle (end) no grow - uint32_t
+336/484 Test #462: Encryption handling .............................................................................................................   Passed    0.45 sec
+        Start 290: An OD outside the timed station index does not expand the national timed network
+337/484 Test #365: Journey merge checks include mode and the executable leg ........................................................................   Passed    0.45 sec
+338/484 Test #375: Event snapshots refresh delays timetables capacity and position within the same tick ............................................   Passed    0.34 sec
+        Start 339: 4096 distinct packet observations obey the shared shadow quota
+        Start 352: A chosen ordinary train boards and partial loading preserves OD and money
+339/484 Test  #26: RingBuffer - insert in middle (end) no grow - uint32_t ..........................................................................   Passed    0.45 sec
+        Start 386: A primary engine with different cargo preserves the passenger coach journey after load
+340/484 Test #290: An OD outside the timed station index does not expand the national timed network ................................................   Passed    0.44 sec
+341/484 Test #339: 4096 distinct packet observations obey the shared shadow quota ..................................................................   Passed    0.33 sec
+        Start 307: Standard scoped capture serves an 80800 visit twenty thousand object network
+        Start  62: RingBuffer - resize - uint32_t
+342/484 Test #352: A chosen ordinary train boards and partial loading preserves OD and money .......................................................   Passed    0.45 sec
+        Start 294: Operating stops retain physical occurrences, dwell, phases and saved publication
+343/484 Test #386: A primary engine with different cargo preserves the passenger coach journey after load ..........................................   Passed    0.45 sec
+344/484 Test #307: Standard scoped capture serves an 80800 visit twenty thousand object network ....................................................   Passed    0.34 sec
+        Start 463: GetPacketGameTypeName
+        Start 174: Passenger OD survives splitting merging and partial removal with cargo accounting
+345/484 Test  #62: RingBuffer - resize - uint32_t ..................................................................................................   Passed    0.46 sec
+        Start 286: Periodic round trips prefer the earlier equivalent boarding occurrence
+346/484 Test #294: Operating stops retain physical occurrences, dwell, phases and saved publication ................................................   Passed    0.47 sec
+347/484 Test #463: GetPacketGameTypeName ...........................................................................................................   Passed    0.35 sec
+        Start 159: Passenger services keep their own travel times and order positions
+        Start 353: Reservations and gradual loading allocate seats only once
+348/484 Test #174: Passenger OD survives splitting merging and partial removal with cargo accounting ...............................................   Passed    0.47 sec
+        Start 106: PartialPixelTest - One corner up slopes - SLOPE_W
+349/484 Test #286: Periodic round trips prefer the earlier equivalent boarding occurrence ..........................................................   Passed    0.46 sec
+350/484 Test #159: Passenger services keep their own travel times and order positions ..............................................................   Passed    0.34 sec
+        Start 311: Passenger journeys compare low frequency shortcut and high capacity trunk
+        Start 359: Unreachable OD fallback waits without reboarding a circulating train and can recover
+351/484 Test #353: Reservations and gradual loading allocate seats only once .......................................................................   Passed    0.45 sec
+        Start 147: CargoDist transfer penalties change the chosen flow while zero retains the fast path
+352/484 Test #106: PartialPixelTest - One corner up slopes - SLOPE_W ...............................................................................   Passed    0.45 sec
+353/484 Test #311: Passenger journeys compare low frequency shortcut and high capacity trunk .......................................................   Passed    0.34 sec
+        Start  91: EnumOverOptimisation_BoundsCheck
+        Start 322: Journey circular trains and scheduled dispatch use real future occurrences
+354/484 Test #359: Unreachable OD fallback waits without reboarding a circulating train and can recover ............................................   Passed    0.45 sec
+        Start  46: RingBuffer - insert multi in middle - uint8_t
+355/484 Test #147: CargoDist transfer penalties change the chosen flow while zero retains the fast path ............................................   Passed    0.45 sec
+356/484 Test  #91: EnumOverOptimisation_BoundsCheck ................................................................................................   Passed    0.33 sec
+        Start 209: Passenger OD budget remainders have deterministic origin ordering
+        Start  76: RingBuffer - operator <=> - uint8_t
+357/484 Test #322: Journey circular trains and scheduled dispatch use real future occurrences ......................................................   Passed    0.45 sec
+        Start 233: Graph allocation allowance is independent of traversal work
+358/484 Test  #46: RingBuffer - insert multi in middle - uint8_t ...................................................................................   Passed    0.45 sec
+359/484 Test #209: Passenger OD budget remainders have deterministic origin ordering ...............................................................   Passed    0.34 sec
+        Start 151: IntSqrtTest - FindSqRt
+        Start 121: PartialPixelTest - Steep slopes - SLOPE_STEEP_N
+360/484 Test  #76: RingBuffer - operator <=> - uint8_t .............................................................................................   Passed    0.44 sec
+        Start 378: An unrelated running implicit service leaves active journey routing complete
+361/484 Test #233: Graph allocation allowance is independent of traversal work .....................................................................   Passed    0.44 sec
+362/484 Test #151: IntSqrtTest - FindSqRt ..........................................................................................................   Passed    0.33 sec
+        Start 266: Periodic rebuilding tolerates another edit and falls back before publication
+        Start  48: RingBuffer - insert multi in middle - NonTrivialTestType
+363/484 Test #121: PartialPixelTest - Steep slopes - SLOPE_STEEP_N .................................................................................   Passed    0.45 sec
+        Start  43: RingBuffer - insert multi at end - uint8_t
+364/484 Test #378: An unrelated running implicit service leaves active journey routing complete ....................................................   Passed    0.45 sec
+365/484 Test #266: Periodic rebuilding tolerates another edit and falls back before publication ....................................................   Passed    0.34 sec
+        Start 105: PartialPixelTest - One corner up slopes - SLOPE_S
+        Start 417: Multimodal execution preserves the existing save extension and validates afterload
+366/484 Test  #48: RingBuffer - insert multi in middle - NonTrivialTestType ........................................................................   Passed    0.47 sec
+        Start 278: Periodic unplanned implicit stops never become forecast boarding occurrences
+367/484 Test  #43: RingBuffer - insert multi at end - uint8_t ......................................................................................   Passed    0.48 sec
+368/484 Test #105: PartialPixelTest - One corner up slopes - SLOPE_S ...............................................................................   Passed    0.37 sec
+        Start 181: Passenger OD uses original satisfied demand in stable station order
+        Start  79: RingBuffer - insert with ref to existing element - uint32_t
+369/484 Test #417: Multimodal execution preserves the existing save extension and validates afterload ..............................................   Passed    0.47 sec
+        Start 342: Shadow measures a complete 8001 station fleet within its production quotas
+370/484 Test #278: Periodic unplanned implicit stops never become forecast boarding occurrences ....................................................   Passed    0.49 sec
+371/484 Test #181: Passenger OD uses original satisfied demand in stable station order .............................................................   Passed    0.36 sec
+        Start 125: PartialPixelTest - Half tile on top of steep slopes - SLOPE_STEEP/CORNER_N
+        Start 111: PartialPixelTest - Two opposite corner up slopes - SLOPE_NS
+372/484 Test  #79: RingBuffer - insert with ref to existing element - uint32_t .....................................................................   Passed    0.48 sec
+        Start 379: A certified physical prefix of an incomplete trip is applied reserved and loaded
+373/484 Test #342: Shadow measures a complete 8001 station fleet within its production quotas ......................................................   Passed    0.48 sec
+374/484 Test #125: PartialPixelTest - Half tile on top of steep slopes - SLOPE_STEEP/CORNER_N ......................................................   Passed    0.35 sec
+        Start  72: RingBuffer - copy reverse - uint32_t
+        Start 130: LinkGraph route records retain capacity and expire within their bound
+375/484 Test #111: PartialPixelTest - Two opposite corner up slopes - SLOPE_NS .....................................................................   Passed    0.44 sec
+        Start 114: PartialPixelTest - Three corner up slopes - SLOPE_SEN
+376/484 Test #379: A certified physical prefix of an incomplete trip is applied reserved and loaded ................................................   Passed    0.44 sec
+377/484 Test  #72: RingBuffer - copy reverse - uint32_t ............................................................................................   Passed    0.33 sec
+        Start 323: National journey queries reach eight thousand stations without whole network rescans
+        Start 238: Scoped capture stops at the first unknown dwell and recovers after an order edit
+378/484 Test #130: LinkGraph route records retain capacity and expire within their bound ...........................................................   Passed    0.45 sec
+        Start 196: Passenger OD load removes invalid destinations and ignores manual and freight data
+379/484 Test #114: PartialPixelTest - Three corner up slopes - SLOPE_SEN ...........................................................................   Passed    0.45 sec
+380/484 Test #323: National journey queries reach eight thousand stations without whole network rescans ............................................   Passed    0.34 sec
+        Start 102: PartialPixelSlopeAdditionTest - A half tile steep slope is a one corner half tile on top of a three corner slope
+        Start 228: Timed choices match the timed-only network and perform no unknown bound search
+381/484 Test #238: Scoped capture stops at the first unknown dwell and recovers after an order edit ................................................   Passed    0.45 sec
+        Start 127: PartialPixelTest - Half tile on top of steep slopes - SLOPE_STEEP/CORNER_S
+382/484 Test #196: Passenger OD load removes invalid destinations and ignores manual and freight data ..............................................   Passed    0.44 sec
+383/484 Test #102: PartialPixelSlopeAdditionTest - A half tile steep slope is a one corner half tile on top of a three corner slope ................   Passed    0.33 sec
+        Start 168: Passenger scheduled dispatch uses slots without modifying the schedule
+        Start 350: Active horizons certify short frequent journeys and extend long ODs
+384/484 Test #228: Timed choices match the timed-only network and perform no unknown bound search ..................................................   Passed    0.44 sec
+        Start 366: Routing state and leg have an independent versioned save round trip
+385/484 Test #127: PartialPixelTest - Half tile on top of steep slopes - SLOPE_STEEP/CORNER_S ......................................................   Passed    0.45 sec
+386/484 Test #168: Passenger scheduled dispatch uses slots without modifying the schedule ..........................................................   Passed    0.34 sec
+        Start  50: RingBuffer - erase - uint32_t
+        Start 459: Authentication_PAKE
+387/484 Test #350: Active horizons certify short frequent journeys and extend long ODs .............................................................   Passed    0.46 sec
+        Start  34: RingBuffer - insert in middle (begin) grow - uint8_t
+388/484 Test #366: Routing state and leg have an independent versioned save round trip .............................................................   Passed    0.46 sec
+389/484 Test  #50: RingBuffer - erase - uint32_t ...................................................................................................   Passed    0.34 sec
+        Start 179: Passenger OD table serialisation round trips and validates loaded station IDs
+        Start 236: Implicit freight and unavailable trains cannot poison a passenger scope
+390/484 Test #459: Authentication_PAKE .............................................................................................................   Passed    0.45 sec
+        Start 345: Untimed direct journeys share live decisions and count only actual gradual loads
+391/484 Test  #34: RingBuffer - insert in middle (begin) grow - uint8_t ............................................................................   Passed    0.44 sec
+392/484 Test #179: Passenger OD table serialisation round trips and validates loaded station IDs ...................................................   Passed    0.33 sec
+        Start 237: Historic implicit stops are skipped consistently by scoped forecasts and topology
+        Start 402: Multimodal OD fallback boards only progressing rides and respects forced transfers
+393/484 Test #236: Implicit freight and unavailable trains cannot poison a passenger scope .........................................................   Passed    0.45 sec
+        Start 129: CargoDist route costs survive copying shared orders
+394/484 Test #345: Untimed direct journeys share live decisions and count only actual gradual loads ................................................   Passed    0.44 sec
+395/484 Test #237: Historic implicit stops are skipped consistently by scoped forecasts and topology ...............................................   Passed    0.33 sec
+        Start 173: Passenger OD assignment validates cargo and stations and cannot replace an assigned OD
+        Start 248: Passenger graph reports unfinished boarding candidates at the exact budget boundary
+396/484 Test #402: Multimodal OD fallback boards only progressing rides and respects forced transfers ..............................................   Passed    0.45 sec
+        Start 370: Trip cache peers preserve execution save bytes and tick allowances
+397/484 Test #129: CargoDist route costs survive copying shared orders .............................................................................   Passed    0.45 sec
+398/484 Test #173: Passenger OD assignment validates cargo and stations and cannot replace an assigned OD ..........................................   Passed    0.34 sec
+        Start 455: Comparison operator tests
+        Start 360: OD fallback boarding validates live prefixes and restricted links
+399/484 Test #248: Passenger graph reports unfinished boarding candidates at the exact budget boundary .............................................   Passed    0.45 sec
+        Start  30: RingBuffer - insert at beginning grow - NonTrivialTestType
+400/484 Test #370: Trip cache peers preserve execution save bytes and tick allowances ..............................................................   Passed    0.45 sec
+401/484 Test #455: Comparison operator tests .......................................................................................................   Passed    0.34 sec
+        Start  58: RingBuffer - reserve - uint8_t
+        Start 253: Service pattern capture isolates timing policies and agrees with physical trips
+402/484 Test #360: OD fallback boarding validates live prefixes and restricted links ...............................................................   Passed    0.44 sec
+        Start 136: Deleted and recycled order-list IDs cannot revive old link observations
+403/484 Test  #30: RingBuffer - insert at beginning grow - NonTrivialTestType ......................................................................   Passed    0.44 sec
+404/484 Test  #58: RingBuffer - reserve - uint8_t ..................................................................................................   Passed    0.33 sec
+        Start 117: PartialPixelTest - Normal half tile slopes - SLOPE/CORNER_N
+        Start 439: StrEqualsIgnoreCase - std::string_view
+405/484 Test #253: Service pattern capture isolates timing policies and agrees with physical trips .................................................   Passed    0.46 sec
+        Start 224: Timed journeys ignore unknown alternatives and retain physical prefixes
+406/484 Test #136: Deleted and recycled order-list IDs cannot revive old link observations .........................................................   Passed    0.46 sec
+407/484 Test #117: PartialPixelTest - Normal half tile slopes - SLOPE/CORNER_N .....................................................................   Passed    0.35 sec
+        Start 133: Shared links cannot hide a service change across three consecutive edges
+        Start 303: Order save tables and afterload recreate deterministic service indices
+408/484 Test #439: StrEqualsIgnoreCase - std::string_view ..........................................................................................   Passed    0.46 sec
+        Start 217: Trip cache validates changed dispatch history and every timing input
+409/484 Test #224: Timed journeys ignore unknown alternatives and retain physical prefixes .........................................................   Passed    0.44 sec
+410/484 Test #133: Shared links cannot hide a service change across three consecutive edges ........................................................   Passed    0.33 sec
+        Start   4: RingBuffer - front resize - uint8_t
+        Start 223: Historic implicit orders do not hide the fastest explicit train or invent transfers
+411/484 Test #303: Order save tables and afterload recreate deterministic service indices ..........................................................   Passed    0.46 sec
+        Start 293: Timing publication epochs use floor division for negative state ticks
+412/484 Test #217: Trip cache validates changed dispatch history and every timing input ............................................................   Passed    0.46 sec
+413/484 Test   #4: RingBuffer - front resize - uint8_t .............................................................................................   Passed    0.35 sec
+        Start 110: PartialPixelTest - Two corner up, diagonal slopes - SLOPE_NW
+        Start 109: PartialPixelTest - Two corner up, diagonal slopes - SLOPE_SW
+414/484 Test #223: Historic implicit orders do not hide the fastest explicit train or invent transfers .............................................   Passed    0.46 sec
+        Start   5: RingBuffer - front resize - uint32_t
+415/484 Test #293: Timing publication epochs use floor division for negative state ticks ...........................................................   Passed    0.46 sec
+416/484 Test #110: PartialPixelTest - Two corner up, diagonal slopes - SLOPE_NW ....................................................................   Passed    0.35 sec
+        Start 436: StrCompareIgnoreCase - std::string_view
+        Start 232: Graph discovery excludes definite freight before timetable capture
+417/484 Test #109: PartialPixelTest - Two corner up, diagonal slopes - SLOPE_SW ....................................................................   Passed    0.46 sec
+        Start 116: PartialPixelTest - Three corner up slopes - SLOPE_NWS
+418/484 Test   #5: RingBuffer - front resize - uint32_t ............................................................................................   Passed    0.45 sec
+419/484 Test #436: StrCompareIgnoreCase - std::string_view .........................................................................................   Passed    0.33 sec
+        Start 180: CargoDist staging ignores OD for boarding transfer and delivery decisions
+        Start 166: Passenger predictions respect unloading, non-stop and route barriers
+420/484 Test #232: Graph discovery excludes definite freight before timetable capture ..............................................................   Passed    0.44 sec
+        Start  78: RingBuffer - insert with ref to existing element - uint8_t
+421/484 Test #116: PartialPixelTest - Three corner up slopes - SLOPE_NWS ...........................................................................   Passed    0.45 sec
+422/484 Test #180: CargoDist staging ignores OD for boarding transfer and delivery decisions .......................................................   Passed    0.34 sec
+        Start 432: StringConsumer - invalid int
+        Start 128: PartialPixelTest - Half tile on top of steep slopes - SLOPE_STEEP/CORNER_W
+423/484 Test #166: Passenger predictions respect unloading, non-stop and route barriers ............................................................   Passed    0.45 sec
+        Start 149: DivideApproxTest, Divide
+424/484 Test  #78: RingBuffer - insert with ref to existing element - uint8_t ......................................................................   Passed    0.45 sec
+425/484 Test #432: StringConsumer - invalid int ....................................................................................................   Passed    0.34 sec
+        Start 231: Graph failure diagnostics distinguish independent resource and prediction ceilings
+        Start  71: RingBuffer - copy reverse - uint8_t
+426/484 Test #128: PartialPixelTest - Half tile on top of steep slopes - SLOPE_STEEP/CORNER_W ......................................................   Passed    0.46 sec
+        Start 410: Ships traverse buoys without boarding and retain repeated port occurrences
+427/484 Test #149: DivideApproxTest, Divide ........................................................................................................   Passed    0.45 sec
+428/484 Test #231: Graph failure diagnostics distinguish independent resource and prediction ceilings ..............................................   Passed    0.34 sec
+        Start 258: Shared periodic vehicles retain individually observed phases
+        Start 142: Service labels share the capacity of their physical link
+429/484 Test  #71: RingBuffer - copy reverse - uint8_t .............................................................................................   Passed    0.44 sec
+        Start 164: Passenger connections search actual repeated visits within the stay horizon
+430/484 Test #410: Ships traverse buoys without boarding and retain repeated port occurrences ......................................................   Passed    0.44 sec
+431/484 Test #258: Shared periodic vehicles retain individually observed phases ....................................................................   Passed    0.33 sec
+        Start 447: ConvertHexToBytes
+        Start 160: Passenger predictions account for current progress, dwell and delay
+432/484 Test #142: Service labels share the capacity of their physical link ........................................................................   Passed    0.44 sec
+        Start 344: Timed ordinary journeys win over an untimed express without any bound proof
+433/484 Test #164: Passenger connections search actual repeated visits within the stay horizon .....................................................   Passed    0.44 sec
+434/484 Test #447: ConvertHexToBytes ...............................................................................................................   Passed    0.33 sec
+        Start 390: Existing Journey packets do not consume the Fallback retry inspection allowance
+        Start 451: EncodedString::ReplaceParam - positive
+435/484 Test #160: Passenger predictions account for current progress, dwell and delay .............................................................   Passed    0.44 sec
+        Start 249: Passenger graph certifies only the known time prefix of a truncated prediction
+436/484 Test #344: Timed ordinary journeys win over an untimed express without any bound proof .....................................................   Passed    0.44 sec
+437/484 Test #390: Existing Journey packets do not consume the Fallback retry inspection allowance .................................................   Passed    0.33 sec
+        Start   9: RingBuffer - front resize 2 - NonTrivialTestType
+        Start 270: Periodic ride validation rejects no load no unload forced transfer and changed identities
+438/484 Test #451: EncodedString::ReplaceParam - positive ..........................................................................................   Passed    0.44 sec
+        Start 395: Planner and boarding validate the same long timetabled physical ride
+439/484 Test #249: Passenger graph certifies only the known time prefix of a truncated prediction ..................................................   Passed    0.45 sec
+440/484 Test   #9: RingBuffer - front resize 2 - NonTrivialTestType ................................................................................   Passed    0.33 sec
+        Start 445: StrEndsWithIgnoreCase - std::string_view
+        Start  25: RingBuffer - insert in middle (end) no grow - uint8_t
+441/484 Test #270: Periodic ride validation rejects no load no unload forced transfer and changed identities .......................................   Passed    0.45 sec
+        Start 254: Periodic round trips repeat without horizon expansion
+442/484 Test #395: Planner and boarding validate the same long timetabled physical ride ............................................................   Passed    0.45 sec
+443/484 Test #445: StrEndsWithIgnoreCase - std::string_view ........................................................................................   Passed    0.33 sec
+        Start 385: Production journey execution covers eight thousand stations at standard budgets
+        Start 205: 4096 passenger OD packets cap only excess destinations and rotate fairly
+444/484 Test  #25: RingBuffer - insert in middle (end) no grow - uint8_t ...........................................................................   Passed    0.45 sec
+        Start  96: History Rotation and Reporting tests
+445/484 Test #254: Periodic round trips repeat without horizon expansion ...........................................................................   Passed    0.45 sec
+446/484 Test #385: Production journey execution covers eight thousand stations at standard budgets .................................................   Passed    0.34 sec
+        Start  35: RingBuffer - insert in middle (begin) grow - uint32_t
+        Start 427: StringConsumer - binary64
+447/484 Test #205: 4096 passenger OD packets cap only excess destinations and rotate fairly ........................................................   Passed    0.46 sec
+        Start 321: Journey partial candidates and route diversity are retained under explicit limits
+448/484 Test  #96: History Rotation and Reporting tests ............................................................................................   Passed    0.46 sec
+449/484 Test  #35: RingBuffer - insert in middle (begin) grow - uint32_t ...........................................................................   Passed    0.35 sec
+        Start 434: StrCompareIgnoreCase - std::string
+        Start  93: FlatSet - basic
+450/484 Test #427: StringConsumer - binary64 .......................................................................................................   Passed    0.50 sec
+        Start 316: Reverse journey pruning preserves unknown connections beyond captured visits
+451/484 Test #321: Journey partial candidates and route diversity are retained under explicit limits ...............................................   Passed    0.50 sec
+452/484 Test #434: StrCompareIgnoreCase - std::string ..............................................................................................   Passed    0.38 sec
+        Start 428: StringConsumer - utf8
+        Start 251: Passenger graph station queries retain occurrence order rather than departure order
+453/484 Test  #93: FlatSet - basic .................................................................................................................   Passed    0.47 sec
+        Start  27: RingBuffer - insert in middle (end) no grow - NonTrivialTestType
+454/484 Test #316: Reverse journey pruning preserves unknown connections beyond captured visits ....................................................   Passed    0.45 sec
+455/484 Test #428: StringConsumer - utf8 ...........................................................................................................   Passed    0.34 sec
+        Start 358: OD fallback chooses a progressing interchange instead of unrelated CargoDist flows
+        Start  12: RingBuffer - back resize - NonTrivialTestType
+456/484 Test #251: Passenger graph station queries retain occurrence order rather than departure order .............................................   Passed    0.47 sec
+        Start 476: Utf8View - invalid
+457/484 Test  #27: RingBuffer - insert in middle (end) no grow - NonTrivialTestType ................................................................   Passed    0.47 sec
+458/484 Test #358: OD fallback chooses a progressing interchange instead of unrelated CargoDist flows ..............................................   Passed    0.35 sec
+        Start 446: FormatArrayAsHex
+        Start 335: Onboard interchanges apply actual stop restrictions and transfer costs
+459/484 Test  #12: RingBuffer - back resize - NonTrivialTestType ...................................................................................   Passed    0.47 sec
+        Start 259: Periodic transfers evaluate different periods at the current ready time
+460/484 Test #476: Utf8View - invalid ..............................................................................................................   Passed    0.47 sec
+461/484 Test #446: FormatArrayAsHex ................................................................................................................   Passed    0.36 sec
+        Start 103: PartialPixelTest - One corner up slopes - SLOPE_N
+        Start  33: RingBuffer - insert at end grow - NonTrivialTestType
+462/484 Test #335: Onboard interchanges apply actual stop restrictions and transfer costs ..........................................................   Passed    0.46 sec
+        Start 154: SoftClamp
+463/484 Test #259: Periodic transfers evaluate different periods at the current ready time .........................................................   Passed    0.46 sec
+464/484 Test #103: PartialPixelTest - One corner up slopes - SLOPE_N ...............................................................................   Passed    0.35 sec
+        Start 153: ClampTo
+        Start  94: Test format_to_fixed
+465/484 Test  #33: RingBuffer - insert at end grow - NonTrivialTestType ............................................................................   Passed    0.46 sec
+        Start 465: JSON -> Squirrel conversion
+466/484 Test #154: SoftClamp .......................................................................................................................   Passed    0.47 sec
+467/484 Test #153: ClampTo .........................................................................................................................   Passed    0.35 sec
+        Start 320: Journey event interval cache and departure index preserve deterministic routing
+        Start 112: PartialPixelTest - Two opposite corner up slopes - SLOPE_EW
+468/484 Test  #94: Test format_to_fixed ............................................................................................................   Passed    0.45 sec
+        Start  73: RingBuffer - copy reverse - NonTrivialTestType
+469/484 Test #465: JSON -> Squirrel conversion .....................................................................................................   Passed    0.45 sec
+470/484 Test #320: Journey event interval cache and departure index preserve deterministic routing .................................................   Passed    0.34 sec
+        Start 394: Cleaning the packet pool discards the reverse index before packet ID reuse
+        Start 113: PartialPixelTest - Three corner up slopes - SLOPE_ENW
+471/484 Test #112: PartialPixelTest - Two opposite corner up slopes - SLOPE_EW .....................................................................   Passed    0.45 sec
+        Start 198: Passenger OD bounds destination memory packet growth and exhausted pool fallback
+472/484 Test  #73: RingBuffer - copy reverse - NonTrivialTestType ..................................................................................   Passed    0.45 sec
+473/484 Test #394: Cleaning the packet pool discards the reverse index before packet ID reuse ......................................................   Passed    0.34 sec
+        Start 202: A thousand passenger destinations remain sparse and all receive packet turns
+        Start 393: Afterload returns invalid Journey reservations without disturbing Legacy
+474/484 Test #113: PartialPixelTest - Three corner up slopes - SLOPE_ENW ...........................................................................   Passed    0.46 sec
+        Start 216: Trip cache separates events periods limits and resource stops
+475/484 Test #198: Passenger OD bounds destination memory packet growth and exhausted pool fallback ................................................   Passed    0.46 sec
+476/484 Test #202: A thousand passenger destinations remain sparse and all receive packet turns ....................................................   Passed    0.35 sec
+        Start  15: RingBuffer - back resize 2 - NonTrivialTestType
+477/484 Test #393: Afterload returns invalid Journey reservations without disturbing Legacy ........................................................   Passed    0.34 sec
+478/484 Test #216: Trip cache separates events periods limits and resource stops ...................................................................   Passed    0.23 sec
+479/484 Test  #15: RingBuffer - back resize 2 - NonTrivialTestType .................................................................................   Passed    0.19 sec
+        Start 480: passenger_journey_shadow_production
+480/484 Test #480: passenger_journey_shadow_production .............................................................................................   Passed    5.69 sec
+        Start 481: regression_regression
+481/484 Test #481: regression_regression ...........................................................................................................   Passed    2.44 sec
+        Start 482: regression_stationlist
+482/484 Test #482: regression_stationlist ..........................................................................................................   Passed    2.49 sec
+        Start 483: regression_gs
+483/484 Test #483: regression_gs ...................................................................................................................   Passed    2.20 sec
+        Start 484: regression_gs_compat
+484/484 Test #484: regression_gs_compat ............................................................................................................   Passed    2.49 sec
+
+100% tests passed, 0 tests failed out of 484
+
+Total Test time (real) =  76.65 sec

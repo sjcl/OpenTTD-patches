@@ -4895,6 +4895,8 @@ static bool ConPassengerJourneyStats(std::span<std::string_view> argv)
 			stats.fair_share_claims, stats.fair_share_releases, stats.fair_share_work, stats.retained_rides);
 	IConsolePrint(CC_DEFAULT, "OD fallback: work={}; path_searches={}", stats.od_fallback_work, stats.od_fallback_searches);
 	IConsolePrint(CC_DEFAULT, "Journey transport: boarded={}; transferred={}; delivered={} people", stats.boarded_passengers, stats.transferred_passengers, stats.delivered_passengers);
+	IConsolePrint(CC_DEFAULT, "Timed depot transport: service_boarded={}; service_delivered={}; crossing_boarded={}; crossing_delivered={} people",
+			stats.depot_service_boarded_passengers, stats.depot_service_delivered_passengers, stats.depot_crossing_boarded_passengers, stats.depot_crossing_delivered_passengers);
 	IConsolePrint(CC_DEFAULT, "Pragmatic routing: timed={} packets; timed_ignoring_unknown={}; timed_budget_deferred={}; untimed={} live routes; untimed_no_route={}; untimed_budget_deferred={}",
 			stats.journeys, stats.timed_routes_ignoring_unknown, stats.timed_budget_deferred, stats.untimed_routes, stats.untimed_no_route, stats.untimed_budget_deferred);
 	IConsolePrint(CC_DEFAULT, "Untimed transport: boarded={}; transferred={}; delivered={} people", stats.untimed_boarded_passengers, stats.untimed_transferred_passengers, stats.untimed_delivered_passengers);
