@@ -1,0 +1,8 @@
+{
+  "issue": "The already-running wrapper retained the parent binary SHA in instrumentation.binary_sha256; the executed binary is correctly identified by the top-level manifest and process record.",
+  "parent_binary_sha256": "a14923478b64bab836517bb35e6a8d673a407d7537dff521f8c290d13466152e",
+  "executed_binary_sha256": "42349706f62f921d942012e91ac0aba008b19435f72821caa7854098a839a97f",
+  "raw_manifest_preserved": true,
+  "future_orchestrator_corrected": true,
+  "impact": "No Work, decisions, timing samples, save hashes or game data changed."
+}

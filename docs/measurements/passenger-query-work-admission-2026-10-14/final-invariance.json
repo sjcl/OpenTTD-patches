@@ -1,0 +1,18 @@
+{
+  "same_binary": true,
+  "same_input": true,
+  "same_semantics": true,
+  "same_admission": true,
+  "checks": {
+    "Periodic admission": true,
+    "Periodic allocation": true,
+    "Periodic Work outcomes": true,
+    "Periodic missing": true,
+    "Work exhausted OD transport": true,
+    "Waiting age sample": true
+  },
+  "same_full_save": true,
+  "full_save_sha256": "2fa1b07407db3ca3077664fb9aab21a13378d2df6d478c80d4cf81302495f1c2",
+  "warm_mean_ms": 32.369060302734376,
+  "cold_mean_ms": 48.4102880859375
+}
