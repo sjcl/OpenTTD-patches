@@ -1487,19 +1487,28 @@ TEST_CASE("Routing state and leg have an independent versioned save round trip",
 TEST_CASE("Loading passenger packets preserves the queues used by station rating", "[passenger][active][saveload][determinism]")
 {
 	ActiveFixture fixture;
+	const bool historical_legacy_hops = GENERATE(false, true);
 	_settings_game.linkgraph.passenger_journey_periodic = true;
 	AutoRestoreBackup version{_sl_version, SAVEGAME_VERSION};
 	AutoRestoreBackup features{_sl_xv_feature_versions, AutoRestoreBackupNoNewValueTag{}};
 	AutoRestoreBackup static_features{_sl_xv_feature_static_versions, AutoRestoreBackupNoNewValueTag{}};
 	SlXvSetStaticCurrentVersions(); _sl_xv_feature_versions = _sl_xv_feature_static_versions;
 	std::array hops{B, C, D};
+	const std::array saved_hops{historical_legacy_hops ? StationID::Invalid() : B,
+			historical_legacy_hops ? StationID::Invalid() : C, D};
 	std::array<CargoPacket *, 3> packets;
 	for (size_t i = 0; i < hops.size(); ++i) {
 		auto original = std::unique_ptr<CargoPacket>(fixture.Packet(3));
-		if (i == 2) original->FallbackPassengerJourney(A, NOW);
+		if (i == 2) original->FallbackPassengerJourney(A, NOW, saved_hops[i]);
+		else original->SetPassengerLegacyHop(saved_hops[i]);
 		auto *loaded = CargoPacket::Create();
 		REQUIRE_FALSE(SlTestSaveLoadTable(original.get(), loaded, GetCargoPacketDesc()).empty());
+		REQUIRE(loaded->GetPassengerLegacyHop() == saved_hops[i]);
 		fixture.Waiting().Append(loaded, hops[i]);
+		/* Queue loading restores its key independently of saved Packet fields.
+		 * Normal Append now refreshes OD hops; restore the serialized value to
+		 * represent both historical Legacy packets and current saves here. */
+		loaded->SetPassengerLegacyHop(saved_hops[i]);
 		packets[i] = loaded;
 	}
 	REQUIRE(fixture.Waiting().Packets()->MapSize() == 3);
@@ -1516,8 +1525,8 @@ TEST_CASE("Loading passenger packets preserves the queues used by station rating
 	CHECK(fixture.Waiting().ReservedCount() == 0);
 	for (StationID hop : hops) CHECK(fixture.Waiting().AvailableViaCount(hop) == 3);
 	CHECK(packets[0]->GetPassengerRoutingMode() == PassengerRoutingMode::Legacy);
-	CHECK(packets[0]->GetPassengerLegacyHop() == StationID::Invalid());
-	CHECK(packets[1]->GetPassengerLegacyHop() == StationID::Invalid());
+	CHECK(packets[0]->GetPassengerLegacyHop() == saved_hops[0]);
+	CHECK(packets[1]->GetPassengerLegacyHop() == saved_hops[1]);
 	CHECK(packets[2]->GetPassengerRoutingMode() == PassengerRoutingMode::Fallback);
 	CHECK(packets[2]->GetPassengerLegacyHop() == D);
 	CHECK_FALSE(packets[2]->CanRetryPassengerJourney(A, NOW));
@@ -2418,4 +2427,32 @@ TEST_CASE("Periodic hot origins preserve waiting station Work and query slots", 
 	CHECK(GetPassengerJourneyTickDiagnostic().admission.maximum_tick_queries <= PassengerQueryAdmission::QUERIES_PER_TICK);
 	CHECK(GetPassengerJourneyTickDiagnostic().admission.used <= 1048576);
 	CleanLoadingVehicles();
+}
+
+TEST_CASE("Periodic admission rejection sharing retains the current CargoDist hop", "[passenger][periodic][admission][fallback-via][cache]")
+{
+	ActiveFixture fixture; _settings_game.linkgraph.passenger_journey_periodic = true;
+	ActiveTrain train({ActiveStop(A, 10, 1), ActiveStop(D, 10, 1)});
+	Station::Get(A)->goods[PAX].CreateData().flows.insert(FlowStat(A, B, 10));
+	ResetPassengerServiceDatabase(); auto &db = GetPassengerServiceDatabase();
+	for (int i = 0; i < 128 && db.IsBuilding(); ++i) db.Tick(); REQUIRE_FALSE(db.IsBuilding());
+	for (size_t i = 0; i < PassengerQueryAdmission::QUERIES_PER_TICK; ++i) {
+		auto packet = std::unique_ptr<CargoPacket>(fixture.Packet(1));
+		REQUIRE(PassengerJourneyActiveContext(nullptr, A).PlanWaiting(*packet, PAX, D));
+	}
+	const auto used = GetPassengerJourneyTickDiagnostic().admission.used;
+	PassengerJourneyActiveContext context(nullptr, A);
+	GameRandomSeedChecker seeds;
+	for (size_t i = 0; i < 2; ++i) {
+		auto packet = std::unique_ptr<CargoPacket>(fixture.Packet(1));
+		CHECK_FALSE(context.PlanWaiting(*packet, PAX, D));
+		CHECK(packet->IsPassengerJourneyDeferred());
+		CHECK(packet->GetPassengerLegacyHop() == B);
+		CHECK(GetPassengerJourneyTickDiagnostic().admission.used == used);
+	}
+	CHECK(GetPassengerJourneyTickDiagnostic().admission.accepted == PassengerQueryAdmission::QUERIES_PER_TICK);
+	CHECK(GetPassengerJourneyTickDiagnostic().admission.rejected == 1);
+	CHECK(GetPassengerJourneyTickDiagnostic().query_cache_hits == 1);
+	CHECK(GetPassengerJourneyTickDiagnostic().deferred[static_cast<size_t>(PassengerJourneyFallbackReason::QueryLimit)] == 2);
+	CHECK(seeds.Check());
 }
