@@ -5070,7 +5070,7 @@ static bool ConPassengerJourneyStats(std::span<std::string_view> argv)
 	const auto &admission = stats.admission;
 	IConsolePrint(CC_DEFAULT, "Periodic admission: accepted={}; rejected={}; reserved={}; used={}; returned={}; max_tick_queries={}; max_tick_work={}",
 			admission.accepted, admission.rejected, admission.reserved, admission.used, admission.returned, admission.maximum_tick_queries, admission.maximum_tick_work);
-	static constexpr std::array admission_reasons{"None", "EventQueries", "TickQueries", "EventWork", "GlobalWork", "FairShare"};
+	static constexpr std::array admission_reasons{"None", "EventQueries", "TickQueries", "EventWork", "GlobalWork", "FairWork", "FairQueries"};
 	static_assert(admission_reasons.size() == static_cast<size_t>(PassengerQueryAdmission::Rejection::End));
 	for (size_t i = 1; i < admission_reasons.size(); ++i) IConsolePrint(CC_DEFAULT, "Admission rejected {}: {}", admission_reasons[i], admission.rejections[i]);
 	IConsolePrint(CC_DEFAULT, "Periodic allocation: timed={}; schedule={}; timed_used={}; schedule_used={}",

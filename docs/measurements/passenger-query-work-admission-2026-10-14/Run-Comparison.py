@@ -40,7 +40,7 @@ def main():
                 label=variant, revision=metadata["source_revision"], kind="minimal", ticks=a.ticks,
                 phase="continuation" if a.resume else f"initial_{a.ticks}", repetitions=a.repetitions,
                 modes=["cold" if a.cold else "on"], cache_off_scope="all", resume_settings=a.resume,
-                wait_idle_seconds=3600, idle_grace_seconds=30)
+                wait_idle_seconds=3600, idle_grace_seconds=90)
             runner.run_locked(args)
             manifest = json.loads((args.output / "manifest.json").read_text(encoding="utf-8"))
             for run in manifest["runs"]:

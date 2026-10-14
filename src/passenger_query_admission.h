@@ -11,8 +11,8 @@ class PassengerQueryAdmission {
 public:
 	static constexpr size_t MAX_WORK = 65536;
 	static constexpr size_t SCHEDULE_PROTECTION = 16384;
-	static constexpr size_t QUERIES_PER_TICK = 32;
-	enum class Rejection : uint8_t { None, EventQueries, TickQueries, EventWork, GlobalWork, FairShare, End };
+	static constexpr size_t QUERIES_PER_TICK = 16; ///< 24/32/64 raised real-map CPU disproportionately; retune with a faster planner.
+	enum class Rejection : uint8_t { None, EventQueries, TickQueries, EventWork, GlobalWork, FairWork, FairQueries, End };
 private:
 	size_t &event_work, &global_work;
 	size_t reserved = 0, used = 0;
@@ -25,7 +25,8 @@ public:
 		else if (global_queries == 0) this->rejection = Rejection::TickQueries;
 		else if (event_work == 0) this->rejection = Rejection::EventWork;
 		else if (global_work == 0) this->rejection = Rejection::GlobalWork;
-		else if (global_work <= protected_work || global_queries <= protected_queries) this->rejection = Rejection::FairShare;
+		else if (global_work <= protected_work) this->rejection = Rejection::FairWork;
+		else if (global_queries <= protected_queries) this->rejection = Rejection::FairQueries;
 		else {
 			this->reserved = std::min({MAX_WORK, event_work, global_work - protected_work});
 			event_work -= this->reserved; global_work -= this->reserved;
@@ -47,7 +48,7 @@ public:
 	size_t TimedAllowance(size_t protection = SCHEDULE_PROTECTION) const
 	{
 		assert(protection <= MAX_WORK);
-		return this->reserved - this->reserved * protection / MAX_WORK;
+		return this->reserved - uint64_t(this->reserved) * protection / MAX_WORK;
 	}
 	size_t ScheduleAllowance() const { return this->Returned(); }
 	void Charge(size_t work) { assert(work <= this->Returned()); this->used += work; }

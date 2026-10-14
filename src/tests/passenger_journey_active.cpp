@@ -40,6 +40,7 @@ TEST_CASE("Periodic Work leases settle once at partial and full boundaries", "[p
 		{
 			PassengerQueryAdmission admission(event_work, global_work, event_queries, tick_queries);
 			REQUIRE(admission); CHECK(admission.Reserved() == reservation);
+			CHECK(admission.TimedAllowance(65536) == 0); // Including 32-bit size_t builds.
 			CHECK(admission.TimedAllowance() + reservation / 4 == reservation);
 			admission.Charge(admission.TimedAllowance());
 			CHECK(admission.ScheduleAllowance() == reservation / 4);
@@ -62,14 +63,14 @@ TEST_CASE("Periodic Work leases settle once at partial and full boundaries", "[p
 TEST_CASE("Periodic admission distinguishes fair share and event global boundaries", "[passenger][admission][budget][fairshare]")
 {
 	using Rejection = PassengerQueryAdmission::Rejection;
-	for (auto reason : {Rejection::EventQueries, Rejection::TickQueries, Rejection::EventWork, Rejection::GlobalWork, Rejection::FairShare}) {
+	for (auto reason : {Rejection::EventQueries, Rejection::TickQueries, Rejection::EventWork, Rejection::GlobalWork, Rejection::FairWork}) {
 		size_t event_work = 65536, global_work = 131072, event_queries = 128, tick_queries = 32;
 		if (reason == Rejection::EventQueries) event_queries = 0;
 		if (reason == Rejection::TickQueries) tick_queries = 0;
 		if (reason == Rejection::EventWork) event_work = 0;
 		if (reason == Rejection::GlobalWork) global_work = 0;
 		auto before = std::tuple(event_work, global_work, event_queries, tick_queries);
-		PassengerQueryAdmission admission(event_work, global_work, event_queries, tick_queries, reason == Rejection::FairShare ? global_work : 0);
+		PassengerQueryAdmission admission(event_work, global_work, event_queries, tick_queries, reason == Rejection::FairWork ? global_work : 0);
 		CHECK_FALSE(admission); CHECK(admission.GetRejection() == reason);
 		CHECK(std::tuple(event_work, global_work, event_queries, tick_queries) == before);
 	}
@@ -80,7 +81,7 @@ TEST_CASE("Periodic admission distinguishes fair share and event global boundari
 	}
 	CHECK(global_work == 131072); CHECK(tick_queries == 2);
 	PassengerQueryAdmission protected_slots(event_work, global_work, event_queries, tick_queries, 0, 2);
-	CHECK(protected_slots.GetRejection() == Rejection::FairShare);
+	CHECK(protected_slots.GetRejection() == Rejection::FairQueries);
 }
 
 static Order ActiveStop(StationID station, TimetableTicks travel = 10000, TimetableTicks wait = 100)

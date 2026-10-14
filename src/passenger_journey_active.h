@@ -201,7 +201,11 @@ class PassengerJourneyActiveContext {
 	StationID station;
 	std::map<std::tuple<CargoType, StationID, Ticks>, std::unique_ptr<Snapshot>> snapshots;
 	std::map<CargoType, PassengerJourneyBoardingContext> continuation;
-	struct PeriodicWaiting { std::optional<PassengerJourneyExecution> ride; bool deferred; bool provisional; bool work_exhausted; };
+	struct PeriodicWaiting {
+		std::optional<PassengerJourneyExecution> ride;
+		bool deferred, provisional, work_exhausted;
+		PassengerJourneyFallbackReason failure = PassengerJourneyFallbackReason::QueryWork;
+	};
 	std::map<std::tuple<CargoType, StationID, StateTicks, OrderListID>, PeriodicWaiting> periodic_waiting;
 	PassengerOdFallbackContext fallback;
 	size_t work_left = 4194304;

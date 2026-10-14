@@ -340,7 +340,7 @@ void RecordPassengerJourneyMovement(PassengerJourneyMovement movement, uint coun
  * deferred Legacy packets. Neither unknown-OD CargoDist nor reservations count. */
 void RecordPassengerJourneyMovement(PassengerJourneyMovement movement, const CargoPacket &packet, uint count)
 {
-	if (packet.HasExhaustedPassengerWork()) {
+	if (packet.HasExhaustedPassengerWork() && Station::IsValidID(packet.GetPassengerDestination())) {
 		if (movement == PassengerJourneyMovement::Board) TickBudget().diagnostic.work_recovered_boarded += count;
 		if (movement == PassengerJourneyMovement::Deliver) TickBudget().diagnostic.work_recovered_delivered += count;
 	}
@@ -624,7 +624,7 @@ bool PassengerJourneyActiveContext::PlanWaiting(CargoPacket &packet, CargoType c
 			++TickBudget().diagnostic.query_cache_hits;
 			if (cached->second.work_exhausted) packet.MarkPassengerWorkExhaustion();
 			if (!cached->second.ride) {
-				if (cached->second.deferred) { CountJourneyDeferral(PassengerJourneyFallbackReason::QueryWork); packet.DeferPassengerJourney(this->station, _state_ticks); }
+				if (cached->second.deferred) { CountJourneyDeferral(cached->second.failure); packet.DeferPassengerJourney(this->station, _state_ticks); }
 				return false;
 			}
 			apply(*cached->second.ride, cached->second.provisional);
@@ -642,9 +642,10 @@ bool PassengerJourneyActiveContext::PlanWaiting(CargoPacket &packet, CargoType c
 		auto &diagnostic = global.diagnostic.admission;
 		if (!admission) {
 			++diagnostic.rejected; ++diagnostic.rejections[static_cast<size_t>(admission.GetRejection())];
-			this->failure = admission.GetRejection() == PassengerQueryAdmission::Rejection::EventQueries || admission.GetRejection() == PassengerQueryAdmission::Rejection::TickQueries ?
+			this->failure = admission.GetRejection() == PassengerQueryAdmission::Rejection::EventQueries || admission.GetRejection() == PassengerQueryAdmission::Rejection::TickQueries || admission.GetRejection() == PassengerQueryAdmission::Rejection::FairQueries ?
 					PassengerJourneyFallbackReason::QueryLimit : PassengerJourneyFallbackReason::QueryWork;
-			this->periodic_waiting.emplace(key, PeriodicWaiting{{}, true, false, false});
+			this->deferred = true;
+			this->periodic_waiting.emplace(key, PeriodicWaiting{{}, true, false, false, this->failure});
 			CountJourneyDeferral(this->failure); packet.DeferPassengerJourney(this->station, _state_ticks); return false;
 		}
 		if (ticket != nullptr) { ticket->claimed = true; ++global.diagnostic.fair_share_claims; }

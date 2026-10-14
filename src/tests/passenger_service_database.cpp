@@ -958,7 +958,12 @@ TEST_CASE("Periodic actual Work admission shares packets and caps cheap queries 
 	CHECK(GetPassengerJourneyTickDiagnostic().admission.reserved == GetPassengerJourneyTickDiagnostic().admission.used + GetPassengerJourneyTickDiagnostic().admission.returned);
 	CHECK(event.GetWorkAllowanceUsed() == work);
 	ResetPassengerJourneyDiagnostic(); db.ClearPolicies();
-	auto *denied = f.Packet(); CHECK_FALSE(PassengerJourneyActiveContext(nullptr, A).PlanWaiting(*denied, PAX, D));
+	PassengerJourneyActiveContext exhausted(nullptr, A);
+	auto *denied = f.Packet(); CHECK_FALSE(exhausted.PlanWaiting(*denied, PAX, D));
+	CHECK_FALSE(exhausted.PlanWaiting(*f.Packet(), PAX, D));
+	CHECK(GetPassengerJourneyTickDiagnostic().query_cache_hits == 1);
+	CHECK(GetPassengerJourneyTickDiagnostic().deferred[static_cast<size_t>(PassengerJourneyFallbackReason::QueryLimit)] == 2);
+	CHECK(GetPassengerJourneyTickDiagnostic().deferred[static_cast<size_t>(PassengerJourneyFallbackReason::QueryWork)] == 0);
 	CHECK(denied->IsPassengerJourneyDeferred());
 	CHECK(GetPassengerJourneyTickDiagnostic().admission.rejections[static_cast<size_t>(PassengerQueryAdmission::Rejection::TickQueries)] == 1);
 	++_state_ticks; BeginPassengerJourneyTick(); REQUIRE(PassengerJourneyActiveContext(nullptr, A).PlanWaiting(*denied, PAX, D));

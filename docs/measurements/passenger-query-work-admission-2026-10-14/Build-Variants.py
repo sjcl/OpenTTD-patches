@@ -15,7 +15,8 @@ import sys
 HERE = pathlib.Path(__file__).resolve().parent
 ROOT = HERE.parents[2]
 VARIANTS = {"control": None, "q32-t49152": (32, 49152, 16384),
-            "q64-t49152": (64, 49152, 16384), "q32-t32768": (32, 32768, 8192)}
+            "q64-t49152": (64, 49152, 16384), "q32-t32768": (32, 32768, 8192),
+            "q16-t49152": (16, 49152, 16384), "q24-t49152": (24, 49152, 16384)}
 
 
 def replace_once(text, old, new):
@@ -32,6 +33,14 @@ def main():
     p.add_argument("--parallel", type=int, default=8)
     a = p.parse_args()
     build = a.build.resolve()
+    # Restore only owned TU replacements so the generator can run again.
+    project = build / "openttd_lib.vcxproj"
+    xml = project.read_text(encoding="utf-8-sig")
+    for name in ("console_cmds.cpp", "passenger_journey_active.cpp"):
+        copied = str(build / "journey-profile" / name)
+        if copied in xml:
+            xml = replace_once(xml, copied, str(ROOT / "src" / name))
+    project.write_text(xml, encoding="utf-8-sig")
     subprocess.run([sys.executable, "-B", str(HERE.parent / "passenger-routing-profile-2026-10-13/Instrument-Profile.py"),
                     str(ROOT), str(build), "--mode", "minimal"], check=True)
     project = build / "openttd_lib.vcxproj"

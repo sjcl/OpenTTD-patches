@@ -1,0 +1,110 @@
+[
+  {
+    "output": "comparison",
+    "status": "failed",
+    "source_revision": "77f465d9f69c30cd580e96b0fd3edbda32fba433",
+    "binary_sha256": "be98f1824f7528ad89a37f686e975fc69bde1d1881b418ae3a7949ca86ff50d9",
+    "input_sha256": "14d68c82911b9dcfc5ef7291e9697c5bbd67f44ffcc79d7575a144405edf6390",
+    "runs": [
+      {
+        "id": "on-1",
+        "mode": "on",
+        "repetition": 1,
+        "directory": "on-1",
+        "started_utc": "2026-10-14T03:33:13.200761+00:00",
+        "returncode": 1,
+        "contamination": [
+          {
+            "utc": "2026-10-14T03:34:00.624741+00:00",
+            "processes": [
+              "passenger_journey_active_test:107296"
+            ]
+          },
+          {
+            "utc": "2026-10-14T03:34:09.025770+00:00",
+            "processes": [
+              "passenger_journey_active_test:107296"
+            ]
+          }
+        ],
+        "final_save_sha256": null
+      }
+    ],
+    "excluded_from_performance": true
+  },
+  {
+    "output": "comparison-clean",
+    "status": "failed",
+    "source_revision": "77f465d9f69c30cd580e96b0fd3edbda32fba433",
+    "binary_sha256": "be98f1824f7528ad89a37f686e975fc69bde1d1881b418ae3a7949ca86ff50d9",
+    "input_sha256": "14d68c82911b9dcfc5ef7291e9697c5bbd67f44ffcc79d7575a144405edf6390",
+    "runs": [
+      {
+        "id": "on-1",
+        "mode": "on",
+        "repetition": 1,
+        "directory": "on-1",
+        "started_utc": "2026-10-14T03:36:16.449641+00:00",
+        "returncode": 1,
+        "contamination": [
+          {
+            "utc": "2026-10-14T03:39:39.564244+00:00",
+            "processes": [
+              "cmake:98188",
+              "MSBuild:78940"
+            ]
+          },
+          {
+            "utc": "2026-10-14T03:39:47.988887+00:00",
+            "processes": [
+              "cmake:98188"
+            ]
+          }
+        ],
+        "final_save_sha256": null
+      }
+    ],
+    "excluded_from_performance": true
+  },
+  {
+    "output": "comparison-final",
+    "status": "failed",
+    "source_revision": "77f465d9f69c30cd580e96b0fd3edbda32fba433",
+    "binary_sha256": "be98f1824f7528ad89a37f686e975fc69bde1d1881b418ae3a7949ca86ff50d9",
+    "input_sha256": "14d68c82911b9dcfc5ef7291e9697c5bbd67f44ffcc79d7575a144405edf6390",
+    "runs": [
+      {
+        "id": "on-1",
+        "mode": "on",
+        "repetition": 1,
+        "directory": "on-1",
+        "started_utc": "2026-10-14T03:44:42.520868+00:00",
+        "returncode": 1,
+        "contamination": [
+          {
+            "utc": "2026-10-14T03:44:49.667328+00:00",
+            "processes": [
+              "ctest:24512",
+              "cmake:129592",
+              "cmake:116692",
+              "passenger_journey_active_test:118640",
+              "passenger_od_load:127312",
+              "openttd_test:134672",
+              "openttd_test:138176"
+            ]
+          },
+          {
+            "utc": "2026-10-14T03:44:58.744942+00:00",
+            "processes": [
+              "ctest:24512",
+              "openttd_test:73568",
+              "openttd_test:111576"
+            ]
+          }
+        ],
+        "final_save_sha256": null
+      }
+    ],
+    "excluded_from_performance": true
+  }
+]
