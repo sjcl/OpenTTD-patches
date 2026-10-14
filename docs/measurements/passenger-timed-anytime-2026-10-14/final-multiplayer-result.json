@@ -1,0 +1,72 @@
+{
+  "joined_clients": 2,
+  "backend": "periodic",
+  "binary": "openttd-network.exe",
+  "input_save": "C:\\Users\\bebe\\.codex\\worktrees\\e133\\OpenTTD-patches\\build-timed-anytime\\package\\input.sav",
+  "fixture": false,
+  "detected_sync_failure": false,
+  "client_exit_codes": [
+    null,
+    null
+  ],
+  "server_state_ticks": [
+    "3176545487",
+    "3176546542"
+  ],
+  "single_core_clients": false,
+  "affinity": {
+    "client-initial": {
+      "mask": 0,
+      "applied": false
+    },
+    "client-late": {
+      "mask": 0,
+      "applied": false
+    }
+  },
+  "sync_frequency": 1,
+  "loopback_address": "127.0.0.1:17523",
+  "client_departure_index_disabled": true,
+  "client_policy_cache_disabled": true,
+  "client_fallback_cache_disabled": true,
+  "client_state_ticks": [
+    [
+      3176545487,
+      3176545639,
+      3176545802,
+      3176545998,
+      3176546268,
+      3176546498
+    ],
+    [
+      3176545871,
+      3176546035,
+      3176546196,
+      3176546335,
+      3176546524
+    ]
+  ],
+  "connected_clients_at_end": 2,
+  "max_lag_time": 32000,
+  "max_join_time": 32000,
+  "progress_observation_resolution_ticks": 128,
+  "unrestricted_clients": true,
+  "client_scratch_disabled": true,
+  "client_scratch_retained_bytes": [
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0
+    ]
+  ]
+}

@@ -4991,6 +4991,7 @@ static bool ConPassengerJourneyStats(std::span<std::string_view> argv)
 	IConsolePrint(CC_DEFAULT, "Periodic global invalidations: {}", periodic.global_invalidations);
 	IConsolePrint(CC_DEFAULT, "Timed search storage: labels={}; frontier_lookups={}; queue_pushes={}; queue_pops={}; scratch_bytes={}; scratch_peak_bytes={}",
 		periodic.timed_labels, periodic.frontier_lookups, periodic.queue_pushes, periodic.queue_pops, periodic.search_scratch_bytes, periodic.search_scratch_peak_bytes);
+	IConsolePrint(CC_DEFAULT, "Timed Work destination geometry: with_destination_label={}", periodic.work_with_destination_label);
 	IConsolePrint(CC_DEFAULT, "Timed Work completion: with_complete={}; without_complete={}; with_queued={}; with_popped={}; improvement_possible={}; reverse_work={}; forward_work={}",
 		periodic.work_with_complete, periodic.work_without_complete, periodic.work_with_queued_complete, periodic.work_with_popped_complete,
 		periodic.work_with_improvement, periodic.work_reverse, periodic.work_forward);

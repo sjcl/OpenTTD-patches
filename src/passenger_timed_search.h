@@ -20,6 +20,7 @@ struct PassengerTimedLabel {
 	PassengerJourneyExecution leg{}, first{};
 	bool active = true;
 	size_t next = SIZE_MAX; ///< Intrusive frontier link, in original insertion order.
+	bool complete_valid = false; ///< Admitted destination with a current, connected chain to the origin.
 };
 static_assert(sizeof(PassengerTimedLabel) <= 512);
 

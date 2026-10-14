@@ -1,0 +1,164 @@
+{
+  "schema_version": 1,
+  "raw_sha256": "2a42bc9dc6070bd397dd6594a8fcf97bb612e5e7586346056be2f7aba238a5de",
+  "samples": 57,
+  "found": 44,
+  "old_found": 19,
+  "rescued": 25,
+  "provisional": 25,
+  "certified_references": 50,
+  "uncertified_references": 0,
+  "reference_cost_difference": {
+    "count": 44,
+    "mean": 22.227272727272727,
+    "min": 0,
+    "max": 612,
+    "p50": 0,
+    "p95": 20,
+    "p99": 612
+  },
+  "reference_arrival_difference": {
+    "count": 44,
+    "mean": 22.681818181818183,
+    "min": 0,
+    "max": 592,
+    "p50": 0,
+    "p95": 69,
+    "p99": 592
+  },
+  "provisional_cost_difference": {
+    "count": 25,
+    "mean": 39.12,
+    "min": 0,
+    "max": 612,
+    "p50": 0,
+    "p95": 317,
+    "p99": 612
+  },
+  "provisional_arrival_difference": {
+    "count": 25,
+    "mean": 39.92,
+    "min": 0,
+    "max": 592,
+    "p50": 0,
+    "p95": 337,
+    "p99": 592
+  },
+  "old_certified_changed": 0,
+  "notes": [
+    "Samples are a deterministic systematic sample, not random or population-wide quality claims.",
+    "Ready, cargo, excluded service and live pools are identical for each paired query.",
+    "Reference Work is 1048576, Labels 65536 and memory 128 MiB. Uncertified references are excluded from optimum deltas.",
+    "Arrival deltas may be negative when nonzero generalized-cost penalties change the preferred arrival.",
+    "This probe adds CPU cost; its run is excluded from performance comparisons."
+  ],
+  "strata": {
+    "systematic": {
+      "samples": 33,
+      "found": 20,
+      "old_found": 19,
+      "rescued": 1,
+      "provisional": 1,
+      "certified_references": 26,
+      "uncertified_references": 0,
+      "reference_cost_difference": {
+        "count": 20,
+        "mean": 0.0,
+        "min": 0,
+        "max": 0,
+        "p50": 0,
+        "p95": 0,
+        "p99": 0
+      },
+      "reference_arrival_difference": {
+        "count": 20,
+        "mean": 0.0,
+        "min": 0,
+        "max": 0,
+        "p50": 0,
+        "p95": 0,
+        "p99": 0
+      },
+      "provisional_cost_difference": {
+        "count": 1,
+        "mean": 0.0,
+        "min": 0,
+        "max": 0,
+        "p50": 0,
+        "p95": 0,
+        "p99": 0
+      },
+      "provisional_arrival_difference": {
+        "count": 1,
+        "mean": 0.0,
+        "min": 0,
+        "max": 0,
+        "p50": 0,
+        "p95": 0,
+        "p99": 0
+      },
+      "old_certified_changed": 0,
+      "notes": [
+        "Samples are a deterministic systematic sample, not random or population-wide quality claims.",
+        "Ready, cargo, excluded service and live pools are identical for each paired query.",
+        "Reference Work is 1048576, Labels 65536 and memory 128 MiB. Uncertified references are excluded from optimum deltas.",
+        "Arrival deltas may be negative when nonzero generalized-cost penalties change the preferred arrival.",
+        "This probe adds CPU cost; its run is excluded from performance comparisons."
+      ]
+    },
+    "additional_provisional": {
+      "samples": 24,
+      "found": 24,
+      "old_found": 0,
+      "rescued": 24,
+      "provisional": 24,
+      "certified_references": 24,
+      "uncertified_references": 0,
+      "reference_cost_difference": {
+        "count": 24,
+        "mean": 40.75,
+        "min": 0,
+        "max": 612,
+        "p50": 0,
+        "p95": 317,
+        "p99": 612
+      },
+      "reference_arrival_difference": {
+        "count": 24,
+        "mean": 41.583333333333336,
+        "min": 0,
+        "max": 592,
+        "p50": 0,
+        "p95": 337,
+        "p99": 592
+      },
+      "provisional_cost_difference": {
+        "count": 24,
+        "mean": 40.75,
+        "min": 0,
+        "max": 612,
+        "p50": 0,
+        "p95": 317,
+        "p99": 612
+      },
+      "provisional_arrival_difference": {
+        "count": 24,
+        "mean": 41.583333333333336,
+        "min": 0,
+        "max": 592,
+        "p50": 0,
+        "p95": 337,
+        "p99": 592
+      },
+      "old_certified_changed": 0,
+      "notes": [
+        "Samples are a deterministic systematic sample, not random or population-wide quality claims.",
+        "Ready, cargo, excluded service and live pools are identical for each paired query.",
+        "Reference Work is 1048576, Labels 65536 and memory 128 MiB. Uncertified references are excluded from optimum deltas.",
+        "Arrival deltas may be negative when nonzero generalized-cost penalties change the preferred arrival.",
+        "This probe adds CPU cost; its run is excluded from performance comparisons."
+      ]
+    }
+  },
+  "strata_note": "Additional provisional samples are a separate stratum; pooled means are not population estimates."
+}

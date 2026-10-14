@@ -46,7 +46,10 @@ if __name__ == "__main__":
     a = p.parse_args()
     raw = a.samples.read_bytes()
     rows = [json.loads(line) for line in raw.decode().splitlines()]
-    data = {"schema_version": 1, "raw_sha256": hashlib.sha256(raw).hexdigest(), **summarize(rows)}
+    data = {"schema_version": 1, "raw_sha256": hashlib.sha256(raw).hexdigest(), **summarize(rows),
+            "strata": {"systematic": summarize([r for r in rows if not r.get("sample_provisional", 0)]),
+                       "additional_provisional": summarize([r for r in rows if r.get("sample_provisional", 0)])},
+            "strata_note": "Additional provisional samples are a separate stratum; pooled means are not population estimates."}
     a.output.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     a.output.with_suffix(".jsonl").write_bytes(raw.replace(b"\r\n", b"\n"))
     print(json.dumps(data, ensure_ascii=False, indent=2))

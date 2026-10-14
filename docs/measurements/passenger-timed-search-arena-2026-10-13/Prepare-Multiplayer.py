@@ -6,10 +6,11 @@ import sys
 
 p = argparse.ArgumentParser(description=__doc__)
 p.add_argument("build", type=pathlib.Path)
+p.add_argument("--directory", default="mp-arena")
 a = p.parse_args()
 source = pathlib.Path(__file__).resolve().parents[3]
 subprocess.run([sys.executable, str(source / "docs/measurements/passenger-timed-pruning-2026-10-13/Prepare-Multiplayer.py"), str(a.build),
-                "--directory", "mp-arena", "--probe", "--unrestricted-clients"], check=True)
+                "--directory", a.directory, "--probe", "--unrestricted-clients"], check=True)
 target = a.build / "Exercise-Pruning-Multiplayer.py"
 text = target.read_text(encoding="utf-8")
 assert text.count("passenger_journey_stats departures_off") == 2

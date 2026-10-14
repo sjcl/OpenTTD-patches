@@ -67,6 +67,7 @@ struct PassengerPeriodicPlan {
 	struct SearchDiagnostic {
 		size_t reverse_work = 0, forward_work = 0;
 		size_t complete_labels = 0, queued_complete = 0, popped_complete = 0;
+		size_t destination_labels = 0; ///< Geometric destination labels, including stale service generations.
 		std::optional<int64_t> best_complete_cost;
 		StateTicks best_complete_arrival{};
 		int64_t remaining_lower_bound = INT64_MAX;
@@ -93,6 +94,7 @@ struct PassengerDatabaseDiagnostic {
 	uint64_t rescued_unpopped = 0; ///< Selected complete path when the old pop-only search had no winner.
 	uint64_t work_with_complete = 0, work_without_complete = 0, work_with_queued_complete = 0, work_with_popped_complete = 0, work_with_improvement = 0;
 	uint64_t work_reverse = 0, work_forward = 0;
+	uint64_t work_with_destination_label = 0;
 	std::array<uint64_t, static_cast<size_t>(PassengerPeriodicPlan::WorkStop::End)> work_stop_calls{}, work_stop_observations{};
 	std::array<uint64_t, 65> search_work_histogram{}; ///< 1024-work upper bounds, last bucket includes overflow.
 	std::array<PassengerPeriodicPlan::SearchDiagnostic, 16> work_samples{};
@@ -157,6 +159,9 @@ public:
 	/** Read-only comparison with the previous pop-only completion rule, same budgets
 	 * and search order. Never a local preference that could change peer decisions. */
 	PassengerPeriodicPlan PlanWithLegacyCompletion(CargoType cargo, StationID origin, StationID destination, StateTicks ready,
+			PassengerJourneyLimits limits = {}, PassengerJourneyEvaluation evaluation = {}, OrderListID excluded = OrderListID::Invalid());
+	/** Diagnostic only: original pop/pruning and generation handling, never a player setting. */
+	PassengerPeriodicPlan PlanWithOriginalCompletion(CargoType cargo, StationID origin, StationID destination, StateTicks ready,
 			PassengerJourneyLimits limits = {}, PassengerJourneyEvaluation evaluation = {}, OrderListID excluded = OrderListID::Invalid());
 	void SetTimedSearchScratchEnabled(bool enabled)
 	{
@@ -263,7 +268,7 @@ private:
 	void Index(const PassengerPeriodicService &service);
 	JourneyPolicy CompilePolicy(CargoType cargo, StationID origin, StationID destination, PassengerJourneyLimits limits, PassengerJourneyEvaluation evaluation, Dependencies &dependencies) const;
 	PassengerPeriodicPlan PlanInternal(CargoType cargo, StationID origin, StationID destination, StateTicks ready,
-			PassengerJourneyLimits limits, PassengerJourneyEvaluation evaluation, OrderListID excluded, bool prune_services, bool legacy_structures = false, bool anytime = true);
+			PassengerJourneyLimits limits, PassengerJourneyEvaluation evaluation, OrderListID excluded, bool prune_services, bool legacy_structures = false, bool anytime = true, bool validate_completes = true);
 	bool ServiceCannotImprove(const PassengerPeriodicTimetable &pattern, size_t boarding, CargoType cargo,
 			StationID destination, int64_t cost, bool transfer, int64_t best, const JourneyPolicy &policy, PassengerJourneyEvaluation evaluation);
 };

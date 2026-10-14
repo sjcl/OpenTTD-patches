@@ -230,6 +230,56 @@ TEST_CASE("Anytime ties keep the original complete key and earlier occurrence", 
 	CHECK(provisional);
 }
 
+TEST_CASE("Stale cheap services cannot hide or prune a current complete journey", "[passenger][periodic][anytime][active]")
+{
+	Fixture f; auto *stale = f.Train({Stop(A, 1000, 0), Stop(D, 10, 0)});
+	auto *current = f.Train({Stop(A, 1000, 0), Stop(D, 100, 0)});
+	auto &db = f.Build(); db.Invalidate(stale->orders->index);
+	auto wire = db.Save(); GameRandomSeedChecker seeds;
+	auto reference = db.Plan(PAX, A, D, NOW);
+	REQUIRE(reference.state == PassengerPeriodicPlan::State::Certified);
+	REQUIRE(reference.ride); CHECK(reference.ride->service == current->orders->index);
+	bool provisional = false, observed_stale_geometry = false;
+	for (size_t work = 0; work < 160; ++work) {
+		PassengerJourneyLimits limits; limits.work = work;
+		auto plan = db.Plan(PAX, A, D, NOW, limits);
+		auto original = db.PlanWithOriginalCompletion(PAX, A, D, NOW, limits);
+		observed_stale_geometry |= original.search.destination_labels > original.search.complete_labels;
+		if (plan.ride) { CHECK(plan.ride->service == current->orders->index); CHECK(db.IsCurrent(*plan.ride)); CHECK(plan.cost == reference.cost); }
+		provisional |= plan.state == PassengerPeriodicPlan::State::Provisional;
+	}
+	CHECK(provisional); CHECK(observed_stale_geometry); CHECK(db.Save() == wire); CHECK(seeds.Check());
+}
+
+TEST_CASE("A stale transfer suffix cannot certify or suppress a valid direct alternative", "[passenger][periodic][anytime][active]")
+{
+	Fixture f; f.Train({Stop(A, 1000, 0), Stop(B, 10, 0)});
+	auto *suffix = f.Train({Stop(B, 1000, 0), Stop(D, 10, 0)});
+	auto *direct = f.Train({Stop(A, 1000, 0), Stop(D, 100, 0)});
+	auto &db = f.Build(); db.Invalidate(suffix->orders->index);
+	auto plan = db.Plan(PAX, A, D, NOW);
+	REQUIRE(plan.state == PassengerPeriodicPlan::State::Certified); REQUIRE(plan.ride);
+	CHECK(plan.route.size() == 1); CHECK(plan.ride->service == direct->orders->index);
+	auto unpruned = db.PlanWithoutServicePruning(PAX, A, D, NOW);
+	CHECK(plan.route == unpruned.route); CHECK(plan.cost == unpruned.cost);
+}
+
+TEST_CASE("Budget stops with only stale services remain Deferred without a usable complete path", "[passenger][periodic][anytime][active]")
+{
+	Fixture f; auto *first = f.Train({Stop(A, 1000, 0), Stop(D, 10, 0)});
+	auto *second = f.Train({Stop(A, 1000, 0), Stop(D, 20, 0)});
+	auto &db = f.Build(); db.Invalidate(first->orders->index); db.Invalidate(second->orders->index);
+	bool stopped = false;
+	for (size_t work = 0; work < 80; ++work) {
+		PassengerJourneyLimits limits; limits.work = work; auto plan = db.Plan(PAX, A, D, NOW, limits);
+		CHECK_FALSE(plan.ride); CHECK(plan.search.complete_labels == 0);
+		if (plan.reason == PassengerPeriodicPlan::Reason::Work) {
+			CHECK(plan.state == PassengerPeriodicPlan::State::Deferred); CHECK(plan.deferred); stopped = true;
+		}
+	}
+	CHECK(stopped);
+}
+
 TEST_CASE("Anytime separates exhausted budgets unknown timing and proved Timed absence", "[passenger][periodic][anytime]")
 {
 	Fixture f; auto *train = f.Train({Stop(A), Stop(D)});

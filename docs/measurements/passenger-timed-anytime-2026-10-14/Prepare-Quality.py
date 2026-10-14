@@ -12,10 +12,11 @@ import re
 p = argparse.ArgumentParser(description=__doc__)
 p.add_argument("source", type=pathlib.Path)
 p.add_argument("build", type=pathlib.Path)
-p.add_argument("--stride", type=int, default=1024)
+p.add_argument("--stride", type=int, default=1021)
+p.add_argument("--provisional-stride", type=int, default=64)
 a = p.parse_args()
-if a.stride < 1:
-    p.error("stride must be positive")
+if a.stride < 1 or a.provisional_stride < 1:
+    p.error("strides must be positive")
 source, build = a.source.resolve(), a.build.resolve()
 original = source / "src/passenger_service_database.cpp"
 text = original.read_text(encoding="utf-8")
@@ -25,7 +26,10 @@ anchor = "\t\treturn result;\n\t};\n\tif (cargo >= NUM_CARGO"
 assert text.count(anchor) == 1
 probe = r'''
         static bool comparing = false;
-        if (!comparing && this->diagnostic.searches % STRIDE == 1) {
+        const bool systematic = this->diagnostic.searches % STRIDE == 1;
+        const bool provisional_sample = result.state == PassengerPeriodicPlan::State::Provisional &&
+            this->diagnostic.result_states[static_cast<size_t>(PassengerPeriodicPlan::State::Provisional)] % PROVISIONAL_STRIDE == 1;
+        if (!comparing && (systematic || provisional_sample)) {
             struct Guard { bool &flag; Guard(bool &flag) : flag(flag) { flag = true; } ~Guard() { flag = false; } } guard{comparing};
             PassengerServiceDatabase isolated;
             if (isolated.Load(this->Save())) {
@@ -34,7 +38,8 @@ probe = r'''
                 auto high_limits = limits; high_limits.work = 1048576; high_limits.labels = 65536; high_limits.memory_bytes = 128 * 1024 * 1024;
                 auto reference = isolated.Plan(cargo, origin, destination, ready, high_limits, evaluation, excluded);
                 std::ofstream out("anytime-quality.jsonl", std::ios::app);
-                out << "{\"ordinal\":" << this->diagnostic.searches << ",\"cargo\":" << unsigned(cargo)
+                out << "{\"ordinal\":" << this->diagnostic.searches << ",\"sample_provisional\":" << (provisional_sample && !systematic)
+                    << ",\"cargo\":" << unsigned(cargo)
                     << ",\"origin\":" << origin.base() << ",\"destination\":" << destination.base()
                     << ",\"ready\":" << ready.base() << ",\"excluded\":" << excluded.base()
                     << ",\"work\":" << result.work << ",\"state\":" << unsigned(result.state)
@@ -48,9 +53,10 @@ probe = r'''
                     << ",\"reference_work\":" << reference.work << "}\n";
             }
         }
-'''.replace("STRIDE", str(a.stride))
+'''.replace("PROVISIONAL_STRIDE", str(a.provisional_stride)).replace("STRIDE", str(a.stride))
 text = text.replace(anchor, probe + anchor)
-target = build / "journey-profile/anytime-quality.cpp"
+target = build / "journey-profile/quality/passenger_service_database.cpp"
+target.parent.mkdir(parents=True, exist_ok=True)
 target.write_text(text, encoding="utf-8")
 project = build / "openttd_lib.vcxproj"
 xml = project.read_text(encoding="utf-8-sig")
@@ -59,6 +65,7 @@ project.write_text(xml.replace(str(original), str(target)), encoding="utf-8-sig"
 metadata_path = build / "journey-profile/instrumentation.json"
 metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
 metadata["quality_probe"] = {"stride": a.stride, "reference_work": 1048576,
+    "provisional_stride": a.provisional_stride,
     "original_sha256": hashlib.sha256(original.read_bytes()).hexdigest(),
     "copy_sha256": hashlib.sha256(target.read_bytes()).hexdigest(), "performance_eligible": False}
 metadata_path.write_text(json.dumps(metadata, indent=2) + "\n", encoding="utf-8")

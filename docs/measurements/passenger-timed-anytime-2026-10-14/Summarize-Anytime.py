@@ -46,11 +46,31 @@ def completion(text):
             p95 = row["upper"]
             break
     summary.update(work_histogram=histogram, work_p95_upper=p95,
+                   destination_geometry=next((fields(line) for line in reversed(lines) if line.startswith("Timed Work destination geometry:")), None),
                    work_p95_overflow=p95 is None, samples=samples,
                    stops={line.split(":")[0][16:]: fields(line) for line in lines if line.startswith("Timed Work stop ")},
                    results=next((fields(line) for line in reversed(lines) if line.startswith("Timed result states:")), None),
                    adoption=next((fields(line) for line in reversed(lines) if line.startswith("Timed plan adoption:")), None))
     return summary
+
+
+def validate_completion(run):
+    observation = run["anytime"]
+    diagnostics = run["diagnostics"]
+    outcomes = diagnostics["periodic_outcomes"]
+    if observation["with_complete"] + observation["without_complete"] != outcomes["Work"]["outcomes"]:
+        raise ValueError("Work completion counts do not partition final Work outcomes")
+    searches = diagnostics["records"]["Periodic database"]["searches"]
+    if sum(row["count"] for row in observation["work_histogram"]) != searches:
+        raise ValueError("Work histogram does not cover every Timed search")
+    states = observation["results"]
+    if states is not None:
+        if sum(states[key] for key in ("unavailable", "certified", "provisional", "deferred", "no_route")) != searches:
+            raise ValueError("Result states do not partition Timed searches")
+        if states["certified"] != outcomes["Found"]["outcomes"]:
+            raise ValueError("Found includes uncertified results")
+        if states["rescued_unpopped"] > states["provisional"]:
+            raise ValueError("Unpopped rescues exceed provisional results")
 
 
 def main():
@@ -71,9 +91,7 @@ def main():
                         (run["label"], run["revision"], run["kind"], run["phase"]) and run["id"] in {r["id"] for r in m["runs"]})
         directory = pathlib.Path(manifest["path"]).parent / run["directory"]
         run["anytime"] = completion((directory / (run["id"] + "-console.txt")).read_text(encoding="utf-8-sig"))
-        calls = run["anytime"]["with_complete"] + run["anytime"]["without_complete"]
-        if calls != run["diagnostics"]["periodic_outcomes"]["Work"]["outcomes"]:
-            raise ValueError("Work completion counts do not partition final Work outcomes")
+        validate_completion(run)
     summary_file.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     archive.archive(summary_file, args.output)
     print(args.output)
