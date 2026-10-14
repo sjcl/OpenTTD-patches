@@ -37,6 +37,7 @@ add_test_files(
     test_script_admin.cpp
     test_window_desc.cpp
     tilearea.cpp
+    town_auto_fund.cpp
     utf8.cpp
 )
 

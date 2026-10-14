@@ -2,6 +2,11 @@
 
 * * *
 
+### Unreleased
+* Import automatic renewal of the fund new buildings town action from ns2091/OpenTTD-patches, with a per-company toggle in each town's local authority window
+* Import optional markers above vehicles in the selected group, coloured by the immediate child group and including sub-groups, ungrouped vehicles, and all vehicles
+* Keep diagonal rail tunnels and tunnel/bridge station platforms excluded
+
 ### v0.73.3+2 (2026-10-11)
 * Add optional timetable-aware passenger train transfers, comparing arrival times, connection waits, and transfer penalties while retaining CargoDist flow choices
 * Cache service lookups and arrival estimates per unloading operation, with bounded work and conservative fallback for uncertain orders and timings
