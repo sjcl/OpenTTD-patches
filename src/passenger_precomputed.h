@@ -1,0 +1,91 @@
+/*
+ * This file is part of OpenTTD.
+ * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License, version 2.
+ */
+
+/** @file passenger_precomputed.h Shared destination trees over service occurrences. */
+#ifndef PASSENGER_PRECOMPUTED_H
+#define PASSENGER_PRECOMPUTED_H
+
+#include "passenger_journey_type.h"
+#include "cargo_type.h"
+#include <queue>
+
+struct PassengerPeriodicService;
+
+struct PassengerPrecomputedPlan {
+	enum class State : uint8_t { Ready, NoRoute, Building, Unsupported, Memory };
+	State state = State::Building;
+	std::optional<PassengerJourneyExecution> ride;
+	int64_t cost = 0, riding = 0, waiting = 0;
+	uint32_t distance = 0, transfers = 0;
+};
+
+struct PassengerPrecomputedDiagnostic {
+	uint64_t builds = 0, operations = 0, build_nanoseconds = 0;
+	uint64_t queries = 0, query_nanoseconds = 0, hits = 0, missing = 0, no_route = 0;
+	size_t stations = 0, patterns = 0, states = 0, edges = 0, destinations = 0;
+	size_t bytes = 0, envelope = 0;
+};
+
+/** Mandatory derived state, independent of the optional Timed/Schedule caches.
+ * A fixed number of reverse-tree operations is executed per tick. The operation
+ * cursor is saved; replay from the saved published DB restores precisely the same
+ * ready rows and frontier before simulation resumes. No wall-clock admission.
+ * Waiting states remember the incoming pattern, so alternatives are not limited
+ * to K routes and the no-immediate-reboarding constraint is part of the graph.
+ */
+class PassengerPrecomputedTable {
+public:
+	static constexpr uint32_t INVALID = UINT32_MAX;
+	static constexpr size_t MAX_BYTES = size_t{2} * 1024 * 1024 * 1024;
+	void Begin(std::span<const PassengerPeriodicService *const> services, CargoType cargo, int64_t transfer, size_t memory = MAX_BYTES);
+	size_t Step(size_t operations);
+	PassengerPrecomputedPlan Plan(StationID origin, StationID destination, StateTicks ready, OrderListID excluded = OrderListID::Invalid(), uint32_t sample = 0) const;
+	bool Finished() const { return this->failed || this->destination == this->stations.size(); }
+	bool MemoryRejected() const { return this->failed; }
+	const PassengerPrecomputedDiagnostic &GetDiagnostic() const { return this->diagnostic; }
+	OrderListID BoardingKey(OrderListID service) const;
+	bool Rebind(PassengerJourneyExecution &ride, OrderListID service) const;
+private:
+	struct Member { OrderListID id; uint64_t incarnation, generation; };
+	struct Pattern {
+		std::vector<Member> members;
+		std::vector<uint32_t> occurrences;
+		int64_t wait = 0, circuit = 0, risk = 0;
+		uint64_t weight = 1;
+	};
+	struct Occurrence { StationID station; VehicleOrderID order; uint32_t pattern, arrival, departure; bool board, alight; };
+	enum class EdgeKind : uint8_t { Board, Ride, Wait, Alight };
+	struct Edge { uint32_t from, to, occurrence; int64_t cost; uint32_t distance; EdgeKind kind; };
+	struct Label {
+		int64_t cost = INT64_MAX, riding = 0, waiting = 0;
+		uint32_t board = INVALID, alight = INVALID, legs = 0, distance = 0;
+	};
+	struct Row { std::vector<Label> labels; std::vector<uint32_t> alternative; };
+	using QueueItem = std::tuple<int64_t, uint32_t, uint32_t>;
+	std::vector<uint32_t> station_index, service_pattern;
+	std::vector<StationID> stations;
+	std::vector<Pattern> patterns;
+	std::vector<Occurrence> occurrences;
+	std::vector<Edge> edges;
+	std::vector<uint32_t> incoming_offsets, incoming;
+	std::vector<std::vector<std::pair<uint32_t, uint32_t>>> waiting_states;
+	std::vector<Row> rows;
+	Row scratch;
+	std::priority_queue<QueueItem, std::vector<QueueItem>, std::greater<QueueItem>> queue;
+	size_t destination = 0, cursor = 0;
+	uint32_t expanding = INVALID;
+	size_t finishing = 0;
+	bool finishing_row = false;
+	bool initializing_row = false;
+	size_t seeding = 0;
+	bool failed = false, unsupported = false;
+	mutable PassengerPrecomputedDiagnostic diagnostic;
+	uint32_t StateFor(uint32_t station, uint32_t pattern) const;
+	void StartDestination();
+	void AddEdge(uint32_t from, uint32_t to, int64_t cost, EdgeKind kind, uint32_t occurrence = INVALID, uint32_t distance = 0);
+	PassengerPrecomputedPlan Select(const Label &label, StateTicks ready, OrderListID excluded, uint32_t sample) const;
+};
+
+#endif
