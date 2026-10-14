@@ -36,11 +36,18 @@ struct PassengerJourneyExecution {
 	PassengerRideKind kind = PassengerRideKind::VehicleSnapshot;
 	uint64_t generation = 0;
 	StateTicks not_before{}; ///< Earliest real boarding, including an actual interchange's minimum transfer time.
-	StateTicks planned_at{}; ///< Real decision time, used only for observing waiting/expiry.
+	StateTicks planned_at{}; ///< Schedule-aware decision time for observing waiting/expiry; not set for Timed intents.
 	int64_t estimated_wait = 0; ///< Duration in ticks; never an absolute departure.
 	int64_t waiting_limit = 0; ///< Re-evaluate after two conservative service circuits.
 	bool timed_deferred = false; ///< Timed work was insufficient; absence of a timed route is not asserted.
 	bool operator==(const PassengerJourneyExecution &) const = default;
 };
+
+/** Schedule-aware intent age, not continuous passenger waiting time. Timed
+ * intents have no decision timestamp, so they cannot supply this diagnostic. */
+inline bool IsPassengerScheduleIntentAged(const PassengerJourneyExecution &ride, StateTicks now, int64_t minimum_age)
+{
+	return IsEstimatedPassengerRide(ride.kind) && now >= ride.planned_at && now.base() - ride.planned_at.base() >= minimum_age;
+}
 
 #endif /* PASSENGER_JOURNEY_TYPE_H */

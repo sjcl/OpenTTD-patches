@@ -210,7 +210,6 @@ NamedSaveLoadTable GetCargoPacketDesc()
 		NSL("passenger_transport", SLE_CONDVAR_X(CargoPacket, passenger_transport, SLE_UINT8, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_PASSENGER_JOURNEY_ROUTING, 3))),
 		NSL("passenger_interchange_transport", SLE_CONDVAR_X(CargoPacket, passenger_interchange_transport, SLE_UINT8, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_PASSENGER_JOURNEY_ROUTING, 3))),
 		NSL("passenger_schedule_used", SLE_CONDVAR_X(CargoPacket, passenger_schedule_used, SLE_BOOL, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_PASSENGER_JOURNEY_ROUTING, 3))),
-		NSL("passenger_work_exhausted", SLE_CONDVAR_X(CargoPacket, passenger_work_exhausted, SLE_BOOL, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_PASSENGER_JOURNEY_ROUTING, 4))),
 		NSL("passenger_legacy_hop", SLE_CONDVAR_X(CargoPacket, passenger_legacy_hop, SLE_UINT16, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_PASSENGER_JOURNEY_ROUTING))),
 		NSL("passenger_retry_station", SLE_CONDVAR_X(CargoPacket, passenger_retry_station, SLE_UINT16, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_PASSENGER_JOURNEY_ROUTING))),
 		NSL("passenger_retry_after", SLE_CONDVAR_X(CargoPacket, passenger_retry_after, SLE_INT64, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_PASSENGER_JOURNEY_ROUTING))),

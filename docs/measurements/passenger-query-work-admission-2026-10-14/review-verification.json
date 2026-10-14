@@ -1,0 +1,18 @@
+{
+  "base_revision": "11730ea68230150324245d1bb7bd348999c49d90",
+  "configuration": "MSVC x64 Release, OPTION_PASSENGER_BENCHMARK=OFF",
+  "product_binary_sha256": "0ef59d92315d488cc88f5b7837ff70ba51307c6ce51ab0e47cb31ce386daa551",
+  "test_binary_sha256": "50176d44d29885d6b196041332fa212a11f013bca8c21ee4019b2310ec0bd533",
+  "ctest_passed": 588,
+  "ctest_failed": 0,
+  "evidence_tests_passed": 8,
+  "packet_implementation_matches_base": "8a96044d40",
+  "save_write_feature_version": 3,
+  "maximum_supported_load_feature_version": 4,
+  "retired_history_true_false_load_merge_resave": "passed",
+  "timed_and_snapshot_excluded_from_schedule_intent_age": "passed",
+  "schedule_intent_age_4096_boundary_future_time_zero_and_replan": "passed",
+  "corrected_real_map_performance_remeasured": false,
+  "old_measurement_corrections": "review-corrections.json",
+  "ctest_log_sha256": "9dece0fb20c7c1ed736d03678c8ab983d40fe89229a05e2a1c0c8346ff989802"
+}

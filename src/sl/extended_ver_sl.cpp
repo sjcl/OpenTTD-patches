@@ -260,7 +260,9 @@ const std::initializer_list<SlxiSubChunkInfo> _sl_xv_sub_chunk_infos = {
 	{ XSLFI_PASSENGER_VIA,                    XSCF_IGNORABLE_UNKNOWN,   1,   1, "passenger_via",                    nullptr, nullptr, nullptr          },
 	{ XSLFI_PASSENGER_DESTINATION,            XSCF_IGNORABLE_UNKNOWN,   1,   1, "passenger_destination",            nullptr, nullptr, nullptr          },
 	{ XSLFI_PASSENGER_OD_ASSIGNMENT,          XSCF_NULL,                3,   3, "passenger_od_assignment",          SavePassengerOdRevision, LoadPassengerOdRevision, nullptr },
-	{ XSLFI_PASSENGER_JOURNEY_ROUTING,        XSCF_NULL,                4,   4, "passenger_journey_routing",        nullptr, nullptr, nullptr },
+	/* v4 added a diagnostic Packet tag. Table loading skips that retired field;
+	 * new saves use v3 again and carry only the execution state. */
+	{ XSLFI_PASSENGER_JOURNEY_ROUTING,        XSCF_NULL,                3,   4, "passenger_journey_routing",        nullptr, nullptr, nullptr },
 	{ XSLFI_PASSENGER_PERIODIC,               XSCF_NULL,                3,   3, "passenger_periodic",               nullptr, nullptr, "JPSD" },
 };
 

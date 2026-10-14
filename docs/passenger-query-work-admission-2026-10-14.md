@@ -2,6 +2,8 @@
 
 ベースは `8a96044d40`（Agent A統合後の `jgrpp-ya`）。Agent Bの路線探索はこのベースに未統合であり、ユーザー確認により現在の `jgrpp-ya` から実装した。ブランチは `feat/passenger-query-work-admission`。
 
+レビュー後、診断用Work履歴がPacket結合を禁止していた実装を撤去した。以下の実マップ性能・配送値は撤去前の測定であり、修正版の性能実績としては扱わない。旧 `intent_wait_ge_4096` はTimedの未設定時刻を含むため無効で、長時間待機の根拠から除外した。原本は保持し、[レビュー訂正記録](measurements/passenger-query-work-admission-2026-10-14/review-corrections.json)で区別する。
+
 ## 受付と精算
 
 Snapshot用 `PassengerJourneyActiveContext::AdmitQuery()` は従来のまま。Periodicだけが `PassengerQueryAdmission` を使い、Globalの1,048,576 Work/tickとイベントの4,194,304 Work残量から最大65,536 Workを予約する。少ない残量でも部分予約できる。既存のイベント128検索上限に加え、Periodicには固定16 OD/tickの上限を設けた。
@@ -28,13 +30,15 @@ CPU時間・実時間・キャッシュ状態は受付や停止の入力にし�
 
 再試行はcargo/origin/destinationの4,096エントリ以内のローカル観測で、累積再検索数・同一OD最大試行数・16標本・追跡eviction数を出す。eviction後の回数は下限であり、ゲームの再試行制御には使わない。
 
-Packetの `passenger_work_exhausted` はTimedがWork終了したODの観測フラグ。split・fallback・乗換・保存を通じて保持し、実Cargo移動のBoard/Deliverだけを数える。乗車は乗換で再び数えるため延べ人数。最終配送は全carrierを含む。このフラグは保存拡張 `passenger_journey_routing` v4で保存し、v3以前はfalse。フラグの異なるPacketは観測属性を失わないようmergeしない。
+Work履歴によるPacketフラグ・結合条件・保存フィールド・長期追跡カウンタは撤去した。Work経験旅客だけの乗車・配送人数は現在は未計測で、0人として報告しない。Timed/Schedule/Untimedの実乗車・乗換・最終配送と、Work終了・両経路なし・Schedule救済のOD集計は保持する。長期追跡はAdmissionから独立した測定方式で設計し直す必要がある。
 
-`inventory` の待機人数と `intent_wait_ge_4096` も測定する。intentの経過時間は再計画時にリセットされ、全旅客の連続待機時間ではない。`transit_age_ge_256` は旅行時間を含むcargo年齢の代理指標であり、待機時間と混同しない。
+新規保存は既存の実行状態だけを持つ `passenger_journey_routing` v3へ戻した。読込はv4まで許可し、既存v4の廃止済み診断フィールドは名前付きtableの未知フィールドとして読み飛ばす。true/falseの異なる旧履歴から読んだ同一経路のPacketも結合できる。
+
+`inventory` の `schedule_intent_age_ge_4096` はSchedule-awareだけを数える。Timedの `planned_at` は未設定なので待機年齢は未計測と表示する。intentの経過時間は再計画時にリセットされ、全旅客の連続待機時間ではない。`transit_age_ge_256` は旅行時間を含むcargo年齢の代理指標であり、待機時間と混同しない。旧 `intent_wait_ge_4096` と新しいSchedule専用指標は比較できない。
 
 ## 回帰と再測定
 
-6件のAdmission回帰で、同一ODの100 Packet共有、軽いODの固定件数上限、Global/Event境界、fair shareのWorkと件数保護、途中終了・例外時返却、両探索で65,536 Work消費、Timed49,152 Work後のSchedule救済、cold/warm、旧v3/新v4保存、splitと実移動観測を検証する。既存の旅客回帰は366ケース・2,726,174アサーションが成功した。
+Admission回帰で、同一ODの100 Packet共有、軽いODの固定件数上限、Global/Event境界、fair shareのWorkと件数保護、途中終了・例外時返却、両探索で65,536 Work消費、Timed49,152 Work後のSchedule救済、cold/warm、v3保存、splitと実移動観測を検証する。レビュー修正では旧v4のtrue/false履歴を含むtableの読込・Packet結合・履歴なし再保存と、Timed/Snapshot除外・Schedule-awareの4,096境界・未来時刻・再計画後の年齢を追加検証する。撤去前の旅客回帰は366ケース・2,726,174アサーションが成功した。
 
 比較用 [Build-Variants.py](measurements/passenger-query-work-admission-2026-10-14/Build-Variants.py) は探索実装のコピーだけで32/64件、Timed49,152/32,768を作る。通常製品に実験設定やローカル判断フラグは追加しない。[Run-Comparison.py](measurements/passenger-query-work-admission-2026-10-14/Run-Comparison.py) は固定実マップを共有測定ロック・競合監視の下で逐次実行し、StateTicksの実進行を確認する。
 
@@ -57,7 +61,7 @@ Agent Bは同じleaseの `TimedAllowance()` を路線plannerのlimits.workへ渡
 
 これは各条件1ランの初期比較で、変更だけの因果的CPU改善率ではない。24/32/64件はCPU平均が19%/39%/59%増に対し、全配送の増加が0.94%/0.39%/0.86%に留まり、採用しなかった。Timed32,768も平均43%増で、両経路なし率が悪化した。
 
-16件案では、Work終了率25.39%と両経路なし率20.97%を分けて計測した。完全経路あり・最適性未証明は5,780 OD、Timed Work後のSchedule救済は11 OD。Work経験ODの延べ実乗車19,379人・最終配送201人を観測したが、これを変更による純増やSchedule救済だけの人数とは解釈しない。
+撤去前の16件案では、Work終了率25.39%と両経路なし率20.97%を分けて計測した。完全経路あり・最適性未証明は5,780 OD、Timed Work後のSchedule救済は11 OD。Work経験ODの延べ実乗車19,379人・最終配送201人は廃止した追跡方式の旧観測であり、結合制限のない修正版の移動人数とは解釈しない。
 
 Timed実乗車108,529 / 乗換43,511 / 配送38,361、Schedule 223 / 53 / 130、Untimed 494,102 / 248,582 / 202,732人。全配送は対照比0.28%減でほぼ横ばいであり、配送総数の増加を成果として主張しない。実使用3,338,090,464 Work、未使用返却5,228,447,776 Work。観測最大は16 OD/tick・1,040,512 Work/tickで、Global上限を超えなかった。
 
@@ -89,7 +93,7 @@ Timed/Schedule共有policy・Departure Index・resident fallback cacheを無効�
 | 最大検索 / 最大実Work per tick | 16 / 983,902 |
 | 実Work / 未使用返却Work | 3,658,261,987 / 4,917,385,757 |
 
-最終待機は334,754人、そのうちknown OD待機282,642人。cargo年齢256以上の待機は11人、intentの計画後4,096 tick以上の待機は9,503人。新規生成を含むcensusなので、これを開始時の同一旅客集団の未達率とはしない。継続区間の全配送は303,058人で、対応する対照継続を追加測定したとは主張しない。[10ランの集計](measurements/passenger-query-work-admission-2026-10-14/summary.json)には待機・未配送OD census・CPU/メモリ・停止・各carrier輸送・検証済みSaveハッシュを保存した。
+最終待機は334,754人、そのうちknown OD待機282,642人。cargo年齢256以上の待機は11人。旧 `intent_wait_ge_4096=9503` はTimedの未設定時刻から数えた可能性があり、長時間待機人数の根拠として撤回する。新規生成を含むcensusなので、これを開始時の同一旅客集団の未達率とはしない。継続区間の全配送は303,058人で、対応する対照継続を追加測定したとは主張しない。[10ランの旧集計](measurements/passenger-query-work-admission-2026-10-14/summary.json)にはレビュー前の待機・未配送OD census・CPU/メモリ・停止・各carrier輸送・検証済みSaveハッシュを保存した。
 
 loopback途中参加では初回と後発の2クライアントが最後まで接続し、serverは1,149 tick進んだ。policy・Departure・fallback・scratchを無効にしたクライアントでも、sync frequency 1で同期エラー・assertion・切断を検出しなかった。最終観測はserverと同tick / 39 tick以内（観測分解能128 tick）。serverはProvisionalを1,093 packet・延べ1,211人に採用した。[途中参加結果](measurements/passenger-query-work-admission-2026-10-14/final-multiplayer-result.json)とserver/clientのconsole原本を保存した。
 
@@ -98,3 +102,9 @@ loopback途中参加では初回と後発の2クライアントが最後まで�
 継続補助metadataの重複SHA欄には親バイナリのSHAが残っていた。実行バイナリのSHAは主要manifestとprocess記録で再hash検証し、原本を保持して[訂正記録](measurements/passenger-query-work-admission-2026-10-14/measurement-errata.json)を残した。再実行用 `Final-Checks.py` は修正済み。経路・Work・時間標本・Saveデータには影響しない。
 
 再測定は構成済みbuildと固定packageに対して `Build-Variants.py`、`Run-Comparison.py` を使う。`Final-Checks.py BUILD PACKAGE DEPENDENCIES` は最終warm測定のsequenceを待ち、cold・継続・途中参加・計測なし製品版を共有ロックの下で逐次実行する。`Verify-Invariance.py WARM_MANIFEST COLD_MANIFEST --output RESULT.json` は実Saveを再hashする。Save・NewGRF・exeはGitに含めない。
+
+## レビュー修正の検証
+
+計測なしのMSVC x64 Release製品版と専用テストtargetを再ビルドし、[588件の全回帰](measurements/passenger-query-work-admission-2026-10-14/review-fixes-ctest.log)と診断集計の8件が成功した。CargoPacketの実装・結合条件はベース `8a96044d40` と一致する。旧v4で履歴true/falseを保存したtableを現在の記述子で読み、同一経路Packetを結合してv3で履歴なし再保存する回帰も通った。Timed/Snapshotの計画時刻0を除外し、Schedule-awareの時刻0・4,096境界・未来時刻・再計画後の年齢と読取時の状態不変性を確認した。
+
+[検証記録](measurements/passenger-query-work-admission-2026-10-14/review-verification.json)には製品・テストバイナリと全回帰ログのSHA-256を保存した。今回は修正版の長時間実マップ性能を再測定していないため、前掲の旧CPU・配送・メモリ値を修正版の性能保証へ転用しない。

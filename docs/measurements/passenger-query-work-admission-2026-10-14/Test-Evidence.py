@@ -39,6 +39,19 @@ class EvidenceTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "actual work"):
             summary.check_accounting(self.run)
 
+    def test_old_waiting_metric_is_flagged_invalid(self):
+        limitations = summary.diagnostic_limitations({"Waiting age sample": {"intent_wait_ge_4096": 9503}})
+        self.assertTrue(any("is invalid" in item for item in limitations))
+
+    def test_schedule_only_age_is_not_invalid(self):
+        limitations = summary.diagnostic_limitations({"Waiting age sample": {"schedule_intent_age_ge_4096": 3}})
+        self.assertFalse(any("is invalid" in item for item in limitations))
+        self.assertTrue(any("unavailable" in item for item in limitations))
+
+    def test_historical_cohort_runs_identify_merge_effect(self):
+        limitations = summary.diagnostic_limitations({"Work exhausted OD transport": {"boarded": 7, "delivered": 3}})
+        self.assertTrue(any("changed Packet merging" in item for item in limitations))
+
 
 if __name__ == "__main__":
     unittest.main()

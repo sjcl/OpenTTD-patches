@@ -30,6 +30,17 @@ def check_accounting(run):
             raise ValueError("Query counter did not charge actual work")
 
 
+def diagnostic_limitations(records):
+    limitations = []
+    if "intent_wait_ge_4096" in records.get("Waiting age sample", {}):
+        limitations.append("intent_wait_ge_4096 is invalid: Timed intents have planned_at=0; do not use it as waiting evidence.")
+    if "Work exhausted OD transport" in records:
+        limitations.append("Historical Work-cohort tracking changed Packet merging; these runs do not isolate Admission performance.")
+    else:
+        limitations.append("Work-cohort boarding/delivery is unavailable: persistent Packet history tracking is removed.")
+    return limitations
+
+
 def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("manifests", nargs="+", type=pathlib.Path)
@@ -47,6 +58,7 @@ def main():
             check_accounting(run)
             records = run["diagnostics"]["records"]
             run["fingerprint"] = profile.fingerprint(manifest, run)
+            run["diagnostic_limitations"] = diagnostic_limitations(records)
             run["metrics"] = {key: records.get(key) for key in ["Periodic admission", "Periodic allocation", "Periodic Work outcomes",
                 "Periodic missing", "Work exhausted OD transport", "Timed result states", "Timed Work completion", "Schedule routing",
                 "Journey transport", "Schedule transport", "Untimed transport", "Completed interchanges", "Passenger inventory",
@@ -88,7 +100,8 @@ def main():
               "notes": ["Times are matched observations, not a causal estimate or confidence interval.",
                         "Process CPU and peaks include load/save and workers; quantiles are 1ms upper bounds.",
                         "Work stop and failure to obtain either route have different counters.",
-                        "Transit age includes travel; intent waiting resets on replan."]}
+                        "Transit age includes travel; Schedule-aware intent age resets on replan and excludes Timed waiting.",
+                        "Historical intent_wait_ge_4096 is invalid; see each run's diagnostic_limitations."]}
     a.output.write_text(json.dumps(result, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     for run in all_runs:
         m, d = run["metrics"], run["derived"]

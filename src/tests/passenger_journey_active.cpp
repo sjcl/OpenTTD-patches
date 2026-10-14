@@ -1143,6 +1143,25 @@ TEST_CASE("Journey merge checks include mode and the executable leg", "[passenge
 	}
 }
 
+TEST_CASE("Waiting intent age excludes Timed timestamps and observes Schedule-aware age", "[passenger][active][diagnostic]")
+{
+	PassengerJourneyExecution ride;
+	ride.kind = GENERATE(PassengerRideKind::VehicleSnapshot, PassengerRideKind::ServiceIntent, PassengerRideKind::BoundService,
+			PassengerRideKind::EstimatedServiceIntent, PassengerRideKind::EstimatedBoundService);
+	const bool estimated = IsEstimatedPassengerRide(ride.kind);
+	/* In particular a default Timed planned_at=0 is not an old waiting intent. */
+	CHECK_FALSE(IsPassengerScheduleIntentAged(ride, StateTicks{4095}, 4096));
+	CHECK(IsPassengerScheduleIntentAged(ride, StateTicks{4096}, 4096) == estimated);
+	ride.planned_at = NOW;
+	CHECK_FALSE(IsPassengerScheduleIntentAged(ride, NOW - 1, 4096));
+	CHECK_FALSE(IsPassengerScheduleIntentAged(ride, NOW, 4096));
+	CHECK_FALSE(IsPassengerScheduleIntentAged(ride, NOW + 4095, 4096));
+	CHECK(IsPassengerScheduleIntentAged(ride, NOW + 4096, 4096) == estimated);
+	const auto original = ride;
+	IsPassengerScheduleIntentAged(ride, NOW + 8192, 4096);
+	CHECK(ride == original);
+}
+
 TEST_CASE("Routing state and leg have an independent versioned save round trip", "[passenger][active][saveload]")
 {
 	ActiveFixture fixture;
@@ -1151,7 +1170,7 @@ TEST_CASE("Routing state and leg have an independent versioned save round trip",
 	AutoRestoreBackup features{_sl_xv_feature_versions, AutoRestoreBackupNoNewValueTag{}};
 	AutoRestoreBackup static_features{_sl_xv_feature_static_versions, AutoRestoreBackupNoNewValueTag{}};
 	SlXvSetStaticCurrentVersions(); _sl_xv_feature_versions = _sl_xv_feature_static_versions;
-	REQUIRE(_sl_xv_feature_versions[XSLFI_PASSENGER_JOURNEY_ROUTING] == 4);
+	REQUIRE(_sl_xv_feature_versions[XSLFI_PASSENGER_JOURNEY_ROUTING] == 3);
 	auto packet = std::unique_ptr<CargoPacket>(fixture.Packet()); fixture.Plan(*packet);
 	PassengerRoutingMode expected = PassengerRoutingMode::Journey;
 	SECTION("Journey survives") {}

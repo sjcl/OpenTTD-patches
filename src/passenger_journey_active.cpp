@@ -76,7 +76,6 @@ namespace {
 	static size_t resident_distance_bytes = 0;
 	static void AddDiagnostic(PassengerJourneyTickDiagnostic &a, const PassengerJourneyTickDiagnostic &b)
 	{
-		a.work_recovered_boarded += b.work_recovered_boarded; a.work_recovered_delivered += b.work_recovered_delivered;
 		a.admission.accepted += b.admission.accepted; a.admission.rejected += b.admission.rejected;
 		a.admission.reserved += b.admission.reserved; a.admission.used += b.admission.used; a.admission.returned += b.admission.returned;
 		a.admission.timed_allocated += b.admission.timed_allocated; a.admission.schedule_allocated += b.admission.schedule_allocated;
@@ -340,10 +339,6 @@ void RecordPassengerJourneyMovement(PassengerJourneyMovement movement, uint coun
  * deferred Legacy packets. Neither unknown-OD CargoDist nor reservations count. */
 void RecordPassengerJourneyMovement(PassengerJourneyMovement movement, const CargoPacket &packet, uint count)
 {
-	if (packet.HasExhaustedPassengerWork() && Station::IsValidID(packet.GetPassengerDestination())) {
-		if (movement == PassengerJourneyMovement::Board) TickBudget().diagnostic.work_recovered_boarded += count;
-		if (movement == PassengerJourneyMovement::Deliver) TickBudget().diagnostic.work_recovered_delivered += count;
-	}
 	if (movement == PassengerJourneyMovement::Deliver && packet.HasUsedPassengerSchedule() && _settings_game.linkgraph.passenger_journey_routing && Station::IsValidID(packet.GetPassengerDestination())) TickBudget().diagnostic.schedule_assisted_delivered_passengers += count;
 	if (movement == PassengerJourneyMovement::Board && packet.GetPassengerArrivingService() != OrderListID::Invalid()) {
 		auto &d = TickBudget().diagnostic;
@@ -622,7 +617,6 @@ bool PassengerJourneyActiveContext::PlanWaiting(CargoPacket &packet, CargoType c
 		auto cached = this->periodic_waiting.find(key);
 		if (cached != this->periodic_waiting.end()) {
 			++TickBudget().diagnostic.query_cache_hits;
-			if (cached->second.work_exhausted) packet.MarkPassengerWorkExhaustion();
 			if (!cached->second.ride) {
 				if (cached->second.deferred) { CountJourneyDeferral(cached->second.failure); packet.DeferPassengerJourney(this->station, _state_ticks); }
 				return false;
@@ -645,7 +639,7 @@ bool PassengerJourneyActiveContext::PlanWaiting(CargoPacket &packet, CargoType c
 			this->failure = admission.GetRejection() == PassengerQueryAdmission::Rejection::EventQueries || admission.GetRejection() == PassengerQueryAdmission::Rejection::TickQueries || admission.GetRejection() == PassengerQueryAdmission::Rejection::FairQueries ?
 					PassengerJourneyFallbackReason::QueryLimit : PassengerJourneyFallbackReason::QueryWork;
 			this->deferred = true;
-			this->periodic_waiting.emplace(key, PeriodicWaiting{{}, true, false, false, this->failure});
+			this->periodic_waiting.emplace(key, PeriodicWaiting{{}, true, false, this->failure});
 			CountJourneyDeferral(this->failure); packet.DeferPassengerJourney(this->station, _state_ticks); return false;
 		}
 		if (ticket != nullptr) { ticket->claimed = true; ++global.diagnostic.fair_share_claims; }
@@ -699,13 +693,12 @@ bool PassengerJourneyActiveContext::PlanWaiting(CargoPacket &packet, CargoType c
 			} else plan.deferred |= estimated.deferred;
 		}
 		diagnostic.work_no_route += work_stopped && !plan.ride;
-		if (work_stopped) packet.MarkPassengerWorkExhaustion();
 		/* A full Timed path may be selected while search optimality is unproved.
 		 * Preserve the query status in this event cache; only absence of a usable
 		 * ride defers the packet. Persistent execution still stores one ordinary
 		 * ServiceIntent, with the same live boarding checks and transfer replan. */
 		const bool provisional = plan.state == PassengerPeriodicPlan::State::Provisional;
-		this->periodic_waiting.emplace(key, PeriodicWaiting{plan.ride, plan.deferred, provisional, work_stopped});
+		this->periodic_waiting.emplace(key, PeriodicWaiting{plan.ride, plan.deferred, provisional});
 		if (!plan.ride) {
 			if (plan.deferred) { CountJourneyDeferral(PassengerJourneyFallbackReason::QueryWork); packet.DeferPassengerJourney(this->station, _state_ticks); }
 			else CountJourneyFallback(GetPassengerServiceDatabase().IsBuilding() ? PassengerJourneyFallbackReason::PredictionIncomplete : PassengerJourneyFallbackReason::NoJourney);

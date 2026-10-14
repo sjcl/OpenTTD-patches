@@ -1,0 +1,20 @@
+{
+  "affected_revisions": ["77f465d9f6", "f519df10ab", "11730ea682"],
+  "raw_evidence_preserved": true,
+  "issues": [
+    {
+      "id": "P1",
+      "issue": "Persistent Work history prevented otherwise identical CargoPackets from merging.",
+      "resolution": "Remove the Packet flag, merge restriction, split propagation, save field and Work-cohort transport counters. Keep Admission and actual carrier transport diagnostics.",
+      "save_compatibility": "Write passenger_journey_routing v3, accept v4 and skip the retired named table field.",
+      "evidence_limit": "Existing real-map CPU, memory, Packet counts, Work and delivery observations describe the pre-fix design with altered merging. They are not measurements of the corrected implementation.",
+      "work_cohort_transport_after_fix": null
+    },
+    {
+      "id": "P2",
+      "issue": "intent_wait_ge_4096 included Timed ServiceIntent whose planned_at was not initialized.",
+      "resolution": "Replace it with schedule_intent_age_ge_4096, restricted to estimated intents, and explicitly report Timed waiting age as unavailable.",
+      "evidence_limit": "All historical intent_wait_ge_4096 values, including continuation 9503, are invalid as long-wait evidence. No corrected aggregate can be recovered from these logs."
+    }
+  ]
+}

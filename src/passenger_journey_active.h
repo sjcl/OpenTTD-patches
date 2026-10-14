@@ -57,7 +57,6 @@ struct PassengerJourneyTickDiagnostic {
 		std::array<uint64_t, 65> tick_queries{}; ///< Exact OD admission counts; zero includes idle simulation ticks.
 		std::array<uint64_t, 65> tick_work{}; ///< 16384-Work upper bounds, including idle simulation ticks.
 	} admission;
-	size_t work_recovered_boarded = 0, work_recovered_delivered = 0; ///< Actual moves of ODs that have experienced Timed Work exhaustion.
 	std::array<size_t, static_cast<size_t>(PassengerGraphFailure::End)> graph_failures{};
 	std::array<size_t, static_cast<size_t>(PassengerPredictionStop::End)> prediction_stops{};
 	PassengerGraphFailureDetail first_graph_failure;
@@ -203,7 +202,7 @@ class PassengerJourneyActiveContext {
 	std::map<CargoType, PassengerJourneyBoardingContext> continuation;
 	struct PeriodicWaiting {
 		std::optional<PassengerJourneyExecution> ride;
-		bool deferred, provisional, work_exhausted;
+		bool deferred, provisional;
 		PassengerJourneyFallbackReason failure = PassengerJourneyFallbackReason::QueryWork;
 	};
 	std::map<std::tuple<CargoType, StationID, StateTicks, OrderListID>, PeriodicWaiting> periodic_waiting;

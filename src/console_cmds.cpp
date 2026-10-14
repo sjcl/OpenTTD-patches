@@ -4898,8 +4898,7 @@ static bool ConPassengerJourneyStats(std::span<std::string_view> argv)
 			if (packet->GetPassengerDestination() == StationID::Invalid()) return;
 			known_waiting += count;
 			if (packet->GetPeriodsInTransit() >= 256) aged_waiting += count;
-			if (packet->GetPassengerRoutingMode() == PassengerRoutingMode::Journey && packet->GetPassengerJourney().kind != PassengerRideKind::VehicleSnapshot &&
-					_state_ticks > packet->GetPassengerJourney().planned_at && _state_ticks.base() - packet->GetPassengerJourney().planned_at.base() >= 4096) long_intent_waiting += count;
+			if (packet->GetPassengerRoutingMode() == PassengerRoutingMode::Journey && IsPassengerScheduleIntentAged(packet->GetPassengerJourney(), _state_ticks, 4096)) long_intent_waiting += count;
 		};
 		auto inspect = [&](const CargoPacket *packet) {
 			if (++work > 16777216) { complete = false; return false; }
@@ -4948,7 +4947,7 @@ static bool ConPassengerJourneyStats(std::span<std::string_view> argv)
 		uint64_t timed_waiting = waiting_modes[1] > schedule_waiting ? waiting_modes[1] - schedule_waiting : 0;
 		IConsolePrint(CC_DEFAULT, "Waiting routing: timed={}; schedule={}; CargoDist_or_deferred={}; OD_fallback_or_waiting={} people", timed_waiting, schedule_waiting, waiting_modes[0], waiting_modes[2]);
 		IConsolePrint(CC_DEFAULT, "Schedule inventory: people={}; packets={}; waiting={}; timed_waiting={} people", schedule_people, schedule_packets, schedule_waiting, timed_waiting);
-		IConsolePrint(CC_DEFAULT, "Waiting age sample: known_OD_waiting={}; transit_age_ge_256={}; intent_wait_ge_4096={} people (transit age includes travel; intent age resets on replan)", known_waiting, aged_waiting, long_intent_waiting);
+		IConsolePrint(CC_DEFAULT, "Waiting age sample: known_OD_waiting={}; transit_age_ge_256={}; schedule_intent_age_ge_4096={} people (transit age includes travel; Schedule-aware only; intent age resets on replan; Timed waiting age unavailable)", known_waiting, aged_waiting, long_intent_waiting);
 		return true;
 	}
 	if (operation == "reset") { ResetPassengerJourneyDiagnostic(); return true; }
@@ -5081,7 +5080,6 @@ static bool ConPassengerJourneyStats(std::span<std::string_view> argv)
 			admission.accepted == 0 ? 0.0 : 100.0 * admission.work_no_route / admission.accepted);
 	IConsolePrint(CC_DEFAULT, "Periodic missing: published={}; building={}; retries={}; max_od_attempts={}; tracking_evictions={}",
 			admission.missing_published, admission.missing_building, admission.retries, admission.maximum_od_attempts, admission.retry_tracking_evictions);
-	IConsolePrint(CC_DEFAULT, "Work exhausted OD transport: boarded={}; delivered={} people (all carriers, boarding may repeat)", stats.work_recovered_boarded, stats.work_recovered_delivered);
 	for (size_t i = 0; i < admission.retry_sample_count; ++i) {
 		const auto &sample = admission.retry_samples[i];
 		IConsolePrint(CC_DEFAULT, "Periodic OD retry: cargo={}; origin={}; destination={}; attempts={}", sample.cargo, sample.origin, sample.destination, sample.attempts);

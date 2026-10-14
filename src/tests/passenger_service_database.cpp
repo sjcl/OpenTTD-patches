@@ -27,6 +27,7 @@
 
 extern SaveLoadVersion _sl_version;
 extern std::vector<uint8_t> SlTestSaveLoadTable(void *, void *, const NamedSaveLoadTable &);
+extern std::vector<uint8_t> SlTestSaveLoadTable(void *, void *, const NamedSaveLoadTable &, const NamedSaveLoadTable &);
 
 namespace {
 	constexpr CargoType PAX{0};
@@ -1005,7 +1006,7 @@ TEST_CASE("Schedule protection rescues an exhausted Timed query and survives pac
 	CAPTURE(d.admission.timed_used, d.admission.schedule_used, packet->GetPassengerJourney().kind);
 	CHECK(d.admission.timed_used == 49152); CHECK(d.admission.schedule_allocated == 16384);
 	CHECK(d.admission.schedule_rescued == (rescue ? 1 : 0)); CHECK(d.admission.work_stopped == 1); CHECK(d.admission.work_no_route == (rescue ? 0 : 1));
-	CHECK(IsEstimatedPassengerRide(packet->GetPassengerJourney().kind) == rescue); CHECK(packet->HasExhaustedPassengerWork()); CHECK(shared->HasExhaustedPassengerWork());
+	CHECK(IsEstimatedPassengerRide(packet->GetPassengerJourney().kind) == rescue);
 	if (!rescue) { CHECK(d.admission.used == 65536); CHECK(packet->IsPassengerJourneyDeferred()); }
 	CHECK(context.GetWorkAllowanceUsed() == d.admission.used); CHECK(d.admission.used == d.admission.timed_used + d.admission.schedule_used);
 	CHECK(d.admission.used + d.admission.returned == 65536);
@@ -1014,13 +1015,47 @@ TEST_CASE("Schedule protection rescues an exhausted Timed query and survives pac
 	AutoRestoreBackup static_features{_sl_xv_feature_static_versions, AutoRestoreBackupNoNewValueTag{}};
 	SlXvSetStaticCurrentVersions(); _sl_xv_feature_versions = _sl_xv_feature_static_versions;
 	auto *loaded = CargoPacket::Create(); REQUIRE_FALSE(SlTestSaveLoadTable(packet, loaded, GetCargoPacketDesc()).empty());
-	CHECK(loaded->HasExhaustedPassengerWork()); auto *split = loaded->Split(3); REQUIRE(split); CHECK(split->HasExhaustedPassengerWork());
-	loaded->FallbackPassengerJourney(A, NOW); CHECK(loaded->HasExhaustedPassengerWork());
+	CHECK(loaded->GetPassengerRoutingMode() == packet->GetPassengerRoutingMode());
+	CHECK(loaded->GetPassengerJourney() == packet->GetPassengerJourney());
+	auto *split = loaded->Split(3); REQUIRE(split);
+	CHECK(loaded->HasSamePassengerRouting(*split)); REQUIRE(loaded->Merge(split)); CHECK(loaded->Count() == 10);
+	loaded->FallbackPassengerJourney(A, NOW);
+	loaded->SetPassengerVia(D); // A real untimed boarding has a validated progressing hop.
 	RecordPassengerJourneyMovement(PassengerJourneyMovement::Board, *loaded, 7);
-	RecordPassengerJourneyMovement(PassengerJourneyMovement::Deliver, *split, 3);
-	CHECK(d.work_recovered_boarded == 7); CHECK(d.work_recovered_delivered == 3);
+	RecordPassengerJourneyMovement(PassengerJourneyMovement::Deliver, *loaded, 3);
+	CHECK(d.untimed_boarded_passengers == 7); CHECK(d.untimed_delivered_passengers == 3);
+}
+
+TEST_CASE("Retired v4 Work history is skipped and cannot prevent Packet merging", "[passenger][periodic][admission][save]")
+{
+	Fixture f; f.Train({Stop(A), Stop(D)}); f.Build();
+	auto *packet = f.Packet(); REQUIRE(PassengerJourneyActiveContext(nullptr, A).PlanWaiting(*packet, PAX, D));
+	AutoRestoreBackup version{_sl_version, SAVEGAME_VERSION};
+	AutoRestoreBackup features{_sl_xv_feature_versions, AutoRestoreBackupNoNewValueTag{}};
+	AutoRestoreBackup static_features{_sl_xv_feature_static_versions, AutoRestoreBackupNoNewValueTag{}};
+	SlXvSetStaticCurrentVersions(); _sl_xv_feature_versions = _sl_xv_feature_static_versions;
+	REQUIRE(_sl_xv_feature_versions[XSLFI_PASSENGER_JOURNEY_ROUTING] == 3);
+	const auto current = GetCargoPacketDesc();
+	std::vector<NamedSaveLoad> old(current.begin(), current.end());
+	bool work_history = true;
+	old.push_back(NSL("passenger_work_exhausted", SLEG_CONDVAR_X(work_history, SLE_BOOL, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_PASSENGER_JOURNEY_ROUTING, 4))));
+	_sl_xv_feature_versions[XSLFI_PASSENGER_JOURNEY_ROUTING] = 4;
+	auto *exhausted = CargoPacket::Create();
+	const auto tagged_save = SlTestSaveLoadTable(packet, exhausted, old, current);
+	work_history = false;
+	auto *unexhausted = CargoPacket::Create();
+	const auto untagged_save = SlTestSaveLoadTable(packet, unexhausted, old, current);
+	CHECK(tagged_save != untagged_save);
+	CHECK(exhausted->GetPassengerJourney() == packet->GetPassengerJourney());
+	CHECK(exhausted->HasSamePassengerRouting(*unexhausted));
+	CHECK(StationCargoList::AreMergable(exhausted, unexhausted)); CHECK(VehicleCargoList::AreMergable(exhausted, unexhausted));
+	REQUIRE(exhausted->Merge(unexhausted)); CHECK(exhausted->Count() == 20);
 	_sl_xv_feature_versions[XSLFI_PASSENGER_JOURNEY_ROUTING] = 3;
-	auto *old = CargoPacket::Create(); REQUIRE_FALSE(SlTestSaveLoadTable(packet, old, GetCargoPacketDesc()).empty()); CHECK_FALSE(old->HasExhaustedPassengerWork());
+	auto *roundtrip = CargoPacket::Create();
+	const auto saved = SlTestSaveLoadTable(exhausted, roundtrip, current);
+	CHECK(roundtrip->Count() == 20); CHECK(roundtrip->GetPassengerJourney() == packet->GetPassengerJourney());
+	const std::string field = "passenger_work_exhausted";
+	CHECK(std::search(saved.begin(), saved.end(), field.begin(), field.end()) == saved.end());
 }
 
 TEST_CASE("Periodic local invalidation preserves unrelated published services", "[passenger][periodic][determinism]")

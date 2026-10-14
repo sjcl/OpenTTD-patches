@@ -2336,7 +2336,7 @@ bool SlIsTableChunk()
 void SlTestResetLinkGraphLoadBudget();
 
 /** Exercise the real table header and object serializers in an isolated test context. */
-std::vector<uint8_t> SlTestSaveLoadTable(void *saved_object, void *loaded_object, const NamedSaveLoadTable &table)
+std::vector<uint8_t> SlTestSaveLoadTable(void *saved_object, void *loaded_object, const NamedSaveLoadTable &save_table, const NamedSaveLoadTable &load_table)
 {
 	SaveLoadParams original = std::move(_sl);
 	auto guard = scope_guard([&]() { _sl = std::move(original); });
@@ -2346,7 +2346,7 @@ std::vector<uint8_t> SlTestSaveLoadTable(void *saved_object, void *loaded_object
 	_sl.dumper = std::make_unique<MemoryDumper>();
 	_sl.dumper->AllocateBuffer();
 	std::vector<uint8_t> bytes = SlSaveToVector([&]() {
-		SaveLoadTableData fields = SlTableHeader(table);
+		SaveLoadTableData fields = SlTableHeader(save_table);
 		SlObjectSaveFiltered(saved_object, fields);
 	});
 	_sl.action = SaveLoadAction::Load;
@@ -2354,10 +2354,15 @@ std::vector<uint8_t> SlTestSaveLoadTable(void *saved_object, void *loaded_object
 	/* Individual table tests bypass the chunk handlers which normally reset these limits. */
 	SlTestResetLinkGraphLoadBudget();
 	SlLoadFromBuffer(bytes.data(), bytes.size(), [&]() {
-		SaveLoadTableData fields = SlTableHeader(table);
+		SaveLoadTableData fields = SlTableHeader(load_table);
 		SlObjectLoadFiltered(loaded_object, fields);
 	});
 	return bytes;
+}
+
+std::vector<uint8_t> SlTestSaveLoadTable(void *saved_object, void *loaded_object, const NamedSaveLoadTable &table)
+{
+	return SlTestSaveLoadTable(saved_object, loaded_object, table, table);
 }
 #endif
 

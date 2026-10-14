@@ -1,4 +1,10 @@
 {
+  "review_corrections": {
+    "details": "review-corrections.json",
+    "performance_scope": "All runs predate removal of persistent Work history and its Packet merge restriction. They do not measure the corrected implementation.",
+    "invalid_waiting_metric": "intent_wait_ge_4096 includes uninitialized Timed planned_at; do not interpret it as long waiting.",
+    "raw_records_preserved": true
+  },
   "datasets": [
     {
       "manifest": "C:\\Users\\bebe\\.codex\\worktrees\\923a\\OpenTTD-patches\\build-admission\\matched\\control\\manifest.json",
