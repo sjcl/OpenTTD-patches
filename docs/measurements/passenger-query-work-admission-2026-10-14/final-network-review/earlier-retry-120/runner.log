@@ -1,0 +1,18 @@
+Waiting for idle host: quiet interval (20s)
+Traceback (most recent call last):
+  File "C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\build-admission\Exercise-Pruning-Multiplayer.py", line 161, in <module>
+    wait_for(lambda: all(len(ticks) >= 2 and ticks[-1] >= server_tick - 128 and ticks[-1] > baseline_tick for ticks in client_ticks()), "client monthly game progress", seconds=900)
+    ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\build-admission\Exercise-Pruning-Multiplayer.py", line 42, in wait_for
+    raise TimeoutError(label)
+TimeoutError: client monthly game progress
+Traceback (most recent call last):
+  File "C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\docs\measurements\passenger-query-work-admission-2026-10-14\Run-Final-Multiplayer.py", line 37, in <module>
+    subprocess.run([sys.executable, build / 'Exercise-Pruning-Multiplayer.py', build, build / a.directory,
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        '--binary', binary.name, '--backend', 'periodic', '--input-save', a.input.resolve(), '--duration', str(a.duration)], check=True)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\bebe\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 577, in run
+    raise CalledProcessError(retcode, process.args,
+                             output=stdout, stderr=stderr)
+subprocess.CalledProcessError: Command '['C:\\Users\\bebe\\AppData\\Local\\Programs\\Python\\Python313\\python.exe', WindowsPath('C:/Users/bebe/.codex/worktrees/923a/OpenTTD-patches/build-admission/Exercise-Pruning-Multiplayer.py'), WindowsPath('C:/Users/bebe/.codex/worktrees/923a/OpenTTD-patches/build-admission'), WindowsPath('C:/Users/bebe/.codex/worktrees/923a/OpenTTD-patches/build-admission/mp-final-review-retry'), '--binary', 'openttd-network-final.exe', '--backend', 'periodic', '--input-save', WindowsPath('C:/Users/bebe/.codex/worktrees/e133/OpenTTD-patches/build-timed-anytime/package/input.sav'), '--duration', '120']' returned non-zero exit status 1.

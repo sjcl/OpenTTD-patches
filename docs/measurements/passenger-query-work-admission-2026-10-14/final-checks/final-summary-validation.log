@@ -1,0 +1,70 @@
+{
+  "groups": {
+    "A": {
+      "runs": 2,
+      "simulation_mean_ms": 32.20050817871093,
+      "simulation_mean_range_ms": [
+        32.19743896484375,
+        32.203577392578126
+      ],
+      "simulation_mean_spread_percent": 0.01906313931541005,
+      "total_delivered": [
+        241896,
+        241896
+      ],
+      "packet_peak": [
+        194887,
+        194887
+      ]
+    },
+    "B": {
+      "runs": 2,
+      "simulation_mean_ms": 32.03568383789062,
+      "simulation_mean_range_ms": [
+        31.611193115234375,
+        32.460174560546875
+      ],
+      "simulation_mean_spread_percent": 2.6501118240789854,
+      "total_delivered": [
+        241720,
+        241720
+      ],
+      "packet_peak": [
+        194464,
+        194464
+      ]
+    },
+    "C": {
+      "runs": 2,
+      "simulation_mean_ms": 47.46368701171875,
+      "simulation_mean_range_ms": [
+        47.39272424316406,
+        47.53464978027344
+      ],
+      "simulation_mean_spread_percent": 0.2990191998239379,
+      "total_delivered": [
+        241720,
+        241720
+      ],
+      "packet_peak": [
+        194464,
+        194464
+      ]
+    }
+  },
+  "cache_determinism": {
+    "query_count": true,
+    "query_digest": true,
+    "result_count": true,
+    "result_digest": true,
+    "admission_count": true,
+    "admission_digest": true,
+    "packet_current": true,
+    "packet_peak": true,
+    "full_save_sha256": true,
+    "semantic_signature": true,
+    "accounting": true,
+    "rejection_reasons": true
+  },
+  "simulation_B_over_A": 0.9948813124344018
+}

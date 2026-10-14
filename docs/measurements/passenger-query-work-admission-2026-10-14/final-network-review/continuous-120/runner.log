@@ -1,0 +1,51 @@
+Waiting for idle host: quiet interval (20s)
+Waiting for idle host: cmake:6624, ninja:22232, cmake:136088
+Waiting for idle host: cmake:6624
+Waiting for idle host: cmake:134216, ninja:136116, cl:135372, cl:128732, cl:82492, cl:16244, cl:110168, cl:716, cl:102608, cmake:31852, cmake:128032
+Waiting for idle host: cmake:134216, ninja:136116, cl:135372, cl:128732, cl:82492, cl:16244, cl:110168, cl:716, cl:102608, cmake:30448, cmake:95136, cmake:133664
+Waiting for idle host: cmake:134216, ninja:136116, cl:135372, cl:82492, cl:16244, cl:110168, cl:716, cl:102608, cmake:68284, cmake:39684
+Waiting for idle host: cmake:134216, ninja:136116, cl:135372, cl:82492, cl:16244, cl:110168, cl:716, cl:102608, cmake:68284, cmake:16820, cmake:51520, cmake:138644, cmake:58308
+Waiting for idle host: cmake:134216, ninja:136116, cl:82492, cl:16244, cl:110168, cl:716, cl:102608, cmake:107860, cmake:80328, cmake:103048
+Waiting for idle host: cmake:134216, ninja:136116, cmake:72980, cmake:98648
+Waiting for idle host: cmake:134216, ninja:136116, cl:57320, cl:40740, cl:82108, cl:10652, cl:132372, cl:14332, cl:78104, cl:114696, cl:125984, cl:128188, cl:42180, cl:124136, cl:79076, cl:113420
+Waiting for idle host: cmake:134216, ninja:136116, cl:140768, cl:73216, cl:106056, cl:102480, cl:105832, cl:137148, cl:56484, cl:137396, cl:121404, cl:112836, cl:120424, cl:13900, cl:56232, cl:134056, cl:118548, cl:134052
+Waiting for idle host: cmake:134216, ninja:136116, cl:128528, cl:41932, cl:11656, cl:49072, cl:113984, cl:140436, cl:109348, cl:81836, cl:86376, cl:111572, cl:95756, cl:99068, cl:89068, cl:131716, cl:131068, cl:45208
+Waiting for idle host: cmake:134216, ninja:136116, cl:111236, cl:56736, cl:99404, cl:114604, cl:40760, cl:107788, cl:79124, cl:91280, cl:112252, cl:50840, cl:121216, cl:127716, cl:139748, cl:73188
+Waiting for idle host: cmake:134216, ninja:136116, cl:122472, cl:57400, cl:29432, cl:88744, cl:140424, cl:10472, cl:53652, cl:140660, cl:16760, cl:52400, cl:111632, cl:138948, cl:35096, cl:130952, cl:141624, cl:139732
+Waiting for idle host: cmake:134216, ninja:136116, cl:133704, cl:42784, cl:132852, cl:31416, cl:93680, cl:79228, cl:8484, cl:48124, cl:117676, cl:92656, cl:140628, cl:4132, cl:135240, cl:41236, cl:132048, cl:75724
+Waiting for idle host: cmake:134216, ninja:136116, cl:80752, cl:10724, cl:134516, cl:131436, cl:113596, cl:93272, cl:79088, cl:44892, cl:130980, cl:93172, cl:5512, cl:123232, cl:141980, cl:128192, cl:88532, cl:68164
+Waiting for idle host: cmake:134216, ninja:136116, cl:136324, cl:99736, cl:133176, cl:24344, cl:113212, cl:123236, cl:63772, cl:123048, cl:131576, cl:138512, cl:106680, cl:87236, cl:13892, cl:79924, cl:129520
+Waiting for idle host: cmake:134216, ninja:136116, cl:77712, cl:86816, cl:10964, cl:103272, cl:69272, cl:130904, cl:137452, cl:32872, cl:74860, cl:116816, cl:65100, cl:48468, cl:75944, cl:13164, cl:140980, cl:118108
+Waiting for idle host: cmake:134216, ninja:136116, cl:132500, cl:59360, cl:136300, cl:141572, cl:54308, cl:57512, cl:123632, cl:140848, cl:134200, cl:4972, cl:130728, cl:8964, cl:134028, cl:138500, cl:52740, cl:134496
+Waiting for idle host: cmake:134216, ninja:136116, cmake:140388, cl:20936, MSBuild:126448, cl:101488, cl:82820, cl:54688, cl:126812, cl:27060, cl:74976, cl:114424, cl:96604, cl:125868, cl:142104, cl:137016, cl:34744, cl:131664, cl:10004, cl:142208
+Waiting for idle host: cmake:134216, ninja:136116, cmake:140388, cl:74976, cl:131212, cl:76928, cl:129656, cl:138408, cl:26940, cl:42720, cl:43116, cl:47992, cl:140532, cl:63772, cl:58888, cl:106172, cl:118396, cl:103356, cl:13064
+Waiting for idle host: cmake:134216, ninja:136116, cl:77100, cl:132420, cl:115348, cl:123352, cl:121144, cl:128328, cl:64140, cl:133592, cl:129964, cl:104680, cl:4516, cl:115336, cl:105584, cl:122444, cl:28396, cl:137608
+Waiting for idle host: cmake:134216, ninja:136116, cl:75100, cl:33644, cl:138992, cl:70020, cl:140708, cl:101644, cl:58336, cl:96956, cl:82548, cl:58588, cl:132072, cl:7684, cl:39104, cmake:78876
+Waiting for idle host: cmake:119312, MSBuild:55728
+Waiting for idle host: cmake:119312, MSBuild:101684
+Waiting for idle host: quiet interval (20s)
+Waiting for idle host: ctest:75276, cmake:125808, cmake:75372, passenger_journey_active_test:21444, passenger_od_load:88640, openttd_test:83028
+Waiting for idle host: ctest:75276, openttd_test:80684
+Waiting for idle host: ctest:75276, openttd_test:44024, openttd_test:108768
+Waiting for idle host: ctest:75276, openttd_test:134200, openttd_test:23992
+Waiting for idle host: ctest:75276, openttd_test:30024, openttd_test:22840
+Waiting for idle host: ctest:75276, openttd_test:66700, openttd_test:140128
+Waiting for idle host: ctest:75276, cmake:30908
+Waiting for idle host: quiet interval (20s)
+Traceback (most recent call last):
+  File "C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\build-admission\Exercise-Pruning-Multiplayer.py", line 164, in <module>
+    wait_for(lambda: all(len(ticks) >= 2 and ticks[-1] >= server_tick - 128 and ticks[-1] > baseline_tick for ticks in client_ticks()), "client monthly game progress", seconds=900)
+    ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\build-admission\Exercise-Pruning-Multiplayer.py", line 41, in wait_for
+    raise RuntimeError(f"A client disconnected while waiting for {label}")
+RuntimeError: A client disconnected while waiting for client monthly game progress
+Traceback (most recent call last):
+  File "C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\docs\measurements\passenger-query-work-admission-2026-10-14\Run-Final-Multiplayer.py", line 37, in <module>
+    subprocess.run([sys.executable, build / 'Exercise-Pruning-Multiplayer.py', build, build / a.directory,
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        '--binary', binary.name, '--backend', 'periodic', '--input-save', a.input.resolve(), '--duration', str(a.duration)], check=True)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\bebe\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 577, in run
+    raise CalledProcessError(retcode, process.args,
+                             output=stdout, stderr=stderr)
+subprocess.CalledProcessError: Command '['C:\\Users\\bebe\\AppData\\Local\\Programs\\Python\\Python313\\python.exe', WindowsPath('C:/Users/bebe/.codex/worktrees/923a/OpenTTD-patches/build-admission/Exercise-Pruning-Multiplayer.py'), WindowsPath('C:/Users/bebe/.codex/worktrees/923a/OpenTTD-patches/build-admission'), WindowsPath('C:/Users/bebe/.codex/worktrees/923a/OpenTTD-patches/build-admission/mp-final-review-long'), '--binary', 'openttd-network-final.exe', '--backend', 'periodic', '--input-save', WindowsPath('C:/Users/bebe/.codex/worktrees/e133/OpenTTD-patches/build-timed-anytime/package/input.sav'), '--duration', '120']' returned non-zero exit status 1.

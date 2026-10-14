@@ -1,0 +1,2115 @@
+*** OpenTTD Crash Report ***
+
+Crash at: 2026-10-14 09:33:53 (UTC)
+In game date: 117528-06-30 (6, 0) (DL: 1)
+Calendar date: 117528-06-30 (6, 0)
+Game loaded at: 117528-06-30 (5, 0), (1 state ticks ago), 2026-10-14 09:33:53
+
+Crash reason:
+ Exception:  E1212012
+ Location:   7FFDF04941CA
+ Message:    Assertion failed at line 252 of C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\src\ground_vehicle.cpp: this->gcache.cached_max_track_speed > 0
+
+Within context:
+     0: CallVehicleTicks: veh: 99: (Road Vehicle 126, c:6, st:F, vs:D, vf:FTzsa, vcf:lzd, gvf:, rvf:, rvs: 9, rvf: 2, [tile: 2269538 (5432 x 2202), type: 20 (Road), height: 03, data: 05 0266 50 00 0D 08 00 0FC0])
+
+OpenTTD version:
+ Version:     jgrpp-ya-0.73.3+2-84-gc16da0399-m (2)
+ Release ver: 0.73.3+2
+ NewGRF ver:  20006d64
+ Bits:        64
+ Endian:      little
+ Dedicated:   no
+ Build date:  Oct 14 2026 17:14:55
+ Defines:     WITH_PNG WITH_ZLIB WITH_LIBLZMA WITH_LZO WITH_ZSTD WITH_OPUSFILE WITH_OPENGL WITH_PERSONAL_DIR WITH_SSE WITH_ASSERT UNICODE _UNICODE WITH_UNISCRIBE PSAPI_VERSION=1 POINTER_IS_64BIT
+
+Decoded stack trace:
+[00] KERNELBASE           0x00007FFDF04941CA RaiseException + 138
+[01] openttd              0x00007FF74D483D07
+[02] openttd              0x00007FF74D7C378D
+[03] openttd              0x00007FF74D697A23
+[04] openttd              0x00007FF74D69797B
+[05] openttd              0x00007FF74D6DF234
+[06] openttd              0x00007FF74D870EE9
+[07] openttd              0x00007FF74D9E7F10
+[08] openttd              0x00007FF74D7C58B0
+[09] openttd              0x00007FF74D7C3B54
+[10] openttd              0x00007FF74D54AD92
+[11] openttd              0x00007FF74D7C91B7
+[12] openttd              0x00007FF74D26215E
+[13] openttd              0x00007FF74DB25986
+[14] KERNEL32             0x00007FFDF1E2CD87 BaseThreadInitThunk + 23
+[15] ntdll                0x00007FFDF31CCAEC RtlUserThreadStart + 44
+
+Registers:
+ RAX: 0000025F5D79B3A0 RBX: 0000000000000000 RCX: 0000000000000E66 RDX: 0000008CCC2FEAD8
+ RSI: 0000000000000000 RDI: 00000000E1212012 RBP: 0000000000000000 RSP: 0000008CCC2FECE0
+ R8:  0000000000000EDF R9:  0000000000000000 R10: 0000000000000000 R11: 0000000000000000
+ R12: 0000000000000004 R13: 0000000000000001 R14: 0000000000000000 R15: 0000000000001A7C
+ RIP: 00007FFDF04941CA EFLAGS: 00000206
+
+ Bytes at instruction pointer:
+ 0F 1F 44 00 00 48 8B 8C 24 C0 00 00 00 48 33 CC E8 E1 2C 0D 00 48 81 C4
+
+Operating system:
+ Name:     Windows
+ Release:  10.0.26200 ()
+ Compiler: MSVC 1944
+
+Configuration:
+ Blitter:      null
+ Graphics set: OpenGFX (7761)
+ Language:     english.lng
+ Music driver: null
+ Music set:    OpenMSX (7761)
+ Network:      no
+ Sound driver: null
+ Sound set:    OpenSFX (7974)
+ Video driver: null
+ Game mode:    Normal
+
+Fonts:
+ Small:  OpenTTD Small
+ Medium: OpenTTD Sans
+ Large:  OpenTTD Serif
+ Mono:   sprite
+
+Map size: 0x4000000 (16384 x 4096)
+
+AI Configuration (local: 0) (current: 16):
+  0: Human
+  1: Human
+  2: Human
+  3: Human
+  4: Human
+  5: Human
+  6: Human
+  7: Human
+  8: Human
+  9: Human
+
+Libraries:
+ LZMA:       5.6.3
+ ZSTD:       1.5.6
+ LZO:        2.10
+ PNG:        1.6.44
+ Zlib:       1.3.1
+
+Non-default settings:
+  language: english.lng
+  resolution: 2880,1620
+  last_newgrf_count: 132
+  difficulty.number_towns: 1
+  difficulty.industry_density: 3
+  difficulty.vehicle_breakdowns: 0
+  difficulty.terrain_type: 3
+  difficulty.town_council_tolerance: 3
+  difficulty.rename_towns_in_multiplayer: true
+  economy.town_layout: 1
+  economy.found_town: 2
+  economy.min_town_land_area: 0
+  economy.station_noise_level: true
+  economy.multiple_industry_per_town: true
+  economy.allow_shares: true
+  economy.town_growth_rate: 3
+  economy.town_growth_cargo_transported: 100
+  economy.town_min_distance: 15
+  economy.infrastructure_sharing[0]: true
+  economy.infrastructure_sharing[1]: true
+  economy.infrastructure_sharing[2]: true
+  economy.infrastructure_sharing[3]: true
+  economy.sharing_fee[0]: 500
+  economy.sharing_fee[1]: 10
+  economy.sharing_fee[3]: 500
+  economy.sharing_payment_in_debt: true
+  economy.town_cargo_scale: 36
+  economy.payment_algorithm: 0
+  station.never_expire_airports: true
+  station.station_spread: 24
+  station.cargo_class_rating_wait_time: true
+  station.station_size_rating_cargo_amount: true
+  vehicle.road_side: left
+  vehicle.train_braking_model: 1
+  vehicle.realistic_braking_aspect_limited: 1
+  vehicle.through_load_speed_limit: 500
+  vehicle.rail_depot_speed_limit: 100
+  vehicle.max_train_length: 64
+  vehicle.smoke_amount: 1
+  vehicle.never_expire_vehicles: true
+  vehicle.max_trains: 5000
+  vehicle.max_roadveh: 5000
+  vehicle.max_aircraft: 5000
+  vehicle.max_ships: 5000
+  vehicle.plane_speed: 1
+  vehicle.plane_crashes: 0
+  vehicle.improved_breakdowns: true
+  vehicle.drive_through_train_depot: true
+  vehicle.safer_crossings: true
+  gui.autosave_interval: 0
+  gui.threaded_saves: false
+  linkgraph.distribution_pax: 2
+  linkgraph.distribution_mail: 1
+  linkgraph.accuracy: 64
+  linkgraph.demand_distance: 255
+  linkgraph.demand_size: 85
+  linkgraph.short_path_saturation: 125
+  linkgraph.aircraft_link_scale: 300
+  linkgraph.passenger_transfer_timetables: true
+  linkgraph.passenger_od_assignment: true
+  linkgraph.passenger_journey_routing: true
+  linkgraph.transfer_penalty_same_mode: 100
+  linkgraph.transfer_penalty_mode_change: 100
+  locale.currency: JPY
+  locale.units_force: metric
+  music.custom_1: 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+  music.custom_2: 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+  pf.reroute_rv_on_layout_change: 2
+  pf.yapf.rail_firstred_twoway_eol: false
+  ai.ai_in_multiplayer: false
+  game_creation.town_name: 22
+  game_creation.landscape: arctic
+  game_creation.heightmap_height: 64
+  game_creation.snow_line_height: 11
+  game_creation.snow_coverage: 30
+  game_creation.starting_year: 2051
+  game_creation.ending_year: 2200
+  game_creation.tgen_smoothness: 2
+  game_creation.variety: 3
+  game_creation.generation_seed: 3498866450
+  game_creation.generation_unique_id: 368981555
+  game_creation.tree_placer: 2
+  game_creation.amount_of_rivers: 0
+  construction.map_height_limit: 79
+  construction.command_pause_level: 3
+  construction.enable_build_river: true
+  construction.max_bridge_length: 4096
+  construction.max_bridge_height: 255
+  construction.max_tunnel_length: 4096
+  construction.chunnel: true
+  construction.allow_grf_objects_under_bridges: true
+  construction.allow_stations_under_bridges: true
+  construction.raw_industry_construction: 1
+  game_time.time_in_minutes: true
+
+Command Log:
+ Showing most recent 3 of 3 commands
+   0 | 117528-06-30,  5,   0 | ----m----- | cc:   0, lc:   0 |              | cmd: 054 CmdPause                           | 1, false
+   1 | 117528-06-30,  5,   0 | ----m----- | cc:   0, lc:   0 |              | cmd: 054 CmdPause                           | 3, false
+   2 | 117528-06-30,  5,   0 | ----m----- | cc:   0, lc:   0 |              | cmd: 054 CmdPause                           | 3, true
+
+Special Events Log:
+ Showing most recent 0 of 0 events
+
+Events: , dmntcijvr
+
+---- gamelog start ----
+Tick 0: new game started
+Revision text changed to jgrpp-ya-0.43.1+2, savegame version 291, maybe modified, _openttd_newgrf_version = 0x1c006d64
+New game mode: 2 landscape: 1
+Added NewGRF: GRF ID 444E0400, checksum 735D3D74D5DCADBF1FD6EF7A9C5A3519, unknown GRF
+Added NewGRF: GRF ID 454E3701, checksum 790D1F97E481AF36737371EA0A827849, unknown GRF
+Added NewGRF: GRF ID 6D6B77E0, checksum 40746D85AEE624BB26A981D9EA9BD5A2, unknown GRF
+Added NewGRF: GRF ID 41570102, checksum F0277907E806BBB087F42727B2DF8CD1, unknown GRF
+Added NewGRF: GRF ID 4B570101, checksum 04C0F5160683940421285B980D72EC47, unknown GRF
+Added NewGRF: GRF ID 4A544E45, checksum 8F3301887E272D775C331163F2C71CE5, unknown GRF
+Added NewGRF: GRF ID 454E1302, checksum 623C32CFD50835F484DBBD42EC45FE3D, unknown GRF
+Added NewGRF: GRF ID 4A430002, checksum 93EAC5F5396584B92D4C5F0AAAF3F6C5, unknown GRF
+Added NewGRF: GRF ID 52453400, checksum B2E27B74A3894198A00139CFCF09D011, unknown GRF
+Added NewGRF: GRF ID 474C0000, checksum 1E5E4C815B905749AAE94142C1A67B8B, unknown GRF
+Added NewGRF: GRF ID 52453200, checksum A222F0B3BCF0CFE187A7868116A00C49, unknown GRF
+Added NewGRF: GRF ID 74677563, checksum 8A53DE2FF752868097FBE403FACD8DA4, unknown GRF
+Added NewGRF: GRF ID 2C320A01, checksum 065916BDB63F43BBB4A686E1B4954004, unknown GRF
+Added NewGRF: GRF ID 45530500, checksum D9BE5AFA481FC3E0A96E6EB72B455612, unknown GRF
+Added NewGRF: GRF ID 44503000, checksum 0BF5A48500990CF4CBFED5D7CC6ED120, unknown GRF
+Added NewGRF: GRF ID 535A0D00, checksum 21AC703CAB2BE6A80FAF2344366FE0C1, unknown GRF
+Added NewGRF: GRF ID 44501401, checksum 5B9D588504701CCC2BB14CDB1F18D06B, unknown GRF
+Added NewGRF: GRF ID 66724D49, checksum 235C574C38ED0DC51023E5985768AA38, unknown GRF
+Added NewGRF: GRF ID 736C6602, checksum 2DB244FD410D77FCCE2DE6D5AF09DF51, unknown GRF
+Added NewGRF: GRF ID 42531320, checksum 242F78FF0A1ABCEF50D690BF6AE7CCB4, unknown GRF
+Added NewGRF: GRF ID 44483031, checksum 462AEF0B6FD5F93F593E7AF549D91FA6, unknown GRF
+Added NewGRF: GRF ID 454E0202, checksum 122AA2D35FD674606278F33D4E1ED2C3, unknown GRF
+Added NewGRF: GRF ID 454E2101, checksum 16DD458D62FAD59BA0D12D7C3958AB2A, unknown GRF
+Added NewGRF: GRF ID 42530720, checksum E67C3FBE38362E87B5B52A5979F63F4C, unknown GRF
+Added NewGRF: GRF ID 454E2201, checksum 402297D30584292FFB2C5812F9E79185, unknown GRF
+Added NewGRF: GRF ID 52415608, checksum C808C4B56D0589A5605DDEDBA6732094, unknown GRF
+Added NewGRF: GRF ID 1560B248, checksum 76BE5A3BA8C66817C14CFA05177D20D9, unknown GRF
+Added NewGRF: GRF ID 454E2001, checksum 342B064182A42854EF830BC11BE86E4E, unknown GRF
+Added NewGRF: GRF ID 54420101, checksum A6B5EAE6320FC2C1A3A62D6D7295E029, unknown GRF
+Added NewGRF: GRF ID 57A50001, checksum 318F3C3F17CA68EAD533BAC88B093094, unknown GRF
+Added NewGRF: GRF ID 454E1901, checksum E84F4875E7EBC3B7DB5379746A0AD563, unknown GRF
+Added NewGRF: GRF ID 41501202, checksum B13DD8FB0D7C34CACAC2FE68BD137BB9, unknown GRF
+Added NewGRF: GRF ID 454E0E01, checksum B3F4AE2F441BCBDB1F43BD64A2C7052F, unknown GRF
+Added NewGRF: GRF ID 52571203, checksum 7CE88A25DDB058C1BE577B88D049B274, unknown GRF
+Added NewGRF: GRF ID 454E0801, checksum 63390ED3CCAB5360374A1EDCD3A4A6C6, unknown GRF
+Added NewGRF: GRF ID 52455400, checksum 1600687C50C5AB1E72EDD487CAD50E2A, unknown GRF
+Added NewGRF: GRF ID 52453300, checksum EF6A4519AD4C18B9B9112B8D7083862D, unknown GRF
+Added NewGRF: GRF ID 4A595001, checksum BBA9F50E894D063E20773A66E15B8FAD, unknown GRF
+Added NewGRF: GRF ID FBFB0010, checksum 910E27FA08080A404B80EA7E9A888B95, unknown GRF
+Added NewGRF: GRF ID 454E1301, checksum 1FFB499CFEE765FF7F591D7D8C040AD0, unknown GRF
+Tick 1280: game loaded
+Revision text changed to jgrpp-ya-0.44.1+0, savegame version 292, maybe modified, _openttd_newgrf_version = 0x1d006d64
+Tick 1280: game loaded
+Revision text changed to jgrpp-fruit-0.48.2-1-gea7e5e23f, savegame version 292, not modified, _openttd_newgrf_version = 0x1d006d64
+Tick 1280: settings changed
+Setting changed: vehicle.plane_speed : 4 -> 3
+Tick 1280: settings changed
+Setting changed: vehicle.plane_speed : 3 -> 2
+Tick 1280: settings changed
+Setting changed: vehicle.plane_speed : 2 -> 1
+Tick 1280: GRF config changed
+GRF parameter changed: GRF ID 535A0D00, unknown GRF
+GRF parameter changed: GRF ID 42531320, unknown GRF
+GRF parameter changed: GRF ID 454E2201, unknown GRF
+Tick 1280: game loaded
+New game mode: 1 landscape: 1
+Tick 1280: GRF config changed
+Added NewGRF: GRF ID 4A44A1E1, checksum 5E000C8DC8947C772610D5408D069741, unknown GRF
+Added NewGRF: GRF ID 4B523033, checksum 75AA6C3B1D7FEC0113C461F331404CAE, unknown GRF
+Tick 60345: settings changed
+Setting changed: gui.fast_forward_speed_limit : 500 -> 1000
+Tick 47174: game loaded
+Revision text changed to jgrpp-fruit-0.48.2-1-gea7e5e23f-m, savegame version 292, modified, _openttd_newgrf_version = 0x1d006d64
+Tick 13807: GRF config changed
+GRF order changed: 42531320 moved 22 places downGRF ID 42531320, unknown GRF
+Added NewGRF: GRF ID 42531320, checksum 242F78FF0A1ABCEF50D690BF6AE7CCB4, unknown GRF. Gamelog inconsistency: GrfID was already added!
+Tick 58600: GRF config changed
+GRF parameter changed: GRF ID 535A0D00, unknown GRF
+Tick 14649: settings changed
+Setting changed: gui.fast_forward_speed_limit : 1000 -> 0
+Tick 52835: GRF config changed
+GRF parameter changed: GRF ID 6D6B77E0, unknown GRF
+GRF parameter changed: GRF ID 454E2101, unknown GRF
+Tick 31461: GRF config changed
+Added NewGRF: GRF ID 43415000, checksum FBAE0C1ACFDA5AE8B95B4DA230A395FE, unknown GRF
+Tick 23179: settings changed
+Setting changed: construction.max_tunnel_length : 64 -> 4096
+Tick 23337: settings changed
+Setting changed: construction.max_bridge_length : 64 -> 4096
+Tick 23452: settings changed
+Setting changed: construction.max_bridge_height : 12 -> 255
+Tick 35754: GRF config changed
+GRF order changed: 4B523033 moved 2 places downGRF ID 4B523033, unknown GRF
+Added NewGRF: GRF ID 4B523033, checksum F5272D9024EB5C679A645385160BB889, unknown GRF. Gamelog inconsistency: GrfID was already added!
+Tick 58690: GRF config changed
+Added NewGRF: GRF ID 50470500, checksum 15530E300FE3E60EAF6D2D1DF1F527C1, unknown GRF
+Tick 14197: GRF config changed
+GRF order changed: 54420101 moved 16 places downGRF ID 54420101, unknown GRF
+Added NewGRF: GRF ID 54420101, checksum 83C95D568B4A5ADD2DCFCDFAC877BB49, unknown GRF. Gamelog inconsistency: GrfID was already added!
+Tick 25801: GRF config changed
+GRF order changed: 4B523033 moved 2 places downGRF ID 4B523033, unknown GRF
+Added NewGRF: GRF ID 4B523033, checksum 1D9CD9EDE364352C58E2F5291E7A42F0, unknown GRF. Gamelog inconsistency: GrfID was already added!
+Tick 55078: GRF config changed
+GRF parameter changed: GRF ID 54420101, unknown GRF
+Tick 23471: game loaded
+Revision text changed to jgrpp-fruit-0.48.5-1-g76b64d231, savegame version 292, not modified, _openttd_newgrf_version = 0x1d006d64
+Tick 173528: GRF config changed
+Compatible NewGRF loaded: GRF ID 4B523033, checksum A6DC5C55E8446ED0FEA85A962469DFD7, unknown GRF
+GRF parameter changed: GRF ID 4B523033, unknown GRF
+Tick 333087: GRF config changed
+GRF order changed: 42531320 moved 5 places downGRF ID 42531320, unknown GRF
+Added NewGRF: GRF ID 595AAA01, checksum 238337AACDC8834B2B0FC76838E69786, unknown GRF
+Added NewGRF: GRF ID 42531320, checksum 45C480EEF47E0A8B67CA4E1B1DC30604, unknown GRF. Gamelog inconsistency: GrfID was already added!
+Tick 334474: GRF config changed
+GRF parameter changed: GRF ID 42531320, unknown GRF
+Added NewGRF: GRF ID 4A44B123, checksum C2A3EAEBDAD578C20A3B11EA969CE6AD, unknown GRF
+Tick 334474: GRF config changed
+GRF parameter changed: GRF ID 42531320, unknown GRF
+Tick 334474: GRF config changed
+GRF order changed: 42531320 moved 1 places downGRF ID 42531320, unknown GRF
+Added NewGRF: GRF ID 42531320, checksum 45C480EEF47E0A8B67CA4E1B1DC30604, unknown GRF. Gamelog inconsistency: GrfID was already added!
+Tick 334474: GRF config changed
+GRF parameter changed: GRF ID 42531320, unknown GRF
+Tick 334474: GRF config changed
+GRF parameter changed: GRF ID 42531320, unknown GRF
+Tick 334474: GRF config changed
+GRF parameter changed: GRF ID 42531320, unknown GRF
+Tick 334474: GRF config changed
+GRF parameter changed: GRF ID 42531320, unknown GRF
+Tick 1422678: GRF config changed
+GRF parameter changed: GRF ID 4B523033, unknown GRF
+Tick 1422678: GRF config changed
+GRF parameter changed: GRF ID 4B523033, unknown GRF
+Tick 686027213: GRF config changed
+GRF parameter changed: GRF ID 42531320, unknown GRF
+Tick 686027213: GRF config changed
+GRF parameter changed: GRF ID 42531320, unknown GRF
+Tick 698825833: GRF config changed
+GRF parameter changed: GRF ID 42531320, unknown GRF
+Tick 788048847: game loaded
+Revision text changed to jgrpp-ya-0.54.4+1, savegame version 292, maybe modified, _openttd_newgrf_version = 0x1e006d64
+Tick 802528250: GRF config changed
+GRF parameter changed: GRF ID 444E0400, unknown GRF
+GRF parameter changed: GRF ID 454E3701, unknown GRF
+GRF parameter changed: GRF ID 6D6B77E0, unknown GRF
+GRF parameter changed: GRF ID 41570102, unknown GRF
+GRF parameter changed: GRF ID 4B570101, unknown GRF
+GRF parameter changed: GRF ID 4A544E45, unknown GRF
+GRF parameter changed: GRF ID 454E1302, unknown GRF
+GRF parameter changed: GRF ID 4A430002, unknown GRF
+GRF parameter changed: GRF ID 52453400, unknown GRF
+GRF parameter changed: GRF ID 474C0000, unknown GRF
+GRF parameter changed: GRF ID 52453200, unknown GRF
+GRF parameter changed: GRF ID 74677563, unknown GRF
+GRF parameter changed: GRF ID 2C320A01, unknown GRF
+GRF parameter changed: GRF ID 45530500, unknown GRF
+GRF parameter changed: GRF ID 44503000, unknown GRF
+GRF parameter changed: GRF ID 535A0D00, unknown GRF
+GRF parameter changed: GRF ID 44501401, unknown GRF
+GRF parameter changed: GRF ID 66724D49, unknown GRF
+GRF parameter changed: GRF ID 736C6602, unknown GRF
+GRF parameter changed: GRF ID 44483031, unknown GRF
+GRF parameter changed: GRF ID 454E0202, unknown GRF
+GRF parameter changed: GRF ID 454E2101, unknown GRF
+GRF parameter changed: GRF ID 42530720, unknown GRF
+GRF parameter changed: GRF ID 454E2201, unknown GRF
+GRF parameter changed: GRF ID 52415608, unknown GRF
+GRF parameter changed: GRF ID 1560B248, unknown GRF
+GRF parameter changed: GRF ID 454E2001, unknown GRF
+GRF parameter changed: GRF ID 57A50001, unknown GRF
+GRF parameter changed: GRF ID 454E1901, unknown GRF
+GRF parameter changed: GRF ID 41501202, unknown GRF
+GRF parameter changed: GRF ID 454E0E01, unknown GRF
+GRF parameter changed: GRF ID 52571203, unknown GRF
+GRF parameter changed: GRF ID 454E0801, unknown GRF
+GRF parameter changed: GRF ID 52455400, unknown GRF
+GRF parameter changed: GRF ID 52453300, unknown GRF
+GRF parameter changed: GRF ID 4A595001, unknown GRF
+GRF parameter changed: GRF ID FBFB0010, unknown GRF
+GRF parameter changed: GRF ID 454E1301, unknown GRF
+GRF parameter changed: GRF ID 4A44A1E1, unknown GRF
+GRF parameter changed: GRF ID 43415000, unknown GRF
+GRF parameter changed: GRF ID 50470500, unknown GRF
+GRF parameter changed: GRF ID 54420101, unknown GRF
+GRF parameter changed: GRF ID 4B523033, unknown GRF
+GRF parameter changed: GRF ID 595AAA01, unknown GRF
+GRF parameter changed: GRF ID 4A44B123, unknown GRF
+GRF parameter changed: GRF ID 42531320, unknown GRF
+Added NewGRF: GRF ID 4A475281, checksum 411DF55274B3557E9C6F8ED2872DADEF, unknown GRF
+Added NewGRF: GRF ID 4A505053, checksum 7ED4636C2A1FFE30ED436DAE6AF3FFFB, unknown GRF
+Tick 802528250: GRF config changed
+GRF parameter changed: GRF ID 444E0400, unknown GRF
+GRF parameter changed: GRF ID 454E3701, unknown GRF
+GRF parameter changed: GRF ID 6D6B77E0, unknown GRF
+GRF parameter changed: GRF ID 41570102, unknown GRF
+GRF parameter changed: GRF ID 4B570101, unknown GRF
+GRF parameter changed: GRF ID 4A544E45, unknown GRF
+GRF parameter changed: GRF ID 454E1302, unknown GRF
+GRF parameter changed: GRF ID 4A430002, unknown GRF
+GRF parameter changed: GRF ID 52453400, unknown GRF
+GRF parameter changed: GRF ID 474C0000, unknown GRF
+GRF parameter changed: GRF ID 52453200, unknown GRF
+GRF parameter changed: GRF ID 74677563, unknown GRF
+GRF parameter changed: GRF ID 2C320A01, unknown GRF
+GRF parameter changed: GRF ID 45530500, unknown GRF
+GRF parameter changed: GRF ID 44503000, unknown GRF
+GRF parameter changed: GRF ID 535A0D00, unknown GRF
+GRF parameter changed: GRF ID 44501401, unknown GRF
+GRF parameter changed: GRF ID 66724D49, unknown GRF
+GRF parameter changed: GRF ID 736C6602, unknown GRF
+GRF parameter changed: GRF ID 44483031, unknown GRF
+GRF parameter changed: GRF ID 454E0202, unknown GRF
+GRF parameter changed: GRF ID 454E2101, unknown GRF
+GRF parameter changed: GRF ID 42530720, unknown GRF
+GRF parameter changed: GRF ID 454E2201, unknown GRF
+GRF parameter changed: GRF ID 52415608, unknown GRF
+GRF parameter changed: GRF ID 1560B248, unknown GRF
+GRF parameter changed: GRF ID 454E2001, unknown GRF
+GRF parameter changed: GRF ID 57A50001, unknown GRF
+GRF parameter changed: GRF ID 454E1901, unknown GRF
+GRF parameter changed: GRF ID 41501202, unknown GRF
+GRF parameter changed: GRF ID 454E0E01, unknown GRF
+GRF parameter changed: GRF ID 52571203, unknown GRF
+GRF parameter changed: GRF ID 454E0801, unknown GRF
+GRF parameter changed: GRF ID 52455400, unknown GRF
+GRF parameter changed: GRF ID 52453300, unknown GRF
+GRF parameter changed: GRF ID 4A595001, unknown GRF
+GRF parameter changed: GRF ID FBFB0010, unknown GRF
+GRF parameter changed: GRF ID 454E1301, unknown GRF
+GRF parameter changed: GRF ID 4A44A1E1, unknown GRF
+GRF parameter changed: GRF ID 43415000, unknown GRF
+GRF parameter changed: GRF ID 50470500, unknown GRF
+GRF parameter changed: GRF ID 54420101, unknown GRF
+GRF parameter changed: GRF ID 4B523033, unknown GRF
+GRF parameter changed: GRF ID 595AAA01, unknown GRF
+GRF parameter changed: GRF ID 4A44B123, unknown GRF
+GRF parameter changed: GRF ID 42531320, unknown GRF
+GRF parameter changed: GRF ID 4A475281, unknown GRF
+GRF parameter changed: GRF ID 4A505053, unknown GRF
+Tick 888596217: GRF config changed
+GRF parameter changed: GRF ID 444E0400, unknown GRF
+GRF parameter changed: GRF ID 454E3701, unknown GRF
+GRF parameter changed: GRF ID 6D6B77E0, unknown GRF
+GRF parameter changed: GRF ID 41570102, unknown GRF
+GRF parameter changed: GRF ID 4B570101, unknown GRF
+GRF parameter changed: GRF ID 4A544E45, unknown GRF
+Compatible NewGRF loaded: GRF ID 454E1302, checksum 5608A7B7C632E0FE7AD715795BE23938, unknown GRF
+GRF parameter changed: GRF ID 454E1302, unknown GRF
+GRF parameter changed: GRF ID 4A430002, unknown GRF
+GRF parameter changed: GRF ID 52453400, unknown GRF
+GRF parameter changed: GRF ID 474C0000, unknown GRF
+GRF parameter changed: GRF ID 52453200, unknown GRF
+GRF parameter changed: GRF ID 74677563, unknown GRF
+GRF parameter changed: GRF ID 2C320A01, unknown GRF
+GRF parameter changed: GRF ID 45530500, unknown GRF
+GRF parameter changed: GRF ID 44503000, unknown GRF
+GRF parameter changed: GRF ID 535A0D00, unknown GRF
+GRF parameter changed: GRF ID 44501401, unknown GRF
+GRF parameter changed: GRF ID 66724D49, unknown GRF
+GRF parameter changed: GRF ID 736C6602, unknown GRF
+GRF parameter changed: GRF ID 44483031, unknown GRF
+Compatible NewGRF loaded: GRF ID 454E0202, checksum 4D5C1B648CC4FCD1D10D3349EFBEE9F1, unknown GRF
+GRF parameter changed: GRF ID 454E0202, unknown GRF
+GRF parameter changed: GRF ID 454E2101, unknown GRF
+GRF parameter changed: GRF ID 42530720, unknown GRF
+GRF parameter changed: GRF ID 454E2201, unknown GRF
+GRF parameter changed: GRF ID 52415608, unknown GRF
+GRF parameter changed: GRF ID 1560B248, unknown GRF
+GRF parameter changed: GRF ID 454E2001, unknown GRF
+GRF parameter changed: GRF ID 57A50001, unknown GRF
+GRF parameter changed: GRF ID 454E1901, unknown GRF
+GRF parameter changed: GRF ID 41501202, unknown GRF
+Compatible NewGRF loaded: GRF ID 454E0E01, checksum 71939AF959C59906A4C68038DA0B7A54, unknown GRF
+GRF parameter changed: GRF ID 454E0E01, unknown GRF
+Compatible NewGRF loaded: GRF ID 52571203, checksum 2E00A55DF056E0F4BD7BBC2517514DC7, unknown GRF
+GRF parameter changed: GRF ID 52571203, unknown GRF
+GRF order changed: 454E0801 moved 15 places downGRF ID 454E0801, unknown GRF
+GRF parameter changed: GRF ID 52455400, unknown GRF
+GRF parameter changed: GRF ID 52453300, unknown GRF
+GRF parameter changed: GRF ID 4A595001, unknown GRF
+GRF parameter changed: GRF ID FBFB0010, unknown GRF
+Compatible NewGRF loaded: GRF ID 454E1301, checksum DEDD19297E4BE9CE4BDAA3A274A2811F, unknown GRF
+GRF parameter changed: GRF ID 454E1301, unknown GRF
+GRF parameter changed: GRF ID 4A44A1E1, unknown GRF
+GRF parameter changed: GRF ID 43415000, unknown GRF
+GRF parameter changed: GRF ID 50470500, unknown GRF
+GRF parameter changed: GRF ID 54420101, unknown GRF
+Compatible NewGRF loaded: GRF ID 4B523033, checksum 0D2612B834706B09C91D04DC8E6034CC, unknown GRF
+GRF parameter changed: GRF ID 4B523033, unknown GRF
+Compatible NewGRF loaded: GRF ID 595AAA01, checksum B63389A59508E465E972247949447C11, unknown GRF
+GRF parameter changed: GRF ID 595AAA01, unknown GRF
+GRF parameter changed: GRF ID 4A44B123, unknown GRF
+Compatible NewGRF loaded: GRF ID 42531320, checksum 200BF15A3BC83435C59E4D58EFAFEBF1, unknown GRF
+GRF parameter changed: GRF ID 42531320, unknown GRF
+GRF parameter changed: GRF ID 4A475281, unknown GRF
+GRF parameter changed: GRF ID 4A505053, unknown GRF
+Added NewGRF: GRF ID 454E0801, checksum 63390ED3CCAB5360374A1EDCD3A4A6C6, unknown GRF. Gamelog inconsistency: GrfID was already added!
+Tick 888596217: GRF config changed
+GRF parameter changed: GRF ID 444E0400, unknown GRF
+GRF parameter changed: GRF ID 454E3701, unknown GRF
+Removed NewGRF: GRF ID 6D6B77E0, unknown GRF
+GRF parameter changed: GRF ID 41570102, unknown GRF
+GRF parameter changed: GRF ID 4B570101, unknown GRF
+GRF parameter changed: GRF ID 4A544E45, unknown GRF
+GRF parameter changed: GRF ID 454E1302, unknown GRF
+GRF parameter changed: GRF ID 4A430002, unknown GRF
+GRF parameter changed: GRF ID 52453400, unknown GRF
+GRF parameter changed: GRF ID 474C0000, unknown GRF
+GRF parameter changed: GRF ID 52453200, unknown GRF
+GRF parameter changed: GRF ID 74677563, unknown GRF
+GRF parameter changed: GRF ID 2C320A01, unknown GRF
+GRF parameter changed: GRF ID 45530500, unknown GRF
+GRF parameter changed: GRF ID 44503000, unknown GRF
+GRF parameter changed: GRF ID 535A0D00, unknown GRF
+GRF parameter changed: GRF ID 44501401, unknown GRF
+GRF parameter changed: GRF ID 66724D49, unknown GRF
+GRF parameter changed: GRF ID 736C6602, unknown GRF
+GRF parameter changed: GRF ID 44483031, unknown GRF
+GRF parameter changed: GRF ID 454E0202, unknown GRF
+GRF parameter changed: GRF ID 454E2101, unknown GRF
+GRF parameter changed: GRF ID 42530720, unknown GRF
+GRF parameter changed: GRF ID 454E2201, unknown GRF
+GRF parameter changed: GRF ID 52415608, unknown GRF
+GRF parameter changed: GRF ID 1560B248, unknown GRF
+GRF parameter changed: GRF ID 454E2001, unknown GRF
+GRF parameter changed: GRF ID 57A50001, unknown GRF
+GRF parameter changed: GRF ID 454E1901, unknown GRF
+GRF parameter changed: GRF ID 41501202, unknown GRF
+GRF parameter changed: GRF ID 454E0E01, unknown GRF
+GRF parameter changed: GRF ID 52571203, unknown GRF
+GRF parameter changed: GRF ID 52455400, unknown GRF
+GRF parameter changed: GRF ID 52453300, unknown GRF
+GRF parameter changed: GRF ID 4A595001, unknown GRF
+GRF parameter changed: GRF ID FBFB0010, unknown GRF
+GRF parameter changed: GRF ID 454E1301, unknown GRF
+GRF parameter changed: GRF ID 4A44A1E1, unknown GRF
+GRF parameter changed: GRF ID 43415000, unknown GRF
+GRF parameter changed: GRF ID 50470500, unknown GRF
+GRF parameter changed: GRF ID 54420101, unknown GRF
+GRF parameter changed: GRF ID 4B523033, unknown GRF
+GRF parameter changed: GRF ID 595AAA01, unknown GRF
+GRF parameter changed: GRF ID 4A44B123, unknown GRF
+GRF parameter changed: GRF ID 42531320, unknown GRF
+GRF parameter changed: GRF ID 4A475281, unknown GRF
+GRF parameter changed: GRF ID 4A505053, unknown GRF
+GRF parameter changed: GRF ID 454E0801, unknown GRF
+Tick 892867529: GRF config changed
+GRF parameter changed: GRF ID 444E0400, unknown GRF
+GRF parameter changed: GRF ID 454E3701, unknown GRF
+GRF parameter changed: GRF ID 41570102, unknown GRF
+GRF parameter changed: GRF ID 4B570101, unknown GRF
+GRF parameter changed: GRF ID 4A544E45, unknown GRF
+GRF parameter changed: GRF ID 454E1302, unknown GRF
+GRF parameter changed: GRF ID 4A430002, unknown GRF
+GRF parameter changed: GRF ID 52453400, unknown GRF
+GRF parameter changed: GRF ID 474C0000, unknown GRF
+GRF parameter changed: GRF ID 52453200, unknown GRF
+GRF parameter changed: GRF ID 74677563, unknown GRF
+GRF parameter changed: GRF ID 2C320A01, unknown GRF
+GRF parameter changed: GRF ID 45530500, unknown GRF
+GRF parameter changed: GRF ID 44503000, unknown GRF
+GRF parameter changed: GRF ID 535A0D00, unknown GRF
+GRF parameter changed: GRF ID 44501401, unknown GRF
+GRF parameter changed: GRF ID 66724D49, unknown GRF
+GRF parameter changed: GRF ID 736C6602, unknown GRF
+GRF parameter changed: GRF ID 44483031, unknown GRF
+GRF parameter changed: GRF ID 454E0202, unknown GRF
+GRF parameter changed: GRF ID 454E2101, unknown GRF
+GRF parameter changed: GRF ID 42530720, unknown GRF
+GRF parameter changed: GRF ID 454E2201, unknown GRF
+GRF parameter changed: GRF ID 52415608, unknown GRF
+GRF parameter changed: GRF ID 1560B248, unknown GRF
+GRF parameter changed: GRF ID 454E2001, unknown GRF
+GRF parameter changed: GRF ID 57A50001, unknown GRF
+GRF parameter changed: GRF ID 454E1901, unknown GRF
+GRF parameter changed: GRF ID 41501202, unknown GRF
+GRF parameter changed: GRF ID 454E0E01, unknown GRF
+GRF parameter changed: GRF ID 52571203, unknown GRF
+GRF parameter changed: GRF ID 52455400, unknown GRF
+GRF parameter changed: GRF ID 52453300, unknown GRF
+GRF parameter changed: GRF ID 4A595001, unknown GRF
+GRF parameter changed: GRF ID FBFB0010, unknown GRF
+GRF parameter changed: GRF ID 454E1301, unknown GRF
+GRF parameter changed: GRF ID 4A44A1E1, unknown GRF
+GRF parameter changed: GRF ID 43415000, unknown GRF
+GRF parameter changed: GRF ID 50470500, unknown GRF
+GRF parameter changed: GRF ID 54420101, unknown GRF
+GRF parameter changed: GRF ID 595AAA01, unknown GRF
+GRF parameter changed: GRF ID 4A44B123, unknown GRF
+GRF parameter changed: GRF ID 4A475281, unknown GRF
+GRF parameter changed: GRF ID 4A505053, unknown GRF
+GRF parameter changed: GRF ID 454E0801, unknown GRF
+Tick 892909246: GRF config changed
+GRF parameter changed: GRF ID 444E0400, unknown GRF
+GRF parameter changed: GRF ID 454E3701, unknown GRF
+GRF parameter changed: GRF ID 41570102, unknown GRF
+GRF parameter changed: GRF ID 4B570101, unknown GRF
+GRF parameter changed: GRF ID 4A544E45, unknown GRF
+GRF parameter changed: GRF ID 454E1302, unknown GRF
+GRF parameter changed: GRF ID 4A430002, unknown GRF
+GRF parameter changed: GRF ID 52453400, unknown GRF
+GRF parameter changed: GRF ID 474C0000, unknown GRF
+GRF parameter changed: GRF ID 52453200, unknown GRF
+GRF parameter changed: GRF ID 74677563, unknown GRF
+GRF parameter changed: GRF ID 2C320A01, unknown GRF
+GRF parameter changed: GRF ID 45530500, unknown GRF
+GRF parameter changed: GRF ID 44503000, unknown GRF
+GRF parameter changed: GRF ID 535A0D00, unknown GRF
+GRF parameter changed: GRF ID 44501401, unknown GRF
+GRF parameter changed: GRF ID 66724D49, unknown GRF
+GRF parameter changed: GRF ID 736C6602, unknown GRF
+GRF parameter changed: GRF ID 44483031, unknown GRF
+GRF parameter changed: GRF ID 454E0202, unknown GRF
+GRF parameter changed: GRF ID 454E2101, unknown GRF
+GRF parameter changed: GRF ID 42530720, unknown GRF
+GRF parameter changed: GRF ID 454E2201, unknown GRF
+GRF parameter changed: GRF ID 52415608, unknown GRF
+GRF parameter changed: GRF ID 1560B248, unknown GRF
+GRF parameter changed: GRF ID 454E2001, unknown GRF
+GRF parameter changed: GRF ID 57A50001, unknown GRF
+GRF parameter changed: GRF ID 454E1901, unknown GRF
+GRF parameter changed: GRF ID 41501202, unknown GRF
+GRF parameter changed: GRF ID 454E0E01, unknown GRF
+GRF parameter changed: GRF ID 52571203, unknown GRF
+GRF parameter changed: GRF ID 52455400, unknown GRF
+GRF parameter changed: GRF ID 52453300, unknown GRF
+GRF parameter changed: GRF ID 4A595001, unknown GRF
+GRF parameter changed: GRF ID FBFB0010, unknown GRF
+GRF parameter changed: GRF ID 454E1301, unknown GRF
+GRF parameter changed: GRF ID 4A44A1E1, unknown GRF
+GRF parameter changed: GRF ID 43415000, unknown GRF
+GRF parameter changed: GRF ID 50470500, unknown GRF
+GRF parameter changed: GRF ID 4B523033, unknown GRF
+GRF parameter changed: GRF ID 595AAA01, unknown GRF
+GRF parameter changed: GRF ID 4A44B123, unknown GRF
+GRF parameter changed: GRF ID 42531320, unknown GRF
+GRF parameter changed: GRF ID 4A475281, unknown GRF
+GRF parameter changed: GRF ID 4A505053, unknown GRF
+GRF parameter changed: GRF ID 454E0801, unknown GRF
+Tick 892918573: GRF config changed
+GRF parameter changed: GRF ID 444E0400, unknown GRF
+GRF parameter changed: GRF ID 454E3701, unknown GRF
+GRF parameter changed: GRF ID 41570102, unknown GRF
+GRF parameter changed: GRF ID 4B570101, unknown GRF
+GRF parameter changed: GRF ID 4A544E45, unknown GRF
+GRF parameter changed: GRF ID 454E1302, unknown GRF
+GRF parameter changed: GRF ID 4A430002, unknown GRF
+GRF parameter changed: GRF ID 52453400, unknown GRF
+GRF parameter changed: GRF ID 474C0000, unknown GRF
+GRF parameter changed: GRF ID 52453200, unknown GRF
+GRF parameter changed: GRF ID 74677563, unknown GRF
+GRF parameter changed: GRF ID 2C320A01, unknown GRF
+GRF parameter changed: GRF ID 45530500, unknown GRF
+GRF parameter changed: GRF ID 44503000, unknown GRF
+GRF parameter changed: GRF ID 44501401, unknown GRF
+GRF parameter changed: GRF ID 66724D49, unknown GRF
+GRF parameter changed: GRF ID 736C6602, unknown GRF
+GRF parameter changed: GRF ID 44483031, unknown GRF
+GRF parameter changed: GRF ID 454E0202, unknown GRF
+GRF parameter changed: GRF ID 454E2101, unknown GRF
+GRF parameter changed: GRF ID 42530720, unknown GRF
+GRF parameter changed: GRF ID 454E2201, unknown GRF
+GRF parameter changed: GRF ID 52415608, unknown GRF
+GRF parameter changed: GRF ID 1560B248, unknown GRF
+GRF parameter changed: GRF ID 454E2001, unknown GRF
+GRF parameter changed: GRF ID 57A50001, unknown GRF
+GRF parameter changed: GRF ID 454E1901, unknown GRF
+GRF parameter changed: GRF ID 41501202, unknown GRF
+GRF parameter changed: GRF ID 454E0E01, unknown GRF
+GRF parameter changed: GRF ID 52571203, unknown GRF
+GRF parameter changed: GRF ID 52455400, unknown GRF
+GRF parameter changed: GRF ID 52453300, unknown GRF
+GRF parameter changed: GRF ID 4A595001, unknown GRF
+GRF parameter changed: GRF ID FBFB0010, unknown GRF
+GRF parameter changed: GRF ID 454E1301, unknown GRF
+GRF parameter changed: GRF ID 4A44A1E1, unknown GRF
+GRF parameter changed: GRF ID 43415000, unknown GRF
+GRF parameter changed: GRF ID 50470500, unknown GRF
+GRF parameter changed: GRF ID 54420101, unknown GRF
+GRF parameter changed: GRF ID 4B523033, unknown GRF
+GRF parameter changed: GRF ID 595AAA01, unknown GRF
+GRF parameter changed: GRF ID 4A44B123, unknown GRF
+GRF parameter changed: GRF ID 42531320, unknown GRF
+GRF parameter changed: GRF ID 4A475281, unknown GRF
+GRF parameter changed: GRF ID 4A505053, unknown GRF
+GRF parameter changed: GRF ID 454E0801, unknown GRF
+Tick 892977414: game loaded
+Revision text changed to jgrpp-ya-0.54.5+1, savegame version 292, maybe modified, _openttd_newgrf_version = 0x1e006d64
+Tick 896882838: game loaded
+Missing NewGRF: GRF ID 454E1302, unknown GRF
+Tick 896883394: GRF config changed
+GRF parameter changed: GRF ID 444E0400, unknown GRF
+GRF parameter changed: GRF ID 454E3701, unknown GRF
+GRF parameter changed: GRF ID 41570102, unknown GRF
+GRF parameter changed: GRF ID 4B570101, unknown GRF
+GRF parameter changed: GRF ID 4A544E45, unknown GRF
+GRF parameter changed: GRF ID 4A430002, unknown GRF
+GRF parameter changed: GRF ID 52453400, unknown GRF
+GRF parameter changed: GRF ID 474C0000, unknown GRF
+GRF parameter changed: GRF ID 52453200, unknown GRF
+GRF parameter changed: GRF ID 74677563, unknown GRF
+GRF parameter changed: GRF ID 2C320A01, unknown GRF
+GRF parameter changed: GRF ID 45530500, unknown GRF
+GRF parameter changed: GRF ID 44503000, unknown GRF
+GRF parameter changed: GRF ID 535A0D00, unknown GRF
+GRF parameter changed: GRF ID 44501401, unknown GRF
+GRF parameter changed: GRF ID 66724D49, unknown GRF
+GRF parameter changed: GRF ID 736C6602, unknown GRF
+GRF parameter changed: GRF ID 44483031, unknown GRF
+GRF parameter changed: GRF ID 454E0202, unknown GRF
+GRF parameter changed: GRF ID 454E2101, unknown GRF
+GRF parameter changed: GRF ID 42530720, unknown GRF
+GRF parameter changed: GRF ID 454E2201, unknown GRF
+GRF parameter changed: GRF ID 52415608, unknown GRF
+GRF parameter changed: GRF ID 1560B248, unknown GRF
+GRF parameter changed: GRF ID 454E2001, unknown GRF
+GRF parameter changed: GRF ID 57A50001, unknown GRF
+GRF parameter changed: GRF ID 454E1901, unknown GRF
+GRF parameter changed: GRF ID 41501202, unknown GRF
+GRF parameter changed: GRF ID 454E0E01, unknown GRF
+GRF parameter changed: GRF ID 52571203, unknown GRF
+GRF parameter changed: GRF ID 52455400, unknown GRF
+GRF parameter changed: GRF ID 52453300, unknown GRF
+GRF parameter changed: GRF ID 4A595001, unknown GRF
+GRF parameter changed: GRF ID FBFB0010, unknown GRF
+GRF parameter changed: GRF ID 454E1301, unknown GRF
+GRF parameter changed: GRF ID 4A44A1E1, unknown GRF
+GRF parameter changed: GRF ID 43415000, unknown GRF
+GRF parameter changed: GRF ID 50470500, unknown GRF
+GRF parameter changed: GRF ID 54420101, unknown GRF
+GRF parameter changed: GRF ID 4B523033, unknown GRF
+GRF parameter changed: GRF ID 595AAA01, unknown GRF
+GRF parameter changed: GRF ID 4A44B123, unknown GRF
+GRF parameter changed: GRF ID 42531320, unknown GRF
+GRF parameter changed: GRF ID 4A475281, unknown GRF
+GRF parameter changed: GRF ID 4A505053, unknown GRF
+GRF parameter changed: GRF ID 454E0801, unknown GRF
+Tick 896891404: GRF config changed
+GRF parameter changed: GRF ID 444E0400, unknown GRF
+GRF parameter changed: GRF ID 454E3701, unknown GRF
+GRF parameter changed: GRF ID 41570102, unknown GRF
+GRF parameter changed: GRF ID 4B570101, unknown GRF
+GRF parameter changed: GRF ID 4A544E45, unknown GRF
+GRF parameter changed: GRF ID 4A430002, unknown GRF
+GRF parameter changed: GRF ID 52453400, unknown GRF
+GRF parameter changed: GRF ID 474C0000, unknown GRF
+GRF parameter changed: GRF ID 52453200, unknown GRF
+GRF parameter changed: GRF ID 74677563, unknown GRF
+GRF parameter changed: GRF ID 2C320A01, unknown GRF
+GRF parameter changed: GRF ID 45530500, unknown GRF
+GRF parameter changed: GRF ID 44503000, unknown GRF
+GRF parameter changed: GRF ID 535A0D00, unknown GRF
+GRF parameter changed: GRF ID 44501401, unknown GRF
+GRF parameter changed: GRF ID 66724D49, unknown GRF
+GRF parameter changed: GRF ID 736C6602, unknown GRF
+GRF parameter changed: GRF ID 44483031, unknown GRF
+GRF parameter changed: GRF ID 454E0202, unknown GRF
+GRF parameter changed: GRF ID 454E2101, unknown GRF
+GRF parameter changed: GRF ID 42530720, unknown GRF
+GRF parameter changed: GRF ID 454E2201, unknown GRF
+GRF parameter changed: GRF ID 52415608, unknown GRF
+GRF parameter changed: GRF ID 1560B248, unknown GRF
+GRF parameter changed: GRF ID 454E2001, unknown GRF
+GRF parameter changed: GRF ID 57A50001, unknown GRF
+GRF parameter changed: GRF ID 454E1901, unknown GRF
+GRF parameter changed: GRF ID 41501202, unknown GRF
+GRF parameter changed: GRF ID 454E0E01, unknown GRF
+GRF parameter changed: GRF ID 52571203, unknown GRF
+GRF parameter changed: GRF ID 52455400, unknown GRF
+GRF parameter changed: GRF ID 52453300, unknown GRF
+GRF parameter changed: GRF ID 4A595001, unknown GRF
+GRF parameter changed: GRF ID FBFB0010, unknown GRF
+Removed NewGRF: GRF ID 454E1301, unknown GRF
+GRF parameter changed: GRF ID 4A44A1E1, unknown GRF
+GRF parameter changed: GRF ID 43415000, unknown GRF
+GRF parameter changed: GRF ID 50470500, unknown GRF
+GRF parameter changed: GRF ID 54420101, unknown GRF
+GRF parameter changed: GRF ID 4B523033, unknown GRF
+GRF parameter changed: GRF ID 595AAA01, unknown GRF
+GRF parameter changed: GRF ID 4A44B123, unknown GRF
+GRF parameter changed: GRF ID 42531320, unknown GRF
+GRF parameter changed: GRF ID 4A475281, unknown GRF
+GRF parameter changed: GRF ID 4A505053, unknown GRF
+GRF parameter changed: GRF ID 454E0801, unknown GRF
+Added NewGRF: GRF ID 454E1302, checksum 623C32CFD50835F484DBBD42EC45FE3D, unknown GRF
+Tick 896912888: GRF config changed
+GRF parameter changed: GRF ID 444E0400, unknown GRF
+GRF parameter changed: GRF ID 454E3701, unknown GRF
+GRF parameter changed: GRF ID 41570102, unknown GRF
+GRF parameter changed: GRF ID 4B570101, unknown GRF
+GRF parameter changed: GRF ID 4A544E45, unknown GRF
+GRF parameter changed: GRF ID 4A430002, unknown GRF
+GRF parameter changed: GRF ID 52453400, unknown GRF
+GRF parameter changed: GRF ID 474C0000, unknown GRF
+GRF parameter changed: GRF ID 52453200, unknown GRF
+GRF parameter changed: GRF ID 74677563, unknown GRF
+GRF parameter changed: GRF ID 2C320A01, unknown GRF
+GRF parameter changed: GRF ID 45530500, unknown GRF
+GRF parameter changed: GRF ID 44503000, unknown GRF
+GRF parameter changed: GRF ID 535A0D00, unknown GRF
+GRF parameter changed: GRF ID 44501401, unknown GRF
+GRF parameter changed: GRF ID 66724D49, unknown GRF
+GRF parameter changed: GRF ID 736C6602, unknown GRF
+GRF parameter changed: GRF ID 44483031, unknown GRF
+GRF parameter changed: GRF ID 454E0202, unknown GRF
+GRF parameter changed: GRF ID 454E2101, unknown GRF
+GRF parameter changed: GRF ID 42530720, unknown GRF
+GRF parameter changed: GRF ID 454E2201, unknown GRF
+GRF parameter changed: GRF ID 52415608, unknown GRF
+GRF parameter changed: GRF ID 1560B248, unknown GRF
+GRF parameter changed: GRF ID 454E2001, unknown GRF
+GRF parameter changed: GRF ID 57A50001, unknown GRF
+GRF parameter changed: GRF ID 454E1901, unknown GRF
+GRF parameter changed: GRF ID 41501202, unknown GRF
+GRF parameter changed: GRF ID 454E0E01, unknown GRF
+GRF parameter changed: GRF ID 52571203, unknown GRF
+GRF parameter changed: GRF ID 52455400, unknown GRF
+GRF parameter changed: GRF ID 52453300, unknown GRF
+GRF parameter changed: GRF ID 4A595001, unknown GRF
+GRF parameter changed: GRF ID FBFB0010, unknown GRF
+GRF parameter changed: GRF ID 4A44A1E1, unknown GRF
+GRF parameter changed: GRF ID 43415000, unknown GRF
+GRF parameter changed: GRF ID 50470500, unknown GRF
+GRF parameter changed: GRF ID 54420101, unknown GRF
+Compatible NewGRF loaded: GRF ID 4B523033, checksum 79BBA8D1BC1326720C5C528040B3E492, unknown GRF
+GRF parameter changed: GRF ID 4B523033, unknown GRF
+Compatible NewGRF loaded: GRF ID 595AAA01, checksum 5FE18D640A82C9E0CD2FECCF281A67BD, unknown GRF
+GRF parameter changed: GRF ID 595AAA01, unknown GRF
+GRF parameter changed: GRF ID 4A44B123, unknown GRF
+GRF parameter changed: GRF ID 42531320, unknown GRF
+GRF parameter changed: GRF ID 4A475281, unknown GRF
+GRF parameter changed: GRF ID 4A505053, unknown GRF
+GRF parameter changed: GRF ID 454E0801, unknown GRF
+Removed NewGRF: GRF ID 454E1302, unknown GRF
+Tick 925106955: GRF config changed
+GRF parameter changed: GRF ID 444E0400, unknown GRF
+GRF parameter changed: GRF ID 454E3701, unknown GRF
+GRF parameter changed: GRF ID 41570102, unknown GRF
+GRF parameter changed: GRF ID 4B570101, unknown GRF
+GRF parameter changed: GRF ID 4A544E45, unknown GRF
+GRF parameter changed: GRF ID 4A430002, unknown GRF
+GRF parameter changed: GRF ID 52453400, unknown GRF
+GRF parameter changed: GRF ID 474C0000, unknown GRF
+GRF parameter changed: GRF ID 52453200, unknown GRF
+GRF parameter changed: GRF ID 74677563, unknown GRF
+GRF parameter changed: GRF ID 2C320A01, unknown GRF
+GRF parameter changed: GRF ID 45530500, unknown GRF
+GRF parameter changed: GRF ID 44503000, unknown GRF
+GRF parameter changed: GRF ID 535A0D00, unknown GRF
+GRF parameter changed: GRF ID 44501401, unknown GRF
+GRF parameter changed: GRF ID 66724D49, unknown GRF
+GRF parameter changed: GRF ID 736C6602, unknown GRF
+GRF parameter changed: GRF ID 44483031, unknown GRF
+GRF parameter changed: GRF ID 454E0202, unknown GRF
+GRF parameter changed: GRF ID 454E2101, unknown GRF
+GRF parameter changed: GRF ID 42530720, unknown GRF
+GRF parameter changed: GRF ID 454E2201, unknown GRF
+GRF parameter changed: GRF ID 52415608, unknown GRF
+GRF parameter changed: GRF ID 1560B248, unknown GRF
+GRF parameter changed: GRF ID 454E2001, unknown GRF
+GRF parameter changed: GRF ID 57A50001, unknown GRF
+GRF parameter changed: GRF ID 454E1901, unknown GRF
+GRF parameter changed: GRF ID 41501202, unknown GRF
+GRF parameter changed: GRF ID 454E0E01, unknown GRF
+GRF parameter changed: GRF ID 52571203, unknown GRF
+GRF parameter changed: GRF ID 52455400, unknown GRF
+GRF parameter changed: GRF ID 52453300, unknown GRF
+GRF parameter changed: GRF ID 4A595001, unknown GRF
+GRF parameter changed: GRF ID FBFB0010, unknown GRF
+GRF parameter changed: GRF ID 4A44A1E1, unknown GRF
+GRF parameter changed: GRF ID 43415000, unknown GRF
+GRF parameter changed: GRF ID 50470500, unknown GRF
+GRF parameter changed: GRF ID 54420101, unknown GRF
+GRF parameter changed: GRF ID 4B523033, unknown GRF
+GRF parameter changed: GRF ID 595AAA01, unknown GRF
+GRF parameter changed: GRF ID 4A44B123, unknown GRF
+GRF parameter changed: GRF ID 42531320, unknown GRF
+GRF parameter changed: GRF ID 4A475281, unknown GRF
+GRF parameter changed: GRF ID 4A505053, unknown GRF
+GRF parameter changed: GRF ID 454E0801, unknown GRF
+Tick 925106955: GRF config changed
+GRF parameter changed: GRF ID 444E0400, unknown GRF
+GRF parameter changed: GRF ID 454E3701, unknown GRF
+GRF parameter changed: GRF ID 41570102, unknown GRF
+GRF parameter changed: GRF ID 4B570101, unknown GRF
+GRF parameter changed: GRF ID 4A544E45, unknown GRF
+GRF parameter changed: GRF ID 4A430002, unknown GRF
+GRF parameter changed: GRF ID 52453400, unknown GRF
+GRF parameter changed: GRF ID 474C0000, unknown GRF
+GRF parameter changed: GRF ID 52453200, unknown GRF
+GRF parameter changed: GRF ID 74677563, unknown GRF
+GRF parameter changed: GRF ID 2C320A01, unknown GRF
+GRF parameter changed: GRF ID 45530500, unknown GRF
+GRF parameter changed: GRF ID 44503000, unknown GRF
+GRF parameter changed: GRF ID 535A0D00, unknown GRF
+GRF parameter changed: GRF ID 44501401, unknown GRF
+GRF parameter changed: GRF ID 66724D49, unknown GRF
+GRF parameter changed: GRF ID 736C6602, unknown GRF
+GRF parameter changed: GRF ID 44483031, unknown GRF
+GRF parameter changed: GRF ID 454E0202, unknown GRF
+GRF parameter changed: GRF ID 454E2101, unknown GRF
+GRF parameter changed: GRF ID 42530720, unknown GRF
+GRF parameter changed: GRF ID 454E2201, unknown GRF
+GRF parameter changed: GRF ID 52415608, unknown GRF
+GRF parameter changed: GRF ID 1560B248, unknown GRF
+GRF parameter changed: GRF ID 454E2001, unknown GRF
+GRF parameter changed: GRF ID 57A50001, unknown GRF
+GRF parameter changed: GRF ID 454E1901, unknown GRF
+GRF parameter changed: GRF ID 41501202, unknown GRF
+GRF parameter changed: GRF ID 454E0E01, unknown GRF
+GRF parameter changed: GRF ID 52571203, unknown GRF
+GRF parameter changed: GRF ID 52455400, unknown GRF
+GRF parameter changed: GRF ID 52453300, unknown GRF
+GRF parameter changed: GRF ID 4A595001, unknown GRF
+GRF parameter changed: GRF ID FBFB0010, unknown GRF
+GRF parameter changed: GRF ID 4A44A1E1, unknown GRF
+GRF parameter changed: GRF ID 43415000, unknown GRF
+GRF parameter changed: GRF ID 50470500, unknown GRF
+GRF parameter changed: GRF ID 54420101, unknown GRF
+GRF parameter changed: GRF ID 4B523033, unknown GRF
+GRF parameter changed: GRF ID 595AAA01, unknown GRF
+GRF parameter changed: GRF ID 4A44B123, unknown GRF
+GRF parameter changed: GRF ID 42531320, unknown GRF
+GRF parameter changed: GRF ID 4A475281, unknown GRF
+GRF parameter changed: GRF ID 4A505053, unknown GRF
+GRF parameter changed: GRF ID 454E0801, unknown GRF
+Tick 925106955: GRF config changed
+GRF parameter changed: GRF ID 444E0400, unknown GRF
+GRF parameter changed: GRF ID 454E3701, unknown GRF
+GRF parameter changed: GRF ID 41570102, unknown GRF
+GRF parameter changed: GRF ID 4B570101, unknown GRF
+GRF parameter changed: GRF ID 4A544E45, unknown GRF
+GRF parameter changed: GRF ID 4A430002, unknown GRF
+GRF parameter changed: GRF ID 52453400, unknown GRF
+GRF parameter changed: GRF ID 474C0000, unknown GRF
+GRF parameter changed: GRF ID 52453200, unknown GRF
+GRF parameter changed: GRF ID 74677563, unknown GRF
+GRF parameter changed: GRF ID 2C320A01, unknown GRF
+GRF parameter changed: GRF ID 45530500, unknown GRF
+GRF parameter changed: GRF ID 44503000, unknown GRF
+GRF parameter changed: GRF ID 535A0D00, unknown GRF
+GRF parameter changed: GRF ID 44501401, unknown GRF
+GRF parameter changed: GRF ID 66724D49, unknown GRF
+GRF parameter changed: GRF ID 736C6602, unknown GRF
+GRF parameter changed: GRF ID 44483031, unknown GRF
+GRF parameter changed: GRF ID 454E0202, unknown GRF
+GRF parameter changed: GRF ID 454E2101, unknown GRF
+GRF parameter changed: GRF ID 42530720, unknown GRF
+GRF parameter changed: GRF ID 454E2201, unknown GRF
+GRF parameter changed: GRF ID 52415608, unknown GRF
+GRF parameter changed: GRF ID 1560B248, unknown GRF
+GRF parameter changed: GRF ID 454E2001, unknown GRF
+GRF parameter changed: GRF ID 57A50001, unknown GRF
+GRF parameter changed: GRF ID 454E1901, unknown GRF
+GRF parameter changed: GRF ID 41501202, unknown GRF
+GRF parameter changed: GRF ID 454E0E01, unknown GRF
+GRF parameter changed: GRF ID 52571203, unknown GRF
+GRF parameter changed: GRF ID 52455400, unknown GRF
+GRF parameter changed: GRF ID 52453300, unknown GRF
+GRF parameter changed: GRF ID 4A595001, unknown GRF
+GRF parameter changed: GRF ID FBFB0010, unknown GRF
+GRF parameter changed: GRF ID 4A44A1E1, unknown GRF
+GRF parameter changed: GRF ID 43415000, unknown GRF
+GRF parameter changed: GRF ID 50470500, unknown GRF
+GRF parameter changed: GRF ID 54420101, unknown GRF
+GRF parameter changed: GRF ID 4B523033, unknown GRF
+GRF parameter changed: GRF ID 595AAA01, unknown GRF
+GRF parameter changed: GRF ID 4A44B123, unknown GRF
+GRF parameter changed: GRF ID 42531320, unknown GRF
+GRF parameter changed: GRF ID 4A475281, unknown GRF
+GRF parameter changed: GRF ID 4A505053, unknown GRF
+GRF parameter changed: GRF ID 454E0801, unknown GRF
+Tick 925106955: GRF config changed
+GRF parameter changed: GRF ID 444E0400, unknown GRF
+GRF parameter changed: GRF ID 454E3701, unknown GRF
+GRF parameter changed: GRF ID 41570102, unknown GRF
+GRF parameter changed: GRF ID 4B570101, unknown GRF
+GRF parameter changed: GRF ID 4A544E45, unknown GRF
+GRF parameter changed: GRF ID 4A430002, unknown GRF
+GRF parameter changed: GRF ID 52453400, unknown GRF
+GRF parameter changed: GRF ID 474C0000, unknown GRF
+GRF parameter changed: GRF ID 52453200, unknown GRF
+GRF parameter changed: GRF ID 74677563, unknown GRF
+GRF parameter changed: GRF ID 2C320A01, unknown GRF
+GRF parameter changed: GRF ID 45530500, unknown GRF
+GRF parameter changed: GRF ID 44503000, unknown GRF
+GRF parameter changed: GRF ID 535A0D00, unknown GRF
+GRF parameter changed: GRF ID 44501401, unknown GRF
+GRF parameter changed: GRF ID 66724D49, unknown GRF
+GRF parameter changed: GRF ID 736C6602, unknown GRF
+GRF parameter changed: GRF ID 44483031, unknown GRF
+GRF parameter changed: GRF ID 454E0202, unknown GRF
+GRF parameter changed: GRF ID 454E2101, unknown GRF
+GRF parameter changed: GRF ID 42530720, unknown GRF
+GRF parameter changed: GRF ID 454E2201, unknown GRF
+GRF parameter changed: GRF ID 52415608, unknown GRF
+GRF parameter changed: GRF ID 1560B248, unknown GRF
+GRF parameter changed: GRF ID 454E2001, unknown GRF
+GRF parameter changed: GRF ID 57A50001, unknown GRF
+GRF parameter changed: GRF ID 454E1901, unknown GRF
+GRF parameter changed: GRF ID 41501202, unknown GRF
+GRF parameter changed: GRF ID 454E0E01, unknown GRF
+GRF parameter changed: GRF ID 52571203, unknown GRF
+GRF parameter changed: GRF ID 52455400, unknown GRF
+GRF parameter changed: GRF ID 52453300, unknown GRF
+GRF parameter changed: GRF ID 4A595001, unknown GRF
+GRF parameter changed: GRF ID FBFB0010, unknown GRF
+GRF parameter changed: GRF ID 4A44A1E1, unknown GRF
+GRF parameter changed: GRF ID 43415000, unknown GRF
+GRF parameter changed: GRF ID 50470500, unknown GRF
+GRF parameter changed: GRF ID 54420101, unknown GRF
+GRF parameter changed: GRF ID 4B523033, unknown GRF
+GRF parameter changed: GRF ID 595AAA01, unknown GRF
+GRF parameter changed: GRF ID 4A44B123, unknown GRF
+GRF parameter changed: GRF ID 42531320, unknown GRF
+GRF parameter changed: GRF ID 4A475281, unknown GRF
+GRF parameter changed: GRF ID 4A505053, unknown GRF
+GRF parameter changed: GRF ID 454E0801, unknown GRF
+Tick 925106955: GRF config changed
+GRF parameter changed: GRF ID 444E0400, unknown GRF
+GRF parameter changed: GRF ID 454E3701, unknown GRF
+GRF parameter changed: GRF ID 41570102, unknown GRF
+GRF parameter changed: GRF ID 4B570101, unknown GRF
+GRF parameter changed: GRF ID 4A544E45, unknown GRF
+GRF parameter changed: GRF ID 4A430002, unknown GRF
+GRF parameter changed: GRF ID 52453400, unknown GRF
+GRF parameter changed: GRF ID 474C0000, unknown GRF
+GRF parameter changed: GRF ID 52453200, unknown GRF
+GRF parameter changed: GRF ID 74677563, unknown GRF
+GRF parameter changed: GRF ID 2C320A01, unknown GRF
+GRF parameter changed: GRF ID 45530500, unknown GRF
+GRF parameter changed: GRF ID 44503000, unknown GRF
+GRF parameter changed: GRF ID 535A0D00, unknown GRF
+GRF parameter changed: GRF ID 44501401, unknown GRF
+GRF parameter changed: GRF ID 66724D49, unknown GRF
+GRF parameter changed: GRF ID 736C6602, unknown GRF
+GRF parameter changed: GRF ID 44483031, unknown GRF
+GRF parameter changed: GRF ID 454E0202, unknown GRF
+GRF parameter changed: GRF ID 454E2101, unknown GRF
+GRF parameter changed: GRF ID 42530720, unknown GRF
+GRF parameter changed: GRF ID 454E2201, unknown GRF
+GRF parameter changed: GRF ID 52415608, unknown GRF
+GRF parameter changed: GRF ID 1560B248, unknown GRF
+GRF parameter changed: GRF ID 454E2001, unknown GRF
+GRF parameter changed: GRF ID 57A50001, unknown GRF
+GRF parameter changed: GRF ID 454E1901, unknown GRF
+GRF parameter changed: GRF ID 41501202, unknown GRF
+GRF parameter changed: GRF ID 454E0E01, unknown GRF
+GRF parameter changed: GRF ID 52571203, unknown GRF
+GRF parameter changed: GRF ID 52455400, unknown GRF
+GRF parameter changed: GRF ID 52453300, unknown GRF
+GRF parameter changed: GRF ID 4A595001, unknown GRF
+GRF parameter changed: GRF ID FBFB0010, unknown GRF
+GRF parameter changed: GRF ID 4A44A1E1, unknown GRF
+GRF parameter changed: GRF ID 43415000, unknown GRF
+GRF parameter changed: GRF ID 50470500, unknown GRF
+GRF parameter changed: GRF ID 54420101, unknown GRF
+GRF parameter changed: GRF ID 4B523033, unknown GRF
+GRF parameter changed: GRF ID 595AAA01, unknown GRF
+GRF parameter changed: GRF ID 4A44B123, unknown GRF
+GRF parameter changed: GRF ID 42531320, unknown GRF
+GRF parameter changed: GRF ID 4A475281, unknown GRF
+GRF parameter changed: GRF ID 4A505053, unknown GRF
+GRF parameter changed: GRF ID 454E0801, unknown GRF
+Tick 928435738: GRF config changed
+GRF parameter changed: GRF ID 444E0400, unknown GRF
+GRF parameter changed: GRF ID 454E3701, unknown GRF
+GRF parameter changed: GRF ID 41570102, unknown GRF
+GRF parameter changed: GRF ID 4B570101, unknown GRF
+GRF parameter changed: GRF ID 4A544E45, unknown GRF
+GRF parameter changed: GRF ID 4A430002, unknown GRF
+GRF parameter changed: GRF ID 52453400, unknown GRF
+GRF parameter changed: GRF ID 474C0000, unknown GRF
+GRF parameter changed: GRF ID 52453200, unknown GRF
+GRF parameter changed: GRF ID 74677563, unknown GRF
+GRF parameter changed: GRF ID 2C320A01, unknown GRF
+GRF parameter changed: GRF ID 45530500, unknown GRF
+GRF parameter changed: GRF ID 44503000, unknown GRF
+GRF parameter changed: GRF ID 535A0D00, unknown GRF
+GRF parameter changed: GRF ID 44501401, unknown GRF
+GRF parameter changed: GRF ID 66724D49, unknown GRF
+GRF parameter changed: GRF ID 736C6602, unknown GRF
+GRF parameter changed: GRF ID 44483031, unknown GRF
+GRF parameter changed: GRF ID 454E0202, unknown GRF
+GRF parameter changed: GRF ID 454E2101, unknown GRF
+GRF parameter changed: GRF ID 42530720, unknown GRF
+GRF parameter changed: GRF ID 454E2201, unknown GRF
+GRF parameter changed: GRF ID 52415608, unknown GRF
+GRF parameter changed: GRF ID 1560B248, unknown GRF
+GRF parameter changed: GRF ID 454E2001, unknown GRF
+GRF parameter changed: GRF ID 57A50001, unknown GRF
+GRF parameter changed: GRF ID 454E1901, unknown GRF
+GRF parameter changed: GRF ID 41501202, unknown GRF
+GRF parameter changed: GRF ID 454E0E01, unknown GRF
+GRF parameter changed: GRF ID 52571203, unknown GRF
+GRF parameter changed: GRF ID 52455400, unknown GRF
+GRF parameter changed: GRF ID 52453300, unknown GRF
+GRF parameter changed: GRF ID 4A595001, unknown GRF
+GRF parameter changed: GRF ID FBFB0010, unknown GRF
+GRF parameter changed: GRF ID 4A44A1E1, unknown GRF
+GRF parameter changed: GRF ID 43415000, unknown GRF
+GRF parameter changed: GRF ID 50470500, unknown GRF
+GRF parameter changed: GRF ID 54420101, unknown GRF
+GRF parameter changed: GRF ID 4B523033, unknown GRF
+GRF parameter changed: GRF ID 595AAA01, unknown GRF
+GRF parameter changed: GRF ID 4A44B123, unknown GRF
+GRF parameter changed: GRF ID 42531320, unknown GRF
+GRF parameter changed: GRF ID 4A475281, unknown GRF
+GRF parameter changed: GRF ID 4A505053, unknown GRF
+GRF parameter changed: GRF ID 454E0801, unknown GRF
+Tick 1008796943: GRF config changed
+GRF parameter changed: GRF ID 444E0400, unknown GRF
+GRF parameter changed: GRF ID 454E3701, unknown GRF
+GRF parameter changed: GRF ID 41570102, unknown GRF
+GRF parameter changed: GRF ID 4B570101, unknown GRF
+GRF parameter changed: GRF ID 4A544E45, unknown GRF
+GRF parameter changed: GRF ID 4A430002, unknown GRF
+GRF parameter changed: GRF ID 52453400, unknown GRF
+GRF parameter changed: GRF ID 474C0000, unknown GRF
+GRF parameter changed: GRF ID 52453200, unknown GRF
+GRF parameter changed: GRF ID 74677563, unknown GRF
+GRF parameter changed: GRF ID 2C320A01, unknown GRF
+GRF parameter changed: GRF ID 45530500, unknown GRF
+GRF parameter changed: GRF ID 44503000, unknown GRF
+GRF parameter changed: GRF ID 535A0D00, unknown GRF
+GRF parameter changed: GRF ID 44501401, unknown GRF
+GRF parameter changed: GRF ID 66724D49, unknown GRF
+GRF parameter changed: GRF ID 736C6602, unknown GRF
+GRF parameter changed: GRF ID 44483031, unknown GRF
+GRF parameter changed: GRF ID 454E0202, unknown GRF
+GRF parameter changed: GRF ID 454E2101, unknown GRF
+GRF parameter changed: GRF ID 42530720, unknown GRF
+GRF parameter changed: GRF ID 454E2201, unknown GRF
+GRF parameter changed: GRF ID 52415608, unknown GRF
+GRF parameter changed: GRF ID 1560B248, unknown GRF
+GRF parameter changed: GRF ID 454E2001, unknown GRF
+GRF parameter changed: GRF ID 57A50001, unknown GRF
+GRF parameter changed: GRF ID 454E1901, unknown GRF
+GRF parameter changed: GRF ID 41501202, unknown GRF
+GRF parameter changed: GRF ID 454E0E01, unknown GRF
+GRF parameter changed: GRF ID 52571203, unknown GRF
+GRF parameter changed: GRF ID 52455400, unknown GRF
+GRF parameter changed: GRF ID 52453300, unknown GRF
+GRF parameter changed: GRF ID 4A595001, unknown GRF
+GRF parameter changed: GRF ID FBFB0010, unknown GRF
+GRF parameter changed: GRF ID 4A44A1E1, unknown GRF
+GRF parameter changed: GRF ID 43415000, unknown GRF
+GRF parameter changed: GRF ID 50470500, unknown GRF
+GRF parameter changed: GRF ID 54420101, unknown GRF
+Compatible NewGRF loaded: GRF ID 4B523033, checksum DEDB54FBB8A5A4B35D94F2EF1EDE3210, unknown GRF
+GRF parameter changed: GRF ID 4B523033, unknown GRF
+Compatible NewGRF loaded: GRF ID 595AAA01, checksum E002E229285033F90546B64180810CB2, unknown GRF
+GRF parameter changed: GRF ID 595AAA01, unknown GRF
+GRF parameter changed: GRF ID 4A44B123, unknown GRF
+Compatible NewGRF loaded: GRF ID 42531320, checksum D09896751031B30DC358812DB7A20D64, unknown GRF
+GRF parameter changed: GRF ID 42531320, unknown GRF
+GRF parameter changed: GRF ID 4A475281, unknown GRF
+GRF parameter changed: GRF ID 4A505053, unknown GRF
+GRF parameter changed: GRF ID 454E0801, unknown GRF
+Tick 1008796943: GRF config changed
+GRF parameter changed: GRF ID 444E0400, unknown GRF
+GRF parameter changed: GRF ID 454E3701, unknown GRF
+GRF parameter changed: GRF ID 41570102, unknown GRF
+GRF parameter changed: GRF ID 4B570101, unknown GRF
+GRF parameter changed: GRF ID 4A544E45, unknown GRF
+GRF parameter changed: GRF ID 4A430002, unknown GRF
+GRF parameter changed: GRF ID 52453400, unknown GRF
+GRF parameter changed: GRF ID 474C0000, unknown GRF
+GRF parameter changed: GRF ID 52453200, unknown GRF
+GRF parameter changed: GRF ID 74677563, unknown GRF
+GRF parameter changed: GRF ID 2C320A01, unknown GRF
+GRF parameter changed: GRF ID 45530500, unknown GRF
+GRF parameter changed: GRF ID 44503000, unknown GRF
+GRF parameter changed: GRF ID 535A0D00, unknown GRF
+GRF parameter changed: GRF ID 44501401, unknown GRF
+GRF parameter changed: GRF ID 66724D49, unknown GRF
+GRF parameter changed: GRF ID 736C6602, unknown GRF
+GRF parameter changed: GRF ID 44483031, unknown GRF
+GRF parameter changed: GRF ID 454E0202, unknown GRF
+GRF parameter changed: GRF ID 454E2101, unknown GRF
+GRF parameter changed: GRF ID 42530720, unknown GRF
+GRF parameter changed: GRF ID 454E2201, unknown GRF
+GRF parameter changed: GRF ID 52415608, unknown GRF
+GRF parameter changed: GRF ID 1560B248, unknown GRF
+GRF parameter changed: GRF ID 454E2001, unknown GRF
+GRF parameter changed: GRF ID 57A50001, unknown GRF
+GRF parameter changed: GRF ID 454E1901, unknown GRF
+GRF parameter changed: GRF ID 41501202, unknown GRF
+GRF parameter changed: GRF ID 454E0E01, unknown GRF
+GRF parameter changed: GRF ID 52571203, unknown GRF
+GRF parameter changed: GRF ID 52455400, unknown GRF
+GRF parameter changed: GRF ID 52453300, unknown GRF
+GRF parameter changed: GRF ID 4A595001, unknown GRF
+GRF parameter changed: GRF ID FBFB0010, unknown GRF
+GRF parameter changed: GRF ID 4A44A1E1, unknown GRF
+GRF parameter changed: GRF ID 43415000, unknown GRF
+GRF parameter changed: GRF ID 50470500, unknown GRF
+GRF parameter changed: GRF ID 54420101, unknown GRF
+GRF parameter changed: GRF ID 4B523033, unknown GRF
+GRF parameter changed: GRF ID 595AAA01, unknown GRF
+GRF parameter changed: GRF ID 4A44B123, unknown GRF
+GRF parameter changed: GRF ID 4A475281, unknown GRF
+GRF parameter changed: GRF ID 4A505053, unknown GRF
+GRF parameter changed: GRF ID 454E0801, unknown GRF
+Tick 1008796943: game loaded
+Revision text changed to jgrpp-ya-0.55.3+0, savegame version 292, maybe modified, _openttd_newgrf_version = 0x1e006d64
+Tick 1104402032: GRF config changed
+GRF parameter changed: GRF ID 444E0400, unknown GRF
+GRF parameter changed: GRF ID 454E3701, unknown GRF
+GRF parameter changed: GRF ID 41570102, unknown GRF
+GRF parameter changed: GRF ID 4B570101, unknown GRF
+GRF parameter changed: GRF ID 4A544E45, unknown GRF
+GRF parameter changed: GRF ID 4A430002, unknown GRF
+GRF parameter changed: GRF ID 52453400, unknown GRF
+GRF parameter changed: GRF ID 474C0000, unknown GRF
+GRF parameter changed: GRF ID 52453200, unknown GRF
+GRF parameter changed: GRF ID 74677563, unknown GRF
+GRF parameter changed: GRF ID 2C320A01, unknown GRF
+GRF parameter changed: GRF ID 45530500, unknown GRF
+GRF parameter changed: GRF ID 44503000, unknown GRF
+GRF parameter changed: GRF ID 535A0D00, unknown GRF
+GRF parameter changed: GRF ID 44501401, unknown GRF
+GRF parameter changed: GRF ID 66724D49, unknown GRF
+GRF parameter changed: GRF ID 736C6602, unknown GRF
+GRF parameter changed: GRF ID 44483031, unknown GRF
+GRF parameter changed: GRF ID 454E0202, unknown GRF
+GRF parameter changed: GRF ID 454E2101, unknown GRF
+GRF parameter changed: GRF ID 42530720, unknown GRF
+GRF parameter changed: GRF ID 454E2201, unknown GRF
+GRF parameter changed: GRF ID 52415608, unknown GRF
+GRF parameter changed: GRF ID 1560B248, unknown GRF
+GRF parameter changed: GRF ID 454E2001, unknown GRF
+GRF parameter changed: GRF ID 57A50001, unknown GRF
+GRF parameter changed: GRF ID 454E1901, unknown GRF
+GRF parameter changed: GRF ID 41501202, unknown GRF
+GRF parameter changed: GRF ID 454E0E01, unknown GRF
+GRF parameter changed: GRF ID 52571203, unknown GRF
+GRF parameter changed: GRF ID 52455400, unknown GRF
+GRF parameter changed: GRF ID 52453300, unknown GRF
+GRF parameter changed: GRF ID 4A595001, unknown GRF
+GRF parameter changed: GRF ID FBFB0010, unknown GRF
+GRF parameter changed: GRF ID 4A44A1E1, unknown GRF
+GRF parameter changed: GRF ID 43415000, unknown GRF
+GRF parameter changed: GRF ID 50470500, unknown GRF
+GRF parameter changed: GRF ID 54420101, unknown GRF
+GRF parameter changed: GRF ID 4B523033, unknown GRF
+GRF parameter changed: GRF ID 595AAA01, unknown GRF
+GRF parameter changed: GRF ID 4A44B123, unknown GRF
+GRF parameter changed: GRF ID 42531320, unknown GRF
+GRF parameter changed: GRF ID 4A475281, unknown GRF
+GRF parameter changed: GRF ID 4A505053, unknown GRF
+GRF parameter changed: GRF ID 454E0801, unknown GRF
+Added NewGRF: GRF ID 4B523034, checksum 3B05426CAE3D82E81AD98AD2FC7B64CE, unknown GRF
+Added NewGRF: GRF ID 4A4B4735, checksum D58664905478B1B47106670AEE7FF7D1, unknown GRF
+Tick 1239481928: GRF config changed
+GRF parameter changed: GRF ID 444E0400, unknown GRF
+GRF parameter changed: GRF ID 454E3701, unknown GRF
+GRF parameter changed: GRF ID 41570102, unknown GRF
+GRF parameter changed: GRF ID 4B570101, unknown GRF
+GRF parameter changed: GRF ID 4A544E45, unknown GRF
+GRF parameter changed: GRF ID 4A430002, unknown GRF
+GRF parameter changed: GRF ID 52453400, unknown GRF
+GRF parameter changed: GRF ID 474C0000, unknown GRF
+GRF parameter changed: GRF ID 52453200, unknown GRF
+GRF parameter changed: GRF ID 74677563, unknown GRF
+GRF parameter changed: GRF ID 2C320A01, unknown GRF
+GRF parameter changed: GRF ID 45530500, unknown GRF
+GRF parameter changed: GRF ID 44503000, unknown GRF
+GRF parameter changed: GRF ID 535A0D00, unknown GRF
+GRF parameter changed: GRF ID 44501401, unknown GRF
+GRF parameter changed: GRF ID 66724D49, unknown GRF
+GRF parameter changed: GRF ID 736C6602, unknown GRF
+GRF parameter changed: GRF ID 44483031, unknown GRF
+GRF parameter changed: GRF ID 454E0202, unknown GRF
+GRF parameter changed: GRF ID 454E2101, unknown GRF
+GRF parameter changed: GRF ID 42530720, unknown GRF
+GRF parameter changed: GRF ID 454E2201, unknown GRF
+GRF parameter changed: GRF ID 52415608, unknown GRF
+GRF parameter changed: GRF ID 1560B248, unknown GRF
+GRF parameter changed: GRF ID 454E2001, unknown GRF
+GRF parameter changed: GRF ID 57A50001, unknown GRF
+GRF parameter changed: GRF ID 454E1901, unknown GRF
+GRF parameter changed: GRF ID 41501202, unknown GRF
+GRF parameter changed: GRF ID 454E0E01, unknown GRF
+GRF parameter changed: GRF ID 52571203, unknown GRF
+GRF parameter changed: GRF ID 52455400, unknown GRF
+GRF parameter changed: GRF ID 52453300, unknown GRF
+GRF parameter changed: GRF ID 4A595001, unknown GRF
+GRF parameter changed: GRF ID FBFB0010, unknown GRF
+GRF parameter changed: GRF ID 4A44A1E1, unknown GRF
+GRF parameter changed: GRF ID 43415000, unknown GRF
+GRF parameter changed: GRF ID 50470500, unknown GRF
+GRF parameter changed: GRF ID 54420101, unknown GRF
+GRF parameter changed: GRF ID 4B523033, unknown GRF
+GRF parameter changed: GRF ID 595AAA01, unknown GRF
+GRF parameter changed: GRF ID 4A44B123, unknown GRF
+GRF parameter changed: GRF ID 42531320, unknown GRF
+GRF parameter changed: GRF ID 4A475281, unknown GRF
+GRF parameter changed: GRF ID 4A505053, unknown GRF
+GRF parameter changed: GRF ID 454E0801, unknown GRF
+GRF parameter changed: GRF ID 4B523034, unknown GRF
+GRF parameter changed: GRF ID 4A4B4735, unknown GRF
+Added NewGRF: GRF ID 5F5F0409, checksum 4F1B2C792E711DADA343B8195D85DBFE, unknown GRF
+Tick 1274215152: GRF config changed
+GRF parameter changed: GRF ID 444E0400, unknown GRF
+GRF parameter changed: GRF ID 454E3701, unknown GRF
+GRF parameter changed: GRF ID 41570102, unknown GRF
+GRF parameter changed: GRF ID 4B570101, unknown GRF
+GRF parameter changed: GRF ID 4A544E45, unknown GRF
+GRF parameter changed: GRF ID 4A430002, unknown GRF
+GRF parameter changed: GRF ID 52453400, unknown GRF
+GRF parameter changed: GRF ID 474C0000, unknown GRF
+GRF parameter changed: GRF ID 52453200, unknown GRF
+GRF parameter changed: GRF ID 74677563, unknown GRF
+GRF parameter changed: GRF ID 2C320A01, unknown GRF
+GRF parameter changed: GRF ID 45530500, unknown GRF
+GRF parameter changed: GRF ID 44503000, unknown GRF
+GRF parameter changed: GRF ID 535A0D00, unknown GRF
+GRF parameter changed: GRF ID 44501401, unknown GRF
+GRF parameter changed: GRF ID 66724D49, unknown GRF
+GRF parameter changed: GRF ID 736C6602, unknown GRF
+GRF parameter changed: GRF ID 44483031, unknown GRF
+GRF parameter changed: GRF ID 454E0202, unknown GRF
+GRF parameter changed: GRF ID 454E2101, unknown GRF
+GRF parameter changed: GRF ID 42530720, unknown GRF
+GRF parameter changed: GRF ID 454E2201, unknown GRF
+GRF parameter changed: GRF ID 52415608, unknown GRF
+GRF parameter changed: GRF ID 1560B248, unknown GRF
+GRF parameter changed: GRF ID 454E2001, unknown GRF
+GRF parameter changed: GRF ID 57A50001, unknown GRF
+GRF parameter changed: GRF ID 454E1901, unknown GRF
+GRF parameter changed: GRF ID 41501202, unknown GRF
+GRF parameter changed: GRF ID 454E0E01, unknown GRF
+GRF parameter changed: GRF ID 52571203, unknown GRF
+GRF parameter changed: GRF ID 52455400, unknown GRF
+GRF parameter changed: GRF ID 52453300, unknown GRF
+GRF parameter changed: GRF ID 4A595001, unknown GRF
+GRF parameter changed: GRF ID FBFB0010, unknown GRF
+Compatible NewGRF loaded: GRF ID 4A44A1E1, checksum D29E7B20A604D2B503C1C79DB46029D8, unknown GRF
+GRF parameter changed: GRF ID 4A44A1E1, unknown GRF
+GRF parameter changed: GRF ID 43415000, unknown GRF
+GRF parameter changed: GRF ID 50470500, unknown GRF
+GRF parameter changed: GRF ID 54420101, unknown GRF
+Compatible NewGRF loaded: GRF ID 4B523033, checksum D624AA69B2C61601ACED74B705ED5223, unknown GRF
+GRF parameter changed: GRF ID 4B523033, unknown GRF
+GRF parameter changed: GRF ID 595AAA01, unknown GRF
+GRF parameter changed: GRF ID 4A44B123, unknown GRF
+GRF parameter changed: GRF ID 42531320, unknown GRF
+GRF parameter changed: GRF ID 4A475281, unknown GRF
+GRF parameter changed: GRF ID 4A505053, unknown GRF
+GRF parameter changed: GRF ID 454E0801, unknown GRF
+GRF parameter changed: GRF ID 4B523034, unknown GRF
+Compatible NewGRF loaded: GRF ID 4A4B4735, checksum 328F7365F943F55A5D83E27589570563, unknown GRF
+GRF parameter changed: GRF ID 4A4B4735, unknown GRF
+GRF parameter changed: GRF ID 5F5F0409, unknown GRF
+Tick 1355172362: GRF config changed
+GRF parameter changed: GRF ID 444E0400, unknown GRF
+GRF parameter changed: GRF ID 454E3701, unknown GRF
+GRF parameter changed: GRF ID 41570102, unknown GRF
+GRF parameter changed: GRF ID 4B570101, unknown GRF
+GRF parameter changed: GRF ID 4A544E45, unknown GRF
+GRF parameter changed: GRF ID 4A430002, unknown GRF
+GRF parameter changed: GRF ID 52453400, unknown GRF
+GRF parameter changed: GRF ID 474C0000, unknown GRF
+GRF parameter changed: GRF ID 52453200, unknown GRF
+GRF parameter changed: GRF ID 74677563, unknown GRF
+GRF parameter changed: GRF ID 2C320A01, unknown GRF
+GRF parameter changed: GRF ID 45530500, unknown GRF
+GRF parameter changed: GRF ID 44503000, unknown GRF
+GRF parameter changed: GRF ID 535A0D00, unknown GRF
+GRF parameter changed: GRF ID 44501401, unknown GRF
+GRF parameter changed: GRF ID 66724D49, unknown GRF
+GRF parameter changed: GRF ID 736C6602, unknown GRF
+GRF parameter changed: GRF ID 44483031, unknown GRF
+GRF parameter changed: GRF ID 454E0202, unknown GRF
+GRF parameter changed: GRF ID 454E2101, unknown GRF
+GRF parameter changed: GRF ID 42530720, unknown GRF
+GRF parameter changed: GRF ID 454E2201, unknown GRF
+GRF parameter changed: GRF ID 52415608, unknown GRF
+GRF parameter changed: GRF ID 1560B248, unknown GRF
+GRF parameter changed: GRF ID 454E2001, unknown GRF
+GRF parameter changed: GRF ID 57A50001, unknown GRF
+GRF parameter changed: GRF ID 454E1901, unknown GRF
+GRF parameter changed: GRF ID 41501202, unknown GRF
+GRF parameter changed: GRF ID 454E0E01, unknown GRF
+GRF parameter changed: GRF ID 52571203, unknown GRF
+GRF parameter changed: GRF ID 52455400, unknown GRF
+GRF parameter changed: GRF ID 52453300, unknown GRF
+GRF parameter changed: GRF ID 4A595001, unknown GRF
+GRF parameter changed: GRF ID FBFB0010, unknown GRF
+GRF parameter changed: GRF ID 4A44A1E1, unknown GRF
+GRF parameter changed: GRF ID 43415000, unknown GRF
+GRF parameter changed: GRF ID 50470500, unknown GRF
+GRF parameter changed: GRF ID 54420101, unknown GRF
+GRF parameter changed: GRF ID 4B523033, unknown GRF
+GRF parameter changed: GRF ID 595AAA01, unknown GRF
+GRF parameter changed: GRF ID 4A44B123, unknown GRF
+Compatible NewGRF loaded: GRF ID 42531320, checksum A9365C3B7ED19DD834729BEA44039FF8, unknown GRF
+GRF parameter changed: GRF ID 4A475281, unknown GRF
+GRF parameter changed: GRF ID 4A505053, unknown GRF
+GRF parameter changed: GRF ID 454E0801, unknown GRF
+GRF parameter changed: GRF ID 4B523034, unknown GRF
+GRF parameter changed: GRF ID 4A4B4735, unknown GRF
+GRF parameter changed: GRF ID 5F5F0409, unknown GRF
+Tick 1364278616: GRF config changed
+GRF parameter changed: GRF ID 444E0400, unknown GRF
+GRF parameter changed: GRF ID 454E3701, unknown GRF
+GRF parameter changed: GRF ID 41570102, unknown GRF
+GRF parameter changed: GRF ID 4B570101, unknown GRF
+GRF parameter changed: GRF ID 4A544E45, unknown GRF
+GRF parameter changed: GRF ID 4A430002, unknown GRF
+GRF parameter changed: GRF ID 52453400, unknown GRF
+GRF parameter changed: GRF ID 474C0000, unknown GRF
+GRF parameter changed: GRF ID 52453200, unknown GRF
+GRF parameter changed: GRF ID 74677563, unknown GRF
+GRF parameter changed: GRF ID 2C320A01, unknown GRF
+GRF parameter changed: GRF ID 45530500, unknown GRF
+GRF parameter changed: GRF ID 44503000, unknown GRF
+GRF parameter changed: GRF ID 535A0D00, unknown GRF
+GRF parameter changed: GRF ID 44501401, unknown GRF
+GRF parameter changed: GRF ID 66724D49, unknown GRF
+GRF parameter changed: GRF ID 736C6602, unknown GRF
+GRF parameter changed: GRF ID 44483031, unknown GRF
+GRF parameter changed: GRF ID 454E0202, unknown GRF
+GRF parameter changed: GRF ID 454E2101, unknown GRF
+GRF parameter changed: GRF ID 42530720, unknown GRF
+GRF parameter changed: GRF ID 454E2201, unknown GRF
+GRF parameter changed: GRF ID 52415608, unknown GRF
+GRF parameter changed: GRF ID 1560B248, unknown GRF
+GRF parameter changed: GRF ID 454E2001, unknown GRF
+GRF parameter changed: GRF ID 57A50001, unknown GRF
+GRF parameter changed: GRF ID 454E1901, unknown GRF
+GRF parameter changed: GRF ID 41501202, unknown GRF
+GRF parameter changed: GRF ID 454E0E01, unknown GRF
+GRF parameter changed: GRF ID 52571203, unknown GRF
+GRF parameter changed: GRF ID 52455400, unknown GRF
+GRF parameter changed: GRF ID 52453300, unknown GRF
+GRF parameter changed: GRF ID 4A595001, unknown GRF
+GRF parameter changed: GRF ID FBFB0010, unknown GRF
+GRF parameter changed: GRF ID 4A44A1E1, unknown GRF
+GRF parameter changed: GRF ID 43415000, unknown GRF
+GRF parameter changed: GRF ID 50470500, unknown GRF
+GRF parameter changed: GRF ID 54420101, unknown GRF
+GRF parameter changed: GRF ID 4B523033, unknown GRF
+GRF parameter changed: GRF ID 595AAA01, unknown GRF
+GRF parameter changed: GRF ID 4A44B123, unknown GRF
+GRF parameter changed: GRF ID 4A475281, unknown GRF
+GRF parameter changed: GRF ID 4A505053, unknown GRF
+GRF parameter changed: GRF ID 454E0801, unknown GRF
+GRF parameter changed: GRF ID 4B523034, unknown GRF
+GRF parameter changed: GRF ID 4A4B4735, unknown GRF
+GRF parameter changed: GRF ID 5F5F0409, unknown GRF
+Tick 1364278616: GRF config changed
+GRF parameter changed: GRF ID 444E0400, unknown GRF
+GRF parameter changed: GRF ID 454E3701, unknown GRF
+GRF parameter changed: GRF ID 41570102, unknown GRF
+GRF parameter changed: GRF ID 4B570101, unknown GRF
+GRF parameter changed: GRF ID 4A544E45, unknown GRF
+GRF parameter changed: GRF ID 4A430002, unknown GRF
+GRF parameter changed: GRF ID 52453400, unknown GRF
+GRF parameter changed: GRF ID 474C0000, unknown GRF
+GRF parameter changed: GRF ID 52453200, unknown GRF
+GRF parameter changed: GRF ID 74677563, unknown GRF
+GRF parameter changed: GRF ID 2C320A01, unknown GRF
+GRF parameter changed: GRF ID 45530500, unknown GRF
+GRF parameter changed: GRF ID 44503000, unknown GRF
+GRF parameter changed: GRF ID 535A0D00, unknown GRF
+GRF parameter changed: GRF ID 44501401, unknown GRF
+GRF parameter changed: GRF ID 66724D49, unknown GRF
+GRF parameter changed: GRF ID 736C6602, unknown GRF
+GRF parameter changed: GRF ID 44483031, unknown GRF
+GRF parameter changed: GRF ID 454E0202, unknown GRF
+GRF parameter changed: GRF ID 454E2101, unknown GRF
+GRF parameter changed: GRF ID 42530720, unknown GRF
+GRF parameter changed: GRF ID 454E2201, unknown GRF
+GRF parameter changed: GRF ID 52415608, unknown GRF
+GRF parameter changed: GRF ID 1560B248, unknown GRF
+GRF parameter changed: GRF ID 454E2001, unknown GRF
+GRF parameter changed: GRF ID 57A50001, unknown GRF
+GRF parameter changed: GRF ID 454E1901, unknown GRF
+GRF parameter changed: GRF ID 41501202, unknown GRF
+GRF parameter changed: GRF ID 454E0E01, unknown GRF
+GRF parameter changed: GRF ID 52571203, unknown GRF
+GRF parameter changed: GRF ID 52455400, unknown GRF
+GRF parameter changed: GRF ID 52453300, unknown GRF
+GRF parameter changed: GRF ID 4A595001, unknown GRF
+GRF parameter changed: GRF ID FBFB0010, unknown GRF
+GRF parameter changed: GRF ID 4A44A1E1, unknown GRF
+GRF parameter changed: GRF ID 43415000, unknown GRF
+GRF parameter changed: GRF ID 50470500, unknown GRF
+GRF parameter changed: GRF ID 54420101, unknown GRF
+GRF parameter changed: GRF ID 4B523033, unknown GRF
+GRF parameter changed: GRF ID 595AAA01, unknown GRF
+GRF parameter changed: GRF ID 4A44B123, unknown GRF
+GRF parameter changed: GRF ID 42531320, unknown GRF
+GRF parameter changed: GRF ID 4A475281, unknown GRF
+GRF parameter changed: GRF ID 4A505053, unknown GRF
+GRF parameter changed: GRF ID 454E0801, unknown GRF
+GRF parameter changed: GRF ID 4B523034, unknown GRF
+GRF parameter changed: GRF ID 4A4B4735, unknown GRF
+GRF parameter changed: GRF ID 5F5F0409, unknown GRF
+Tick 1595956730: game loaded
+Revision text changed to jgrpp-ya-0.58.3+1, savegame version 292, maybe modified, _openttd_newgrf_version = 0x1f006d64
+Tick 1713899930: GRF config changed
+GRF parameter changed: GRF ID 444E0400, unknown GRF
+GRF parameter changed: GRF ID 454E3701, unknown GRF
+GRF parameter changed: GRF ID 41570102, unknown GRF
+GRF parameter changed: GRF ID 4B570101, unknown GRF
+GRF parameter changed: GRF ID 4A544E45, unknown GRF
+GRF parameter changed: GRF ID 4A430002, unknown GRF
+GRF parameter changed: GRF ID 52453400, unknown GRF
+GRF parameter changed: GRF ID 474C0000, unknown GRF
+GRF parameter changed: GRF ID 52453200, unknown GRF
+GRF parameter changed: GRF ID 74677563, unknown GRF
+GRF parameter changed: GRF ID 2C320A01, unknown GRF
+GRF parameter changed: GRF ID 45530500, unknown GRF
+GRF parameter changed: GRF ID 44503000, unknown GRF
+GRF parameter changed: GRF ID 535A0D00, unknown GRF
+GRF parameter changed: GRF ID 44501401, unknown GRF
+GRF parameter changed: GRF ID 66724D49, unknown GRF
+GRF parameter changed: GRF ID 736C6602, unknown GRF
+GRF parameter changed: GRF ID 44483031, unknown GRF
+GRF parameter changed: GRF ID 454E0202, unknown GRF
+GRF parameter changed: GRF ID 454E2101, unknown GRF
+GRF parameter changed: GRF ID 42530720, unknown GRF
+GRF parameter changed: GRF ID 454E2201, unknown GRF
+GRF parameter changed: GRF ID 52415608, unknown GRF
+GRF parameter changed: GRF ID 1560B248, unknown GRF
+GRF parameter changed: GRF ID 454E2001, unknown GRF
+GRF parameter changed: GRF ID 57A50001, unknown GRF
+GRF parameter changed: GRF ID 454E1901, unknown GRF
+GRF parameter changed: GRF ID 41501202, unknown GRF
+GRF parameter changed: GRF ID 454E0E01, unknown GRF
+GRF parameter changed: GRF ID 52571203, unknown GRF
+GRF parameter changed: GRF ID 52455400, unknown GRF
+GRF parameter changed: GRF ID 52453300, unknown GRF
+GRF parameter changed: GRF ID 4A595001, unknown GRF
+GRF parameter changed: GRF ID FBFB0010, unknown GRF
+GRF parameter changed: GRF ID 4A44A1E1, unknown GRF
+GRF parameter changed: GRF ID 43415000, unknown GRF
+GRF parameter changed: GRF ID 50470500, unknown GRF
+GRF parameter changed: GRF ID 54420101, unknown GRF
+GRF parameter changed: GRF ID 4B523033, unknown GRF
+GRF parameter changed: GRF ID 595AAA01, unknown GRF
+GRF parameter changed: GRF ID 4A44B123, unknown GRF
+GRF parameter changed: GRF ID 42531320, unknown GRF
+GRF parameter changed: GRF ID 4A475281, unknown GRF
+GRF parameter changed: GRF ID 4A505053, unknown GRF
+GRF parameter changed: GRF ID 454E0801, unknown GRF
+GRF parameter changed: GRF ID 4B523034, unknown GRF
+GRF parameter changed: GRF ID 4A4B4735, unknown GRF
+GRF parameter changed: GRF ID 5F5F0409, unknown GRF
+Added NewGRF: GRF ID 4A485401, checksum 3EBB73D1F12BB08C41C317316B6EBEB5, unknown GRF
+Tick 1713899930: GRF config changed
+GRF parameter changed: GRF ID 444E0400, unknown GRF
+GRF parameter changed: GRF ID 454E3701, unknown GRF
+GRF parameter changed: GRF ID 41570102, unknown GRF
+GRF parameter changed: GRF ID 4B570101, unknown GRF
+GRF parameter changed: GRF ID 4A544E45, unknown GRF
+GRF parameter changed: GRF ID 4A430002, unknown GRF
+GRF parameter changed: GRF ID 52453400, unknown GRF
+GRF parameter changed: GRF ID 474C0000, unknown GRF
+GRF parameter changed: GRF ID 52453200, unknown GRF
+GRF parameter changed: GRF ID 74677563, unknown GRF
+GRF parameter changed: GRF ID 2C320A01, unknown GRF
+GRF parameter changed: GRF ID 45530500, unknown GRF
+GRF parameter changed: GRF ID 44503000, unknown GRF
+GRF parameter changed: GRF ID 535A0D00, unknown GRF
+GRF parameter changed: GRF ID 44501401, unknown GRF
+GRF parameter changed: GRF ID 66724D49, unknown GRF
+GRF parameter changed: GRF ID 736C6602, unknown GRF
+GRF parameter changed: GRF ID 44483031, unknown GRF
+GRF parameter changed: GRF ID 454E0202, unknown GRF
+GRF parameter changed: GRF ID 454E2101, unknown GRF
+GRF parameter changed: GRF ID 42530720, unknown GRF
+GRF parameter changed: GRF ID 454E2201, unknown GRF
+GRF parameter changed: GRF ID 52415608, unknown GRF
+GRF parameter changed: GRF ID 1560B248, unknown GRF
+GRF parameter changed: GRF ID 454E2001, unknown GRF
+GRF parameter changed: GRF ID 57A50001, unknown GRF
+GRF parameter changed: GRF ID 454E1901, unknown GRF
+GRF parameter changed: GRF ID 41501202, unknown GRF
+GRF parameter changed: GRF ID 454E0E01, unknown GRF
+GRF parameter changed: GRF ID 52571203, unknown GRF
+GRF parameter changed: GRF ID 52455400, unknown GRF
+GRF parameter changed: GRF ID 52453300, unknown GRF
+GRF parameter changed: GRF ID 4A595001, unknown GRF
+GRF parameter changed: GRF ID FBFB0010, unknown GRF
+GRF parameter changed: GRF ID 4A44A1E1, unknown GRF
+GRF parameter changed: GRF ID 43415000, unknown GRF
+GRF parameter changed: GRF ID 50470500, unknown GRF
+GRF parameter changed: GRF ID 54420101, unknown GRF
+GRF parameter changed: GRF ID 4B523033, unknown GRF
+GRF parameter changed: GRF ID 595AAA01, unknown GRF
+GRF parameter changed: GRF ID 4A44B123, unknown GRF
+GRF parameter changed: GRF ID 42531320, unknown GRF
+GRF parameter changed: GRF ID 4A475281, unknown GRF
+GRF parameter changed: GRF ID 4A505053, unknown GRF
+GRF parameter changed: GRF ID 454E0801, unknown GRF
+GRF parameter changed: GRF ID 4B523034, unknown GRF
+GRF parameter changed: GRF ID 4A4B4735, unknown GRF
+GRF parameter changed: GRF ID 5F5F0409, unknown GRF
+Tick 2209448870: GRF config changed
+GRF parameter changed: GRF ID 444E0400, unknown GRF
+GRF parameter changed: GRF ID 454E3701, unknown GRF
+GRF parameter changed: GRF ID 41570102, unknown GRF
+GRF parameter changed: GRF ID 4B570101, unknown GRF
+GRF parameter changed: GRF ID 4A544E45, unknown GRF
+GRF parameter changed: GRF ID 4A430002, unknown GRF
+GRF parameter changed: GRF ID 52453400, unknown GRF
+GRF parameter changed: GRF ID 474C0000, unknown GRF
+GRF parameter changed: GRF ID 52453200, unknown GRF
+GRF parameter changed: GRF ID 74677563, unknown GRF
+GRF parameter changed: GRF ID 2C320A01, unknown GRF
+GRF parameter changed: GRF ID 45530500, unknown GRF
+GRF parameter changed: GRF ID 44503000, unknown GRF
+GRF parameter changed: GRF ID 535A0D00, unknown GRF
+GRF parameter changed: GRF ID 44501401, unknown GRF
+GRF parameter changed: GRF ID 66724D49, unknown GRF
+GRF parameter changed: GRF ID 736C6602, unknown GRF
+GRF parameter changed: GRF ID 44483031, unknown GRF
+GRF parameter changed: GRF ID 454E0202, unknown GRF
+GRF parameter changed: GRF ID 454E2101, unknown GRF
+GRF parameter changed: GRF ID 42530720, unknown GRF
+GRF parameter changed: GRF ID 454E2201, unknown GRF
+GRF parameter changed: GRF ID 52415608, unknown GRF
+GRF parameter changed: GRF ID 1560B248, unknown GRF
+GRF parameter changed: GRF ID 454E2001, unknown GRF
+GRF parameter changed: GRF ID 57A50001, unknown GRF
+GRF parameter changed: GRF ID 454E1901, unknown GRF
+GRF parameter changed: GRF ID 41501202, unknown GRF
+GRF parameter changed: GRF ID 454E0E01, unknown GRF
+GRF parameter changed: GRF ID 52571203, unknown GRF
+GRF parameter changed: GRF ID 52455400, unknown GRF
+GRF parameter changed: GRF ID 52453300, unknown GRF
+GRF parameter changed: GRF ID 4A595001, unknown GRF
+GRF parameter changed: GRF ID FBFB0010, unknown GRF
+GRF parameter changed: GRF ID 4A44A1E1, unknown GRF
+GRF parameter changed: GRF ID 43415000, unknown GRF
+GRF parameter changed: GRF ID 50470500, unknown GRF
+GRF parameter changed: GRF ID 54420101, unknown GRF
+GRF parameter changed: GRF ID 4B523033, unknown GRF
+GRF order changed: 595AAA01 moved 8 places downGRF ID 595AAA01, unknown GRF
+GRF parameter changed: GRF ID 4A44B123, unknown GRF
+GRF order changed: 42531320 moved 8 places downGRF ID 42531320, unknown GRF
+GRF parameter changed: GRF ID 4A475281, unknown GRF
+GRF parameter changed: GRF ID 4A505053, unknown GRF
+GRF parameter changed: GRF ID 454E0801, unknown GRF
+GRF parameter changed: GRF ID 4B523034, unknown GRF
+GRF parameter changed: GRF ID 4A4B4735, unknown GRF
+GRF parameter changed: GRF ID 5F5F0409, unknown GRF
+GRF parameter changed: GRF ID 4A485401, unknown GRF
+Added NewGRF: GRF ID 595AAA01, checksum AA04FCEA18B452C453AEFAA1094F9CC8, unknown GRF. Gamelog inconsistency: GrfID was already added!
+Added NewGRF: GRF ID 42531320, checksum 29F5430C96F82589B71D2DBA64EA93C7, unknown GRF. Gamelog inconsistency: GrfID was already added!
+Tick 2214611080: GRF config changed
+GRF parameter changed: GRF ID 444E0400, unknown GRF
+GRF parameter changed: GRF ID 454E3701, unknown GRF
+GRF parameter changed: GRF ID 41570102, unknown GRF
+GRF parameter changed: GRF ID 4B570101, unknown GRF
+GRF parameter changed: GRF ID 4A544E45, unknown GRF
+GRF parameter changed: GRF ID 4A430002, unknown GRF
+GRF parameter changed: GRF ID 52453400, unknown GRF
+GRF parameter changed: GRF ID 474C0000, unknown GRF
+GRF parameter changed: GRF ID 52453200, unknown GRF
+GRF parameter changed: GRF ID 74677563, unknown GRF
+GRF parameter changed: GRF ID 2C320A01, unknown GRF
+GRF parameter changed: GRF ID 45530500, unknown GRF
+GRF parameter changed: GRF ID 44503000, unknown GRF
+GRF parameter changed: GRF ID 535A0D00, unknown GRF
+GRF parameter changed: GRF ID 44501401, unknown GRF
+GRF parameter changed: GRF ID 66724D49, unknown GRF
+GRF parameter changed: GRF ID 736C6602, unknown GRF
+GRF parameter changed: GRF ID 44483031, unknown GRF
+GRF parameter changed: GRF ID 454E0202, unknown GRF
+GRF parameter changed: GRF ID 454E2101, unknown GRF
+GRF parameter changed: GRF ID 42530720, unknown GRF
+GRF parameter changed: GRF ID 454E2201, unknown GRF
+GRF parameter changed: GRF ID 52415608, unknown GRF
+GRF parameter changed: GRF ID 1560B248, unknown GRF
+GRF parameter changed: GRF ID 454E2001, unknown GRF
+GRF parameter changed: GRF ID 57A50001, unknown GRF
+GRF parameter changed: GRF ID 454E1901, unknown GRF
+GRF parameter changed: GRF ID 41501202, unknown GRF
+GRF parameter changed: GRF ID 454E0E01, unknown GRF
+GRF parameter changed: GRF ID 52571203, unknown GRF
+GRF parameter changed: GRF ID 52455400, unknown GRF
+GRF parameter changed: GRF ID 52453300, unknown GRF
+GRF parameter changed: GRF ID 4A595001, unknown GRF
+GRF parameter changed: GRF ID FBFB0010, unknown GRF
+GRF parameter changed: GRF ID 4A44A1E1, unknown GRF
+GRF parameter changed: GRF ID 43415000, unknown GRF
+GRF parameter changed: GRF ID 50470500, unknown GRF
+GRF parameter changed: GRF ID 54420101, unknown GRF
+GRF parameter changed: GRF ID 4A44B123, unknown GRF
+GRF parameter changed: GRF ID 4A475281, unknown GRF
+GRF parameter changed: GRF ID 4A505053, unknown GRF
+GRF parameter changed: GRF ID 454E0801, unknown GRF
+GRF parameter changed: GRF ID 4B523034, unknown GRF
+GRF parameter changed: GRF ID 4A4B4735, unknown GRF
+GRF parameter changed: GRF ID 5F5F0409, unknown GRF
+GRF parameter changed: GRF ID 4A485401, unknown GRF
+GRF parameter changed: GRF ID 595AAA01, unknown GRF
+GRF parameter changed: GRF ID 42531320, unknown GRF
+Tick 2215194542: GRF config changed
+GRF parameter changed: GRF ID 444E0400, unknown GRF
+GRF parameter changed: GRF ID 454E3701, unknown GRF
+GRF parameter changed: GRF ID 41570102, unknown GRF
+GRF parameter changed: GRF ID 4B570101, unknown GRF
+GRF parameter changed: GRF ID 4A544E45, unknown GRF
+GRF parameter changed: GRF ID 4A430002, unknown GRF
+GRF parameter changed: GRF ID 52453400, unknown GRF
+GRF parameter changed: GRF ID 474C0000, unknown GRF
+GRF parameter changed: GRF ID 52453200, unknown GRF
+GRF parameter changed: GRF ID 74677563, unknown GRF
+GRF parameter changed: GRF ID 2C320A01, unknown GRF
+GRF parameter changed: GRF ID 45530500, unknown GRF
+GRF parameter changed: GRF ID 44503000, unknown GRF
+GRF parameter changed: GRF ID 535A0D00, unknown GRF
+GRF parameter changed: GRF ID 44501401, unknown GRF
+GRF parameter changed: GRF ID 66724D49, unknown GRF
+GRF parameter changed: GRF ID 736C6602, unknown GRF
+GRF parameter changed: GRF ID 44483031, unknown GRF
+GRF parameter changed: GRF ID 454E0202, unknown GRF
+GRF parameter changed: GRF ID 454E2101, unknown GRF
+GRF parameter changed: GRF ID 42530720, unknown GRF
+GRF parameter changed: GRF ID 454E2201, unknown GRF
+GRF parameter changed: GRF ID 52415608, unknown GRF
+GRF parameter changed: GRF ID 1560B248, unknown GRF
+GRF parameter changed: GRF ID 454E2001, unknown GRF
+GRF parameter changed: GRF ID 57A50001, unknown GRF
+GRF parameter changed: GRF ID 454E1901, unknown GRF
+GRF parameter changed: GRF ID 41501202, unknown GRF
+GRF parameter changed: GRF ID 454E0E01, unknown GRF
+GRF parameter changed: GRF ID 52571203, unknown GRF
+GRF parameter changed: GRF ID 52455400, unknown GRF
+GRF parameter changed: GRF ID 52453300, unknown GRF
+GRF parameter changed: GRF ID 4A595001, unknown GRF
+GRF parameter changed: GRF ID FBFB0010, unknown GRF
+GRF parameter changed: GRF ID 4A44A1E1, unknown GRF
+GRF parameter changed: GRF ID 43415000, unknown GRF
+GRF parameter changed: GRF ID 50470500, unknown GRF
+GRF parameter changed: GRF ID 54420101, unknown GRF
+GRF order changed: 4B523033 moved 10 places downGRF ID 4B523033, unknown GRF
+GRF parameter changed: GRF ID 4A44B123, unknown GRF
+GRF parameter changed: GRF ID 4A475281, unknown GRF
+GRF parameter changed: GRF ID 4A505053, unknown GRF
+GRF parameter changed: GRF ID 454E0801, unknown GRF
+GRF parameter changed: GRF ID 4B523034, unknown GRF
+GRF parameter changed: GRF ID 4A4B4735, unknown GRF
+GRF parameter changed: GRF ID 5F5F0409, unknown GRF
+GRF parameter changed: GRF ID 4A485401, unknown GRF
+GRF parameter changed: GRF ID 595AAA01, unknown GRF
+GRF parameter changed: GRF ID 42531320, unknown GRF
+Added NewGRF: GRF ID 4B523033, checksum 7456685F4EFECC773ACCE62C6CA8B331, unknown GRF. Gamelog inconsistency: GrfID was already added!
+Tick 2216722903: GRF config changed
+GRF parameter changed: GRF ID 444E0400, unknown GRF
+GRF parameter changed: GRF ID 454E3701, unknown GRF
+GRF parameter changed: GRF ID 41570102, unknown GRF
+GRF parameter changed: GRF ID 4B570101, unknown GRF
+GRF parameter changed: GRF ID 4A544E45, unknown GRF
+GRF parameter changed: GRF ID 4A430002, unknown GRF
+GRF parameter changed: GRF ID 52453400, unknown GRF
+GRF parameter changed: GRF ID 474C0000, unknown GRF
+GRF parameter changed: GRF ID 52453200, unknown GRF
+GRF parameter changed: GRF ID 74677563, unknown GRF
+GRF parameter changed: GRF ID 2C320A01, unknown GRF
+GRF parameter changed: GRF ID 45530500, unknown GRF
+GRF parameter changed: GRF ID 44503000, unknown GRF
+GRF parameter changed: GRF ID 535A0D00, unknown GRF
+GRF parameter changed: GRF ID 44501401, unknown GRF
+GRF parameter changed: GRF ID 66724D49, unknown GRF
+GRF parameter changed: GRF ID 736C6602, unknown GRF
+GRF parameter changed: GRF ID 44483031, unknown GRF
+GRF parameter changed: GRF ID 454E0202, unknown GRF
+GRF parameter changed: GRF ID 454E2101, unknown GRF
+GRF parameter changed: GRF ID 42530720, unknown GRF
+GRF parameter changed: GRF ID 454E2201, unknown GRF
+GRF parameter changed: GRF ID 52415608, unknown GRF
+GRF parameter changed: GRF ID 1560B248, unknown GRF
+GRF parameter changed: GRF ID 454E2001, unknown GRF
+GRF parameter changed: GRF ID 57A50001, unknown GRF
+GRF parameter changed: GRF ID 454E1901, unknown GRF
+GRF parameter changed: GRF ID 41501202, unknown GRF
+GRF parameter changed: GRF ID 454E0E01, unknown GRF
+GRF parameter changed: GRF ID 52571203, unknown GRF
+GRF parameter changed: GRF ID 52455400, unknown GRF
+GRF parameter changed: GRF ID 52453300, unknown GRF
+GRF parameter changed: GRF ID 4A595001, unknown GRF
+GRF parameter changed: GRF ID FBFB0010, unknown GRF
+GRF parameter changed: GRF ID 4A44A1E1, unknown GRF
+GRF parameter changed: GRF ID 43415000, unknown GRF
+GRF parameter changed: GRF ID 50470500, unknown GRF
+GRF parameter changed: GRF ID 54420101, unknown GRF
+GRF parameter changed: GRF ID 4A44B123, unknown GRF
+GRF parameter changed: GRF ID 4A475281, unknown GRF
+GRF parameter changed: GRF ID 4A505053, unknown GRF
+GRF parameter changed: GRF ID 454E0801, unknown GRF
+GRF parameter changed: GRF ID 4B523034, unknown GRF
+GRF parameter changed: GRF ID 4A4B4735, unknown GRF
+GRF parameter changed: GRF ID 5F5F0409, unknown GRF
+GRF parameter changed: GRF ID 4A485401, unknown GRF
+GRF parameter changed: GRF ID 595AAA01, unknown GRF
+GRF parameter changed: GRF ID 4B523033, unknown GRF
+Tick 2216722903: GRF config changed
+GRF parameter changed: GRF ID 444E0400, unknown GRF
+GRF parameter changed: GRF ID 454E3701, unknown GRF
+GRF parameter changed: GRF ID 41570102, unknown GRF
+GRF parameter changed: GRF ID 4B570101, unknown GRF
+GRF parameter changed: GRF ID 4A544E45, unknown GRF
+GRF parameter changed: GRF ID 4A430002, unknown GRF
+GRF parameter changed: GRF ID 52453400, unknown GRF
+GRF parameter changed: GRF ID 474C0000, unknown GRF
+GRF parameter changed: GRF ID 52453200, unknown GRF
+GRF parameter changed: GRF ID 74677563, unknown GRF
+GRF parameter changed: GRF ID 2C320A01, unknown GRF
+GRF parameter changed: GRF ID 45530500, unknown GRF
+GRF parameter changed: GRF ID 44503000, unknown GRF
+GRF parameter changed: GRF ID 535A0D00, unknown GRF
+GRF parameter changed: GRF ID 44501401, unknown GRF
+GRF parameter changed: GRF ID 66724D49, unknown GRF
+GRF parameter changed: GRF ID 736C6602, unknown GRF
+GRF parameter changed: GRF ID 44483031, unknown GRF
+GRF parameter changed: GRF ID 454E0202, unknown GRF
+GRF parameter changed: GRF ID 454E2101, unknown GRF
+GRF parameter changed: GRF ID 42530720, unknown GRF
+GRF parameter changed: GRF ID 454E2201, unknown GRF
+GRF parameter changed: GRF ID 52415608, unknown GRF
+GRF parameter changed: GRF ID 1560B248, unknown GRF
+GRF parameter changed: GRF ID 454E2001, unknown GRF
+GRF parameter changed: GRF ID 57A50001, unknown GRF
+GRF parameter changed: GRF ID 454E1901, unknown GRF
+GRF parameter changed: GRF ID 41501202, unknown GRF
+GRF parameter changed: GRF ID 454E0E01, unknown GRF
+GRF parameter changed: GRF ID 52571203, unknown GRF
+GRF parameter changed: GRF ID 52455400, unknown GRF
+GRF parameter changed: GRF ID 52453300, unknown GRF
+GRF parameter changed: GRF ID 4A595001, unknown GRF
+GRF parameter changed: GRF ID FBFB0010, unknown GRF
+GRF parameter changed: GRF ID 4A44A1E1, unknown GRF
+GRF parameter changed: GRF ID 43415000, unknown GRF
+GRF parameter changed: GRF ID 50470500, unknown GRF
+GRF parameter changed: GRF ID 54420101, unknown GRF
+GRF parameter changed: GRF ID 4A44B123, unknown GRF
+GRF parameter changed: GRF ID 4A475281, unknown GRF
+GRF parameter changed: GRF ID 4A505053, unknown GRF
+GRF parameter changed: GRF ID 454E0801, unknown GRF
+GRF parameter changed: GRF ID 4B523034, unknown GRF
+GRF parameter changed: GRF ID 4A4B4735, unknown GRF
+GRF parameter changed: GRF ID 5F5F0409, unknown GRF
+GRF parameter changed: GRF ID 4A485401, unknown GRF
+GRF parameter changed: GRF ID 595AAA01, unknown GRF
+GRF parameter changed: GRF ID 4B523033, unknown GRF
+Tick 2216722903: GRF config changed
+GRF parameter changed: GRF ID 444E0400, unknown GRF
+GRF parameter changed: GRF ID 454E3701, unknown GRF
+GRF parameter changed: GRF ID 41570102, unknown GRF
+GRF parameter changed: GRF ID 4B570101, unknown GRF
+GRF parameter changed: GRF ID 4A544E45, unknown GRF
+GRF parameter changed: GRF ID 4A430002, unknown GRF
+GRF parameter changed: GRF ID 52453400, unknown GRF
+GRF parameter changed: GRF ID 474C0000, unknown GRF
+GRF parameter changed: GRF ID 52453200, unknown GRF
+GRF parameter changed: GRF ID 74677563, unknown GRF
+GRF parameter changed: GRF ID 2C320A01, unknown GRF
+GRF parameter changed: GRF ID 45530500, unknown GRF
+GRF parameter changed: GRF ID 44503000, unknown GRF
+GRF parameter changed: GRF ID 535A0D00, unknown GRF
+GRF parameter changed: GRF ID 44501401, unknown GRF
+GRF parameter changed: GRF ID 66724D49, unknown GRF
+GRF parameter changed: GRF ID 736C6602, unknown GRF
+GRF parameter changed: GRF ID 44483031, unknown GRF
+GRF parameter changed: GRF ID 454E0202, unknown GRF
+GRF parameter changed: GRF ID 454E2101, unknown GRF
+GRF parameter changed: GRF ID 42530720, unknown GRF
+GRF parameter changed: GRF ID 454E2201, unknown GRF
+GRF parameter changed: GRF ID 52415608, unknown GRF
+GRF parameter changed: GRF ID 1560B248, unknown GRF
+GRF parameter changed: GRF ID 454E2001, unknown GRF
+GRF parameter changed: GRF ID 57A50001, unknown GRF
+GRF parameter changed: GRF ID 454E1901, unknown GRF
+GRF parameter changed: GRF ID 41501202, unknown GRF
+GRF parameter changed: GRF ID 454E0E01, unknown GRF
+GRF parameter changed: GRF ID 52571203, unknown GRF
+GRF parameter changed: GRF ID 52455400, unknown GRF
+GRF parameter changed: GRF ID 52453300, unknown GRF
+GRF parameter changed: GRF ID 4A595001, unknown GRF
+GRF parameter changed: GRF ID FBFB0010, unknown GRF
+GRF parameter changed: GRF ID 4A44A1E1, unknown GRF
+GRF parameter changed: GRF ID 43415000, unknown GRF
+GRF parameter changed: GRF ID 50470500, unknown GRF
+GRF parameter changed: GRF ID 54420101, unknown GRF
+GRF parameter changed: GRF ID 4A44B123, unknown GRF
+GRF parameter changed: GRF ID 4A475281, unknown GRF
+GRF parameter changed: GRF ID 4A505053, unknown GRF
+GRF parameter changed: GRF ID 454E0801, unknown GRF
+GRF parameter changed: GRF ID 4B523034, unknown GRF
+GRF parameter changed: GRF ID 4A4B4735, unknown GRF
+GRF parameter changed: GRF ID 5F5F0409, unknown GRF
+GRF parameter changed: GRF ID 4A485401, unknown GRF
+GRF parameter changed: GRF ID 595AAA01, unknown GRF
+GRF parameter changed: GRF ID 42531320, unknown GRF
+GRF parameter changed: GRF ID 4B523033, unknown GRF
+Tick 2220542487: GRF config changed
+GRF parameter changed: GRF ID 444E0400, unknown GRF
+GRF parameter changed: GRF ID 454E3701, unknown GRF
+GRF parameter changed: GRF ID 41570102, unknown GRF
+GRF parameter changed: GRF ID 4B570101, unknown GRF
+GRF parameter changed: GRF ID 4A544E45, unknown GRF
+GRF parameter changed: GRF ID 4A430002, unknown GRF
+GRF parameter changed: GRF ID 52453400, unknown GRF
+GRF parameter changed: GRF ID 474C0000, unknown GRF
+GRF parameter changed: GRF ID 52453200, unknown GRF
+GRF parameter changed: GRF ID 74677563, unknown GRF
+GRF parameter changed: GRF ID 2C320A01, unknown GRF
+GRF parameter changed: GRF ID 45530500, unknown GRF
+GRF parameter changed: GRF ID 44503000, unknown GRF
+GRF parameter changed: GRF ID 535A0D00, unknown GRF
+GRF parameter changed: GRF ID 44501401, unknown GRF
+GRF parameter changed: GRF ID 66724D49, unknown GRF
+GRF parameter changed: GRF ID 736C6602, unknown GRF
+GRF parameter changed: GRF ID 44483031, unknown GRF
+GRF parameter changed: GRF ID 454E0202, unknown GRF
+GRF parameter changed: GRF ID 454E2101, unknown GRF
+GRF parameter changed: GRF ID 42530720, unknown GRF
+GRF parameter changed: GRF ID 454E2201, unknown GRF
+GRF parameter changed: GRF ID 52415608, unknown GRF
+GRF parameter changed: GRF ID 1560B248, unknown GRF
+GRF parameter changed: GRF ID 454E2001, unknown GRF
+GRF parameter changed: GRF ID 57A50001, unknown GRF
+GRF parameter changed: GRF ID 454E1901, unknown GRF
+GRF parameter changed: GRF ID 41501202, unknown GRF
+GRF parameter changed: GRF ID 454E0E01, unknown GRF
+GRF parameter changed: GRF ID 52571203, unknown GRF
+GRF parameter changed: GRF ID 52455400, unknown GRF
+GRF parameter changed: GRF ID 52453300, unknown GRF
+GRF parameter changed: GRF ID 4A595001, unknown GRF
+GRF parameter changed: GRF ID FBFB0010, unknown GRF
+GRF parameter changed: GRF ID 4A44A1E1, unknown GRF
+GRF parameter changed: GRF ID 43415000, unknown GRF
+GRF parameter changed: GRF ID 50470500, unknown GRF
+GRF parameter changed: GRF ID 54420101, unknown GRF
+GRF parameter changed: GRF ID 4A44B123, unknown GRF
+GRF parameter changed: GRF ID 4A475281, unknown GRF
+GRF parameter changed: GRF ID 4A505053, unknown GRF
+GRF parameter changed: GRF ID 454E0801, unknown GRF
+GRF parameter changed: GRF ID 4B523034, unknown GRF
+GRF parameter changed: GRF ID 4A4B4735, unknown GRF
+GRF parameter changed: GRF ID 5F5F0409, unknown GRF
+GRF parameter changed: GRF ID 4A485401, unknown GRF
+GRF parameter changed: GRF ID 595AAA01, unknown GRF
+GRF parameter changed: GRF ID 42531320, unknown GRF
+Tick 2749089977: game loaded
+Revision text changed to jgrpp-ya-0.67.1+1, savegame version 292, maybe modified, _openttd_newgrf_version = 0x1f006d64
+Tick 3007749166: game loaded
+Revision text changed to jgrpp-ya-0.73.3+2, savegame version 292, maybe modified, _openttd_newgrf_version = 0x20006d64
+Tick 3010931579: game loaded
+Revision text changed to jgrpp-ya-0.73.3+2-26-g1d2de041e-m, savegame version 292, modified, _openttd_newgrf_version = 0x20006d64
+Tick 3010931579: game loaded
+Revision text changed to jgrpp-ya-0.73.3+2-31-gcf2ae8e99-m, savegame version 292, modified, _openttd_newgrf_version = 0x20006d64
+Tick 3010946389: game loaded
+Revision text changed to jgrpp-ya-0.73.3+2-81-gf519df10a, savegame version 292, not modified, _openttd_newgrf_version = 0x20006d64
+Tick 3010954581: game loaded
+Revision text changed to jgrpp-ya-0.73.3+2-84-gc16da0399-m, savegame version 292, modified, _openttd_newgrf_version = 0x20006d64
+Missing NewGRF: GRF ID 444E0400, unknown GRF
+Missing NewGRF: GRF ID 454E3701, unknown GRF
+Missing NewGRF: GRF ID 41570102, unknown GRF
+Missing NewGRF: GRF ID 4B570101, unknown GRF
+Missing NewGRF: GRF ID 4A544E45, unknown GRF
+Missing NewGRF: GRF ID 4A430002, unknown GRF
+Missing NewGRF: GRF ID 52453400, unknown GRF
+Missing NewGRF: GRF ID 474C0000, unknown GRF
+Missing NewGRF: GRF ID 52453200, unknown GRF
+Missing NewGRF: GRF ID 74677563, unknown GRF
+Missing NewGRF: GRF ID 2C320A01, unknown GRF
+Missing NewGRF: GRF ID 45530500, unknown GRF
+Missing NewGRF: GRF ID 44503000, unknown GRF
+Missing NewGRF: GRF ID 535A0D00, unknown GRF
+Missing NewGRF: GRF ID 44501401, unknown GRF
+Missing NewGRF: GRF ID 66724D49, unknown GRF
+Missing NewGRF: GRF ID 736C6602, unknown GRF
+Missing NewGRF: GRF ID 44483031, unknown GRF
+Missing NewGRF: GRF ID 454E0202, unknown GRF
+Missing NewGRF: GRF ID 454E2101, unknown GRF
+Missing NewGRF: GRF ID 42530720, unknown GRF
+Missing NewGRF: GRF ID 454E2201, unknown GRF
+Missing NewGRF: GRF ID 52415608, unknown GRF
+Missing NewGRF: GRF ID 1560B248, unknown GRF
+Missing NewGRF: GRF ID 454E2001, unknown GRF
+Missing NewGRF: GRF ID 57A50001, unknown GRF
+Missing NewGRF: GRF ID 454E1901, unknown GRF
+Missing NewGRF: GRF ID 41501202, unknown GRF
+Missing NewGRF: GRF ID 454E0E01, unknown GRF
+Missing NewGRF: GRF ID 52571203, unknown GRF
+Missing NewGRF: GRF ID 52455400, unknown GRF
+Missing NewGRF: GRF ID 52453300, unknown GRF
+Missing NewGRF: GRF ID 4A595001, unknown GRF
+Missing NewGRF: GRF ID FBFB0010, unknown GRF
+Missing NewGRF: GRF ID 4A44A1E1, unknown GRF
+Missing NewGRF: GRF ID 43415000, unknown GRF
+Missing NewGRF: GRF ID 50470500, unknown GRF
+Missing NewGRF: GRF ID 54420101, unknown GRF
+Missing NewGRF: GRF ID 4A44B123, unknown GRF
+Missing NewGRF: GRF ID 4A475281, unknown GRF
+Missing NewGRF: GRF ID 4A505053, unknown GRF
+Missing NewGRF: GRF ID 454E0801, unknown GRF
+Missing NewGRF: GRF ID 4B523034, unknown GRF
+Missing NewGRF: GRF ID 4A4B4735, unknown GRF
+Missing NewGRF: GRF ID 5F5F0409, unknown GRF
+Missing NewGRF: GRF ID 4A485401, unknown GRF
+Missing NewGRF: GRF ID 595AAA01, unknown GRF
+Missing NewGRF: GRF ID 42531320, unknown GRF
+Missing NewGRF: GRF ID 4B523033, unknown GRF
+Tick 3010954581: game loaded
+Missing NewGRF: GRF ID 444E0400, unknown GRF
+Missing NewGRF: GRF ID 454E3701, unknown GRF
+Missing NewGRF: GRF ID 41570102, unknown GRF
+Missing NewGRF: GRF ID 4B570101, unknown GRF
+Missing NewGRF: GRF ID 4A544E45, unknown GRF
+Missing NewGRF: GRF ID 4A430002, unknown GRF
+Missing NewGRF: GRF ID 52453400, unknown GRF
+Missing NewGRF: GRF ID 474C0000, unknown GRF
+Missing NewGRF: GRF ID 52453200, unknown GRF
+Missing NewGRF: GRF ID 74677563, unknown GRF
+Missing NewGRF: GRF ID 2C320A01, unknown GRF
+Missing NewGRF: GRF ID 45530500, unknown GRF
+Missing NewGRF: GRF ID 44503000, unknown GRF
+Missing NewGRF: GRF ID 535A0D00, unknown GRF
+Missing NewGRF: GRF ID 44501401, unknown GRF
+Missing NewGRF: GRF ID 66724D49, unknown GRF
+Missing NewGRF: GRF ID 736C6602, unknown GRF
+Missing NewGRF: GRF ID 44483031, unknown GRF
+Missing NewGRF: GRF ID 454E0202, unknown GRF
+Missing NewGRF: GRF ID 454E2101, unknown GRF
+Missing NewGRF: GRF ID 42530720, unknown GRF
+Missing NewGRF: GRF ID 454E2201, unknown GRF
+Missing NewGRF: GRF ID 52415608, unknown GRF
+Missing NewGRF: GRF ID 1560B248, unknown GRF
+Missing NewGRF: GRF ID 454E2001, unknown GRF
+Missing NewGRF: GRF ID 57A50001, unknown GRF
+Missing NewGRF: GRF ID 454E1901, unknown GRF
+Missing NewGRF: GRF ID 41501202, unknown GRF
+Missing NewGRF: GRF ID 454E0E01, unknown GRF
+Missing NewGRF: GRF ID 52571203, unknown GRF
+Missing NewGRF: GRF ID 52455400, unknown GRF
+Missing NewGRF: GRF ID 52453300, unknown GRF
+Missing NewGRF: GRF ID 4A595001, unknown GRF
+Missing NewGRF: GRF ID FBFB0010, unknown GRF
+Missing NewGRF: GRF ID 4A44A1E1, unknown GRF
+Missing NewGRF: GRF ID 43415000, unknown GRF
+Missing NewGRF: GRF ID 50470500, unknown GRF
+Missing NewGRF: GRF ID 54420101, unknown GRF
+Missing NewGRF: GRF ID 4A44B123, unknown GRF
+Missing NewGRF: GRF ID 4A475281, unknown GRF
+Missing NewGRF: GRF ID 4A505053, unknown GRF
+Missing NewGRF: GRF ID 454E0801, unknown GRF
+Missing NewGRF: GRF ID 4B523034, unknown GRF
+Missing NewGRF: GRF ID 4A4B4735, unknown GRF
+Missing NewGRF: GRF ID 5F5F0409, unknown GRF
+Missing NewGRF: GRF ID 4A485401, unknown GRF
+Missing NewGRF: GRF ID 595AAA01, unknown GRF
+Missing NewGRF: GRF ID 42531320, unknown GRF
+Missing NewGRF: GRF ID 4B523033, unknown GRF
+Tick 3010954581: game loaded
+Missing NewGRF: GRF ID 444E0400, unknown GRF
+Missing NewGRF: GRF ID 454E3701, unknown GRF
+Missing NewGRF: GRF ID 41570102, unknown GRF
+Missing NewGRF: GRF ID 4B570101, unknown GRF
+Missing NewGRF: GRF ID 4A544E45, unknown GRF
+Missing NewGRF: GRF ID 4A430002, unknown GRF
+Missing NewGRF: GRF ID 52453400, unknown GRF
+Missing NewGRF: GRF ID 474C0000, unknown GRF
+Missing NewGRF: GRF ID 52453200, unknown GRF
+Missing NewGRF: GRF ID 74677563, unknown GRF
+Missing NewGRF: GRF ID 2C320A01, unknown GRF
+Missing NewGRF: GRF ID 45530500, unknown GRF
+Missing NewGRF: GRF ID 44503000, unknown GRF
+Missing NewGRF: GRF ID 535A0D00, unknown GRF
+Missing NewGRF: GRF ID 44501401, unknown GRF
+Missing NewGRF: GRF ID 66724D49, unknown GRF
+Missing NewGRF: GRF ID 736C6602, unknown GRF
+Missing NewGRF: GRF ID 44483031, unknown GRF
+Missing NewGRF: GRF ID 454E0202, unknown GRF
+Missing NewGRF: GRF ID 454E2101, unknown GRF
+Missing NewGRF: GRF ID 42530720, unknown GRF
+Missing NewGRF: GRF ID 454E2201, unknown GRF
+Missing NewGRF: GRF ID 52415608, unknown GRF
+Missing NewGRF: GRF ID 1560B248, unknown GRF
+Missing NewGRF: GRF ID 454E2001, unknown GRF
+Missing NewGRF: GRF ID 57A50001, unknown GRF
+Missing NewGRF: GRF ID 454E1901, unknown GRF
+Missing NewGRF: GRF ID 41501202, unknown GRF
+Missing NewGRF: GRF ID 454E0E01, unknown GRF
+Missing NewGRF: GRF ID 52571203, unknown GRF
+Missing NewGRF: GRF ID 52455400, unknown GRF
+Missing NewGRF: GRF ID 52453300, unknown GRF
+Missing NewGRF: GRF ID 4A595001, unknown GRF
+Missing NewGRF: GRF ID FBFB0010, unknown GRF
+Missing NewGRF: GRF ID 4A44A1E1, unknown GRF
+Missing NewGRF: GRF ID 43415000, unknown GRF
+Missing NewGRF: GRF ID 50470500, unknown GRF
+Missing NewGRF: GRF ID 54420101, unknown GRF
+Missing NewGRF: GRF ID 4A44B123, unknown GRF
+Missing NewGRF: GRF ID 4A475281, unknown GRF
+Missing NewGRF: GRF ID 4A505053, unknown GRF
+Missing NewGRF: GRF ID 454E0801, unknown GRF
+Missing NewGRF: GRF ID 4B523034, unknown GRF
+Missing NewGRF: GRF ID 4A4B4735, unknown GRF
+Missing NewGRF: GRF ID 5F5F0409, unknown GRF
+Missing NewGRF: GRF ID 4A485401, unknown GRF
+Missing NewGRF: GRF ID 595AAA01, unknown GRF
+Missing NewGRF: GRF ID 42531320, unknown GRF
+Missing NewGRF: GRF ID 4B523033, unknown GRF
+---- gamelog end ----
+
+Recent news messages (0 of 0):
+
+*** End of OpenTTD Crash Report ***

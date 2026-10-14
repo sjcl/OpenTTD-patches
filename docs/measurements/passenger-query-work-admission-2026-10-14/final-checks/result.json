@@ -1,0 +1,24 @@
+{
+  "source_revision": "c16da03990eff522af2abf0ca9379ce5d24e5aac",
+  "product_binary_sha256": "a5f33ba45ed83222d3b2d61e3f82afeeb2b0e32d3d82e6da37b192c662674cc5",
+  "benchmark": "OFF",
+  "asserts": "ON",
+  "LTO": "OFF",
+  "runtime": "MultiThreaded",
+  "release_flags": "/O2 /Ob2 /DNDEBUG",
+  "isolated_probe_references": false,
+  "ctest": {
+    "cases": 590,
+    "failed": 0
+  },
+  "passenger": {
+    "cases": 352,
+    "assertions": 2670223,
+    "failed": 0
+  },
+  "boundary": {
+    "MSVC_assertions": 327,
+    "UBSan_cases": 95,
+    "old_subtraction_trap_calibrated": true
+  }
+}

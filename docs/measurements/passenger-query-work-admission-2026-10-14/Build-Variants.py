@@ -31,18 +31,21 @@ def main():
     p.add_argument("--variants", nargs="+", choices=VARIANTS, default=list(VARIANTS))
     p.add_argument("--control", default="8a96044d40")
     p.add_argument("--parallel", type=int, default=8)
+    p.add_argument("--final-metrics", action="store_true")
     a = p.parse_args()
     build = a.build.resolve()
     # Restore only owned TU replacements so the generator can run again.
     project = build / "openttd_lib.vcxproj"
     xml = project.read_text(encoding="utf-8-sig")
-    for name in ("console_cmds.cpp", "passenger_journey_active.cpp"):
+    for name in ("console_cmds.cpp", "passenger_journey_active.cpp", "passenger_service_database.cpp", "cargopacket.cpp"):
         copied = str(build / "journey-profile" / name)
         if copied in xml:
             xml = replace_once(xml, copied, str(ROOT / "src" / name))
     project.write_text(xml, encoding="utf-8-sig")
     subprocess.run([sys.executable, "-B", str(HERE.parent / "passenger-routing-profile-2026-10-13/Instrument-Profile.py"),
                     str(ROOT), str(build), "--mode", "minimal"], check=True)
+    if a.final_metrics:
+        subprocess.run([sys.executable, '-B', str(HERE / 'Prepare-Final-Metrics.py'), str(build)], check=True)
     project = build / "openttd_lib.vcxproj"
     xml = project.read_text(encoding="utf-8-sig")
     original = ROOT / "src/passenger_journey_active.cpp"
@@ -62,6 +65,20 @@ def main():
                 text = replace_once(text, old, new)
         text = re.sub(r'#include "([^"]+)"', lambda m: '#include "' + (ROOT / "src" / m[1]).as_posix() + '"'
                       if (ROOT / "src" / m[1]).is_file() else m[0], text)
+        if a.final_metrics:
+            header = (build / 'journey-profile/final_metrics.h').as_posix()
+            text = replace_once(text, '#include "' + (ROOT / 'src/safeguards.h').as_posix() + '"', '#include "' + header + '"\n#include "' + (ROOT / 'src/safeguards.h').as_posix() + '"')
+            anchor = '\t\tauto &diagnostic = global.diagnostic.admission;'
+            if parameters:
+                text = replace_once(text, anchor, anchor + '\n\t\tFinalMetrics::Admission(_state_ticks, cargo, this->station, packet.GetPassengerDestination(), ready, excluded, admission.Reserved(), admission.GetRejection());')
+            else:
+                for reason, counter in [('QueryLimit', 'old_query_rejected'), ('QueryWork', 'old_work_rejected')]:
+                    text = replace_once(text, f'this->failure = PassengerJourneyFallbackReason::{reason}; return false; }}',
+                        f'this->failure = PassengerJourneyFallbackReason::{reason}; if (FinalMetrics::enabled) ++FinalMetrics::{counter}; return false; }}')
+                text = replace_once(text, '\t++global.diagnostic.queries; global.diagnostic.query_work += QUERY_WORK;',
+                    '\t++global.diagnostic.queries; global.diagnostic.query_work += QUERY_WORK;\n\tif (FinalMetrics::enabled) ++FinalMetrics::old_accepted;')
+            marker = '\t++diagnostic.simulation_ticks;'
+            text = replace_once(text, marker, marker + ('\n\tFinalMetrics::Tick(diagnostic.admission.accepted, diagnostic.admission.used);' if parameters else '\n\tFinalMetrics::Tick(diagnostic.queries, diagnostic.query_work);'))
         target.write_text(text, encoding="utf-8")
         metadata = dict(base_metadata, admission_variant=name, parameters=parameters, control_commit=a.control,
                         active_copy_sha256=hashlib.sha256(target.read_bytes()).hexdigest())

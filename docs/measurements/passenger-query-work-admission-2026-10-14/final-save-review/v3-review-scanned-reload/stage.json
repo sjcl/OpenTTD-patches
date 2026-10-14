@@ -1,0 +1,23 @@
+{
+  "input_sha256": "b03181ba532e57e2275eeb93ca98607983bdb151528fff5e74ac6e77a656b9f4",
+  "binary_sha256": "c690a7209638987eae8363d9ab4c207b71beede91a001fcc1e6beb9099a4de46",
+  "result_sha256": "b03181ba532e57e2275eeb93ca98607983bdb151528fff5e74ac6e77a656b9f4",
+  "result_bytes": 29824716,
+  "exit_code": 0,
+  "requested_ticks": 0,
+  "integrity": {
+    "loaded_routing_feature": 3,
+    "packets": 193783,
+    "cargo_units": 855403,
+    "known_od_units": 299288,
+    "journey_packets": 19802,
+    "packet_state_digest": 14238130775671843509,
+    "payment_digest": 4369277870292276850,
+    "payments_valid": true,
+    "legacy_true_packets": 0,
+    "legacy_false_packets": 0,
+    "legacy_true_units": 0,
+    "legacy_false_units": 0,
+    "opposite_history_mergeable_pairs": 0
+  }
+}

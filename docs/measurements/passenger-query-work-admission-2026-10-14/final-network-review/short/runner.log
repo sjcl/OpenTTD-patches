@@ -1,0 +1,126 @@
+Waiting for idle host: quiet interval (20s)
+{
+  "joined_clients": 2,
+  "backend": "periodic",
+  "binary": "openttd-network-final.exe",
+  "input_save": "C:\\Users\\bebe\\.codex\\worktrees\\e133\\OpenTTD-patches\\build-timed-anytime\\package\\input.sav",
+  "fixture": false,
+  "detected_sync_failure": false,
+  "client_exit_codes": [
+    null,
+    null
+  ],
+  "server_state_ticks": [
+    "3176545487",
+    "3176546622"
+  ],
+  "single_core_clients": false,
+  "affinity": {
+    "client-initial": {
+      "mask": 0,
+      "applied": false
+    },
+    "client-late": {
+      "mask": 0,
+      "applied": false
+    }
+  },
+  "sync_frequency": 1,
+  "loopback_address": "127.0.0.1:17523",
+  "client_departure_index_disabled": true,
+  "client_policy_cache_disabled": true,
+  "client_fallback_cache_disabled": true,
+  "client_state_ticks": [
+    [
+      3176545487,
+      3176545621,
+      3176545840,
+      3176546004,
+      3176546137,
+      3176546332,
+      3176546567
+    ],
+    [
+      3176545908,
+      3176546081,
+      3176546251,
+      3176546398,
+      3176546567
+    ]
+  ],
+  "connected_clients_at_end": 2,
+  "max_lag_time": 32000,
+  "max_join_time": 32000,
+  "progress_observation_resolution_ticks": 128,
+  "unrestricted_clients": true,
+  "client_scratch_disabled": true,
+  "client_scratch_retained_bytes": [
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0
+    ]
+  ],
+  "cargo_state_equal": true,
+  "cargo_snapshots": [
+    {
+      "runtime_routing_feature": 3,
+      "state_ticks": 3176546622,
+      "packets": 115244,
+      "cargo_units": 842760,
+      "known_od_units": 154843,
+      "journey_packets": 7201,
+      "packet_state_digest": 8013424964464745688,
+      "payment_digest": 13178296303081616542,
+      "payments_valid": true,
+      "legacy_true_packets": 0,
+      "legacy_false_packets": 0,
+      "legacy_true_units": 0,
+      "legacy_false_units": 0,
+      "opposite_history_mergeable_pairs": 0
+    },
+    {
+      "runtime_routing_feature": 3,
+      "state_ticks": 3176546622,
+      "packets": 115244,
+      "cargo_units": 842760,
+      "known_od_units": 154843,
+      "journey_packets": 7201,
+      "packet_state_digest": 8013424964464745688,
+      "payment_digest": 13178296303081616542,
+      "payments_valid": true,
+      "legacy_true_packets": 0,
+      "legacy_false_packets": 0,
+      "legacy_true_units": 0,
+      "legacy_false_units": 0,
+      "opposite_history_mergeable_pairs": 0
+    },
+    {
+      "runtime_routing_feature": 3,
+      "state_ticks": 3176546622,
+      "packets": 115244,
+      "cargo_units": 842760,
+      "known_od_units": 154843,
+      "journey_packets": 7201,
+      "packet_state_digest": 8013424964464745688,
+      "payment_digest": 13178296303081616542,
+      "payments_valid": true,
+      "legacy_true_packets": 0,
+      "legacy_false_packets": 0,
+      "legacy_true_units": 0,
+      "legacy_false_units": 0,
+      "opposite_history_mergeable_pairs": 0
+    }
+  ]
+}

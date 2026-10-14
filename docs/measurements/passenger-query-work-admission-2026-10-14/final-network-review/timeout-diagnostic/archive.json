@@ -1,0 +1,24 @@
+{
+  "outcome": "fail",
+  "local_run": "C:\\Users\\bebe\\.codex\\worktrees\\923a\\OpenTTD-patches\\build-admission\\mp-final-review-timeout",
+  "stderr": {
+    "server": {
+      "bytes": 5575328,
+      "sha256": "984f1def86b856759c57156a5dd594ff3a3728ecb73bd9eccc52caa332b2faf6",
+      "complete_gzip": "stderr.txt.gz",
+      "newgrf_capacity_warning_count": 26959
+    },
+    "client-initial": {
+      "bytes": 4655620,
+      "sha256": "9c26df112b4633a99238cd7488d30196856110ac0cd99f867d2af089b62cac16",
+      "complete_gzip": "stderr.txt.gz",
+      "newgrf_capacity_warning_count": 22514
+    },
+    "client-late": {
+      "bytes": 3855632,
+      "sha256": "c983f06c388cf9f7185010d3c3192ed545f52bd05bc725618476574dd7c1edf2",
+      "complete_gzip": "stderr.txt.gz",
+      "newgrf_capacity_warning_count": 18652
+    }
+  }
+}

@@ -1,5 +1,7 @@
 # Periodic Journey Query Work Admission
 
+修正後の再測定・実v4セーブ・最終検証は[最終修正レポート](passenger-query-work-admission-final-2026-10-14.md)を参照。以下の初期性能測定は履歴として保持する。
+
 ベースは `8a96044d40`（Agent A統合後の `jgrpp-ya`）。Agent Bの路線探索はこのベースに未統合であり、ユーザー確認により現在の `jgrpp-ya` から実装した。ブランチは `feat/passenger-query-work-admission`。
 
 レビュー後、診断用Work履歴がPacket結合を禁止していた実装を撤去した。以下の実マップ性能・配送値は撤去前の測定であり、修正版の性能実績としては扱わない。旧 `intent_wait_ge_4096` はTimedの未設定時刻を含むため無効で、長時間待機の根拠から除外した。原本は保持し、[レビュー訂正記録](measurements/passenger-query-work-admission-2026-10-14/review-corrections.json)で区別する。

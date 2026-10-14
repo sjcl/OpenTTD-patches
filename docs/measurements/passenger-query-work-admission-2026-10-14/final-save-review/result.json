@@ -1,0 +1,146 @@
+{
+  "stages": {
+    "v4-review-scanned-reader": {
+      "input_sha256": "2fa1b07407db3ca3077664fb9aab21a13378d2df6d478c80d4cf81302495f1c2",
+      "binary_sha256": "f07ee958d6ac9dce7472ebc13e2ed1ffe6d97dd6041653428cdf1af9ffcf0727",
+      "result_sha256": "b03181ba532e57e2275eeb93ca98607983bdb151528fff5e74ac6e77a656b9f4",
+      "result_bytes": 29824716,
+      "exit_code": 0,
+      "requested_ticks": 0,
+      "integrity": {
+        "packets": 193783,
+        "cargo_units": 855403,
+        "known_od_units": 299288,
+        "journey_packets": 19802,
+        "packet_state_digest": 14238130775671843509,
+        "payment_digest": 4369277870292276850,
+        "payments_valid": true,
+        "legacy_true_packets": 11703,
+        "legacy_false_packets": 182080,
+        "legacy_true_units": 13644,
+        "legacy_false_units": 841759,
+        "opposite_history_mergeable_pairs": 225
+      }
+    },
+    "v4-review-scanned-native": {
+      "input_sha256": "2fa1b07407db3ca3077664fb9aab21a13378d2df6d478c80d4cf81302495f1c2",
+      "binary_sha256": "c690a7209638987eae8363d9ab4c207b71beede91a001fcc1e6beb9099a4de46",
+      "result_sha256": "b03181ba532e57e2275eeb93ca98607983bdb151528fff5e74ac6e77a656b9f4",
+      "result_bytes": 29824716,
+      "exit_code": 0,
+      "requested_ticks": 0,
+      "integrity": {
+        "loaded_routing_feature": 3,
+        "packets": 193783,
+        "cargo_units": 855403,
+        "known_od_units": 299288,
+        "journey_packets": 19802,
+        "packet_state_digest": 14238130775671843509,
+        "payment_digest": 4369277870292276850,
+        "payments_valid": true,
+        "legacy_true_packets": 0,
+        "legacy_false_packets": 0,
+        "legacy_true_units": 0,
+        "legacy_false_units": 0,
+        "opposite_history_mergeable_pairs": 0
+      }
+    },
+    "v3-review-scanned-reload": {
+      "input_sha256": "b03181ba532e57e2275eeb93ca98607983bdb151528fff5e74ac6e77a656b9f4",
+      "binary_sha256": "c690a7209638987eae8363d9ab4c207b71beede91a001fcc1e6beb9099a4de46",
+      "result_sha256": "b03181ba532e57e2275eeb93ca98607983bdb151528fff5e74ac6e77a656b9f4",
+      "result_bytes": 29824716,
+      "exit_code": 0,
+      "requested_ticks": 0,
+      "integrity": {
+        "loaded_routing_feature": 3,
+        "packets": 193783,
+        "cargo_units": 855403,
+        "known_od_units": 299288,
+        "journey_packets": 19802,
+        "packet_state_digest": 14238130775671843509,
+        "payment_digest": 4369277870292276850,
+        "payments_valid": true,
+        "legacy_true_packets": 0,
+        "legacy_false_packets": 0,
+        "legacy_true_units": 0,
+        "legacy_false_units": 0,
+        "opposite_history_mergeable_pairs": 0
+      }
+    },
+    "v3-review-scanned-continuation": {
+      "input_sha256": "b03181ba532e57e2275eeb93ca98607983bdb151528fff5e74ac6e77a656b9f4",
+      "binary_sha256": "c690a7209638987eae8363d9ab4c207b71beede91a001fcc1e6beb9099a4de46",
+      "result_sha256": "292951c6353d54a3218327db93a55f7bce90fae6e4fec2cfad25216a3cf0f7e2",
+      "result_bytes": 29871156,
+      "exit_code": 0,
+      "requested_ticks": 256,
+      "integrity": {
+        "loaded_routing_feature": 3,
+        "packets": 195969,
+        "cargo_units": 856954,
+        "known_od_units": 303462,
+        "journey_packets": 21245,
+        "packet_state_digest": 5871330053593703012,
+        "payment_digest": 10183138583164435813,
+        "payments_valid": true,
+        "legacy_true_packets": 0,
+        "legacy_false_packets": 0,
+        "legacy_true_units": 0,
+        "legacy_false_units": 0,
+        "opposite_history_mergeable_pairs": 0
+      },
+      "actual_clock": {
+        "start_tick": 3176553679,
+        "end_tick": 3176553935,
+        "driver_loops": 256,
+        "error_resumes": 0
+      }
+    }
+  },
+  "actual_save_features": {
+    "old_input": 4,
+    "v4-review-scanned-reader": 3,
+    "v4-review-scanned-native": 3,
+    "v3-review-scanned-reload": 3,
+    "v3-review-scanned-continuation": 3
+  },
+  "checks": {
+    "packets": true,
+    "cargo_units": true,
+    "known_od_units": true,
+    "journey_packets": true,
+    "packet_state_digest": true,
+    "payment_digest": true,
+    "payments_valid": true,
+    "v4_both_tag_values_present": true,
+    "packet_count_conserved": true,
+    "cargo_count_conserved": true,
+    "opposite_history_mergeable": true,
+    "probe_and_native_save_sha256": true,
+    "actual_256_ticks": true,
+    "no_error_pause_resumes": true,
+    "actual_v4_to_v3": true
+  },
+  "excluded_setup_attempts": {
+    "reason": "Incorrect -Q startup skipped NewGRF scanning. Missing GRFs caused identical cargo normalization and first-tick road-speed assertion in old and corrected binaries. No engine fix or assertion suppression was used; normal scan resolved both.",
+    "excluded_directories": [
+      "v4-review-reader",
+      "v4-review-native",
+      "v3-review-reload",
+      "v4-review-old-roundtrip",
+      "v4-review-native-final",
+      "v3-review-reload-final",
+      "v3-review-continuation",
+      "v4-review-old-reference",
+      "v4-review-old-continuation"
+    ]
+  },
+  "producer": "Archived f519df10ab executable a1492347..., product sources identical to 11730ea682; git diff --quiet src excluding tests, cmake, CMakeLists returned 0.",
+  "notes": [
+    "The retired field exists only as a temporary scalar in an isolated reader; the native variant skips it as an unknown field.",
+    "Packet, OD, Intent and payment fingerprints use explicit saved fields. Full probe/native v3 save hashes also agree.",
+    "Runtime feature globals reset for saving; actual file versions above were read independently from SLXI.",
+    "No Work-history field or merge restriction was added back to the product."
+  ]
+}

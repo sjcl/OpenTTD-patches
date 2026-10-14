@@ -1,0 +1,22 @@
+dbg: [net:3] Starting dedicated server, version jgrpp-ya-0.73.3+2-84-gc16da0399-m
+dbg: [net:3] Starting network
+dbg: [net:3] Initializing UDP listeners
+dbg: [net:3] Network online, multiplayer available
+dbg: [net:3] Detected broadcast addresses:
+dbg: [net:3]   0) 172.25.15.255
+dbg: [net:3]   1) 192.168.1.255
+dbg: [net:3]   2) 169.254.255.255
+dbg: [net:3] Network revision name: jgrpp-ya-0.73.3+2-84-gc16da0399-
+dbg: [net:1] No "server_name" has been set, using "Unnamed Server" instead. Please set this now using the "server_name <new name>" command
+dbg: [net:3] Initializing UDP listeners
+dbg: [net:3] Initializing UDP listeners
+dbg: [net:3] Listening on 127.0.0.1:17523 (IPv4)
+dbg: [net:3] Listening on 127.0.0.1:17523 (IPv4)
+dbg: [net:3] [server] Client connected from 127.0.0.1 on frame 89
+dbg: [net:3] [server] Client #2 (127.0.0.1) joined as periodic-client-initial, pubkey: 257B9B1289CE4A7607FFBCCF7C3E20268AE12FC3387F20059EFE750C98DC7003
+dbg: [net:3] [server] Client connected from 127.0.0.1 on frame 612
+dbg: [net:3] [server] Client #3 (127.0.0.1) joined as periodic-client-late, pubkey: 6EA522A97F853D98FF68B166D9AA0FE4A1F0BEE6CA4023A3B03878639F23F543
+dbg: [net:3] [server] Client #2 closed connection
+dbg: [net:3] [server] Client #3 closed connection
+dbg: [net:3] Initializing UDP listeners
+dbg: [net:3] Shutting down network
