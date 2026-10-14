@@ -643,7 +643,24 @@ bool PassengerJourneyActiveContext::PlanWaiting(CargoPacket &packet, CargoType c
 	PassengerJourneyWorkTimer timer;
 	this->deferred = false;
 	if (!IsPassengerJourneyRoutingEnabled(cargo) || !Station::IsValidID(packet.GetPassengerDestination()) ||
-			packet.GetPassengerDestination() == this->station || !packet.CanRetryPassengerJourney(this->station, _state_ticks)) return false;
+			packet.GetPassengerDestination() == this->station ||
+			(!_settings_game.linkgraph.passenger_journey_precomputed && !packet.CanRetryPassengerJourney(this->station, _state_ticks))) return false;
+	if (_settings_game.linkgraph.passenger_journey_precomputed) {
+		StateTicks ready = std::max(_state_ticks, packet.GetPassengerInterchangeReady());
+		if (this->vehicle != nullptr) ready = std::max(ready, _state_ticks + StateTicksDelta{ActiveJourneyEvaluation().minimum_transfer});
+		const auto *arriving = OrderList::GetIfValid(packet.GetPassengerArrivingService());
+		OrderListID excluded = arriving != nullptr && arriving->GetCargoDistRouteGeneration() == packet.GetPassengerArrivingIncarnation() ? arriving->index : OrderListID::Invalid();
+		uint32_t sample = static_cast<uint32_t>(SimpleHash64((uint64_t{packet.index.base()} << 32) ^
+				(uint64_t{this->station.base()} << 16) ^ packet.GetPassengerDestination().base()));
+		auto plan = GetPassengerServiceDatabase().PlanPrecomputed(cargo, this->station, packet.GetPassengerDestination(), ready, excluded, sample);
+		if (plan.ride) {
+			packet.SetPassengerJourney(*plan.ride, legacy_hop);
+			++TickBudget().diagnostic.schedule_packets; TickBudget().diagnostic.schedule_passengers += packet.Count();
+			return true;
+		}
+		if (plan.state != PassengerPrecomputedPlan::State::Memory) return false; // Untimed fallback while building or for unsupported controls.
+		// A deterministic table-size rejection uses the original admitted planners.
+	}
 	const StationID fallback_hop = CurrentPassengerLegacyHop(packet, cargo, this->station, legacy_hop);
 	packet.SetPassengerLegacyHop(fallback_hop);
 	if (_settings_game.linkgraph.passenger_journey_periodic) {
@@ -1159,8 +1176,13 @@ void PassengerJourneyBoardingContext::Initialize() const
 			limits.visits_per_trip, limits.steps_per_trip, budget, {}, true, PassengerTimingPolicy::AssumeTimetable);
 }
 
-bool PassengerJourneyBoardingContext::ValidateServiceRide(const PassengerJourneyExecution &ride, bool boarding) const
+bool PassengerJourneyBoardingContext::ValidateServiceRide(const PassengerJourneyExecution &original, bool boarding) const
 {
+	auto ride = original;
+	if (boarding && _settings_game.linkgraph.passenger_journey_precomputed && !IsBoundPassengerRide(ride.kind) && this->vehicle != nullptr &&
+			this->vehicle->orders != nullptr && ride.service != this->vehicle->orders->index) {
+		if (!GetPassengerServiceDatabase().IsCurrent(original) || !GetPassengerServiceDatabase().RebindPrecomputed(ride, this->vehicle->orders->index, this->cargo)) return false;
+	}
 	if (this->vehicle == nullptr || (IsBoundPassengerRide(ride.kind) && ride.vehicle != this->vehicle->index)) return false;
 	if (boarding && _state_ticks < ride.not_before) return false;
 	if (boarding && !GetPassengerServiceDatabase().IsCurrent(ride)) return false;
@@ -1175,6 +1197,8 @@ bool PassengerJourneyBoardingContext::ValidateServiceRide(const PassengerJourney
 
 bool PassengerJourneyBoardingContext::CanBoard(const CargoPacket &packet) const
 {
+	if (_settings_game.linkgraph.passenger_journey_precomputed && this->vehicle != nullptr && this->vehicle->orders != nullptr &&
+			packet.GetPassengerArrivingService() == this->vehicle->orders->index && packet.GetPassengerArrivingIncarnation() == this->vehicle->orders->GetCargoDistRouteGeneration()) return false;
 	if (packet.GetPassengerRoutingMode() != PassengerRoutingMode::Journey) return true;
 	const auto &leg = packet.GetPassengerJourney();
 	if (leg.kind != PassengerRideKind::VehicleSnapshot) return this->ValidateServiceRide(leg, true);
@@ -1251,6 +1275,8 @@ void PassengerJourneyLoadingContext::PrepareBoard(CargoPacket &packet, const Veh
 	if (vehicle != nullptr && packet.GetPassengerRoutingMode() == PassengerRoutingMode::Journey &&
 			(packet.GetPassengerJourney().kind == PassengerRideKind::ServiceIntent || packet.GetPassengerJourney().kind == PassengerRideKind::EstimatedServiceIntent)) {
 		auto ride = packet.GetPassengerJourney();
+		if (_settings_game.linkgraph.passenger_journey_precomputed && vehicle->First()->orders != nullptr && ride.service != vehicle->First()->orders->index)
+			GetPassengerServiceDatabase().RebindPrecomputed(ride, vehicle->First()->orders->index, vehicle->cargo_type);
 		ride.vehicle = vehicle->First()->index; ride.kind = IsEstimatedPassengerRide(ride.kind) ? PassengerRideKind::EstimatedBoundService : PassengerRideKind::BoundService;
 		packet.SetPassengerJourney(ride, packet.GetPassengerLegacyHop());
 	}
@@ -1565,6 +1591,7 @@ std::array<uint, 3> CountReservedPassengerRoutingModes(const Station &station, C
 
 void PassengerJourneySettingsChanged(int32_t)
 {
+	if (!_settings_game.linkgraph.passenger_journey_precomputed) GetPassengerServiceDatabase().DiscardPrecomputed();
 	InvalidatePassengerServiceDatabase();
 	/* Reserved cargo lives on vehicles. Return it before changing queue keys or mode. */
 	for (Station *station : Station::Iterate()) {
@@ -1597,6 +1624,7 @@ void AfterLoadPassengerJourneys()
 {
 	ClearPassengerOdFallbackCache();
 	GetPassengerServiceDatabase().FinishLoad(SlXvIsFeaturePresent(XSLFI_PASSENGER_PERIODIC));
+	if (SlXvIsFeatureMissing(XSLFI_PASSENGER_PERIODIC, 4)) _settings_game.linkgraph.passenger_journey_precomputed = false;
 	if (SlXvIsFeatureMissing(XSLFI_PASSENGER_PERIODIC)) _settings_game.linkgraph.passenger_journey_periodic = true;
 	InvalidatePassengerServiceIndex();
 	BeginPassengerJourneyTick();

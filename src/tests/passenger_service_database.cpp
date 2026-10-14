@@ -2272,3 +2272,41 @@ TEST_CASE("Depot entry without a wait preserves full cycles and queued saved pub
 		auto published = db.Save(); ObservePassengerPeriodicVehicle(train); db.Tick(); CHECK(db.Save() == published);
 	}
 }
+
+TEST_CASE("Precomputed active journeys bypass OD admission and survive partial-build saves", "[passenger][precomputed][active][determinism]")
+{
+	Fixture f;
+	_settings_game.linkgraph.passenger_journey_precomputed = true;
+	auto *train = f.Train({Stop(A), Stop(B), Stop(C), Stop(D)});
+	auto &db = f.Build();
+	for (int i = 0; i < 1000; ++i) db.TickPrecomputed();
+	const auto timed_searches = db.GetDiagnostic().searches;
+	PassengerJourneyActiveContext context(nullptr, A);
+	for (int i = 0; i < 100; ++i) {
+		auto *packet = f.Packet();
+		REQUIRE(context.PlanWaiting(*packet, PAX, B));
+		CHECK(packet->GetPassengerJourney().alighting == D);
+		CHECK(packet->GetPassengerJourney().boarding_order == 0);
+		PassengerJourneyLoadingContext loading;
+		CHECK(loading.CanBoard(*packet, train, PAX));
+		delete packet;
+	}
+	CHECK(GetPassengerJourneyTickDiagnostic().admission.accepted == 0);
+	CHECK(GetPassengerJourneyTickDiagnostic().admission.used == 0);
+	CHECK(db.GetDiagnostic().searches == timed_searches);
+	CHECK(db.GetPrecomputedDiagnostic(PAX).hits >= 100);
+	auto wire = db.Save(); REQUIRE(wire[0] == 4);
+	PassengerServiceDatabase peer; REQUIRE(peer.Load(wire)); peer.FinishLoad(true);
+	CHECK(peer.Save() == wire);
+	CHECK(peer.PlanPrecomputed(PAX, A, D, NOW).ride == db.PlanPrecomputed(PAX, A, D, NOW).ride);
+	/* A different transfer setting starts a new table, then stop inside a row. */
+	_settings_game.linkgraph.passenger_transfer_penalty = 17;
+	db.TickPrecomputed(1); wire = db.Save();
+	REQUIRE(peer.Load(wire)); peer.FinishLoad(true); CHECK(peer.Save() == wire);
+	for (size_t i = 0; i < 1000; ++i) {
+		CHECK(peer.PlanPrecomputed(PAX, A, D, NOW).state == db.PlanPrecomputed(PAX, A, D, NOW).state);
+		CHECK(peer.PlanPrecomputed(PAX, A, D, NOW).ride == db.PlanPrecomputed(PAX, A, D, NOW).ride);
+		peer.TickPrecomputed(1); db.TickPrecomputed(1);
+	}
+	CHECK(peer.Save() == db.Save());
+}
