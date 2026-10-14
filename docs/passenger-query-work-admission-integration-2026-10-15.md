@@ -1,5 +1,17 @@
 # Work Admission: 最新ベースへの追従と統合検証
 
+**最終の統合対象はローカル `jgrpp-ya` の `84ab414e6b771a82444310c58241b72ae2f9a007`、検証した製品ソースは `4a4c06157dae72fd0dd9dad3d177a76e6b0aaebf`。** リモート未反映だった6コミット（街の自動資金供給、車両グループのマーカー等）も保持して追従した。未コミットの `vcpkg.json` は変更していない。性能比較はユーザー指定により省略した。
+
+[最終検証の証拠](measurements/passenger-query-work-admission-2026-10-15/latest-main/result.json)で、Benchmark OFF・assert ON・LTO OFFの製品ビルド、**全CTest 606/606、旅客364ケース・2,671,581アサーション**、受付拒否共有49アサーションが成功した。Work配分、Packet結合、ネットワーク処理に追加変更はない。Roundsも取り込んでいない。
+
+最新mainの保存形式を含む実ファイルのロード・再保存・再ロード、同じ入力からの512tick継続も成功した。cache/Scratch有効と全無効で、Work・拒否・結果・実輸送・全保存対象フィールド・全Save SHA-256 **`4039450019e02e3ad34ac5f27fa18e5a720afed4f4205c83ff3509cf2512c474`** が一致した。受付8,118・実Work140,426,084・返却391,595,164など下記512tickの論理集計も一致。旧v4のPacket/支払の保全、v3再保存・再ロード、256tick継続も再確認した。
+
+通常cacheのloopbackは初期・途中参加成功後300秒、StateTicks **3176545487 → 3176552132**（全体6,645tick）進行し、両clientが接続を維持。終点で3台の194,879 Packet・859,965 cargo単位・既知OD284,754単位・Journey20,176 Packet、全保存対象フィールド/支払digestが一致した。支払検証成功、desync・assert・切断・異常終了・競合の検出0。受信timeoutの延長は行っていない。
+
+追加GUI文字列に伴い言語packの版が更新された。実マップは同じSave・NewGRF・baseset・configを使い、言語packだけ現在の生成物へ揃えた。旧 `Release/lang` で製品起動の保存テスト3件が失敗した原因は、追加ログの「not a valid language file」で分離した。更新後の製品構成で606件全てが成功した。計測用の実tickドライバーを使った構成で通常AI回帰3件が失敗した試行も、製品の成功結果へ読み替えず原本を保持した。
+
+**最新mainへの統合可。** 機能・保存・同期・Packet結合と製品回帰を根拠とし、未実施のCPU比較を合格理由にはしない。以下は `a6e6664a18` へ最初に追従した段階の詳細であり、その数値・原本も残す。
+
 対象は `feat/passenger-query-work-admission`。比較ベースは `jgrpp-ya` の `a6e6664a185a1a49c1f0df1ecc2572e70762f3b7`、検証した製品ソースは `cb9bef900d7b529c9e21e854b59f084b57db6fb7`。上流のFallback乗車・via表示・routing無効時のreturnとdirect ride保持、Journey採用時の更新済みhop保持を取り込んだ。Roundsは取り込んでいない。
 
 最初の追従先 `7753377108` での600件の回帰と一部性能ラン完了後、統合先に `a6e6664a18` が追加された。保存状態にも影響する修正なので、その時点の未完了比較は統合基準へ使わず、新しいベースで再検証した。
@@ -82,3 +94,9 @@ Archive-Integration.py build-admission <evidence> --skip-performance
 ```
 
 計測・Save/Load・loopbackは共有ロックで直列実行し、他ゲーム・ビルド・テストと同時実行しない。各性能ラン前90秒の無競合待機と実行中5秒ごとの監視を使う。最終段階でCMakeを再生成して `OPTION_PASSENGER_BENCHMARK=OFF` へ戻し、コピーしたprobeのobjectを明示的に除去して製品をビルドする。
+
+最新mainの再検証では、`Prepare-Integration-Package.py <build> <frozen-package>` で現在の言語packを固定した。Save検証の `--directory` は `integration-2026-10-15-saveload-latest-main`、途中参加は `integration-2026-10-15-mp-warm-latest-main` を使用し、同じ5段階のSave検証・3段階のv4検証・cache会計照合・300秒観測を再実行した。証拠保存は以下の引数で行った。
+
+```text
+Archive-Integration.py build-admission <evidence>/latest-main --skip-performance --save-directory integration-2026-10-15-saveload-latest-main --base-commit 84ab414e6b
+```

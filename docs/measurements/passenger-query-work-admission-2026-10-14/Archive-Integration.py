@@ -14,6 +14,8 @@ p = argparse.ArgumentParser(description=__doc__)
 p.add_argument('build', type=pathlib.Path)
 p.add_argument('archive', type=pathlib.Path)
 p.add_argument('--skip-performance', action='store_true', help='Explicit user authorization to omit the six-run CPU comparison')
+p.add_argument('--save-directory', default='integration-2026-10-15-saveload')
+p.add_argument('--base-commit', default='a6e6664a18')
 a = p.parse_args()
 build, output = a.build.resolve(), a.archive.resolve()
 checks = output / 'checks'
@@ -41,7 +43,7 @@ for suffix in ['configure', 'build', 'merge-regression', 'test-build', 'passenge
                'product-configure', 'product-build', 'script-syntax']:
     name = prefix + suffix + '.log'
     shutil.copy2(build / name, checks / name)
-save_root = build / 'integration-2026-10-15-saveload'
+save_root = build / a.save_directory
 save_result = json.loads((save_root / 'result.json').read_text(encoding='utf-8'))
 assert all(save_result['checks'].values())
 save_out = output / 'saveload'
@@ -73,7 +75,7 @@ assert revision == save_result['source_revision'] == network['source_revision']
 if not a.skip_performance:
     assert revision == profile['source_revision']
 result = {'source_revision': revision,
-          'control_commit': subprocess.check_output(['git', '-C', ROOT, 'rev-parse', 'a6e6664a18'], text=True).strip(),
+          'control_commit': subprocess.check_output(['git', '-C', ROOT, 'rev-parse', a.base_commit], text=True).strip(),
           'product_binary_sha256': hashlib.sha256((build / 'Release/openttd.exe').read_bytes()).hexdigest(),
           'benchmark': 'OFF', 'asserts': 'ON', 'LTO': 'OFF', 'runtime': option('CMAKE_MSVC_RUNTIME_LIBRARY'),
           'release_flags': option('CMAKE_CXX_FLAGS_RELEASE'), 'isolated_probe_references': False,

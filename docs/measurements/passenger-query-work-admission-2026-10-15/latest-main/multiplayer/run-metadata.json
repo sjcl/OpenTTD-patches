@@ -1,0 +1,10 @@
+{
+  "binary_sha256": "73de59a85b75a9bc63592482b4e0d16a865ea9bf6e40b60fc13a9f354083755d",
+  "input_sha256": "14d68c82911b9dcfc5ef7291e9697c5bbd67f44ffcc79d7575a144405edf6390",
+  "source_revision": "4a4c06157dae72fd0dd9dad3d177a76e6b0aaebf",
+  "requested_post_join_seconds": 300,
+  "contamination": [],
+  "outcome": "pass",
+  "started_utc": "2026-10-14T17:18:45.297058+00:00",
+  "finished_utc": "2026-10-14T17:24:25.752514+00:00"
+}

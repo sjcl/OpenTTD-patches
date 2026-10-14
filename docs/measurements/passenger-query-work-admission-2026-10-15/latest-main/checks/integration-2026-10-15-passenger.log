@@ -1,0 +1,149 @@
+Filters: [passenger]~[.benchmark]~[.performance]
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+openttd_test.exe is a Catch v2.13.10 host application.
+Run with -? for options
+
+-------------------------------------------------------------------------------
+A sparse national hub retains all eight thousand valid destinations
+-------------------------------------------------------------------------------
+C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\src\tests\passenger_od_assignment.cpp(749)
+...............................................................................
+
+C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\src\tests\passenger_od_assignment.cpp(784): warning:
+  National OD generation: 89763 us / 400 batches; destinations=8000;
+  passengers=512 per batch
+
+-------------------------------------------------------------------------------
+Graph admission pays for generated visits rather than maximum trip reservations
+-------------------------------------------------------------------------------
+C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\src\tests\passenger_service_graph.cpp(791)
+...............................................................................
+
+C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\src\tests\passenger_service_graph.cpp(817): warning:
+  Actual-visit fleet: trips=4000; visits=104000; work=132058; bound=37896128;
+  retained=12685708; cold_us=16643; warm_us=17435
+
+-------------------------------------------------------------------------------
+Anytime complete paths survive every Work boundary through 65536
+-------------------------------------------------------------------------------
+C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\src\tests\passenger_service_database.cpp(153)
+...............................................................................
+
+C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\src\tests\passenger_service_database.cpp(189): warning:
+  Anytime Work boundaries 0..65536: rescued=20; inferior_to_reference=16;
+  after_generation=2; before_pop=6
+
+-------------------------------------------------------------------------------
+Timed pruning budgets are independent of caches save load and joining
+-------------------------------------------------------------------------------
+C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\src\tests\passenger_service_database.cpp(848)
+...............................................................................
+
+C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\src\tests\passenger_service_database.cpp(872): warning:
+  Timed Work boundaries: old_admitted=349; new_admitted=446; newly_admitted=97;
+  route_quality_changes=0
+
+-------------------------------------------------------------------------------
+Schedule 8000 station network caches OD policies without physical visit
+expansion
+-------------------------------------------------------------------------------
+C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\src\tests\passenger_service_database.cpp(1757)
+...............................................................................
+
+C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\src\tests\passenger_service_database.cpp(1767): warning:
+  Schedule 8000-station benchmark: queries=4097; work_per_query=7;
+  total_query_us=23; policy_bytes=1056
+
+-------------------------------------------------------------------------------
+Shared LRU evicts across Timed and Schedule-aware without changing routes
+-------------------------------------------------------------------------------
+C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\src\tests\passenger_service_database.cpp(2135)
+...............................................................................
+
+C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\src\tests\passenger_service_database.cpp(2145): warning:
+  Shared LRU: evictions=906; eviction_us=4; validation_us=0; entries=4096;
+  bytes=4718584
+
+-------------------------------------------------------------------------------
+Journey stages continue actual train chains without replaying earlier rounds
+-------------------------------------------------------------------------------
+C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\src\tests\passenger_journey_planner.cpp(895)
+...............................................................................
+
+C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\src\tests\passenger_journey_planner.cpp(946): warning:
+  Transfer chain: transfers=0; rounds=1; extensions=0; work=12; labels=2;
+  scratch=28088
+
+-------------------------------------------------------------------------------
+Journey stages continue actual train chains without replaying earlier rounds
+-------------------------------------------------------------------------------
+C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\src\tests\passenger_journey_planner.cpp(895)
+...............................................................................
+
+C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\src\tests\passenger_journey_planner.cpp(946): warning:
+  Transfer chain: transfers=4; rounds=5; extensions=0; work=70; labels=6;
+  scratch=30744
+
+-------------------------------------------------------------------------------
+Journey stages continue actual train chains without replaying earlier rounds
+-------------------------------------------------------------------------------
+C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\src\tests\passenger_journey_planner.cpp(895)
+...............................................................................
+
+C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\src\tests\passenger_journey_planner.cpp(946): warning:
+  Transfer chain: transfers=5; rounds=6; extensions=1; work=87; labels=7;
+  scratch=31408
+
+-------------------------------------------------------------------------------
+Journey stages continue actual train chains without replaying earlier rounds
+-------------------------------------------------------------------------------
+C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\src\tests\passenger_journey_planner.cpp(895)
+...............................................................................
+
+C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\src\tests\passenger_journey_planner.cpp(946): warning:
+  Transfer chain: transfers=9; rounds=10; extensions=2; work=165; labels=11;
+  scratch=34064
+
+-------------------------------------------------------------------------------
+Journey stages continue actual train chains without replaying earlier rounds
+-------------------------------------------------------------------------------
+C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\src\tests\passenger_journey_planner.cpp(895)
+...............................................................................
+
+C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\src\tests\passenger_journey_planner.cpp(946): warning:
+  Transfer chain: transfers=15; rounds=16; extensions=2; work=312; labels=17;
+  scratch=38048
+
+-------------------------------------------------------------------------------
+Journey stages continue actual train chains without replaying earlier rounds
+-------------------------------------------------------------------------------
+C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\src\tests\passenger_journey_planner.cpp(895)
+...............................................................................
+
+C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\src\tests\passenger_journey_planner.cpp(946): warning:
+  Transfer chain: transfers=33; rounds=34; extensions=4; work=969; labels=35;
+  scratch=77136
+
+-------------------------------------------------------------------------------
+Journey stages continue actual train chains without replaying earlier rounds
+-------------------------------------------------------------------------------
+C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\src\tests\passenger_journey_planner.cpp(895)
+...............................................................................
+
+C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\src\tests\passenger_journey_planner.cpp(946): warning:
+  Transfer chain: transfers=300; rounds=301; extensions=7; work=48762; labels=
+  302; scratch=634328
+
+-------------------------------------------------------------------------------
+Fair shares exclude idle stations unknown ODs and sleeping loading passes
+-------------------------------------------------------------------------------
+C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\src\tests\passenger_journey_active.cpp(2056)
+...............................................................................
+
+C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\src\tests\passenger_journey_active.cpp(2086): warning:
+  Due loading admission: stations=4801; applied=14; waiting-share claims=1
+
+===============================================================================
+All tests passed (2671581 assertions in 364 test cases)
+

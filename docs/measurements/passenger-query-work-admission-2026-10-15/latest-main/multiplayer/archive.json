@@ -1,0 +1,26 @@
+{
+  "outcome": "pass",
+  "local_run": "C:\\Users\\bebe\\.codex\\worktrees\\923a\\OpenTTD-patches\\build-admission\\integration-2026-10-15-mp-warm-latest-main",
+  "stderr": {
+    "server": {
+      "bytes": 14925497,
+      "sha256": "de80a777ce98bff08573d7b0433d370b8162037399e0c7c63ce9bf24fe90d3e7",
+      "complete_gzip": "stderr.txt.gz",
+      "newgrf_capacity_warning_count": 72238
+    },
+    "client-initial": {
+      "bytes": 15049077,
+      "sha256": "cf9d8490f45929eeeecbe010820d35b0297bba80b4b6f58d9c0df7e6b5a9965b",
+      "complete_gzip": "stderr.txt.gz",
+      "newgrf_capacity_warning_count": 72238
+    },
+    "client-late": {
+      "bytes": 14161858,
+      "sha256": "ce2e27cc0ef2d894387d955772dbf68679187514ba83f43190903ed4769b8e07",
+      "complete_gzip": "stderr.txt.gz",
+      "newgrf_capacity_warning_count": 68512
+    }
+  },
+  "measurement_uncontaminated": true,
+  "formal_cpu_comparison_eligible": true
+}

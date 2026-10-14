@@ -1,0 +1,121 @@
+dbg: [misc:3] C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\build-admission\regression\passenger_od_load\ added as search path
+dbg: [misc:3] C:\Users\bebe\OneDrive\ドキュメント\OpenTTD\ added as search path
+dbg: [misc:3] C:\Users\Public\Documents\OpenTTD\ added as search path
+dbg: [misc:3] C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\build-admission\Release\ added as search path
+dbg: [misc:3] C:\Users\bebe\OneDrive\ドキュメント\OpenTTD\content_download\ added as search path
+dbg: [misc:1] C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\build-admission\regression\passenger_od_load\ found as config directory
+dbg: [misc:1] C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\build-admission\regression\passenger_od_load\ found as personal directory
+dbg: [misc:3] C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\build-admission\regression\passenger_od_load\content_download\ added as search path
+dbg: [misc:2] Scanning for tars
+dbg: [misc:6] Found file in tar: opengfx-0.6.1\changelog.txt (25942 bytes, 512 offset)
+dbg: [misc:6] Found file in tar: opengfx-0.6.1\ogfx1_base.grf (2693605 bytes, 27136 offset)
+dbg: [misc:6] Found file in tar: opengfx-0.6.1\ogfxc_arctic.grf (287331 bytes, 2721280 offset)
+dbg: [misc:6] Found file in tar: opengfx-0.6.1\ogfxe_extra.grf (926634 bytes, 3009536 offset)
+dbg: [misc:6] Found file in tar: opengfx-0.6.1\ogfxh_tropical.grf (472020 bytes, 3936768 offset)
+dbg: [misc:6] Found file in tar: opengfx-0.6.1\ogfxi_logos.grf (253846 bytes, 4409344 offset)
+dbg: [misc:6] Found file in tar: opengfx-0.6.1\ogfxt_toyland.grf (622079 bytes, 4663808 offset)
+dbg: [misc:6] Found file in tar: opengfx-0.6.1\opengfx.obg (8528 bytes, 5286400 offset)
+dbg: [misc:6] Found file in tar: opengfx-0.6.1\readme.txt (15120 bytes, 5295616 offset)
+dbg: [misc:6] Found file in tar: opengfx-0.6.1\license.txt (17987 bytes, 5311488 offset)
+dbg: [misc:4] Found tar 'C:\Users\bebe\OneDrive\ドキュメント\OpenTTD\content_download\baseset\4f474658-OpenGFX-0.6.1.tar' with 10 new files
+dbg: [misc:6] Found file in tar: opensfx-1.0.1\changelog.txt (1551 bytes, 512 offset)
+dbg: [misc:6] Found file in tar: opensfx-1.0.1\license.txt (55863 bytes, 3072 offset)
+dbg: [misc:6] Found file in tar: opensfx-1.0.1\opensfx.cat (13196440 bytes, 59904 offset)
+dbg: [misc:6] Found file in tar: opensfx-1.0.1\opensfx.obs (6393 bytes, 13257216 offset)
+dbg: [misc:6] Found file in tar: opensfx-1.0.1\readme.txt (16403 bytes, 13264384 offset)
+dbg: [misc:4] Found tar 'C:\Users\bebe\OneDrive\ドキュメント\OpenTTD\content_download\baseset\4f534658-OpenSFX-1.0.1.tar' with 5 new files
+dbg: [misc:6] Found file in tar: opensfx-1.0.3\changelog.txt (1886 bytes, 512 offset)
+dbg: [misc:6] Found file in tar: opensfx-1.0.3\license.txt (55863 bytes, 3072 offset)
+dbg: [misc:6] Found file in tar: opensfx-1.0.3\opensfx.cat (13196496 bytes, 59904 offset)
+dbg: [misc:6] Found file in tar: opensfx-1.0.3\opensfx.obs (9320 bytes, 13257216 offset)
+dbg: [misc:6] Found file in tar: opensfx-1.0.3\readme.txt (16403 bytes, 13267456 offset)
+dbg: [misc:4] Found tar 'C:\Users\bebe\OneDrive\ドキュメント\OpenTTD\content_download\baseset\4f534658-OpenSFX-1.0.3.tar' with 5 new files
+dbg: [misc:6] Found file in tar: opengfx2_classic-0.8.1\changelog.md (7127 bytes, 512 offset)
+dbg: [misc:6] Found file in tar: opengfx2_classic-0.8.1\license.txt (18092 bytes, 8192 offset)
+dbg: [misc:6] Found file in tar: opengfx2_classic-0.8.1\ogfx21_base_8.grf (3371855 bytes, 27136 offset)
+dbg: [misc:6] Found file in tar: opengfx2_classic-0.8.1\ogfx2c_arctic_8.grf (282819 bytes, 3399680 offset)
+dbg: [misc:6] Found file in tar: opengfx2_classic-0.8.1\ogfx2e_extra_8.grf (7720306 bytes, 3683328 offset)
+dbg: [misc:6] Found file in tar: opengfx2_classic-0.8.1\ogfx2h_tropical_8.grf (427733 bytes, 11404288 offset)
+dbg: [misc:6] Found file in tar: opengfx2_classic-0.8.1\ogfx2i_logos_8.grf (4289785 bytes, 11832832 offset)
+dbg: [misc:6] Found file in tar: opengfx2_classic-0.8.1\ogfx2t_toyland_8.grf (597309 bytes, 16123392 offset)
+dbg: [misc:6] Found file in tar: opengfx2_classic-0.8.1\opengfx2_8.obg (7989 bytes, 16721408 offset)
+dbg: [misc:6] Found file in tar: opengfx2_classic-0.8.1\readme.md (4159 bytes, 16730112 offset)
+dbg: [misc:4] Found tar 'C:\Users\bebe\OneDrive\ドキュメント\OpenTTD\content_download\baseset\6f676678-OpenGFX2_Classic-0.8.1.tar' with 10 new files
+dbg: [misc:6] Found file in tar: zbase-v5588\license.txt (17987 bytes, 512 offset)
+dbg: [misc:6] Found file in tar: zbase-v5588\changelog.txt (76 bytes, 19456 offset)
+dbg: [misc:6] Found file in tar: zbase-v5588\readme.txt (13371 bytes, 20480 offset)
+dbg: [misc:6] Found file in tar: zbase-v5588\zbase_base.grf (183031925 bytes, 34816 offset)
+dbg: [misc:6] Found file in tar: zbase-v5588\zbase_logos.grf (253846 bytes, 183067648 offset)
+dbg: [misc:6] Found file in tar: zbase-v5588\zbase_arctic.grf (19171547 bytes, 183322112 offset)
+dbg: [misc:6] Found file in tar: zbase-v5588\zbase_toyland.grf (52445864 bytes, 202494464 offset)
+dbg: [misc:6] Found file in tar: zbase-v5588\zbase_tropical.grf (28979966 bytes, 254941184 offset)
+dbg: [misc:6] Found file in tar: zbase-v5588\zbase_extra.grf (44233121 bytes, 283921920 offset)
+dbg: [misc:6] Found file in tar: zbase-v5588\zbase.obg (1562 bytes, 328155648 offset)
+dbg: [misc:4] Found tar 'C:\Users\bebe\OneDrive\ドキュメント\OpenTTD\content_download\baseset\7a423332-zBase-v5588.tar' with 10 new files
+dbg: [misc:2] Scan complete, found 5 files
+dbg: [misc:3] C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\build-admission\Release\lang\afrikaans.lng is not a valid language file
+dbg: [misc:3] C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\build-admission\Release\lang\arabic_egypt.lng is not a valid language file
+dbg: [misc:3] C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\build-admission\Release\lang\basque.lng is not a valid language file
+dbg: [misc:3] C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\build-admission\Release\lang\belarusian.lng is not a valid language file
+dbg: [misc:3] C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\build-admission\Release\lang\brazilian_portuguese.lng is not a valid language file
+dbg: [misc:3] C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\build-admission\Release\lang\bulgarian.lng is not a valid language file
+dbg: [misc:3] C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\build-admission\Release\lang\catalan.lng is not a valid language file
+dbg: [misc:3] C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\build-admission\Release\lang\chuvash.lng is not a valid language file
+dbg: [misc:3] C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\build-admission\Release\lang\croatian.lng is not a valid language file
+dbg: [misc:3] C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\build-admission\Release\lang\czech.lng is not a valid language file
+dbg: [misc:3] C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\build-admission\Release\lang\danish.lng is not a valid language file
+dbg: [misc:3] C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\build-admission\Release\lang\dutch.lng is not a valid language file
+dbg: [misc:3] C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\build-admission\Release\lang\english.lng is not a valid language file
+dbg: [misc:3] C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\build-admission\Release\lang\english_AU.lng is not a valid language file
+dbg: [misc:3] C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\build-admission\Release\lang\english_US.lng is not a valid language file
+dbg: [misc:3] C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\build-admission\Release\lang\esperanto.lng is not a valid language file
+dbg: [misc:3] C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\build-admission\Release\lang\estonian.lng is not a valid language file
+dbg: [misc:3] C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\build-admission\Release\lang\faroese.lng is not a valid language file
+dbg: [misc:3] C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\build-admission\Release\lang\finnish.lng is not a valid language file
+dbg: [misc:3] C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\build-admission\Release\lang\french.lng is not a valid language file
+dbg: [misc:3] C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\build-admission\Release\lang\frisian.lng is not a valid language file
+dbg: [misc:3] C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\build-admission\Release\lang\gaelic.lng is not a valid language file
+dbg: [misc:3] C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\build-admission\Release\lang\galician.lng is not a valid language file
+dbg: [misc:3] C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\build-admission\Release\lang\german.lng is not a valid language file
+dbg: [misc:3] C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\build-admission\Release\lang\greek.lng is not a valid language file
+dbg: [misc:3] C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\build-admission\Release\lang\hebrew.lng is not a valid language file
+dbg: [misc:3] C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\build-admission\Release\lang\hindi.lng is not a valid language file
+dbg: [misc:3] C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\build-admission\Release\lang\hungarian.lng is not a valid language file
+dbg: [misc:3] C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\build-admission\Release\lang\icelandic.lng is not a valid language file
+dbg: [misc:3] C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\build-admission\Release\lang\ido.lng is not a valid language file
+dbg: [misc:3] C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\build-admission\Release\lang\indonesian.lng is not a valid language file
+dbg: [misc:3] C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\build-admission\Release\lang\irish.lng is not a valid language file
+dbg: [misc:3] C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\build-admission\Release\lang\italian.lng is not a valid language file
+dbg: [misc:3] C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\build-admission\Release\lang\japanese.lng is not a valid language file
+dbg: [misc:3] C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\build-admission\Release\lang\korean.lng is not a valid language file
+dbg: [misc:3] C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\build-admission\Release\lang\latin.lng is not a valid language file
+dbg: [misc:3] C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\build-admission\Release\lang\latvian.lng is not a valid language file
+dbg: [misc:3] C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\build-admission\Release\lang\lithuanian.lng is not a valid language file
+dbg: [misc:3] C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\build-admission\Release\lang\luxembourgish.lng is not a valid language file
+dbg: [misc:3] C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\build-admission\Release\lang\macedonian.lng is not a valid language file
+dbg: [misc:3] C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\build-admission\Release\lang\malay.lng is not a valid language file
+dbg: [misc:3] C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\build-admission\Release\lang\maltese.lng is not a valid language file
+dbg: [misc:3] C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\build-admission\Release\lang\maori.lng is not a valid language file
+dbg: [misc:3] C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\build-admission\Release\lang\marathi.lng is not a valid language file
+dbg: [misc:3] C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\build-admission\Release\lang\norwegian_bokmal.lng is not a valid language file
+dbg: [misc:3] C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\build-admission\Release\lang\norwegian_nynorsk.lng is not a valid language file
+dbg: [misc:3] C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\build-admission\Release\lang\persian.lng is not a valid language file
+dbg: [misc:3] C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\build-admission\Release\lang\polish.lng is not a valid language file
+dbg: [misc:3] C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\build-admission\Release\lang\portuguese.lng is not a valid language file
+dbg: [misc:3] C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\build-admission\Release\lang\romanian.lng is not a valid language file
+dbg: [misc:3] C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\build-admission\Release\lang\russian.lng is not a valid language file
+dbg: [misc:3] C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\build-admission\Release\lang\serbian.lng is not a valid language file
+dbg: [misc:3] C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\build-admission\Release\lang\simplified_chinese.lng is not a valid language file
+dbg: [misc:3] C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\build-admission\Release\lang\slovak.lng is not a valid language file
+dbg: [misc:3] C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\build-admission\Release\lang\slovenian.lng is not a valid language file
+dbg: [misc:3] C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\build-admission\Release\lang\spanish.lng is not a valid language file
+dbg: [misc:3] C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\build-admission\Release\lang\spanish_MX.lng is not a valid language file
+dbg: [misc:3] C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\build-admission\Release\lang\swedish.lng is not a valid language file
+dbg: [misc:3] C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\build-admission\Release\lang\tamil.lng is not a valid language file
+dbg: [misc:3] C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\build-admission\Release\lang\thai.lng is not a valid language file
+dbg: [misc:3] C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\build-admission\Release\lang\traditional_chinese.lng is not a valid language file
+dbg: [misc:3] C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\build-admission\Release\lang\turkish.lng is not a valid language file
+dbg: [misc:3] C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\build-admission\Release\lang\ukrainian.lng is not a valid language file
+dbg: [misc:3] C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\build-admission\Release\lang\urdu.lng is not a valid language file
+dbg: [misc:3] C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\build-admission\Release\lang\vietnamese.lng is not a valid language file
+dbg: [misc:3] C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\build-admission\Release\lang\welsh.lng is not a valid language file

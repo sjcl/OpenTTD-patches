@@ -1,0 +1,26 @@
+{
+  "input_sha256": "2fa1b07407db3ca3077664fb9aab21a13378d2df6d478c80d4cf81302495f1c2",
+  "binary_sha256": "8c4b7d909dc243650e5445a676919922c4070a7a27fd7065070065c8b1e4dac2",
+  "result_sha256": "29f59a12a1c240e7ff5bd659a370ea2a2644c094178b21459639f84a7d83a347",
+  "result_bytes": 29824576,
+  "exit_code": 0,
+  "requested_ticks": 0,
+  "cache_mode": "warm",
+  "scratch_disabled": false,
+  "integrity": {
+    "runtime_routing_feature": 3,
+    "state_ticks": 3176553679,
+    "packets": 193783,
+    "cargo_units": 855403,
+    "known_od_units": 299288,
+    "journey_packets": 19802,
+    "packet_state_digest": 14238130775671843509,
+    "payment_digest": 4369277870292276850,
+    "payments_valid": true,
+    "legacy_true_packets": 0,
+    "legacy_false_packets": 0,
+    "legacy_true_units": 0,
+    "legacy_false_units": 0,
+    "opposite_history_mergeable_pairs": 0
+  }
+}
