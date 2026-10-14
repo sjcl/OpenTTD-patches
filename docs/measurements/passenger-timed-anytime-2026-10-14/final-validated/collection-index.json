@@ -1,0 +1,78 @@
+{
+  "schema_version": 1,
+  "runs": [
+    {
+      "id": "on-1",
+      "label": "original",
+      "kind": "minimal",
+      "source_directory": "C:\\Users\\bebe\\.codex\\worktrees\\e133\\OpenTTD-patches\\build-timed-anytime\\takeover-final\\original\\on-1",
+      "archive_directory": "original-minimal-on-1",
+      "raw_console_sha256": "dd5c3a91763dda69cd6d96e3e85c861fa07a8481796faf7c402c9e2d3c4047a8",
+      "archived_console_sha256": "dd5c3a91763dda69cd6d96e3e85c861fa07a8481796faf7c402c9e2d3c4047a8",
+      "final_save_sha256_verified_at_collection": "ab821b6e8d0cf2b6cdd3eaf14c77e5fcf2679ceaffb73586740fd7b4aabf729b"
+    },
+    {
+      "id": "on-1",
+      "label": "baseline",
+      "kind": "minimal",
+      "source_directory": "C:\\Users\\bebe\\.codex\\worktrees\\e133\\OpenTTD-patches\\build-timed-anytime\\takeover-final\\baseline\\on-1",
+      "archive_directory": "baseline-minimal-on-1",
+      "raw_console_sha256": "ade7d8904025749b8eca58d00e47dde46a61b38dc58de36ac389004fec2e35e8",
+      "archived_console_sha256": "ade7d8904025749b8eca58d00e47dde46a61b38dc58de36ac389004fec2e35e8",
+      "final_save_sha256_verified_at_collection": "ecd62668aafadacfc43eeaf22d73dc46ac1298aa672680f65c323f5ebf4a3b06"
+    },
+    {
+      "id": "on-1",
+      "label": "anytime",
+      "kind": "minimal",
+      "source_directory": "C:\\Users\\bebe\\.codex\\worktrees\\e133\\OpenTTD-patches\\build-timed-anytime\\takeover-final\\anytime\\on-1",
+      "archive_directory": "anytime-minimal-on-1",
+      "raw_console_sha256": "d7353454d05a446167ca9aefd735a0a79403f6df0181aab4037fe9b612a9acb5",
+      "archived_console_sha256": "d7353454d05a446167ca9aefd735a0a79403f6df0181aab4037fe9b612a9acb5",
+      "final_save_sha256_verified_at_collection": "d8b8b8374eba20ef5d00faa8508baf20fc0865ae851f6ff5cf914a4d2a328c11"
+    },
+    {
+      "id": "on-2",
+      "label": "anytime",
+      "kind": "minimal",
+      "source_directory": "C:\\Users\\bebe\\.codex\\worktrees\\e133\\OpenTTD-patches\\build-timed-anytime\\takeover-final\\anytime\\on-2",
+      "archive_directory": "anytime-minimal-on-2",
+      "raw_console_sha256": "8b31b30d8c9668604dcdf8087a365a985b3b70c98ba2f20761c6294ab8b19f5f",
+      "archived_console_sha256": "8b31b30d8c9668604dcdf8087a365a985b3b70c98ba2f20761c6294ab8b19f5f",
+      "final_save_sha256_verified_at_collection": "d8b8b8374eba20ef5d00faa8508baf20fc0865ae851f6ff5cf914a4d2a328c11"
+    },
+    {
+      "id": "cold-1",
+      "label": "anytime-cold",
+      "kind": "minimal",
+      "source_directory": "C:\\Users\\bebe\\.codex\\worktrees\\e133\\OpenTTD-patches\\build-timed-anytime\\takeover-final\\anytime-cold\\cold-1",
+      "archive_directory": "anytime-cold-minimal-cold-1",
+      "raw_console_sha256": "8deffbef21e137364ce68110d3e98f4d0ce9aaeba724aa44eae3cc3ff3debaff",
+      "archived_console_sha256": "8deffbef21e137364ce68110d3e98f4d0ce9aaeba724aa44eae3cc3ff3debaff",
+      "final_save_sha256_verified_at_collection": "d8b8b8374eba20ef5d00faa8508baf20fc0865ae851f6ff5cf914a4d2a328c11"
+    },
+    {
+      "id": "on-1",
+      "label": "quality-validated",
+      "kind": "minimal",
+      "source_directory": "C:\\Users\\bebe\\.codex\\worktrees\\e133\\OpenTTD-patches\\build-timed-anytime\\takeover-final\\quality-validated\\on-1",
+      "archive_directory": "quality-validated-minimal-on-1",
+      "raw_console_sha256": "1c2e25e276bd6e90ee79e0ce7a2a17801ed8c6fb09845e085c2de7e474189d73",
+      "archived_console_sha256": "1c2e25e276bd6e90ee79e0ce7a2a17801ed8c6fb09845e085c2de7e474189d73",
+      "final_save_sha256_verified_at_collection": "7301cba18584bfe4fc9ffb0b9b8bc19114327dae3b7ae0e2354da4e2e12ff5cb"
+    },
+    {
+      "id": "on-1",
+      "label": "continuation",
+      "kind": "minimal",
+      "source_directory": "C:\\Users\\bebe\\.codex\\worktrees\\e133\\OpenTTD-patches\\build-timed-anytime\\takeover-continuation-final\\continuation\\on-1",
+      "archive_directory": "continuation-minimal-on-1",
+      "raw_console_sha256": "a8ae5620f90aeda4165d7bd7109edaf8b080cc8c93dbbb860c7351fa337223b8",
+      "archived_console_sha256": "a8ae5620f90aeda4165d7bd7109edaf8b080cc8c93dbbb860c7351fa337223b8",
+      "final_save_sha256_verified_at_collection": "ccf4492754265d5caeefa349ecf89b81fec96d8a0bcada57ec788ed18e67418c"
+    }
+  ],
+  "source_summary_sha256": "69f8c644991452a0250d9648e925070f8b0ef6ddd4174ae53d7ef68c4bc9a133",
+  "archived_summary_sha256": "8f1540f6be5e4a73bea7f29a457eefc95f7e1c1b2e443cd55063497436943c8f",
+  "note": "Save/asset/exe files remain outside Git. Text/JSON is LF normalized; raw source and archived summary/console hashes are distinct. --existing-summary reuses recorded validation."
+}

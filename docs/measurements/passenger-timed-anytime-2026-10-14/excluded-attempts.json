@@ -1,0 +1,83 @@
+{
+  "schema_version": 1,
+  "accepted_for_comparison": false,
+  "attempts": [
+    {
+      "directory": "build-timed-anytime/baseline-diagnostic",
+      "status": "failed_before_game_start",
+      "reason": "The referenced asset worktree was removed before assets could be prepared.",
+      "started_games": 0,
+      "final_save_sha256": null
+    },
+    {
+      "directory": "build-timed-anytime/sequence/baseline/on-1",
+      "status": "aborted_for_competing_build",
+      "started_utc": "2026-10-14T02:18:56.383487+09:00",
+      "contamination": [
+        {
+          "utc": "2026-10-14T02:24:10.529156+09:00",
+          "processes": [
+            "cmake:64700",
+            "MSBuild:112452"
+          ]
+        },
+        {
+          "utc": "2026-10-14T02:24:19.686942+09:00",
+          "processes": [
+            "cmake:64700",
+            "MSBuild:112452"
+          ]
+        }
+      ],
+      "wall_seconds_before_abort": 315.640994,
+      "cpu_seconds_before_abort": 416.203125,
+      "process_exit_code": -1,
+      "final_save_sha256": null,
+      "reason": "The harness detected competing CPU work and stopped only its own game. No tick, transport or speed result from this attempt is accepted."
+    },
+    {
+      "directory": "build-timed-anytime/sequence2/baseline/on-1",
+      "status": "completed_but_wrong_control_link",
+      "started_utc": "2026-10-14T02:42:22.217455+09:00",
+      "contamination": [],
+      "final_save_sha256": "48cf100ffc5836b8637947e5add18bf5efbd76b262a90713cb9e961ee8453e68",
+      "rescued_unpopped": 4778,
+      "reason": "The renamed replacement TU compiled, but CMake OBJECT-library consumers still linked passenger_service_database.obj. The control therefore executed Anytime completion. Replacements now keep the original basename, stale objects are removed between variants, and control/probe runtime gates reject this failure."
+    },
+    {
+      "directory": "build-timed-anytime/sequence2/continuation/on-1",
+      "status": "incomplete_simulation_interval",
+      "requested_driver_loops": 8192,
+      "actual_simulation_ticks": 1669,
+      "start_tick": 3176553679,
+      "end_tick": 3176555348,
+      "reason": "The loaded map encountered an existing critical NewGRF capacity-change error and paused. Driver loops continued while simulation was paused. This is excluded from the 8192-tick continuation. The corrected benchmark counts actual StateTicks and explicitly records benchmark-only error resumes."
+    },
+    {
+      "directory": "build-timed-anytime/mp-arena",
+      "status": "failed_client_progress_validation",
+      "input_sha256": "48cf100ffc5836b8637947e5add18bf5efbd76b262a90713cb9e961ee8453e68",
+      "server_ticks_advanced": 929,
+      "client_last_observed_ticks_advanced": [
+        552,
+        808
+      ],
+      "provisional_packets_adopted": 617,
+      "reason": "Two clients joined, but the first client did not reach the required end progress within 120 seconds. NewGRF capacity warnings and missed-sync-frame messages are retained in the local logs. Joins alone do not establish deterministic continued operation; this attempt is not a passing multiplayer test."
+    },
+    {
+      "directory": "build-timed-anytime/validated-v2",
+      "status": "failed_before_game_start",
+      "started_games": 0,
+      "reason": "The copied continuation TU included OpenTTD headers before stdafx.h. Build-Variants stopped before starting measurements; the copied driver now keeps stdafx.h first."
+    },
+    {
+      "directory": "build-timed-anytime/takeover-final/continuation/on-1",
+      "status": "excluded_binary_metadata_changed_during_prelaunch_wait",
+      "actual_simulation_ticks": 8192,
+      "actual_binary_sha256": "7cf14850d6336180c4ea7e462f1e6bc70bd8d9e175fb9226d363db450b1ceab3",
+      "manifest_binary_sha256": "26fca086e9eee4c1caeeca7958ac5e47030d26929a2a93133bea9a0b5d255107",
+      "reason": "The corrected driver was rebuilt while the runner was waiting before launch, after its manifest snapshot. The run advanced exactly 8192 StateTicks but its binary metadata was stale. A separate continuation replay freezes the corrected binary before recording the manifest."
+    }
+  ]
+}

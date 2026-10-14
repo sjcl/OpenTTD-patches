@@ -833,6 +833,18 @@ PassengerPeriodicPlan PassengerServiceDatabase::PlanWithLegacySearchStructures(C
 	return this->PlanInternal(cargo, origin, destination, ready, limits, evaluation, excluded, true, true);
 }
 
+PassengerPeriodicPlan PassengerServiceDatabase::PlanWithLegacyCompletion(CargoType cargo, StationID origin, StationID destination, StateTicks ready,
+		PassengerJourneyLimits limits, PassengerJourneyEvaluation evaluation, OrderListID excluded)
+{
+	return this->PlanInternal(cargo, origin, destination, ready, limits, evaluation, excluded, true, false, false);
+}
+
+PassengerPeriodicPlan PassengerServiceDatabase::PlanWithOriginalCompletion(CargoType cargo, StationID origin, StationID destination, StateTicks ready,
+		PassengerJourneyLimits limits, PassengerJourneyEvaluation evaluation, OrderListID excluded)
+{
+	return this->PlanInternal(cargo, origin, destination, ready, limits, evaluation, excluded, true, false, false, false);
+}
+
 bool PassengerServiceDatabase::ServiceCannotImprove(const PassengerPeriodicTimetable &pattern, size_t boarding, CargoType cargo,
 		StationID destination, int64_t cost, bool transfer, int64_t best, const JourneyPolicy &policy, PassengerJourneyEvaluation evaluation)
 {
@@ -873,17 +885,40 @@ bool PassengerServiceDatabase::ServiceCannotImprove(const PassengerPeriodicTimet
 }
 
 PassengerPeriodicPlan PassengerServiceDatabase::PlanInternal(CargoType cargo, StationID origin, StationID destination, StateTicks ready,
-		PassengerJourneyLimits limits, PassengerJourneyEvaluation evaluation, OrderListID excluded, bool prune_services, bool legacy_structures)
+		PassengerJourneyLimits limits, PassengerJourneyEvaluation evaluation, OrderListID excluded, bool prune_services, bool legacy_structures, bool anytime, bool validate_completes)
 {
 	using Reason = PassengerPeriodicPlan::Reason;
+	using WorkStop = PassengerPeriodicPlan::WorkStop;
 	PassengerPeriodicPlan result;
 	const auto started = std::chrono::steady_clock::now(); ++this->diagnostic.searches;
 	auto observe = [&](Reason reason) { result.observations[static_cast<size_t>(reason)] = true; };
 	auto finish = [&]() {
+		if (result.ride) result.state = result.deferred ? PassengerPeriodicPlan::State::Provisional : PassengerPeriodicPlan::State::Certified;
+		else if (result.deferred && (result.reason == Reason::Work || result.reason == Reason::Labels || result.reason == Reason::Memory || result.reason == Reason::Transfers)) result.state = PassengerPeriodicPlan::State::Deferred;
+		else if (!result.deferred && !result.observations[static_cast<size_t>(Reason::UnknownPhase)] && !result.observations[static_cast<size_t>(Reason::Evaluation)] &&
+				(result.reason == Reason::OriginMissing || result.reason == Reason::DestinationMissing || result.reason == Reason::NoAlighting ||
+				result.reason == Reason::Unreachable || result.reason == Reason::NoCandidate)) result.state = PassengerPeriodicPlan::State::NoRoute;
+		++this->diagnostic.result_states[static_cast<size_t>(result.state)];
 		observe(result.reason);
 		++this->diagnostic.outcomes[static_cast<size_t>(result.reason)];
 		for (size_t i = 0; i < result.observations.size(); ++i) this->diagnostic.observations[i] += result.observations[i];
 		this->diagnostic.search_work += result.work;
+		++this->diagnostic.search_work_histogram[std::min<size_t>((result.work + 1023) / 1024, 64)];
+		for (size_t i = 0; i < result.search.work_stops.size(); ++i) {
+			this->diagnostic.work_stop_observations[i] += result.search.work_stops[i];
+			this->diagnostic.work_stop_calls[i] += result.search.work_stops[i] != 0;
+		}
+		if (result.reason == Reason::Work) {
+			this->diagnostic.work_with_destination_label += result.search.destination_labels != 0;
+			this->diagnostic.work_with_complete += result.search.complete_labels != 0;
+			this->diagnostic.work_without_complete += result.search.complete_labels == 0;
+			this->diagnostic.work_with_queued_complete += result.search.queued_complete != 0;
+			this->diagnostic.work_with_popped_complete += result.search.popped_complete != 0;
+			this->diagnostic.work_with_improvement += result.search.improvement_possible;
+			this->diagnostic.work_reverse += result.search.reverse_work;
+			this->diagnostic.work_forward += result.search.forward_work;
+			if (this->diagnostic.work_sample_count < this->diagnostic.work_samples.size()) this->diagnostic.work_samples[this->diagnostic.work_sample_count++] = result.search;
+		}
 		this->diagnostic.query_microseconds += std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - started).count();
 		return result;
 	};
@@ -893,6 +928,7 @@ PassengerPeriodicPlan PassengerServiceDatabase::PlanInternal(CargoType cargo, St
 		result.deferred = true; result.reason = Reason::Evaluation; return finish();
 	}
 	if (limits.work == 0 || limits.memory_bytes < 256) {
+		if (limits.work == 0) { result.search.first_work_stop = WorkStop::Admission; ++result.search.work_stops[static_cast<size_t>(WorkStop::Admission)]; }
 		result.deferred = true; result.reason = limits.work == 0 ? Reason::Work : Reason::Memory; return finish();
 	}
 	PolicyKey key{false, cargo, origin, destination, OrderListID::Invalid(), limits, evaluation};
@@ -908,6 +944,7 @@ PassengerPeriodicPlan PassengerServiceDatabase::PlanInternal(CargoType cargo, St
 		this->diagnostic.policy_compile_microseconds += std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - compile_start).count();
 	}
 	result.work = policy->work; result.memory = policy->bytes;
+	result.search.reverse_work = policy->work;
 	result.reason = policy->reason;
 	/* Replaying the same reverse work keeps optional residency irrelevant to
 	 * admission, including cold/warm/evicted caches and network joins. */
@@ -923,7 +960,10 @@ PassengerPeriodicPlan PassengerServiceDatabase::PlanInternal(CargoType cargo, St
 			auto &labels = scratch.labels;
 			auto &queue = scratch.queue;
 			std::optional<int64_t> incumbent_cost; ///< Cost of an admitted complete label, independently of queue order.
+			size_t best_complete = SIZE_MAX;
 			int64_t omitted_bound = INT64_MAX;
+			int64_t non_work_omitted_bound = INT64_MAX;
+			int64_t interrupted_bound = INT64_MAX;
 			auto bound = [&](StationID station, int64_t cost) {
 				int64_t distance = policy->DistanceLowerBound(station);
 				if (!AddTicks(cost, distance)) return INT64_MAX;
@@ -931,13 +971,39 @@ PassengerPeriodicPlan PassengerServiceDatabase::PlanInternal(CargoType cargo, St
 			};
 			auto limited = [&](Reason reason, int64_t lower) {
 				observe(reason); omitted_bound = std::min(omitted_bound, lower);
+				if (reason != Reason::Work) non_work_omitted_bound = std::min(non_work_omitted_bound, lower);
 				if (result.reason == Reason::NoCandidate || result.reason == Reason::Work || result.reason == Reason::Memory) result.reason = reason;
 			};
-			auto spend = [&]() {
-				if (result.work >= limits.work) { limited(Reason::Work, 0); return false; }
+			auto work_stop = [&](WorkStop where, int64_t lower) {
+				if (result.search.first_work_stop == WorkStop::None) result.search.first_work_stop = where;
+				++result.search.work_stops[static_cast<size_t>(where)];
+				interrupted_bound = std::min(interrupted_bound, lower);
+			};
+			auto spend = [&](WorkStop where, auto lower) {
+				/* Bounds are observations on a failed spend, not additional work on
+				 * every vehicle/dominance visit in the hot loop. */
+				if (result.work >= limits.work) { work_stop(where, lower()); limited(Reason::Work, 0); return false; }
 				++result.work; return true;
 			};
 			auto first_key = [](const Label &a) { return std::tie(a.first.departure, a.first.service, a.first.boarding_order, a.first.alighting_order); };
+			auto complete_key = [](const Label &a) {
+				return std::tie(a.cost, a.time, a.rides, a.first.departure, a.first.service, a.first.boarding_order, a.first.alighting_order);
+			};
+			auto complete_valid = [&](size_t index) {
+				if (labels[index].station != destination || labels[index].rides == 0) return false;
+				const auto &first = labels[index].first;
+				while (labels[index].parent != SIZE_MAX) {
+					const auto &child = labels[index];
+					if (child.parent >= index) return false;
+					const auto &parent = labels[child.parent]; const auto &leg = child.leg;
+					if (child.rides != parent.rides + 1 || leg.boarding != parent.station || leg.alighting != child.station ||
+							leg.arrival != child.time || leg.departure < parent.time || leg.departure < leg.not_before ||
+							leg.arrival < leg.departure || !this->IsCurrent(leg)) return false;
+					if (parent.parent == SIZE_MAX && leg != first) return false;
+					index = child.parent;
+				}
+				return labels[index].station == origin && labels[index].time == ready && labels[index].rides == 0;
+			};
 			auto insert = [&](Label next) {
 				int64_t lower = bound(next.station, next.cost);
 				if (result.ride && lower > result.cost) return;
@@ -945,7 +1011,7 @@ PassengerPeriodicPlan PassengerServiceDatabase::PlanInternal(CargoType cargo, St
 				auto frontier = scratch.At(next.station);
 				size_t retained = 0;
 				if (next.station != destination) for (size_t index : frontier) {
-					if (!spend()) return;
+					if (!spend(WorkStop::Dominance, [&]() { return lower; })) return;
 					const auto &other = labels[index];
 					if (!other.active) continue;
 					++retained;
@@ -963,23 +1029,41 @@ PassengerPeriodicPlan PassengerServiceDatabase::PlanInternal(CargoType cargo, St
 				constexpr size_t LABEL_BYTES = 1536; // Original logical envelope: never discount reused storage or direct indexing.
 				if (result.memory > limits.memory_bytes || LABEL_BYTES > limits.memory_bytes - result.memory) { limited(Reason::Memory, lower); return; }
 				result.memory += LABEL_BYTES;
-				if (next.station == destination && (!incumbent_cost || next.cost < *incumbent_cost)) incumbent_cost = next.cost;
-				queue.emplace(lower, next.cost, next.time, next.rides, next.first.departure, next.first.service,
-					next.first.boarding_order, next.first.alighting_order, labels.size());
+				/* Admission precedes storage and completion. A rejected label is never
+				 * an incumbent, and each parent's index precedes its admitted child. */
+				const size_t index = labels.size();
+				labels.push_back(std::move(next)); scratch.Append(labels.back().station, index);
+				auto &admitted = labels[index];
+				if (admitted.station == destination) {
+					++result.search.destination_labels;
+					admitted.complete_valid = complete_valid(index);
+					result.search.complete_labels += admitted.complete_valid;
+					if (admitted.complete_valid && (best_complete == SIZE_MAX || complete_key(admitted) < complete_key(labels[best_complete]))) {
+						best_complete = index;
+						result.search.best_complete_cost = admitted.cost; result.search.best_complete_arrival = admitted.time;
+					}
+					if ((!validate_completes || admitted.complete_valid) && (!incumbent_cost || admitted.cost < *incumbent_cost)) incumbent_cost = admitted.cost;
+				}
+				queue.emplace(lower, admitted.cost, admitted.time, admitted.rides, admitted.first.departure, admitted.first.service,
+					admitted.first.boarding_order, admitted.first.alighting_order, index);
 				++this->diagnostic.queue_pushes;
-				labels.push_back(std::move(next)); scratch.Append(labels.back().station, labels.size() - 1);
 			};
 			insert({origin, ready, 0, SIZE_MAX, 0, {}, {}});
 			size_t winner = SIZE_MAX;
 			const size_t candidates = std::clamp<size_t>(limits.candidates, 1, 16);
 			while (!queue.empty()) {
 				if (result.ride && std::get<0>(queue.top()) > result.cost) break;
-				if (!spend()) break;
+				if (!spend(WorkStop::Queue, [&]() {
+					const auto &item = queue.top();
+					return labels[std::get<8>(item)].station == destination ? INT64_MAX : std::get<0>(item);
+				})) break;
 				size_t index = std::get<8>(queue.top()); queue.pop();
 				++this->diagnostic.queue_pops;
 				Label current = labels[index];
 				if (!current.active) continue;
 				if (current.station == destination) {
+					result.search.popped_complete += current.complete_valid;
+					if (validate_completes && !current.complete_valid) { observe(Reason::Evaluation); continue; }
 					/* Completion only when popped by actual cost plus time lower bound.
 					 * A full candidate list never prevents a better transfer prefix. */
 					if (result.candidates < candidates) ++result.candidates; else observe(Reason::Candidates);
@@ -995,9 +1079,15 @@ PassengerPeriodicPlan PassengerServiceDatabase::PlanInternal(CargoType cargo, St
 				auto row = this->stations.find(current.station);
 				if (row == this->stations.end()) continue;
 				for (const auto &ref : row->second) {
-					if (!spend()) break;
+					if (!spend(WorkStop::Service, [&]() { return bound(current.station, current.cost); })) break;
 					if (current.rides == 0 && ref.service == excluded) continue;
 					const auto &service = this->services.at(ref.service);
+					if (validate_completes) {
+						const auto *list = OrderList::GetIfValid(service.id);
+						if (this->unsafe.contains(service.id) || list == nullptr || list->GetCargoDistRouteGeneration() != service.incarnation) {
+							observe(Reason::Evaluation); continue;
+						}
+					}
 					const auto &pattern = service.timetable;
 					const auto &board = pattern.stops[ref.stop];
 					if (!(board.board & (uint64_t{1} << cargo))) continue;
@@ -1043,7 +1133,7 @@ PassengerPeriodicPlan PassengerServiceDatabase::PlanInternal(CargoType cargo, St
 					} else {
 						++this->diagnostic.departure_index_fallbacks;
 						for (const auto &vehicle : service.vehicles) {
-							if (!spend()) break;
+							if (!spend(WorkStop::Vehicle, [&]() { return bound(current.station, current.cost); })) break;
 							++this->diagnostic.vehicle_candidates;
 							if (!vehicle.capacity[cargo]) continue;
 							if (!vehicle.phase_known) { observe(Reason::UnknownPhase); continue; }
@@ -1051,7 +1141,7 @@ PassengerPeriodicPlan PassengerServiceDatabase::PlanInternal(CargoType cargo, St
 								int64_t offset = board.departure - pattern.stops[service.dispatch_stop].departure;
 								if (offset < 0) offset += pattern.period;
 								for (uint32_t slot : service.dispatch_slots) {
-									if (!spend()) break;
+									if (!spend(WorkStop::Dispatch, [&]() { return bound(current.station, current.cost); })) break;
 									int64_t floor = service.dispatch_floor.base();
 									if (!AddTicks(floor, offset)) continue;
 									++this->diagnostic.next_departures;
@@ -1075,7 +1165,7 @@ PassengerPeriodicPlan PassengerServiceDatabase::PlanInternal(CargoType cargo, St
 							}
 						}
 					}
-					if (result.work >= limits.work) { limited(Reason::Work, 0); break; }
+					if (result.work >= limits.work) { work_stop(WorkStop::Departure, bound(current.station, current.cost)); limited(Reason::Work, 0); break; }
 					if (!departure) { observe(Reason::Evaluation); continue; }
 					if (current.rides && current.leg.service == service.id && current.leg.alighting_order == board.order &&
 							!(board.forced & (uint64_t{1} << cargo))) {
@@ -1085,7 +1175,7 @@ PassengerPeriodicPlan PassengerServiceDatabase::PlanInternal(CargoType cargo, St
 						if (AddTicks(through, board.departure - board.arrival) && departure->base() >= through) continue;
 					}
 					for (size_t step = 1; step < pattern.stops.size(); ++step) {
-						if (!spend()) break;
+						if (!spend(WorkStop::Alighting, [&]() { return bound(current.station, current.cost); })) break;
 						size_t stop_index = (ref.stop + step) % pattern.stops.size();
 						const auto &alight = pattern.stops[stop_index];
 						if ((alight.alight & (uint64_t{1} << cargo)) && (!policy->complete || policy->LowerBound(alight.station) != nullptr)) {
@@ -1107,9 +1197,47 @@ PassengerPeriodicPlan PassengerServiceDatabase::PlanInternal(CargoType cargo, St
 				}
 			}
 			result.labels = labels.size();
+			result.search.forward_work = result.work - result.search.reverse_work;
+			result.search.remaining_lower_bound = std::min(interrupted_bound, non_work_omitted_bound);
+			for (const auto &item : queue.Items()) {
+				const auto &label = labels[std::get<8>(item)];
+				if (!label.active) continue;
+				result.search.queued_complete += label.complete_valid;
+				if (label.station != destination) result.search.remaining_lower_bound = std::min(result.search.remaining_lower_bound, std::get<0>(item));
+			}
+			result.search.improvement_possible = result.search.best_complete_cost && result.search.remaining_lower_bound <= *result.search.best_complete_cost;
 			this->diagnostic.timed_labels += result.labels;
+			const bool rescued = anytime && best_complete != SIZE_MAX && winner == SIZE_MAX;
+			if (anytime && best_complete != SIZE_MAX) {
+				winner = best_complete;
+				const auto &complete = labels[winner];
+				result.ride = complete.first; result.arrival = complete.time; result.cost = complete.cost;
+				result.transfers = complete.rides - 1;
+			}
 			if (result.ride) {
-				for (size_t index = winner; labels[index].parent != SIZE_MAX; index = labels[index].parent) result.route.push_back(labels[index].leg);
+				/* Destination membership alone is insufficient: require a finite chain
+				 * of connected admitted legs back to the exact origin/ready root. No
+				 * later boarding is guaranteed by this forecast itinerary. */
+				size_t index = winner;
+				bool valid = labels[index].station == destination && labels[index].rides != 0;
+				while (valid && labels[index].parent != SIZE_MAX) {
+					const auto &child = labels[index];
+					if (child.parent >= index) { valid = false; break; }
+					const auto &parent = labels[child.parent]; const auto &leg = child.leg;
+					valid = child.rides == parent.rides + 1 && leg.boarding == parent.station && leg.alighting == child.station &&
+							leg.arrival == child.time && leg.departure >= parent.time && leg.departure >= leg.not_before &&
+							leg.arrival >= leg.departure && (!validate_completes || this->IsCurrent(leg));
+					if (valid) result.route.push_back(leg);
+					index = child.parent;
+				}
+				valid = valid && labels[index].station == origin && labels[index].time == ready && labels[index].rides == 0 &&
+						!result.route.empty() && result.route.back() == *result.ride;
+				if (!valid) {
+					result.ride.reset(); result.route.clear(); result.deferred = true; observe(Reason::Evaluation);
+					if (result.reason == Reason::NoCandidate) result.reason = Reason::Evaluation;
+					return;
+				}
+				this->diagnostic.rescued_unpopped += rescued;
 				std::reverse(result.route.begin(), result.route.end());
 				result.deferred = omitted_bound <= result.cost;
 				if (!result.deferred) result.reason = Reason::Found;

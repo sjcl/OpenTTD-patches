@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "runs": [
+    {
+      "id": "on-1",
+      "label": "baseline-diagnostic",
+      "kind": "minimal",
+      "source_directory": "build-timed-anytime\\baseline-diagnostic-recovered\\on-1",
+      "archive_directory": "baseline-diagnostic-minimal-on-1",
+      "raw_console_sha256": "f36ea5c19cc063d95870be9d96d23683975a44facf427bcd86390cfd4de7d26b",
+      "archived_console_sha256": "f36ea5c19cc063d95870be9d96d23683975a44facf427bcd86390cfd4de7d26b",
+      "final_save_sha256_verified_at_collection": "c8d4323412fdf2e85e53d30eda98d7815a639691a62f25f47b2cfeb3c8c7f2a9"
+    }
+  ],
+  "source_summary_sha256": "d1ee6fe5a009deb0d209a560cdf41c9dfbcad020131adfa94d677fcf85a4e522",
+  "archived_summary_sha256": "760a6f7496c17d80fc5387e9f0342299c0186348c2973edf3abb87016f405dc9",
+  "note": "Save/asset/exe files remain outside Git. Text/JSON is LF normalized; raw source and archived summary/console hashes are distinct. --existing-summary reuses recorded validation."
+}

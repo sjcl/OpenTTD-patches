@@ -194,7 +194,8 @@ inline void Dump() {
         db = replace(db, forward_anchor, '\t\tJourneyProfile::Scope forward_scope{"timed.forward"};\n' + forward_anchor)
         db = replace(db, '\t\tauto insert = [&](Label next) {', '\t\tauto insert = [&](Label next) {\n\t\t\tJourneyProfile::Count("timed.label_attempts");')
         db = replace(db, '\t\t\t\tconst auto &other = labels[index];', '\t\t\t\tJourneyProfile::Count("timed.dominance_checks");\n\t\t\t\tconst auto &other = labels[index];')
-        db = replace(db, '\t\t\tqueue.emplace(lower, next.cost,', '\t\t\tJourneyProfile::Count("timed.queue_push");\n\t\t\tqueue.emplace(lower, next.cost,')
+        queue_push = '\t\t\tqueue.emplace(lower, ' + ('admitted' if 'queue.emplace(lower, admitted.cost,' in db else 'next') + '.cost,'
+        db = replace(db, queue_push, '\t\t\tJourneyProfile::Count("timed.queue_push");\n' + queue_push)
         db = replace(db, '\t\t\tsize_t index = std::get<8>(queue.top()); queue.pop();', '\t\t\tJourneyProfile::Count("timed.queue_pop");\n\t\t\tsize_t index = std::get<8>(queue.top()); queue.pop();')
         db = replace(db, '\t\t\tfor (const auto &ref : row->second) {', '\t\t\tfor (const auto &ref : row->second) {\n\t\t\t\tJourneyProfile::Count("timed.candidate_service_visits");')
         if merged:
@@ -209,15 +210,23 @@ inline void Dump() {
             db = replace(db, '\t\t\t\tJourneyProfile::Scope phase_scope', '\t\t\t\t{ JourneyProfile::Scope phase_scope')
             db = replace(db, '\t\t\t\t\t\tconst Vehicle *live = Vehicle::GetIfValid(vehicle.id);', '\t\t\t\t\t\tJourneyProfile::Count("timed.live_vehicle_reads");\n\t\t\t\t\t\tconst Vehicle *live = Vehicle::GetIfValid(vehicle.id);')
         # Explicit boundary excludes the subsequent alighting loop.
-        db = replace(db, '\t\t\t\tif (result.work >= limits.work) { limited(Reason::Work, 0); break; }', '\t\t\t\t}\n\t\t\t\tif (result.work >= limits.work) { limited(Reason::Work, 0); break; }')
+        modern_work = 'auto work_stop = [&](WorkStop where, int64_t lower)' in db
+        departure_stop = '\t\t\t\tif (result.work >= limits.work) { ' + ('work_stop(WorkStop::Departure, bound(current.station, current.cost)); ' if modern_work else '') + 'limited(Reason::Work, 0); break; }'
+        db = replace(db, departure_stop, '\t\t\t\t}\n' + departure_stop)
         # Count actual short-circuit evaluations, preserving the boolean expression.
         start, end = db.index(signature), db.index('PassengerPlannerComparison ComparePassengerPlanners(')
         plan = db[start:end]
-        plan = replace(plan, 'auto spend = [&]() {', 'auto spend = [&](const char *stage) {')
-        plan = replace(plan, 'if (result.work >= limits.work) { limited(Reason::Work, 0); return false; }',
-                       'if (result.work >= limits.work) { JourneyProfile::Count(stage); limited(Reason::Work, 0); return false; }')
-        plan = replace(plan, 'if (!spend()) return;', 'if (!spend("timed.work_stop.dominance")) return;')
-        for indent, stage in [(3, 'queue'), (4, 'candidate_service'), (6 if merged else 5, 'vehicle_phase'), (8 if merged else 7, 'dispatch_slot'), (5, 'alighting')]:
+        if modern_work:
+            plan = replace(plan, 'auto work_stop = [&](WorkStop where, int64_t lower) {',
+                           'auto work_stop = [&](WorkStop where, int64_t lower) {\n'
+                           '\t\t\tstatic constexpr const char *names[]{"timed.work_stop.none", "timed.work_stop.admission", "timed.work_stop.queue", "timed.work_stop.candidate_service", "timed.work_stop.vehicle_phase", "timed.work_stop.dispatch_slot", "timed.work_stop.post_departure", "timed.work_stop.alighting", "timed.work_stop.dominance"};\n'
+                           '\t\t\tJourneyProfile::Count(names[static_cast<size_t>(where)]);')
+        else:
+            plan = replace(plan, 'auto spend = [&]() {', 'auto spend = [&](const char *stage) {')
+            plan = replace(plan, 'if (result.work >= limits.work) { limited(Reason::Work, 0); return false; }',
+                           'if (result.work >= limits.work) { JourneyProfile::Count(stage); limited(Reason::Work, 0); return false; }')
+            plan = replace(plan, 'if (!spend()) return;', 'if (!spend("timed.work_stop.dominance")) return;')
+        for indent, stage in ([] if modern_work else [(3, 'queue'), (4, 'candidate_service'), (6 if merged else 5, 'vehicle_phase'), (8 if merged else 7, 'dispatch_slot'), (5, 'alighting')]):
             # Vehicle and alighting have equal indentation; use their adjacent anchors.
             if stage == 'vehicle_phase':
                 following = '++this->diagnostic.vehicle_candidates;' if merged else 'if (!vehicle.capacity[cargo])'

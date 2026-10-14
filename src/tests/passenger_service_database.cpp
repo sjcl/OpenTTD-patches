@@ -101,6 +101,10 @@ namespace {
 		CHECK(a.transfers == b.transfers); CHECK(a.deferred == b.deferred); CHECK(a.reason == b.reason);
 		CHECK(a.work == b.work); CHECK(a.memory == b.memory); CHECK(a.labels == b.labels); CHECK(a.candidates == b.candidates);
 		CHECK(a.observations == b.observations);
+		CHECK(a.state == b.state);
+		CHECK(a.search.complete_labels == b.search.complete_labels); CHECK(a.search.queued_complete == b.search.queued_complete);
+		CHECK(a.search.popped_complete == b.search.popped_complete); CHECK(a.search.best_complete_cost == b.search.best_complete_cost);
+		CHECK(a.search.best_complete_arrival == b.search.best_complete_arrival); CHECK(a.search.work_stops == b.search.work_stops);
 	}
 
 	std::optional<StateTicks> ScannedDeparture(const PassengerPeriodicService &service, CargoType cargo, int64_t offset, StateTicks ready, std::span<const VehicleID> excluded)
@@ -113,6 +117,247 @@ namespace {
 		}
 		return result;
 	}
+}
+
+TEST_CASE("Timed completion diagnostics preserve the legacy Work boundaries", "[passenger][periodic][anytime][determinism]")
+{
+	Fixture f;
+	f.Train({Stop(A, 1000, 0), Stop(D, 100, 0)});
+	f.Train({Stop(A, 1000, 0), Stop(D, 50, 0)});
+	f.Train({Stop(A, 1000, 0), Stop(D, 50, 0)});
+	f.Train({Stop(A, 1000, 0), Stop(B, 20, 0)});
+	f.Train({Stop(B, 1000, 30), Stop(D, 20, 0)});
+	auto &db = f.Build(); auto wire = db.Save(); GameRandomSeedChecker seeds;
+	PassengerServiceDatabase peer; REQUIRE(peer.Load(wire)); peer.FinishLoad(true);
+	peer.SetPolicyCacheEnabled(false); peer.SetDepartureIndexEnabled(false); peer.SetTimedSearchScratchEnabled(false);
+	size_t queued_only = 0, missing = 0, popped = 0;
+	for (size_t work = 0; work <= 160; ++work) {
+		PassengerJourneyLimits limits; limits.work = work;
+		auto plan = db.Plan(PAX, A, D, NOW, limits);
+		auto cold = peer.Plan(PAX, A, D, NOW, limits); SameDeparturePlan(plan, cold);
+		CHECK(plan.search.reverse_work + plan.search.forward_work == plan.work);
+		CHECK(plan.search.complete_labels == plan.search.queued_complete + plan.search.popped_complete);
+		CHECK(plan.search.best_complete_cost.has_value() == (plan.search.complete_labels != 0));
+		CHECK(plan.search.work_stops == cold.search.work_stops);
+		if (plan.reason != PassengerPeriodicPlan::Reason::Work) continue;
+		queued_only += plan.search.queued_complete != 0 && plan.search.popped_complete == 0;
+		missing += plan.search.complete_labels == 0;
+		popped += plan.search.popped_complete != 0;
+	}
+	CHECK(queued_only > 0); CHECK(missing > 0); CHECK(popped > 0);
+	CHECK(db.GetDiagnostic().work_with_complete + db.GetDiagnostic().work_without_complete == db.GetDiagnostic().outcomes[static_cast<size_t>(PassengerPeriodicPlan::Reason::Work)]);
+	CHECK(db.Save() == wire); CHECK(peer.Save() == wire); CHECK(seeds.Check());
+}
+
+TEST_CASE("Anytime complete paths survive every Work boundary through 65536", "[passenger][periodic][anytime][determinism][save]")
+{
+	Fixture f; f.Train({Stop(A, 1000, 0), Stop(D, 100, 0), Stop(C, 100, 0)});
+	f.Train({Stop(A, 1000, 0), Stop(B, 20, 0)}); f.Train({Stop(B, 1000, 30), Stop(D, 20, 0)});
+	auto &db = f.Build(); auto wire = db.Save(); GameRandomSeedChecker seeds;
+	PassengerServiceDatabase peer; REQUIRE(peer.Load(wire)); peer.FinishLoad(true);
+	peer.SetPolicyCacheEnabled(false); peer.SetDepartureIndexEnabled(false); peer.SetTimedSearchScratchEnabled(false);
+	auto reference = db.Plan(PAX, A, D, NOW); REQUIRE(reference.state == PassengerPeriodicPlan::State::Certified);
+	size_t rescued = 0, improved_later = 0, just_generated = 0, before_pop = 0, missing = 0;
+	for (size_t work = 0; work <= 65536; ++work) {
+		PassengerJourneyLimits limits; limits.work = work;
+		auto plan = db.Plan(PAX, A, D, NOW, limits); auto old = db.PlanWithLegacyCompletion(PAX, A, D, NOW, limits);
+		CHECK(plan.work == old.work); CHECK(plan.labels == old.labels); CHECK(plan.memory == old.memory);
+		CHECK(plan.search.work_stops == old.search.work_stops); CHECK(plan.work <= work);
+		if (work < 256 || work % 1024 == 0 || work == 65536) SameDeparturePlan(plan, peer.Plan(PAX, A, D, NOW, limits));
+		if (old.state == PassengerPeriodicPlan::State::Certified) {
+			CHECK(plan.state == PassengerPeriodicPlan::State::Certified); CHECK(plan.route == old.route); CHECK(plan.cost == old.cost);
+		}
+		if (plan.ride) {
+			REQUIRE_FALSE(plan.route.empty()); CHECK(plan.route.front() == *plan.ride);
+			CHECK(plan.route.front().boarding == A); CHECK(plan.route.back().alighting == D);
+			CHECK(plan.cost >= reference.cost); CHECK(plan.arrival >= reference.arrival);
+			for (size_t i = 1; i < plan.route.size(); ++i) {
+				CHECK(plan.route[i - 1].alighting == plan.route[i].boarding);
+				CHECK(plan.route[i - 1].arrival <= plan.route[i].departure);
+			}
+		}
+		if (plan.state == PassengerPeriodicPlan::State::Provisional) {
+			CHECK(plan.deferred); CHECK(plan.reason != PassengerPeriodicPlan::Reason::Found);
+			CHECK(plan.cost == *plan.search.best_complete_cost);
+			rescued += !old.ride; improved_later += plan.cost > reference.cost && plan.search.improvement_possible;
+			before_pop += plan.search.first_work_stop == PassengerPeriodicPlan::WorkStop::Queue && !plan.search.popped_complete;
+			just_generated += plan.search.first_work_stop == PassengerPeriodicPlan::WorkStop::Alighting && !plan.search.popped_complete;
+		} else if (plan.state == PassengerPeriodicPlan::State::Deferred) { CHECK_FALSE(plan.ride); ++missing; }
+	}
+	CHECK(rescued > 0); CHECK(improved_later > 0); CHECK(before_pop > 0); CHECK(just_generated > 0); CHECK(missing > 0);
+	WARN("Anytime Work boundaries 0..65536: rescued=" << rescued << "; inferior_to_reference=" << improved_later << "; after_generation=" << just_generated << "; before_pop=" << before_pop);
+	CHECK(db.Save() == wire); CHECK(peer.Save() == wire); CHECK(seeds.Check());
+}
+
+TEST_CASE("Anytime admission limits never promote a rejected or partial label", "[passenger][periodic][anytime]")
+{
+	Fixture f; f.Train({Stop(A, 1000, 0), Stop(D, 100, 0)});
+	f.Train({Stop(A, 1000, 0), Stop(B, 20, 0)}); f.Train({Stop(B, 1000, 30), Stop(D, 20, 0)});
+	auto &db = f.Build(); auto reference = db.Plan(PAX, A, D, NOW);
+	bool label_provisional = false, memory_provisional = false;
+	for (size_t labels = 0; labels <= 12; ++labels) for (size_t memory : {size_t{0}, size_t{255}, size_t{256}, size_t{1792}, size_t{3328}, size_t{4096}, size_t{4864}, size_t{6400}, size_t{65536}}) {
+		PassengerJourneyLimits limits; limits.labels = labels; limits.memory_bytes = memory;
+		auto plan = db.Plan(PAX, A, D, NOW, limits);
+		CHECK(plan.labels <= labels);
+		if (!plan.search.complete_labels) CHECK_FALSE(plan.ride);
+		if (plan.ride) { CHECK(plan.route.back().alighting == D); CHECK(plan.cost >= reference.cost); }
+		if (plan.state == PassengerPeriodicPlan::State::Provisional) {
+			CHECK(plan.reason != PassengerPeriodicPlan::Reason::Found);
+			label_provisional |= plan.observations[static_cast<size_t>(PassengerPeriodicPlan::Reason::Labels)];
+			memory_provisional |= plan.observations[static_cast<size_t>(PassengerPeriodicPlan::Reason::Memory)];
+		}
+	}
+	CHECK(label_provisional); CHECK(memory_provisional);
+	for (Vehicle *v : Vehicle::Iterate()) v->GetOrder(v->GetNumOrders() - 1)->SetUnloadType(OrderUnloadType::NoUnload);
+	ResetPassengerServiceDatabase(); f.Build();
+	for (size_t work : {0, 1, 16, 65536}) {
+		PassengerJourneyLimits limits; limits.work = work; auto plan = db.Plan(PAX, A, D, NOW, limits);
+		CHECK_FALSE(plan.ride); CHECK(plan.route.empty()); CHECK(plan.search.complete_labels == 0);
+	}
+}
+
+TEST_CASE("Anytime ties keep the original complete key and earlier occurrence", "[passenger][periodic][anytime]")
+{
+	Fixture f; auto *first = f.Train({Stop(A, 1000, 0), Stop(D, 50, 0), Stop(A, 0, 0), Stop(D, 0, 0)});
+	f.Train({Stop(A, 1000, 0), Stop(D, 50, 0)}); auto &db = f.Build();
+	bool provisional = false;
+	for (size_t work = 1; work < 160; ++work) {
+		PassengerJourneyLimits limits; limits.work = work; auto plan = db.Plan(PAX, A, D, NOW, limits);
+		if (!plan.ride) continue;
+		CHECK(plan.ride->service == first->orders->index); CHECK(plan.ride->boarding_order == 0); CHECK(plan.ride->alighting_order == 1);
+		provisional |= plan.state == PassengerPeriodicPlan::State::Provisional;
+	}
+	CHECK(provisional);
+}
+
+TEST_CASE("Stale cheap services cannot hide or prune a current complete journey", "[passenger][periodic][anytime][active]")
+{
+	Fixture f; auto *stale = f.Train({Stop(A, 1000, 0), Stop(D, 10, 0)});
+	auto *current = f.Train({Stop(A, 1000, 0), Stop(D, 100, 0)});
+	auto &db = f.Build(); db.Invalidate(stale->orders->index);
+	auto wire = db.Save(); GameRandomSeedChecker seeds;
+	auto reference = db.Plan(PAX, A, D, NOW);
+	REQUIRE(reference.state == PassengerPeriodicPlan::State::Certified);
+	REQUIRE(reference.ride); CHECK(reference.ride->service == current->orders->index);
+	bool provisional = false, observed_stale_geometry = false;
+	for (size_t work = 0; work < 160; ++work) {
+		PassengerJourneyLimits limits; limits.work = work;
+		auto plan = db.Plan(PAX, A, D, NOW, limits);
+		auto original = db.PlanWithOriginalCompletion(PAX, A, D, NOW, limits);
+		observed_stale_geometry |= original.search.destination_labels > original.search.complete_labels;
+		if (plan.ride) { CHECK(plan.ride->service == current->orders->index); CHECK(db.IsCurrent(*plan.ride)); CHECK(plan.cost == reference.cost); }
+		provisional |= plan.state == PassengerPeriodicPlan::State::Provisional;
+	}
+	CHECK(provisional); CHECK(observed_stale_geometry); CHECK(db.Save() == wire); CHECK(seeds.Check());
+}
+
+TEST_CASE("A stale transfer suffix cannot certify or suppress a valid direct alternative", "[passenger][periodic][anytime][active]")
+{
+	Fixture f; f.Train({Stop(A, 1000, 0), Stop(B, 10, 0)});
+	auto *suffix = f.Train({Stop(B, 1000, 0), Stop(D, 10, 0)});
+	auto *direct = f.Train({Stop(A, 1000, 0), Stop(D, 100, 0)});
+	auto &db = f.Build(); db.Invalidate(suffix->orders->index);
+	auto plan = db.Plan(PAX, A, D, NOW);
+	REQUIRE(plan.state == PassengerPeriodicPlan::State::Certified); REQUIRE(plan.ride);
+	CHECK(plan.route.size() == 1); CHECK(plan.ride->service == direct->orders->index);
+	auto unpruned = db.PlanWithoutServicePruning(PAX, A, D, NOW);
+	CHECK(plan.route == unpruned.route); CHECK(plan.cost == unpruned.cost);
+}
+
+TEST_CASE("Budget stops with only stale services remain Deferred without a usable complete path", "[passenger][periodic][anytime][active]")
+{
+	Fixture f; auto *first = f.Train({Stop(A, 1000, 0), Stop(D, 10, 0)});
+	auto *second = f.Train({Stop(A, 1000, 0), Stop(D, 20, 0)});
+	auto &db = f.Build(); db.Invalidate(first->orders->index); db.Invalidate(second->orders->index);
+	bool stopped = false;
+	for (size_t work = 0; work < 80; ++work) {
+		PassengerJourneyLimits limits; limits.work = work; auto plan = db.Plan(PAX, A, D, NOW, limits);
+		CHECK_FALSE(plan.ride); CHECK(plan.search.complete_labels == 0);
+		if (plan.reason == PassengerPeriodicPlan::Reason::Work) {
+			CHECK(plan.state == PassengerPeriodicPlan::State::Deferred); CHECK(plan.deferred); stopped = true;
+		}
+	}
+	CHECK(stopped);
+}
+
+TEST_CASE("Anytime separates exhausted budgets unknown timing and proved Timed absence", "[passenger][periodic][anytime]")
+{
+	Fixture f; auto *train = f.Train({Stop(A), Stop(D)});
+	SECTION("Unknown phase") {
+		train->current_order.Free(); auto &db = f.Build();
+		auto plan = db.Plan(PAX, A, D, NOW); CHECK_FALSE(plan.ride); CHECK(plan.state == PassengerPeriodicPlan::State::Unavailable);
+	}
+	SECTION("No alighting") {
+		train->GetOrder(1)->SetUnloadType(OrderUnloadType::NoUnload); auto &db = f.Build();
+		auto plan = db.Plan(PAX, A, D, NOW); CHECK_FALSE(plan.ride); CHECK(plan.state == PassengerPeriodicPlan::State::NoRoute);
+	}
+	SECTION("Unsupported evaluation") {
+		auto &db = f.Build(); PassengerJourneyEvaluation evaluation; evaluation.crowding_penalty = 1;
+		auto plan = db.Plan(PAX, A, D, NOW, {}, evaluation); CHECK_FALSE(plan.ride); CHECK(plan.state == PassengerPeriodicPlan::State::Unavailable);
+	}
+	SECTION("Zero Work") {
+		auto &db = f.Build(); PassengerJourneyLimits limits; limits.work = 0;
+		auto plan = db.Plan(PAX, A, D, NOW, limits); CHECK_FALSE(plan.ride); CHECK(plan.state == PassengerPeriodicPlan::State::Deferred);
+	}
+}
+
+TEST_CASE("Anytime provisional ServiceIntent passes the ordinary live safety checks", "[passenger][periodic][anytime][active]")
+{
+	Fixture f; auto *train = f.Train({Stop(A), Stop(B), Stop(D)}); auto &db = f.Build();
+	PassengerPeriodicPlan plan;
+	for (size_t work = 1; work < 100; ++work) {
+		PassengerJourneyLimits limits; limits.work = work; plan = db.Plan(PAX, A, D, NOW, limits);
+		if (plan.state == PassengerPeriodicPlan::State::Provisional) break;
+	}
+	REQUIRE(plan.state == PassengerPeriodicPlan::State::Provisional); REQUIRE(plan.ride);
+	CHECK(ValidatePassengerServiceRide(*plan.ride, train, PAX, true));
+	SECTION("NoLoad") { train->GetOrder(0)->SetLoadType(OrderLoadType::NoLoad); }
+	SECTION("NoUnload") { train->GetOrder(2)->SetUnloadType(OrderUnloadType::NoUnload); }
+	SECTION("Forced transfer") { train->GetOrder(1)->SetUnloadType(OrderUnloadType::Transfer); }
+	SECTION("Incarnation") { ++plan.ride->signature; }
+	SECTION("Generation") { ++plan.ride->generation; }
+	SECTION("Occurrence") { plan.ride->boarding_order = 1; }
+	SECTION("Cargo capacity") { train->cargo_cap = 0; }
+	SECTION("Minimum interchange") { plan.ride->not_before = NOW + 1; }
+	CHECK_FALSE(ValidatePassengerServiceRide(*plan.ride, train, PAX, true));
+}
+
+TEST_CASE("Waiting packets actually adopt cache and serialize an unpopped provisional path", "[passenger][periodic][anytime][active][save]")
+{
+	Fixture f; auto *direct = f.Train({Stop(A, 1000, 0), Stop(D, 1000, 0)});
+	std::vector<Order> stops; for (int i = 0; i < 64; ++i) { stops.push_back(Stop(A, 1, 0)); stops.push_back(Stop(B, 1, 0)); }
+	/* Keep each publication task below BUILD_WORK; four admitted fleets then
+	 * exhaust the query while expanding the origin, after the direct label. */
+	for (int line = 0; line < 4; ++line) {
+		auto *long_line = f.Train(stops);
+		for (int i = 1; i < 80; ++i) Vehicle::Create<PeriodicTrain>(long_line);
+	}
+	f.Train({Stop(B, 1000, 0), Stop(D, 10, 0)});
+	auto &db = f.Build(); REQUIRE(db.GetDiagnostic().timed_services == 6);
+	PassengerJourneyLimits limits; limits.work = 65536; limits.labels = 8192; limits.memory_bytes = 8 * 1024 * 1024;
+	auto old = db.PlanWithLegacyCompletion(PAX, A, D, NOW, limits);
+	auto plan = db.Plan(PAX, A, D, NOW, limits);
+	CAPTURE(old.work, plan.work, plan.labels, plan.search.complete_labels, plan.search.first_work_stop);
+	CHECK_FALSE(old.ride); REQUIRE(plan.state == PassengerPeriodicPlan::State::Provisional); REQUIRE(plan.ride);
+	CHECK(plan.search.popped_complete == 0); CHECK(plan.ride->service == direct->orders->index);
+	PassengerJourneyActiveContext waiting(nullptr, A); auto *packet = f.Packet(); auto *cached = f.Packet();
+	REQUIRE(waiting.PlanWaiting(*packet, PAX, D)); REQUIRE(waiting.PlanWaiting(*cached, PAX, D));
+	CHECK(packet->GetPassengerJourney() == *plan.ride); CHECK_FALSE(packet->IsPassengerJourneyDeferred());
+	CHECK(GetPassengerJourneyTickDiagnostic().timed_provisional_packets == 2); CHECK(GetPassengerJourneyTickDiagnostic().query_cache_hits == 1);
+	AutoRestoreBackup version{_sl_version, SAVEGAME_VERSION};
+	AutoRestoreBackup features{_sl_xv_feature_versions, AutoRestoreBackupNoNewValueTag{}};
+	AutoRestoreBackup static_features{_sl_xv_feature_static_versions, AutoRestoreBackupNoNewValueTag{}};
+	SlXvSetStaticCurrentVersions(); _sl_xv_feature_versions = _sl_xv_feature_static_versions;
+	auto *loaded = CargoPacket::Create(); REQUIRE_FALSE(SlTestSaveLoadTable(packet, loaded, GetCargoPacketDesc()).empty());
+	CHECK(loaded->GetPassengerJourney() == packet->GetPassengerJourney());
+	PassengerServiceDatabase peer; auto wire = db.Save(); REQUIRE(peer.Load(wire)); peer.FinishLoad(true);
+	peer.SetPolicyCacheEnabled(false); peer.SetDepartureIndexEnabled(false); peer.SetTimedSearchScratchEnabled(false);
+	SameDeparturePlan(plan, peer.Plan(PAX, A, D, NOW, limits)); CHECK(peer.Save() == wire);
+	auto &cargo = Station::Get(A)->goods[PAX].CreateData().cargo; cargo.Append(loaded, StationID::Invalid());
+	_state_ticks += 5000; direct->current_order_time = 5000; direct->lateness_counter = 5000; BeginPassengerJourneyTick();
+	PassengerJourneyLoadingContext loading; std::array next{D};
+	CHECK(cargo.Reserve(10, &direct->cargo, next, TileIndex{0}, direct, &loading) == 10);
+	CHECK(direct->cargo.Packets()->front()->GetPassengerJourney().kind == PassengerRideKind::BoundService);
 }
 
 TEST_CASE("Departure index respects first starts duplicate phases cargo and signed tick boundaries", "[passenger][periodic][departure-index][determinism]")

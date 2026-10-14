@@ -1,0 +1,17 @@
+{
+  "old_save_sha256": "c8d4323412fdf2e85e53d30eda98d7815a639691a62f25f47b2cfeb3c8c7f2a9",
+  "original_save_sha256": "ab821b6e8d0cf2b6cdd3eaf14c77e5fcf2679ceaffb73586740fd7b4aabf729b",
+  "old_revision": "jgrpp-ya-0.73.3+2-74-gc2c4d1898-m",
+  "original_revision": "jgrpp-ya-0.73.3+2-76-gb57532a4a-m",
+  "headers_identical": true,
+  "decompressed_bytes": [
+    882410938,
+    882410938
+  ],
+  "payload_identical_except_revision": true,
+  "normalized_payload_sha256": [
+    "fb9a63594d72651e327384b373e178a8b4bf85293eee5d24ce2a483f5b951220",
+    "fb9a63594d72651e327384b373e178a8b4bf85293eee5d24ce2a483f5b951220"
+  ],
+  "normalization": "Replace the two occurrences of the changed, equally sized current-build revision only; historical revisions and every other byte must match."
+}

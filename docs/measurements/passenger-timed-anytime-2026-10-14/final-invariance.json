@@ -1,0 +1,15 @@
+{
+  "valid_runs": 7,
+  "profiled_source_revision": "b57532a4a248b9941a4a819dff4a2fc8d10c3a66",
+  "profiled_source_diff_sha256": "ee54dfe6a0a74ecc7eafcead2d60a5869373e9080f2a70eab9bf1dcd2ef47f0e",
+  "repeat_semantics_identical": true,
+  "cache_disabled_semantics_identical": true,
+  "repeat_and_cache_disabled_save_sha256": "d8b8b8374eba20ef5d00faa8508baf20fc0865ae851f6ff5cf914a4d2a328c11",
+  "periodic_results_and_adoption_identical": true,
+  "initial_ticks": 8192,
+  "continuation_ticks": 8192,
+  "total_sequential_ticks": 16384,
+  "continuation_save_sha256": "ccf4492754265d5caeefa349ecf89b81fec96d8a0bcada57ec788ed18e67418c",
+  "product_ctest_tests": 580,
+  "multiplayer_provisional_packets": 949
+}

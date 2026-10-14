@@ -1,0 +1,11 @@
+{
+  "tested_implementation_commit": "7134fb526e244b5cc242a3f64d51590fb116373d",
+  "merged_product_sources_identical": true,
+  "resolved_conflict": "docs/measurements/passenger-routing-profile-2026-10-13/Instrument-Profile.py",
+  "instrumentation_generation": [
+    "minimal",
+    "detail"
+  ],
+  "anytime_evidence_tests": 8,
+  "profile_evidence_tests": 23
+}

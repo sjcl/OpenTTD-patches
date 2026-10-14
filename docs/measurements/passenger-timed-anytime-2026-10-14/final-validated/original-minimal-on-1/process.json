@@ -1,0 +1,15 @@
+{
+  "backend": "periodic",
+  "exit_code": 0,
+  "wall_seconds": 328.4412814,
+  "cpu_seconds": 444.046875,
+  "peak_working_set": 2093019136,
+  "sampled_peak_private": 2090762240,
+  "input_save": "input.sav",
+  "resumed": false,
+  "requested_driver_loops": 8192,
+  "policy_cache_disabled": false,
+  "input_sha256": "14D68C82911B9DCFC5EF7291E9697C5BBD67F44FFCC79D7575A144405EDF6390",
+  "binary_sha256": "A9F1F4C20134821D98B0BCFF102E9B03C54E7E5A645BF8296495A6514A4A9382",
+  "sample_ms": 100
+}

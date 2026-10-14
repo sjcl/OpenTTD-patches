@@ -20,6 +20,7 @@ struct PassengerTimedLabel {
 	PassengerJourneyExecution leg{}, first{};
 	bool active = true;
 	size_t next = SIZE_MAX; ///< Intrusive frontier link, in original insertion order.
+	bool complete_valid = false; ///< Admitted destination with a current, connected chain to the origin.
 };
 static_assert(sizeof(PassengerTimedLabel) <= 512);
 
@@ -28,6 +29,7 @@ static_assert(sizeof(PassengerTimedLabel) <= 512);
 using PassengerTimedQueueItem = std::tuple<int64_t, int64_t, StateTicks, size_t, StateTicks, OrderListID, VehicleOrderID, VehicleOrderID, size_t>;
 struct PassengerTimedQueue : std::priority_queue<PassengerTimedQueueItem, std::vector<PassengerTimedQueueItem>, std::greater<PassengerTimedQueueItem>> {
 	size_t CapacityBytes() const { return this->c.capacity() * sizeof(PassengerTimedQueueItem); }
+	const auto &Items() const { return this->c; } ///< Read-only diagnostics; never pop or reorder the heap.
 	void Clear() { this->c.clear(); }
 	void Release() { std::vector<PassengerTimedQueueItem>{}.swap(this->c); }
 };
