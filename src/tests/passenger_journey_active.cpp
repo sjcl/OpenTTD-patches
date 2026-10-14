@@ -610,6 +610,76 @@ static void ExhaustJourneyAdmission(ActiveFixture &fixture)
 	CHECK(GetPassengerJourneyTickDiagnostic().query_work >= 15 * 65536);
 }
 
+TEST_CASE("Waiting Journey adoption and cache hits retain the current flow hop", "[passenger][active][fallback-hop]")
+{
+	ActiveFixture fixture;
+	const int backend = GENERATE(0, 1, 2); // Snapshot, periodic Timed, periodic Schedule.
+	const bool has_flow = GENERATE(false, true);
+	const StationID old_hop = GENERATE(B, A, StationID::Invalid());
+	ActiveTrain *train = Vehicle::Create<ActiveTrain>(std::vector<Order>{ActiveStop(A), ActiveStop(D, 100)});
+	if (has_flow) Station::Get(A)->goods[PAX].CreateData().flows.insert(FlowStat(A, C, 10));
+	if (backend != 0) {
+		_settings_game.linkgraph.passenger_journey_periodic = true;
+		if (backend == 2) train->current_order.Free();
+		ResetPassengerServiceDatabase(); GetPassengerServiceDatabase().Tick();
+	}
+	auto *packet = fixture.Packet(); auto *cached = fixture.Packet(1, D, 8);
+	PassengerJourneyActiveContext waiting(nullptr, A);
+	GameRandomSeedChecker seeds;
+	REQUIRE(waiting.PlanWaiting(*packet, PAX, old_hop));
+	REQUIRE(waiting.PlanWaiting(*cached, PAX, old_hop));
+	const StationID expected = has_flow ? C : StationID::Invalid();
+	CHECK(packet->GetPassengerLegacyHop() == expected);
+	CHECK(cached->GetPassengerLegacyHop() == expected);
+	CHECK(cached->GetPassengerJourney() == packet->GetPassengerJourney());
+	CHECK(GetPassengerJourneyTickDiagnostic().query_cache_hits == 1);
+	CHECK(packet->GetPassengerJourney().kind == (backend == 0 ? PassengerRideKind::VehicleSnapshot :
+			backend == 1 ? PassengerRideKind::ServiceIntent : PassengerRideKind::EstimatedServiceIntent));
+	train->LoadAt(0);
+	fixture.Waiting().Append(packet, StationID::Invalid());
+	std::array next{D};
+	REQUIRE(fixture.Waiting().Reserve(6, &train->cargo, next, TileIndex{0}, train) == 6);
+	REQUIRE(fixture.Waiting().Load(2, &train->cargo, next, TileIndex{0}, train) == 2);
+	REQUIRE(train->cargo.ReturnReserved(&fixture.Waiting(), StationID::Invalid(), TileIndex{0},
+			[](const CargoPacket &) { return true; }, PAX) == 4);
+	CHECK(packet->GetPassengerLegacyHop() == expected);
+	for (StationCargoList::ConstIterator it(fixture.Waiting().Packets()->begin()); it != fixture.Waiting().Packets()->end(); ++it) {
+		CHECK((*it)->GetPassengerLegacyHop() == expected);
+	}
+	CHECK(fixture.Waiting().AvailableCount() == 8);
+	CHECK(train->cargo.StoredCount() == 2);
+	CHECK(train->cargo.ReservedCount() == 0);
+	_settings_game.linkgraph.passenger_journey_routing = false;
+	fixture.Waiting().RoutePassengerJourneys(PAX, A, false);
+	CHECK(packet->GetPassengerRoutingMode() == PassengerRoutingMode::Fallback);
+	CHECK(fixture.Waiting().AvailableViaCount(expected) == 8);
+	CHECK(seeds.Check());
+	_vehicle_pool.CleanPool();
+}
+
+TEST_CASE("Rejected fallback reservations preserve the current flow hop", "[passenger][active][fallback-hop]")
+{
+	ActiveFixture fixture;
+	ActiveTrain train({ActiveStop(A), ActiveStop(C)});
+	Station::Get(A)->goods[PAX].CreateData().flows.insert(FlowStat(A, C, 10));
+	auto *packet = fixture.Packet(); packet->FallbackPassengerJourney(A, NOW);
+	fixture.Waiting().Append(packet, C);
+	fixture.Waiting().RoutePassengerJourneys(PAX, A, false);
+	std::array next{C};
+	REQUIRE(fixture.Waiting().Reserve(10, &train.cargo, next, TileIndex{0}, &train) == 10);
+	REQUIRE(fixture.Waiting().Load(4, &train.cargo, next, TileIndex{0}, &train) == 4);
+	train.current_order.SetLoadType(OrderLoadType::NoLoad);
+	CHECK(fixture.Waiting().Load(10, &train.cargo, next, TileIndex{0}, &train) == 0);
+	CHECK(fixture.Waiting().AvailableViaCount(C) == 6);
+	CHECK(fixture.Waiting().ReservedCount() == 0);
+	CHECK(train.cargo.StoredCount() == 4);
+	CHECK(train.cargo.ReservedCount() == 0);
+	for (StationCargoList::ConstIterator it(fixture.Waiting().Packets()->begin()); it != fixture.Waiting().Packets()->end(); ++it) {
+		CHECK((*it)->GetPassengerLegacyHop() == C);
+		CHECK(GetStationCargoVia(PAX, **it, it.GetKey(), A) == C);
+	}
+}
+
 TEST_CASE("Inactive Journey reservation returns preserve the CargoDist return bucket", "[passenger][active][fallback-via]")
 {
 	ActiveFixture fixture;
@@ -1696,6 +1766,7 @@ TEST_CASE("Disabling journeys rekeys passengers and preserves legacy random rout
 {
 	ActiveFixture fixture;
 	ActiveTrain train({ActiveStop(A), ActiveStop(D, 100)});
+	Station::Get(A)->goods[PAX].CreateData().flows.insert(FlowStat(A, B, 10));
 	auto *packet = fixture.Packet(); fixture.Plan(*packet); fixture.Waiting().Append(packet, B);
 	_settings_game.linkgraph.passenger_journey_routing = false;
 	PassengerJourneySettingsChanged(0);

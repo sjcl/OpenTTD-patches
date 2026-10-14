@@ -653,7 +653,7 @@ bool PassengerJourneyActiveContext::PlanWaiting(CargoPacket &packet, CargoType c
 		OrderListID excluded = arriving != nullptr && arriving->GetCargoDistRouteGeneration() == packet.GetPassengerArrivingIncarnation() ? arriving->index : OrderListID::Invalid();
 		auto key = std::tuple(cargo, packet.GetPassengerDestination(), ready, excluded);
 		auto apply = [&](const PassengerJourneyExecution &ride, bool provisional) {
-			packet.SetPassengerJourney(ride, legacy_hop);
+			packet.SetPassengerJourney(ride, fallback_hop);
 			if (IsEstimatedPassengerRide(ride.kind)) {
 				++TickBudget().diagnostic.schedule_packets; TickBudget().diagnostic.schedule_passengers += packet.Count();
 				TickBudget().diagnostic.schedule_deferred_packets += ride.timed_deferred;
@@ -790,7 +790,7 @@ bool PassengerJourneyActiveContext::PlanWaiting(CargoPacket &packet, CargoType c
 				if (snapshot->failure == PassengerJourneyFallbackReason::PredictionHorizon && horizon < 65536) continue;
 				this->deferred = snapshot->deferred; return reject(snapshot->failure);
 			}
-			packet.SetPassengerJourney(*cached->second, legacy_hop);
+			packet.SetPassengerJourney(*cached->second, fallback_hop);
 			TickBudget().diagnostic.timed_routes_ignoring_unknown += snapshot->waiting_ignored_unknown;
 			++TickBudget().diagnostic.journeys; TickBudget().diagnostic.passengers += packet.Count();
 			return true;
@@ -813,7 +813,7 @@ bool PassengerJourneyActiveContext::PlanWaiting(CargoPacket &packet, CargoType c
 		if (!execution) return reject(this->deferred ? this->failure : PassengerJourneyFallbackReason::InvalidLeg);
 		cached->second = *execution;
 		snapshot->waiting_ignored_unknown = result.diagnostic.unknown_alternatives_ignored;
-		packet.SetPassengerJourney(*execution, legacy_hop);
+		packet.SetPassengerJourney(*execution, fallback_hop);
 		TickBudget().diagnostic.timed_routes_ignoring_unknown += snapshot->waiting_ignored_unknown;
 		++TickBudget().diagnostic.journeys; TickBudget().diagnostic.passengers += packet.Count();
 		return true;

@@ -1721,12 +1721,15 @@ TEST_CASE("Schedule boarding enforces live restrictions incarnation and generati
 TEST_CASE("Schedule transfer constraints survive replanning fallback and packet save", "[passenger][schedule][active][save]")
 {
 	Fixture f; auto *ab = f.Train({Stop(A), Stop(B)}); auto *bd = f.Train({Stop(B), Stop(D)});
+	Station::CreateAtIndex(C, TileIndex{0});
+	Station::Get(B)->goods[PAX].CreateData().flows.insert(FlowStat(A, C, 10));
 	ab->current_order.Free(); bd->current_order.Free(); auto &db = f.Build(); auto *packet = f.Packet();
 	REQUIRE(PassengerJourneyActiveContext(nullptr, A).PlanWaiting(*packet, PAX, D));
 	ab->LoadAt(0); PassengerJourneyLoadingContext loading; REQUIRE(loading.CanBoard(*packet, ab)); loading.PrepareBoard(*packet, ab);
 	_state_ticks += 100; ab->LoadAt(1); _settings_game.linkgraph.passenger_transfer_penalty = 20;
 	PassengerJourneyActiveContext arrived(ab, B); CHECK(arrived.Decide(*packet, PAX, false, OrderUnloadType::UnloadIfPossible) == VehicleCargoList::MoveToAction::Transfer);
 	REQUIRE(packet->GetPassengerJourney().kind == PassengerRideKind::EstimatedServiceIntent); CHECK(packet->GetPassengerJourney().service == bd->orders->index);
+	CHECK(packet->GetPassengerLegacyHop() == C);
 	bd->LoadAt(0); CHECK_FALSE(loading.CanBoard(*packet, bd)); CHECK_FALSE(loading.CanBoard(*packet, ab));
 	_state_ticks += 20; CHECK(loading.CanBoard(*packet, bd));
 	packet->FallbackPassengerJourney(B, _state_ticks); CHECK_FALSE(loading.CanBoard(*packet, ab));
