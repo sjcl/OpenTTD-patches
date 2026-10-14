@@ -1462,8 +1462,9 @@ TEST_CASE("Loading passenger packets preserves the queues used by station rating
 	CHECK(fixture.Waiting().ReservedCount() == 0);
 	for (StationID hop : hops) CHECK(fixture.Waiting().AvailableViaCount(hop) == 3);
 	CHECK(packets[0]->GetPassengerRoutingMode() == PassengerRoutingMode::Legacy);
-	CHECK(packets[0]->GetPassengerLegacyHop() == StationID::Invalid());
-	CHECK(packets[1]->GetPassengerLegacyHop() == StationID::Invalid());
+	/* Append retains the saved queue hop for OD fallback boarding. */
+	CHECK(packets[0]->GetPassengerLegacyHop() == B);
+	CHECK(packets[1]->GetPassengerLegacyHop() == C);
 	CHECK(packets[2]->GetPassengerRoutingMode() == PassengerRoutingMode::Fallback);
 	CHECK(packets[2]->GetPassengerLegacyHop() == D);
 	CHECK_FALSE(packets[2]->CanRetryPassengerJourney(A, NOW));
