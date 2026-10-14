@@ -4,6 +4,8 @@
 #include "../stdafx.h"
 #include "../3rdparty/catch2/catch.hpp"
 #include "../station_cargo_gui.h"
+#include "../passenger_journey_active.h"
+#include "../settings_type.h"
 #include "../cargopacket.h"
 #include "../vehicle_base.h"
 #include "../group.h"
@@ -282,6 +284,62 @@ TEST_CASE("Station GUI service reads do not mutate passenger execution or RNG", 
 	CHECK(first.primary_checks + second.primary_checks == checks);
 	cache.Clear(); CHECK(cache.Resolve(PAX, execution).group == first.group_id);
 	CHECK(first.primary_checks + second.primary_checks > checks);
+}
+
+TEST_CASE("Station waiting summaries show deferred and Fallback passengers without guessing a service", "[passenger][station-gui]")
+{
+	GuiFixture f; GuiTrain train(VehicleID{100}); train.group_id = f.GroupFor(train);
+	AutoRestoreBackup<LinkGraphSettings> settings{_settings_game.linkgraph, AutoRestoreBackupNoNewValueTag{}};
+	_settings_game.linkgraph.passenger_journey_routing = true;
+	_settings_game.linkgraph.distribution_per_cargo[PAX] = DistributionType::Asymmetric;
+	CargoDataEntry expanded, data; expanded.InsertOrRetrieve(PAX);
+	std::array<StationCargoGrouping, 4> order{GR_CARGO, GR_NEXT, GR_SOURCE, GR_DESTINATION};
+	StationPassengerServiceCache cache;
+	CargoPacket *packet = f.Packet();
+	auto show = [&]() {
+		return ShowStationWaitingCargo(data, expanded, order, A, true, PAX, *packet,
+				GetStationCargoVia(PAX, *packet, B), packet->GetPassengerDestination(), packet->Count(), cache);
+	};
+	CargoDataEntry *via = show();
+	REQUIRE(via != nullptr);
+	CHECK(via->GetServices().at({}) == 10); // An OD destination alone does not identify a carrier.
+	packet->SetPassengerJourney(train.Ride(), B);
+	packet->FallbackPassengerJourney(A, StateTicks{0});
+	CHECK(show() == via); CHECK(via->GetServices().at({}) == 20);
+	packet->SetPassengerJourney(train.Ride(), B);
+	CHECK(show() == via); CHECK(via->GetServices().at({train.group_id}) == 10);
+	CHECK(via->GetServices().size() == 2); CHECK(via->GetCount() == 30); CHECK(data.GetCount() == 30);
+	CHECK(data.GetNumRows() == 4);
+	data.Clear(); packet->FallbackPassengerJourney(A, StateTicks{0});
+	_settings_game.linkgraph.passenger_journey_routing = false;
+	CHECK(show()->GetServices().empty()); // Disabled Journey routing retains the original CargoDist display.
+	data.Clear(); _settings_game.linkgraph.passenger_journey_routing = true;
+	CHECK(ShowStationWaitingCargo(data, expanded, order, A, true, CargoType{1}, *packet, B, B, 10, cache) == nullptr);
+}
+
+TEST_CASE("Station unknown via and estimated destinations retain service-unknown counts exactly once", "[passenger][station-gui]")
+{
+	GuiFixture f;
+	AutoRestoreBackup<LinkGraphSettings> settings{_settings_game.linkgraph, AutoRestoreBackupNoNewValueTag{}};
+	_settings_game.linkgraph.passenger_journey_routing = true;
+	_settings_game.linkgraph.distribution_per_cargo[PAX] = DistributionType::Asymmetric;
+	CargoPacket *packet = CargoPacket::Create(10, 0, A, TileIndex{0}, Money{0});
+	CHECK(packet->GetPassengerDestination() == StationID::Invalid());
+	CargoDataEntry expanded, data; expanded.InsertOrRetrieve(PAX);
+	std::array<StationCargoGrouping, 4> order{GR_CARGO, GR_NEXT, GR_DESTINATION, GR_SOURCE};
+	StationPassengerServiceCache cache;
+	auto show = [&](StationID destination, uint count) {
+		return ShowStationWaitingCargo(data, expanded, order, A, true, PAX, *packet,
+				GetStationCargoVia(PAX, *packet, StationID::Invalid()), destination, count, cache);
+	};
+	CargoDataEntry *via = show(B, 3);
+	REQUIRE(via != nullptr); CHECK(via->GetStation() == StationID::Invalid());
+	CHECK(show(C, 7) == via); CHECK(show(D, 0) == nullptr);
+	CHECK(via->GetServices().at({}) == 10); CHECK(data.GetCount() == 10); CHECK(packet->Count() == 10);
+	CHECK(data.GetNumRows() == 3);
+	CargoDataEntry planned;
+	REQUIRE(ShowStationCargo(planned, expanded, order, A, true, PAX, A, StationID::Invalid(), B, 10) != nullptr);
+	CHECK(planned.GetNumRows() == 2); // Planned flows have no service annotations.
 }
 
 TEST_CASE("Station service fleet inspection remains bounded and never guesses an uninspected group", "[passenger][station-gui]")

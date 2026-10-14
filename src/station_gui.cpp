@@ -1202,6 +1202,22 @@ CargoDataEntry *ShowStationCargo(CargoDataEntry &root, const CargoDataEntry &exp
 	return via;
 }
 
+CargoDataEntry *ShowStationWaitingCargo(CargoDataEntry &root, const CargoDataEntry &expanded, std::span<const StationCargoGrouping, 4> groupings,
+		StationID station, bool auto_distributed, CargoType cargo, const CargoPacket &packet, StationID next, StationID dest, uint count,
+		StationPassengerServiceCache &services)
+{
+	CargoDataEntry *via = ShowStationCargo(root, expanded, groupings, station, auto_distributed, cargo, packet.GetFirstStation(), next, dest, count);
+	if (via != nullptr && IsCargoInClass(cargo, CargoClass::Passengers) &&
+			(packet.GetPassengerRoutingMode() == PassengerRoutingMode::Journey || IsPassengerJourneyRoutingEnabled(cargo))) {
+		/* CargoDist/deferred/Fallback packets have no promised service. Keep their
+		 * counts visible without assigning them to a Journey passenger's group. */
+		StationPassengerService service = packet.GetPassengerRoutingMode() == PassengerRoutingMode::Journey ?
+				services.Resolve(cargo, packet.GetPassengerJourney()) : StationPassengerService{};
+		via->AddService(service, count);
+	}
+	return via;
+}
+
 void CargoDataEntry::Resort(CargoSortType type, SortOrder order)
 {
 	auto new_children = std::make_unique<CargoDataSet>(CargoSorter(type, order));
@@ -1763,27 +1779,29 @@ struct StationViewWindow : public Window {
 	void BuildCargoList(CargoType cargo, const StationCargoList &packets, CargoDataEntry *entry)
 	{
 		const CargoDataEntry *source_dest = this->cached_destinations.Retrieve(cargo);
+		bool auto_distributed = _settings_game.linkgraph.GetDistributionType(cargo) != DistributionType::Manual;
 		for (StationCargoList::ConstIterator it = packets.Packets()->begin(); it != packets.Packets()->end(); it++) {
 			const CargoPacket *cp = *it;
 			StationID next = GetStationCargoVia(cargo, *cp, it.GetKey());
+			auto show_waiting = [&](StationID dest, uint count) {
+				ShowStationWaitingCargo(*entry, this->expanded_rows, this->groupings, static_cast<StationID>(this->window_number),
+						auto_distributed, cargo, *cp, next, dest, count, this->passenger_services);
+			};
 			if (IsCargoInClass(cargo, CargoClass::Passengers)) this->passenger_routing_counts[cargo][to_underlying(cp->GetPassengerRoutingMode())] += cp->Count();
 			if (cp->GetPassengerDestination() != StationID::Invalid()) {
-				CargoDataEntry *via = this->ShowCargo(entry, cargo, cp->GetFirstStation(), next, cp->GetPassengerDestination(), cp->Count());
-				if (via != nullptr && IsCargoInClass(cargo, CargoClass::Passengers) && cp->GetPassengerRoutingMode() == PassengerRoutingMode::Journey) {
-					via->AddService(this->passenger_services.Resolve(cargo, cp->GetPassengerJourney()), cp->Count());
-				}
+				show_waiting(cp->GetPassengerDestination(), cp->Count());
 				continue;
 			}
 
 			const CargoDataEntry *source_entry = source_dest->Retrieve(cp->GetFirstStation());
 			if (source_entry == nullptr) {
-				this->ShowCargo(entry, cargo, cp->GetFirstStation(), next, StationID::Invalid(), cp->Count());
+				show_waiting(StationID::Invalid(), cp->Count());
 				continue;
 			}
 
 			const CargoDataEntry *via_entry = source_entry->Retrieve(next);
 			if (via_entry == nullptr) {
-				this->ShowCargo(entry, cargo, cp->GetFirstStation(), next, StationID::Invalid(), cp->Count());
+				show_waiting(StationID::Invalid(), cp->Count());
 				continue;
 			}
 
@@ -1804,7 +1822,7 @@ struct StationViewWindow : public Window {
 					val = std::min<uint>(remaining, DivideApprox(cp->Count() * dest_entry.GetCount(), via_entry->GetCount()));
 					remaining -= val;
 				}
-				this->ShowCargo(entry, cargo, cp->GetFirstStation(), next, dest_entry.GetStation(), val);
+				show_waiting(dest_entry.GetStation(), val);
 			}
 		}
 		this->ShowCargo(entry, cargo, NEW_STATION, NEW_STATION, NEW_STATION, packets.ReservedCount());
