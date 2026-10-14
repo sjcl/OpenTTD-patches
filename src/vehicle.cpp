@@ -3561,7 +3561,7 @@ void Vehicle::CancelReservation(StationID next, Station *st)
 		VehicleCargoList &cargo = v->cargo;
 		if (cargo.ActionCount(VehicleCargoList::MoveToAction::Load) > 0) {
 			Debug(misc, 1, "cancelling cargo reservation");
-			cargo.Return(UINT_MAX, &st->goods[v->cargo_type].CreateData().cargo, next, v->tile);
+			cargo.Return(UINT_MAX, &st->goods[v->cargo_type].CreateData().cargo, next, v->tile, v->cargo_type);
 		}
 		cargo.KeepAll();
 	}

@@ -15,6 +15,7 @@
 #include "sl/saveload.h"
 #include "debug.h"
 #include "linkgraph/linkgraph.h"
+#include "core/hash_func.hpp"
 #include <set>
 #include <chrono>
 
@@ -567,8 +568,9 @@ std::optional<PassengerJourneyExecution> PassengerJourneyActiveContext::Execute(
 			leg.departure, leg.arrival, signature->second};
 }
 
-/** Retain a hop only while it is an unrestricted flow from this station. Choose
- * a stable StationID otherwise; GUI reads the result without drawing randomness. */
+/** Retain an unrestricted hop from this station. New hops follow CargoDist flow
+ * weights using a deterministic packet/station/tick sample, without consuming RNG.
+ * A later interchange gets a new sample rather than always choosing the lowest ID. */
 static StationID CurrentPassengerLegacyHop(const CargoPacket &packet, CargoType cargo, StationID station, StationID preferred)
 {
 	const Station *current = Station::GetIfValid(station);
@@ -576,14 +578,29 @@ static StationID CurrentPassengerLegacyHop(const CargoPacket &packet, CargoType 
 	const auto &flows = current->goods[cargo].ConstFlows();
 	auto flow = flows.find(packet.GetFirstStation());
 	if (flow == flows.end() || flow->IsInvalid()) return StationID::Invalid();
-	StationID next = StationID::Invalid();
+	uint32_t eligible = 0, previous = 0;
 	for (const auto &share : *flow) {
 		if (share.first > flow->GetUnrestricted()) break;
+		const uint32_t weight = share.first - previous;
+		previous = share.first;
 		if (share.second == station || !Station::IsValidID(share.second)) continue;
 		if (share.second == preferred) return preferred;
-		if (next == StationID::Invalid() || share.second < next) next = share.second;
+		eligible += weight;
 	}
-	return next;
+	if (eligible == 0) return StationID::Invalid();
+	const uint64_t seed = (uint64_t{packet.index.base()} << 32) ^ (uint64_t{station.base()} << 16) ^
+			packet.GetPassengerDestination().base() ^ static_cast<uint64_t>(_state_ticks.base());
+	uint32_t sample = static_cast<uint32_t>((uint64_t{static_cast<uint32_t>(SimpleHash64(seed))} * eligible) >> 32);
+	previous = 0;
+	for (const auto &share : *flow) {
+		if (share.first > flow->GetUnrestricted()) break;
+		const uint32_t weight = share.first - previous;
+		previous = share.first;
+		if (share.second == station || !Station::IsValidID(share.second)) continue;
+		if (sample < weight) return share.second;
+		sample -= weight;
+	}
+	return StationID::Invalid();
 }
 
 bool PassengerJourneyActiveContext::PlanWaiting(CargoPacket &packet, CargoType cargo, StationID legacy_hop)
@@ -951,7 +968,12 @@ StationID PassengerOdFallbackContext::BoardingVia(const CargoPacket &packet, con
 			vehicle->current_order.GetCargoLoadType(cargo) == OrderLoadType::NoLoad ||
 			vehicle->current_order.GetCargoUnloadType(cargo) == OrderUnloadType::Unload ||
 			vehicle->current_order.GetCargoUnloadType(cargo) == OrderUnloadType::Transfer) return StationID::Invalid();
-	const StationID via = CurrentPassengerLegacyHop(packet, cargo, vehicle->last_station_visited, packet.GetPassengerLegacyHop());
+	/* A live direct ride takes priority over an intermediate CargoDist hop. Both
+	 * checks reuse one order prefix and require no LinkGraph reverse exploration. */
+	StationID via = destination;
+	if (!this->CanReach(vehicle, cargo, destination)) {
+		via = CurrentPassengerLegacyHop(packet, cargo, vehicle->last_station_visited, packet.GetPassengerLegacyHop());
+	}
 	/* The order prefix is shared across ODs. A full OD result cache cannot veto
 	 * this local ride either; retaining a diagnostic entry is optional. */
 	if (this->CanReach(vehicle, cargo, via)) {
@@ -1002,6 +1024,12 @@ std::optional<VehicleCargoList::MoveToAction> PassengerOdFallbackContext::Decide
 	if (unload == OrderUnloadType::NoUnload) return Action::Keep;
 	if (packet.GetPassengerDestination() == station) return accepted ? Action::Deliver : Action::Keep;
 	if (unload != OrderUnloadType::Unload && unload != OrderUnloadType::Transfer) {
+		/* Also repair an older CargoDist commitment or a changed live order suffix
+		 * when this train can now deliver directly. Forced transfers still win. */
+		if (this->CanReach(vehicle, cargo, packet.GetPassengerDestination())) {
+			packet.SetPassengerVia(packet.GetPassengerDestination());
+			return Action::Keep;
+		}
 		StationID via = packet.GetPassengerVia();
 		/* Keep the validated ride to its interchange; intermediate CargoDist flows
 		 * cannot redraw it. Arrival at the via starts a new transfer/routing event. */
@@ -1456,7 +1484,7 @@ void PassengerJourneySettingsChanged(int32_t)
 			for (Vehicle *v = front; v != nullptr; v = v->Next()) {
 				if (!IsCargoInClass(v->cargo_type, CargoClass::Passengers) || IsPassengerJourneyRoutingEnabled(v->cargo_type)) continue;
 				v->cargo.ReturnReserved(&station->goods[v->cargo_type].CreateData().cargo, StationID::Invalid(), v->GetCargoTile(),
-						[](const CargoPacket &packet) { return packet.GetPassengerRoutingMode() == PassengerRoutingMode::Journey; });
+						[](const CargoPacket &packet) { return packet.GetPassengerRoutingMode() == PassengerRoutingMode::Journey; }, v->cargo_type);
 				for (CargoPacket *packet : *v->cargo.Packets()) if (packet->GetPassengerRoutingMode() == PassengerRoutingMode::Journey) {
 					CountJourneyFallback(PassengerJourneyFallbackReason::Disabled);
 					packet->FallbackPassengerJourney(station->index, _state_ticks);
@@ -1554,7 +1582,7 @@ void AfterLoadPassengerJourneys()
 		Station *station = Station::GetIfValid(front->last_station_visited);
 		if (invalid && v->cargo.ReservedCount() > 0 && station != nullptr) v->cargo.ReturnReserved(
 				&station->goods[v->cargo_type].CreateData().cargo, StationID::Invalid(), v->GetCargoTile(),
-				[&](const CargoPacket &packet) { return invalidated.contains(packet.index); });
+				[&](const CargoPacket &packet) { return invalidated.contains(packet.index); }, v->cargo_type);
 	}
 	/* Preserve saved waiting queue keys and packet order. Reclassifying here
 	 * changes station rating/truncation RNG on a joining client. Ordinary

@@ -1024,16 +1024,17 @@ uint VehicleCargoList::Reassign<VehicleCargoList::MoveToAction::Deliver, Vehicle
  * @param dest Station the cargo is returned to.
  * @param next ID of the next station the cargo wants to go to.
  * @param current_tile Current tile the cargo handling is happening on.
+ * @param cargo Cargo type, used to respect the per-cargo Journey routing switch.
  * @return Amount of cargo actually returned.
  */
-uint VehicleCargoList::Return(uint max_move, StationCargoList *dest, StationID next, TileIndex current_tile)
+uint VehicleCargoList::Return(uint max_move, StationCargoList *dest, StationID next, TileIndex current_tile, CargoType cargo)
 {
 	max_move = std::min(this->action_counts[MoveToAction::Load], max_move);
-	this->PopCargo(CargoReturn(this, dest, max_move, next, current_tile));
+	this->PopCargo(CargoReturn(this, dest, max_move, next, current_tile, cargo));
 	return max_move;
 }
 
-uint VehicleCargoList::ReturnReserved(StationCargoList *dest, StationID next, TileIndex current_tile, const std::function<bool(const CargoPacket &)> &select)
+uint VehicleCargoList::ReturnReserved(StationCargoList *dest, StationID next, TileIndex current_tile, const std::function<bool(const CargoPacket &)> &select, CargoType cargo)
 {
 	uint remaining = this->ReservedCount();
 	uint returned = 0;
@@ -1047,7 +1048,7 @@ uint VehicleCargoList::ReturnReserved(StationCargoList *dest, StationID next, Ti
 		/* At the pool limit leave this boundary reservation in place rather than
 		 * returning its stored portion too. Mode invalidation still permits fallback. */
 		if (count < packet->Count() && !CargoPacket::CanAllocateItem()) continue;
-		CargoReturn action(this, dest, count, next, current_tile);
+		CargoReturn action(this, dest, count, next, current_tile, cargo);
 		if (action(packet)) it = this->packets.erase(it);
 		returned += count;
 	}

@@ -558,6 +558,110 @@ static void ExhaustJourneyAdmission(ActiveFixture &fixture)
 	CHECK(GetPassengerJourneyTickDiagnostic().query_work >= 15 * 65536);
 }
 
+TEST_CASE("Inactive Journey reservation returns preserve the CargoDist return bucket", "[passenger][active][fallback-via]")
+{
+	ActiveFixture fixture;
+	ActiveTrain train({ActiveStop(A), ActiveStop(B)});
+	const bool manual = GENERATE(false, true);
+	const bool fallback = GENERATE(false, true);
+	const bool selective = GENERATE(false, true);
+	const StationID legacy = GENERATE(StationID::Invalid(), C);
+	if (manual) _settings_game.linkgraph.distribution_per_cargo[PAX] = DistributionType::Manual;
+	else _settings_game.linkgraph.passenger_journey_routing = false;
+	auto *packet = fixture.Packet();
+	if (fallback) packet->FallbackPassengerJourney(A, NOW);
+	fixture.Waiting().Append(packet, B);
+	std::array next{B};
+	REQUIRE(fixture.Waiting().Reserve(6, &train.cargo, next, TileIndex{0}, &train) == 6);
+	REQUIRE(fixture.Waiting().Load(2, &train.cargo, next, TileIndex{0}, &train) == 2);
+	for (CargoPacket *reserved : *train.cargo.Packets()) reserved->SetPassengerLegacyHop(legacy);
+	const uint returned = selective ?
+			train.cargo.ReturnReserved(&fixture.Waiting(), B, TileIndex{0}, [](const CargoPacket &) { return true; }, PAX) :
+			train.cargo.Return(2, &fixture.Waiting(), B, TileIndex{0}, PAX);
+	CHECK(returned == (selective ? 4 : 2));
+	CHECK(train.cargo.StoredCount() == 2);
+	CHECK(train.cargo.ReservedCount() == 4 - returned);
+	CHECK(fixture.Waiting().ReservedCount() == 4 - returned);
+	CHECK(fixture.Waiting().AvailableViaCount(B) == 4 + returned);
+	CHECK(fixture.Waiting().AvailableViaCount(StationID::Invalid()) == 0);
+	CHECK(fixture.Waiting().AvailableViaCount(C) == 0);
+	for (StationCargoList::ConstIterator it(fixture.Waiting().Packets()->begin()); it != fixture.Waiting().Packets()->end(); ++it) {
+		CHECK((*it)->GetPassengerDestination() == D);
+	}
+}
+
+TEST_CASE("Direct fallback rides pass the CargoDist via and repair older commitments", "[passenger][active][fallback-via]")
+{
+	ActiveFixture fixture; FinalDeliveryFixture delivery;
+	const bool old_commitment = GENERATE(false, true);
+	ActiveTrain train({ActiveStop(A), ActiveStop(B), ActiveStop(D)});
+	train.owner = delivery.company->index;
+	Station::Get(A)->goods[PAX].CreateData().flows.insert(FlowStat(A, B, 10));
+	Station::Get(B)->goods[PAX].CreateData().flows.insert(FlowStat(A, C, 10));
+	auto *packet = fixture.Packet();
+	SECTION("Fallback") { packet->FallbackPassengerJourney(A, NOW); }
+	SECTION("Deferred Legacy") { packet->DeferPassengerJourney(A, NOW); }
+	SECTION("Legacy") {}
+	fixture.Waiting().Append(packet, B);
+	fixture.Waiting().RoutePassengerJourneys(PAX, A, false);
+	std::array next{B};
+	REQUIRE(fixture.Waiting().Load(10, &train.cargo, next, TileIndex{0}, &train) == 10);
+	CHECK(packet->GetPassengerVia() == D);
+	if (old_commitment) packet->SetPassengerVia(B);
+	train.LoadAt(1);
+	CargoPayment at_b(CargoPaymentID::Invalid(), &train);
+	train.cargo.Stage(true, B, next, OrderUnloadType::UnloadIfPossible, &Station::Get(B)->goods[PAX], PAX, &at_b, TileIndex{0});
+	CHECK(train.cargo.ActionCount(Action::Keep) == 10);
+	CHECK(train.cargo.ActionCount(Action::Transfer) == 0);
+	CHECK(packet->GetPassengerVia() == D);
+	train.LoadAt(2);
+	CargoPayment at_d(CargoPaymentID::Invalid(), &train);
+	train.cargo.Stage(true, D, next, OrderUnloadType::UnloadIfPossible, &Station::Get(D)->goods[PAX], PAX, &at_d, TileIndex{0});
+	REQUIRE(train.cargo.Unload(10, &fixture.Waiting(D), PAX, &at_d, TileIndex{0}) == 10);
+	CHECK(delivery.company->cur_economy.delivered_cargo[PAX] == 10);
+	CHECK(GetPassengerJourneyTickDiagnostic().od_fallback_searches == 0);
+}
+
+TEST_CASE("New fallback hops respect flow weights and retain valid saved choices", "[passenger][active][fallback-via]")
+{
+	ActiveFixture fixture;
+	auto &flows = Station::Get(A)->goods[PAX].CreateData().flows;
+	flows.insert(FlowStat(A, B, 20));
+	flows.find(A)->AppendShare(C, 80);
+	flows.find(A)->AppendShare(A, 500); // Local consumption is not a hop.
+	flows.find(A)->AppendShare(D, 500, true); // Restricted shares are ineligible.
+	std::vector<CargoPacket *> packets;
+	GameRandomSeedChecker seeds;
+	for (uint16_t i = 0; i < 100; ++i) {
+		auto *packet = fixture.Packet(1, D, i);
+		packet->FallbackPassengerJourney(A, NOW);
+		fixture.Waiting().Append(packet, StationID::Invalid());
+		packets.push_back(packet);
+	}
+	fixture.Waiting().RoutePassengerJourneys(PAX, A, false);
+	auto count_b = [&]() { return std::count_if(packets.begin(), packets.end(), [](const CargoPacket *packet) { return packet->GetPassengerLegacyHop() == B; }); };
+	CHECK(count_b() >= 10); CHECK(count_b() <= 30);
+	std::vector<StationID> selected;
+	for (const CargoPacket *packet : packets) {
+		const StationID hop = packet->GetPassengerLegacyHop();
+		REQUIRE((hop == B || hop == C));
+		CHECK(GetStationCargoVia(PAX, *packet, StationID::Invalid(), A) == hop);
+		selected.push_back(hop);
+	}
+	++_state_ticks;
+	fixture.Waiting().RoutePassengerJourneys(PAX, A, false);
+	for (size_t i = 0; i < packets.size(); ++i) {
+		CHECK(packets[i]->GetPassengerLegacyHop() == selected[i]); // Waiting must not redraw valid hops.
+		packets[i]->SetPassengerLegacyHop(StationID::Invalid()); // A new interchange must select again.
+	}
+	fixture.Waiting().RoutePassengerJourneys(PAX, A, false);
+	size_t changed = 0;
+	for (size_t i = 0; i < packets.size(); ++i) changed += packets[i]->GetPassengerLegacyHop() != selected[i];
+	CHECK(changed > 0);
+	CHECK(count_b() >= 10); CHECK(count_b() <= 30);
+	CHECK(seeds.Check());
+}
+
 TEST_CASE("CargoDist fallback rides board past intermediate stops and retain their via", "[passenger][active][fallback-via]")
 {
 	ActiveFixture fixture;
@@ -579,7 +683,7 @@ TEST_CASE("CargoDist fallback rides board past intermediate stops and retain the
 	REQUIRE(fixture.Waiting().Reserve(10, &train.cargo, next, TileIndex{0}, &train, &loading) == 10);
 	CHECK(packet->GetPassengerVia() == StationID::Invalid()); // The waiting remainder has no ride commitment.
 	CHECK(fixture.Waiting().ReservedCount() == 10);
-	train.cargo.ReturnReserved(&fixture.Waiting(), StationID::Invalid(), TileIndex{0}, [](const CargoPacket &) { return true; });
+	train.cargo.ReturnReserved(&fixture.Waiting(), StationID::Invalid(), TileIndex{0}, [](const CargoPacket &) { return true; }, PAX);
 	CHECK(fixture.Waiting().AvailableCount() == 30);
 	CHECK(fixture.Waiting().ReservedCount() == 0);
 	for (StationCargoList::ConstIterator it(fixture.Waiting().Packets()->begin()); it != fixture.Waiting().Packets()->end(); ++it) {

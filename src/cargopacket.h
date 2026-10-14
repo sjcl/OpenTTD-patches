@@ -604,9 +604,9 @@ public:
 
 	template <MoveToAction Tfrom, MoveToAction Tto>
 	uint Reassign(uint max_move);
-	uint Return(uint max_move, StationCargoList *dest, StationID next_station, TileIndex current_tile);
+	uint Return(uint max_move, StationCargoList *dest, StationID next_station, TileIndex current_tile, CargoType cargo = INVALID_CARGO);
 	/** Return selected reserved portions only, preserving all stored cargo and other reservations. */
-	uint ReturnReserved(StationCargoList *dest, StationID next_station, TileIndex current_tile, const std::function<bool(const CargoPacket &)> &select);
+	uint ReturnReserved(StationCargoList *dest, StationID next_station, TileIndex current_tile, const std::function<bool(const CargoPacket &)> &select, CargoType cargo = INVALID_CARGO);
 	uint Unload(uint max_move, StationCargoList *dest, CargoType cargo, CargoPayment *payment, TileIndex current_tile);
 	uint Shift(uint max_move, VehicleCargoList *dest);
 	uint Truncate(uint max_move = UINT_MAX);
