@@ -1746,7 +1746,7 @@ struct ReturnCargoAction
 	 */
 	bool operator()(Vehicle *v)
 	{
-		v->cargo.Return(UINT_MAX, &this->st->goods[v->cargo_type].CreateData().cargo, this->next_hop, v->GetCargoTile());
+		v->cargo.Return(UINT_MAX, &this->st->goods[v->cargo_type].CreateData().cargo, this->next_hop, v->GetCargoTile(), v->cargo_type);
 		return true;
 	}
 };
@@ -2146,7 +2146,7 @@ static void LoadUnloadVehicle(Vehicle *front, PassengerJourneyLoadingContext &lo
 					uint new_remaining = v->cargo.RemainingCount() + v->cargo.ActionCount(VehicleCargoList::MoveToAction::Deliver);
 					if (v->cargo_cap < new_remaining) {
 						/* Return some of the reserved cargo to not overload the vehicle. */
-						v->cargo.Return(new_remaining - v->cargo_cap, &ged->cargo, StationID::Invalid(), v->GetCargoTile());
+						v->cargo.Return(new_remaining - v->cargo_cap, &ged->cargo, StationID::Invalid(), v->GetCargoTile(), v->cargo_type);
 					}
 
 					/* Keep instead of delivering. This may lead to no cargo being unloaded, so ...*/

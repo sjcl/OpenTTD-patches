@@ -36,7 +36,7 @@ private:
 	size_t work_left = MAX_WORK;
 };
 
-StationID GetStationCargoVia(CargoType cargo, const CargoPacket &packet, StationID queue_key);
+StationID GetStationCargoVia(CargoType cargo, const CargoPacket &packet, StationID queue_key, StationID station = StationID::Invalid());
 
 /** Existing cargo/from/via/to columns, independently ordered by the station window. */
 enum StationCargoGrouping : uint8_t { GR_SOURCE, GR_NEXT, GR_DESTINATION, GR_CARGO };
@@ -244,11 +244,16 @@ private:
 	uint num_children;        ///< the number of subentries belonging to this entry.
 	uint count;               ///< sum of counts of all children or amount of cargo for this entry.
 	std::unique_ptr<CargoDataSet> children;   ///< the children of this entry.
-	std::unique_ptr<std::map<StationPassengerService, uint>> services; ///< Allocated only for visible Journey via rows; counts do not propagate.
+	std::unique_ptr<std::map<StationPassengerService, uint>> services; ///< Allocated only for visible passenger via rows; counts do not propagate.
 	uint num_service_rows = 0; ///< Number of descendant service annotation rows.
 };
 /** Add cargo once, returning its visible via row (if expanded far enough to show it). */
 CargoDataEntry *ShowStationCargo(CargoDataEntry &root, const CargoDataEntry &expanded, std::span<const StationCargoGrouping, 4> groupings,
 		StationID station, bool auto_distributed, CargoType cargo, StationID source, StationID next, StationID dest, uint count);
+
+/** Waiting passengers without a stored ride have an unknown service, never an inferred carrier. */
+CargoDataEntry *ShowStationWaitingCargo(CargoDataEntry &root, const CargoDataEntry &expanded, std::span<const StationCargoGrouping, 4> groupings,
+		StationID station, bool auto_distributed, CargoType cargo, const CargoPacket &packet, StationID next, StationID dest, uint count,
+		StationPassengerServiceCache &services);
 
 #endif /* STATION_CARGO_GUI_H */

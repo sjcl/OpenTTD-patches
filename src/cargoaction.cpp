@@ -166,7 +166,10 @@ bool CargoReturn::operator()(CargoPacket *cp)
 			cp_new->SetPassengerJourney(ride, cp_new->GetPassengerLegacyHop());
 		}
 	}
-	else if (cp_new->GetPassengerRoutingMode() == PassengerRoutingMode::Fallback) next = cp_new->GetPassengerLegacyHop();
+	else if (IsPassengerJourneyRoutingEnabled(this->cargo) &&
+			(cp_new->GetPassengerRoutingMode() == PassengerRoutingMode::Fallback || Station::IsValidID(cp_new->GetPassengerDestination()))) {
+		next = cp_new->GetPassengerLegacyHop();
+	}
 	this->destination->Append(cp_new, next);
 	return cp_new == cp;
 }

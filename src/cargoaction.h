@@ -122,9 +122,10 @@ class CargoReturn : public CargoMovement<VehicleCargoList, StationCargoList> {
 protected:
 	TileIndex current_tile; ///< Current tile cargo unloading is happening.
 	StationID next;
+	CargoType cargo;
 public:
-	CargoReturn(VehicleCargoList *source, StationCargoList *destination, uint max_move, StationID next, TileIndex current_tile) :
-			CargoMovement<VehicleCargoList, StationCargoList>(source, destination, max_move), current_tile(current_tile), next(next) {}
+	CargoReturn(VehicleCargoList *source, StationCargoList *destination, uint max_move, StationID next, TileIndex current_tile, CargoType cargo) :
+			CargoMovement<VehicleCargoList, StationCargoList>(source, destination, max_move), current_tile(current_tile), next(next), cargo(cargo) {}
 	bool operator()(CargoPacket *cp);
 };
 
