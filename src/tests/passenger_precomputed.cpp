@@ -80,7 +80,10 @@ TEST_CASE("Precomputed identical fleets aggregate without synthetic headways", "
 	std::array services{Service(0, {A, D}), Service(1, {A, D})};
 	auto table = Build(services); CHECK(table.GetDiagnostic().patterns == 1);
 	const auto baseline = table.Plan(A, D, StateTicks{});
-	for (int i = 0; i < 10000; ++i) services[0].vehicles.push_back(services[0].vehicles.front());
+	for (int i = 0; i < 10000; ++i) {
+		auto vehicle = services[0].vehicles.front(); vehicle.id = VehicleID{static_cast<uint32_t>(i + 2)};
+		services[0].vehicles.push_back(vehicle);
+	}
 	auto fleet = Build(services); CHECK(fleet.GetDiagnostic().states == table.GetDiagnostic().states);
 	CHECK(fleet.GetDiagnostic().edges == table.GetDiagnostic().edges); CHECK(fleet.Plan(A, D, StateTicks{}).waiting == baseline.waiting);
 	auto excluded = fleet.Plan(A, D, StateTicks{}, OrderListID{1}); REQUIRE(excluded.ride); CHECK(excluded.ride->service == OrderListID{0});
@@ -112,7 +115,10 @@ TEST_CASE("Precomputed CPU scaling benchmark", "[.benchmark][passenger][precompu
 	for (int axis = 0; axis < 4; ++axis) for (int scale : {16, 64, 256, 512}) {
 		std::vector<PassengerPeriodicService> services{Service(0, {A, D})};
 		if (axis == 0 || axis == 3) for (int i = 4; i < scale; i += 2) services.push_back(Service(i, {StationID{static_cast<uint16_t>(i)}, StationID{static_cast<uint16_t>(i + 1)}}));
-		if (axis == 1) for (int i = 1; i < scale * 16; ++i) services[0].vehicles.push_back(services[0].vehicles.front());
+		if (axis == 1) for (int i = 1; i < scale * 16; ++i) {
+			auto vehicle = services[0].vehicles.front(); vehicle.id = VehicleID{static_cast<uint32_t>(i)};
+			services[0].vehicles.push_back(vehicle);
+		}
 		auto start = Clock::now(); auto table = Build(services);
 		uint64_t build_us = std::chrono::duration_cast<std::chrono::microseconds>(Clock::now() - start).count();
 		std::vector<uint64_t> samples;
