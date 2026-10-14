@@ -39,10 +39,20 @@
 /** Derived reverse index. Only Journey packets consume entries; never saved or used for routing. */
 static std::map<VehicleID, std::set<CargoPacketID>> _passenger_journey_vehicle_packets;
 static std::unordered_map<uint32_t, StationCargoList *> _passenger_waiting_owners;
+static std::set<StationCargoList *> _passenger_waiting_lists;
 
+void InvalidatePassengerWaitingRouting()
+{
+	for (auto *list : _passenger_waiting_lists) list->passenger_routing_dirty = true;
+}
 
-
-
+void ShiftPassengerWaitingEventTicks(StateTicksDelta delta)
+{
+	for (Station *station : Station::Iterate()) for (CargoType cargo : EnumRange(NUM_CARGO)) if (station->goods[cargo].data != nullptr) {
+		auto &list = station->goods[cargo].data->cargo;
+		if (list.passenger_routing_due != INVALID_STATE_TICKS) list.passenger_routing_due += delta;
+	}
+}
 
 void PassengerWaitingPacketChanged(const CargoPacket &packet)
 {
@@ -96,6 +106,7 @@ void CargoPacket::PreCleanPool()
 {
 	_passenger_journey_vehicle_packets.clear();
 	_passenger_waiting_owners.clear();
+	_passenger_waiting_lists.clear();
 }
 
 void CargoPacket::SetPassengerJourney(PassengerJourneyExecution journey, StationID legacy_hop)
@@ -1194,6 +1205,7 @@ StationCargoList::~StationCargoList() { this->ClearWaitingIndex(); }
 
 void StationCargoList::ClearWaitingIndex()
 {
+	_passenger_waiting_lists.erase(this);
 	for (const auto &[id, entry] : this->waiting_entries) _passenger_waiting_owners.erase(id.base());
 	this->waiting_entries.clear(); this->merge_index.clear(); this->boarding_index.clear(); this->waiting_wake.clear();
 	this->waiting_index_valid = false;
@@ -1230,6 +1242,8 @@ void StationCargoList::IndexPacket(CargoPacket *packet, StationID key, StationCa
 
 void StationCargoList::RefreshWaitingPacket(const CargoPacket &packet) const
 {
+	if (packet.GetPassengerRoutingMode() != PassengerRoutingMode::Journey && Station::IsValidID(packet.GetPassengerDestination()))
+		const_cast<StationCargoList *>(this)->passenger_routing_dirty = true;
 	auto it = this->waiting_entries.find(packet.index); if (it == this->waiting_entries.end()) return;
 	const auto position = it->second.position; const StationID key = it->second.key;
 	this->ForgetWaitingPacket(packet.index);
@@ -1270,6 +1284,7 @@ uint StationCargoList::ShiftIndexedJourneyCargo(Taction action, std::span<const 
 void StationCargoList::EnsureWaitingIndex() const
 {
 	if (this->waiting_index_valid) return;
+	_passenger_waiting_lists.insert(const_cast<StationCargoList *>(this));
 	for (auto &[key, list] : const_cast<StationCargoPacketMap &>(this->packets)) {
 		for (auto it = list.begin(); it != list.end(); ++it) this->IndexPacket(*it, key, it);
 	}
@@ -1313,6 +1328,7 @@ std::vector<CargoPacketID> StationCargoList::BoardingCandidates(const Vehicle *v
 void StationCargoList::Append(CargoPacket *cp, StationID next)
 {
 	dbg_assert(cp != nullptr);
+	if (cp->GetPassengerRoutingMode() != PassengerRoutingMode::Journey && Station::IsValidID(cp->GetPassengerDestination())) this->passenger_routing_dirty = true;
 	if (cp->GetPassengerRoutingMode() == PassengerRoutingMode::Journey) next = StationID::Invalid();
 	if (cp->GetPassengerRoutingMode() != PassengerRoutingMode::Journey && Station::IsValidID(cp->GetPassengerDestination())) {
 		cp->SetPassengerLegacyHop(next);

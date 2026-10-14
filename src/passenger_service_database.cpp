@@ -352,6 +352,7 @@ void PassengerServiceDatabase::Remove(OrderListID id)
 void PassengerServiceDatabase::Invalidate(OrderListID id)
 {
 	if (this->restoring) return;
+	InvalidatePassengerWaitingRouting();
 	++this->diagnostic.invalidations;
 	if (id == OrderListID::Invalid()) {
 		++this->diagnostic.global_invalidations;

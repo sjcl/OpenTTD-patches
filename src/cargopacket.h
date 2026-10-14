@@ -37,6 +37,8 @@ struct CargoPacketIDTag : public PoolIDTraits<uint32_t, 0xFFF000, 0xFFFFFF> {};
 using CargoPacketID = PoolID<CargoPacketIDTag>;
 struct CargoPacket;
 void PassengerWaitingPacketChanged(const CargoPacket &packet);
+void InvalidatePassengerWaitingRouting();
+void ShiftPassengerWaitingEventTicks(StateTicksDelta delta);
 
 /** Type of the pool for cargo packets for a little over 16 million packets. */
 using CargoPacketPool = Pool<CargoPacket, CargoPacketID, 1024, PoolType::Normal, true>;
@@ -677,6 +679,9 @@ public:
 	void RefreshWaitingPacket(const CargoPacket &packet) const;
 	uint64_t BoardingCandidatesInspected() const { return this->boarding_candidates_inspected; }
 	mutable uint64_t boarding_candidates_inspected = 0; ///< Diagnostic only; absent from saves.
+	bool passenger_routing_dirty = true; ///< Saved event state; joining clients must not invent a waiting pass.
+	uint64_t passenger_routing_revision = UINT64_MAX, passenger_routing_rows = UINT64_MAX;
+	StateTicks passenger_routing_due = INVALID_STATE_TICKS;
 	void RebuildWaitingIndex() const { this->EnsureWaitingIndex(); }
 	CargoType passenger_index_cargo = INVALID_CARGO; ///< Derived owning cargo, supplied by routing/boarding events.
 	/** The super class ought to know what it's doing. */

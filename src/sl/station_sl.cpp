@@ -479,6 +479,28 @@ struct PassengerOdStructHandler final : public TypedSaveLoadStructHandler<Passen
 };
 
 /** Get the save/load description for a station's goods entry. */
+struct PassengerWaitingEventsStructHandler final : public TypedSaveLoadStructHandler<PassengerWaitingEventsStructHandler, GoodsEntry> {
+	NamedSaveLoadTable GetDescription() const override
+	{
+		static const NamedSaveLoad fields[] = {
+			NSL("dirty", SLE_VAR(StationCargoList, passenger_routing_dirty, SLE_BOOL)),
+			NSL("revision", SLE_VAR(StationCargoList, passenger_routing_revision, SLE_UINT64)),
+			NSL("rows", SLE_VAR(StationCargoList, passenger_routing_rows, SLE_UINT64)),
+			NSL("due", SLE_VAR(StationCargoList, passenger_routing_due, SLE_INT64)),
+		};
+		return fields;
+	}
+	void Save(GoodsEntry *ge) const override
+	{
+		SlSetStructListLength(ge->data == nullptr ? 0 : 1);
+		if (ge->data != nullptr) SlObjectSaveFiltered(&ge->data->cargo, this->GetLoadDescription());
+	}
+	void Load(GoodsEntry *ge) const override
+	{
+		if (SlGetStructListLength(1) != 0) SlObjectLoadFiltered(&ge->CreateData().cargo, this->GetLoadDescription());
+	}
+};
+
 NamedSaveLoadTable GetGoodsDesc()
 {
 	static const NamedSaveLoad goods_desc[] = {
@@ -510,6 +532,7 @@ NamedSaveLoadTable GetGoodsDesc()
 		NSLT_STRUCTLIST<StationGoodsFlowStructHandler>("flow"),
 		NSLT_STRUCTLIST<StationGoodsCargoStructHandler>("cargo"),
 		NSLT_STRUCTLIST<PassengerOdStructHandler>("passenger_od", SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_PASSENGER_OD_ASSIGNMENT)),
+		NSLT_STRUCTLIST<PassengerWaitingEventsStructHandler>("passenger_waiting_events", SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_PASSENGER_PERIODIC, 4)),
 	};
 
 	return goods_desc;

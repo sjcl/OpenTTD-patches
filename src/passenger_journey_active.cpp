@@ -298,10 +298,15 @@ PassengerJourneyWorkTimer::~PassengerJourneyWorkTimer()
 	assert(journey_timer_depth > 0);
 	if (--journey_timer_depth == 0) TickBudget().diagnostic.journey_microseconds += (std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now().time_since_epoch()).count() - this->started) / 1000;
 }
-void PreparePassengerJourneyLoading() { PassengerJourneyWorkTimer timer; InitializeFairShares(TickBudget()); }
+void PreparePassengerJourneyLoading()
+{
+	PassengerJourneyWorkTimer timer;
+	if (!_settings_game.linkgraph.passenger_journey_precomputed || GetPassengerServiceDatabase().HasRejectedPrecomputedMemory()) InitializeFairShares(TickBudget());
+}
 void ReleasePassengerJourneyWaitingShare(StationID station)
 {
 	if (!_settings_game.linkgraph.passenger_journey_routing) return;
+	if (_settings_game.linkgraph.passenger_journey_precomputed && !tick_budget.fair_shares_initialized) return;
 	auto &global = TickBudget();
 	for (auto &share : global.fair_shares) if (share.station == station && !share.claimed) {
 		share.claimed = true;
@@ -1410,7 +1415,13 @@ std::optional<VehicleCargoList::MoveToAction> PassengerJourneyActiveContext::Dec
 size_t StationCargoList::RoutePassengerJourneys(CargoType cargo, StationID station, bool allow_search, PassengerJourneyLoadingContext *loading)
 {
 	if (this->passenger_index_cargo != cargo) { this->ClearWaitingIndex(); this->passenger_index_cargo = cargo; }
+	const bool precomputed = _settings_game.linkgraph.passenger_journey_precomputed;
+	const auto revision = GetPassengerServiceDatabase().GetPublishedRevision();
+	const auto rows = GetPassengerServiceDatabase().GetPrecomputedDiagnostic(cargo).destinations;
+	if (precomputed && allow_search && !this->passenger_routing_dirty && this->passenger_routing_revision == revision &&
+			this->passenger_routing_rows == rows && (this->passenger_routing_due == INVALID_STATE_TICKS || _state_ticks < this->passenger_routing_due)) return 0;
 	this->ClearWaitingIndex(); // Queue relocation changes the stable primary-list handles.
+	this->passenger_routing_due = INVALID_STATE_TICKS;
 	CounterTimer category{TickBudget().diagnostic.waiting_microseconds};
 	PassengerJourneyActiveContext context(nullptr, station);
 	PassengerJourneyLoadingContext local_loading;
@@ -1526,7 +1537,9 @@ size_t StationCargoList::RoutePassengerJourneys(CargoType cargo, StationID stati
 				else key = StationID::Invalid();
 				}
 			}
-			if (IsPassengerJourneyRoutingEnabled(cargo) && allow_search && CanSearchWaitingJourney(*packet, station, search) && inspected < 4096) {
+			if (IsPassengerJourneyRoutingEnabled(cargo) && allow_search &&
+					(precomputed ? packet->GetPassengerRoutingMode() != PassengerRoutingMode::Journey : CanSearchWaitingJourney(*packet, station, search)) &&
+					(precomputed || inspected < 4096)) {
 				++inspected;
 				if (context.PlanWaiting(*packet, cargo, key)) key = StationID::Invalid();
 				else if (!packet->IsPassengerJourneyDeferred()) packet->FallbackPassengerJourney(station, _state_ticks);
@@ -1539,6 +1552,13 @@ size_t StationCargoList::RoutePassengerJourneys(CargoType cargo, StationID stati
 				key = StationID::Invalid(); // CanBoard validates the through ride, including reservations and refits.
 			}
 			changed |= key != bucket->first || previous_mode != packet->GetPassengerRoutingMode();
+			if (precomputed && packet->GetPassengerRoutingMode() == PassengerRoutingMode::Journey) {
+				const auto &ride = packet->GetPassengerJourney();
+				if (IsEstimatedPassengerRide(ride.kind) && ride.waiting_limit >= 0 && ride.planned_at.base() < INT64_MAX - ride.waiting_limit) {
+					StateTicks expiry{ride.planned_at.base() + ride.waiting_limit + 1};
+					if (this->passenger_routing_due == INVALID_STATE_TICKS || expiry < this->passenger_routing_due) this->passenger_routing_due = expiry;
+				}
+			}
 			if (key != bucket->first) {
 				moved.emplace_back(key, packet);
 				list.erase(position);
@@ -1550,7 +1570,8 @@ size_t StationCargoList::RoutePassengerJourneys(CargoType cargo, StationID stati
 	/* Delay insertion so relocated packets cannot be revisited in this pass. Unchanged
 	 * buckets retain their storage and packet order; only changed queue keys allocate. */
 	for (const auto &[key, packet] : moved) this->packets.Insert(key, packet);
-	if (_settings_game.linkgraph.passenger_journey_precomputed) this->RebuildWaitingIndex();
+	this->passenger_routing_dirty = false; this->passenger_routing_revision = revision; this->passenger_routing_rows = rows;
+	if (precomputed) this->RebuildWaitingIndex();
 	if (changed) SetWindowDirty(WindowClass::StationView, station);
 	return moved.size();
 }

@@ -27,6 +27,7 @@
 #include <chrono>
 
 extern SaveLoadVersion _sl_version;
+extern NamedSaveLoadTable GetGoodsDesc();
 extern std::vector<uint8_t> SlTestSaveLoadTable(void *, void *, const NamedSaveLoadTable &);
 extern std::vector<uint8_t> SlTestSaveLoadTable(void *, void *, const NamedSaveLoadTable &, const NamedSaveLoadTable &);
 
@@ -2392,4 +2393,48 @@ TEST_CASE("Precomputed boarding CPU scaling benchmark", "[.benchmark][passenger]
 		}
 		std::cout << packets << ',' << times[0] << ',' << times[1] << ',' << waiting.BoardingCandidatesInspected() << '\n';
 	}
+}
+
+TEST_CASE("Precomputed waiting events survive save tables without inventing a routing pass", "[passenger][precomputed][save][determinism]")
+{
+	Fixture f;
+	AutoRestoreBackup version{_sl_version, SAVEGAME_VERSION};
+	AutoRestoreBackup features{_sl_xv_feature_versions, AutoRestoreBackupNoNewValueTag{}};
+	AutoRestoreBackup static_features{_sl_xv_feature_static_versions, AutoRestoreBackupNoNewValueTag{}};
+	SlXvSetStaticCurrentVersions(); _sl_xv_feature_versions = _sl_xv_feature_static_versions;
+	GoodsEntry source{}, loaded{}; source.CreateData(); loaded.CreateData();
+	auto &a = source.data->cargo;
+	a.passenger_routing_dirty = false; a.passenger_routing_revision = 17; a.passenger_routing_rows = 23; a.passenger_routing_due = NOW + 100;
+	REQUIRE_FALSE(SlTestSaveLoadTable(&source, &loaded, GetGoodsDesc()).empty());
+	auto &b = loaded.data->cargo; b.RebuildWaitingIndex();
+	CHECK_FALSE(b.passenger_routing_dirty); CHECK(b.passenger_routing_revision == 17); CHECK(b.passenger_routing_rows == 23); CHECK(b.passenger_routing_due == NOW + 100);
+}
+
+TEST_CASE("Precomputed idle loading passes do not rescan or replan waiting passengers", "[passenger][precomputed][events]")
+{
+	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = true;
+	f.Train({Stop(A), Stop(D)}); auto &db = f.Build(); for (int i = 0; i < 100; ++i) db.TickPrecomputed();
+	auto &waiting = Station::Get(A)->goods[PAX].CreateData().cargo; waiting.Append(f.Packet(), D);
+	waiting.RoutePassengerJourneys(PAX, A);
+	REQUIRE(db.GetPrecomputedDiagnostic(PAX).queries == 1);
+	const auto operations = db.GetPrecomputedDiagnostic(PAX).operations;
+	for (int i = 0; i < 100; ++i) {
+		++_state_ticks; BeginPassengerJourneyTick(); db.Tick(); waiting.RoutePassengerJourneys(PAX, A);
+		CHECK(db.GetPrecomputedDiagnostic(PAX).queries == 1); CHECK(db.GetPrecomputedDiagnostic(PAX).operations == operations);
+		CHECK(GetPassengerJourneyTickDiagnostic().fair_share_work == 0);
+	}
+	db.Invalidate(); CHECK(waiting.passenger_routing_dirty);
+}
+
+TEST_CASE("Precomputed generation capture retains large shared physical fleets", "[passenger][precomputed][fleet][save]")
+{
+	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = true;
+	auto *first = f.Train({Stop(A), Stop(D)});
+	for (int i = 1; i < 600; ++i) Vehicle::Create<PeriodicTrain>(first);
+	auto &db = f.Build(); for (int i = 0; i < 100; ++i) db.TickPrecomputed();
+	REQUIRE(db.Get(first->orders->index) != nullptr); CHECK(db.Get(first->orders->index)->vehicles.size() == 600);
+	CHECK(db.GetPrecomputedDiagnostic(PAX).patterns == 1); CHECK(db.GetPrecomputedDiagnostic(PAX).states == 8);
+	REQUIRE(db.PlanPrecomputed(PAX, A, D, NOW).ride);
+	PassengerServiceDatabase peer; auto wire = db.Save(); REQUIRE(peer.Load(wire)); peer.FinishLoad(true);
+	CHECK(peer.Save() == wire); CHECK(peer.PlanPrecomputed(PAX, A, D, NOW).ride == db.PlanPrecomputed(PAX, A, D, NOW).ride);
 }
