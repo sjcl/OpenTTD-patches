@@ -1,0 +1,22 @@
+MSBuild のバージョン 17.14.40+3e7442088 (.NET Framework)
+
+  strgen.vcxproj -> C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\build-admission\src\strgen\Release\strgen.exe
+  settingsgen.vcxproj -> C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\build-admission\src\settingsgen\Release\settingsgen.exe
+  -- Version string: jgrpp-ya-0.73.3+2-85-g91201edc7-m, Release: 0.73.3+2, Online contents compatible jgrpp version: 0.73.3
+  -- Generating rev.cpp
+  -- Generating ottdres.rc
+  -- Generating CPackProperties.cmake
+  -- Generating Doxyfile
+  -- Generating Doxyfile_AI
+  -- Generating Doxyfile_GS
+  rev.cpp
+  cargopacket.cpp
+  console_cmds.cpp
+  tcp.cpp
+  network.cpp
+  network_client.cpp
+  network_server.cpp
+  null_v.cpp
+  cargopacket_sl.cpp
+  openttd_lib.vcxproj -> C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\build-admission\openttd_lib.dir\Release\openttd_lib.lib
+  openttd.vcxproj -> C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\build-admission\Release\openttd.exe

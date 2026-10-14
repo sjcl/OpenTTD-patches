@@ -1,0 +1,19 @@
+Waiting for idle host: openttd:138232
+Waiting for idle host: quiet interval (20s)
+Traceback (most recent call last):
+  File "C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\build-admission\Exercise-Pruning-Multiplayer.py", line 136, in <module>
+    wait_for(lambda: time.monotonic() >= observation_end, "post-join observation", seconds=a.duration + 60)
+    ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\build-admission\Exercise-Pruning-Multiplayer.py", line 41, in wait_for
+    raise RuntimeError(f"A client disconnected while waiting for {label}")
+RuntimeError: A client disconnected while waiting for post-join observation
+Traceback (most recent call last):
+  File "C:\Users\bebe\.codex\worktrees\923a\OpenTTD-patches\docs\measurements\passenger-query-work-admission-2026-10-14\Run-Final-Multiplayer.py", line 59, in <module>
+    subprocess.run([sys.executable, build / 'Exercise-Pruning-Multiplayer.py', build, build / a.directory,
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        '--binary', binary.name, '--backend', 'periodic', '--input-save', a.input.resolve(), '--duration', str(a.duration)], check=True)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\bebe\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 577, in run
+    raise CalledProcessError(retcode, process.args,
+                             output=stdout, stderr=stderr)
+subprocess.CalledProcessError: Command '['C:\\Users\\bebe\\AppData\\Local\\Programs\\Python\\Python313\\python.exe', WindowsPath('C:/Users/bebe/.codex/worktrees/923a/OpenTTD-patches/build-admission/Exercise-Pruning-Multiplayer.py'), WindowsPath('C:/Users/bebe/.codex/worktrees/923a/OpenTTD-patches/build-admission'), WindowsPath('C:/Users/bebe/.codex/worktrees/923a/OpenTTD-patches/build-admission/mp-timeline-cold-1'), '--binary', 'openttd-network-final.exe', '--backend', 'periodic', '--input-save', WindowsPath('C:/Users/bebe/.codex/worktrees/e133/OpenTTD-patches/build-timed-anytime/package/input.sav'), '--duration', '120']' returned non-zero exit status 1.

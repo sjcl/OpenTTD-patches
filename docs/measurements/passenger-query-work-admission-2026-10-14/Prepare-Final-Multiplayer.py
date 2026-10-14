@@ -12,6 +12,7 @@ p = argparse.ArgumentParser(description=__doc__)
 p.add_argument('build', type=pathlib.Path)
 p.add_argument('package', type=pathlib.Path)
 p.add_argument('--directory', default='mp-final-review')
+p.add_argument('--warm-clients', action='store_true', help='Comparison only: enable all derived client caches and scratch')
 a = p.parse_args()
 build = a.build.resolve()
 spec = importlib.util.spec_from_file_location('runner', HERE.parent / 'passenger-routing-profile-2026-10-13/Run-Profile.py')
@@ -26,6 +27,7 @@ subprocess.run([sys.executable, HERE.parent / 'passenger-timed-search-arena-2026
     '--directory', a.directory], check=True)
 target = build / 'Exercise-Pruning-Multiplayer.py'
 text = target.read_text(encoding='utf-8')
+text = text.replace('    processes.append(proc)', '    processes.append(proc)\n    (root / "owned-pids.json").write_text(json.dumps([p.pid for p in processes]), encoding="utf-8")')
 text = text.replace('    time.sleep(a.duration)', '''    observation_end = time.monotonic() + a.duration
     wait_for(lambda: time.monotonic() >= observation_end, "post-join observation", seconds=a.duration + 60)''')
 text = text.replace('        if any(proc.poll() is not None for proc in processes):', '''        if any("Final close probe:" in text(d / "stderr.txt") or "Closed client connection" in text(d / "stderr.txt")
@@ -52,6 +54,16 @@ text = text.replace(anchor, '''    server_integrity = json.loads((server_dir / "
     if not result["cargo_state_equal"]:
         raise RuntimeError("Cargo state differs at the same paused tick")
 ''' + anchor)
+if a.warm_clients:
+    for feature in ['cache', 'fallback_cache', 'scratch', 'departures']:
+        text = text.replace('passenger_journey_stats ' + feature + '_off', 'passenger_journey_stats ' + feature + '_on')
+    for label in ['Periodic policy residency', 'Periodic departure index', 'OD fallback residency', 'Timed search scratch']:
+        text = text.replace(label + ': disabled', label + ': enabled')
+    for feature in ['policy_cache', 'departure_index', 'fallback_cache', 'scratch']:
+        text = text.replace('client_' + feature + '_disabled', 'client_' + feature + '_enabled')
+    text = text.replace('values and max(values) == 0', 'values and max(values) > 0')
+    text = text.replace('Clients did not exercise disabled scratch', 'Clients did not exercise enabled scratch')
+text = text.replace('    result["max_lag_time"] = 32000', '    result["client_cache_mode"] = "' + ('warm' if a.warm_clients else 'cold') + '"\n    result["max_lag_time"] = 32000')
 target.write_text(text, encoding='utf-8')
 probe = build / 'network-probe/null_v.cpp'
 code = probe.read_text(encoding='utf-8')

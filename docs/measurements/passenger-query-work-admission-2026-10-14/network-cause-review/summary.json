@@ -1,0 +1,559 @@
+{
+  "formal": {
+    "cold-1": {
+      "metadata": {
+        "binary_sha256": "61ec8ed6ecc052da65a5fa5268704a26e57b2a2ad0bd789c0f5e3b66c451da4b",
+        "input_sha256": "14d68c82911b9dcfc5ef7291e9697c5bbd67f44ffcc79d7575a144405edf6390",
+        "source_revision": "91201edc79a7e2f1c58c932e785a291d533cb00a",
+        "requested_post_join_seconds": 120,
+        "contamination": [],
+        "outcome": "fail",
+        "started_utc": "2026-10-14T14:06:00.314979+00:00",
+        "error": "Command '['C:\\\\Users\\\\bebe\\\\AppData\\\\Local\\\\Programs\\\\Python\\\\Python313\\\\python.exe', WindowsPath('C:/Users/bebe/.codex/worktrees/923a/OpenTTD-patches/build-admission/Exercise-Pruning-Multiplayer.py'), WindowsPath('C:/Users/bebe/.codex/worktrees/923a/OpenTTD-patches/build-admission'), WindowsPath('C:/Users/bebe/.codex/worktrees/923a/OpenTTD-patches/build-admission/mp-timeline-cold-1'), '--binary', 'openttd-network-final.exe', '--backend', 'periodic', '--input-save', WindowsPath('C:/Users/bebe/.codex/worktrees/e133/OpenTTD-patches/build-timed-anytime/package/input.sav'), '--duration', '120']' returned non-zero exit status 1.",
+        "finished_utc": "2026-10-14T14:08:22.752439+00:00"
+      },
+      "analysis": {
+        "local_run": "C:\\Users\\bebe\\.codex\\worktrees\\923a\\OpenTTD-patches\\build-admission\\mp-timeline-cold-1",
+        "findings": [
+          {
+            "role": "client-initial",
+            "local_port": 55263,
+            "server_socket": 1060,
+            "timeout_frame": 2255,
+            "timeout_qpc_us": 2394232995813,
+            "last_protocol_packet_age_ms": 24229,
+            "pending_socket_bytes_before_close": 26784,
+            "catchup_initial_frame": 1903,
+            "catchup_target_frame": 2255,
+            "catchup_final_frame": 2255,
+            "catchup_frames": 352,
+            "catchup_begin_qpc_us": 2394208766160,
+            "catchup_end_qpc_us": 2394232995585,
+            "catchup_wall_seconds": 24.22942,
+            "catchup_game_thread_cpu_seconds": 23.46875,
+            "catchup_process_cpu_seconds": 47.078125,
+            "catchup_game_thread_cpu_to_wall": 0.968605521716987,
+            "server_os_accepted_bytes_lower_bound_during_catchup": 26102,
+            "server_tx_samples_during_catchup": 46,
+            "server_tx_last_success_qpc_us": 2394232493985,
+            "server_queued_frames_range_during_catchup": [
+              2256,
+              2677
+            ],
+            "server_send_would_block_delta_during_catchup": 0,
+            "receive_entry_samples_inside_catchup": 0,
+            "classification": "client_cpu_catchup_with_pending_data"
+          }
+        ],
+        "peer_summary": {
+          "client-initial": {
+            "observed_catchup_batches": 92,
+            "maximum_catchup_wall_seconds": 24.22942,
+            "maximum_receive_entry_gap_seconds": 18.636541,
+            "maximum_batch_frames": 352
+          },
+          "client-late": {
+            "observed_catchup_batches": 39,
+            "maximum_catchup_wall_seconds": 19.956087,
+            "maximum_receive_entry_gap_seconds": 19.965138,
+            "maximum_batch_frames": 291
+          }
+        },
+        "clock": "same-host QPC microseconds",
+        "sampling": "TCP and server-frame samples every 500ms; catch-up and timeout events immediate",
+        "cpu_units": "thread and process user+kernel 100ns; wall QPC microseconds",
+        "timeout_changed": false,
+        "network_success_claimed": false,
+        "limits": [
+          "Positive send means OS accepted bytes; FIONREAD additionally proves bytes were waiting at this client.",
+          "CPU ratio <70% does not prove CPU saturation; process CPU includes workers and may exceed wall time.",
+          "This observer measures processing/IO timing, not a proof of route determinism."
+        ]
+      }
+    },
+    "cold-3": {
+      "metadata": {
+        "binary_sha256": "61ec8ed6ecc052da65a5fa5268704a26e57b2a2ad0bd789c0f5e3b66c451da4b",
+        "input_sha256": "14d68c82911b9dcfc5ef7291e9697c5bbd67f44ffcc79d7575a144405edf6390",
+        "source_revision": "91201edc79a7e2f1c58c932e785a291d533cb00a",
+        "requested_post_join_seconds": 120,
+        "contamination": [],
+        "outcome": "fail",
+        "started_utc": "2026-10-14T14:19:29.402521+00:00",
+        "error": "Command '['C:\\\\Users\\\\bebe\\\\AppData\\\\Local\\\\Programs\\\\Python\\\\Python313\\\\python.exe', WindowsPath('C:/Users/bebe/.codex/worktrees/923a/OpenTTD-patches/build-admission/Exercise-Pruning-Multiplayer.py'), WindowsPath('C:/Users/bebe/.codex/worktrees/923a/OpenTTD-patches/build-admission'), WindowsPath('C:/Users/bebe/.codex/worktrees/923a/OpenTTD-patches/build-admission/mp-timeline-cold-3'), '--binary', 'openttd-network-final.exe', '--backend', 'periodic', '--input-save', WindowsPath('C:/Users/bebe/.codex/worktrees/e133/OpenTTD-patches/build-timed-anytime/package/input.sav'), '--duration', '120']' returned non-zero exit status 1.",
+        "finished_utc": "2026-10-14T14:21:38.969909+00:00"
+      },
+      "analysis": {
+        "local_run": "C:\\Users\\bebe\\.codex\\worktrees\\923a\\OpenTTD-patches\\build-admission\\mp-timeline-cold-3",
+        "findings": [
+          {
+            "role": "client-initial",
+            "local_port": 51432,
+            "server_socket": 1064,
+            "timeout_frame": 1989,
+            "timeout_qpc_us": 2395029712053,
+            "last_protocol_packet_age_ms": 23644,
+            "pending_socket_bytes_before_close": 24118,
+            "catchup_initial_frame": 1683,
+            "catchup_target_frame": 1989,
+            "catchup_final_frame": 1989,
+            "catchup_frames": 306,
+            "catchup_begin_qpc_us": 2395006068017,
+            "catchup_end_qpc_us": 2395029711869,
+            "catchup_wall_seconds": 23.64385,
+            "catchup_game_thread_cpu_seconds": 22.796875,
+            "catchup_process_cpu_seconds": 45.5625,
+            "catchup_game_thread_cpu_to_wall": 0.9641777883043582,
+            "server_os_accepted_bytes_lower_bound_during_catchup": 23808,
+            "server_tx_samples_during_catchup": 45,
+            "server_tx_last_success_qpc_us": 2395029572286,
+            "server_queued_frames_range_during_catchup": [
+              1992,
+              2376
+            ],
+            "server_send_would_block_delta_during_catchup": 0,
+            "receive_entry_samples_inside_catchup": 0,
+            "classification": "client_cpu_catchup_with_pending_data"
+          }
+        ],
+        "peer_summary": {
+          "client-initial": {
+            "observed_catchup_batches": 66,
+            "maximum_catchup_wall_seconds": 23.64385,
+            "maximum_receive_entry_gap_seconds": 16.240849,
+            "maximum_batch_frames": 306
+          },
+          "client-late": {
+            "observed_catchup_batches": 30,
+            "maximum_catchup_wall_seconds": 18.419195,
+            "maximum_receive_entry_gap_seconds": 18.427742,
+            "maximum_batch_frames": 242
+          }
+        },
+        "clock": "same-host QPC microseconds",
+        "sampling": "TCP and server-frame samples every 500ms; catch-up and timeout events immediate",
+        "cpu_units": "thread and process user+kernel 100ns; wall QPC microseconds",
+        "timeout_changed": false,
+        "network_success_claimed": false,
+        "limits": [
+          "Positive send means OS accepted bytes; FIONREAD additionally proves bytes were waiting at this client.",
+          "CPU ratio <70% does not prove CPU saturation; process CPU includes workers and may exceed wall time.",
+          "This observer measures processing/IO timing, not a proof of route determinism."
+        ]
+      }
+    },
+    "warm-2": {
+      "metadata": {
+        "binary_sha256": "61ec8ed6ecc052da65a5fa5268704a26e57b2a2ad0bd789c0f5e3b66c451da4b",
+        "input_sha256": "14d68c82911b9dcfc5ef7291e9697c5bbd67f44ffcc79d7575a144405edf6390",
+        "source_revision": "91201edc79a7e2f1c58c932e785a291d533cb00a",
+        "requested_post_join_seconds": 120,
+        "contamination": [],
+        "outcome": "pass",
+        "started_utc": "2026-10-14T14:23:20.056934+00:00",
+        "finished_utc": "2026-10-14T14:25:59.801088+00:00"
+      },
+      "analysis": {
+        "local_run": "C:\\Users\\bebe\\.codex\\worktrees\\923a\\OpenTTD-patches\\build-admission\\mp-timeline-warm-2",
+        "findings": [],
+        "peer_summary": {
+          "client-initial": {
+            "observed_catchup_batches": 2771,
+            "maximum_catchup_wall_seconds": 0.380778,
+            "maximum_receive_entry_gap_seconds": 1.941671,
+            "maximum_batch_frames": 94
+          },
+          "client-late": {
+            "observed_catchup_batches": 2436,
+            "maximum_catchup_wall_seconds": 0.400261,
+            "maximum_receive_entry_gap_seconds": 1.987611,
+            "maximum_batch_frames": 96
+          }
+        },
+        "clock": "same-host QPC microseconds",
+        "sampling": "TCP and server-frame samples every 500ms; catch-up and timeout events immediate",
+        "cpu_units": "thread and process user+kernel 100ns; wall QPC microseconds",
+        "timeout_changed": false,
+        "network_success_claimed": false,
+        "limits": [
+          "Positive send means OS accepted bytes; FIONREAD additionally proves bytes were waiting at this client.",
+          "CPU ratio <70% does not prove CPU saturation; process CPU includes workers and may exceed wall time.",
+          "This observer measures processing/IO timing, not a proof of route determinism."
+        ]
+      },
+      "result": {
+        "joined_clients": 2,
+        "backend": "periodic",
+        "binary": "openttd-network-final.exe",
+        "input_save": "C:\\Users\\bebe\\.codex\\worktrees\\e133\\OpenTTD-patches\\build-timed-anytime\\package\\input.sav",
+        "fixture": false,
+        "detected_sync_failure": false,
+        "client_exit_codes": [
+          null,
+          null
+        ],
+        "server_state_ticks": [
+          "3176545487",
+          "3176548054"
+        ],
+        "single_core_clients": false,
+        "affinity": {
+          "client-initial": {
+            "mask": 0,
+            "applied": false
+          },
+          "client-late": {
+            "mask": 0,
+            "applied": false
+          }
+        },
+        "sync_frequency": 1,
+        "loopback_address": "127.0.0.1:17523",
+        "client_departure_index_enabled": true,
+        "client_policy_cache_enabled": true,
+        "client_fallback_cache_enabled": true,
+        "client_state_ticks": [
+          [
+            3176545487,
+            3176545615,
+            3176545743,
+            3176545871,
+            3176545999,
+            3176546127,
+            3176546255,
+            3176546383,
+            3176546512,
+            3176546640,
+            3176546768,
+            3176546896,
+            3176547026,
+            3176547154,
+            3176547282,
+            3176547410,
+            3176547540,
+            3176547668,
+            3176547796,
+            3176547924,
+            3176548052
+          ],
+          [
+            3176545765,
+            3176545893,
+            3176546023,
+            3176546151,
+            3176546279,
+            3176546407,
+            3176546536,
+            3176546664,
+            3176546792,
+            3176546920,
+            3176547048,
+            3176547176,
+            3176547304,
+            3176547432,
+            3176547560,
+            3176547688,
+            3176547816,
+            3176547944
+          ]
+        ],
+        "connected_clients_at_end": 2,
+        "client_cache_mode": "warm",
+        "max_lag_time": 32000,
+        "max_join_time": 32000,
+        "progress_observation_resolution_ticks": 128,
+        "unrestricted_clients": true,
+        "client_scratch_enabled": true,
+        "client_scratch_retained_bytes": [
+          [
+            0,
+            604436,
+            604436,
+            605460,
+            605464,
+            605464,
+            810008,
+            810008,
+            867536,
+            867536,
+            867536,
+            867536,
+            867536,
+            867536,
+            867536,
+            867536,
+            867536,
+            867536,
+            867540,
+            867540,
+            867540
+          ],
+          [
+            0,
+            605460,
+            605464,
+            605464,
+            810008,
+            810008,
+            867536,
+            867536,
+            867536,
+            867536,
+            867536,
+            867536,
+            867536,
+            867536,
+            867536,
+            867536,
+            867540,
+            867540
+          ]
+        ],
+        "cargo_state_equal": true,
+        "cargo_snapshots": [
+          {
+            "runtime_routing_feature": 3,
+            "state_ticks": 3176548054,
+            "packets": 134035,
+            "cargo_units": 838522,
+            "known_od_units": 190097,
+            "journey_packets": 12646,
+            "packet_state_digest": 15504959763452612739,
+            "payment_digest": 12255061276385468005,
+            "payments_valid": true,
+            "legacy_true_packets": 0,
+            "legacy_false_packets": 0,
+            "legacy_true_units": 0,
+            "legacy_false_units": 0,
+            "opposite_history_mergeable_pairs": 0
+          },
+          {
+            "runtime_routing_feature": 3,
+            "state_ticks": 3176548054,
+            "packets": 134035,
+            "cargo_units": 838522,
+            "known_od_units": 190097,
+            "journey_packets": 12646,
+            "packet_state_digest": 15504959763452612739,
+            "payment_digest": 12255061276385468005,
+            "payments_valid": true,
+            "legacy_true_packets": 0,
+            "legacy_false_packets": 0,
+            "legacy_true_units": 0,
+            "legacy_false_units": 0,
+            "opposite_history_mergeable_pairs": 0
+          },
+          {
+            "runtime_routing_feature": 3,
+            "state_ticks": 3176548054,
+            "packets": 134035,
+            "cargo_units": 838522,
+            "known_od_units": 190097,
+            "journey_packets": 12646,
+            "packet_state_digest": 15504959763452612739,
+            "payment_digest": 12255061276385468005,
+            "payments_valid": true,
+            "legacy_true_packets": 0,
+            "legacy_false_packets": 0,
+            "legacy_true_units": 0,
+            "legacy_false_units": 0,
+            "opposite_history_mergeable_pairs": 0
+          }
+        ],
+        "binary_sha256": "61ec8ed6ecc052da65a5fa5268704a26e57b2a2ad0bd789c0f5e3b66c451da4b",
+        "source_revision": "c16da03990eff522af2abf0ca9379ce5d24e5aac",
+        "post_late_join_seconds": 120
+      }
+    }
+  },
+  "excluded": {
+    "cold-2": {
+      "reason": "host contention; excluded from formal CPU comparison",
+      "metadata": {
+        "binary_sha256": "61ec8ed6ecc052da65a5fa5268704a26e57b2a2ad0bd789c0f5e3b66c451da4b",
+        "input_sha256": "14d68c82911b9dcfc5ef7291e9697c5bbd67f44ffcc79d7575a144405edf6390",
+        "source_revision": "91201edc79a7e2f1c58c932e785a291d533cb00a",
+        "requested_post_join_seconds": 120,
+        "contamination": [
+          {
+            "utc": "2026-10-14T14:12:11.160313+00:00",
+            "processes": [
+              "cmake:80396",
+              "MSBuild:108372",
+              "cl:141068",
+              "cl:115864",
+              "cl:115200",
+              "cl:109292",
+              "cl:127068",
+              "cl:68408",
+              "cl:94904",
+              "cl:50524",
+              "cl:112564",
+              "cl:54040",
+              "cl:25532",
+              "cl:84792",
+              "cl:5792",
+              "cl:84396",
+              "cl:132536",
+              "cl:136316",
+              "cl:49824",
+              "cl:57056",
+              "cl:124648",
+              "cl:41732",
+              "cl:70468",
+              "cl:134400",
+              "cl:104012",
+              "cl:115908",
+              "cl:76660",
+              "cl:136272",
+              "cl:119076",
+              "cl:100160",
+              "cl:128936",
+              "cl:114444",
+              "cl:58140",
+              "cl:55380",
+              "cl:72964"
+            ]
+          },
+          {
+            "utc": "2026-10-14T14:12:19.996276+00:00",
+            "processes": [
+              "cmake:80396",
+              "MSBuild:108372",
+              "cl:141068",
+              "cl:115864",
+              "cl:115200",
+              "cl:109292",
+              "cl:127068",
+              "cl:68408",
+              "cl:94904",
+              "cl:50524",
+              "cl:112564",
+              "cl:54040",
+              "cl:25532",
+              "cl:84792",
+              "cl:5792",
+              "cl:84396",
+              "cl:132536",
+              "cl:136316",
+              "cl:49824",
+              "cl:57056",
+              "cl:124648",
+              "cl:41732",
+              "cl:70468",
+              "cl:134400",
+              "cl:104012",
+              "cl:115908",
+              "cl:76660",
+              "cl:136272",
+              "cl:119076",
+              "cl:100160",
+              "cl:128936",
+              "cl:114444",
+              "cl:58140",
+              "cl:55380",
+              "cl:72964"
+            ]
+          },
+          {
+            "utc": "2026-10-14T14:12:28.585409+00:00",
+            "processes": [
+              "cmake:80396",
+              "MSBuild:108372",
+              "cl:141068",
+              "cl:115864",
+              "cl:115200",
+              "cl:109292",
+              "cl:127068",
+              "cl:68408",
+              "cl:94904",
+              "cl:50524",
+              "cl:112564",
+              "cl:54040",
+              "cl:25532",
+              "cl:84792",
+              "cl:5792",
+              "cl:84396",
+              "cl:132536",
+              "cl:136316",
+              "cl:49824",
+              "cl:57056",
+              "cl:124648",
+              "cl:41732",
+              "cl:70468",
+              "cl:134400",
+              "cl:104012",
+              "cl:115908",
+              "cl:76660",
+              "cl:136272",
+              "cl:119076",
+              "cl:100160",
+              "cl:128936",
+              "cl:114444",
+              "cl:58140",
+              "cl:55380",
+              "cl:72964"
+            ]
+          }
+        ],
+        "outcome": "fail",
+        "started_utc": "2026-10-14T14:10:34.830206+00:00",
+        "error": "Command '['C:\\\\Users\\\\bebe\\\\AppData\\\\Local\\\\Programs\\\\Python\\\\Python313\\\\python.exe', WindowsPath('C:/Users/bebe/.codex/worktrees/923a/OpenTTD-patches/build-admission/Exercise-Pruning-Multiplayer.py'), WindowsPath('C:/Users/bebe/.codex/worktrees/923a/OpenTTD-patches/build-admission'), WindowsPath('C:/Users/bebe/.codex/worktrees/923a/OpenTTD-patches/build-admission/mp-timeline-cold-2'), '--binary', 'openttd-network-final.exe', '--backend', 'periodic', '--input-save', WindowsPath('C:/Users/bebe/.codex/worktrees/e133/OpenTTD-patches/build-timed-anytime/package/input.sav'), '--duration', '120']' returned non-zero exit status 1.",
+        "finished_utc": "2026-10-14T14:12:28.585599+00:00"
+      }
+    },
+    "warm": {
+      "reason": "host contention; excluded from formal CPU comparison",
+      "metadata": {
+        "binary_sha256": "61ec8ed6ecc052da65a5fa5268704a26e57b2a2ad0bd789c0f5e3b66c451da4b",
+        "input_sha256": "14d68c82911b9dcfc5ef7291e9697c5bbd67f44ffcc79d7575a144405edf6390",
+        "source_revision": "91201edc79a7e2f1c58c932e785a291d533cb00a",
+        "requested_post_join_seconds": 120,
+        "contamination": [
+          {
+            "utc": "2026-10-14T14:15:22.565212+00:00",
+            "processes": [
+              "openttd_test:113980",
+              "openttd_test:83744"
+            ]
+          },
+          {
+            "utc": "2026-10-14T14:15:36.175573+00:00",
+            "processes": [
+              "openttd_test:130672",
+              "openttd_test:125716"
+            ]
+          },
+          {
+            "utc": "2026-10-14T14:16:03.606080+00:00",
+            "processes": [
+              "cmake:116192",
+              "MSBuild:93824",
+              "cl:108196"
+            ]
+          },
+          {
+            "utc": "2026-10-14T14:16:10.419422+00:00",
+            "processes": [
+              "cmake:116192",
+              "MSBuild:93824",
+              "cmake:128188"
+            ]
+          }
+        ],
+        "outcome": "pass",
+        "started_utc": "2026-10-14T14:14:55.765196+00:00",
+        "finished_utc": "2026-10-14T14:17:33.662237+00:00"
+      }
+    }
+  },
+  "timeout_extended": false,
+  "product_network_code_changed": false,
+  "conclusion": "Server continued sending; client CPU catch-up prevented receive re-entry until the unchanged timeout closed a socket containing pending bytes.",
+  "integration_approved": false,
+  "limits": [
+    "All-off vs all-on does not separate the individual cache and scratch costs.",
+    "The existing catch-up mechanism is unchanged from 8a96044d40, but old Admission was not tested in this network comparison.",
+    "Timing instrumentation has overhead; these values are not reused as product performance benchmark results."
+  ]
+}

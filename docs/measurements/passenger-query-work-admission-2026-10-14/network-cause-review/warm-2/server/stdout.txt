@@ -1,0 +1,583 @@
+OpenTTD Game Console Revision 7 - jgrpp-ya-0.73.3+2-85-g91201edc7
+------------------------------------
+use "help" for more information
+
+Behaviour of NewGRF 'JP+ Multiple Units' is likely to cause desyncs and/or crashes It changed vehicle capacity for '303 Series (EMU)' when not inside a depot or refitting
+Behaviour of NewGRF 'JP+ Private Companies v2.6.1' is likely to cause desyncs and/or crashes It changed vehicle capacity for 'Tobu 30000 Series' when not inside a depot or refitting
+Behaviour of NewGRF 'JP+ Engines & Wagons v0.12.4' is likely to cause desyncs and/or crashes It changed vehicle capacity for 'KOKI 100 / 101 Container Carrier' when not inside a depot or refitting
+Console log output started to 'C:/Users/bebe/.codex/worktrees/923a/OpenTTD-patches/build-admission/mp-timeline-warm-2/server/console.txt'.
+Game is already paused.
+Calendar Date: 117528-03-11 (42926290), fract: 27, sub_fract: 0
+Economy Date: 117528-03-11 (42926290), fract: 27, tick skip: 0
+Period display offset: 0
+Elapsed years: 117527
+Tick counter: 3010946389
+Tick counter (scaled): 3010946389
+State ticks: 3176545487 (offset: 0)
+Effective economy speed reduction factor: 1
+Ticks per calendar day: 74
+Timetable time: 22:10 + 27 ticks
+Graph coverage: complete=0; eligible_services=0; selected_services=0; selected_trips=0; largest_block_services=0; admitted_visits=0; max_unpredicted_ticks=0
+Graph failure None: 0 builds
+Graph failure Work: 0 builds
+Graph failure Memory: 0 builds
+Graph failure Services: 0 builds
+Graph failure Trips: 0 builds
+Graph failure TotalVisits: 0 builds
+Graph failure Index: 0 builds
+Graph failure Opaque: 0 builds
+Trip stop None: 0 predictions
+Trip stop Work: 0 predictions
+Trip stop Memory: 0 predictions
+Trip stop Visits: 0 predictions
+Trip stop Steps: 0 predictions
+Trip stop Timing: 0 predictions
+Trip stop Conditional: 0 predictions
+Trip stop Refit: 0 predictions
+Trip stop Implicit: 0 predictions
+Trip stop Unsupported: 0 predictions
+Trip stop Dispatch: 0 predictions
+Trip stop Facilities: 0 predictions
+Trip stop VehicleState: 0 predictions
+Trip stop OrderProgress: 0 predictions
+First graph failure: reason=None; stage=Discovery; work=0; memory=0; trips=0; visits=0
+First opaque scope: service=65535; vehicle=1048575
+First trip failure: reason=None; stage=Prediction; vehicle=1048575; work=0; memory=0; trips=0; visits=0; cursor=0; certified_until=0; required_until=0
+Uncertainty: timing=0 trips; path=0 trips; OD_resolved=0 searches; first_order=65535; first_unknown_order=65535; first_unknown_reason=None; tile=0; current_order=65535
+Simulation tick time: completed_ticks=0; total_us=0; mean_us=0; max_us=0
+Tick histogram (1ms upper bounds): simulation_p95_us=1000; simulation_p99_us=1000; journey_mean_us=0; journey_p95_us=1000; journey_p99_us=1000; journey_max_us=0
+Journey inclusive scopes: waiting_us=0; fallback_distance_us=0; boarding_us=0
+Periodic pending age: ticks=0
+OD fallback cache: hits=0; bytes=0; work=0; searches=0
+OD fallback bindings: hits=0; builds=0; validation_nodes=0; validation_ns=0; build_ns=0; reverse_hits=0; reverse_builds=0; reverse_build_ns=0
+Periodic database: services=0; timed=0; vehicles=0; bytes=0; policies_bytes=0; pending=837; builds=0; work=0; build_us=0; searches=0; query_us=0; next_departures=0; policy_hits=0; policy_misses=0; invalidations=0; rejected_work=0; rejected_memory=0
+Periodic departures: logical_vehicles=0; logical_departures=0; physical_calculations=0; hits=0; fallbacks=0; builds=0; build_ns=0; bytes=0; peak_bytes=0; forward_us=0; search_work=0
+Periodic global invalidations: 0
+Timed search storage: labels=0; frontier_lookups=0; queue_pushes=0; queue_pops=0; scratch_bytes=0; scratch_peak_bytes=0
+Timed Work destination geometry: with_destination_label=0
+Timed Work completion: with_complete=0; without_complete=0; with_queued=0; with_popped=0; improvement_possible=0; reverse_work=0; forward_work=0
+Timed result states: unavailable=0; certified=0; provisional=0; deferred=0; no_route=0; rescued_unpopped=0
+Timed plan adoption: certified_packets=0; provisional_packets=0; provisional_passengers=0
+Timed Work stop None: calls=0; observations=0
+Timed Work stop Admission: calls=0; observations=0
+Timed Work stop Queue: calls=0; observations=0
+Timed Work stop Service: calls=0; observations=0
+Timed Work stop Vehicle: calls=0; observations=0
+Timed Work stop Dispatch: calls=0; observations=0
+Timed Work stop Departure: calls=0; observations=0
+Timed Work stop Alighting: calls=0; observations=0
+Timed Work stop Dominance: calls=0; observations=0
+Timed Work histogram: upper=0; count=0
+Timed Work histogram: upper=1024; count=0
+Timed Work histogram: upper=2048; count=0
+Timed Work histogram: upper=3072; count=0
+Timed Work histogram: upper=4096; count=0
+Timed Work histogram: upper=5120; count=0
+Timed Work histogram: upper=6144; count=0
+Timed Work histogram: upper=7168; count=0
+Timed Work histogram: upper=8192; count=0
+Timed Work histogram: upper=9216; count=0
+Timed Work histogram: upper=10240; count=0
+Timed Work histogram: upper=11264; count=0
+Timed Work histogram: upper=12288; count=0
+Timed Work histogram: upper=13312; count=0
+Timed Work histogram: upper=14336; count=0
+Timed Work histogram: upper=15360; count=0
+Timed Work histogram: upper=16384; count=0
+Timed Work histogram: upper=17408; count=0
+Timed Work histogram: upper=18432; count=0
+Timed Work histogram: upper=19456; count=0
+Timed Work histogram: upper=20480; count=0
+Timed Work histogram: upper=21504; count=0
+Timed Work histogram: upper=22528; count=0
+Timed Work histogram: upper=23552; count=0
+Timed Work histogram: upper=24576; count=0
+Timed Work histogram: upper=25600; count=0
+Timed Work histogram: upper=26624; count=0
+Timed Work histogram: upper=27648; count=0
+Timed Work histogram: upper=28672; count=0
+Timed Work histogram: upper=29696; count=0
+Timed Work histogram: upper=30720; count=0
+Timed Work histogram: upper=31744; count=0
+Timed Work histogram: upper=32768; count=0
+Timed Work histogram: upper=33792; count=0
+Timed Work histogram: upper=34816; count=0
+Timed Work histogram: upper=35840; count=0
+Timed Work histogram: upper=36864; count=0
+Timed Work histogram: upper=37888; count=0
+Timed Work histogram: upper=38912; count=0
+Timed Work histogram: upper=39936; count=0
+Timed Work histogram: upper=40960; count=0
+Timed Work histogram: upper=41984; count=0
+Timed Work histogram: upper=43008; count=0
+Timed Work histogram: upper=44032; count=0
+Timed Work histogram: upper=45056; count=0
+Timed Work histogram: upper=46080; count=0
+Timed Work histogram: upper=47104; count=0
+Timed Work histogram: upper=48128; count=0
+Timed Work histogram: upper=49152; count=0
+Timed Work histogram: upper=50176; count=0
+Timed Work histogram: upper=51200; count=0
+Timed Work histogram: upper=52224; count=0
+Timed Work histogram: upper=53248; count=0
+Timed Work histogram: upper=54272; count=0
+Timed Work histogram: upper=55296; count=0
+Timed Work histogram: upper=56320; count=0
+Timed Work histogram: upper=57344; count=0
+Timed Work histogram: upper=58368; count=0
+Timed Work histogram: upper=59392; count=0
+Timed Work histogram: upper=60416; count=0
+Timed Work histogram: upper=61440; count=0
+Timed Work histogram: upper=62464; count=0
+Timed Work histogram: upper=63488; count=0
+Timed Work histogram: upper=64512; count=0
+Timed Work histogram: upper=65536; count=0
+Periodic service pruning: bound_checks=0; bound_stops=0; pruned_services=0; skipped_vehicle_visits=0
+Periodic residency: entries=0; revision=0; publications=0; staged=0; staged_bytes=0; additions=0; removals=0; updates=0; timetable_notifications=0
+Periodic cache cost: clears=0; lost=0; maximum_lost=0; explicit=0; reset=0; global=0; stale=0; evictions=0; rebuilds=0; compile_us=0; validation_us=0; eviction_us=0
+Periodic publication cost: publication_us=0; wait_ticks=0; wait_samples=0
+Periodic known vehicle phases: 0
+Periodic operating events: physical_passenger_occurrences=0; exchange_passenger_occurrences=0; depot_timed=0; depot_untimed=0; depot_blocked=0
+Schedule policy compilation: compile_us=0; residency_shared=true
+Schedule invalidation ServiceMissing: 0 packets
+Schedule invalidation Incarnation: 0 packets
+Schedule invalidation Generation: 0 packets
+Schedule invalidation Station: 0 packets
+Schedule invalidation Disabled: 0 packets
+Schedule invalidation VehicleDeleted: 0 packets
+Schedule invalidation LiveRide: 0 packets
+Schedule invalidation ForcedUnload: 0 packets
+Schedule invalidation WaitingExpired: 0 packets
+Schedule routing: packets=0; passengers=0; timed_deferred=0; hits=0; misses=0; bytes=0; work=0; query_us=0; stale=0; expired=0
+Schedule transport: boarded=0; transferred=0; delivered=0 people; expected_wait_person_ticks=0; actual_wait_person_ticks=0; wait_people=0
+Completed interchanges: from_schedule=0; from_timed=0 people (next vehicle actually loaded)
+Schedule-assisted final OD: delivered=0 people (any real schedule leg; overlaps final-carrier delivery counts)
+Periodic passenger census (live OrderLists, cargo-only excluded): total=837; passenger=771; complete_cycles=663; compile_success=663; compile_failure=108; unpublished=771; dirty=771; unknown_vehicles=3711
+Periodic passenger pending census: 771 lists; compilation observations=0 attempts/0 successes (rebuilds overlap)
+Periodic phase work stops: 0 vehicle capture observations (retries overlap)
+Periodic passenger eligibility: declared_complete=674; live_compiled_cycles=663; published_lists=0; published_cycles=0; phase_known_lists=0; denominator=771
+Periodic live compilation: None=663
+Periodic live compilation: Control=4
+Periodic live compilation: Refit=0
+Periodic live compilation: Travel=96
+Periodic live compilation: Wait=1
+Periodic live compilation: Overflow=0
+Periodic live compilation: ZeroPeriod=7
+Periodic live compilation: TooFewStops=0
+Periodic compilation observations: None=0
+Periodic compilation observations: Control=0
+Periodic compilation observations: Refit=0
+Periodic compilation observations: Travel=0
+Periodic compilation observations: Wait=0
+Periodic compilation observations: Overflow=0
+Periodic compilation observations: ZeroPeriod=0
+Periodic compilation observations: TooFewStops=0
+Periodic passenger vehicle phase census: Known=0
+Periodic passenger vehicle phase census: NoTimetable=279
+Periodic passenger vehicle phase census: VehicleState=173
+Periodic passenger vehicle phase census: OrderProgress=6
+Periodic passenger vehicle phase census: Facilities=0
+Periodic passenger vehicle phase census: Work=0
+Periodic passenger vehicle phase census: Unbunching=0
+Periodic passenger vehicle phase census: DispatchCompetition=0
+Periodic passenger vehicle phase census: DispatchUnsupported=0
+Periodic passenger vehicle phase census: Overflow=0
+Periodic passenger vehicle phase census: ElapsedTravel=156
+Periodic passenger vehicle phase census: AwaitCapture=3097
+Periodic OD calls: Found outcomes=0; overlapping_observations=0
+Periodic OD calls: Invalid outcomes=0; overlapping_observations=0
+Periodic OD calls: OriginMissing outcomes=0; overlapping_observations=0
+Periodic OD calls: DestinationMissing outcomes=0; overlapping_observations=0
+Periodic OD calls: NoAlighting outcomes=0; overlapping_observations=0
+Periodic OD calls: Unreachable outcomes=0; overlapping_observations=0
+Periodic OD calls: NoCandidate outcomes=0; overlapping_observations=0
+Periodic OD calls: UnknownPhase outcomes=0; overlapping_observations=0
+Periodic OD calls: Evaluation outcomes=0; overlapping_observations=0
+Periodic OD calls: Candidates outcomes=0; overlapping_observations=0
+Periodic OD calls: Labels outcomes=0; overlapping_observations=0
+Periodic OD calls: Work outcomes=0; overlapping_observations=0
+Periodic OD calls: Memory outcomes=0; overlapping_observations=0
+Periodic OD calls: Transfers outcomes=0; overlapping_observations=0
+Periodic execution observations: expired=0 packets/0 passengers; failed_same_service_boarding_checks=0; retries_overlap=true
+Active journey total: applied=0 packets/0 passengers; builds=0; static_hits=0; searches=0; OD_hits=0
+Periodic admission: accepted=0; rejected=0; reserved=0; used=0; returned=0; max_tick_queries=0; max_tick_work=0
+Admission rejected EventQueries: 0
+Admission rejected TickQueries: 0
+Admission rejected EventWork: 0
+Admission rejected GlobalWork: 0
+Admission rejected FairWork: 0
+Admission rejected FairQueries: 0
+Periodic allocation: timed=0; schedule=0; timed_used=0; schedule_used=0
+Periodic Work outcomes: stopped=0; no_route=0; schedule_rescued=0; complete_unproved=0; incomplete_work=0; stop_percent=0.000; no_route_percent=0.000
+Periodic missing: published=0; building=0; retries=0; max_od_attempts=0; tracking_evictions=0
+Train observations=0; cargo_capable=0; possible_refit=0; predicted=0; inactive=0; excluded_cargo=0; excluded_scope=0; visits=0; omitted_trains_at_least=0; truncated_predictions=0 (uncaptured visit count unknown)
+Trip prediction: executions=0; hits=0; logical_work=0; executed_visits=0; predictor_ns=0; cache_bytes=0
+Graph work=0; mean=0; max=0; cached_index_allowance_avoided=0; query_allowance=0; build_us=0; mean_us=0; max_us=0; search_us=0; max_tick_graph_search_us=0
+Peak graph retained_estimate=0; static retained_estimate=0; conservative_graph_envelope_including_index=0; query_scratch=0; query_cache=0
+Graph phase_us: discovery=0; capacity=0; selection=0; orders_dispatch=0; pattern=0; prediction=0; departures=0
+Event capture: discovery_hits=0; service_hits=0; logical_work_replayed=0; retained_estimate_including_shared_patterns=0
+Fair waiting shares: claims=0; releases=0; admission_scan_work=0; retained_rides=0
+OD fallback: work=0; path_searches=0
+Journey transport: boarded=0; transferred=0; delivered=0 people
+Timed depot transport: service_boarded=0; service_delivered=0; crossing_boarded=0; crossing_delivered=0 people
+Pragmatic routing: timed=0 packets; timed_ignoring_unknown=0; timed_budget_deferred=0; untimed=0 live routes; untimed_no_route=0; untimed_budget_deferred=0
+Untimed transport: boarded=0; transferred=0; delivered=0 people
+Fallback GraphWork: 0 packets; deferred=0 packets
+Fallback GraphMemory: 0 packets; deferred=0 packets
+Fallback SnapshotLimit: 0 packets; deferred=0 packets
+Fallback QueryWork: 0 packets; deferred=0 packets
+Fallback QueryLimit: 0 packets; deferred=0 packets
+Fallback QueryMemory: 0 packets; deferred=0 packets
+Fallback PredictionIncomplete: 0 packets; deferred=0 packets
+Fallback PredictionHorizon: 0 packets; deferred=0 packets
+Fallback NoJourney: 0 packets; deferred=0 packets
+Fallback InvalidLeg: 0 packets; deferred=0 packets
+Fallback StaleLeg: 0 packets; deferred=0 packets
+Fallback Disabled: 0 packets; deferred=0 packets
+Fallback VehicleDeleted: 0 packets; deferred=0 packets
+Console log file closed.
+‎*** Game still paused (manual, connecting clients)
+‎*** periodic-client-initial has joined the game (Client #2)
+‎*** Game still paused (manual)
+‎*** Game unpaused (manual)
+‎*** Game paused (connecting clients)
+‎*** periodic-client-late has joined the game (Client #3)
+‎*** Game unpaused (connecting clients)
+‎*** Game paused (manual)
+Console log output started to 'C:/Users/bebe/.codex/worktrees/923a/OpenTTD-patches/build-admission/mp-timeline-warm-2/server/console.txt'.
+Calendar Date: 117528-04-15 (42926325), fract: 4, sub_fract: 0
+Economy Date: 117528-04-15 (42926325), fract: 4, tick skip: 0
+Period display offset: 0
+Elapsed years: 117527
+Tick counter: 3010948956
+Tick counter (scaled): 3010948956
+State ticks: 3176548054 (offset: 0)
+Effective economy speed reduction factor: 1
+Ticks per calendar day: 74
+Timetable time: 22:45 + 4 ticks
+Client #1  name: 'periodic-server'  company: 255  IP: server  pubkey: 
+Client #2  name: 'periodic-client-initial'  company: 255  IP: 127.0.0.1  pubkey: 4B80841565C57B394F7A2AD09A377BF02411DE710EBCA7DB140A059D9A3E0640
+Client #3  name: 'periodic-client-late'  company: 255  IP: 127.0.0.1  pubkey: 926E1B1B19036CF27D39F1FC316C9BBB6E7CF508619A3D483C6F516E4EBE4525
+Passenger inventory: complete; waiting=218393 people (available=218393, reserved=0); deferred=78429 people; state_ticks=3176548054; scaled_ticks=3010948956
+Inventory Legacy: 390069 people/84454 packets; known_OD=107410 people
+Inventory Journey: 25963 people/12646 packets; known_OD=25963 people
+Inventory Fallback: 56724 people/30923 packets; known_OD=56724 people
+Waiting routing: timed=10419; schedule=379; CargoDist_or_deferred=178434; OD_fallback_or_waiting=29161 people
+Schedule inventory: people=489; packets=211; waiting=379; timed_waiting=10419 people
+Waiting age sample: known_OD_waiting=113619; transit_age_ge_256=0; schedule_intent_age_ge_4096=0 people (transit age includes travel; Schedule-aware only; intent age resets on replan; Timed waiting age unavailable)
+Graph coverage: complete=0; eligible_services=0; selected_services=0; selected_trips=0; largest_block_services=0; admitted_visits=0; max_unpredicted_ticks=0
+Graph failure None: 0 builds
+Graph failure Work: 0 builds
+Graph failure Memory: 0 builds
+Graph failure Services: 0 builds
+Graph failure Trips: 0 builds
+Graph failure TotalVisits: 0 builds
+Graph failure Index: 0 builds
+Graph failure Opaque: 0 builds
+Trip stop None: 0 predictions
+Trip stop Work: 0 predictions
+Trip stop Memory: 0 predictions
+Trip stop Visits: 0 predictions
+Trip stop Steps: 0 predictions
+Trip stop Timing: 0 predictions
+Trip stop Conditional: 0 predictions
+Trip stop Refit: 0 predictions
+Trip stop Implicit: 0 predictions
+Trip stop Unsupported: 0 predictions
+Trip stop Dispatch: 0 predictions
+Trip stop Facilities: 0 predictions
+Trip stop VehicleState: 0 predictions
+Trip stop OrderProgress: 0 predictions
+First graph failure: reason=None; stage=Discovery; work=0; memory=0; trips=0; visits=0
+First opaque scope: service=65535; vehicle=1048575
+First trip failure: reason=None; stage=Prediction; vehicle=1048575; work=0; memory=0; trips=0; visits=0; cursor=0; certified_until=0; required_until=0
+Uncertainty: timing=0 trips; path=0 trips; OD_resolved=0 searches; first_order=65535; first_unknown_order=65535; first_unknown_reason=None; tile=0; current_order=65535
+Simulation tick time: completed_ticks=2567; total_us=111663818; mean_us=43499; max_us=357580
+Tick histogram (1ms upper bounds): simulation_p95_us=67000; simulation_p99_us=83000; journey_mean_us=18344; journey_p95_us=42000; journey_p99_us=56000; journey_max_us=68674
+Journey inclusive scopes: waiting_us=39782590; fallback_distance_us=5959875; boarding_us=5110849
+Periodic pending age: ticks=676
+OD fallback cache: hits=32791; bytes=16871884; work=4075247315; searches=83690
+OD fallback bindings: hits=38066; builds=4; validation_nodes=0; validation_ns=0; build_ns=206700; reverse_hits=83686; reverse_builds=4; reverse_build_ns=813800
+Periodic database: services=837; timed=651; vehicles=3658; bytes=11992544; policies_bytes=16616712; pending=637; builds=9291; work=36745180; build_us=247531; searches=40925; query_us=26746181; next_departures=41289849; policy_hits=11355; policy_misses=29570; invalidations=11; rejected_work=42; rejected_memory=0
+Periodic departures: logical_vehicles=43638692; logical_departures=41289849; physical_calculations=9903013; hits=6646299; fallbacks=831; builds=4752; build_ns=12699000; bytes=440940; peak_bytes=442948; forward_us=10385708; search_work=649052814
+Periodic global invalidations: 11
+Timed search storage: labels=12733336; frontier_lookups=189709580; queue_pushes=12733336; queue_pops=1267779; scratch_bytes=867540; scratch_peak_bytes=867540
+Timed Work destination geometry: with_destination_label=1856
+Timed Work completion: with_complete=1856; without_complete=6592; with_queued=1856; with_popped=0; improvement_possible=1856; reverse_work=99198359; forward_work=316037737
+Timed result states: unavailable=6087; certified=22002; provisional=1859; deferred=6603; no_route=4374; rescued_unpopped=1859
+Timed plan adoption: certified_packets=35676; provisional_packets=2351; provisional_passengers=2566
+Timed Work stop None: calls=0; observations=0
+Timed Work stop Admission: calls=0; observations=0
+Timed Work stop Queue: calls=8462; observations=8462
+Timed Work stop Service: calls=45; observations=45
+Timed Work stop Vehicle: calls=740; observations=740
+Timed Work stop Dispatch: calls=0; observations=0
+Timed Work stop Departure: calls=831; observations=831
+Timed Work stop Alighting: calls=7385; observations=7385
+Timed Work stop Dominance: calls=4369; observations=4369
+Timed Work sample 0: complete=16; queued=16; popped=0; cost=14580; arrival=3176560038; lower=12919; reverse=1035; forward=48117; first_stop=Dominance
+Timed Work sample 1: complete=16; queued=16; popped=0; cost=14888; arrival=3176560346; lower=12664; reverse=1010; forward=48142; first_stop=Dominance
+Timed Work sample 2: complete=2; queued=2; popped=0; cost=20081; arrival=3176565546; lower=17220; reverse=1235; forward=47917; first_stop=Dominance
+Timed Work sample 3: complete=2; queued=2; popped=0; cost=21892; arrival=3176567357; lower=18551; reverse=1270; forward=47882; first_stop=Dominance
+Timed Work sample 4: complete=0; queued=0; popped=0; cost=-1; arrival=0; lower=17726; reverse=1125; forward=48027; first_stop=Alighting
+Timed Work sample 5: complete=0; queued=0; popped=0; cost=-1; arrival=0; lower=49931; reverse=10964; forward=38188; first_stop=Dominance
+Timed Work sample 6: complete=0; queued=0; popped=0; cost=-1; arrival=0; lower=23212; reverse=934; forward=48218; first_stop=Dominance
+Timed Work sample 7: complete=0; queued=0; popped=0; cost=-1; arrival=0; lower=27086; reverse=1559; forward=47593; first_stop=Dominance
+Timed Work sample 8: complete=0; queued=0; popped=0; cost=-1; arrival=0; lower=27451; reverse=1569; forward=47583; first_stop=Dominance
+Timed Work sample 9: complete=0; queued=0; popped=0; cost=-1; arrival=0; lower=26177; reverse=1544; forward=47608; first_stop=Alighting
+Timed Work sample 10: complete=12; queued=12; popped=0; cost=90658; arrival=3176636137; lower=35481; reverse=728; forward=48424; first_stop=Dominance
+Timed Work sample 11: complete=19; queued=19; popped=0; cost=15677; arrival=3176561157; lower=15585; reverse=447; forward=48705; first_stop=Service
+Timed Work sample 12: complete=66; queued=66; popped=0; cost=14533; arrival=3176559994; lower=13496; reverse=4460; forward=44692; first_stop=Vehicle
+Timed Work sample 13: complete=0; queued=0; popped=0; cost=-1; arrival=0; lower=47985; reverse=1691; forward=47461; first_stop=Dominance
+Timed Work sample 14: complete=1; queued=1; popped=0; cost=32165; arrival=3176577628; lower=31768; reverse=978; forward=48174; first_stop=Alighting
+Timed Work sample 15: complete=1; queued=1; popped=0; cost=50750; arrival=3176596195; lower=46456; reverse=1691; forward=47461; first_stop=Dominance
+Timed Work histogram: upper=0; count=0
+Timed Work histogram: upper=1024; count=13806
+Timed Work histogram: upper=2048; count=3050
+Timed Work histogram: upper=3072; count=1953
+Timed Work histogram: upper=4096; count=1337
+Timed Work histogram: upper=5120; count=1155
+Timed Work histogram: upper=6144; count=1013
+Timed Work histogram: upper=7168; count=727
+Timed Work histogram: upper=8192; count=591
+Timed Work histogram: upper=9216; count=547
+Timed Work histogram: upper=10240; count=513
+Timed Work histogram: upper=11264; count=419
+Timed Work histogram: upper=12288; count=406
+Timed Work histogram: upper=13312; count=453
+Timed Work histogram: upper=14336; count=349
+Timed Work histogram: upper=15360; count=330
+Timed Work histogram: upper=16384; count=334
+Timed Work histogram: upper=17408; count=302
+Timed Work histogram: upper=18432; count=307
+Timed Work histogram: upper=19456; count=248
+Timed Work histogram: upper=20480; count=275
+Timed Work histogram: upper=21504; count=323
+Timed Work histogram: upper=22528; count=284
+Timed Work histogram: upper=23552; count=223
+Timed Work histogram: upper=24576; count=251
+Timed Work histogram: upper=25600; count=580
+Timed Work histogram: upper=26624; count=170
+Timed Work histogram: upper=27648; count=176
+Timed Work histogram: upper=28672; count=168
+Timed Work histogram: upper=29696; count=143
+Timed Work histogram: upper=30720; count=140
+Timed Work histogram: upper=31744; count=148
+Timed Work histogram: upper=32768; count=127
+Timed Work histogram: upper=33792; count=132
+Timed Work histogram: upper=34816; count=130
+Timed Work histogram: upper=35840; count=125
+Timed Work histogram: upper=36864; count=123
+Timed Work histogram: upper=37888; count=107
+Timed Work histogram: upper=38912; count=108
+Timed Work histogram: upper=39936; count=98
+Timed Work histogram: upper=40960; count=109
+Timed Work histogram: upper=41984; count=92
+Timed Work histogram: upper=43008; count=92
+Timed Work histogram: upper=44032; count=102
+Timed Work histogram: upper=45056; count=82
+Timed Work histogram: upper=46080; count=84
+Timed Work histogram: upper=47104; count=75
+Timed Work histogram: upper=48128; count=64
+Timed Work histogram: upper=49152; count=8554
+Timed Work histogram: upper=50176; count=0
+Timed Work histogram: upper=51200; count=0
+Timed Work histogram: upper=52224; count=0
+Timed Work histogram: upper=53248; count=0
+Timed Work histogram: upper=54272; count=0
+Timed Work histogram: upper=55296; count=0
+Timed Work histogram: upper=56320; count=0
+Timed Work histogram: upper=57344; count=0
+Timed Work histogram: upper=58368; count=0
+Timed Work histogram: upper=59392; count=0
+Timed Work histogram: upper=60416; count=0
+Timed Work histogram: upper=61440; count=0
+Timed Work histogram: upper=62464; count=0
+Timed Work histogram: upper=63488; count=0
+Timed Work histogram: upper=64512; count=0
+Timed Work histogram: upper=65536; count=0
+Periodic service pruning: bound_checks=2664828; bound_stops=8075638; pruned_services=958798; skipped_vehicle_visits=5896189
+Periodic residency: entries=1304; revision=1486; publications=1486; staged=0; staged_bytes=0; additions=837; removals=0; updates=4766; timetable_notifications=16848
+Periodic cache cost: clears=0; lost=0; maximum_lost=0; explicit=0; reset=0; global=0; stale=2511; evictions=33203; rebuilds=3495; compile_us=15664175; validation_us=15116; eviction_us=84809
+Periodic publication cost: publication_us=73822; wait_ticks=1123284; wait_samples=8050
+Periodic known vehicle phases: 3080
+Periodic operating events: physical_passenger_occurrences=14927; exchange_passenger_occurrences=14907; depot_timed=149; depot_untimed=47; depot_blocked=0
+Schedule policy compilation: compile_us=12059007; residency_shared=true
+Schedule invalidation ServiceMissing: 0 packets
+Schedule invalidation Incarnation: 0 packets
+Schedule invalidation Generation: 5008 packets
+Schedule invalidation Station: 0 packets
+Schedule invalidation Disabled: 0 packets
+Schedule invalidation VehicleDeleted: 0 packets
+Schedule invalidation LiveRide: 0 packets
+Schedule invalidation ForcedUnload: 0 packets
+Schedule invalidation WaitingExpired: 0 packets
+Schedule routing: packets=5345; passengers=11628; timed_deferred=27; hits=5593; misses=7448; bytes=270192; work=342822849; query_us=12137910; stale=5008; expired=0
+Schedule transport: boarded=153; transferred=10; delivered=33 people; expected_wait_person_ticks=306896; actual_wait_person_ticks=16612; wait_people=153
+Completed interchanges: from_schedule=5; from_timed=2658 people (next vehicle actually loaded)
+Schedule-assisted final OD: delivered=33 people (any real schedule leg; overlaps final-carrier delivery counts)
+Periodic passenger census (live OrderLists, cargo-only excluded): total=837; passenger=771; complete_cycles=662; compile_success=662; compile_failure=109; unpublished=0; dirty=597; unknown_vehicles=631
+Periodic passenger pending census: 597 lists; compilation observations=8636 attempts/7529 successes (rebuilds overlap)
+Periodic phase work stops: 323 vehicle capture observations (retries overlap)
+Periodic passenger eligibility: declared_complete=673; live_compiled_cycles=662; published_lists=771; published_cycles=657; phase_known_lists=651; denominator=771
+Periodic live compilation: None=662
+Periodic live compilation: Control=4
+Periodic live compilation: Refit=0
+Periodic live compilation: Travel=97
+Periodic live compilation: Wait=1
+Periodic live compilation: Overflow=0
+Periodic live compilation: ZeroPeriod=7
+Periodic live compilation: TooFewStops=0
+Periodic compilation observations: None=7529
+Periodic compilation observations: Control=48
+Periodic compilation observations: Refit=0
+Periodic compilation observations: Travel=985
+Periodic compilation observations: Wait=9
+Periodic compilation observations: Overflow=0
+Periodic compilation observations: ZeroPeriod=65
+Periodic compilation observations: TooFewStops=0
+Periodic passenger vehicle phase census: Known=3080
+Periodic passenger vehicle phase census: NoTimetable=291
+Periodic passenger vehicle phase census: VehicleState=159
+Periodic passenger vehicle phase census: OrderProgress=0
+Periodic passenger vehicle phase census: Facilities=0
+Periodic passenger vehicle phase census: Work=0
+Periodic passenger vehicle phase census: Unbunching=0
+Periodic passenger vehicle phase census: DispatchCompetition=0
+Periodic passenger vehicle phase census: DispatchUnsupported=0
+Periodic passenger vehicle phase census: Overflow=0
+Periodic passenger vehicle phase census: ElapsedTravel=46
+Periodic passenger vehicle phase census: AwaitCapture=135
+Periodic OD calls: Found outcomes=22002; overlapping_observations=22002
+Periodic OD calls: Invalid outcomes=0; overlapping_observations=0
+Periodic OD calls: OriginMissing outcomes=622; overlapping_observations=622
+Periodic OD calls: DestinationMissing outcomes=3401; overlapping_observations=3401
+Periodic OD calls: NoAlighting outcomes=0; overlapping_observations=0
+Periodic OD calls: Unreachable outcomes=336; overlapping_observations=336
+Periodic OD calls: NoCandidate outcomes=47; overlapping_observations=47
+Periodic OD calls: UnknownPhase outcomes=4006; overlapping_observations=31342
+Periodic OD calls: Evaluation outcomes=2049; overlapping_observations=9640
+Periodic OD calls: Candidates outcomes=0; overlapping_observations=11
+Periodic OD calls: Labels outcomes=14; overlapping_observations=18
+Periodic OD calls: Work outcomes=8448; overlapping_observations=8899
+Periodic OD calls: Memory outcomes=0; overlapping_observations=0
+Periodic OD calls: Transfers outcomes=0; overlapping_observations=0
+Periodic execution observations: expired=22151 packets/42074 passengers; failed_same_service_boarding_checks=6539; retries_overlap=true
+Active journey total: applied=38027 packets/72430 passengers; builds=0; static_hits=0; searches=40925; OD_hits=343366
+Periodic admission: accepted=40925; rejected=685855; reserved=2682060800; used=991875663; returned=1690185137; max_tick_queries=16; max_tick_work=1040512
+Admission rejected EventQueries: 0
+Admission rejected TickQueries: 275253
+Admission rejected EventWork: 0
+Admission rejected GlobalWork: 0
+Admission rejected FairWork: 8928
+Admission rejected FairQueries: 401674
+Periodic allocation: timed=2011545600; schedule=502899372; timed_used=649052814; schedule_used=342822849
+Periodic Work outcomes: stopped=8448; no_route=6588; schedule_rescued=4; complete_unproved=1859; incomplete_work=6592; stop_percent=20.643; no_route_percent=16.098
+Periodic missing: published=0; building=4023; retries=5581; max_od_attempts=35; tracking_evictions=31248
+Periodic OD retry: cargo=0; origin=43; destination=823; attempts=2
+Periodic OD retry: cargo=0; origin=43; destination=102; attempts=2
+Periodic OD retry: cargo=0; origin=43; destination=3871; attempts=2
+Periodic OD retry: cargo=0; origin=43; destination=111; attempts=2
+Periodic OD retry: cargo=0; origin=43; destination=844; attempts=2
+Periodic OD retry: cargo=0; origin=43; destination=823; attempts=3
+Periodic OD retry: cargo=0; origin=43; destination=3871; attempts=3
+Periodic OD retry: cargo=0; origin=43; destination=844; attempts=3
+Periodic OD retry: cargo=0; origin=43; destination=284; attempts=2
+Periodic OD retry: cargo=0; origin=43; destination=539; attempts=2
+Periodic OD retry: cargo=0; origin=13; destination=829; attempts=2
+Periodic OD retry: cargo=0; origin=13; destination=835; attempts=2
+Periodic OD retry: cargo=0; origin=117; destination=860; attempts=2
+Periodic OD retry: cargo=0; origin=117; destination=1532; attempts=2
+Periodic OD retry: cargo=0; origin=117; destination=682; attempts=2
+Periodic OD retry: cargo=0; origin=117; destination=1258; attempts=2
+Periodic tick searches 13: 1
+Periodic tick searches 14: 18
+Periodic tick searches 15: 108
+Periodic tick searches 16: 2440
+Periodic tick Work upper 16384: 8
+Periodic tick Work upper 32768: 8
+Periodic tick Work upper 49152: 8
+Periodic tick Work upper 65536: 15
+Periodic tick Work upper 81920: 23
+Periodic tick Work upper 98304: 31
+Periodic tick Work upper 114688: 39
+Periodic tick Work upper 131072: 38
+Periodic tick Work upper 147456: 58
+Periodic tick Work upper 163840: 67
+Periodic tick Work upper 180224: 63
+Periodic tick Work upper 196608: 70
+Periodic tick Work upper 212992: 69
+Periodic tick Work upper 229376: 83
+Periodic tick Work upper 245760: 68
+Periodic tick Work upper 262144: 79
+Periodic tick Work upper 278528: 101
+Periodic tick Work upper 294912: 80
+Periodic tick Work upper 311296: 86
+Periodic tick Work upper 327680: 79
+Periodic tick Work upper 344064: 99
+Periodic tick Work upper 360448: 74
+Periodic tick Work upper 376832: 67
+Periodic tick Work upper 393216: 80
+Periodic tick Work upper 409600: 84
+Periodic tick Work upper 425984: 76
+Periodic tick Work upper 442368: 70
+Periodic tick Work upper 458752: 84
+Periodic tick Work upper 475136: 73
+Periodic tick Work upper 491520: 59
+Periodic tick Work upper 507904: 76
+Periodic tick Work upper 524288: 58
+Periodic tick Work upper 540672: 53
+Periodic tick Work upper 557056: 54
+Periodic tick Work upper 573440: 47
+Periodic tick Work upper 589824: 52
+Periodic tick Work upper 606208: 43
+Periodic tick Work upper 622592: 43
+Periodic tick Work upper 638976: 29
+Periodic tick Work upper 655360: 24
+Periodic tick Work upper 671744: 41
+Periodic tick Work upper 688128: 23
+Periodic tick Work upper 704512: 27
+Periodic tick Work upper 720896: 26
+Periodic tick Work upper 737280: 21
+Periodic tick Work upper 753664: 18
+Periodic tick Work upper 770048: 16
+Periodic tick Work upper 786432: 19
+Periodic tick Work upper 802816: 15
+Periodic tick Work upper 819200: 10
+Periodic tick Work upper 835584: 5
+Periodic tick Work upper 851968: 8
+Periodic tick Work upper 868352: 7
+Periodic tick Work upper 884736: 4
+Periodic tick Work upper 901120: 2
+Periodic tick Work upper 917504: 1
+Periodic tick Work upper 933888: 4
+Periodic tick Work upper 1015808: 1
+Periodic tick Work upper 1048576: 1
+Train observations=0; cargo_capable=0; possible_refit=0; predicted=0; inactive=0; excluded_cargo=0; excluded_scope=0; visits=0; omitted_trains_at_least=0; truncated_predictions=0 (uncaptured visit count unknown)
+Trip prediction: executions=0; hits=0; logical_work=0; executed_visits=0; predictor_ns=0; cache_bytes=0
+Graph work=0; mean=0; max=0; cached_index_allowance_avoided=0; query_allowance=991875663; build_us=0; mean_us=0; max_us=0; search_us=0; max_tick_graph_search_us=0
+Peak graph retained_estimate=0; static retained_estimate=0; conservative_graph_envelope_including_index=0; query_scratch=0; query_cache=0
+Graph phase_us: discovery=0; capacity=0; selection=0; orders_dispatch=0; pattern=0; prediction=0; departures=0
+Event capture: discovery_hits=0; service_hits=0; logical_work_replayed=0; retained_estimate_including_shared_patterns=0
+Fair waiting shares: claims=10268; releases=0; admission_scan_work=14650499; retained_rides=0
+OD fallback: work=4075247315; path_searches=83690
+Journey transport: boarded=28792; transferred=6748; delivered=6980 people
+Timed depot transport: service_boarded=6341; service_delivered=1718; crossing_boarded=291; crossing_delivered=5 people
+Pragmatic routing: timed=38027 packets; timed_ignoring_unknown=0; timed_budget_deferred=12485; untimed=39131 live routes; untimed_no_route=51141; untimed_budget_deferred=1374878
+Untimed transport: boarded=132879; transferred=64214; delivered=53635 people
+Fallback GraphWork: 0 packets; deferred=0 packets
+Fallback GraphMemory: 0 packets; deferred=0 packets
+Fallback SnapshotLimit: 0 packets; deferred=0 packets
+Fallback QueryWork: 0 packets; deferred=37332 packets
+Fallback QueryLimit: 0 packets; deferred=988910 packets
+Fallback QueryMemory: 0 packets; deferred=0 packets
+Fallback PredictionIncomplete: 157 packets; deferred=0 packets
+Fallback PredictionHorizon: 0 packets; deferred=0 packets
+Fallback NoJourney: 0 packets; deferred=0 packets
+Fallback InvalidLeg: 0 packets; deferred=0 packets
+Fallback StaleLeg: 22151 packets; deferred=0 packets
+Fallback Disabled: 0 packets; deferred=0 packets
+Fallback VehicleDeleted: 0 packets; deferred=0 packets
+Saving map...
+Map successfully saved to 'C:/Users/bebe/.codex/worktrees/923a/OpenTTD-patches/build-admission/mp-timeline-warm-2/server/final.sav'.
+Console log file closed.

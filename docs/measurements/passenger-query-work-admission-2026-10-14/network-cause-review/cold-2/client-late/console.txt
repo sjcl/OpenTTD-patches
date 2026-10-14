@@ -1,0 +1,16 @@
+Console log output started to 'C:/Users/bebe/.codex/worktrees/923a/OpenTTD-patches/build-admission/mp-timeline-cold-2/client-late/console.txt'.
+Calendar Date: 2051-05-09 (749241), fract: 27, sub_fract: 0
+Economy Date: 2051-05-09 (749241), fract: 27, tick skip: 0
+Period display offset: 0
+Elapsed years: 2050
+Tick counter: 62677
+Tick counter (scaled): 62677
+State ticks: 13639682 (offset: -41804181)
+Effective economy speed reduction factor: 1
+Ticks per calendar day: 74
+Periodic policy residency: disabled; logical query work unchanged
+OD fallback residency: disabled; logical work unchanged
+Timed search scratch: disabled; logical query work unchanged
+Periodic departure index: disabled; logical query work unchanged
+Script file 'C:/Users/bebe/.codex/worktrees/923a/OpenTTD-patches/build-admission/mp-timeline-cold-2/client-late/scripts/finish.scr' scheduled to execute at the start of next calendar month.
+Console log file closed.

@@ -1,0 +1,41 @@
+{
+  "binary_sha256": "61ec8ed6ecc052da65a5fa5268704a26e57b2a2ad0bd789c0f5e3b66c451da4b",
+  "input_sha256": "14d68c82911b9dcfc5ef7291e9697c5bbd67f44ffcc79d7575a144405edf6390",
+  "source_revision": "91201edc79a7e2f1c58c932e785a291d533cb00a",
+  "requested_post_join_seconds": 120,
+  "contamination": [
+    {
+      "utc": "2026-10-14T14:15:22.565212+00:00",
+      "processes": [
+        "openttd_test:113980",
+        "openttd_test:83744"
+      ]
+    },
+    {
+      "utc": "2026-10-14T14:15:36.175573+00:00",
+      "processes": [
+        "openttd_test:130672",
+        "openttd_test:125716"
+      ]
+    },
+    {
+      "utc": "2026-10-14T14:16:03.606080+00:00",
+      "processes": [
+        "cmake:116192",
+        "MSBuild:93824",
+        "cl:108196"
+      ]
+    },
+    {
+      "utc": "2026-10-14T14:16:10.419422+00:00",
+      "processes": [
+        "cmake:116192",
+        "MSBuild:93824",
+        "cmake:128188"
+      ]
+    }
+  ],
+  "outcome": "pass",
+  "started_utc": "2026-10-14T14:14:55.765196+00:00",
+  "finished_utc": "2026-10-14T14:17:33.662237+00:00"
+}

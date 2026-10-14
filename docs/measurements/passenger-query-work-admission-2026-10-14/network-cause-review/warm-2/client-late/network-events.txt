@@ -1,0 +1,99 @@
+dbg: [net:3] Starting network
+dbg: [net:3] Initializing UDP listeners
+dbg: [net:3] Network online, multiplayer available
+dbg: [net:3] Detected broadcast addresses:
+dbg: [net:3]   0) 172.25.15.255
+dbg: [net:3]   1) 192.168.1.255
+dbg: [net:3]   2) 169.254.255.255
+dbg: [net:3] Network revision name: jgrpp-ya-0.73.3+2-85-g91201edc7
+dbg: [net:3] Initializing UDP listeners
+dbg: [net:3] Connected to 127.0.0.1:17523
+dbg: [net:3] [crypto] Creating a new random key
+dbg: [net:1] Missed frame for sync-test: 569 / 570
+dbg: [net:1] Missed frame for sync-test: 623 / 624
+dbg: [net:1] Missed frame for sync-test: 637 / 638
+dbg: [net:1] Missed frame for sync-test: 640 / 641
+dbg: [net:1] Missed frame for sync-test: 641 / 642
+dbg: [net:1] Missed frame for sync-test: 731 / 732
+dbg: [net:1] Missed frame for sync-test: 747 / 748
+dbg: [net:1] Missed frame for sync-test: 750 / 751
+dbg: [net:1] Missed frame for sync-test: 781 / 782
+dbg: [net:1] Missed frame for sync-test: 874 / 875
+dbg: [net:1] Missed frame for sync-test: 938 / 939
+dbg: [net:1] Missed frame for sync-test: 953 / 954
+dbg: [net:1] Missed frame for sync-test: 965 / 966
+dbg: [net:1] Missed frame for sync-test: 1026 / 1027
+dbg: [net:1] Missed frame for sync-test: 1048 / 1049
+dbg: [net:1] Missed frame for sync-test: 1098 / 1099
+dbg: [net:1] Missed frame for sync-test: 1116 / 1117
+dbg: [net:1] Missed frame for sync-test: 1160 / 1161
+dbg: [net:1] Missed frame for sync-test: 1161 / 1162
+dbg: [net:1] Missed frame for sync-test: 1193 / 1194
+dbg: [net:1] Missed frame for sync-test: 1194 / 1195
+dbg: [net:1] Missed frame for sync-test: 1195 / 1196
+dbg: [net:1] Missed frame for sync-test: 1204 / 1205
+dbg: [net:1] Missed frame for sync-test: 1205 / 1206
+dbg: [net:1] Missed frame for sync-test: 1264 / 1265
+dbg: [net:1] Missed frame for sync-test: 1275 / 1276
+dbg: [net:1] Missed frame for sync-test: 1395 / 1396
+dbg: [net:1] Missed frame for sync-test: 1396 / 1397
+dbg: [net:1] Missed frame for sync-test: 1460 / 1461
+dbg: [net:1] Missed frame for sync-test: 1480 / 1481
+dbg: [net:1] Missed frame for sync-test: 1481 / 1482
+dbg: [net:1] Missed frame for sync-test: 1557 / 1558
+dbg: [net:1] Missed frame for sync-test: 1558 / 1559
+dbg: [net:1] Missed frame for sync-test: 1629 / 1630
+dbg: [net:1] Missed frame for sync-test: 1635 / 1636
+dbg: [net:1] Missed frame for sync-test: 1667 / 1668
+dbg: [net:1] Missed frame for sync-test: 1668 / 1669
+dbg: [net:1] Missed frame for sync-test: 1683 / 1684
+dbg: [net:1] Missed frame for sync-test: 1684 / 1685
+dbg: [net:1] Missed frame for sync-test: 1717 / 1718
+dbg: [net:1] Missed frame for sync-test: 1728 / 1729
+dbg: [net:1] Missed frame for sync-test: 1729 / 1730
+dbg: [net:1] Missed frame for sync-test: 1875 / 1876
+dbg: [net:1] Missed frame for sync-test: 1876 / 1877
+dbg: [net:1] Missed frame for sync-test: 1913 / 1914
+dbg: [net:1] Missed frame for sync-test: 1929 / 1930
+dbg: [net:1] Missed frame for sync-test: 1946 / 1947
+dbg: [net:1] Missed frame for sync-test: 1987 / 1988
+dbg: [net:1] Missed frame for sync-test: 2030 / 2031
+dbg: [net:1] Missed frame for sync-test: 2111 / 2112
+dbg: [net:1] Missed frame for sync-test: 2147 / 2148
+dbg: [net:1] Missed frame for sync-test: 2181 / 2182
+dbg: [net:1] Missed frame for sync-test: 2182 / 2183
+dbg: [net:1] Missed frame for sync-test: 2227 / 2228
+dbg: [net:1] Missed frame for sync-test: 2443 / 2444
+dbg: [net:1] Missed frame for sync-test: 2484 / 2485
+dbg: [net:1] Missed frame for sync-test: 2609 / 2610
+dbg: [net:1] Missed frame for sync-test: 2610 / 2611
+dbg: [net:1] Missed frame for sync-test: 2664 / 2665
+dbg: [net:1] Missed frame for sync-test: 2665 / 2666
+dbg: [net:1] Missed frame for sync-test: 2854 / 2855
+dbg: [net:1] Missed frame for sync-test: 2864 / 2865
+dbg: [net:1] Missed frame for sync-test: 2872 / 2873
+dbg: [net:1] Missed frame for sync-test: 2895 / 2896
+dbg: [net:1] Missed frame for sync-test: 2896 / 2897
+dbg: [net:1] Missed frame for sync-test: 2897 / 2898
+dbg: [net:1] Missed frame for sync-test: 2898 / 2899
+dbg: [net:1] Missed frame for sync-test: 2911 / 2912
+dbg: [net:1] Missed frame for sync-test: 2921 / 2922
+dbg: [net:1] Missed frame for sync-test: 2967 / 2968
+dbg: [net:1] Missed frame for sync-test: 2968 / 2969
+dbg: [net:1] Missed frame for sync-test: 2974 / 2975
+dbg: [net:1] Missed frame for sync-test: 2979 / 2980
+dbg: [net:1] Missed frame for sync-test: 2980 / 2981
+dbg: [net:1] Missed frame for sync-test: 2983 / 2984
+dbg: [net:1] Missed frame for sync-test: 2984 / 2985
+dbg: [net:1] Missed frame for sync-test: 2993 / 2994
+dbg: [net:1] Missed frame for sync-test: 3002 / 3003
+dbg: [net:1] Missed frame for sync-test: 3003 / 3004
+dbg: [net:1] Missed frame for sync-test: 3008 / 3009
+dbg: [net:1] Missed frame for sync-test: 3016 / 3017
+dbg: [net:1] Missed frame for sync-test: 3023 / 3024
+dbg: [net:1] Missed frame for sync-test: 3036 / 3037
+dbg: [net:1] Missed frame for sync-test: 3049 / 3050
+dbg: [net:1] Missed frame for sync-test: 3050 / 3051
+dbg: [net:1] Missed frame for sync-test: 3086 / 3087
+dbg: [net:1] Missed frame for sync-test: 3087 / 3088
+dbg: [net:1] Missed frame for sync-test: 3105 / 3106

@@ -1,0 +1,58 @@
+{
+  "local_run": "C:\\Users\\bebe\\.codex\\worktrees\\923a\\OpenTTD-patches\\build-admission\\mp-timeline-cold-2",
+  "findings": [
+    {
+      "role": "client-initial",
+      "local_port": 55043,
+      "server_socket": 1040,
+      "timeout_frame": 1633,
+      "timeout_qpc_us": 2394475266502,
+      "last_protocol_packet_age_ms": 22293,
+      "pending_socket_bytes_before_close": 16182,
+      "catchup_initial_frame": 1428,
+      "catchup_target_frame": 1633,
+      "catchup_final_frame": 1633,
+      "catchup_frames": 205,
+      "catchup_begin_qpc_us": 2394452973168,
+      "catchup_end_qpc_us": 2394475266290,
+      "catchup_wall_seconds": 22.293119,
+      "catchup_game_thread_cpu_seconds": 15.703125,
+      "catchup_process_cpu_seconds": 34.671875,
+      "catchup_game_thread_cpu_to_wall": 0.7043933601215693,
+      "server_os_accepted_bytes_lower_bound_during_catchup": 15624,
+      "server_tx_samples_during_catchup": 38,
+      "server_tx_last_success_qpc_us": 2394475004189,
+      "server_queued_frames_range_during_catchup": [
+        1641,
+        1893
+      ],
+      "server_send_would_block_delta_during_catchup": 0,
+      "receive_entry_samples_inside_catchup": 0,
+      "classification": "client_cpu_catchup_with_pending_data"
+    }
+  ],
+  "peer_summary": {
+    "client-initial": {
+      "observed_catchup_batches": 86,
+      "maximum_catchup_wall_seconds": 22.293119,
+      "maximum_receive_entry_gap_seconds": 11.706271,
+      "maximum_batch_frames": 205
+    },
+    "client-late": {
+      "observed_catchup_batches": 34,
+      "maximum_catchup_wall_seconds": 12.98581,
+      "maximum_receive_entry_gap_seconds": 12.995804,
+      "maximum_batch_frames": 185
+    }
+  },
+  "clock": "same-host QPC microseconds",
+  "sampling": "TCP and server-frame samples every 500ms; catch-up and timeout events immediate",
+  "cpu_units": "thread and process user+kernel 100ns; wall QPC microseconds",
+  "timeout_changed": false,
+  "network_success_claimed": false,
+  "limits": [
+    "Positive send means OS accepted bytes; FIONREAD additionally proves bytes were waiting at this client.",
+    "CPU ratio <70% does not prove CPU saturation; process CPU includes workers and may exceed wall time.",
+    "This observer measures processing/IO timing, not a proof of route determinism."
+  ]
+}

@@ -1,0 +1,7 @@
+{
+  "benchmark": "OFF",
+  "copied_probe_references": false,
+  "product_binary_sha256": "5ce5048fe33bfe6062f3fc1deb6ff114999d1fad20fc828dd86d1a4467dadc85",
+  "product_source_changes": false,
+  "full_regression_reference": "../final-checks/result.json"
+}

@@ -18,7 +18,7 @@ metadata = {'outcome': a.outcome, 'local_run': str(root), 'stderr': {}}
 for role in ['server', 'client-initial', 'client-late']:
     target = output / role
     target.mkdir(exist_ok=True)
-    for name in ['console.txt', 'progress-console.txt', 'stdout.txt', 'save-integrity.json']:
+    for name in ['console.txt', 'progress-console.txt', 'stdout.txt', 'save-integrity.json', 'network-timeline.csv']:
         source = root / role / name
         if source.exists():
             shutil.copy2(source, target / name)
@@ -30,7 +30,16 @@ for role in ['server', 'client-initial', 'client-late']:
     (target / 'network-events.txt').write_text('\n'.join(events) + '\n', encoding='utf-8')
     metadata['stderr'][role] = {'bytes': len(raw), 'sha256': hashlib.sha256(raw).hexdigest(),
         'complete_gzip': 'stderr.txt.gz', 'newgrf_capacity_warning_count': sum('It changed vehicle capacity' in line for line in lines)}
+    if (root / role / 'network-timeline.csv').exists():
+        metadata['stderr'][role]['timeline_sha256'] = hashlib.sha256((root / role / 'network-timeline.csv').read_bytes()).hexdigest()
 shutil.copy2(a.run_log, output / 'runner.log')
+for name in ['run-metadata.json', 'owned-pids.json']:
+    if (root / name).exists():
+        shutil.copy2(root / name, output / name)
+if (root / 'run-metadata.json').exists():
+    runtime = json.loads((root / 'run-metadata.json').read_text(encoding='utf-8'))
+    metadata['measurement_uncontaminated'] = not runtime['contamination']
+    metadata['formal_cpu_comparison_eligible'] = not runtime['contamination']
 if (root / 'result.json').exists():
     result = json.loads((root / 'result.json').read_text(encoding='utf-8'))
     if a.outcome == 'pass' and (not result['cargo_state_equal'] or result['detected_sync_failure'] or result['connected_clients_at_end'] != 2):

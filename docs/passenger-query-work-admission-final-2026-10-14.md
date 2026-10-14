@@ -4,6 +4,8 @@
 
 **統合判断は保留。** 修正・性能再測定・実v4互換・製品構成の全回帰は成功した。一方、実マップで両クライアントの派生キャッシュとScratchを無効化した長区間loopbackでは既存の受信タイムアウトが発動し、接続維持条件を満たせなかった。短区間の完全Cargo一致とofflineのSave一致を、長区間の途中参加成功へ読み替えない。
 
+追加の[切断原因分離](passenger-query-work-admission-network-cause-2026-10-14.md)では、サーバー送信継続とclientの受信待機データを確認した。無競合の2再現でclientの一括catch-upが23〜24秒を占有し、その96%以上がゲームthreadのCPU時間だった。本切断は受信処理へ戻れない機構によるもので、desync検出による切断とは区別した。タイムアウトは延長していない。
+
 ## 時刻と診断
 
 `GetPassengerScheduleIntentAge()` はEstimatedServiceIntent / EstimatedBoundServiceだけを受け付け、`INVALID_STATE_TICKS = INT64_MIN` と未来の計画時刻を除外する。順序確認後、両オペランドをuint64_tへ変換して減算する。変換と減算は2^64を法とするため、数学的な非負差分がINT64_MAXを超えても正確に表せる。無効センチネルを除いた最大差 `INT64_MAX - (INT64_MIN + 1) = UINT64_MAX - 1` も判定できる。閾値が負ならfalse、計画時刻0は有効のまま。
@@ -93,8 +95,8 @@ Packet数は増えず、最終配送はほぼ維持した。Saveサイズの+0.8
 | 初期の120秒試験2回 | 同様に参加後切断。進行待ちtimeoutとなった失敗を保持。 |
 | 受信監視の追加観測 | 初期clientがframe 2,039で、last_packetから24,697ms経過。製品と同じ `CheckConnection()` の20秒分岐が発動し、`ClientQuit`で閉じた。切断を検出して試験を失敗終了した。 |
 
-長区間でWork・経路由来のsync error、assert、異常終了のログは観測しなかったが、切断は実際に発生した。cacheを外したクライアントの追い付き処理と受信監視の関係が疑われるものの、旧Admissionの同じネットワーク条件での対照試験はしていないため、今回のWork変更に原因がないと確定しない。タイムアウトの延長・sync頻度の低下・人工的なpauseで失敗を隠していない。ネットワーク全体の修正はこの診断修正へ混ぜていない。
+長区間でWork・経路由来のsync error、assert、異常終了のログは観測しなかったが、切断は実際に発生した。[追加の原因分離](passenger-query-work-admission-network-cause-2026-10-14.md)で、サーバーが送信を継続する間の23〜24秒の一括catch-upと、client socketの到着済みデータを確認した。旧Admissionの同じネットワーク条件での対照試験はしていないため、今回のWork変更が発生頻度へ無関係とは確定しない。タイムアウトの延長・sync頻度の低下・人工的なpauseで失敗を隠していない。ネットワーク全体の修正はこの診断修正へ混ぜていない。
 
 [製品構成・回帰ログ](measurements/passenger-query-work-admission-2026-10-14/final-checks/result.json)。MSVC x64 Release `/O2 /Ob2 /MT`、assert ON、LTO OFF、`OPTION_PASSENGER_BENCHMARK=OFF`で製品・テスト・regression_filesをビルドした。プロジェクトにコピーした計測TUや `WITH_PASSENGER_BENCHMARK` が残っていないことを検査した。全CTest 590/590成功、旅客回帰352ケース・2,670,223アサーション成功、会計証拠のPython回帰8/8成功。Work早期return/例外返却・部分予約・65,536/1,048,576/16件上限・Fair Share・保護枠・キャッシュ・split/merge・車庫/運転停車/強制降車・列車/バス/船/航空機・保存/同期の既存回帰を含む。大きな診断追跡をPacketへ戻しておらず、CargoPacket製品ソースは比較ベースと一致する。
 
-CPU・配送・Packet・保存互換の条件はこの区間で満たしたが、マルチプレイ接続維持条件が未達のため `jgrpp-ya` への統合を承認しない。次の確認は、同条件の旧Admission対照と、catch-up中の受信監視を含む長区間loopback。`jgrpp-ya` への自動マージは行っていない。
+CPU・配送・Packet・保存互換の条件はこの区間で満たしたが、マルチプレイ接続維持条件が未達のため `jgrpp-ya` への統合を承認しない。次の確認は、同条件の旧Admission対照と、catch-upから定期的に受信へ戻る別修正の長区間loopback。cache有効の120秒対照が成功しても、要求されたcache無効試験の代わりとはしない。`jgrpp-ya` への自動マージは行っていない。

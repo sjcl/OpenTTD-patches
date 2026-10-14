@@ -1,0 +1,28 @@
+{
+  "local_run": "C:\\Users\\bebe\\.codex\\worktrees\\923a\\OpenTTD-patches\\build-admission\\mp-timeline-warm",
+  "findings": [],
+  "peer_summary": {
+    "client-initial": {
+      "observed_catchup_batches": 2356,
+      "maximum_catchup_wall_seconds": 0.460938,
+      "maximum_receive_entry_gap_seconds": 1.92732,
+      "maximum_batch_frames": 94
+    },
+    "client-late": {
+      "observed_catchup_batches": 2006,
+      "maximum_catchup_wall_seconds": 0.428703,
+      "maximum_receive_entry_gap_seconds": 1.95496,
+      "maximum_batch_frames": 96
+    }
+  },
+  "clock": "same-host QPC microseconds",
+  "sampling": "TCP and server-frame samples every 500ms; catch-up and timeout events immediate",
+  "cpu_units": "thread and process user+kernel 100ns; wall QPC microseconds",
+  "timeout_changed": false,
+  "network_success_claimed": false,
+  "limits": [
+    "Positive send means OS accepted bytes; FIONREAD additionally proves bytes were waiting at this client.",
+    "CPU ratio <70% does not prove CPU saturation; process CPU includes workers and may exceed wall time.",
+    "This observer measures processing/IO timing, not a proof of route determinism."
+  ]
+}

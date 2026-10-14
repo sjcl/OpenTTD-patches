@@ -1,0 +1,14 @@
+{
+  "copies": {
+    "network/network.cpp": "927f524ef418c03bcc95ab5d39b6b72489223bba36f220986c03294a81d85299",
+    "network/network_client.cpp": "067386c25a254518b364cc79073ad7051b879c1d5ece82755cfdb171330ee1ed",
+    "network/network_server.cpp": "08f3ea190a4dcdfca3a14774bec33459fbdc14345a4fa118babb67cb50a5d5f2",
+    "network/core/tcp.cpp": "2cd5a2741f7036953cc44e8095e6de353b3e8789d60982083174138f868a7ae8"
+  },
+  "header_sha256": "ba0dceabae9161397136fc61c5a6244947cec17f44b25250045839141bd0129d",
+  "clock": "QPC microseconds, same Windows host",
+  "tcp_sample_us": 500000,
+  "timeouts_changed": false,
+  "cpu": "GetThreadTimes / GetProcessTimes user+kernel in 100ns units",
+  "pending_bytes": "FIONREAD, never drains socket"
+}

@@ -1,0 +1,29 @@
+{
+  "outcome": "fail",
+  "local_run": "C:\\Users\\bebe\\.codex\\worktrees\\923a\\OpenTTD-patches\\build-admission\\mp-timeline-cold-3",
+  "stderr": {
+    "server": {
+      "bytes": 5441331,
+      "sha256": "c6ec1ff285c39e2d14070b037d1161f4a42b4ed2c4099314f1ad9bfeaf95754c",
+      "complete_gzip": "stderr.txt.gz",
+      "newgrf_capacity_warning_count": 26306,
+      "timeline_sha256": "f36d179773af330db5c6c949d5ea2216778c2e5d2406fa568b0f066874e76058"
+    },
+    "client-initial": {
+      "bytes": 4594843,
+      "sha256": "995ca6007cfebaeb64960bed58f842a8a1921bc12b673a15168f2b29d3ac517e",
+      "complete_gzip": "stderr.txt.gz",
+      "newgrf_capacity_warning_count": 22220,
+      "timeline_sha256": "0ee8ef0c8854ca1cf67bd9e9746afeeb0c043b8062b5d137e14c31f8a60f23de"
+    },
+    "client-late": {
+      "bytes": 3853883,
+      "sha256": "bab83e8057bfbae283c848396b6393a0df0526e69c7fa19c50a483a9fc65a1fc",
+      "complete_gzip": "stderr.txt.gz",
+      "newgrf_capacity_warning_count": 18644,
+      "timeline_sha256": "0ce41b41a09c63c1bb8a6387a2cc0127ddd014537529886643d6f310118452e7"
+    }
+  },
+  "measurement_uncontaminated": true,
+  "formal_cpu_comparison_eligible": true
+}

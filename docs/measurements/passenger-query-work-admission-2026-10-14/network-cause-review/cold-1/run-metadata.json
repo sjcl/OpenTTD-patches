@@ -1,0 +1,11 @@
+{
+  "binary_sha256": "61ec8ed6ecc052da65a5fa5268704a26e57b2a2ad0bd789c0f5e3b66c451da4b",
+  "input_sha256": "14d68c82911b9dcfc5ef7291e9697c5bbd67f44ffcc79d7575a144405edf6390",
+  "source_revision": "91201edc79a7e2f1c58c932e785a291d533cb00a",
+  "requested_post_join_seconds": 120,
+  "contamination": [],
+  "outcome": "fail",
+  "started_utc": "2026-10-14T14:06:00.314979+00:00",
+  "error": "Command '['C:\\\\Users\\\\bebe\\\\AppData\\\\Local\\\\Programs\\\\Python\\\\Python313\\\\python.exe', WindowsPath('C:/Users/bebe/.codex/worktrees/923a/OpenTTD-patches/build-admission/Exercise-Pruning-Multiplayer.py'), WindowsPath('C:/Users/bebe/.codex/worktrees/923a/OpenTTD-patches/build-admission'), WindowsPath('C:/Users/bebe/.codex/worktrees/923a/OpenTTD-patches/build-admission/mp-timeline-cold-1'), '--binary', 'openttd-network-final.exe', '--backend', 'periodic', '--input-save', WindowsPath('C:/Users/bebe/.codex/worktrees/e133/OpenTTD-patches/build-timed-anytime/package/input.sav'), '--duration', '120']' returned non-zero exit status 1.",
+  "finished_utc": "2026-10-14T14:08:22.752439+00:00"
+}

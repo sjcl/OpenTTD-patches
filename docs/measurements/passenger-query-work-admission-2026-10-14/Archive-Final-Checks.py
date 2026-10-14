@@ -21,7 +21,7 @@ assert option('OPTION_PASSENGER_BENCHMARK') == 'OFF'
 assert option('OPTION_USE_ASSERTS') == 'ON' and option('OPTION_NO_LTO') == 'ON'
 assert option('CMAKE_MSVC_RUNTIME_LIBRARY') == 'MultiThreaded'
 xml = (build / 'openttd_lib.vcxproj').read_text(encoding='utf-8-sig')
-assert all(term not in xml for term in ['WITH_PASSENGER_BENCHMARK', 'journey-profile', 'save-integrity', 'network-probe'])
+assert all(term not in xml for term in ['WITH_PASSENGER_BENCHMARK', 'journey-profile', 'save-integrity', 'network-probe', 'network-timeline'])
 ctest = (build / 'final-ctest.log').read_text(encoding='utf-8', errors='replace')
 assert '100% tests passed, 0 tests failed out of 590' in ctest
 passenger = (build / 'final-passenger.log').read_text(encoding='utf-8', errors='replace')

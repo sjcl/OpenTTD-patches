@@ -1,0 +1,17 @@
+dbg: [net:3] Starting network
+dbg: [net:3] Initializing UDP listeners
+dbg: [net:3] Network online, multiplayer available
+dbg: [net:3] Detected broadcast addresses:
+dbg: [net:3]   0) 172.25.15.255
+dbg: [net:3]   1) 192.168.1.255
+dbg: [net:3]   2) 169.254.255.255
+dbg: [net:3] Network revision name: jgrpp-ya-0.73.3+2-85-g91201edc7
+dbg: [net:3] Initializing UDP listeners
+dbg: [net:3] Connected to 127.0.0.1:17523
+dbg: [net:3] [crypto] Creating a new random key
+dbg: [net:1] Missed frame for sync-test: 167 / 168
+dbg: [net:1] Missed frame for sync-test: 168 / 169
+dbg: [net:1] Missed frame for sync-test: 549 / 550
+dbg: [net:0] Final timeline timeout: frame=1989 idle_ms=23644
+dbg: [net:3] Closed client connection 0
+dbg: [net:1] Shutdown client connection 0
