@@ -111,7 +111,17 @@ TEST_CASE("Station Legacy Fallback and non-passenger via preserve queue informat
 	CHECK(GetStationCargoVia(CargoType{1}, *packet, C) == C);
 	packet->FallbackPassengerJourney(A, StateTicks{0});
 	CHECK(GetStationCargoVia(PAX, *packet, C) == C);
-	CHECK(GetStationCargoVia(PAX, *packet, StationID::Invalid()) == B);
+	CHECK(GetStationCargoVia(PAX, *packet, StationID::Invalid()) == StationID::Invalid());
+	packet->SetPassengerLegacyHop(B);
+	CHECK(GetStationCargoVia(PAX, *packet, StationID::Invalid(), B) == StationID::Invalid());
+	CHECK(GetStationCargoVia(PAX, *packet, B, B) == StationID::Invalid());
+	packet->SetPassengerVia(B);
+	packet->SetPassengerLegacyHop(A);
+	GameRandomSeedChecker seeds;
+	CHECK(GetStationCargoVia(PAX, *packet, StationID::Invalid(), B) == A);
+	CHECK(packet->GetPassengerVia() == B);
+	CHECK(packet->GetPassengerLegacyHop() == A);
+	CHECK(seeds.Check());
 }
 
 TEST_CASE("Station fixed carriers show their own group in a mixed shared fleet", "[passenger][station-gui]")

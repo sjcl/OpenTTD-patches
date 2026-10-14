@@ -135,8 +135,8 @@ public:
 	size_t GetPredictionCount() const { return this->predictions; }
 };
 
-/** Untimed OD fallback, local to one arrival/loading pass. LinkGraph paths use
- * unrestricted directed links; boarding also requires a live order prefix.
+/** Untimed fallback, local to one arrival/loading pass. Prefer the current CargoDist
+ * hop and a live order prefix; OD recovery uses unrestricted directed LinkGraph links.
  * No timing, optimum, future capacity or permanent unreachability is asserted. */
 class PassengerOdFallbackContext {
 	using BindingNodes = std::vector<std::pair<StationID, bool>>;
@@ -148,7 +148,7 @@ class PassengerOdFallbackContext {
 	};
 	std::map<std::pair<CargoType, StationID>, Distances> distances;
 	std::map<std::pair<VehicleID, CargoType>, std::vector<StationID>> stops;
-	std::map<std::tuple<VehicleID, CargoType, StationID>, StationID> routes;
+	std::map<std::tuple<VehicleID, CargoType, StationID, StationID>, StationID> routes;
 	size_t distance_bytes = 0;
 	size_t work_left = 128 * 1024; ///< Includes live state/facility capture and the 4096-order prefix.
 	bool resource_limited = false;
@@ -156,8 +156,9 @@ class PassengerOdFallbackContext {
 	bool CanReach(const Vehicle *vehicle, CargoType cargo, StationID target);
 	uint32_t Distance(CargoType cargo, StationID origin, StationID destination);
 	StationID ProgressingVia(const Vehicle *vehicle, CargoType cargo, StationID destination);
-	StationID BoardingVia(const Vehicle *vehicle, CargoType cargo, StationID destination);
+	StationID BoardingVia(const CargoPacket &packet, const Vehicle *vehicle, CargoType cargo);
 public:
+	explicit PassengerOdFallbackContext(size_t work_allowance = 128 * 1024) : work_left(std::min(work_allowance, size_t{128 * 1024})) {}
 	bool CanBoard(const CargoPacket &packet, const Vehicle *vehicle, CargoType cargo);
 	void PrepareBoard(CargoPacket &packet, const Vehicle *vehicle, CargoType cargo);
 	void Invalidate(const Vehicle *vehicle);

@@ -97,21 +97,23 @@ void CargoPacket::SetPassengerJourney(PassengerJourneyExecution journey, Station
 	if (!same_vehicle) RegisterPassengerJourneyPacket(*this);
 }
 
-void CargoPacket::FallbackPassengerJourney(StationID station, StateTicks now)
+void CargoPacket::FallbackPassengerJourney(StationID station, StateTicks now, StationID legacy_hop)
 {
 	UnregisterPassengerJourneyPacket(*this);
 	this->passenger_routing_mode = PassengerRoutingMode::Fallback;
 	this->passenger_journey = {};
+	this->passenger_legacy_hop = legacy_hop == station ? StationID::Invalid() : legacy_hop;
 	this->passenger_via = StationID::Invalid();
 	this->passenger_retry_station = station;
 	this->passenger_retry_after = now + 256;
 }
 
-void CargoPacket::DeferPassengerJourney(StationID station, StateTicks now)
+void CargoPacket::DeferPassengerJourney(StationID station, StateTicks now, StationID legacy_hop)
 {
 	UnregisterPassengerJourneyPacket(*this);
 	this->passenger_routing_mode = PassengerRoutingMode::Legacy;
 	this->passenger_journey = {};
+	this->passenger_legacy_hop = legacy_hop == station ? StationID::Invalid() : legacy_hop;
 	this->passenger_via = StationID::Invalid();
 	this->passenger_retry_station = station;
 	this->passenger_retry_after = now + 1;
@@ -1156,7 +1158,10 @@ void StationCargoList::Append(CargoPacket *cp, StationID next)
 {
 	dbg_assert(cp != nullptr);
 	if (cp->GetPassengerRoutingMode() == PassengerRoutingMode::Journey) next = StationID::Invalid();
-	if (cp->GetPassengerRoutingMode() == PassengerRoutingMode::Fallback) cp->SetPassengerLegacyHop(next);
+	if (cp->GetPassengerRoutingMode() != PassengerRoutingMode::Journey && Station::IsValidID(cp->GetPassengerDestination())) {
+		cp->SetPassengerLegacyHop(next);
+		cp->SetPassengerVia(StationID::Invalid());
+	}
 	this->AddToCache(cp);
 
 	StationCargoPacketMap::List &list = this->packets[next];
@@ -1405,6 +1410,7 @@ uint StationCargoList::ShiftJourneyCargo(Taction action, std::span<const Station
 			if (!loading.CanBoard(*packet, vehicle)) { ++it; continue; }
 			const auto intent = packet->GetPassengerJourney();
 			const StationID legacy = packet->GetPassengerLegacyHop();
+			const StationID via = packet->GetPassengerVia();
 			const auto previous_transport = packet->GetPassengerTransport();
 			loading.PrepareBoard(*packet, vehicle);
 			if (action(packet)) it = this->packets.erase(it);
@@ -1412,6 +1418,7 @@ uint StationCargoList::ShiftJourneyCargo(Taction action, std::span<const Station
 				/* A split copies the bound ride into the moved suffix. Passengers
 				 * remaining at the station can still board another shared vehicle. */
 				if (intent.kind == PassengerRideKind::ServiceIntent || intent.kind == PassengerRideKind::EstimatedServiceIntent) packet->SetPassengerJourney(intent, legacy);
+				else if (packet->GetPassengerRoutingMode() != PassengerRoutingMode::Journey) packet->SetPassengerVia(via);
 				packet->SetPassengerTransport(previous_transport);
 				break;
 			}

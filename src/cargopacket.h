@@ -80,7 +80,7 @@ private:
 	StationID passenger_destination = StationID::Invalid(); ///< Final passenger destination; independent of CargoDist hops and commitments.
 	PassengerRoutingMode passenger_routing_mode = PassengerRoutingMode::Legacy;
 	PassengerJourneyExecution passenger_journey{};
-	StationID passenger_legacy_hop = StationID::Invalid(); ///< Queue key to restore when a waiting journey expires.
+	StationID passenger_legacy_hop = StationID::Invalid(); ///< Current CargoDist hop, revalidated when a waiting journey expires.
 	StationID passenger_retry_station = StationID::Invalid();
 	StateTicks passenger_retry_after{}; ///< Deterministic cooldown, shared by split packets.
 	StateTicks passenger_interchange_ready{};
@@ -143,8 +143,8 @@ public:
 	/** Budget wait uses existing saved Legacy/retry fields; CargoDist can still transport it. */
 	bool IsPassengerJourneyDeferred() const { return this->passenger_routing_mode == PassengerRoutingMode::Legacy && this->passenger_retry_station != StationID::Invalid(); }
 	void SetPassengerJourney(PassengerJourneyExecution journey, StationID legacy_hop);
-	void FallbackPassengerJourney(StationID station, StateTicks now);
-	void DeferPassengerJourney(StationID station, StateTicks now);
+	void FallbackPassengerJourney(StationID station, StateTicks now, StationID legacy_hop = StationID::Invalid());
+	void DeferPassengerJourney(StationID station, StateTicks now, StationID legacy_hop = StationID::Invalid());
 	void ShiftPassengerJourneyTicks(StateTicksDelta delta);
 	bool HasSamePassengerRouting(const CargoPacket &other) const
 	{

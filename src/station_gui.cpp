@@ -1104,16 +1104,17 @@ void CargoDataEntry::IncrementServiceRows()
 }
 
 /** The internal Journey queue key is deliberately invalid; use the stored next ride for display only. */
-StationID GetStationCargoVia(CargoType cargo, const CargoPacket &packet, StationID queue_key)
+StationID GetStationCargoVia(CargoType cargo, const CargoPacket &packet, StationID queue_key, StationID station)
 {
 	if (!IsCargoInClass(cargo, CargoClass::Passengers)) return queue_key;
-	if (packet.GetPassengerRoutingMode() == PassengerRoutingMode::Journey && Station::IsValidID(packet.GetPassengerJourney().alighting)) {
-		return packet.GetPassengerJourney().alighting;
+	if (packet.GetPassengerRoutingMode() == PassengerRoutingMode::Journey) {
+		return Station::IsValidID(packet.GetPassengerJourney().alighting) ? packet.GetPassengerJourney().alighting : StationID::Invalid();
 	}
-	if (queue_key != StationID::Invalid()) return queue_key;
-	if (Station::IsValidID(packet.GetPassengerVia())) return packet.GetPassengerVia();
-	if (Station::IsValidID(packet.GetPassengerLegacyHop())) return packet.GetPassengerLegacyHop();
-	return queue_key;
+	if (queue_key != StationID::Invalid()) return queue_key != station ? queue_key : StationID::Invalid();
+	/* The simulation refreshes this hop from the current station's flows. A ride
+	 * commitment belongs to onboard/reserved cargo and is not a waiting via. */
+	StationID hop = packet.GetPassengerLegacyHop();
+	return hop != station && Station::IsValidID(hop) ? hop : StationID::Invalid();
 }
 
 /** Read the current name's ID, retaining ungrouped candidates as unknown rather than ignoring them. */
@@ -1782,7 +1783,7 @@ struct StationViewWindow : public Window {
 		bool auto_distributed = _settings_game.linkgraph.GetDistributionType(cargo) != DistributionType::Manual;
 		for (StationCargoList::ConstIterator it = packets.Packets()->begin(); it != packets.Packets()->end(); it++) {
 			const CargoPacket *cp = *it;
-			StationID next = GetStationCargoVia(cargo, *cp, it.GetKey());
+			StationID next = GetStationCargoVia(cargo, *cp, it.GetKey(), static_cast<StationID>(this->window_number));
 			auto show_waiting = [&](StationID dest, uint count) {
 				ShowStationWaitingCargo(*entry, this->expanded_rows, this->groupings, static_cast<StationID>(this->window_number),
 						auto_distributed, cargo, *cp, next, dest, count, this->passenger_services);

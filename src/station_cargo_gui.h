@@ -36,7 +36,7 @@ private:
 	size_t work_left = MAX_WORK;
 };
 
-StationID GetStationCargoVia(CargoType cargo, const CargoPacket &packet, StationID queue_key);
+StationID GetStationCargoVia(CargoType cargo, const CargoPacket &packet, StationID queue_key, StationID station = StationID::Invalid());
 
 /** Existing cargo/from/via/to columns, independently ordered by the station window. */
 enum StationCargoGrouping : uint8_t { GR_SOURCE, GR_NEXT, GR_DESTINATION, GR_CARGO };
