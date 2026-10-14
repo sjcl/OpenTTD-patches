@@ -15,6 +15,7 @@
 #include "sl/saveload.h"
 #include "debug.h"
 #include "linkgraph/linkgraph.h"
+#include "core/math_func.hpp"
 #include <set>
 #include <chrono>
 
@@ -112,7 +113,9 @@ namespace {
 		a.schedule_assisted_delivered_passengers += b.schedule_assisted_delivered_passengers;
 		a.schedule_expired += b.schedule_expired; a.schedule_stale += b.schedule_stale;
 		for (size_t i = 0; i < a.schedule_invalidations.size(); ++i) a.schedule_invalidations[i] += b.schedule_invalidations[i];
-		a.schedule_expected_wait += b.schedule_expected_wait; a.schedule_actual_wait += b.schedule_actual_wait; a.schedule_wait_samples += b.schedule_wait_samples;
+		a.schedule_expected_wait = SaturatingAdd(a.schedule_expected_wait, b.schedule_expected_wait);
+		a.schedule_actual_wait = SaturatingAdd(a.schedule_actual_wait, b.schedule_actual_wait);
+		a.schedule_wait_samples = SaturatingAdd(a.schedule_wait_samples, b.schedule_wait_samples);
 		for (size_t i = 0; i < b.query_sample_count && a.query_sample_count < a.query_samples.size(); ++i) a.query_samples[a.query_sample_count++] = b.query_samples[i];
 		a.simulation_ticks += b.simulation_ticks; a.simulation_microseconds += b.simulation_microseconds;
 		a.maximum_simulation_microseconds = std::max(a.maximum_simulation_microseconds, b.maximum_simulation_microseconds);
@@ -355,9 +358,17 @@ void RecordPassengerJourneyMovement(PassengerJourneyMovement movement, const Car
 				d.schedule_boarded_passengers += count;
 				if (IsEstimatedPassengerRide(packet.GetPassengerJourney().kind)) {
 					const auto &ride = packet.GetPassengerJourney();
-					d.schedule_expected_wait += uint64_t(ride.estimated_wait) * count;
-					d.schedule_actual_wait += uint64_t(std::max<int64_t>(0, _state_ticks.base() - ride.planned_at.base())) * count;
-					d.schedule_wait_samples += count;
+					if (const auto age = GetPassengerScheduleIntentAge(ride, _state_ticks)) {
+						/* Saturate extreme diagnostic observations rather than wrap their
+						 * weighted sum. No timestamp or routing state is changed. */
+						auto accumulate = [count](uint64_t &total, uint64_t value) {
+							const uint64_t maximum = UINT64_MAX;
+							total = count != 0 && value > (maximum - total) / count ? maximum : total + value * count;
+						};
+						accumulate(d.schedule_expected_wait, uint64_t(std::max<int64_t>(0, ride.estimated_wait)));
+						accumulate(d.schedule_actual_wait, *age);
+						accumulate(d.schedule_wait_samples, 1);
+					}
 				}
 				break;
 			case PassengerJourneyMovement::Transfer: d.schedule_transferred_passengers += count; break;

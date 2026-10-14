@@ -1162,6 +1162,59 @@ TEST_CASE("Waiting intent age excludes Timed timestamps and observes Schedule-aw
 	CHECK(ride == original);
 }
 
+TEST_CASE("Schedule intent diagnostic age is safe across signed tick boundaries", "[passenger][active][diagnostic][boundary]")
+{
+	PassengerJourneyExecution ride;
+	ride.kind = GENERATE(PassengerRideKind::VehicleSnapshot, PassengerRideKind::ServiceIntent, PassengerRideKind::BoundService,
+			PassengerRideKind::EstimatedServiceIntent, PassengerRideKind::EstimatedBoundService);
+	struct Case { int64_t planned, now, minimum; bool valid, aged; uint64_t age; };
+	const std::array cases{
+		Case{0, 4095, 4096, true, false, 4095}, Case{0, 4096, 4096, true, true, 4096}, Case{0, 4097, 4096, true, true, 4097},
+		Case{INT64_MIN + 1, INT64_MAX, 4096, true, true, UINT64_MAX - 1},
+		Case{INT64_MIN + 1, INT64_MAX, INT64_MAX, true, true, UINT64_MAX - 1},
+		Case{INT64_MAX - 4096, INT64_MAX, 4096, true, true, 4096}, Case{INT64_MAX - 4095, INT64_MAX, 4096, true, false, 4095},
+		Case{10, 9, 0, false, false, 0}, Case{-8192, -4096, 4096, true, true, 4096},
+		Case{-4096, 0, 4096, true, true, 4096}, Case{-4096, 1, 4096, true, true, 4097},
+		Case{0, 0, 0, true, true, 0}, Case{-10, -10, 0, true, true, 0},
+		Case{0, 4096, -1, true, false, 4096}, Case{0, 4096, INT64_MIN, true, false, 4096},
+		Case{INT64_MIN, 0, 0, false, false, 0}, Case{0, INT64_MIN, 0, false, false, 0},
+		Case{INT64_MIN, INT64_MIN, 0, false, false, 0}, Case{INT64_MAX, INT64_MAX, 0, true, true, 0},
+	};
+	for (const auto &test : cases) {
+		CAPTURE(ride.kind, test.planned, test.now, test.minimum);
+		ride.planned_at = StateTicks{test.planned};
+		const auto original = ride;
+		const auto age = GetPassengerScheduleIntentAge(ride, StateTicks{test.now});
+		CHECK(age.has_value() == (IsEstimatedPassengerRide(ride.kind) && test.valid));
+		if (age) CHECK(*age == test.age);
+		CHECK(IsPassengerScheduleIntentAged(ride, StateTicks{test.now}, test.minimum) == (IsEstimatedPassengerRide(ride.kind) && test.aged));
+		CHECK(ride == original);
+	}
+}
+
+TEST_CASE("Schedule actual wait observations saturate and reject invalid timestamps", "[passenger][active][diagnostic][boundary]")
+{
+	ActiveFixture fixture;
+	_state_ticks = StateTicks{INT64_MAX}; BeginPassengerJourneyTick(); ResetPassengerJourneyDiagnostic();
+	auto *packet = fixture.Packet();
+	PassengerJourneyExecution ride;
+	ride.kind = PassengerRideKind::EstimatedServiceIntent; ride.boarding = A; ride.alighting = D;
+	ride.planned_at = StateTicks{INT64_MIN + 1}; ride.estimated_wait = INT64_MAX;
+	packet->SetPassengerJourney(ride, B);
+	RecordPassengerJourneyMovement(PassengerJourneyMovement::Board, *packet, 2);
+	auto diagnostic = GetPassengerJourneyTickDiagnostic();
+	CHECK(diagnostic.schedule_actual_wait == UINT64_MAX); CHECK(diagnostic.schedule_expected_wait == UINT64_MAX - 1);
+	CHECK(diagnostic.schedule_wait_samples == 2); CHECK(packet->GetPassengerJourney() == ride);
+	RecordPassengerJourneyMovement(PassengerJourneyMovement::Board, *packet, 1);
+	diagnostic = GetPassengerJourneyTickDiagnostic();
+	CHECK(diagnostic.schedule_actual_wait == UINT64_MAX); CHECK(diagnostic.schedule_expected_wait == UINT64_MAX); CHECK(diagnostic.schedule_wait_samples == 3);
+	ride.planned_at = INVALID_STATE_TICKS; packet->SetPassengerJourney(ride, B);
+	RecordPassengerJourneyMovement(PassengerJourneyMovement::Board, *packet, 7);
+	CHECK(GetPassengerJourneyTickDiagnostic().schedule_wait_samples == 3); CHECK(packet->GetPassengerJourney() == ride);
+	_state_ticks = StateTicks{INT64_MAX - 1}; BeginPassengerJourneyTick();
+	CHECK(GetPassengerJourneyTotalDiagnostic().schedule_actual_wait == UINT64_MAX);
+}
+
 TEST_CASE("Routing state and leg have an independent versioned save round trip", "[passenger][active][saveload]")
 {
 	ActiveFixture fixture;

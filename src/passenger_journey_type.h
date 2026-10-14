@@ -11,6 +11,7 @@
 #include "order_type.h"
 #include "station_type.h"
 #include "date_type.h"
+#include <optional>
 
 enum class PassengerRoutingMode : uint8_t { Legacy, Journey, Fallback };
 
@@ -45,9 +46,20 @@ struct PassengerJourneyExecution {
 
 /** Schedule-aware intent age, not continuous passenger waiting time. Timed
  * intents have no decision timestamp, so they cannot supply this diagnostic. */
+inline std::optional<uint64_t> GetPassengerScheduleIntentAge(const PassengerJourneyExecution &ride, StateTicks now)
+{
+	if (!IsEstimatedPassengerRide(ride.kind) || now == INVALID_STATE_TICKS || ride.planned_at == INVALID_STATE_TICKS || now < ride.planned_at) return std::nullopt;
+	/* Conversion and subtraction are modulo 2^64. With the signed ordering
+	 * checked above, this is the exact non-negative mathematical difference,
+	 * even when it exceeds INT64_MAX. Zero is a valid decision timestamp. */
+	return uint64_t(now.base()) - uint64_t(ride.planned_at.base());
+}
+
 inline bool IsPassengerScheduleIntentAged(const PassengerJourneyExecution &ride, StateTicks now, int64_t minimum_age)
 {
-	return IsEstimatedPassengerRide(ride.kind) && now >= ride.planned_at && now.base() - ride.planned_at.base() >= minimum_age;
+	if (minimum_age < 0) return false;
+	const auto age = GetPassengerScheduleIntentAge(ride, now);
+	return age.has_value() && *age >= uint64_t(minimum_age);
 }
 
 #endif /* PASSENGER_JOURNEY_TYPE_H */
