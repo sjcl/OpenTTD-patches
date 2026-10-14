@@ -106,7 +106,8 @@ void ObservePassengerPeriodicVehicle(const Vehicle *vehicle)
 	if (!_settings_game.linkgraph.passenger_journey_routing || vehicle == nullptr || vehicle->orders == nullptr) return;
 	const auto *service = database.Get(vehicle->orders->index);
 	if (service == nullptr) return;
-	auto phase = std::find_if(service->vehicles.begin(), service->vehicles.end(), [&](const auto &v) { return v.id == vehicle->index; });
+	auto phase = std::lower_bound(service->vehicles.begin(), service->vehicles.end(), vehicle->index, [](const auto &v, VehicleID id) { return v.id < id; });
+	if (phase != service->vehicles.end() && phase->id != vehicle->index) phase = service->vehicles.end();
 	if (phase == service->vehicles.end() && service->timetable.period != 0) return;
 	std::array<uint64_t, NUM_CARGO> capacity{};
 	bool passengers = false;
@@ -472,7 +473,8 @@ void PassengerServiceDatabase::Tick(size_t allowance)
 		/* A shared fleet must not disappear merely because its one-time capture
 		 * exceeds an OD search budget. Admit one larger atomic generation task at
 		 * a fresh tick boundary; ordinary packet/table lookups remain unchanged. */
-		if (charged_work > BUILD_WORK && charged_work <= task_limit && allowance == original && task_limit > BUILD_WORK) {
+		if ((charged_work > BUILD_WORK || facility_envelope > BUILD_WORK - std::min(charged_work, BUILD_WORK)) &&
+				charged_work <= task_limit && allowance == original && task_limit > BUILD_WORK) {
 			size_t needed = std::min(task_limit, charged_work + facility_envelope + BUILD_WORK);
 			if (needed > allowance) { original += needed - allowance; allowance = needed; }
 		}
@@ -1605,6 +1607,7 @@ bool PassengerServiceDatabase::Load(std::span<const uint8_t> data)
 			if (vehicle.phase_known && service.timetable.period == 0) return false;
 			service.vehicles.push_back(vehicle);
 		}
+		if (!std::is_sorted(service.vehicles.begin(), service.vehicles.end(), [](const auto &a, const auto &b) { return a.id < b.id; })) return false;
 		service.dispatch_base = StateTicks{static_cast<int64_t>(get())}; service.dispatch_floor = StateTicks{static_cast<int64_t>(get())}; service.dispatch_period = static_cast<int64_t>(get()); service.dispatch_stop = get();
 		if (service.dispatch_period < 0 || service.dispatch_period > MAX_PERIOD) return false;
 		for (size_t slots = count(65536); slots > 0 && valid; --slots) {
