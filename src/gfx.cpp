@@ -1656,6 +1656,9 @@ void DrawDirtyBlocks()
 	extern void ViewportPrepareVehicleRoute();
 	ViewportPrepareVehicleRoute();
 
+	extern void ViewportPrepareGroupMarkers();
+	ViewportPrepareGroupMarkers();
+
 	extern void ProcessInvalidatedCompanyWindows();
 	ProcessInvalidatedCompanyWindows();
 

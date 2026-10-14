@@ -117,6 +117,8 @@
 #include "tracerestrict.h"
 #include "worker_thread.h"
 #include "vehiclelist.h"
+#include "group.h"
+#include "group_gui.h"
 #include "tile_cmd.h"
 #include "core/backup_type.hpp"
 #include "3rdparty/robin_hood/robin_hood.h"
@@ -3022,6 +3024,148 @@ static void ViewportDrawVehicleRouteSteps(const Viewport * const vp)
 	}
 }
 
+/** Marker shown in the viewports above a vehicle of a group which is selected in a group window. */
+struct ViewportGroupMarker {
+	VehicleID veh;      ///< Marked vehicle.
+	Point pt;           ///< Top centre of the vehicle sprite, in viewport coordinates.
+	PixelColour colour; ///< Colour of the child group of the selected group which contains the vehicle.
+};
+static std::vector<ViewportGroupMarker> _vp_group_markers; ///< Current group markers, sorted by vehicle ID.
+
+static int GetGroupMarkerHalfWidth() { return ScaleGUITrad(5); }
+static int GetGroupMarkerHeight() { return ScaleGUITrad(8); }
+static int GetGroupMarkerGap() { return ScaleGUITrad(2); }
+
+/**
+ * Get the position of the group marker of a vehicle.
+ * This uses the current position of the vehicle, as the viewport coordinates of vehicles outside the viewports may not be up to date.
+ * @param v The vehicle.
+ * @return Top centre of the vehicle sprite, in viewport coordinates.
+ */
+static Point GetGroupMarkerPosition(const Vehicle *v)
+{
+	Point pt = RemapCoords(v->x_pos + v->bounds.origin.x + v->bounds.offset.x, v->y_pos + v->bounds.origin.y + v->bounds.offset.y, v->z_pos);
+	pt.x += (v->sprite_seq_bounds.left + v->sprite_seq_bounds.right) / 2;
+	pt.y += v->sprite_seq_bounds.top;
+	return pt;
+}
+
+/**
+ * Get the colour of the group marker of a vehicle.
+ * This is the primary colour of the child group of the selected group which contains the vehicle,
+ * or of the selected group itself if the vehicle is directly in it.
+ * When all vehicles are selected, the child groups are the top level groups.
+ * Ungrouped vehicles use the primary colour of the company.
+ * @param v The vehicle.
+ * @param selected The selected group, which contains the vehicle.
+ * @return The marker colour.
+ */
+static PixelColour GetGroupMarkerColour(const Vehicle *v, GroupID selected)
+{
+	const GroupID child_parent = IsAllGroupID(selected) ? GroupID::Invalid() : selected;
+	const Group *g = Group::GetIfValid(v->group_id);
+	while (g != nullptr && g->index != selected && g->parent != child_parent) {
+		g = Group::GetIfValid(g->parent);
+	}
+
+	const Colours colour = (g != nullptr) ? g->livery.colour1 : Company::Get(v->owner)->livery[LiveryScheme::Default].colour1;
+	return GetColourGradient(colour, Shade::Lighter);
+}
+
+static void MarkGroupMarkerDirty(const Point &pt)
+{
+	const int half_width = GetGroupMarkerHalfWidth() + 2;
+	const int height = GetGroupMarkerHeight() + GetGroupMarkerGap() + 2;
+	for (Viewport * const vp : _viewport_window_cache) {
+		MarkViewportDirty(vp, pt.x - ScaleByZoom(half_width, vp->zoom), pt.y - ScaleByZoom(height, vp->zoom),
+				pt.x + ScaleByZoom(half_width, vp->zoom), pt.y + ScaleByZoom(1, vp->zoom), VMDF_NOT_LANDSCAPE);
+	}
+}
+
+/**
+ * Update the markers above the vehicles of the groups which are selected in the group windows,
+ * and mark the markers which have appeared, disappeared or moved dirty.
+ */
+void ViewportPrepareGroupMarkers()
+{
+	static std::vector<VehicleListIdentifier> groups;
+	static std::vector<ViewportGroupMarker> markers;
+
+	if (_settings_client.gui.show_group_vehicle_markers) {
+		GetGroupWindowSelectedGroups(groups);
+	} else {
+		groups.clear();
+	}
+
+	markers.clear();
+	if (!groups.empty()) {
+		VehicleTypeMask types = 0;
+		for (const VehicleListIdentifier &vli : groups) SetBit(types, to_underlying(vli.vtype));
+
+		for (const Vehicle *v : Vehicle::IterateTypeMaskFrontOnly(types)) {
+			if (!v->IsPrimaryVehicle() || HasBit(v->subtype, GVSF_VIRTUAL) || !v->IsDrawn()) continue;
+
+			auto in_group = [v](const VehicleListIdentifier &vli) {
+				if (v->type != vli.vtype || v->owner != vli.company) return false;
+				return IsAllGroupID(vli.ToGroupID()) || GroupIsInGroup(v->group_id, vli.ToGroupID());
+			};
+			auto selected = std::ranges::find_if(groups, in_group);
+			if (selected == groups.end()) continue;
+
+			markers.push_back({ v->index, GetGroupMarkerPosition(v), GetGroupMarkerColour(v, selected->ToGroupID()) });
+		}
+	}
+
+	/* Both lists are sorted by vehicle ID, as the vehicle pool is iterated in order. */
+	auto old_it = _vp_group_markers.begin();
+	auto new_it = markers.begin();
+	while (old_it != _vp_group_markers.end() || new_it != markers.end()) {
+		if (new_it == markers.end() || (old_it != _vp_group_markers.end() && old_it->veh < new_it->veh)) {
+			MarkGroupMarkerDirty(old_it->pt);
+			++old_it;
+		} else if (old_it == _vp_group_markers.end() || new_it->veh < old_it->veh) {
+			MarkGroupMarkerDirty(new_it->pt);
+			++new_it;
+		} else {
+			if (old_it->pt.x != new_it->pt.x || old_it->pt.y != new_it->pt.y) {
+				MarkGroupMarkerDirty(old_it->pt);
+				MarkGroupMarkerDirty(new_it->pt);
+			} else if (old_it->colour.p != new_it->colour.p) {
+				MarkGroupMarkerDirty(new_it->pt);
+			}
+			++old_it;
+			++new_it;
+		}
+	}
+
+	_vp_group_markers.swap(markers);
+}
+
+/** Draw the markers above the vehicles of the groups which are selected in the group windows. */
+static void ViewportDrawGroupMarkers()
+{
+	/* The marker is a downward pointing triangle in the colour of the child group, with a black outline. */
+	const int outer_half_width = GetGroupMarkerHalfWidth() + 1;
+	const int outer_height = GetGroupMarkerHeight() + 1;
+	const int gap = GetGroupMarkerGap();
+
+	for (const ViewportGroupMarker &marker : _vp_group_markers) {
+		const int x = UnScaleByZoomLower(marker.pt.x - _vdd->dpi.left, _vdd->dpi.zoom);
+		const int bottom = UnScaleByZoomLower(marker.pt.y - _vdd->dpi.top, _vdd->dpi.zoom) - gap;
+		const int top = bottom - outer_height;
+		if (x + outer_half_width < 0 || x - outer_half_width >= _cur_dpi->width || bottom < 0 || top >= _cur_dpi->height) continue;
+
+		for (int row = 0; row <= outer_height; row++) {
+			const int y = _cur_dpi->top + top + row;
+			const int half_width = (outer_half_width * (outer_height - row)) / outer_height;
+			GfxFillRect(_cur_dpi->left + x - half_width, y, _cur_dpi->left + x + half_width, y, PC_BLACK);
+			if (row > 0 && half_width > 1) {
+				GfxFillRect(_cur_dpi->left + x - half_width + 1, y, _cur_dpi->left + x + half_width - 1, y, marker.colour);
+			}
+		}
+	}
+}
+
 static void ViewportDrawPlans(const Viewport *vp, Blitter *blitter, DrawPixelInfo *plan_dpi)
 {
 	const Rect bounds = {
@@ -4375,6 +4519,11 @@ static void ViewportDoDrawPhase3(Viewport *vp)
 		dp.left = _vdd->offset_x + vp->left;
 		dp.top = _vdd->offset_y + vp->top;
 		ViewportDrawVehicleRouteSteps(vp);
+	}
+	if (!_vp_group_markers.empty()) {
+		dp.left = _vdd->offset_x + vp->left;
+		dp.top = _vdd->offset_y + vp->top;
+		ViewportDrawGroupMarkers();
 	}
 	_cur_dpi = nullptr;
 

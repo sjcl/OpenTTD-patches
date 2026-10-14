@@ -454,6 +454,7 @@ static const NamedSaveLoad _town_desc[] = {
 	NSL("", SLE_CONDVAR_X(Town, max_road_slope,      SLE_UINT8, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_TOWN_SETTING_OVERRIDE))),
 
 	NSLT("valid_history",                  SLE_CONDVAR_X(Town, valid_history,       SLE_UINT64, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_TOWN_SUPPLY_HISTORY))),
+	NSLT("fund_buildings_auto",            SLE_CONDVAR_X(Town, fund_buildings_auto, SLE_UINT16, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_TOWN_AUTO_FUND_BUILDINGS))),
 
 	NSLT_STRUCTLIST<TownOldSuppliedStructHandler>("supplied", SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_TOWN_SUPPLY_HISTORY, 0, 0)),
 	NSLT_STRUCTLIST<TownSuppliedStructHandler>("supplied", SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_TOWN_SUPPLY_HISTORY, 1)),

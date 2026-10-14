@@ -226,6 +226,7 @@ struct Town : TownPool::PoolItem<&_town_pool> {
 
 	uint8_t fund_buildings_months = 0;;   ///< fund buildings program in action?
 	uint8_t road_build_months = 0;;       ///< fund road reconstruction in action?
+	CompanyMask fund_buildings_auto{};    ///< companies which automatically renew the fund buildings program when it expires
 
 	bool larger_town = false;             ///< if this is a larger town and should grow more quickly
 	TownLayout layout{};                  ///< town specific road layout

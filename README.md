@@ -132,6 +132,7 @@ The TT-Forums thread for this patchpack can be found [here](https://www.tt-forum
   See the [guide on the wiki](https://github.com/JGRennison/OpenTTD-patches/wiki/Signalling) for more information.
 * Add cargo capacity / running cost sort mode to the build vehicle window.
 * Add client settings to show the full group hierarchy in group and vehicle names.
+* Add setting to show a marker in the viewports above each vehicle of the group which is selected in a group window (including sub-groups, the ungrouped vehicles and all vehicles), in the colour of the sub-group directly below the selected group.
 
 #### Orders and Timetabling
 
@@ -204,6 +205,7 @@ The TT-Forums thread for this patchpack can be found [here](https://www.tt-forum
 * Allow overriding town road construction settings and whether town growth is enabled on a per-town basis, add setting to enable this for multiplayer clients.
 * Allow NewGRFs to set town zone radii.
 * Show town count in town directory window.
+* Allow the "fund new buildings" town action to be automatically renewed whenever it expires, until switched off (per company, in the local authority window).
 
 #### Industries
 

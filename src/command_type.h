@@ -608,6 +608,7 @@ enum class Commands : uint8_t {
 	TownAction,                             ///< do a action from the town detail window (like advertises or bribe)
 	TownSettingOverride,                    ///< override a town setting
 	TownSettingOverrideNonAdmin,            ///< override a town setting, non-admin command
+	TownAutoFundBuildings,                  ///< enable/disable automatic renewal of funding new buildings in a town
 	TownCargoGoal,                          ///< set the goal of a cargo for a town
 	TownGrowthRate,                         ///< set the town growth rate
 	TownRating,                             ///< set rating of a company in a town

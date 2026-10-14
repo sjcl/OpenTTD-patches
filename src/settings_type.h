@@ -435,6 +435,7 @@ struct GUISettings : public TimeSettings {
 	uint8_t     show_vehicle_route_mode;                         ///< How to show a vehicle's route when one of its windows is focused
 	bool        show_vehicle_route;                              ///< Show route lines when vehicles route overlay is being shown
 	bool        show_vehicle_route_steps;                        ///< Show route step markers when vehicles route overlay is being shown
+	bool        show_group_vehicle_markers;                      ///< Show markers above the vehicles of the groups selected in group windows
 	uint8_t     dash_level_of_route_lines;                       ///< the dash level passed to GfxDrawLine() (plain if 0) for vehicle route lines
 	uint8_t     dash_level_of_plan_lines;                        ///< the dash level passed to GfxDrawLine() (plain if 0) for plan lines
 	SelectedPlanLineDrawMode selected_plan_line_mode;            ///< mode for drawing selected plan lines
