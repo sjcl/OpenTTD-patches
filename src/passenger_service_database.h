@@ -12,9 +12,11 @@
 #include "passenger_journey_schedule.h"
 #include "passenger_departure_index.h"
 #include "passenger_timed_search.h"
+#include "passenger_precomputed.h"
 #include <set>
 #include <list>
 #include <variant>
+#include <bitset>
 
 struct PassengerPeriodicStop {
 	StationID station = StationID::Invalid();
@@ -141,6 +143,7 @@ struct PassengerDatabaseDiagnostic {
 class PassengerServiceDatabase {
 public:
 	static constexpr size_t BUILD_WORK = 65536, MAX_BYTES = 64 * 1024 * 1024;
+	static constexpr size_t PRECOMPUTED_CAPTURE_WORK = 16 * 1024 * 1024; ///< Generation construction only; packet queries never use this allowance.
 	static constexpr size_t POLICY_BYTES = 16 * 1024 * 1024, POLICY_ENTRIES = 4096; ///< Shared by Timed and Schedule-aware, including dependency and LRU storage.
 	static constexpr size_t POLICY_STORAGE_BYTES = POLICY_BYTES - 1024 * 1024; ///< Reserve for station stamps and bounded rebuild diagnostics.
 	static constexpr int64_t TIMETABLE_EPOCH = 4096;
@@ -148,6 +151,17 @@ public:
 	void Invalidate(OrderListID id = OrderListID::Invalid());
 	void TimetableChanged(OrderListID id); ///< Keep safe published timing until the next deterministic update epoch.
 	void Tick(size_t allowance = BUILD_WORK);
+	void TickPrecomputed(size_t allowance = BUILD_WORK);
+	void DiscardPrecomputed() { this->precomputed = {}; this->precomputed_revision = UINT64_MAX; this->precomputed_operations = 0; }
+	bool HasRejectedPrecomputedMemory() const
+	{ return std::any_of(this->precomputed.begin(), this->precomputed.end(), [](const auto &table) { return table.MemoryRejected(); }); }
+	PassengerPrecomputedPlan PlanPrecomputed(CargoType cargo, StationID origin, StationID destination, StateTicks ready,
+			OrderListID excluded = OrderListID::Invalid(), uint32_t sample = 0) const;
+	PassengerPrecomputedDiagnostic GetPrecomputedDiagnostic(CargoType cargo) const { return this->precomputed[cargo].GetDiagnostic(); }
+	uint64_t GetPublishedRevision() const { return this->published_revision; }
+	OrderListID PrecomputedBoardingKey(CargoType cargo, OrderListID service) const { return this->precomputed[cargo].BoardingKey(service); }
+	bool RebindPrecomputed(PassengerJourneyExecution &ride, OrderListID service, CargoType cargo) const
+	{ return cargo < NUM_CARGO && this->precomputed[cargo].Rebind(ride, service) && this->IsCurrent(ride); }
 	PassengerPeriodicPlan Plan(CargoType cargo, StationID origin, StationID destination, StateTicks ready,
 			PassengerJourneyLimits limits = {}, PassengerJourneyEvaluation evaluation = {}, OrderListID excluded = OrderListID::Invalid());
 	/** Explicit read-only algorithm comparison, never a local cache preference or simulation setting. */
@@ -196,6 +210,10 @@ public:
 private:
 	friend class PassengerSchedulePlanner;
 	PassengerSchedulePlanner schedule;
+	std::array<PassengerPrecomputedTable, NUM_CARGO> precomputed;
+	uint64_t precomputed_revision = UINT64_MAX, precomputed_operations = 0;
+	int64_t precomputed_transfer = 0;
+	void BeginPrecomputed(int64_t transfer);
 	using Dependencies = std::map<StationID, uint64_t>;
 	struct JourneyPolicy {
 		std::vector<std::pair<StationID, int64_t>> lower_bounds; ///< Relaxed reverse adjacent-stop distances, never winning routes.
@@ -235,6 +253,8 @@ private:
 	void Publish(size_t &allowance);
 	void ClearPolicies(PassengerDatabaseDiagnostic::ClearReason reason);
 	std::map<OrderListID, PassengerPeriodicService> services; ///< Published network only.
+	std::vector<const PassengerPeriodicService *> service_lookup; ///< Derived dense pool-ID lookup, rebuilt before simulation resumes.
+	std::bitset<65536> unsafe_lookup; ///< Same saved unsafe set, allocation-free membership for packet lookups.
 	std::map<OrderListID, PassengerPeriodicService> building; ///< Completed tasks awaiting the publication barrier.
 	std::set<OrderListID> build_queue, unsafe;
 	std::map<OrderListID, StateTicks> build_since, staged_since;
