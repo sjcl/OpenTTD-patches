@@ -1,6 +1,6 @@
 # Periodic Journey Query Work Admission
 
-修正後の再測定・実v4セーブ・最終検証は[最終修正レポート](passenger-query-work-admission-final-2026-10-14.md)を参照。以下の初期性能測定は履歴として保持する。
+最新ベース `7753377108` への追従と統合検証は[2026-10-15のレポート](passenger-query-work-admission-integration-2026-10-15.md)を参照。旧ベースでの修正後の再測定・実v4セーブは[2026-10-14の最終修正レポート](passenger-query-work-admission-final-2026-10-14.md)に保持する。以下の初期性能測定は履歴として保持する。
 
 ベースは `8a96044d40`（Agent A統合後の `jgrpp-ya`）。Agent Bの路線探索はこのベースに未統合であり、ユーザー確認により現在の `jgrpp-ya` から実装した。ブランチは `feat/passenger-query-work-admission`。
 

@@ -1,0 +1,4 @@
+*.txt -text -whitespace
+*.log -text -whitespace
+*.csv -text -whitespace
+*.json text eol=lf

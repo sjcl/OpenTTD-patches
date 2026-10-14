@@ -1,0 +1,22 @@
+Waiting for idle host: quiet interval (20s)
+Waiting for idle host: quiet interval (20s)
+Waiting for idle host: quiet interval (20s)
+{
+  "load_payments_valid": true,
+  "zero_tick_reload_equal": true,
+  "continued_reload_equal": true,
+  "cache_scratch_full_save_equal": true,
+  "cache_scratch_packet_payment_equal": true,
+  "warm-512_actual_ticks": true,
+  "warm-512_no_error_resume": true,
+  "warm-512_payments_valid": true,
+  "cold-scratch-off-512_actual_ticks": true,
+  "cold-scratch-off-512_no_error_resume": true,
+  "cold-scratch-off-512_payments_valid": true,
+  "v4-load_saved_fields_conserved": true,
+  "v4-reload-v3_saved_fields_conserved": true,
+  "all_saved_formats_v3": true,
+  "v4_actual_256_ticks": true,
+  "v4_no_error_resume": true,
+  "v4_continued_payments_valid": true
+}

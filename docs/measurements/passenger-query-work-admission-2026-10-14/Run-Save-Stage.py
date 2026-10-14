@@ -16,6 +16,8 @@ for name in ['binary', 'package', 'input', 'output']:
     p.add_argument('--' + name, type=pathlib.Path, required=True)
 p.add_argument('--ticks', type=int, default=0)
 p.add_argument('--no-integrity', action='store_true', help='Reference old binary lacks the read-only inspector')
+p.add_argument('--cache-mode', choices=['warm', 'cold'], default='warm')
+p.add_argument('--scratch-off', action='store_true')
 a = p.parse_args()
 directory = a.output.resolve()
 directory.mkdir(exist_ok=False)
@@ -30,8 +32,12 @@ scripts.mkdir(exist_ok=True)
 log = (directory / 'on-1-console.txt').as_posix()
 result = (directory / 'result').as_posix()
 start = f'script {log}\ngetfulldate\npassenger_journey_stats inventory\n'
+if a.cache_mode == 'cold':
+    start += 'passenger_journey_stats cache_off\npassenger_journey_stats departures_off\npassenger_journey_stats fallback_cache_off\n'
+if a.scratch_off:
+    start += 'passenger_journey_stats scratch_off\n'
 inspect = '' if a.no_integrity else 'passenger_journey_stats save_integrity\n'
-finish = f'script {log}\ngetfulldate\npassenger_journey_stats inventory\n{inspect}save {result}\nscript\n'
+finish = f'script {log}\ngetfulldate\npassenger_journey_stats inventory\npassenger_journey_stats total\n{inspect}save {result}\nscript\n'
 if a.ticks:
     start += 'unpause\nscript\n'
 else:
@@ -46,7 +52,7 @@ if completed.returncode or not (directory / 'result.sav').is_file() or (not a.no
     raise RuntimeError(f'Save stage failed: {completed.returncode}; see {directory}')
 metadata = {'input_sha256': runner.sha256(directory / 'input.sav'), 'binary_sha256': runner.sha256(directory / 'openttd.exe'),
     'result_sha256': runner.sha256(directory / 'result.sav'), 'result_bytes': (directory / 'result.sav').stat().st_size,
-    'exit_code': completed.returncode, 'requested_ticks': a.ticks,
+    'exit_code': completed.returncode, 'requested_ticks': a.ticks, 'cache_mode': a.cache_mode, 'scratch_disabled': a.scratch_off,
     'integrity': None if a.no_integrity else json.loads((directory / 'save-integrity.json').read_text(encoding='utf-8'))}
 if (directory / 'continuation-driver.json').is_file():
     metadata['actual_clock'] = json.loads((directory / 'continuation-driver.json').read_text(encoding='utf-8'))

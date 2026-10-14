@@ -1,0 +1,231 @@
+{
+  "checks": {
+    "Periodic admission": true,
+    "Periodic allocation": true,
+    "Periodic Work outcomes": true,
+    "Periodic missing": true,
+    "Timed result states": true,
+    "Timed Work completion": true,
+    "Journey transport": true,
+    "Schedule transport": true,
+    "Untimed transport": true,
+    "Completed interchanges": true,
+    "Passenger inventory": true,
+    "Waiting routing": true,
+    "Waiting age sample": true,
+    "query_work": true,
+    "timed_logical_work": true,
+    "schedule_logical_work": true,
+    "rejection_reasons": true,
+    "Periodic tick searches": true,
+    "Periodic tick Work upper": true,
+    "actual_searches_exercised": true,
+    "settled_work": true,
+    "planner_work_settled": true,
+    "query_work_charged": true,
+    "fixed_limits": true,
+    "cold_controls_disabled": true,
+    "policy_cache_exercised": true,
+    "scratch_exercised": true
+  },
+  "records": [
+    {
+      "Periodic admission": {
+        "accepted": 8118,
+        "rejected": 69465,
+        "reserved": 532021248,
+        "used": 140426084,
+        "returned": 391595164,
+        "max_tick_queries": 16,
+        "max_tick_work": 916069
+      },
+      "Periodic allocation": {
+        "timed": 399015936,
+        "schedule": 60466147,
+        "timed_used": 101817743,
+        "schedule_used": 38608341
+      },
+      "Periodic Work outcomes": {
+        "stopped": 1098,
+        "no_route": 652,
+        "schedule_rescued": 1,
+        "complete_unproved": 447,
+        "incomplete_work": 653,
+        "stop_percent": 13.525,
+        "no_route_percent": 8.032
+      },
+      "Periodic missing": {
+        "published": 0,
+        "building": 934,
+        "retries": 2148,
+        "max_od_attempts": 31,
+        "tracking_evictions": 1874
+      },
+      "Timed result states": {
+        "unavailable": 732,
+        "certified": 5284,
+        "provisional": 447,
+        "deferred": 653,
+        "no_route": 1002,
+        "rescued_unpopped": 447
+      },
+      "Timed Work completion": {
+        "with_complete": 445,
+        "without_complete": 653,
+        "with_queued": 445,
+        "with_popped": 0,
+        "improvement_possible": 445,
+        "reverse_work": 8468245,
+        "forward_work": 45500651
+      },
+      "Journey transport": {
+        "boarded": 5225,
+        "transferred": 29,
+        "delivered": 85
+      },
+      "Schedule transport": {
+        "boarded": 28,
+        "transferred": 1,
+        "delivered": 0,
+        "expected_wait_person_ticks": 141018,
+        "actual_wait_person_ticks": 4206,
+        "wait_people": 28
+      },
+      "Untimed transport": {
+        "boarded": 43383,
+        "transferred": 19793,
+        "delivered": 8914
+      },
+      "Completed interchanges": {
+        "from_schedule": 0,
+        "from_timed": 0
+      },
+      "Passenger inventory": {
+        "waiting": 192794,
+        "deferred": 44376,
+        "state_ticks": 3176545999,
+        "scaled_ticks": 3010946901
+      },
+      "Waiting routing": {
+        "timed": 7049,
+        "schedule": 197,
+        "CargoDist_or_deferred": 168195,
+        "OD_fallback_or_waiting": 17353
+      },
+      "Waiting age sample": {
+        "known_OD_waiting": 68669,
+        "transit_age_ge_256": 0,
+        "schedule_intent_age_ge_4096": 0
+      }
+    },
+    {
+      "Periodic admission": {
+        "accepted": 8118,
+        "rejected": 69465,
+        "reserved": 532021248,
+        "used": 140426084,
+        "returned": 391595164,
+        "max_tick_queries": 16,
+        "max_tick_work": 916069
+      },
+      "Periodic allocation": {
+        "timed": 399015936,
+        "schedule": 60466147,
+        "timed_used": 101817743,
+        "schedule_used": 38608341
+      },
+      "Periodic Work outcomes": {
+        "stopped": 1098,
+        "no_route": 652,
+        "schedule_rescued": 1,
+        "complete_unproved": 447,
+        "incomplete_work": 653,
+        "stop_percent": 13.525,
+        "no_route_percent": 8.032
+      },
+      "Periodic missing": {
+        "published": 0,
+        "building": 934,
+        "retries": 2148,
+        "max_od_attempts": 31,
+        "tracking_evictions": 1874
+      },
+      "Timed result states": {
+        "unavailable": 732,
+        "certified": 5284,
+        "provisional": 447,
+        "deferred": 653,
+        "no_route": 1002,
+        "rescued_unpopped": 447
+      },
+      "Timed Work completion": {
+        "with_complete": 445,
+        "without_complete": 653,
+        "with_queued": 445,
+        "with_popped": 0,
+        "improvement_possible": 445,
+        "reverse_work": 8468245,
+        "forward_work": 45500651
+      },
+      "Journey transport": {
+        "boarded": 5225,
+        "transferred": 29,
+        "delivered": 85
+      },
+      "Schedule transport": {
+        "boarded": 28,
+        "transferred": 1,
+        "delivered": 0,
+        "expected_wait_person_ticks": 141018,
+        "actual_wait_person_ticks": 4206,
+        "wait_people": 28
+      },
+      "Untimed transport": {
+        "boarded": 43383,
+        "transferred": 19793,
+        "delivered": 8914
+      },
+      "Completed interchanges": {
+        "from_schedule": 0,
+        "from_timed": 0
+      },
+      "Passenger inventory": {
+        "waiting": 192794,
+        "deferred": 44376,
+        "state_ticks": 3176545999,
+        "scaled_ticks": 3010946901
+      },
+      "Waiting routing": {
+        "timed": 7049,
+        "schedule": 197,
+        "CargoDist_or_deferred": 168195,
+        "OD_fallback_or_waiting": 17353
+      },
+      "Waiting age sample": {
+        "known_OD_waiting": 68669,
+        "transit_age_ge_256": 0,
+        "schedule_intent_age_ge_4096": 0
+      }
+    }
+  ],
+  "rejections": [
+    {
+      "EventQueries": "0",
+      "TickQueries": "30239",
+      "EventWork": "0",
+      "GlobalWork": "0",
+      "FairWork": "157",
+      "FairQueries": "39069"
+    },
+    {
+      "EventQueries": "0",
+      "TickQueries": "30239",
+      "EventWork": "0",
+      "GlobalWork": "0",
+      "FairWork": "157",
+      "FairQueries": "39069"
+    }
+  ],
+  "performance_comparison": "skipped by user",
+  "note": "Full-save SHA and all Packet/payment fields are checked separately by Run-Integration-SaveLoad.py."
+}

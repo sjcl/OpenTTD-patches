@@ -1,0 +1,30 @@
+Waiting for idle host: quiet interval (90s)
+control: on-1 (minimal, 8192 driver loops)
+Waiting for idle host: quiet interval (90s)
+q16-t49152: on-1 (minimal, 8192 driver loops)
+Waiting for idle host: quiet interval (90s)
+q16-t49152: cold-1 (minimal, 8192 driver loops)
+Waiting for idle host: quiet interval (90s)
+q16-t49152: cold-1 (minimal, 8192 driver loops)
+Waiting for idle host: quiet interval (90s)
+Waiting for idle host: cmake:76672, MSBuild:140472, cl:127500
+Waiting for idle host: cmake:76672, MSBuild:140472
+Waiting for idle host: quiet interval (90s)
+q16-t49152: cold-1 (minimal, 8192 driver loops)
+Waiting for idle host: quiet interval (90s)
+q16-t49152: on-1 (minimal, 8192 driver loops)
+Waiting for idle host: cmake:131644, MSBuild:134272
+Waiting for idle host: quiet interval (90s)
+Waiting for idle host: cmake:142208
+Waiting for idle host: cmake:142208, MSBuild:101316
+Waiting for idle host: quiet interval (90s)
+Waiting for idle host: cmake:133116, MSBuild:103984, cmake:61680, cmake:136832, cmake:54464, cmake:100728, cmake:10620
+Waiting for idle host: cmake:133116, MSBuild:103984, cmake:82480, cmake:65104
+Waiting for idle host: cmake:133116, MSBuild:103984, cmake:74348
+Waiting for idle host: cmake:133116, MSBuild:103984, cl:119692, cl:2956, cl:71440, cl:10968, cl:71576, cl:111972, cl:36168, cl:69408, cl:45532, cl:99456, cl:65008, cl:127312, cl:30328, cl:44136, cl:118684, cl:126376, cl:106632, cl:79056, cl:106840, cl:121920, cl:137388, cl:21016, cl:78004, cl:27628, cl:77840, cl:30540, cl:98696, cl:138552, cl:70708, cl:36444, cl:114960, cl:35448, cl:137448
+Waiting for idle host: cmake:133116, MSBuild:103984, cl:119692, cl:2956, cl:10968, cl:71576, cl:36168, cl:69408, cl:45532, cl:65008, cl:127312, cl:30328, cl:126376, cl:106632, cl:79056, cl:106840, cl:121920, cl:137388, cl:78004, cl:77840, cl:98696, cl:138552, cl:70708, cl:36444, cl:114960, cl:35448
+Waiting for idle host: cmake:133116, MSBuild:103984, cl:92016
+Waiting for idle host: cmake:133116, MSBuild:103984
+Waiting for idle host: cmake:133116, MSBuild:103984, cl:89416
+Waiting for idle host: cmake:133116, MSBuild:103984, cl:82508
+Waiting for idle host: cmake:133116, MSBuild:103984, cl:39000

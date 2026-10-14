@@ -1,0 +1,23 @@
+{
+  "status": "superseded",
+  "source_revision": "370e5dcd893ce6f3d9f0f1eade9df117325dc352",
+  "control_commit": "7753377108",
+  "sequence_at_stop": {
+    "manifests": [
+      "C:\\Users\\bebe\\.codex\\worktrees\\923a\\OpenTTD-patches\\build-admission\\integration-2026-10-15-comparison\\01-control-on-attempt1\\manifest.json",
+      "C:\\Users\\bebe\\.codex\\worktrees\\923a\\OpenTTD-patches\\build-admission\\integration-2026-10-15-comparison\\02-q16-t49152-on-attempt1\\manifest.json",
+      "C:\\Users\\bebe\\.codex\\worktrees\\923a\\OpenTTD-patches\\build-admission\\integration-2026-10-15-comparison\\03-q16-t49152-cold-attempt1\\manifest.json",
+      "C:\\Users\\bebe\\.codex\\worktrees\\923a\\OpenTTD-patches\\build-admission\\integration-2026-10-15-comparison\\04-q16-t49152-cold-attempt2\\manifest.json"
+    ],
+    "excluded": [
+      "C:\\Users\\bebe\\.codex\\worktrees\\923a\\OpenTTD-patches\\build-admission\\integration-2026-10-15-comparison\\04-q16-t49152-cold-attempt1\\manifest.json"
+    ],
+    "status": "running"
+  },
+  "excluded": [
+    "C:\\Users\\bebe\\.codex\\worktrees\\923a\\OpenTTD-patches\\build-admission\\integration-2026-10-15-comparison\\04-q16-t49152-cold-attempt1\\manifest.json",
+    "C:\\Users\\bebe\\.codex\\worktrees\\923a\\OpenTTD-patches\\build-admission\\integration-2026-10-15-comparison\\05-q16-t49152-on-attempt1\\manifest.json"
+  ],
+  "reason": "jgrpp-ya advanced to a6e6664a18 during the incomplete comparison. No game was running when owned waiting scripts were stopped.",
+  "integration_evidence": false
+}

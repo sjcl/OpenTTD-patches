@@ -61,7 +61,7 @@ try:
     result_path = build / a.directory / 'result.json'
     result = json.loads(result_path.read_text(encoding='utf-8'))
     result['binary_sha256'] = runner.sha256(binary)
-    result['source_revision'] = 'c16da03990eff522af2abf0ca9379ce5d24e5aac'
+    result['source_revision'] = metadata['source_revision']
     result['post_late_join_seconds'] = a.duration
     result_path.write_text(json.dumps(result, indent=2) + '\n', encoding='utf-8')
     metadata['outcome'] = 'pass'

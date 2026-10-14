@@ -1,5 +1,7 @@
 # Work admission: multiplayer disconnect cause separation
 
+後続のユーザー方針により、全cache無効時の接続timeoutは[独立した受信fairness課題](passenger-network-receive-fairness-followup.md)として扱う。最新ベースでの通常cache有効の統合条件と結果は[2026-10-15の検証](passenger-query-work-admission-integration-2026-10-15.md)を参照。この原因分離の観測・失敗原本は保持する。
+
 対象は `feat/passenger-query-work-admission` の製品実装 `c16da03990`、既存検証HEAD `91201edc79`。製品ソースとWork配分は変更せず、コピーしたnetwork.cpp / network_client.cpp / network_server.cpp / tcp.cppだけへ観測を追加した。タイムアウトの延長、sync頻度の低下、追い付きの途中yieldや人工pauseは行っていない。
 
 ## 分離した観測

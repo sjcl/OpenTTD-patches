@@ -1,5 +1,7 @@
 # Work Budget 最終修正・検証
 
+この記録の統合保留判断は2026-10-14時点のもの。以後、ユーザー指定により全cache無効時のtimeoutを独立課題へ分離し、最新 `jgrpp-ya` に追従した。[2026-10-15の統合検証](passenger-query-work-admission-integration-2026-10-15.md)を現在の判断に用いる。以下の測定値・失敗原本を、新ベースの結果へ読み替えない。
+
 対象は `feat/passenger-query-work-admission`、依頼ベース `a77dca75a2`、時刻修正の実装SHAは `c16da03990eff522af2abf0ca9379ce5d24e5aac`。Work予約・実使用精算、16 OD/tick、Timed 49,152 / Schedule保護16,384、1 OD 65,536、Global 1,048,576 Work/tickは変更していない。Roundsは導入していない。
 
 **統合判断は保留。** 修正・性能再測定・実v4互換・製品構成の全回帰は成功した。一方、実マップで両クライアントの派生キャッシュとScratchを無効化した長区間loopbackでは既存の受信タイムアウトが発動し、接続維持条件を満たせなかった。短区間の完全Cargo一致とofflineのSave一致を、長区間の途中参加成功へ読み替えない。

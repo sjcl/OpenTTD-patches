@@ -1,0 +1,32 @@
+{
+  "input_sha256": "31a15d40f245bf1c999497fd7f712fb2d85d66fef8a7ab75aab592beeae1ce9c",
+  "binary_sha256": "f26e0b9001157fb27779e230981bc8496d961a25320ee804b944dcfc3cfafcae",
+  "result_sha256": "98c1b98040497b9dcfb7d316cee333a11e36c2795f06bb5f81f8441da9b44ccb",
+  "result_bytes": 27928284,
+  "exit_code": 0,
+  "requested_ticks": 512,
+  "cache_mode": "cold",
+  "scratch_disabled": true,
+  "integrity": {
+    "runtime_routing_feature": 3,
+    "state_ticks": 3176545999,
+    "packets": 107890,
+    "cargo_units": 843588,
+    "known_od_units": 134757,
+    "journey_packets": 6330,
+    "packet_state_digest": 12794429169976563679,
+    "payment_digest": 8822769649394713950,
+    "payments_valid": true,
+    "legacy_true_packets": 0,
+    "legacy_false_packets": 0,
+    "legacy_true_units": 0,
+    "legacy_false_units": 0,
+    "opposite_history_mergeable_pairs": 0
+  },
+  "actual_clock": {
+    "start_tick": 3176545487,
+    "end_tick": 3176545999,
+    "driver_loops": 512,
+    "error_resumes": 0
+  }
+}

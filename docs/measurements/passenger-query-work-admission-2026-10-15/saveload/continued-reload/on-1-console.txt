@@ -1,0 +1,19 @@
+Console log output started to 'C:/Users/bebe/.codex/worktrees/923a/OpenTTD-patches/build-admission/integration-2026-10-15-saveload/continued-reload/on-1-console.txt'.
+Calendar Date: 117528-03-18 (42926297), fract: 21, sub_fract: 0
+Economy Date: 117528-03-18 (42926297), fract: 21, tick skip: 0
+Period display offset: 0
+Elapsed years: 117527
+Tick counter: 3010946901
+Tick counter (scaled): 3010946901
+State ticks: 3176545999 (offset: 0)
+Effective economy speed reduction factor: 1
+Ticks per calendar day: 74
+Timetable time: 22:17 + 21 ticks
+Passenger inventory: complete; waiting=192794 people (available=192794, reserved=0); deferred=44376 people; state_ticks=3176545999; scaled_ticks=3010946901
+Inventory Legacy: 417135 people/69739 packets; known_OD=74183 people
+Inventory Journey: 12381 people/6330 packets; known_OD=12381 people
+Inventory Fallback: 48193 people/25802 packets; known_OD=48193 people
+Waiting routing: timed=7049; schedule=197; CargoDist_or_deferred=168195; OD_fallback_or_waiting=17353 people
+Schedule inventory: people=224; packets=134; waiting=197; timed_waiting=7049 people
+Waiting age sample: known_OD_waiting=68669; transit_age_ge_256=0; schedule_intent_age_ge_4096=0 people (transit age includes travel; Schedule-aware only; intent age resets on replan; Timed waiting age unavailable)
+Console log file closed.
