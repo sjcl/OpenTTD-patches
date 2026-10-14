@@ -32,6 +32,57 @@ static constexpr StationID A{0}, B{1}, C{2}, D{3};
 static constexpr StateTicks NOW{64000};
 using Action = VehicleCargoList::MoveToAction;
 
+TEST_CASE("Periodic Work leases settle once at partial and full boundaries", "[passenger][admission][budget]")
+{
+	for (size_t allowance : {size_t{1}, size_t{8192}, size_t{65535}, size_t{65536}, size_t{1048576}}) {
+		size_t event_work = allowance, global_work = allowance, event_queries = 128, tick_queries = 32;
+		const auto reservation = std::min(allowance, size_t{65536});
+		{
+			PassengerQueryAdmission admission(event_work, global_work, event_queries, tick_queries);
+			REQUIRE(admission); CHECK(admission.Reserved() == reservation);
+			CHECK(admission.TimedAllowance() + reservation / 4 == reservation);
+			admission.Charge(admission.TimedAllowance());
+			CHECK(admission.ScheduleAllowance() == reservation / 4);
+			admission.Charge(admission.ScheduleAllowance()); CHECK(admission.Used() == reservation);
+		}
+		CHECK(event_work == allowance - reservation); CHECK(global_work == event_work);
+		CHECK(event_queries == 127); CHECK(tick_queries == 31);
+	}
+	size_t event_work = 65536, global_work = 1048576, event_queries = 128, tick_queries = 32;
+	try {
+		PassengerQueryAdmission admission(event_work, global_work, event_queries, tick_queries);
+		admission.Charge(3); throw 1;
+	} catch (int) {}
+	CHECK(event_work == 65533); CHECK(global_work == 1048573);
+	CHECK(event_queries == 127); CHECK(tick_queries == 31);
+	{ PassengerQueryAdmission early_return(event_work, global_work, event_queries, tick_queries); }
+	CHECK(event_work == 65533); CHECK(global_work == 1048573); CHECK(tick_queries == 30);
+}
+
+TEST_CASE("Periodic admission distinguishes fair share and event global boundaries", "[passenger][admission][budget][fairshare]")
+{
+	using Rejection = PassengerQueryAdmission::Rejection;
+	for (auto reason : {Rejection::EventQueries, Rejection::TickQueries, Rejection::EventWork, Rejection::GlobalWork, Rejection::FairShare}) {
+		size_t event_work = 65536, global_work = 131072, event_queries = 128, tick_queries = 32;
+		if (reason == Rejection::EventQueries) event_queries = 0;
+		if (reason == Rejection::TickQueries) tick_queries = 0;
+		if (reason == Rejection::EventWork) event_work = 0;
+		if (reason == Rejection::GlobalWork) global_work = 0;
+		auto before = std::tuple(event_work, global_work, event_queries, tick_queries);
+		PassengerQueryAdmission admission(event_work, global_work, event_queries, tick_queries, reason == Rejection::FairShare ? global_work : 0);
+		CHECK_FALSE(admission); CHECK(admission.GetRejection() == reason);
+		CHECK(std::tuple(event_work, global_work, event_queries, tick_queries) == before);
+	}
+	size_t event_work = 1048576, global_work = 131073, event_queries = 128, tick_queries = 3;
+	{
+		PassengerQueryAdmission tail(event_work, global_work, event_queries, tick_queries, 131072, 2);
+		REQUIRE(tail); CHECK(tail.Reserved() == 1); tail.Charge(1);
+	}
+	CHECK(global_work == 131072); CHECK(tick_queries == 2);
+	PassengerQueryAdmission protected_slots(event_work, global_work, event_queries, tick_queries, 0, 2);
+	CHECK(protected_slots.GetRejection() == Rejection::FairShare);
+}
+
 static Order ActiveStop(StationID station, TimetableTicks travel = 10000, TimetableTicks wait = 100)
 {
 	Order order;
@@ -1099,7 +1150,7 @@ TEST_CASE("Routing state and leg have an independent versioned save round trip",
 	AutoRestoreBackup features{_sl_xv_feature_versions, AutoRestoreBackupNoNewValueTag{}};
 	AutoRestoreBackup static_features{_sl_xv_feature_static_versions, AutoRestoreBackupNoNewValueTag{}};
 	SlXvSetStaticCurrentVersions(); _sl_xv_feature_versions = _sl_xv_feature_static_versions;
-	REQUIRE(_sl_xv_feature_versions[XSLFI_PASSENGER_JOURNEY_ROUTING] == 3);
+	REQUIRE(_sl_xv_feature_versions[XSLFI_PASSENGER_JOURNEY_ROUTING] == 4);
 	auto packet = std::unique_ptr<CargoPacket>(fixture.Packet()); fixture.Plan(*packet);
 	PassengerRoutingMode expected = PassengerRoutingMode::Journey;
 	SECTION("Journey survives") {}
@@ -2039,4 +2090,26 @@ TEST_CASE("Ordinary lateness does not invalidate a timetabled ride and actual de
 	PassengerJourneyActiveContext late(&train, B);
 	CHECK(late.Decide(*packet, PAX, false, OrderUnloadType::UnloadIfPossible) == Action::Keep);
 	CHECK(packet->GetPassengerJourney().arrival == NOW + 1200);
+}
+
+TEST_CASE("Periodic hot origins preserve waiting station Work and query slots", "[passenger][periodic][admission][fairshare][determinism]")
+{
+	ActiveFixture fixture; _settings_game.linkgraph.passenger_journey_periodic = true;
+	ActiveTrain train({ActiveStop(A, 10, 1), ActiveStop(B, 10, 1), ActiveStop(C, 10, 1), ActiveStop(D, 10, 1)});
+	ResetPassengerServiceDatabase(); auto &db = GetPassengerServiceDatabase();
+	for (int i = 0; i < 128 && db.IsBuilding(); ++i) db.Tick(); REQUIRE_FALSE(db.IsBuilding());
+	for (StationID origin : {A, B, C}) { fixture.Waiting(origin).Append(fixture.Packet(1), D); DueLoadingVehicle(origin); }
+	PreparePassengerJourneyLoading();
+	size_t hot = 0;
+	for (size_t i = 0; i < 100; ++i) {
+		auto packet = std::unique_ptr<CargoPacket>(fixture.Packet(1)); hot += PassengerJourneyActiveContext(nullptr, A).PlanWaiting(*packet, PAX, D);
+	}
+	CHECK(hot == PassengerQueryAdmission::QUERIES_PER_TICK - 4);
+	for (StationID origin : {B, C}) {
+		auto packet = std::unique_ptr<CargoPacket>(fixture.Packet(1)); REQUIRE(PassengerJourneyActiveContext(nullptr, origin).PlanWaiting(*packet, PAX, D));
+	}
+	CHECK(GetPassengerJourneyTickDiagnostic().fair_share_claims == 3);
+	CHECK(GetPassengerJourneyTickDiagnostic().admission.maximum_tick_queries <= PassengerQueryAdmission::QUERIES_PER_TICK);
+	CHECK(GetPassengerJourneyTickDiagnostic().admission.used <= 1048576);
+	CleanLoadingVehicles();
 }

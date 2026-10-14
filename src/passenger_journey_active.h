@@ -9,6 +9,7 @@
 
 #include "cargopacket.h"
 #include "passenger_journey_planner.h"
+#include "passenger_query_admission.h"
 
 bool IsPassengerJourneyRoutingEnabled(CargoType cargo);
 uint64_t PassengerJourneyServiceSignature(const OrderList &orders, CargoType cargo, size_t *budget = nullptr);
@@ -42,6 +43,21 @@ enum class PassengerScheduleInvalidation : uint8_t { ServiceMissing, Incarnation
 void RecordPassengerScheduleInvalidation(PassengerScheduleInvalidation reason);
 
 struct PassengerJourneyTickDiagnostic {
+	struct Admission {
+		struct RetrySample { CargoType cargo; StationID origin, destination; uint64_t attempts; };
+		std::array<RetrySample, 16> retry_samples{};
+		size_t retry_sample_count = 0;
+		uint64_t accepted = 0, rejected = 0, reserved = 0, used = 0, returned = 0;
+		uint64_t timed_allocated = 0, schedule_allocated = 0, timed_used = 0, schedule_used = 0;
+		uint64_t work_stopped = 0, work_no_route = 0, schedule_rescued = 0;
+		uint64_t complete_unproved = 0, incomplete_work = 0, missing_published = 0, missing_building = 0;
+		uint64_t retries = 0, maximum_od_attempts = 0, retry_tracking_evictions = 0;
+		uint64_t maximum_tick_queries = 0, maximum_tick_work = 0;
+		std::array<uint64_t, static_cast<size_t>(PassengerQueryAdmission::Rejection::End)> rejections{};
+		std::array<uint64_t, 65> tick_queries{}; ///< Exact OD admission counts; zero includes idle simulation ticks.
+		std::array<uint64_t, 65> tick_work{}; ///< 16384-Work upper bounds, including idle simulation ticks.
+	} admission;
+	size_t work_recovered_boarded = 0, work_recovered_delivered = 0; ///< Actual moves of ODs that have experienced Timed Work exhaustion.
 	std::array<size_t, static_cast<size_t>(PassengerGraphFailure::End)> graph_failures{};
 	std::array<size_t, static_cast<size_t>(PassengerPredictionStop::End)> prediction_stops{};
 	PassengerGraphFailureDetail first_graph_failure;
@@ -185,7 +201,7 @@ class PassengerJourneyActiveContext {
 	StationID station;
 	std::map<std::tuple<CargoType, StationID, Ticks>, std::unique_ptr<Snapshot>> snapshots;
 	std::map<CargoType, PassengerJourneyBoardingContext> continuation;
-	struct PeriodicWaiting { std::optional<PassengerJourneyExecution> ride; bool deferred; bool provisional; };
+	struct PeriodicWaiting { std::optional<PassengerJourneyExecution> ride; bool deferred; bool provisional; bool work_exhausted; };
 	std::map<std::tuple<CargoType, StationID, StateTicks, OrderListID>, PeriodicWaiting> periodic_waiting;
 	PassengerOdFallbackContext fallback;
 	size_t work_left = 4194304;

@@ -21,6 +21,9 @@
 #include "safeguards.h"
 
 namespace {
+	static constexpr size_t PERIODIC_QUERY_LIMIT = PassengerQueryAdmission::QUERIES_PER_TICK;
+	static constexpr size_t PERIODIC_TIMED_WORK = 49152;
+	static constexpr size_t PERIODIC_SCHEDULE_PROTECTION = PassengerQueryAdmission::SCHEDULE_PROTECTION;
 	static constexpr size_t FAIR_GRAPH_WORK = 2 * 1024 * 1024, FAIR_QUERY_WORK = 128 * 1024;
 	struct JourneyFairShare {
 		StationID station = StationID::Invalid();
@@ -30,6 +33,7 @@ namespace {
 		StateTicks tick = INVALID_STATE_TICKS;
 		size_t graph = 16 * 1024 * 1024;
 		size_t query = 1024 * 1024;
+		size_t periodic_queries = PERIODIC_QUERY_LIMIT;
 		size_t snapshots = 16;
 		size_t od_fallback = 4 * 1024 * 1024;
 		PassengerJourneyTickDiagnostic diagnostic;
@@ -39,6 +43,8 @@ namespace {
 	static JourneyTickBudget tick_budget;
 	static PassengerJourneyTickDiagnostic total_diagnostic;
 	static size_t journey_timer_depth = 0;
+	/* Bounded local observations only; losing an entry never changes retry or admission. */
+	static std::map<std::tuple<CargoType, StationID, StationID>, uint64_t> periodic_attempts;
 	struct CounterTimer {
 		uint64_t &counter;
 		std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
@@ -70,6 +76,23 @@ namespace {
 	static size_t resident_distance_bytes = 0;
 	static void AddDiagnostic(PassengerJourneyTickDiagnostic &a, const PassengerJourneyTickDiagnostic &b)
 	{
+		a.work_recovered_boarded += b.work_recovered_boarded; a.work_recovered_delivered += b.work_recovered_delivered;
+		a.admission.accepted += b.admission.accepted; a.admission.rejected += b.admission.rejected;
+		a.admission.reserved += b.admission.reserved; a.admission.used += b.admission.used; a.admission.returned += b.admission.returned;
+		a.admission.timed_allocated += b.admission.timed_allocated; a.admission.schedule_allocated += b.admission.schedule_allocated;
+		a.admission.timed_used += b.admission.timed_used; a.admission.schedule_used += b.admission.schedule_used;
+		a.admission.work_stopped += b.admission.work_stopped; a.admission.work_no_route += b.admission.work_no_route;
+		a.admission.schedule_rescued += b.admission.schedule_rescued;
+		a.admission.complete_unproved += b.admission.complete_unproved; a.admission.incomplete_work += b.admission.incomplete_work;
+		a.admission.missing_published += b.admission.missing_published; a.admission.missing_building += b.admission.missing_building;
+		a.admission.retries += b.admission.retries; a.admission.retry_tracking_evictions += b.admission.retry_tracking_evictions;
+		for (size_t i = 0; i < b.admission.retry_sample_count && a.admission.retry_sample_count < a.admission.retry_samples.size(); ++i) a.admission.retry_samples[a.admission.retry_sample_count++] = b.admission.retry_samples[i];
+		a.admission.maximum_od_attempts = std::max(a.admission.maximum_od_attempts, b.admission.maximum_od_attempts);
+		a.admission.maximum_tick_queries = std::max(a.admission.maximum_tick_queries, b.admission.maximum_tick_queries);
+		a.admission.maximum_tick_work = std::max(a.admission.maximum_tick_work, b.admission.maximum_tick_work);
+		for (size_t i = 0; i < a.admission.rejections.size(); ++i) a.admission.rejections[i] += b.admission.rejections[i];
+		for (size_t i = 0; i < a.admission.tick_queries.size(); ++i) a.admission.tick_queries[i] += b.admission.tick_queries[i];
+		for (size_t i = 0; i < a.admission.tick_work.size(); ++i) a.admission.tick_work[i] += b.admission.tick_work[i];
 		for (size_t i = 0; i < a.graph_failures.size(); ++i) a.graph_failures[i] += b.graph_failures[i];
 		for (size_t i = 0; i < a.prediction_stops.size(); ++i) a.prediction_stops[i] += b.prediction_stops[i];
 		if (a.first_graph_failure.reason == PassengerGraphFailure::None) a.first_graph_failure = b.first_graph_failure;
@@ -256,6 +279,8 @@ void RecordPassengerJourneySimulationTick(uint64_t microseconds)
 {
 	auto &diagnostic = TickBudget().diagnostic;
 	++diagnostic.simulation_ticks;
+	++diagnostic.admission.tick_queries[std::min<uint64_t>(64, diagnostic.admission.accepted)];
+	++diagnostic.admission.tick_work[std::min<uint64_t>(64, (diagnostic.admission.used + 16383) / 16384)];
 	diagnostic.simulation_microseconds += microseconds;
 	diagnostic.maximum_simulation_microseconds = std::max(diagnostic.maximum_simulation_microseconds, microseconds);
 	++diagnostic.simulation_histogram[std::min<size_t>(2047, microseconds / 1000)];
@@ -270,7 +295,7 @@ PassengerJourneyWorkTimer::~PassengerJourneyWorkTimer()
 	assert(journey_timer_depth > 0);
 	if (--journey_timer_depth == 0) TickBudget().diagnostic.journey_microseconds += (std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now().time_since_epoch()).count() - this->started) / 1000;
 }
-void PreparePassengerJourneyLoading() { PassengerJourneyWorkTimer timer; if (!_settings_game.linkgraph.passenger_journey_periodic) InitializeFairShares(TickBudget()); }
+void PreparePassengerJourneyLoading() { PassengerJourneyWorkTimer timer; InitializeFairShares(TickBudget()); }
 void ReleasePassengerJourneyWaitingShare(StationID station)
 {
 	if (!_settings_game.linkgraph.passenger_journey_routing) return;
@@ -287,7 +312,7 @@ PassengerJourneyTickDiagnostic GetPassengerJourneyTotalDiagnostic()
 	AddDiagnostic(result, tick_budget.diagnostic);
 	return result;
 }
-void ResetPassengerJourneyDiagnostic() { total_diagnostic = {}; tick_budget.diagnostic = {}; GetPassengerServiceDatabase().ResetDiagnostic(); }
+void ResetPassengerJourneyDiagnostic() { total_diagnostic = {}; tick_budget.diagnostic = {}; periodic_attempts.clear(); GetPassengerServiceDatabase().ResetDiagnostic(); }
 void ClearPassengerOdFallbackCache()
 {
 	resident_distances.clear(); resident_distance_bytes = 0; resident_bindings.clear(); resident_binding_bytes = 0;
@@ -315,6 +340,10 @@ void RecordPassengerJourneyMovement(PassengerJourneyMovement movement, uint coun
  * deferred Legacy packets. Neither unknown-OD CargoDist nor reservations count. */
 void RecordPassengerJourneyMovement(PassengerJourneyMovement movement, const CargoPacket &packet, uint count)
 {
+	if (packet.HasExhaustedPassengerWork()) {
+		if (movement == PassengerJourneyMovement::Board) TickBudget().diagnostic.work_recovered_boarded += count;
+		if (movement == PassengerJourneyMovement::Deliver) TickBudget().diagnostic.work_recovered_delivered += count;
+	}
 	if (movement == PassengerJourneyMovement::Deliver && packet.HasUsedPassengerSchedule() && _settings_game.linkgraph.passenger_journey_routing && Station::IsValidID(packet.GetPassengerDestination())) TickBudget().diagnostic.schedule_assisted_delivered_passengers += count;
 	if (movement == PassengerJourneyMovement::Board && packet.GetPassengerArrivingService() != OrderListID::Invalid()) {
 		auto &d = TickBudget().diagnostic;
@@ -593,6 +622,7 @@ bool PassengerJourneyActiveContext::PlanWaiting(CargoPacket &packet, CargoType c
 		auto cached = this->periodic_waiting.find(key);
 		if (cached != this->periodic_waiting.end()) {
 			++TickBudget().diagnostic.query_cache_hits;
+			if (cached->second.work_exhausted) packet.MarkPassengerWorkExhaustion();
 			if (!cached->second.ride) {
 				if (cached->second.deferred) { CountJourneyDeferral(PassengerJourneyFallbackReason::QueryWork); packet.DeferPassengerJourney(this->station, _state_ticks); }
 				return false;
@@ -601,27 +631,80 @@ bool PassengerJourneyActiveContext::PlanWaiting(CargoPacket &packet, CargoType c
 			return true;
 		}
 		if (this->periodic_waiting.size() >= 128) return false;
-		if (!this->AdmitQuery()) { CountJourneyDeferral(this->failure); packet.DeferPassengerJourney(this->station, _state_ticks); return false; }
+		auto &global = TickBudget();
+		JourneyFairShare *ticket = nullptr;
+		if (this->vehicle == nullptr) for (auto &share : global.fair_shares) {
+			if (share.station == this->station && !share.claimed) { ticket = &share; break; }
+		}
+		const size_t protected_shares = UnclaimedShares(global) - (ticket != nullptr);
+		PassengerQueryAdmission admission(this->work_left, global.query, this->queries_left, global.periodic_queries,
+				protected_shares * FAIR_QUERY_WORK, protected_shares * 2);
+		auto &diagnostic = global.diagnostic.admission;
+		if (!admission) {
+			++diagnostic.rejected; ++diagnostic.rejections[static_cast<size_t>(admission.GetRejection())];
+			this->failure = admission.GetRejection() == PassengerQueryAdmission::Rejection::EventQueries || admission.GetRejection() == PassengerQueryAdmission::Rejection::TickQueries ?
+					PassengerJourneyFallbackReason::QueryLimit : PassengerJourneyFallbackReason::QueryWork;
+			this->periodic_waiting.emplace(key, PeriodicWaiting{{}, true, false, false});
+			CountJourneyDeferral(this->failure); packet.DeferPassengerJourney(this->station, _state_ticks); return false;
+		}
+		if (ticket != nullptr) { ticket->claimed = true; ++global.diagnostic.fair_share_claims; }
+		++global.diagnostic.queries; ++diagnostic.accepted;
+		diagnostic.maximum_tick_queries = std::max<uint64_t>(diagnostic.maximum_tick_queries, PERIODIC_QUERY_LIMIT - global.periodic_queries);
+		diagnostic.reserved += admission.Reserved();
+		/* Destroyed before the lease returns its unused Work. Every exit, including
+		 * exceptions and missing publications, records exactly one settlement. */
+		struct Settlement {
+			PassengerQueryAdmission &admission;
+			PassengerJourneyTickDiagnostic &diagnostic;
+			~Settlement()
+			{
+				auto &a = this->diagnostic.admission;
+				a.used += this->admission.Used(); a.returned += this->admission.Returned();
+				a.maximum_tick_work = std::max(a.maximum_tick_work, a.used);
+				this->diagnostic.query_work += this->admission.Used();
+			}
+		} settlement{admission, global.diagnostic};
+		auto retry_key = std::tuple(cargo, this->station, packet.GetPassengerDestination());
+		if (!periodic_attempts.contains(retry_key) && periodic_attempts.size() >= 4096) { periodic_attempts.erase(periodic_attempts.begin()); ++diagnostic.retry_tracking_evictions; }
+		auto attempts = ++periodic_attempts[retry_key]; diagnostic.retries += attempts > 1;
+		if (attempts > 1 && diagnostic.retry_sample_count < diagnostic.retry_samples.size()) diagnostic.retry_samples[diagnostic.retry_sample_count++] = {cargo, this->station, packet.GetPassengerDestination(), attempts};
+		diagnostic.maximum_od_attempts = std::max(diagnostic.maximum_od_attempts, attempts);
 		auto limits = ActiveJourneyLimits(); limits.candidates = 8;
+		limits.work = std::min(PERIODIC_TIMED_WORK, admission.TimedAllowance(PERIODIC_SCHEDULE_PROTECTION)); diagnostic.timed_allocated += limits.work;
 		auto &db = GetPassengerServiceDatabase();
 		auto plan = db.Plan(cargo, this->station, packet.GetPassengerDestination(), ready, limits, ActiveJourneyEvaluation(), excluded);
+		admission.Charge(plan.work); diagnostic.timed_used += plan.work;
+		const bool work_stopped = plan.reason == PassengerPeriodicPlan::Reason::Work;
+		diagnostic.work_stopped += work_stopped;
+		diagnostic.complete_unproved += plan.ride.has_value() && plan.deferred;
+		diagnostic.incomplete_work += work_stopped && !plan.ride;
+		const bool missing = plan.reason == PassengerPeriodicPlan::Reason::OriginMissing || plan.reason == PassengerPeriodicPlan::Reason::DestinationMissing;
+		if (missing) {
+			if (db.IsBuilding()) { ++diagnostic.missing_building; plan.deferred = true; }
+			else ++diagnostic.missing_published;
+		}
 		if (plan.deferred) ++TickBudget().diagnostic.timed_budget_deferred;
 		/* Timed winners always take priority. The two searches share the admitted
 		 * work envelope; cache hits replay the same logical work as cold peers. */
-		if (!plan.ride) {
-			auto estimated_limits = limits; estimated_limits.work -= std::min(limits.work, plan.work);
+		if (!plan.ride && !missing) {
+			auto estimated_limits = limits; estimated_limits.work = admission.ScheduleAllowance();
+			diagnostic.schedule_allocated += estimated_limits.work;
 			auto estimated = db.PlanEstimated(cargo, this->station, packet.GetPassengerDestination(), ready, estimated_limits, ActiveJourneyEvaluation(), excluded);
+			admission.Charge(estimated.work); diagnostic.schedule_used += estimated.work;
 			if (estimated.ride) {
 				estimated.ride->planned_at = _state_ticks; estimated.ride->timed_deferred = plan.deferred;
 				plan.ride = estimated.ride;
+				diagnostic.schedule_rescued += work_stopped;
 			} else plan.deferred |= estimated.deferred;
 		}
+		diagnostic.work_no_route += work_stopped && !plan.ride;
+		if (work_stopped) packet.MarkPassengerWorkExhaustion();
 		/* A full Timed path may be selected while search optimality is unproved.
 		 * Preserve the query status in this event cache; only absence of a usable
 		 * ride defers the packet. Persistent execution still stores one ordinary
 		 * ServiceIntent, with the same live boarding checks and transfer replan. */
 		const bool provisional = plan.state == PassengerPeriodicPlan::State::Provisional;
-		this->periodic_waiting.emplace(key, PeriodicWaiting{plan.ride, plan.deferred, provisional});
+		this->periodic_waiting.emplace(key, PeriodicWaiting{plan.ride, plan.deferred, provisional, work_stopped});
 		if (!plan.ride) {
 			if (plan.deferred) { CountJourneyDeferral(PassengerJourneyFallbackReason::QueryWork); packet.DeferPassengerJourney(this->station, _state_ticks); }
 			else CountJourneyFallback(GetPassengerServiceDatabase().IsBuilding() ? PassengerJourneyFallbackReason::PredictionIncomplete : PassengerJourneyFallbackReason::NoJourney);

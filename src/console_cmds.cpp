@@ -4891,8 +4891,16 @@ static bool ConPassengerJourneyStats(std::span<std::string_view> argv)
 		std::array<uint64_t, 3> people{}, packets{}, known{};
 		std::array<uint64_t, 3> waiting_modes{};
 		uint64_t available = 0, reserved = 0, deferred = 0, schedule_people = 0, schedule_packets = 0, schedule_waiting = 0;
+		uint64_t known_waiting = 0, aged_waiting = 0, long_intent_waiting = 0;
 		size_t work = 0;
 		bool complete = true;
+		auto inspect_waiting = [&](const CargoPacket *packet, uint count) {
+			if (packet->GetPassengerDestination() == StationID::Invalid()) return;
+			known_waiting += count;
+			if (packet->GetPeriodsInTransit() >= 256) aged_waiting += count;
+			if (packet->GetPassengerRoutingMode() == PassengerRoutingMode::Journey && packet->GetPassengerJourney().kind != PassengerRideKind::VehicleSnapshot &&
+					_state_ticks > packet->GetPassengerJourney().planned_at && _state_ticks.base() - packet->GetPassengerJourney().planned_at.base() >= 4096) long_intent_waiting += count;
+		};
 		auto inspect = [&](const CargoPacket *packet) {
 			if (++work > 16777216) { complete = false; return false; }
 			size_t mode = to_underlying(packet->GetPassengerRoutingMode());
@@ -4914,6 +4922,7 @@ static bool ConPassengerJourneyStats(std::span<std::string_view> argv)
 				const auto reserved_modes = CountReservedPassengerRoutingModes(*station, cargo);
 				for (size_t mode = 0; mode < waiting_modes.size(); ++mode) waiting_modes[mode] += available_modes[mode] + reserved_modes[mode];
 				for (StationCargoList::ConstIterator it(list.Packets()->begin()); it != list.Packets()->end(); ++it) {
+					inspect_waiting(*it, (*it)->Count());
 					if ((*it)->GetPassengerRoutingMode() == PassengerRoutingMode::Journey && IsEstimatedPassengerRide((*it)->GetPassengerJourney().kind)) schedule_waiting += (*it)->Count();
 					if (!inspect(*it)) break;
 				}
@@ -4927,6 +4936,7 @@ static bool ConPassengerJourneyStats(std::span<std::string_view> argv)
 			uint skip = vehicle->cargo.TotalCount() - vehicle->cargo.ReservedCount();
 			for (const CargoPacket *packet : *vehicle->cargo.Packets()) {
 				uint n = std::min<uint>(skip, packet->Count()); skip -= n;
+				inspect_waiting(packet, packet->Count() - n);
 				if (packet->GetPassengerRoutingMode() == PassengerRoutingMode::Journey && IsEstimatedPassengerRide(packet->GetPassengerJourney().kind)) schedule_waiting += packet->Count() - n;
 			}
 			if (!complete) break;
@@ -4938,6 +4948,7 @@ static bool ConPassengerJourneyStats(std::span<std::string_view> argv)
 		uint64_t timed_waiting = waiting_modes[1] > schedule_waiting ? waiting_modes[1] - schedule_waiting : 0;
 		IConsolePrint(CC_DEFAULT, "Waiting routing: timed={}; schedule={}; CargoDist_or_deferred={}; OD_fallback_or_waiting={} people", timed_waiting, schedule_waiting, waiting_modes[0], waiting_modes[2]);
 		IConsolePrint(CC_DEFAULT, "Schedule inventory: people={}; packets={}; waiting={}; timed_waiting={} people", schedule_people, schedule_packets, schedule_waiting, timed_waiting);
+		IConsolePrint(CC_DEFAULT, "Waiting age sample: known_OD_waiting={}; transit_age_ge_256={}; intent_wait_ge_4096={} people (transit age includes travel; intent age resets on replan)", known_waiting, aged_waiting, long_intent_waiting);
 		return true;
 	}
 	if (operation == "reset") { ResetPassengerJourneyDiagnostic(); return true; }
@@ -5056,6 +5067,27 @@ static bool ConPassengerJourneyStats(std::span<std::string_view> argv)
 	}
 	IConsolePrint(CC_DEFAULT, "Active journey {}: applied={} packets/{} passengers; builds={}; static_hits={}; searches={}; OD_hits={}",
 			operation, stats.journeys, stats.passengers, stats.builds, stats.static_cache_hits, stats.queries, stats.query_cache_hits);
+	const auto &admission = stats.admission;
+	IConsolePrint(CC_DEFAULT, "Periodic admission: accepted={}; rejected={}; reserved={}; used={}; returned={}; max_tick_queries={}; max_tick_work={}",
+			admission.accepted, admission.rejected, admission.reserved, admission.used, admission.returned, admission.maximum_tick_queries, admission.maximum_tick_work);
+	static constexpr std::array admission_reasons{"None", "EventQueries", "TickQueries", "EventWork", "GlobalWork", "FairShare"};
+	static_assert(admission_reasons.size() == static_cast<size_t>(PassengerQueryAdmission::Rejection::End));
+	for (size_t i = 1; i < admission_reasons.size(); ++i) IConsolePrint(CC_DEFAULT, "Admission rejected {}: {}", admission_reasons[i], admission.rejections[i]);
+	IConsolePrint(CC_DEFAULT, "Periodic allocation: timed={}; schedule={}; timed_used={}; schedule_used={}",
+			admission.timed_allocated, admission.schedule_allocated, admission.timed_used, admission.schedule_used);
+	IConsolePrint(CC_DEFAULT, "Periodic Work outcomes: stopped={}; no_route={}; schedule_rescued={}; complete_unproved={}; incomplete_work={}; stop_percent={:.3f}; no_route_percent={:.3f}",
+			admission.work_stopped, admission.work_no_route, admission.schedule_rescued, admission.complete_unproved, admission.incomplete_work,
+			admission.accepted == 0 ? 0.0 : 100.0 * admission.work_stopped / admission.accepted,
+			admission.accepted == 0 ? 0.0 : 100.0 * admission.work_no_route / admission.accepted);
+	IConsolePrint(CC_DEFAULT, "Periodic missing: published={}; building={}; retries={}; max_od_attempts={}; tracking_evictions={}",
+			admission.missing_published, admission.missing_building, admission.retries, admission.maximum_od_attempts, admission.retry_tracking_evictions);
+	IConsolePrint(CC_DEFAULT, "Work exhausted OD transport: boarded={}; delivered={} people (all carriers, boarding may repeat)", stats.work_recovered_boarded, stats.work_recovered_delivered);
+	for (size_t i = 0; i < admission.retry_sample_count; ++i) {
+		const auto &sample = admission.retry_samples[i];
+		IConsolePrint(CC_DEFAULT, "Periodic OD retry: cargo={}; origin={}; destination={}; attempts={}", sample.cargo, sample.origin, sample.destination, sample.attempts);
+	}
+	for (size_t i = 0; i < admission.tick_queries.size(); ++i) if (admission.tick_queries[i] != 0) IConsolePrint(CC_DEFAULT, "Periodic tick searches {}: {}", i, admission.tick_queries[i]);
+	for (size_t i = 0; i < admission.tick_work.size(); ++i) if (admission.tick_work[i] != 0) IConsolePrint(CC_DEFAULT, "Periodic tick Work upper {}: {}", i * 16384, admission.tick_work[i]);
 	IConsolePrint(CC_DEFAULT, "Train observations={}; cargo_capable={}; possible_refit={}; predicted={}; inactive={}; excluded_cargo={}; excluded_scope={}; visits={}; omitted_trains_at_least={}; truncated_predictions={} (uncaptured visit count unknown)",
 			stats.trains, stats.cargo_capable, stats.possible_refit, stats.predicted, stats.inactive, stats.excluded_cargo, stats.excluded_scope, stats.visits, stats.omitted_trains, stats.truncated_predictions);
 	IConsolePrint(CC_DEFAULT, "Trip prediction: executions={}; hits={}; logical_work={}; executed_visits={}; predictor_ns={}; cache_bytes={}",

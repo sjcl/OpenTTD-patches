@@ -279,7 +279,8 @@ CargoPacket::CargoPacket(CargoPacketID index, uint16_t count, Money feeder_share
 		passenger_arriving_incarnation(original.passenger_arriving_incarnation),
 		passenger_transport(original.passenger_transport),
 		passenger_interchange_transport(original.passenger_interchange_transport),
-		passenger_schedule_used(original.passenger_schedule_used)
+		passenger_schedule_used(original.passenger_schedule_used),
+		passenger_work_exhausted(original.passenger_work_exhausted)
 {
 	dbg_assert(count != 0);
 	RegisterPassengerJourneyPacket(*this);

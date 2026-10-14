@@ -943,6 +943,81 @@ TEST_CASE("Periodic policies are inert across cold warm evicted and unused cache
 	CHECK(db.GetDiagnostic().builds == 1); CHECK(db.GetDiagnostic().bytes < 4096); CHECK(seeds.Check());
 }
 
+TEST_CASE("Periodic actual Work admission shares packets and caps cheap queries across contexts", "[passenger][periodic][admission][determinism]")
+{
+	Fixture f; f.Train({Stop(A), Stop(D)}); auto &db = f.Build();
+	const bool cached = GENERATE(false, true); db.SetPolicyCacheEnabled(cached); db.SetDepartureIndexEnabled(cached);
+	GameRandomSeedChecker seed;
+	PassengerJourneyActiveContext event(nullptr, A);
+	REQUIRE(event.PlanWaiting(*f.Packet(), PAX, D));
+	auto work = GetPassengerJourneyTickDiagnostic().admission.used; REQUIRE(work < 100);
+	for (int i = 0; i < 100; ++i) REQUIRE(event.PlanWaiting(*f.Packet(), PAX, D));
+	CHECK(GetPassengerJourneyTickDiagnostic().admission.accepted == 1); CHECK(GetPassengerJourneyTickDiagnostic().admission.used == work);
+	for (size_t i = 1; i < PassengerQueryAdmission::QUERIES_PER_TICK; ++i) REQUIRE(PassengerJourneyActiveContext(nullptr, A).PlanWaiting(*f.Packet(), PAX, D));
+	CHECK(GetPassengerJourneyTickDiagnostic().admission.used == work * PassengerQueryAdmission::QUERIES_PER_TICK);
+	CHECK(GetPassengerJourneyTickDiagnostic().admission.reserved == GetPassengerJourneyTickDiagnostic().admission.used + GetPassengerJourneyTickDiagnostic().admission.returned);
+	CHECK(event.GetWorkAllowanceUsed() == work);
+	ResetPassengerJourneyDiagnostic(); db.ClearPolicies();
+	auto *denied = f.Packet(); CHECK_FALSE(PassengerJourneyActiveContext(nullptr, A).PlanWaiting(*denied, PAX, D));
+	CHECK(denied->IsPassengerJourneyDeferred());
+	CHECK(GetPassengerJourneyTickDiagnostic().admission.rejections[static_cast<size_t>(PassengerQueryAdmission::Rejection::TickQueries)] == 1);
+	++_state_ticks; BeginPassengerJourneyTick(); REQUIRE(PassengerJourneyActiveContext(nullptr, A).PlanWaiting(*denied, PAX, D));
+	CHECK(seed.Check());
+}
+
+TEST_CASE("Periodic missing publications charge one Work and retry after publication", "[passenger][periodic][admission][save][determinism]")
+{
+	Fixture f; f.Train({Stop(A), Stop(B)}); Station::CreateAtIndex(D, TileIndex{0}); auto &db = f.Build();
+	auto *missing = f.Packet(); PassengerJourneyActiveContext settled(nullptr, A);
+	CHECK_FALSE(settled.PlanWaiting(*missing, PAX, D));
+	CHECK(GetPassengerJourneyTickDiagnostic().admission.missing_published == 1);
+	CHECK(GetPassengerJourneyTickDiagnostic().admission.used == 1); CHECK(db.GetScheduleDiagnostic().misses == 0);
+	auto *new_line = f.Train({Stop(A), Stop(D)}); db.Invalidate(new_line->orders->index);
+	auto *unpublished = f.Packet(); CHECK_FALSE(PassengerJourneyActiveContext(nullptr, A).PlanWaiting(*unpublished, PAX, D));
+	CHECK(unpublished->IsPassengerJourneyDeferred()); CHECK(GetPassengerJourneyTickDiagnostic().admission.missing_building == 1);
+	auto wire = db.Save(); PassengerServiceDatabase peer; REQUIRE(peer.Load(wire)); peer.FinishLoad(true); CHECK(peer.IsBuilding());
+	f.PublishUpdates(db); BeginPassengerJourneyTick(); REQUIRE(PassengerJourneyActiveContext(nullptr, A).PlanWaiting(*unpublished, PAX, D));
+}
+
+TEST_CASE("Schedule protection rescues an exhausted Timed query and survives packet save split and transport", "[passenger][periodic][admission][schedule][save][determinism]")
+{
+	Fixture f;
+	const bool rescue = GENERATE(false, true);
+	auto *estimated = f.Train({Stop(A, rescue ? 1 : 100, 0), Stop(D, rescue ? 1 : 100, 0)}); estimated->current_order.Free();
+	std::vector<Order> stops; for (int i = 0; i < 30; ++i) { stops.push_back(Stop(A, 1, 0)); stops.push_back(Stop(B, 1, 0)); }
+	for (int n = 0; n < 3; ++n) {
+		auto *line = f.Train(stops); for (int i = 1; i < 170; ++i) {
+			auto *vehicle = Vehicle::Create<PeriodicTrain>(line); vehicle->LoadAt(1); vehicle->current_order_time = i % 50;
+		}
+	}
+	f.Train({Stop(B, 1000, 0), Stop(D, 10, 0)}); auto &db = f.Build();
+	const bool cached = GENERATE(false, true); db.SetPolicyCacheEnabled(cached); db.SetDepartureIndexEnabled(cached);
+	PassengerJourneyActiveContext context(nullptr, A); auto *packet = f.Packet(), *shared = f.Packet();
+	auto found = context.PlanWaiting(*packet, PAX, D);
+	CAPTURE(GetPassengerJourneyTickDiagnostic().admission.timed_used, GetPassengerJourneyTickDiagnostic().admission.schedule_used);
+	CHECK(found == rescue); CHECK(context.PlanWaiting(*shared, PAX, D) == rescue);
+	const auto &d = GetPassengerJourneyTickDiagnostic();
+	CAPTURE(d.admission.timed_used, d.admission.schedule_used, packet->GetPassengerJourney().kind);
+	CHECK(d.admission.timed_used == 49152); CHECK(d.admission.schedule_allocated == 16384);
+	CHECK(d.admission.schedule_rescued == (rescue ? 1 : 0)); CHECK(d.admission.work_stopped == 1); CHECK(d.admission.work_no_route == (rescue ? 0 : 1));
+	CHECK(IsEstimatedPassengerRide(packet->GetPassengerJourney().kind) == rescue); CHECK(packet->HasExhaustedPassengerWork()); CHECK(shared->HasExhaustedPassengerWork());
+	if (!rescue) { CHECK(d.admission.used == 65536); CHECK(packet->IsPassengerJourneyDeferred()); }
+	CHECK(context.GetWorkAllowanceUsed() == d.admission.used); CHECK(d.admission.used == d.admission.timed_used + d.admission.schedule_used);
+	CHECK(d.admission.used + d.admission.returned == 65536);
+	AutoRestoreBackup version{_sl_version, SAVEGAME_VERSION};
+	AutoRestoreBackup features{_sl_xv_feature_versions, AutoRestoreBackupNoNewValueTag{}};
+	AutoRestoreBackup static_features{_sl_xv_feature_static_versions, AutoRestoreBackupNoNewValueTag{}};
+	SlXvSetStaticCurrentVersions(); _sl_xv_feature_versions = _sl_xv_feature_static_versions;
+	auto *loaded = CargoPacket::Create(); REQUIRE_FALSE(SlTestSaveLoadTable(packet, loaded, GetCargoPacketDesc()).empty());
+	CHECK(loaded->HasExhaustedPassengerWork()); auto *split = loaded->Split(3); REQUIRE(split); CHECK(split->HasExhaustedPassengerWork());
+	loaded->FallbackPassengerJourney(A, NOW); CHECK(loaded->HasExhaustedPassengerWork());
+	RecordPassengerJourneyMovement(PassengerJourneyMovement::Board, *loaded, 7);
+	RecordPassengerJourneyMovement(PassengerJourneyMovement::Deliver, *split, 3);
+	CHECK(d.work_recovered_boarded == 7); CHECK(d.work_recovered_delivered == 3);
+	_sl_xv_feature_versions[XSLFI_PASSENGER_JOURNEY_ROUTING] = 3;
+	auto *old = CargoPacket::Create(); REQUIRE_FALSE(SlTestSaveLoadTable(packet, old, GetCargoPacketDesc()).empty()); CHECK_FALSE(old->HasExhaustedPassengerWork());
+}
+
 TEST_CASE("Periodic local invalidation preserves unrelated published services", "[passenger][periodic][determinism]")
 {
 	Fixture f; auto *one = f.Train({Stop(A), Stop(B)}); auto *two = f.Train({Stop(C), Stop(D)});

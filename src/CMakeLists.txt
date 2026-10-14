@@ -73,6 +73,7 @@ add_files(
     passenger_journey_schedule.cpp
     passenger_journey_schedule.h
     passenger_journey_active.h
+    passenger_query_admission.h
     passenger_journey_type.h
     aircraft.h
     aircraft_cmd.cpp

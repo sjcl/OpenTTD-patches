@@ -89,6 +89,7 @@ private:
 	PassengerTransportKind passenger_transport = PassengerTransportKind::None; ///< Last carrier; survives next-intent staging.
 	PassengerTransportKind passenger_interchange_transport = PassengerTransportKind::None; ///< Carrier before the next actual boarding.
 	bool passenger_schedule_used = false; ///< A physically loaded schedule carrier was observed at an arrival.
+	bool passenger_work_exhausted = false; ///< This OD has experienced Timed Work exhaustion; observation only, retained through replanning.
 
 	/** Cargo packet flag bits in CargoPacket::flags. */
 	enum CargoPacketFlags {
@@ -132,6 +133,8 @@ public:
 	PassengerTransportKind GetPassengerTransport() const { return this->passenger_transport; }
 	PassengerTransportKind GetPassengerInterchangeTransport() const { return this->passenger_interchange_transport; }
 	bool HasUsedPassengerSchedule() const { return this->passenger_schedule_used; }
+	bool HasExhaustedPassengerWork() const { return this->passenger_work_exhausted; }
+	void MarkPassengerWorkExhaustion() { this->passenger_work_exhausted = true; }
 	void SetPassengerTransport(PassengerTransportKind kind) { this->passenger_transport = kind; }
 	void SetPassengerInterchange(StateTicks ready, OrderListID arriving, uint64_t incarnation = 0) { this->passenger_interchange_ready = ready; this->passenger_arriving_service = arriving; this->passenger_arriving_incarnation = incarnation; this->passenger_interchange_transport = this->passenger_transport; }
 	void SetPassengerVia(StationID via) { this->passenger_via = via; }
@@ -152,7 +155,8 @@ public:
 				this->passenger_legacy_hop == other.passenger_legacy_hop && this->passenger_retry_station == other.passenger_retry_station &&
 				this->passenger_retry_after == other.passenger_retry_after && this->passenger_interchange_ready == other.passenger_interchange_ready &&
 				this->passenger_arriving_service == other.passenger_arriving_service && this->passenger_arriving_incarnation == other.passenger_arriving_incarnation && this->passenger_transport == other.passenger_transport &&
-				this->passenger_interchange_transport == other.passenger_interchange_transport && this->passenger_schedule_used == other.passenger_schedule_used;
+				this->passenger_interchange_transport == other.passenger_interchange_transport && this->passenger_schedule_used == other.passenger_schedule_used &&
+				this->passenger_work_exhausted == other.passenger_work_exhausted;
 	}
 
 	/**

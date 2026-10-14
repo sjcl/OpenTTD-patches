@@ -42,29 +42,29 @@ load_game(legacy "${LEGACY_SAVE}" true 0 false
 if(NOT EXISTS "${WORK_DIR}/enabled.sav")
     message(FATAL_ERROR "Active routing current save was not written")
 endif()
-load_game(enabled "${WORK_DIR}/enabled.sav" false 3 true
+load_game(enabled "${WORK_DIR}/enabled.sav" false 4 true
     "save \"${WORK_DIR}/without-window\"")
-load_game(window "${WORK_DIR}/enabled.sav" false 3 true
+load_game(window "${WORK_DIR}/enabled.sav" false 4 true
     "show_station_window 0\nsave \"${WORK_DIR}/with-window\"")
 file(SHA256 "${WORK_DIR}/without-window.sav" without_window)
 file(SHA256 "${WORK_DIR}/with-window.sav" with_window)
 if(NOT without_window STREQUAL with_window)
     message(FATAL_ERROR "Opening the station GUI changed the saved game state")
 endif()
-load_game(diagnostics "${WORK_DIR}/enabled.sav" false 3 true
+load_game(diagnostics "${WORK_DIR}/enabled.sav" false 4 true
     "passenger_journey_stats total\npassenger_journey_stats tick\npassenger_journey_stats inventory\ndump_linkgraph_jobs\npassenger_journey_stats reset\nsave \"${WORK_DIR}/with-diagnostics\"")
 file(SHA256 "${WORK_DIR}/with-diagnostics.sav" with_diagnostics)
 if(NOT without_window STREQUAL with_diagnostics)
     message(FATAL_ERROR "Reading/resetting passenger diagnostics changed the saved game state")
 endif()
-load_game(planned "${WORK_DIR}/enabled.sav" false 3 true
+load_game(planned "${WORK_DIR}/enabled.sav" false 4 true
     "show_station_window 0\nsave \"${WORK_DIR}/planned-window\""
     "station_gui_sort_by = 3\nstation_gui_sort_order = 1\nstation_gui_group_order = 5\n")
 file(SHA256 "${WORK_DIR}/planned-window.sav" planned_window)
 if(NOT without_window STREQUAL planned_window)
     message(FATAL_ERROR "Changing station GUI grouping/sorting/planned mode changed the saved game state")
 endif()
-load_game(disable "${WORK_DIR}/enabled.sav" false 3 true
+load_game(disable "${WORK_DIR}/enabled.sav" false 4 true
     "setting ${setting} false\nsave \"${WORK_DIR}/disabled\"")
-load_game(disabled "${WORK_DIR}/disabled.sav" true 3 false "")
+load_game(disabled "${WORK_DIR}/disabled.sav" true 4 false "")
 message(STATUS "Active routing legacy migration, setting round trips, afterload hook and GUI state purity passed")
