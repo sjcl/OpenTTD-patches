@@ -24,6 +24,7 @@
 #include "passenger_test_stations.h"
 #include "passenger_index_allocations.h"
 #include <iostream>
+#include <chrono>
 
 extern SaveLoadVersion _sl_version;
 extern std::vector<uint8_t> SlTestSaveLoadTable(void *, void *, const NamedSaveLoadTable &);
@@ -2309,4 +2310,86 @@ TEST_CASE("Precomputed active journeys bypass OD admission and survive partial-b
 		peer.TickPrecomputed(1); db.TickPrecomputed(1);
 	}
 	CHECK(peer.Save() == db.Save());
+}
+
+TEST_CASE("Precomputed waiting index excludes unrelated packets and preserves partial reservations", "[passenger][precomputed][boarding][cargo]")
+{
+	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = true;
+	auto *train = f.Train({Stop(A), Stop(B), Stop(D)});
+	auto *other = f.Train({Stop(A), Stop(C), Stop(D)});
+	auto &db = f.Build(); for (int i = 0; i < 100; ++i) db.TickPrecomputed();
+	StationCargoList waiting; PassengerJourneyLoadingContext loading;
+	auto make = [&](const Vehicle *v, uint16_t count, uint16_t age) {
+		auto *packet = CargoPacket::Create(count, age, A, TileIndex{0}, Money{17}); REQUIRE(packet->SetPassengerDestination(PAX, D));
+		const auto *service = db.Get(v->orders->index); REQUIRE(service != nullptr);
+		PassengerJourneyExecution ride; ride.service = service->id; ride.signature = service->incarnation; ride.generation = service->generation;
+		ride.boarding = A; ride.alighting = D; ride.boarding_order = 0; ride.alighting_order = 2;
+		ride.kind = PassengerRideKind::EstimatedServiceIntent; ride.not_before = ride.planned_at = NOW; ride.waiting_limit = 1000;
+		packet->SetPassengerJourney(ride, B); waiting.Append(packet, B); return packet;
+	};
+	for (int i = 0; i < 5000; ++i) make(other, 1, i);
+	auto *target = make(train, 20, 6000); CargoPacketID target_id = target->index;
+	REQUIRE(waiting.HasCargoFor(std::array{B, D}, train, &loading, PAX));
+	CHECK(waiting.BoardingCandidatesInspected() == 1);
+	const uint before = waiting.TotalCount();
+	CHECK(waiting.Reserve(7, &train->cargo, std::array{B, D}, TileIndex{0}, train, &loading) == 7);
+	CHECK(waiting.TotalCount() == before); CHECK(waiting.ReservedCount() == 7);
+	CHECK(CargoPacket::Get(target_id)->Count() == 13);
+	CHECK(CargoPacket::Get(target_id)->GetPassengerJourney().kind == PassengerRideKind::EstimatedServiceIntent);
+	CHECK(waiting.BoardingCandidatesInspected() == 2);
+	CHECK(train->cargo.Return(7, &waiting, B, TileIndex{0}, PAX) == 7);
+	CHECK(waiting.ReservedCount() == 0); CHECK(waiting.TotalCount() == before);
+	CHECK(waiting.Load(20, &train->cargo, std::array{B, D}, TileIndex{0}, train, &loading) == 20);
+	CHECK(waiting.AvailableCount() == 5000); CHECK(train->cargo.StoredCount() == 20);
+	CHECK(waiting.BoardingCandidatesInspected() <= 4);
+	CHECK_FALSE(waiting.HasCargoFor(std::array{B, D}, train, &loading, PAX));
+}
+
+TEST_CASE("Precomputed waiting wake queue and identical service binding are live validated", "[passenger][precomputed][boarding]")
+{
+	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = true;
+	auto *first = f.Train({Stop(A), Stop(D)}), *second = f.Train({Stop(A), Stop(D)});
+	auto &db = f.Build(); for (int i = 0; i < 100; ++i) db.TickPrecomputed();
+	auto *packet = f.Packet(); auto plan = db.PlanPrecomputed(PAX, A, D, NOW + 10); REQUIRE(plan.ride);
+	/* Force the intent to the other equivalent order list. */
+	const auto *source = db.Get(first->orders->index); plan.ride->service = source->id; plan.ride->signature = source->incarnation; plan.ride->generation = source->generation;
+	packet->SetPassengerJourney(*plan.ride, D);
+	StationCargoList waiting; waiting.Append(packet, D); PassengerJourneyLoadingContext loading;
+	CHECK_FALSE(waiting.HasCargoFor(std::array{D}, second, &loading, PAX)); CHECK(waiting.BoardingCandidatesInspected() == 0);
+	_state_ticks += 10;
+	REQUIRE(waiting.HasCargoFor(std::array{D}, second, &loading, PAX));
+	CHECK(waiting.Load(10, &second->cargo, std::array{D}, TileIndex{0}, second, &loading) == 10);
+	REQUIRE(second->cargo.StoredCount() == 10);
+	CHECK(second->cargo.Packets()->front()->GetPassengerJourney().service == second->orders->index);
+	CHECK(second->cargo.Packets()->front()->GetPassengerJourney().vehicle == second->index);
+}
+
+TEST_CASE("Precomputed boarding CPU scaling benchmark", "[.benchmark][passenger][precomputed][boarding][cpu]")
+{
+	using Clock = std::chrono::steady_clock;
+	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = true;
+	auto *train = f.Train({Stop(A), Stop(B), Stop(D)}), *other = f.Train({Stop(A), Stop(C), Stop(D)});
+	auto &db = f.Build(); for (int i = 0; i < 100; ++i) db.TickPrecomputed();
+	std::cout << "waiting_packets,legacy_ns,indexed_ns,indexed_candidates\n";
+	for (int packets : {128, 1024, 8192, 32768}) {
+		StationCargoList waiting{};
+		for (int i = 0; i <= packets; ++i) {
+			const auto *s = db.Get((i == packets ? train : other)->orders->index);
+			auto *packet = CargoPacket::Create(1, i, A, TileIndex{0}, Money{0}); REQUIRE(packet->SetPassengerDestination(PAX, D));
+			PassengerJourneyExecution ride; ride.service = s->id; ride.signature = s->incarnation; ride.generation = s->generation;
+			ride.boarding = A; ride.alighting = D; ride.boarding_order = 0; ride.alighting_order = 2;
+			ride.kind = PassengerRideKind::EstimatedServiceIntent; ride.not_before = ride.planned_at = NOW; ride.waiting_limit = 1000;
+			packet->SetPassengerJourney(ride, B); waiting.Append(packet, B);
+		}
+		std::array<int64_t, 2> times{};
+		for (int indexed = 0; indexed < 2; ++indexed) {
+			_settings_game.linkgraph.passenger_journey_precomputed = indexed != 0;
+			PassengerJourneyLoadingContext loading; REQUIRE(waiting.HasCargoFor(std::array{B, D}, train, &loading, PAX));
+			auto start = Clock::now(); size_t successes = 0;
+			for (int i = 0; i < 512; ++i) successes += waiting.HasCargoFor(std::array{B, D}, train, &loading, PAX);
+			times[indexed] = std::chrono::duration_cast<std::chrono::nanoseconds>(Clock::now() - start).count() / 512;
+			CHECK(successes == 512);
+		}
+		std::cout << packets << ',' << times[0] << ',' << times[1] << ',' << waiting.BoardingCandidatesInspected() << '\n';
+	}
 }

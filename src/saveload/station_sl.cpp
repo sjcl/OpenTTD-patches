@@ -55,7 +55,7 @@ struct FlowSaveLoad {
 	bool restricted;
 };
 
-typedef std::pair<const StationID, CargoPacketList > StationCargoPair;
+typedef std::pair<const StationID, StationCargoPacketList> StationCargoPair;
 
 static OldPersistentStorage _old_st_persistent_storage;
 static VehicleType _old_last_vehicle_type;
@@ -70,16 +70,18 @@ static void SwapPackets(GoodsEntry *ge)
 	StationCargoPacketMap &ge_packets = const_cast<StationCargoPacketMap &>(*ge->data->cargo.Packets());
 
 	if (_packets.empty()) {
-		std::map<StationID, CargoPacketList>::iterator it(ge_packets.find(StationID::Invalid()));
+		auto it = ge_packets.find(StationID::Invalid());
 		if (it == ge_packets.end()) {
 			return;
 		} else {
-			it->second.swap(_packets);
+			for (CargoPacket *packet : it->second) _packets.push_back(packet);
+			it->second.clear();
 		}
 	} else {
-		CargoPacketList &cplist = ge_packets[StationID::Invalid()];
+		auto &cplist = ge_packets[StationID::Invalid()];
 		assert(cplist.empty());
-		cplist.swap(_packets);
+		for (CargoPacket *packet : _packets) cplist.push_back(packet);
+		_packets.clear();
 	}
 }
 
@@ -140,7 +142,7 @@ class SlStationCargo : public DefaultSaveLoadHandler<SlStationCargo, GoodsEntry>
 public:
 	static inline const SaveLoad description[] = {
 		    SLE_VAR(StationCargoPair, first,  VarTypes::U16),
-		SLE_REFRING(StationCargoPair, second, SLRefType::CargoPacket),
+		SLE_REFLIST(StationCargoPair, second, SLRefType::CargoPacket),
 	};
 	static inline const SaveLoadCompatTable compat_description = _station_cargo_sl_compat;
 

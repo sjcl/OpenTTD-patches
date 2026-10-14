@@ -376,11 +376,11 @@ struct StationGoodsFlowStructHandler final : public TypedSaveLoadStructHandler<S
 	}
 };
 
-typedef std::pair<const StationID, CargoPacketList> StationCargoPair;
+typedef std::pair<const StationID, StationCargoPacketList> StationCargoPair;
 
 static const NamedSaveLoad _cargo_list_desc[] = {
 	NSL("first",      SLE_VAR(StationCargoPair, first,  SLE_UINT16)),
-	NSL("second", SLE_REFRING(StationCargoPair, second, REF_CARGO_PACKET)),
+	NSL("second", SLE_REFLIST(StationCargoPair, second, REF_CARGO_PACKET)),
 };
 
 struct StationGoodsCargoStructHandler final : public TypedSaveLoadStructHandler<StationGoodsCargoStructHandler, GoodsEntry> {
@@ -527,15 +527,17 @@ static void SwapPackets(GoodsEntry *ge)
 	StationCargoPacketMap &ge_packets = const_cast<StationCargoPacketMap &>(*ge->CreateData().cargo.Packets());
 
 	if (_packets.empty()) {
-		std::map<StationID, CargoPacketList>::iterator it(ge_packets.find(StationID::Invalid()));
+		auto it = ge_packets.find(StationID::Invalid());
 		if (it == ge_packets.end()) {
 			return;
 		} else {
-			it->second.swap(_packets);
+			for (CargoPacket *packet : it->second) _packets.push_back(packet);
+			it->second.clear();
 		}
 	} else {
 		assert(ge_packets[StationID::Invalid()].empty());
-		ge_packets[StationID::Invalid()].swap(_packets);
+		for (CargoPacket *packet : _packets) ge_packets[StationID::Invalid()].push_back(packet);
+		_packets.clear();
 	}
 }
 

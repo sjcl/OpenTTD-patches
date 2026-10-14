@@ -1409,6 +1409,8 @@ std::optional<VehicleCargoList::MoveToAction> PassengerJourneyActiveContext::Dec
 
 size_t StationCargoList::RoutePassengerJourneys(CargoType cargo, StationID station, bool allow_search, PassengerJourneyLoadingContext *loading)
 {
+	if (this->passenger_index_cargo != cargo) { this->ClearWaitingIndex(); this->passenger_index_cargo = cargo; }
+	this->ClearWaitingIndex(); // Queue relocation changes the stable primary-list handles.
 	CounterTimer category{TickBudget().diagnostic.waiting_microseconds};
 	PassengerJourneyActiveContext context(nullptr, station);
 	PassengerJourneyLoadingContext local_loading;
@@ -1429,8 +1431,9 @@ size_t StationCargoList::RoutePassengerJourneys(CargoType cargo, StationID stati
 	StationCargoPacketMap::Map &queues = this->packets;
 	for (auto bucket = queues.begin(); bucket != queues.end();) {
 		auto &list = bucket->second;
-		size_t kept = 0;
-		for (CargoPacket *packet : list) {
+		for (auto it = list.begin(); it != list.end();) {
+			auto position = it++;
+			CargoPacket *packet = *position;
 			StationID key = bucket->first;
 			PassengerRoutingMode previous_mode = packet->GetPassengerRoutingMode();
 			if (packet->GetPassengerRoutingMode() != PassengerRoutingMode::Journey && key == StationID::Invalid()) key = packet->GetPassengerLegacyHop();
@@ -1538,19 +1541,16 @@ size_t StationCargoList::RoutePassengerJourneys(CargoType cargo, StationID stati
 			changed |= key != bucket->first || previous_mode != packet->GetPassengerRoutingMode();
 			if (key != bucket->first) {
 				moved.emplace_back(key, packet);
-			} else {
-				/* Compact once per bucket, avoiding quadratic ring-buffer erases. */
-				if (list[kept] != packet) list[kept] = packet;
-				++kept;
+				list.erase(position);
 			}
 		}
-		while (list.size() > kept) list.pop_back();
 		if (list.empty()) bucket = queues.erase(bucket);
 		else ++bucket;
 	}
 	/* Delay insertion so relocated packets cannot be revisited in this pass. Unchanged
 	 * buckets retain their storage and packet order; only changed queue keys allocate. */
 	for (const auto &[key, packet] : moved) this->packets.Insert(key, packet);
+	if (_settings_game.linkgraph.passenger_journey_precomputed) this->RebuildWaitingIndex();
 	if (changed) SetWindowDirty(WindowClass::StationView, station);
 	return moved.size();
 }
@@ -1631,6 +1631,12 @@ void AfterLoadPassengerJourneys()
 	/* Saveload writes packet fields directly; reconstruct the derived index before
 	 * validation changes modes or vehicles can be deleted/reuse their pool IDs. */
 	RebuildPassengerJourneyVehicleIndex();
+	if (_settings_game.linkgraph.passenger_journey_precomputed) for (Station *station : Station::Iterate()) for (CargoType cargo : EnumRange(NUM_CARGO)) {
+		if (station->goods[cargo].data != nullptr) {
+			station->goods[cargo].data->cargo.passenger_index_cargo = cargo;
+			station->goods[cargo].data->cargo.RebuildWaitingIndex();
+		}
+	}
 	if (SlXvIsFeatureMissing(XSLFI_PASSENGER_JOURNEY_ROUTING)) _settings_game.linkgraph.passenger_journey_routing = false;
 	std::set<CargoPacketID> invalidated;
 	for (CargoPacket *packet : CargoPacket::Iterate()) {

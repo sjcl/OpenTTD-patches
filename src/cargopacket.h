@@ -26,6 +26,9 @@
 #include "3rdparty/cpp-ring-buffer/ring_buffer.hpp"
 #include "3rdparty/cpp-btree/btree_map.h"
 #include <functional>
+#include <list>
+#include <set>
+#include <unordered_map>
 
 struct CargoPayment;
 
@@ -33,6 +36,7 @@ struct CargoPayment;
 struct CargoPacketIDTag : public PoolIDTraits<uint32_t, 0xFFF000, 0xFFFFFF> {};
 using CargoPacketID = PoolID<CargoPacketIDTag>;
 struct CargoPacket;
+void PassengerWaitingPacketChanged(const CargoPacket &packet);
 
 /** Type of the pool for cargo packets for a little over 16 million packets. */
 using CargoPacketPool = Pool<CargoPacket, CargoPacketID, 1024, PoolType::Normal, true>;
@@ -124,7 +128,7 @@ public:
 	PassengerRoutingMode GetPassengerRoutingMode() const { return this->passenger_routing_mode; }
 	const PassengerJourneyExecution &GetPassengerJourney() const { return this->passenger_journey; }
 	StationID GetPassengerLegacyHop() const { return this->passenger_legacy_hop; }
-	void SetPassengerLegacyHop(StationID next) { this->passenger_legacy_hop = next; }
+	void SetPassengerLegacyHop(StationID next) { this->passenger_legacy_hop = next; PassengerWaitingPacketChanged(*this); }
 	StationID GetPassengerVia() const { return this->passenger_via; }
 	StateTicks GetPassengerInterchangeReady() const { return this->passenger_interchange_ready; }
 	OrderListID GetPassengerArrivingService() const { return this->passenger_arriving_service; }
@@ -132,8 +136,8 @@ public:
 	PassengerTransportKind GetPassengerTransport() const { return this->passenger_transport; }
 	PassengerTransportKind GetPassengerInterchangeTransport() const { return this->passenger_interchange_transport; }
 	bool HasUsedPassengerSchedule() const { return this->passenger_schedule_used; }
-	void SetPassengerTransport(PassengerTransportKind kind) { this->passenger_transport = kind; }
-	void SetPassengerInterchange(StateTicks ready, OrderListID arriving, uint64_t incarnation = 0) { this->passenger_interchange_ready = ready; this->passenger_arriving_service = arriving; this->passenger_arriving_incarnation = incarnation; this->passenger_interchange_transport = this->passenger_transport; }
+	void SetPassengerTransport(PassengerTransportKind kind) { this->passenger_transport = kind; PassengerWaitingPacketChanged(*this); }
+	void SetPassengerInterchange(StateTicks ready, OrderListID arriving, uint64_t incarnation = 0) { this->passenger_interchange_ready = ready; this->passenger_arriving_service = arriving; this->passenger_arriving_incarnation = incarnation; this->passenger_interchange_transport = this->passenger_transport; PassengerWaitingPacketChanged(*this); }
 	void SetPassengerVia(StationID via) { this->passenger_via = via; }
 	bool CanRetryPassengerJourney(StationID station, StateTicks now) const
 	{
@@ -154,6 +158,7 @@ public:
 				this->passenger_arriving_service == other.passenger_arriving_service && this->passenger_arriving_incarnation == other.passenger_arriving_incarnation && this->passenger_transport == other.passenger_transport &&
 				this->passenger_interchange_transport == other.passenger_interchange_transport && this->passenger_schedule_used == other.passenger_schedule_used;
 	}
+	uint64_t StationMergeHash() const;
 
 	/**
 	 * Assign an explicit final destination to an unassigned passenger packet.
@@ -631,20 +636,49 @@ public:
 	}
 };
 
-typedef MultiMap<StationID, CargoPacket *, CargoPacketList> StationCargoPacketMap;
+using StationCargoPacketList = std::list<CargoPacket *>; ///< Stable handles for direct removal of indexed boarding candidates.
+typedef MultiMap<StationID, CargoPacket *, StationCargoPacketList> StationCargoPacketMap;
 typedef btree::btree_map<StationID, uint> StationCargoAmountMap;
 
 /**
  * CargoList that is used for stations.
  */
 class StationCargoList : public CargoList<StationCargoList, StationCargoPacketMap> {
+	struct WaitingEntry {
+		StationID key;
+		StationCargoPacketList::iterator position;
+		uint64_t hash;
+		OrderListID service;
+		uint16_t space;
+		bool pending;
+		std::multimap<StateTicks, CargoPacketID>::iterator wake;
+	};
+	mutable bool waiting_index_valid = false;
+	struct PacketHash { size_t operator()(CargoPacketID id) const { return id.base(); } };
+	mutable std::unordered_map<CargoPacketID, WaitingEntry, PacketHash> waiting_entries;
+	mutable std::unordered_map<uint64_t, std::set<std::pair<uint16_t, CargoPacketID>>> merge_index;
+	mutable std::map<OrderListID, std::set<CargoPacketID>> boarding_index;
+	mutable std::multimap<StateTicks, CargoPacketID> waiting_wake;
+	void IndexPacket(CargoPacket *packet, StationID key, StationCargoPacketList::iterator position) const;
+	void EnsureWaitingIndex() const;
+	std::vector<CargoPacketID> BoardingCandidates(const Vehicle *vehicle) const;
+	template <class Taction> uint ShiftIndexedJourneyCargo(Taction action, std::span<const StationID> next, const Vehicle *vehicle, PassengerJourneyLoadingContext &loading);
 protected:
 	/** The (direct) parent of this class. */
 	typedef CargoList<StationCargoList, StationCargoPacketMap> Parent;
 
-	uint reserved_count; ///< Amount of cargo being reserved for loading.
+	uint reserved_count = 0; ///< Amount of cargo being reserved for loading.
+	void RemoveFromCache(const CargoPacket *cp, uint count);
 
 public:
+	~StationCargoList();
+	void ClearWaitingIndex();
+	void ForgetWaitingPacket(CargoPacketID id) const;
+	void RefreshWaitingPacket(const CargoPacket &packet) const;
+	uint64_t BoardingCandidatesInspected() const { return this->boarding_candidates_inspected; }
+	mutable uint64_t boarding_candidates_inspected = 0; ///< Diagnostic only; absent from saves.
+	void RebuildWaitingIndex() const { this->EnsureWaitingIndex(); }
+	CargoType passenger_index_cargo = INVALID_CARGO; ///< Derived owning cargo, supplied by routing/boarding events.
 	/** The super class ought to know what it's doing. */
 	friend class CargoList<StationCargoList, StationCargoPacketMap>;
 	/** The stations, via GoodsEntry, have a CargoList. */
