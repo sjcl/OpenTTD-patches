@@ -13,6 +13,7 @@
 #include "command_type.h"
 #include "debug.h"
 #include "station_base.h"
+#include "vehicle_base.h"
 #include "core/pool_func.hpp"
 #include "core/random_func.hpp"
 #include "economy_base.h"
@@ -1387,7 +1388,7 @@ uint StationCargoList::Load(uint max_move, VehicleCargoList *dest, std::span<con
 	/* Return invalid Journey reservations only, retaining Legacy/valid reservations. */
 	if (dest->ReservedCount() > 0) {
 		dest->ReturnReserved(this, StationID::Invalid(), current_tile,
-				[&](const CargoPacket &packet) { return !loading->CanBoard(packet, vehicle); });
+				[&](const CargoPacket &packet) { return !loading->CanBoard(packet, vehicle); }, vehicle == nullptr ? INVALID_CARGO : vehicle->cargo_type);
 	}
 	uint move = std::min(dest->ActionCount(VehicleCargoList::MoveToAction::Load), max_move);
 	if (move > 0) {
