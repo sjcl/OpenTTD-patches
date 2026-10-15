@@ -1,0 +1,937 @@
+{
+  "runs": [
+    {
+      "run": "quality-focused",
+      "sampling_method": "target_od_packet_representatives",
+      "delivered_samples": 187,
+      "complete_trip_samples": 130,
+      "population_transport": {
+        "boarded": 3713584,
+        "transferred": 2171706,
+        "delivered": 1604851,
+        "known_od_boarded": 2518823,
+        "known_od_transferred": 1655115,
+        "known_od_delivered": 937740,
+        "train_boarded": 3111706,
+        "train_boarded_by_group_class": {
+          "rapid": 407545,
+          "semi_express": 62306,
+          "unclassified": 1988550,
+          "express": 57472,
+          "limited_express": 160685,
+          "local": 435148
+        },
+        "known_od_train_boarded_by_group_class": {
+          "rapid": 284922,
+          "semi_express": 42050,
+          "unclassified": 1344107,
+          "express": 36032,
+          "limited_express": 113601,
+          "local": 275118
+        },
+        "train_classified_fraction": 0.3609454106525488,
+        "train_boarded_on_structural_short_turns": 499540,
+        "known_od_train_boarded_on_structural_short_turns": 329046
+      },
+      "population_balance": {
+        "initial": 954776,
+        "generated": 1733056,
+        "delivered": 1604851,
+        "remaining": 743298,
+        "other_removals": 339683,
+        "initial_known": 806628,
+        "assigned_known": 938361,
+        "delivered_known": 937740,
+        "remaining_known": 628779,
+        "known_removals_or_destination_invalidation": 178470
+      },
+      "original_destination_mismatch_samples": 0,
+      "original_destination_mismatch_examples": [],
+      "selected_sample_starts": 250,
+      "fresh_sample_starts": 192,
+      "unaccounted_fresh_sample_starts": 0,
+      "unaccounted_sample_starts": 0,
+      "lost_samples": 26,
+      "lost_new_samples": 26,
+      "all_samples_observed_misses": 0,
+      "fresh_samples_observed_misses": 0,
+      "initial_sample_starts": 54,
+      "initial_fates": {
+        "delivered": 53,
+        "pending": 1
+      },
+      "observed_origin_departure_to_arrival_ticks": {
+        "n": 133,
+        "mean": 763.8947368421053,
+        "median": 485,
+        "p95": 485,
+        "p99": 21474,
+        "maximum": 21474
+      },
+      "initial_remaining_to_arrival_ticks": {
+        "n": 53,
+        "mean": 6027.566037735849,
+        "median": 2333,
+        "p95": 22104,
+        "p99": 22104,
+        "maximum": 22104
+      },
+      "pending_all_metrics": {
+        "riding_ticks": {
+          "n": 37,
+          "mean": 472.35135135135135,
+          "median": 0,
+          "p95": 0,
+          "p99": 17477,
+          "maximum": 17477
+        },
+        "waiting_ticks": {
+          "n": 37,
+          "mean": 1462.972972972973,
+          "median": 1408,
+          "p95": 2898,
+          "p99": 7099,
+          "maximum": 7099
+        },
+        "origin_waiting_ticks": {
+          "n": 37,
+          "mean": 1271.1081081081081,
+          "median": 1329,
+          "p95": 2822,
+          "p99": 2898,
+          "maximum": 2898
+        },
+        "transfer_waiting_ticks": {
+          "n": 37,
+          "mean": 191.86486486486487,
+          "median": 0,
+          "p95": 0,
+          "p99": 7099,
+          "maximum": 7099
+        },
+        "distance_x16": {
+          "n": 37,
+          "mean": 241.27027027027026,
+          "median": 0,
+          "p95": 0,
+          "p99": 8927,
+          "maximum": 8927
+        },
+        "transfers": {
+          "n": 37,
+          "mean": 0.10810810810810811,
+          "median": 0,
+          "p95": 0,
+          "p99": 4,
+          "maximum": 4
+        },
+        "revisits": {
+          "n": 37,
+          "mean": 0,
+          "median": 0,
+          "p95": 0,
+          "p99": 0,
+          "maximum": 0
+        },
+        "returns": {
+          "n": 37,
+          "mean": 0,
+          "median": 0,
+          "p95": 0,
+          "p99": 0,
+          "maximum": 0
+        },
+        "observed_misses": {
+          "n": 37,
+          "mean": 0,
+          "median": 0,
+          "p95": 0,
+          "p99": 0,
+          "maximum": 0
+        },
+        "maximum_wait": {
+          "n": 37,
+          "mean": 1371.972972972973,
+          "median": 1407,
+          "p95": 2897,
+          "p99": 3768,
+          "maximum": 3768
+        }
+      },
+      "pending_waiting_now_samples": 37,
+      "pending_waiting_now_maximum_wait_ticks": {
+        "n": 37,
+        "mean": 1371.972972972973,
+        "median": 1407,
+        "p95": 2897,
+        "p99": 3768,
+        "maximum": 3768
+      },
+      "pending_longest_wait_od": [
+        {
+          "od": "971:916",
+          "n": 1,
+          "mean": 3768,
+          "median": 3768,
+          "p95": 3768,
+          "p99": 3768,
+          "maximum": 3768
+        },
+        {
+          "od": "3393:3394",
+          "n": 36,
+          "mean": 1305.4166666666667,
+          "median": 1367.5,
+          "p95": 2821,
+          "p99": 2897,
+          "maximum": 2897
+        }
+      ],
+      "pending_samples": 37,
+      "right_censored_new_samples": 36,
+      "trip_ticks": {
+        "n": 130,
+        "mean": 2892.2923076923075,
+        "median": 2332.0,
+        "p95": 6745,
+        "p99": 7431,
+        "maximum": 7444
+      },
+      "metrics": {
+        "riding_ticks": {
+          "n": 130,
+          "mean": 447.4230769230769,
+          "median": 485.0,
+          "p95": 485,
+          "p99": 485,
+          "maximum": 485
+        },
+        "waiting_ticks": {
+          "n": 130,
+          "mean": 2444.869230769231,
+          "median": 1847.0,
+          "p95": 6260,
+          "p99": 6946,
+          "maximum": 6959
+        },
+        "origin_waiting_ticks": {
+          "n": 130,
+          "mean": 2444.869230769231,
+          "median": 1847.0,
+          "p95": 6260,
+          "p99": 6946,
+          "maximum": 6959
+        },
+        "transfer_waiting_ticks": {
+          "n": 130,
+          "mean": 0,
+          "median": 0.0,
+          "p95": 0,
+          "p99": 0,
+          "maximum": 0
+        },
+        "distance_x16": {
+          "n": 130,
+          "mean": 208,
+          "median": 208.0,
+          "p95": 208,
+          "p99": 208,
+          "maximum": 208
+        },
+        "transfers": {
+          "n": 130,
+          "mean": 0,
+          "median": 0.0,
+          "p95": 0,
+          "p99": 0,
+          "maximum": 0
+        },
+        "revisits": {
+          "n": 130,
+          "mean": 0,
+          "median": 0.0,
+          "p95": 0,
+          "p99": 0,
+          "maximum": 0
+        },
+        "returns": {
+          "n": 130,
+          "mean": 0,
+          "median": 0.0,
+          "p95": 0,
+          "p99": 0,
+          "maximum": 0
+        },
+        "observed_misses": {
+          "n": 130,
+          "mean": 0,
+          "median": 0.0,
+          "p95": 0,
+          "p99": 0,
+          "maximum": 0
+        },
+        "maximum_wait": {
+          "n": 130,
+          "mean": 2444.869230769231,
+          "median": 1847.0,
+          "p95": 6260,
+          "p99": 6946,
+          "maximum": 6959
+        }
+      },
+      "right_censored_metrics": {
+        "riding_ticks": {
+          "n": 36,
+          "mean": 0,
+          "median": 0.0,
+          "p95": 0,
+          "p99": 0,
+          "maximum": 0
+        },
+        "waiting_ticks": {
+          "n": 36,
+          "mean": 1306.4166666666667,
+          "median": 1368.5,
+          "p95": 2822,
+          "p99": 2898,
+          "maximum": 2898
+        },
+        "origin_waiting_ticks": {
+          "n": 36,
+          "mean": 1306.4166666666667,
+          "median": 1368.5,
+          "p95": 2822,
+          "p99": 2898,
+          "maximum": 2898
+        },
+        "transfer_waiting_ticks": {
+          "n": 36,
+          "mean": 0,
+          "median": 0.0,
+          "p95": 0,
+          "p99": 0,
+          "maximum": 0
+        },
+        "distance_x16": {
+          "n": 36,
+          "mean": 0,
+          "median": 0.0,
+          "p95": 0,
+          "p99": 0,
+          "maximum": 0
+        },
+        "transfers": {
+          "n": 36,
+          "mean": 0,
+          "median": 0.0,
+          "p95": 0,
+          "p99": 0,
+          "maximum": 0
+        },
+        "revisits": {
+          "n": 36,
+          "mean": 0,
+          "median": 0.0,
+          "p95": 0,
+          "p99": 0,
+          "maximum": 0
+        },
+        "returns": {
+          "n": 36,
+          "mean": 0,
+          "median": 0.0,
+          "p95": 0,
+          "p99": 0,
+          "maximum": 0
+        },
+        "observed_misses": {
+          "n": 36,
+          "mean": 0,
+          "median": 0.0,
+          "p95": 0,
+          "p99": 0,
+          "maximum": 0
+        },
+        "maximum_wait": {
+          "n": 36,
+          "mean": 1305.4166666666667,
+          "median": 1367.5,
+          "p95": 2821,
+          "p99": 2897,
+          "maximum": 2897
+        }
+      },
+      "right_censored_elapsed_ticks": {
+        "n": 36,
+        "mean": 1305.4166666666667,
+        "median": 1367.5,
+        "p95": 2821,
+        "p99": 2897,
+        "maximum": 2897
+      },
+      "pending_wait_ticks": {
+        "n": 36,
+        "mean": 1305.4166666666667,
+        "median": 1367.5,
+        "p95": 2821,
+        "p99": 2897,
+        "maximum": 2897
+      },
+      "completed_od_ticks": {
+        "3393:3394": {
+          "n": 130,
+          "mean": 2892.2923076923075,
+          "median": 2332.0,
+          "p95": 6745,
+          "p99": 7431,
+          "maximum": 7444
+        }
+      },
+      "completed_od_means": {
+        "3393:3394": {
+          "distance_x16": 208,
+          "transfers": 0,
+          "riding_ticks": 447.4230769230769,
+          "transfer_waiting_ticks": 0
+        }
+      },
+      "sampled_boardings_by_service": {
+        "302": 7,
+        "69": 8,
+        "300": 48,
+        "245": 12,
+        "71": 4,
+        "122": 11,
+        "524": 35,
+        "509": 5,
+        "36": 2,
+        "525": 96,
+        "748": 1
+      },
+      "sampled_boardings_by_order_count": {
+        "2": 18,
+        "30": 9,
+        "66": 48,
+        "32": 12,
+        "58": 4,
+        "92": 35,
+        "22": 5,
+        "6": 2,
+        "188": 96
+      },
+      "sampled_boardings_by_group_class": {
+        "unclassified": 34,
+        "rapid": 64,
+        "local": 131
+      },
+      "elapsed_minus_ride_wait_ticks": {
+        "n": 130,
+        "mean": 0,
+        "median": 0.0,
+        "p95": 0,
+        "p99": 0,
+        "maximum": 0
+      },
+      "trace_classified_boarding_fraction": 0.851528384279476,
+      "sampled_boardings_on_named_short_turn_groups": 0,
+      "sampled_boardings_on_structural_short_turns": 47,
+      "structural_short_turn_services": {
+        "532": [
+          "533"
+        ],
+        "561": [
+          "562"
+        ],
+        "211": [
+          "157"
+        ],
+        "524": [
+          "525"
+        ],
+        "38": [
+          "168",
+          "538"
+        ],
+        "421": [
+          "38",
+          "39",
+          "168",
+          "538",
+          "611"
+        ],
+        "729": [
+          "182"
+        ],
+        "148": [
+          "182"
+        ],
+        "432": [
+          "433",
+          "447"
+        ],
+        "312": [
+          "505"
+        ],
+        "111": [
+          "115"
+        ],
+        "256": [
+          "268"
+        ],
+        "173": [
+          "63"
+        ],
+        "507": [
+          "508"
+        ],
+        "749": [
+          "670"
+        ],
+        "723": [
+          "11",
+          "159"
+        ],
+        "721": [
+          "634"
+        ],
+        "779": [
+          "776"
+        ],
+        "44": [
+          "6"
+        ],
+        "94": [
+          "99"
+        ],
+        "630": [
+          "570"
+        ],
+        "730": [
+          "377"
+        ],
+        "518": [
+          "226"
+        ],
+        "30": [
+          "93"
+        ],
+        "485": [
+          "676"
+        ],
+        "708": [
+          "707"
+        ],
+        "526": [
+          "525"
+        ],
+        "472": [
+          "267"
+        ],
+        "722": [
+          "612"
+        ],
+        "369": [
+          "327"
+        ],
+        "427": [
+          "2"
+        ],
+        "677": [
+          "676"
+        ],
+        "522": [
+          "400"
+        ],
+        "787": [
+          "786"
+        ],
+        "34": [
+          "150"
+        ],
+        "395": [
+          "112"
+        ],
+        "337": [
+          "525",
+          "526"
+        ],
+        "129": [
+          "556"
+        ],
+        "559": [
+          "55",
+          "124",
+          "560",
+          "583"
+        ],
+        "423": [
+          "424"
+        ],
+        "331": [
+          "528"
+        ],
+        "346": [
+          "209"
+        ],
+        "407": [
+          "595"
+        ],
+        "286": [
+          "285"
+        ],
+        "132": [
+          "656"
+        ],
+        "62": [
+          "347"
+        ],
+        "288": [
+          "259"
+        ],
+        "39": [
+          "611"
+        ],
+        "720": [
+          "613"
+        ],
+        "283": [
+          "285"
+        ],
+        "801": [
+          "235"
+        ],
+        "28": [
+          "6",
+          "42",
+          "44"
+        ],
+        "861": [
+          "860"
+        ],
+        "56": [
+          "6"
+        ],
+        "0": [
+          "42",
+          "78"
+        ],
+        "725": [
+          "1",
+          "8",
+          "633"
+        ],
+        "130": [
+          "45"
+        ],
+        "272": [
+          "2"
+        ],
+        "799": [
+          "798"
+        ],
+        "208": [
+          "637"
+        ],
+        "253": [
+          "268"
+        ],
+        "668": [
+          "670"
+        ],
+        "631": [
+          "378"
+        ],
+        "233": [
+          "778"
+        ],
+        "143": [
+          "78"
+        ],
+        "538": [
+          "168"
+        ],
+        "761": [
+          "261"
+        ],
+        "638": [
+          "305"
+        ],
+        "167": [
+          "86"
+        ],
+        "694": [
+          "693"
+        ],
+        "564": [
+          "562"
+        ],
+        "794": [
+          "279"
+        ],
+        "596": [
+          "849"
+        ],
+        "726": [
+          "235"
+        ],
+        "309": [
+          "304"
+        ],
+        "281": [
+          "652"
+        ],
+        "57": [
+          "59",
+          "103"
+        ],
+        "604": [
+          "605"
+        ],
+        "250": [
+          "290"
+        ],
+        "273": [
+          "290",
+          "505"
+        ],
+        "126": [
+          "292"
+        ],
+        "793": [
+          "446"
+        ],
+        "514": [
+          "411"
+        ],
+        "603": [
+          "605"
+        ],
+        "790": [
+          "789"
+        ],
+        "678": [
+          "676"
+        ],
+        "311": [
+          "254"
+        ],
+        "416": [
+          "385"
+        ],
+        "513": [
+          "409"
+        ],
+        "17": [
+          "625"
+        ],
+        "245": [
+          "71"
+        ],
+        "134": [
+          "5"
+        ],
+        "655": [
+          "86"
+        ],
+        "510": [
+          "475"
+        ],
+        "555": [
+          "246"
+        ],
+        "734": [
+          "735"
+        ],
+        "336": [
+          "161"
+        ],
+        "455": [
+          "221"
+        ],
+        "413": [
+          "414"
+        ],
+        "521": [
+          "294"
+        ],
+        "560": [
+          "55"
+        ],
+        "461": [
+          "483"
+        ],
+        "727": [
+          "550"
+        ],
+        "310": [
+          "154"
+        ],
+        "420": [
+          "401"
+        ],
+        "527": [
+          "259"
+        ],
+        "389": [
+          "386"
+        ],
+        "444": [
+          "443"
+        ],
+        "697": [
+          "698"
+        ],
+        "851": [
+          "848",
+          "849"
+        ],
+        "358": [
+          "16"
+        ],
+        "225": [
+          "777"
+        ],
+        "534": [
+          "533"
+        ],
+        "760": [
+          "261",
+          "750"
+        ],
+        "340": [
+          "341"
+        ],
+        "321": [
+          "348"
+        ],
+        "73": [
+          "88"
+        ],
+        "754": [
+          "753"
+        ],
+        "536": [
+          "417"
+        ],
+        "367": [
+          "361"
+        ],
+        "706": [
+          "689"
+        ],
+        "750": [
+          "261"
+        ],
+        "601": [
+          "66",
+          "298",
+          "339"
+        ],
+        "271": [
+          "243"
+        ],
+        "600": [
+          "409"
+        ],
+        "791": [
+          "267",
+          "472"
+        ],
+        "501": [
+          "13"
+        ],
+        "449": [
+          "451"
+        ],
+        "800": [
+          "243",
+          "271"
+        ],
+        "628": [
+          "412"
+        ],
+        "659": [
+          "660"
+        ],
+        "738": [
+          "402"
+        ],
+        "117": [
+          "112",
+          "116"
+        ],
+        "249": [
+          "231"
+        ],
+        "642": [
+          "641"
+        ],
+        "234": [
+          "242"
+        ],
+        "313": [
+          "348"
+        ],
+        "742": [
+          "576"
+        ],
+        "31": [
+          "63"
+        ],
+        "685": [
+          "709",
+          "710"
+        ],
+        "484": [
+          "259",
+          "527"
+        ],
+        "262": [
+          "260"
+        ],
+        "853": [
+          "848",
+          "849",
+          "851"
+        ],
+        "339": [
+          "66",
+          "298"
+        ],
+        "251": [
+          "454"
+        ],
+        "855": [
+          "856",
+          "857"
+        ],
+        "692": [
+          "688"
+        ],
+        "188": [
+          "355"
+        ],
+        "422": [
+          "462"
+        ],
+        "450": [
+          "449",
+          "451"
+        ],
+        "437": [
+          "229"
+        ],
+        "430": [
+          "431"
+        ]
+      },
+      "complete_single_board_trip_outside_service_route": 0,
+      "new_samples_with_revisit": 0,
+      "new_samples_with_immediate_return": 0,
+      "lost_new_samples_with_revisit": 0,
+      "lost_new_samples_with_immediate_return": 0,
+      "trace_metadata": "selected=250\nfresh_selected=192\ninitial_selected=54\nassigned_packets=853671\nassigned_units=938361\nfresh_assigned_packets=853671\nfresh_assigned_units=938361\ninitial_passengers=954776\ninitial_known_passengers=806628\ngenerated_passengers=1733056\nremaining_passengers=743298\nremaining_known_passengers=628779\ndiscarded=0\nsampling=deterministic hash of packet ID and current birth tick; approximately 1/64; maximum 65536 sample starts\n"
+    }
+  ],
+  "limitations": "Each run reports its sampling_method: ordinary runs use deterministic hash sampling of approximately one eligible packet in 64; independent focused runs select all packet representatives for the three target ODs. Each follows one person at the packet midpoint, capped at 65536 starts; neither is a population-weighted travel-time estimate. Do not pool focused and ordinary samples. Initial known-OD people are enrolled before settings change and matched by saved packet ID and offset. Loaded trips are left-censored; fresh full-trip and observed-origin-departure metrics are separate. Pending trips are right-censored; erasure/reduction without delivery is lost. All passenger movement totals use actual vehicle cargo, excluding reservations; population removals are the inventory residual, not a diagnosis of their cause. Service classes use actual vehicles' group names at movement; sampled service summaries use the end manifest. Observed misses cover only queried indexed candidates with positive free capacity, which other passengers may consume, and may undercount collective cache hits. Structural short turns conservatively require two reversal stops, a proper subset of a longer nominal route's stops and edges, and at least one internal reversal. Order count is not a service class. Physical distance is Manhattan displacement in 1/16-tile units."
+}
