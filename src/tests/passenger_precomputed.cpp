@@ -138,15 +138,16 @@ TEST_CASE("Common sections aggregate short turns without inventing through train
 		auto outer = table.Plan(C, E, StateTicks{}, OrderListID::Invalid(), sample);
 		REQUIRE(outer.ride); CHECK(outer.ride->service != OrderListID{1}); CHECK(outer.ride->estimated_wait == 200);
 	}
-	/* Both concrete patterns are selectable; short-turn bindings cannot be
-	 * rebound as though they were the identical long-distance pattern. */
+	/* Every representative is an anchor for the same whole-section intent. */
 	std::set<OrderListID> selected;
 	for (uint32_t sample = 0; sample < 32; ++sample) {
 		auto plan = table.Plan(A, C, StateTicks{}, OrderListID::Invalid(), sample * 134217727U);
 		REQUIRE(plan.ride); selected.insert(plan.ride->service);
-		CHECK_FALSE(table.Rebind(*plan.ride, plan.ride->service == OrderListID{1} ? OrderListID{0} : OrderListID{1}));
+		CHECK(table.Rebind(*plan.ride, plan.ride->service == OrderListID{1} ? OrderListID{0} : OrderListID{1}));
 	}
 	CHECK(selected.contains(OrderListID{1})); CHECK(selected.size() >= 2);
+	auto through = table.Plan(A, E, StateTicks{}, OrderListID{1}); REQUIRE(through.ride);
+	CHECK(through.transfers == 0); CHECK_FALSE(table.Rebind(*through.ride, OrderListID{1}));
 }
 
 TEST_CASE("Common section events respect periods physical identity and dispatch anchors", "[passenger][precomputed][sections]")
@@ -218,6 +219,45 @@ TEST_CASE("Common sections match across order numbering and circuit boundaries",
 		REQUIRE(a.ride); CHECK(a.ride == b.ride); CHECK(a.cost == b.cost); CHECK(a.ride->estimated_wait == 150);
 		if (a.ride->service == OrderListID{0}) { CHECK(a.ride->boarding_order == 3); CHECK(a.ride->alighting_order == 1); }
 		else { CHECK(a.ride->boarding_order == 20); CHECK(a.ride->alighting_order == 22); }
+		auto long_ride = *a.ride, short_ride = *a.ride;
+		REQUIRE(fine.Rebind(long_ride, OrderListID{0}, 3)); REQUIRE(fine.Rebind(short_ride, OrderListID{1}, 20));
+		CHECK(long_ride.boarding_order == 3); CHECK(long_ride.alighting_order == 1);
+		CHECK(short_ride.boarding_order == 20); CHECK(short_ride.alighting_order == 22);
+		CHECK(fine.SectionBoardingKey(long_ride) == fine.SectionBoardingKey(short_ride));
+	}
+}
+
+TEST_CASE("Common section bindings match the complete frequency pool", "[passenger][precomputed][sections][boarding]")
+{
+	std::array services{Service(0, {A, B, C, D}), Service(1, {A, B, C}), Service(2, {A, B, C, D})};
+	services[0].timetable.period = services[2].timetable.period = 600; services[1].timetable.period = 300;
+	services[1].vehicles[0].base = StateTicks{150}; services[2].vehicles[0].base = StateTicks{300};
+	auto table = Build(services); auto plan = table.Plan(A, C, StateTicks{}); REQUIRE(plan.ride);
+	const auto key = table.SectionBoardingKey(*plan.ride); REQUIRE(key);
+	for (const auto &service : services) {
+		auto ride = *plan.ride; REQUIRE(table.Rebind(ride, service.id, 0));
+		CHECK(ride.service == service.id); CHECK(ride.signature == service.incarnation); CHECK(ride.generation == service.generation);
+		CHECK(ride.boarding_order == 0); CHECK(ride.alighting_order == 2); CHECK(ride.alighting == C);
+		CHECK(table.SectionBoardingKey(ride) == key);
+		auto keys = table.SectionBoardingKeys(service.id, 0); CHECK(std::find(keys.begin(), keys.end(), *key) != keys.end());
+		CHECK_FALSE(table.Rebind(ride, service.id, 1));
+	}
+	auto bound = *plan.ride; bound.kind = PassengerRideKind::EstimatedBoundService;
+	CHECK_FALSE(table.SectionBoardingKey(bound)); CHECK_FALSE(table.Rebind(bound, OrderListID{1}, 0));
+	auto stale = *plan.ride; ++stale.generation;
+	CHECK_FALSE(table.SectionBoardingKey(stale)); CHECK_FALSE(table.Rebind(stale, OrderListID{1}, 0));
+}
+
+TEST_CASE("Common section bindings distinguish repeated boarding orders on the same service", "[passenger][precomputed][sections][boarding]")
+{
+	std::array services{Service(0, {A, B, C, A, B, C, D}), Service(1, {A, B, C})};
+	auto table = Build(services); auto plan = table.Plan(A, C, StateTicks{}); REQUIRE(plan.ride);
+	const auto key = table.SectionBoardingKey(*plan.ride); REQUIRE(key);
+	for (VehicleOrderID order : {VehicleOrderID{0}, VehicleOrderID{3}}) {
+		auto ride = *plan.ride; REQUIRE(table.Rebind(ride, OrderListID{0}, order));
+		CHECK(ride.boarding_order == order); CHECK(ride.alighting_order == order + 2); CHECK(ride.alighting == C);
+		CHECK(table.SectionBoardingKey(ride) == key);
+		auto keys = table.SectionBoardingKeys(OrderListID{0}, order); CHECK(std::find(keys.begin(), keys.end(), *key) != keys.end());
 	}
 }
 

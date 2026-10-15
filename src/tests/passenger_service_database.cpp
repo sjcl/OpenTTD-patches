@@ -2437,6 +2437,119 @@ TEST_CASE("Precomputed waiting wake queue and identical service binding are live
 	CHECK(second->cargo.Packets()->front()->GetPassengerJourney().vehicle == second->index);
 }
 
+TEST_CASE("Common section intents board the first eligible pattern and keep concrete orders", "[passenger][precomputed][sections][boarding][save]")
+{
+	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = true;
+	auto *long_train = f.Train({Stop(A), Stop(B), Stop(C), Stop(D)});
+	auto *short_train = f.Train({Stop(B), Stop(A), Stop(B), Stop(C)}); short_train->LoadAt(1); short_train->current_order_time = 5;
+	auto &db = f.Build(); while (!db.PreparePrecomputed()) {}
+	PeriodicTrain *first = short_train, *second = long_train;
+	SECTION("Short turn arrives first") {}
+	SECTION("Long service arrives first") { std::swap(first, second); }
+	auto plan = db.PlanPrecomputed(PAX, A, C, NOW + 10); REQUIRE(plan.ride);
+	/* Anchor the saved intent to the train which will arrive second. The
+	 * first train must board it without changing/replanning the chosen route. */
+	REQUIRE(db.RebindPrecomputed(*plan.ride, second->orders->index, PAX, second->cur_real_order_index));
+	const auto intent = *plan.ride;
+	auto *packet = CargoPacket::Create(20, 7, A, TileIndex{0}, Money{17}); REQUIRE(packet->SetPassengerDestination(PAX, C));
+	packet->SetPassengerJourney(intent, C);
+	StationCargoList waiting; waiting.Append(packet, C); PassengerJourneyLoadingContext loading;
+	CHECK_FALSE(waiting.HasCargoFor(std::array{B, C}, first, &loading, PAX)); CHECK(waiting.BoardingCandidatesInspected() == 0);
+	/* Both the Packet fields and derived group membership survive a database
+	 * and CargoPacket table round trip. No new persistent Packet fields. */
+	AutoRestoreBackup version{_sl_version, SAVEGAME_VERSION};
+	AutoRestoreBackup features{_sl_xv_feature_versions, AutoRestoreBackupNoNewValueTag{}};
+	AutoRestoreBackup static_features{_sl_xv_feature_static_versions, AutoRestoreBackupNoNewValueTag{}};
+	SlXvSetStaticCurrentVersions(); _sl_xv_feature_versions = _sl_xv_feature_static_versions;
+	auto *copy = CargoPacket::Create(); REQUIRE_FALSE(SlTestSaveLoadTable(packet, copy, GetCargoPacketDesc()).empty());
+	CHECK(copy->GetPassengerJourney() == intent); delete copy;
+	auto wire = db.Save(); REQUIRE(db.Load(wire)); db.FinishLoad(true); CHECK(db.Save() == wire);
+	waiting.ClearWaitingIndex(); _state_ticks += 10;
+	const auto queries = db.GetPrecomputedDiagnostic(PAX).queries;
+	REQUIRE(waiting.HasCargoFor(std::array{B, C}, first, &loading, PAX));
+	REQUIRE(waiting.Reserve(7, &first->cargo, std::array{B, C}, TileIndex{0}, first, &loading) == 7);
+	CHECK(packet->Count() == 13); CHECK(packet->GetPassengerJourney() == intent);
+	REQUIRE(waiting.Load(7, &first->cargo, std::array{B, C}, TileIndex{0}, first, &loading) == 7);
+	REQUIRE(waiting.Load(13, &second->cargo, std::array{B, C}, TileIndex{0}, second, &loading) == 13);
+	CHECK(waiting.AvailableCount() == 0); CHECK(waiting.ReservedCount() == 0);
+	CHECK(first->cargo.StoredCount() == 7); CHECK(second->cargo.StoredCount() == 13);
+	for (const auto *train : {long_train, short_train}) {
+		const auto &bound = train->cargo.Packets()->front()->GetPassengerJourney();
+		CHECK(bound.kind == PassengerRideKind::EstimatedBoundService); CHECK(bound.vehicle == train->index);
+		CHECK(bound.service == train->orders->index); CHECK(bound.alighting == C);
+		CHECK(bound.boarding_order == (train == long_train ? 0 : 1)); CHECK(bound.alighting_order == (train == long_train ? 2 : 3));
+	}
+	CHECK(db.GetPrecomputedDiagnostic(PAX).queries == queries);
+}
+
+TEST_CASE("Common section binding preserves live restrictions and through destinations", "[passenger][precomputed][sections][boarding]")
+{
+	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = true;
+	auto *long_train = f.Train({Stop(A), Stop(B), Stop(C), Stop(D)});
+	auto *short_train = f.Train({Stop(A), Stop(B), Stop(C)});
+	auto &db = f.Build(); while (!db.PreparePrecomputed()) {}
+	auto common = db.PlanPrecomputed(PAX, A, C, NOW); REQUIRE(common.ride);
+	REQUIRE(db.RebindPrecomputed(*common.ride, long_train->orders->index, PAX, 0));
+	auto *packet = f.Packet(); packet->SetPassengerJourney(*common.ride, C);
+	SECTION("NoLoad is checked on the actual arriving train") { short_train->current_order.SetLoadType(OrderLoadType::NoLoad); }
+	SECTION("NoUnload is checked on the actual selected alighting order") { short_train->GetOrder(2)->SetUnloadType(OrderUnloadType::NoUnload); }
+	SECTION("Forced unloading cannot be bypassed") { short_train->GetOrder(1)->SetUnloadType(OrderUnloadType::Transfer); }
+	SECTION("New service generation is rejected") { db.Invalidate(short_train->orders->index); }
+	PassengerJourneyLoadingContext loading;
+	CHECK_FALSE(loading.CanBoard(*packet, short_train, PAX)); CHECK(loading.CanBoard(*packet, long_train, PAX));
+	auto through = db.PlanPrecomputed(PAX, A, D, NOW, short_train->orders->index); REQUIRE(through.ride);
+	CHECK(through.ride->alighting == D); CHECK_FALSE(db.RebindPrecomputed(*through.ride, short_train->orders->index, PAX, 0));
+	packet->SetPassengerJourney(*through.ride, D);
+	CHECK_FALSE(loading.CanBoard(*packet, short_train, PAX)); delete packet;
+}
+
+TEST_CASE("Common section boarding merges retained and replacement keys without duplicate inspections", "[passenger][precomputed][sections][boarding][save]")
+{
+	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = true;
+	auto *long_train = f.Train({Stop(A), Stop(B), Stop(C), Stop(D)});
+	auto *short_train = f.Train({Stop(A), Stop(B), Stop(C)});
+	auto &db = f.Build(); while (!db.PreparePrecomputed()) {}
+	auto plan = db.PlanPrecomputed(PAX, A, C, NOW); REQUIRE(plan.ride);
+	REQUIRE(db.RebindPrecomputed(*plan.ride, long_train->orders->index, PAX, 0));
+	auto *packet = f.Packet(); packet->SetPassengerJourney(*plan.ride, C);
+	StationCargoList waiting; waiting.Append(packet, C);
+	_settings_game.linkgraph.passenger_transfer_penalty = 17; db.TickPrecomputed(1);
+	REQUIRE(db.GetPrecomputedDiagnostic(PAX).retained_destinations > 0);
+	auto keys = db.PrecomputedBoardingKeys(PAX, short_train->orders->index, 0);
+	REQUIRE_FALSE(keys.sections[0].empty()); CHECK(std::equal(keys.sections[0].begin(), keys.sections[0].end(), keys.sections[1].begin(), keys.sections[1].end()));
+	auto wire = db.Save(); REQUIRE(db.Load(wire)); db.FinishLoad(true); CHECK(db.Save() == wire);
+	waiting.ClearWaitingIndex(); PassengerJourneyLoadingContext loading;
+	REQUIRE(waiting.HasCargoFor(std::array{B, C}, short_train, &loading, PAX)); CHECK(waiting.BoardingCandidatesInspected() == 1);
+	REQUIRE(waiting.Load(10, &short_train->cargo, std::array{B, C}, TileIndex{0}, short_train, &loading) == 10);
+	CHECK(short_train->cargo.Packets()->front()->GetPassengerJourney().service == short_train->orders->index);
+}
+
+TEST_CASE("Common section boarding is independent of warm indices when a pool representative changes", "[passenger][precomputed][sections][boarding][determinism]")
+{
+	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = true;
+	auto *earlier = f.Train({Stop(A), Stop(B), Stop(C)}); earlier->cargo_cap = 0;
+	auto *long_train = f.Train({Stop(A), Stop(B), Stop(C), Stop(D)});
+	auto *short_train = f.Train({Stop(A), Stop(B), Stop(C)});
+	auto &db = f.Build(); while (!db.PreparePrecomputed()) {}
+	auto plan = db.PlanPrecomputed(PAX, A, C, NOW); REQUIRE(plan.ride);
+	REQUIRE(db.RebindPrecomputed(*plan.ride, long_train->orders->index, PAX, 0));
+	plan.ride->waiting_limit = 1000000; // Remain valid across the publication epoch under test.
+	auto *packet = f.Packet(); packet->SetPassengerJourney(*plan.ride, C);
+	StationCargoList waiting; waiting.Append(packet, C); PassengerJourneyLoadingContext before;
+	REQUIRE(waiting.HasCargoFor(std::array{B, C}, short_train, &before, PAX));
+	/* Introduce a lower-ID eligible member without changing the saved anchor.
+	 * A canonical-table key in IndexPacket would now differ on a cold peer. */
+	earlier->cargo_cap = 100; db.Invalidate(earlier->orders->index); f.PublishUpdates(db);
+	db.TickPrecomputed(); while (!db.PrecomputedFinished()) db.TickPrecomputed();
+	REQUIRE(db.IsCurrent(*plan.ride));
+	const auto wire = db.Save(); const auto intent = packet->GetPassengerJourney();
+	PassengerJourneyLoadingContext warm, cold;
+	const bool a = waiting.HasCargoFor(std::array{B, C}, short_train, &warm, PAX);
+	waiting.ClearWaitingIndex();
+	const bool b = waiting.HasCargoFor(std::array{B, C}, short_train, &cold, PAX);
+	CHECK(a); CHECK(a == b); CHECK(packet->GetPassengerJourney() == intent); CHECK(db.Save() == wire);
+}
+
 TEST_CASE("Precomputed boarding CPU scaling benchmark", "[.benchmark][passenger][precomputed][boarding][cpu]")
 {
 	using Clock = std::chrono::steady_clock;
@@ -2464,6 +2577,33 @@ TEST_CASE("Precomputed boarding CPU scaling benchmark", "[.benchmark][passenger]
 			CHECK(successes == 512);
 		}
 		std::cout << packets << ',' << times[0] << ',' << times[1] << ',' << waiting.BoardingCandidatesInspected() << '\n';
+	}
+}
+
+TEST_CASE("Common section boarding ignores unrelated destinations in the same anchor service", "[.benchmark][passenger][precomputed][sections][boarding][cpu]")
+{
+	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = true;
+	auto *long_train = f.Train({Stop(A), Stop(B), Stop(C), Stop(D)});
+	auto *short_train = f.Train({Stop(A), Stop(B), Stop(C)});
+	auto &db = f.Build(); while (!db.PreparePrecomputed()) {}
+	auto common = db.PlanPrecomputed(PAX, A, C, NOW); REQUIRE(common.ride);
+	REQUIRE(db.RebindPrecomputed(*common.ride, long_train->orders->index, PAX, 0));
+	auto through = db.PlanPrecomputed(PAX, A, D, NOW, short_train->orders->index); REQUIRE(through.ride);
+	std::cout << "unrelated_packets,section_ns,section_candidates,section_groups,section_keys\n";
+	for (int count : {128, 1024, 8192, 32768}) {
+		StationCargoList waiting;
+		for (int i = 0; i <= count; ++i) {
+			auto *packet = CargoPacket::Create(1, i, A, TileIndex{0}, Money{0}); REQUIRE(packet->SetPassengerDestination(PAX, i == count ? C : D));
+			packet->SetPassengerJourney(i == count ? *common.ride : *through.ride, C); waiting.Append(packet, C);
+		}
+		PassengerJourneyLoadingContext loading; REQUIRE(waiting.HasCargoFor(std::array{B, C}, short_train, &loading, PAX));
+		const auto before = waiting.BoardingCandidatesInspected(); auto start = std::chrono::steady_clock::now();
+		for (int i = 0; i < 512; ++i) REQUIRE(waiting.HasCargoFor(std::array{B, C}, short_train, &loading, PAX));
+		const auto elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - start).count() / 512;
+		CHECK(waiting.BoardingCandidatesInspected() - before == 512);
+		auto keys = db.PrecomputedBoardingKeys(PAX, short_train->orders->index, 0);
+		std::cout << count << ',' << elapsed << ',' << (waiting.BoardingCandidatesInspected() - before) / 512 << ','
+				<< db.GetPrecomputedDiagnostic(PAX).shared_sections << ',' << keys.sections[0].size() << '\n';
 	}
 }
 

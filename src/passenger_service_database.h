@@ -171,8 +171,9 @@ public:
 	uint64_t GetPublishedRevision() const { return this->published_revision; }
 	OrderListID PrecomputedBoardingKey(CargoType cargo, OrderListID service) const { return this->precomputed[cargo].BoardingKey(service); }
 	std::span<const OrderListID> PrecomputedBoardingServices(CargoType cargo, OrderListID service) const { return this->precomputed[cargo].BoardingServices(service); }
-	bool RebindPrecomputed(PassengerJourneyExecution &ride, OrderListID service, CargoType cargo) const
-	{ return cargo < NUM_CARGO && this->precomputed[cargo].Rebind(ride, service) && this->IsCurrent(ride); }
+	struct BoardingKeys { std::array<std::span<const OrderListID>, 2> services; std::array<std::span<const uint64_t>, 2> sections; };
+	BoardingKeys PrecomputedBoardingKeys(CargoType cargo, OrderListID service, VehicleOrderID boarding) const;
+	bool RebindPrecomputed(PassengerJourneyExecution &ride, OrderListID service, CargoType cargo, VehicleOrderID boarding = INVALID_VEH_ORDER_ID) const;
 	PassengerPeriodicPlan Plan(CargoType cargo, StationID origin, StationID destination, StateTicks ready,
 			PassengerJourneyLimits limits = {}, PassengerJourneyEvaluation evaluation = {}, OrderListID excluded = OrderListID::Invalid());
 	/** Explicit read-only algorithm comparison, never a local cache preference or simulation setting. */

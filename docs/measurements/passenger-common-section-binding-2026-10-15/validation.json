@@ -1,0 +1,36 @@
+{
+  "integration_base": "f880eac3bccadcc8182bcedbe4dbb8b963f5ee72",
+  "configuration": "MSVC x64 Release; asserts ON; LTO OFF; passenger benchmark OFF",
+  "precomputed": {
+    "assertions": 58036,
+    "passed": true,
+    "cases": 44
+  },
+  "ctest": {
+    "passed": 650,
+    "failed": 0,
+    "cases": 650
+  },
+  "benchmark": {
+    "assertions": 232488,
+    "passed": true,
+    "cases": 5
+  },
+  "source_sha256": {
+    "src/cargopacket.cpp": "780c0d1d2789f65b7560ab607382a1b601969990a500b6236793a648ed72f81e",
+    "src/cargopacket.h": "6a2e15bc0862811be0ee85f4019082dc896482ae99e314069b4020d66f953268",
+    "src/passenger_journey_active.cpp": "98e649b681cf74cbbfce952d58ddff9c396c47dcdbee7a923d74e32b0c6b06d7",
+    "src/passenger_precomputed.cpp": "32977bfa383395864c3a4b81cf5ac6848d275d19746912d2da61ba1f26eae448",
+    "src/passenger_precomputed.h": "79bd6dc58564f0d0cf1951cce4d635334768da6fbdd195404af3176dcb2b80f2",
+    "src/passenger_service_database.cpp": "fff2b923b9f4a610e8c2a1b14194f0be2acce4752af5ceecdd32cd9f71029371",
+    "src/passenger_service_database.h": "dcc8c1226e0b1c825301fe68578b65f11762ecc8e99c7dad0468baa9bc628ed6",
+    "src/tests/passenger_precomputed.cpp": "9ee83bd853591a30f37d1c50d62bc6c0a019ed97e64267f5d44b0dad1303f2fd",
+    "src/tests/passenger_service_database.cpp": "1ebff4aae2794a2e0721979742e12b3038602ed873cc0760f61524b2a626e033",
+    "utils/passenger_precomputed_benchmark.py": "384797644efbe38b4ca179bb8364fce39f15b9aa76b3a11b506c94fcaeaf70ba"
+  },
+  "limitations": [
+    "No new long-duration real-map or live server/client multiplayer run",
+    "Other host activity was not excluded from the synthetic benchmark",
+    "FIFO merge cost depends on occupied eligible buckets and distinct service/order-pair keys, not just passenger count"
+  ]
+}

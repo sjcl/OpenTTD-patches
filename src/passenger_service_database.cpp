@@ -761,6 +761,25 @@ void PassengerServiceDatabase::TickPrecomputed(size_t allowance)
 	if (this->PrecomputedFinished() && !this->HasRejectedPrecomputedMemory()) this->ClearRetainedPrecomputed();
 }
 
+PassengerServiceDatabase::BoardingKeys PassengerServiceDatabase::PrecomputedBoardingKeys(CargoType cargo, OrderListID service, VehicleOrderID boarding) const
+{
+	BoardingKeys keys{};
+	if (cargo >= NUM_CARGO) return keys;
+	keys.services = {this->precomputed[cargo].BoardingServices(service), this->retained_precomputed[cargo].BoardingServices(service)};
+	keys.sections = {this->precomputed[cargo].SectionBoardingKeys(service, boarding), this->retained_precomputed[cargo].SectionBoardingKeys(service, boarding)};
+	return keys;
+}
+
+bool PassengerServiceDatabase::RebindPrecomputed(PassengerJourneyExecution &ride, OrderListID service, CargoType cargo, VehicleOrderID boarding) const
+{
+	if (cargo >= NUM_CARGO || !this->IsCurrent(ride)) return false;
+	for (const auto *table : {&this->precomputed[cargo], &this->retained_precomputed[cargo]}) {
+		auto candidate = ride;
+		if (table->Rebind(candidate, service, boarding) && this->IsCurrent(candidate)) { ride = candidate; return true; }
+	}
+	return false;
+}
+
 PassengerPrecomputedPlan PassengerServiceDatabase::PlanPrecomputed(CargoType cargo, StationID origin, StationID destination,
 		StateTicks ready, OrderListID excluded, uint32_t sample) const
 {

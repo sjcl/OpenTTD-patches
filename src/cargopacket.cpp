@@ -1244,8 +1244,11 @@ void StationCargoList::ForgetWaitingPacket(CargoPacketID id) const
 	if (merge != this->merge_index.end()) { merge->second.erase({entry.space, id}); if (merge->second.empty()) this->merge_index.erase(merge); }
 	if (entry.pending) this->waiting_wake.erase(entry.wake);
 	else {
-		auto board = this->boarding_index.find(entry.service);
-		if (board != this->boarding_index.end()) { board->second.erase({entry.key, entry.sequence, id}); if (board->second.empty()) this->boarding_index.erase(board); }
+		for (uint64_t key : {entry.service, entry.section}) {
+			if (key == UINT64_MAX) continue;
+			auto board = this->boarding_index.find(key);
+			if (board != this->boarding_index.end()) { board->second.erase({entry.key, entry.sequence, id}); if (board->second.empty()) this->boarding_index.erase(board); }
+		}
 	}
 	this->waiting_entries.erase(it); _passenger_waiting_owners.erase(id.base());
 }
@@ -1253,19 +1256,23 @@ void StationCargoList::ForgetWaitingPacket(CargoPacketID id) const
 void StationCargoList::IndexPacket(CargoPacket *packet, StationID key, StationCargoPacketList::iterator position, std::optional<uint64_t> sequence) const
 {
 	const bool journey = packet->GetPassengerRoutingMode() == PassengerRoutingMode::Journey;
-	OrderListID service = journey ? packet->GetPassengerJourney().service : OrderListID::Invalid();
+	uint64_t service = journey ? packet->GetPassengerJourney().service.base() : OrderListID::Invalid().base();
 	/* Index the saved raw identity. A changing table's canonical pattern key
 	 * cannot live in a derived index: a joining peer would rebuild it earlier
 	 * than a server's pending generation sweep and see different candidates. */
 	bool pending = journey && packet->GetPassengerJourney().not_before > _state_ticks;
 	const uint64_t rank = sequence ? *sequence : this->waiting_next_sequence++;
 	WaitingEntry entry{key, position, packet->StationMergeHash(), service, static_cast<uint16_t>(CargoPacket::MAX_COUNT - packet->Count()), pending, rank, {}, packet->GetPassengerRoutingEvent()};
+	if (journey && packet->GetPassengerJourney().kind == PassengerRideKind::EstimatedServiceIntent) entry.section = PassengerPrecomputedTable::RawSectionBoardingKey(packet->GetPassengerJourney());
 	if (entry.routing_due != INVALID_STATE_TICKS) this->routing_events.emplace(entry.routing_due, packet->index);
 	/* Current intents use saved expiry events and lazy live generation checks.
 	 * A table publication only needs to revisit unresolved waiting passengers. */
 	if (!journey && Station::IsValidID(packet->GetPassengerDestination())) this->routing_packets.insert(packet->index);
 	if (pending) entry.wake = this->waiting_wake.emplace(packet->GetPassengerJourney().not_before, packet->index);
-	else this->boarding_index[service].emplace(key, rank, packet->index);
+	else {
+		this->boarding_index[service].emplace(key, rank, packet->index);
+		if (entry.section != UINT64_MAX) this->boarding_index[entry.section].emplace(key, rank, packet->index);
+	}
 	this->merge_index[entry.hash].emplace(entry.space, packet->index);
 	this->waiting_entries.emplace(packet->index, entry);
 	_passenger_waiting_owners[packet->index.base()] = const_cast<StationCargoList *>(this);
@@ -1343,54 +1350,79 @@ bool StationCargoList::VisitBoardingCandidates(const Vehicle *vehicle, Visitor &
 	this->EnsureWaitingIndex();
 	while (!this->waiting_wake.empty() && this->waiting_wake.begin()->first <= _state_ticks) {
 		auto wake = this->waiting_wake.begin(); auto it = this->waiting_entries.find(wake->second);
-		if (it != this->waiting_entries.end()) { it->second.pending = false; this->boarding_index[it->second.service].emplace(it->second.key, it->second.sequence, wake->second); }
+		if (it != this->waiting_entries.end()) {
+			it->second.pending = false;
+			this->boarding_index[it->second.service].emplace(it->second.key, it->second.sequence, wake->second);
+			if (it->second.section != UINT64_MAX) this->boarding_index[it->second.section].emplace(it->second.key, it->second.sequence, wake->second);
+		}
 		this->waiting_wake.erase(wake);
 	}
 	OrderListID service = vehicle != nullptr && vehicle->First()->orders != nullptr ? vehicle->First()->orders->index : OrderListID::Invalid();
-	auto visit = [&](OrderListID id) {
-		auto group = this->boarding_index.find(id);
+	const auto keys = GetPassengerServiceDatabase().PrecomputedBoardingKeys(this->passenger_index_cargo, service,
+			vehicle == nullptr ? INVALID_VEH_ORDER_ID : vehicle->First()->cur_real_order_index);
+	auto visit = [&](uint64_t key) {
+		auto group = this->boarding_index.find(key);
 		if (group == this->boarding_index.end()) return true;
 		for (auto it = group->second.begin(); it != group->second.end();) {
 			CargoPacketID packet = std::get<2>(*it++);
 			const bool last = it == group->second.end();
-			/* The action may erase/reinsert the current packet, including the
-			 * last entry and its map bucket. Never touch that iterator again.
-			 * Other entries are stable: an action moves only its own packet. */
 			if (!visitor(packet)) return false;
 			if (last) break;
 		}
 		return true;
 	};
-	/* Merge equivalent raw-service queues in primary FIFO order. Only service
-	 * buckets participate; packets are consumed directly, never copied/scanned. */
-	auto services = this->passenger_index_cargo < NUM_CARGO ? GetPassengerServiceDatabase().PrecomputedBoardingServices(this->passenger_index_cargo, service) : std::span<const OrderListID>{};
-	if (services.size() <= 1) return visit(service) && (service == OrderListID::Invalid() || visit(OrderListID::Invalid()));
+	if (keys.sections[0].empty() && keys.sections[1].empty() && keys.services[0].size() <= 1 && keys.services[1].size() <= 1) {
+		return visit(service.base()) && (service == OrderListID::Invalid() || visit(OrderListID::Invalid().base()));
+	}
+	auto own = [&](OrderListID id) {
+		return id == service || std::binary_search(keys.services[0].begin(), keys.services[0].end(), id) ||
+				std::binary_search(keys.services[1].begin(), keys.services[1].end(), id);
+	};
+	auto source = [](uint64_t key) { return OrderListID{static_cast<uint16_t>(key >> 32)}; };
 	using Position = std::set<BoardingOrder>::const_iterator;
 	struct Cursor { BoardingOrder order; Position next, end; };
 	auto later = [](const Cursor &a, const Cursor &b) { return a.order > b.order; };
 	std::priority_queue<Cursor, std::vector<Cursor>, decltype(later)> candidates(later);
-	auto add = [&](OrderListID id) {
-		auto group = this->boarding_index.find(id);
+	auto add = [&](uint64_t key) {
+		auto group = this->boarding_index.find(key);
 		if (group != this->boarding_index.end() && !group->second.empty()) {
 			auto first = group->second.begin(); candidates.push({*first, std::next(first), group->second.end()});
 		}
 	};
-	if (this->boarding_index.size() < services.size()) {
-		/* A large equivalent fleet often has only one or two resident service
-		 * buckets here. Intersect the smaller side, rather than walking its fleet. */
-		const auto canonical = GetPassengerServiceDatabase().PrecomputedBoardingKey(this->passenger_index_cargo, service);
-		for (const auto &[id, group] : this->boarding_index) {
-			if (id != OrderListID::Invalid() && GetPassengerServiceDatabase().PrecomputedBoardingKey(this->passenger_index_cargo, id) == canonical) add(id);
+	/* Raw service/order identities are a function of the saved Packet only.
+	 * A server with warm indices and a joining peer with cold indices therefore
+	 * select exactly the same queues, even during a pending generation sweep.
+	 * Intersect the smaller side; never expand a large fleet per Packet. */
+	const size_t possible = 1 + keys.services[0].size() + keys.services[1].size() + keys.sections[0].size() + keys.sections[1].size();
+	if (this->boarding_index.size() < possible) {
+		for (const auto &[key, group] : this->boarding_index) {
+			if (key <= OrderListID::Invalid().base()) {
+				if (key != OrderListID::Invalid().base() && own(OrderListID{static_cast<uint16_t>(key)})) add(key);
+			} else if (!own(source(key)) && (std::binary_search(keys.sections[0].begin(), keys.sections[0].end(), key) ||
+					std::binary_search(keys.sections[1].begin(), keys.sections[1].end(), key))) add(key);
 		}
 	} else {
-		for (OrderListID id : services) add(id);
+		add(service.base());
+		auto merge = [&](auto first, auto second, auto &&accept) {
+			size_t a = 0, b = 0;
+			while (a < first.size() || b < second.size()) {
+				if (b == second.size() || (a < first.size() && first[a] < second[b])) { accept(first[a++]); }
+				else if (a == first.size() || second[b] < first[a]) { accept(second[b++]); }
+				else { accept(first[a]); ++a; ++b; }
+			}
+		};
+		merge(keys.services[0], keys.services[1], [&](OrderListID id) { if (id != service) add(id.base()); });
+		merge(keys.sections[0], keys.sections[1], [&](uint64_t key) { if (!own(source(key))) add(key); });
 	}
+	/* A Packet has a raw-service and (for an unbound estimate) a raw-section
+	 * entry. Own-pattern Packets use only the former; foreign-pattern Packets
+	 * use only the latter. The FIFO merge cannot yield the same Packet twice. */
 	while (!candidates.empty()) {
 		auto current = candidates.top(); candidates.pop();
 		if (current.next != current.end) candidates.push({*current.next, std::next(current.next), current.end});
 		if (!visitor(std::get<2>(current.order))) return false;
 	}
-	return service == OrderListID::Invalid() || visit(OrderListID::Invalid());
+	return service == OrderListID::Invalid() || visit(OrderListID::Invalid().base());
 }
 
 /**

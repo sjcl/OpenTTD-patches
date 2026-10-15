@@ -11,6 +11,7 @@
 #include "cargo_type.h"
 #include <queue>
 #include <functional>
+#include <unordered_map>
 
 struct PassengerPeriodicService;
 
@@ -56,8 +57,11 @@ public:
 	bool MemoryRejected() const { return this->failed; }
 	const PassengerPrecomputedDiagnostic &GetDiagnostic() const { return this->diagnostic; }
 	OrderListID BoardingKey(OrderListID service) const;
-	std::span<const OrderListID> BoardingServices(OrderListID service) const; ///< Sorted raw service IDs; independent of row publication.
-	bool Rebind(PassengerJourneyExecution &ride, OrderListID service) const;
+	std::span<const OrderListID> BoardingServices(OrderListID service) const;
+	static uint64_t RawSectionBoardingKey(const PassengerJourneyExecution &ride);
+	bool Rebind(PassengerJourneyExecution &ride, OrderListID service, VehicleOrderID boarding = INVALID_VEH_ORDER_ID) const;
+	std::optional<uint64_t> SectionBoardingKey(const PassengerJourneyExecution &ride) const;
+	std::span<const uint64_t> SectionBoardingKeys(OrderListID service, VehicleOrderID boarding) const;
 	bool RefreshService(const PassengerPeriodicService &service); ///< Refresh bindings, retaining the frozen estimated costs.
 private:
 	struct Member { OrderListID id; uint64_t incarnation, generation; };
@@ -72,6 +76,9 @@ private:
 	enum class EdgeKind : uint8_t { Board, Ride, Wait, Alight, Section };
 	struct Edge { uint32_t from, to, occurrence; int64_t cost; uint32_t distance; EdgeKind kind; };
 	struct SectionRide { uint32_t board, alight; int64_t riding, waiting, cost; };
+	struct SectionBinding { uint32_t board, alight; };
+	struct Section { uint64_t key; std::vector<SectionBinding> bindings; };
+	struct SectionPath { uint32_t section, board, alight; };
 	struct Label {
 		int64_t cost = INT64_MAX, riding = 0, waiting = 0;
 		int64_t first_wait = 0;
@@ -85,6 +92,10 @@ private:
 	std::vector<Occurrence> occurrences;
 	std::vector<Edge> edges;
 	std::vector<SectionRide> section_rides;
+	std::vector<Section> sections;
+	std::unordered_map<uint64_t, SectionPath> section_paths; ///< Packed pattern and saved order pair; lookup only, never iterated for decisions.
+	std::vector<std::vector<uint64_t>> boarding_sections; ///< Keys for each concrete boarding occurrence, independent of fleet size.
+	size_t binding_bytes = 0; ///< Computed once during graph preparation.
 	std::vector<uint32_t> landings; ///< Section arrivals have no on-board continuation.
 	std::vector<uint32_t> incoming_offsets, incoming;
 	std::vector<std::vector<std::pair<uint32_t, uint32_t>>> waiting_states;
@@ -102,6 +113,8 @@ private:
 	CargoType cargo = INVALID_CARGO;
 	mutable PassengerPrecomputedDiagnostic diagnostic;
 	uint32_t StateFor(uint32_t station, uint32_t pattern) const;
+	const Member *FindMember(OrderListID service) const;
+	const Section *FindSection(const PassengerJourneyExecution &ride) const;
 	void StartDestination();
 	void AddEdge(uint32_t from, uint32_t to, int64_t cost, EdgeKind kind, uint32_t occurrence = INVALID, uint32_t distance = 0);
 	bool BuildSections(const std::vector<std::vector<const PassengerPeriodicService *>> &members, int64_t transfer,

@@ -1198,8 +1198,8 @@ bool PassengerJourneyBoardingContext::ValidateServiceRide(const PassengerJourney
 	if (boarding && _settings_game.linkgraph.passenger_journey_precomputed && IsEstimatedPassengerRide(ride.kind) &&
 			_state_ticks > ride.planned_at && uint64_t(_state_ticks.base()) - uint64_t(ride.planned_at.base()) > uint64_t(ride.waiting_limit)) return false;
 	if (boarding && _settings_game.linkgraph.passenger_journey_precomputed && !IsBoundPassengerRide(ride.kind) && this->vehicle != nullptr &&
-			this->vehicle->orders != nullptr && ride.service != this->vehicle->orders->index) {
-		if (!GetPassengerServiceDatabase().IsCurrent(original) || !GetPassengerServiceDatabase().RebindPrecomputed(ride, this->vehicle->orders->index, this->cargo)) return false;
+			this->vehicle->orders != nullptr && (ride.service != this->vehicle->orders->index || ride.boarding_order != this->vehicle->cur_real_order_index)) {
+		if (!GetPassengerServiceDatabase().RebindPrecomputed(ride, this->vehicle->orders->index, this->cargo, this->vehicle->cur_real_order_index)) return false;
 	}
 	if (this->vehicle == nullptr || (IsBoundPassengerRide(ride.kind) && ride.vehicle != this->vehicle->index)) return false;
 	if (boarding && _state_ticks < ride.not_before) return false;
@@ -1297,8 +1297,9 @@ void PassengerJourneyLoadingContext::PrepareBoard(CargoPacket &packet, const Veh
 	if (vehicle != nullptr && packet.GetPassengerRoutingMode() == PassengerRoutingMode::Journey &&
 			(packet.GetPassengerJourney().kind == PassengerRideKind::ServiceIntent || packet.GetPassengerJourney().kind == PassengerRideKind::EstimatedServiceIntent)) {
 		auto ride = packet.GetPassengerJourney();
-		if (_settings_game.linkgraph.passenger_journey_precomputed && vehicle->First()->orders != nullptr && ride.service != vehicle->First()->orders->index)
-			GetPassengerServiceDatabase().RebindPrecomputed(ride, vehicle->First()->orders->index, vehicle->cargo_type);
+		if (_settings_game.linkgraph.passenger_journey_precomputed && vehicle->First()->orders != nullptr &&
+				(ride.service != vehicle->First()->orders->index || ride.boarding_order != vehicle->First()->cur_real_order_index))
+			GetPassengerServiceDatabase().RebindPrecomputed(ride, vehicle->First()->orders->index, vehicle->cargo_type, vehicle->First()->cur_real_order_index);
 		ride.vehicle = vehicle->First()->index; ride.kind = IsEstimatedPassengerRide(ride.kind) ? PassengerRideKind::EstimatedBoundService : PassengerRideKind::BoundService;
 		packet.SetPassengerJourney(ride, packet.GetPassengerLegacyHop());
 	}

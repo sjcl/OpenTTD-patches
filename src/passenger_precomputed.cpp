@@ -39,6 +39,12 @@ namespace {
 		return value < 0 ? value + period : value;
 	}
 
+	uint64_t SectionPathKey(uint32_t pattern, VehicleOrderID boarding, VehicleOrderID alighting)
+	{
+		static_assert(sizeof(VehicleOrderID) <= 2);
+		return (uint64_t{pattern} << 32) | (uint64_t{boarding} << 16) | alighting;
+	}
+
 	/** Union of real periodic departure streams, never an artificial fleet headway.
 	 * Prefer a complete joint cycle; otherwise observe one longest circuit. If
 	 * even that contains excessive events, retain the fastest certified stream's
@@ -98,15 +104,63 @@ std::span<const OrderListID> PassengerPrecomputedTable::BoardingServices(OrderLi
 	return this->patterns[this->service_pattern[service.base()]].boarding_services;
 }
 
-bool PassengerPrecomputedTable::Rebind(PassengerJourneyExecution &ride, OrderListID service) const
+uint64_t PassengerPrecomputedTable::RawSectionBoardingKey(const PassengerJourneyExecution &ride)
 {
-	if (ride.service.base() >= this->service_pattern.size() || service.base() >= this->service_pattern.size()) return false;
-	uint32_t pattern = this->service_pattern[ride.service.base()];
-	if (pattern == INVALID || pattern != this->service_pattern[service.base()]) return false;
-	const auto &members = this->patterns[pattern].members;
-	auto member = std::lower_bound(members.begin(), members.end(), service, [](const auto &m, OrderListID id) { return m.id < id; });
-	if (member == members.end() || member->id != service) return false;
-	ride.service = service; ride.signature = member->incarnation; ride.generation = member->generation; return true;
+	return (uint64_t{1} << 63) | SectionPathKey(ride.service.base(), ride.boarding_order, ride.alighting_order);
+}
+
+const PassengerPrecomputedTable::Member *PassengerPrecomputedTable::FindMember(OrderListID service) const
+{
+	if (service.base() >= this->service_pattern.size() || this->service_pattern[service.base()] == INVALID) return nullptr;
+	const auto &members = this->patterns[this->service_pattern[service.base()]].members;
+	auto it = std::lower_bound(members.begin(), members.end(), service, [](const Member &member, OrderListID id) { return member.id < id; });
+	return it != members.end() && it->id == service ? &*it : nullptr;
+}
+
+const PassengerPrecomputedTable::Section *PassengerPrecomputedTable::FindSection(const PassengerJourneyExecution &ride) const
+{
+	if (ride.kind != PassengerRideKind::EstimatedServiceIntent) return nullptr;
+	const auto *member = this->FindMember(ride.service);
+	if (member == nullptr || member->incarnation != ride.signature || member->generation != ride.generation) return nullptr;
+	auto it = this->section_paths.find(SectionPathKey(this->service_pattern[ride.service.base()], ride.boarding_order, ride.alighting_order));
+	if (it == this->section_paths.end() || this->occurrences[it->second.board].station != ride.boarding ||
+			this->occurrences[it->second.alight].station != ride.alighting) return nullptr;
+	return &this->sections[it->second.section];
+}
+
+std::optional<uint64_t> PassengerPrecomputedTable::SectionBoardingKey(const PassengerJourneyExecution &ride) const
+{
+	if (const auto *section = this->FindSection(ride)) return section->key;
+	return std::nullopt;
+}
+
+std::span<const uint64_t> PassengerPrecomputedTable::SectionBoardingKeys(OrderListID service, VehicleOrderID boarding) const
+{
+	if (service.base() >= this->service_pattern.size() || this->service_pattern[service.base()] == INVALID || this->boarding_sections.empty()) return {};
+	const auto &stops = this->patterns[this->service_pattern[service.base()]].occurrences;
+	auto it = std::lower_bound(stops.begin(), stops.end(), boarding, [&](uint32_t id, VehicleOrderID order) { return this->occurrences[id].order < order; });
+	return it != stops.end() && this->occurrences[*it].order == boarding ? std::span<const uint64_t>(this->boarding_sections[*it]) : std::span<const uint64_t>{};
+}
+
+bool PassengerPrecomputedTable::Rebind(PassengerJourneyExecution &ride, OrderListID service, VehicleOrderID boarding) const
+{
+	const auto *member = this->FindMember(service);
+	const auto *original = this->FindMember(ride.service);
+	if (member == nullptr || original == nullptr || original->incarnation != ride.signature || original->generation != ride.generation || IsBoundPassengerRide(ride.kind)) return false;
+	uint32_t pattern = this->service_pattern[service.base()];
+	if (const auto *section = this->FindSection(ride)) {
+		auto key = std::pair(pattern, boarding == INVALID_VEH_ORDER_ID ? VehicleOrderID{0} : boarding);
+		auto it = std::lower_bound(section->bindings.begin(), section->bindings.end(), key, [&](const SectionBinding &binding, const auto &candidate) {
+			const auto &stop = this->occurrences[binding.board]; return std::pair(stop.pattern, stop.order) < candidate;
+		});
+		if (it == section->bindings.end() || this->occurrences[it->board].pattern != pattern ||
+				(boarding != INVALID_VEH_ORDER_ID && this->occurrences[it->board].order != boarding)) return false;
+		ride.boarding_order = this->occurrences[it->board].order; ride.alighting_order = this->occurrences[it->alight].order;
+	} else if (pattern != this->service_pattern[ride.service.base()] || (boarding != INVALID_VEH_ORDER_ID && ride.boarding_order != boarding)) {
+		return false;
+	}
+	ride.service = service; ride.signature = member->incarnation; ride.generation = member->generation;
+	return true;
 }
 
 bool PassengerPrecomputedTable::RefreshService(const PassengerPeriodicService &service)
@@ -381,9 +435,40 @@ bool PassengerPrecomputedTable::BuildSections(const std::vector<std::vector<cons
 		int64_t risk = gap / seats + (gap % seats != 0);
 		++this->diagnostic.shared_sections;
 		if (this->landings.empty()) {
-			if (!Product(this->occurrences.size(), 4, envelope, memory)) return false;
+			if (!Product(this->occurrences.size(), 36, envelope, memory)) return false;
 			this->landings.assign(this->occurrences.size(), INVALID);
+			this->boarding_sections.resize(this->occurrences.size());
 		}
+		/* Persist the same complete paths used by the frequency estimate. Each
+		 * pattern refers to its existing member vector, rather than copying this
+		 * binding once per vehicle or shared order list. The saved concrete order
+		 * pair identifies the section without adding anything to CargoPacket. */
+		if (this->sections.size() >= INVALID || !Product(1, 128, envelope, memory) || !Product(paths.size(), 128, envelope, memory)) return false;
+		Section section{UINT64_MAX, {}};
+		section.bindings.reserve(paths.size());
+		uint64_t key_count = 0;
+		for (const auto &path : paths) key_count += this->patterns[this->occurrences[path.board].pattern].members.size();
+		if (!Product(key_count, 16, envelope, memory) || !Product(key_count, uint64_t(paths.size()) * 16, envelope, memory)) return false;
+		std::vector<uint64_t> raw_keys;
+		raw_keys.reserve(static_cast<size_t>(key_count));
+		for (const auto &path : paths) {
+			const auto &board = this->occurrences[path.board], &alight = this->occurrences[path.alight];
+			section.key = std::min(section.key, (uint64_t{1} << 63) |
+					SectionPathKey(this->patterns[board.pattern].members.front().id.base(), board.order, alight.order));
+			for (const auto &member : this->patterns[board.pattern].members) raw_keys.push_back((uint64_t{1} << 63) | SectionPathKey(member.id.base(), board.order, alight.order));
+		}
+		std::sort(raw_keys.begin(), raw_keys.end()); raw_keys.erase(std::unique(raw_keys.begin(), raw_keys.end()), raw_keys.end());
+		for (const auto &path : paths) {
+			const auto &board = this->occurrences[path.board], &alight = this->occurrences[path.alight];
+			section.bindings.push_back({path.board, path.alight});
+			this->section_paths.emplace(SectionPathKey(board.pattern, board.order, alight.order),
+					SectionPath{static_cast<uint32_t>(this->sections.size()), path.board, path.alight});
+			this->boarding_sections[path.board].insert(this->boarding_sections[path.board].end(), raw_keys.begin(), raw_keys.end());
+		}
+		std::sort(section.bindings.begin(), section.bindings.end(), [&](const SectionBinding &a, const SectionBinding &b) {
+			const auto &x = this->occurrences[a.board], &y = this->occurrences[b.board]; return std::tie(x.pattern, x.order) < std::tie(y.pattern, y.order);
+		});
+		this->sections.push_back(std::move(section));
 		for (const auto &path : paths) {
 			const auto &board = this->occurrences[path.board], &alight = this->occurrences[path.alight];
 			uint32_t station = this->station_index[board.station.base()];
@@ -407,6 +492,12 @@ bool PassengerPrecomputedTable::BuildSections(const std::vector<std::vector<cons
 			}
 		}
 	}
+	for (auto &keys : this->boarding_sections) {
+		std::sort(keys.begin(), keys.end()); keys.erase(std::unique(keys.begin(), keys.end()), keys.end());
+	}
+	this->binding_bytes = this->sections.capacity() * sizeof(Section) + this->boarding_sections.capacity() * sizeof(std::vector<uint64_t>) + this->section_paths.size() * 64;
+	for (const auto &section : this->sections) this->binding_bytes += section.bindings.capacity() * sizeof(SectionBinding);
+	for (const auto &keys : this->boarding_sections) this->binding_bytes += keys.capacity() * sizeof(uint64_t);
 	this->diagnostic.section_rides = this->section_rides.size();
 	return true;
 }
@@ -529,6 +620,7 @@ size_t PassengerPrecomputedTable::Step(size_t allowance, bool legacy_publication
 			(this->incoming.capacity() + this->incoming_offsets.capacity()) * 4 + this->rows.size() * this->diagnostic.stored_states * sizeof(Label) +
 			(this->scratch.labels.capacity() + this->scratch.alternative.capacity() + this->prepared.labels.capacity()) * sizeof(Label) +
 			this->section_rides.capacity() * sizeof(SectionRide) + this->landings.capacity() * sizeof(uint32_t);
+	this->diagnostic.bytes += this->binding_bytes;
 	return used;
 }
 
@@ -554,6 +646,9 @@ PassengerPrecomputedPlan PassengerPrecomputedTable::Select(const Label &label, S
 	if (pattern.members[member].id == excluded) { result.state = PassengerPrecomputedPlan::State::NoRoute; return result; }
 	const auto &m = pattern.members[member];
 	PassengerJourneyExecution ride;
+	/* The saved service/order pair anchors a shared section; it does not
+	 * restrict its carriers. SectionBoardingKey and Rebind recover the same
+	 * complete path pool whose departures supplied the estimated wait. */
 	ride.service = m.id; ride.signature = m.incarnation; ride.generation = m.generation;
 	ride.boarding = board.station; ride.alighting = alight.station; ride.boarding_order = board.order; ride.alighting_order = alight.order;
 	ride.kind = PassengerRideKind::EstimatedServiceIntent; ride.not_before = ready; ride.planned_at = ready;
