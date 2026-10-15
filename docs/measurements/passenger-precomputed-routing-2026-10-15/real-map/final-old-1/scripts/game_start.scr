@@ -1,0 +1,12 @@
+script C:/Users/bebe/.codex/worktrees/49c6/OpenTTD-patches/build-real-map/final-old-1/on-1-console.txt
+getfulldate
+passenger_journey_stats inventory
+setting linkgraph.distribution_pax 2
+setting linkgraph.passenger_od_assignment true
+setting linkgraph.passenger_journey_routing true
+setting linkgraph.passenger_journey_periodic true
+setting linkgraph.recalc_interval 8
+setting linkgraph.recalc_time 32
+passenger_journey_stats reset
+unpause
+script

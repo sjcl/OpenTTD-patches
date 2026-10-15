@@ -1,0 +1,7 @@
+script C:/Users/bebe/.codex/worktrees/49c6/OpenTTD-patches/build-real-map/baseline-2048/on-1-console.txt
+getfulldate
+passenger_journey_stats inventory
+passenger_journey_stats total
+passenger_journey_stats save_integrity
+save C:/Users/bebe/.codex/worktrees/49c6/OpenTTD-patches/build-real-map/baseline-2048/result
+script

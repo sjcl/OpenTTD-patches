@@ -1,0 +1,43 @@
+{
+  "source_revision": "22f235eea089076c0d0fd089d5b34857c42970d8",
+  "previous_measurement_revision": "abc802005e844846d32183291b75457f3e0528e9",
+  "baseline_revision": "3f0c8aaac95058ec0b64040594c6a653275956e7",
+  "baseline_tree": "09f47baa5c3179e34a791ad78ffce460d8ebe755",
+  "original_input": {
+    "name": "ga58d47238.sav",
+    "bytes": 37178272,
+    "sha256": "18fb2ba6bed025e442f22165d2d4fecd7a829703cb122ed18480f10af4b7a8cb"
+  },
+  "canonical_input": {
+    "sha256": "d8d40bd49ca5fbb20c2f9645d984a2b19f41eb7b482bf6707e49da8fd61ee1ea",
+    "bytes": 37178216
+  },
+  "counter_recovery": {
+    "saved_counter": 64,
+    "maximum_graph_or_job_counter": 82,
+    "scope": "one-off copied baseline reader; no graph, station OD or Packet revision rewritten; standard afterload/save fixups still apply"
+  },
+  "assets_sha256": "a58e20478fab5d9e6eb1a7e33e87eadfaf323160502e6c9212bbd999cfe61276",
+  "frozen_config_sha256": "bf8503ba53c6ec79dd57380a2244aa6b77014663ccfc1b53205ce1e09d94f30c",
+  "host_ram_bytes": 100265259008,
+  "cpu": "AMD Ryzen 9 9950X",
+  "physical_cores": 16,
+  "logical_processors": 32,
+  "conditions": [
+    "x64 MSVC Release /O2 /MT, assertions on, LTO off",
+    "identical isolated assets with -X; matching per-build English language files",
+    "routing/OD/distribution/recalc settings explicitly recorded in console scripts",
+    "no competing build/test/game processes; other host activity is not fully excluded",
+    "StateTicks 3181092957 -> 3181093981; 1024 real ticks; same economy period",
+    "company counters include all passenger cargo, known-OD movement counters exclude unknown-OD CargoDist",
+    "warm scenario completes mandatory rows before the first tick; process CPU includes that build, load and save",
+    "NewGRF capacity warnings retained; no long-run or multiplayer success inferred"
+  ],
+  "excluded": [
+    "original input rejected by both readers; title-screen artifacts are not gameplay measurements",
+    "baseline-2048 stopped at 1255 real ticks because the old harness loop cap was reached",
+    "new-2048-fixed stopped by the harness owner after prolonged existing CargoDist pause at tick 1255",
+    "new-1024, fixed-smoke and final-new-1 belong to superseded/no-table or memory-rejected implementations"
+  ],
+  "runner_sha256": "86f389e7ea4c381b38b48e3c5497aa95c3db0ea3569c7879c5dc46433aa9afc8"
+}

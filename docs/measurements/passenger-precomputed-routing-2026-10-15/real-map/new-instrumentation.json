@@ -1,0 +1,63 @@
+{
+  "source": "C:\\Users\\bebe\\.codex\\worktrees\\49c6\\OpenTTD-patches",
+  "source_revision": "22f235eea089076c0d0fd089d5b34857c42970d8",
+  "original_driver_sha256": "13347d9dbd3e759701d9ede65c53858f044363fbf25a01b13cf08970e5288881",
+  "instrumented_driver_sha256": "8faee43affbb0e7eb7cf4168d3076762978bf76615752dfc448827ef4d216813",
+  "compiler": {
+    "CMAKE_CXX_FLAGS": "/DWIN32 /D_WINDOWS /GR /EHsc",
+    "CMAKE_CXX_FLAGS_RELEASE": "/O2 /Ob2 /DNDEBUG",
+    "CMAKE_C_FLAGS": "/DWIN32 /D_WINDOWS",
+    "CMAKE_C_FLAGS_RELEASE": "/O2 /Ob2 /DNDEBUG",
+    "OPTION_NO_LTO": "ON",
+    "OPTION_PASSENGER_BENCHMARK": "ON",
+    "OPTION_USE_ASSERTS": "ON",
+    "CMAKE_GENERATOR": "Visual Studio 17 2022",
+    "CMAKE_GENERATOR_PLATFORM": "x64",
+    "CMAKE_CXX_COMPILER": "C:/Program Files (x86)/Microsoft Visual Studio/2022/BuildTools/VC/Tools/MSVC/14.44.35207/bin/Hostx64/x64/cl.exe",
+    "CMAKE_CXX_COMPILER_ID": "MSVC",
+    "CMAKE_CXX_COMPILER_VERSION": "19.44.35227.0",
+    "library_sha256": {
+      "libpng16d.lib": "7b7f861dec57dc4b3ccda31909e3f3e3d9e3c343453998f9eb72850421213492",
+      "lzma.lib": "14a38a5ef1d68e67c80e96faba4d7bf5d2cde00de7257bdb396d4801e7160c6b",
+      "lzo2.lib": "95eaa6fc31476599afe4bc4837eee263716e0d386fe29593d67590c2e670a60d",
+      "ogg.lib": "3a8e78bea0945bbc2730469ed4b5476ba6915a0c23a52d74590b384ee8933899",
+      "opus.lib": "e5d870f1d21e01912bf4f9aa2c7f18dd0ed7cf815ae44008612a60d9c751ac47",
+      "opusfile.lib": "010f8114a5755aa66f8129bb9dc6426683055452b915ea5c0d29159fdf50f6f5",
+      "zlibd.lib": "d47366984da8865d42f8bec6c4c710d16dbe327b11be0e4a07ea73d340d402ca",
+      "zstd.lib": "849d290091047fa4f7dce989e84e085a98846d996a6cc22fc86a4aeedc317746",
+      "libpng16.lib": "2b3e07b20b3a1c48e8d7c0a299c700721dd82c1499269e019a6cd8459774ec3d",
+      "zlib.lib": "0d3ce92e180e325c2eaa1f0c39dde62fb4153ebfbec078d740590fd12f0be3f9"
+    }
+  },
+  "note": "Copied TUs only; exact StateTicks; error resumptions retained; read-only packet/payment inspector.",
+  "translation_units": [
+    {
+      "path": "save-integrity/cargopacket.cpp",
+      "sha256": "3f259485a1b48d5575f0fa56dbf0d86dc42d10c03adb1fa8d03fc0396021aadb"
+    },
+    {
+      "path": "save-integrity/cargopacket_sl.cpp",
+      "sha256": "b5dac466f901758710d5341ca7d997210b4b81c3ec998356281692dd52e099ca"
+    },
+    {
+      "path": "save-integrity/console_cmds.cpp",
+      "sha256": "e16d2b8a4b85dfe440565c2e748a7acf6160d5ff05d1e54dafde7b4123c36a11"
+    },
+    {
+      "path": "save-integrity/integrity.h",
+      "sha256": "19d8714fd43f2ac65da807288acf6e0833c196ad1d47a6d351c26e0df80eef51"
+    },
+    {
+      "path": "real-map-driver/null_v.cpp",
+      "sha256": "8faee43affbb0e7eb7cf4168d3076762978bf76615752dfc448827ef4d216813"
+    },
+    {
+      "path": "real-map-driver/passenger_od.cpp",
+      "sha256": "61c180c90c9bb54b3c3371a044e66806810b9786da7fa0fca60b0c5d0c93cbf8"
+    },
+    {
+      "path": "real-map-driver/win32.cpp",
+      "sha256": "7431174b4663298f0715e690998a2c8b398b9fef90c3faec7d612c0d728f16f5"
+    }
+  ]
+}

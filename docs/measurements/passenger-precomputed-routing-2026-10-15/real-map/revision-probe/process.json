@@ -1,0 +1,53 @@
+{
+  "exit_code": 0,
+  "requested_ticks": 1,
+  "elapsed_seconds": 5.563305699732155,
+  "contamination": [],
+  "input_sha256": "18fb2ba6bed025e442f22165d2d4fecd7a829703cb122ed18480f10af4b7a8cb",
+  "binary_sha256": "e787f3fcb4613a8337cf6345799f8457ef6648d14bcd48a41d58ddbc2170aa08",
+  "language_sha256": "ac664ad25c3e91632d656de396cf92ca65d4175aded4e5126b8699f0d637fa78",
+  "resume_settings": false,
+  "precomputed": true,
+  "command": [
+    "C:\\Users\\bebe\\.codex\\worktrees\\49c6\\OpenTTD-patches\\build-real-map\\revision-probe\\openttd.exe",
+    "-x",
+    "-X",
+    "-c",
+    "openttd.cfg",
+    "-g",
+    "input.sav",
+    "-v",
+    "null:ticks=1",
+    "-snull",
+    "-mnull",
+    "-d",
+    "sl=2"
+  ],
+  "peak_working_bytes": 1137717248,
+  "peak_commit_bytes": 1132834816,
+  "process_cpu_seconds": 5.828125,
+  "actual-ticks.json": {
+    "start_tick": 0,
+    "end_tick": 13641729,
+    "driver_loops": 2049,
+    "error_resumes": 0,
+    "samples": []
+  },
+  "save-integrity.json": {
+    "runtime_routing_feature": 3,
+    "state_ticks": 13641729,
+    "packets": 87,
+    "cargo_units": 10818,
+    "known_od_units": 0,
+    "journey_packets": 0,
+    "packet_state_digest": 7523694489499679855,
+    "payment_digest": 4315541545484706242,
+    "payments_valid": true,
+    "legacy_true_packets": 0,
+    "legacy_false_packets": 0,
+    "legacy_true_units": 0,
+    "legacy_false_units": 0,
+    "opposite_history_mergeable_pairs": 0
+  },
+  "result_sha256": "9db71d5deebc76abfc6187cae1ed70da51c8e2b856de8e14181ed510a6bed878"
+}

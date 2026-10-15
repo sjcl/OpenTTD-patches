@@ -1,0 +1,31 @@
+{
+  "exit_code": 4294967295,
+  "requested_ticks": 2048,
+  "elapsed_seconds": 194.34273619996384,
+  "contamination": [],
+  "input_sha256": "d8d40bd49ca5fbb20c2f9645d984a2b19f41eb7b482bf6707e49da8fd61ee1ea",
+  "binary_sha256": "0d59ce81decbcf02d2e752d0d489c84e27c4d0ddfd3d014147922ea3c4f7f86b",
+  "language_sha256": "ac664ad25c3e91632d656de396cf92ca65d4175aded4e5126b8699f0d637fa78",
+  "resume_settings": false,
+  "precomputed": true,
+  "command": [
+    "C:\\Users\\bebe\\.codex\\worktrees\\49c6\\OpenTTD-patches\\build-real-map\\new-2048-fixed\\openttd.exe",
+    "-x",
+    "-X",
+    "-c",
+    "openttd.cfg",
+    "-g",
+    "input.sav",
+    "-v",
+    "null:ticks=2048",
+    "-snull",
+    "-mnull",
+    "-d",
+    "sl=2"
+  ],
+  "peak_working_bytes": 1357266944,
+  "peak_commit_bytes": 1351507968,
+  "process_cpu_seconds": 375.390625,
+  "load_failed": false,
+  "newgrf_warning_lines": 15279
+}

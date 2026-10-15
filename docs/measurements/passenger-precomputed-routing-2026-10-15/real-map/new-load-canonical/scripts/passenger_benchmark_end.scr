@@ -1,0 +1,7 @@
+script C:/Users/bebe/.codex/worktrees/49c6/OpenTTD-patches/build-real-map/new-load-canonical/on-1-console.txt
+getfulldate
+passenger_journey_stats inventory
+passenger_journey_stats total
+passenger_journey_stats save_integrity
+save C:/Users/bebe/.codex/worktrees/49c6/OpenTTD-patches/build-real-map/new-load-canonical/result
+script
