@@ -19,6 +19,7 @@
 #include "strings_func.h"
 #include "viewport_func.h"
 #include "vehicle_func.h"
+#include "passenger_service_database.h"
 #include "sound_func.h"
 #include "ai/ai.hpp"
 #include "game/game.hpp"
@@ -7668,6 +7669,10 @@ static CommandCost CmdTemplateReplaceVehicle(DoCommandFlags flags, Train *incomi
 		return buy;
 	}
 
+	/* A matching template returns above without changing a passenger service.
+	 * Real refits/rearrangements invalidate only this shared order list; nested
+	 * construction/deletion retains its own fleet safety notifications. */
+	if (incoming->orders != nullptr) InvalidatePassengerServiceDatabase(incoming->orders->index);
 	RegisterGameEvents(GEF_TBTR_REPLACEMENT);
 
 	if (need_replacement) {
