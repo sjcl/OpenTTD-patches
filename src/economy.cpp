@@ -2490,6 +2490,7 @@ void LoadUnloadStation(Station *st)
 	 */
 	if (last_loading == nullptr) { ReleasePassengerJourneyWaitingShare(st->index); return; }
 	PassengerJourneyLoadingContext loading;
+	loading.EnableWaitingEvents();
 	RouteWaitingPassengerJourneys(st, &loading);
 	ReleasePassengerJourneyWaitingShare(st->index);
 

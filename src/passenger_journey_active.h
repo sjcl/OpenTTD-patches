@@ -10,6 +10,7 @@
 #include "cargopacket.h"
 #include "passenger_journey_planner.h"
 #include "passenger_query_admission.h"
+#include "passenger_precomputed.h"
 
 bool IsPassengerJourneyRoutingEnabled(CargoType cargo);
 uint64_t PassengerJourneyServiceSignature(const OrderList &orders, CargoType cargo, size_t *budget = nullptr);
@@ -186,7 +187,9 @@ public:
 class PassengerJourneyLoadingContext {
 	std::map<std::pair<VehicleID, CargoType>, PassengerJourneyBoardingContext> boarding;
 	PassengerOdFallbackContext fallback;
+	bool waiting_events = false;
 public:
+	void EnableWaitingEvents() { this->waiting_events = true; } ///< Actual station simulation only; read-only predicates never wake packets.
 	bool CanBoard(const CargoPacket &packet, const Vehicle *vehicle, CargoType cargo = INVALID_CARGO);
 	void PrepareBoard(CargoPacket &packet, const Vehicle *vehicle);
 	void Invalidate(const Vehicle *vehicle);
@@ -207,6 +210,7 @@ class PassengerJourneyActiveContext {
 		PassengerJourneyFallbackReason failure = PassengerJourneyFallbackReason::QueryWork;
 	};
 	std::map<std::tuple<CargoType, StationID, StateTicks, OrderListID>, PeriodicWaiting> periodic_waiting;
+	std::map<std::tuple<CargoType, StationID, StateTicks, OrderListID>, PassengerPrecomputedPlan> precomputed_waiting;
 	PassengerOdFallbackContext fallback;
 	size_t work_left = 4194304;
 	size_t memory_left = 256 * 1024 * 1024;

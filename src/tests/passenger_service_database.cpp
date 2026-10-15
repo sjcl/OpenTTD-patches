@@ -28,6 +28,7 @@
 
 extern SaveLoadVersion _sl_version;
 extern NamedSaveLoadTable GetGoodsDesc();
+extern NamedSaveLoadTable GetPassengerWaitingEventDesc();
 extern std::vector<uint8_t> SlTestSaveLoadTable(void *, void *, const NamedSaveLoadTable &);
 extern std::vector<uint8_t> SlTestSaveLoadTable(void *, void *, const NamedSaveLoadTable &, const NamedSaveLoadTable &);
 
@@ -2296,7 +2297,8 @@ TEST_CASE("Precomputed active journeys bypass OD admission and survive partial-b
 	CHECK(GetPassengerJourneyTickDiagnostic().admission.accepted == 0);
 	CHECK(GetPassengerJourneyTickDiagnostic().admission.used == 0);
 	CHECK(db.GetDiagnostic().searches == timed_searches);
-	CHECK(db.GetPrecomputedDiagnostic(PAX).hits >= 100);
+	CHECK(db.GetPrecomputedDiagnostic(PAX).hits == 1);
+	CHECK(GetPassengerJourneyTickDiagnostic().query_cache_hits == 99);
 	auto wire = db.Save(); REQUIRE(wire[0] == 8);
 	PassengerServiceDatabase peer; REQUIRE(peer.Load(wire)); peer.FinishLoad(true);
 	CHECK(peer.Save() == wire);
@@ -2472,12 +2474,282 @@ TEST_CASE("Precomputed waiting events survive save tables without inventing a ro
 	AutoRestoreBackup features{_sl_xv_feature_versions, AutoRestoreBackupNoNewValueTag{}};
 	AutoRestoreBackup static_features{_sl_xv_feature_static_versions, AutoRestoreBackupNoNewValueTag{}};
 	SlXvSetStaticCurrentVersions(); _sl_xv_feature_versions = _sl_xv_feature_static_versions;
+	bool legacy = false;
+	SECTION("Current packet-event save") { REQUIRE(_sl_xv_feature_versions[XSLFI_PASSENGER_PERIODIC] == 9); }
+	SECTION("v8 common-section save has no packet-event fields") { legacy = true; _sl_xv_feature_versions[XSLFI_PASSENGER_PERIODIC] = 8; }
 	GoodsEntry source{}, loaded{}; source.CreateData(); loaded.CreateData();
 	auto &a = source.data->cargo;
 	a.passenger_routing_dirty = false; a.passenger_routing_revision = 17; a.passenger_routing_rows = 23; a.passenger_routing_due = NOW + 100;
+	a.passenger_routing_sweeping = true; a.passenger_routing_cursor = 7; a.passenger_routing_end = 103;
+	a.passenger_routing_tick = NOW; a.passenger_routing_work = 31;
+	CHECK_FALSE(source.data->MayBeRemoved());
 	REQUIRE_FALSE(SlTestSaveLoadTable(&source, &loaded, GetGoodsDesc()).empty());
 	auto &b = loaded.data->cargo; b.RebuildWaitingIndex();
 	CHECK_FALSE(b.passenger_routing_dirty); CHECK(b.passenger_routing_revision == 17); CHECK(b.passenger_routing_rows == 23); CHECK(b.passenger_routing_due == NOW + 100);
+	CHECK(b.passenger_routing_sweeping == !legacy); CHECK(b.passenger_routing_cursor == (legacy ? 0 : 7)); CHECK(b.passenger_routing_end == (legacy ? 0 : 103));
+	CHECK(b.passenger_routing_tick == (legacy ? INVALID_STATE_TICKS : NOW)); CHECK(b.passenger_routing_work == (legacy ? 0 : 31));
+	CHECK_FALSE(loaded.data->MayBeRemoved());
+	auto *packet = CargoPacket::Create(10, 0, A, TileIndex{0}, Money{0});
+	auto *copy = CargoPacket::Create(); packet->SchedulePassengerRouting(NOW + 150);
+	REQUIRE_FALSE(SlTestSaveLoadTable(packet, copy, GetCargoPacketDesc()).empty());
+	CHECK(copy->GetPassengerRoutingEvent() == (legacy ? StateTicks{} : NOW + 150));
+	delete packet; delete copy;
+}
+
+TEST_CASE("Precomputed single packet events leave thousands of sleeping intents untouched", "[passenger][precomputed][events][scaling]")
+{
+	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = true;
+	f.Train({Stop(A), Stop(D)}); auto &db = f.Build(); while (!db.PreparePrecomputed()) {}
+	auto &waiting = Station::Get(A)->goods[PAX].CreateData().cargo;
+	std::vector<CargoPacket *> packets;
+	for (int i = 0; i < 5000; ++i) {
+		auto *packet = CargoPacket::Create(2, i, A, TileIndex{0}, Money{14});
+		REQUIRE(packet->SetPassengerDestination(PAX, D)); waiting.Append(packet, D); packets.push_back(packet);
+	}
+	for (int i = 0; i < 200; ++i) { waiting.RoutePassengerJourneys(PAX, A); ++_state_ticks; }
+	REQUIRE_FALSE(waiting.passenger_routing_sweeping);
+	for (auto *packet : packets) REQUIRE(packet->GetPassengerRoutingMode() == PassengerRoutingMode::Journey);
+	const auto inspected = waiting.passenger_routing_inspected;
+	const auto generations = waiting.passenger_generation_inspected;
+	const auto queries = db.GetPrecomputedDiagnostic(PAX).queries;
+	/* Count/payment changes must not dirty a route. */
+	packets.back()->Reduce(1); waiting.ClearWaitingIndex(); waiting.RebuildWaitingIndex();
+	waiting.RoutePassengerJourneys(PAX, A);
+	CHECK(waiting.passenger_routing_inspected == inspected);
+	InvalidatePassengerWaitingRouting(); waiting.RoutePassengerJourneys(PAX, A);
+	CHECK(waiting.passenger_routing_inspected == inspected);
+	CHECK(waiting.passenger_generation_inspected == generations);
+	auto *added = CargoPacket::Create(2, 6000, A, TileIndex{0}, Money{19});
+	REQUIRE(added->SetPassengerDestination(PAX, D)); waiting.Append(added, D);
+	waiting.RoutePassengerJourneys(PAX, A);
+	CHECK(added->GetPassengerRoutingMode() == PassengerRoutingMode::Journey);
+	CHECK(added->GetFeederShare() == Money{19}); CHECK(added->Count() == 2);
+	CHECK(waiting.passenger_routing_inspected == inspected + 1);
+	CHECK(waiting.passenger_generation_inspected == generations);
+	CHECK(db.GetPrecomputedDiagnostic(PAX).queries == queries + 1);
+	/* Interchange readiness and expiry each wake only the affected packet. */
+	added->SetPassengerInterchange(_state_ticks + 10, OrderListID::Invalid());
+	waiting.RoutePassengerJourneys(PAX, A);
+	const auto ready_inspected = waiting.passenger_routing_inspected;
+	_state_ticks += 9; waiting.RoutePassengerJourneys(PAX, A);
+	CHECK(waiting.passenger_routing_inspected == ready_inspected);
+	++_state_ticks; waiting.RoutePassengerJourneys(PAX, A);
+	CHECK(waiting.passenger_routing_inspected == ready_inspected + 1);
+	auto expired = added->GetPassengerJourney(); expired.planned_at = _state_ticks - expired.waiting_limit - 1;
+	added->SetPassengerJourney(expired, D); ++_state_ticks;
+	waiting.RoutePassengerJourneys(PAX, A);
+	CHECK(waiting.passenger_routing_inspected == ready_inspected + 2);
+	CHECK(added->GetPassengerJourney().planned_at == _state_ticks);
+	CHECK(db.GetPrecomputedDiagnostic(PAX).queries < 205); // One lookup per cohort/slice, not per packet.
+}
+
+TEST_CASE("Precomputed reroutes keep packet event handles valid for split and whole moves", "[passenger][precomputed][events][cargo]")
+{
+	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = true;
+	auto *train = f.Train({Stop(A), Stop(B), Stop(C), Stop(D)});
+	auto &db = f.Build(); while (!db.PreparePrecomputed()) {}
+	GoodsEntry flows{}; flows.CreateData().flows.insert(FlowStat(A, C, 100));
+	StationCargoList source, destination;
+	auto *packet = CargoPacket::Create(10, 0, A, TileIndex{0}, Money{100});
+	REQUIRE(packet->SetPassengerDestination(PAX, D)); source.Append(packet, B);
+	REQUIRE(source.Reroute(4, &destination, B, A, &flows) == 4);
+	REQUIRE(source.RerouteFromSource(3, &source, A, B, A, &flows) == 3);
+	REQUIRE(source.Reroute(3, &source, B, A, &flows) == 3);
+	CHECK(source.AvailableCount() == 6); CHECK(destination.AvailableCount() == 4);
+	CHECK(source.AvailableViaCount(B) == 0); CHECK(source.AvailableViaCount(C) == 6);
+	source.RoutePassengerJourneys(PAX, A); destination.RoutePassengerJourneys(PAX, A);
+	Money feeder{};
+	for (const auto *list : {&source, &destination}) for (StationCargoList::ConstIterator it(list->Packets()->begin()); it != list->Packets()->end(); ++it) {
+		CHECK((*it)->GetPassengerRoutingMode() == PassengerRoutingMode::Journey); feeder += (*it)->GetFeederShare();
+	}
+	CHECK(feeder == Money{100});
+	PassengerJourneyLoadingContext loading;
+	CHECK(source.Reserve(4, &train->cargo, std::array{B, C, D}, TileIndex{0}, train, &loading) == 4);
+	CHECK(source.TotalCount() == 6); CHECK(source.ReservedCount() == 4);
+	CHECK(train->cargo.Return(4, &source, C, TileIndex{0}, PAX) == 4);
+	CHECK(source.Truncate() == 6); CHECK(destination.Truncate() == 4);
+	++_state_ticks; source.RoutePassengerJourneys(PAX, A); destination.RoutePassengerJourneys(PAX, A);
+	CHECK(source.AvailableCount() == 0); CHECK(destination.AvailableCount() == 0);
+}
+
+TEST_CASE("Precomputed generation events do not depend on waiting index residency", "[passenger][precomputed][events][determinism]")
+{
+	Fixture f; f.Train({Stop(A), Stop(B), Stop(D)});
+	auto &warm = Station::Get(A)->goods[PAX].CreateData().cargo;
+	auto &cold = Station::Get(B)->goods[PAX].CreateData().cargo;
+	warm.RebuildWaitingIndex(); cold.ClearWaitingIndex();
+	warm.passenger_routing_dirty = cold.passenger_routing_dirty = false;
+	InvalidatePassengerWaitingRouting();
+	CHECK(warm.passenger_routing_dirty); CHECK(cold.passenger_routing_dirty);
+}
+
+TEST_CASE("Precomputed service changes wake only actually referenced stale intents", "[passenger][precomputed][events][generation]")
+{
+	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = true;
+	auto *train = f.Train({Stop(A), Stop(D)}); auto &db = f.Build(); while (!db.PreparePrecomputed()) {}
+	auto &waiting = Station::Get(A)->goods[PAX].CreateData().cargo;
+	std::vector<CargoPacket *> packets;
+	for (int i = 0; i < 200; ++i) {
+		auto *packet = CargoPacket::Create(1, i, A, TileIndex{0}, Money{7});
+		REQUIRE(packet->SetPassengerDestination(PAX, D)); waiting.Append(packet, D); packets.push_back(packet);
+	}
+	for (int tick = 0; tick < 10; ++tick) { ++_state_ticks; waiting.RoutePassengerJourneys(PAX, A); }
+	const auto inspected = waiting.passenger_routing_inspected;
+	db.Invalidate(train->orders->index); waiting.RoutePassengerJourneys(PAX, A);
+	CHECK(waiting.passenger_routing_inspected == inspected);
+	const auto due = packets.back()->GetPassengerRoutingEvent();
+	PassengerJourneyLoadingContext query;
+	CHECK_FALSE(query.CanBoard(*packets.back(), train, PAX));
+	CHECK(packets.back()->GetPassengerRoutingEvent() == due);
+	PassengerJourneyLoadingContext actual; actual.EnableWaitingEvents();
+	CHECK_FALSE(actual.CanBoard(*packets.back(), train, PAX));
+	CHECK(packets.back()->GetPassengerRoutingEvent() == _state_ticks);
+	waiting.RoutePassengerJourneys(PAX, A);
+	CHECK(waiting.passenger_routing_inspected == inspected + 1);
+	for (size_t i = 0; i + 1 < packets.size(); ++i) CHECK(packets[i]->GetPassengerRoutingMode() == PassengerRoutingMode::Journey);
+}
+
+TEST_CASE("Precomputed dormant no-route cohorts wake on publication without periodic polling", "[passenger][precomputed][events][generation]")
+{
+	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = true;
+	f.Train({Stop(A), Stop(D)}); f.Train({Stop(B), Stop(C)});
+	auto &db = f.Build(); while (!db.PreparePrecomputed()) {}
+	auto &waiting = Station::Get(A)->goods[PAX].CreateData().cargo;
+	std::vector<CargoPacket *> packets;
+	for (int i = 0; i < 300; ++i) {
+		auto *packet = CargoPacket::Create(1, i, A, TileIndex{0}, Money{5});
+		REQUIRE(packet->SetPassengerDestination(PAX, C)); waiting.Append(packet, D); packets.push_back(packet);
+	}
+	for (int tick = 0; tick < 20; ++tick) { ++_state_ticks; waiting.RoutePassengerJourneys(PAX, A); }
+	for (auto *packet : packets) {
+		CHECK(packet->GetPassengerRoutingMode() == PassengerRoutingMode::Fallback);
+		CHECK(packet->GetPassengerRoutingEvent() == INVALID_STATE_TICKS);
+	}
+	const auto inspected = waiting.passenger_routing_inspected;
+	_state_ticks += 1024; waiting.RoutePassengerJourneys(PAX, A);
+	CHECK(waiting.passenger_routing_inspected == inspected);
+	f.Train({Stop(A), Stop(C)}); db.Invalidate(); f.PublishUpdates(db);
+	for (int i = 0; i < 100; ++i) db.TickPrecomputed();
+	for (int tick = 0; tick < 20; ++tick) { ++_state_ticks; waiting.RoutePassengerJourneys(PAX, A); }
+	for (auto *packet : packets) {
+		CHECK(packet->GetPassengerRoutingMode() == PassengerRoutingMode::Journey);
+		CHECK(packet->GetPassengerJourney().alighting == C);
+	}
+}
+
+TEST_CASE("Precomputed boarding regrouping agrees before and after rebuilding pending indices", "[passenger][precomputed][events][boarding][determinism]")
+{
+	Fixture f;
+	f.Train({Stop(A), Stop(D)}); auto *second = f.Train({Stop(A), Stop(D)});
+	auto &db = f.Build();
+	second->orders->GetOrderAt(1)->SetWaitTime(11); db.TimetableChanged(second->orders->index);
+	_settings_game.linkgraph.passenger_journey_precomputed = true;
+	_state_ticks = NOW + 3000; db.TickPrecomputed();
+	REQUIRE(db.GetPrecomputedDiagnostic(PAX).patterns == 1);
+	_state_ticks = NOW + PassengerServiceDatabase::TIMETABLE_EPOCH;
+	for (int i = 0; i < 128 && db.IsBuilding(); ++i) db.Tick();
+	auto *packet = f.Packet(); auto plan = db.PlanPrecomputed(PAX, A, D, _state_ticks); REQUIRE(plan.ride);
+	const auto *service = db.Get(second->orders->index); REQUIRE(service != nullptr);
+	plan.ride->service = service->id; plan.ride->signature = service->incarnation; plan.ride->generation = service->generation;
+	plan.ride->waiting_limit = 20000;
+	packet->SetPassengerJourney(*plan.ride, D);
+	auto &waiting = Station::Get(A)->goods[PAX].CreateData().cargo; waiting.Append(packet, D);
+	PassengerJourneyLoadingContext initial;
+	REQUIRE(waiting.HasCargoFor(std::array{D}, second, &initial, PAX));
+	_state_ticks = NOW + 3000 + PassengerServiceDatabase::TIMETABLE_EPOCH; db.TickPrecomputed();
+	REQUIRE(db.GetPrecomputedDiagnostic(PAX).patterns == 2);
+	REQUIRE(db.IsCurrent(packet->GetPassengerJourney()));
+	/* No routing/refresh event between regrouping and this actual reference. */
+	PassengerJourneyLoadingContext before;
+	const bool live = waiting.HasCargoFor(std::array{D}, second, &before, PAX);
+	waiting.ClearWaitingIndex(); waiting.RebuildWaitingIndex();
+	PassengerJourneyLoadingContext after;
+	CHECK(waiting.HasCargoFor(std::array{D}, second, &after, PAX) == live);
+	CHECK(live);
+}
+
+TEST_CASE("Precomputed event slices preserve old deadlines and station shares under arrivals", "[passenger][precomputed][events][fairness]")
+{
+	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = true;
+	f.Train({Stop(A), Stop(B), Stop(D)}); auto &db = f.Build(); while (!db.PreparePrecomputed()) {}
+	auto &a = Station::Get(A)->goods[PAX].CreateData().cargo;
+	auto &b = Station::Get(B)->goods[PAX].CreateData().cargo;
+	auto *spare = f.Packet(); const auto recycled = spare->index;
+	std::vector<CargoPacket *> queued;
+	for (int i = 0; i < 300; ++i) {
+		auto *packet = CargoPacket::Create(1, i, A, TileIndex{0}, Money{7});
+		REQUIRE(packet->SetPassengerDestination(PAX, D)); a.Append(packet, D); queued.push_back(packet);
+	}
+	a.RoutePassengerJourneys(PAX, A);
+	CHECK(a.passenger_routing_work == StationCargoList::PASSENGER_ROUTING_SLICE);
+	const auto inspected = a.passenger_routing_inspected;
+	for (int i = 0; i < 10; ++i) a.RoutePassengerJourneys(PAX, A);
+	CHECK(a.passenger_routing_inspected == inspected);
+	b.Append(f.Packet(), D); b.RoutePassengerJourneys(PAX, B);
+	CHECK(b.passenger_routing_inspected == 1);
+	delete spare; ++_state_ticks;
+	auto *newcomer = f.Packet(); REQUIRE(newcomer->index == recycled); a.Append(newcomer, D);
+	a.RoutePassengerJourneys(PAX, A);
+	CHECK(newcomer->GetPassengerRoutingMode() == PassengerRoutingMode::Legacy);
+	/* Repeated invalidations do not reset an unfinished sweep to low pool IDs. */
+	for (int tick = 0; tick < 20; ++tick) {
+		++_state_ticks; InvalidatePassengerWaitingRouting();
+		auto *packet = CargoPacket::Create(1, 1000 + tick, A, TileIndex{0}, Money{3});
+		REQUIRE(packet->SetPassengerDestination(PAX, D)); a.Append(packet, D);
+		a.RoutePassengerJourneys(PAX, A);
+		CHECK(a.passenger_routing_work <= StationCargoList::PASSENGER_ROUTING_SLICE);
+	}
+	for (auto *packet : queued) CHECK(packet->GetPassengerRoutingMode() == PassengerRoutingMode::Journey);
+	CHECK(newcomer->GetPassengerRoutingMode() == PassengerRoutingMode::Journey);
+}
+
+TEST_CASE("Precomputed pending slices replay packet deadlines and cursors through save tables", "[passenger][precomputed][events][save][determinism]")
+{
+	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = true;
+	AutoRestoreBackup version{_sl_version, SAVEGAME_VERSION};
+	AutoRestoreBackup features{_sl_xv_feature_versions, AutoRestoreBackupNoNewValueTag{}};
+	AutoRestoreBackup static_features{_sl_xv_feature_static_versions, AutoRestoreBackupNoNewValueTag{}};
+	SlXvSetStaticCurrentVersions(); _sl_xv_feature_versions = _sl_xv_feature_static_versions;
+	f.Train({Stop(A), Stop(D)}); auto &db = f.Build(); while (!db.PreparePrecomputed()) {}
+	auto &waiting = Station::Get(A)->goods[PAX].CreateData().cargo;
+	std::vector<CargoPacket *> packets, saved, completed;
+	for (int i = 0; i < 200; ++i) {
+		auto *packet = CargoPacket::Create(2, i, A, TileIndex{0}, Money{17});
+		REQUIRE(packet->SetPassengerDestination(PAX, D)); waiting.Append(packet, D); packets.push_back(packet);
+	}
+	waiting.RoutePassengerJourneys(PAX, A);
+	REQUIRE(waiting.passenger_routing_sweeping);
+	StationCargoList saved_scheduler;
+	SlTestSaveLoadTable(&waiting, &saved_scheduler, GetPassengerWaitingEventDesc());
+	for (auto *packet : packets) {
+		auto *copy = f.Packet(); SlTestSaveLoadTable(packet, copy, GetCargoPacketDesc()); saved.push_back(copy);
+	}
+	const StateTicks saved_tick = _state_ticks;
+	using Checkpoint = std::tuple<uint32_t, bool, uint16_t>;
+	std::vector<Checkpoint> checkpoints;
+	for (int i = 0; i < 8; ++i) {
+		++_state_ticks; waiting.RoutePassengerJourneys(PAX, A);
+		checkpoints.emplace_back(waiting.passenger_routing_cursor, waiting.passenger_routing_sweeping, waiting.passenger_routing_work);
+	}
+	for (auto *packet : packets) {
+		auto *copy = f.Packet(); SlTestSaveLoadTable(packet, copy, GetCargoPacketDesc()); completed.push_back(copy);
+	}
+	waiting.ClearWaitingIndex();
+	for (size_t i = 0; i < packets.size(); ++i) SlTestSaveLoadTable(saved[i], packets[i], GetCargoPacketDesc());
+	SlTestSaveLoadTable(&saved_scheduler, &waiting, GetPassengerWaitingEventDesc());
+	_state_ticks = saved_tick; waiting.RebuildWaitingIndex();
+	/* A join/rebuild in the middle of the same tick cannot buy another slice. */
+	const auto inspected = waiting.passenger_routing_inspected;
+	waiting.RoutePassengerJourneys(PAX, A); CHECK(waiting.passenger_routing_inspected == inspected);
+	for (int i = 0; i < 8; ++i) {
+		++_state_ticks; waiting.RoutePassengerJourneys(PAX, A);
+		CHECK(Checkpoint(waiting.passenger_routing_cursor, waiting.passenger_routing_sweeping, waiting.passenger_routing_work) == checkpoints[i]);
+	}
+	for (size_t i = 0; i < packets.size(); ++i) {
+		CHECK(packets[i]->HasSamePassengerRouting(*completed[i]));
+		CHECK(packets[i]->GetPassengerRoutingEvent() == completed[i]->GetPassengerRoutingEvent());
+		CHECK(packets[i]->Count() == 2); CHECK(packets[i]->GetFeederShare() == Money{17});
+	}
 }
 
 TEST_CASE("Precomputed idle loading passes do not rescan or replan waiting passengers", "[passenger][precomputed][events]")
@@ -2494,6 +2766,45 @@ TEST_CASE("Precomputed idle loading passes do not rescan or replan waiting passe
 		CHECK(GetPassengerJourneyTickDiagnostic().fair_share_work == 0);
 	}
 	db.Invalidate(); CHECK(waiting.passenger_routing_dirty);
+}
+
+TEST_CASE("Precomputed waiting event CPU scaling", "[.benchmark][passenger][precomputed][events][scaling][cpu]")
+{
+	using Clock = std::chrono::steady_clock;
+	std::cout << "waiting_packets,idle_ns,single_event_ns,generation_ns,processed_events,generation_packets\n";
+	for (int size : {128, 1024, 8192, 32768}) {
+		Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = true;
+		f.Train({Stop(A), Stop(D)}); auto &db = f.Build(); while (!db.PreparePrecomputed()) {}
+		auto ride = db.PlanPrecomputed(PAX, A, D, _state_ticks).ride; REQUIRE(ride);
+		ride->waiting_limit = 1000000;
+		auto &waiting = Station::Get(A)->goods[PAX].CreateData().cargo;
+		CargoPacket *target = nullptr;
+		for (int i = 0; i < size; ++i) {
+			auto *packet = CargoPacket::Create(2, i, A, TileIndex{0}, Money{7});
+			REQUIRE(packet->SetPassengerDestination(PAX, D)); packet->SetPassengerJourney(*ride, D);
+			waiting.Append(packet, D); target = packet;
+		}
+		for (int tick = 0; tick < size / StationCargoList::PASSENGER_ROUTING_SLICE + 2; ++tick) {
+			++_state_ticks; waiting.RoutePassengerJourneys(PAX, A);
+		}
+		const auto inspected = waiting.passenger_routing_inspected;
+		const auto generations = waiting.passenger_generation_inspected;
+		std::array<int64_t, 3> elapsed{};
+		for (int mode = 0; mode < 3; ++mode) {
+			const auto start = Clock::now();
+			for (int tick = 0; tick < 1024; ++tick) {
+				++_state_ticks;
+				if (mode == 1) target->SetPassengerInterchange(_state_ticks, OrderListID::Invalid());
+				if (mode == 2) InvalidatePassengerWaitingRouting();
+				waiting.RoutePassengerJourneys(PAX, A);
+			}
+			elapsed[mode] = std::chrono::duration_cast<std::chrono::nanoseconds>(Clock::now() - start).count() / 1024;
+		}
+		CHECK(waiting.passenger_routing_inspected - inspected == 1024);
+		CHECK(waiting.passenger_generation_inspected == generations);
+		std::cout << size << ',' << elapsed[0] << ',' << elapsed[1] << ',' << elapsed[2] << ','
+				<< waiting.passenger_routing_inspected - inspected << ',' << waiting.passenger_generation_inspected - generations << '\n';
+	}
 }
 
 TEST_CASE("Precomputed generation capture retains large shared physical fleets", "[passenger][precomputed][fleet][save]")

@@ -56,12 +56,14 @@ public:
 	bool MemoryRejected() const { return this->failed; }
 	const PassengerPrecomputedDiagnostic &GetDiagnostic() const { return this->diagnostic; }
 	OrderListID BoardingKey(OrderListID service) const;
+	std::span<const OrderListID> BoardingServices(OrderListID service) const; ///< Sorted raw service IDs; independent of row publication.
 	bool Rebind(PassengerJourneyExecution &ride, OrderListID service) const;
 	bool RefreshService(const PassengerPeriodicService &service); ///< Refresh bindings, retaining the frozen estimated costs.
 private:
 	struct Member { OrderListID id; uint64_t incarnation, generation; };
 	struct Pattern {
 		std::vector<Member> members;
+		std::vector<OrderListID> boarding_services;
 		std::vector<uint32_t> occurrences;
 		int64_t wait = 0, circuit = 0, risk = 0;
 		uint64_t weight = 1;

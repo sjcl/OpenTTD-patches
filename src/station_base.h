@@ -524,7 +524,8 @@ struct GoodsEntryData {
 
 	bool MayBeRemoved() const
 	{
-		return this->cargo.Packets()->MapSize() == 0 && this->cargo.ReservedCount() == 0 && this->flows.empty() && this->passenger_od == nullptr;
+		return this->cargo.Packets()->MapSize() == 0 && this->cargo.ReservedCount() == 0 && this->flows.empty() && this->passenger_od == nullptr &&
+				!this->cargo.HasPassengerRoutingState();
 	}
 };
 

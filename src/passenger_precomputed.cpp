@@ -92,15 +92,21 @@ OrderListID PassengerPrecomputedTable::BoardingKey(OrderListID service) const
 	return this->patterns[this->service_pattern[service.base()]].members.front().id;
 }
 
+std::span<const OrderListID> PassengerPrecomputedTable::BoardingServices(OrderListID service) const
+{
+	if (service.base() >= this->service_pattern.size() || this->service_pattern[service.base()] == INVALID) return {};
+	return this->patterns[this->service_pattern[service.base()]].boarding_services;
+}
+
 bool PassengerPrecomputedTable::Rebind(PassengerJourneyExecution &ride, OrderListID service) const
 {
 	if (ride.service.base() >= this->service_pattern.size() || service.base() >= this->service_pattern.size()) return false;
 	uint32_t pattern = this->service_pattern[ride.service.base()];
 	if (pattern == INVALID || pattern != this->service_pattern[service.base()]) return false;
-	for (const auto &member : this->patterns[pattern].members) if (member.id == service) {
-		ride.service = service; ride.signature = member.incarnation; ride.generation = member.generation; return true;
-	}
-	return false;
+	const auto &members = this->patterns[pattern].members;
+	auto member = std::lower_bound(members.begin(), members.end(), service, [](const auto &m, OrderListID id) { return m.id < id; });
+	if (member == members.end() || member->id != service) return false;
+	ride.service = service; ride.signature = member->incarnation; ride.generation = member->generation; return true;
 }
 
 bool PassengerPrecomputedTable::RefreshService(const PassengerPeriodicService &service)
@@ -194,6 +200,7 @@ void PassengerPrecomputedTable::Begin(std::span<const PassengerPeriodicService *
 				}
 			}
 			std::sort(p.members.begin(), p.members.end(), [](const auto &a, const auto &b) { return a.id < b.id; });
+			for (const auto &member : p.members) p.boarding_services.push_back(member.id);
 			std::sort(phases.begin(), phases.end());
 			phases.erase(std::unique(phases.begin(), phases.end()), phases.end());
 			int64_t gap = p.circuit;

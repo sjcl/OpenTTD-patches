@@ -170,6 +170,7 @@ public:
 	}
 	uint64_t GetPublishedRevision() const { return this->published_revision; }
 	OrderListID PrecomputedBoardingKey(CargoType cargo, OrderListID service) const { return this->precomputed[cargo].BoardingKey(service); }
+	std::span<const OrderListID> PrecomputedBoardingServices(CargoType cargo, OrderListID service) const { return this->precomputed[cargo].BoardingServices(service); }
 	bool RebindPrecomputed(PassengerJourneyExecution &ride, OrderListID service, CargoType cargo) const
 	{ return cargo < NUM_CARGO && this->precomputed[cargo].Rebind(ride, service) && this->IsCurrent(ride); }
 	PassengerPeriodicPlan Plan(CargoType cargo, StationID origin, StationID destination, StateTicks ready,

@@ -656,9 +656,17 @@ bool PassengerJourneyActiveContext::PlanWaiting(CargoPacket &packet, CargoType c
 		if (this->vehicle != nullptr) ready = std::max(ready, _state_ticks + StateTicksDelta{ActiveJourneyEvaluation().minimum_transfer});
 		const auto *arriving = OrderList::GetIfValid(packet.GetPassengerArrivingService());
 		OrderListID excluded = arriving != nullptr && arriving->GetCargoDistRouteGeneration() == packet.GetPassengerArrivingIncarnation() ? arriving->index : OrderListID::Invalid();
-		uint32_t sample = static_cast<uint32_t>(SimpleHash64((uint64_t{packet.index.base()} << 32) ^
-				(uint64_t{this->station.base()} << 16) ^ packet.GetPassengerDestination().base()));
-		auto plan = GetPassengerServiceDatabase().PlanPrecomputed(cargo, this->station, packet.GetPassengerDestination(), ready, excluded, sample);
+		/* One decision per OD/ready/incoming-service cohort in this slice. A
+		 * packet's pool allocation history is not part of its routing condition. */
+		const auto key = std::tuple(cargo, packet.GetPassengerDestination(), ready, excluded);
+		auto cached = this->precomputed_waiting.find(key);
+		if (cached == this->precomputed_waiting.end()) {
+			uint32_t sample = static_cast<uint32_t>(SimpleHash64((uint64_t{excluded.base()} << 32) ^
+					(uint64_t{this->station.base()} << 16) ^ packet.GetPassengerDestination().base() ^ uint64_t(ready.base())));
+			cached = this->precomputed_waiting.emplace(key,
+					GetPassengerServiceDatabase().PlanPrecomputed(cargo, this->station, packet.GetPassengerDestination(), ready, excluded, sample)).first;
+		} else ++TickBudget().diagnostic.query_cache_hits;
+		const auto &plan = cached->second;
 		if (plan.ride) {
 			packet.SetPassengerJourney(*plan.ride, legacy_hop);
 			++TickBudget().diagnostic.schedule_packets; TickBudget().diagnostic.schedule_passengers += packet.Count();
@@ -1185,6 +1193,10 @@ void PassengerJourneyBoardingContext::Initialize() const
 bool PassengerJourneyBoardingContext::ValidateServiceRide(const PassengerJourneyExecution &original, bool boarding) const
 {
 	auto ride = original;
+	/* An overdue event may be waiting behind this station's slice limit. It
+	 * must not make an expired intent physically boardable in the meantime. */
+	if (boarding && _settings_game.linkgraph.passenger_journey_precomputed && IsEstimatedPassengerRide(ride.kind) &&
+			_state_ticks > ride.planned_at && uint64_t(_state_ticks.base()) - uint64_t(ride.planned_at.base()) > uint64_t(ride.waiting_limit)) return false;
 	if (boarding && _settings_game.linkgraph.passenger_journey_precomputed && !IsBoundPassengerRide(ride.kind) && this->vehicle != nullptr &&
 			this->vehicle->orders != nullptr && ride.service != this->vehicle->orders->index) {
 		if (!GetPassengerServiceDatabase().IsCurrent(original) || !GetPassengerServiceDatabase().RebindPrecomputed(ride, this->vehicle->orders->index, this->cargo)) return false;
@@ -1259,6 +1271,10 @@ bool PassengerJourneyLoadingContext::CanBoard(const CargoPacket &packet, const V
 	CounterTimer category{TickBudget().diagnostic.boarding_microseconds};
 	if (vehicle == nullptr) return packet.GetPassengerRoutingMode() != PassengerRoutingMode::Journey;
 	if (cargo == INVALID_CARGO) cargo = vehicle->cargo_type;
+	if (this->waiting_events && _settings_game.linkgraph.passenger_journey_precomputed &&
+			packet.GetPassengerRoutingMode() == PassengerRoutingMode::Journey && !GetPassengerServiceDatabase().IsCurrent(packet.GetPassengerJourney())) {
+		PassengerWaitingRoutingChanged(const_cast<CargoPacket &>(packet));
+	}
 	if (IsPassengerJourneyRoutingEnabled(cargo) && Station::IsValidID(packet.GetPassengerDestination()) &&
 			packet.GetPassengerArrivingService() != OrderListID::Invalid() && (_state_ticks < packet.GetPassengerInterchangeReady() ||
 			(vehicle->First()->orders != nullptr && vehicle->First()->orders->index == packet.GetPassengerArrivingService() && vehicle->First()->orders->GetCargoDistRouteGeneration() == packet.GetPassengerArrivingIncarnation()))) return false;
@@ -1419,162 +1435,227 @@ size_t StationCargoList::RoutePassengerJourneys(CargoType cargo, StationID stati
 	const bool precomputed = _settings_game.linkgraph.passenger_journey_precomputed;
 	const auto revision = GetPassengerServiceDatabase().GetPublishedRevision();
 	const auto rows = GetPassengerServiceDatabase().GetPrecomputedDiagnostic(cargo).destinations;
-	if (precomputed && allow_search && !this->passenger_routing_dirty && this->passenger_routing_revision == revision &&
-			this->passenger_routing_rows == rows && (this->passenger_routing_due == INVALID_STATE_TICKS || _state_ticks < this->passenger_routing_due)) return 0;
-	this->ClearWaitingIndex(); // Queue relocation changes the stable primary-list handles.
-	this->passenger_routing_due = INVALID_STATE_TICKS;
+	const bool events = precomputed && allow_search;
+	if (events) {
+		this->EnsureWaitingIndex();
+		if (this->passenger_routing_tick != _state_ticks) {
+			this->passenger_routing_tick = _state_ticks;
+			this->passenger_routing_work = 0;
+		}
+		/* Do not restart an in-progress sweep on another publication. Finish its
+		 * saved cursor first, then coalesce newer generations into the next one. */
+		if (!this->passenger_routing_sweeping && (this->passenger_routing_dirty ||
+				this->passenger_routing_revision != revision || this->passenger_routing_rows != rows)) {
+			this->passenger_routing_sweeping = true;
+			this->passenger_routing_cursor = 0;
+			this->passenger_routing_end = this->routing_packets.empty() ? 0 : this->routing_packets.rbegin()->base();
+			this->passenger_routing_dirty = false;
+			this->passenger_routing_revision = revision;
+			this->passenger_routing_rows = rows;
+		}
+		if (this->passenger_routing_work >= PASSENGER_ROUTING_SLICE ||
+				(!this->passenger_routing_sweeping && (this->routing_events.empty() || this->routing_events.begin()->first > _state_ticks))) return 0;
+	} else {
+		this->ClearWaitingIndex();
+	}
 	CounterTimer category{TickBudget().diagnostic.waiting_microseconds};
 	PassengerJourneyActiveContext context(nullptr, station);
 	PassengerJourneyLoadingContext local_loading;
 	if (loading == nullptr) loading = &local_loading;
-	/* New OD packets are considered before boarding. OD fallback/deferred queues
-	 * share the filtered bucket, allowing a verified through ride past intermediate stops. */
-	/* Spread national-map waiting cohorts across 1024 ticks instead of 64.
-	 * Each station receives a search opportunity; an overloaded cohort still
-	 * consumes the shared allowance in deterministic simulation order. */
 	const bool search = IsJourneyRetryTick(station);
-	std::vector<std::pair<StationID, CargoPacket *>> moved;
 	std::map<OrderListID, uint64_t> signatures;
 	std::map<std::tuple<VehicleID, VehicleOrderID, VehicleOrderID, StationID>, bool> usable;
 	std::map<std::tuple<OrderListID, uint64_t, VehicleOrderID, VehicleOrderID, StationID>, bool> periodic_available;
 	size_t validation_work = 524288;
 	size_t inspected = 0;
 	bool changed = false;
-	StationCargoPacketMap::Map &queues = this->packets;
-	for (auto bucket = queues.begin(); bucket != queues.end();) {
-		auto &list = bucket->second;
-		for (auto it = list.begin(); it != list.end();) {
-			auto position = it++;
-			CargoPacket *packet = *position;
-			StationID key = bucket->first;
-			PassengerRoutingMode previous_mode = packet->GetPassengerRoutingMode();
-			if (packet->GetPassengerRoutingMode() != PassengerRoutingMode::Journey && key == StationID::Invalid()) key = packet->GetPassengerLegacyHop();
-			if (packet->GetPassengerRoutingMode() == PassengerRoutingMode::Journey) {
-				const auto &leg = packet->GetPassengerJourney();
-				if (leg.kind != PassengerRideKind::VehicleSnapshot) {
-					if (!IsPassengerJourneyRoutingEnabled(cargo) || !Station::IsValidID(packet->GetPassengerDestination()) || leg.boarding != station ||
-							!Station::IsValidID(leg.alighting) || (allow_search && !GetPassengerServiceDatabase().IsCurrent(leg))) {
-						CountJourneyFallback(PassengerJourneyFallbackReason::StaleLeg);
-						if (IsEstimatedPassengerRide(leg.kind)) {
-							++TickBudget().diagnostic.schedule_stale;
-							const auto *s = GetPassengerServiceDatabase().Get(leg.service);
-							RecordPassengerScheduleInvalidation(!IsPassengerJourneyRoutingEnabled(cargo) ? PassengerScheduleInvalidation::Disabled :
-									!Station::IsValidID(packet->GetPassengerDestination()) || leg.boarding != station || !Station::IsValidID(leg.alighting) ? PassengerScheduleInvalidation::Station :
-									s == nullptr ? PassengerScheduleInvalidation::ServiceMissing : s->incarnation != leg.signature ? PassengerScheduleInvalidation::Incarnation : PassengerScheduleInvalidation::Generation);
-						}
-						GetPassengerServiceDatabase().RecordExpiry(packet->Count());
-						key = packet->GetPassengerLegacyHop(); packet->FallbackPassengerJourney(station, _state_ticks);
-					} else {
-						key = StationID::Invalid();
-						if (IsBoundPassengerRide(leg.kind)) {
-							auto intent = leg; intent.kind = IsEstimatedPassengerRide(leg.kind) ? PassengerRideKind::EstimatedServiceIntent : PassengerRideKind::ServiceIntent; intent.vehicle = VehicleID::Invalid();
-							packet->SetPassengerJourney(intent, packet->GetPassengerLegacyHop());
-						}
-						bool estimated_expired = IsEstimatedPassengerRide(leg.kind) && _state_ticks > leg.planned_at &&
-								uint64_t(_state_ticks.base()) - uint64_t(leg.planned_at.base()) > uint64_t(leg.waiting_limit);
-						if (estimated_expired && allow_search) {
-							++TickBudget().diagnostic.schedule_expired; key = packet->GetPassengerLegacyHop();
-							RecordPassengerScheduleInvalidation(PassengerScheduleInvalidation::WaitingExpired);
-							packet->DeferPassengerJourney(station, _state_ticks + StateTicksDelta{-1});
-						} else if (allow_search && !IsEstimatedPassengerRide(leg.kind) && _state_ticks > leg.departure) {
-							auto ride_key = std::tuple(leg.service, leg.signature, leg.boarding_order, leg.alighting_order, leg.alighting);
-							auto available = periodic_available.find(ride_key);
-							if (available == periodic_available.end() && periodic_available.size() < 4096) {
-								bool present = false;
-								for (const Vehicle *v : Station::Get(station)->loading_vehicles) {
-									if (validation_work == 0) break;
-									--validation_work;
-									if (v->orders == nullptr || v->orders->index != leg.service || v->current_order.IsType(OT_LOADING_ADVANCE) || !loading->CanBoard(*packet, v, cargo)) continue;
-									for (const Vehicle *part = v; part != nullptr && validation_work > 0; part = part->Next()) {
-										--validation_work;
-										if (part->cargo_type == cargo && part->cargo_cap > part->cargo.RemainingCount()) { present = true; break; }
-									}
-									if (present) break;
-								}
-								available = periodic_available.emplace(ride_key, present).first;
-							}
-							if (available == periodic_available.end() || !available->second) {
-								key = packet->GetPassengerLegacyHop(); CountJourneyFallback(PassengerJourneyFallbackReason::StaleLeg);
-								GetPassengerServiceDatabase().RecordExpiry(packet->Count());
-								packet->DeferPassengerJourney(station, _state_ticks + StateTicksDelta{-1}); // Expiry is an immediate routing event.
-							}
-						}
+	auto route = [&](CargoPacket *packet, StationID original_key) {
+		StationID key = original_key;
+		PassengerRoutingMode previous_mode = packet->GetPassengerRoutingMode();
+		if (packet->GetPassengerRoutingMode() != PassengerRoutingMode::Journey && key == StationID::Invalid()) key = packet->GetPassengerLegacyHop();
+		if (packet->GetPassengerRoutingMode() == PassengerRoutingMode::Journey) {
+			const auto &leg = packet->GetPassengerJourney();
+			if (leg.kind != PassengerRideKind::VehicleSnapshot) {
+				if (!IsPassengerJourneyRoutingEnabled(cargo) || !Station::IsValidID(packet->GetPassengerDestination()) || leg.boarding != station ||
+						!Station::IsValidID(leg.alighting) || (allow_search && !GetPassengerServiceDatabase().IsCurrent(leg))) {
+					CountJourneyFallback(PassengerJourneyFallbackReason::StaleLeg);
+					if (IsEstimatedPassengerRide(leg.kind)) {
+						++TickBudget().diagnostic.schedule_stale;
+						const auto *s = GetPassengerServiceDatabase().Get(leg.service);
+						RecordPassengerScheduleInvalidation(!IsPassengerJourneyRoutingEnabled(cargo) ? PassengerScheduleInvalidation::Disabled :
+								!Station::IsValidID(packet->GetPassengerDestination()) || leg.boarding != station || !Station::IsValidID(leg.alighting) ? PassengerScheduleInvalidation::Station :
+								s == nullptr ? PassengerScheduleInvalidation::ServiceMissing : s->incarnation != leg.signature ? PassengerScheduleInvalidation::Incarnation : PassengerScheduleInvalidation::Generation);
 					}
-				} else {
-				const Vehicle *vehicle = Vehicle::GetIfValid(leg.vehicle);
-				bool valid = IsPassengerJourneyRoutingEnabled(cargo) && IsPassengerServiceVehicle(vehicle) &&
-						!vehicle->vehstatus.Any({VehState::Stopped, VehState::Crashed}) && Station::IsValidID(packet->GetPassengerDestination()) &&
-						vehicle->orders != nullptr && vehicle->orders->index == leg.service && leg.boarding == station &&
-						Station::IsValidID(leg.alighting);
-				if (valid) {
-					auto key = std::tuple(leg.vehicle, leg.boarding_order, leg.alighting_order, leg.alighting);
-					auto entry = usable.find(key);
-					bool inserted = false;
-					if (entry == usable.end() && usable.size() < 4096 && validation_work >= 16) {
-						validation_work -= 16; // Bound unique validation records as well as facility traversal.
-						std::tie(entry, inserted) = usable.try_emplace(key, false);
-					}
-					if (inserted && leg.boarding_order < vehicle->GetNumOrders() && leg.alighting_order < vehicle->GetNumOrders()) {
-						const Order *board = vehicle->GetOrder(leg.boarding_order), *alight = vehicle->GetOrder(leg.alighting_order);
-						entry->second = board->GetDestination() == station && alight->GetDestination() == leg.alighting &&
-								board->GetCargoLoadType(cargo) != OrderLoadType::NoLoad && alight->GetCargoUnloadType(cargo) != OrderUnloadType::NoUnload &&
-								HasPassengerVehicleCapacity(vehicle, cargo, validation_work) &&
-								CanPassengerVehicleUseStation(vehicle, station, board, validation_work) &&
-								CanPassengerVehicleUseStation(vehicle, leg.alighting, alight, validation_work);
-					}
-					valid = entry != usable.end() && entry->second;
-				}
-				if (valid && vehicle->current_order.IsAnyLoadingType() && vehicle->last_station_visited == station) {
-					valid = loading->CanBoard(*packet, vehicle, cargo);
-				} else if (valid) {
-					auto [signature, inserted] = signatures.try_emplace(leg.service, 0);
-					if (inserted) signature->second = PassengerJourneyServiceSignature(*vehicle->orders, cargo, &validation_work);
-					valid = _state_ticks <= leg.departure && signature->second != 0 && leg.signature == signature->second;
-				}
-				if (!valid) {
-					CountJourneyFallback(IsPassengerJourneyRoutingEnabled(cargo) ? PassengerJourneyFallbackReason::StaleLeg : PassengerJourneyFallbackReason::Disabled);
+					GetPassengerServiceDatabase().RecordExpiry(packet->Count());
 					key = packet->GetPassengerLegacyHop(); packet->FallbackPassengerJourney(station, _state_ticks);
+				} else {
+					key = StationID::Invalid();
+					if (IsBoundPassengerRide(leg.kind)) {
+						auto intent = leg; intent.kind = IsEstimatedPassengerRide(leg.kind) ? PassengerRideKind::EstimatedServiceIntent : PassengerRideKind::ServiceIntent; intent.vehicle = VehicleID::Invalid();
+						packet->SetPassengerJourney(intent, packet->GetPassengerLegacyHop());
+					}
+					bool estimated_expired = IsEstimatedPassengerRide(leg.kind) && _state_ticks > leg.planned_at &&
+							uint64_t(_state_ticks.base()) - uint64_t(leg.planned_at.base()) > uint64_t(leg.waiting_limit);
+					if (estimated_expired && allow_search) {
+						++TickBudget().diagnostic.schedule_expired; key = packet->GetPassengerLegacyHop();
+						RecordPassengerScheduleInvalidation(PassengerScheduleInvalidation::WaitingExpired);
+						packet->DeferPassengerJourney(station, _state_ticks + StateTicksDelta{-1});
+					} else if (allow_search && !IsEstimatedPassengerRide(leg.kind) && _state_ticks > leg.departure) {
+						auto ride_key = std::tuple(leg.service, leg.signature, leg.boarding_order, leg.alighting_order, leg.alighting);
+						auto available = periodic_available.find(ride_key);
+						if (available == periodic_available.end() && periodic_available.size() < 4096) {
+							bool present = false;
+							for (const Vehicle *v : Station::Get(station)->loading_vehicles) {
+								if (validation_work == 0) break;
+								--validation_work;
+								if (v->orders == nullptr || v->orders->index != leg.service || v->current_order.IsType(OT_LOADING_ADVANCE) || !loading->CanBoard(*packet, v, cargo)) continue;
+								for (const Vehicle *part = v; part != nullptr && validation_work > 0; part = part->Next()) {
+									--validation_work;
+									if (part->cargo_type == cargo && part->cargo_cap > part->cargo.RemainingCount()) { present = true; break; }
+								}
+								if (present) break;
+							}
+							available = periodic_available.emplace(ride_key, present).first;
+						}
+						if (available == periodic_available.end() || !available->second) {
+							key = packet->GetPassengerLegacyHop(); CountJourneyFallback(PassengerJourneyFallbackReason::StaleLeg);
+							GetPassengerServiceDatabase().RecordExpiry(packet->Count());
+							packet->DeferPassengerJourney(station, _state_ticks + StateTicksDelta{-1}); // Expiry is an immediate routing event.
+						}
+					}
 				}
-				else key = StationID::Invalid();
+			} else {
+			const Vehicle *vehicle = Vehicle::GetIfValid(leg.vehicle);
+			bool valid = IsPassengerJourneyRoutingEnabled(cargo) && IsPassengerServiceVehicle(vehicle) &&
+					!vehicle->vehstatus.Any({VehState::Stopped, VehState::Crashed}) && Station::IsValidID(packet->GetPassengerDestination()) &&
+					vehicle->orders != nullptr && vehicle->orders->index == leg.service && leg.boarding == station &&
+					Station::IsValidID(leg.alighting);
+			if (valid) {
+				auto key = std::tuple(leg.vehicle, leg.boarding_order, leg.alighting_order, leg.alighting);
+				auto entry = usable.find(key);
+				bool inserted = false;
+				if (entry == usable.end() && usable.size() < 4096 && validation_work >= 16) {
+					validation_work -= 16; // Bound unique validation records as well as facility traversal.
+					std::tie(entry, inserted) = usable.try_emplace(key, false);
 				}
-			}
-			if (IsPassengerJourneyRoutingEnabled(cargo) && allow_search &&
-					(precomputed ? packet->GetPassengerRoutingMode() != PassengerRoutingMode::Journey : CanSearchWaitingJourney(*packet, station, search)) &&
-					(precomputed || inspected < 4096)) {
-				++inspected;
-				if (context.PlanWaiting(*packet, cargo, key)) key = StationID::Invalid();
-				else if (!packet->IsPassengerJourneyDeferred()) packet->FallbackPassengerJourney(station, _state_ticks);
-			}
-			if (IsPassengerJourneyRoutingEnabled(cargo) && Station::IsValidID(packet->GetPassengerDestination()) &&
-					packet->GetPassengerRoutingMode() != PassengerRoutingMode::Journey) {
-				const StationID hop = CurrentPassengerLegacyHop(*packet, cargo, station, key);
-				changed |= hop != packet->GetPassengerLegacyHop();
-				packet->SetPassengerLegacyHop(hop);
-				key = StationID::Invalid(); // CanBoard validates the through ride, including reservations and refits.
-			}
-			changed |= key != bucket->first || previous_mode != packet->GetPassengerRoutingMode();
-			if (precomputed && packet->GetPassengerRoutingMode() == PassengerRoutingMode::Journey) {
-				const auto &ride = packet->GetPassengerJourney();
-				if (IsEstimatedPassengerRide(ride.kind) && ride.waiting_limit >= 0 && ride.planned_at.base() < INT64_MAX - ride.waiting_limit) {
-					StateTicks expiry{ride.planned_at.base() + ride.waiting_limit + 1};
-					if (this->passenger_routing_due == INVALID_STATE_TICKS || expiry < this->passenger_routing_due) this->passenger_routing_due = expiry;
+				if (inserted && leg.boarding_order < vehicle->GetNumOrders() && leg.alighting_order < vehicle->GetNumOrders()) {
+					const Order *board = vehicle->GetOrder(leg.boarding_order), *alight = vehicle->GetOrder(leg.alighting_order);
+					entry->second = board->GetDestination() == station && alight->GetDestination() == leg.alighting &&
+							board->GetCargoLoadType(cargo) != OrderLoadType::NoLoad && alight->GetCargoUnloadType(cargo) != OrderUnloadType::NoUnload &&
+							HasPassengerVehicleCapacity(vehicle, cargo, validation_work) &&
+							CanPassengerVehicleUseStation(vehicle, station, board, validation_work) &&
+							CanPassengerVehicleUseStation(vehicle, leg.alighting, alight, validation_work);
 				}
+				valid = entry != usable.end() && entry->second;
 			}
-			if (key != bucket->first) {
-				moved.emplace_back(key, packet);
-				list.erase(position);
+			if (valid && vehicle->current_order.IsAnyLoadingType() && vehicle->last_station_visited == station) {
+				valid = loading->CanBoard(*packet, vehicle, cargo);
+			} else if (valid) {
+				auto [signature, inserted] = signatures.try_emplace(leg.service, 0);
+				if (inserted) signature->second = PassengerJourneyServiceSignature(*vehicle->orders, cargo, &validation_work);
+				valid = _state_ticks <= leg.departure && signature->second != 0 && leg.signature == signature->second;
+			}
+			if (!valid) {
+				CountJourneyFallback(IsPassengerJourneyRoutingEnabled(cargo) ? PassengerJourneyFallbackReason::StaleLeg : PassengerJourneyFallbackReason::Disabled);
+				key = packet->GetPassengerLegacyHop(); packet->FallbackPassengerJourney(station, _state_ticks);
+			}
+			else key = StationID::Invalid();
 			}
 		}
-		if (list.empty()) bucket = queues.erase(bucket);
-		else ++bucket;
+		if (IsPassengerJourneyRoutingEnabled(cargo) && allow_search &&
+				(precomputed ? packet->GetPassengerRoutingMode() != PassengerRoutingMode::Journey : CanSearchWaitingJourney(*packet, station, search)) &&
+				(precomputed || inspected < 4096)) {
+			++inspected;
+			if (context.PlanWaiting(*packet, cargo, key)) key = StationID::Invalid();
+			else if (!packet->IsPassengerJourneyDeferred()) packet->FallbackPassengerJourney(station, _state_ticks);
+		}
+		if (IsPassengerJourneyRoutingEnabled(cargo) && Station::IsValidID(packet->GetPassengerDestination()) &&
+				packet->GetPassengerRoutingMode() != PassengerRoutingMode::Journey) {
+			const StationID hop = CurrentPassengerLegacyHop(*packet, cargo, station, key);
+			changed |= hop != packet->GetPassengerLegacyHop();
+			packet->SetPassengerLegacyHop(hop);
+			key = StationID::Invalid(); // CanBoard validates the through ride, including reservations and refits.
+		}
+		changed |= original_key != key || previous_mode != packet->GetPassengerRoutingMode();
+		return key;
+	};
+	/* Deadlines are simulation state. Rebuilding the derived index must never
+	 * create new work, discard pending work or reset the per-tick allowance. */
+	auto schedule = [&](CargoPacket &packet) {
+		StateTicks due = INVALID_STATE_TICKS;
+		if (packet.GetPassengerRoutingMode() == PassengerRoutingMode::Journey) {
+			const auto &ride = packet.GetPassengerJourney();
+			const int64_t base = IsEstimatedPassengerRide(ride.kind) ? ride.planned_at.base() : ride.departure.base();
+			const int64_t wait = IsEstimatedPassengerRide(ride.kind) ? ride.waiting_limit : 0;
+			if (wait >= 0 && base < INT64_MAX - wait) due = std::max(_state_ticks + 1, StateTicks{base + wait + 1});
+		} else if (packet.IsPassengerJourneyDeferred()) {
+			due = _state_ticks + 1;
+		}
+		if (packet.GetPassengerInterchangeReady() > _state_ticks) due = due == INVALID_STATE_TICKS ? packet.GetPassengerInterchangeReady() : std::min(due, packet.GetPassengerInterchangeReady());
+		packet.SchedulePassengerRouting(due);
+	};
+	size_t moved = 0;
+	StationCargoPacketMap::Map &queues = this->packets;
+	if (events) {
+		/* Alternate generations and timed/new work. Each station has its own
+		 * allowance; busy low-ID stations cannot consume another station's slice.
+		 * Due time precedes pool ID, so a stream of new packets cannot starve old
+		 * events. Both cursors survive save/load and repeated calls this tick. */
+		while (this->passenger_routing_work < PASSENGER_ROUTING_SLICE) {
+			const bool due = !this->routing_events.empty() && this->routing_events.begin()->first <= _state_ticks;
+			bool sweep = this->passenger_routing_sweeping && (!due || (this->passenger_routing_work % 2 == 0));
+			CargoPacketID id;
+			if (sweep) {
+				auto next = this->routing_packets.lower_bound(CargoPacketID{this->passenger_routing_cursor});
+				if (next == this->routing_packets.end() || next->base() > this->passenger_routing_end) { this->passenger_routing_sweeping = false; continue; }
+				id = *next;
+				this->passenger_routing_cursor = id.base() + 1;
+				++this->passenger_generation_inspected;
+			} else if (due) {
+				id = this->routing_events.begin()->second;
+			} else break;
+			++this->passenger_routing_work;
+			CargoPacket *packet = CargoPacket::Get(id);
+			/* Generation cursors contain unresolved passengers only. Existing
+			 * intents are validated lazily at real boarding and by their saved
+			 * expiry event, rather than scanned on unrelated publications. */
+			++this->passenger_routing_inspected;
+			const auto entry = this->waiting_entries.at(id);
+			this->ForgetWaitingPacket(id);
+			const StationID key = route(packet, entry.key);
+			schedule(*packet);
+			if (key == entry.key) {
+				this->IndexPacket(packet, key, entry.position, entry.sequence);
+			} else {
+				auto bucket = queues.find(entry.key);
+				auto &list = queues[key];
+				list.splice(list.end(), bucket->second, entry.position);
+				if (bucket->second.empty()) queues.erase(bucket);
+				this->IndexPacket(packet, key, entry.position);
+				++moved;
+			}
+		}
+	} else {
+		std::vector<std::pair<StationID, CargoPacket *>> relocated;
+		for (auto bucket = queues.begin(); bucket != queues.end();) {
+			auto &list = bucket->second;
+			for (auto it = list.begin(); it != list.end();) {
+				auto position = it++;
+				CargoPacket *packet = *position;
+				const StationID key = route(packet, bucket->first);
+				schedule(*packet);
+				if (key != bucket->first) { relocated.emplace_back(key, packet); list.erase(position); }
+			}
+			if (list.empty()) bucket = queues.erase(bucket); else ++bucket;
+		}
+		for (const auto &[key, packet] : relocated) this->packets.Insert(key, packet);
+		moved = relocated.size();
+		this->passenger_routing_dirty = false;
+		this->passenger_routing_revision = revision; this->passenger_routing_rows = rows;
+		if (precomputed) this->RebuildWaitingIndex();
 	}
-	/* Delay insertion so relocated packets cannot be revisited in this pass. Unchanged
-	 * buckets retain their storage and packet order; only changed queue keys allocate. */
-	for (const auto &[key, packet] : moved) this->packets.Insert(key, packet);
-	this->passenger_routing_dirty = false; this->passenger_routing_revision = revision; this->passenger_routing_rows = rows;
-	if (precomputed) this->RebuildWaitingIndex();
 	if (changed) SetWindowDirty(WindowClass::StationView, station);
-	return moved.size();
+	return moved;
 }
 
 void RouteWaitingPassengerJourneys(Station *station, PassengerJourneyLoadingContext *loading)

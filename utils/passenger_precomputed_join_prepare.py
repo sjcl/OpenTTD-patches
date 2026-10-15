@@ -40,7 +40,7 @@ def main():
     for (const Station *station : Station::Iterate()) {
         Mix(loading, station->index, station->loading_vehicles.size());
         for (const Vehicle *v : station->loading_vehicles) Mix(loading, v->index);
-        for (CargoType cargo : EnumRange(NUM_CARGO)) if (station->goods[cargo].data) {
+        for (CargoType cargo : EnumRange(NUM_CARGO)) if (station->goods[cargo].data && !station->goods[cargo].data->MayBeRemoved()) {
             const auto &list = station->goods[cargo].data->cargo;
             Mix(ownership, station->index, cargo, list.TotalCount(), list.ReservedCount(), list.Packets()->size());
             for (const auto &[via, packets] : *list.Packets()) {
@@ -71,6 +71,21 @@ def main():
         << ",\"precomputed_routing\":" << _settings_game.linkgraph.passenger_journey_precomputed
 ''' + anchor)
     header.write_text(content, encoding="utf-8")
+    # v8 schedules packet events across ticks. Compare this saved simulation
+    # state too; local diagnostics and reconstructed iterator ranks are excluded.
+    if "passenger_routing_event" in (source / "src/cargopacket.h").read_text(encoding="utf-8"):
+        packet = build / "save-integrity/cargopacket_sl.cpp"
+        text = packet.read_text(encoding="utf-8")
+        anchor = '        Mix(state, cp.index, merge,'
+        assert text.count(anchor) == 1
+        packet.write_text(text.replace(anchor, '        Mix(state, cp.passenger_routing_event);\n' + anchor), encoding="utf-8")
+        anchor = '            Mix(ownership, station->index, cargo, list.TotalCount()'
+        assert content.count(anchor) == 1
+        content = content.replace(anchor, '''            Mix(ownership, list.passenger_routing_dirty, list.passenger_routing_revision, list.passenger_routing_rows,
+                list.passenger_routing_due, list.passenger_routing_sweeping, list.passenger_routing_cursor, list.passenger_routing_end,
+                list.passenger_routing_tick, list.passenger_routing_work);
+''' + anchor)
+        header.write_text(content, encoding="utf-8")
     console = build / "save-integrity/console_cmds.cpp"
     text = console.read_text(encoding="utf-8")
     anchor = '    if (operation == "build_precomputed") {'
@@ -86,7 +101,7 @@ def main():
     content = original.read_text(encoding="utf-8")
     content = re.sub(r'#include "([^"]+)"', lambda m: '#include "' + (original.parent / m[1]).resolve().as_posix() + '"', content)
     includes = "".join(f'#include "{(source / "src" / name).as_posix()}"\n' for name in (
-        "openttd.h", "date_func.h", "passenger_service_database.h", "network/network.h", "network/network_internal.h"))
+        "openttd.h", "date_func.h", "passenger_service_database.h", "network/network.h", "network/network_internal.h", "console_func.h"))
     content = content.replace("#include <atomic>", "#include <atomic>\n#include <fstream>\n#include <cstdio>\n" + includes)
     anchor = '''		while (!_exit_game) {
 			::GameLoop();

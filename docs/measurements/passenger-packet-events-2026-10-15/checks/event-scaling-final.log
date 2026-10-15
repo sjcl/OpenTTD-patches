@@ -1,0 +1,9 @@
+Filters: [precomputed][events][cpu]
+waiting_packets,idle_ns,single_event_ns,generation_ns,processed_events,generation_packets
+128,4,2311,1583,1024,0
+1024,4,2361,1594,1024,0
+8192,4,2826,1577,1024,0
+32768,4,2927,1614,1024,0
+===============================================================================
+All tests passed (42136 assertions in 1 test case)
+

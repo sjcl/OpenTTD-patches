@@ -101,7 +101,7 @@ def driver(args):
     content = re.sub(r'#include "([^"]+)"', lambda match: '#include "' + (original.parent / match[1]).resolve().as_posix() + '"', content)
     stdafx = '#include "' + (source / "src/stdafx.h").as_posix() + '"\n'
     assert content.count(stdafx) == 1
-    headers = ''.join('#include "' + (source / "src" / name).as_posix() + '"\n' for name in ["openttd.h", "date_func.h", "passenger_journey_active.h"])
+    headers = ''.join('#include "' + (source / "src" / name).as_posix() + '"\n' for name in ["openttd.h", "date_func.h", "passenger_journey_active.h", "console_func.h"])
     content = content.replace(stdafx, stdafx + headers + '#include <charconv>\n#include <fstream>\n#include <vector>\n')
     anchor = "\t\tfor (int i = 0; i < this->ticks; i++) {\n\t\t\t::GameLoop();\n\t\t\t::InputLoop();\n\t\t\t::UpdateWindows();\n\t\t}"
     assert content.count(anchor) == 1

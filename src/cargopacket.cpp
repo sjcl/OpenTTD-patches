@@ -43,6 +43,13 @@ static std::set<StationCargoList *> _passenger_waiting_lists;
 
 void InvalidatePassengerWaitingRouting()
 {
+	/* Index residency is derived. In particular a joining peer rebuilds lists
+	 * that a server may not have referenced yet. Save the same generation event
+	 * for every owning goods entry, irrespective of that local residency. */
+	for (Station *station : Station::Iterate()) for (CargoType cargo : EnumRange(NUM_CARGO)) {
+		if (station->goods[cargo].data != nullptr) station->goods[cargo].data->cargo.passenger_routing_dirty = true;
+	}
+	/* Standalone lists are also used by cargo actions and regression fixtures. */
 	for (auto *list : _passenger_waiting_lists) list->passenger_routing_dirty = true;
 }
 
@@ -51,6 +58,7 @@ void ShiftPassengerWaitingEventTicks(StateTicksDelta delta)
 	for (Station *station : Station::Iterate()) for (CargoType cargo : EnumRange(NUM_CARGO)) if (station->goods[cargo].data != nullptr) {
 		auto &list = station->goods[cargo].data->cargo;
 		if (list.passenger_routing_due != INVALID_STATE_TICKS) list.passenger_routing_due += delta;
+		if (list.passenger_routing_tick != INVALID_STATE_TICKS) list.passenger_routing_tick += delta;
 	}
 }
 
@@ -58,6 +66,14 @@ void PassengerWaitingPacketChanged(const CargoPacket &packet)
 {
 	auto owner = _passenger_waiting_owners.find(packet.index.base());
 	if (owner != _passenger_waiting_owners.end()) owner->second->RefreshWaitingPacket(packet);
+}
+
+/** Keep an older pending event ahead of newly arriving work. Count/payment-only
+ * changes refresh the indices without waking a dormant routing decision. */
+void PassengerWaitingRoutingChanged(CargoPacket &packet)
+{
+	const auto due = packet.GetPassengerRoutingEvent();
+	packet.SchedulePassengerRouting(due == INVALID_STATE_TICKS ? _state_ticks : std::min(due, _state_ticks));
 }
 
 static void RegisterPassengerJourneyPacket(const CargoPacket &packet)
@@ -120,7 +136,7 @@ void CargoPacket::SetPassengerJourney(PassengerJourneyExecution journey, Station
 	this->passenger_retry_after = {};
 	this->passenger_via = StationID::Invalid();
 	if (!same_vehicle) RegisterPassengerJourneyPacket(*this);
-	PassengerWaitingPacketChanged(*this);
+	PassengerWaitingRoutingChanged(*this);
 }
 
 void CargoPacket::FallbackPassengerJourney(StationID station, StateTicks now, StationID legacy_hop)
@@ -132,7 +148,7 @@ void CargoPacket::FallbackPassengerJourney(StationID station, StateTicks now, St
 	this->passenger_via = StationID::Invalid();
 	this->passenger_retry_station = station;
 	this->passenger_retry_after = now + 256;
-	PassengerWaitingPacketChanged(*this);
+	PassengerWaitingRoutingChanged(*this);
 }
 
 void CargoPacket::DeferPassengerJourney(StationID station, StateTicks now, StationID legacy_hop)
@@ -144,11 +160,12 @@ void CargoPacket::DeferPassengerJourney(StationID station, StateTicks now, Stati
 	this->passenger_via = StationID::Invalid();
 	this->passenger_retry_station = station;
 	this->passenger_retry_after = now + 1;
-	PassengerWaitingPacketChanged(*this);
+	PassengerWaitingRoutingChanged(*this);
 }
 
 void CargoPacket::ShiftPassengerJourneyTicks(StateTicksDelta delta)
 {
+	if (this->passenger_routing_event != INVALID_STATE_TICKS) this->passenger_routing_event += delta;
 	if (this->passenger_retry_after != StateTicks{0}) this->passenger_retry_after += delta;
 	if (this->passenger_arriving_service != OrderListID::Invalid()) this->passenger_interchange_ready += delta;
 	if (this->passenger_routing_mode == PassengerRoutingMode::Journey) {
@@ -310,7 +327,8 @@ CargoPacket::CargoPacket(CargoPacketID index, uint16_t count, Money feeder_share
 		passenger_arriving_incarnation(original.passenger_arriving_incarnation),
 		passenger_transport(original.passenger_transport),
 		passenger_interchange_transport(original.passenger_interchange_transport),
-		passenger_schedule_used(original.passenger_schedule_used)
+		passenger_schedule_used(original.passenger_schedule_used),
+		passenger_routing_event(original.passenger_routing_event)
 {
 	dbg_assert(count != 0);
 	RegisterPassengerJourneyPacket(*this);
@@ -374,6 +392,8 @@ bool CargoPacket::Merge(CargoPacket *cp)
 	if (this->passenger_destination != cp->passenger_destination || !this->HasSamePassengerRouting(*cp)) return false;
 	this->count += cp->count;
 	this->feeder_share += cp->feeder_share;
+	if (this->passenger_routing_event == INVALID_STATE_TICKS ||
+			(cp->passenger_routing_event != INVALID_STATE_TICKS && cp->passenger_routing_event < this->passenger_routing_event)) this->passenger_routing_event = cp->passenger_routing_event;
 	PassengerWaitingPacketChanged(*this);
 
 	if (cp->flags & CPF_HAS_DEFERRED_PAYMENT) {
@@ -401,7 +421,7 @@ bool CargoPacket::SetPassengerDestination(CargoType cargo, StationID destination
 	if (destination != StationID::Invalid() && !Station::IsValidID(destination)) return false;
 	if (this->passenger_destination != StationID::Invalid() && this->passenger_destination != destination) return false;
 	this->passenger_destination = destination;
-	PassengerWaitingPacketChanged(*this);
+	PassengerWaitingRoutingChanged(*this);
 	return true;
 }
 
@@ -1208,6 +1228,7 @@ void StationCargoList::ClearWaitingIndex()
 	_passenger_waiting_lists.erase(this);
 	for (const auto &[id, entry] : this->waiting_entries) _passenger_waiting_owners.erase(id.base());
 	this->waiting_entries.clear(); this->merge_index.clear(); this->boarding_index.clear(); this->waiting_wake.clear();
+	this->routing_events.clear(); this->routing_packets.clear();
 	this->waiting_next_sequence = 0;
 	this->waiting_index_valid = false;
 }
@@ -1217,6 +1238,8 @@ void StationCargoList::ForgetWaitingPacket(CargoPacketID id) const
 	auto it = this->waiting_entries.find(id);
 	if (it == this->waiting_entries.end()) return;
 	const auto &entry = it->second;
+	if (entry.routing_due != INVALID_STATE_TICKS) this->routing_events.erase({entry.routing_due, id});
+	this->routing_packets.erase(id);
 	auto merge = this->merge_index.find(entry.hash);
 	if (merge != this->merge_index.end()) { merge->second.erase({entry.space, id}); if (merge->second.empty()) this->merge_index.erase(merge); }
 	if (entry.pending) this->waiting_wake.erase(entry.wake);
@@ -1231,10 +1254,16 @@ void StationCargoList::IndexPacket(CargoPacket *packet, StationID key, StationCa
 {
 	const bool journey = packet->GetPassengerRoutingMode() == PassengerRoutingMode::Journey;
 	OrderListID service = journey ? packet->GetPassengerJourney().service : OrderListID::Invalid();
-	if (journey && this->passenger_index_cargo < NUM_CARGO) service = GetPassengerServiceDatabase().PrecomputedBoardingKey(this->passenger_index_cargo, service);
+	/* Index the saved raw identity. A changing table's canonical pattern key
+	 * cannot live in a derived index: a joining peer would rebuild it earlier
+	 * than a server's pending generation sweep and see different candidates. */
 	bool pending = journey && packet->GetPassengerJourney().not_before > _state_ticks;
 	const uint64_t rank = sequence ? *sequence : this->waiting_next_sequence++;
-	WaitingEntry entry{key, position, packet->StationMergeHash(), service, static_cast<uint16_t>(CargoPacket::MAX_COUNT - packet->Count()), pending, rank, {}};
+	WaitingEntry entry{key, position, packet->StationMergeHash(), service, static_cast<uint16_t>(CargoPacket::MAX_COUNT - packet->Count()), pending, rank, {}, packet->GetPassengerRoutingEvent()};
+	if (entry.routing_due != INVALID_STATE_TICKS) this->routing_events.emplace(entry.routing_due, packet->index);
+	/* Current intents use saved expiry events and lazy live generation checks.
+	 * A table publication only needs to revisit unresolved waiting passengers. */
+	if (!journey && Station::IsValidID(packet->GetPassengerDestination())) this->routing_packets.insert(packet->index);
 	if (pending) entry.wake = this->waiting_wake.emplace(packet->GetPassengerJourney().not_before, packet->index);
 	else this->boarding_index[service].emplace(key, rank, packet->index);
 	this->merge_index[entry.hash].emplace(entry.space, packet->index);
@@ -1244,8 +1273,6 @@ void StationCargoList::IndexPacket(CargoPacket *packet, StationID key, StationCa
 
 void StationCargoList::RefreshWaitingPacket(const CargoPacket &packet) const
 {
-	if (packet.GetPassengerRoutingMode() != PassengerRoutingMode::Journey && Station::IsValidID(packet.GetPassengerDestination()))
-		const_cast<StationCargoList *>(this)->passenger_routing_dirty = true;
 	auto it = this->waiting_entries.find(packet.index); if (it == this->waiting_entries.end()) return;
 	const auto position = it->second.position; const StationID key = it->second.key;
 	const auto sequence = it->second.sequence;
@@ -1263,7 +1290,13 @@ uint StationCargoList::ShiftIndexedJourneyCargo(Taction action, std::span<const 
 		const StationID key = entry->second.key;
 		if (key != StationID::Invalid() && std::find(next.begin(), next.end(), key) == next.end()) return true;
 		CargoPacket *packet = CargoPacket::Get(id); ++this->boarding_candidates_inspected;
-		if (!loading.CanBoard(*packet, vehicle)) return true;
+		if (!loading.CanBoard(*packet, vehicle)) {
+			/* This is an actual loading action, unlike the read-only HasCargoFor
+			 * predicate. Queue a stale intent for the next bounded routing slice. */
+			if (packet->GetPassengerRoutingMode() == PassengerRoutingMode::Journey &&
+					!GetPassengerServiceDatabase().IsCurrent(packet->GetPassengerJourney())) PassengerWaitingRoutingChanged(*packet);
+			return true;
+		}
 		const auto position = entry->second.position;
 		const auto sequence = entry->second.sequence;
 		const auto intent = packet->GetPassengerJourney(); const auto legacy = packet->GetPassengerLegacyHop();
@@ -1314,7 +1347,6 @@ bool StationCargoList::VisitBoardingCandidates(const Vehicle *vehicle, Visitor &
 		this->waiting_wake.erase(wake);
 	}
 	OrderListID service = vehicle != nullptr && vehicle->First()->orders != nullptr ? vehicle->First()->orders->index : OrderListID::Invalid();
-	if (this->passenger_index_cargo < NUM_CARGO) service = GetPassengerServiceDatabase().PrecomputedBoardingKey(this->passenger_index_cargo, service);
 	auto visit = [&](OrderListID id) {
 		auto group = this->boarding_index.find(id);
 		if (group == this->boarding_index.end()) return true;
@@ -1329,7 +1361,36 @@ bool StationCargoList::VisitBoardingCandidates(const Vehicle *vehicle, Visitor &
 		}
 		return true;
 	};
-	return visit(service) && (service == OrderListID::Invalid() || visit(OrderListID::Invalid()));
+	/* Merge equivalent raw-service queues in primary FIFO order. Only service
+	 * buckets participate; packets are consumed directly, never copied/scanned. */
+	auto services = this->passenger_index_cargo < NUM_CARGO ? GetPassengerServiceDatabase().PrecomputedBoardingServices(this->passenger_index_cargo, service) : std::span<const OrderListID>{};
+	if (services.size() <= 1) return visit(service) && (service == OrderListID::Invalid() || visit(OrderListID::Invalid()));
+	using Position = std::set<BoardingOrder>::const_iterator;
+	struct Cursor { BoardingOrder order; Position next, end; };
+	auto later = [](const Cursor &a, const Cursor &b) { return a.order > b.order; };
+	std::priority_queue<Cursor, std::vector<Cursor>, decltype(later)> candidates(later);
+	auto add = [&](OrderListID id) {
+		auto group = this->boarding_index.find(id);
+		if (group != this->boarding_index.end() && !group->second.empty()) {
+			auto first = group->second.begin(); candidates.push({*first, std::next(first), group->second.end()});
+		}
+	};
+	if (this->boarding_index.size() < services.size()) {
+		/* A large equivalent fleet often has only one or two resident service
+		 * buckets here. Intersect the smaller side, rather than walking its fleet. */
+		const auto canonical = GetPassengerServiceDatabase().PrecomputedBoardingKey(this->passenger_index_cargo, service);
+		for (const auto &[id, group] : this->boarding_index) {
+			if (id != OrderListID::Invalid() && GetPassengerServiceDatabase().PrecomputedBoardingKey(this->passenger_index_cargo, id) == canonical) add(id);
+		}
+	} else {
+		for (OrderListID id : services) add(id);
+	}
+	while (!candidates.empty()) {
+		auto current = candidates.top(); candidates.pop();
+		if (current.next != current.end) candidates.push({*current.next, std::next(current.next), current.end});
+		if (!visitor(std::get<2>(current.order))) return false;
+	}
+	return service == OrderListID::Invalid() || visit(OrderListID::Invalid());
 }
 
 /**
@@ -1343,7 +1404,9 @@ bool StationCargoList::VisitBoardingCandidates(const Vehicle *vehicle, Visitor &
 void StationCargoList::Append(CargoPacket *cp, StationID next)
 {
 	dbg_assert(cp != nullptr);
-	if (cp->GetPassengerRoutingMode() != PassengerRoutingMode::Journey && Station::IsValidID(cp->GetPassengerDestination())) this->passenger_routing_dirty = true;
+	/* Appending is a new waiting event, including returned reservations. Never
+	 * assign time zero here: new low/recycled pool IDs must not overtake old work. */
+	cp->SchedulePassengerRouting(_state_ticks);
 	if (cp->GetPassengerRoutingMode() == PassengerRoutingMode::Journey) next = StationID::Invalid();
 	if (cp->GetPassengerRoutingMode() != PassengerRoutingMode::Journey && Station::IsValidID(cp->GetPassengerDestination())) {
 		cp->SetPassengerLegacyHop(next);

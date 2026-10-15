@@ -478,18 +478,26 @@ struct PassengerOdStructHandler final : public TypedSaveLoadStructHandler<Passen
 	}
 };
 
+/** Saved scheduler state, separate from its reconstructible packet indices. */
+NamedSaveLoadTable GetPassengerWaitingEventDesc()
+{
+	static const NamedSaveLoad fields[] = {
+		NSL("dirty", SLE_VAR(StationCargoList, passenger_routing_dirty, SLE_BOOL)),
+		NSL("revision", SLE_VAR(StationCargoList, passenger_routing_revision, SLE_UINT64)),
+		NSL("rows", SLE_VAR(StationCargoList, passenger_routing_rows, SLE_UINT64)),
+		NSL("due", SLE_VAR(StationCargoList, passenger_routing_due, SLE_INT64)),
+		NSL("sweeping", SLE_CONDVAR_X(StationCargoList, passenger_routing_sweeping, SLE_BOOL, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_PASSENGER_PERIODIC, 9))),
+		NSL("cursor", SLE_CONDVAR_X(StationCargoList, passenger_routing_cursor, SLE_UINT32, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_PASSENGER_PERIODIC, 9))),
+		NSL("end", SLE_CONDVAR_X(StationCargoList, passenger_routing_end, SLE_UINT32, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_PASSENGER_PERIODIC, 9))),
+		NSL("tick", SLE_CONDVAR_X(StationCargoList, passenger_routing_tick, SLE_INT64, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_PASSENGER_PERIODIC, 9))),
+		NSL("work", SLE_CONDVAR_X(StationCargoList, passenger_routing_work, SLE_UINT16, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_PASSENGER_PERIODIC, 9))),
+	};
+	return fields;
+}
+
 /** Get the save/load description for a station's goods entry. */
 struct PassengerWaitingEventsStructHandler final : public TypedSaveLoadStructHandler<PassengerWaitingEventsStructHandler, GoodsEntry> {
-	NamedSaveLoadTable GetDescription() const override
-	{
-		static const NamedSaveLoad fields[] = {
-			NSL("dirty", SLE_VAR(StationCargoList, passenger_routing_dirty, SLE_BOOL)),
-			NSL("revision", SLE_VAR(StationCargoList, passenger_routing_revision, SLE_UINT64)),
-			NSL("rows", SLE_VAR(StationCargoList, passenger_routing_rows, SLE_UINT64)),
-			NSL("due", SLE_VAR(StationCargoList, passenger_routing_due, SLE_INT64)),
-		};
-		return fields;
-	}
+	NamedSaveLoadTable GetDescription() const override { return GetPassengerWaitingEventDesc(); }
 	void Save(GoodsEntry *ge) const override
 	{
 		SlSetStructListLength(ge->data == nullptr ? 0 : 1);
