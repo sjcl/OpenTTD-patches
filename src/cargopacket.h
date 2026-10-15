@@ -29,6 +29,7 @@
 #include <list>
 #include <set>
 #include <unordered_map>
+#include <tuple>
 
 struct CargoPayment;
 
@@ -653,17 +654,20 @@ class StationCargoList : public CargoList<StationCargoList, StationCargoPacketMa
 		OrderListID service;
 		uint16_t space;
 		bool pending;
+		uint64_t sequence; ///< Primary queue order; preserved through refresh and reconstructed from saved lists.
 		std::multimap<StateTicks, CargoPacketID>::iterator wake;
 	};
 	mutable bool waiting_index_valid = false;
 	struct PacketHash { size_t operator()(CargoPacketID id) const { return id.base(); } };
 	mutable std::unordered_map<CargoPacketID, WaitingEntry, PacketHash> waiting_entries;
 	mutable std::unordered_map<uint64_t, std::set<std::pair<uint16_t, CargoPacketID>>> merge_index;
-	mutable std::map<OrderListID, std::set<CargoPacketID>> boarding_index;
+	using BoardingOrder = std::tuple<StationID, uint64_t, CargoPacketID>;
+	mutable std::map<OrderListID, std::set<BoardingOrder>> boarding_index;
+	mutable uint64_t waiting_next_sequence = 0;
 	mutable std::multimap<StateTicks, CargoPacketID> waiting_wake;
-	void IndexPacket(CargoPacket *packet, StationID key, StationCargoPacketList::iterator position) const;
+	void IndexPacket(CargoPacket *packet, StationID key, StationCargoPacketList::iterator position, std::optional<uint64_t> sequence = {}) const;
 	void EnsureWaitingIndex() const;
-	std::vector<CargoPacketID> BoardingCandidates(const Vehicle *vehicle) const;
+	template <typename Visitor> bool VisitBoardingCandidates(const Vehicle *vehicle, Visitor &&visitor) const;
 	template <class Taction> uint ShiftIndexedJourneyCargo(Taction action, std::span<const StationID> next, const Vehicle *vehicle, PassengerJourneyLoadingContext &loading);
 protected:
 	/** The (direct) parent of this class. */

@@ -2580,3 +2580,35 @@ TEST_CASE("Precomputed replacement coalesces edits and rejects only unsafe live 
 	CHECK_FALSE(joined.PlanPrecomputed(PAX, A, B, NOW).ride);
 	CHECK(joined.PlanPrecomputed(PAX, C, D, NOW).ride == db.PlanPrecomputed(PAX, C, D, NOW).ride);
 }
+
+TEST_CASE("Precomputed boarding uses primary FIFO order through refresh wake and partial moves", "[passenger][precomputed][boarding][fairness]")
+{
+	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = true;
+	auto *train = f.Train({Stop(A), Stop(D)});
+	auto &db = f.Build(); while (!db.PreparePrecomputed()) {}
+	StationCargoList waiting;
+	/* Deliberately enqueue the larger pool ID first. Pool allocation/reuse
+	 * must not give newly arriving passengers priority over the saved queue. */
+	auto *newer = CargoPacket::Create(10, 1, A, TileIndex{0}, Money{0});
+	auto *older = CargoPacket::Create(10, 2, A, TileIndex{0}, Money{0});
+	REQUIRE(older->index > newer->index);
+	for (CargoPacket *packet : {older, newer}) {
+		REQUIRE(packet->SetPassengerDestination(PAX, D));
+		auto plan = db.PlanPrecomputed(PAX, A, D, NOW + 10); REQUIRE(plan.ride);
+		packet->SetPassengerJourney(*plan.ride, D); waiting.Append(packet, D);
+	}
+	waiting.RefreshWaitingPacket(*older);
+	_state_ticks += 10;
+	PassengerJourneyLoadingContext loading;
+	REQUIRE(waiting.HasCargoFor(std::array{D}, train, &loading, PAX));
+	REQUIRE(waiting.Reserve(5, &train->cargo, std::array{D}, TileIndex{0}, train, &loading) == 5);
+	CHECK(train->cargo.Packets()->front()->GetPeriodsInTransit() == 2);
+	CHECK(older->Count() == 5); CHECK(newer->Count() == 10);
+	/* A derived-index reconstruction, as on load, preserves the same order. */
+	waiting.ClearWaitingIndex();
+	REQUIRE(waiting.Load(5, &train->cargo, std::array{D}, TileIndex{0}, train, &loading) == 5); // Consume the reservation first.
+	REQUIRE(waiting.Load(5, &train->cargo, std::array{D}, TileIndex{0}, train, &loading) == 5);
+	CHECK(newer->Count() == 10);
+	REQUIRE(waiting.Load(10, &train->cargo, std::array{D}, TileIndex{0}, train, &loading) == 10);
+	CHECK(waiting.AvailableCount() == 0); // Erasing the last indexed bucket is safe.
+}
