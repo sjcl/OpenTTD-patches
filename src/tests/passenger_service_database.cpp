@@ -2612,3 +2612,30 @@ TEST_CASE("Precomputed boarding uses primary FIFO order through refresh wake and
 	REQUIRE(waiting.Load(10, &train->cargo, std::array{D}, TileIndex{0}, train, &loading) == 10);
 	CHECK(waiting.AvailableCount() == 0); // Erasing the last indexed bucket is safe.
 }
+
+TEST_CASE("Precomputed same service boarding prefix CPU benchmark", "[.benchmark][passenger][precomputed][boarding][cpu]")
+{
+	using Clock = std::chrono::steady_clock;
+	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = true;
+	auto *train = f.Train({Stop(A), Stop(D)});
+	auto &db = f.Build(); while (!db.PreparePrecomputed()) {}
+	std::cout << "cohort_packets,prefix_ns,prefix_candidates\n";
+	for (int packets : {128, 1024, 8192, 32768}) {
+		StationCargoList waiting;
+		for (int i = 0; i < packets; ++i) {
+			auto *packet = CargoPacket::Create(1, i, A, TileIndex{0}, Money{0}); REQUIRE(packet->SetPassengerDestination(PAX, D));
+			auto plan = db.PlanPrecomputed(PAX, A, D, NOW); REQUIRE(plan.ride);
+			packet->SetPassengerJourney(*plan.ride, D); waiting.Append(packet, D);
+		}
+		PassengerJourneyLoadingContext loading;
+		REQUIRE(waiting.HasCargoFor(std::array{D}, train, &loading, PAX));
+		const auto before = waiting.BoardingCandidatesInspected();
+		auto started = Clock::now();
+		size_t successes = 0;
+		for (int i = 0; i < 512; ++i) successes += waiting.HasCargoFor(std::array{D}, train, &loading, PAX);
+		const auto ns = std::chrono::duration_cast<std::chrono::nanoseconds>(Clock::now() - started).count() / 512;
+		CHECK(successes == 512);
+		CHECK(waiting.BoardingCandidatesInspected() - before == 512);
+		std::cout << packets << ',' << ns << ',' << (waiting.BoardingCandidatesInspected() - before) / 512 << '\n';
+	}
+}

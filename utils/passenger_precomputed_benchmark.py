@@ -61,7 +61,7 @@ def main():
         for key, value in observe(process).items():
             observed[key] = max(observed.get(key, 0), value)
     raw = (args.output / "raw.log").read_text(encoding="utf-8", errors="replace")
-    routing, boarding = [], []
+    routing, boarding, boarding_prefix = [], [], []
     for row in csv.reader(raw.splitlines()):
         if not row or not row[0].isdigit():
             continue
@@ -69,10 +69,12 @@ def main():
             routing.append(dict(zip(("axis", "size", "build_us", "lookup_ns", "p95_ns", "p99_ns", "flat_array_bytes", "allocation_envelope", "states", "edges", "operations", "hits"), map(int, row))))
         elif len(row) == 4:
             boarding.append(dict(zip(("waiting_packets", "legacy_ns", "indexed_ns", "indexed_candidates"), map(int, row))))
+        elif len(row) == 3:
+            boarding_prefix.append(dict(zip(("cohort_packets", "prefix_ns", "prefix_candidates"), map(int, row))))
     result = dict(command=command, exit_code=process.returncode, elapsed_seconds=time.perf_counter() - started,
                   platform=platform.platform(), processor=platform.processor(),
                   binary_sha256=hashlib.sha256(args.binary.read_bytes()).hexdigest(),
-                  routing=routing, boarding=boarding, **observed,
+                  routing=routing, boarding=boarding, boarding_prefix=boarding_prefix, **observed,
                   axes={0: "served stations", 1: "physical vehicles (size x 16)", 2: "same-OD lookup batches (size x 4 x 256)", 3: "OD diversity"},
                   limitations=["Elapsed per-call samples and total process CPU are distinct measurements.",
                                "Peak process memory includes the test runtime and prior cases; it is not per-table peak memory.",
@@ -80,7 +82,7 @@ def main():
                                "Real-map transport and simulation percentiles require a separate paired run."])
     (args.output / "result.json").write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
     print(json.dumps(result, indent=2))
-    if process.returncode or len(routing) != 16 or len(boarding) != 4:
+    if process.returncode or len(routing) != 16 or len(boarding) != 4 or len(boarding_prefix) != 4:
         raise SystemExit("Benchmark failed or incomplete; retain raw.log.")
 
 

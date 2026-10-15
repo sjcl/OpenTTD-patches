@@ -298,8 +298,12 @@ def run(args):
             "setting linkgraph.recalc_interval 8\nsetting linkgraph.recalc_time 32\n")
         if args.precomputed is not None:
             setup += f"setting linkgraph.passenger_journey_precomputed {'true' if args.precomputed else 'false'}\n"
-        if args.warm_precomputed:
+        if args.warm_precomputed or args.rebuild_precomputed:
             setup += "passenger_journey_stats build_precomputed\n"
+        if args.rebuild_precomputed:
+            # Trigger a deterministic cost generation after completing the old
+            # rows. The ordinary product tick builder must keep those rows live.
+            setup += "setting linkgraph.passenger_transfer_penalty 17\n"
         start = f"script {log}\ngetfulldate\npassenger_journey_stats inventory\n{setup}passenger_journey_stats reset\n"
         finish = f"script {log}\ngetfulldate\npassenger_journey_stats inventory\npassenger_journey_stats total\npassenger_journey_stats save_integrity\nsave {result}\nscript\n"
         start += "unpause\nscript\n" if args.ticks else "script\n" + finish + "quit\n"
@@ -330,7 +334,8 @@ def run(args):
         metadata = dict(exit_code=process.returncode, requested_ticks=args.ticks, elapsed_seconds=time.perf_counter()-started,
             contamination=contamination, input_sha256=PROFILE.sha256(directory / "input.sav"), binary_sha256=PROFILE.sha256(args.binary),
             language_sha256=PROFILE.sha256(directory / "lang/english.lng"),
-            resume_settings=args.resume, precomputed=args.precomputed, warm_precomputed=args.warm_precomputed, command=command, **observed)
+            resume_settings=args.resume, precomputed=args.precomputed, warm_precomputed=args.warm_precomputed,
+            rebuild_precomputed=args.rebuild_precomputed, command=command, **observed)
         for name in ("actual-ticks.json", "save-integrity.json"):
             if (directory / name).is_file():
                 metadata[name] = json.loads((directory / name).read_text(encoding="utf-8"))
@@ -340,7 +345,7 @@ def run(args):
         metadata["load_failed"] = "Game load failed" in stderr
         metadata["newgrf_warning_lines"] = sum("[grf:0]" in line for line in stderr.splitlines())
         console = (directory / "on-1-console.txt").read_text(encoding="utf-8", errors="replace") if (directory / "on-1-console.txt").is_file() else ""
-        metadata["warm_complete"] = "Precomputed warm: ready=true;" in console if args.warm_precomputed else None
+        metadata["warm_complete"] = "Precomputed warm: ready=true;" in console if args.warm_precomputed or args.rebuild_precomputed else None
         dump(directory / "process.json", metadata)
         print(json.dumps({k:v for k,v in metadata.items() if k != "actual-ticks.json"}, indent=2), flush=True)
         if process.returncode or contamination or metadata["load_failed"] or metadata["warm_complete"] is False or "result_sha256" not in metadata or "save-integrity.json" not in metadata:
@@ -419,6 +424,7 @@ def main():
     p.add_argument("--lang", type=pathlib.Path, help="Matching build language directory (defaults beside the binary)")
     p.add_argument("--resume", action="store_true")
     p.add_argument("--warm-precomputed", action="store_true", help="Complete mandatory rows while paused before the first tick; initial build CPU remains in process totals")
+    p.add_argument("--rebuild-precomputed", action="store_true", help="Start with complete rows then change the transfer penalty to 17; measure ordinary replacement ticks")
     p.add_argument("--precomputed", action=argparse.BooleanOptionalAction, default=None)
     p = sub.add_parser("summarize")
     p.add_argument("output", type=pathlib.Path)
