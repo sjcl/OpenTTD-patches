@@ -673,7 +673,13 @@ bool PassengerJourneyActiveContext::PlanWaiting(CargoPacket &packet, CargoType c
 			++TickBudget().diagnostic.schedule_packets; TickBudget().diagnostic.schedule_passengers += packet.Count();
 			return true;
 		}
-		if (plan.state != PassengerPrecomputedPlan::State::Memory) return false; // Untimed fallback while building or for unsupported controls.
+		if (plan.state != PassengerPrecomputedPlan::State::Memory) {
+			/* A previous admitted-search wait is no longer a next-tick retry.
+			 * Missing/building rows wake this unresolved cohort on publication;
+			 * the indexed loading path can still bind a real arriving train. */
+			if (packet.IsPassengerJourneyDeferred()) packet.FallbackPassengerJourney(this->station, _state_ticks, legacy_hop);
+			return false;
+		}
 		// A deterministic table-size rejection uses the original admitted planners.
 	}
 	const StationID fallback_hop = CurrentPassengerLegacyHop(packet, cargo, this->station, legacy_hop);

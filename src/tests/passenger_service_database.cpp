@@ -2661,6 +2661,44 @@ TEST_CASE("Precomputed fallback boarding CPU scaling", "[.benchmark][passenger][
 	}
 }
 
+TEST_CASE("Precomputed pending cohorts board a simultaneous fleet despite an older backlog", "[.benchmark][passenger][precomputed][boarding][arrivals][cpu]")
+{
+	using Clock = std::chrono::steady_clock;
+	std::cout << "simultaneous_trains,older_packets,loaded_people,arrival_us,candidate_packets,validated_groups,pending_after\n";
+	for (int count : {1, 16, 64, 256}) {
+		Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = true;
+		auto *first = f.Train({Stop(A), Stop(D)});
+		std::vector<PeriodicTrain *> trains{first};
+		for (int i = 1; i < count; ++i) trains.push_back(Vehicle::Create<PeriodicTrain>(first));
+		f.Train({Stop(B), Stop(C)});
+		auto &db = f.Build(); while (!db.PreparePrecomputed()) {}
+		auto &waiting = Station::Get(A)->goods[PAX].CreateData().cargo;
+		constexpr int older = 32768, seats = 64;
+		for (int i = 0; i < older; ++i) {
+			auto *packet = CargoPacket::Create(1, i, A, TileIndex{0}, Money{7});
+			REQUIRE(packet->SetPassengerDestination(PAX, C)); waiting.Append(packet, C);
+		}
+		for (int i = 0; i < count * seats; ++i) {
+			auto *packet = CargoPacket::Create(1, older + i, A, TileIndex{0}, Money{11});
+			REQUIRE(packet->SetPassengerDestination(PAX, D)); waiting.Append(packet, D);
+		}
+		RunPassengerWaitingEvents(); // The station quantum cannot reach the newer, boardable cohort.
+		const auto start = Clock::now();
+		size_t loaded = 0, validated = 0;
+		for (auto *train : trains) {
+			PassengerJourneyLoadingContext loading;
+			loaded += waiting.Load(seats, &train->cargo, std::array{D}, TileIndex{0}, train, &loading);
+			validated += loading.GetValidationCount();
+			CHECK(train->cargo.StoredCount() == seats);
+		}
+		const auto us = std::chrono::duration_cast<std::chrono::microseconds>(Clock::now() - start).count();
+		CHECK(loaded == count * seats); CHECK(waiting.AvailableCount() == older); CHECK(waiting.ReservedCount() == 0);
+		CHECK(_state_ticks == NOW); CHECK(GetPassengerJourneyTickDiagnostic().od_fallback_searches == 0);
+		std::cout << count << ',' << older << ',' << loaded << ',' << us << ',' << waiting.BoardingCandidatesInspected()
+				<< ',' << validated << ',' << GetPassengerWaitingEventDiagnostic().pending << '\n';
+	}
+}
+
 TEST_CASE("Precomputed boarding CPU scaling benchmark", "[.benchmark][passenger][precomputed][boarding][cpu]")
 {
 	using Clock = std::chrono::steady_clock;
@@ -2927,13 +2965,20 @@ TEST_CASE("Indexed boarding resolves unprocessed cohorts beyond the station even
 TEST_CASE("Precomputed dormant no-route cohorts wake on publication without periodic polling", "[passenger][precomputed][events][generation]")
 {
 	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = true;
+	bool deferred = false, building = false;
+	SECTION("New unresolved passengers") {}
+	SECTION("Previously deferred passengers") { deferred = true; }
+	SECTION("Previously deferred while destination rows build") { deferred = building = true; }
 	f.Train({Stop(A), Stop(D)}); f.Train({Stop(B), Stop(C)});
 	auto &db = f.Build(); while (!db.PreparePrecomputed()) {}
+	if (building) { db.DiscardPrecomputed(); db.TickPrecomputed(1); REQUIRE(db.GetPrecomputedDiagnostic(PAX).destinations == 0); }
 	auto &waiting = Station::Get(A)->goods[PAX].CreateData().cargo;
 	std::vector<CargoPacket *> packets;
 	for (int i = 0; i < 300; ++i) {
 		auto *packet = CargoPacket::Create(1, i, A, TileIndex{0}, Money{5});
-		REQUIRE(packet->SetPassengerDestination(PAX, C)); waiting.Append(packet, D); packets.push_back(packet);
+		REQUIRE(packet->SetPassengerDestination(PAX, C));
+		if (deferred) packet->DeferPassengerJourney(A, NOW, D);
+		waiting.Append(packet, D); packets.push_back(packet);
 	}
 	for (int tick = 0; tick < 20; ++tick) { ++_state_ticks; waiting.RoutePassengerJourneys(PAX, A); }
 	for (auto *packet : packets) {
