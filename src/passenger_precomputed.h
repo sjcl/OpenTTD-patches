@@ -72,7 +72,7 @@ public:
 	std::span<const StationID> ReachableDestinations(StationID origin) const;
 	std::optional<int64_t> RouteCost(StationID origin, StationID destination) const; ///< Missing row differs from a proved infinite cost.
 private:
-	struct Member { OrderListID id; uint64_t incarnation, generation; };
+	struct Member { OrderListID id; uint64_t incarnation, generation; bool estimated; };
 	struct Pattern {
 		std::vector<Member> members;
 		std::vector<OrderListID> boarding_services;

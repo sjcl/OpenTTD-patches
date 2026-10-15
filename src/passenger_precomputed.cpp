@@ -190,7 +190,8 @@ bool PassengerPrecomputedTable::RefreshService(const PassengerPeriodicService &s
 	auto &p = this->patterns[pattern];
 	auto member = std::lower_bound(p.members.begin(), p.members.end(), service.id, [](const auto &m, OrderListID id) { return m.id < id; });
 	if (member == p.members.end() || member->id != service.id || member->incarnation != service.incarnation ||
-			service.timetable.Circuit() <= 0 || p.estimated != (service.timetable.period == 0) || p.occurrences.size() != service.timetable.stops.size()) return false;
+			service.timetable.Circuit() <= 0 || p.occurrences.size() != service.timetable.stops.size()) return false;
+	if (!this->estimates && p.estimated != (service.timetable.period == 0)) return false; // Exact legacy binding replay.
 	uint64_t mask = uint64_t{1} << this->cargo;
 	for (size_t i = 0; i < p.occurrences.size(); ++i) {
 		const auto &old = this->occurrences[p.occurrences[i]];
@@ -199,6 +200,7 @@ bool PassengerPrecomputedTable::RefreshService(const PassengerPeriodicService &s
 				old.alight != ((stop.alight & mask) != 0) || old.forced != ((stop.forced & mask) != 0) || old.continues != stop.continues) return false;
 	}
 	member->generation = service.generation;
+	member->estimated = service.timetable.period == 0;
 	return true;
 }
 
@@ -285,7 +287,7 @@ PassengerBuildTask PassengerPrecomputedTable::BuildGraph(std::vector<const Passe
 			std::set<VehicleID> physical;
 			for (const auto *s : members) {
 				if (cooperative) co_await std::suspend_always{};
-				p.members.push_back({s->id, s->incarnation, s->generation});
+				p.members.push_back({s->id, s->incarnation, s->generation, s->timetable.period == 0});
 				this->service_pattern[s->id.base()] = static_cast<uint32_t>(this->patterns.size());
 				for (const auto &v : s->vehicles) if (v.capacity[cargo]) {
 					if (cooperative) co_await std::suspend_always{};
@@ -804,7 +806,7 @@ PassengerPrecomputedPlan PassengerPrecomputedTable::Select(const Label &label, S
 	ride.estimated_wait = label.first_wait; ride.waiting_limit = std::min<int64_t>(INT64_MAX / 2, pattern.circuit) * 2;
 	result.ride = ride; result.state = PassengerPrecomputedPlan::State::Ready;
 	result.cost = label.cost; result.riding = label.riding; result.waiting = label.waiting; result.distance = label.distance; result.transfers = label.legs - 1;
-	result.estimated_service = pattern.estimated;
+	result.estimated_service = m.estimated;
 	return result;
 }
 

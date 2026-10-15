@@ -276,6 +276,32 @@ TEST_CASE("Mixed estimated generations replay retained rows and resume identical
 	CHECK(db.GetDiagnostic().searches == searches); CHECK(peer.GetDiagnostic().searches == 0);
 }
 
+TEST_CASE("Timing certification changes preserve a compatible frozen boarding policy", "[passenger][precomputed][estimated][generation][boarding]")
+{
+	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = true;
+	bool upgrade = true;
+	SECTION("Estimated timetable becomes certified") {}
+	SECTION("Certification is removed without changing stops") { upgrade = false; }
+	auto first = Stop(A); first.SetTravelTimetabled(!upgrade);
+	auto *train = f.Train({first, Stop(B), Stop(D)}); auto &db = f.Build(); while (!db.PreparePrecomputed()) {}
+	auto before = db.PlanPrecomputed(PAX, A, D, NOW); REQUIRE(before.ride);
+	const auto operations = db.GetPrecomputedDiagnostic(PAX).operations;
+	train->GetOrder(0)->SetTravelTimetabled(upgrade); train->orders->RecalculateTimetableDuration();
+	db.TimetableChanged(train->orders->index); _state_ticks += PassengerServiceDatabase::TIMETABLE_EPOCH;
+	for (int i = 0; i < 128 && db.IsBuilding(); ++i) db.Tick(PassengerServiceDatabase::BUILD_WORK, false);
+	REQUIRE_FALSE(db.IsBuilding());
+	auto after = db.PlanPrecomputed(PAX, A, D, _state_ticks); REQUIRE(after.ride);
+	CHECK(after.estimated_service == !upgrade); CHECK(after.cost == before.cost);
+	CHECK(after.ride->generation != before.ride->generation);
+	CHECK_FALSE(db.IsCurrent(*before.ride)); CHECK(db.IsCurrent(*after.ride));
+	CHECK_FALSE(ValidatePassengerServiceRide(*before.ride, train, PAX, true));
+	CHECK(ValidatePassengerServiceRide(*after.ride, train, PAX, true));
+	CHECK(after.ride->departure == StateTicks{}); CHECK(after.ride->arrival == StateTicks{});
+	CHECK(db.GetPrecomputedDiagnostic(PAX).operations == operations);
+	PassengerServiceDatabase peer; const auto wire = db.Save(); REQUIRE(peer.Load(wire)); peer.FinishLoad(true);
+	CHECK(peer.Save() == wire); CHECK(peer.PlanPrecomputed(PAX, A, D, _state_ticks).ride == after.ride);
+}
+
 TEST_CASE("Estimated boarding rechecks changed orders cargo facilities and generations", "[passenger][precomputed][estimated][boarding]")
 {
 	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = true;
