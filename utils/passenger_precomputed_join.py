@@ -28,7 +28,7 @@ def main():
     parser.add_argument("--initial-build", action="store_true")
     parser.add_argument("--stall", action="store_true")
     parser.add_argument("--toggle-precomputed", action="store_true", help="Disable and re-enable routing after joining, then compare the peer preparation barrier")
-    parser.add_argument("--wait-server-ready", action="store_true", help="Connect after the server's initial passenger preparation; preserves the game's absolute join deadline")
+    parser.add_argument("--wait-server-ready", action="store_true", help="Connect after server preparation instead of testing the server-wait phase")
     parser.add_argument("--observe-timeout", type=int, default=180,
                         help="Harness observation seconds for loading/replay; does not change game/network timeouts")
     args = parser.parse_args()
@@ -143,7 +143,7 @@ def main():
                    "passenger_journey_stats partial_precomputed\n" if args.initial_build else "")
         (server / "scripts/game_start.scr").write_text(
             f"script {(server / 'console.txt').as_posix()}\npause\ngetfulldate\n"
-            "setting max_join_time\nsetting max_lag_time\nsetting max_init_time\nsetting max_download_time\n"
+            "setting max_join_time\nsetting max_join_time_total\nsetting max_lag_time\nsetting max_init_time\nsetting max_download_time\n"
             + initial + "passenger_journey_stats total\npassenger_journey_stats save_integrity\nscript\n", encoding="utf-8")
         host = start(server, ["-D", result["address"], "-g", str(args.input.resolve())])
         if not wait(lambda: (server / "save-integrity.json").exists(), args.observe_timeout):
@@ -168,7 +168,7 @@ def main():
         guest = start(client, ["-v", "null:until_exit", "-n", result["address"] + "#255"])
         join_started = time.monotonic()
         if args.stall:
-            if not wait(lambda: "map replay progress" in read(server, "stderr.txt"), 90):
+            if not wait(lambda: "map replay progress" in read(server, "stderr.txt") or errors(server, client), args.observe_timeout) or "map replay progress" not in read(server, "stderr.txt"):
                 raise RuntimeError("Client never reported replay progress")
             # Do not send fake heartbeats while work is stopped.
             ctypes.windll.kernel32.OpenProcess.restype = ctypes.c_void_p
@@ -205,6 +205,10 @@ def main():
         # Permit the MAP_OK exchange to reach the server after the local load.
         wait(lambda: "joined as" in read(server, "stderr.txt") or guest.poll() is not None, 10)
         result["joined"] = "joined as" in read(server, "stderr.txt")
+        timing = re.search(r"map ready: server_preparation_ms=(\d+); client_join_ms=(\d+)", read(server, "stderr.txt"))
+        if timing:
+            result["server_owned_preparation_seconds"] = int(timing[1]) / 1000
+            result["client_join_budget_seconds"] = int(timing[2]) / 1000
         result["client_exit_code"] = guest.poll()
         result["network_error"] = errors(server, client)
         result["completed_observation"] = bool(snapshot)
