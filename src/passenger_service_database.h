@@ -190,6 +190,7 @@ public:
 	struct BoardingKeys { std::array<std::span<const OrderListID>, 2> services; std::array<std::span<const uint64_t>, 2> sections; };
 	BoardingKeys PrecomputedBoardingKeys(CargoType cargo, OrderListID service, VehicleOrderID boarding) const;
 	bool RebindPrecomputed(PassengerJourneyExecution &ride, OrderListID service, CargoType cargo, VehicleOrderID boarding = INVALID_VEH_ORDER_ID) const;
+	std::optional<PassengerJourneyExecution> ExtendPrecomputedRide(const PassengerJourneyExecution &ride, CargoType cargo, StationID destination) const;
 	PassengerPeriodicPlan Plan(CargoType cargo, StationID origin, StationID destination, StateTicks ready,
 			PassengerJourneyLimits limits = {}, PassengerJourneyEvaluation evaluation = {}, OrderListID excluded = OrderListID::Invalid());
 	/** Explicit read-only algorithm comparison, never a local cache preference or simulation setting. */

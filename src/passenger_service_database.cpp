@@ -924,6 +924,55 @@ bool PassengerServiceDatabase::RebindPrecomputed(PassengerJourneyExecution &ride
 	return false;
 }
 
+/** A shared prefix may bind the very carrier needed by its planned suffix.
+ * Alighting and then excluding that carrier can manufacture a pointless return
+ * trip. Compare staying aboard with the frozen cost of the onward transfer.
+ * Only the actual service's compiled cycle is inspected, once per loading cohort;
+ * live orders, facilities, forced unload and generation are checked by boarding. */
+std::optional<PassengerJourneyExecution> PassengerServiceDatabase::ExtendPrecomputedRide(
+		const PassengerJourneyExecution &ride, CargoType cargo, StationID destination) const
+{
+	if (cargo >= NUM_CARGO || ride.kind != PassengerRideKind::EstimatedServiceIntent || ride.alighting == destination ||
+			!Station::IsValidID(destination) || !this->IsCurrent(ride)) return {};
+	const uint64_t mask = uint64_t{1} << cargo;
+	for (bool retained : {false, true}) {
+		if (!(retained ? this->retained_precomputed_estimates : this->precomputed_estimates)) continue;
+		const auto &snapshot = retained ? this->retained_precomputed_services : this->precomputed_services;
+		const auto &table = (retained ? this->retained_precomputed : this->precomputed)[cargo];
+		auto suffix = table.RouteCost(ride.alighting, destination);
+		if (!suffix) continue; // Do not replace missing construction work with a search.
+		auto found = snapshot.find(ride.service);
+		if (found == snapshot.end() || found->second.incarnation != ride.signature) continue;
+		const auto &t = found->second.timetable;
+		auto first = std::find_if(t.stops.begin(), t.stops.end(), [&](const auto &stop) {
+			return stop.order == ride.boarding_order && stop.station == ride.boarding;
+		});
+		if (first == t.stops.end() || t.Circuit() <= 0 || !(first->board & mask)) continue;
+		size_t previous = first - t.stops.begin();
+		int64_t cost = 0, prefix = -1;
+		for (size_t step = 1; step < t.stops.size(); ++step) {
+			const auto &from = t.stops[previous];
+			if (!from.continues || (from.forced & mask)) break;
+			size_t next = (previous + 1) % t.stops.size(); const auto &to = t.stops[next];
+			int64_t travel = std::max<int64_t>(1, to.arrival - from.departure + (next == 0 ? t.Circuit() : 0));
+			int64_t uncertainty = to.travel_quality == 1 ? (travel + 7) / 8 : to.travel_quality == 2 ? (travel + 3) / 4 : 0;
+			if (!AddTicks(cost, travel) || !AddTicks(cost, uncertainty)) break;
+			if (prefix < 0 && to.station == destination && (to.alight & mask)) break;
+			if (prefix >= 0 && to.station == destination && (to.alight & mask)) {
+				if (*suffix == INT64_MAX || prefix > INT64_MAX - *suffix || cost <= prefix + *suffix) {
+					auto extended = ride; extended.alighting = destination; extended.alighting_order = to.order;
+					return extended;
+				}
+				break; // A later circuit occurrence cannot make staying aboard faster.
+			}
+			if (to.order == ride.alighting_order && to.station == ride.alighting && (to.alight & mask)) prefix = cost;
+			if (!AddTicks(cost, to.departure - to.arrival)) break;
+			previous = next;
+		}
+	}
+	return {};
+}
+
 PassengerPrecomputedPlan PassengerServiceDatabase::PlanPrecomputed(CargoType cargo, StationID origin, StationID destination,
 		StateTicks ready, OrderListID excluded, uint32_t sample) const
 {

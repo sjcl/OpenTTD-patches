@@ -1249,6 +1249,19 @@ bool PassengerJourneyBoardingContext::ValidateServiceRide(const PassengerJourney
 	return this->service_rides.emplace(key, valid).first->second;
 }
 
+void PassengerJourneyBoardingContext::ExtendRide(PassengerJourneyExecution &ride, StationID destination) const
+{
+	if (ride.alighting == destination) return;
+	auto &db = GetPassengerServiceDatabase();
+	if (this->extension_revision != db.BoardingRevision()) { this->extensions.clear(); this->extension_revision = db.BoardingRevision(); }
+	auto [it, inserted] = this->extensions.try_emplace(std::pair{ride, destination});
+	if (inserted) {
+		auto extended = db.ExtendPrecomputedRide(ride, this->cargo, destination);
+		if (extended && ValidatePassengerServiceRide(*extended, this->vehicle, this->cargo, true)) it->second = std::move(extended);
+	}
+	if (it->second) ride = *it->second;
+}
+
 bool PassengerJourneyBoardingContext::CanBoard(const CargoPacket &packet) const
 {
 	if (_settings_game.linkgraph.passenger_journey_precomputed && this->vehicle != nullptr && this->vehicle->orders != nullptr &&
@@ -1407,6 +1420,8 @@ void PassengerJourneyLoadingContext::PrepareBoard(CargoPacket &packet, const Veh
 		if (_settings_game.linkgraph.passenger_journey_precomputed && vehicle->First()->orders != nullptr &&
 				(ride.service != vehicle->First()->orders->index || ride.boarding_order != vehicle->First()->cur_real_order_index))
 			GetPassengerServiceDatabase().RebindPrecomputed(ride, vehicle->First()->orders->index, vehicle->cargo_type, vehicle->First()->cur_real_order_index);
+		if (_settings_game.linkgraph.passenger_journey_precomputed)
+			this->boarding.try_emplace({vehicle->First()->index, vehicle->cargo_type}, vehicle, vehicle->cargo_type).first->second.ExtendRide(ride, packet.GetPassengerDestination());
 		ride.vehicle = vehicle->First()->index; ride.kind = IsEstimatedPassengerRide(ride.kind) ? PassengerRideKind::EstimatedBoundService : PassengerRideKind::BoundService;
 		packet.SetPassengerJourney(ride, packet.GetPassengerLegacyHop());
 	}

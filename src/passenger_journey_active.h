@@ -157,12 +157,15 @@ class PassengerJourneyBoardingContext {
 	mutable PassengerVisitPrediction prediction;
 	mutable size_t predictions = 0;
 	mutable std::map<std::tuple<OrderListID, uint64_t, VehicleOrderID, VehicleOrderID, StationID, StationID, bool>, bool> service_rides;
+	mutable std::map<std::pair<PassengerJourneyExecution, StationID>, std::optional<PassengerJourneyExecution>> extensions;
+	mutable std::tuple<uint64_t, uint64_t, uint64_t> extension_revision{};
 	void Initialize() const;
 	bool ValidateServiceRide(const PassengerJourneyExecution &ride, bool boarding) const;
 public:
 	explicit PassengerJourneyBoardingContext(const Vehicle *vehicle, CargoType cargo = INVALID_CARGO);
 	bool CanBoard(const CargoPacket &packet) const;
 	bool CanBoardIntent(const PassengerJourneyExecution &ride) const { return this->ValidateServiceRide(ride, true); }
+	void ExtendRide(PassengerJourneyExecution &ride, StationID destination) const;
 	bool CanContinue(const CargoPacket &packet) const;
 	size_t GetPredictionCount() const { return this->predictions; }
 };
