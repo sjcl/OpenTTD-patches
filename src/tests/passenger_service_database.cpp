@@ -2297,7 +2297,7 @@ TEST_CASE("Precomputed active journeys bypass OD admission and survive partial-b
 	CHECK(GetPassengerJourneyTickDiagnostic().admission.used == 0);
 	CHECK(db.GetDiagnostic().searches == timed_searches);
 	CHECK(db.GetPrecomputedDiagnostic(PAX).hits >= 100);
-	auto wire = db.Save(); REQUIRE(wire[0] == 4);
+	auto wire = db.Save(); REQUIRE(wire[0] == 5);
 	PassengerServiceDatabase peer; REQUIRE(peer.Load(wire)); peer.FinishLoad(true);
 	CHECK(peer.Save() == wire);
 	CHECK(peer.PlanPrecomputed(PAX, A, D, NOW).ride == db.PlanPrecomputed(PAX, A, D, NOW).ride);
@@ -2311,6 +2311,31 @@ TEST_CASE("Precomputed active journeys bypass OD admission and survive partial-b
 		peer.TickPrecomputed(1); db.TickPrecomputed(1);
 	}
 	CHECK(peer.Save() == db.Save());
+}
+
+TEST_CASE("Precomputed frozen build progresses during a pending sweep and replays saved input", "[passenger][precomputed][generation][save]")
+{
+	Fixture f;
+	f.Train({Stop(A), Stop(B), Stop(C), Stop(D)});
+	auto &db = f.Build();
+	_settings_game.linkgraph.passenger_journey_precomputed = true;
+	db.TickPrecomputed(1);
+	db.Invalidate();
+	REQUIRE(db.IsBuilding());
+	for (int i = 0; i < 13; ++i) db.TickPrecomputed(1);
+	REQUIRE(db.GetPrecomputedDiagnostic(PAX).operations == 14);
+	auto wire = db.Save();
+	PassengerServiceDatabase peer; REQUIRE(peer.Load(wire)); peer.FinishLoad(true);
+	REQUIRE(peer.Save() == wire);
+	for (int i = 0; i < 1000; ++i) {
+		db.TickPrecomputed(1); peer.TickPrecomputed(1);
+		CHECK(peer.GetPrecomputedDiagnostic(PAX).destinations == db.GetPrecomputedDiagnostic(PAX).destinations);
+	}
+	CHECK(db.GetPrecomputedDiagnostic(PAX).destinations == 4);
+	CHECK_FALSE(db.PlanPrecomputed(PAX, A, D, NOW).ride); // Real boarding remains unsafe until publication.
+	CHECK(peer.Save() == db.Save());
+	f.PublishUpdates(db);
+	REQUIRE(db.PlanPrecomputed(PAX, A, D, _state_ticks).ride);
 }
 
 TEST_CASE("Precomputed waiting index excludes unrelated packets and preserves partial reservations", "[passenger][precomputed][boarding][cargo]")

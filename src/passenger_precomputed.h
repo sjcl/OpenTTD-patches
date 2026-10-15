@@ -47,6 +47,7 @@ public:
 	const PassengerPrecomputedDiagnostic &GetDiagnostic() const { return this->diagnostic; }
 	OrderListID BoardingKey(OrderListID service) const;
 	bool Rebind(PassengerJourneyExecution &ride, OrderListID service) const;
+	bool RefreshService(const PassengerPeriodicService &service); ///< Refresh bindings, retaining the frozen estimated costs.
 private:
 	struct Member { OrderListID id; uint64_t incarnation, generation; };
 	struct Pattern {
@@ -55,7 +56,7 @@ private:
 		int64_t wait = 0, circuit = 0, risk = 0;
 		uint64_t weight = 1;
 	};
-	struct Occurrence { StationID station; VehicleOrderID order; uint32_t pattern, arrival, departure; bool board, alight; };
+	struct Occurrence { StationID station; VehicleOrderID order; uint32_t pattern, arrival, departure; bool board, alight, forced; };
 	enum class EdgeKind : uint8_t { Board, Ride, Wait, Alight };
 	struct Edge { uint32_t from, to, occurrence; int64_t cost; uint32_t distance; EdgeKind kind; };
 	struct Label {
@@ -81,6 +82,7 @@ private:
 	bool initializing_row = false;
 	size_t seeding = 0;
 	bool failed = false, unsupported = false;
+	CargoType cargo = INVALID_CARGO;
 	mutable PassengerPrecomputedDiagnostic diagnostic;
 	uint32_t StateFor(uint32_t station, uint32_t pattern) const;
 	void StartDestination();

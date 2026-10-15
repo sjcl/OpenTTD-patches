@@ -57,6 +57,26 @@ bool PassengerPrecomputedTable::Rebind(PassengerJourneyExecution &ride, OrderLis
 	return false;
 }
 
+bool PassengerPrecomputedTable::RefreshService(const PassengerPeriodicService &service)
+{
+	if (this->cargo >= NUM_CARGO || service.id.base() >= this->service_pattern.size()) return false;
+	uint32_t pattern = this->service_pattern[service.id.base()];
+	if (pattern == INVALID) return false;
+	auto &p = this->patterns[pattern];
+	auto member = std::lower_bound(p.members.begin(), p.members.end(), service.id, [](const auto &m, OrderListID id) { return m.id < id; });
+	if (member == p.members.end() || member->id != service.id || member->incarnation != service.incarnation ||
+			service.timetable.period <= 0 || p.occurrences.size() != service.timetable.stops.size()) return false;
+	uint64_t mask = uint64_t{1} << this->cargo;
+	for (size_t i = 0; i < p.occurrences.size(); ++i) {
+		const auto &old = this->occurrences[p.occurrences[i]];
+		const auto &stop = service.timetable.stops[i];
+		if (old.station != stop.station || old.order != stop.order || old.board != ((stop.board & mask) != 0) ||
+				old.alight != ((stop.alight & mask) != 0) || old.forced != ((stop.forced & mask) != 0)) return false;
+	}
+	member->generation = service.generation;
+	return true;
+}
+
 void PassengerPrecomputedTable::AddEdge(uint32_t from, uint32_t to, int64_t cost, EdgeKind kind, uint32_t occurrence, uint32_t distance)
 {
 	assert(cost >= 0);
@@ -66,6 +86,7 @@ void PassengerPrecomputedTable::AddEdge(uint32_t from, uint32_t to, int64_t cost
 void PassengerPrecomputedTable::Begin(std::span<const PassengerPeriodicService *const> services, CargoType cargo, int64_t transfer, size_t memory)
 {
 	*this = {};
+	this->cargo = cargo;
 	const auto started = Clock::now();
 	this->diagnostic.builds = 1;
 	if (cargo >= NUM_CARGO || transfer < 0 || transfer > INT64_MAX / 2) { this->failed = true; return; }
@@ -138,7 +159,7 @@ void PassengerPrecomputedTable::Begin(std::span<const PassengerPeriodicService *
 			uint32_t pattern = static_cast<uint32_t>(this->patterns.size());
 			for (const auto &stop : t.stops) {
 				p.occurrences.push_back(static_cast<uint32_t>(this->occurrences.size()));
-				this->occurrences.push_back({stop.station, stop.order, pattern, 0, 0, (stop.board & mask) != 0, (stop.alight & mask) != 0});
+				this->occurrences.push_back({stop.station, stop.order, pattern, 0, 0, (stop.board & mask) != 0, (stop.alight & mask) != 0, (stop.forced & mask) != 0});
 				if (stop.alight & mask) this->waiting_states[this->station_index[stop.station.base()]].emplace_back(pattern, 0);
 			}
 			this->patterns.push_back(std::move(p)); representatives.push_back(members.front());

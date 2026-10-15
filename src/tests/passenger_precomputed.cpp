@@ -59,6 +59,29 @@ TEST_CASE("Precomputed masks and forced alighting cannot be bypassed", "[passeng
 	table = Build(services); CHECK_FALSE(table.Plan(A, D, StateTicks{}).ride);
 }
 
+TEST_CASE("Precomputed frozen costs refresh only compatible live service bindings", "[passenger][precomputed][generation]")
+{
+	std::array services{Service(0, {A, B, D})};
+	auto table = Build(services);
+	auto before = table.Plan(A, D, StateTicks{}); REQUIRE(before.ride);
+	services[0].generation += 10;
+	services[0].timetable.period += 100;
+	services[0].timetable.stops.back().arrival += 100;
+	services[0].timetable.stops.back().departure += 100;
+	REQUIRE(table.RefreshService(services[0]));
+	auto refreshed = table.Plan(A, D, StateTicks{}); REQUIRE(refreshed.ride);
+	CHECK(refreshed.cost == before.cost);
+	CHECK(refreshed.ride->generation == services[0].generation);
+	SECTION("NoLoad") { services[0].timetable.stops.front().board = 0; }
+	SECTION("NoUnload") { services[0].timetable.stops.back().alight = 0; }
+	SECTION("Forced unload") { services[0].timetable.stops[1].forced = 1; }
+	SECTION("Occurrence station") { services[0].timetable.stops[1].station = C; }
+	SECTION("Recycled list") { ++services[0].incarnation; }
+	++services[0].generation;
+	CHECK_FALSE(table.RefreshService(services[0]));
+	CHECK(table.Plan(A, D, StateTicks{}).ride->generation == refreshed.ride->generation);
+}
+
 TEST_CASE("Precomputed incoming service states rescue routes beyond fixed K", "[passenger][precomputed]")
 {
 	std::vector<PassengerPeriodicService> services;

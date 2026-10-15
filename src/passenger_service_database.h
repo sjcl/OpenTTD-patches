@@ -152,7 +152,7 @@ public:
 	void TimetableChanged(OrderListID id); ///< Keep safe published timing until the next deterministic update epoch.
 	void Tick(size_t allowance = BUILD_WORK);
 	void TickPrecomputed(size_t allowance = BUILD_WORK);
-	void DiscardPrecomputed() { this->precomputed = {}; this->precomputed_revision = UINT64_MAX; this->precomputed_operations = 0; }
+	void DiscardPrecomputed() { this->precomputed = {}; this->precomputed_services.clear(); this->precomputed_revision = UINT64_MAX; this->precomputed_operations = 0; this->precomputed_invalidated = false; }
 	bool HasRejectedPrecomputedMemory() const
 	{ return std::any_of(this->precomputed.begin(), this->precomputed.end(), [](const auto &table) { return table.MemoryRejected(); }); }
 	PassengerPrecomputedPlan PlanPrecomputed(CargoType cargo, StationID origin, StationID destination, StateTicks ready,
@@ -211,9 +211,13 @@ private:
 	friend class PassengerSchedulePlanner;
 	PassengerSchedulePlanner schedule;
 	std::array<PassengerPrecomputedTable, NUM_CARGO> precomputed;
+	std::map<OrderListID, PassengerPeriodicService> precomputed_services; ///< Frozen build input, saved independently of live publications.
 	uint64_t precomputed_revision = UINT64_MAX, precomputed_operations = 0;
 	int64_t precomputed_transfer = 0;
+	StateTicks precomputed_refresh{};
+	bool precomputed_invalidated = false;
 	void BeginPrecomputed(int64_t transfer);
+	void BuildPrecomputedTables();
 	using Dependencies = std::map<StationID, uint64_t>;
 	struct JourneyPolicy {
 		std::vector<std::pair<StationID, int64_t>> lower_bounds; ///< Relaxed reverse adjacent-stop distances, never winning routes.
