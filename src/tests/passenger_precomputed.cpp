@@ -146,6 +146,29 @@ TEST_CASE("Estimated connector replaces a large certified detour in mixed and un
 	CHECK(plan.cost < 500); CHECK(table.GetDiagnostic().estimated_patterns + table.GetDiagnostic().certified_patterns == table.GetDiagnostic().patterns);
 }
 
+TEST_CASE("Route dispersion cannot trade a small wait difference for a large riding detour", "[passenger][precomputed][estimated][quality]")
+{
+	std::array services{Service(0, {A, D}, 100), Service(1, {A, B}, 125), Service(2, {B, D}, 125)};
+	services[0].timetable.period = 400;
+	for (size_t service : {size_t{1}, size_t{2}}) {
+		services[service].timetable.period = 300;
+		for (uint32_t i = 1; i < 15; ++i) {
+			auto v = services[service].vehicles.front(); v.id = VehicleID{static_cast<uint32_t>(service * 100 + i)};
+			v.base = StateTicks{i * 20}; services[service].vehicles.push_back(v);
+		}
+	}
+	std::vector<const PassengerPeriodicService *> records; for (const auto &s : services) records.push_back(&s);
+	PassengerPrecomputedTable legacy; legacy.Begin(records, PAX, 20, PassengerPrecomputedTable::MAX_BYTES, true, false, {}, false);
+	while (!legacy.Finished()) legacy.Step(10000);
+	auto before = legacy.Plan(A, D, StateTicks{}, OrderListID::Invalid(), 0); REQUIRE(before.ride);
+	CHECK(before.ride->service != OrderListID{0}); CHECK(before.riding == 250);
+	auto table = Build(services);
+	for (uint32_t sample : {0U, 123456789U, UINT32_MAX}) {
+		auto plan = table.Plan(A, D, StateTicks{}, OrderListID::Invalid(), sample); REQUIRE(plan.ride);
+		CHECK(plan.ride->service == OrderListID{0}); CHECK(plan.riding == 100); CHECK(plan.transfers == 0);
+	}
+}
+
 TEST_CASE("Unknown phases receive bounded fleet credit without absolute departures", "[passenger][precomputed][estimated][frequency]")
 {
 	std::array services{Service(0, {A, D}, 100)};

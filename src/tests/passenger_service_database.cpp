@@ -2333,7 +2333,7 @@ TEST_CASE("A local disabled policy cache stays disabled across loading and joini
 
 TEST_CASE("A staging memory boundary remains bounded and loadable during deletions", "[passenger][periodic][residency][save][scaling][determinism]")
 {
-	Fixture f; f.Train({Stop(A), Stop(D)}); auto &db = f.Build(); auto wire = db.Save();
+	Fixture f; f.Train({Stop(A), Stop(D)}); auto &db = f.Build(); auto wire = LegacyDatabaseWire(db.Save(), 3);
 	wire.resize(wire.size() - 7 * 8); // Replace the empty version-three staging suffix.
 	auto put = [&](uint64_t value) { for (uint i = 0; i < 8; ++i) { wire.push_back(value & 255); value >>= 8; } };
 	put(1); put(NOW.base()); put(0); put(0); // Published revision, batch tick, publishing, bootstrap.
