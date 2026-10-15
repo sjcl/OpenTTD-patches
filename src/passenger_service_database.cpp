@@ -639,6 +639,9 @@ void PassengerServiceDatabase::BeginPrecomputed(int64_t transfer)
 	this->precomputed_refresh = StateTicks{refresh};
 	this->precomputed_services = this->services;
 	this->BuildPrecomputedTables();
+	/* Timing-only regrouping can change canonical boarding keys even when the
+	 * live revision and ready-row count are unchanged at the end of this tick. */
+	InvalidatePassengerWaitingRouting();
 }
 
 void PassengerServiceDatabase::BuildPrecomputedTables()
@@ -1556,7 +1559,7 @@ std::vector<uint8_t> PassengerServiceDatabase::Save() const
 	auto put = [&](uint64_t value) { for (uint i = 0; i < 8; ++i) { data.push_back(value & 255); value >>= 8; } };
 	const bool precomputed = this->precomputed_revision != UINT64_MAX;
 	const bool version_four = precomputed || _settings_game.linkgraph.passenger_journey_precomputed;
-	put(version_four ? 5 : 3); put(this->generation); put(this->cursor); put(this->sweeping); put(this->dirty_cursor);
+	put(version_four ? 6 : 3); put(this->generation); put(this->cursor); put(this->sweeping); put(this->dirty_cursor);
 	put(this->sweeping_since.base());
 	put(this->dirty.size()); for (OrderListID id : this->dirty) { put(id.base()); put(this->dirty_since.at(id).base()); }
 	auto put_service = [&](const PassengerPeriodicService &service) {
@@ -1601,7 +1604,8 @@ bool PassengerServiceDatabase::Load(std::span<const uint8_t> data)
 	};
 	auto count = [&](size_t max) { uint64_t n = get(); if (n > max || n > (data.size() - cursor) / 8) { valid = false; return size_t{0}; } return static_cast<size_t>(n); };
 	PassengerServiceDatabase restored;
-	uint64_t version = get(); if (version < 1 || version > 5) return false;
+	uint64_t version = get(); if (version < 1 || version > 6) return false;
+	restored.legacy_precomputed_cursor = version < 6;
 	restored.generation = get();
 	uint64_t saved_cursor = get(); if (saved_cursor > OrderListID::Invalid().base()) return false;
 	restored.cursor = static_cast<uint32_t>(saved_cursor);
@@ -1749,13 +1753,15 @@ void PassengerServiceDatabase::FinishLoad(bool present)
 		this->BuildPrecomputedTables();
 		for (auto &table : this->precomputed) {
 			while (remaining != 0 && !table.Finished()) {
-				size_t used = table.Step(static_cast<size_t>(std::min<uint64_t>(remaining, BUILD_WORK)));
+				size_t used = table.Step(static_cast<size_t>(std::min<uint64_t>(remaining, BUILD_WORK)), this->legacy_precomputed_cursor);
 				remaining -= used; this->precomputed_operations += used;
 			}
 		}
 		if (remaining != 0) SlErrorCorrupt("Invalid passenger routing construction cursor");
+		if (this->legacy_precomputed_cursor) for (const auto &table : this->precomputed) this->precomputed_operations += table.LegacyPublicationWork();
 		for (const auto &[id, service] : this->services) for (auto &table : this->precomputed) table.RefreshService(service);
 	}
+	this->legacy_precomputed_cursor = false;
 	/* Pool construction/AfterLoad may call invalidation hooks. Those must not
 	 * consume saved publication progress or recapture phases on a network join. */
 }

@@ -216,6 +216,7 @@ private:
 	int64_t precomputed_transfer = 0;
 	StateTicks precomputed_refresh{};
 	bool precomputed_invalidated = false;
+	bool legacy_precomputed_cursor = false; ///< v4/v5 row publication did not charge compact-label copies.
 	void BeginPrecomputed(int64_t transfer);
 	void BuildPrecomputedTables();
 	using Dependencies = std::map<StationID, uint64_t>;

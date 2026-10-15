@@ -2297,7 +2297,7 @@ TEST_CASE("Precomputed active journeys bypass OD admission and survive partial-b
 	CHECK(GetPassengerJourneyTickDiagnostic().admission.used == 0);
 	CHECK(db.GetDiagnostic().searches == timed_searches);
 	CHECK(db.GetPrecomputedDiagnostic(PAX).hits >= 100);
-	auto wire = db.Save(); REQUIRE(wire[0] == 5);
+	auto wire = db.Save(); REQUIRE(wire[0] == 6);
 	PassengerServiceDatabase peer; REQUIRE(peer.Load(wire)); peer.FinishLoad(true);
 	CHECK(peer.Save() == wire);
 	CHECK(peer.PlanPrecomputed(PAX, A, D, NOW).ride == db.PlanPrecomputed(PAX, A, D, NOW).ride);
@@ -2336,6 +2336,33 @@ TEST_CASE("Precomputed frozen build progresses during a pending sweep and replay
 	CHECK(peer.Save() == db.Save());
 	f.PublishUpdates(db);
 	REQUIRE(db.PlanPrecomputed(PAX, A, D, _state_ticks).ride);
+}
+
+TEST_CASE("Precomputed cost regrouping wakes queues without a live revision or row-count change", "[passenger][precomputed][events]")
+{
+	Fixture f;
+	f.Train({Stop(A), Stop(D)});
+	auto *second = f.Train({Stop(A), Stop(D)});
+	auto &db = f.Build();
+	second->orders->GetOrderAt(1)->SetWaitTime(11);
+	db.TimetableChanged(second->orders->index);
+	_state_ticks = NOW + 3000;
+	_settings_game.linkgraph.passenger_journey_precomputed = true;
+	db.TickPrecomputed(); REQUIRE(db.GetPrecomputedDiagnostic(PAX).patterns == 1);
+	_state_ticks = NOW + PassengerServiceDatabase::TIMETABLE_EPOCH;
+	for (int i = 0; i < 128 && db.IsBuilding(); ++i) db.Tick();
+	REQUIRE_FALSE(db.IsBuilding()); REQUIRE(db.GetPrecomputedDiagnostic(PAX).patterns == 1);
+	auto &list = Station::Get(A)->goods[PAX].CreateData().cargo;
+	list.RoutePassengerJourneys(PAX, A);
+	REQUIRE_FALSE(list.passenger_routing_dirty);
+	const auto revision = db.GetPublishedRevision();
+	const auto rows = db.GetPrecomputedDiagnostic(PAX).destinations;
+	_state_ticks = NOW + 3000 + PassengerServiceDatabase::TIMETABLE_EPOCH;
+	db.TickPrecomputed();
+	CHECK(db.GetPrecomputedDiagnostic(PAX).patterns == 2);
+	CHECK(db.GetPublishedRevision() == revision);
+	CHECK(db.GetPrecomputedDiagnostic(PAX).destinations == rows);
+	CHECK(list.passenger_routing_dirty);
 }
 
 TEST_CASE("Precomputed waiting index excludes unrelated packets and preserves partial reservations", "[passenger][precomputed][boarding][cargo]")

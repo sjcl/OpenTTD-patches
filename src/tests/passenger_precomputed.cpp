@@ -131,6 +131,43 @@ TEST_CASE("Precomputed publication is independent of build chunk and query histo
 	CHECK(limited.Plan(A, D, StateTicks{}).state == PassengerPrecomputedPlan::State::Memory);
 }
 
+TEST_CASE("Precomputed published rows retain only query states", "[passenger][precomputed][memory]")
+{
+	std::array services{Service(0, {A, D})};
+	auto &service = services.front(); service.timetable.stops.clear();
+	for (uint16_t i = 0; i < 1000; ++i) {
+		service.timetable.stops.push_back({i % 2 == 0 ? A : D, i, int64_t(i) * 110, int64_t(i) * 110 + 10, 1, 1, 0});
+	}
+	service.timetable.period = 110000;
+	auto table = Build(services);
+	CHECK(table.GetDiagnostic().stored_states == 6);
+	CHECK(table.GetDiagnostic().states == 2004);
+	REQUIRE(table.Plan(A, D, StateTicks{}).ride);
+	CHECK(table.Plan(A, D, StateTicks{}).ride->alighting == D);
+}
+
+TEST_CASE("Precomputed legacy cursors map to the same compact publication frontier", "[passenger][precomputed][determinism][save]")
+{
+	std::array services{Service(0, {A, B}), Service(1, {B, C}), Service(2, {C, D}), Service(3, {A, D}, 500)};
+	std::vector<const PassengerPeriodicService *> records;
+	for (const auto &s : services) records.push_back(&s);
+	PassengerPrecomputedTable legacy; legacy.Begin(records, PAX, 20);
+	for (int i = 0; i < 2000; ++i) {
+		legacy.Step(1, true);
+		if (i % 17 != 0 && !legacy.Finished()) continue;
+		PassengerPrecomputedTable current; current.Begin(records, PAX, 20);
+		current.Step(legacy.GetDiagnostic().operations + legacy.LegacyPublicationWork());
+		CHECK(current.GetDiagnostic().destinations == legacy.GetDiagnostic().destinations);
+		for (StationID from : {A, B, C, D}) for (StationID to : {A, B, C, D}) {
+			auto old = legacy.Plan(from, to, StateTicks{}, OrderListID{0}, UINT32_MAX);
+			auto now = current.Plan(from, to, StateTicks{}, OrderListID{0}, UINT32_MAX);
+			CHECK(now.state == old.state); CHECK(now.ride == old.ride); CHECK(now.cost == old.cost);
+		}
+		if (legacy.Finished()) break;
+	}
+	CHECK(legacy.Finished());
+}
+
 TEST_CASE("Precomputed CPU scaling benchmark", "[.benchmark][passenger][precomputed][cpu]")
 {
 	using Clock = std::chrono::steady_clock;

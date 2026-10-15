@@ -24,7 +24,7 @@ struct PassengerPrecomputedPlan {
 struct PassengerPrecomputedDiagnostic {
 	uint64_t builds = 0, operations = 0, build_nanoseconds = 0;
 	uint64_t queries = 0, query_nanoseconds = 0, hits = 0, missing = 0, no_route = 0;
-	size_t stations = 0, patterns = 0, states = 0, edges = 0, destinations = 0;
+	size_t stations = 0, patterns = 0, states = 0, edges = 0, destinations = 0, stored_states = 0;
 	size_t bytes = 0;
 	uint64_t envelope = 0;
 };
@@ -41,7 +41,8 @@ public:
 	static constexpr uint32_t INVALID = UINT32_MAX;
 	static constexpr uint64_t MAX_BYTES = uint64_t{8} * 1024 * 1024 * 1024;
 	void Begin(std::span<const PassengerPeriodicService *const> services, CargoType cargo, int64_t transfer, uint64_t memory = MAX_BYTES);
-	size_t Step(size_t operations);
+	size_t Step(size_t operations, bool legacy_publication = false);
+	uint64_t LegacyPublicationWork() const { return uint64_t(this->rows.size()) * this->waiting_state_count; }
 	PassengerPrecomputedPlan Plan(StationID origin, StationID destination, StateTicks ready, OrderListID excluded = OrderListID::Invalid(), uint32_t sample = 0) const;
 	bool Finished() const { return this->failed || this->destination == this->stations.size(); }
 	bool MemoryRejected() const { return this->failed; }
@@ -64,7 +65,7 @@ private:
 		int64_t cost = INT64_MAX, riding = 0, waiting = 0;
 		uint32_t board = INVALID, alight = INVALID, legs = 0, distance = 0;
 	};
-	struct Row { std::vector<Label> labels; std::vector<uint32_t> alternative; };
+	struct Row { std::vector<Label> labels, alternative; };
 	using QueueItem = std::tuple<int64_t, uint32_t, uint32_t>;
 	std::vector<uint32_t> station_index, service_pattern;
 	std::vector<StationID> stations;
@@ -74,7 +75,8 @@ private:
 	std::vector<uint32_t> incoming_offsets, incoming;
 	std::vector<std::vector<std::pair<uint32_t, uint32_t>>> waiting_states;
 	std::vector<Row> rows;
-	Row scratch;
+	Row scratch, prepared;
+	size_t waiting_state_count = 0;
 	std::priority_queue<QueueItem, std::vector<QueueItem>, std::greater<QueueItem>> queue;
 	size_t destination = 0, cursor = 0;
 	uint32_t expanding = INVALID;

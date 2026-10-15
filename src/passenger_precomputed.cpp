@@ -169,6 +169,7 @@ void PassengerPrecomputedTable::Begin(std::span<const PassengerPeriodicService *
 			std::sort(states.begin(), states.end()); states.erase(std::unique(states.begin(), states.end()), states.end());
 			for (auto &state : states) state.second = static_cast<uint32_t>(nodes++);
 		}
+		this->waiting_state_count = nodes;
 		for (auto &o : this->occurrences) { o.arrival = static_cast<uint32_t>(nodes++); o.departure = static_cast<uint32_t>(nodes++); }
 		size_t edge_count = 0;
 		for (size_t p = 0; p < this->patterns.size(); ++p) for (const auto &stop : representatives[p]->timetable.stops) {
@@ -181,8 +182,9 @@ void PassengerPrecomputedTable::Begin(std::span<const PassengerPeriodicService *
 		 * is bounded by successful edge relaxations, never by passengers or OD calls. */
 		this->diagnostic.stations = this->stations.size(); this->diagnostic.patterns = this->patterns.size();
 		this->diagnostic.states = nodes; this->diagnostic.edges = edge_count;
+		this->diagnostic.stored_states = this->waiting_state_count + this->stations.size();
 		bool fits = nodes < INVALID && edge_count < INVALID && nodes <= memory / 128 &&
-				Product(this->stations.size(), uint64_t(nodes) * 64 + uint64_t(this->stations.size()) * 4 + 64, envelope, memory) &&
+				Product(this->stations.size(), uint64_t(this->diagnostic.stored_states) * 64 + 128, envelope, memory) &&
 				Product(edge_count, 264, envelope, memory) && Product(nodes, 144, envelope, memory);
 		this->diagnostic.envelope = envelope;
 		if (!fits) { this->failed = true; this->diagnostic.build_nanoseconds = Elapsed(started); return; }
@@ -227,12 +229,13 @@ void PassengerPrecomputedTable::Begin(std::span<const PassengerPeriodicService *
 void PassengerPrecomputedTable::StartDestination()
 {
 	this->scratch.labels.clear(); this->scratch.labels.reserve(this->incoming_offsets.size() - 1);
-	this->scratch.alternative.assign(this->stations.size(), INVALID);
+	this->scratch.alternative.assign(this->stations.size(), Label{});
+	this->prepared.labels.clear(); this->prepared.labels.reserve(this->waiting_state_count);
 	this->expanding = INVALID; this->finishing_row = false; this->finishing = 0;
 	this->initializing_row = true; this->seeding = 0;
 }
 
-size_t PassengerPrecomputedTable::Step(size_t allowance)
+size_t PassengerPrecomputedTable::Step(size_t allowance, bool legacy_publication)
 {
 	const auto started = Clock::now(); size_t used = 0;
 	try {
@@ -266,10 +269,21 @@ size_t PassengerPrecomputedTable::Step(size_t allowance)
 					if (cost - best.cost > best.cost / 4) continue;
 					/* Only real Board edges are alternatives; NoLoad stops never enter. */
 					if (!o.board) continue;
-					uint32_t &alt = this->scratch.alternative[station];
-					if (alt == INVALID || cost < this->scratch.labels[this->occurrences[alt].departure].cost + this->patterns[this->occurrences[alt].pattern].wait + this->patterns[this->occurrences[alt].pattern].risk) alt = id;
+					auto &alt = this->scratch.alternative[station];
+					if (cost < alt.cost) {
+						alt = suffix; alt.board = id; ++alt.legs;
+						alt.cost = cost; alt.waiting += p.wait;
+					}
 				} else {
-					this->rows.push_back(std::move(this->scratch)); ++this->destination;
+					/* Arrival/departure labels are construction scratch. Queries use
+					 * only initial/transfer waits and one complete dispersion label. */
+					if (legacy_publication) {
+						this->prepared.labels.assign(this->scratch.labels.begin(), this->scratch.labels.begin() + this->waiting_state_count);
+					} else if (this->prepared.labels.size() < this->waiting_state_count) {
+						this->prepared.labels.push_back(this->scratch.labels[this->prepared.labels.size()]); continue;
+					}
+					this->prepared.alternative = std::move(this->scratch.alternative);
+					this->rows.push_back(std::move(this->prepared)); ++this->destination;
 					this->diagnostic.destinations = this->destination;
 					if (!this->Finished()) this->StartDestination();
 				}
@@ -299,7 +313,8 @@ size_t PassengerPrecomputedTable::Step(size_t allowance)
 	} catch (const std::bad_alloc &) { FatalError("Insufficient memory for passenger routing. Disable passenger_journey_precomputed or free memory before resuming."); }
 	this->diagnostic.operations += used; this->diagnostic.build_nanoseconds += Elapsed(started);
 	this->diagnostic.bytes = this->station_index.capacity() * 4 + this->service_pattern.capacity() * 4 + this->edges.capacity() * sizeof(Edge) +
-			(this->incoming.capacity() + this->incoming_offsets.capacity()) * 4 + this->rows.size() * (this->diagnostic.states * sizeof(Label) + this->stations.size() * 4);
+			(this->incoming.capacity() + this->incoming_offsets.capacity()) * 4 + this->rows.size() * this->diagnostic.stored_states * sizeof(Label) +
+			(this->scratch.labels.capacity() + this->scratch.alternative.capacity() + this->prepared.labels.capacity()) * sizeof(Label);
 	return used;
 }
 
@@ -334,12 +349,11 @@ PassengerPrecomputedPlan PassengerPrecomputedTable::Plan(StationID origin, Stati
 		uint32_t previous = excluded.base() < this->service_pattern.size() ? this->service_pattern[excluded.base()] : INVALID;
 		uint32_t state = previous == INVALID ? from : this->StateFor(from, previous);
 		const auto &row = this->rows[to]; Label label = row.labels[state];
-		uint32_t alternative = row.alternative[from];
-		if (state == from && label.board != INVALID && alternative != INVALID) {
-			const auto &best = this->patterns[this->occurrences[label.board].pattern], &alt = this->patterns[this->occurrences[alternative].pattern];
+		const auto &alternative = row.alternative[from];
+		if (state == from && label.board != INVALID && alternative.board != INVALID) {
+			const auto &best = this->patterns[this->occurrences[label.board].pattern], &alt = this->patterns[this->occurrences[alternative.board].pattern];
 			if (uint64_t(sample) * (best.weight + alt.weight) / (uint64_t{1} << 32) < alt.weight) {
-				label = row.labels[this->occurrences[alternative].departure]; label.board = alternative; ++label.legs;
-				label.cost += alt.wait + alt.risk; label.waiting += alt.wait;
+				label = alternative;
 			}
 		}
 		return this->Select(label, ready, excluded, sample);
