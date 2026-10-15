@@ -673,10 +673,18 @@ void PassengerServiceDatabase::TickPrecomputed(size_t allowance)
 			this->precomputed_transfer != _settings_game.linkgraph.passenger_transfer_penalty ||
 			(finished && _state_ticks >= this->precomputed_refresh && this->precomputed_revision != this->published_revision))
 		this->BeginPrecomputed(_settings_game.linkgraph.passenger_transfer_penalty);
+	const bool had_work = std::any_of(this->precomputed.begin(), this->precomputed.end(), [](const auto &t) { return !t.Finished(); });
 	for (auto &table : this->precomputed) {
 		if (table.Finished()) continue;
 		size_t used = table.Step(allowance); allowance -= used; this->precomputed_operations += used;
 		if (allowance == 0) break;
+	}
+	/* A national build may take longer than an epoch. Retain its completed
+	 * rows for a full epoch instead of discarding them on the following tick. */
+	if (had_work && std::all_of(this->precomputed.begin(), this->precomputed.end(), [](const auto &t) { return t.Finished(); })) {
+		int64_t refresh = _state_ticks.base();
+		if (!AddTicks(refresh, TIMETABLE_EPOCH)) refresh = INT64_MAX;
+		this->precomputed_refresh = std::max(this->precomputed_refresh, StateTicks{refresh});
 	}
 }
 

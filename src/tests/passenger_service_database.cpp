@@ -2338,6 +2338,24 @@ TEST_CASE("Precomputed frozen build progresses during a pending sweep and replay
 	REQUIRE(db.PlanPrecomputed(PAX, A, D, _state_ticks).ride);
 }
 
+TEST_CASE("Precomputed long builds retain a complete epoch before cost refresh", "[passenger][precomputed][generation]")
+{
+	Fixture f;
+	auto *train = f.Train({Stop(A), Stop(D)});
+	auto &db = f.Build();
+	_settings_game.linkgraph.passenger_journey_precomputed = true;
+	db.TickPrecomputed(1);
+	train->orders->GetOrderAt(1)->SetWaitTime(11);
+	db.TimetableChanged(train->orders->index);
+	f.PublishUpdates(db);
+	const auto frozen = db.PlanPrecomputed(PAX, A, D, _state_ticks); REQUIRE(frozen.ride);
+	db.TickPrecomputed();
+	CHECK(db.PlanPrecomputed(PAX, A, D, _state_ticks).cost == frozen.cost);
+	_state_ticks += PassengerServiceDatabase::TIMETABLE_EPOCH;
+	db.TickPrecomputed();
+	CHECK(db.PlanPrecomputed(PAX, A, D, _state_ticks).cost > frozen.cost);
+}
+
 TEST_CASE("Precomputed cost regrouping wakes queues without a live revision or row-count change", "[passenger][precomputed][events]")
 {
 	Fixture f;
