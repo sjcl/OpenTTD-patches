@@ -213,6 +213,7 @@ CommandCost CmdBuildVehicle(DoCommandFlags flags, TileIndex tile, EngineID eid, 
 				/* Move any free wagons to the new vehicle. */
 				NormalizeTrainVehInDepot(Train::From(v));
 			}
+			if (v->First()->orders != nullptr) InvalidatePassengerServiceDatabase(v->First()->orders->index);
 
 			InvalidateWindowData(WindowClass::VehicleDepot, v->tile.base());
 			InvalidateVehicleListWindows(type);
@@ -276,6 +277,7 @@ CommandCost CmdSellVehicle(DoCommandFlags flags, TileIndex tile, VehicleID v_id,
 
 	/* Do this check only if the vehicle to be moved is non-virtual */
 	if (!HasFlag(sell_flags, SellVehicleFlags::VirtualOnly) && !front->IsStoppedInDepot()) return CommandCost(STR_ERROR_TRAIN_MUST_BE_STOPPED_INSIDE_DEPOT + to_underlying(front->type));
+	const OrderListID passenger_service = front->orders != nullptr ? front->orders->index : OrderListID::Invalid();
 
 	if (v->type == VehicleType::Train) {
 		ret = CmdSellRailWagon(flags, v, HasFlag(sell_flags, SellVehicleFlags::SellChain), HasFlag(sell_flags, SellVehicleFlags::BackupOrder), client_id);
@@ -288,6 +290,8 @@ CommandCost CmdSellVehicle(DoCommandFlags flags, TileIndex tile, VehicleID v_id,
 		}
 	}
 
+	if (ret.Succeeded() && flags.Test(DoCommandFlag::Execute) && passenger_service != OrderListID::Invalid())
+		InvalidatePassengerServiceDatabase(passenger_service);
 	return ret;
 }
 

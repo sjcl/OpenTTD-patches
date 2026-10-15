@@ -2377,6 +2377,10 @@ CommandCost CmdMoveRailVehicle(DoCommandFlags flags, VehicleID src_veh, VehicleI
 
 	/* do it? */
 	if (flags.Test(DoCommandFlag::Execute)) {
+		/* Notify the original shared lists before head/order ownership changes.
+		 * Rearranging one depot consist must not block every published service. */
+		if (original_src_head->orders != nullptr) InvalidatePassengerServiceDatabase(original_src_head->orders->index);
+		if (original_dst_head != nullptr && original_dst_head->orders != nullptr) InvalidatePassengerServiceDatabase(original_dst_head->orders->index);
 		/* Remove old heads from the statistics */
 		if (original_src_head_front_engine) GroupStatistics::CountVehicle(original_src_head, -1);
 		if (original_dst_head_front_engine) GroupStatistics::CountVehicle(original_dst_head, -1);

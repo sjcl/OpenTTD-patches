@@ -51,6 +51,8 @@ static bool PassengerConstructionChangesRouting(CommandType type, Commands cmd, 
 {
 	if (cmd == Commands::RefitVehicle) return false; // Auto-refit is frequent; CmdRefitVehicle checks its actual affected consist.
 	if (cmd == Commands::TemplateReplaceVehicle) return false; // No-op depot checks are frequent; actual changes have a local hook.
+	if (cmd == Commands::BuildVehicle || cmd == Commands::SellVehicle || cmd == Commands::MoveRailVehicle ||
+			cmd == Commands::AutoreplaceVehicle) return false; // Fleet/order/consist handlers notify their own shared lists.
 	/* Town growth repeatedly lays single road tiles and adjusts terrain. Away
 	 * from a station these do not change any declared stop, cargo permission or
 	 * vehicle/facility compatibility. Blocking the entire published network for
