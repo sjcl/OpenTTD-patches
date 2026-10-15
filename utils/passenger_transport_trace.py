@@ -18,7 +18,7 @@ def main():
     target.mkdir(exist_ok=True)
     header = target / "trace.h"
     includes = "".join(f'#include "{(source / "src" / name).as_posix()}"\n' for name in (
-        "passenger_journey_active.h", "station_base.h", "station_map.h", "vehicle_base.h", "date_func.h", "group.h", "cargotype.h"))
+        "passenger_journey_active.h", "passenger_service_database.h", "settings_type.h", "station_base.h", "station_map.h", "vehicle_base.h", "date_func.h", "group.h", "cargotype.h"))
     header.write_text(includes + (source / "utils/passenger_transport_trace.h").read_text(encoding="utf-8"), encoding="utf-8")
     project = build / "openttd_lib.vcxproj"
     xml = project.read_text(encoding="utf-8-sig")
@@ -79,7 +79,10 @@ def main():
     text = text.replace(anchor, anchor + f'\n#include "{header.as_posix()}"')
     anchor = '\tif (operation == "inventory") {\n\n        uint64_t company_deliveries'
     assert text.count(anchor) == 1
-    text = text.replace(anchor, '\tif (operation == "inventory") {\n\t\tPassengerTransportTrace::BeginObservation();\n\n        uint64_t company_deliveries')
+    controls = '''    if (operation == "trace_prepare") { PassengerTransportTrace::defer_next_dump = true; return true; }
+    if (operation == "trace_state") { IConsolePrint(CC_DEFAULT, "Trace recording: final={}", PassengerTransportTrace::recording_finished); return true; }
+'''
+    text = text.replace(anchor, controls + '\tif (operation == "inventory") {\n\t\tPassengerTransportTrace::BeginObservation();\n\n        uint64_t company_deliveries')
     anchor = '\tconst auto events = GetPassengerWaitingEventDiagnostic();'
     assert text.count(anchor) == 1
     text = text.replace(anchor, '\tPassengerTransportTrace::Dump();\n' + anchor)

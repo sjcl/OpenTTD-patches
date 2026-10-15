@@ -35,6 +35,7 @@ inline uint64_t complete_started = 0;
 inline uint64_t initial_started = 0, assigned_packets = 0, assigned_units = 0, fresh_assigned_packets = 0, fresh_assigned_units = 0;
 inline uint64_t generated_units = 0, initial_units = 0, initial_known_units = 0;
 inline bool observation_started = false, recording_finished = false;
+inline bool defer_next_dump = false; ///< A paused cold-build diagnostic is not the end of observation.
 inline std::ofstream delivered, lost;
 enum class Movement : uint8_t { Board, Transfer, Deliver };
 using PopulationKey = std::tuple<uint32_t, uint32_t, uint32_t, uint64_t>;
@@ -253,6 +254,48 @@ inline void Location(const CargoPacket &packet, TileIndex tile)
 	auto it = samples.find(packet.index); if (it == samples.end()) return;
 	if (IsValidTile(tile) && IsTileType(tile, TileType::Station)) for (auto &s : it->second) s.location = GetStationIndex(tile);
 }
+/** Focused, read-only observations for the three quality regression ODs. Only
+ * queried sampled cohorts are covered; this is not an inventory of all trains
+ * which could have loaded a passenger. Never enabled in CPU measurements. */
+inline void TargetEvent(const Sample &s, const CargoPacket &packet, const Vehicle *vehicle, const char *event, bool allowed = true)
+{
+	if (!((s.origin == StationID{3222} && s.destination == StationID{400}) ||
+			(s.origin == StationID{971} && s.destination == StationID{916}) ||
+			(s.origin == StationID{3393} && s.destination == StationID{3394}))) return;
+	if (vehicle != nullptr) vehicle = vehicle->First();
+	static std::ofstream out("transport-target-events.csv");
+	static bool header = false;
+	if (!header) { out << "tick,sample,initial_packet,initial_offset,origin,destination,event,station,vehicle,actual_service,actual_order,allowed,reason,free_capacity,intent_kind,intent_service,intent_board,intent_alight,current,ready,estimated_wait,waiting_limit,table_state,candidate_service,cost,riding,waiting,transfers\n"; header = true; }
+	const auto &ride = packet.GetPassengerJourney();
+	auto &db = GetPassengerServiceDatabase();
+	StationID station = vehicle != nullptr ? vehicle->last_station_visited : s.location;
+	uint64_t room = 0;
+	if (vehicle != nullptr) for (const auto *part = vehicle; part != nullptr; part = part->Next()) if (part->cargo_type == vehicle->cargo_type)
+		room += part->cargo_cap > part->cargo.RemainingCount() ? part->cargo_cap - part->cargo.RemainingCount() : 0;
+	const char *reason = allowed ? "allowed" : "live_conditions";
+	if (!allowed && _state_ticks < packet.GetPassengerInterchangeReady()) reason = "transfer_time";
+	else if (!allowed && packet.GetPassengerRoutingMode() == PassengerRoutingMode::Journey) {
+		if (!db.IsCurrent(ride)) reason = "stale_generation";
+		else if (_state_ticks < ride.not_before) reason = "intent_ready_time";
+		else if (vehicle != nullptr && vehicle->orders != nullptr) {
+			auto rebound = ride;
+			if (!db.RebindPrecomputed(rebound, vehicle->orders->index, vehicle->cargo_type, vehicle->cur_real_order_index)) reason = "intent_mismatch";
+			else if (vehicle->current_order.GetCargoLoadType(vehicle->cargo_type) == OrderLoadType::NoLoad) reason = "no_load";
+		}
+	}
+	if (allowed && room == 0) reason = "capacity_or_reservation";
+	PassengerPrecomputedPlan plan;
+	if (vehicle != nullptr && _settings_game.linkgraph.passenger_journey_precomputed)
+		plan = db.PlanPrecomputed(vehicle->cargo_type, station, s.destination, _state_ticks, packet.GetPassengerArrivingService());
+	out << _state_ticks.base() << ',' << s.sample_id << ',' << s.initial_packet << ',' << s.initial_offset << ',' << s.origin.base() << ',' << s.destination.base()
+		<< ',' << event << ',' << station.base() << ',' << (vehicle != nullptr ? vehicle->index.base() : VehicleID::Invalid().base())
+		<< ',' << (vehicle != nullptr && vehicle->orders != nullptr ? vehicle->orders->index.base() : OrderListID::Invalid().base())
+		<< ',' << (vehicle != nullptr ? vehicle->cur_real_order_index : INVALID_VEH_ORDER_ID) << ',' << allowed << ',' << reason << ',' << room
+		<< ',' << unsigned(to_underlying(ride.kind)) << ',' << ride.service.base() << ',' << ride.boarding_order << ',' << ride.alighting_order
+		<< ',' << db.IsCurrent(ride) << ',' << ride.not_before.base() << ',' << ride.estimated_wait << ',' << ride.waiting_limit
+		<< ',' << unsigned(to_underlying(plan.state)) << ',' << (plan.ride ? plan.ride->service.base() : OrderListID::Invalid().base())
+		<< ',' << plan.cost << ',' << plan.riding << ',' << plan.waiting << ',' << plan.transfers << '\n';
+}
 inline void Board(const CargoPacket &packet, uint offset, uint count, const VehicleCargoList *cargo)
 {
 	if (!Enabled()) return;
@@ -262,6 +305,7 @@ inline void Board(const CargoPacket &packet, uint offset, uint count, const Vehi
 	Start(packet, false);
 	auto it = samples.find(packet.index); if (it == samples.end()) return;
 	for (auto &s : it->second) if (s.offset >= offset && s.offset - offset < count) {
+		TargetEvent(s, packet, carrier, "board");
 		s.opportunities.clear();
 		if (!s.ever_onboard && carrier != nullptr && carrier->First()->last_station_visited == s.origin) s.origin_departure = _state_ticks;
 		s.ever_onboard = true;
@@ -290,6 +334,7 @@ inline void Arrive(const CargoPacket &packet, uint count, bool final, const Vehi
 	const auto *carrier = Vehicle::GetIfValid(Owner(cargo));
 	auto it = samples.find(packet.index); if (it == samples.end()) return;
 	for (auto &s : it->second) if (s.offset < count) {
+		TargetEvent(s, packet, carrier, final ? "deliver" : "transfer");
 		Position(s); s.onboard = false; s.waiting_since = _state_ticks;
 		if (carrier != nullptr) s.location = carrier->First()->last_station_visited;
 		if (!final) ++s.transfers;
@@ -303,8 +348,10 @@ inline void Arrive(const CargoPacket &packet, uint count, bool final, const Vehi
 }
 inline void Opportunity(const CargoPacket &packet, const Vehicle *vehicle, bool allowed)
 {
-	if (!Enabled() || !allowed || vehicle == nullptr) return;
+	if (!Enabled() || vehicle == nullptr) return;
 	auto it = samples.find(packet.index); if (it == samples.end()) return;
+	for (const auto &s : it->second) if (!s.onboard) TargetEvent(s, packet, vehicle, "candidate", allowed);
+	if (!allowed) return;
 	bool room = false;
 	for (const auto *v = vehicle->First(); v != nullptr; v = v->Next()) if (v->cargo_type == vehicle->cargo_type && v->cargo_cap > v->cargo.RemainingCount()) { room = true; break; }
 	if (room) for (auto &s : it->second) if (!s.onboard) s.opportunities[vehicle->First()->index] = vehicle->First()->last_station_visited;
@@ -332,6 +379,7 @@ inline void Tick()
 inline void Dump()
 {
 	if (!Enabled()) return;
+	if (defer_next_dump) { defer_next_dump = false; return; }
 	std::ofstream out("transport-pending.csv"); Header(out);
 	for (const auto &[id, group] : samples) for (const auto &s : group) Row(out, s);
 	std::ofstream fleet("transport-services.csv");

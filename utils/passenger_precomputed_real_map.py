@@ -331,6 +331,8 @@ def recover_counter(args):
 def run(args):
     if args.cold_precomputed and (args.precomputed is not True or not args.warm_precomputed):
         raise ValueError("--cold-precomputed requires --precomputed --warm-precomputed")
+    if args.fixture_estimated and (args.precomputed is not True or not args.warm_precomputed or args.fixture_timetable):
+        raise ValueError("--fixture-estimated requires --precomputed --warm-precomputed and excludes --fixture-timetable")
     directory = args.output.resolve()
     if any(c.isspace() for c in str(directory)):
         raise ValueError("Console scripts require an output directory without whitespace")
@@ -363,19 +365,32 @@ def run(args):
         if args.cold_precomputed:
             # Exercise the ordinary disable callback to discard saved rows;
             # report that frontier before enabling and warming the empty table.
-            setup += "setting linkgraph.passenger_journey_precomputed false\npassenger_journey_stats total\n"
+            setup += "setting linkgraph.passenger_journey_precomputed false\n"
+            if "OPENTTD_PASSENGER_TRACE" in os.environ:
+                setup += "passenger_journey_stats trace_prepare\n"
+            setup += "passenger_journey_stats total\n"
+            if "OPENTTD_PASSENGER_TRACE" in os.environ:
+                setup += "passenger_journey_stats trace_state\n"
         if args.precomputed is not None:
             setup += f"setting linkgraph.passenger_journey_precomputed {'true' if args.precomputed else 'false'}\n"
         if args.fixture_timetable:
             setup += "passenger_journey_stats fixture_timetable\n"
+        if args.fixture_estimated:
+            setup += "passenger_journey_stats fixture_estimated\n"
         if args.warm_precomputed or args.rebuild_precomputed:
             setup += "passenger_journey_stats build_precomputed\n"
         if args.rebuild_precomputed:
             # Trigger a deterministic cost generation after completing the old
             # rows. The ordinary product tick builder must keep those rows live.
             setup += "setting linkgraph.passenger_transfer_penalty 17\n"
+        if args.quality_probe:
+            setup += "passenger_journey_stats quality_probe\n"
+        if args.fixture_estimated:
+            setup += "passenger_journey_stats fixture_estimated_od\n"
         start = f"script {log}\ngetfulldate\npassenger_journey_stats inventory\n{setup}passenger_journey_stats reset\n"
         finish = f"script {log}\ngetfulldate\npassenger_journey_stats inventory\npassenger_journey_stats total\npassenger_journey_stats save_integrity\nsave {result}\nscript\n"
+        if args.quality_probe:
+            finish = finish.replace("passenger_journey_stats total\n", "passenger_journey_stats total\npassenger_journey_stats quality_probe\n")
         start += "unpause\nscript\n" if args.ticks else "script\n" + finish + "quit\n"
         (scripts / "game_start.scr").write_text(start, encoding="utf-8")
         (scripts / "passenger_benchmark_end.scr").write_text(finish, encoding="utf-8")
@@ -405,7 +420,7 @@ def run(args):
             trace_enabled="OPENTTD_PASSENGER_TRACE" in os.environ, checkpoint_tick=os.environ.get("OPENTTD_PASSENGER_CHECKPOINT_TICK"),
             contamination=contamination, input_sha256=PROFILE.sha256(directory / "input.sav"), binary_sha256=PROFILE.sha256(args.binary),
             language_sha256=PROFILE.sha256(directory / "lang/english.lng"),
-            resume_settings=args.resume, fixture_timetable=args.fixture_timetable, cold_precomputed=args.cold_precomputed,
+            resume_settings=args.resume, fixture_timetable=args.fixture_timetable, fixture_estimated=args.fixture_estimated, cold_precomputed=args.cold_precomputed,
             precomputed=args.precomputed, warm_precomputed=args.warm_precomputed,
             rebuild_precomputed=args.rebuild_precomputed, command=command, **observed)
         for name in ("actual-ticks.json", "save-integrity.json"):
@@ -419,6 +434,11 @@ def run(args):
         console = (directory / "on-1-console.txt").read_text(encoding="utf-8", errors="replace") if (directory / "on-1-console.txt").is_file() else ""
         metadata["warm_complete"] = "Precomputed warm: ready=true;" in console if args.warm_precomputed or args.rebuild_precomputed else None
         metadata["script_error_pause_resumes"] = console.count("Measurement resumed a NewGRF error pause.")
+        if args.cold_precomputed and "OPENTTD_PASSENGER_TRACE" in os.environ:
+            metadata["trace_preserved_during_initial_snapshot"] = "Trace recording: final=false" in console
+            if not metadata["trace_preserved_during_initial_snapshot"]:
+                dump(directory / "process.json", metadata)
+                raise RuntimeError("The initial cold snapshot finalized transport observation")
         dump(directory / "process.json", metadata)
         print(json.dumps({k:v for k,v in metadata.items() if k != "actual-ticks.json"}, indent=2), flush=True)
         if process.returncode or contamination or metadata["load_failed"] or metadata["warm_complete"] is False or "result_sha256" not in metadata or "save-integrity.json" not in metadata:
@@ -499,7 +519,9 @@ def main():
     p.add_argument("--input", type=pathlib.Path)
     p.add_argument("--lang", type=pathlib.Path, help="Matching build language directory (defaults beside the binary)")
     p.add_argument("--resume", action="store_true")
+    p.add_argument("--quality-probe", action="store_true", help="Read-only OD/service diagnostics in the copied estimated-pattern measurement TUs")
     p.add_argument("--fixture-timetable", action="store_true", help="Synthetic MP fixture only: assign fixed timetable times using the copied join console hook")
+    p.add_argument("--fixture-estimated", action="store_true", help="Synthetic MP fixture only: clear timing certification and assign waiting passengers to reachable OD pairs")
     p.add_argument("--cold-precomputed", action="store_true", help="Discard saved rows through the normal disable callback before enabling and warming; requires --precomputed --warm-precomputed")
     p.add_argument("--warm-precomputed", action="store_true", help="Complete mandatory rows while paused before the first tick; initial build CPU remains in process totals")
     p.add_argument("--rebuild-precomputed", action="store_true", help="Start with complete rows then change the transfer penalty to 17; measure ordinary replacement ticks")
