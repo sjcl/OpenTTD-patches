@@ -867,7 +867,7 @@ bool PassengerOdFallbackContext::CanReach(const Vehicle *vehicle, CargoType carg
 	if (vehicle == nullptr || !Station::IsValidID(target)) return false;
 	vehicle = vehicle->First();
 	const auto key = std::pair(vehicle->index, cargo);
-	if (!this->stops.contains(key) && this->stops.size() >= 128) { this->resource_limited = true; return false; }
+	if (!_settings_game.linkgraph.passenger_journey_precomputed && !this->stops.contains(key) && this->stops.size() >= 128) { this->resource_limited = true; return false; }
 	auto [cached, inserted] = this->stops.try_emplace(key);
 	if (inserted) {
 		auto &global = TickBudget();
@@ -911,6 +911,19 @@ bool PassengerOdFallbackContext::CanReach(const Vehicle *vehicle, CargoType carg
 		std::sort(cached->second.begin(), cached->second.end());
 	}
 	return std::binary_search(cached->second.begin(), cached->second.end(), target);
+}
+
+std::span<const StationID> PassengerOdFallbackContext::BoardingStops(const Vehicle *vehicle, CargoType cargo)
+{
+	if (vehicle == nullptr || cargo >= NUM_CARGO) return {};
+	vehicle = vehicle->First();
+	if (!vehicle->current_order.IsAnyLoadingType() || vehicle->vehstatus.Any({VehState::Stopped, VehState::Crashed}) ||
+			vehicle->current_order.GetCargoLoadType(cargo) == OrderLoadType::NoLoad ||
+			vehicle->current_order.GetCargoUnloadType(cargo) == OrderUnloadType::Unload ||
+			vehicle->current_order.GetCargoUnloadType(cargo) == OrderUnloadType::Transfer) return {};
+	this->CanReach(vehicle, cargo, vehicle->last_station_visited);
+	auto found = this->stops.find({vehicle->index, cargo});
+	return found == this->stops.end() ? std::span<const StationID>{} : std::span<const StationID>(found->second);
 }
 
 /** Reverse hop distances are hints for progress, never proof of a live service.
@@ -1062,6 +1075,16 @@ StationID PassengerOdFallbackContext::ProgressingVia(const Vehicle *vehicle, Car
 {
 	if (vehicle == nullptr) return StationID::Invalid();
 	if (this->CanReach(vehicle, cargo, destination)) return destination;
+	if (_settings_game.linkgraph.passenger_journey_precomputed) {
+		const auto &db = GetPassengerServiceDatabase();
+		int64_t remaining = db.PrecomputedRouteCost(cargo, vehicle->First()->last_station_visited, destination).value_or(INT64_MAX);
+		StationID best = StationID::Invalid();
+		for (StationID stop : this->BoardingStops(vehicle, cargo)) {
+			auto cost = db.PrecomputedRouteCost(cargo, stop, destination);
+			if (cost && *cost < remaining) { remaining = *cost; best = stop; }
+		}
+		return best;
+	}
 	uint32_t remaining = this->Distance(cargo, vehicle->last_station_visited, destination);
 	if (remaining == UINT32_MAX) return StationID::Invalid();
 	StationID best = StationID::Invalid();
@@ -1091,7 +1114,10 @@ StationID PassengerOdFallbackContext::BoardingVia(const CargoPacket &packet, con
 	 * checks reuse one order prefix and require no LinkGraph reverse exploration. */
 	StationID via = destination;
 	if (!this->CanReach(vehicle, cargo, destination)) {
-		via = CurrentPassengerLegacyHop(packet, cargo, vehicle->last_station_visited, packet.GetPassengerLegacyHop());
+		/* Precomputed waiting cohorts are indexed by their saved hop. Flow
+		 * changes are routing events, never a hidden per-packet boarding search. */
+		via = _settings_game.linkgraph.passenger_journey_precomputed ? packet.GetPassengerLegacyHop() :
+				CurrentPassengerLegacyHop(packet, cargo, vehicle->last_station_visited, packet.GetPassengerLegacyHop());
 	}
 	/* The order prefix is shared across ODs. A full OD result cache cannot veto
 	 * this local ride either; retaining a diagnostic entry is optional. */
@@ -1101,7 +1127,7 @@ StationID PassengerOdFallbackContext::BoardingVia(const CargoPacket &packet, con
 		return via;
 	}
 	const auto key = std::tuple(vehicle->index, cargo, destination, StationID::Invalid());
-	if (!this->routes.contains(key) && this->routes.size() >= 128) {
+	if (!_settings_game.linkgraph.passenger_journey_precomputed && !this->routes.contains(key) && this->routes.size() >= 128) {
 		++TickBudget().diagnostic.untimed_budget_deferred;
 		return StationID::Invalid();
 	}
@@ -1130,8 +1156,11 @@ void PassengerOdFallbackContext::Invalidate(const Vehicle *vehicle)
 {
 	VehicleID id = vehicle->First()->index;
 	for (auto it = this->stops.lower_bound({id, CargoType{0}}); it != this->stops.end() && it->first.first == id;) it = this->stops.erase(it);
-	this->routes.clear();
-	this->distances.clear(); this->distance_bytes = 0; this->bindings.clear();
+	if (_settings_game.linkgraph.passenger_journey_precomputed) {
+		for (auto it = this->routes.lower_bound({id, CargoType{0}, StationID{0}, StationID{0}}); it != this->routes.end() && std::get<0>(it->first) == id;) it = this->routes.erase(it);
+	} else {
+		this->routes.clear(); this->distances.clear(); this->distance_bytes = 0; this->bindings.clear();
+	}
 }
 
 std::optional<VehicleCargoList::MoveToAction> PassengerOdFallbackContext::Decide(CargoPacket &packet, const Vehicle *vehicle,
@@ -1207,7 +1236,7 @@ bool PassengerJourneyBoardingContext::ValidateServiceRide(const PassengerJourney
 	auto key = std::tuple(ride.service, ride.signature, ride.boarding_order, ride.alighting_order, ride.boarding, ride.alighting, boarding);
 	auto found = this->service_rides.find(key);
 	if (found != this->service_rides.end()) return found->second;
-	if (this->service_rides.size() >= 128) return false;
+	if (!_settings_game.linkgraph.passenger_journey_precomputed && this->service_rides.size() >= 128) return false;
 	bool valid = ValidatePassengerServiceRide(ride, this->vehicle, this->cargo, boarding);
 	if (boarding && !valid && this->vehicle->orders != nullptr && this->vehicle->orders->index == ride.service) GetPassengerServiceDatabase().RecordBoardingFailure();
 	return this->service_rides.emplace(key, valid).first->second;
@@ -1269,6 +1298,27 @@ bool PassengerJourneyLoadingContext::CanBoard(const CargoPacket &packet, const V
 {
 	PassengerJourneyWorkTimer timer;
 	CounterTimer category{TickBudget().diagnostic.boarding_microseconds};
+	if (vehicle == nullptr || !_settings_game.linkgraph.passenger_journey_precomputed) return this->CanBoardUncached(packet, vehicle, cargo);
+	if (cargo == INVALID_CARGO) cargo = vehicle->cargo_type;
+	if (this->waiting_events && packet.GetPassengerRoutingMode() == PassengerRoutingMode::Journey && !GetPassengerServiceDatabase().IsCurrent(packet.GetPassengerJourney()))
+		PassengerWaitingRoutingChanged(const_cast<CargoPacket &>(packet));
+	BoardingState state{packet.GetPassengerRoutingMode(), packet.GetPassengerDestination(), packet.GetPassengerLegacyHop(),
+			packet.GetPassengerInterchangeReady(), packet.GetPassengerArrivingService(), packet.GetPassengerArrivingIncarnation(), IsPassengerJourneyRoutingEnabled(cargo)};
+	auto key = std::pair(state, packet.GetPassengerJourney());
+	auto &decisions = this->decisions[{vehicle->First()->index, cargo}];
+	auto revision = GetPassengerServiceDatabase().BoardingRevision();
+	auto found = decisions.find(key);
+	if (found != decisions.end() && found->second.tick == _state_ticks && found->second.revision == revision) {
+		++this->cache_hits; return found->second.allowed;
+	}
+	++this->validations;
+	bool allowed = this->CanBoardUncached(packet, vehicle, cargo);
+	decisions.insert_or_assign(key, Decision{_state_ticks, revision, allowed});
+	return allowed;
+}
+
+bool PassengerJourneyLoadingContext::CanBoardUncached(const CargoPacket &packet, const Vehicle *vehicle, CargoType cargo)
+{
 	if (vehicle == nullptr) return packet.GetPassengerRoutingMode() != PassengerRoutingMode::Journey;
 	if (cargo == INVALID_CARGO) cargo = vehicle->cargo_type;
 	if (this->waiting_events && _settings_game.linkgraph.passenger_journey_precomputed &&
@@ -1283,7 +1333,7 @@ bool PassengerJourneyLoadingContext::CanBoard(const CargoPacket &packet, const V
 	}
 	if (packet.GetPassengerJourney().kind != PassengerRideKind::ServiceIntent && packet.GetPassengerJourney().kind != PassengerRideKind::EstimatedServiceIntent && packet.GetPassengerJourney().vehicle != vehicle->First()->index) return false;
 	auto key = std::pair(vehicle->First()->index, cargo);
-	if (!this->boarding.contains(key) && this->boarding.size() >= 128) return false;
+	if (!_settings_game.linkgraph.passenger_journey_precomputed && !this->boarding.contains(key) && this->boarding.size() >= 128) return false;
 	return this->boarding.try_emplace(key, vehicle, cargo).first->second.CanBoard(packet);
 }
 
@@ -1315,6 +1365,7 @@ void PassengerJourneyLoadingContext::Invalidate(const Vehicle *vehicle)
 	this->fallback.Invalidate(vehicle);
 	VehicleID id = vehicle->First()->index;
 	for (auto it = this->boarding.lower_bound({id, CargoType{0}}); it != this->boarding.end() && it->first.first == id;) it = this->boarding.erase(it);
+	for (auto it = this->decisions.lower_bound({id, CargoType{0}}); it != this->decisions.end() && it->first.first == id;) it = this->decisions.erase(it);
 }
 
 size_t PassengerJourneyLoadingContext::GetPredictionCount() const

@@ -491,6 +491,7 @@ NamedSaveLoadTable GetPassengerWaitingEventDesc()
 		NSL("end", SLE_CONDVAR_X(StationCargoList, passenger_routing_end, SLE_UINT32, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_PASSENGER_PERIODIC, 9))),
 		NSL("tick", SLE_CONDVAR_X(StationCargoList, passenger_routing_tick, SLE_INT64, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_PASSENGER_PERIODIC, 9))),
 		NSL("work", SLE_CONDVAR_X(StationCargoList, passenger_routing_work, SLE_UINT16, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_PASSENGER_PERIODIC, 9))),
+		NSL("boarding_last", SLE_CONDVAR_X(StationCargoList, passenger_boarding_last, SLE_UINT16, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_PASSENGER_PERIODIC, 10))),
 	};
 	return fields;
 }

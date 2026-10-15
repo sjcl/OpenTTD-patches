@@ -169,6 +169,15 @@ public:
 		return result;
 	}
 	uint64_t GetPublishedRevision() const { return this->published_revision; }
+	auto BoardingRevision() const { return std::tuple(this->published_revision, this->boarding_revision, this->precomputed_operations); }
+	std::span<const StationID> PrecomputedReachableDestinations(CargoType cargo, StationID origin, bool retained = false) const
+	{ return cargo < NUM_CARGO ? (retained ? this->retained_precomputed[cargo] : this->precomputed[cargo]).ReachableDestinations(origin) : std::span<const StationID>{}; }
+	std::optional<int64_t> PrecomputedRouteCost(CargoType cargo, StationID origin, StationID destination) const
+	{
+		if (cargo >= NUM_CARGO) return {};
+		auto cost = this->precomputed[cargo].RouteCost(origin, destination);
+		return cost ? cost : this->retained_precomputed[cargo].RouteCost(origin, destination);
+	}
 	OrderListID PrecomputedBoardingKey(CargoType cargo, OrderListID service) const { return this->precomputed[cargo].BoardingKey(service); }
 	std::span<const OrderListID> PrecomputedBoardingServices(CargoType cargo, OrderListID service) const { return this->precomputed[cargo].BoardingServices(service); }
 	struct BoardingKeys { std::array<std::span<const OrderListID>, 2> services; std::array<std::span<const uint64_t>, 2> sections; };
@@ -239,6 +248,7 @@ private:
 	bool precomputed_invalidated = false;
 	bool legacy_precomputed_cursor = false; ///< v4/v5 row publication did not charge compact-label copies.
 	bool precomputed_sections = true, retained_precomputed_sections = true; ///< Saved graph algorithm for exact pre-v8 cursor replay.
+	uint64_t boarding_revision = 0; ///< Event-local validation invalidation; never saved or used for simulation admission.
 	uint64_t precomputed_preparation_nanoseconds = 0; ///< Local elapsed observation, never saved or used for admission.
 	void BeginPrecomputed(int64_t transfer);
 	void BuildPrecomputedTables();

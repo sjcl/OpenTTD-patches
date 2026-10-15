@@ -1,0 +1,288 @@
+MSBuild のバージョン 17.14.40+3e7442088 (.NET Framework)
+
+  strgen.vcxproj -> C:\Users\bebe\.codex\worktrees\6fb9\OpenTTD-patches\build-packet-events\src\strgen\Release\strgen.exe
+  settingsgen.vcxproj -> C:\Users\bebe\.codex\worktrees\6fb9\OpenTTD-patches\build-packet-events\src\settingsgen\Release\settingsgen.exe
+  -- Version string: jgrpp-ya-0.73.3+2-127-g378a32e3b-m, Release: 0.73.3+2, Online contents compatible jgrpp version: 0.73.3
+  -- Generating rev.cpp
+  -- Generating ottdres.rc
+  -- Generating CPackProperties.cmake
+  -- Generating Doxyfile
+  -- Generating Doxyfile_AI
+  -- Generating Doxyfile_GS
+  rev.cpp
+  ai_instance.cpp
+  aircraft_cmd.cpp
+  aircraft_gui.cpp
+  airport.cpp
+  airport_gui.cpp
+  animated_tile.cpp
+  articulated_vehicles.cpp
+  autoreplace_cmd.cpp
+  base_consist.cpp
+  build_vehicle_gui.cpp
+  cachecheck.cpp
+  cargoaction.cpp
+  cargomonitor.cpp
+  cargopacket.cpp
+  cheat_gui.cpp
+  clear_cmd.cpp
+  command.cpp
+  command_table.cpp
+  company_cmd.cpp
+  company_gui.cpp
+  console_cmds.cpp
+  date.cpp
+  departures.cpp
+  departures_gui.cpp
+  depot.cpp
+  depot_gui.cpp
+  disaster_vehicle.cpp
+  dock_gui.cpp
+  economy.cpp
+  effectvehicle.cpp
+  elrail.cpp
+  engine.cpp
+  engine_gui.cpp
+  error_gui.cpp
+  fios_gui.cpp
+  fontcache.cpp
+  game_instance.cpp
+  genworld.cpp
+  genworld_gui.cpp
+  gfx.cpp
+  goal.cpp
+  goal_gui.cpp
+  graph_gui.cpp
+  ground_vehicle.cpp
+  group_cmd.cpp
+  group_gui.cpp
+  industry_cmd.cpp
+  industry_gui.cpp
+  infrastructure.cpp
+  intro_gui.cpp
+  landscape.cpp
+  league_cmd.cpp
+  league_gui.cpp
+  demands.cpp
+  flowmapper.cpp
+  linkgraph.cpp
+  linkgraph_gui.cpp
+  linkgraphjob.cpp
+  linkgraphschedule.cpp
+  mcf.cpp
+  refresh.cpp
+  main_gui.cpp
+  misc.cpp
+  misc_gui.cpp
+  network_client.cpp
+  network_server.cpp
+  newgrf.cpp
+  newgrf_act0.cpp
+  newgrf_act0_airports.cpp
+  newgrf_act0_globalvar.cpp
+  newgrf_act0_industries.cpp
+  newgrf_act0_roadvehs.cpp
+  newgrf_act0_ships.cpp
+  newgrf_act0_trains.cpp
+  newgrf_act2.cpp
+  newgrf_act3.cpp
+  newgrf_act4.cpp
+  newgrf_actd.cpp
+  newgrf_airport.cpp
+  newgrf_airporttiles.cpp
+  newgrf_debug_gui.cpp
+  newgrf_engine.cpp
+  newgrf_house.cpp
+  newgrf_industries.cpp
+  newgrf_industrytiles.cpp
+  newgrf_object.cpp
+  newgrf_roadstop.cpp
+  newgrf_sound.cpp
+  newgrf_station.cpp
+  news_gui.cpp
+  object_cmd.cpp
+  object_gui.cpp
+  openttd.cpp
+  order_backup.cpp
+  order_cmd.cpp
+  order_gui.cpp
+  order_serialisation.cpp
+  order_serialisation_gui.cpp
+  passenger_departure_index.cpp
+  passenger_journey_active.cpp
+  passenger_journey_schedule.cpp
+  passenger_journey_shadow.cpp
+  passenger_od.cpp
+  passenger_precomputed.cpp
+  passenger_routing.cpp
+  passenger_service_database.cpp
+  passenger_service_graph.cpp
+  passenger_service_index.cpp
+  water_regions.cpp
+  yapf_common.cpp
+  yapf_rail.cpp
+  yapf_road.cpp
+  yapf_ship.cpp
+  yapf_ship_regions.cpp
+  pbs.cpp
+  plans.cpp
+  plans_cmd.cpp
+  plans_gui.cpp
+  programmable_signals_gui.cpp
+  rail_cmd.cpp
+  rail_gui.cpp
+  road.cpp
+  road_cmd.cpp
+  road_gui.cpp
+C:\Users\bebe\.codex\worktrees\6fb9\OpenTTD-patches\src\passenger_od.cpp(390,38): warning C4834: [[nodiscard]] 属性を持つ関数の戻り値を破棄しています [C:\Users\bebe\.codex\worktrees\6fb9\OpenTTD-patches\build-packet-events\openttd_lib.vcxproj]
+C:\Users\bebe\.codex\worktrees\6fb9\OpenTTD-patches\src\passenger_od.cpp(397,30): warning C4834: [[nodiscard]] 属性を持つ関数の戻り値を破棄しています [C:\Users\bebe\.codex\worktrees\6fb9\OpenTTD-patches\build-packet-events\openttd_lib.vcxproj]
+  roadstop.cpp
+  roadveh_cmd.cpp
+  roadveh_gui.cpp
+C:\Users\bebe\.codex\worktrees\6fb9\OpenTTD-patches\src\passenger_journey_active.cpp(399,66): warning C4267: '引数': 'size_t' から 'VehicleOrderID' に変換しました。データが失われているかもしれません。 [C:\Users\bebe\.codex\worktrees\6fb9\OpenTTD-patches\build-packet-events\openttd_lib.vcxproj]
+  schdispatch_cmd.cpp
+  schdispatch_gui.cpp
+  scope_info.cpp
+  screensaver.cpp
+  screenshot.cpp
+  script_airport.cpp
+  script_basestation.cpp
+  script_cargolist.cpp
+  script_cargomonitor.cpp
+  script_depotlist.cpp
+  script_goal.cpp
+  script_group.cpp
+  script_industry.cpp
+  script_industrylist.cpp
+  script_industrytype.cpp
+  script_industrytypelist.cpp
+  script_marine.cpp
+  script_news.cpp
+  script_order.cpp
+  script_rail.cpp
+  script_road.cpp
+  script_station.cpp
+  script_stationlist.cpp
+  script_story_page.cpp
+  script_subsidy.cpp
+  script_tilelist.cpp
+  script_town.cpp
+  script_vehicle.cpp
+  script_vehiclelist.cpp
+  script_viewport.cpp
+  script_waypointlist.cpp
+  settings_gui.cpp
+  settings_table.cpp
+  ship_cmd.cpp
+  ship_gui.cpp
+  signal.cpp
+  signs.cpp
+  signs_cmd.cpp
+  signs_gui.cpp
+  afterload.cpp
+  extended_ver_sl.cpp
+  oldloader_sl.cpp
+  plans_sl.cpp
+  tbtr_template_replacement_sl.cpp
+  tbtr_template_veh_sl.cpp
+  waypoint_sl.cpp
+  smallmap_gui.cpp
+  smallmap_table.cpp
+  sound.cpp
+  sprite.cpp
+  station.cpp
+  station_cmd.cpp
+  station_gui.cpp
+  statusbar_gui.cpp
+  story.cpp
+  story_gui.cpp
+  strings.cpp
+  subsidy.cpp
+  subsidy_gui.cpp
+  tbtr_template_gui_create.cpp
+  tbtr_template_gui_main.cpp
+  tbtr_template_vehicle.cpp
+  tbtr_template_vehicle_func.cpp
+  terraform_cmd.cpp
+  terraform_gui.cpp
+  texteff.cpp
+  timetable_cmd.cpp
+  timetable_gui.cpp
+  toolbar_gui.cpp
+  town_cmd.cpp
+  town_gui.cpp
+  tracerestrict.cpp
+  tracerestrict_gui.cpp
+  train_cmd.cpp
+  train_gui.cpp
+  tree_cmd.cpp
+  tree_gui.cpp
+  tunnelbridge_cmd.cpp
+  vehicle.cpp
+  vehicle_cmd.cpp
+  vehicle_gui.cpp
+  vehiclelist.cpp
+  viewport.cpp
+  viewport_gui.cpp
+  viewport_sprite_sorter_sse4.cpp
+  void_cmd.cpp
+  water_cmd.cpp
+  waypoint.cpp
+  waypoint_cmd.cpp
+  waypoint_gui.cpp
+  widget.cpp
+  window.cpp
+  zoning_cmd.cpp
+  zoning_gui.cpp
+  cargomonitor_sl.cpp
+  cargopacket_sl.cpp
+  company_sl.cpp
+  economy_sl.cpp
+  industry_sl.cpp
+  linkgraph_sl.cpp
+  misc_sl.cpp
+  saveload.cpp
+  station_sl.cpp
+  vehicle_sl.cpp
+  cargomonitor_sl.cpp
+  cargopacket_sl.cpp
+  company_sl.cpp
+  economy_sl.cpp
+  industry_sl.cpp
+  linkgraph_sl.cpp
+  misc_sl.cpp
+  saveload.cpp
+  station_sl.cpp
+  vehicle_sl.cpp
+  openttd_lib.vcxproj -> C:\Users\bebe\.codex\worktrees\6fb9\OpenTTD-patches\build-packet-events\openttd_lib.dir\Release\openttd_lib.lib
+  linkgraph_route_penalties.cpp
+  passenger_journey_active.cpp
+  passenger_journey_planner.cpp
+  passenger_journey_shadow.cpp
+  passenger_multimodal.cpp
+  passenger_od.cpp
+  passenger_od_assignment.cpp
+  passenger_precomputed.cpp
+  passenger_routing.cpp
+  passenger_service_database.cpp
+  passenger_service_graph.cpp
+  passenger_service_graph_index.cpp
+  station_cargo_gui.cpp
+C:\Users\bebe\.codex\worktrees\6fb9\OpenTTD-patches\src\tests\passenger_service_graph.cpp(1644,3): warning C4267: '引数': 'size_t' から 'VehicleOrderID' に変換しました。データが失われているかもしれません。 [C:\Users\bebe\.codex\worktrees\6fb9\OpenTTD-patches\build-packet-events\openttd_test.vcxproj]
+C:\Users\bebe\.codex\worktrees\6fb9\OpenTTD-patches\src\tests\passenger_service_graph.cpp(1645,3): warning C4267: '引数': 'size_t' から 'VehicleOrderID' に変換しました。データが失われているかもしれません。 [C:\Users\bebe\.codex\worktrees\6fb9\OpenTTD-patches\build-packet-events\openttd_test.vcxproj]
+C:\Users\bebe\.codex\worktrees\6fb9\OpenTTD-patches\src\tests\passenger_service_graph.cpp(1646,3): warning C4267: '引数': 'size_t' から 'VehicleOrderID' に変換しました。データが失われているかもしれません。 [C:\Users\bebe\.codex\worktrees\6fb9\OpenTTD-patches\build-packet-events\openttd_test.vcxproj]
+C:\Users\bebe\.codex\worktrees\6fb9\OpenTTD-patches\src\tests\passenger_journey_active.cpp(2322,15): warning C4189: 'train': ローカル変数が初期化されましたが、参照されていません [C:\Users\bebe\.codex\worktrees\6fb9\OpenTTD-patches\build-packet-events\openttd_test.vcxproj]
+  openttd_test.vcxproj -> C:\Users\bebe\.codex\worktrees\6fb9\OpenTTD-patches\build-packet-events\Release\openttd_test.exe
+MSBuild のバージョン 17.14.40+3e7442088 (.NET Framework)
+
+  strgen.vcxproj -> C:\Users\bebe\.codex\worktrees\6fb9\OpenTTD-patches\build-packet-events\src\strgen\Release\strgen.exe
+  settingsgen.vcxproj -> C:\Users\bebe\.codex\worktrees\6fb9\OpenTTD-patches\build-packet-events\src\settingsgen\Release\settingsgen.exe
+  -- Version string: jgrpp-ya-0.73.3+2-127-g378a32e3b-m, Release: 0.73.3+2, Online contents compatible jgrpp version: 0.73.3
+  -- Generating rev.cpp
+  -- Generating ottdres.rc
+  -- Generating CPackProperties.cmake
+  -- Generating Doxyfile
+  -- Generating Doxyfile_AI
+  -- Generating Doxyfile_GS
+  openttd_lib.vcxproj -> C:\Users\bebe\.codex\worktrees\6fb9\OpenTTD-patches\build-packet-events\openttd_lib.dir\Release\openttd_lib.lib
+  openttd.vcxproj -> C:\Users\bebe\.codex\worktrees\6fb9\OpenTTD-patches\build-packet-events\Release\openttd.exe

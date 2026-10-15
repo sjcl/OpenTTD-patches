@@ -651,31 +651,46 @@ typedef btree::btree_map<StationID, uint> StationCargoAmountMap;
  * CargoList that is used for stations.
  */
 class StationCargoList : public CargoList<StationCargoList, StationCargoPacketMap> {
+	using FallbackKey = std::tuple<StationID, StationID, OrderListID, uint64_t>; ///< Destination, saved hop, arriving service/incarnation.
+	using BoardingOrder = std::tuple<StationID, uint64_t, CargoPacketID>;
+	using JourneyKey = std::tuple<OrderListID, VehicleID, StationID, VehicleOrderID>;
+	using JourneyRideKey = std::tuple<PassengerJourneyExecution, OrderListID, uint64_t>;
+	using JourneyRides = std::map<JourneyRideKey, std::set<BoardingOrder>>;
+	using JourneyIndex = std::map<JourneyKey, JourneyRides>;
+	static JourneyKey BoardingJourneyKey(const CargoPacket &packet);
 	struct WaitingEntry {
 		StationID key;
 		StationCargoPacketList::iterator position;
 		uint64_t hash;
-		uint64_t service; ///< Saved raw service ID, independent of table residency.
+		OrderListID service;
 		uint16_t space;
 		bool pending;
 		uint64_t sequence; ///< Primary queue order; preserved through refresh and reconstructed from saved lists.
 		std::multimap<StateTicks, CargoPacketID>::iterator wake;
 		StateTicks routing_due;
-		uint64_t section = UINT64_MAX; ///< Saved raw service/order-pair key; never a table's canonical group key.
+		bool journey;
+		std::optional<FallbackKey> fallback;
+		std::optional<std::pair<JourneyIndex::iterator, JourneyRides::iterator>> journey_group;
 	};
 	mutable bool waiting_index_valid = false;
 	struct PacketHash { size_t operator()(CargoPacketID id) const { return id.base(); } };
 	mutable std::unordered_map<CargoPacketID, WaitingEntry, PacketHash> waiting_entries;
 	mutable std::unordered_map<uint64_t, std::set<std::pair<uint16_t, CargoPacketID>>> merge_index;
-	using BoardingOrder = std::tuple<StationID, uint64_t, CargoPacketID>;
-	mutable std::map<uint64_t, std::set<BoardingOrder>> boarding_index;
+	mutable JourneyIndex boarding_index;
+	mutable std::map<uint64_t, std::map<JourneyRideKey, const std::set<BoardingOrder> *>> section_boarding_index; ///< Raw saved order-pair keys to shared cohort queues.
+	mutable std::map<OrderListID, size_t> boarding_services;
+	mutable std::map<std::pair<bool, StationID>, std::set<BoardingOrder>> legacy_boarding_index;
+	mutable std::map<FallbackKey, std::set<BoardingOrder>> fallback_boarding_index;
+	mutable std::map<StationID, std::set<FallbackKey>> fallback_destinations, fallback_hops;
 	mutable uint64_t waiting_next_sequence = 0;
 	mutable std::multimap<StateTicks, CargoPacketID> waiting_wake;
 	mutable std::set<std::pair<StateTicks, CargoPacketID>> routing_events; ///< Erasable time priority queue, without stale tombstones.
 	mutable std::set<CargoPacketID> routing_packets; ///< Unresolved OD only; deterministic generation cursor, independent of primary queue order.
 	void IndexPacket(CargoPacket *packet, StationID key, StationCargoPacketList::iterator position, std::optional<uint64_t> sequence = {}) const;
 	void EnsureWaitingIndex() const;
-	template <typename Visitor> bool VisitBoardingCandidates(const Vehicle *vehicle, Visitor &&visitor) const;
+	void AddBoardingEntry(CargoPacketID id, WaitingEntry &entry) const;
+	void RemoveBoardingEntry(CargoPacketID id, const WaitingEntry &entry) const;
+	template <typename Visitor> bool VisitBoardingCandidates(std::span<const StationID> next, const Vehicle *vehicle, PassengerJourneyLoadingContext &loading, Visitor &&visitor) const;
 	template <class Taction> uint ShiftIndexedJourneyCargo(Taction action, std::span<const StationID> next, const Vehicle *vehicle, PassengerJourneyLoadingContext &loading);
 protected:
 	/** The (direct) parent of this class. */
@@ -691,6 +706,9 @@ public:
 	void RefreshWaitingPacket(const CargoPacket &packet) const;
 	uint64_t BoardingCandidatesInspected() const { return this->boarding_candidates_inspected; }
 	mutable uint64_t boarding_candidates_inspected = 0; ///< Diagnostic only; absent from saves.
+	mutable uint64_t boarding_groups_inspected = 0; ///< Candidate cohorts, independent of unrelated packet population.
+	mutable uint64_t boarding_index_updates = 0; ///< Diagnostic: count/payment-only refreshes do not touch boarding cohorts.
+	StationID passenger_boarding_last = StationID::Invalid(); ///< Saved round-robin cursor across primary next-hop buckets; FIFO within each bucket.
 	bool passenger_routing_dirty = true; ///< Saved event state; joining clients must not invent a waiting pass.
 	uint64_t passenger_routing_revision = UINT64_MAX, passenger_routing_rows = UINT64_MAX;
 	StateTicks passenger_routing_due = INVALID_STATE_TICKS;
@@ -702,7 +720,7 @@ public:
 	 * it on load must not reset a slice or pass its cursor to a reused goods entry. */
 	bool HasPassengerRoutingState() const
 	{
-		return !this->passenger_routing_dirty || this->passenger_routing_revision != UINT64_MAX || this->passenger_routing_rows != UINT64_MAX ||
+		return this->passenger_boarding_last != StationID::Invalid() || !this->passenger_routing_dirty || this->passenger_routing_revision != UINT64_MAX || this->passenger_routing_rows != UINT64_MAX ||
 				this->passenger_routing_due != INVALID_STATE_TICKS || this->passenger_routing_sweeping || this->passenger_routing_cursor != 0 ||
 				this->passenger_routing_end != 0 || this->passenger_routing_tick != INVALID_STATE_TICKS || this->passenger_routing_work != 0;
 	}

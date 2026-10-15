@@ -322,11 +322,34 @@ TEST_CASE("Precomputed replacement retires rows at publication without retaining
 	size_t published = 0;
 	while (!replacement.Finished()) replacement.Step(1, false, [&](StationID destination) {
 		old.ReleaseDestination(destination); ++published;
+		for (StationID origin : {A, B, C, D}) {
+			auto destinations = old.ReachableDestinations(origin);
+			CHECK_FALSE(std::binary_search(destinations.begin(), destinations.end(), destination));
+			CHECK_FALSE(old.RouteCost(origin, destination));
+		}
 		CHECK(old.GetDiagnostic().destinations + published == 4);
 		CHECK(old.Plan(destination == A ? B : A, destination, StateTicks{}).state == PassengerPrecomputedPlan::State::Building);
 	});
 	CHECK(published == 4); CHECK(old.GetDiagnostic().destinations == 0);
 	CHECK(old.GetDiagnostic().bytes < replacement.GetDiagnostic().bytes);
+}
+
+TEST_CASE("Precomputed inverse destinations contain exactly the published finite rows", "[passenger][precomputed][boarding][save]")
+{
+	std::array services{Service(0, {A, B}), Service(1, {B, D}), Service(2, {C})};
+	std::vector<const PassengerPeriodicService *> records; for (const auto &service : services) records.push_back(&service);
+	PassengerPrecomputedTable table; table.Begin(records, PAX, 20);
+	while (!table.Finished()) {
+		table.Step(7);
+		for (StationID origin : {A, B, C, D}) {
+			auto destinations = table.ReachableDestinations(origin); REQUIRE(std::is_sorted(destinations.begin(), destinations.end()));
+			for (StationID destination : {A, B, C, D}) {
+				auto cost = table.RouteCost(origin, destination);
+				CHECK(std::binary_search(destinations.begin(), destinations.end(), destination) == (cost && *cost != INT64_MAX));
+			}
+		}
+	}
+	CHECK(table.RouteCost(A, D).value() > table.RouteCost(B, D).value());
 }
 
 TEST_CASE("Precomputed legacy cursors map to the same compact publication frontier", "[passenger][precomputed][determinism][save]")

@@ -12,6 +12,7 @@
 #include "station_type.h"
 #include "date_type.h"
 #include <optional>
+#include <tuple>
 
 enum class PassengerRoutingMode : uint8_t { Legacy, Journey, Fallback };
 
@@ -42,6 +43,13 @@ struct PassengerJourneyExecution {
 	int64_t waiting_limit = 0; ///< Re-evaluate after two conservative service circuits.
 	bool timed_deferred = false; ///< Timed work was insufficient; absence of a timed route is not asserted.
 	bool operator==(const PassengerJourneyExecution &) const = default;
+	bool operator<(const PassengerJourneyExecution &other) const
+	{
+		return std::tie(vehicle, service, boarding, alighting, boarding_order, alighting_order, departure, arrival, signature, kind, generation,
+				not_before, planned_at, estimated_wait, waiting_limit, timed_deferred) <
+				std::tie(other.vehicle, other.service, other.boarding, other.alighting, other.boarding_order, other.alighting_order, other.departure, other.arrival,
+						other.signature, other.kind, other.generation, other.not_before, other.planned_at, other.estimated_wait, other.waiting_limit, other.timed_deferred);
+	}
 };
 
 /** Schedule-aware intent age, not continuous passenger waiting time. Timed

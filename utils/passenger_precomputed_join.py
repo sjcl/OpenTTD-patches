@@ -26,14 +26,19 @@ def main():
     parser.add_argument("--ticks", type=int, default=1024)
     parser.add_argument("--initial-build", action="store_true")
     parser.add_argument("--stall", action="store_true")
+    parser.add_argument("--observe-timeout", type=int, default=180,
+                        help="Harness observation seconds for loading/replay; does not change game/network timeouts")
     args = parser.parse_args()
+    if args.observe_timeout <= 0:
+        parser.error("--observe-timeout must be positive")
     root = args.output.resolve()
     root.mkdir(parents=True, exist_ok=False)
     processes, streams, observed = [], [], {}
     result = dict(address=f"127.0.0.1:{args.port}", default_timeouts=True, paused_join=True,
                   input=str(args.input.resolve()), joined=False, packet_payment_equal=False,
                   binary_sha256=real.PROFILE.sha256(args.binary), input_sha256=real.PROFILE.sha256(args.input),
-                  requested_ticks=args.ticks, initial_build=args.initial_build, stall_test=args.stall)
+                  requested_ticks=args.ticks, initial_build=args.initial_build, stall_test=args.stall,
+                  observation_timeout_seconds=args.observe_timeout)
 
     def read(directory, name):
         path = directory / name
@@ -137,7 +142,7 @@ def main():
             "setting max_join_time\nsetting max_lag_time\nsetting max_init_time\nsetting max_download_time\n"
             + initial + "passenger_journey_stats total\npassenger_journey_stats save_integrity\nscript\n", encoding="utf-8")
         host = start(server, ["-D", result["address"], "-g", str(args.input.resolve())])
-        if not wait(lambda: (server / "save-integrity.json").exists(), 180):
+        if not wait(lambda: (server / "save-integrity.json").exists(), args.observe_timeout):
             raise RuntimeError("Server did not finish loading")
         # Console settings/pause are synchronized commands; let them execute
         # before comparing the server with the subsequently downloaded map.
@@ -175,7 +180,7 @@ def main():
             if not result["pass"]:
                 raise RuntimeError("Stalled replay was not dropped at the default join deadline")
             return
-        snapshot = wait(lambda: json_file(client, "save-integrity.json") or errors(server, client), 180)
+        snapshot = wait(lambda: json_file(client, "save-integrity.json") or errors(server, client), args.observe_timeout)
         result["join_elapsed_seconds"] = time.monotonic() - join_started
         if (client / "save-integrity.json").exists():
             result["client_snapshot"] = json_file(client, "save-integrity.json")

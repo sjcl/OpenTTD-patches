@@ -63,6 +63,8 @@ public:
 	std::optional<uint64_t> SectionBoardingKey(const PassengerJourneyExecution &ride) const;
 	std::span<const uint64_t> SectionBoardingKeys(OrderListID service, VehicleOrderID boarding) const;
 	bool RefreshService(const PassengerPeriodicService &service); ///< Refresh bindings, retaining the frozen estimated costs.
+	std::span<const StationID> ReachableDestinations(StationID origin) const;
+	std::optional<int64_t> RouteCost(StationID origin, StationID destination) const; ///< Missing row differs from a proved infinite cost.
 private:
 	struct Member { OrderListID id; uint64_t incarnation, generation; };
 	struct Pattern {
@@ -100,6 +102,8 @@ private:
 	std::vector<uint32_t> incoming_offsets, incoming;
 	std::vector<std::vector<std::pair<uint32_t, uint32_t>>> waiting_states;
 	std::vector<Row> rows;
+	std::vector<std::vector<StationID>> reachable_destinations; ///< Inverse published rows; no waiting-packet dependency.
+	size_t reachable_bytes = 0;
 	Row scratch, prepared;
 	size_t waiting_state_count = 0;
 	std::priority_queue<QueueItem, std::vector<QueueItem>, std::greater<QueueItem>> queue;

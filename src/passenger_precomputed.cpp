@@ -297,10 +297,12 @@ void PassengerPrecomputedTable::Begin(std::span<const PassengerPeriodicService *
 		this->diagnostic.stored_states = this->waiting_state_count + this->stations.size();
 		bool fits = nodes < INVALID && edge_count < INVALID && nodes <= memory / 128 &&
 				Product(this->stations.size(), uint64_t(this->diagnostic.stored_states) * 64 + 128, envelope, memory) &&
+				Product(this->stations.size(), uint64_t(this->stations.size()) * 8 + 64, envelope, memory) &&
 				Product(edge_count, 264, envelope, memory) && Product(nodes, 144, envelope, memory);
 		this->diagnostic.envelope = envelope;
 		if (!fits) { this->failed = true; this->diagnostic.build_nanoseconds = Elapsed(started); return; }
 		this->edges.reserve(edge_count);
+		this->reachable_destinations.resize(this->stations.size());
 		for (uint32_t p = 0; p < this->patterns.size(); ++p) {
 			const auto &pattern = this->patterns[p]; const auto &t = representatives[p]->timetable;
 			for (size_t i = 0; i < t.stops.size(); ++i) {
@@ -514,6 +516,12 @@ void PassengerPrecomputedTable::StartDestination()
 size_t PassengerPrecomputedTable::Step(size_t allowance, bool legacy_publication, const std::function<void(StationID)> &published)
 {
 	const auto started = Clock::now(); size_t used = 0;
+	auto index_origin = [&](size_t from) {
+		if (from >= this->stations.size() || this->scratch.labels[from].cost == INT64_MAX) return;
+		auto &destinations = this->reachable_destinations[from]; size_t capacity = destinations.capacity();
+		destinations.push_back(this->stations[this->destination]);
+		this->reachable_bytes += (destinations.capacity() - capacity) * sizeof(StationID);
+	};
 	try {
 		while (used < allowance && !this->Finished()) {
 			++used;
@@ -573,7 +581,11 @@ size_t PassengerPrecomputedTable::Step(size_t allowance, bool legacy_publication
 					 * only initial/transfer waits and one complete dispersion label. */
 					if (legacy_publication) {
 						this->prepared.labels.assign(this->scratch.labels.begin(), this->scratch.labels.begin() + this->waiting_state_count);
+						for (size_t from = 0; from < this->stations.size(); ++from) index_origin(from);
 					} else if (this->prepared.labels.size() < this->waiting_state_count) {
+						/* Charge inverse-index construction to the existing label-copy
+						 * slice, rather than visiting all stations at publication. */
+						index_origin(this->prepared.labels.size());
 						this->prepared.labels.push_back(this->scratch.labels[this->prepared.labels.size()]); continue;
 					}
 					this->prepared.alternative = std::move(this->scratch.alternative);
@@ -620,7 +632,7 @@ size_t PassengerPrecomputedTable::Step(size_t allowance, bool legacy_publication
 			(this->incoming.capacity() + this->incoming_offsets.capacity()) * 4 + this->rows.size() * this->diagnostic.stored_states * sizeof(Label) +
 			(this->scratch.labels.capacity() + this->scratch.alternative.capacity() + this->prepared.labels.capacity()) * sizeof(Label) +
 			this->section_rides.capacity() * sizeof(SectionRide) + this->landings.capacity() * sizeof(uint32_t);
-	this->diagnostic.bytes += this->binding_bytes;
+	this->diagnostic.bytes += this->binding_bytes + this->reachable_bytes;
 	return used;
 }
 
@@ -632,8 +644,31 @@ void PassengerPrecomputedTable::ReleaseDestination(StationID destination)
 		this->diagnostic.bytes -= std::min(this->diagnostic.bytes,
 				(this->rows[row].labels.capacity() + this->rows[row].alternative.capacity()) * sizeof(Label));
 		this->rows[row] = {};
+		for (auto &destinations : this->reachable_destinations) {
+			auto found = std::lower_bound(destinations.begin(), destinations.end(), destination);
+			if (found != destinations.end() && *found == destination) destinations.erase(found);
+		}
 		--this->diagnostic.destinations;
 	}
+}
+
+std::span<const StationID> PassengerPrecomputedTable::ReachableDestinations(StationID origin) const
+{
+	if (origin.base() >= this->station_index.size()) return {};
+	uint32_t from = this->station_index[origin.base()];
+	if (from >= this->reachable_destinations.size()) return {};
+	auto result = std::span<const StationID>(this->reachable_destinations[from]);
+	/* A sliced copy can have staged one entry for the still-private row. */
+	if (this->destination >= this->rows.size() && this->destination < this->stations.size() && !result.empty() && result.back() == this->stations[this->destination]) result = result.first(result.size() - 1);
+	return result;
+}
+
+std::optional<int64_t> PassengerPrecomputedTable::RouteCost(StationID origin, StationID destination) const
+{
+	if (this->failed || origin.base() >= this->station_index.size() || destination.base() >= this->station_index.size()) return {};
+	uint32_t from = this->station_index[origin.base()], to = this->station_index[destination.base()];
+	if (from == INVALID || to >= this->rows.size() || this->rows[to].labels.empty()) return {};
+	return this->rows[to].labels[from].cost;
 }
 
 PassengerPrecomputedPlan PassengerPrecomputedTable::Select(const Label &label, StateTicks ready, OrderListID excluded, uint32_t sample) const

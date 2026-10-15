@@ -365,6 +365,7 @@ void PassengerServiceDatabase::Remove(OrderListID id)
 void PassengerServiceDatabase::Invalidate(OrderListID id)
 {
 	if (this->restoring) return;
+	++this->boarding_revision;
 	InvalidatePassengerWaitingRouting();
 	++this->diagnostic.invalidations;
 	if (id == OrderListID::Invalid()) {
@@ -653,6 +654,7 @@ bool PassengerServiceDatabase::PreparePrecomputed()
 
 void PassengerServiceDatabase::BeginPrecomputed(int64_t transfer)
 {
+	++this->boarding_revision;
 	/* A replacement owns only its new rows. Retire old rows as soon as their
 	 * replacements are public; never allocate a second complete label matrix.
 	 * Structural edits arriving during a build are coalesced until it finishes,
@@ -718,6 +720,7 @@ void PassengerServiceDatabase::ClearRetainedPrecomputed()
 
 void PassengerServiceDatabase::DiscardPrecomputed()
 {
+	++this->boarding_revision;
 	this->ClearRetainedPrecomputed();
 	this->precomputed = {}; this->precomputed_services.clear();
 	this->precomputed_revision = UINT64_MAX; this->precomputed_operations = 0; this->precomputed_invalidated = false;

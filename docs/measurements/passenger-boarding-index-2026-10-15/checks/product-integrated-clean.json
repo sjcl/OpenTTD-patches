@@ -1,0 +1,12 @@
+{
+  "binary_sha256": "1201632a53d63dd3e425d01d10810092c1c783e7f81f991a6225f9f334d7c10e",
+  "assertions_enabled": true,
+  "lto_off": true,
+  "passenger_benchmark_off": true,
+  "copied_source_references_absent": true,
+  "measurement_strings_absent": {
+    "save-integrity.json": true,
+    "OPENTTD_PASSENGER_MEASURE": true,
+    "passenger_benchmark_end.scr": true
+  }
+}

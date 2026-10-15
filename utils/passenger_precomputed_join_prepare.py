@@ -83,7 +83,7 @@ def main():
         assert content.count(anchor) == 1
         content = content.replace(anchor, '''            Mix(ownership, list.passenger_routing_dirty, list.passenger_routing_revision, list.passenger_routing_rows,
                 list.passenger_routing_due, list.passenger_routing_sweeping, list.passenger_routing_cursor, list.passenger_routing_end,
-                list.passenger_routing_tick, list.passenger_routing_work);
+                list.passenger_routing_tick, list.passenger_routing_work, list.passenger_boarding_last);
 ''' + anchor)
         header.write_text(content, encoding="utf-8")
     console = build / "save-integrity/console_cmds.cpp"

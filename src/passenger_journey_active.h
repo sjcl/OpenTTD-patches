@@ -175,6 +175,7 @@ class PassengerOdFallbackContext {
 	StationID BoardingVia(const CargoPacket &packet, const Vehicle *vehicle, CargoType cargo);
 public:
 	explicit PassengerOdFallbackContext(size_t work_allowance = 128 * 1024) : work_left(std::min(work_allowance, size_t{128 * 1024})) {}
+	std::span<const StationID> BoardingStops(const Vehicle *vehicle, CargoType cargo);
 	bool CanBoard(const CargoPacket &packet, const Vehicle *vehicle, CargoType cargo);
 	void PrepareBoard(CargoPacket &packet, const Vehicle *vehicle, CargoType cargo);
 	void Invalidate(const Vehicle *vehicle);
@@ -188,12 +189,20 @@ class PassengerJourneyLoadingContext {
 	std::map<std::pair<VehicleID, CargoType>, PassengerJourneyBoardingContext> boarding;
 	PassengerOdFallbackContext fallback;
 	bool waiting_events = false;
+	using BoardingState = std::tuple<PassengerRoutingMode, StationID, StationID, StateTicks, OrderListID, uint64_t, bool>;
+	struct Decision { StateTicks tick; std::tuple<uint64_t, uint64_t, uint64_t> revision; bool allowed; };
+	std::map<std::pair<VehicleID, CargoType>, std::map<std::pair<BoardingState, PassengerJourneyExecution>, Decision>> decisions;
+	bool CanBoardUncached(const CargoPacket &packet, const Vehicle *vehicle, CargoType cargo);
+	size_t validations = 0, cache_hits = 0;
 public:
 	void EnableWaitingEvents() { this->waiting_events = true; } ///< Actual station simulation only; read-only predicates never wake packets.
 	bool CanBoard(const CargoPacket &packet, const Vehicle *vehicle, CargoType cargo = INVALID_CARGO);
 	void PrepareBoard(CargoPacket &packet, const Vehicle *vehicle);
 	void Invalidate(const Vehicle *vehicle);
 	size_t GetPredictionCount() const;
+	size_t GetValidationCount() const { return this->validations; }
+	size_t GetBoardingCacheHits() const { return this->cache_hits; }
+	std::span<const StationID> BoardingStops(const Vehicle *vehicle, CargoType cargo) { return this->fallback.BoardingStops(vehicle, cargo); }
 };
 
 /** Shares snapshots/query caches across all coaches and packets at an arrival. */
