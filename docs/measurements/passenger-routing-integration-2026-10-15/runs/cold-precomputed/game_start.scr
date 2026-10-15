@@ -1,0 +1,17 @@
+script C:/Users/bebe/.codex/worktrees/99a5/OpenTTD-patches/build-integration/cold-precomputed/on-1-console.txt
+getfulldate
+passenger_journey_stats inventory
+setting linkgraph.passenger_journey_precomputed false
+passenger_journey_stats total
+setting linkgraph.passenger_journey_precomputed true
+passenger_journey_stats build_precomputed
+passenger_journey_stats reset
+script
+script C:/Users/bebe/.codex/worktrees/99a5/OpenTTD-patches/build-integration/cold-precomputed/on-1-console.txt
+getfulldate
+passenger_journey_stats inventory
+passenger_journey_stats total
+passenger_journey_stats save_integrity
+save C:/Users/bebe/.codex/worktrees/99a5/OpenTTD-patches/build-integration/cold-precomputed/result
+script
+quit

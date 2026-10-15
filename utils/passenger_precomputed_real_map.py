@@ -329,6 +329,8 @@ def recover_counter(args):
 
 
 def run(args):
+    if args.cold_precomputed and (args.precomputed is not True or not args.warm_precomputed):
+        raise ValueError("--cold-precomputed requires --precomputed --warm-precomputed")
     directory = args.output.resolve()
     if any(c.isspace() for c in str(directory)):
         raise ValueError("Console scripts require an output directory without whitespace")
@@ -358,6 +360,10 @@ def run(args):
         setup = "" if args.resume else ("setting linkgraph.distribution_pax 2\nsetting linkgraph.passenger_od_assignment true\n"
             "setting linkgraph.passenger_journey_routing true\nsetting linkgraph.passenger_journey_periodic true\n"
             "setting linkgraph.recalc_interval 8\nsetting linkgraph.recalc_time 32\n")
+        if args.cold_precomputed:
+            # Exercise the ordinary disable callback to discard saved rows;
+            # report that frontier before enabling and warming the empty table.
+            setup += "setting linkgraph.passenger_journey_precomputed false\npassenger_journey_stats total\n"
         if args.precomputed is not None:
             setup += f"setting linkgraph.passenger_journey_precomputed {'true' if args.precomputed else 'false'}\n"
         if args.fixture_timetable:
@@ -399,7 +405,8 @@ def run(args):
             trace_enabled="OPENTTD_PASSENGER_TRACE" in os.environ, checkpoint_tick=os.environ.get("OPENTTD_PASSENGER_CHECKPOINT_TICK"),
             contamination=contamination, input_sha256=PROFILE.sha256(directory / "input.sav"), binary_sha256=PROFILE.sha256(args.binary),
             language_sha256=PROFILE.sha256(directory / "lang/english.lng"),
-            resume_settings=args.resume, fixture_timetable=args.fixture_timetable, precomputed=args.precomputed, warm_precomputed=args.warm_precomputed,
+            resume_settings=args.resume, fixture_timetable=args.fixture_timetable, cold_precomputed=args.cold_precomputed,
+            precomputed=args.precomputed, warm_precomputed=args.warm_precomputed,
             rebuild_precomputed=args.rebuild_precomputed, command=command, **observed)
         for name in ("actual-ticks.json", "save-integrity.json"):
             if (directory / name).is_file():
@@ -493,6 +500,7 @@ def main():
     p.add_argument("--lang", type=pathlib.Path, help="Matching build language directory (defaults beside the binary)")
     p.add_argument("--resume", action="store_true")
     p.add_argument("--fixture-timetable", action="store_true", help="Synthetic MP fixture only: assign fixed timetable times using the copied join console hook")
+    p.add_argument("--cold-precomputed", action="store_true", help="Discard saved rows through the normal disable callback before enabling and warming; requires --precomputed --warm-precomputed")
     p.add_argument("--warm-precomputed", action="store_true", help="Complete mandatory rows while paused before the first tick; initial build CPU remains in process totals")
     p.add_argument("--rebuild-precomputed", action="store_true", help="Start with complete rows then change the transfer penalty to 17; measure ordinary replacement ticks")
     p.add_argument("--precomputed", action=argparse.BooleanOptionalAction, default=None)

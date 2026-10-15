@@ -1,0 +1,58 @@
+{
+  "runs": [
+    {
+      "run": "cpu-legacy-32768-work",
+      "canonical_mismatches": {},
+      "state_ticks": 3181099101,
+      "active_events": {
+        "pending": 0,
+        "overdue": 0,
+        "oldest_ticks": 0,
+        "maximum_station_backlog": 0,
+        "on_time": 0,
+        "packets": 0,
+        "groups": 0,
+        "scheduler_us": 0,
+        "arrival_candidates": 0,
+        "arrival_passengers": 0,
+        "unresolved_missed_estimate": 0
+      }
+    },
+    {
+      "run": "cpu-precomputed-warm-32768-work",
+      "canonical_mismatches": {},
+      "state_ticks": 3181099101,
+      "active_events": {
+        "pending": 231530,
+        "overdue": 1716,
+        "oldest_ticks": 0,
+        "maximum_station_backlog": 9618,
+        "on_time": 0,
+        "packets": 0,
+        "groups": 0,
+        "scheduler_us": 0,
+        "arrival_candidates": 0,
+        "arrival_passengers": 0,
+        "unresolved_missed_estimate": 0
+      }
+    },
+    {
+      "run": "cpu-precomputed-update-32768-work",
+      "canonical_mismatches": {},
+      "state_ticks": 3181099101,
+      "active_events": {
+        "pending": 231889,
+        "overdue": 173,
+        "oldest_ticks": 0,
+        "maximum_station_backlog": 11143,
+        "on_time": 0,
+        "packets": 0,
+        "groups": 0,
+        "scheduler_us": 0,
+        "arrival_candidates": 0,
+        "arrival_passengers": 0,
+        "unresolved_missed_estimate": 0
+      }
+    }
+  ]
+}

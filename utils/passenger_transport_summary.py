@@ -131,8 +131,11 @@ def summarize(directory):
     censored = [row for row in pending if row["complete_origin"]]
     metrics = ("riding_ticks", "waiting_ticks", "origin_waiting_ticks", "transfer_waiting_ticks", "distance_x16", "transfers", "revisits", "returns", "observed_misses", "maximum_wait")
     od = collections.defaultdict(list)
+    od_rows = collections.defaultdict(list)
     for row in complete:
-        od[f'{row["origin"]}:{row["destination"]}'].append(row["at"] - row["born"])
+        key = f'{row["origin"]}:{row["destination"]}'
+        od[key].append(row["at"] - row["born"])
+        od_rows[key].append(row)
     services, stop_counts = collections.Counter(), collections.Counter()
     for row in delivered + pending:
         services.update(row["services"].split(";") if row["services"] else [])
@@ -190,6 +193,8 @@ def summarize(directory):
                 unaccounted_fresh_sample_starts=(fresh_started - sum(r['complete_origin'] for r in all_rows)) if fresh_started is not None else None,
                 unaccounted_sample_starts=selected - len(all_rows),
                 lost_samples=len(lost), lost_new_samples=sum(r['complete_origin'] for r in lost),
+                all_samples_observed_misses=sum(r['observed_misses'] for r in all_rows),
+                fresh_samples_observed_misses=sum(r['observed_misses'] for r in all_rows if r['complete_origin']),
                 initial_sample_starts=meta.get('initial_selected'), initial_fates=collections.Counter(r['fate'] for r in initial.values()),
                 _initial=initial,
                 observed_origin_departure_to_arrival_ticks=distribution([r['at'] - r['origin_departure'] for r in departure_arrivals]),
@@ -205,6 +210,9 @@ def summarize(directory):
                 right_censored_elapsed_ticks=distribution([r["at"] - r["born"] for r in censored]),
                 pending_wait_ticks=distribution([r["maximum_wait"] for r in censored]),
                 completed_od_ticks={key: distribution(value) for key, value in sorted(od.items())},
+                completed_od_means={key:{metric:statistics.mean(row[metric] for row in group)
+                                        for metric in ['distance_x16', 'transfers', 'riding_ticks', 'transfer_waiting_ticks']}
+                                    for key, group in sorted(od_rows.items())},
                 sampled_boardings_by_service=services, sampled_boardings_by_order_count=stop_counts,
                 sampled_boardings_by_group_class=by_class,
                 elapsed_minus_ride_wait_ticks=distribution([r["at"] - r["born"] - r["riding_ticks"] - r["waiting_ticks"] for r in complete]),
@@ -213,8 +221,10 @@ def summarize(directory):
                 sampled_boardings_on_structural_short_turns=sum(services[s] for s in structural),
                 structural_short_turn_services=structural,
                 complete_single_board_trip_outside_service_route=sum(r["boardings"] == 1 and r["destination"] not in routes.get(r["services"], {r["destination"]}) for r in complete),
-                new_samples_with_revisit=sum(r["revisits"] > 0 for r in complete + censored),
-                new_samples_with_immediate_return=sum(r["returns"] > 0 for r in complete + censored),
+                new_samples_with_revisit=sum(r['complete_origin'] and r["revisits"] > 0 for r in all_rows),
+                new_samples_with_immediate_return=sum(r['complete_origin'] and r["returns"] > 0 for r in all_rows),
+                lost_new_samples_with_revisit=sum(r['complete_origin'] and r['revisits'] > 0 for r in lost),
+                lost_new_samples_with_immediate_return=sum(r['complete_origin'] and r['returns'] > 0 for r in lost),
                 trace_metadata=metadata)
 
 
@@ -223,11 +233,14 @@ def compare_initial(left, right):
     if a.keys() != b.keys():
         raise ValueError('Initial sampled people differ between fixed-input runs')
     fates, times, ratios, departure_ratios = collections.Counter(), [], [], []
+    physical_delta = collections.defaultdict(list)
     examples = []
     for key in a:
         x, y = a[key], b[key]
         fates[f"{x['fate']}->{y['fate']}"] += 1
         if x['fate'] == y['fate'] == 'delivered':
+            for metric in ['distance_x16', 'transfers', 'riding_ticks', 'origin_waiting_ticks', 'transfer_waiting_ticks', 'revisits', 'returns']:
+                physical_delta[metric].append(y[metric] - x[metric])
             old, new = x['at'] - x['born'], y['at'] - y['born']
             times.append(new - old)
             if old:
@@ -236,6 +249,7 @@ def compare_initial(left, right):
             if x.get('origin_departure', -1) >= x['born'] and y.get('origin_departure', -1) >= y['born'] and x['at'] > x['origin_departure']:
                 departure_ratios.append((y['at'] - y['origin_departure']) / (x['at'] - x['origin_departure']))
     return dict(n=len(a), fates=fates, both_delivered_elapsed_delta_ticks=distribution(times),
+                both_delivered_physical_delta={key:distribution(values) for key,values in physical_delta.items()},
                 both_delivered_elapsed_ratio=distribution(ratios),
                 both_observed_origin_departure_to_arrival_ratio=distribution(departure_ratios),
                 slowest_ratios=sorted(examples, key=lambda row:-row['ratio'])[:30])
@@ -251,10 +265,16 @@ def main():
         for od in left["completed_od_ticks"].keys() & right["completed_od_ticks"].keys():
             a, b = left["completed_od_ticks"][od], right["completed_od_ticks"][od]
             if min(a["n"], b["n"]) >= 3 and a["mean"]:
-                common.append(dict(od=od, left=a, right=b, mean_ratio=b["mean"] / a["mean"]))
+                x, y = left['completed_od_means'][od], right['completed_od_means'][od]
+                common.append(dict(od=od, left=a, right=b, mean_ratio=b["mean"] / a["mean"],
+                                   left_physical_means=x, right_physical_means=y,
+                                   distance_ratio=y['distance_x16'] / x['distance_x16'] if x['distance_x16'] else None,
+                                   transfers_delta=y['transfers'] - x['transfers']))
         result["matched_od"] = sorted(common, key=lambda r: (-r["mean_ratio"], r["od"]))
         result["matched_od_mean_ratio"] = distribution([r["mean_ratio"] for r in common])
         result["matched_od_at_least_ten_mean_ratio"] = distribution([r["mean_ratio"] for r in common if min(r["left"]["n"], r["right"]["n"]) >= 10])
+        result['matched_od_distance_ratio'] = distribution([r['distance_ratio'] for r in common if r['distance_ratio'] is not None])
+        result['matched_od_transfers_delta'] = distribution([r['transfers_delta'] for r in common])
         result['paired_initial_people'] = compare_initial(left, right)
     for run in result['runs']:
         run.pop('_initial')
