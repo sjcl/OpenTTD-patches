@@ -12,6 +12,44 @@
 #include "../3rdparty/catch2/catch.hpp"
 
 #include "../network/core/tcp_game.h"
+#include "../network/network_join_progress.h"
+
+TEST_CASE("Map replay progress cannot extend the absolute join deadline", "[network][join][security]")
+{
+	using namespace std::chrono;
+	const NetworkJoinProgress::Clock::time_point start{};
+	NetworkJoinProgress client; client.Start(start); client.BeginReplay(UINT64_MAX, start);
+	/* Normal 225-second replay is admitted with the existing inactivity limit. */
+	for (int second = 1; second <= 225; ++second) {
+		CHECK(client.Report(second, start + seconds(second)) == NetworkJoinProgress::Result::Accepted);
+		CHECK_FALSE(client.Idle(start + seconds(second), milliseconds(15000)));
+		CHECK_FALSE(client.Expired(start + seconds(second), seconds(900)));
+	}
+	CHECK(client.Idle(start + seconds(241), milliseconds(15000)));
+	/* An attacker can keep making tiny valid claims, but cannot buy more time. */
+	for (int second = 226; second <= 900; ++second) REQUIRE(client.Report(second, start + seconds(second)) == NetworkJoinProgress::Result::Accepted);
+	CHECK(client.Expired(start + seconds(900), seconds(900)));
+	client.Start(start + seconds(900)); client.BeginReplay(UINT64_MAX, start + seconds(900));
+	CHECK(client.Expired(start + seconds(900), seconds(900)));
+}
+
+TEST_CASE("Map replay progress validates work and bounds bursts independently per client", "[network][join][security]")
+{
+	using namespace std::chrono;
+	const NetworkJoinProgress::Clock::time_point start{};
+	NetworkJoinProgress client, other; client.Start(start); other.Start(start);
+	client.BeginReplay(1000, start); other.BeginReplay(1000, start);
+	CHECK(client.Report(0, start) == NetworkJoinProgress::Result::Invalid);
+	CHECK(client.Report(1001, start) == NetworkJoinProgress::Result::Invalid);
+	CHECK(client.Report(1, start) == NetworkJoinProgress::Result::Accepted);
+	CHECK(client.Report(1, start) == NetworkJoinProgress::Result::Invalid);
+	for (int i = 2; i <= 16; ++i) CHECK(client.Report(i, start) == NetworkJoinProgress::Result::Accepted);
+	CHECK(client.Report(17, start) == NetworkJoinProgress::Result::Flood);
+	CHECK(other.Report(100, start) == NetworkJoinProgress::Result::Accepted);
+	CHECK(client.Report(17, start + milliseconds(250)) == NetworkJoinProgress::Result::Accepted);
+	CHECK(client.Report(18, start + milliseconds(250)) == NetworkJoinProgress::Result::Flood);
+	CHECK(other.Idle(start + seconds(16), milliseconds(15000)));
+}
 
 
 TEST_CASE("GetPacketGameTypeName")
@@ -75,6 +113,8 @@ TEST_CASE("GetPacketGameTypeName")
 	CHECK_NAME(ServerDesyncLog);
 	CHECK_NAME(ClientDesyncMessage);
 	CHECK_NAME(ClientDesyncSyncData);
+	CHECK_NAME(ServerPassengerPrepare);
+	CHECK_NAME(ClientPassengerPrepared);
 #undef CHECK_NAME
 	CHECK(number_of_tests == static_cast<uint>(PacketGameType::End));
 }

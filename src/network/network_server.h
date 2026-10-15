@@ -12,6 +12,7 @@
 
 #include "network_internal.h"
 #include "core/tcp_listen.h"
+#include "network_join_progress.h"
 #include "../core/pool_type.hpp"
 
 class ServerNetworkGameSocketHandler;
@@ -27,6 +28,12 @@ class ServerNetworkGameSocketHandler : public NetworkClientSocketPool::PoolItem<
 	uint64_t min_key_message_id = 0;
 	uint8_t *rcon_reply_key = nullptr;
 	uint64_t map_load_work = 0, map_load_work_limit = 0; ///< Progress is bounded by the snapshot actually sent.
+	NetworkJoinProgress join_progress;
+	friend void NetworkServer_Tick(bool send_frame);
+	std::optional<uint32_t> passenger_prepare_frame;
+	bool passenger_prepared = false;
+	std::chrono::steady_clock::time_point passenger_prepare_started{}, passenger_prepare_sent{};
+	void SendPassengerPreparation(bool preparing);
 
 protected:
 	std::unique_ptr<class NetworkAuthenticationServerHandler> authentication_handler = nullptr; ///< The handler for the authentication.
@@ -41,6 +48,7 @@ protected:
 	NetworkRecvStatus ReceiveClientGetMap(Packet &p) override;
 	NetworkRecvStatus ReceiveClientMapOk(Packet &p) override;
 	NetworkRecvStatus ReceiveClientMapProgress(Packet &p) override;
+	NetworkRecvStatus ReceiveClientPassengerPrepared(Packet &p) override;
 	NetworkRecvStatus ReceiveClientAck(Packet &p) override;
 	NetworkRecvStatus ReceiveClientCommand(Packet &p) override;
 	NetworkRecvStatus ReceiveClientChat(Packet &p) override;
@@ -146,6 +154,8 @@ public:
 	}
 
 	static void Send();
+	static bool PreparePassengerRouting(); ///< Network receive/send continue while all peers prepare the same initial table.
+	static void ResetPassengerPreparation();
 	static void AcceptConnection(SOCKET s, const NetworkAddress &address);
 	static bool AllowConnection();
 

@@ -1164,8 +1164,8 @@ NetworkRecvStatus ClientNetworkGameSocketHandler::ReceiveServerMapDone(Packet &)
 		my_client->ClientError(NetworkRecvStatus::Savegame);
 		return false;
 	}
-	if (database.GetLoadWork() > my_client->map_load_work && started - my_client->map_load_report >= std::chrono::seconds(1)) {
-		my_client->map_load_work = database.GetLoadWork();
+	if (database.GetLoadProgress() > my_client->map_load_work && started - my_client->map_load_report >= std::chrono::seconds(1)) {
+		my_client->map_load_work = database.GetLoadProgress();
 		my_client->map_load_report = started;
 		auto p = std::make_unique<Packet>(my_client, PacketGameType::ClientMapProgress, TCP_MTU);
 		p->Send_uint64(my_client->map_load_work);
@@ -1174,6 +1174,40 @@ NetworkRecvStatus ClientNetworkGameSocketHandler::ReceiveServerMapDone(Packet &)
 	if (database.GetLoadState() != PassengerServiceDatabase::LoadState::Ready) return false;
 	my_client->FinishMapLoad();
 	return true;
+}
+
+NetworkRecvStatus ClientNetworkGameSocketHandler::ReceiveServerPassengerPrepare(Packet &p)
+{
+	if (this->status != ServerStatus::Active) return NetworkRecvStatus::MalformedPacket;
+	const bool preparing = p.Recv_bool(); const auto frame = p.Recv_uint32();
+	if ((this->passenger_prepare_frame && *this->passenger_prepare_frame != frame) || _frame_counter > frame) return NetworkRecvStatus::MalformedPacket;
+	if (preparing) {
+		if (!this->passenger_prepare_frame) { this->passenger_prepare_frame = frame; this->passenger_prepared = false; }
+	} else {
+		if (!this->passenger_prepare_frame || !this->passenger_prepared || _frame_counter != frame) return NetworkRecvStatus::MalformedPacket;
+		this->passenger_prepare_frame.reset(); this->passenger_prepared = false;
+	}
+	return NetworkRecvStatus::Okay;
+}
+
+bool ClientNetworkGameSocketHandler::PreparePassengerRouting()
+{
+	auto &db = GetPassengerServiceDatabase();
+	if (db.IsPreparingPrecomputed() && !my_client->passenger_prepare_frame) {
+		my_client->passenger_prepare_frame = _frame_counter; my_client->passenger_prepared = false;
+	}
+	if (!my_client->passenger_prepare_frame || _frame_counter < *my_client->passenger_prepare_frame) return true;
+	const auto started = std::chrono::steady_clock::now();
+	bool ready;
+	do {
+		ready = db.PreparePrecomputed();
+	} while (!ready && std::chrono::steady_clock::now() - started < std::chrono::milliseconds(8));
+	if (ready && !my_client->passenger_prepared) {
+		auto p = std::make_unique<Packet>(my_client, PacketGameType::ClientPassengerPrepared, TCP_MTU);
+		p->Send_uint32(*my_client->passenger_prepare_frame); my_client->SendPacket(std::move(p));
+		my_client->passenger_prepared = true;
+	}
+	return false;
 }
 
 NetworkRecvStatus ClientNetworkGameSocketHandler::ReceiveServerMapProgress(Packet &p)

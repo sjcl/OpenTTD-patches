@@ -139,6 +139,8 @@ enum class PacketGameType : uint8_t {
 	ClientDesyncMessage, ///< A client reports a desync message
 	ClientDesyncSyncData, ///< A client reports desync sync data
 
+	ServerPassengerPrepare, ///< Initial-table barrier at an exact completed network frame; also a keepalive.
+	ClientPassengerPrepared, ///< Local preparation completed at that frame; never a simulation ACK.
 	End,
 };
 /** Mark PacketGameType as PacketType. */
@@ -369,6 +371,8 @@ protected:
 	virtual NetworkRecvStatus ReceiveClientMapOk(Packet &p);
 	virtual NetworkRecvStatus ReceiveClientMapProgress(Packet &p);
 	virtual NetworkRecvStatus ReceiveServerMapProgress(Packet &p);
+	virtual NetworkRecvStatus ReceiveServerPassengerPrepare(Packet &p);
+	virtual NetworkRecvStatus ReceiveClientPassengerPrepared(Packet &p);
 
 	/**
 	 * A client joined (PacketGameType::ClientMapOk), what usually directly follows is a PacketGameType::ServerClientInfo:

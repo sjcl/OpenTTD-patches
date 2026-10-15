@@ -22,6 +22,8 @@ private:
 	NetworkSharedSecrets last_rcon_shared_secrets{}; ///< Keys for last rcon (and incoming replies)
 	uint64_t map_load_work = 0, map_load_ack = 0; ///< Completed replay work sent/acknowledged during map processing.
 	std::chrono::steady_clock::time_point map_load_report{};
+	std::optional<uint32_t> passenger_prepare_frame;
+	bool passenger_prepared = false;
 
 	/** Status of the connection with the server. */
 	enum class ServerStatus : uint8_t {
@@ -70,6 +72,7 @@ protected:
 	NetworkRecvStatus ReceiveServerMapData(Packet &p) override;
 	NetworkRecvStatus ReceiveServerMapDone(Packet &p) override;
 	NetworkRecvStatus ReceiveServerMapProgress(Packet &p) override;
+	NetworkRecvStatus ReceiveServerPassengerPrepare(Packet &p) override;
 	NetworkRecvStatus ReceiveServerClientJoined(Packet &p) override;
 	NetworkRecvStatus ReceiveServerFrame(Packet &p) override;
 	NetworkRecvStatus ReceiveServerSync(Packet &p) override;
@@ -140,6 +143,7 @@ public:
 	static void Send();
 	static bool Receive();
 	static bool GameLoop();
+	static bool PreparePassengerRouting();
 	static bool ProcessMapLoad(); ///< Return to receive/send between bounded replay slices.
 
 	static bool EmergencySavePossible();

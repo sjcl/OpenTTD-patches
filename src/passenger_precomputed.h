@@ -9,6 +9,7 @@
 
 #include "passenger_journey_type.h"
 #include "cargo_type.h"
+#include "passenger_build_task.h"
 #include <queue>
 #include <functional>
 #include <unordered_map>
@@ -48,12 +49,15 @@ class PassengerPrecomputedTable {
 public:
 	static constexpr uint32_t INVALID = UINT32_MAX;
 	static constexpr uint64_t MAX_BYTES = uint64_t{16} * 1024 * 1024 * 1024;
-	void Begin(std::span<const PassengerPeriodicService *const> services, CargoType cargo, int64_t transfer, uint64_t memory = MAX_BYTES, bool sections = true);
+	void Begin(std::span<const PassengerPeriodicService *const> services, CargoType cargo, int64_t transfer, uint64_t memory = MAX_BYTES, bool sections = true, bool cooperative = false, std::shared_ptr<uint64_t> memory_budget = {});
+	bool PrepareGraph(size_t quantum = 1024);
+	bool IsPreparingGraph() const { return static_cast<bool>(this->graph_build); }
+	uint64_t GetGraphWork() const { return this->graph_work; }
 	size_t Step(size_t operations, bool legacy_publication = false, const std::function<void(StationID)> &published = {});
 	void ReleaseDestination(StationID destination); ///< Retire a row immediately after its replacement is published.
 	uint64_t LegacyPublicationWork() const { return uint64_t(this->rows.size()) * this->waiting_state_count; }
 	PassengerPrecomputedPlan Plan(StationID origin, StationID destination, StateTicks ready, OrderListID excluded = OrderListID::Invalid(), uint32_t sample = 0) const;
-	bool Finished() const { return this->failed || this->destination == this->stations.size(); }
+	bool Finished() const { return !this->graph_build && (this->failed || this->destination == this->stations.size()); }
 	bool MemoryRejected() const { return this->failed; }
 	const PassengerPrecomputedDiagnostic &GetDiagnostic() const { return this->diagnostic; }
 	OrderListID BoardingKey(OrderListID service) const;
@@ -115,14 +119,17 @@ private:
 	size_t seeding = 0;
 	bool failed = false, unsupported = false;
 	CargoType cargo = INVALID_CARGO;
+	PassengerBuildTask graph_build; ///< Derived preparation only. No row can be published until this completes.
+	uint64_t graph_work = 0; ///< Actual coroutine steps, used only for bounded join progress reports.
+	PassengerBuildTask BuildGraph(std::vector<const PassengerPeriodicService *> services, CargoType cargo, int64_t transfer, uint64_t memory, bool sections, bool cooperative, std::shared_ptr<uint64_t> memory_budget);
 	mutable PassengerPrecomputedDiagnostic diagnostic;
 	uint32_t StateFor(uint32_t station, uint32_t pattern) const;
 	const Member *FindMember(OrderListID service) const;
 	const Section *FindSection(const PassengerJourneyExecution &ride) const;
 	void StartDestination();
 	void AddEdge(uint32_t from, uint32_t to, int64_t cost, EdgeKind kind, uint32_t occurrence = INVALID, uint32_t distance = 0);
-	bool BuildSections(const std::vector<std::vector<const PassengerPeriodicService *>> &members, int64_t transfer,
-			size_t &nodes, uint64_t &envelope, uint64_t memory);
+	PassengerBuildTask BuildSections(const std::vector<std::vector<const PassengerPeriodicService *>> &members, int64_t transfer,
+			size_t &nodes, uint64_t &envelope, uint64_t memory, bool cooperative, bool &success);
 	PassengerPrecomputedPlan Select(const Label &label, StateTicks ready, OrderListID excluded, uint32_t sample) const;
 };
 

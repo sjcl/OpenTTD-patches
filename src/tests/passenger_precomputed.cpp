@@ -45,6 +45,39 @@ TEST_CASE("Precomputed trees preserve through rides and physical occurrences", "
 	plan = table.Plan(A, D, StateTicks{1000}); REQUIRE(plan.ride); CHECK(plan.ride->boarding_order == 2); CHECK(plan.ride->alighting_order == 3);
 }
 
+TEST_CASE("Cooperative graph preparation preserves exact trees and shared memory admission", "[passenger][precomputed][startup][network]")
+{
+	std::array services{Service(0, {A, B, C, D}), Service(1, {A, B, C}), Service(2, {B, C, D}, 80)};
+	for (uint32_t i = 3; i < 600; ++i) { auto vehicle = services[0].vehicles.front(); vehicle.id = VehicleID{i}; services[0].vehicles.push_back(vehicle); }
+	auto control = Build(services);
+	std::vector<const PassengerPeriodicService *> records; for (const auto &service : services) records.push_back(&service);
+	for (size_t quantum : {size_t{1}, size_t{7}, size_t{1024}}) {
+		PassengerPrecomputedTable peer;
+		peer.Begin(records, PAX, 20, PassengerPrecomputedTable::MAX_BYTES, true, true);
+		size_t slices = 0;
+		while (peer.IsPreparingGraph()) {
+			CHECK_FALSE(peer.Finished()); CHECK(peer.GetDiagnostic().destinations == 0);
+			CHECK(peer.Plan(A, D, StateTicks{}).state == PassengerPrecomputedPlan::State::Building);
+			peer.PrepareGraph(quantum); REQUIRE(++slices < 100000);
+		}
+		REQUIRE(slices > 1);
+		while (!peer.Finished()) peer.Step(19);
+		CHECK(peer.GetDiagnostic().operations == control.GetDiagnostic().operations);
+		CHECK(peer.GetDiagnostic().envelope == control.GetDiagnostic().envelope);
+		for (auto from : {A, B, C, D}) for (auto to : {A, B, C, D}) {
+			auto actual = peer.Plan(from, to, StateTicks{42}); auto expected = control.Plan(from, to, StateTicks{42});
+			CHECK(actual.state == expected.state); CHECK(actual.ride == expected.ride); CHECK(actual.cost == expected.cost);
+		}
+	}
+	auto remaining = std::make_shared<uint64_t>(control.GetDiagnostic().envelope);
+	PassengerPrecomputedTable first, second;
+	first.Begin(records, PAX, 20, PassengerPrecomputedTable::MAX_BYTES, true, true, remaining);
+	second.Begin(records, PAX, 20, PassengerPrecomputedTable::MAX_BYTES, true, true, remaining);
+	while (!first.PrepareGraph(7)) {}
+	while (!second.PrepareGraph(3)) {}
+	CHECK(*remaining == 0); CHECK_FALSE(first.MemoryRejected()); CHECK(second.MemoryRejected());
+}
+
 TEST_CASE("Precomputed masks and forced alighting cannot be bypassed", "[passenger][precomputed]")
 {
 	std::array services{Service(0, {A, B, D}), Service(1, {B, D}, 150)};

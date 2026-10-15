@@ -3141,7 +3141,7 @@ TEST_CASE("Precomputed startup completes discovery and all rows without simulati
 	f.Train({Stop(A), Stop(B), Stop(C), Stop(D)});
 	_settings_game.linkgraph.passenger_journey_precomputed = true;
 	auto &db = GetPassengerServiceDatabase();
-	for (size_t slices = 0; !db.PreparePrecomputed(); ++slices) REQUIRE(slices < 1000);
+	for (size_t slices = 0; !db.PreparePrecomputed(); ++slices) REQUIRE(slices < 5000);
 	CHECK(_state_ticks == NOW);
 	CHECK(db.PrecomputedFinished()); CHECK_FALSE(db.IsPreparingPrecomputed());
 	CHECK(db.GetPrecomputedDiagnostic(PAX).destinations == 4);
@@ -3151,6 +3151,47 @@ TEST_CASE("Precomputed startup completes discovery and all rows without simulati
 	PassengerServiceDatabase joined; REQUIRE(joined.Load(wire)); joined.FinishLoad(true);
 	CHECK(joined.Save() == wire); CHECK(joined.PreparePrecomputed());
 	CHECK(joined.PlanPrecomputed(PAX, A, D, NOW).ride == db.PlanPrecomputed(PAX, A, D, NOW).ride);
+}
+
+TEST_CASE("Saving suspended initial fleet capture resumes the same publication", "[passenger][precomputed][startup][save][determinism]")
+{
+	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = true;
+	auto *first = f.Train({Stop(A), Stop(B), Stop(C), Stop(D)});
+	for (uint i = 0; i < 600; ++i) Vehicle::Create<PeriodicTrain>(first);
+	auto &db = GetPassengerServiceDatabase();
+	CHECK_FALSE(db.PreparePrecomputed());
+	const auto saved = db.Save();
+	PassengerServiceDatabase peer; REQUIRE(peer.Load(saved)); peer.FinishLoad(true, true);
+	for (uint i = 0; db.IsPreparingPrecomputed() || peer.IsPreparingPrecomputed(); ++i) {
+		REQUIRE(i < 10000);
+		db.PreparePrecomputed(); peer.PreparePrecomputed();
+		CHECK(_state_ticks == NOW);
+	}
+	CHECK(db.Save() == peer.Save());
+	CHECK(db.PlanPrecomputed(PAX, A, D, NOW).ride == peer.PlanPrecomputed(PAX, A, D, NOW).ride);
+}
+
+TEST_CASE("Replacement preparation completes only the graph and retains the row frontier", "[passenger][precomputed][startup][generation][determinism]")
+{
+	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = true;
+	auto *first = f.Train({Stop(A), Stop(B), Stop(C), Stop(D)});
+	for (uint i = 0; i < 2000; ++i) Vehicle::Create<PeriodicTrain>(first);
+	auto &db = f.Build(); while (!db.PreparePrecomputed()) {}
+	const auto old_rows = db.GetPrecomputedDiagnostic(PAX).destinations;
+	_settings_game.linkgraph.passenger_transfer_penalty = 17;
+	db.Tick(PassengerServiceDatabase::BUILD_WORK, true, true);
+	REQUIRE(db.IsPreparingPrecomputed());
+	const auto wire = db.Save();
+	while (!db.PreparePrecomputed()) {
+		CHECK(_state_ticks == NOW);
+		CHECK(db.Save() == wire);
+	}
+	CHECK(db.Save() == wire);
+	CHECK_FALSE(db.PrecomputedFinished());
+	CHECK(db.GetPrecomputedDiagnostic(PAX).destinations == 0);
+	CHECK(db.GetPrecomputedDiagnostic(PAX).retained_destinations == old_rows);
+	db.TickPrecomputed(1);
+	CHECK(db.GetPrecomputedDiagnostic(PAX).operations == 1);
 }
 
 TEST_CASE("Precomputed replacement retains pending destination rows across every saved frontier", "[passenger][precomputed][generation][save]")
@@ -3230,12 +3271,15 @@ TEST_CASE("Precomputed join replay yields at exact work boundaries for all publi
 		PassengerServiceDatabase peer; REQUIRE(peer.Load(wire)); peer.FinishLoad(true, true);
 		REQUIRE(peer.GetLoadState() == PassengerServiceDatabase::LoadState::Replaying);
 		CHECK(peer.StepLoad(0) == PassengerServiceDatabase::LoadState::Replaying);
-		uint64_t last = 0;
+		uint64_t last = 0, last_progress = 0;
 		for (size_t slices = 0; peer.GetLoadState() == PassengerServiceDatabase::LoadState::Replaying; ++slices) {
 			REQUIRE(slices < 100000);
 			peer.StepLoad(quantum);
 			CHECK(peer.GetLoadWork() - last <= quantum); last = peer.GetLoadWork();
 			CHECK(peer.GetLoadWork() <= limit);
+			CHECK(peer.GetLoadProgress() >= last_progress);
+			CHECK(peer.GetLoadProgress() <= limit);
+			last_progress = peer.GetLoadProgress();
 			CHECK(_state_ticks == NOW);
 			CHECK(peer.Save() == wire); // Serialized progress is the saved frontier, never the local replay cursor.
 		}

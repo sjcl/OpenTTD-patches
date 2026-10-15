@@ -150,7 +150,7 @@ public:
 	void Reset();
 	void Invalidate(OrderListID id = OrderListID::Invalid());
 	void TimetableChanged(OrderListID id); ///< Keep safe published timing until the next deterministic update epoch.
-	void Tick(size_t allowance = BUILD_WORK, bool build_precomputed = true);
+	void Tick(size_t allowance = BUILD_WORK, bool build_precomputed = true, bool prepare_graphs = false);
 	void TickPrecomputed(size_t allowance = BUILD_WORK);
 	bool PreparePrecomputed(); ///< Single-player startup barrier: one bounded slice, without advancing StateTicks.
 	bool IsPreparingPrecomputed() const;
@@ -220,6 +220,7 @@ public:
 	LoadState StepLoad(size_t allowance = BUILD_WORK); ///< Replay saved work only; never advance simulation or capture live input.
 	LoadState GetLoadState() const { return this->load_state; }
 	uint64_t GetLoadWork() const { return this->load_work; }
+	uint64_t GetLoadProgress() const; ///< Tree operations plus capped, actually executed graph preparation steps.
 	uint64_t GetLoadWorkLimit() const; ///< Upper bound for a peer replaying the current saved snapshot.
 	PassengerDatabaseDiagnostic GetDiagnostic() const;
 	void ResetDiagnostic() { this->diagnostic = {}; this->schedule.ResetDiagnostic(); this->recent_policy_builds.clear(); }
@@ -250,11 +251,14 @@ private:
 	bool precomputed_sections = true, retained_precomputed_sections = true; ///< Saved graph algorithm for exact pre-v8 cursor replay.
 	uint64_t boarding_revision = 0; ///< Event-local validation invalidation; never saved or used for simulation admission.
 	uint64_t precomputed_preparation_nanoseconds = 0; ///< Local elapsed observation, never saved or used for admission.
+	PassengerBuildTask preparation_capture;
+	PassengerBuildTask TickBuild(size_t allowance, bool build_precomputed, bool cooperative);
+	bool cooperative_graph = false, load_graph_refreshed = false, load_current_graph_started = false;
 	void BeginPrecomputed(int64_t transfer);
 	void BuildPrecomputedTables();
 	void ClearRetainedPrecomputed();
 	void BuildPrecomputedTables(std::array<PassengerPrecomputedTable, NUM_CARGO> &tables,
-			const std::map<OrderListID, PassengerPeriodicService> &snapshot, int64_t transfer, uint64_t remaining, bool sections);
+			const std::map<OrderListID, PassengerPeriodicService> &snapshot, int64_t transfer, uint64_t remaining, bool sections, bool cooperative = false);
 	using Dependencies = std::map<StationID, uint64_t>;
 	struct JourneyPolicy {
 		std::vector<std::pair<StationID, int64_t>> lower_bounds; ///< Relaxed reverse adjacent-stop distances, never winning routes.

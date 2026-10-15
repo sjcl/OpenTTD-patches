@@ -189,24 +189,48 @@ void PassengerPrecomputedTable::AddEdge(uint32_t from, uint32_t to, int64_t cost
 	this->edges.push_back({from, to, occurrence, cost, distance, kind});
 }
 
-void PassengerPrecomputedTable::Begin(std::span<const PassengerPeriodicService *const> services, CargoType cargo, int64_t transfer, uint64_t memory, bool sections)
+void PassengerPrecomputedTable::Begin(std::span<const PassengerPeriodicService *const> services, CargoType cargo, int64_t transfer, uint64_t memory, bool sections, bool cooperative, std::shared_ptr<uint64_t> memory_budget)
 {
-	*this = {};
-	this->cargo = cargo;
+	*this = {}; this->cargo = cargo;
+	this->graph_build = this->BuildGraph({services.begin(), services.end()}, cargo, transfer, memory, sections, cooperative, std::move(memory_budget));
+	if (!cooperative) this->PrepareGraph(SIZE_MAX);
+}
+
+bool PassengerPrecomputedTable::PrepareGraph(size_t quantum)
+{
+	if (!this->graph_build) return true;
 	const auto started = Clock::now();
+	while (this->graph_build && quantum-- > 0) {
+		this->graph_build.Resume(1);
+		++this->graph_work;
+	}
+	const bool ready = !this->graph_build;
+	this->diagnostic.build_nanoseconds += Elapsed(started);
+	if (ready) this->graph_build = {};
+	return ready;
+}
+
+PassengerBuildTask PassengerPrecomputedTable::BuildGraph(std::vector<const PassengerPeriodicService *> services, CargoType cargo, int64_t transfer, uint64_t memory, bool sections, bool cooperative, std::shared_ptr<uint64_t> memory_budget)
+{
+	if (memory_budget) memory = std::min(memory, *memory_budget);
+	struct Charge {
+		std::shared_ptr<uint64_t> remaining; const PassengerPrecomputedDiagnostic &diagnostic;
+		~Charge() { if (remaining) *remaining -= std::min(*remaining, diagnostic.envelope); }
+	} charge{std::move(memory_budget), this->diagnostic};
 	this->diagnostic.builds = 1;
-	if (cargo >= NUM_CARGO || transfer < 0 || transfer > INT64_MAX / 2) { this->failed = true; return; }
+	if (cargo >= NUM_CARGO || transfer < 0 || transfer > INT64_MAX / 2) { this->failed = true; co_return; }
 	const uint64_t mask = uint64_t{1} << cargo;
 	memory = std::min(memory, MAX_BYTES);
 	/* Canonical byte charges are identical on 32/64-bit peers. Native sizeof
 	 * and allocator residency are diagnostics only, never routing admission. */
 	static_assert(sizeof(Label) <= 64 && sizeof(Edge) <= 64 && sizeof(QueueItem) <= 32 && sizeof(Row) <= 64);
 	uint64_t envelope = 1024 * 1024;
-	if (envelope > memory) { this->failed = true; return; }
+	if (envelope > memory) { this->failed = true; co_return; }
 	for (const auto *s : services) {
+		if (cooperative) co_await std::suspend_always{};
 		if (!Product(1, 256, envelope, memory) || !Product(s->timetable.stops.size(), 256, envelope, memory) ||
 				!Product(s->vehicles.size(), 64, envelope, memory) || !Product(s->dispatch_slots.size(), 32, envelope, memory)) {
-			this->failed = true; this->diagnostic.envelope = memory; return;
+			this->failed = true; this->diagnostic.envelope = memory; co_return;
 		}
 	}
 	try {
@@ -215,6 +239,7 @@ void PassengerPrecomputedTable::Begin(std::span<const PassengerPeriodicService *
 		std::map<std::vector<int64_t>, std::vector<const PassengerPeriodicService *>> groups;
 		std::set<StationID> station_ids;
 		for (const auto *s : services) {
+			if (cooperative) co_await std::suspend_always{};
 			bool capacity = std::any_of(s->vehicles.begin(), s->vehicles.end(), [cargo](const auto &v) { return v.capacity[cargo] != 0; });
 			if (!capacity) { this->unsupported |= s->timetable.period == 0; continue; }
 			if (s->timetable.period <= 0 || s->timetable.stops.size() < 2) { this->unsupported = true; continue; }
@@ -227,6 +252,7 @@ void PassengerPrecomputedTable::Begin(std::span<const PassengerPeriodicService *
 		std::vector<const PassengerPeriodicService *> representatives;
 		std::vector<std::vector<const PassengerPeriodicService *>> pattern_members;
 		for (auto &[key, members] : groups) {
+			if (cooperative) co_await std::suspend_always{};
 			if (sections) std::sort(members.begin(), members.end(), [](const auto *a, const auto *b) { return a->id < b->id; });
 			Pattern p;
 			const auto &t = members.front()->timetable;
@@ -236,14 +262,17 @@ void PassengerPrecomputedTable::Begin(std::span<const PassengerPeriodicService *
 			std::vector<int64_t> phases;
 			std::set<VehicleID> physical;
 			for (const auto *s : members) {
+				if (cooperative) co_await std::suspend_always{};
 				p.members.push_back({s->id, s->incarnation, s->generation});
 				this->service_pattern[s->id.base()] = static_cast<uint32_t>(this->patterns.size());
 				for (const auto &v : s->vehicles) if (v.capacity[cargo]) {
+					if (cooperative) co_await std::suspend_always{};
 					if (sections && !physical.insert(v.id).second) continue;
 					seats = std::max(seats, v.capacity[cargo]); unknown |= !v.phase_known;
 					if (s->dispatch_period > 0) {
 						p.circuit = s->dispatch_period;
 						for (uint32_t slot : s->dispatch_slots) {
+							if (cooperative) co_await std::suspend_always{};
 							int64_t phase = (s->dispatch_base.base() % p.circuit + slot) % p.circuit;
 							phases.push_back(phase < 0 ? phase + p.circuit : phase);
 						}
@@ -269,6 +298,7 @@ void PassengerPrecomputedTable::Begin(std::span<const PassengerPeriodicService *
 			p.weight = std::clamp<uint64_t>(std::min<uint64_t>(seats, 65535) * 65536 / std::max<int64_t>(1, gap), 1, UINT32_MAX / 2);
 			uint32_t pattern = static_cast<uint32_t>(this->patterns.size());
 			for (const auto &stop : t.stops) {
+				if (cooperative) co_await std::suspend_always{};
 				p.occurrences.push_back(static_cast<uint32_t>(this->occurrences.size()));
 				this->occurrences.push_back({stop.station, stop.order, pattern, 0, 0, (stop.board & mask) != 0, (stop.alight & mask) != 0, (stop.forced & mask) != 0});
 				if (stop.alight & mask) this->waiting_states[this->station_index[stop.station.base()]].emplace_back(pattern, 0);
@@ -278,6 +308,7 @@ void PassengerPrecomputedTable::Begin(std::span<const PassengerPeriodicService *
 		}
 		size_t nodes = this->stations.size();
 		for (auto &states : this->waiting_states) {
+			if (cooperative) co_await std::suspend_always{};
 			std::sort(states.begin(), states.end()); states.erase(std::unique(states.begin(), states.end()), states.end());
 			for (auto &state : states) state.second = static_cast<uint32_t>(nodes++);
 		}
@@ -285,9 +316,10 @@ void PassengerPrecomputedTable::Begin(std::span<const PassengerPeriodicService *
 		for (auto &o : this->occurrences) { o.arrival = static_cast<uint32_t>(nodes++); o.departure = static_cast<uint32_t>(nodes++); }
 		size_t edge_count = 0;
 		for (size_t p = 0; p < this->patterns.size(); ++p) for (const auto &stop : representatives[p]->timetable.stops) {
+			if (cooperative) co_await std::suspend_always{};
 			size_t contribution = 2 + ((stop.alight & mask) != 0);
 			if (stop.board & mask) contribution += 1 + this->waiting_states[this->station_index[stop.station.base()]].size();
-			if (contribution > INVALID - edge_count) { this->failed = true; return; }
+			if (contribution > INVALID - edge_count) { this->failed = true; co_return; }
 			edge_count += contribution;
 		}
 		/* Every product is checked before route/scratch allocation. Queue storage
@@ -300,17 +332,20 @@ void PassengerPrecomputedTable::Begin(std::span<const PassengerPeriodicService *
 				Product(this->stations.size(), uint64_t(this->stations.size()) * 8 + 64, envelope, memory) &&
 				Product(edge_count, 264, envelope, memory) && Product(nodes, 144, envelope, memory);
 		this->diagnostic.envelope = envelope;
-		if (!fits) { this->failed = true; this->diagnostic.build_nanoseconds = Elapsed(started); return; }
+		if (!fits) { this->failed = true; co_return; }
 		this->edges.reserve(edge_count);
 		this->reachable_destinations.resize(this->stations.size());
 		for (uint32_t p = 0; p < this->patterns.size(); ++p) {
+			if (cooperative) co_await std::suspend_always{};
 			const auto &pattern = this->patterns[p]; const auto &t = representatives[p]->timetable;
 			for (size_t i = 0; i < t.stops.size(); ++i) {
+				if (cooperative) co_await std::suspend_always{};
 				const auto &stop = t.stops[i]; uint32_t id = pattern.occurrences[i]; const auto &o = this->occurrences[id];
 				if (stop.board & mask) {
 					uint32_t station = this->station_index[stop.station.base()];
 					this->AddEdge(station, o.departure, pattern.wait + pattern.risk, EdgeKind::Board, id);
 					for (const auto &[previous, state] : this->waiting_states[station]) {
+						if (cooperative) co_await std::suspend_always{};
 						if (previous != p || pattern.members.size() > 1) this->AddEdge(state, o.departure, pattern.wait + pattern.risk, EdgeKind::Board, id);
 					}
 				}
@@ -323,8 +358,11 @@ void PassengerPrecomputedTable::Begin(std::span<const PassengerPeriodicService *
 				this->AddEdge(o.departure, this->occurrences[pattern.occurrences[next]].arrival, std::max<int64_t>(1, travel), EdgeKind::Ride, INVALID, distance);
 			}
 		}
-		if (sections && !this->BuildSections(pattern_members, transfer, nodes, envelope, memory)) {
-			this->failed = true; this->diagnostic.envelope = memory; return;
+		if (sections) {
+			bool success = false;
+			auto task = this->BuildSections(pattern_members, transfer, nodes, envelope, memory, cooperative, success);
+			while (!task.Resume(1)) co_await std::suspend_always{};
+			if (!success) { this->failed = true; this->diagnostic.envelope = memory; co_return; }
 		}
 		this->diagnostic.envelope = envelope;
 		this->incoming_offsets.assign(nodes + 1, 0);
@@ -341,11 +379,10 @@ void PassengerPrecomputedTable::Begin(std::span<const PassengerPeriodicService *
 		 * deterministic envelope uses legacy fallback; physical OOM stops play. */
 		FatalError("Insufficient memory for passenger routing. Disable passenger_journey_precomputed or free memory before resuming.");
 	}
-	this->diagnostic.build_nanoseconds += Elapsed(started);
 }
 
-bool PassengerPrecomputedTable::BuildSections(const std::vector<std::vector<const PassengerPeriodicService *>> &members,
-		int64_t transfer, size_t &nodes, uint64_t &envelope, uint64_t memory)
+PassengerBuildTask PassengerPrecomputedTable::BuildSections(const std::vector<std::vector<const PassengerPeriodicService *>> &members,
+		int64_t transfer, size_t &nodes, uint64_t &envelope, uint64_t memory, bool cooperative, bool &success)
 {
 	struct Path { uint32_t board, alight; int64_t riding; uint32_t distance; };
 	struct Prefix { std::vector<Path> paths; };
@@ -357,21 +394,25 @@ bool PassengerPrecomputedTable::BuildSections(const std::vector<std::vector<cons
 	std::vector<Prefix> prefixes;
 	std::map<StationID, std::set<uint32_t>> starters;
 	for (uint32_t p = 0; p < this->patterns.size(); ++p) for (uint32_t id : this->patterns[p].occurrences) {
+		if (cooperative) co_await std::suspend_always{};
 		if (this->occurrences[id].board) starters[this->occurrences[id].station].insert(p);
 	}
 	for (uint32_t p = 0; p < this->patterns.size(); ++p) {
+		if (cooperative) co_await std::suspend_always{};
 		const auto &pattern = this->patterns[p]; const auto &t = members[p].front()->timetable;
 		for (size_t start = 0; start < t.stops.size(); ++start) {
+			if (cooperative) co_await std::suspend_always{};
 			uint32_t board = pattern.occurrences[start]; const auto &b = this->occurrences[board];
 			if (!b.board || starters[b.station].size() < 2) continue;
 			uint32_t prefix = INVALID, distance = 0;
 			for (size_t length = 0; length < t.stops.size(); ++length) {
+				if (cooperative) co_await std::suspend_always{};
 				size_t stop = (start + length) % t.stops.size();
 				uint32_t alight = pattern.occurrences[stop]; const auto &a = this->occurrences[alight];
 				Key key{prefix, a.station, uint8_t((a.board ? 1 : 0) | (a.alight ? 2 : 0) | (a.forced ? 4 : 0))};
 				auto found = index.find(key);
 				if (found == index.end()) {
-					if (prefixes.size() >= INVALID || !Product(1, 256, envelope, memory)) return false;
+					if (prefixes.size() >= INVALID || !Product(1, 256, envelope, memory)) co_return;
 					prefix = static_cast<uint32_t>(prefixes.size()); index.emplace(key, prefix); prefixes.emplace_back();
 				} else prefix = found->second;
 				if (length == 0) continue;
@@ -380,7 +421,7 @@ bool PassengerPrecomputedTable::BuildSections(const std::vector<std::vector<cons
 					distance = static_cast<uint32_t>(std::min<uint64_t>(UINT32_MAX, uint64_t(distance) + DistanceManhattan(x->xy, y->xy)));
 				}
 				if (a.alight && a.station != b.station) {
-					if (!Product(1, 64, envelope, memory)) return false;
+					if (!Product(1, 64, envelope, memory)) co_return;
 					int64_t riding = t.stops[stop].arrival - t.stops[start].departure + (stop < start ? t.period : 0);
 					prefixes[prefix].paths.push_back({board, alight, riding, distance});
 				}
@@ -390,22 +431,25 @@ bool PassengerPrecomputedTable::BuildSections(const std::vector<std::vector<cons
 	}
 	uint64_t event_memory = 0;
 	for (const auto &prefix : prefixes) {
+		if (cooperative) co_await std::suspend_always{};
 		const auto &paths = prefix.paths;
 		if (paths.empty()) continue;
 		uint32_t first = this->occurrences[paths.front().board].pattern;
 		if (std::none_of(paths.begin(), paths.end(), [&](const Path &path) { return this->occurrences[path.board].pattern != first; })) continue;
 		uint64_t candidates = 0;
 		for (const auto &path : paths) for (const auto *service : members[this->occurrences[path.board].pattern]) {
+			if (cooperative) co_await std::suspend_always{};
 			candidates += service->vehicles.size() + service->dispatch_slots.size();
 		}
 		/* These maps/heap coexist only for one section. Charge their peak before
 		 * allocating them, in addition to the prefix and final graph storage. */
 		if (candidates > event_memory) {
-			if (!Product(candidates - event_memory, 256, envelope, memory)) return false;
+			if (!Product(candidates - event_memory, 256, envelope, memory)) co_return;
 			event_memory = candidates;
 		}
 		std::map<VehicleID, OrderListID> owners;
 		for (const auto &path : paths) for (const auto *s : members[this->occurrences[path.board].pattern]) for (const auto &v : s->vehicles) {
+			if (cooperative) co_await std::suspend_always{};
 			if (!v.capacity[this->cargo]) continue;
 			auto [it, inserted] = owners.emplace(v.id, s->id);
 			if (!inserted) it->second = std::min(it->second, s->id);
@@ -414,9 +458,11 @@ bool PassengerPrecomputedTable::BuildSections(const std::vector<std::vector<cons
 		int64_t unknown_gap = INT64_MAX;
 		uint64_t seats = 1;
 		for (const auto &path : paths) {
+			if (cooperative) co_await std::suspend_always{};
 			uint32_t p = this->occurrences[path.board].pattern;
 			size_t stop = path.board - this->patterns[p].occurrences.front();
 			for (const auto *s : members[p]) for (const auto &v : s->vehicles) {
+				if (cooperative) co_await std::suspend_always{};
 				if (!v.capacity[this->cargo] || owners.at(v.id) != s->id) continue;
 				seats = std::max(seats, std::min<uint64_t>(v.capacity[this->cargo], 64));
 				int64_t circuit = std::max(s->timetable.period, s->uncertain_dispatch_period);
@@ -437,7 +483,7 @@ bool PassengerPrecomputedTable::BuildSections(const std::vector<std::vector<cons
 		int64_t risk = gap / seats + (gap % seats != 0);
 		++this->diagnostic.shared_sections;
 		if (this->landings.empty()) {
-			if (!Product(this->occurrences.size(), 36, envelope, memory)) return false;
+			if (!Product(this->occurrences.size(), 36, envelope, memory)) co_return;
 			this->landings.assign(this->occurrences.size(), INVALID);
 			this->boarding_sections.resize(this->occurrences.size());
 		}
@@ -445,15 +491,16 @@ bool PassengerPrecomputedTable::BuildSections(const std::vector<std::vector<cons
 		 * pattern refers to its existing member vector, rather than copying this
 		 * binding once per vehicle or shared order list. The saved concrete order
 		 * pair identifies the section without adding anything to CargoPacket. */
-		if (this->sections.size() >= INVALID || !Product(1, 128, envelope, memory) || !Product(paths.size(), 128, envelope, memory)) return false;
+		if (this->sections.size() >= INVALID || !Product(1, 128, envelope, memory) || !Product(paths.size(), 128, envelope, memory)) co_return;
 		Section section{UINT64_MAX, {}};
 		section.bindings.reserve(paths.size());
 		uint64_t key_count = 0;
 		for (const auto &path : paths) key_count += this->patterns[this->occurrences[path.board].pattern].members.size();
-		if (!Product(key_count, 16, envelope, memory) || !Product(key_count, uint64_t(paths.size()) * 16, envelope, memory)) return false;
+		if (!Product(key_count, 16, envelope, memory) || !Product(key_count, uint64_t(paths.size()) * 16, envelope, memory)) co_return;
 		std::vector<uint64_t> raw_keys;
 		raw_keys.reserve(static_cast<size_t>(key_count));
 		for (const auto &path : paths) {
+			if (cooperative) co_await std::suspend_always{};
 			const auto &board = this->occurrences[path.board], &alight = this->occurrences[path.alight];
 			section.key = std::min(section.key, (uint64_t{1} << 63) |
 					SectionPathKey(this->patterns[board.pattern].members.front().id.base(), board.order, alight.order));
@@ -461,6 +508,7 @@ bool PassengerPrecomputedTable::BuildSections(const std::vector<std::vector<cons
 		}
 		std::sort(raw_keys.begin(), raw_keys.end()); raw_keys.erase(std::unique(raw_keys.begin(), raw_keys.end()), raw_keys.end());
 		for (const auto &path : paths) {
+			if (cooperative) co_await std::suspend_always{};
 			const auto &board = this->occurrences[path.board], &alight = this->occurrences[path.alight];
 			section.bindings.push_back({path.board, path.alight});
 			this->section_paths.emplace(SectionPathKey(board.pattern, board.order, alight.order),
@@ -472,13 +520,14 @@ bool PassengerPrecomputedTable::BuildSections(const std::vector<std::vector<cons
 		});
 		this->sections.push_back(std::move(section));
 		for (const auto &path : paths) {
+			if (cooperative) co_await std::suspend_always{};
 			const auto &board = this->occurrences[path.board], &alight = this->occurrences[path.alight];
 			uint32_t station = this->station_index[board.station.base()];
 			size_t edges = 1 + this->waiting_states[station].size();
 			if (this->section_rides.size() >= INVALID || edges >= INVALID - this->edges.size() ||
-					!Product(1, 64, envelope, memory) || !Product(edges, 264, envelope, memory)) return false;
+					!Product(1, 64, envelope, memory) || !Product(edges, 264, envelope, memory)) co_return;
 			if (this->landings[path.alight] == INVALID) {
-				if (nodes >= INVALID || !Product(1, 144 + 264, envelope, memory)) return false;
+				if (nodes >= INVALID || !Product(1, 144 + 264, envelope, memory)) co_return;
 				this->landings[path.alight] = static_cast<uint32_t>(nodes++);
 				this->AddEdge(this->landings[path.alight], this->StateFor(this->station_index[alight.station.base()], alight.pattern),
 						2 * transfer, EdgeKind::Alight, path.alight);
@@ -488,6 +537,7 @@ bool PassengerPrecomputedTable::BuildSections(const std::vector<std::vector<cons
 			this->section_rides.push_back({path.board, path.alight, path.riding, wait, cost});
 			this->AddEdge(station, this->landings[path.alight], cost, EdgeKind::Section, id, path.distance);
 			for (const auto &[previous, state] : this->waiting_states[station]) {
+				if (cooperative) co_await std::suspend_always{};
 				if (previous != board.pattern || this->patterns[board.pattern].members.size() > 1) {
 					this->AddEdge(state, this->landings[path.alight], cost, EdgeKind::Section, id, path.distance);
 				}
@@ -495,13 +545,14 @@ bool PassengerPrecomputedTable::BuildSections(const std::vector<std::vector<cons
 		}
 	}
 	for (auto &keys : this->boarding_sections) {
+		if (cooperative) co_await std::suspend_always{};
 		std::sort(keys.begin(), keys.end()); keys.erase(std::unique(keys.begin(), keys.end()), keys.end());
 	}
 	this->binding_bytes = this->sections.capacity() * sizeof(Section) + this->boarding_sections.capacity() * sizeof(std::vector<uint64_t>) + this->section_paths.size() * 64;
 	for (const auto &section : this->sections) this->binding_bytes += section.bindings.capacity() * sizeof(SectionBinding);
 	for (const auto &keys : this->boarding_sections) this->binding_bytes += keys.capacity() * sizeof(uint64_t);
 	this->diagnostic.section_rides = this->section_rides.size();
-	return true;
+	success = true; co_return;
 }
 
 void PassengerPrecomputedTable::StartDestination()
@@ -515,6 +566,7 @@ void PassengerPrecomputedTable::StartDestination()
 
 size_t PassengerPrecomputedTable::Step(size_t allowance, bool legacy_publication, const std::function<void(StationID)> &published)
 {
+	if (!this->PrepareGraph(std::min<size_t>(allowance, 1024))) return 0;
 	const auto started = Clock::now(); size_t used = 0;
 	auto index_origin = [&](size_t from) {
 		if (from >= this->stations.size() || this->scratch.labels[from].cost == INT64_MAX) return;
@@ -697,6 +749,7 @@ PassengerPrecomputedPlan PassengerPrecomputedTable::Plan(StationID origin, Stati
 {
 	const auto started = Clock::now(); ++this->diagnostic.queries;
 	auto lookup = [&]() -> PassengerPrecomputedPlan {
+		if (this->graph_build) return {PassengerPrecomputedPlan::State::Building};
 		if (this->failed) return {PassengerPrecomputedPlan::State::Memory};
 		if (origin.base() >= this->station_index.size() || destination.base() >= this->station_index.size()) return {PassengerPrecomputedPlan::State::Unsupported};
 		uint32_t from = this->station_index[origin.base()], to = this->station_index[destination.base()];

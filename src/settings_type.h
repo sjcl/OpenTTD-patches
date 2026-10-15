@@ -587,6 +587,7 @@ struct NetworkSettings {
 	uint16_t      bytes_per_frame_burst;                  ///< how many bytes may, over a short period, be received?
 	uint16_t      max_init_time;                          ///< maximum amount of time, in game ticks, a client may take to initiate joining
 	uint16_t      max_join_time;                          ///< maximum amount of time, in game ticks, a client may take to sync up during joining
+	uint16_t      max_join_time_total;                    ///< Absolute join limit in real seconds, including map queue, download, replay and catch-up.
 	uint16_t      max_download_time;                      ///< maximum amount of time, in game ticks, a client may take to download the map
 	uint16_t      max_password_time;                      ///< maximum amount of time, in game ticks, a client may take to enter the password
 	uint16_t      max_lag_time;                           ///< maximum amount of time, in game ticks, a client may be lagging behind the server
