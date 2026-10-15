@@ -55,6 +55,16 @@ def census(args):
     source, build = args.source.resolve(), args.build.resolve()
     target = build / "save-integrity/console_cmds.cpp"
     content = target.read_text(encoding="utf-8")
+    pause = '''#ifdef WITH_PASSENGER_BENCHMARK
+\t/* Opt-in measurement build only, used with isolated inputs. */
+\tif (_pause_mode.Test(PauseMode::Error)) Command<Commands::Pause>::Post(PauseMode::Error, false);
+#endif'''
+    assert content.count(pause) == 1
+    content = content.replace(pause, '''    /* Copied measurement TU: keep the product's error-pause policy intact. */
+    if (getenv("OPENTTD_PASSENGER_MEASURE") != nullptr && _pause_mode.Test(PauseMode::Error)) {
+        IConsolePrint(CC_WARNING, "Measurement resumed a NewGRF error pause.");
+        Command<Commands::Pause>::Post(PauseMode::Error, false);
+    }''')
     opening = '\tif (operation == "inventory") {\n'
     anchor = opening + '\t\t/* Explicit read-only census.'
     assert content.count(anchor) == 1
@@ -102,7 +112,7 @@ def driver(args):
     stdafx = '#include "' + (source / "src/stdafx.h").as_posix() + '"\n'
     assert content.count(stdafx) == 1
     headers = ''.join('#include "' + (source / "src" / name).as_posix() + '"\n' for name in ["openttd.h", "date_func.h", "passenger_journey_active.h", "console_func.h"])
-    content = content.replace(stdafx, stdafx + headers + '#include <charconv>\n#include <fstream>\n#include <vector>\n')
+    content = content.replace(stdafx, stdafx + headers + '#include <charconv>\n#include <cstdio>\n#include <fstream>\n#include <vector>\n')
     anchor = "\t\tfor (int i = 0; i < this->ticks; i++) {\n\t\t\t::GameLoop();\n\t\t\t::InputLoop();\n\t\t\t::UpdateWindows();\n\t\t}"
     assert content.count(anchor) == 1
     driver = r'''
@@ -112,6 +122,8 @@ def driver(args):
         int64_t start = 0;
         bool started = false;
         uint64_t loops = 0, error_resumes = 0;
+        int64_t checkpoint = 0;
+        if (const char *value = getenv("OPENTTD_PASSENGER_CHECKPOINT_TICK")) std::from_chars(value, value + strlen(value), checkpoint);
         while (!_exit_game && (!started || _state_ticks.base() - start < this->ticks)) {
             if (started && _pause_mode.Test(PauseMode::Error)) {
                 ++error_resumes;
@@ -139,8 +151,12 @@ def driver(args):
             if (started && _state_ticks.base() > before) {
                 const auto &stats = GetPassengerJourneyTickDiagnostic();
                 samples.push_back({_state_ticks.base(), stats.simulation_microseconds, stats.journey_microseconds});
+                if (checkpoint > 0 && _state_ticks.base() - start == checkpoint) {
+                    IConsoleCmdExec("passenger_journey_stats save_integrity");
+                    std::rename("save-integrity.json", "transport-checkpoint.json");
+                }
             }
-            if (loops == 1 || loops % 100000 == 0) {
+            if (loops == 1 || loops % 256 == 0) {
                 std::ofstream progress("progress.json");
                 progress << "{\"start\":" << start << ",\"end\":" << _state_ticks.base()
                     << ",\"samples\":" << samples.size() << ",\"pause_bits\":" << unsigned(_pause_mode.base()) << "}\n";
@@ -160,6 +176,15 @@ def driver(args):
         out << "]}\n";
 '''
     content = content.replace(anchor, driver)
+    finish = '''#ifdef WITH_PASSENGER_BENCHMARK
+\tif (!this->until_exit) {
+\t\tIConsoleCmdExec("exec scripts/passenger_benchmark_end.scr 0");
+\t}
+#endif'''
+    assert content.count(finish) == 1
+    content = content.replace(finish, '''    if (!this->until_exit && getenv("OPENTTD_PASSENGER_MEASURE") != nullptr) {
+        IConsoleCmdExec("exec scripts/passenger_benchmark_end.scr 0");
+    }''')
     target = build / "real-map-driver/null_v.cpp"
     target.parent.mkdir(exist_ok=True)
     target.write_text(content, encoding="utf-8")
@@ -335,6 +360,8 @@ def run(args):
             "setting linkgraph.recalc_interval 8\nsetting linkgraph.recalc_time 32\n")
         if args.precomputed is not None:
             setup += f"setting linkgraph.passenger_journey_precomputed {'true' if args.precomputed else 'false'}\n"
+        if args.fixture_timetable:
+            setup += "passenger_journey_stats fixture_timetable\n"
         if args.warm_precomputed or args.rebuild_precomputed:
             setup += "passenger_journey_stats build_precomputed\n"
         if args.rebuild_precomputed:
@@ -369,9 +396,10 @@ def run(args):
             for key, value in CPU.observe(process).items():
                 observed[key] = max(observed.get(key, 0), value)
         metadata = dict(exit_code=process.returncode, requested_ticks=args.ticks, elapsed_seconds=time.perf_counter()-started,
+            trace_enabled="OPENTTD_PASSENGER_TRACE" in os.environ, checkpoint_tick=os.environ.get("OPENTTD_PASSENGER_CHECKPOINT_TICK"),
             contamination=contamination, input_sha256=PROFILE.sha256(directory / "input.sav"), binary_sha256=PROFILE.sha256(args.binary),
             language_sha256=PROFILE.sha256(directory / "lang/english.lng"),
-            resume_settings=args.resume, precomputed=args.precomputed, warm_precomputed=args.warm_precomputed,
+            resume_settings=args.resume, fixture_timetable=args.fixture_timetable, precomputed=args.precomputed, warm_precomputed=args.warm_precomputed,
             rebuild_precomputed=args.rebuild_precomputed, command=command, **observed)
         for name in ("actual-ticks.json", "save-integrity.json"):
             if (directory / name).is_file():
@@ -383,6 +411,7 @@ def run(args):
         metadata["newgrf_warning_lines"] = sum("[grf:0]" in line for line in stderr.splitlines())
         console = (directory / "on-1-console.txt").read_text(encoding="utf-8", errors="replace") if (directory / "on-1-console.txt").is_file() else ""
         metadata["warm_complete"] = "Precomputed warm: ready=true;" in console if args.warm_precomputed or args.rebuild_precomputed else None
+        metadata["script_error_pause_resumes"] = console.count("Measurement resumed a NewGRF error pause.")
         dump(directory / "process.json", metadata)
         print(json.dumps({k:v for k,v in metadata.items() if k != "actual-ticks.json"}, indent=2), flush=True)
         if process.returncode or contamination or metadata["load_failed"] or metadata["warm_complete"] is False or "result_sha256" not in metadata or "save-integrity.json" not in metadata:
@@ -463,6 +492,7 @@ def main():
     p.add_argument("--input", type=pathlib.Path)
     p.add_argument("--lang", type=pathlib.Path, help="Matching build language directory (defaults beside the binary)")
     p.add_argument("--resume", action="store_true")
+    p.add_argument("--fixture-timetable", action="store_true", help="Synthetic MP fixture only: assign fixed timetable times using the copied join console hook")
     p.add_argument("--warm-precomputed", action="store_true", help="Complete mandatory rows while paused before the first tick; initial build CPU remains in process totals")
     p.add_argument("--rebuild-precomputed", action="store_true", help="Start with complete rows then change the transfer penalty to 17; measure ordinary replacement ticks")
     p.add_argument("--precomputed", action=argparse.BooleanOptionalAction, default=None)

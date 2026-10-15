@@ -17,6 +17,7 @@ def main():
     parser.add_argument("source", type=pathlib.Path)
     parser.add_argument("build", type=pathlib.Path)
     parser.add_argument("revision")
+    parser.add_argument("--protocol-graph-quantum", type=int, choices=range(1, 1025), help="Protocol fixture only: force graph suspension in a copied TU")
     args = parser.parse_args()
     source, build = args.source.resolve(), args.build.resolve()
     real.prepare(args)
@@ -95,6 +96,21 @@ def main():
         return true;
     }
 ''' + anchor)
+    text = text.replace(anchor, '''    if (operation == "fixture_timetable") {
+        for (OrderList *list : OrderList::Iterate()) {
+            for (VehicleOrderID i = 0; i < list->GetNumOrders(); ++i) {
+                Order *order = list->GetOrderAt(i);
+                order->SetTravelTime(128); order->SetTravelTimetabled(true);
+                order->SetWaitTime(32); order->SetWaitTimetabled(true);
+            }
+            list->RecalculateTimetableDuration();
+        }
+        InvalidatePassengerServiceDatabase();
+        auto &db = GetPassengerServiceDatabase();
+        for (uint i = 0; i < 10000 && !db.PreparePrecomputed(); ++i) {}
+        return db.PrecomputedFinished();
+    }
+''' + anchor)
     console.write_text(text, encoding="utf-8")
 
     original = source / "src/video/null_v.cpp"
@@ -146,6 +162,23 @@ def main():
 ''')
     target = build / "real-map-driver/null_v.cpp"
     target.write_text(content, encoding="utf-8")
+
+    if args.protocol_graph_quantum is not None:
+        original = source / "src/passenger_precomputed.cpp"
+        content = original.read_text(encoding="utf-8")
+        content = re.sub(r'#include "([^"]+)"', lambda m: '#include "' + (original.parent / m[1]).resolve().as_posix() + '"', content)
+        anchor = "std::min<size_t>(allowance, 1024)"
+        assert content.count(anchor) == 1
+        content = content.replace(anchor, f"std::min<size_t>(allowance, {args.protocol_graph_quantum})")
+        target = build / "real-map-driver/passenger_precomputed.cpp"
+        target.write_text(content, encoding="utf-8")
+        project = build / "openttd_lib.vcxproj"
+        xml = project.read_text(encoding="utf-8-sig").replace(str(target), str(original))
+        assert xml.count(str(original)) == 1
+        project.write_text(xml.replace(str(original), str(target)), encoding="utf-8-sig")
+        real.dump(build / "protocol-graph-quantum.json", dict(quantum=args.protocol_graph_quantum,
+            original_sha256=real.PROFILE.sha256(original), instrumented_sha256=real.PROFILE.sha256(target),
+            note="Synthetic protocol regression only; never use for performance or real-map transport measurements"))
 
 
 if __name__ == "__main__":

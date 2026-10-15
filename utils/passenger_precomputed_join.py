@@ -23,9 +23,11 @@ def main():
     for name in ("binary", "package", "input", "output", "lang"):
         parser.add_argument(name, type=pathlib.Path)
     parser.add_argument("--port", type=int, default=17529)
+    parser.add_argument("--frame-freq", type=int, default=0)
     parser.add_argument("--ticks", type=int, default=1024)
     parser.add_argument("--initial-build", action="store_true")
     parser.add_argument("--stall", action="store_true")
+    parser.add_argument("--toggle-precomputed", action="store_true", help="Disable and re-enable routing after joining, then compare the peer preparation barrier")
     parser.add_argument("--observe-timeout", type=int, default=180,
                         help="Harness observation seconds for loading/replay; does not change game/network timeouts")
     args = parser.parse_args()
@@ -37,7 +39,7 @@ def main():
     result = dict(address=f"127.0.0.1:{args.port}", default_timeouts=True, paused_join=True,
                   input=str(args.input.resolve()), joined=False, packet_payment_equal=False,
                   binary_sha256=real.PROFILE.sha256(args.binary), input_sha256=real.PROFILE.sha256(args.input),
-                  requested_ticks=args.ticks, initial_build=args.initial_build, stall_test=args.stall,
+                  requested_ticks=args.ticks, initial_build=args.initial_build, stall_test=args.stall, frame_freq=args.frame_freq,
                   observation_timeout_seconds=args.observe_timeout)
 
     def read(directory, name):
@@ -61,14 +63,14 @@ def main():
         (directory / "openttd.cfg").write_text(
             "[misc]\nlanguage = english.lng\n[gui]\nautosave = off\nautosave_on_exit = false\n"
             f"[network]\nclient_name = routing-{name}\nserver_game_type = local\nserver_port = {args.port}\n"
-            "pause_on_join = true\nmin_active_clients = 0\n[graphicsset]\nname = zBase\n", encoding="utf-8")
+            f"pause_on_join = true\nmin_active_clients = 0\nframe_freq = {args.frame_freq}\n[graphicsset]\nname = zBase\n", encoding="utf-8")
         return directory
 
     def start(directory, arguments):
         out, err = (directory / "stdout.txt").open("w"), (directory / "stderr.txt").open("w")
         streams.extend((out, err))
         process = subprocess.Popen([str(args.binary.resolve()), "-x", "-X", "-c", "openttd.cfg", "-snull", "-mnull",
-                                    "-d", "net=3,desync=1", *arguments], cwd=directory,
+                                    "-d", f"net={4 if args.frame_freq else 3},desync=1", *arguments], cwd=directory,
                                    stdin=subprocess.PIPE, stdout=out, stderr=err, text=True, encoding="utf-8",
                                    creationflags=subprocess.CREATE_NO_WINDOW,
                                    env=dict(os.environ, OPENTTD_PASSENGER_MEASURE="1"))
@@ -183,6 +185,8 @@ def main():
         snapshot = wait(lambda: json_file(client, "save-integrity.json") or errors(server, client), args.observe_timeout)
         result["join_elapsed_seconds"] = time.monotonic() - join_started
         if (client / "save-integrity.json").exists():
+            result["server_loading_snapshot"] = result["server_snapshot"]
+            result["server_snapshot"] = snapshot_server(host, server)
             result["client_snapshot"] = json_file(client, "save-integrity.json")
             result["join_mismatches"] = compare(result["server_snapshot"], result["client_snapshot"])
             result["packet_payment_equal"] = not result["join_mismatches"]
@@ -196,6 +200,24 @@ def main():
         result["progress_packets"] = len(re.findall("map replay progress", read(server, "stderr.txt")))
         if not (result["joined"] and result["packet_payment_equal"] and not result["network_error"]):
             raise RuntimeError("Join or canonical snapshot comparison failed")
+        if args.toggle_precomputed:
+            command(host, "setting linkgraph.passenger_journey_precomputed false")
+            deadline = time.monotonic() + 30
+            while True:
+                off_server, off_client = snapshot_server(host, server), snapshot_client(client)
+                if not off_server["precomputed_routing"] and not off_client["precomputed_routing"]:
+                    break
+                if time.monotonic() >= deadline or errors(server, client):
+                    raise RuntimeError("Peers did not execute the disable command")
+                time.sleep(.25)
+            barriers = read(server, "stderr.txt").count("Initial passenger tables ready at frame")
+            command(host, "setting linkgraph.passenger_journey_precomputed true")
+            if not wait(lambda: read(server, "stderr.txt").count("Initial passenger tables ready at frame") > barriers or errors(server, client), args.observe_timeout):
+                raise RuntimeError("Connected-peer preparation barrier did not release")
+            result["toggle_server"], result["toggle_client"] = snapshot_server(host, server), snapshot_client(client)
+            result["toggle_mismatches"] = compare(result["toggle_server"], result["toggle_client"])
+            if result["toggle_mismatches"] or result["toggle_server"]["state_ticks"] != off_server["state_ticks"]:
+                raise RuntimeError("Connected-peer preparation advanced or diverged simulation state")
         if args.ticks:
             initial_tick = result["server_snapshot"]["state_ticks"]
             command(host, "unpause")
@@ -233,6 +255,7 @@ def main():
         command(host, "passenger_journey_stats total")
         command(host, "script")
         result["network_error"] = errors(server, client)
+        result["predicted_preparation_waits"] = read(client, "stderr.txt").count("ready at predicted frame")
         result["pass"] = result["joined"] and result["packet_payment_equal"] and result["transport_equal"] and not result["network_error"]
     except Exception as error:
         result.update(error=str(error), **{"pass": False})
@@ -246,7 +269,7 @@ def main():
                         process.wait(timeout=5)
                     else:
                         process.terminate()
-                except (OSError, subprocess.TimeoutExpired):
+                except (OSError, RuntimeError, subprocess.TimeoutExpired):
                     process.terminate()
             process.wait(timeout=15)
         for stream in streams:
