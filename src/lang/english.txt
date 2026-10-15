@@ -854,6 +854,7 @@ STR_STATUSBAR_TOOLTIP_SHOW_LAST_NEWS                            :{BLACK}Show las
 STR_STATUSBAR_COMPANY_NAME                                      :{SILVER}- -  {COMPANY}  - -
 STR_STATUSBAR_PAUSED                                            :{YELLOW}*  *  PAUSED  *  *
 STR_STATUSBAR_PAUSED_LINK_GRAPH                                 :{ORANGE}*  *  PAUSED (waiting for link graph update) *  *
+STR_STATUSBAR_PASSENGER_ROUTES                                  :{YELLOW}Passenger routes: {NUM} / {NUM}
 STR_STATUSBAR_AUTOSAVE                                          :{RED}AUTOSAVE
 STR_STATUSBAR_SAVING_GAME                                       :{RED}*  *  SAVING GAME  *  *
 

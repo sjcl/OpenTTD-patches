@@ -1839,6 +1839,26 @@ void GameLoop()
 
 	DebugSendRemoteMessages();
 
+	/* Initial passenger trees are preparation, not simulation. Return to the
+	 * video/input loop between slices, including while the game is paused.
+	 * Network peers retain the deterministic per-frame builder until a shared
+	 * startup barrier is implemented; local readiness must not skip a frame. */
+	if (!_networking && _game_mode == GameMode::Normal && !HasModalProgress()) {
+		const auto started = std::chrono::steady_clock::now();
+		bool ready;
+		do {
+			ready = GetPassengerServiceDatabase().PreparePrecomputed();
+		} while (!ready && std::chrono::steady_clock::now() - started < std::chrono::milliseconds(8));
+		if (!ready) {
+			SetWindowDirty(WindowClass::Statusbar, 0);
+			ExecuteCommandQueue();
+			SoundDriver::GetInstance()->MainLoop();
+			MusicLoop();
+			SocialIntegration::RunCallbacks();
+			return;
+		}
+	}
+
 	if (_networking && !HasModalProgress()) {
 		/* Multiplayer */
 		NetworkGameLoop();

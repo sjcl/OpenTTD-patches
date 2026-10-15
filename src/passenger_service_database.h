@@ -150,14 +150,24 @@ public:
 	void Reset();
 	void Invalidate(OrderListID id = OrderListID::Invalid());
 	void TimetableChanged(OrderListID id); ///< Keep safe published timing until the next deterministic update epoch.
-	void Tick(size_t allowance = BUILD_WORK);
+	void Tick(size_t allowance = BUILD_WORK, bool build_precomputed = true);
 	void TickPrecomputed(size_t allowance = BUILD_WORK);
-	void DiscardPrecomputed() { this->precomputed = {}; this->precomputed_services.clear(); this->precomputed_revision = UINT64_MAX; this->precomputed_operations = 0; this->precomputed_invalidated = false; }
+	bool PreparePrecomputed(); ///< Single-player startup barrier: one bounded slice, without advancing StateTicks.
+	bool IsPreparingPrecomputed() const;
+	uint64_t GetPrecomputedPreparationNanoseconds() const { return this->precomputed_preparation_nanoseconds; }
+	void DiscardPrecomputed();
+	bool PrecomputedFinished() const;
 	bool HasRejectedPrecomputedMemory() const
 	{ return std::any_of(this->precomputed.begin(), this->precomputed.end(), [](const auto &table) { return table.MemoryRejected(); }); }
 	PassengerPrecomputedPlan PlanPrecomputed(CargoType cargo, StationID origin, StationID destination, StateTicks ready,
 			OrderListID excluded = OrderListID::Invalid(), uint32_t sample = 0) const;
-	PassengerPrecomputedDiagnostic GetPrecomputedDiagnostic(CargoType cargo) const { return this->precomputed[cargo].GetDiagnostic(); }
+	PassengerPrecomputedDiagnostic GetPrecomputedDiagnostic(CargoType cargo) const
+	{
+		auto result = this->precomputed[cargo].GetDiagnostic();
+		const auto &old = this->retained_precomputed[cargo].GetDiagnostic();
+		result.retained_destinations = old.destinations; result.retained_bytes = old.bytes; result.retained_envelope = old.envelope;
+		return result;
+	}
 	uint64_t GetPublishedRevision() const { return this->published_revision; }
 	OrderListID PrecomputedBoardingKey(CargoType cargo, OrderListID service) const { return this->precomputed[cargo].BoardingKey(service); }
 	bool RebindPrecomputed(PassengerJourneyExecution &ride, OrderListID service, CargoType cargo) const
@@ -211,14 +221,22 @@ private:
 	friend class PassengerSchedulePlanner;
 	PassengerSchedulePlanner schedule;
 	std::array<PassengerPrecomputedTable, NUM_CARGO> precomputed;
+	std::array<PassengerPrecomputedTable, NUM_CARGO> retained_precomputed;
+	std::map<OrderListID, PassengerPeriodicService> retained_precomputed_services;
+	uint64_t retained_precomputed_revision = UINT64_MAX;
+	int64_t retained_precomputed_transfer = 0;
 	std::map<OrderListID, PassengerPeriodicService> precomputed_services; ///< Frozen build input, saved independently of live publications.
 	uint64_t precomputed_revision = UINT64_MAX, precomputed_operations = 0;
 	int64_t precomputed_transfer = 0;
 	StateTicks precomputed_refresh{};
 	bool precomputed_invalidated = false;
 	bool legacy_precomputed_cursor = false; ///< v4/v5 row publication did not charge compact-label copies.
+	uint64_t precomputed_preparation_nanoseconds = 0; ///< Local CPU observation, never saved or used for admission.
 	void BeginPrecomputed(int64_t transfer);
 	void BuildPrecomputedTables();
+	void ClearRetainedPrecomputed();
+	void BuildPrecomputedTables(std::array<PassengerPrecomputedTable, NUM_CARGO> &tables,
+			const std::map<OrderListID, PassengerPeriodicService> &snapshot, int64_t transfer, uint64_t remaining);
 	using Dependencies = std::map<StationID, uint64_t>;
 	struct JourneyPolicy {
 		std::vector<std::pair<StationID, int64_t>> lower_bounds; ///< Relaxed reverse adjacent-stop distances, never winning routes.

@@ -235,7 +235,7 @@ void PassengerPrecomputedTable::StartDestination()
 	this->initializing_row = true; this->seeding = 0;
 }
 
-size_t PassengerPrecomputedTable::Step(size_t allowance, bool legacy_publication)
+size_t PassengerPrecomputedTable::Step(size_t allowance, bool legacy_publication, const std::function<void(StationID)> &published)
 {
 	const auto started = Clock::now(); size_t used = 0;
 	try {
@@ -283,7 +283,9 @@ size_t PassengerPrecomputedTable::Step(size_t allowance, bool legacy_publication
 						this->prepared.labels.push_back(this->scratch.labels[this->prepared.labels.size()]); continue;
 					}
 					this->prepared.alternative = std::move(this->scratch.alternative);
-					this->rows.push_back(std::move(this->prepared)); ++this->destination;
+					this->rows.push_back(std::move(this->prepared));
+					if (published) published(this->stations[this->destination]);
+					++this->destination;
 					this->diagnostic.destinations = this->destination;
 					if (!this->Finished()) this->StartDestination();
 				}
@@ -318,6 +320,18 @@ size_t PassengerPrecomputedTable::Step(size_t allowance, bool legacy_publication
 	return used;
 }
 
+void PassengerPrecomputedTable::ReleaseDestination(StationID destination)
+{
+	if (destination.base() >= this->station_index.size()) return;
+	uint32_t row = this->station_index[destination.base()];
+	if (row < this->rows.size() && !this->rows[row].labels.empty()) {
+		this->diagnostic.bytes -= std::min(this->diagnostic.bytes,
+				(this->rows[row].labels.capacity() + this->rows[row].alternative.capacity()) * sizeof(Label));
+		this->rows[row] = {};
+		--this->diagnostic.destinations;
+	}
+}
+
 PassengerPrecomputedPlan PassengerPrecomputedTable::Select(const Label &label, StateTicks ready, OrderListID excluded, uint32_t sample) const
 {
 	PassengerPrecomputedPlan result;
@@ -345,7 +359,7 @@ PassengerPrecomputedPlan PassengerPrecomputedTable::Plan(StationID origin, Stati
 		if (origin.base() >= this->station_index.size() || destination.base() >= this->station_index.size()) return {PassengerPrecomputedPlan::State::Unsupported};
 		uint32_t from = this->station_index[origin.base()], to = this->station_index[destination.base()];
 		if (from == INVALID || to == INVALID || from == to) return {this->unsupported ? PassengerPrecomputedPlan::State::Unsupported : PassengerPrecomputedPlan::State::NoRoute};
-		if (to >= this->rows.size()) return {PassengerPrecomputedPlan::State::Building};
+		if (to >= this->rows.size() || this->rows[to].labels.empty()) return {PassengerPrecomputedPlan::State::Building};
 		uint32_t previous = excluded.base() < this->service_pattern.size() ? this->service_pattern[excluded.base()] : INVALID;
 		uint32_t state = previous == INVALID ? from : this->StateFor(from, previous);
 		const auto &row = this->rows[to]; Label label = row.labels[state];

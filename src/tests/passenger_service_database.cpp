@@ -2297,7 +2297,7 @@ TEST_CASE("Precomputed active journeys bypass OD admission and survive partial-b
 	CHECK(GetPassengerJourneyTickDiagnostic().admission.used == 0);
 	CHECK(db.GetDiagnostic().searches == timed_searches);
 	CHECK(db.GetPrecomputedDiagnostic(PAX).hits >= 100);
-	auto wire = db.Save(); REQUIRE(wire[0] == 6);
+	auto wire = db.Save(); REQUIRE(wire[0] == 7);
 	PassengerServiceDatabase peer; REQUIRE(peer.Load(wire)); peer.FinishLoad(true);
 	CHECK(peer.Save() == wire);
 	CHECK(peer.PlanPrecomputed(PAX, A, D, NOW).ride == db.PlanPrecomputed(PAX, A, D, NOW).ride);
@@ -2507,4 +2507,76 @@ TEST_CASE("Precomputed generation capture retains large shared physical fleets",
 	REQUIRE(db.PlanPrecomputed(PAX, A, D, NOW).ride);
 	PassengerServiceDatabase peer; auto wire = db.Save(); REQUIRE(peer.Load(wire)); peer.FinishLoad(true);
 	CHECK(peer.Save() == wire); CHECK(peer.PlanPrecomputed(PAX, A, D, NOW).ride == db.PlanPrecomputed(PAX, A, D, NOW).ride);
+}
+
+TEST_CASE("Precomputed startup completes discovery and all rows without simulation", "[passenger][precomputed][startup]")
+{
+	Fixture f;
+	f.Train({Stop(A), Stop(B), Stop(C), Stop(D)});
+	_settings_game.linkgraph.passenger_journey_precomputed = true;
+	auto &db = GetPassengerServiceDatabase();
+	for (size_t slices = 0; !db.PreparePrecomputed(); ++slices) REQUIRE(slices < 1000);
+	CHECK(_state_ticks == NOW);
+	CHECK(db.PrecomputedFinished()); CHECK_FALSE(db.IsPreparingPrecomputed());
+	CHECK(db.GetPrecomputedDiagnostic(PAX).destinations == 4);
+	REQUIRE(db.PlanPrecomputed(PAX, A, D, NOW).ride);
+	auto wire = db.Save();
+	CHECK(db.PreparePrecomputed()); CHECK(db.Save() == wire);
+	PassengerServiceDatabase joined; REQUIRE(joined.Load(wire)); joined.FinishLoad(true);
+	CHECK(joined.Save() == wire); CHECK(joined.PreparePrecomputed());
+	CHECK(joined.PlanPrecomputed(PAX, A, D, NOW).ride == db.PlanPrecomputed(PAX, A, D, NOW).ride);
+}
+
+TEST_CASE("Precomputed replacement retains pending destination rows across every saved frontier", "[passenger][precomputed][generation][save]")
+{
+	Fixture f;
+	f.Train({Stop(A), Stop(B), Stop(C), Stop(D)});
+	auto &db = f.Build(); _settings_game.linkgraph.passenger_journey_precomputed = true;
+	while (!db.PreparePrecomputed()) {}
+	const auto old = db.PlanPrecomputed(PAX, A, D, NOW); REQUIRE(old.ride);
+	_settings_game.linkgraph.passenger_transfer_penalty = 17;
+	db.TickPrecomputed(1);
+	REQUIRE_FALSE(db.PrecomputedFinished()); CHECK_FALSE(db.IsPreparingPrecomputed());
+	CHECK(db.PlanPrecomputed(PAX, A, D, NOW).ride == old.ride);
+	PassengerServiceDatabase joined;
+	for (int i = 0; !db.PrecomputedFinished(); ++i) {
+		REQUIRE(i < 10000);
+		/* Loading at arbitrary row frontiers restores both inputs and retires
+		 * exactly the rows already replaced, without an extra routing pass. */
+		if (i % 19 == 0) {
+			auto wire = db.Save(); REQUIRE(joined.Load(wire)); joined.FinishLoad(true); CHECK(joined.Save() == wire);
+		}
+		for (StationID from : {A, B, C, D}) for (StationID to : {A, B, C, D}) if (from != to) {
+			auto plan = db.PlanPrecomputed(PAX, from, to, NOW); REQUIRE(plan.ride);
+		}
+		db.TickPrecomputed(1);
+	}
+	const auto completed = db.Save(); REQUIRE(joined.Load(completed)); joined.FinishLoad(true);
+	CHECK(joined.Save() == completed);
+	CHECK(db.PlanPrecomputed(PAX, A, D, NOW).cost == old.cost);
+	/* v6 had no retained-generation suffix. Its completed cursor still loads. */
+	auto v6 = completed; v6[0] = 6; v6.resize(v6.size() - 24);
+	REQUIRE(joined.Load(v6)); joined.FinishLoad(true);
+	CHECK(joined.Save() == completed);
+}
+
+TEST_CASE("Precomputed replacement coalesces edits and rejects only unsafe live rides", "[passenger][precomputed][generation]")
+{
+	Fixture f;
+	auto *first = f.Train({Stop(A), Stop(B)});
+	f.Train({Stop(C), Stop(D)});
+	auto &db = f.Build(); _settings_game.linkgraph.passenger_journey_precomputed = true;
+	while (!db.PreparePrecomputed()) {}
+	_settings_game.linkgraph.passenger_transfer_penalty = 17;
+	db.TickPrecomputed(1);
+	const auto operations = db.GetPrecomputedDiagnostic(PAX).operations;
+	db.Invalidate(first->orders->index);
+	CHECK_FALSE(db.PlanPrecomputed(PAX, A, B, NOW).ride);
+	REQUIRE(db.PlanPrecomputed(PAX, C, D, NOW).ride);
+	db.TickPrecomputed(1);
+	CHECK(db.GetPrecomputedDiagnostic(PAX).operations == operations + 1);
+	PassengerServiceDatabase joined; auto wire = db.Save(); REQUIRE(joined.Load(wire)); joined.FinishLoad(true);
+	CHECK(joined.Save() == wire);
+	CHECK_FALSE(joined.PlanPrecomputed(PAX, A, B, NOW).ride);
+	CHECK(joined.PlanPrecomputed(PAX, C, D, NOW).ride == db.PlanPrecomputed(PAX, C, D, NOW).ride);
 }

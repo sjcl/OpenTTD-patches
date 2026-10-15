@@ -4989,8 +4989,12 @@ static bool ConPassengerJourneyStats(std::span<std::string_view> argv)
 		const auto p = GetPassengerServiceDatabase().GetPrecomputedDiagnostic(cargo);
 		IConsolePrint(CC_DEFAULT, "Precomputed passenger routes: cargo={}; patterns={}; stations={}; states={}; edges={}; destinations={}; bytes={}; envelope={}; build_ns={}; operations={}; queries={}; query_ns={}; hits={}; missing={}; no_route={}",
 			cargo, p.patterns, p.stations, p.states, p.edges, p.destinations, p.bytes, p.envelope, p.build_nanoseconds, p.operations, p.queries, p.query_nanoseconds, p.hits, p.missing, p.no_route);
+		IConsolePrint(CC_DEFAULT, "Precomputed retained routes: cargo={}; destinations={}; bytes={}; envelope={}",
+				cargo, p.retained_destinations, p.retained_bytes, p.retained_envelope);
 	}
 	IConsolePrint(CC_DEFAULT, "Precomputed memory admission: rejected={}; shared_limit={}", GetPassengerServiceDatabase().HasRejectedPrecomputedMemory(), PassengerPrecomputedTable::MAX_BYTES);
+	IConsolePrint(CC_DEFAULT, "Precomputed initial preparation: pending={}; elapsed_ns={}; simulation_advanced=false",
+			GetPassengerServiceDatabase().IsPreparingPrecomputed(), GetPassengerServiceDatabase().GetPrecomputedPreparationNanoseconds());
 	IConsolePrint(CC_DEFAULT, "Journey inclusive scopes: waiting_us={}; fallback_distance_us={}; boarding_us={}", stats.waiting_microseconds, stats.fallback_distance_microseconds, stats.boarding_microseconds);
 	IConsolePrint(CC_DEFAULT, "Periodic pending age: ticks={}", periodic.maximum_pending_ticks);
 	IConsolePrint(CC_DEFAULT, "OD fallback cache: hits={}; bytes={}; work={}; searches={}", stats.od_fallback_cache_hits, stats.od_fallback_cache_bytes, stats.od_fallback_work, stats.od_fallback_searches);

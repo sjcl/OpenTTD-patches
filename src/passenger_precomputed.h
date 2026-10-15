@@ -10,6 +10,7 @@
 #include "passenger_journey_type.h"
 #include "cargo_type.h"
 #include <queue>
+#include <functional>
 
 struct PassengerPeriodicService;
 
@@ -27,6 +28,8 @@ struct PassengerPrecomputedDiagnostic {
 	size_t stations = 0, patterns = 0, states = 0, edges = 0, destinations = 0, stored_states = 0;
 	size_t bytes = 0;
 	uint64_t envelope = 0;
+	size_t retained_destinations = 0, retained_bytes = 0;
+	uint64_t retained_envelope = 0;
 };
 
 /** Mandatory derived state, independent of the optional Timed/Schedule caches.
@@ -39,9 +42,10 @@ struct PassengerPrecomputedDiagnostic {
 class PassengerPrecomputedTable {
 public:
 	static constexpr uint32_t INVALID = UINT32_MAX;
-	static constexpr uint64_t MAX_BYTES = uint64_t{8} * 1024 * 1024 * 1024;
+	static constexpr uint64_t MAX_BYTES = uint64_t{16} * 1024 * 1024 * 1024;
 	void Begin(std::span<const PassengerPeriodicService *const> services, CargoType cargo, int64_t transfer, uint64_t memory = MAX_BYTES);
-	size_t Step(size_t operations, bool legacy_publication = false);
+	size_t Step(size_t operations, bool legacy_publication = false, const std::function<void(StationID)> &published = {});
+	void ReleaseDestination(StationID destination); ///< Retire a row immediately after its replacement is published.
 	uint64_t LegacyPublicationWork() const { return uint64_t(this->rows.size()) * this->waiting_state_count; }
 	PassengerPrecomputedPlan Plan(StationID origin, StationID destination, StateTicks ready, OrderListID excluded = OrderListID::Invalid(), uint32_t sample = 0) const;
 	bool Finished() const { return this->failed || this->destination == this->stations.size(); }

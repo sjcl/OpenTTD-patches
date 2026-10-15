@@ -146,6 +146,22 @@ TEST_CASE("Precomputed published rows retain only query states", "[passenger][pr
 	CHECK(table.Plan(A, D, StateTicks{}).ride->alighting == D);
 }
 
+TEST_CASE("Precomputed replacement retires rows at publication without retaining two matrices", "[passenger][precomputed][memory]")
+{
+	std::array services{Service(0, {A, B, C, D})};
+	auto old = Build(services);
+	std::vector<const PassengerPeriodicService *> records{&services[0]};
+	PassengerPrecomputedTable replacement; replacement.Begin(records, PAX, 30);
+	size_t published = 0;
+	while (!replacement.Finished()) replacement.Step(1, false, [&](StationID destination) {
+		old.ReleaseDestination(destination); ++published;
+		CHECK(old.GetDiagnostic().destinations + published == 4);
+		CHECK(old.Plan(destination == A ? B : A, destination, StateTicks{}).state == PassengerPrecomputedPlan::State::Building);
+	});
+	CHECK(published == 4); CHECK(old.GetDiagnostic().destinations == 0);
+	CHECK(old.GetDiagnostic().bytes < replacement.GetDiagnostic().bytes);
+}
+
 TEST_CASE("Precomputed legacy cursors map to the same compact publication frontier", "[passenger][precomputed][determinism][save]")
 {
 	std::array services{Service(0, {A, B}), Service(1, {B, C}), Service(2, {C, D}), Service(3, {A, D}, 500)};
