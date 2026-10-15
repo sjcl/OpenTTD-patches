@@ -51,6 +51,8 @@ def main():
     if len(set(intervals)) != 1:
         raise ValueError(f"Different inputs or StateTicks intervals: {intervals}")
     for index, (directory, process) in enumerate(zip(directories, processes)):
+        if process.get("focused_od_trace"):
+            raise ValueError(f"Focused OD sampling cannot be mixed with the ordinary population sample: {directory}")
         if process["exit_code"] or process["load_failed"] or (index == 2 and process["contamination"]) or not process["save-integrity.json"]["payments_valid"]:
             raise ValueError(f"Invalid physical run: {directory}")
     runs = [transport.summarize(directory) for directory in directories]
