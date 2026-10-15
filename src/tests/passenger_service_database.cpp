@@ -43,6 +43,34 @@ namespace {
 		order.SetWaitTime(wait); order.SetWaitTimetabled(true);
 		return order;
 	}
+	/** Produce the actual pre-estimate record layout for compatibility fixtures.
+	 * Only certified services are used here; dropping estimates is never a
+	 * production save operation. Counts are parsed instead of guessing offsets. */
+	std::vector<uint8_t> LegacyDatabaseWire(const std::vector<uint8_t> &wire, uint8_t version = 8)
+	{
+		REQUIRE(wire[0] == 9); REQUIRE((version == 3 || version == 8));
+		std::vector<uint8_t> old; size_t cursor = 0;
+		auto value = [&]() { REQUIRE(cursor + 8 <= wire.size()); uint64_t v = 0; for (size_t i = 0; i < 8; ++i) v |= uint64_t{wire[cursor++]} << (8 * i); return v; };
+		auto copy = [&]() { size_t start = cursor; auto v = value(); old.insert(old.end(), wire.begin() + start, wire.begin() + cursor); return v; };
+		auto words = [&](size_t n) { while (n-- != 0) copy(); };
+		auto service = [&]() {
+			words(4); REQUIRE(value() == 0); // No estimated circuit in these fixtures.
+			for (uint64_t n = copy(); n != 0; --n) { words(7); REQUIRE(value() == 1); REQUIRE(value() == 0); }
+			for (uint64_t n = copy(); n != 0; --n) words(4 + NUM_CARGO);
+			words(4); auto slots = copy(); words(static_cast<size_t>(slots)); copy();
+		};
+		copy(); old[0] = version; words(5);
+		auto dirty = copy(); words(static_cast<size_t>(dirty) * 2);
+		for (uint64_t n = copy(); n != 0; --n) service();
+		words(4); auto pending = copy(); words(static_cast<size_t>(pending) * 2);
+		auto unsafe = copy(); words(static_cast<size_t>(unsafe));
+		for (uint64_t n = copy(); n != 0; --n) { service(); copy(); }
+		if (version == 3) return old;
+		words(5); for (uint64_t n = copy(); n != 0; --n) service();
+		words(2); for (uint64_t n = copy(); n != 0; --n) service();
+		words(2); value(); value(); REQUIRE(cursor == wire.size());
+		return old;
+	}
 	struct PeriodicTrain : Vehicle {
 		PeriodicTrain(VehicleID id, std::vector<Order> orders) : Vehicle(id, VehicleType::Train)
 		{
@@ -121,6 +149,105 @@ namespace {
 		}
 		return result;
 	}
+}
+
+TEST_CASE("Incomplete timetables retain concrete estimated rides and indexed loading", "[passenger][precomputed][estimated][active][save]")
+{
+	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = true;
+	std::vector<Order> orders{Stop(A, 100, 10), Stop(B, 120, 20), Stop(D, 80, 10)};
+	SECTION("Only certification flags are missing") { for (auto &order : orders) { order.SetTravelTimetabled(false); order.SetWaitTimetabled(false); } }
+	SECTION("One section has no travel measurement") { orders[1].SetTravelTime(0); orders[1].SetTravelTimetabled(false); }
+	SECTION("Only the return circuit is unknown") { orders[0].SetTravelTimetabled(false); }
+	SECTION("Waypoint and regular depot retain continuity") {
+		Order waypoint; waypoint.MakeGoToWaypoint(C); waypoint.SetTravelTime(30);
+		Order depot; depot.MakeGoToDepot(DepotID{0}, {OrderDepotTypeFlag::PartOfOrders}); depot.SetTravelTime(20);
+		orders.insert(orders.begin() + 1, waypoint); orders.insert(orders.begin() + 2, depot);
+	}
+	auto *train = f.Train(orders); auto &db = f.Build(); while (!db.PreparePrecomputed()) {}
+	const auto *service = db.Get(train->orders->index); REQUIRE(service);
+	CHECK(service->timetable.GetCertainty() == PassengerPeriodicTimetable::Certainty::Estimated);
+	CHECK(service->timetable.period == 0); CHECK(service->timetable.estimated_period > 0);
+	CHECK_FALSE(service->vehicles[0].phase_known); CHECK_FALSE(db.Plan(PAX, A, D, NOW).ride);
+	auto plan = db.PlanPrecomputed(PAX, A, D, NOW); REQUIRE(plan.ride); CHECK(plan.estimated_service);
+	CHECK(plan.ride->boarding_order == 0); CHECK(plan.ride->alighting_order == orders.size() - 1);
+	CHECK(plan.ride->departure == StateTicks{}); CHECK(plan.ride->arrival == StateTicks{}); CHECK(plan.transfers == 0);
+	const auto wire = db.Save(); PassengerServiceDatabase peer; REQUIRE(peer.Load(wire)); peer.FinishLoad(true, true);
+	while (peer.StepLoad(7) == PassengerServiceDatabase::LoadState::Replaying) {}
+	REQUIRE(peer.GetLoadState() == PassengerServiceDatabase::LoadState::Ready);
+	CHECK(peer.Save() == wire); CHECK(peer.PlanPrecomputed(PAX, A, D, NOW).ride == plan.ride);
+	auto &waiting = Station::Get(A)->goods[PAX].CreateData().cargo; auto *packet = f.Packet(); waiting.Append(packet, D);
+	waiting.RoutePassengerJourneys(PAX, A); REQUIRE(packet->GetPassengerRoutingMode() == PassengerRoutingMode::Journey);
+	const auto searches = db.GetDiagnostic().searches;
+	PassengerJourneyLoadingContext loading; std::array<StationID, 1> next{D};
+	CHECK(waiting.Load(10, &train->cargo, next, TileIndex{0}, train, &loading) == 10);
+	CHECK(packet->GetPassengerJourney().kind == PassengerRideKind::EstimatedBoundService);
+	CHECK(db.GetDiagnostic().searches == searches);
+	train->LoadAt(static_cast<VehicleOrderID>(orders.size() - 1));
+	PassengerJourneyActiveContext arrived(train, D);
+	CHECK(arrived.Decide(*packet, PAX, true, OrderUnloadType::UnloadIfPossible) == VehicleCargoList::MoveToAction::Deliver);
+}
+
+TEST_CASE("Estimated patterns cut unsafe controls and preserve safe partial stretches", "[passenger][precomputed][estimated][orders]")
+{
+	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = true;
+	Order control; control.MakeConditional(0);
+	SECTION("Conditional jump") {}
+	SECTION("Refit depot") { control.MakeGoToDepot(DepotID{0}, {OrderDepotTypeFlag::PartOfOrders}); control.SetRefit(PAX); }
+	SECTION("Halt depot") { control.MakeGoToDepot(DepotID{0}, {OrderDepotTypeFlag::PartOfOrders}); control.SetDepotActionType(ODATFB_HALT); }
+	SECTION("Sell depot") { control.MakeGoToDepot(DepotID{0}, {OrderDepotTypeFlag::PartOfOrders}); control.SetDepotActionType(ODATFB_SELL); }
+	auto *train = f.Train({Stop(A), Stop(B), control, Stop(C), Stop(D)});
+	auto &db = f.Build(); while (!db.PreparePrecomputed()) {}
+	const auto &t = db.Get(train->orders->index)->timetable;
+	REQUIRE(t.stops.size() == 4); CHECK_FALSE(t.stops[1].continues);
+	REQUIRE(db.PlanPrecomputed(PAX, A, B, NOW).ride); REQUIRE(db.PlanPrecomputed(PAX, C, D, NOW).ride);
+	CHECK_FALSE(db.PlanPrecomputed(PAX, A, D, NOW).ride);
+	CHECK_FALSE(db.PlanPrecomputed(PAX, B, C, NOW).ride);
+	auto safe = db.PlanPrecomputed(PAX, C, D, NOW); REQUIRE(safe.ride); train->LoadAt(3);
+	CHECK(ValidatePassengerServiceRide(*safe.ride, train, PAX, true));
+	train->LoadAt(0); auto forged = *safe.ride; forged.boarding = A; forged.boarding_order = 0;
+	CHECK_FALSE(ValidatePassengerServiceRide(forged, train, PAX, true));
+}
+
+TEST_CASE("Estimated durations preserve measured sections and use deterministic mode costs", "[passenger][precomputed][estimated][cost]")
+{
+	Fixture f;
+	std::vector<Order> orders{Stop(A), Stop(B, 120), Stop(D, 80)};
+	f.Train(orders);
+	orders[0].SetTravelTimetabled(false);
+	for (auto type : {VehicleType::Train, VehicleType::Road, VehicleType::Ship, VehicleType::Aircraft}) {
+		auto table = PassengerPeriodicTimetable::CompileEstimated(orders, type);
+		REQUIRE(table.stops.size() == 3); CHECK(table.period == 0); CHECK(table.estimated_period == 330);
+		CHECK(table.stops[1].arrival - table.stops[0].departure == 120); CHECK(table.stops[1].travel_quality == 0);
+		CHECK(table.stops[0].travel_quality == 1);
+	}
+	orders[1].SetTravelTime(0); orders[1].SetTravelTimetabled(false);
+	auto train = PassengerPeriodicTimetable::CompileEstimated(orders, VehicleType::Train);
+	auto bus = PassengerPeriodicTimetable::CompileEstimated(orders, VehicleType::Road);
+	auto ship = PassengerPeriodicTimetable::CompileEstimated(orders, VehicleType::Ship);
+	CHECK(train.stops[1].travel_quality == 2);
+	CHECK(train.estimated_period < bus.estimated_period); CHECK(bus.estimated_period < ship.estimated_period);
+	for (auto &order : orders) { order.SetTravelTime(0); order.SetWaitTime(0); order.SetTravelTimetabled(true); order.SetWaitTimetabled(true); }
+	CHECK(PassengerPeriodicTimetable::Compile(orders).period == 0);
+	CHECK(PassengerPeriodicTimetable::CompileEstimated(orders, VehicleType::Train).estimated_period > 0);
+}
+
+TEST_CASE("Estimated boarding rechecks changed orders cargo facilities and generations", "[passenger][precomputed][estimated][boarding]")
+{
+	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = true;
+	auto a = Stop(A); a.SetTravelTimetabled(false);
+	auto *train = f.Train({a, Stop(B), Stop(D)}); auto &db = f.Build(); while (!db.PreparePrecomputed()) {}
+	auto plan = db.PlanPrecomputed(PAX, A, D, NOW); REQUIRE(plan.ride);
+	REQUIRE(ValidatePassengerServiceRide(*plan.ride, train, PAX, true));
+	SECTION("NoLoad") { train->GetOrder(0)->SetLoadType(OrderLoadType::NoLoad); }
+	SECTION("NoUnload") { train->GetOrder(2)->SetUnloadType(OrderUnloadType::NoUnload); }
+	SECTION("Forced intermediate transfer") { train->GetOrder(1)->SetUnloadType(OrderUnloadType::Transfer); }
+	SECTION("Refit") { train->GetOrder(1)->SetRefit(PAX); }
+	SECTION("Facilities") { Station::Get(D)->facilities.Reset(StationFacility::Train); }
+	SECTION("Capacity") { train->cargo_cap = 0; }
+	SECTION("Generation") { db.Invalidate(train->orders->index); }
+	SECTION("Transfer ready time") { plan.ride->not_before = NOW + 1; }
+	SECTION("Wrong current occurrence") { train->LoadAt(1); }
+	CHECK_FALSE(ValidatePassengerServiceRide(*plan.ride, train, PAX, true));
 }
 
 TEST_CASE("Timed completion diagnostics preserve the legacy Work boundaries", "[passenger][periodic][anytime][determinism]")
@@ -1085,7 +1212,7 @@ TEST_CASE("Periodic scheduler progress and captured phases survive save and join
 TEST_CASE("Periodic database rejects malformed and oversized saved state", "[passenger][periodic][save]")
 {
 	Fixture f; f.Train({Stop(A), Stop(D)}); auto &db = f.Build(); auto wire = db.Save(); PassengerServiceDatabase other;
-	wire.pop_back(); CHECK_FALSE(other.Load(wire)); wire = db.Save(); wire[0] = 9; CHECK_FALSE(other.Load(wire));
+	wire.pop_back(); CHECK_FALSE(other.Load(wire)); wire = db.Save(); wire[0] = 10; CHECK_FALSE(other.Load(wire));
 	CHECK(other.GetDiagnostic().services == 0);
 }
 
@@ -1781,7 +1908,7 @@ TEST_CASE("Schedule reads old periodic wire state and unresolved dispatch circui
 	auto wire = db.Save(); PassengerServiceDatabase peer; REQUIRE(peer.Load(wire)); peer.FinishLoad(true);
 	CHECK(peer.PlanEstimated(PAX, A, D, NOW).ride == plan.ride);
 	/* Version one had the same record prefix without the final dispatch estimate. */
-	wire.resize(wire.size() - 7 * 8); wire[0] = 1; wire.resize(wire.size() - 8); REQUIRE(peer.Load(wire)); peer.FinishLoad(true);
+	wire = LegacyDatabaseWire(wire, 3); wire.resize(wire.size() - 7 * 8); wire[0] = 1; wire.resize(wire.size() - 8); REQUIRE(peer.Load(wire)); peer.FinishLoad(true);
 	CHECK(peer.Get(v->orders->index) == nullptr); CHECK(peer.GetDiagnostic().pending != 0);
 	peer.Tick(); REQUIRE(peer.Get(v->orders->index) != nullptr);
 	CHECK(peer.Get(v->orders->index)->uncertain_dispatch_period == 2000); CHECK(peer.PlanEstimated(PAX, A, D, NOW).ride.has_value());
@@ -2299,7 +2426,7 @@ TEST_CASE("Precomputed active journeys bypass OD admission and survive partial-b
 	CHECK(db.GetDiagnostic().searches == timed_searches);
 	CHECK(db.GetPrecomputedDiagnostic(PAX).hits == 1);
 	CHECK(GetPassengerJourneyTickDiagnostic().query_cache_hits == 99);
-	auto wire = db.Save(); REQUIRE(wire[0] == 8);
+	auto wire = db.Save(); REQUIRE(wire[0] == 9);
 	PassengerServiceDatabase peer; REQUIRE(peer.Load(wire)); peer.FinishLoad(true);
 	CHECK(peer.Save() == wire);
 	CHECK(peer.PlanPrecomputed(PAX, A, D, NOW).ride == db.PlanPrecomputed(PAX, A, D, NOW).ride);
@@ -2737,7 +2864,7 @@ TEST_CASE("Precomputed waiting events survive save tables without inventing a ro
 	AutoRestoreBackup static_features{_sl_xv_feature_static_versions, AutoRestoreBackupNoNewValueTag{}};
 	SlXvSetStaticCurrentVersions(); _sl_xv_feature_versions = _sl_xv_feature_static_versions;
 	bool legacy = false;
-	SECTION("Current packet-event save") { REQUIRE(_sl_xv_feature_versions[XSLFI_PASSENGER_PERIODIC] == 10); }
+	SECTION("Current packet-event save") { REQUIRE(_sl_xv_feature_versions[XSLFI_PASSENGER_PERIODIC] == 11); }
 	SECTION("v9 packet events predate the boarding cursor") { _sl_xv_feature_versions[XSLFI_PASSENGER_PERIODIC] = 9; }
 	SECTION("v8 common-section save has no packet-event fields") { legacy = true; _sl_xv_feature_versions[XSLFI_PASSENGER_PERIODIC] = 8; }
 	GoodsEntry source{}, loaded{}; source.CreateData(); loaded.CreateData();
@@ -3333,7 +3460,7 @@ TEST_CASE("Precomputed pre-section cursors replay the old graph before upgrading
 	f.Train({Stop(A), Stop(B), Stop(C)});
 	auto &db = f.Build(); _settings_game.linkgraph.passenger_journey_precomputed = true;
 	db.TickPrecomputed(1);
-	auto old = db.Save(); old.resize(old.size() - 16); old[0] = 7;
+	auto old = LegacyDatabaseWire(db.Save()); old.resize(old.size() - 16); old[0] = 7;
 	SECTION("v6 without a retained generation") { old.resize(old.size() - 24); old[0] = 6; }
 	SECTION("v7 with a retained-generation suffix") {}
 	PassengerServiceDatabase migrated; REQUIRE(migrated.Load(old)); migrated.FinishLoad(true, true);
@@ -3406,9 +3533,9 @@ TEST_CASE("Precomputed sliced replay rejects impossible cursors and migrates leg
 {
 	Fixture f; f.Train({Stop(A), Stop(B), Stop(C), Stop(D)});
 	auto &db = f.Build();
-	const size_t cursor_offset = db.Save().size(); // v3 prefix precedes the precomputed extension.
+	const size_t cursor_offset = LegacyDatabaseWire(db.Save(), 3).size(); // v3 prefix precedes the precomputed extension.
 	_settings_game.linkgraph.passenger_journey_precomputed = true; db.TickPrecomputed(1);
-	auto wire = db.Save(); REQUIRE(wire.size() > cursor_offset + 8);
+	auto wire = LegacyDatabaseWire(db.Save()); REQUIRE(wire.size() > cursor_offset + 8);
 	SECTION("Invalid work never authorizes simulation") {
 		for (size_t i = 0; i < 8; ++i) wire[cursor_offset + i] = 255;
 		wire[cursor_offset] = 254; // UINT64_MAX is the separate 'not started' sentinel.
@@ -3427,7 +3554,7 @@ TEST_CASE("Precomputed sliced replay rejects impossible cursors and migrates leg
 		while (peer.StepLoad(1) == PassengerServiceDatabase::LoadState::Replaying) CHECK(peer.Save() == legacy);
 		CHECK(peer.GetLoadState() == PassengerServiceDatabase::LoadState::Ready);
 		auto upgraded = wire; upgraded[upgraded.size() - 16] = 0;
-		CHECK(peer.Save() == upgraded);
+		CHECK(LegacyDatabaseWire(peer.Save()) == upgraded);
 	}
 }
 

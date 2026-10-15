@@ -22,6 +22,7 @@ struct PassengerPrecomputedPlan {
 	std::optional<PassengerJourneyExecution> ride;
 	int64_t cost = 0, riding = 0, waiting = 0;
 	uint32_t distance = 0, transfers = 0;
+	bool estimated_service = false; ///< First carrier has an incomplete timetable; no certified departure exists.
 };
 
 struct PassengerPrecomputedDiagnostic {
@@ -30,6 +31,7 @@ struct PassengerPrecomputedDiagnostic {
 	size_t stations = 0, patterns = 0, states = 0, edges = 0, destinations = 0, stored_states = 0;
 	size_t bytes = 0;
 	size_t shared_sections = 0, section_rides = 0; ///< Build-time estimates and concrete, non-spliceable rides.
+	size_t certified_patterns = 0, estimated_patterns = 0;
 	uint64_t envelope = 0;
 	size_t retained_destinations = 0, retained_bytes = 0;
 	uint64_t retained_envelope = 0;
@@ -49,7 +51,7 @@ class PassengerPrecomputedTable {
 public:
 	static constexpr uint32_t INVALID = UINT32_MAX;
 	static constexpr uint64_t MAX_BYTES = uint64_t{16} * 1024 * 1024 * 1024;
-	void Begin(std::span<const PassengerPeriodicService *const> services, CargoType cargo, int64_t transfer, uint64_t memory = MAX_BYTES, bool sections = true, bool cooperative = false, std::shared_ptr<uint64_t> memory_budget = {});
+	void Begin(std::span<const PassengerPeriodicService *const> services, CargoType cargo, int64_t transfer, uint64_t memory = MAX_BYTES, bool sections = true, bool cooperative = false, std::shared_ptr<uint64_t> memory_budget = {}, bool estimates = true);
 	bool PrepareGraph(size_t quantum = 1024);
 	bool IsPreparingGraph() const { return static_cast<bool>(this->graph_build); }
 	uint64_t GetGraphWork() const { return this->graph_work; }
@@ -77,10 +79,11 @@ private:
 		std::vector<uint32_t> occurrences;
 		int64_t wait = 0, circuit = 0, risk = 0;
 		uint64_t weight = 1;
+		bool estimated = false;
 	};
-	struct Occurrence { StationID station; VehicleOrderID order; uint32_t pattern, arrival, departure; bool board, alight, forced; };
+	struct Occurrence { StationID station; VehicleOrderID order; uint32_t pattern, arrival, departure; bool board, alight, forced, continues; };
 	enum class EdgeKind : uint8_t { Board, Ride, Wait, Alight, Section };
-	struct Edge { uint32_t from, to, occurrence; int64_t cost; uint32_t distance; EdgeKind kind; };
+	struct Edge { uint32_t from, to, occurrence; int64_t cost; uint32_t distance; EdgeKind kind; int64_t uncertainty; };
 	struct SectionRide { uint32_t board, alight; int64_t riding, waiting, cost; };
 	struct SectionBinding { uint32_t board, alight; };
 	struct Section { uint64_t key; std::vector<SectionBinding> bindings; };
@@ -118,6 +121,7 @@ private:
 	bool initializing_row = false;
 	size_t seeding = 0;
 	bool failed = false, unsupported = false;
+	bool estimates = true;
 	CargoType cargo = INVALID_CARGO;
 	PassengerBuildTask graph_build; ///< Derived preparation only. No row can be published until this completes.
 	uint64_t graph_work = 0; ///< Actual coroutine steps, used only for bounded join progress reports.
@@ -127,7 +131,7 @@ private:
 	const Member *FindMember(OrderListID service) const;
 	const Section *FindSection(const PassengerJourneyExecution &ride) const;
 	void StartDestination();
-	void AddEdge(uint32_t from, uint32_t to, int64_t cost, EdgeKind kind, uint32_t occurrence = INVALID, uint32_t distance = 0);
+	void AddEdge(uint32_t from, uint32_t to, int64_t cost, EdgeKind kind, uint32_t occurrence = INVALID, uint32_t distance = 0, int64_t uncertainty = 0);
 	PassengerBuildTask BuildSections(const std::vector<std::vector<const PassengerPeriodicService *>> &members, int64_t transfer,
 			size_t &nodes, uint64_t &envelope, uint64_t memory, bool cooperative, bool &success);
 	PassengerPrecomputedPlan Select(const Label &label, StateTicks ready, OrderListID excluded, uint32_t sample) const;

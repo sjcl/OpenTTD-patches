@@ -23,6 +23,8 @@ struct PassengerPeriodicStop {
 	VehicleOrderID order = INVALID_VEH_ORDER_ID;
 	int64_t arrival = 0, departure = 0;
 	uint64_t board = 0, alight = 0, forced = 0; ///< Cargo-slot masks, independent of cargo labels.
+	bool continues = true; ///< Safe order traversal from this occurrence to the next, including wraparound.
+	uint8_t travel_quality = 0; ///< Incoming segment: 0 declared, 1 recorded, 2 distance estimate.
 	bool operator==(const PassengerPeriodicStop &) const = default;
 };
 
@@ -31,8 +33,13 @@ struct PassengerPeriodicStop {
 struct PassengerPeriodicTimetable {
 	std::vector<PassengerPeriodicStop> stops; ///< Physical station events; zero exchange masks stay for phases, dispatch and saved occurrence IDs.
 	int64_t period = 0;
+	int64_t estimated_period = 0; ///< Duration estimate only. Never supplied to NextDeparture or phase capture.
+	enum class Certainty : uint8_t { Unsupported, Estimated, Certified };
+	Certainty GetCertainty() const { return this->period > 0 ? Certainty::Certified : this->estimated_period > 0 ? Certainty::Estimated : Certainty::Unsupported; }
+	int64_t Circuit() const { return this->period > 0 ? this->period : this->estimated_period; }
 	enum class Failure : uint8_t { None, Control, Refit, Travel, Wait, Overflow, ZeroPeriod, TooFewStops, End };
 	static PassengerPeriodicTimetable Compile(std::span<const Order> orders, Failure *failure = nullptr);
+	static PassengerPeriodicTimetable CompileEstimated(std::span<const Order> orders, VehicleType type);
 	static std::optional<StateTicks> NextDeparture(StateTicks base, int64_t offset, int64_t period, StateTicks ready);
 	bool operator==(const PassengerPeriodicTimetable &) const = default;
 };
@@ -249,6 +256,7 @@ private:
 	bool precomputed_invalidated = false;
 	bool legacy_precomputed_cursor = false; ///< v4/v5 row publication did not charge compact-label copies.
 	bool precomputed_sections = true, retained_precomputed_sections = true; ///< Saved graph algorithm for exact pre-v8 cursor replay.
+	bool precomputed_estimates = true, retained_precomputed_estimates = true; ///< Exact replay of pre-v9 costs and route dispersion.
 	uint64_t boarding_revision = 0; ///< Event-local validation invalidation; never saved or used for simulation admission.
 	uint64_t precomputed_preparation_nanoseconds = 0; ///< Local elapsed observation, never saved or used for admission.
 	PassengerBuildTask preparation_capture;
@@ -258,7 +266,7 @@ private:
 	void BuildPrecomputedTables();
 	void ClearRetainedPrecomputed();
 	void BuildPrecomputedTables(std::array<PassengerPrecomputedTable, NUM_CARGO> &tables,
-			const std::map<OrderListID, PassengerPeriodicService> &snapshot, int64_t transfer, uint64_t remaining, bool sections, bool cooperative = false);
+			const std::map<OrderListID, PassengerPeriodicService> &snapshot, int64_t transfer, uint64_t remaining, bool sections, bool estimates, bool cooperative = false);
 	using Dependencies = std::map<StationID, uint64_t>;
 	struct JourneyPolicy {
 		std::vector<std::pair<StationID, int64_t>> lower_bounds; ///< Relaxed reverse adjacent-stop distances, never winning routes.

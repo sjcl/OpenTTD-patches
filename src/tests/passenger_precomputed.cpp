@@ -131,6 +131,68 @@ TEST_CASE("Precomputed incoming service states rescue routes beyond fixed K", "[
 	CHECK(station == D); CHECK(legs <= 2);
 }
 
+TEST_CASE("Estimated connector replaces a large certified detour in mixed and untimed networks", "[passenger][precomputed][estimated][quality]")
+{
+	std::array services{Service(0, {A, B}, 40), Service(1, {B, D}, 40), Service(2, {A, C}, 1000), Service(3, {C, D}, 1000)};
+	auto untimed = [](auto &s) { s.timetable.estimated_period = s.timetable.period; s.timetable.period = 0; for (auto &v : s.vehicles) v.phase_known = false; };
+	SECTION("All certified") {}
+	SECTION("Mixed connector has only unconfirmed measurements") { untimed(services[1]); services[1].timetable.stops[1].travel_quality = 1; }
+	SECTION("Every timetable is incomplete") { for (auto &s : services) untimed(s); }
+	SECTION("Cross mode transfer") { untimed(services[1]); services[1].vehicles[0].type = VehicleType::Road; }
+	auto table = Build(services, 7); auto plan = table.Plan(A, D, StateTicks{}); REQUIRE(plan.ride);
+	CHECK(plan.ride->service == OrderListID{0}); CHECK(plan.ride->alighting == B); CHECK(plan.transfers == 1); CHECK(plan.riding == 80);
+	auto connector = table.Plan(B, D, StateTicks{}, OrderListID{0}); REQUIRE(connector.ride);
+	CHECK(connector.ride->service == OrderListID{1}); CHECK(connector.ride->alighting_order == 1);
+	CHECK(plan.cost < 500); CHECK(table.GetDiagnostic().estimated_patterns + table.GetDiagnostic().certified_patterns == table.GetDiagnostic().patterns);
+}
+
+TEST_CASE("Unknown phases receive bounded fleet credit without absolute departures", "[passenger][precomputed][estimated][frequency]")
+{
+	std::array services{Service(0, {A, D}, 100)};
+	auto &s = services[0]; s.timetable.estimated_period = s.timetable.period; s.timetable.period = 0; s.vehicles[0].phase_known = false;
+	auto baseline = Build(services).Plan(A, D, StateTicks{}); REQUIRE(baseline.ride); CHECK(baseline.ride->estimated_wait == 165);
+	for (uint32_t i = 1; i < 16; ++i) { auto v = s.vehicles[0]; v.id = VehicleID{i}; s.vehicles.push_back(v); }
+	auto fleet = Build(services); auto plan = fleet.Plan(A, D, StateTicks{999}); REQUIRE(plan.ride);
+	CHECK(plan.ride->estimated_wait == 42); CHECK(plan.estimated_service);
+	CHECK(plan.ride->departure == StateTicks{}); CHECK(plan.ride->arrival == StateTicks{});
+	CHECK(plan.ride->waiting_limit == baseline.ride->waiting_limit); // Deadlines are not shortened to conceal a missed service.
+	CHECK(fleet.GetDiagnostic().states == Build(services).GetDiagnostic().states);
+}
+
+TEST_CASE("Estimated masks and unsafe segment boundaries cannot invent a through ride", "[passenger][precomputed][estimated][orders]")
+{
+	std::array services{Service(0, {A, B, C, D}), Service(1, {B, C, D}, 150)};
+	for (auto &s : services) { s.timetable.estimated_period = s.timetable.period; s.timetable.period = 0; s.vehicles[0].phase_known = false; }
+	SECTION("NoLoad") { services[0].timetable.stops[0].board = 0; CHECK_FALSE(Build(services).Plan(A, D, StateTicks{}).ride); }
+	SECTION("NoUnload") { services[0].timetable.stops[3].alight = 0; services[1].timetable.stops[2].alight = 0; CHECK_FALSE(Build(services).Plan(A, D, StateTicks{}).ride); }
+	SECTION("Forced transfer") {
+		services[0].timetable.stops[1].forced = 1; services[0].timetable.stops[1].board = 0;
+		auto plan = Build(services).Plan(A, D, StateTicks{}); REQUIRE(plan.ride); CHECK(plan.ride->alighting == B); CHECK(plan.transfers == 1);
+	}
+	SECTION("Control boundary inside a shared prefix") {
+		services[0].timetable.stops[1].continues = services[1].timetable.stops[0].continues = false;
+		auto table = Build(services); CHECK_FALSE(table.Plan(A, D, StateTicks{}).ride); REQUIRE(table.Plan(C, D, StateTicks{}).ride);
+	}
+}
+
+TEST_CASE("Estimated common sections retain real short turn express and occurrence contracts", "[passenger][precomputed][estimated][sections]")
+{
+	std::array services{Service(0, {A, B, C, D}), Service(1, {A, B, C}), Service(2, {A, C, D}, 60)};
+	for (auto &s : services) { s.timetable.estimated_period = s.timetable.period; s.timetable.period = 0; s.vehicles[0].phase_known = false; }
+	auto table = Build(services); REQUIRE(table.GetDiagnostic().shared_sections > 0);
+	for (uint32_t sample : {0U, 123456789U, UINT32_MAX}) {
+		auto through = table.Plan(A, D, StateTicks{}, OrderListID::Invalid(), sample); REQUIRE(through.ride);
+		if (through.transfers == 0) CHECK(through.ride->service != OrderListID{1});
+		auto local = table.Plan(A, B, StateTicks{}, OrderListID::Invalid(), sample); REQUIRE(local.ride);
+		CHECK(local.ride->service != OrderListID{2});
+		auto rebound = *local.ride; CHECK_FALSE(table.Rebind(rebound, OrderListID{2}, 0));
+	}
+	services[0] = Service(0, {A, B, A, D});
+	services[0].timetable.estimated_period = services[0].timetable.period; services[0].timetable.period = 0; services[0].vehicles[0].phase_known = false;
+	std::array repeated{services[0]}; auto repeat = Build(repeated).Plan(A, D, StateTicks{}); REQUIRE(repeat.ride);
+	CHECK(repeat.ride->boarding_order == 2); CHECK(repeat.ride->alighting_order == 3);
+}
+
 TEST_CASE("Precomputed identical fleets aggregate without synthetic headways", "[passenger][precomputed]")
 {
 	std::array services{Service(0, {A, D}), Service(1, {A, D})};
@@ -144,7 +206,9 @@ TEST_CASE("Precomputed identical fleets aggregate without synthetic headways", "
 	CHECK(fleet.GetDiagnostic().edges == table.GetDiagnostic().edges); CHECK(fleet.Plan(A, D, StateTicks{}).waiting == baseline.waiting);
 	auto excluded = fleet.Plan(A, D, StateTicks{}, OrderListID{1}); REQUIRE(excluded.ride); CHECK(excluded.ride->service == OrderListID{0});
 	services[0].vehicles[0].phase_known = false; fleet = Build(services);
-	CHECK(fleet.Plan(A, D, StateTicks{}).waiting == services[0].timetable.period);
+	/* Thousands of coincident known phases do not earn unknown-fleet credit.
+	 * The one remaining certified stream still supplies its half-circuit wait. */
+	CHECK(fleet.Plan(A, D, StateTicks{}).waiting == services[0].timetable.period / 2);
 }
 
 TEST_CASE("Common sections aggregate short turns without inventing through trains", "[passenger][precomputed][sections]")
@@ -217,7 +281,8 @@ TEST_CASE("Common section events respect periods physical identity and dispatch 
 	}
 	SECTION("Unknown phases do not create evenly spaced trains") {
 		for (auto &s : services) s.vehicles[0].phase_known = false;
-		auto plan = Build(services).Plan(A, C, StateTicks{}); REQUIRE(plan.ride); CHECK(plan.ride->estimated_wait == 300);
+		auto plan = Build(services).Plan(A, C, StateTicks{}); REQUIRE(plan.ride); CHECK(plan.ride->estimated_wait == 225);
+		CHECK(plan.ride->departure == StateTicks{}); CHECK(plan.ride->arrival == StateTicks{});
 	}
 }
 

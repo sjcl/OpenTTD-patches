@@ -23,10 +23,11 @@ namespace {
 	}
 	std::vector<int64_t> PatternKey(const PassengerPeriodicService &s)
 	{
-		std::vector<int64_t> key{s.timetable.period, s.dispatch_period, s.uncertain_dispatch_period, static_cast<int64_t>(s.dispatch_stop)};
+		std::vector<int64_t> key{s.timetable.period, s.timetable.estimated_period, s.dispatch_period, s.uncertain_dispatch_period, static_cast<int64_t>(s.dispatch_stop)};
 		for (const auto &stop : s.timetable.stops) {
 			key.insert(key.end(), {stop.station.base(), stop.order, stop.arrival, stop.departure,
 					static_cast<int64_t>(stop.board), static_cast<int64_t>(stop.alight), static_cast<int64_t>(stop.forced)});
+			key.insert(key.end(), {stop.continues, stop.travel_quality});
 		}
 		key.push_back(-1);
 		for (uint32_t slot : s.dispatch_slots) key.push_back(slot);
@@ -37,6 +38,24 @@ namespace {
 	{
 		value %= period;
 		return value < 0 ? value + period : value;
+	}
+
+	/** Unknown phases are duration estimates, not invented departures. Sublinear
+	 * fleet credit allows bunching: only floor(sqrt(N)), capped at eight, counts.
+	 * Three quarters of a circuit per effective vehicle is above the uniform
+	 * residual (one half). Dispatch competition retains at least half a circuit. */
+	int64_t UnknownWait(int64_t circuit, size_t fleet, bool dispatch = false)
+	{
+		size_t effective = 1;
+		while (effective < 8 && (effective + 1) * (effective + 1) <= fleet) ++effective;
+		int64_t divisor = 4 * effective;
+		int64_t wait = (3 * circuit + divisor - 1) / divisor;
+		return std::max<int64_t>(dispatch ? (circuit + 1) / 2 : 1, wait);
+	}
+
+	int64_t TravelUncertainty(int64_t travel, uint8_t quality)
+	{
+		return quality == 0 ? 0 : (travel + (quality == 1 ? 7 : 3)) / (quality == 1 ? 8 : 4);
 	}
 
 	uint64_t SectionPathKey(uint32_t pattern, VehicleOrderID boarding, VehicleOrderID alighting)
@@ -171,27 +190,27 @@ bool PassengerPrecomputedTable::RefreshService(const PassengerPeriodicService &s
 	auto &p = this->patterns[pattern];
 	auto member = std::lower_bound(p.members.begin(), p.members.end(), service.id, [](const auto &m, OrderListID id) { return m.id < id; });
 	if (member == p.members.end() || member->id != service.id || member->incarnation != service.incarnation ||
-			service.timetable.period <= 0 || p.occurrences.size() != service.timetable.stops.size()) return false;
+			service.timetable.Circuit() <= 0 || p.estimated != (service.timetable.period == 0) || p.occurrences.size() != service.timetable.stops.size()) return false;
 	uint64_t mask = uint64_t{1} << this->cargo;
 	for (size_t i = 0; i < p.occurrences.size(); ++i) {
 		const auto &old = this->occurrences[p.occurrences[i]];
 		const auto &stop = service.timetable.stops[i];
 		if (old.station != stop.station || old.order != stop.order || old.board != ((stop.board & mask) != 0) ||
-				old.alight != ((stop.alight & mask) != 0) || old.forced != ((stop.forced & mask) != 0)) return false;
+				old.alight != ((stop.alight & mask) != 0) || old.forced != ((stop.forced & mask) != 0) || old.continues != stop.continues) return false;
 	}
 	member->generation = service.generation;
 	return true;
 }
 
-void PassengerPrecomputedTable::AddEdge(uint32_t from, uint32_t to, int64_t cost, EdgeKind kind, uint32_t occurrence, uint32_t distance)
+void PassengerPrecomputedTable::AddEdge(uint32_t from, uint32_t to, int64_t cost, EdgeKind kind, uint32_t occurrence, uint32_t distance, int64_t uncertainty)
 {
 	assert(cost >= 0);
-	this->edges.push_back({from, to, occurrence, cost, distance, kind});
+	this->edges.push_back({from, to, occurrence, cost, distance, kind, uncertainty});
 }
 
-void PassengerPrecomputedTable::Begin(std::span<const PassengerPeriodicService *const> services, CargoType cargo, int64_t transfer, uint64_t memory, bool sections, bool cooperative, std::shared_ptr<uint64_t> memory_budget)
+void PassengerPrecomputedTable::Begin(std::span<const PassengerPeriodicService *const> services, CargoType cargo, int64_t transfer, uint64_t memory, bool sections, bool cooperative, std::shared_ptr<uint64_t> memory_budget, bool estimates)
 {
-	*this = {}; this->cargo = cargo;
+	*this = {}; this->cargo = cargo; this->estimates = estimates;
 	this->graph_build = this->BuildGraph({services.begin(), services.end()}, cargo, transfer, memory, sections, cooperative, std::move(memory_budget));
 	if (!cooperative) this->PrepareGraph(SIZE_MAX);
 }
@@ -242,7 +261,7 @@ PassengerBuildTask PassengerPrecomputedTable::BuildGraph(std::vector<const Passe
 			if (cooperative) co_await std::suspend_always{};
 			bool capacity = std::any_of(s->vehicles.begin(), s->vehicles.end(), [cargo](const auto &v) { return v.capacity[cargo] != 0; });
 			if (!capacity) { this->unsupported |= s->timetable.period == 0; continue; }
-			if (s->timetable.period <= 0 || s->timetable.stops.size() < 2) { this->unsupported = true; continue; }
+			if ((this->estimates ? s->timetable.Circuit() : s->timetable.period) <= 0 || s->timetable.stops.size() < 2) { this->unsupported = true; continue; }
 			groups[PatternKey(*s)].push_back(s);
 			for (const auto &stop : s->timetable.stops) if ((stop.board | stop.alight) & mask) station_ids.insert(stop.station);
 		}
@@ -256,8 +275,11 @@ PassengerBuildTask PassengerPrecomputedTable::BuildGraph(std::vector<const Passe
 			if (sections) std::sort(members.begin(), members.end(), [](const auto *a, const auto *b) { return a->id < b->id; });
 			Pattern p;
 			const auto &t = members.front()->timetable;
-			p.circuit = std::max(t.period, members.front()->uncertain_dispatch_period);
+			p.circuit = std::max(t.Circuit(), members.front()->uncertain_dispatch_period);
+			p.estimated = t.period == 0;
+			if (p.estimated) ++this->diagnostic.estimated_patterns; else ++this->diagnostic.certified_patterns;
 			uint64_t seats = 0;
+			size_t unknown_fleet = 0;
 			bool unknown = false;
 			std::vector<int64_t> phases;
 			std::set<VehicleID> physical;
@@ -267,8 +289,10 @@ PassengerBuildTask PassengerPrecomputedTable::BuildGraph(std::vector<const Passe
 				this->service_pattern[s->id.base()] = static_cast<uint32_t>(this->patterns.size());
 				for (const auto &v : s->vehicles) if (v.capacity[cargo]) {
 					if (cooperative) co_await std::suspend_always{};
-					if (sections && !physical.insert(v.id).second) continue;
+					if ((sections || this->estimates) && !physical.insert(v.id).second) continue;
 					seats = std::max(seats, v.capacity[cargo]); unknown |= !v.phase_known;
+					unknown_fleet += !v.phase_known || p.estimated;
+					if (this->estimates && (!v.phase_known || p.estimated)) continue;
 					if (s->dispatch_period > 0) {
 						p.circuit = s->dispatch_period;
 						for (uint32_t slot : s->dispatch_slots) {
@@ -287,20 +311,26 @@ PassengerBuildTask PassengerPrecomputedTable::BuildGraph(std::vector<const Passe
 			std::sort(phases.begin(), phases.end());
 			phases.erase(std::unique(phases.begin(), phases.end()), phases.end());
 			int64_t gap = p.circuit;
-			if (!unknown && !phases.empty()) {
+			if ((!unknown || this->estimates) && !phases.empty()) {
 				gap = 0;
 				for (size_t i = 0; i < phases.size(); ++i) gap = std::max(gap, (i + 1 < phases.size() ? phases[i + 1] : p.circuit + phases.front()) - phases[i]);
 			}
 			/* Unknown phases retain a conservative circuit estimate. No departure
 			 * timestamps or evenly spaced synthetic trains are generated. */
 			p.wait = unknown ? p.circuit : (gap + 1) / 2;
+			if (this->estimates && (unknown || p.estimated)) {
+				p.wait = UnknownWait(p.circuit, unknown_fleet, members.front()->uncertain_dispatch_period > 0);
+				if (!phases.empty()) p.wait = std::min(p.wait, (gap + 1) / 2);
+				gap = std::max<int64_t>(1, 2 * p.wait);
+			}
 			p.risk = (gap + std::min<uint64_t>(seats, 64) - 1) / std::min<uint64_t>(seats, 64);
+			if (this->estimates && (unknown || p.estimated)) p.risk += std::min<int64_t>(64, (p.wait + 7) / 8);
 			p.weight = std::clamp<uint64_t>(std::min<uint64_t>(seats, 65535) * 65536 / std::max<int64_t>(1, gap), 1, UINT32_MAX / 2);
 			uint32_t pattern = static_cast<uint32_t>(this->patterns.size());
 			for (const auto &stop : t.stops) {
 				if (cooperative) co_await std::suspend_always{};
 				p.occurrences.push_back(static_cast<uint32_t>(this->occurrences.size()));
-				this->occurrences.push_back({stop.station, stop.order, pattern, 0, 0, (stop.board & mask) != 0, (stop.alight & mask) != 0, (stop.forced & mask) != 0});
+				this->occurrences.push_back({stop.station, stop.order, pattern, 0, 0, (stop.board & mask) != 0, (stop.alight & mask) != 0, (stop.forced & mask) != 0, stop.continues});
 				if (stop.alight & mask) this->waiting_states[this->station_index[stop.station.base()]].emplace_back(pattern, 0);
 			}
 			this->patterns.push_back(std::move(p)); representatives.push_back(members.front());
@@ -351,11 +381,13 @@ PassengerBuildTask PassengerPrecomputedTable::BuildGraph(std::vector<const Passe
 				}
 				if (stop.alight & mask) this->AddEdge(o.arrival, this->StateFor(this->station_index[stop.station.base()], p), 2 * transfer, EdgeKind::Alight, id);
 				if (!(stop.forced & mask)) this->AddEdge(o.arrival, o.departure, stop.departure - stop.arrival, EdgeKind::Ride);
+				if (!stop.continues) continue;
 				size_t next = (i + 1) % t.stops.size();
-				int64_t travel = t.stops[next].arrival - stop.departure + (next == 0 ? t.period : 0);
+				int64_t travel = std::max<int64_t>(1, t.stops[next].arrival - stop.departure + (next == 0 ? t.Circuit() : 0));
 				uint32_t distance = 0;
 				if (const auto *a = Station::GetIfValid(stop.station)) if (const auto *b = Station::GetIfValid(t.stops[next].station)) distance = DistanceManhattan(a->xy, b->xy);
-				this->AddEdge(o.departure, this->occurrences[pattern.occurrences[next]].arrival, std::max<int64_t>(1, travel), EdgeKind::Ride, INVALID, distance);
+				int64_t uncertainty = TravelUncertainty(travel, t.stops[next].travel_quality);
+				this->AddEdge(o.departure, this->occurrences[pattern.occurrences[next]].arrival, travel + uncertainty, EdgeKind::Ride, INVALID, distance, uncertainty);
 			}
 		}
 		if (sections) {
@@ -384,7 +416,7 @@ PassengerBuildTask PassengerPrecomputedTable::BuildGraph(std::vector<const Passe
 PassengerBuildTask PassengerPrecomputedTable::BuildSections(const std::vector<std::vector<const PassengerPeriodicService *>> &members,
 		int64_t transfer, size_t &nodes, uint64_t &envelope, uint64_t memory, bool cooperative, bool &success)
 {
-	struct Path { uint32_t board, alight; int64_t riding; uint32_t distance; };
+	struct Path { uint32_t board, alight; int64_t riding; uint32_t distance; int64_t uncertainty; };
 	struct Prefix { std::vector<Path> paths; };
 	/* Intern all directed stop prefixes. Timings, order numbers and the circuit
 	 * outside the section are deliberately absent from compatibility; every
@@ -405,6 +437,7 @@ PassengerBuildTask PassengerPrecomputedTable::BuildSections(const std::vector<st
 			uint32_t board = pattern.occurrences[start]; const auto &b = this->occurrences[board];
 			if (!b.board || starters[b.station].size() < 2) continue;
 			uint32_t prefix = INVALID, distance = 0;
+			int64_t uncertainty = 0;
 			for (size_t length = 0; length < t.stops.size(); ++length) {
 				if (cooperative) co_await std::suspend_always{};
 				size_t stop = (start + length) % t.stops.size();
@@ -417,13 +450,16 @@ PassengerBuildTask PassengerPrecomputedTable::BuildSections(const std::vector<st
 				} else prefix = found->second;
 				if (length == 0) continue;
 				const auto &previous = t.stops[(stop + t.stops.size() - 1) % t.stops.size()];
+				if (!previous.continues) break;
+				int64_t travel = std::max<int64_t>(1, t.stops[stop].arrival - previous.departure + (stop == 0 ? t.Circuit() : 0));
+				uncertainty += TravelUncertainty(travel, t.stops[stop].travel_quality);
 				if (const auto *x = Station::GetIfValid(previous.station)) if (const auto *y = Station::GetIfValid(a.station)) {
 					distance = static_cast<uint32_t>(std::min<uint64_t>(UINT32_MAX, uint64_t(distance) + DistanceManhattan(x->xy, y->xy)));
 				}
 				if (a.alight && a.station != b.station) {
 					if (!Product(1, 64, envelope, memory)) co_return;
-					int64_t riding = t.stops[stop].arrival - t.stops[start].departure + (stop < start ? t.period : 0);
-					prefixes[prefix].paths.push_back({board, alight, riding, distance});
+					int64_t riding = t.stops[stop].arrival - t.stops[start].departure + (stop < start ? t.Circuit() : 0);
+					prefixes[prefix].paths.push_back({board, alight, riding, distance, uncertainty});
 				}
 				if (a.forced) break;
 			}
@@ -457,6 +493,9 @@ PassengerBuildTask PassengerPrecomputedTable::BuildSections(const std::vector<st
 		std::set<std::pair<int64_t, int64_t>> events;
 		int64_t unknown_gap = INT64_MAX;
 		uint64_t seats = 1;
+		std::set<VehicleID> unknown_vehicles;
+		int64_t unknown_circuit = INT64_MAX;
+		bool uncertain_dispatch = false;
 		for (const auto &path : paths) {
 			if (cooperative) co_await std::suspend_always{};
 			uint32_t p = this->occurrences[path.board].pattern;
@@ -465,22 +504,38 @@ PassengerBuildTask PassengerPrecomputedTable::BuildSections(const std::vector<st
 				if (cooperative) co_await std::suspend_always{};
 				if (!v.capacity[this->cargo] || owners.at(v.id) != s->id) continue;
 				seats = std::max(seats, std::min<uint64_t>(v.capacity[this->cargo], 64));
-				int64_t circuit = std::max(s->timetable.period, s->uncertain_dispatch_period);
+				int64_t circuit = std::max(s->timetable.Circuit(), s->uncertain_dispatch_period);
 				if (s->dispatch_period > 0) {
 					int64_t period = s->dispatch_period;
 					int64_t offset = s->timetable.stops[stop].departure - s->timetable.stops[s->dispatch_stop].departure;
 					/* A board before the dispatch anchor belongs to the next run. */
 					if (stop < s->dispatch_stop) offset += s->timetable.period;
 					for (uint32_t slot : s->dispatch_slots) events.emplace(period, Mod(Mod(s->dispatch_base.base(), period) + slot + offset, period));
-				} else if (v.phase_known && s->uncertain_dispatch_period == 0) {
+				} else if (s->timetable.period > 0 && v.phase_known && s->uncertain_dispatch_period == 0) {
 					events.emplace(circuit, Mod(Mod(v.base.base(), circuit) + s->timetable.stops[stop].departure, circuit));
-				} else unknown_gap = std::min(unknown_gap, circuit);
+				} else {
+					unknown_gap = std::min(unknown_gap, circuit);
+					unknown_vehicles.insert(v.id);
+					unknown_circuit = std::min(unknown_circuit, circuit);
+					uncertain_dispatch |= s->uncertain_dispatch_period > 0;
+				}
 			}
 		}
 		int64_t gap = events.empty() ? unknown_gap : SectionGap(events);
 		if (gap == INT64_MAX) continue;
 		int64_t wait = events.empty() ? gap : gap / 2 + gap % 2;
+		if (this->estimates && !unknown_vehicles.empty()) {
+			/* Use the longest unknown circuit for fleet credit; heterogeneous
+			 * long routes must not inherit a short shuttle's headway. */
+			int64_t longest = 0;
+			for (const auto &path : paths) for (const auto *s : members[this->occurrences[path.board].pattern])
+				longest = std::max(longest, std::max(s->timetable.Circuit(), s->uncertain_dispatch_period));
+			int64_t estimated = std::min(UnknownWait(unknown_circuit, 1, uncertain_dispatch), UnknownWait(longest, unknown_vehicles.size(), uncertain_dispatch));
+			wait = events.empty() ? estimated : std::min(wait, estimated);
+			gap = std::max<int64_t>(1, 2 * wait);
+		}
 		int64_t risk = gap / seats + (gap % seats != 0);
+		if (this->estimates && !unknown_vehicles.empty()) risk += std::min<int64_t>(64, (wait + 7) / 8);
 		++this->diagnostic.shared_sections;
 		if (this->landings.empty()) {
 			if (!Product(this->occurrences.size(), 36, envelope, memory)) co_return;
@@ -533,7 +588,7 @@ PassengerBuildTask PassengerPrecomputedTable::BuildSections(const std::vector<st
 						2 * transfer, EdgeKind::Alight, path.alight);
 			}
 			uint32_t id = static_cast<uint32_t>(this->section_rides.size());
-			int64_t cost = path.riding + wait + risk;
+			int64_t cost = path.riding + path.uncertainty + wait + risk;
 			this->section_rides.push_back({path.board, path.alight, path.riding, wait, cost});
 			this->AddEdge(station, this->landings[path.alight], cost, EdgeKind::Section, id, path.distance);
 			for (const auto &[previous, state] : this->waiting_states[station]) {
@@ -671,7 +726,7 @@ size_t PassengerPrecomputedTable::Step(size_t allowance, bool legacy_publication
 					next.board = ride.board; next.alight = ride.alight; ++next.legs;
 					next.first_wait = ride.waiting; next.waiting += ride.waiting; next.riding += ride.riding;
 				}
-				if (edge.kind == EdgeKind::Ride) next.riding += edge.cost;
+				if (edge.kind == EdgeKind::Ride) next.riding += edge.cost - edge.uncertainty;
 				if (edge.kind == EdgeKind::Alight) { next.board = INVALID; next.alight = edge.occurrence; next.waiting += edge.cost / 2; }
 				auto &old = this->scratch.labels[edge.from];
 				if (std::tie(next.cost, next.legs) >= std::tie(old.cost, old.legs)) continue;
@@ -742,6 +797,7 @@ PassengerPrecomputedPlan PassengerPrecomputedTable::Select(const Label &label, S
 	ride.estimated_wait = label.first_wait; ride.waiting_limit = std::min<int64_t>(INT64_MAX / 2, pattern.circuit) * 2;
 	result.ride = ride; result.state = PassengerPrecomputedPlan::State::Ready;
 	result.cost = label.cost; result.riding = label.riding; result.waiting = label.waiting; result.distance = label.distance; result.transfers = label.legs - 1;
+	result.estimated_service = pattern.estimated;
 	return result;
 }
 

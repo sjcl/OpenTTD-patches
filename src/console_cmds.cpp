@@ -4994,6 +4994,7 @@ static bool ConPassengerJourneyStats(std::span<std::string_view> argv)
 		IConsolePrint(CC_DEFAULT, "Precomputed passenger routes: cargo={}; patterns={}; stations={}; states={}; edges={}; destinations={}; bytes={}; envelope={}; build_ns={}; operations={}; queries={}; query_ns={}; hits={}; missing={}; no_route={}",
 			cargo, p.patterns, p.stations, p.states, p.edges, p.destinations, p.bytes, p.envelope, p.build_nanoseconds, p.operations, p.queries, p.query_nanoseconds, p.hits, p.missing, p.no_route);
 		IConsolePrint(CC_DEFAULT, "Precomputed common sections: cargo={}; sections={}; concrete_rides={}", cargo, p.shared_sections, p.section_rides);
+		IConsolePrint(CC_DEFAULT, "Precomputed timetable certainty: cargo={}; certified_patterns={}; estimated_patterns={}", cargo, p.certified_patterns, p.estimated_patterns);
 		IConsolePrint(CC_DEFAULT, "Precomputed retained routes: cargo={}; destinations={}; bytes={}; envelope={}",
 				cargo, p.retained_destinations, p.retained_bytes, p.retained_envelope);
 	}
