@@ -28,6 +28,7 @@ def main():
     parser.add_argument("--initial-build", action="store_true")
     parser.add_argument("--stall", action="store_true")
     parser.add_argument("--toggle-precomputed", action="store_true", help="Disable and re-enable routing after joining, then compare the peer preparation barrier")
+    parser.add_argument("--wait-server-ready", action="store_true", help="Connect after the server's initial passenger preparation; preserves the game's absolute join deadline")
     parser.add_argument("--observe-timeout", type=int, default=180,
                         help="Harness observation seconds for loading/replay; does not change game/network timeouts")
     args = parser.parse_args()
@@ -40,6 +41,7 @@ def main():
                   input=str(args.input.resolve()), joined=False, packet_payment_equal=False,
                   binary_sha256=real.PROFILE.sha256(args.binary), input_sha256=real.PROFILE.sha256(args.input),
                   requested_ticks=args.ticks, initial_build=args.initial_build, stall_test=args.stall, frame_freq=args.frame_freq,
+                  wait_server_ready=args.wait_server_ready,
                   observation_timeout_seconds=args.observe_timeout)
 
     def read(directory, name):
@@ -150,6 +152,16 @@ def main():
         # before comparing the server with the subsequently downloaded map.
         wait(lambda: False, 1)
         result["server_snapshot"] = snapshot_server(host, server)
+        if args.wait_server_ready:
+            preparation_started = time.monotonic()
+            if not wait(lambda: "Initial passenger tables ready at frame" in read(server, "stderr.txt"), args.observe_timeout):
+                raise RuntimeError("Server initial passenger preparation did not finish")
+            result["server_preparation_wait_seconds"] = time.monotonic() - preparation_started
+            prepared = snapshot_server(host, server)
+            if prepared["state_ticks"] != result["server_snapshot"]["state_ticks"]:
+                raise RuntimeError("Server preparation advanced paused simulation")
+            result["server_loading_snapshot"] = result["server_snapshot"]
+            result["server_snapshot"] = prepared
         client = prepare("client")
         client_commands(client, [f"script {(client / 'console.txt').as_posix()}", "getfulldate",
                                 "passenger_journey_stats total", "passenger_journey_stats save_integrity", "script"])
