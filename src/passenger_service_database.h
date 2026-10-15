@@ -236,12 +236,13 @@ private:
 	StateTicks precomputed_refresh{};
 	bool precomputed_invalidated = false;
 	bool legacy_precomputed_cursor = false; ///< v4/v5 row publication did not charge compact-label copies.
+	bool precomputed_sections = true, retained_precomputed_sections = true; ///< Saved graph algorithm for exact pre-v8 cursor replay.
 	uint64_t precomputed_preparation_nanoseconds = 0; ///< Local elapsed observation, never saved or used for admission.
 	void BeginPrecomputed(int64_t transfer);
 	void BuildPrecomputedTables();
 	void ClearRetainedPrecomputed();
 	void BuildPrecomputedTables(std::array<PassengerPrecomputedTable, NUM_CARGO> &tables,
-			const std::map<OrderListID, PassengerPeriodicService> &snapshot, int64_t transfer, uint64_t remaining);
+			const std::map<OrderListID, PassengerPeriodicService> &snapshot, int64_t transfer, uint64_t remaining, bool sections);
 	using Dependencies = std::map<StationID, uint64_t>;
 	struct JourneyPolicy {
 		std::vector<std::pair<StationID, int64_t>> lower_bounds; ///< Relaxed reverse adjacent-stop distances, never winning routes.

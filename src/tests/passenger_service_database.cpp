@@ -2297,7 +2297,7 @@ TEST_CASE("Precomputed active journeys bypass OD admission and survive partial-b
 	CHECK(GetPassengerJourneyTickDiagnostic().admission.used == 0);
 	CHECK(db.GetDiagnostic().searches == timed_searches);
 	CHECK(db.GetPrecomputedDiagnostic(PAX).hits >= 100);
-	auto wire = db.Save(); REQUIRE(wire[0] == 7);
+	auto wire = db.Save(); REQUIRE(wire[0] == 8);
 	PassengerServiceDatabase peer; REQUIRE(peer.Load(wire)); peer.FinishLoad(true);
 	CHECK(peer.Save() == wire);
 	CHECK(peer.PlanPrecomputed(PAX, A, D, NOW).ride == db.PlanPrecomputed(PAX, A, D, NOW).ride);
@@ -2531,6 +2531,7 @@ TEST_CASE("Precomputed replacement retains pending destination rows across every
 {
 	Fixture f;
 	f.Train({Stop(A), Stop(B), Stop(C), Stop(D)});
+	f.Train({Stop(A), Stop(B), Stop(C)});
 	auto &db = f.Build(); _settings_game.linkgraph.passenger_journey_precomputed = true;
 	while (!db.PreparePrecomputed()) {}
 	const auto old = db.PlanPrecomputed(PAX, A, D, NOW); REQUIRE(old.ride);
@@ -2554,15 +2555,40 @@ TEST_CASE("Precomputed replacement retains pending destination rows across every
 	const auto completed = db.Save(); REQUIRE(joined.Load(completed)); joined.FinishLoad(true);
 	CHECK(joined.Save() == completed);
 	CHECK(db.PlanPrecomputed(PAX, A, D, NOW).cost == old.cost);
-	/* v6 had no retained-generation suffix. Its completed cursor still loads. */
-	auto v6 = completed; v6[0] = 6; v6.resize(v6.size() - 24);
-	REQUIRE(joined.Load(v6)); joined.FinishLoad(true);
-	CHECK(joined.Save() == completed);
+}
+
+TEST_CASE("Precomputed pre-section cursors replay the old graph before upgrading", "[passenger][precomputed][sections][save][network]")
+{
+	Fixture f;
+	f.Train({Stop(A), Stop(B), Stop(C), Stop(D)});
+	f.Train({Stop(A), Stop(B), Stop(C)});
+	auto &db = f.Build(); _settings_game.linkgraph.passenger_journey_precomputed = true;
+	db.TickPrecomputed(1);
+	auto old = db.Save(); old.resize(old.size() - 16); old[0] = 7;
+	SECTION("v6 without a retained generation") { old.resize(old.size() - 24); old[0] = 6; }
+	SECTION("v7 with a retained-generation suffix") {}
+	PassengerServiceDatabase migrated; REQUIRE(migrated.Load(old)); migrated.FinishLoad(true, true);
+	while (migrated.StepLoad(1) == PassengerServiceDatabase::LoadState::Replaying) {}
+	REQUIRE(migrated.GetLoadState() == PassengerServiceDatabase::LoadState::Ready);
+	CHECK(migrated.GetPrecomputedDiagnostic(PAX).shared_sections == 0);
+	while (!migrated.PrecomputedFinished()) migrated.TickPrecomputed();
+	REQUIRE(migrated.PlanPrecomputed(PAX, A, D, NOW).ride);
+	migrated.TickPrecomputed(1); // New graph, retaining a completed old graph.
+	CHECK(migrated.GetPrecomputedDiagnostic(PAX).shared_sections > 0);
+	CHECK(migrated.GetPrecomputedDiagnostic(PAX).retained_destinations > 0);
+	auto mixed = migrated.Save(); PassengerServiceDatabase peer;
+	REQUIRE(peer.Load(mixed)); peer.FinishLoad(true); CHECK(peer.Save() == mixed);
+	for (size_t i = 0; !migrated.PrecomputedFinished(); ++i) {
+		REQUIRE(i < 10000); migrated.TickPrecomputed(19); peer.TickPrecomputed(19);
+		CHECK(migrated.Save() == peer.Save());
+		CHECK(migrated.PlanPrecomputed(PAX, A, C, NOW).ride == peer.PlanPrecomputed(PAX, A, C, NOW).ride);
+	}
 }
 
 TEST_CASE("Precomputed join replay yields at exact work boundaries for all publication states", "[passenger][precomputed][save][network]")
 {
 	Fixture f; f.Train({Stop(A), Stop(B), Stop(C), Stop(D)});
+	f.Train({Stop(A), Stop(B), Stop(C)});
 	auto &db = f.Build(); _settings_game.linkgraph.passenger_journey_precomputed = true;
 	db.TickPrecomputed(73);
 	SECTION("Initial frontier") { REQUIRE_FALSE(db.PrecomputedFinished()); }
@@ -2623,12 +2649,13 @@ TEST_CASE("Precomputed sliced replay rejects impossible cursors and migrates leg
 		CHECK(_state_ticks == NOW);
 	}
 	SECTION("Legacy work format remains saveable until conversion completes") {
-		auto legacy = wire; legacy[0] = 5; legacy.resize(legacy.size() - 24);
+		auto legacy = wire; legacy[0] = 5; legacy.resize(legacy.size() - 40);
 		PassengerServiceDatabase peer; REQUIRE(peer.Load(legacy)); peer.FinishLoad(true, true);
 		CHECK(peer.Save() == legacy);
 		while (peer.StepLoad(1) == PassengerServiceDatabase::LoadState::Replaying) CHECK(peer.Save() == legacy);
 		CHECK(peer.GetLoadState() == PassengerServiceDatabase::LoadState::Ready);
-		CHECK(peer.Save() == wire);
+		auto upgraded = wire; upgraded[upgraded.size() - 16] = 0;
+		CHECK(peer.Save() == upgraded);
 	}
 }
 

@@ -75,14 +75,15 @@ def main():
                   platform=platform.platform(), processor=platform.processor(),
                   binary_sha256=hashlib.sha256(args.binary.read_bytes()).hexdigest(),
                   routing=routing, boarding=boarding, boarding_prefix=boarding_prefix, **observed,
-                  axes={0: "served stations", 1: "physical vehicles (size x 16)", 2: "same-OD lookup batches (size x 4 x 256)", 3: "OD diversity"},
+                  axes={0: "served stations", 1: "physical vehicles (size x 16)", 2: "same-OD lookup batches (size x 4 x 256)", 3: "OD diversity",
+                        4: "physical vehicles across shared sections with different periods (size x 16)"},
                   limitations=["Elapsed per-call samples and total process CPU are distinct measurements.",
                                "Peak process memory includes the test runtime and prior cases; it is not per-table peak memory.",
                                "Other host activity is not excluded by this runner.",
                                "Real-map transport and simulation percentiles require a separate paired run."])
     (args.output / "result.json").write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
     print(json.dumps(result, indent=2))
-    if process.returncode or len(routing) != 16 or len(boarding) != 4 or len(boarding_prefix) != 4:
+    if process.returncode or len(routing) != 20 or len(boarding) != 4 or len(boarding_prefix) != 4:
         raise SystemExit("Benchmark failed or incomplete; retain raw.log.")
 
 

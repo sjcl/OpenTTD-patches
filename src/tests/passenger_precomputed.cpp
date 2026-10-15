@@ -114,6 +114,133 @@ TEST_CASE("Precomputed identical fleets aggregate without synthetic headways", "
 	CHECK(fleet.Plan(A, D, StateTicks{}).waiting == services[0].timetable.period);
 }
 
+TEST_CASE("Common sections aggregate short turns without inventing through trains", "[passenger][precomputed][sections]")
+{
+	constexpr StationID E{4};
+	std::array services{Service(0, {A, B, C, D, E}), Service(1, {A, B, C}), Service(2, {A, B, C, D, E})};
+	for (auto &s : services) s.timetable.period = 600;
+	services[1].vehicles[0].base = StateTicks{400}; services[2].vehicles[0].base = StateTicks{200};
+	auto table = Build(services);
+	REQUIRE(table.GetDiagnostic().shared_sections > 0); CHECK(table.GetDiagnostic().patterns == 2);
+	for (uint32_t sample : {0U, 1U, 1000000000U, 2000000001U, UINT32_MAX}) {
+		auto common = table.Plan(A, C, StateTicks{}, OrderListID::Invalid(), sample);
+		REQUIRE(common.ride); CHECK(common.ride->estimated_wait == 100); CHECK(common.waiting == 100);
+		CHECK(common.riding == 210); CHECK(common.transfers == 0);
+		auto through = table.Plan(A, E, StateTicks{}, OrderListID::Invalid(), sample);
+		REQUIRE(through.ride);
+		if (through.ride->service == OrderListID{1}) {
+			CHECK(through.transfers > 0); CHECK(through.ride->alighting != E);
+			CHECK(through.ride->alighting_order < 3); CHECK(through.ride->estimated_wait == 100);
+		} else if (through.transfers == 0) {
+			CHECK(through.ride->alighting == E); CHECK(through.ride->alighting_order == 4);
+			CHECK(through.ride->estimated_wait == 200);
+		}
+		auto outer = table.Plan(C, E, StateTicks{}, OrderListID::Invalid(), sample);
+		REQUIRE(outer.ride); CHECK(outer.ride->service != OrderListID{1}); CHECK(outer.ride->estimated_wait == 200);
+	}
+	/* Both concrete patterns are selectable; short-turn bindings cannot be
+	 * rebound as though they were the identical long-distance pattern. */
+	std::set<OrderListID> selected;
+	for (uint32_t sample = 0; sample < 32; ++sample) {
+		auto plan = table.Plan(A, C, StateTicks{}, OrderListID::Invalid(), sample * 134217727U);
+		REQUIRE(plan.ride); selected.insert(plan.ride->service);
+		CHECK_FALSE(table.Rebind(*plan.ride, plan.ride->service == OrderListID{1} ? OrderListID{0} : OrderListID{1}));
+	}
+	CHECK(selected.contains(OrderListID{1})); CHECK(selected.size() >= 2);
+}
+
+TEST_CASE("Common section events respect periods physical identity and dispatch anchors", "[passenger][precomputed][sections]")
+{
+	std::array services{Service(0, {A, B, C, D}), Service(1, {A, B, C})};
+	services[0].timetable.period = 600; services[1].timetable.period = 300;
+	services[1].vehicles[0].base = StateTicks{150};
+	SECTION("Different periods") {
+		auto plan = Build(services).Plan(A, C, StateTicks{}); REQUIRE(plan.ride);
+		CHECK(plan.ride->estimated_wait == 150); CHECK(plan.ride->estimated_wait < 300);
+	}
+	SECTION("One physical vehicle cannot belong to two frequency sources") {
+		services[1].vehicles[0].id = services[0].vehicles[0].id;
+		auto table = Build(services);
+		/* The owner with the lowest service ID supplies this physical event.
+		 * Exclude the short service to inspect the long service's estimate. */
+		auto plan = table.Plan(A, C, StateTicks{}, OrderListID{1}); REQUIRE(plan.ride);
+		CHECK(plan.ride->service == OrderListID{0}); CHECK(plan.ride->estimated_wait == 300);
+	}
+	SECTION("Coincident departures count once including across periods") {
+		services[1].vehicles[0].base = StateTicks{};
+		auto once = Build(services).Plan(A, C, StateTicks{}); REQUIRE(once.ride);
+		for (int i = 2; i < 100; ++i) {
+			auto v = services[1].vehicles[0]; v.id = VehicleID{static_cast<uint32_t>(i)}; services[1].vehicles.push_back(v);
+		}
+		auto many = Build(services).Plan(A, C, StateTicks{}); REQUIRE(many.ride);
+		CHECK(many.waiting == once.waiting); CHECK(many.cost == once.cost);
+	}
+	SECTION("Certified slots use the boarding offset from the dispatch stop") {
+		for (auto &s : services) { s.dispatch_period = 600; s.dispatch_stop = 1; s.dispatch_slots = {0}; }
+		auto table = Build(services);
+		auto plan = table.Plan(A, C, StateTicks{}); REQUIRE(plan.ride); CHECK(plan.ride->estimated_wait == 150);
+		plan = table.Plan(B, C, StateTicks{}); REQUIRE(plan.ride); CHECK(plan.ride->estimated_wait == 300);
+	}
+	SECTION("Unknown phases do not create evenly spaced trains") {
+		for (auto &s : services) s.vehicles[0].phase_known = false;
+		auto plan = Build(services).Plan(A, C, StateTicks{}); REQUIRE(plan.ride); CHECK(plan.ride->estimated_wait == 300);
+	}
+}
+
+TEST_CASE("Common sections preserve physical stop and exchange differences", "[passenger][precomputed][sections]")
+{
+	std::array services{Service(0, {A, B, C, D}), Service(1, {A, B, C})};
+	for (auto &s : services) s.timetable.period = 600;
+	services[1].vehicles[0].base = StateTicks{300};
+	SECTION("NoLoad") { services[1].timetable.stops[0].board = 0; }
+	SECTION("NoUnload") { services[1].timetable.stops[2].alight = 0; }
+	SECTION("Forced unload") { services[1].timetable.stops[1].forced = 1; }
+	SECTION("Operational pass through") { services[1].timetable.stops[1].board = services[1].timetable.stops[1].alight = 0; }
+	SECTION("Skipped stop") { services[1] = Service(1, {A, C}); services[1].timetable.period = 600; services[1].vehicles[0].base = StateTicks{300}; }
+	SECTION("Opposite direction") { services[1] = Service(1, {C, B, A}); services[1].timetable.period = 600; services[1].vehicles[0].base = StateTicks{300}; }
+	auto table = Build(services);
+	auto plan = table.Plan(A, C, StateTicks{}, OrderListID{1}); REQUIRE(plan.ride);
+	CHECK(plan.ride->service == OrderListID{0}); CHECK(plan.ride->estimated_wait == 300);
+}
+
+TEST_CASE("Common sections match across order numbering and circuit boundaries", "[passenger][precomputed][sections][determinism]")
+{
+	std::array services{Service(0, {B, C, D, A}), Service(1, {A, B, C})};
+	for (auto &s : services) s.timetable.period = 600;
+	/* Long service boards A at 340, short service at 40: opposite phases. */
+	services[1].vehicles[0].base = StateTicks{30};
+	for (auto &stop : services[1].timetable.stops) stop.order += 20;
+	auto fine = Build(services, 1), coarse = Build(services);
+	CHECK(fine.GetDiagnostic().operations == coarse.GetDiagnostic().operations);
+	for (uint32_t sample : {0U, 1000000000U, UINT32_MAX}) {
+		auto a = fine.Plan(A, C, StateTicks{}, OrderListID::Invalid(), sample);
+		auto b = coarse.Plan(A, C, StateTicks{}, OrderListID::Invalid(), sample);
+		REQUIRE(a.ride); CHECK(a.ride == b.ride); CHECK(a.cost == b.cost); CHECK(a.ride->estimated_wait == 150);
+		if (a.ride->service == OrderListID{0}) { CHECK(a.ride->boarding_order == 3); CHECK(a.ride->alighting_order == 1); }
+		else { CHECK(a.ride->boarding_order == 20); CHECK(a.ride->alighting_order == 22); }
+	}
+}
+
+TEST_CASE("Common section admission and large period ratios stay deterministic", "[passenger][precomputed][sections][memory]")
+{
+	std::array services{Service(0, {A, B, C, D}), Service(1, {A, B, C})};
+	services[0].timetable.period = int64_t{1} << 40; services[1].timetable.period = 300;
+	services[1].vehicles[0].base = StateTicks{150};
+	auto table = Build(services); auto plan = table.Plan(A, C, StateTicks{}, OrderListID{1});
+	REQUIRE(plan.ride); CHECK(plan.ride->estimated_wait == 150);
+	const auto work = table.GetDiagnostic().operations;
+	for (int i = 0; i < 10000; ++i) REQUIRE(table.Plan(A, C, StateTicks{}, OrderListID::Invalid(), i * 654323U).ride);
+	CHECK(table.GetDiagnostic().operations == work);
+	std::array<const PassengerPeriodicService *, 2> records{&services[1], &services[0]};
+	PassengerPrecomputedTable reversed; reversed.Begin(records, PAX, 20);
+	while (!reversed.Finished()) reversed.Step(19);
+	CHECK(reversed.GetDiagnostic().operations == work);
+	CHECK(reversed.Plan(A, C, StateTicks{}).ride == table.Plan(A, C, StateTicks{}).ride);
+	PassengerPrecomputedTable limited;
+	limited.Begin(records, PAX, 20, table.GetDiagnostic().envelope - 1);
+	CHECK(limited.MemoryRejected()); CHECK(limited.GetDiagnostic().destinations == 0);
+}
+
 TEST_CASE("Precomputed publication is independent of build chunk and query history", "[passenger][precomputed][determinism]")
 {
 	std::array services{Service(0, {A, B}), Service(1, {B, C}), Service(2, {C, D}), Service(3, {A, D}, 500)};
@@ -188,14 +315,24 @@ TEST_CASE("Precomputed CPU scaling benchmark", "[.benchmark][passenger][precompu
 {
 	using Clock = std::chrono::steady_clock;
 	std::cout << "axis,size,build_us,lookup_ns,p95_ns,p99_ns,bytes,envelope,states,edges,operations,hits\n";
-	for (int axis = 0; axis < 4; ++axis) for (int scale : {16, 64, 256, 512}) {
+	for (int axis = 0; axis < 5; ++axis) for (int scale : {16, 64, 256, 512}) {
 		std::vector<PassengerPeriodicService> services{Service(0, {A, D})};
+		if (axis == 4) {
+			services = {Service(0, {A, B, C, D}), Service(1, {A, B, C})};
+			services[0].timetable.period = 600; services[1].timetable.period = 300;
+			services[1].vehicles[0].base = StateTicks{150};
+			for (int i = 2; i < scale * 16; ++i) {
+				auto &s = services[i % 2]; auto v = s.vehicles[0]; v.id = VehicleID{static_cast<uint32_t>(i)};
+				s.vehicles.push_back(v);
+			}
+		}
 		if (axis == 0 || axis == 3) for (int i = 4; i < scale; i += 2) services.push_back(Service(i, {StationID{static_cast<uint16_t>(i)}, StationID{static_cast<uint16_t>(i + 1)}}));
 		if (axis == 1) for (int i = 1; i < scale * 16; ++i) {
 			auto vehicle = services[0].vehicles.front(); vehicle.id = VehicleID{static_cast<uint32_t>(i)};
 			services[0].vehicles.push_back(vehicle);
 		}
 		auto start = Clock::now(); auto table = Build(services);
+		if (axis == 4) REQUIRE(table.GetDiagnostic().shared_sections > 0);
 		uint64_t build_us = std::chrono::duration_cast<std::chrono::microseconds>(Clock::now() - start).count();
 		std::vector<uint64_t> samples;
 		const size_t batches = axis == 2 ? static_cast<size_t>(scale) * 4 : 1024;

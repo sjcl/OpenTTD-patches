@@ -1,0 +1,38 @@
+{
+  "base_commit": "ffb3dc98db4a2d46b0d6508d2f4d375d0c24ee36",
+  "configuration": "MSVC x64 Release; asserts ON; LTO OFF; passenger benchmark OFF",
+  "precomputed": {
+    "passed": true,
+    "assertions": 43751,
+    "cases": 30
+  },
+  "ctest": {
+    "combined_passed": 636,
+    "initial_failed": 4,
+    "failure": "Windows font loading warnings contaminated regression output under restricted execution",
+    "cases": 636,
+    "retry_passed": 4,
+    "initial_passed": 632
+  },
+  "benchmark": {
+    "passed": true,
+    "assertions": 146174,
+    "cases": 3
+  },
+  "source_sha256": {
+    "src/console_cmds.cpp": "dce9066292e601498201546dea47e4b6809bd044e9bee6813524d9f5d5abd118",
+    "src/passenger_precomputed.cpp": "7d6d2ac0f43ef362f4895532797c17b95c5e98318b2d50ba85a6a71159437fb6",
+    "src/passenger_precomputed.h": "79e477828f3a16983ac60d99c8588f87cc69c54979bd0dffe251439df990cbf1",
+    "src/passenger_service_database.cpp": "199f18be94d19b36f82bbc2edec1043fd6607f90253ee71745ec83af00b70e76",
+    "src/passenger_service_database.h": "dbef80897825ce68f21fab5cde31c2277cd282928782f0f4feef15536b984649",
+    "src/sl/extended_ver_sl.cpp": "e4b1fb07430a926eee0a3eaa62833c9bd5f99f9b5531cb914c579248fe337842",
+    "src/tests/passenger_precomputed.cpp": "b99d7e377b6adac72c0746b897f3a205eecf1a056879e36121ec28e9153d7ea2",
+    "src/tests/passenger_service_database.cpp": "388368a42b1833179f6bd41aee06024d6eaa4ee375c62f04bf2ce42542790272",
+    "utils/passenger_precomputed_benchmark.py": "cb4278d56cf2de88940ab25d5a54751adf6ad2fa29de71734f9798266daaa5da"
+  },
+  "limitations": [
+    "No new long-duration real-map or live server/client multiplayer test",
+    "Other host activity was not excluded from the synthetic benchmark",
+    "The worst-case section prefix construction is quadratic in stops; graph preparation remains synchronous"
+  ]
+}

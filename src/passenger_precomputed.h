@@ -27,6 +27,7 @@ struct PassengerPrecomputedDiagnostic {
 	uint64_t queries = 0, query_nanoseconds = 0, hits = 0, missing = 0, no_route = 0;
 	size_t stations = 0, patterns = 0, states = 0, edges = 0, destinations = 0, stored_states = 0;
 	size_t bytes = 0;
+	size_t shared_sections = 0, section_rides = 0; ///< Build-time estimates and concrete, non-spliceable rides.
 	uint64_t envelope = 0;
 	size_t retained_destinations = 0, retained_bytes = 0;
 	uint64_t retained_envelope = 0;
@@ -38,12 +39,15 @@ struct PassengerPrecomputedDiagnostic {
  * ready rows and frontier before simulation resumes. No wall-clock admission.
  * Waiting states remember the incoming pattern, so alternatives are not limited
  * to K routes and the no-immediate-reboarding constraint is part of the graph.
+ * Shared stop sections add estimated boarding costs to concrete whole rides.
+ * Their landing states permit alighting only; frequency sharing cannot splice
+ * one vehicle's prefix into another vehicle's on-board continuation.
  */
 class PassengerPrecomputedTable {
 public:
 	static constexpr uint32_t INVALID = UINT32_MAX;
 	static constexpr uint64_t MAX_BYTES = uint64_t{16} * 1024 * 1024 * 1024;
-	void Begin(std::span<const PassengerPeriodicService *const> services, CargoType cargo, int64_t transfer, uint64_t memory = MAX_BYTES);
+	void Begin(std::span<const PassengerPeriodicService *const> services, CargoType cargo, int64_t transfer, uint64_t memory = MAX_BYTES, bool sections = true);
 	size_t Step(size_t operations, bool legacy_publication = false, const std::function<void(StationID)> &published = {});
 	void ReleaseDestination(StationID destination); ///< Retire a row immediately after its replacement is published.
 	uint64_t LegacyPublicationWork() const { return uint64_t(this->rows.size()) * this->waiting_state_count; }
@@ -63,10 +67,12 @@ private:
 		uint64_t weight = 1;
 	};
 	struct Occurrence { StationID station; VehicleOrderID order; uint32_t pattern, arrival, departure; bool board, alight, forced; };
-	enum class EdgeKind : uint8_t { Board, Ride, Wait, Alight };
+	enum class EdgeKind : uint8_t { Board, Ride, Wait, Alight, Section };
 	struct Edge { uint32_t from, to, occurrence; int64_t cost; uint32_t distance; EdgeKind kind; };
+	struct SectionRide { uint32_t board, alight; int64_t riding, waiting, cost; };
 	struct Label {
 		int64_t cost = INT64_MAX, riding = 0, waiting = 0;
+		int64_t first_wait = 0;
 		uint32_t board = INVALID, alight = INVALID, legs = 0, distance = 0;
 	};
 	struct Row { std::vector<Label> labels, alternative; };
@@ -76,6 +82,8 @@ private:
 	std::vector<Pattern> patterns;
 	std::vector<Occurrence> occurrences;
 	std::vector<Edge> edges;
+	std::vector<SectionRide> section_rides;
+	std::vector<uint32_t> landings; ///< Section arrivals have no on-board continuation.
 	std::vector<uint32_t> incoming_offsets, incoming;
 	std::vector<std::vector<std::pair<uint32_t, uint32_t>>> waiting_states;
 	std::vector<Row> rows;
@@ -94,6 +102,8 @@ private:
 	uint32_t StateFor(uint32_t station, uint32_t pattern) const;
 	void StartDestination();
 	void AddEdge(uint32_t from, uint32_t to, int64_t cost, EdgeKind kind, uint32_t occurrence = INVALID, uint32_t distance = 0);
+	bool BuildSections(const std::vector<std::vector<const PassengerPeriodicService *>> &members, int64_t transfer,
+			size_t &nodes, uint64_t &envelope, uint64_t memory);
 	PassengerPrecomputedPlan Select(const Label &label, StateTicks ready, OrderListID excluded, uint32_t sample) const;
 };
 

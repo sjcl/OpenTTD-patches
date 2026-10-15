@@ -1,5 +1,8 @@
 # 旅客事前計算ルーティング：残課題への追加実装
 
+追記：Phase 4 の後続実装・検証は、[共通区間の頻度集約](passenger-common-section-frequency-2026-10-15.md)を参照。
+下表はこのレポート作成時点の状態を保持する。
+
 追記：この文書のMP途中参加の失敗に対する後続修正・再検証は、[ロード再生の分割](passenger-precomputed-join-replay-2026-10-15.md)を参照。この文書の測定結果と当時の未完了判定は履歴として保持する。
 
 開始点は `feat/passenger-precomputed-routing` の `a650090b625b30687cc0e676e157d5d15984cb0b`。
