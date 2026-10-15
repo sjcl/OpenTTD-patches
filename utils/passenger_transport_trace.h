@@ -83,6 +83,12 @@ inline void RecordLoss(const Sample &s)
 }
 inline bool Selected(const CargoPacket &packet)
 {
+	/* An independent focused run keeps all target packet representatives. Never
+	 * mix it into the ordinary 1/64 sample; canonical end state must still match. */
+	static const bool focus = getenv("OPENTTD_PASSENGER_FOCUS_TRACE") != nullptr;
+	if (focus) return (packet.GetFirstStation() == StationID{3222} && packet.GetPassengerDestination() == StationID{400}) ||
+			(packet.GetFirstStation() == StationID{971} && packet.GetPassengerDestination() == StationID{916}) ||
+			(packet.GetFirstStation() == StationID{3393} && packet.GetPassengerDestination() == StationID{3394});
 	uint64_t key = packet.index.base();
 	if (auto birth = births.find(packet.index); birth != births.end() && birth->second == _state_ticks) key ^= uint64_t(birth->second.base()) * 0x9e3779b97f4a7c15ULL;
 	key = (key ^ (key >> 30)) * 0xbf58476d1ce4e5b9ULL;

@@ -418,6 +418,7 @@ def run(args):
                 observed[key] = max(observed.get(key, 0), value)
         metadata = dict(exit_code=process.returncode, requested_ticks=args.ticks, elapsed_seconds=time.perf_counter()-started,
             trace_enabled="OPENTTD_PASSENGER_TRACE" in os.environ, checkpoint_tick=os.environ.get("OPENTTD_PASSENGER_CHECKPOINT_TICK"),
+            focused_od_trace="OPENTTD_PASSENGER_FOCUS_TRACE" in os.environ,
             contamination=contamination, input_sha256=PROFILE.sha256(directory / "input.sav"), binary_sha256=PROFILE.sha256(args.binary),
             language_sha256=PROFILE.sha256(directory / "lang/english.lng"),
             resume_settings=args.resume, fixture_timetable=args.fixture_timetable, fixture_estimated=args.fixture_estimated, cold_precomputed=args.cold_precomputed,
