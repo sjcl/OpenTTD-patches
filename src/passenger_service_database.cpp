@@ -748,7 +748,9 @@ void PassengerServiceDatabase::TickPrecomputed(size_t allowance)
 	for (CargoType cargo : EnumRange(NUM_CARGO)) {
 		auto &table = this->precomputed[cargo];
 		if (table.Finished()) continue;
+		const auto rows = table.GetDiagnostic().destinations;
 		size_t used = table.Step(allowance, false, [&](StationID destination) { this->retained_precomputed[cargo].ReleaseDestination(destination); });
+		if (table.GetDiagnostic().destinations != rows) WakePassengerWaitingCargo(cargo);
 		allowance -= used; this->precomputed_operations += used;
 		if (allowance == 0) break;
 	}

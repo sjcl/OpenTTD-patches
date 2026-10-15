@@ -1577,6 +1577,7 @@ void StateGameLoop()
 		DateDetail::_state_ticks_offset++;
 		BeginPassengerJourneyTick();
 		GetPassengerServiceDatabase().Tick();
+		RunPassengerWaitingEvents();
 
 		RunTileLoop();
 		CallVehicleTicks();
@@ -1608,6 +1609,7 @@ void StateGameLoop()
 		}
 		BeginPassengerJourneyTick();
 		GetPassengerServiceDatabase().Tick();
+		RunPassengerWaitingEvents();
 
 		if (!(_game_mode == GameMode::Menu || _game_mode == GameMode::Bootstrap) && !_settings_client.gui.autosave_realtime && _settings_client.gui.autosave_interval != 0 &&
 				(_state_ticks.base() % (_settings_client.gui.autosave_interval * (60000 / MILLISECONDS_PER_TICK))) == 0) {

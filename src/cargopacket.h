@@ -32,6 +32,7 @@
 #include <tuple>
 
 struct CargoPayment;
+struct PassengerWaitingEventDiagnostic;
 
 /** Unique identifier for a single cargo packet. */
 struct CargoPacketIDTag : public PoolIDTraits<uint32_t, 0xFFF000, 0xFFFFFF> {};
@@ -686,6 +687,9 @@ class StationCargoList : public CargoList<StationCargoList, StationCargoPacketMa
 	mutable std::multimap<StateTicks, CargoPacketID> waiting_wake;
 	mutable std::set<std::pair<StateTicks, CargoPacketID>> routing_events; ///< Erasable time priority queue, without stale tombstones.
 	mutable std::set<CargoPacketID> routing_packets; ///< Unresolved OD only; deterministic generation cursor, independent of primary queue order.
+	StationID passenger_station = StationID::Invalid(); ///< Derived owner, assigned when the goods entry is created.
+	mutable StateTicks passenger_scheduled_at = INVALID_STATE_TICKS; ///< Derived national queue handle.
+	mutable bool passenger_unresolved_registered = false;
 	void IndexPacket(CargoPacket *packet, StationID key, StationCargoPacketList::iterator position, std::optional<uint64_t> sequence = {}) const;
 	void EnsureWaitingIndex() const;
 	void AddBoardingEntry(CargoPacketID id, WaitingEntry &entry) const;
@@ -701,6 +705,12 @@ protected:
 
 public:
 	~StationCargoList();
+	void BindPassengerStation(StationID station, CargoType cargo);
+	void UpdatePassengerRoutingSchedule() const;
+	friend void RunPassengerWaitingEvents();
+	friend void RebuildPassengerWaitingScheduler();
+	friend struct PassengerWaitingEventDiagnostic;
+	friend PassengerWaitingEventDiagnostic GetPassengerWaitingEventDiagnostic();
 	void ClearWaitingIndex();
 	void ForgetWaitingPacket(CargoPacketID id) const;
 	void RefreshWaitingPacket(const CargoPacket &packet) const;
@@ -724,7 +734,7 @@ public:
 				this->passenger_routing_due != INVALID_STATE_TICKS || this->passenger_routing_sweeping || this->passenger_routing_cursor != 0 ||
 				this->passenger_routing_end != 0 || this->passenger_routing_tick != INVALID_STATE_TICKS || this->passenger_routing_work != 0;
 	}
-	static constexpr uint16_t PASSENGER_ROUTING_SLICE = 64; ///< Per cargo/station/tick, shared by all loading calls.
+	static constexpr uint16_t PASSENGER_ROUTING_SLICE = 256; ///< Cheap table events; national budget and station fairness also apply.
 	uint64_t passenger_routing_inspected = 0, passenger_generation_inspected = 0; ///< Diagnostics only.
 	void RebuildWaitingIndex() const { this->EnsureWaitingIndex(); }
 	CargoType passenger_index_cargo = INVALID_CARGO; ///< Derived owning cargo, supplied by routing/boarding events.
