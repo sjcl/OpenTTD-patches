@@ -222,6 +222,43 @@ def stdio(args):
     dump(metadata_path, metadata)
 
 
+def packet_id_control(args):
+    """Measurement-only control: restore the old boarding order, retaining direct iteration."""
+    import difflib
+    build = args.build.resolve()
+    original = build / "save-integrity/cargopacket.cpp"
+    before = original.read_text(encoding="utf-8")
+    content = before
+    changes = {
+        "const uint64_t rank = sequence ? *sequence : this->waiting_next_sequence++;":
+            "const uint64_t rank = packet->index.base(); // Measurement-only PacketID order control.",
+        "board->second.erase({entry.key, entry.sequence, id})":
+            "board->second.erase({StationID::Invalid(), entry.sequence, id})",
+        "this->boarding_index[service].emplace(key, rank, packet->index)":
+            "this->boarding_index[service].emplace(StationID::Invalid(), rank, packet->index)",
+        "this->boarding_index[it->second.service].emplace(it->second.key, it->second.sequence, wake->second)":
+            "this->boarding_index[it->second.service].emplace(StationID::Invalid(), it->second.sequence, wake->second)",
+    }
+    for old, new in changes.items():
+        if content.count(old) != 1:
+            raise ValueError(f"Boarding order control anchor changed: {old}")
+        content = content.replace(old, new)
+    folder = build / "packet-id-control"
+    folder.mkdir(exist_ok=True)
+    target = folder / "cargopacket.cpp"
+    target.write_text(content, encoding="utf-8")
+    (folder / "control.patch").write_text("".join(difflib.unified_diff(
+        before.splitlines(keepends=True), content.splitlines(keepends=True),
+        fromfile="FIFO/cargopacket.cpp", tofile="PacketID-control/cargopacket.cpp")), encoding="utf-8")
+    project = build / "openttd_lib.vcxproj"
+    xml = project.read_text(encoding="utf-8-sig").replace(str(target), str(original))
+    if xml.count(str(original)) != 1:
+        raise ValueError("Expected prepared save-integrity cargo TU")
+    project.write_text(xml.replace(str(original), str(target)), encoding="utf-8-sig")
+    dump(folder / "provenance.json", dict(scope="Copied TU only; restore pre-change PacketID priority with direct iteration",
+        original_sha256=PROFILE.sha256(original), control_sha256=PROFILE.sha256(target)))
+
+
 def probe(args):
     source, build = args.source.resolve(), args.build.resolve()
     original = source / "src/passenger_od.cpp"
@@ -404,6 +441,9 @@ def main():
     p.add_argument("build", type=pathlib.Path)
     p.add_argument("revision")
     p = sub.add_parser("stdio")
+    p.add_argument("source", type=pathlib.Path)
+    p.add_argument("build", type=pathlib.Path)
+    p = sub.add_parser("packet_id_control")
     p.add_argument("source", type=pathlib.Path)
     p.add_argument("build", type=pathlib.Path)
     p = sub.add_parser("probe")
