@@ -278,13 +278,14 @@ TEST_CASE("Mixed estimated generations replay retained rows and resume identical
 
 TEST_CASE("Shared prefix carriers stay aboard only for a safe competitive continuation", "[passenger][precomputed][estimated][sections][boarding]")
 {
-	bool estimated = false, forced = false, no_unload = false, faster_transfer = false, incompatible = false;
+	bool estimated = false, forced = false, no_unload = false, faster_transfer = false, incompatible = false, split = false;
 	SECTION("Certified carrier continues to the destination") {}
 	SECTION("Estimated carrier continues to the destination") { estimated = true; }
 	SECTION("Forced unloading prevents an extension") { forced = true; }
 	SECTION("NoUnload at the destination prevents an extension") { no_unload = true; }
 	SECTION("A much faster transfer remains preferable") { faster_transfer = true; }
 	SECTION("Live destination facilities are checked again") { incompatible = true; }
+	SECTION("A partially boarded packet leaves its remainder on the original intent") { split = true; }
 	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = true;
 	auto a = Stop(A), b = Stop(B), c = Stop(C, faster_transfer ? 10000 : 100), d = Stop(D);
 	if (estimated) a.SetTravelTimetabled(false);
@@ -300,10 +301,17 @@ TEST_CASE("Shared prefix carriers stay aboard only for a safe competitive contin
 	CHECK(peer.ExtendPrecomputedRide(actual, PAX, D) == db.ExtendPrecomputedRide(actual, PAX, D));
 	if (incompatible) Station::Get(D)->facilities = {StationFacility::Airport};
 	StationCargoList waiting;
-	for (int i = 0; i < 10; ++i) { auto *packet = f.Packet(1); packet->SetPassengerJourney(*plan.ride, B); waiting.Append(packet, B); }
+	for (int i = 0; i < (split ? 1 : 10); ++i) { auto *packet = f.Packet(split ? 10 : 1); packet->SetPassengerJourney(*plan.ride, B); waiting.Append(packet, B); }
 	const auto searches = db.GetDiagnostic().searches;
 	PassengerJourneyLoadingContext loading;
-	REQUIRE(waiting.Load(10, &long_train->cargo, std::array{B, C, D}, TileIndex{0}, long_train, &loading) == 10);
+	const uint load = split ? 5 : 10;
+	REQUIRE(waiting.Load(load, &long_train->cargo, std::array{B, C, D}, TileIndex{0}, long_train, &loading) == load);
+	if (split) {
+		CHECK(waiting.TotalCount() == 5);
+		for (const auto &[via, packets] : *waiting.Packets()) for (const CargoPacket *packet : packets) {
+			CHECK(packet->GetPassengerJourney() == *plan.ride); CHECK(packet->Count() == 5);
+		}
+	}
 	for (const CargoPacket *packet : *long_train->cargo.Packets()) {
 		const auto &ride = packet->GetPassengerJourney(); CHECK(ride.service == long_train->orders->index);
 		CHECK(ride.alighting == (forced || no_unload || faster_transfer || incompatible ? B : D));
