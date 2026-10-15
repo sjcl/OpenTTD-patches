@@ -1501,9 +1501,16 @@ void NetworkGameLoop()
 
 		/* Make sure we are at the frame were the server is (quick-frames) */
 		if (_frame_counter_server > _frame_counter) {
-			/* Run a number of frames; when things go bad, get out. */
+			/* Catch-up can contain expensive simulation frames after a join.
+			 * Flush real frame ACKs and receive packets between slices, just
+			 * as during mandatory map replay; never acknowledge unrun frames. */
+			const auto started = std::chrono::steady_clock::now();
+			uint frames = 0;
 			while (_frame_counter_server > _frame_counter) {
 				if (!ClientNetworkGameSocketHandler::GameLoop()) return;
+				/* Fixed-rate video drivers must be able to run more than one
+				 * frame per tick to catch up even when a frame exceeds 8 ms. */
+				if (++frames >= 2 && std::chrono::steady_clock::now() - started >= std::chrono::milliseconds(8)) break;
 			}
 		} else {
 			/* Else, keep on going till _frame_counter_max */
