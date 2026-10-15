@@ -109,6 +109,8 @@ def population_summary(directory):
 
 
 def summarize(directory):
+    process_path = directory / 'process.json'
+    focused = process_path.exists() and json.loads(process_path.read_text(encoding='utf-8')).get('focused_od_trace', False)
     delivered = read(directory / "transport-delivered.csv")
     pending = read(directory / "transport-pending.csv")
     lost = read(directory / "transport-lost.csv")
@@ -184,7 +186,9 @@ def summarize(directory):
                                   initial_known=meta['initial_known_passengers'], assigned_known=meta['assigned_units'],
                                   delivered_known=population['known_od_delivered'], remaining_known=meta['remaining_known_passengers'],
                                   known_removals_or_destination_invalidation=meta['initial_known_passengers'] + meta['assigned_units'] - population['known_od_delivered'] - meta['remaining_known_passengers'])
-    return dict(run=directory.name, delivered_samples=len(delivered), complete_trip_samples=len(complete),
+    return dict(run=directory.name,
+                sampling_method=('target_od_packet_representatives' if focused else 'hash_one_in_64_packet_representatives'),
+                delivered_samples=len(delivered), complete_trip_samples=len(complete),
                 population_transport=population, population_balance=population_balance,
                 original_destination_mismatch_samples=len(destination_mismatches),
                 original_destination_mismatch_examples=destination_mismatches[:20],
@@ -258,9 +262,11 @@ def compare_initial(left, right):
 def main():
     output, *runs = map(pathlib.Path, sys.argv[1:])
     result = dict(runs=[summarize(run) for run in runs],
-                  limitations="Deterministic hash sampling of approximately one eligible packet in 64, one person at its midpoint, capped at 65536 starts; this is not a population-weighted travel-time estimate. Initial known-OD people are enrolled before settings change and matched by saved packet ID and offset. Loaded trips are left-censored; fresh full-trip and observed-origin-departure metrics are separate. Pending trips are right-censored; erasure/reduction without delivery is lost. All passenger movement totals use actual vehicle cargo, excluding reservations; population removals are the inventory residual, not a diagnosis of their cause. Service classes use actual vehicles' group names at movement; sampled service summaries use the end manifest. Observed misses cover only queried indexed candidates with positive free capacity, which other passengers may consume, and may undercount collective cache hits. Structural short turns conservatively require two reversal stops, a proper subset of a longer nominal route's stops and edges, and at least one internal reversal. Order count is not a service class. Physical distance is Manhattan displacement in 1/16-tile units.")
+                  limitations="Each run reports its sampling_method: ordinary runs use deterministic hash sampling of approximately one eligible packet in 64; independent focused runs select all packet representatives for the three target ODs. Each follows one person at the packet midpoint, capped at 65536 starts; neither is a population-weighted travel-time estimate. Do not pool focused and ordinary samples. Initial known-OD people are enrolled before settings change and matched by saved packet ID and offset. Loaded trips are left-censored; fresh full-trip and observed-origin-departure metrics are separate. Pending trips are right-censored; erasure/reduction without delivery is lost. All passenger movement totals use actual vehicle cargo, excluding reservations; population removals are the inventory residual, not a diagnosis of their cause. Service classes use actual vehicles' group names at movement; sampled service summaries use the end manifest. Observed misses cover only queried indexed candidates with positive free capacity, which other passengers may consume, and may undercount collective cache hits. Structural short turns conservatively require two reversal stops, a proper subset of a longer nominal route's stops and edges, and at least one internal reversal. Order count is not a service class. Physical distance is Manhattan displacement in 1/16-tile units.")
     if len(result["runs"]) == 2:
         left, right = result["runs"]
+        if left['sampling_method'] != right['sampling_method']:
+            raise ValueError('Focused and ordinary packet samples require separate reports')
         common = []
         for od in left["completed_od_ticks"].keys() & right["completed_od_ticks"].keys():
             a, b = left["completed_od_ticks"][od], right["completed_od_ticks"][od]
