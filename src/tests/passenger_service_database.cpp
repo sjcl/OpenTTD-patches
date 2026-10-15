@@ -18,6 +18,8 @@
 #include "../command_func.h"
 #include "../company_func.h"
 #include "../clear_map.h"
+#include "../road_cmd.h"
+#include "../road.h"
 #include "../core/backup_type.hpp"
 #include "../core/random_func.hpp"
 #include "../sl/saveload.h"
@@ -229,6 +231,33 @@ TEST_CASE("Estimated durations preserve measured sections and use deterministic 
 	for (auto &order : orders) { order.SetTravelTime(0); order.SetWaitTime(0); order.SetTravelTimetabled(true); order.SetWaitTimetabled(true); }
 	CHECK(PassengerPeriodicTimetable::Compile(orders).period == 0);
 	CHECK(PassengerPeriodicTimetable::CompileEstimated(orders, VehicleType::Train).estimated_period > 0);
+}
+
+TEST_CASE("Mixed estimated generations replay retained rows and resume identical publication", "[passenger][precomputed][estimated][save][network]")
+{
+	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = true;
+	auto missing = Stop(B); missing.SetTravelTimetabled(false);
+	f.Train({Stop(A), missing, Stop(C), Stop(D)}); f.Train({Stop(A), Stop(C), Stop(D)});
+	auto &db = f.Build(); while (!db.PreparePrecomputed()) {}
+	_settings_game.linkgraph.passenger_transfer_penalty = 17; db.TickPrecomputed(1);
+	REQUIRE(db.GetPrecomputedDiagnostic(PAX).retained_destinations > 0);
+	const auto wire = db.Save(); const auto searches = db.GetDiagnostic().searches;
+	PassengerServiceDatabase peer; REQUIRE(peer.Load(wire)); peer.FinishLoad(true, true);
+	for (size_t slice = 0; peer.GetLoadState() == PassengerServiceDatabase::LoadState::Replaying; ++slice) {
+		REQUIRE(slice < 10000); CHECK(peer.Save() == wire); CHECK(_state_ticks == NOW);
+		peer.StepLoad(slice % 2 == 0 ? 1 : 19);
+	}
+	REQUIRE(peer.GetLoadState() == PassengerServiceDatabase::LoadState::Ready);
+	CHECK(peer.Save() == wire);
+	for (size_t step = 0; !db.PrecomputedFinished(); ++step) {
+		REQUIRE(step < 10000); db.TickPrecomputed(13); peer.TickPrecomputed(13);
+		CHECK(peer.Save() == db.Save());
+		for (auto from : {A, B, C}) {
+			auto expected = db.PlanPrecomputed(PAX, from, D, NOW); auto actual = peer.PlanPrecomputed(PAX, from, D, NOW);
+			CHECK(expected.state == actual.state); CHECK(expected.ride == actual.ride); CHECK(expected.cost == actual.cost);
+		}
+	}
+	CHECK(db.GetDiagnostic().searches == searches); CHECK(peer.GetDiagnostic().searches == 0);
 }
 
 TEST_CASE("Estimated boarding rechecks changed orders cargo facilities and generations", "[passenger][precomputed][estimated][boarding]")
@@ -1478,6 +1507,24 @@ TEST_CASE("Unrelated landscape clearing preserves the published passenger networ
 	REQUIRE(Command<Commands::LandscapeClear>::Do({DoCommandFlag::Execute}, tile).Succeeded());
 	CHECK(db.Get(train->orders->index)->generation == generation);
 	CHECK(db.GetDiagnostic().global_invalidations == 0);
+}
+
+TEST_CASE("Town road construction leaves unrelated indexed passenger rides boardable", "[passenger][precomputed][estimated][quality][construction]")
+{
+	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = true;
+	ResetRoadTypes();
+	auto *train = f.Train({Stop(A), Stop(D)}); auto &db = f.Build(); while (!db.PreparePrecomputed()) {}
+	auto plan = db.PlanPrecomputed(PAX, A, D, NOW); REQUIRE(plan.ride);
+	auto *packet = f.Packet(); packet->SetPassengerJourney(*plan.ride, D);
+	PassengerJourneyLoadingContext before; REQUIRE(before.CanBoard(*packet, train, PAX));
+	AutoRestoreBackup company{_current_company, OWNER_DEITY};
+	TileIndex tile = TileXY(40, 40); MakeClear(tile, ClearGround::Grass, 3);
+	REQUIRE(Command<Commands::BuildRoad>::Do({DoCommandFlag::Execute}, tile, ROAD_X, ROADTYPE_ROAD,
+			DisallowedRoadDirections{}, TownID::Invalid(), BuildRoadFlags::None).Succeeded());
+	CHECK(db.GetDiagnostic().global_invalidations == 0); CHECK(db.IsCurrent(*plan.ride));
+	PassengerJourneyLoadingContext after; CHECK(after.CanBoard(*packet, train, PAX));
+	CHECK(db.PlanPrecomputed(PAX, A, D, NOW).ride == plan.ride); CHECK(db.GetDiagnostic().searches == 0);
+	delete packet;
 }
 
 TEST_CASE("Automatic timetable edits coalesce while safe old generations and policies survive", "[passenger][periodic][save][determinism]")

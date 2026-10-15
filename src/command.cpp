@@ -50,6 +50,14 @@ ClientID _cmd_client_id = ClientID::Invalid;
 static bool PassengerConstructionChangesRouting(CommandType type, Commands cmd, TileIndex tile)
 {
 	if (cmd == Commands::RefitVehicle) return false; // Auto-refit is frequent; CmdRefitVehicle checks its actual affected consist.
+	/* Town growth repeatedly lays single road tiles and adjusts terrain. Away
+	 * from a station these do not change any declared stop, cargo permission or
+	 * vehicle/facility compatibility. Blocking the entire published network for
+	 * them strands otherwise boardable cohorts until the next database sweep.
+	 * Station demolition performed by a nested clear retains its own hook. */
+	if (cmd == Commands::BuildRoad || cmd == Commands::TerraformLand) {
+		return tile < Map::Size() && IsTileType(tile, TileType::Station);
+	}
 	/* Town growth and landscape maintenance clear thousands of unrelated tiles.
 	 * Inspect the original tile, before the command removes its transport type. */
 	if (cmd == Commands::LandscapeClear) {
