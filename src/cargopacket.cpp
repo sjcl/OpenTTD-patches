@@ -83,8 +83,8 @@ void StationCargoList::UpdatePassengerRoutingSchedule() const
 		/* Unserved stations retain their old deadline ahead of a station that
 		 * has used its quantum. Count/payment-only refreshes keep the handle. */
 		if (due != INVALID_STATE_TICKS && this->passenger_routing_work >= PASSENGER_ROUTING_SLICE && this->passenger_routing_tick >= due) due = this->passenger_routing_tick + 1;
+		_passenger_event_diagnostic.maximum_station_backlog = std::max<uint64_t>(_passenger_event_diagnostic.maximum_station_backlog, this->routing_events.size());
 	}
-	_passenger_event_diagnostic.maximum_station_backlog = std::max<uint64_t>(_passenger_event_diagnostic.maximum_station_backlog, this->routing_events.size());
 	if (due == this->passenger_scheduled_at) return;
 	if (this->passenger_scheduled_at != INVALID_STATE_TICKS) _passenger_due_lists.erase({this->passenger_scheduled_at, this->passenger_station, this->passenger_index_cargo});
 	this->passenger_scheduled_at = due;
@@ -136,8 +136,10 @@ void WakePassengerWaitingCargo(CargoType cargo)
 PassengerWaitingEventDiagnostic GetPassengerWaitingEventDiagnostic()
 {
 	auto result = _passenger_event_diagnostic;
+	if (!_settings_game.linkgraph.passenger_journey_precomputed) return result;
 	/* Explicit diagnostics only; simulation never walks this registry per tick. */
 	for (const auto &[owner, list] : _passenger_station_lists) {
+		if (!IsPassengerJourneyRoutingEnabled(owner.second)) continue;
 		uint64_t pending = list->routing_events.size();
 		for (const auto &[due, id] : list->routing_events) {
 			if (due > _state_ticks) break;

@@ -1335,11 +1335,14 @@ bool PassengerJourneyLoadingContext::CanBoardUncached(const CargoPacket &packet,
 	if (IsPassengerJourneyRoutingEnabled(cargo) && Station::IsValidID(packet.GetPassengerDestination()) &&
 			packet.GetPassengerArrivingService() != OrderListID::Invalid() && (_state_ticks < packet.GetPassengerInterchangeReady() ||
 			(vehicle->First()->orders != nullptr && vehicle->First()->orders->index == packet.GetPassengerArrivingService() && vehicle->First()->orders->GetCargoDistRouteGeneration() == packet.GetPassengerArrivingIncarnation()))) return false;
-	if (packet.GetPassengerRoutingMode() != PassengerRoutingMode::Journey) {
+	const bool stale = _settings_game.linkgraph.passenger_journey_precomputed && packet.GetPassengerRoutingMode() == PassengerRoutingMode::Journey &&
+			!GetPassengerServiceDatabase().IsCurrent(packet.GetPassengerJourney());
+	if (packet.GetPassengerRoutingMode() != PassengerRoutingMode::Journey || stale) {
 		if (_settings_game.linkgraph.passenger_journey_precomputed && IsPassengerJourneyRoutingEnabled(cargo) && Station::IsValidID(packet.GetPassengerDestination())) {
 			const auto &plan = this->PendingPlan(packet, vehicle, cargo);
 			if (plan.ride) return this->boarding.try_emplace({vehicle->First()->index, cargo}, vehicle, cargo).first->second.CanBoardIntent(*plan.ride);
 		}
+		if (stale) return false;
 		return !IsPassengerJourneyRoutingEnabled(cargo) || !Station::IsValidID(packet.GetPassengerDestination()) || this->fallback.CanBoard(packet, vehicle, cargo);
 	}
 	if (packet.GetPassengerJourney().kind != PassengerRideKind::ServiceIntent && packet.GetPassengerJourney().kind != PassengerRideKind::EstimatedServiceIntent && packet.GetPassengerJourney().vehicle != vehicle->First()->index) return false;
@@ -1369,7 +1372,8 @@ const PassengerPrecomputedPlan &PassengerJourneyLoadingContext::PendingPlan(cons
 
 void PassengerJourneyLoadingContext::ResolveWaiting(CargoPacket &packet, const Vehicle *vehicle)
 {
-	if (vehicle == nullptr || !_settings_game.linkgraph.passenger_journey_precomputed || packet.GetPassengerRoutingMode() == PassengerRoutingMode::Journey ||
+	if (vehicle == nullptr || !_settings_game.linkgraph.passenger_journey_precomputed ||
+			(packet.GetPassengerRoutingMode() == PassengerRoutingMode::Journey && GetPassengerServiceDatabase().IsCurrent(packet.GetPassengerJourney())) ||
 			!IsPassengerJourneyRoutingEnabled(vehicle->cargo_type) || !Station::IsValidID(packet.GetPassengerDestination())) return;
 	const auto &plan = this->PendingPlan(packet, vehicle, vehicle->cargo_type);
 	if (plan.ride) {
@@ -1380,7 +1384,8 @@ void PassengerJourneyLoadingContext::ResolveWaiting(CargoPacket &packet, const V
 
 void PassengerJourneyLoadingContext::ObserveWaitingGroup(const CargoPacket &packet, const Vehicle *vehicle, CargoType cargo, size_t packets)
 {
-	if (!this->waiting_events || vehicle == nullptr || packet.GetPassengerRoutingMode() == PassengerRoutingMode::Journey ||
+	if (!this->waiting_events || vehicle == nullptr ||
+			(packet.GetPassengerRoutingMode() == PassengerRoutingMode::Journey && GetPassengerServiceDatabase().IsCurrent(packet.GetPassengerJourney())) ||
 			!IsPassengerJourneyRoutingEnabled(cargo) || !Station::IsValidID(packet.GetPassengerDestination())) return;
 	const auto &plan = this->PendingPlan(packet, vehicle, cargo);
 	/* This is an upper estimate for rejected, unresolved cohorts, not proof of

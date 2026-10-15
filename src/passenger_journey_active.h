@@ -18,7 +18,7 @@ void PassengerJourneySettingsChanged(int32_t);
 class PassengerJourneyLoadingContext;
 void RouteWaitingPassengerJourneys(Station *station, PassengerJourneyLoadingContext *loading = nullptr);
 void AfterLoadPassengerJourneys();
-static constexpr size_t PASSENGER_ROUTING_TICK_WORK = 32768;
+static constexpr size_t PASSENGER_ROUTING_TICK_WORK = 8192;
 void RunPassengerWaitingEvents(); ///< National due queue; never enumerates Station::Iterate().
 void RebuildPassengerWaitingScheduler(); ///< Load/clock rebase only; restores the debit from saved goods entries.
 bool ConsumePassengerRoutingWork();

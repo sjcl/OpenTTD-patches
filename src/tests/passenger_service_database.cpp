@@ -2900,6 +2900,34 @@ TEST_CASE("National passenger events run at stations without loading vehicles", 
 	RunPassengerWaitingEvents(); CHECK(waiting.passenger_routing_inspected == inspected);
 }
 
+TEST_CASE("Passenger event diagnostics exclude inactive cargo and disabled routing", "[passenger][precomputed][events][scheduler][diagnostic]")
+{
+	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = true;
+	constexpr CargoType INACTIVE{1};
+	AutoRestoreBackup<CargoClasses> inactive_classes{CargoSpec::Get(INACTIVE)->classes, CargoClasses{}};
+	f.Train({Stop(A), Stop(D)});
+	auto &active = Station::Get(A)->goods[PAX].CreateData().cargo;
+	auto &inactive = Station::Get(A)->goods[INACTIVE].CreateData().cargo;
+	ResetPassengerWaitingEventDiagnostic();
+	auto *passenger = f.Packet(1); active.Append(passenger, D); passenger->SchedulePassengerRouting(NOW + 10);
+	active.RebuildWaitingIndex();
+	/* Save/NewGRF cargo conversions can leave passenger metadata in an
+	 * inactive goods list. These are not runnable passenger events. */
+	for (int i = 0; i < 100; ++i) {
+		auto *packet = CargoPacket::Create(1, i, A, TileIndex{0}, Money{7});
+		REQUIRE(packet->SetPassengerDestination(PAX, D)); packet->SchedulePassengerRouting(StateTicks{0}); inactive.Append(packet, D);
+	}
+	inactive.RebuildWaitingIndex();
+	const auto stats = GetPassengerWaitingEventDiagnostic();
+	CHECK(stats.pending == 1); CHECK(stats.overdue == 0); CHECK(stats.oldest_ticks == 0);
+	CHECK(stats.maximum_station_backlog == 1);
+	_settings_game.linkgraph.passenger_journey_precomputed = false;
+	CHECK(GetPassengerWaitingEventDiagnostic().pending == 0);
+	_settings_game.linkgraph.passenger_journey_precomputed = true;
+	_settings_game.linkgraph.passenger_journey_routing = false;
+	CHECK(GetPassengerWaitingEventDiagnostic().pending == 0);
+}
+
 TEST_CASE("National passenger event fairness and debit survive index reconstruction", "[passenger][precomputed][events][scheduler][determinism]")
 {
 	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = true;
@@ -2960,6 +2988,30 @@ TEST_CASE("Indexed boarding resolves unprocessed cohorts beyond the station even
 	CHECK(partial->Count() == 10); CHECK(partial->GetPassengerJourney().kind == PassengerRideKind::EstimatedServiceIntent);
 	CHECK(waiting.Reserve(19, &long_train->cargo, std::array{B, C, D}, TileIndex{0}, long_train, &remaining) == 19);
 	CHECK(waiting.AvailableCount() == 0);
+}
+
+TEST_CASE("Indexed boarding renews stale intents after the national event allowance is spent", "[passenger][precomputed][events][scheduler][boarding][generation]")
+{
+	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = true;
+	auto *train = f.Train({Stop(A), Stop(D)}); auto &db = f.Build(); while (!db.PreparePrecomputed()) {}
+	auto plan = db.PlanPrecomputed(PAX, A, D, NOW); REQUIRE(plan.ride);
+	auto *packet = f.Packet(10); packet->SetPassengerJourney(*plan.ride, D);
+	auto &waiting = Station::Get(A)->goods[PAX].CreateData().cargo; waiting.Append(packet, D);
+	const auto old_intent = packet->GetPassengerJourney();
+	train->current_order_time = 1; db.Invalidate(train->orders->index); f.PublishUpdates(db);
+	REQUIRE_FALSE(db.IsCurrent(old_intent)); REQUIRE(db.PlanPrecomputed(PAX, A, D, _state_ticks).ride);
+	while (ConsumePassengerRoutingWork()) {}
+	const auto deadline = packet->GetPassengerRoutingEvent();
+	PassengerJourneyLoadingContext loading;
+	CHECK(waiting.HasCargoFor(std::array{D}, train, &loading, PAX));
+	CHECK(packet->GetPassengerJourney() == old_intent); CHECK(packet->GetPassengerRoutingEvent() == deadline);
+	CHECK(waiting.Load(4, &train->cargo, std::array{D}, TileIndex{0}, train, &loading) == 4);
+	CHECK(waiting.AvailableCount() == 6); CHECK(packet->Count() == 6);
+	CHECK(packet->GetPassengerJourney().kind == PassengerRideKind::EstimatedServiceIntent);
+	CHECK(db.IsCurrent(packet->GetPassengerJourney())); CHECK(packet->GetPassengerDestination() == D);
+	for (const auto *loaded : *train->cargo.Packets()) {
+		CHECK(db.IsCurrent(loaded->GetPassengerJourney())); CHECK(loaded->GetPassengerJourney().vehicle == train->index);
+	}
 }
 
 TEST_CASE("Precomputed dormant no-route cohorts wake on publication without periodic polling", "[passenger][precomputed][events][generation]")
