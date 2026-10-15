@@ -232,9 +232,10 @@ PassengerPeriodicTimetable PassengerPeriodicTimetable::Compile(std::span<const O
 	return result;
 }
 
-/** Preserve only unconditional order stretches. A conditional/jump, refit or
- * terminating depot cuts continuity, rather than creating a fictitious circuit.
- * Offsets describe durations, even across cuts; cuts never become ride edges.
+/** Preserve unconditional order cycles. A conditional/jump, refit or terminating
+ * depot remains Unsupported: a linear fragment behind an always-taken jump or
+ * halt is not evidence of an operating service. Partial patterns require a
+ * separate control-flow/recurrence proof, not just cutting the preceding edge.
  * Recorded positive durations outrank geometry. Unknown zero dwell uses 10 ticks
  * (aircraft 32); geometric travel uses conservative mode-specific ticks/tile and
  * a fixed acceleration/terminal allowance. No live position or local cache input. */
@@ -243,23 +244,29 @@ PassengerPeriodicTimetable PassengerPeriodicTimetable::CompileEstimated(std::spa
 	PassengerPeriodicTimetable result;
 	if (orders.size() > 4096 || type >= VehicleType::CompanyEnd) return result;
 	int64_t cursor = 0, first_travel = 0;
-	bool first = true, barrier = false, leading_barrier = false;
-	const bool zero_circuit = std::none_of(orders.begin(), orders.end(), [](const Order &o) { return o.GetTravelTime() != 0 || o.GetWaitTime() != 0; });
+	bool first = true;
+	const bool zero_circuit = std::none_of(orders.begin(), orders.end(), [](const Order &o) {
+		return !o.IsType(OT_IMPLICIT) && !o.IsType(OT_LABEL) && (o.GetTravelTime() != 0 ||
+				(o.IsType(OT_GOTO_DEPOT) ? o.GetTimetabledWait() : o.GetWaitTime()) != 0);
+	});
 	uint8_t quality = 0, leading_quality = 0;
-	const Station *previous = nullptr;
-	for (const auto &order : orders) if (order.IsType(OT_GOTO_STATION)) previous = Station::GetIfValid(order.GetDestination().ToStationID());
+	const BaseStation *previous = nullptr;
+	for (const auto &order : orders) if (order.IsType(OT_GOTO_STATION) || order.IsType(OT_GOTO_WAYPOINT)) {
+		if (const auto *position = BaseStation::GetIfValid(order.GetDestination().ToStationID())) previous = position;
+	}
 	for (size_t i = 0; i < orders.size(); ++i) {
 		const Order &order = orders[i];
 		if (order.IsType(OT_IMPLICIT) || order.IsType(OT_LABEL)) continue;
 		bool safe = !order.IsRefit() && (order.IsType(OT_GOTO_STATION) || order.IsType(OT_GOTO_WAYPOINT) ||
 				(order.IsType(OT_GOTO_DEPOT) && ClassifyPassengerDepot(order) != PassengerDepotTraversal::Blocked && !order.IsScheduledDispatchOrder(true)));
-		if (!safe) { barrier = true; previous = nullptr; continue; }
+		if (!safe) return {};
 		const Station *station = order.IsType(OT_GOTO_STATION) ? Station::GetIfValid(order.GetDestination().ToStationID()) : nullptr;
+		const BaseStation *position = order.IsBaseStationOrder() ? BaseStation::GetIfValid(order.GetDestination().ToStationID()) : nullptr;
 		int64_t travel = order.GetTravelTime();
 		if (!order.IsTravelTimetabled() || zero_circuit) {
 			quality = std::max<uint8_t>(quality, travel > 0 ? 1 : 2);
 			if (travel == 0) {
-				int64_t distance = previous != nullptr && station != nullptr ? DistanceManhattan(previous->xy, station->xy) : 8;
+				int64_t distance = previous != nullptr && position != nullptr ? DistanceManhattan(previous->xy, position->xy) : 8;
 				int64_t per_tile = type == VehicleType::Road ? 8 : type == VehicleType::Ship ? 16 : type == VehicleType::Aircraft ? 2 : 4;
 				travel = std::max<int64_t>(1, distance) * per_tile + (type == VehicleType::Aircraft ? 128 : 16);
 			}
@@ -281,18 +288,19 @@ PassengerPeriodicTimetable PassengerPeriodicTimetable::CompileEstimated(std::spa
 				if (unload != OrderUnloadType::NoUnload) stop.alight |= mask;
 				if (order.GetCargoLoadType(cargo) != OrderLoadType::NoLoad && !(stop.forced & mask)) stop.board |= mask;
 			}
-			if (result.stops.empty()) { leading_barrier = barrier; leading_quality = quality; }
-			else result.stops.back().continues = !barrier;
-			result.stops.push_back(stop); barrier = false; quality = 0;
+			if (result.stops.empty()) leading_quality = quality;
+			result.stops.push_back(stop); quality = 0;
 		} else {
-			if (order.IsType(OT_GOTO_STATION) && station == nullptr) barrier = true;
+			if (order.IsType(OT_GOTO_STATION) && station == nullptr) return {};
 			if (!AddTicks(cursor, wait)) return {};
 		}
-		previous = station;
+		/* Keep the last known position through a depot without coordinates. An
+		 * unknown waypoint/depot must not replace a long station-to-station leg
+		 * with just two short constant estimates. */
+		if (position != nullptr) previous = position;
 		if (cursor > MAX_PERIOD) return {};
 	}
 	if (!AddTicks(cursor, first_travel) || cursor <= 0 || cursor > MAX_PERIOD || result.stops.size() < 2) return {};
-	result.stops.back().continues = !barrier && !leading_barrier;
 	result.stops.front().travel_quality = std::max(quality, leading_quality);
 	int64_t origin = result.stops.front().arrival;
 	for (auto &stop : result.stops) { stop.arrival -= origin; stop.departure -= origin; }

@@ -20,6 +20,7 @@
 #include "../clear_map.h"
 #include "../road_cmd.h"
 #include "../road.h"
+#include "../waypoint_base.h"
 #include "../core/backup_type.hpp"
 #include "../core/random_func.hpp"
 #include "../sl/saveload.h"
@@ -189,7 +190,7 @@ TEST_CASE("Incomplete timetables retain concrete estimated rides and indexed loa
 	CHECK(arrived.Decide(*packet, PAX, true, OrderUnloadType::UnloadIfPossible) == VehicleCargoList::MoveToAction::Deliver);
 }
 
-TEST_CASE("Estimated patterns cut unsafe controls and preserve safe partial stretches", "[passenger][precomputed][estimated][orders]")
+TEST_CASE("Unsupported controls never advertise fragments behind a jump refit or halt", "[passenger][precomputed][estimated][orders]")
 {
 	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = true;
 	Order control; control.MakeConditional(0);
@@ -200,14 +201,13 @@ TEST_CASE("Estimated patterns cut unsafe controls and preserve safe partial stre
 	auto *train = f.Train({Stop(A), Stop(B), control, Stop(C), Stop(D)});
 	auto &db = f.Build(); while (!db.PreparePrecomputed()) {}
 	const auto &t = db.Get(train->orders->index)->timetable;
-	REQUIRE(t.stops.size() == 4); CHECK_FALSE(t.stops[1].continues);
-	REQUIRE(db.PlanPrecomputed(PAX, A, B, NOW).ride); REQUIRE(db.PlanPrecomputed(PAX, C, D, NOW).ride);
+	CHECK(t.GetCertainty() == PassengerPeriodicTimetable::Certainty::Unsupported);
+	CHECK(t.stops.empty());
+	/* C and D are written after the unconditional jump/halting depot. Merely
+	 * cutting B->C must not invent a recurring C->D service which never runs. */
+	CHECK_FALSE(db.PlanPrecomputed(PAX, C, D, NOW).ride);
 	CHECK_FALSE(db.PlanPrecomputed(PAX, A, D, NOW).ride);
 	CHECK_FALSE(db.PlanPrecomputed(PAX, B, C, NOW).ride);
-	auto safe = db.PlanPrecomputed(PAX, C, D, NOW); REQUIRE(safe.ride); train->LoadAt(3);
-	CHECK(ValidatePassengerServiceRide(*safe.ride, train, PAX, true));
-	train->LoadAt(0); auto forged = *safe.ride; forged.boarding = A; forged.boarding_order = 0;
-	CHECK_FALSE(ValidatePassengerServiceRide(forged, train, PAX, true));
 }
 
 TEST_CASE("Estimated durations preserve measured sections and use deterministic mode costs", "[passenger][precomputed][estimated][cost]")
@@ -231,6 +231,22 @@ TEST_CASE("Estimated durations preserve measured sections and use deterministic 
 	for (auto &order : orders) { order.SetTravelTime(0); order.SetWaitTime(0); order.SetTravelTimetabled(true); order.SetWaitTimetabled(true); }
 	CHECK(PassengerPeriodicTimetable::Compile(orders).period == 0);
 	CHECK(PassengerPeriodicTimetable::CompileEstimated(orders, VehicleType::Train).estimated_period > 0);
+	Order depot; depot.MakeGoToDepot(DepotID{0}, {OrderDepotTypeFlag::PartOfOrders}); depot.SetWaitTime(77);
+	orders.insert(orders.begin() + 1, depot); // The raw unconfirmed depot dwell is not an executed waiting instruction.
+	CHECK(PassengerPeriodicTimetable::CompileEstimated(orders, VehicleType::Train).estimated_period > 0);
+}
+
+TEST_CASE("Missing waypoint durations retain the physical distance of the detour", "[passenger][precomputed][estimated][cost]")
+{
+	Fixture f; f.Train({Stop(A), Stop(D)});
+	Station::Get(A)->xy = TileXY(20, 20); Station::Get(D)->xy = TileXY(100, 20);
+	Waypoint::CreateAtIndex(C, TileXY(20, 100));
+	Order a = Stop(A, 0, 0), d = Stop(D, 0, 0), waypoint; waypoint.MakeGoToWaypoint(C);
+	a.SetTravelTimetabled(false); d.SetTravelTimetabled(false);
+	auto table = PassengerPeriodicTimetable::CompileEstimated(std::array{a, waypoint, d}, VehicleType::Train);
+	REQUIRE(table.stops.size() == 2);
+	CHECK(table.stops[1].arrival - table.stops[0].departure >= 4 * (80 + 160));
+	CHECK(table.stops[1].travel_quality == 2);
 }
 
 TEST_CASE("Mixed estimated generations replay retained rows and resume identical publication", "[passenger][precomputed][estimated][save][network]")
@@ -1524,6 +1540,9 @@ TEST_CASE("Town road construction leaves unrelated indexed passenger rides board
 	CHECK(db.GetDiagnostic().global_invalidations == 0); CHECK(db.IsCurrent(*plan.ride));
 	PassengerJourneyLoadingContext after; CHECK(after.CanBoard(*packet, train, PAX));
 	CHECK(db.PlanPrecomputed(PAX, A, D, NOW).ride == plan.ride); CHECK(db.GetDiagnostic().searches == 0);
+	REQUIRE(Command<Commands::LandscapeClear>::Do({DoCommandFlag::Execute}, tile).Succeeded());
+	CHECK(db.GetDiagnostic().global_invalidations == 0); CHECK(db.IsCurrent(*plan.ride));
+	PassengerJourneyLoadingContext cleared; CHECK(cleared.CanBoard(*packet, train, PAX));
 	delete packet;
 }
 
