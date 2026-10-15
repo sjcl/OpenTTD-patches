@@ -51,6 +51,63 @@ TEST_CASE("Map replay progress validates work and bounds bursts independently pe
 	CHECK(other.Idle(start + seconds(16), milliseconds(15000)));
 }
 
+TEST_CASE("Server preparation and client join have separate bounded deadlines", "[network][join][security]")
+{
+	using namespace std::chrono;
+	const NetworkJoinProgress::Clock::time_point start{};
+	NetworkJoinProgress client; client.Start(start);
+	client.SetServerPreparing(true, start);
+	CHECK_FALSE(client.Expired(start + seconds(665), seconds(900)));
+	client.SetServerPreparing(false, start + seconds(665));
+	client.BeginReplay(UINT64_MAX, start + seconds(665));
+	/* The real-map serial 665s preparation + 399s join must fit. */
+	CHECK_FALSE(client.Expired(start + seconds(1064), seconds(900)));
+	CHECK(client.GetServerPreparationTime(start + seconds(1064)) == seconds(665));
+	CHECK(client.GetClientJoinTime(start + seconds(1064)) == seconds(399));
+	/* Claims, another queue transition and BeginReplay cannot renew either budget. */
+	for (int second = 1065; second < 1565; ++second) {
+		REQUIRE(client.Report(second, start + seconds(second)) == NetworkJoinProgress::Result::Accepted);
+		CHECK_FALSE(client.Expired(start + seconds(second), seconds(900)));
+	}
+	client.Start(start + seconds(1565)); client.BeginReplay(UINT64_MAX, start + seconds(1565));
+	client.SetServerPreparing(false, start + seconds(1565));
+	CHECK(client.Expired(start + seconds(1565), seconds(900)));
+	CHECK_FALSE(client.ServerPreparationExpired(start + seconds(1565), seconds(900)));
+}
+
+TEST_CASE("Server preparation wait is cumulative and cannot reserve a connection forever", "[network][join][security]")
+{
+	using namespace std::chrono;
+	const NetworkJoinProgress::Clock::time_point start{};
+	NetworkJoinProgress client, other; client.Start(start); other.Start(start);
+	client.SetServerPreparing(true, start + seconds(10));
+	client.SetServerPreparing(true, start + seconds(200)); // Repeated polling must not restart waiting.
+	client.SetServerPreparing(false, start + seconds(410));
+	client.SetServerPreparing(true, start + seconds(500));
+	CHECK_FALSE(client.Expired(start + seconds(999), seconds(900)));
+	CHECK(client.ServerPreparationExpired(start + seconds(1000), seconds(900)));
+	CHECK(client.Expired(start + seconds(1000), seconds(900)));
+	client.SetServerPreparing(false, start + seconds(1000));
+	client.Start(start + seconds(1001)); client.BeginReplay(UINT64_MAX, start + seconds(1001));
+	client.SetServerPreparing(true, start + seconds(1001));
+	CHECK(client.Expired(start + seconds(1001), seconds(900)));
+	/* Another client and ordinary queue time receive no exemption. */
+	CHECK(other.Expired(start + seconds(900), seconds(900)));
+	CHECK(other.GetServerPreparationTime(start + seconds(1000)) == seconds(0));
+}
+
+TEST_CASE("A stuck server preparation expires even while the client budget is unused", "[network][join][security]")
+{
+	using namespace std::chrono;
+	const NetworkJoinProgress::Clock::time_point start{};
+	NetworkJoinProgress client; client.Start(start);
+	client.SetServerPreparing(true, start);
+	CHECK_FALSE(client.Expired(start + seconds(899), seconds(900)));
+	CHECK(client.Expired(start + seconds(900), seconds(900)));
+	CHECK(client.ServerPreparationExpired(start + seconds(900), seconds(900)));
+	CHECK(client.GetClientJoinTime(start + seconds(900)) == seconds(0));
+}
+
 
 TEST_CASE("GetPacketGameTypeName")
 {
