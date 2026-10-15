@@ -231,7 +231,7 @@ private:
 	StateTicks precomputed_refresh{};
 	bool precomputed_invalidated = false;
 	bool legacy_precomputed_cursor = false; ///< v4/v5 row publication did not charge compact-label copies.
-	uint64_t precomputed_preparation_nanoseconds = 0; ///< Local CPU observation, never saved or used for admission.
+	uint64_t precomputed_preparation_nanoseconds = 0; ///< Local elapsed observation, never saved or used for admission.
 	void BeginPrecomputed(int64_t transfer);
 	void BuildPrecomputedTables();
 	void ClearRetainedPrecomputed();

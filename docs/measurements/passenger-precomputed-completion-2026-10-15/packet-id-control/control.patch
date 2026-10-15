@@ -1,0 +1,33 @@
+--- FIFO/cargopacket.cpp
++++ PacketID-control/cargopacket.cpp
+@@ -1224,7 +1224,7 @@
+ 	if (entry.pending) this->waiting_wake.erase(entry.wake);
+ 	else {
+ 		auto board = this->boarding_index.find(entry.service);
+-		if (board != this->boarding_index.end()) { board->second.erase({entry.key, entry.sequence, id}); if (board->second.empty()) this->boarding_index.erase(board); }
++		if (board != this->boarding_index.end()) { board->second.erase({StationID::Invalid(), entry.sequence, id}); if (board->second.empty()) this->boarding_index.erase(board); }
+ 	}
+ 	this->waiting_entries.erase(it); _passenger_waiting_owners.erase(id.base());
+ }
+@@ -1235,10 +1235,10 @@
+ 	OrderListID service = journey ? packet->GetPassengerJourney().service : OrderListID::Invalid();
+ 	if (journey && this->passenger_index_cargo < NUM_CARGO) service = GetPassengerServiceDatabase().PrecomputedBoardingKey(this->passenger_index_cargo, service);
+ 	bool pending = journey && packet->GetPassengerJourney().not_before > _state_ticks;
+-	const uint64_t rank = sequence ? *sequence : this->waiting_next_sequence++;
++	const uint64_t rank = packet->index.base(); // Measurement-only PacketID order control.
+ 	WaitingEntry entry{key, position, packet->StationMergeHash(), service, static_cast<uint16_t>(CargoPacket::MAX_COUNT - packet->Count()), pending, rank, {}};
+ 	if (pending) entry.wake = this->waiting_wake.emplace(packet->GetPassengerJourney().not_before, packet->index);
+-	else this->boarding_index[service].emplace(key, rank, packet->index);
++	else this->boarding_index[service].emplace(StationID::Invalid(), rank, packet->index);
+ 	this->merge_index[entry.hash].emplace(entry.space, packet->index);
+ 	this->waiting_entries.emplace(packet->index, entry);
+ 	_passenger_waiting_owners[packet->index.base()] = const_cast<StationCargoList *>(this);
+@@ -1312,7 +1312,7 @@
+ 	this->EnsureWaitingIndex();
+ 	while (!this->waiting_wake.empty() && this->waiting_wake.begin()->first <= _state_ticks) {
+ 		auto wake = this->waiting_wake.begin(); auto it = this->waiting_entries.find(wake->second);
+-		if (it != this->waiting_entries.end()) { it->second.pending = false; this->boarding_index[it->second.service].emplace(it->second.key, it->second.sequence, wake->second); }
++		if (it != this->waiting_entries.end()) { it->second.pending = false; this->boarding_index[it->second.service].emplace(StationID::Invalid(), it->second.sequence, wake->second); }
+ 		this->waiting_wake.erase(wake);
+ 	}
+ 	OrderListID service = vehicle != nullptr && vehicle->First()->orders != nullptr ? vehicle->First()->orders->index : OrderListID::Invalid();

@@ -1,0 +1,30 @@
+{
+  "address": "127.0.0.1:17529",
+  "default_timeouts": true,
+  "paused_join": true,
+  "input": "C:\\Users\\bebe\\.codex\\worktrees\\ef5d\\OpenTTD-patches\\build-results\\automatic\\result.sav",
+  "joined": false,
+  "packet_payment_equal": false,
+  "server_snapshot": {
+    "runtime_routing_feature": 3,
+    "state_ticks": 3181093981,
+    "packets": 491798,
+    "cargo_units": 1318382,
+    "known_od_units": 849503,
+    "journey_packets": 239279,
+    "packet_state_digest": 11494718336824414507,
+    "payment_digest": 13427218769392221484,
+    "payments_valid": true,
+    "legacy_true_packets": 0,
+    "legacy_false_packets": 0,
+    "legacy_true_units": 0,
+    "legacy_false_units": 0,
+    "opposite_history_mergeable_pairs": 0
+  },
+  "join_elapsed_seconds": 120.07888029981405,
+  "client_exit_code": null,
+  "network_error": true,
+  "completed_observation": false,
+  "pass": false,
+  "elapsed_seconds": 159.60222170036286
+}

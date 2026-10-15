@@ -1,0 +1,3 @@
+Console log output started to 'C:/Users/bebe/.codex/worktrees/ef5d/OpenTTD-patches/build-results/join-complete/server/end-console.txt'.
+Client #1  name: 'routing-server'  company: 255  IP: server  pubkey: 
+Console log file closed.
