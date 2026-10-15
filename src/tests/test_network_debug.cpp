@@ -48,6 +48,8 @@ TEST_CASE("GetPacketGameTypeName")
 	CHECK_NAME(ServerMapData);
 	CHECK_NAME(ServerMapDone);
 	CHECK_NAME(ClientMapOk);
+	CHECK_NAME(ClientMapProgress);
+	CHECK_NAME(ServerMapProgress);
 	CHECK_NAME(ServerClientJoined);
 	CHECK_NAME(ServerFrame);
 	CHECK_NAME(ClientAck);

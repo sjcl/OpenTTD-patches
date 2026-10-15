@@ -1,5 +1,7 @@
 # 旅客事前計算ルーティング：残課題への追加実装
 
+追記：この文書のMP途中参加の失敗に対する後続修正・再検証は、[ロード再生の分割](passenger-precomputed-join-replay-2026-10-15.md)を参照。この文書の測定結果と当時の未完了判定は履歴として保持する。
+
 開始点は `feat/passenger-precomputed-routing` の `a650090b625b30687cc0e676e157d5d15984cb0b`。
 同ブランチが別作業ツリーにあるため、変更は `codex/passenger-precomputed-completion` で行う。
 前回の測定値・未達要件は [前回レポート](passenger-precomputed-routing-2026-10-15.md) を参照。

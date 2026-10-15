@@ -1,0 +1,24 @@
+{
+  "address": "127.0.0.1:17529",
+  "default_timeouts": true,
+  "paused_join": true,
+  "input": "C:\\Users\\bebe\\.codex\\worktrees\\49c6\\OpenTTD-patches\\build-real-map\\recovered-input-fixed\\result.sav",
+  "joined": false,
+  "packet_payment_equal": false,
+  "binary_sha256": "127e9e8acf276a2ea7b93166db592a0bbe5a3cf388cf8f45e0e78a8ef31c770e",
+  "input_sha256": "d8d40bd49ca5fbb20c2f9645d984a2b19f41eb7b482bf6707e49da8fd61ee1ea",
+  "requested_ticks": 1024,
+  "initial_build": true,
+  "error": "Server did not finish loading",
+  "pass": false,
+  "elapsed_seconds": 3.6684067002497613,
+  "process_observations": {
+    "0_peak_working_bytes": 1079566336,
+    "0_peak_commit_bytes": 1071304704,
+    "0_process_cpu_seconds": 3.109375
+  },
+  "newgrf_warning_lines": {
+    "server": 0,
+    "client": 0
+  }
+}
