@@ -645,12 +645,12 @@ void PassengerServiceDatabase::BuildPrecomputedTables()
 {
 	this->precomputed = {}; this->precomputed_operations = 0;
 	std::vector<const PassengerPeriodicService *> records;
-	size_t remaining = PassengerPrecomputedTable::MAX_BYTES;
+	uint64_t remaining = PassengerPrecomputedTable::MAX_BYTES;
 	for (const auto &[id, service] : this->precomputed_services) {
 		records.push_back(&service);
 		/* Fixed charges for the additional saved snapshot, independent of host ABI. */
 		size_t bytes = 512 + 256 * service.timetable.stops.size() + 1024 * service.vehicles.size() + 32 * service.dispatch_slots.size();
-		remaining -= std::min(remaining, bytes);
+		remaining -= std::min<uint64_t>(remaining, bytes);
 	}
 	for (CargoType cargo : EnumRange(NUM_CARGO)) {
 		if (!IsCargoInClass(cargo, CargoClass::Passengers)) continue;

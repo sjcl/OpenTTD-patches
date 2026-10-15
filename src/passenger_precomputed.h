@@ -25,7 +25,8 @@ struct PassengerPrecomputedDiagnostic {
 	uint64_t builds = 0, operations = 0, build_nanoseconds = 0;
 	uint64_t queries = 0, query_nanoseconds = 0, hits = 0, missing = 0, no_route = 0;
 	size_t stations = 0, patterns = 0, states = 0, edges = 0, destinations = 0;
-	size_t bytes = 0, envelope = 0;
+	size_t bytes = 0;
+	uint64_t envelope = 0;
 };
 
 /** Mandatory derived state, independent of the optional Timed/Schedule caches.
@@ -38,8 +39,8 @@ struct PassengerPrecomputedDiagnostic {
 class PassengerPrecomputedTable {
 public:
 	static constexpr uint32_t INVALID = UINT32_MAX;
-	static constexpr size_t MAX_BYTES = size_t{2} * 1024 * 1024 * 1024;
-	void Begin(std::span<const PassengerPeriodicService *const> services, CargoType cargo, int64_t transfer, size_t memory = MAX_BYTES);
+	static constexpr uint64_t MAX_BYTES = uint64_t{8} * 1024 * 1024 * 1024;
+	void Begin(std::span<const PassengerPeriodicService *const> services, CargoType cargo, int64_t transfer, uint64_t memory = MAX_BYTES);
 	size_t Step(size_t operations);
 	PassengerPrecomputedPlan Plan(StationID origin, StationID destination, StateTicks ready, OrderListID excluded = OrderListID::Invalid(), uint32_t sample = 0) const;
 	bool Finished() const { return this->failed || this->destination == this->stations.size(); }

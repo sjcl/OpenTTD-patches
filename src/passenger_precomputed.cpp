@@ -15,7 +15,7 @@
 namespace {
 	using Clock = std::chrono::steady_clock;
 	uint64_t Elapsed(Clock::time_point start) { return std::chrono::duration_cast<std::chrono::nanoseconds>(Clock::now() - start).count(); }
-	bool Product(size_t a, size_t b, size_t &total, size_t limit)
+	bool Product(uint64_t a, uint64_t b, uint64_t &total, uint64_t limit)
 	{
 		if (a != 0 && b > (limit - total) / a) return false;
 		total += a * b; return true;
@@ -83,7 +83,7 @@ void PassengerPrecomputedTable::AddEdge(uint32_t from, uint32_t to, int64_t cost
 	this->edges.push_back({from, to, occurrence, cost, distance, kind});
 }
 
-void PassengerPrecomputedTable::Begin(std::span<const PassengerPeriodicService *const> services, CargoType cargo, int64_t transfer, size_t memory)
+void PassengerPrecomputedTable::Begin(std::span<const PassengerPeriodicService *const> services, CargoType cargo, int64_t transfer, uint64_t memory)
 {
 	*this = {};
 	this->cargo = cargo;
@@ -95,7 +95,7 @@ void PassengerPrecomputedTable::Begin(std::span<const PassengerPeriodicService *
 	/* Canonical byte charges are identical on 32/64-bit peers. Native sizeof
 	 * and allocator residency are diagnostics only, never routing admission. */
 	static_assert(sizeof(Label) <= 64 && sizeof(Edge) <= 64 && sizeof(QueueItem) <= 32 && sizeof(Row) <= 64);
-	size_t envelope = 1024 * 1024;
+	uint64_t envelope = 1024 * 1024;
 	if (envelope > memory) { this->failed = true; return; }
 	for (const auto *s : services) {
 		if (!Product(1, 256, envelope, memory) || !Product(s->timetable.stops.size(), 256, envelope, memory) ||
@@ -179,8 +179,10 @@ void PassengerPrecomputedTable::Begin(std::span<const PassengerPeriodicService *
 		}
 		/* Every product is checked before route/scratch allocation. Queue storage
 		 * is bounded by successful edge relaxations, never by passengers or OD calls. */
+		this->diagnostic.stations = this->stations.size(); this->diagnostic.patterns = this->patterns.size();
+		this->diagnostic.states = nodes; this->diagnostic.edges = edge_count;
 		bool fits = nodes < INVALID && edge_count < INVALID && nodes <= memory / 128 &&
-				Product(this->stations.size(), nodes * 64 + this->stations.size() * 4 + 64, envelope, memory) &&
+				Product(this->stations.size(), uint64_t(nodes) * 64 + uint64_t(this->stations.size()) * 4 + 64, envelope, memory) &&
 				Product(edge_count, 264, envelope, memory) && Product(nodes, 144, envelope, memory);
 		this->diagnostic.envelope = envelope;
 		if (!fits) { this->failed = true; this->diagnostic.build_nanoseconds = Elapsed(started); return; }
