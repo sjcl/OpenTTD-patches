@@ -204,7 +204,12 @@ public:
 	bool IsBuilding() const { return this->sweeping || !this->dirty.empty() || !this->build_queue.empty() || !this->building.empty(); }
 	std::vector<uint8_t> Save() const;
 	bool Load(std::span<const uint8_t> bytes);
-	void FinishLoad(bool present);
+	void FinishLoad(bool present, bool defer_precomputed = false);
+	enum class LoadState : uint8_t { Ready, Replaying, Invalid };
+	LoadState StepLoad(size_t allowance = BUILD_WORK); ///< Replay saved work only; never advance simulation or capture live input.
+	LoadState GetLoadState() const { return this->load_state; }
+	uint64_t GetLoadWork() const { return this->load_work; }
+	uint64_t GetLoadWorkLimit() const; ///< Upper bound for a peer replaying the current saved snapshot.
 	PassengerDatabaseDiagnostic GetDiagnostic() const;
 	void ResetDiagnostic() { this->diagnostic = {}; this->schedule.ResetDiagnostic(); this->recent_policy_builds.clear(); }
 	void SetPolicyCacheEnabled(bool enabled) { this->policy_cache_enabled = enabled; if (!enabled) this->ClearPolicies(); }
@@ -293,6 +298,11 @@ private:
 	uint32_t cursor = 0; ///< Bounded pool-ID sweep; no national discovery per query/tick.
 	uint16_t dirty_cursor = 65534; ///< Rotating deterministic dirty queue; repeated edits cannot starve higher IDs.
 	bool sweeping = true, restoring = false;
+	LoadState load_state = LoadState::Ready;
+	bool load_retained = false;
+	CargoType load_cargo{0};
+	uint64_t load_remaining = 0, load_work = 0;
+	std::vector<uint8_t> load_legacy_wire; ///< Preserve the old cursor format until its publication charge has been migrated.
 	uint64_t generation = 0;
 	size_t bytes = 0, policy_bytes = 0;
 	bool policy_cache_enabled = true; ///< Local optional accelerator; absent from saves and routing admission.

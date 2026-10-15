@@ -13,6 +13,7 @@
 #include "core/network_game_info.h"
 #include "network_admin.h"
 #include "network_server.h"
+#include "../passenger_service_database.h"
 #include "network_udp.h"
 #include "network_base.h"
 #include "../console_func.h"
@@ -696,6 +697,8 @@ NetworkRecvStatus ServerNetworkGameSocketHandler::SendMap()
 		this->SendPacket(std::move(p));
 
 		NetworkSyncCommandQueue(this);
+		this->map_load_work = 0;
+		this->map_load_work_limit = GetPassengerServiceDatabase().GetLoadWorkLimit();
 		this->status = ClientStatus::Map;
 		/* Mark the start of download */
 		this->last_frame = _frame_counter;
@@ -1231,6 +1234,22 @@ NetworkRecvStatus ServerNetworkGameSocketHandler::ReceiveClientGetMap(Packet &p)
 
 	/* We receive a request to upload the map.. give it to the client! */
 	return this->SendMap();
+}
+
+NetworkRecvStatus ServerNetworkGameSocketHandler::ReceiveClientMapProgress(Packet &p)
+{
+	if (this->status != ClientStatus::DoneMap || this->HasClientQuit()) return this->SendError(NetworkErrorCode::NotExpected);
+	uint64_t work = p.Recv_uint64();
+	if (work <= this->map_load_work || work > this->map_load_work_limit) return this->SendError(NetworkErrorCode::IllegalPacket);
+	this->map_load_work = work;
+	/* Only actual forward progress renews the existing join deadline. This is
+	 * not a frame ACK and must not release pause-on-join or execute commands. */
+	this->last_frame = this->last_frame_server = _frame_counter;
+	auto reply = std::make_unique<Packet>(this, PacketGameType::ServerMapProgress, TCP_MTU);
+	reply->Send_uint64(work);
+	this->SendPacket(std::move(reply));
+	Debug(net, 3, "[server] Client #{} map replay progress {}/{}", this->client_id, work, this->map_load_work_limit);
+	return NetworkRecvStatus::Okay;
 }
 
 NetworkRecvStatus ServerNetworkGameSocketHandler::ReceiveClientMapOk(Packet &)

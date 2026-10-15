@@ -337,6 +337,8 @@ void PassengerServiceDatabase::Reset()
 	this->building.clear(); this->build_queue.clear(); this->build_since.clear(); this->staged_since.clear(); this->unsafe.clear(); this->station_revisions.clear(); this->recent_policy_builds.clear();
 	this->sweeping_since = this->batch_started = _state_ticks;
 	this->cursor = 0; this->dirty_cursor = 65534; this->sweeping = true; this->publishing = false; this->bootstrap = true; this->restoring = false;
+	this->load_state = LoadState::Ready; this->load_remaining = this->load_work = 0;
+	this->load_legacy_wire.clear();
 	this->generation = this->published_revision = 0; this->bytes = this->building_bytes = 0;
 	this->diagnostic = {}; this->schedule.ResetDiagnostic();
 	this->DiscardPrecomputed(); this->precomputed_refresh = {};
@@ -1635,6 +1637,7 @@ bool ValidatePassengerServiceRide(const PassengerJourneyExecution &ride, const V
  * Optional policies and wall-clock observations are deliberately absent. */
 std::vector<uint8_t> PassengerServiceDatabase::Save() const
 {
+	if (this->load_state == LoadState::Replaying && this->legacy_precomputed_cursor) return this->load_legacy_wire;
 	std::vector<uint8_t> data;
 	auto put = [&](uint64_t value) { for (uint i = 0; i < 8; ++i) { data.push_back(value & 255); value >>= 8; } };
 	const bool precomputed = this->precomputed_revision != UINT64_MAX;
@@ -1828,6 +1831,7 @@ bool PassengerServiceDatabase::Load(std::span<const uint8_t> data)
 	for (const auto &[id, service] : restored.services) restored.service_lookup[id.base()] = &service;
 	for (OrderListID id : restored.unsafe) restored.unsafe_lookup.set(id.base());
 	restored.restoring = true;
+	if (version < 6 && restored.precomputed_revision != UINT64_MAX) restored.load_legacy_wire.assign(data.begin(), data.end());
 	restored.policy_cache_enabled = this->policy_cache_enabled; // Local optional preference survives loading; absent from simulation state.
 	restored.departure_index_enabled = this->departure_index_enabled;
 	restored.timed_scratch_enabled = this->timed_scratch_enabled;
@@ -1835,32 +1839,69 @@ bool PassengerServiceDatabase::Load(std::span<const uint8_t> data)
 	return true;
 }
 
-void PassengerServiceDatabase::FinishLoad(bool present)
+uint64_t PassengerServiceDatabase::GetLoadWorkLimit() const
+{
+	uint64_t work = this->precomputed_operations;
+	/* Legacy cursors did not charge row publication. Include that charge for
+	 * retained tables that may have originated in an older savegame. */
+	for (const auto &table : this->retained_precomputed) work += table.GetDiagnostic().operations + table.LegacyPublicationWork();
+	return work;
+}
+
+void PassengerServiceDatabase::FinishLoad(bool present, bool defer_precomputed)
 {
 	if (!present) { this->Reset(); return; }
 	this->restoring = false;
+	this->load_state = LoadState::Ready;
+	this->load_work = 0;
 	if (this->precomputed_revision != UINT64_MAX) {
-		uint64_t remaining = this->precomputed_operations;
+		this->load_remaining = this->precomputed_operations;
+		this->load_retained = this->retained_precomputed_revision != UINT64_MAX;
+		this->load_cargo = CargoType{0};
 		if (this->retained_precomputed_revision != UINT64_MAX) {
 			this->BuildPrecomputedTables(this->retained_precomputed, this->retained_precomputed_services,
 					this->retained_precomputed_transfer, PassengerPrecomputedTable::MAX_BYTES);
-			for (auto &table : this->retained_precomputed) while (!table.Finished()) table.Step(BUILD_WORK);
 		}
 		this->BuildPrecomputedTables();
-		for (CargoType cargo : EnumRange(NUM_CARGO)) {
-			auto &table = this->precomputed[cargo];
-			while (remaining != 0 && !table.Finished()) {
-				size_t used = table.Step(static_cast<size_t>(std::min<uint64_t>(remaining, BUILD_WORK)), this->legacy_precomputed_cursor,
-						[&](StationID destination) { this->retained_precomputed[cargo].ReleaseDestination(destination); });
-				remaining -= used; this->precomputed_operations += used;
-			}
-		}
-		if (remaining != 0) SlErrorCorrupt("Invalid passenger routing construction cursor");
-		if (this->legacy_precomputed_cursor) for (const auto &table : this->precomputed) this->precomputed_operations += table.LegacyPublicationWork();
+		/* Keep the serialized cursor intact throughout replay. No save or
+		 * network command may observe CPU-dependent partial replay progress. */
+		this->precomputed_operations = this->load_remaining;
 		for (const auto &[id, service] : this->services) for (auto &table : this->precomputed) table.RefreshService(service);
 		for (const auto &[id, service] : this->services) for (auto &table : this->retained_precomputed) table.RefreshService(service);
+		this->load_state = LoadState::Replaying;
 	}
-	this->legacy_precomputed_cursor = false;
+	if (!defer_precomputed) {
+		while (this->StepLoad() == LoadState::Replaying) {}
+		if (this->load_state == LoadState::Invalid) SlErrorCorrupt("Invalid passenger routing construction cursor");
+	}
 	/* Pool construction/AfterLoad may call invalidation hooks. Those must not
 	 * consume saved publication progress or recapture phases on a network join. */
+}
+
+PassengerServiceDatabase::LoadState PassengerServiceDatabase::StepLoad(size_t allowance)
+{
+	if (this->load_state != LoadState::Replaying) return this->load_state;
+	while (true) {
+		if (this->load_cargo == NUM_CARGO || (!this->load_retained && this->load_remaining == 0)) {
+			if (this->load_retained) { this->load_retained = false; this->load_cargo = CargoType{0}; continue; }
+			if (this->load_remaining != 0) return this->load_state = LoadState::Invalid;
+			if (this->legacy_precomputed_cursor) for (const auto &table : this->precomputed) this->precomputed_operations += table.LegacyPublicationWork();
+			this->legacy_precomputed_cursor = false;
+			this->load_legacy_wire.clear();
+			return this->load_state = LoadState::Ready;
+		}
+		auto &table = (this->load_retained ? this->retained_precomputed : this->precomputed)[this->load_cargo];
+		if (table.Finished()) { ++this->load_cargo; continue; }
+		if (allowance == 0) return this->load_state;
+		size_t used;
+		if (this->load_retained) {
+			used = table.Step(allowance);
+		} else {
+			used = table.Step(static_cast<size_t>(std::min<uint64_t>(this->load_remaining, allowance)), this->legacy_precomputed_cursor,
+					[&](StationID destination) { this->retained_precomputed[this->load_cargo].ReleaseDestination(destination); });
+			this->load_remaining -= used;
+		}
+		this->load_work += used;
+		allowance -= used;
+	}
 }

@@ -26,6 +26,7 @@ class ServerNetworkGameSocketHandler : public NetworkClientSocketPool::PoolItem<
 	NetworkGameKeys intl_keys;
 	uint64_t min_key_message_id = 0;
 	uint8_t *rcon_reply_key = nullptr;
+	uint64_t map_load_work = 0, map_load_work_limit = 0; ///< Progress is bounded by the snapshot actually sent.
 
 protected:
 	std::unique_ptr<class NetworkAuthenticationServerHandler> authentication_handler = nullptr; ///< The handler for the authentication.
@@ -39,6 +40,7 @@ protected:
 	NetworkRecvStatus ReceiveClientSettingsPassword(Packet &p) override;
 	NetworkRecvStatus ReceiveClientGetMap(Packet &p) override;
 	NetworkRecvStatus ReceiveClientMapOk(Packet &p) override;
+	NetworkRecvStatus ReceiveClientMapProgress(Packet &p) override;
 	NetworkRecvStatus ReceiveClientAck(Packet &p) override;
 	NetworkRecvStatus ReceiveClientCommand(Packet &p) override;
 	NetworkRecvStatus ReceiveClientChat(Packet &p) override;

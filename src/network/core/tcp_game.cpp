@@ -53,6 +53,8 @@ static const char *_packet_game_type_names[] {
 	"ServerMapData",
 	"ServerMapDone",
 	"ClientMapOk",
+	"ClientMapProgress",
+	"ServerMapProgress",
 	"ServerClientJoined",
 	"ServerFrame",
 	"ClientAck",
@@ -160,6 +162,8 @@ NetworkRecvStatus NetworkGameSocketHandler::HandlePacket(Packet &p)
 		case PacketGameType::ServerMapData: return this->ReceiveServerMapData(p);
 		case PacketGameType::ServerMapDone: return this->ReceiveServerMapDone(p);
 		case PacketGameType::ClientMapOk: return this->ReceiveClientMapOk(p);
+		case PacketGameType::ClientMapProgress: return this->ReceiveClientMapProgress(p);
+		case PacketGameType::ServerMapProgress: return this->ReceiveServerMapProgress(p);
 		case PacketGameType::ServerClientJoined: return this->ReceiveServerClientJoined(p);
 		case PacketGameType::ServerFrame: return this->ReceiveServerFrame(p);
 		case PacketGameType::ServerSync: return this->ReceiveServerSync(p);
@@ -250,6 +254,8 @@ NetworkRecvStatus NetworkGameSocketHandler::ReceiveServerMapSize(Packet &) { ret
 NetworkRecvStatus NetworkGameSocketHandler::ReceiveServerMapData(Packet &) { return this->ReceiveInvalidPacket(PacketGameType::ServerMapData); }
 NetworkRecvStatus NetworkGameSocketHandler::ReceiveServerMapDone(Packet &) { return this->ReceiveInvalidPacket(PacketGameType::ServerMapDone); }
 NetworkRecvStatus NetworkGameSocketHandler::ReceiveClientMapOk(Packet &) { return this->ReceiveInvalidPacket(PacketGameType::ClientMapOk); }
+NetworkRecvStatus NetworkGameSocketHandler::ReceiveClientMapProgress(Packet &) { return this->ReceiveInvalidPacket(PacketGameType::ClientMapProgress); }
+NetworkRecvStatus NetworkGameSocketHandler::ReceiveServerMapProgress(Packet &) { return this->ReceiveInvalidPacket(PacketGameType::ServerMapProgress); }
 NetworkRecvStatus NetworkGameSocketHandler::ReceiveServerClientJoined(Packet &) { return this->ReceiveInvalidPacket(PacketGameType::ServerClientJoined); }
 NetworkRecvStatus NetworkGameSocketHandler::ReceiveServerFrame(Packet &) { return this->ReceiveInvalidPacket(PacketGameType::ServerFrame); }
 NetworkRecvStatus NetworkGameSocketHandler::ReceiveServerSync(Packet &) { return this->ReceiveInvalidPacket(PacketGameType::ServerSync); }

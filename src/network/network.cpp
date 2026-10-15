@@ -1289,6 +1289,10 @@ void NetworkGameLoop()
 	if (!_networking) return;
 
 	if (!NetworkReceive()) return;
+	if (!_network_server && !ClientNetworkGameSocketHandler::ProcessMapLoad()) {
+		if (_networking) NetworkSend();
+		return;
+	}
 
 	if (_network_server) {
 		/* Log the sync state to check for in-syncedness of replays. */

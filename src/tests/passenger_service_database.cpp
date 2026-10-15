@@ -2560,6 +2560,78 @@ TEST_CASE("Precomputed replacement retains pending destination rows across every
 	CHECK(joined.Save() == completed);
 }
 
+TEST_CASE("Precomputed join replay yields at exact work boundaries for all publication states", "[passenger][precomputed][save][network]")
+{
+	Fixture f; f.Train({Stop(A), Stop(B), Stop(C), Stop(D)});
+	auto &db = f.Build(); _settings_game.linkgraph.passenger_journey_precomputed = true;
+	db.TickPrecomputed(73);
+	SECTION("Initial frontier") { REQUIRE_FALSE(db.PrecomputedFinished()); }
+	SECTION("Completed generation") { while (!db.PrecomputedFinished()) db.TickPrecomputed(); }
+	SECTION("Replacement frontier with retained rows") {
+		while (!db.PrecomputedFinished()) db.TickPrecomputed();
+		_settings_game.linkgraph.passenger_transfer_penalty = 17;
+		db.TickPrecomputed(73);
+		REQUIRE(db.GetPrecomputedDiagnostic(PAX).retained_destinations > 0);
+	}
+	const auto wire = db.Save(); const auto limit = db.GetLoadWorkLimit();
+	for (size_t quantum : {size_t{1}, size_t{19}, PassengerServiceDatabase::BUILD_WORK}) {
+		PassengerServiceDatabase peer; REQUIRE(peer.Load(wire)); peer.FinishLoad(true, true);
+		REQUIRE(peer.GetLoadState() == PassengerServiceDatabase::LoadState::Replaying);
+		CHECK(peer.StepLoad(0) == PassengerServiceDatabase::LoadState::Replaying);
+		uint64_t last = 0;
+		for (size_t slices = 0; peer.GetLoadState() == PassengerServiceDatabase::LoadState::Replaying; ++slices) {
+			REQUIRE(slices < 100000);
+			peer.StepLoad(quantum);
+			CHECK(peer.GetLoadWork() - last <= quantum); last = peer.GetLoadWork();
+			CHECK(peer.GetLoadWork() <= limit);
+			CHECK(_state_ticks == NOW);
+			CHECK(peer.Save() == wire); // Serialized progress is the saved frontier, never the local replay cursor.
+		}
+		REQUIRE(peer.GetLoadState() == PassengerServiceDatabase::LoadState::Ready);
+		CHECK(peer.GetPrecomputedDiagnostic(PAX).destinations == db.GetPrecomputedDiagnostic(PAX).destinations);
+		CHECK(peer.GetPrecomputedDiagnostic(PAX).retained_destinations == db.GetPrecomputedDiagnostic(PAX).retained_destinations);
+		for (StationID from : {A, B, C, D}) for (StationID to : {A, B, C, D}) {
+			const auto actual = peer.PlanPrecomputed(PAX, from, to, NOW), expected = db.PlanPrecomputed(PAX, from, to, NOW);
+			CHECK(actual.state == expected.state); CHECK(actual.ride == expected.ride); CHECK(actual.cost == expected.cost);
+		}
+		for (int i = 0; i < 100; ++i) {
+			/* Different replay slice sizes must resume the same deterministic builder. */
+			peer.TickPrecomputed(11);
+		}
+		PassengerServiceDatabase control; REQUIRE(control.Load(wire)); control.FinishLoad(true);
+		for (int i = 0; i < 100; ++i) control.TickPrecomputed(11);
+		CHECK(peer.Save() == control.Save());
+	}
+}
+
+TEST_CASE("Precomputed sliced replay rejects impossible cursors and migrates legacy frontiers", "[passenger][precomputed][save][network]")
+{
+	Fixture f; f.Train({Stop(A), Stop(B), Stop(C), Stop(D)});
+	auto &db = f.Build();
+	const size_t cursor_offset = db.Save().size(); // v3 prefix precedes the precomputed extension.
+	_settings_game.linkgraph.passenger_journey_precomputed = true; db.TickPrecomputed(1);
+	auto wire = db.Save(); REQUIRE(wire.size() > cursor_offset + 8);
+	SECTION("Invalid work never authorizes simulation") {
+		for (size_t i = 0; i < 8; ++i) wire[cursor_offset + i] = 255;
+		wire[cursor_offset] = 254; // UINT64_MAX is the separate 'not started' sentinel.
+		PassengerServiceDatabase peer; REQUIRE(peer.Load(wire)); peer.FinishLoad(true, true);
+		for (size_t i = 0; peer.GetLoadState() == PassengerServiceDatabase::LoadState::Replaying; ++i) {
+			REQUIRE(i < 10000); peer.StepLoad(19);
+		}
+		CHECK(peer.GetLoadState() == PassengerServiceDatabase::LoadState::Invalid);
+		CHECK(peer.StepLoad() == PassengerServiceDatabase::LoadState::Invalid);
+		CHECK(_state_ticks == NOW);
+	}
+	SECTION("Legacy work format remains saveable until conversion completes") {
+		auto legacy = wire; legacy[0] = 5; legacy.resize(legacy.size() - 24);
+		PassengerServiceDatabase peer; REQUIRE(peer.Load(legacy)); peer.FinishLoad(true, true);
+		CHECK(peer.Save() == legacy);
+		while (peer.StepLoad(1) == PassengerServiceDatabase::LoadState::Replaying) CHECK(peer.Save() == legacy);
+		CHECK(peer.GetLoadState() == PassengerServiceDatabase::LoadState::Ready);
+		CHECK(peer.Save() == wire);
+	}
+}
+
 TEST_CASE("Precomputed replacement coalesces edits and rejects only unsafe live rides", "[passenger][precomputed][generation]")
 {
 	Fixture f;
