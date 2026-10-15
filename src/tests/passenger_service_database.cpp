@@ -3182,15 +3182,20 @@ TEST_CASE("Replacement preparation completes only the graph and retains the row 
 	db.Tick(PassengerServiceDatabase::BUILD_WORK, true, true);
 	REQUIRE(db.IsPreparingPrecomputed());
 	const auto wire = db.Save();
+	PassengerServiceDatabase loaded; REQUIRE(loaded.Load(wire)); loaded.FinishLoad(true, true);
+	while (loaded.StepLoad() == PassengerServiceDatabase::LoadState::Replaying) {}
 	while (!db.PreparePrecomputed()) {
 		CHECK(_state_ticks == NOW);
 		CHECK(db.Save() == wire);
 	}
 	CHECK(db.Save() == wire);
+	CHECK(loaded.Save() == db.Save());
 	CHECK_FALSE(db.PrecomputedFinished());
 	CHECK(db.GetPrecomputedDiagnostic(PAX).destinations == 0);
 	CHECK(db.GetPrecomputedDiagnostic(PAX).retained_destinations == old_rows);
 	db.TickPrecomputed(1);
+	loaded.TickPrecomputed(1);
+	CHECK(loaded.Save() == db.Save());
 	CHECK(db.GetPrecomputedDiagnostic(PAX).operations == 1);
 }
 

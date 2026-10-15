@@ -24,6 +24,7 @@ private:
 	std::chrono::steady_clock::time_point map_load_report{};
 	std::optional<uint32_t> passenger_prepare_frame;
 	bool passenger_prepared = false;
+	bool passenger_prepare_announced = false; ///< Local prediction can reach a barrier before the server announces it.
 
 	/** Status of the connection with the server. */
 	enum class ServerStatus : uint8_t {

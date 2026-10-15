@@ -1183,9 +1183,10 @@ NetworkRecvStatus ClientNetworkGameSocketHandler::ReceiveServerPassengerPrepare(
 	if ((this->passenger_prepare_frame && *this->passenger_prepare_frame != frame) || _frame_counter > frame) return NetworkRecvStatus::MalformedPacket;
 	if (preparing) {
 		if (!this->passenger_prepare_frame) { this->passenger_prepare_frame = frame; this->passenger_prepared = false; }
+		this->passenger_prepare_announced = true;
 	} else {
 		if (!this->passenger_prepare_frame || !this->passenger_prepared || _frame_counter != frame) return NetworkRecvStatus::MalformedPacket;
-		this->passenger_prepare_frame.reset(); this->passenger_prepared = false;
+		this->passenger_prepare_frame.reset(); this->passenger_prepared = false; this->passenger_prepare_announced = false;
 	}
 	return NetworkRecvStatus::Okay;
 }
@@ -1202,7 +1203,8 @@ bool ClientNetworkGameSocketHandler::PreparePassengerRouting()
 	do {
 		ready = db.PreparePrecomputed();
 	} while (!ready && std::chrono::steady_clock::now() - started < std::chrono::milliseconds(8));
-	if (ready && !my_client->passenger_prepared) {
+	if (ready && !my_client->passenger_prepare_announced) Debug(net, 4, "[client] Passenger tables ready at predicted frame {}; waiting for server barrier", *my_client->passenger_prepare_frame);
+	if (ready && my_client->passenger_prepare_announced && !my_client->passenger_prepared) {
 		auto p = std::make_unique<Packet>(my_client, PacketGameType::ClientPassengerPrepared, TCP_MTU);
 		p->Send_uint32(*my_client->passenger_prepare_frame); my_client->SendPacket(std::move(p));
 		my_client->passenger_prepared = true;
