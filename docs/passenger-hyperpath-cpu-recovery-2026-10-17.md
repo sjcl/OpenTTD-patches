@@ -106,7 +106,7 @@ increment explains 47.37% of the simulation increment.
 This confirms a material enumeration cost but **does not establish the
 proposed downstream label scan as the main cause**. Roughly half the ordinary
 tail increment is outside this block, and observer overhead is not zero.
-Task 2 remains unapplied pending broader `VisitBoardingCandidates`, waiting
+At that gate Task 2 remained unapplied pending broader `VisitBoardingCandidates`, waiting
 index/update and concrete-resolution measurements. The additional counters
 also distinguish NoLoad predicates from actual `ResolveHyperpath` calls.
 
@@ -138,3 +138,39 @@ not a synthetic extra frequency. This only establishes how the recovered
 snapshot represents that order. Actual order executions, departure-time
 passenger states and the cause of the OD regression still require a live
 targeted diagnostic; none is claimed from this readback.
+
+## Expanded attribution and permission to proceed
+
+The expanded observer adds the whole visitor, waiting-index maintenance,
+merge/update, concrete-resolution and NoLoad counters. It uses the same input,
+2,048-tick interval, midpoint replacement and executable for both modes
+(`6a298c24f89e8cbaf4a00c819c7722b8495a6a2200af970cd0c4a6a657c991ae`).
+Both modes end in exactly the same canonical state as their first observer
+runs. The comparison includes every canonical JSON field, not just unit counts.
+
+For ordinary ticks 513–1,024, simulation increases by 3.680064 seconds.
+Enumeration's net increment is 2.203634 seconds, **59.88%** of this increase.
+The whole visitor increases by 2.173403 seconds, so enumeration accounts for
+essentially all of the visitor regression. The inspected index/update, merge,
+schedule and cache-maintenance scopes show no comparable positive increment;
+the largest positive one is 17.354 ms for boarding-entry removal. Journey's
+tail difference is -95.876 ms. These overlapping scopes cannot be added, and
+the remaining simulation increment has not been fully attributed.
+
+Hyperpath's tail enumerates 6,944,941 cohorts. Predicate time is 1.275600 s,
+including 700.462 ms of concrete-resolution time. Over the full interval,
+23,374,464 ResolveHyperpath calls take 2.557902 s, whereas all 215,829
+EvaluateRide calls take 174.049 ms. The NoLoad early-exit counter is zero.
+Repeated resolution/cache lookup is material; a full stop scan on every cohort
+is not supported by the data. Calls alone do not establish a cache hit ratio.
+
+The full-interval enumeration increment explains 36.75% of simulation growth;
+the ordinary first-half share is 43.65%. The ordinary-tail evidence identifies
+enumeration as the largest observed regression and clears Task 2's diagnostic
+gate. The product optimization is then checked separately with uninstrumented
+CPU runs and exact state comparisons.
+
+Evidence: [expanded attribution](measurements/passenger-hyperpath-cpu-recovery-2026-10-17/task1b-attribution.json),
+[CPU summary](measurements/passenger-hyperpath-cpu-recovery-2026-10-17/task1b-summary.json),
+[previous state control](measurements/passenger-hyperpath-cpu-recovery-2026-10-17/task1b-legacy-state-control.json)
+and [Hyperpath state control](measurements/passenger-hyperpath-cpu-recovery-2026-10-17/task1b-hyperpath-state-control.json).
