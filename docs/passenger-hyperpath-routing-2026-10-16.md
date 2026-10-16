@@ -5,7 +5,8 @@ Work in progress on `feat/passenger-hyperpath-routing`, based on
 
 The A-mode checkpoint is commit `76b4e51091`. Subsequent changes connect real
 B-mode boarding, local capacity-failure replanning and saved algorithm identity.
-Live multiplayer and long-duration transport measurements are still pending.
+The live MP join/toggle/replacement probe passes. Long-duration matched transport
+and untraced simulation measurements are still pending.
 
 ## Construction
 
@@ -216,12 +217,51 @@ passes 44192 assertions; the independent Fraction oracle passes seven cases.
 Saved partial Hyperpath event
 frontiers replay to identical wire state under different Work slices. Current
 packet saves retain failure state; older packet versions default it to empty.
-These tests do not substitute for the pending live server/client measurement.
+The live server/client probe below complements these replay tests.
+
+## Live B-mode and multiplayer checkpoint
+
+The matched transport source save is SHA-256
+`6783a500f47435a342a36e9a6544e33bb38f041abe91e9e2ff2c654edd16c978`.
+The 512-tick B-mode smoke advances exactly 512 StateTicks and records 512
+simulation samples. There is no measurement contamination. It records 41,691
+capacity-missed packet opportunities / 72,619 passenger opportunities, with no
+local replans yet (the three-failure threshold has not been reached in this
+short interval). The last 256 ticks average 59.640 ms simulation and 2.093 ms
+Journey time, with tracing enabled. These are smoke results, not a transport
+quality conclusion. The ordinary and target-OD observers remain independent.
+
+The actual loopback server/client probe loads that smoke's save, prepares the
+initial table while StateTicks stay fixed, joins, disables/re-enables precomputed
+routing, then changes transfer cost and transports for 1071 ticks. It passes:
+
+- Initial join, connected-peer re-enable, and transport have zero mismatched
+  packet/payment/database/ownership/loading/row/work/publication/delivery fields.
+- Client replay performs 1,879,590,756 Work in 15,085 slices; the largest observed
+  loop is 28.911 ms. Replay changes neither StateTicks nor the client frame.
+- There are 254 actual progress notifications. Native map-ready elapsed time is
+  262.742 s; the harness join observation is 265.166 s. The server's initial
+  preparation wait is 339.101 s and releases at frame zero.
+- Default network limits remain max_join_time=500, max_join_time_total=900 s,
+  max_lag_time=500, max_init_time=100, max_download_time=1000. The harness's 600 s
+  observation bound changes no native timeout. Networking source is unchanged.
+- During ordinary replacement the peers agree on 181 current / 4736 retained
+  destination rows and 70,123,520 Work, including packet failure state and saved
+  waiting-event fields in their canonical digest.
+
+Evidence: [MP result](measurements/passenger-hyperpath-2026-10-16/mp-hyperpath.json),
+[default settings](measurements/passenger-hyperpath-2026-10-16/mp-default-timeouts.txt),
+and [512-tick measurements](measurements/passenger-hyperpath-2026-10-16/b-smoke.json).
+The input's JP+ Multiple Units NewGRF emits capacity-change warnings on both
+peers (27,337 lines each); the probe reports no network error and its explicit
+paused snapshots match. This verifies this fixture/run, not all NewGRF/network
+combinations. Long-duration quality, packet-fragmentation census and untraced
+simulation comparison remain pending.
 
 ## Correctness coverage
 
-The following obligations are covered by the current tests. Live server/client
-and long-duration transport measurements remain pending.
+The following obligations are covered by the current tests. Long-duration
+transport measurements remain pending.
 
 | Requested cases | Evidence in the tests |
 |---|---|
