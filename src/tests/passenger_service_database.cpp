@@ -2720,6 +2720,26 @@ TEST_CASE("Hyperpath partial event replay keeps policy membership and work ident
 	}
 }
 
+TEST_CASE("Hyperpath and legacy replacements replay both mixed generation directions", "[passenger][hyperpath][save][generation]")
+{
+	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = _settings_game.linkgraph.passenger_journey_hyperpath = true;
+	f.Train({Stop(A), Stop(B), Stop(D)}); f.Train({Stop(A, 150), Stop(D, 150)});
+	auto &db = f.Build(); while (!db.PreparePrecomputed()) {}
+	for (bool mode : {false, true}) {
+		_settings_game.linkgraph.passenger_journey_hyperpath = mode; db.TickPrecomputed(3);
+		auto wire = db.Save(); PassengerServiceDatabase peer; REQUIRE(peer.Load(wire)); peer.FinishLoad(true, true);
+		while (peer.StepLoad(7) == PassengerServiceDatabase::LoadState::Replaying) {}
+		REQUIRE(peer.GetLoadState() == PassengerServiceDatabase::LoadState::Ready); CHECK(peer.Save() == wire);
+		for (size_t iteration = 0; !db.PrecomputedFinished(); ++iteration) {
+			REQUIRE(iteration < 10000); db.TickPrecomputed(19); peer.TickPrecomputed(19);
+			CHECK(db.Save() == peer.Save());
+		}
+		CHECK_FALSE(db.HasRejectedPrecomputedMemory());
+		auto plan = db.PlanPrecomputed(PAX, A, D, NOW); REQUIRE(plan.ride);
+		CHECK(plan.hyperpath == mode); CHECK((plan.ride->kind == PassengerRideKind::HyperpathIntent) == mode);
+	}
+}
+
 TEST_CASE("Hyperpath shared policy queues do not let an expired head hide a ready passenger", "[passenger][hyperpath][boarding][events]")
 {
 	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = _settings_game.linkgraph.passenger_journey_hyperpath = true;

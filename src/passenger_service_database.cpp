@@ -827,7 +827,10 @@ void PassengerServiceDatabase::BeginPrecomputed(int64_t transfer)
 void PassengerServiceDatabase::BuildPrecomputedTables()
 {
 	this->precomputed = {}; this->precomputed_operations = 0;
-	uint64_t remaining = this->precomputed_hyperpath ? PassengerPrecomputedTable::MAX_HYPERPATH_BYTES : PassengerPrecomputedTable::MAX_BYTES;
+	/* A mixed replacement still owns the larger strategy generation. Switching
+	 * back must not strand it behind the legacy-only combined envelope. Old
+	 * saved generations (neither flag set) retain their exact original budget. */
+	uint64_t remaining = this->precomputed_hyperpath || this->retained_precomputed_hyperpath ? PassengerPrecomputedTable::MAX_HYPERPATH_BYTES : PassengerPrecomputedTable::MAX_BYTES;
 	for (const auto &table : this->retained_precomputed) remaining -= std::min(remaining, table.GetDiagnostic().envelope);
 	for (const auto &[id, service] : this->retained_precomputed_services) {
 		uint64_t bytes = 512 + uint64_t{256} * service.timetable.stops.size() + uint64_t{1024} * service.vehicles.size() + uint64_t{32} * service.dispatch_slots.size();

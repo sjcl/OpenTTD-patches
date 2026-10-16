@@ -100,6 +100,32 @@ Work slicing.
 These are construction measurements. Live B-mode boarding, save/load, MP and
 long-duration transport outcomes remain separate completion requirements.
 
+The subsequent matched frozen-map run uses one MSVC x64 Release executable
+(assertions enabled, LTO disabled, normal client build, static runtime), SHA-256
+`b95d42e04b6a36ccbd8dc5a438f070b6099438a6c80f43199261324cd7689638`.
+Both algorithms consume the same frozen input in one sequential probe:
+
+| Current frozen-map metric | Previous | Hyperpath |
+|---|---:|---:|
+| Graph + all rows | 82.073 s | 102.082 s (+24.38%) |
+| Logical Work | 5,665,642,229 | 1,878,463,918 |
+| Reported array capacities | 4,635,480,774 B | 7,817,735,166 B |
+| Canonical admission envelope | 6,596,276,484 B | 16,275,076,536 B |
+
+The new byte counter includes graph, workspace, row/vector capacities and
+indices. These counters exclude allocator metadata and are not process peak
+memory. Base/difference policy payloads are 1,152,320,560 / 1,788,057,000 B;
+candidate distribution and the three focus ODs match the A checkpoint.
+All published candidates again pass the forward/reverse x assertion.
+
+Among 23,673,690 mutually reachable OD pairs (including same-station pairs),
+23,281,933 improve, 355,550 are equal and 36,207 increase. No OD gains or loses
+reachability. Summed expected cost falls from 1,051,915,529,021 to
+956,753,854,181 ticks (9.0465%). The largest increase is 2789 ticks. These are
+model expectations, not physical travel-time improvements. Raw evidence is in
+[the full-OD log](measurements/passenger-hyperpath-2026-10-16/full-od.log) and
+[its summary](measurements/passenger-hyperpath-2026-10-16/full-od-summary.json).
+
 ## B-mode execution and local replanning
 
 With precomputed routing enabled, `linkgraph.passenger_journey_hyperpath`
@@ -175,7 +201,8 @@ legacy row does not reset their old expiry while its replacement is building.
 The derived migration set depends on saved packet fields, not cache residency;
 legacy mode retains its original unresolved-only generation sweep.
 The 16 GiB canonical envelope is unchanged for old algorithms. New strategies
-use a 32 GiB canonical admission envelope including retained generations; this
+use a 32 GiB canonical admission envelope while either current or retained
+generation is Hyperpath; this
 is a worst-case bound, not a request to allocate that amount of physical memory.
 The increased policy-header charge covers vector growth as well as complete
 candidate sets. Physical allocation failure stops play rather than selecting a
