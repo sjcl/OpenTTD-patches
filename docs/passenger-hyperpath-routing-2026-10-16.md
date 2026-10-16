@@ -41,6 +41,8 @@ numerator is therefore bounded by `2^48 + (2^63-1)*(INT64_MAX-1)`, below
 are ceil(N/F), and every insertion asserts that its key is at least the
 current popped key. MSVC x64 uses `_umul128`/`_udiv128`; other targets use
 native unsigned 128-bit arithmetic or the portable split-word implementation.
+Published and downstream labels retain integer tick units, rounding expectations
+upward; acceptance compares N/F exactly within the Q48 frequency model.
 
 The independent Python oracle uses exact `Fraction` arithmetic and a separate
 event algorithm. It reports each candidate's x, frequency and pre-acceptance u.
@@ -208,7 +210,7 @@ The increased policy-header charge covers vector growth as well as complete
 candidate sets. Physical allocation failure stops play rather than selecting a
 different route on one peer.
 
-The current MSVC Release run passes all 713 CTest cases, including the native
+The current MSVC Release run passes all 714 CTest cases, including the native
 integration and regression fixtures. The timestamp-diverse lookup benchmark
 passes 44192 assertions; the independent Fraction oracle passes seven cases.
 Saved partial Hyperpath event

@@ -384,6 +384,8 @@ def run(args, measurement_lock_fd=None):
             setup += "passenger_journey_stats fixture_timetable\n"
         if args.fixture_estimated:
             setup += "passenger_journey_stats fixture_estimated\n"
+        if getattr(args, 'full_rebuild_precomputed', False):
+            setup += "setting linkgraph.passenger_transfer_penalty 20\n"
         if args.warm_precomputed or args.rebuild_precomputed:
             setup += "passenger_journey_stats build_precomputed\n"
         if args.rebuild_precomputed:
