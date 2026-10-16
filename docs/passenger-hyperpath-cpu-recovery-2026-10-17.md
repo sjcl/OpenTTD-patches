@@ -307,3 +307,71 @@ The recovered construction fixture is the former
 `build-estimated/quality-through-final/result.sav`. Its StateTicks are exactly
 24,576 later than the requested original input. It is a later simulation
 state on the same topology, not a substitute that reproduces the prior interval.
+
+## Target departure diagnosis
+
+The copied-TU observer is restricted to station 3393, services 524/525/528
+and destination 3394. It records available cargo and virtual reservations
+separately, runs native eligibility without waking packets, and checks saved
+DB bytes/Work, RNG and StateTicks at each departure. Queried packet intent,
+failure and event state are also checked. The 4,096-tick checkpoint matches
+all 24 canonical fields. All 14 departure guards and 300 packet queries pass.
+The observed 24,576-tick run has no competing measurement. Its timings are
+excluded from fair CPU comparisons because of the departure observer.
+
+| Service / real order | Departures | Target people boarded | Target people left | Free seats at departure, min–max |
+| --- | ---: | ---: | ---: | ---: |
+| 524 / 13, forward | 4 | 74 | 0 | 894–941 |
+| 524 / 79, reverse | 6 | 0 | 297 opportunities | 830–915 |
+| 525 / 13, forward | 2 | 140 | 0 | 270–600 |
+| 525 / 175, reverse | 2 | 0 | 34 opportunities | 547–585 |
+| 528 | 0 | 0 | — | — |
+
+All 331 remaining passenger opportunities are at reverse departures and
+outside their candidate sets. There is no concrete ride to test there;
+the -1 legality category must not be described as a native-prefix rejection.
+They comprise 238 current Hyperpath-intent and 93 retired Hyperpath-intent
+opportunities. **Native-eligible, capacity-available leftover is zero.**
+All observed early, expired, unindexed, new-unprocessed and pending-event
+counts are zero; no overdue event age is observed. Target reservations and
+cancellation-created target opportunities are also zero. Counts repeat
+people across departures; they are not distinct-person totals. Forward
+departures clear all target waiting cargo, so free seats on reverse departures
+do not establish a missed forward opportunity.
+
+No expiry-to-replan pair or pending expiry is observed, so expiry latency
+is **not estimable**, rather than measured to be zero. The observed base
+intent waiting limits are 28,770 and 36,386 ticks, longer than this interval.
+This later input cannot exclude expiry problems in the original interval,
+whose reported waiting limit was different.
+
+Published 528 has one vehicle and an estimated circuit of 82,510–83,694 ticks
+across the captured publications. Its initial order 33 is a real boarding
+stop at 3393 (arrival/departure 26,196/26,418), followed by 3394 at order 34;
+the underlying travel estimate is 370 ticks with quality 1. The initially
+observed real order is 93. Actual dispatches and transitions execute each
+order 94–113 and 0–11 once; order 33 executes zero times. No PBS forecast
+is counted as an execution. Thus this interval contains no actual 528
+boarding at 3393. The pattern's 111 station stops are distinct from the
+real order list's non-station orders.
+
+524's eight frozen vehicles and 528's single vehicle have unknown phases.
+The existing model uses its conservative UnknownWait rule, not a circuit
+divided by an assumed evenly spaced fleet. This is observed model input,
+not a new frequency-learning rule.
+
+These observations narrow the candidates: missed eligible forward loading,
+target reservation cancellation, observed event backlog, actual 528 boarding
+and observed expiry are not the explanation in this interval. They do not
+by themselves identify the original trip-mean regression. The matched
+transport control and packet-representative sampling limits must also be
+considered before attributing a change in mean travel time.
+
+Evidence: [departure report](measurements/passenger-hyperpath-cpu-recovery-2026-10-17/task3-departure-report.json),
+[raw waiting rows](measurements/passenger-hyperpath-cpu-recovery-2026-10-17/task3-target-waiting.csv),
+[departure rows](measurements/passenger-hyperpath-cpu-recovery-2026-10-17/task3-target-departures.csv),
+[528 executions](measurements/passenger-hyperpath-cpu-recovery-2026-10-17/task3-target-order-executions.csv),
+[initial patterns](measurements/passenger-hyperpath-cpu-recovery-2026-10-17/task3-initial-patterns.json),
+[final patterns](measurements/passenger-hyperpath-cpu-recovery-2026-10-17/task3-final-patterns.json),
+[read-only guards](measurements/passenger-hyperpath-cpu-recovery-2026-10-17/task3-target-readonly-checks.csv)
+and [state control](measurements/passenger-hyperpath-cpu-recovery-2026-10-17/task3-observer-state-control.json).
