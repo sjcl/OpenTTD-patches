@@ -706,7 +706,7 @@ class StationCargoList : public CargoList<StationCargoList, StationCargoPacketMa
 	void EnsureWaitingIndex() const;
 	void AddBoardingEntry(CargoPacketID id, WaitingEntry &entry) const;
 	void RemoveBoardingEntry(CargoPacketID id, const WaitingEntry &entry) const;
-	template <typename Visitor> bool VisitBoardingCandidates(std::span<const StationID> next, const Vehicle *vehicle, PassengerJourneyLoadingContext &loading, Visitor &&visitor) const;
+	template <typename Visitor> bool VisitBoardingCandidates(std::span<const StationID> next, const Vehicle *vehicle, PassengerJourneyLoadingContext &loading, Visitor &&visitor, bool defer_hyperpath = true) const;
 	template <class Taction> uint ShiftIndexedJourneyCargo(Taction action, std::span<const StationID> next, const Vehicle *vehicle, PassengerJourneyLoadingContext &loading);
 protected:
 	/** The (direct) parent of this class. */

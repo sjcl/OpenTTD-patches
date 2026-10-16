@@ -174,3 +174,47 @@ Evidence: [expanded attribution](measurements/passenger-hyperpath-cpu-recovery-2
 [CPU summary](measurements/passenger-hyperpath-cpu-recovery-2026-10-17/task1b-summary.json),
 [previous state control](measurements/passenger-hyperpath-cpu-recovery-2026-10-17/task1b-legacy-state-control.json)
 and [Hyperpath state control](measurements/passenger-hyperpath-cpu-recovery-2026-10-17/task1b-hyperpath-state-control.json).
+
+## Task 2: separated membership and selected-cohort execution
+
+The loading context now resolves the current/retained boarding occurrences
+once per vehicle/cargo/order/station context. Cohorts check sorted candidates
+without EvaluateRide. A cached failed-service local policy supplies membership;
+a cold local cache is an unknown positive superset and is resolved only when
+its cohort reaches the FIFO front. The original complete group predicate then
+runs before any visitor can queue an event or mutate cargo. Base/adjusted union
+and the existing FIFO/round-robin merge are retained. RecordCapacityMiss
+explicitly requests the original full predicate during enumeration.
+
+All **723 tests pass**. New regressions cover an attractive but unsafe live
+binding and a cold failed-policy superset that is rejected without changing
+intent/failure/event/reservation/FIFO/database state. A separate ordinary
+4,096-tick before/after run matches **all 24 canonical fields**, including the
+packet, payment, ownership, loading and DB digests, deliveries and table Work.
+The 2,048-tick midpoint replacement also matches at tick 1,024 and at the end.
+These comparisons use the recovered `306a8d…` fixture from StateTicks
+3,181,119,581, not the missing original transport input.
+
+The first uninstrumented CPU triplet, milliseconds/tick (mean / p95 / p99):
+
+| Window | Previous | Before Hyperpath | Separated Hyperpath |
+| --- | ---: | ---: | ---: |
+| Ordinary 1–1,024 | 25.480 / 29.304 / 32.727 | 32.952 / 46.257 / 62.449 | 30.164 / 45.437 / 70.093 |
+| Ordinary 513–1,024 | 24.295 / 27.357 / 29.019 | 32.579 / 42.072 / 53.606 | 31.944 / 45.437 / 82.329 |
+| Replacement 1,025–2,048 | 27.650 / 41.000 / 46.100 | 39.059 / 49.733 / 57.739 | 33.109 / 42.384 / 48.295 |
+
+Ordinary mean drops 8.46% and replacement mean 15.23%. The ordinary excess
+over previous mode shrinks by about 37%, but the tail mean improves only 1.95%
+and its p95/p99 regress. Tail median changes from 31.396 to 29.548 ms. Seven
+after ticks exceed 80 ms, clustered around elapsed ticks 623–635; the matching
+before case has one such tick. No competing game/build/test was detected by
+the host census. This first triplet does not establish stable tail recovery.
+An additional reversed execution order is pending, with source preparation
+kept outside its measured games. The expanded after observer also checks that
+any remaining enumeration ride evaluations belong exclusively to the
+intentionally unchanged capacity visitor.
+
+Evidence: [CPU summary](measurements/passenger-hyperpath-cpu-recovery-2026-10-17/task2-cpu-summary.json),
+[4,096-tick comparison](measurements/passenger-hyperpath-cpu-recovery-2026-10-17/task2-canonical-4096.json),
+[replacement endpoint](measurements/passenger-hyperpath-cpu-recovery-2026-10-17/task2-cpu-end-state.json)
+and [native tests](measurements/passenger-hyperpath-cpu-recovery-2026-10-17/task2-native-ctest.txt).

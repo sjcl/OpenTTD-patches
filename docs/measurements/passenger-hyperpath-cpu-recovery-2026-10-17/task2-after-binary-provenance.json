@@ -1,0 +1,37 @@
+{
+  "revision": "6ce8b30c7c4c36609137301b910d5bfca0f320e3",
+  "mp": false,
+  "boarding_profile": false,
+  "files": {
+    "save-integrity\\boarding_profile.h": "3a10289921f7bc8b3402c76e6f94e8e2c54555238c04dc94215f6dedc66c2f56",
+    "save-integrity\\cargopacket.cpp": "4de22f8da316f4925d9715fb65370ea80e187343217371d1309e70b05416bbbf",
+    "save-integrity\\cargopacket_sl.cpp": "01f3aa724c405a062682fc1f9251767db0b8ca03ff2bd0759aabfe20c2e70459",
+    "save-integrity\\command.cpp": "2448845810228935a64f761bca62b7e29af553202d61bc3611a6724f03fc7fcd",
+    "save-integrity\\console_cmds.cpp": "7b9f56da43ba122d2417d2c005d6e7fa196de2a6f4c7cb2c2f3984ea292c1e84",
+    "save-integrity\\hyperpath_metrics.h": "2c6b925c3e20c9b1fb78a71facc7c8b5c16123fe8330dbf73fc9f0080fea515e",
+    "save-integrity\\integrity.h": "dcac445f095a810ec12394f606a1d18674a2045c1f24044ea24cf3a142b2e044",
+    "save-integrity\\passenger_precomputed.cpp": "db287763a62d665f72fb2418fdcff23b0fe077b745428ff2b4caca9e5da80033",
+    "save-integrity\\passenger_service_database.cpp": "f418086c94f5a4f63077b8f5f2114037555706c7c5b0168cfc01082c3423146c",
+    "transport-trace\\cargoaction.cpp": "1a1d03adc24462d22acd4a170a29356cd6b7c9c6dee1c9119459177070d69d8d",
+    "transport-trace\\cargopacket.cpp": "bf8156afe5f22b266eb10c562ccecdddcbd17b2bb1c7aee8bbfb7f4cd65d2ac9",
+    "transport-trace\\focus_trace.h": "c93366bf3c73fe75845e5636e41d9ace739defd91ff7ca4bd61967ac6dd10d07",
+    "transport-trace\\passenger_journey_active.cpp": "1b11d003bb8b1d9966f7b2fd054da68452b5e99e1cbb1992dcb34cc1146daa7b",
+    "transport-trace\\passenger_od.cpp": "727f34ced3b3908cb0532a7fbd666d65a8aac9518dcd53f92850210d4456f2ac",
+    "transport-trace\\trace.h": "fff50a15e9f68892f8b91b7acb5b878642eb794e9ac653157dad51e4a447d9a5",
+    "transport-trace\\vehicle.cpp": "a2ae2df10b10c06d787146da16846ea3870b2c40bed2061cc275845abf07555b",
+    "real-map-driver\\null_v.cpp": "9f1e1ead08938ffe9bed533892b3e69fb8b7c7bffcfe2eb0aca851eb2573c108",
+    "real-map-driver\\win32.cpp": "ef0f2bc96d0ed1050fdc7687038bac0f5c64e504a7b6ac6ab769daed5b46c842"
+  },
+  "working_tree_source_files": {
+    "src/cargopacket.cpp": "d79a9d5ace06d336219e9b0a0f7749e05b04f7b5d217c62a8aee607a7c76615a",
+    "src/cargopacket.h": "7364b6253c3c96ebbecb0380720618b0b5c790bf171e6733d6ff84e8a561cd56",
+    "src/passenger_journey_active.cpp": "d232c86b116957cb13726a82b80b1d57798059a7599011b81e110a5cced92dc5",
+    "src/passenger_journey_active.h": "6443e0c0a9ecc0e77215c87667dfb017c763277117ed12b5c34700b77b9b2e7e",
+    "src/passenger_precomputed.cpp": "71f01a6111a4a7b232779ed6425d72bcf30e2b0a0792610983b82e3294f5ac1e",
+    "src/passenger_precomputed.h": "55479d98c897c693cf0e54ffcc1ac1ae0bbf442769e72a49e508b6b4a848ccd8",
+    "src/passenger_service_database.cpp": "0b64cad24eeacfc4b4da94cb2d5c02829bd344f909ec9b3e0882805102d0cfae",
+    "src/passenger_service_database.h": "005484a21c2c311bb0ef199ffb939a5b41eb6bcaaf6c756adf884167e9962bce",
+    "src/tests/passenger_service_database.cpp": "a07cfb64357249e53d1812b1cec3f8696a7915e28c36cc449cd6d14a9757d757"
+  },
+  "working_tree_patch_sha256": "5f6cedb20ca66019efc4895c56b9da93e6f597b4dfc6f6af1fce68088641cb6e"
+}

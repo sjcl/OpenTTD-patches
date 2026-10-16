@@ -1389,6 +1389,36 @@ uint32_t PassengerPrecomputedTable::PolicyState(StationID origin, OrderListID pr
 	return pattern == INVALID ? station : this->StateFor(station, pattern);
 }
 
+uint32_t PassengerPrecomputedTable::BoardingOccurrence(StationID origin, OrderListID service, VehicleOrderID order) const
+{
+	if (!this->hyperpath || service.base() >= this->service_pattern.size()) return INVALID;
+	uint32_t pattern = this->service_pattern[service.base()];
+	if (pattern == INVALID) return INVALID;
+	const auto &stops = this->patterns[pattern].occurrences;
+	auto at = std::lower_bound(stops.begin(), stops.end(), order, [&](uint32_t id, VehicleOrderID value) { return this->occurrences[id].order < value; });
+	return at != stops.end() && this->occurrences[*at].order == order && this->occurrences[*at].station == origin && this->occurrences[*at].board ? *at : INVALID;
+}
+
+std::optional<bool> PassengerPrecomputedTable::ContainsCached(StationID origin, StationID destination, uint32_t occurrence, OrderListID previous, OrderListID failed) const
+{
+	const auto *row = this->FindRow(destination); uint32_t state = this->PolicyState(origin, previous);
+	if (row == nullptr || state == INVALID || occurrence >= this->occurrences.size()) return false;
+	const auto &board = this->occurrences[occurrence];
+	if (board.station != origin || this->patterns[board.pattern].members.front().id == previous) return false;
+	std::span<const uint32_t> candidates;
+	if (failed != OrderListID::Invalid()) {
+		auto found = this->local_policies.find({destination, state, failed});
+		/* A cold/evicted local policy is unknown, not a negative membership.
+		 * Its deterministic construction belongs to the selected FIFO cohort.
+		 * Enumerating an unrelated cohort must never run EvaluateRide. */
+		if (found == this->local_policies.end()) return {};
+		candidates = found->second.candidates;
+	} else {
+		candidates = row->policies[row->policy_index[state]].candidates;
+	}
+	return std::binary_search(candidates.begin(), candidates.end(), occurrence);
+}
+
 std::span<const uint32_t> PassengerPrecomputedTable::Candidates(StationID origin, StationID destination, OrderListID previous, OrderListID failed) const
 {
 	const auto *row = this->FindRow(destination); uint32_t state = this->PolicyState(origin, previous);

@@ -4500,3 +4500,52 @@ TEST_CASE("Common section boarding ignores unrelated destinations in the same an
 				<< db.GetPrecomputedDiagnostic(PAX).shared_sections << ',' << keys.sections[0].size() << '\n';
 	}
 }
+
+TEST_CASE("Hyperpath conservative membership cannot mutate a rejected binding or record a capacity miss", "[passenger][hyperpath][boarding][determinism]")
+{
+	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = _settings_game.linkgraph.passenger_journey_hyperpath = true;
+	auto *train = f.Train({Stop(A), Stop(D)});
+	auto &db = f.Build(); while (!db.PreparePrecomputed()) {}
+	train->cargo.Append(f.Packet(100));
+	auto *packet = f.Packet(20); PassengerJourneyActiveContext context(nullptr, A);
+	REQUIRE(context.PlanWaiting(*packet, PAX, D));
+	StationCargoList waiting; waiting.passenger_index_cargo = PAX; waiting.Append(packet, D);
+	db.Invalidate(train->orders->index); // Frozen membership survives; its concrete binding is unsafe.
+	packet->SchedulePassengerRouting(NOW + 1234);
+	PassengerJourneyLoadingContext loading; loading.EnableWaitingEvents();
+	const auto occurrences = loading.HyperpathBoardingOccurrences(train, PAX);
+	REQUIRE(loading.MayUseHyperpathPolicy(*packet, train, PAX, occurrences, true, false));
+	REQUIRE_FALSE(loading.CanUseHyperpathPolicy(*packet, train, PAX, true, false));
+	const auto before = std::tuple(packet->GetPassengerJourney(), packet->GetPassengerBoardingFailure(), packet->GetPassengerRoutingEvent(),
+			waiting.passenger_boarding_last, waiting.AvailableCount(), waiting.ReservedCount(), train->cargo.ReservedCount(), db.Save());
+	CHECK(waiting.Load(20, &train->cargo, std::array{D}, TileIndex{0}, train, &loading) == 0);
+	waiting.RecordCapacityMiss(std::array{D}, train, PAX, loading);
+	CHECK(std::tuple(packet->GetPassengerJourney(), packet->GetPassengerBoardingFailure(), packet->GetPassengerRoutingEvent(),
+			waiting.passenger_boarding_last, waiting.AvailableCount(), waiting.ReservedCount(), train->cargo.ReservedCount(), db.Save()) == before);
+	CHECK(loading.GetValidationCount() == 0);
+}
+
+TEST_CASE("Hyperpath cold local membership defers evaluation until the FIFO cohort is selected", "[passenger][hyperpath][boarding][replan]")
+{
+	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = _settings_game.linkgraph.passenger_journey_hyperpath = true;
+	auto *fast = f.Train({Stop(A), Stop(D)}), *slow = f.Train({Stop(A, 220), Stop(D, 220)});
+	auto &db = f.Build(); while (!db.PreparePrecomputed()) {}
+	auto *packet = f.Packet(20); PassengerJourneyActiveContext context(nullptr, A);
+	REQUIRE(context.PlanWaiting(*packet, PAX, D));
+	for (int i = 0; i < 3; ++i) packet->RecordPassengerCapacityFailure(fast->orders->index, NOW);
+	StationCargoList waiting; waiting.passenger_index_cargo = PAX; waiting.Append(packet, D);
+	PassengerJourneyLoadingContext loading; loading.EnableWaitingEvents();
+	const auto occurrences = loading.HyperpathBoardingOccurrences(fast, PAX);
+	const auto replans = db.GetPrecomputedDiagnostic(PAX).local_replans;
+	REQUIRE(loading.MayUseHyperpathPolicy(*packet, fast, PAX, occurrences, false, true)); // Unknown is conservative.
+	CHECK(db.GetPrecomputedDiagnostic(PAX).local_replans == replans);
+	const auto intent = packet->GetPassengerJourney(); const auto failure = packet->GetPassengerBoardingFailure();
+	const auto event = packet->GetPassengerRoutingEvent(); const auto saved = db.Save();
+	CHECK(waiting.Load(20, &fast->cargo, std::array{D}, TileIndex{0}, fast, &loading) == 0);
+	CHECK(db.GetPrecomputedDiagnostic(PAX).local_replans == replans + 1);
+	CHECK(packet->GetPassengerJourney() == intent); CHECK(packet->GetPassengerBoardingFailure() == failure);
+	CHECK(packet->GetPassengerRoutingEvent() == event); CHECK(db.Save() == saved);
+	CHECK_FALSE(loading.MayUseHyperpathPolicy(*packet, fast, PAX, occurrences, false, true)); // Cached exact set.
+	REQUIRE(waiting.Load(20, &slow->cargo, std::array{D}, TileIndex{0}, slow, &loading) == 20);
+	CHECK(waiting.AvailableCount() == 0);
+}

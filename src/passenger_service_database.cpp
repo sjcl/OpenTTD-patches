@@ -1017,6 +1017,28 @@ PassengerPrecomputedPlan PassengerServiceDatabase::PlanPrecomputed(CargoType car
 	return result;
 }
 
+std::array<uint32_t, 2> PassengerServiceDatabase::HyperpathBoardingOccurrences(CargoType cargo, StationID origin, OrderListID service, VehicleOrderID order) const
+{
+	if (cargo >= NUM_CARGO) return {PassengerPrecomputedTable::INVALID, PassengerPrecomputedTable::INVALID};
+	return {this->precomputed[cargo].BoardingOccurrence(origin, service, order), this->retained_precomputed[cargo].BoardingOccurrence(origin, service, order)};
+}
+
+bool PassengerServiceDatabase::MayBoardHyperpath(const PassengerJourneyExecution &intent, CargoType cargo,
+		const std::array<uint32_t, 2> &occurrences, OrderListID previous, OrderListID failed, bool cached_only) const
+{
+	if (cargo >= NUM_CARGO || intent.kind != PassengerRideKind::HyperpathIntent || intent.signature != uint64_t(cargo) + 1) return false;
+	for (size_t index = 0; index < 2; ++index) {
+		if (intent.generation != (index != 0 ? this->retained_precomputed_policy_generation : this->precomputed_policy_generation)) continue;
+		const auto &table = (index != 0 ? this->retained_precomputed : this->precomputed)[cargo];
+		if (!cached_only) {
+			const auto candidates = table.Candidates(intent.boarding, intent.alighting, previous, failed);
+			return std::binary_search(candidates.begin(), candidates.end(), occurrences[index]);
+		}
+		return table.ContainsCached(intent.boarding, intent.alighting, occurrences[index], previous, failed).value_or(true);
+	}
+	return false;
+}
+
 PassengerPrecomputedPlan PassengerServiceDatabase::BoardHyperpath(const PassengerJourneyExecution &intent, CargoType cargo,
 		OrderListID service, VehicleOrderID boarding, OrderListID previous, OrderListID failed) const
 {

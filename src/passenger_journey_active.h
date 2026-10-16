@@ -225,11 +225,15 @@ class PassengerJourneyLoadingContext {
 	const PassengerPrecomputedPlan &PendingPlan(const CargoPacket &packet, const Vehicle *vehicle, CargoType cargo);
 	using HyperpathKey = std::tuple<VehicleID, CargoType, VehicleOrderID, uint64_t, StationID, StationID, OrderListID, OrderListID>;
 	std::map<HyperpathKey, PassengerPrecomputedPlan> hyperpath_rides;
+	using HyperpathBoardingKey = std::tuple<VehicleID, CargoType, OrderListID, VehicleOrderID, StationID>;
+	std::map<HyperpathBoardingKey, std::array<uint32_t, 2>> hyperpath_boardings;
 	std::optional<PassengerJourneyExecution> ResolveHyperpath(const PassengerJourneyExecution &intent, const CargoPacket &packet, const Vehicle *vehicle, CargoType cargo, bool override_failure = false, OrderListID failed = OrderListID::Invalid());
 public:
 	void EnableWaitingEvents() { this->waiting_events = true; } ///< Actual station simulation only; read-only predicates never wake packets.
 	bool CanBoard(const CargoPacket &packet, const Vehicle *vehicle, CargoType cargo = INVALID_CARGO);
-	bool MayUseHyperpathPolicy(const CargoPacket &representative, const Vehicle *vehicle, CargoType cargo, bool base, bool adjusted);
+	const std::array<uint32_t, 2> &HyperpathBoardingOccurrences(const Vehicle *vehicle, CargoType cargo);
+	bool MayUseHyperpathPolicy(const CargoPacket &representative, const Vehicle *vehicle, CargoType cargo, const std::array<uint32_t, 2> &occurrences, bool base, bool adjusted);
+	bool CanUseHyperpathPolicy(const CargoPacket &representative, const Vehicle *vehicle, CargoType cargo, bool base, bool adjusted);
 	void ResolveWaiting(CargoPacket &packet, const Vehicle *vehicle); ///< Selected indexed candidate only, detached before changing its cohort.
 	void ObserveWaitingGroup(const CargoPacket &packet, const Vehicle *vehicle, CargoType cargo, size_t packets);
 	void PrepareBoard(CargoPacket &packet, const Vehicle *vehicle);
