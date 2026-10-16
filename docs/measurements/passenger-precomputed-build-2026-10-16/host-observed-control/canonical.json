@@ -1,0 +1,22 @@
+{
+  "legacy-c": {
+    "reference": "runtime-same-image-legacy-a",
+    "mismatches": {},
+    "entire_save_hash_matches": true
+  },
+  "integrated-c": {
+    "reference": "runtime-same-image-integrated-a",
+    "mismatches": {},
+    "entire_save_hash_matches": true
+  },
+  "integrated-d": {
+    "reference": "runtime-same-image-integrated-a",
+    "mismatches": {},
+    "entire_save_hash_matches": true
+  },
+  "legacy-d": {
+    "reference": "runtime-same-image-legacy-a",
+    "mismatches": {},
+    "entire_save_hash_matches": true
+  }
+}

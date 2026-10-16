@@ -114,3 +114,18 @@ JSONの引数・入力ハッシュと同じ固定snapshotを使う。CPU時間�
 `host-observed-control/self-probe-preparation.json`はWindowsの読み取りAPIの動作確認で、
 ゲームの性能試行ではない。任意指定の`--observe-host`はOSが提供するカウンターをそのまま記録し、
 raw tickの補正や電源・スケジューラ設定の変更はしない。スレッド一覧取得は準備中だけに限定する。
+
+`background-ready-control/`は基点902と現在の製品をそれぞれ実際にビルドした比較で、
+Release設定の一致、1,866基点ソースの照合数、バイナリhash、計測用ソース、通常構成への復元を記録する。
+`runtime-background-ready/`は旧A→新A→新B→旧Bの通常時各2,048tick。
+`--wait-background-ready`で完成表のwarm後にロード時LinkGraphJob全件の完了を待ち、
+前後StateTicksが同じことを検証する。結果を早期に取り込まず、製品や参加期限には待機を加えない。
+旧新版の構築所要時間が異なることで、未完了ジョブとの競合時間が偏る問題を除くための測定準備である。
+
+`runtime-background-ready-retained/`は同じ保存済みバイナリを再利用し、warmとジョブ待ちの後に
+transfer penaltyを17へ変更して旧表を保持した更新を測る。各版の全canonical項目を、
+以前の同じ版の終了状態と照合する。
+`runtime-background-ready-analysis.json`は各試行と各版4,096tickの統計、
+`runtime-control-method/summarize-background-ready.py`はその集計手順である。
+全raw tickを保存し、外部CPUカウンターで時間を補正したり標本を除外したりしない。
+外部観測区間の非主スレッドCPU時間は全補助threadを含み、正確なStateGameLoop境界ではない。

@@ -339,6 +339,9 @@ def run(args, measurement_lock_fd=None):
     affinity_mask = getattr(args, "affinity_mask", None)
     main_affinity = getattr(args, "main_thread_affinity_mask", None)
     observe_host = getattr(args, "observe_host", False)
+    wait_background = getattr(args, "wait_background_ready", False)
+    if wait_background and not (args.precomputed is True and (args.warm_precomputed or args.rebuild_precomputed)):
+        raise ValueError("--wait-background-ready requires precomputed table warm-up")
     if observe_host and (os.name != "nt" or main_affinity is None):
         raise ValueError("--observe-host requires Windows and --main-thread-affinity-mask")
     for mask in (affinity_mask, main_affinity):
@@ -404,6 +407,8 @@ def run(args, measurement_lock_fd=None):
             setup += "passenger_journey_stats fixture_estimated\n"
         if args.warm_precomputed or args.rebuild_precomputed:
             setup += "passenger_journey_stats build_precomputed\n"
+        if wait_background:
+            setup += "passenger_journey_stats wait_background_ready\n"
         if args.rebuild_precomputed:
             # Trigger a deterministic cost generation after completing the old
             # rows. The ordinary product tick builder must keep those rows live.
@@ -573,6 +578,14 @@ def run(args, measurement_lock_fd=None):
         metadata["newgrf_warning_lines"] = sum("[grf:0]" in line for line in stderr.splitlines())
         console = (directory / "on-1-console.txt").read_text(encoding="utf-8", errors="replace") if (directory / "on-1-console.txt").is_file() else ""
         metadata["warm_complete"] = "Precomputed warm: ready=true;" in console if args.warm_precomputed or args.rebuild_precomputed else None
+        if wait_background:
+            ready = re.search(r"Background jobs ready: completed=(true|false); initial=(\d+); total=(\d+); elapsed_us=(\d+); tick_before=(\d+); tick_after=(\d+)", console)
+            metadata["background_ready"] = dict(completed=ready[1] == "true", initial=int(ready[2]), total=int(ready[3]),
+                elapsed_us=int(ready[4]), tick_before=int(ready[5]), tick_after=int(ready[6])) if ready else None
+            if ready is None or ready[1] != "true" or ready[5] != ready[6]:
+                metadata["simulation_timing_valid"] = False
+                dump(directory / "process.json", metadata)
+                raise RuntimeError(f"Background preparation failed or advanced StateTicks; see {directory}")
         metadata["script_error_pause_resumes"] = console.count("Measurement resumed a NewGRF error pause.")
         if args.cold_precomputed and "OPENTTD_PASSENGER_TRACE" in os.environ:
             metadata["trace_preserved_during_initial_snapshot"] = "Trace recording: final=false" in console
@@ -682,6 +695,7 @@ def main():
     p.add_argument("--affinity-mask", type=lambda value: int(value, 0), help="Optional Windows affinity for this benchmark child only; recorded in the output")
     p.add_argument("--main-thread-affinity-mask", type=lambda value: int(value, 0), help="Fix only the null driver's main simulation thread; preserve worker parallelism")
     p.add_argument("--observe-host", action="store_true", help="Read Windows CPU counters, main-thread CPU time and power-policy state; requires main-thread affinity")
+    p.add_argument("--wait-background-ready", action="store_true", help="After warming rows, wait for loaded linkgraph workers without publishing results or advancing StateTicks")
     p.add_argument("--precomputed", action=argparse.BooleanOptionalAction, default=None)
     p = sub.add_parser("summarize")
     p.add_argument("output", type=pathlib.Path)
