@@ -210,6 +210,17 @@ void PassengerPrecomputedTable::AddEdge(uint32_t from, uint32_t to, int64_t cost
 	this->edges.push_back({from, to, occurrence, cost, distance, kind, uncertainty});
 }
 
+void PassengerPrecomputedTable::AddBoardEdges(uint32_t station, uint32_t to, uint32_t pattern, int64_t cost, EdgeKind kind, uint32_t occurrence, uint32_t distance)
+{
+	this->AddEdge(station, to, cost, kind, occurrence, distance);
+	const auto &states = this->waiting_states[station];
+	if (states.empty()) return;
+	uint32_t excluded = this->patterns[pattern].members.size() == 1 ? this->StateFor(station, pattern) : INVALID;
+	if (excluded == station) excluded = INVALID; // No waiting state exists for this previous pattern.
+	this->edges.back().range = static_cast<uint32_t>(this->range_edges.size());
+	this->range_edges.push_back({states.front().second, states.back().second + 1, excluded});
+}
+
 void PassengerPrecomputedTable::Begin(std::span<const PassengerPeriodicService *const> services, CargoType cargo, int64_t transfer, uint64_t memory, bool sections, bool cooperative, std::shared_ptr<uint64_t> memory_budget, bool estimates, bool optimized, bool integrated)
 {
 	*this = {}; this->cargo = cargo; this->estimates = estimates; this->optimized = optimized; this->integrated = optimized && integrated;
@@ -347,12 +358,14 @@ PassengerBuildTask PassengerPrecomputedTable::BuildGraph(std::vector<const Passe
 		}
 		this->waiting_state_count = nodes;
 		for (auto &o : this->occurrences) { o.arrival = static_cast<uint32_t>(nodes++); o.departure = static_cast<uint32_t>(nodes++); }
-		size_t edge_count = 0;
+		size_t edge_count = 0; uint64_t logical_edge_bound = 0;
 		for (size_t p = 0; p < this->patterns.size(); ++p) for (const auto &stop : representatives[p]->timetable.stops) {
 			if (cooperative) co_await std::suspend_always{};
 			size_t contribution = 2 + ((stop.alight & mask) != 0);
 			if (stop.board & mask) contribution += 1 + this->waiting_states[this->station_index[stop.station.base()]].size();
 			if (contribution > INVALID - edge_count) { this->failed = true; co_return; }
+			logical_edge_bound += contribution;
+			if (this->integrated && (stop.board & mask)) contribution -= this->waiting_states[this->station_index[stop.station.base()]].size();
 			edge_count += contribution;
 		}
 		/* Every product is checked before route/scratch allocation. Queue storage
@@ -363,7 +376,8 @@ PassengerBuildTask PassengerPrecomputedTable::BuildGraph(std::vector<const Passe
 		bool fits = nodes < INVALID && edge_count < INVALID && nodes <= memory / 128 &&
 				Product(this->stations.size(), uint64_t(this->diagnostic.stored_states) * 64 + 128, envelope, memory) &&
 				Product(this->stations.size(), uint64_t(this->stations.size()) * 8 + 64, envelope, memory) &&
-				Product(edge_count, 264, envelope, memory) && Product(nodes, 144, envelope, memory);
+				Product(edge_count, this->integrated ? 128 : 264, envelope, memory) &&
+				(!this->integrated || Product(logical_edge_bound, 128, envelope, memory)) && Product(nodes, this->integrated ? 160 : 144, envelope, memory);
 		this->diagnostic.envelope = envelope;
 		if (!fits) { this->failed = true; co_return; }
 		this->edges.reserve(edge_count);
@@ -376,10 +390,13 @@ PassengerBuildTask PassengerPrecomputedTable::BuildGraph(std::vector<const Passe
 				const auto &stop = t.stops[i]; uint32_t id = pattern.occurrences[i]; const auto &o = this->occurrences[id];
 				if (stop.board & mask) {
 					uint32_t station = this->station_index[stop.station.base()];
+					if (this->integrated) this->AddBoardEdges(station, o.departure, p, pattern.wait + pattern.risk, EdgeKind::Board, id);
+					else {
 					this->AddEdge(station, o.departure, pattern.wait + pattern.risk, EdgeKind::Board, id);
 					for (const auto &[previous, state] : this->waiting_states[station]) {
 						if (cooperative) co_await std::suspend_always{};
 						if (previous != p || pattern.members.size() > 1) this->AddEdge(state, o.departure, pattern.wait + pattern.risk, EdgeKind::Board, id);
+					}
 					}
 				}
 				if (stop.alight & mask) this->AddEdge(o.arrival, this->StateFor(this->station_index[stop.station.base()], p), 2 * transfer, EdgeKind::Alight, id);
@@ -400,7 +417,7 @@ PassengerBuildTask PassengerPrecomputedTable::BuildGraph(std::vector<const Passe
 			if (!success) { this->failed = true; this->diagnostic.envelope = memory; co_return; }
 		}
 		this->diagnostic.envelope = envelope;
-		if (this->optimized) this->ContractGraph(nodes);
+		if (this->optimized && !this->integrated) this->ContractGraph(nodes);
 		this->incoming_offsets.assign(nodes + 1, 0);
 		for (const auto &edge : this->edges) ++this->incoming_offsets[edge.to + 1];
 		for (size_t i = 1; i < this->incoming_offsets.size(); ++i) this->incoming_offsets[i] += this->incoming_offsets[i - 1];
@@ -411,13 +428,18 @@ PassengerBuildTask PassengerPrecomputedTable::BuildGraph(std::vector<const Passe
 			this->hot_edges.from.resize(this->edges.size());
 			this->hot_edges.cost.resize(this->edges.size());
 			this->hot_edges.legs.resize(this->edges.size());
+			this->hot_edges.range.resize(this->edges.size());
 			this->cold_edges.resize(this->edges.size());
 			for (const auto &edge : this->edges) {
 				uint32_t at = cursor[edge.to]++;
+				this->hot_edges.range[at] = edge.range;
 				this->hot_edges.from[at] = edge.from; this->hot_edges.cost[at] = edge.cost;
 				this->hot_edges.legs[at] = edge.kind == EdgeKind::Board || edge.kind == EdgeKind::Section;
 				this->cold_edges[at] = {edge.occurrence, edge.distance, edge.uncertainty, edge.kind};
 			}
+			this->diagnostic.logical_edges = this->edges.size();
+			for (const auto &range : this->range_edges) this->diagnostic.logical_edges += range.end - range.begin - (range.excluded >= range.begin && range.excluded < range.end);
+			this->diagnostic.range_edges = this->range_edges.size();
 			std::vector<Edge>().swap(this->edges);
 		} else if (this->optimized) {
 			/* Stable reverse CSR: the incoming order at each state is exactly
@@ -446,7 +468,7 @@ PassengerBuildTask PassengerPrecomputedTable::BuildGraph(std::vector<const Passe
 		this->rows.reserve(this->stations.size());
 		this->diagnostic.stations = this->stations.size(); this->diagnostic.patterns = this->patterns.size();
 		this->diagnostic.states = nodes; this->diagnostic.edges = this->integrated ? this->hot_edges.from.size() : this->edges.size();
-		this->queue.SetCapacityLimit(uint64_t(this->diagnostic.edges) + nodes);
+		this->queue.SetCapacityLimit(uint64_t(this->integrated ? this->diagnostic.logical_edges : this->diagnostic.edges) + nodes);
 		if (!this->stations.empty()) this->StartDestination();
 	} catch (const std::bad_alloc &) {
 		/* Local OOM cannot select different routes on one network peer. The
@@ -679,7 +701,8 @@ PassengerBuildTask PassengerPrecomputedTable::BuildSections(const std::vector<st
 			uint32_t station = this->station_index[board.station.base()];
 			size_t edges = 1 + this->waiting_states[station].size();
 			if (this->section_rides.size() >= INVALID || edges >= INVALID - this->edges.size() ||
-					!Product(1, 64, envelope, memory) || !Product(edges, 264, envelope, memory)) co_return;
+					!Product(1, 64, envelope, memory) || !Product(this->integrated ? 1 : edges, this->integrated ? 128 : 264, envelope, memory) ||
+					(this->integrated && !Product(edges, 128, envelope, memory))) co_return;
 			if (this->landings[path.alight] == INVALID) {
 				if (nodes >= INVALID || !Product(1, 144 + 264, envelope, memory)) co_return;
 				this->landings[path.alight] = static_cast<uint32_t>(nodes++);
@@ -689,12 +712,15 @@ PassengerBuildTask PassengerPrecomputedTable::BuildSections(const std::vector<st
 			uint32_t id = static_cast<uint32_t>(this->section_rides.size());
 			int64_t cost = path.riding + path.uncertainty + wait + risk;
 			this->section_rides.push_back({path.board, path.alight, path.riding, wait, cost});
+			if (this->integrated) this->AddBoardEdges(station, this->landings[path.alight], board.pattern, cost, EdgeKind::Section, id, path.distance);
+			else {
 			this->AddEdge(station, this->landings[path.alight], cost, EdgeKind::Section, id, path.distance);
 			for (const auto &[previous, state] : this->waiting_states[station]) {
 				if (cooperative) co_await std::suspend_always{};
 				if (previous != board.pattern || this->patterns[board.pattern].members.size() > 1) {
 					this->AddEdge(state, this->landings[path.alight], cost, EdgeKind::Section, id, path.distance);
 				}
+			}
 			}
 		}
 	}
@@ -739,6 +765,53 @@ void PassengerPrecomputedTable::SetSearchLabel(uint32_t state, const Label &labe
 	if (!this->optimized) { this->scratch.labels[state] = label; return; }
 	this->search.cost[state] = label.cost; this->search.legs[state] = label.legs;
 	this->search.metadata[state] = {label.riding, label.waiting, label.first_wait, label.board, label.alight, label.distance};
+}
+
+/** One descriptor is one original contiguous incoming-edge subsequence.
+ * Each virtual relaxation costs exactly one Work unit. Excluded states were
+ * never edges; skipping them is free. The base station always precedes waits.
+ * Only the accepted states touch cold metadata, in original state order. */
+size_t PassengerPrecomputedTable::RelaxIncoming(size_t allowance)
+{
+	const uint32_t index = static_cast<uint32_t>(this->cursor);
+	const uint32_t range_id = this->hot_edges.range[index];
+	const auto range = range_id == INVALID ? RangeEdge{0, 0, INVALID} : this->range_edges[range_id];
+	const uint32_t count = 1 + range.end - range.begin;
+	const int64_t source_cost = this->SearchCost(this->expanding), edge_cost = this->hot_edges.cost[index];
+	const uint32_t source_legs = this->SearchLegs(this->expanding), delta = this->hot_edges.legs[index];
+	const bool finite = source_cost <= INT64_MAX - edge_cost && source_legs <= UINT32_MAX - delta;
+	const int64_t cost = finite ? source_cost + edge_cost : INT64_MAX;
+	const uint32_t legs = finite ? source_legs + delta : UINT32_MAX;
+	size_t used = 0;
+	Label next; bool materialized = false;
+	while (this->range_offset < count && used < allowance) {
+		uint32_t from = this->range_offset == 0 ? this->hot_edges.from[index] : range.begin + this->range_offset - 1;
+		++this->range_offset;
+		if (from == range.excluded) continue;
+		++used;
+		if (!finite || std::tuple(cost, legs) >= std::tuple(this->search.cost[from], this->search.legs[from])) continue;
+		if (!materialized) {
+			const auto &edge = this->cold_edges[index];
+			next = this->SearchLabel(this->expanding); next.cost = cost; next.legs = legs;
+			next.distance = static_cast<uint32_t>(std::min<uint64_t>(UINT32_MAX, uint64_t(next.distance) + edge.distance));
+			if (edge.kind == EdgeKind::Board) {
+				next.board = edge.occurrence;
+				next.first_wait = this->patterns[this->occurrences[edge.occurrence].pattern].wait; next.waiting += next.first_wait;
+			} else if (edge.kind == EdgeKind::Section) {
+				const auto &ride = this->section_rides[edge.occurrence];
+				next.board = ride.board; next.alight = ride.alight;
+				next.first_wait = ride.waiting; next.waiting += ride.waiting; next.riding += ride.riding;
+			} else if (edge.kind == EdgeKind::Ride) next.riding += edge_cost - edge.uncertainty;
+			else if (edge.kind == EdgeKind::Alight) { next.board = INVALID; next.alight = edge.occurrence; next.waiting += edge_cost / 2; }
+			materialized = true;
+		}
+		this->SetSearchLabel(from, next); this->queue.emplace(cost, legs, from);
+	}
+	/* An excluded final state consumes no work, including at a slice boundary. */
+	if (this->range_offset < count && this->range_offset != 0 && range.begin + this->range_offset - 1 == range.excluded) ++this->range_offset;
+	if (this->range_offset == count) { ++this->cursor; this->range_offset = 0; }
+	assert(used > 0);
+	return used;
 }
 
 size_t PassengerPrecomputedTable::Step(size_t allowance, bool legacy_publication, const std::function<void(StationID)> &published)
@@ -853,17 +926,14 @@ size_t PassengerPrecomputedTable::Step(size_t allowance, bool legacy_publication
 				if (this->queue.empty()) { this->finishing_row = true; continue; }
 				auto [cost, legs, state] = this->queue.top(); this->queue.pop();
 				if (cost != this->SearchCost(state) || legs != this->SearchLegs(state)) continue;
-				this->expanding = state; this->cursor = this->incoming_offsets[state];
+				this->expanding = state; this->cursor = this->incoming_offsets[state]; this->range_offset = 0;
 			} else if (this->cursor == this->incoming_offsets[this->expanding + 1]) {
 				this->expanding = INVALID;
+			} else if (this->integrated) {
+				used += this->RelaxIncoming(allowance - used + 1) - 1;
 			} else {
 				uint32_t index = static_cast<uint32_t>(this->cursor++);
-				Edge soa{};
-				if (this->integrated) {
-					const auto &cold = this->cold_edges[index];
-					soa = {this->hot_edges.from[index], this->expanding, cold.occurrence, this->hot_edges.cost[index], cold.distance, cold.kind, cold.uncertainty};
-				}
-				const auto &edge = this->integrated ? soa : this->edges[this->optimized ? index : this->incoming[index]];
+				const auto &edge = this->edges[this->optimized ? index : this->incoming[index]];
 				int64_t cost = this->SearchCost(edge.to);
 				if (cost > INT64_MAX - edge.cost) continue;
 				cost += edge.cost;
@@ -892,7 +962,7 @@ size_t PassengerPrecomputedTable::Step(size_t allowance, bool legacy_publication
 			(this->incoming.capacity() + this->incoming_offsets.capacity()) * 4 + this->rows.size() * this->diagnostic.stored_states * sizeof(Label) +
 			(this->scratch.labels.capacity() + this->scratch.alternative.capacity() + this->prepared.labels.capacity()) * sizeof(Label) +
 			this->section_rides.capacity() * sizeof(SectionRide) + this->landings.capacity() * sizeof(uint32_t);
-	this->diagnostic.bytes += this->hot_edges.from.capacity() * 4 + this->hot_edges.cost.capacity() * 8 + this->hot_edges.legs.capacity() + this->cold_edges.capacity() * sizeof(ColdEdge);
+	this->diagnostic.bytes += this->hot_edges.from.capacity() * 4 + this->hot_edges.cost.capacity() * 8 + this->hot_edges.legs.capacity() + this->hot_edges.range.capacity() * 4 + this->range_edges.capacity() * sizeof(RangeEdge) + this->cold_edges.capacity() * sizeof(ColdEdge);
 	this->diagnostic.bytes += this->binding_bytes + this->reachable_bytes;
 	this->diagnostic.bytes += (this->seed_offsets.capacity() + this->seed_occurrences.capacity()) * sizeof(uint32_t);
 	this->diagnostic.bytes += this->queue.AllocatedBytes();

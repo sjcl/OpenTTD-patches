@@ -3721,7 +3721,7 @@ TEST_CASE("Precomputed sliced replay rejects impossible cursors and migrates leg
 		CHECK(_state_ticks == NOW);
 	}
 	SECTION("Legacy work format remains saveable until conversion completes") {
-		auto legacy = wire; legacy[0] = 5; legacy.resize(legacy.size() - 56);
+		auto legacy = wire; legacy[0] = 5; legacy.resize(legacy.size() - 40);
 		PassengerServiceDatabase peer; REQUIRE(peer.Load(legacy)); peer.FinishLoad(true, true);
 		CHECK(peer.Save() == legacy);
 		while (peer.StepLoad(1) == PassengerServiceDatabase::LoadState::Replaying) CHECK(peer.Save() == legacy);

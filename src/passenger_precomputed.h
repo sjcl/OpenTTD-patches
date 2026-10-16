@@ -32,6 +32,7 @@ struct PassengerPrecomputedDiagnostic {
 	size_t stations = 0, patterns = 0, states = 0, edges = 0, destinations = 0, stored_states = 0;
 	size_t bytes = 0;
 	size_t shared_sections = 0, section_rides = 0; ///< Build-time estimates and concrete, non-spliceable rides.
+	size_t range_edges = 0, logical_edges = 0; ///< Physical CSR descriptors versus their ordered virtual relaxations.
 	size_t certified_patterns = 0, estimated_patterns = 0;
 	uint64_t envelope = 0;
 	size_t retained_destinations = 0, retained_bytes = 0;
@@ -84,7 +85,8 @@ private:
 	};
 	struct Occurrence { StationID station; VehicleOrderID order; uint32_t pattern, arrival, departure; bool board, alight, forced, continues; };
 	enum class EdgeKind : uint8_t { Board, Ride, Wait, Alight, Section };
-	struct Edge { uint32_t from, to, occurrence; int64_t cost; uint32_t distance; EdgeKind kind; int64_t uncertainty; };
+	struct Edge { uint32_t from, to, occurrence; int64_t cost; uint32_t distance; EdgeKind kind; int64_t uncertainty; uint32_t range = INVALID; };
+	struct RangeEdge { uint32_t begin, end, excluded; }; ///< Base station is the descriptor's from, preceding this contiguous range.
 	struct SectionRide { uint32_t board, alight; int64_t riding, waiting, cost; };
 	struct SectionBinding { uint32_t board, alight; };
 	struct Section { uint64_t key; std::vector<SectionBinding> bindings; };
@@ -114,7 +116,9 @@ private:
 		std::vector<uint32_t> from;
 		std::vector<int64_t> cost;
 		std::vector<uint8_t> legs;
+		std::vector<uint32_t> range;
 	} hot_edges;
+	std::vector<RangeEdge> range_edges;
 	struct ColdEdge { uint32_t occurrence, distance; int64_t uncertainty; EdgeKind kind; };
 	std::vector<ColdEdge> cold_edges;
 	std::vector<SectionRide> section_rides;
@@ -133,6 +137,7 @@ private:
 	size_t waiting_state_count = 0;
 	PassengerDestinationQueue<QueueItem> queue;
 	size_t destination = 0, cursor = 0;
+	uint32_t range_offset = 0; ///< Next virtual edge: zero is the separate base station, then begin..end.
 	uint32_t expanding = INVALID;
 	size_t finishing = 0;
 	bool finishing_row = false;
@@ -158,6 +163,8 @@ private:
 	int64_t SearchRiding(uint32_t state) const { return this->optimized ? this->search.metadata[state].riding : this->scratch.labels[state].riding; }
 	Label SearchLabel(uint32_t state) const;
 	void SetSearchLabel(uint32_t state, const Label &label);
+	size_t RelaxIncoming(size_t allowance);
+	void AddBoardEdges(uint32_t station, uint32_t to, uint32_t pattern, int64_t cost, EdgeKind kind, uint32_t occurrence, uint32_t distance = 0);
 	void ContractGraph(size_t &nodes);
 	void AddEdge(uint32_t from, uint32_t to, int64_t cost, EdgeKind kind, uint32_t occurrence = INVALID, uint32_t distance = 0, int64_t uncertainty = 0);
 	PassengerBuildTask BuildSections(const std::vector<std::vector<const PassengerPeriodicService *>> &members, int64_t transfer,
