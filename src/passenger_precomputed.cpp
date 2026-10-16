@@ -210,9 +210,9 @@ void PassengerPrecomputedTable::AddEdge(uint32_t from, uint32_t to, int64_t cost
 	this->edges.push_back({from, to, occurrence, cost, distance, kind, uncertainty});
 }
 
-void PassengerPrecomputedTable::Begin(std::span<const PassengerPeriodicService *const> services, CargoType cargo, int64_t transfer, uint64_t memory, bool sections, bool cooperative, std::shared_ptr<uint64_t> memory_budget, bool estimates, bool optimized)
+void PassengerPrecomputedTable::Begin(std::span<const PassengerPeriodicService *const> services, CargoType cargo, int64_t transfer, uint64_t memory, bool sections, bool cooperative, std::shared_ptr<uint64_t> memory_budget, bool estimates, bool optimized, bool integrated)
 {
-	*this = {}; this->cargo = cargo; this->estimates = estimates; this->optimized = optimized;
+	*this = {}; this->cargo = cargo; this->estimates = estimates; this->optimized = optimized; this->integrated = optimized && integrated;
 	this->graph_build = this->BuildGraph({services.begin(), services.end()}, cargo, transfer, memory, sections, cooperative, std::move(memory_budget));
 	if (!cooperative) this->PrepareGraph(SIZE_MAX);
 }
@@ -405,7 +405,21 @@ PassengerBuildTask PassengerPrecomputedTable::BuildGraph(std::vector<const Passe
 		for (const auto &edge : this->edges) ++this->incoming_offsets[edge.to + 1];
 		for (size_t i = 1; i < this->incoming_offsets.size(); ++i) this->incoming_offsets[i] += this->incoming_offsets[i - 1];
 		auto cursor = this->incoming_offsets;
-		if (this->optimized) {
+		if (this->integrated) {
+			/* Write each stream directly into its stable reverse-CSR position.
+			 * The builder AoS and destination ids are released before searching. */
+			this->hot_edges.from.resize(this->edges.size());
+			this->hot_edges.cost.resize(this->edges.size());
+			this->hot_edges.legs.resize(this->edges.size());
+			this->cold_edges.resize(this->edges.size());
+			for (const auto &edge : this->edges) {
+				uint32_t at = cursor[edge.to]++;
+				this->hot_edges.from[at] = edge.from; this->hot_edges.cost[at] = edge.cost;
+				this->hot_edges.legs[at] = edge.kind == EdgeKind::Board || edge.kind == EdgeKind::Section;
+				this->cold_edges[at] = {edge.occurrence, edge.distance, edge.uncertainty, edge.kind};
+			}
+			std::vector<Edge>().swap(this->edges);
+		} else if (this->optimized) {
 			/* Stable reverse CSR: the incoming order at each state is exactly
 			 * the original insertion order, including equal-cost alternatives. */
 			std::vector<Edge> reverse(this->edges.size());
@@ -431,8 +445,8 @@ PassengerBuildTask PassengerPrecomputedTable::BuildGraph(std::vector<const Passe
 		}
 		this->rows.reserve(this->stations.size());
 		this->diagnostic.stations = this->stations.size(); this->diagnostic.patterns = this->patterns.size();
-		this->diagnostic.states = nodes; this->diagnostic.edges = this->edges.size();
-		this->queue.SetCapacityLimit(uint64_t(this->edges.size()) + nodes);
+		this->diagnostic.states = nodes; this->diagnostic.edges = this->integrated ? this->hot_edges.from.size() : this->edges.size();
+		this->queue.SetCapacityLimit(uint64_t(this->diagnostic.edges) + nodes);
 		if (!this->stations.empty()) this->StartDestination();
 	} catch (const std::bad_alloc &) {
 		/* Local OOM cannot select different routes on one network peer. The
@@ -844,7 +858,12 @@ size_t PassengerPrecomputedTable::Step(size_t allowance, bool legacy_publication
 				this->expanding = INVALID;
 			} else {
 				uint32_t index = static_cast<uint32_t>(this->cursor++);
-				const auto &edge = this->edges[this->optimized ? index : this->incoming[index]];
+				Edge soa{};
+				if (this->integrated) {
+					const auto &cold = this->cold_edges[index];
+					soa = {this->hot_edges.from[index], this->expanding, cold.occurrence, this->hot_edges.cost[index], cold.distance, cold.kind, cold.uncertainty};
+				}
+				const auto &edge = this->integrated ? soa : this->edges[this->optimized ? index : this->incoming[index]];
 				int64_t cost = this->SearchCost(edge.to);
 				if (cost > INT64_MAX - edge.cost) continue;
 				cost += edge.cost;
@@ -873,6 +892,7 @@ size_t PassengerPrecomputedTable::Step(size_t allowance, bool legacy_publication
 			(this->incoming.capacity() + this->incoming_offsets.capacity()) * 4 + this->rows.size() * this->diagnostic.stored_states * sizeof(Label) +
 			(this->scratch.labels.capacity() + this->scratch.alternative.capacity() + this->prepared.labels.capacity()) * sizeof(Label) +
 			this->section_rides.capacity() * sizeof(SectionRide) + this->landings.capacity() * sizeof(uint32_t);
+	this->diagnostic.bytes += this->hot_edges.from.capacity() * 4 + this->hot_edges.cost.capacity() * 8 + this->hot_edges.legs.capacity() + this->cold_edges.capacity() * sizeof(ColdEdge);
 	this->diagnostic.bytes += this->binding_bytes + this->reachable_bytes;
 	this->diagnostic.bytes += (this->seed_offsets.capacity() + this->seed_occurrences.capacity()) * sizeof(uint32_t);
 	this->diagnostic.bytes += this->queue.AllocatedBytes();

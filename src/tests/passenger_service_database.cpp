@@ -51,7 +51,7 @@ namespace {
 	 * production save operation. Counts are parsed instead of guessing offsets. */
 	std::vector<uint8_t> LegacyDatabaseWire(const std::vector<uint8_t> &wire, uint8_t version = 8, size_t *current_cursor_offset = nullptr)
 	{
-		REQUIRE(wire[0] == 10); REQUIRE((version == 3 || version == 8));
+		REQUIRE(wire[0] == 11); REQUIRE((version == 3 || version == 8));
 		std::vector<uint8_t> old; size_t cursor = 0;
 		auto value = [&]() { REQUIRE(cursor + 8 <= wire.size()); uint64_t v = 0; for (size_t i = 0; i < 8; ++i) v |= uint64_t{wire[cursor++]} << (8 * i); return v; };
 		auto copy = [&]() { size_t start = cursor; auto v = value(); old.insert(old.end(), wire.begin() + start, wire.begin() + cursor); return v; };
@@ -72,7 +72,7 @@ namespace {
 		if (version == 3) return old;
 		words(5); for (uint64_t n = copy(); n != 0; --n) service();
 		words(2); for (uint64_t n = copy(); n != 0; --n) service();
-		words(2); value(); value(); value(); value(); REQUIRE(cursor == wire.size());
+		words(2); value(); value(); value(); value(); value(); value(); REQUIRE(cursor == wire.size());
 		return old;
 	}
 	struct PeriodicTrain : Vehicle {
@@ -204,7 +204,7 @@ TEST_CASE("JPSD v9 partial trees replay with their original operation sequence",
 	size_t offset; LegacyDatabaseWire(saved, 3, &offset);
 	for (size_t allowance : {size_t{1}, size_t{17}, size_t{89}, size_t{300}}) {
 		original.Step(allowance);
-		auto old = saved; old[0] = 9; old.resize(old.size() - 16);
+		auto old = saved; old[0] = 9; old.resize(old.size() - 32);
 		uint64_t operations = original.GetDiagnostic().operations;
 		for (size_t i = 0; i < 8; ++i) old[offset + i] = (operations >> (i * 8)) & 255;
 		PassengerServiceDatabase peer; REQUIRE(peer.Load(old)); peer.FinishLoad(true, true);
@@ -216,11 +216,11 @@ TEST_CASE("JPSD v9 partial trees replay with their original operation sequence",
 			auto a = original.Plan(from, to, NOW), b = peer.PlanPrecomputed(PAX, from, to, NOW);
 			CHECK(a.state == b.state); CHECK(a.ride == b.ride); CHECK(a.cost == b.cost);
 		}
-		auto current = peer.Save(); REQUIRE(current[0] == 10); CHECK(current[current.size() - 16] == 0);
+		auto current = peer.Save(); REQUIRE(current[0] == 11); CHECK(current[current.size() - 32] == 0);
 		PassengerServiceDatabase joined; REQUIRE(joined.Load(current)); joined.FinishLoad(true); CHECK(joined.Save() == current);
 		while (!peer.PrecomputedFinished()) peer.TickPrecomputed(7);
 		/* Migration begins only after the old generation has fully finished. */
-		peer.TickPrecomputed(1); CHECK(peer.Save()[peer.Save().size() - 16] == 1);
+		peer.TickPrecomputed(1); CHECK(peer.Save()[peer.Save().size() - 32] == 1);
 	}
 }
 
@@ -1362,7 +1362,7 @@ TEST_CASE("Periodic scheduler progress and captured phases survive save and join
 TEST_CASE("Periodic database rejects malformed and oversized saved state", "[passenger][periodic][save]")
 {
 	Fixture f; f.Train({Stop(A), Stop(D)}); auto &db = f.Build(); auto wire = db.Save(); PassengerServiceDatabase other;
-	wire.pop_back(); CHECK_FALSE(other.Load(wire)); wire = db.Save(); wire[0] = 11; CHECK_FALSE(other.Load(wire));
+	wire.pop_back(); CHECK_FALSE(other.Load(wire)); wire = db.Save(); wire[0] = 12; CHECK_FALSE(other.Load(wire));
 	wire = db.Save(); wire[wire.size() - 16] = 2; CHECK_FALSE(other.Load(wire));
 	wire = db.Save(); wire[wire.size() - 8] = 2; CHECK_FALSE(other.Load(wire));
 	CHECK(other.GetDiagnostic().services == 0);
@@ -2599,7 +2599,7 @@ TEST_CASE("Precomputed active journeys bypass OD admission and survive partial-b
 	CHECK(db.GetDiagnostic().searches == timed_searches);
 	CHECK(db.GetPrecomputedDiagnostic(PAX).hits == 1);
 	CHECK(GetPassengerJourneyTickDiagnostic().query_cache_hits == 99);
-	auto wire = db.Save(); REQUIRE(wire[0] == 10);
+	auto wire = db.Save(); REQUIRE(wire[0] == 11);
 	PassengerServiceDatabase peer; REQUIRE(peer.Load(wire)); peer.FinishLoad(true);
 	CHECK(peer.Save() == wire);
 	CHECK(peer.PlanPrecomputed(PAX, A, D, NOW).ride == db.PlanPrecomputed(PAX, A, D, NOW).ride);
@@ -3037,7 +3037,7 @@ TEST_CASE("Precomputed waiting events survive save tables without inventing a ro
 	AutoRestoreBackup static_features{_sl_xv_feature_static_versions, AutoRestoreBackupNoNewValueTag{}};
 	SlXvSetStaticCurrentVersions(); _sl_xv_feature_versions = _sl_xv_feature_static_versions;
 	bool legacy = false;
-	SECTION("Current packet-event save") { REQUIRE(_sl_xv_feature_versions[XSLFI_PASSENGER_PERIODIC] == 12); }
+	SECTION("Current packet-event save") { REQUIRE(_sl_xv_feature_versions[XSLFI_PASSENGER_PERIODIC] == 13); }
 	SECTION("v9 packet events predate the boarding cursor") { _sl_xv_feature_versions[XSLFI_PASSENGER_PERIODIC] = 9; }
 	SECTION("v8 common-section save has no packet-event fields") { legacy = true; _sl_xv_feature_versions[XSLFI_PASSENGER_PERIODIC] = 8; }
 	GoodsEntry source{}, loaded{}; source.CreateData(); loaded.CreateData();
@@ -3721,7 +3721,7 @@ TEST_CASE("Precomputed sliced replay rejects impossible cursors and migrates leg
 		CHECK(_state_ticks == NOW);
 	}
 	SECTION("Legacy work format remains saveable until conversion completes") {
-		auto legacy = wire; legacy[0] = 5; legacy.resize(legacy.size() - 40);
+		auto legacy = wire; legacy[0] = 5; legacy.resize(legacy.size() - 56);
 		PassengerServiceDatabase peer; REQUIRE(peer.Load(legacy)); peer.FinishLoad(true, true);
 		CHECK(peer.Save() == legacy);
 		while (peer.StepLoad(1) == PassengerServiceDatabase::LoadState::Replaying) CHECK(peer.Save() == legacy);

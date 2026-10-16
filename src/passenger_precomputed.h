@@ -52,7 +52,7 @@ class PassengerPrecomputedTable {
 public:
 	static constexpr uint32_t INVALID = UINT32_MAX;
 	static constexpr uint64_t MAX_BYTES = uint64_t{16} * 1024 * 1024 * 1024;
-	void Begin(std::span<const PassengerPeriodicService *const> services, CargoType cargo, int64_t transfer, uint64_t memory = MAX_BYTES, bool sections = true, bool cooperative = false, std::shared_ptr<uint64_t> memory_budget = {}, bool estimates = true, bool optimized = true);
+	void Begin(std::span<const PassengerPeriodicService *const> services, CargoType cargo, int64_t transfer, uint64_t memory = MAX_BYTES, bool sections = true, bool cooperative = false, std::shared_ptr<uint64_t> memory_budget = {}, bool estimates = true, bool optimized = true, bool integrated = true);
 	bool PrepareGraph(size_t quantum = 1024);
 	bool IsPreparingGraph() const { return static_cast<bool>(this->graph_build); }
 	uint64_t GetGraphWork() const { return this->graph_work; }
@@ -110,6 +110,13 @@ private:
 	std::vector<Pattern> patterns;
 	std::vector<Occurrence> occurrences;
 	std::vector<Edge> edges;
+	struct HotEdges {
+		std::vector<uint32_t> from;
+		std::vector<int64_t> cost;
+		std::vector<uint8_t> legs;
+	} hot_edges;
+	struct ColdEdge { uint32_t occurrence, distance; int64_t uncertainty; EdgeKind kind; };
+	std::vector<ColdEdge> cold_edges;
 	std::vector<SectionRide> section_rides;
 	std::vector<Section> sections;
 	std::unordered_map<uint64_t, SectionPath> section_paths; ///< Packed pattern and saved order pair; lookup only, never iterated for decisions.
@@ -134,6 +141,7 @@ private:
 	bool failed = false, unsupported = false;
 	bool estimates = true;
 	bool optimized = true; ///< Saved algorithm identity; old work cursors always use the original graph and operation sequence.
+	bool integrated = true; ///< v11 bounded range/CSR engine; never reinterpret a v10 operation cursor.
 	CargoType cargo = INVALID_CARGO;
 	PassengerBuildTask graph_build; ///< Derived preparation only. No row can be published until this completes.
 	uint64_t graph_work = 0; ///< Actual coroutine steps, used only for bounded join progress reports.
