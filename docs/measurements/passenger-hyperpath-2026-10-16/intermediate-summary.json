@@ -1,0 +1,173 @@
+{
+  "raw_sha256": "ce9819376ea2d0f5dcd74398f657b833ac3ec5d3cc287c175ceee6dca0a52dbb",
+  "build": {
+    "milliseconds": 99723,
+    "operations": 1878463918,
+    "envelope_bytes": 12876341048,
+    "partial_array_bytes": 6108687336,
+    "board_events": 83672294,
+    "accepts": 137543387,
+    "range_updates": 137573308,
+    "heap_pushes": 390155495,
+    "heap_pops": 390155495,
+    "base_policy_bytes": 958905448,
+    "difference_policy_bytes": 1485314920,
+    "max_candidates": 26
+  },
+  "sizes": {
+    "states": 70470444,
+    "mean": "137543387/70470444",
+    "p95": 5,
+    "maximum": 26
+  },
+  "histogram": {
+    "0": 14789939,
+    "1": 18491625,
+    "2": 19888331,
+    "3": 6207078,
+    "4": 5245898,
+    "5": 2496128,
+    "6": 1227356,
+    "7": 690200,
+    "8": 427845,
+    "9": 208978,
+    "10": 208779,
+    "11": 134969,
+    "12": 122128,
+    "13": 123487,
+    "14": 109188,
+    "15": 66579,
+    "16": 25550,
+    "17": 4600,
+    "18": 1562,
+    "19": 59,
+    "20": 26,
+    "21": 33,
+    "22": 37,
+    "23": 20,
+    "24": 47,
+    "25": 1,
+    "26": 1
+  },
+  "ods": {
+    "3222->400": {
+      "legacy_cost": 6136,
+      "cost": 5843,
+      "candidates": [
+        {
+          "occurrence": 8652,
+          "service": 543,
+          "order": 27,
+          "alight": 3221,
+          "x": 4379,
+          "wait": 1757,
+          "frequency": 160202035692,
+          "u_before": "infinity"
+        },
+        {
+          "occurrence": 14448,
+          "service": 300,
+          "order": 14,
+          "alight": 3221,
+          "x": 4775,
+          "wait": 6403,
+          "frequency": 43959858928,
+          "u_before": "245749922751481/40050508923"
+        }
+      ],
+      "numerator": 1192908017387124,
+      "frequency": 204161894620
+    },
+    "971->916": {
+      "legacy_cost": 22862,
+      "cost": 18749,
+      "candidates": [
+        {
+          "occurrence": 6544,
+          "service": 509,
+          "order": 17,
+          "alight": 395,
+          "x": 17611,
+          "wait": 1914,
+          "frequency": 147061116359,
+          "u_before": "1049762143686082/44291892481"
+        },
+        {
+          "occurrence": 11017,
+          "service": 310,
+          "order": 9,
+          "alight": 395,
+          "x": 17346,
+          "wait": 6355,
+          "frequency": 44291892481,
+          "u_before": "infinity"
+        },
+        {
+          "occurrence": 11056,
+          "service": 508,
+          "order": 18,
+          "alight": 444,
+          "x": 18116,
+          "wait": 12705,
+          "frequency": 22154661686,
+          "u_before": "4568332108990102/242914645901"
+        },
+        {
+          "occurrence": 15186,
+          "service": 154,
+          "order": 9,
+          "alight": 395,
+          "x": 18011,
+          "wait": 5459,
+          "frequency": 51561637061,
+          "u_before": "1213218487961477/63784336280"
+        }
+      ],
+      "numerator": 4969685960093678,
+      "frequency": 265069307587
+    },
+    "3393->3394": {
+      "legacy_cost": 5552,
+      "cost": 3832,
+      "candidates": [
+        {
+          "occurrence": 916,
+          "service": 524,
+          "order": 13,
+          "alight": 3394,
+          "x": 685,
+          "wait": 9995,
+          "frequency": 28161578461,
+          "u_before": "76725700643084/13819470577"
+        },
+        {
+          "occurrence": 1909,
+          "service": 528,
+          "order": 33,
+          "alight": 3394,
+          "x": 2412,
+          "wait": 61772,
+          "frequency": 4556675787,
+          "u_before": "326193483818121/83439460769"
+        },
+        {
+          "occurrence": 17112,
+          "service": 525,
+          "order": 13,
+          "alight": 3394,
+          "x": 460,
+          "wait": 5092,
+          "frequency": 55277882308,
+          "u_before": "infinity"
+        }
+      ],
+      "numerator": 337184185816365,
+      "frequency": 87996136556
+    }
+  },
+  "limitations": [
+    "Construction/diagnostic mode only; no B-mode transport measurement.",
+    "partial_array_bytes excludes graph, workspace and allocator overhead.",
+    "The legacy costs were evaluated in this run; its build duration was not recorded."
+  ]
+}

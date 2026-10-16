@@ -61,6 +61,42 @@ connections. This work does not learn departure gaps or global crowding.
 
 ## Validation
 
-Intermediate real-map measurements and final B-mode results will be recorded
-separately; passing construction tests alone does not establish live boarding,
-save/load or multiplayer correctness.
+The A-mode intermediate run used the existing frozen real-map fixture from
+`passenger-precomputed-build-2026-10-16`: source save SHA-256
+`306a8d3094c406286ff1dd3249f1726bf9d10e230ead593eacdd91efc43ac629`.
+MSVC x64 Release, assertions enabled, LTO disabled. The measured executable's
+SHA-256 was `ae8007137aeb8fd8f7f0e7d4c81b37360ed01a7fdf325d5b5dae452ec9e015e2`.
+
+| Intermediate construction metric | Result |
+|---|---:|
+| New graph + all destination policies | 99.723 s |
+| Logical Work | 1,878,463,918 |
+| Heap pushes / pops | 390,155,495 / 390,155,495 |
+| Board events / accepted state candidates | 83,672,294 / 137,543,387 |
+| Range targets updated | 137,573,308 |
+| Frozen memory envelope | 12,876,341,048 bytes |
+| Stored base / difference policy payloads | 958,905,448 / 1,485,314,920 bytes |
+| Candidate distribution over 70,470,444 waiting states | mean 1.9518, p95 5, max 26 |
+
+The partial array diagnostic is 6,108,687,336 bytes; it excludes graph,
+workspace and allocator overhead and must not be interpreted as process peak
+memory. The existing 60.3 s baseline was measured in a previous run, so it
+does not establish the exact performance regression of this executable.
+
+| OD | Old minimum cost | Strategy expectation | Attractive service(Order), selected alighting station |
+|---|---:|---:|---|
+| 3222 → 400 | 6136 | 5843 | 543(27)→3221; 300(14)→3221 |
+| 971 → 916 | 22862 | 18749 | 310(9)→395; 509(17)→395; 154(9)→395; 508(18)→444 |
+| 3393 → 3394 | 5552 | 3832 | 525(13)→3394; 524(13)→3394; 528(33)→3394 |
+
+The [raw intermediate log](measurements/passenger-hyperpath-2026-10-16/intermediate-real.log)
+and [integer acceptance reconstruction](measurements/passenger-hyperpath-2026-10-16/intermediate-summary.json)
+record candidate x, f, wait and u before acceptance. Every published candidate
+passed the forward/reverse cost equality assertion. The independent rational
+oracle passed six cases. The existing precomputed regression passed 89 cases
+and 564,225 assertions. Additional synthetic tests cover risk-sensitive Board
+event ordering, certified/estimated single-service equivalence and arbitrary
+Work slicing.
+
+These are construction measurements. Live B-mode boarding, save/load, MP and
+long-duration transport outcomes remain separate completion requirements.
