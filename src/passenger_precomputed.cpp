@@ -280,6 +280,8 @@ PassengerBuildTask PassengerPrecomputedTable::BuildGraph(std::vector<const Passe
 			for (const auto &stop : s->timetable.stops) if ((stop.board | stop.alight) & mask) station_ids.insert(stop.station);
 		}
 		this->stations.assign(station_ids.begin(), station_ids.end());
+		assert(std::is_sorted(this->stations.begin(), this->stations.end()));
+		assert(std::adjacent_find(this->stations.begin(), this->stations.end()) == this->stations.end());
 		for (uint32_t i = 0; i < this->stations.size(); ++i) this->station_index[this->stations[i].base()] = i;
 		this->waiting_states.resize(this->stations.size());
 		std::vector<const PassengerPeriodicService *> representatives;
@@ -1010,15 +1012,68 @@ size_t PassengerPrecomputedTable::Step(size_t allowance, bool legacy_publication
 	return used;
 }
 
+void PassengerPrecomputedTable::PrepareRetirement(const PassengerPrecomputedTable &replacement)
+{
+	/* The replacement selects the publication engine. Its retained rows may
+	 * originate in a v9/v10 save; their construction/replay remains untouched. */
+	if (!replacement.integrated || this->retirement_prepared || this->rows.empty()) return;
+	assert(!replacement.IsPreparingGraph());
+	std::vector<StationID> missing;
+	std::set_difference(this->stations.begin(), this->stations.end(), replacement.stations.begin(), replacement.stations.end(), std::back_inserter(missing));
+	if (!missing.empty()) {
+		this->retirement_survivors.resize(this->reachable_destinations.size());
+		for (size_t origin = 0; origin < this->reachable_destinations.size(); ++origin) {
+			const auto &reachable = this->reachable_destinations[origin];
+			auto &survivors = this->retirement_survivors[origin];
+			for (StationID destination : missing) {
+				if (std::binary_search(reachable.begin(), reachable.end(), destination)) survivors.push_back(destination);
+			}
+			this->reachable_bytes += survivors.capacity() * sizeof(StationID);
+			this->diagnostic.bytes += survivors.capacity() * sizeof(StationID);
+		}
+		this->reachable_bytes += this->retirement_survivors.capacity() * sizeof(std::vector<StationID>);
+		this->diagnostic.bytes += this->retirement_survivors.capacity() * sizeof(std::vector<StationID>);
+	}
+	this->retirement_prepared = true;
+}
+
+void PassengerPrecomputedTable::ReuseRetainedDestinations()
+{
+	if (!this->retirement_prepared) return;
+	/* Another cargo may have rejected its replacement. All common rows of
+	 * this cargo's completed replacement are retired; only its missing stations
+	 * remain. Compact that small set before restarting the ascending watermark. */
+	size_t freed = this->retirement_survivors.capacity() * sizeof(std::vector<StationID>);
+	for (size_t origin = 0; origin < this->reachable_destinations.size(); ++origin) {
+		auto &reachable = this->reachable_destinations[origin];
+		if (this->retirement_survivors.empty()) {
+			reachable.clear();
+		} else {
+			const auto &survivors = this->retirement_survivors[origin];
+			assert(survivors.size() <= reachable.capacity());
+			reachable.assign(survivors.begin(), survivors.end());
+			freed += survivors.capacity() * sizeof(StationID);
+		}
+	}
+	decltype(this->retirement_survivors){}.swap(this->retirement_survivors);
+	this->reachable_bytes -= freed;
+	this->diagnostic.bytes -= std::min(this->diagnostic.bytes, freed);
+	this->retirement_watermark.reset(); this->retirement_prepared = false;
+}
+
 void PassengerPrecomputedTable::ReleaseDestination(StationID destination)
 {
+	if (this->retirement_prepared) {
+		assert(!this->retirement_watermark || *this->retirement_watermark < destination);
+		this->retirement_watermark = destination;
+	}
 	if (destination.base() >= this->station_index.size()) return;
 	uint32_t row = this->station_index[destination.base()];
 	if (row < this->rows.size() && !this->rows[row].labels.empty()) {
 		this->diagnostic.bytes -= std::min(this->diagnostic.bytes,
 				(this->rows[row].labels.capacity() + this->rows[row].alternative.capacity()) * sizeof(Label));
 		this->rows[row] = {};
-		for (auto &destinations : this->reachable_destinations) {
+		if (!this->retirement_prepared) for (auto &destinations : this->reachable_destinations) {
 			auto found = std::lower_bound(destinations.begin(), destinations.end(), destination);
 			if (found != destinations.end() && *found == destination) destinations.erase(found);
 		}
@@ -1026,7 +1081,7 @@ void PassengerPrecomputedTable::ReleaseDestination(StationID destination)
 	}
 }
 
-std::span<const StationID> PassengerPrecomputedTable::ReachableDestinations(StationID origin) const
+PassengerPrecomputedTable::DestinationSpans PassengerPrecomputedTable::ReachableDestinations(StationID origin) const
 {
 	if (origin.base() >= this->station_index.size()) return {};
 	uint32_t from = this->station_index[origin.base()];
@@ -1034,7 +1089,16 @@ std::span<const StationID> PassengerPrecomputedTable::ReachableDestinations(Stat
 	auto result = std::span<const StationID>(this->reachable_destinations[from]);
 	/* A sliced copy can have staged one entry for the still-private row. */
 	if (this->destination >= this->rows.size() && this->destination < this->stations.size() && !result.empty() && result.back() == this->stations[this->destination]) result = result.first(result.size() - 1);
-	return result;
+	if (!this->retirement_watermark) return {std::span<const StationID>{}, result};
+	const StationID watermark = *this->retirement_watermark;
+	/* StationID successors are representable: a published ID is never Invalid. */
+	auto suffix = result.subspan(std::lower_bound(result.begin(), result.end(), StationID{static_cast<uint16_t>(watermark.base() + 1)}) - result.begin());
+	std::span<const StationID> survivors;
+	if (!this->retirement_survivors.empty()) {
+		survivors = this->retirement_survivors[from];
+		survivors = survivors.first(std::upper_bound(survivors.begin(), survivors.end(), watermark) - survivors.begin());
+	}
+	return {survivors, suffix};
 }
 
 std::optional<int64_t> PassengerPrecomputedTable::RouteCost(StationID origin, StationID destination) const

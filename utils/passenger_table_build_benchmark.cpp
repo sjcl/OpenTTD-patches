@@ -37,6 +37,13 @@ template <typename L> auto Values(const L &l)
 }
 template <typename A, typename B> void Compare(const A &a, const B &b)
 {
+	if constexpr (std::is_same_v<decltype(a.queue), decltype(b.queue)>) {
+		if (a.integrated && b.integrated) {
+		const auto &x = a.metrics; const auto &y = b.metrics;
+		REQUIRE(std::tie(x.relaxations, x.successes, x.pushes, x.pops, x.stale, x.push_order, x.pop_order) ==
+				std::tie(y.relaxations, y.successes, y.pushes, y.pops, y.stale, y.push_order, y.pop_order));
+		}
+	}
 	REQUIRE(a.rows.size() == b.rows.size());
 	for (size_t d = 0; d < a.rows.size(); ++d) {
 		REQUIRE(a.rows[d].labels.size() == b.rows[d].labels.size());
@@ -54,11 +61,45 @@ template <typename A, typename B> void Compare(const A &a, const B &b)
 		auto x = a.SectionBoardingKeys(member.id, a.occurrences[id].order), y = b.SectionBoardingKeys(member.id, a.occurrences[id].order);
 		REQUIRE(std::equal(x.begin(), x.end(), y.begin(), y.end()));
 	}
+	/* Compare section IDs and every binding, not just the exported boarding key. */
+	REQUIRE(a.sections.size() == b.sections.size());
+	for (size_t i = 0; i < a.sections.size(); ++i) {
+		const auto &x = a.sections[i]; const auto &y = b.sections[i];
+		REQUIRE(x.key == y.key); REQUIRE(x.bindings.size() == y.bindings.size());
+		for (size_t j = 0; j < x.bindings.size(); ++j) REQUIRE(std::tie(x.bindings[j].board, x.bindings[j].alight) == std::tie(y.bindings[j].board, y.bindings[j].alight));
+	}
+	REQUIRE(a.section_rides.size() == b.section_rides.size());
+	for (size_t i = 0; i < a.section_rides.size(); ++i) {
+		const auto &x = a.section_rides[i]; const auto &y = b.section_rides[i];
+		REQUIRE(std::tie(x.board, x.alight, x.riding, x.waiting, x.cost) == std::tie(y.board, y.alight, y.riding, y.waiting, y.cost));
+	}
+	REQUIRE(a.landings == b.landings); REQUIRE(a.boarding_sections == b.boarding_sections);
+	REQUIRE(a.section_paths.size() == b.section_paths.size());
+	for (const auto &[key, x] : a.section_paths) {
+		auto found = b.section_paths.find(key); REQUIRE(found != b.section_paths.end()); const auto &y = found->second;
+		REQUIRE(std::tie(x.section, x.board, x.alight) == std::tie(y.section, y.board, y.alight));
+	}
 	if (getenv("OPENTTD_TABLE_SKIP_PLAN") != nullptr) return;
-	for (auto from : a.stations) for (auto to : a.stations) for (uint32_t sample : {0U, 1U, UINT32_MAX / 2, UINT32_MAX}) {
-		for (OrderListID excluded : {OrderListID::Invalid(), OrderListID{0}, OrderListID{1}, OrderListID{7}}) {
+	for (size_t origin = 0; origin < a.stations.size(); ++origin) {
+		/* Every excluded service that can change StateFor or Select is tested.
+		 * All other valid IDs share the base state, disable dispersion in the
+		 * same way, and cannot equal a selected boarding member. One represents
+		 * that exact equivalence class, including IDs absent from the snapshot. */
+		std::set<uint32_t> relevant;
+		for (const auto &[pattern, state] : a.waiting_states[origin]) relevant.insert(pattern);
+		for (const auto &occurrence : a.occurrences) if (occurrence.board && occurrence.station == a.stations[origin]) relevant.insert(occurrence.pattern);
+		std::vector<OrderListID> exclusions{OrderListID::Invalid()};
+		for (uint32_t pattern : relevant) for (const auto &member : a.patterns[pattern].members) exclusions.push_back(member.id);
+		for (uint32_t id = 0; id < OrderListID::Invalid().base(); ++id) {
+			if (id >= a.service_pattern.size() || !relevant.contains(a.service_pattern[id])) {
+				exclusions.push_back(OrderListID{static_cast<uint16_t>(id)}); break;
+			}
+		}
+		for (auto to : a.stations) for (uint32_t sample : {0U, 1U, UINT32_MAX / 2, UINT32_MAX}) for (OrderListID excluded : exclusions) {
+			auto from = a.stations[origin];
 			auto p = a.Plan(from, to, StateTicks{100}, excluded, sample), q = b.Plan(from, to, StateTicks{100}, excluded, sample);
 			REQUIRE(p.state == q.state); REQUIRE(p.ride == q.ride);
+			REQUIRE(p.estimated_service == q.estimated_service);
 			REQUIRE(std::tie(p.cost, p.riding, p.waiting, p.distance, p.transfers) == std::tie(q.cost, q.riding, q.waiting, q.distance, q.transfers));
 		}
 	}
@@ -89,6 +130,7 @@ template <typename T> T Run(std::span<const PassengerPeriodicService *const> rec
 	if constexpr (requires { table.queue.decreases; }) std::cout << ',' << table.queue.pushes << ',' << table.queue.decreases;
 	std::cout << std::endl;
 	std::cout << "heap_sample," << name << ',' << m.heap_ns << ',' << m.heap_samples << std::endl;
+	std::cout << "queue_order," << name << ',' << m.push_order << ',' << m.pop_order << std::endl;
 	if constexpr (requires { table.queue.PackedEnabled(); }) std::cout << "packed_bounds," << name << ',' << table.queue.PackedEnabled() << ',' << table.queue.LegBits() << std::endl;
 	size_t rows_bytes = 0;
 	for (const auto &row : table.rows) rows_bytes += (row.labels.capacity() + row.alternative.capacity()) * sizeof(typename T::Label);
@@ -276,6 +318,15 @@ TEST_CASE("Precomputed build fixed real map snapshot", "[.table-real][passenger]
 		return;
 	}
 #endif
+	if (getenv("OPENTTD_TABLE_PAIRED_ORDER") != nullptr) {
+		/* Both timed variants retain exactly the same completed warm table. */
+		auto warm = Run<PassengerTableReference>(records, 20, "warm-real");
+		auto before = [&] { auto t = Run<PassengerTableReference>(records, 20, "reference-real"); Compare(warm, t); };
+		auto after = [&] { auto t = Run<PassengerTableCandidate>(records, 20, "candidate-real"); Compare(warm, t); };
+		if (getenv("OPENTTD_TABLE_REVERSE_ORDER") != nullptr) { after(); before(); }
+		else { before(); after(); }
+		return;
+	}
 	if (getenv("OPENTTD_TABLE_REVERSE_ORDER") != nullptr) {
 		auto candidate = Run<PassengerTableCandidate>(records, 20, "candidate-real");
 		auto reference = Run<PassengerTableReference>(records, 20, "reference-real");

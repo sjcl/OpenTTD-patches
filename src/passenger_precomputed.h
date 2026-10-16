@@ -59,6 +59,8 @@ public:
 	uint64_t GetGraphWork() const { return this->graph_work; }
 	size_t Step(size_t operations, bool legacy_publication = false, const std::function<void(StationID)> &published = {});
 	void ReleaseDestination(StationID destination); ///< Retire a row immediately after its replacement is published.
+	void PrepareRetirement(const PassengerPrecomputedTable &replacement); ///< Freeze the few destinations absent from the replacement before retiring its ascending rows.
+	void ReuseRetainedDestinations(); ///< Start another retirement epoch after the previous replacement finished.
 	uint64_t LegacyPublicationWork() const { return uint64_t(this->rows.size()) * this->waiting_state_count; }
 	PassengerPrecomputedPlan Plan(StationID origin, StationID destination, StateTicks ready, OrderListID excluded = OrderListID::Invalid(), uint32_t sample = 0) const;
 	bool Finished() const { return !this->graph_build && (this->failed || this->destination == this->stations.size()); }
@@ -71,7 +73,8 @@ public:
 	std::optional<uint64_t> SectionBoardingKey(const PassengerJourneyExecution &ride) const;
 	std::span<const uint64_t> SectionBoardingKeys(OrderListID service, VehicleOrderID boarding) const;
 	bool RefreshService(const PassengerPeriodicService &service); ///< Refresh bindings, retaining the frozen estimated costs.
-	std::span<const StationID> ReachableDestinations(StationID origin) const;
+	using DestinationSpans = std::array<std::span<const StationID>, 2>; ///< Sorted surviving prefix, then sorted suffix; no overlap.
+	DestinationSpans ReachableDestinations(StationID origin) const;
 	std::optional<int64_t> RouteCost(StationID origin, StationID destination) const; ///< Missing row differs from a proved infinite cost.
 private:
 	struct Member { OrderListID id; uint64_t incarnation, generation; bool estimated; };
@@ -132,6 +135,9 @@ private:
 	std::vector<std::vector<std::pair<uint32_t, uint32_t>>> waiting_states;
 	std::vector<Row> rows;
 	std::vector<std::vector<StationID>> reachable_destinations; ///< Inverse published rows; no waiting-packet dependency.
+	std::vector<std::vector<StationID>> retirement_survivors; ///< Only destinations absent from the frozen replacement.
+	std::optional<StationID> retirement_watermark;
+	bool retirement_prepared = false;
 	size_t reachable_bytes = 0;
 	Row scratch, prepared;
 	size_t waiting_state_count = 0;

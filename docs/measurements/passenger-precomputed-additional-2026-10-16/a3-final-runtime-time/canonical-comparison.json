@@ -1,0 +1,56 @@
+{
+  "binary_sha256": "e5642751892cd9a3686d0e2ea036c6361fbe3b365dbe441b76c037f4a428f587",
+  "profile": false,
+  "runs": [
+    {
+      "name": "normal-old",
+      "path": "C:\\Users\\bebe\\.codex\\worktrees\\4ba5\\OpenTTD-patches\\build-msvc\\a3-final-runtime-time\\normal-old",
+      "canonical_equal": true,
+      "simulation_timing_valid": true
+    },
+    {
+      "name": "normal-new",
+      "path": "C:\\Users\\bebe\\.codex\\worktrees\\4ba5\\OpenTTD-patches\\build-msvc\\a3-final-runtime-time\\normal-new",
+      "canonical_equal": true,
+      "simulation_timing_valid": true
+    },
+    {
+      "name": "reverse-new",
+      "path": "C:\\Users\\bebe\\.codex\\worktrees\\4ba5\\OpenTTD-patches\\build-msvc\\a3-final-runtime-time\\reverse-new",
+      "canonical_equal": true,
+      "simulation_timing_valid": true
+    },
+    {
+      "name": "reverse-old",
+      "path": "C:\\Users\\bebe\\.codex\\worktrees\\4ba5\\OpenTTD-patches\\build-msvc\\a3-final-runtime-time\\reverse-old",
+      "canonical_equal": true,
+      "simulation_timing_valid": true
+    }
+  ],
+  "canonical": {
+    "runtime_routing_feature": 3,
+    "state_ticks": 3181121629,
+    "packets": 467885,
+    "cargo_units": 1084438,
+    "known_od_units": 620230,
+    "journey_packets": 441096,
+    "packet_state_digest": 11668853973613463669,
+    "payment_digest": 15521507570608916248,
+    "payments_valid": true,
+    "database_digest": 9722742478258806991,
+    "ownership_digest": 5658085060826344966,
+    "loading_digest": 4240584175195051439,
+    "completed_rows": 115,
+    "retained_rows": 4802,
+    "table_operations": 134152192,
+    "published_revision": 2804,
+    "company_deliveries": 5263,
+    "journey_routing": 1,
+    "precomputed_routing": 1,
+    "legacy_true_packets": 0,
+    "legacy_false_packets": 0,
+    "legacy_true_units": 0,
+    "legacy_false_units": 0,
+    "opposite_history_mergeable_pairs": 0
+  }
+}

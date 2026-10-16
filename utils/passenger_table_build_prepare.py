@@ -60,12 +60,14 @@ def generate(source, build, name, revision, heap="priority", simd=False, contrac
         uint64_t relaxations = 0, successes = 0, pushes = 0, pops = 0, stale = 0, peak_queue = 0, copies = 0;
         uint64_t section_checks = 0, graph_ns = 0, sections_ns = 0, csr_ns = 0, init_ns = 0, search_ns = 0, finish_ns = 0, publish_ns = 0;
         uint64_t heap_ns = 0, heap_samples = 0;
+        uint64_t push_order = 14695981039346656037ULL, pop_order = 14695981039346656037ULL;
         std::chrono::steady_clock::time_point phase, row_started;
         std::vector<uint64_t> destinations_ns;
     } metrics;
     template <typename... Args> void MeasuredPush(Args... args)
     {
         if constexpr (PASSENGER_TABLE_COUNT) {
+            std::apply([&](auto... value) { ((this->metrics.push_order = (this->metrics.push_order ^ uint64_t(value)) * 1099511628211ULL), ...); }, QueueItem{args...});
             if ((++this->metrics.pushes & 1023) == 0) {
                 const auto started = std::chrono::steady_clock::now(); this->queue.emplace(args...);
                 this->metrics.heap_ns += std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - started).count();
@@ -77,6 +79,7 @@ def generate(source, build, name, revision, heap="priority", simd=False, contrac
     auto MeasuredPop()
     {
         if constexpr (PASSENGER_TABLE_COUNT) {
+            std::apply([&](auto... value) { ((this->metrics.pop_order = (this->metrics.pop_order ^ uint64_t(value)) * 1099511628211ULL), ...); }, this->queue.top());
             if ((++this->metrics.pops & 1023) == 0) {
                 const auto started = std::chrono::steady_clock::now(); auto item = this->queue.top(); this->queue.pop();
                 this->metrics.heap_ns += std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - started).count();
@@ -232,7 +235,9 @@ def main():
     if args.range_split:
         cmake = cmake.replace("endfunction()", "  target_compile_definitions(openttd_test PRIVATE WITH_TABLE_BUILD_RANGE_SPLIT)\nendfunction()")
     if args.timing_only:
-        cmake = cmake.replace("endfunction()", "  target_compile_definitions(openttd_test PRIVATE PASSENGER_TABLE_COUNT=0)\nendfunction()")
+        definitions = "  set_source_files_properties(\n" + ''.join(f'    "{p.as_posix()}"\n' for p in sources)
+        definitions += "    PROPERTIES COMPILE_DEFINITIONS PASSENGER_TABLE_COUNT=0)\n"
+        cmake = cmake.replace("endfunction()", definitions + "endfunction()")
     (build / "benchmark.cmake").write_text(cmake, encoding="utf-8")
     manifest = dict(reference=args.reference, candidate=args.candidate, heap=args.heap, timing_only=args.timing_only,
                     source_head=subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=args.source).decode().strip(),

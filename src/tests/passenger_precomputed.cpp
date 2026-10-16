@@ -32,6 +32,20 @@ namespace {
 		for (size_t i = 0; !table.Finished() && i < 1000000; ++i) table.Step(chunk);
 		REQUIRE(table.Finished()); return table;
 	}
+	template <typename T> std::vector<StationID> DestinationList(const T &destinations)
+	{
+		if constexpr (std::is_same_v<typename T::value_type, StationID>) return {destinations.begin(), destinations.end()};
+		else {
+			std::vector<StationID> result;
+			for (auto span : destinations) {
+				REQUIRE(std::is_sorted(span.begin(), span.end()));
+				result.insert(result.end(), span.begin(), span.end());
+			}
+			REQUIRE(std::is_sorted(result.begin(), result.end()));
+			REQUIRE(std::adjacent_find(result.begin(), result.end()) == result.end());
+			return result;
+		}
+	}
 }
 
 TEST_CASE("Precomputed trees preserve through rides and physical occurrences", "[passenger][precomputed]")
@@ -506,11 +520,12 @@ TEST_CASE("Precomputed replacement retires rows at publication without retaining
 	auto old = Build(services);
 	std::vector<const PassengerPeriodicService *> records{&services[0]};
 	PassengerPrecomputedTable replacement; replacement.Begin(records, PAX, 30);
+	old.PrepareRetirement(replacement);
 	size_t published = 0;
 	while (!replacement.Finished()) replacement.Step(1, false, [&](StationID destination) {
 		old.ReleaseDestination(destination); ++published;
 		for (StationID origin : {A, B, C, D}) {
-			auto destinations = old.ReachableDestinations(origin);
+			auto destinations = DestinationList(old.ReachableDestinations(origin));
 			CHECK_FALSE(std::binary_search(destinations.begin(), destinations.end(), destination));
 			CHECK_FALSE(old.RouteCost(origin, destination));
 		}
@@ -521,6 +536,115 @@ TEST_CASE("Precomputed replacement retires rows at publication without retaining
 	CHECK(old.GetDiagnostic().bytes < replacement.GetDiagnostic().bytes);
 }
 
+TEST_CASE("Retirement preserves every sliced reachable set across added and missing stations", "[passenger][precomputed][memory][save]")
+{
+	const std::array origins{A, B, C, D, StationID{4}, StationID{7}, StationID{8}, StationID{9}, StationID{10}};
+	std::array previous{Service(0, {A, B, C, D, StationID{7}, StationID{9}}), Service(1, {A, StationID{10}})};
+	std::array next{Service(0, {B, D, StationID{4}, StationID{8}}), Service(1, {StationID{4}, StationID{10}})};
+	for (auto [algorithm, replacement_algorithm] : {std::pair{0U, 0U}, std::pair{1U, 1U}, std::pair{2U, 2U}, std::pair{0U, 2U}, std::pair{1U, 2U}}) {
+		uint64_t work = 0;
+		for (size_t quantum : {1U, 2U, 3U, 4U, 5U, 7U, 64U}) {
+			CAPTURE(algorithm, replacement_algorithm, quantum);
+			PassengerPrecomputedTable retained, current;
+			std::vector<const PassengerPeriodicService *> records;
+			for (const auto &s : previous) records.push_back(&s);
+			retained.Begin(records, PAX, 20, PassengerPrecomputedTable::MAX_BYTES, true, false, {}, true, algorithm != 0, algorithm == 2);
+			while (!retained.Finished()) retained.Step(65536);
+			std::map<StationID, std::vector<StationID>> expected;
+			std::map<std::pair<StationID, StationID>, std::optional<int64_t>> costs;
+			for (StationID origin : origins) {
+				expected[origin] = DestinationList(retained.ReachableDestinations(origin));
+				for (StationID destination : origins) costs[{origin, destination}] = retained.RouteCost(origin, destination);
+			}
+			records.clear(); for (const auto &s : next) records.push_back(&s);
+			current.Begin(records, PAX, 30, PassengerPrecomputedTable::MAX_BYTES, true, false, {}, true, replacement_algorithm != 0, replacement_algorithm == 2);
+			[&]<typename T>(T &old) { if constexpr (requires { old.PrepareRetirement(current); }) old.PrepareRetirement(current); }(retained);
+			std::set<StationID> released;
+			while (!current.Finished()) {
+				CHECK(current.Step(quantum, false, [&](StationID destination) {
+					CHECK((released.empty() || *released.rbegin() < destination));
+					retained.ReleaseDestination(destination); released.insert(destination);
+					for (auto &[origin, destinations] : expected) std::erase(destinations, destination);
+				}) <= quantum);
+				for (StationID origin : origins) {
+					auto actual = DestinationList(retained.ReachableDestinations(origin));
+					CHECK(actual == expected[origin]);
+					/* Match both CargoPacket scan strategies, including calls for a
+					 * reachable destination without a waiting fallback cohort. */
+					for (size_t fallback_count : {size_t{0}, size_t{1}, origins.size()}) {
+						std::vector<StationID> scalar_calls, span_calls;
+						const auto &destinations = expected[origin];
+						if (fallback_count < destinations.size()) {
+							for (size_t i = 0; i < fallback_count; ++i) if (std::binary_search(destinations.begin(), destinations.end(), origins[i])) scalar_calls.push_back(origins[i]);
+						} else scalar_calls = destinations;
+						auto spans = retained.ReachableDestinations(origin);
+						if (fallback_count < spans[0].size() + spans[1].size()) {
+							for (size_t i = 0; i < fallback_count; ++i) if (std::binary_search(spans[0].begin(), spans[0].end(), origins[i]) || std::binary_search(spans[1].begin(), spans[1].end(), origins[i])) span_calls.push_back(origins[i]);
+						} else for (auto span : spans) span_calls.insert(span_calls.end(), span.begin(), span.end());
+						CHECK(span_calls == scalar_calls);
+					}
+					auto fresh = DestinationList(current.ReachableDestinations(origin));
+					for (StationID destination : origins) {
+						CHECK_FALSE((std::binary_search(actual.begin(), actual.end(), destination) && std::binary_search(fresh.begin(), fresh.end(), destination)));
+						CHECK(retained.RouteCost(origin, destination) == (released.contains(destination) ? std::nullopt : costs[{origin, destination}]));
+					}
+				}
+			}
+			if (work == 0) work = current.GetDiagnostic().operations;
+			CHECK(current.GetDiagnostic().operations == work);
+		}
+	}
+}
+
+TEST_CASE("Retained destinations survive repeated replacement epochs without resurrection", "[passenger][precomputed][memory][save]")
+{
+	const std::array origins{A, B, C, D, StationID{4}, StationID{7}, StationID{8}, StationID{9}, StationID{10}};
+	std::array previous{Service(0, {A, B, C, D, StationID{7}, StationID{9}, StationID{10}})};
+	const std::array generations{
+		Service(0, {B, D, StationID{4}, StationID{8}, StationID{10}}),
+		Service(0, {A, StationID{7}, StationID{10}}),
+		Service(0, {C, StationID{9}}),
+		Service(0, {A, B, C, D})};
+	for (unsigned algorithm : {0U, 1U, 2U}) for (size_t quantum : {1U, 4U, 5U}) {
+		CAPTURE(algorithm, quantum);
+		PassengerPrecomputedTable retained;
+		std::vector<const PassengerPeriodicService *> records{&previous[0]};
+		retained.Begin(records, PAX, 20, PassengerPrecomputedTable::MAX_BYTES, true, false, {}, true, algorithm != 0, algorithm == 2);
+		while (!retained.Finished()) retained.Step(65536);
+		std::map<StationID, std::vector<StationID>> expected;
+		std::map<std::pair<StationID, StationID>, std::optional<int64_t>> costs;
+		for (StationID origin : origins) {
+			expected[origin] = DestinationList(retained.ReachableDestinations(origin));
+			for (StationID destination : origins) costs[{origin, destination}] = retained.RouteCost(origin, destination);
+		}
+		std::set<StationID> retired;
+		for (const auto &generation : generations) {
+			retained.ReuseRetainedDestinations();
+			for (StationID origin : origins) CHECK(DestinationList(retained.ReachableDestinations(origin)) == expected[origin]);
+			records = {&generation};
+			PassengerPrecomputedTable current; current.Begin(records, PAX, 30);
+			retained.PrepareRetirement(current);
+			while (!current.Finished()) {
+				CHECK(current.Step(quantum, false, [&](StationID destination) {
+					retained.ReleaseDestination(destination); retired.insert(destination);
+					for (auto &[origin, destinations] : expected) std::erase(destinations, destination);
+				}) <= quantum);
+				for (StationID origin : origins) {
+					auto actual = DestinationList(retained.ReachableDestinations(origin));
+					CHECK(actual == expected[origin]); CHECK(std::is_sorted(actual.begin(), actual.end()));
+					auto fresh = DestinationList(current.ReachableDestinations(origin));
+					for (StationID destination : origins) {
+						CHECK_FALSE((std::binary_search(actual.begin(), actual.end(), destination) && std::binary_search(fresh.begin(), fresh.end(), destination)));
+						CHECK(retained.RouteCost(origin, destination) == (retired.contains(destination) ? std::nullopt : costs[{origin, destination}]));
+					}
+				}
+			}
+		}
+		retained.ReuseRetainedDestinations();
+		for (StationID origin : origins) CHECK(DestinationList(retained.ReachableDestinations(origin)).empty());
+	}
+}
+
 TEST_CASE("Precomputed inverse destinations contain exactly the published finite rows", "[passenger][precomputed][boarding][save]")
 {
 	std::array services{Service(0, {A, B}), Service(1, {B, D}), Service(2, {C})};
@@ -529,7 +653,7 @@ TEST_CASE("Precomputed inverse destinations contain exactly the published finite
 	while (!table.Finished()) {
 		table.Step(7);
 		for (StationID origin : {A, B, C, D}) {
-			auto destinations = table.ReachableDestinations(origin); REQUIRE(std::is_sorted(destinations.begin(), destinations.end()));
+			auto destinations = DestinationList(table.ReachableDestinations(origin)); REQUIRE(std::is_sorted(destinations.begin(), destinations.end()));
 			for (StationID destination : {A, B, C, D}) {
 				auto cost = table.RouteCost(origin, destination);
 				CHECK(std::binary_search(destinations.begin(), destinations.end(), destination) == (cost && *cost != INT64_MAX));

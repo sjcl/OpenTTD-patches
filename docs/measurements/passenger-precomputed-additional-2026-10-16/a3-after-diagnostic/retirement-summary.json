@@ -1,0 +1,102 @@
+{
+  "simulation_timing_valid": false,
+  "profile_enabled": true,
+  "ticks": 2048,
+  "setup_observation": null,
+  "release_ticks": 115,
+  "calls": 115,
+  "simulation_us": {
+    "mean": 26668.79638671875,
+    "p95": 38630,
+    "p99": 48457,
+    "maximum": 62049
+  },
+  "retirement_us": {
+    "mean": 3798.0704347826086,
+    "p95": 5820.8,
+    "p99": 7410.7,
+    "maximum": 8470.5
+  },
+  "percentiles": {
+    "p95": {
+      "tick": 3181119893,
+      "simulation_us": 38630,
+      "journey_us": 3965,
+      "retirement_us": 0.0,
+      "calls": 0
+    },
+    "p99": {
+      "tick": 3181119972,
+      "simulation_us": 48457,
+      "journey_us": 20476,
+      "retirement_us": 4874.5,
+      "calls": 1
+    }
+  },
+  "tail_release_ticks": {
+    "0.95": 71,
+    "0.99": 18
+  },
+  "worst_retirements": [
+    {
+      "tick": 3181119955,
+      "simulation_us": 51508,
+      "retirement_us": 8470.5,
+      "calls": 1
+    },
+    {
+      "tick": 3181119795,
+      "simulation_us": 57084,
+      "retirement_us": 7410.7,
+      "calls": 1
+    },
+    {
+      "tick": 3181120487,
+      "simulation_us": 62049,
+      "retirement_us": 6315.5,
+      "calls": 1
+    },
+    {
+      "tick": 3181120575,
+      "simulation_us": 48675,
+      "retirement_us": 6116.1,
+      "calls": 1
+    },
+    {
+      "tick": 3181119777,
+      "simulation_us": 49067,
+      "retirement_us": 5938.5,
+      "calls": 1
+    },
+    {
+      "tick": 3181120150,
+      "simulation_us": 47004,
+      "retirement_us": 5820.8,
+      "calls": 1
+    },
+    {
+      "tick": 3181119919,
+      "simulation_us": 50522,
+      "retirement_us": 5137.8,
+      "calls": 1
+    },
+    {
+      "tick": 3181121266,
+      "simulation_us": 61582,
+      "retirement_us": 5065.8,
+      "calls": 1
+    },
+    {
+      "tick": 3181120540,
+      "simulation_us": 47204,
+      "retirement_us": 5041.8,
+      "calls": 1
+    },
+    {
+      "tick": 3181120061,
+      "simulation_us": 40610,
+      "retirement_us": 4982.8,
+      "calls": 1
+    }
+  ]
+}

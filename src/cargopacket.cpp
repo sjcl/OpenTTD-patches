@@ -1709,11 +1709,12 @@ bool StationCargoList::VisitBoardingCandidates(std::span<const StationID> next, 
 			};
 			for (bool retained : {false, true}) {
 				auto destinations = db.PrecomputedReachableDestinations(this->passenger_index_cargo, stop, retained);
-				if (this->fallback_destinations.size() < destinations.size()) {
+				if (this->fallback_destinations.size() < destinations[0].size() + destinations[1].size()) {
 					for (const auto &[destination, groups] : this->fallback_destinations) {
-						if (std::binary_search(destinations.begin(), destinations.end(), destination)) progress(destination);
+						if (std::binary_search(destinations[0].begin(), destinations[0].end(), destination) ||
+								std::binary_search(destinations[1].begin(), destinations[1].end(), destination)) progress(destination);
 					}
-				} else for (StationID destination : destinations) progress(destination);
+				} else for (auto span : destinations) for (StationID destination : span) progress(destination);
 			}
 		}
 	}

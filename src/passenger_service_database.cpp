@@ -802,6 +802,8 @@ void PassengerServiceDatabase::BeginPrecomputed(int64_t transfer)
 		this->retained_precomputed_estimates = this->precomputed_estimates;
 		this->retained_precomputed_optimized = this->precomputed_optimized;
 		this->retained_precomputed_integrated = this->precomputed_integrated;
+	} else {
+		for (auto &table : this->retained_precomputed) table.ReuseRetainedDestinations();
 	}
 	this->precomputed_sections = true;
 	this->precomputed_estimates = true;
@@ -893,7 +895,10 @@ void PassengerServiceDatabase::TickPrecomputed(size_t allowance)
 		auto &table = this->precomputed[cargo];
 		if (table.Finished()) continue;
 		const auto rows = table.GetDiagnostic().destinations;
-		size_t used = table.Step(allowance, false, [&](StationID destination) { this->retained_precomputed[cargo].ReleaseDestination(destination); });
+		size_t used = table.Step(allowance, false, [&](StationID destination) {
+			auto &retained = this->retained_precomputed[cargo];
+			retained.PrepareRetirement(table); retained.ReleaseDestination(destination);
+		});
 		if (table.GetDiagnostic().destinations != rows) WakePassengerWaitingCargo(cargo);
 		allowance -= used; this->precomputed_operations += used;
 		if (allowance == 0 || table.IsPreparingGraph()) break;
@@ -2193,7 +2198,10 @@ PassengerServiceDatabase::LoadState PassengerServiceDatabase::StepLoad(size_t al
 			used = table.Step(allowance);
 		} else {
 			used = table.Step(static_cast<size_t>(std::min<uint64_t>(this->load_remaining, allowance)), this->legacy_precomputed_cursor,
-					[&](StationID destination) { this->retained_precomputed[this->load_cargo].ReleaseDestination(destination); });
+					[&](StationID destination) {
+						auto &retained = this->retained_precomputed[this->load_cargo];
+						retained.PrepareRetirement(table); retained.ReleaseDestination(destination);
+					});
 			this->load_remaining -= used;
 		}
 		this->load_work += used;

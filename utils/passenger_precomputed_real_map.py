@@ -363,7 +363,7 @@ def run(args, measurement_lock_fd=None):
             raise ValueError("Only the owning process can reuse a measurement reservation")
         lock = measurement_lock_fd
     else:
-        lock = PROFILE.acquire_measurement_lock(lock_path, 60)
+        lock = PROFILE.acquire_measurement_lock(lock_path, getattr(args, "measurement_wait", 60))
     observer = None
     try:
         if not borrowed_lock:
@@ -555,6 +555,9 @@ def run(args, measurement_lock_fd=None):
             rebuild_precomputed=args.rebuild_precomputed, command=command, **observed)
         metadata["unpause_before_save"] = args.unpause_before_save
         metadata["validation_only"] = args.validation_only
+        # Copied retirement instrumentation is independent of saved algorithm flags.
+        metadata["retirement_profile"] = "OPENTTD_RETIREMENT_PROFILE" in os.environ
+        metadata["retirement_reference"] = "OPENTTD_RETIREMENT_REFERENCE" in os.environ
         metadata["affinity_mask"] = affinity_mask
         metadata["main_thread_affinity_mask"] = main_affinity
         metadata["main_thread"] = main_thread
@@ -681,6 +684,7 @@ def main():
         p.add_argument(name, type=pathlib.Path)
     p.add_argument("--ticks", type=int, default=4096)
     p.add_argument("--timeout", type=int, default=900)
+    p.add_argument("--measurement-wait", type=int, default=60, help="Seconds to wait for the shared host measurement lock")
     p.add_argument("--input", type=pathlib.Path)
     p.add_argument("--lang", type=pathlib.Path, help="Matching build language directory (defaults beside the binary)")
     p.add_argument("--resume", action="store_true")
