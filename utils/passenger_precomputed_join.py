@@ -29,6 +29,7 @@ def main():
     parser.add_argument("--stall", action="store_true")
     parser.add_argument("--toggle-precomputed", action="store_true", help="Disable and re-enable routing after joining, then compare the peer preparation barrier")
     parser.add_argument("--wait-server-ready", action="store_true", help="Connect after server preparation instead of testing the server-wait phase")
+    parser.add_argument("--replace-precomputed", action="store_true", help="Change transfer cost after joining; compare ordinary replacement ticks with retained rows")
     parser.add_argument("--observe-timeout", type=int, default=180,
                         help="Harness observation seconds for loading/replay; does not change game/network timeouts")
     args = parser.parse_args()
@@ -235,6 +236,9 @@ def main():
             if result["toggle_mismatches"] or result["toggle_server"]["state_ticks"] != off_server["state_ticks"]:
                 raise RuntimeError("Connected-peer preparation advanced or diverged simulation state")
         if args.ticks:
+            if args.replace_precomputed:
+                command(host, "setting linkgraph.passenger_transfer_penalty 17")
+                result["replacement_requested"] = True
             initial_tick = result["server_snapshot"]["state_ticks"]
             command(host, "unpause")
             deadline = time.monotonic() + 900

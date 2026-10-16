@@ -1,0 +1,65 @@
+{
+  "command": [
+    "C:\\Users\\bebe\\.codex\\worktrees\\c430\\OpenTTD-patches\\build-msvc\\Release\\openttd_test-final-counted.exe",
+    "[.table-real]"
+  ],
+  "binary_sha256": "2915036cdc2dfefdb52db32b6bfca66087504393bb6157d7c1933091d996c2bb",
+  "exit_code": 0,
+  "elapsed_seconds": 336.2933147996664,
+  "skip_plan": false,
+  "rows": [
+    {
+      "name": "reference-real",
+      "services": 864,
+      "occurrences": 17445,
+      "nodes": 58929,
+      "edges": 810897,
+      "graph_ns": 3877274000,
+      "rows_ns": 155092246200,
+      "init_ns": 1518140700,
+      "search_ns": 146943959600,
+      "alternative_ns": 5342579700,
+      "publication_ns": 1286045700,
+      "relaxations": 3916843139,
+      "improvements": 340556902,
+      "queue_updates": 340598358,
+      "pops": 340598358,
+      "stale": 69176273,
+      "max_queue": 11050,
+      "label_copies": 3916843139,
+      "section_checks": 690745077,
+      "array_bytes": 4666571482,
+      "operations": 5751401877
+    },
+    {
+      "name": "candidate-real",
+      "services": 864,
+      "occurrences": 17445,
+      "nodes": 58929,
+      "edges": 810897,
+      "graph_ns": 4009311900,
+      "rows_ns": 84904494900,
+      "init_ns": 2062738200,
+      "search_ns": 72886119300,
+      "alternative_ns": 7910144700,
+      "publication_ns": 2044434200,
+      "relaxations": 3916843139,
+      "improvements": 340556902,
+      "queue_updates": 340598358,
+      "pops": 340598358,
+      "stale": 69176273,
+      "max_queue": 11050,
+      "label_copies": 340556902,
+      "section_checks": 690745077,
+      "array_bytes": 4656419222,
+      "operations": 5665642229
+    }
+  ],
+  "peak_working_bytes": 9430073344,
+  "peak_commit_bytes": 10269016064,
+  "process_cpu_seconds": 326.4375,
+  "limitations": [
+    "Array residency excludes allocator overhead; OS peak includes both compared tables and the map.",
+    "This runner does not exclude unrelated host activity."
+  ]
+}

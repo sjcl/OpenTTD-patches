@@ -1,0 +1,349 @@
+{
+  "command": [
+    "C:\\Users\\bebe\\.codex\\worktrees\\c430\\OpenTTD-patches\\build-msvc\\Release\\openttd_test-experiments.exe",
+    "[.table-real]"
+  ],
+  "binary_sha256": "eb560f70b6ff04ae54bf88ad218a83a296607b1b0294d90fc80e270b4b04d94b",
+  "exit_code": 0,
+  "elapsed_seconds": 591.6663460000418,
+  "skip_plan": true,
+  "rows": [
+    {
+      "name": "reference-real",
+      "services": 864,
+      "occurrences": 17445,
+      "nodes": 58929,
+      "edges": 810897,
+      "graph_ns": 3902366200,
+      "rows_ns": 152237874500,
+      "init_ns": 1442934200,
+      "search_ns": 144452449900,
+      "alternative_ns": 5093254800,
+      "publication_ns": 1247114000,
+      "relaxations": 0,
+      "improvements": 0,
+      "queue_updates": 0,
+      "pops": 0,
+      "stale": 0,
+      "max_queue": 0,
+      "label_copies": 0,
+      "section_checks": 0,
+      "array_bytes": 4666571482,
+      "operations": 5751401877
+    },
+    {
+      "name": "hot-edge-real",
+      "services": 864,
+      "occurrences": 17445,
+      "nodes": 58929,
+      "edges": 810897,
+      "graph_ns": 3988631000,
+      "rows_ns": 88523742500,
+      "init_ns": 1624494600,
+      "search_ns": 79547207800,
+      "alternative_ns": 5455786800,
+      "publication_ns": 1894603600,
+      "relaxations": 0,
+      "improvements": 0,
+      "queue_updates": 0,
+      "pops": 0,
+      "stale": 0,
+      "max_queue": 0,
+      "label_copies": 0,
+      "section_checks": 0,
+      "array_bytes": 4653986531,
+      "operations": 5665642229
+    },
+    {
+      "name": "range-real",
+      "services": 864,
+      "occurrences": 17445,
+      "nodes": 58929,
+      "edges": 219728,
+      "graph_ns": 3972838200,
+      "rows_ns": 65148622000,
+      "init_ns": 1565940100,
+      "search_ns": 56404083300,
+      "alternative_ns": 5380610800,
+      "publication_ns": 1797544200,
+      "relaxations": 0,
+      "improvements": 0,
+      "queue_updates": 0,
+      "pops": 0,
+      "stale": 0,
+      "max_queue": 0,
+      "label_copies": 0,
+      "section_checks": 0,
+      "array_bytes": 4635480774,
+      "operations": 5665642229
+    },
+    {
+      "name": "init-real",
+      "services": 864,
+      "occurrences": 17445,
+      "nodes": 58929,
+      "edges": 219728,
+      "graph_ns": 4006629600,
+      "rows_ns": 58633658900,
+      "init_ns": 524095100,
+      "search_ns": 51218891700,
+      "alternative_ns": 5176019900,
+      "publication_ns": 1713586900,
+      "relaxations": 0,
+      "improvements": 0,
+      "queue_updates": 0,
+      "pops": 0,
+      "stale": 0,
+      "max_queue": 0,
+      "label_copies": 0,
+      "section_checks": 0,
+      "array_bytes": 4635480774,
+      "operations": 5665642229
+    },
+    {
+      "name": "batch-real",
+      "services": 864,
+      "occurrences": 17445,
+      "nodes": 58929,
+      "edges": 219728,
+      "graph_ns": 4004319400,
+      "rows_ns": 59419484400,
+      "init_ns": 542902100,
+      "search_ns": 51771286900,
+      "alternative_ns": 5341678600,
+      "publication_ns": 1762451200,
+      "relaxations": 0,
+      "improvements": 0,
+      "queue_updates": 0,
+      "pops": 0,
+      "stale": 0,
+      "max_queue": 0,
+      "label_copies": 0,
+      "section_checks": 0,
+      "array_bytes": 4635480774,
+      "operations": 5665642229
+    },
+    {
+      "name": "simd-real",
+      "services": 864,
+      "occurrences": 17445,
+      "nodes": 58929,
+      "edges": 219728,
+      "graph_ns": 4048637800,
+      "rows_ns": 63611175800,
+      "init_ns": 579563600,
+      "search_ns": 56100304000,
+      "alternative_ns": 5192826900,
+      "publication_ns": 1737219300,
+      "relaxations": 0,
+      "improvements": 0,
+      "queue_updates": 0,
+      "pops": 0,
+      "stale": 0,
+      "max_queue": 0,
+      "label_copies": 0,
+      "section_checks": 0,
+      "array_bytes": 4635480774,
+      "operations": 5665642229
+    },
+    {
+      "name": "contract-real",
+      "services": 864,
+      "occurrences": 17445,
+      "nodes": 58889,
+      "edges": 219688,
+      "graph_ns": 3947646300,
+      "rows_ns": 58899418000,
+      "init_ns": 587534400,
+      "search_ns": 51345959700,
+      "alternative_ns": 5221504500,
+      "publication_ns": 1743005100,
+      "relaxations": 0,
+      "improvements": 0,
+      "queue_updates": 0,
+      "pops": 0,
+      "stale": 0,
+      "max_queue": 0,
+      "label_copies": 0,
+      "section_checks": 0,
+      "array_bytes": 4635476894,
+      "operations": 5664861629
+    }
+  ],
+  "details": {
+    "reference-real": {
+      "heap_stats": [
+        0
+      ],
+      "memory": [
+        4543071984,
+        194208,
+        2828592
+      ],
+      "graph_layout": [
+        810897,
+        0,
+        0,
+        2330800
+      ],
+      "phases": [
+        3848241800,
+        517900,
+        30015300,
+        45390300,
+        63117800
+      ]
+    },
+    "hot-edge-real": {
+      "heap_stats": [
+        0
+      ],
+      "memory": [
+        4543071984,
+        935752,
+        0,
+        3064308
+      ],
+      "graph_layout": [
+        810897,
+        0,
+        0,
+        11561300
+      ],
+      "phases": [
+        3923180300,
+        627100,
+        18084700,
+        23389000,
+        35436500
+      ]
+    },
+    "range-real": {
+      "heap_stats": [
+        0
+      ],
+      "memory": [
+        4543071984,
+        935752,
+        0,
+        3064308
+      ],
+      "graph_layout": [
+        61923,
+        157805,
+        810897,
+        5301900
+      ],
+      "phases": [
+        3907577700,
+        636300,
+        13115700,
+        19563600,
+        29737600
+      ]
+    },
+    "init-real": {
+      "heap_stats": [
+        0
+      ],
+      "memory": [
+        4543071984,
+        935752,
+        0,
+        3064308
+      ],
+      "graph_layout": [
+        61923,
+        157805,
+        810897,
+        2952300
+      ],
+      "phases": [
+        3956625400,
+        493200,
+        11838000,
+        17089100,
+        26666900
+      ]
+    },
+    "batch-real": {
+      "heap_stats": [
+        0
+      ],
+      "memory": [
+        4543071984,
+        935752,
+        0,
+        3064308
+      ],
+      "graph_layout": [
+        61923,
+        157805,
+        810897,
+        3784600
+      ],
+      "phases": [
+        3946578200,
+        502100,
+        11943200,
+        17665700,
+        23778400
+      ]
+    },
+    "simd-real": {
+      "heap_stats": [
+        0
+      ],
+      "memory": [
+        4543071984,
+        935752,
+        0,
+        3064308
+      ],
+      "graph_layout": [
+        61923,
+        157805,
+        810897,
+        2922400
+      ],
+      "phases": [
+        3998058900,
+        496800,
+        12871200,
+        18395100,
+        25946600
+      ]
+    },
+    "contract-real": {
+      "heap_stats": [
+        0
+      ],
+      "memory": [
+        4543071984,
+        935752,
+        0,
+        3062228
+      ],
+      "graph_layout": [
+        61883,
+        157805,
+        810857,
+        2613500
+      ],
+      "phases": [
+        3894727800,
+        509400,
+        11948800,
+        17058700,
+        27663500
+      ]
+    }
+  },
+  "peak_working_bytes": 9427197952,
+  "peak_commit_bytes": 10298138624,
+  "process_cpu_seconds": 581.890625,
+  "limitations": [
+    "Array residency excludes allocator overhead; OS peak includes both compared tables and the map.",
+    "This runner does not exclude unrelated host activity."
+  ]
+}
