@@ -1,0 +1,10 @@
+{
+  "reference_commit": "881cec768f",
+  "status": "Measured initial Section candidate: station counts, standard unordered prefix hash, sorted-vector owners, sorted unique event vector",
+  "files": {
+    "passenger_precomputed.cpp.txt": "b3a82bc8ac6b46281865573688e9137a9653c2b8814cb49c4987b75298ced58a",
+    "passenger_precomputed.h.txt": "074577209c63bb7fb7981f8d152d5668c8d33d6264268ae83ef6d911d5caef06"
+  },
+  "adopted": false,
+  "reason": "Counter-free Section mean gain is smaller than run-to-run variability; evaluate the repository flat-map alternative."
+}

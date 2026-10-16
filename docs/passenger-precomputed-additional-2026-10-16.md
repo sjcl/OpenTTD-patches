@@ -1,7 +1,7 @@
 # 旅客経路表の追加最適化
 
 対象は `perf/passenger-precomputed-table-build`、開始点は `01648fd6ea`。
-A3 → A1 → A4 → A2 → A5 の順に検証する。未完了項目を採用済みとは扱わない。
+A3 → A1 → A4 → A2 → A5 の順に検証した。A3・A2を採用し、A1・A4・A5は不採用とした。
 保存形式・JPSDバージョン・アルゴリズム識別は変更しない。
 
 ## A3 事前診断
@@ -309,3 +309,76 @@ GBは10^9 byteとして表示する。nativeの2表同時保持プロセスのpe
 成功ケースは旧形式の一括公開でも各StepのWork・公開行数・LegacyPublicationWorkと完成表/Planが一致した。
 全688テスト・5,734,015アサーションも再確認した。この追加テストを含む最終比較用に生成した
 参照/候補h/cppの4ファイルは、実測した計数版とバイト単位で同一である。
+
+A2確定コミット: `881cec768f`。
+
+## A5 Section構築のflat化と小入力の検証
+
+integratedだけで、startersを駅別countと直前pattern IDに置き換えた。
+prefixのtupleを衝突しない51bitキーに詰め、固定のmix hashを使う。IDは従来の発見順で割り当て、
+hashの走査順は使わない。ownersはVehicleID/OrderListIDのsort済み配列にし、重複VehicleIDでは最小serviceを残す。
+VehicleIDの最大値に比例する配列は確保しない。
+eventsはvectorに集め、従来のsetと同じ(period, phase)順でsort/uniqueしてSectionGapへ渡す。
+
+dispatch slotの同じeventを全vehicle分増やすと一時容量が旧課金を超えるため、service/pathごとに一度だけ追加する。
+車両の容量・owner・seats検査とyieldは全件維持する。pathごとにmarkerをリセットするので、乗車地点のoffsetも保つ。
+raw event数を従来課金のvehicles+slots内に収め、prefixと一時領域のcanonical入場課金を変えない。
+legacy/v10は従来のmap/setを使う。
+
+全688テスト・5,734,015アサーション、追加8テスト・129,885,768アサーション成功。
+80入力×7予算、500系統×3 seedに加え、8形状の共通prefix・異なるperiod・未知phase・容量0・
+重複owner・重複dispatch slot・大きく疎なVehicleID・逆順の入力recordsを確認した。
+追加形状はintegratedの各slice（予算1/4/5）と、legacy/v10の完成配列・各StepのWork/公開位置も照合した。
+メモリ入場境界と旧形式一括公開の追加テストも再実行した。
+
+初案の実マップ比較は1,688,990,619アサーション成功。5配列の内容とID順、束縛キー、
+全Label・alternative・全OD/除外同値類/4 sampleのPlanが一致した。
+既存カウンターとpush/pop順ハッシュもA1記載の値と同じで、Workは5,665,642,229。
+完成行容量2,934,631,128byte、全配列診断3,027,295,602byteは変わらない。
+
+初案のカウンターなし・assert ON測定（同一image、共通の完成基準表、各190,713,339アサーション成功、競合記録なし）:
+
+| 順序・方式 | Dijkstra (秒) | 代替候補 (秒) | 公開 (秒) | Section構築 (秒) | 全行 (秒) |
+|---|---:|---:|---:|---:|---:|
+| 通常順・旧 | 59.271 | 5.561 | 3.172 | 4.715 | 68.144 |
+| 通常順・初案 | 66.826 | 6.160 | 3.570 | 4.674 | 76.738 |
+| 逆順・初案 | 65.196 | 5.988 | 3.360 | 4.021 | 74.699 |
+| 逆順・旧 | 65.600 | 6.012 | 3.515 | 4.249 | 75.309 |
+
+Section平均は旧4.482秒→初案4.348秒だが、平均差0.134秒は
+旧の試行間差0.466秒、初案の試行間差0.653秒より小さい。
+改善をばらつきと分離できず、初案は不採用とする。
+再現可能な初案を `utils/passenger_table_build_experiments/section_flat_initial/` に保存した。
+
+## A5 既存flat hash案の追加試行と最終不採用判断
+
+既存の `robin_hood::unordered_flat_map` をprefix internと最小service owner索引に使う案も試した。
+ownerのsortと重複配列を除き、元のsetと同じordered event vectorは維持する。
+比較用ビルドの全688テスト・5,734,015アサーション、候補の追加8テスト・129,885,768アサーション成功。
+
+選別用の短い実マップprefixで全Section配列・束縛キーと公開されたLabel/alternativeを比較し、
+カウンターなし同一imageの通常順／逆順は各1,946,828アサーション成功、競合記録なし。
+`--destinations 1` はWorkスライス間で止める既存の粗い上限であり、厳密な1行停止ではない。
+この試行は完成基準表を保持する全行測定ではなく、全実マップPlanも比較していない。
+完全な表の正確性・時間の主証拠は上記初案の測定であり、この選別結果と混同しない。
+
+| 短いprefixの順序 | 旧Section (秒) | flat hash案Section (秒) |
+|---|---:|---:|
+| 通常順 | 4.252 | 4.139 |
+| 逆順 | 4.136 | 4.029 |
+
+平均差0.110秒は旧の試行間差0.116秒、新の試行間差0.110秒と同程度である。
+初案・flat hash案とも改善幅をばらつきから分離できず、A5は不採用とする。
+flat hash案は `utils/passenger_table_build_experiments/section_flat_robin/` に保存した。
+本番のSection構築はA2時点へ戻す。保存形式・識別値・旧アルゴリズムは変更しない。
+
+## 最終製品構成の確認
+
+A5初案を保存したsnapshotから再生成した参照/候補h/cppの4ファイルは実測時とバイト単位で一致した。
+本番へ戻した構成でも全688テスト・5,734,015アサーション、追加8テスト・129,885,768アサーション成功。
+さらにCMAKE_PROJECT_INCLUDEを空にして測定用TUを外し、assert ONでゲームと製品テストをビルドした。
+この純粋な製品構成も全688テスト・5,734,015アサーション成功。
+プロジェクトのcompile対象に測定用TUがないこと、ゲームimageに行形式の測定用環境変数がないことを確認した。
+本番の旅客表h/cppはA2コミット `881cec768f` と同一で、A1・A4・A5の候補コードは製品へ入れていない。
+保存serializer・JPSDバージョン・保存されたアルゴリズム識別の変更はない。
+raw出力・source hash・canonical比較・最終製品構成の証拠は同名のmeasurementsディレクトリに保存した。

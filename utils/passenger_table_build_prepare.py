@@ -125,7 +125,7 @@ def generate(source, build, name, revision, heap="priority", simd=False, contrac
         cpp = re.sub(r'^\s*this->queue\.(SetOptimized|SetCapacityLimit|Reset)\([^\n]*\);\n', '', cpp, flags=re.M)
         cpp = cpp.replace("this->queue.AllocatedBytes()", "PassengerBenchmarkQueueBytes(this->queue)")
     cpp = cpp.replace('#include "passenger_precomputed.h"', f'#include "{name}.h"')
-    cpp = re.sub(r'#include "([^"/]+)"', lambda m: m[0] if m[1] == name + '.h' else '#include "' + (source / "src" / m[1]).as_posix() + '"', cpp)
+    cpp = re.sub(r'#include "([^"]+)"', lambda m: m[0] if m[1] == name + '.h' or not (source / "src" / m[1]).is_file() else '#include "' + (source / "src" / m[1]).as_posix() + '"', cpp)
     cpp = cpp.replace("this->queue.emplace(", "this->MeasuredPush(")
     cpp = cpp.replace("auto [cost, legs, state] = this->queue.top(); this->queue.pop();", "auto [cost, legs, state] = this->MeasuredPop();")
     cpp = cpp.replace("\t\t\t++used;", "\t\t\t++used; this->metrics.peak_queue = std::max<uint64_t>(this->metrics.peak_queue, this->queue.size());")

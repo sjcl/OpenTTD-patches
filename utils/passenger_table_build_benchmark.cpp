@@ -557,3 +557,51 @@ TEST_CASE("Compressed rows retain canonical admission and legacy publication wor
 		}
 	}
 }
+
+TEST_CASE("Flat section containers preserve sparse owners and duplicate dispatch events", "[.table-sections][passenger]")
+{
+	PassengerTestStations fixture;
+	for (uint32_t id = 0; id < 32; ++id) Station::CreateAtIndex(StationID{static_cast<uint16_t>(id)}, TileIndex{256 + id + 1});
+	for (unsigned shape = 0; shape < 8; ++shape) {
+		std::vector<PassengerPeriodicService> services;
+		for (uint16_t id = 0; id < 8; ++id) {
+			PassengerPeriodicService service; service.id = OrderListID{id}; service.incarnation = id + 1; service.generation = 100 + id;
+			for (uint16_t stop = 0; stop < 4; ++stop) {
+				service.timetable.stops.push_back({StationID{static_cast<uint16_t>(stop < 3 ? stop : id + 3)}, static_cast<VehicleOrderID>(stop * 2), stop * 50, stop * 50 + 10, 1, 1, 0});
+			}
+			service.timetable.period = 300 + id * 100;
+			if ((shape & 1) && id % 3 == 0) { service.timetable.estimated_period = service.timetable.period; service.timetable.period = 0; }
+			for (uint32_t vehicle = 0; vehicle < 12; ++vehicle) {
+				PassengerPeriodicVehicle entry;
+				entry.id = VehicleID{vehicle == 1 ? 0xFEFFFU : vehicle % 3 == 0 ? vehicle : 100U * id + vehicle};
+				entry.type = VehicleType::Train; entry.capacity[CargoType{0}] = vehicle == 0 ? 0 : vehicle + 3;
+				entry.phase_known = !(shape & 2); entry.base = StateTicks{int64_t(vehicle) * 23 - 300};
+				service.vehicles.push_back(entry);
+			}
+			if ((shape & 4) && id % 2 == 0) {
+				service.dispatch_period = 600; service.dispatch_stop = 1; service.dispatch_base = StateTicks{-37};
+				service.dispatch_slots = {0, 0, 100, 300, 300, 500};
+			} else if (id % 3 == 0) service.uncertain_dispatch_period = 1200;
+			services.push_back(std::move(service));
+		}
+		std::reverse(services.begin(), services.end());
+		std::vector<const PassengerPeriodicService *> records; for (const auto &service : services) records.push_back(&service);
+		auto before = Run<PassengerTableReference>(records, 20, "section-reference");
+		auto after = Run<PassengerTableCandidate>(records, 20, "section-candidate");
+		REQUIRE(before.GetDiagnostic().shared_sections > 0); Compare(before, after);
+		/* The flat containers must not enter either saved scalar algorithm. */
+		for (bool optimized : {false, true}) {
+			PassengerTableReference legacy; PassengerTableCandidate replay;
+			legacy.Begin(records, CargoType{0}, 20, legacy.MAX_BYTES, true, false, {}, true, optimized, false);
+			replay.Begin(records, CargoType{0}, 20, replay.MAX_BYTES, true, false, {}, true, optimized, false);
+			while (!legacy.Finished()) {
+				REQUIRE(legacy.Step(7) == replay.Step(7));
+				REQUIRE(legacy.GetDiagnostic().operations == replay.GetDiagnostic().operations);
+				REQUIRE(legacy.GetDiagnostic().destinations == replay.GetDiagnostic().destinations);
+			}
+			REQUIRE(replay.Finished()); Compare(legacy, replay);
+		}
+
+		for (size_t quantum : {1U, 4U, 5U}) CompareEverySlice<PassengerTableReference, PassengerTableCandidate>(records, 20, quantum);
+	}
+}
