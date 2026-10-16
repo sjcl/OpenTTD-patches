@@ -1,0 +1,21 @@
+{
+  "before": "5dc3b990ffadf8e134ba3318b1b03647356a4125",
+  "adopted_checkpoint": "d7af532165489277745dafa23f7555ac9640be0d",
+  "selected_kernel": "split scalar",
+  "source_head": "d7af532165489277745dafa23f7555ac9640be0d",
+  "sources": {
+    "src/passenger_precomputed.cpp": "eb5cb8dedb6bef937645b0cb1a29f1201ca9e9f29bf04ee00ebcc5f7b82bc776",
+    "src/passenger_precomputed.h": "8e51935b3f5855edca482da3c887bcba34bde7e83fdee8c95a6edd54123d4bd4"
+  },
+  "fixture": {
+    "source": "C:\\Users\\bebe\\.codex\\worktrees\\dae2\\OpenTTD-patches\\build-estimated\\quality-through-final\\result.sav",
+    "sha256": "306a8d3094c406286ff1dd3249f1726bf9d10e230ead593eacdd91efc43ac629",
+    "jpsd_sha256": "7ca9ad50ca3fb134369ad01d9eb1a193dce3cf48c720fdba2ea4e55b15f06a93",
+    "width": 16384,
+    "height": 4096,
+    "stations": 5008,
+    "jpsd_version": 9
+  },
+  "product_binary_sha256": "2f1781375e17a89053f271fe1f397f70187aef20c66ec79bacb52e484aed2449",
+  "note": "Range span splitting only. Same Work/cursors and graph identity; no save version or publication rule changes. SIMD remains isolated in measurement TUs unless explicitly adopted."
+}

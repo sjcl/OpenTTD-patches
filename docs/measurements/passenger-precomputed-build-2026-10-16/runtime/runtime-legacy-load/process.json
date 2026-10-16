@@ -1,0 +1,124 @@
+{
+  "exit_code": 0,
+  "requested_ticks": 1,
+  "elapsed_seconds": 200.57675229990855,
+  "trace_enabled": false,
+  "checkpoint_tick": null,
+  "focused_od_trace": false,
+  "contamination": [
+    [
+      "openttd:131624",
+      "openttd:118356"
+    ],
+    [
+      "openttd:131624",
+      "openttd:118356"
+    ],
+    [
+      "openttd:131624",
+      "openttd:118356"
+    ],
+    [
+      "openttd:131624",
+      "openttd:118356"
+    ],
+    [
+      "openttd:131624",
+      "openttd:118356"
+    ],
+    [
+      "openttd:131624",
+      "openttd:118356"
+    ],
+    [
+      "openttd:131624",
+      "openttd:118356"
+    ],
+    [
+      "openttd:131624",
+      "openttd:118356"
+    ],
+    [
+      "openttd:131624",
+      "openttd:118356"
+    ],
+    [
+      "openttd:131624",
+      "openttd:118356"
+    ]
+  ],
+  "input_sha256": "306a8d3094c406286ff1dd3249f1726bf9d10e230ead593eacdd91efc43ac629",
+  "binary_sha256": "3be5164f0e2181e86f8d9c1f134f9bada57ba04463b2dc8af4be0266c4c121e1",
+  "language_sha256": "af5d093144abcc99f3d31b95c531b0b4d019166a8ffec05af8c672e7a890822a",
+  "resume_settings": true,
+  "fixture_timetable": false,
+  "fixture_estimated": false,
+  "cold_precomputed": false,
+  "precomputed": null,
+  "warm_precomputed": false,
+  "rebuild_precomputed": false,
+  "command": [
+    "C:\\Users\\bebe\\.codex\\worktrees\\c430\\OpenTTD-patches\\build-msvc\\runtime-legacy-load\\openttd.exe",
+    "-x",
+    "-X",
+    "-c",
+    "openttd.cfg",
+    "-g",
+    "input.sav",
+    "-v",
+    "null:ticks=1",
+    "-snull",
+    "-mnull",
+    "-d",
+    "sl=2"
+  ],
+  "peak_working_bytes": 7075545088,
+  "peak_commit_bytes": 7122018304,
+  "process_cpu_seconds": 212.84375,
+  "unpause_before_save": false,
+  "validation_only": true,
+  "actual-ticks.json": {
+    "start_tick": 3181119581,
+    "end_tick": 3181119582,
+    "driver_loops": 1,
+    "error_resumes": 0,
+    "samples": [
+      [
+        3181119582,
+        27736,
+        4021
+      ]
+    ]
+  },
+  "save-integrity.json": {
+    "runtime_routing_feature": 3,
+    "state_ticks": 3181119582,
+    "packets": 462775,
+    "cargo_units": 1106573,
+    "known_od_units": 628731,
+    "journey_packets": 432660,
+    "packet_state_digest": 12279333035088763651,
+    "payment_digest": 5955938472169596090,
+    "payments_valid": true,
+    "database_digest": 6144513022446369462,
+    "ownership_digest": 9470824534998361435,
+    "loading_digest": 10246087605850782006,
+    "completed_rows": 1252,
+    "retained_rows": 3665,
+    "table_operations": 1478164480,
+    "published_revision": 2803,
+    "company_deliveries": 323972,
+    "journey_routing": 1,
+    "precomputed_routing": 1,
+    "legacy_true_packets": 0,
+    "legacy_false_packets": 0,
+    "legacy_true_units": 0,
+    "legacy_false_units": 0,
+    "opposite_history_mergeable_pairs": 0
+  },
+  "result_sha256": "93205ffce3dc0b542da38148478d065d7e8c7fab167d313bb9a3dfad58c331f0",
+  "load_failed": false,
+  "newgrf_warning_lines": 5601,
+  "warm_complete": null,
+  "script_error_pause_resumes": 1
+}

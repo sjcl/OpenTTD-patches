@@ -1,0 +1,333 @@
+{
+  "runs": {
+    "legacy-c": {
+      "binary_sha256": "1097338f0ea711eb9b5af992cf77abe72c2fc503726b3edfefec18439e677280",
+      "input_sha256": "ca42a90f558ed2c07323b66b5cf2f5632d1c522b6bc79a7371b3d0797ccd1c97",
+      "tick_source_sha256": "ca79b4886f25a6148d46cd324eb11838d945d24f3813b9a9306d6f9a6a29e54a",
+      "host_source_sha256": "e7348039f75e7adaeb08d56b2b4c03ea6576ded2b975dfeeec3e2d4ee7ff486e",
+      "simulation_us": {
+        "count": 2048,
+        "mean": 25401.94287109375,
+        "p95": 31461,
+        "p99": 35106,
+        "maximum": 63346
+      },
+      "journey_us": {
+        "count": 2048,
+        "mean": 1364.271484375,
+        "p95": 2036,
+        "p99": 3286,
+        "maximum": 27664
+      },
+      "host_counters": {
+        "cpu0_performance_percent": {
+          "count": 48,
+          "mean": 126.96007250022573,
+          "minimum": 124.53954746984962,
+          "maximum": 128.08937925896922
+        },
+        "cpu0_frequency_mhz": {
+          "count": 48,
+          "mean": 4300.0,
+          "minimum": 4300.0,
+          "maximum": 4300.0
+        },
+        "cpu0_time_percent": {
+          "count": 48,
+          "mean": 99.8909523124335,
+          "minimum": 98.44518962566833,
+          "maximum": 100.0
+        },
+        "cpu0_utility_percent": {
+          "count": 48,
+          "mean": 126.87478760397956,
+          "minimum": 124.5397068064493,
+          "maximum": 128.07067771604457
+        },
+        "total_time_percent": {
+          "count": 48,
+          "mean": 22.356522215635405,
+          "minimum": 14.755418623116745,
+          "maximum": 36.69006196056165
+        },
+        "total_performance_percent": {
+          "count": 48,
+          "mean": 124.02872230033122,
+          "minimum": 122.04699535441331,
+          "maximum": 124.92295666394112
+        }
+      },
+      "monitor_interval": {
+        "samples": 48,
+        "elapsed_seconds": 55.89489530026913,
+        "main_cpu_seconds": 54.234375,
+        "other_process_thread_cpu_seconds": 15.359375
+      },
+      "observation_cost_us": {
+        "count": 48,
+        "mean": 495.18958333333336,
+        "p95": 1356.0,
+        "p99": 2227.3,
+        "maximum": 2227.3
+      },
+      "actual_worker_affinity_matches_process": true,
+      "linkgraph_threads_in_preparation": [
+        {
+          "thread_id": 100040,
+          "mask": 4294967295,
+          "group": 0,
+          "cpu_100ns": 350781250,
+          "description": "ottd:linkgraph"
+        }
+      ],
+      "result_sha256": "5963c0a88b59c422eb1eb48f6a537639072375ce9947f18c9cab9f73622695cf"
+    },
+    "integrated-c": {
+      "binary_sha256": "1097338f0ea711eb9b5af992cf77abe72c2fc503726b3edfefec18439e677280",
+      "input_sha256": "ca42a90f558ed2c07323b66b5cf2f5632d1c522b6bc79a7371b3d0797ccd1c97",
+      "tick_source_sha256": "92bce28dcdd4c8bc5d132e0bd397f7370b73e810dc9f82603165ded999a498a0",
+      "host_source_sha256": "54ace765dffe843836d9fb2454eb2a90d6149aab2f47286a9972df410fc04908",
+      "simulation_us": {
+        "count": 2048,
+        "mean": 27591.84375,
+        "p95": 34079,
+        "p99": 41003,
+        "maximum": 73854
+      },
+      "journey_us": {
+        "count": 2048,
+        "mean": 1476.5087890625,
+        "p95": 2209,
+        "p99": 3326,
+        "maximum": 25599
+      },
+      "host_counters": {
+        "cpu0_performance_percent": {
+          "count": 52,
+          "mean": 125.82742605241056,
+          "minimum": 124.26212272331666,
+          "maximum": 127.2295383653656
+        },
+        "cpu0_frequency_mhz": {
+          "count": 52,
+          "mean": 4300.0,
+          "minimum": 4300.0,
+          "maximum": 4300.0
+        },
+        "cpu0_time_percent": {
+          "count": 52,
+          "mean": 99.78769855826312,
+          "minimum": 96.89325554111485,
+          "maximum": 100.0
+        },
+        "cpu0_utility_percent": {
+          "count": 52,
+          "mean": 125.60456741393318,
+          "minimum": 124.25851581508516,
+          "maximum": 126.98690849475544
+        },
+        "total_time_percent": {
+          "count": 52,
+          "mean": 29.627571320269254,
+          "minimum": 17.871414822823883,
+          "maximum": 42.82564753854869
+        },
+        "total_performance_percent": {
+          "count": 52,
+          "mean": 123.26234256034738,
+          "minimum": 122.04055814934979,
+          "maximum": 124.12150715408323
+        }
+      },
+      "monitor_interval": {
+        "samples": 52,
+        "elapsed_seconds": 60.53527930006385,
+        "main_cpu_seconds": 57.90625,
+        "other_process_thread_cpu_seconds": 57.5625
+      },
+      "observation_cost_us": {
+        "count": 52,
+        "mean": 512.2423076923077,
+        "p95": 913.6,
+        "p99": 1253.0,
+        "maximum": 1253.0
+      },
+      "actual_worker_affinity_matches_process": true,
+      "linkgraph_threads_in_preparation": [
+        {
+          "thread_id": 81156,
+          "mask": 4294967295,
+          "group": 0,
+          "cpu_100ns": 351562500,
+          "description": "ottd:linkgraph"
+        }
+      ],
+      "result_sha256": "02832990fcab2daf78dd1584548140e66a4e03d1f3e0696e12ff0af229bd8a81"
+    },
+    "integrated-d": {
+      "binary_sha256": "1097338f0ea711eb9b5af992cf77abe72c2fc503726b3edfefec18439e677280",
+      "input_sha256": "ca42a90f558ed2c07323b66b5cf2f5632d1c522b6bc79a7371b3d0797ccd1c97",
+      "tick_source_sha256": "1c92ad48be65ba716352e0e9f4649f24c16a618fbe1712d1a68517e24a0f1143",
+      "host_source_sha256": "a9aac97b0ce0144f7dea0212f1a1f4a6f4d06b0be1c3f5da8011a344293171b7",
+      "simulation_us": {
+        "count": 2048,
+        "mean": 26226.1669921875,
+        "p95": 33149,
+        "p99": 40586,
+        "maximum": 64497
+      },
+      "journey_us": {
+        "count": 2048,
+        "mean": 1408.26318359375,
+        "p95": 2167,
+        "p99": 3256,
+        "maximum": 23239
+      },
+      "host_counters": {
+        "cpu0_performance_percent": {
+          "count": 50,
+          "mean": 126.20760327265397,
+          "minimum": 124.11351416738557,
+          "maximum": 127.20942010958659
+        },
+        "cpu0_frequency_mhz": {
+          "count": 50,
+          "mean": 4300.0,
+          "minimum": 4300.0,
+          "maximum": 4300.0
+        },
+        "cpu0_time_percent": {
+          "count": 50,
+          "mean": 99.7406644811035,
+          "minimum": 96.89209874036015,
+          "maximum": 100.0
+        },
+        "cpu0_utility_percent": {
+          "count": 50,
+          "mean": 125.97113679967222,
+          "minimum": 123.92141029512261,
+          "maximum": 126.92331975057797
+        },
+        "total_time_percent": {
+          "count": 50,
+          "mean": 26.59040789340664,
+          "minimum": 16.609523510525804,
+          "maximum": 42.036070394807034
+        },
+        "total_performance_percent": {
+          "count": 50,
+          "mean": 123.43101949132563,
+          "minimum": 122.03148588539966,
+          "maximum": 124.17301399714455
+        }
+      },
+      "monitor_interval": {
+        "samples": 50,
+        "elapsed_seconds": 58.351394900120795,
+        "main_cpu_seconds": 53.390625,
+        "other_process_thread_cpu_seconds": 56.5625
+      },
+      "observation_cost_us": {
+        "count": 50,
+        "mean": 402.154,
+        "p95": 724.1,
+        "p99": 756.6,
+        "maximum": 756.6
+      },
+      "actual_worker_affinity_matches_process": true,
+      "linkgraph_threads_in_preparation": [
+        {
+          "thread_id": 81552,
+          "mask": 4294967295,
+          "group": 0,
+          "cpu_100ns": 346093750,
+          "description": "ottd:linkgraph"
+        }
+      ],
+      "result_sha256": "02832990fcab2daf78dd1584548140e66a4e03d1f3e0696e12ff0af229bd8a81"
+    },
+    "legacy-d": {
+      "binary_sha256": "1097338f0ea711eb9b5af992cf77abe72c2fc503726b3edfefec18439e677280",
+      "input_sha256": "ca42a90f558ed2c07323b66b5cf2f5632d1c522b6bc79a7371b3d0797ccd1c97",
+      "tick_source_sha256": "fd666c61065eaed4ce33d09a9f0fb8e8904ec1d99482bae9c37b9044a5bb43a3",
+      "host_source_sha256": "689c34da9b522b515bff78aeed3d3e0f0dd4c4e8afa5f6a044c56da429deb21f",
+      "simulation_us": {
+        "count": 2048,
+        "mean": 25510.1259765625,
+        "p95": 32299,
+        "p99": 37388,
+        "maximum": 80269
+      },
+      "journey_us": {
+        "count": 2048,
+        "mean": 1371.5888671875,
+        "p95": 2071,
+        "p99": 3245,
+        "maximum": 28926
+      },
+      "host_counters": {
+        "cpu0_performance_percent": {
+          "count": 49,
+          "mean": 126.64846545010735,
+          "minimum": 125.05681650008195,
+          "maximum": 127.97531802932376
+        },
+        "cpu0_frequency_mhz": {
+          "count": 49,
+          "mean": 4300.0,
+          "minimum": 4300.0,
+          "maximum": 4300.0
+        },
+        "cpu0_time_percent": {
+          "count": 49,
+          "mean": 99.94613583981038,
+          "minimum": 98.44704539080091,
+          "maximum": 100.0
+        },
+        "cpu0_utility_percent": {
+          "count": 49,
+          "mean": 126.5580932260441,
+          "minimum": 124.85237690785665,
+          "maximum": 127.96280738030858
+        },
+        "total_time_percent": {
+          "count": 49,
+          "mean": 23.774048477773103,
+          "minimum": 13.441650453214837,
+          "maximum": 42.79583655308286
+        },
+        "total_performance_percent": {
+          "count": 49,
+          "mean": 123.84509354432004,
+          "minimum": 122.19323983222941,
+          "maximum": 124.92984255895135
+        }
+      },
+      "monitor_interval": {
+        "samples": 49,
+        "elapsed_seconds": 57.30661270022392,
+        "main_cpu_seconds": 55.140625,
+        "other_process_thread_cpu_seconds": 16.328125
+      },
+      "observation_cost_us": {
+        "count": 49,
+        "mean": 435.49795918367346,
+        "p95": 787.1,
+        "p99": 1093.5,
+        "maximum": 1093.5
+      },
+      "actual_worker_affinity_matches_process": true,
+      "linkgraph_threads_in_preparation": [
+        {
+          "thread_id": 134420,
+          "mask": 4294967295,
+          "group": 0,
+          "cpu_100ns": 342656250,
+          "description": "ottd:linkgraph"
+        }
+      ],
+      "result_sha256": "5963c0a88b59c422eb1eb48f6a537639072375ce9947f18c9cab9f73622695cf"
+    }
+  },
+  "note": "No tick samples excluded or normalized. OS monitor intervals cover the interior of the externally observed simulation phase, not exact StateGameLoop CPU boundaries. Non-main CPU includes every other thread of this game process, not only linkgraph. Global CPU includes unrelated applications. Provider frequency/performance data are not assumed to be exact hardware instruction cycles."
+}

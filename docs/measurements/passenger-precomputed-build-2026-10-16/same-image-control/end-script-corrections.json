@@ -1,0 +1,23 @@
+{
+  "legacy-a": {
+    "corrected_utc": "2026-10-16T08:00:53.129792+00:00",
+    "original_sha256": "9a3d86f990759ce73288cac254c995ef936b8ba59a90a9d07d890c927724ba3a",
+    "corrected_sha256": "507159c0c5b67fb0545f30bf831aeb7f62e7bad5ed906a026d70edbafa7d22f7",
+    "timed_ticks_started": false,
+    "reason": "Correct post-window auxiliary console command name; no measured tick or product change."
+  },
+  "legacy-b": {
+    "corrected_utc": "2026-10-16T08:03:50.802117+00:00",
+    "original_sha256": "2ba2c479b7ba19311dfee2c814d0408d431edc7022511caa4830295ea1753863",
+    "corrected_sha256": "696486c11df77617311973e12dddfff899e1d763dc652bd54e235f1385a465fc",
+    "timed_ticks_started": false,
+    "reason": "Correct post-window auxiliary console command name; no measured tick or product change."
+  },
+  "integrated-b": {
+    "corrected_utc": "2026-10-16T08:07:58.925177+00:00",
+    "original_sha256": "6a468b3ac998394d9065d8c2ef2c0052d33139e7dc6dce39d1a14edac6c4cd76",
+    "corrected_sha256": "50baa113cfdd74f9287d6c800eb7b6c98bef0af9a860e52382431f3c28548812",
+    "timed_ticks_started": false,
+    "reason": "Correct post-window auxiliary console command name; no measured tick or product change."
+  }
+}

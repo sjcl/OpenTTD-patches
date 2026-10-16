@@ -45,6 +45,72 @@ TEST_CASE("Precomputed trees preserve through rides and physical occurrences", "
 	plan = table.Plan(A, D, StateTicks{1000}); REQUIRE(plan.ride); CHECK(plan.ride->boarding_order == 2); CHECK(plan.ride->alighting_order == 3);
 }
 
+TEST_CASE("Precomputed contraction preserves pass-through orders and alight-only dwell", "[passenger][precomputed][contraction]")
+{
+	std::array services{Service(0, {A, B, C, D}), Service(1, {A, B, C}, 90)};
+	for (auto &s : services) { s.timetable.stops[1].board = s.timetable.stops[1].alight = 0; }
+	SECTION("Pass-through chains") {}
+	SECTION("Alight-only arrival retains its dwell boundary") { services[0].timetable.stops[2].board = 0; }
+	SECTION("Forced stop cannot be contracted") { services[0].timetable.stops[1].forced = 1; }
+	SECTION("Discontinued ride cannot be contracted") { services[0].timetable.stops[1].continues = false; }
+	SECTION("Repeated station remains a distinct occurrence") { services[0].timetable.stops[2].station = A; }
+	SECTION("Zero dwell and transfer") { for (auto &s : services) for (auto &stop : s.timetable.stops) stop.departure = stop.arrival; }
+	std::vector<const PassengerPeriodicService *> records; for (const auto &s : services) records.push_back(&s);
+	PassengerPrecomputedTable legacy, optimized;
+	legacy.Begin(records, PAX, 0, PassengerPrecomputedTable::MAX_BYTES, true, false, {}, true, false);
+	optimized.Begin(records, PAX, 0);
+	while (!legacy.Finished()) legacy.Step(7);
+	while (!optimized.Finished()) optimized.Step(3);
+	CHECK(optimized.GetDiagnostic().states <= legacy.GetDiagnostic().states);
+	CHECK(optimized.GetDiagnostic().stored_states == legacy.GetDiagnostic().stored_states);
+	for (auto from : {A, B, C, D}) for (auto to : {A, B, C, D}) for (auto excluded : {OrderListID::Invalid(), OrderListID{0}, OrderListID{1}}) {
+		for (uint32_t sample : {0U, UINT32_MAX / 2, UINT32_MAX}) {
+			auto a = legacy.Plan(from, to, StateTicks{42}, excluded, sample), b = optimized.Plan(from, to, StateTicks{42}, excluded, sample);
+			CHECK(a.ride == b.ride); CHECK(a.state == b.state);
+			CHECK(std::tie(a.cost, a.riding, a.waiting, a.distance, a.transfers) == std::tie(b.cost, b.riding, b.waiting, b.distance, b.transfers));
+		}
+	}
+}
+
+TEST_CASE("Passenger radix queue preserves wide keys zero-cost ties and reinsertion", "[passenger][precomputed][heap]")
+{
+	using Item = std::tuple<int64_t, uint32_t, uint32_t>;
+	for (bool optimized : {false, true}) {
+		PassengerDestinationQueue<Item> queue; queue.SetOptimized(optimized); queue.SetCapacityLimit(1);
+		queue.emplace(0, 2, 8); queue.emplace(0, 1, 9); queue.emplace(0, 1, 7);
+		CHECK(queue.top() == Item(0, 1, 7)); queue.pop();
+		queue.emplace(0, 1, 2); // A smaller state appears after a pop at the same cost.
+		CHECK(queue.top() == Item(0, 1, 2)); queue.pop();
+		queue.emplace(0, 0, 7); // A previously popped state may be reinserted.
+		CHECK(queue.top() == Item(0, 0, 7)); queue.pop();
+		CHECK(queue.top() == Item(0, 1, 9)); queue.pop();
+		CHECK(queue.top() == Item(0, 2, 8)); queue.pop();
+		for (int64_t cost : {int64_t{1} << 33, int64_t{1} << 48, INT64_MAX - 1}) queue.emplace(cost, UINT32_MAX, 1);
+		for (int64_t cost : {int64_t{1} << 33, int64_t{1} << 48, INT64_MAX - 1}) { CHECK(queue.top() == Item(cost, UINT32_MAX, 1)); queue.pop(); }
+		REQUIRE(queue.empty()); queue.Reset(); queue.emplace(0, 0, 0); CHECK(queue.top() == Item(0, 0, 0)); queue.pop();
+	}
+}
+
+TEST_CASE("Alight-only zero dwell preserves the original equal-cost carrier choice", "[passenger][precomputed][contraction][determinism]")
+{
+	std::array services{Service(0, {A, B, C, StationID{4}}, 101), Service(1, {B, D}, 150), Service(2, {C, D}, 100)};
+	for (size_t p = 0; p < services.size(); ++p) {
+		int64_t travel = std::array<int64_t, 3>{101, 150, 100}[p];
+		for (size_t i = 0; i < services[p].timetable.stops.size(); ++i) {
+			auto &stop = services[p].timetable.stops[i]; stop.arrival = stop.departure = i * travel;
+		}
+		services[p].timetable.period = services[p].timetable.stops.size() * travel;
+	}
+	services[0].timetable.stops[1].board = 0;
+	auto table = Build(services, 7, 0);
+	auto plan = table.Plan(A, D, StateTicks{}); REQUIRE(plan.ride);
+	/* Both continuations cost 615 with two legs. The original waiting state
+	 * at B wins before B's departure. Moving the dwell onto a shortcut would
+	 * discover the C continuation early and silently change the first alight. */
+	CHECK(plan.cost == 615); CHECK(plan.riding == 251); CHECK(plan.transfers == 1);
+	CHECK(plan.ride->alighting == B); CHECK(plan.ride->alighting_order == 1);
+}
+
 TEST_CASE("Cooperative graph preparation preserves exact trees and shared memory admission", "[passenger][precomputed][startup][network]")
 {
 	std::array services{Service(0, {A, B, C, D}), Service(1, {A, B, C}), Service(2, {B, C, D}, 80)};
@@ -478,11 +544,11 @@ TEST_CASE("Precomputed legacy cursors map to the same compact publication fronti
 	std::array services{Service(0, {A, B}), Service(1, {B, C}), Service(2, {C, D}), Service(3, {A, D}, 500)};
 	std::vector<const PassengerPeriodicService *> records;
 	for (const auto &s : services) records.push_back(&s);
-	PassengerPrecomputedTable legacy; legacy.Begin(records, PAX, 20);
+	PassengerPrecomputedTable legacy; legacy.Begin(records, PAX, 20, PassengerPrecomputedTable::MAX_BYTES, true, false, {}, true, false);
 	for (int i = 0; i < 2000; ++i) {
 		legacy.Step(1, true);
 		if (i % 17 != 0 && !legacy.Finished()) continue;
-		PassengerPrecomputedTable current; current.Begin(records, PAX, 20);
+		PassengerPrecomputedTable current; current.Begin(records, PAX, 20, PassengerPrecomputedTable::MAX_BYTES, true, false, {}, true, false);
 		current.Step(legacy.GetDiagnostic().operations + legacy.LegacyPublicationWork());
 		CHECK(current.GetDiagnostic().destinations == legacy.GetDiagnostic().destinations);
 		for (StationID from : {A, B, C, D}) for (StationID to : {A, B, C, D}) {

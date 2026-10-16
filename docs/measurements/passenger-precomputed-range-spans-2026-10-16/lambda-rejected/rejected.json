@@ -1,0 +1,7 @@
+{
+  "adopted": false,
+  "reason": "MSVC outlined the span lambda; scalar rows were 7.37 percent slower in counter-free forward comparison.",
+  "full_plan_passed": true,
+  "forward_complete": true,
+  "reverse_discarded": "Own reverse benchmark deliberately terminated after rejection; parent restored normal projects and released lock."
+}

@@ -1,0 +1,10 @@
+{
+  "old": {
+    "project_restored": true,
+    "binary_sha256": "93ae031e04eab77bcef9b00f8b246d159ab426b5a18ed5607f31a947ac54cad4"
+  },
+  "new": {
+    "project_restored": true,
+    "binary_sha256": "901f29d8cd35877dc98e77d6af5fb54329be9e03368ce03bff797606a2c62a7c"
+  }
+}

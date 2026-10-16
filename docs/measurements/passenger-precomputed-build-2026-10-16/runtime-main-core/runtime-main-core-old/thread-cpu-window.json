@@ -1,0 +1,19 @@
+{
+  "pid": 33428,
+  "thread_id": 86636,
+  "start": {
+    "wall": 2536266.9373063,
+    "cpu_seconds": 172.234375,
+    "cycles": 724280285940
+  },
+  "end": {
+    "wall": 2536323.5893342,
+    "cpu_seconds": 226.828125,
+    "cycles": 953958568140
+  },
+  "already_finished_at_start": false,
+  "elapsed_seconds": 56.65202790033072,
+  "main_cpu_seconds": 54.59375,
+  "main_cycles": 229678282200,
+  "method": "External observation of game_start log closure and exact-ticks output; 50ms polling; auxiliary interval includes bounded boundary observation error."
+}

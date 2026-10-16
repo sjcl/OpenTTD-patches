@@ -1,0 +1,494 @@
+?RelaxIncoming@PassengerTableCandidate@@QEAA_K_K@Z (public: unsigned __int64 __cdecl PassengerTableCandidate::RelaxIncoming(unsigned __int64)):
+  0000000000000000: mov         rax,rsp
+  0000000000000003: mov         qword ptr [rax+20h],rbx
+  0000000000000007: push        rbp
+  0000000000000008: push        rdi
+  0000000000000009: push        r12
+  000000000000000B: push        r13
+  000000000000000D: push        r15
+  000000000000000F: lea         rbp,[rax-5Fh]
+  0000000000000013: sub         rsp,100h
+  000000000000001A: movaps      xmmword ptr [rax-38h],xmm6
+  000000000000001E: mov         rbx,rcx
+  0000000000000021: mov         ecx,dword ptr [rcx+414h]
+  0000000000000027: mov         r12,rdx
+  000000000000002A: movdqa      xmm6,xmmword ptr [__xmm@00000000000000007fffffffffffffff]
+  0000000000000032: mov         edi,0FFFFFFFFh
+  0000000000000037: mov         qword ptr [rax+10h],rsi
+  000000000000003B: mov         r11,7FFFFFFFFFFFFFFFh
+  0000000000000045: mov         qword ptr [rax+18h],r14
+  0000000000000049: mov         rax,qword ptr [rbx+0B0h]
+  0000000000000050: mov         qword ptr [rbp-41h],rdx
+  0000000000000054: mov         qword ptr [rbp-21h],0
+  000000000000005C: mov         r9,qword ptr [rax+rcx*8]
+  0000000000000060: mov         rax,qword ptr [rbx+0C8h]
+  0000000000000067: mov         qword ptr [rbp-11h],r9
+  000000000000006B: mov         r8d,dword ptr [rax+rcx*4]
+  000000000000006F: mov         dword ptr [rbp-51h],r8d
+  0000000000000073: jmp         0000000000000079
+  0000000000000075: mov         r8d,dword ptr [rbp-51h]
+  0000000000000079: mov         r10d,dword ptr [rbx+408h]
+  0000000000000080: mov         rax,qword ptr [rbx+1D0h]
+  0000000000000087: mov         qword ptr [rbp-59h],r10
+  000000000000008B: mov         ecx,dword ptr [rax+r10*4]
+  000000000000008F: cmp         ecx,edi
+  0000000000000091: jne         00000000000000A1
+  0000000000000093: xor         r15d,r15d
+  0000000000000096: mov         dword ptr [rbp-6Dh],edi
+  0000000000000099: mov         qword ptr [rbp-39h],r15
+  000000000000009D: xor         esi,esi
+  000000000000009F: jmp         00000000000000C4
+  00000000000000A1: mov         rax,qword ptr [rbx+1E8h]
+  00000000000000A8: lea         rcx,[rcx+rcx*2]
+  00000000000000AC: movsd       xmm0,mmword ptr [rax+rcx*4]
+  00000000000000B1: mov         eax,dword ptr [rax+rcx*4+8]
+  00000000000000B5: movsd       mmword ptr [rbp-39h],xmm0
+  00000000000000BA: mov         esi,dword ptr [rbp-35h]
+  00000000000000BD: mov         r15d,dword ptr [rbp-39h]
+  00000000000000C1: mov         dword ptr [rbp-6Dh],eax
+  00000000000000C4: mov         rax,qword ptr [rbp-39h]
+  00000000000000C8: shr         rax,20h
+  00000000000000CC: sub         eax,r15d
+  00000000000000CF: inc         eax
+  00000000000000D1: mov         qword ptr [rbp-19h],rax
+  00000000000000D5: mov         rax,qword ptr [rbx+1A0h]
+  00000000000000DC: mov         rdx,qword ptr [rax+r10*8]
+  00000000000000E0: mov         rax,qword ptr [rbx+1B8h]
+  00000000000000E7: mov         qword ptr [rbp-69h],rdx
+  00000000000000EB: movzx       ecx,byte ptr [rax+r10]
+  00000000000000F0: mov         rax,r11
+  00000000000000F3: sub         rax,rdx
+  00000000000000F6: cmp         r9,rax
+  00000000000000F9: jg          0000000000000110
+  00000000000000FB: mov         eax,ecx
+  00000000000000FD: not         eax
+  00000000000000FF: cmp         r8d,eax
+  0000000000000102: ja          0000000000000110
+  0000000000000104: mov         r13b,1
+  0000000000000107: lea         r14,[rdx+r9]
+  000000000000010B: add         r8d,ecx
+  000000000000010E: jmp         0000000000000119
+  0000000000000110: xor         r13b,r13b
+  0000000000000113: mov         r14,r11
+  0000000000000116: mov         r8d,edi
+  0000000000000119: xor         eax,eax
+  000000000000011B: mov         dword ptr [rsp+24h],r8d
+  0000000000000120: xor         r11d,r11d
+  0000000000000123: mov         qword ptr [rbp-79h],rax
+  0000000000000127: mov         eax,dword ptr [rbx+410h]
+  000000000000012D: xor         dil,dil
+  0000000000000130: mov         qword ptr [rbp-29h],r11
+  0000000000000134: xorps       xmm0,xmm0
+  0000000000000137: mov         qword ptr [rsp+48h],0FFFFFFFFFFFFFFFFh
+  0000000000000140: movdqu      xmmword ptr [rsp+28h],xmm6
+  0000000000000146: movdqu      xmmword ptr [rsp+38h],xmm0
+  000000000000014C: test        eax,eax
+  000000000000014E: jne         00000000000002D2
+  0000000000000154: mov         rax,qword ptr [rbx+188h]
+  000000000000015B: mov         r12d,dword ptr [rax+r10*4]
+  000000000000015F: test        r13b,r13b
+  0000000000000162: je          00000000000002B7
+  0000000000000168: mov         rax,qword ptr [rbx+0B0h]
+  000000000000016F: cmp         r14,qword ptr [rax+r12*8]
+  0000000000000173: jl          000000000000018C
+  0000000000000175: jne         00000000000002B7
+  000000000000017B: mov         rax,qword ptr [rbx+0C8h]
+  0000000000000182: cmp         r8d,dword ptr [rax+r12*4]
+  0000000000000186: jae         00000000000002B7
+  000000000000018C: mov         rax,qword ptr [rbx+200h]
+  0000000000000193: lea         rcx,[r10+r10*2]
+  0000000000000197: mov         r8d,dword ptr [rbx+414h]
+  000000000000019E: lea         rdx,[rbp-9]
+  00000000000001A2: lea         rdi,[rax+rcx*8]
+  00000000000001A6: mov         rcx,rbx
+  00000000000001A9: call        ?SearchLabel@PassengerTableCandidate@@QEBA?AULabel@1@I@Z
+  00000000000001AE: mov         edx,dword ptr [rdi+4]
+  00000000000001B1: mov         ecx,0FFFFFFFFh
+  00000000000001B6: movups      xmm0,xmmword ptr [rax]
+  00000000000001B9: movups      xmm1,xmmword ptr [rax+10h]
+  00000000000001BD: movups      xmmword ptr [rsp+28h],xmm0
+  00000000000001C2: mov         qword ptr [rsp+28h],r14
+  00000000000001C7: movups      xmm0,xmmword ptr [rax+20h]
+  00000000000001CB: mov         eax,dword ptr [rsp+24h]
+  00000000000001CF: movups      xmmword ptr [rsp+38h],xmm1
+  00000000000001D4: movups      xmmword ptr [rsp+48h],xmm0
+  00000000000001D9: mov         dword ptr [rbp-79h],eax
+  00000000000001DC: mov         eax,dword ptr [rbp-75h]
+  00000000000001DF: add         rdx,rax
+  00000000000001E2: mov         eax,ecx
+  00000000000001E4: cmp         rdx,rcx
+  00000000000001E7: cmovb       eax,edx
+  00000000000001EA: mov         dword ptr [rbp-75h],eax
+  00000000000001ED: movzx       eax,byte ptr [rdi+10h]
+  00000000000001F1: test        al,al
+  00000000000001F3: jne         0000000000000226
+  00000000000001F5: mov         eax,dword ptr [rdi]
+  00000000000001F7: mov         dword ptr [rsp+48h],eax
+  00000000000001FB: lea         rcx,[rax+rax*4]
+  00000000000001FF: mov         rax,qword ptr [rbx+158h]
+  0000000000000206: mov         ecx,dword ptr [rax+rcx*4+4]
+  000000000000020A: mov         rax,qword ptr [rbx+140h]
+  0000000000000211: imul        rdx,rcx,70h
+  0000000000000215: mov         rcx,qword ptr [rdx+rax+48h]
+  000000000000021A: add         qword ptr [rsp+38h],rcx
+  000000000000021F: mov         qword ptr [rsp+40h],rcx
+  0000000000000224: jmp         000000000000028D
+  0000000000000226: cmp         al,4
+  0000000000000228: jne         000000000000025C
+  000000000000022A: mov         edx,dword ptr [rdi]
+  000000000000022C: shl         rdx,5
+  0000000000000230: add         rdx,qword ptr [rbx+218h]
+  0000000000000237: mov         eax,dword ptr [rdx]
+  0000000000000239: mov         dword ptr [rsp+48h],eax
+  000000000000023D: mov         eax,dword ptr [rdx+4]
+  0000000000000240: mov         dword ptr [rbp-7Dh],eax
+  0000000000000243: mov         rax,qword ptr [rdx+10h]
+  0000000000000247: add         qword ptr [rsp+38h],rax
+  000000000000024C: mov         qword ptr [rsp+40h],rax
+  0000000000000251: mov         rax,qword ptr [rdx+8]
+  0000000000000255: add         qword ptr [rsp+30h],rax
+  000000000000025A: jmp         000000000000028D
+  000000000000025C: cmp         al,1
+  000000000000025E: jne         000000000000026F
+  0000000000000260: mov         rax,qword ptr [rbp-69h]
+  0000000000000264: sub         rax,qword ptr [rdi+8]
+  0000000000000268: add         qword ptr [rsp+30h],rax
+  000000000000026D: jmp         000000000000028D
+  000000000000026F: cmp         al,3
+  0000000000000271: jne         000000000000028D
+  0000000000000273: mov         eax,dword ptr [rdi]
+  0000000000000275: mov         dword ptr [rbp-7Dh],eax
+  0000000000000278: mov         rax,qword ptr [rbp-69h]
+  000000000000027C: cqo
+  000000000000027E: mov         dword ptr [rsp+48h],ecx
+  0000000000000282: sub         rax,rdx
+  0000000000000285: sar         rax,1
+  0000000000000288: add         qword ptr [rsp+38h],rax
+  000000000000028D: lea         r8,[rsp+28h]
+  0000000000000292: mov         edx,r12d
+  0000000000000295: mov         rcx,rbx
+  0000000000000298: mov         dil,1
+  000000000000029B: call        ?SetSearchLabel@PassengerTableCandidate@@QEAAXIAEBULabel@1@@Z
+  00000000000002A0: mov         r8d,dword ptr [rsp+24h]
+  00000000000002A5: mov         r9d,r12d
+  00000000000002A8: mov         rdx,r14
+  00000000000002AB: mov         rcx,rbx
+  00000000000002AE: call        ??$MeasuredPush@_JII@PassengerTableCandidate@@QEAAX_JII@Z
+  00000000000002B3: mov         r10,qword ptr [rbp-59h]
+  00000000000002B7: mov         r12,qword ptr [rbp-41h]
+  00000000000002BB: mov         r11d,1
+  00000000000002C1: mov         qword ptr [rbp-29h],r11
+  00000000000002C5: mov         eax,r11d
+  00000000000002C8: mov         dword ptr [rbx+410h],1
+  00000000000002D2: mov         r8d,dword ptr [rbp-6Dh]
+  00000000000002D6: lea         edx,[r15+rax]
+  00000000000002DA: lea         r15d,[rdx-1]
+  00000000000002DE: mov         dword ptr [rbp-4Dh],r15d
+  00000000000002E2: cmp         r8d,r15d
+  00000000000002E5: jb          0000000000000330
+  00000000000002E7: cmp         r8d,esi
+  00000000000002EA: jae         0000000000000330
+  00000000000002EC: sub         esi,r15d
+  00000000000002EF: mov         rax,r12
+  00000000000002F2: sub         rax,r11
+  00000000000002F5: mov         r9b,1
+  00000000000002F8: mov         byte ptr [rsp+20h],r9b
+  00000000000002FD: lea         ecx,[rsi-1]
+  0000000000000300: cmp         rax,rcx
+  0000000000000303: cmovb       rcx,rax
+  0000000000000307: mov         eax,r8d
+  000000000000030A: sub         eax,r15d
+  000000000000030D: mov         qword ptr [rbp-49h],rcx
+  0000000000000311: cmp         rax,rcx
+  0000000000000314: ja          000000000000034E
+  0000000000000316: lea         eax,[rdx+rcx]
+  0000000000000319: mov         qword ptr [rbp-49h],rcx
+  000000000000031D: cmp         eax,r8d
+  0000000000000320: mov         dword ptr [rbp-71h],eax
+  0000000000000323: mov         ecx,r8d
+  0000000000000326: mov         byte ptr [rsp+20h],r9b
+  000000000000032B: cmovb       ecx,eax
+  000000000000032E: jmp         0000000000000367
+  0000000000000330: sub         esi,r15d
+  0000000000000333: xor         r9b,r9b
+  0000000000000336: mov         ecx,esi
+  0000000000000338: mov         rax,r12
+  000000000000033B: sub         rax,r11
+  000000000000033E: mov         byte ptr [rsp+20h],r9b
+  0000000000000343: cmp         rax,rcx
+  0000000000000346: cmovb       rcx,rax
+  000000000000034A: mov         qword ptr [rbp-49h],rcx
+  000000000000034E: lea         eax,[rcx+r15]
+  0000000000000352: mov         dword ptr [rbp-71h],eax
+  0000000000000355: test        r9b,r9b
+  0000000000000358: je          0000000000000365
+  000000000000035A: cmp         eax,r8d
+  000000000000035D: mov         ecx,r8d
+  0000000000000360: cmovb       ecx,eax
+  0000000000000363: jmp         0000000000000367
+  0000000000000365: mov         ecx,eax
+  0000000000000367: mov         dword ptr [rbp-61h],ecx
+  000000000000036A: test        r13b,r13b
+  000000000000036D: je          00000000000006C7
+  0000000000000373: mov         esi,r15d
+  0000000000000376: cmp         r15d,ecx
+  0000000000000379: jae         000000000000050D
+  000000000000037F: mov         eax,r15d
+  0000000000000382: lea         r15,[r15*4]
+  000000000000038A: lea         r12,[rax*8]
+  0000000000000392: mov         rax,qword ptr [rbx+0B0h]
+  0000000000000399: cmp         r14,qword ptr [r12+rax]
+  000000000000039D: jl          00000000000003BD
+  000000000000039F: jne         00000000000004EC
+  00000000000003A5: mov         rax,qword ptr [rbx+0C8h]
+  00000000000003AC: mov         r13d,dword ptr [rsp+24h]
+  00000000000003B1: cmp         r13d,dword ptr [r15+rax]
+  00000000000003B5: jae         00000000000004EC
+  00000000000003BB: jmp         00000000000003C2
+  00000000000003BD: mov         r13d,dword ptr [rsp+24h]
+  00000000000003C2: test        dil,dil
+  00000000000003C5: jne         00000000000004CC
+  00000000000003CB: mov         rax,qword ptr [rbx+200h]
+  00000000000003D2: lea         rcx,[r10+r10*2]
+  00000000000003D6: mov         r8d,dword ptr [rbx+414h]
+  00000000000003DD: lea         rdx,[rbp-9]
+  00000000000003E1: lea         rdi,[rax+rcx*8]
+  00000000000003E5: mov         rcx,rbx
+  00000000000003E8: call        ?SearchLabel@PassengerTableCandidate@@QEBA?AULabel@1@I@Z
+  00000000000003ED: mov         edx,dword ptr [rdi+4]
+  00000000000003F0: mov         ecx,0FFFFFFFFh
+  00000000000003F5: movups      xmm0,xmmword ptr [rax]
+  00000000000003F8: movups      xmm1,xmmword ptr [rax+10h]
+  00000000000003FC: movups      xmmword ptr [rsp+28h],xmm0
+  0000000000000401: mov         qword ptr [rsp+28h],r14
+  0000000000000406: movups      xmm0,xmmword ptr [rax+20h]
+  000000000000040A: movups      xmmword ptr [rsp+38h],xmm1
+  000000000000040F: movups      xmmword ptr [rsp+48h],xmm0
+  0000000000000414: mov         eax,dword ptr [rbp-75h]
+  0000000000000417: add         rdx,rax
+  000000000000041A: mov         dword ptr [rbp-79h],r13d
+  000000000000041E: cmp         rdx,rcx
+  0000000000000421: mov         eax,ecx
+  0000000000000423: cmovb       eax,edx
+  0000000000000426: mov         dword ptr [rbp-75h],eax
+  0000000000000429: movzx       eax,byte ptr [rdi+10h]
+  000000000000042D: test        al,al
+  000000000000042F: jne         0000000000000462
+  0000000000000431: mov         eax,dword ptr [rdi]
+  0000000000000433: mov         dword ptr [rsp+48h],eax
+  0000000000000437: lea         rcx,[rax+rax*4]
+  000000000000043B: mov         rax,qword ptr [rbx+158h]
+  0000000000000442: mov         ecx,dword ptr [rax+rcx*4+4]
+  0000000000000446: mov         rax,qword ptr [rbx+140h]
+  000000000000044D: imul        rdx,rcx,70h
+  0000000000000451: mov         rcx,qword ptr [rdx+rax+48h]
+  0000000000000456: add         qword ptr [rsp+38h],rcx
+  000000000000045B: mov         qword ptr [rsp+40h],rcx
+  0000000000000460: jmp         00000000000004C9
+  0000000000000462: cmp         al,4
+  0000000000000464: jne         0000000000000498
+  0000000000000466: mov         edx,dword ptr [rdi]
+  0000000000000468: shl         rdx,5
+  000000000000046C: add         rdx,qword ptr [rbx+218h]
+  0000000000000473: mov         eax,dword ptr [rdx]
+  0000000000000475: mov         dword ptr [rsp+48h],eax
+  0000000000000479: mov         eax,dword ptr [rdx+4]
+  000000000000047C: mov         dword ptr [rbp-7Dh],eax
+  000000000000047F: mov         rax,qword ptr [rdx+10h]
+  0000000000000483: add         qword ptr [rsp+38h],rax
+  0000000000000488: mov         qword ptr [rsp+40h],rax
+  000000000000048D: mov         rax,qword ptr [rdx+8]
+  0000000000000491: add         qword ptr [rsp+30h],rax
+  0000000000000496: jmp         00000000000004C9
+  0000000000000498: cmp         al,1
+  000000000000049A: jne         00000000000004AB
+  000000000000049C: mov         rax,qword ptr [rbp-69h]
+  00000000000004A0: sub         rax,qword ptr [rdi+8]
+  00000000000004A4: add         qword ptr [rsp+30h],rax
+  00000000000004A9: jmp         00000000000004C9
+  00000000000004AB: cmp         al,3
+  00000000000004AD: jne         00000000000004C9
+  00000000000004AF: mov         eax,dword ptr [rdi]
+  00000000000004B1: mov         dword ptr [rbp-7Dh],eax
+  00000000000004B4: mov         rax,qword ptr [rbp-69h]
+  00000000000004B8: cqo
+  00000000000004BA: mov         dword ptr [rsp+48h],ecx
+  00000000000004BE: sub         rax,rdx
+  00000000000004C1: sar         rax,1
+  00000000000004C4: add         qword ptr [rsp+38h],rax
+  00000000000004C9: mov         dil,1
+  00000000000004CC: lea         r8,[rsp+28h]
+  00000000000004D1: mov         edx,esi
+  00000000000004D3: mov         rcx,rbx
+  00000000000004D6: call        ?SetSearchLabel@PassengerTableCandidate@@QEAAXIAEBULabel@1@@Z
+  00000000000004DB: mov         r9d,esi
+  00000000000004DE: mov         r8d,r13d
+  00000000000004E1: mov         rdx,r14
+  00000000000004E4: mov         rcx,rbx
+  00000000000004E7: call        ??$MeasuredPush@_JII@PassengerTableCandidate@@QEAAX_JII@Z
+  00000000000004EC: mov         r10,qword ptr [rbp-59h]
+  00000000000004F0: inc         esi
+  00000000000004F2: add         r12,8
+  00000000000004F6: add         r15,4
+  00000000000004FA: cmp         esi,dword ptr [rbp-61h]
+  00000000000004FD: jb          0000000000000392
+  0000000000000503: mov         r8d,dword ptr [rbp-6Dh]
+  0000000000000507: movzx       r9d,byte ptr [rsp+20h]
+  000000000000050D: test        r9b,r9b
+  0000000000000510: mov         r9d,dword ptr [rbp-71h]
+  0000000000000514: je          00000000000006CB
+  000000000000051A: cmp         r8d,r9d
+  000000000000051D: jae         00000000000006CB
+  0000000000000523: lea         esi,[r8+1]
+  0000000000000527: cmp         esi,r9d
+  000000000000052A: jae         00000000000006CB
+  0000000000000530: mov         edx,dword ptr [rbp-59h]
+  0000000000000533: lea         r15,[rsi*4]
+  000000000000053B: mov         qword ptr [rbp-59h],rdx
+  000000000000053F: lea         r12,[rsi*8]
+  0000000000000547: nop         word ptr [rax+rax]
+  0000000000000550: mov         rax,qword ptr [rbx+0B0h]
+  0000000000000557: cmp         r14,qword ptr [r12+rax]
+  000000000000055B: jl          000000000000057B
+  000000000000055D: jne         00000000000006B2
+  0000000000000563: mov         rax,qword ptr [rbx+0C8h]
+  000000000000056A: mov         r13d,dword ptr [rsp+24h]
+  000000000000056F: cmp         r13d,dword ptr [r15+rax]
+  0000000000000573: jae         00000000000006B2
+  0000000000000579: jmp         0000000000000580
+  000000000000057B: mov         r13d,dword ptr [rsp+24h]
+  0000000000000580: test        dil,dil
+  0000000000000583: jne         000000000000068A
+  0000000000000589: mov         rax,qword ptr [rbx+200h]
+  0000000000000590: lea         rcx,[rdx+rdx*2]
+  0000000000000594: mov         r8d,dword ptr [rbx+414h]
+  000000000000059B: lea         rdx,[rbp-9]
+  000000000000059F: lea         rdi,[rax+rcx*8]
+  00000000000005A3: mov         rcx,rbx
+  00000000000005A6: call        ?SearchLabel@PassengerTableCandidate@@QEBA?AULabel@1@I@Z
+  00000000000005AB: mov         edx,dword ptr [rdi+4]
+  00000000000005AE: mov         ecx,0FFFFFFFFh
+  00000000000005B3: movups      xmm0,xmmword ptr [rax]
+  00000000000005B6: movups      xmm1,xmmword ptr [rax+10h]
+  00000000000005BA: movups      xmmword ptr [rsp+28h],xmm0
+  00000000000005BF: mov         qword ptr [rsp+28h],r14
+  00000000000005C4: movups      xmm0,xmmword ptr [rax+20h]
+  00000000000005C8: movups      xmmword ptr [rsp+38h],xmm1
+  00000000000005CD: movups      xmmword ptr [rsp+48h],xmm0
+  00000000000005D2: mov         eax,dword ptr [rbp-75h]
+  00000000000005D5: add         rdx,rax
+  00000000000005D8: mov         dword ptr [rbp-79h],r13d
+  00000000000005DC: cmp         rdx,rcx
+  00000000000005DF: mov         eax,ecx
+  00000000000005E1: cmovb       eax,edx
+  00000000000005E4: mov         dword ptr [rbp-75h],eax
+  00000000000005E7: movzx       eax,byte ptr [rdi+10h]
+  00000000000005EB: test        al,al
+  00000000000005ED: jne         0000000000000620
+  00000000000005EF: mov         eax,dword ptr [rdi]
+  00000000000005F1: mov         dword ptr [rsp+48h],eax
+  00000000000005F5: lea         rcx,[rax+rax*4]
+  00000000000005F9: mov         rax,qword ptr [rbx+158h]
+  0000000000000600: mov         ecx,dword ptr [rax+rcx*4+4]
+  0000000000000604: mov         rax,qword ptr [rbx+140h]
+  000000000000060B: imul        rdx,rcx,70h
+  000000000000060F: mov         rcx,qword ptr [rdx+rax+48h]
+  0000000000000614: add         qword ptr [rsp+38h],rcx
+  0000000000000619: mov         qword ptr [rsp+40h],rcx
+  000000000000061E: jmp         0000000000000687
+  0000000000000620: cmp         al,4
+  0000000000000622: jne         0000000000000656
+  0000000000000624: mov         edx,dword ptr [rdi]
+  0000000000000626: shl         rdx,5
+  000000000000062A: add         rdx,qword ptr [rbx+218h]
+  0000000000000631: mov         eax,dword ptr [rdx]
+  0000000000000633: mov         dword ptr [rsp+48h],eax
+  0000000000000637: mov         eax,dword ptr [rdx+4]
+  000000000000063A: mov         dword ptr [rbp-7Dh],eax
+  000000000000063D: mov         rax,qword ptr [rdx+10h]
+  0000000000000641: add         qword ptr [rsp+38h],rax
+  0000000000000646: mov         qword ptr [rsp+40h],rax
+  000000000000064B: mov         rax,qword ptr [rdx+8]
+  000000000000064F: add         qword ptr [rsp+30h],rax
+  0000000000000654: jmp         0000000000000687
+  0000000000000656: cmp         al,1
+  0000000000000658: jne         0000000000000669
+  000000000000065A: mov         rax,qword ptr [rbp-69h]
+  000000000000065E: sub         rax,qword ptr [rdi+8]
+  0000000000000662: add         qword ptr [rsp+30h],rax
+  0000000000000667: jmp         0000000000000687
+  0000000000000669: cmp         al,3
+  000000000000066B: jne         0000000000000687
+  000000000000066D: mov         eax,dword ptr [rdi]
+  000000000000066F: mov         dword ptr [rbp-7Dh],eax
+  0000000000000672: mov         rax,qword ptr [rbp-69h]
+  0000000000000676: cqo
+  0000000000000678: mov         dword ptr [rsp+48h],ecx
+  000000000000067C: sub         rax,rdx
+  000000000000067F: sar         rax,1
+  0000000000000682: add         qword ptr [rsp+38h],rax
+  0000000000000687: mov         dil,1
+  000000000000068A: lea         r8,[rsp+28h]
+  000000000000068F: mov         edx,esi
+  0000000000000691: mov         rcx,rbx
+  0000000000000694: call        ?SetSearchLabel@PassengerTableCandidate@@QEAAXIAEBULabel@1@@Z
+  0000000000000699: mov         r9d,esi
+  000000000000069C: mov         r8d,r13d
+  000000000000069F: mov         rdx,r14
+  00000000000006A2: mov         rcx,rbx
+  00000000000006A5: call        ??$MeasuredPush@_JII@PassengerTableCandidate@@QEAAX_JII@Z
+  00000000000006AA: mov         rdx,qword ptr [rbp-59h]
+  00000000000006AE: mov         r9d,dword ptr [rbp-71h]
+  00000000000006B2: inc         esi
+  00000000000006B4: add         r12,8
+  00000000000006B8: add         r15,4
+  00000000000006BC: cmp         esi,r9d
+  00000000000006BF: jb          0000000000000550
+  00000000000006C5: jmp         00000000000006CB
+  00000000000006C7: mov         r9d,dword ptr [rbp-71h]
+  00000000000006CB: sub         r9d,dword ptr [rbp-4Dh]
+  00000000000006CF: mov         rax,qword ptr [rbp-29h]
+  00000000000006D3: add         dword ptr [rbx+410h],r9d
+  00000000000006DA: add         rax,qword ptr [rbp-49h]
+  00000000000006DE: mov         rcx,qword ptr [rbp-19h]
+  00000000000006E2: cmp         dword ptr [rbx+410h],ecx
+  00000000000006E8: jne         00000000000006FB
+  00000000000006EA: inc         qword ptr [rbx+408h]
+  00000000000006F1: mov         dword ptr [rbx+410h],0
+  00000000000006FB: test        rax,rax
+  00000000000006FE: je          000000000000077D
+  0000000000000700: mov         r8,qword ptr [rbp-21h]
+  0000000000000704: mov         r12,qword ptr [rbp-41h]
+  0000000000000708: add         r8,rax
+  000000000000070B: sub         r12,rax
+  000000000000070E: mov         qword ptr [rbp-21h],r8
+  0000000000000712: mov         qword ptr [rbp-41h],r12
+  0000000000000716: je          000000000000074A
+  0000000000000718: mov         edx,dword ptr [rbx+414h]
+  000000000000071E: mov         edi,0FFFFFFFFh
+  0000000000000723: mov         rcx,qword ptr [rbx+2C0h]
+  000000000000072A: inc         edx
+  000000000000072C: mov         r9,qword ptr [rbp-11h]
+  0000000000000730: mov         r11,7FFFFFFFFFFFFFFFh
+  000000000000073A: mov         edx,dword ptr [rcx+rdx*4]
+  000000000000073D: cmp         qword ptr [rbx+408h],rdx
+  0000000000000744: jb          0000000000000075
+  000000000000074A: mov         r14,qword ptr [rsp+140h]
+  0000000000000752: mov         rax,r8
+  0000000000000755: mov         rsi,qword ptr [rsp+138h]
+  000000000000075D: mov         rbx,qword ptr [rsp+148h]
+  0000000000000765: movaps      xmm6,xmmword ptr [rsp+0F0h]
+  000000000000076D: add         rsp,100h
+  0000000000000774: pop         r15
+  0000000000000776: pop         r13
+  0000000000000778: pop         r12
+  000000000000077A: pop         rdi
+  000000000000077B: pop         rbp
+  000000000000077C: ret
+  000000000000077D: lea         r8,[??_C@_08PNMIAFDD@used?5?$DO?50@]
+  0000000000000784: mov         ecx,352h
+  0000000000000789: lea         rdx,[??_C@_0HH@CFPLLMKJ@C?3?2Users?2bebe?2?4codex?2worktrees?2@]
+  0000000000000790: call        ?assert_str_error@@YAXHPEBD0@Z
+  0000000000000795: int         3
+
+

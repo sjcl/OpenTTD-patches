@@ -1,0 +1,1024 @@
+MSBuild のバージョン 17.14.40+3e7442088 (.NET Framework)
+
+  1>Checking Build System
+  Building Custom Rule C:/Users/bebe/.codex/worktrees/c430/OpenTTD-patches/src/settingsgen/CMakeLists.txt
+  Building Custom Rule C:/Users/bebe/.codex/worktrees/c430/OpenTTD-patches/src/strgen/CMakeLists.txt
+  Copying compat_0.7.nut bin/ai/ file
+  Copying OpenTTD-Mono.ttf baseset file
+  Copying compat_1.0.nut bin/ai/ file
+  Copying compat_1.1.nut bin/ai/ file
+  Copying OpenTTD-Sans.ttf baseset file
+  Copying compat_1.10.nut bin/ai/ file
+  settingsgen.cpp
+  alloc_func.cpp
+  string_consumer.cpp
+  utf8.cpp
+  getoptdata.cpp
+  error.cpp
+  ini_load.cpp
+  string.cpp
+  Copying compat_1.11.nut bin/ai/ file
+  strgen.cpp
+  strgen_base.cpp
+  alloc_func.cpp
+  string_builder.cpp
+  string_consumer.cpp
+  utf8.cpp
+  getoptdata.cpp
+  error.cpp
+  string.cpp
+  Copying OpenTTD-Serif.ttf baseset file
+  Copying compat_1.2.nut bin/ai/ file
+  Copying compat_1.3.nut bin/ai/ file
+  Copying OpenTTD-Small.ttf baseset file
+  Copying compat_1.4.nut bin/ai/ file
+  Copying compat_1.5.nut bin/ai/ file
+  Copying extra_signals.grf baseset file
+  Copying compat_1.6.nut bin/ai/ file
+  format.cpp
+  Copying compat_1.7.nut bin/ai/ file
+  Copying innerhighlight.grf baseset file
+  Copying compat_1.8.nut bin/ai/ file
+  Copying compat_1.9.nut bin/ai/ file
+  format.cpp
+  Copying misc_gui.grf baseset file
+  format.cc
+  Copying compat_12.nut bin/ai/ file
+  -- Version string: jgrpp-ya-0.73.3+2-174-g9e845522a-m, Release: 0.73.3+2, Online contents compatible jgrpp version: 0.73.3
+  -- Generating rev.cpp
+  -- Generating ottdres.rc
+  -- Generating CPackProperties.cmake
+  -- Generating Doxyfile
+  -- Generating Doxyfile_AI
+  -- Generating Doxyfile_GS
+  Copying compat_13.nut bin/ai/ file
+  Building Custom Rule C:/Users/bebe/.codex/worktrees/c430/OpenTTD-patches/CMakeLists.txt
+  Generating no_music.obm baseset metadata file
+  Copying compat_14.nut bin/ai/ file
+  Copying compat_15.nut bin/ai/ file
+  format.cc
+  Generating script_window.hpp
+  Copying compat_1.10.nut bin/game/ file
+  Copying compat_1.11.nut bin/game/ file
+  Generating no_sound.obs baseset metadata file
+  Copying compat_1.2.nut bin/game/ file
+  Building Custom Rule C:/Users/bebe/.codex/worktrees/c430/OpenTTD-patches/src/script/api/CMakeLists.txt
+  Copying compat_1.3.nut bin/game/ file
+  settingsgen.vcxproj -> C:\Users\bebe\.codex\worktrees\c430\OpenTTD-patches\build-runtime-matched\src\settingsgen\Release\settingsgen.exe
+  Copying compat_1.4.nut bin/game/ file
+  Generating table/settings.h
+  Generating template/template_accounting.sq.hpp
+  Copying compat_1.5.nut bin/game/ file
+  Copying openttd.grf baseset file
+  Copying compat_1.6.nut bin/game/ file
+  Copying compat_1.7.nut bin/game/ file
+  strgen.vcxproj -> C:\Users\bebe\.codex\worktrees\c430\OpenTTD-patches\build-runtime-matched\src\strgen\Release\strgen.exe
+  Copying opntitle.dat baseset file
+  Generating template/template_admin.sq.hpp
+  Building Custom Rule C:/Users/bebe/.codex/worktrees/c430/OpenTTD-patches/src/table/settings/CMakeLists.txt
+  Copying compat_1.8.nut bin/game/ file
+  Compiling language afrikaans
+  Copying compat_1.9.nut bin/game/ file
+  Generating orig_dos.obg baseset metadata file
+  Generating table/strings.h
+  Generating template/template_airport.sq.hpp
+  Copying compat_12.nut bin/game/ file
+  Compiling language arabic_egypt
+  Copying compat_13.nut bin/game/ file
+  Generating template/template_asyncmode.sq.hpp
+  Copying compat_14.nut bin/game/ file
+  Building Custom Rule C:/Users/bebe/.codex/worktrees/c430/OpenTTD-patches/src/lang/CMakeLists.txt
+  Compiling language basque
+  Generating orig_dos.obm baseset metadata file
+  Copying compat_15.nut bin/game/ file
+  Generating template/template_base.sq.hpp
+  Compiling language belarusian
+  Copying compat_brgs.nut bin/game/ file
+  Generating template/template_basestation.sq.hpp
+  Copying autoexec.scr.example bin/scripts/ file
+  Compiling language brazilian_portuguese
+  Copying game_start.scr.example bin/scripts/ file
+  Generating orig_dos.obs baseset metadata file
+  Copying on_client.scr.example bin/scripts/ file
+  Generating template/template_bridge.sq.hpp
+  Compiling language bulgarian
+  Copying on_dedicated.scr.example bin/scripts/ file
+  Copying on_server.scr.example bin/scripts/ file
+  Generating template/template_bridgelist.sq.hpp
+  Compiling language catalan
+  Copying on_server_connect.scr.example bin/scripts/ file
+  Generating orig_dos_de.obg baseset metadata file
+  Copying pre_dedicated.scr.example bin/scripts/ file
+  Generating template/template_cargo.sq.hpp
+  Compiling language chuvash
+  Copying pre_server.scr.example bin/scripts/ file
+  Copying readme.txt bin/scripts/ file
+  Generating template/template_cargolist.sq.hpp
+  Compiling language croatian
+  Building Custom Rule C:/Users/bebe/.codex/worktrees/c430/OpenTTD-patches/bin/CMakeLists.txt
+  Copying orig_extra.grf baseset file
+  Generating template/template_cargomonitor.sq.hpp
+  Compiling language czech
+  Generating orig_tto.obm baseset metadata file
+  Generating ai/ai_accounting.sq.hpp
+  Generating template/template_client.sq.hpp
+  Compiling language danish
+  Generating ai/ai_admin.sq.hpp
+  Generating template/template_clientlist.sq.hpp
+  Compiling language dutch
+  Generating orig_win.obg baseset metadata file
+  Generating ai/ai_airport.sq.hpp
+  Generating template/template_company.sq.hpp
+  Compiling language english
+  Generating ai/ai_asyncmode.sq.hpp
+  Generating template/template_companymode.sq.hpp
+  Compiling language english_AU
+  Generating orig_win.obm baseset metadata file
+  Generating ai/ai_base.sq.hpp
+  Generating template/template_date.sq.hpp
+  Compiling language english_US
+  Generating ai/ai_basestation.sq.hpp
+  Generating template/template_depotlist.sq.hpp
+  Compiling language esperanto
+  Generating orig_win.obs baseset metadata file
+  Generating ai/ai_bridge.sq.hpp
+  Generating template/template_engine.sq.hpp
+  Compiling language estonian
+  Generating ai/ai_bridgelist.sq.hpp
+  Compiling language faroese
+  Generating template/template_enginelist.sq.hpp
+  Copying progsignals.grf baseset file
+  Generating ai/ai_cargo.sq.hpp
+  Compiling language finnish
+  Generating template/template_error.sq.hpp
+  Copying route_step.grf baseset file
+  Compiling language french
+  Generating ai/ai_cargolist.sq.hpp
+  Generating template/template_event.sq.hpp
+  Copying tracerestrict.grf baseset file
+  Compiling language frisian
+  Generating ai/ai_cargomonitor.sq.hpp
+  Generating template/template_event_types.sq.hpp
+  Building Custom Rule C:/Users/bebe/.codex/worktrees/c430/OpenTTD-patches/media/baseset/CMakeLists.txt
+  Compiling language gaelic
+  Generating ai/ai_client.sq.hpp
+  Generating template/template_execmode.sq.hpp
+  Compiling language galician
+  Generating game/game_accounting.sq.hpp
+  Generating ai/ai_clientlist.sq.hpp
+  Compiling language german
+  Generating template/template_game.sq.hpp
+  Generating game/game_admin.sq.hpp
+  Generating ai/ai_company.sq.hpp
+  Compiling language greek
+  Generating game/game_airport.sq.hpp
+  Generating template/template_gamesettings.sq.hpp
+  Compiling language hebrew
+  Generating ai/ai_companymode.sq.hpp
+  Generating game/game_asyncmode.sq.hpp
+  Generating template/template_goal.sq.hpp
+  Compiling language hindi
+  Generating ai/ai_date.sq.hpp
+  Generating game/game_base.sq.hpp
+  Generating template/template_group.sq.hpp
+  Compiling language hungarian
+  Generating ai/ai_depotlist.sq.hpp
+  Generating game/game_basestation.sq.hpp
+  Generating template/template_grouplist.sq.hpp
+  Compiling language icelandic
+  Generating ai/ai_engine.sq.hpp
+  Generating game/game_bridge.sq.hpp
+  Generating template/template_industry.sq.hpp
+  Compiling language ido
+  Generating ai/ai_enginelist.sq.hpp
+  Generating game/game_bridgelist.sq.hpp
+  Compiling language indonesian
+  Generating template/template_industrylist.sq.hpp
+  Generating ai/ai_error.sq.hpp
+  Generating game/game_cargo.sq.hpp
+  Compiling language irish
+  Generating template/template_industrytype.sq.hpp
+  Generating ai/ai_event.sq.hpp
+  Generating game/game_cargolist.sq.hpp
+  Compiling language italian
+  Generating template/template_industrytypelist.sq.hpp
+  Generating game/game_cargomonitor.sq.hpp
+  Generating ai/ai_event_types.sq.hpp
+  Compiling language japanese
+  Generating template/template_inflation.sq.hpp
+  Generating game/game_client.sq.hpp
+  Generating ai/ai_execmode.sq.hpp
+C:\Users\bebe\.codex\worktrees\c430\OpenTTD-patches\src\lang\japanese.txt(3722): warning : STR_STATION_VIEW_PASSENGER_SERVICE: Param idx #0 'STRING' doesn't match with template command 'RAW_STRING' (info) [C:\Users\bebe\.codex\worktrees\c430\OpenTTD-patches\build-runtime-matched\src\lang\language_files.vcxproj]
+C:\Users\bebe\.codex\worktrees\c430\OpenTTD-patches\src\lang\extra\japanese.txt(2190): warning : STR_CONFIG_SETTING_TRANSFER_PENALTY_SAME_MODE: Param idx #0 'STRING' doesn't match with template command 'STRING2' (info) [C:\Users\bebe\.codex\worktrees\c430\OpenTTD-patches\build-runtime-matched\src\lang\language_files.vcxproj]
+C:\Users\bebe\.codex\worktrees\c430\OpenTTD-patches\src\lang\extra\japanese.txt(2192): warning : STR_CONFIG_SETTING_TRANSFER_PENALTY_MODE_CHANGE: Param idx #0 'STRING' doesn't match with template command 'STRING2' (info) [C:\Users\bebe\.codex\worktrees\c430\OpenTTD-patches\build-runtime-matched\src\lang\language_files.vcxproj]
+C:\Users\bebe\.codex\worktrees\c430\OpenTTD-patches\src\lang\extra\japanese.txt(2220): warning : STR_CONFIG_SETTING_SHOW_GROUP_VEHICLE_MARKERS: Param idx #0 'STRING' doesn't match with template command 'STRING2' (info) [C:\Users\bebe\.codex\worktrees\c430\OpenTTD-patches\build-runtime-matched\src\lang\language_files.vcxproj]
+  Compiling language korean
+  Generating template/template_info_docs.sq.hpp
+  Generating game/game_clientlist.sq.hpp
+  Generating ai/ai_game.sq.hpp
+  Compiling language latin
+  Generating template/template_infrastructure.sq.hpp
+  Generating game/game_company.sq.hpp
+  Generating ai/ai_gamesettings.sq.hpp
+  Compiling language latvian
+  Generating template/template_league.sq.hpp
+  Generating game/game_companymode.sq.hpp
+  Compiling language lithuanian
+  Generating ai/ai_goal.sq.hpp
+  Compiling language luxembourgish
+  Generating template/template_list.sq.hpp
+  Generating game/game_date.sq.hpp
+  Generating ai/ai_group.sq.hpp
+  Compiling language macedonian
+  Generating template/template_log.sq.hpp
+  Generating game/game_depotlist.sq.hpp
+  Generating ai/ai_grouplist.sq.hpp
+  Compiling language malay
+  Generating template/template_log_types.sq.hpp
+  Generating game/game_engine.sq.hpp
+  Generating ai/ai_industry.sq.hpp
+  Compiling language maltese
+  Generating template/template_map.sq.hpp
+  Generating game/game_enginelist.sq.hpp
+  Generating ai/ai_industrylist.sq.hpp
+  Compiling language maori
+  Generating template/template_marine.sq.hpp
+  Generating game/game_error.sq.hpp
+  Generating ai/ai_industrytype.sq.hpp
+  Generating template/template_newgrf.sq.hpp
+  Compiling language marathi
+  Generating game/game_event.sq.hpp
+  Generating ai/ai_industrytypelist.sq.hpp
+  Compiling language norwegian_bokmal
+  Generating template/template_news.sq.hpp
+  Generating game/game_event_types.sq.hpp
+  Generating ai/ai_inflation.sq.hpp
+  Compiling language norwegian_nynorsk
+  Generating template/template_object.sq.hpp
+  Generating ai/ai_info_docs.sq.hpp
+  Compiling language persian
+  Generating game/game_execmode.sq.hpp
+  Generating template/template_objecttype.sq.hpp
+  Generating ai/ai_infrastructure.sq.hpp
+  Generating template/template_objecttypelist.sq.hpp
+  Compiling language polish
+  Generating game/game_game.sq.hpp
+  Generating ai/ai_league.sq.hpp
+  Generating template/template_order.sq.hpp
+  Compiling language portuguese
+  Generating game/game_gamesettings.sq.hpp
+  Generating template/template_priorityqueue.sq.hpp
+  Generating ai/ai_list.sq.hpp
+  Compiling language romanian
+  Generating game/game_goal.sq.hpp
+  Generating template/template_rail.sq.hpp
+  Compiling language russian
+  Generating ai/ai_log.sq.hpp
+  Generating game/game_group.sq.hpp
+  Generating template/template_railtypelist.sq.hpp
+  Compiling language serbian
+  Generating game/game_grouplist.sq.hpp
+  Generating ai/ai_log_types.sq.hpp
+  Generating template/template_road.sq.hpp
+  Compiling language simplified_chinese
+  Generating game/game_industry.sq.hpp
+  Generating template/template_roadtypelist.sq.hpp
+  Generating ai/ai_map.sq.hpp
+  Compiling language slovak
+  Generating template/template_sign.sq.hpp
+  Generating game/game_industrylist.sq.hpp
+  Generating ai/ai_marine.sq.hpp
+  Compiling language slovenian
+  Generating template/template_signlist.sq.hpp
+  Generating game/game_industrytype.sq.hpp
+  Generating ai/ai_newgrf.sq.hpp
+  Compiling language spanish
+  Generating template/template_station.sq.hpp
+  Generating ai/ai_news.sq.hpp
+  Generating game/game_industrytypelist.sq.hpp
+  Compiling language spanish_MX
+  Generating template/template_stationlist.sq.hpp
+  Generating ai/ai_object.sq.hpp
+  Generating game/game_inflation.sq.hpp
+  Compiling language swedish
+  Generating template/template_story_page.sq.hpp
+  Generating game/game_info_docs.sq.hpp
+  Generating ai/ai_objecttype.sq.hpp
+  Compiling language tamil
+  Generating template/template_storypageelementlist.sq.hpp
+  Generating ai/ai_objecttypelist.sq.hpp
+  Generating game/game_infrastructure.sq.hpp
+  Compiling language thai
+  Generating template/template_storypagelist.sq.hpp
+  Generating ai/ai_order.sq.hpp
+  Generating game/game_league.sq.hpp
+  Compiling language traditional_chinese
+  Generating template/template_subsidy.sq.hpp
+  Compiling language turkish
+  Generating game/game_list.sq.hpp
+  Generating ai/ai_priorityqueue.sq.hpp
+  Generating template/template_subsidylist.sq.hpp
+  Compiling language ukrainian
+  Generating game/game_log.sq.hpp
+  Generating ai/ai_rail.sq.hpp
+  Generating template/template_testmode.sq.hpp
+  Compiling language urdu
+  Generating game/game_log_types.sq.hpp
+  Generating ai/ai_railtypelist.sq.hpp
+  Generating template/template_text.sq.hpp
+  Compiling language vietnamese
+  Generating game/game_map.sq.hpp
+  Generating ai/ai_road.sq.hpp
+  Generating template/template_tile.sq.hpp
+  Compiling language welsh
+  Generating game/game_marine.sq.hpp
+  Generating ai/ai_roadtypelist.sq.hpp
+  Generating template/template_tilelist.sq.hpp
+  Building Custom Rule C:/Users/bebe/.codex/worktrees/c430/OpenTTD-patches/src/lang/CMakeLists.txt
+  Generating game/game_newgrf.sq.hpp
+  Generating ai/ai_sign.sq.hpp
+  Generating template/template_town.sq.hpp
+  Generating game/game_news.sq.hpp
+  Generating ai/ai_signlist.sq.hpp
+  Generating template/template_townlist.sq.hpp
+  Generating game/game_object.sq.hpp
+  Generating ai/ai_station.sq.hpp
+  Generating template/template_tunnel.sq.hpp
+  Generating ai/ai_stationlist.sq.hpp
+  Generating template/template_types.sq.hpp
+  Generating game/game_objecttype.sq.hpp
+  Generating ai/ai_story_page.sq.hpp
+  Generating game/game_objecttypelist.sq.hpp
+  Generating template/template_vehicle.sq.hpp
+  Generating game/game_order.sq.hpp
+  Generating ai/ai_storypageelementlist.sq.hpp
+  Generating template/template_vehiclelist.sq.hpp
+  Generating ai/ai_storypagelist.sq.hpp
+  Generating template/template_viewport.sq.hpp
+  Generating game/game_priorityqueue.sq.hpp
+  Generating ai/ai_subsidy.sq.hpp
+  Generating template/template_waypoint.sq.hpp
+  Generating game/game_rail.sq.hpp
+  Generating template/template_waypointlist.sq.hpp
+  Generating ai/ai_subsidylist.sq.hpp
+  Generating game/game_railtypelist.sq.hpp
+  Generating template/template_window.sq.hpp
+  Generating ai/ai_testmode.sq.hpp
+  Generating game/game_road.sq.hpp
+  Generating ai/ai_text.sq.hpp
+  Generating game/game_roadtypelist.sq.hpp
+  Generating ai/ai_tile.sq.hpp
+  Generating game/game_sign.sq.hpp
+  Building Custom Rule C:/Users/bebe/.codex/worktrees/c430/OpenTTD-patches/src/script/api/CMakeLists.txt
+  Generating ai/ai_tilelist.sq.hpp
+  Generating game/game_signlist.sq.hpp
+  Generating ai/ai_town.sq.hpp
+  Generating game/game_station.sq.hpp
+  Generating ai/ai_townlist.sq.hpp
+  Generating game/game_stationlist.sq.hpp
+  Generating ai/ai_tunnel.sq.hpp
+  Generating game/game_story_page.sq.hpp
+  Generating ai/ai_types.sq.hpp
+  Generating game/game_storypageelementlist.sq.hpp
+  Generating ai/ai_vehicle.sq.hpp
+  Generating game/game_storypagelist.sq.hpp
+  Generating ai/ai_vehiclelist.sq.hpp
+  Generating game/game_subsidy.sq.hpp
+  Generating ai/ai_viewport.sq.hpp
+  Generating game/game_subsidylist.sq.hpp
+  Generating ai/ai_waypoint.sq.hpp
+  Generating game/game_testmode.sq.hpp
+  Generating ai/ai_waypointlist.sq.hpp
+  Generating game/game_text.sq.hpp
+  Generating ai/ai_window.sq.hpp
+  Generating game/game_tile.sq.hpp
+  Generating game/game_tilelist.sq.hpp
+  Generating game/game_town.sq.hpp
+  Building Custom Rule C:/Users/bebe/.codex/worktrees/c430/OpenTTD-patches/src/script/api/CMakeLists.txt
+  Generating game/game_townlist.sq.hpp
+  Generating ai/ai_includes.hpp
+  Generating game/game_tunnel.sq.hpp
+  Generating game/game_types.sq.hpp
+  Generating game/game_vehicle.sq.hpp
+  Building Custom Rule C:/Users/bebe/.codex/worktrees/c430/OpenTTD-patches/src/script/api/CMakeLists.txt
+  Generating game/game_vehiclelist.sq.hpp
+  Generating game/game_viewport.sq.hpp
+  Generating game/game_waypoint.sq.hpp
+  Generating game/game_waypointlist.sq.hpp
+  Generating game/game_window.sq.hpp
+  Building Custom Rule C:/Users/bebe/.codex/worktrees/c430/OpenTTD-patches/src/script/api/CMakeLists.txt
+  Generating game/game_includes.hpp
+  Building Custom Rule C:/Users/bebe/.codex/worktrees/c430/OpenTTD-patches/src/script/api/CMakeLists.txt
+  Building Custom Rule C:/Users/bebe/.codex/worktrees/c430/OpenTTD-patches/CMakeLists.txt
+  rev.cpp
+  script_accounting.cpp
+  script_admin.cpp
+  script_airport.cpp
+  script_asyncmode.cpp
+  script_base.cpp
+  script_basestation.cpp
+  script_bridge.cpp
+  script_bridgelist.cpp
+  script_cargo.cpp
+  script_cargolist.cpp
+  script_cargomonitor.cpp
+  script_client.cpp
+  script_clientlist.cpp
+  script_company.cpp
+  script_companymode.cpp
+  script_controller.cpp
+  script_date.cpp
+  script_depotlist.cpp
+  script_engine.cpp
+  script_enginelist.cpp
+  script_error.cpp
+  script_event.cpp
+  script_event_types.cpp
+  script_execmode.cpp
+  script_game.cpp
+  script_gamesettings.cpp
+  script_goal.cpp
+  script_group.cpp
+  script_grouplist.cpp
+  script_industry.cpp
+  script_industrylist.cpp
+  script_industrytype.cpp
+  script_industrytypelist.cpp
+  script_inflation.cpp
+  script_infrastructure.cpp
+  script_league.cpp
+  script_list.cpp
+  script_log.cpp
+  script_map.cpp
+  script_marine.cpp
+  script_newgrf.cpp
+  script_news.cpp
+  script_object.cpp
+  script_objecttype.cpp
+  script_objecttypelist.cpp
+  script_order.cpp
+  script_priorityqueue.cpp
+  script_rail.cpp
+  script_railtypelist.cpp
+  script_road.cpp
+  script_roadtypelist.cpp
+  script_sign.cpp
+  script_signlist.cpp
+  script_station.cpp
+  script_stationlist.cpp
+  script_story_page.cpp
+  script_storypagelist.cpp
+  script_storypageelementlist.cpp
+  script_subsidy.cpp
+  script_subsidylist.cpp
+  script_testmode.cpp
+  script_text.cpp
+  script_tile.cpp
+  script_tilelist.cpp
+  script_town.cpp
+  script_townlist.cpp
+  script_tunnel.cpp
+  script_vehicle.cpp
+  script_vehiclelist.cpp
+  script_viewport.cpp
+  script_waypoint.cpp
+  script_waypointlist.cpp
+  script_window.cpp
+  script_config.cpp
+  script_gui.cpp
+  script_info.cpp
+  script_info_dummy.cpp
+  script_instance.cpp
+  script_scanner.cpp
+  squirrel.cpp
+  squirrel_std.cpp
+  strgen_base.cpp
+  os.cc
+  md5.cpp
+  monocypher-ed25519.cpp
+  sqstdaux.cpp
+  sqstdmath.cpp
+  sqapi.cpp
+  sqbaselib.cpp
+  sqclass.cpp
+  sqcompiler.cpp
+  sqdebug.cpp
+  sqfuncstate.cpp
+  sqlexer.cpp
+  sqmem.cpp
+  sqobject.cpp
+  sqstate.cpp
+  sqtable.cpp
+  sqvm.cpp
+  ai_config.cpp
+  ai_core.cpp
+  ai_gui.cpp
+  ai_info.cpp
+  ai_instance.cpp
+  ai_scanner.cpp
+  32bpp_anim.cpp
+  32bpp_base.cpp
+  32bpp_optimized.cpp
+  32bpp_simple.cpp
+  8bpp_base.cpp
+  8bpp_optimized.cpp
+  8bpp_simple.cpp
+  32bpp_anim_sse2.cpp
+  32bpp_anim_sse4.cpp
+  32bpp_sse2.cpp
+  32bpp_sse4.cpp
+  32bpp_ssse3.cpp
+  40bpp_anim.cpp
+  null.cpp
+  alloc_func.cpp
+  geometry_func.cpp
+  label.cpp
+  math_func.cpp
+  pool_func.cpp
+  random_func.cpp
+  serialisation.cpp
+  string_builder.cpp
+  string_consumer.cpp
+  utf8.cpp
+  spritefontcache.cpp
+  truetypefontcache.cpp
+  game_config.cpp
+  game_core.cpp
+  game_gui.cpp
+  game_info.cpp
+  game_instance.cpp
+  game_scanner.cpp
+  game_text.cpp
+  demands.cpp
+  flowmapper.cpp
+  linkgraph.cpp
+  linkgraph_gui.cpp
+  linkgraphjob.cpp
+  linkgraphschedule.cpp
+  mcf.cpp
+  refresh.cpp
+  dbg_helpers.cpp
+  getoptdata.cpp
+  history.cpp
+  dmusic.cpp
+  win32_m.cpp
+  midifile.cpp
+  null_m.cpp
+  address.cpp
+  config.cpp
+  core.cpp
+  network_game_info.cpp
+  host.cpp
+  os_abstraction.cpp
+  packet.cpp
+  tcp.cpp
+  tcp_admin.cpp
+  tcp_connect.cpp
+  tcp_content.cpp
+  tcp_coordinator.cpp
+  tcp_game.cpp
+  tcp_stun.cpp
+  tcp_turn.cpp
+  udp.cpp
+  http_winhttp.cpp
+  network.cpp
+  network_admin.cpp
+  network_chat_gui.cpp
+  network_client.cpp
+  network_command.cpp
+  network_content.cpp
+  network_content_gui.cpp
+  network_coordinator.cpp
+  network_crypto.cpp
+  network_gamelist.cpp
+  network_gui.cpp
+  network_query.cpp
+  network_server.cpp
+  network_stun.cpp
+  network_survey.cpp
+  network_turn.cpp
+  network_udp.cpp
+  newgrf_act0_aircraft.cpp
+  newgrf_act0_airports.cpp
+  newgrf_act0_badges.cpp
+  newgrf_act0_bridges.cpp
+  newgrf_act0_canals.cpp
+  newgrf_act0_cargo.cpp
+  newgrf_act0_globalvar.cpp
+  newgrf_act0_houses.cpp
+  newgrf_act0_industries.cpp
+  newgrf_act0_newlandscape.cpp
+  newgrf_act0_objects.cpp
+  newgrf_act0_railtypes.cpp
+  newgrf_act0_roadstops.cpp
+  newgrf_act0_roadtypes.cpp
+  newgrf_act0_roadvehs.cpp
+  newgrf_act0_ships.cpp
+  newgrf_act0_signals.cpp
+  newgrf_act0_sounds.cpp
+  newgrf_act0_stations.cpp
+  newgrf_act0_trains.cpp
+  newgrf_act0.cpp
+  newgrf_act1.cpp
+  newgrf_act2.cpp
+  newgrf_act3.cpp
+  newgrf_act4.cpp
+  newgrf_act5.cpp
+  newgrf_act6.cpp
+  newgrf_act7_9.cpp
+  newgrf_act8.cpp
+  newgrf_acta.cpp
+  newgrf_actb.cpp
+  newgrf_actc.cpp
+  newgrf_actd.cpp
+  newgrf_acte.cpp
+  newgrf_actf.cpp
+  newgrf_act10.cpp
+  newgrf_act11.cpp
+  newgrf_act12.cpp
+  newgrf_act13.cpp
+  newgrf_act14.cpp
+  newgrf_bytereader.cpp
+  newgrf_optimiser.cpp
+  newgrf_stringmapping.cpp
+  crashlog_win.cpp
+  font_win32.cpp
+  library_loader_win.cpp
+  string_uniscribe.cpp
+  survey_win.cpp
+  win32.cpp
+  yapf_common.cpp
+  yapf_rail.cpp
+  yapf_road.cpp
+  yapf_ship.cpp
+  yapf_ship_regions.cpp
+  aystar.cpp
+  queue.cpp
+  water_regions.cpp
+  randomizer_sl.cpp
+  settings_sl.cpp
+  water_regions_sl.cpp
+  afterload.cpp
+  bridge_signal_sl.cpp
+  debug_sl.cpp
+  extended_ver_sl.cpp
+  newsignals_sl.cpp
+  oldloader.cpp
+  oldloader_sl.cpp
+  plans_sl.cpp
+  signal_sl.cpp
+  strings_sl.cpp
+  tbtr_template_replacement_sl.cpp
+  tbtr_template_veh_sl.cpp
+  tracerestrict_sl.cpp
+  train_speed_adaptation.cpp
+  tunnel_sl.cpp
+  waypoint_sl.cpp
+  win32_s.cpp
+  xaudio2_s.cpp
+  null_s.cpp
+  grf.cpp
+  makeindexed.cpp
+  sprite_file.cpp
+  timer_game_calendar.cpp
+  timer_game_realtime.cpp
+  timer_game_tick.cpp
+  timer_window.cpp
+  opengl.cpp
+  win32_v.cpp
+  dedicated_v.cpp
+  null_v.cpp
+  video_driver.cpp
+  viewport_sprite_sorter_sse4.cpp
+  screenshot_png.cpp
+  soundloader_opus.cpp
+  passenger_routing.cpp
+  passenger_od.cpp
+  passenger_service_graph.cpp
+  passenger_service_database.cpp
+  passenger_precomputed.cpp
+  passenger_departure_index.cpp
+  passenger_service_index.cpp
+  passenger_journey_planner.cpp
+  passenger_journey_shadow.cpp
+  passenger_journey_active.cpp
+  passenger_journey_schedule.cpp
+  aircraft_cmd.cpp
+  aircraft_gui.cpp
+  airport.cpp
+  airport_gui.cpp
+  animated_tile.cpp
+  articulated_vehicles.cpp
+  autoreplace.cpp
+  autoreplace_cmd.cpp
+  autoreplace_gui.cpp
+  base_consist.cpp
+  bmp.cpp
+  bootstrap_gui.cpp
+  bridge_gui.cpp
+  bridge_map.cpp
+  build_vehicle_gui.cpp
+  cachecheck.cpp
+  cargoaction.cpp
+  cargomonitor.cpp
+  cargopacket.cpp
+  cargotype.cpp
+C:\Users\bebe\.codex\worktrees\c430\OpenTTD-patches\src\passenger_od.cpp(390,38): warning C4834: [[nodiscard]] 属性を持つ関数の戻り値を破棄しています [C:\Users\bebe\.codex\worktrees\c430\OpenTTD-patches\build-runtime-matched\openttd_lib.vcxproj]
+C:\Users\bebe\.codex\worktrees\c430\OpenTTD-patches\src\passenger_od.cpp(397,30): warning C4834: [[nodiscard]] 属性を持つ関数の戻り値を破棄しています [C:\Users\bebe\.codex\worktrees\c430\OpenTTD-patches\build-runtime-matched\openttd_lib.vcxproj]
+  cheat.cpp
+  cheat_gui.cpp
+  clear_cmd.cpp
+  command.cpp
+  command_callback.cpp
+  command_table.cpp
+C:\Users\bebe\.codex\worktrees\c430\OpenTTD-patches\src\passenger_journey_active.cpp(399,66): warning C4267: '引数': 'size_t' から 'VehicleOrderID' に変換しました。データが失われているかもしれません。 [C:\Users\bebe\.codex\worktrees\c430\OpenTTD-patches\build-runtime-matched\openttd_lib.vcxproj]
+  company_cmd.cpp
+  company_gui.cpp
+  console.cpp
+  console_cmds.cpp
+  console_gui.cpp
+  cpu.cpp
+  crashlog.cpp
+  currency.cpp
+  date.cpp
+  date_gui.cpp
+  debug.cpp
+  dedicated.cpp
+  departures.cpp
+  departures_gui.cpp
+  depot.cpp
+  depot_cmd.cpp
+  depot_gui.cpp
+  disaster_vehicle.cpp
+  dock_gui.cpp
+  driver.cpp
+  dropdown.cpp
+  economy.cpp
+  effectvehicle.cpp
+  elrail.cpp
+  engine.cpp
+  engine_gui.cpp
+  error.cpp
+  error_gui.cpp
+  event_logs.cpp
+  fileio.cpp
+  fios.cpp
+  fios_gui.cpp
+  fontcache.cpp
+  framerate_gui.cpp
+  gamelog.cpp
+  genworld.cpp
+  genworld_gui.cpp
+  gfx.cpp
+  gfx_layout.cpp
+  gfx_layout_fallback.cpp
+  gfxinit.cpp
+  goal.cpp
+  goal_gui.cpp
+  graph_gui.cpp
+  ground_vehicle.cpp
+  group_cmd.cpp
+  group_gui.cpp
+  heightmap.cpp
+  help_gui.cpp
+  highscore.cpp
+  highscore_gui.cpp
+  hotkeys.cpp
+  industry_cmd.cpp
+  industry_gui.cpp
+  ini.cpp
+  ini_load.cpp
+  infrastructure.cpp
+  intro_gui.cpp
+  landscape.cpp
+  landscape_ppz.cpp
+  league_cmd.cpp
+  league_gui.cpp
+  main_gui.cpp
+  map.cpp
+  misc.cpp
+  misc_cmd.cpp
+  misc_gui.cpp
+  mixer.cpp
+  music.cpp
+  music_gui.cpp
+  newgrf.cpp
+  newgrf_airport.cpp
+  newgrf_airporttiles.cpp
+  newgrf_analysis.cpp
+  newgrf_badge.cpp
+  newgrf_badge_config.cpp
+  newgrf_badge_gui.cpp
+  newgrf_canal.cpp
+  newgrf_cargo.cpp
+  newgrf_commons.cpp
+  newgrf_config.cpp
+  newgrf_debug_gui.cpp
+  newgrf_engine.cpp
+  newgrf_extension.cpp
+  newgrf_generic.cpp
+  newgrf_gui.cpp
+  newgrf_house.cpp
+  newgrf_industries.cpp
+  newgrf_industrytiles.cpp
+  newgrf_newlandscape.cpp
+  newgrf_newsignals.cpp
+  newgrf_object.cpp
+  newgrf_profiling.cpp
+  newgrf_railtype.cpp
+  newgrf_roadstop.cpp
+  newgrf_roadtype.cpp
+  newgrf_sound.cpp
+  newgrf_spritegroup.cpp
+  newgrf_station.cpp
+  newgrf_storage.cpp
+  newgrf_text.cpp
+  newgrf_town.cpp
+  newgrf_townname.cpp
+  news_gui.cpp
+  object_cmd.cpp
+  object_gui.cpp
+  openttd.cpp
+  order_backup.cpp
+  order_cmd.cpp
+  order_gui.cpp
+  order_serialisation.cpp
+  order_serialisation_gui.cpp
+  osk_gui.cpp
+  palette.cpp
+  pbs.cpp
+  picker_gui.cpp
+  plans.cpp
+  plans_cmd.cpp
+  plans_gui.cpp
+  programmable_signals.cpp
+  programmable_signals_gui.cpp
+  progress.cpp
+  rail.cpp
+  rail_cmd.cpp
+  rail_gui.cpp
+  random_access_file.cpp
+  road.cpp
+  road_cmd.cpp
+  road_gui.cpp
+  road_map.cpp
+  roadstop.cpp
+  roadveh_cmd.cpp
+  roadveh_gui.cpp
+  schdispatch_cmd.cpp
+  schdispatch_gui.cpp
+  screensaver.cpp
+  screenshot_bmp.cpp
+  screenshot_gui.cpp
+  screenshot.cpp
+  scope_info.cpp
+  screenshot_pcx.cpp
+  settingentry_gui.cpp
+  settings.cpp
+  settings_gui.cpp
+  settings_table.cpp
+  ship_cmd.cpp
+  ship_gui.cpp
+  signal.cpp
+  signature.cpp
+  signs.cpp
+  signs_cmd.cpp
+  signs_gui.cpp
+  slider.cpp
+  smallmap_gui.cpp
+  smallmap_table.cpp
+  social_integration.cpp
+  sound.cpp
+  soundloader.cpp
+  soundloader_raw.cpp
+  soundloader_wav.cpp
+  sprite.cpp
+  spritecache.cpp
+  station.cpp
+  station_cmd.cpp
+  station_gui.cpp
+  statusbar_gui.cpp
+  story.cpp
+  story_gui.cpp
+  string.cpp
+  string_extra.cpp
+  stringfilter.cpp
+  strings.cpp
+  subsidy.cpp
+  subsidy_gui.cpp
+  survey.cpp
+  tbtr_template_gui_main.cpp
+  tbtr_template_gui_create.cpp
+  tbtr_template_vehicle.cpp
+  tbtr_template_vehicle_func.cpp
+  terraform_cmd.cpp
+  terraform_gui.cpp
+  textbuf.cpp
+  texteff.cpp
+  textfile_gui.cpp
+  tgp.cpp
+  tile_map.cpp
+  tilearea.cpp
+  timetable_cmd.cpp
+  timetable_gui.cpp
+  toolbar_gui.cpp
+  town_cmd.cpp
+  town_gui.cpp
+  townname.cpp
+  tracerestrict.cpp
+  tracerestrict_gui.cpp
+  train_cmd.cpp
+  train_gui.cpp
+  transparency_gui.cpp
+  tree_cmd.cpp
+  tree_gui.cpp
+  tunnel_map.cpp
+  tunnelbridge_cmd.cpp
+  vehicle.cpp
+  vehicle_cmd.cpp
+  vehicle_gui.cpp
+  vehiclelist.cpp
+  viewport.cpp
+  viewport_gui.cpp
+  void_cmd.cpp
+  walltime_func.cpp
+  water_cmd.cpp
+  waypoint.cpp
+  waypoint_cmd.cpp
+  waypoint_gui.cpp
+  widget.cpp
+  window.cpp
+  worker_thread.cpp
+  zoning_cmd.cpp
+  zoning_gui.cpp
+  format.cc
+  monocypher.cpp
+  format.cpp
+  ai_sl.cpp
+  airport_sl.cpp
+  animated_tile_sl.cpp
+  autoreplace_sl.cpp
+  cargomonitor_sl.cpp
+  cargopacket_sl.cpp
+  cheat_sl.cpp
+  company_sl.cpp
+  depot_sl.cpp
+  economy_sl.cpp
+  engine_sl.cpp
+  game_sl.cpp
+  gamelog_sl.cpp
+  goal_sl.cpp
+  group_sl.cpp
+  industry_sl.cpp
+  labelmaps_sl.cpp
+  league_sl.cpp
+  linkgraph_sl.cpp
+  map_sl.cpp
+  misc_sl.cpp
+  newgrf_sl.cpp
+  object_sl.cpp
+  order_sl.cpp
+  saveload.cpp
+  signs_sl.cpp
+  station_sl.cpp
+  storage_sl.cpp
+  story_sl.cpp
+  subsidy_sl.cpp
+  town_sl.cpp
+  vehicle_sl.cpp
+  ai_sl.cpp
+  airport_sl.cpp
+  animated_tile_sl.cpp
+  autoreplace_sl.cpp
+  cargomonitor_sl.cpp
+  cargopacket_sl.cpp
+  cheat_sl.cpp
+  company_sl.cpp
+  depot_sl.cpp
+  economy_sl.cpp
+  engine_sl.cpp
+  game_sl.cpp
+  gamelog_sl.cpp
+  goal_sl.cpp
+  group_sl.cpp
+  industry_sl.cpp
+  labelmaps_sl.cpp
+  league_sl.cpp
+  linkgraph_sl.cpp
+  map_sl.cpp
+  misc_sl.cpp
+  newgrf_sl.cpp
+  object_sl.cpp
+  order_sl.cpp
+  saveload.cpp
+  signs_sl.cpp
+  station_sl.cpp
+  storage_sl.cpp
+  story_sl.cpp
+  subsidy_sl.cpp
+  town_sl.cpp
+  vehicle_sl.cpp
+  openttd_lib.vcxproj -> C:\Users\bebe\.codex\worktrees\c430\OpenTTD-patches\build-runtime-matched\openttd_lib.dir\Release\openttd_lib.lib
+  Building Custom Rule C:/Users/bebe/.codex/worktrees/c430/OpenTTD-patches/CMakeLists.txt
+  win32_main.cpp
+  openttd.vcxproj -> C:\Users\bebe\.codex\worktrees\c430\OpenTTD-patches\build-runtime-matched\Release\openttd.exe

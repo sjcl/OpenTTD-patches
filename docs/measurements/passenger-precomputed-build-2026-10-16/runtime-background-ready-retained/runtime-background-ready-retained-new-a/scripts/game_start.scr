@@ -1,0 +1,10 @@
+script C:/Users/bebe/.codex/worktrees/c430/OpenTTD-patches/build-msvc/runtime-background-ready-retained-new-a/on-1-console.txt
+getfulldate
+passenger_journey_stats inventory
+setting linkgraph.passenger_journey_precomputed true
+passenger_journey_stats build_precomputed
+passenger_journey_stats wait_background_ready
+setting linkgraph.passenger_transfer_penalty 17
+passenger_journey_stats reset
+unpause
+script

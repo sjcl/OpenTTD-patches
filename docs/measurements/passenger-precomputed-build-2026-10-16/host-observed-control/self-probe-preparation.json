@@ -1,0 +1,206 @@
+{
+  "counter_paths": {
+    "cpu0_performance_percent": "\\Processor Information(0,0)\\% Processor Performance",
+    "cpu0_frequency_mhz": "\\Processor Information(0,0)\\Processor Frequency",
+    "cpu0_time_percent": "\\Processor Information(0,0)\\% Processor Time",
+    "cpu0_utility_percent": "\\Processor Information(0,0)\\% Processor Utility",
+    "total_time_percent": "\\Processor Information(_Total)\\% Processor Time",
+    "total_performance_percent": "\\Processor Information(_Total)\\% Processor Performance"
+  },
+  "counter_errors": {},
+  "worker_affinity_snapshot": [
+    {
+      "thread_id": 58360,
+      "mask": 4294967295,
+      "group": 0,
+      "cpu_100ns": 6250000,
+      "description": ""
+    },
+    {
+      "thread_id": 94360,
+      "mask": 4294967295,
+      "group": 0,
+      "cpu_100ns": 0,
+      "description": ""
+    },
+    {
+      "thread_id": 102588,
+      "mask": 4294967295,
+      "group": 0,
+      "cpu_100ns": 0,
+      "description": ""
+    },
+    {
+      "thread_id": 32064,
+      "mask": 4294967295,
+      "group": 0,
+      "cpu_100ns": 0,
+      "description": ""
+    }
+  ],
+  "samples": [
+    {
+      "elapsed_seconds": 40,
+      "stage": "preparation",
+      "counters": {
+        "cpu0_performance_percent": {
+          "api_status": "0x0",
+          "data_status": 0,
+          "value": 126.82930178030401
+        },
+        "cpu0_frequency_mhz": {
+          "api_status": "0x0",
+          "data_status": 0,
+          "value": 4300.0
+        },
+        "cpu0_time_percent": {
+          "api_status": "0x0",
+          "data_status": 0,
+          "value": 47.48910498273329
+        },
+        "cpu0_utility_percent": {
+          "api_status": "0x0",
+          "data_status": 0,
+          "value": 64.30459418493291
+        },
+        "total_time_percent": {
+          "api_status": "0x0",
+          "data_status": 0,
+          "value": 25.13648972444099
+        },
+        "total_performance_percent": {
+          "api_status": "0x0",
+          "data_status": 0,
+          "value": 123.77542351325228
+        }
+      },
+      "main_cpu_100ns": 4843750,
+      "process_cpu_100ns": 4843750,
+      "main_cycles": 1934659440,
+      "process_power": {
+        "version": 1,
+        "control_mask": 0,
+        "state_mask": 0
+      },
+      "main_thread_power": {
+        "version": 1,
+        "control_mask": 0,
+        "state_mask": 0
+      },
+      "priority_class": 32,
+      "observation_cost_us": 139853.3
+    },
+    {
+      "elapsed_seconds": 41,
+      "stage": "simulation",
+      "counters": {
+        "cpu0_performance_percent": {
+          "api_status": "0x0",
+          "data_status": 0,
+          "value": 127.08221712300896
+        },
+        "cpu0_frequency_mhz": {
+          "api_status": "0x0",
+          "data_status": 0,
+          "value": 4300.0
+        },
+        "cpu0_time_percent": {
+          "api_status": "0x0",
+          "data_status": 0,
+          "value": 26.93640496314854
+        },
+        "cpu0_utility_percent": {
+          "api_status": "0x0",
+          "data_status": 0,
+          "value": 39.07792326745446
+        },
+        "total_time_percent": {
+          "api_status": "0x0",
+          "data_status": 0,
+          "value": 20.48035655518109
+        },
+        "total_performance_percent": {
+          "api_status": "0x0",
+          "data_status": 0,
+          "value": 123.95924924362097
+        }
+      },
+      "main_cpu_100ns": 6250000,
+      "process_cpu_100ns": 6250000,
+      "main_cycles": 2533148920,
+      "process_power": {
+        "version": 1,
+        "control_mask": 0,
+        "state_mask": 0
+      },
+      "main_thread_power": {
+        "version": 1,
+        "control_mask": 0,
+        "state_mask": 0
+      },
+      "priority_class": 32,
+      "observation_cost_us": 233.7
+    },
+    {
+      "elapsed_seconds": 42,
+      "stage": "simulation",
+      "counters": {
+        "cpu0_performance_percent": {
+          "api_status": "0x0",
+          "data_status": 0,
+          "value": 127.06666537934231
+        },
+        "cpu0_frequency_mhz": {
+          "api_status": "0x0",
+          "data_status": 0,
+          "value": 4300.0
+        },
+        "cpu0_time_percent": {
+          "api_status": "0x0",
+          "data_status": 0,
+          "value": 41.79830055125924
+        },
+        "cpu0_utility_percent": {
+          "api_status": "0x0",
+          "data_status": 0,
+          "value": 47.82872978771651
+        },
+        "total_time_percent": {
+          "api_status": "0x0",
+          "data_status": 0,
+          "value": 23.077935720975628
+        },
+        "total_performance_percent": {
+          "api_status": "0x0",
+          "data_status": 0,
+          "value": 123.84842565406674
+        }
+      },
+      "main_cpu_100ns": 6250000,
+      "process_cpu_100ns": 6250000,
+      "main_cycles": 2534204570,
+      "process_power": {
+        "version": 1,
+        "control_mask": 0,
+        "state_mask": 0
+      },
+      "main_thread_power": {
+        "version": 1,
+        "control_mask": 0,
+        "state_mask": 0
+      },
+      "priority_class": 32,
+      "observation_cost_us": 282.9
+    }
+  ],
+  "note": "Read-only OS observations at approximately 1s intervals. Values are unadjusted provider data; unavailable counters are null, not zero. No power or scheduler setting was changed.",
+  "kind": "Read-only API probe; synthetic elapsed/stage labels; no game benchmark. Thread enumeration is preparation-only.",
+  "observer_sha256": "278b5fc4a04c5e7d2a9e8a7da13acb560b9b72fa8dda8a0c5ba4843190a6a30e",
+  "native_apis_verified": [
+    "PDH language-neutral CPU counters",
+    "thread/process CPU time",
+    "thread cycle counter",
+    "power-policy reads",
+    "thread affinities/descriptions"
+  ]
+}

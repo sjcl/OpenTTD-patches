@@ -1,0 +1,123 @@
+{
+  "command": [
+    "C:\\Users\\bebe\\.codex\\worktrees\\c430\\OpenTTD-patches\\build-msvc\\Release\\openttd_test.exe",
+    "[.table-real]"
+  ],
+  "binary_sha256": "7fb556b329ae2b52f38e25051b2b3e9702aa7ad44b32426f3ed6fe46cad7f02d",
+  "exit_code": 0,
+  "elapsed_seconds": 271.2252803002484,
+  "skip_plan": false,
+  "rows": [
+    {
+      "name": "reference-real",
+      "services": 864,
+      "occurrences": 17445,
+      "nodes": 58929,
+      "edges": 219728,
+      "graph_ns": 4113783500,
+      "rows_ns": 72368370200,
+      "init_ns": 534433500,
+      "search_ns": 63833958900,
+      "alternative_ns": 6040068900,
+      "publication_ns": 1958644800,
+      "relaxations": 3916843139,
+      "improvements": 340556902,
+      "queue_updates": 340598358,
+      "pops": 340598358,
+      "stale": 69176273,
+      "max_queue": 11050,
+      "label_copies": 271451913,
+      "section_checks": 690745077,
+      "array_bytes": 4635480774,
+      "operations": 5665642229
+    },
+    {
+      "name": "candidate-real",
+      "services": 864,
+      "occurrences": 17445,
+      "nodes": 58929,
+      "edges": 219728,
+      "graph_ns": 4242917600,
+      "rows_ns": 94223520800,
+      "init_ns": 568713700,
+      "search_ns": 85350453900,
+      "alternative_ns": 6263206700,
+      "publication_ns": 2039843300,
+      "relaxations": 3916843139,
+      "improvements": 340556902,
+      "queue_updates": 340598358,
+      "pops": 340598358,
+      "stale": 69176273,
+      "max_queue": 11050,
+      "label_copies": 271451913,
+      "section_checks": 690745077,
+      "array_bytes": 4635480774,
+      "operations": 5665642229
+    }
+  ],
+  "details": {
+    "reference-real": {
+      "heap_stats": [
+        0
+      ],
+      "heap_sample": [
+        31696100,
+        665230
+      ],
+      "memory": [
+        4543071984,
+        935752,
+        0,
+        3064308
+      ],
+      "graph_layout": [
+        61923,
+        157805,
+        810897,
+        5317000
+      ],
+      "phases": [
+        4042865500,
+        558200,
+        14441000,
+        19277900,
+        28300900
+      ]
+    },
+    "candidate-real": {
+      "heap_stats": [
+        0
+      ],
+      "heap_sample": [
+        32788800,
+        665230
+      ],
+      "memory": [
+        4543071984,
+        935752,
+        0,
+        3064308
+      ],
+      "graph_layout": [
+        61923,
+        157805,
+        810897,
+        4476100
+      ],
+      "phases": [
+        4179900300,
+        598900,
+        18979800,
+        23307900,
+        32081700
+      ]
+    }
+  },
+  "peak_working_bytes": 9384624128,
+  "peak_commit_bytes": 10216337408,
+  "process_cpu_seconds": 265.421875,
+  "limitations": [
+    "Array residency excludes allocator overhead; OS peak includes both compared tables and the map.",
+    "This runner does not exclude unrelated host activity."
+  ]
+}

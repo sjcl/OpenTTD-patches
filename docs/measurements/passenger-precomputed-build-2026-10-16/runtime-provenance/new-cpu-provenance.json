@@ -1,0 +1,29 @@
+{
+  "source": "C:\\Users\\bebe\\.codex\\worktrees\\c430\\OpenTTD-patches",
+  "source_revision": "667e154816",
+  "original_driver_sha256": "13347d9dbd3e759701d9ede65c53858f044363fbf25a01b13cf08970e5288881",
+  "instrumented_driver_sha256": "3712ef4e403e11992ea292df19ac08be1fa5c2f653a82863d40627b53b9c9b81",
+  "compiler": {
+    "CMAKE_CXX_FLAGS": "/DWIN32 /D_WINDOWS /GR /EHsc",
+    "CMAKE_CXX_FLAGS_RELEASE": "/O2 /Ob2 /DNDEBUG",
+    "CMAKE_C_FLAGS": "/DWIN32 /D_WINDOWS",
+    "CMAKE_C_FLAGS_RELEASE": "/O2 /Ob2 /DNDEBUG",
+    "CMAKE_PREFIX_PATH": "C:/Users/bebe/CLionProjects/OpenTTD-patches/cmake-build-release-visual-studio/vcpkg_installed/x64-windows-static",
+    "OPTION_NO_LTO": "ON",
+    "OPTION_PASSENGER_BENCHMARK": "OFF",
+    "OPTION_USE_ASSERTS": "ON",
+    "CMAKE_GENERATOR": "Visual Studio 17 2022",
+    "CMAKE_GENERATOR_PLATFORM": "x64",
+    "CMAKE_CXX_COMPILER": "C:/Program Files (x86)/Microsoft Visual Studio/2022/BuildTools/VC/Tools/MSVC/14.44.35207/bin/Hostx64/x64/cl.exe",
+    "CMAKE_CXX_COMPILER_ID": "MSVC",
+    "CMAKE_CXX_COMPILER_VERSION": "19.44.35227.0",
+    "library_sha256": {
+      "libpng16.lib": "2b3e07b20b3a1c48e8d7c0a299c700721dd82c1499269e019a6cd8459774ec3d",
+      "lzma.lib": "14a38a5ef1d68e67c80e96faba4d7bf5d2cde00de7257bdb396d4801e7160c6b",
+      "lzo2.lib": "851b503360b8747a20344cf9fac72b9a9d4067894220d32ed25465616b94515e",
+      "zlib.lib": "0d3ce92e180e325c2eaa1f0c39dde62fb4153ebfbec078d740590fd12f0be3f9",
+      "zstd.lib": "9ca9d4b5df6591751b4ccb35dcea0d771601c89aa9528a7a2af430b0e71586ac"
+    }
+  },
+  "note": "Copied TUs only; exact StateTicks; error resumptions retained; read-only packet/payment inspector."
+}

@@ -1,0 +1,26 @@
+{
+  "runs": {
+    "legacy-a": {
+      "save_sha256": "5963c0a88b59c422eb1eb48f6a537639072375ce9947f18c9cab9f73622695cf",
+      "header": "81240000",
+      "prefix_bytes": 929553497,
+      "prefix_sha256": "1cb8c61d226575fcb02230bffcd248a3a15d97b6aa09fdd1dcd9faa1ea39d543",
+      "jpsd_bytes": 10721688,
+      "jpsd_sha256": "e26f827a0a5b32f0f9ce5d17a1b556103bdb278748845b729ab5b2e565745491",
+      "suffix_bytes": 2062569,
+      "suffix_sha256": "27b83a9adcd35a940ef3b9adcb9b515e7be315d369a4448e3307fcf823467eb4"
+    },
+    "integrated-a": {
+      "save_sha256": "02832990fcab2daf78dd1584548140e66a4e03d1f3e0696e12ff0af229bd8a81",
+      "header": "81240000",
+      "prefix_bytes": 929553497,
+      "prefix_sha256": "1cb8c61d226575fcb02230bffcd248a3a15d97b6aa09fdd1dcd9faa1ea39d543",
+      "jpsd_bytes": 10721688,
+      "jpsd_sha256": "dff9d27de96b35ac064e15a33d8b673363c2d15624d228c75b747230f7eee745",
+      "suffix_bytes": 2062569,
+      "suffix_sha256": "27b83a9adcd35a940ef3b9adcb9b515e7be315d369a4448e3307fcf823467eb4"
+    }
+  },
+  "all_bytes_outside_jpsd_identical": true,
+  "note": "JPSD holds different engine identity and construction cursors. Other bytes include every other saved game chunk. No save file was changed."
+}

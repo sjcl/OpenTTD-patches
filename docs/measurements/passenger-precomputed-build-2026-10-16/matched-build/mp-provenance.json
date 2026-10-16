@@ -1,0 +1,79 @@
+{
+  "source_head": "9e845522aa4544a15ca2c5a454c33488bd193e47",
+  "product_sha256": {
+    "src/passenger_precomputed.cpp": "d89fb2a43a0614a9255addcd31a9cdd69cf47e82d5aceec5fd06ba246883aaec",
+    "src/passenger_precomputed.h": "8e51935b3f5855edca482da3c887bcba34bde7e83fdee8c95a6edd54123d4bd4",
+    "src/passenger_service_database.cpp": "bbad621bb6b4e0009a86b6dcd39ec0e2ad03b7aecfd98338c3b908c4996c61ae",
+    "src/passenger_service_database.h": "6b5f0c3f753ca655c9e1a008413f4de802aa15b4c98830b4b978b97b5d3ccf25",
+    "src/sl/extended_ver_sl.cpp": "4deb8f54c1294c235c920bd512fb041542949573a5faacc591b4bbcacedfa8b1"
+  },
+  "release_flags": {
+    "AdditionalIncludeDirectories": "C:\\Users\\bebe\\.codex\\worktrees\\c430\\OpenTTD-patches\\src\\3rdparty\\squirrel\\include;C:\\Users\\bebe\\.codex\\worktrees\\c430\\OpenTTD-patches\\build-runtime-matched\\generated;C:\\Users\\bebe\\.codex\\worktrees\\c430\\OpenTTD-patches\\build-runtime-matched\\generated\\script\\api;C:\\Users\\bebe\\.codex\\worktrees\\c430\\OpenTTD-patches\\src\\script\\api;C:\\Users\\bebe\\.codex\\worktrees\\c430\\OpenTTD-patches\\build-runtime-matched\\generated\\script;C:\\Users\\bebe\\.codex\\worktrees\\c430\\OpenTTD-patches\\build-runtime-matched\\generated\\script\\api\\ai;C:\\Users\\bebe\\.codex\\worktrees\\c430\\OpenTTD-patches\\src\\script\\api\\ai;C:\\Users\\bebe\\.codex\\worktrees\\c430\\OpenTTD-patches\\build-runtime-matched\\generated\\script\\api\\game;C:\\Users\\bebe\\.codex\\worktrees\\c430\\OpenTTD-patches\\src\\script\\api\\game;C:\\Users\\bebe\\.codex\\worktrees\\c430\\OpenTTD-patches\\build-runtime-matched\\generated\\script\\api\\template;C:\\Users\\bebe\\.codex\\worktrees\\c430\\OpenTTD-patches\\src\\script\\api\\template;%(AdditionalIncludeDirectories)",
+    "AdditionalOptions": "%(AdditionalOptions) /external:I \"C:/Users/bebe/CLionProjects/OpenTTD-patches/cmake-build-release-visual-studio/vcpkg_installed/x64-windows-static/include\" /external:I \"C:/Users/bebe/CLionProjects/OpenTTD-patches/cmake-build-release-visual-studio/vcpkg_installed/x64-windows-static/include/opus\" /external:I \"C:/Users/bebe/CLionProjects/OpenTTD-patches/cmake-build-release-visual-studio/vcpkg_installed/x64-windows-static/include/ogg\" /utf-8 /w34189",
+    "AssemblerListingLocation": "$(IntDir)",
+    "BasicRuntimeChecks": "Default",
+    "EnforceTypeConversionRules": "true",
+    "ExceptionHandling": "Sync",
+    "ExternalWarningLevel": "TurnOffAllWarnings",
+    "InlineFunctionExpansion": "AnySuitable",
+    "LanguageStandard": "stdcpp20",
+    "MinimalRebuild": null,
+    "MultiProcessorCompilation": "true",
+    "Optimization": "MaxSpeed",
+    "PrecompiledHeader": "NotUsing",
+    "RuntimeLibrary": "MultiThreaded",
+    "RuntimeTypeInfo": "true",
+    "SupportJustMyCode": null,
+    "UseFullPaths": "true",
+    "UseStandardPreprocessor": "true",
+    "WarningLevel": "Level3",
+    "PreprocessorDefinitions": "%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;_FORTIFY_SOURCE=2;WITH_PNG;WITH_ZLIB;WITH_LIBLZMA;WITH_LZO;WITH_ZSTD;WITH_OPUSFILE;WITH_OPENGL;WITH_PERSONAL_DIR;PERSONAL_DIR=\"OpenTTD\";WITH_SSE;WITH_ASSERT;UNICODE;_UNICODE;WITH_UNISCRIBE;PSAPI_VERSION=1;POINTER_IS_64BIT;CMAKE_INTDIR=\"Release\"",
+    "ObjectFileName": "$(IntDir)",
+    "DebugInformationFormat": "\n      ",
+    "ScanSourceForModuleDependencies": "false"
+  },
+  "compiler": {
+    "CMAKE_CXX_FLAGS": "/DWIN32 /D_WINDOWS /GR /EHsc",
+    "CMAKE_CXX_FLAGS_RELEASE": "/O2 /Ob2 /DNDEBUG",
+    "CMAKE_C_FLAGS": "/DWIN32 /D_WINDOWS",
+    "CMAKE_C_FLAGS_RELEASE": "/O2 /Ob2 /DNDEBUG",
+    "CMAKE_MSVC_RUNTIME_LIBRARY": "MultiThreaded",
+    "CMAKE_PREFIX_PATH": "C:/Users/bebe/CLionProjects/OpenTTD-patches/cmake-build-release-visual-studio/vcpkg_installed/x64-windows-static",
+    "OPTION_NO_LTO": "ON",
+    "OPTION_PASSENGER_BENCHMARK": "OFF",
+    "OPTION_USE_ASSERTS": "ON",
+    "CMAKE_GENERATOR": "Visual Studio 17 2022",
+    "CMAKE_GENERATOR_PLATFORM": "x64",
+    "CMAKE_CXX_COMPILER": "C:/Program Files (x86)/Microsoft Visual Studio/2022/BuildTools/VC/Tools/MSVC/14.44.35207/bin/Hostx64/x64/cl.exe",
+    "CMAKE_CXX_COMPILER_ID": "MSVC",
+    "CMAKE_CXX_COMPILER_VERSION": "19.44.35227.0",
+    "library_sha256": {
+      "libpng16.lib": "2b3e07b20b3a1c48e8d7c0a299c700721dd82c1499269e019a6cd8459774ec3d",
+      "lzma.lib": "14a38a5ef1d68e67c80e96faba4d7bf5d2cde00de7257bdb396d4801e7160c6b",
+      "lzo2.lib": "851b503360b8747a20344cf9fac72b9a9d4067894220d32ed25465616b94515e",
+      "ogg.lib": "027feab8bec33c3cd0e9f286d630c3ccfa0d39d74005c723913a4061c73b5b67",
+      "opus.lib": "7670e882d03cd26214da63a7d0d8de5ba9ae7c5a6b91a2bcba7b350c4bc4a6e8",
+      "opusfile.lib": "472c9c7a425ba4d30c918d272cb7535c685c3b4d88736c9b8888b67be0e97a5a",
+      "zlib.lib": "0d3ce92e180e325c2eaa1f0c39dde62fb4153ebfbec078d740590fd12f0be3f9",
+      "zstd.lib": "9ca9d4b5df6591751b4ccb35dcea0d771601c89aa9528a7a2af430b0e71586ac"
+    }
+  },
+  "tools": {
+    "passenger_precomputed_benchmark.py": "80500c29fa410bfb4adddd716f74357c00aa2e533ea721fd4f6332f19e5f0c8a",
+    "passenger_precomputed_diagnostic_readback.py": "5da9ef3983e3e2ade63d70c3c10622d016efcc0a49e6362ad2790fedf66a7378",
+    "passenger_precomputed_join.py": "9878d75a371bf4646e8f69937217987db5f5c132952d839d154111382df3f371",
+    "passenger_precomputed_join_prepare.py": "b44dbfcb7f91779788750534b702ddb3274d3e3484f322634f7535dbfdfd3898",
+    "passenger_precomputed_real_map.py": "d7483bb0dcb140f2da539ef559ea80b830aefc9c6695808a63678bf0bdeb3aac"
+  },
+  "copied_tus": {
+    "save-integrity\\cargopacket.cpp": "368d392cb1591bb7894ea4a9a0462c0ff08433803440486e0d36ef1712c8d1b3",
+    "save-integrity\\cargopacket_sl.cpp": "86827288e5b70cf9de662e6fab9cbf9bb856e1ab9bda8a01ce181c65298faf2c",
+    "save-integrity\\command.cpp": "9717696b882db8664a6bc95034e5d72959acab3e4ed80819e70f38ac0f48ce04",
+    "save-integrity\\console_cmds.cpp": "b5ba1ae5dc35036daccfee6159cdbd202ce24f7628dd74f75c525afcf2b5474e",
+    "save-integrity\\integrity.h": "2ecacaf6f46c42ee7deea410d338886856fa746a5feee7ff09b1d10c9723ecc5",
+    "save-integrity\\passenger_service_database.cpp": "188c1cb5b64e7dc7de09b4370edf76b9f23fe8d0b765e5533d0b7d623470d709",
+    "real-map-driver\\null_v.cpp": "bda63851f16510770e37ef1b6a319fab9aa03623880a61194f642a9ec85de567",
+    "real-map-driver\\win32.cpp": "5c676b4358912e67262e0984ed36975cba47acdbce577888cdebc9c3fb707e25"
+  },
+  "binary_sha256": "00c27fbcf4bcf57dffdd38dd6d26fe3b790b00f02eb5c29d37ff6e5e789169cb"
+}

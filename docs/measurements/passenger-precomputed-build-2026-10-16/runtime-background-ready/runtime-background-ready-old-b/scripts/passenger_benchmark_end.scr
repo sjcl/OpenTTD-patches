@@ -1,0 +1,8 @@
+script C:/Users/bebe/.codex/worktrees/c430/OpenTTD-patches/build-msvc/runtime-background-ready-old-b/on-1-console.txt
+getfulldate
+passenger_journey_stats inventory
+passenger_journey_stats total
+fps
+passenger_journey_stats save_integrity
+save C:/Users/bebe/.codex/worktrees/c430/OpenTTD-patches/build-msvc/runtime-background-ready-old-b/result
+script

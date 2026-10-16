@@ -1,0 +1,4082 @@
+{
+  "old": "C:\\Users\\bebe\\.codex\\worktrees\\c430\\OpenTTD-patches\\build-reference-matched\\build\\openttd_lib.dir\\Release\\vehicle.obj",
+  "new": "C:\\Users\\bebe\\.codex\\worktrees\\c430\\OpenTTD-patches\\build-msvc\\baseline-candidate-objects\\vehicle.obj",
+  "common_functions": 663,
+  "identical_functions": 608,
+  "identical_function_bytes": 663,
+  "selected": {
+    "?<lambda_invoker_cdecl>@<lambda_1>@?1???0?$FunctorScopeStackRecord@V<lambda_1>@?9??CallVehicleTicks@@YAXXZ@@@QEAA@V1?9??CallVehicleTicks@@YAXXZ@@Z@SA@PEAUScopeStackRecord@@AEAUformat_target@@@Z": {
+      "old": {
+        "size": 127,
+        "normalized_sha256": "aee571957df289e2b037881bc96501c3b893d00dd04d4100a62901d5299bf825",
+        "relocations": [
+          [
+            10,
+            4,
+            "__security_cookie"
+          ],
+          [
+            70,
+            4,
+            "??$format_custom@U?$GeneralFmtDumper@UVehicle@@PEBU1@@@U?$formatter@U?$GeneralFmtDumper@UVehicle@@PEBU1@@@DX@v11@fmt@@@?$value@Vcontext@v11@fmt@@@detail@v11@fmt@@CAXPEAXAEAV?$parse_context@D@23@AEAVcontext@23@@Z"
+          ],
+          [
+            89,
+            4,
+            "??_C@_0CD@JNHFHJHN@CallVehicleTicks?5?9?$DO?5OnPeriodic?3@"
+          ],
+          [
+            105,
+            4,
+            "?vformat_to@detail@v11@fmt@@YAXAEAV?$buffer@D@123@V?$basic_string_view@D@23@V?$basic_format_args@Vcontext@v11@fmt@@@23@Vlocale_ref@123@@Z"
+          ],
+          [
+            118,
+            4,
+            "__security_check_cookie"
+          ]
+        ]
+      },
+      "new": {
+        "size": 127,
+        "normalized_sha256": "aee571957df289e2b037881bc96501c3b893d00dd04d4100a62901d5299bf825",
+        "relocations": [
+          [
+            10,
+            4,
+            "__security_cookie"
+          ],
+          [
+            70,
+            4,
+            "??$format_custom@U?$GeneralFmtDumper@UVehicle@@PEBU1@@@U?$formatter@U?$GeneralFmtDumper@UVehicle@@PEBU1@@@DX@v11@fmt@@@?$value@Vcontext@v11@fmt@@@detail@v11@fmt@@CAXPEAXAEAV?$parse_context@D@23@AEAVcontext@23@@Z"
+          ],
+          [
+            89,
+            4,
+            "??_C@_0CD@JNHFHJHN@CallVehicleTicks?5?9?$DO?5OnPeriodic?3@"
+          ],
+          [
+            105,
+            4,
+            "?vformat_to@detail@v11@fmt@@YAXAEAV?$buffer@D@123@V?$basic_string_view@D@23@V?$basic_format_args@Vcontext@v11@fmt@@@23@Vlocale_ref@123@@Z"
+          ],
+          [
+            118,
+            4,
+            "__security_check_cookie"
+          ]
+        ]
+      },
+      "exact": true,
+      "normalized_bytes_identical": true
+    },
+    "?<lambda_invoker_cdecl>@<lambda_1>@?1???0?$FunctorScopeStackRecord@V<lambda_2>@?BB@??CallVehicleTicks@@YAXXZ@@@QEAA@V<lambda_2>@?BB@??CallVehicleTicks@@YAXXZ@@Z@SA@PEAUScopeStackRecord@@AEAUformat_target@@@Z": {
+      "old": {
+        "size": 127,
+        "normalized_sha256": "cd3cbe8c230f44c194afe29103e8243e8dc3235e9cd074997e3e598f93e4cf1c",
+        "relocations": [
+          [
+            10,
+            4,
+            "__security_cookie"
+          ],
+          [
+            70,
+            4,
+            "??$format_custom@U?$GeneralFmtDumper@UBaseStation@@PEBU1@@@U?$formatter@U?$GeneralFmtDumper@UBaseStation@@PEBU1@@@DX@v11@fmt@@@?$value@Vcontext@v11@fmt@@@detail@v11@fmt@@CAXPEAXAEAV?$parse_context@D@23@AEAVcontext@23@@Z"
+          ],
+          [
+            89,
+            4,
+            "??_C@_0CI@HBGCOGLB@CallVehicleTicks?3?5LoadUnloadSta@"
+          ],
+          [
+            105,
+            4,
+            "?vformat_to@detail@v11@fmt@@YAXAEAV?$buffer@D@123@V?$basic_string_view@D@23@V?$basic_format_args@Vcontext@v11@fmt@@@23@Vlocale_ref@123@@Z"
+          ],
+          [
+            118,
+            4,
+            "__security_check_cookie"
+          ]
+        ]
+      },
+      "new": {
+        "size": 127,
+        "normalized_sha256": "cd3cbe8c230f44c194afe29103e8243e8dc3235e9cd074997e3e598f93e4cf1c",
+        "relocations": [
+          [
+            10,
+            4,
+            "__security_cookie"
+          ],
+          [
+            70,
+            4,
+            "??$format_custom@U?$GeneralFmtDumper@UBaseStation@@PEBU1@@@U?$formatter@U?$GeneralFmtDumper@UBaseStation@@PEBU1@@@DX@v11@fmt@@@?$value@Vcontext@v11@fmt@@@detail@v11@fmt@@CAXPEAXAEAV?$parse_context@D@23@AEAVcontext@23@@Z"
+          ],
+          [
+            89,
+            4,
+            "??_C@_0CI@HBGCOGLB@CallVehicleTicks?3?5LoadUnloadSta@"
+          ],
+          [
+            105,
+            4,
+            "?vformat_to@detail@v11@fmt@@YAXAEAV?$buffer@D@123@V?$basic_string_view@D@23@V?$basic_format_args@Vcontext@v11@fmt@@@23@Vlocale_ref@123@@Z"
+          ],
+          [
+            118,
+            4,
+            "__security_check_cookie"
+          ]
+        ]
+      },
+      "exact": true,
+      "normalized_bytes_identical": true
+    },
+    "?<lambda_invoker_cdecl>@<lambda_1>@?1???0?$FunctorScopeStackRecord@V<lambda_3>@?1??CallVehicleTicks@@YAXXZ@@@QEAA@V<lambda_3>@?1??CallVehicleTicks@@YAXXZ@@Z@SA@PEAUScopeStackRecord@@AEAUformat_target@@@Z": {
+      "old": {
+        "size": 127,
+        "normalized_sha256": "ffdce27b7756e4c323ac00459e8208d843880d4845b309d28312982b9ddc7e65",
+        "relocations": [
+          [
+            10,
+            4,
+            "__security_cookie"
+          ],
+          [
+            70,
+            4,
+            "??$format_custom@U?$GeneralFmtDumper@UVehicle@@PEBU1@@@U?$formatter@U?$GeneralFmtDumper@UVehicle@@PEBU1@@@DX@v11@fmt@@@?$value@Vcontext@v11@fmt@@@detail@v11@fmt@@CAXPEAXAEAV?$parse_context@D@23@AEAVcontext@23@@Z"
+          ],
+          [
+            89,
+            4,
+            "??_C@_0BF@CGDPBELE@CallVehicleTicks?3?5?$HL?$HN@"
+          ],
+          [
+            105,
+            4,
+            "?vformat_to@detail@v11@fmt@@YAXAEAV?$buffer@D@123@V?$basic_string_view@D@23@V?$basic_format_args@Vcontext@v11@fmt@@@23@Vlocale_ref@123@@Z"
+          ],
+          [
+            118,
+            4,
+            "__security_check_cookie"
+          ]
+        ]
+      },
+      "new": {
+        "size": 127,
+        "normalized_sha256": "ffdce27b7756e4c323ac00459e8208d843880d4845b309d28312982b9ddc7e65",
+        "relocations": [
+          [
+            10,
+            4,
+            "__security_cookie"
+          ],
+          [
+            70,
+            4,
+            "??$format_custom@U?$GeneralFmtDumper@UVehicle@@PEBU1@@@U?$formatter@U?$GeneralFmtDumper@UVehicle@@PEBU1@@@DX@v11@fmt@@@?$value@Vcontext@v11@fmt@@@detail@v11@fmt@@CAXPEAXAEAV?$parse_context@D@23@AEAVcontext@23@@Z"
+          ],
+          [
+            89,
+            4,
+            "??_C@_0BF@CGDPBELE@CallVehicleTicks?3?5?$HL?$HN@"
+          ],
+          [
+            105,
+            4,
+            "?vformat_to@detail@v11@fmt@@YAXAEAV?$buffer@D@123@V?$basic_string_view@D@23@V?$basic_format_args@Vcontext@v11@fmt@@@23@Vlocale_ref@123@@Z"
+          ],
+          [
+            118,
+            4,
+            "__security_check_cookie"
+          ]
+        ]
+      },
+      "exact": true,
+      "normalized_bytes_identical": true
+    },
+    "?<lambda_invoker_cdecl>@<lambda_1>@?1???0?$FunctorScopeStackRecord@V<lambda_4>@?GH@??CallVehicleTicks@@YAXXZ@@@QEAA@V<lambda_4>@?GH@??CallVehicleTicks@@YAXXZ@@Z@SA@PEAUScopeStackRecord@@AEAUformat_target@@@Z": {
+      "old": {
+        "size": 124,
+        "normalized_sha256": "dc0158b401381be078386d2959d2e234eedbea17c9b9e8bad1c8d01302db2585",
+        "relocations": [
+          [
+            10,
+            4,
+            "__security_cookie"
+          ],
+          [
+            60,
+            4,
+            "??$format_custom@U?$GeneralFmtDumper@UVehicle@@PEBU1@@@U?$formatter@U?$GeneralFmtDumper@UVehicle@@PEBU1@@@DX@v11@fmt@@@?$value@Vcontext@v11@fmt@@@detail@v11@fmt@@CAXPEAXAEAV?$parse_context@D@23@AEAVcontext@23@@Z"
+          ],
+          [
+            93,
+            4,
+            "??_C@_0BL@COIDFMKB@CallVehicleTicks?3?5sell?3?5?$HL?$HN@"
+          ],
+          [
+            102,
+            4,
+            "?vformat_to@detail@v11@fmt@@YAXAEAV?$buffer@D@123@V?$basic_string_view@D@23@V?$basic_format_args@Vcontext@v11@fmt@@@23@Vlocale_ref@123@@Z"
+          ],
+          [
+            115,
+            4,
+            "__security_check_cookie"
+          ]
+        ]
+      },
+      "new": {
+        "size": 124,
+        "normalized_sha256": "dc0158b401381be078386d2959d2e234eedbea17c9b9e8bad1c8d01302db2585",
+        "relocations": [
+          [
+            10,
+            4,
+            "__security_cookie"
+          ],
+          [
+            60,
+            4,
+            "??$format_custom@U?$GeneralFmtDumper@UVehicle@@PEBU1@@@U?$formatter@U?$GeneralFmtDumper@UVehicle@@PEBU1@@@DX@v11@fmt@@@?$value@Vcontext@v11@fmt@@@detail@v11@fmt@@CAXPEAXAEAV?$parse_context@D@23@AEAVcontext@23@@Z"
+          ],
+          [
+            93,
+            4,
+            "??_C@_0BL@COIDFMKB@CallVehicleTicks?3?5sell?3?5?$HL?$HN@"
+          ],
+          [
+            102,
+            4,
+            "?vformat_to@detail@v11@fmt@@YAXAEAV?$buffer@D@123@V?$basic_string_view@D@23@V?$basic_format_args@Vcontext@v11@fmt@@@23@Vlocale_ref@123@@Z"
+          ],
+          [
+            115,
+            4,
+            "__security_check_cookie"
+          ]
+        ]
+      },
+      "exact": true,
+      "normalized_bytes_identical": true
+    },
+    "?<lambda_invoker_cdecl>@<lambda_1>@?1???0?$FunctorScopeStackRecord@V<lambda_5>@?HH@??CallVehicleTicks@@YAXXZ@@@QEAA@V<lambda_5>@?HH@??CallVehicleTicks@@YAXXZ@@Z@SA@PEAUScopeStackRecord@@AEAUformat_target@@@Z": {
+      "old": {
+        "size": 124,
+        "normalized_sha256": "0e3a45392a89eb298e387bd94e3920059d25f23397a4c2b5b1e3c5b7c74e3a5e",
+        "relocations": [
+          [
+            10,
+            4,
+            "__security_cookie"
+          ],
+          [
+            60,
+            4,
+            "??$format_custom@U?$GeneralFmtDumper@UVehicle@@PEBU1@@@U?$formatter@U?$GeneralFmtDumper@UVehicle@@PEBU1@@@DX@v11@fmt@@@?$value@Vcontext@v11@fmt@@@detail@v11@fmt@@CAXPEAXAEAV?$parse_context@D@23@AEAVcontext@23@@Z"
+          ],
+          [
+            93,
+            4,
+            "??_C@_0CH@FHNNMMPD@CallVehicleTicks?3?5template?5repl@"
+          ],
+          [
+            102,
+            4,
+            "?vformat_to@detail@v11@fmt@@YAXAEAV?$buffer@D@123@V?$basic_string_view@D@23@V?$basic_format_args@Vcontext@v11@fmt@@@23@Vlocale_ref@123@@Z"
+          ],
+          [
+            115,
+            4,
+            "__security_check_cookie"
+          ]
+        ]
+      },
+      "new": {
+        "size": 124,
+        "normalized_sha256": "0e3a45392a89eb298e387bd94e3920059d25f23397a4c2b5b1e3c5b7c74e3a5e",
+        "relocations": [
+          [
+            10,
+            4,
+            "__security_cookie"
+          ],
+          [
+            60,
+            4,
+            "??$format_custom@U?$GeneralFmtDumper@UVehicle@@PEBU1@@@U?$formatter@U?$GeneralFmtDumper@UVehicle@@PEBU1@@@DX@v11@fmt@@@?$value@Vcontext@v11@fmt@@@detail@v11@fmt@@CAXPEAXAEAV?$parse_context@D@23@AEAVcontext@23@@Z"
+          ],
+          [
+            93,
+            4,
+            "??_C@_0CH@FHNNMMPD@CallVehicleTicks?3?5template?5repl@"
+          ],
+          [
+            102,
+            4,
+            "?vformat_to@detail@v11@fmt@@YAXAEAV?$buffer@D@123@V?$basic_string_view@D@23@V?$basic_format_args@Vcontext@v11@fmt@@@23@Vlocale_ref@123@@Z"
+          ],
+          [
+            115,
+            4,
+            "__security_check_cookie"
+          ]
+        ]
+      },
+      "exact": true,
+      "normalized_bytes_identical": true
+    },
+    "?<lambda_invoker_cdecl>@<lambda_1>@?1???0?$FunctorScopeStackRecord@V<lambda_6>@?KN@??CallVehicleTicks@@YAXXZ@@@QEAA@V<lambda_6>@?KN@??CallVehicleTicks@@YAXXZ@@Z@SA@PEAUScopeStackRecord@@AEAUformat_target@@@Z": {
+      "old": {
+        "size": 124,
+        "normalized_sha256": "2a6e023ad38d3102e8bd4b157e54a66180c9fda1c3affe7cb2ef10262bec60fb",
+        "relocations": [
+          [
+            10,
+            4,
+            "__security_cookie"
+          ],
+          [
+            60,
+            4,
+            "??$format_custom@U?$GeneralFmtDumper@UVehicle@@PEBU1@@@U?$formatter@U?$GeneralFmtDumper@UVehicle@@PEBU1@@@DX@v11@fmt@@@?$value@Vcontext@v11@fmt@@@detail@v11@fmt@@CAXPEAXAEAV?$parse_context@D@23@AEAVcontext@23@@Z"
+          ],
+          [
+            93,
+            4,
+            "??_C@_0BN@IAELJNK@CallVehicleTicks?3?5repair?3?5?$HL?$HN@"
+          ],
+          [
+            102,
+            4,
+            "?vformat_to@detail@v11@fmt@@YAXAEAV?$buffer@D@123@V?$basic_string_view@D@23@V?$basic_format_args@Vcontext@v11@fmt@@@23@Vlocale_ref@123@@Z"
+          ],
+          [
+            115,
+            4,
+            "__security_check_cookie"
+          ]
+        ]
+      },
+      "new": {
+        "size": 124,
+        "normalized_sha256": "2a6e023ad38d3102e8bd4b157e54a66180c9fda1c3affe7cb2ef10262bec60fb",
+        "relocations": [
+          [
+            10,
+            4,
+            "__security_cookie"
+          ],
+          [
+            60,
+            4,
+            "??$format_custom@U?$GeneralFmtDumper@UVehicle@@PEBU1@@@U?$formatter@U?$GeneralFmtDumper@UVehicle@@PEBU1@@@DX@v11@fmt@@@?$value@Vcontext@v11@fmt@@@detail@v11@fmt@@CAXPEAXAEAV?$parse_context@D@23@AEAVcontext@23@@Z"
+          ],
+          [
+            93,
+            4,
+            "??_C@_0BN@IAELJNK@CallVehicleTicks?3?5repair?3?5?$HL?$HN@"
+          ],
+          [
+            102,
+            4,
+            "?vformat_to@detail@v11@fmt@@YAXAEAV?$buffer@D@123@V?$basic_string_view@D@23@V?$basic_format_args@Vcontext@v11@fmt@@@23@Vlocale_ref@123@@Z"
+          ],
+          [
+            115,
+            4,
+            "__security_check_cookie"
+          ]
+        ]
+      },
+      "exact": true,
+      "normalized_bytes_identical": true
+    },
+    "??1?$FunctorScopeStackRecord@V<lambda_1>@?9??CallVehicleTicks@@YAXXZ@@@QEAA@XZ": {
+      "old": {
+        "size": 12,
+        "normalized_sha256": "0146d4503e09653389f0282d72d053f74ec8015391d67a862978223d8263ac78",
+        "relocations": [
+          [
+            7,
+            4,
+            "?_scope_stack_head@@3PEAUScopeStackRecord@@EA"
+          ]
+        ]
+      },
+      "new": {
+        "size": 12,
+        "normalized_sha256": "0146d4503e09653389f0282d72d053f74ec8015391d67a862978223d8263ac78",
+        "relocations": [
+          [
+            7,
+            4,
+            "?_scope_stack_head@@3PEAUScopeStackRecord@@EA"
+          ]
+        ]
+      },
+      "exact": true,
+      "normalized_bytes_identical": true
+    },
+    "??1?$FunctorScopeStackRecord@V<lambda_2>@?BB@??CallVehicleTicks@@YAXXZ@@@QEAA@XZ": {
+      "old": {
+        "size": 12,
+        "normalized_sha256": "0146d4503e09653389f0282d72d053f74ec8015391d67a862978223d8263ac78",
+        "relocations": [
+          [
+            7,
+            4,
+            "?_scope_stack_head@@3PEAUScopeStackRecord@@EA"
+          ]
+        ]
+      },
+      "new": {
+        "size": 12,
+        "normalized_sha256": "0146d4503e09653389f0282d72d053f74ec8015391d67a862978223d8263ac78",
+        "relocations": [
+          [
+            7,
+            4,
+            "?_scope_stack_head@@3PEAUScopeStackRecord@@EA"
+          ]
+        ]
+      },
+      "exact": true,
+      "normalized_bytes_identical": true
+    },
+    "??1?$FunctorScopeStackRecord@V<lambda_3>@?1??CallVehicleTicks@@YAXXZ@@@QEAA@XZ": {
+      "old": {
+        "size": 12,
+        "normalized_sha256": "0146d4503e09653389f0282d72d053f74ec8015391d67a862978223d8263ac78",
+        "relocations": [
+          [
+            7,
+            4,
+            "?_scope_stack_head@@3PEAUScopeStackRecord@@EA"
+          ]
+        ]
+      },
+      "new": {
+        "size": 12,
+        "normalized_sha256": "0146d4503e09653389f0282d72d053f74ec8015391d67a862978223d8263ac78",
+        "relocations": [
+          [
+            7,
+            4,
+            "?_scope_stack_head@@3PEAUScopeStackRecord@@EA"
+          ]
+        ]
+      },
+      "exact": true,
+      "normalized_bytes_identical": true
+    },
+    "??1?$FunctorScopeStackRecord@V<lambda_4>@?GH@??CallVehicleTicks@@YAXXZ@@@QEAA@XZ": {
+      "old": {
+        "size": 12,
+        "normalized_sha256": "0146d4503e09653389f0282d72d053f74ec8015391d67a862978223d8263ac78",
+        "relocations": [
+          [
+            7,
+            4,
+            "?_scope_stack_head@@3PEAUScopeStackRecord@@EA"
+          ]
+        ]
+      },
+      "new": {
+        "size": 12,
+        "normalized_sha256": "0146d4503e09653389f0282d72d053f74ec8015391d67a862978223d8263ac78",
+        "relocations": [
+          [
+            7,
+            4,
+            "?_scope_stack_head@@3PEAUScopeStackRecord@@EA"
+          ]
+        ]
+      },
+      "exact": true,
+      "normalized_bytes_identical": true
+    },
+    "??1?$FunctorScopeStackRecord@V<lambda_5>@?HH@??CallVehicleTicks@@YAXXZ@@@QEAA@XZ": {
+      "old": {
+        "size": 12,
+        "normalized_sha256": "0146d4503e09653389f0282d72d053f74ec8015391d67a862978223d8263ac78",
+        "relocations": [
+          [
+            7,
+            4,
+            "?_scope_stack_head@@3PEAUScopeStackRecord@@EA"
+          ]
+        ]
+      },
+      "new": {
+        "size": 12,
+        "normalized_sha256": "0146d4503e09653389f0282d72d053f74ec8015391d67a862978223d8263ac78",
+        "relocations": [
+          [
+            7,
+            4,
+            "?_scope_stack_head@@3PEAUScopeStackRecord@@EA"
+          ]
+        ]
+      },
+      "exact": true,
+      "normalized_bytes_identical": true
+    },
+    "??1?$FunctorScopeStackRecord@V<lambda_6>@?KN@??CallVehicleTicks@@YAXXZ@@@QEAA@XZ": {
+      "old": {
+        "size": 12,
+        "normalized_sha256": "0146d4503e09653389f0282d72d053f74ec8015391d67a862978223d8263ac78",
+        "relocations": [
+          [
+            7,
+            4,
+            "?_scope_stack_head@@3PEAUScopeStackRecord@@EA"
+          ]
+        ]
+      },
+      "new": {
+        "size": 12,
+        "normalized_sha256": "0146d4503e09653389f0282d72d053f74ec8015391d67a862978223d8263ac78",
+        "relocations": [
+          [
+            7,
+            4,
+            "?_scope_stack_head@@3PEAUScopeStackRecord@@EA"
+          ]
+        ]
+      },
+      "exact": true,
+      "normalized_bytes_identical": true
+    },
+    "?CallVehicleTicks@@YAXXZ": {
+      "old": {
+        "size": 6687,
+        "normalized_sha256": "c9cb466579ea37c0dfe336938a89f7a64a424ad68fa07616846624a6d7a5036f",
+        "relocations": [
+          [
+            42,
+            4,
+            "__security_cookie"
+          ],
+          [
+            65,
+            4,
+            "?_vehicles_to_autoreplace@@3V?$btree_map@U?$PoolID@UVehicleIDTag@@@@_NU?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$pair@$$CBU?$PoolID@UVehicleIDTag@@@@_N@std@@@3@$0BAA@@btree@@A"
+          ],
+          [
+            77,
+            4,
+            "?_vehicles_to_autoreplace@@3V?$btree_map@U?$PoolID@UVehicleIDTag@@@@_NU?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$pair@$$CBU?$PoolID@UVehicleIDTag@@@@_N@std@@@3@$0BAA@@btree@@A"
+          ],
+          [
+            82,
+            4,
+            "?internal_clear@?$btree@U?$btree_map_params@U?$PoolID@UVehicleIDTag@@@@_NU?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$pair@$$CBU?$PoolID@UVehicleIDTag@@@@_N@std@@@3@$0BAA@@0@@btree@@AEAAXPEAV?$btree_node@U?$btree_map_params@U?$PoolID@UVehicleIDTag@@@@_NU?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$pair@$$CBU?$PoolID@UVehicleIDTag@@@@_N@std@@@3@$0BAA@@btree@@@2@@Z"
+          ],
+          [
+            89,
+            4,
+            "?_vehicles_to_autoreplace@@3V?$btree_map@U?$PoolID@UVehicleIDTag@@@@_NU?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$pair@$$CBU?$PoolID@UVehicleIDTag@@@@_N@std@@@3@$0BAA@@btree@@A"
+          ],
+          [
+            96,
+            4,
+            "?_vehicles_to_templatereplace@@3V?$btree_set@U?$PoolID@UVehicleIDTag@@@@U?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$PoolID@UVehicleIDTag@@@@@3@$0BAA@@btree@@A"
+          ],
+          [
+            108,
+            4,
+            "?_vehicles_to_templatereplace@@3V?$btree_set@U?$PoolID@UVehicleIDTag@@@@U?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$PoolID@UVehicleIDTag@@@@@3@$0BAA@@btree@@A"
+          ],
+          [
+            113,
+            4,
+            "?internal_clear@?$btree@U?$btree_set_params@U?$PoolID@UVehicleIDTag@@@@U?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$PoolID@UVehicleIDTag@@@@@3@$0BAA@@0@@btree@@AEAAXPEAV?$btree_node@U?$btree_set_params@U?$PoolID@UVehicleIDTag@@@@U?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$PoolID@UVehicleIDTag@@@@@3@$0BAA@@btree@@@2@@Z"
+          ],
+          [
+            120,
+            4,
+            "?_vehicles_to_templatereplace@@3V?$btree_set@U?$PoolID@UVehicleIDTag@@@@U?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$PoolID@UVehicleIDTag@@@@@3@$0BAA@@btree@@A"
+          ],
+          [
+            127,
+            4,
+            "?_vehicles_to_pay_repair@@3V?$btree_set@U?$PoolID@UVehicleIDTag@@@@U?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$PoolID@UVehicleIDTag@@@@@3@$0BAA@@btree@@A"
+          ],
+          [
+            139,
+            4,
+            "?_vehicles_to_pay_repair@@3V?$btree_set@U?$PoolID@UVehicleIDTag@@@@U?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$PoolID@UVehicleIDTag@@@@@3@$0BAA@@btree@@A"
+          ],
+          [
+            144,
+            4,
+            "?internal_clear@?$btree@U?$btree_set_params@U?$PoolID@UVehicleIDTag@@@@U?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$PoolID@UVehicleIDTag@@@@@3@$0BAA@@0@@btree@@AEAAXPEAV?$btree_node@U?$btree_set_params@U?$PoolID@UVehicleIDTag@@@@U?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$PoolID@UVehicleIDTag@@@@@3@$0BAA@@btree@@@2@@Z"
+          ],
+          [
+            151,
+            4,
+            "?_vehicles_to_pay_repair@@3V?$btree_set@U?$PoolID@UVehicleIDTag@@@@U?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$PoolID@UVehicleIDTag@@@@@3@$0BAA@@btree@@A"
+          ],
+          [
+            158,
+            4,
+            "?_vehicles_to_sell@@3V?$btree_set@U?$PoolID@UVehicleIDTag@@@@U?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$PoolID@UVehicleIDTag@@@@@3@$0BAA@@btree@@A"
+          ],
+          [
+            170,
+            4,
+            "?_vehicles_to_sell@@3V?$btree_set@U?$PoolID@UVehicleIDTag@@@@U?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$PoolID@UVehicleIDTag@@@@@3@$0BAA@@btree@@A"
+          ],
+          [
+            175,
+            4,
+            "?internal_clear@?$btree@U?$btree_set_params@U?$PoolID@UVehicleIDTag@@@@U?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$PoolID@UVehicleIDTag@@@@@3@$0BAA@@0@@btree@@AEAAXPEAV?$btree_node@U?$btree_set_params@U?$PoolID@UVehicleIDTag@@@@U?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$PoolID@UVehicleIDTag@@@@@3@$0BAA@@btree@@@2@@Z"
+          ],
+          [
+            182,
+            4,
+            "?_vehicles_to_sell@@3V?$btree_set@U?$PoolID@UVehicleIDTag@@@@U?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$PoolID@UVehicleIDTag@@@@@3@$0BAA@@btree@@A"
+          ],
+          [
+            189,
+            4,
+            "?_train_news_too_heavy_this_tick@@3V?$vector@U?$PoolID@UVehicleIDTag@@@@V?$allocator@U?$PoolID@UVehicleIDTag@@@@@std@@@std@@A"
+          ],
+          [
+            196,
+            4,
+            "?_train_news_too_heavy_this_tick@@3V?$vector@U?$PoolID@UVehicleIDTag@@@@V?$allocator@U?$PoolID@UVehicleIDTag@@@@@std@@@std@@A"
+          ],
+          [
+            205,
+            4,
+            "?_train_news_too_heavy_this_tick@@3V?$vector@U?$PoolID@UVehicleIDTag@@@@V?$allocator@U?$PoolID@UVehicleIDTag@@@@@std@@@std@@A"
+          ],
+          [
+            212,
+            4,
+            "?_tick_skip_counter@DateDetail@@3EA"
+          ],
+          [
+            219,
+            4,
+            "?RunVehicleDayProc@@YAXXZ"
+          ],
+          [
+            226,
+            4,
+            "?UsingWallclockUnits@EconTime@@SA_N_N@Z"
+          ],
+          [
+            251,
+            4,
+            "?IsCalendarFrozen@CalTime@@SA_N_N@Z"
+          ],
+          [
+            266,
+            4,
+            "?now@Detail@CalTime@@2UState@2@A"
+          ],
+          [
+            278,
+            5,
+            "?_game_mode@@3W4GameMode@@A"
+          ],
+          [
+            304,
+            4,
+            "?<lambda_invoker_cdecl>@<lambda_1>@?1???0?$FunctorScopeStackRecord@V<lambda_1>@?1??RunVehicleCalendarDayProc@@YAXXZ@@@QEAA@V1?1??RunVehicleCalendarDayProc@@YAXXZ@@Z@SA@PEAUScopeStackRecord@@AEAUformat_target@@@Z"
+          ],
+          [
+            315,
+            4,
+            "?_scope_stack_head@@3PEAUScopeStackRecord@@EA"
+          ],
+          [
+            330,
+            4,
+            "?_scope_stack_head@@3PEAUScopeStackRecord@@EA"
+          ],
+          [
+            337,
+            4,
+            "?now@Detail@CalTime@@2UState@2@A"
+          ],
+          [
+            344,
+            4,
+            "?_vehicle_pool@@3U?$Pool@UVehicle@@U?$PoolID@UVehicleIDTag@@@@$0CAA@$0A@$0A@UVehiclePoolOps@@@@A"
+          ],
+          [
+            355,
+            4,
+            "?_vehicle_pool@@3U?$Pool@UVehicle@@U?$PoolID@UVehicleIDTag@@@@$0CAA@$0A@$0A@UVehiclePoolOps@@@@A"
+          ],
+          [
+            436,
+            4,
+            "?AgeVehicle@@YAXPEAUVehicle@@@Z"
+          ],
+          [
+            447,
+            4,
+            "?_vehicle_pool@@3U?$Pool@UVehicle@@U?$PoolID@UVehicleIDTag@@@@$0CAA@$0A@$0A@UVehiclePoolOps@@@@A"
+          ],
+          [
+            460,
+            4,
+            "?_scope_stack_head@@3PEAUScopeStackRecord@@EA"
+          ],
+          [
+            466,
+            5,
+            "?_effective_day_length@DateDetail@@3EA"
+          ],
+          [
+            479,
+            5,
+            "?_game_mode@@3W4GameMode@@A"
+          ],
+          [
+            505,
+            4,
+            "?<lambda_invoker_cdecl>@<lambda_1>@?1???0?$FunctorScopeStackRecord@V<lambda_1>@?9??CallVehicleTicks@@YAXXZ@@@QEAA@V1?9??CallVehicleTicks@@YAXXZ@@Z@SA@PEAUScopeStackRecord@@AEAUformat_target@@@Z"
+          ],
+          [
+            516,
+            4,
+            "?_scope_stack_head@@3PEAUScopeStackRecord@@EA"
+          ],
+          [
+            531,
+            4,
+            "?_scope_stack_head@@3PEAUScopeStackRecord@@EA"
+          ],
+          [
+            537,
+            4,
+            "?_scaled_tick_counter@@3_KA"
+          ],
+          [
+            552,
+            4,
+            "?_vehicle_pool@@3U?$Pool@UVehicle@@U?$PoolID@UVehicleIDTag@@@@$0CAA@$0A@$0A@UVehiclePoolOps@@@@A"
+          ],
+          [
+            565,
+            4,
+            "?_vehicle_pool@@3U?$Pool@UVehicle@@U?$PoolID@UVehicleIDTag@@@@$0CAA@$0A@$0A@UVehiclePoolOps@@@@A"
+          ],
+          [
+            616,
+            4,
+            "?OnPeriodic@Aircraft@@UEAAXXZ"
+          ],
+          [
+            633,
+            4,
+            "?OnPeriodic@Ship@@UEAAXXZ"
+          ],
+          [
+            650,
+            4,
+            "?OnPeriodic@RoadVehicle@@UEAAXXZ"
+          ],
+          [
+            667,
+            4,
+            "?OnPeriodic@Train@@UEAAXXZ"
+          ],
+          [
+            682,
+            4,
+            "?_vehicle_pool@@3U?$Pool@UVehicle@@U?$PoolID@UVehicleIDTag@@@@$0CAA@$0A@$0A@UVehiclePoolOps@@@@A"
+          ],
+          [
+            695,
+            4,
+            "?_scope_stack_head@@3PEAUScopeStackRecord@@EA"
+          ],
+          [
+            701,
+            5,
+            "?_record_sync_records@@3_NA"
+          ],
+          [
+            714,
+            4,
+            "?RecordSyncEventData@@YAXW4NetworkSyncRecordEvents@@@Z"
+          ],
+          [
+            725,
+            4,
+            "??0PerformanceMeasurer@@QEAA@W4PerformanceElement@@@Z"
+          ],
+          [
+            745,
+            4,
+            "?<lambda_invoker_cdecl>@<lambda_1>@?1???0?$FunctorScopeStackRecord@V<lambda_2>@?BB@??CallVehicleTicks@@YAXXZ@@@QEAA@V<lambda_2>@?BB@??CallVehicleTicks@@YAXXZ@@Z@SA@PEAUScopeStackRecord@@AEAUformat_target@@@Z"
+          ],
+          [
+            756,
+            4,
+            "?_scope_stack_head@@3PEAUScopeStackRecord@@EA"
+          ],
+          [
+            771,
+            4,
+            "?_scope_stack_head@@3PEAUScopeStackRecord@@EA"
+          ],
+          [
+            776,
+            4,
+            "?PreparePassengerJourneyLoading@@YAXXZ"
+          ],
+          [
+            786,
+            4,
+            "?_station_pool@@3U?$Pool@UBaseStation@@U?$PoolID@UStationIDTag@@@@$0CA@$0A@$0A@U?$DefaultPoolOps@UBaseStation@@@@@@A"
+          ],
+          [
+            793,
+            4,
+            "?_station_pool@@3U?$Pool@UBaseStation@@U?$PoolID@UStationIDTag@@@@$0CA@$0A@$0A@U?$DefaultPoolOps@UBaseStation@@@@@@A"
+          ],
+          [
+            889,
+            4,
+            "?LoadUnloadStation@@YAXPEAUStation@@@Z"
+          ],
+          [
+            899,
+            4,
+            "?_station_pool@@3U?$Pool@UBaseStation@@U?$PoolID@UStationIDTag@@@@$0CA@$0A@$0A@U?$DefaultPoolOps@UBaseStation@@@@@@A"
+          ],
+          [
+            906,
+            4,
+            "?_station_pool@@3U?$Pool@UBaseStation@@U?$PoolID@UStationIDTag@@@@$0CA@$0A@$0A@U?$DefaultPoolOps@UBaseStation@@@@@@A"
+          ],
+          [
+            955,
+            4,
+            "?_scope_stack_head@@3PEAUScopeStackRecord@@EA"
+          ],
+          [
+            964,
+            4,
+            "??1PerformanceMeasurer@@QEAA@XZ"
+          ],
+          [
+            970,
+            5,
+            "?_record_sync_records@@3_NA"
+          ],
+          [
+            983,
+            4,
+            "?RecordSyncEventData@@YAXW4NetworkSyncRecordEvents@@@Z"
+          ],
+          [
+            989,
+            5,
+            "?_tick_caches_valid@@3_NA"
+          ],
+          [
+            998,
+            4,
+            "?_settings_game@@3UGameSettings@@A"
+          ],
+          [
+            1007,
+            4,
+            "?RebuildVehicleTickCaches@@YAXXZ"
+          ],
+          [
+            1013,
+            4,
+            "?_settings_game@@3UGameSettings@@A"
+          ],
+          [
+            1022,
+            4,
+            "?DebugInvalidateAllWaterRegions@@YAXXZ"
+          ],
+          [
+            1028,
+            4,
+            "?_settings_game@@3UGameSettings@@A"
+          ],
+          [
+            1039,
+            4,
+            "?DebugInitAllWaterRegions@@YAXXZ"
+          ],
+          [
+            1060,
+            4,
+            "?<lambda_invoker_cdecl>@<lambda_1>@?1???0?$FunctorScopeStackRecord@V<lambda_3>@?1??CallVehicleTicks@@YAXXZ@@@QEAA@V<lambda_3>@?1??CallVehicleTicks@@YAXXZ@@Z@SA@PEAUScopeStackRecord@@AEAUformat_target@@@Z"
+          ],
+          [
+            1071,
+            4,
+            "?_scope_stack_head@@3PEAUScopeStackRecord@@EA"
+          ],
+          [
+            1086,
+            4,
+            "?_scope_stack_head@@3PEAUScopeStackRecord@@EA"
+          ],
+          [
+            1093,
+            5,
+            "?_remove_from_tick_effect_veh_cache@@3V?$Table@$00$0FA@U?$PoolID@UVehicleIDTag@@@@XU?$hash@U?$PoolID@UVehicleIDTag@@@@X@robin_hood@@U?$equal_to@U?$PoolID@UVehicleIDTag@@@@@std@@@detail@robin_hood@@A"
+          ],
+          [
+            1103,
+            4,
+            "?_remove_from_tick_effect_veh_cache@@3V?$Table@$00$0FA@U?$PoolID@UVehicleIDTag@@@@XU?$hash@U?$PoolID@UVehicleIDTag@@@@X@robin_hood@@U?$equal_to@U?$PoolID@UVehicleIDTag@@@@@std@@@detail@robin_hood@@A"
+          ],
+          [
+            1118,
+            4,
+            "?_remove_from_tick_effect_veh_cache@@3V?$Table@$00$0FA@U?$PoolID@UVehicleIDTag@@@@XU?$hash@U?$PoolID@UVehicleIDTag@@@@X@robin_hood@@U?$equal_to@U?$PoolID@UVehicleIDTag@@@@@std@@@detail@robin_hood@@A"
+          ],
+          [
+            1130,
+            4,
+            "?_remove_from_tick_effect_veh_cache@@3V?$Table@$00$0FA@U?$PoolID@UVehicleIDTag@@@@XU?$hash@U?$PoolID@UVehicleIDTag@@@@X@robin_hood@@U?$equal_to@U?$PoolID@UVehicleIDTag@@@@@std@@@detail@robin_hood@@A"
+          ],
+          [
+            1145,
+            4,
+            "?fastForward@?$Iter@$0A@@?$Table@$00$0FA@U?$PoolID@UVehicleIDTag@@@@XU?$hash@U?$PoolID@UVehicleIDTag@@@@X@robin_hood@@U?$equal_to@U?$PoolID@UVehicleIDTag@@@@@std@@@detail@robin_hood@@AEAAXXZ"
+          ],
+          [
+            1162,
+            4,
+            "?_remove_from_tick_effect_veh_cache@@3V?$Table@$00$0FA@U?$PoolID@UVehicleIDTag@@@@XU?$hash@U?$PoolID@UVehicleIDTag@@@@X@robin_hood@@U?$equal_to@U?$PoolID@UVehicleIDTag@@@@@std@@@detail@robin_hood@@A"
+          ],
+          [
+            1193,
+            4,
+            "?_tick_effect_veh_cache@@3V?$btree_set@U?$PoolID@UVehicleIDTag@@@@U?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$PoolID@UVehicleIDTag@@@@@3@$0BAA@@btree@@A"
+          ],
+          [
+            1220,
+            4,
+            "?_tick_effect_veh_cache@@3V?$btree_set@U?$PoolID@UVehicleIDTag@@@@U?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$PoolID@UVehicleIDTag@@@@@3@$0BAA@@btree@@A"
+          ],
+          [
+            1225,
+            4,
+            "?internal_find_unique@?$btree@U?$btree_set_params@U?$PoolID@UVehicleIDTag@@@@U?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$PoolID@UVehicleIDTag@@@@@3@$0BAA@@0@@btree@@AEBA?AU?$btree_iterator@U?$btree_set_params@U?$PoolID@UVehicleIDTag@@@@U?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$PoolID@UVehicleIDTag@@@@@3@$0BAA@@btree@@@2@AEBU?$PoolID@UVehicleIDTag@@@@U32@@Z"
+          ],
+          [
+            1265,
+            4,
+            "?_tick_effect_veh_cache@@3V?$btree_set@U?$PoolID@UVehicleIDTag@@@@U?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$PoolID@UVehicleIDTag@@@@@3@$0BAA@@btree@@A"
+          ],
+          [
+            1270,
+            4,
+            "?erase@?$btree@U?$btree_set_params@U?$PoolID@UVehicleIDTag@@@@U?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$PoolID@UVehicleIDTag@@@@@3@$0BAA@@0@@btree@@QEAA?AU?$btree_iterator@U?$btree_set_params@U?$PoolID@UVehicleIDTag@@@@U?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$PoolID@UVehicleIDTag@@@@@3@$0BAA@@btree@@@2@U32@@Z"
+          ],
+          [
+            1297,
+            4,
+            "?fastForward@?$Iter@$0A@@?$Table@$00$0FA@U?$PoolID@UVehicleIDTag@@@@XU?$hash@U?$PoolID@UVehicleIDTag@@@@X@robin_hood@@U?$equal_to@U?$PoolID@UVehicleIDTag@@@@@std@@@detail@robin_hood@@AEAAXXZ"
+          ],
+          [
+            1324,
+            4,
+            "?_remove_from_tick_effect_veh_cache@@3V?$Table@$00$0FA@U?$PoolID@UVehicleIDTag@@@@XU?$hash@U?$PoolID@UVehicleIDTag@@@@X@robin_hood@@U?$equal_to@U?$PoolID@UVehicleIDTag@@@@@std@@@detail@robin_hood@@A"
+          ],
+          [
+            1329,
+            4,
+            "?clear@?$Table@$00$0FA@U?$PoolID@UVehicleIDTag@@@@XU?$hash@U?$PoolID@UVehicleIDTag@@@@X@robin_hood@@U?$equal_to@U?$PoolID@UVehicleIDTag@@@@@std@@@detail@robin_hood@@QEAAXXZ"
+          ],
+          [
+            1336,
+            4,
+            "?_tick_effect_veh_cache@@3V?$btree_set@U?$PoolID@UVehicleIDTag@@@@U?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$PoolID@UVehicleIDTag@@@@@3@$0BAA@@btree@@A"
+          ],
+          [
+            1416,
+            4,
+            "?_vehicle_pool@@3U?$Pool@UVehicle@@U?$PoolID@UVehicleIDTag@@@@$0CAA@$0A@$0A@UVehiclePoolOps@@@@A"
+          ],
+          [
+            1433,
+            4,
+            "?Tick@EffectVehicle@@UEAA_NXZ"
+          ],
+          [
+            1443,
+            4,
+            "?increment@?$btree_const_iterator@U?$btree_set_params@U?$PoolID@UVehicleIDTag@@@@U?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$PoolID@UVehicleIDTag@@@@@3@$0BAA@@btree@@@btree@@QEAAXXZ"
+          ],
+          [
+            1461,
+            5,
+            "?_tick_effect_veh_cache@@3V?$btree_set@U?$PoolID@UVehicleIDTag@@@@U?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$PoolID@UVehicleIDTag@@@@@3@$0BAA@@btree@@A"
+          ],
+          [
+            1470,
+            5,
+            "?_record_sync_records@@3_NA"
+          ],
+          [
+            1483,
+            4,
+            "?RecordSyncEventData@@YAXW4NetworkSyncRecordEvents@@@Z"
+          ],
+          [
+            1494,
+            4,
+            "??0PerformanceMeasurer@@QEAA@W4PerformanceElement@@@Z"
+          ],
+          [
+            1502,
+            4,
+            "?_tick_train_front_cache@@3V?$vector@PEAUTrain@@V?$allocator@PEAUTrain@@@std@@@std@@A"
+          ],
+          [
+            1509,
+            4,
+            "?_tick_train_front_cache@@3V?$vector@PEAUTrain@@V?$allocator@PEAUTrain@@@std@@@std@@A"
+          ],
+          [
+            1548,
+            4,
+            "?Tick@Train@@UEAA_NXZ"
+          ],
+          [
+            1621,
+            4,
+            "?AgeCargo@VehicleCargoList@@QEAAXXZ"
+          ],
+          [
+            1674,
+            4,
+            "?VehicleTickMotion@@YAXPEAUVehicle@@0@Z"
+          ],
+          [
+            1705,
+            4,
+            "??1PerformanceMeasurer@@QEAA@XZ"
+          ],
+          [
+            1711,
+            5,
+            "?_record_sync_records@@3_NA"
+          ],
+          [
+            1724,
+            4,
+            "?RecordSyncEventData@@YAXW4NetworkSyncRecordEvents@@@Z"
+          ],
+          [
+            1735,
+            4,
+            "??0PerformanceMeasurer@@QEAA@W4PerformanceElement@@@Z"
+          ],
+          [
+            1743,
+            4,
+            "?_tick_road_veh_front_cache@@3V?$vector@PEAURoadVehicle@@V?$allocator@PEAURoadVehicle@@@std@@@std@@A"
+          ],
+          [
+            1750,
+            4,
+            "?_tick_road_veh_front_cache@@3V?$vector@PEAURoadVehicle@@V?$allocator@PEAURoadVehicle@@@std@@@std@@A"
+          ],
+          [
+            1788,
+            4,
+            "?Tick@RoadVehicle@@UEAA_NXZ"
+          ],
+          [
+            1861,
+            4,
+            "?AgeCargo@VehicleCargoList@@QEAAXXZ"
+          ],
+          [
+            1904,
+            4,
+            "?VehicleTickMotion@@YAXPEAUVehicle@@0@Z"
+          ],
+          [
+            1926,
+            4,
+            "??1PerformanceMeasurer@@QEAA@XZ"
+          ],
+          [
+            1933,
+            4,
+            "?_tick_road_veh_front_cache@@3V?$vector@PEAURoadVehicle@@V?$allocator@PEAURoadVehicle@@@std@@@std@@A"
+          ],
+          [
+            1940,
+            4,
+            "?_tick_road_veh_front_cache@@3V?$vector@PEAURoadVehicle@@V?$allocator@PEAURoadVehicle@@@std@@@std@@A"
+          ],
+          [
+            1948,
+            5,
+            "?_record_sync_records@@3_NA"
+          ],
+          [
+            1961,
+            4,
+            "?RecordSyncEventData@@YAXW4NetworkSyncRecordEvents@@@Z"
+          ],
+          [
+            1972,
+            4,
+            "??0PerformanceMeasurer@@QEAA@W4PerformanceElement@@@Z"
+          ],
+          [
+            1980,
+            4,
+            "?_tick_aircraft_front_cache@@3V?$vector@PEAUAircraft@@V?$allocator@PEAUAircraft@@@std@@@std@@A"
+          ],
+          [
+            1987,
+            4,
+            "?_tick_aircraft_front_cache@@3V?$vector@PEAUAircraft@@V?$allocator@PEAUAircraft@@@std@@@std@@A"
+          ],
+          [
+            2012,
+            4,
+            "?Tick@Aircraft@@UEAA_NXZ"
+          ],
+          [
+            2079,
+            4,
+            "?AgeCargo@VehicleCargoList@@QEAAXXZ"
+          ],
+          [
+            2122,
+            4,
+            "?VehicleTickMotion@@YAXPEAUVehicle@@0@Z"
+          ],
+          [
+            2144,
+            4,
+            "??1PerformanceMeasurer@@QEAA@XZ"
+          ],
+          [
+            2151,
+            4,
+            "?_tick_aircraft_front_cache@@3V?$vector@PEAUAircraft@@V?$allocator@PEAUAircraft@@@std@@@std@@A"
+          ],
+          [
+            2158,
+            4,
+            "?_tick_aircraft_front_cache@@3V?$vector@PEAUAircraft@@V?$allocator@PEAUAircraft@@@std@@@std@@A"
+          ],
+          [
+            2166,
+            5,
+            "?_record_sync_records@@3_NA"
+          ],
+          [
+            2179,
+            4,
+            "?RecordSyncEventData@@YAXW4NetworkSyncRecordEvents@@@Z"
+          ],
+          [
+            2190,
+            4,
+            "??0PerformanceMeasurer@@QEAA@W4PerformanceElement@@@Z"
+          ],
+          [
+            2198,
+            4,
+            "?_tick_ship_front_cache@@3V?$vector@PEAUShip@@V?$allocator@PEAUShip@@@std@@@std@@A"
+          ],
+          [
+            2205,
+            4,
+            "?_tick_ship_front_cache@@3V?$vector@PEAUShip@@V?$allocator@PEAUShip@@@std@@@std@@A"
+          ],
+          [
+            2236,
+            4,
+            "?Tick@Ship@@UEAA_NXZ"
+          ],
+          [
+            2303,
+            4,
+            "?AgeCargo@VehicleCargoList@@QEAAXXZ"
+          ],
+          [
+            2346,
+            4,
+            "?VehicleTickMotion@@YAXPEAUVehicle@@0@Z"
+          ],
+          [
+            2368,
+            4,
+            "??1PerformanceMeasurer@@QEAA@XZ"
+          ],
+          [
+            2375,
+            4,
+            "?_tick_ship_front_cache@@3V?$vector@PEAUShip@@V?$allocator@PEAUShip@@@std@@@std@@A"
+          ],
+          [
+            2382,
+            4,
+            "?_tick_ship_front_cache@@3V?$vector@PEAUShip@@V?$allocator@PEAUShip@@@std@@@std@@A"
+          ],
+          [
+            2390,
+            5,
+            "?_record_sync_records@@3_NA"
+          ],
+          [
+            2403,
+            4,
+            "?RecordSyncEventData@@YAXW4NetworkSyncRecordEvents@@@Z"
+          ],
+          [
+            2410,
+            4,
+            "?_tick_other_veh_cache@@3V?$vector@PEAUVehicle@@V?$allocator@PEAUVehicle@@@std@@@std@@A"
+          ],
+          [
+            2417,
+            4,
+            "?_tick_other_veh_cache@@3V?$vector@PEAUVehicle@@V?$allocator@PEAUVehicle@@@std@@@std@@A"
+          ],
+          [
+            2463,
+            4,
+            "?_tick_other_veh_cache@@3V?$vector@PEAUVehicle@@V?$allocator@PEAUVehicle@@@std@@@std@@A"
+          ],
+          [
+            2470,
+            4,
+            "?_tick_other_veh_cache@@3V?$vector@PEAUVehicle@@V?$allocator@PEAUVehicle@@@std@@@std@@A"
+          ],
+          [
+            2486,
+            5,
+            "?_record_sync_records@@3_NA"
+          ],
+          [
+            2499,
+            4,
+            "?RecordSyncEventData@@YAXW4NetworkSyncRecordEvents@@@Z"
+          ],
+          [
+            2506,
+            4,
+            "?_current_company@@3U?$PoolID@UCompanyIDTag@@@@A"
+          ],
+          [
+            2517,
+            4,
+            "??_C@_0GD@PAPPGEIJ@C?3?2Users?2bebe?2?4codex?2worktrees?2@"
+          ],
+          [
+            2539,
+            4,
+            "?_current_company@@3U?$PoolID@UCompanyIDTag@@@@A"
+          ],
+          [
+            2553,
+            4,
+            "?_vehicles_to_sell@@3V?$btree_set@U?$PoolID@UVehicleIDTag@@@@U?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$PoolID@UVehicleIDTag@@@@@3@$0BAA@@btree@@A"
+          ],
+          [
+            2621,
+            4,
+            "?_scope_stack_head@@3PEAUScopeStackRecord@@EA"
+          ],
+          [
+            2628,
+            4,
+            "?operations@?$TupleCmdData@XU?$PoolID@UVehicleIDTag@@@@W4SellVehicleFlags@@W4ClientID@@@@2UOperations@CommandPayloadBase@@B"
+          ],
+          [
+            2641,
+            4,
+            "?<lambda_invoker_cdecl>@<lambda_1>@?1???0?$FunctorScopeStackRecord@V<lambda_4>@?GH@??CallVehicleTicks@@YAXXZ@@@QEAA@V<lambda_4>@?GH@??CallVehicleTicks@@YAXXZ@@Z@SA@PEAUScopeStackRecord@@AEAUformat_target@@@Z"
+          ],
+          [
+            2671,
+            4,
+            "?_vehicle_pool@@3U?$Pool@UVehicle@@U?$PoolID@UVehicleIDTag@@@@$0CAA@$0A@$0A@UVehiclePoolOps@@@@A"
+          ],
+          [
+            2701,
+            4,
+            "?_scope_stack_head@@3PEAUScopeStackRecord@@EA"
+          ],
+          [
+            2720,
+            4,
+            "?_current_company@@3U?$PoolID@UCompanyIDTag@@@@A"
+          ],
+          [
+            2819,
+            4,
+            "?DoCommandImplementation@@YA?AVCommandCost@@W4Commands@@U?$ST@UTileIndexTag@@@@AEBUCommandPayloadBase@@V?$EnumBitSet@W4DoCommandFlag@@G$0BA@@@W4DoCommandIntlFlag@@@Z"
+          ],
+          [
+            2853,
+            4,
+            "?_current_company@@3U?$PoolID@UCompanyIDTag@@@@A"
+          ],
+          [
+            2859,
+            4,
+            "?_local_company@@3U?$PoolID@UCompanyIDTag@@@@A"
+          ],
+          [
+            2892,
+            4,
+            "?ShowCostOrIncomeAnimation@@YAXHHHV?$OverflowSafeInt@_J@@@Z"
+          ],
+          [
+            2904,
+            4,
+            "?_vehicles_to_templatereplace@@3V?$btree_set@U?$PoolID@UVehicleIDTag@@@@U?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$PoolID@UVehicleIDTag@@@@@3@$0BAA@@btree@@A"
+          ],
+          [
+            2931,
+            4,
+            "?_vehicles_to_templatereplace@@3V?$btree_set@U?$PoolID@UVehicleIDTag@@@@U?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$PoolID@UVehicleIDTag@@@@@3@$0BAA@@btree@@A"
+          ],
+          [
+            2936,
+            4,
+            "?internal_find_unique@?$btree@U?$btree_set_params@U?$PoolID@UVehicleIDTag@@@@U?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$PoolID@UVehicleIDTag@@@@@3@$0BAA@@0@@btree@@AEBA?AU?$btree_iterator@U?$btree_set_params@U?$PoolID@UVehicleIDTag@@@@U?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$PoolID@UVehicleIDTag@@@@@3@$0BAA@@btree@@@2@AEBU?$PoolID@UVehicleIDTag@@@@U32@@Z"
+          ],
+          [
+            2970,
+            4,
+            "?_vehicles_to_templatereplace@@3V?$btree_set@U?$PoolID@UVehicleIDTag@@@@U?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$PoolID@UVehicleIDTag@@@@@3@$0BAA@@btree@@A"
+          ],
+          [
+            2975,
+            4,
+            "?erase@?$btree@U?$btree_set_params@U?$PoolID@UVehicleIDTag@@@@U?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$PoolID@UVehicleIDTag@@@@@3@$0BAA@@0@@btree@@QEAA?AU?$btree_iterator@U?$btree_set_params@U?$PoolID@UVehicleIDTag@@@@U?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$PoolID@UVehicleIDTag@@@@@3@$0BAA@@btree@@@2@U32@@Z"
+          ],
+          [
+            2982,
+            4,
+            "?_vehicles_to_autoreplace@@3V?$btree_map@U?$PoolID@UVehicleIDTag@@@@_NU?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$pair@$$CBU?$PoolID@UVehicleIDTag@@@@_N@std@@@3@$0BAA@@btree@@A"
+          ],
+          [
+            3009,
+            4,
+            "?_vehicles_to_autoreplace@@3V?$btree_map@U?$PoolID@UVehicleIDTag@@@@_NU?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$pair@$$CBU?$PoolID@UVehicleIDTag@@@@_N@std@@@3@$0BAA@@btree@@A"
+          ],
+          [
+            3014,
+            4,
+            "?internal_find_unique@?$btree@U?$btree_map_params@U?$PoolID@UVehicleIDTag@@@@_NU?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$pair@$$CBU?$PoolID@UVehicleIDTag@@@@_N@std@@@3@$0BAA@@0@@btree@@AEBA?AU?$btree_iterator@U?$btree_map_params@U?$PoolID@UVehicleIDTag@@@@_NU?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$pair@$$CBU?$PoolID@UVehicleIDTag@@@@_N@std@@@3@$0BAA@@btree@@@2@AEBU?$PoolID@UVehicleIDTag@@@@U32@@Z"
+          ],
+          [
+            3049,
+            4,
+            "?_vehicles_to_autoreplace@@3V?$btree_map@U?$PoolID@UVehicleIDTag@@@@_NU?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$pair@$$CBU?$PoolID@UVehicleIDTag@@@@_N@std@@@3@$0BAA@@btree@@A"
+          ],
+          [
+            3054,
+            4,
+            "?erase@?$btree@U?$btree_map_params@U?$PoolID@UVehicleIDTag@@@@_NU?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$pair@$$CBU?$PoolID@UVehicleIDTag@@@@_N@std@@@3@$0BAA@@0@@btree@@QEAA?AU?$btree_iterator@U?$btree_map_params@U?$PoolID@UVehicleIDTag@@@@_NU?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$pair@$$CBU?$PoolID@UVehicleIDTag@@@@_N@std@@@3@$0BAA@@btree@@@2@U32@@Z"
+          ],
+          [
+            3088,
+            4,
+            "?_Decref@_Ref_count_base@std@@QEAAXXZ"
+          ],
+          [
+            3097,
+            4,
+            "?_Tidy_deallocate@?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEAAXXZ"
+          ],
+          [
+            3110,
+            4,
+            "??3@YAXPEAX_K@Z"
+          ],
+          [
+            3122,
+            4,
+            "?_scope_stack_head@@3PEAUScopeStackRecord@@EA"
+          ],
+          [
+            3132,
+            4,
+            "?increment@?$btree_const_iterator@U?$btree_set_params@U?$PoolID@UVehicleIDTag@@@@U?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$PoolID@UVehicleIDTag@@@@@3@$0BAA@@btree@@@btree@@QEAAXXZ"
+          ],
+          [
+            3167,
+            4,
+            "?_current_company@@3U?$PoolID@UCompanyIDTag@@@@A"
+          ],
+          [
+            3178,
+            5,
+            "?_vehicles_to_sell@@3V?$btree_set@U?$PoolID@UVehicleIDTag@@@@U?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$PoolID@UVehicleIDTag@@@@@3@$0BAA@@btree@@A"
+          ],
+          [
+            3187,
+            5,
+            "?_record_sync_records@@3_NA"
+          ],
+          [
+            3200,
+            4,
+            "?RecordSyncEventData@@YAXW4NetworkSyncRecordEvents@@@Z"
+          ],
+          [
+            3207,
+            4,
+            "?_current_company@@3U?$PoolID@UCompanyIDTag@@@@A"
+          ],
+          [
+            3214,
+            4,
+            "?_scope_stack_head@@3PEAUScopeStackRecord@@EA"
+          ],
+          [
+            3221,
+            4,
+            "?_current_company@@3U?$PoolID@UCompanyIDTag@@@@A"
+          ],
+          [
+            3232,
+            4,
+            "??_C@_0GD@PAPPGEIJ@C?3?2Users?2bebe?2?4codex?2worktrees?2@"
+          ],
+          [
+            3257,
+            4,
+            "?_vehicles_to_templatereplace@@3V?$btree_set@U?$PoolID@UVehicleIDTag@@@@U?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$PoolID@UVehicleIDTag@@@@@3@$0BAA@@btree@@A"
+          ],
+          [
+            3342,
+            4,
+            "?operations@?$TupleCmdData@XU?$PoolID@UVehicleIDTag@@@@@@2UOperations@CommandPayloadBase@@B"
+          ],
+          [
+            3349,
+            4,
+            "?<lambda_invoker_cdecl>@<lambda_1>@?1???0?$FunctorScopeStackRecord@V<lambda_5>@?HH@??CallVehicleTicks@@YAXXZ@@@QEAA@V<lambda_5>@?HH@??CallVehicleTicks@@YAXXZ@@Z@SA@PEAUScopeStackRecord@@AEAUformat_target@@@Z"
+          ],
+          [
+            3375,
+            4,
+            "?_vehicle_pool@@3U?$Pool@UVehicle@@U?$PoolID@UVehicleIDTag@@@@$0CAA@$0A@$0A@UVehiclePoolOps@@@@A"
+          ],
+          [
+            3405,
+            4,
+            "?_scope_stack_head@@3PEAUScopeStackRecord@@EA"
+          ],
+          [
+            3412,
+            4,
+            "?_vehicles_to_autoreplace@@3V?$btree_map@U?$PoolID@UVehicleIDTag@@@@_NU?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$pair@$$CBU?$PoolID@UVehicleIDTag@@@@_N@std@@@3@$0BAA@@btree@@A"
+          ],
+          [
+            3671,
+            4,
+            "?_vehicles_to_autoreplace@@3V?$btree_map@U?$PoolID@UVehicleIDTag@@@@_NU?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$pair@$$CBU?$PoolID@UVehicleIDTag@@@@_N@std@@@3@$0BAA@@btree@@A"
+          ],
+          [
+            3676,
+            4,
+            "?erase@?$btree@U?$btree_map_params@U?$PoolID@UVehicleIDTag@@@@_NU?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$pair@$$CBU?$PoolID@UVehicleIDTag@@@@_N@std@@@3@$0BAA@@0@@btree@@QEAA?AU?$btree_iterator@U?$btree_map_params@U?$PoolID@UVehicleIDTag@@@@_NU?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$pair@$$CBU?$PoolID@UVehicleIDTag@@@@_N@std@@@3@$0BAA@@btree@@@2@U32@@Z"
+          ],
+          [
+            3714,
+            4,
+            "?_current_company@@3U?$PoolID@UCompanyIDTag@@@@A"
+          ],
+          [
+            3755,
+            4,
+            "?DoCommandImplementation@@YA?AVCommandCost@@W4Commands@@U?$ST@UTileIndexTag@@@@AEBUCommandPayloadBase@@V?$EnumBitSet@W4DoCommandFlag@@G$0BA@@@W4DoCommandIntlFlag@@@Z"
+          ],
+          [
+            3818,
+            4,
+            "?_vehicle_pool@@3U?$Pool@UVehicle@@U?$PoolID@UVehicleIDTag@@@@$0CAA@$0A@$0A@UVehiclePoolOps@@@@A"
+          ],
+          [
+            3842,
+            4,
+            "?_current_company@@3U?$PoolID@UCompanyIDTag@@@@A"
+          ],
+          [
+            3849,
+            4,
+            "?_company_pool@@3U?$Pool@UCompany@@U?$PoolID@UCompanyIDTag@@@@$00$0A@$0A@U?$DefaultPoolOps@UCompany@@@@@@A"
+          ],
+          [
+            3904,
+            4,
+            "?SubtractMoneyFromCompany@@YAXPEAUCompany@@AEBVCommandCost@@@Z"
+          ],
+          [
+            3940,
+            4,
+            "?_Decref@_Ref_count_base@std@@QEAAXXZ"
+          ],
+          [
+            3949,
+            4,
+            "?_Tidy_deallocate@?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEAAXXZ"
+          ],
+          [
+            3962,
+            4,
+            "??3@YAXPEAX_K@Z"
+          ],
+          [
+            3993,
+            4,
+            "?operations@?$TupleCmdData@XU?$PoolID@UVehicleIDTag@@@@_N@@2UOperations@CommandPayloadBase@@B"
+          ],
+          [
+            4036,
+            4,
+            "?DoCommandImplementation@@YA?AVCommandCost@@W4Commands@@U?$ST@UTileIndexTag@@@@AEBUCommandPayloadBase@@V?$EnumBitSet@W4DoCommandFlag@@G$0BA@@@W4DoCommandIntlFlag@@@Z"
+          ],
+          [
+            4099,
+            4,
+            "?_vehicle_pool@@3U?$Pool@UVehicle@@U?$PoolID@UVehicleIDTag@@@@$0CAA@$0A@$0A@UVehiclePoolOps@@@@A"
+          ],
+          [
+            4170,
+            4,
+            "?SubtractMoneyFromCompany@@YAXPEAUCompany@@AEBVCommandCost@@@Z"
+          ],
+          [
+            4206,
+            4,
+            "?_Decref@_Ref_count_base@std@@QEAAXXZ"
+          ],
+          [
+            4215,
+            4,
+            "?_Tidy_deallocate@?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEAAXXZ"
+          ],
+          [
+            4228,
+            4,
+            "??3@YAXPEAX_K@Z"
+          ],
+          [
+            4235,
+            4,
+            "?_current_company@@3U?$PoolID@UCompanyIDTag@@@@A"
+          ],
+          [
+            4241,
+            4,
+            "?_local_company@@3U?$PoolID@UCompanyIDTag@@@@A"
+          ],
+          [
+            4390,
+            4,
+            "?ShowCostOrIncomeAnimation@@YAXHHHV?$OverflowSafeInt@_J@@@Z"
+          ],
+          [
+            4420,
+            4,
+            "?ShowAutoReplaceAdviceMessage@@YAXAEBVCommandCost@@PEBUVehicle@@@Z"
+          ],
+          [
+            4454,
+            4,
+            "?_Decref@_Ref_count_base@std@@QEAAXXZ"
+          ],
+          [
+            4463,
+            4,
+            "?_Tidy_deallocate@?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEAAXXZ"
+          ],
+          [
+            4476,
+            4,
+            "??3@YAXPEAX_K@Z"
+          ],
+          [
+            4510,
+            4,
+            "?_Decref@_Ref_count_base@std@@QEAAXXZ"
+          ],
+          [
+            4519,
+            4,
+            "?_Tidy_deallocate@?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEAAXXZ"
+          ],
+          [
+            4532,
+            4,
+            "??3@YAXPEAX_K@Z"
+          ],
+          [
+            4544,
+            4,
+            "?_scope_stack_head@@3PEAUScopeStackRecord@@EA"
+          ],
+          [
+            4553,
+            4,
+            "?increment@?$btree_const_iterator@U?$btree_set_params@U?$PoolID@UVehicleIDTag@@@@U?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$PoolID@UVehicleIDTag@@@@@3@$0BAA@@btree@@@btree@@QEAAXXZ"
+          ],
+          [
+            4589,
+            4,
+            "?_current_company@@3U?$PoolID@UCompanyIDTag@@@@A"
+          ],
+          [
+            4600,
+            5,
+            "?_vehicles_to_templatereplace@@3V?$btree_set@U?$PoolID@UVehicleIDTag@@@@U?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$PoolID@UVehicleIDTag@@@@@3@$0BAA@@btree@@A"
+          ],
+          [
+            4609,
+            5,
+            "?_record_sync_records@@3_NA"
+          ],
+          [
+            4622,
+            4,
+            "?RecordSyncEventData@@YAXW4NetworkSyncRecordEvents@@@Z"
+          ],
+          [
+            4629,
+            4,
+            "?_current_company@@3U?$PoolID@UCompanyIDTag@@@@A"
+          ],
+          [
+            4636,
+            4,
+            "?_vehicles_to_autoreplace@@3V?$btree_map@U?$PoolID@UVehicleIDTag@@@@_NU?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$pair@$$CBU?$PoolID@UVehicleIDTag@@@@_N@std@@@3@$0BAA@@btree@@A"
+          ],
+          [
+            4736,
+            4,
+            "?_vehicle_pool@@3U?$Pool@UVehicle@@U?$PoolID@UVehicleIDTag@@@@$0CAA@$0A@$0A@UVehiclePoolOps@@@@A"
+          ],
+          [
+            4765,
+            4,
+            "?_current_company@@3U?$PoolID@UCompanyIDTag@@@@A"
+          ],
+          [
+            4786,
+            4,
+            "?_current_company@@3U?$PoolID@UCompanyIDTag@@@@A"
+          ],
+          [
+            4804,
+            4,
+            "?_vehicles_to_templatereplace@@3V?$btree_set@U?$PoolID@UVehicleIDTag@@@@U?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$PoolID@UVehicleIDTag@@@@@3@$0BAA@@btree@@A"
+          ],
+          [
+            4964,
+            4,
+            "?_current_company@@3U?$PoolID@UCompanyIDTag@@@@A"
+          ],
+          [
+            5004,
+            4,
+            "?_company_pool@@3U?$Pool@UCompany@@U?$PoolID@UCompanyIDTag@@@@$00$0A@$0A@U?$DefaultPoolOps@UCompany@@@@@@A"
+          ],
+          [
+            5056,
+            4,
+            "?SubtractMoneyFromCompany@@YAXU?$PoolID@UCompanyIDTag@@@@AEBVCommandCost@@@Z"
+          ],
+          [
+            5144,
+            4,
+            "?_Tidy_deallocate@?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEAAXXZ"
+          ],
+          [
+            5157,
+            4,
+            "??3@YAXPEAX_K@Z"
+          ],
+          [
+            5188,
+            4,
+            "?operations@?$TupleCmdData@XU?$PoolID@UVehicleIDTag@@@@_N@@2UOperations@CommandPayloadBase@@B"
+          ],
+          [
+            5230,
+            4,
+            "?DoCommandImplementation@@YA?AVCommandCost@@W4Commands@@U?$ST@UTileIndexTag@@@@AEBUCommandPayloadBase@@V?$EnumBitSet@W4DoCommandFlag@@G$0BA@@@W4DoCommandIntlFlag@@@Z"
+          ],
+          [
+            5288,
+            4,
+            "?_current_company@@3U?$PoolID@UCompanyIDTag@@@@A"
+          ],
+          [
+            5293,
+            4,
+            "?SubtractMoneyFromCompany@@YAXU?$PoolID@UCompanyIDTag@@@@AEBVCommandCost@@@Z"
+          ],
+          [
+            5381,
+            4,
+            "?_Tidy_deallocate@?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEAAXXZ"
+          ],
+          [
+            5394,
+            4,
+            "??3@YAXPEAX_K@Z"
+          ],
+          [
+            5401,
+            4,
+            "?_current_company@@3U?$PoolID@UCompanyIDTag@@@@A"
+          ],
+          [
+            5407,
+            4,
+            "?_local_company@@3U?$PoolID@UCompanyIDTag@@@@A"
+          ],
+          [
+            5503,
+            4,
+            "?_Tidy_deallocate@?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEAAXXZ"
+          ],
+          [
+            5543,
+            4,
+            "?ShowCostOrIncomeAnimation@@YAXHHHV?$OverflowSafeInt@_J@@@Z"
+          ],
+          [
+            5559,
+            4,
+            "?ShowAutoReplaceAdviceMessage@@YAXAEBVCommandCost@@PEBUVehicle@@@Z"
+          ],
+          [
+            5593,
+            4,
+            "?_Decref@_Ref_count_base@std@@QEAAXXZ"
+          ],
+          [
+            5602,
+            4,
+            "?_Tidy_deallocate@?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEAAXXZ"
+          ],
+          [
+            5615,
+            4,
+            "??3@YAXPEAX_K@Z"
+          ],
+          [
+            5622,
+            4,
+            "?_current_company@@3U?$PoolID@UCompanyIDTag@@@@A"
+          ],
+          [
+            5778,
+            5,
+            "?_vehicles_to_autoreplace@@3V?$btree_map@U?$PoolID@UVehicleIDTag@@@@_NU?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$pair@$$CBU?$PoolID@UVehicleIDTag@@@@_N@std@@@3@$0BAA@@btree@@A"
+          ],
+          [
+            5787,
+            5,
+            "?_record_sync_records@@3_NA"
+          ],
+          [
+            5800,
+            4,
+            "?RecordSyncEventData@@YAXW4NetworkSyncRecordEvents@@@Z"
+          ],
+          [
+            5807,
+            4,
+            "?_vehicles_to_pay_repair@@3V?$btree_set@U?$PoolID@UVehicleIDTag@@@@U?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$PoolID@UVehicleIDTag@@@@@3@$0BAA@@btree@@A"
+          ],
+          [
+            5873,
+            4,
+            "?<lambda_invoker_cdecl>@<lambda_1>@?1???0?$FunctorScopeStackRecord@V<lambda_6>@?KN@??CallVehicleTicks@@YAXXZ@@@QEAA@V<lambda_6>@?KN@??CallVehicleTicks@@YAXXZ@@Z@SA@PEAUScopeStackRecord@@AEAUformat_target@@@Z"
+          ],
+          [
+            5890,
+            4,
+            "?_scope_stack_head@@3PEAUScopeStackRecord@@EA"
+          ],
+          [
+            5917,
+            4,
+            "?_vehicle_pool@@3U?$Pool@UVehicle@@U?$PoolID@UVehicleIDTag@@@@$0CAA@$0A@$0A@UVehiclePoolOps@@@@A"
+          ],
+          [
+            5957,
+            4,
+            "?_scope_stack_head@@3PEAUScopeStackRecord@@EA"
+          ],
+          [
+            6018,
+            4,
+            "?_engine_pool@@3U?$Pool@UEngine@@U?$PoolID@UEngineIDTag@@@@$0EA@$0A@$0A@U?$DefaultPoolOps@UEngine@@@@@@A"
+          ],
+          [
+            6027,
+            4,
+            "?GetCost@Engine@@QEBA?AV?$OverflowSafeInt@_J@@XZ"
+          ],
+          [
+            6052,
+            4,
+            "??X?$OverflowSafeInt@_J@@QEAAAEAV0@H@Z"
+          ],
+          [
+            6059,
+            4,
+            "?_settings_game@@3UGameSettings@@A"
+          ],
+          [
+            6259,
+            4,
+            "?SubtractMoneyFromCompany@@YAXU?$PoolID@UCompanyIDTag@@@@AEBVCommandCost@@@Z"
+          ],
+          [
+            6266,
+            4,
+            "?_local_company@@3U?$PoolID@UCompanyIDTag@@@@A"
+          ],
+          [
+            6311,
+            4,
+            "?ShowCostOrIncomeAnimation@@YAXHHHV?$OverflowSafeInt@_J@@@Z"
+          ],
+          [
+            6403,
+            4,
+            "?_Tidy_deallocate@?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEAAXXZ"
+          ],
+          [
+            6416,
+            4,
+            "??3@YAXPEAX_K@Z"
+          ],
+          [
+            6428,
+            4,
+            "?_scope_stack_head@@3PEAUScopeStackRecord@@EA"
+          ],
+          [
+            6437,
+            4,
+            "?increment@?$btree_const_iterator@U?$btree_set_params@U?$PoolID@UVehicleIDTag@@@@U?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$PoolID@UVehicleIDTag@@@@@3@$0BAA@@btree@@@btree@@QEAAXXZ"
+          ],
+          [
+            6456,
+            4,
+            "?_vehicles_to_pay_repair@@3V?$btree_set@U?$PoolID@UVehicleIDTag@@@@U?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$PoolID@UVehicleIDTag@@@@@3@$0BAA@@btree@@A"
+          ],
+          [
+            6467,
+            5,
+            "?_record_sync_records@@3_NA"
+          ],
+          [
+            6480,
+            4,
+            "?RecordSyncEventData@@YAXW4NetworkSyncRecordEvents@@@Z"
+          ],
+          [
+            6487,
+            4,
+            "?_vehicles_to_pay_repair@@3V?$btree_set@U?$PoolID@UVehicleIDTag@@@@U?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$PoolID@UVehicleIDTag@@@@@3@$0BAA@@btree@@A"
+          ],
+          [
+            6499,
+            4,
+            "?_vehicles_to_pay_repair@@3V?$btree_set@U?$PoolID@UVehicleIDTag@@@@U?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$PoolID@UVehicleIDTag@@@@@3@$0BAA@@btree@@A"
+          ],
+          [
+            6504,
+            4,
+            "?internal_clear@?$btree@U?$btree_set_params@U?$PoolID@UVehicleIDTag@@@@U?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$PoolID@UVehicleIDTag@@@@@3@$0BAA@@0@@btree@@AEAAXPEAV?$btree_node@U?$btree_set_params@U?$PoolID@UVehicleIDTag@@@@U?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$PoolID@UVehicleIDTag@@@@@3@$0BAA@@btree@@@2@@Z"
+          ],
+          [
+            6511,
+            4,
+            "?_vehicles_to_pay_repair@@3V?$btree_set@U?$PoolID@UVehicleIDTag@@@@U?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$PoolID@UVehicleIDTag@@@@@3@$0BAA@@btree@@A"
+          ],
+          [
+            6520,
+            4,
+            "??1?$Backup@U?$PoolID@UCompanyIDTag@@@@@@QEAA@XZ"
+          ],
+          [
+            6530,
+            4,
+            "??1?$Backup@U?$PoolID@UCompanyIDTag@@@@@@QEAA@XZ"
+          ],
+          [
+            6542,
+            4,
+            "?_scope_stack_head@@3PEAUScopeStackRecord@@EA"
+          ],
+          [
+            6557,
+            4,
+            "__security_check_cookie"
+          ],
+          [
+            6597,
+            4,
+            "??_C@_0CO@CAAEFICF@?$CB_vehicles_to_templatereplace?4c@"
+          ],
+          [
+            6604,
+            4,
+            "??_C@_0GD@PAPPGEIJ@C?3?2Users?2bebe?2?4codex?2worktrees?2@"
+          ],
+          [
+            6614,
+            4,
+            "?assert_str_error@@YAXHPEBD0@Z"
+          ],
+          [
+            6622,
+            4,
+            "??_C@_0CF@DOKNELKB@it?5?$CB?$DN?5_vehicles_to_autoreplace?4@"
+          ],
+          [
+            6629,
+            4,
+            "??_C@_0GD@PAPPGEIJ@C?3?2Users?2bebe?2?4codex?2worktrees?2@"
+          ],
+          [
+            6639,
+            4,
+            "?assert_str_error@@YAXHPEBD0@Z"
+          ],
+          [
+            6647,
+            4,
+            "??_C@_0BA@EEIJHHEF@v?9?$DOtype?5?$DN?$DN?5Type@"
+          ],
+          [
+            6654,
+            4,
+            "??_C@_0GG@BINPNNPB@C?3?2Users?2bebe?2?4codex?2worktrees?2@"
+          ],
+          [
+            6664,
+            4,
+            "?assert_str_error@@YAXHPEBD0@Z"
+          ],
+          [
+            6672,
+            4,
+            "??_C@_0GD@PAPPGEIJ@C?3?2Users?2bebe?2?4codex?2worktrees?2@"
+          ],
+          [
+            6682,
+            4,
+            "?not_reached_error@@YAXHPEBD@Z"
+          ]
+        ]
+      },
+      "new": {
+        "size": 6687,
+        "normalized_sha256": "c9cb466579ea37c0dfe336938a89f7a64a424ad68fa07616846624a6d7a5036f",
+        "relocations": [
+          [
+            42,
+            4,
+            "__security_cookie"
+          ],
+          [
+            65,
+            4,
+            "?_vehicles_to_autoreplace@@3V?$btree_map@U?$PoolID@UVehicleIDTag@@@@_NU?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$pair@$$CBU?$PoolID@UVehicleIDTag@@@@_N@std@@@3@$0BAA@@btree@@A"
+          ],
+          [
+            77,
+            4,
+            "?_vehicles_to_autoreplace@@3V?$btree_map@U?$PoolID@UVehicleIDTag@@@@_NU?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$pair@$$CBU?$PoolID@UVehicleIDTag@@@@_N@std@@@3@$0BAA@@btree@@A"
+          ],
+          [
+            82,
+            4,
+            "?internal_clear@?$btree@U?$btree_map_params@U?$PoolID@UVehicleIDTag@@@@_NU?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$pair@$$CBU?$PoolID@UVehicleIDTag@@@@_N@std@@@3@$0BAA@@0@@btree@@AEAAXPEAV?$btree_node@U?$btree_map_params@U?$PoolID@UVehicleIDTag@@@@_NU?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$pair@$$CBU?$PoolID@UVehicleIDTag@@@@_N@std@@@3@$0BAA@@btree@@@2@@Z"
+          ],
+          [
+            89,
+            4,
+            "?_vehicles_to_autoreplace@@3V?$btree_map@U?$PoolID@UVehicleIDTag@@@@_NU?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$pair@$$CBU?$PoolID@UVehicleIDTag@@@@_N@std@@@3@$0BAA@@btree@@A"
+          ],
+          [
+            96,
+            4,
+            "?_vehicles_to_templatereplace@@3V?$btree_set@U?$PoolID@UVehicleIDTag@@@@U?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$PoolID@UVehicleIDTag@@@@@3@$0BAA@@btree@@A"
+          ],
+          [
+            108,
+            4,
+            "?_vehicles_to_templatereplace@@3V?$btree_set@U?$PoolID@UVehicleIDTag@@@@U?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$PoolID@UVehicleIDTag@@@@@3@$0BAA@@btree@@A"
+          ],
+          [
+            113,
+            4,
+            "?internal_clear@?$btree@U?$btree_set_params@U?$PoolID@UVehicleIDTag@@@@U?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$PoolID@UVehicleIDTag@@@@@3@$0BAA@@0@@btree@@AEAAXPEAV?$btree_node@U?$btree_set_params@U?$PoolID@UVehicleIDTag@@@@U?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$PoolID@UVehicleIDTag@@@@@3@$0BAA@@btree@@@2@@Z"
+          ],
+          [
+            120,
+            4,
+            "?_vehicles_to_templatereplace@@3V?$btree_set@U?$PoolID@UVehicleIDTag@@@@U?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$PoolID@UVehicleIDTag@@@@@3@$0BAA@@btree@@A"
+          ],
+          [
+            127,
+            4,
+            "?_vehicles_to_pay_repair@@3V?$btree_set@U?$PoolID@UVehicleIDTag@@@@U?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$PoolID@UVehicleIDTag@@@@@3@$0BAA@@btree@@A"
+          ],
+          [
+            139,
+            4,
+            "?_vehicles_to_pay_repair@@3V?$btree_set@U?$PoolID@UVehicleIDTag@@@@U?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$PoolID@UVehicleIDTag@@@@@3@$0BAA@@btree@@A"
+          ],
+          [
+            144,
+            4,
+            "?internal_clear@?$btree@U?$btree_set_params@U?$PoolID@UVehicleIDTag@@@@U?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$PoolID@UVehicleIDTag@@@@@3@$0BAA@@0@@btree@@AEAAXPEAV?$btree_node@U?$btree_set_params@U?$PoolID@UVehicleIDTag@@@@U?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$PoolID@UVehicleIDTag@@@@@3@$0BAA@@btree@@@2@@Z"
+          ],
+          [
+            151,
+            4,
+            "?_vehicles_to_pay_repair@@3V?$btree_set@U?$PoolID@UVehicleIDTag@@@@U?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$PoolID@UVehicleIDTag@@@@@3@$0BAA@@btree@@A"
+          ],
+          [
+            158,
+            4,
+            "?_vehicles_to_sell@@3V?$btree_set@U?$PoolID@UVehicleIDTag@@@@U?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$PoolID@UVehicleIDTag@@@@@3@$0BAA@@btree@@A"
+          ],
+          [
+            170,
+            4,
+            "?_vehicles_to_sell@@3V?$btree_set@U?$PoolID@UVehicleIDTag@@@@U?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$PoolID@UVehicleIDTag@@@@@3@$0BAA@@btree@@A"
+          ],
+          [
+            175,
+            4,
+            "?internal_clear@?$btree@U?$btree_set_params@U?$PoolID@UVehicleIDTag@@@@U?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$PoolID@UVehicleIDTag@@@@@3@$0BAA@@0@@btree@@AEAAXPEAV?$btree_node@U?$btree_set_params@U?$PoolID@UVehicleIDTag@@@@U?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$PoolID@UVehicleIDTag@@@@@3@$0BAA@@btree@@@2@@Z"
+          ],
+          [
+            182,
+            4,
+            "?_vehicles_to_sell@@3V?$btree_set@U?$PoolID@UVehicleIDTag@@@@U?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$PoolID@UVehicleIDTag@@@@@3@$0BAA@@btree@@A"
+          ],
+          [
+            189,
+            4,
+            "?_train_news_too_heavy_this_tick@@3V?$vector@U?$PoolID@UVehicleIDTag@@@@V?$allocator@U?$PoolID@UVehicleIDTag@@@@@std@@@std@@A"
+          ],
+          [
+            196,
+            4,
+            "?_train_news_too_heavy_this_tick@@3V?$vector@U?$PoolID@UVehicleIDTag@@@@V?$allocator@U?$PoolID@UVehicleIDTag@@@@@std@@@std@@A"
+          ],
+          [
+            205,
+            4,
+            "?_train_news_too_heavy_this_tick@@3V?$vector@U?$PoolID@UVehicleIDTag@@@@V?$allocator@U?$PoolID@UVehicleIDTag@@@@@std@@@std@@A"
+          ],
+          [
+            212,
+            4,
+            "?_tick_skip_counter@DateDetail@@3EA"
+          ],
+          [
+            219,
+            4,
+            "?RunVehicleDayProc@@YAXXZ"
+          ],
+          [
+            226,
+            4,
+            "?UsingWallclockUnits@EconTime@@SA_N_N@Z"
+          ],
+          [
+            251,
+            4,
+            "?IsCalendarFrozen@CalTime@@SA_N_N@Z"
+          ],
+          [
+            266,
+            4,
+            "?now@Detail@CalTime@@2UState@2@A"
+          ],
+          [
+            278,
+            5,
+            "?_game_mode@@3W4GameMode@@A"
+          ],
+          [
+            304,
+            4,
+            "?<lambda_invoker_cdecl>@<lambda_1>@?1???0?$FunctorScopeStackRecord@V<lambda_1>@?1??RunVehicleCalendarDayProc@@YAXXZ@@@QEAA@V1?1??RunVehicleCalendarDayProc@@YAXXZ@@Z@SA@PEAUScopeStackRecord@@AEAUformat_target@@@Z"
+          ],
+          [
+            315,
+            4,
+            "?_scope_stack_head@@3PEAUScopeStackRecord@@EA"
+          ],
+          [
+            330,
+            4,
+            "?_scope_stack_head@@3PEAUScopeStackRecord@@EA"
+          ],
+          [
+            337,
+            4,
+            "?now@Detail@CalTime@@2UState@2@A"
+          ],
+          [
+            344,
+            4,
+            "?_vehicle_pool@@3U?$Pool@UVehicle@@U?$PoolID@UVehicleIDTag@@@@$0CAA@$0A@$0A@UVehiclePoolOps@@@@A"
+          ],
+          [
+            355,
+            4,
+            "?_vehicle_pool@@3U?$Pool@UVehicle@@U?$PoolID@UVehicleIDTag@@@@$0CAA@$0A@$0A@UVehiclePoolOps@@@@A"
+          ],
+          [
+            436,
+            4,
+            "?AgeVehicle@@YAXPEAUVehicle@@@Z"
+          ],
+          [
+            447,
+            4,
+            "?_vehicle_pool@@3U?$Pool@UVehicle@@U?$PoolID@UVehicleIDTag@@@@$0CAA@$0A@$0A@UVehiclePoolOps@@@@A"
+          ],
+          [
+            460,
+            4,
+            "?_scope_stack_head@@3PEAUScopeStackRecord@@EA"
+          ],
+          [
+            466,
+            5,
+            "?_effective_day_length@DateDetail@@3EA"
+          ],
+          [
+            479,
+            5,
+            "?_game_mode@@3W4GameMode@@A"
+          ],
+          [
+            505,
+            4,
+            "?<lambda_invoker_cdecl>@<lambda_1>@?1???0?$FunctorScopeStackRecord@V<lambda_1>@?9??CallVehicleTicks@@YAXXZ@@@QEAA@V1?9??CallVehicleTicks@@YAXXZ@@Z@SA@PEAUScopeStackRecord@@AEAUformat_target@@@Z"
+          ],
+          [
+            516,
+            4,
+            "?_scope_stack_head@@3PEAUScopeStackRecord@@EA"
+          ],
+          [
+            531,
+            4,
+            "?_scope_stack_head@@3PEAUScopeStackRecord@@EA"
+          ],
+          [
+            537,
+            4,
+            "?_scaled_tick_counter@@3_KA"
+          ],
+          [
+            552,
+            4,
+            "?_vehicle_pool@@3U?$Pool@UVehicle@@U?$PoolID@UVehicleIDTag@@@@$0CAA@$0A@$0A@UVehiclePoolOps@@@@A"
+          ],
+          [
+            565,
+            4,
+            "?_vehicle_pool@@3U?$Pool@UVehicle@@U?$PoolID@UVehicleIDTag@@@@$0CAA@$0A@$0A@UVehiclePoolOps@@@@A"
+          ],
+          [
+            616,
+            4,
+            "?OnPeriodic@Aircraft@@UEAAXXZ"
+          ],
+          [
+            633,
+            4,
+            "?OnPeriodic@Ship@@UEAAXXZ"
+          ],
+          [
+            650,
+            4,
+            "?OnPeriodic@RoadVehicle@@UEAAXXZ"
+          ],
+          [
+            667,
+            4,
+            "?OnPeriodic@Train@@UEAAXXZ"
+          ],
+          [
+            682,
+            4,
+            "?_vehicle_pool@@3U?$Pool@UVehicle@@U?$PoolID@UVehicleIDTag@@@@$0CAA@$0A@$0A@UVehiclePoolOps@@@@A"
+          ],
+          [
+            695,
+            4,
+            "?_scope_stack_head@@3PEAUScopeStackRecord@@EA"
+          ],
+          [
+            701,
+            5,
+            "?_record_sync_records@@3_NA"
+          ],
+          [
+            714,
+            4,
+            "?RecordSyncEventData@@YAXW4NetworkSyncRecordEvents@@@Z"
+          ],
+          [
+            725,
+            4,
+            "??0PerformanceMeasurer@@QEAA@W4PerformanceElement@@@Z"
+          ],
+          [
+            745,
+            4,
+            "?<lambda_invoker_cdecl>@<lambda_1>@?1???0?$FunctorScopeStackRecord@V<lambda_2>@?BB@??CallVehicleTicks@@YAXXZ@@@QEAA@V<lambda_2>@?BB@??CallVehicleTicks@@YAXXZ@@Z@SA@PEAUScopeStackRecord@@AEAUformat_target@@@Z"
+          ],
+          [
+            756,
+            4,
+            "?_scope_stack_head@@3PEAUScopeStackRecord@@EA"
+          ],
+          [
+            771,
+            4,
+            "?_scope_stack_head@@3PEAUScopeStackRecord@@EA"
+          ],
+          [
+            776,
+            4,
+            "?PreparePassengerJourneyLoading@@YAXXZ"
+          ],
+          [
+            786,
+            4,
+            "?_station_pool@@3U?$Pool@UBaseStation@@U?$PoolID@UStationIDTag@@@@$0CA@$0A@$0A@U?$DefaultPoolOps@UBaseStation@@@@@@A"
+          ],
+          [
+            793,
+            4,
+            "?_station_pool@@3U?$Pool@UBaseStation@@U?$PoolID@UStationIDTag@@@@$0CA@$0A@$0A@U?$DefaultPoolOps@UBaseStation@@@@@@A"
+          ],
+          [
+            889,
+            4,
+            "?LoadUnloadStation@@YAXPEAUStation@@@Z"
+          ],
+          [
+            899,
+            4,
+            "?_station_pool@@3U?$Pool@UBaseStation@@U?$PoolID@UStationIDTag@@@@$0CA@$0A@$0A@U?$DefaultPoolOps@UBaseStation@@@@@@A"
+          ],
+          [
+            906,
+            4,
+            "?_station_pool@@3U?$Pool@UBaseStation@@U?$PoolID@UStationIDTag@@@@$0CA@$0A@$0A@U?$DefaultPoolOps@UBaseStation@@@@@@A"
+          ],
+          [
+            955,
+            4,
+            "?_scope_stack_head@@3PEAUScopeStackRecord@@EA"
+          ],
+          [
+            964,
+            4,
+            "??1PerformanceMeasurer@@QEAA@XZ"
+          ],
+          [
+            970,
+            5,
+            "?_record_sync_records@@3_NA"
+          ],
+          [
+            983,
+            4,
+            "?RecordSyncEventData@@YAXW4NetworkSyncRecordEvents@@@Z"
+          ],
+          [
+            989,
+            5,
+            "?_tick_caches_valid@@3_NA"
+          ],
+          [
+            998,
+            4,
+            "?_settings_game@@3UGameSettings@@A"
+          ],
+          [
+            1007,
+            4,
+            "?RebuildVehicleTickCaches@@YAXXZ"
+          ],
+          [
+            1013,
+            4,
+            "?_settings_game@@3UGameSettings@@A"
+          ],
+          [
+            1022,
+            4,
+            "?DebugInvalidateAllWaterRegions@@YAXXZ"
+          ],
+          [
+            1028,
+            4,
+            "?_settings_game@@3UGameSettings@@A"
+          ],
+          [
+            1039,
+            4,
+            "?DebugInitAllWaterRegions@@YAXXZ"
+          ],
+          [
+            1060,
+            4,
+            "?<lambda_invoker_cdecl>@<lambda_1>@?1???0?$FunctorScopeStackRecord@V<lambda_3>@?1??CallVehicleTicks@@YAXXZ@@@QEAA@V<lambda_3>@?1??CallVehicleTicks@@YAXXZ@@Z@SA@PEAUScopeStackRecord@@AEAUformat_target@@@Z"
+          ],
+          [
+            1071,
+            4,
+            "?_scope_stack_head@@3PEAUScopeStackRecord@@EA"
+          ],
+          [
+            1086,
+            4,
+            "?_scope_stack_head@@3PEAUScopeStackRecord@@EA"
+          ],
+          [
+            1093,
+            5,
+            "?_remove_from_tick_effect_veh_cache@@3V?$Table@$00$0FA@U?$PoolID@UVehicleIDTag@@@@XU?$hash@U?$PoolID@UVehicleIDTag@@@@X@robin_hood@@U?$equal_to@U?$PoolID@UVehicleIDTag@@@@@std@@@detail@robin_hood@@A"
+          ],
+          [
+            1103,
+            4,
+            "?_remove_from_tick_effect_veh_cache@@3V?$Table@$00$0FA@U?$PoolID@UVehicleIDTag@@@@XU?$hash@U?$PoolID@UVehicleIDTag@@@@X@robin_hood@@U?$equal_to@U?$PoolID@UVehicleIDTag@@@@@std@@@detail@robin_hood@@A"
+          ],
+          [
+            1118,
+            4,
+            "?_remove_from_tick_effect_veh_cache@@3V?$Table@$00$0FA@U?$PoolID@UVehicleIDTag@@@@XU?$hash@U?$PoolID@UVehicleIDTag@@@@X@robin_hood@@U?$equal_to@U?$PoolID@UVehicleIDTag@@@@@std@@@detail@robin_hood@@A"
+          ],
+          [
+            1130,
+            4,
+            "?_remove_from_tick_effect_veh_cache@@3V?$Table@$00$0FA@U?$PoolID@UVehicleIDTag@@@@XU?$hash@U?$PoolID@UVehicleIDTag@@@@X@robin_hood@@U?$equal_to@U?$PoolID@UVehicleIDTag@@@@@std@@@detail@robin_hood@@A"
+          ],
+          [
+            1145,
+            4,
+            "?fastForward@?$Iter@$0A@@?$Table@$00$0FA@U?$PoolID@UVehicleIDTag@@@@XU?$hash@U?$PoolID@UVehicleIDTag@@@@X@robin_hood@@U?$equal_to@U?$PoolID@UVehicleIDTag@@@@@std@@@detail@robin_hood@@AEAAXXZ"
+          ],
+          [
+            1162,
+            4,
+            "?_remove_from_tick_effect_veh_cache@@3V?$Table@$00$0FA@U?$PoolID@UVehicleIDTag@@@@XU?$hash@U?$PoolID@UVehicleIDTag@@@@X@robin_hood@@U?$equal_to@U?$PoolID@UVehicleIDTag@@@@@std@@@detail@robin_hood@@A"
+          ],
+          [
+            1193,
+            4,
+            "?_tick_effect_veh_cache@@3V?$btree_set@U?$PoolID@UVehicleIDTag@@@@U?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$PoolID@UVehicleIDTag@@@@@3@$0BAA@@btree@@A"
+          ],
+          [
+            1220,
+            4,
+            "?_tick_effect_veh_cache@@3V?$btree_set@U?$PoolID@UVehicleIDTag@@@@U?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$PoolID@UVehicleIDTag@@@@@3@$0BAA@@btree@@A"
+          ],
+          [
+            1225,
+            4,
+            "?internal_find_unique@?$btree@U?$btree_set_params@U?$PoolID@UVehicleIDTag@@@@U?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$PoolID@UVehicleIDTag@@@@@3@$0BAA@@0@@btree@@AEBA?AU?$btree_iterator@U?$btree_set_params@U?$PoolID@UVehicleIDTag@@@@U?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$PoolID@UVehicleIDTag@@@@@3@$0BAA@@btree@@@2@AEBU?$PoolID@UVehicleIDTag@@@@U32@@Z"
+          ],
+          [
+            1265,
+            4,
+            "?_tick_effect_veh_cache@@3V?$btree_set@U?$PoolID@UVehicleIDTag@@@@U?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$PoolID@UVehicleIDTag@@@@@3@$0BAA@@btree@@A"
+          ],
+          [
+            1270,
+            4,
+            "?erase@?$btree@U?$btree_set_params@U?$PoolID@UVehicleIDTag@@@@U?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$PoolID@UVehicleIDTag@@@@@3@$0BAA@@0@@btree@@QEAA?AU?$btree_iterator@U?$btree_set_params@U?$PoolID@UVehicleIDTag@@@@U?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$PoolID@UVehicleIDTag@@@@@3@$0BAA@@btree@@@2@U32@@Z"
+          ],
+          [
+            1297,
+            4,
+            "?fastForward@?$Iter@$0A@@?$Table@$00$0FA@U?$PoolID@UVehicleIDTag@@@@XU?$hash@U?$PoolID@UVehicleIDTag@@@@X@robin_hood@@U?$equal_to@U?$PoolID@UVehicleIDTag@@@@@std@@@detail@robin_hood@@AEAAXXZ"
+          ],
+          [
+            1324,
+            4,
+            "?_remove_from_tick_effect_veh_cache@@3V?$Table@$00$0FA@U?$PoolID@UVehicleIDTag@@@@XU?$hash@U?$PoolID@UVehicleIDTag@@@@X@robin_hood@@U?$equal_to@U?$PoolID@UVehicleIDTag@@@@@std@@@detail@robin_hood@@A"
+          ],
+          [
+            1329,
+            4,
+            "?clear@?$Table@$00$0FA@U?$PoolID@UVehicleIDTag@@@@XU?$hash@U?$PoolID@UVehicleIDTag@@@@X@robin_hood@@U?$equal_to@U?$PoolID@UVehicleIDTag@@@@@std@@@detail@robin_hood@@QEAAXXZ"
+          ],
+          [
+            1336,
+            4,
+            "?_tick_effect_veh_cache@@3V?$btree_set@U?$PoolID@UVehicleIDTag@@@@U?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$PoolID@UVehicleIDTag@@@@@3@$0BAA@@btree@@A"
+          ],
+          [
+            1416,
+            4,
+            "?_vehicle_pool@@3U?$Pool@UVehicle@@U?$PoolID@UVehicleIDTag@@@@$0CAA@$0A@$0A@UVehiclePoolOps@@@@A"
+          ],
+          [
+            1433,
+            4,
+            "?Tick@EffectVehicle@@UEAA_NXZ"
+          ],
+          [
+            1443,
+            4,
+            "?increment@?$btree_const_iterator@U?$btree_set_params@U?$PoolID@UVehicleIDTag@@@@U?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$PoolID@UVehicleIDTag@@@@@3@$0BAA@@btree@@@btree@@QEAAXXZ"
+          ],
+          [
+            1461,
+            5,
+            "?_tick_effect_veh_cache@@3V?$btree_set@U?$PoolID@UVehicleIDTag@@@@U?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$PoolID@UVehicleIDTag@@@@@3@$0BAA@@btree@@A"
+          ],
+          [
+            1470,
+            5,
+            "?_record_sync_records@@3_NA"
+          ],
+          [
+            1483,
+            4,
+            "?RecordSyncEventData@@YAXW4NetworkSyncRecordEvents@@@Z"
+          ],
+          [
+            1494,
+            4,
+            "??0PerformanceMeasurer@@QEAA@W4PerformanceElement@@@Z"
+          ],
+          [
+            1502,
+            4,
+            "?_tick_train_front_cache@@3V?$vector@PEAUTrain@@V?$allocator@PEAUTrain@@@std@@@std@@A"
+          ],
+          [
+            1509,
+            4,
+            "?_tick_train_front_cache@@3V?$vector@PEAUTrain@@V?$allocator@PEAUTrain@@@std@@@std@@A"
+          ],
+          [
+            1548,
+            4,
+            "?Tick@Train@@UEAA_NXZ"
+          ],
+          [
+            1621,
+            4,
+            "?AgeCargo@VehicleCargoList@@QEAAXXZ"
+          ],
+          [
+            1674,
+            4,
+            "?VehicleTickMotion@@YAXPEAUVehicle@@0@Z"
+          ],
+          [
+            1705,
+            4,
+            "??1PerformanceMeasurer@@QEAA@XZ"
+          ],
+          [
+            1711,
+            5,
+            "?_record_sync_records@@3_NA"
+          ],
+          [
+            1724,
+            4,
+            "?RecordSyncEventData@@YAXW4NetworkSyncRecordEvents@@@Z"
+          ],
+          [
+            1735,
+            4,
+            "??0PerformanceMeasurer@@QEAA@W4PerformanceElement@@@Z"
+          ],
+          [
+            1743,
+            4,
+            "?_tick_road_veh_front_cache@@3V?$vector@PEAURoadVehicle@@V?$allocator@PEAURoadVehicle@@@std@@@std@@A"
+          ],
+          [
+            1750,
+            4,
+            "?_tick_road_veh_front_cache@@3V?$vector@PEAURoadVehicle@@V?$allocator@PEAURoadVehicle@@@std@@@std@@A"
+          ],
+          [
+            1788,
+            4,
+            "?Tick@RoadVehicle@@UEAA_NXZ"
+          ],
+          [
+            1861,
+            4,
+            "?AgeCargo@VehicleCargoList@@QEAAXXZ"
+          ],
+          [
+            1904,
+            4,
+            "?VehicleTickMotion@@YAXPEAUVehicle@@0@Z"
+          ],
+          [
+            1926,
+            4,
+            "??1PerformanceMeasurer@@QEAA@XZ"
+          ],
+          [
+            1933,
+            4,
+            "?_tick_road_veh_front_cache@@3V?$vector@PEAURoadVehicle@@V?$allocator@PEAURoadVehicle@@@std@@@std@@A"
+          ],
+          [
+            1940,
+            4,
+            "?_tick_road_veh_front_cache@@3V?$vector@PEAURoadVehicle@@V?$allocator@PEAURoadVehicle@@@std@@@std@@A"
+          ],
+          [
+            1948,
+            5,
+            "?_record_sync_records@@3_NA"
+          ],
+          [
+            1961,
+            4,
+            "?RecordSyncEventData@@YAXW4NetworkSyncRecordEvents@@@Z"
+          ],
+          [
+            1972,
+            4,
+            "??0PerformanceMeasurer@@QEAA@W4PerformanceElement@@@Z"
+          ],
+          [
+            1980,
+            4,
+            "?_tick_aircraft_front_cache@@3V?$vector@PEAUAircraft@@V?$allocator@PEAUAircraft@@@std@@@std@@A"
+          ],
+          [
+            1987,
+            4,
+            "?_tick_aircraft_front_cache@@3V?$vector@PEAUAircraft@@V?$allocator@PEAUAircraft@@@std@@@std@@A"
+          ],
+          [
+            2012,
+            4,
+            "?Tick@Aircraft@@UEAA_NXZ"
+          ],
+          [
+            2079,
+            4,
+            "?AgeCargo@VehicleCargoList@@QEAAXXZ"
+          ],
+          [
+            2122,
+            4,
+            "?VehicleTickMotion@@YAXPEAUVehicle@@0@Z"
+          ],
+          [
+            2144,
+            4,
+            "??1PerformanceMeasurer@@QEAA@XZ"
+          ],
+          [
+            2151,
+            4,
+            "?_tick_aircraft_front_cache@@3V?$vector@PEAUAircraft@@V?$allocator@PEAUAircraft@@@std@@@std@@A"
+          ],
+          [
+            2158,
+            4,
+            "?_tick_aircraft_front_cache@@3V?$vector@PEAUAircraft@@V?$allocator@PEAUAircraft@@@std@@@std@@A"
+          ],
+          [
+            2166,
+            5,
+            "?_record_sync_records@@3_NA"
+          ],
+          [
+            2179,
+            4,
+            "?RecordSyncEventData@@YAXW4NetworkSyncRecordEvents@@@Z"
+          ],
+          [
+            2190,
+            4,
+            "??0PerformanceMeasurer@@QEAA@W4PerformanceElement@@@Z"
+          ],
+          [
+            2198,
+            4,
+            "?_tick_ship_front_cache@@3V?$vector@PEAUShip@@V?$allocator@PEAUShip@@@std@@@std@@A"
+          ],
+          [
+            2205,
+            4,
+            "?_tick_ship_front_cache@@3V?$vector@PEAUShip@@V?$allocator@PEAUShip@@@std@@@std@@A"
+          ],
+          [
+            2236,
+            4,
+            "?Tick@Ship@@UEAA_NXZ"
+          ],
+          [
+            2303,
+            4,
+            "?AgeCargo@VehicleCargoList@@QEAAXXZ"
+          ],
+          [
+            2346,
+            4,
+            "?VehicleTickMotion@@YAXPEAUVehicle@@0@Z"
+          ],
+          [
+            2368,
+            4,
+            "??1PerformanceMeasurer@@QEAA@XZ"
+          ],
+          [
+            2375,
+            4,
+            "?_tick_ship_front_cache@@3V?$vector@PEAUShip@@V?$allocator@PEAUShip@@@std@@@std@@A"
+          ],
+          [
+            2382,
+            4,
+            "?_tick_ship_front_cache@@3V?$vector@PEAUShip@@V?$allocator@PEAUShip@@@std@@@std@@A"
+          ],
+          [
+            2390,
+            5,
+            "?_record_sync_records@@3_NA"
+          ],
+          [
+            2403,
+            4,
+            "?RecordSyncEventData@@YAXW4NetworkSyncRecordEvents@@@Z"
+          ],
+          [
+            2410,
+            4,
+            "?_tick_other_veh_cache@@3V?$vector@PEAUVehicle@@V?$allocator@PEAUVehicle@@@std@@@std@@A"
+          ],
+          [
+            2417,
+            4,
+            "?_tick_other_veh_cache@@3V?$vector@PEAUVehicle@@V?$allocator@PEAUVehicle@@@std@@@std@@A"
+          ],
+          [
+            2463,
+            4,
+            "?_tick_other_veh_cache@@3V?$vector@PEAUVehicle@@V?$allocator@PEAUVehicle@@@std@@@std@@A"
+          ],
+          [
+            2470,
+            4,
+            "?_tick_other_veh_cache@@3V?$vector@PEAUVehicle@@V?$allocator@PEAUVehicle@@@std@@@std@@A"
+          ],
+          [
+            2486,
+            5,
+            "?_record_sync_records@@3_NA"
+          ],
+          [
+            2499,
+            4,
+            "?RecordSyncEventData@@YAXW4NetworkSyncRecordEvents@@@Z"
+          ],
+          [
+            2506,
+            4,
+            "?_current_company@@3U?$PoolID@UCompanyIDTag@@@@A"
+          ],
+          [
+            2517,
+            4,
+            "??_C@_0EE@DIEIIACD@C?3?2Users?2bebe?2?4codex?2worktrees?2@"
+          ],
+          [
+            2539,
+            4,
+            "?_current_company@@3U?$PoolID@UCompanyIDTag@@@@A"
+          ],
+          [
+            2553,
+            4,
+            "?_vehicles_to_sell@@3V?$btree_set@U?$PoolID@UVehicleIDTag@@@@U?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$PoolID@UVehicleIDTag@@@@@3@$0BAA@@btree@@A"
+          ],
+          [
+            2621,
+            4,
+            "?_scope_stack_head@@3PEAUScopeStackRecord@@EA"
+          ],
+          [
+            2628,
+            4,
+            "?operations@?$TupleCmdData@XU?$PoolID@UVehicleIDTag@@@@W4SellVehicleFlags@@W4ClientID@@@@2UOperations@CommandPayloadBase@@B"
+          ],
+          [
+            2641,
+            4,
+            "?<lambda_invoker_cdecl>@<lambda_1>@?1???0?$FunctorScopeStackRecord@V<lambda_4>@?GH@??CallVehicleTicks@@YAXXZ@@@QEAA@V<lambda_4>@?GH@??CallVehicleTicks@@YAXXZ@@Z@SA@PEAUScopeStackRecord@@AEAUformat_target@@@Z"
+          ],
+          [
+            2671,
+            4,
+            "?_vehicle_pool@@3U?$Pool@UVehicle@@U?$PoolID@UVehicleIDTag@@@@$0CAA@$0A@$0A@UVehiclePoolOps@@@@A"
+          ],
+          [
+            2701,
+            4,
+            "?_scope_stack_head@@3PEAUScopeStackRecord@@EA"
+          ],
+          [
+            2720,
+            4,
+            "?_current_company@@3U?$PoolID@UCompanyIDTag@@@@A"
+          ],
+          [
+            2819,
+            4,
+            "?DoCommandImplementation@@YA?AVCommandCost@@W4Commands@@U?$ST@UTileIndexTag@@@@AEBUCommandPayloadBase@@V?$EnumBitSet@W4DoCommandFlag@@G$0BA@@@W4DoCommandIntlFlag@@@Z"
+          ],
+          [
+            2853,
+            4,
+            "?_current_company@@3U?$PoolID@UCompanyIDTag@@@@A"
+          ],
+          [
+            2859,
+            4,
+            "?_local_company@@3U?$PoolID@UCompanyIDTag@@@@A"
+          ],
+          [
+            2892,
+            4,
+            "?ShowCostOrIncomeAnimation@@YAXHHHV?$OverflowSafeInt@_J@@@Z"
+          ],
+          [
+            2904,
+            4,
+            "?_vehicles_to_templatereplace@@3V?$btree_set@U?$PoolID@UVehicleIDTag@@@@U?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$PoolID@UVehicleIDTag@@@@@3@$0BAA@@btree@@A"
+          ],
+          [
+            2931,
+            4,
+            "?_vehicles_to_templatereplace@@3V?$btree_set@U?$PoolID@UVehicleIDTag@@@@U?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$PoolID@UVehicleIDTag@@@@@3@$0BAA@@btree@@A"
+          ],
+          [
+            2936,
+            4,
+            "?internal_find_unique@?$btree@U?$btree_set_params@U?$PoolID@UVehicleIDTag@@@@U?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$PoolID@UVehicleIDTag@@@@@3@$0BAA@@0@@btree@@AEBA?AU?$btree_iterator@U?$btree_set_params@U?$PoolID@UVehicleIDTag@@@@U?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$PoolID@UVehicleIDTag@@@@@3@$0BAA@@btree@@@2@AEBU?$PoolID@UVehicleIDTag@@@@U32@@Z"
+          ],
+          [
+            2970,
+            4,
+            "?_vehicles_to_templatereplace@@3V?$btree_set@U?$PoolID@UVehicleIDTag@@@@U?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$PoolID@UVehicleIDTag@@@@@3@$0BAA@@btree@@A"
+          ],
+          [
+            2975,
+            4,
+            "?erase@?$btree@U?$btree_set_params@U?$PoolID@UVehicleIDTag@@@@U?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$PoolID@UVehicleIDTag@@@@@3@$0BAA@@0@@btree@@QEAA?AU?$btree_iterator@U?$btree_set_params@U?$PoolID@UVehicleIDTag@@@@U?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$PoolID@UVehicleIDTag@@@@@3@$0BAA@@btree@@@2@U32@@Z"
+          ],
+          [
+            2982,
+            4,
+            "?_vehicles_to_autoreplace@@3V?$btree_map@U?$PoolID@UVehicleIDTag@@@@_NU?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$pair@$$CBU?$PoolID@UVehicleIDTag@@@@_N@std@@@3@$0BAA@@btree@@A"
+          ],
+          [
+            3009,
+            4,
+            "?_vehicles_to_autoreplace@@3V?$btree_map@U?$PoolID@UVehicleIDTag@@@@_NU?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$pair@$$CBU?$PoolID@UVehicleIDTag@@@@_N@std@@@3@$0BAA@@btree@@A"
+          ],
+          [
+            3014,
+            4,
+            "?internal_find_unique@?$btree@U?$btree_map_params@U?$PoolID@UVehicleIDTag@@@@_NU?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$pair@$$CBU?$PoolID@UVehicleIDTag@@@@_N@std@@@3@$0BAA@@0@@btree@@AEBA?AU?$btree_iterator@U?$btree_map_params@U?$PoolID@UVehicleIDTag@@@@_NU?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$pair@$$CBU?$PoolID@UVehicleIDTag@@@@_N@std@@@3@$0BAA@@btree@@@2@AEBU?$PoolID@UVehicleIDTag@@@@U32@@Z"
+          ],
+          [
+            3049,
+            4,
+            "?_vehicles_to_autoreplace@@3V?$btree_map@U?$PoolID@UVehicleIDTag@@@@_NU?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$pair@$$CBU?$PoolID@UVehicleIDTag@@@@_N@std@@@3@$0BAA@@btree@@A"
+          ],
+          [
+            3054,
+            4,
+            "?erase@?$btree@U?$btree_map_params@U?$PoolID@UVehicleIDTag@@@@_NU?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$pair@$$CBU?$PoolID@UVehicleIDTag@@@@_N@std@@@3@$0BAA@@0@@btree@@QEAA?AU?$btree_iterator@U?$btree_map_params@U?$PoolID@UVehicleIDTag@@@@_NU?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$pair@$$CBU?$PoolID@UVehicleIDTag@@@@_N@std@@@3@$0BAA@@btree@@@2@U32@@Z"
+          ],
+          [
+            3088,
+            4,
+            "?_Decref@_Ref_count_base@std@@QEAAXXZ"
+          ],
+          [
+            3097,
+            4,
+            "?_Tidy_deallocate@?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEAAXXZ"
+          ],
+          [
+            3110,
+            4,
+            "??3@YAXPEAX_K@Z"
+          ],
+          [
+            3122,
+            4,
+            "?_scope_stack_head@@3PEAUScopeStackRecord@@EA"
+          ],
+          [
+            3132,
+            4,
+            "?increment@?$btree_const_iterator@U?$btree_set_params@U?$PoolID@UVehicleIDTag@@@@U?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$PoolID@UVehicleIDTag@@@@@3@$0BAA@@btree@@@btree@@QEAAXXZ"
+          ],
+          [
+            3167,
+            4,
+            "?_current_company@@3U?$PoolID@UCompanyIDTag@@@@A"
+          ],
+          [
+            3178,
+            5,
+            "?_vehicles_to_sell@@3V?$btree_set@U?$PoolID@UVehicleIDTag@@@@U?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$PoolID@UVehicleIDTag@@@@@3@$0BAA@@btree@@A"
+          ],
+          [
+            3187,
+            5,
+            "?_record_sync_records@@3_NA"
+          ],
+          [
+            3200,
+            4,
+            "?RecordSyncEventData@@YAXW4NetworkSyncRecordEvents@@@Z"
+          ],
+          [
+            3207,
+            4,
+            "?_current_company@@3U?$PoolID@UCompanyIDTag@@@@A"
+          ],
+          [
+            3214,
+            4,
+            "?_scope_stack_head@@3PEAUScopeStackRecord@@EA"
+          ],
+          [
+            3221,
+            4,
+            "?_current_company@@3U?$PoolID@UCompanyIDTag@@@@A"
+          ],
+          [
+            3232,
+            4,
+            "??_C@_0EE@DIEIIACD@C?3?2Users?2bebe?2?4codex?2worktrees?2@"
+          ],
+          [
+            3257,
+            4,
+            "?_vehicles_to_templatereplace@@3V?$btree_set@U?$PoolID@UVehicleIDTag@@@@U?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$PoolID@UVehicleIDTag@@@@@3@$0BAA@@btree@@A"
+          ],
+          [
+            3342,
+            4,
+            "?operations@?$TupleCmdData@XU?$PoolID@UVehicleIDTag@@@@@@2UOperations@CommandPayloadBase@@B"
+          ],
+          [
+            3349,
+            4,
+            "?<lambda_invoker_cdecl>@<lambda_1>@?1???0?$FunctorScopeStackRecord@V<lambda_5>@?HH@??CallVehicleTicks@@YAXXZ@@@QEAA@V<lambda_5>@?HH@??CallVehicleTicks@@YAXXZ@@Z@SA@PEAUScopeStackRecord@@AEAUformat_target@@@Z"
+          ],
+          [
+            3375,
+            4,
+            "?_vehicle_pool@@3U?$Pool@UVehicle@@U?$PoolID@UVehicleIDTag@@@@$0CAA@$0A@$0A@UVehiclePoolOps@@@@A"
+          ],
+          [
+            3405,
+            4,
+            "?_scope_stack_head@@3PEAUScopeStackRecord@@EA"
+          ],
+          [
+            3412,
+            4,
+            "?_vehicles_to_autoreplace@@3V?$btree_map@U?$PoolID@UVehicleIDTag@@@@_NU?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$pair@$$CBU?$PoolID@UVehicleIDTag@@@@_N@std@@@3@$0BAA@@btree@@A"
+          ],
+          [
+            3671,
+            4,
+            "?_vehicles_to_autoreplace@@3V?$btree_map@U?$PoolID@UVehicleIDTag@@@@_NU?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$pair@$$CBU?$PoolID@UVehicleIDTag@@@@_N@std@@@3@$0BAA@@btree@@A"
+          ],
+          [
+            3676,
+            4,
+            "?erase@?$btree@U?$btree_map_params@U?$PoolID@UVehicleIDTag@@@@_NU?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$pair@$$CBU?$PoolID@UVehicleIDTag@@@@_N@std@@@3@$0BAA@@0@@btree@@QEAA?AU?$btree_iterator@U?$btree_map_params@U?$PoolID@UVehicleIDTag@@@@_NU?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$pair@$$CBU?$PoolID@UVehicleIDTag@@@@_N@std@@@3@$0BAA@@btree@@@2@U32@@Z"
+          ],
+          [
+            3714,
+            4,
+            "?_current_company@@3U?$PoolID@UCompanyIDTag@@@@A"
+          ],
+          [
+            3755,
+            4,
+            "?DoCommandImplementation@@YA?AVCommandCost@@W4Commands@@U?$ST@UTileIndexTag@@@@AEBUCommandPayloadBase@@V?$EnumBitSet@W4DoCommandFlag@@G$0BA@@@W4DoCommandIntlFlag@@@Z"
+          ],
+          [
+            3818,
+            4,
+            "?_vehicle_pool@@3U?$Pool@UVehicle@@U?$PoolID@UVehicleIDTag@@@@$0CAA@$0A@$0A@UVehiclePoolOps@@@@A"
+          ],
+          [
+            3842,
+            4,
+            "?_current_company@@3U?$PoolID@UCompanyIDTag@@@@A"
+          ],
+          [
+            3849,
+            4,
+            "?_company_pool@@3U?$Pool@UCompany@@U?$PoolID@UCompanyIDTag@@@@$00$0A@$0A@U?$DefaultPoolOps@UCompany@@@@@@A"
+          ],
+          [
+            3904,
+            4,
+            "?SubtractMoneyFromCompany@@YAXPEAUCompany@@AEBVCommandCost@@@Z"
+          ],
+          [
+            3940,
+            4,
+            "?_Decref@_Ref_count_base@std@@QEAAXXZ"
+          ],
+          [
+            3949,
+            4,
+            "?_Tidy_deallocate@?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEAAXXZ"
+          ],
+          [
+            3962,
+            4,
+            "??3@YAXPEAX_K@Z"
+          ],
+          [
+            3993,
+            4,
+            "?operations@?$TupleCmdData@XU?$PoolID@UVehicleIDTag@@@@_N@@2UOperations@CommandPayloadBase@@B"
+          ],
+          [
+            4036,
+            4,
+            "?DoCommandImplementation@@YA?AVCommandCost@@W4Commands@@U?$ST@UTileIndexTag@@@@AEBUCommandPayloadBase@@V?$EnumBitSet@W4DoCommandFlag@@G$0BA@@@W4DoCommandIntlFlag@@@Z"
+          ],
+          [
+            4099,
+            4,
+            "?_vehicle_pool@@3U?$Pool@UVehicle@@U?$PoolID@UVehicleIDTag@@@@$0CAA@$0A@$0A@UVehiclePoolOps@@@@A"
+          ],
+          [
+            4170,
+            4,
+            "?SubtractMoneyFromCompany@@YAXPEAUCompany@@AEBVCommandCost@@@Z"
+          ],
+          [
+            4206,
+            4,
+            "?_Decref@_Ref_count_base@std@@QEAAXXZ"
+          ],
+          [
+            4215,
+            4,
+            "?_Tidy_deallocate@?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEAAXXZ"
+          ],
+          [
+            4228,
+            4,
+            "??3@YAXPEAX_K@Z"
+          ],
+          [
+            4235,
+            4,
+            "?_current_company@@3U?$PoolID@UCompanyIDTag@@@@A"
+          ],
+          [
+            4241,
+            4,
+            "?_local_company@@3U?$PoolID@UCompanyIDTag@@@@A"
+          ],
+          [
+            4390,
+            4,
+            "?ShowCostOrIncomeAnimation@@YAXHHHV?$OverflowSafeInt@_J@@@Z"
+          ],
+          [
+            4420,
+            4,
+            "?ShowAutoReplaceAdviceMessage@@YAXAEBVCommandCost@@PEBUVehicle@@@Z"
+          ],
+          [
+            4454,
+            4,
+            "?_Decref@_Ref_count_base@std@@QEAAXXZ"
+          ],
+          [
+            4463,
+            4,
+            "?_Tidy_deallocate@?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEAAXXZ"
+          ],
+          [
+            4476,
+            4,
+            "??3@YAXPEAX_K@Z"
+          ],
+          [
+            4510,
+            4,
+            "?_Decref@_Ref_count_base@std@@QEAAXXZ"
+          ],
+          [
+            4519,
+            4,
+            "?_Tidy_deallocate@?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEAAXXZ"
+          ],
+          [
+            4532,
+            4,
+            "??3@YAXPEAX_K@Z"
+          ],
+          [
+            4544,
+            4,
+            "?_scope_stack_head@@3PEAUScopeStackRecord@@EA"
+          ],
+          [
+            4553,
+            4,
+            "?increment@?$btree_const_iterator@U?$btree_set_params@U?$PoolID@UVehicleIDTag@@@@U?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$PoolID@UVehicleIDTag@@@@@3@$0BAA@@btree@@@btree@@QEAAXXZ"
+          ],
+          [
+            4589,
+            4,
+            "?_current_company@@3U?$PoolID@UCompanyIDTag@@@@A"
+          ],
+          [
+            4600,
+            5,
+            "?_vehicles_to_templatereplace@@3V?$btree_set@U?$PoolID@UVehicleIDTag@@@@U?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$PoolID@UVehicleIDTag@@@@@3@$0BAA@@btree@@A"
+          ],
+          [
+            4609,
+            5,
+            "?_record_sync_records@@3_NA"
+          ],
+          [
+            4622,
+            4,
+            "?RecordSyncEventData@@YAXW4NetworkSyncRecordEvents@@@Z"
+          ],
+          [
+            4629,
+            4,
+            "?_current_company@@3U?$PoolID@UCompanyIDTag@@@@A"
+          ],
+          [
+            4636,
+            4,
+            "?_vehicles_to_autoreplace@@3V?$btree_map@U?$PoolID@UVehicleIDTag@@@@_NU?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$pair@$$CBU?$PoolID@UVehicleIDTag@@@@_N@std@@@3@$0BAA@@btree@@A"
+          ],
+          [
+            4736,
+            4,
+            "?_vehicle_pool@@3U?$Pool@UVehicle@@U?$PoolID@UVehicleIDTag@@@@$0CAA@$0A@$0A@UVehiclePoolOps@@@@A"
+          ],
+          [
+            4765,
+            4,
+            "?_current_company@@3U?$PoolID@UCompanyIDTag@@@@A"
+          ],
+          [
+            4786,
+            4,
+            "?_current_company@@3U?$PoolID@UCompanyIDTag@@@@A"
+          ],
+          [
+            4804,
+            4,
+            "?_vehicles_to_templatereplace@@3V?$btree_set@U?$PoolID@UVehicleIDTag@@@@U?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$PoolID@UVehicleIDTag@@@@@3@$0BAA@@btree@@A"
+          ],
+          [
+            4964,
+            4,
+            "?_current_company@@3U?$PoolID@UCompanyIDTag@@@@A"
+          ],
+          [
+            5004,
+            4,
+            "?_company_pool@@3U?$Pool@UCompany@@U?$PoolID@UCompanyIDTag@@@@$00$0A@$0A@U?$DefaultPoolOps@UCompany@@@@@@A"
+          ],
+          [
+            5056,
+            4,
+            "?SubtractMoneyFromCompany@@YAXU?$PoolID@UCompanyIDTag@@@@AEBVCommandCost@@@Z"
+          ],
+          [
+            5144,
+            4,
+            "?_Tidy_deallocate@?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEAAXXZ"
+          ],
+          [
+            5157,
+            4,
+            "??3@YAXPEAX_K@Z"
+          ],
+          [
+            5188,
+            4,
+            "?operations@?$TupleCmdData@XU?$PoolID@UVehicleIDTag@@@@_N@@2UOperations@CommandPayloadBase@@B"
+          ],
+          [
+            5230,
+            4,
+            "?DoCommandImplementation@@YA?AVCommandCost@@W4Commands@@U?$ST@UTileIndexTag@@@@AEBUCommandPayloadBase@@V?$EnumBitSet@W4DoCommandFlag@@G$0BA@@@W4DoCommandIntlFlag@@@Z"
+          ],
+          [
+            5288,
+            4,
+            "?_current_company@@3U?$PoolID@UCompanyIDTag@@@@A"
+          ],
+          [
+            5293,
+            4,
+            "?SubtractMoneyFromCompany@@YAXU?$PoolID@UCompanyIDTag@@@@AEBVCommandCost@@@Z"
+          ],
+          [
+            5381,
+            4,
+            "?_Tidy_deallocate@?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEAAXXZ"
+          ],
+          [
+            5394,
+            4,
+            "??3@YAXPEAX_K@Z"
+          ],
+          [
+            5401,
+            4,
+            "?_current_company@@3U?$PoolID@UCompanyIDTag@@@@A"
+          ],
+          [
+            5407,
+            4,
+            "?_local_company@@3U?$PoolID@UCompanyIDTag@@@@A"
+          ],
+          [
+            5503,
+            4,
+            "?_Tidy_deallocate@?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEAAXXZ"
+          ],
+          [
+            5543,
+            4,
+            "?ShowCostOrIncomeAnimation@@YAXHHHV?$OverflowSafeInt@_J@@@Z"
+          ],
+          [
+            5559,
+            4,
+            "?ShowAutoReplaceAdviceMessage@@YAXAEBVCommandCost@@PEBUVehicle@@@Z"
+          ],
+          [
+            5593,
+            4,
+            "?_Decref@_Ref_count_base@std@@QEAAXXZ"
+          ],
+          [
+            5602,
+            4,
+            "?_Tidy_deallocate@?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEAAXXZ"
+          ],
+          [
+            5615,
+            4,
+            "??3@YAXPEAX_K@Z"
+          ],
+          [
+            5622,
+            4,
+            "?_current_company@@3U?$PoolID@UCompanyIDTag@@@@A"
+          ],
+          [
+            5778,
+            5,
+            "?_vehicles_to_autoreplace@@3V?$btree_map@U?$PoolID@UVehicleIDTag@@@@_NU?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$pair@$$CBU?$PoolID@UVehicleIDTag@@@@_N@std@@@3@$0BAA@@btree@@A"
+          ],
+          [
+            5787,
+            5,
+            "?_record_sync_records@@3_NA"
+          ],
+          [
+            5800,
+            4,
+            "?RecordSyncEventData@@YAXW4NetworkSyncRecordEvents@@@Z"
+          ],
+          [
+            5807,
+            4,
+            "?_vehicles_to_pay_repair@@3V?$btree_set@U?$PoolID@UVehicleIDTag@@@@U?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$PoolID@UVehicleIDTag@@@@@3@$0BAA@@btree@@A"
+          ],
+          [
+            5873,
+            4,
+            "?<lambda_invoker_cdecl>@<lambda_1>@?1???0?$FunctorScopeStackRecord@V<lambda_6>@?KN@??CallVehicleTicks@@YAXXZ@@@QEAA@V<lambda_6>@?KN@??CallVehicleTicks@@YAXXZ@@Z@SA@PEAUScopeStackRecord@@AEAUformat_target@@@Z"
+          ],
+          [
+            5890,
+            4,
+            "?_scope_stack_head@@3PEAUScopeStackRecord@@EA"
+          ],
+          [
+            5917,
+            4,
+            "?_vehicle_pool@@3U?$Pool@UVehicle@@U?$PoolID@UVehicleIDTag@@@@$0CAA@$0A@$0A@UVehiclePoolOps@@@@A"
+          ],
+          [
+            5957,
+            4,
+            "?_scope_stack_head@@3PEAUScopeStackRecord@@EA"
+          ],
+          [
+            6018,
+            4,
+            "?_engine_pool@@3U?$Pool@UEngine@@U?$PoolID@UEngineIDTag@@@@$0EA@$0A@$0A@U?$DefaultPoolOps@UEngine@@@@@@A"
+          ],
+          [
+            6027,
+            4,
+            "?GetCost@Engine@@QEBA?AV?$OverflowSafeInt@_J@@XZ"
+          ],
+          [
+            6052,
+            4,
+            "??X?$OverflowSafeInt@_J@@QEAAAEAV0@H@Z"
+          ],
+          [
+            6059,
+            4,
+            "?_settings_game@@3UGameSettings@@A"
+          ],
+          [
+            6259,
+            4,
+            "?SubtractMoneyFromCompany@@YAXU?$PoolID@UCompanyIDTag@@@@AEBVCommandCost@@@Z"
+          ],
+          [
+            6266,
+            4,
+            "?_local_company@@3U?$PoolID@UCompanyIDTag@@@@A"
+          ],
+          [
+            6311,
+            4,
+            "?ShowCostOrIncomeAnimation@@YAXHHHV?$OverflowSafeInt@_J@@@Z"
+          ],
+          [
+            6403,
+            4,
+            "?_Tidy_deallocate@?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEAAXXZ"
+          ],
+          [
+            6416,
+            4,
+            "??3@YAXPEAX_K@Z"
+          ],
+          [
+            6428,
+            4,
+            "?_scope_stack_head@@3PEAUScopeStackRecord@@EA"
+          ],
+          [
+            6437,
+            4,
+            "?increment@?$btree_const_iterator@U?$btree_set_params@U?$PoolID@UVehicleIDTag@@@@U?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$PoolID@UVehicleIDTag@@@@@3@$0BAA@@btree@@@btree@@QEAAXXZ"
+          ],
+          [
+            6456,
+            4,
+            "?_vehicles_to_pay_repair@@3V?$btree_set@U?$PoolID@UVehicleIDTag@@@@U?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$PoolID@UVehicleIDTag@@@@@3@$0BAA@@btree@@A"
+          ],
+          [
+            6467,
+            5,
+            "?_record_sync_records@@3_NA"
+          ],
+          [
+            6480,
+            4,
+            "?RecordSyncEventData@@YAXW4NetworkSyncRecordEvents@@@Z"
+          ],
+          [
+            6487,
+            4,
+            "?_vehicles_to_pay_repair@@3V?$btree_set@U?$PoolID@UVehicleIDTag@@@@U?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$PoolID@UVehicleIDTag@@@@@3@$0BAA@@btree@@A"
+          ],
+          [
+            6499,
+            4,
+            "?_vehicles_to_pay_repair@@3V?$btree_set@U?$PoolID@UVehicleIDTag@@@@U?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$PoolID@UVehicleIDTag@@@@@3@$0BAA@@btree@@A"
+          ],
+          [
+            6504,
+            4,
+            "?internal_clear@?$btree@U?$btree_set_params@U?$PoolID@UVehicleIDTag@@@@U?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$PoolID@UVehicleIDTag@@@@@3@$0BAA@@0@@btree@@AEAAXPEAV?$btree_node@U?$btree_set_params@U?$PoolID@UVehicleIDTag@@@@U?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$PoolID@UVehicleIDTag@@@@@3@$0BAA@@btree@@@2@@Z"
+          ],
+          [
+            6511,
+            4,
+            "?_vehicles_to_pay_repair@@3V?$btree_set@U?$PoolID@UVehicleIDTag@@@@U?$less@U?$PoolID@UVehicleIDTag@@@@@std@@V?$allocator@U?$PoolID@UVehicleIDTag@@@@@3@$0BAA@@btree@@A"
+          ],
+          [
+            6520,
+            4,
+            "??1?$Backup@U?$PoolID@UCompanyIDTag@@@@@@QEAA@XZ"
+          ],
+          [
+            6530,
+            4,
+            "??1?$Backup@U?$PoolID@UCompanyIDTag@@@@@@QEAA@XZ"
+          ],
+          [
+            6542,
+            4,
+            "?_scope_stack_head@@3PEAUScopeStackRecord@@EA"
+          ],
+          [
+            6557,
+            4,
+            "__security_check_cookie"
+          ],
+          [
+            6597,
+            4,
+            "??_C@_0CO@CAAEFICF@?$CB_vehicles_to_templatereplace?4c@"
+          ],
+          [
+            6604,
+            4,
+            "??_C@_0EE@DIEIIACD@C?3?2Users?2bebe?2?4codex?2worktrees?2@"
+          ],
+          [
+            6614,
+            4,
+            "?assert_str_error@@YAXHPEBD0@Z"
+          ],
+          [
+            6622,
+            4,
+            "??_C@_0CF@DOKNELKB@it?5?$CB?$DN?5_vehicles_to_autoreplace?4@"
+          ],
+          [
+            6629,
+            4,
+            "??_C@_0EE@DIEIIACD@C?3?2Users?2bebe?2?4codex?2worktrees?2@"
+          ],
+          [
+            6639,
+            4,
+            "?assert_str_error@@YAXHPEBD0@Z"
+          ],
+          [
+            6647,
+            4,
+            "??_C@_0BA@EEIJHHEF@v?9?$DOtype?5?$DN?$DN?5Type@"
+          ],
+          [
+            6654,
+            4,
+            "??_C@_0EH@KDCHBFEI@C?3?2Users?2bebe?2?4codex?2worktrees?2@"
+          ],
+          [
+            6664,
+            4,
+            "?assert_str_error@@YAXHPEBD0@Z"
+          ],
+          [
+            6672,
+            4,
+            "??_C@_0EE@DIEIIACD@C?3?2Users?2bebe?2?4codex?2worktrees?2@"
+          ],
+          [
+            6682,
+            4,
+            "?not_reached_error@@YAXHPEBD@Z"
+          ]
+        ]
+      },
+      "exact": false,
+      "normalized_bytes_identical": true
+    },
+    "?dtor$0@?0??CallVehicleTicks@@YAXXZ@4HA": {
+      "old": {
+        "size": 12,
+        "normalized_sha256": "23090e272a35e83059df6e9b0fa326f0a9e1f421985a64f4156315a69d9150dc",
+        "relocations": [
+          [
+            8,
+            4,
+            "??1?$FunctorScopeStackRecord@V<lambda_1>@?9??CallVehicleTicks@@YAXXZ@@@QEAA@XZ"
+          ]
+        ]
+      },
+      "new": {
+        "size": 12,
+        "normalized_sha256": "23090e272a35e83059df6e9b0fa326f0a9e1f421985a64f4156315a69d9150dc",
+        "relocations": [
+          [
+            8,
+            4,
+            "??1?$FunctorScopeStackRecord@V<lambda_1>@?9??CallVehicleTicks@@YAXXZ@@@QEAA@XZ"
+          ]
+        ]
+      },
+      "exact": true,
+      "normalized_bytes_identical": true
+    },
+    "?dtor$10@?0??CallVehicleTicks@@YAXXZ@4HA": {
+      "old": {
+        "size": 12,
+        "normalized_sha256": "d52296570cecde4248b5d81bae1c8b961f2dee5d95537c19ffcaf86486c37590",
+        "relocations": [
+          [
+            8,
+            4,
+            "??1CommandCost@@QEAA@XZ"
+          ]
+        ]
+      },
+      "new": {
+        "size": 12,
+        "normalized_sha256": "d52296570cecde4248b5d81bae1c8b961f2dee5d95537c19ffcaf86486c37590",
+        "relocations": [
+          [
+            8,
+            4,
+            "??1CommandCost@@QEAA@XZ"
+          ]
+        ]
+      },
+      "exact": true,
+      "normalized_bytes_identical": true
+    },
+    "?dtor$11@?0??CallVehicleTicks@@YAXXZ@4HA": {
+      "old": {
+        "size": 12,
+        "normalized_sha256": "d52296570cecde4248b5d81bae1c8b961f2dee5d95537c19ffcaf86486c37590",
+        "relocations": [
+          [
+            8,
+            4,
+            "??1?$Backup@U?$PoolID@UCompanyIDTag@@@@@@QEAA@XZ"
+          ]
+        ]
+      },
+      "new": {
+        "size": 12,
+        "normalized_sha256": "d52296570cecde4248b5d81bae1c8b961f2dee5d95537c19ffcaf86486c37590",
+        "relocations": [
+          [
+            8,
+            4,
+            "??1?$Backup@U?$PoolID@UCompanyIDTag@@@@@@QEAA@XZ"
+          ]
+        ]
+      },
+      "exact": true,
+      "normalized_bytes_identical": true
+    },
+    "?dtor$12@?0??CallVehicleTicks@@YAXXZ@4HA": {
+      "old": {
+        "size": 12,
+        "normalized_sha256": "abe6d6c86daf77598680d835af88ac349455a9773387e5bbe045a44f46153396",
+        "relocations": [
+          [
+            8,
+            4,
+            "??1?$FunctorScopeStackRecord@V<lambda_5>@?HH@??CallVehicleTicks@@YAXXZ@@@QEAA@XZ"
+          ]
+        ]
+      },
+      "new": {
+        "size": 12,
+        "normalized_sha256": "abe6d6c86daf77598680d835af88ac349455a9773387e5bbe045a44f46153396",
+        "relocations": [
+          [
+            8,
+            4,
+            "??1?$FunctorScopeStackRecord@V<lambda_5>@?HH@??CallVehicleTicks@@YAXXZ@@@QEAA@XZ"
+          ]
+        ]
+      },
+      "exact": true,
+      "normalized_bytes_identical": true
+    },
+    "?dtor$13@?0??CallVehicleTicks@@YAXXZ@4HA": {
+      "old": {
+        "size": 12,
+        "normalized_sha256": "be026b4d393d519675d5539b47648e319468a2a988054d70603dbbd450b530fd",
+        "relocations": [
+          [
+            8,
+            4,
+            "??1CommandCost@@QEAA@XZ"
+          ]
+        ]
+      },
+      "new": {
+        "size": 12,
+        "normalized_sha256": "be026b4d393d519675d5539b47648e319468a2a988054d70603dbbd450b530fd",
+        "relocations": [
+          [
+            8,
+            4,
+            "??1CommandCost@@QEAA@XZ"
+          ]
+        ]
+      },
+      "exact": true,
+      "normalized_bytes_identical": true
+    },
+    "?dtor$14@?0??CallVehicleTicks@@YAXXZ@4HA": {
+      "old": {
+        "size": 12,
+        "normalized_sha256": "3bfa28c200a433d2e2086325ce9cc6cf2f3ce494784cd2c575c011efc6644f69",
+        "relocations": [
+          [
+            8,
+            4,
+            "??1CommandCost@@QEAA@XZ"
+          ]
+        ]
+      },
+      "new": {
+        "size": 12,
+        "normalized_sha256": "3bfa28c200a433d2e2086325ce9cc6cf2f3ce494784cd2c575c011efc6644f69",
+        "relocations": [
+          [
+            8,
+            4,
+            "??1CommandCost@@QEAA@XZ"
+          ]
+        ]
+      },
+      "exact": true,
+      "normalized_bytes_identical": true
+    },
+    "?dtor$15@?0??CallVehicleTicks@@YAXXZ@4HA": {
+      "old": {
+        "size": 12,
+        "normalized_sha256": "4365ac4df710d9a271d96e75b8e19aaa7952e2f20ded63670e72cb7d26a4fb3f",
+        "relocations": [
+          [
+            8,
+            4,
+            "??1CommandCost@@QEAA@XZ"
+          ]
+        ]
+      },
+      "new": {
+        "size": 12,
+        "normalized_sha256": "4365ac4df710d9a271d96e75b8e19aaa7952e2f20ded63670e72cb7d26a4fb3f",
+        "relocations": [
+          [
+            8,
+            4,
+            "??1CommandCost@@QEAA@XZ"
+          ]
+        ]
+      },
+      "exact": true,
+      "normalized_bytes_identical": true
+    },
+    "?dtor$16@?0??CallVehicleTicks@@YAXXZ@4HA": {
+      "old": {
+        "size": 12,
+        "normalized_sha256": "3bfa28c200a433d2e2086325ce9cc6cf2f3ce494784cd2c575c011efc6644f69",
+        "relocations": [
+          [
+            8,
+            4,
+            "??1CommandCost@@QEAA@XZ"
+          ]
+        ]
+      },
+      "new": {
+        "size": 12,
+        "normalized_sha256": "3bfa28c200a433d2e2086325ce9cc6cf2f3ce494784cd2c575c011efc6644f69",
+        "relocations": [
+          [
+            8,
+            4,
+            "??1CommandCost@@QEAA@XZ"
+          ]
+        ]
+      },
+      "exact": true,
+      "normalized_bytes_identical": true
+    },
+    "?dtor$17@?0??CallVehicleTicks@@YAXXZ@4HA": {
+      "old": {
+        "size": 12,
+        "normalized_sha256": "e758c8aed525c88fd7c986db1acbf0366ea9786c20ce88e5baf2b45970c91452",
+        "relocations": [
+          [
+            8,
+            4,
+            "??1?$AutoRestoreBackup@U?$PoolID@UCompanyIDTag@@@@@@QEAA@XZ"
+          ]
+        ]
+      },
+      "new": {
+        "size": 12,
+        "normalized_sha256": "e758c8aed525c88fd7c986db1acbf0366ea9786c20ce88e5baf2b45970c91452",
+        "relocations": [
+          [
+            8,
+            4,
+            "??1?$AutoRestoreBackup@U?$PoolID@UCompanyIDTag@@@@@@QEAA@XZ"
+          ]
+        ]
+      },
+      "exact": true,
+      "normalized_bytes_identical": true
+    },
+    "?dtor$18@?0??CallVehicleTicks@@YAXXZ@4HA": {
+      "old": {
+        "size": 12,
+        "normalized_sha256": "2b828f41bc63ffac32f69cb288904d144d4f49f23629c2cf1221288ab8d5b809",
+        "relocations": [
+          [
+            8,
+            4,
+            "??1CommandCost@@QEAA@XZ"
+          ]
+        ]
+      },
+      "new": {
+        "size": 12,
+        "normalized_sha256": "2b828f41bc63ffac32f69cb288904d144d4f49f23629c2cf1221288ab8d5b809",
+        "relocations": [
+          [
+            8,
+            4,
+            "??1CommandCost@@QEAA@XZ"
+          ]
+        ]
+      },
+      "exact": true,
+      "normalized_bytes_identical": true
+    },
+    "?dtor$19@?0??CallVehicleTicks@@YAXXZ@4HA": {
+      "old": {
+        "size": 12,
+        "normalized_sha256": "4365ac4df710d9a271d96e75b8e19aaa7952e2f20ded63670e72cb7d26a4fb3f",
+        "relocations": [
+          [
+            8,
+            4,
+            "??1CommandCost@@QEAA@XZ"
+          ]
+        ]
+      },
+      "new": {
+        "size": 12,
+        "normalized_sha256": "4365ac4df710d9a271d96e75b8e19aaa7952e2f20ded63670e72cb7d26a4fb3f",
+        "relocations": [
+          [
+            8,
+            4,
+            "??1CommandCost@@QEAA@XZ"
+          ]
+        ]
+      },
+      "exact": true,
+      "normalized_bytes_identical": true
+    },
+    "?dtor$1@?0??CallVehicleTicks@@YAXXZ@4HA": {
+      "old": {
+        "size": 12,
+        "normalized_sha256": "f1e14c795bf2e85faf92e7d72d22d13be334e8c8de04a531c09a2d1149202d37",
+        "relocations": [
+          [
+            8,
+            4,
+            "??1PerformanceMeasurer@@QEAA@XZ"
+          ]
+        ]
+      },
+      "new": {
+        "size": 12,
+        "normalized_sha256": "f1e14c795bf2e85faf92e7d72d22d13be334e8c8de04a531c09a2d1149202d37",
+        "relocations": [
+          [
+            8,
+            4,
+            "??1PerformanceMeasurer@@QEAA@XZ"
+          ]
+        ]
+      },
+      "exact": true,
+      "normalized_bytes_identical": true
+    },
+    "?dtor$20@?0??CallVehicleTicks@@YAXXZ@4HA": {
+      "old": {
+        "size": 12,
+        "normalized_sha256": "2b828f41bc63ffac32f69cb288904d144d4f49f23629c2cf1221288ab8d5b809",
+        "relocations": [
+          [
+            8,
+            4,
+            "??1CommandCost@@QEAA@XZ"
+          ]
+        ]
+      },
+      "new": {
+        "size": 12,
+        "normalized_sha256": "2b828f41bc63ffac32f69cb288904d144d4f49f23629c2cf1221288ab8d5b809",
+        "relocations": [
+          [
+            8,
+            4,
+            "??1CommandCost@@QEAA@XZ"
+          ]
+        ]
+      },
+      "exact": true,
+      "normalized_bytes_identical": true
+    },
+    "?dtor$21@?0??CallVehicleTicks@@YAXXZ@4HA": {
+      "old": {
+        "size": 12,
+        "normalized_sha256": "abe6d6c86daf77598680d835af88ac349455a9773387e5bbe045a44f46153396",
+        "relocations": [
+          [
+            8,
+            4,
+            "??1?$FunctorScopeStackRecord@V<lambda_6>@?KN@??CallVehicleTicks@@YAXXZ@@@QEAA@XZ"
+          ]
+        ]
+      },
+      "new": {
+        "size": 12,
+        "normalized_sha256": "abe6d6c86daf77598680d835af88ac349455a9773387e5bbe045a44f46153396",
+        "relocations": [
+          [
+            8,
+            4,
+            "??1?$FunctorScopeStackRecord@V<lambda_6>@?KN@??CallVehicleTicks@@YAXXZ@@@QEAA@XZ"
+          ]
+        ]
+      },
+      "exact": true,
+      "normalized_bytes_identical": true
+    },
+    "?dtor$22@?0??CallVehicleTicks@@YAXXZ@4HA": {
+      "old": {
+        "size": 12,
+        "normalized_sha256": "2b828f41bc63ffac32f69cb288904d144d4f49f23629c2cf1221288ab8d5b809",
+        "relocations": [
+          [
+            8,
+            4,
+            "??1CommandCost@@QEAA@XZ"
+          ]
+        ]
+      },
+      "new": {
+        "size": 12,
+        "normalized_sha256": "2b828f41bc63ffac32f69cb288904d144d4f49f23629c2cf1221288ab8d5b809",
+        "relocations": [
+          [
+            8,
+            4,
+            "??1CommandCost@@QEAA@XZ"
+          ]
+        ]
+      },
+      "exact": true,
+      "normalized_bytes_identical": true
+    },
+    "?dtor$2@?0??CallVehicleTicks@@YAXXZ@4HA": {
+      "old": {
+        "size": 12,
+        "normalized_sha256": "23090e272a35e83059df6e9b0fa326f0a9e1f421985a64f4156315a69d9150dc",
+        "relocations": [
+          [
+            8,
+            4,
+            "??1?$FunctorScopeStackRecord@V<lambda_2>@?BB@??CallVehicleTicks@@YAXXZ@@@QEAA@XZ"
+          ]
+        ]
+      },
+      "new": {
+        "size": 12,
+        "normalized_sha256": "23090e272a35e83059df6e9b0fa326f0a9e1f421985a64f4156315a69d9150dc",
+        "relocations": [
+          [
+            8,
+            4,
+            "??1?$FunctorScopeStackRecord@V<lambda_2>@?BB@??CallVehicleTicks@@YAXXZ@@@QEAA@XZ"
+          ]
+        ]
+      },
+      "exact": true,
+      "normalized_bytes_identical": true
+    },
+    "?dtor$3@?0??CallVehicleTicks@@YAXXZ@4HA": {
+      "old": {
+        "size": 12,
+        "normalized_sha256": "b12a917d8d2d4a0343ae010fd4618a1d5e42e377b6805acf64f88657e2c8957c",
+        "relocations": [
+          [
+            8,
+            4,
+            "??1?$FunctorScopeStackRecord@V<lambda_3>@?1??CallVehicleTicks@@YAXXZ@@@QEAA@XZ"
+          ]
+        ]
+      },
+      "new": {
+        "size": 12,
+        "normalized_sha256": "b12a917d8d2d4a0343ae010fd4618a1d5e42e377b6805acf64f88657e2c8957c",
+        "relocations": [
+          [
+            8,
+            4,
+            "??1?$FunctorScopeStackRecord@V<lambda_3>@?1??CallVehicleTicks@@YAXXZ@@@QEAA@XZ"
+          ]
+        ]
+      },
+      "exact": true,
+      "normalized_bytes_identical": true
+    },
+    "?dtor$4@?0??CallVehicleTicks@@YAXXZ@4HA": {
+      "old": {
+        "size": 12,
+        "normalized_sha256": "f1e14c795bf2e85faf92e7d72d22d13be334e8c8de04a531c09a2d1149202d37",
+        "relocations": [
+          [
+            8,
+            4,
+            "??1PerformanceMeasurer@@QEAA@XZ"
+          ]
+        ]
+      },
+      "new": {
+        "size": 12,
+        "normalized_sha256": "f1e14c795bf2e85faf92e7d72d22d13be334e8c8de04a531c09a2d1149202d37",
+        "relocations": [
+          [
+            8,
+            4,
+            "??1PerformanceMeasurer@@QEAA@XZ"
+          ]
+        ]
+      },
+      "exact": true,
+      "normalized_bytes_identical": true
+    },
+    "?dtor$5@?0??CallVehicleTicks@@YAXXZ@4HA": {
+      "old": {
+        "size": 12,
+        "normalized_sha256": "f1e14c795bf2e85faf92e7d72d22d13be334e8c8de04a531c09a2d1149202d37",
+        "relocations": [
+          [
+            8,
+            4,
+            "??1PerformanceMeasurer@@QEAA@XZ"
+          ]
+        ]
+      },
+      "new": {
+        "size": 12,
+        "normalized_sha256": "f1e14c795bf2e85faf92e7d72d22d13be334e8c8de04a531c09a2d1149202d37",
+        "relocations": [
+          [
+            8,
+            4,
+            "??1PerformanceMeasurer@@QEAA@XZ"
+          ]
+        ]
+      },
+      "exact": true,
+      "normalized_bytes_identical": true
+    },
+    "?dtor$6@?0??CallVehicleTicks@@YAXXZ@4HA": {
+      "old": {
+        "size": 12,
+        "normalized_sha256": "f1e14c795bf2e85faf92e7d72d22d13be334e8c8de04a531c09a2d1149202d37",
+        "relocations": [
+          [
+            8,
+            4,
+            "??1PerformanceMeasurer@@QEAA@XZ"
+          ]
+        ]
+      },
+      "new": {
+        "size": 12,
+        "normalized_sha256": "f1e14c795bf2e85faf92e7d72d22d13be334e8c8de04a531c09a2d1149202d37",
+        "relocations": [
+          [
+            8,
+            4,
+            "??1PerformanceMeasurer@@QEAA@XZ"
+          ]
+        ]
+      },
+      "exact": true,
+      "normalized_bytes_identical": true
+    },
+    "?dtor$73@?0??CallVehicleTicks@@YAXXZ@4HA": {
+      "old": {
+        "size": 12,
+        "normalized_sha256": "23090e272a35e83059df6e9b0fa326f0a9e1f421985a64f4156315a69d9150dc",
+        "relocations": [
+          [
+            8,
+            4,
+            "??1?$FunctorScopeStackRecord@V<lambda_1>@?1??RunVehicleCalendarDayProc@@YAXXZ@@@QEAA@XZ"
+          ]
+        ]
+      },
+      "new": {
+        "size": 12,
+        "normalized_sha256": "23090e272a35e83059df6e9b0fa326f0a9e1f421985a64f4156315a69d9150dc",
+        "relocations": [
+          [
+            8,
+            4,
+            "??1?$FunctorScopeStackRecord@V<lambda_1>@?1??RunVehicleCalendarDayProc@@YAXXZ@@@QEAA@XZ"
+          ]
+        ]
+      },
+      "exact": true,
+      "normalized_bytes_identical": true
+    },
+    "?dtor$7@?0??CallVehicleTicks@@YAXXZ@4HA": {
+      "old": {
+        "size": 12,
+        "normalized_sha256": "f1e14c795bf2e85faf92e7d72d22d13be334e8c8de04a531c09a2d1149202d37",
+        "relocations": [
+          [
+            8,
+            4,
+            "??1PerformanceMeasurer@@QEAA@XZ"
+          ]
+        ]
+      },
+      "new": {
+        "size": 12,
+        "normalized_sha256": "f1e14c795bf2e85faf92e7d72d22d13be334e8c8de04a531c09a2d1149202d37",
+        "relocations": [
+          [
+            8,
+            4,
+            "??1PerformanceMeasurer@@QEAA@XZ"
+          ]
+        ]
+      },
+      "exact": true,
+      "normalized_bytes_identical": true
+    },
+    "?dtor$8@?0??CallVehicleTicks@@YAXXZ@4HA": {
+      "old": {
+        "size": 12,
+        "normalized_sha256": "23090e272a35e83059df6e9b0fa326f0a9e1f421985a64f4156315a69d9150dc",
+        "relocations": [
+          [
+            8,
+            4,
+            "??1?$Backup@U?$PoolID@UCompanyIDTag@@@@@@QEAA@XZ"
+          ]
+        ]
+      },
+      "new": {
+        "size": 12,
+        "normalized_sha256": "23090e272a35e83059df6e9b0fa326f0a9e1f421985a64f4156315a69d9150dc",
+        "relocations": [
+          [
+            8,
+            4,
+            "??1?$Backup@U?$PoolID@UCompanyIDTag@@@@@@QEAA@XZ"
+          ]
+        ]
+      },
+      "exact": true,
+      "normalized_bytes_identical": true
+    },
+    "?dtor$9@?0??CallVehicleTicks@@YAXXZ@4HA": {
+      "old": {
+        "size": 12,
+        "normalized_sha256": "abe6d6c86daf77598680d835af88ac349455a9773387e5bbe045a44f46153396",
+        "relocations": [
+          [
+            8,
+            4,
+            "??1?$FunctorScopeStackRecord@V<lambda_4>@?GH@??CallVehicleTicks@@YAXXZ@@@QEAA@XZ"
+          ]
+        ]
+      },
+      "new": {
+        "size": 12,
+        "normalized_sha256": "abe6d6c86daf77598680d835af88ac349455a9773387e5bbe045a44f46153396",
+        "relocations": [
+          [
+            8,
+            4,
+            "??1?$FunctorScopeStackRecord@V<lambda_4>@?GH@??CallVehicleTicks@@YAXXZ@@@QEAA@XZ"
+          ]
+        ]
+      },
+      "exact": true,
+      "normalized_bytes_identical": true
+    }
+  },
+  "note": "Relocated bytes zeroed; symbolic relocation targets compared. This describes generated code, not elapsed performance."
+}

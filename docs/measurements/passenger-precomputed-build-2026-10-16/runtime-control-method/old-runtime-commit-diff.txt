@@ -1,0 +1,186 @@
+diff --git a/src/network/network_join_progress.h b/src/network/network_join_progress.h
+index b24183cc46..e7cc830234 100644
+--- a/src/network/network_join_progress.h
++++ b/src/network/network_join_progress.h
+@@ -16,6 +16,8 @@ public:
+ 	enum class Result { Accepted, Invalid, Flood };
+ private:
+ 	std::optional<Clock::time_point> started;
++	std::optional<Clock::time_point> server_preparation_started;
++	Clock::duration server_preparation{};
+ 	Clock::time_point progress{}, refill{};
+ 	uint64_t work = 0, limit = 0;
+ 	static constexpr uint BURST = 16;
+@@ -31,6 +33,23 @@ public:
+ 		this->work = 0; this->limit = limit;
+ 		this->progress = this->refill = now; this->tokens = BURST;
+ 	}
++	/** Only the server may exclude its own preparation while a map request waits.
++	 * Ordinary map queues and client replay never qualify. Neither budget resets. */
++	void SetServerPreparing(bool preparing, Clock::time_point now)
++	{
++		if (!this->started) return;
++		if (preparing && !this->server_preparation_started) this->server_preparation_started = now;
++		if (!preparing && this->server_preparation_started) {
++			this->server_preparation += now - *this->server_preparation_started;
++			this->server_preparation_started.reset();
++		}
++	}
++	Clock::duration GetServerPreparationTime(Clock::time_point now) const
++	{ return this->server_preparation + (this->server_preparation_started ? now - *this->server_preparation_started : Clock::duration::zero()); }
++	Clock::duration GetClientJoinTime(Clock::time_point now) const
++	{ return this->started ? now - *this->started - this->GetServerPreparationTime(now) : Clock::duration::zero(); }
++	bool ServerPreparationExpired(Clock::time_point now, std::chrono::seconds maximum) const
++	{ return this->started && this->GetServerPreparationTime(now) >= maximum; }
+ 	Result Report(uint64_t value, Clock::time_point now)
+ 	{
+ 		if (value <= this->work || value > this->limit) return Result::Invalid;
+@@ -46,7 +65,11 @@ public:
+ 		return Result::Accepted;
+ 	}
+ 	bool Expired(Clock::time_point now, std::chrono::seconds maximum) const
+-	{ return this->started && now - *this->started >= maximum; }
++	{
++		/* A stalled server is bounded too: elapsed time after authorization is less than
++		 * twice maximum, even across repeated preparation/queue transitions. */
++		return this->started && (this->GetClientJoinTime(now) >= maximum || this->ServerPreparationExpired(now, maximum));
++	}
+ 	bool Idle(Clock::time_point now, std::chrono::milliseconds maximum) const
+ 	{ return now - this->progress > maximum; }
+ };
+diff --git a/src/network/network_server.cpp b/src/network/network_server.cpp
+index 7da37e2325..21ec72cbf6 100644
+--- a/src/network/network_server.cpp
++++ b/src/network/network_server.cpp
+@@ -761,7 +761,9 @@ NetworkRecvStatus ServerNetworkGameSocketHandler::SendMap()
+ 	}
+ 
+ 	if (this->status == ClientStatus::Authorized) {
+-		if (_passenger_preparation_frame || GetPassengerServiceDatabase().IsPreparingPrecomputed()) {
++		const bool server_preparing = GetPassengerServiceDatabase().IsPreparingPrecomputed();
++		this->join_progress.SetServerPreparing(server_preparing, std::chrono::steady_clock::now());
++		if (_passenger_preparation_frame || server_preparing) {
+ 			this->status = ClientStatus::MapWait;
+ 			return this->SendWait();
+ 		}
+@@ -1335,7 +1337,11 @@ NetworkRecvStatus ServerNetworkGameSocketHandler::ReceiveClientMapOk(Packet &)
+ {
+ 	/* Client has the map, now start syncing */
+ 	if (this->status == ClientStatus::DoneMap && !this->HasClientQuit()) {
+-		if (this->join_progress.Expired(std::chrono::steady_clock::now(), std::chrono::seconds(_settings_client.network.max_join_time_total))) return this->SendError(NetworkErrorCode::TimeoutJoin);
++		const auto now = std::chrono::steady_clock::now();
++		if (this->join_progress.Expired(now, std::chrono::seconds(_settings_client.network.max_join_time_total))) return this->SendError(NetworkErrorCode::TimeoutJoin);
++		Debug(net, 2, "[server] Client #{} map ready: server_preparation_ms={}; client_join_ms={}", this->client_id,
++				std::chrono::duration_cast<std::chrono::milliseconds>(this->join_progress.GetServerPreparationTime(now)).count(),
++				std::chrono::duration_cast<std::chrono::milliseconds>(this->join_progress.GetClientJoinTime(now)).count());
+ 		std::string client_name = this->GetClientName();
+ 
+ 		NetworkTextMessage(NetworkAction::ClientJoin, CC_DEFAULT, false, client_name, {}, this->client_id);
+@@ -2214,6 +2220,8 @@ void NetworkServer_Tick(bool send_frame)
+ 
+ 	/* Now we are done with the frame, inform the clients that they can
+ 	 *  do their frame! */
++	const bool server_preparing = GetPassengerServiceDatabase().IsPreparingPrecomputed();
++	const auto join_now = std::chrono::steady_clock::now();
+ 	for (NetworkClientSocket *cs : NetworkClientSocket::Iterate()) {
+ 		/* We allow a number of bytes per frame, but only to the burst amount
+ 		 * to be available for packet receiving at any particular time. */
+@@ -2222,9 +2230,15 @@ void NetworkServer_Tick(bool send_frame)
+ 
+ 		/* Check if the speed of the client is what we can expect from a client */
+ 		uint lag = NetworkCalculateLag(cs);
++		/* A joining client cannot download/replay while our own initial graph
++		 * blocks SendMap. Waiting for another peer after local readiness counts
++		 * against the client budget, as does the ordinary download queue. */
++		cs->join_progress.SetServerPreparing(cs->status == NetworkClientSocket::ClientStatus::MapWait && server_preparing, join_now);
+ 		if (cs->status >= NetworkClientSocket::ClientStatus::Authorized && cs->status < NetworkClientSocket::ClientStatus::Active &&
+-				cs->join_progress.Expired(std::chrono::steady_clock::now(), std::chrono::seconds(_settings_client.network.max_join_time_total))) {
+-			IConsolePrint(CC_ERROR, "Client #{} exceeded the absolute join limit of {} seconds", cs->client_id, _settings_client.network.max_join_time_total);
++				cs->join_progress.Expired(join_now, std::chrono::seconds(_settings_client.network.max_join_time_total))) {
++			IConsolePrint(CC_ERROR, "Client #{} exceeded the {} limit of {} seconds", cs->client_id,
++					cs->join_progress.ServerPreparationExpired(join_now, std::chrono::seconds(_settings_client.network.max_join_time_total)) ? "server preparation wait" : "client join",
++					_settings_client.network.max_join_time_total);
+ 			cs->SendError(NetworkErrorCode::TimeoutJoin);
+ 			continue;
+ 		}
+diff --git a/src/settings_type.h b/src/settings_type.h
+index 3882e840ec..b354e0d4a1 100644
+--- a/src/settings_type.h
++++ b/src/settings_type.h
+@@ -587,7 +587,7 @@ struct NetworkSettings {
+ 	uint16_t      bytes_per_frame_burst;                  ///< how many bytes may, over a short period, be received?
+ 	uint16_t      max_init_time;                          ///< maximum amount of time, in game ticks, a client may take to initiate joining
+ 	uint16_t      max_join_time;                          ///< maximum amount of time, in game ticks, a client may take to sync up during joining
+-	uint16_t      max_join_time_total;                    ///< Absolute join limit in real seconds, including map queue, download, replay and catch-up.
++	uint16_t      max_join_time_total;                    ///< Client join limit in real seconds (queue/download/replay/catch-up), and a separate cumulative server preparation wait limit.
+ 	uint16_t      max_download_time;                      ///< maximum amount of time, in game ticks, a client may take to download the map
+ 	uint16_t      max_password_time;                      ///< maximum amount of time, in game ticks, a client may take to enter the password
+ 	uint16_t      max_lag_time;                           ///< maximum amount of time, in game ticks, a client may be lagging behind the server
+diff --git a/src/tests/test_network_debug.cpp b/src/tests/test_network_debug.cpp
+index 68e2c8f6a4..85b323a221 100644
+--- a/src/tests/test_network_debug.cpp
++++ b/src/tests/test_network_debug.cpp
+@@ -51,6 +51,63 @@ TEST_CASE("Map replay progress validates work and bounds bursts independently pe
+ 	CHECK(other.Idle(start + seconds(16), milliseconds(15000)));
+ }
+ 
++TEST_CASE("Server preparation and client join have separate bounded deadlines", "[network][join][security]")
++{
++	using namespace std::chrono;
++	const NetworkJoinProgress::Clock::time_point start{};
++	NetworkJoinProgress client; client.Start(start);
++	client.SetServerPreparing(true, start);
++	CHECK_FALSE(client.Expired(start + seconds(665), seconds(900)));
++	client.SetServerPreparing(false, start + seconds(665));
++	client.BeginReplay(UINT64_MAX, start + seconds(665));
++	/* The real-map serial 665s preparation + 399s join must fit. */
++	CHECK_FALSE(client.Expired(start + seconds(1064), seconds(900)));
++	CHECK(client.GetServerPreparationTime(start + seconds(1064)) == seconds(665));
++	CHECK(client.GetClientJoinTime(start + seconds(1064)) == seconds(399));
++	/* Claims, another queue transition and BeginReplay cannot renew either budget. */
++	for (int second = 1065; second < 1565; ++second) {
++		REQUIRE(client.Report(second, start + seconds(second)) == NetworkJoinProgress::Result::Accepted);
++		CHECK_FALSE(client.Expired(start + seconds(second), seconds(900)));
++	}
++	client.Start(start + seconds(1565)); client.BeginReplay(UINT64_MAX, start + seconds(1565));
++	client.SetServerPreparing(false, start + seconds(1565));
++	CHECK(client.Expired(start + seconds(1565), seconds(900)));
++	CHECK_FALSE(client.ServerPreparationExpired(start + seconds(1565), seconds(900)));
++}
++
++TEST_CASE("Server preparation wait is cumulative and cannot reserve a connection forever", "[network][join][security]")
++{
++	using namespace std::chrono;
++	const NetworkJoinProgress::Clock::time_point start{};
++	NetworkJoinProgress client, other; client.Start(start); other.Start(start);
++	client.SetServerPreparing(true, start + seconds(10));
++	client.SetServerPreparing(true, start + seconds(200)); // Repeated polling must not restart waiting.
++	client.SetServerPreparing(false, start + seconds(410));
++	client.SetServerPreparing(true, start + seconds(500));
++	CHECK_FALSE(client.Expired(start + seconds(999), seconds(900)));
++	CHECK(client.ServerPreparationExpired(start + seconds(1000), seconds(900)));
++	CHECK(client.Expired(start + seconds(1000), seconds(900)));
++	client.SetServerPreparing(false, start + seconds(1000));
++	client.Start(start + seconds(1001)); client.BeginReplay(UINT64_MAX, start + seconds(1001));
++	client.SetServerPreparing(true, start + seconds(1001));
++	CHECK(client.Expired(start + seconds(1001), seconds(900)));
++	/* Another client and ordinary queue time receive no exemption. */
++	CHECK(other.Expired(start + seconds(900), seconds(900)));
++	CHECK(other.GetServerPreparationTime(start + seconds(1000)) == seconds(0));
++}
++
++TEST_CASE("A stuck server preparation expires even while the client budget is unused", "[network][join][security]")
++{
++	using namespace std::chrono;
++	const NetworkJoinProgress::Clock::time_point start{};
++	NetworkJoinProgress client; client.Start(start);
++	client.SetServerPreparing(true, start);
++	CHECK_FALSE(client.Expired(start + seconds(899), seconds(900)));
++	CHECK(client.Expired(start + seconds(900), seconds(900)));
++	CHECK(client.ServerPreparationExpired(start + seconds(900), seconds(900)));
++	CHECK(client.GetClientJoinTime(start + seconds(900)) == seconds(0));
++}
++
+ 
+ TEST_CASE("GetPacketGameTypeName")
+ {

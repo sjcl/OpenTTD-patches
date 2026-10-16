@@ -1,0 +1,6 @@
+{
+  "timing_only": true,
+  "object_sha256": "a26365bb0811f0b41db78afb9b5294048056e8c3ff24dd8a9deefd061c012e0e",
+  "disassembly_sha256": "9b44eb8aacfa369fac88af5dc67b87150d96cf3942d80b703c6b5f41c974f399",
+  "cold_accept_calls": []
+}

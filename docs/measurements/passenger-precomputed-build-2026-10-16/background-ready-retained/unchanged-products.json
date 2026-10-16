@@ -1,0 +1,20 @@
+{
+  "unchanged": true,
+  "product_sha256": {
+    "src/passenger_precomputed.cpp": "d89fb2a43a0614a9255addcd31a9cdd69cf47e82d5aceec5fd06ba246883aaec",
+    "src/passenger_precomputed.h": "8e51935b3f5855edca482da3c887bcba34bde7e83fdee8c95a6edd54123d4bd4",
+    "src/passenger_service_database.cpp": "bbad621bb6b4e0009a86b6dcd39ec0e2ad03b7aecfd98338c3b908c4996c61ae",
+    "src/passenger_service_database.h": "6b5f0c3f753ca655c9e1a008413f4de802aa15b4c98830b4b978b97b5d3ccf25",
+    "src/sl/extended_ver_sl.cpp": "4deb8f54c1294c235c920bd512fb041542949573a5faacc591b4bbcacedfa8b1"
+  },
+  "restored_binaries": {
+    "old": {
+      "project_restored": true,
+      "binary_sha256": "93ae031e04eab77bcef9b00f8b246d159ab426b5a18ed5607f31a947ac54cad4"
+    },
+    "new": {
+      "project_restored": true,
+      "binary_sha256": "901f29d8cd35877dc98e77d6af5fb54329be9e03368ce03bff797606a2c62a7c"
+    }
+  }
+}

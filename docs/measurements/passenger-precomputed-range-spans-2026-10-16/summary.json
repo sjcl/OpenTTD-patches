@@ -1,0 +1,117 @@
+{
+  "cases": {
+    "forward": {
+      "binary_sha256": "822bb11afe9ed09beeeedce5f2f36458b83a36a20b71b5e5ac808237ca5ec451",
+      "result_sha256": "5f6bf10753c6cf171defba3ae2c8cae8089f8cbd307e40a0f163217efa76c830",
+      "variants": {
+        "before-scalar-real": {
+          "graph_s": 4.2411019,
+          "rows_s": 72.2617653,
+          "search_s": 63.7315487,
+          "total_s": 76.5028672
+        },
+        "before-simd-real": {
+          "graph_s": 4.3302675,
+          "rows_s": 69.6578916,
+          "search_s": 60.947659,
+          "total_s": 73.9881591
+        },
+        "split-scalar-real": {
+          "graph_s": 4.2208132,
+          "rows_s": 67.5851386,
+          "search_s": 59.2027899,
+          "total_s": 71.8059518
+        },
+        "split-simd-real": {
+          "graph_s": 4.2690099,
+          "rows_s": 69.3587042,
+          "search_s": 60.791134,
+          "total_s": 73.6277141
+        }
+      }
+    },
+    "reverse": {
+      "binary_sha256": "822bb11afe9ed09beeeedce5f2f36458b83a36a20b71b5e5ac808237ca5ec451",
+      "result_sha256": "f154a409f83887800aeb20455775e685b14a009c5ec7d25571c4229d709cb321",
+      "variants": {
+        "before-scalar-real": {
+          "graph_s": 4.2350221,
+          "rows_s": 72.4648781,
+          "search_s": 63.7124695,
+          "total_s": 76.6999002
+        },
+        "before-simd-real": {
+          "graph_s": 4.262698,
+          "rows_s": 64.5883169,
+          "search_s": 56.2363637,
+          "total_s": 68.8510149
+        },
+        "split-scalar-real": {
+          "graph_s": 4.2169367,
+          "rows_s": 70.382729,
+          "search_s": 61.7575012,
+          "total_s": 74.5996657
+        },
+        "split-simd-real": {
+          "graph_s": 4.2630641,
+          "rows_s": 68.0682025,
+          "search_s": 59.7798995,
+          "total_s": 72.3312666
+        }
+      }
+    }
+  },
+  "means": {
+    "before-scalar-real": {
+      "graph_s": 4.238062,
+      "rows_s": 72.3633217,
+      "search_s": 63.722009099999994,
+      "total_s": 76.6013837
+    },
+    "before-simd-real": {
+      "graph_s": 4.29648275,
+      "rows_s": 67.12310425,
+      "search_s": 58.59201135,
+      "total_s": 71.419587
+    },
+    "split-scalar-real": {
+      "graph_s": 4.21887495,
+      "rows_s": 68.98393379999999,
+      "search_s": 60.48014555,
+      "total_s": 73.20280875
+    },
+    "split-simd-real": {
+      "graph_s": 4.266037000000001,
+      "rows_s": 68.71345335000001,
+      "search_s": 60.28551675,
+      "total_s": 72.97949035
+    }
+  },
+  "percent_vs_before_scalar": {
+    "before-scalar-real": {
+      "graph_s": 0.0,
+      "rows_s": 0.0,
+      "search_s": 0.0,
+      "total_s": 0.0
+    },
+    "before-simd-real": {
+      "graph_s": 1.3784779458158036,
+      "rows_s": -7.241538015245652,
+      "search_s": -8.050590090386834,
+      "total_s": -6.764625454148277
+    },
+    "split-scalar-real": {
+      "graph_s": -0.45273169670476676,
+      "rows_s": -4.67002871152059,
+      "search_s": -5.087509944817469,
+      "total_s": -4.436701774618202
+    },
+    "split-simd-real": {
+      "graph_s": 0.6600894465442098,
+      "rows_s": -5.043809853189741,
+      "search_s": -5.392944131135369,
+      "total_s": -4.72823488957419
+    }
+  },
+  "note": "Both complete orders are included. Reference-warm rows are ground truth and excluded from variant means by design. No timing normalization or outcome-based sample exclusion. Other applications remain active; small timing differences are not universal speedup guarantees. Prefix probes and rejected prototypes are separate evidence."
+}
