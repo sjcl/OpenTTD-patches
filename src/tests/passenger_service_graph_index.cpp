@@ -158,7 +158,7 @@ struct PassengerServiceGraphTestAccess {
 	}
 	static void Build(Graph &graph, bool measure = false)
 	{
-		graph.BuildDepartureIndex(Enabled(graph), measure ? [](Graph::IndexStage stage, bool begin) { ObserveIndexStage(static_cast<size_t>(stage), begin); } : nullptr);
+		graph.BuildDepartureIndex(Enabled(graph), measure ? +[](Graph::IndexStage stage, bool begin) { ObserveIndexStage(static_cast<size_t>(stage), begin); } : nullptr);
 	}
 	static Graph Reference(const Graph &source, const LegacyPassengerIndex &legacy)
 	{
