@@ -23,7 +23,7 @@ namespace {
 		std::vector<std::vector<size_t>> tree;
 		std::vector<size_t> parent, depth, root;
 	};
-	static std::optional<ServiceIndex> index;
+	static std::optional<ServiceIndex> service_index;
 	static uint64_t revision = 0;
 
 	/** O(orders + services) vertices/edges, no recursion even for national transfer chains. */
@@ -157,7 +157,7 @@ namespace {
 	}
 }
 
-void InvalidatePassengerGraphServiceIndex() { index.reset(); ++revision; }
+void InvalidatePassengerGraphServiceIndex() { service_index.reset(); ++revision; }
 uint64_t PassengerGraphServiceIndexRevision() { return revision; }
 
 PassengerServiceSelection SelectPassengerServices(CargoType cargo, PassengerServiceScope scope, std::span<const OrderListID> eligible, size_t &work, size_t memory_bytes)
@@ -184,37 +184,37 @@ PassengerServiceSelection SelectPassengerServices(CargoType cargo, PassengerServ
 	}
 	work -= allowance;
 	if (scope.onboard_service != OrderListID::Invalid()) result.services.insert(scope.onboard_service);
-	result.cache_hit = index && index->cargo == cargo && std::equal(eligible.begin(), eligible.end(), index->eligible.begin(), index->eligible.end());
+	result.cache_hit = service_index && service_index->cargo == cargo && std::equal(eligible.begin(), eligible.end(), service_index->eligible.begin(), service_index->eligible.end());
 	if (result.cache_hit) result.reused_work = allowance - lists;
 	if (!result.cache_hit) {
 		/* Release the previous cargo/fleet view before allocating replacement scratch. */
-		index.reset();
-		index = BuildIndex(cargo, eligible);
+		service_index.reset();
+		service_index = BuildIndex(cargo, eligible);
 	}
-	result.allocation_bytes = index->allocation_bytes;
-	result.resident_bound = index->resident_bound;
-	result.largest_block_services = index->largest_block_services;
-	auto from = index->stations.find(scope.origin), to = index->stations.find(scope.destination);
-	if (from == index->stations.end() || to == index->stations.end() || index->root[from->second] != index->root[to->second]) return result;
+	result.allocation_bytes = service_index->allocation_bytes;
+	result.resident_bound = service_index->resident_bound;
+	result.largest_block_services = service_index->largest_block_services;
+	auto from = service_index->stations.find(scope.origin), to = service_index->stations.find(scope.destination);
+	if (from == service_index->stations.end() || to == service_index->stations.end() || service_index->root[from->second] != service_index->root[to->second]) return result;
 	auto include = [&](size_t node) {
 		if (work == 0) { result.status = PassengerPredictionStatus::BudgetExhausted; return false; }
 		--work;
 		/* Tree block nodes contain all cyclic alternatives, not just a single DFS path. */
-		if (node >= index->vertices) for (size_t member : index->tree[node]) {
+		if (node >= service_index->vertices) for (size_t member : service_index->tree[node]) {
 			if (work == 0) { result.status = PassengerPredictionStatus::BudgetExhausted; return false; }
 			--work;
-			auto service = index->services.find(member);
-			if (service != index->services.end()) result.services.insert(service->second);
+			auto service = service_index->services.find(member);
+			if (service != service_index->services.end()) result.services.insert(service->second);
 		}
-		auto service = index->services.find(node);
-		if (service != index->services.end()) result.services.insert(service->second);
+		auto service = service_index->services.find(node);
+		if (service != service_index->services.end()) result.services.insert(service->second);
 		return true;
 	};
 	size_t a = from->second, b = to->second;
 	while (a != b) {
-		if (index->depth[a] < index->depth[b]) std::swap(a, b);
+		if (service_index->depth[a] < service_index->depth[b]) std::swap(a, b);
 		if (!include(a)) return result;
-		a = index->parent[a];
+		a = service_index->parent[a];
 	}
 	include(a);
 	return result;
