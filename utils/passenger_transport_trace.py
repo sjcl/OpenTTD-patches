@@ -40,6 +40,7 @@ def main():
         xml = xml.replace(str(active), str(output))
 
     copy("cargopacket.cpp", [
+        ('\t\tpacket->RecordPassengerCapacityFailure(vehicle->First()->orders->index, _state_ticks);', '\t\tpacket->RecordPassengerCapacityFailure(vehicle->First()->orders->index, _state_ticks);\n\t\tPassengerTransportTrace::CapacityMiss(*packet, *vehicle, this->passenger_station);'),
         ('void StationCargoList::IndexPacket(CargoPacket *packet, StationID key, StationCargoPacketList::iterator position, std::optional<uint64_t> sequence) const\n{', 'void StationCargoList::IndexPacket(CargoPacket *packet, StationID key, StationCargoPacketList::iterator position, std::optional<uint64_t> sequence) const\n{\n\tPassengerTransportTrace::Wait(*packet, this->passenger_station, this->passenger_index_cargo);'),
         ('\t\tfirst_station(first_station)\n{\n\tdbg_assert(count != 0);\n}', '\t\tfirst_station(first_station)\n{\n\tdbg_assert(count != 0);\n\tPassengerTransportTrace::Birth(*this);\n}'),
         ('\tif (CleaningPool()) return;\n\tUnregisterPassengerJourneyPacket(*this);', '\tPassengerTransportTrace::Erase(this->index);\n\tif (CleaningPool()) return;\n\tUnregisterPassengerJourneyPacket(*this);'),
@@ -57,6 +58,7 @@ def main():
         ('\tRecordPassengerJourneyMovement(PassengerJourneyMovement::Deliver, *cp, remove);', '\tPassengerTransportTrace::Location(*cp, this->current_tile);\n\tPassengerTransportTrace::Arrive(*cp, remove, true, this->source);\n\tRecordPassengerJourneyMovement(PassengerJourneyMovement::Deliver, *cp, remove);'),
     ])
     copy("vehicle.cpp", [
+        ('void Vehicle::LeaveStation()\n{', 'void Vehicle::LeaveStation()\n{\n\tPassengerTransportTrace::DepartureEvent(*this);'),
         ('\tv = nullptr;\n\tif (!_tick_other_veh_cache.empty())', '\tPassengerTransportTrace::Tick();\n\tv = nullptr;\n\tif (!_tick_other_veh_cache.empty())'),
     ])
     copy("passenger_od.cpp", [

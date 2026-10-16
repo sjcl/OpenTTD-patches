@@ -36,6 +36,33 @@ inline uint64_t initial_started = 0, assigned_packets = 0, assigned_units = 0, f
 inline uint64_t generated_units = 0, initial_units = 0, initial_known_units = 0;
 inline bool observation_started = false, recording_finished = false;
 inline bool defer_next_dump = false; ///< A paused cold-build diagnostic is not the end of observation.
+inline bool Enabled();
+struct Departure { uint64_t count = 0, full = 0, maximum_gap = 0, missed_packets = 0, missed_passengers = 0, missed_opportunities = 0; StateTicks first = INVALID_STATE_TICKS, last = INVALID_STATE_TICKS, missed_at = INVALID_STATE_TICKS; VehicleID missed_vehicle = VehicleID::Invalid(); };
+inline std::map<std::pair<StationID, OrderListID>, Departure> departures;
+inline std::ofstream departure_events;
+inline void CapacityMiss(const CargoPacket &packet, const Vehicle &vehicle, StationID station)
+{
+	if (!Enabled() || !observation_started || recording_finished || station != StationID{3393} || vehicle.orders == nullptr) return;
+	auto &d = departures[{station, vehicle.orders->index}];
+	++d.missed_packets; d.missed_passengers += packet.Count();
+	if (d.missed_at != _state_ticks || d.missed_vehicle != vehicle.index) ++d.missed_opportunities;
+	d.missed_at = _state_ticks; d.missed_vehicle = vehicle.index;
+}
+inline void DepartureEvent(const Vehicle &vehicle)
+{
+	if (!Enabled() || !observation_started || recording_finished || vehicle.orders == nullptr || vehicle.last_station_visited != StationID{3393}) return;
+	uint64_t capacity = 0, remaining = 0;
+	for (const Vehicle *part = &vehicle; part != nullptr; part = part->Next()) if (part->cargo_type < NUM_CARGO && IsCargoInClass(part->cargo_type, CargoClass::Passengers)) {
+		capacity += part->cargo_cap; remaining += part->cargo.RemainingCount();
+	}
+	if (capacity == 0) return;
+	auto &d = departures[{vehicle.last_station_visited, vehicle.orders->index}];
+	if (d.count++ == 0) d.first = _state_ticks;
+	else d.maximum_gap = std::max(d.maximum_gap, uint64_t(_state_ticks.base() - d.last.base()));
+	d.last = _state_ticks; d.full += remaining >= capacity;
+	if (!departure_events.is_open()) { departure_events.open("transport-departures.csv"); departure_events << "tick,station,service,vehicle,order,capacity,occupied\n"; }
+	departure_events << _state_ticks.base() << ',' << vehicle.last_station_visited.base() << ',' << vehicle.orders->index.base() << ',' << vehicle.index.base() << ',' << vehicle.cur_real_order_index << ',' << capacity << ',' << remaining << '\n';
+}
 inline std::ofstream delivered, lost;
 enum class Movement : uint8_t { Board, Transfer, Deliver };
 using PopulationKey = std::tuple<uint32_t, uint32_t, uint32_t, uint64_t>;
@@ -386,6 +413,10 @@ inline void Dump()
 {
 	if (!Enabled()) return;
 	if (defer_next_dump) { defer_next_dump = false; return; }
+	std::ofstream departure_summary("transport-departure-summary.csv");
+	departure_summary << "station,service,count,full,first,last,maximum_gap,missed_packets,missed_passengers,missed_opportunities\n";
+	for (const auto &[key, d] : departures) departure_summary << key.first.base() << ',' << key.second.base() << ',' << d.count << ',' << d.full << ',' << d.first.base() << ',' << d.last.base() << ',' << d.maximum_gap << ',' << d.missed_packets << ',' << d.missed_passengers << ',' << d.missed_opportunities << '\n';
+	departure_events.flush();
 	std::ofstream out("transport-pending.csv"); Header(out);
 	for (const auto &[id, group] : samples) for (const auto &s : group) Row(out, s);
 	std::ofstream fleet("transport-services.csv");
