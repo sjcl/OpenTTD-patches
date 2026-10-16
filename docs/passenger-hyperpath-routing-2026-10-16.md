@@ -211,7 +211,7 @@ The increased policy-header charge covers vector growth as well as complete
 candidate sets. Physical allocation failure stops play rather than selecting a
 different route on one peer.
 
-The current MSVC Release run passes all 714 CTest cases, including the native
+The current MSVC Release run passes all 715 CTest cases, including the native
 integration and regression fixtures. The timestamp-diverse lookup benchmark
 passes 44192 assertions; the independent Fraction oracle passes seven cases.
 Saved partial Hyperpath event
@@ -282,3 +282,11 @@ Additional regression cases cover interleaved full services, expired policy-queu
 heads, no extra Hyperpath validations for legacy full trains, and bounded legacy
 intent migration with warm versus reconstructed derived indices.
 Reservation tests distinguish reserve, partial physical load and returned suffix.
+
+The capacity-readiness regression reproduces a derived-index dependency before
+commit `40b434315a`: an index retained from before interchange readiness records
+zero misses, while reconstruction at readiness records one. Capacity handling
+now wakes due entries before its empty-policy fast exit. Both paths record the
+same service, incarnation, count and start tick. Legacy full trains still avoid
+additional routing/validation calls. Evidence: [counterexample](measurements/passenger-hyperpath-2026-10-16/capacity-readiness-before-fix.log)
+and [715-test run](measurements/passenger-hyperpath-2026-10-16/ctest-readiness-fix.log).
