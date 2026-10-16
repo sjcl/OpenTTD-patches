@@ -667,11 +667,29 @@ PassengerBuildTask PassengerPrecomputedTable::BuildSections(const std::vector<st
 
 void PassengerPrecomputedTable::StartDestination()
 {
-	this->scratch.labels.clear(); this->scratch.labels.reserve(this->incoming_offsets.size() - 1);
+	this->scratch.labels.clear();
+	if (this->optimized) {
+		this->search.cost.clear(); this->search.legs.clear(); this->search.metadata.clear();
+		this->search.cost.reserve(this->diagnostic.states); this->search.legs.reserve(this->diagnostic.states); this->search.metadata.reserve(this->diagnostic.states);
+	} else this->scratch.labels.reserve(this->incoming_offsets.size() - 1);
 	this->scratch.alternative.assign(this->stations.size(), Label{});
 	this->prepared.labels.clear(); this->prepared.labels.reserve(this->waiting_state_count);
 	this->expanding = INVALID; this->finishing_row = false; this->finishing = 0;
 	this->initializing_row = true; this->seeding = 0;
+}
+
+PassengerPrecomputedTable::Label PassengerPrecomputedTable::SearchLabel(uint32_t state) const
+{
+	if (!this->optimized) return this->scratch.labels[state];
+	const auto &m = this->search.metadata[state];
+	return {this->search.cost[state], m.riding, m.waiting, m.first_wait, m.board, m.alight, this->search.legs[state], m.distance};
+}
+
+void PassengerPrecomputedTable::SetSearchLabel(uint32_t state, const Label &label)
+{
+	if (!this->optimized) { this->scratch.labels[state] = label; return; }
+	this->search.cost[state] = label.cost; this->search.legs[state] = label.legs;
+	this->search.metadata[state] = {label.riding, label.waiting, label.first_wait, label.board, label.alight, label.distance};
 }
 
 size_t PassengerPrecomputedTable::Step(size_t allowance, bool legacy_publication, const std::function<void(StationID)> &published)
@@ -679,7 +697,7 @@ size_t PassengerPrecomputedTable::Step(size_t allowance, bool legacy_publication
 	if (!this->PrepareGraph(std::min<size_t>(allowance, 1024))) return 0;
 	const auto started = Clock::now(); size_t used = 0;
 	auto index_origin = [&](size_t from) {
-		if (from >= this->stations.size() || this->scratch.labels[from].cost == INT64_MAX) return;
+		if (from >= this->stations.size() || this->SearchCost(static_cast<uint32_t>(from)) == INT64_MAX) return;
 		auto &destinations = this->reachable_destinations[from]; size_t capacity = destinations.capacity();
 		destinations.push_back(this->stations[this->destination]);
 		this->reachable_bytes += (destinations.capacity() - capacity) * sizeof(StationID);
@@ -688,9 +706,13 @@ size_t PassengerPrecomputedTable::Step(size_t allowance, bool legacy_publication
 		while (used < allowance && !this->Finished()) {
 			++used;
 			if (this->initializing_row) {
-				if (this->scratch.labels.size() < this->diagnostic.states) { this->scratch.labels.emplace_back(); continue; }
+				if (this->optimized) {
+					if (this->search.cost.size() < this->diagnostic.states) {
+						this->search.cost.push_back(INT64_MAX); this->search.legs.push_back(0); this->search.metadata.emplace_back(); continue;
+					}
+				} else if (this->scratch.labels.size() < this->diagnostic.states) { this->scratch.labels.emplace_back(); continue; }
 				auto seed = [&](uint32_t state, uint32_t alight = INVALID) {
-					auto &label = this->scratch.labels[state]; label.cost = 0; label.alight = alight;
+					auto label = this->SearchLabel(state); label.cost = 0; label.alight = alight; this->SetSearchLabel(state, label);
 					this->queue.emplace(0, 0, state);
 				};
 				if (this->seeding == 0) {
@@ -711,9 +733,9 @@ size_t PassengerPrecomputedTable::Step(size_t allowance, bool legacy_publication
 					const auto &ride = this->section_rides[this->finishing++ - this->occurrences.size()];
 					const auto &board = this->occurrences[ride.board];
 					uint32_t station = this->station_index[board.station.base()];
-					const auto &best = this->scratch.labels[station];
+					const auto best = this->SearchLabel(station);
 					if (best.board == INVALID || this->occurrences[best.board].pattern == board.pattern) continue;
-					const auto &suffix = this->scratch.labels[this->landings[ride.alight]];
+					const auto suffix = this->SearchLabel(this->landings[ride.alight]);
 					if (suffix.cost > INT64_MAX - ride.cost) continue;
 					int64_t cost = suffix.cost + ride.cost;
 					if (cost == INT64_MAX || cost - best.cost > best.cost / 4) continue;
@@ -726,8 +748,9 @@ size_t PassengerPrecomputedTable::Step(size_t allowance, bool legacy_publication
 					}
 				} else if (this->finishing < this->occurrences.size()) {
 					uint32_t id = static_cast<uint32_t>(this->finishing++); const auto &o = this->occurrences[id];
+					if (this->optimized && !o.board) continue;
 					uint32_t station = this->station_index[o.station.base()]; if (station == INVALID) continue;
-					const auto &best = this->scratch.labels[station], &suffix = this->scratch.labels[o.departure];
+					const auto best = this->SearchLabel(station), suffix = this->SearchLabel(o.departure);
 					const auto &p = this->patterns[o.pattern];
 					if (best.board == INVALID || suffix.alight == INVALID || suffix.cost == INT64_MAX || suffix.cost >= best.cost ||
 							this->occurrences[best.board].pattern == o.pattern || suffix.cost > INT64_MAX - p.wait - p.risk) continue;
@@ -748,15 +771,16 @@ size_t PassengerPrecomputedTable::Step(size_t allowance, bool legacy_publication
 				} else {
 					/* Arrival/departure labels are construction scratch. Queries use
 					 * only initial/transfer waits and one complete dispersion label. */
-					if (this->optimized && !o.board) continue;
 					if (legacy_publication) {
-						this->prepared.labels.assign(this->scratch.labels.begin(), this->scratch.labels.begin() + this->waiting_state_count);
+						if (this->optimized) {
+							for (uint32_t state = 0; state < this->waiting_state_count; ++state) this->prepared.labels.push_back(this->SearchLabel(state));
+						} else this->prepared.labels.assign(this->scratch.labels.begin(), this->scratch.labels.begin() + this->waiting_state_count);
 						for (size_t from = 0; from < this->stations.size(); ++from) index_origin(from);
 					} else if (this->prepared.labels.size() < this->waiting_state_count) {
 						/* Charge inverse-index construction to the existing label-copy
 						 * slice, rather than visiting all stations at publication. */
 						index_origin(this->prepared.labels.size());
-						this->prepared.labels.push_back(this->scratch.labels[this->prepared.labels.size()]); continue;
+						this->prepared.labels.push_back(this->SearchLabel(static_cast<uint32_t>(this->prepared.labels.size()))); continue;
 					}
 					this->prepared.alternative = std::move(this->scratch.alternative);
 					this->rows.push_back(std::move(this->prepared));
@@ -770,30 +794,32 @@ size_t PassengerPrecomputedTable::Step(size_t allowance, bool legacy_publication
 			if (this->expanding == INVALID) {
 				if (this->queue.empty()) { this->finishing_row = true; continue; }
 				auto [cost, legs, state] = this->queue.top(); this->queue.pop();
-				if (cost != this->scratch.labels[state].cost || legs != this->scratch.labels[state].legs) continue;
+				if (cost != this->SearchCost(state) || legs != this->SearchLegs(state)) continue;
 				this->expanding = state; this->cursor = this->incoming_offsets[state];
 			} else if (this->cursor == this->incoming_offsets[this->expanding + 1]) {
 				this->expanding = INVALID;
 			} else {
 				const auto &edge = this->edges[this->incoming[this->cursor++]];
-				Label next = this->scratch.labels[edge.to];
-				if (next.cost > INT64_MAX - edge.cost) continue;
-				next.cost += edge.cost;
+				int64_t cost = this->SearchCost(edge.to);
+				if (cost > INT64_MAX - edge.cost) continue;
+				cost += edge.cost;
+				uint32_t legs = this->SearchLegs(edge.to) + (edge.kind == EdgeKind::Board || edge.kind == EdgeKind::Section);
+				if (std::tuple(cost, legs) >= std::tuple(this->SearchCost(edge.from), this->SearchLegs(edge.from))) continue;
+				Label next = this->SearchLabel(edge.to);
+				next.cost = cost; next.legs = legs;
 				next.distance = static_cast<uint32_t>(std::min<uint64_t>(UINT32_MAX, uint64_t(next.distance) + edge.distance));
 				if (edge.kind == EdgeKind::Board) {
-					next.board = edge.occurrence; ++next.legs;
+					next.board = edge.occurrence;
 					next.first_wait = this->patterns[this->occurrences[edge.occurrence].pattern].wait; next.waiting += next.first_wait;
 				}
 				if (edge.kind == EdgeKind::Section) {
 					const auto &ride = this->section_rides[edge.occurrence];
-					next.board = ride.board; next.alight = ride.alight; ++next.legs;
+					next.board = ride.board; next.alight = ride.alight;
 					next.first_wait = ride.waiting; next.waiting += ride.waiting; next.riding += ride.riding;
 				}
 				if (edge.kind == EdgeKind::Ride) next.riding += edge.cost - edge.uncertainty;
 				if (edge.kind == EdgeKind::Alight) { next.board = INVALID; next.alight = edge.occurrence; next.waiting += edge.cost / 2; }
-				auto &old = this->scratch.labels[edge.from];
-				if (std::tie(next.cost, next.legs) >= std::tie(old.cost, old.legs)) continue;
-				old = next; this->queue.emplace(next.cost, next.legs, edge.from);
+				this->SetSearchLabel(edge.from, next); this->queue.emplace(next.cost, next.legs, edge.from);
 			}
 		}
 	} catch (const std::bad_alloc &) { FatalError("Insufficient memory for passenger routing. Disable passenger_journey_precomputed or free memory before resuming."); }
@@ -803,6 +829,7 @@ size_t PassengerPrecomputedTable::Step(size_t allowance, bool legacy_publication
 			(this->scratch.labels.capacity() + this->scratch.alternative.capacity() + this->prepared.labels.capacity()) * sizeof(Label) +
 			this->section_rides.capacity() * sizeof(SectionRide) + this->landings.capacity() * sizeof(uint32_t);
 	this->diagnostic.bytes += this->binding_bytes + this->reachable_bytes;
+	this->diagnostic.bytes += this->search.cost.capacity() * sizeof(int64_t) + this->search.legs.capacity() * sizeof(uint32_t) + this->search.metadata.capacity() * sizeof(LabelMetadata);
 	return used;
 }
 

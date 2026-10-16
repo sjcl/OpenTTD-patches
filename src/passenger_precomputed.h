@@ -94,6 +94,15 @@ private:
 		uint32_t board = INVALID, alight = INVALID, legs = 0, distance = 0;
 	};
 	struct Row { std::vector<Label> labels, alternative; };
+	struct LabelMetadata {
+		int64_t riding = 0, waiting = 0, first_wait = 0;
+		uint32_t board = INVALID, alight = INVALID, distance = 0;
+	};
+	struct SearchWorkspace {
+		std::vector<int64_t> cost;
+		std::vector<uint32_t> legs;
+		std::vector<LabelMetadata> metadata;
+	} search;
 	using QueueItem = std::tuple<int64_t, uint32_t, uint32_t>;
 	std::vector<uint32_t> station_index, service_pattern;
 	std::vector<StationID> stations;
@@ -122,6 +131,7 @@ private:
 	size_t seeding = 0;
 	bool failed = false, unsupported = false;
 	bool estimates = true;
+	bool optimized = true; ///< Saved algorithm identity; old work cursors always use the original graph and operation sequence.
 	CargoType cargo = INVALID_CARGO;
 	PassengerBuildTask graph_build; ///< Derived preparation only. No row can be published until this completes.
 	uint64_t graph_work = 0; ///< Actual coroutine steps, used only for bounded join progress reports.
@@ -131,7 +141,11 @@ private:
 	const Member *FindMember(OrderListID service) const;
 	const Section *FindSection(const PassengerJourneyExecution &ride) const;
 	void StartDestination();
-	bool optimized = true; ///< Saved algorithm identity; old work cursors always use the original graph and operation sequence.
+	int64_t SearchCost(uint32_t state) const { return this->optimized ? this->search.cost[state] : this->scratch.labels[state].cost; }
+	uint32_t SearchLegs(uint32_t state) const { return this->optimized ? this->search.legs[state] : this->scratch.labels[state].legs; }
+	Label SearchLabel(uint32_t state) const;
+	void SetSearchLabel(uint32_t state, const Label &label);
+	void ContractGraph(size_t &nodes);
 	void AddEdge(uint32_t from, uint32_t to, int64_t cost, EdgeKind kind, uint32_t occurrence = INVALID, uint32_t distance = 0, int64_t uncertainty = 0);
 	PassengerBuildTask BuildSections(const std::vector<std::vector<const PassengerPeriodicService *>> &members, int64_t transfer,
 			size_t &nodes, uint64_t &envelope, uint64_t memory, bool cooperative, bool &success);
@@ -139,4 +153,3 @@ private:
 };
 
 #endif
-	void ContractGraph(size_t &nodes);
