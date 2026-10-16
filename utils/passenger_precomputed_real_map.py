@@ -139,8 +139,9 @@ def driver(args):
                 std::string line;
                 while (std::getline(clock, line)) {
                     constexpr std::string_view prefix = "State ticks: ";
-                    if (!line.starts_with(prefix)) continue;
-                    auto parsed = std::from_chars(line.data() + prefix.size(), line.data() + line.size(), start);
+                    const auto position = line.find(prefix); // Console logs may prefix a wall-clock timestamp.
+                    if (position == std::string::npos) continue;
+                    auto parsed = std::from_chars(line.data() + position + prefix.size(), line.data() + line.size(), start);
                     if (parsed.ec != std::errc{}) continue;
                     started = true;
                     before = start;
@@ -473,6 +474,7 @@ def summarize(args):
         lines = (directory / "on-1-console.txt").read_text(encoding="utf-8", errors="replace").splitlines()
         observations = {}
         for line in lines:
+            line = re.sub(r"^\[[^\]]+\]\s*", "", line)
             if ": " not in line:
                 continue
             name, rest = line.split(": ", 1)

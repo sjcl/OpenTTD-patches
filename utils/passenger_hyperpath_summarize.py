@@ -13,13 +13,17 @@ def main():
     parser.add_argument("log", type=Path)
     parser.add_argument("output", type=Path)
     args = parser.parse_args()
-    histogram, ods, build = {}, {}, {}
+    histogram, ods, build, previous, all_od = {}, {}, {}, {}, {}
     for row in csv.reader(args.log.read_text(encoding="utf-8-sig").splitlines()):
         if not row:
             continue
         if row[0] == "hyperpath_build":
             names = "milliseconds operations envelope_bytes partial_array_bytes board_events accepts range_updates heap_pushes heap_pops base_policy_bytes difference_policy_bytes max_candidates".split()
             build = dict(zip(names, map(int, row[1:])))
+        elif row[0] == "hyperpath_previous_build":
+            previous = dict(zip('milliseconds operations allocated_array_bytes envelope_bytes'.split(), map(int, row[1:])))
+        elif row[0] == "hyperpath_all_od":
+            all_od = dict(zip('improved equal worse newly_reachable newly_unreachable maximum_increase old_sum_high old_sum_low new_sum_high new_sum_low'.split(), map(int, row[1:])))
         elif row[0] == "hyperpath_histogram":
             histogram[int(row[1])] = int(row[2])
         elif row[0] == "hyperpath_od":
@@ -45,12 +49,14 @@ def main():
             f += candidate["frequency"]
         od["numerator"], od["frequency"] = n, f
         assert (n + f - 1) // f == od["cost"]
-    result = dict(raw_sha256=hashlib.sha256(args.log.read_bytes()).hexdigest(), build=build,
+    if previous:
+        build['allocated_array_bytes'] = build.pop('partial_array_bytes')
+    result = dict(raw_sha256=hashlib.sha256(args.log.read_bytes()).hexdigest(), build=build, previous=previous, all_od=all_od,
                   sizes=dict(states=total, mean=str(Fraction(numerator, total)), p95=p95, maximum=max(histogram)),
                   histogram=histogram, ods={f"{a}->{b}": value for (a, b), value in ods.items()},
                   limitations=["Construction/diagnostic mode only; no B-mode transport measurement.",
-                               "partial_array_bytes excludes graph, workspace and allocator overhead.",
-                               "The legacy costs were evaluated in this run; its build duration was not recorded."])
+                               "Allocated array capacities exclude allocator metadata and are not process peak memory." if previous else
+                               "partial_array_bytes excludes graph, workspace and allocator overhead; legacy duration was not recorded."])
     args.output.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
     print(json.dumps(result["sizes"]))
 

@@ -82,6 +82,14 @@ def selftest():
     labels, sets, trace = solve(["sink"], [("ride", "sink", 100), ("ride", "sink", 150)], [("wait", "ride", 7, 100, 42)])
     assert labels["wait"] == 207 and sets["wait"] == [42]
     results.append(dict(name="one_vehicle_multiple_alights", cost="207", candidates=[42], trace=trace))
+    # A second strategy downstream, then an upstream direct/transfer choice.
+    # These constants also exercise the production frozen graph test: each
+    # 100-tick leg has risk ceil(220/64)=4; the direct 220-tick leg risk is 8.
+    labels, sets, trace = solve(['sink'], [('bd1', 'sink', 104), ('bd2', 'sink', 104), ('ab', 'B', 104), ('ad', 'sink', 228)],
+                               [('B', 'bd1', 0, 110, 1), ('B', 'bd2', 0, 110, 2), ('A', 'ab', 0, 110, 0), ('A', 'ad', 0, 230, 3)])
+    assert labels['B'] == 159 and labels['A'] == Fraction(11087, 34)
+    assert sets['B'] == [1, 2] and sets['A'] == [3, 0]
+    results.append(dict(name='downstream_strategy', cost=str(labels['A']), downstream=str(labels['B']), candidates=sets['A'], trace=trace))
     return results
 
 

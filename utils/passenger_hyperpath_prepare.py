@@ -31,13 +31,57 @@ def main():
     if args.mp:
         command.append("--mp")
     subprocess.run(command, check=True)
+    # Lifetime table counters disappear when a generation is replaced. Keep a
+    # measurement-only total across current/retained tables, reset with the
+    # ordinary console diagnostic reset. This never enters routing/save state.
+    metrics = build / 'save-integrity/hyperpath_metrics.h'
+    metrics.write_text('#pragma once\n#include <cstdint>\nnamespace PassengerHyperpathMetrics { inline uint64_t replans = 0, nanoseconds = 0; }\n', encoding='utf-8')
+    original = source / 'src/passenger_precomputed.cpp'
+    copied = build / 'save-integrity/passenger_precomputed.cpp'
+    text = original.read_text(encoding='utf-8')
+    text = re.sub(r'#include "([^"]+)"', lambda match: '#include "' + (original.parent / match[1]).resolve().as_posix() + '"', text)
+    text = text.replace('#include "' + (source / 'src/stdafx.h').as_posix() + '"', '#include "' + (source / 'src/stdafx.h').as_posix() + '"\n#include "' + metrics.as_posix() + '"')
+    anchor = '++this->diagnostic.local_replans; this->diagnostic.local_replan_nanoseconds += Elapsed(started);'
+    if text.count(anchor) != 1:
+        raise ValueError('Local-policy measurement anchor changed')
+    text = text.replace(anchor, 'auto elapsed = Elapsed(started); ++this->diagnostic.local_replans; this->diagnostic.local_replan_nanoseconds += elapsed;\n'
+                               '\t++PassengerHyperpathMetrics::replans; PassengerHyperpathMetrics::nanoseconds += elapsed;')
+    copied.write_text(text, encoding='utf-8')
+    replace_once(build / 'openttd_lib.vcxproj', str(original), str(copied))
     path = build / "save-integrity/cargopacket_sl.cpp"
     before = "        const auto &r = cp.passenger_journey;"
     replace_once(path, before, "        const auto &failure = cp.passenger_boarding_failure;\n        Mix(merge, failure.service, failure.count, failure.since, failure.incarnation);\n" + before)
+    before = "        Mix(state, cp.index, merge, cp.count, cp.feeder_share, cp.next_hop, cp.travelled.x, cp.travelled.y);"
+    replace_once(path, before, before.replace("cp.travelled.y", "cp.travelled.y, cp.passenger_routing_event"))
+    if args.mp:
+        header = build / "save-integrity/integrity.h"
+        header.write_text(header.read_text(encoding="utf-8") + '\n#include "' + (source / "utils/passenger_hyperpath_merge_census.h").as_posix() + '"\n', encoding="utf-8")
+        before = "NamedSaveLoadTable GetCargoPacketDesc()\n{"
+        replace_once(path, before, before + '''
+    SaveIntegrity::neutral_fields = [](const CargoPacket &cp) {
+        std::vector<uint64_t> key;
+        auto add = [&](auto... values) { (key.push_back(SaveIntegrity::Number(values)), ...); };
+        add(cp.source_xy, cp.periods_in_transit, cp.first_station, cp.source.type, cp.source.id, cp.passenger_via, cp.passenger_destination,
+            cp.passenger_routing_mode, cp.passenger_legacy_hop, cp.passenger_retry_station, cp.passenger_retry_after, cp.passenger_interchange_ready,
+            cp.passenger_arriving_service, cp.passenger_arriving_incarnation, cp.passenger_transport, cp.passenger_interchange_transport, cp.passenger_schedule_used);
+        const auto &r = cp.passenger_journey;
+        add(r.vehicle, r.service, r.boarding, r.alighting, r.boarding_order, r.alighting_order, r.departure, r.arrival, r.signature,
+            r.kind, r.generation, r.not_before, r.planned_at, r.estimated_wait, r.waiting_limit, r.timed_deferred);
+        return key;
+    };
+''')
     path = build / "save-integrity/console_cmds.cpp"
+    stdafx = '#include "' + (source / 'src/stdafx.h').as_posix() + '"'
+    replace_once(path, stdafx, stdafx + '\n#include "' + metrics.as_posix() + '"')
+    replace_once(path, 'if (operation == "reset") { ResetPassengerJourneyDiagnostic(); return true; }',
+                 'if (operation == "reset") { PassengerHyperpathMetrics::replans = PassengerHyperpathMetrics::nanoseconds = 0; ResetPassengerJourneyDiagnostic(); return true; }')
+    if args.mp:
+        before = '\tif (operation == "save_integrity")'
+        replace_once(path, before, '\tif (operation == "hyperpath_merge_census") { SaveIntegrity::MergeCensus(); return true; }\n' + before)
     before = "\tconst auto events = GetPassengerWaitingEventDiagnostic();"
     replace_once(path, before, before + '''
     IConsolePrint(CC_DEFAULT, "Hyperpath capacity: packets={}; passengers={}", events.capacity_missed_packets, events.capacity_missed_passengers);
+    IConsolePrint(CC_DEFAULT, "Hyperpath local totals: replans={}; nanoseconds={}", PassengerHyperpathMetrics::replans, PassengerHyperpathMetrics::nanoseconds);
     for (CargoType cargo : EnumRange(NUM_CARGO)) if (IsCargoInClass(cargo, CargoClass::Passengers)) {
         auto hp = GetPassengerServiceDatabase().GetPrecomputedDiagnostic(cargo);
         IConsolePrint(CC_DEFAULT, "Hyperpath diagnostics: cargo={}; local_replans={}; local_ns={}; board_events={}; accepted={}; range_updates={}; pushes={}; pops={}; bytes={}; envelope={}; base_bytes={}; difference_bytes={}; max_candidates={}",
@@ -86,7 +130,12 @@ def main():
         for path in (build / folder).glob("*"):
             if path.is_file():
                 files[str(path.relative_to(build))] = hashlib.sha256(path.read_bytes()).hexdigest()
-    (build / "hyperpath-provenance.json").write_text(json.dumps(dict(revision=args.revision, mp=args.mp, files=files), indent=2) + "\n", encoding="utf-8")
+    patch = subprocess.check_output(['git', 'diff', args.revision, '--', 'src'], cwd=source)
+    (build / 'hyperpath-source-diff.patch').write_bytes(patch)
+    changed = subprocess.check_output(['git', 'diff', '--name-only', args.revision, '--', 'src'], cwd=source, text=True).splitlines()
+    source_files = {name: hashlib.sha256((source / name).read_bytes()).hexdigest() for name in changed if (source / name).is_file()}
+    (build / "hyperpath-provenance.json").write_text(json.dumps(dict(revision=args.revision, mp=args.mp, files=files,
+        working_tree_source_files=source_files, working_tree_patch_sha256=hashlib.sha256(patch).hexdigest()), indent=2) + "\n", encoding="utf-8")
 
 
 if __name__ == "__main__":

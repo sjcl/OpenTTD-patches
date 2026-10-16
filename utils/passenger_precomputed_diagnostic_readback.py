@@ -21,6 +21,7 @@ def main():
     for name in ('binary', 'package', 'lang', 'output'):
         parser.add_argument(name, type=pathlib.Path)
     parser.add_argument('runs', type=pathlib.Path, nargs='+')
+    parser.add_argument('--hyperpath-census', action='store_true', help='Read the failure-state merge counterfactual from a Hyperpath inspector')
     args = parser.parse_args()
     output = args.output.resolve()
     if any(character.isspace() for character in str(output)):
@@ -42,7 +43,8 @@ def main():
         scripts = directory / 'scripts'
         scripts.mkdir()
         log = (directory / 'console.txt').as_posix()
-        (scripts / 'game_start.scr').write_text(f'script {log}\ngetfulldate\npassenger_journey_stats total\n'
+        census = 'passenger_journey_stats hyperpath_merge_census\n' if args.hyperpath_census else ''
+        (scripts / 'game_start.scr').write_text(f'script {log}\ngetfulldate\npassenger_journey_stats total\n' + census +
                                               'passenger_journey_stats save_integrity\nscript\nquit\n', encoding='utf-8')
         command = [str(args.binary.resolve()), '-x', '-X', '-c', 'openttd.cfg', '-snull', '-mnull',
                    f'-D127.0.0.1:{17610 + index}', '-g', 'input.sav']
@@ -57,10 +59,12 @@ def main():
         if mismatches:
             raise RuntimeError(f'Readback changed canonical state: {run.name}: {mismatches}')
         console = (directory / 'console.txt').read_text(encoding='utf-8')
-        line = next(line for line in console.splitlines() if line.startswith('Passenger events: '))
+        line = next(line for line in console.splitlines() if 'Passenger events: ' in line)
         events = {key:int(value) for key, value in re.findall(r'(\w+)=(-?\d+)', line)}
         results.append(dict(run=run.name, canonical_mismatches=mismatches, state_ticks=actual['state_ticks'],
                             active_events=events))
+        if args.hyperpath_census:
+            results[-1]['merge_census'] = json.loads((directory / 'hyperpath-merge-census.json').read_text(encoding='utf-8'))
         print(run.name, events, flush=True)
     (output / 'result.json').write_text(json.dumps(dict(runs=results), indent=2) + '\n', encoding='utf-8')
 
