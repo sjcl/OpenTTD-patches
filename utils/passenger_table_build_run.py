@@ -1,0 +1,68 @@
+#!/usr/bin/env python3
+"""Run isolated build comparisons, recording raw counters and process peaks."""
+import argparse
+import csv
+import hashlib
+import json
+import os
+import pathlib
+import subprocess
+import sys
+import time
+sys.dont_write_bytecode = True
+from passenger_precomputed_benchmark import observe
+
+FIELDS = "services occurrences nodes edges graph_ns rows_ns init_ns search_ns alternative_ns publication_ns relaxations improvements queue_updates pops stale max_queue label_copies section_checks array_bytes operations".split()
+
+
+def main():
+    parser = argparse.ArgumentParser(__doc__)
+    parser.add_argument("binary", type=pathlib.Path)
+    parser.add_argument("output", type=pathlib.Path)
+    parser.add_argument("--fixture", type=pathlib.Path)
+    parser.add_argument("--matrix", action="store_true")
+    parser.add_argument("--stages", action="store_true")
+    parser.add_argument("--experiments", action="store_true")
+    parser.add_argument("--skip-plan", action="store_true")
+    parser.add_argument("--test", default="[.table-real]")
+    args = parser.parse_args()
+    args.output.mkdir(parents=True, exist_ok=True)
+    env = dict(os.environ)
+    if args.fixture:
+        env["OPENTTD_TABLE_DATABASE"] = str((args.fixture / "database.bin").resolve())
+        env["OPENTTD_TABLE_STATIONS"] = str((args.fixture / "stations.txt").resolve())
+    if args.matrix:
+        env["OPENTTD_TABLE_HEAP_MATRIX"] = "1"
+    if args.stages:
+        env["OPENTTD_TABLE_STAGES"] = "1"
+    if args.experiments:
+        env["OPENTTD_TABLE_EXPERIMENTS"] = "1"
+    if args.skip_plan:
+        env["OPENTTD_TABLE_SKIP_PLAN"] = "1"
+    command = [str(args.binary.resolve()), args.test]
+    started = time.monotonic()
+    observed = {}
+    with (args.output / "raw.log").open("wb") as stream:
+        process = subprocess.Popen(command, stdout=stream, stderr=subprocess.STDOUT, env=env,
+                                   creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0)
+        while process.poll() is None:
+            for key, value in observe(process).items():
+                observed[key] = max(observed.get(key, 0), value)
+            time.sleep(.1)
+        observed.update(observe(process))
+    rows, details = [], {}
+    for row in csv.reader((args.output / "raw.log").read_text(encoding="utf-8", errors="replace").splitlines()):
+        if row and row[0] == "table_build":
+            rows.append(dict(name=row[1], **dict(zip(FIELDS, map(int, row[2:])))))
+        elif row and row[0] in ("heap_stats", "heap_sample", "memory", "graph_layout", "phases", "packed_bounds"):
+            details.setdefault(row[1], {})[row[0]] = list(map(int, row[2:]))
+    result = dict(command=command, binary_sha256=hashlib.sha256(args.binary.read_bytes()).hexdigest(), exit_code=process.returncode,
+                  elapsed_seconds=time.monotonic() - started, skip_plan=args.skip_plan, rows=rows, details=details, **observed,
+                  limitations=["Array residency excludes allocator overhead; OS peak includes both compared tables and the map.", "This runner does not exclude unrelated host activity."])
+    (args.output / "result.json").write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
+    print(json.dumps(result, indent=2))
+    raise SystemExit(process.returncode)
+
+
+if __name__ == "__main__":
+    main()
