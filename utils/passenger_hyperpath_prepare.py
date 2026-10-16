@@ -93,11 +93,13 @@ def main():
         if not path.is_file():
             path = next((build / "transport-trace").glob("*.h"))
         before = 'if (!db.RebindPrecomputed(rebound, vehicle->orders->index, vehicle->cargo_type, vehicle->cur_real_order_index)) reason = "intent_mismatch";'
-        after = '''if (ride.kind == PassengerRideKind::HyperpathIntent) {
+        after = '''if (vehicle->current_order.GetCargoLoadType(vehicle->cargo_type) == OrderLoadType::NoLoad) reason = "no_load";
+            else if (ride.kind == PassengerRideKind::HyperpathIntent) {
                 auto board = db.BoardHyperpath(ride, vehicle->cargo_type, vehicle->orders->index, vehicle->cur_real_order_index, packet.GetPassengerArrivingService(), packet.GetPassengerFailedService(_state_ticks));
                 if (!board.ride) reason = "not_attractive";
             } else if (!db.RebindPrecomputed(rebound, vehicle->orders->index, vehicle->cargo_type, vehicle->cur_real_order_index)) reason = "intent_mismatch";'''
         replace_once(path, before, after)
+        replace_once(path, '\n\t\t\telse if (vehicle->current_order.GetCargoLoadType(vehicle->cargo_type) == OrderLoadType::NoLoad) reason = "no_load";', '')
         # Two separate observers share the same immutable simulation. The
         # ordinary 1/64 sample and exhaustive target-OD sample never mix.
         trace = path.read_text(encoding="utf-8")

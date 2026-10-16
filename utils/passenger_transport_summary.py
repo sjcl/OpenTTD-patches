@@ -108,6 +108,32 @@ def population_summary(directory):
     return result
 
 
+def target_probe_summary(directory):
+    """Read target-OD validation probes; these are not loading opportunities."""
+    path = directory / 'transport-target-events.csv'
+    if not path.exists():
+        return None
+    raw, unique = collections.Counter(), collections.Counter()
+    by_od, seen = collections.defaultdict(collections.Counter), set()
+    with path.open(newline='', encoding='utf-8') as stream:
+        for row in csv.DictReader(stream):
+            label = f"{row['event']}:{row['reason']}"
+            raw[label] += 1
+            key = tuple(row[field] for field in ('event', 'tick', 'sample', 'station', 'vehicle',
+                                                'actual_service', 'actual_order', 'allowed', 'reason'))
+            if key in seen:
+                continue
+            seen.add(key)
+            unique[label] += 1
+            by_od[f"{row['origin']}:{row['destination']}"][label] += 1
+    return dict(raw_calls=raw, unique_tick_sample_vehicle_order=unique, by_od=by_od,
+                scope='Target-OD representatives reached by indexed validation/boarding hooks. '
+                      'Repeated calls in one tick are deduplicated separately; different loading '
+                      'ticks can still describe one arrival. Eligibility probes are not actual '
+                      'capacity misses, and unqueried vehicles/packets are absent. Use the native '
+                      'completed-loading capacity counters for actual full-train opportunities.')
+
+
 def summarize(directory):
     process_path = directory / 'process.json'
     focused = process_path.exists() and json.loads(process_path.read_text(encoding='utf-8')).get('focused_od_trace', False)
@@ -188,6 +214,7 @@ def summarize(directory):
                                   known_removals_or_destination_invalidation=meta['initial_known_passengers'] + meta['assigned_units'] - population['known_od_delivered'] - meta['remaining_known_passengers'])
     return dict(run=directory.name,
                 sampling_method=('target_od_packet_representatives' if focused else 'hash_one_in_64_packet_representatives'),
+                target_validation_probes=target_probe_summary(directory),
                 delivered_samples=len(delivered), complete_trip_samples=len(complete),
                 population_transport=population, population_balance=population_balance,
                 original_destination_mismatch_samples=len(destination_mismatches),
