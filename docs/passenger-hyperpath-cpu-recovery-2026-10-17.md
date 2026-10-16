@@ -1,8 +1,8 @@
 # Hyperpath boarding CPU recovery
 
-Work in progress on `feat/passenger-hyperpath-routing`, starting at
-`21b7f06ad9cbe7e214ac3762d9e73f56e6f3fc46`. No routing optimization or capacity
-policy change has been applied yet. Task 2 is gated on measured Task 1 results.
+Work on `feat/passenger-hyperpath-routing`, starting at
+`21b7f06ad9cbe7e214ac3762d9e73f56e6f3fc46`. Task 1 was measured before the
+Task 2 optimization. The measurements and subsequent changes are recorded below.
 
 ## Measurement instrumentation
 
@@ -209,7 +209,7 @@ and its p95/p99 regress. Tail median changes from 31.396 to 29.548 ms. Seven
 after ticks exceed 80 ms, clustered around elapsed ticks 623–635; the matching
 before case has one such tick. No competing game/build/test was detected by
 the host census. This first triplet does not establish stable tail recovery.
-An additional reversed execution order is pending, with source preparation
+The reversed execution order is reported below, with source preparation
 kept outside its measured games. The expanded after observer also checks that
 any remaining enumeration ride evaluations belong exclusively to the
 intentionally unchanged capacity visitor.

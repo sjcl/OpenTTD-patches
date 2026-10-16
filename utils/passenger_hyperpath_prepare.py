@@ -26,9 +26,15 @@ def main():
     parser.add_argument("revision")
     parser.add_argument("--mp", action="store_true")
     parser.add_argument("--boarding-profile", action="store_true", help="Measure enumeration/predicate/ride work in copied TUs, with cumulative per-tick CSV")
+    parser.add_argument("--departure-diagnostic", action="store_true", help="Read-only station 3393/service 524,525,528/destination 3394 departure observer")
+    parser.add_argument("--failure-threshold", type=int, choices=(2048, 4096), help="Measurement-only capacity threshold variant, applied to the copied cargo TU")
     args = parser.parse_args()
     if args.boarding_profile and args.mp:
         parser.error("--boarding-profile requires the exact-tick driver, not --mp")
+    if args.departure_diagnostic and args.mp:
+        parser.error("--departure-diagnostic requires the transport driver")
+    if args.failure_threshold and args.mp:
+        parser.error("MP validation must use the native product failure threshold")
     source, build = args.source.resolve(), args.build.resolve()
     command = [sys.executable, "-B", str(source / "utils/passenger_estimated_prepare.py"), str(source), str(build), args.revision]
     if args.mp:
@@ -145,11 +151,25 @@ def main():
                     text = text[:match.start()] + "{ " + call + " " + call.replace("PassengerTransportTrace::", "PassengerHyperpathFocusTrace::") + " }" + text[end + 1:]
                 text = text.replace("PassengerTransportTrace::defer_next_dump = true;", "PassengerTransportTrace::defer_next_dump = true; PassengerHyperpathFocusTrace::defer_next_dump = true;")
                 copied.write_text(text, encoding="utf-8")
+    if args.departure_diagnostic:
+        from passenger_hyperpath_departure_diagnostic import prepare
+        prepare(source, build)
     if args.boarding_profile:
         from passenger_hyperpath_boarding_profile import prepare
         prepare(source, build)
+    native_threshold = re.search(r'static constexpr int64_t T_FAIL = (\d+);', (source / 'src/cargopacket.cpp').read_text(encoding='utf-8'))
+    failure_threshold = int(native_threshold[1]) if native_threshold else None
+    if args.failure_threshold:
+        if native_threshold is None:
+            raise ValueError('Threshold variants require the time-based capacity implementation')
+        xml = (build / 'openttd_lib.vcxproj').read_text(encoding='utf-8-sig')
+        paths = [Path(path) for path in re.findall(r'<ClCompile Include="([^"]+)"', xml) if Path(path).name == 'cargopacket.cpp']
+        if len(paths) != 1 or paths[0].is_relative_to(source / 'src'):
+            raise ValueError('Expected one copied cargo TU for the threshold variant')
+        replace_once(paths[0], native_threshold[0], f'static constexpr int64_t T_FAIL = {args.failure_threshold};')
+        failure_threshold = args.failure_threshold
     files = {}
-    for folder in ("save-integrity", "transport-trace", "real-map-driver"):
+    for folder in ("save-integrity", "transport-trace", "real-map-driver", "target-departure"):
         for path in (build / folder).glob("*"):
             if path.is_file():
                 files[str(path.relative_to(build))] = hashlib.sha256(path.read_bytes()).hexdigest()
@@ -157,7 +177,7 @@ def main():
     (build / 'hyperpath-source-diff.patch').write_bytes(patch)
     changed = subprocess.check_output(['git', 'diff', '--name-only', args.revision, '--', 'src'], cwd=source, text=True).splitlines()
     source_files = {name: hashlib.sha256((source / name).read_bytes()).hexdigest() for name in changed if (source / name).is_file()}
-    (build / "hyperpath-provenance.json").write_text(json.dumps(dict(revision=args.revision, mp=args.mp, boarding_profile=args.boarding_profile, files=files,
+    (build / "hyperpath-provenance.json").write_text(json.dumps(dict(revision=args.revision, mp=args.mp, boarding_profile=args.boarding_profile, departure_diagnostic=args.departure_diagnostic, failure_threshold=failure_threshold, failure_threshold_override=args.failure_threshold, files=files,
         working_tree_source_files=source_files, working_tree_patch_sha256=hashlib.sha256(patch).hexdigest()), indent=2) + "\n", encoding="utf-8")
 
 
