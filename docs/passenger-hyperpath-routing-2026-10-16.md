@@ -5,8 +5,8 @@ Work in progress on `feat/passenger-hyperpath-routing`, based on
 
 The A-mode checkpoint is commit `76b4e51091`. Subsequent changes connect real
 B-mode boarding, local capacity-failure replanning and saved algorithm identity.
-The live MP join/toggle/replacement probe passes. Long-duration matched transport
-and untraced simulation measurements are still pending.
+The live MP join/toggle/replacement probe and matched untraced CPU measurements
+are complete. Long-duration matched transport remains pending.
 
 ## Construction
 
@@ -275,8 +275,72 @@ and [512-tick measurements](measurements/passenger-hyperpath-2026-10-16/b-smoke.
 The input's JP+ Multiple Units NewGRF emits capacity-change warnings on both
 peers (27,155 lines each); the probe reports no network error and its explicit
 paused snapshots match. This verifies this fixture/run, not all NewGRF/network
-combinations. Long-duration quality, packet-fragmentation census and untraced
-simulation comparison remain pending.
+combinations. Long-duration quality and packet-fragmentation census remain
+pending.
+
+## Matched CPU and memory
+
+Both cases use source `f9407e6041` (product fix `40b434315a`), the same initial
+save above, and immutable executable SHA-256
+`4d24261d3b37ea9b0b85b18966da1ea19f0e73f13fc02dce3de55f25ff0184be`.
+Each advances exactly 2048 ticks with 2048 samples, with tracing disabled and
+no detected competing measurement. Initial tables are completed while paused.
+At elapsed tick 1024, transfer cost changes from 20 to 17; the next 1024 ticks
+use the normal replacement budget and retained table. The replacement is then
+completed while paused. Both warm observations succeed in both cases.
+
+All simulation figures below are milliseconds per tick (mean / p95 / p99).
+Journey is the existing Journey timer, not all passenger-related game work.
+
+| Window | Previous simulation | Hyperpath simulation | Previous / Hyperpath Journey mean |
+|---|---:|---:|---:|
+| First 1024 ordinary ticks, including initial intent migration | 28.243 / 34.166 / 41.071 | 33.344 / 54.400 / 76.868 | 1.528 / 2.770 |
+| Last 512 of those ordinary ticks | 27.924 / 33.201 / 37.719 | 29.970 / 48.183 / 58.491 | 1.223 / 1.581 |
+| 1024 replacement ticks | 31.292 / 47.741 / 55.270 | 37.980 / 60.355 / 74.710 | 3.900 / 9.203 |
+
+Hyperpath increases the ordinary-tail mean by 7.3% and replacement mean by
+21.4%; upper-tail latency and initial migration remain costs. It retains
+bounded shared lookup/local replanning, but does not match the old mode's CPU
+or tail latency on this fixture. The quality run must be considered alongside
+these costs. This is one sequential pair, not a statistical claim across maps.
+
+| Build / process metric | Previous | Hyperpath |
+|---|---:|---:|
+| Initial paused warm elapsed | 97.634 s | 127.153 s |
+| Remaining replacement completion while paused after 1024 background ticks | 94.583 s | 128.165 s |
+| Completed replacement cumulative builder time | 100.371 s | 133.079 s |
+| Completed replacement Work | 5,667,026,635 | 1,879,772,949 |
+| Peak resident / commit | 6.687 / 6.712 GiB | 9.559 / 10.375 GiB |
+
+The paused replacement figure is its remaining completion time, not total
+wall time from the setting change. Process peaks include load, initial build,
+transport, retained-table replacement and save. They are distinct from stored
+array bytes and the conservative canonical memory envelope. At the completed
+cost-17 replacement, Hyperpath reports 7,820,281,490 array bytes, a
+16,275,076,536-byte envelope, 1,153,706,120 base-policy bytes and 1,796,819,312
+difference-policy bytes. There are 83,672,294 Board events, 137,930,134 accepted
+state candidates, 137,961,676 range updates and 390,640,267 pushes/pops.
+The frozen full-OD comparison above provides the complete candidate distribution;
+this changed-cost replacement has maximum 22.
+
+The Hyperpath interval records 129,226 actual capacity-missed packet /
+243,908 passenger opportunities and computes 7044 shared local policies in
+42.756 ms total across generations. These are opportunities, not distinct
+people. Target validation probes are reported separately from actual capacity
+misses. Indexed probes omit unqueried vehicles/packets and can repeat within a
+loading; the report keeps raw and deduplicated probe counts.
+
+The midpoint snapshot/command takes 217.940 ms / 72 microseconds in the old case
+and 200.340 ms / 57 microseconds in Hyperpath. These sit outside tick samples.
+The measured loops need no error-pause resumption; each startup script separately
+resumes one pre-existing NewGRF error pause before sampling. Capacity-change
+warnings remain (23,489 / 23,657 lines). No source changes or timeout changes
+were made to suppress them.
+
+Evidence: [CPU summary](measurements/passenger-hyperpath-2026-10-16/cpu-matched.json),
+[old raw samples](measurements/passenger-hyperpath-2026-10-16/cpu-previous-raw.json),
+[Hyperpath raw samples](measurements/passenger-hyperpath-2026-10-16/cpu-hyperpath-raw.json),
+and [binary provenance](measurements/passenger-hyperpath-2026-10-16/matched-binary-provenance.json).
 
 ## Correctness coverage
 
