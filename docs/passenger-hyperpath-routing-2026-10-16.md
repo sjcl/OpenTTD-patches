@@ -298,11 +298,13 @@ Journey is the existing Journey timer, not all passenger-related game work.
 | Last 512 of those ordinary ticks | 27.924 / 33.201 / 37.719 | 29.970 / 48.183 / 58.491 | 1.223 / 1.581 |
 | 1024 replacement ticks | 31.292 / 47.741 / 55.270 | 37.980 / 60.355 / 74.710 | 3.900 / 9.203 |
 
-Hyperpath increases the ordinary-tail mean by 7.3% and replacement mean by
-21.4%; upper-tail latency and initial migration remain costs. It retains
+The observed Hyperpath ordinary-tail mean is 7.3% higher and replacement mean
+21.4% higher; upper-tail latency and initial migration remain costs. It retains
 bounded shared lookup/local replanning, but does not match the old mode's CPU
 or tail latency on this fixture. The quality run must be considered alongside
 these costs. This is one sequential pair, not a statistical claim across maps.
+Host frequency, temperature and scheduling were not pinned or logged in this
+pair; the observed timing differences include run variance.
 
 | Build / process metric | Previous | Hyperpath |
 |---|---:|---:|
@@ -341,6 +343,41 @@ Evidence: [CPU summary](measurements/passenger-hyperpath-2026-10-16/cpu-matched.
 [old raw samples](measurements/passenger-hyperpath-2026-10-16/cpu-previous-raw.json),
 [Hyperpath raw samples](measurements/passenger-hyperpath-2026-10-16/cpu-hyperpath-raw.json),
 and [binary provenance](measurements/passenger-hyperpath-2026-10-16/matched-binary-provenance.json).
+
+The measurements use a normal MSVC x64 Release build, static runtime
+`MultiThreaded`, `OPTION_DEDICATED=OFF`, `OPTION_USE_ASSERTS=ON` and
+`OPTION_NO_LTO=ON`. The measurement preparer copies translation units and
+modifies only the build project. Snapshot the resulting executable before
+restoring that project with CMake. Two pre-existing local source edits (an index
+variable rename and explicit noncapturing-lambda conversion in a test) were
+present in both cases, remain outside the feature commits, and have hashes in
+the provenance. The independent compiler probe accepts the original lambda
+expression too.
+
+The corrected legacy control completes all 24576 ticks with 24576 samples,
+successful initial warm and no detected measurement competition. Its complete
+canonical end state matches the earlier pre-readiness-fix legacy control, and
+the delivered, pending, lost and population CSVs are byte-identical. The
+16384-tick canonical checkpoint matches too. This is a behavioural regression
+check across the two executables, not an isolated CPU comparison: elapsed
+process times are 1209.074 s and 1280.097 s. Evidence:
+[canonical comparison](measurements/passenger-hyperpath-2026-10-16/legacy-control-equivalence.json)
+and [trace hashes](measurements/passenger-hyperpath-2026-10-16/legacy-trace-equivalence.json).
+
+For reproduction, `utils/passenger_hyperpath_prepare.py` prepares the quality
+probe in an already configured MSVC build. `utils/passenger_hyperpath_quality.py`
+accepts the immutable executable, asset package, initial save, empty output
+directory and matching language directory, then runs the 64-tick smoke and both
+24576-tick modes. `utils/passenger_hyperpath_report.py` summarizes its output.
+For untraced CPU runs, unset both trace environment variables and use
+`utils/passenger_precomputed_real_map.py run` with `--precomputed`,
+`--cold-precomputed`, `--warm-precomputed`, `--ticks 2048`,
+`--mid-rebuild-tick 1024`, `--finish-rebuild-precomputed` and respectively
+`--no-hyperpath` / `--hyperpath`. Use `--timeout 5400` and a sufficient
+`--measurement-wait` for this fixture. The normal-host shared measurement lock
+serializes builds and games; frozen measurements, CPU and transport are separate
+stages. The source save and NewGRF asset package are existing local fixtures and
+are not embedded in the result JSON or repository.
 
 ## Correctness coverage
 
