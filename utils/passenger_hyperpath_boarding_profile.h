@@ -7,8 +7,8 @@
 #include <vector>
 
 namespace PassengerBoardingProfile {
-enum Stage : size_t { Enumeration, Predicate, Ride, EnumerationRide, Visit, Index, Forget, Refresh, Schedule, MergeHash, Merge, Shift, Ensure, AddEntry, RemoveEntry, Resolve, NoLoad, FullPredicate, CapacityEnumerationRide, WrongBoarding, RejectedCohort, Count };
-inline constexpr std::array<const char *, Count> names = {"enumeration", "predicate", "ride", "enumeration_ride", "visit", "index", "forget", "refresh", "schedule", "merge_hash", "merge", "shift", "ensure", "add_entry", "remove_entry", "resolve", "no_load", "full_predicate", "capacity_enumeration_ride", "wrong_boarding", "rejected_cohort"};
+enum Stage : size_t { Enumeration, Predicate, Ride, EnumerationRide, Visit, Index, Forget, Refresh, Schedule, MergeHash, Merge, Shift, Ensure, AddEntry, RemoveEntry, Resolve, NoLoad, FullPredicate, CapacityEnumerationRide, WrongBoarding, RejectedCohort, MembershipHit, Count };
+inline constexpr std::array<const char *, Count> names = {"enumeration", "predicate", "ride", "enumeration_ride", "visit", "index", "forget", "refresh", "schedule", "merge_hash", "merge", "shift", "ensure", "add_entry", "remove_entry", "resolve", "no_load", "full_predicate", "capacity_enumeration_ride", "wrong_boarding", "rejected_cohort", "membership_hit"};
 struct Counter { uint64_t calls = 0, nanoseconds = 0, stops = 0; };
 inline std::array<Counter, Count> counters{};
 inline uint64_t visits = 0, groups = 0;

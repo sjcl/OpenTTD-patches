@@ -77,6 +77,9 @@ def prepare(source, build):
         predicates.append(("function:bool PassengerJourneyLoadingContext::CanUseHyperpathPolicy(", "PassengerBoardingProfile::Scope profile(PassengerBoardingProfile::FullPredicate);"))
         predicates.append(('if (current && intent.boarding != vehicle->First()->last_station_visited) return false;',
             'if (current && intent.boarding != vehicle->First()->last_station_visited) { ++PassengerBoardingProfile::counters[PassengerBoardingProfile::WrongBoarding].calls; return false; }'))
+        if 'hyperpath_memberships' in (source / 'src/passenger_journey_active.cpp').read_text(encoding='utf-8'):
+            before = 'const bool current = cached != this->hyperpath_memberships.end() || db.IsCurrent(intent);'
+            predicates.append((before, 'if (cached != this->hyperpath_memberships.end()) ++PassengerBoardingProfile::counters[PassengerBoardingProfile::MembershipHit].calls;\n\t' + before))
     instrument("passenger_journey_active.cpp", predicates)
     instrument("passenger_precomputed.cpp", [
         ("uint32_t board, StationID destination) const\n{", "uint32_t board, StationID destination) const\n{\n\tPassengerBoardingProfile::Scope profile(PassengerBoardingProfile::Ride);"),

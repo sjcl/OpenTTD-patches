@@ -247,3 +247,63 @@ rejection counters while preserving the original stage definitions.
 Evidence: [after attribution](measurements/passenger-hyperpath-cpu-recovery-2026-10-17/task2-after-profile.json),
 [raw counters](measurements/passenger-hyperpath-cpu-recovery-2026-10-17/task2-after-profile-boarding.csv)
 and [observer state control](measurements/passenger-hyperpath-cpu-recovery-2026-10-17/task2-profile-state.json).
+
+## Reversed control and context membership reuse
+
+The reversed 1,025-tick runs compare only the first 1,024 ordinary ticks;
+the one replacement tick is excluded from CPU claims. All canonical fields
+match their forward-run midpoints; before/after also match the reversed end.
+Ordinary means are previous 22.086, before Hyperpath 26.619, separated v1
+30.966 ms. Tail means are 22.130 / 26.398 / 30.552 ms. This reverses the first
+triplet's apparent v1 speedup. **The separation alone did not establish a
+stable CPU recovery.** The substantial run-order variation must not be hidden.
+
+The follow-up retains an exact base-membership boolean in the existing loading
+context and reads the representative intent by const reference. It caches
+neither a ride, cost/label nor live legality. A full frozen boarding revision
+(publication, invalidation and saved table Work) invalidates these booleans;
+vehicle invalidation removes that consist's entries. Keys include carrier,
+cargo/order, policy identity, previous carrier and both occurrence identities.
+Failed-service membership still consults the table cache, so a cold unknown
+can never become a stale negative. No global/shared route-evaluation cache,
+reverse index, saved field or Work unit is introduced.
+
+All **724 tests pass**, including a cached negative whose old policy is retired
+and must replan under the new publication, distinct occurrence identities,
+vehicle invalidation and missing orders. The 2,048-tick midpoint/replacement
+end and independent 4,096-tick end again match all 24 canonical fields.
+The final guarded observer also matches the pre-optimization observer exactly.
+
+Memo-case uninstrumented milliseconds/tick (mean / p95 / p99):
+
+| Window | Context membership memo |
+| --- | ---: |
+| Ordinary 1–1,024 | 22.096 / 32.560 / 45.739 |
+| Ordinary 513–1,024 | 21.557 / 28.893 / 36.059 |
+| Replacement 1,025–2,048 | 25.912 / 33.849 / 40.283 |
+
+These ordinary means are near the reversed previous-mode control, but these
+are separate runs, not simultaneous matched CPU samples. A fresh final
+three-way comparison after the remaining features is still required.
+
+The final observer records 20,271,043 base/currentness memo hits in 22,767,827
+light predicates (89.03%). Full-interval enumeration is 5.800545 seconds
+versus the original 7.849864 (-26.11%); the tail is 1.659134 versus 2.206051
+seconds (-24.79%). Predicate time is 3.064429 seconds, slightly higher than
+v1's 2.908455 despite the reuse, so that timer alone does not establish the
+source of the larger uninstrumented gain. The cohort walk persists. Resolve
+and ride counts are unchanged from separated v1: ordinary boarding enumeration
+still has zero EvaluateRide calls/stops and capacity-only enumeration retains
+17,570 calls / 220,438 stops. Measurements establish correctness and repeat
+opportunities; they do not establish an exact causal percentage for the memo.
+
+Evidence: [reverse control](measurements/passenger-hyperpath-cpu-recovery-2026-10-17/task2-reverse-summary.json),
+[memo CPU](measurements/passenger-hyperpath-cpu-recovery-2026-10-17/task2-memo-cpu-summary.json),
+[memo 4,096-tick state](measurements/passenger-hyperpath-cpu-recovery-2026-10-17/task2-memo-canonical-4096.json),
+[guarded native tests](measurements/passenger-hyperpath-cpu-recovery-2026-10-17/task2-memo-final-ctest-native.txt)
+and [memo attribution](measurements/passenger-hyperpath-cpu-recovery-2026-10-17/task2-memo-final-profile-report.json).
+
+The recovered construction fixture is the former
+`build-estimated/quality-through-final/result.sav`. Its StateTicks are exactly
+24,576 later than the requested original input. It is a later simulation
+state on the same topology, not a substitute that reproduces the prior interval.

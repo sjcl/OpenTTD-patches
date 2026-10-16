@@ -4549,3 +4549,30 @@ TEST_CASE("Hyperpath cold local membership defers evaluation until the FIFO coho
 	REQUIRE(waiting.Load(20, &slow->cargo, std::array{D}, TileIndex{0}, slow, &loading) == 20);
 	CHECK(waiting.AvailableCount() == 0);
 }
+
+TEST_CASE("Hyperpath membership memo releases a retired policy before replanning", "[passenger][hyperpath][boarding][generation]")
+{
+	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = _settings_game.linkgraph.passenger_journey_hyperpath = true;
+	auto *fast = f.Train({Stop(A), Stop(D)}), *slow = f.Train({Stop(A, 220), Stop(D, 220)});
+	auto &db = f.Build(); while (!db.PreparePrecomputed()) {}
+	auto *packet = f.Packet(); PassengerJourneyActiveContext context(nullptr, A); REQUIRE(context.PlanWaiting(*packet, PAX, D));
+	const auto old = packet->GetPassengerJourney(); PassengerJourneyLoadingContext loading;
+	auto occurrence = db.HyperpathBoardingOccurrences(PAX, A, slow->orders->index, 0);
+	for (int i = 0; i < 3; ++i) CHECK_FALSE(loading.MayUseHyperpathPolicy(*packet, slow, PAX, occurrence, true, false));
+	CHECK_FALSE(loading.MayUseHyperpathPolicy(*packet, fast, PAX, std::array{PassengerPrecomputedTable::INVALID, PassengerPrecomputedTable::INVALID}, true, false));
+	CHECK(loading.MayUseHyperpathPolicy(*packet, fast, PAX, db.HyperpathBoardingOccurrences(PAX, A, fast->orders->index, 0), true, false));
+	const auto fast_occurrence = db.HyperpathBoardingOccurrences(PAX, A, fast->orders->index, 0);
+	{
+		AutoRestoreBackup<OrderList *> no_orders{fast->orders, nullptr};
+		CHECK_FALSE(loading.MayUseHyperpathPolicy(*packet, fast, PAX, fast_occurrence, true, false));
+	}
+	fast->GetOrder(0)->SetLoadType(OrderLoadType::NoLoad); db.Invalidate(fast->orders->index); f.PublishUpdates(db);
+	db.TickPrecomputed(1); while (!db.PrecomputedFinished()) db.TickPrecomputed(65536);
+	REQUIRE_FALSE(db.IsCurrent(old));
+	occurrence = db.HyperpathBoardingOccurrences(PAX, A, slow->orders->index, 0);
+	CHECK(loading.MayUseHyperpathPolicy(*packet, slow, PAX, occurrence, true, false));
+	CHECK(loading.CanUseHyperpathPolicy(*packet, slow, PAX, true, false));
+	CHECK(packet->GetPassengerJourney() == old); // Read-only membership cannot migrate the packet.
+	loading.Invalidate(slow);
+	CHECK(loading.MayUseHyperpathPolicy(*packet, slow, PAX, occurrence, true, false));
+}

@@ -227,6 +227,8 @@ class PassengerJourneyLoadingContext {
 	std::map<HyperpathKey, PassengerPrecomputedPlan> hyperpath_rides;
 	using HyperpathBoardingKey = std::tuple<VehicleID, CargoType, OrderListID, VehicleOrderID, StationID>;
 	std::map<HyperpathBoardingKey, std::array<uint32_t, 2>> hyperpath_boardings;
+	using HyperpathMembershipKey = std::tuple<HyperpathKey, OrderListID, uint64_t, std::array<uint32_t, 2>>;
+	std::map<HyperpathMembershipKey, bool> hyperpath_memberships; ///< Base membership only, local to this loading context.
 	std::optional<PassengerJourneyExecution> ResolveHyperpath(const PassengerJourneyExecution &intent, const CargoPacket &packet, const Vehicle *vehicle, CargoType cargo, bool override_failure = false, OrderListID failed = OrderListID::Invalid());
 public:
 	void EnableWaitingEvents() { this->waiting_events = true; } ///< Actual station simulation only; read-only predicates never wake packets.
