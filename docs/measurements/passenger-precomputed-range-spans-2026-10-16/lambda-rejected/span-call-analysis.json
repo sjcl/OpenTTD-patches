@@ -1,0 +1,9 @@
+{
+  "counted_build": true,
+  "disassembly_sha256": "63b4574f54e81ccfb23fbd5927fb7d28d90d5e2773dd033d825913efc11d664c",
+  "span_lambda_calls": [
+    "  00000000000001A1: call        ??R<lambda_1>@?3??RelaxIncoming@PassengerTableCandidate@@QEAA_K_K@Z@QEBA@II@Z",
+    "  000000000000022F: call        ??R<lambda_1>@?3??RelaxIncoming@PassengerTableCandidate@@QEAA_K_K@Z@QEBA@II@Z",
+    "  0000000000000244: call        ??R<lambda_1>@?3??RelaxIncoming@PassengerTableCandidate@@QEAA_K_K@Z@QEBA@II@Z"
+  ]
+}

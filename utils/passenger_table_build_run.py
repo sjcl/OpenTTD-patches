@@ -24,8 +24,11 @@ def main():
     parser.add_argument("--stages", action="store_true")
     parser.add_argument("--experiments", action="store_true")
     parser.add_argument("--skip-plan", action="store_true")
+    parser.add_argument("--destinations", type=int, help="Coarse performance probe of a deterministic row prefix; requires --skip-plan")
     parser.add_argument("--test", default="[.table-real]")
     args = parser.parse_args()
+    if args.destinations is not None and (args.destinations <= 0 or not args.skip_plan):
+        parser.error("--destinations must be positive and requires --skip-plan")
     args.output.mkdir(parents=True, exist_ok=True)
     env = dict(os.environ)
     if args.fixture:
@@ -39,6 +42,11 @@ def main():
         env["OPENTTD_TABLE_EXPERIMENTS"] = "1"
     if args.skip_plan:
         env["OPENTTD_TABLE_SKIP_PLAN"] = "1"
+    else:
+        env.pop("OPENTTD_TABLE_SKIP_PLAN", None)
+    env.pop("OPENTTD_TABLE_MAX_DESTINATIONS", None)
+    if args.destinations is not None:
+        env["OPENTTD_TABLE_MAX_DESTINATIONS"] = str(args.destinations)
     command = [str(args.binary.resolve()), args.test]
     started = time.monotonic()
     observed = {}
@@ -54,10 +62,10 @@ def main():
     for row in csv.reader((args.output / "raw.log").read_text(encoding="utf-8", errors="replace").splitlines()):
         if row and row[0] == "table_build":
             rows.append(dict(name=row[1], **dict(zip(FIELDS, map(int, row[2:])))))
-        elif row and row[0] in ("heap_stats", "heap_sample", "memory", "graph_layout", "phases", "packed_bounds"):
+        elif row and row[0] in ("heap_stats", "heap_sample", "memory", "graph_layout", "phases", "packed_bounds", "table_window"):
             details.setdefault(row[1], {})[row[0]] = list(map(int, row[2:]))
     result = dict(command=command, binary_sha256=hashlib.sha256(args.binary.read_bytes()).hexdigest(), exit_code=process.returncode,
-                  elapsed_seconds=time.monotonic() - started, skip_plan=args.skip_plan, rows=rows, details=details, **observed,
+                  elapsed_seconds=time.monotonic() - started, skip_plan=args.skip_plan, destination_limit=args.destinations, rows=rows, details=details, **observed,
                   limitations=["Array residency excludes allocator overhead; OS peak includes both compared tables and the map.", "This runner does not exclude unrelated host activity."])
     (args.output / "result.json").write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
     print(json.dumps(result, indent=2))

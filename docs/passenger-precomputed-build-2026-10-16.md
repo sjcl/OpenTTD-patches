@@ -6,6 +6,9 @@ scalar SoA・RangeEdge・安定CSR・予算付きブロック初期化・ノー�
 ロード時の非同期処理完了を揃えた通常tick比較では、平均・p95・p99に悪化は見られなかった。
 保持更新中は平均がほぼ同じだがp95/p99の増加が残るため、不悪化条件の最終判定は保留する。
 
+その後、`RelaxIncoming`の範囲分割を`d7af532165`で追加した。
+この追試の結果と試作の比較は[範囲分割レポート](passenger-precomputed-range-spans-2026-10-16.md)に記録する。
+
 基点は最新 `sjcl/jgrpp-ya` の `902997e6314e018a08c4b92ec0083b040790005f`。
 作業ブランチは `perf/passenger-precomputed-table-build`。
 費用、待ち時間推定係数、乗降条件、分散条件、Work Budgetは変更しない。

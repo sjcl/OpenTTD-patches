@@ -1,0 +1,7 @@
+{
+  "adopted": false,
+  "reason": "Fixed-array inline cold updates increased failed-probe register/stack work; forward counter-free scalar rows 86.697s vs 68.452s.",
+  "full_plan_passed": true,
+  "forward_complete": true,
+  "reverse_discarded": "Own reverse benchmark deliberately terminated after rejection; normal projects restored and lock released."
+}

@@ -1,0 +1,8 @@
+{
+  "restored": true,
+  "sources": {
+    "src/passenger_precomputed.cpp": "eb5cb8dedb6bef937645b0cb1a29f1201ca9e9f29bf04ee00ebcc5f7b82bc776",
+    "utils/passenger_table_build_prepare.py": "c3422e3eff9d31fb7d5f0c4f586b675f79ec375f948633ec4f793f82430c99dc",
+    "utils/passenger_table_build_benchmark.cpp": "1c09546ea7ac9bbb27814170fd564aa9ad2de5e9015b44588eb5b1630c95e627"
+  }
+}

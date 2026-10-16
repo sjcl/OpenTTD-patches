@@ -1,0 +1,19 @@
+{
+  "command": [
+    "C:\\Users\\bebe\\.codex\\worktrees\\c430\\OpenTTD-patches\\build-msvc\\split-range-validation\\openttd_test-timing.exe",
+    "[.table-real]"
+  ],
+  "binary_sha256": "54896c1108a41813f30ffdfb79e1aefd16c7ba4599ff918f444c8c64caf34242",
+  "exit_code": 4294967295,
+  "elapsed_seconds": 35.87974000023678,
+  "skip_plan": true,
+  "rows": [],
+  "details": {},
+  "peak_working_bytes": 2281500672,
+  "peak_commit_bytes": 3082211328,
+  "process_cpu_seconds": 34.78125,
+  "limitations": [
+    "Array residency excludes allocator overhead; OS peak includes both compared tables and the map.",
+    "This runner does not exclude unrelated host activity."
+  ]
+}

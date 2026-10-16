@@ -17,6 +17,28 @@ BASE = "902997e6314e018a08c4b92ec0083b040790005f"
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 
 
+def split_bounded_spans_simd(cpp):
+    """Vectorize the two hot spans while retaining the shared cold accept path."""
+    pattern = re.compile(r'(?P<indent>\t+)for \(uint32_t from = (?P<first>[^;\n]+); from < (?P<last>\w+); \+\+from\) \{\n'
+        r'(?P=indent)\tif \(cost < this->search.cost\[from\] \|\| \(cost == this->search.cost\[from\] && legs < this->search.legs\[from\]\)\) accept\(from\);\n(?P=indent)\}')
+    def vectorize(match):
+        indent, first, last = (match[key] for key in ('indent', 'first', 'last'))
+        body = '''{
+    uint32_t from = FIRST;
+    for (; LAST - from >= 4; from += 4) {
+        uint32_t mask = PassengerRangeMask(cost, legs, this->search.cost.data() + from, this->search.legs.data() + from);
+        while (mask != 0) { unsigned bit = std::countr_zero(mask); mask &= mask - 1; accept(from + bit); }
+    }
+    for (; from < LAST; ++from) {
+        if (cost < this->search.cost[from] || (cost == this->search.cost[from] && legs < this->search.legs[from])) accept(from);
+    }
+}'''.replace('FIRST', first).replace('LAST', last).replace('    ', '\t')
+        return textwrap.indent(body, indent)
+    cpp, count = pattern.subn(vectorize, cpp)
+    assert count == 2, count
+    return cpp
+
+
 def generate(source, build, name, revision, heap="priority", simd=False, contract=False, generation=False):
     def read(path):
         if revision:
@@ -82,6 +104,10 @@ def generate(source, build, name, revision, heap="priority", simd=False, contrac
         cpp = cpp.replace("if (this->search.cost[state] == INT64_MAX)", "if (this->SearchCost(state) == INT64_MAX)")
         cpp = cpp.replace("this->search.cost[state] = label.cost;", "this->search.generation[state] = this->generation_epoch; this->search.cost[state] = label.cost;")
         cpp = cpp.replace("std::tuple(this->search.cost[from], this->search.legs[from])", "std::tuple(this->SearchCost(from), this->SearchLegs(from))")
+        cpp = cpp.replace("this->search.cost[from]", "this->SearchCost(from)")
+        cpp = cpp.replace("this->search.cost[base]", "this->SearchCost(base)")
+        cpp = cpp.replace("this->search.legs[from]", "this->SearchLegs(from)")
+        cpp = cpp.replace("this->search.legs[base]", "this->SearchLegs(base)")
         cpp = cpp.replace("const int64_t source_cost = this->search.cost[this->expanding];", "const int64_t source_cost = this->SearchCost(this->expanding);")
         cpp = cpp.replace("const uint32_t source_legs = this->search.legs[this->expanding];", "const uint32_t source_legs = this->SearchLegs(this->expanding);")
         cpp = cpp.replace("\treturn used;\n}", "\tthis->diagnostic.bytes += this->search.generation.capacity() * sizeof(uint32_t);\n\treturn used;\n}")
@@ -118,7 +144,9 @@ def generate(source, build, name, revision, heap="priority", simd=False, contrac
     cpp = cpp.replace("\t\t\t\t\t++this->destination;", "\t\t\t\t\tthis->metrics.destinations_ns.push_back(Elapsed(this->metrics.row_started));\n\t\t\t\t\t++this->destination;")
     cpp = cpp.replace("\tstruct Path {", "\tconst auto section_started = Clock::now();\n\tstruct Path {")
     cpp = cpp.replace("success = true; co_return;", "this->metrics.sections_ns += Elapsed(section_started); success = true; co_return;")
-    if simd:
+    if simd and "/* Bounded waiting spans:" in cpp:
+        cpp = '#include "' + (ROOT / "utils/passenger_table_build_simd.h").as_posix() + '"\n' + split_bounded_spans_simd(cpp)
+    elif simd:
         cpp = '#include "' + (ROOT / "utils/passenger_table_build_simd.h").as_posix() + '"\n' + cpp
         begin = cpp.index("while (this->range_offset < count")
         begin = cpp.rfind("\n", 0, begin) + 1
@@ -159,17 +187,27 @@ def main():
     parser.add_argument("build", type=pathlib.Path)
     parser.add_argument("--source", type=pathlib.Path, default=ROOT)
     parser.add_argument("--candidate", default=None, help="Git ref; default: working tree")
+    parser.add_argument("--reference", default=BASE, help="Pinned comparison ref; default: original baseline")
     parser.add_argument("--heap", choices=["priority", "indexed", "radix", "four", "packed", "product"], default="priority")
     parser.add_argument("--matrix", action="store_true", help="Compile all three queues over the same candidate graph")
     parser.add_argument("--timing-only", action="store_true", help="Remove diagnostic counter updates from timing runs")
     parser.add_argument("--simd", action="store_true", help="Isolated scalar/AVX2 ordered range experiment")
+    parser.add_argument("--range-split", action="store_true", help="Compare scalar/SIMD before and after span splitting; requires an integrated --reference")
     parser.add_argument("--stages", action="store_true", help="Compile independent integration stages using the product queue")
     args = parser.parse_args()
+    if args.range_split and args.reference == BASE:
+        parser.error("--range-split requires an integrated --reference")
+    if args.range_split and (args.heap != "product" or args.simd or args.matrix or args.stages):
+        parser.error("--range-split requires --heap product and cannot combine with --simd, --matrix or --stages")
     build = args.build.resolve() / "table-build"
     build.mkdir(parents=True, exist_ok=True)
-    generate(args.source.resolve(), build, "PassengerTableReference", BASE)
+    generate(args.source.resolve(), build, "PassengerTableReference", args.reference, "product" if args.reference != BASE else "priority")
     generate(args.source.resolve(), build, "PassengerTableCandidate", args.candidate, args.heap, args.simd)
     sources = [build / "PassengerTableReference.cpp", build / "PassengerTableCandidate.cpp", ROOT / "utils/passenger_table_build_benchmark.cpp"]
+    if args.range_split:
+        for name, revision in [("PassengerTableBeforeSIMD", args.reference), ("PassengerTableSplitSIMD", args.candidate)]:
+            generate(args.source.resolve(), build, name, revision, "product", simd=True)
+            sources.append(build / f"{name}.cpp")
     if args.matrix:
         for suffix, heap in [("Priority", "priority"), ("Four", "four"), ("Packed", "packed"), ("Indexed", "indexed"), ("Radix", "radix")]:
             name = "PassengerTable" + suffix
@@ -191,12 +229,15 @@ def main():
         cmake = cmake.replace("endfunction()", "  target_compile_definitions(openttd_test PRIVATE WITH_TABLE_BUILD_HEAP_MATRIX)\nendfunction()")
     if args.stages:
         cmake = cmake.replace("endfunction()", "  target_compile_definitions(openttd_test PRIVATE WITH_TABLE_BUILD_STAGES)\nendfunction()")
+    if args.range_split:
+        cmake = cmake.replace("endfunction()", "  target_compile_definitions(openttd_test PRIVATE WITH_TABLE_BUILD_RANGE_SPLIT)\nendfunction()")
     if args.timing_only:
         cmake = cmake.replace("endfunction()", "  target_compile_definitions(openttd_test PRIVATE PASSENGER_TABLE_COUNT=0)\nendfunction()")
     (build / "benchmark.cmake").write_text(cmake, encoding="utf-8")
-    manifest = dict(reference=BASE, candidate=args.candidate, heap=args.heap, timing_only=args.timing_only,
+    manifest = dict(reference=args.reference, candidate=args.candidate, heap=args.heap, timing_only=args.timing_only,
                     source_head=subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=args.source).decode().strip(),
                     simd=args.simd, stages=args.stages, matrix=args.matrix,
+                    range_split=args.range_split,
                     tools={p.name: hashlib.sha256(p.read_bytes()).hexdigest() for p in [ROOT / "utils" / n for n in ("passenger_table_build_prepare.py", "passenger_table_build_benchmark.cpp", "passenger_table_build_heaps.h", "passenger_table_build_simd.h")]},
                     files={p.name: hashlib.sha256(p.read_bytes()).hexdigest() for p in build.glob("PassengerTable*.*")})
     (build / "source.json").write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")

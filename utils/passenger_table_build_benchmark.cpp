@@ -5,6 +5,10 @@
 #include "../src/tests/passenger_test_stations.h"
 #include "PassengerTableReference.h"
 #include "PassengerTableCandidate.h"
+#ifdef WITH_TABLE_BUILD_RANGE_SPLIT
+#include "PassengerTableBeforeSIMD.h"
+#include "PassengerTableSplitSIMD.h"
+#endif
 #ifdef WITH_TABLE_BUILD_HEAP_MATRIX
 #include "PassengerTablePriority.h"
 #include "PassengerTableFour.h"
@@ -68,10 +72,16 @@ template <typename T> T Run(std::span<const PassengerPeriodicService *const> rec
 	auto graph = std::chrono::steady_clock::now();
 	size_t quantum = 16 * 1024 * 1024;
 	if (const char *value = getenv("OPENTTD_TABLE_QUANTUM")) quantum = std::max<size_t>(1, strtoull(value, nullptr, 10));
-	while (!table.Finished()) REQUIRE(table.Step(quantum) <= quantum);
+	size_t limit = 0;
+	if (const char *value = getenv("OPENTTD_TABLE_MAX_DESTINATIONS")) limit = strtoull(value, nullptr, 10);
+	while (!table.Finished()) {
+		REQUIRE(table.Step(quantum) <= quantum);
+		if (limit != 0 && table.GetDiagnostic().destinations >= limit) break;
+	}
 	auto finished = std::chrono::steady_clock::now();
 	auto ns = [](auto a, auto b) { return std::chrono::duration_cast<std::chrono::nanoseconds>(b - a).count(); };
 	const auto &m = table.metrics; const auto &d = table.GetDiagnostic();
+	std::cout << "table_window," << name << ',' << limit << ',' << d.destinations << std::endl;
 	std::cout << "table_build," << name << ',' << records.size() << ',' << table.occurrences.size() << ',' << d.states << ',' << d.edges << ','
 		<< ns(started, graph) << ',' << ns(graph, finished) << ',' << m.init_ns << ',' << m.search_ns << ',' << m.finish_ns << ',' << m.publish_ns << ','
 		<< m.relaxations << ',' << m.successes << ',' << m.pushes << ',' << m.pops << ',' << m.stale << ',' << m.peak_queue << ',' << m.copies << ',' << m.section_checks << ',' << d.bytes << ',' << d.operations << std::endl;
@@ -92,6 +102,57 @@ template <typename T> T Run(std::span<const PassengerPeriodicService *const> rec
 	if (!row_times.empty()) std::cout << ',' << row_times.front() << ',' << row_times[row_times.size() / 2] << ',' << row_times[row_times.size() * 95 / 100] << ',' << row_times.back();
 	std::cout << std::endl;
 	return table;
+}
+
+template <typename Before, typename After> void CompareRangeSlices()
+{
+	if constexpr (requires(Before t) { t.RelaxIncoming(1); }) {
+		for (uint32_t excluded : {UINT32_MAX, 5U, 6U, 10U, 14U, 15U}) for (unsigned overflow = 0; overflow < 3; ++overflow) {
+			for (size_t quantum : {1U, 2U, 3U, 4U, 5U, 7U, 64U}) {
+				CAPTURE(excluded, overflow, quantum);
+				Before before; After after;
+				auto init = [&]<typename T>(T &t) {
+					t.search.cost.resize(24); t.search.legs.resize(24); t.search.metadata.resize(24);
+					for (uint32_t s = 0; s < 24; ++s) {
+						typename T::Label label;
+						label.cost = s % 4 == 0 ? 103 : s % 4 == 1 ? 104 : INT64_MAX;
+						label.legs = s % 4 == 1 ? 3 : 0; t.SetSearchLabel(s, label);
+					}
+					typename T::Label source{overflow == 1 ? INT64_MAX - 2 : 100, 50, 7, 3, 1, 2, overflow == 2 ? UINT32_MAX : 2, UINT32_MAX - 2};
+					t.SetSearchLabel(23, source); t.expanding = 23;
+					t.incoming_offsets.assign(25, 0); t.incoming_offsets.back() = 3;
+					t.hot_edges.from = {2, 3, 4}; t.hot_edges.cost = {4, 1, 3};
+					t.hot_edges.legs.assign(3, overflow == 2 ? 1 : 0);
+					t.hot_edges.range = {0, UINT32_MAX, 1};
+					t.range_edges = {{6, 15, excluded}, {16, 20, UINT32_MAX}};
+					t.cold_edges.assign(3, typename T::ColdEdge{0, 8, 1, T::EdgeKind::Ride});
+					t.queue.SetOptimized(true); t.queue.SetCapacityLimit(64);
+				};
+				init(before); init(after); size_t total = 0;
+				while (before.cursor != 3) {
+					size_t a = before.RelaxIncoming(quantum), b = after.RelaxIncoming(quantum);
+					REQUIRE(a > 0); REQUIRE(a <= quantum); REQUIRE(a == b); total += a;
+					REQUIRE(before.cursor == after.cursor); REQUIRE(before.range_offset == after.range_offset);
+					REQUIRE(before.queue.size() == after.queue.size());
+					for (uint32_t s = 0; s < 24; ++s) REQUIRE(Values(before.SearchLabel(s)) == Values(after.SearchLabel(s)));
+				}
+				REQUIRE(total == 16 - (excluded >= 6 && excluded < 15));
+				while (!before.queue.empty()) {
+					REQUIRE(before.queue.top() == after.queue.top()); before.queue.pop(); after.queue.pop();
+				}
+				REQUIRE(after.queue.empty());
+			}
+		}
+	}
+}
+
+TEST_CASE("Range slicing retains excluded-hole cursors and exact work at every boundary", "[.table-ranges]")
+{
+	CompareRangeSlices<PassengerTableReference, PassengerTableCandidate>();
+#ifdef WITH_TABLE_BUILD_RANGE_SPLIT
+	CompareRangeSlices<PassengerTableReference, PassengerTableBeforeSIMD>();
+	CompareRangeSlices<PassengerTableReference, PassengerTableSplitSIMD>();
+#endif
 }
 
 TEST_CASE("Experimental four-way and packed queues retain the complete ordering", "[.table-queues]")
@@ -202,6 +263,19 @@ TEST_CASE("Precomputed build fixed real map snapshot", "[.table-real][passenger]
 		AllocateMap(width, height);
 		while (positions >> id >> x >> y) Station::CreateAtIndex(StationID{static_cast<uint16_t>(id)}, TileIndex{width * y + x});
 	} else std::cout << "limitation,real-map station coordinates absent; distances are zero\n";
+#ifdef WITH_TABLE_BUILD_RANGE_SPLIT
+	if (getenv("OPENTTD_TABLE_RANGE_SPLIT") != nullptr) {
+		/* Keep the same completed reference resident for every timed variant. */
+		auto reference = Run<PassengerTableReference>(records, 20, "reference-warm-real");
+		auto before = [&] { auto t = Run<PassengerTableReference>(records, 20, "before-scalar-real"); Compare(reference, t); };
+		auto before_simd = [&] { auto t = Run<PassengerTableBeforeSIMD>(records, 20, "before-simd-real"); Compare(reference, t); };
+		auto after = [&] { auto t = Run<PassengerTableCandidate>(records, 20, "split-scalar-real"); Compare(reference, t); };
+		auto after_simd = [&] { auto t = Run<PassengerTableSplitSIMD>(records, 20, "split-simd-real"); Compare(reference, t); };
+		if (getenv("OPENTTD_TABLE_REVERSE_ORDER") != nullptr) { after_simd(); after(); before_simd(); before(); }
+		else { before(); before_simd(); after(); after_simd(); }
+		return;
+	}
+#endif
 	if (getenv("OPENTTD_TABLE_REVERSE_ORDER") != nullptr) {
 		auto candidate = Run<PassengerTableCandidate>(records, 20, "candidate-real");
 		auto reference = Run<PassengerTableReference>(records, 20, "reference-real");

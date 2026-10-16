@@ -1,0 +1,29 @@
+MSBuild のバージョン 17.14.40+3e7442088 (.NET Framework)
+
+  strgen.vcxproj -> C:\Users\bebe\.codex\worktrees\c430\OpenTTD-patches\build-msvc\src\strgen\Release\strgen.exe
+  -- Version string: jgrpp-ya-0.73.3+2-178-g5dc3b990f-m, Release: 0.73.3+2, Online contents compatible jgrpp version: 0.73.3
+  -- Generating rev.cpp
+  -- Generating ottdres.rc
+  -- Generating CPackProperties.cmake
+  -- Generating Doxyfile
+  -- Generating Doxyfile_AI
+  -- Generating Doxyfile_GS
+  settingsgen.vcxproj -> C:\Users\bebe\.codex\worktrees\c430\OpenTTD-patches\build-msvc\src\settingsgen\Release\settingsgen.exe
+  passenger_precomputed.cpp
+  openttd_lib.vcxproj -> C:\Users\bebe\.codex\worktrees\c430\OpenTTD-patches\build-msvc\openttd_lib.dir\Release\openttd_lib.lib
+LINK : warning LNK4098: defaultlib 'LIBCMT' は他のライブラリの使用と競合しています。/NODEFAULTLIB:library を使用してください。 [C:\Users\bebe\.codex\worktrees\c430\OpenTTD-patches\build-msvc\openttd.vcxproj]
+  openttd.vcxproj -> C:\Users\bebe\.codex\worktrees\c430\OpenTTD-patches\build-msvc\Release\openttd.exe
+MSBuild のバージョン 17.14.40+3e7442088 (.NET Framework)
+
+  settingsgen.vcxproj -> C:\Users\bebe\.codex\worktrees\c430\OpenTTD-patches\build-msvc\src\settingsgen\Release\settingsgen.exe
+  strgen.vcxproj -> C:\Users\bebe\.codex\worktrees\c430\OpenTTD-patches\build-msvc\src\strgen\Release\strgen.exe
+  -- Version string: jgrpp-ya-0.73.3+2-178-g5dc3b990f-m, Release: 0.73.3+2, Online contents compatible jgrpp version: 0.73.3
+  -- Generating rev.cpp
+  -- Generating ottdres.rc
+  -- Generating CPackProperties.cmake
+  -- Generating Doxyfile
+  -- Generating Doxyfile_AI
+  -- Generating Doxyfile_GS
+  openttd_lib.vcxproj -> C:\Users\bebe\.codex\worktrees\c430\OpenTTD-patches\build-msvc\openttd_lib.dir\Release\openttd_lib.lib
+LINK : warning LNK4098: defaultlib 'LIBCMT' は他のライブラリの使用と競合しています。/NODEFAULTLIB:library を使用してください。 [C:\Users\bebe\.codex\worktrees\c430\OpenTTD-patches\build-msvc\openttd_test.vcxproj]
+  openttd_test.vcxproj -> C:\Users\bebe\.codex\worktrees\c430\OpenTTD-patches\build-msvc\Release\openttd_test.exe
