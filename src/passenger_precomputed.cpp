@@ -280,7 +280,7 @@ PassengerBuildTask PassengerPrecomputedTable::BuildGraph(std::vector<const Passe
 		std::map<VehicleID, std::pair<uint64_t, OrderListID>> owners;
 		if (this->hyperpath) for (const auto *s : services) for (const auto &v : s->vehicles) {
 			if (cooperative) co_await std::suspend_always{};
-			if (v.id == VehicleID::Invalid() || v.capacity[cargo] == 0) continue;
+			if (v.id == VehicleID::Invalid()) continue;
 			auto [it, inserted] = owners.try_emplace(v.id, s->generation, s->id);
 			if (!inserted && (s->generation > it->second.first || (s->generation == it->second.first && s->id < it->second.second))) it->second = {s->generation, s->id};
 		}

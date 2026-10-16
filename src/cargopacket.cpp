@@ -64,10 +64,21 @@ void StationCargoList::BindPassengerStation(StationID station, CargoType cargo)
 	if (station != StationID::Invalid() && cargo < NUM_CARGO) _passenger_station_lists[{station, cargo}] = this;
 }
 
+CargoPacketID StationCargoList::NextPassengerGenerationPacket(uint32_t cursor) const
+{
+	auto next = this->routing_packets.lower_bound(CargoPacketID{cursor});
+	CargoPacketID result = next == this->routing_packets.end() ? CargoPacketID::Invalid() : *next;
+	if (_settings_game.linkgraph.passenger_journey_hyperpath) {
+		auto legacy = this->legacy_journey_packets.lower_bound(CargoPacketID{cursor});
+		if (legacy != this->legacy_journey_packets.end() && (result == CargoPacketID::Invalid() || *legacy < result)) result = *legacy;
+	}
+	return result;
+}
+
 void StationCargoList::UpdatePassengerRoutingSchedule() const
 {
 	if (this->passenger_station == StationID::Invalid() || this->passenger_index_cargo >= NUM_CARGO) return;
-	const bool unresolved = this->waiting_index_valid && !this->routing_packets.empty();
+	const bool unresolved = this->waiting_index_valid && this->NextPassengerGenerationPacket(0) != CargoPacketID::Invalid();
 	if (unresolved != this->passenger_unresolved_registered) {
 		if (unresolved) _passenger_unresolved_stations[this->passenger_index_cargo].insert(this->passenger_station);
 		else _passenger_unresolved_stations[this->passenger_index_cargo].erase(this->passenger_station);
@@ -146,7 +157,7 @@ PassengerWaitingEventDiagnostic GetPassengerWaitingEventDiagnostic()
 			++result.overdue;
 			result.oldest_ticks = std::max<uint64_t>(result.oldest_ticks, uint64_t(_state_ticks.base()) - uint64_t(due.base()));
 		}
-		if (list->passenger_routing_dirty || list->passenger_routing_sweeping) for (CargoPacketID id : list->routing_packets) {
+		if (list->passenger_routing_dirty || list->passenger_routing_sweeping) for (CargoPacketID id = list->NextPassengerGenerationPacket(0); id != CargoPacketID::Invalid(); id = list->NextPassengerGenerationPacket(id.base() + 1)) {
 			if (!list->passenger_routing_dirty && (id.base() < list->passenger_routing_cursor || id.base() > list->passenger_routing_end)) continue;
 			if (list->waiting_entries.at(id).routing_due != INVALID_STATE_TICKS) continue;
 			++pending; ++result.overdue;
@@ -285,7 +296,8 @@ void CargoPacket::RecordPassengerCapacityFailure(OrderListID service, StateTicks
 	auto &failure = this->passenger_boarding_failure;
 	if (!failure.Present() || failure.Expired(now, this->passenger_journey.waiting_limit) || (failure.service == service && failure.incarnation != incarnation)) failure = {service, 1, now, incarnation};
 	else if (failure.service == service && failure.count < PassengerBoardingFailure::THRESHOLD) ++failure.count;
-	else if (failure.count < PassengerBoardingFailure::THRESHOLD) failure = {service, 1, now, incarnation};
+	/* Interleaved full services must not reset this counter forever. Track one
+	 * identity until success/expiry, including before it reaches the threshold. */
 	PassengerWaitingRoutingChanged(*this);
 }
 
@@ -1397,7 +1409,7 @@ void StationCargoList::ClearWaitingIndex()
 	this->section_boarding_index.clear();
 	this->hyperpath_boarding_index.clear();
 	this->legacy_boarding_index.clear(); this->fallback_boarding_index.clear(); this->fallback_destinations.clear(); this->fallback_hops.clear();
-	this->routing_events.clear(); this->routing_packets.clear();
+	this->routing_events.clear(); this->routing_packets.clear(); this->legacy_journey_packets.clear();
 	this->waiting_next_sequence = 0;
 	this->waiting_index_valid = false;
 	this->UpdatePassengerRoutingSchedule();
@@ -1410,6 +1422,7 @@ void StationCargoList::ForgetWaitingPacket(CargoPacketID id) const
 	const auto &entry = it->second;
 	if (entry.routing_due != INVALID_STATE_TICKS) this->routing_events.erase({entry.routing_due, id});
 	this->routing_packets.erase(id);
+	this->legacy_journey_packets.erase(id);
 	auto merge = this->merge_index.find(entry.hash);
 	if (merge != this->merge_index.end()) { merge->second.erase({entry.space, id}); if (merge->second.empty()) this->merge_index.erase(merge); }
 	if (entry.pending) this->waiting_wake.erase(entry.wake);
@@ -1423,6 +1436,20 @@ StationCargoList::JourneyKey StationCargoList::BoardingJourneyKey(const CargoPac
 	const auto &ride = packet.GetPassengerJourney();
 	VehicleID physical = IsPassengerRideIntent(ride.kind) ? VehicleID::Invalid() : ride.vehicle;
 	return {ride.service, physical, ride.boarding, ride.boarding_order};
+}
+
+StationCargoList::HyperpathKey StationCargoList::BoardingHyperpathKey(const JourneyRideKey &key)
+{
+	const auto &ride = std::get<0>(key); const auto &failure = std::get<3>(key);
+	bool adjusted = failure.count >= PassengerBoardingFailure::THRESHOLD;
+	return {ride.boarding, ride.signature, ride.generation, std::get<1>(key), std::get<2>(key),
+			adjusted ? failure.service : OrderListID::Invalid(), adjusted ? failure.incarnation : 0};
+}
+
+StateTicks StationCargoList::BoardingHyperpathExpiry(const JourneyRideKey &key)
+{
+	const auto &failure = std::get<3>(key); int64_t hold = failure.Hold(std::get<0>(key).waiting_limit);
+	return StateTicks{failure.since.base() > INT64_MAX - hold ? INT64_MAX : failure.since.base() + hold};
 }
 
 void StationCargoList::AddBoardingEntry(CargoPacketID id, WaitingEntry &entry) const
@@ -1440,8 +1467,11 @@ void StationCargoList::AddBoardingEntry(CargoPacketID id, WaitingEntry &entry) c
 		ride->second.insert(order); entry.journey_group = std::pair(group, ride);
 		if (new_ride && packet.GetPassengerJourney().kind == PassengerRideKind::EstimatedServiceIntent)
 			this->section_boarding_index[PassengerPrecomputedTable::RawSectionBoardingKey(packet.GetPassengerJourney())].emplace(ride->first, &ride->second);
-		if (new_ride && packet.GetPassengerJourney().kind == PassengerRideKind::HyperpathIntent)
-			this->hyperpath_boarding_index[packet.GetPassengerDestination()].emplace(ride->first, &ride->second);
+		if (packet.GetPassengerJourney().kind == PassengerRideKind::HyperpathIntent) {
+			auto &policy = this->hyperpath_boarding_index[packet.GetPassengerJourney().alighting][BoardingHyperpathKey(ride->first)];
+			policy.packets.insert(order);
+			if (std::get<3>(ride->first).count >= PassengerBoardingFailure::THRESHOLD) policy.expiries.insert(BoardingHyperpathExpiry(ride->first));
+		}
 	}
 	else if (entry.fallback) {
 		auto [group, inserted] = this->fallback_boarding_index.try_emplace(*entry.fallback);
@@ -1464,17 +1494,23 @@ void StationCargoList::RemoveBoardingEntry(CargoPacketID id, const WaitingEntry 
 	if (entry.pending) return;
 	if (entry.journey) {
 		auto [group, ride] = *entry.journey_group;
+		if (std::get<0>(ride->first).kind == PassengerRideKind::HyperpathIntent) {
+			auto destination = this->hyperpath_boarding_index.find(std::get<0>(ride->first).alighting);
+			auto policy = destination->second.find(BoardingHyperpathKey(ride->first));
+			policy->second.packets.erase(order);
+			if (std::get<3>(ride->first).count >= PassengerBoardingFailure::THRESHOLD) {
+				auto expiry = policy->second.expiries.find(BoardingHyperpathExpiry(ride->first));
+				assert(expiry != policy->second.expiries.end()); policy->second.expiries.erase(expiry);
+			}
+			if (policy->second.packets.empty()) destination->second.erase(policy);
+			if (destination->second.empty()) this->hyperpath_boarding_index.erase(destination);
+		}
 		ride->second.erase(order);
 		if (ride->second.empty()) {
 			const auto &intent = std::get<0>(ride->first);
 			if (intent.kind == PassengerRideKind::EstimatedServiceIntent) {
 				auto section = this->section_boarding_index.find(PassengerPrecomputedTable::RawSectionBoardingKey(intent));
 				section->second.erase(ride->first); if (section->second.empty()) this->section_boarding_index.erase(section);
-			}
-			if (intent.kind == PassengerRideKind::HyperpathIntent) {
-				auto destination = this->hyperpath_boarding_index.find(intent.alighting);
-				destination->second.erase(ride->first);
-				if (destination->second.empty()) this->hyperpath_boarding_index.erase(destination);
 			}
 			group->second.erase(ride);
 		}
@@ -1510,9 +1546,11 @@ void StationCargoList::IndexPacket(CargoPacket *packet, StationID key, StationCa
 	WaitingEntry entry{key, position, packet->StationMergeHash(), service, static_cast<uint16_t>(CargoPacket::MAX_COUNT - packet->Count()), pending, rank, {}, packet->GetPassengerRoutingEvent(), journey, {}, {}};
 	if (!journey && Station::IsValidID(packet->GetPassengerDestination())) entry.fallback = FallbackKey{packet->GetPassengerDestination(), packet->GetPassengerLegacyHop(), packet->GetPassengerArrivingService(), packet->GetPassengerArrivingIncarnation()};
 	if (entry.routing_due != INVALID_STATE_TICKS) this->routing_events.emplace(entry.routing_due, packet->index);
-	/* Current intents use saved expiry events and lazy live generation checks.
-	 * A table publication only needs to revisit unresolved waiting passengers. */
+	/* Membership depends only on packet state, never table/cache residency.
+	 * Legacy mode visits unresolved OD only; Hyperpath also migrates old intents
+	 * under the same saved national/station work allowances. */
 	if (!journey && Station::IsValidID(packet->GetPassengerDestination())) this->routing_packets.insert(packet->index);
+	if (journey && packet->GetPassengerJourney().kind != PassengerRideKind::HyperpathIntent && Station::IsValidID(packet->GetPassengerDestination())) this->legacy_journey_packets.insert(packet->index);
 	if (pending) entry.wake = this->waiting_wake.emplace(ready, packet->index);
 	this->AddBoardingEntry(packet->index, entry);
 	this->merge_index[entry.hash].emplace(entry.space, packet->index);
@@ -1543,6 +1581,8 @@ void StationCargoList::RefreshWaitingPacket(const CargoPacket &packet) const
 	if (fallback.has_value() != (!entry.journey && entry.fallback.has_value())) {
 		if (fallback) this->routing_packets.insert(packet.index); else this->routing_packets.erase(packet.index);
 	}
+	if (journey && packet.GetPassengerJourney().kind != PassengerRideKind::HyperpathIntent && Station::IsValidID(packet.GetPassengerDestination())) this->legacy_journey_packets.insert(packet.index);
+	else this->legacy_journey_packets.erase(packet.index);
 	StateTicks ready = journey ? packet.GetPassengerJourney().not_before : StateTicks{};
 	if (Station::IsValidID(packet.GetPassengerDestination()) && packet.GetPassengerArrivingService() != OrderListID::Invalid()) ready = std::max(ready, packet.GetPassengerInterchangeReady());
 	const bool pending = ready > _state_ticks;
@@ -1683,8 +1723,11 @@ bool StationCargoList::VisitBoardingCandidates(std::span<const StationID> next, 
 		 * ride evaluation across packets and cohorts of the same policy state.
 		 * The existing FIFO merge governs simultaneous vehicles and split cargo. */
 		for (const auto &[destination, groups] : this->hyperpath_boarding_index) {
-			for (const auto &[ride, packets] : groups) {
-				if (loading.CanBoard(*CargoPacket::Get(std::get<2>(*packets->begin())), vehicle, this->passenger_index_cargo)) add_group(*packets, true);
+			for (const auto &[key, policy] : groups) {
+				const auto *packet = CargoPacket::Get(std::get<2>(*policy.packets.begin()));
+				bool base = policy.expiries.empty() || *policy.expiries.begin() <= _state_ticks;
+				bool adjusted = !policy.expiries.empty() && *policy.expiries.rbegin() > _state_ticks;
+				if (loading.MayUseHyperpathPolicy(*packet, vehicle, this->passenger_index_cargo, base, adjusted)) add_group(policy.packets);
 			}
 		}
 	}
@@ -2079,13 +2122,15 @@ uint StationCargoList::ShiftJourneyCargo(Taction action, std::span<const Station
 void StationCargoList::RecordCapacityMiss(std::span<const StationID> next, const Vehicle *vehicle, CargoType cargo, PassengerJourneyLoadingContext &loading)
 {
 	if (vehicle == nullptr || vehicle->First()->orders == nullptr || !IsPassengerJourneyRoutingEnabled(cargo)) return;
+	if (this->passenger_index_cargo != cargo) { this->ClearWaitingIndex(); this->passenger_index_cargo = cargo; }
+	this->EnsureWaitingIndex();
+	if (this->hyperpath_boarding_index.empty()) return; // Preserve legacy/full-train behaviour without extra validation or routing events.
 	bool capacity = false;
 	for (const Vehicle *part = vehicle->First(); part != nullptr; part = part->Next()) if (part->cargo_type == cargo && part->cargo_cap != 0) {
 		capacity = true;
 		if (part->cargo.RemainingCount() < part->cargo_cap) return;
 	}
 	if (!capacity) return;
-	if (this->passenger_index_cargo != cargo) { this->ClearWaitingIndex(); this->passenger_index_cargo = cargo; }
 	loading.EnableWaitingEvents();
 	this->VisitBoardingCandidates(next, vehicle, loading, [&](CargoPacketID id) {
 		auto entry = this->waiting_entries.find(id); if (entry == this->waiting_entries.end()) return true;

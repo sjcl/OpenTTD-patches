@@ -220,10 +220,11 @@ class PassengerJourneyLoadingContext {
 	const PassengerPrecomputedPlan &PendingPlan(const CargoPacket &packet, const Vehicle *vehicle, CargoType cargo);
 	using HyperpathKey = std::tuple<VehicleID, CargoType, VehicleOrderID, uint64_t, StationID, StationID, OrderListID, OrderListID>;
 	std::map<HyperpathKey, PassengerPrecomputedPlan> hyperpath_rides;
-	std::optional<PassengerJourneyExecution> ResolveHyperpath(const PassengerJourneyExecution &intent, const CargoPacket &packet, const Vehicle *vehicle, CargoType cargo);
+	std::optional<PassengerJourneyExecution> ResolveHyperpath(const PassengerJourneyExecution &intent, const CargoPacket &packet, const Vehicle *vehicle, CargoType cargo, bool override_failure = false, OrderListID failed = OrderListID::Invalid());
 public:
 	void EnableWaitingEvents() { this->waiting_events = true; } ///< Actual station simulation only; read-only predicates never wake packets.
 	bool CanBoard(const CargoPacket &packet, const Vehicle *vehicle, CargoType cargo = INVALID_CARGO);
+	bool MayUseHyperpathPolicy(const CargoPacket &representative, const Vehicle *vehicle, CargoType cargo, bool base, bool adjusted);
 	void ResolveWaiting(CargoPacket &packet, const Vehicle *vehicle); ///< Selected indexed candidate only, detached before changing its cohort.
 	void ObserveWaitingGroup(const CargoPacket &packet, const Vehicle *vehicle, CargoType cargo, size_t packets);
 	void PrepareBoard(CargoPacket &packet, const Vehicle *vehicle);
@@ -263,7 +264,7 @@ public:
 	PassengerJourneyActiveContext(const Vehicle *vehicle, StationID station, size_t prediction_cache_bytes = PassengerServiceCapture::MAXIMUM_PREDICTION_BYTES);
 	~PassengerJourneyActiveContext();
 	size_t GetWorkAllowanceUsed() const { return 4194304 - this->work_left; }
-	bool PlanWaiting(CargoPacket &packet, CargoType cargo, StationID legacy_hop);
+	bool PlanWaiting(CargoPacket &packet, CargoType cargo, StationID legacy_hop, bool require_hyperpath = false);
 	std::optional<VehicleCargoList::MoveToAction> Decide(CargoPacket &packet, CargoType cargo, bool accepted, OrderUnloadType unload);
 };
 

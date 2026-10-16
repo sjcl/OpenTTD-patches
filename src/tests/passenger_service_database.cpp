@@ -2693,6 +2693,22 @@ TEST_CASE("Hyperpath partial event replay keeps policy membership and work ident
 	}
 }
 
+TEST_CASE("Hyperpath shared policy queues do not let an expired head hide a ready passenger", "[passenger][hyperpath][boarding][events]")
+{
+	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = _settings_game.linkgraph.passenger_journey_hyperpath = true;
+	auto *train = f.Train({Stop(A), Stop(D)}); auto &db = f.Build(); while (!db.PreparePrecomputed()) {}
+	auto plan = db.PlanPrecomputed(PAX, A, D, NOW); REQUIRE(plan.ride);
+	auto *expired = f.Packet(1), *ready = f.Packet(1);
+	auto old = *plan.ride; old.planned_at = NOW - 1000; old.waiting_limit = 256;
+	expired->SetPassengerJourney(old, D); ready->SetPassengerJourney(*plan.ride, D);
+	StationCargoList waiting; waiting.Append(expired, D); waiting.Append(ready, D);
+	PassengerJourneyLoadingContext loading;
+	REQUIRE(waiting.HasCargoFor(std::array{D}, train, &loading, PAX));
+	REQUIRE(waiting.Load(1, &train->cargo, std::array{D}, TileIndex{0}, train, &loading) == 1);
+	CHECK(train->cargo.Packets()->front()->index == ready->index);
+	CHECK(waiting.AvailableCount() == 1); CHECK(expired->GetPassengerJourney().kind == PassengerRideKind::HyperpathIntent);
+}
+
 TEST_CASE("Hyperpath failure identity survives current saves and defaults in older packets", "[passenger][hyperpath][save]")
 {
 	Fixture f; auto *train = f.Train({Stop(A), Stop(D)});
@@ -2713,6 +2729,65 @@ TEST_CASE("Hyperpath failure identity survives current saves and defaults in old
 	CHECK_FALSE(packet->HasSamePassengerRouting(*old));
 }
 
+TEST_CASE("Hyperpath remembers one failed service across interleaved full arrivals", "[passenger][hyperpath][replan]")
+{
+	Fixture f; auto *first = f.Train({Stop(A), Stop(D)}), *other = f.Train({Stop(A), Stop(D)});
+	auto *packet = f.Packet();
+	for (uint8_t count = 1; count <= 3; ++count) {
+		packet->RecordPassengerCapacityFailure(first->orders->index, NOW);
+		packet->RecordPassengerCapacityFailure(other->orders->index, NOW);
+		CHECK(packet->GetPassengerBoardingFailure().service == first->orders->index);
+		CHECK(packet->GetPassengerBoardingFailure().count == count);
+	}
+}
+
+TEST_CASE("Full legacy vehicles do not acquire Hyperpath validation or routing work", "[passenger][hyperpath][legacy]")
+{
+	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = true;
+	auto *train = f.Train({Stop(A), Stop(D)}); auto &db = f.Build(); while (!db.PreparePrecomputed()) {}
+	train->cargo.Append(f.Packet(100));
+	auto *packet = f.Packet(); auto plan = db.PlanPrecomputed(PAX, A, D, NOW); REQUIRE(plan.ride);
+	packet->SetPassengerJourney(*plan.ride, D);
+	StationCargoList waiting; waiting.Append(packet, D); PassengerJourneyLoadingContext loading;
+	waiting.RecordCapacityMiss(std::array{D}, train, PAX, loading);
+	CHECK(loading.GetValidationCount() == 0); CHECK(waiting.boarding_groups_inspected == 0);
+	CHECK_FALSE(packet->GetPassengerBoardingFailure().Present());
+}
+
+TEST_CASE("Hyperpath migrates legacy waiting intents within saved station work slices", "[passenger][hyperpath][events][legacy]")
+{
+	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = true;
+	f.Train({Stop(A), Stop(D)}); auto &db = f.Build(); while (!db.PreparePrecomputed()) {}
+	auto old = db.PlanPrecomputed(PAX, A, D, NOW); REQUIRE(old.ride);
+	REQUIRE(old.ride->kind != PassengerRideKind::HyperpathIntent);
+	auto &waiting = Station::Get(A)->goods[PAX].CreateData().cargo;
+	std::vector<CargoPacket *> packets;
+	for (int i = 0; i < 600; ++i) {
+		auto *packet = CargoPacket::Create(1, i, A, TileIndex{0}, Money{0}); REQUIRE(packet->SetPassengerDestination(PAX, D));
+		auto intent = *old.ride; intent.waiting_limit = int64_t{1} << 22;
+		packet->SetPassengerJourney(intent, D); waiting.Append(packet, D); packets.push_back(packet);
+	}
+	_settings_game.linkgraph.passenger_journey_hyperpath = true;
+	db.TickPrecomputed(1);
+	const auto saved_intent = packets.front()->GetPassengerJourney();
+	PassengerJourneyActiveContext pending(nullptr, A);
+	CHECK_FALSE(pending.PlanWaiting(*packets.front(), PAX, D, true));
+	CHECK(packets.front()->GetPassengerJourney() == saved_intent); // Same expiry while only a retained legacy row exists.
+	while (!db.PreparePrecomputed()) {}
+	while (!db.PrecomputedFinished()) db.TickPrecomputed(7); // A replacement startup barrier prepares only the graph.
+	REQUIRE(db.PlanPrecomputed(PAX, A, D, NOW).hyperpath);
+	InvalidatePassengerWaitingRouting();
+	SECTION("Warm index") {}
+	SECTION("Rebuilt index") { waiting.ClearWaitingIndex(); waiting.RebuildWaitingIndex(); }
+	for (size_t iteration = 0; iteration < 8; ++iteration) {
+		const auto before = waiting.passenger_routing_inspected;
+		waiting.RoutePassengerJourneys(PAX, A);
+		CHECK(waiting.passenger_routing_inspected - before <= StationCargoList::PASSENGER_ROUTING_SLICE);
+		++_state_ticks;
+	}
+	for (const auto *packet : packets) CHECK(packet->GetPassengerJourney().kind == PassengerRideKind::HyperpathIntent);
+}
+
 TEST_CASE("Hyperpath destination scan is independent of unrelated packet population", "[.hyperpath-cpu][passenger]")
 {
 	for (uint population : {128U, 1024U, 8192U, 32768U}) {
@@ -2724,7 +2799,8 @@ TEST_CASE("Hyperpath destination scan is independent of unrelated packet populat
 		StationCargoList waiting;
 		for (uint i = 0; i < population; ++i) {
 			auto *packet = CargoPacket::Create(1, i, A, TileIndex{0}, Money{0}); REQUIRE(packet->SetPassengerDestination(PAX, C));
-			packet->SetPassengerJourney(*other.ride, C); waiting.Append(packet, C);
+			auto intent = *other.ride; intent.planned_at = NOW - i; intent.waiting_limit = int64_t{1} << 22;
+			packet->SetPassengerJourney(intent, C); waiting.Append(packet, C);
 		}
 		auto *packet = f.Packet(1); packet->SetPassengerJourney(*target.ride, D); waiting.Append(packet, D);
 		auto cold_start = std::chrono::steady_clock::now();
@@ -2734,6 +2810,7 @@ TEST_CASE("Hyperpath destination scan is independent of unrelated packet populat
 		auto start = std::chrono::steady_clock::now();
 		for (size_t i = 0; i < 256; ++i) {
 			PassengerJourneyLoadingContext loading; REQUIRE(waiting.HasCargoFor(std::array{B, D}, train, &loading, PAX));
+			CHECK(loading.GetValidationCount() == 1); // Distinct unrelated timestamps do not cause per-packet membership queries.
 		}
 		auto nanos = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - start).count() / 256;
 		std::cout << "hyperpath_lookup," << population << ',' << nanos << ',' << (waiting.BoardingCandidatesInspected() - inspected) / 256 << ',' << (waiting.boarding_groups_inspected - groups) / 256 << ',' << cold_nanos << std::endl;

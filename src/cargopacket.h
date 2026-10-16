@@ -664,6 +664,10 @@ class StationCargoList : public CargoList<StationCargoList, StationCargoPacketMa
 	using JourneyRides = std::map<JourneyRideKey, std::set<BoardingOrder>>;
 	using JourneyIndex = std::map<JourneyKey, JourneyRides>;
 	static JourneyKey BoardingJourneyKey(const CargoPacket &packet);
+	using HyperpathKey = std::tuple<StationID, uint64_t, uint64_t, OrderListID, uint64_t, OrderListID, uint64_t>;
+	struct HyperpathWaiting { std::set<BoardingOrder> packets; std::multiset<StateTicks> expiries; };
+	static HyperpathKey BoardingHyperpathKey(const JourneyRideKey &ride);
+	static StateTicks BoardingHyperpathExpiry(const JourneyRideKey &ride);
 	struct WaitingEntry {
 		StationID key;
 		StationCargoPacketList::iterator position;
@@ -684,7 +688,7 @@ class StationCargoList : public CargoList<StationCargoList, StationCargoPacketMa
 	mutable std::unordered_map<uint64_t, std::set<std::pair<uint16_t, CargoPacketID>>> merge_index;
 	mutable JourneyIndex boarding_index;
 	mutable std::map<uint64_t, std::map<JourneyRideKey, const std::set<BoardingOrder> *>> section_boarding_index; ///< Raw saved order-pair keys to shared cohort queues.
-	mutable std::map<StationID, std::map<JourneyRideKey, const std::set<BoardingOrder> *>> hyperpath_boarding_index; ///< Option (b): present destinations, independent of candidate-set size and table publication.
+	mutable std::map<StationID, std::map<HyperpathKey, HyperpathWaiting>> hyperpath_boarding_index; ///< Option (b): policy-state queues, independent of per-packet decision timestamps and table publication.
 	mutable std::map<OrderListID, size_t> boarding_services;
 	mutable std::map<std::pair<bool, StationID>, std::set<BoardingOrder>> legacy_boarding_index;
 	mutable std::map<FallbackKey, std::set<BoardingOrder>> fallback_boarding_index;
@@ -693,6 +697,8 @@ class StationCargoList : public CargoList<StationCargoList, StationCargoPacketMa
 	mutable std::multimap<StateTicks, CargoPacketID> waiting_wake;
 	mutable std::set<std::pair<StateTicks, CargoPacketID>> routing_events; ///< Erasable time priority queue, without stale tombstones.
 	mutable std::set<CargoPacketID> routing_packets; ///< Unresolved OD only; deterministic generation cursor, independent of primary queue order.
+	mutable std::set<CargoPacketID> legacy_journey_packets; ///< Saved legacy intents eligible for budgeted migration when Hyperpath is enabled.
+	CargoPacketID NextPassengerGenerationPacket(uint32_t cursor) const;
 	StationID passenger_station = StationID::Invalid(); ///< Derived owner, assigned when the goods entry is created.
 	mutable StateTicks passenger_scheduled_at = INVALID_STATE_TICKS; ///< Derived national queue handle.
 	mutable bool passenger_unresolved_registered = false;
