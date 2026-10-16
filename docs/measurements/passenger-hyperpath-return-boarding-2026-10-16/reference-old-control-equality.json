@@ -1,0 +1,38 @@
+{
+  "transport-delivered.csv": {
+    "equal": true,
+    "previous_sha256": "21bdbdcf07091db66bb9e1c715ea0fe34986103ad083fd2198f4b61a2a6c81cf",
+    "current_sha256": "21bdbdcf07091db66bb9e1c715ea0fe34986103ad083fd2198f4b61a2a6c81cf"
+  },
+  "transport-lost.csv": {
+    "equal": true,
+    "previous_sha256": "31da9fb859a44d76936827c2ee379ca9986072c83e2ca40078214305571fd3b8",
+    "current_sha256": "31da9fb859a44d76936827c2ee379ca9986072c83e2ca40078214305571fd3b8"
+  },
+  "transport-pending.csv": {
+    "equal": true,
+    "previous_sha256": "81b2c821bce2629c9816b19b45497304c8c7e566476605470154a91b86e932c4",
+    "current_sha256": "81b2c821bce2629c9816b19b45497304c8c7e566476605470154a91b86e932c4"
+  },
+  "focused-transport-delivered.csv": {
+    "equal": true,
+    "previous_sha256": "089c6c0d72831ff7049340c2f9d7df1ff12e935b32d746d9e6b9682b4513dafe",
+    "current_sha256": "089c6c0d72831ff7049340c2f9d7df1ff12e935b32d746d9e6b9682b4513dafe"
+  },
+  "focused-transport-lost.csv": {
+    "equal": true,
+    "previous_sha256": "1473c201ff3f8931e4e8397e1a9495400d567300169179edc0cfd2591a4604f5",
+    "current_sha256": "1473c201ff3f8931e4e8397e1a9495400d567300169179edc0cfd2591a4604f5"
+  },
+  "focused-transport-pending.csv": {
+    "equal": true,
+    "previous_sha256": "e7e8cc293b5cf823dfcb2443e0271a38a2bcb3a19b7ffc9f2ff886709b337fec",
+    "current_sha256": "e7e8cc293b5cf823dfcb2443e0271a38a2bcb3a19b7ffc9f2ff886709b337fec"
+  },
+  "canonical_differences": {
+    "database_digest": [
+      4455270161341252993,
+      6180444899360003996
+    ]
+  }
+}

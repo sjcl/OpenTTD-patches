@@ -1,0 +1,5 @@
+# Preserve raw artifact bytes across platforms for evidence-sha256.json.
+* -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+# Preserve the console's empty public key and Catch's final blank line verbatim.
+mp-final-end-console.txt whitespace=-blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+native-hyperpath-tests.log whitespace=blank-at-eol,-blank-at-eof,space-before-tab,cr-at-eol

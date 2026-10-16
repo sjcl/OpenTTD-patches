@@ -1,0 +1,16 @@
+{
+  "tick": 3181099101,
+  "previous_product": "40b434315a",
+  "current_product": "16d175c549",
+  "differences": {
+    "database_digest": [
+      2505850301749374632,
+      7274910711080119669
+    ]
+  },
+  "all_other_canonical_fields_equal": true,
+  "saved_format_versions": [
+    12,
+    13
+  ]
+}

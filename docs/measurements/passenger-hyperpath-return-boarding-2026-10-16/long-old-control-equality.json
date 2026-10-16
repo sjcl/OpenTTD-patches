@@ -1,0 +1,19 @@
+{
+  "compared": "build-hyperpath\\quality-final-v2\\previous",
+  "ignored_canonical": [
+    "database_digest"
+  ],
+  "checkpoints": {
+    "transport-checkpoint.json": {},
+    "transport-checkpoint-16384.json": {},
+    "save-integrity.json": {}
+  },
+  "csv": {
+    "transport-delivered.csv": "21bdbdcf07091db66bb9e1c715ea0fe34986103ad083fd2198f4b61a2a6c81cf",
+    "transport-pending.csv": "81b2c821bce2629c9816b19b45497304c8c7e566476605470154a91b86e932c4",
+    "transport-lost.csv": "31da9fb859a44d76936827c2ee379ca9986072c83e2ca40078214305571fd3b8",
+    "transport-population.csv": "a544ee9deef40ec76cafe46e9702af2c1841080070279ca7f66fe6c443f9eff8",
+    "transport-services.csv": "a125bef9ffedb9674a205f37a757f3380fca7cdb19a417a78f785268abbb28b9",
+    "transport-target-events.csv": "56ae1b858f2c128fd0aa929f342d2114e4be77e01e879bce9e7c3bdac3c824e9"
+  }
+}

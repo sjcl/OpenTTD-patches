@@ -13,6 +13,11 @@ quality acceptance goal is not met**: 971→916 gets substantially slower,
 B-mode implementation passes its tests; these measurements do not establish a
 uniformly better routing replacement.
 
+The [return-boarding and scheduler follow-up](passenger-hyperpath-return-boarding-2026-10-16.md)
+adds a continuous-run witness rule, reduces generation-sweep index work and
+reports a new matched 24,576-tick comparison. Its improved results and remaining
+regressions are separate from the original measurements below.
+
 ## Construction
 
 The reverse graph keeps RangeEdge, hot/cold CSR, SoA labels, occurrence
