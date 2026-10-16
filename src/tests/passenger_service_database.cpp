@@ -2678,7 +2678,14 @@ TEST_CASE("JPSD v12 and v13 repeat-visit strategies retain their saved event seq
 		old.Step(work); const auto operations = old.GetDiagnostic().operations;
 		for (size_t i = 0; i < 8; ++i) wire[offset + i] = (operations >> (8 * i)) & 255;
 		PassengerServiceDatabase peer; REQUIRE(peer.Load(wire)); peer.FinishLoad(true, true);
-		while (peer.StepLoad(3) == PassengerServiceDatabase::LoadState::Replaying) {}
+		while (peer.GetLoadState() == PassengerServiceDatabase::LoadState::Replaying) {
+			const auto saved = peer.Save(); const auto replay_work = peer.GetLoadWork();
+			/* An initial-build console callback must not migrate the algorithm
+			 * while its original generation is still being reconstructed. */
+			peer.TickPrecomputed(64 * 1024 * 1024);
+			CHECK(peer.Save() == saved); CHECK(peer.GetLoadWork() == replay_work);
+			peer.StepLoad(3);
+		}
 		REQUIRE(peer.GetLoadState() == PassengerServiceDatabase::LoadState::Ready);
 		CHECK(peer.GetPrecomputedDiagnostic(PAX).operations == operations);
 		CHECK(peer.GetPrecomputedDiagnostic(PAX).destinations == old.GetDiagnostic().destinations);

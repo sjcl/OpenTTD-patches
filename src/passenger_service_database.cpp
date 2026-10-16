@@ -897,6 +897,10 @@ bool PassengerServiceDatabase::PrecomputedFinished() const
 
 void PassengerServiceDatabase::TickPrecomputed(size_t allowance)
 {
+	/* Startup callbacks may run before a deferred load has replayed its saved
+	 * frontier. Only StepLoad may advance it; starting a replacement here would
+	 * retain an empty local table which a joining peer reconstructs in full. */
+	if (this->load_state == LoadState::Replaying) return;
 	/* Timing refresh queues need not become empty on a busy map. Build from a
 	 * saved immutable publication snapshot and never restart it for time drift.
 	 * Actual order/boarding changes still restart; cost-only changes coalesce. */
