@@ -4989,6 +4989,11 @@ static bool ConPassengerJourneyStats(std::span<std::string_view> argv)
 	IConsolePrint(CC_DEFAULT, "Passenger events: pending={}; overdue={}; oldest_ticks={}; maximum_station_backlog={}; on_time={}; packets={}; groups={}; scheduler_us={}; arrival_candidates={}; arrival_passengers={}; unresolved_missed_estimate={}",
 			events.pending, events.overdue, events.oldest_ticks, events.maximum_station_backlog, events.on_time, events.packets, events.groups,
 			events.scheduler_microseconds, events.arrival_candidates, events.arrival_passengers, events.unresolved_missed);
+	for (size_t cause = 0; cause < static_cast<size_t>(PassengerWaitingCause::End); ++cause) {
+		static constexpr std::array names{"new", "expiry", "failure", "migration", "generation"};
+		IConsolePrint(CC_DEFAULT, "Passenger scheduler cause: cause={}; packets={}; microseconds={}", names[cause], events.cause_packets[cause], events.cause_nanoseconds[cause] / 1000);
+	}
+	IConsolePrint(CC_DEFAULT, "Passenger capacity records: packets={}; passengers={}; microseconds={}", events.capacity_missed_packets, events.capacity_missed_passengers, events.capacity_record_nanoseconds / 1000);
 	for (CargoType cargo : EnumRange(NUM_CARGO)) if (IsCargoInClass(cargo, CargoClass::Passengers)) {
 		const auto p = GetPassengerServiceDatabase().GetPrecomputedDiagnostic(cargo);
 		IConsolePrint(CC_DEFAULT, "Precomputed passenger routes: cargo={}; patterns={}; stations={}; states={}; edges={}; destinations={}; bytes={}; envelope={}; build_ns={}; operations={}; queries={}; query_ns={}; hits={}; missing={}; no_route={}",

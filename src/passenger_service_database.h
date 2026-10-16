@@ -262,6 +262,7 @@ private:
 	bool precomputed_estimates = true, retained_precomputed_estimates = true; ///< Exact replay of pre-v9 costs and route dispersion.
 	bool precomputed_integrated = true, retained_precomputed_integrated = true; ///< v11 range/CSR work cursor.
 	bool precomputed_optimized = true, retained_precomputed_optimized = true; ///< v10 graph/work cursor algorithm, including retained generations.
+	bool precomputed_revisit_dominance = true, retained_precomputed_revisit_dominance = true; ///< v13 repeat-visit pruning, separately replayed for retained rows.
 	bool precomputed_hyperpath = false, retained_precomputed_hyperpath = false; ///< v12 SF event work and set intentions.
 	uint64_t precomputed_policy_generation = 0, retained_precomputed_policy_generation = 0;
 	uint64_t boarding_revision = 0; ///< Event-local validation invalidation; never saved or used for simulation admission.
@@ -273,7 +274,7 @@ private:
 	void BuildPrecomputedTables();
 	void ClearRetainedPrecomputed();
 	void BuildPrecomputedTables(std::array<PassengerPrecomputedTable, NUM_CARGO> &tables,
-			const std::map<OrderListID, PassengerPeriodicService> &snapshot, int64_t transfer, uint64_t remaining, bool sections, bool estimates, bool optimized, bool integrated, bool hyperpath, bool cooperative = false);
+			const std::map<OrderListID, PassengerPeriodicService> &snapshot, int64_t transfer, uint64_t remaining, bool sections, bool estimates, bool optimized, bool integrated, bool hyperpath, bool revisit_dominance, bool cooperative = false);
 	using Dependencies = std::map<StationID, uint64_t>;
 	struct JourneyPolicy {
 		std::vector<std::pair<StationID, int64_t>> lower_bounds; ///< Relaxed reverse adjacent-stop distances, never winning routes.

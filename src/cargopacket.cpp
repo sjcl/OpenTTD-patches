@@ -171,6 +171,11 @@ PassengerWaitingEventDiagnostic GetPassengerWaitingEventDiagnostic()
 }
 
 void ResetPassengerWaitingEventDiagnostic() { _passenger_event_diagnostic = {}; }
+void RecordPassengerWaitingCause(PassengerWaitingCause cause, uint64_t nanoseconds)
+{
+	_passenger_event_diagnostic.cause_nanoseconds[static_cast<size_t>(cause)] += nanoseconds;
+	++_passenger_event_diagnostic.cause_packets[static_cast<size_t>(cause)];
+}
 void RecordPassengerWaitingEvent(StateTicks due)
 {
 	++_passenger_event_diagnostic.packets;
@@ -2162,6 +2167,7 @@ void StationCargoList::RecordCapacityMiss(std::span<const StationID> next, const
 		if (part->cargo.RemainingCount() < part->cargo_cap) return;
 	}
 	if (!capacity) return;
+	const auto started = std::chrono::steady_clock::now();
 	loading.EnableWaitingEvents();
 	this->VisitBoardingCandidates(next, vehicle, loading, [&](CargoPacketID id) {
 		auto entry = this->waiting_entries.find(id); if (entry == this->waiting_entries.end()) return true;
@@ -2174,6 +2180,7 @@ void StationCargoList::RecordCapacityMiss(std::span<const StationID> next, const
 		this->IndexPacket(packet, key, position, sequence);
 		return true;
 	});
+	_passenger_event_diagnostic.capacity_record_nanoseconds += std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - started).count();
 }
 
 bool StationCargoList::HasCargoFor(std::span<const StationID> next, const Vehicle *vehicle, PassengerJourneyLoadingContext *loading, CargoType cargo) const

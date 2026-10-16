@@ -23,12 +23,16 @@ void RunPassengerWaitingEvents(); ///< National due queue; never enumerates Stat
 void RebuildPassengerWaitingScheduler(); ///< Load/clock rebase only; restores the debit from saved goods entries.
 bool ConsumePassengerRoutingWork();
 void WakePassengerWaitingCargo(CargoType cargo); ///< A newly published row can resolve dormant ODs.
+enum class PassengerWaitingCause : uint8_t { New, Expiry, Failure, Migration, Generation, End };
 struct PassengerWaitingEventDiagnostic {
 	uint64_t pending = 0, overdue = 0, oldest_ticks = 0, maximum_station_backlog = 0;
 	uint64_t on_time = 0, packets = 0, groups = 0, scheduler_microseconds = 0;
 	uint64_t arrival_candidates = 0, arrival_passengers = 0, unresolved_missed = 0;
 	uint64_t capacity_missed_packets = 0, capacity_missed_passengers = 0;
+	uint64_t capacity_record_nanoseconds = 0; ///< Outside the national scheduler; includes candidate visits and index/event mutation.
+	std::array<uint64_t, static_cast<size_t>(PassengerWaitingCause::End)> cause_nanoseconds{}, cause_packets{};
 };
+void RecordPassengerWaitingCause(PassengerWaitingCause cause, uint64_t nanoseconds);
 PassengerWaitingEventDiagnostic GetPassengerWaitingEventDiagnostic();
 void ResetPassengerWaitingEventDiagnostic();
 void RecordPassengerWaitingEvent(StateTicks due);

@@ -1836,6 +1836,10 @@ size_t StationCargoList::RoutePassengerJourneys(CargoType cargo, StationID stati
 			}
 			++this->passenger_routing_work;
 			CargoPacket *packet = CargoPacket::Get(id);
+			const auto cause = packet->GetPassengerRoutingMode() == PassengerRoutingMode::Journey && packet->GetPassengerJourney().kind != PassengerRideKind::HyperpathIntent && _settings_game.linkgraph.passenger_journey_hyperpath ? PassengerWaitingCause::Migration :
+					packet->GetPassengerBoardingFailure().Present() ? PassengerWaitingCause::Failure : sweep ? PassengerWaitingCause::Generation :
+					packet->GetPassengerRoutingMode() == PassengerRoutingMode::Journey ? PassengerWaitingCause::Expiry : PassengerWaitingCause::New;
+			const auto cause_started = std::chrono::steady_clock::now();
 			RecordPassengerWaitingEvent(sweep ? this->passenger_routing_due : packet->GetPassengerRoutingEvent());
 			/* Existing Hyperpath intents use lazy validation and saved deadlines.
 			 * Legacy intents join the budgeted generation sweep only in B mode. */
@@ -1854,6 +1858,7 @@ size_t StationCargoList::RoutePassengerJourneys(CargoType cargo, StationID stati
 				this->IndexPacket(packet, key, entry.position);
 				++moved;
 			}
+			RecordPassengerWaitingCause(cause, std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - cause_started).count());
 		}
 	} else {
 		std::vector<std::pair<StationID, CargoPacket *>> relocated;

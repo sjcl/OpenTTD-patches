@@ -221,10 +221,11 @@ void PassengerPrecomputedTable::AddBoardEdges(uint32_t station, uint32_t to, uin
 	this->range_edges.push_back({states.front().second, states.back().second + 1, excluded});
 }
 
-void PassengerPrecomputedTable::Begin(std::span<const PassengerPeriodicService *const> services, CargoType cargo, int64_t transfer, uint64_t memory, bool sections, bool cooperative, std::shared_ptr<uint64_t> memory_budget, bool estimates, bool optimized, bool integrated, bool hyperpath)
+void PassengerPrecomputedTable::Begin(std::span<const PassengerPeriodicService *const> services, CargoType cargo, int64_t transfer, uint64_t memory, bool sections, bool cooperative, std::shared_ptr<uint64_t> memory_budget, bool estimates, bool optimized, bool integrated, bool hyperpath, bool revisit_dominance)
 {
 	*this = {}; this->cargo = cargo; this->estimates = estimates; this->optimized = optimized; this->integrated = optimized && integrated;
 	this->hyperpath = hyperpath; this->transfer_cost = transfer >= 0 && transfer <= INT64_MAX / 2 ? 2 * transfer : 0;
+	this->revisit_dominance = revisit_dominance;
 	if (hyperpath) { this->optimized = this->integrated = true; this->strategy.events.SetOptimized(true); }
 	this->graph_build = this->BuildGraph({services.begin(), services.end()}, cargo, transfer, memory, sections, cooperative, std::move(memory_budget));
 	if (!cooperative) this->PrepareGraph(SIZE_MAX);
@@ -462,6 +463,32 @@ PassengerBuildTask PassengerPrecomputedTable::BuildGraph(std::vector<const Passe
 				this->AddEdge(o.departure, this->occurrences[pattern.occurrences[next]].arrival, travel + uncertainty, EdgeKind::Ride, INVALID, distance, uncertainty);
 			}
 		}
+		if (this->hyperpath && this->revisit_dominance) {
+			if (!Product(this->occurrences.size(), 16, envelope, memory)) { this->failed = true; this->diagnostic.envelope = memory; co_return; }
+			this->revisits.resize(this->occurrences.size());
+			/* Two backwards passes find the next visit across the circuit seam.
+			 * A forced unload or broken continuation severs physical occupancy.
+			 * Prefix costs include travel uncertainty and the arrival stop's dwell,
+			 * exactly as the two Ride edges between departures do. */
+			for (const auto &pattern : this->patterns) {
+				std::map<StationID, std::pair<uint32_t, int64_t>> next;
+				int64_t cost = 0;
+				for (size_t k = 2 * pattern.occurrences.size(); k-- > 0;) {
+					if (cooperative) co_await std::suspend_always{};
+					uint32_t id = pattern.occurrences[k % pattern.occurrences.size()];
+					const auto &o = this->occurrences[id];
+					const auto &to = this->occurrences[pattern.occurrences[(k + 1) % pattern.occurrences.size()]];
+					if (!o.continues || to.forced || cost > INT64_MAX - o.travel ||
+							cost + o.travel > INT64_MAX - o.uncertainty || cost + o.travel + o.uncertainty > INT64_MAX - to.dwell) {
+						next.clear(); cost = 0;
+					} else cost += o.travel + o.uncertainty + to.dwell;
+					auto found = next.find(o.station);
+					if (k < pattern.occurrences.size() && o.board && found != next.end() && found->second.first != id && this->occurrences[found->second.first].board)
+						this->revisits[id] = {found->second.first, cost - found->second.second};
+					next[o.station] = {id, cost};
+				}
+			}
+		}
 		if (sections && !this->hyperpath) {
 			bool success = false;
 			auto task = this->BuildSections(pattern_members, transfer, nodes, envelope, memory, cooperative, success);
@@ -522,7 +549,7 @@ PassengerBuildTask PassengerPrecomputedTable::BuildGraph(std::vector<const Passe
 		this->diagnostic.states = nodes; this->diagnostic.edges = this->integrated ? this->hot_edges.from.size() : this->edges.size();
 		this->queue.SetCapacityLimit(uint64_t(this->integrated ? this->diagnostic.logical_edges : this->diagnostic.edges) + nodes);
 		if (this->hyperpath) {
-			this->hyperpath_static_bytes = (this->station_index.capacity() + this->service_pattern.capacity() + this->waiting_station.capacity() +
+			this->hyperpath_static_bytes = this->revisits.capacity() * sizeof(Revisit) + (this->station_index.capacity() + this->service_pattern.capacity() + this->waiting_station.capacity() +
 					this->incoming_offsets.capacity() + this->seed_offsets.capacity() + this->seed_occurrences.capacity()) * 4 + this->stations.capacity() * sizeof(StationID) +
 					this->patterns.capacity() * sizeof(Pattern) + this->occurrences.capacity() * sizeof(Occurrence) + this->range_edges.capacity() * sizeof(RangeEdge) +
 					this->cold_edges.capacity() * sizeof(ColdEdge) + this->hot_edges.from.capacity() * 4 + this->hot_edges.cost.capacity() * 8 +
@@ -1204,7 +1231,12 @@ size_t PassengerPrecomputedTable::StepHyperpath(size_t allowance, const std::fun
 			if (this->strategy.events.empty()) { this->finishing_row = true; this->strategy.offset = 0; continue; }
 			auto [key, kind, id] = this->strategy.events.top(); this->strategy.events.pop();
 			++this->diagnostic.heap_pops; this->strategy.last = key;
-			if (kind == 0) { this->strategy.board_edge = id; this->strategy.offset = 0; continue; }
+			if (kind == 0) {
+				uint32_t board = this->cold_edges[id].occurrence;
+				if (!this->revisits.empty() && this->revisits[board].next != INVALID && this->DominatedRevisit(board,
+						this->SearchCost(this->occurrences[board].departure), this->SearchCost(this->occurrences[this->revisits[board].next].departure))) continue;
+				this->strategy.board_edge = id; this->strategy.offset = 0; continue;
+			}
 			if (this->strategy.settled[id] || key != this->SearchCost(id)) continue;
 			this->strategy.settled[id] = true;
 			this->expanding = id; this->cursor = this->incoming_offsets[id];
@@ -1297,6 +1329,8 @@ const PassengerPrecomputedTable::Policy &PassengerPrecomputedTable::LocalPolicy(
 		const auto &o = this->occurrences[board];
 		if (state != this->waiting_station[state] && this->StateFor(this->waiting_station[state], o.pattern) == state) continue;
 		auto label = this->EvaluateRide(row, board, destination);
+		if (!this->revisits.empty() && this->revisits[board].next != INVALID && this->DominatedRevisit(board,
+				label.cost, this->EvaluateRide(row, this->revisits[board].next, destination).cost)) continue;
 		if (label.cost != INT64_MAX) choices.emplace_back(label.cost, board);
 	}
 	std::sort(choices.begin(), choices.end());
@@ -1317,6 +1351,12 @@ const PassengerPrecomputedTable::Policy &PassengerPrecomputedTable::LocalPolicy(
 	this->local_policy_bytes += 128 + policy.candidates.capacity() * 4;
 	++this->diagnostic.local_replans; this->diagnostic.local_replan_nanoseconds += Elapsed(started);
 	return this->local_policies.emplace(key, std::move(policy)).first->second;
+}
+
+bool PassengerPrecomputedTable::DominatedRevisit(uint32_t board, int64_t cost, int64_t next_cost) const
+{
+	const auto &revisit = this->revisits[board];
+	return next_cost != INT64_MAX && next_cost <= INT64_MAX - revisit.cost && cost >= next_cost + revisit.cost;
 }
 
 /** The forward form of the same frozen Ride/Alight recurrence used by the
