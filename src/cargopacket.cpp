@@ -2144,7 +2144,18 @@ void StationCargoList::RecordCapacityMiss(std::span<const StationID> next, const
 	if (vehicle == nullptr || vehicle->First()->orders == nullptr || !IsPassengerJourneyRoutingEnabled(cargo)) return;
 	if (this->passenger_index_cargo != cargo) { this->ClearWaitingIndex(); this->passenger_index_cargo = cargo; }
 	this->EnsureWaitingIndex();
-	if (this->hyperpath_boarding_index.empty()) return; // Preserve legacy/full-train behaviour without extra validation or routing events.
+	if (this->hyperpath_boarding_index.empty()) {
+		/* Readiness is derived: a warm index can still hold due packets in its
+		 * wake queue while a joining peer already indexed them as ready. Wake
+		 * them before this fast exit, exactly as VisitBoardingCandidates does.
+		 * A legacy-only consist still performs no validation/routing mutation. */
+		while (!this->waiting_wake.empty() && this->waiting_wake.begin()->first <= _state_ticks) {
+			auto wake = this->waiting_wake.begin(); auto it = this->waiting_entries.find(wake->second);
+			if (it != this->waiting_entries.end()) { it->second.pending = false; this->AddBoardingEntry(wake->second, it->second); }
+			this->waiting_wake.erase(wake);
+		}
+		if (this->hyperpath_boarding_index.empty()) return;
+	}
 	bool capacity = false;
 	for (const Vehicle *part = vehicle->First(); part != nullptr; part = part->Next()) if (part->cargo_type == cargo && part->cargo_cap != 0) {
 		capacity = true;

@@ -2676,6 +2676,28 @@ TEST_CASE("Hyperpath capacity failures change the local policy and copy through 
 	CHECK(CargoPacket::Get(id)->GetPassengerJourney().kind == PassengerRideKind::HyperpathIntent);
 }
 
+TEST_CASE("Hyperpath capacity misses do not depend on pending-index residency", "[passenger][hyperpath][replan][determinism]")
+{
+	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = _settings_game.linkgraph.passenger_journey_hyperpath = true;
+	auto *train = f.Train({Stop(A), Stop(D)}); auto &db = f.Build(); while (!db.PreparePrecomputed()) {}
+	train->cargo.Append(f.Packet(100));
+	auto plan = db.PlanPrecomputed(PAX, A, D, NOW); REQUIRE(plan.ride);
+	auto intent = *plan.ride; intent.not_before = NOW + 10;
+	auto *packet = f.Packet(); packet->SetPassengerJourney(intent, D);
+	StationCargoList waiting; waiting.passenger_index_cargo = PAX; waiting.Append(packet, D); waiting.RebuildWaitingIndex();
+	_state_ticks = NOW + 10;
+	auto check_failure = [&]() {
+		PassengerJourneyLoadingContext loading;
+		waiting.RecordCapacityMiss(std::array{D}, train, PAX, loading);
+		CHECK(packet->GetPassengerBoardingFailure().count == 1);
+		CHECK(packet->GetPassengerBoardingFailure().service == train->orders->index);
+		CHECK(packet->GetPassengerBoardingFailure().since == NOW + 10);
+		CHECK(packet->GetPassengerBoardingFailure().incarnation == train->orders->GetCargoDistRouteGeneration());
+	};
+	SECTION("Keep the index built before interchange readiness") { check_failure(); }
+	SECTION("Rebuild the same saved packet after readiness") { waiting.ClearWaitingIndex(); waiting.RebuildWaitingIndex(); check_failure(); }
+}
+
 TEST_CASE("Hyperpath reservations retain failures until physical boarding and restore a shared policy on return", "[passenger][hyperpath][boarding][reservation]")
 {
 	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = _settings_game.linkgraph.passenger_journey_hyperpath = true;
