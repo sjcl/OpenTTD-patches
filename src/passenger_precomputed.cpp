@@ -414,6 +414,20 @@ PassengerBuildTask PassengerPrecomputedTable::BuildGraph(std::vector<const Passe
 			this->incoming.resize(this->edges.size());
 			for (uint32_t i = 0; i < this->edges.size(); ++i) this->incoming[cursor[this->edges[i].to]++] = i;
 		}
+		if (this->optimized) {
+			this->seed_offsets.assign(this->stations.size() + 1, 0);
+			for (const auto &o : this->occurrences) {
+				if (cooperative) co_await std::suspend_always{};
+				if (o.alight) ++this->seed_offsets[this->station_index[o.station.base()] + 1];
+			}
+			for (size_t i = 1; i < this->seed_offsets.size(); ++i) this->seed_offsets[i] += this->seed_offsets[i - 1];
+			this->seed_occurrences.resize(this->seed_offsets.back()); auto cursor = this->seed_offsets;
+			for (uint32_t id = 0; id < this->occurrences.size(); ++id) {
+				if (cooperative) co_await std::suspend_always{};
+				const auto &o = this->occurrences[id];
+				if (o.alight) this->seed_occurrences[cursor[this->station_index[o.station.base()]]++] = id;
+			}
+		}
 		this->rows.reserve(this->stations.size());
 		this->diagnostic.stations = this->stations.size(); this->diagnostic.patterns = this->patterns.size();
 		this->diagnostic.states = nodes; this->diagnostic.edges = this->edges.size();
@@ -732,8 +746,10 @@ size_t PassengerPrecomputedTable::Step(size_t allowance, bool legacy_publication
 					seed(static_cast<uint32_t>(this->destination));
 					for (const auto &[pattern, state] : this->waiting_states[this->destination]) seed(state);
 				}
-				if (this->seeding < this->occurrences.size()) {
-					uint32_t id = static_cast<uint32_t>(this->seeding++); const auto &o = this->occurrences[id];
+				size_t seed_count = this->optimized ? this->seed_offsets[this->destination + 1] - this->seed_offsets[this->destination] : this->occurrences.size();
+				if (this->seeding < seed_count) {
+					uint32_t id = this->optimized ? this->seed_occurrences[this->seed_offsets[this->destination] + this->seeding++] : static_cast<uint32_t>(this->seeding++);
+					const auto &o = this->occurrences[id];
 					if (o.alight && o.station == this->stations[this->destination]) {
 						seed(o.arrival, id);
 						if (!this->landings.empty() && this->landings[id] != INVALID) seed(this->landings[id], id);
@@ -843,6 +859,7 @@ size_t PassengerPrecomputedTable::Step(size_t allowance, bool legacy_publication
 			(this->scratch.labels.capacity() + this->scratch.alternative.capacity() + this->prepared.labels.capacity()) * sizeof(Label) +
 			this->section_rides.capacity() * sizeof(SectionRide) + this->landings.capacity() * sizeof(uint32_t);
 	this->diagnostic.bytes += this->binding_bytes + this->reachable_bytes;
+	this->diagnostic.bytes += (this->seed_offsets.capacity() + this->seed_occurrences.capacity()) * sizeof(uint32_t);
 	this->diagnostic.bytes += this->search.cost.capacity() * sizeof(int64_t) + this->search.legs.capacity() * sizeof(uint32_t) + this->search.metadata.capacity() * sizeof(LabelMetadata);
 	return used;
 }

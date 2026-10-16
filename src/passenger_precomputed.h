@@ -116,6 +116,7 @@ private:
 	size_t binding_bytes = 0; ///< Computed once during graph preparation.
 	std::vector<uint32_t> landings; ///< Section arrivals have no on-board continuation.
 	std::vector<uint32_t> incoming_offsets, incoming;
+	std::vector<uint32_t> seed_offsets, seed_occurrences; ///< Alighting occurrences in original order, indexed by destination station.
 	std::vector<std::vector<std::pair<uint32_t, uint32_t>>> waiting_states;
 	std::vector<Row> rows;
 	std::vector<std::vector<StationID>> reachable_destinations; ///< Inverse published rows; no waiting-packet dependency.
