@@ -1502,7 +1502,6 @@ void PassengerJourneyLoadingContext::PrepareBoard(CargoPacket &packet, const Veh
 			this->boarding.try_emplace({vehicle->First()->index, vehicle->cargo_type}, vehicle, vehicle->cargo_type).first->second.ExtendRide(ride, packet.GetPassengerDestination());
 		ride.vehicle = vehicle->First()->index; ride.kind = IsEstimatedPassengerRide(ride.kind) ? PassengerRideKind::EstimatedBoundService : PassengerRideKind::BoundService;
 		packet.SetPassengerJourney(ride, packet.GetPassengerLegacyHop());
-		packet.SetPassengerBoardingFailure({});
 	}
 	if (vehicle != nullptr && packet.GetPassengerRoutingMode() != PassengerRoutingMode::Journey &&
 			IsPassengerJourneyRoutingEnabled(vehicle->cargo_type) && Station::IsValidID(packet.GetPassengerDestination())) {

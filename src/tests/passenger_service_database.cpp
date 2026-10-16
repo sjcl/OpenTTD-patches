@@ -2676,6 +2676,33 @@ TEST_CASE("Hyperpath capacity failures change the local policy and copy through 
 	CHECK(CargoPacket::Get(id)->GetPassengerJourney().kind == PassengerRideKind::HyperpathIntent);
 }
 
+TEST_CASE("Hyperpath reservations retain failures until physical boarding and restore a shared policy on return", "[passenger][hyperpath][boarding][reservation]")
+{
+	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = _settings_game.linkgraph.passenger_journey_hyperpath = true;
+	auto *fast = f.Train({Stop(A), Stop(D)}), *slow = f.Train({Stop(A, 220), Stop(D, 220)});
+	auto &db = f.Build(); while (!db.PreparePrecomputed()) {}
+	fast->cargo.Append(f.Packet(100));
+	auto *packet = f.Packet(20); PassengerJourneyActiveContext context(nullptr, A); REQUIRE(context.PlanWaiting(*packet, PAX, D));
+	StationCargoList waiting; waiting.Append(packet, D); PassengerJourneyLoadingContext loading;
+	for (int i = 0; i < 3; ++i) { ++_state_ticks; waiting.RecordCapacityMiss(std::array{D}, fast, PAX, loading); }
+	const auto failure = packet->GetPassengerBoardingFailure(); REQUIRE(failure.count == 3);
+	REQUIRE(waiting.Reserve(20, &slow->cargo, std::array{D}, TileIndex{0}, slow, &loading) == 20);
+	CHECK(slow->cargo.Packets()->front()->GetPassengerBoardingFailure() == failure);
+	REQUIRE(waiting.Load(7, &slow->cargo, std::array{D}, TileIndex{0}, slow, &loading) == 7);
+	CHECK(slow->cargo.StoredCount() == 7); CHECK(slow->cargo.ReservedCount() == 13);
+	REQUIRE(slow->cargo.Packets()->size() == 2);
+	CHECK_FALSE(slow->cargo.Packets()->front()->GetPassengerBoardingFailure().Present());
+	CHECK(slow->cargo.Packets()->back()->GetPassengerBoardingFailure() == failure);
+	CHECK(slow->cargo.Packets()->back()->Count() == 13);
+	REQUIRE(slow->cargo.Return(13, &waiting, D, TileIndex{0}, PAX) == 13);
+	StationCargoList::ConstIterator returned(waiting.Packets()->begin());
+	CHECK((*returned)->GetPassengerJourney().kind == PassengerRideKind::HyperpathIntent);
+	CHECK((*returned)->GetPassengerBoardingFailure() == failure);
+	REQUIRE(waiting.Load(13, &slow->cargo, std::array{D}, TileIndex{0}, slow, &loading) == 13);
+	CHECK(slow->cargo.StoredCount() == 20); CHECK(slow->cargo.ReservedCount() == 0);
+	for (const auto *loaded : *slow->cargo.Packets()) CHECK_FALSE(loaded->GetPassengerBoardingFailure().Present());
+}
+
 TEST_CASE("Hyperpath partial event replay keeps policy membership and work identical", "[passenger][hyperpath][save][network]")
 {
 	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = _settings_game.linkgraph.passenger_journey_hyperpath = true;

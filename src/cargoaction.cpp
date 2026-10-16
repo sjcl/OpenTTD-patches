@@ -12,6 +12,7 @@
 #include "cargoaction.h"
 #include "station_base.h"
 #include "passenger_journey_active.h"
+#include "settings_type.h"
 
 #include "safeguards.h"
 
@@ -122,6 +123,7 @@ bool CargoLoad::operator()(CargoPacket *cp)
 {
 	CargoPacket *cp_new = this->Preprocess(cp);
 	if (cp_new == nullptr) return false;
+	if (cp_new->GetPassengerBoardingFailure().Present()) cp_new->SetPassengerBoardingFailure({}); // A reservation alone is not a successful boarding.
 	RecordPassengerJourneyMovement(PassengerJourneyMovement::Board, *cp_new, cp_new->Count());
 	cp_new->UpdateLoadingTile(this->current_tile);
 	this->source->RemoveFromCache(cp_new, cp_new->Count());
@@ -164,6 +166,11 @@ bool CargoReturn::operator()(CargoPacket *cp)
 		if (IsBoundPassengerRide(cp_new->GetPassengerJourney().kind)) {
 			auto ride = cp_new->GetPassengerJourney(); ride.kind = IsEstimatedPassengerRide(ride.kind) ? PassengerRideKind::EstimatedServiceIntent : PassengerRideKind::ServiceIntent; ride.vehicle = VehicleID::Invalid();
 			cp_new->SetPassengerJourney(ride, cp_new->GetPassengerLegacyHop());
+		}
+		if (_settings_game.linkgraph.passenger_journey_precomputed && _settings_game.linkgraph.passenger_journey_hyperpath &&
+				this->cargo < NUM_CARGO && Station::IsValidID(cp_new->GetPassengerJourney().boarding)) {
+			PassengerJourneyActiveContext context(nullptr, cp_new->GetPassengerJourney().boarding);
+			context.PlanWaiting(*cp_new, this->cargo, cp_new->GetPassengerLegacyHop(), true);
 		}
 	}
 	else if (IsPassengerJourneyRoutingEnabled(this->cargo) &&

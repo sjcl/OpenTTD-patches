@@ -1183,9 +1183,9 @@ void VehicleCargoList::InvalidateCache()
  * Moves some cargo from one designation to another. You can only move
  * between adjacent designations. E.g. you can keep cargo that was previously
  * reserved (MoveToAction::Load), but you can't reserve cargo that's marked as to be
- * delivered. Furthermore, as this method doesn't change the actual packets,
- * you cannot move cargo from or to MoveToAction::Transfer. You need a specialized
- * template method for that.
+ * delivered. Transfer payment/next-hop changes require a specialized method.
+ * A physical load may split packets carrying capacity failures so only the
+ * successfully boarded people have their failure state cleared.
  * @tparam from Previous designation of cargo.
  * @tparam to New designation of cargo.
  * @param max_move Maximum amount of cargo to reassign.
@@ -1201,13 +1201,33 @@ uint VehicleCargoList::Reassign(uint max_move)
 		/* Count only the reserved prefix actually becoming loaded. Observe before
 		 * changing counts; mixed Legacy/Journey cargo and partial loads stay exact. */
 		uint skip = this->count - this->action_counts[MoveToAction::Load], remaining = max_move;
-		for (const CargoPacket *packet : this->packets) {
+		for (auto it = this->packets.begin(); it != this->packets.end(); ++it) {
+			CargoPacket *packet = *it;
 			if (remaining == 0) break;
 			if (skip >= packet->Count()) { skip -= packet->Count(); continue; }
 			uint count = std::min<uint>(remaining, packet->Count() - skip);
+			if (packet->GetPassengerBoardingFailure().Present()) {
+				/* A partial physical load must not clear the still-reserved people's
+				 * failures. Split only these nonempty failure states; ordinary cargo
+				 * retains the original allocation-free reassignment. Pool exhaustion
+				 * postpones this partial load, as CargoLoad::Preprocess already does. */
+				if (skip != 0) {
+					auto *reserved = packet->Split(packet->Count() - skip);
+					if (reserved == nullptr) break;
+					packet->SetPassengerBoardingFailure({});
+					it = this->packets.insert(std::next(it), reserved); packet = reserved; skip = 0;
+				}
+				if (count != packet->Count()) {
+					auto *reserved = packet->Split(packet->Count() - count);
+					if (reserved == nullptr) break;
+					this->packets.insert(std::next(it), reserved);
+				}
+				packet->SetPassengerBoardingFailure({});
+			}
 			RecordPassengerJourneyMovement(PassengerJourneyMovement::Board, *packet, count);
 			remaining -= count; skip = 0;
 		}
+		max_move -= remaining;
 	}
 	this->action_counts[Tfrom] -= max_move;
 	this->action_counts[Tto] += max_move;
@@ -2078,8 +2098,8 @@ uint StationCargoList::Load(uint max_move, VehicleCargoList *dest, std::span<con
 	}
 	uint move = std::min(dest->ActionCount(VehicleCargoList::MoveToAction::Load), max_move);
 	if (move > 0) {
+		move = dest->Reassign<VehicleCargoList::MoveToAction::Load, VehicleCargoList::MoveToAction::Keep>(move);
 		this->reserved_count -= move;
-		dest->Reassign<VehicleCargoList::MoveToAction::Load, VehicleCargoList::MoveToAction::Keep>(move);
 		return move;
 	} else {
 		return this->ShiftJourneyCargo(CargoLoad{this, dest, max_move, current_tile}, next_station, vehicle, *loading);

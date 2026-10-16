@@ -114,16 +114,31 @@ OrderList/occurrence, the shared frozen Ride/Alight evaluator chooses alighting,
 and the native service validator checks live orders, facilities and generation.
 The existing cargo reservation/load action then binds the actual vehicle.
 Partial loads restore the shared intention and failure state to the remainder.
+Reservations retain failure state until physical loading. A partially loaded
+failed packet splits at the stored/reserved boundary, clearing only the boarded
+people; ordinary empty-state packets retain allocation-free reassignment. If
+the packet pool cannot supply this split, that partial load is postponed and
+station/vehicle reservation counts still use the actual loaded quantity.
+Returning a reservation restores a shared policy immediately when its row is
+available, preserving failures and interchange readiness.
 
-The station index uses option (b), present-destination/cohort scans and binary
-membership lookup. It requires no candidate-set expansion/reindexing on policy
-publication. Concrete ride evaluation is shared by a loading context. Existing
-FIFO merging, round-robin buckets and Legacy/Fallback/section indices remain.
-At two waiting destinations, warm lookup measured 1.4–1.7 microseconds with
-128–32,768 unrelated packets and inspected one eligible packet/cohort per query.
-Cold index construction was measured separately (0.073–24.563 milliseconds).
-This establishes independence from packet population with fixed cohorts; it
-does not claim constant cost as the number of distinct destinations grows.
+The station index uses option (b), present-destination/policy-state scans and
+binary membership lookup. A shared FIFO policy queue excludes per-packet
+planning timestamps from its key. Previous-service and failed-service identities
+remain separate policy variants. Failure-expiry extrema select the union of
+base/adjusted membership when necessary; each selected packet still receives
+its native readiness/expiry/legality validation. An expired representative cannot
+hide a valid passenger behind it. There is no candidate-set expansion/reindexing
+on publication. Concrete ride evaluation is shared by a loading context.
+Existing FIFO merging, round-robin buckets and Legacy/Fallback/section indices
+remain. Lookup scales with present destinations and distinct policy states,
+not unrelated packet timestamps. The expanded scaling benchmark assigns every
+unrelated packet a different planning timestamp. With 128 / 1024 / 8192 / 32768
+unrelated packets, warm lookup averaged 1522 / 1296 / 1328 / 1158 ns over 256
+queries, inspecting one eligible packet, one group and one native validation.
+Cold derived-index reconstruction remains proportional to resident packets:
+0.103 / 0.992 / 14.755 / 74.122 ms. There are two destinations in this test;
+it does not claim independence from destination or policy-state cardinality.
 
 A full consist records one capacity opportunity when LoadingFinished transitions
 from false to true. Read-only predicates and repeated gradual-loading ticks do
@@ -137,7 +152,8 @@ residency never changes the computed result or search admission.
 Failure state contains one service identity (OrderList and incarnation), count
 and start tick. Its hold is the saved waiting limit clamped to 4096–4194304
 ticks. Successful boarding or expiry clears it; another failed service cannot
-replace an active exclusion. Splits copy it, and merges require exact equality.
+replace the tracked identity before expiry, including below the threshold.
+Splits copy it, and merges require exact equality.
 Updating all affected eligible packets at a completed full loading is still
 proportional to those affected packets; unrelated station packets are not scanned.
 
@@ -153,6 +169,11 @@ passenger_periodic v14 identifies set intentions and explicitly serializes
 failure identity/count/start tick. Previous ride-kind values are unchanged.
 JPSD v1–v11 retain their original graph, queue, costs, Work and publication
 sequence; a completed old table can coexist with a new table during replacement.
+Old waiting intentions migrate only when a new set intention is available,
+under the existing saved station/national generation-sweep allowances. A retained
+legacy row does not reset their old expiry while its replacement is building.
+The derived migration set depends on saved packet fields, not cache residency;
+legacy mode retains its original unresolved-only generation sweep.
 The 16 GiB canonical envelope is unchanged for old algorithms. New strategies
 use a 32 GiB canonical admission envelope including retained generations; this
 is a worst-case bound, not a request to allocate that amount of physical memory.
@@ -160,9 +181,31 @@ The increased policy-header charge covers vector growth as well as complete
 candidate sets. Physical allocation failure stops play rather than selecting a
 different route on one peer.
 
-Tests currently pass: 11 Hyperpath cases / 898 assertions, 89 previous
-precomputed cases / 564255 assertions, and all 704 CTest cases after placing
-the normal language and regression fixtures. Saved partial Hyperpath event
+The current MSVC Release run passes all 713 CTest cases, including the native
+integration and regression fixtures. The timestamp-diverse lookup benchmark
+passes 44192 assertions; the independent Fraction oracle passes seven cases.
+Saved partial Hyperpath event
 frontiers replay to identical wire state under different Work slices. Current
 packet saves retain failure state; older packet versions default it to empty.
 These tests do not substitute for the pending live server/client measurement.
+
+## Correctness coverage
+
+The following obligations are covered by the current tests. Live server/client
+and long-duration transport measurements remain pending.
+
+| Requested cases | Evidence in the tests |
+|---|---|
+| 1, 8, 9 | Single-service certified/estimated equivalence, exact independent LCM rational accumulator (256 cases), nine-member unbounded set and Fraction event oracle |
+| 2, 3, 4 | Both local/express arrival orders bind the arriving vehicle; express excluded for a local-only destination |
+| 5, 6, 7 | Short-turn rejected as a through service; one alight per departure; no Section frequency in strategies |
+| 10, 11 | Separate OrderLists with identical stops, previous-service exclusion, masks/forced unloading, repeated station occurrences and zero dwell |
+| 12, 13, 14 | Three actual capacity opportunities, previously rejected alternative admitted, no-alternative failed-service restoration |
+| 15, 16 | Every published candidate asserts forward/reverse x equality; every heap insertion asserts monotonicity |
+| 17 | Failure state copied by splits, strict merge equality, moved suffix cleared on successful boarding |
+| 18, 19 | Partial JPSD event frontiers replay to identical wire bytes; different Work slices preserve results and total Work |
+
+Additional regression cases cover interleaved full services, expired policy-queue
+heads, no extra Hyperpath validations for legacy full trains, and bounded legacy
+intent migration with warm versus reconstructed derived indices.
+Reservation tests distinguish reserve, partial physical load and returned suffix.

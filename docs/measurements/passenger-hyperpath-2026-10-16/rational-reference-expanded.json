@@ -1,0 +1,209 @@
+[
+  {
+    "name": "single",
+    "cost": "200",
+    "candidates": [
+      0
+    ],
+    "trace": [
+      {
+        "occurrence": 0,
+        "x": "100",
+        "f": "1/100",
+        "before": "None",
+        "accepted": true
+      }
+    ]
+  },
+  {
+    "name": "local_express",
+    "cost": "175",
+    "candidates": [
+      0,
+      1
+    ],
+    "trace": [
+      {
+        "occurrence": 0,
+        "x": "100",
+        "f": "1/100",
+        "before": "None",
+        "accepted": true
+      },
+      {
+        "occurrence": 1,
+        "x": "150",
+        "f": "1/100",
+        "before": "200",
+        "accepted": true
+      }
+    ]
+  },
+  {
+    "name": "reject_slow",
+    "cost": "200",
+    "candidates": [
+      0
+    ],
+    "trace": [
+      {
+        "occurrence": 0,
+        "x": "100",
+        "f": "1/100",
+        "before": "None",
+        "accepted": true
+      }
+    ]
+  },
+  {
+    "name": "unbounded_set",
+    "cost": "1000/9",
+    "candidates": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8
+    ],
+    "trace": [
+      {
+        "occurrence": 0,
+        "x": "100",
+        "f": "1/100",
+        "before": "None",
+        "accepted": true
+      },
+      {
+        "occurrence": 1,
+        "x": "100",
+        "f": "1/100",
+        "before": "200",
+        "accepted": true
+      },
+      {
+        "occurrence": 2,
+        "x": "100",
+        "f": "1/100",
+        "before": "150",
+        "accepted": true
+      },
+      {
+        "occurrence": 3,
+        "x": "100",
+        "f": "1/100",
+        "before": "400/3",
+        "accepted": true
+      },
+      {
+        "occurrence": 4,
+        "x": "100",
+        "f": "1/100",
+        "before": "125",
+        "accepted": true
+      },
+      {
+        "occurrence": 5,
+        "x": "100",
+        "f": "1/100",
+        "before": "120",
+        "accepted": true
+      },
+      {
+        "occurrence": 6,
+        "x": "100",
+        "f": "1/100",
+        "before": "350/3",
+        "accepted": true
+      },
+      {
+        "occurrence": 7,
+        "x": "100",
+        "f": "1/100",
+        "before": "800/7",
+        "accepted": true
+      },
+      {
+        "occurrence": 8,
+        "x": "100",
+        "f": "1/100",
+        "before": "225/2",
+        "accepted": true
+      }
+    ]
+  },
+  {
+    "name": "rejected_becomes_attractive",
+    "cost": "211",
+    "candidates": [
+      0
+    ],
+    "trace": [
+      {
+        "occurrence": 0,
+        "x": "210",
+        "f": "1",
+        "before": "None",
+        "accepted": true
+      }
+    ]
+  },
+  {
+    "name": "one_vehicle_multiple_alights",
+    "cost": "207",
+    "candidates": [
+      42
+    ],
+    "trace": [
+      {
+        "occurrence": 42,
+        "x": "107",
+        "f": "1/100",
+        "before": "None",
+        "accepted": true
+      }
+    ]
+  },
+  {
+    "name": "downstream_strategy",
+    "cost": "11087/34",
+    "downstream": "159",
+    "candidates": [
+      3,
+      0
+    ],
+    "trace": [
+      {
+        "occurrence": 1,
+        "x": "104",
+        "f": "1/110",
+        "before": "None",
+        "accepted": true
+      },
+      {
+        "occurrence": 2,
+        "x": "104",
+        "f": "1/110",
+        "before": "214",
+        "accepted": true
+      },
+      {
+        "occurrence": 3,
+        "x": "228",
+        "f": "1/230",
+        "before": "None",
+        "accepted": true
+      },
+      {
+        "occurrence": 0,
+        "x": "263",
+        "f": "1/110",
+        "before": "458",
+        "accepted": true
+      }
+    ]
+  }
+]
