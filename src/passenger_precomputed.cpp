@@ -403,8 +403,17 @@ PassengerBuildTask PassengerPrecomputedTable::BuildGraph(std::vector<const Passe
 		this->incoming_offsets.assign(nodes + 1, 0);
 		for (const auto &edge : this->edges) ++this->incoming_offsets[edge.to + 1];
 		for (size_t i = 1; i < this->incoming_offsets.size(); ++i) this->incoming_offsets[i] += this->incoming_offsets[i - 1];
-		this->incoming.resize(this->edges.size()); auto cursor = this->incoming_offsets;
-		for (uint32_t i = 0; i < this->edges.size(); ++i) this->incoming[cursor[this->edges[i].to]++] = i;
+		auto cursor = this->incoming_offsets;
+		if (this->optimized) {
+			/* Stable reverse CSR: the incoming order at each state is exactly
+			 * the original insertion order, including equal-cost alternatives. */
+			std::vector<Edge> reverse(this->edges.size());
+			for (const auto &edge : this->edges) reverse[cursor[edge.to]++] = edge;
+			this->edges.swap(reverse);
+		} else {
+			this->incoming.resize(this->edges.size());
+			for (uint32_t i = 0; i < this->edges.size(); ++i) this->incoming[cursor[this->edges[i].to]++] = i;
+		}
 		this->rows.reserve(this->stations.size());
 		this->diagnostic.stations = this->stations.size(); this->diagnostic.patterns = this->patterns.size();
 		this->diagnostic.states = nodes; this->diagnostic.edges = this->edges.size();
@@ -799,7 +808,8 @@ size_t PassengerPrecomputedTable::Step(size_t allowance, bool legacy_publication
 			} else if (this->cursor == this->incoming_offsets[this->expanding + 1]) {
 				this->expanding = INVALID;
 			} else {
-				const auto &edge = this->edges[this->incoming[this->cursor++]];
+				uint32_t index = static_cast<uint32_t>(this->cursor++);
+				const auto &edge = this->edges[this->optimized ? index : this->incoming[index]];
 				int64_t cost = this->SearchCost(edge.to);
 				if (cost > INT64_MAX - edge.cost) continue;
 				cost += edge.cost;
