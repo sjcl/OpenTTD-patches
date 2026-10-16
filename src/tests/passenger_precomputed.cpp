@@ -53,7 +53,7 @@ namespace {
 
 TEST_CASE("Hyperpath fixed point preserves single waits and exact acceptance", "[passenger][hyperpath]")
 {
-	for (int64_t wait : {1LL, 2LL, 3LL, 100LL, 65537LL, PassengerStrategy::MAX_WAIT}) {
+	for (int64_t wait : std::initializer_list<int64_t>{1, 2, 3, 100, 65537, PassengerStrategy::MAX_WAIT}) {
 		PassengerStrategy sum;
 		REQUIRE(sum.Add(1234, PassengerStrategy::Frequency(wait)));
 		CHECK(sum.Cost() == wait + 1234); CHECK(sum.Wait() == wait);
@@ -819,23 +819,28 @@ TEST_CASE("Retirement preserves every sliced reachable set across added and miss
 	const std::array origins{A, B, C, D, StationID{4}, StationID{7}, StationID{8}, StationID{9}, StationID{10}};
 	std::array previous{Service(0, {A, B, C, D, StationID{7}, StationID{9}}), Service(1, {A, StationID{10}})};
 	std::array next{Service(0, {B, D, StationID{4}, StationID{8}}), Service(1, {StationID{4}, StationID{10}})};
-	for (auto [algorithm, replacement_algorithm] : {std::pair{0U, 0U}, std::pair{1U, 1U}, std::pair{2U, 2U}, std::pair{0U, 2U}, std::pair{1U, 2U}}) {
+	/* 3 is Hyperpath: it forces the integrated engine but keeps per-state rows,
+	 * and must share the watermark retirement with compressed rows in either direction. */
+	for (auto [algorithm, replacement_algorithm] : {std::pair{0U, 0U}, std::pair{1U, 1U}, std::pair{2U, 2U}, std::pair{0U, 2U}, std::pair{1U, 2U},
+			std::pair{3U, 3U}, std::pair{2U, 3U}, std::pair{3U, 2U}, std::pair{0U, 3U}}) {
 		uint64_t work = 0;
 		for (size_t quantum : {1U, 2U, 3U, 4U, 5U, 7U, 64U}) {
 			CAPTURE(algorithm, replacement_algorithm, quantum);
 			PassengerPrecomputedTable retained, current;
 			std::vector<const PassengerPeriodicService *> records;
 			for (const auto &s : previous) records.push_back(&s);
-			retained.Begin(records, PAX, 20, PassengerPrecomputedTable::MAX_BYTES, true, false, {}, true, algorithm != 0, algorithm == 2);
+			retained.Begin(records, PAX, 20, PassengerPrecomputedTable::MAX_BYTES, true, false, {}, true, algorithm != 0, algorithm >= 2, algorithm == 3);
 			while (!retained.Finished()) retained.Step(65536);
+			REQUIRE(retained.IsHyperpath() == (algorithm == 3));
 			std::map<StationID, std::vector<StationID>> expected;
 			std::map<std::pair<StationID, StationID>, std::optional<int64_t>> costs;
 			for (StationID origin : origins) {
 				expected[origin] = DestinationList(retained.ReachableDestinations(origin));
 				for (StationID destination : origins) costs[{origin, destination}] = retained.RouteCost(origin, destination);
 			}
+			CHECK(std::any_of(expected.begin(), expected.end(), [](const auto &entry) { return !entry.second.empty(); }));
 			records.clear(); for (const auto &s : next) records.push_back(&s);
-			current.Begin(records, PAX, 30, PassengerPrecomputedTable::MAX_BYTES, true, false, {}, true, replacement_algorithm != 0, replacement_algorithm == 2);
+			current.Begin(records, PAX, 30, PassengerPrecomputedTable::MAX_BYTES, true, false, {}, true, replacement_algorithm != 0, replacement_algorithm >= 2, replacement_algorithm == 3);
 			[&]<typename T>(T &old) { if constexpr (requires { old.PrepareRetirement(current); }) old.PrepareRetirement(current); }(retained);
 			std::set<StationID> released;
 			while (!current.Finished()) {
@@ -883,11 +888,11 @@ TEST_CASE("Retained destinations survive repeated replacement epochs without res
 		Service(0, {A, StationID{7}, StationID{10}}),
 		Service(0, {C, StationID{9}}),
 		Service(0, {A, B, C, D})};
-	for (unsigned algorithm : {0U, 1U, 2U}) for (size_t quantum : {1U, 4U, 5U}) {
-		CAPTURE(algorithm, quantum);
+	for (unsigned algorithm : {0U, 1U, 2U, 3U}) for (bool hyperpath_replacement : {false, true}) for (size_t quantum : {1U, 4U, 5U}) {
+		CAPTURE(algorithm, hyperpath_replacement, quantum);
 		PassengerPrecomputedTable retained;
 		std::vector<const PassengerPeriodicService *> records{&previous[0]};
-		retained.Begin(records, PAX, 20, PassengerPrecomputedTable::MAX_BYTES, true, false, {}, true, algorithm != 0, algorithm == 2);
+		retained.Begin(records, PAX, 20, PassengerPrecomputedTable::MAX_BYTES, true, false, {}, true, algorithm != 0, algorithm >= 2, algorithm == 3);
 		while (!retained.Finished()) retained.Step(65536);
 		std::map<StationID, std::vector<StationID>> expected;
 		std::map<std::pair<StationID, StationID>, std::optional<int64_t>> costs;
@@ -900,7 +905,7 @@ TEST_CASE("Retained destinations survive repeated replacement epochs without res
 			retained.ReuseRetainedDestinations();
 			for (StationID origin : origins) CHECK(DestinationList(retained.ReachableDestinations(origin)) == expected[origin]);
 			records = {&generation};
-			PassengerPrecomputedTable current; current.Begin(records, PAX, 30);
+			PassengerPrecomputedTable current; current.Begin(records, PAX, 30, PassengerPrecomputedTable::MAX_BYTES, true, false, {}, true, true, true, hyperpath_replacement);
 			retained.PrepareRetirement(current);
 			while (!current.Finished()) {
 				CHECK(current.Step(quantum, false, [&](StationID destination) {
