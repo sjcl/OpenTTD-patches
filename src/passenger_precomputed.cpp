@@ -221,11 +221,12 @@ void PassengerPrecomputedTable::AddBoardEdges(uint32_t station, uint32_t to, uin
 	this->range_edges.push_back({states.front().second, states.back().second + 1, excluded});
 }
 
-void PassengerPrecomputedTable::Begin(std::span<const PassengerPeriodicService *const> services, CargoType cargo, int64_t transfer, uint64_t memory, bool sections, bool cooperative, std::shared_ptr<uint64_t> memory_budget, bool estimates, bool optimized, bool integrated, bool hyperpath, bool revisit_dominance)
+void PassengerPrecomputedTable::Begin(std::span<const PassengerPeriodicService *const> services, CargoType cargo, int64_t transfer, uint64_t memory, bool sections, bool cooperative, std::shared_ptr<uint64_t> memory_budget, bool estimates, bool optimized, bool integrated, bool hyperpath, bool revisit_dominance, bool continuation_witness)
 {
 	*this = {}; this->cargo = cargo; this->estimates = estimates; this->optimized = optimized; this->integrated = optimized && integrated;
 	this->hyperpath = hyperpath; this->transfer_cost = transfer >= 0 && transfer <= INT64_MAX / 2 ? 2 * transfer : 0;
 	this->revisit_dominance = revisit_dominance;
+	this->continuation_witness = revisit_dominance && continuation_witness;
 	if (hyperpath) { this->optimized = this->integrated = true; this->strategy.events.SetOptimized(true); }
 	this->graph_build = this->BuildGraph({services.begin(), services.end()}, cargo, transfer, memory, sections, cooperative, std::move(memory_budget));
 	if (!cooperative) this->PrepareGraph(SIZE_MAX);
@@ -470,7 +471,9 @@ PassengerBuildTask PassengerPrecomputedTable::BuildGraph(std::vector<const Passe
 			 * A forced unload or broken continuation severs physical occupancy.
 			 * Prefix costs include travel uncertainty and the arrival stop's dwell,
 			 * exactly as the two Ride edges between departures do. */
-			for (const auto &pattern : this->patterns) {
+			for (size_t p = 0; p < this->patterns.size(); ++p) {
+				const auto &pattern = this->patterns[p];
+				bool road = std::any_of(representatives[p]->vehicles.begin(), representatives[p]->vehicles.end(), [](const auto &v) { return v.type == VehicleType::Road; });
 				std::map<StationID, std::pair<uint32_t, int64_t>> next;
 				int64_t cost = 0;
 				for (size_t k = 2 * pattern.occurrences.size(); k-- > 0;) {
@@ -483,8 +486,16 @@ PassengerBuildTask PassengerPrecomputedTable::BuildGraph(std::vector<const Passe
 						next.clear(); cost = 0;
 					} else cost += o.travel + o.uncertainty + to.dwell;
 					auto found = next.find(o.station);
-					if (k < pattern.occurrences.size() && o.board && found != next.end() && found->second.first != id && this->occurrences[found->second.first].board)
-						this->revisits[id] = {found->second.first, cost - found->second.second};
+					if (k < pattern.occurrences.size() && o.board && found != next.end() && found->second.first != id && this->occurrences[found->second.first].board) {
+						/* Road orders can request different bay/drive-through directions at
+						 * the same station. With no captured proof of equal facility access,
+						 * retain the earlier opportunity. Other supported modes depend only
+						 * on the same station/vehicle; refits and control flow are unsupported. */
+						const auto &a = representatives[p]->timetable.stops[k];
+						const auto &b = representatives[p]->timetable.stops[found->second.first - pattern.occurrences.front()];
+						if (!this->continuation_witness || !road || (a.boarding_facility != 0 && a.boarding_facility == b.boarding_facility))
+							this->revisits[id] = {found->second.first, cost - found->second.second};
+					}
 					next[o.station] = {id, cost};
 				}
 			}
@@ -839,6 +850,7 @@ void PassengerPrecomputedTable::StartDestination()
 {
 	if (this->hyperpath) {
 		this->strategy.events.Reset(); this->strategy.last = 0; this->strategy.board_edge = INVALID;
+		this->strategy.witness_edge = INVALID;
 		this->strategy.sums.clear(); this->strategy.settled.clear();
 		this->prepared = {};
 		this->prepared_candidate_bytes = 0;
@@ -1102,6 +1114,7 @@ void PassengerPrecomputedTable::PushHyperpath(int64_t key, uint32_t kind, uint32
  * (including generating its Board event), range target, copied label or copied
  * candidate. Row publication and each state-set header also cost one unit.
  * All cursors survive arbitrary slice boundaries; replay uses the saved total.
+ * A v14 continuation-witness prefix stop also consumes one Work unit.
  * Event order is (ceil cost, Board/min/strategy, stable edge/state rank). */
 size_t PassengerPrecomputedTable::StepHyperpath(size_t allowance, const std::function<void(StationID)> &published)
 {
@@ -1182,6 +1195,35 @@ size_t PassengerPrecomputedTable::StepHyperpath(size_t allowance, const std::fun
 				if (!this->Finished()) this->StartDestination();
 				continue;
 			}
+			if (this->strategy.witness_edge != INVALID) {
+				/* One prefix stop is one Work unit. Costs alone cannot discard a
+				 * tied, earlier alighting. Certify that every optimal first alighting
+				 * lies beyond b's departure, using the same frozen suffix labels as
+				 * EvaluateRide. Unsettled suffixes cannot tie: travel is positive and
+				 * their priorities are at least the already popped Board key. */
+				uint32_t edge = this->strategy.witness_edge, board = this->cold_edges[edge].occurrence;
+				const auto &first = this->occurrences[board]; const auto &stops = this->patterns[first.pattern].occurrences;
+				const auto &from = this->occurrences[this->strategy.witness_at];
+				int64_t step = from.travel + from.uncertainty;
+				if (this->strategy.witness_at != board) step += from.dwell;
+				this->strategy.witness_cost += step; // Bounded by the precomputed, checked departure-to-departure delta.
+				this->strategy.witness_at = this->strategy.witness_at == stops.back() ? stops.front() : this->strategy.witness_at + 1;
+				const auto &to = this->occurrences[this->strategy.witness_at];
+				bool earlier = false;
+				if (to.alight) {
+					int64_t suffix = to.station == this->stations[this->destination] ? 0 : this->SearchCost(this->StateFor(this->station_index[to.station.base()], first.pattern));
+					int64_t alight = to.station == this->stations[this->destination] ? 0 : this->transfer_cost;
+					if (suffix <= INT64_MAX - alight && suffix + alight <= INT64_MAX - this->strategy.witness_cost)
+						earlier = suffix + alight + this->strategy.witness_cost <= this->SearchCost(first.departure);
+				}
+				if (earlier || this->strategy.witness_at == this->revisits[board].next) {
+					if (earlier || !this->HasSameRunContinuationWitness(board, this->SearchAlight(first.departure))) {
+						this->strategy.board_edge = edge; this->strategy.offset = 0;
+					}
+					this->strategy.witness_edge = INVALID;
+				}
+				continue;
+			}
 			if (this->strategy.board_edge != INVALID) {
 				uint32_t edge = this->strategy.board_edge, r = this->hot_edges.range[edge];
 				auto range = r == INVALID ? RangeEdge{0, 0, INVALID} : this->range_edges[r];
@@ -1234,7 +1276,12 @@ size_t PassengerPrecomputedTable::StepHyperpath(size_t allowance, const std::fun
 			if (kind == 0) {
 				uint32_t board = this->cold_edges[id].occurrence;
 				if (!this->revisits.empty() && this->revisits[board].next != INVALID && this->DominatedRevisit(board,
-						this->SearchCost(this->occurrences[board].departure), this->SearchCost(this->occurrences[this->revisits[board].next].departure))) continue;
+						this->SearchCost(this->occurrences[board].departure), this->SearchCost(this->occurrences[this->revisits[board].next].departure))) {
+					if (!this->continuation_witness) continue; // Exact v13 event replay.
+					if (this->strategy.settled[this->occurrences[board].departure] && this->strategy.settled[this->occurrences[this->revisits[board].next].departure]) {
+						this->strategy.witness_edge = id; this->strategy.witness_at = board; this->strategy.witness_cost = 0; continue;
+					}
+				}
 				this->strategy.board_edge = id; this->strategy.offset = 0; continue;
 			}
 			if (this->strategy.settled[id] || key != this->SearchCost(id)) continue;
@@ -1362,7 +1409,8 @@ const PassengerPrecomputedTable::Policy &PassengerPrecomputedTable::LocalPolicy(
 		if (state != this->waiting_station[state] && this->StateFor(this->waiting_station[state], o.pattern) == state) continue;
 		auto label = this->EvaluateRide(row, board, destination);
 		if (!this->revisits.empty() && this->revisits[board].next != INVALID && this->DominatedRevisit(board,
-				label.cost, this->EvaluateRide(row, this->revisits[board].next, destination).cost)) continue;
+				label.cost, this->EvaluateRide(row, this->revisits[board].next, destination).cost) &&
+				(!this->continuation_witness || this->HasSameRunContinuationWitness(board, label.alight))) continue;
 		if (label.cost != INT64_MAX) choices.emplace_back(label.cost, board);
 	}
 	std::sort(choices.begin(), choices.end());
@@ -1388,7 +1436,21 @@ const PassengerPrecomputedTable::Policy &PassengerPrecomputedTable::LocalPolicy(
 bool PassengerPrecomputedTable::DominatedRevisit(uint32_t board, int64_t cost, int64_t next_cost) const
 {
 	const auto &revisit = this->revisits[board];
-	return next_cost != INT64_MAX && next_cost <= INT64_MAX - revisit.cost && cost >= next_cost + revisit.cost;
+	return cost != INT64_MAX && next_cost != INT64_MAX && next_cost <= INT64_MAX - revisit.cost &&
+			(this->continuation_witness ? cost == next_cost + revisit.cost : cost >= next_cost + revisit.cost);
+}
+
+bool PassengerPrecomputedTable::HasSameRunContinuationWitness(uint32_t board, uint32_t alight) const
+{
+	if (alight == INVALID || this->occurrences[alight].pattern != this->occurrences[board].pattern) return false;
+	const auto &stops = this->patterns[this->occurrences[board].pattern].occurrences;
+	uint32_t next = this->revisits[board].next;
+	if (next == INVALID) return false;
+	/* Pattern occurrence IDs are contiguous and ordered, including the circuit seam.
+	 * Alighting at b's arrival does not witness continuation through its departure. */
+	size_t to_alight = alight > board ? alight - board : stops.size() - (board - alight);
+	size_t to_next = next > board ? next - board : stops.size() - (board - next);
+	return to_alight > to_next;
 }
 
 /** The forward form of the same frozen Ride/Alight recurrence used by the
@@ -1424,7 +1486,8 @@ PassengerPrecomputedTable::Label PassengerPrecomputedTable::EvaluateRide(const R
 		candidate.board = board; candidate.alight = stops[at]; candidate.riding += riding;
 		candidate.distance = static_cast<uint32_t>(std::min<uint64_t>(UINT32_MAX, uint64_t(distance) + candidate.distance));
 		candidate.waiting += alight / 2;
-		if (std::tie(candidate.cost, candidate.legs) < std::tie(best.cost, best.legs)) best = candidate;
+		bool earlier_tie = this->continuation_witness && !this->revisits.empty() && this->revisits[board].next != INVALID;
+		if (earlier_tie ? candidate.cost < best.cost : std::tie(candidate.cost, candidate.legs) < std::tie(best.cost, best.legs)) best = candidate;
 	}
 	return best;
 }

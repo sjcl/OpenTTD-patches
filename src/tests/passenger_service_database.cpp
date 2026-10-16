@@ -46,11 +46,22 @@ namespace {
 		order.SetWaitTime(wait); order.SetWaitTimetabled(true);
 		return order;
 	}
+	std::vector<uint8_t> WithoutWitnessTrailer(std::vector<uint8_t> wire)
+	{
+		if (wire[0] == 14) {
+			uint64_t words = 0; for (size_t i = 0; i < 8; ++i) words |= uint64_t(wire[wire.size() - 8 + i]) << (8 * i);
+			REQUIRE(words >= 2); REQUIRE(words < wire.size() / 8);
+			wire.resize(wire.size() - (words + 1) * 8); wire[0] = 13;
+		}
+		REQUIRE(wire[0] == 13);
+		return wire;
+	}
 	/** Produce the actual pre-estimate record layout for compatibility fixtures.
 	 * Only certified services are used here; dropping estimates is never a
 	 * production save operation. Counts are parsed instead of guessing offsets. */
-	std::vector<uint8_t> LegacyDatabaseWire(const std::vector<uint8_t> &wire, uint8_t version = 8, size_t *current_cursor_offset = nullptr)
+	std::vector<uint8_t> LegacyDatabaseWire(const std::vector<uint8_t> &input, uint8_t version = 8, size_t *current_cursor_offset = nullptr)
 	{
+		const auto wire = WithoutWitnessTrailer(input);
 		REQUIRE(wire[0] == 13); REQUIRE((version == 3 || version == 8));
 		std::vector<uint8_t> old; size_t cursor = 0;
 		auto value = [&]() { REQUIRE(cursor + 8 <= wire.size()); uint64_t v = 0; for (size_t i = 0; i < 8; ++i) v |= uint64_t{wire[cursor++]} << (8 * i); return v; };
@@ -202,7 +213,7 @@ TEST_CASE("JPSD v9 partial trees replay with their original operation sequence",
 	std::array records{service};
 	PassengerPrecomputedTable original;
 	original.Begin(records, PAX, 0, PassengerPrecomputedTable::MAX_BYTES, true, false, {}, true, false);
-	const auto saved = db.Save();
+	const auto saved = WithoutWitnessTrailer(db.Save());
 	size_t offset; LegacyDatabaseWire(saved, 3, &offset);
 	for (size_t allowance : {size_t{1}, size_t{17}, size_t{89}, size_t{300}}) {
 		original.Step(allowance);
@@ -218,11 +229,11 @@ TEST_CASE("JPSD v9 partial trees replay with their original operation sequence",
 			auto a = original.Plan(from, to, NOW), b = peer.PlanPrecomputed(PAX, from, to, NOW);
 			CHECK(a.state == b.state); CHECK(a.ride == b.ride); CHECK(a.cost == b.cost);
 		}
-		auto current = peer.Save(); REQUIRE(current[0] == 13); CHECK(current[current.size() - 80] == 0);
-		PassengerServiceDatabase joined; REQUIRE(joined.Load(current)); joined.FinishLoad(true); CHECK(joined.Save() == current);
+		auto current = WithoutWitnessTrailer(peer.Save()); CHECK(current[current.size() - 80] == 0);
+		PassengerServiceDatabase joined; REQUIRE(joined.Load(current)); joined.FinishLoad(true); CHECK(WithoutWitnessTrailer(joined.Save()) == current);
 		while (!peer.PrecomputedFinished()) peer.TickPrecomputed(7);
 		/* Migration begins only after the old generation has fully finished. */
-		peer.TickPrecomputed(1); CHECK(peer.Save()[peer.Save().size() - 80] == 1);
+		peer.TickPrecomputed(1); auto migrated = WithoutWitnessTrailer(peer.Save()); CHECK(migrated[migrated.size() - 80] == 1);
 	}
 }
 
@@ -233,7 +244,7 @@ TEST_CASE("JPSD v10 optimized cursors retain the pre-range graph and Work sequen
 	std::array records{db.Get(train->orders->index)};
 	PassengerPrecomputedTable original;
 	original.Begin(records, PAX, 0, PassengerPrecomputedTable::MAX_BYTES, true, false, {}, true, true, false);
-	auto wire = db.Save(); size_t offset; LegacyDatabaseWire(wire, 3, &offset);
+	auto wire = WithoutWitnessTrailer(db.Save()); size_t offset; LegacyDatabaseWire(wire, 3, &offset);
 	wire[0] = 10; wire.resize(wire.size() - 64);
 	for (size_t allowance : {size_t{1}, size_t{17}, size_t{89}, size_t{300}}) {
 		original.Step(allowance);
@@ -248,7 +259,7 @@ TEST_CASE("JPSD v10 optimized cursors retain the pre-range graph and Work sequen
 			auto a = original.Plan(from, to, NOW), b = peer.PlanPrecomputed(PAX, from, to, NOW);
 			CHECK(a.state == b.state); CHECK(a.ride == b.ride); CHECK(a.cost == b.cost);
 		}
-		auto current = peer.Save(); REQUIRE(current[0] == 13);
+		auto current = WithoutWitnessTrailer(peer.Save());
 		CHECK(current[current.size() - 80] == 1); CHECK(current[current.size() - 64] == 0);
 	}
 }
@@ -1391,10 +1402,17 @@ TEST_CASE("Periodic scheduler progress and captured phases survive save and join
 TEST_CASE("Periodic database rejects malformed and oversized saved state", "[passenger][periodic][save]")
 {
 	Fixture f; f.Train({Stop(A), Stop(D)}); auto &db = f.Build(); auto wire = db.Save(); PassengerServiceDatabase other;
-	wire.pop_back(); CHECK_FALSE(other.Load(wire)); wire = db.Save(); wire[0] = 14; CHECK_FALSE(other.Load(wire));
-	wire = db.Save(); wire[wire.size() - 48] = 2; CHECK_FALSE(other.Load(wire));
-	wire = db.Save(); wire[wire.size() - 40] = 2; CHECK_FALSE(other.Load(wire));
-	wire = db.Save(); wire[wire.size() - 16] = 2; CHECK_FALSE(other.Load(wire));
+	wire.pop_back(); CHECK_FALSE(other.Load(wire)); wire = db.Save(); wire[0] = 15; CHECK_FALSE(other.Load(wire));
+	wire = WithoutWitnessTrailer(db.Save()); wire[wire.size() - 48] = 2; CHECK_FALSE(other.Load(wire));
+	wire = WithoutWitnessTrailer(db.Save()); wire[wire.size() - 40] = 2; CHECK_FALSE(other.Load(wire));
+	wire = WithoutWitnessTrailer(db.Save()); wire[wire.size() - 16] = 2; CHECK_FALSE(other.Load(wire));
+	wire = db.Save(); wire.back() = 255; CHECK_FALSE(other.Load(wire));
+	wire = db.Save(); {
+		uint64_t words = 0; for (size_t i = 0; i < 8; ++i) words |= uint64_t(wire[wire.size() - 8 + i]) << (8 * i);
+		size_t trailer = wire.size() - (words + 1) * 8;
+		wire[trailer] = 2; CHECK_FALSE(other.Load(wire));
+		wire = db.Save(); wire[trailer + 16] |= 7; CHECK_FALSE(other.Load(wire)); // Invalid packed facility key.
+	}
 	CHECK(other.GetDiagnostic().services == 0);
 }
 
@@ -2612,12 +2630,19 @@ TEST_CASE("Hyperpath absorbs a repeated station into its later departure", "[pas
 	auto *train = f.Train({Stop(A, 1000, 7), Stop(B, 20, 11), Stop(A, 20, 13), Stop(D, 1000, 17)});
 	auto &db = f.Build(); auto service = *db.Get(train->orders->index);
 	VehicleOrderID early = 0, later = 2;
+	bool earlier_needed = false;
 	SECTION("Return within the order list") {}
 	SECTION("Return across the circuit seam") {
 		std::swap(service.timetable.stops[1].station, service.timetable.stops[3].station);
 		early = 2; later = 0;
 	}
-	SECTION("A return which forbids boarding cannot absorb the earlier opportunity") { service.timetable.stops[2].board = 0; }
+	SECTION("A return which forbids boarding cannot absorb the earlier opportunity") { service.timetable.stops[2].board = 0; earlier_needed = true; }
+	SECTION("Different road-order facility directions are not a boarding proof") {
+		service.vehicles[0].type = VehicleType::Road; service.timetable.stops[0].boarding_facility = 2; service.timetable.stops[2].boarding_facility = 3; earlier_needed = true;
+	}
+	SECTION("Unknown road-order facility access is not a boarding proof") {
+		service.vehicles[0].type = VehicleType::Road; service.timetable.stops[0].boarding_facility = service.timetable.stops[2].boarding_facility = 0; earlier_needed = true;
+	}
 	SECTION("Forced unloading terminates the continuation") { service.timetable.stops[1].forced = uint64_t{1} << PAX; }
 	SECTION("A broken continuation terminates the ride") { service.timetable.stops[1].continues = false; }
 	SECTION("Estimated travel uncertainty and dwell are included") {
@@ -2631,21 +2656,24 @@ TEST_CASE("Hyperpath absorbs a repeated station into its later departure", "[pas
 	CHECK(memory.labels + memory.indices + memory.policy_headers + memory.candidate_arrays + memory.graph <= memory.reported);
 	for (OrderListID failed : {OrderListID::Invalid(), OrderListID{123}}) {
 		auto down = table.Board(A, D, NOW, service.id, early, OrderListID::Invalid(), failed);
-		CHECK(bool(down.ride) == (service.timetable.stops[2].board == 0));
+		CHECK(bool(down.ride) == earlier_needed);
 		if (service.timetable.stops[2].board != 0) CHECK(table.Board(A, D, NOW, service.id, later, OrderListID::Invalid(), failed).ride);
 		CHECK(table.Board(A, B, NOW, service.id, early, OrderListID::Invalid(), failed).ride);
 	}
 }
 
-TEST_CASE("JPSD v12 repeat-visit strategies retain their saved event sequence", "[passenger][hyperpath][revisit][save][network]")
+TEST_CASE("JPSD v12 and v13 repeat-visit strategies retain their saved event sequence", "[passenger][hyperpath][revisit][save][network]")
 {
 	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = _settings_game.linkgraph.passenger_journey_hyperpath = true;
 	auto *train = f.Train({Stop(A, 1000), Stop(B, 20), Stop(A, 20), Stop(D, 1000)});
 	auto &db = f.Build(); db.TickPrecomputed(1);
+	bool dominance = false;
+	SECTION("v12 independent occurrence frequencies") {}
+	SECTION("v13 numerical dominance without a witness") { dominance = true; }
 	std::array records{db.Get(train->orders->index)}; PassengerPrecomputedTable old;
-	old.Begin(records, PAX, 0, PassengerPrecomputedTable::MAX_HYPERPATH_BYTES, true, false, {}, true, true, true, true, false);
-	size_t offset; auto wire = db.Save(); LegacyDatabaseWire(wire, 3, &offset);
-	wire[0] = 12; wire.resize(wire.size() - 16);
+	old.Begin(records, PAX, 0, PassengerPrecomputedTable::MAX_HYPERPATH_BYTES, true, false, {}, true, true, true, true, dominance, false);
+	size_t offset; auto wire = WithoutWitnessTrailer(db.Save()); LegacyDatabaseWire(wire, 3, &offset);
+	if (!dominance) { wire[0] = 12; wire.resize(wire.size() - 16); }
 	for (size_t work : {size_t{1}, size_t{73}, size_t{181}}) {
 		old.Step(work); const auto operations = old.GetDiagnostic().operations;
 		for (size_t i = 0; i < 8; ++i) wire[offset + i] = (operations >> (8 * i)) & 255;
@@ -2655,8 +2683,53 @@ TEST_CASE("JPSD v12 repeat-visit strategies retain their saved event sequence", 
 		CHECK(peer.GetPrecomputedDiagnostic(PAX).operations == operations);
 		CHECK(peer.GetPrecomputedDiagnostic(PAX).destinations == old.GetDiagnostic().destinations);
 		CHECK(peer.PlanPrecomputed(PAX, A, D, NOW).cost == old.Plan(A, D, NOW).cost);
-		auto upgraded = peer.Save(); REQUIRE(upgraded[0] == 13); CHECK(upgraded[upgraded.size() - 16] == 0);
+		auto upgraded = WithoutWitnessTrailer(peer.Save()); CHECK(upgraded[upgraded.size() - 16] == dominance);
+		if (work == 181) {
+			while (!old.Finished()) old.Step(7);
+			CHECK(old.Inspect(A, D).size() == (dominance ? 1 : 2));
+			while (!peer.PrecomputedFinished()) peer.TickPrecomputed(7);
+			peer.TickPrecomputed(1); auto replacing = peer.Save(); auto prefix = WithoutWitnessTrailer(replacing);
+			CHECK(prefix[prefix.size() - 16] == 1); CHECK(prefix[prefix.size() - 8] == dominance);
+			PassengerServiceDatabase joined; REQUIRE(joined.Load(replacing)); joined.FinishLoad(true, true);
+			while (joined.StepLoad(3) == PassengerServiceDatabase::LoadState::Replaying) {}
+			REQUIRE(joined.GetLoadState() == PassengerServiceDatabase::LoadState::Ready); CHECK(joined.Save() == replacing);
+			while (!peer.PrecomputedFinished()) { peer.TickPrecomputed(7); joined.TickPrecomputed(7); CHECK(peer.Save() == joined.Save()); }
+			auto plan = peer.PlanPrecomputed(PAX, A, D, NOW); REQUIRE(plan.ride);
+			CHECK_FALSE(peer.BoardHyperpath(*plan.ride, PAX, train->orders->index, 0).ride);
+			CHECK(peer.BoardHyperpath(*plan.ride, PAX, train->orders->index, 2).ride);
+		}
 	}
+}
+
+TEST_CASE("Hyperpath retains a tied optimal alighting before the return visit", "[passenger][hyperpath][revisit][replan][ties]")
+{
+	Fixture f;
+	auto *loop = f.Train({Stop(A, 1000, 0), Stop(B, 10, 0), Stop(A, 10, 0), Stop(D, 52, 0)});
+	auto *connection = f.Train({Stop(B, 60, 0), Stop(D, 20, 0)});
+	auto &db = f.Build(); std::array records{db.Get(loop->orders->index), db.Get(connection->orders->index)};
+	PassengerPrecomputedTable table, sliced;
+	table.Begin(records, PAX, 0, PassengerPrecomputedTable::MAX_HYPERPATH_BYTES, true, false, {}, true, true, true, true);
+	sliced.Begin(records, PAX, 0, PassengerPrecomputedTable::MAX_HYPERPATH_BYTES, true, false, {}, true, true, true, true);
+	while (!table.Finished()) table.Step(1);
+	while (!sliced.Finished()) sliced.Step(93);
+	CHECK(table.GetDiagnostic().operations == sliced.GetDiagnostic().operations);
+	for (OrderListID failed : {OrderListID::Invalid(), OrderListID{123}}) {
+		auto early = table.Board(A, D, NOW, loop->orders->index, 0, OrderListID::Invalid(), failed);
+		REQUIRE(early.ride); CHECK(early.ride->alighting == B); // Equal cost, without the on-board return to A.
+		CHECK(sliced.Board(A, D, NOW, loop->orders->index, 0, OrderListID::Invalid(), failed).ride == early.ride);
+		CHECK(table.Board(A, D, NOW, loop->orders->index, 2, OrderListID::Invalid(), failed).ride);
+	}
+}
+
+TEST_CASE("Hyperpath boarding suppression preserves a through ride from an earlier station", "[passenger][hyperpath][revisit][boarding]")
+{
+	Fixture f; auto *train = f.Train({Stop(C, 1000), Stop(A, 20), Stop(B, 20), Stop(A, 20), Stop(D, 1000)});
+	auto &db = f.Build(); std::array records{db.Get(train->orders->index)}; PassengerPrecomputedTable table;
+	table.Begin(records, PAX, 0, PassengerPrecomputedTable::MAX_HYPERPATH_BYTES, true, false, {}, true, true, true, true);
+	while (!table.Finished()) table.Step(7);
+	CHECK_FALSE(table.Board(A, D, NOW, train->orders->index, 1).ride);
+	auto through = table.Board(C, D, NOW, train->orders->index, 0); REQUIRE(through.ride);
+	CHECK(through.ride->alighting == D); CHECK(through.ride->alighting_order == 4);
 }
 
 TEST_CASE("Hyperpath boards the first attractive local or express and preserves a split policy", "[passenger][hyperpath][boarding]")
@@ -2964,7 +3037,7 @@ TEST_CASE("Precomputed active journeys bypass OD admission and survive partial-b
 	CHECK(db.GetDiagnostic().searches == timed_searches);
 	CHECK(db.GetPrecomputedDiagnostic(PAX).hits == 1);
 	CHECK(GetPassengerJourneyTickDiagnostic().query_cache_hits == 99);
-	auto wire = db.Save(); REQUIRE(wire[0] == 13);
+	auto wire = db.Save(); REQUIRE(wire[0] == 14);
 	PassengerServiceDatabase peer; REQUIRE(peer.Load(wire)); peer.FinishLoad(true);
 	CHECK(peer.Save() == wire);
 	CHECK(peer.PlanPrecomputed(PAX, A, D, NOW).ride == db.PlanPrecomputed(PAX, A, D, NOW).ride);
@@ -3402,7 +3475,7 @@ TEST_CASE("Precomputed waiting events survive save tables without inventing a ro
 	AutoRestoreBackup static_features{_sl_xv_feature_static_versions, AutoRestoreBackupNoNewValueTag{}};
 	SlXvSetStaticCurrentVersions(); _sl_xv_feature_versions = _sl_xv_feature_static_versions;
 	bool legacy = false;
-	SECTION("Current packet-event save") { REQUIRE(_sl_xv_feature_versions[XSLFI_PASSENGER_PERIODIC] == 15); }
+	SECTION("Current packet-event save") { REQUIRE(_sl_xv_feature_versions[XSLFI_PASSENGER_PERIODIC] == 16); }
 	SECTION("v9 packet events predate the boarding cursor") { _sl_xv_feature_versions[XSLFI_PASSENGER_PERIODIC] = 9; }
 	SECTION("v8 common-section save has no packet-event fields") { legacy = true; _sl_xv_feature_versions[XSLFI_PASSENGER_PERIODIC] = 8; }
 	GoodsEntry source{}, loaded{}; source.CreateData(); loaded.CreateData();

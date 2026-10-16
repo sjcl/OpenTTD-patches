@@ -68,7 +68,7 @@ public:
 	static constexpr uint32_t INVALID = UINT32_MAX;
 	static constexpr uint64_t MAX_BYTES = uint64_t{16} * 1024 * 1024 * 1024;
 	static constexpr uint64_t MAX_HYPERPATH_BYTES = uint64_t{32} * 1024 * 1024 * 1024; ///< Canonical admission, including a retained generation; not a physical allocation request.
-	void Begin(std::span<const PassengerPeriodicService *const> services, CargoType cargo, int64_t transfer, uint64_t memory = MAX_BYTES, bool sections = true, bool cooperative = false, std::shared_ptr<uint64_t> memory_budget = {}, bool estimates = true, bool optimized = true, bool integrated = true, bool hyperpath = false, bool revisit_dominance = true);
+	void Begin(std::span<const PassengerPeriodicService *const> services, CargoType cargo, int64_t transfer, uint64_t memory = MAX_BYTES, bool sections = true, bool cooperative = false, std::shared_ptr<uint64_t> memory_budget = {}, bool estimates = true, bool optimized = true, bool integrated = true, bool hyperpath = false, bool revisit_dominance = true, bool continuation_witness = true);
 	bool PrepareGraph(size_t quantum = 1024);
 	bool IsPreparingGraph() const { return static_cast<bool>(this->graph_build); }
 	uint64_t GetGraphWork() const { return this->graph_work; }
@@ -180,6 +180,7 @@ private:
 	bool integrated = true; ///< v11 bounded range/CSR engine; never reinterpret a v10 operation cursor.
 	bool hyperpath = false; ///< A separate algorithm identity; legacy work never enters the strategy queue.
 	bool revisit_dominance = true; ///< JPSD v12 strategies replay without the v13 occurrence dominance rule.
+	bool continuation_witness = true; ///< v14: require equality and a selected same-run continuation, preserving earlier tied alighting.
 	int64_t transfer_cost = 0;
 	struct StrategyWorkspace {
 		std::vector<PassengerStrategy> sums;
@@ -187,6 +188,8 @@ private:
 		std::vector<bool> settled;
 		PassengerDestinationQueue<QueueItem> events;
 		uint32_t board_edge = INVALID, offset = 0;
+		uint32_t witness_edge = INVALID, witness_at = INVALID;
+		int64_t witness_cost = 0;
 		int64_t last = 0;
 	} strategy;
 	CargoType cargo = INVALID_CARGO;
@@ -212,6 +215,7 @@ private:
 	const Row *FindRow(StationID destination) const;
 	Label EvaluateRide(const Row &row, uint32_t board, StationID destination) const;
 	bool DominatedRevisit(uint32_t board, int64_t cost, int64_t next_cost) const;
+	bool HasSameRunContinuationWitness(uint32_t board, uint32_t alight) const;
 	void AddBoardEdges(uint32_t station, uint32_t to, uint32_t pattern, int64_t cost, EdgeKind kind, uint32_t occurrence, uint32_t distance = 0);
 	void ContractGraph(size_t &nodes);
 	void AddEdge(uint32_t from, uint32_t to, int64_t cost, EdgeKind kind, uint32_t occurrence = INVALID, uint32_t distance = 0, int64_t uncertainty = 0);

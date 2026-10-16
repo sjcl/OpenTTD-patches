@@ -25,6 +25,7 @@ struct PassengerPeriodicStop {
 	uint64_t board = 0, alight = 0, forced = 0; ///< Cargo-slot masks, independent of cargo labels.
 	bool continues = true; ///< Safe order traversal from this occurrence to the next, including wraparound.
 	uint8_t travel_quality = 0; ///< Incoming segment: 0 declared, 1 recorded, 2 distance estimate.
+	uint8_t boarding_facility = 0; ///< v14 captured road-order access: 0 unknown, 1 any direction, 2..5 a specific direction.
 	bool operator==(const PassengerPeriodicStop &) const = default;
 };
 
@@ -265,6 +266,7 @@ private:
 	bool precomputed_integrated = true, retained_precomputed_integrated = true; ///< v11 range/CSR work cursor.
 	bool precomputed_optimized = true, retained_precomputed_optimized = true; ///< v10 graph/work cursor algorithm, including retained generations.
 	bool precomputed_revisit_dominance = true, retained_precomputed_revisit_dominance = true; ///< v13 repeat-visit pruning, separately replayed for retained rows.
+	bool precomputed_continuation_witness = true, retained_precomputed_continuation_witness = true; ///< v14 checked same-run witness and conservative tie handling.
 	bool precomputed_hyperpath = false, retained_precomputed_hyperpath = false; ///< v12 SF event work and set intentions.
 	uint64_t precomputed_policy_generation = 0, retained_precomputed_policy_generation = 0;
 	uint64_t boarding_revision = 0; ///< Event-local validation invalidation; never saved or used for simulation admission.
@@ -276,7 +278,7 @@ private:
 	void BuildPrecomputedTables();
 	void ClearRetainedPrecomputed();
 	void BuildPrecomputedTables(std::array<PassengerPrecomputedTable, NUM_CARGO> &tables,
-			const std::map<OrderListID, PassengerPeriodicService> &snapshot, int64_t transfer, uint64_t remaining, bool sections, bool estimates, bool optimized, bool integrated, bool hyperpath, bool revisit_dominance, bool cooperative = false);
+			const std::map<OrderListID, PassengerPeriodicService> &snapshot, int64_t transfer, uint64_t remaining, bool sections, bool estimates, bool optimized, bool integrated, bool hyperpath, bool revisit_dominance, bool continuation_witness, bool cooperative = false);
 	using Dependencies = std::map<StationID, uint64_t>;
 	struct JourneyPolicy {
 		std::vector<std::pair<StationID, int64_t>> lower_bounds; ///< Relaxed reverse adjacent-stop distances, never winning routes.

@@ -536,6 +536,10 @@ def summarize(args):
             if ": " not in line:
                 continue
             name, rest = line.split(": ", 1)
+            if name == 'Passenger scheduler cause':
+                cause = re.search(r'\bcause=(\w+)', rest)
+                if cause:
+                    name += '/' + cause[1]
             values = {k:float(v) if '.' in v else int(v) for k,v in re.findall(r'(\w+)=(-?\d+(?:\.\d+)?)', rest)}
             if values:
                 observations.setdefault(name, []).append(values)

@@ -13,6 +13,8 @@ import pathlib
 import re
 import shutil
 import subprocess
+import sys
+import tempfile
 
 import passenger_precomputed_real_map as real
 
@@ -74,12 +76,21 @@ def main():
             size = (riff & 0xFFFFFF) | ((riff >> 28) << 24)
             saved_wire = decoded[at + 8:at + 8 + size]
             version = int.from_bytes(saved_wire[:8], 'little')
-            if len(saved_wire) != size or version not in (12, 13):
-                raise ValueError('Memory readback expects JPSD v12 or v13')
-            expected_wire = (13).to_bytes(8, 'little') + saved_wire[8:] + bytes(16) if version == 12 else saved_wire
-            if (directory / 'hyperpath-replay-before.bin').read_bytes() != expected_wire:
-                raise RuntimeError('The loader changed saved algorithm state beyond the verified v12-to-v13 wire upgrade')
-            wire_upgrade = dict(from_version=version, to_version=13, bytes_verified=True, replay_identical=True)
+            if len(saved_wire) != size or version not in (12, 13, 14):
+                raise ValueError('Memory readback expects JPSD v12, v13 or v14')
+            expected_wire = (directory / 'hyperpath-replay-before.bin').read_bytes()
+            if version < 14:
+                words = int.from_bytes(expected_wire[-8:], 'little')
+                if not 2 <= words < len(expected_wire) // 8 or any(expected_wire[-(words + 1) * 8:-8]):
+                    raise RuntimeError('An old snapshot acquired unrecorded witness/facility state')
+                prefix = (13).to_bytes(8, 'little') + expected_wire[8:-(words + 1) * 8]
+                original = (13).to_bytes(8, 'little') + saved_wire[8:] + bytes(16) if version == 12 else saved_wire
+                verified = prefix == original
+            else:
+                verified = expected_wire == saved_wire
+            if not verified:
+                raise RuntimeError('The loader changed saved algorithm state beyond the verified old-prefix wire upgrade')
+            wire_upgrade = dict(from_version=version, to_version=14, bytes_verified=True, replay_identical=True)
             derived.add('database_digest')
             del raw, decoded, saved_wire, expected_wire
         mismatches = {key:[expected.get(key), actual.get(key)] for key in expected.keys() | actual.keys()
@@ -121,4 +132,22 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    if '-h' in sys.argv or '--help' in sys.argv:
+        main()
+    else:
+        lock_path = pathlib.Path(tempfile.gettempdir()) / 'openttd-passenger-routing-measurement.lock'
+        try:
+            parent_owns_lease = json.loads(lock_path.read_text(encoding='utf-8')).get('pid') == os.getppid()
+        except (FileNotFoundError, json.JSONDecodeError):
+            parent_owns_lease = False
+        lock = None
+        try:
+            if not parent_owns_lease:
+                lock = real.PROFILE.acquire_measurement_lock(lock_path, 14400)
+                os.write(lock, json.dumps(dict(pid=os.getpid(), purpose='canonical end-save readback', output=sys.argv[4])).encode())
+                real.PROFILE.wait_for_idle(1800, 5)
+            main()
+        finally:
+            if lock is not None:
+                os.close(lock)
+                lock_path.unlink()
