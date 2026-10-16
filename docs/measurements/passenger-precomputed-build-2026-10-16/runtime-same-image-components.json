@@ -1,0 +1,170 @@
+{
+  "runs": {
+    "legacy-a": {
+      "console_sha256": "89ea48dee2797af6d1b68b5edcaf053193dee257f040292b4b5bc76ac8d18617",
+      "rolling_points": [
+        64,
+        128,
+        512
+      ],
+      "mean_ms": {
+        "Game loop": [
+          22.36,
+          21.28,
+          22.05
+        ],
+        "GL station ticks": [
+          1.4,
+          1.29,
+          1.41
+        ],
+        "GL train ticks": [
+          7.12,
+          7.06,
+          7.5
+        ],
+        "GL road vehicle ticks": [
+          1.31,
+          1.25,
+          1.32
+        ],
+        "GL ship ticks": [
+          0.04,
+          0.06,
+          0.05
+        ],
+        "GL aircraft ticks": [
+          0.34,
+          0.33,
+          0.35
+        ],
+        "GL landscape ticks": [
+          9.58,
+          9.3,
+          9.92
+        ],
+        "Drawing": [
+          0.1,
+          0.08,
+          0.13
+        ],
+        "Viewport drawing": [
+          0.03,
+          0.02,
+          0.06
+        ]
+      }
+    },
+    "legacy-b": {
+      "console_sha256": "d3e4217479283299e1c2af6b765ccf49e4fcd3820cae2f7a74ba785f6cbeef69",
+      "rolling_points": [
+        64,
+        128,
+        512
+      ],
+      "mean_ms": {
+        "Game loop": [
+          29.34,
+          28.44,
+          25.27
+        ],
+        "GL station ticks": [
+          1.8,
+          1.83,
+          1.6
+        ],
+        "GL train ticks": [
+          9.45,
+          9.23,
+          8.46
+        ],
+        "GL road vehicle ticks": [
+          1.68,
+          1.61,
+          1.49
+        ],
+        "GL ship ticks": [
+          0.05,
+          0.07,
+          0.06
+        ],
+        "GL aircraft ticks": [
+          0.41,
+          0.41,
+          0.39
+        ],
+        "GL landscape ticks": [
+          12.92,
+          12.84,
+          11.6
+        ],
+        "Drawing": [
+          0.12,
+          0.1,
+          0.14
+        ],
+        "Viewport drawing": [
+          0.04,
+          0.02,
+          0.06
+        ]
+      }
+    },
+    "integrated-b": {
+      "console_sha256": "8f258ea5090c34aff8c7bb24c4b323de002680153aff19abc7437d2a522155d4",
+      "rolling_points": [
+        64,
+        128,
+        512
+      ],
+      "mean_ms": {
+        "Game loop": [
+          23.2,
+          23.13,
+          22.14
+        ],
+        "GL station ticks": [
+          1.46,
+          1.4,
+          1.41
+        ],
+        "GL train ticks": [
+          7.6,
+          7.71,
+          7.53
+        ],
+        "GL road vehicle ticks": [
+          1.46,
+          1.42,
+          1.39
+        ],
+        "GL ship ticks": [
+          0.05,
+          0.06,
+          0.06
+        ],
+        "GL aircraft ticks": [
+          0.35,
+          0.36,
+          0.35
+        ],
+        "GL landscape ticks": [
+          9.98,
+          10.19,
+          9.91
+        ],
+        "Drawing": [
+          0.1,
+          0.08,
+          0.15
+        ],
+        "Viewport drawing": [
+          0.03,
+          0.02,
+          0.07
+        ]
+      }
+    }
+  },
+  "note": "Existing ConPrintFramerate rolling averages after the timed ticks. Component histories may contain fewer valid points; categories overlap with journey diagnostics. These are auxiliary, not the full 2048-tick statistics."
+}

@@ -103,3 +103,14 @@ JSONの引数・入力ハッシュと同じ固定snapshotを使う。CPU時間�
 `reference-build/`は基点902997e631を同じ通常版・静的CRT環境で新たにビルドした記録、
 `compiled-code-comparison/`はMSVC COFFの再配置部分を除いた関数byte列の比較である。
 後者は時間の測定ではなく、通常tickの不悪化や差の原因を証明するものではない。
+
+`runtime-same-image/`は同一実行ファイルの新→旧→旧→新の各2,048tick。
+旧モードは既存の再生エンジンを使い、計測用DBコピーだけで即時移行を抑える。
+`same-image-control/canonical.json`は全保存項目の照合、`counter-differences-a.json`は
+通常動作カウンターの差、`runtime-same-image-components.json`は既存`fps`診断の末尾窓である。
+最初の補助診断のコマンド誤記と、残りの終了スクリプト訂正の前後hashも保存した。
+訂正はtick開始前で、元の主標本とconsole記録は変更していない。
+
+`host-observed-control/self-probe-preparation.json`はWindowsの読み取りAPIの動作確認で、
+ゲームの性能試行ではない。任意指定の`--observe-host`はOSが提供するカウンターをそのまま記録し、
+raw tickの補正や電源・スケジューラ設定の変更はしない。スレッド一覧取得は準備中だけに限定する。

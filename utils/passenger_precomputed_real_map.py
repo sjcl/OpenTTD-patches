@@ -338,6 +338,9 @@ def recover_counter(args):
 def run(args, measurement_lock_fd=None):
     affinity_mask = getattr(args, "affinity_mask", None)
     main_affinity = getattr(args, "main_thread_affinity_mask", None)
+    observe_host = getattr(args, "observe_host", False)
+    if observe_host and (os.name != "nt" or main_affinity is None):
+        raise ValueError("--observe-host requires Windows and --main-thread-affinity-mask")
     for mask in (affinity_mask, main_affinity):
         if mask is not None and (os.name != "nt" or mask <= 0):
             raise ValueError("A positive Windows affinity mask is required")
@@ -358,6 +361,7 @@ def run(args, measurement_lock_fd=None):
         lock = measurement_lock_fd
     else:
         lock = PROFILE.acquire_measurement_lock(lock_path, 60)
+    observer = None
     try:
         if not borrowed_lock:
             os.write(lock, json.dumps(dict(pid=os.getpid(), output=str(directory))).encode())
@@ -410,7 +414,7 @@ def run(args, measurement_lock_fd=None):
             setup += "passenger_journey_stats fixture_estimated_od\n"
         start = f"script {log}\ngetfulldate\npassenger_journey_stats inventory\n{setup}passenger_journey_stats reset\n"
         # The existing component profiler is printed after the timed ticks.
-        finish = f"script {log}\ngetfulldate\npassenger_journey_stats inventory\npassenger_journey_stats total\nframerate\npassenger_journey_stats save_integrity\nsave {result}\nscript\n"
+        finish = f"script {log}\ngetfulldate\npassenger_journey_stats inventory\npassenger_journey_stats total\nfps\npassenger_journey_stats save_integrity\nsave {result}\nscript\n"
         if args.quality_probe:
             finish = finish.replace("passenger_journey_stats total\n", "passenger_journey_stats total\npassenger_journey_stats quality_probe\n")
         start += "unpause\nscript\n" if args.ticks else ("unpause\n" if args.unpause_before_save else "") + "script\n" + finish + "quit\n"
@@ -471,10 +475,38 @@ def run(args, measurement_lock_fd=None):
                     process.kill()
                     process.wait()
                     raise
+            if observe_host:
+                try:
+                    host = module(ROOT / "utils/passenger_host_observer.py", "host_observer")
+                    observer = host.HostObserver(int(process._handle), process.pid, main_thread["thread_id"])
+                except Exception:
+                    process.kill()
+                    process.wait()
+                    raise
             last_census = time.monotonic()
+            next_observation = last_census + 1
             while process.poll() is None:
                 for key, value in CPU.observe(process).items():
                     observed[key] = max(observed.get(key, 0), value)
+                if observer is not None and time.monotonic() >= next_observation:
+                    stage = "preparation"
+                    if (directory / "actual-ticks.json").exists():
+                        stage = "after_simulation"
+                    elif (directory / "on-1-console.txt").exists() and "Console log file closed." in (directory / "on-1-console.txt").read_text(encoding="utf-8", errors="replace"):
+                        stage = "simulation"
+                    elif (directory / "progress.json").exists():
+                        try:
+                            if json.loads((directory / "progress.json").read_text(encoding="utf-8"))["samples"]:
+                                stage = "simulation"
+                        except (OSError, ValueError, KeyError):
+                            stage = "simulation"
+                    try:
+                        observer.sample(time.perf_counter() - started, stage)
+                    except Exception:
+                        process.kill()
+                        process.wait()
+                        raise
+                    next_observation = time.monotonic() + 1
                 if time.monotonic() - last_census > 10:
                     busy = [p for p in PROFILE.competing_processes() if p != f"openttd:{process.pid}"]
                     if busy:
@@ -521,6 +553,11 @@ def run(args, measurement_lock_fd=None):
         metadata["affinity_mask"] = affinity_mask
         metadata["main_thread_affinity_mask"] = main_affinity
         metadata["main_thread"] = main_thread
+        if observer is not None:
+            dump(directory / "host-observation.json", observer.result())
+            metadata["host_observation"] = dict(file="host-observation.json", samples=len(observer.samples),
+                maximum_observation_cost_us=max((s["observation_cost_us"] for s in observer.samples), default=None),
+                read_only=True)
         metadata["phase_contamination"] = phase_contamination
         metadata["whole_process_timing_valid"] = not args.validation_only and not contamination
         for name in ("actual-ticks.json", "save-integrity.json"):
@@ -550,6 +587,8 @@ def run(args, measurement_lock_fd=None):
         if args.ticks and (metadata["actual-ticks.json"]["end_tick"] - metadata["actual-ticks.json"]["start_tick"] != args.ticks or len(metadata["actual-ticks.json"]["samples"]) != args.ticks):
             raise RuntimeError("Actual simulation tick count differs from requested")
     finally:
+        if observer is not None:
+            observer.close()
         if not borrowed_lock:
             os.close(lock)
             lock_path.unlink()
@@ -642,6 +681,7 @@ def main():
     p.add_argument("--validation-only", action="store_true", help="Allow other processes for a correctness-only load; record them and prohibit performance summarization")
     p.add_argument("--affinity-mask", type=lambda value: int(value, 0), help="Optional Windows affinity for this benchmark child only; recorded in the output")
     p.add_argument("--main-thread-affinity-mask", type=lambda value: int(value, 0), help="Fix only the null driver's main simulation thread; preserve worker parallelism")
+    p.add_argument("--observe-host", action="store_true", help="Read Windows CPU counters, main-thread CPU time and power-policy state; requires main-thread affinity")
     p.add_argument("--precomputed", action=argparse.BooleanOptionalAction, default=None)
     p = sub.add_parser("summarize")
     p.add_argument("output", type=pathlib.Path)
