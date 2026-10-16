@@ -37,6 +37,20 @@
 通常tickは各ケースの`process.json`に実際のStateTicks、全tick標本、OS peak、
 他ビルドの検出、NewGRF警告・error pauseの測定用解除回数を保存する。
 準備・ロード・保存を含むプロセス時間と、simulationの平均/p95/p99を混同しない。
+`phase_contamination`は準備・simulation・保存後の競合を区別し、計測期間の競合は拒否する。
+全プロセス時間の有効性とsimulation標本の有効性を別々に記録する。
+`runtime-matched-*`は通常版・静的CRT・assert ON・LTO OFFを揃えた比較。
+`matched-build`に実際のVS定義、バイナリSHA、DLL依存とビルドログを保存する。
+`runtime-core-control`は全プロセス、`runtime-main-core`は主スレッドだけをCPU 0へ固定した補助比較。
+前者はworkerも直列化する条件で、通常tickの採否判定には使わない。
+後者の`affinity-audit.json`はOSから読んだ実際のthread maskとprocess mask。
+`thread-cpu-window.json`は開始logのcloseからtick出力までを50ms間隔で外部観測した値で、
+生のtick標本そのもののCPU時間ではない。境界の観測誤差を含む補助情報として扱う。
+`runtime-control-method`に両runner、観測手順、旧製品ソース14件のコミット照合を残す。
+記録したrunnerは`build-msvc/run-matched-validation.py`として実行したsnapshotであり、
+再実行にはその場所へコピーし、記録された固定入力packageと旧バイナリを用意する。
+`runtime/`の初期試行には、旧通常版/静的CRTと新dedicated版/DLL CRTの構成差がある。
+これらは最終採用の性能比較に使わず、構成差の調査記録として残す。
 `runtime-discarded`の試行は、日時行の読取失敗または外部ビルドとの重複がある。
 要求tick数の検査・負荷の検査に通過していないため性能比較には使わない。
 このセーブには元からNewGRF警告があり、警告のないmapの検証ではない。

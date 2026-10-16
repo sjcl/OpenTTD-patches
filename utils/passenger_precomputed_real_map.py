@@ -6,6 +6,7 @@ The opt-in driver counts StateTicks, records existing diagnostics, and resumes
 NewGRF error pauses. Such warnings/resumptions are retained as limitations.
 """
 import argparse
+import ctypes
 import importlib.util
 import json
 import math
@@ -334,7 +335,12 @@ def recover_counter(args):
     project.write_text(xml.replace(str(original), str(target)), encoding="utf-8-sig")
 
 
-def run(args):
+def run(args, measurement_lock_fd=None):
+    affinity_mask = getattr(args, "affinity_mask", None)
+    main_affinity = getattr(args, "main_thread_affinity_mask", None)
+    for mask in (affinity_mask, main_affinity):
+        if mask is not None and (os.name != "nt" or mask <= 0):
+            raise ValueError("A positive Windows affinity mask is required")
     if args.cold_precomputed and (args.precomputed is not True or not args.warm_precomputed):
         raise ValueError("--cold-precomputed requires --precomputed --warm-precomputed")
     if args.fixture_estimated and (args.precomputed is not True or not args.warm_precomputed or args.fixture_timetable):
@@ -345,9 +351,16 @@ def run(args):
     directory.mkdir(parents=True, exist_ok=False)
     lock_name = f"openttd-passenger-routing-validation-{os.getpid()}.lock" if args.validation_only else "openttd-passenger-routing-measurement.lock"
     lock_path = pathlib.Path(tempfile.gettempdir()) / lock_name
-    lock = PROFILE.acquire_measurement_lock(lock_path, 60)
+    borrowed_lock = measurement_lock_fd is not None
+    if borrowed_lock:
+        if args.validation_only or json.loads(lock_path.read_text(encoding="utf-8"))["pid"] != os.getpid():
+            raise ValueError("Only the owning process can reuse a measurement reservation")
+        lock = measurement_lock_fd
+    else:
+        lock = PROFILE.acquire_measurement_lock(lock_path, 60)
     try:
-        os.write(lock, json.dumps(dict(pid=os.getpid(), output=str(directory))).encode())
+        if not borrowed_lock:
+            os.write(lock, json.dumps(dict(pid=os.getpid(), output=str(directory))).encode())
         if not args.validation_only:
             PROFILE.wait_for_idle(60, 5)
         package = args.package.resolve()
@@ -405,9 +418,58 @@ def run(args):
         command = [str(directory / "openttd.exe"), "-x", "-X", "-c", "openttd.cfg", "-g", "input.sav", "-v",
                    f"null:ticks={args.ticks}" if args.ticks else "null:until_exit", "-snull", "-mnull", "-d", "sl=2"]
         started, observed, contamination = time.perf_counter(), {}, []
+        phase_contamination, simulation_contamination = [], []
+        main_thread = None
         with (directory / "stdout.txt").open("wb") as out, (directory / "stderr.txt").open("wb") as err:
             process = subprocess.Popen(command, cwd=directory, stdout=out, stderr=err, creationflags=subprocess.CREATE_NO_WINDOW,
                                        env=dict(os.environ, OPENTTD_PASSENGER_MEASURE="1"))
+            if affinity_mask is not None:
+                kernel = ctypes.WinDLL("kernel32", use_last_error=True)
+                kernel.SetProcessAffinityMask.argtypes = (ctypes.c_void_p, ctypes.c_size_t)
+                kernel.SetProcessAffinityMask.restype = ctypes.c_int
+                if not kernel.SetProcessAffinityMask(int(process._handle), affinity_mask):
+                    error = ctypes.WinError(ctypes.get_last_error())
+                    process.kill()
+                    process.wait()
+                    raise error
+            if main_affinity is not None:
+                try:
+                    # Null video executes MainLoop/GameLoop on the initial
+                    # process thread; preserve the other workers' CPU access.
+                    result = PROFILE.powershell(
+                        "$ErrorActionPreference = 'Stop'; "
+                        f"$benchProcess = Get-Process -Id {process.pid} -ErrorAction Stop; "
+                        "$benchThread = $benchProcess.Threads | Sort-Object StartTime | Select-Object -First 1; "
+                        "if ($null -eq $benchThread) { throw 'No benchmark thread' }; "
+                        f"$benchThread.ProcessorAffinity = [IntPtr]{main_affinity}; "
+                        "[pscustomobject]@{thread_id=$benchThread.Id; process_affinity=[int64]$benchProcess.ProcessorAffinity} | ConvertTo-Json -Compress")
+                    main_thread = json.loads(result)
+                    class GroupAffinity(ctypes.Structure):
+                        _fields_ = [("mask", ctypes.c_size_t), ("group", ctypes.c_ushort),
+                                    ("reserved", ctypes.c_ushort * 3)]
+
+                    kernel = ctypes.WinDLL("kernel32", use_last_error=True)
+                    kernel.OpenThread.argtypes = (ctypes.c_uint32, ctypes.c_int, ctypes.c_uint32)
+                    kernel.OpenThread.restype = ctypes.c_void_p
+                    kernel.GetThreadGroupAffinity.argtypes = (ctypes.c_void_p, ctypes.POINTER(GroupAffinity))
+                    kernel.GetThreadGroupAffinity.restype = ctypes.c_int
+                    kernel.CloseHandle.argtypes = (ctypes.c_void_p,)
+                    thread = kernel.OpenThread(0x0040, False, main_thread["thread_id"])
+                    if not thread:
+                        raise ctypes.WinError(ctypes.get_last_error())
+                    try:
+                        actual = GroupAffinity()
+                        if not kernel.GetThreadGroupAffinity(thread, ctypes.byref(actual)):
+                            raise ctypes.WinError(ctypes.get_last_error())
+                        if actual.mask != main_affinity:
+                            raise RuntimeError("Main thread CPU affinity was not applied")
+                        main_thread.update(verified_mask=actual.mask, group=actual.group)
+                    finally:
+                        kernel.CloseHandle(thread)
+                except Exception:
+                    process.kill()
+                    process.wait()
+                    raise
             last_census = time.monotonic()
             while process.poll() is None:
                 for key, value in CPU.observe(process).items():
@@ -416,6 +478,27 @@ def run(args):
                     busy = [p for p in PROFILE.competing_processes() if p != f"openttd:{process.pid}"]
                     if busy:
                         contamination.append(busy)
+                        # Only StateGameLoop samples are used for ordinary-tick
+                        # timing. Keep preparation/load/save overlap visible;
+                        # it invalidates whole-process timing, not a later clean
+                        # simulation window. Existing sample files delimit it.
+                        stage = "preparation"
+                        if (directory / "actual-ticks.json").exists():
+                            stage = "after_simulation"
+                        elif (directory / "on-1-console.txt").exists() and "Console log file closed." in (directory / "on-1-console.txt").read_text(encoding="utf-8", errors="replace"):
+                            # game_start closes the log immediately after its
+                            # unpause. Do not miss the first 255 ticks between
+                            # the driver's periodic progress-file updates.
+                            stage = "simulation"
+                        elif (directory / "progress.json").exists():
+                            try:
+                                if json.loads((directory / "progress.json").read_text(encoding="utf-8"))["samples"]:
+                                    stage = "simulation"
+                            except (OSError, ValueError, KeyError):
+                                stage = "simulation"  # A concurrent rewrite is conservative.
+                        phase_contamination.append(dict(elapsed_seconds=time.perf_counter()-started, stage=stage, processes=busy))
+                        if stage == "simulation":
+                            simulation_contamination.append(busy)
                     last_census = time.monotonic()
                 if time.perf_counter() - started > args.timeout:
                     process.kill()
@@ -434,9 +517,17 @@ def run(args):
             rebuild_precomputed=args.rebuild_precomputed, command=command, **observed)
         metadata["unpause_before_save"] = args.unpause_before_save
         metadata["validation_only"] = args.validation_only
+        metadata["affinity_mask"] = affinity_mask
+        metadata["main_thread_affinity_mask"] = main_affinity
+        metadata["main_thread"] = main_thread
+        metadata["phase_contamination"] = phase_contamination
+        metadata["whole_process_timing_valid"] = not args.validation_only and not contamination
         for name in ("actual-ticks.json", "save-integrity.json"):
             if (directory / name).is_file():
                 metadata[name] = json.loads((directory / name).read_text(encoding="utf-8"))
+        clock = metadata.get("actual-ticks.json", {})
+        complete_ticks = bool(args.ticks) and clock.get("end_tick", 0) - clock.get("start_tick", 0) == args.ticks and len(clock.get("samples", [])) == args.ticks
+        metadata["simulation_timing_valid"] = complete_ticks and not args.validation_only and not simulation_contamination
         if (directory / "result.sav").is_file():
             metadata["result_sha256"] = PROFILE.sha256(directory / "result.sav")
         stderr = (directory / "stderr.txt").read_text(encoding="utf-8", errors="replace")
@@ -452,13 +543,15 @@ def run(args):
                 raise RuntimeError("The initial cold snapshot finalized transport observation")
         dump(directory / "process.json", metadata)
         print(json.dumps({k:v for k,v in metadata.items() if k != "actual-ticks.json"}, indent=2), flush=True)
-        if process.returncode or (contamination and not args.validation_only) or metadata["load_failed"] or metadata["warm_complete"] is False or "result_sha256" not in metadata or "save-integrity.json" not in metadata:
+        timing_overlap = simulation_contamination if args.ticks else contamination
+        if process.returncode or (timing_overlap and not args.validation_only) or metadata["load_failed"] or metadata["warm_complete"] is False or "result_sha256" not in metadata or "save-integrity.json" not in metadata:
             raise RuntimeError(f"Invalid run; see {directory}")
         if args.ticks and (metadata["actual-ticks.json"]["end_tick"] - metadata["actual-ticks.json"]["start_tick"] != args.ticks or len(metadata["actual-ticks.json"]["samples"]) != args.ticks):
             raise RuntimeError("Actual simulation tick count differs from requested")
     finally:
-        os.close(lock)
-        lock_path.unlink()
+        if not borrowed_lock:
+            os.close(lock)
+            lock_path.unlink()
 
 
 def summarize(args):
@@ -467,7 +560,12 @@ def summarize(args):
         process = json.loads((directory / "process.json").read_text(encoding="utf-8"))
         if process.get("validation_only"):
             raise ValueError(f"Correctness-only run cannot be summarized as performance: {directory}")
+        if not process.get("simulation_timing_valid", not process.get("contamination")):
+            raise ValueError(f"Overlapping simulation workload cannot be summarized as performance: {directory}")
         samples = process.get("actual-ticks.json", {}).get("samples", [])
+        clock = process.get("actual-ticks.json", {})
+        if not process.get("requested_ticks") or len(samples) != process["requested_ticks"] or clock.get("end_tick", 0) - clock.get("start_tick", 0) != process["requested_ticks"]:
+            raise ValueError(f"Incomplete tick window cannot be summarized as performance: {directory}")
         def distribution(values):
             values = sorted(values)
             if not values:
@@ -541,6 +639,8 @@ def main():
     p.add_argument("--rebuild-precomputed", action="store_true", help="Start with complete rows then change the transfer penalty to 17; measure ordinary replacement ticks")
     p.add_argument("--unpause-before-save", action="store_true", help="For a zero-tick MP fixture, use the ordinary unpause command before saving without advancing simulation")
     p.add_argument("--validation-only", action="store_true", help="Allow other processes for a correctness-only load; record them and prohibit performance summarization")
+    p.add_argument("--affinity-mask", type=lambda value: int(value, 0), help="Optional Windows affinity for this benchmark child only; recorded in the output")
+    p.add_argument("--main-thread-affinity-mask", type=lambda value: int(value, 0), help="Fix only the null driver's main simulation thread; preserve worker parallelism")
     p.add_argument("--precomputed", action=argparse.BooleanOptionalAction, default=None)
     p = sub.add_parser("summarize")
     p.add_argument("output", type=pathlib.Path)

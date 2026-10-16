@@ -1,0 +1,40 @@
+{
+  "runs": [
+    {
+      "run": "runtime-matched-new-steady",
+      "canonical_mismatches": {},
+      "state_ticks": 3181121629,
+      "active_events": {
+        "pending": 208217,
+        "overdue": 100,
+        "oldest_ticks": 0,
+        "maximum_station_backlog": 8478,
+        "on_time": 0,
+        "packets": 0,
+        "groups": 0,
+        "scheduler_us": 0,
+        "arrival_candidates": 0,
+        "arrival_passengers": 0,
+        "unresolved_missed_estimate": 0
+      }
+    },
+    {
+      "run": "runtime-matched-new-retained",
+      "canonical_mismatches": {},
+      "state_ticks": 3181121629,
+      "active_events": {
+        "pending": 207456,
+        "overdue": 82,
+        "oldest_ticks": 0,
+        "maximum_station_backlog": 8476,
+        "on_time": 0,
+        "packets": 0,
+        "groups": 0,
+        "scheduler_us": 0,
+        "arrival_candidates": 0,
+        "arrival_passengers": 0,
+        "unresolved_missed_estimate": 0
+      }
+    }
+  ]
+}

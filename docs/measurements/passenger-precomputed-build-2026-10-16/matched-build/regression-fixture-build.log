@@ -1,0 +1,26 @@
+MSBuild のバージョン 17.14.40+3e7442088 (.NET Framework)
+
+  Copying regression/info.nut regression file
+  Copying gs_compat/info.nut regression file
+  Copying gs/info.nut regression file
+  Copying stationlist/info.nut regression file
+  Copying regression/main.nut regression file
+  Copying gs_compat/main.nut regression file
+  Copying gs/main.nut regression file
+  Copying stationlist/main.nut regression file
+  Copying regression/require.nut regression file
+  Copying gs_compat/result.txt regression file
+  Copying gs/require.nut regression file
+  Copying stationlist/result.txt regression file
+  Copying regression/result.txt regression file
+  Copying gs_compat/test.sav regression file
+  Copying gs/result.txt regression file
+  Copying stationlist/test.sav regression file
+  Copying regression/test.sav regression file
+  Building Custom Rule C:/Users/bebe/.codex/worktrees/c430/OpenTTD-patches/regression/gs_compat/CMakeLists.txt
+  Copying gs/test.sav regression file
+  Building Custom Rule C:/Users/bebe/.codex/worktrees/c430/OpenTTD-patches/regression/stationlist/CMakeLists.txt
+  Building Custom Rule C:/Users/bebe/.codex/worktrees/c430/OpenTTD-patches/regression/regression/CMakeLists.txt
+  Building Custom Rule C:/Users/bebe/.codex/worktrees/c430/OpenTTD-patches/regression/gs/CMakeLists.txt
+  Copying regression.cfg regression file
+  Building Custom Rule C:/Users/bebe/.codex/worktrees/c430/OpenTTD-patches/regression/CMakeLists.txt

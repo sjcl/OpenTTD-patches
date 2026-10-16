@@ -1,0 +1,23 @@
+dbg: [net:3] Starting dedicated server, version jgrpp-ya-0.73.3+2-174-g9e845522a-m
+dbg: [net:3] Starting network
+dbg: [net:3] Initializing UDP listeners
+dbg: [net:3] Network online, multiplayer available
+dbg: [net:3] Detected broadcast addresses:
+dbg: [net:3]   0) 172.25.15.255
+dbg: [net:3]   1) 192.168.1.255
+dbg: [net:3]   2) 169.254.255.255
+dbg: [net:3] Network revision name: jgrpp-ya-0.73.3+2-174-g9e845522a
+dbg: [net:1] No "server_name" has been set, using "Unnamed Server" instead. Please set this now using the "server_name <new name>" command
+dbg: [net:3] Initializing UDP listeners
+dbg: [net:3] Initializing UDP listeners
+dbg: [net:3] Listening on 127.0.0.1:17533 (IPv4)
+dbg: [net:3] Listening on 127.0.0.1:17533 (IPv4)
+dbg: [net:3] [server] Client connected from 127.0.0.1 on frame 128
+dbg: [net:3] [server] Client #2 map replay progress 240/4294967492
+dbg: [net:2] [server] Client #2 map ready: server_preparation_ms=0; client_join_ms=185
+dbg: [net:3] [server] Client #2 (127.0.0.1) joined as routing-client, pubkey: F48659944E741C8FA371DBCF4F3539C749324759AC6B77C431672E0B60C42A40
+dbg: [net:2] [server] Preparing initial passenger tables at frame 211
+dbg: [net:2] [server] Initial passenger tables ready at frame 211
+dbg: [net:3] [server] Client #2 closed connection
+dbg: [net:3] Initializing UDP listeners
+dbg: [net:3] Shutting down network

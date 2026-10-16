@@ -1,0 +1,31 @@
+{
+  "address": "127.0.0.1:17531",
+  "default_timeouts": true,
+  "paused_join": true,
+  "input": "C:\\Users\\bebe\\.codex\\worktrees\\c430\\OpenTTD-patches\\build-msvc\\package\\input.sav",
+  "joined": false,
+  "packet_payment_equal": false,
+  "binary_sha256": "4a1b0cd59155573dd83395feca46c970fa84cd26476821245e5645bde18f12ed",
+  "input_sha256": "306a8d3094c406286ff1dd3249f1726bf9d10e230ead593eacdd91efc43ac629",
+  "requested_ticks": 0,
+  "initial_build": true,
+  "stall_test": false,
+  "frame_freq": 0,
+  "toggle_precomputed": false,
+  "replace_precomputed": false,
+  "wait_server_ready": false,
+  "observation_timeout_seconds": 120,
+  "error": "Partial build probe cannot mutate an unfinished save replay; use an input without an active saved table",
+  "pass": false,
+  "network_error": false,
+  "elapsed_seconds": 5.450525199994445,
+  "process_observations": {
+    "0_peak_working_bytes": 1415913472,
+    "0_peak_commit_bytes": 1410646016,
+    "0_process_cpu_seconds": 4.546875
+  },
+  "newgrf_warning_lines": {
+    "server": 5601,
+    "client": 0
+  }
+}

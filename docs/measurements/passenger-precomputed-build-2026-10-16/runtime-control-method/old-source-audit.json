@@ -1,0 +1,76 @@
+{
+  "runtime_commit": "bea07371bd315d58f91c52a55243195cc91e5e01",
+  "sources": [
+    {
+      "path": "src/autoreplace_cmd.cpp",
+      "lf": false,
+      "crlf": true
+    },
+    {
+      "path": "src/command.cpp",
+      "lf": false,
+      "crlf": true
+    },
+    {
+      "path": "src/console_cmds.cpp",
+      "lf": false,
+      "crlf": true
+    },
+    {
+      "path": "src/passenger_journey_active.cpp",
+      "lf": false,
+      "crlf": true
+    },
+    {
+      "path": "src/passenger_journey_active.h",
+      "lf": false,
+      "crlf": true
+    },
+    {
+      "path": "src/passenger_precomputed.cpp",
+      "lf": false,
+      "crlf": true
+    },
+    {
+      "path": "src/passenger_precomputed.h",
+      "lf": false,
+      "crlf": true
+    },
+    {
+      "path": "src/passenger_service_database.cpp",
+      "lf": false,
+      "crlf": true
+    },
+    {
+      "path": "src/passenger_service_database.h",
+      "lf": false,
+      "crlf": true
+    },
+    {
+      "path": "src/sl/extended_ver_sl.cpp",
+      "lf": false,
+      "crlf": true
+    },
+    {
+      "path": "src/tests/passenger_precomputed.cpp",
+      "lf": false,
+      "crlf": true
+    },
+    {
+      "path": "src/tests/passenger_service_database.cpp",
+      "lf": false,
+      "crlf": true
+    },
+    {
+      "path": "src/train_cmd.cpp",
+      "lf": false,
+      "crlf": true
+    },
+    {
+      "path": "src/vehicle_cmd.cpp",
+      "lf": false,
+      "crlf": true
+    }
+  ],
+  "mismatches": []
+}

@@ -1,0 +1,30 @@
+Waiting for idle host: cmake:44116, MSBuild:49444, cl:139540, cl:105428
+Waiting for idle host: cmake:44116, MSBuild:49444, cl:101980
+Waiting for idle host: cmake:44116, MSBuild:49444, cl:99228
+Waiting for idle host: cmake:44116, MSBuild:49444, cl:112252
+Waiting for idle host: cmake:44116, MSBuild:49444, cl:46600
+Waiting for idle host: cmake:44116, MSBuild:49444, cl:123556
+Waiting for idle host: cmake:44116, MSBuild:49444
+Waiting for idle host: quiet interval (60s)
+Waiting for idle host: cmake:2996, MSBuild:100760, cl:45392
+Waiting for idle host: quiet interval (60s)
+Waiting for idle host: openttd_test:116348
+Waiting for idle host: quiet interval (60s)
+Waiting for idle host: ctest:86640, openttd_test:97732
+Waiting for idle host: ctest:86640, cmake:7628, MSBuild:6080, openttd_test:58940, cmake:130780, openttd_test:24944, cmake:23156
+Waiting for idle host: ctest:86640, cmake:7628, MSBuild:6080, cmake:124976, openttd_test:63048
+Waiting for idle host: ctest:86640, openttd_test:67572, openttd_test:83416
+Waiting for idle host: ctest:86640, openttd_test:84768, openttd_test:90432
+Waiting for idle host: ctest:86640, openttd_test:8676
+Waiting for idle host: ctest:86640, openttd_test:104252
+Waiting for idle host: ctest:86640, cmake:128192, cmake:41924, passenger_od_load:60240, passenger_journey_active_test:97068
+Waiting for idle host: ctest:86640, cmake:41264, passenger_shadow_test:49896
+Waiting for idle host: quiet interval (60s)
+Waiting for idle host: ctest:102528, cmake:116928, passenger_od_load:106040
+Waiting for idle host: ctest:102528, cmake:47280, passenger_journey_active_test:47888
+Waiting for idle host: ctest:102528, cmake:85384, passenger_shadow_test:109108
+Waiting for idle host: quiet interval (60s)
+Waiting for idle host: ctest:17924, cmake:91208, passenger_journey_active_test:74484
+Waiting for idle host: quiet interval (60s)
+Waiting for idle host: ctest:12572, cmake:125612, regression_stationlist:57028
+Waiting for idle host: quiet interval (60s)

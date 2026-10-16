@@ -1,0 +1,13 @@
+Test project C:/Users/bebe/.codex/worktrees/c430/OpenTTD-patches/build-runtime-matched
+    Start 690: regression_regression
+1/4 Test #690: regression_regression ............   Passed    2.58 sec
+    Start 691: regression_stationlist
+2/4 Test #691: regression_stationlist ...........   Passed    2.03 sec
+    Start 692: regression_gs
+3/4 Test #692: regression_gs ....................   Passed    1.87 sec
+    Start 693: regression_gs_compat
+4/4 Test #693: regression_gs_compat .............   Passed    2.15 sec
+
+100% tests passed, 0 tests failed out of 4
+
+Total Test time (real) =   8.67 sec

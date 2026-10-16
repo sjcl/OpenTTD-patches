@@ -1,0 +1,23 @@
+dbg: [net:3] Starting network
+dbg: [net:3] Initializing UDP listeners
+dbg: [net:3] Network online, multiplayer available
+dbg: [net:3] Detected broadcast addresses:
+dbg: [net:3]   0) 172.25.15.255
+dbg: [net:3]   1) 192.168.1.255
+dbg: [net:3]   2) 169.254.255.255
+dbg: [net:3] Network revision name: jgrpp-ya-0.73.3+2-174-g9e845522a
+dbg: [net:3] Initializing UDP listeners
+dbg: [net:3] Connected to 127.0.0.1:17533
+dbg: [net:3] [crypto] Creating a new random key
+dbg: [net:1] Missed frame for sync-test: 200 / 207
+dbg: [net:4] [client] Passenger tables ready at predicted frame 211; waiting for server barrier
+dbg: [net:1] Missed frame for sync-test: 300 / 303
+dbg: [net:1] Missed frame for sync-test: 500 / 505
+dbg: [net:1] Missed frame for sync-test: 600 / 608
+dbg: [net:1] Missed frame for sync-test: 700 / 705
+dbg: [net:1] Missed frame for sync-test: 900 / 904
+dbg: [net:1] Missed frame for sync-test: 1000 / 1009
+dbg: [net:1] Missed frame for sync-test: 1100 / 1105
+dbg: [net:1] Missed frame for sync-test: 1200 / 1201
+dbg: [net:1] Missed frame for sync-test: 1300 / 1303
+dbg: [net:3] Closed client connection 0

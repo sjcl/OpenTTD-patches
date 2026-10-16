@@ -1,0 +1,35 @@
+Microsoft (R) COFF/PE Dumper Version 14.44.35227.0
+Copyright (C) Microsoft Corporation.  All rights reserved.
+
+
+Dump of file build-runtime-matched\cpu-binary\openttd.exe
+
+File Type: EXECUTABLE IMAGE
+
+  Image has the following dependencies:
+
+    OPENGL32.dll
+    WS2_32.dll
+    WINMM.dll
+    IMM32.dll
+    USP10.dll
+    PSAPI.DLL
+    WINHTTP.dll
+    bcrypt.dll
+    KERNEL32.dll
+    USER32.dll
+    GDI32.dll
+    SHELL32.dll
+    ole32.dll
+    ADVAPI32.dll
+    OLEAUT32.dll
+
+  Summary
+
+      215000 .data
+        1000 .fptable
+       64000 .pdata
+      204000 .rdata
+       12000 .reloc
+        B000 .rsrc
+      9D3000 .text
