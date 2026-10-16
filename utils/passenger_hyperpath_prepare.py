@@ -25,7 +25,10 @@ def main():
     parser.add_argument("build", type=Path)
     parser.add_argument("revision")
     parser.add_argument("--mp", action="store_true")
+    parser.add_argument("--boarding-profile", action="store_true", help="Measure enumeration/predicate/ride work in copied TUs, with cumulative per-tick CSV")
     args = parser.parse_args()
+    if args.boarding_profile and args.mp:
+        parser.error("--boarding-profile requires the exact-tick driver, not --mp")
     source, build = args.source.resolve(), args.build.resolve()
     command = [sys.executable, "-B", str(source / "utils/passenger_estimated_prepare.py"), str(source), str(build), args.revision]
     if args.mp:
@@ -142,6 +145,9 @@ def main():
                     text = text[:match.start()] + "{ " + call + " " + call.replace("PassengerTransportTrace::", "PassengerHyperpathFocusTrace::") + " }" + text[end + 1:]
                 text = text.replace("PassengerTransportTrace::defer_next_dump = true;", "PassengerTransportTrace::defer_next_dump = true; PassengerHyperpathFocusTrace::defer_next_dump = true;")
                 copied.write_text(text, encoding="utf-8")
+    if args.boarding_profile:
+        from passenger_hyperpath_boarding_profile import prepare
+        prepare(source, build)
     files = {}
     for folder in ("save-integrity", "transport-trace", "real-map-driver"):
         for path in (build / folder).glob("*"):
@@ -151,7 +157,7 @@ def main():
     (build / 'hyperpath-source-diff.patch').write_bytes(patch)
     changed = subprocess.check_output(['git', 'diff', '--name-only', args.revision, '--', 'src'], cwd=source, text=True).splitlines()
     source_files = {name: hashlib.sha256((source / name).read_bytes()).hexdigest() for name in changed if (source / name).is_file()}
-    (build / "hyperpath-provenance.json").write_text(json.dumps(dict(revision=args.revision, mp=args.mp, files=files,
+    (build / "hyperpath-provenance.json").write_text(json.dumps(dict(revision=args.revision, mp=args.mp, boarding_profile=args.boarding_profile, files=files,
         working_tree_source_files=source_files, working_tree_patch_sha256=hashlib.sha256(patch).hexdigest()), indent=2) + "\n", encoding="utf-8")
 
 
