@@ -3,10 +3,9 @@
 Work in progress on `feat/passenger-hyperpath-routing`, based on
 `667e1548161d976bbc9f0ef87635572a3d8603de`.
 
-The first checkpoint is an explicitly selected construction/diagnostic mode.
-It does not change live passenger intentions or the saved algorithm identity.
-Completion requires the B-mode boarding, local capacity-failure replanning,
-savegame/MP compatibility and transport measurements described in the request.
+The A-mode checkpoint is commit `76b4e51091`. Subsequent changes connect real
+B-mode boarding, local capacity-failure replanning and saved algorithm identity.
+Live multiplayer and long-duration transport measurements are still pending.
 
 ## Construction
 
@@ -100,3 +99,70 @@ Work slicing.
 
 These are construction measurements. Live B-mode boarding, save/load, MP and
 long-duration transport outcomes remain separate completion requirements.
+
+## B-mode execution and local replanning
+
+With precomputed routing enabled, `linkgraph.passenger_journey_hyperpath`
+defaults to true. Setting it false selects the previous precomputed algorithm
+for controlled comparisons; the selected algorithm remains part of the saved
+construction identity. Changing the setting replaces tables deterministically.
+
+A waiting HyperpathIntent stores origin, final destination, cargo and a saved
+policy generation, plus the existing readiness and expiry fields. It does not
+commit to a service. At real loading, membership is checked for the actual
+OrderList/occurrence, the shared frozen Ride/Alight evaluator chooses alighting,
+and the native service validator checks live orders, facilities and generation.
+The existing cargo reservation/load action then binds the actual vehicle.
+Partial loads restore the shared intention and failure state to the remainder.
+
+The station index uses option (b), present-destination/cohort scans and binary
+membership lookup. It requires no candidate-set expansion/reindexing on policy
+publication. Concrete ride evaluation is shared by a loading context. Existing
+FIFO merging, round-robin buckets and Legacy/Fallback/section indices remain.
+At two waiting destinations, warm lookup measured 1.4–1.7 microseconds with
+128–32,768 unrelated packets and inspected one eligible packet/cohort per query.
+Cold index construction was measured separately (0.073–24.563 milliseconds).
+This establishes independence from packet population with fixed cohorts; it
+does not claim constant cost as the number of distinct destinations grows.
+
+A full consist records one capacity opportunity when LoadingFinished transitions
+from false to true. Read-only predicates and repeated gradual-loading ticks do
+not increment failures. Readiness, membership and native legality must pass;
+any remaining capacity prevents recording. After three failures of one service,
+the local policy excludes it and re-evaluates **all** station boarding
+occurrences, including previously rejected alternatives. No alternative restores
+the failed service. Results are shared in a bounded derived policy cache; cache
+residency never changes the computed result or search admission.
+
+Failure state contains one service identity (OrderList and incarnation), count
+and start tick. Its hold is the saved waiting limit clamped to 4096–4194304
+ticks. Successful boarding or expiry clears it; another failed service cannot
+replace an active exclusion. Splits copy it, and merges require exact equality.
+Updating all affected eligible packets at a completed full loading is still
+proportional to those affected packets; unrelated station packets are not scanned.
+
+The waiting safety deadline uses `wait + 3 * (2 * wait)`, clamped to
+256–4194304 ticks. Here wait is the combined SF residual and twice that value
+is the effective headway. Capacity adaptation uses actual failed opportunities,
+not repeated deadline expiry.
+
+## Save and deterministic replay
+
+JPSD v12 saves current/retained Hyperpath flags and policy generations.
+passenger_periodic v14 identifies set intentions and explicitly serializes
+failure identity/count/start tick. Previous ride-kind values are unchanged.
+JPSD v1–v11 retain their original graph, queue, costs, Work and publication
+sequence; a completed old table can coexist with a new table during replacement.
+The 16 GiB canonical envelope is unchanged for old algorithms. New strategies
+use a 32 GiB canonical admission envelope including retained generations; this
+is a worst-case bound, not a request to allocate that amount of physical memory.
+The increased policy-header charge covers vector growth as well as complete
+candidate sets. Physical allocation failure stops play rather than selecting a
+different route on one peer.
+
+Tests currently pass: 11 Hyperpath cases / 898 assertions, 89 previous
+precomputed cases / 564255 assertions, and all 704 CTest cases after placing
+the normal language and regression fixtures. Saved partial Hyperpath event
+frontiers replay to identical wire state under different Work slices. Current
+packet saves retain failure state; older packet versions default it to empty.
+These tests do not substitute for the pending live server/client measurement.

@@ -27,6 +27,7 @@ struct PassengerWaitingEventDiagnostic {
 	uint64_t pending = 0, overdue = 0, oldest_ticks = 0, maximum_station_backlog = 0;
 	uint64_t on_time = 0, packets = 0, groups = 0, scheduler_microseconds = 0;
 	uint64_t arrival_candidates = 0, arrival_passengers = 0, unresolved_missed = 0;
+	uint64_t capacity_missed_packets = 0, capacity_missed_passengers = 0;
 };
 PassengerWaitingEventDiagnostic GetPassengerWaitingEventDiagnostic();
 void ResetPassengerWaitingEventDiagnostic();
@@ -208,15 +209,18 @@ class PassengerJourneyLoadingContext {
 	std::map<std::pair<VehicleID, CargoType>, PassengerJourneyBoardingContext> boarding;
 	PassengerOdFallbackContext fallback;
 	bool waiting_events = false;
-	using BoardingState = std::tuple<PassengerRoutingMode, StationID, StationID, StateTicks, OrderListID, uint64_t, bool>;
+	using BoardingState = std::tuple<PassengerRoutingMode, StationID, StationID, StateTicks, OrderListID, uint64_t, bool, PassengerBoardingFailure>;
 	struct Decision { StateTicks tick; std::tuple<uint64_t, uint64_t, uint64_t> revision; bool allowed; };
 	std::map<std::pair<VehicleID, CargoType>, std::map<std::pair<BoardingState, PassengerJourneyExecution>, Decision>> decisions;
 	bool CanBoardUncached(const CargoPacket &packet, const Vehicle *vehicle, CargoType cargo);
 	size_t validations = 0, cache_hits = 0;
-	using PendingKey = std::tuple<CargoType, StationID, StationID, StateTicks, OrderListID>;
+	using PendingKey = std::tuple<CargoType, StationID, StationID, StateTicks, OrderListID, OrderListID>;
 	std::map<PendingKey, PassengerPrecomputedPlan> pending_plans;
 	std::tuple<uint64_t, uint64_t, uint64_t> pending_revision{};
 	const PassengerPrecomputedPlan &PendingPlan(const CargoPacket &packet, const Vehicle *vehicle, CargoType cargo);
+	using HyperpathKey = std::tuple<VehicleID, CargoType, VehicleOrderID, uint64_t, StationID, StationID, OrderListID, OrderListID>;
+	std::map<HyperpathKey, PassengerPrecomputedPlan> hyperpath_rides;
+	std::optional<PassengerJourneyExecution> ResolveHyperpath(const PassengerJourneyExecution &intent, const CargoPacket &packet, const Vehicle *vehicle, CargoType cargo);
 public:
 	void EnableWaitingEvents() { this->waiting_events = true; } ///< Actual station simulation only; read-only predicates never wake packets.
 	bool CanBoard(const CargoPacket &packet, const Vehicle *vehicle, CargoType cargo = INVALID_CARGO);
@@ -244,7 +248,7 @@ class PassengerJourneyActiveContext {
 		PassengerJourneyFallbackReason failure = PassengerJourneyFallbackReason::QueryWork;
 	};
 	std::map<std::tuple<CargoType, StationID, StateTicks, OrderListID>, PeriodicWaiting> periodic_waiting;
-	std::map<std::tuple<CargoType, StationID, StateTicks, OrderListID>, PassengerPrecomputedPlan> precomputed_waiting;
+	std::map<std::tuple<CargoType, StationID, StateTicks, OrderListID, OrderListID>, PassengerPrecomputedPlan> precomputed_waiting;
 	PassengerOdFallbackContext fallback;
 	size_t work_left = 4194304;
 	size_t memory_left = 256 * 1024 * 1024;

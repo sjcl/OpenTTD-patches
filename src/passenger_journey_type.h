@@ -13,13 +13,32 @@
 #include "date_type.h"
 #include <optional>
 #include <tuple>
+#include <algorithm>
 
 enum class PassengerRoutingMode : uint8_t { Legacy, Journey, Fallback };
 
-enum class PassengerRideKind : uint8_t { VehicleSnapshot, ServiceIntent, BoundService, EstimatedServiceIntent, EstimatedBoundService };
+enum class PassengerRideKind : uint8_t { VehicleSnapshot, ServiceIntent, BoundService, EstimatedServiceIntent, EstimatedBoundService, HyperpathIntent };
 enum class PassengerTransportKind : uint8_t { None, Timed, Schedule, Untimed };
-inline bool IsEstimatedPassengerRide(PassengerRideKind kind) { return kind == PassengerRideKind::EstimatedServiceIntent || kind == PassengerRideKind::EstimatedBoundService; }
+inline bool IsEstimatedPassengerRide(PassengerRideKind kind) { return kind == PassengerRideKind::EstimatedServiceIntent || kind == PassengerRideKind::EstimatedBoundService || kind == PassengerRideKind::HyperpathIntent; }
+inline bool IsPassengerRideIntent(PassengerRideKind kind) { return kind == PassengerRideKind::ServiceIntent || kind == PassengerRideKind::EstimatedServiceIntent || kind == PassengerRideKind::HyperpathIntent; }
 inline bool IsBoundPassengerRide(PassengerRideKind kind) { return kind == PassengerRideKind::BoundService || kind == PassengerRideKind::EstimatedBoundService; }
+
+/** One locally failed service, copied on split and compared exactly on merge.
+ * Holding the first exclusion until expiry prevents alternating failed services
+ * from repeatedly replacing one another. No global frequency learning. */
+struct PassengerBoardingFailure {
+	OrderListID service = OrderListID::Invalid();
+	uint8_t count = 0;
+	StateTicks since{};
+	uint64_t incarnation = 0; ///< Part of the single failed service identity; an OrderList pool ID can be reused.
+	static constexpr uint8_t THRESHOLD = 3;
+	int64_t Hold(int64_t limit) const { return std::clamp<int64_t>(limit, 4096, int64_t{1} << 22); }
+	bool Present() const { return this->count != 0; }
+	bool Expired(StateTicks now, int64_t limit) const { return now >= this->since && uint64_t(now.base()) - uint64_t(this->since.base()) >= uint64_t(this->Hold(limit)); }
+	OrderListID Excluded(StateTicks now, int64_t limit) const { return this->count >= THRESHOLD && !this->Expired(now, limit) ? this->service : OrderListID::Invalid(); }
+	bool operator==(const PassengerBoardingFailure &) const = default;
+	bool operator<(const PassengerBoardingFailure &b) const { return std::tie(this->service, this->count, this->since, this->incarnation) < std::tie(b.service, b.count, b.since, b.incarnation); }
+};
 
 /** Only the next ride is stored. The kind distinguishes old absolute vehicle visits
  * from recurring service intentions and their actual bound carrier. New intentions

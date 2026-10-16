@@ -89,6 +89,7 @@ private:
 	StationID passenger_destination = StationID::Invalid(); ///< Final passenger destination; independent of CargoDist hops and commitments.
 	PassengerRoutingMode passenger_routing_mode = PassengerRoutingMode::Legacy;
 	PassengerJourneyExecution passenger_journey{};
+	PassengerBoardingFailure passenger_boarding_failure{};
 	StationID passenger_legacy_hop = StationID::Invalid(); ///< Current CargoDist hop, revalidated when a waiting journey expires.
 	StationID passenger_retry_station = StationID::Invalid();
 	StateTicks passenger_retry_after{}; ///< Deterministic cooldown, shared by split packets.
@@ -133,6 +134,10 @@ public:
 	StationID GetPassengerDestination() const { return this->passenger_destination; }
 	PassengerRoutingMode GetPassengerRoutingMode() const { return this->passenger_routing_mode; }
 	const PassengerJourneyExecution &GetPassengerJourney() const { return this->passenger_journey; }
+	const PassengerBoardingFailure &GetPassengerBoardingFailure() const { return this->passenger_boarding_failure; }
+	void SetPassengerBoardingFailure(PassengerBoardingFailure failure) { this->passenger_boarding_failure = failure; PassengerWaitingPacketChanged(*this); }
+	void RecordPassengerCapacityFailure(OrderListID service, StateTicks now);
+	OrderListID GetPassengerFailedService(StateTicks now) const;
 	StationID GetPassengerLegacyHop() const { return this->passenger_legacy_hop; }
 	void SetPassengerLegacyHop(StationID next) { if (this->passenger_legacy_hop != next) { this->passenger_legacy_hop = next; PassengerWaitingRoutingChanged(*this); } }
 	StationID GetPassengerVia() const { return this->passenger_via; }
@@ -160,7 +165,7 @@ public:
 	void ShiftPassengerJourneyTicks(StateTicksDelta delta);
 	bool HasSamePassengerRouting(const CargoPacket &other) const
 	{
-		return this->passenger_routing_mode == other.passenger_routing_mode && this->passenger_journey == other.passenger_journey &&
+		return this->passenger_routing_mode == other.passenger_routing_mode && this->passenger_journey == other.passenger_journey && this->passenger_boarding_failure == other.passenger_boarding_failure &&
 				this->passenger_legacy_hop == other.passenger_legacy_hop && this->passenger_retry_station == other.passenger_retry_station &&
 				this->passenger_retry_after == other.passenger_retry_after && this->passenger_interchange_ready == other.passenger_interchange_ready &&
 				this->passenger_arriving_service == other.passenger_arriving_service && this->passenger_arriving_incarnation == other.passenger_arriving_incarnation && this->passenger_transport == other.passenger_transport &&
@@ -655,7 +660,7 @@ class StationCargoList : public CargoList<StationCargoList, StationCargoPacketMa
 	using FallbackKey = std::tuple<StationID, StationID, OrderListID, uint64_t>; ///< Destination, saved hop, arriving service/incarnation.
 	using BoardingOrder = std::tuple<StationID, uint64_t, CargoPacketID>;
 	using JourneyKey = std::tuple<OrderListID, VehicleID, StationID, VehicleOrderID>;
-	using JourneyRideKey = std::tuple<PassengerJourneyExecution, OrderListID, uint64_t>;
+	using JourneyRideKey = std::tuple<PassengerJourneyExecution, OrderListID, uint64_t, PassengerBoardingFailure>;
 	using JourneyRides = std::map<JourneyRideKey, std::set<BoardingOrder>>;
 	using JourneyIndex = std::map<JourneyKey, JourneyRides>;
 	static JourneyKey BoardingJourneyKey(const CargoPacket &packet);
@@ -679,6 +684,7 @@ class StationCargoList : public CargoList<StationCargoList, StationCargoPacketMa
 	mutable std::unordered_map<uint64_t, std::set<std::pair<uint16_t, CargoPacketID>>> merge_index;
 	mutable JourneyIndex boarding_index;
 	mutable std::map<uint64_t, std::map<JourneyRideKey, const std::set<BoardingOrder> *>> section_boarding_index; ///< Raw saved order-pair keys to shared cohort queues.
+	mutable std::map<StationID, std::map<JourneyRideKey, const std::set<BoardingOrder> *>> hyperpath_boarding_index; ///< Option (b): present destinations, independent of candidate-set size and table publication.
 	mutable std::map<OrderListID, size_t> boarding_services;
 	mutable std::map<std::pair<bool, StationID>, std::set<BoardingOrder>> legacy_boarding_index;
 	mutable std::map<FallbackKey, std::set<BoardingOrder>> fallback_boarding_index;
@@ -776,6 +782,7 @@ public:
 	 * @return If there is any cargo for that station.
 	 */
 	bool HasCargoFor(std::span<const StationID> next, const Vehicle *vehicle = nullptr, PassengerJourneyLoadingContext *loading = nullptr, CargoType cargo = INVALID_CARGO) const;
+	void RecordCapacityMiss(std::span<const StationID> next, const Vehicle *vehicle, CargoType cargo, PassengerJourneyLoadingContext &loading);
 	/** Re-key waiting packets without touching count/payment caches or splitting them. */
 	size_t RoutePassengerJourneys(CargoType cargo, StationID station, bool allow_search = true, PassengerJourneyLoadingContext *loading = nullptr);
 

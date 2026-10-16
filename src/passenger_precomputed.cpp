@@ -254,7 +254,7 @@ PassengerBuildTask PassengerPrecomputedTable::BuildGraph(std::vector<const Passe
 	this->diagnostic.builds = 1;
 	if (cargo >= NUM_CARGO || transfer < 0 || transfer > INT64_MAX / 2) { this->failed = true; co_return; }
 	const uint64_t mask = uint64_t{1} << cargo;
-	memory = std::min(memory, MAX_BYTES);
+	memory = std::min(memory, this->hyperpath ? MAX_HYPERPATH_BYTES : MAX_BYTES);
 	/* Canonical byte charges are identical on 32/64-bit peers. Native sizeof
 	 * and allocator residency are diagnostics only, never routing admission. */
 	static_assert(sizeof(Label) <= 64 && sizeof(Edge) <= 64 && sizeof(QueueItem) <= 32 && sizeof(Row) <= 128);
@@ -374,8 +374,11 @@ PassengerBuildTask PassengerPrecomputedTable::BuildGraph(std::vector<const Passe
 		for (auto &o : this->occurrences) { o.arrival = static_cast<uint32_t>(nodes++); o.departure = static_cast<uint32_t>(nodes++); }
 		if (this->hyperpath) {
 			std::vector<uint64_t> frequency(this->stations.size());
+			this->station_boarding.resize(this->stations.size());
 			uint64_t candidate_bound = 0;
-			for (const auto &o : this->occurrences) if (o.board) {
+			for (uint32_t id = 0; id < this->occurrences.size(); ++id) if (this->occurrences[id].board) {
+				const auto &o = this->occurrences[id];
+				this->station_boarding[this->station_index[o.station.base()]].push_back(id);
 				const auto wait = this->patterns[o.pattern].wait;
 				if (wait <= 0 || wait > PassengerStrategy::MAX_WAIT) { this->failed = true; co_return; }
 				auto &sum = frequency[this->station_index[o.station.base()]];
@@ -384,10 +387,12 @@ PassengerBuildTask PassengerPrecomputedTable::BuildGraph(std::vector<const Passe
 				sum += f;
 				candidate_bound += 1 + this->waiting_states[this->station_index[o.station.base()]].size();
 			}
+			size_t max_boarding = 0;
+			for (const auto &boards : this->station_boarding) max_boarding = std::max(max_boarding, boards.size());
 			/* Full sparse sets, including worst-case differences; never truncate
 			 * to K candidates. Admission is based solely on the frozen graph. */
-			if (!Product(candidate_bound, uint64_t(this->stations.size()) * 8, envelope, memory) ||
-					!Product(this->waiting_state_count, uint64_t(this->stations.size()) * 48 + 80, envelope, memory)) {
+			if (!Product(max_boarding, uint64_t{4096} * 64, envelope, memory) || !Product(candidate_bound, uint64_t(this->stations.size()) * 8, envelope, memory) ||
+					!Product(this->waiting_state_count, uint64_t(this->stations.size()) * 96 + 128, envelope, memory)) {
 				this->failed = true; this->diagnostic.envelope = memory; co_return;
 			}
 		}
@@ -504,6 +509,17 @@ PassengerBuildTask PassengerPrecomputedTable::BuildGraph(std::vector<const Passe
 		this->diagnostic.stations = this->stations.size(); this->diagnostic.patterns = this->patterns.size();
 		this->diagnostic.states = nodes; this->diagnostic.edges = this->integrated ? this->hot_edges.from.size() : this->edges.size();
 		this->queue.SetCapacityLimit(uint64_t(this->integrated ? this->diagnostic.logical_edges : this->diagnostic.edges) + nodes);
+		if (this->hyperpath) {
+			this->hyperpath_static_bytes = (this->station_index.capacity() + this->service_pattern.capacity() + this->waiting_station.capacity() +
+					this->incoming_offsets.capacity() + this->seed_offsets.capacity() + this->seed_occurrences.capacity()) * 4 + this->stations.capacity() * sizeof(StationID) +
+					this->patterns.capacity() * sizeof(Pattern) + this->occurrences.capacity() * sizeof(Occurrence) + this->range_edges.capacity() * sizeof(RangeEdge) +
+					this->cold_edges.capacity() * sizeof(ColdEdge) + this->hot_edges.from.capacity() * 4 + this->hot_edges.cost.capacity() * 8 +
+					this->hot_edges.legs.capacity() + this->hot_edges.range.capacity() * 4 + this->rows.capacity() * sizeof(Row) +
+					this->waiting_states.capacity() * sizeof(this->waiting_states[0]) + this->station_boarding.capacity() * sizeof(this->station_boarding[0]);
+			for (const auto &p : this->patterns) this->hyperpath_static_bytes += p.members.capacity() * sizeof(Member) + p.boarding_services.capacity() * sizeof(OrderListID) + p.occurrences.capacity() * 4;
+			for (const auto &waits : this->waiting_states) this->hyperpath_static_bytes += waits.capacity() * sizeof(waits[0]);
+			for (const auto &boards : this->station_boarding) this->hyperpath_static_bytes += boards.capacity() * 4;
+		}
 		if (!this->stations.empty()) this->StartDestination();
 	} catch (const std::bad_alloc &) {
 		/* Local OOM cannot select different routes on one network peer. The
@@ -784,8 +800,9 @@ void PassengerPrecomputedTable::StartDestination()
 {
 	if (this->hyperpath) {
 		this->strategy.events.Reset(); this->strategy.last = 0; this->strategy.board_edge = INVALID;
-		this->strategy.sums.clear(); this->strategy.candidates.clear(); this->strategy.settled.clear();
+		this->strategy.sums.clear(); this->strategy.settled.clear();
 		this->prepared = {};
+		this->prepared_candidate_bytes = 0;
 	}
 	this->queue.Reset();
 	this->scratch.labels.clear();
@@ -1058,7 +1075,9 @@ size_t PassengerPrecomputedTable::StepHyperpath(size_t allowance, const std::fun
 					this->search.cost.push_back(INT64_MAX); this->search.legs.push_back(0);
 					this->strategy.settled.push_back(false);
 					if (this->strategy.sums.size() < this->waiting_state_count) {
-						this->strategy.sums.emplace_back(); this->strategy.candidates.emplace_back();
+						this->strategy.sums.emplace_back();
+						if (this->strategy.candidates.size() < this->strategy.sums.size()) this->strategy.candidates.emplace_back();
+						else this->strategy.candidates[this->strategy.sums.size() - 1].clear();
 					}
 					continue;
 				}
@@ -1081,7 +1100,8 @@ size_t PassengerPrecomputedTable::StepHyperpath(size_t allowance, const std::fun
 					uint32_t state = static_cast<uint32_t>(this->prepared.labels.size());
 					this->prepared.labels.push_back(this->SearchLabel(state));
 					if (state < this->stations.size() && this->SearchCost(state) != INT64_MAX) {
-						this->reachable_destinations[state].push_back(this->stations[this->destination]);
+						auto &destinations = this->reachable_destinations[state]; size_t capacity = destinations.capacity();
+						destinations.push_back(this->stations[this->destination]); this->reachable_bytes += (destinations.capacity() - capacity) * sizeof(StationID);
 					}
 					continue;
 				}
@@ -1097,6 +1117,7 @@ size_t PassengerPrecomputedTable::StepHyperpath(size_t allowance, const std::fun
 						this->prepared.policy_index.push_back(static_cast<uint32_t>(this->prepared.policies.size()));
 						this->prepared.policies.push_back({this->SearchCost(state), this->strategy.sums[state].Wait(), {}});
 						this->prepared.policies.back().candidates.reserve(candidates.size());
+						this->prepared_candidate_bytes += this->prepared.policies.back().candidates.capacity() * 4;
 						++this->strategy.offset; continue;
 					}
 					if (this->strategy.offset <= candidates.size()) {
@@ -1107,12 +1128,16 @@ size_t PassengerPrecomputedTable::StepHyperpath(size_t allowance, const std::fun
 					}
 					++this->diagnostic.policy_count; this->diagnostic.candidate_count += candidates.size();
 					this->diagnostic.max_candidates = std::max(this->diagnostic.max_candidates, candidates.size());
-					auto bytes = 32 + candidates.size() * 4;
+					auto bytes = sizeof(Policy) + candidates.size() * 4;
 					if (state < this->stations.size()) this->diagnostic.base_policy_bytes += bytes;
 					else this->diagnostic.difference_policy_bytes += bytes;
 					++this->finishing; this->strategy.offset = 0; continue;
 				}
+				this->prepared.bytes = this->prepared.labels.capacity() * sizeof(Label) + this->prepared.policy_index.capacity() * 4 +
+						this->prepared.policies.capacity() * sizeof(Policy) + this->prepared_candidate_bytes;
+				this->hyperpath_row_bytes += this->prepared.bytes;
 				this->rows.push_back(std::move(this->prepared));
+				this->prepared_candidate_bytes = 0;
 				if (published) published(this->stations[this->destination]);
 				++this->destination; this->diagnostic.destinations = this->destination;
 				if (!this->Finished()) this->StartDestination();
@@ -1132,7 +1157,9 @@ size_t PassengerPrecomputedTable::StepHyperpath(size_t allowance, const std::fun
 					auto &sum = this->strategy.sums[from];
 					if (sum.Add(x, PassengerStrategy::Frequency(pattern.wait))) {
 						auto &set = this->strategy.candidates[from];
+						size_t capacity = set.capacity();
 						set.insert(std::lower_bound(set.begin(), set.end(), board), board);
+						this->hyperpath_candidate_bytes += (set.capacity() - capacity) * 4;
 						++this->diagnostic.board_accepts;
 						if (set.size() == 1) { label.board = board; ++label.legs; label.waiting += sum.Wait(); }
 						else { label = this->SearchLabel(from); label.waiting += sum.Wait() - label.first_wait; }
@@ -1172,18 +1199,29 @@ size_t PassengerPrecomputedTable::StepHyperpath(size_t allowance, const std::fun
 		}
 	} catch (const std::bad_alloc &) { FatalError("Insufficient memory for passenger strategies."); }
 	this->diagnostic.operations += used; this->diagnostic.build_nanoseconds += Elapsed(started);
-	this->diagnostic.bytes = this->diagnostic.base_policy_bytes + this->diagnostic.difference_policy_bytes +
-			this->rows.size() * this->waiting_state_count * (sizeof(Label) + sizeof(uint32_t)) + this->strategy.events.AllocatedBytes();
+	this->diagnostic.bytes = this->hyperpath_static_bytes + this->hyperpath_row_bytes + this->hyperpath_candidate_bytes + this->local_policy_bytes +
+			this->reachable_bytes + this->reachable_destinations.capacity() * sizeof(this->reachable_destinations[0]) + this->queue.AllocatedBytes() +
+			(this->scratch.labels.capacity() + this->scratch.alternative.capacity()) * sizeof(Label) +
+			this->search.cost.capacity() * 8 + this->search.legs.capacity() * 4 + this->search.metadata.capacity() * sizeof(LabelMetadata) +
+			this->strategy.sums.capacity() * sizeof(PassengerStrategy) + this->strategy.candidates.capacity() * sizeof(this->strategy.candidates[0]) +
+			this->strategy.settled.capacity() / 8 + this->strategy.events.AllocatedBytes() + this->prepared_candidate_bytes +
+			this->prepared.labels.capacity() * sizeof(Label) + this->prepared.policy_index.capacity() * 4 + this->prepared.policies.capacity() * sizeof(Policy);
 	return used;
 }
 
 void PassengerPrecomputedTable::ReleaseDestination(StationID destination)
 {
+	if (this->hyperpath) {
+		for (auto it = this->local_policies.begin(); it != this->local_policies.end();) {
+			if (std::get<0>(it->first) == destination) { this->local_policy_bytes -= 128 + it->second.candidates.capacity() * 4; it = this->local_policies.erase(it); } else ++it;
+		}
+	}
 	if (destination.base() >= this->station_index.size()) return;
 	uint32_t row = this->station_index[destination.base()];
 	if (row < this->rows.size() && !this->rows[row].labels.empty()) {
+		this->hyperpath_row_bytes -= this->rows[row].bytes;
 		this->diagnostic.bytes -= std::min(this->diagnostic.bytes,
-				(this->rows[row].labels.capacity() + this->rows[row].alternative.capacity()) * sizeof(Label));
+				this->hyperpath ? this->rows[row].bytes : (this->rows[row].labels.capacity() + this->rows[row].alternative.capacity()) * sizeof(Label));
 		this->rows[row] = {};
 		for (auto &destinations : this->reachable_destinations) {
 			auto found = std::lower_bound(destinations.begin(), destinations.end(), destination);
@@ -1228,11 +1266,45 @@ uint32_t PassengerPrecomputedTable::PolicyState(StationID origin, OrderListID pr
 	return pattern == INVALID ? station : this->StateFor(station, pattern);
 }
 
-std::span<const uint32_t> PassengerPrecomputedTable::Candidates(StationID origin, StationID destination, OrderListID previous) const
+std::span<const uint32_t> PassengerPrecomputedTable::Candidates(StationID origin, StationID destination, OrderListID previous, OrderListID failed) const
 {
 	const auto *row = this->FindRow(destination); uint32_t state = this->PolicyState(origin, previous);
 	if (row == nullptr || state == INVALID) return {};
+	if (failed != OrderListID::Invalid()) return this->LocalPolicy(*row, destination, state, failed).candidates;
 	return row->policies[row->policy_index[state]].candidates;
+}
+
+const PassengerPrecomputedTable::Policy &PassengerPrecomputedTable::LocalPolicy(const Row &row, StationID destination, uint32_t state, OrderListID failed) const
+{
+	auto key = std::tuple(destination, state, failed);
+	auto found = this->local_policies.find(key);
+	if (found != this->local_policies.end()) return found->second;
+	const auto started = Clock::now();
+	std::vector<std::pair<int64_t, uint32_t>> choices;
+	for (uint32_t board : this->station_boarding[this->waiting_station[state]]) {
+		const auto &o = this->occurrences[board];
+		if (state != this->waiting_station[state] && this->StateFor(this->waiting_station[state], o.pattern) == state) continue;
+		auto label = this->EvaluateRide(row, board, destination);
+		if (label.cost != INT64_MAX) choices.emplace_back(label.cost, board);
+	}
+	std::sort(choices.begin(), choices.end());
+	Policy policy;
+	auto compute = [&](bool exclude) {
+		PassengerStrategy sum; policy.candidates.clear();
+		for (auto [cost, board] : choices) {
+			const auto &p = this->patterns[this->occurrences[board].pattern];
+			if (exclude && p.members.front().id == failed) continue;
+			if (sum.Add(cost, PassengerStrategy::Frequency(p.wait))) policy.candidates.push_back(board);
+		}
+		policy.cost = sum.Cost(); policy.wait = sum.Wait();
+	};
+	compute(true);
+	if (policy.candidates.empty()) compute(false); // Preserve reachability when there is no alternative.
+	std::sort(policy.candidates.begin(), policy.candidates.end());
+	if (this->local_policies.size() >= 4096) { this->local_policy_bytes -= 128 + this->local_policies.begin()->second.candidates.capacity() * 4; this->local_policies.erase(this->local_policies.begin()); }
+	this->local_policy_bytes += 128 + policy.candidates.capacity() * 4;
+	++this->diagnostic.local_replans; this->diagnostic.local_replan_nanoseconds += Elapsed(started);
+	return this->local_policies.emplace(key, std::move(policy)).first->second;
 }
 
 /** The forward form of the same frozen Ride/Alight recurrence used by the
@@ -1274,7 +1346,7 @@ PassengerPrecomputedTable::Label PassengerPrecomputedTable::EvaluateRide(const R
 }
 
 PassengerPrecomputedPlan PassengerPrecomputedTable::Board(StationID origin, StationID destination, StateTicks ready,
-		OrderListID service, VehicleOrderID order, OrderListID previous) const
+		OrderListID service, VehicleOrderID order, OrderListID previous, OrderListID failed) const
 {
 	const auto *row = this->FindRow(destination);
 	if (row == nullptr) return {};
@@ -1283,7 +1355,7 @@ PassengerPrecomputedPlan PassengerPrecomputedTable::Board(StationID origin, Stat
 	if (pattern == INVALID) return {PassengerPrecomputedPlan::State::NoRoute};
 	const auto &stops = this->patterns[pattern].occurrences;
 	auto at = std::lower_bound(stops.begin(), stops.end(), order, [&](uint32_t id, VehicleOrderID value) { return this->occurrences[id].order < value; });
-	const auto set = this->Candidates(origin, destination, previous);
+	const auto set = this->Candidates(origin, destination, previous, failed);
 	if (at == stops.end() || this->occurrences[*at].order != order || this->occurrences[*at].station != origin || !std::binary_search(set.begin(), set.end(), *at)) return {PassengerPrecomputedPlan::State::NoRoute};
 	auto label = this->EvaluateRide(*row, *at, destination);
 	auto plan = this->Select(label, ready, previous, 0);
@@ -1325,7 +1397,7 @@ PassengerPrecomputedPlan PassengerPrecomputedTable::Select(const Label &label, S
 	return result;
 }
 
-PassengerPrecomputedPlan PassengerPrecomputedTable::Plan(StationID origin, StationID destination, StateTicks ready, OrderListID excluded, uint32_t sample) const
+PassengerPrecomputedPlan PassengerPrecomputedTable::Plan(StationID origin, StationID destination, StateTicks ready, OrderListID excluded, uint32_t sample, OrderListID failed) const
 {
 	const auto started = Clock::now(); ++this->diagnostic.queries;
 	auto lookup = [&]() -> PassengerPrecomputedPlan {
@@ -1339,7 +1411,24 @@ PassengerPrecomputedPlan PassengerPrecomputedTable::Plan(StationID origin, Stati
 		uint32_t state = previous == INVALID ? from : this->StateFor(from, previous);
 		const auto &row = this->rows[to]; Label label = row.labels[state];
 		if (this->hyperpath) {
+			const auto &policy = failed == OrderListID::Invalid() ? row.policies[row.policy_index[state]] : this->LocalPolicy(row, destination, state, failed);
+			if (failed != OrderListID::Invalid() && !policy.candidates.empty()) {
+				label = this->EvaluateRide(row, policy.candidates.front(), destination); label.cost = policy.cost; label.first_wait = policy.wait;
+			}
 			auto result = this->Select(label, ready, excluded, sample); result.hyperpath = true;
+			if (result.ride) {
+				PassengerJourneyExecution intent;
+				intent.kind = PassengerRideKind::HyperpathIntent; intent.boarding = origin; intent.alighting = destination;
+				intent.not_before = intent.planned_at = ready;
+				/* Database replaces the standalone generation with the saved table
+				 * generation. Signature encodes cargo+1, never a service incarnation. */
+				intent.signature = uint64_t(this->cargo) + 1; intent.generation = 1;
+				intent.estimated_wait = policy.wait;
+				/* Effective headway is twice the frequency-model residual wait.
+				 * k=3 gives wait+3*headway; this is an abnormal-service safety net. */
+				intent.waiting_limit = std::clamp<int64_t>(policy.wait > (int64_t{1} << 22) / 7 ? int64_t{1} << 22 : 7 * policy.wait, 256, int64_t{1} << 22);
+				result.ride = intent;
+			}
 			return result;
 		}
 		const auto &alternative = row.alternative[from];

@@ -373,6 +373,8 @@ def run(args):
                 setup += "passenger_journey_stats trace_state\n"
         if args.precomputed is not None:
             setup += f"setting linkgraph.passenger_journey_precomputed {'true' if args.precomputed else 'false'}\n"
+        if args.hyperpath is not None:
+            setup += f"setting linkgraph.passenger_journey_hyperpath {'true' if args.hyperpath else 'false'}\n"
         if args.fixture_timetable:
             setup += "passenger_journey_stats fixture_timetable\n"
         if args.fixture_estimated:
@@ -422,7 +424,7 @@ def run(args):
             contamination=contamination, input_sha256=PROFILE.sha256(directory / "input.sav"), binary_sha256=PROFILE.sha256(args.binary),
             language_sha256=PROFILE.sha256(directory / "lang/english.lng"),
             resume_settings=args.resume, fixture_timetable=args.fixture_timetable, fixture_estimated=args.fixture_estimated, cold_precomputed=args.cold_precomputed,
-            precomputed=args.precomputed, warm_precomputed=args.warm_precomputed,
+            precomputed=args.precomputed, hyperpath=args.hyperpath, warm_precomputed=args.warm_precomputed,
             rebuild_precomputed=args.rebuild_precomputed, command=command, **observed)
         for name in ("actual-ticks.json", "save-integrity.json"):
             if (directory / name).is_file():
@@ -527,6 +529,7 @@ def main():
     p.add_argument("--warm-precomputed", action="store_true", help="Complete mandatory rows while paused before the first tick; initial build CPU remains in process totals")
     p.add_argument("--rebuild-precomputed", action="store_true", help="Start with complete rows then change the transfer penalty to 17; measure ordinary replacement ticks")
     p.add_argument("--precomputed", action=argparse.BooleanOptionalAction, default=None)
+    p.add_argument("--hyperpath", action=argparse.BooleanOptionalAction, default=None)
     p = sub.add_parser("summarize")
     p.add_argument("output", type=pathlib.Path)
     p.add_argument("runs", type=pathlib.Path, nargs='+')

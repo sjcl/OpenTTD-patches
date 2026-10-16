@@ -29,7 +29,12 @@ extern btree::btree_map<uint64_t, Money> _cargo_packet_deferred_payments;
 	/* Stations are now available. Old saves have no OD; malformed or stale IDs
 	 * must not survive loading or become references to subsequently reused IDs. */
 	for (CargoPacket *cp : CargoPacket::Iterate()) {
-		if (to_underlying(cp->passenger_journey.kind) > to_underlying(PassengerRideKind::EstimatedBoundService) ||
+		if (cp->passenger_boarding_failure.count > PassengerBoardingFailure::THRESHOLD ||
+				(cp->passenger_boarding_failure.Present() && (cp->passenger_boarding_failure.service == OrderListID::Invalid() || cp->passenger_boarding_failure.incarnation == 0)) ||
+				(!cp->passenger_boarding_failure.Present() && cp->passenger_boarding_failure != PassengerBoardingFailure{})) SlErrorCorrupt("Invalid passenger boarding failure");
+		if (cp->passenger_journey.kind == PassengerRideKind::HyperpathIntent &&
+				SlXvIsFeatureMissing(XSLFI_PASSENGER_PERIODIC, 14)) SlErrorCorrupt("Hyperpath intent without strategy save format");
+		if (to_underlying(cp->passenger_journey.kind) > to_underlying(PassengerRideKind::HyperpathIntent) ||
 				to_underlying(cp->passenger_transport) > to_underlying(PassengerTransportKind::Untimed) ||
 				to_underlying(cp->passenger_interchange_transport) > to_underlying(PassengerTransportKind::Untimed)) SlErrorCorrupt("Invalid passenger ride kind");
 		if (cp->passenger_journey.kind != PassengerRideKind::VehicleSnapshot &&
@@ -214,6 +219,10 @@ NamedSaveLoadTable GetCargoPacketDesc()
 		NSL("passenger_retry_station", SLE_CONDVAR_X(CargoPacket, passenger_retry_station, SLE_UINT16, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_PASSENGER_JOURNEY_ROUTING))),
 		NSL("passenger_retry_after", SLE_CONDVAR_X(CargoPacket, passenger_retry_after, SLE_INT64, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_PASSENGER_JOURNEY_ROUTING))),
 		NSL("passenger_routing_event", SLE_CONDVAR_X(CargoPacket, passenger_routing_event, SLE_INT64, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_PASSENGER_PERIODIC, 9))),
+		NSL("passenger_boarding_failure.service", SLE_CONDVAR_X(CargoPacket, passenger_boarding_failure.service, SLE_UINT16, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_PASSENGER_PERIODIC, 14))),
+		NSL("passenger_boarding_failure.count", SLE_CONDVAR_X(CargoPacket, passenger_boarding_failure.count, SLE_UINT8, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_PASSENGER_PERIODIC, 14))),
+		NSL("passenger_boarding_failure.since", SLE_CONDVAR_X(CargoPacket, passenger_boarding_failure.since, SLE_INT64, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_PASSENGER_PERIODIC, 14))),
+		NSL("passenger_boarding_failure.incarnation", SLE_CONDVAR_X(CargoPacket, passenger_boarding_failure.incarnation, SLE_UINT64, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_PASSENGER_PERIODIC, 14))),
 		NSL("count",              SLE_VAR(CargoPacket, count,                    SLE_UINT16)),
 		NSL("periods_in_transit", SLE_CONDVAR_X(CargoPacket, periods_in_transit, SLE_FILE_U8 | SLE_VAR_U16, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_MORE_CARGO_AGE, 0, 0))),
 		NSL("periods_in_transit", SLE_CONDVAR_X(CargoPacket, periods_in_transit, SLE_UINT16, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_MORE_CARGO_AGE))),

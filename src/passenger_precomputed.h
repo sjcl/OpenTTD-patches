@@ -44,6 +44,7 @@ struct PassengerPrecomputedDiagnostic {
 	uint64_t candidate_count = 0, policy_count = 0, base_policy_bytes = 0, difference_policy_bytes = 0;
 	size_t max_candidates = 0;
 	std::map<size_t, uint64_t> candidate_histogram;
+	uint64_t local_replans = 0, local_replan_nanoseconds = 0;
 };
 
 /** Mandatory derived state, independent of the optional Timed/Schedule caches.
@@ -60,6 +61,7 @@ class PassengerPrecomputedTable {
 public:
 	static constexpr uint32_t INVALID = UINT32_MAX;
 	static constexpr uint64_t MAX_BYTES = uint64_t{16} * 1024 * 1024 * 1024;
+	static constexpr uint64_t MAX_HYPERPATH_BYTES = uint64_t{32} * 1024 * 1024 * 1024; ///< Canonical admission, including a retained generation; not a physical allocation request.
 	void Begin(std::span<const PassengerPeriodicService *const> services, CargoType cargo, int64_t transfer, uint64_t memory = MAX_BYTES, bool sections = true, bool cooperative = false, std::shared_ptr<uint64_t> memory_budget = {}, bool estimates = true, bool optimized = true, bool integrated = true, bool hyperpath = false);
 	bool PrepareGraph(size_t quantum = 1024);
 	bool IsPreparingGraph() const { return static_cast<bool>(this->graph_build); }
@@ -67,7 +69,7 @@ public:
 	size_t Step(size_t operations, bool legacy_publication = false, const std::function<void(StationID)> &published = {});
 	void ReleaseDestination(StationID destination); ///< Retire a row immediately after its replacement is published.
 	uint64_t LegacyPublicationWork() const { return uint64_t(this->rows.size()) * this->waiting_state_count; }
-	PassengerPrecomputedPlan Plan(StationID origin, StationID destination, StateTicks ready, OrderListID excluded = OrderListID::Invalid(), uint32_t sample = 0) const;
+	PassengerPrecomputedPlan Plan(StationID origin, StationID destination, StateTicks ready, OrderListID excluded = OrderListID::Invalid(), uint32_t sample = 0, OrderListID failed = OrderListID::Invalid()) const;
 	bool Finished() const { return !this->graph_build && (this->failed || this->destination == this->stations.size()); }
 	bool MemoryRejected() const { return this->failed; }
 	const PassengerPrecomputedDiagnostic &GetDiagnostic() const { return this->diagnostic; }
@@ -81,8 +83,9 @@ public:
 	std::span<const StationID> ReachableDestinations(StationID origin) const;
 	std::optional<int64_t> RouteCost(StationID origin, StationID destination) const; ///< Missing row differs from a proved infinite cost.
 	bool IsHyperpath() const { return this->hyperpath; }
-	std::span<const uint32_t> Candidates(StationID origin, StationID destination, OrderListID previous = OrderListID::Invalid()) const;
-	PassengerPrecomputedPlan Board(StationID origin, StationID destination, StateTicks ready, OrderListID service, VehicleOrderID order, OrderListID previous = OrderListID::Invalid()) const;
+	bool HasPolicy(StationID origin, StationID destination) const { return this->FindRow(destination) != nullptr && this->PolicyState(origin, OrderListID::Invalid()) != INVALID; }
+	std::span<const uint32_t> Candidates(StationID origin, StationID destination, OrderListID previous = OrderListID::Invalid(), OrderListID failed = OrderListID::Invalid()) const;
+	PassengerPrecomputedPlan Board(StationID origin, StationID destination, StateTicks ready, OrderListID service, VehicleOrderID order, OrderListID previous = OrderListID::Invalid(), OrderListID failed = OrderListID::Invalid()) const;
 	struct CandidateDiagnostic { uint32_t occurrence; OrderListID service; VehicleOrderID order; StationID alight; int64_t cost, wait; uint64_t frequency; };
 	std::vector<CandidateDiagnostic> Inspect(StationID origin, StationID destination, OrderListID previous = OrderListID::Invalid()) const;
 private:
@@ -109,7 +112,7 @@ private:
 		uint32_t board = INVALID, alight = INVALID, legs = 0, distance = 0;
 	};
 	struct Policy { int64_t cost = INT64_MAX, wait = 0; std::vector<uint32_t> candidates; };
-	struct Row { std::vector<Label> labels, alternative; std::vector<uint32_t> policy_index; std::vector<Policy> policies; };
+	struct Row { std::vector<Label> labels, alternative; std::vector<uint32_t> policy_index; std::vector<Policy> policies; size_t bytes = 0; };
 	struct LabelMetadata {
 		int64_t riding = 0, waiting = 0, first_wait = 0;
 		uint32_t board = INVALID, alight = INVALID, distance = 0;
@@ -144,6 +147,11 @@ private:
 	std::vector<uint32_t> seed_offsets, seed_occurrences; ///< Alighting occurrences in original order, indexed by destination station.
 	std::vector<std::vector<std::pair<uint32_t, uint32_t>>> waiting_states;
 	std::vector<uint32_t> waiting_station;
+	std::vector<std::vector<uint32_t>> station_boarding;
+	mutable std::map<std::tuple<StationID, uint32_t, OrderListID>, Policy> local_policies;
+	size_t hyperpath_static_bytes = 0, hyperpath_row_bytes = 0, hyperpath_candidate_bytes = 0, prepared_candidate_bytes = 0;
+	mutable size_t local_policy_bytes = 0;
+	const Policy &LocalPolicy(const Row &row, StationID destination, uint32_t state, OrderListID failed) const;
 	std::vector<Row> rows;
 	std::vector<std::vector<StationID>> reachable_destinations; ///< Inverse published rows; no waiting-packet dependency.
 	size_t reachable_bytes = 0;

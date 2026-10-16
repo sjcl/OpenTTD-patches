@@ -1,0 +1,13 @@
+Test project C:/Users/bebe/.codex/worktrees/33d4/OpenTTD-patches/build-hyperpath
+    Start 701: regression_regression
+1/4 Test #701: regression_regression ............   Passed    2.62 sec
+    Start 702: regression_stationlist
+2/4 Test #702: regression_stationlist ...........   Passed    2.44 sec
+    Start 703: regression_gs
+3/4 Test #703: regression_gs ....................   Passed    2.13 sec
+    Start 704: regression_gs_compat
+4/4 Test #704: regression_gs_compat .............   Passed    1.72 sec
+
+100% tests passed, 0 tests failed out of 4
+
+Total Test time (real) =   8.96 sec

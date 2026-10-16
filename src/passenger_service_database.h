@@ -167,7 +167,9 @@ public:
 	bool HasRejectedPrecomputedMemory() const
 	{ return std::any_of(this->precomputed.begin(), this->precomputed.end(), [](const auto &table) { return table.MemoryRejected(); }); }
 	PassengerPrecomputedPlan PlanPrecomputed(CargoType cargo, StationID origin, StationID destination, StateTicks ready,
-			OrderListID excluded = OrderListID::Invalid(), uint32_t sample = 0) const;
+			OrderListID excluded = OrderListID::Invalid(), uint32_t sample = 0, OrderListID failed = OrderListID::Invalid()) const;
+	PassengerPrecomputedPlan BoardHyperpath(const PassengerJourneyExecution &intent, CargoType cargo, OrderListID service,
+			VehicleOrderID boarding, OrderListID previous = OrderListID::Invalid(), OrderListID failed = OrderListID::Invalid()) const;
 	PassengerPrecomputedDiagnostic GetPrecomputedDiagnostic(CargoType cargo) const
 	{
 		auto result = this->precomputed[cargo].GetDiagnostic();
@@ -260,6 +262,8 @@ private:
 	bool precomputed_estimates = true, retained_precomputed_estimates = true; ///< Exact replay of pre-v9 costs and route dispersion.
 	bool precomputed_integrated = true, retained_precomputed_integrated = true; ///< v11 range/CSR work cursor.
 	bool precomputed_optimized = true, retained_precomputed_optimized = true; ///< v10 graph/work cursor algorithm, including retained generations.
+	bool precomputed_hyperpath = false, retained_precomputed_hyperpath = false; ///< v12 SF event work and set intentions.
+	uint64_t precomputed_policy_generation = 0, retained_precomputed_policy_generation = 0;
 	uint64_t boarding_revision = 0; ///< Event-local validation invalidation; never saved or used for simulation admission.
 	uint64_t precomputed_preparation_nanoseconds = 0; ///< Local elapsed observation, never saved or used for admission.
 	PassengerBuildTask preparation_capture;
@@ -269,7 +273,7 @@ private:
 	void BuildPrecomputedTables();
 	void ClearRetainedPrecomputed();
 	void BuildPrecomputedTables(std::array<PassengerPrecomputedTable, NUM_CARGO> &tables,
-			const std::map<OrderListID, PassengerPeriodicService> &snapshot, int64_t transfer, uint64_t remaining, bool sections, bool estimates, bool optimized, bool integrated, bool cooperative = false);
+			const std::map<OrderListID, PassengerPeriodicService> &snapshot, int64_t transfer, uint64_t remaining, bool sections, bool estimates, bool optimized, bool integrated, bool hyperpath, bool cooperative = false);
 	using Dependencies = std::map<StationID, uint64_t>;
 	struct JourneyPolicy {
 		std::vector<std::pair<StationID, int64_t>> lower_bounds; ///< Relaxed reverse adjacent-stop distances, never winning routes.

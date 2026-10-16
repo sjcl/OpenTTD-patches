@@ -174,6 +174,26 @@ TEST_CASE("Hyperpath matches single-service certified and estimated costs", "[pa
 	CHECK(table.Plan(A, D, StateTicks{}).cost == set[0].cost + set[0].wait);
 }
 
+TEST_CASE("Hyperpath local replanning admits a previously rejected service and preserves reachability", "[passenger][hyperpath][replan]")
+{
+	std::vector<PassengerPeriodicService> services{Service(0, {A, D}, 100)};
+	bool alternative = true;
+	SECTION("Previously unattractive alternative") { services.push_back(Service(1, {A, D}, 220)); }
+	SECTION("No alternative restores the failed service") { alternative = false; }
+	std::vector<const PassengerPeriodicService *> records; for (const auto &s : services) records.push_back(&s);
+	PassengerPrecomputedTable table; table.Begin(records, PAX, 0, PassengerPrecomputedTable::MAX_BYTES, true, false, {}, true, true, true, true);
+	while (!table.Finished()) table.Step(3);
+	REQUIRE(table.Candidates(A, D).size() == 1);
+	CHECK_FALSE(table.Board(A, D, StateTicks{}, OrderListID{1}, 0).ride);
+	OrderListID chosen{static_cast<uint16_t>(alternative ? 1 : 0)};
+	for (size_t i = 0; i < 100; ++i) {
+		auto board = table.Board(A, D, StateTicks{}, chosen, 0, OrderListID::Invalid(), OrderListID{0}); REQUIRE(board.ride);
+		CHECK(board.ride->service == chosen); CHECK(board.ride->alighting == D);
+	}
+	CHECK(table.GetDiagnostic().local_replans == 1);
+	if (alternative) CHECK_FALSE(table.Board(A, D, StateTicks{}, OrderListID{0}, 0, OrderListID::Invalid(), OrderListID{0}).ride);
+}
+
 TEST_CASE("Precomputed trees preserve through rides and physical occurrences", "[passenger][precomputed]")
 {
 	std::array services{Service(0, {A, B, C, D})};

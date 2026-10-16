@@ -1970,6 +1970,7 @@ static void UpdateLoadUnloadTicks(Vehicle *front, const Station *st, int ticks, 
 static void LoadUnloadVehicle(Vehicle *front, PassengerJourneyLoadingContext &loading)
 {
 	assert(front->current_order.IsType(OT_LOADING));
+	const bool already_finished = front->vehicle_flags.Test(VehicleFlag::LoadingFinished);
 
 	StationID last_visited = front->last_station_visited;
 	Station *st = Station::Get(last_visited);
@@ -2422,6 +2423,18 @@ static void LoadUnloadVehicle(Vehicle *front, PassengerJourneyLoadingContext &lo
 
 		if (finished_loading && may_leave_early()) {
 			front->current_order.SetLeaveType(OLT_LEAVE_EARLY);
+		}
+	}
+
+	/* A capacity miss is one completed real loading opportunity, not each
+	 * gradual-loading tick or a read-only HasCargoFor/reservation predicate.
+	 * LoadingFinished is persistent vehicle state and resets on the next stop. */
+	if (_settings_game.linkgraph.passenger_journey_precomputed && !already_finished && front->vehicle_flags.Test(VehicleFlag::LoadingFinished)) {
+		for (CargoType cargo : (cargo_full & ~cargo_not_full)) {
+			if (IsCargoInClass(cargo, CargoClass::Passengers) && front->current_order.GetCargoLoadType(cargo) != OrderLoadType::NoLoad &&
+					st->goods[cargo].data != nullptr && MayLoadUnderExclusiveRights(st, front)) {
+				st->goods[cargo].data->cargo.RecordCapacityMiss(next_station.Get(cargo), front, cargo, loading);
+			}
 		}
 	}
 
