@@ -13,7 +13,7 @@ def summarize(directory, midpoint):
         rows = [{key: int(value) for key, value in row.items()} for row in csv.DictReader(stream)]
     if len(rows) != len(samples) or any(row["tick"] != sample[0] for row, sample in zip(rows, samples)):
         raise ValueError("Profile snapshots must match every measured simulation tick")
-    if process["exit_code"] or process["contamination"] or process["trace_enabled"]:
+    if process["exit_code"] or process["contamination"] or process["trace_enabled"] or process.get("departure_diagnostic"):
         raise ValueError("Expected an uncontaminated, successful, untraced run")
     windows = {"all": (0, len(rows))}
     if midpoint:
@@ -24,6 +24,11 @@ def summarize(directory, midpoint):
     for name, (first, last) in windows.items():
         previous = rows[first - 1] if first else dict.fromkeys(rows[0], 0)
         values = {key: rows[last - 1][key] - previous[key] for key in rows[0] if key != "tick"}
+        if 'capacity_enumeration_ride_calls' in values:
+            for suffix in ('calls', 'ns', 'stops'):
+                values['boarding_enumeration_ride_' + suffix] = values['enumeration_ride_' + suffix] - values['capacity_enumeration_ride_' + suffix]
+                if values['boarding_enumeration_ride_' + suffix] < 0:
+                    raise ValueError('Capacity enumeration must be a subset of all enumeration ride work')
         result[name] = dict(ticks=last - first, counters=values,
                             simulation_ns=sum(sample[1] * 1000 for sample in samples[first:last]),
                             journey_ns=sum(sample[2] * 1000 for sample in samples[first:last]))

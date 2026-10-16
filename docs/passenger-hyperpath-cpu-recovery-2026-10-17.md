@@ -218,3 +218,32 @@ Evidence: [CPU summary](measurements/passenger-hyperpath-cpu-recovery-2026-10-17
 [4,096-tick comparison](measurements/passenger-hyperpath-cpu-recovery-2026-10-17/task2-canonical-4096.json),
 [replacement endpoint](measurements/passenger-hyperpath-cpu-recovery-2026-10-17/task2-cpu-end-state.json)
 and [native tests](measurements/passenger-hyperpath-cpu-recovery-2026-10-17/task2-native-ctest.txt).
+
+The after observer ends in the same 24-field canonical state as the earlier
+before observer. Across 2,048 ticks, cohort count remains 22,842,650 in 154,940
+visitor calls. Enumeration time falls from 7.849864 to 6.157043 seconds
+(-21.56%); its ordinary-tail time falls from 2.206051 to 1.812770 seconds
+(-17.83%). ResolveHyperpath calls fall from 23,374,464 to 778,822 (-96.67%),
+and their measured time from 2.557902 to 0.269540 seconds. The complete group
+predicate now runs 247,008 times, including the unchanged capacity visitor.
+
+Enumeration ride evaluations fall from 208,740 calls / 3,506,823 stops to
+17,570 calls / 220,438 stops. **Every remaining enumeration evaluation belongs
+to RecordCapacityMiss; ordinary boarding enumeration has zero calls/stops.**
+All ride evaluations fall from 215,829 / 3,690,603 stops to 144,933 /
+2,835,865 stops. Their measured time changes only from 174.049 to 143.438 ms,
+again contradicting a dominant full-stop-scan explanation. The conservative
+superset rejects only 443 FIFO range heads; current wrong-boarding-station
+cohort rejections are zero in this interval.
+
+The complete cohort walk remains. About 3.249 seconds of after enumeration
+time is outside the light predicate, essentially unchanged from before.
+Separation removes repeated concrete resolution but does not remove this
+walk, so the observed enumeration cost is only partly recovered. No complete
+explanation for the remaining whole-simulation regression is claimed here.
+The old observer has 17 stages; after adds full-predicate, capacity-ride and
+rejection counters while preserving the original stage definitions.
+
+Evidence: [after attribution](measurements/passenger-hyperpath-cpu-recovery-2026-10-17/task2-after-profile.json),
+[raw counters](measurements/passenger-hyperpath-cpu-recovery-2026-10-17/task2-after-profile-boarding.csv)
+and [observer state control](measurements/passenger-hyperpath-cpu-recovery-2026-10-17/task2-profile-state.json).
