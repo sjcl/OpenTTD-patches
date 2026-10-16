@@ -773,6 +773,8 @@ void PassengerPrecomputedTable::SetSearchLabel(uint32_t state, const Label &labe
  * Only the accepted states touch cold metadata, in original state order. */
 size_t PassengerPrecomputedTable::RelaxIncoming(size_t allowance)
 {
+	size_t total = 0;
+	do {
 	const uint32_t index = static_cast<uint32_t>(this->cursor);
 	const uint32_t range_id = this->hot_edges.range[index];
 	const auto range = range_id == INVALID ? RangeEdge{0, 0, INVALID} : this->range_edges[range_id];
@@ -811,7 +813,9 @@ size_t PassengerPrecomputedTable::RelaxIncoming(size_t allowance)
 	if (this->range_offset < count && this->range_offset != 0 && range.begin + this->range_offset - 1 == range.excluded) ++this->range_offset;
 	if (this->range_offset == count) { ++this->cursor; this->range_offset = 0; }
 	assert(used > 0);
-	return used;
+	total += used; allowance -= used;
+	} while (allowance != 0 && this->cursor < this->incoming_offsets[this->expanding + 1]);
+	return total;
 }
 
 size_t PassengerPrecomputedTable::Step(size_t allowance, bool legacy_publication, const std::function<void(StationID)> &published)
