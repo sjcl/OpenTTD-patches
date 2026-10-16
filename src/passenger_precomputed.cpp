@@ -678,8 +678,11 @@ void PassengerPrecomputedTable::StartDestination()
 {
 	this->scratch.labels.clear();
 	if (this->optimized) {
-		this->search.cost.clear(); this->search.legs.clear(); this->search.metadata.clear();
-		this->search.cost.reserve(this->diagnostic.states); this->search.legs.reserve(this->diagnostic.states); this->search.metadata.reserve(this->diagnostic.states);
+		this->search.cost.clear(); this->search.legs.clear();
+		this->search.cost.reserve(this->diagnostic.states); this->search.legs.reserve(this->diagnostic.states);
+		/* Infinite priorities make old payloads unobservable. Only successful
+		 * relaxations/zero seeds write metadata; every row resets all hot keys. */
+		this->search.metadata.resize(this->diagnostic.states);
 	} else this->scratch.labels.reserve(this->incoming_offsets.size() - 1);
 	this->scratch.alternative.assign(this->stations.size(), Label{});
 	this->prepared.labels.clear(); this->prepared.labels.reserve(this->waiting_state_count);
@@ -690,6 +693,7 @@ void PassengerPrecomputedTable::StartDestination()
 PassengerPrecomputedTable::Label PassengerPrecomputedTable::SearchLabel(uint32_t state) const
 {
 	if (!this->optimized) return this->scratch.labels[state];
+	if (this->search.cost[state] == INT64_MAX) return {};
 	const auto &m = this->search.metadata[state];
 	return {this->search.cost[state], m.riding, m.waiting, m.first_wait, m.board, m.alight, this->search.legs[state], m.distance};
 }
@@ -717,7 +721,7 @@ size_t PassengerPrecomputedTable::Step(size_t allowance, bool legacy_publication
 			if (this->initializing_row) {
 				if (this->optimized) {
 					if (this->search.cost.size() < this->diagnostic.states) {
-						this->search.cost.push_back(INT64_MAX); this->search.legs.push_back(0); this->search.metadata.emplace_back(); continue;
+						this->search.cost.push_back(INT64_MAX); this->search.legs.push_back(0); continue;
 					}
 				} else if (this->scratch.labels.size() < this->diagnostic.states) { this->scratch.labels.emplace_back(); continue; }
 				auto seed = [&](uint32_t state, uint32_t alight = INVALID) {
