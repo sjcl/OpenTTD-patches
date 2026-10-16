@@ -224,6 +224,33 @@ TEST_CASE("JPSD v9 partial trees replay with their original operation sequence",
 	}
 }
 
+TEST_CASE("JPSD v10 optimized cursors retain the pre-range graph and Work sequence", "[passenger][precomputed][save][network]")
+{
+	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = true;
+	auto *train = f.Train({Stop(A), Stop(B), Stop(D)}); auto &db = f.Build(); db.TickPrecomputed(1);
+	std::array records{db.Get(train->orders->index)};
+	PassengerPrecomputedTable original;
+	original.Begin(records, PAX, 0, PassengerPrecomputedTable::MAX_BYTES, true, false, {}, true, true, false);
+	auto wire = db.Save(); size_t offset; LegacyDatabaseWire(wire, 3, &offset);
+	wire[0] = 10; wire.resize(wire.size() - 16);
+	for (size_t allowance : {size_t{1}, size_t{17}, size_t{89}, size_t{300}}) {
+		original.Step(allowance);
+		uint64_t operations = original.GetDiagnostic().operations;
+		for (size_t i = 0; i < 8; ++i) wire[offset + i] = (operations >> (i * 8)) & 255;
+		PassengerServiceDatabase peer; REQUIRE(peer.Load(wire)); peer.FinishLoad(true, true);
+		while (peer.StepLoad(3) == PassengerServiceDatabase::LoadState::Replaying) {}
+		REQUIRE(peer.GetLoadState() == PassengerServiceDatabase::LoadState::Ready);
+		CHECK(peer.GetPrecomputedDiagnostic(PAX).operations == operations);
+		CHECK(peer.GetPrecomputedDiagnostic(PAX).destinations == original.GetDiagnostic().destinations);
+		for (auto from : {A, B, D}) for (auto to : {A, B, D}) {
+			auto a = original.Plan(from, to, NOW), b = peer.PlanPrecomputed(PAX, from, to, NOW);
+			CHECK(a.state == b.state); CHECK(a.ride == b.ride); CHECK(a.cost == b.cost);
+		}
+		auto current = peer.Save(); REQUIRE(current[0] == 11);
+		CHECK(current[current.size() - 32] == 1); CHECK(current[current.size() - 16] == 0);
+	}
+}
+
 TEST_CASE("Unsupported controls never advertise fragments behind a jump refit or halt", "[passenger][precomputed][estimated][orders]")
 {
 	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = true;
