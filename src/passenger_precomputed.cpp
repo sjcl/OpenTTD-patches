@@ -801,12 +801,7 @@ size_t PassengerPrecomputedTable::RelaxIncoming(size_t allowance)
 		const uint32_t legs = finite ? source_legs + delta : UINT32_MAX;
 		size_t used = 0;
 		Label next; bool materialized = false;
-		while (this->range_offset < count && used < allowance) {
-			uint32_t from = this->range_offset == 0 ? this->hot_edges.from[index] : range.begin + this->range_offset - 1;
-			++this->range_offset;
-			if (from == range.excluded) continue;
-			++used;
-			if (!finite || std::tuple(cost, legs) >= std::tuple(this->search.cost[from], this->search.legs[from])) continue;
+		auto accept = [&, index, cost, legs, edge_cost](uint32_t from) {
 			if (!materialized) {
 				const auto &edge = this->cold_edges[index];
 				next = this->SearchLabel(this->expanding); next.cost = cost; next.legs = legs;
@@ -823,9 +818,30 @@ size_t PassengerPrecomputedTable::RelaxIncoming(size_t allowance)
 				materialized = true;
 			}
 			this->SetSearchLabel(from, next); this->queue.emplace(cost, legs, from);
+		};
+		if (this->range_offset == 0) {
+			const uint32_t base = this->hot_edges.from[index];
+			if (finite && (cost < this->search.cost[base] || (cost == this->search.cost[base] && legs < this->search.legs[base]))) accept(base);
+			this->range_offset = 1; used = 1;
 		}
-		/* An excluded final state consumes no work, including at a slice boundary. */
-		if (this->range_offset < count && this->range_offset != 0 && range.begin + this->range_offset - 1 == range.excluded) ++this->range_offset;
+		const uint32_t first = range.begin + this->range_offset - 1;
+		const bool excluded = range.excluded >= first && range.excluded < range.end;
+		const size_t waiting = std::min<size_t>(range.end - first - excluded, allowance - used);
+		/* Include the free hole even when the budget ends immediately before it. */
+		const uint32_t last = first + static_cast<uint32_t>(waiting) + (excluded && range.excluded - first <= waiting);
+		const uint32_t middle = excluded ? std::min(range.excluded, last) : last;
+		/* Bounded waiting spans: only an improving state enters the cold path. */
+		if (finite) {
+			for (uint32_t from = first; from < middle; ++from) {
+				if (cost < this->search.cost[from] || (cost == this->search.cost[from] && legs < this->search.legs[from])) accept(from);
+			}
+			if (excluded && range.excluded < last) {
+				for (uint32_t from = range.excluded + 1; from < last; ++from) {
+					if (cost < this->search.cost[from] || (cost == this->search.cost[from] && legs < this->search.legs[from])) accept(from);
+				}
+			}
+		}
+		this->range_offset += last - first; used += waiting;
 		if (this->range_offset == count) { ++this->cursor; this->range_offset = 0; }
 		assert(used > 0);
 		total += used; allowance -= used;
