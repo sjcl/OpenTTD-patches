@@ -417,7 +417,7 @@ PassengerBuildTask PassengerPrecomputedTable::BuildGraph(std::vector<const Passe
 			if (!success) { this->failed = true; this->diagnostic.envelope = memory; co_return; }
 		}
 		this->diagnostic.envelope = envelope;
-		if (this->optimized && !this->integrated) this->ContractGraph(nodes);
+		if (this->optimized) this->ContractGraph(nodes);
 		this->incoming_offsets.assign(nodes + 1, 0);
 		for (const auto &edge : this->edges) ++this->incoming_offsets[edge.to + 1];
 		for (size_t i = 1; i < this->incoming_offsets.size(); ++i) this->incoming_offsets[i] += this->incoming_offsets[i - 1];
@@ -489,6 +489,16 @@ void PassengerPrecomputedTable::ContractGraph(size_t &nodes)
 	 * or available memory. Tiny pass-through populations keep the old graph. */
 	size_t candidates = std::count_if(this->occurrences.begin(), this->occurrences.end(), [](const auto &o) { return !o.board && !o.alight && !o.forced && o.continues; });
 	if (uint64_t(candidates) * this->stations.size() * 8 <= uint64_t(this->edges.size()) * 2) return;
+	if (this->integrated) {
+		uint64_t logical = this->edges.size();
+		for (const auto &range : this->range_edges) logical += range.end - range.begin - (range.excluded >= range.begin && range.excluded < range.end);
+		/* Range compression can make the physical graph tiny without reducing
+		 * virtual search work. Require at least a one-percent upper bound on
+		 * saved per-row work before paying for degree/rank construction. */
+		if (uint64_t(candidates) * 8 * 100 <= nodes + logical) return;
+	}
+	/* Ranges refer only to the waiting-state prefix, whose ranks never move.
+	 * Their missing per-wait degrees cannot affect pure occurrence nodes. */
 	std::vector<uint32_t> in_degree(nodes), out_degree(nodes), successor(nodes, INVALID), rank(nodes, INVALID);
 	for (uint32_t i = 0; i < this->edges.size(); ++i) {
 		const auto &edge = this->edges[i];
