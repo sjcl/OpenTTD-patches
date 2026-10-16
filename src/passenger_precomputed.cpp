@@ -830,7 +830,12 @@ size_t PassengerPrecomputedTable::Step(size_t allowance, bool legacy_publication
 			if (this->initializing_row) {
 				if (this->optimized) {
 					if (this->search.cost.size() < this->diagnostic.states) {
-						this->search.cost.push_back(INT64_MAX); this->search.legs.push_back(0); continue;
+						/* Resize only the budgeted prefix. Retained capacity is reused;
+						 * no uncharged full-array reset occurs at a row boundary. */
+						size_t count = this->integrated ? std::min(this->diagnostic.states - this->search.cost.size(), allowance - used + 1) : 1;
+						this->search.cost.resize(this->search.cost.size() + count, INT64_MAX);
+						this->search.legs.resize(this->search.legs.size() + count, 0);
+						used += count - 1; continue;
 					}
 				} else if (this->scratch.labels.size() < this->diagnostic.states) { this->scratch.labels.emplace_back(); continue; }
 				auto seed = [&](uint32_t state, uint32_t alight = INVALID) {
