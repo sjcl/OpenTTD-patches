@@ -1,12 +1,17 @@
 # Hyperpath passenger routing
 
-Work in progress on `feat/passenger-hyperpath-routing`, based on
+Implemented and measured on `feat/passenger-hyperpath-routing`, based on
 `667e1548161d976bbc9f0ef87635572a3d8603de`.
 
 The A-mode checkpoint is commit `76b4e51091`. Subsequent changes connect real
 B-mode boarding, local capacity-failure replanning and saved algorithm identity.
-The live MP join/toggle/replacement probe and matched untraced CPU measurements
-are complete. Long-duration matched transport remains pending.
+The live MP join/toggle/replacement probe, matched untraced CPU measurements,
+both 24576-tick transport cases and canonical end-save readback are complete.
+Delivery rises 2.0% and final station waiting falls 14.4%, but **the transport
+quality acceptance goal is not met**: 971→916 gets substantially slower,
+3393→3394 fresh-trip time also worsens, and return rides increase. The functional
+B-mode implementation passes its tests; these measurements do not establish a
+uniformly better routing replacement.
 
 ## Construction
 
@@ -275,8 +280,8 @@ and [512-tick measurements](measurements/passenger-hyperpath-2026-10-16/b-smoke.
 The input's JP+ Multiple Units NewGRF emits capacity-change warnings on both
 peers (27,155 lines each); the probe reports no network error and its explicit
 paused snapshots match. This verifies this fixture/run, not all NewGRF/network
-combinations. Long-duration quality and packet-fragmentation census remain
-pending.
+combinations. The completed long-duration comparison below measures transport
+quality and the failure-state merge counterfactual.
 
 ## Matched CPU and memory
 
@@ -379,10 +384,181 @@ serializes builds and games; frozen measurements, CPU and transport are separate
 stages. The source save and NewGRF asset package are existing local fixtures and
 are not embedded in the result JSON or repository.
 
+## Matched 24576-tick transport
+
+Both modes use the same executable and source save as the CPU pair. Each
+completes exactly 24576 StateTicks and 24576 samples, with successful initial
+warm, exit zero and no detected competing measurement. Tracing is enabled for
+this experiment; its timing must not replace the untraced CPU comparison.
+The cases run sequentially and release the shared resource at the completed
+old-case boundary. No game is interrupted or resumed mid-transport.
+
+| Actual passenger population | Previous | Hyperpath |
+|---|---:|---:|
+| Initial people | 954,776 | 954,776 |
+| Generated during interval | 1,730,357 | 1,732,490 |
+| Delivered | 1,600,764 | 1,632,227 |
+| Delivered with known OD | 934,857 | 967,714 |
+| Remaining, waiting plus onboard | 744,046 | 722,122 |
+| Waiting at endpoint, including reservations | 351,526 | 300,976 |
+| Physically onboard at endpoint | 392,520 | 421,146 |
+| Other population removals, inventory residual | 340,323 | 332,917 |
+
+Delivery increases by 31,463 people (1.97%); known-OD delivery increases 3.51%.
+Waiting falls by 50,550 people (14.38%), while onboard occupancy rises by
+28,626. Thus some reduced station waiting becomes riding, not completed trips.
+Generated demand also differs slightly as the simulated world responds to
+transport. Other removals are a population-balance residual, not a diagnosis of
+their causes. The read-only end-save inventory is complete, agrees with the live
+population totals, and reports zero reserved passengers in both endpoints.
+
+The ordinary observer follows one person in about one packet per 64, with a
+65536-start cap. It records 34,554 / 34,625 starts and 13,510 / 13,420 fresh
+full-trip starts; neither cap is reached. Initial loaded trips are left-censored;
+pending trips are right-censored. These representatives are not a
+population-weighted travel-time estimate. All representative starts, including
+fresh starts, are accounted for, and no completed fresh representative arrives
+at a different original destination.
+
+| Same 7349 initial representatives | Previous | Hyperpath |
+|---|---:|---:|
+| Delivered to original destination | 4268 | 4564 |
+| Pending | 2733 | 2482 |
+| Lost without observed delivery | 348 | 303 |
+
+There are 4028 representatives delivered in both modes. Their remaining-time
+delta (Hyperpath minus previous) has mean −359 ticks, median −14, p95 +3415,
+p99 +6469 and maximum +18342. The complete fate matrix is in the ordinary
+report: 434 old-pending people become delivered, while 172 old-delivered people
+become pending. The improved delivery count does not remove large individual
+regressions.
+
+| Completed fresh representative trips | Previous | Hyperpath |
+|---|---:|---:|
+| Count | 6074 | 6174 |
+| Travel ticks, mean / p95 / p99 | 3177.55 / 8131 / 10601 | 3164.70 / 7998 / 10500 |
+| Riding ticks, mean | 1794.51 | 1863.09 |
+| Waiting ticks, mean | 1383.04 | 1301.60 |
+| Distance, mean in 1/16-tile Manhattan units | 932.38 | 982.58 |
+| Transfers, mean / p95 / p99 | 0.377 / 2 / 3 | 0.407 / 2 / 3 |
+| Revisits, mean / p99 / maximum | 0.00115 / 0 / 2 | 0.05410 / 2 / 9 |
+
+Fresh delivered mean time changes −0.4%, waiting −5.9%, riding +3.8% and distance
++5.4%. These are different delivered cohorts conditioned on completion; there
+are also 5260 / 5138 right-censored fresh trips and 2176 / 2108 lost fresh
+representatives. Across all fresh fates, 24 / 393 representatives revisit a
+station and 23 / 391 make an immediate return. Completed fresh trips with an
+immediate return number 4 / 215. Return counters include intermediate stops on
+one bound vehicle, not just repeated transfer/replanning loops. The increase is
+real physical backtracking and must not be hidden by the lower station-wait
+count. Across 290 ODs with at least three completed fresh representatives in
+each mode, the median OD mean-time ratio is 1.023 and p95 is 1.688; there are no
+ODs with at least ten completed fresh observations in both ordinary samples.
+
+### Target ODs
+
+The independent focused observer selects all packet representatives for the
+three target ODs. It is not pooled with the ordinary sample. Its initial set is
+54 people: 53 arrive and one remains pending in both modes.
+
+| OD and observation cohort | Count per mode | Previous mean ticks | Hyperpath mean ticks |
+|---|---:|---:|---:|
+| 3222→400, same initial people, remaining time | 7 | 3992.14 | 1668.00 |
+| 971→916, same initial delivered people, remaining time | 46 | 6049.65 | 9100.37 |
+| 3393→3394, fresh completed representatives | 110 / 108 | 2744.17 | 3137.81 |
+
+3222→400 improves 58.2% in this initial cohort. 971→916 worsens 50.4%; its
+median remaining time rises from 2333 to 9382 ticks. The one initial pending
+person is also a 971→916 trip. There are no completed fresh full-trip observations
+for the first two ODs in this interval, so their loaded-trip results must not be
+called full travel times. For 3393→3394, fresh mean time worsens 14.3%, p95
+6636→8447, with no transfers and the same mean distance of 208 units. Waiting
+is the larger component; these fresh cohorts are not paired identities.
+
+For a concrete 971→916 example, initial person `40772:2` transfers at station
+385 in both modes. Previously it boards service 300 at order 1 and arrives
+after 2333 ticks. Hyperpath observes three service-300 candidate probes with
+zero free capacity, then boards a positive-capacity vehicle at order 65 in the
+same tick as that probe. It passes `385→387→385→913→916` and arrives after
+14998 ticks, with 11934 waiting ticks versus 583 previously. The boarding and
+alighting are legal, and the repeated occurrence is in the attractive policy.
+This identifies crowding and occurrence choice in the observed delay; the
+probe trace does not isolate every cause of mode-wide demand redistribution.
+
+The requested SF rule can accept a vehicle before it makes an out-and-back
+section when its frozen post-boarding cost is below the strategy expectation.
+The actual same-vehicle opportunities are correlated. Boarding such a vehicle
+can occupy seats and reduce station waiting without improving arrival time.
+This is a transport-quality limitation of this result, not evidence that a
+different alighting formula was used: all published forward/reverse x assertions
+remain enabled and pass. The current implementation does not correct phases or
+learn global crowding, as excluded by the requested scope.
+
+Real boarding records include both services 508/509 for the 971→916 corridor
+and both 524/525 for 3393→3394. The latter's observed focused boardings are
+29/80 in Hyperpath; service 528 is not observed boarding in this interval.
+The local/express synthetic tests cover both first-arrival orders. Target
+validation probes remain a partial indexed observation: there are 55 unique
+zero-capacity candidate probes in the focused Hyperpath data (51 for 971→916,
+4 for 3222→400), not a population census of rejected opportunities.
+
+### Capacity, packets and saved endpoints
+
+Across the complete Hyperpath interval, native completed-loading hooks record
+804,313 missed packet / 1,643,287 passenger opportunities. These can include
+several opportunities for one person. The lifetime diagnostic records 420,547
+shared local-policy computations in 2.5446251 seconds total, about 6.05
+microseconds per computation. Native inclusive boarding time is 1.309 s versus
+2.112 s previously, and waiting/routing time is 100.113 s versus 51.389 s;
+these traced inclusive scopes are not isolated per-lookup CPU measurements.
+The warm/cold lookup scaling test and untraced CPU pair above give separate
+evidence. Unqueried ineligible vehicles/packets are absent from reason probes;
+population totals for every non-capacity rejection reason are not measured.
+
+| Endpoint packet census | Previous | Hyperpath |
+|---|---:|---:|
+| All CargoPackets, all cargos | 463,299 | 458,858 |
+| Passenger CargoPackets, all ownership modes | 457,573 | 453,139 |
+| Passenger station packets | 216,523 | 175,103 |
+| Station packets / people carrying failure state | 0 / 0 | 37,344 / 89,281 |
+| Minimum repacked station packets, strict state | 209,510 | 165,712 |
+| Minimum repacked station packets, ignoring only failure state | 209,510 | 165,522 |
+
+Ignoring only failure state saves 190 repacking bins at the Hyperpath endpoint
+(0.115% of the neutral minimum). This read-only counterfactual fixes endpoint
+people and all other merge attributes, and permits splitting/repacking. It
+measures the extra minimum at that endpoint, not historical rejected merges or
+the total causal fragmentation over a run. Live queues do not eagerly repack.
+The total packet reduction between modes also includes changed routes, loads,
+deliveries and removals, so it cannot be attributed solely to the merge rule.
+
+Both end saves reload at the exact ending StateTicks with zero canonical
+packet/payment/database/ownership/loading/publication/delivery differences.
+The derived ready-row/work gauges await table replay and are excluded from
+that readback comparison. At transport end, current / retained rows are
+1271 / 3646 versus 3873 / 1044, with the same 1,478,098,944 background Work.
+The shorter Hyperpath Work total publishes more rows within that budget.
+
+Evidence: [manifest and raw hashes](measurements/passenger-hyperpath-2026-10-16/long-manifest.json),
+[ordinary results and paired initial people](measurements/passenger-hyperpath-2026-10-16/long-transport-ordinary.json),
+[focused results](measurements/passenger-hyperpath-2026-10-16/long-transport-focused.json),
+[outlier paths](measurements/passenger-hyperpath-2026-10-16/long-outliers.json),
+[40772:2 event trace](measurements/passenger-hyperpath-2026-10-16/long-focus-40772.json),
+[canonical readback, inventory and merge census](measurements/passenger-hyperpath-2026-10-16/long-readback.json),
+and [traced process observations](measurements/passenger-hyperpath-2026-10-16/long-simulation.json).
+Raw tick samples and compact process records are also committed alongside
+these files. Full CSVs remain in the local measurement directories with hashes
+in each compact process record.
+
+The remaining quality work is to address return-trip boarding and crowding
+regressions while preserving candidate/boarding consistency, then repeat the
+matched transport comparison. This branch's CPU, memory and target-OD
+regressions prevent an unqualified claim that all requested quality goals pass.
+
 ## Correctness coverage
 
-The following obligations are covered by the current tests. Long-duration
-transport measurements remain pending.
+The following obligations are covered by the current tests. The long-duration
+transport results above add measured benefits and regressions.
 
 | Requested cases | Evidence in the tests |
 |---|---|
@@ -407,3 +583,11 @@ now wakes due entries before its empty-policy fast exit. Both paths record the
 same service, incarnation, count and start tick. Legacy full trains still avoid
 additional routing/validation calls. Evidence: [counterexample](measurements/passenger-hyperpath-2026-10-16/capacity-readiness-before-fix.log)
 and [715-test run](measurements/passenger-hyperpath-2026-10-16/ctest-readiness-fix.log).
+
+After measurements, the original CMake projects and normal product/test
+executables were restored, with no copied measurement translation units in the
+projects. The four native first-arrival, local-only-destination, readiness and
+reservation regression cases pass again. Native executable SHA-256 is
+`066a81505e57647de6420f471d42a021611c53428804c3ab27e1c3f258b5e8e7`.
+Evidence: [native build metadata](measurements/passenger-hyperpath-2026-10-16/native-final.json)
+and [native regression run](measurements/passenger-hyperpath-2026-10-16/native-final-tests.log).

@@ -44,7 +44,7 @@ def main():
         scripts.mkdir()
         log = (directory / 'console.txt').as_posix()
         census = 'passenger_journey_stats hyperpath_merge_census\n' if args.hyperpath_census else ''
-        (scripts / 'game_start.scr').write_text(f'script {log}\ngetfulldate\npassenger_journey_stats total\n' + census +
+        (scripts / 'game_start.scr').write_text(f'script {log}\ngetfulldate\npassenger_journey_stats total\npassenger_journey_stats inventory\n' + census +
                                               'passenger_journey_stats save_integrity\nscript\nquit\n', encoding='utf-8')
         command = [str(args.binary.resolve()), '-x', '-X', '-c', 'openttd.cfg', '-snull', '-mnull',
                    f'-D127.0.0.1:{17610 + index}', '-g', 'input.sav']
@@ -63,6 +63,25 @@ def main():
         events = {key:int(value) for key, value in re.findall(r'(\w+)=(-?\d+)', line)}
         results.append(dict(run=run.name, canonical_mismatches=mismatches, state_ticks=actual['state_ticks'],
                             active_events=events))
+        inventory_line = next(line for line in console.splitlines() if 'Passenger inventory: ' in line)
+        if 'Passenger inventory: complete;' not in inventory_line:
+            raise RuntimeError(f'The endpoint passenger inventory is incomplete: {run.name}')
+        inventory = {key:int(value) for key, value in re.findall(r'(\w+)=(-?\d+)', inventory_line)}
+        modes = {}
+        for line in console.splitlines():
+            match = re.search(r'Inventory (Legacy|Journey|Fallback): (\d+) people/(\d+) packets; known_OD=(\d+) people', line)
+            if match:
+                modes[match[1]] = dict(people=int(match[2]), packets=int(match[3]), known_OD=int(match[4]))
+        if len(modes) != 3 or inventory['available'] + inventory['reserved'] != inventory['waiting'] or inventory['waiting'] > sum(mode['people'] for mode in modes.values()):
+            raise RuntimeError(f'Inconsistent endpoint inventory: {run.name}')
+        metadata = run / 'transport-trace-meta.txt'
+        if metadata.is_file():
+            counts = {key:int(value) for key, value in re.findall(r'^(\w+)=(\d+)$', metadata.read_text(encoding='utf-8'), re.M)}
+            if sum(mode['people'] for mode in modes.values()) != counts['remaining_passengers'] or sum(mode['known_OD'] for mode in modes.values()) != counts['remaining_known_passengers']:
+                raise RuntimeError(f'End-save inventory differs from the live transport census: {run.name}')
+        results[-1]['passenger_inventory'] = dict(complete=True, **inventory, modes=modes,
+            total_people=sum(mode['people'] for mode in modes.values()),
+            physically_onboard_people=sum(mode['people'] for mode in modes.values()) - inventory['waiting'])
         if args.hyperpath_census:
             results[-1]['merge_census'] = json.loads((directory / 'hyperpath-merge-census.json').read_text(encoding='utf-8'))
         print(run.name, events, flush=True)

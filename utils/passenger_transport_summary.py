@@ -212,7 +212,7 @@ def summarize(directory):
                                   initial_known=meta['initial_known_passengers'], assigned_known=meta['assigned_units'],
                                   delivered_known=population['known_od_delivered'], remaining_known=meta['remaining_known_passengers'],
                                   known_removals_or_destination_invalidation=meta['initial_known_passengers'] + meta['assigned_units'] - population['known_od_delivered'] - meta['remaining_known_passengers'])
-    return dict(run=directory.name,
+    return dict(run=directory.parent.name if focused and directory.name == 'focus-view' else directory.name,
                 sampling_method=('target_od_packet_representatives' if focused else 'hash_one_in_64_packet_representatives'),
                 target_validation_probes=target_probe_summary(directory),
                 delivered_samples=len(delivered), complete_trip_samples=len(complete),
