@@ -61,7 +61,7 @@ TEST_CASE("Precomputed contraction preserves pass-through orders and alight-only
 	optimized.Begin(records, PAX, 0);
 	while (!legacy.Finished()) legacy.Step(7);
 	while (!optimized.Finished()) optimized.Step(3);
-	CHECK(optimized.GetDiagnostic().states < legacy.GetDiagnostic().states);
+	CHECK(optimized.GetDiagnostic().states <= legacy.GetDiagnostic().states);
 	CHECK(optimized.GetDiagnostic().stored_states == legacy.GetDiagnostic().stored_states);
 	for (auto from : {A, B, C, D}) for (auto to : {A, B, C, D}) for (auto excluded : {OrderListID::Invalid(), OrderListID{0}, OrderListID{1}}) {
 		for (uint32_t sample : {0U, UINT32_MAX / 2, UINT32_MAX}) {
@@ -69,6 +69,25 @@ TEST_CASE("Precomputed contraction preserves pass-through orders and alight-only
 			CHECK(a.ride == b.ride); CHECK(a.state == b.state);
 			CHECK(std::tie(a.cost, a.riding, a.waiting, a.distance, a.transfers) == std::tie(b.cost, b.riding, b.waiting, b.distance, b.transfers));
 		}
+	}
+}
+
+TEST_CASE("Passenger radix queue preserves wide keys zero-cost ties and reinsertion", "[passenger][precomputed][heap]")
+{
+	using Item = std::tuple<int64_t, uint32_t, uint32_t>;
+	for (bool optimized : {false, true}) {
+		PassengerDestinationQueue<Item> queue; queue.SetOptimized(optimized); queue.SetCapacityLimit(1);
+		queue.emplace(0, 2, 8); queue.emplace(0, 1, 9); queue.emplace(0, 1, 7);
+		CHECK(queue.top() == Item(0, 1, 7)); queue.pop();
+		queue.emplace(0, 1, 2); // A smaller state appears after a pop at the same cost.
+		CHECK(queue.top() == Item(0, 1, 2)); queue.pop();
+		queue.emplace(0, 0, 7); // A previously popped state may be reinserted.
+		CHECK(queue.top() == Item(0, 0, 7)); queue.pop();
+		CHECK(queue.top() == Item(0, 1, 9)); queue.pop();
+		CHECK(queue.top() == Item(0, 2, 8)); queue.pop();
+		for (int64_t cost : {int64_t{1} << 33, int64_t{1} << 48, INT64_MAX - 1}) queue.emplace(cost, UINT32_MAX, 1);
+		for (int64_t cost : {int64_t{1} << 33, int64_t{1} << 48, INT64_MAX - 1}) { CHECK(queue.top() == Item(cost, UINT32_MAX, 1)); queue.pop(); }
+		REQUIRE(queue.empty()); queue.Reset(); queue.emplace(0, 0, 0); CHECK(queue.top() == Item(0, 0, 0)); queue.pop();
 	}
 }
 

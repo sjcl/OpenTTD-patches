@@ -10,6 +10,7 @@
 #include "passenger_journey_type.h"
 #include "cargo_type.h"
 #include "passenger_build_task.h"
+#include "core/passenger_queue.hpp"
 #include <queue>
 #include <functional>
 #include <unordered_map>
@@ -123,7 +124,7 @@ private:
 	size_t reachable_bytes = 0;
 	Row scratch, prepared;
 	size_t waiting_state_count = 0;
-	std::priority_queue<QueueItem, std::vector<QueueItem>, std::greater<QueueItem>> queue;
+	PassengerDestinationQueue<QueueItem> queue;
 	size_t destination = 0, cursor = 0;
 	uint32_t expanding = INVALID;
 	size_t finishing = 0;

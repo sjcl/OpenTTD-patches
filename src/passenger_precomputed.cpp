@@ -255,6 +255,7 @@ PassengerBuildTask PassengerPrecomputedTable::BuildGraph(std::vector<const Passe
 		}
 	}
 	try {
+		this->queue.SetOptimized(this->optimized);
 		this->station_index.assign(StationID::Invalid().base(), INVALID);
 		this->service_pattern.assign(OrderListID::Invalid().base(), INVALID);
 		std::map<std::vector<int64_t>, std::vector<const PassengerPeriodicService *>> groups;
@@ -431,6 +432,7 @@ PassengerBuildTask PassengerPrecomputedTable::BuildGraph(std::vector<const Passe
 		this->rows.reserve(this->stations.size());
 		this->diagnostic.stations = this->stations.size(); this->diagnostic.patterns = this->patterns.size();
 		this->diagnostic.states = nodes; this->diagnostic.edges = this->edges.size();
+		this->queue.SetCapacityLimit(uint64_t(this->edges.size()) + nodes);
 		if (!this->stations.empty()) this->StartDestination();
 	} catch (const std::bad_alloc &) {
 		/* Local OOM cannot select different routes on one network peer. The
@@ -695,6 +697,7 @@ PassengerBuildTask PassengerPrecomputedTable::BuildSections(const std::vector<st
 
 void PassengerPrecomputedTable::StartDestination()
 {
+	this->queue.Reset();
 	this->scratch.labels.clear();
 	if (this->optimized) {
 		this->search.cost.clear(); this->search.legs.clear();
@@ -865,6 +868,7 @@ size_t PassengerPrecomputedTable::Step(size_t allowance, bool legacy_publication
 			this->section_rides.capacity() * sizeof(SectionRide) + this->landings.capacity() * sizeof(uint32_t);
 	this->diagnostic.bytes += this->binding_bytes + this->reachable_bytes;
 	this->diagnostic.bytes += (this->seed_offsets.capacity() + this->seed_occurrences.capacity()) * sizeof(uint32_t);
+	this->diagnostic.bytes += this->queue.AllocatedBytes();
 	this->diagnostic.bytes += this->search.cost.capacity() * sizeof(int64_t) + this->search.legs.capacity() * sizeof(uint32_t) + this->search.metadata.capacity() * sizeof(LabelMetadata);
 	return used;
 }
