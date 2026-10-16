@@ -1,0 +1,23 @@
+dbg: [net:3] Starting network
+dbg: [net:3] Initializing UDP listeners
+dbg: [net:3] Network online, multiplayer available
+dbg: [net:3] Detected broadcast addresses:
+dbg: [net:3]   0) 172.25.15.255
+dbg: [net:3]   1) 192.168.1.255
+dbg: [net:3]   2) 169.254.255.255
+dbg: [net:3] Network revision name: jgrpp-ya-0.73.3+2-173-g667e15481
+[2026-10-16 12:49:23] dbg: [net:3] Initializing UDP listeners
+[2026-10-16 12:49:23] dbg: [net:3] Connected to 127.0.0.1:17530
+[2026-10-16 12:49:23] dbg: [net:3] [crypto] Creating a new random key
+[2026-10-16 12:49:25] dbg: [net:1] Missed frame for sync-test: 200 / 208
+[2026-10-16 12:49:28] dbg: [net:1] Missed frame for sync-test: 300 / 304
+[2026-10-16 12:49:34] dbg: [net:1] Missed frame for sync-test: 500 / 505
+[2026-10-16 12:49:36] dbg: [net:1] Missed frame for sync-test: 600 / 608
+[2026-10-16 12:49:39] dbg: [net:1] Missed frame for sync-test: 700 / 704
+[2026-10-16 12:49:42] dbg: [net:1] Missed frame for sync-test: 800 / 801
+[2026-10-16 12:49:44] dbg: [net:1] Missed frame for sync-test: 900 / 904
+[2026-10-16 12:49:47] dbg: [net:1] Missed frame for sync-test: 1000 / 1009
+[2026-10-16 12:49:50] dbg: [net:1] Missed frame for sync-test: 1100 / 1102
+[2026-10-16 12:49:52] dbg: [net:1] Missed frame for sync-test: 1200 / 1201
+[2026-10-16 12:49:55] dbg: [net:1] Missed frame for sync-test: 1300 / 1303
+[2026-10-16 12:49:58] dbg: [net:3] Closed client connection 0

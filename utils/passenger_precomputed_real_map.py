@@ -79,6 +79,10 @@ def census(args):
         warm = '''
     if (operation == "build_precomputed") {
         auto &db = GetPassengerServiceDatabase();
+        if (db.GetLoadState() != PassengerServiceDatabase::LoadState::Ready) {
+            IConsolePrint(CC_ERROR, "Warm build probe requires completed passenger save replay.");
+            return false;
+        }
         bool ready = false;
         const auto started = std::chrono::steady_clock::now();
         for (int i = 0; i < 4096; ++i) {
@@ -139,8 +143,10 @@ def driver(args):
                 std::string line;
                 while (std::getline(clock, line)) {
                     constexpr std::string_view prefix = "State ticks: ";
-                    if (!line.starts_with(prefix)) continue;
-                    auto parsed = std::from_chars(line.data() + prefix.size(), line.data() + line.size(), start);
+                    /* Console logging can prefix each line with a timestamp. */
+                    const auto offset = line.find(prefix);
+                    if (offset == std::string::npos) continue;
+                    auto parsed = std::from_chars(line.data() + offset + prefix.size(), line.data() + line.size(), start);
                     if (parsed.ec != std::errc{}) continue;
                     started = true;
                     before = start;
@@ -337,11 +343,13 @@ def run(args):
     if any(c.isspace() for c in str(directory)):
         raise ValueError("Console scripts require an output directory without whitespace")
     directory.mkdir(parents=True, exist_ok=False)
-    lock_path = pathlib.Path(tempfile.gettempdir()) / "openttd-passenger-routing-measurement.lock"
+    lock_name = f"openttd-passenger-routing-validation-{os.getpid()}.lock" if args.validation_only else "openttd-passenger-routing-measurement.lock"
+    lock_path = pathlib.Path(tempfile.gettempdir()) / lock_name
     lock = PROFILE.acquire_measurement_lock(lock_path, 60)
     try:
         os.write(lock, json.dumps(dict(pid=os.getpid(), output=str(directory))).encode())
-        PROFILE.wait_for_idle(60, 5)
+        if not args.validation_only:
+            PROFILE.wait_for_idle(60, 5)
         package = args.package.resolve()
         manifest = json.loads((package / "package.json").read_text(encoding="utf-8"))
         if PROFILE.sha256(args.input or package / "input.sav") != manifest["input_sha256"] and args.input is None:
@@ -391,7 +399,7 @@ def run(args):
         finish = f"script {log}\ngetfulldate\npassenger_journey_stats inventory\npassenger_journey_stats total\npassenger_journey_stats save_integrity\nsave {result}\nscript\n"
         if args.quality_probe:
             finish = finish.replace("passenger_journey_stats total\n", "passenger_journey_stats total\npassenger_journey_stats quality_probe\n")
-        start += "unpause\nscript\n" if args.ticks else "script\n" + finish + "quit\n"
+        start += "unpause\nscript\n" if args.ticks else ("unpause\n" if args.unpause_before_save else "") + "script\n" + finish + "quit\n"
         (scripts / "game_start.scr").write_text(start, encoding="utf-8")
         (scripts / "passenger_benchmark_end.scr").write_text(finish, encoding="utf-8")
         command = [str(directory / "openttd.exe"), "-x", "-X", "-c", "openttd.cfg", "-g", "input.sav", "-v",
@@ -424,6 +432,8 @@ def run(args):
             resume_settings=args.resume, fixture_timetable=args.fixture_timetable, fixture_estimated=args.fixture_estimated, cold_precomputed=args.cold_precomputed,
             precomputed=args.precomputed, warm_precomputed=args.warm_precomputed,
             rebuild_precomputed=args.rebuild_precomputed, command=command, **observed)
+        metadata["unpause_before_save"] = args.unpause_before_save
+        metadata["validation_only"] = args.validation_only
         for name in ("actual-ticks.json", "save-integrity.json"):
             if (directory / name).is_file():
                 metadata[name] = json.loads((directory / name).read_text(encoding="utf-8"))
@@ -442,7 +452,7 @@ def run(args):
                 raise RuntimeError("The initial cold snapshot finalized transport observation")
         dump(directory / "process.json", metadata)
         print(json.dumps({k:v for k,v in metadata.items() if k != "actual-ticks.json"}, indent=2), flush=True)
-        if process.returncode or contamination or metadata["load_failed"] or metadata["warm_complete"] is False or "result_sha256" not in metadata or "save-integrity.json" not in metadata:
+        if process.returncode or (contamination and not args.validation_only) or metadata["load_failed"] or metadata["warm_complete"] is False or "result_sha256" not in metadata or "save-integrity.json" not in metadata:
             raise RuntimeError(f"Invalid run; see {directory}")
         if args.ticks and (metadata["actual-ticks.json"]["end_tick"] - metadata["actual-ticks.json"]["start_tick"] != args.ticks or len(metadata["actual-ticks.json"]["samples"]) != args.ticks):
             raise RuntimeError("Actual simulation tick count differs from requested")
@@ -455,6 +465,8 @@ def summarize(args):
     rows = []
     for directory in args.runs:
         process = json.loads((directory / "process.json").read_text(encoding="utf-8"))
+        if process.get("validation_only"):
+            raise ValueError(f"Correctness-only run cannot be summarized as performance: {directory}")
         samples = process.get("actual-ticks.json", {}).get("samples", [])
         def distribution(values):
             values = sorted(values)
@@ -471,6 +483,7 @@ def summarize(args):
         lines = (directory / "on-1-console.txt").read_text(encoding="utf-8", errors="replace").splitlines()
         observations = {}
         for line in lines:
+            line = re.sub(r"^\[\d{4}-\d\d-\d\d \d\d:\d\d:\d\d\] ", "", line)
             if ": " not in line:
                 continue
             name, rest = line.split(": ", 1)
@@ -526,6 +539,8 @@ def main():
     p.add_argument("--cold-precomputed", action="store_true", help="Discard saved rows through the normal disable callback before enabling and warming; requires --precomputed --warm-precomputed")
     p.add_argument("--warm-precomputed", action="store_true", help="Complete mandatory rows while paused before the first tick; initial build CPU remains in process totals")
     p.add_argument("--rebuild-precomputed", action="store_true", help="Start with complete rows then change the transfer penalty to 17; measure ordinary replacement ticks")
+    p.add_argument("--unpause-before-save", action="store_true", help="For a zero-tick MP fixture, use the ordinary unpause command before saving without advancing simulation")
+    p.add_argument("--validation-only", action="store_true", help="Allow other processes for a correctness-only load; record them and prohibit performance summarization")
     p.add_argument("--precomputed", action=argparse.BooleanOptionalAction, default=None)
     p = sub.add_parser("summarize")
     p.add_argument("output", type=pathlib.Path)

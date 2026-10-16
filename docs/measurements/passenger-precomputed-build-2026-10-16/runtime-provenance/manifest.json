@@ -1,0 +1,25 @@
+{
+  "checkpoint": "667e1548161d976bbc9f0ef87635572a3d8603de",
+  "source_head": "667e1548161d976bbc9f0ef87635572a3d8603de",
+  "product_core": "3429f283b2",
+  "product_source_sha256": {
+    "src/passenger_precomputed.cpp": "d89fb2a43a0614a9255addcd31a9cdd69cf47e82d5aceec5fd06ba246883aaec",
+    "src/passenger_precomputed.h": "8e51935b3f5855edca482da3c887bcba34bde7e83fdee8c95a6edd54123d4bd4",
+    "src/passenger_service_database.cpp": "bbad621bb6b4e0009a86b6dcd39ec0e2ad03b7aecfd98338c3b908c4996c61ae",
+    "src/passenger_service_database.h": "6b5f0c3f753ca655c9e1a008413f4de802aa15b4c98830b4b978b97b5d3ccf25",
+    "src/sl/extended_ver_sl.cpp": "4deb8f54c1294c235c920bd512fb041542949573a5faacc591b4bbcacedfa8b1"
+  },
+  "binaries": {
+    "final-cpu-binary\\openttd.exe": "3be5164f0e2181e86f8d9c1f134f9bada57ba04463b2dc8af4be0266c4c121e1",
+    "final-mp-binary\\openttd.exe": "4a1b0cd59155573dd83395feca46c970fa84cd26476821245e5645bde18f12ed",
+    "Release\\openttd.exe": "244b4a5fbc883270216d50edff30dd52dece5847e09b7cb8a455b3e53dfa348a"
+  },
+  "tools": {
+    "passenger_precomputed_benchmark.py": "80500c29fa410bfb4adddd716f74357c00aa2e533ea721fd4f6332f19e5f0c8a",
+    "passenger_precomputed_diagnostic_readback.py": "5da9ef3983e3e2ade63d70c3c10622d016efcc0a49e6362ad2790fedf66a7378",
+    "passenger_precomputed_join.py": "9878d75a371bf4646e8f69937217987db5f5c132952d839d154111382df3f371",
+    "passenger_precomputed_join_prepare.py": "b44dbfcb7f91779788750534b702ddb3274d3e3484f322634f7535dbfdfd3898",
+    "passenger_precomputed_real_map.py": "a8890e714296be2a981360c3593ed2c6c849b08e32ab7dabd08ec9a395eef97d"
+  },
+  "method": "Copied measurement TUs only; product project restored; no routing or timeout changes after checkpoint."
+}

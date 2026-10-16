@@ -92,7 +92,12 @@ def main():
     anchor = '    if (operation == "build_precomputed") {'
     assert text.count(anchor) == 1
     text = text.replace(anchor, '''    if (operation == "partial_precomputed") {
-        GetPassengerServiceDatabase().TickPrecomputed(64 * 1024 * 1024);
+        auto &db = GetPassengerServiceDatabase();
+        if (db.GetLoadState() != PassengerServiceDatabase::LoadState::Ready) {
+            IConsolePrint(CC_ERROR, "Partial build probe requires completed passenger save replay.");
+            return false;
+        }
+        db.TickPrecomputed(64 * 1024 * 1024);
         return true;
     }
 ''' + anchor)

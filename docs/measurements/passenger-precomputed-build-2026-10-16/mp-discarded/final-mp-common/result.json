@@ -1,0 +1,29 @@
+{
+  "address": "127.0.0.1:17529",
+  "default_timeouts": true,
+  "paused_join": true,
+  "input": "C:\\Users\\bebe\\.codex\\worktrees\\c430\\OpenTTD-patches\\build-msvc\\runtime-common-input\\result.sav",
+  "joined": false,
+  "packet_payment_equal": false,
+  "binary_sha256": "e7e90cfe7f5c2f06523cf2e50e2f796c7440a397309735b1f2a477b6b19c0b60",
+  "input_sha256": "ca42a90f558ed2c07323b66b5cf2f5632d1c522b6bc79a7371b3d0797ccd1c97",
+  "requested_ticks": 512,
+  "initial_build": true,
+  "stall_test": false,
+  "frame_freq": 20,
+  "wait_server_ready": false,
+  "observation_timeout_seconds": 1900,
+  "error": "Server did not finish loading",
+  "pass": false,
+  "network_error": false,
+  "elapsed_seconds": 3.325519099831581,
+  "process_observations": {
+    "0_peak_working_bytes": 1083936768,
+    "0_peak_commit_bytes": 1074929664,
+    "0_process_cpu_seconds": 3.21875
+  },
+  "newgrf_warning_lines": {
+    "server": 0,
+    "client": 0
+  }
+}
