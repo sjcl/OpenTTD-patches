@@ -30,11 +30,73 @@
 #include <random>
 #include "passenger_table_build_simd.h"
 
+/** Inspect exact heap arrays without popping, rebuilding or normalizing them. */
+template <typename Item> struct PassengerDestinationQueueInspector {
+	static auto Snapshot(const PassengerDestinationQueue<Item> &queue)
+	{
+		using Buckets = std::array<std::vector<Item>, 65>;
+		const auto *radix = queue.radix.get();
+		std::array<size_t, 65> capacities{};
+		if (radix) for (size_t i = 0; i < capacities.size(); ++i) capacities[i] = radix->buckets[i].capacity();
+		return std::tuple(radix != nullptr, queue.legacy.c, radix ? radix->zero.c : std::vector<Item>{}, radix ? radix->buckets : Buckets{},
+				radix ? radix->last : 0, radix ? radix->count : 0, radix ? radix->retained_limit : 0, radix ? radix->bucket_bytes : 0,
+				queue.legacy.c.capacity(), radix ? radix->zero.c.capacity() : 0, capacities, queue.AllocatedBytes());
+	}
+};
+
 namespace {
 template <typename L> auto Values(const L &l)
 {
 	return std::tuple(l.cost, l.riding, l.waiting, l.first_wait, l.board, l.alight, l.legs, l.distance);
 }
+template <typename T> const auto &StoredLabel(const T &table, const typename T::Row &row, uint32_t origin, uint32_t state)
+{
+	if constexpr (requires { table.RowLabel(row, origin, state); }) return table.RowLabel(row, origin, state);
+	else return row.labels[state];
+}
+template <typename T> const auto &StoredAlternative(const T &table, const typename T::Row &row, uint32_t origin)
+{
+	if constexpr (requires { table.AlternativeLabel(row, origin); }) return table.AlternativeLabel(row, origin);
+	else return row.alternative[origin];
+}
+template <typename T> void RowStatistics(const T &table, const char *name)
+{
+	uint64_t rows = 0, exceptions = 0, alternatives = 0, metadata_ties = 0, actual_payload = 0;
+	uint64_t eligible = std::count_if(table.waiting_states.begin(), table.waiting_states.end(), [](const auto &states) { return !states.empty(); });
+	for (const auto &row : table.rows) {
+		if (row.labels.empty()) continue;
+		++rows;
+		if constexpr (requires { row.AllocatedBytes(); }) actual_payload += row.AllocatedBytes();
+		else actual_payload += (row.labels.capacity() + row.alternative.capacity()) * sizeof(typename T::Label);
+		for (uint32_t origin = 0; origin < table.stations.size(); ++origin) {
+			const auto &base = StoredLabel(table, row, origin, origin);
+			unsigned differences = 0;
+			for (const auto &[pattern, state] : table.waiting_states[origin]) {
+				const auto &label = StoredLabel(table, row, origin, state);
+				if (Values(label) == Values(base)) continue;
+				++differences;
+				if (label.cost == base.cost && label.legs == base.legs) ++metadata_ties;
+			}
+			REQUIRE(differences <= 1); exceptions += differences;
+			const auto &alt = StoredAlternative(table, row, origin);
+			if (alt.board != T::INVALID) ++alternatives;
+			else REQUIRE(Values(alt) == Values(typename T::Label{}));
+		}
+	}
+	struct SparseException { uint32_t state; typename T::Label label; };
+	const uint64_t cells = rows * table.stations.size(), labels = sizeof(typename T::Label), id = sizeof(uint32_t);
+	const uint64_t dense = cells * (3 * labels + id);
+	const uint64_t dense_eligible = cells * (2 * labels) + rows * eligible * (labels + id) + table.stations.size() * id;
+	const uint64_t sparse_exception = cells * (2 * labels + id) + exceptions * sizeof(SparseException);
+	const uint64_t sparse_both = cells * (labels + 2 * id) + exceptions * sizeof(SparseException) + alternatives * labels;
+	const uint64_t dense_exception_sparse_alternative = cells * (labels + id) + rows * eligible * (labels + id) + alternatives * labels + table.stations.size() * id;
+	std::cout << "row_distribution," << name << ',' << rows << ',' << table.stations.size() << ',' << cells << ',' << rows * eligible
+		<< ',' << exceptions << ',' << alternatives << ',' << metadata_ties << ',' << actual_payload << ',' << dense << ',' << dense_eligible
+		<< ',' << sparse_exception << ',' << sparse_both << ',' << sizeof(SparseException) << ',' << sizeof(std::vector<typename T::Label>) * 4 * table.rows.capacity()
+		<< ',' << sizeof(std::vector<typename T::Label>) * 5 * table.rows.capacity() << ',' << dense_exception_sparse_alternative << std::endl;
+}
+
+
 template <typename A, typename B> void Compare(const A &a, const B &b)
 {
 	if constexpr (std::is_same_v<decltype(a.queue), decltype(b.queue)>) {
@@ -42,6 +104,8 @@ template <typename A, typename B> void Compare(const A &a, const B &b)
 		const auto &x = a.metrics; const auto &y = b.metrics;
 		REQUIRE(std::tie(x.relaxations, x.successes, x.pushes, x.pops, x.stale, x.push_order, x.pop_order) ==
 				std::tie(y.relaxations, y.successes, y.pushes, y.pops, y.stale, y.push_order, y.pop_order));
+		REQUIRE(std::tie(x.copies, x.section_checks, x.peak_queue) == std::tie(y.copies, y.section_checks, y.peak_queue));
+		REQUIRE(a.GetDiagnostic().operations == b.GetDiagnostic().operations);
 		}
 	}
 	REQUIRE(a.rows.size() == b.rows.size());
@@ -131,6 +195,7 @@ template <typename T> T Run(std::span<const PassengerPeriodicService *const> rec
 	std::cout << std::endl;
 	std::cout << "heap_sample," << name << ',' << m.heap_ns << ',' << m.heap_samples << std::endl;
 	std::cout << "queue_order," << name << ',' << m.push_order << ',' << m.pop_order << std::endl;
+	std::cout << "range_probes," << name << ',' << m.range_comparisons << ',' << m.invariant_comparisons << std::endl;
 	if constexpr (requires { table.queue.PackedEnabled(); }) std::cout << "packed_bounds," << name << ',' << table.queue.PackedEnabled() << ',' << table.queue.LegBits() << std::endl;
 	size_t rows_bytes = 0;
 	for (const auto &row : table.rows) rows_bytes += (row.labels.capacity() + row.alternative.capacity()) * sizeof(typename T::Label);
@@ -143,15 +208,16 @@ template <typename T> T Run(std::span<const PassengerPeriodicService *const> rec
 	std::cout << "phases," << name << ',' << m.sections_ns;
 	if (!row_times.empty()) std::cout << ',' << row_times.front() << ',' << row_times[row_times.size() / 2] << ',' << row_times[row_times.size() * 95 / 100] << ',' << row_times.back();
 	std::cout << std::endl;
+	if (getenv("OPENTTD_TABLE_ROW_STATS") != nullptr) RowStatistics(table, name);
 	return table;
 }
 
 template <typename Before, typename After> void CompareRangeSlices()
 {
 	if constexpr (requires(Before t) { t.RelaxIncoming(1); }) {
-		for (uint32_t excluded : {UINT32_MAX, 5U, 6U, 10U, 14U, 15U}) for (unsigned overflow = 0; overflow < 3; ++overflow) {
+		for (uint32_t excluded : {UINT32_MAX, 5U, 6U, 8U, 10U, 14U, 15U}) for (unsigned overflow = 0; overflow < 3; ++overflow) for (unsigned shape = 0; shape < 3; ++shape) {
 			for (size_t quantum : {1U, 2U, 3U, 4U, 5U, 7U, 64U}) {
-				CAPTURE(excluded, overflow, quantum);
+				CAPTURE(excluded, overflow, shape, quantum);
 				Before before; After after;
 				auto init = [&]<typename T>(T &t) {
 					t.search.cost.resize(24); t.search.legs.resize(24); t.search.metadata.resize(24);
@@ -160,6 +226,15 @@ template <typename Before, typename After> void CompareRangeSlices()
 						label.cost = s % 4 == 0 ? 103 : s % 4 == 1 ? 104 : INT64_MAX;
 						label.legs = s % 4 == 1 ? 3 : 0; t.SetSearchLabel(s, label);
 					}
+					/* Only one wait may differ from each base at descriptor entry. */
+					typename T::Label base{shape == 0 ? 103 : shape == 1 ? 105 : 104, 13, 9, 2, 1, 2, shape == 2 ? 2U : 0U, 9};
+					t.SetSearchLabel(2, base); t.stations.resize(6); t.waiting_states.resize(6);
+					for (uint32_t state = 6; state < 15; ++state) { t.SetSearchLabel(state, base); t.waiting_states[2].emplace_back(0, state); }
+					auto exception = base; exception.cost += shape == 2 ? 0 : 2; exception.legs = shape == 2 ? 3 : base.legs; ++exception.first_wait;
+					t.SetSearchLabel(8, exception);
+					base.cost = 104; t.SetSearchLabel(4, base);
+					for (uint32_t state = 16; state < 20; ++state) { t.SetSearchLabel(state, base); t.waiting_states[4].emplace_back(0, state); }
+					if constexpr (requires { t.exception_state; }) { t.exception_state.assign(6, UINT32_MAX); t.exception_state[2] = 8; }
 					typename T::Label source{overflow == 1 ? INT64_MAX - 2 : 100, 50, 7, 3, 1, 2, overflow == 2 ? UINT32_MAX : 2, UINT32_MAX - 2};
 					t.SetSearchLabel(23, source); t.expanding = 23;
 					t.incoming_offsets.assign(25, 0); t.incoming_offsets.back() = 3;
@@ -176,6 +251,7 @@ template <typename Before, typename After> void CompareRangeSlices()
 					REQUIRE(a > 0); REQUIRE(a <= quantum); REQUIRE(a == b); total += a;
 					REQUIRE(before.cursor == after.cursor); REQUIRE(before.range_offset == after.range_offset);
 					REQUIRE(before.queue.size() == after.queue.size());
+					REQUIRE(PassengerDestinationQueueInspector<typename Before::QueueItem>::Snapshot(before.queue) == PassengerDestinationQueueInspector<typename After::QueueItem>::Snapshot(after.queue));
 					for (uint32_t s = 0; s < 24; ++s) REQUIRE(Values(before.SearchLabel(s)) == Values(after.SearchLabel(s)));
 				}
 				REQUIRE(total == 16 - (excluded >= 6 && excluded < 15));
@@ -273,6 +349,64 @@ TEST_CASE("Precomputed build independent reference comparison", "[.table-build][
 			auto generation = Run<PassengerTableGeneration>(records, seed % 3, "generation"); Compare(reference, generation);
 		}
 #endif
+	}
+}
+
+template <typename Before, typename After> void CompareEverySlice(std::span<const PassengerPeriodicService *const> records, int64_t transfer, size_t quantum)
+{
+	if constexpr (requires(Before table) { table.RelaxIncoming(1); }) {
+		{
+			Before before; After after;
+			before.Begin(records, CargoType{0}, transfer, Before::MAX_BYTES, true, true);
+			after.Begin(records, CargoType{0}, transfer, After::MAX_BYTES, true, true);
+			while (before.IsPreparingGraph()) {
+				REQUIRE(before.PrepareGraph(quantum) == after.PrepareGraph(quantum));
+				REQUIRE(before.GetGraphWork() == after.GetGraphWork());
+			}
+			REQUIRE_FALSE(after.IsPreparingGraph()); Compare(before, after);
+		}
+		Before before; After after;
+		before.Begin(records, CargoType{0}, transfer); after.Begin(records, CargoType{0}, transfer);
+		while (!before.Finished()) {
+			REQUIRE(before.Step(quantum) == after.Step(quantum));
+			REQUIRE(before.Finished() == after.Finished());
+			REQUIRE(std::tie(before.destination, before.cursor, before.range_offset, before.expanding, before.finishing,
+					before.finishing_row, before.initializing_row, before.seeding) ==
+					std::tie(after.destination, after.cursor, after.range_offset, after.expanding, after.finishing,
+					after.finishing_row, after.initializing_row, after.seeding));
+			REQUIRE(before.search.cost == after.search.cost); REQUIRE(before.search.legs == after.search.legs);
+			bool metadata_equal = true;
+			for (uint32_t state = 0; state < before.search.cost.size(); ++state) {
+				if (Values(before.SearchLabel(state)) != Values(after.SearchLabel(state))) { metadata_equal = false; break; }
+			}
+			REQUIRE(metadata_equal);
+			if constexpr (!requires { after.alternative_candidates; }) {
+				REQUIRE(std::equal(before.scratch.alternative.begin(), before.scratch.alternative.end(), after.scratch.alternative.begin(), after.scratch.alternative.end(),
+						[](const auto &a, const auto &b) { return Values(a) == Values(b); }));
+			}
+			REQUIRE(PassengerDestinationQueueInspector<typename Before::QueueItem>::Snapshot(before.queue) == PassengerDestinationQueueInspector<typename After::QueueItem>::Snapshot(after.queue));
+			REQUIRE(before.prepared.labels.size() == after.prepared.labels.size());
+			REQUIRE(std::equal(before.prepared.labels.begin(), before.prepared.labels.end(), after.prepared.labels.begin(), [](const auto &a, const auto &b) { return Values(a) == Values(b); }));
+			const auto &a = before.metrics; const auto &b = after.metrics;
+			REQUIRE(std::tie(a.relaxations, a.successes, a.pushes, a.pops, a.stale, a.copies, a.section_checks, a.push_order, a.pop_order) ==
+					std::tie(b.relaxations, b.successes, b.pushes, b.pops, b.stale, b.copies, b.section_checks, b.push_order, b.pop_order));
+			REQUIRE(before.GetDiagnostic().operations == after.GetDiagnostic().operations);
+		}
+		Compare(before, after);
+	}
+}
+
+TEST_CASE("Integrated range cache preserves labels heap and work at every real slice", "[.table-slices][passenger]")
+{
+	PassengerTestStations fixture;
+	for (uint32_t id = 0; id < 64; ++id) Station::CreateAtIndex(StationID{static_cast<uint16_t>(id)}, TileIndex{256 * (id / 8 + 1) + id % 8 + 1});
+	for (uint32_t seed = 0; seed < 80; ++seed) {
+		auto services = Synthetic(seed, 12, 6, 12);
+		std::vector<const PassengerPeriodicService *> records; for (const auto &service : services) records.push_back(&service);
+		for (size_t quantum : {1U, 2U, 3U, 4U, 5U, 7U, 64U}) {
+			CAPTURE(seed, quantum);
+			CompareEverySlice<PassengerTableReference, PassengerTableCandidate>(records, seed % 3, quantum);
+		}
 	}
 }
 

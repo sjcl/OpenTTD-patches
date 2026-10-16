@@ -15,8 +15,10 @@ def main():
     parser.add_argument("build", type=pathlib.Path)
     parser.add_argument("log", type=pathlib.Path)
     parser.add_argument("--include", help="Reconfigure CMAKE_PROJECT_INCLUDE; empty restores product TUs")
+    parser.add_argument("--asserts", choices=("on", "off"), help="Explicit assertion setting; omitted preserves the existing build")
     parser.add_argument("--target", default="openttd_test")
     parser.add_argument("--all-tests", action="store_true")
+    parser.add_argument("--test-filter", action="append", default=[], help="Additional opt-in test groups under the same reservation")
     parser.add_argument("--runtime-reference", help="Prepare the copied runtime with a pre-A3 reference after configuration")
     parser.add_argument("--measurement-wait", type=int, default=60)
     args = parser.parse_args()
@@ -31,8 +33,11 @@ def main():
             def run(command):
                 print(json.dumps(command), flush=True)
                 subprocess.run(command, cwd=ROOT, stdout=stream, stderr=subprocess.STDOUT, check=True)
-            if args.include is not None:
-                run(["cmake", "-S", str(ROOT), "-B", str(build), "-DCMAKE_PROJECT_INCLUDE=" + args.include])
+            if args.include is not None or args.asserts is not None:
+                command = ["cmake", "-S", str(ROOT), "-B", str(build)]
+                if args.include is not None: command.append("-DCMAKE_PROJECT_INCLUDE=" + args.include)
+                if args.asserts is not None: command.append("-DOPTION_USE_ASSERTS=" + args.asserts.upper())
+                run(command)
             if args.runtime_reference:
                 import sys
                 run([sys.executable, "-B", str(ROOT / "utils/passenger_estimated_prepare.py"), str(ROOT), str(build), args.runtime_reference, "--cpu"])
@@ -41,6 +46,9 @@ def main():
         if args.all_tests:
             with log.with_suffix(".tests.log").open("wb") as stream:
                 subprocess.run([str(build / "Release/openttd_test.exe")], cwd=ROOT, stdout=stream, stderr=subprocess.STDOUT, check=True)
+        for number, test_filter in enumerate(args.test_filter):
+            with log.with_suffix(f".extra-{number}.log").open("wb") as stream:
+                subprocess.run([str(build / "Release/openttd_test.exe"), test_filter], cwd=ROOT, stdout=stream, stderr=subprocess.STDOUT, check=True)
     finally:
         os.close(lock)
         path.unlink()

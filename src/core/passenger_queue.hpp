@@ -14,7 +14,9 @@
  * count after a pop. Such entries go into a secondary binary heap immediately.
  * Legacy mode retains the original lazy binary heap and its work sequence. */
 template <typename Item> class PassengerDestinationQueue {
+	template <typename> friend struct PassengerDestinationQueueInspector;
 	template <typename Compare> struct Heap : std::priority_queue<Item, std::vector<Item>, Compare> {
+		template <typename> friend struct PassengerDestinationQueueInspector;
 		size_t Bytes() const { return this->c.capacity() * sizeof(Item); }
 	};
 	struct Later {

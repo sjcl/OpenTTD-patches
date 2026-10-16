@@ -1,0 +1,9 @@
+{
+  "reference_commit": "4734ea1d1e",
+  "adopted": false,
+  "reason": "Default assertion-ON build slows down; assertion-OFF timing gain varies strongly by order. Preserve the measured candidate without changing the production scalar path.",
+  "files": {
+    "passenger_precomputed.h.txt": "bf8efba5267e24841a533050daa2b9435e8090b1db7fb1455647b592457f4af6",
+    "passenger_precomputed.cpp.txt": "533e111fa8ac61e4a0a824f25547478318a9976a5ca0eb406bd5d6c14064f50a"
+  }
+}
