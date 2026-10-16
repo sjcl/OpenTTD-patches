@@ -1,0 +1,861 @@
+{
+  "source_save_sha256": "306a8d3094c406286ff1dd3249f1726bf9d10e230ead593eacdd91efc43ac629",
+  "database_sha256": "7ca9ad50ca3fb134369ad01d9eb1a193dce3cf48c720fdba2ea4e55b15f06a93",
+  "version": 9,
+  "snapshot_totals": {
+    "published": {
+      "services": 864,
+      "stops": 17445
+    },
+    "building": {
+      "services": 0,
+      "stops": 0
+    },
+    "frozen": {
+      "services": 864,
+      "stops": 17445
+    },
+    "retained": {
+      "services": 864,
+      "stops": 17445
+    }
+  },
+  "snapshots": {
+    "published": [
+      {
+        "id": 524,
+        "incarnation": 525,
+        "generation": 366295,
+        "period": 0,
+        "estimated_period": 26652,
+        "stop_count": 91,
+        "vehicles": [
+          {
+            "id": 265,
+            "base": 0,
+            "phase_known": 0,
+            "type": 0
+          },
+          {
+            "id": 319,
+            "base": 0,
+            "phase_known": 0,
+            "type": 0
+          },
+          {
+            "id": 1153,
+            "base": 0,
+            "phase_known": 0,
+            "type": 0
+          },
+          {
+            "id": 3493,
+            "base": 0,
+            "phase_known": 0,
+            "type": 0
+          },
+          {
+            "id": 8540,
+            "base": 0,
+            "phase_known": 0,
+            "type": 0
+          },
+          {
+            "id": 12323,
+            "base": 0,
+            "phase_known": 0,
+            "type": 0
+          },
+          {
+            "id": 18046,
+            "base": 0,
+            "phase_known": 0,
+            "type": 0
+          },
+          {
+            "id": 20070,
+            "base": 0,
+            "phase_known": 0,
+            "type": 0
+          }
+        ],
+        "selected_stops": [
+          {
+            "station": 3393,
+            "order": 13,
+            "arrival": 4645,
+            "departure": 4665,
+            "board": 18446744073709551615,
+            "alight": 18446744073709551615,
+            "forced": 0,
+            "continues": 1,
+            "travel_quality": 0
+          },
+          {
+            "station": 3394,
+            "order": 14,
+            "arrival": 4973,
+            "departure": 4974,
+            "board": 18446744073709551615,
+            "alight": 18446744073709551615,
+            "forced": 0,
+            "continues": 1,
+            "travel_quality": 0
+          },
+          {
+            "station": 3394,
+            "order": 78,
+            "arrival": 21966,
+            "departure": 21967,
+            "board": 18446744073709551615,
+            "alight": 18446744073709551615,
+            "forced": 0,
+            "continues": 1,
+            "travel_quality": 0
+          },
+          {
+            "station": 3393,
+            "order": 79,
+            "arrival": 22281,
+            "departure": 22305,
+            "board": 18446744073709551615,
+            "alight": 18446744073709551615,
+            "forced": 0,
+            "continues": 1,
+            "travel_quality": 0
+          }
+        ]
+      },
+      {
+        "id": 525,
+        "incarnation": 526,
+        "generation": 367126,
+        "period": 76132,
+        "estimated_period": 0,
+        "stop_count": 187,
+        "vehicles": [
+          {
+            "id": 1354,
+            "base": 3181048924,
+            "phase_known": 1,
+            "type": 0
+          },
+          {
+            "id": 2670,
+            "base": 3181116553,
+            "phase_known": 1,
+            "type": 0
+          },
+          {
+            "id": 5895,
+            "base": 3181100862,
+            "phase_known": 1,
+            "type": 0
+          },
+          {
+            "id": 8012,
+            "base": 3181066090,
+            "phase_known": 1,
+            "type": 0
+          },
+          {
+            "id": 11670,
+            "base": 3181108440,
+            "phase_known": 1,
+            "type": 0
+          },
+          {
+            "id": 17190,
+            "base": 3181093692,
+            "phase_known": 1,
+            "type": 0
+          },
+          {
+            "id": 17209,
+            "base": 3181074698,
+            "phase_known": 1,
+            "type": 0
+          },
+          {
+            "id": 17573,
+            "base": 3181057646,
+            "phase_known": 1,
+            "type": 0
+          },
+          {
+            "id": 19336,
+            "base": 3181083508,
+            "phase_known": 1,
+            "type": 0
+          }
+        ],
+        "selected_stops": [
+          {
+            "station": 3393,
+            "order": 13,
+            "arrival": 6568,
+            "departure": 6722,
+            "board": 18446744073709551615,
+            "alight": 18446744073709551615,
+            "forced": 0,
+            "continues": 1,
+            "travel_quality": 0
+          },
+          {
+            "station": 3394,
+            "order": 14,
+            "arrival": 7022,
+            "departure": 7185,
+            "board": 18446744073709551615,
+            "alight": 18446744073709551615,
+            "forced": 0,
+            "continues": 1,
+            "travel_quality": 0
+          },
+          {
+            "station": 3394,
+            "order": 174,
+            "arrival": 68390,
+            "departure": 68620,
+            "board": 18446744073709551615,
+            "alight": 18446744073709551615,
+            "forced": 0,
+            "continues": 1,
+            "travel_quality": 0
+          },
+          {
+            "station": 3393,
+            "order": 175,
+            "arrival": 68970,
+            "departure": 69175,
+            "board": 18446744073709551615,
+            "alight": 18446744073709551615,
+            "forced": 0,
+            "continues": 1,
+            "travel_quality": 0
+          }
+        ]
+      },
+      {
+        "id": 528,
+        "incarnation": 529,
+        "generation": 367128,
+        "period": 0,
+        "estimated_period": 82362,
+        "stop_count": 111,
+        "vehicles": [
+          {
+            "id": 4272,
+            "base": 0,
+            "phase_known": 0,
+            "type": 0
+          }
+        ],
+        "selected_stops": [
+          {
+            "station": 3393,
+            "order": 33,
+            "arrival": 26196,
+            "departure": 26418,
+            "board": 18446744073709551615,
+            "alight": 18446744073709551615,
+            "forced": 0,
+            "continues": 1,
+            "travel_quality": 1
+          },
+          {
+            "station": 3394,
+            "order": 34,
+            "arrival": 26788,
+            "departure": 27010,
+            "board": 18446744073709551615,
+            "alight": 18446744073709551615,
+            "forced": 0,
+            "continues": 1,
+            "travel_quality": 1
+          },
+          {
+            "station": 3394,
+            "order": 78,
+            "arrival": 54020,
+            "departure": 54168,
+            "board": 18446744073709551615,
+            "alight": 18446744073709551615,
+            "forced": 0,
+            "continues": 1,
+            "travel_quality": 1
+          },
+          {
+            "station": 3393,
+            "order": 79,
+            "arrival": 54612,
+            "departure": 54686,
+            "board": 18446744073709551615,
+            "alight": 18446744073709551615,
+            "forced": 0,
+            "continues": 1,
+            "travel_quality": 1
+          }
+        ]
+      }
+    ],
+    "building": [],
+    "frozen": [
+      {
+        "id": 524,
+        "incarnation": 525,
+        "generation": 362172,
+        "period": 0,
+        "estimated_period": 26578,
+        "stop_count": 91,
+        "vehicles": [
+          {
+            "id": 265,
+            "base": 0,
+            "phase_known": 0,
+            "type": 0
+          },
+          {
+            "id": 319,
+            "base": 0,
+            "phase_known": 0,
+            "type": 0
+          },
+          {
+            "id": 1153,
+            "base": 0,
+            "phase_known": 0,
+            "type": 0
+          },
+          {
+            "id": 3493,
+            "base": 0,
+            "phase_known": 0,
+            "type": 0
+          },
+          {
+            "id": 8540,
+            "base": 0,
+            "phase_known": 0,
+            "type": 0
+          },
+          {
+            "id": 12323,
+            "base": 0,
+            "phase_known": 0,
+            "type": 0
+          },
+          {
+            "id": 18046,
+            "base": 0,
+            "phase_known": 0,
+            "type": 0
+          },
+          {
+            "id": 20070,
+            "base": 0,
+            "phase_known": 0,
+            "type": 0
+          }
+        ],
+        "selected_stops": [
+          {
+            "station": 3393,
+            "order": 13,
+            "arrival": 4645,
+            "departure": 4665,
+            "board": 18446744073709551615,
+            "alight": 18446744073709551615,
+            "forced": 0,
+            "continues": 1,
+            "travel_quality": 0
+          },
+          {
+            "station": 3394,
+            "order": 14,
+            "arrival": 4973,
+            "departure": 4974,
+            "board": 18446744073709551615,
+            "alight": 18446744073709551615,
+            "forced": 0,
+            "continues": 1,
+            "travel_quality": 0
+          },
+          {
+            "station": 3394,
+            "order": 78,
+            "arrival": 21892,
+            "departure": 21893,
+            "board": 18446744073709551615,
+            "alight": 18446744073709551615,
+            "forced": 0,
+            "continues": 1,
+            "travel_quality": 0
+          },
+          {
+            "station": 3393,
+            "order": 79,
+            "arrival": 22207,
+            "departure": 22231,
+            "board": 18446744073709551615,
+            "alight": 18446744073709551615,
+            "forced": 0,
+            "continues": 1,
+            "travel_quality": 0
+          }
+        ]
+      },
+      {
+        "id": 525,
+        "incarnation": 526,
+        "generation": 363030,
+        "period": 77008,
+        "estimated_period": 0,
+        "stop_count": 187,
+        "vehicles": [
+          {
+            "id": 1354,
+            "base": 3181046944,
+            "phase_known": 1,
+            "type": 0
+          },
+          {
+            "id": 2670,
+            "base": 0,
+            "phase_known": 0,
+            "type": 0
+          },
+          {
+            "id": 5895,
+            "base": 3181095041,
+            "phase_known": 1,
+            "type": 0
+          },
+          {
+            "id": 8012,
+            "base": 3181062053,
+            "phase_known": 1,
+            "type": 0
+          },
+          {
+            "id": 11670,
+            "base": 3181027160,
+            "phase_known": 1,
+            "type": 0
+          },
+          {
+            "id": 17190,
+            "base": 3181086658,
+            "phase_known": 1,
+            "type": 0
+          },
+          {
+            "id": 17209,
+            "base": 3181070259,
+            "phase_known": 1,
+            "type": 0
+          },
+          {
+            "id": 17573,
+            "base": 3181054190,
+            "phase_known": 1,
+            "type": 0
+          },
+          {
+            "id": 19336,
+            "base": 3181078418,
+            "phase_known": 1,
+            "type": 0
+          }
+        ],
+        "selected_stops": [
+          {
+            "station": 3393,
+            "order": 13,
+            "arrival": 6850,
+            "departure": 7030,
+            "board": 18446744073709551615,
+            "alight": 18446744073709551615,
+            "forced": 0,
+            "continues": 1,
+            "travel_quality": 0
+          },
+          {
+            "station": 3394,
+            "order": 14,
+            "arrival": 7330,
+            "departure": 7483,
+            "board": 18446744073709551615,
+            "alight": 18446744073709551615,
+            "forced": 0,
+            "continues": 1,
+            "travel_quality": 0
+          },
+          {
+            "station": 3394,
+            "order": 174,
+            "arrival": 68916,
+            "departure": 69149,
+            "board": 18446744073709551615,
+            "alight": 18446744073709551615,
+            "forced": 0,
+            "continues": 1,
+            "travel_quality": 0
+          },
+          {
+            "station": 3393,
+            "order": 175,
+            "arrival": 69516,
+            "departure": 69730,
+            "board": 18446744073709551615,
+            "alight": 18446744073709551615,
+            "forced": 0,
+            "continues": 1,
+            "travel_quality": 0
+          }
+        ]
+      },
+      {
+        "id": 528,
+        "incarnation": 529,
+        "generation": 363033,
+        "period": 0,
+        "estimated_period": 76442,
+        "stop_count": 111,
+        "vehicles": [
+          {
+            "id": 4272,
+            "base": 0,
+            "phase_known": 0,
+            "type": 0
+          }
+        ],
+        "selected_stops": [
+          {
+            "station": 3393,
+            "order": 33,
+            "arrival": 26196,
+            "departure": 26418,
+            "board": 18446744073709551615,
+            "alight": 18446744073709551615,
+            "forced": 0,
+            "continues": 1,
+            "travel_quality": 1
+          },
+          {
+            "station": 3394,
+            "order": 34,
+            "arrival": 26788,
+            "departure": 27010,
+            "board": 18446744073709551615,
+            "alight": 18446744073709551615,
+            "forced": 0,
+            "continues": 1,
+            "travel_quality": 1
+          },
+          {
+            "station": 3394,
+            "order": 78,
+            "arrival": 49654,
+            "departure": 49802,
+            "board": 18446744073709551615,
+            "alight": 18446744073709551615,
+            "forced": 0,
+            "continues": 1,
+            "travel_quality": 1
+          },
+          {
+            "station": 3393,
+            "order": 79,
+            "arrival": 50172,
+            "departure": 50320,
+            "board": 18446744073709551615,
+            "alight": 18446744073709551615,
+            "forced": 0,
+            "continues": 1,
+            "travel_quality": 1
+          }
+        ]
+      }
+    ],
+    "retained": [
+      {
+        "id": 524,
+        "incarnation": 525,
+        "generation": 362172,
+        "period": 0,
+        "estimated_period": 26578,
+        "stop_count": 91,
+        "vehicles": [
+          {
+            "id": 265,
+            "base": 0,
+            "phase_known": 0,
+            "type": 0
+          },
+          {
+            "id": 319,
+            "base": 0,
+            "phase_known": 0,
+            "type": 0
+          },
+          {
+            "id": 1153,
+            "base": 0,
+            "phase_known": 0,
+            "type": 0
+          },
+          {
+            "id": 3493,
+            "base": 0,
+            "phase_known": 0,
+            "type": 0
+          },
+          {
+            "id": 8540,
+            "base": 0,
+            "phase_known": 0,
+            "type": 0
+          },
+          {
+            "id": 12323,
+            "base": 0,
+            "phase_known": 0,
+            "type": 0
+          },
+          {
+            "id": 18046,
+            "base": 0,
+            "phase_known": 0,
+            "type": 0
+          },
+          {
+            "id": 20070,
+            "base": 0,
+            "phase_known": 0,
+            "type": 0
+          }
+        ],
+        "selected_stops": [
+          {
+            "station": 3393,
+            "order": 13,
+            "arrival": 4645,
+            "departure": 4665,
+            "board": 18446744073709551615,
+            "alight": 18446744073709551615,
+            "forced": 0,
+            "continues": 1,
+            "travel_quality": 0
+          },
+          {
+            "station": 3394,
+            "order": 14,
+            "arrival": 4973,
+            "departure": 4974,
+            "board": 18446744073709551615,
+            "alight": 18446744073709551615,
+            "forced": 0,
+            "continues": 1,
+            "travel_quality": 0
+          },
+          {
+            "station": 3394,
+            "order": 78,
+            "arrival": 21892,
+            "departure": 21893,
+            "board": 18446744073709551615,
+            "alight": 18446744073709551615,
+            "forced": 0,
+            "continues": 1,
+            "travel_quality": 0
+          },
+          {
+            "station": 3393,
+            "order": 79,
+            "arrival": 22207,
+            "departure": 22231,
+            "board": 18446744073709551615,
+            "alight": 18446744073709551615,
+            "forced": 0,
+            "continues": 1,
+            "travel_quality": 0
+          }
+        ]
+      },
+      {
+        "id": 525,
+        "incarnation": 526,
+        "generation": 362173,
+        "period": 77049,
+        "estimated_period": 0,
+        "stop_count": 187,
+        "vehicles": [
+          {
+            "id": 1354,
+            "base": 3181045781,
+            "phase_known": 1,
+            "type": 0
+          },
+          {
+            "id": 2670,
+            "base": 3181036038,
+            "phase_known": 1,
+            "type": 0
+          },
+          {
+            "id": 5895,
+            "base": 3181094696,
+            "phase_known": 1,
+            "type": 0
+          },
+          {
+            "id": 8012,
+            "base": 3181061638,
+            "phase_known": 1,
+            "type": 0
+          },
+          {
+            "id": 11670,
+            "base": 0,
+            "phase_known": 0,
+            "type": 0
+          },
+          {
+            "id": 17190,
+            "base": 3181086098,
+            "phase_known": 1,
+            "type": 0
+          },
+          {
+            "id": 17209,
+            "base": 0,
+            "phase_known": 0,
+            "type": 0
+          },
+          {
+            "id": 17573,
+            "base": 3181053527,
+            "phase_known": 1,
+            "type": 0
+          },
+          {
+            "id": 19336,
+            "base": 3181077871,
+            "phase_known": 1,
+            "type": 0
+          }
+        ],
+        "selected_stops": [
+          {
+            "station": 3393,
+            "order": 13,
+            "arrival": 6897,
+            "departure": 7077,
+            "board": 18446744073709551615,
+            "alight": 18446744073709551615,
+            "forced": 0,
+            "continues": 1,
+            "travel_quality": 0
+          },
+          {
+            "station": 3394,
+            "order": 14,
+            "arrival": 7377,
+            "departure": 7530,
+            "board": 18446744073709551615,
+            "alight": 18446744073709551615,
+            "forced": 0,
+            "continues": 1,
+            "travel_quality": 0
+          },
+          {
+            "station": 3394,
+            "order": 174,
+            "arrival": 68895,
+            "departure": 69140,
+            "board": 18446744073709551615,
+            "alight": 18446744073709551615,
+            "forced": 0,
+            "continues": 1,
+            "travel_quality": 0
+          },
+          {
+            "station": 3393,
+            "order": 175,
+            "arrival": 69542,
+            "departure": 69771,
+            "board": 18446744073709551615,
+            "alight": 18446744073709551615,
+            "forced": 0,
+            "continues": 1,
+            "travel_quality": 0
+          }
+        ]
+      },
+      {
+        "id": 528,
+        "incarnation": 529,
+        "generation": 362176,
+        "period": 0,
+        "estimated_period": 77330,
+        "stop_count": 111,
+        "vehicles": [
+          {
+            "id": 4272,
+            "base": 0,
+            "phase_known": 0,
+            "type": 0
+          }
+        ],
+        "selected_stops": [
+          {
+            "station": 3393,
+            "order": 33,
+            "arrival": 26196,
+            "departure": 26418,
+            "board": 18446744073709551615,
+            "alight": 18446744073709551615,
+            "forced": 0,
+            "continues": 1,
+            "travel_quality": 1
+          },
+          {
+            "station": 3394,
+            "order": 34,
+            "arrival": 26788,
+            "departure": 27010,
+            "board": 18446744073709551615,
+            "alight": 18446744073709551615,
+            "forced": 0,
+            "continues": 1,
+            "travel_quality": 1
+          },
+          {
+            "station": 3394,
+            "order": 78,
+            "arrival": 50542,
+            "departure": 50690,
+            "board": 18446744073709551615,
+            "alight": 18446744073709551615,
+            "forced": 0,
+            "continues": 1,
+            "travel_quality": 1
+          },
+          {
+            "station": 3393,
+            "order": 79,
+            "arrival": 51060,
+            "departure": 51208,
+            "board": 18446744073709551615,
+            "alight": 18446744073709551615,
+            "forced": 0,
+            "continues": 1,
+            "travel_quality": 1
+          }
+        ]
+      }
+    ]
+  },
+  "limitation": "Earlier construction fixture; not the missing original transport input. No real order execution or departure-time behavior is observed."
+}

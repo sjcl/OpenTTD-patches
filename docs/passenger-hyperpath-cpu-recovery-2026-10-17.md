@@ -69,3 +69,27 @@ launch attempts timed out in the incomplete asset layout; no product edit
 was needed. The instrumented executable also passes a 64-tick exact-driver
 smoke with replacement at tick 32. The real-map attribution pair is running;
 no CPU-recovery result is claimed yet.
+
+## Preliminary service 528 readback
+
+The read-only `passenger_hyperpath_pattern_readback.py` checks and decodes an
+extracted JPSD v9-v14 blob, including all snapshot records and the v14 trailer.
+It does not load a game or advance Work. The recovered v9 fixture contains
+864 services and 17,445 stops in each of its published/current/retained
+snapshots, matching the original fixture census.
+
+In its published service 528 there is one vehicle and 111 stops, with an
+estimated circuit of 82,362 ticks (`period=0`). Order 33 is station 3393,
+arrival/departure 26,196/26,418; order 34 is station 3394,
+arrival/departure 26,788/27,010. Both permit boarding and alighting for
+passengers. Their incoming travel quality is 1: a positive recorded travel
+duration without timetable certification. These offsets correspond to
+370-tick travel legs and 222-tick dwell.
+
+`CompileEstimated` skips implicit/label orders, retains the real order index,
+uses a positive recorded travel duration when available and adds the recorded
+dwell. Thus this frozen pattern's order 33 is an explicit station occurrence,
+not a synthetic extra frequency. This only establishes how the recovered
+snapshot represents that order. Actual order executions, departure-time
+passenger states and the cause of the OD regression still require a live
+targeted diagnostic; none is claimed from this readback.
