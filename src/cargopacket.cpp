@@ -171,10 +171,11 @@ PassengerWaitingEventDiagnostic GetPassengerWaitingEventDiagnostic()
 }
 
 void ResetPassengerWaitingEventDiagnostic() { _passenger_event_diagnostic = {}; }
-void RecordPassengerWaitingCause(PassengerWaitingCause cause, uint64_t nanoseconds)
+void RecordPassengerWaitingCause(PassengerWaitingCause cause, uint64_t nanoseconds, bool unchanged)
 {
 	_passenger_event_diagnostic.cause_nanoseconds[static_cast<size_t>(cause)] += nanoseconds;
 	++_passenger_event_diagnostic.cause_packets[static_cast<size_t>(cause)];
+	_passenger_event_diagnostic.unchanged_generation_packets += unchanged;
 }
 void RecordPassengerWaitingEvent(StateTicks due)
 {

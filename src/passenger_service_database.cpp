@@ -996,6 +996,17 @@ std::optional<PassengerJourneyExecution> PassengerServiceDatabase::ExtendPrecomp
 	return {};
 }
 
+bool PassengerServiceDatabase::MayHavePrecomputedRoute(CargoType cargo, StationID origin, StationID destination) const
+{
+	if (cargo >= NUM_CARGO || this->precomputed_revision == UINT64_MAX) return true;
+	for (const auto *table : {&this->precomputed[cargo], &this->retained_precomputed[cargo]}) {
+		if (table->MemoryRejected()) return true; // Preserve the admitted-planner fallback.
+		auto cost = table->RouteCost(origin, destination);
+		if (cost && *cost != INT64_MAX) return true;
+	}
+	return false;
+}
+
 PassengerPrecomputedPlan PassengerServiceDatabase::PlanPrecomputed(CargoType cargo, StationID origin, StationID destination,
 		StateTicks ready, OrderListID excluded, uint32_t sample, OrderListID failed) const
 {

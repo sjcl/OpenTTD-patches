@@ -1845,6 +1845,22 @@ size_t StationCargoList::RoutePassengerJourneys(CargoType cargo, StationID stati
 			 * Legacy intents join the budgeted generation sweep only in B mode. */
 			++this->passenger_routing_inspected;
 			const auto entry = this->waiting_entries.at(id);
+			/* Publishing an unrelated destination must not renew a sleeping
+			 * fallback's retry timestamp and rebuild all of its indices. Keep the
+			 * saved cursor/debit, but mutate the packet only when a frozen route,
+			 * a changed flow hop, or its own event can change the decision. The
+			 * base state's unreachable label also excludes every previous-service
+			 * state. Both generations are checked conservatively; memory rejection
+			 * still runs the normal admitted planners. */
+			if (_settings_game.linkgraph.passenger_journey_hyperpath && sweep &&
+					packet->GetPassengerRoutingMode() == PassengerRoutingMode::Fallback && entry.key == StationID::Invalid() &&
+					!packet->GetPassengerBoardingFailure().Present() &&
+					(packet->GetPassengerRoutingEvent() == INVALID_STATE_TICKS || packet->GetPassengerRoutingEvent() > _state_ticks) &&
+					!GetPassengerServiceDatabase().MayHavePrecomputedRoute(cargo, station, packet->GetPassengerDestination()) &&
+					CurrentPassengerLegacyHop(*packet, cargo, station, packet->GetPassengerLegacyHop()) == packet->GetPassengerLegacyHop()) {
+				RecordPassengerWaitingCause(cause, std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - cause_started).count(), true);
+				continue;
+			}
 			this->ForgetWaitingPacket(id);
 			const StationID key = route(packet, entry.key);
 			schedule(*packet);

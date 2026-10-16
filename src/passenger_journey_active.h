@@ -30,9 +30,10 @@ struct PassengerWaitingEventDiagnostic {
 	uint64_t arrival_candidates = 0, arrival_passengers = 0, unresolved_missed = 0;
 	uint64_t capacity_missed_packets = 0, capacity_missed_passengers = 0;
 	uint64_t capacity_record_nanoseconds = 0; ///< Outside the national scheduler; includes candidate visits and index/event mutation.
+	uint64_t unchanged_generation_packets = 0; ///< Frozen rows still have no route; retain native packet state and derived indices.
 	std::array<uint64_t, static_cast<size_t>(PassengerWaitingCause::End)> cause_nanoseconds{}, cause_packets{};
 };
-void RecordPassengerWaitingCause(PassengerWaitingCause cause, uint64_t nanoseconds);
+void RecordPassengerWaitingCause(PassengerWaitingCause cause, uint64_t nanoseconds, bool unchanged = false);
 PassengerWaitingEventDiagnostic GetPassengerWaitingEventDiagnostic();
 void ResetPassengerWaitingEventDiagnostic();
 void RecordPassengerWaitingEvent(StateTicks due);

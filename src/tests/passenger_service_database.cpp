@@ -3546,6 +3546,58 @@ TEST_CASE("Precomputed single packet events leave thousands of sleeping intents 
 	CHECK(db.GetPrecomputedDiagnostic(PAX).queries < 205); // One lookup per cohort/slice, not per packet.
 }
 
+TEST_CASE("Hyperpath unrelated row sweeps retain a sleeping unreachable fallback", "[passenger][hyperpath][events][determinism]")
+{
+	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = _settings_game.linkgraph.passenger_journey_hyperpath = true;
+	f.Train({Stop(A), Stop(B)}); f.Train({Stop(C), Stop(D)});
+	auto &db = f.Build(); while (!db.PreparePrecomputed()) {}
+	REQUIRE_FALSE(db.MayHavePrecomputedRoute(PAX, A, D));
+	auto &waiting = Station::Get(A)->goods[PAX].CreateData().cargo;
+	auto *packet = f.Packet(1); waiting.Append(packet, D);
+	waiting.RoutePassengerJourneys(PAX, A);
+	REQUIRE(packet->GetPassengerRoutingMode() == PassengerRoutingMode::Fallback);
+	REQUIRE(packet->GetPassengerRoutingEvent() == INVALID_STATE_TICKS);
+	const bool cold = GENERATE(false, true);
+	if (cold) { waiting.ClearWaitingIndex(); waiting.RebuildWaitingIndex(); }
+	++_state_ticks;
+	InvalidatePassengerWaitingRouting();
+	const auto hash = packet->StationMergeHash(), updates = waiting.boarding_index_updates;
+	const auto generation = waiting.passenger_generation_inspected;
+	ResetPassengerWaitingEventDiagnostic();
+	SECTION("Unrelated publication preserves all packet fields and index membership") {
+		waiting.RoutePassengerJourneys(PAX, A);
+		CHECK(packet->StationMergeHash() == hash);
+		CHECK(waiting.boarding_index_updates == updates);
+		CHECK(waiting.passenger_generation_inspected == generation + 1);
+		CHECK(GetPassengerWaitingEventDiagnostic().unchanged_generation_packets == 1);
+		CHECK_FALSE(waiting.passenger_routing_sweeping);
+	}
+	SECTION("The packet's own deadline still runs") {
+		packet->SchedulePassengerRouting(_state_ticks);
+		waiting.RoutePassengerJourneys(PAX, A);
+		CHECK(packet->StationMergeHash() != hash);
+		CHECK(waiting.boarding_index_updates > updates);
+		CHECK(GetPassengerWaitingEventDiagnostic().unchanged_generation_packets == 0);
+	}
+	SECTION("A changed CargoDist flow still updates the saved hop") {
+		Station::Get(A)->goods[PAX].CreateData().flows.insert(FlowStat(A, B, 10));
+		waiting.RoutePassengerJourneys(PAX, A);
+		CHECK(packet->GetPassengerLegacyHop() == B);
+		CHECK(waiting.boarding_index_updates > updates);
+		CHECK(GetPassengerWaitingEventDiagnostic().unchanged_generation_packets == 0);
+	}
+	SECTION("A newly usable frozen row is applied normally") {
+		auto *train = f.Train({Stop(A), Stop(D)}); db.Invalidate(train->orders->index);
+		f.PublishUpdates(db); while (!db.PreparePrecomputed()) {}
+		while (!db.PrecomputedFinished()) db.TickPrecomputed();
+		REQUIRE(db.MayHavePrecomputedRoute(PAX, A, D));
+		waiting.RoutePassengerJourneys(PAX, A);
+		CHECK(packet->GetPassengerRoutingMode() == PassengerRoutingMode::Journey);
+		CHECK(packet->GetPassengerJourney().kind == PassengerRideKind::HyperpathIntent);
+		CHECK(GetPassengerWaitingEventDiagnostic().unchanged_generation_packets == 0);
+	}
+}
+
 TEST_CASE("Precomputed reroutes keep packet event handles valid for split and whole moves", "[passenger][precomputed][events][cargo]")
 {
 	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = true;

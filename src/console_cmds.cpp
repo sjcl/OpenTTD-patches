@@ -5002,6 +5002,7 @@ static bool ConPassengerJourneyStats(std::span<std::string_view> argv)
 		IConsolePrint(CC_DEFAULT, "Passenger scheduler cause: cause={}; packets={}; microseconds={}", names[cause], events.cause_packets[cause], events.cause_nanoseconds[cause] / 1000);
 	}
 	IConsolePrint(CC_DEFAULT, "Passenger capacity records: packets={}; passengers={}; microseconds={}", events.capacity_missed_packets, events.capacity_missed_passengers, events.capacity_record_nanoseconds / 1000);
+	IConsolePrint(CC_DEFAULT, "Passenger unchanged generation: packets={}", events.unchanged_generation_packets);
 	for (CargoType cargo : EnumRange(NUM_CARGO)) if (IsCargoInClass(cargo, CargoClass::Passengers)) {
 		const auto p = GetPassengerServiceDatabase().GetPrecomputedDiagnostic(cargo);
 		IConsolePrint(CC_DEFAULT, "Precomputed passenger routes: cargo={}; patterns={}; stations={}; states={}; edges={}; destinations={}; bytes={}; envelope={}; build_ns={}; operations={}; queries={}; query_ns={}; hits={}; missing={}; no_route={}",
