@@ -145,6 +145,9 @@ private:
 	void StartDestination();
 	int64_t SearchCost(uint32_t state) const { return this->optimized ? this->search.cost[state] : this->scratch.labels[state].cost; }
 	uint32_t SearchLegs(uint32_t state) const { return this->optimized ? this->search.legs[state] : this->scratch.labels[state].legs; }
+	uint32_t SearchBoard(uint32_t state) const { return this->optimized ? this->search.metadata[state].board : this->scratch.labels[state].board; }
+	uint32_t SearchAlight(uint32_t state) const { return this->optimized ? this->search.metadata[state].alight : this->scratch.labels[state].alight; }
+	int64_t SearchRiding(uint32_t state) const { return this->optimized ? this->search.metadata[state].riding : this->scratch.labels[state].riding; }
 	Label SearchLabel(uint32_t state) const;
 	void SetSearchLabel(uint32_t state, const Label &label);
 	void ContractGraph(size_t &nodes);

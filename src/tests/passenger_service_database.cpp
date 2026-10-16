@@ -1362,7 +1362,9 @@ TEST_CASE("Periodic scheduler progress and captured phases survive save and join
 TEST_CASE("Periodic database rejects malformed and oversized saved state", "[passenger][periodic][save]")
 {
 	Fixture f; f.Train({Stop(A), Stop(D)}); auto &db = f.Build(); auto wire = db.Save(); PassengerServiceDatabase other;
-	wire.pop_back(); CHECK_FALSE(other.Load(wire)); wire = db.Save(); wire[0] = 10; CHECK_FALSE(other.Load(wire));
+	wire.pop_back(); CHECK_FALSE(other.Load(wire)); wire = db.Save(); wire[0] = 11; CHECK_FALSE(other.Load(wire));
+	wire = db.Save(); wire[wire.size() - 16] = 2; CHECK_FALSE(other.Load(wire));
+	wire = db.Save(); wire[wire.size() - 8] = 2; CHECK_FALSE(other.Load(wire));
 	CHECK(other.GetDiagnostic().services == 0);
 }
 

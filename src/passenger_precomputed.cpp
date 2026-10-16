@@ -770,39 +770,46 @@ size_t PassengerPrecomputedTable::Step(size_t allowance, bool legacy_publication
 					const auto &ride = this->section_rides[this->finishing++ - this->occurrences.size()];
 					const auto &board = this->occurrences[ride.board];
 					uint32_t station = this->station_index[board.station.base()];
-					const auto best = this->SearchLabel(station);
-					if (best.board == INVALID || this->occurrences[best.board].pattern == board.pattern) continue;
-					const auto suffix = this->SearchLabel(this->landings[ride.alight]);
-					if (suffix.cost > INT64_MAX - ride.cost) continue;
-					int64_t cost = suffix.cost + ride.cost;
-					if (cost == INT64_MAX || cost - best.cost > best.cost / 4) continue;
-					if (this->estimates && (suffix.riding + ride.riding > best.riding + std::max<int64_t>(32, best.riding / 4) ||
-							suffix.legs + 1 > best.legs + 1)) continue;
+					int64_t best_cost = this->SearchCost(station);
+					if (best_cost == INT64_MAX) continue;
+					uint32_t best_board = this->SearchBoard(station);
+					if (best_board == INVALID || this->occurrences[best_board].pattern == board.pattern) continue;
+					uint32_t landing = this->landings[ride.alight];
+					int64_t suffix_cost = this->SearchCost(landing);
+					if (suffix_cost > INT64_MAX - ride.cost) continue;
+					int64_t cost = suffix_cost + ride.cost;
+					if (cost == INT64_MAX || cost - best_cost > best_cost / 4) continue;
+					int64_t best_riding = this->SearchRiding(station);
+					if (this->estimates && (this->SearchRiding(landing) + ride.riding > best_riding + std::max<int64_t>(32, best_riding / 4) ||
+							this->SearchLegs(landing) + 1 > this->SearchLegs(station) + 1)) continue;
 					auto &alt = this->scratch.alternative[station];
 					if (cost < alt.cost) {
-						alt = suffix; alt.board = ride.board; alt.alight = ride.alight; ++alt.legs;
+						alt = this->SearchLabel(landing); alt.board = ride.board; alt.alight = ride.alight; ++alt.legs;
 						alt.cost = cost; alt.waiting += ride.waiting; alt.riding += ride.riding; alt.first_wait = ride.waiting;
 					}
 				} else if (this->finishing < this->occurrences.size()) {
 					uint32_t id = static_cast<uint32_t>(this->finishing++); const auto &o = this->occurrences[id];
 					if (this->optimized && !o.board) continue;
 					uint32_t station = this->station_index[o.station.base()]; if (station == INVALID) continue;
-					const auto best = this->SearchLabel(station), suffix = this->SearchLabel(o.departure);
+					int64_t best_cost = this->SearchCost(station), suffix_cost = this->SearchCost(o.departure);
+					if (best_cost == INT64_MAX || suffix_cost == INT64_MAX || suffix_cost >= best_cost) continue;
+					uint32_t best_board = this->SearchBoard(station);
 					const auto &p = this->patterns[o.pattern];
-					if (best.board == INVALID || suffix.alight == INVALID || suffix.cost == INT64_MAX || suffix.cost >= best.cost ||
-							this->occurrences[best.board].pattern == o.pattern || suffix.cost > INT64_MAX - p.wait - p.risk) continue;
-					int64_t cost = suffix.cost + p.wait + p.risk;
-					if (cost - best.cost > best.cost / 4) continue;
+					if (best_board == INVALID || this->SearchAlight(o.departure) == INVALID ||
+							this->occurrences[best_board].pattern == o.pattern || suffix_cost > INT64_MAX - p.wait - p.risk) continue;
+					int64_t cost = suffix_cost + p.wait + p.risk;
+					if (cost - best_cost > best_cost / 4) continue;
 					/* Dispersion may pay a modest cost premium, but a waiting-time
 					 * estimate alone must not randomly select a much longer ride or
 					 * several extra transfers. Faster winning routes stay unrestricted. */
-					if (this->estimates && (suffix.riding > best.riding + std::max<int64_t>(32, best.riding / 4) ||
-							suffix.legs + 1 > best.legs + 1)) continue;
+					int64_t best_riding = this->SearchRiding(station);
+					if (this->estimates && (this->SearchRiding(o.departure) > best_riding + std::max<int64_t>(32, best_riding / 4) ||
+							this->SearchLegs(o.departure) + 1 > this->SearchLegs(station) + 1)) continue;
 					/* Only real Board edges are alternatives; NoLoad stops never enter. */
 					if (!o.board) continue;
 					auto &alt = this->scratch.alternative[station];
 					if (cost < alt.cost) {
-						alt = suffix; alt.board = id; ++alt.legs;
+						alt = this->SearchLabel(o.departure); alt.board = id; ++alt.legs;
 						alt.cost = cost; alt.waiting += p.wait; alt.first_wait = p.wait;
 					}
 				} else {
