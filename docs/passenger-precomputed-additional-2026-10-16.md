@@ -382,3 +382,9 @@ A5初案を保存したsnapshotから再生成した参照/候補h/cppの4ファ
 本番の旅客表h/cppはA2コミット `881cec768f` と同一で、A1・A4・A5の候補コードは製品へ入れていない。
 保存serializer・JPSDバージョン・保存されたアルゴリズム識別の変更はない。
 raw出力・source hash・canonical比較・最終製品構成の証拠は同名のmeasurementsディレクトリに保存した。
+
+## 再評価: A3の保持表再利用前提
+
+レビューを受け、BeginPrecomputedの保持表再利用側でcargoごとの置き換え表がFinishedであることをassertした。
+メモリ拒否もFinishedに含まれ、再利用処理やWorkの意味は変えない。
+assert ONの製品構成で全688テスト・5,734,015アサーション成功。4世代の保持表再利用回帰テストも含む。

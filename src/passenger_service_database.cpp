@@ -803,7 +803,12 @@ void PassengerServiceDatabase::BeginPrecomputed(int64_t transfer)
 		this->retained_precomputed_optimized = this->precomputed_optimized;
 		this->retained_precomputed_integrated = this->precomputed_integrated;
 	} else {
-		for (auto &table : this->retained_precomputed) table.ReuseRetainedDestinations();
+		for (CargoType cargo : EnumRange(NUM_CARGO)) {
+			/* Reuse may discard retired destinations only after this cargo's
+			 * replacement has completed (including a memory rejection). */
+			assert(this->precomputed[cargo].Finished());
+			this->retained_precomputed[cargo].ReuseRetainedDestinations();
+		}
 	}
 	this->precomputed_sections = true;
 	this->precomputed_estimates = true;
