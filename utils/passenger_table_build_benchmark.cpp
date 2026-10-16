@@ -49,6 +49,23 @@ template <typename L> auto Values(const L &l)
 {
 	return std::tuple(l.cost, l.riding, l.waiting, l.first_wait, l.board, l.alight, l.legs, l.distance);
 }
+template <typename Row> bool StoredRowEmpty(const Row &row)
+{
+	if constexpr (requires { row.Empty(); }) return row.Empty();
+	else return row.labels.empty();
+}
+template <typename T> size_t StoredRowBytes(const typename T::Row &row)
+{
+	if constexpr (requires { row.AllocatedBytes(); }) return row.AllocatedBytes();
+	else return (row.labels.capacity() + row.alternative.capacity()) * sizeof(typename T::Label);
+}
+template <typename T> size_t PublicationPosition(const T &table)
+{
+	if constexpr (requires { table.publication_cursor; table.UseCompressedRows(); }) {
+		if (table.UseCompressedRows()) return table.publication_cursor;
+	}
+	return table.prepared.labels.size();
+}
 template <typename T> const auto &StoredLabel(const T &table, const typename T::Row &row, uint32_t origin, uint32_t state)
 {
 	if constexpr (requires { table.RowLabel(row, origin, state); }) return table.RowLabel(row, origin, state);
@@ -64,7 +81,7 @@ template <typename T> void RowStatistics(const T &table, const char *name)
 	uint64_t rows = 0, exceptions = 0, alternatives = 0, metadata_ties = 0, actual_payload = 0;
 	uint64_t eligible = std::count_if(table.waiting_states.begin(), table.waiting_states.end(), [](const auto &states) { return !states.empty(); });
 	for (const auto &row : table.rows) {
-		if (row.labels.empty()) continue;
+		if (StoredRowEmpty(row)) continue;
 		++rows;
 		if constexpr (requires { row.AllocatedBytes(); }) actual_payload += row.AllocatedBytes();
 		else actual_payload += (row.labels.capacity() + row.alternative.capacity()) * sizeof(typename T::Label);
@@ -109,16 +126,18 @@ template <typename A, typename B> void Compare(const A &a, const B &b)
 		}
 	}
 	REQUIRE(a.rows.size() == b.rows.size());
+	REQUIRE(a.stations == b.stations); REQUIRE(a.waiting_states == b.waiting_states);
+	REQUIRE(a.waiting_state_count == b.waiting_state_count);
 	for (size_t d = 0; d < a.rows.size(); ++d) {
-		REQUIRE(a.rows[d].labels.size() == b.rows[d].labels.size());
-		for (size_t s = 0; s < a.rows[d].labels.size(); ++s) {
-			if (Values(a.rows[d].labels[s]) != Values(b.rows[d].labels[s])) {
-				const auto &x = a.rows[d].labels[s]; const auto &y = b.rows[d].labels[s];
-				std::cerr << "label_mismatch," << d << ',' << s << ',' << x.cost << ',' << y.cost << ',' << x.legs << ',' << y.legs << ',' << x.board << ',' << y.board << ',' << x.alight << ',' << y.alight << std::endl;
+		REQUIRE(StoredRowEmpty(a.rows[d]) == StoredRowEmpty(b.rows[d]));
+		if (StoredRowEmpty(a.rows[d])) continue;
+		for (uint32_t origin = 0; origin < a.stations.size(); ++origin) {
+			REQUIRE(Values(StoredLabel(a, a.rows[d], origin, origin)) == Values(StoredLabel(b, b.rows[d], origin, origin)));
+			for (const auto &[pattern, state] : a.waiting_states[origin]) {
+				REQUIRE(Values(StoredLabel(a, a.rows[d], origin, state)) == Values(StoredLabel(b, b.rows[d], origin, state)));
 			}
-			REQUIRE(Values(a.rows[d].labels[s]) == Values(b.rows[d].labels[s]));
+			REQUIRE(Values(StoredAlternative(a, a.rows[d], origin)) == Values(StoredAlternative(b, b.rows[d], origin)));
 		}
-		for (size_t s = 0; s < a.rows[d].alternative.size(); ++s) REQUIRE(Values(a.rows[d].alternative[s]) == Values(b.rows[d].alternative[s]));
 	}
 	REQUIRE(a.patterns.size() == b.patterns.size());
 	for (const auto &pattern : a.patterns) for (const auto &member : pattern.members) for (uint32_t id : pattern.occurrences) {
@@ -199,10 +218,10 @@ template <typename T> T Run(std::span<const PassengerPeriodicService *const> rec
 	std::cout << "alternative_probes," << name << ',' << m.alternative_base_reads << ',' << m.alternative_skipped << ',' << m.section_actual_reads << std::endl;
 	if constexpr (requires { table.queue.PackedEnabled(); }) std::cout << "packed_bounds," << name << ',' << table.queue.PackedEnabled() << ',' << table.queue.LegBits() << std::endl;
 	size_t rows_bytes = 0;
-	for (const auto &row : table.rows) rows_bytes += (row.labels.capacity() + row.alternative.capacity()) * sizeof(typename T::Label);
+	for (const auto &row : table.rows) rows_bytes += StoredRowBytes<T>(row);
 	auto row_times = m.destinations_ns; std::sort(row_times.begin(), row_times.end());
 	std::cout << "memory," << name << ',' << rows_bytes << ',' << PassengerBenchmarkQueueBytes(table.queue) << ','
-		<< (table.scratch.labels.capacity() + table.scratch.alternative.capacity() + table.prepared.labels.capacity()) * sizeof(typename T::Label);
+		<< (StoredRowBytes<T>(table.scratch) + StoredRowBytes<T>(table.prepared));
 	if constexpr (requires { table.search; }) std::cout << ',' << table.search.cost.capacity() * 8 + table.search.legs.capacity() * 4 + table.search.metadata.capacity() * sizeof(typename T::LabelMetadata);
 	std::cout << std::endl;
 	if constexpr (requires { d.range_edges; }) std::cout << "graph_layout," << name << ',' << d.edges - d.range_edges << ',' << d.range_edges << ',' << d.logical_edges << ',' << m.csr_ns << std::endl;
@@ -368,6 +387,11 @@ template <typename Before, typename After> void CompareEverySlice(std::span<cons
 		}
 		Before before; After after;
 		before.Begin(records, CargoType{0}, transfer); after.Begin(records, CargoType{0}, transfer);
+		std::vector<uint32_t> state_origins(before.waiting_state_count);
+		for (uint32_t origin = 0; origin < before.stations.size(); ++origin) {
+			state_origins[origin] = origin;
+			for (const auto &[pattern, state] : before.waiting_states[origin]) state_origins[state] = origin;
+		}
 		while (!before.Finished()) {
 			REQUIRE(before.Step(quantum) == after.Step(quantum));
 			REQUIRE(before.Finished() == after.Finished());
@@ -381,13 +405,19 @@ template <typename Before, typename After> void CompareEverySlice(std::span<cons
 				if (Values(before.SearchLabel(state)) != Values(after.SearchLabel(state))) { metadata_equal = false; break; }
 			}
 			REQUIRE(metadata_equal);
-			if constexpr (!requires { after.alternative_candidates; }) {
+			if constexpr (!requires { after.alternative_candidates; } && !requires { after.publication_cursor; }) {
 				REQUIRE(std::equal(before.scratch.alternative.begin(), before.scratch.alternative.end(), after.scratch.alternative.begin(), after.scratch.alternative.end(),
 						[](const auto &a, const auto &b) { return Values(a) == Values(b); }));
 			}
 			REQUIRE(PassengerDestinationQueueInspector<typename Before::QueueItem>::Snapshot(before.queue) == PassengerDestinationQueueInspector<typename After::QueueItem>::Snapshot(after.queue));
-			REQUIRE(before.prepared.labels.size() == after.prepared.labels.size());
-			REQUIRE(std::equal(before.prepared.labels.begin(), before.prepared.labels.end(), after.prepared.labels.begin(), [](const auto &a, const auto &b) { return Values(a) == Values(b); }));
+			const size_t copied = PublicationPosition(before);
+			REQUIRE(copied == PublicationPosition(after));
+			bool prepared_equal = true;
+			for (uint32_t state = 0; state < copied; ++state) {
+				uint32_t origin = state_origins[state];
+				if (Values(StoredLabel(before, before.prepared, origin, state)) != Values(StoredLabel(after, after.prepared, origin, state))) { prepared_equal = false; break; }
+			}
+			REQUIRE(prepared_equal);
 			const auto &a = before.metrics; const auto &b = after.metrics;
 			REQUIRE(std::tie(a.relaxations, a.successes, a.pushes, a.pops, a.stale, a.copies, a.section_checks, a.push_order, a.pop_order) ==
 					std::tie(b.relaxations, b.successes, b.pushes, b.pops, b.stale, b.copies, b.section_checks, b.push_order, b.pop_order));
@@ -498,4 +528,32 @@ TEST_CASE("Precomputed build fixed real map snapshot", "[.table-real][passenger]
 #endif
 	auto candidate = Run<PassengerTableCandidate>(records, 20, "candidate-real");
 	Compare(reference, candidate);
+}
+
+TEST_CASE("Compressed rows retain canonical admission and legacy publication work", "[.table-rows][passenger]")
+{
+	PassengerTestStations fixture;
+	for (uint32_t id = 0; id < 32; ++id) Station::CreateAtIndex(StationID{static_cast<uint16_t>(id)}, TileIndex{256 + id + 1});
+	auto services = Synthetic(73, 8, 6, 12);
+	std::vector<const PassengerPeriodicService *> records; for (const auto &service : services) records.push_back(&service);
+	for (unsigned algorithm : {0U, 1U, 2U}) {
+		PassengerTableReference complete;
+		complete.Begin(records, CargoType{0}, 20, complete.MAX_BYTES, true, false, {}, true, algorithm != 0, algorithm == 2);
+		const uint64_t envelope = complete.GetDiagnostic().envelope;
+		for (uint64_t budget : {uint64_t{1}, uint64_t{1024 * 1024}, envelope - 1, envelope, complete.MAX_BYTES}) {
+			PassengerTableReference before; PassengerTableCandidate after;
+			before.Begin(records, CargoType{0}, 20, budget, true, false, {}, true, algorithm != 0, algorithm == 2);
+			after.Begin(records, CargoType{0}, 20, budget, true, false, {}, true, algorithm != 0, algorithm == 2);
+			REQUIRE(before.MemoryRejected() == after.MemoryRejected());
+			REQUIRE(before.GetDiagnostic().envelope == after.GetDiagnostic().envelope);
+			if (before.MemoryRejected()) continue;
+			while (!before.Finished()) {
+				REQUIRE(before.Step(5, true) == after.Step(5, true));
+				REQUIRE(before.GetDiagnostic().operations == after.GetDiagnostic().operations);
+				REQUIRE(before.GetDiagnostic().destinations == after.GetDiagnostic().destinations);
+				REQUIRE(before.LegacyPublicationWork() == after.LegacyPublicationWork());
+			}
+			REQUIRE(after.Finished()); Compare(before, after);
+		}
+	}
 }

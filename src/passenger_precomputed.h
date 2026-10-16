@@ -98,8 +98,18 @@ private:
 		int64_t cost = INT64_MAX, riding = 0, waiting = 0;
 		int64_t first_wait = 0;
 		uint32_t board = INVALID, alight = INVALID, legs = 0, distance = 0;
+		bool operator==(const Label &) const = default;
 	};
-	struct Row { std::vector<Label> labels, alternative; };
+	struct Row {
+		std::vector<Label> labels, alternative, exception_labels;
+		std::vector<uint32_t> indices; ///< Alternative indices, then exception state IDs.
+		bool Empty() const { return this->labels.empty(); }
+		size_t AllocatedBytes() const
+		{
+			return (this->labels.capacity() + this->alternative.capacity() + this->exception_labels.capacity()) * sizeof(Label) +
+					this->indices.capacity() * sizeof(uint32_t);
+		}
+	};
 	struct LabelMetadata {
 		int64_t riding = 0, waiting = 0, first_wait = 0;
 		uint32_t board = INVALID, alight = INVALID, distance = 0;
@@ -132,6 +142,8 @@ private:
 	std::vector<uint32_t> landings; ///< Section arrivals have no on-board continuation.
 	std::vector<uint32_t> incoming_offsets, incoming;
 	std::vector<uint32_t> seed_offsets, seed_occurrences; ///< Alighting occurrences in original order, indexed by destination station.
+	std::vector<uint32_t> exception_slots; ///< Dense exception slot only for stations with waiting states.
+	uint32_t exception_slot_count = 0;
 	std::vector<std::vector<std::pair<uint32_t, uint32_t>>> waiting_states;
 	std::vector<Row> rows;
 	std::vector<std::vector<StationID>> reachable_destinations; ///< Inverse published rows; no waiting-packet dependency.
@@ -141,6 +153,8 @@ private:
 	size_t reachable_bytes = 0;
 	Row scratch, prepared;
 	size_t waiting_state_count = 0;
+	size_t publication_cursor = 0; ///< Original virtual query-state copy position, independent of compressed storage.
+	size_t published_bytes = 0;
 	PassengerDestinationQueue<QueueItem> queue;
 	size_t destination = 0, cursor = 0;
 	uint32_t range_offset = 0; ///< Next virtual edge: zero is the separate base station, then begin..end.
@@ -162,6 +176,11 @@ private:
 	const Member *FindMember(OrderListID service) const;
 	const Section *FindSection(const PassengerJourneyExecution &ride) const;
 	void StartDestination();
+	bool UseCompressedRows() const;
+	const Label &RowLabel(const Row &row, uint32_t origin, uint32_t state) const;
+	const Label &AlternativeLabel(const Row &row, uint32_t origin) const;
+	void PrepareCompressedRow();
+	void CopyStationLabel(uint32_t origin);
 	int64_t SearchCost(uint32_t state) const { return this->optimized ? this->search.cost[state] : this->scratch.labels[state].cost; }
 	uint32_t SearchLegs(uint32_t state) const { return this->optimized ? this->search.legs[state] : this->scratch.labels[state].legs; }
 	uint32_t SearchBoard(uint32_t state) const { return this->optimized ? this->search.metadata[state].board : this->scratch.labels[state].board; }

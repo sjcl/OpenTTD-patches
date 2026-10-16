@@ -19,7 +19,9 @@ def main():
     parser.add_argument("--target", default="openttd_test")
     parser.add_argument("--all-tests", action="store_true")
     parser.add_argument("--test-filter", action="append", default=[], help="Additional opt-in test groups under the same reservation")
-    parser.add_argument("--runtime-reference", help="Prepare the copied runtime with a pre-A3 reference after configuration")
+    runtime = parser.add_mutually_exclusive_group()
+    runtime.add_argument("--runtime-reference", help="Prepare the copied runtime with a pre-A3 reference after configuration")
+    runtime.add_argument("--runtime-row-control", help="Prepare the copied game with dense/compressed integrated row control")
     parser.add_argument("--measurement-wait", type=int, default=60)
     args = parser.parse_args()
     build, log = args.build.resolve(), args.log.resolve()
@@ -42,6 +44,10 @@ def main():
                 import sys
                 run([sys.executable, "-B", str(ROOT / "utils/passenger_estimated_prepare.py"), str(ROOT), str(build), args.runtime_reference, "--cpu"])
                 run([sys.executable, "-B", str(ROOT / "utils/passenger_table_retirement_prepare.py"), str(ROOT), str(build), "--reference", args.runtime_reference])
+            if args.runtime_row_control:
+                import sys
+                run([sys.executable, "-B", str(ROOT / "utils/passenger_estimated_prepare.py"), str(ROOT), str(build), args.runtime_row_control, "--cpu"])
+                run([sys.executable, "-B", str(ROOT / "utils/passenger_table_row_prepare.py"), str(ROOT), str(build)])
             run(["cmake", "--build", str(build), "--config", "Release", "--target", args.target, "-j", "8"])
         if args.all_tests:
             with log.with_suffix(".tests.log").open("wb") as stream:

@@ -255,7 +255,7 @@ PassengerBuildTask PassengerPrecomputedTable::BuildGraph(std::vector<const Passe
 	memory = std::min(memory, MAX_BYTES);
 	/* Canonical byte charges are identical on 32/64-bit peers. Native sizeof
 	 * and allocator residency are diagnostics only, never routing admission. */
-	static_assert(sizeof(Label) <= 64 && sizeof(Edge) <= 64 && sizeof(QueueItem) <= 32 && sizeof(Row) <= 64);
+	static_assert(sizeof(Label) <= 64 && sizeof(Edge) <= 64 && sizeof(QueueItem) <= 32 && sizeof(Row) <= 128);
 	uint64_t envelope = 1024 * 1024;
 	if (envelope > memory) { this->failed = true; co_return; }
 	for (const auto *s : services) {
@@ -353,10 +353,13 @@ PassengerBuildTask PassengerPrecomputedTable::BuildGraph(std::vector<const Passe
 			pattern_members.push_back(members);
 		}
 		size_t nodes = this->stations.size();
-		for (auto &states : this->waiting_states) {
+		if (this->integrated) this->exception_slots.assign(this->stations.size(), INVALID);
+		for (uint32_t station = 0; station < this->waiting_states.size(); ++station) {
+			auto &states = this->waiting_states[station];
 			if (cooperative) co_await std::suspend_always{};
 			std::sort(states.begin(), states.end()); states.erase(std::unique(states.begin(), states.end()), states.end());
 			for (auto &state : states) state.second = static_cast<uint32_t>(nodes++);
+			if (this->integrated && !states.empty()) this->exception_slots[station] = this->exception_slot_count++;
 		}
 		this->waiting_state_count = nodes;
 		for (auto &o : this->occurrences) { o.arrival = static_cast<uint32_t>(nodes++); o.departure = static_cast<uint32_t>(nodes++); }
@@ -759,9 +762,74 @@ void PassengerPrecomputedTable::StartDestination()
 		this->search.metadata.resize(this->diagnostic.states);
 	} else this->scratch.labels.reserve(this->incoming_offsets.size() - 1);
 	this->scratch.alternative.assign(this->stations.size(), Label{});
-	this->prepared.labels.clear(); this->prepared.labels.reserve(this->waiting_state_count);
+	this->publication_cursor = 0;
+	this->prepared.labels.clear(); this->prepared.labels.reserve(this->UseCompressedRows() ? this->stations.size() : this->waiting_state_count);
 	this->expanding = INVALID; this->finishing_row = false; this->finishing = 0;
 	this->initializing_row = true; this->seeding = 0;
+}
+
+bool PassengerPrecomputedTable::UseCompressedRows() const
+{
+	return this->integrated;
+}
+
+const PassengerPrecomputedTable::Label &PassengerPrecomputedTable::RowLabel(const Row &row, uint32_t origin, uint32_t state) const
+{
+	if (!this->UseCompressedRows()) return row.labels[state];
+	if (state != origin) {
+		uint32_t slot = this->exception_slots[origin];
+		if (slot != INVALID && row.indices[this->stations.size() + slot] == state) return row.exception_labels[slot];
+	}
+	return row.labels[origin];
+}
+
+const PassengerPrecomputedTable::Label &PassengerPrecomputedTable::AlternativeLabel(const Row &row, uint32_t origin) const
+{
+	if (!this->UseCompressedRows()) return row.alternative[origin];
+	uint32_t index = row.indices[origin];
+	static const Label empty;
+	return index == INVALID ? empty : row.alternative[index];
+}
+
+void PassengerPrecomputedTable::PrepareCompressedRow()
+{
+	/* Keep the original conservative admission charge: at most 100*n + 52*w
+	 * payload bytes versus the reserved 128*n + 64*w. Four vector headers fit
+	 * the original 128-byte row charge, including MSVC debug iterators. Never
+	 * turn a saved v11 memory rejection into success. */
+	static_assert(sizeof(Label) == 48 && sizeof(Row) <= 128);
+	this->prepared.exception_labels.reserve(this->exception_slot_count);
+	this->prepared.indices.reserve(this->stations.size() + this->exception_slot_count);
+	this->prepared.indices.assign(this->stations.size() + this->exception_slot_count, INVALID);
+	size_t alternatives = std::count_if(this->scratch.alternative.begin(), this->scratch.alternative.end(), [](const Label &label) { return label.board != INVALID; });
+	this->prepared.alternative.reserve(alternatives);
+}
+
+void PassengerPrecomputedTable::CopyStationLabel(uint32_t origin)
+{
+	const Label base = this->SearchLabel(origin);
+	this->prepared.labels.push_back(base);
+	uint32_t slot = this->exception_slots[origin];
+	if (slot != INVALID) {
+		assert(slot == this->prepared.exception_labels.size());
+		uint32_t state = INVALID; Label exception;
+		/* The scalar range engine has the same final invariant. Check it once
+		 * at publication, rather than maintaining a cache at every descriptor. */
+		for (const auto &[pattern, waiting] : this->waiting_states[origin]) {
+			Label candidate = this->SearchLabel(waiting);
+			if (candidate == base) continue;
+			assert(state == INVALID);
+			state = waiting; exception = candidate;
+		}
+		this->prepared.indices[this->stations.size() + slot] = state; this->prepared.exception_labels.push_back(exception);
+	}
+	const auto &alternative = this->scratch.alternative[origin];
+	if (alternative.board == INVALID) {
+		assert(alternative == Label{});
+	} else {
+		this->prepared.indices[origin] = static_cast<uint32_t>(this->prepared.alternative.size());
+		this->prepared.alternative.push_back(alternative);
+	}
 }
 
 PassengerPrecomputedTable::Label PassengerPrecomputedTable::SearchLabel(uint32_t state) const
@@ -944,19 +1012,33 @@ size_t PassengerPrecomputedTable::Step(size_t allowance, bool legacy_publication
 				} else {
 					/* Arrival/departure labels are construction scratch. Queries use
 					 * only initial/transfer waits and one complete dispersion label. */
-					if (legacy_publication) {
-						if (this->optimized) {
-							for (uint32_t state = 0; state < this->waiting_state_count; ++state) this->prepared.labels.push_back(this->SearchLabel(state));
-						} else this->prepared.labels.assign(this->scratch.labels.begin(), this->scratch.labels.begin() + this->waiting_state_count);
-						for (size_t from = 0; from < this->stations.size(); ++from) index_origin(from);
-					} else if (this->prepared.labels.size() < this->waiting_state_count) {
-						/* Charge inverse-index construction to the existing label-copy
-						 * slice, rather than visiting all stations at publication. */
-						index_origin(this->prepared.labels.size());
-						this->prepared.labels.push_back(this->SearchLabel(static_cast<uint32_t>(this->prepared.labels.size()))); continue;
+					if (this->UseCompressedRows()) {
+						if (this->publication_cursor == 0) this->PrepareCompressedRow();
+						if (legacy_publication) {
+							for (uint32_t origin = 0; origin < this->stations.size(); ++origin) { index_origin(origin); this->CopyStationLabel(origin); }
+						} else if (this->publication_cursor < this->waiting_state_count) {
+							/* Stage each station's base/exception together, but consume
+							 * every original virtual copy before making the row public. */
+							size_t count = std::min(this->waiting_state_count - this->publication_cursor, allowance - used + 1);
+							for (size_t origin = this->publication_cursor; origin < std::min(this->stations.size(), this->publication_cursor + count); ++origin) {
+								index_origin(origin); this->CopyStationLabel(static_cast<uint32_t>(origin));
+							}
+							this->publication_cursor += count; used += count - 1; continue;
+						}
+					} else {
+						if (legacy_publication) {
+							if (this->optimized) {
+								for (uint32_t state = 0; state < this->waiting_state_count; ++state) this->prepared.labels.push_back(this->SearchLabel(state));
+							} else this->prepared.labels.assign(this->scratch.labels.begin(), this->scratch.labels.begin() + this->waiting_state_count);
+							for (size_t from = 0; from < this->stations.size(); ++from) index_origin(from);
+						} else if (this->prepared.labels.size() < this->waiting_state_count) {
+							index_origin(this->prepared.labels.size());
+							this->prepared.labels.push_back(this->SearchLabel(static_cast<uint32_t>(this->prepared.labels.size()))); continue;
+						}
+						this->prepared.alternative = std::move(this->scratch.alternative);
 					}
-					this->prepared.alternative = std::move(this->scratch.alternative);
-					this->rows.push_back(std::move(this->prepared));
+					this->rows.push_back(std::move(this->prepared)); this->publication_cursor = 0;
+					this->published_bytes += this->rows.back().AllocatedBytes();
 					if (published) published(this->stations[this->destination]);
 					++this->destination;
 					this->diagnostic.destinations = this->destination;
@@ -1001,11 +1083,14 @@ size_t PassengerPrecomputedTable::Step(size_t allowance, bool legacy_publication
 	} catch (const std::bad_alloc &) { FatalError("Insufficient memory for passenger routing. Disable passenger_journey_precomputed or free memory before resuming."); }
 	this->diagnostic.operations += used; this->diagnostic.build_nanoseconds += Elapsed(started);
 	this->diagnostic.bytes = this->station_index.capacity() * 4 + this->service_pattern.capacity() * 4 + this->edges.capacity() * sizeof(Edge) +
-			(this->incoming.capacity() + this->incoming_offsets.capacity()) * 4 + this->rows.size() * this->diagnostic.stored_states * sizeof(Label) +
+			(this->incoming.capacity() + this->incoming_offsets.capacity()) * 4 + (this->UseCompressedRows() ? this->published_bytes : this->rows.size() * this->diagnostic.stored_states * sizeof(Label)) +
 			(this->scratch.labels.capacity() + this->scratch.alternative.capacity() + this->prepared.labels.capacity()) * sizeof(Label) +
 			this->section_rides.capacity() * sizeof(SectionRide) + this->landings.capacity() * sizeof(uint32_t);
 	this->diagnostic.bytes += this->hot_edges.from.capacity() * 4 + this->hot_edges.cost.capacity() * 8 + this->hot_edges.legs.capacity() + this->hot_edges.range.capacity() * 4 + this->range_edges.capacity() * sizeof(RangeEdge) + this->cold_edges.capacity() * sizeof(ColdEdge);
 	this->diagnostic.bytes += this->binding_bytes + this->reachable_bytes;
+	this->diagnostic.bytes += this->exception_slots.capacity() * sizeof(uint32_t);
+	this->diagnostic.bytes += (this->prepared.exception_labels.capacity() + this->prepared.alternative.capacity() + this->scratch.exception_labels.capacity()) * sizeof(Label);
+	this->diagnostic.bytes += (this->prepared.indices.capacity() + this->scratch.indices.capacity()) * sizeof(uint32_t);
 	this->diagnostic.bytes += (this->seed_offsets.capacity() + this->seed_occurrences.capacity()) * sizeof(uint32_t);
 	this->diagnostic.bytes += this->queue.AllocatedBytes();
 	this->diagnostic.bytes += this->search.cost.capacity() * sizeof(int64_t) + this->search.legs.capacity() * sizeof(uint32_t) + this->search.metadata.capacity() * sizeof(LabelMetadata);
@@ -1069,9 +1154,10 @@ void PassengerPrecomputedTable::ReleaseDestination(StationID destination)
 	}
 	if (destination.base() >= this->station_index.size()) return;
 	uint32_t row = this->station_index[destination.base()];
-	if (row < this->rows.size() && !this->rows[row].labels.empty()) {
-		this->diagnostic.bytes -= std::min(this->diagnostic.bytes,
-				(this->rows[row].labels.capacity() + this->rows[row].alternative.capacity()) * sizeof(Label));
+	if (row < this->rows.size() && !this->rows[row].Empty()) {
+		const size_t bytes = this->rows[row].AllocatedBytes();
+		this->published_bytes -= bytes;
+		this->diagnostic.bytes -= std::min(this->diagnostic.bytes, bytes);
 		this->rows[row] = {};
 		if (!this->retirement_prepared) for (auto &destinations : this->reachable_destinations) {
 			auto found = std::lower_bound(destinations.begin(), destinations.end(), destination);
@@ -1105,8 +1191,8 @@ std::optional<int64_t> PassengerPrecomputedTable::RouteCost(StationID origin, St
 {
 	if (this->failed || origin.base() >= this->station_index.size() || destination.base() >= this->station_index.size()) return {};
 	uint32_t from = this->station_index[origin.base()], to = this->station_index[destination.base()];
-	if (from == INVALID || to >= this->rows.size() || this->rows[to].labels.empty()) return {};
-	return this->rows[to].labels[from].cost;
+	if (from == INVALID || to >= this->rows.size() || this->rows[to].Empty()) return {};
+	return this->RowLabel(this->rows[to], from, from).cost;
 }
 
 PassengerPrecomputedPlan PassengerPrecomputedTable::Select(const Label &label, StateTicks ready, OrderListID excluded, uint32_t sample) const
@@ -1141,11 +1227,11 @@ PassengerPrecomputedPlan PassengerPrecomputedTable::Plan(StationID origin, Stati
 		if (origin.base() >= this->station_index.size() || destination.base() >= this->station_index.size()) return {PassengerPrecomputedPlan::State::Unsupported};
 		uint32_t from = this->station_index[origin.base()], to = this->station_index[destination.base()];
 		if (from == INVALID || to == INVALID || from == to) return {this->unsupported ? PassengerPrecomputedPlan::State::Unsupported : PassengerPrecomputedPlan::State::NoRoute};
-		if (to >= this->rows.size() || this->rows[to].labels.empty()) return {PassengerPrecomputedPlan::State::Building};
+		if (to >= this->rows.size() || this->rows[to].Empty()) return {PassengerPrecomputedPlan::State::Building};
 		uint32_t previous = excluded.base() < this->service_pattern.size() ? this->service_pattern[excluded.base()] : INVALID;
 		uint32_t state = previous == INVALID ? from : this->StateFor(from, previous);
-		const auto &row = this->rows[to]; Label label = row.labels[state];
-		const auto &alternative = row.alternative[from];
+		const auto &row = this->rows[to]; Label label = this->RowLabel(row, from, state);
+		const auto &alternative = this->AlternativeLabel(row, from);
 		if (state == from && (!this->estimates || excluded == OrderListID::Invalid()) && label.board != INVALID && alternative.board != INVALID) {
 			const auto &best = this->patterns[this->occurrences[label.board].pattern], &alt = this->patterns[this->occurrences[alternative.board].pattern];
 			if (uint64_t(sample) * (best.weight + alt.weight) / (uint64_t{1} << 32) < alt.weight) {
