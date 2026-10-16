@@ -6,7 +6,9 @@
 #include "../3rdparty/catch2/catch.hpp"
 #include "../passenger_precomputed.h"
 #include "../passenger_service_database.h"
+#include "passenger_test_stations.h"
 #include <chrono>
+#include <fstream>
 #include <iostream>
 
 namespace {
@@ -32,6 +34,144 @@ namespace {
 		for (size_t i = 0; !table.Finished() && i < 1000000; ++i) table.Step(chunk);
 		REQUIRE(table.Finished()); return table;
 	}
+}
+
+TEST_CASE("Hyperpath fixed point preserves single waits and exact acceptance", "[passenger][hyperpath]")
+{
+	for (int64_t wait : {1LL, 2LL, 3LL, 100LL, 65537LL, PassengerStrategy::MAX_WAIT}) {
+		PassengerStrategy sum;
+		REQUIRE(sum.Add(1234, PassengerStrategy::Frequency(wait)));
+		CHECK(sum.Cost() == wait + 1234); CHECK(sum.Wait() == wait);
+		CHECK_FALSE(sum.Attractive(sum.Cost()));
+	}
+	PassengerStrategy sum;
+	REQUIRE(sum.Add(100, PassengerStrategy::Frequency(100)));
+	CHECK(sum.Cost() == 200);
+	REQUIRE(sum.Add(150, PassengerStrategy::Frequency(100)));
+	CHECK(sum.Cost() == 175);
+	CHECK_FALSE(sum.Add(175, PassengerStrategy::Frequency(1)));
+	PassengerStrategy many;
+	for (size_t i = 0; i < 9; ++i) REQUIRE(many.Add(100, PassengerStrategy::Frequency(100)));
+	CHECK(many.Cost() == 112); // ceil(100 + 100/9), from the independent Fraction oracle.
+	CHECK(PassengerWide::Multiply(UINT64_MAX, UINT64_MAX) == PassengerWide{UINT64_MAX - 1, 1});
+}
+
+TEST_CASE("Hyperpath frozen real map intermediate diagnostic", "[.hyperpath-real][passenger]")
+{
+	const char *path = getenv("OPENTTD_TABLE_DATABASE"); REQUIRE(path != nullptr);
+	std::ifstream file(path, std::ios::binary); REQUIRE(file.good());
+	std::vector<uint8_t> wire{std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>()};
+	PassengerServiceDatabase database; REQUIRE(database.Load(wire));
+	PassengerTestStations fixture;
+	if (const char *coordinates = getenv("OPENTTD_TABLE_STATIONS")) {
+		std::ifstream positions(coordinates); uint32_t width, height, id, x, y; REQUIRE(bool(positions >> width >> height));
+		AllocateMap(width, height);
+		while (positions >> id >> x >> y) Station::CreateAtIndex(StationID{static_cast<uint16_t>(id)}, TileIndex{width * y + x});
+	}
+	std::vector<const PassengerPeriodicService *> records;
+	for (uint32_t id = 0; id < OrderListID::Invalid().base(); ++id) if (auto *service = database.Get(OrderListID{static_cast<uint16_t>(id)})) records.push_back(service);
+	std::array<std::pair<StationID, StationID>, 3> ods{{{StationID{3222}, StationID{400}}, {StationID{971}, StationID{916}}, {StationID{3393}, StationID{3394}}}};
+	std::array<int64_t, 3> old_cost{};
+	{
+		PassengerPrecomputedTable old; old.Begin(records, PAX, 20);
+		while (!old.Finished()) old.Step(16 * 1024 * 1024);
+		for (size_t i = 0; i < ods.size(); ++i) old_cost[i] = old.RouteCost(ods[i].first, ods[i].second).value_or(INT64_MAX);
+	}
+	PassengerPrecomputedTable table;
+	auto start = std::chrono::steady_clock::now();
+	table.Begin(records, PAX, 20, PassengerPrecomputedTable::MAX_BYTES, true, false, {}, true, true, true, true);
+	while (!table.Finished()) table.Step(16 * 1024 * 1024);
+	const auto &d = table.GetDiagnostic();
+	std::cout << "hyperpath_build," << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start).count()
+			<< ',' << d.operations << ',' << d.envelope << ',' << d.bytes << ',' << d.board_events << ',' << d.board_accepts << ',' << d.range_updates
+			<< ',' << d.heap_pushes << ',' << d.heap_pops << ',' << d.base_policy_bytes << ',' << d.difference_policy_bytes << ',' << d.max_candidates << std::endl;
+	REQUIRE_FALSE(table.MemoryRejected());
+	for (const auto &[size, count] : d.candidate_histogram) std::cout << "hyperpath_histogram," << size << ',' << count << std::endl;
+	for (size_t i = 0; i < ods.size(); ++i) {
+		auto [from, to] = ods[i]; auto plan = table.Plan(from, to, StateTicks{});
+		std::cout << "hyperpath_od," << from.base() << ',' << to.base() << ',' << old_cost[i] << ',' << plan.cost << std::endl;
+		for (const auto &candidate : table.Inspect(from, to)) std::cout << "hyperpath_candidate," << from.base() << ',' << to.base() << ',' << candidate.occurrence << ','
+				<< candidate.service.base() << ',' << candidate.order << ',' << candidate.alight.base() << ',' << candidate.cost << ',' << candidate.wait << ',' << candidate.frequency << std::endl;
+	}
+}
+
+TEST_CASE("Hyperpath keeps all attractive real boarding occurrences", "[passenger][hyperpath]")
+{
+	std::vector<PassengerPeriodicService> services;
+	for (uint16_t i = 0; i < 9; ++i) services.push_back(Service(i, {A, B, D}, 100 + i));
+	services.push_back(Service(9, {A, C}, 100)); // A short turn cannot become a through ride to D.
+	std::vector<const PassengerPeriodicService *> records; for (const auto &s : services) records.push_back(&s);
+	uint64_t work = 0;
+	for (size_t chunk : {size_t{1}, size_t{7}, size_t{65536}}) {
+		PassengerPrecomputedTable table;
+		table.Begin(records, PAX, 20, PassengerPrecomputedTable::MAX_BYTES, true, false, {}, true, true, true, true);
+		while (!table.Finished()) table.Step(chunk);
+		REQUIRE_FALSE(table.MemoryRejected());
+		CAPTURE(chunk);
+		if (work == 0) work = table.GetDiagnostic().operations;
+		CHECK(work == table.GetDiagnostic().operations);
+		auto set = table.Inspect(A, D);
+		REQUIRE(set.size() == 9);
+		CHECK(table.GetDiagnostic().section_rides == 0);
+		CHECK(table.GetDiagnostic().max_candidates >= 9);
+		auto plan = table.Plan(A, D, StateTicks{42}); REQUIRE(plan.ride); CHECK(plan.hyperpath);
+		PassengerStrategy reference;
+		std::sort(set.begin(), set.end(), [](const auto &a, const auto &b) { return std::tie(a.cost, a.occurrence) < std::tie(b.cost, b.occurrence); });
+		for (const auto &candidate : set) {
+			CAPTURE(candidate.service.base(), candidate.cost, candidate.frequency, reference.Cost());
+			REQUIRE(reference.Add(candidate.cost, candidate.frequency));
+			auto board = table.Board(A, D, StateTicks{42}, candidate.service, candidate.order);
+			REQUIRE(board.ride); CHECK(board.ride->alighting == D); CHECK(board.cost == candidate.cost);
+		}
+		CHECK(plan.cost == reference.Cost());
+		CHECK_FALSE(table.Board(A, D, StateTicks{}, OrderListID{9}, 0).ride);
+		CHECK(table.Candidates(A, D, OrderListID{0}).size() == 8);
+	}
+}
+
+TEST_CASE("Hyperpath excludes only the arriving OrderList and handles masks", "[passenger][hyperpath]")
+{
+	std::array services{Service(0, {A, B, D}), Service(1, {A, B, D}), Service(2, {A, C, D}, 100)};
+	SECTION("Identical patterns remain distinct real opportunities") {}
+	SECTION("NoLoad") { services[2].timetable.stops[0].board = 0; }
+	SECTION("NoUnload") { services[2].timetable.stops[2].alight = 0; }
+	SECTION("Forced unloading") { services[2].timetable.stops[1].forced = 1; }
+	SECTION("Zero dwell") { for (auto &s : services) for (auto &stop : s.timetable.stops) stop.departure = stop.arrival; }
+	std::vector<const PassengerPeriodicService *> records; for (const auto &s : services) records.push_back(&s);
+	PassengerPrecomputedTable table; table.Begin(records, PAX, 0, PassengerPrecomputedTable::MAX_BYTES, true, false, {}, true, true, true, true);
+	while (!table.Finished()) table.Step(3);
+	REQUIRE_FALSE(table.MemoryRejected());
+	auto set = table.Inspect(A, D, OrderListID{0});
+	CHECK(std::none_of(set.begin(), set.end(), [](const auto &c) { return c.service == OrderListID{0}; }));
+	CHECK(std::any_of(set.begin(), set.end(), [](const auto &c) { return c.service == OrderListID{1}; }));
+}
+
+TEST_CASE("Hyperpath orders Board events by cost including risk", "[passenger][hyperpath]")
+{
+	std::array services{Service(0, {A, D}, 100), Service(1, {A, D}, 150)};
+	services[0].vehicles[0].capacity[PAX] = 1;
+	std::vector<const PassengerPeriodicService *> records; for (const auto &s : services) records.push_back(&s);
+	PassengerPrecomputedTable table; table.Begin(records, PAX, 0, PassengerPrecomputedTable::MAX_BYTES, true, false, {}, true, true, true, true);
+	while (!table.Finished()) table.Step(1);
+	auto set = table.Inspect(A, D);
+	REQUIRE(set.size() == 1); CHECK(set[0].service == OrderListID{1});
+	CHECK(set[0].cost == 155); CHECK(set[0].wait == 160);
+	CHECK(table.Plan(A, D, StateTicks{}).cost == 315);
+}
+
+TEST_CASE("Hyperpath matches single-service certified and estimated costs", "[passenger][hyperpath]")
+{
+	std::array services{Service(0, {A, B, D})};
+	SECTION("Certified") {}
+	SECTION("Unknown phase") { services[0].vehicles[0].phase_known = false; }
+	SECTION("Estimated") { services[0].timetable.estimated_period = services[0].timetable.period; services[0].timetable.period = 0; }
+	std::vector<const PassengerPeriodicService *> records{&services[0]};
+	auto old = Build(services);
+	PassengerPrecomputedTable table; table.Begin(records, PAX, 20, PassengerPrecomputedTable::MAX_BYTES, true, false, {}, true, true, true, true);
+	while (!table.Finished()) table.Step(7);
+	CHECK(table.Plan(A, D, StateTicks{}).cost == old.Plan(A, D, StateTicks{}).cost);
+	auto set = table.Inspect(A, D); REQUIRE(set.size() == 1);
+	CHECK(table.Plan(A, D, StateTicks{}).cost == set[0].cost + set[0].wait);
 }
 
 TEST_CASE("Precomputed trees preserve through rides and physical occurrences", "[passenger][precomputed]")

@@ -11,9 +11,11 @@
 #include "cargo_type.h"
 #include "passenger_build_task.h"
 #include "core/passenger_queue.hpp"
+#include "core/passenger_strategy.hpp"
 #include <queue>
 #include <functional>
 #include <unordered_map>
+#include <map>
 
 struct PassengerPeriodicService;
 
@@ -24,6 +26,7 @@ struct PassengerPrecomputedPlan {
 	int64_t cost = 0, riding = 0, waiting = 0;
 	uint32_t distance = 0, transfers = 0;
 	bool estimated_service = false; ///< First carrier has an incomplete timetable; no certified departure exists.
+	bool hyperpath = false;
 };
 
 struct PassengerPrecomputedDiagnostic {
@@ -37,6 +40,10 @@ struct PassengerPrecomputedDiagnostic {
 	uint64_t envelope = 0;
 	size_t retained_destinations = 0, retained_bytes = 0;
 	uint64_t retained_envelope = 0;
+	uint64_t board_events = 0, board_accepts = 0, range_updates = 0, heap_pushes = 0, heap_pops = 0;
+	uint64_t candidate_count = 0, policy_count = 0, base_policy_bytes = 0, difference_policy_bytes = 0;
+	size_t max_candidates = 0;
+	std::map<size_t, uint64_t> candidate_histogram;
 };
 
 /** Mandatory derived state, independent of the optional Timed/Schedule caches.
@@ -53,7 +60,7 @@ class PassengerPrecomputedTable {
 public:
 	static constexpr uint32_t INVALID = UINT32_MAX;
 	static constexpr uint64_t MAX_BYTES = uint64_t{16} * 1024 * 1024 * 1024;
-	void Begin(std::span<const PassengerPeriodicService *const> services, CargoType cargo, int64_t transfer, uint64_t memory = MAX_BYTES, bool sections = true, bool cooperative = false, std::shared_ptr<uint64_t> memory_budget = {}, bool estimates = true, bool optimized = true, bool integrated = true);
+	void Begin(std::span<const PassengerPeriodicService *const> services, CargoType cargo, int64_t transfer, uint64_t memory = MAX_BYTES, bool sections = true, bool cooperative = false, std::shared_ptr<uint64_t> memory_budget = {}, bool estimates = true, bool optimized = true, bool integrated = true, bool hyperpath = false);
 	bool PrepareGraph(size_t quantum = 1024);
 	bool IsPreparingGraph() const { return static_cast<bool>(this->graph_build); }
 	uint64_t GetGraphWork() const { return this->graph_work; }
@@ -73,6 +80,11 @@ public:
 	bool RefreshService(const PassengerPeriodicService &service); ///< Refresh bindings, retaining the frozen estimated costs.
 	std::span<const StationID> ReachableDestinations(StationID origin) const;
 	std::optional<int64_t> RouteCost(StationID origin, StationID destination) const; ///< Missing row differs from a proved infinite cost.
+	bool IsHyperpath() const { return this->hyperpath; }
+	std::span<const uint32_t> Candidates(StationID origin, StationID destination, OrderListID previous = OrderListID::Invalid()) const;
+	PassengerPrecomputedPlan Board(StationID origin, StationID destination, StateTicks ready, OrderListID service, VehicleOrderID order, OrderListID previous = OrderListID::Invalid()) const;
+	struct CandidateDiagnostic { uint32_t occurrence; OrderListID service; VehicleOrderID order; StationID alight; int64_t cost, wait; uint64_t frequency; };
+	std::vector<CandidateDiagnostic> Inspect(StationID origin, StationID destination, OrderListID previous = OrderListID::Invalid()) const;
 private:
 	struct Member { OrderListID id; uint64_t incarnation, generation; bool estimated; };
 	struct Pattern {
@@ -83,7 +95,7 @@ private:
 		uint64_t weight = 1;
 		bool estimated = false;
 	};
-	struct Occurrence { StationID station; VehicleOrderID order; uint32_t pattern, arrival, departure; bool board, alight, forced, continues; };
+	struct Occurrence { StationID station; VehicleOrderID order; uint32_t pattern, arrival, departure; bool board, alight, forced, continues; int64_t travel = 0, uncertainty = 0, dwell = 0; uint32_t distance = 0; };
 	enum class EdgeKind : uint8_t { Board, Ride, Wait, Alight, Section };
 	struct Edge { uint32_t from, to, occurrence; int64_t cost; uint32_t distance; EdgeKind kind; int64_t uncertainty; uint32_t range = INVALID; };
 	struct RangeEdge { uint32_t begin, end, excluded; }; ///< Base station is the descriptor's from, preceding this contiguous range.
@@ -96,7 +108,8 @@ private:
 		int64_t first_wait = 0;
 		uint32_t board = INVALID, alight = INVALID, legs = 0, distance = 0;
 	};
-	struct Row { std::vector<Label> labels, alternative; };
+	struct Policy { int64_t cost = INT64_MAX, wait = 0; std::vector<uint32_t> candidates; };
+	struct Row { std::vector<Label> labels, alternative; std::vector<uint32_t> policy_index; std::vector<Policy> policies; };
 	struct LabelMetadata {
 		int64_t riding = 0, waiting = 0, first_wait = 0;
 		uint32_t board = INVALID, alight = INVALID, distance = 0;
@@ -130,6 +143,7 @@ private:
 	std::vector<uint32_t> incoming_offsets, incoming;
 	std::vector<uint32_t> seed_offsets, seed_occurrences; ///< Alighting occurrences in original order, indexed by destination station.
 	std::vector<std::vector<std::pair<uint32_t, uint32_t>>> waiting_states;
+	std::vector<uint32_t> waiting_station;
 	std::vector<Row> rows;
 	std::vector<std::vector<StationID>> reachable_destinations; ///< Inverse published rows; no waiting-packet dependency.
 	size_t reachable_bytes = 0;
@@ -147,6 +161,16 @@ private:
 	bool estimates = true;
 	bool optimized = true; ///< Saved algorithm identity; old work cursors always use the original graph and operation sequence.
 	bool integrated = true; ///< v11 bounded range/CSR engine; never reinterpret a v10 operation cursor.
+	bool hyperpath = false; ///< A separate algorithm identity; legacy work never enters the strategy queue.
+	int64_t transfer_cost = 0;
+	struct StrategyWorkspace {
+		std::vector<PassengerStrategy> sums;
+		std::vector<std::vector<uint32_t>> candidates;
+		std::vector<bool> settled;
+		PassengerDestinationQueue<QueueItem> events;
+		uint32_t board_edge = INVALID, offset = 0;
+		int64_t last = 0;
+	} strategy;
 	CargoType cargo = INVALID_CARGO;
 	PassengerBuildTask graph_build; ///< Derived preparation only. No row can be published until this completes.
 	uint64_t graph_work = 0; ///< Actual coroutine steps, used only for bounded join progress reports.
@@ -164,6 +188,11 @@ private:
 	Label SearchLabel(uint32_t state) const;
 	void SetSearchLabel(uint32_t state, const Label &label);
 	size_t RelaxIncoming(size_t allowance);
+	size_t StepHyperpath(size_t allowance, const std::function<void(StationID)> &published);
+	void PushHyperpath(int64_t key, uint32_t kind, uint32_t id);
+	uint32_t PolicyState(StationID origin, OrderListID previous) const;
+	const Row *FindRow(StationID destination) const;
+	Label EvaluateRide(const Row &row, uint32_t board, StationID destination) const;
 	void AddBoardEdges(uint32_t station, uint32_t to, uint32_t pattern, int64_t cost, EdgeKind kind, uint32_t occurrence, uint32_t distance = 0);
 	void ContractGraph(size_t &nodes);
 	void AddEdge(uint32_t from, uint32_t to, int64_t cost, EdgeKind kind, uint32_t occurrence = INVALID, uint32_t distance = 0, int64_t uncertainty = 0);
