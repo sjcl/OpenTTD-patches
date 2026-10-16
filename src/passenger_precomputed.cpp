@@ -774,46 +774,51 @@ void PassengerPrecomputedTable::SetSearchLabel(uint32_t state, const Label &labe
 size_t PassengerPrecomputedTable::RelaxIncoming(size_t allowance)
 {
 	size_t total = 0;
+	/* Every edge is nonnegative in (cost, legs), so relaxing an incoming
+	 * edge cannot improve the expanded state itself. Keep its priorities
+	 * outside the descriptor loop, including at a saved slice boundary. */
+	const int64_t source_cost = this->search.cost[this->expanding];
+	const uint32_t source_legs = this->search.legs[this->expanding];
 	do {
-	const uint32_t index = static_cast<uint32_t>(this->cursor);
-	const uint32_t range_id = this->hot_edges.range[index];
-	const auto range = range_id == INVALID ? RangeEdge{0, 0, INVALID} : this->range_edges[range_id];
-	const uint32_t count = 1 + range.end - range.begin;
-	const int64_t source_cost = this->SearchCost(this->expanding), edge_cost = this->hot_edges.cost[index];
-	const uint32_t source_legs = this->SearchLegs(this->expanding), delta = this->hot_edges.legs[index];
-	const bool finite = source_cost <= INT64_MAX - edge_cost && source_legs <= UINT32_MAX - delta;
-	const int64_t cost = finite ? source_cost + edge_cost : INT64_MAX;
-	const uint32_t legs = finite ? source_legs + delta : UINT32_MAX;
-	size_t used = 0;
-	Label next; bool materialized = false;
-	while (this->range_offset < count && used < allowance) {
-		uint32_t from = this->range_offset == 0 ? this->hot_edges.from[index] : range.begin + this->range_offset - 1;
-		++this->range_offset;
-		if (from == range.excluded) continue;
-		++used;
-		if (!finite || std::tuple(cost, legs) >= std::tuple(this->search.cost[from], this->search.legs[from])) continue;
-		if (!materialized) {
-			const auto &edge = this->cold_edges[index];
-			next = this->SearchLabel(this->expanding); next.cost = cost; next.legs = legs;
-			next.distance = static_cast<uint32_t>(std::min<uint64_t>(UINT32_MAX, uint64_t(next.distance) + edge.distance));
-			if (edge.kind == EdgeKind::Board) {
-				next.board = edge.occurrence;
-				next.first_wait = this->patterns[this->occurrences[edge.occurrence].pattern].wait; next.waiting += next.first_wait;
-			} else if (edge.kind == EdgeKind::Section) {
-				const auto &ride = this->section_rides[edge.occurrence];
-				next.board = ride.board; next.alight = ride.alight;
-				next.first_wait = ride.waiting; next.waiting += ride.waiting; next.riding += ride.riding;
-			} else if (edge.kind == EdgeKind::Ride) next.riding += edge_cost - edge.uncertainty;
-			else if (edge.kind == EdgeKind::Alight) { next.board = INVALID; next.alight = edge.occurrence; next.waiting += edge_cost / 2; }
-			materialized = true;
+		const uint32_t index = static_cast<uint32_t>(this->cursor);
+		const uint32_t range_id = this->hot_edges.range[index];
+		const auto range = range_id == INVALID ? RangeEdge{0, 0, INVALID} : this->range_edges[range_id];
+		const uint32_t count = 1 + range.end - range.begin;
+		const int64_t edge_cost = this->hot_edges.cost[index];
+		const uint32_t delta = this->hot_edges.legs[index];
+		const bool finite = source_cost <= INT64_MAX - edge_cost && source_legs <= UINT32_MAX - delta;
+		const int64_t cost = finite ? source_cost + edge_cost : INT64_MAX;
+		const uint32_t legs = finite ? source_legs + delta : UINT32_MAX;
+		size_t used = 0;
+		Label next; bool materialized = false;
+		while (this->range_offset < count && used < allowance) {
+			uint32_t from = this->range_offset == 0 ? this->hot_edges.from[index] : range.begin + this->range_offset - 1;
+			++this->range_offset;
+			if (from == range.excluded) continue;
+			++used;
+			if (!finite || std::tuple(cost, legs) >= std::tuple(this->search.cost[from], this->search.legs[from])) continue;
+			if (!materialized) {
+				const auto &edge = this->cold_edges[index];
+				next = this->SearchLabel(this->expanding); next.cost = cost; next.legs = legs;
+				next.distance = static_cast<uint32_t>(std::min<uint64_t>(UINT32_MAX, uint64_t(next.distance) + edge.distance));
+				if (edge.kind == EdgeKind::Board) {
+					next.board = edge.occurrence;
+					next.first_wait = this->patterns[this->occurrences[edge.occurrence].pattern].wait; next.waiting += next.first_wait;
+				} else if (edge.kind == EdgeKind::Section) {
+					const auto &ride = this->section_rides[edge.occurrence];
+					next.board = ride.board; next.alight = ride.alight;
+					next.first_wait = ride.waiting; next.waiting += ride.waiting; next.riding += ride.riding;
+				} else if (edge.kind == EdgeKind::Ride) next.riding += edge_cost - edge.uncertainty;
+				else if (edge.kind == EdgeKind::Alight) { next.board = INVALID; next.alight = edge.occurrence; next.waiting += edge_cost / 2; }
+				materialized = true;
+			}
+			this->SetSearchLabel(from, next); this->queue.emplace(cost, legs, from);
 		}
-		this->SetSearchLabel(from, next); this->queue.emplace(cost, legs, from);
-	}
-	/* An excluded final state consumes no work, including at a slice boundary. */
-	if (this->range_offset < count && this->range_offset != 0 && range.begin + this->range_offset - 1 == range.excluded) ++this->range_offset;
-	if (this->range_offset == count) { ++this->cursor; this->range_offset = 0; }
-	assert(used > 0);
-	total += used; allowance -= used;
+		/* An excluded final state consumes no work, including at a slice boundary. */
+		if (this->range_offset < count && this->range_offset != 0 && range.begin + this->range_offset - 1 == range.excluded) ++this->range_offset;
+		if (this->range_offset == count) { ++this->cursor; this->range_offset = 0; }
+		assert(used > 0);
+		total += used; allowance -= used;
 	} while (allowance != 0 && this->cursor < this->incoming_offsets[this->expanding + 1]);
 	return total;
 }
