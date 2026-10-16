@@ -94,3 +94,23 @@ TEST_CASE("Precomputed build fixed synthetic timing", "[.table-timing][passenger
 		Compare(reference, candidate);
 	}
 }
+
+TEST_CASE("Precomputed build fixed real map snapshot", "[.table-real][passenger]")
+{
+	const char *path = getenv("OPENTTD_TABLE_DATABASE"); REQUIRE(path != nullptr);
+	std::ifstream file(path, std::ios::binary); REQUIRE(file.good());
+	std::vector<uint8_t> wire{std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>()};
+	PassengerServiceDatabase database; REQUIRE(database.Load(wire));
+	PassengerTestStations fixture;
+	std::vector<const PassengerPeriodicService *> records;
+	for (uint32_t id = 0; id < OrderListID::Invalid().base(); ++id) if (auto *service = database.Get(OrderListID{static_cast<uint16_t>(id)})) records.push_back(service);
+	/* Coordinates are exported independently of the routing DB. Missing
+	 * coordinates are reported explicitly; cost/timing still use real input. */
+	if (const char *coordinates = getenv("OPENTTD_TABLE_STATIONS")) {
+		std::ifstream positions(coordinates); uint32_t id, x, y;
+		while (positions >> id >> x >> y) Station::CreateAtIndex(StationID{static_cast<uint16_t>(id)}, TileIndex{256 * y + x});
+	} else std::cout << "limitation,real-map station coordinates absent; distances are zero\n";
+	auto reference = Run<PassengerTableReference>(records, 20, "reference-real");
+	auto candidate = Run<PassengerTableCandidate>(records, 20, "candidate-real");
+	Compare(reference, candidate);
+}

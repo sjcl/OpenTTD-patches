@@ -800,9 +800,11 @@ void PassengerServiceDatabase::BeginPrecomputed(int64_t transfer)
 		this->retained_precomputed_transfer = this->precomputed_transfer;
 		this->retained_precomputed_sections = this->precomputed_sections;
 		this->retained_precomputed_estimates = this->precomputed_estimates;
+		this->retained_precomputed_optimized = this->precomputed_optimized;
 	}
 	this->precomputed_sections = true;
 	this->precomputed_estimates = true;
+	this->precomputed_optimized = true;
 	this->precomputed_revision = this->published_revision;
 	this->precomputed_transfer = transfer; this->precomputed_invalidated = false;
 	int64_t refresh = _state_ticks.base();
@@ -824,11 +826,11 @@ void PassengerServiceDatabase::BuildPrecomputedTables()
 		uint64_t bytes = 512 + uint64_t{256} * service.timetable.stops.size() + uint64_t{1024} * service.vehicles.size() + uint64_t{32} * service.dispatch_slots.size();
 		remaining -= std::min(remaining, bytes);
 	}
-	this->BuildPrecomputedTables(this->precomputed, this->precomputed_services, this->precomputed_transfer, remaining, this->precomputed_sections, this->precomputed_estimates, this->cooperative_graph);
+	this->BuildPrecomputedTables(this->precomputed, this->precomputed_services, this->precomputed_transfer, remaining, this->precomputed_sections, this->precomputed_estimates, this->precomputed_optimized, this->cooperative_graph);
 }
 
 void PassengerServiceDatabase::BuildPrecomputedTables(std::array<PassengerPrecomputedTable, NUM_CARGO> &tables,
-		const std::map<OrderListID, PassengerPeriodicService> &snapshot, int64_t transfer, uint64_t remaining, bool sections, bool estimates, bool cooperative)
+		const std::map<OrderListID, PassengerPeriodicService> &snapshot, int64_t transfer, uint64_t remaining, bool sections, bool estimates, bool optimized, bool cooperative)
 {
 	std::vector<const PassengerPeriodicService *> records;
 	for (const auto &[id, service] : snapshot) {
@@ -840,7 +842,7 @@ void PassengerServiceDatabase::BuildPrecomputedTables(std::array<PassengerPrecom
 	auto memory_budget = cooperative ? std::make_shared<uint64_t>(remaining) : nullptr;
 	for (CargoType cargo : EnumRange(NUM_CARGO)) {
 		if (!IsCargoInClass(cargo, CargoClass::Passengers)) continue;
-		tables[cargo].Begin(records, cargo, transfer, remaining, sections, cooperative, memory_budget, estimates);
+		tables[cargo].Begin(records, cargo, transfer, remaining, sections, cooperative, memory_budget, estimates, optimized);
 		remaining -= std::min(remaining, tables[cargo].GetDiagnostic().envelope);
 	}
 }
@@ -853,6 +855,7 @@ void PassengerServiceDatabase::ClearRetainedPrecomputed()
 	this->retained_precomputed_transfer = 0;
 	this->retained_precomputed_sections = true;
 	this->retained_precomputed_estimates = true;
+	this->retained_precomputed_optimized = true;
 }
 
 void PassengerServiceDatabase::DiscardPrecomputed()
@@ -864,6 +867,7 @@ void PassengerServiceDatabase::DiscardPrecomputed()
 	this->precomputed_revision = UINT64_MAX; this->precomputed_operations = 0; this->precomputed_invalidated = false;
 	this->precomputed_sections = true;
 	this->precomputed_estimates = true;
+	this->precomputed_optimized = true;
 }
 
 bool PassengerServiceDatabase::PrecomputedFinished() const
@@ -879,7 +883,7 @@ void PassengerServiceDatabase::TickPrecomputed(size_t allowance)
 	 * Actual order/boarding changes still restart; cost-only changes coalesce. */
 	if (this->precomputed_revision == UINT64_MAX && this->services.empty()) return;
 	const bool finished = std::all_of(this->precomputed.begin(), this->precomputed.end(), [](const auto &t) { return t.Finished(); });
-	if (this->precomputed_revision == UINT64_MAX || (finished && (!this->precomputed_sections || !this->precomputed_estimates || this->precomputed_invalidated ||
+	if (this->precomputed_revision == UINT64_MAX || (finished && (!this->precomputed_sections || !this->precomputed_estimates || !this->precomputed_optimized || this->precomputed_invalidated ||
 			this->precomputed_transfer != _settings_game.linkgraph.passenger_transfer_penalty ||
 			(_state_ticks >= this->precomputed_refresh && this->precomputed_revision != this->published_revision))))
 		this->BeginPrecomputed(_settings_game.linkgraph.passenger_transfer_penalty);
@@ -1857,7 +1861,7 @@ std::vector<uint8_t> PassengerServiceDatabase::Save() const
 	std::vector<uint8_t> data;
 	auto put = [&](uint64_t value) { for (uint i = 0; i < 8; ++i) { data.push_back(value & 255); value >>= 8; } };
 	const bool precomputed = this->precomputed_revision != UINT64_MAX;
-	put(9); put(this->generation); put(this->cursor); put(this->sweeping); put(this->dirty_cursor);
+	put(10); put(this->generation); put(this->cursor); put(this->sweeping); put(this->dirty_cursor);
 	put(this->sweeping_since.base());
 	put(this->dirty.size()); for (OrderListID id : this->dirty) { put(id.base()); put(this->dirty_since.at(id).base()); }
 	auto put_service = [&](const PassengerPeriodicService &service) {
@@ -1891,6 +1895,7 @@ std::vector<uint8_t> PassengerServiceDatabase::Save() const
 		put(this->retained_precomputed_services.size()); for (const auto &[id, service] : this->retained_precomputed_services) put_service(service);
 		put(this->precomputed_sections); put(this->retained_precomputed_sections);
 		put(this->precomputed_estimates); put(this->retained_precomputed_estimates);
+		put(this->precomputed_optimized); put(this->retained_precomputed_optimized);
 	}
 	return data;
 }
@@ -1908,10 +1913,11 @@ bool PassengerServiceDatabase::Load(std::span<const uint8_t> data)
 	};
 	auto count = [&](size_t max) { uint64_t n = get(); if (n > max || n > (data.size() - cursor) / 8) { valid = false; return size_t{0}; } return static_cast<size_t>(n); };
 	PassengerServiceDatabase restored;
-	uint64_t version = get(); if (version < 1 || version > 9) return false;
+	uint64_t version = get(); if (version < 1 || version > 10) return false;
 	restored.legacy_precomputed_cursor = version < 6;
 	restored.precomputed_sections = restored.retained_precomputed_sections = version >= 8;
 	restored.precomputed_estimates = restored.retained_precomputed_estimates = version >= 9;
+	restored.precomputed_optimized = restored.retained_precomputed_optimized = version >= 10;
 	restored.generation = get();
 	uint64_t saved_cursor = get(); if (saved_cursor > OrderListID::Invalid().base()) return false;
 	restored.cursor = static_cast<uint32_t>(saved_cursor);
@@ -2050,6 +2056,11 @@ bool PassengerServiceDatabase::Load(std::span<const uint8_t> data)
 		if (current > 1 || retained > 1) return false;
 		restored.precomputed_estimates = current != 0; restored.retained_precomputed_estimates = retained != 0;
 	}
+	if (version >= 10) {
+		uint64_t current = get(), retained = get();
+		if (current > 1 || retained > 1) return false;
+		restored.precomputed_optimized = current != 0; restored.retained_precomputed_optimized = retained != 0;
+	}
 	if (restored.retained_precomputed_revision == UINT64_MAX) restored.retained_precomputed_sections = true;
 	if (!valid || cursor != data.size()) return false;
 	if (version == 1) {
@@ -2118,7 +2129,7 @@ void PassengerServiceDatabase::FinishLoad(bool present, bool defer_precomputed)
 		this->load_cargo = CargoType{0};
 		if (this->retained_precomputed_revision != UINT64_MAX) {
 			this->BuildPrecomputedTables(this->retained_precomputed, this->retained_precomputed_services,
-					this->retained_precomputed_transfer, PassengerPrecomputedTable::MAX_BYTES, this->retained_precomputed_sections, this->retained_precomputed_estimates, defer_precomputed);
+					this->retained_precomputed_transfer, PassengerPrecomputedTable::MAX_BYTES, this->retained_precomputed_sections, this->retained_precomputed_estimates, this->retained_precomputed_optimized, defer_precomputed);
 		}
 		this->load_current_graph_started = !defer_precomputed;
 		if (!defer_precomputed) this->BuildPrecomputedTables();

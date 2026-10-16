@@ -210,9 +210,9 @@ void PassengerPrecomputedTable::AddEdge(uint32_t from, uint32_t to, int64_t cost
 	this->edges.push_back({from, to, occurrence, cost, distance, kind, uncertainty});
 }
 
-void PassengerPrecomputedTable::Begin(std::span<const PassengerPeriodicService *const> services, CargoType cargo, int64_t transfer, uint64_t memory, bool sections, bool cooperative, std::shared_ptr<uint64_t> memory_budget, bool estimates)
+void PassengerPrecomputedTable::Begin(std::span<const PassengerPeriodicService *const> services, CargoType cargo, int64_t transfer, uint64_t memory, bool sections, bool cooperative, std::shared_ptr<uint64_t> memory_budget, bool estimates, bool optimized)
 {
-	*this = {}; this->cargo = cargo; this->estimates = estimates;
+	*this = {}; this->cargo = cargo; this->estimates = estimates; this->optimized = optimized;
 	this->graph_build = this->BuildGraph({services.begin(), services.end()}, cargo, transfer, memory, sections, cooperative, std::move(memory_budget));
 	if (!cooperative) this->PrepareGraph(SIZE_MAX);
 }
@@ -399,6 +399,7 @@ PassengerBuildTask PassengerPrecomputedTable::BuildGraph(std::vector<const Passe
 			if (!success) { this->failed = true; this->diagnostic.envelope = memory; co_return; }
 		}
 		this->diagnostic.envelope = envelope;
+		if (this->optimized) this->ContractGraph(nodes);
 		this->incoming_offsets.assign(nodes + 1, 0);
 		for (const auto &edge : this->edges) ++this->incoming_offsets[edge.to + 1];
 		for (size_t i = 1; i < this->incoming_offsets.size(); ++i) this->incoming_offsets[i] += this->incoming_offsets[i - 1];
@@ -413,6 +414,58 @@ PassengerBuildTask PassengerPrecomputedTable::BuildGraph(std::vector<const Passe
 		 * deterministic envelope uses legacy fallback; physical OOM stops play. */
 		FatalError("Insufficient memory for passenger routing. Disable passenger_journey_precomputed or free memory before resuming.");
 	}
+}
+
+/** Remove only unobservable, strictly advancing on-board chains. Keep the
+ * occurrence metadata and the relative rank of every surviving state. A Board,
+ * Alight, Section, landing or destination seed must never enter such a chain.
+ * Alight-only arrivals have competing continuations: contracting their dwell
+ * can change equal-label discovery order, so their departure is retained. */
+void PassengerPrecomputedTable::ContractGraph(size_t &nodes)
+{
+	std::vector<uint32_t> in_degree(nodes), out_degree(nodes), successor(nodes, INVALID), rank(nodes, INVALID);
+	for (uint32_t i = 0; i < this->edges.size(); ++i) {
+		const auto &edge = this->edges[i];
+		++in_degree[edge.to]; ++out_degree[edge.from]; successor[edge.from] = i;
+	}
+	std::vector<bool> remove(nodes);
+	for (const auto &o : this->occurrences) {
+		if (o.board || o.alight || o.forced || !o.continues || in_degree[o.arrival] != 1 || out_degree[o.arrival] != 1 ||
+				in_degree[o.departure] != 1 || out_degree[o.departure] != 1) continue;
+		const auto &dwell = this->edges[successor[o.arrival]], &travel = this->edges[successor[o.departure]];
+		if (dwell.kind != EdgeKind::Ride || dwell.to != o.departure || travel.kind != EdgeKind::Ride || travel.cost <= 0) continue;
+		remove[o.arrival] = remove[o.departure] = true;
+	}
+	/* Validate all sums before mutating anything. Closed, unobservable cycles
+	 * have no surviving predecessor and are simply unreachable from any seed. */
+	for (const auto &edge : this->edges) {
+		if (remove[edge.from]) continue;
+		int64_t cost = edge.cost, uncertainty = edge.uncertainty;
+		uint32_t to = edge.to;
+		while (remove[to]) {
+			const auto &next = this->edges[successor[to]];
+			if (edge.kind != EdgeKind::Ride || cost > INT64_MAX - next.cost || uncertainty > INT64_MAX - next.uncertainty) return;
+			cost += next.cost; uncertainty += next.uncertainty; to = next.to;
+		}
+	}
+	uint32_t count = 0;
+	for (uint32_t state = 0; state < nodes; ++state) if (!remove[state]) rank[state] = count++;
+	std::vector<Edge> contracted; contracted.reserve(this->edges.size());
+	for (auto edge : this->edges) {
+		if (remove[edge.from]) continue;
+		while (remove[edge.to]) {
+			const auto &next = this->edges[successor[edge.to]];
+			edge.cost += next.cost; edge.uncertainty += next.uncertainty;
+			edge.distance = static_cast<uint32_t>(std::min<uint64_t>(UINT32_MAX, uint64_t(edge.distance) + next.distance));
+			edge.to = next.to;
+		}
+		edge.from = rank[edge.from]; edge.to = rank[edge.to];
+		contracted.push_back(edge);
+	}
+	this->edges.swap(contracted);
+	for (auto &o : this->occurrences) { o.arrival = rank[o.arrival]; o.departure = rank[o.departure]; }
+	for (auto &state : this->landings) if (state != INVALID) state = rank[state];
+	nodes = count;
 }
 
 PassengerBuildTask PassengerPrecomputedTable::BuildSections(const std::vector<std::vector<const PassengerPeriodicService *>> &members,
@@ -695,6 +748,7 @@ size_t PassengerPrecomputedTable::Step(size_t allowance, bool legacy_publication
 				} else {
 					/* Arrival/departure labels are construction scratch. Queries use
 					 * only initial/transfer waits and one complete dispersion label. */
+					if (this->optimized && !o.board) continue;
 					if (legacy_publication) {
 						this->prepared.labels.assign(this->scratch.labels.begin(), this->scratch.labels.begin() + this->waiting_state_count);
 						for (size_t from = 0; from < this->stations.size(); ++from) index_origin(from);

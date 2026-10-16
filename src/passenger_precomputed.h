@@ -51,7 +51,7 @@ class PassengerPrecomputedTable {
 public:
 	static constexpr uint32_t INVALID = UINT32_MAX;
 	static constexpr uint64_t MAX_BYTES = uint64_t{16} * 1024 * 1024 * 1024;
-	void Begin(std::span<const PassengerPeriodicService *const> services, CargoType cargo, int64_t transfer, uint64_t memory = MAX_BYTES, bool sections = true, bool cooperative = false, std::shared_ptr<uint64_t> memory_budget = {}, bool estimates = true);
+	void Begin(std::span<const PassengerPeriodicService *const> services, CargoType cargo, int64_t transfer, uint64_t memory = MAX_BYTES, bool sections = true, bool cooperative = false, std::shared_ptr<uint64_t> memory_budget = {}, bool estimates = true, bool optimized = true);
 	bool PrepareGraph(size_t quantum = 1024);
 	bool IsPreparingGraph() const { return static_cast<bool>(this->graph_build); }
 	uint64_t GetGraphWork() const { return this->graph_work; }
@@ -131,6 +131,7 @@ private:
 	const Member *FindMember(OrderListID service) const;
 	const Section *FindSection(const PassengerJourneyExecution &ride) const;
 	void StartDestination();
+	bool optimized = true; ///< Saved algorithm identity; old work cursors always use the original graph and operation sequence.
 	void AddEdge(uint32_t from, uint32_t to, int64_t cost, EdgeKind kind, uint32_t occurrence = INVALID, uint32_t distance = 0, int64_t uncertainty = 0);
 	PassengerBuildTask BuildSections(const std::vector<std::vector<const PassengerPeriodicService *>> &members, int64_t transfer,
 			size_t &nodes, uint64_t &envelope, uint64_t memory, bool cooperative, bool &success);
@@ -138,3 +139,4 @@ private:
 };
 
 #endif
+	void ContractGraph(size_t &nodes);

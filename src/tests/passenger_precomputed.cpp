@@ -45,6 +45,33 @@ TEST_CASE("Precomputed trees preserve through rides and physical occurrences", "
 	plan = table.Plan(A, D, StateTicks{1000}); REQUIRE(plan.ride); CHECK(plan.ride->boarding_order == 2); CHECK(plan.ride->alighting_order == 3);
 }
 
+TEST_CASE("Precomputed contraction preserves pass-through orders and alight-only dwell", "[passenger][precomputed][contraction]")
+{
+	std::array services{Service(0, {A, B, C, D}), Service(1, {A, B, C}, 90)};
+	for (auto &s : services) { s.timetable.stops[1].board = s.timetable.stops[1].alight = 0; }
+	SECTION("Pass-through chains") {}
+	SECTION("Alight-only arrival retains its dwell boundary") { services[0].timetable.stops[2].board = 0; }
+	SECTION("Forced stop cannot be contracted") { services[0].timetable.stops[1].forced = 1; }
+	SECTION("Discontinued ride cannot be contracted") { services[0].timetable.stops[1].continues = false; }
+	SECTION("Repeated station remains a distinct occurrence") { services[0].timetable.stops[2].station = A; }
+	SECTION("Zero dwell and transfer") { for (auto &s : services) for (auto &stop : s.timetable.stops) stop.departure = stop.arrival; }
+	std::vector<const PassengerPeriodicService *> records; for (const auto &s : services) records.push_back(&s);
+	PassengerPrecomputedTable legacy, optimized;
+	legacy.Begin(records, PAX, 0, PassengerPrecomputedTable::MAX_BYTES, true, false, {}, true, false);
+	optimized.Begin(records, PAX, 0);
+	while (!legacy.Finished()) legacy.Step(7);
+	while (!optimized.Finished()) optimized.Step(3);
+	CHECK(optimized.GetDiagnostic().states < legacy.GetDiagnostic().states);
+	CHECK(optimized.GetDiagnostic().stored_states == legacy.GetDiagnostic().stored_states);
+	for (auto from : {A, B, C, D}) for (auto to : {A, B, C, D}) for (auto excluded : {OrderListID::Invalid(), OrderListID{0}, OrderListID{1}}) {
+		for (uint32_t sample : {0U, UINT32_MAX / 2, UINT32_MAX}) {
+			auto a = legacy.Plan(from, to, StateTicks{42}, excluded, sample), b = optimized.Plan(from, to, StateTicks{42}, excluded, sample);
+			CHECK(a.ride == b.ride); CHECK(a.state == b.state);
+			CHECK(std::tie(a.cost, a.riding, a.waiting, a.distance, a.transfers) == std::tie(b.cost, b.riding, b.waiting, b.distance, b.transfers));
+		}
+	}
+}
+
 TEST_CASE("Cooperative graph preparation preserves exact trees and shared memory admission", "[passenger][precomputed][startup][network]")
 {
 	std::array services{Service(0, {A, B, C, D}), Service(1, {A, B, C}), Service(2, {B, C, D}, 80)};

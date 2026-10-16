@@ -258,6 +258,7 @@ private:
 	bool legacy_precomputed_cursor = false; ///< v4/v5 row publication did not charge compact-label copies.
 	bool precomputed_sections = true, retained_precomputed_sections = true; ///< Saved graph algorithm for exact pre-v8 cursor replay.
 	bool precomputed_estimates = true, retained_precomputed_estimates = true; ///< Exact replay of pre-v9 costs and route dispersion.
+	bool precomputed_optimized = true, retained_precomputed_optimized = true; ///< v10 graph/work cursor algorithm, including retained generations.
 	uint64_t boarding_revision = 0; ///< Event-local validation invalidation; never saved or used for simulation admission.
 	uint64_t precomputed_preparation_nanoseconds = 0; ///< Local elapsed observation, never saved or used for admission.
 	PassengerBuildTask preparation_capture;
@@ -267,7 +268,7 @@ private:
 	void BuildPrecomputedTables();
 	void ClearRetainedPrecomputed();
 	void BuildPrecomputedTables(std::array<PassengerPrecomputedTable, NUM_CARGO> &tables,
-			const std::map<OrderListID, PassengerPeriodicService> &snapshot, int64_t transfer, uint64_t remaining, bool sections, bool estimates, bool cooperative = false);
+			const std::map<OrderListID, PassengerPeriodicService> &snapshot, int64_t transfer, uint64_t remaining, bool sections, bool estimates, bool optimized, bool cooperative = false);
 	using Dependencies = std::map<StationID, uint64_t>;
 	struct JourneyPolicy {
 		std::vector<std::pair<StationID, int64_t>> lower_bounds; ///< Relaxed reverse adjacent-stop distances, never winning routes.
