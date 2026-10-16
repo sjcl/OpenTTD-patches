@@ -4855,7 +4855,7 @@ static bool ConPassengerPeriodicCompare(std::span<std::string_view> argv)
 static bool ConPassengerJourneyStats(std::span<std::string_view> argv)
 {
 	if (argv.empty()) {
-		IConsolePrint(CC_HELP, "passenger_journey_stats [total|tick|inventory|reset|cache_on|cache_off|departures_on|departures_off|scratch_on|scratch_off|fallback_cache_on|fallback_cache_off|fallback_validate_on|fallback_validate_off]: local diagnostics and derived cache preferences");
+		IConsolePrint(CC_HELP, "passenger_journey_stats [total|tick|inventory|hyperpath_memory|reset|cache_on|cache_off|departures_on|departures_off|scratch_on|scratch_off|fallback_cache_on|fallback_cache_off|fallback_validate_on|fallback_validate_off]: local diagnostics and derived cache preferences");
 		return true;
 	}
 	if (argv.size() > 2) return false;
@@ -4883,6 +4883,14 @@ static bool ConPassengerJourneyStats(std::span<std::string_view> argv)
 	if (operation == "cache_on" || operation == "cache_off") {
 		GetPassengerServiceDatabase().SetPolicyCacheEnabled(operation == "cache_on");
 		IConsolePrint(CC_DEFAULT, "Periodic policy residency: {}; logical query work unchanged", operation == "cache_on" ? "enabled" : "disabled");
+		return true;
+	}
+	if (operation == "hyperpath_memory") {
+		for (CargoType cargo : EnumRange(NUM_CARGO)) if (IsCargoInClass(cargo, CargoClass::Passengers)) for (bool retained : {false, true}) {
+			auto m = GetPassengerServiceDatabase().InspectPrecomputedMemory(cargo, retained);
+			IConsolePrint(CC_DEFAULT, "Hyperpath memory: cargo={}; retained={}; reported={}; graph={}; labels={}; indices={}; policy_headers={}; candidate_arrays={}; local={}; differences={}; additions={}; maximum_additions={}; multi_addition_differences={}; unexpected_removals={}; overlay_bytes={}",
+					cargo, retained, m.reported, m.graph, m.labels, m.indices, m.policy_headers, m.candidate_arrays, m.local, m.differences, m.additions, m.maximum_additions, m.multi_addition_differences, m.unexpected_removals, m.overlay_bytes);
+		}
 		return true;
 	}
 	if (operation == "inventory") {

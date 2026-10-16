@@ -71,6 +71,19 @@ def main():
     };
 ''')
     path = build / "save-integrity/console_cmds.cpp"
+    before = '    if (operation == "partial_precomputed") {'
+    replace_once(path, before, '''    if (operation == "replay_precomputed") {
+        auto &db = GetPassengerServiceDatabase();
+        auto before = db.Save(); const auto tick = _state_ticks;
+        std::ofstream wire("hyperpath-replay-before.bin", std::ios::binary);
+        wire.write(reinterpret_cast<const char *>(before.data()), static_cast<std::streamsize>(before.size())); wire.close();
+        while (db.StepLoad(65536) == PassengerServiceDatabase::LoadState::Replaying) {}
+        const bool identical = before == db.Save() && tick == _state_ticks;
+        IConsolePrint(CC_DEFAULT, "Hyperpath replay: ready={}; saved_state_identical={}; tick={}",
+            db.GetLoadState() == PassengerServiceDatabase::LoadState::Ready, identical, _state_ticks.base());
+        return identical && db.GetLoadState() == PassengerServiceDatabase::LoadState::Ready;
+    }
+''' + before)
     stdafx = '#include "' + (source / 'src/stdafx.h').as_posix() + '"'
     replace_once(path, stdafx, stdafx + '\n#include "' + metrics.as_posix() + '"')
     replace_once(path, 'if (operation == "reset") { ResetPassengerJourneyDiagnostic(); return true; }',

@@ -2626,6 +2626,9 @@ TEST_CASE("Hyperpath absorbs a repeated station into its later departure", "[pas
 	std::array records{&service}; PassengerPrecomputedTable table;
 	table.Begin(records, PAX, 0, PassengerPrecomputedTable::MAX_HYPERPATH_BYTES, true, false, {}, true, true, true, true);
 	while (!table.Finished()) table.Step(7);
+	auto memory = table.InspectMemory();
+	CHECK(memory.unexpected_removals == 0);
+	CHECK(memory.labels + memory.indices + memory.policy_headers + memory.candidate_arrays + memory.graph <= memory.reported);
 	for (OrderListID failed : {OrderListID::Invalid(), OrderListID{123}}) {
 		auto down = table.Board(A, D, NOW, service.id, early, OrderListID::Invalid(), failed);
 		CHECK(bool(down.ride) == (service.timetable.stops[2].board == 0));

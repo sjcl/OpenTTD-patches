@@ -1253,6 +1253,38 @@ size_t PassengerPrecomputedTable::StepHyperpath(size_t allowance, const std::fun
 	return used;
 }
 
+PassengerHyperpathMemoryDiagnostic PassengerPrecomputedTable::InspectMemory() const
+{
+	PassengerHyperpathMemoryDiagnostic result;
+	if (!this->hyperpath) return result;
+	result.reported = this->diagnostic.bytes; result.graph = this->hyperpath_static_bytes; result.local = this->local_policy_bytes;
+	auto inspect = [&](const Row &row, bool differences) {
+		result.labels += row.labels.capacity() * sizeof(Label);
+		result.indices += row.policy_index.capacity() * sizeof(uint32_t);
+		result.policy_headers += row.policies.capacity() * sizeof(Policy);
+		for (const auto &policy : row.policies) result.candidate_arrays += policy.candidates.capacity() * sizeof(uint32_t);
+		if (!differences || row.policy_index.empty()) return;
+		for (uint32_t station = 0; station < this->waiting_states.size(); ++station) for (const auto &[previous, state] : this->waiting_states[station]) {
+			if (row.policy_index[state] == row.policy_index[station]) continue;
+			++result.differences;
+			const auto &base = row.policies[row.policy_index[station]].candidates;
+			const auto &variant = row.policies[row.policy_index[state]].candidates;
+			uint64_t additions = 0;
+			for (uint32_t board : variant) additions += !std::binary_search(base.begin(), base.end(), board);
+			result.additions += additions; result.maximum_additions = std::max(result.maximum_additions, additions);
+			result.multi_addition_differences += additions > 1;
+			for (uint32_t board : base) if (this->occurrences[board].pattern != previous && !std::binary_search(variant.begin(), variant.end(), board)) ++result.unexpected_removals;
+		}
+	};
+	for (const auto &row : this->rows) inspect(row, true);
+	inspect(this->prepared, false);
+	/* Cost + wait + an offset/count pair for a flat addition array. Previous
+	 * service comes from the waiting state. This is a representation estimate,
+	 * excluding allocator overhead and any cache needed by span-based callers. */
+	result.overlay_bytes = result.differences * 24 + result.additions * 4;
+	return result;
+}
+
 void PassengerPrecomputedTable::ReleaseDestination(StationID destination)
 {
 	if (this->hyperpath) {

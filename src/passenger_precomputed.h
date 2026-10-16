@@ -47,6 +47,12 @@ struct PassengerPrecomputedDiagnostic {
 	uint64_t local_replans = 0, local_replan_nanoseconds = 0;
 };
 
+/** Explicit, potentially linear diagnostic; never collected by the tick scheduler. */
+struct PassengerHyperpathMemoryDiagnostic {
+	uint64_t reported = 0, graph = 0, labels = 0, indices = 0, policy_headers = 0, candidate_arrays = 0, local = 0;
+	uint64_t differences = 0, additions = 0, maximum_additions = 0, multi_addition_differences = 0, unexpected_removals = 0, overlay_bytes = 0;
+};
+
 /** Mandatory derived state, independent of the optional Timed/Schedule caches.
  * A fixed number of reverse-tree operations is executed per tick. The operation
  * cursor is saved; replay from the saved published DB restores precisely the same
@@ -73,6 +79,7 @@ public:
 	bool Finished() const { return !this->graph_build && (this->failed || this->destination == this->stations.size()); }
 	bool MemoryRejected() const { return this->failed; }
 	const PassengerPrecomputedDiagnostic &GetDiagnostic() const { return this->diagnostic; }
+	PassengerHyperpathMemoryDiagnostic InspectMemory() const;
 	OrderListID BoardingKey(OrderListID service) const;
 	std::span<const OrderListID> BoardingServices(OrderListID service) const;
 	static uint64_t RawSectionBoardingKey(const PassengerJourneyExecution &ride);
