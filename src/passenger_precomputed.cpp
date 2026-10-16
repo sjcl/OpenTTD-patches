@@ -446,6 +446,11 @@ PassengerBuildTask PassengerPrecomputedTable::BuildGraph(std::vector<const Passe
  * can change equal-label discovery order, so their departure is retained. */
 void PassengerPrecomputedTable::ContractGraph(size_t &nodes)
 {
+	/* Even the upper bound on saved row work must amortize the two full
+	 * edge passes below. This uses only frozen graph sizes, never elapsed time
+	 * or available memory. Tiny pass-through populations keep the old graph. */
+	size_t candidates = std::count_if(this->occurrences.begin(), this->occurrences.end(), [](const auto &o) { return !o.board && !o.alight && !o.forced && o.continues; });
+	if (uint64_t(candidates) * this->stations.size() * 8 <= uint64_t(this->edges.size()) * 2) return;
 	std::vector<uint32_t> in_degree(nodes), out_degree(nodes), successor(nodes, INVALID), rank(nodes, INVALID);
 	for (uint32_t i = 0; i < this->edges.size(); ++i) {
 		const auto &edge = this->edges[i];

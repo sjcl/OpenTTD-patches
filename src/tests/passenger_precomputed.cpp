@@ -72,6 +72,26 @@ TEST_CASE("Precomputed contraction preserves pass-through orders and alight-only
 	}
 }
 
+TEST_CASE("Alight-only zero dwell preserves the original equal-cost carrier choice", "[passenger][precomputed][contraction][determinism]")
+{
+	std::array services{Service(0, {A, B, C, StationID{4}}, 101), Service(1, {B, D}, 150), Service(2, {C, D}, 100)};
+	for (size_t p = 0; p < services.size(); ++p) {
+		int64_t travel = std::array<int64_t, 3>{101, 150, 100}[p];
+		for (size_t i = 0; i < services[p].timetable.stops.size(); ++i) {
+			auto &stop = services[p].timetable.stops[i]; stop.arrival = stop.departure = i * travel;
+		}
+		services[p].timetable.period = services[p].timetable.stops.size() * travel;
+	}
+	services[0].timetable.stops[1].board = 0;
+	auto table = Build(services, 7, 0);
+	auto plan = table.Plan(A, D, StateTicks{}); REQUIRE(plan.ride);
+	/* Both continuations cost 615 with two legs. The original waiting state
+	 * at B wins before B's departure. Moving the dwell onto a shortcut would
+	 * discover the C continuation early and silently change the first alight. */
+	CHECK(plan.cost == 615); CHECK(plan.riding == 251); CHECK(plan.transfers == 1);
+	CHECK(plan.ride->alighting == B); CHECK(plan.ride->alighting_order == 1);
+}
+
 TEST_CASE("Cooperative graph preparation preserves exact trees and shared memory admission", "[passenger][precomputed][startup][network]")
 {
 	std::array services{Service(0, {A, B, C, D}), Service(1, {A, B, C}), Service(2, {B, C, D}, 80)};
@@ -505,11 +525,11 @@ TEST_CASE("Precomputed legacy cursors map to the same compact publication fronti
 	std::array services{Service(0, {A, B}), Service(1, {B, C}), Service(2, {C, D}), Service(3, {A, D}, 500)};
 	std::vector<const PassengerPeriodicService *> records;
 	for (const auto &s : services) records.push_back(&s);
-	PassengerPrecomputedTable legacy; legacy.Begin(records, PAX, 20);
+	PassengerPrecomputedTable legacy; legacy.Begin(records, PAX, 20, PassengerPrecomputedTable::MAX_BYTES, true, false, {}, true, false);
 	for (int i = 0; i < 2000; ++i) {
 		legacy.Step(1, true);
 		if (i % 17 != 0 && !legacy.Finished()) continue;
-		PassengerPrecomputedTable current; current.Begin(records, PAX, 20);
+		PassengerPrecomputedTable current; current.Begin(records, PAX, 20, PassengerPrecomputedTable::MAX_BYTES, true, false, {}, true, false);
 		current.Step(legacy.GetDiagnostic().operations + legacy.LegacyPublicationWork());
 		CHECK(current.GetDiagnostic().destinations == legacy.GetDiagnostic().destinations);
 		for (StationID from : {A, B, C, D}) for (StationID to : {A, B, C, D}) {
