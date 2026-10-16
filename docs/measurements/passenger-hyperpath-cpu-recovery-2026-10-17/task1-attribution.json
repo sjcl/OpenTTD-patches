@@ -1,0 +1,207 @@
+{
+  "runs": {
+    "legacy": {
+      "input_sha256": "306a8d3094c406286ff1dd3249f1726bf9d10e230ead593eacdd91efc43ac629",
+      "binary_sha256": "74de3c15aeac9d50d31066c5d8fcc90703198624e8959017ea62bf208ba5da6a",
+      "windows": {
+        "all": {
+          "ticks": 2048,
+          "counters": {
+            "visits": 162845,
+            "groups": 0,
+            "enumeration_calls": 162845,
+            "enumeration_ns": 10709900,
+            "enumeration_stops": 0,
+            "predicate_calls": 0,
+            "predicate_ns": 0,
+            "predicate_stops": 0,
+            "ride_calls": 0,
+            "ride_ns": 0,
+            "ride_stops": 0,
+            "enumeration_ride_calls": 0,
+            "enumeration_ride_ns": 0,
+            "enumeration_ride_stops": 0
+          },
+          "simulation_ns": 59236040000,
+          "journey_ns": 5914429000
+        },
+        "ordinary": {
+          "ticks": 1024,
+          "counters": {
+            "visits": 79587,
+            "groups": 0,
+            "enumeration_calls": 79587,
+            "enumeration_ns": 5333900,
+            "enumeration_stops": 0,
+            "predicate_calls": 0,
+            "predicate_ns": 0,
+            "predicate_stops": 0,
+            "ride_calls": 0,
+            "ride_ns": 0,
+            "ride_stops": 0,
+            "enumeration_ride_calls": 0,
+            "enumeration_ride_ns": 0,
+            "enumeration_ride_stops": 0
+          },
+          "simulation_ns": 26398452000,
+          "journey_ns": 1576057000
+        },
+        "ordinary_tail": {
+          "ticks": 512,
+          "counters": {
+            "visits": 39569,
+            "groups": 0,
+            "enumeration_calls": 39569,
+            "enumeration_ns": 2634600,
+            "enumeration_stops": 0,
+            "predicate_calls": 0,
+            "predicate_ns": 0,
+            "predicate_stops": 0,
+            "ride_calls": 0,
+            "ride_ns": 0,
+            "ride_stops": 0,
+            "enumeration_ride_calls": 0,
+            "enumeration_ride_ns": 0,
+            "enumeration_ride_stops": 0
+          },
+          "simulation_ns": 13371128000,
+          "journey_ns": 801749000
+        },
+        "replacement": {
+          "ticks": 1024,
+          "counters": {
+            "visits": 83258,
+            "groups": 0,
+            "enumeration_calls": 83258,
+            "enumeration_ns": 5376000,
+            "enumeration_stops": 0,
+            "predicate_calls": 0,
+            "predicate_ns": 0,
+            "predicate_stops": 0,
+            "ride_calls": 0,
+            "ride_ns": 0,
+            "ride_stops": 0,
+            "enumeration_ride_calls": 0,
+            "enumeration_ride_ns": 0,
+            "enumeration_ride_stops": 0
+          },
+          "simulation_ns": 32837588000,
+          "journey_ns": 4338372000
+        }
+      }
+    },
+    "hyperpath": {
+      "input_sha256": "306a8d3094c406286ff1dd3249f1726bf9d10e230ead593eacdd91efc43ac629",
+      "binary_sha256": "74de3c15aeac9d50d31066c5d8fcc90703198624e8959017ea62bf208ba5da6a",
+      "windows": {
+        "all": {
+          "ticks": 2048,
+          "counters": {
+            "visits": 154940,
+            "groups": 22842650,
+            "enumeration_calls": 154940,
+            "enumeration_ns": 6949201800,
+            "enumeration_stops": 0,
+            "predicate_calls": 22842650,
+            "predicate_ns": 3744190600,
+            "predicate_stops": 0,
+            "ride_calls": 215829,
+            "ride_ns": 176422400,
+            "ride_stops": 3690603,
+            "enumeration_ride_calls": 208740,
+            "enumeration_ride_ns": 172502900,
+            "enumeration_ride_stops": 3506823
+          },
+          "simulation_ns": 73883052000,
+          "journey_ns": 10764158000
+        },
+        "ordinary": {
+          "ticks": 1024,
+          "counters": {
+            "visits": 75389,
+            "groups": 12284130,
+            "enumeration_calls": 75389,
+            "enumeration_ns": 3736104800,
+            "enumeration_stops": 0,
+            "predicate_calls": 12284130,
+            "predicate_ns": 2025958100,
+            "predicate_stops": 0,
+            "ride_calls": 101444,
+            "ride_ns": 85044400,
+            "ride_stops": 1734457,
+            "enumeration_ride_calls": 97509,
+            "enumeration_ride_ns": 82579300,
+            "enumeration_ride_stops": 1614366
+          },
+          "simulation_ns": 34783385000,
+          "journey_ns": 2370813000
+        },
+        "ordinary_tail": {
+          "ticks": 512,
+          "counters": {
+            "visits": 37781,
+            "groups": 6944941,
+            "enumeration_calls": 37781,
+            "enumeration_ns": 2085228900,
+            "enumeration_stops": 0,
+            "predicate_calls": 6944941,
+            "predicate_ns": 1099845000,
+            "predicate_stops": 0,
+            "ride_calls": 57291,
+            "ride_ns": 46562400,
+            "ride_stops": 951289,
+            "enumeration_ride_calls": 53759,
+            "enumeration_ride_ns": 44420900,
+            "enumeration_ride_stops": 839796
+          },
+          "simulation_ns": 17712284000,
+          "journey_ns": 820846000
+        },
+        "replacement": {
+          "ticks": 1024,
+          "counters": {
+            "visits": 79551,
+            "groups": 10558520,
+            "enumeration_calls": 79551,
+            "enumeration_ns": 3213097000,
+            "enumeration_stops": 0,
+            "predicate_calls": 10558520,
+            "predicate_ns": 1718232500,
+            "predicate_stops": 0,
+            "ride_calls": 114385,
+            "ride_ns": 91378000,
+            "ride_stops": 1956146,
+            "enumeration_ride_calls": 111231,
+            "enumeration_ride_ns": 89923600,
+            "enumeration_ride_stops": 1892457
+          },
+          "simulation_ns": 39099667000,
+          "journey_ns": 8393345000
+        }
+      }
+    }
+  },
+  "note": "Nested enumeration/predicate/ride times overlap. Timers add observer overhead; this is attribution, not an uninstrumented CPU comparison.",
+  "attribution": {
+    "all": {
+      "simulation_increase_ns": 14647012000,
+      "enumeration_increase_ns": 6938491900,
+      "fraction": 0.47371381275580304
+    },
+    "ordinary": {
+      "simulation_increase_ns": 8384933000,
+      "enumeration_increase_ns": 3730770900,
+      "fraction": 0.44493747296490027
+    },
+    "ordinary_tail": {
+      "simulation_increase_ns": 4341156000,
+      "enumeration_increase_ns": 2082594300,
+      "fraction": 0.4797326564629329
+    },
+    "replacement": {
+      "simulation_increase_ns": 6262079000,
+      "enumeration_increase_ns": 3207721000,
+      "fraction": 0.512245374100199
+    }
+  }
+}

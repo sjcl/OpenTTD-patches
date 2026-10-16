@@ -67,8 +67,53 @@ on the first run, then the three production-launch cases after placing the
 language/basic graphics assets beside the Windows executable. The first
 launch attempts timed out in the incomplete asset layout; no product edit
 was needed. The instrumented executable also passes a 64-tick exact-driver
-smoke with replacement at tick 32. The real-map attribution pair is running;
-no CPU-recovery result is claimed yet.
+smoke with replacement at tick 32. The first real-map attribution pair has
+completed as described below. No
+CPU-recovery result is claimed yet.
+
+## First attribution result and gate
+
+Both cases use the recovered `306a8d…` input and the same measurement executable,
+SHA256 `74de3c15aeac9d50d31066c5d8fcc90703198624e8959017ea62bf208ba5da6a`.
+Each advances exactly 2,048 ticks from 3,181,119,581, with tracing disabled,
+successful initial warm-up, cost replacement at elapsed tick 1,024, exit zero
+and no detected competing game/build. These are timer-instrumented attribution
+runs, not the final uninstrumented CPU acceptance comparison.
+
+Simulation milliseconds per tick (mean / p95 / p99):
+
+| Window | Previous | Hyperpath |
+| --- | ---: | ---: |
+| Ordinary 1–1,024 | 25.780 / 30.407 / 35.708 | 33.968 / 48.726 / 64.745 |
+| Ordinary 513–1,024 | 26.115 / 31.034 / 35.506 | 34.594 / 46.393 / 62.246 |
+| Replacement 1,025–2,048 | 32.068 / 44.557 / 56.020 | 38.183 / 50.888 / 61.384 |
+
+In the 512-tick ordinary tail, the simulation increment is 4.341156 seconds
+(8.478820 ms/tick). The Hyperpath enumeration block takes 2.085229 seconds;
+subtracting the previous-mode empty-block overhead gives 2.082594 seconds,
+**47.97% of the observed increment**. It enumerates 6,944,941 cohorts in
+37,781 visits. Predicate time is 1.099845 seconds. Its nested `EvaluateRide`
+work is only 53,759 calls, 839,796 visited stops and 0.044421 seconds, about
+1.02% of the simulation increment. Journey mean changes from 1.565916 to
+1.603215 ms/tick.
+
+Across all 2,048 ticks, there are 22,842,650 enumerated cohorts and 208,740
+enumeration ride evaluations (3,506,823 visited stops). Enumeration takes
+6.949202 seconds, including 3.744191 predicate seconds and 0.172503 ride
+seconds. Nested timings must not be added. The full-interval enumeration
+increment explains 47.37% of the simulation increment.
+
+This confirms a material enumeration cost but **does not establish the
+proposed downstream label scan as the main cause**. Roughly half the ordinary
+tail increment is outside this block, and observer overhead is not zero.
+Task 2 remains unapplied pending broader `VisitBoardingCandidates`, waiting
+index/update and concrete-resolution measurements. The additional counters
+also distinguish NoLoad predicates from actual `ResolveHyperpath` calls.
+
+Evidence: [attribution](measurements/passenger-hyperpath-cpu-recovery-2026-10-17/task1-attribution.json),
+[CPU/diagnostic summary](measurements/passenger-hyperpath-cpu-recovery-2026-10-17/task1-summary.json)
+and the per-tick [previous](measurements/passenger-hyperpath-cpu-recovery-2026-10-17/task1-legacy-boarding.csv)
+/ [Hyperpath](measurements/passenger-hyperpath-cpu-recovery-2026-10-17/task1-hyperpath-boarding.csv) counters.
 
 ## Preliminary service 528 readback
 

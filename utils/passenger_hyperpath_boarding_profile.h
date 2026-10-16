@@ -7,7 +7,8 @@
 #include <vector>
 
 namespace PassengerBoardingProfile {
-enum Stage : size_t { Enumeration, Predicate, Ride, EnumerationRide, Count };
+enum Stage : size_t { Enumeration, Predicate, Ride, EnumerationRide, Visit, Index, Forget, Refresh, Schedule, MergeHash, Merge, Shift, Ensure, AddEntry, RemoveEntry, Resolve, NoLoad, Count };
+inline constexpr std::array<const char *, Count> names = {"enumeration", "predicate", "ride", "enumeration_ride", "visit", "index", "forget", "refresh", "schedule", "merge_hash", "merge", "shift", "ensure", "add_entry", "remove_entry", "resolve", "no_load"};
 struct Counter { uint64_t calls = 0, nanoseconds = 0, stops = 0; };
 inline std::array<Counter, Count> counters{};
 inline uint64_t visits = 0, groups = 0;
@@ -43,7 +44,9 @@ inline void Snapshot(int64_t tick) { samples.push_back({tick, visits, groups, co
 inline void Dump()
 {
 	std::ofstream out("boarding-profile.csv");
-	out << "tick,visits,groups,enumeration_calls,enumeration_ns,enumeration_stops,predicate_calls,predicate_ns,predicate_stops,ride_calls,ride_ns,ride_stops,enumeration_ride_calls,enumeration_ride_ns,enumeration_ride_stops\n";
+	out << "tick,visits,groups";
+	for (const auto *name : names) out << ',' << name << "_calls," << name << "_ns," << name << "_stops";
+	out << '\n';
 	for (const auto &sample : samples) {
 		out << sample.tick << ',' << sample.visits << ',' << sample.groups;
 		for (const auto &counter : sample.counters) out << ',' << counter.calls << ',' << counter.nanoseconds << ',' << counter.stops;

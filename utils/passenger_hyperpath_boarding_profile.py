@@ -43,17 +43,33 @@ def prepare(source, build):
         anchor = f'#include "{(source / "src/stdafx.h").as_posix()}"\n'
         text = replace(text, anchor, anchor + include)
         for before, after in edits:
-            text = replace(text, before, after)
+            if before.startswith("function:"):
+                name = before.removeprefix("function:")
+                if text.count(name) != 1:
+                    raise ValueError(f"Expected one definition of {name}")
+                opening = text.index("\n{", text.index(name)) + 2
+                text = text[:opening] + "\n\t" + after + text[opening:]
+            else:
+                text = replace(text, before, after)
         target.write_text(text, encoding="utf-8")
 
-    instrument("cargopacket.cpp", [
-        ("Visitor &&visitor) const\n{", "Visitor &&visitor) const\n{\n\t++PassengerBoardingProfile::visits;"),
-        ("if (vehicle != nullptr && service != OrderListID::Invalid()) {\n\t\t/* Scan only", "if (vehicle != nullptr && service != OrderListID::Invalid()) {\n\t\tPassengerBoardingProfile::Scope profile(PassengerBoardingProfile::Enumeration);\n\t\t/* Scan only"),
+    cargo_edits = [
+        ("function:bool StationCargoList::VisitBoardingCandidates(", "++PassengerBoardingProfile::visits; PassengerBoardingProfile::Scope whole_profile(PassengerBoardingProfile::Visit);"),
+        ("if (vehicle != nullptr && service != OrderListID::Invalid()) {", "if (vehicle != nullptr && service != OrderListID::Invalid()) {\n\t\tPassengerBoardingProfile::Scope profile(PassengerBoardingProfile::Enumeration);"),
         ("for (const auto &[key, policy] : groups) {", "for (const auto &[key, policy] : groups) {\n\t\t\t\t++PassengerBoardingProfile::groups;"),
-    ])
-    instrument("passenger_journey_active.cpp", [
-        ("CargoType cargo, bool base, bool adjusted)\n{", "CargoType cargo, bool base, bool adjusted)\n{\n\tPassengerBoardingProfile::Scope profile(PassengerBoardingProfile::Predicate);"),
-    ])
+    ]
+    for name, stage in [("StationCargoList::IndexPacket(", "Index"), ("StationCargoList::ForgetWaitingPacket(", "Forget"),
+                        ("StationCargoList::RefreshWaitingPacket(", "Refresh"), ("StationCargoList::UpdatePassengerRoutingSchedule(", "Schedule"),
+                        ("CargoPacket::StationMergeHash(", "MergeHash"), ("CargoPacket::Merge(", "Merge"),
+                        ("StationCargoList::ShiftIndexedJourneyCargo(", "Shift"), ("StationCargoList::EnsureWaitingIndex(", "Ensure"),
+                        ("StationCargoList::AddBoardingEntry(", "AddEntry"), ("StationCargoList::RemoveBoardingEntry(", "RemoveEntry")]:
+        cargo_edits.append(("function:" + name, f"PassengerBoardingProfile::Scope boarding_profile_scope(PassengerBoardingProfile::{stage});"))
+    instrument("cargopacket.cpp", cargo_edits)
+    predicates = [("function:bool PassengerJourneyLoadingContext::MayUseHyperpathPolicy(", "PassengerBoardingProfile::Scope profile(PassengerBoardingProfile::Predicate);\n\tif (cargo < NUM_CARGO && vehicle != nullptr && vehicle->First()->current_order.GetCargoLoadType(cargo) == OrderLoadType::NoLoad) ++PassengerBoardingProfile::counters[PassengerBoardingProfile::NoLoad].calls;"),
+                  ("function:std::optional<PassengerJourneyExecution> PassengerJourneyLoadingContext::ResolveHyperpath(", "PassengerBoardingProfile::Scope profile(PassengerBoardingProfile::Resolve);")]
+    if "bool PassengerJourneyLoadingContext::CanUseHyperpathPolicy(" in (source / "src/passenger_journey_active.cpp").read_text(encoding="utf-8"):
+        predicates.append(("function:bool PassengerJourneyLoadingContext::CanUseHyperpathPolicy(", "PassengerBoardingProfile::Scope profile(PassengerBoardingProfile::Predicate);"))
+    instrument("passenger_journey_active.cpp", predicates)
     instrument("passenger_precomputed.cpp", [
         ("uint32_t board, StationID destination) const\n{", "uint32_t board, StationID destination) const\n{\n\tPassengerBoardingProfile::Scope profile(PassengerBoardingProfile::Ride);"),
         ("for (size_t step = 0; step < stops.size(); ++step) {", "for (size_t step = 0; step < stops.size(); ++step) {\n\t\tPassengerBoardingProfile::Stop();"),
