@@ -329,7 +329,9 @@ def recover_counter(args):
     project.write_text(xml.replace(str(original), str(target)), encoding="utf-8-sig")
 
 
-def run(args):
+def run(args, measurement_lock_fd=None):
+    if getattr(args, 'full_rebuild_precomputed', False) and (args.precomputed is not True or not args.warm_precomputed or args.rebuild_precomputed):
+        raise ValueError('--full-rebuild-precomputed requires --precomputed --warm-precomputed and excludes --rebuild-precomputed')
     if args.cold_precomputed and (args.precomputed is not True or not args.warm_precomputed):
         raise ValueError("--cold-precomputed requires --precomputed --warm-precomputed")
     if args.fixture_estimated and (args.precomputed is not True or not args.warm_precomputed or args.fixture_timetable):
@@ -339,10 +341,12 @@ def run(args):
         raise ValueError("Console scripts require an output directory without whitespace")
     directory.mkdir(parents=True, exist_ok=False)
     lock_path = pathlib.Path(tempfile.gettempdir()) / "openttd-passenger-routing-measurement.lock"
-    lock = PROFILE.acquire_measurement_lock(lock_path, args.measurement_wait)
+    owns_lock = measurement_lock_fd is None
+    lock = PROFILE.acquire_measurement_lock(lock_path, args.measurement_wait) if owns_lock else measurement_lock_fd
     try:
-        os.write(lock, json.dumps(dict(pid=os.getpid(), output=str(directory))).encode())
-        PROFILE.wait_for_idle(args.measurement_wait, 5)
+        if owns_lock:
+            os.write(lock, json.dumps(dict(pid=os.getpid(), output=str(directory))).encode())
+            PROFILE.wait_for_idle(args.measurement_wait, 5)
         package = args.package.resolve()
         manifest = json.loads((package / "package.json").read_text(encoding="utf-8"))
         if PROFILE.sha256(args.input or package / "input.sav") != manifest["input_sha256"] and args.input is None:
@@ -386,6 +390,10 @@ def run(args):
             # Trigger a deterministic cost generation after completing the old
             # rows. The ordinary product tick builder must keep those rows live.
             setup += "setting linkgraph.passenger_transfer_penalty 17\n"
+        if getattr(args, 'full_rebuild_precomputed', False):
+            # Separate paused all-row replacement timing from ordinary
+            # tick-budgeted replacement. Both retain the prior live rows.
+            setup += "setting linkgraph.passenger_transfer_penalty 17\npassenger_journey_stats build_precomputed\n"
         if args.quality_probe:
             setup += "passenger_journey_stats quality_probe\n"
         if args.fixture_estimated:
@@ -426,7 +434,7 @@ def run(args):
             language_sha256=PROFILE.sha256(directory / "lang/english.lng"),
             resume_settings=args.resume, fixture_timetable=args.fixture_timetable, fixture_estimated=args.fixture_estimated, cold_precomputed=args.cold_precomputed,
             precomputed=args.precomputed, hyperpath=args.hyperpath, warm_precomputed=args.warm_precomputed,
-            rebuild_precomputed=args.rebuild_precomputed, command=command, **observed)
+            rebuild_precomputed=args.rebuild_precomputed, full_rebuild_precomputed=getattr(args, 'full_rebuild_precomputed', False), command=command, **observed)
         for name in ("actual-ticks.json", "save-integrity.json"):
             if (directory / name).is_file():
                 metadata[name] = json.loads((directory / name).read_text(encoding="utf-8"))
@@ -450,8 +458,9 @@ def run(args):
         if args.ticks and (metadata["actual-ticks.json"]["end_tick"] - metadata["actual-ticks.json"]["start_tick"] != args.ticks or len(metadata["actual-ticks.json"]["samples"]) != args.ticks):
             raise RuntimeError("Actual simulation tick count differs from requested")
     finally:
-        os.close(lock)
-        lock_path.unlink()
+        if owns_lock:
+            os.close(lock)
+            lock_path.unlink()
 
 
 def summarize(args):
@@ -531,6 +540,7 @@ def main():
     p.add_argument("--cold-precomputed", action="store_true", help="Discard saved rows through the normal disable callback before enabling and warming; requires --precomputed --warm-precomputed")
     p.add_argument("--warm-precomputed", action="store_true", help="Complete mandatory rows while paused before the first tick; initial build CPU remains in process totals")
     p.add_argument("--rebuild-precomputed", action="store_true", help="Start with complete rows then change the transfer penalty to 17; measure ordinary replacement ticks")
+    p.add_argument("--full-rebuild-precomputed", action="store_true", help="Time a complete paused cost replacement after warming the initial table; requires --warm-precomputed")
     p.add_argument("--precomputed", action=argparse.BooleanOptionalAction, default=None)
     p.add_argument("--hyperpath", action=argparse.BooleanOptionalAction, default=None)
     p = sub.add_parser("summarize")
