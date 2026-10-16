@@ -221,10 +221,13 @@ def main():
     parser.add_argument("--heap", choices=["priority", "indexed", "radix", "four", "packed", "product"], default="priority")
     parser.add_argument("--matrix", action="store_true", help="Compile all three queues over the same candidate graph")
     parser.add_argument("--timing-only", action="store_true", help="Remove diagnostic counter updates from timing runs")
+    parser.add_argument("--validate-invariants", action="store_true", help="Enable full waiting-Label checks in the isolated candidate test TU only")
     parser.add_argument("--simd", action="store_true", help="Isolated scalar/AVX2 ordered range experiment")
     parser.add_argument("--range-split", action="store_true", help="Compare scalar/SIMD before and after span splitting; requires an integrated --reference")
     parser.add_argument("--stages", action="store_true", help="Compile independent integration stages using the product queue")
     args = parser.parse_args()
+    if args.validate_invariants and args.timing_only:
+        parser.error("Full invariant checks belong to correctness trials, not --timing-only")
     if args.candidate_snapshot and (args.candidate or args.heap != "product" or args.simd or args.matrix or args.stages or args.range_split):
         parser.error("--candidate-snapshot requires --heap product and excludes another candidate ref or graph/queue experiments")
     if args.range_split and args.reference == BASE:
@@ -264,12 +267,15 @@ def main():
         cmake = cmake.replace("endfunction()", "  target_compile_definitions(openttd_test PRIVATE WITH_TABLE_BUILD_STAGES)\nendfunction()")
     if args.range_split:
         cmake = cmake.replace("endfunction()", "  target_compile_definitions(openttd_test PRIVATE WITH_TABLE_BUILD_RANGE_SPLIT)\nendfunction()")
+    if args.validate_invariants:
+        check = '  set_property(SOURCE "' + (build / "PassengerTableCandidate.cpp").as_posix() + '" APPEND PROPERTY COMPILE_DEFINITIONS WITH_PASSENGER_TABLE_INVARIANT_CHECKS)\n'
+        cmake = cmake.replace("endfunction()", check + "endfunction()")
     if args.timing_only:
         definitions = "  set_source_files_properties(\n" + ''.join(f'    "{p.as_posix()}"\n' for p in sources)
         definitions += "    PROPERTIES COMPILE_DEFINITIONS PASSENGER_TABLE_COUNT=0)\n"
         cmake = cmake.replace("endfunction()", definitions + "endfunction()")
     (build / "benchmark.cmake").write_text(cmake, encoding="utf-8")
-    manifest = dict(reference=args.reference, candidate=args.candidate, candidate_snapshot=str(args.candidate_snapshot.resolve()) if args.candidate_snapshot else None, heap=args.heap, timing_only=args.timing_only,
+    manifest = dict(reference=args.reference, candidate=args.candidate, candidate_snapshot=str(args.candidate_snapshot.resolve()) if args.candidate_snapshot else None, heap=args.heap, timing_only=args.timing_only, validate_invariants=args.validate_invariants,
                     source_head=subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=args.source).decode().strip(),
                     simd=args.simd, stages=args.stages, matrix=args.matrix,
                     range_split=args.range_split,

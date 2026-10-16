@@ -761,6 +761,7 @@ void PassengerPrecomputedTable::StartDestination()
 		 * relaxations/zero seeds write metadata; every row resets all hot keys. */
 		this->search.metadata.resize(this->diagnostic.states);
 	} else this->scratch.labels.reserve(this->incoming_offsets.size() - 1);
+	if (this->integrated) this->exception_state.assign(this->stations.size(), INVALID);
 	this->scratch.alternative.assign(this->stations.size(), Label{});
 	this->publication_cursor = 0;
 	this->prepared.labels.clear(); this->prepared.labels.reserve(this->UseCompressedRows() ? this->stations.size() : this->waiting_state_count);
@@ -812,15 +813,12 @@ void PassengerPrecomputedTable::CopyStationLabel(uint32_t origin)
 	uint32_t slot = this->exception_slots[origin];
 	if (slot != INVALID) {
 		assert(slot == this->prepared.exception_labels.size());
-		uint32_t state = INVALID; Label exception;
-		/* The scalar range engine has the same final invariant. Check it once
-		 * at publication, rather than maintaining a cache at every descriptor. */
-		for (const auto &[pattern, waiting] : this->waiting_states[origin]) {
-			Label candidate = this->SearchLabel(waiting);
-			if (candidate == base) continue;
-			assert(state == INVALID);
-			state = waiting; exception = candidate;
-		}
+		uint32_t state = this->exception_state[origin];
+		assert(state == INVALID || (state >= this->waiting_states[origin].front().second && state <= this->waiting_states[origin].back().second));
+		Label exception = state == INVALID ? Label{} : this->SearchLabel(state);
+		/* Priority ties may retain different metadata. Omit the cached ID only
+		 * when every Label field equals the base, matching the scalar row form. */
+		if (state != INVALID && exception == base) { state = INVALID; exception = {}; }
 		this->prepared.indices[this->stations.size() + slot] = state; this->prepared.exception_labels.push_back(exception);
 	}
 	const auto &alternative = this->scratch.alternative[origin];
@@ -846,6 +844,18 @@ void PassengerPrecomputedTable::SetSearchLabel(uint32_t state, const Label &labe
 	this->search.cost[state] = label.cost; this->search.legs[state] = label.legs;
 	this->search.metadata[state] = {label.riding, label.waiting, label.first_wait, label.board, label.alight, label.distance};
 }
+
+#ifdef WITH_PASSENGER_TABLE_INVARIANT_CHECKS
+bool PassengerPrecomputedTable::WaitingStationInvariant(uint32_t station) const
+{
+	const auto base = this->SearchLabel(station);
+	for (const auto &[pattern, state] : this->waiting_states[station]) {
+		if (state != this->exception_state[station] && this->SearchLabel(state) != base) return false;
+	}
+	return true;
+}
+
+#endif
 
 /** One descriptor is one original contiguous incoming-edge subsequence.
  * Each virtual relaxation costs exactly one Work unit. Excluded states were
@@ -889,9 +899,17 @@ size_t PassengerPrecomputedTable::RelaxIncoming(size_t allowance)
 			}
 			this->SetSearchLabel(from, next); this->queue.emplace(cost, legs, from);
 		};
+		const uint32_t base = this->hot_edges.from[index];
+		/* A resumed descriptor uses the original scalar scan. Its cursor owns
+		 * the expansion until completion, so no other update can interleave. */
+		bool compare_all = true;
 		if (this->range_offset == 0) {
-			const uint32_t base = this->hot_edges.from[index];
-			if (finite && (cost < this->search.cost[base] || (cost == this->search.cost[base] && legs < this->search.legs[base]))) accept(base);
+			const bool improves_base = finite && (cost < this->search.cost[base] || (cost == this->search.cost[base] && legs < this->search.legs[base]));
+			if (improves_base) accept(base);
+			if (range_id != INVALID) {
+				compare_all = improves_base;
+				if (improves_base) this->exception_state[base] = range.excluded >= range.begin && range.excluded < range.end ? range.excluded : INVALID;
+			}
 			this->range_offset = 1; used = 1;
 		}
 		const uint32_t first = range.begin + this->range_offset - 1;
@@ -901,7 +919,7 @@ size_t PassengerPrecomputedTable::RelaxIncoming(size_t allowance)
 		const uint32_t last = first + static_cast<uint32_t>(waiting) + (excluded && range.excluded - first <= waiting);
 		const uint32_t middle = excluded ? std::min(range.excluded, last) : last;
 		/* Bounded waiting spans: only an improving state enters the cold path. */
-		if (finite) {
+		if (finite && compare_all) {
 			for (uint32_t from = first; from < middle; ++from) {
 				if (cost < this->search.cost[from] || (cost == this->search.cost[from] && legs < this->search.legs[from])) accept(from);
 			}
@@ -911,8 +929,23 @@ size_t PassengerPrecomputedTable::RelaxIncoming(size_t allowance)
 				}
 			}
 		}
+		if (finite && !compare_all) {
+			const uint32_t from = this->exception_state[base];
+			if (from >= first && from < last && from != range.excluded) {
+				if (cost < this->search.cost[from] || (cost == this->search.cost[from] && legs < this->search.legs[from])) accept(from);
+			}
+		}
 		this->range_offset += last - first; used += waiting;
-		if (this->range_offset == count) { ++this->cursor; this->range_offset = 0; }
+		if (this->range_offset == count) {
+			if (range_id != INVALID) {
+				const uint32_t exception = this->exception_state[base];
+				assert(exception == INVALID || (exception >= range.begin && exception < range.end));
+#ifdef WITH_PASSENGER_TABLE_INVARIANT_CHECKS
+				assert(this->WaitingStationInvariant(base));
+#endif
+			}
+			++this->cursor; this->range_offset = 0;
+		}
 		assert(used > 0);
 		total += used; allowance -= used;
 	} while (allowance != 0 && this->cursor < this->incoming_offsets[this->expanding + 1]);
@@ -1088,7 +1121,7 @@ size_t PassengerPrecomputedTable::Step(size_t allowance, bool legacy_publication
 			this->section_rides.capacity() * sizeof(SectionRide) + this->landings.capacity() * sizeof(uint32_t);
 	this->diagnostic.bytes += this->hot_edges.from.capacity() * 4 + this->hot_edges.cost.capacity() * 8 + this->hot_edges.legs.capacity() + this->hot_edges.range.capacity() * 4 + this->range_edges.capacity() * sizeof(RangeEdge) + this->cold_edges.capacity() * sizeof(ColdEdge);
 	this->diagnostic.bytes += this->binding_bytes + this->reachable_bytes;
-	this->diagnostic.bytes += this->exception_slots.capacity() * sizeof(uint32_t);
+	this->diagnostic.bytes += (this->exception_slots.capacity() + this->exception_state.capacity()) * sizeof(uint32_t);
 	this->diagnostic.bytes += (this->prepared.exception_labels.capacity() + this->prepared.alternative.capacity() + this->scratch.exception_labels.capacity()) * sizeof(Label);
 	this->diagnostic.bytes += (this->prepared.indices.capacity() + this->scratch.indices.capacity()) * sizeof(uint32_t);
 	this->diagnostic.bytes += (this->seed_offsets.capacity() + this->seed_occurrences.capacity()) * sizeof(uint32_t);

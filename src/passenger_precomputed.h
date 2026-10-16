@@ -119,6 +119,7 @@ private:
 		std::vector<uint32_t> legs;
 		std::vector<LabelMetadata> metadata;
 	} search;
+	std::vector<uint32_t> exception_state; ///< At descriptor boundaries, only this wait may differ from the station base.
 	using QueueItem = std::tuple<int64_t, uint32_t, uint32_t>;
 	std::vector<uint32_t> station_index, service_pattern;
 	std::vector<StationID> stations;
@@ -188,6 +189,7 @@ private:
 	int64_t SearchRiding(uint32_t state) const { return this->optimized ? this->search.metadata[state].riding : this->scratch.labels[state].riding; }
 	Label SearchLabel(uint32_t state) const;
 	void SetSearchLabel(uint32_t state, const Label &label);
+	bool WaitingStationInvariant(uint32_t station) const; ///< Defined only in the invariant-checking test TU.
 	size_t RelaxIncoming(size_t allowance);
 	void AddBoardEdges(uint32_t station, uint32_t to, uint32_t pattern, int64_t cost, EdgeKind kind, uint32_t occurrence, uint32_t distance = 0);
 	void ContractGraph(size_t &nodes);

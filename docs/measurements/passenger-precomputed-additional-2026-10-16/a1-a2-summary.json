@@ -1,0 +1,166 @@
+{
+  "reference": "a1534cd2b1",
+  "assert_on": true,
+  "full_audit_correctness_only": true,
+  "counted_range_probes": {
+    "reference-real": [
+      2876540832,
+      0
+    ],
+    "candidate-real": [
+      573124721,
+      3643764488
+    ]
+  },
+  "trials": [
+    {
+      "order": "normal",
+      "method": "reference",
+      "assertions": 190733007,
+      "dijkstra_s": 62.7132827,
+      "alternative_s": 5.8707271,
+      "publication_s": 3.1649901,
+      "section_s": 4.2847057,
+      "rows_s": 71.9898799
+    },
+    {
+      "order": "normal",
+      "method": "candidate",
+      "assertions": 190733007,
+      "dijkstra_s": 57.8378668,
+      "alternative_s": 5.93209,
+      "publication_s": 2.7848989,
+      "section_s": 4.2278213,
+      "rows_s": 66.787767
+    },
+    {
+      "order": "reverse",
+      "method": "reference",
+      "assertions": 190733007,
+      "dijkstra_s": 59.7627493,
+      "alternative_s": 5.2528816,
+      "publication_s": 3.0588619,
+      "section_s": 3.997681,
+      "rows_s": 68.3234415
+    },
+    {
+      "order": "reverse",
+      "method": "candidate",
+      "assertions": 190733007,
+      "dijkstra_s": 55.3303456,
+      "alternative_s": 5.2127241,
+      "publication_s": 2.5389551,
+      "section_s": 4.0734338,
+      "rows_s": 63.3102848
+    },
+    {
+      "order": "normal-2",
+      "method": "reference",
+      "assertions": 190733007,
+      "dijkstra_s": 57.9729765,
+      "alternative_s": 5.2072754,
+      "publication_s": 2.9122964,
+      "section_s": 4.0276843,
+      "rows_s": 66.3339422
+    },
+    {
+      "order": "normal-2",
+      "method": "candidate",
+      "assertions": 190733007,
+      "dijkstra_s": 53.4821768,
+      "alternative_s": 5.1449575,
+      "publication_s": 2.4922169,
+      "section_s": 4.0597974,
+      "rows_s": 61.3692368
+    },
+    {
+      "order": "reverse-2",
+      "method": "reference",
+      "assertions": 190733007,
+      "dijkstra_s": 56.1726448,
+      "alternative_s": 4.9705079,
+      "publication_s": 2.9251136,
+      "section_s": 3.876938,
+      "rows_s": 64.2807958
+    },
+    {
+      "order": "reverse-2",
+      "method": "candidate",
+      "assertions": 190733007,
+      "dijkstra_s": 53.0058514,
+      "alternative_s": 5.0158694,
+      "publication_s": 2.473208,
+      "section_s": 3.9089085,
+      "rows_s": 60.7063582
+    }
+  ],
+  "mean": {
+    "reference": {
+      "dijkstra_s": 59.155413325,
+      "alternative_s": 5.325348,
+      "publication_s": 3.0153155,
+      "section_s": 4.04675225,
+      "rows_s": 67.73201485
+    },
+    "candidate": {
+      "dijkstra_s": 54.91406015,
+      "alternative_s": 5.32641025,
+      "publication_s": 2.572319725,
+      "section_s": 4.06749025,
+      "rows_s": 63.0434117
+    }
+  },
+  "delta_percent": {
+    "dijkstra_s": -7.169847925325101,
+    "alternative_s": 0.019947053225455313,
+    "publication_s": -14.691523159019349,
+    "section_s": 0.5124603316152943,
+    "rows_s": -6.9222850676794785
+  },
+  "paired_reduction_s": {
+    "normal": {
+      "dijkstra_s": 4.8754159,
+      "alternative_s": -0.061362899999999776,
+      "publication_s": 0.38009119999999985,
+      "section_s": 0.05688440000000039,
+      "rows_s": 5.202112900000003
+    },
+    "reverse": {
+      "dijkstra_s": 4.432403700000002,
+      "alternative_s": 0.04015750000000029,
+      "publication_s": 0.5199068000000002,
+      "section_s": -0.07575280000000006,
+      "rows_s": 5.013156700000003
+    },
+    "normal-2": {
+      "dijkstra_s": 4.490799700000004,
+      "alternative_s": 0.06231790000000004,
+      "publication_s": 0.42007949999999994,
+      "section_s": -0.03211310000000012,
+      "rows_s": 4.964705399999993
+    },
+    "reverse-2": {
+      "dijkstra_s": 3.166793400000003,
+      "alternative_s": -0.04536149999999939,
+      "publication_s": 0.4519055999999999,
+      "section_s": -0.0319704999999999,
+      "rows_s": 3.57443760000001
+    }
+  },
+  "range_s": {
+    "reference": {
+      "dijkstra_s": 6.5406379,
+      "alternative_s": 0.9002191999999996,
+      "publication_s": 0.2526937,
+      "section_s": 0.40776769999999996,
+      "rows_s": 7.709084099999998
+    },
+    "candidate": {
+      "dijkstra_s": 4.832015400000003,
+      "alternative_s": 0.9162205999999999,
+      "publication_s": 0.3116908999999999,
+      "section_s": 0.31891279999999966,
+      "rows_s": 6.0814088000000055
+    }
+  }
+}

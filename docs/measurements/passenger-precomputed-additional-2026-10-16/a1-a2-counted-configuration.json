@@ -1,0 +1,43 @@
+{
+  "phase": "counted",
+  "assertions": true,
+  "projects": {
+    "openttd_lib": {
+      "sha256": "5aa4954ddd4f5fe5c63a987cf43f57cdf3ed5e34fa43b198d38151deb9061cff",
+      "release_definitions": "%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;_FORTIFY_SOURCE=2;WITH_PNG;WITH_ZLIB;WITH_LIBLZMA;WITH_LZO;WITH_ZSTD;WITH_PERSONAL_DIR;PERSONAL_DIR=\"OpenTTD\";WITH_SSE;DEDICATED;WITH_ASSERT;UNICODE;_UNICODE;WITH_UNISCRIBE;PSAPI_VERSION=1;POINTER_IS_64BIT;CMAKE_INTDIR=\"Release\"",
+      "per_source_release_definitions": [
+        {
+          "source": "C:\\Users\\bebe\\.codex\\worktrees\\4ba5\\OpenTTD-patches\\src\\sl\\linkgraph_sl.cpp",
+          "definitions": "%(PreprocessorDefinitions);WITH_SAVELOAD_TESTS"
+        },
+        {
+          "source": "C:\\Users\\bebe\\.codex\\worktrees\\4ba5\\OpenTTD-patches\\src\\sl\\saveload.cpp",
+          "definitions": "%(PreprocessorDefinitions);WITH_SAVELOAD_TESTS"
+        }
+      ],
+      "full_audit_sources": [],
+      "compiled_source_count": 584
+    },
+    "openttd_test": {
+      "sha256": "0db820fd0e3d9ad826188fbe9e26008ff7fafc9bd25023e209c81dfc3b38f3a8",
+      "release_definitions": "%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;_FORTIFY_SOURCE=2;WITH_PNG;WITH_ZLIB;WITH_LIBLZMA;WITH_LZO;WITH_ZSTD;WITH_PERSONAL_DIR;PERSONAL_DIR=\"OpenTTD\";WITH_SSE;DEDICATED;WITH_ASSERT;UNICODE;_UNICODE;WITH_UNISCRIBE;PSAPI_VERSION=1;POINTER_IS_64BIT;CMAKE_INTDIR=\"Release\"",
+      "per_source_release_definitions": [
+        {
+          "source": "C:\\Users\\bebe\\.codex\\worktrees\\4ba5\\OpenTTD-patches\\build-msvc\\a1-a2-counted\\table-build\\PassengerTableCandidate.cpp",
+          "definitions": "%(PreprocessorDefinitions);WITH_PASSENGER_TABLE_INVARIANT_CHECKS"
+        }
+      ],
+      "full_audit_sources": [
+        "C:\\Users\\bebe\\.codex\\worktrees\\4ba5\\OpenTTD-patches\\build-msvc\\a1-a2-counted\\table-build\\PassengerTableCandidate.cpp"
+      ],
+      "compiled_source_count": 41
+    },
+    "openttd": {
+      "sha256": "1ca60bda2d88e0379d5a49c554e4b885a38afce2b9bcc95dca0f72d27e8caa32",
+      "release_definitions": "%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;_FORTIFY_SOURCE=2;WITH_PNG;WITH_ZLIB;WITH_LIBLZMA;WITH_LZO;WITH_ZSTD;WITH_PERSONAL_DIR;PERSONAL_DIR=\"OpenTTD\";WITH_SSE;DEDICATED;WITH_ASSERT;UNICODE;_UNICODE;WITH_UNISCRIBE;PSAPI_VERSION=1;POINTER_IS_64BIT;CMAKE_INTDIR=\"Release\"",
+      "per_source_release_definitions": [],
+      "full_audit_sources": [],
+      "compiled_source_count": 1
+    }
+  }
+}

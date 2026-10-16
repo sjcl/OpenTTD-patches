@@ -1,0 +1,10 @@
+{
+  "assertions": 5734015,
+  "test_cases": 688,
+  "assert_on": true,
+  "isolated_measurement_tus": false,
+  "executable_sha256": {
+    "openttd.exe": "1592cc6ffe5a711c99c39bf5b129151bd901adb3f0437cc14118c88087746f7f",
+    "openttd_test.exe": "3276fcb842dfcafcee2637b191ed70cb7578f4d0ef46fbe8d72acd267278b00a"
+  }
+}

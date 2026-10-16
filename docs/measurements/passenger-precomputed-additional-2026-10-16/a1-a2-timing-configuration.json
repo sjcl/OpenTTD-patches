@@ -1,0 +1,49 @@
+{
+  "phase": "timing",
+  "assertions": true,
+  "projects": {
+    "openttd_lib": {
+      "sha256": "b03db45bd76078203effb9d1c1c959ab323e59e86b45ab36350eb18491808ebe",
+      "release_definitions": "%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;_FORTIFY_SOURCE=2;WITH_PNG;WITH_ZLIB;WITH_LIBLZMA;WITH_LZO;WITH_ZSTD;WITH_PERSONAL_DIR;PERSONAL_DIR=\"OpenTTD\";WITH_SSE;DEDICATED;WITH_ASSERT;UNICODE;_UNICODE;WITH_UNISCRIBE;PSAPI_VERSION=1;POINTER_IS_64BIT;CMAKE_INTDIR=\"Release\"",
+      "per_source_release_definitions": [
+        {
+          "source": "C:\\Users\\bebe\\.codex\\worktrees\\4ba5\\OpenTTD-patches\\src\\sl\\linkgraph_sl.cpp",
+          "definitions": "%(PreprocessorDefinitions);WITH_SAVELOAD_TESTS"
+        },
+        {
+          "source": "C:\\Users\\bebe\\.codex\\worktrees\\4ba5\\OpenTTD-patches\\src\\sl\\saveload.cpp",
+          "definitions": "%(PreprocessorDefinitions);WITH_SAVELOAD_TESTS"
+        }
+      ],
+      "full_audit_sources": [],
+      "compiled_source_count": 584
+    },
+    "openttd_test": {
+      "sha256": "f43473c44da6e9597103c0967e9469b9d35f3f6e84155db461809ef289692947",
+      "release_definitions": "%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;_FORTIFY_SOURCE=2;WITH_PNG;WITH_ZLIB;WITH_LIBLZMA;WITH_LZO;WITH_ZSTD;WITH_PERSONAL_DIR;PERSONAL_DIR=\"OpenTTD\";WITH_SSE;DEDICATED;WITH_ASSERT;UNICODE;_UNICODE;WITH_UNISCRIBE;PSAPI_VERSION=1;POINTER_IS_64BIT;CMAKE_INTDIR=\"Release\"",
+      "per_source_release_definitions": [
+        {
+          "source": "C:\\Users\\bebe\\.codex\\worktrees\\4ba5\\OpenTTD-patches\\build-msvc\\a1-a2-timing\\table-build\\PassengerTableReference.cpp",
+          "definitions": "%(PreprocessorDefinitions);PASSENGER_TABLE_COUNT=0"
+        },
+        {
+          "source": "C:\\Users\\bebe\\.codex\\worktrees\\4ba5\\OpenTTD-patches\\build-msvc\\a1-a2-timing\\table-build\\PassengerTableCandidate.cpp",
+          "definitions": "%(PreprocessorDefinitions);PASSENGER_TABLE_COUNT=0"
+        },
+        {
+          "source": "C:\\Users\\bebe\\.codex\\worktrees\\4ba5\\OpenTTD-patches\\utils\\passenger_table_build_benchmark.cpp",
+          "definitions": "%(PreprocessorDefinitions);PASSENGER_TABLE_COUNT=0"
+        }
+      ],
+      "full_audit_sources": [],
+      "compiled_source_count": 41
+    },
+    "openttd": {
+      "sha256": "49b0966a2dd887bd668d2f08633723208fb33723025e4a8c7f9209d3238fb303",
+      "release_definitions": "%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;_FORTIFY_SOURCE=2;WITH_PNG;WITH_ZLIB;WITH_LIBLZMA;WITH_LZO;WITH_ZSTD;WITH_PERSONAL_DIR;PERSONAL_DIR=\"OpenTTD\";WITH_SSE;DEDICATED;WITH_ASSERT;UNICODE;_UNICODE;WITH_UNISCRIBE;PSAPI_VERSION=1;POINTER_IS_64BIT;CMAKE_INTDIR=\"Release\"",
+      "per_source_release_definitions": [],
+      "full_audit_sources": [],
+      "compiled_source_count": 1
+    }
+  }
+}

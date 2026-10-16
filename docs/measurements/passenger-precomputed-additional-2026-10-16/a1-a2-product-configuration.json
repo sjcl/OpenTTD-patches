@@ -1,0 +1,36 @@
+{
+  "phase": "product",
+  "assertions": true,
+  "projects": {
+    "openttd_lib": {
+      "sha256": "34aa2953ede4cc1895fd78782a8cb9f0a372fbd02880bcb15a59bdecccb7d6c8",
+      "release_definitions": "%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;_FORTIFY_SOURCE=2;WITH_PNG;WITH_ZLIB;WITH_LIBLZMA;WITH_LZO;WITH_ZSTD;WITH_PERSONAL_DIR;PERSONAL_DIR=\"OpenTTD\";WITH_SSE;DEDICATED;WITH_ASSERT;UNICODE;_UNICODE;WITH_UNISCRIBE;PSAPI_VERSION=1;POINTER_IS_64BIT;CMAKE_INTDIR=\"Release\"",
+      "per_source_release_definitions": [
+        {
+          "source": "C:\\Users\\bebe\\.codex\\worktrees\\4ba5\\OpenTTD-patches\\src\\sl\\linkgraph_sl.cpp",
+          "definitions": "%(PreprocessorDefinitions);WITH_SAVELOAD_TESTS"
+        },
+        {
+          "source": "C:\\Users\\bebe\\.codex\\worktrees\\4ba5\\OpenTTD-patches\\src\\sl\\saveload.cpp",
+          "definitions": "%(PreprocessorDefinitions);WITH_SAVELOAD_TESTS"
+        }
+      ],
+      "full_audit_sources": [],
+      "compiled_source_count": 584
+    },
+    "openttd_test": {
+      "sha256": "8bdc5387639378279dad5d47ca1993809b1ec8eda265216017924388b018dcd3",
+      "release_definitions": "%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;_FORTIFY_SOURCE=2;WITH_PNG;WITH_ZLIB;WITH_LIBLZMA;WITH_LZO;WITH_ZSTD;WITH_PERSONAL_DIR;PERSONAL_DIR=\"OpenTTD\";WITH_SSE;DEDICATED;WITH_ASSERT;UNICODE;_UNICODE;WITH_UNISCRIBE;PSAPI_VERSION=1;POINTER_IS_64BIT;CMAKE_INTDIR=\"Release\"",
+      "per_source_release_definitions": [],
+      "full_audit_sources": [],
+      "compiled_source_count": 38
+    },
+    "openttd": {
+      "sha256": "42e66931e02518b7520ce2f2155d200c913a5068d6767af566e539db34afca11",
+      "release_definitions": "%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;_FORTIFY_SOURCE=2;WITH_PNG;WITH_ZLIB;WITH_LIBLZMA;WITH_LZO;WITH_ZSTD;WITH_PERSONAL_DIR;PERSONAL_DIR=\"OpenTTD\";WITH_SSE;DEDICATED;WITH_ASSERT;UNICODE;_UNICODE;WITH_UNISCRIBE;PSAPI_VERSION=1;POINTER_IS_64BIT;CMAKE_INTDIR=\"Release\"",
+      "per_source_release_definitions": [],
+      "full_audit_sources": [],
+      "compiled_source_count": 1
+    }
+  }
+}

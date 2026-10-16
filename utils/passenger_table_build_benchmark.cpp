@@ -131,6 +131,11 @@ template <typename A, typename B> void Compare(const A &a, const B &b)
 	for (size_t d = 0; d < a.rows.size(); ++d) {
 		REQUIRE(StoredRowEmpty(a.rows[d]) == StoredRowEmpty(b.rows[d]));
 		if (StoredRowEmpty(a.rows[d])) continue;
+		if constexpr (requires { a.rows[d].indices; b.rows[d].indices; }) {
+			REQUIRE(a.rows[d].indices == b.rows[d].indices);
+			REQUIRE(std::equal(a.rows[d].exception_labels.begin(), a.rows[d].exception_labels.end(),
+					b.rows[d].exception_labels.begin(), b.rows[d].exception_labels.end(), [](const auto &x, const auto &y) { return Values(x) == Values(y); }));
+		}
 		for (uint32_t origin = 0; origin < a.stations.size(); ++origin) {
 			REQUIRE(Values(StoredLabel(a, a.rows[d], origin, origin)) == Values(StoredLabel(b, b.rows[d], origin, origin)));
 			for (const auto &[pattern, state] : a.waiting_states[origin]) {
