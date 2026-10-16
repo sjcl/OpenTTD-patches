@@ -3123,6 +3123,30 @@ TEST_CASE("Precomputed cost regrouping wakes queues without a live revision or r
 	CHECK(list.passenger_routing_dirty);
 }
 
+TEST_CASE("Learning access metadata from an old save does not replace an unchanged legacy table", "[passenger][precomputed][save][determinism]")
+{
+	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = true;
+	auto *train = f.Train({Stop(A, 1014), Stop(D, 1014)}); // Epoch is exactly two circuits.
+	auto &db = f.Build(); while (!db.PreparePrecomputed()) {}
+	auto old = WithoutWitnessTrailer(db.Save());
+	REQUIRE(db.Load(old)); db.FinishLoad(true, true);
+	while (db.StepLoad(65536) == PassengerServiceDatabase::LoadState::Replaying) {}
+	REQUIRE(db.GetLoadState() == PassengerServiceDatabase::LoadState::Ready);
+	REQUIRE(db.PrecomputedFinished());
+	const auto id = train->orders->index;
+	REQUIRE(db.Get(id)->timetable.stops.front().boarding_facility == 0);
+	const auto revision = db.GetPublishedRevision(), generation = db.Get(id)->generation;
+	const auto work = db.GetPrecomputedDiagnostic(PAX).operations;
+	db.Invalidate(id); f.PublishUpdates(db);
+	CHECK(db.Get(id)->timetable.stops.front().boarding_facility == 1);
+	CHECK(db.GetPublishedRevision() == revision);
+	CHECK(db.Get(id)->generation == generation);
+	db.TickPrecomputed(1);
+	CHECK(db.PrecomputedFinished());
+	CHECK(db.GetPrecomputedDiagnostic(PAX).operations == work);
+	CHECK(db.GetPrecomputedDiagnostic(PAX).retained_destinations == 0);
+}
+
 TEST_CASE("Precomputed waiting index excludes unrelated packets and preserves partial reservations", "[passenger][precomputed][boarding][cargo]")
 {
 	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = true;
@@ -3546,14 +3570,25 @@ TEST_CASE("Precomputed single packet events leave thousands of sleeping intents 
 	CHECK(db.GetPrecomputedDiagnostic(PAX).queries < 205); // One lookup per cohort/slice, not per packet.
 }
 
-TEST_CASE("Hyperpath unrelated row sweeps retain a sleeping unreachable fallback", "[passenger][hyperpath][events][determinism]")
+TEST_CASE("Hyperpath unchanged fallback decisions retain boarding indices and native retry semantics", "[passenger][hyperpath][events][determinism]")
 {
 	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = _settings_game.linkgraph.passenger_journey_hyperpath = true;
-	f.Train({Stop(A), Stop(B)}); f.Train({Stop(C), Stop(D)});
+	auto *carrier = f.Train({Stop(A), Stop(B)}); f.Train({Stop(C), Stop(D)});
 	auto &db = f.Build(); while (!db.PreparePrecomputed()) {}
-	REQUIRE_FALSE(db.MayHavePrecomputedRoute(PAX, A, D));
+	const bool incoming_excluded = GENERATE(false, true);
+	StationID destination = incoming_excluded ? B : D;
+	OrderListID previous = incoming_excluded ? carrier->orders->index : OrderListID::Invalid();
+	if (incoming_excluded) {
+		auto base = db.PrecomputedRouteCost(PAX, A, destination); REQUIRE(base); REQUIRE(*base != INT64_MAX);
+	}
+	REQUIRE_FALSE(db.PlanPrecomputed(PAX, A, destination, NOW, previous).ride);
 	auto &waiting = Station::Get(A)->goods[PAX].CreateData().cargo;
-	auto *packet = f.Packet(1); waiting.Append(packet, D);
+	auto make_packet = [&](uint8_t age) {
+		auto *p = CargoPacket::Create(1, age, A, TileIndex{0}, Money{0}); REQUIRE(p->SetPassengerDestination(PAX, destination));
+		if (incoming_excluded) p->SetPassengerInterchange(NOW, previous, carrier->orders->GetCargoDistRouteGeneration());
+		return p;
+	};
+	auto *packet = make_packet(0); waiting.Append(packet, D);
 	waiting.RoutePassengerJourneys(PAX, A);
 	REQUIRE(packet->GetPassengerRoutingMode() == PassengerRoutingMode::Fallback);
 	REQUIRE(packet->GetPassengerRoutingEvent() == INVALID_STATE_TICKS);
@@ -3564,18 +3599,36 @@ TEST_CASE("Hyperpath unrelated row sweeps retain a sleeping unreachable fallback
 	const auto hash = packet->StationMergeHash(), updates = waiting.boarding_index_updates;
 	const auto generation = waiting.passenger_generation_inspected;
 	ResetPassengerWaitingEventDiagnostic();
-	SECTION("Unrelated publication preserves all packet fields and index membership") {
+	SECTION("Unrelated publication produces the full pass's retry state without rebuilding boarding indices") {
+		StationCargoList control;
+		auto *reference = make_packet(1); reference->FallbackPassengerJourney(A, NOW, packet->GetPassengerLegacyHop());
+		control.Append(reference, StationID::Invalid()); control.RoutePassengerJourneys(PAX, A);
+		ResetPassengerWaitingEventDiagnostic();
 		waiting.RoutePassengerJourneys(PAX, A);
-		CHECK(packet->StationMergeHash() == hash);
+		CHECK(packet->HasSamePassengerRouting(*reference));
+		CHECK(packet->GetPassengerRoutingEvent() == reference->GetPassengerRoutingEvent());
+		CHECK(packet->StationMergeHash() != hash); // The original retry timestamp is renewed.
 		CHECK(waiting.boarding_index_updates == updates);
 		CHECK(waiting.passenger_generation_inspected == generation + 1);
 		CHECK(GetPassengerWaitingEventDiagnostic().unchanged_generation_packets == 1);
 		CHECK_FALSE(waiting.passenger_routing_sweeping);
+		/* The merge index must follow the new retry timestamp too. */
+		auto *joining = make_packet(0); joining->FallbackPassengerJourney(A, _state_ticks, packet->GetPassengerLegacyHop());
+		waiting.Append(joining, StationID::Invalid());
+		CHECK(packet->Count() == 2);
+		CHECK(waiting.Packets()->find(StationID::Invalid())->second.size() == 1);
 	}
 	SECTION("The packet's own deadline still runs") {
 		packet->SchedulePassengerRouting(_state_ticks);
 		waiting.RoutePassengerJourneys(PAX, A);
 		CHECK(packet->StationMergeHash() != hash);
+		CHECK(waiting.boarding_index_updates > updates);
+		CHECK(GetPassengerWaitingEventDiagnostic().unchanged_generation_packets == 0);
+	}
+	SECTION("An extra future event is rescheduled by the full pass") {
+		packet->SchedulePassengerRouting(_state_ticks + 100);
+		waiting.RoutePassengerJourneys(PAX, A);
+		CHECK(packet->GetPassengerRoutingEvent() == INVALID_STATE_TICKS);
 		CHECK(waiting.boarding_index_updates > updates);
 		CHECK(GetPassengerWaitingEventDiagnostic().unchanged_generation_packets == 0);
 	}
@@ -3587,10 +3640,10 @@ TEST_CASE("Hyperpath unrelated row sweeps retain a sleeping unreachable fallback
 		CHECK(GetPassengerWaitingEventDiagnostic().unchanged_generation_packets == 0);
 	}
 	SECTION("A newly usable frozen row is applied normally") {
-		auto *train = f.Train({Stop(A), Stop(D)}); db.Invalidate(train->orders->index);
+		auto *train = f.Train({Stop(A), Stop(destination)}); db.Invalidate(train->orders->index);
 		f.PublishUpdates(db); while (!db.PreparePrecomputed()) {}
 		while (!db.PrecomputedFinished()) db.TickPrecomputed();
-		REQUIRE(db.MayHavePrecomputedRoute(PAX, A, D));
+		REQUIRE(db.PlanPrecomputed(PAX, A, destination, _state_ticks, previous).ride);
 		waiting.RoutePassengerJourneys(PAX, A);
 		CHECK(packet->GetPassengerRoutingMode() == PassengerRoutingMode::Journey);
 		CHECK(packet->GetPassengerJourney().kind == PassengerRideKind::HyperpathIntent);

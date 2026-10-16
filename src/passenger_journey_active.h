@@ -30,7 +30,7 @@ struct PassengerWaitingEventDiagnostic {
 	uint64_t arrival_candidates = 0, arrival_passengers = 0, unresolved_missed = 0;
 	uint64_t capacity_missed_packets = 0, capacity_missed_passengers = 0;
 	uint64_t capacity_record_nanoseconds = 0; ///< Outside the national scheduler; includes candidate visits and index/event mutation.
-	uint64_t unchanged_generation_packets = 0; ///< Frozen rows still have no route; retain native packet state and derived indices.
+	uint64_t unchanged_generation_packets = 0; ///< Unchanged fallback decision; only retry/merge metadata is refreshed.
 	std::array<uint64_t, static_cast<size_t>(PassengerWaitingCause::End)> cause_nanoseconds{}, cause_packets{};
 };
 void RecordPassengerWaitingCause(PassengerWaitingCause cause, uint64_t nanoseconds, bool unchanged = false);
@@ -269,6 +269,7 @@ public:
 	PassengerJourneyActiveContext(const Vehicle *vehicle, StationID station, size_t prediction_cache_bytes = PassengerServiceCapture::MAXIMUM_PREDICTION_BYTES);
 	~PassengerJourneyActiveContext();
 	size_t GetWorkAllowanceUsed() const { return 4194304 - this->work_left; }
+	const PassengerPrecomputedPlan &QueryWaiting(const CargoPacket &packet, CargoType cargo); ///< Shared frozen-table lookup; never changes a packet or admits a search.
 	bool PlanWaiting(CargoPacket &packet, CargoType cargo, StationID legacy_hop, bool require_hyperpath = false);
 	std::optional<VehicleCargoList::MoveToAction> Decide(CargoPacket &packet, CargoType cargo, bool accepted, OrderUnloadType unload);
 };

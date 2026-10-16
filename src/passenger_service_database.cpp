@@ -996,17 +996,6 @@ std::optional<PassengerJourneyExecution> PassengerServiceDatabase::ExtendPrecomp
 	return {};
 }
 
-bool PassengerServiceDatabase::MayHavePrecomputedRoute(CargoType cargo, StationID origin, StationID destination) const
-{
-	if (cargo >= NUM_CARGO || this->precomputed_revision == UINT64_MAX) return true;
-	for (const auto *table : {&this->precomputed[cargo], &this->retained_precomputed[cargo]}) {
-		if (table->MemoryRejected()) return true; // Preserve the admitted-planner fallback.
-		auto cost = table->RouteCost(origin, destination);
-		if (cost && *cost != INT64_MAX) return true;
-	}
-	return false;
-}
-
 PassengerPrecomputedPlan PassengerServiceDatabase::PlanPrecomputed(CargoType cargo, StationID origin, StationID destination,
 		StateTicks ready, OrderListID excluded, uint32_t sample, OrderListID failed) const
 {
@@ -1058,6 +1047,16 @@ void PassengerServiceDatabase::Publish(size_t &allowance)
 		 * Keeping its generation also preserves already waiting intents. */
 		bool same = false;
 		if (old != this->services.end()) {
+			/* Old wires did not capture road access. Learning that metadata is
+			 * not a new service or timing publication. Enrich the live catalogue
+			 * without changing the immutable graph snapshot or its saved Work.
+			 * Actual order edits still change the incarnation. */
+			if (service.incarnation == old->second.incarnation && service.timetable.stops.size() == old->second.timetable.stops.size()) {
+				for (size_t i = 0; i < service.timetable.stops.size(); ++i) {
+					auto &before = old->second.timetable.stops[i]; const auto &after = service.timetable.stops[i];
+					if (before.boarding_facility == 0 && before.station == after.station && before.order == after.order) before.boarding_facility = after.boarding_facility;
+				}
+			}
 			auto normalized = service;
 			normalized.generation = old->second.generation;
 			if (normalized.timetable.period > 0 && normalized.vehicles.size() == old->second.vehicles.size()) {

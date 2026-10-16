@@ -644,6 +644,27 @@ static StationID CurrentPassengerLegacyHop(const CargoPacket &packet, CargoType 
 	return StationID::Invalid();
 }
 
+const PassengerPrecomputedPlan &PassengerJourneyActiveContext::QueryWaiting(const CargoPacket &packet, CargoType cargo)
+{
+	StateTicks ready = std::max(_state_ticks, packet.GetPassengerInterchangeReady());
+	if (this->vehicle != nullptr) ready = std::max(ready, _state_ticks + StateTicksDelta{ActiveJourneyEvaluation().minimum_transfer});
+	const auto *arriving = OrderList::GetIfValid(packet.GetPassengerArrivingService());
+	OrderListID excluded = arriving != nullptr && arriving->GetCargoDistRouteGeneration() == packet.GetPassengerArrivingIncarnation() ? arriving->index : OrderListID::Invalid();
+	/* One decision per OD/ready/incoming-service cohort in this slice. A
+	 * packet's pool allocation history is not part of its routing condition. */
+	const auto failed = packet.GetPassengerFailedService(_state_ticks);
+	const auto key = std::tuple(cargo, packet.GetPassengerDestination(), ready, excluded, failed);
+	auto cached = this->precomputed_waiting.find(key);
+	if (cached == this->precomputed_waiting.end()) {
+		RecordPassengerWaitingGroup();
+		uint32_t sample = static_cast<uint32_t>(SimpleHash64((uint64_t{excluded.base()} << 32) ^
+				(uint64_t{this->station.base()} << 16) ^ packet.GetPassengerDestination().base() ^ uint64_t(ready.base())));
+		cached = this->precomputed_waiting.emplace(key,
+				GetPassengerServiceDatabase().PlanPrecomputed(cargo, this->station, packet.GetPassengerDestination(), ready, excluded, sample, failed)).first;
+	} else ++TickBudget().diagnostic.query_cache_hits;
+	return cached->second;
+}
+
 bool PassengerJourneyActiveContext::PlanWaiting(CargoPacket &packet, CargoType cargo, StationID legacy_hop, bool require_hyperpath)
 {
 	PassengerJourneyWorkTimer timer;
@@ -652,23 +673,7 @@ bool PassengerJourneyActiveContext::PlanWaiting(CargoPacket &packet, CargoType c
 			packet.GetPassengerDestination() == this->station ||
 			(!_settings_game.linkgraph.passenger_journey_precomputed && !packet.CanRetryPassengerJourney(this->station, _state_ticks))) return false;
 	if (_settings_game.linkgraph.passenger_journey_precomputed) {
-		StateTicks ready = std::max(_state_ticks, packet.GetPassengerInterchangeReady());
-		if (this->vehicle != nullptr) ready = std::max(ready, _state_ticks + StateTicksDelta{ActiveJourneyEvaluation().minimum_transfer});
-		const auto *arriving = OrderList::GetIfValid(packet.GetPassengerArrivingService());
-		OrderListID excluded = arriving != nullptr && arriving->GetCargoDistRouteGeneration() == packet.GetPassengerArrivingIncarnation() ? arriving->index : OrderListID::Invalid();
-		/* One decision per OD/ready/incoming-service cohort in this slice. A
-		 * packet's pool allocation history is not part of its routing condition. */
-		const auto failed = packet.GetPassengerFailedService(_state_ticks);
-		const auto key = std::tuple(cargo, packet.GetPassengerDestination(), ready, excluded, failed);
-		auto cached = this->precomputed_waiting.find(key);
-		if (cached == this->precomputed_waiting.end()) {
-			RecordPassengerWaitingGroup();
-			uint32_t sample = static_cast<uint32_t>(SimpleHash64((uint64_t{excluded.base()} << 32) ^
-					(uint64_t{this->station.base()} << 16) ^ packet.GetPassengerDestination().base() ^ uint64_t(ready.base())));
-			cached = this->precomputed_waiting.emplace(key,
-					GetPassengerServiceDatabase().PlanPrecomputed(cargo, this->station, packet.GetPassengerDestination(), ready, excluded, sample, failed)).first;
-		} else ++TickBudget().diagnostic.query_cache_hits;
-		const auto &plan = cached->second;
+		const auto &plan = this->QueryWaiting(packet, cargo);
 		/* Migration must not refresh a valid old intent's expiry from a retained
 		 * legacy row while its replacement destination is still building. */
 		if (require_hyperpath && (!plan.ride || plan.ride->kind != PassengerRideKind::HyperpathIntent)) return false;
@@ -1845,21 +1850,27 @@ size_t StationCargoList::RoutePassengerJourneys(CargoType cargo, StationID stati
 			 * Legacy intents join the budgeted generation sweep only in B mode. */
 			++this->passenger_routing_inspected;
 			const auto entry = this->waiting_entries.at(id);
-			/* Publishing an unrelated destination must not renew a sleeping
-			 * fallback's retry timestamp and rebuild all of its indices. Keep the
-			 * saved cursor/debit, but mutate the packet only when a frozen route,
-			 * a changed flow hop, or its own event can change the decision. The
-			 * base state's unreachable label also excludes every previous-service
-			 * state. Both generations are checked conservatively; memory rejection
-			 * still runs the normal admitted planners. */
-			if (_settings_game.linkgraph.passenger_journey_hyperpath && sweep &&
+			/* A frozen route can exist while its live service is unavailable. Use
+			 * the same cached validation as PlanWaiting, rather than testing only
+			 * reachability. An unchanged fallback needs its original retry/merge
+			 * metadata update, but no boarding-index rebuild. Preserve the saved
+			 * cursor/debit and every native field the full route/schedule pass
+			 * would produce. Own events, changed hops and memory fallback still
+			 * take that ordinary path. */
+			StateTicks fallback_due = packet->GetPassengerInterchangeReady() > _state_ticks ? packet->GetPassengerInterchangeReady() : INVALID_STATE_TICKS;
+			if (_settings_game.linkgraph.passenger_journey_hyperpath && sweep && IsPassengerJourneyRoutingEnabled(cargo) &&
 					packet->GetPassengerRoutingMode() == PassengerRoutingMode::Fallback && entry.key == StationID::Invalid() &&
 					!packet->GetPassengerBoardingFailure().Present() &&
-					(packet->GetPassengerRoutingEvent() == INVALID_STATE_TICKS || packet->GetPassengerRoutingEvent() > _state_ticks) &&
-					!GetPassengerServiceDatabase().MayHavePrecomputedRoute(cargo, station, packet->GetPassengerDestination()) &&
+					packet->GetPassengerRoutingEvent() == fallback_due &&
 					CurrentPassengerLegacyHop(*packet, cargo, station, packet->GetPassengerLegacyHop()) == packet->GetPassengerLegacyHop()) {
-				RecordPassengerWaitingCause(cause, std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - cause_started).count(), true);
-				continue;
+				const auto &plan = context.QueryWaiting(*packet, cargo);
+				if (!plan.ride && plan.state != PassengerPrecomputedPlan::State::Memory) {
+					packet->passenger_journey = {}; packet->passenger_via = StationID::Invalid();
+					packet->passenger_retry_station = station; packet->passenger_retry_after = _state_ticks + 256;
+					this->RefreshWaitingPacket(*packet);
+					RecordPassengerWaitingCause(cause, std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - cause_started).count(), true);
+					continue;
+				}
 			}
 			this->ForgetWaitingPacket(id);
 			const StationID key = route(packet, entry.key);

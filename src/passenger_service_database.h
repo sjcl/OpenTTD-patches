@@ -169,7 +169,6 @@ public:
 	{ return std::any_of(this->precomputed.begin(), this->precomputed.end(), [](const auto &table) { return table.MemoryRejected(); }); }
 	PassengerPrecomputedPlan PlanPrecomputed(CargoType cargo, StationID origin, StationID destination, StateTicks ready,
 			OrderListID excluded = OrderListID::Invalid(), uint32_t sample = 0, OrderListID failed = OrderListID::Invalid()) const;
-	bool MayHavePrecomputedRoute(CargoType cargo, StationID origin, StationID destination) const; ///< Conservative frozen-row test; never builds or admits a search.
 	PassengerPrecomputedPlan BoardHyperpath(const PassengerJourneyExecution &intent, CargoType cargo, OrderListID service,
 			VehicleOrderID boarding, OrderListID previous = OrderListID::Invalid(), OrderListID failed = OrderListID::Invalid()) const;
 	PassengerPrecomputedDiagnostic GetPrecomputedDiagnostic(CargoType cargo) const
