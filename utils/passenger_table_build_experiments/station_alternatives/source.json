@@ -1,0 +1,9 @@
+{
+  "reference_commit": "cf42a42660",
+  "adopted": false,
+  "reason": "Station-local traversal overhead exceeds the saved repeated base reads on the measured input.",
+  "files": {
+    "passenger_precomputed.cpp.txt": "ba4047db51d67cdbc123b621c9fb5050c50e7d80ade971ca41890b36ca57abd0",
+    "passenger_precomputed.h.txt": "212961abb33329b9407ef85e3cc509402429640e443dc8befca83526e0214d42"
+  }
+}

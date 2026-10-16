@@ -92,7 +92,7 @@ def main():
     for row in csv.reader((args.output / "raw.log").read_text(encoding="utf-8", errors="replace").splitlines()):
         if row and row[0] == "table_build":
             rows.append(dict(name=row[1], **dict(zip(FIELDS, map(int, row[2:])))))
-        elif row and row[0] in ("heap_stats", "heap_sample", "queue_order", "range_probes", "row_distribution", "memory", "graph_layout", "phases", "packed_bounds", "table_window"):
+        elif row and row[0] in ("heap_stats", "heap_sample", "queue_order", "range_probes", "alternative_probes", "row_distribution", "memory", "graph_layout", "phases", "packed_bounds", "table_window"):
             details.setdefault(row[1], {})[row[0]] = list(map(int, row[2:]))
     result = dict(command=command, binary_sha256=hashlib.sha256(args.binary.read_bytes()).hexdigest(), exit_code=process.returncode,
                   environment={key: value for key, value in env.items() if key.startswith("OPENTTD_TABLE_")},

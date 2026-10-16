@@ -196,6 +196,7 @@ template <typename T> T Run(std::span<const PassengerPeriodicService *const> rec
 	std::cout << "heap_sample," << name << ',' << m.heap_ns << ',' << m.heap_samples << std::endl;
 	std::cout << "queue_order," << name << ',' << m.push_order << ',' << m.pop_order << std::endl;
 	std::cout << "range_probes," << name << ',' << m.range_comparisons << ',' << m.invariant_comparisons << std::endl;
+	std::cout << "alternative_probes," << name << ',' << m.alternative_base_reads << ',' << m.alternative_skipped << ',' << m.section_actual_reads << std::endl;
 	if constexpr (requires { table.queue.PackedEnabled(); }) std::cout << "packed_bounds," << name << ',' << table.queue.PackedEnabled() << ',' << table.queue.LegBits() << std::endl;
 	size_t rows_bytes = 0;
 	for (const auto &row : table.rows) rows_bytes += (row.labels.capacity() + row.alternative.capacity()) * sizeof(typename T::Label);

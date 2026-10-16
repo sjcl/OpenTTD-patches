@@ -64,6 +64,7 @@ def generate(source, build, name, revision, heap="priority", simd=False, contrac
         uint64_t heap_ns = 0, heap_samples = 0;
         uint64_t push_order = 14695981039346656037ULL, pop_order = 14695981039346656037ULL;
         uint64_t range_comparisons = 0, invariant_comparisons = 0;
+        uint64_t alternative_base_reads = 0, alternative_skipped = 0, section_actual_reads = 0;
         std::chrono::steady_clock::time_point phase, row_started;
         std::vector<uint64_t> destinations_ns;
     };
@@ -138,7 +139,23 @@ def generate(source, build, name, revision, heap="priority", simd=False, contrac
                    "const auto &edge = this->edges[this->optimized ? index : this->incoming[index]];",
                    "const auto &edge = this->integrated ? soa : this->edges[this->optimized ? index : this->incoming[index]];"):
         cpp = cpp.replace(lookup, "++this->metrics.relaxations; " + lookup)
-    cpp = cpp.replace("\t\t\t\t\tconst auto &ride = this->section_rides[this->finishing", "\t\t\t\t\t++this->metrics.section_checks; const auto &ride = this->section_rides[this->finishing")
+    if "alternative_candidates" in header:
+        # Keep the original logical Section-candidate counter at EVERY slice,
+        # although the actual station-local candidate order is different.
+        marker = "const size_t candidate_count = this->occurrences.size() + this->section_rides.size();"
+        assert cpp.count(marker) == 1
+        cpp = cpp.replace(marker, marker + "\n\t\t\t\tif constexpr (PASSENGER_TABLE_COUNT) this->metrics.section_checks += this->finishing < candidate_count && this->finishing >= this->occurrences.size();")
+        marker = "this->finishing += skipped;"
+        assert cpp.count(marker) == 1
+        charge = "if constexpr (PASSENGER_TABLE_COUNT) { this->metrics.alternative_skipped += skipped; this->metrics.section_checks += skipped - std::min<size_t>(skipped, this->occurrences.size() - std::min<size_t>(this->finishing, this->occurrences.size())) - (this->finishing >= this->occurrences.size()); } "
+        cpp = cpp.replace(marker, charge + marker)
+        cpp = cpp.replace("this->alternative_base.cost = this->SearchCost(station);", "++this->metrics.alternative_base_reads; this->alternative_base.cost = this->SearchCost(station);")
+        lookup = "const auto &ride = this->section_rides[candidate - this->occurrences.size()];"
+        assert cpp.count(lookup) == 1
+        cpp = cpp.replace(lookup, "++this->metrics.section_actual_reads; " + lookup)
+    else:
+        cpp = cpp.replace("int64_t best_cost = this->SearchCost(station)", "++this->metrics.alternative_base_reads; int64_t best_cost = this->SearchCost(station)")
+        cpp = cpp.replace("\t\t\t\t\tconst auto &ride = this->section_rides[this->finishing", "\t\t\t\t\t++this->metrics.section_checks; ++this->metrics.section_actual_reads; const auto &ride = this->section_rides[this->finishing")
     cpp = cpp.replace("legs != this->scratch.labels[state].legs) continue;", "legs != this->scratch.labels[state].legs) { ++this->metrics.stale; continue; }")
     cpp = cpp.replace("legs != this->SearchLegs(state)) continue;", "legs != this->SearchLegs(state)) { ++this->metrics.stale; continue; }")
     cpp = cpp.replace("\tthis->scratch.labels.clear();", "\tthis->metrics.phase = this->metrics.row_started = Clock::now();\n\tthis->scratch.labels.clear();")
