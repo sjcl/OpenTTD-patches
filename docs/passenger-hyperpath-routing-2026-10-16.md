@@ -28,6 +28,17 @@ waiting states reuse the base station policy when both membership and cost
 coincide. A frozen-input worst-case memory envelope admits the full candidate
 sets or returns Memory; allocator residency never changes route admission.
 
+Hyperpath Work charges one unit for each state initialization, seed, heap pop,
+incoming descriptor (including its Board-event generation), virtual range
+target, copied label, copied candidate, state-set header and destination-row
+publication. Heap pushes and acceptance arithmetic belong to the descriptor or
+range-target operation that causes them. Phase transitions are charged too.
+The active incoming/range offset and publication cursor allow a slice to stop
+inside a Board range or candidate list. Loading replays the saved operation
+total with the saved algorithm identity; wall-clock timing never publishes a
+row or chooses a route. Equal keys use Board, min, strategy order followed by
+stable edge/state rank.
+
 ## Integer model
 
 Alpha is the single Q48 unit, 2^48. Frequencies are `ceil(alpha / wait)`.
@@ -233,31 +244,36 @@ quality conclusion. The ordinary and target-OD observers remain independent.
 
 The actual loopback server/client probe loads that smoke's save, prepares the
 initial table while StateTicks stay fixed, joins, disables/re-enables precomputed
-routing, then changes transfer cost and transports for 1071 ticks. It passes:
+routing, then changes transfer cost and transports for 1029 ticks. This run
+includes the readiness-index fix `40b434315a`, executable SHA-256
+`eda700271cafaad0956aaa36a9fd78e74aed4c2066b83525b87357eb8de41b65`.
+It passes:
 
 - Initial join, connected-peer re-enable, and transport have zero mismatched
   packet/payment/database/ownership/loading/row/work/publication/delivery fields.
-- Client replay performs 1,879,590,756 Work in 15,085 slices; the largest observed
-  loop is 28.911 ms. Replay changes neither StateTicks nor the client frame.
-- There are 254 actual progress notifications. Native map-ready elapsed time is
-  262.742 s; the harness join observation is 265.166 s. The server's initial
-  preparation wait is 339.101 s and releases at frame zero.
+- Client replay performs 1,879,590,756 Work in 11,788 slices; the largest observed
+  loop is 25.792 ms. Replay changes neither StateTicks nor the client frame.
+- There are 183 actual progress notifications. Native map-ready elapsed time is
+  191.118 s; the harness join observation is 194.036 s. The server's initial
+  preparation wait is 322.696 s and releases at frame zero.
 - Default network limits remain max_join_time=500, max_join_time_total=900 s,
   max_lag_time=500, max_init_time=100, max_download_time=1000. The harness's 600 s
   observation bound changes no native timeout. Networking source is unchanged.
-- During ordinary replacement the peers agree on 181 current / 4736 retained
-  destination rows and 70,123,520 Work, including packet failure state and saved
+- During ordinary replacement the peers agree on 174 current / 4743 retained
+  destination rows and 67,371,008 Work, including packet failure state and saved
   waiting-event fields in their canonical digest.
 - The MP interval exercises actual three-miss adaptation: the server computes
-  3728 shared local policies in 22.8872 ms total (cache misses across generations),
-  while recording 59,766 capacity-missed packet / 116,914 passenger opportunities.
+  3693 shared local policies in 19.7206 ms total (cache misses across generations),
+  while recording 59,461 capacity-missed packet / 115,715 passenger opportunities.
   These counters reset with the process and exclude the preceding smoke run.
 
-Evidence: [MP result](measurements/passenger-hyperpath-2026-10-16/mp-hyperpath.json),
+Evidence: [MP result](measurements/passenger-hyperpath-2026-10-16/mp-hyperpath-fixed.json),
+[binary provenance](measurements/passenger-hyperpath-2026-10-16/mp-hyperpath-fixed-provenance.json),
+[end counters](measurements/passenger-hyperpath-2026-10-16/mp-hyperpath-fixed-end.txt),
 [default settings](measurements/passenger-hyperpath-2026-10-16/mp-default-timeouts.txt),
 and [512-tick measurements](measurements/passenger-hyperpath-2026-10-16/b-smoke.json).
 The input's JP+ Multiple Units NewGRF emits capacity-change warnings on both
-peers (27,337 lines each); the probe reports no network error and its explicit
+peers (27,155 lines each); the probe reports no network error and its explicit
 paused snapshots match. This verifies this fixture/run, not all NewGRF/network
 combinations. Long-duration quality, packet-fragmentation census and untraced
 simulation comparison remain pending.
