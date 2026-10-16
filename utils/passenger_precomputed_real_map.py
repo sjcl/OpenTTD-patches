@@ -111,8 +111,8 @@ def driver(args):
     content = re.sub(r'#include "([^"]+)"', lambda match: '#include "' + (original.parent / match[1]).resolve().as_posix() + '"', content)
     stdafx = '#include "' + (source / "src/stdafx.h").as_posix() + '"\n'
     assert content.count(stdafx) == 1
-    headers = ''.join('#include "' + (source / "src" / name).as_posix() + '"\n' for name in ["openttd.h", "date_func.h", "passenger_journey_active.h", "console_func.h"])
-    content = content.replace(stdafx, stdafx + headers + '#include <charconv>\n#include <cstdio>\n#include <fstream>\n#include <vector>\n')
+    headers = ''.join('#include "' + (source / "src" / name).as_posix() + '"\n' for name in ["openttd.h", "date_func.h", "passenger_journey_active.h", "console_func.h", "settings_type.h"])
+    content = content.replace(stdafx, stdafx + headers + '#include <charconv>\n#include <chrono>\n#include <cstdio>\n#include <fstream>\n#include <vector>\n')
     anchor = "\t\tfor (int i = 0; i < this->ticks; i++) {\n\t\t\t::GameLoop();\n\t\t\t::InputLoop();\n\t\t\t::UpdateWindows();\n\t\t}"
     assert content.count(anchor) == 1
     driver = r'''
@@ -123,7 +123,9 @@ def driver(args):
         bool started = false;
         uint64_t loops = 0, error_resumes = 0;
         int64_t checkpoint = 0;
+        int64_t rebuild_tick = 0;
         if (const char *value = getenv("OPENTTD_PASSENGER_CHECKPOINT_TICK")) std::from_chars(value, value + strlen(value), checkpoint);
+        if (const char *value = getenv("OPENTTD_PASSENGER_REBUILD_TICK")) std::from_chars(value, value + strlen(value), rebuild_tick);
         while (!_exit_game && (!started || _state_ticks.base() - start < this->ticks)) {
             if (started && _pause_mode.Test(PauseMode::Error)) {
                 ++error_resumes;
@@ -155,6 +157,24 @@ def driver(args):
                 if (checkpoint > 0 && _state_ticks.base() - start == checkpoint) {
                     IConsoleCmdExec("passenger_journey_stats save_integrity");
                     std::rename("save-integrity.json", "transport-checkpoint.json");
+                }
+                if (rebuild_tick > 0 && _state_ticks.base() - start == rebuild_tick) {
+                    /* A declared measurement transition between ticks. Keep its
+                     * diagnostic/command time outside both simulation samples. */
+                    const auto diagnostic_started = std::chrono::steady_clock::now();
+                    IConsoleCmdExec("script midpoint-console.txt");
+                    IConsoleCmdExec("passenger_journey_stats total");
+                    IConsoleCmdExec("passenger_journey_stats save_integrity");
+                    IConsoleCmdExec("script");
+                    std::rename("save-integrity.json", "midpoint-save-integrity.json");
+                    const auto setting_started = std::chrono::steady_clock::now();
+                    IConsoleCmdExec("setting linkgraph.passenger_transfer_penalty 17");
+                    const auto finished = std::chrono::steady_clock::now();
+                    std::ofstream event("rebuild-transition.json");
+                    event << "{\"elapsed_tick\":" << rebuild_tick << ",\"state_tick\":" << _state_ticks.base()
+                        << ",\"cost\":" << _settings_game.linkgraph.passenger_transfer_penalty
+                        << ",\"diagnostic_us\":" << std::chrono::duration_cast<std::chrono::microseconds>(setting_started - diagnostic_started).count()
+                        << ",\"setting_us\":" << std::chrono::duration_cast<std::chrono::microseconds>(finished - setting_started).count() << "}\n";
                 }
             }
             if (loops == 1 || loops % 256 == 0) {
@@ -330,6 +350,12 @@ def recover_counter(args):
 
 
 def run(args, measurement_lock_fd=None):
+    midpoint = getattr(args, 'mid_rebuild_tick', 0)
+    finish_rebuild = getattr(args, 'finish_rebuild_precomputed', False)
+    if midpoint and (not 0 < midpoint < args.ticks or args.precomputed is not True or not args.warm_precomputed or args.rebuild_precomputed or getattr(args, 'full_rebuild_precomputed', False)):
+        raise ValueError('--mid-rebuild-tick requires a warm table, 0 < midpoint < ticks, and no other replacement option')
+    if finish_rebuild and not midpoint:
+        raise ValueError('--finish-rebuild-precomputed requires --mid-rebuild-tick')
     if getattr(args, 'full_rebuild_precomputed', False) and (args.precomputed is not True or not args.warm_precomputed or args.rebuild_precomputed):
         raise ValueError('--full-rebuild-precomputed requires --precomputed --warm-precomputed and excludes --rebuild-precomputed')
     if args.cold_precomputed and (args.precomputed is not True or not args.warm_precomputed):
@@ -384,7 +410,7 @@ def run(args, measurement_lock_fd=None):
             setup += "passenger_journey_stats fixture_timetable\n"
         if args.fixture_estimated:
             setup += "passenger_journey_stats fixture_estimated\n"
-        if getattr(args, 'full_rebuild_precomputed', False):
+        if getattr(args, 'full_rebuild_precomputed', False) or midpoint:
             setup += "setting linkgraph.passenger_transfer_penalty 20\n"
         if args.warm_precomputed or args.rebuild_precomputed:
             setup += "passenger_journey_stats build_precomputed\n"
@@ -402,6 +428,8 @@ def run(args, measurement_lock_fd=None):
             setup += "passenger_journey_stats fixture_estimated_od\n"
         start = f"script {log}\ngetfulldate\npassenger_journey_stats inventory\n{setup}passenger_journey_stats reset\n"
         finish = f"script {log}\ngetfulldate\npassenger_journey_stats inventory\npassenger_journey_stats total\npassenger_journey_stats save_integrity\nsave {result}\nscript\n"
+        if finish_rebuild:
+            finish = finish.replace('passenger_journey_stats inventory\n', 'passenger_journey_stats build_precomputed\npassenger_journey_stats inventory\n', 1)
         if args.quality_probe:
             finish = finish.replace("passenger_journey_stats total\n", "passenger_journey_stats total\npassenger_journey_stats quality_probe\n")
         start += "unpause\nscript\n" if args.ticks else "script\n" + finish + "quit\n"
@@ -410,9 +438,13 @@ def run(args, measurement_lock_fd=None):
         command = [str(directory / "openttd.exe"), "-x", "-X", "-c", "openttd.cfg", "-g", "input.sav", "-v",
                    f"null:ticks={args.ticks}" if args.ticks else "null:until_exit", "-snull", "-mnull", "-d", "sl=2"]
         started, observed, contamination = time.perf_counter(), {}, []
+        run_env = dict(os.environ, OPENTTD_PASSENGER_MEASURE='1')
+        run_env.pop('OPENTTD_PASSENGER_REBUILD_TICK', None)
+        if midpoint:
+            run_env['OPENTTD_PASSENGER_REBUILD_TICK'] = str(midpoint)
         with (directory / "stdout.txt").open("wb") as out, (directory / "stderr.txt").open("wb") as err:
             process = subprocess.Popen(command, cwd=directory, stdout=out, stderr=err, creationflags=subprocess.CREATE_NO_WINDOW,
-                                       env=dict(os.environ, OPENTTD_PASSENGER_MEASURE="1"))
+                                       env=run_env)
             last_census = time.monotonic()
             while process.poll() is None:
                 for key, value in CPU.observe(process).items():
@@ -436,8 +468,9 @@ def run(args, measurement_lock_fd=None):
             language_sha256=PROFILE.sha256(directory / "lang/english.lng"),
             resume_settings=args.resume, fixture_timetable=args.fixture_timetable, fixture_estimated=args.fixture_estimated, cold_precomputed=args.cold_precomputed,
             precomputed=args.precomputed, hyperpath=args.hyperpath, warm_precomputed=args.warm_precomputed,
-            rebuild_precomputed=args.rebuild_precomputed, full_rebuild_precomputed=getattr(args, 'full_rebuild_precomputed', False), command=command, **observed)
-        for name in ("actual-ticks.json", "save-integrity.json"):
+            rebuild_precomputed=args.rebuild_precomputed, full_rebuild_precomputed=getattr(args, 'full_rebuild_precomputed', False),
+            mid_rebuild_tick=midpoint, finish_rebuild_precomputed=finish_rebuild, command=command, **observed)
+        for name in ("actual-ticks.json", "save-integrity.json", "rebuild-transition.json", "midpoint-save-integrity.json"):
             if (directory / name).is_file():
                 metadata[name] = json.loads((directory / name).read_text(encoding="utf-8"))
         if (directory / "result.sav").is_file():
@@ -446,7 +479,10 @@ def run(args, measurement_lock_fd=None):
         metadata["load_failed"] = "Game load failed" in stderr
         metadata["newgrf_warning_lines"] = sum("[grf:0]" in line for line in stderr.splitlines())
         console = (directory / "on-1-console.txt").read_text(encoding="utf-8", errors="replace") if (directory / "on-1-console.txt").is_file() else ""
-        metadata["warm_complete"] = "Precomputed warm: ready=true;" in console if args.warm_precomputed or args.rebuild_precomputed else None
+        warms = re.findall(r'Precomputed warm: ready=(true|false);', console)
+        metadata['warm_observations'] = warms
+        required_warms = 2 if getattr(args, 'full_rebuild_precomputed', False) or finish_rebuild else 1
+        metadata["warm_complete"] = len(warms) >= required_warms and all(ready == 'true' for ready in warms) if args.warm_precomputed or args.rebuild_precomputed else None
         metadata["script_error_pause_resumes"] = console.count("Measurement resumed a NewGRF error pause.")
         if args.cold_precomputed and "OPENTTD_PASSENGER_TRACE" in os.environ:
             metadata["trace_preserved_during_initial_snapshot"] = "Trace recording: final=false" in console
@@ -459,6 +495,10 @@ def run(args, measurement_lock_fd=None):
             raise RuntimeError(f"Invalid run; see {directory}")
         if args.ticks and (metadata["actual-ticks.json"]["end_tick"] - metadata["actual-ticks.json"]["start_tick"] != args.ticks or len(metadata["actual-ticks.json"]["samples"]) != args.ticks):
             raise RuntimeError("Actual simulation tick count differs from requested")
+        if midpoint:
+            event = metadata.get('rebuild-transition.json', {})
+            if event.get('elapsed_tick') != midpoint or event.get('state_tick') != metadata['actual-ticks.json']['start_tick'] + midpoint or event.get('cost') != 17:
+                raise RuntimeError('The declared cost-replacement transition was not executed at its requested tick')
     finally:
         if owns_lock:
             os.close(lock)
@@ -482,6 +522,13 @@ def summarize(args):
         row["journey"] = distribution([s[2] for s in samples])
         row["second_half_simulation"] = distribution([s[1] for s in samples[len(samples)//2:]])
         row["second_half_journey"] = distribution([s[2] for s in samples[len(samples)//2:]])
+        if midpoint := process.get('mid_rebuild_tick'):
+            row['ordinary_simulation'] = distribution([s[1] for s in samples[:midpoint]])
+            row['ordinary_journey'] = distribution([s[2] for s in samples[:midpoint]])
+            row['ordinary_tail_simulation'] = distribution([s[1] for s in samples[midpoint//2:midpoint]])
+            row['ordinary_tail_journey'] = distribution([s[2] for s in samples[midpoint//2:midpoint]])
+            row['replacement_simulation'] = distribution([s[1] for s in samples[midpoint:]])
+            row['replacement_journey'] = distribution([s[2] for s in samples[midpoint:]])
         lines = (directory / "on-1-console.txt").read_text(encoding="utf-8", errors="replace").splitlines()
         observations = {}
         for line in lines:
@@ -543,6 +590,8 @@ def main():
     p.add_argument("--warm-precomputed", action="store_true", help="Complete mandatory rows while paused before the first tick; initial build CPU remains in process totals")
     p.add_argument("--rebuild-precomputed", action="store_true", help="Start with complete rows then change the transfer penalty to 17; measure ordinary replacement ticks")
     p.add_argument("--full-rebuild-precomputed", action="store_true", help="Time a complete paused cost replacement after warming the initial table; requires --warm-precomputed")
+    p.add_argument('--mid-rebuild-tick', type=int, default=0, help='Record ordinary ticks, then change transfer cost from 20 to 17 at this exact tick')
+    p.add_argument('--finish-rebuild-precomputed', action='store_true', help='Complete the mid-run replacement while paused after all measured ticks')
     p.add_argument("--precomputed", action=argparse.BooleanOptionalAction, default=None)
     p.add_argument("--hyperpath", action=argparse.BooleanOptionalAction, default=None)
     p = sub.add_parser("summarize")

@@ -84,8 +84,8 @@ def main():
     IConsolePrint(CC_DEFAULT, "Hyperpath local totals: replans={}; nanoseconds={}", PassengerHyperpathMetrics::replans, PassengerHyperpathMetrics::nanoseconds);
     for (CargoType cargo : EnumRange(NUM_CARGO)) if (IsCargoInClass(cargo, CargoClass::Passengers)) {
         auto hp = GetPassengerServiceDatabase().GetPrecomputedDiagnostic(cargo);
-        IConsolePrint(CC_DEFAULT, "Hyperpath diagnostics: cargo={}; local_replans={}; local_ns={}; board_events={}; accepted={}; range_updates={}; pushes={}; pops={}; bytes={}; envelope={}; base_bytes={}; difference_bytes={}; max_candidates={}",
-            cargo, hp.local_replans, hp.local_replan_nanoseconds, hp.board_events, hp.board_accepts, hp.range_updates, hp.heap_pushes, hp.heap_pops, hp.bytes, hp.envelope, hp.base_policy_bytes, hp.difference_policy_bytes, hp.max_candidates);
+        IConsolePrint(CC_DEFAULT, "Hyperpath diagnostics: cargo={}; local_replans={}; local_ns={}; board_events={}; accepted={}; range_updates={}; pushes={}; pops={}; bytes={}; envelope={}; base_bytes={}; difference_bytes={}; max_candidates={}; work={}; build_ns={}; transfer={}",
+            cargo, hp.local_replans, hp.local_replan_nanoseconds, hp.board_events, hp.board_accepts, hp.range_updates, hp.heap_pushes, hp.heap_pops, hp.bytes, hp.envelope, hp.base_policy_bytes, hp.difference_policy_bytes, hp.max_candidates, hp.operations, hp.build_nanoseconds, _settings_game.linkgraph.passenger_transfer_penalty);
     }
 ''')
     if not args.mp:
@@ -104,6 +104,8 @@ def main():
         focused = trace.replace("namespace PassengerTransportTrace", "namespace PassengerHyperpathFocusTrace")
         focused = focused.replace('getenv("OPENTTD_PASSENGER_FOCUS_TRACE") != nullptr', "true")
         focused = focused.replace('"transport-', '"focused-transport-').replace('"Transport ', '"Focused transport ')
+        focused = focused.replace('sampling=deterministic hash of packet ID and current birth tick; approximately 1/64; maximum 65536 sample starts',
+                                  'sampling=all packet representatives for the three target ODs; maximum 65536 sample starts')
         focus_header = path.with_name("focus_trace.h")
         focus_header.write_text(focused, encoding="utf-8")
         for folder in ("transport-trace", "save-integrity", "real-map-driver"):
