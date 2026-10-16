@@ -1,0 +1,54 @@
+{
+  "runtime_revision": "a2915e1844",
+  "binaries": {
+    "mp-peak-binary": {
+      "binary_sha256": "40790475ad512d45530aa42a9ba3203629b139065308a8ecd0478930bf05e4c9",
+      "copied_translation_units": {
+        "generated/rev.cpp": "60e21656416610f495e126c2e3a7ae3877ab9014522e043ed2ee60b851cd47e9",
+        "real-map-driver/win32.cpp": "81c10418898b5126ef71de270fa7cc831d2ece7f05bb6543a699b726c06a1e04",
+        "save-integrity/cargopacket_sl.cpp": "787a0899492a66a161cc49a9ee68e7affb3aaef0400a079a03ec83091fc869f6",
+        "real-map-driver/null_v.cpp": "9320ad9662697c2dd910956d2a44d6f852bcf417578c5ed7f9306ce1aa6a72ff",
+        "save-integrity/cargopacket.cpp": "ed10ca53ae48872e1d6c27a18f0796346987120b252024ee463db7b3235a8f99",
+        "save-integrity/console_cmds.cpp": "5210074f770a96af951b7fa5cc73528cb67523ec81924375c5cf34676ec5c852"
+      }
+    },
+    "cpu": {
+      "binary_sha256": "0c618014cee43108328780485c24da05d5914ef705d85e26f60a5b69dd64590f",
+      "copied_translation_units": {
+        "generated/rev.cpp": "60e21656416610f495e126c2e3a7ae3877ab9014522e043ed2ee60b851cd47e9",
+        "real-map-driver/win32.cpp": "81c10418898b5126ef71de270fa7cc831d2ece7f05bb6543a699b726c06a1e04",
+        "save-integrity/cargopacket_sl.cpp": "787a0899492a66a161cc49a9ee68e7affb3aaef0400a079a03ec83091fc869f6",
+        "real-map-driver/null_v.cpp": "60c8629713f4f9c96ffdaa6be96a67967026d7320bc9a90623e1b0be4de30d31",
+        "save-integrity/cargopacket.cpp": "ed10ca53ae48872e1d6c27a18f0796346987120b252024ee463db7b3235a8f99",
+        "save-integrity/console_cmds.cpp": "5210074f770a96af951b7fa5cc73528cb67523ec81924375c5cf34676ec5c852"
+      }
+    },
+    "quality": {
+      "binary_sha256": "cacdce388abbe847450ff6ab6f62a6d28e4a14d55cdeba35b8c42f053a2125f6",
+      "copied_translation_units": {
+        "generated/rev.cpp": "60e21656416610f495e126c2e3a7ae3877ab9014522e043ed2ee60b851cd47e9",
+        "real-map-driver/win32.cpp": "81c10418898b5126ef71de270fa7cc831d2ece7f05bb6543a699b726c06a1e04",
+        "save-integrity/cargopacket_sl.cpp": "787a0899492a66a161cc49a9ee68e7affb3aaef0400a079a03ec83091fc869f6",
+        "real-map-driver/null_v.cpp": "ac5cbfdabe13596b4b80af7a47f06e93394b6b310146fdd8d10c9983906aa477",
+        "transport-trace/passenger_journey_active.cpp": "133abe470601ad385c66a2f6e6842bd9254ccb8db93edf43a6b15ab5b4e5aa90",
+        "transport-trace/cargoaction.cpp": "765a438123d52d9458d8e9afeccddbbe4ae4c51d7f84810171425eff05f87860",
+        "transport-trace/cargopacket.cpp": "606756198046fe4d7fd160b3a6a114404d53076bdf5f284d2bcd5636ce19cc9b",
+        "save-integrity/console_cmds.cpp": "5825d92a4df579d746d4ff3ea9f43c9f7e54677b155bbd7305486acc5d62415a",
+        "transport-trace/vehicle.cpp": "ef85172121dbadf29f4e5f43acec8642e770c42ddbf1e5287d12bad1b9c49750",
+        "transport-trace/trace.h": "c692c5f7049cc8c8881f0357663b898076d7fa2eb9c7b9e1b0e8abf8df58133e",
+        "transport-trace/passenger_od.cpp": "14ec4317f64466c60324cfeac3a3e546c4a29fbf6b6807e4e671b2f55db7f7f9"
+      }
+    },
+    "product": {
+      "binary_sha256": "cb93f99d5ff70532ac9c54efc952e31d3fccb02e37e9a4ab823f567f05476536",
+      "copied_translation_units": {
+        "generated/rev.cpp": "8e677c21c850c764185a03e073fd887385f6ad50bac19e567ba3a152e691e78c"
+      }
+    },
+    "quality-probe": {
+      "binary_sha256": "8e32c7c863c58487df1d4ab80514ffb5d79a553a30cc42432f4b2517981c3e02",
+      "note": "Read-only diagnostic; not used for timing"
+    }
+  },
+  "trace_header_sha256": "74121de20aaf21341b265586cf21717ac27e7679f83eae0431fea4150e6e0604"
+}

@@ -1540,6 +1540,9 @@ void WriteVehicleInfo(format_target &buffer, const Vehicle *u, const Vehicle *v,
  */
 void StateGameLoop()
 {
+	/* A setting command can enable routing in this frame. Finish that network
+	 * frame without advancing simulation; prepare at its boundary on every peer. */
+	if (_game_mode == GameMode::Normal && GetPassengerServiceDatabase().IsPreparingPrecomputed()) return;
 	if (!_networking || _network_server) {
 		StateGameLoop_LinkGraphPauseControl();
 	}
@@ -1576,7 +1579,8 @@ void StateGameLoop()
 		_state_ticks++;
 		DateDetail::_state_ticks_offset++;
 		BeginPassengerJourneyTick();
-		GetPassengerServiceDatabase().Tick();
+		GetPassengerServiceDatabase().Tick(PassengerServiceDatabase::BUILD_WORK, true, true);
+		RunPassengerWaitingEvents();
 
 		RunTileLoop();
 		CallVehicleTicks();
@@ -1607,7 +1611,8 @@ void StateGameLoop()
 			_state_ticks++;   // This must update in lock-step with _tick_skip_counter, such that _state_ticks_offset doesn't need to be changed.
 		}
 		BeginPassengerJourneyTick();
-		GetPassengerServiceDatabase().Tick();
+		GetPassengerServiceDatabase().Tick(PassengerServiceDatabase::BUILD_WORK, true, true);
+		RunPassengerWaitingEvents();
 
 		if (!(_game_mode == GameMode::Menu || _game_mode == GameMode::Bootstrap) && !_settings_client.gui.autosave_realtime && _settings_client.gui.autosave_interval != 0 &&
 				(_state_ticks.base() % (_settings_client.gui.autosave_interval * (60000 / MILLISECONDS_PER_TICK))) == 0) {
@@ -1838,6 +1843,25 @@ void GameLoop()
 	if (_network_available) NetworkBackgroundLoop();
 
 	DebugSendRemoteMessages();
+
+	/* Initial trees and replacement graph preparation yield to video/input
+	 * between slices, including while paused. Network peers use the shared
+	 * frame barrier in NetworkGameLoop before resuming simulation. */
+	if (!_networking && _game_mode == GameMode::Normal && !HasModalProgress()) {
+		const auto started = std::chrono::steady_clock::now();
+		bool ready;
+		do {
+			ready = GetPassengerServiceDatabase().PreparePrecomputed();
+		} while (!ready && std::chrono::steady_clock::now() - started < std::chrono::milliseconds(8));
+		if (!ready) {
+			SetWindowDirty(WindowClass::Statusbar, 0);
+			ExecuteCommandQueue();
+			SoundDriver::GetInstance()->MainLoop();
+			MusicLoop();
+			SocialIntegration::RunCallbacks();
+			return;
+		}
+	}
 
 	if (_networking && !HasModalProgress()) {
 		/* Multiplayer */

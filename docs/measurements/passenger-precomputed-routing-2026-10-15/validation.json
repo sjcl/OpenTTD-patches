@@ -1,0 +1,29 @@
+{
+  "production_revision": "371dd8cde6013498420c02bedd4535ac303edd0c",
+  "base_revision": "3f0c8aaac95058ec0b64040594c6a653275956e7",
+  "branch": "feat/passenger-precomputed-routing",
+  "ctest": {
+    "passed": 617,
+    "failed": 0
+  },
+  "passenger": {
+    "cases": 393,
+    "assertions": 2741014
+  },
+  "precomputed": {
+    "cases": 11,
+    "assertions": 13161
+  },
+  "build": {
+    "compiler": "MSVC x64",
+    "configuration": "Release",
+    "asserts": "ON",
+    "LTO": "OFF",
+    "passenger_benchmark": "OFF"
+  },
+  "product_sha256": "ad6db63cdf36a2c81dd9087455bf7210253e93696a827fff5d3d5846c377adf0",
+  "benchmark_sha256": "5c9581dacdca6df330e105e3d7b95fac85107bb98e2c66d4f9b7c66378720a02",
+  "real_map": "not run: fixed input unavailable, path requested",
+  "multiplayer": "not run",
+  "scope": "implemented feature, requirement gaps documented in report"
+}

@@ -74,6 +74,7 @@ void CheckStateTicksWrap()
 	extern void AdjustVehicleStateTicksBase(StateTicksDelta delta);
 	AdjustVehicleStateTicksBase(-tick_adjust);
 	GetPassengerServiceDatabase().ShiftTicks(-tick_adjust);
+	ShiftPassengerWaitingEventTicks(-tick_adjust);
 	for (CargoPacket *packet : CargoPacket::Iterate()) packet->ShiftPassengerJourneyTicks(-tick_adjust);
 }
 

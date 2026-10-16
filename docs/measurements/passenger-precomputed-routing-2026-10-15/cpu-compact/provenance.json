@@ -1,0 +1,6 @@
+{
+  "source_revision": "abc802005e844846d32183291b75457f3e0528e9",
+  "scope": "Standalone compressed-table and boarding benchmarks. The later 22f235eea0 change retains a completed DB generation for an epoch and does not change the table algorithm or boarding index measured here.",
+  "configuration": "MSVC x64 Release, /O2 /MT, assertions on, LTO off, product benchmark option off",
+  "binary_sha256_source": "result.json"
+}

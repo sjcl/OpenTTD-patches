@@ -524,7 +524,8 @@ struct GoodsEntryData {
 
 	bool MayBeRemoved() const
 	{
-		return this->cargo.Packets()->MapSize() == 0 && this->cargo.ReservedCount() == 0 && this->flows.empty() && this->passenger_od == nullptr;
+		return this->cargo.Packets()->MapSize() == 0 && this->cargo.ReservedCount() == 0 && this->flows.empty() && this->passenger_od == nullptr &&
+				!this->cargo.HasPassengerRoutingState();
 	}
 };
 
@@ -629,6 +630,8 @@ struct GoodsEntry {
 	uint8_t amount_fract;   ///< Fractional part of the amount in the cargo list
 
 	std::unique_ptr<GoodsEntryData> data;
+	StationID passenger_station = StationID::Invalid(); ///< Derived goods owner, never saved.
+	CargoType passenger_cargo = INVALID_CARGO;
 
 	LinkGraphID link_graph; ///< Link graph this station belongs to. Runtime writes must use SetLinkGraph; save/load writes directly.
 	NodeID node;            ///< ID of node in link graph referring to this goods entry. Runtime writes must use SetLinkGraph.
@@ -688,14 +691,16 @@ struct GoodsEntry {
 
 	GoodsEntryData &CreateData()
 	{
-		if (this->data == nullptr) this->data.reset(new GoodsEntryData());
+		if (this->data == nullptr) {
+			this->data.reset(new GoodsEntryData());
+			this->data->cargo.BindPassengerStation(this->passenger_station, this->passenger_cargo);
+		}
 		return *this->data;
 	}
 
 	const GoodsEntryData &CreateData() const
 	{
-		if (this->data == nullptr) const_cast<GoodsEntry *>(this)->data.reset(new GoodsEntryData());
-		return *this->data;
+		return const_cast<GoodsEntry *>(this)->CreateData();
 	}
 
 	inline uint CargoAvailableCount() const

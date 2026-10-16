@@ -1,0 +1,4 @@
+selected=11501
+fresh_selected=5269
+discarded=0
+sampling=one person per packet ID divisible by 64; maximum 65536 sample starts

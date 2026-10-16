@@ -1,0 +1,13 @@
+Test project C:/Users/bebe/.codex/worktrees/b97f/OpenTTD-patches/build-sections
+    Start 633: regression_regression
+1/4 Test #633: regression_regression ............   Passed    2.13 sec
+    Start 634: regression_stationlist
+2/4 Test #634: regression_stationlist ...........   Passed    2.12 sec
+    Start 635: regression_gs
+3/4 Test #635: regression_gs ....................   Passed    1.88 sec
+    Start 636: regression_gs_compat
+4/4 Test #636: regression_gs_compat .............   Passed    1.90 sec
+
+100% tests passed, 0 tests failed out of 4
+
+Total Test time (real) =   8.05 sec

@@ -1,0 +1,359 @@
+{
+  "command": [
+    "C:\\Users\\bebe\\.codex\\worktrees\\b97f\\OpenTTD-patches\\build-sections\\openttd_test.exe",
+    "[precomputed][cpu]",
+    "-r",
+    "compact"
+  ],
+  "exit_code": 0,
+  "elapsed_seconds": 3.7161472998559475,
+  "platform": "Windows-11-10.0.26200-SP0",
+  "processor": "AMD64 Family 26 Model 68 Stepping 0, AuthenticAMD",
+  "binary_sha256": "54b7796090ab50d80df794a07a9e84ac6bb25af66f0b731e16df798b708c9316",
+  "routing": [
+    {
+      "axis": 0,
+      "size": 16,
+      "build_us": 210,
+      "lookup_ns": 60,
+      "p95_ns": 62,
+      "p99_ns": 66,
+      "flat_array_bytes": 557884,
+      "allocation_envelope": 1120368,
+      "states": 56,
+      "edges": 56,
+      "operations": 1904,
+      "hits": 262144
+    },
+    {
+      "axis": 0,
+      "size": 64,
+      "build_us": 342,
+      "lookup_ns": 59,
+      "p95_ns": 61,
+      "p99_ns": 65,
+      "flat_array_bytes": 1101628,
+      "allocation_envelope": 1937904,
+      "states": 248,
+      "edges": 248,
+      "operations": 32240,
+      "hits": 262144
+    },
+    {
+      "axis": 0,
+      "size": 256,
+      "build_us": 3375,
+      "lookup_ns": 61,
+      "p95_ns": 65,
+      "p99_ns": 125,
+      "flat_array_bytes": 9912124,
+      "allocation_envelope": 14055408,
+      "states": 1016,
+      "edges": 1016,
+      "operations": 522224,
+      "hits": 262144
+    },
+    {
+      "axis": 0,
+      "size": 512,
+      "build_us": 13913,
+      "lookup_ns": 60,
+      "p95_ns": 64,
+      "p99_ns": 71,
+      "flat_array_bytes": 38174524,
+      "allocation_envelope": 52232176,
+      "states": 2040,
+      "edges": 2040,
+      "operations": 2093040,
+      "hits": 262144
+    },
+    {
+      "axis": 1,
+      "size": 16,
+      "build_us": 151,
+      "lookup_ns": 61,
+      "p95_ns": 62,
+      "p99_ns": 72,
+      "flat_array_bytes": 525628,
+      "allocation_envelope": 1070544,
+      "states": 8,
+      "edges": 8,
+      "operations": 80,
+      "hits": 262144
+    },
+    {
+      "axis": 1,
+      "size": 64,
+      "build_us": 144,
+      "lookup_ns": 61,
+      "p95_ns": 65,
+      "p99_ns": 125,
+      "flat_array_bytes": 525628,
+      "allocation_envelope": 1119696,
+      "states": 8,
+      "edges": 8,
+      "operations": 80,
+      "hits": 262144
+    },
+    {
+      "axis": 1,
+      "size": 256,
+      "build_us": 386,
+      "lookup_ns": 60,
+      "p95_ns": 64,
+      "p99_ns": 68,
+      "flat_array_bytes": 525628,
+      "allocation_envelope": 1316304,
+      "states": 8,
+      "edges": 8,
+      "operations": 80,
+      "hits": 262144
+    },
+    {
+      "axis": 1,
+      "size": 512,
+      "build_us": 818,
+      "lookup_ns": 59,
+      "p95_ns": 64,
+      "p99_ns": 67,
+      "flat_array_bytes": 525628,
+      "allocation_envelope": 1578448,
+      "states": 8,
+      "edges": 8,
+      "operations": 80,
+      "hits": 262144
+    },
+    {
+      "axis": 2,
+      "size": 16,
+      "build_us": 150,
+      "lookup_ns": 61,
+      "p95_ns": 66,
+      "p99_ns": 77,
+      "flat_array_bytes": 525628,
+      "allocation_envelope": 1054224,
+      "states": 8,
+      "edges": 8,
+      "operations": 80,
+      "hits": 16384
+    },
+    {
+      "axis": 2,
+      "size": 64,
+      "build_us": 126,
+      "lookup_ns": 60,
+      "p95_ns": 64,
+      "p99_ns": 66,
+      "flat_array_bytes": 525628,
+      "allocation_envelope": 1054224,
+      "states": 8,
+      "edges": 8,
+      "operations": 80,
+      "hits": 65536
+    },
+    {
+      "axis": 2,
+      "size": 256,
+      "build_us": 106,
+      "lookup_ns": 59,
+      "p95_ns": 63,
+      "p99_ns": 68,
+      "flat_array_bytes": 525628,
+      "allocation_envelope": 1054224,
+      "states": 8,
+      "edges": 8,
+      "operations": 80,
+      "hits": 262144
+    },
+    {
+      "axis": 2,
+      "size": 512,
+      "build_us": 127,
+      "lookup_ns": 61,
+      "p95_ns": 64,
+      "p99_ns": 100,
+      "flat_array_bytes": 525628,
+      "allocation_envelope": 1054224,
+      "states": 8,
+      "edges": 8,
+      "operations": 80,
+      "hits": 524288
+    },
+    {
+      "axis": 3,
+      "size": 16,
+      "build_us": 155,
+      "lookup_ns": 59,
+      "p95_ns": 60,
+      "p99_ns": 64,
+      "flat_array_bytes": 557884,
+      "allocation_envelope": 1120368,
+      "states": 56,
+      "edges": 56,
+      "operations": 1904,
+      "hits": 262144
+    },
+    {
+      "axis": 3,
+      "size": 64,
+      "build_us": 418,
+      "lookup_ns": 61,
+      "p95_ns": 67,
+      "p99_ns": 125,
+      "flat_array_bytes": 1101628,
+      "allocation_envelope": 1937904,
+      "states": 248,
+      "edges": 248,
+      "operations": 32240,
+      "hits": 262144
+    },
+    {
+      "axis": 3,
+      "size": 256,
+      "build_us": 3268,
+      "lookup_ns": 60,
+      "p95_ns": 64,
+      "p99_ns": 87,
+      "flat_array_bytes": 9912124,
+      "allocation_envelope": 14055408,
+      "states": 1016,
+      "edges": 1016,
+      "operations": 522224,
+      "hits": 262144
+    },
+    {
+      "axis": 3,
+      "size": 512,
+      "build_us": 13343,
+      "lookup_ns": 64,
+      "p95_ns": 69,
+      "p99_ns": 127,
+      "flat_array_bytes": 38174524,
+      "allocation_envelope": 52232176,
+      "states": 2040,
+      "edges": 2040,
+      "operations": 2093040,
+      "hits": 262144
+    },
+    {
+      "axis": 4,
+      "size": 16,
+      "build_us": 241,
+      "lookup_ns": 61,
+      "p95_ns": 66,
+      "p99_ns": 125,
+      "flat_array_bytes": 531044,
+      "allocation_envelope": 1163172,
+      "states": 29,
+      "edges": 50,
+      "operations": 675,
+      "hits": 262144
+    },
+    {
+      "axis": 4,
+      "size": 64,
+      "build_us": 412,
+      "lookup_ns": 59,
+      "p95_ns": 63,
+      "p99_ns": 72,
+      "flat_array_bytes": 531044,
+      "allocation_envelope": 1408932,
+      "states": 29,
+      "edges": 50,
+      "operations": 675,
+      "hits": 262144
+    },
+    {
+      "axis": 4,
+      "size": 256,
+      "build_us": 1658,
+      "lookup_ns": 59,
+      "p95_ns": 62,
+      "p99_ns": 67,
+      "flat_array_bytes": 531044,
+      "allocation_envelope": 2391972,
+      "states": 29,
+      "edges": 50,
+      "operations": 675,
+      "hits": 262144
+    },
+    {
+      "axis": 4,
+      "size": 512,
+      "build_us": 3132,
+      "lookup_ns": 60,
+      "p95_ns": 64,
+      "p99_ns": 75,
+      "flat_array_bytes": 531044,
+      "allocation_envelope": 3702692,
+      "states": 29,
+      "edges": 50,
+      "operations": 675,
+      "hits": 262144
+    }
+  ],
+  "boarding": [
+    {
+      "waiting_packets": 128,
+      "legacy_ns": 10438,
+      "indexed_ns": 191,
+      "indexed_candidates": 513
+    },
+    {
+      "waiting_packets": 1024,
+      "legacy_ns": 85175,
+      "indexed_ns": 284,
+      "indexed_candidates": 513
+    },
+    {
+      "waiting_packets": 8192,
+      "legacy_ns": 693244,
+      "indexed_ns": 195,
+      "indexed_candidates": 513
+    },
+    {
+      "waiting_packets": 32768,
+      "legacy_ns": 4086611,
+      "indexed_ns": 199,
+      "indexed_candidates": 513
+    }
+  ],
+  "boarding_prefix": [
+    {
+      "cohort_packets": 128,
+      "prefix_ns": 233,
+      "prefix_candidates": 1
+    },
+    {
+      "cohort_packets": 1024,
+      "prefix_ns": 207,
+      "prefix_candidates": 1
+    },
+    {
+      "cohort_packets": 8192,
+      "prefix_ns": 207,
+      "prefix_candidates": 1
+    },
+    {
+      "cohort_packets": 32768,
+      "prefix_ns": 201,
+      "prefix_candidates": 1
+    }
+  ],
+  "peak_working_bytes": 56754176,
+  "peak_commit_bytes": 48009216,
+  "process_cpu_seconds": 3.15625,
+  "axes": {
+    "0": "served stations",
+    "1": "physical vehicles (size x 16)",
+    "2": "same-OD lookup batches (size x 4 x 256)",
+    "3": "OD diversity",
+    "4": "physical vehicles across shared sections with different periods (size x 16)"
+  },
+  "limitations": [
+    "Elapsed per-call samples and total process CPU are distinct measurements.",
+    "Peak process memory includes the test runtime and prior cases; it is not per-table peak memory.",
+    "Other host activity is not excluded by this runner.",
+    "Real-map transport and simulation percentiles require a separate paired run."
+  ]
+}

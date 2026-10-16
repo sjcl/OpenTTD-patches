@@ -14,6 +14,7 @@ add_test_files(
     passenger_od_assignment.cpp
     passenger_service_graph.cpp
     passenger_service_database.cpp
+    passenger_precomputed.cpp
     passenger_service_graph_index.cpp
     passenger_journey_planner.cpp
     passenger_journey_shadow.cpp

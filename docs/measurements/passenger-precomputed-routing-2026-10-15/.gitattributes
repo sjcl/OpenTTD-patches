@@ -1,0 +1,3 @@
+# Preserve the bytes recorded on Windows, including raw log terminators.
+cpu-compact/** -text whitespace=-blank-at-eof,cr-at-eol
+real-map/** -text whitespace=-blank-at-eof,cr-at-eol

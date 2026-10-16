@@ -9,6 +9,7 @@
 
 #include "../stdafx.h"
 #include "network_gui.h"
+#include "../passenger_service_database.h"
 #include "../sl/saveload_filter.h"
 #include "../sl/saveload_func.h"
 #include "../command_func.h"
@@ -370,6 +371,7 @@ void ClientNetworkGameSocketHandler::ClientError(NetworkRecvStatus res)
 /* static */ bool ClientNetworkGameSocketHandler::EmergencySavePossible()
 {
 	if (!my_client) return false;
+	if (my_client->status != ServerStatus::Active) return false;
 	if (my_client->emergency_save_done) return false;
 	my_client->emergency_save_done = true;
 	return true;
@@ -1141,7 +1143,88 @@ NetworkRecvStatus ClientNetworkGameSocketHandler::ReceiveServerMapDone(Packet &)
 	/* If the savegame has successfully loaded, ALL windows have been removed,
 	 * only toolbar/statusbar and gamefield are visible */
 
-	/* Say we received the map and loaded it correctly! */
+	this->status = ServerStatus::Processing;
+	ShowJoinStatusWindow();
+	if (GetPassengerServiceDatabase().GetLoadState() == PassengerServiceDatabase::LoadState::Ready) return this->FinishMapLoad();
+	return NetworkRecvStatus::Okay;
+}
+
+/* static */ bool ClientNetworkGameSocketHandler::ProcessMapLoad()
+{
+	if (my_client->status != ServerStatus::Processing) return my_client->status == ServerStatus::Active;
+	auto &database = GetPassengerServiceDatabase();
+	const auto started = std::chrono::steady_clock::now();
+	do {
+		database.StepLoad();
+	} while (database.GetLoadState() == PassengerServiceDatabase::LoadState::Replaying &&
+			std::chrono::steady_clock::now() - started < std::chrono::milliseconds(8));
+	if (database.GetLoadState() == PassengerServiceDatabase::LoadState::Invalid) {
+		ShowErrorMessage(GetEncodedString(STR_NETWORK_ERROR_SAVEGAMEERROR),
+				GetEncodedRawString("Invalid passenger routing construction cursor"), WarningLevel::Critical);
+		my_client->ClientError(NetworkRecvStatus::Savegame);
+		return false;
+	}
+	if (database.GetLoadProgress() > my_client->map_load_work && started - my_client->map_load_report >= std::chrono::seconds(1)) {
+		my_client->map_load_work = database.GetLoadProgress();
+		my_client->map_load_report = started;
+		auto p = std::make_unique<Packet>(my_client, PacketGameType::ClientMapProgress, TCP_MTU);
+		p->Send_uint64(my_client->map_load_work);
+		my_client->SendPacket(std::move(p));
+	}
+	if (database.GetLoadState() != PassengerServiceDatabase::LoadState::Ready) return false;
+	my_client->FinishMapLoad();
+	return true;
+}
+
+NetworkRecvStatus ClientNetworkGameSocketHandler::ReceiveServerPassengerPrepare(Packet &p)
+{
+	if (this->status != ServerStatus::Active) return NetworkRecvStatus::MalformedPacket;
+	const bool preparing = p.Recv_bool(); const auto frame = p.Recv_uint32();
+	if ((this->passenger_prepare_frame && *this->passenger_prepare_frame != frame) || _frame_counter > frame) return NetworkRecvStatus::MalformedPacket;
+	if (preparing) {
+		if (!this->passenger_prepare_frame) { this->passenger_prepare_frame = frame; this->passenger_prepared = false; }
+		this->passenger_prepare_announced = true;
+	} else {
+		if (!this->passenger_prepare_frame || !this->passenger_prepared || _frame_counter != frame) return NetworkRecvStatus::MalformedPacket;
+		this->passenger_prepare_frame.reset(); this->passenger_prepared = false; this->passenger_prepare_announced = false;
+	}
+	return NetworkRecvStatus::Okay;
+}
+
+bool ClientNetworkGameSocketHandler::PreparePassengerRouting()
+{
+	auto &db = GetPassengerServiceDatabase();
+	if (db.IsPreparingPrecomputed() && !my_client->passenger_prepare_frame) {
+		my_client->passenger_prepare_frame = _frame_counter; my_client->passenger_prepared = false;
+	}
+	if (!my_client->passenger_prepare_frame || _frame_counter < *my_client->passenger_prepare_frame) return true;
+	const auto started = std::chrono::steady_clock::now();
+	bool ready;
+	do {
+		ready = db.PreparePrecomputed();
+	} while (!ready && std::chrono::steady_clock::now() - started < std::chrono::milliseconds(8));
+	if (ready && !my_client->passenger_prepare_announced) Debug(net, 4, "[client] Passenger tables ready at predicted frame {}; waiting for server barrier", *my_client->passenger_prepare_frame);
+	if (ready && my_client->passenger_prepare_announced && !my_client->passenger_prepared) {
+		auto p = std::make_unique<Packet>(my_client, PacketGameType::ClientPassengerPrepared, TCP_MTU);
+		p->Send_uint32(*my_client->passenger_prepare_frame); my_client->SendPacket(std::move(p));
+		my_client->passenger_prepared = true;
+	}
+	return false;
+}
+
+NetworkRecvStatus ClientNetworkGameSocketHandler::ReceiveServerMapProgress(Packet &p)
+{
+	/* The final progress reply can arrive after our MAP_OK crossed it. */
+	if (this->status != ServerStatus::Processing && this->status != ServerStatus::Active) return NetworkRecvStatus::MalformedPacket;
+	uint64_t work = p.Recv_uint64();
+	if (work <= this->map_load_ack || work > this->map_load_work) return NetworkRecvStatus::MalformedPacket;
+	this->map_load_ack = work;
+	return NetworkRecvStatus::Okay;
+}
+
+NetworkRecvStatus ClientNetworkGameSocketHandler::FinishMapLoad()
+{
+	/* Say we received the map and restored its exact saved frontier! */
 	SendMapOk();
 
 	/* As we skipped switch-mode, update the time we "switched". */
@@ -1536,6 +1619,7 @@ const char *ClientNetworkGameSocketHandler::GetServerStatusName(ServerStatus sta
 		"Authorized",
 		"MapWait",
 		"Map",
+		"Processing",
 		"Active",
 		"Closing",
 	};

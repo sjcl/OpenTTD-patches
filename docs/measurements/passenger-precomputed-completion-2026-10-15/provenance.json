@@ -1,0 +1,49 @@
+{
+  "product_code_revision": "fc7718fe65",
+  "baseline": "a650090b625b30687cc0e676e157d5d15984cb0b",
+  "compiler": "MSVC x64 Release, assertions ON, LTO OFF",
+  "real_map_ticks": 1024,
+  "main_binary_sha256": "cb66225f2142ba4ec08f574ecd31f12497011cd8a5f00118aae1f6dc9fe315e9",
+  "control_binary_sha256": "25f6677aa8cd0a4c9870856a54640435db23cf6314f8a0f0eded51ac9a827464",
+  "frozen_package_input_sha256": "18fb2ba6bed025e442f22165d2d4fecd7a829703cb122ed18480f10af4b7a8cb",
+  "canonical_input_sha256": "d8d40bd49ca5fbb20c2f9645d984a2b19f41eb7b482bf6707e49da8fd61ee1ea",
+  "roundtrips": {
+    "automatic": {
+      "state_ticks": true,
+      "packets": true,
+      "cargo_units": true,
+      "known_od_units": true,
+      "journey_packets": true,
+      "packet_state_digest": true,
+      "payment_digest": true,
+      "payments_valid": true
+    },
+    "replacement": {
+      "state_ticks": true,
+      "packets": true,
+      "cargo_units": true,
+      "known_od_units": true,
+      "journey_packets": true,
+      "packet_state_digest": true,
+      "payment_digest": true,
+      "payments_valid": true
+    }
+  },
+  "control_matches_previous": {
+    "state_ticks": true,
+    "packets": true,
+    "cargo_units": true,
+    "known_od_units": true,
+    "journey_packets": true,
+    "packet_state_digest": true,
+    "payment_digest": true,
+    "payments_valid": true
+  },
+  "join_snapshot_comparison": "Not observed: default-timeout join failed before a client snapshot",
+  "notes": [
+    "One run per condition; no competing build/test/OpenTTD was recorded in real-map CPU runs.",
+    "Initial preparation elapsed and total process CPU are separate measurements.",
+    "MP test finished after the timing measurements; default game timeouts were not extended.",
+    "Completed and replacement save roundtrips do not imply multiplayer success."
+  ]
+}

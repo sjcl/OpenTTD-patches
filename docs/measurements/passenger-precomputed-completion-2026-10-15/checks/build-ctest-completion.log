@@ -1,0 +1,1261 @@
+Test project C:/Users/bebe/.codex/worktrees/ef5d/OpenTTD-patches/build-completion
+        Start   1: RingBuffer - basic tests - uint8_t
+        Start   2: RingBuffer - basic tests - uint32_t
+        Start   3: RingBuffer - basic tests - NonTrivialTestType
+        Start   4: RingBuffer - front resize - uint8_t
+        Start   5: RingBuffer - front resize - uint32_t
+        Start   6: RingBuffer - front resize - NonTrivialTestType
+        Start   7: RingBuffer - front resize 2 - uint8_t
+        Start   8: RingBuffer - front resize 2 - uint32_t
+        Start   9: RingBuffer - front resize 2 - NonTrivialTestType
+        Start  10: RingBuffer - back resize - uint8_t
+        Start  11: RingBuffer - back resize - uint32_t
+        Start  12: RingBuffer - back resize - NonTrivialTestType
+  1/628 Test   #1: RingBuffer - basic tests - uint8_t ..............................................................................................   Passed    1.42 sec
+  2/628 Test   #2: RingBuffer - basic tests - uint32_t .............................................................................................   Passed    1.32 sec
+  3/628 Test   #3: RingBuffer - basic tests - NonTrivialTestType ...................................................................................   Passed    1.22 sec
+  4/628 Test   #4: RingBuffer - front resize - uint8_t .............................................................................................   Passed    1.13 sec
+  5/628 Test   #5: RingBuffer - front resize - uint32_t ............................................................................................   Passed    1.01 sec
+  6/628 Test   #6: RingBuffer - front resize - NonTrivialTestType ..................................................................................   Passed    0.92 sec
+  7/628 Test   #7: RingBuffer - front resize 2 - uint8_t ...........................................................................................   Passed    0.82 sec
+  8/628 Test   #8: RingBuffer - front resize 2 - uint32_t ..........................................................................................   Passed    0.69 sec
+  9/628 Test   #9: RingBuffer - front resize 2 - NonTrivialTestType ................................................................................   Passed    0.57 sec
+ 10/628 Test  #10: RingBuffer - back resize - uint8_t ..............................................................................................   Passed    0.36 sec
+        Start  13: RingBuffer - back resize 2 - uint8_t
+        Start  14: RingBuffer - back resize 2 - uint32_t
+        Start  15: RingBuffer - back resize 2 - NonTrivialTestType
+        Start  16: RingBuffer - insert at ends no grow - uint8_t
+        Start  17: RingBuffer - insert at ends no grow - uint32_t
+        Start  18: RingBuffer - insert at ends no grow - NonTrivialTestType
+        Start  19: RingBuffer - insert at ends shifted no grow - uint8_t
+        Start  20: RingBuffer - insert at ends shifted no grow - uint32_t
+        Start  21: RingBuffer - insert at ends shifted no grow - NonTrivialTestType
+        Start  22: RingBuffer - insert in middle (begin) no grow - uint8_t
+ 11/628 Test  #11: RingBuffer - back resize - uint32_t .............................................................................................   Passed    1.33 sec
+        Start  23: RingBuffer - insert in middle (begin) no grow - uint32_t
+ 12/628 Test  #12: RingBuffer - back resize - NonTrivialTestType ...................................................................................   Passed    1.28 sec
+ 13/628 Test  #13: RingBuffer - back resize 2 - uint8_t ............................................................................................   Passed    1.16 sec
+ 14/628 Test  #14: RingBuffer - back resize 2 - uint32_t ...........................................................................................   Passed    1.06 sec
+ 15/628 Test  #15: RingBuffer - back resize 2 - NonTrivialTestType .................................................................................   Passed    0.95 sec
+ 16/628 Test  #16: RingBuffer - insert at ends no grow - uint8_t ...................................................................................   Passed    0.85 sec
+ 17/628 Test  #17: RingBuffer - insert at ends no grow - uint32_t ..................................................................................   Passed    0.73 sec
+ 18/628 Test  #18: RingBuffer - insert at ends no grow - NonTrivialTestType ........................................................................   Passed    0.61 sec
+ 19/628 Test  #19: RingBuffer - insert at ends shifted no grow - uint8_t ...........................................................................   Passed    0.51 sec
+ 20/628 Test  #20: RingBuffer - insert at ends shifted no grow - uint32_t ..........................................................................   Passed    0.40 sec
+ 21/628 Test  #21: RingBuffer - insert at ends shifted no grow - NonTrivialTestType ................................................................   Passed    0.31 sec
+        Start  24: RingBuffer - insert in middle (begin) no grow - NonTrivialTestType
+        Start  25: RingBuffer - insert in middle (end) no grow - uint8_t
+        Start  26: RingBuffer - insert in middle (end) no grow - uint32_t
+        Start  27: RingBuffer - insert in middle (end) no grow - NonTrivialTestType
+        Start  28: RingBuffer - insert at beginning grow - uint8_t
+        Start  29: RingBuffer - insert at beginning grow - uint32_t
+        Start  30: RingBuffer - insert at beginning grow - NonTrivialTestType
+        Start  31: RingBuffer - insert at end grow - uint8_t
+        Start  32: RingBuffer - insert at end grow - uint32_t
+        Start  33: RingBuffer - insert at end grow - NonTrivialTestType
+ 22/628 Test  #22: RingBuffer - insert in middle (begin) no grow - uint8_t .........................................................................   Passed    1.34 sec
+        Start  34: RingBuffer - insert in middle (begin) grow - uint8_t
+ 23/628 Test  #23: RingBuffer - insert in middle (begin) no grow - uint32_t ........................................................................   Passed    1.34 sec
+ 24/628 Test  #24: RingBuffer - insert in middle (begin) no grow - NonTrivialTestType ..............................................................   Passed    1.24 sec
+ 25/628 Test  #25: RingBuffer - insert in middle (end) no grow - uint8_t ...........................................................................   Passed    1.08 sec
+ 26/628 Test  #26: RingBuffer - insert in middle (end) no grow - uint32_t ..........................................................................   Passed    0.98 sec
+ 27/628 Test  #27: RingBuffer - insert in middle (end) no grow - NonTrivialTestType ................................................................   Passed    0.88 sec
+ 28/628 Test  #28: RingBuffer - insert at beginning grow - uint8_t .................................................................................   Passed    0.77 sec
+ 29/628 Test  #29: RingBuffer - insert at beginning grow - uint32_t ................................................................................   Passed    0.66 sec
+ 30/628 Test  #30: RingBuffer - insert at beginning grow - NonTrivialTestType ......................................................................   Passed    0.55 sec
+ 31/628 Test  #31: RingBuffer - insert at end grow - uint8_t .......................................................................................   Passed    0.44 sec
+ 32/628 Test  #32: RingBuffer - insert at end grow - uint32_t ......................................................................................   Passed    0.34 sec
+        Start  35: RingBuffer - insert in middle (begin) grow - uint32_t
+        Start  36: RingBuffer - insert in middle (begin) grow - NonTrivialTestType
+        Start  37: RingBuffer - insert in middle (end) grow - uint8_t
+        Start  38: RingBuffer - insert in middle (end) grow - uint32_t
+        Start  39: RingBuffer - insert in middle (end) grow - NonTrivialTestType
+        Start  40: RingBuffer - insert multi at start - uint8_t
+        Start  41: RingBuffer - insert multi at start - uint32_t
+        Start  42: RingBuffer - insert multi at start - NonTrivialTestType
+        Start  43: RingBuffer - insert multi at end - uint8_t
+        Start  44: RingBuffer - insert multi at end - uint32_t
+ 33/628 Test  #33: RingBuffer - insert at end grow - NonTrivialTestType ............................................................................   Passed    1.30 sec
+        Start  45: RingBuffer - insert multi at end - NonTrivialTestType
+ 34/628 Test  #34: RingBuffer - insert in middle (begin) grow - uint8_t ............................................................................   Passed    1.29 sec
+ 35/628 Test  #35: RingBuffer - insert in middle (begin) grow - uint32_t ...........................................................................   Passed    1.17 sec
+ 36/628 Test  #36: RingBuffer - insert in middle (begin) grow - NonTrivialTestType .................................................................   Passed    1.06 sec
+ 37/628 Test  #37: RingBuffer - insert in middle (end) grow - uint8_t ..............................................................................   Passed    0.95 sec
+ 38/628 Test  #38: RingBuffer - insert in middle (end) grow - uint32_t .............................................................................   Passed    0.84 sec
+ 39/628 Test  #39: RingBuffer - insert in middle (end) grow - NonTrivialTestType ...................................................................   Passed    0.73 sec
+ 40/628 Test  #40: RingBuffer - insert multi at start - uint8_t ....................................................................................   Passed    0.62 sec
+ 41/628 Test  #41: RingBuffer - insert multi at start - uint32_t ...................................................................................   Passed    0.52 sec
+ 42/628 Test  #42: RingBuffer - insert multi at start - NonTrivialTestType .........................................................................   Passed    0.41 sec
+ 43/628 Test  #43: RingBuffer - insert multi at end - uint8_t ......................................................................................   Passed    0.30 sec
+        Start  46: RingBuffer - insert multi in middle - uint8_t
+        Start  47: RingBuffer - insert multi in middle - uint32_t
+        Start  48: RingBuffer - insert multi in middle - NonTrivialTestType
+        Start  49: RingBuffer - erase - uint8_t
+        Start  50: RingBuffer - erase - uint32_t
+        Start  51: RingBuffer - erase - NonTrivialTestType
+        Start  52: RingBuffer - erase multi - uint8_t
+        Start  53: RingBuffer - erase multi - uint32_t
+        Start  54: RingBuffer - erase multi - NonTrivialTestType
+        Start  55: RingBuffer - shrink to fit - uint8_t
+ 44/628 Test  #44: RingBuffer - insert multi at end - uint32_t .....................................................................................   Passed    1.21 sec
+        Start  56: RingBuffer - shrink to fit - uint32_t
+ 45/628 Test  #45: RingBuffer - insert multi at end - NonTrivialTestType ...........................................................................   Passed    1.22 sec
+ 46/628 Test  #46: RingBuffer - insert multi in middle - uint8_t ...................................................................................   Passed    1.12 sec
+ 47/628 Test  #47: RingBuffer - insert multi in middle - uint32_t ..................................................................................   Passed    1.02 sec
+ 48/628 Test  #48: RingBuffer - insert multi in middle - NonTrivialTestType ........................................................................   Passed    0.92 sec
+ 49/628 Test  #49: RingBuffer - erase - uint8_t ....................................................................................................   Passed    0.81 sec
+ 50/628 Test  #50: RingBuffer - erase - uint32_t ...................................................................................................   Passed    0.72 sec
+ 51/628 Test  #51: RingBuffer - erase - NonTrivialTestType .........................................................................................   Passed    0.62 sec
+ 52/628 Test  #52: RingBuffer - erase multi - uint8_t ..............................................................................................   Passed    0.52 sec
+ 53/628 Test  #53: RingBuffer - erase multi - uint32_t .............................................................................................   Passed    0.42 sec
+ 54/628 Test  #54: RingBuffer - erase multi - NonTrivialTestType ...................................................................................   Passed    0.32 sec
+        Start  57: RingBuffer - shrink to fit - NonTrivialTestType
+        Start  58: RingBuffer - reserve - uint8_t
+        Start  59: RingBuffer - reserve - uint32_t
+        Start  60: RingBuffer - reserve - NonTrivialTestType
+        Start  61: RingBuffer - resize - uint8_t
+        Start  62: RingBuffer - resize - uint32_t
+        Start  63: RingBuffer - resize - NonTrivialTestType
+        Start  64: RingBuffer - basic move-only test - uint8_t
+        Start  65: RingBuffer - basic move-only test - uint32_t
+        Start  66: RingBuffer - basic move-only test - NonTrivialTestType
+ 55/628 Test  #55: RingBuffer - shrink to fit - uint8_t ............................................................................................   Passed    1.35 sec
+        Start  67: RingBuffer - basic move-only test - MoveOnlyTestType
+ 56/628 Test  #56: RingBuffer - shrink to fit - uint32_t ...........................................................................................   Passed    1.36 sec
+ 57/628 Test  #57: RingBuffer - shrink to fit - NonTrivialTestType .................................................................................   Passed    1.25 sec
+ 58/628 Test  #58: RingBuffer - reserve - uint8_t ..................................................................................................   Passed    1.15 sec
+ 59/628 Test  #59: RingBuffer - reserve - uint32_t .................................................................................................   Passed    1.04 sec
+ 60/628 Test  #60: RingBuffer - reserve - NonTrivialTestType .......................................................................................   Passed    0.92 sec
+ 61/628 Test  #61: RingBuffer - resize - uint8_t ...................................................................................................   Passed    0.81 sec
+ 62/628 Test  #62: RingBuffer - resize - uint32_t ..................................................................................................   Passed    0.70 sec
+ 63/628 Test  #63: RingBuffer - resize - NonTrivialTestType ........................................................................................   Passed    0.57 sec
+ 64/628 Test  #64: RingBuffer - basic move-only test - uint8_t .....................................................................................   Passed    0.46 sec
+ 65/628 Test  #65: RingBuffer - basic move-only test - uint32_t ....................................................................................   Passed    0.34 sec
+        Start  68: RingBuffer - copy/move constructors and assignment - uint8_t
+        Start  69: RingBuffer - copy/move constructors and assignment - uint32_t
+        Start  70: RingBuffer - copy/move constructors and assignment - NonTrivialTestType
+        Start  71: RingBuffer - copy reverse - uint8_t
+        Start  72: RingBuffer - copy reverse - uint32_t
+        Start  73: RingBuffer - copy reverse - NonTrivialTestType
+        Start  74: RingBuffer - equality tests - uint8_t
+        Start  75: RingBuffer - equality tests - uint32_t
+        Start  76: RingBuffer - operator <=> - uint8_t
+        Start  77: RingBuffer - operator <=> - uint32_t
+ 66/628 Test  #66: RingBuffer - basic move-only test - NonTrivialTestType ..........................................................................   Passed    1.25 sec
+        Start  78: RingBuffer - insert with ref to existing element - uint8_t
+ 67/628 Test  #67: RingBuffer - basic move-only test - MoveOnlyTestType ............................................................................   Passed    1.24 sec
+ 68/628 Test  #68: RingBuffer - copy/move constructors and assignment - uint8_t ....................................................................   Passed    1.12 sec
+ 69/628 Test  #69: RingBuffer - copy/move constructors and assignment - uint32_t ...................................................................   Passed    1.02 sec
+ 70/628 Test  #70: RingBuffer - copy/move constructors and assignment - NonTrivialTestType .........................................................   Passed    0.90 sec
+ 71/628 Test  #71: RingBuffer - copy reverse - uint8_t .............................................................................................   Passed    0.79 sec
+ 72/628 Test  #72: RingBuffer - copy reverse - uint32_t ............................................................................................   Passed    0.69 sec
+ 73/628 Test  #73: RingBuffer - copy reverse - NonTrivialTestType ..................................................................................   Passed    0.60 sec
+ 74/628 Test  #74: RingBuffer - equality tests - uint8_t ...........................................................................................   Passed    0.50 sec
+ 75/628 Test  #75: RingBuffer - equality tests - uint32_t ..........................................................................................   Passed    0.41 sec
+ 76/628 Test  #76: RingBuffer - operator <=> - uint8_t .............................................................................................   Passed    0.31 sec
+        Start  79: RingBuffer - insert with ref to existing element - uint32_t
+        Start  80: RingBuffer - insert with ref to existing element - NonTrivialTestType
+        Start  81: AlternatingIterator tests
+        Start  82: FindLastBit tests
+        Start  83: SetBitIterator tests
+        Start  84: GetBitMaskSC tests
+        Start  85: GetBitMaskFL tests
+        Start  86: GetBitMaskBN tests
+        Start  87: CmdDataT simple tests
+        Start  88: TupleRefCmdData tests
+ 77/628 Test  #77: RingBuffer - operator <=> - uint32_t ............................................................................................   Passed    1.22 sec
+        Start  89: Command string sanitise tests
+ 78/628 Test  #78: RingBuffer - insert with ref to existing element - uint8_t ......................................................................   Passed    1.23 sec
+ 79/628 Test  #79: RingBuffer - insert with ref to existing element - uint32_t .....................................................................   Passed    1.12 sec
+ 80/628 Test  #80: RingBuffer - insert with ref to existing element - NonTrivialTestType ...........................................................   Passed    1.02 sec
+ 81/628 Test  #81: AlternatingIterator tests .......................................................................................................   Passed    0.92 sec
+ 82/628 Test  #82: FindLastBit tests ...............................................................................................................   Passed    0.83 sec
+ 83/628 Test  #83: SetBitIterator tests ............................................................................................................   Passed    0.73 sec
+ 84/628 Test  #84: GetBitMaskSC tests ..............................................................................................................   Passed    0.62 sec
+ 85/628 Test  #85: GetBitMaskFL tests ..............................................................................................................   Passed    0.53 sec
+ 86/628 Test  #86: GetBitMaskBN tests ..............................................................................................................   Passed    0.43 sec
+ 87/628 Test  #87: CmdDataT simple tests ...........................................................................................................   Passed    0.32 sec
+        Start  90: Command format debug summary
+        Start  91: EnumOverOptimisation_BoundsCheck
+        Start  92: EnumOverOptimisation_Bitmask
+        Start  93: FlatSet - basic
+        Start  94: Test format_to_fixed
+        Start  95: Test format_to_fixed_z
+        Start  96: History Rotation and Reporting tests
+        Start  97: PartialPixelSlopeAdditionTest - A one corner slope, plus the opposite three corner slope results in a flat but elevated slope
+        Start  98: PartialPixelSlopeAdditionTest - Diagonal slopes with their opposite slope result in a flat but elevated slope
+        Start  99: PartialPixelSlopeAdditionTest - Half tile slopes with their opposite half tile slope result in a flat but elevated slope
+ 88/628 Test  #88: TupleRefCmdData tests ...........................................................................................................   Passed    1.25 sec
+        Start 100: PartialPixelSlopeAdditionTest - Two opposite one corner slopes result in the two corner slope with opposite corners
+ 89/628 Test  #89: Command string sanitise tests ...................................................................................................   Passed    1.24 sec
+ 90/628 Test  #90: Command format debug summary ....................................................................................................   Passed    1.13 sec
+ 91/628 Test  #91: EnumOverOptimisation_BoundsCheck ................................................................................................   Passed    1.02 sec
+ 92/628 Test  #92: EnumOverOptimisation_Bitmask ....................................................................................................   Passed    0.91 sec
+ 93/628 Test  #93: FlatSet - basic .................................................................................................................   Passed    0.81 sec
+ 94/628 Test  #94: Test format_to_fixed ............................................................................................................   Passed    0.71 sec
+ 95/628 Test  #95: Test format_to_fixed_z ..........................................................................................................   Passed    0.61 sec
+ 96/628 Test  #96: History Rotation and Reporting tests ............................................................................................   Passed    0.51 sec
+ 97/628 Test  #97: PartialPixelSlopeAdditionTest - A one corner slope, plus the opposite three corner slope results in a flat but elevated slope ...   Passed    0.41 sec
+ 98/628 Test  #98: PartialPixelSlopeAdditionTest - Diagonal slopes with their opposite slope result in a flat but elevated slope ...................   Passed    0.32 sec
+        Start 101: PartialPixelSlopeAdditionTest - A steep slope is a one corner slope on top of a three corner slope
+        Start 102: PartialPixelSlopeAdditionTest - A half tile steep slope is a one corner half tile on top of a three corner slope
+        Start 103: PartialPixelTest - One corner up slopes - SLOPE_N
+        Start 104: PartialPixelTest - One corner up slopes - SLOPE_E
+        Start 105: PartialPixelTest - One corner up slopes - SLOPE_S
+        Start 106: PartialPixelTest - One corner up slopes - SLOPE_W
+        Start 107: PartialPixelTest - Two corner up, diagonal slopes - SLOPE_NE
+        Start 108: PartialPixelTest - Two corner up, diagonal slopes - SLOPE_SE
+        Start 109: PartialPixelTest - Two corner up, diagonal slopes - SLOPE_SW
+        Start 110: PartialPixelTest - Two corner up, diagonal slopes - SLOPE_NW
+ 99/628 Test  #99: PartialPixelSlopeAdditionTest - Half tile slopes with their opposite half tile slope result in a flat but elevated slope ........   Passed    1.22 sec
+        Start 111: PartialPixelTest - Two opposite corner up slopes - SLOPE_NS
+100/628 Test #100: PartialPixelSlopeAdditionTest - Two opposite one corner slopes result in the two corner slope with opposite corners .............   Passed    1.22 sec
+101/628 Test #101: PartialPixelSlopeAdditionTest - A steep slope is a one corner slope on top of a three corner slope ..............................   Passed    1.11 sec
+102/628 Test #102: PartialPixelSlopeAdditionTest - A half tile steep slope is a one corner half tile on top of a three corner slope ................   Passed    1.02 sec
+103/628 Test #103: PartialPixelTest - One corner up slopes - SLOPE_N ...............................................................................   Passed    0.91 sec
+104/628 Test #104: PartialPixelTest - One corner up slopes - SLOPE_E ...............................................................................   Passed    0.80 sec
+105/628 Test #105: PartialPixelTest - One corner up slopes - SLOPE_S ...............................................................................   Passed    0.71 sec
+106/628 Test #106: PartialPixelTest - One corner up slopes - SLOPE_W ...............................................................................   Passed    0.61 sec
+107/628 Test #107: PartialPixelTest - Two corner up, diagonal slopes - SLOPE_NE ....................................................................   Passed    0.51 sec
+108/628 Test #108: PartialPixelTest - Two corner up, diagonal slopes - SLOPE_SE ....................................................................   Passed    0.41 sec
+109/628 Test #109: PartialPixelTest - Two corner up, diagonal slopes - SLOPE_SW ....................................................................   Passed    0.31 sec
+        Start 112: PartialPixelTest - Two opposite corner up slopes - SLOPE_EW
+        Start 113: PartialPixelTest - Three corner up slopes - SLOPE_ENW
+        Start 114: PartialPixelTest - Three corner up slopes - SLOPE_SEN
+        Start 115: PartialPixelTest - Three corner up slopes - SLOPE_WSE
+        Start 116: PartialPixelTest - Three corner up slopes - SLOPE_NWS
+        Start 117: PartialPixelTest - Normal half tile slopes - SLOPE/CORNER_N
+        Start 118: PartialPixelTest - Normal half tile slopes - SLOPE/CORNER_E
+        Start 119: PartialPixelTest - Normal half tile slopes - SLOPE/CORNER_S
+        Start 120: PartialPixelTest - Normal half tile slopes - SLOPE/CORNER_W
+        Start 121: PartialPixelTest - Steep slopes - SLOPE_STEEP_N
+110/628 Test #110: PartialPixelTest - Two corner up, diagonal slopes - SLOPE_NW ....................................................................   Passed    1.23 sec
+        Start 122: PartialPixelTest - Steep slopes - SLOPE_STEEP_E
+111/628 Test #111: PartialPixelTest - Two opposite corner up slopes - SLOPE_NS .....................................................................   Passed    1.23 sec
+112/628 Test #112: PartialPixelTest - Two opposite corner up slopes - SLOPE_EW .....................................................................   Passed    1.12 sec
+113/628 Test #113: PartialPixelTest - Three corner up slopes - SLOPE_ENW ...........................................................................   Passed    1.03 sec
+114/628 Test #114: PartialPixelTest - Three corner up slopes - SLOPE_SEN ...........................................................................   Passed    0.94 sec
+115/628 Test #115: PartialPixelTest - Three corner up slopes - SLOPE_WSE ...........................................................................   Passed    0.84 sec
+116/628 Test #116: PartialPixelTest - Three corner up slopes - SLOPE_NWS ...........................................................................   Passed    0.74 sec
+117/628 Test #117: PartialPixelTest - Normal half tile slopes - SLOPE/CORNER_N .....................................................................   Passed    0.63 sec
+118/628 Test #118: PartialPixelTest - Normal half tile slopes - SLOPE/CORNER_E .....................................................................   Passed    0.54 sec
+119/628 Test #119: PartialPixelTest - Normal half tile slopes - SLOPE/CORNER_S .....................................................................   Passed    0.43 sec
+120/628 Test #120: PartialPixelTest - Normal half tile slopes - SLOPE/CORNER_W .....................................................................   Passed    0.33 sec
+        Start 123: PartialPixelTest - Steep slopes - SLOPE_STEEP_S
+        Start 124: PartialPixelTest - Steep slopes - SLOPE_STEEP_W
+        Start 125: PartialPixelTest - Half tile on top of steep slopes - SLOPE_STEEP/CORNER_N
+        Start 126: PartialPixelTest - Half tile on top of steep slopes - SLOPE_STEEP/CORNER_E
+        Start 127: PartialPixelTest - Half tile on top of steep slopes - SLOPE_STEEP/CORNER_S
+        Start 128: PartialPixelTest - Half tile on top of steep slopes - SLOPE_STEEP/CORNER_W
+        Start 129: CargoDist route costs survive copying shared orders
+        Start 130: LinkGraph route records retain capacity and expire within their bound
+        Start 131: Aircraft cost settings change the preferred passenger and freight journey
+        Start 132: MCF keeps a more expensive arrival on the continuing service in both passes
+121/628 Test #121: PartialPixelTest - Steep slopes - SLOPE_STEEP_N .................................................................................   Passed    1.20 sec
+        Start 133: Shared links cannot hide a service change across three consecutive edges
+122/628 Test #122: PartialPixelTest - Steep slopes - SLOPE_STEEP_E .................................................................................   Passed    1.20 sec
+123/628 Test #123: PartialPixelTest - Steep slopes - SLOPE_STEEP_S .................................................................................   Passed    1.09 sec
+124/628 Test #124: PartialPixelTest - Steep slopes - SLOPE_STEEP_W .................................................................................   Passed    1.00 sec
+125/628 Test #125: PartialPixelTest - Half tile on top of steep slopes - SLOPE_STEEP/CORNER_N ......................................................   Passed    0.90 sec
+126/628 Test #126: PartialPixelTest - Half tile on top of steep slopes - SLOPE_STEEP/CORNER_E ......................................................   Passed    0.80 sec
+127/628 Test #127: PartialPixelTest - Half tile on top of steep slopes - SLOPE_STEEP/CORNER_S ......................................................   Passed    0.71 sec
+128/628 Test #128: PartialPixelTest - Half tile on top of steep slopes - SLOPE_STEEP/CORNER_W ......................................................   Passed    0.61 sec
+129/628 Test #129: CargoDist route costs survive copying shared orders .............................................................................   Passed    0.51 sec
+130/628 Test #130: LinkGraph route records retain capacity and expire within their bound ...........................................................   Passed    0.41 sec
+131/628 Test #131: Aircraft cost settings change the preferred passenger and freight journey .......................................................   Passed    0.30 sec
+        Start 134: Path costs exceed UINT_MAX without wrapping or becoming unreachable
+        Start 135: An exhausted cheap prefix survives until a downstream exhausted edge
+        Start 136: Deleted and recycled order-list IDs cannot revive old link observations
+        Start 137: Invalid and legacy service metadata are discarded before use
+        Start 138: Route identity allocator resumes the saved server counter after loading
+        Start 139: Graph compression and merging retain many services and 64-bit travel sums
+        Start 140: OrderBackup restores private route costs after the source list is deleted
+        Start 141: Shared OrderBackup restores the surviving live route and its current costs
+        Start 142: Service labels share the capacity of their physical link
+        Start 143: Service-state distance search agrees with exhaustive DAG journeys
+132/628 Test #132: MCF keeps a more expensive arrival on the continuing service in both passes .....................................................   Passed    1.21 sec
+        Start 144: Capacity service search keeps its ancestry guard for cyclic flow graphs
+133/628 Test #133: Shared links cannot hide a service change across three consecutive edges ........................................................   Passed    1.21 sec
+134/628 Test #134: Path costs exceed UINT_MAX without wrapping or becoming unreachable .............................................................   Passed    1.11 sec
+135/628 Test #135: An exhausted cheap prefix survives until a downstream exhausted edge ............................................................   Passed    1.01 sec
+136/628 Test #136: Deleted and recycled order-list IDs cannot revive old link observations .........................................................   Passed    0.91 sec
+137/628 Test #137: Invalid and legacy service metadata are discarded before use ....................................................................   Passed    0.82 sec
+138/628 Test #138: Route identity allocator resumes the saved server counter after loading .........................................................   Passed    0.72 sec
+139/628 Test #139: Graph compression and merging retain many services and 64-bit travel sums .......................................................   Passed    0.62 sec
+140/628 Test #140: OrderBackup restores private route costs after the source list is deleted .......................................................   Passed    0.51 sec
+141/628 Test #141: Shared OrderBackup restores the surviving live route and its current costs ......................................................   Passed    0.40 sec
+142/628 Test #142: Service labels share the capacity of their physical link ........................................................................   Passed    0.30 sec
+        Start 145: Long train near-end stop geometry agrees with the braking prediction
+        Start 146: LinkGraph jobs distinguish route transfers and snapshot weighted costs
+        Start 147: CargoDist transfer penalties change the chosen flow while zero retains the fast path
+        Start 148: DivideApproxTest - Negative
+        Start 149: DivideApproxTest, Divide
+        Start 150: IntSqrtTest - Zero
+        Start 151: IntSqrtTest - FindSqRt
+        Start 152: IntSqrt64Test - FindSqRt
+        Start 153: ClampTo
+        Start 154: SoftClamp
+143/628 Test #143: Service-state distance search agrees with exhaustive DAG journeys ...............................................................   Passed    1.22 sec
+        Start 155: SaturatingAdd
+144/628 Test #144: Capacity service search keeps its ancestry guard for cyclic flow graphs .........................................................   Passed    1.22 sec
+145/628 Test #145: Long train near-end stop geometry agrees with the braking prediction ............................................................   Passed    1.12 sec
+146/628 Test #146: LinkGraph jobs distinguish route transfers and snapshot weighted costs ..........................................................   Passed    1.02 sec
+147/628 Test #147: CargoDist transfer penalties change the chosen flow while zero retains the fast path ............................................   Passed    0.92 sec
+148/628 Test #148: DivideApproxTest - Negative .....................................................................................................   Passed    0.82 sec
+149/628 Test #149: DivideApproxTest, Divide ........................................................................................................   Passed    0.72 sec
+150/628 Test #150: IntSqrtTest - Zero ..............................................................................................................   Passed    0.62 sec
+151/628 Test #151: IntSqrtTest - FindSqRt ..........................................................................................................   Passed    0.53 sec
+152/628 Test #152: IntSqrt64Test - FindSqRt ........................................................................................................   Passed    0.42 sec
+153/628 Test #153: ClampTo .........................................................................................................................   Passed    0.31 sec
+        Start 156: GetBase10DigitsRequired
+        Start 157: Passenger settings do not alter the legacy LinkGraphJob save schema
+        Start 158: Passenger transfer compares local running time with express waiting time
+        Start 159: Passenger services keep their own travel times and order positions
+        Start 160: Passenger predictions account for current progress, dwell and delay
+        Start 161: Passenger transfers require a usable connection and complete predictions
+        Start 162: Timetable assumption ignores early departure and full loading only in planner predictions
+        Start 163: Timetable assumption uses elapsed progress and explicit timing flags
+        Start 164: Passenger connections search actual repeated visits within the stay horizon
+        Start 165: Passenger repeated dispatch predictions use private slot history
+154/628 Test #154: SoftClamp .......................................................................................................................   Passed    1.20 sec
+        Start 166: Passenger predictions respect unloading, non-stop and route barriers
+155/628 Test #155: SaturatingAdd ...................................................................................................................   Passed    1.21 sec
+156/628 Test #156: GetBase10DigitsRequired .........................................................................................................   Passed    1.11 sec
+157/628 Test #157: Passenger settings do not alter the legacy LinkGraphJob save schema .............................................................   Passed    1.01 sec
+158/628 Test #158: Passenger transfer compares local running time with express waiting time ........................................................   Passed    0.91 sec
+159/628 Test #159: Passenger services keep their own travel times and order positions ..............................................................   Passed    0.82 sec
+160/628 Test #160: Passenger predictions account for current progress, dwell and delay .............................................................   Passed    0.72 sec
+161/628 Test #161: Passenger transfers require a usable connection and complete predictions ........................................................   Passed    0.62 sec
+162/628 Test #162: Timetable assumption ignores early departure and full loading only in planner predictions .......................................   Passed    0.53 sec
+163/628 Test #163: Timetable assumption uses elapsed progress and explicit timing flags ............................................................   Passed    0.42 sec
+164/628 Test #164: Passenger connections search actual repeated visits within the stay horizon .....................................................   Passed    0.32 sec
+        Start 167: Passenger conditional prediction is bounded and conservative
+        Start 168: Passenger scheduled dispatch uses slots without modifying the schedule
+        Start 169: Passenger Stage retains a CargoDist via across intermediate stops
+        Start 170: Passenger seat snapshots account for eligible waiting queues and the entire consist
+        Start 171: Passenger terminal comparisons are bounded and independent of index warmth
+        Start 172: Passenger OD defaults to unassigned in every creation path
+        Start 173: Passenger OD assignment validates cargo and stations and cannot replace an assigned OD
+        Start 174: Passenger OD survives splitting merging and partial removal with cargo accounting
+        Start 175: Passenger OD is a merge invariant for both station and vehicle cargo lists
+        Start 176: Passenger OD survives reservation return loading vehicle moves and station transfer
+165/628 Test #165: Passenger repeated dispatch predictions use private slot history ................................................................   Passed    1.34 sec
+        Start 177: Passenger OD survives all station and vehicle reroute variants
+166/628 Test #166: Passenger predictions respect unloading, non-stop and route barriers ............................................................   Passed    1.33 sec
+167/628 Test #167: Passenger conditional prediction is bounded and conservative ....................................................................   Passed    1.22 sec
+168/628 Test #168: Passenger scheduled dispatch uses slots without modifying the schedule ..........................................................   Passed    1.10 sec
+169/628 Test #169: Passenger Stage retains a CargoDist via across intermediate stops ...............................................................   Passed    1.00 sec
+170/628 Test #170: Passenger seat snapshots account for eligible waiting queues and the entire consist .............................................   Passed    0.89 sec
+171/628 Test #171: Passenger terminal comparisons are bounded and independent of index warmth ......................................................   Passed    0.76 sec
+172/628 Test #172: Passenger OD defaults to unassigned in every creation path ......................................................................   Passed    0.65 sec
+173/628 Test #173: Passenger OD assignment validates cargo and stations and cannot replace an assigned OD ..........................................   Passed    0.54 sec
+174/628 Test #174: Passenger OD survives splitting merging and partial removal with cargo accounting ...............................................   Passed    0.43 sec
+175/628 Test #175: Passenger OD is a merge invariant for both station and vehicle cargo lists ......................................................   Passed    0.32 sec
+        Start 178: Station deletion clears passenger destination without changing an unrelated OD
+        Start 179: Passenger OD table serialisation round trips and validates loaded station IDs
+        Start 180: CargoDist staging ignores OD for boarding transfer and delivery decisions
+        Start 181: Passenger OD uses original satisfied demand in stable station order
+        Start 182: Real CargoDist demand and both MCF passes produce final passenger destinations
+        Start 183: Passenger OD rounding carries small demand without changing batch totals
+        Start 184: Passenger OD integer bounds and irregular batches keep bounded residuals
+        Start 185: Passenger generation splits OD while preserving next hop source and random state
+        Start 186: Passenger OD fallback preserves legacy generation when disabled manual freight or absent
+        Start 187: OD packet splitting changes later per-packet CargoDist draws without changing cargo total
+176/628 Test #176: Passenger OD survives reservation return loading vehicle moves and station transfer .............................................   Passed    1.22 sec
+        Start 188: Passenger OD topology identity rejects changed jobs and stale distributions
+177/628 Test #177: Passenger OD survives all station and vehicle reroute variants ..................................................................   Passed    1.21 sec
+178/628 Test #178: Station deletion clears passenger destination without changing an unrelated OD ..................................................   Passed    1.11 sec
+179/628 Test #179: Passenger OD table serialisation round trips and validates loaded station IDs ...................................................   Passed    1.01 sec
+180/628 Test #180: CargoDist staging ignores OD for boarding transfer and delivery decisions .......................................................   Passed    0.90 sec
+181/628 Test #181: Passenger OD uses original satisfied demand in stable station order .............................................................   Passed    0.80 sec
+182/628 Test #182: Real CargoDist demand and both MCF passes produce final passenger destinations ..................................................   Passed    0.70 sec
+183/628 Test #183: Passenger OD rounding carries small demand without changing batch totals ........................................................   Passed    0.60 sec
+184/628 Test #184: Passenger OD integer bounds and irregular batches keep bounded residuals ........................................................   Passed    0.50 sec
+185/628 Test #185: Passenger generation splits OD while preserving next hop source and random state ................................................   Passed    0.40 sec
+186/628 Test #186: Passenger OD fallback preserves legacy generation when disabled manual freight or absent ........................................   Passed    0.31 sec
+        Start 189: Passenger OD recalculation retains identical residuals and resets changed weights
+        Start 190: Passenger OD never includes wholly unsatisfied or nonpositive demands
+        Start 191: Passenger OD save table restores distribution residuals and the next generated passengers
+        Start 192: Passenger OD legacy saves omit distribution and load safely
+        Start 193: Earlier passenger OD saves initialise absent cursor and unknown state
+        Start 194: Passenger OD identity counter survives SLXI data and prevents unsigned wrap
+        Start 195: Passenger OD save validation rejects corrupt counts weights ordering and residuals
+        Start 196: Passenger OD load removes invalid destinations and ignores manual and freight data
+        Start 197: Passenger OD afterload rejects graph and pending job revisions beyond the saved counter
+        Start 198: Passenger OD bounds destination memory packet growth and exhausted pool fallback
+187/628 Test #187: OD packet splitting changes later per-packet CargoDist draws without changing cargo total .......................................   Passed    1.23 sec
+        Start 199: Packet limited passenger OD rotates through all destinations and only commits served rounding
+188/628 Test #188: Passenger OD topology identity rejects changed jobs and stale distributions .....................................................   Passed    1.23 sec
+189/628 Test #189: Passenger OD recalculation retains identical residuals and resets changed weights ...............................................   Passed    1.12 sec
+190/628 Test #190: Passenger OD never includes wholly unsatisfied or nonpositive demands ...........................................................   Passed    1.02 sec
+191/628 Test #191: Passenger OD save table restores distribution residuals and the next generated passengers .......................................   Passed    0.90 sec
+192/628 Test #192: Passenger OD legacy saves omit distribution and load safely .....................................................................   Passed    0.80 sec
+193/628 Test #193: Earlier passenger OD saves initialise absent cursor and unknown state ...........................................................   Passed    0.70 sec
+194/628 Test #194: Passenger OD identity counter survives SLXI data and prevents unsigned wrap .....................................................   Passed    0.59 sec
+195/628 Test #195: Passenger OD save validation rejects corrupt counts weights ordering and residuals ..............................................   Passed    0.50 sec
+196/628 Test #196: Passenger OD load removes invalid destinations and ignores manual and freight data ..............................................   Passed    0.40 sec
+197/628 Test #197: Passenger OD afterload rejects graph and pending job revisions beyond the saved counter .........................................   Passed    0.30 sec
+        Start 200: Passenger OD packet cursor and limited residuals survive save and the next batch
+        Start 201: Packet limits cannot consume rounding awards of tiny passenger demands
+        Start 202: A thousand passenger destinations remain sparse and all receive packet turns
+        Start 203: National passenger demand keeps high weights and saves omitted demand without renormalisation
+        Start 204: A sparse national hub retains all eight thousand valid destinations
+        Start 205: 4096 passenger OD packets cap only excess destinations and rotate fairly
+        Start 206: OD generation preserves the maximum legacy CargoPacket count
+        Start 207: Passenger OD budgets depend on record contents rather than reserved capacity
+        Start 208: Passenger OD redistributes unused origin budgets and retains original weights
+        Start 209: Passenger OD budget remainders have deterministic origin ordering
+198/628 Test #198: Passenger OD bounds destination memory packet growth and exhausted pool fallback ................................................   Passed    1.22 sec
+        Start 210: Passenger OD wide unknown weights allocate maximum batches without integer overflow
+199/628 Test #199: Packet limited passenger OD rotates through all destinations and only commits served rounding ...................................   Passed    1.23 sec
+200/628 Test #200: Passenger OD packet cursor and limited residuals survive save and the next batch ................................................   Passed    1.12 sec
+201/628 Test #202: A thousand passenger destinations remain sparse and all receive packet turns ....................................................   Passed    0.92 sec
+202/628 Test #201: Packet limits cannot consume rounding awards of tiny passenger demands ..........................................................   Passed    1.03 sec
+203/628 Test #203: National passenger demand keeps high weights and saves omitted demand without renormalisation ...................................   Passed    0.81 sec
+204/628 Test #204: A sparse national hub retains all eight thousand valid destinations .............................................................   Passed    0.71 sec
+205/628 Test #205: 4096 passenger OD packets cap only excess destinations and rotate fairly ........................................................   Passed    0.61 sec
+206/628 Test #206: OD generation preserves the maximum legacy CargoPacket count ....................................................................   Passed    0.51 sec
+207/628 Test #207: Passenger OD budgets depend on record contents rather than reserved capacity ....................................................   Passed    0.40 sec
+208/628 Test #208: Passenger OD redistributes unused origin budgets and retains original weights ...................................................   Passed    0.30 sec
+        Start 211: Passenger OD weighted unknown demand never increases retained destination ratios
+        Start 212: Passenger OD storage is proportional to eligible demand rather than raw annotations
+        Start 213: Passenger OD load bounds aggregate entry storage before resizing
+        Start 214: Event capture shares services across 100 distinct OD searches
+        Start 215: Trip cache rejects live input changes within the same tick
+        Start 216: Trip cache separates events periods limits and resource stops
+        Start 217: Trip cache validates changed dispatch history and every timing input
+        Start 218: Trip cache is bounded and never shares predictions between shared vehicles
+        Start 219: Trip capture notices newly eligible refits and shared fleet changes
+        Start 220: Expanded Trip cache retains visits beyond the former eight MiB ceiling
+209/628 Test #209: Passenger OD budget remainders have deterministic origin ordering ...............................................................   Passed    1.21 sec
+        Start 221: Event capture preserves every small work boundary and memory admission
+210/628 Test #210: Passenger OD wide unknown weights allocate maximum batches without integer overflow .............................................   Passed    1.21 sec
+211/628 Test #211: Passenger OD weighted unknown demand never increases retained destination ratios ................................................   Passed    1.11 sec
+212/628 Test #212: Passenger OD storage is proportional to eligible demand rather than raw annotations .............................................   Passed    1.01 sec
+213/628 Test #213: Passenger OD load bounds aggregate entry storage before resizing ................................................................   Passed    0.92 sec
+214/628 Test #215: Trip cache rejects live input changes within the same tick ......................................................................   Passed    0.71 sec
+215/628 Test #214: Event capture shares services across 100 distinct OD searches ...................................................................   Passed    0.81 sec
+216/628 Test #216: Trip cache separates events periods limits and resource stops ...................................................................   Passed    0.61 sec
+217/628 Test #217: Trip cache validates changed dispatch history and every timing input ............................................................   Passed    0.51 sec
+218/628 Test #218: Trip cache is bounded and never shares predictions between shared vehicles ......................................................   Passed    0.41 sec
+219/628 Test #219: Trip capture notices newly eligible refits and shared fleet changes .............................................................   Passed    0.32 sec
+        Start 222: Capture separates cargos and rereads progress and new events within one tick
+        Start 223: Historic implicit orders do not hide the fastest explicit train or invent transfers
+        Start 224: Timed journeys ignore unknown alternatives and retain physical prefixes
+        Start 225: Bounded route controls remain unknown until a fresh live state can certify them
+        Start 226: Unknown alternatives leave timed access and generalised costs unchanged
+        Start 227: Partial fleet timing and timed query budgets have separate outcomes
+        Start 228: Timed choices match the timed-only network and perform no unknown bound search
+        Start 229: Graph admission pays for generated visits rather than maximum trip reservations
+        Start 230: High frequency prediction extends past 128 occurrences without hiding limits
+        Start 231: Graph failure diagnostics distinguish independent resource and prediction ceilings
+220/628 Test #220: Expanded Trip cache retains visits beyond the former eight MiB ceiling ..........................................................   Passed    1.24 sec
+        Start 232: Graph discovery excludes definite freight before timetable capture
+221/628 Test #221: Event capture preserves every small work boundary and memory admission ..........................................................   Passed    1.24 sec
+222/628 Test #222: Capture separates cargos and rereads progress and new events within one tick ....................................................   Passed    1.13 sec
+223/628 Test #223: Historic implicit orders do not hide the fastest explicit train or invent transfers .............................................   Passed    1.03 sec
+224/628 Test #224: Timed journeys ignore unknown alternatives and retain physical prefixes .........................................................   Passed    0.94 sec
+225/628 Test #225: Bounded route controls remain unknown until a fresh live state can certify them .................................................   Passed    0.82 sec
+226/628 Test #226: Unknown alternatives leave timed access and generalised costs unchanged .........................................................   Passed    0.70 sec
+227/628 Test #227: Partial fleet timing and timed query budgets have separate outcomes .............................................................   Passed    0.60 sec
+228/628 Test #228: Timed choices match the timed-only network and perform no unknown bound search ..................................................   Passed    0.51 sec
+229/628 Test #229: Graph admission pays for generated visits rather than maximum trip reservations .................................................   Passed    0.40 sec
+230/628 Test #230: High frequency prediction extends past 128 occurrences without hiding limits ....................................................   Passed    0.31 sec
+        Start 233: Graph allocation allowance is independent of traversal work
+        Start 234: Freight topology cannot expand a passenger corridor and live refits rebuild its view
+        Start 235: Scoped graph cache residency cannot change capture or logical allowances
+        Start 236: Implicit freight and unavailable trains cannot poison a passenger scope
+        Start 237: Historic implicit stops are skipped consistently by scoped forecasts and topology
+        Start 238: Scoped capture stops at the first unknown dwell and recovers after an order edit
+        Start 239: Passenger graph separates local and express services and shared trips
+        Start 240: Passenger graph stop permissions and forced unloading bound through rides
+        Start 241: Passenger graph capacity includes only the requested cargo across a consist
+        Start 242: Passenger graph retains partial times and reuses journey timing
+231/628 Test #231: Graph failure diagnostics distinguish independent resource and prediction ceilings ..............................................   Passed    1.23 sec
+        Start 243: Passenger graph waypoint segments, cargo flags and direction are copied
+232/628 Test #232: Graph discovery excludes definite freight before timetable capture ..............................................................   Passed    1.22 sec
+233/628 Test #233: Graph allocation allowance is independent of traversal work .....................................................................   Passed    1.12 sec
+234/628 Test #234: Freight topology cannot expand a passenger corridor and live refits rebuild its view ............................................   Passed    1.03 sec
+235/628 Test #235: Scoped graph cache residency cannot change capture or logical allowances ........................................................   Passed    0.92 sec
+236/628 Test #236: Implicit freight and unavailable trains cannot poison a passenger scope .........................................................   Passed    0.81 sec
+237/628 Test #237: Historic implicit stops are skipped consistently by scoped forecasts and topology ...............................................   Passed    0.71 sec
+238/628 Test #238: Scoped capture stops at the first unknown dwell and recovers after an order edit ................................................   Passed    0.60 sec
+239/628 Test #239: Passenger graph separates local and express services and shared trips ...........................................................   Passed    0.50 sec
+240/628 Test #240: Passenger graph stop permissions and forced unloading bound through rides .......................................................   Passed    0.40 sec
+241/628 Test #241: Passenger graph capacity includes only the requested cargo across a consist .....................................................   Passed    0.30 sec
+        Start 244: Passenger graph unknown branches, depots and refits never certify a path
+        Start 245: Passenger graph handles repeated stops, unconditional jumps and bounded cycles
+        Start 246: Passenger graph dispatch is independent per vehicle and owns its snapshot
+        Start 247: Passenger graph distinguishes inactive trains and exhausted budgets from no service
+        Start 248: Passenger graph reports unfinished boarding candidates at the exact budget boundary
+        Start 249: Passenger graph certifies only the known time prefix of a truncated prediction
+        Start 250: Passenger graph keeps uncertainty beyond the certified prefix out of early queries
+        Start 251: Passenger graph station queries retain occurrence order rather than departure order
+        Start 252: Passenger graph construction and queries are deterministic and leave live state unchanged
+        Start 253: Service pattern capture isolates timing policies and agrees with physical trips
+242/628 Test #242: Passenger graph retains partial times and reuses journey timing .................................................................   Passed    1.20 sec
+        Start 254: Timed completion diagnostics preserve the legacy Work boundaries
+243/628 Test #243: Passenger graph waypoint segments, cargo flags and direction are copied .........................................................   Passed    1.19 sec
+244/628 Test #244: Passenger graph unknown branches, depots and refits never certify a path ........................................................   Passed    1.09 sec
+245/628 Test #245: Passenger graph handles repeated stops, unconditional jumps and bounded cycles ..................................................   Passed    1.00 sec
+246/628 Test #246: Passenger graph dispatch is independent per vehicle and owns its snapshot .......................................................   Passed    0.89 sec
+247/628 Test #247: Passenger graph distinguishes inactive trains and exhausted budgets from no service .............................................   Passed    0.79 sec
+248/628 Test #248: Passenger graph reports unfinished boarding candidates at the exact budget boundary .............................................   Passed    0.70 sec
+249/628 Test #249: Passenger graph certifies only the known time prefix of a truncated prediction ..................................................   Passed    0.60 sec
+250/628 Test #250: Passenger graph keeps uncertainty beyond the certified prefix out of early queries ..............................................   Passed    0.50 sec
+251/628 Test #251: Passenger graph station queries retain occurrence order rather than departure order .............................................   Passed    0.41 sec
+252/628 Test #252: Passenger graph construction and queries are deterministic and leave live state unchanged .......................................   Passed    0.30 sec
+        Start 255: Anytime complete paths survive every Work boundary through 65536
+        Start 256: Anytime admission limits never promote a rejected or partial label
+        Start 257: Anytime ties keep the original complete key and earlier occurrence
+        Start 258: Stale cheap services cannot hide or prune a current complete journey
+        Start 259: A stale transfer suffix cannot certify or suppress a valid direct alternative
+        Start 260: Budget stops with only stale services remain Deferred without a usable complete path
+        Start 261: Anytime separates exhausted budgets unknown timing and proved Timed absence
+        Start 262: Anytime provisional ServiceIntent passes the ordinary live safety checks
+        Start 263: Waiting packets actually adopt cache and serialize an unpopped provisional path
+        Start 264: Departure index respects first starts duplicate phases cargo and signed tick boundaries
+253/628 Test #253: Service pattern capture isolates timing policies and agrees with physical trips .................................................   Passed    1.18 sec
+        Start 265: Indexed and scanned plans match every work boundary for physical fleets
+254/628 Test #254: Timed completion diagnostics preserve the legacy Work boundaries ................................................................   Passed    1.19 sec
+255/628 Test #256: Anytime admission limits never promote a rejected or partial label ..............................................................   Passed    0.99 sec
+256/628 Test #255: Anytime complete paths survive every Work boundary through 65536 ................................................................   Passed    1.10 sec
+257/628 Test #257: Anytime ties keep the original complete key and earlier occurrence ..............................................................   Passed    0.89 sec
+258/628 Test #258: Stale cheap services cannot hide or prune a current complete journey ............................................................   Passed    0.80 sec
+259/628 Test #259: A stale transfer suffix cannot certify or suppress a valid direct alternative ...................................................   Passed    0.69 sec
+260/628 Test #260: Budget stops with only stale services remain Deferred without a usable complete path ............................................   Passed    0.60 sec
+261/628 Test #261: Anytime separates exhausted budgets unknown timing and proved Timed absence .....................................................   Passed    0.50 sec
+262/628 Test #262: Anytime provisional ServiceIntent passes the ordinary live safety checks ........................................................   Passed    0.40 sec
+263/628 Test #263: Waiting packets actually adopt cache and serialize an unpopped provisional path .................................................   Passed    0.31 sec
+        Start 266: Live dwells replace indexed phases even after scheduled departure and for future queries
+        Start 267: Departure indices follow publication reuse rebasing and cold peers
+        Start 268: Dispatch slot scans preserve each partial work prefix
+        Start 269: Cargo-specific departure rows keep capacity and unknown observations separate
+        Start 270: Departure successor trees agree with dense reference queries
+        Start 271: Periodic round trips repeat without horizon expansion
+        Start 272: Periodic departure boundaries do not overflow state ticks
+        Start 273: Periodic compiler distinguishes explicit zero from missing zero
+        Start 274: Periodic control restrictions remain untimed and full load uses declared wait
+        Start 275: Shared periodic vehicles retain individually observed phases
+264/628 Test #264: Departure index respects first starts duplicate phases cargo and signed tick boundaries .........................................   Passed    1.26 sec
+        Start 276: Periodic transfers evaluate different periods at the current ready time
+265/628 Test #265: Indexed and scanned plans match every work boundary for physical fleets .........................................................   Passed    1.27 sec
+266/628 Test #266: Live dwells replace indexed phases even after scheduled departure and for future queries ........................................   Passed    1.16 sec
+267/628 Test #267: Departure indices follow publication reuse rebasing and cold peers ..............................................................   Passed    1.04 sec
+268/628 Test #268: Dispatch slot scans preserve each partial work prefix ...........................................................................   Passed    0.94 sec
+269/628 Test #269: Cargo-specific departure rows keep capacity and unknown observations separate ...................................................   Passed    0.83 sec
+270/628 Test #270: Departure successor trees agree with dense reference queries ....................................................................   Passed    0.72 sec
+271/628 Test #271: Periodic round trips repeat without horizon expansion ...........................................................................   Passed    0.62 sec
+272/628 Test #272: Periodic departure boundaries do not overflow state ticks .......................................................................   Passed    0.52 sec
+273/628 Test #273: Periodic compiler distinguishes explicit zero from missing zero .................................................................   Passed    0.43 sec
+274/628 Test #274: Periodic control restrictions remain untimed and full load uses declared wait ...................................................   Passed    0.33 sec
+        Start 277: Periodic local express and direct services compare actual phases
+        Start 278: Timed service bounds skip slow fleets before computing departures
+        Start 279: Timed arena preserves every partial work prefix and canonical tie
+        Start 280: Timed arena standard heap keeps all equal-key insertion indices in order
+        Start 281: Timed arena resets touched high IDs and drops oversized retained storage
+        Start 282: Timed pruning preserves cost ties phases transfers and boarding restrictions
+        Start 283: Timed pruning budgets are independent of caches save load and joining
+        Start 284: Timed partial reverse bounds retain an eleven transfer journey
+        Start 285: Timed service pruning follows cargo-specific exchange masks and capacities
+        Start 286: Periodic timed routes win while missing timetable services stay unknown
+275/628 Test #275: Shared periodic vehicles retain individually observed phases ....................................................................   Passed    1.31 sec
+        Start 287: Periodic policies are inert across cold warm evicted and unused caches
+276/628 Test #276: Periodic transfers evaluate different periods at the current ready time .........................................................   Passed    1.31 sec
+277/628 Test #277: Periodic local express and direct services compare actual phases ................................................................   Passed    1.20 sec
+278/628 Test #278: Timed service bounds skip slow fleets before computing departures ...............................................................   Passed    1.09 sec
+279/628 Test #279: Timed arena preserves every partial work prefix and canonical tie ...............................................................   Passed    0.97 sec
+280/628 Test #280: Timed arena standard heap keeps all equal-key insertion indices in order ........................................................   Passed    0.87 sec
+281/628 Test #281: Timed arena resets touched high IDs and drops oversized retained storage ........................................................   Passed    0.77 sec
+282/628 Test #282: Timed pruning preserves cost ties phases transfers and boarding restrictions ....................................................   Passed    0.66 sec
+283/628 Test #283: Timed pruning budgets are independent of caches save load and joining ...........................................................   Passed    0.55 sec
+284/628 Test #284: Timed partial reverse bounds retain an eleven transfer journey ..................................................................   Passed    0.44 sec
+285/628 Test #285: Timed service pruning follows cargo-specific exchange masks and capacities ......................................................   Passed    0.33 sec
+        Start 288: Periodic actual Work admission shares packets and caps cheap queries across contexts
+        Start 289: Periodic missing publications charge one Work and retry after publication
+        Start 290: Schedule protection rescues an exhausted Timed query and survives packet save split and transport
+        Start 291: Retired v4 Work history is skipped and cannot prevent Packet merging
+        Start 292: Periodic local invalidation preserves unrelated published services
+        Start 293: Periodic scheduler progress and captured phases survive save and join
+        Start 294: Periodic database rejects malformed and oversized saved state
+        Start 295: Periodic rebuilding tolerates another edit and falls back before publication
+        Start 296: Periodic shared dispatch competition never invents physical trips
+        Start 297: Periodic single vehicle dispatch uses real slots with turnaround checks
+286/628 Test #286: Periodic timed routes win while missing timetable services stay unknown .........................................................   Passed    1.24 sec
+        Start 298: Periodic active journeys board a delayed actual vehicle with real empty seats
+287/628 Test #287: Periodic policies are inert across cold warm evicted and unused caches ..........................................................   Passed    1.23 sec
+288/628 Test #288: Periodic actual Work admission shares packets and caps cheap queries across contexts ............................................   Passed    1.12 sec
+289/628 Test #289: Periodic missing publications charge one Work and retry after publication .......................................................   Passed    1.01 sec
+290/628 Test #290: Schedule protection rescues an exhausted Timed query and survives packet save split and transport ...............................   Passed    0.91 sec
+291/628 Test #291: Retired v4 Work history is skipped and cannot prevent Packet merging ............................................................   Passed    0.82 sec
+292/628 Test #292: Periodic local invalidation preserves unrelated published services ..............................................................   Passed    0.71 sec
+293/628 Test #293: Periodic scheduler progress and captured phases survive save and join ...........................................................   Passed    0.61 sec
+294/628 Test #294: Periodic database rejects malformed and oversized saved state ...................................................................   Passed    0.51 sec
+295/628 Test #295: Periodic rebuilding tolerates another edit and falls back before publication ....................................................   Passed    0.41 sec
+296/628 Test #296: Periodic shared dispatch competition never invents physical trips ...............................................................   Passed    0.31 sec
+        Start 299: Periodic ride validation rejects no load no unload forced transfer and changed identities
+        Start 300: Periodic routing disabled leaves the scheduler and cargo state untouched
+        Start 301: Cached periodic route alternatives change the winner with departure phase
+        Start 302: Periodic and snapshot planners agree on complete small timetable networks
+        Start 303: Periodic split passengers can board a second real shared vehicle immediately
+        Start 304: Periodic many packets share one event policy and never build service graphs
+        Start 305: Periodic network scales to 8000 stations without expanded physical visits
+        Start 306: Periodic dirty queue rotation prevents repeated edits from starving other lists
+        Start 307: Periodic unplanned implicit stops never become forecast boarding occurrences
+        Start 308: Periodic saved order list identities cannot bind to recycled pool IDs
+297/628 Test #297: Periodic single vehicle dispatch uses real slots with turnaround checks .........................................................   Passed    1.24 sec
+        Start 309: Periodic state tick rebasing preserves departures and packet retry intervals
+298/628 Test #298: Periodic active journeys board a delayed actual vehicle with real empty seats ...................................................   Passed    1.24 sec
+299/628 Test #299: Periodic ride validation rejects no load no unload forced transfer and changed identities .......................................   Passed    1.13 sec
+300/628 Test #300: Periodic routing disabled leaves the scheduler and cargo state untouched ........................................................   Passed    1.03 sec
+301/628 Test #301: Cached periodic route alternatives change the winner with departure phase .......................................................   Passed    0.93 sec
+302/628 Test #302: Periodic and snapshot planners agree on complete small timetable networks .......................................................   Passed    0.81 sec
+303/628 Test #303: Periodic split passengers can board a second real shared vehicle immediately ....................................................   Passed    0.72 sec
+304/628 Test #304: Periodic many packets share one event policy and never build service graphs .....................................................   Passed    0.62 sec
+305/628 Test #305: Periodic network scales to 8000 stations without expanded physical visits .......................................................   Passed    0.51 sec
+306/628 Test #306: Periodic dirty queue rotation prevents repeated edits from starving other lists .................................................   Passed    0.41 sec
+307/628 Test #307: Periodic unplanned implicit stops never become forecast boarding occurrences ....................................................   Passed    0.31 sec
+        Start 310: Periodic long shared lines preserve their direct ride within a bounded policy search
+        Start 311: Expired periodic intents choose an alternative while a delayed live ride remains usable
+        Start 312: Periodic transfer intents enforce the actual minimum interchange time
+        Start 313: Dirty service intents retain their saved retry state until the next simulation event
+        Start 314: Periodic capacity changes invalidate only the affected service while occupancy does not
+        Start 315: Periodic round trips prefer the earlier equivalent boarding occurrence
+        Start 316: Routine order window notifications preserve periodic generations and policies
+        Start 317: Unrelated landscape clearing preserves the published passenger network
+        Start 318: Automatic timetable edits coalesce while safe old generations and policies survive
+        Start 319: An OD outside the timed station index does not expand the national timed network
+308/628 Test #308: Periodic saved order list identities cannot bind to recycled pool IDs ...........................................................   Passed    1.24 sec
+        Start 320: An unknown destination phase stays untimed without expanding other timed services
+309/628 Test #309: Periodic state tick rebasing preserves departures and packet retry intervals ....................................................   Passed    1.24 sec
+310/628 Test #310: Periodic long shared lines preserve their direct ride within a bounded policy search ............................................   Passed    1.13 sec
+311/628 Test #311: Expired periodic intents choose an alternative while a delayed live ride remains usable .........................................   Passed    1.03 sec
+312/628 Test #312: Periodic transfer intents enforce the actual minimum interchange time ...........................................................   Passed    0.93 sec
+313/628 Test #313: Dirty service intents retain their saved retry state until the next simulation event ............................................   Passed    0.83 sec
+314/628 Test #314: Periodic capacity changes invalidate only the affected service while occupancy does not .........................................   Passed    0.73 sec
+315/628 Test #315: Periodic round trips prefer the earlier equivalent boarding occurrence ..........................................................   Passed    0.61 sec
+316/628 Test #316: Routine order window notifications preserve periodic generations and policies ...................................................   Passed    0.51 sec
+317/628 Test #317: Unrelated landscape clearing preserves the published passenger network ..........................................................   Passed    0.42 sec
+318/628 Test #318: Automatic timetable edits coalesce while safe old generations and policies survive ..............................................   Passed    0.32 sec
+        Start 321: Separate timed components reject unreachable ODs with bounded incidence work
+        Start 322: Timing publication epochs use floor division for negative state ticks
+        Start 323: Operating stops retain physical occurrences, dwell, phases and saved publication
+        Start 324: Cargo-specific operating stops cannot join passenger service components
+        Start 325: Mixed passenger exchange stops keep directional permissions
+        Start 326: Operating first stop remains a dispatch and phase anchor
+        Start 327: Waypoint waits and reversals are operating events in periodic and snapshot cycles
+        Start 328: Depot traversal separates passenger continuity from timing certainty
+        Start 329: Schedule duration-only direct policies retain no invented absolute times
+        Start 330: Schedule routes compare frequency capacity direct and transfer costs
+319/628 Test #319: An OD outside the timed station index does not expand the national timed network ................................................   Passed    1.21 sec
+        Start 331: Schedule compares multiple interchange corridors including known phases
+320/628 Test #320: An unknown destination phase stays untimed without expanding other timed services ...............................................   Passed    1.20 sec
+321/628 Test #321: Separate timed components reject unreachable ODs with bounded incidence work ....................................................   Passed    1.10 sec
+322/628 Test #322: Timing publication epochs use floor division for negative state ticks ...........................................................   Passed    1.00 sec
+323/628 Test #323: Operating stops retain physical occurrences, dwell, phases and saved publication ................................................   Passed    0.90 sec
+324/628 Test #324: Cargo-specific operating stops cannot join passenger service components .........................................................   Passed    0.80 sec
+325/628 Test #325: Mixed passenger exchange stops keep directional permissions .....................................................................   Passed    0.71 sec
+326/628 Test #326: Operating first stop remains a dispatch and phase anchor ........................................................................   Passed    0.60 sec
+327/628 Test #327: Waypoint waits and reversals are operating events in periodic and snapshot cycles ...............................................   Passed    0.51 sec
+328/628 Test #328: Depot traversal separates passenger continuity from timing certainty ............................................................   Passed    0.41 sec
+329/628 Test #329: Schedule duration-only direct policies retain no invented absolute times ........................................................   Passed    0.31 sec
+        Start 332: Schedule fleet frequency never fabricates evenly spaced unknown phases
+        Start 333: Schedule active selection gives timed OD routes priority
+        Start 334: Schedule work admission is identical across hits eviction saved DB and peers
+        Start 335: Schedule actual shared carriers use reservations splits and saved independent intents
+        Start 336: Schedule boarding enforces live restrictions incarnation and generation
+        Start 337: Schedule transfer constraints survive replanning fallback and packet save
+        Start 338: Schedule expiry and timetable deletion safely trigger another OD policy
+        Start 339: Schedule 8000 station network caches OD policies without physical visit expansion
+        Start 340: Schedule reads old periodic wire state and unresolved dispatch circuits conservatively
+        Start 341: Schedule forced alighting replans without boarding the arriving service
+330/628 Test #330: Schedule routes compare frequency capacity direct and transfer costs ............................................................   Passed    1.22 sec
+        Start 342: Schedule interchange exclusion distinguishes recycled order list incarnations
+331/628 Test #331: Schedule compares multiple interchange corridors including known phases .........................................................   Passed    1.23 sec
+332/628 Test #332: Schedule fleet frequency never fabricates evenly spaced unknown phases ..........................................................   Passed    1.13 sec
+333/628 Test #333: Schedule active selection gives timed OD routes priority ........................................................................   Passed    1.02 sec
+334/628 Test #334: Schedule work admission is identical across hits eviction saved DB and peers ....................................................   Passed    0.93 sec
+335/628 Test #335: Schedule actual shared carriers use reservations splits and saved independent intents ...........................................   Passed    0.83 sec
+336/628 Test #336: Schedule boarding enforces live restrictions incarnation and generation .........................................................   Passed    0.73 sec
+337/628 Test #337: Schedule transfer constraints survive replanning fallback and packet save .......................................................   Passed    0.63 sec
+338/628 Test #338: Schedule expiry and timetable deletion safely trigger another OD policy .........................................................   Passed    0.53 sec
+339/628 Test #339: Schedule 8000 station network caches OD policies without physical visit expansion ...............................................   Passed    0.42 sec
+340/628 Test #340: Schedule reads old periodic wire state and unresolved dispatch circuits conservatively ..........................................   Passed    0.32 sec
+        Start 343: Timed interchange exclusion remains correct across shared policy cache hits
+        Start 344: Observing an unknown phase preserves estimated boarding until timing publication
+        Start 345: Former schedule journeys refresh constraints on a later fallback transfer
+        Start 346: Schedule bindings continue from a real implicit stop without forecasting it
+        Start 347: Eight slow direct lines cannot consume the timed transfer candidate budget
+        Start 348: Periodic timed search retains a nominally slower express with an earlier phase
+        Start 349: Periodic local express and multiple interchange paths compete by actual arrival
+        Start 350: Periodic exhausted search and resource truncation have distinct diagnoses
+        Start 351: Periodic candidate capacity is observed without certifying a false absence
+        Start 352: Periodic overdue loading aligns with snapshot remaining dwell rather than another circuit
+341/628 Test #341: Schedule forced alighting replans without boarding the arriving service .........................................................   Passed    1.22 sec
+        Start 353: Periodic capture supports an actual waypoint phase without inventing overdue travel
+342/628 Test #342: Schedule interchange exclusion distinguishes recycled order list incarnations ...................................................   Passed    1.21 sec
+343/628 Test #343: Timed interchange exclusion remains correct across shared policy cache hits .....................................................   Passed    1.10 sec
+344/628 Test #344: Observing an unknown phase preserves estimated boarding until timing publication ................................................   Passed    1.00 sec
+345/628 Test #345: Former schedule journeys refresh constraints on a later fallback transfer .......................................................   Passed    0.90 sec
+346/628 Test #346: Schedule bindings continue from a real implicit stop without forecasting it .....................................................   Passed    0.80 sec
+347/628 Test #347: Eight slow direct lines cannot consume the timed transfer candidate budget ......................................................   Passed    0.70 sec
+348/628 Test #348: Periodic timed search retains a nominally slower express with an earlier phase ..................................................   Passed    0.61 sec
+349/628 Test #349: Periodic local express and multiple interchange paths compete by actual arrival .................................................   Passed    0.51 sec
+350/628 Test #350: Periodic exhausted search and resource truncation have distinct diagnoses .......................................................   Passed    0.41 sec
+351/628 Test #351: Periodic candidate capacity is observed without certifying a false absence ......................................................   Passed    0.31 sec
+        Start 354: Actual explicit arrival recaptures a drifted periodic phase
+        Start 355: Paired periodic snapshot diagnostic cannot change publication packets or RNG
+        Start 356: Periodic passenger denominator excludes cargo-only order lists
+        Start 357: A tick ending during facility capture retries before publishing Unknown
+        Start 358: Periodic search obeys load unload and mandatory interchange permissions
+        Start 359: A phase-only interchange gap is distinct from disconnected published components
+        Start 360: Periodic journeys can use more than the initial four transfer rounds
+        Start 361: Arrival phase comparison normalizes cycles across negative state ticks
+        Start 362: A new periodic query can board a live vehicle overdue since phase publication
+        Start 363: A slower prefix survives when a common connection restores the canonical tie
+352/628 Test #352: Periodic overdue loading aligns with snapshot remaining dwell rather than another circuit .......................................   Passed    1.19 sec
+        Start 364: A fleet larger than a full phase capture tick cannot stall publication
+353/628 Test #353: Periodic capture supports an actual waypoint phase without inventing overdue travel .............................................   Passed    1.20 sec
+354/628 Test #354: Actual explicit arrival recaptures a drifted periodic phase .....................................................................   Passed    1.10 sec
+355/628 Test #355: Paired periodic snapshot diagnostic cannot change publication packets or RNG ....................................................   Passed    1.01 sec
+356/628 Test #356: Periodic passenger denominator excludes cargo-only order lists ..................................................................   Passed    0.91 sec
+357/628 Test #357: A tick ending during facility capture retries before publishing Unknown .........................................................   Passed    0.81 sec
+358/628 Test #358: Periodic search obeys load unload and mandatory interchange permissions .........................................................   Passed    0.72 sec
+359/628 Test #359: A phase-only interchange gap is distinct from disconnected published components .................................................   Passed    0.62 sec
+360/628 Test #360: Periodic journeys can use more than the initial four transfer rounds ............................................................   Passed    0.53 sec
+361/628 Test #361: Arrival phase comparison normalizes cycles across negative state ticks ..........................................................   Passed    0.42 sec
+362/628 Test #362: A new periodic query can board a live vehicle overdue since phase publication ...................................................   Passed    0.32 sec
+        Start 365: Shared policies remain resident through thousands of unchanged ticks
+        Start 366: An unrelated publication preserves both policy kinds and their logical work
+        Start 367: A new shortcut invalidates policies which never used its service
+        Start 368: A frozen publication batch survives additional edits and a cold joining peer
+        Start 369: Shared LRU evicts across Timed and Schedule-aware without changing routes
+        Start 370: Structural edits block real boarding while the old publication remains readable
+        Start 371: Disabling shared residency preserves work outcomes and saved publication
+        Start 372: Deleted station and vehicle IDs cannot board through a resident old publication
+        Start 373: A local disabled policy cache stays disabled across loading and joining
+        Start 374: A staging memory boundary remains bounded and loadable during deletions
+363/628 Test #363: A slower prefix survives when a common connection restores the canonical tie ....................................................   Passed    1.25 sec
+        Start 375: Depot entry without a wait preserves full cycles and queued saved publication
+364/628 Test #364: A fleet larger than a full phase capture tick cannot stall publication ..........................................................   Passed    1.26 sec
+365/628 Test #365: Shared policies remain resident through thousands of unchanged ticks ............................................................   Passed    1.14 sec
+366/628 Test #366: An unrelated publication preserves both policy kinds and their logical work .....................................................   Passed    1.04 sec
+367/628 Test #367: A new shortcut invalidates policies which never used its service ................................................................   Passed    0.94 sec
+368/628 Test #368: A frozen publication batch survives additional edits and a cold joining peer ....................................................   Passed    0.85 sec
+369/628 Test #369: Shared LRU evicts across Timed and Schedule-aware without changing routes .......................................................   Passed    0.74 sec
+370/628 Test #370: Structural edits block real boarding while the old publication remains readable .................................................   Passed    0.61 sec
+371/628 Test #371: Disabling shared residency preserves work outcomes and saved publication ........................................................   Passed    0.50 sec
+372/628 Test #372: Deleted station and vehicle IDs cannot board through a resident old publication .................................................   Passed    0.40 sec
+373/628 Test #373: A local disabled policy cache stays disabled across loading and joining .........................................................   Passed    0.30 sec
+        Start 376: Precomputed active journeys bypass OD admission and survive partial-build saves
+        Start 377: Precomputed frozen build progresses during a pending sweep and replays saved input
+        Start 378: Precomputed long builds retain a complete epoch before cost refresh
+        Start 379: Precomputed cost regrouping wakes queues without a live revision or row-count change
+        Start 380: Precomputed waiting index excludes unrelated packets and preserves partial reservations
+        Start 381: Precomputed waiting wake queue and identical service binding are live validated
+        Start 382: Precomputed waiting events survive save tables without inventing a routing pass
+        Start 383: Precomputed idle loading passes do not rescan or replan waiting passengers
+        Start 384: Precomputed generation capture retains large shared physical fleets
+        Start 385: Precomputed startup completes discovery and all rows without simulation
+374/628 Test #375: Depot entry without a wait preserves full cycles and queued saved publication ...................................................   Passed    1.17 sec
+375/628 Test #374: A staging memory boundary remains bounded and loadable during deletions .........................................................   Passed    1.26 sec
+376/628 Test #376: Precomputed active journeys bypass OD admission and survive partial-build saves .................................................   Passed    1.06 sec
+377/628 Test #377: Precomputed frozen build progresses during a pending sweep and replays saved input ..............................................   Passed    0.95 sec
+378/628 Test #378: Precomputed long builds retain a complete epoch before cost refresh .............................................................   Passed    0.86 sec
+379/628 Test #379: Precomputed cost regrouping wakes queues without a live revision or row-count change ............................................   Passed    0.76 sec
+380/628 Test #380: Precomputed waiting index excludes unrelated packets and preserves partial reservations .........................................   Passed    0.66 sec
+381/628 Test #381: Precomputed waiting wake queue and identical service binding are live validated .................................................   Passed    0.55 sec
+382/628 Test #382: Precomputed waiting events survive save tables without inventing a routing pass .................................................   Passed    0.44 sec
+383/628 Test #383: Precomputed idle loading passes do not rescan or replan waiting passengers ......................................................   Passed    0.33 sec
+384/628 Test #384: Precomputed generation capture retains large shared physical fleets .............................................................   Passed    0.22 sec
+        Start 386: Precomputed replacement retains pending destination rows across every saved frontier
+        Start 387: Precomputed replacement coalesces edits and rejects only unsafe live rides
+        Start 388: Precomputed boarding uses primary FIFO order through refresh wake and partial moves
+        Start 389: Precomputed trees preserve through rides and physical occurrences
+        Start 390: Precomputed masks and forced alighting cannot be bypassed
+        Start 391: Precomputed frozen costs refresh only compatible live service bindings
+        Start 392: Precomputed incoming service states rescue routes beyond fixed K
+        Start 393: Precomputed identical fleets aggregate without synthetic headways
+        Start 394: Precomputed publication is independent of build chunk and query history
+        Start 395: Precomputed published rows retain only query states
+        Start 396: Precomputed replacement retires rows at publication without retaining two matrices
+385/628 Test #385: Precomputed startup completes discovery and all rows without simulation .........................................................   Passed    1.28 sec
+386/628 Test #386: Precomputed replacement retains pending destination rows across every saved frontier ............................................   Passed    1.16 sec
+387/628 Test #387: Precomputed replacement coalesces edits and rejects only unsafe live rides ......................................................   Passed    1.05 sec
+388/628 Test #388: Precomputed boarding uses primary FIFO order through refresh wake and partial moves .............................................   Passed    0.94 sec
+389/628 Test #389: Precomputed trees preserve through rides and physical occurrences ...............................................................   Passed    0.83 sec
+390/628 Test #390: Precomputed masks and forced alighting cannot be bypassed .......................................................................   Passed    0.72 sec
+391/628 Test #391: Precomputed frozen costs refresh only compatible live service bindings ..........................................................   Passed    0.61 sec
+392/628 Test #392: Precomputed incoming service states rescue routes beyond fixed K ................................................................   Passed    0.50 sec
+393/628 Test #393: Precomputed identical fleets aggregate without synthetic headways ...............................................................   Passed    0.40 sec
+394/628 Test #394: Precomputed publication is independent of build chunk and query history .........................................................   Passed    0.30 sec
+395/628 Test #395: Precomputed published rows retain only query states .............................................................................   Passed    0.20 sec
+        Start 397: Precomputed legacy cursors map to the same compact publication frontier
+        Start 398: Contiguous service indices match all legacy station and departure sequences
+        Start 399: Live index capture preserves cold warm scoped and truncated query work
+        Start 400: Order save tables and afterload recreate deterministic service indices
+        Start 401: Scoped alternatives preserve local express returns and cyclic detours
+        Start 402: Scoped uncertainty retains future refits and conditional alternatives
+        Start 403: Weighted waiting never certifies a scoped graph that omitted riding excursions
+        Start 404: Standard scoped capture serves an 80800 visit twenty thousand object network
+        Start 405: Dense national cycles remain incomplete when query allowances cannot certify alternatives
+        Start 406: Scoped standard work permits three hundred actual transfers
+        Start 407: Passenger journeys retain direct local and express interchange alternatives
+396/628 Test #396: Precomputed replacement retires rows at publication without retaining two matrices ..............................................   Passed    1.21 sec
+397/628 Test #397: Precomputed legacy cursors map to the same compact publication frontier .........................................................   Passed    1.11 sec
+398/628 Test #398: Contiguous service indices match all legacy station and departure sequences .....................................................   Passed    1.01 sec
+399/628 Test #399: Live index capture preserves cold warm scoped and truncated query work ..........................................................   Passed    0.91 sec
+400/628 Test #400: Order save tables and afterload recreate deterministic service indices ..........................................................   Passed    0.81 sec
+401/628 Test #401: Scoped alternatives preserve local express returns and cyclic detours ...........................................................   Passed    0.70 sec
+402/628 Test #402: Scoped uncertainty retains future refits and conditional alternatives ...........................................................   Passed    0.59 sec
+403/628 Test #403: Weighted waiting never certifies a scoped graph that omitted riding excursions ..................................................   Passed    0.49 sec
+404/628 Test #404: Standard scoped capture serves an 80800 visit twenty thousand object network ....................................................   Passed    0.39 sec
+405/628 Test #405: Dense national cycles remain incomplete when query allowances cannot certify alternatives .......................................   Passed    0.29 sec
+406/628 Test #406: Scoped standard work permits three hundred actual transfers .....................................................................   Passed    0.20 sec
+        Start 408: Passenger journeys compare low frequency shortcut and high capacity trunk
+        Start 409: Unknown future seats remain unknown and full predictions require a later physical train
+        Start 410: Capacity preference ratios avoid intermediate overflow and unknown guarantees
+        Start 411: Capacity tie breaks prefer usable confirmations without ranking estimates as guarantees
+        Start 412: Journey labels allocate incrementally within their caps
+        Start 413: Reverse journey pruning preserves unknown connections beyond captured visits
+        Start 414: Journey destination lower bounds retain faster interchanges and honor preference costs
+        Start 415: Journey boarding and alighting restrictions and repeated station occurrences
+        Start 416: Journey uncertainty and exhausted searches never certify unreachable
+        Start 417: Journey event interval cache and departure index preserve deterministic routing
+        Start 418: Journey partial candidates and route diversity are retained under explicit limits
+407/628 Test #407: Passenger journeys retain direct local and express interchange alternatives .....................................................   Passed    1.25 sec
+408/628 Test #408: Passenger journeys compare low frequency shortcut and high capacity trunk .......................................................   Passed    1.15 sec
+409/628 Test #409: Unknown future seats remain unknown and full predictions require a later physical train .........................................   Passed    1.06 sec
+410/628 Test #410: Capacity preference ratios avoid intermediate overflow and unknown guarantees ...................................................   Passed    0.96 sec
+411/628 Test #411: Capacity tie breaks prefer usable confirmations without ranking estimates as guarantees .........................................   Passed    0.86 sec
+412/628 Test #412: Journey labels allocate incrementally within their caps .........................................................................   Passed    0.76 sec
+413/628 Test #413: Reverse journey pruning preserves unknown connections beyond captured visits ....................................................   Passed    0.66 sec
+414/628 Test #414: Journey destination lower bounds retain faster interchanges and honor preference costs ..........................................   Passed    0.55 sec
+415/628 Test #415: Journey boarding and alighting restrictions and repeated station occurrences ....................................................   Passed    0.45 sec
+416/628 Test #416: Journey uncertainty and exhausted searches never certify unreachable ............................................................   Passed    0.35 sec
+417/628 Test #417: Journey event interval cache and departure index preserve deterministic routing .................................................   Passed    0.26 sec
+        Start 419: Journey circular trains and scheduled dispatch use real future occurrences
+        Start 420: National journey queries reach eight thousand stations without whole network rescans
+        Start 421: Journey stages continue actual train chains without replaying earlier rounds
+        Start 422: Journey candidates stop extension at the current stage and disclose unsearched alternatives
+        Start 423: Journey safety ceilings and resource limits remain inconclusive and cache consistently
+        Start 424: Journey expanded stages preserve candidates when subsequent work or labels run out
+        Start 425: Journey absence distinguishes disconnection, a short horizon and invalid OD
+        Start 426: Journey station cycles and zero-time reversals terminate without losing real onward trips
+        Start 427: Journey boarding and reverse counters exceed eight bits and clamp extreme caller limits safely
+        Start 428: Journey cycle suppression preserves a useful ride when waiting has a preference penalty
+        Start 429: Journey resource exhaustion preserves the candidate before a better bucket replacement
+418/628 Test #418: Journey partial candidates and route diversity are retained under explicit limits ...............................................   Passed    1.26 sec
+419/628 Test #419: Journey circular trains and scheduled dispatch use real future occurrences ......................................................   Passed    1.10 sec
+420/628 Test #420: National journey queries reach eight thousand stations without whole network rescans ............................................   Passed    1.00 sec
+421/628 Test #422: Journey candidates stop extension at the current stage and disclose unsearched alternatives .....................................   Passed    0.80 sec
+422/628 Test #423: Journey safety ceilings and resource limits remain inconclusive and cache consistently ..........................................   Passed    0.70 sec
+423/628 Test #424: Journey expanded stages preserve candidates when subsequent work or labels run out ..............................................   Passed    0.60 sec
+424/628 Test #425: Journey absence distinguishes disconnection, a short horizon and invalid OD .....................................................   Passed    0.50 sec
+425/628 Test #426: Journey station cycles and zero-time reversals terminate without losing real onward trips .......................................   Passed    0.40 sec
+426/628 Test #427: Journey boarding and reverse counters exceed eight bits and clamp extreme caller limits safely ..................................   Passed    0.30 sec
+427/628 Test #428: Journey cycle suppression preserves a useful ride when waiting has a preference penalty .........................................   Passed    0.20 sec
+        Start 430: Journey extension preserves capacity forecasts and an incomplete prediction suffix
+        Start 431: Onboard journeys reuse the search without new seats or a boarding cost
+        Start 432: Onboard interchanges apply actual stop restrictions and transfer costs
+        Start 433: Shadow compares the final legacy action with the complete destination journey
+        Start 434: Shadow distinguishes unknown prediction, search budget and memory limits
+        Start 435: Shadow arrival caches are shared across packets and never survive a new arrival
+        Start 436: 4096 distinct packet observations obey the shared shadow quota
+        Start 437: Shadow enabled and disabled produce identical production staging and saved packets
+        Start 438: Thousands of disconnected untimed lines do not poison a complete trunk journey
+        Start 439: Shadow measures a complete 8001 station fleet within its production quotas
+428/628 Test #421: Journey stages continue actual train chains without replaying earlier rounds ....................................................   Passed    1.93 sec
+        Start 440: Periodic Work leases settle once at partial and full boundaries
+429/628 Test #429: Journey resource exhaustion preserves the candidate before a better bucket replacement ..........................................   Passed    1.22 sec
+430/628 Test #430: Journey extension preserves capacity forecasts and an incomplete prediction suffix ..............................................   Passed    1.11 sec
+431/628 Test #431: Onboard journeys reuse the search without new seats or a boarding cost ..........................................................   Passed    1.02 sec
+432/628 Test #432: Onboard interchanges apply actual stop restrictions and transfer costs ..........................................................   Passed    0.92 sec
+433/628 Test #433: Shadow compares the final legacy action with the complete destination journey ...................................................   Passed    0.81 sec
+434/628 Test #434: Shadow distinguishes unknown prediction, search budget and memory limits ........................................................   Passed    0.71 sec
+435/628 Test #435: Shadow arrival caches are shared across packets and never survive a new arrival .................................................   Passed    0.61 sec
+436/628 Test #436: 4096 distinct packet observations obey the shared shadow quota ..................................................................   Passed    0.50 sec
+437/628 Test #437: Shadow enabled and disabled produce identical production staging and saved packets ..............................................   Passed    0.40 sec
+438/628 Test #438: Thousands of disconnected untimed lines do not poison a complete trunk journey ..................................................   Passed    0.30 sec
+        Start 441: Periodic admission distinguishes fair share and event global boundaries
+        Start 442: Missing complete schedules retain live untimed OD boarding
+        Start 443: Resident OD fallback distances replay cold work and invalidate restricted edges
+        Start 444: OD fallback binding residency avoids node scans and preserves cold decisions
+        Start 445: OD fallback detects changed intermediate goods bindings without an OD topology edit
+        Start 446: OD fallback edge eligibility edits reuse station bindings and refresh directed reachability
+        Start 447: OD fallback station pool reinitialization invalidates resident node validity
+        Start 448: OD fallback follows tail-swapped nodes and reused station IDs
+        Start 449: OD fallback rebuilds bindings across graph merges and graph pool reuse
+        Start 450: OD fallback resident capacity eviction preserves results and logical work
+439/628 Test #439: Shadow measures a complete 8001 station fleet within its production quotas ......................................................   Passed    1.24 sec
+        Start 451: OD fallback binding identity is derived across save load and pool reinitialization
+440/628 Test #440: Periodic Work leases settle once at partial and full boundaries .................................................................   Passed    1.24 sec
+441/628 Test #441: Periodic admission distinguishes fair share and event global boundaries .........................................................   Passed    1.14 sec
+442/628 Test #442: Missing complete schedules retain live untimed OD boarding ......................................................................   Passed    1.05 sec
+443/628 Test #443: Resident OD fallback distances replay cold work and invalidate restricted edges .................................................   Passed    0.95 sec
+444/628 Test #444: OD fallback binding residency avoids node scans and preserves cold decisions ....................................................   Passed    0.84 sec
+445/628 Test #445: OD fallback detects changed intermediate goods bindings without an OD topology edit .............................................   Passed    0.73 sec
+446/628 Test #446: OD fallback edge eligibility edits reuse station bindings and refresh directed reachability .....................................   Passed    0.63 sec
+447/628 Test #447: OD fallback station pool reinitialization invalidates resident node validity ....................................................   Passed    0.53 sec
+448/628 Test #448: OD fallback follows tail-swapped nodes and reused station IDs ...................................................................   Passed    0.44 sec
+449/628 Test #449: OD fallback rebuilds bindings across graph merges and graph pool reuse ..........................................................   Passed    0.34 sec
+        Start 452: OD fallback binding and reverse index eviction cannot change logical work
+        Start 453: Timed ordinary journeys win over an untimed express without any bound proof
+        Start 454: Untimed direct journeys share live decisions and count only actual gradual loads
+        Start 455: Mixed timed and untimed corridors transfer and deliver without invented execution times
+        Start 456: Untimed interchanges consider every progressing live stop and reuse one OD search
+        Start 457: A stale saved interchange cannot poison another progressing live stop
+        Start 458: Waiting Journey adoption and cache hits retain the current flow hop
+        Start 459: Rejected fallback reservations preserve the current flow hop
+        Start 460: Inactive Journey reservation returns preserve the CargoDist return bucket
+        Start 461: Direct fallback rides pass the CargoDist via and repair older commitments
+450/628 Test #450: OD fallback resident capacity eviction preserves results and logical work .......................................................   Passed    1.22 sec
+        Start 462: New fallback hops respect flow weights and retain valid saved choices
+451/628 Test #451: OD fallback binding identity is derived across save load and pool reinitialization ..............................................   Passed    1.21 sec
+452/628 Test #452: OD fallback binding and reverse index eviction cannot change logical work .......................................................   Passed    1.10 sec
+453/628 Test #453: Timed ordinary journeys win over an untimed express without any bound proof .....................................................   Passed    1.00 sec
+454/628 Test #454: Untimed direct journeys share live decisions and count only actual gradual loads ................................................   Passed    0.89 sec
+455/628 Test #455: Mixed timed and untimed corridors transfer and deliver without invented execution times .........................................   Passed    0.79 sec
+456/628 Test #456: Untimed interchanges consider every progressing live stop and reuse one OD search ...............................................   Passed    0.69 sec
+457/628 Test #457: A stale saved interchange cannot poison another progressing live stop ...........................................................   Passed    0.59 sec
+458/628 Test #458: Waiting Journey adoption and cache hits retain the current flow hop .............................................................   Passed    0.50 sec
+459/628 Test #459: Rejected fallback reservations preserve the current flow hop ....................................................................   Passed    0.40 sec
+460/628 Test #460: Inactive Journey reservation returns preserve the CargoDist return bucket .......................................................   Passed    0.31 sec
+        Start 463: CargoDist fallback rides board past intermediate stops and retain their via
+        Start 464: A valid CargoDist via survives exhausted OD reverse-search work
+        Start 465: Journey transfer failures and deferrals refresh the current station via
+        Start 466: CargoDist fallback vias still respect live orders and interchange constraints
+        Start 467: Journey boarding selects a physical train even with the same next stop
+        Start 468: Active horizons certify short frequent journeys and extend long ODs
+        Start 469: A short horizon cannot hide a cheaper later direct service
+        Start 470: A chosen ordinary train boards and partial loading preserves OD and money
+        Start 471: Reservations and gradual loading allocate seats only once
+        Start 472: A stale gradual-loading reservation is returned with consistent counts
+461/628 Test #461: Direct fallback rides pass the CargoDist via and repair older commitments .......................................................   Passed    1.25 sec
+        Start 473: Onboard journey stages keep transfer and final delivery in production
+462/628 Test #462: New fallback hops respect flow weights and retain valid saved choices ...........................................................   Passed    1.28 sec
+463/628 Test #463: CargoDist fallback rides board past intermediate stops and retain their via .....................................................   Passed    1.17 sec
+464/628 Test #464: A valid CargoDist via survives exhausted OD reverse-search work .................................................................   Passed    1.06 sec
+465/628 Test #465: Journey transfer failures and deferrals refresh the current station via .........................................................   Passed    0.96 sec
+466/628 Test #466: CargoDist fallback vias still respect live orders and interchange constraints ...................................................   Passed    0.86 sec
+467/628 Test #467: Journey boarding selects a physical train even with the same next stop ..........................................................   Passed    0.76 sec
+468/628 Test #468: Active horizons certify short frequent journeys and extend long ODs .............................................................   Passed    0.66 sec
+469/628 Test #469: A short horizon cannot hide a cheaper later direct service ......................................................................   Passed    0.52 sec
+470/628 Test #470: A chosen ordinary train boards and partial loading preserves OD and money .......................................................   Passed    0.43 sec
+471/628 Test #471: Reservations and gradual loading allocate seats only once .......................................................................   Passed    0.33 sec
+        Start 474: Exhausted searches retain valid onboard rides and cannot deliver at intermediate stations
+        Start 475: Fallback and deferred OD passengers stay on a direct ride through CargoDist destinations
+        Start 476: OD fallback chooses a progressing interchange instead of unrelated CargoDist flows
+        Start 477: Unreachable OD fallback waits without reboarding a circulating train and can recover
+        Start 478: OD fallback boarding validates live prefixes and restricted links
+        Start 479: OD fallback work is shared bounded deterministic and reusable until the next tick
+        Start 480: Destination enforcement preserves disabled and unknown OD CargoDist delivery
+        Start 481: Journey failure uses validated OD fallback while unsupported passengers retain CargoDist
+        Start 482: Missed departure invalidates a leg and cooldown prevents routing oscillation
+        Start 483: Journey merge checks include mode and the executable leg
+472/628 Test #472: A stale gradual-loading reservation is returned with consistent counts ..........................................................   Passed    1.25 sec
+        Start 484: Waiting intent age excludes Timed timestamps and observes Schedule-aware age
+473/628 Test #473: Onboard journey stages keep transfer and final delivery in production ...........................................................   Passed    1.26 sec
+474/628 Test #474: Exhausted searches retain valid onboard rides and cannot deliver at intermediate stations .......................................   Passed    1.13 sec
+475/628 Test #475: Fallback and deferred OD passengers stay on a direct ride through CargoDist destinations ........................................   Passed    1.02 sec
+476/628 Test #476: OD fallback chooses a progressing interchange instead of unrelated CargoDist flows ..............................................   Passed    0.92 sec
+477/628 Test #477: Unreachable OD fallback waits without reboarding a circulating train and can recover ............................................   Passed    0.82 sec
+478/628 Test #478: OD fallback boarding validates live prefixes and restricted links ...............................................................   Passed    0.71 sec
+479/628 Test #479: OD fallback work is shared bounded deterministic and reusable until the next tick ...............................................   Passed    0.61 sec
+480/628 Test #480: Destination enforcement preserves disabled and unknown OD CargoDist delivery ....................................................   Passed    0.52 sec
+481/628 Test #481: Journey failure uses validated OD fallback while unsupported passengers retain CargoDist ........................................   Passed    0.42 sec
+482/628 Test #482: Missed departure invalidates a leg and cooldown prevents routing oscillation ....................................................   Passed    0.32 sec
+        Start 485: Schedule intent diagnostic age is safe across signed tick boundaries
+        Start 486: Schedule actual wait observations saturate and reject invalid timestamps
+        Start 487: Routing state and leg have an independent versioned save round trip
+        Start 488: Loading passenger packets preserves the queues used by station rating
+        Start 489: GUI counts available modes separately from reserved passengers without changing RNG
+        Start 490: 4096 OD packets reuse one search and consume no random numbers
+        Start 491: Trip cache peers preserve execution save bytes and tick allowances
+        Start 492: Order dispatch refit and loading restrictions invalidate boarding
+        Start 493: Deleting the chosen train clears its leg before an ID can be reused
+        Start 494: Disabling journeys rekeys passengers and preserves legacy random routing
+483/628 Test #483: Journey merge checks include mode and the executable leg ........................................................................   Passed    1.28 sec
+        Start 495: Distinct OD searches stop at the deterministic batch work allowance
+484/628 Test #484: Waiting intent age excludes Timed timestamps and observes Schedule-aware age ....................................................   Passed    1.28 sec
+485/628 Test #485: Schedule intent diagnostic age is safe across signed tick boundaries ............................................................   Passed    1.17 sec
+486/628 Test #486: Schedule actual wait observations saturate and reject invalid timestamps ........................................................   Passed    1.07 sec
+487/628 Test #487: Routing state and leg have an independent versioned save round trip .............................................................   Passed    0.96 sec
+488/628 Test #488: Loading passenger packets preserves the queues used by station rating ...........................................................   Passed    0.86 sec
+489/628 Test #489: GUI counts available modes separately from reserved passengers without changing RNG .............................................   Passed    0.76 sec
+490/628 Test #490: 4096 OD packets reuse one search and consume no random numbers ..................................................................   Passed    0.66 sec
+491/628 Test #491: Trip cache peers preserve execution save bytes and tick allowances ..............................................................   Passed    0.55 sec
+492/628 Test #492: Order dispatch refit and loading restrictions invalidate boarding ...............................................................   Passed    0.44 sec
+493/628 Test #493: Deleting the chosen train clears its leg before an ID can be reused .............................................................   Passed    0.34 sec
+        Start 496: Event snapshots refresh delays timetables capacity and position within the same tick
+        Start 497: A current off corridor trip is captured for an immediate transfer
+        Start 498: Tick allowances survive local cache and diagnostic resets deterministically
+        Start 499: An unrelated running implicit service leaves active journey routing complete
+        Start 500: A certified physical prefix of an incomplete trip is applied reserved and loaded
+        Start 501: Actual incidental stops and implicit index changes invalidate stored journeys without wrong delivery
+        Start 502: Distinct OD budget waits retry next tick and remain normal failures when unreachable
+        Start 503: Rotating loading shares survive a hot origin through LoadUnloadStation
+        Start 504: Fair shares exclude idle stations unknown ODs and sleeping loading passes
+        Start 505: Unused loading shares are released before later searches in the same tick
+494/628 Test #494: Disabling journeys rekeys passengers and preserves legacy random routing ........................................................   Passed    1.29 sec
+        Start 506: Production journey execution covers eight thousand stations at standard budgets
+495/628 Test #495: Distinct OD searches stop at the deterministic batch work allowance .............................................................   Passed    1.27 sec
+496/628 Test #496: Event snapshots refresh delays timetables capacity and position within the same tick ............................................   Passed    1.15 sec
+497/628 Test #497: A current off corridor trip is captured for an immediate transfer ...............................................................   Passed    1.04 sec
+498/628 Test #498: Tick allowances survive local cache and diagnostic resets deterministically .....................................................   Passed    0.93 sec
+499/628 Test #499: An unrelated running implicit service leaves active journey routing complete ....................................................   Passed    0.82 sec
+500/628 Test #500: A certified physical prefix of an incomplete trip is applied reserved and loaded ................................................   Passed    0.71 sec
+501/628 Test #501: Actual incidental stops and implicit index changes invalidate stored journeys without wrong delivery ............................   Passed    0.61 sec
+502/628 Test #502: Distinct OD budget waits retry next tick and remain normal failures when unreachable ............................................   Passed    0.51 sec
+503/628 Test #503: Rotating loading shares survive a hot origin through LoadUnloadStation ..........................................................   Passed    0.41 sec
+504/628 Test #504: Fair shares exclude idle stations unknown ODs and sleeping loading passes .......................................................   Passed    0.31 sec
+        Start 507: A primary engine with different cargo preserves the passenger coach journey after load
+        Start 508: Boarding prediction is lazy for Legacy and other trains
+        Start 509: Vehicle invalidation indexes only referring journeys through packet lifecycle
+        Start 510: Unchanged waiting queues retain their buckets and packet storage
+        Start 511: Existing Journey packets do not consume the Fallback retry inspection allowance
+        Start 512: Disabling Journey returns only its reservations including a gradual-loading boundary
+        Start 513: A stale Journey reservation preserves adjacent Legacy reservations
+        Start 514: Afterload returns invalid Journey reservations without disturbing Legacy
+        Start 515: Cleaning the packet pool discards the reverse index before packet ID reuse
+        Start 516: Planner and boarding validate the same long timetabled physical ride
+505/628 Test #505: Unused loading shares are released before later searches in the same tick .......................................................   Passed    1.22 sec
+        Start 517: Ordinary lateness does not invalidate a timetabled ride and actual deviations replan
+506/628 Test #506: Production journey execution covers eight thousand stations at standard budgets .................................................   Passed    1.22 sec
+507/628 Test #507: A primary engine with different cargo preserves the passenger coach journey after load ..........................................   Passed    1.12 sec
+508/628 Test #508: Boarding prediction is lazy for Legacy and other trains .........................................................................   Passed    1.02 sec
+509/628 Test #509: Vehicle invalidation indexes only referring journeys through packet lifecycle ...................................................   Passed    0.93 sec
+510/628 Test #510: Unchanged waiting queues retain their buckets and packet storage ................................................................   Passed    0.83 sec
+511/628 Test #511: Existing Journey packets do not consume the Fallback retry inspection allowance .................................................   Passed    0.73 sec
+512/628 Test #512: Disabling Journey returns only its reservations including a gradual-loading boundary ............................................   Passed    0.62 sec
+513/628 Test #513: A stale Journey reservation preserves adjacent Legacy reservations ..............................................................   Passed    0.52 sec
+514/628 Test #514: Afterload returns invalid Journey reservations without disturbing Legacy ........................................................   Passed    0.42 sec
+515/628 Test #515: Cleaning the packet pool discards the reverse index before packet ID reuse ......................................................   Passed    0.33 sec
+        Start 518: Periodic hot origins preserve waiting station Work and query slots
+        Start 519: Periodic admission rejection sharing retains the current CargoDist hop
+        Start 520: Every passenger transport uses the same planner and production boarding
+        Start 521: Periodic service intents use all real transport adapters and gradual reservations
+        Start 522: Periodic transfers through all four modes retain the final destination
+        Start 523: A schedule leg connects to a timed carrier and reaches the final OD
+        Start 524: An unknown phase cannot advertise an incompatible physical facility
+        Start 525: An unknown aircraft phase cannot conceal a known range restriction
+        Start 526: Trip cache validates every real transport adapter
+        Start 527: Every mode returns only the stale reserved suffix after gradual loading
+516/628 Test #516: Planner and boarding validate the same long timetabled physical ride ............................................................   Passed    1.25 sec
+        Start 528: Multimodal OD fallback boards only progressing rides and respects forced transfers
+517/628 Test #517: Ordinary lateness does not invalidate a timetabled ride and actual deviations replan ............................................   Passed    1.24 sec
+518/628 Test #518: Periodic hot origins preserve waiting station Work and query slots ..............................................................   Passed    1.13 sec
+519/628 Test #519: Periodic admission rejection sharing retains the current CargoDist hop ..........................................................   Passed    1.00 sec
+520/628 Test #520: Every passenger transport uses the same planner and production boarding .........................................................   Passed    0.89 sec
+521/628 Test #521: Periodic service intents use all real transport adapters and gradual reservations ...............................................   Passed    0.79 sec
+522/628 Test #522: Periodic transfers through all four modes retain the final destination ..........................................................   Passed    0.70 sec
+523/628 Test #523: A schedule leg connects to a timed carrier and reaches the final OD .............................................................   Passed    0.60 sec
+524/628 Test #524: An unknown phase cannot advertise an incompatible physical facility .............................................................   Passed    0.50 sec
+525/628 Test #525: An unknown aircraft phase cannot conceal a known range restriction ..............................................................   Passed    0.40 sec
+526/628 Test #526: Trip cache validates every real transport adapter ...............................................................................   Passed    0.30 sec
+        Start 529: Every mode uses resident OD bindings through reservation transfer and final delivery
+        Start 530: Freight-only and zero-capacity vehicles never become passenger trips
+        Start 531: Freight-only fleets leave capture work and service slots for passenger services
+        Start 532: Shared orders retain passenger members among freight-only vehicles
+        Start 533: A road direction edit invalidates execution even when the stop is still usable
+        Start 534: Mixed transport chains transfer at shared StationIDs through the common rounds
+        Start 535: Active passengers execute train road aircraft ship transfers and settle the final delivery
+        Start 536: Road adapters honor bay drive-through cargo direction and articulated capacity
+        Start 537: Ships traverse buoys without boarding and retain repeated port occurrences
+        Start 538: Aircraft distinguish terminals landing holding hangars helicopters and mail
+527/628 Test #527: Every mode returns only the stale reserved suffix after gradual loading .........................................................   Passed    1.31 sec
+        Start 539: All modes safely fallback on changed facilities orders capacity and unknown predictions
+528/628 Test #528: Multimodal OD fallback boards only progressing rides and respects forced transfers ..............................................   Passed    1.31 sec
+529/628 Test #529: Every mode uses resident OD bindings through reservation transfer and final delivery ............................................   Passed    1.21 sec
+530/628 Test #531: Freight-only fleets leave capture work and service slots for passenger services .................................................   Passed    1.02 sec
+531/628 Test #530: Freight-only and zero-capacity vehicles never become passenger trips ............................................................   Passed    1.12 sec
+532/628 Test #532: Shared orders retain passenger members among freight-only vehicles ..............................................................   Passed    0.92 sec
+533/628 Test #533: A road direction edit invalidates execution even when the stop is still usable ..................................................   Passed    0.81 sec
+534/628 Test #534: Mixed transport chains transfer at shared StationIDs through the common rounds ..................................................   Passed    0.67 sec
+535/628 Test #535: Active passengers execute train road aircraft ship transfers and settle the final delivery ......................................   Passed    0.55 sec
+536/628 Test #536: Road adapters honor bay drive-through cargo direction and articulated capacity ..................................................   Passed    0.43 sec
+537/628 Test #537: Ships traverse buoys without boarding and retain repeated port occurrences ......................................................   Passed    0.33 sec
+        Start 540: Multimodal snapshots and OD caches preserve deterministic ties and bounded work
+        Start 541: Multimodal onboard rides survive exhausted search budgets
+        Start 542: A frequent mixed trunk beats the infrequent direct train
+        Start 543: Multimodal vehicle destruction invalidates indexed journeys before pool ID reuse
+        Start 544: Multimodal execution preserves the existing save extension and validates afterload
+        Start 545: Shadow diagnostics observe every transport without changing cargo or RNG
+        Start 546: National mixed fleet shares snapshots and keeps graph query and cache bounds
+        Start 547: Every mode carries passengers through operating stops and continuing depots
+        Start 548: Generic integer
+        Start 549: std::variant
+538/628 Test #538: Aircraft distinguish terminals landing holding hangars helicopters and mail .....................................................   Passed    1.45 sec
+        Start 550: StringConsumer - basic
+539/628 Test #539: All modes safely fallback on changed facilities orders capacity and unknown predictions .........................................   Passed    1.46 sec
+540/628 Test #540: Multimodal snapshots and OD caches preserve deterministic ties and bounded work .................................................   Passed    1.35 sec
+541/628 Test #541: Multimodal onboard rides survive exhausted search budgets .......................................................................   Passed    1.21 sec
+542/628 Test #542: A frequent mixed trunk beats the infrequent direct train ........................................................................   Passed    1.09 sec
+543/628 Test #543: Multimodal vehicle destruction invalidates indexed journeys before pool ID reuse ................................................   Passed    1.00 sec
+544/628 Test #544: Multimodal execution preserves the existing save extension and validates afterload ..............................................   Passed    0.90 sec
+545/628 Test #545: Shadow diagnostics observe every transport without changing cargo or RNG ........................................................   Passed    0.78 sec
+546/628 Test #546: National mixed fleet shares snapshots and keeps graph query and cache bounds ....................................................   Passed    0.65 sec
+547/628 Test #547: Every mode carries passengers through operating stops and continuing depots .....................................................   Passed    0.54 sec
+548/628 Test #548: Generic integer .................................................................................................................   Passed    0.40 sec
+        Start 551: StringConsumer - binary8
+        Start 552: StringConsumer - binary16
+        Start 553: StringConsumer - binary32
+        Start 554: StringConsumer - binary64
+        Start 555: StringConsumer - utf8
+        Start 556: StringConsumer - conditions
+        Start 557: StringConsumer - ascii
+        Start 558: StringConsumer - parse int
+        Start 559: StringConsumer - invalid int
+        Start 560: StringConsumer - most negative
+549/628 Test #549: std::variant ....................................................................................................................   Passed    1.46 sec
+        Start 561: StrCompareIgnoreCase - std::string
+550/628 Test #550: StringConsumer - basic ..........................................................................................................   Passed    1.47 sec
+551/628 Test #551: StringConsumer - binary8 ........................................................................................................   Passed    1.35 sec
+552/628 Test #552: StringConsumer - binary16 .......................................................................................................   Passed    1.25 sec
+553/628 Test #553: StringConsumer - binary32 .......................................................................................................   Passed    1.12 sec
+554/628 Test #554: StringConsumer - binary64 .......................................................................................................   Passed    0.99 sec
+555/628 Test #555: StringConsumer - utf8 ...........................................................................................................   Passed    0.88 sec
+556/628 Test #556: StringConsumer - conditions .....................................................................................................   Passed    0.76 sec
+557/628 Test #557: StringConsumer - ascii ..........................................................................................................   Passed    0.62 sec
+558/628 Test #558: StringConsumer - parse int ......................................................................................................   Passed    0.50 sec
+559/628 Test #559: StringConsumer - invalid int ....................................................................................................   Passed    0.40 sec
+        Start 562: StrCompareIgnoreCase - char pointer
+        Start 563: StrCompareIgnoreCase - std::string_view
+        Start 564: StrEqualsIgnoreCase - std::string
+        Start 565: StrEqualsIgnoreCase - char pointer
+        Start 566: StrEqualsIgnoreCase - std::string_view
+        Start 567: StrStartsWithIgnoreCase - std::string
+        Start 568: StrStartsWithIgnoreCase - char pointer
+        Start 569: StrStartsWithIgnoreCase - std::string_view
+        Start 570: StrEndsWithIgnoreCase - std::string
+        Start 571: StrEndsWithIgnoreCase - char pointer
+560/628 Test #560: StringConsumer - most negative ..................................................................................................   Passed    1.36 sec
+        Start 572: StrEndsWithIgnoreCase - std::string_view
+561/628 Test #561: StrCompareIgnoreCase - std::string ..............................................................................................   Passed    1.33 sec
+562/628 Test #562: StrCompareIgnoreCase - char pointer .............................................................................................   Passed    1.18 sec
+563/628 Test #563: StrCompareIgnoreCase - std::string_view .........................................................................................   Passed    1.07 sec
+564/628 Test #564: StrEqualsIgnoreCase - std::string ...............................................................................................   Passed    0.97 sec
+565/628 Test #565: StrEqualsIgnoreCase - char pointer ..............................................................................................   Passed    0.84 sec
+566/628 Test #566: StrEqualsIgnoreCase - std::string_view ..........................................................................................   Passed    0.73 sec
+567/628 Test #567: StrStartsWithIgnoreCase - std::string ...........................................................................................   Passed    0.62 sec
+568/628 Test #568: StrStartsWithIgnoreCase - char pointer ..........................................................................................   Passed    0.50 sec
+569/628 Test #569: StrStartsWithIgnoreCase - std::string_view ......................................................................................   Passed    0.41 sec
+570/628 Test #570: StrEndsWithIgnoreCase - std::string .............................................................................................   Passed    0.31 sec
+        Start 573: FormatArrayAsHex
+        Start 574: ConvertHexToBytes
+        Start 575: StrTrimInPlace
+        Start 576: StrTrimView
+        Start 577: FixSCCEncoded
+        Start 578: EncodedString::ReplaceParam - positive
+        Start 579: EncodedString::ReplaceParam - negative
+        Start 580: FixSCCEncodedNegative
+        Start 581: AppendStringWithArgsInPlace - format_to_fixed_base
+        Start 582: Comparison operator tests
+571/628 Test #571: StrEndsWithIgnoreCase - char pointer ............................................................................................   Passed    1.25 sec
+        Start 583: Station Journey via uses the alighting station with an invalid queue key
+572/628 Test #572: StrEndsWithIgnoreCase - std::string_view ........................................................................................   Passed    1.25 sec
+573/628 Test #573: FormatArrayAsHex ................................................................................................................   Passed    1.14 sec
+574/628 Test #574: ConvertHexToBytes ...............................................................................................................   Passed    1.04 sec
+575/628 Test #575: StrTrimInPlace ..................................................................................................................   Passed    0.93 sec
+576/628 Test #576: StrTrimView .....................................................................................................................   Passed    0.83 sec
+577/628 Test #577: FixSCCEncoded ...................................................................................................................   Passed    0.73 sec
+578/628 Test #578: EncodedString::ReplaceParam - positive ..........................................................................................   Passed    0.62 sec
+579/628 Test #579: EncodedString::ReplaceParam - negative ..........................................................................................   Passed    0.51 sec
+580/628 Test #580: FixSCCEncodedNegative ...........................................................................................................   Passed    0.40 sec
+581/628 Test #581: AppendStringWithArgsInPlace - format_to_fixed_base ..............................................................................   Passed    0.30 sec
+        Start 584: Station Legacy Fallback and non-passenger via preserve queue information
+        Start 585: Station fixed carriers show their own group in a mixed shared fleet
+        Start 586: Station service intentions distinguish unique and ambiguous shared groups
+        Start 587: Station shared service candidates require usable passenger capacity and stops
+        Start 588: Station distinct shared services produce distinct named summaries at the same via station
+        Start 589: Station group and carrier removal and stale intentions remain safe
+        Start 590: Station service summaries conserve counts and stay in their via branch for all group orders
+        Start 591: Station annotations persist below a collapsed via and vanish when its ancestors collapse
+        Start 592: Station GUI service reads do not mutate passenger execution or RNG
+        Start 593: Station waiting summaries show deferred and Fallback passengers without guessing a service
+582/628 Test #582: Comparison operator tests .......................................................................................................   Passed    1.23 sec
+        Start 594: Station unknown via and estimated destinations retain service-unknown counts exactly once
+583/628 Test #583: Station Journey via uses the alighting station with an invalid queue key ........................................................   Passed    1.25 sec
+584/628 Test #584: Station Legacy Fallback and non-passenger via preserve queue information ........................................................   Passed    1.14 sec
+585/628 Test #585: Station fixed carriers show their own group in a mixed shared fleet .............................................................   Passed    1.04 sec
+586/628 Test #586: Station service intentions distinguish unique and ambiguous shared groups .......................................................   Passed    0.95 sec
+587/628 Test #587: Station shared service candidates require usable passenger capacity and stops ...................................................   Passed    0.85 sec
+588/628 Test #588: Station distinct shared services produce distinct named summaries at the same via station .......................................   Passed    0.75 sec
+589/628 Test #589: Station group and carrier removal and stale intentions remain safe ..............................................................   Passed    0.65 sec
+590/628 Test #590: Station service summaries conserve counts and stay in their via branch for all group orders .....................................   Passed    0.55 sec
+591/628 Test #591: Station annotations persist below a collapsed via and vanish when its ancestors collapse ........................................   Passed    0.45 sec
+592/628 Test #592: Station GUI service reads do not mutate passenger execution or RNG ..............................................................   Passed    0.34 sec
+        Start 595: Station service fleet inspection remains bounded and never guesses an uninspected group
+        Start 596: MayHaveRoad - Station
+        Start 597: MayHaveRoad - Tunnel/bridge
+        Start 598: Authentication_KeyExchangeOnly
+        Start 599: Authentication_PAKE
+        Start 600: Authentication_AuthorizedKey
+        Start 601: Authentication_Combined
+        Start 602: Encryption handling
+        Start 603: GetPacketGameTypeName
+        Start 604: Squirrel -> JSON conversion
+593/628 Test #593: Station waiting summaries show deferred and Fallback passengers without guessing a service ......................................   Passed    1.36 sec
+        Start 605: JSON -> Squirrel conversion
+594/628 Test #594: Station unknown via and estimated destinations retain service-unknown counts exactly once .......................................   Passed    1.34 sec
+595/628 Test #595: Station service fleet inspection remains bounded and never guesses an uninspected group .........................................   Passed    1.22 sec
+596/628 Test #596: MayHaveRoad - Station ...........................................................................................................   Passed    1.11 sec
+597/628 Test #597: MayHaveRoad - Tunnel/bridge .....................................................................................................   Passed    1.00 sec
+598/628 Test #598: Authentication_KeyExchangeOnly ..................................................................................................   Passed    0.89 sec
+599/628 Test #599: Authentication_PAKE .............................................................................................................   Passed    0.78 sec
+600/628 Test #600: Authentication_AuthorizedKey ....................................................................................................   Passed    0.67 sec
+601/628 Test #601: Authentication_Combined .........................................................................................................   Passed    0.51 sec
+602/628 Test #602: Encryption handling .............................................................................................................   Passed    0.41 sec
+603/628 Test #603: GetPacketGameTypeName ...........................................................................................................   Passed    0.31 sec
+        Start 606: WindowDesc - ini_key uniqueness
+        Start 607: WindowDesc - ini_key validity
+        Start 608: WindowDesc - NWidgetParts properly closed
+        Start 609: WindowDesc - NWidgetPart validity
+        Start 610: SpiralTileSequence - minimum
+        Start 611: SpiralTileSequence - odd
+        Start 612: SpiralTileSequence - even
+        Start 613: SpiralTileSequence - zero hole
+        Start 614: SpiralTileSequence - normal hole
+        Start 615: Automatic town funding toggle validates owners and allows disabling when funding is forbidden
+604/628 Test #604: Squirrel -> JSON conversion .....................................................................................................   Passed    1.21 sec
+        Start 616: Automatic town funding renews once on expiry and charges only one company
+605/628 Test #605: JSON -> Squirrel conversion .....................................................................................................   Passed    1.22 sec
+606/628 Test #606: WindowDesc - ini_key uniqueness .................................................................................................   Passed    1.12 sec
+607/628 Test #607: WindowDesc - ini_key validity ...................................................................................................   Passed    1.02 sec
+608/628 Test #608: WindowDesc - NWidgetParts properly closed .......................................................................................   Passed    0.92 sec
+609/628 Test #609: WindowDesc - NWidgetPart validity ...............................................................................................   Passed    0.82 sec
+610/628 Test #611: SpiralTileSequence - odd ........................................................................................................   Passed    0.61 sec
+611/628 Test #610: SpiralTileSequence - minimum ....................................................................................................   Passed    0.72 sec
+612/628 Test #612: SpiralTileSequence - even .......................................................................................................   Passed    0.52 sec
+613/628 Test #613: SpiralTileSequence - zero hole ..................................................................................................   Passed    0.42 sec
+614/628 Test #614: SpiralTileSequence - normal hole ................................................................................................   Passed    0.31 sec
+        Start 617: Automatic town funding retries after funding restrictions or insufficient money
+        Start 618: Automatic town funding skips an ineligible company and a removed company
+        Start 619: Utf8View - empty
+        Start 620: Utf8View - invalid
+        Start 621: Utf8View - iterate
+        Start 622: passenger_od_load
+        Start 623: passenger_journey_active_production
+615/628 Test #615: Automatic town funding toggle validates owners and allows disabling when funding is forbidden ...................................   Passed    0.91 sec
+616/628 Test #616: Automatic town funding renews once on expiry and charges only one company .......................................................   Passed    0.82 sec
+617/628 Test #617: Automatic town funding retries after funding restrictions or insufficient money .................................................   Passed    0.71 sec
+618/628 Test #618: Automatic town funding skips an ineligible company and a removed company ........................................................   Passed    0.59 sec
+619/628 Test #619: Utf8View - empty ................................................................................................................   Passed    0.50 sec
+620/628 Test #620: Utf8View - invalid ..............................................................................................................   Passed    0.40 sec
+621/628 Test #621: Utf8View - iterate ..............................................................................................................   Passed    0.30 sec
+622/628 Test #622: passenger_od_load ...............................................................................................................   Passed    6.56 sec
+623/628 Test #623: passenger_journey_active_production .............................................................................................   Passed   10.89 sec
+        Start 624: passenger_journey_shadow_production
+624/628 Test #624: passenger_journey_shadow_production .............................................................................................   Passed    5.36 sec
+        Start 625: regression_regression
+625/628 Test #625: regression_regression ...........................................................................................................   Passed    2.36 sec
+        Start 626: regression_stationlist
+626/628 Test #626: regression_stationlist ..........................................................................................................   Passed    2.10 sec
+        Start 627: regression_gs
+627/628 Test #627: regression_gs ...................................................................................................................   Passed    1.99 sec
+        Start 628: regression_gs_compat
+628/628 Test #628: regression_gs_compat ............................................................................................................   Passed    2.27 sec
+
+100% tests passed, 0 tests failed out of 628
+
+Total Test time (real) =  90.47 sec

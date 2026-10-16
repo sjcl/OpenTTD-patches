@@ -1,0 +1,134 @@
+{
+  "runtime_commit": "d631621111f1c28f47154b1d8b7cbeacac78f52e",
+  "copied_tus": [
+    {
+      "path": "save-integrity/cargopacket.cpp",
+      "sha256": "727f6c3d10b58fb013bb603fcd448faeb3cdbe764cea6ca493e8d86067cd89df",
+      "active": false
+    },
+    {
+      "path": "save-integrity/cargopacket_sl.cpp",
+      "sha256": "49be75f27f1328aebce1d5c0ba279481e069e724f9c94f44c28e802fc14fc9fe",
+      "active": true
+    },
+    {
+      "path": "save-integrity/command.cpp",
+      "sha256": "d61bff6214002b0af20a7874052d36511d7c850e1fc5e5c7dc77d1174212535a",
+      "active": true
+    },
+    {
+      "path": "save-integrity/console_cmds.cpp",
+      "sha256": "1ef61dfb2682ce789e0859fed08e195b6a1b09c18d82dd152d4399064f494ebd",
+      "active": true
+    },
+    {
+      "path": "save-integrity/integrity.h",
+      "sha256": "11698430fba6f2297df0b48e3a3e13df1f9d8e72f8bfe238767e3ac6e24b7fa3",
+      "active": false
+    },
+    {
+      "path": "save-integrity/passenger_service_database.cpp",
+      "sha256": "e98a3abe443ce28af2c833c107a52cb9cb8810bcf2010ad8c57d9e911f057b2f",
+      "active": true
+    },
+    {
+      "path": "real-map-driver/null_v.cpp",
+      "sha256": "eea7f5e4f90e8a2302dd5a342955f8f05fc0f38cf0efaece7d80a80a81608c1e",
+      "active": true
+    },
+    {
+      "path": "real-map-driver/win32.cpp",
+      "sha256": "c346d64f7e6316d93d5cc1535f6c649121c3f5fe57117a5b95ec6230ec142baf",
+      "active": true
+    },
+    {
+      "path": "transport-trace/cargoaction.cpp",
+      "sha256": "cc67acc4096971b05aae76148e7a22db06ee8093ef0202cae3665a7776bec574",
+      "active": true
+    },
+    {
+      "path": "transport-trace/cargopacket.cpp",
+      "sha256": "9f2ccbffde99b832bbbc8a2710d016bb04b7500b54ee8cdbcdc79a7c2c98ab59",
+      "active": true
+    },
+    {
+      "path": "transport-trace/passenger_journey_active.cpp",
+      "sha256": "3c5d86369712359ebaffa15a7d3561d53fe1481424111faf10d4856c2c3df22b",
+      "active": true
+    },
+    {
+      "path": "transport-trace/passenger_od.cpp",
+      "sha256": "fd86980f045f711698b53c96758de21cded87e4830191e98c54d53b744547689",
+      "active": true
+    },
+    {
+      "path": "transport-trace/trace.h",
+      "sha256": "fdb28211841ec3f73a8f37d0355de89e86f176d5a2e0d18d8322e5c36b581725",
+      "active": false
+    },
+    {
+      "path": "transport-trace/vehicle.cpp",
+      "sha256": "8f52b48189bf0a0b146cc367b8007801f5145305cb6b6bde86f1b8922d01810a",
+      "active": true
+    }
+  ],
+  "product_sources": [
+    {
+      "path": "src/autoreplace_cmd.cpp",
+      "sha256": "461227918e48ae79e33f0e66a7569e1ce151b9932bc8697026c9065eba56628d"
+    },
+    {
+      "path": "src/command.cpp",
+      "sha256": "8223243bf393efb48e5f3f7fcb98693d6c572f5a43ddfe27908f5bbd687fc203"
+    },
+    {
+      "path": "src/console_cmds.cpp",
+      "sha256": "b30dda4352aba017317358ddbf9e56f78bcf2fa41f13061031cc825f180c3801"
+    },
+    {
+      "path": "src/passenger_journey_active.cpp",
+      "sha256": "32c9f04d857827a98c95e854fc61e8fb2c09acc9ed0c34432a77536d68015e28"
+    },
+    {
+      "path": "src/passenger_journey_active.h",
+      "sha256": "c3596d6baea997ccef487ec1fd4f9557d38d5a341f426f497f0c89a24ff67484"
+    },
+    {
+      "path": "src/passenger_precomputed.cpp",
+      "sha256": "9778ae3e8271c4bed1eefc5c8ecb074a7c923fc8549c9aa4ccb15c49b8aa17e8"
+    },
+    {
+      "path": "src/passenger_precomputed.h",
+      "sha256": "f093b6376f27b002b7704d9061b9ced92298606d00f3217dee1fb9f1912d9cc3"
+    },
+    {
+      "path": "src/passenger_service_database.cpp",
+      "sha256": "b7ca5625335fd8dbea9a1cd1e8ce647d97182c37ccf71292ea51c66f92765b3d"
+    },
+    {
+      "path": "src/passenger_service_database.h",
+      "sha256": "bb4564c154173baf2123e2b2a50272ac7ee094563a66829ec2bfb2249a95f330"
+    },
+    {
+      "path": "src/sl/extended_ver_sl.cpp",
+      "sha256": "21d7400835ad5e55827207523103a9b9476578f018ae2cf13c6fbecddb096168"
+    },
+    {
+      "path": "src/tests/passenger_precomputed.cpp",
+      "sha256": "416f4fc27e2e06858c057c442d12b7db3ebf15080a9518ee143b591c1d133d84"
+    },
+    {
+      "path": "src/tests/passenger_service_database.cpp",
+      "sha256": "085571864be42d247da4adacd292a0ae06054c68d9186f741cc60f45222405ce"
+    },
+    {
+      "path": "src/train_cmd.cpp",
+      "sha256": "71771f7fbddcdde0f962e405a2f8b46458b331abaa9d4270f38743a87806cfaf"
+    },
+    {
+      "path": "src/vehicle_cmd.cpp",
+      "sha256": "af045e5cfc07c3f2c2cbc5fbbc596363af118c7cb2fae21ca814bc7a1581785e"
+    }
+  ],
+  "binary_sha256": "296272e7881e26fc17e807884d954623d0620d455a88d55ed56085247c9f39ce"
+}

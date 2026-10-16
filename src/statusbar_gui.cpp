@@ -27,6 +27,8 @@
 #include "core/geometry_func.hpp"
 #include "guitimer_func.h"
 #include "zoom_func.h"
+#include "passenger_service_database.h"
+#include "network/network.h"
 
 #include "widgets/statusbar_widget.h"
 
@@ -169,6 +171,13 @@ struct StatusBarWindow : Window {
 					DrawString(tr, STR_STATUSBAR_SAVING_GAME, TextColour::FromString, {AlignmentH::Centre, AlignmentV::Middle});
 				} else if (_do_autosave) {
 					DrawString(tr, STR_STATUSBAR_AUTOSAVE, TextColour::FromString, AlignmentH::Centre);
+				} else if (!_networking && GetPassengerServiceDatabase().IsPreparingPrecomputed()) {
+					size_t done = 0, total = 0;
+					for (CargoType cargo : EnumRange(NUM_CARGO)) {
+						const auto d = GetPassengerServiceDatabase().GetPrecomputedDiagnostic(cargo);
+						done += d.destinations; total += d.stations;
+					}
+					DrawString(tr, GetString(STR_STATUSBAR_PASSENGER_ROUTES, done, total), TextColour::FromString, AlignmentH::Centre);
 				} else if (_pause_mode.Any()) {
 					StringID msg = _pause_mode.Test(PauseMode::LinkGraph) ? STR_STATUSBAR_PAUSED_LINK_GRAPH : STR_STATUSBAR_PAUSED;
 					DrawString(tr, msg, TextColour::FromString, AlignmentH::Centre);

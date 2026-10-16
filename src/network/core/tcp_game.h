@@ -90,6 +90,8 @@ enum class PacketGameType : uint8_t {
 	ServerMapData, ///< Server sends bits of the map to the client.
 	ServerMapDone, ///< Server tells it has just sent the last bits of the map to the client.
 	ClientMapOk, ///< Client tells the server that it received the whole map.
+	ClientMapProgress, ///< Completed mandatory replay work while processing the map; not a simulation ACK.
+	ServerMapProgress, ///< Acknowledges map processing progress without authorizing simulation frames.
 
 	ServerClientJoined, ///< Tells clients that a new client has joined.
 
@@ -137,6 +139,8 @@ enum class PacketGameType : uint8_t {
 	ClientDesyncMessage, ///< A client reports a desync message
 	ClientDesyncSyncData, ///< A client reports desync sync data
 
+	ServerPassengerPrepare, ///< Initial-table barrier at an exact completed network frame; also a keepalive.
+	ClientPassengerPrepared, ///< Local preparation completed at that frame; never a simulation ACK.
 	End,
 };
 /** Mark PacketGameType as PacketType. */
@@ -365,6 +369,10 @@ protected:
 	 * @return The state the network should have.
 	 */
 	virtual NetworkRecvStatus ReceiveClientMapOk(Packet &p);
+	virtual NetworkRecvStatus ReceiveClientMapProgress(Packet &p);
+	virtual NetworkRecvStatus ReceiveServerMapProgress(Packet &p);
+	virtual NetworkRecvStatus ReceiveServerPassengerPrepare(Packet &p);
+	virtual NetworkRecvStatus ReceiveClientPassengerPrepared(Packet &p);
 
 	/**
 	 * A client joined (PacketGameType::ClientMapOk), what usually directly follows is a PacketGameType::ServerClientInfo:

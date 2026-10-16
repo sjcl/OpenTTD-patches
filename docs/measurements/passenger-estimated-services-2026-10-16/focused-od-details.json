@@ -1,0 +1,899 @@
+{
+  "target_ods": {
+    "3222:400": {
+      "fresh": {
+        "fates": {},
+        "completed_observed_ticks": null,
+        "completed_metrics": {
+          "riding_ticks": null,
+          "waiting_ticks": null,
+          "origin_waiting_ticks": null,
+          "transfer_waiting_ticks": null,
+          "boardings": null,
+          "revisits": null
+        },
+        "completed_services": {},
+        "pending_observed_elapsed_ticks": null,
+        "pending_maximum_wait": null,
+        "longest_wait_examples": []
+      },
+      "initial": {
+        "fates": {
+          "delivered": 7
+        },
+        "completed_observed_ticks": {
+          "n": 7,
+          "mean": 3968.714285714286,
+          "median": 5632,
+          "p95": 5632,
+          "maximum": 5632
+        },
+        "completed_metrics": {
+          "riding_ticks": {
+            "n": 7,
+            "mean": 793.5714285714286,
+            "median": 782,
+            "p95": 849,
+            "maximum": 849
+          },
+          "waiting_ticks": {
+            "n": 7,
+            "mean": 3174.1428571428573,
+            "median": 4849,
+            "p95": 4869,
+            "maximum": 4869
+          },
+          "origin_waiting_ticks": {
+            "n": 7,
+            "mean": 0,
+            "median": 0,
+            "p95": 0,
+            "maximum": 0
+          },
+          "transfer_waiting_ticks": {
+            "n": 7,
+            "mean": 3174.1428571428573,
+            "median": 4849,
+            "p95": 4869,
+            "maximum": 4869
+          },
+          "boardings": {
+            "n": 7,
+            "mean": 2,
+            "median": 2,
+            "p95": 2,
+            "maximum": 2
+          },
+          "revisits": {
+            "n": 7,
+            "mean": 0,
+            "median": 0,
+            "p95": 0,
+            "maximum": 0
+          }
+        },
+        "completed_services": {
+          "302;69": 7
+        },
+        "pending_observed_elapsed_ticks": null,
+        "pending_maximum_wait": null,
+        "longest_wait_examples": [
+          {
+            "origin": "3222",
+            "destination": "400",
+            "born": "3181095005",
+            "at": "3181100637",
+            "complete_origin": "0",
+            "riding_ticks": "762",
+            "waiting_ticks": "4869",
+            "origin_waiting_ticks": "0",
+            "transfer_waiting_ticks": "4869",
+            "distance_x16": "379",
+            "boardings": "2",
+            "transfers": "1",
+            "revisits": "0",
+            "returns": "0",
+            "observed_misses": "0",
+            "maximum_wait": "4841",
+            "services": "302;69",
+            "stop_counts": "2;30",
+            "stations": "3221;399;400",
+            "sample_id": "54",
+            "initial": "1",
+            "initial_packet": "498213",
+            "initial_offset": "0",
+            "origin_departure": "-9223372036854775808",
+            "onboard": "0",
+            "location": "400",
+            "fate": "delivered"
+          },
+          {
+            "origin": "3222",
+            "destination": "400",
+            "born": "3181095005",
+            "at": "3181100637",
+            "complete_origin": "0",
+            "riding_ticks": "762",
+            "waiting_ticks": "4869",
+            "origin_waiting_ticks": "0",
+            "transfer_waiting_ticks": "4869",
+            "distance_x16": "379",
+            "boardings": "2",
+            "transfers": "1",
+            "revisits": "0",
+            "returns": "0",
+            "observed_misses": "0",
+            "maximum_wait": "4841",
+            "services": "302;69",
+            "stop_counts": "2;30",
+            "stations": "3221;399;400",
+            "sample_id": "53",
+            "initial": "1",
+            "initial_packet": "497159",
+            "initial_offset": "0",
+            "origin_departure": "-9223372036854775808",
+            "onboard": "0",
+            "location": "400",
+            "fate": "delivered"
+          },
+          {
+            "origin": "3222",
+            "destination": "400",
+            "born": "3181095005",
+            "at": "3181100637",
+            "complete_origin": "0",
+            "riding_ticks": "762",
+            "waiting_ticks": "4869",
+            "origin_waiting_ticks": "0",
+            "transfer_waiting_ticks": "4869",
+            "distance_x16": "379",
+            "boardings": "2",
+            "transfers": "1",
+            "revisits": "0",
+            "returns": "0",
+            "observed_misses": "0",
+            "maximum_wait": "4841",
+            "services": "302;69",
+            "stop_counts": "2;30",
+            "stations": "3221;399;400",
+            "sample_id": "52",
+            "initial": "1",
+            "initial_packet": "494345",
+            "initial_offset": "0",
+            "origin_departure": "-9223372036854775808",
+            "onboard": "0",
+            "location": "400",
+            "fate": "delivered"
+          }
+        ]
+      },
+      "late_observed": {
+        "fates": {
+          "delivered": 1
+        },
+        "completed_observed_ticks": {
+          "n": 1,
+          "mean": 372,
+          "median": 372,
+          "p95": 372,
+          "maximum": 372
+        },
+        "completed_metrics": {
+          "riding_ticks": {
+            "n": 1,
+            "mean": 372,
+            "median": 372,
+            "p95": 372,
+            "maximum": 372
+          },
+          "waiting_ticks": {
+            "n": 1,
+            "mean": 0,
+            "median": 0,
+            "p95": 0,
+            "maximum": 0
+          },
+          "origin_waiting_ticks": {
+            "n": 1,
+            "mean": 0,
+            "median": 0,
+            "p95": 0,
+            "maximum": 0
+          },
+          "transfer_waiting_ticks": {
+            "n": 1,
+            "mean": 0,
+            "median": 0,
+            "p95": 0,
+            "maximum": 0
+          },
+          "boardings": {
+            "n": 1,
+            "mean": 1,
+            "median": 1,
+            "p95": 1,
+            "maximum": 1
+          },
+          "revisits": {
+            "n": 1,
+            "mean": 0,
+            "median": 0,
+            "p95": 0,
+            "maximum": 0
+          }
+        },
+        "completed_services": {
+          "69": 1
+        },
+        "pending_observed_elapsed_ticks": null,
+        "pending_maximum_wait": null,
+        "longest_wait_examples": [
+          {
+            "origin": "3222",
+            "destination": "400",
+            "born": "3181096384",
+            "at": "3181096756",
+            "complete_origin": "0",
+            "riding_ticks": "372",
+            "waiting_ticks": "0",
+            "origin_waiting_ticks": "0",
+            "transfer_waiting_ticks": "0",
+            "distance_x16": "184",
+            "boardings": "1",
+            "transfers": "0",
+            "revisits": "0",
+            "returns": "0",
+            "observed_misses": "0",
+            "maximum_wait": "0",
+            "services": "69",
+            "stop_counts": "30",
+            "stations": "3222;399;400",
+            "sample_id": "57",
+            "initial": "0",
+            "initial_packet": "161684",
+            "initial_offset": "4",
+            "origin_departure": "-9223372036854775808",
+            "onboard": "0",
+            "location": "400",
+            "fate": "delivered"
+          }
+        ]
+      },
+      "queried_events": {
+        "events": {
+          "candidate": 62,
+          "board": 15,
+          "transfer": 7,
+          "deliver": 8
+        },
+        "candidate_reasons": {
+          "stale_generation": 28,
+          "live_conditions": 10,
+          "allowed": 24
+        },
+        "actual_boarding_services": {
+          "302": 7,
+          "69": 8
+        }
+      }
+    },
+    "971:916": {
+      "fresh": {
+        "fates": {},
+        "completed_observed_ticks": null,
+        "completed_metrics": {
+          "riding_ticks": null,
+          "waiting_ticks": null,
+          "origin_waiting_ticks": null,
+          "transfer_waiting_ticks": null,
+          "boardings": null,
+          "revisits": null
+        },
+        "completed_services": {},
+        "pending_observed_elapsed_ticks": null,
+        "pending_maximum_wait": null,
+        "longest_wait_examples": []
+      },
+      "initial": {
+        "fates": {
+          "delivered": 46,
+          "pending": 1
+        },
+        "completed_observed_ticks": {
+          "n": 46,
+          "mean": 6340.869565217391,
+          "median": 2333.0,
+          "p95": 22104,
+          "maximum": 22104
+        },
+        "completed_metrics": {
+          "riding_ticks": {
+            "n": 46,
+            "mean": 3217.891304347826,
+            "median": 1749.0,
+            "p95": 10112,
+            "maximum": 11320
+          },
+          "waiting_ticks": {
+            "n": 46,
+            "mean": 3121.978260869565,
+            "median": 991.0,
+            "p95": 10783,
+            "maximum": 12882
+          },
+          "origin_waiting_ticks": {
+            "n": 46,
+            "mean": 27.347826086956523,
+            "median": 0.0,
+            "p95": 0,
+            "maximum": 629
+          },
+          "transfer_waiting_ticks": {
+            "n": 46,
+            "mean": 3094.6304347826085,
+            "median": 991.0,
+            "p95": 10154,
+            "maximum": 12882
+          },
+          "boardings": {
+            "n": 46,
+            "mean": 1.673913043478261,
+            "median": 1.0,
+            "p95": 4,
+            "maximum": 4
+          },
+          "revisits": {
+            "n": 46,
+            "mean": 0,
+            "median": 0.0,
+            "p95": 0,
+            "maximum": 0
+          }
+        },
+        "completed_services": {
+          "300": 29,
+          "245;300": 5,
+          "71;122;300": 4,
+          "245;122;300": 2,
+          "509;245;122;300": 4,
+          "36;300": 2
+        },
+        "pending_observed_elapsed_ticks": {
+          "n": 1,
+          "mean": 24576,
+          "median": 24576,
+          "p95": 24576,
+          "maximum": 24576
+        },
+        "pending_maximum_wait": {
+          "n": 1,
+          "mean": 3768,
+          "median": 3768,
+          "p95": 3768,
+          "maximum": 3768
+        },
+        "longest_wait_examples": [
+          {
+            "origin": "971",
+            "destination": "916",
+            "born": "3181095005",
+            "at": "3181117109",
+            "complete_origin": "0",
+            "riding_ticks": "9221",
+            "waiting_ticks": "12882",
+            "origin_waiting_ticks": "0",
+            "transfer_waiting_ticks": "12882",
+            "distance_x16": "4537",
+            "boardings": "4",
+            "transfers": "3",
+            "revisits": "0",
+            "returns": "0",
+            "observed_misses": "0",
+            "maximum_wait": "6658",
+            "services": "509;245;122;300",
+            "stop_counts": "22;32;2;66",
+            "stations": "969;968;444;395;392;390;391;389;386;384;913;916",
+            "sample_id": "8",
+            "initial": "1",
+            "initial_packet": "102745",
+            "initial_offset": "0",
+            "origin_departure": "-9223372036854775808",
+            "onboard": "0",
+            "location": "916",
+            "fate": "delivered"
+          },
+          {
+            "origin": "971",
+            "destination": "916",
+            "born": "3181095005",
+            "at": "3181117109",
+            "complete_origin": "0",
+            "riding_ticks": "11320",
+            "waiting_ticks": "10783",
+            "origin_waiting_ticks": "629",
+            "transfer_waiting_ticks": "10154",
+            "distance_x16": "5689",
+            "boardings": "4",
+            "transfers": "3",
+            "revisits": "0",
+            "returns": "0",
+            "observed_misses": "0",
+            "maximum_wait": "6658",
+            "services": "509;245;122;300",
+            "stop_counts": "22;32;2;66",
+            "stations": "971;970;969;968;444;395;392;390;391;389;386;384;913;916",
+            "sample_id": "42",
+            "initial": "1",
+            "initial_packet": "416839",
+            "initial_offset": "0",
+            "origin_departure": "3181095635",
+            "onboard": "0",
+            "location": "916",
+            "fate": "delivered"
+          },
+          {
+            "origin": "971",
+            "destination": "916",
+            "born": "3181095005",
+            "at": "3181117109",
+            "complete_origin": "0",
+            "riding_ticks": "11320",
+            "waiting_ticks": "10783",
+            "origin_waiting_ticks": "629",
+            "transfer_waiting_ticks": "10154",
+            "distance_x16": "5689",
+            "boardings": "4",
+            "transfers": "3",
+            "revisits": "0",
+            "returns": "0",
+            "observed_misses": "0",
+            "maximum_wait": "6658",
+            "services": "509;245;122;300",
+            "stop_counts": "22;32;2;66",
+            "stations": "971;970;969;968;444;395;392;390;391;389;386;384;913;916",
+            "sample_id": "35",
+            "initial": "1",
+            "initial_packet": "343553",
+            "initial_offset": "0",
+            "origin_departure": "3181095635",
+            "onboard": "0",
+            "location": "916",
+            "fate": "delivered"
+          }
+        ]
+      },
+      "late_observed": {
+        "fates": {
+          "delivered": 2
+        },
+        "completed_observed_ticks": {
+          "n": 2,
+          "mean": 1632.5,
+          "median": 1632.5,
+          "p95": 1924,
+          "maximum": 1924
+        },
+        "completed_metrics": {
+          "riding_ticks": {
+            "n": 2,
+            "mean": 1321,
+            "median": 1321.0,
+            "p95": 1341,
+            "maximum": 1341
+          },
+          "waiting_ticks": {
+            "n": 2,
+            "mean": 311.5,
+            "median": 311.5,
+            "p95": 623,
+            "maximum": 623
+          },
+          "origin_waiting_ticks": {
+            "n": 2,
+            "mean": 311.5,
+            "median": 311.5,
+            "p95": 623,
+            "maximum": 623
+          },
+          "transfer_waiting_ticks": {
+            "n": 2,
+            "mean": 0,
+            "median": 0.0,
+            "p95": 0,
+            "maximum": 0
+          },
+          "boardings": {
+            "n": 2,
+            "mean": 1,
+            "median": 1.0,
+            "p95": 1,
+            "maximum": 1
+          },
+          "revisits": {
+            "n": 2,
+            "mean": 0,
+            "median": 0.0,
+            "p95": 0,
+            "maximum": 0
+          }
+        },
+        "completed_services": {
+          "300": 2
+        },
+        "pending_observed_elapsed_ticks": null,
+        "pending_maximum_wait": null,
+        "longest_wait_examples": [
+          {
+            "origin": "971",
+            "destination": "916",
+            "born": "3181095414",
+            "at": "3181097338",
+            "complete_origin": "0",
+            "riding_ticks": "1301",
+            "waiting_ticks": "623",
+            "origin_waiting_ticks": "623",
+            "transfer_waiting_ticks": "0",
+            "distance_x16": "1056",
+            "boardings": "1",
+            "transfers": "0",
+            "revisits": "0",
+            "returns": "0",
+            "observed_misses": "0",
+            "maximum_wait": "623",
+            "services": "300",
+            "stop_counts": "66",
+            "stations": "385;913;916",
+            "sample_id": "55",
+            "initial": "0",
+            "initial_packet": "151085",
+            "initial_offset": "0",
+            "origin_departure": "-9223372036854775808",
+            "onboard": "0",
+            "location": "916",
+            "fate": "delivered"
+          },
+          {
+            "origin": "971",
+            "destination": "916",
+            "born": "3181095997",
+            "at": "3181097338",
+            "complete_origin": "0",
+            "riding_ticks": "1341",
+            "waiting_ticks": "0",
+            "origin_waiting_ticks": "0",
+            "transfer_waiting_ticks": "0",
+            "distance_x16": "1056",
+            "boardings": "1",
+            "transfers": "0",
+            "revisits": "0",
+            "returns": "0",
+            "observed_misses": "0",
+            "maximum_wait": "0",
+            "services": "300",
+            "stop_counts": "66",
+            "stations": "971;385;913;916",
+            "sample_id": "56",
+            "initial": "0",
+            "initial_packet": "209166",
+            "initial_offset": "1",
+            "origin_departure": "-9223372036854775808",
+            "onboard": "0",
+            "location": "916",
+            "fate": "delivered"
+          }
+        ]
+      },
+      "queried_events": {
+        "events": {
+          "candidate": 109,
+          "board": 83,
+          "transfer": 43,
+          "deliver": 48
+        },
+        "candidate_reasons": {
+          "allowed": 107,
+          "live_conditions": 2
+        },
+        "actual_boarding_services": {
+          "71": 4,
+          "36": 2,
+          "300": 48,
+          "509": 5,
+          "245": 12,
+          "748": 1,
+          "122": 11
+        }
+      }
+    },
+    "3393:3394": {
+      "fresh": {
+        "fates": {
+          "delivered": 130,
+          "pending": 36,
+          "lost": 26
+        },
+        "completed_observed_ticks": {
+          "n": 130,
+          "mean": 2892.2923076923075,
+          "median": 2332.0,
+          "p95": 6745,
+          "maximum": 7444
+        },
+        "completed_metrics": {
+          "riding_ticks": {
+            "n": 130,
+            "mean": 447.4230769230769,
+            "median": 485.0,
+            "p95": 485,
+            "maximum": 485
+          },
+          "waiting_ticks": {
+            "n": 130,
+            "mean": 2444.869230769231,
+            "median": 1847.0,
+            "p95": 6260,
+            "maximum": 6959
+          },
+          "origin_waiting_ticks": {
+            "n": 130,
+            "mean": 2444.869230769231,
+            "median": 1847.0,
+            "p95": 6260,
+            "maximum": 6959
+          },
+          "transfer_waiting_ticks": {
+            "n": 130,
+            "mean": 0,
+            "median": 0.0,
+            "p95": 0,
+            "maximum": 0
+          },
+          "boardings": {
+            "n": 130,
+            "mean": 1,
+            "median": 1.0,
+            "p95": 1,
+            "maximum": 1
+          },
+          "revisits": {
+            "n": 130,
+            "mean": 0,
+            "median": 0.0,
+            "p95": 0,
+            "maximum": 0
+          }
+        },
+        "completed_services": {
+          "524": 35,
+          "525": 95
+        },
+        "pending_observed_elapsed_ticks": {
+          "n": 36,
+          "mean": 1305.4166666666667,
+          "median": 1367.5,
+          "p95": 2821,
+          "maximum": 2897
+        },
+        "pending_maximum_wait": {
+          "n": 36,
+          "mean": 1305.4166666666667,
+          "median": 1367.5,
+          "p95": 2821,
+          "maximum": 2897
+        },
+        "longest_wait_examples": [
+          {
+            "origin": "3393",
+            "destination": "3394",
+            "born": "3181107135",
+            "at": "3181114579",
+            "complete_origin": "1",
+            "riding_ticks": "485",
+            "waiting_ticks": "6959",
+            "origin_waiting_ticks": "6959",
+            "transfer_waiting_ticks": "0",
+            "distance_x16": "208",
+            "boardings": "1",
+            "transfers": "0",
+            "revisits": "0",
+            "returns": "0",
+            "observed_misses": "0",
+            "maximum_wait": "6959",
+            "services": "525",
+            "stop_counts": "188",
+            "stations": "3393;3394",
+            "sample_id": "64",
+            "initial": "0",
+            "initial_packet": "90092",
+            "initial_offset": "1",
+            "origin_departure": "3181114094",
+            "onboard": "0",
+            "location": "3394",
+            "fate": "delivered"
+          },
+          {
+            "origin": "3393",
+            "destination": "3394",
+            "born": "3181107148",
+            "at": "3181114579",
+            "complete_origin": "1",
+            "riding_ticks": "485",
+            "waiting_ticks": "6946",
+            "origin_waiting_ticks": "6946",
+            "transfer_waiting_ticks": "0",
+            "distance_x16": "208",
+            "boardings": "1",
+            "transfers": "0",
+            "revisits": "0",
+            "returns": "0",
+            "observed_misses": "0",
+            "maximum_wait": "6946",
+            "services": "525",
+            "stop_counts": "188",
+            "stations": "3393;3394",
+            "sample_id": "65",
+            "initial": "0",
+            "initial_packet": "399325",
+            "initial_offset": "0",
+            "origin_departure": "3181114094",
+            "onboard": "0",
+            "location": "3394",
+            "fate": "delivered"
+          },
+          {
+            "origin": "3393",
+            "destination": "3394",
+            "born": "3181107508",
+            "at": "3181114579",
+            "complete_origin": "1",
+            "riding_ticks": "485",
+            "waiting_ticks": "6586",
+            "origin_waiting_ticks": "6586",
+            "transfer_waiting_ticks": "0",
+            "distance_x16": "208",
+            "boardings": "1",
+            "transfers": "0",
+            "revisits": "0",
+            "returns": "0",
+            "observed_misses": "0",
+            "maximum_wait": "6586",
+            "services": "525",
+            "stop_counts": "188",
+            "stations": "3393;3394",
+            "sample_id": "68",
+            "initial": "0",
+            "initial_packet": "441560",
+            "initial_offset": "0",
+            "origin_departure": "3181114094",
+            "onboard": "0",
+            "location": "3394",
+            "fate": "delivered"
+          }
+        ]
+      },
+      "initial": {
+        "fates": {},
+        "completed_observed_ticks": null,
+        "completed_metrics": {
+          "riding_ticks": null,
+          "waiting_ticks": null,
+          "origin_waiting_ticks": null,
+          "transfer_waiting_ticks": null,
+          "boardings": null,
+          "revisits": null
+        },
+        "completed_services": {},
+        "pending_observed_elapsed_ticks": null,
+        "pending_maximum_wait": null,
+        "longest_wait_examples": []
+      },
+      "late_observed": {
+        "fates": {
+          "delivered": 1
+        },
+        "completed_observed_ticks": {
+          "n": 1,
+          "mean": 485,
+          "median": 485,
+          "p95": 485,
+          "maximum": 485
+        },
+        "completed_metrics": {
+          "riding_ticks": {
+            "n": 1,
+            "mean": 485,
+            "median": 485,
+            "p95": 485,
+            "maximum": 485
+          },
+          "waiting_ticks": {
+            "n": 1,
+            "mean": 0,
+            "median": 0,
+            "p95": 0,
+            "maximum": 0
+          },
+          "origin_waiting_ticks": {
+            "n": 1,
+            "mean": 0,
+            "median": 0,
+            "p95": 0,
+            "maximum": 0
+          },
+          "transfer_waiting_ticks": {
+            "n": 1,
+            "mean": 0,
+            "median": 0,
+            "p95": 0,
+            "maximum": 0
+          },
+          "boardings": {
+            "n": 1,
+            "mean": 1,
+            "median": 1,
+            "p95": 1,
+            "maximum": 1
+          },
+          "revisits": {
+            "n": 1,
+            "mean": 0,
+            "median": 0,
+            "p95": 0,
+            "maximum": 0
+          }
+        },
+        "completed_services": {
+          "525": 1
+        },
+        "pending_observed_elapsed_ticks": null,
+        "pending_maximum_wait": null,
+        "longest_wait_examples": [
+          {
+            "origin": "3393",
+            "destination": "3394",
+            "born": "3181114094",
+            "at": "3181114579",
+            "complete_origin": "0",
+            "riding_ticks": "485",
+            "waiting_ticks": "0",
+            "origin_waiting_ticks": "0",
+            "transfer_waiting_ticks": "0",
+            "distance_x16": "208",
+            "boardings": "1",
+            "transfers": "0",
+            "revisits": "0",
+            "returns": "0",
+            "observed_misses": "0",
+            "maximum_wait": "0",
+            "services": "525",
+            "stop_counts": "188",
+            "stations": "3393;3394",
+            "sample_id": "177",
+            "initial": "0",
+            "initial_packet": "854",
+            "initial_offset": "0",
+            "origin_departure": "3181114094",
+            "onboard": "0",
+            "location": "3394",
+            "fate": "delivered"
+          }
+        ]
+      },
+      "queried_events": {
+        "events": {
+          "candidate": 261,
+          "board": 131,
+          "deliver": 131
+        },
+        "candidate_reasons": {
+          "allowed": 261
+        },
+        "actual_boarding_services": {
+          "524": 35,
+          "525": 96
+        }
+      }
+    }
+  },
+  "limitations": "One midpoint representative per target packet, not passenger-weighted. Fresh, initial and late-observed samples are separate. Pending and lost are excluded from completed durations. Candidate reasons are auxiliary wrapper classifications of queried cohorts, may repeat cached opportunities and do not enumerate every train arrival."
+}

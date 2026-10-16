@@ -1,0 +1,373 @@
+[
+  {
+    "path": "README.md",
+    "bytes": 3708,
+    "sha256": "70b026dd1e0e7d06cb92f22390a0d47be0d6f22654061f426e00aff8624dfed0",
+    "original_bytes": 3708,
+    "original_sha256": "70b026dd1e0e7d06cb92f22390a0d47be0d6f22654061f426e00aff8624dfed0"
+  },
+  {
+    "path": "checks/build-join-budgets-mp.log.gz",
+    "bytes": 441,
+    "sha256": "239b9b7bb467459d4d20b71c5b8de0fa1bc73054144d5b508ba5baa2e1ffb8af",
+    "original_bytes": 1011,
+    "original_sha256": "5786e2ae6554b259e0db1c6ded2485c91b5633bb29524e467cad514062a5f7ec"
+  },
+  {
+    "path": "checks/build-join-budgets-product.log.gz",
+    "bytes": 478,
+    "sha256": "1d48fa613c693a2e6ef67606de6e4ad3309ca22dc88e105d15c5dcf321baeb20",
+    "original_bytes": 1954,
+    "original_sha256": "9a09823970e0cd93418478391052c77b6adcc69a695731ac7c85b75d5d16b4b2"
+  },
+  {
+    "path": "checks/build-join-budgets.log.gz",
+    "bytes": 2460,
+    "sha256": "c44d7114cbcbeb8cd51566e97461afe6271251005ec6cc6d2d249cde18d9e3a9",
+    "original_bytes": 10285,
+    "original_sha256": "95ff5c5555a86aaad246b28ebe237706b0c3e96c086957e805c4c6978dd5c65f"
+  },
+  {
+    "path": "checks/ctest-join-budgets-product.log.gz",
+    "bytes": 27787,
+    "sha256": "6e483303d531e08c11967f3d134a1d7765d4c6495bafe35c2eff702c00a6df76",
+    "original_bytes": 176462,
+    "original_sha256": "1c9b964200b0aae35c347914de7030dae4b0f495637e0c58a6102f20158637b1"
+  },
+  {
+    "path": "checks/prepare-join-budgets-mp.log.gz",
+    "bytes": 20,
+    "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+    "original_bytes": 0,
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "checks/unit-join-budgets.log.gz",
+    "bytes": 99,
+    "sha256": "87ff289bd9f8fd6f03421c68b045845fb9adf87be923dbf0320e6ca7db4365d0",
+    "original_bytes": 161,
+    "original_sha256": "71b190e210f8ecdd4d13bf8c944bc6963463902e6bdaec877be8f2b577655e6d"
+  },
+  {
+    "path": "multiplayer/mp-join-budgets-fixture/client/console.txt.gz",
+    "bytes": 3848,
+    "sha256": "c4e84f1388a1a6c4ba3fcb6bac274ae22b7bdf8967f99ed0cf4f3285ed38ed60",
+    "original_bytes": 14685,
+    "original_sha256": "b6bec6be7906e9da0afa067d2e8d252a9bc99997cae74c066a26e5694cc4af9a"
+  },
+  {
+    "path": "multiplayer/mp-join-budgets-fixture/client/openttd.cfg",
+    "bytes": 261,
+    "sha256": "2105c6b3cf8ecabaa3c02c81c2ca6b6f79f0b44a0e3f5f0f15fedbbf97cb1062",
+    "original_bytes": 261,
+    "original_sha256": "2105c6b3cf8ecabaa3c02c81c2ca6b6f79f0b44a0e3f5f0f15fedbbf97cb1062"
+  },
+  {
+    "path": "multiplayer/mp-join-budgets-fixture/client/save-integrity.json",
+    "bytes": 622,
+    "sha256": "2bd611fdfcd2a6340a21d6fd970a7a97312b41d934574cd6ab8a9064bbf370e5",
+    "original_bytes": 622,
+    "original_sha256": "2bd611fdfcd2a6340a21d6fd970a7a97312b41d934574cd6ab8a9064bbf370e5"
+  },
+  {
+    "path": "multiplayer/mp-join-budgets-fixture/client/stderr.txt.gz",
+    "bytes": 716,
+    "sha256": "c6c80bc5869df5df46c946d48fed78749b4668e92bb8325825f8348670521301",
+    "original_bytes": 4415,
+    "original_sha256": "385faf99dd32c08de81ec3b1f401eaece060c889c54d6bc20b4680b27bc750a9"
+  },
+  {
+    "path": "multiplayer/mp-join-budgets-fixture/client/stdout.txt.gz",
+    "bytes": 20,
+    "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+    "original_bytes": 0,
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "multiplayer/mp-join-budgets-fixture/client/transport-console.txt.gz",
+    "bytes": 4566,
+    "sha256": "b30744cfd649fe5bb4100fe35a35694f8c8c4d316474c8263da4720a5e184ff4",
+    "original_bytes": 72082,
+    "original_sha256": "e9c0fb1ba1780b23a1885f8ed72ff1c6ad72080998872756ba681cbe07bb8984"
+  },
+  {
+    "path": "multiplayer/mp-join-budgets-fixture/result.json",
+    "bytes": 7170,
+    "sha256": "05f114e81ab560a070a655ea2d2aaf17d92ef7f01855b975d57ecb91f711c982",
+    "original_bytes": 7170,
+    "original_sha256": "05f114e81ab560a070a655ea2d2aaf17d92ef7f01855b975d57ecb91f711c982"
+  },
+  {
+    "path": "multiplayer/mp-join-budgets-fixture/server/console.txt.gz",
+    "bytes": 3907,
+    "sha256": "4f4b58151ffa0b1fae9e17a452f6eb6828247e451caa87f0c0746892aa52007e",
+    "original_bytes": 15050,
+    "original_sha256": "363c31007149c70a4519064373ea9a910399928b7c6e3eb7207322097ee3393b"
+  },
+  {
+    "path": "multiplayer/mp-join-budgets-fixture/server/end-console.txt.gz",
+    "bytes": 3919,
+    "sha256": "29d2e06e769c2aaa07acf32b83c7dd25695baf765f238ab5d0d9cf28ef69d184",
+    "original_bytes": 14691,
+    "original_sha256": "815c7b73c963b0f1d0f340e73041ff449badd46b4ceedbfbab421d52a4ec387e"
+  },
+  {
+    "path": "multiplayer/mp-join-budgets-fixture/server/openttd.cfg",
+    "bytes": 261,
+    "sha256": "7478e054a4e07bcad2607d9f4984bf328d77451a4f3c8e346b7a75f51f9b0e40",
+    "original_bytes": 261,
+    "original_sha256": "7478e054a4e07bcad2607d9f4984bf328d77451a4f3c8e346b7a75f51f9b0e40"
+  },
+  {
+    "path": "multiplayer/mp-join-budgets-fixture/server/save-integrity.json",
+    "bytes": 622,
+    "sha256": "2bd611fdfcd2a6340a21d6fd970a7a97312b41d934574cd6ab8a9064bbf370e5",
+    "original_bytes": 622,
+    "original_sha256": "2bd611fdfcd2a6340a21d6fd970a7a97312b41d934574cd6ab8a9064bbf370e5"
+  },
+  {
+    "path": "multiplayer/mp-join-budgets-fixture/server/stderr.txt.gz",
+    "bytes": 700,
+    "sha256": "6654aee1e6b6a3ab94190a87f237c57fc7a14de645c8a619f2267ac9949acac7",
+    "original_bytes": 1738,
+    "original_sha256": "f1c375632a2e83d752820c9907093a4307d082d192f199eb7d23f739d9641290"
+  },
+  {
+    "path": "multiplayer/mp-join-budgets-fixture/server/stdout.txt.gz",
+    "bytes": 4674,
+    "sha256": "1869ae328a5f66f591431018dc2c0322421f79521501588adebab5107bb6157b",
+    "original_bytes": 31360,
+    "original_sha256": "49be1df088bcff4e03c09cf9aa949c536b31cff387dea1ac738848346c9206a7"
+  },
+  {
+    "path": "multiplayer/mp-join-budgets-stalled/client/openttd.cfg",
+    "bytes": 261,
+    "sha256": "2105c6b3cf8ecabaa3c02c81c2ca6b6f79f0b44a0e3f5f0f15fedbbf97cb1062",
+    "original_bytes": 261,
+    "original_sha256": "2105c6b3cf8ecabaa3c02c81c2ca6b6f79f0b44a0e3f5f0f15fedbbf97cb1062"
+  },
+  {
+    "path": "multiplayer/mp-join-budgets-stalled/client/stderr.txt.gz",
+    "bytes": 5551,
+    "sha256": "c0d6562a6780ee5d5628bb776c60316d942020e16e353a2d784f3b56dbea6573",
+    "original_bytes": 582531,
+    "original_sha256": "16983e8a85a60a02d9fff0739cca16166f621e895e5ced32cf377a5f75f04e31"
+  },
+  {
+    "path": "multiplayer/mp-join-budgets-stalled/client/stdout.txt.gz",
+    "bytes": 20,
+    "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+    "original_bytes": 0,
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "multiplayer/mp-join-budgets-stalled/result.json",
+    "bytes": 1919,
+    "sha256": "0186a9168bb7b98d85dcb22ec43f9248c042965e02fd177dd021334e8d9cd64b",
+    "original_bytes": 1919,
+    "original_sha256": "0186a9168bb7b98d85dcb22ec43f9248c042965e02fd177dd021334e8d9cd64b"
+  },
+  {
+    "path": "multiplayer/mp-join-budgets-stalled/server/console.txt.gz",
+    "bytes": 4055,
+    "sha256": "007e85c94edaabe9e65bb338e2bdc90421e043403ee2fa50571d7f140ea3c7d3",
+    "original_bytes": 15232,
+    "original_sha256": "9a19f4aa6230da1c08ec50fac127085516cb055534e82b1ab58b86007b788db8"
+  },
+  {
+    "path": "multiplayer/mp-join-budgets-stalled/server/openttd.cfg",
+    "bytes": 261,
+    "sha256": "7478e054a4e07bcad2607d9f4984bf328d77451a4f3c8e346b7a75f51f9b0e40",
+    "original_bytes": 261,
+    "original_sha256": "7478e054a4e07bcad2607d9f4984bf328d77451a4f3c8e346b7a75f51f9b0e40"
+  },
+  {
+    "path": "multiplayer/mp-join-budgets-stalled/server/save-integrity.json",
+    "bytes": 654,
+    "sha256": "30323a7f8385151c1d617e265c81eac2197aad93f0a7dd4bcf3670640e9658db",
+    "original_bytes": 654,
+    "original_sha256": "30323a7f8385151c1d617e265c81eac2197aad93f0a7dd4bcf3670640e9658db"
+  },
+  {
+    "path": "multiplayer/mp-join-budgets-stalled/server/stderr.txt.gz",
+    "bytes": 5795,
+    "sha256": "ff6a026afdea1aa247f3d51b7367c86cd010e2ad567293ccfb1a19bc4bbd287e",
+    "original_bytes": 583111,
+    "original_sha256": "f0dca45052f9af6e2b79ce3d29a481221342f3ac77b8dc8a83dad428366ffded"
+  },
+  {
+    "path": "multiplayer/mp-join-budgets-stalled/server/stdout.txt.gz",
+    "bytes": 4496,
+    "sha256": "8b68790b067dbfa1b48a1e5743773640eaf23a1e22d0bad4994694bbaf45ab14",
+    "original_bytes": 16451,
+    "original_sha256": "0c9be3354732f34c92b65141dd678ab96001b324fd6123359fad3ab77c5acd5b"
+  },
+  {
+    "path": "multiplayer/mp-join-budgets-startup/client/console.txt.gz",
+    "bytes": 3998,
+    "sha256": "0aeaba8f42065fcafaf084ffa6f70c370e73eaca505a766fe105f3a0635174f7",
+    "original_bytes": 14884,
+    "original_sha256": "fd5062ef2a8e9f249bf6ab643e15add49f43c088b4c29522ea35d22fda53d9f2"
+  },
+  {
+    "path": "multiplayer/mp-join-budgets-startup/client/join-replay.json",
+    "bytes": 136,
+    "sha256": "67d0d3ae4e681af5d7767f945360b2dc5c2afa2c59d5a2e580f7c0998a8a0453",
+    "original_bytes": 136,
+    "original_sha256": "67d0d3ae4e681af5d7767f945360b2dc5c2afa2c59d5a2e580f7c0998a8a0453"
+  },
+  {
+    "path": "multiplayer/mp-join-budgets-startup/client/openttd.cfg",
+    "bytes": 261,
+    "sha256": "2105c6b3cf8ecabaa3c02c81c2ca6b6f79f0b44a0e3f5f0f15fedbbf97cb1062",
+    "original_bytes": 261,
+    "original_sha256": "2105c6b3cf8ecabaa3c02c81c2ca6b6f79f0b44a0e3f5f0f15fedbbf97cb1062"
+  },
+  {
+    "path": "multiplayer/mp-join-budgets-startup/client/save-integrity.json",
+    "bytes": 662,
+    "sha256": "49643f1376feeea169ae69c17f7312b87c1930c465ed301e63684703eed49c48",
+    "original_bytes": 662,
+    "original_sha256": "49643f1376feeea169ae69c17f7312b87c1930c465ed301e63684703eed49c48"
+  },
+  {
+    "path": "multiplayer/mp-join-budgets-startup/client/stderr.txt.gz",
+    "bytes": 21090,
+    "sha256": "b2056da78cc4d0040748d596932dbd8cd2a9f0a462c0be0d0f153ce5398f9fb3",
+    "original_bytes": 2702128,
+    "original_sha256": "1c72cc2e92b549316ac59ac1ea70e7395e0364dbe687eaf83039e2c1a7c1dfd8"
+  },
+  {
+    "path": "multiplayer/mp-join-budgets-startup/client/stdout.txt.gz",
+    "bytes": 20,
+    "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+    "original_bytes": 0,
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "multiplayer/mp-join-budgets-startup/client/transport-console.txt.gz",
+    "bytes": 4519,
+    "sha256": "d426114f143d200f001b6537f44fcecdc4f6d8b1939f629744b195008f262098",
+    "original_bytes": 29580,
+    "original_sha256": "fbe6ef6e7ef8d97f59a6f7c49d35403a3eab37ef1e274257aedc984bb57f5513"
+  },
+  {
+    "path": "multiplayer/mp-join-budgets-startup/result.json",
+    "bytes": 5910,
+    "sha256": "7fd3072393590325dfa67985a51d769239b2a9ac0945870fdaa8934476e5d016",
+    "original_bytes": 5910,
+    "original_sha256": "7fd3072393590325dfa67985a51d769239b2a9ac0945870fdaa8934476e5d016"
+  },
+  {
+    "path": "multiplayer/mp-join-budgets-startup/server/console.txt.gz",
+    "bytes": 4003,
+    "sha256": "7716bacaede0478ba12cb58e3df35df9fc912d97943d02e4c7ee6bf447009364",
+    "original_bytes": 15182,
+    "original_sha256": "a0781c99eb297afaa0e7839bb97e57426674bbc2b5549e928f6b79038520cf5b"
+  },
+  {
+    "path": "multiplayer/mp-join-budgets-startup/server/end-console.txt.gz",
+    "bytes": 4178,
+    "sha256": "9af7f5cd9c307f91e65c3e6db6b7410816a995fbde3ce5ba5d0413a3a3e3a3c1",
+    "original_bytes": 15007,
+    "original_sha256": "40917bb927f1f99e064ab46067bec288b3cfb4d7bc59fa7971c45ec3acbac8a8"
+  },
+  {
+    "path": "multiplayer/mp-join-budgets-startup/server/openttd.cfg",
+    "bytes": 261,
+    "sha256": "7478e054a4e07bcad2607d9f4984bf328d77451a4f3c8e346b7a75f51f9b0e40",
+    "original_bytes": 261,
+    "original_sha256": "7478e054a4e07bcad2607d9f4984bf328d77451a4f3c8e346b7a75f51f9b0e40"
+  },
+  {
+    "path": "multiplayer/mp-join-budgets-startup/server/save-integrity.json",
+    "bytes": 662,
+    "sha256": "49643f1376feeea169ae69c17f7312b87c1930c465ed301e63684703eed49c48",
+    "original_bytes": 662,
+    "original_sha256": "49643f1376feeea169ae69c17f7312b87c1930c465ed301e63684703eed49c48"
+  },
+  {
+    "path": "multiplayer/mp-join-budgets-startup/server/stderr.txt.gz",
+    "bytes": 23928,
+    "sha256": "ecee3124f3adb556958783c678e802d9108e5e023d358d4428745da289a4ac78",
+    "original_bytes": 2724825,
+    "original_sha256": "a7fc5c1f705130cbd1312460b175c08a41c2d96d1f02bd41bda701ab667f9670"
+  },
+  {
+    "path": "multiplayer/mp-join-budgets-startup/server/stdout.txt.gz",
+    "bytes": 5253,
+    "sha256": "9fd73783f514e28d53c7daa4a99fd3d658db9e20d524309f7c442feaee4a81b3",
+    "original_bytes": 31590,
+    "original_sha256": "bc6fff4b0333af9c6f796745d087e2c3dfa1bf294164d53414d7783a5146723e"
+  },
+  {
+    "path": "provenance/manifest.json",
+    "bytes": 4201,
+    "sha256": "59e4299420f6ecfba860496bb934426a733f8c8bcf52d22cf1c95f4208812e36",
+    "original_bytes": 4201,
+    "original_sha256": "59e4299420f6ecfba860496bb934426a733f8c8bcf52d22cf1c95f4208812e36"
+  },
+  {
+    "path": "provenance/real-map-driver/null_v.cpp.gz",
+    "bytes": 2023,
+    "sha256": "ee3790fad44946ddffac95c86a1b683d7a1503990c4fc8419325f8c54c79c137",
+    "original_bytes": 5681,
+    "original_sha256": "13ddf9e96da23e487df3432304b3c1b015cbc2b72871af99ff64eb14045b0d05"
+  },
+  {
+    "path": "provenance/real-map-driver/win32.cpp.gz",
+    "bytes": 8912,
+    "sha256": "34bc50edb0c2f2c124997f2215ab4fbb135329c0f6d5815686e7b0660ad38e2a",
+    "original_bytes": 28230,
+    "original_sha256": "c346d64f7e6316d93d5cc1535f6c649121c3f5fe57117a5b95ec6230ec142baf"
+  },
+  {
+    "path": "provenance/save-integrity/cargopacket.cpp.gz",
+    "bytes": 21883,
+    "sha256": "7e3bbedfd069a3f85b6597134d6f62a756ac9205d35c8f054359e0b3d9cb04ea",
+    "original_bytes": 98761,
+    "original_sha256": "727f6c3d10b58fb013bb603fcd448faeb3cdbe764cea6ca493e8d86067cd89df"
+  },
+  {
+    "path": "provenance/save-integrity/cargopacket_sl.cpp.gz",
+    "bytes": 4701,
+    "sha256": "2ac934589efbe9b10b4ba59d66f4da4911a555c30468ff44a70b2d55e8bac495",
+    "original_bytes": 19884,
+    "original_sha256": "49be75f27f1328aebce1d5c0ba279481e069e724f9c94f44c28e802fc14fc9fe"
+  },
+  {
+    "path": "provenance/save-integrity/command.cpp.gz",
+    "bytes": 11086,
+    "sha256": "3896026f36ab3ae3fb42a14fe5cca0e9e8204b15cf917e199b98567c12df57bd",
+    "original_bytes": 41760,
+    "original_sha256": "d61bff6214002b0af20a7874052d36511d7c850e1fc5e5c7dc77d1174212535a"
+  },
+  {
+    "path": "provenance/save-integrity/console_cmds.cpp.gz",
+    "bytes": 52386,
+    "sha256": "2f3156232411d6925ca60c4db82433311cbbc9912c88f72c2cd9df9751aab32b",
+    "original_bytes": 246154,
+    "original_sha256": "47c8461f766fb5ca5d08940a999d6b305e676b7e2a500c11a25b92b3ee73c2ab"
+  },
+  {
+    "path": "provenance/save-integrity/integrity.h.gz",
+    "bytes": 2032,
+    "sha256": "be6837e54447d04650ddf08079f7bdb7abba054ff137f68e95de2e77fdcc886a",
+    "original_bytes": 6245,
+    "original_sha256": "11698430fba6f2297df0b48e3a3e13df1f9d8e72f8bfe238767e3ac6e24b7fa3"
+  },
+  {
+    "path": "provenance/save-integrity/passenger_service_database.cpp.gz",
+    "bytes": 32140,
+    "sha256": "d568670a4bd0d8c715dae73108404a36e849273e62f9f3b44d7915892fa51b96",
+    "original_bytes": 135828,
+    "original_sha256": "e98a3abe443ce28af2c833c107a52cb9cb8810bcf2010ad8c57d9e911f057b2f"
+  },
+  {
+    "path": "summary.json",
+    "bytes": 17458,
+    "sha256": "75f8a81d342f244476988eae8f9236a606867e13aef51223b69f3c76d94d3140",
+    "original_bytes": 17458,
+    "original_sha256": "75f8a81d342f244476988eae8f9236a606867e13aef51223b69f3c76d94d3140"
+  }
+]

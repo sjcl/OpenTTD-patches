@@ -1,0 +1,33 @@
+MSBuild のバージョン 17.14.40+3e7442088 (.NET Framework)
+
+  strgen.vcxproj -> C:\Users\bebe\.codex\worktrees\6fb9\OpenTTD-patches\build-packet-events\src\strgen\Release\strgen.exe
+  settingsgen.vcxproj -> C:\Users\bebe\.codex\worktrees\6fb9\OpenTTD-patches\build-packet-events\src\settingsgen\Release\settingsgen.exe
+  -- Version string: jgrpp-ya-0.73.3+2-124-gffb3dc98d-m, Release: 0.73.3+2, Online contents compatible jgrpp version: 0.73.3
+  -- Generating rev.cpp
+  -- Generating ottdres.rc
+  -- Generating CPackProperties.cmake
+  -- Generating Doxyfile
+  -- Generating Doxyfile_AI
+  -- Generating Doxyfile_GS
+  cargopacket.cpp
+  console_cmds.cpp
+  win32.cpp
+  null_v.cpp
+  cargopacket_sl.cpp
+  openttd_lib.vcxproj -> C:\Users\bebe\.codex\worktrees\6fb9\OpenTTD-patches\build-packet-events\openttd_lib.dir\Release\openttd_lib.lib
+  openttd_test.vcxproj -> C:\Users\bebe\.codex\worktrees\6fb9\OpenTTD-patches\build-packet-events\Release\openttd_test.exe
+MSBuild のバージョン 17.14.40+3e7442088 (.NET Framework)
+
+  strgen.vcxproj -> C:\Users\bebe\.codex\worktrees\6fb9\OpenTTD-patches\build-packet-events\src\strgen\Release\strgen.exe
+  settingsgen.vcxproj -> C:\Users\bebe\.codex\worktrees\6fb9\OpenTTD-patches\build-packet-events\src\settingsgen\Release\settingsgen.exe
+  -- Version string: jgrpp-ya-0.73.3+2-124-gffb3dc98d-m, Release: 0.73.3+2, Online contents compatible jgrpp version: 0.73.3
+  -- Generating rev.cpp
+  -- Generating ottdres.rc
+  -- Generating CPackProperties.cmake
+  -- Generating Doxyfile
+  -- Generating Doxyfile_AI
+  -- Generating Doxyfile_GS
+  openttd_lib.vcxproj -> C:\Users\bebe\.codex\worktrees\6fb9\OpenTTD-patches\build-packet-events\openttd_lib.dir\Release\openttd_lib.lib
+  openttd.vcxproj -> C:\Users\bebe\.codex\worktrees\6fb9\OpenTTD-patches\build-packet-events\Release\openttd.exe
+MSBuild のバージョン 17.14.40+3e7442088 (.NET Framework)
+

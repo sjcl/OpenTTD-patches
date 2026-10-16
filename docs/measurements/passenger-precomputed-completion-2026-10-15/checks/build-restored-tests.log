@@ -1,0 +1,55 @@
+Test project C:/Users/bebe/.codex/worktrees/ef5d/OpenTTD-patches/build-completion
+      Start 623: passenger_journey_active_production
+      Start 622: passenger_od_load
+      Start 385: Precomputed startup completes discovery and all rows without simulation
+      Start 396: Precomputed replacement retires rows at publication without retaining two matrices
+      Start 386: Precomputed replacement retains pending destination rows across every saved frontier
+      Start 397: Precomputed legacy cursors map to the same compact publication frontier
+      Start 376: Precomputed active journeys bypass OD admission and survive partial-build saves
+      Start 387: Precomputed replacement coalesces edits and rejects only unsafe live rides
+ 1/25 Test #385: Precomputed startup completes discovery and all rows without simulation ...................   Passed    0.66 sec
+ 2/25 Test #396: Precomputed replacement retires rows at publication without retaining two matrices ........   Passed    0.55 sec
+ 3/25 Test #386: Precomputed replacement retains pending destination rows across every saved frontier ......   Passed    0.45 sec
+ 4/25 Test #397: Precomputed legacy cursors map to the same compact publication frontier ...................   Passed    0.35 sec
+      Start 377: Precomputed frozen build progresses during a pending sweep and replays saved input
+      Start 388: Precomputed boarding uses primary FIFO order through refresh wake and partial moves
+      Start 378: Precomputed long builds retain a complete epoch before cost refresh
+      Start 389: Precomputed trees preserve through rides and physical occurrences
+ 5/25 Test #376: Precomputed active journeys bypass OD admission and survive partial-build saves ...........   Passed    0.70 sec
+      Start 379: Precomputed cost regrouping wakes queues without a live revision or row-count change
+ 6/25 Test #387: Precomputed replacement coalesces edits and rejects only unsafe live rides ................   Passed    0.72 sec
+ 7/25 Test #377: Precomputed frozen build progresses during a pending sweep and replays saved input ........   Passed    0.58 sec
+ 8/25 Test #388: Precomputed boarding uses primary FIFO order through refresh wake and partial moves .......   Passed    0.46 sec
+ 9/25 Test #378: Precomputed long builds retain a complete epoch before cost refresh .......................   Passed    0.32 sec
+      Start 390: Precomputed masks and forced alighting cannot be bypassed
+      Start 380: Precomputed waiting index excludes unrelated packets and preserves partial reservations
+      Start 391: Precomputed frozen costs refresh only compatible live service bindings
+      Start 381: Precomputed waiting wake queue and identical service binding are live validated
+10/25 Test #389: Precomputed trees preserve through rides and physical occurrences .........................   Passed    0.63 sec
+      Start 392: Precomputed incoming service states rescue routes beyond fixed K
+11/25 Test #379: Precomputed cost regrouping wakes queues without a live revision or row-count change ......   Passed    0.66 sec
+12/25 Test #390: Precomputed masks and forced alighting cannot be bypassed .................................   Passed    0.55 sec
+13/25 Test #380: Precomputed waiting index excludes unrelated packets and preserves partial reservations ...   Passed    0.44 sec
+14/25 Test #391: Precomputed frozen costs refresh only compatible live service bindings ....................   Passed    0.32 sec
+      Start 382: Precomputed waiting events survive save tables without inventing a routing pass
+      Start 393: Precomputed identical fleets aggregate without synthetic headways
+      Start 383: Precomputed idle loading passes do not rescan or replan waiting passengers
+      Start 394: Precomputed publication is independent of build chunk and query history
+15/25 Test #381: Precomputed waiting wake queue and identical service binding are live validated ...........   Passed    0.83 sec
+      Start 384: Precomputed generation capture retains large shared physical fleets
+16/25 Test #392: Precomputed incoming service states rescue routes beyond fixed K ..........................   Passed    0.86 sec
+17/25 Test #382: Precomputed waiting events survive save tables without inventing a routing pass ...........   Passed    0.73 sec
+18/25 Test #393: Precomputed identical fleets aggregate without synthetic headways .........................   Passed    0.59 sec
+19/25 Test #383: Precomputed idle loading passes do not rescan or replan waiting passengers ................   Passed    0.39 sec
+      Start 395: Precomputed published rows retain only query states
+20/25 Test #394: Precomputed publication is independent of build chunk and query history ...................   Passed    0.38 sec
+21/25 Test #384: Precomputed generation capture retains large shared physical fleets .......................   Passed    0.24 sec
+22/25 Test #395: Precomputed published rows retain only query states .......................................   Passed    0.19 sec
+23/25 Test #622: passenger_od_load .........................................................................   Passed    4.89 sec
+24/25 Test #623: passenger_journey_active_production .......................................................   Passed    9.35 sec
+      Start 624: passenger_journey_shadow_production
+25/25 Test #624: passenger_journey_shadow_production .......................................................   Passed    5.35 sec
+
+100% tests passed, 0 tests failed out of 25
+
+Total Test time (real) =  14.85 sec

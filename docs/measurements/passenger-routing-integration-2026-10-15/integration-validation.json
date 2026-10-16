@@ -1,0 +1,159 @@
+{
+  "runtime_revision": "a2915e1844",
+  "tests": "671/671 passed; 86.82 seconds",
+  "transport_quality_approved": false,
+  "quality_open_findings": [
+    "Undeclared-timetable connections are outside the precomputed graph",
+    "Completed new-trip waiting time and several OD tails regress",
+    "An initial matched person takes 11.22 times as long with a larger detour"
+  ],
+  "precomputed": "70 cases, 558308 assertions",
+  "arrivals": "1 case, 153009 assertions",
+  "runs": {
+    "cpu-legacy": {
+      "actual_ticks": 4096,
+      "payments_valid": true,
+      "contamination": [],
+      "timing_used": true,
+      "input_sha256": "6783a500f47435a342a36e9a6544e33bb38f041abe91e9e2ff2c654edd16c978",
+      "binary_sha256": "0c618014cee43108328780485c24da05d5914ef705d85e26f60a5b69dd64590f"
+    },
+    "cpu-precomputed-warm": {
+      "actual_ticks": 4096,
+      "payments_valid": true,
+      "contamination": [],
+      "timing_used": true,
+      "input_sha256": "6783a500f47435a342a36e9a6544e33bb38f041abe91e9e2ff2c654edd16c978",
+      "binary_sha256": "0c618014cee43108328780485c24da05d5914ef705d85e26f60a5b69dd64590f"
+    },
+    "cpu-precomputed-update": {
+      "actual_ticks": 4096,
+      "payments_valid": true,
+      "contamination": [],
+      "timing_used": true,
+      "input_sha256": "6783a500f47435a342a36e9a6544e33bb38f041abe91e9e2ff2c654edd16c978",
+      "binary_sha256": "0c618014cee43108328780485c24da05d5914ef705d85e26f60a5b69dd64590f"
+    },
+    "quality-legacy": {
+      "actual_ticks": 24576,
+      "payments_valid": true,
+      "contamination": [],
+      "timing_used": false,
+      "input_sha256": "6783a500f47435a342a36e9a6544e33bb38f041abe91e9e2ff2c654edd16c978",
+      "binary_sha256": "cacdce388abbe847450ff6ab6f62a6d28e4a14d55cdeba35b8c42f053a2125f6",
+      "known_od_movement_matches_core": true
+    },
+    "quality-precomputed": {
+      "actual_ticks": 24576,
+      "payments_valid": true,
+      "contamination": [
+        [
+          "cl:64896"
+        ]
+      ],
+      "timing_used": false,
+      "input_sha256": "6783a500f47435a342a36e9a6544e33bb38f041abe91e9e2ff2c654edd16c978",
+      "binary_sha256": "cacdce388abbe847450ff6ab6f62a6d28e4a14d55cdeba35b8c42f053a2125f6",
+      "known_od_movement_matches_core": true
+    },
+    "cold-precomputed": {
+      "state_ticks": 3181095005,
+      "simulation_advanced": false,
+      "empty_frontier": {
+        "cargo": 0,
+        "patterns": 0,
+        "stations": 0,
+        "states": 0,
+        "edges": 0,
+        "destinations": 0,
+        "bytes": 0,
+        "envelope": 0,
+        "build_ns": 0,
+        "operations": 0,
+        "queries": 0,
+        "query_ns": 0,
+        "hits": 0,
+        "missing": 0,
+        "no_route": 0
+      },
+      "completed_frontier": {
+        "cargo": 0,
+        "patterns": 686,
+        "stations": 4636,
+        "states": 51928,
+        "edges": 626272,
+        "destinations": 4636,
+        "bytes": 4024463932,
+        "envelope": 5752781480,
+        "build_ns": 149836195300,
+        "operations": 4259611387,
+        "queries": 0,
+        "query_ns": 0,
+        "hits": 0,
+        "missing": 0,
+        "no_route": 0
+      },
+      "warm_elapsed_us": 149977137,
+      "peak_working_bytes": 6404980736,
+      "peak_commit_bytes": 6456516608,
+      "process_cpu_seconds": 444.984375
+    },
+    "completed-table-load": {
+      "canonical_comparison": {
+        "canonical_keys": 24,
+        "mismatches": {}
+      },
+      "simulation_advanced": false,
+      "elapsed_seconds": 268.15311039984226,
+      "process_cpu_seconds": 274.15625,
+      "peak_working_bytes": 6324326400,
+      "peak_commit_bytes": 6357139456
+    }
+  },
+  "runtime_source_unchanged_since_tests": true,
+  "original_input_sha256": "6783a500f47435a342a36e9a6544e33bb38f041abe91e9e2ff2c654edd16c978",
+  "trace_neutrality": {
+    "legacy": {
+      "tick": 4096,
+      "canonical_keys": 24,
+      "mismatches": {}
+    },
+    "precomputed": {
+      "tick": 4096,
+      "canonical_keys": 24,
+      "mismatches": {}
+    },
+    "legacy_extended_enrollment": {
+      "tick": 16384,
+      "canonical_keys": 24,
+      "mismatches": {},
+      "comparison": "Earlier limited initial enrollment versus final full initial enrollment"
+    }
+  },
+  "product_markers": {
+    "OPENTTD_PASSENGER_MEASURE": false,
+    "transport-pending.csv": false,
+    "join-replay.json": false,
+    "passenger_benchmark_end.scr": false,
+    "fixture_timetable": false,
+    "OPENTTD_PASSENGER_CHECKPOINT_TICK": false,
+    "Quality published vehicle=": false,
+    "quality_probe": false
+  },
+  "project_measurement_references": {
+    "transport-trace": false,
+    "real-map-driver": false,
+    "save-integrity": false,
+    "protocol-graph": false
+  },
+  "product_sha256": "cb93f99d5ff70532ac9c54efc952e31d3fccb02e37e9a4ab823f567f05476536",
+  "utility_sha256": {
+    "passenger_precomputed_join.py": "ae8c33935871132be4a4a6131e3c01575ff953d9694edc089b65bfa61e0dc791",
+    "passenger_precomputed_join_prepare.py": "60993eb2b9492157cf7c1cff23133623bcddc3d2daca283ba89c38a39dc63e28",
+    "passenger_precomputed_real_map.py": "a5ec4703539ec15c9742c088ca61b2779068c330cba7b7100838faba36a7c1d1",
+    "passenger_precomputed_diagnostic_readback.py": "3184a6dc90bc57beadefe80b085fa4c369e812ae12d379b8c8be1211c8c6a2e5",
+    "passenger_transport_summary.py": "740b454f68884eb5d27a7e5bcd5c7958b4321c62487cde8c44f597fa70535c8e",
+    "passenger_transport_trace.py": "0c271d11d2a4af36e44d48c7772bd4abfba5d7bc322862468b46ff75a117540f",
+    "passenger_transport_trace.h": "74121de20aaf21341b265586cf21717ac27e7679f83eae0431fea4150e6e0604"
+  }
+}

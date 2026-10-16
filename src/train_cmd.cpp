@@ -19,6 +19,7 @@
 #include "strings_func.h"
 #include "viewport_func.h"
 #include "vehicle_func.h"
+#include "passenger_service_database.h"
 #include "sound_func.h"
 #include "ai/ai.hpp"
 #include "game/game.hpp"
@@ -2376,6 +2377,10 @@ CommandCost CmdMoveRailVehicle(DoCommandFlags flags, VehicleID src_veh, VehicleI
 
 	/* do it? */
 	if (flags.Test(DoCommandFlag::Execute)) {
+		/* Notify the original shared lists before head/order ownership changes.
+		 * Rearranging one depot consist must not block every published service. */
+		if (original_src_head->orders != nullptr) InvalidatePassengerServiceDatabase(original_src_head->orders->index);
+		if (original_dst_head != nullptr && original_dst_head->orders != nullptr) InvalidatePassengerServiceDatabase(original_dst_head->orders->index);
 		/* Remove old heads from the statistics */
 		if (original_src_head_front_engine) GroupStatistics::CountVehicle(original_src_head, -1);
 		if (original_dst_head_front_engine) GroupStatistics::CountVehicle(original_dst_head, -1);
@@ -7668,6 +7673,10 @@ static CommandCost CmdTemplateReplaceVehicle(DoCommandFlags flags, Train *incomi
 		return buy;
 	}
 
+	/* A matching template returns above without changing a passenger service.
+	 * Real refits/rearrangements invalidate only this shared order list; nested
+	 * construction/deletion retains its own fleet safety notifications. */
+	if (incoming->orders != nullptr) InvalidatePassengerServiceDatabase(incoming->orders->index);
 	RegisterGameEvents(GEF_TBTR_REPLACEMENT);
 
 	if (need_replacement) {

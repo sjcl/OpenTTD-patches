@@ -216,6 +216,9 @@ bool StationCargoReroute::operator()(CargoPacket *cp)
 	if (cp_new == nullptr) cp_new = cp;
 	StationID next = this->ge->GetVia(cp_new->GetFirstStation(), this->avoid, this->avoid2);
 	assert(next != this->avoid && next != this->avoid2);
+	/* The old node will be erased by ShiftCargo. Detach its indexed position
+	 * first, including in-place reroutes which do not change cargo caches. */
+	if (cp_new == cp) this->source->ForgetWaitingPacket(cp->index);
 	if (this->source != this->destination) {
 		this->source->RemoveFromCache(cp_new, cp_new->Count());
 		this->destination->AddToCache(cp_new);
@@ -224,7 +227,11 @@ bool StationCargoReroute::operator()(CargoPacket *cp)
 	/* Legal, as insert doesn't invalidate iterators in the MultiMap, however
 	 * this might insert the packet between range.first and range.second (which might be end())
 	 * This is why we check for GetKey above to avoid infinite loops. */
-	this->destination->packets.Insert(next, cp_new);
+	if (cp_new->GetPassengerRoutingMode() != PassengerRoutingMode::Journey && Station::IsValidID(cp_new->GetPassengerDestination())) cp_new->SetPassengerLegacyHop(next);
+	PassengerWaitingRoutingChanged(*cp_new);
+	auto &list = this->destination->packets[next];
+	list.push_back(cp_new);
+	if (this->destination->waiting_index_valid) this->destination->IndexPacket(cp_new, next, std::prev(list.end()));
 	return cp_new == cp;
 }
 

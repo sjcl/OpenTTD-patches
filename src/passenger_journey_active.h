@@ -10,6 +10,7 @@
 #include "cargopacket.h"
 #include "passenger_journey_planner.h"
 #include "passenger_query_admission.h"
+#include "passenger_precomputed.h"
 
 bool IsPassengerJourneyRoutingEnabled(CargoType cargo);
 uint64_t PassengerJourneyServiceSignature(const OrderList &orders, CargoType cargo, size_t *budget = nullptr);
@@ -17,6 +18,21 @@ void PassengerJourneySettingsChanged(int32_t);
 class PassengerJourneyLoadingContext;
 void RouteWaitingPassengerJourneys(Station *station, PassengerJourneyLoadingContext *loading = nullptr);
 void AfterLoadPassengerJourneys();
+static constexpr size_t PASSENGER_ROUTING_TICK_WORK = 8192;
+void RunPassengerWaitingEvents(); ///< National due queue; never enumerates Station::Iterate().
+void RebuildPassengerWaitingScheduler(); ///< Load/clock rebase only; restores the debit from saved goods entries.
+bool ConsumePassengerRoutingWork();
+void WakePassengerWaitingCargo(CargoType cargo); ///< A newly published row can resolve dormant ODs.
+struct PassengerWaitingEventDiagnostic {
+	uint64_t pending = 0, overdue = 0, oldest_ticks = 0, maximum_station_backlog = 0;
+	uint64_t on_time = 0, packets = 0, groups = 0, scheduler_microseconds = 0;
+	uint64_t arrival_candidates = 0, arrival_passengers = 0, unresolved_missed = 0;
+};
+PassengerWaitingEventDiagnostic GetPassengerWaitingEventDiagnostic();
+void ResetPassengerWaitingEventDiagnostic();
+void RecordPassengerWaitingEvent(StateTicks due);
+void RecordPassengerWaitingGroup();
+void RecordPassengerWaitingArrival(uint64_t packets, uint64_t passengers, bool missed);
 size_t InvalidatePassengerJourneyVehicle(VehicleID vehicle);
 void RebuildPassengerJourneyVehicleIndex();
 void ClearPassengerOdFallbackCache(); ///< Derived only; cold/warm admission and decisions are identical.
@@ -141,11 +157,15 @@ class PassengerJourneyBoardingContext {
 	mutable PassengerVisitPrediction prediction;
 	mutable size_t predictions = 0;
 	mutable std::map<std::tuple<OrderListID, uint64_t, VehicleOrderID, VehicleOrderID, StationID, StationID, bool>, bool> service_rides;
+	mutable std::map<std::pair<PassengerJourneyExecution, StationID>, std::optional<PassengerJourneyExecution>> extensions;
+	mutable std::tuple<uint64_t, uint64_t, uint64_t> extension_revision{};
 	void Initialize() const;
 	bool ValidateServiceRide(const PassengerJourneyExecution &ride, bool boarding) const;
 public:
 	explicit PassengerJourneyBoardingContext(const Vehicle *vehicle, CargoType cargo = INVALID_CARGO);
 	bool CanBoard(const CargoPacket &packet) const;
+	bool CanBoardIntent(const PassengerJourneyExecution &ride) const { return this->ValidateServiceRide(ride, true); }
+	void ExtendRide(PassengerJourneyExecution &ride, StationID destination) const;
 	bool CanContinue(const CargoPacket &packet) const;
 	size_t GetPredictionCount() const { return this->predictions; }
 };
@@ -174,6 +194,7 @@ class PassengerOdFallbackContext {
 	StationID BoardingVia(const CargoPacket &packet, const Vehicle *vehicle, CargoType cargo);
 public:
 	explicit PassengerOdFallbackContext(size_t work_allowance = 128 * 1024) : work_left(std::min(work_allowance, size_t{128 * 1024})) {}
+	std::span<const StationID> BoardingStops(const Vehicle *vehicle, CargoType cargo);
 	bool CanBoard(const CargoPacket &packet, const Vehicle *vehicle, CargoType cargo);
 	void PrepareBoard(CargoPacket &packet, const Vehicle *vehicle, CargoType cargo);
 	void Invalidate(const Vehicle *vehicle);
@@ -186,11 +207,27 @@ public:
 class PassengerJourneyLoadingContext {
 	std::map<std::pair<VehicleID, CargoType>, PassengerJourneyBoardingContext> boarding;
 	PassengerOdFallbackContext fallback;
+	bool waiting_events = false;
+	using BoardingState = std::tuple<PassengerRoutingMode, StationID, StationID, StateTicks, OrderListID, uint64_t, bool>;
+	struct Decision { StateTicks tick; std::tuple<uint64_t, uint64_t, uint64_t> revision; bool allowed; };
+	std::map<std::pair<VehicleID, CargoType>, std::map<std::pair<BoardingState, PassengerJourneyExecution>, Decision>> decisions;
+	bool CanBoardUncached(const CargoPacket &packet, const Vehicle *vehicle, CargoType cargo);
+	size_t validations = 0, cache_hits = 0;
+	using PendingKey = std::tuple<CargoType, StationID, StationID, StateTicks, OrderListID>;
+	std::map<PendingKey, PassengerPrecomputedPlan> pending_plans;
+	std::tuple<uint64_t, uint64_t, uint64_t> pending_revision{};
+	const PassengerPrecomputedPlan &PendingPlan(const CargoPacket &packet, const Vehicle *vehicle, CargoType cargo);
 public:
+	void EnableWaitingEvents() { this->waiting_events = true; } ///< Actual station simulation only; read-only predicates never wake packets.
 	bool CanBoard(const CargoPacket &packet, const Vehicle *vehicle, CargoType cargo = INVALID_CARGO);
+	void ResolveWaiting(CargoPacket &packet, const Vehicle *vehicle); ///< Selected indexed candidate only, detached before changing its cohort.
+	void ObserveWaitingGroup(const CargoPacket &packet, const Vehicle *vehicle, CargoType cargo, size_t packets);
 	void PrepareBoard(CargoPacket &packet, const Vehicle *vehicle);
 	void Invalidate(const Vehicle *vehicle);
 	size_t GetPredictionCount() const;
+	size_t GetValidationCount() const { return this->validations; }
+	size_t GetBoardingCacheHits() const { return this->cache_hits; }
+	std::span<const StationID> BoardingStops(const Vehicle *vehicle, CargoType cargo) { return this->fallback.BoardingStops(vehicle, cargo); }
 };
 
 /** Shares snapshots/query caches across all coaches and packets at an arrival. */
@@ -207,6 +244,7 @@ class PassengerJourneyActiveContext {
 		PassengerJourneyFallbackReason failure = PassengerJourneyFallbackReason::QueryWork;
 	};
 	std::map<std::tuple<CargoType, StationID, StateTicks, OrderListID>, PeriodicWaiting> periodic_waiting;
+	std::map<std::tuple<CargoType, StationID, StateTicks, OrderListID>, PassengerPrecomputedPlan> precomputed_waiting;
 	PassengerOdFallbackContext fallback;
 	size_t work_left = 4194304;
 	size_t memory_left = 256 * 1024 * 1024;

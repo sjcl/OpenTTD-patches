@@ -1,0 +1,6 @@
+script C:/Users/bebe/.codex/worktrees/ef5d/OpenTTD-patches/build-join-replay/complete/server/console.txt
+pause
+getfulldate
+passenger_journey_stats total
+passenger_journey_stats save_integrity
+script

@@ -1,0 +1,8 @@
+{
+  "canonical_mismatches": {},
+  "population_mismatches": {},
+  "sampling_method": "target_od_packet_representatives",
+  "unaccounted_samples": 0,
+  "unaccounted_fresh_samples": 0,
+  "destination_mismatch_samples": 0
+}

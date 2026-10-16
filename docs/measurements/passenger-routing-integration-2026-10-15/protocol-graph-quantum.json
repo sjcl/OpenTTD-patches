@@ -1,0 +1,6 @@
+{
+  "quantum": 1,
+  "original_sha256": "4243b1a0d63845bd7b7f757e5a111f9138753b2e008cfa64d47154ca473c841e",
+  "instrumented_sha256": "7a5f541e361b6934d3bd4268f975828385e7355c81cd61ddd88dd1c48251a3c8",
+  "note": "Synthetic protocol regression only; never use for performance or real-map transport measurements"
+}

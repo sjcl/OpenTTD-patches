@@ -1,0 +1,47 @@
+{
+  "runtime_source_commit": "c294b447d3086788a49aa67b9c76ccd2c928f3b9",
+  "copied_tus": [
+    {
+      "path": "save-integrity/cargopacket.cpp",
+      "sha256": "727f6c3d10b58fb013bb603fcd448faeb3cdbe764cea6ca493e8d86067cd89df",
+      "active": true
+    },
+    {
+      "path": "save-integrity/cargopacket_sl.cpp",
+      "sha256": "49be75f27f1328aebce1d5c0ba279481e069e724f9c94f44c28e802fc14fc9fe",
+      "active": true
+    },
+    {
+      "path": "save-integrity/command.cpp",
+      "sha256": "d61bff6214002b0af20a7874052d36511d7c850e1fc5e5c7dc77d1174212535a",
+      "active": true
+    },
+    {
+      "path": "save-integrity/console_cmds.cpp",
+      "sha256": "47c8461f766fb5ca5d08940a999d6b305e676b7e2a500c11a25b92b3ee73c2ab",
+      "active": true
+    },
+    {
+      "path": "save-integrity/integrity.h",
+      "sha256": "11698430fba6f2297df0b48e3a3e13df1f9d8e72f8bfe238767e3ac6e24b7fa3",
+      "active": false
+    },
+    {
+      "path": "save-integrity/passenger_service_database.cpp",
+      "sha256": "f01b604c68e2302131954b63561c6b72929942668009b95107f2d38a688a9c0f",
+      "active": true
+    },
+    {
+      "path": "real-map-driver/null_v.cpp",
+      "sha256": "9158c0e30eee253b0558270cc6961ad8e3695970e8ae042f901ea72026dd8b0b",
+      "active": true
+    },
+    {
+      "path": "real-map-driver/win32.cpp",
+      "sha256": "c346d64f7e6316d93d5cc1535f6c649121c3f5fe57117a5b95ec6230ec142baf",
+      "active": true
+    }
+  ],
+  "binary_sha256": "a9c02021321c92ede27ae47781c165a69cddfa26ea3ba1ae7461895a2f402dd5",
+  "project_sha256": "72403c3b1d598c4c153ddc989020dd3906bbbec8f7e3b70aa7ae205b84a37062"
+}

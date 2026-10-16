@@ -708,6 +708,7 @@ static void InitializeNetworkPools(bool close_admins = true)
 	PoolTypes to_clean{PoolType::NetworkClient};
 	if (close_admins) to_clean.Set(PoolType::NetworkAdmin);
 	PoolBase::Clean(to_clean);
+	ServerNetworkGameSocketHandler::ResetPassengerPreparation();
 }
 
 /**
@@ -1289,6 +1290,19 @@ void NetworkGameLoop()
 	if (!_networking) return;
 
 	if (!NetworkReceive()) return;
+	if (!_network_server && !ClientNetworkGameSocketHandler::ProcessMapLoad()) {
+		if (_networking) NetworkSend();
+		return;
+	}
+	if (_network_server && !ServerNetworkGameSocketHandler::PreparePassengerRouting()) {
+		NetworkServer_Tick(false);
+		NetworkSend();
+		return;
+	}
+	if (!_network_server && !ClientNetworkGameSocketHandler::PreparePassengerRouting()) {
+		NetworkSend();
+		return;
+	}
 
 	if (_network_server) {
 		/* Log the sync state to check for in-syncedness of replays. */
@@ -1497,15 +1511,23 @@ void NetworkGameLoop()
 
 		/* Make sure we are at the frame were the server is (quick-frames) */
 		if (_frame_counter_server > _frame_counter) {
-			/* Run a number of frames; when things go bad, get out. */
+			/* Catch-up can contain expensive simulation frames after a join.
+			 * Flush real frame ACKs and receive packets between slices, just
+			 * as during mandatory map replay; never acknowledge unrun frames. */
+			const auto started = std::chrono::steady_clock::now();
+			uint frames = 0;
 			while (_frame_counter_server > _frame_counter) {
+				if (!ClientNetworkGameSocketHandler::PreparePassengerRouting()) break;
 				if (!ClientNetworkGameSocketHandler::GameLoop()) return;
+				/* Fixed-rate video drivers must be able to run more than one
+				 * frame per tick to catch up even when a frame exceeds 8 ms. */
+				if (++frames >= 2 && std::chrono::steady_clock::now() - started >= std::chrono::milliseconds(8)) break;
 			}
 		} else {
 			/* Else, keep on going till _frame_counter_max */
 			if (_frame_counter_max > _frame_counter) {
 				/* Run one frame; if things went bad, get out. */
-				if (!ClientNetworkGameSocketHandler::GameLoop()) return;
+				if (ClientNetworkGameSocketHandler::PreparePassengerRouting() && !ClientNetworkGameSocketHandler::GameLoop()) return;
 			}
 		}
 	}

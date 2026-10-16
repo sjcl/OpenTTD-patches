@@ -1,0 +1,425 @@
+{
+  "aggregate": {
+    "old_mean_us": 46364.51513671875,
+    "warm_mean_us": 28239.9404296875,
+    "cold_mean_us": 48511.73828125,
+    "old_cpu_seconds": 126.2265625,
+    "warm_cpu_seconds": 154.0625,
+    "warm_simulation_reduction_percent": 39.09147901921517,
+    "cold_simulation_change_percent": 4.6311778268349535,
+    "warm_total_cpu_change_percent": 22.052361205669378
+  },
+  "runs": [
+    {
+      "run": "final-old-1",
+      "simulation": {
+        "count": 1024,
+        "mean_us": 46387.0478515625,
+        "p95_us": 74146,
+        "p99_us": 93233,
+        "max_us": 119034
+      },
+      "journey": {
+        "count": 1024,
+        "mean_us": 19294.4384765625,
+        "p95_us": 39057,
+        "p99_us": 53368,
+        "max_us": 71412
+      },
+      "second_half_simulation": {
+        "count": 512,
+        "mean_us": 45281.583984375,
+        "p95_us": 71655,
+        "p99_us": 87849,
+        "max_us": 98058
+      },
+      "cpu_seconds": 127.125,
+      "wall_seconds": 66.71847319975495,
+      "peak_working_gib": 2.0365257263183594,
+      "delivered_all_passengers": 49368,
+      "waiting_before": 482253,
+      "waiting_after": 483037,
+      "known_od_transport": {
+        "boarded": 315320,
+        "transferred": 285275,
+        "delivered": 46695
+      },
+      "precomputed": null,
+      "initial_build": null,
+      "result_sha256": "be6a950d151a54694ba580286cd51f7b8184b013d49550bb3f6809af02f15c1a",
+      "packet_digest": 12620900524169389208,
+      "payment_digest": 15353068529791355186
+    },
+    {
+      "run": "final-old-2",
+      "simulation": {
+        "count": 1024,
+        "mean_us": 46341.982421875,
+        "p95_us": 74450,
+        "p99_us": 95529,
+        "max_us": 127092
+      },
+      "journey": {
+        "count": 1024,
+        "mean_us": 19314.4521484375,
+        "p95_us": 39737,
+        "p99_us": 52856,
+        "max_us": 69542
+      },
+      "second_half_simulation": {
+        "count": 512,
+        "mean_us": 46504.833984375,
+        "p95_us": 73094,
+        "p99_us": 87897,
+        "max_us": 104487
+      },
+      "cpu_seconds": 125.328125,
+      "wall_seconds": 65.72104169987142,
+      "peak_working_gib": 2.0401878356933594,
+      "delivered_all_passengers": 49368,
+      "waiting_before": 482253,
+      "waiting_after": 483037,
+      "known_od_transport": {
+        "boarded": 315320,
+        "transferred": 285275,
+        "delivered": 46695
+      },
+      "precomputed": null,
+      "initial_build": null,
+      "result_sha256": "be6a950d151a54694ba580286cd51f7b8184b013d49550bb3f6809af02f15c1a",
+      "packet_digest": 12620900524169389208,
+      "payment_digest": 15353068529791355186
+    },
+    {
+      "run": "compact-cold-1",
+      "simulation": {
+        "count": 1024,
+        "mean_us": 48666.1162109375,
+        "p95_us": 82487,
+        "p99_us": 119777,
+        "max_us": 156263
+      },
+      "journey": {
+        "count": 1024,
+        "mean_us": 17654.5810546875,
+        "p95_us": 36534,
+        "p99_us": 44966,
+        "max_us": 62152
+      },
+      "second_half_simulation": {
+        "count": 512,
+        "mean_us": 49148.00390625,
+        "p95_us": 81759,
+        "p99_us": 95957,
+        "max_us": 146033
+      },
+      "cpu_seconds": 131.984375,
+      "wall_seconds": 69.14545490033925,
+      "peak_working_gib": 2.2992935180664062,
+      "delivered_all_passengers": 49728,
+      "waiting_before": 482253,
+      "waiting_after": 477940,
+      "known_od_transport": {
+        "boarded": 323955,
+        "transferred": 287870,
+        "delivered": 47121
+      },
+      "precomputed": {
+        "cargo": 0,
+        "patterns": 687,
+        "stations": 4636,
+        "states": 44080,
+        "edges": 99090,
+        "destinations": 251,
+        "bytes": 184378692,
+        "envelope": 5277729744,
+        "build_ns": 2593175200,
+        "operations": 67108864,
+        "queries": 8484624,
+        "query_ns": 226981800,
+        "hits": 29353,
+        "missing": 8455271,
+        "no_route": 0
+      },
+      "initial_build": null,
+      "result_sha256": "776cc0c7078afa82ace41fab0df0734a2807ec2df023543328f54051830788a7",
+      "packet_digest": 10016658735396710403,
+      "payment_digest": 13862944557234307062
+    },
+    {
+      "run": "compact-warm-1",
+      "simulation": {
+        "count": 1024,
+        "mean_us": 27433.9541015625,
+        "p95_us": 46981,
+        "p99_us": 71383,
+        "max_us": 132316
+      },
+      "journey": {
+        "count": 1024,
+        "mean_us": 4514.2646484375,
+        "p95_us": 17013,
+        "p99_us": 29651,
+        "max_us": 45338
+      },
+      "second_half_simulation": {
+        "count": 512,
+        "mean_us": 25202.6484375,
+        "p95_us": 38396,
+        "p99_us": 65250,
+        "max_us": 91606
+      },
+      "cpu_seconds": 147.828125,
+      "wall_seconds": 77.65840639965609,
+      "peak_working_gib": 5.206901550292969,
+      "delivered_all_passengers": 49573,
+      "waiting_before": 482253,
+      "waiting_after": 503871,
+      "known_od_transport": {
+        "boarded": 280666,
+        "transferred": 270349,
+        "delivered": 46841
+      },
+      "precomputed": {
+        "cargo": 0,
+        "patterns": 687,
+        "stations": 4636,
+        "states": 44080,
+        "edges": 99090,
+        "destinations": 4636,
+        "bytes": 3278430532,
+        "envelope": 5277729744,
+        "build_ns": 28768500600,
+        "operations": 1225477814,
+        "queries": 1601047,
+        "query_ns": 309119200,
+        "hits": 1432227,
+        "missing": 168820,
+        "no_route": 0
+      },
+      "initial_build": {
+        "elapsed_us": 28770322
+      },
+      "result_sha256": "9acab774538d07741ce7d92db377db7065d0362bb667348d5d723ee36af2032a",
+      "packet_digest": 17100608692943142836,
+      "payment_digest": 1451674835388670832
+    },
+    {
+      "run": "compact-warm-2",
+      "simulation": {
+        "count": 1024,
+        "mean_us": 27844.9833984375,
+        "p95_us": 46429,
+        "p99_us": 67857,
+        "max_us": 125876
+      },
+      "journey": {
+        "count": 1024,
+        "mean_us": 4572.31640625,
+        "p95_us": 17850,
+        "p99_us": 30213,
+        "max_us": 46048
+      },
+      "second_half_simulation": {
+        "count": 512,
+        "mean_us": 25960.982421875,
+        "p95_us": 40050,
+        "p99_us": 67538,
+        "max_us": 86992
+      },
+      "cpu_seconds": 155.390625,
+      "wall_seconds": 81.11891379998997,
+      "peak_working_gib": 5.213447570800781,
+      "delivered_all_passengers": 49573,
+      "waiting_before": 482253,
+      "waiting_after": 503871,
+      "known_od_transport": {
+        "boarded": 280666,
+        "transferred": 270349,
+        "delivered": 46841
+      },
+      "precomputed": {
+        "cargo": 0,
+        "patterns": 687,
+        "stations": 4636,
+        "states": 44080,
+        "edges": 99090,
+        "destinations": 4636,
+        "bytes": 3278430532,
+        "envelope": 5277729744,
+        "build_ns": 31262317100,
+        "operations": 1225477814,
+        "queries": 1601047,
+        "query_ns": 312811600,
+        "hits": 1432227,
+        "missing": 168820,
+        "no_route": 0
+      },
+      "initial_build": {
+        "elapsed_us": 31263946
+      },
+      "result_sha256": "9acab774538d07741ce7d92db377db7065d0362bb667348d5d723ee36af2032a",
+      "packet_digest": 17100608692943142836,
+      "payment_digest": 1451674835388670832
+    },
+    {
+      "run": "retention-cold-1",
+      "simulation": {
+        "count": 1024,
+        "mean_us": 48511.73828125,
+        "p95_us": 82576,
+        "p99_us": 121562,
+        "max_us": 161464
+      },
+      "journey": {
+        "count": 1024,
+        "mean_us": 17629.99609375,
+        "p95_us": 36715,
+        "p99_us": 45312,
+        "max_us": 62508
+      },
+      "second_half_simulation": {
+        "count": 512,
+        "mean_us": 46644.8984375,
+        "p95_us": 77097,
+        "p99_us": 99102,
+        "max_us": 117551
+      },
+      "cpu_seconds": 131.421875,
+      "wall_seconds": 68.81044609984383,
+      "peak_working_gib": 2.300811767578125,
+      "delivered_all_passengers": 49728,
+      "waiting_before": 482253,
+      "waiting_after": 477940,
+      "known_od_transport": {
+        "boarded": 323955,
+        "transferred": 287870,
+        "delivered": 47121
+      },
+      "precomputed": {
+        "cargo": 0,
+        "patterns": 687,
+        "stations": 4636,
+        "states": 44080,
+        "edges": 99090,
+        "destinations": 251,
+        "bytes": 184378692,
+        "envelope": 5277729744,
+        "build_ns": 2586453200,
+        "operations": 67108864,
+        "queries": 8484624,
+        "query_ns": 227912600,
+        "hits": 29353,
+        "missing": 8455271,
+        "no_route": 0
+      },
+      "initial_build": null,
+      "result_sha256": "b706fc77beaf2c0c700ff5c1cbe15da1b048a785717f45cd5a6b6e0816a1e612",
+      "packet_digest": 10016658735396710403,
+      "payment_digest": 13862944557234307062
+    },
+    {
+      "run": "retention-warm-1",
+      "simulation": {
+        "count": 1024,
+        "mean_us": 28239.9404296875,
+        "p95_us": 48072,
+        "p99_us": 73871,
+        "max_us": 129428
+      },
+      "journey": {
+        "count": 1024,
+        "mean_us": 4707.2626953125,
+        "p95_us": 18782,
+        "p99_us": 32212,
+        "max_us": 51967
+      },
+      "second_half_simulation": {
+        "count": 512,
+        "mean_us": 25568.845703125,
+        "p95_us": 39918,
+        "p99_us": 70135,
+        "max_us": 89871
+      },
+      "cpu_seconds": 154.0625,
+      "wall_seconds": 81.45105829974636,
+      "peak_working_gib": 5.214359283447266,
+      "delivered_all_passengers": 49573,
+      "waiting_before": 482253,
+      "waiting_after": 503871,
+      "known_od_transport": {
+        "boarded": 280666,
+        "transferred": 270349,
+        "delivered": 46841
+      },
+      "precomputed": {
+        "cargo": 0,
+        "patterns": 687,
+        "stations": 4636,
+        "states": 44080,
+        "edges": 99090,
+        "destinations": 4636,
+        "bytes": 3278430532,
+        "envelope": 5277729744,
+        "build_ns": 32074787900,
+        "operations": 1225477814,
+        "queries": 1601047,
+        "query_ns": 320584400,
+        "hits": 1432227,
+        "missing": 168820,
+        "no_route": 0
+      },
+      "initial_build": {
+        "elapsed_us": 32076404
+      },
+      "result_sha256": "cd7f14e11e8d7fa4bc455fe5c9f28905a1a4f371b2f7a74c67ebfe6b641f7198",
+      "packet_digest": 17100608692943142836,
+      "payment_digest": 1451674835388670832
+    },
+    {
+      "run": "compact-reload-final",
+      "simulation": null,
+      "journey": null,
+      "second_half_simulation": null,
+      "cpu_seconds": 72.140625,
+      "wall_seconds": 52.154285999946296,
+      "peak_working_gib": 5.127628326416016,
+      "delivered_all_passengers": 0,
+      "waiting_before": 503871,
+      "waiting_after": 503871,
+      "known_od_transport": {
+        "boarded": 0,
+        "transferred": 0,
+        "delivered": 0
+      },
+      "precomputed": {
+        "cargo": 0,
+        "patterns": 687,
+        "stations": 4636,
+        "states": 44080,
+        "edges": 99090,
+        "destinations": 4636,
+        "bytes": 3278430532,
+        "envelope": 5277729744,
+        "build_ns": 25906730700,
+        "operations": 1225477814,
+        "queries": 0,
+        "query_ns": 0,
+        "hits": 0,
+        "missing": 0,
+        "no_route": 0
+      },
+      "initial_build": null,
+      "result_sha256": "0026e815877dc4bb043886cf50b51126d2da95203c938b1ca2523fbb491307ed",
+      "packet_digest": 17100608692943142836,
+      "payment_digest": 1451674835388670832
+    }
+  ],
+  "repeatability": {
+    "old_saves_identical": true,
+    "previous_revision_warm_saves_identical": true,
+    "reload_packet_payment_and_precomputation_progress_identical": true,
+    "final_revision_matches_previous_warm_packet_and_payment": true,
+    "reload_whole_save_identical": false
+  }
+}

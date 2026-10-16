@@ -1,0 +1,117 @@
+{
+  "base_revision": "ffb3dc98db4a2d46b0d6508d2f4d375d0c24ee36",
+  "code_diff_sha256": "429c0e17b2f9bd9c2888ba91f41dbb85d40ba0e008686ca2a7dc39cbe92694f0",
+  "save_feature": 8,
+  "database_blob_version": 7,
+  "real_map": {
+    "input_sha256": "d8d40bd49ca5fbb20c2f9645d984a2b19f41eb7b482bf6707e49da8fd61ee1ea",
+    "actual_ticks": 1024,
+    "packets": 495474,
+    "known_od_units": 851434,
+    "journey_packets": 199561,
+    "payments_valid": true,
+    "journey_mean_us": 2353.544921875,
+    "journey_p95_us": 4390,
+    "journey_p99_us": 6929,
+    "elapsed_seconds": 72.48059479985386,
+    "peak_working_bytes": 5671624704,
+    "newgrf_warning_lines": 13795,
+    "runtime_error_resumes": 0,
+    "contamination": []
+  },
+  "roundtrip": {
+    "matches": {
+      "state_ticks": true,
+      "packets": true,
+      "cargo_units": true,
+      "known_od_units": true,
+      "journey_packets": true,
+      "packet_state_digest": true,
+      "payment_digest": true,
+      "payments_valid": true,
+      "database_digest": true,
+      "ownership_digest": true,
+      "loading_digest": true,
+      "completed_rows": true,
+      "retained_rows": true,
+      "table_operations": true,
+      "published_revision": true,
+      "company_deliveries": true
+    },
+    "differences": {}
+  },
+  "multiplayer": {
+    "pass": true,
+    "default_timeouts": true,
+    "joined": true,
+    "join_elapsed_seconds": 42.56420959997922,
+    "packet_payment_equal": true,
+    "join_mismatches": [],
+    "actual_ticks": 1095,
+    "transport_equal": true,
+    "transport_mismatches": [],
+    "network_error": false,
+    "replay": {
+      "slices": 3545,
+      "maximum_loop_us": 11452,
+      "work": 1225505375,
+      "start_tick": 3181093981,
+      "end_tick": 3181093981,
+      "start_frame": 140,
+      "end_frame": 140
+    },
+    "newgrf_warning_lines": {
+      "server": 31179,
+      "client": 31179
+    }
+  },
+  "product_validation": {
+    "ctest_cases": 638,
+    "precomputed_cases": 32,
+    "precomputed_assertions": 38382,
+    "assertions_enabled": true,
+    "lto": false,
+    "passenger_benchmark": false,
+    "instrumented_sources_absent": true,
+    "measurement_strings_absent": {
+      "save-integrity.json": true,
+      "OPENTTD_PASSENGER_MEASURE": true,
+      "passenger_benchmark_end.scr": true
+    },
+    "binary_sha256": "564f4d031c700744d2c5cf49cc5248aff345bd10e1ed14c3a8f0655d138fcc23"
+  },
+  "event_scaling": [
+    {
+      "waiting_packets": 128,
+      "idle_ns": 4,
+      "single_event_ns": 2311,
+      "generation_ns": 1583,
+      "processed_events": 1024,
+      "generation_packets": 0
+    },
+    {
+      "waiting_packets": 1024,
+      "idle_ns": 4,
+      "single_event_ns": 2361,
+      "generation_ns": 1594,
+      "processed_events": 1024,
+      "generation_packets": 0
+    },
+    {
+      "waiting_packets": 8192,
+      "idle_ns": 4,
+      "single_event_ns": 2826,
+      "generation_ns": 1577,
+      "processed_events": 1024,
+      "generation_packets": 0
+    },
+    {
+      "waiting_packets": 32768,
+      "idle_ns": 4,
+      "single_event_ns": 2927,
+      "generation_ns": 1614,
+      "processed_events": 1024,
+      "generation_packets": 0
+    }
+  ]
+}

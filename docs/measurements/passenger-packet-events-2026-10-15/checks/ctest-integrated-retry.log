@@ -1,0 +1,7 @@
+Test project C:/Users/bebe/.codex/worktrees/6fb9/OpenTTD-patches/build-packet-events
+    Start 382: Precomputed waiting events survive save tables without inventing a routing pass
+1/1 Test #382: Precomputed waiting events survive save tables without inventing a routing pass ...   Passed    0.18 sec
+
+100% tests passed, 0 tests failed out of 1
+
+Total Test time (real) =   0.22 sec

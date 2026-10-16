@@ -20,6 +20,11 @@ private:
 	std::shared_ptr<struct PacketReader> savegame;   ///< Packet reader for reading the savegame.
 	uint8_t token = 0;                               ///< The token we need to send back to the server to prove we're the right client.
 	NetworkSharedSecrets last_rcon_shared_secrets{}; ///< Keys for last rcon (and incoming replies)
+	uint64_t map_load_work = 0, map_load_ack = 0; ///< Completed replay work sent/acknowledged during map processing.
+	std::chrono::steady_clock::time_point map_load_report{};
+	std::optional<uint32_t> passenger_prepare_frame;
+	bool passenger_prepared = false;
+	bool passenger_prepare_announced = false; ///< Local prediction can reach a barrier before the server announces it.
 
 	/** Status of the connection with the server. */
 	enum class ServerStatus : uint8_t {
@@ -32,6 +37,7 @@ private:
 		Authorized,   ///< The client is authorized at the server.
 		MapWait,      ///< The client is waiting as someone else is downloading the map.
 		Map,          ///< The client is downloading the map.
+		Processing,   ///< Replaying mandatory tables; no simulation frames may run yet.
 		Active,       ///< The client is active within in the game.
 		Closing,      ///< The client connection is in the process of being closed.
 		End,          ///< Must ALWAYS be on the end of this list!! (period)
@@ -66,6 +72,8 @@ protected:
 	NetworkRecvStatus ReceiveServerMapSize(Packet &p) override;
 	NetworkRecvStatus ReceiveServerMapData(Packet &p) override;
 	NetworkRecvStatus ReceiveServerMapDone(Packet &p) override;
+	NetworkRecvStatus ReceiveServerMapProgress(Packet &p) override;
+	NetworkRecvStatus ReceiveServerPassengerPrepare(Packet &p) override;
 	NetworkRecvStatus ReceiveServerClientJoined(Packet &p) override;
 	NetworkRecvStatus ReceiveServerFrame(Packet &p) override;
 	NetworkRecvStatus ReceiveServerSync(Packet &p) override;
@@ -86,6 +94,7 @@ protected:
 	static NetworkRecvStatus SendNewGRFsOk();
 	static NetworkRecvStatus SendGetMap();
 	static NetworkRecvStatus SendMapOk();
+	NetworkRecvStatus FinishMapLoad();
 	static NetworkRecvStatus SendIdentify();
 	void CheckConnection();
 
@@ -135,6 +144,8 @@ public:
 	static void Send();
 	static bool Receive();
 	static bool GameLoop();
+	static bool PreparePassengerRouting();
+	static bool ProcessMapLoad(); ///< Return to receive/send between bounded replay slices.
 
 	static bool EmergencySavePossible();
 };

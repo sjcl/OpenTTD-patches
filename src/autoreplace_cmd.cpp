@@ -8,6 +8,7 @@
 /** @file autoreplace_cmd.cpp Deals with autoreplace execution but not the setup. */
 
 #include "stdafx.h"
+#include "passenger_service_database.h"
 #include "company_func.h"
 #include "train.h"
 #include "command_func.h"
@@ -994,6 +995,7 @@ CommandCost CmdAutoreplaceVehicle(DoCommandFlags flags, VehicleID veh_id, bool s
 		RestoreRandomSeeds(saved_seeds);
 
 		if (cost.Succeeded() && flags.Test(DoCommandFlag::Execute)) {
+			if (!nothing_to_do && v->orders != nullptr) InvalidatePassengerServiceDatabase(v->orders->index);
 			CommandCost ret;
 			if (free_wagon) {
 				ret = ReplaceFreeUnit(&v, flags, &nothing_to_do, same_type_only);

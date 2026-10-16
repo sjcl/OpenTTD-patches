@@ -1,0 +1,7 @@
+script C:/Users/bebe/.codex/worktrees/99a5/OpenTTD-patches/build-integration/cpu-precomputed-update/on-1-console.txt
+getfulldate
+passenger_journey_stats inventory
+setting linkgraph.passenger_journey_precomputed true
+passenger_journey_stats reset
+unpause
+script

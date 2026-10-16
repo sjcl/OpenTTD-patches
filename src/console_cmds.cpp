@@ -4985,6 +4985,22 @@ static bool ConPassengerJourneyStats(std::span<std::string_view> argv)
 			quantile(stats.simulation_histogram, 95), quantile(stats.simulation_histogram, 99), stats.simulation_ticks == 0 ? 0 : stats.journey_microseconds / stats.simulation_ticks,
 			quantile(stats.journey_histogram, 95), quantile(stats.journey_histogram, 99), stats.maximum_journey_microseconds);
 	const auto periodic = GetPassengerServiceDatabase().GetDiagnostic();
+	const auto events = GetPassengerWaitingEventDiagnostic();
+	IConsolePrint(CC_DEFAULT, "Passenger events: pending={}; overdue={}; oldest_ticks={}; maximum_station_backlog={}; on_time={}; packets={}; groups={}; scheduler_us={}; arrival_candidates={}; arrival_passengers={}; unresolved_missed_estimate={}",
+			events.pending, events.overdue, events.oldest_ticks, events.maximum_station_backlog, events.on_time, events.packets, events.groups,
+			events.scheduler_microseconds, events.arrival_candidates, events.arrival_passengers, events.unresolved_missed);
+	for (CargoType cargo : EnumRange(NUM_CARGO)) if (IsCargoInClass(cargo, CargoClass::Passengers)) {
+		const auto p = GetPassengerServiceDatabase().GetPrecomputedDiagnostic(cargo);
+		IConsolePrint(CC_DEFAULT, "Precomputed passenger routes: cargo={}; patterns={}; stations={}; states={}; edges={}; destinations={}; bytes={}; envelope={}; build_ns={}; operations={}; queries={}; query_ns={}; hits={}; missing={}; no_route={}",
+			cargo, p.patterns, p.stations, p.states, p.edges, p.destinations, p.bytes, p.envelope, p.build_nanoseconds, p.operations, p.queries, p.query_nanoseconds, p.hits, p.missing, p.no_route);
+		IConsolePrint(CC_DEFAULT, "Precomputed common sections: cargo={}; sections={}; concrete_rides={}", cargo, p.shared_sections, p.section_rides);
+		IConsolePrint(CC_DEFAULT, "Precomputed timetable certainty: cargo={}; certified_patterns={}; estimated_patterns={}", cargo, p.certified_patterns, p.estimated_patterns);
+		IConsolePrint(CC_DEFAULT, "Precomputed retained routes: cargo={}; destinations={}; bytes={}; envelope={}",
+				cargo, p.retained_destinations, p.retained_bytes, p.retained_envelope);
+	}
+	IConsolePrint(CC_DEFAULT, "Precomputed memory admission: rejected={}; shared_limit={}", GetPassengerServiceDatabase().HasRejectedPrecomputedMemory(), PassengerPrecomputedTable::MAX_BYTES);
+	IConsolePrint(CC_DEFAULT, "Precomputed initial preparation: pending={}; elapsed_ns={}; simulation_advanced=false",
+			GetPassengerServiceDatabase().IsPreparingPrecomputed(), GetPassengerServiceDatabase().GetPrecomputedPreparationNanoseconds());
 	IConsolePrint(CC_DEFAULT, "Journey inclusive scopes: waiting_us={}; fallback_distance_us={}; boarding_us={}", stats.waiting_microseconds, stats.fallback_distance_microseconds, stats.boarding_microseconds);
 	IConsolePrint(CC_DEFAULT, "Periodic pending age: ticks={}", periodic.maximum_pending_ticks);
 	IConsolePrint(CC_DEFAULT, "OD fallback cache: hits={}; bytes={}; work={}; searches={}", stats.od_fallback_cache_hits, stats.od_fallback_cache_bytes, stats.od_fallback_work, stats.od_fallback_searches);

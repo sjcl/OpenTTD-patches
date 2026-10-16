@@ -1,0 +1,14 @@
+selected=34197
+fresh_selected=13340
+initial_selected=7349
+assigned_packets=850000
+assigned_units=932697
+fresh_assigned_packets=850000
+fresh_assigned_units=932697
+initial_passengers=954776
+initial_known_passengers=806628
+generated_passengers=1726571
+remaining_passengers=824619
+remaining_known_passengers=710251
+discarded=0
+sampling=deterministic hash of packet ID and current birth tick; approximately 1/64; maximum 65536 sample starts

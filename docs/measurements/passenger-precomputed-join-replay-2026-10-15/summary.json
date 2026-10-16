@@ -1,0 +1,755 @@
+{
+  "complete-long": {
+    "pass": true,
+    "joined": true,
+    "packet_payment_equal": true,
+    "join_mismatches": [],
+    "transport_mismatches": [],
+    "network_error": false,
+    "join_elapsed_seconds": 46.425309099722654,
+    "replay": {
+      "slices": 3893,
+      "maximum_loop_us": 12606,
+      "work": 1225505375,
+      "start_tick": 3181093981,
+      "end_tick": 3181093981,
+      "start_frame": 106,
+      "end_frame": 106
+    },
+    "progress_packets": 41,
+    "actual_ticks": 1051,
+    "elapsed_seconds": 249.19013010011986,
+    "process_observations": {
+      "0_peak_working_bytes": 5484695552,
+      "0_peak_commit_bytes": 5489582080,
+      "0_process_cpu_seconds": 290.78125,
+      "1_peak_working_bytes": 4720463872,
+      "1_peak_commit_bytes": 4724928512,
+      "1_process_cpu_seconds": 286.953125
+    },
+    "newgrf_warning_lines": {
+      "server": 30725,
+      "client": 30725
+    },
+    "binary_sha256": "3c1b21f334306e33f32ff57cc4b2667deda47123dc214d804ea10aa5a40128b9",
+    "input_sha256": "c70db986372c6be69185081b68c58b6453e8d5567d83e443921d01bcad8c8dec",
+    "server_snapshot": {
+      "state_ticks": 3181093981,
+      "packets": 491798,
+      "cargo_units": 1318382,
+      "completed_rows": 4636,
+      "retained_rows": 0,
+      "table_operations": 1225505375,
+      "published_revision": 2796,
+      "company_deliveries": 298570
+    },
+    "transport_server": {
+      "state_ticks": 3181095032,
+      "packets": 482657,
+      "cargo_units": 1318004,
+      "completed_rows": 242,
+      "retained_rows": 4394,
+      "table_operations": 64684032,
+      "published_revision": 2798,
+      "company_deliveries": 25372
+    }
+  },
+  "initial-rejected-input": {
+    "pass": false,
+    "joined": false,
+    "packet_payment_equal": false,
+    "elapsed_seconds": 3.6684067002497613,
+    "process_observations": {
+      "0_peak_working_bytes": 1079566336,
+      "0_peak_commit_bytes": 1071304704,
+      "0_process_cpu_seconds": 3.109375
+    },
+    "newgrf_warning_lines": {
+      "server": 0,
+      "client": 0
+    },
+    "binary_sha256": "127e9e8acf276a2ea7b93166db592a0bbe5a3cf388cf8f45e0e78a8ef31c770e",
+    "input_sha256": "d8d40bd49ca5fbb20c2f9645d984a2b19f41eb7b482bf6707e49da8fd61ee1ea",
+    "error": "Server did not finish loading",
+    "server_snapshot": null,
+    "transport_server": null
+  },
+  "initial-observation-race": {
+    "pass": false,
+    "joined": true,
+    "packet_payment_equal": true,
+    "join_mismatches": [],
+    "transport_mismatches": [
+      "state_ticks",
+      "packets",
+      "cargo_units",
+      "known_od_units",
+      "journey_packets",
+      "packet_state_digest",
+      "payment_digest",
+      "database_digest",
+      "ownership_digest",
+      "loading_digest",
+      "completed_rows",
+      "table_operations",
+      "company_deliveries"
+    ],
+    "network_error": false,
+    "join_elapsed_seconds": 9.871968999970704,
+    "replay": {
+      "slices": 226,
+      "maximum_loop_us": 12014,
+      "work": 67108864,
+      "start_tick": 3181093981,
+      "end_tick": 3181093981,
+      "start_frame": 135,
+      "end_frame": 135
+    },
+    "progress_packets": 3,
+    "actual_ticks": 1080,
+    "elapsed_seconds": 252.01729730004445,
+    "process_observations": {
+      "0_peak_working_bytes": 2385952768,
+      "0_peak_commit_bytes": 2388365312,
+      "0_process_cpu_seconds": 307.03125,
+      "1_peak_working_bytes": 1710190592,
+      "1_peak_commit_bytes": 1706692608,
+      "1_process_cpu_seconds": 289.4375
+    },
+    "newgrf_warning_lines": {
+      "server": 30477,
+      "client": 30477
+    },
+    "binary_sha256": "7dfb36c4475b6c7f32af239d4fbd399c40ea1182f6d25023ad49d2b29bf0d36f",
+    "input_sha256": "cc73ec5d569d9582f96e42aae67d77022ac085e64683db36394930f3a24e6b68",
+    "movement_counters": {
+      "server": {
+        "Schedule transport": [
+          14561,
+          2274,
+          392
+        ],
+        "Journey transport": [
+          4,
+          3256,
+          2938
+        ],
+        "Untimed transport": [
+          282541,
+          272011,
+          38696
+        ]
+      },
+      "client": {
+        "Schedule transport": [
+          14358,
+          2227,
+          392
+        ],
+        "Journey transport": [
+          4,
+          3228,
+          2837
+        ],
+        "Untimed transport": [
+          279529,
+          268873,
+          38030
+        ]
+      }
+    },
+    "movement_equal": false,
+    "server_snapshot": {
+      "state_ticks": 3181093981,
+      "packets": 491062,
+      "cargo_units": 1319442,
+      "completed_rows": 251,
+      "retained_rows": 0,
+      "table_operations": 67108864,
+      "published_revision": 2805,
+      "company_deliveries": 298636
+    },
+    "transport_server": {
+      "state_ticks": 3181095061,
+      "packets": 483466,
+      "cargo_units": 1319860,
+      "completed_rows": 516,
+      "retained_rows": 0,
+      "table_operations": 137887744,
+      "published_revision": 2808,
+      "company_deliveries": 27480
+    }
+  },
+  "initial-active-timeout": {
+    "pass": false,
+    "joined": true,
+    "packet_payment_equal": true,
+    "join_mismatches": [],
+    "network_error": false,
+    "join_elapsed_seconds": 8.643633699975908,
+    "replay": {
+      "slices": 226,
+      "maximum_loop_us": 12119,
+      "work": 67108864,
+      "start_tick": 3181093981,
+      "end_tick": 3181093981,
+      "start_frame": 138,
+      "end_frame": 138
+    },
+    "progress_packets": 3,
+    "elapsed_seconds": 231.3777121002786,
+    "process_observations": {
+      "0_peak_working_bytes": 2369077248,
+      "0_peak_commit_bytes": 2376163328,
+      "0_process_cpu_seconds": 277.4375,
+      "1_peak_working_bytes": 1645879296,
+      "1_peak_commit_bytes": 1643425792,
+      "1_process_cpu_seconds": 252.578125
+    },
+    "newgrf_warning_lines": {
+      "server": 22557,
+      "client": 21519
+    },
+    "binary_sha256": "7dfb36c4475b6c7f32af239d4fbd399c40ea1182f6d25023ad49d2b29bf0d36f",
+    "input_sha256": "cc73ec5d569d9582f96e42aae67d77022ac085e64683db36394930f3a24e6b68",
+    "error": "Transport did not reach its requested ticks",
+    "server_snapshot": {
+      "state_ticks": 3181093981,
+      "packets": 491062,
+      "cargo_units": 1319442,
+      "completed_rows": 251,
+      "retained_rows": 0,
+      "table_operations": 67108864,
+      "published_revision": 2805,
+      "company_deliveries": 298636
+    },
+    "transport_server": null
+  },
+  "initial-long": {
+    "pass": true,
+    "joined": true,
+    "packet_payment_equal": true,
+    "join_mismatches": [],
+    "transport_mismatches": [],
+    "network_error": false,
+    "join_elapsed_seconds": 12.115432100370526,
+    "replay": {
+      "slices": 214,
+      "maximum_loop_us": 12008,
+      "work": 67108864,
+      "start_tick": 3181093981,
+      "end_tick": 3181093981,
+      "start_frame": 140,
+      "end_frame": 140
+    },
+    "progress_packets": 4,
+    "actual_ticks": 1060,
+    "elapsed_seconds": 280.17989939963445,
+    "process_observations": {
+      "0_peak_working_bytes": 2407235584,
+      "0_peak_commit_bytes": 2409148416,
+      "0_process_cpu_seconds": 347.078125,
+      "1_peak_working_bytes": 1725558784,
+      "1_peak_commit_bytes": 1724084224,
+      "1_process_cpu_seconds": 325.671875
+    },
+    "newgrf_warning_lines": {
+      "server": 30271,
+      "client": 30271
+    },
+    "binary_sha256": "92ce2e59fd12a31ac8a1c44448cd06851b8a72c7eda8ba857eda273287f9deb2",
+    "input_sha256": "cc73ec5d569d9582f96e42aae67d77022ac085e64683db36394930f3a24e6b68",
+    "movement_counters": {
+      "server": {
+        "Schedule transport": [
+          14358,
+          2227,
+          392
+        ],
+        "Journey transport": [
+          4,
+          3228,
+          2837
+        ],
+        "Untimed transport": [
+          278371,
+          268476,
+          37996
+        ]
+      },
+      "client": {
+        "Schedule transport": [
+          14358,
+          2227,
+          392
+        ],
+        "Journey transport": [
+          4,
+          3228,
+          2837
+        ],
+        "Untimed transport": [
+          278371,
+          268476,
+          37996
+        ]
+      }
+    },
+    "movement_equal": true,
+    "server_snapshot": {
+      "state_ticks": 3181093981,
+      "packets": 491062,
+      "cargo_units": 1319442,
+      "completed_rows": 251,
+      "retained_rows": 0,
+      "table_operations": 67108864,
+      "published_revision": 2805,
+      "company_deliveries": 298636
+    },
+    "transport_server": {
+      "state_ticks": 3181095041,
+      "packets": 483579,
+      "cargo_units": 1320309,
+      "completed_rows": 511,
+      "retained_rows": 0,
+      "table_operations": 136577024,
+      "published_revision": 2808,
+      "company_deliveries": 26256
+    }
+  },
+  "updating-long": {
+    "pass": true,
+    "joined": true,
+    "packet_payment_equal": true,
+    "join_mismatches": [],
+    "transport_mismatches": [],
+    "network_error": false,
+    "join_elapsed_seconds": 84.04521510004997,
+    "replay": {
+      "slices": 5004,
+      "maximum_loop_us": 14187,
+      "work": 1292586678,
+      "start_tick": 3181093981,
+      "end_tick": 3181093981,
+      "start_frame": 153,
+      "end_frame": 153
+    },
+    "progress_packets": 75,
+    "actual_ticks": 1078,
+    "elapsed_seconds": 337.16984329978004,
+    "process_observations": {
+      "0_peak_working_bytes": 5535088640,
+      "0_peak_commit_bytes": 5540089856,
+      "0_process_cpu_seconds": 382.34375,
+      "1_peak_working_bytes": 4732358656,
+      "1_peak_commit_bytes": 4738904064,
+      "1_process_cpu_seconds": 361.3125
+    },
+    "newgrf_warning_lines": {
+      "server": 31283,
+      "client": 31283
+    },
+    "binary_sha256": "7dfb36c4475b6c7f32af239d4fbd399c40ea1182f6d25023ad49d2b29bf0d36f",
+    "input_sha256": "6ab8336fbd8e98be7a3738a96679ca53ff904666107fde1733d18c5426cab16b",
+    "movement_counters": {
+      "server": {
+        "Schedule transport": [
+          118379,
+          37396,
+          16612
+        ],
+        "Journey transport": [
+          0,
+          1861,
+          1269
+        ],
+        "Untimed transport": [
+          59281,
+          136883,
+          21564
+        ]
+      },
+      "client": {
+        "Schedule transport": [
+          118379,
+          37396,
+          16612
+        ],
+        "Journey transport": [
+          0,
+          1861,
+          1269
+        ],
+        "Untimed transport": [
+          59281,
+          136883,
+          21564
+        ]
+      }
+    },
+    "movement_equal": true,
+    "server_snapshot": {
+      "state_ticks": 3181093981,
+      "packets": 492936,
+      "cargo_units": 1318831,
+      "completed_rows": 251,
+      "retained_rows": 4385,
+      "table_operations": 67108864,
+      "published_revision": 2795,
+      "company_deliveries": 298937
+    },
+    "transport_server": {
+      "state_ticks": 3181095059,
+      "packets": 483505,
+      "cargo_units": 1321348,
+      "completed_rows": 515,
+      "retained_rows": 4121,
+      "table_operations": 137756672,
+      "published_revision": 2795,
+      "company_deliveries": 25129
+    }
+  },
+  "stalled-observation-missed": {
+    "pass": false,
+    "joined": false,
+    "packet_payment_equal": false,
+    "elapsed_seconds": 76.83765649981797,
+    "process_observations": {
+      "0_peak_working_bytes": 5478789120,
+      "0_peak_commit_bytes": 5482213376,
+      "0_process_cpu_seconds": 75.75,
+      "1_peak_working_bytes": 1356492800,
+      "1_peak_commit_bytes": 1349668864,
+      "1_process_cpu_seconds": 4.546875
+    },
+    "newgrf_warning_lines": {
+      "server": 5601,
+      "client": 5601
+    },
+    "stall_dropped": false,
+    "stall_seconds": 30.04571870015934,
+    "binary_sha256": "7dfb36c4475b6c7f32af239d4fbd399c40ea1182f6d25023ad49d2b29bf0d36f",
+    "input_sha256": "c70db986372c6be69185081b68c58b6453e8d5567d83e443921d01bcad8c8dec",
+    "error": "Stalled replay was not dropped at the default join deadline",
+    "server_snapshot": {
+      "state_ticks": 3181093981,
+      "packets": 491798,
+      "cargo_units": 1318382,
+      "completed_rows": 4636,
+      "retained_rows": 0,
+      "table_operations": 1225505375,
+      "published_revision": 2796,
+      "company_deliveries": 298570
+    },
+    "transport_server": null
+  },
+  "complete": {
+    "pass": true,
+    "joined": true,
+    "packet_payment_equal": true,
+    "join_mismatches": [],
+    "transport_mismatches": [],
+    "network_error": false,
+    "join_elapsed_seconds": 48.096040999982506,
+    "replay": {
+      "slices": 3975,
+      "maximum_loop_us": 12725,
+      "work": 1225505375,
+      "start_tick": 3181093981,
+      "end_tick": 3181093981,
+      "start_frame": 152,
+      "end_frame": 152
+    },
+    "progress_packets": 42,
+    "actual_ticks": 170,
+    "elapsed_seconds": 92.35589799983427,
+    "process_observations": {
+      "0_peak_working_bytes": 5475295232,
+      "0_peak_commit_bytes": 5478539264,
+      "0_process_cpu_seconds": 97.90625,
+      "1_peak_working_bytes": 4645527552,
+      "1_peak_commit_bytes": 4654878720,
+      "1_process_cpu_seconds": 95.953125
+    },
+    "newgrf_warning_lines": {
+      "server": 12295,
+      "client": 12295
+    },
+    "binary_sha256": "b2e384c7db12dfa331a57fd9bc26aba743d38527917b718d66880911a95f105d",
+    "input_sha256": "c70db986372c6be69185081b68c58b6453e8d5567d83e443921d01bcad8c8dec",
+    "movement_counters": {
+      "server": {
+        "Schedule transport": [
+          19459,
+          6022,
+          2235
+        ],
+        "Journey transport": [
+          0,
+          390,
+          111
+        ],
+        "Untimed transport": [
+          20608,
+          33452,
+          4604
+        ]
+      },
+      "client": {
+        "Schedule transport": [
+          19459,
+          6022,
+          2235
+        ],
+        "Journey transport": [
+          0,
+          390,
+          111
+        ],
+        "Untimed transport": [
+          20608,
+          33452,
+          4604
+        ]
+      }
+    },
+    "movement_equal": true,
+    "server_snapshot": {
+      "state_ticks": 3181093981,
+      "packets": 491798,
+      "cargo_units": 1318382,
+      "completed_rows": 4636,
+      "retained_rows": 0,
+      "table_operations": 1225505375,
+      "published_revision": 2796,
+      "company_deliveries": 298570
+    },
+    "transport_server": {
+      "state_ticks": 3181094151,
+      "packets": 490419,
+      "cargo_units": 1319000,
+      "completed_rows": 26,
+      "retained_rows": 4610,
+      "table_operations": 6946816,
+      "published_revision": 2797,
+      "company_deliveries": 306928
+    }
+  },
+  "initial": {
+    "pass": true,
+    "joined": true,
+    "packet_payment_equal": true,
+    "join_mismatches": [],
+    "transport_mismatches": [],
+    "network_error": false,
+    "join_elapsed_seconds": 9.13150619994849,
+    "replay": {
+      "slices": 237,
+      "maximum_loop_us": 12697,
+      "work": 67108864,
+      "start_tick": 3181093981,
+      "end_tick": 3181093981,
+      "start_frame": 147,
+      "end_frame": 147
+    },
+    "progress_packets": 3,
+    "actual_ticks": 153,
+    "elapsed_seconds": 28.872797999996692,
+    "process_observations": {
+      "0_peak_working_bytes": 2391756800,
+      "0_peak_commit_bytes": 2393706496,
+      "0_process_cpu_seconds": 40.03125,
+      "1_peak_working_bytes": 1504944128,
+      "1_peak_commit_bytes": 1502863360,
+      "1_process_cpu_seconds": 29.046875
+    },
+    "newgrf_warning_lines": {
+      "server": 12165,
+      "client": 12165
+    },
+    "binary_sha256": "b2e384c7db12dfa331a57fd9bc26aba743d38527917b718d66880911a95f105d",
+    "input_sha256": "cc73ec5d569d9582f96e42aae67d77022ac085e64683db36394930f3a24e6b68",
+    "movement_counters": {
+      "server": {
+        "Schedule transport": [
+          1333,
+          0,
+          0
+        ],
+        "Journey transport": [
+          4,
+          571,
+          541
+        ],
+        "Untimed transport": [
+          47092,
+          46873,
+          5662
+        ]
+      },
+      "client": {
+        "Schedule transport": [
+          1333,
+          0,
+          0
+        ],
+        "Journey transport": [
+          4,
+          571,
+          541
+        ],
+        "Untimed transport": [
+          47092,
+          46873,
+          5662
+        ]
+      }
+    },
+    "movement_equal": true,
+    "server_snapshot": {
+      "state_ticks": 3181093981,
+      "packets": 491062,
+      "cargo_units": 1319442,
+      "completed_rows": 251,
+      "retained_rows": 0,
+      "table_operations": 67108864,
+      "published_revision": 2805,
+      "company_deliveries": 298636
+    },
+    "transport_server": {
+      "state_ticks": 3181094134,
+      "packets": 490195,
+      "cargo_units": 1320010,
+      "completed_rows": 288,
+      "retained_rows": 0,
+      "table_operations": 77135872,
+      "published_revision": 2806,
+      "company_deliveries": 306162
+    }
+  },
+  "updating": {
+    "pass": true,
+    "joined": true,
+    "packet_payment_equal": true,
+    "join_mismatches": [],
+    "transport_mismatches": [],
+    "network_error": false,
+    "join_elapsed_seconds": 55.88994609983638,
+    "replay": {
+      "slices": 4605,
+      "maximum_loop_us": 13580,
+      "work": 1292586678,
+      "start_tick": 3181093981,
+      "end_tick": 3181093981,
+      "start_frame": 145,
+      "end_frame": 145
+    },
+    "progress_packets": 49,
+    "actual_ticks": 159,
+    "elapsed_seconds": 100.8493551001884,
+    "process_observations": {
+      "0_peak_working_bytes": 5496963072,
+      "0_peak_commit_bytes": 5506584576,
+      "0_process_cpu_seconds": 106.484375,
+      "1_peak_working_bytes": 4657160192,
+      "1_peak_commit_bytes": 4667686912,
+      "1_process_cpu_seconds": 109.90625
+    },
+    "newgrf_warning_lines": {
+      "server": 12241,
+      "client": 12241
+    },
+    "binary_sha256": "b2e384c7db12dfa331a57fd9bc26aba743d38527917b718d66880911a95f105d",
+    "input_sha256": "6ab8336fbd8e98be7a3738a96679ca53ff904666107fde1733d18c5426cab16b",
+    "movement_counters": {
+      "server": {
+        "Schedule transport": [
+          22852,
+          5913,
+          1977
+        ],
+        "Journey transport": [
+          0,
+          316,
+          106
+        ],
+        "Untimed transport": [
+          10434,
+          30435,
+          4157
+        ]
+      },
+      "client": {
+        "Schedule transport": [
+          22852,
+          5913,
+          1977
+        ],
+        "Journey transport": [
+          0,
+          316,
+          106
+        ],
+        "Untimed transport": [
+          10434,
+          30435,
+          4157
+        ]
+      }
+    },
+    "movement_equal": true,
+    "server_snapshot": {
+      "state_ticks": 3181093981,
+      "packets": 492936,
+      "cargo_units": 1318831,
+      "completed_rows": 251,
+      "retained_rows": 4385,
+      "table_operations": 67108864,
+      "published_revision": 2795,
+      "company_deliveries": 298937
+    },
+    "transport_server": {
+      "state_ticks": 3181094140,
+      "packets": 491504,
+      "cargo_units": 1319674,
+      "completed_rows": 290,
+      "retained_rows": 4346,
+      "table_operations": 77529088,
+      "published_revision": 2795,
+      "company_deliveries": 306540
+    }
+  },
+  "stalled": {
+    "pass": true,
+    "joined": false,
+    "packet_payment_equal": false,
+    "elapsed_seconds": 30.913968599867076,
+    "process_observations": {
+      "0_peak_working_bytes": 2378719232,
+      "0_peak_commit_bytes": 2380419072,
+      "0_process_cpu_seconds": 33.3125,
+      "1_peak_working_bytes": 1352482816,
+      "1_peak_commit_bytes": 1345519616,
+      "1_process_cpu_seconds": 4.671875
+    },
+    "newgrf_warning_lines": {
+      "server": 5601,
+      "client": 5601
+    },
+    "stall_dropped": true,
+    "stall_seconds": 15.473370200023055,
+    "binary_sha256": "b2e384c7db12dfa331a57fd9bc26aba743d38527917b718d66880911a95f105d",
+    "input_sha256": "cc73ec5d569d9582f96e42aae67d77022ac085e64683db36394930f3a24e6b68",
+    "server_snapshot": {
+      "state_ticks": 3181093981,
+      "packets": 491062,
+      "cargo_units": 1319442,
+      "completed_rows": 251,
+      "retained_rows": 0,
+      "table_operations": 67108864,
+      "published_revision": 2805,
+      "company_deliveries": 298636
+    },
+    "transport_server": null
+  }
+}

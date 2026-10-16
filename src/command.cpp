@@ -50,11 +50,22 @@ ClientID _cmd_client_id = ClientID::Invalid;
 static bool PassengerConstructionChangesRouting(CommandType type, Commands cmd, TileIndex tile)
 {
 	if (cmd == Commands::RefitVehicle) return false; // Auto-refit is frequent; CmdRefitVehicle checks its actual affected consist.
-	/* Town growth and landscape maintenance clear thousands of unrelated tiles.
-	 * Inspect the original tile, before the command removes its transport type. */
+	if (cmd == Commands::TemplateReplaceVehicle) return false; // No-op depot checks are frequent; actual changes have a local hook.
+	if (cmd == Commands::BuildVehicle || cmd == Commands::SellVehicle || cmd == Commands::MoveRailVehicle ||
+			cmd == Commands::AutoreplaceVehicle) return false; // Fleet/order/consist handlers notify their own shared lists.
+	/* Town growth repeatedly lays single road tiles and adjusts terrain. Away
+	 * from a station these do not change any declared stop, cargo permission or
+	 * vehicle/facility compatibility. Blocking the entire published network for
+	 * them strands otherwise boardable cohorts until the next database sweep.
+	 * Station demolition performed by a nested clear retains its own hook. */
+	if (cmd == Commands::BuildRoad || cmd == Commands::TerraformLand) {
+		return tile < Map::Size() && IsTileType(tile, TileType::Station);
+	}
+	/* The static database checks stop facilities, not intermediate road/track
+	 * pathfinding. Clearing an ordinary transport tile cannot change its stop
+	 * contract. Station removal still blocks bindings before its tile vanishes. */
 	if (cmd == Commands::LandscapeClear) {
-		return tile < Map::Size() && (IsTileType(tile, TileType::Station) || IsTileType(tile, TileType::Railway) ||
-				IsTileType(tile, TileType::Road) || IsTileType(tile, TileType::TunnelBridge) || IsTileType(tile, TileType::Water));
+		return tile < Map::Size() && IsTileType(tile, TileType::Station);
 	}
 	/* Explicit route/timetable edits and actual refits have local hooks. Construction and
 	 * operating-state commands conservatively invalidate all affected facilities

@@ -587,6 +587,7 @@ struct NetworkSettings {
 	uint16_t      bytes_per_frame_burst;                  ///< how many bytes may, over a short period, be received?
 	uint16_t      max_init_time;                          ///< maximum amount of time, in game ticks, a client may take to initiate joining
 	uint16_t      max_join_time;                          ///< maximum amount of time, in game ticks, a client may take to sync up during joining
+	uint16_t      max_join_time_total;                    ///< Client join limit in real seconds (queue/download/replay/catch-up), and a separate cumulative server preparation wait limit.
 	uint16_t      max_download_time;                      ///< maximum amount of time, in game ticks, a client may take to download the map
 	uint16_t      max_password_time;                      ///< maximum amount of time, in game ticks, a client may take to enter the password
 	uint16_t      max_lag_time;                           ///< maximum amount of time, in game ticks, a client may be lagging behind the server
@@ -968,6 +969,7 @@ struct LinkGraphSettings {
 	bool passenger_od_assignment = false;              ///< assign final passenger destinations from CargoDist demand
 	bool passenger_journey_routing = false;            ///< execute explicit-OD passenger train journeys
 	bool passenger_journey_periodic = true;            ///< long-lived periodic service backend
+	bool passenger_journey_precomputed = false;        ///< shared destination trees over static service occurrences
 	uint16_t passenger_transfer_penalty;                ///< minimum connection time and transfer cost, in ticks
 	uint16_t transfer_penalty_same_mode;                ///< path cost penalty (in days) for transferring between routes of the same vehicle type
 	uint16_t transfer_penalty_mode_change;              ///< path cost penalty (in days) for transferring between routes of different vehicle types

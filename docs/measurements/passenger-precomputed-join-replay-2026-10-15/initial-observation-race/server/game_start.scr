@@ -1,0 +1,8 @@
+script C:/Users/bebe/.codex/worktrees/ef5d/OpenTTD-patches/build-join-replay/initial-valid/server/console.txt
+pause
+getfulldate
+setting linkgraph.passenger_journey_precomputed true
+passenger_journey_stats partial_precomputed
+passenger_journey_stats total
+passenger_journey_stats save_integrity
+script

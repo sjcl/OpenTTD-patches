@@ -1,0 +1,53 @@
+MSBuild のバージョン 17.14.40+3e7442088 (.NET Framework)
+
+  settingsgen.vcxproj -> C:\Users\bebe\.codex\worktrees\49c6\OpenTTD-patches\build-precomputed\settingsgen.exe
+  strgen.vcxproj -> C:\Users\bebe\.codex\worktrees\49c6\OpenTTD-patches\build-precomputed\strgen.exe
+  -- Version string: jgrpp-ya-0.73.3+2-111-g43f58fb81-m, Release: 0.73.3+2, Online contents compatible jgrpp version: 0.73.3
+  -- Generating rev.cpp
+  -- Generating ottdres.rc
+  -- Generating CPackProperties.cmake
+  -- Generating Doxyfile
+  -- Generating Doxyfile_AI
+  -- Generating Doxyfile_GS
+  rev.cpp
+  win32.cpp
+  extended_ver_sl.cpp
+  null_v.cpp
+  passenger_service_database.cpp
+  passenger_precomputed.cpp
+  passenger_departure_index.cpp
+  passenger_journey_active.cpp
+  passenger_journey_schedule.cpp
+  cargopacket.cpp
+  command.cpp
+  console_cmds.cpp
+  date.cpp
+  openttd.cpp
+  order_cmd.cpp
+  schdispatch_cmd.cpp
+  station.cpp
+  timetable_cmd.cpp
+  vehicle.cpp
+  vehicle_cmd.cpp
+C:\Users\bebe\.codex\worktrees\49c6\OpenTTD-patches\src\passenger_journey_active.cpp(398,66): warning C4267: '引数': 'size_t' から 'VehicleOrderID' に変換しました。データが失われているかもしれません。 [C:\Users\bebe\.codex\worktrees\49c6\OpenTTD-patches\build-precomputed\openttd_lib.vcxproj]
+  cargopacket_sl.cpp
+  openttd_lib.vcxproj -> C:\Users\bebe\.codex\worktrees\49c6\OpenTTD-patches\build-precomputed\openttd_lib.dir\Release\openttd_lib.lib
+  openttd.vcxproj -> C:\Users\bebe\.codex\worktrees\49c6\OpenTTD-patches\build-precomputed\openttd.exe
+MSBuild のバージョン 17.14.40+3e7442088 (.NET Framework)
+
+  strgen.vcxproj -> C:\Users\bebe\.codex\worktrees\49c6\OpenTTD-patches\build-precomputed\strgen.exe
+  settingsgen.vcxproj -> C:\Users\bebe\.codex\worktrees\49c6\OpenTTD-patches\build-precomputed\settingsgen.exe
+  -- Version string: jgrpp-ya-0.73.3+2-111-g43f58fb81-m, Release: 0.73.3+2, Online contents compatible jgrpp version: 0.73.3
+  -- Generating rev.cpp
+  -- Generating ottdres.rc
+  -- Generating CPackProperties.cmake
+  -- Generating Doxyfile
+  -- Generating Doxyfile_AI
+  -- Generating Doxyfile_GS
+  openttd_lib.vcxproj -> C:\Users\bebe\.codex\worktrees\49c6\OpenTTD-patches\build-precomputed\openttd_lib.dir\Release\openttd_lib.lib
+  passenger_journey_active.cpp
+  passenger_multimodal.cpp
+  passenger_precomputed.cpp
+  passenger_service_database.cpp
+C:\Users\bebe\.codex\worktrees\49c6\OpenTTD-patches\src\tests\passenger_journey_active.cpp(2322,15): warning C4189: 'train': ローカル変数が初期化されましたが、参照されていません [C:\Users\bebe\.codex\worktrees\49c6\OpenTTD-patches\build-precomputed\openttd_test.vcxproj]
+  openttd_test.vcxproj -> C:\Users\bebe\.codex\worktrees\49c6\OpenTTD-patches\build-precomputed\openttd_test.exe

@@ -13,6 +13,7 @@
 #include "core/network_game_info.h"
 #include "network_admin.h"
 #include "network_server.h"
+#include "../passenger_service_database.h"
 #include "network_udp.h"
 #include "network_base.h"
 #include "../console_func.h"
@@ -597,6 +598,7 @@ NetworkRecvStatus ServerNetworkGameSocketHandler::SendWelcome()
 	if (this->status != ClientStatus::AuthCompany) return this->CloseConnection(NetworkRecvStatus::MalformedPacket);
 
 	this->status = ClientStatus::Authorized;
+	this->join_progress.Start(std::chrono::steady_clock::now());
 
 	/* Reset 'lag' counters */
 	this->last_frame = this->last_frame_server = _frame_counter;
@@ -679,6 +681,78 @@ void ServerNetworkGameSocketHandler::CheckNextClientToSendMap(NetworkClientSocke
  * This sends the map to the client.
  * @return The new state the network.
  */
+static std::optional<uint32_t> _passenger_preparation_frame;
+
+void ServerNetworkGameSocketHandler::ResetPassengerPreparation() { _passenger_preparation_frame.reset(); }
+
+void ServerNetworkGameSocketHandler::SendPassengerPreparation(bool preparing)
+{
+	assert(this->passenger_prepare_frame.has_value());
+	auto p = std::make_unique<Packet>(this, PacketGameType::ServerPassengerPrepare, TCP_MTU);
+	p->Send_bool(preparing); p->Send_uint32(*this->passenger_prepare_frame);
+	this->SendPacket(std::move(p));
+	this->passenger_prepare_sent = std::chrono::steady_clock::now();
+}
+
+NetworkRecvStatus ServerNetworkGameSocketHandler::ReceiveClientPassengerPrepared(Packet &p)
+{
+	if (this->status != ClientStatus::PreActive && this->status != ClientStatus::Active) return this->SendError(NetworkErrorCode::NotExpected);
+	const auto frame = p.Recv_uint32();
+	/* A fast peer can arrive before our next outer-loop preparation check. */
+	if (!_passenger_preparation_frame && (!GetPassengerServiceDatabase().IsPreparingPrecomputed() || frame != _frame_counter)) return this->SendError(NetworkErrorCode::NotExpected);
+	if ((_passenger_preparation_frame && frame != *_passenger_preparation_frame) || this->passenger_prepared) return this->SendError(NetworkErrorCode::IllegalPacket);
+	if (!this->passenger_prepare_frame) {
+		this->passenger_prepare_frame = frame;
+		this->passenger_prepare_started = std::chrono::steady_clock::now();
+	}
+	this->passenger_prepared = true;
+	return NetworkRecvStatus::Okay;
+}
+
+bool ServerNetworkGameSocketHandler::PreparePassengerRouting()
+{
+	auto &db = GetPassengerServiceDatabase();
+	if (!_passenger_preparation_frame && !db.IsPreparingPrecomputed()) return true;
+	const auto now = std::chrono::steady_clock::now();
+	if (!_passenger_preparation_frame) {
+		_passenger_preparation_frame = _frame_counter;
+		Debug(net, 2, "[server] Preparing initial passenger tables at frame {}", _frame_counter);
+	}
+	bool peers_ready = true;
+	for (auto *client : NetworkClientSocket::Iterate()) {
+		if (client->status != ClientStatus::Map && client->status != ClientStatus::DoneMap && client->status != ClientStatus::PreActive && client->status != ClientStatus::Active) continue;
+		if (!client->passenger_prepare_frame) {
+			client->passenger_prepare_frame = *_passenger_preparation_frame;
+			client->passenger_prepare_started = now; client->passenger_prepared = false;
+		}
+		if (now - client->passenger_prepare_started >= std::chrono::seconds(_settings_client.network.max_join_time_total)) {
+			client->SendError(NetworkErrorCode::TimeoutComputer);
+			continue;
+		}
+		/* An in-flight map predates this command frame. It must catch up to
+		 * the same barrier after replay; otherwise its later READY would refer
+		 * to a barrier the server had already forgotten. New requests wait. */
+		if (client->status == ClientStatus::Map || client->status == ClientStatus::DoneMap) { peers_ready = false; continue; }
+		if (now - client->passenger_prepare_sent >= std::chrono::seconds(1)) client->SendPassengerPreparation(true);
+		peers_ready &= client->passenger_prepared;
+	}
+	const auto started = std::chrono::steady_clock::now();
+	bool ready;
+	do {
+		ready = db.PreparePrecomputed();
+	} while (!ready && std::chrono::steady_clock::now() - started < std::chrono::milliseconds(8));
+	if (!ready || !peers_ready) return false;
+	/* Readiness only releases a network barrier. Each peer independently
+	 * completes the same deterministic table frontier before running a frame. */
+	for (auto *client : NetworkClientSocket::Iterate()) if (client->passenger_prepare_frame && client->status != ClientStatus::ClosePending) {
+		client->SendPassengerPreparation(false); client->passenger_prepare_frame.reset(); client->passenger_prepared = false;
+	}
+	Debug(net, 2, "[server] Initial passenger tables ready at frame {}", *_passenger_preparation_frame);
+	_passenger_preparation_frame.reset();
+	for (auto *client : NetworkClientSocket::Iterate()) if (client->status == ClientStatus::MapWait) { client->CheckNextClientToSendMap(); break; }
+	return true;
+}
+
 NetworkRecvStatus ServerNetworkGameSocketHandler::SendMap()
 {
 	if (this->status < ClientStatus::Authorized) {
@@ -687,6 +761,12 @@ NetworkRecvStatus ServerNetworkGameSocketHandler::SendMap()
 	}
 
 	if (this->status == ClientStatus::Authorized) {
+		const bool server_preparing = GetPassengerServiceDatabase().IsPreparingPrecomputed();
+		this->join_progress.SetServerPreparing(server_preparing, std::chrono::steady_clock::now());
+		if (_passenger_preparation_frame || server_preparing) {
+			this->status = ClientStatus::MapWait;
+			return this->SendWait();
+		}
 		WaitTillSaved();
 		this->savegame = std::make_shared<PacketWriter>(this);
 
@@ -696,6 +776,8 @@ NetworkRecvStatus ServerNetworkGameSocketHandler::SendMap()
 		this->SendPacket(std::move(p));
 
 		NetworkSyncCommandQueue(this);
+		this->map_load_work = 0;
+		this->map_load_work_limit = GetPassengerServiceDatabase().GetLoadWorkLimit();
 		this->status = ClientStatus::Map;
 		/* Mark the start of download */
 		this->last_frame = _frame_counter;
@@ -717,6 +799,7 @@ NetworkRecvStatus ServerNetworkGameSocketHandler::SendMap()
 			/* Set the status to DONE_MAP, no we will wait for the client
 			 *  to send it is ready (maybe that happens like never ;)) */
 			this->status = ClientStatus::DoneMap;
+			this->join_progress.BeginReplay(this->map_load_work_limit, std::chrono::steady_clock::now());
 
 			this->CheckNextClientToSendMap();
 		}
@@ -1214,7 +1297,7 @@ NetworkRecvStatus ServerNetworkGameSocketHandler::ReceiveClientGetMap(Packet &p)
 {
 	/* The client was never joined.. so this is impossible, right?
 	 *  Ignore the packet, give the client a warning, and close the connection */
-	if (this->status < ClientStatus::Authorized || this->HasClientQuit()) {
+	if (this->status != ClientStatus::Authorized || this->HasClientQuit()) {
 		return this->SendError(NetworkErrorCode::NotAuthorized);
 	}
 
@@ -1233,10 +1316,32 @@ NetworkRecvStatus ServerNetworkGameSocketHandler::ReceiveClientGetMap(Packet &p)
 	return this->SendMap();
 }
 
+NetworkRecvStatus ServerNetworkGameSocketHandler::ReceiveClientMapProgress(Packet &p)
+{
+	if (this->status != ClientStatus::DoneMap || this->HasClientQuit()) return this->SendError(NetworkErrorCode::NotExpected);
+	uint64_t work = p.Recv_uint64();
+	const auto now = std::chrono::steady_clock::now();
+	if (this->join_progress.Expired(now, std::chrono::seconds(_settings_client.network.max_join_time_total))) return this->SendError(NetworkErrorCode::TimeoutJoin);
+	if (this->join_progress.Report(work, now) != NetworkJoinProgress::Result::Accepted) return this->SendError(NetworkErrorCode::IllegalPacket);
+	this->map_load_work = work;
+	/* A client claim renews only the replay inactivity clock. It proves no CPU
+	 * work and never acknowledges a simulation frame or the overall deadline. */
+	auto reply = std::make_unique<Packet>(this, PacketGameType::ServerMapProgress, TCP_MTU);
+	reply->Send_uint64(work);
+	this->SendPacket(std::move(reply));
+	Debug(net, 3, "[server] Client #{} map replay progress {}/{}", this->client_id, work, this->map_load_work_limit);
+	return NetworkRecvStatus::Okay;
+}
+
 NetworkRecvStatus ServerNetworkGameSocketHandler::ReceiveClientMapOk(Packet &)
 {
 	/* Client has the map, now start syncing */
 	if (this->status == ClientStatus::DoneMap && !this->HasClientQuit()) {
+		const auto now = std::chrono::steady_clock::now();
+		if (this->join_progress.Expired(now, std::chrono::seconds(_settings_client.network.max_join_time_total))) return this->SendError(NetworkErrorCode::TimeoutJoin);
+		Debug(net, 2, "[server] Client #{} map ready: server_preparation_ms={}; client_join_ms={}", this->client_id,
+				std::chrono::duration_cast<std::chrono::milliseconds>(this->join_progress.GetServerPreparationTime(now)).count(),
+				std::chrono::duration_cast<std::chrono::milliseconds>(this->join_progress.GetClientJoinTime(now)).count());
 		std::string client_name = this->GetClientName();
 
 		NetworkTextMessage(NetworkAction::ClientJoin, CC_DEFAULT, false, client_name, {}, this->client_id);
@@ -1515,15 +1620,17 @@ NetworkRecvStatus ServerNetworkGameSocketHandler::ReceiveClientQuit(Packet &)
 
 NetworkRecvStatus ServerNetworkGameSocketHandler::ReceiveClientAck(Packet &p)
 {
-	if (this->status < ClientStatus::Authorized) {
+	if (this->status != ClientStatus::PreActive && this->status != ClientStatus::Active) {
 		/* Illegal call, return error and ignore the packet */
 		return this->SendError(NetworkErrorCode::NotAuthorized);
 	}
 
 	uint32_t frame = p.Recv_uint32();
+	if (frame > _frame_counter) return this->SendError(NetworkErrorCode::IllegalPacket);
 
 	/* The client is trying to catch up with the server */
 	if (this->status == ClientStatus::PreActive) {
+		if (this->join_progress.Expired(std::chrono::steady_clock::now(), std::chrono::seconds(_settings_client.network.max_join_time_total))) return this->SendError(NetworkErrorCode::TimeoutJoin);
 		/* The client is not yet caught up? */
 		if (frame + DAY_TICKS < _frame_counter) return NetworkRecvStatus::Okay;
 
@@ -2113,6 +2220,8 @@ void NetworkServer_Tick(bool send_frame)
 
 	/* Now we are done with the frame, inform the clients that they can
 	 *  do their frame! */
+	const bool server_preparing = GetPassengerServiceDatabase().IsPreparingPrecomputed();
+	const auto join_now = std::chrono::steady_clock::now();
 	for (NetworkClientSocket *cs : NetworkClientSocket::Iterate()) {
 		/* We allow a number of bytes per frame, but only to the burst amount
 		 * to be available for packet receiving at any particular time. */
@@ -2121,6 +2230,21 @@ void NetworkServer_Tick(bool send_frame)
 
 		/* Check if the speed of the client is what we can expect from a client */
 		uint lag = NetworkCalculateLag(cs);
+		/* A joining client cannot download/replay while our own initial graph
+		 * blocks SendMap. Waiting for another peer after local readiness counts
+		 * against the client budget, as does the ordinary download queue. */
+		cs->join_progress.SetServerPreparing(cs->status == NetworkClientSocket::ClientStatus::MapWait && server_preparing, join_now);
+		if (cs->status >= NetworkClientSocket::ClientStatus::Authorized && cs->status < NetworkClientSocket::ClientStatus::Active &&
+				cs->join_progress.Expired(join_now, std::chrono::seconds(_settings_client.network.max_join_time_total))) {
+			IConsolePrint(CC_ERROR, "Client #{} exceeded the {} limit of {} seconds", cs->client_id,
+					cs->join_progress.ServerPreparationExpired(join_now, std::chrono::seconds(_settings_client.network.max_join_time_total)) ? "server preparation wait" : "client join",
+					_settings_client.network.max_join_time_total);
+			cs->SendError(NetworkErrorCode::TimeoutJoin);
+			continue;
+		}
+		/* A preparation keepalive is not a frame ACK. At this exact frame no
+		 * peer can run simulation, so ordinary frame-lag clocks do not apply. */
+		if (cs->passenger_prepare_frame) lag = 0;
 		switch (cs->status) {
 			case NetworkClientSocket::ClientStatus::Active:
 				if (lag > _settings_client.network.max_lag_time) {
@@ -2193,6 +2317,12 @@ void NetworkServer_Tick(bool send_frame)
 				break;
 
 			case NetworkClientSocket::ClientStatus::DoneMap:
+				if (cs->join_progress.Idle(std::chrono::steady_clock::now(), std::chrono::milliseconds(_settings_client.network.max_join_time * MILLISECONDS_PER_TICK))) {
+					IConsolePrint(CC_ERROR, "Client #{} is dropped because it took longer than {} ticks to join without replay progress", cs->client_id, _settings_client.network.max_join_time);
+					cs->SendError(NetworkErrorCode::TimeoutJoin);
+					continue;
+				}
+				break;
 			case NetworkClientSocket::ClientStatus::PreActive:
 				/* The map has been sent, so this is for loading the map and syncing up. */
 				if (lag > _settings_client.network.max_join_time) {

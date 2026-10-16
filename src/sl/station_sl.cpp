@@ -376,11 +376,11 @@ struct StationGoodsFlowStructHandler final : public TypedSaveLoadStructHandler<S
 	}
 };
 
-typedef std::pair<const StationID, CargoPacketList> StationCargoPair;
+typedef std::pair<const StationID, StationCargoPacketList> StationCargoPair;
 
 static const NamedSaveLoad _cargo_list_desc[] = {
 	NSL("first",      SLE_VAR(StationCargoPair, first,  SLE_UINT16)),
-	NSL("second", SLE_REFRING(StationCargoPair, second, REF_CARGO_PACKET)),
+	NSL("second", SLE_REFLIST(StationCargoPair, second, REF_CARGO_PACKET)),
 };
 
 struct StationGoodsCargoStructHandler final : public TypedSaveLoadStructHandler<StationGoodsCargoStructHandler, GoodsEntry> {
@@ -478,7 +478,38 @@ struct PassengerOdStructHandler final : public TypedSaveLoadStructHandler<Passen
 	}
 };
 
+/** Saved scheduler state, separate from its reconstructible packet indices. */
+NamedSaveLoadTable GetPassengerWaitingEventDesc()
+{
+	static const NamedSaveLoad fields[] = {
+		NSL("dirty", SLE_VAR(StationCargoList, passenger_routing_dirty, SLE_BOOL)),
+		NSL("revision", SLE_VAR(StationCargoList, passenger_routing_revision, SLE_UINT64)),
+		NSL("rows", SLE_VAR(StationCargoList, passenger_routing_rows, SLE_UINT64)),
+		NSL("due", SLE_VAR(StationCargoList, passenger_routing_due, SLE_INT64)),
+		NSL("sweeping", SLE_CONDVAR_X(StationCargoList, passenger_routing_sweeping, SLE_BOOL, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_PASSENGER_PERIODIC, 9))),
+		NSL("cursor", SLE_CONDVAR_X(StationCargoList, passenger_routing_cursor, SLE_UINT32, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_PASSENGER_PERIODIC, 9))),
+		NSL("end", SLE_CONDVAR_X(StationCargoList, passenger_routing_end, SLE_UINT32, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_PASSENGER_PERIODIC, 9))),
+		NSL("tick", SLE_CONDVAR_X(StationCargoList, passenger_routing_tick, SLE_INT64, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_PASSENGER_PERIODIC, 9))),
+		NSL("work", SLE_CONDVAR_X(StationCargoList, passenger_routing_work, SLE_UINT16, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_PASSENGER_PERIODIC, 9))),
+		NSL("boarding_last", SLE_CONDVAR_X(StationCargoList, passenger_boarding_last, SLE_UINT16, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_PASSENGER_PERIODIC, 10))),
+	};
+	return fields;
+}
+
 /** Get the save/load description for a station's goods entry. */
+struct PassengerWaitingEventsStructHandler final : public TypedSaveLoadStructHandler<PassengerWaitingEventsStructHandler, GoodsEntry> {
+	NamedSaveLoadTable GetDescription() const override { return GetPassengerWaitingEventDesc(); }
+	void Save(GoodsEntry *ge) const override
+	{
+		SlSetStructListLength(ge->data == nullptr ? 0 : 1);
+		if (ge->data != nullptr) SlObjectSaveFiltered(&ge->data->cargo, this->GetLoadDescription());
+	}
+	void Load(GoodsEntry *ge) const override
+	{
+		if (SlGetStructListLength(1) != 0) SlObjectLoadFiltered(&ge->CreateData().cargo, this->GetLoadDescription());
+	}
+};
+
 NamedSaveLoadTable GetGoodsDesc()
 {
 	static const NamedSaveLoad goods_desc[] = {
@@ -510,6 +541,7 @@ NamedSaveLoadTable GetGoodsDesc()
 		NSLT_STRUCTLIST<StationGoodsFlowStructHandler>("flow"),
 		NSLT_STRUCTLIST<StationGoodsCargoStructHandler>("cargo"),
 		NSLT_STRUCTLIST<PassengerOdStructHandler>("passenger_od", SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_PASSENGER_OD_ASSIGNMENT)),
+		NSLT_STRUCTLIST<PassengerWaitingEventsStructHandler>("passenger_waiting_events", SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_PASSENGER_PERIODIC, 4)),
 	};
 
 	return goods_desc;
@@ -527,15 +559,17 @@ static void SwapPackets(GoodsEntry *ge)
 	StationCargoPacketMap &ge_packets = const_cast<StationCargoPacketMap &>(*ge->CreateData().cargo.Packets());
 
 	if (_packets.empty()) {
-		std::map<StationID, CargoPacketList>::iterator it(ge_packets.find(StationID::Invalid()));
+		auto it = ge_packets.find(StationID::Invalid());
 		if (it == ge_packets.end()) {
 			return;
 		} else {
-			it->second.swap(_packets);
+			for (CargoPacket *packet : it->second) _packets.push_back(packet);
+			it->second.clear();
 		}
 	} else {
 		assert(ge_packets[StationID::Invalid()].empty());
-		ge_packets[StationID::Invalid()].swap(_packets);
+		for (CargoPacket *packet : _packets) ge_packets[StationID::Invalid()].push_back(packet);
+		_packets.clear();
 	}
 }
 

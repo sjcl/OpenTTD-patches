@@ -106,6 +106,10 @@ Station::Station(StationID index, TileIndex tile) :
 	time_since_unload(255)
 {
 	/* this->random_bits is set in Station::AddFacility() */
+	for (CargoType cargo : EnumRange(NUM_CARGO)) {
+		this->goods[cargo].passenger_station = index;
+		this->goods[cargo].passenger_cargo = cargo;
+	}
 	InvalidatePassengerStationBindings();
 }
 

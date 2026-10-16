@@ -12,15 +12,19 @@
 #include "passenger_journey_schedule.h"
 #include "passenger_departure_index.h"
 #include "passenger_timed_search.h"
+#include "passenger_precomputed.h"
 #include <set>
 #include <list>
 #include <variant>
+#include <bitset>
 
 struct PassengerPeriodicStop {
 	StationID station = StationID::Invalid();
 	VehicleOrderID order = INVALID_VEH_ORDER_ID;
 	int64_t arrival = 0, departure = 0;
 	uint64_t board = 0, alight = 0, forced = 0; ///< Cargo-slot masks, independent of cargo labels.
+	bool continues = true; ///< Safe order traversal from this occurrence to the next, including wraparound.
+	uint8_t travel_quality = 0; ///< Incoming segment: 0 declared, 1 recorded, 2 distance estimate.
 	bool operator==(const PassengerPeriodicStop &) const = default;
 };
 
@@ -29,8 +33,13 @@ struct PassengerPeriodicStop {
 struct PassengerPeriodicTimetable {
 	std::vector<PassengerPeriodicStop> stops; ///< Physical station events; zero exchange masks stay for phases, dispatch and saved occurrence IDs.
 	int64_t period = 0;
+	int64_t estimated_period = 0; ///< Duration estimate only. Never supplied to NextDeparture or phase capture.
+	enum class Certainty : uint8_t { Unsupported, Estimated, Certified };
+	Certainty GetCertainty() const { return this->period > 0 ? Certainty::Certified : this->estimated_period > 0 ? Certainty::Estimated : Certainty::Unsupported; }
+	int64_t Circuit() const { return this->period > 0 ? this->period : this->estimated_period; }
 	enum class Failure : uint8_t { None, Control, Refit, Travel, Wait, Overflow, ZeroPeriod, TooFewStops, End };
 	static PassengerPeriodicTimetable Compile(std::span<const Order> orders, Failure *failure = nullptr);
+	static PassengerPeriodicTimetable CompileEstimated(std::span<const Order> orders, VehicleType type);
 	static std::optional<StateTicks> NextDeparture(StateTicks base, int64_t offset, int64_t period, StateTicks ready);
 	bool operator==(const PassengerPeriodicTimetable &) const = default;
 };
@@ -141,13 +150,47 @@ struct PassengerDatabaseDiagnostic {
 class PassengerServiceDatabase {
 public:
 	static constexpr size_t BUILD_WORK = 65536, MAX_BYTES = 64 * 1024 * 1024;
+	static constexpr size_t PRECOMPUTED_CAPTURE_WORK = 16 * 1024 * 1024; ///< Generation construction only; packet queries never use this allowance.
 	static constexpr size_t POLICY_BYTES = 16 * 1024 * 1024, POLICY_ENTRIES = 4096; ///< Shared by Timed and Schedule-aware, including dependency and LRU storage.
 	static constexpr size_t POLICY_STORAGE_BYTES = POLICY_BYTES - 1024 * 1024; ///< Reserve for station stamps and bounded rebuild diagnostics.
 	static constexpr int64_t TIMETABLE_EPOCH = 4096;
 	void Reset();
 	void Invalidate(OrderListID id = OrderListID::Invalid());
 	void TimetableChanged(OrderListID id); ///< Keep safe published timing until the next deterministic update epoch.
-	void Tick(size_t allowance = BUILD_WORK);
+	void Tick(size_t allowance = BUILD_WORK, bool build_precomputed = true, bool prepare_graphs = false);
+	void TickPrecomputed(size_t allowance = BUILD_WORK);
+	bool PreparePrecomputed(); ///< Initial trees or replacement graph barrier: one slice, without advancing StateTicks.
+	bool IsPreparingPrecomputed() const;
+	uint64_t GetPrecomputedPreparationNanoseconds() const { return this->precomputed_preparation_nanoseconds; }
+	void DiscardPrecomputed();
+	bool PrecomputedFinished() const;
+	bool HasRejectedPrecomputedMemory() const
+	{ return std::any_of(this->precomputed.begin(), this->precomputed.end(), [](const auto &table) { return table.MemoryRejected(); }); }
+	PassengerPrecomputedPlan PlanPrecomputed(CargoType cargo, StationID origin, StationID destination, StateTicks ready,
+			OrderListID excluded = OrderListID::Invalid(), uint32_t sample = 0) const;
+	PassengerPrecomputedDiagnostic GetPrecomputedDiagnostic(CargoType cargo) const
+	{
+		auto result = this->precomputed[cargo].GetDiagnostic();
+		const auto &old = this->retained_precomputed[cargo].GetDiagnostic();
+		result.retained_destinations = old.destinations; result.retained_bytes = old.bytes; result.retained_envelope = old.envelope;
+		return result;
+	}
+	uint64_t GetPublishedRevision() const { return this->published_revision; }
+	auto BoardingRevision() const { return std::tuple(this->published_revision, this->boarding_revision, this->precomputed_operations); }
+	std::span<const StationID> PrecomputedReachableDestinations(CargoType cargo, StationID origin, bool retained = false) const
+	{ return cargo < NUM_CARGO ? (retained ? this->retained_precomputed[cargo] : this->precomputed[cargo]).ReachableDestinations(origin) : std::span<const StationID>{}; }
+	std::optional<int64_t> PrecomputedRouteCost(CargoType cargo, StationID origin, StationID destination) const
+	{
+		if (cargo >= NUM_CARGO) return {};
+		auto cost = this->precomputed[cargo].RouteCost(origin, destination);
+		return cost ? cost : this->retained_precomputed[cargo].RouteCost(origin, destination);
+	}
+	OrderListID PrecomputedBoardingKey(CargoType cargo, OrderListID service) const { return this->precomputed[cargo].BoardingKey(service); }
+	std::span<const OrderListID> PrecomputedBoardingServices(CargoType cargo, OrderListID service) const { return this->precomputed[cargo].BoardingServices(service); }
+	struct BoardingKeys { std::array<std::span<const OrderListID>, 2> services; std::array<std::span<const uint64_t>, 2> sections; };
+	BoardingKeys PrecomputedBoardingKeys(CargoType cargo, OrderListID service, VehicleOrderID boarding) const;
+	bool RebindPrecomputed(PassengerJourneyExecution &ride, OrderListID service, CargoType cargo, VehicleOrderID boarding = INVALID_VEH_ORDER_ID) const;
+	std::optional<PassengerJourneyExecution> ExtendPrecomputedRide(const PassengerJourneyExecution &ride, CargoType cargo, StationID destination) const;
 	PassengerPeriodicPlan Plan(CargoType cargo, StationID origin, StationID destination, StateTicks ready,
 			PassengerJourneyLimits limits = {}, PassengerJourneyEvaluation evaluation = {}, OrderListID excluded = OrderListID::Invalid());
 	/** Explicit read-only algorithm comparison, never a local cache preference or simulation setting. */
@@ -180,7 +223,13 @@ public:
 	bool IsBuilding() const { return this->sweeping || !this->dirty.empty() || !this->build_queue.empty() || !this->building.empty(); }
 	std::vector<uint8_t> Save() const;
 	bool Load(std::span<const uint8_t> bytes);
-	void FinishLoad(bool present);
+	void FinishLoad(bool present, bool defer_precomputed = false);
+	enum class LoadState : uint8_t { Ready, Replaying, Invalid };
+	LoadState StepLoad(size_t allowance = BUILD_WORK); ///< Replay saved work only; never advance simulation or capture live input.
+	LoadState GetLoadState() const { return this->load_state; }
+	uint64_t GetLoadWork() const { return this->load_work; }
+	uint64_t GetLoadProgress() const; ///< Tree operations plus capped, actually executed graph preparation steps.
+	uint64_t GetLoadWorkLimit() const; ///< Upper bound for a peer replaying the current saved snapshot.
 	PassengerDatabaseDiagnostic GetDiagnostic() const;
 	void ResetDiagnostic() { this->diagnostic = {}; this->schedule.ResetDiagnostic(); this->recent_policy_builds.clear(); }
 	void SetPolicyCacheEnabled(bool enabled) { this->policy_cache_enabled = enabled; if (!enabled) this->ClearPolicies(); }
@@ -196,6 +245,29 @@ public:
 private:
 	friend class PassengerSchedulePlanner;
 	PassengerSchedulePlanner schedule;
+	std::array<PassengerPrecomputedTable, NUM_CARGO> precomputed;
+	std::array<PassengerPrecomputedTable, NUM_CARGO> retained_precomputed;
+	std::map<OrderListID, PassengerPeriodicService> retained_precomputed_services;
+	uint64_t retained_precomputed_revision = UINT64_MAX;
+	int64_t retained_precomputed_transfer = 0;
+	std::map<OrderListID, PassengerPeriodicService> precomputed_services; ///< Frozen build input, saved independently of live publications.
+	uint64_t precomputed_revision = UINT64_MAX, precomputed_operations = 0;
+	int64_t precomputed_transfer = 0;
+	StateTicks precomputed_refresh{};
+	bool precomputed_invalidated = false;
+	bool legacy_precomputed_cursor = false; ///< v4/v5 row publication did not charge compact-label copies.
+	bool precomputed_sections = true, retained_precomputed_sections = true; ///< Saved graph algorithm for exact pre-v8 cursor replay.
+	bool precomputed_estimates = true, retained_precomputed_estimates = true; ///< Exact replay of pre-v9 costs and route dispersion.
+	uint64_t boarding_revision = 0; ///< Event-local validation invalidation; never saved or used for simulation admission.
+	uint64_t precomputed_preparation_nanoseconds = 0; ///< Local elapsed observation, never saved or used for admission.
+	PassengerBuildTask preparation_capture;
+	PassengerBuildTask TickBuild(size_t allowance, bool build_precomputed, bool cooperative);
+	bool cooperative_graph = false, load_graph_refreshed = false, load_current_graph_started = false;
+	void BeginPrecomputed(int64_t transfer);
+	void BuildPrecomputedTables();
+	void ClearRetainedPrecomputed();
+	void BuildPrecomputedTables(std::array<PassengerPrecomputedTable, NUM_CARGO> &tables,
+			const std::map<OrderListID, PassengerPeriodicService> &snapshot, int64_t transfer, uint64_t remaining, bool sections, bool estimates, bool cooperative = false);
 	using Dependencies = std::map<StationID, uint64_t>;
 	struct JourneyPolicy {
 		std::vector<std::pair<StationID, int64_t>> lower_bounds; ///< Relaxed reverse adjacent-stop distances, never winning routes.
@@ -235,6 +307,8 @@ private:
 	void Publish(size_t &allowance);
 	void ClearPolicies(PassengerDatabaseDiagnostic::ClearReason reason);
 	std::map<OrderListID, PassengerPeriodicService> services; ///< Published network only.
+	std::vector<const PassengerPeriodicService *> service_lookup; ///< Derived dense pool-ID lookup, rebuilt before simulation resumes.
+	std::bitset<65536> unsafe_lookup; ///< Same saved unsafe set, allocation-free membership for packet lookups.
 	std::map<OrderListID, PassengerPeriodicService> building; ///< Completed tasks awaiting the publication barrier.
 	std::set<OrderListID> build_queue, unsafe;
 	std::map<OrderListID, StateTicks> build_since, staged_since;
@@ -250,6 +324,11 @@ private:
 	uint32_t cursor = 0; ///< Bounded pool-ID sweep; no national discovery per query/tick.
 	uint16_t dirty_cursor = 65534; ///< Rotating deterministic dirty queue; repeated edits cannot starve higher IDs.
 	bool sweeping = true, restoring = false;
+	LoadState load_state = LoadState::Ready;
+	bool load_retained = false;
+	CargoType load_cargo{0};
+	uint64_t load_remaining = 0, load_work = 0;
+	std::vector<uint8_t> load_legacy_wire; ///< Preserve the old cursor format until its publication charge has been migrated.
 	uint64_t generation = 0;
 	size_t bytes = 0, policy_bytes = 0;
 	bool policy_cache_enabled = true; ///< Local optional accelerator; absent from saves and routing admission.

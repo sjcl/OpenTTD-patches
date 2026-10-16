@@ -1,0 +1,6 @@
+script C:/Users/bebe/.codex/worktrees/99a5/OpenTTD-patches/build-integration/quality-probe-readback/console.txt
+passenger_journey_stats build_precomputed
+passenger_journey_stats quality_probe
+passenger_journey_stats save_integrity
+script
+quit

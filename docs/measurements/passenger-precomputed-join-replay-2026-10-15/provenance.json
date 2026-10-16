@@ -1,0 +1,31 @@
+{
+  "product_code_revision": "d0d2b6023e",
+  "load_replay_revision": "c702dd4a11",
+  "compiler": "MSVC x64 Release, asserts ON, LTO OFF",
+  "measured_binary_sha256": "b2e384c7db12dfa331a57fd9bc26aba743d38527917b718d66880911a95f105d",
+  "final_product_sha256": "605d62813c0ccb6729fb2b7de562d29c2ad0f8cc4906aa828b043e54eb95e2af",
+  "scripts": {
+    "passenger_precomputed_join.py": "6ee0c590dc28fb31cc77e44230c8a4bb8bcffdbe49452003727aa971860a5fb8",
+    "passenger_precomputed_join_prepare.py": "9c5e64e1327817fbe42412c47a9cf3797a2f7ab60c5cbb05056455f9846572ee",
+    "passenger_precomputed_real_map.py": "ecea0d38a0530bbf4ce74bef298dde3707043d4b4d78d36a166cdcfaedd22477"
+  },
+  "instrumentation": {
+    "save-integrity\\cargopacket.cpp": "1e10d494faa186d0c1bc5dae488ebe280903cdbbba4f2db3536217d06f669317",
+    "save-integrity\\cargopacket_sl.cpp": "3b54d7cdb2c17a3ece97e4ad34916262e27bf1dc53d624eafba0c8e5839aa932",
+    "save-integrity\\console_cmds.cpp": "22d0faddaa54e833ed9667cf43493c5842dc18fa830af37690b0d9414b724cdd",
+    "save-integrity\\integrity.h": "23346a97d051577b34badce7fed64e54a2df32b3c2e7f8c4e265645432c0c9dd",
+    "real-map-driver/null_v.cpp": "870c22cb6fe73ea0b8eddb8c20f5d7a5493b938813fb2e7c5083710d9f10bd9a"
+  },
+  "frozen_package_manifest_sha256": "5f81c2046b97e86e17c0eb25a5cee7922bc3b4d1226d8f0461c8f2becfa38655",
+  "final_product_configuration": {
+    "passenger_benchmark": false,
+    "measurement_translation_unit_overrides": false,
+    "all_ctest_cases": 630,
+    "all_ctest_passed": true
+  },
+  "local_settings": "Only loopback address/name, min_active_clients=0 and pause_on_join=true; no timeout setting is overridden.",
+  "digest": "Canonical little-endian database bytes and explicit typed packet/ownership/loading fields; FNV-1a.",
+  "timing": "Elapsed join, replay GameLoop maximum and Windows process CPU/peaks are distinct. Native linkgraph worker time is included in transport process totals.",
+  "teardown": "Snapshots and network_error are evaluated before the probe intentionally closes its own processes. Trailing disconnect/recv-failed lines during shutdown are outside that observation.",
+  "attempts": "complete-long predates the legacy-input buffer allocation guard and commit version stamp; v7 replay behavior is unchanged. initial-rejected-input preserves the native error-state refusal. initial-observation-race compared different StateTicks and is not a same-tick divergence finding. initial-active-timeout records an active client timeout while another probe started concurrently. initial-long uses bounded catch-up before the minimum two-frame video-driver adjustment. stalled-observation-missed did time out at 500 ticks in stdout, but the old probe searched stderr."
+}

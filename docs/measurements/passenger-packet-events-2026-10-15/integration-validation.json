@@ -1,0 +1,21 @@
+{
+  "base_revision": "70c654c7aa9b1040fcf98b1d67474e294f95fbc2",
+  "code_diff_sha256": "85c8897709e3e6c221ae789c6a9ca477f4f39e6ea0846a8839f854a6e22eb41f",
+  "save_feature": 9,
+  "database_blob_version": 8,
+  "configuration": "MSVC x64 Release; asserts ON; LTO OFF; passenger benchmark OFF",
+  "build_passed": true,
+  "product_binary_sha256": "532785a9f188d76155806010f82b7d5d456be3b64337b63e5509dcbca9fa1bec",
+  "test_binary_sha256": "730ef5dd4d1324412db1c0519b89228efdcfa5d0e3cd3556e6578a3e3442268b",
+  "ctest": {
+    "cases": 644,
+    "initial_passed": 643,
+    "initial_failed": 1,
+    "failure": "New packet save-table test used a destination-dependent fixture without creating stations",
+    "correction": "Test-only packet construction; production code unchanged after the full run",
+    "retry_passed": 1,
+    "combined_passed": 644
+  },
+  "compatibility": "v8 omits packet-event fields; v9 preserves packet deadlines and station scheduler state",
+  "long_run_validation": "Real-map, save roundtrip and live multiplayer results in summary.json precede common-section integration; not rerun after integration"
+}

@@ -1,0 +1,24 @@
+Filters: [precomputed][boarding][cpu]
+unrelated_packets,query_ns,packet_inspections,cohort_inspections,expensive_validations,validation_cache_hits
+128,632,1024,1024,0,2048
+1024,591,1024,1024,0,2048
+8192,606,1024,1024,0,2048
+32768,605,1024,1024,0,2048
+waiting_packets,legacy_ns,indexed_ns,indexed_candidates
+128,11353,534,513
+1024,85895,538,513
+8192,730098,554,513
+32768,3946526,550,513
+cohort_packets,prefix_ns,prefix_candidates
+128,510,1
+1024,507,1
+8192,506,1
+32768,567,1
+unrelated_packets,section_ns,section_candidates,section_groups,section_keys
+128,695,1,3,4
+1024,545,1,3,4
+8192,587,1,3,4
+32768,558,1,3,4
+===============================================================================
+All tests passed (198652 assertions in 4 test cases)
+

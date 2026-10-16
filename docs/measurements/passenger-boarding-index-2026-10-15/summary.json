@@ -1,0 +1,108 @@
+{
+  "base_revision": "f880eac3bccadcc8182bcedbe4dbb8b963f5ee72",
+  "code_diff_sha256": "0d5594b8f32f07b1f823d93839a4b1b22473d232fc594d768f76a8a48bbc2594",
+  "save_feature": 10,
+  "database_blob_version": 8,
+  "validation": {
+    "ctest_cases": 654,
+    "ctest_passed": 654,
+    "ctest_seconds": 123.39,
+    "precomputed_cases": 48,
+    "precomputed_assertions": 72388,
+    "boarding_benchmark_cases": 3,
+    "boarding_benchmark_assertions": 154474
+  },
+  "fallback_scaling": [
+    {
+      "unrelated_packets": 128,
+      "query_ns": 688,
+      "packet_inspections": 1024,
+      "cohort_inspections": 1024,
+      "expensive_revalidations": 0,
+      "validation_cache_hits": 2048
+    },
+    {
+      "unrelated_packets": 1024,
+      "query_ns": 897,
+      "packet_inspections": 1024,
+      "cohort_inspections": 1024,
+      "expensive_revalidations": 0,
+      "validation_cache_hits": 2048
+    },
+    {
+      "unrelated_packets": 8192,
+      "query_ns": 570,
+      "packet_inspections": 1024,
+      "cohort_inspections": 1024,
+      "expensive_revalidations": 0,
+      "validation_cache_hits": 2048
+    },
+    {
+      "unrelated_packets": 32768,
+      "query_ns": 673,
+      "packet_inspections": 1024,
+      "cohort_inspections": 1024,
+      "expensive_revalidations": 0,
+      "validation_cache_hits": 2048
+    }
+  ],
+  "real_map": {
+    "input_sha256": "0e2ae908db8d3bf75c0ecae4f5d680a187d920fb9504e129f88dee4185ace22d",
+    "actual_ticks": 1024,
+    "packets": 488096,
+    "journey_packets": 250709,
+    "known_od_units": 806628,
+    "payments_valid": true,
+    "elapsed_seconds": 313.8411550996825,
+    "peak_working_bytes": 6496276480,
+    "runtime_error_resumes": 0,
+    "warm_complete": true,
+    "contamination": [],
+    "stderr_warning_count_available": false,
+    "result_sha256": "6783a500f47435a342a36e9a6544e33bb38f041abe91e9e2ff2c654edd16c978"
+  },
+  "multiplayer": {
+    "pass": true,
+    "default_game_timeouts": true,
+    "harness_observation_timeout_seconds": 600,
+    "initial_harness_observation_limit_seconds": 180,
+    "joined": true,
+    "join_elapsed_seconds": 238.9945668000728,
+    "join_mismatches": [],
+    "actual_ticks": 1084,
+    "transport_equal": true,
+    "transport_mismatches": [],
+    "network_error": false,
+    "replay": {
+      "slices": 14236,
+      "maximum_loop_us": 14511,
+      "work": 4284707345,
+      "start_tick": 3181095005,
+      "end_tick": 3181095005,
+      "start_frame": 146,
+      "end_frame": 146
+    },
+    "newgrf_warning_lines": {
+      "server": 29025,
+      "client": 29025
+    }
+  },
+  "product": {
+    "binary_sha256": "0aab4ed37754ea2d41e8b69c3885f65a423a5a941e052680842570cfbbf5823c",
+    "assertions_enabled": true,
+    "lto_off": true,
+    "passenger_benchmark_off": true,
+    "copied_source_references_absent": true,
+    "measurement_strings_absent": {
+      "save-integrity.json": true,
+      "OPENTTD_PASSENGER_MEASURE": true,
+      "passenger_benchmark_end.scr": true
+    }
+  },
+  "notes": [
+    "Scaling is warm same-loading-pass synthetic CPU measurement; other host activity was not excluded.",
+    "Real-map process time includes mandatory row reconstruction, warmup and a LinkGraph computation pause.",
+    "Real-map and live multiplayer used copied measurement translation units; final product has all hooks removed.",
+    "Known JP+ NewGRF warnings are present; no warning fix is claimed."
+  ]
+}

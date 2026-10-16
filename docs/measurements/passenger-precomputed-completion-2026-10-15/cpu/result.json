@@ -1,0 +1,302 @@
+{
+  "command": [
+    "C:\\Users\\bebe\\.codex\\worktrees\\ef5d\\OpenTTD-patches\\build-completion\\openttd_test.exe",
+    "[precomputed][cpu]",
+    "-r",
+    "compact"
+  ],
+  "exit_code": 0,
+  "elapsed_seconds": 3.16323330020532,
+  "platform": "Windows-11-10.0.26200-SP0",
+  "processor": "AMD64 Family 26 Model 68 Stepping 0, AuthenticAMD",
+  "binary_sha256": "8008c4bb3a98d7496efca6f2b09c89a22f0c2780b9b1c22378d58c9d3a783290",
+  "routing": [
+    {
+      "axis": 0,
+      "size": 16,
+      "build_us": 123,
+      "lookup_ns": 60,
+      "p95_ns": 62,
+      "p99_ns": 67,
+      "flat_array_bytes": 552732,
+      "allocation_envelope": 1120368,
+      "states": 56,
+      "edges": 56,
+      "operations": 1904,
+      "hits": 262144
+    },
+    {
+      "axis": 0,
+      "size": 64,
+      "build_us": 243,
+      "lookup_ns": 60,
+      "p95_ns": 62,
+      "p99_ns": 66,
+      "flat_array_bytes": 1007388,
+      "allocation_envelope": 1937904,
+      "states": 248,
+      "edges": 248,
+      "operations": 32240,
+      "hits": 262144
+    },
+    {
+      "axis": 0,
+      "size": 256,
+      "build_us": 2870,
+      "lookup_ns": 60,
+      "p95_ns": 64,
+      "p99_ns": 66,
+      "flat_array_bytes": 8355612,
+      "allocation_envelope": 14055408,
+      "states": 1016,
+      "edges": 1016,
+      "operations": 522224,
+      "hits": 262144
+    },
+    {
+      "axis": 0,
+      "size": 512,
+      "build_us": 12014,
+      "lookup_ns": 66,
+      "p95_ns": 72,
+      "p99_ns": 137,
+      "flat_array_bytes": 31915804,
+      "allocation_envelope": 52232176,
+      "states": 2040,
+      "edges": 2040,
+      "operations": 2093040,
+      "hits": 262144
+    },
+    {
+      "axis": 1,
+      "size": 16,
+      "build_us": 114,
+      "lookup_ns": 59,
+      "p95_ns": 61,
+      "p99_ns": 64,
+      "flat_array_bytes": 525468,
+      "allocation_envelope": 1070544,
+      "states": 8,
+      "edges": 8,
+      "operations": 80,
+      "hits": 262144
+    },
+    {
+      "axis": 1,
+      "size": 64,
+      "build_us": 63,
+      "lookup_ns": 59,
+      "p95_ns": 64,
+      "p99_ns": 66,
+      "flat_array_bytes": 525468,
+      "allocation_envelope": 1119696,
+      "states": 8,
+      "edges": 8,
+      "operations": 80,
+      "hits": 262144
+    },
+    {
+      "axis": 1,
+      "size": 256,
+      "build_us": 196,
+      "lookup_ns": 59,
+      "p95_ns": 63,
+      "p99_ns": 67,
+      "flat_array_bytes": 525468,
+      "allocation_envelope": 1316304,
+      "states": 8,
+      "edges": 8,
+      "operations": 80,
+      "hits": 262144
+    },
+    {
+      "axis": 1,
+      "size": 512,
+      "build_us": 202,
+      "lookup_ns": 59,
+      "p95_ns": 62,
+      "p99_ns": 66,
+      "flat_array_bytes": 525468,
+      "allocation_envelope": 1578448,
+      "states": 8,
+      "edges": 8,
+      "operations": 80,
+      "hits": 262144
+    },
+    {
+      "axis": 2,
+      "size": 16,
+      "build_us": 135,
+      "lookup_ns": 59,
+      "p95_ns": 60,
+      "p99_ns": 64,
+      "flat_array_bytes": 525468,
+      "allocation_envelope": 1054224,
+      "states": 8,
+      "edges": 8,
+      "operations": 80,
+      "hits": 16384
+    },
+    {
+      "axis": 2,
+      "size": 64,
+      "build_us": 78,
+      "lookup_ns": 59,
+      "p95_ns": 60,
+      "p99_ns": 65,
+      "flat_array_bytes": 525468,
+      "allocation_envelope": 1054224,
+      "states": 8,
+      "edges": 8,
+      "operations": 80,
+      "hits": 65536
+    },
+    {
+      "axis": 2,
+      "size": 256,
+      "build_us": 101,
+      "lookup_ns": 59,
+      "p95_ns": 62,
+      "p99_ns": 66,
+      "flat_array_bytes": 525468,
+      "allocation_envelope": 1054224,
+      "states": 8,
+      "edges": 8,
+      "operations": 80,
+      "hits": 262144
+    },
+    {
+      "axis": 2,
+      "size": 512,
+      "build_us": 92,
+      "lookup_ns": 60,
+      "p95_ns": 64,
+      "p99_ns": 68,
+      "flat_array_bytes": 525468,
+      "allocation_envelope": 1054224,
+      "states": 8,
+      "edges": 8,
+      "operations": 80,
+      "hits": 524288
+    },
+    {
+      "axis": 3,
+      "size": 16,
+      "build_us": 123,
+      "lookup_ns": 59,
+      "p95_ns": 60,
+      "p99_ns": 64,
+      "flat_array_bytes": 552732,
+      "allocation_envelope": 1120368,
+      "states": 56,
+      "edges": 56,
+      "operations": 1904,
+      "hits": 262144
+    },
+    {
+      "axis": 3,
+      "size": 64,
+      "build_us": 263,
+      "lookup_ns": 59,
+      "p95_ns": 60,
+      "p99_ns": 64,
+      "flat_array_bytes": 1007388,
+      "allocation_envelope": 1937904,
+      "states": 248,
+      "edges": 248,
+      "operations": 32240,
+      "hits": 262144
+    },
+    {
+      "axis": 3,
+      "size": 256,
+      "build_us": 2719,
+      "lookup_ns": 59,
+      "p95_ns": 61,
+      "p99_ns": 70,
+      "flat_array_bytes": 8355612,
+      "allocation_envelope": 14055408,
+      "states": 1016,
+      "edges": 1016,
+      "operations": 522224,
+      "hits": 262144
+    },
+    {
+      "axis": 3,
+      "size": 512,
+      "build_us": 11995,
+      "lookup_ns": 59,
+      "p95_ns": 63,
+      "p99_ns": 66,
+      "flat_array_bytes": 31915804,
+      "allocation_envelope": 52232176,
+      "states": 2040,
+      "edges": 2040,
+      "operations": 2093040,
+      "hits": 262144
+    }
+  ],
+  "boarding": [
+    {
+      "waiting_packets": 128,
+      "legacy_ns": 10269,
+      "indexed_ns": 193,
+      "indexed_candidates": 513
+    },
+    {
+      "waiting_packets": 1024,
+      "legacy_ns": 81533,
+      "indexed_ns": 193,
+      "indexed_candidates": 513
+    },
+    {
+      "waiting_packets": 8192,
+      "legacy_ns": 693923,
+      "indexed_ns": 208,
+      "indexed_candidates": 513
+    },
+    {
+      "waiting_packets": 32768,
+      "legacy_ns": 3618479,
+      "indexed_ns": 197,
+      "indexed_candidates": 513
+    }
+  ],
+  "boarding_prefix": [
+    {
+      "cohort_packets": 128,
+      "prefix_ns": 196,
+      "prefix_candidates": 1
+    },
+    {
+      "cohort_packets": 1024,
+      "prefix_ns": 191,
+      "prefix_candidates": 1
+    },
+    {
+      "cohort_packets": 8192,
+      "prefix_ns": 191,
+      "prefix_candidates": 1
+    },
+    {
+      "cohort_packets": 32768,
+      "prefix_ns": 199,
+      "prefix_candidates": 1
+    }
+  ],
+  "peak_working_bytes": 50499584,
+  "peak_commit_bytes": 41668608,
+  "process_cpu_seconds": 2.796875,
+  "axes": {
+    "0": "served stations",
+    "1": "physical vehicles (size x 16)",
+    "2": "same-OD lookup batches (size x 4 x 256)",
+    "3": "OD diversity"
+  },
+  "limitations": [
+    "Elapsed per-call samples and total process CPU are distinct measurements.",
+    "Peak process memory includes the test runtime and prior cases; it is not per-table peak memory.",
+    "Other host activity is not excluded by this runner.",
+    "Real-map transport and simulation percentiles require a separate paired run."
+  ]
+}
