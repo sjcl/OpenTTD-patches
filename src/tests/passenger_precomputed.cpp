@@ -159,6 +159,18 @@ TEST_CASE("Hyperpath orders Board events by cost including risk", "[passenger][h
 	CHECK(table.Plan(A, D, StateTicks{}).cost == 315);
 }
 
+TEST_CASE("Hyperpath counts a frozen physical vehicle in only its newest captured service", "[passenger][hyperpath]")
+{
+	std::array services{Service(0, {A, D}, 100), Service(1, {A, D}, 100)};
+	services[1].vehicles[0].id = services[0].vehicles[0].id;
+	std::vector<const PassengerPeriodicService *> records{&services[0], &services[1]};
+	PassengerPrecomputedTable table; table.Begin(records, PAX, 0, PassengerPrecomputedTable::MAX_BYTES, true, false, {}, true, true, true, true);
+	while (!table.Finished()) table.Step(1);
+	auto set = table.Inspect(A, D); REQUIRE(set.size() == 1);
+	CHECK(set[0].service == services[1].id); // The newer frozen generation owns the single real opportunity.
+	CHECK(table.Plan(A, D, StateTicks{}).cost == set[0].cost + set[0].wait);
+}
+
 TEST_CASE("Hyperpath matches single-service certified and estimated costs", "[passenger][hyperpath]")
 {
 	std::array services{Service(0, {A, B, D})};

@@ -338,10 +338,10 @@ def run(args):
         raise ValueError("Console scripts require an output directory without whitespace")
     directory.mkdir(parents=True, exist_ok=False)
     lock_path = pathlib.Path(tempfile.gettempdir()) / "openttd-passenger-routing-measurement.lock"
-    lock = PROFILE.acquire_measurement_lock(lock_path, 60)
+    lock = PROFILE.acquire_measurement_lock(lock_path, args.measurement_wait)
     try:
         os.write(lock, json.dumps(dict(pid=os.getpid(), output=str(directory))).encode())
-        PROFILE.wait_for_idle(60, 5)
+        PROFILE.wait_for_idle(args.measurement_wait, 5)
         package = args.package.resolve()
         manifest = json.loads((package / "package.json").read_text(encoding="utf-8"))
         if PROFILE.sha256(args.input or package / "input.sav") != manifest["input_sha256"] and args.input is None:
@@ -519,6 +519,7 @@ def main():
         p.add_argument(name, type=pathlib.Path)
     p.add_argument("--ticks", type=int, default=4096)
     p.add_argument("--timeout", type=int, default=900)
+    p.add_argument("--measurement-wait", type=int, default=60, help="Wait for another measurement/host workload without stopping it")
     p.add_argument("--input", type=pathlib.Path)
     p.add_argument("--lang", type=pathlib.Path, help="Matching build language directory (defaults beside the binary)")
     p.add_argument("--resume", action="store_true")

@@ -263,7 +263,7 @@ PassengerBuildTask PassengerPrecomputedTable::BuildGraph(std::vector<const Passe
 	for (const auto *s : services) {
 		if (cooperative) co_await std::suspend_always{};
 		if (!Product(1, 256, envelope, memory) || !Product(s->timetable.stops.size(), 256, envelope, memory) ||
-				!Product(s->vehicles.size(), 64, envelope, memory) || !Product(s->dispatch_slots.size(), 32, envelope, memory)) {
+				!Product(s->vehicles.size(), this->hyperpath ? 128 : 64, envelope, memory) || !Product(s->dispatch_slots.size(), 32, envelope, memory)) {
 			this->failed = true; this->diagnostic.envelope = memory; co_return;
 		}
 	}
@@ -273,9 +273,20 @@ PassengerBuildTask PassengerPrecomputedTable::BuildGraph(std::vector<const Passe
 		this->service_pattern.assign(OrderListID::Invalid().base(), INVALID);
 		std::map<std::vector<int64_t>, std::vector<const PassengerPeriodicService *>> groups;
 		std::set<StationID> station_ids;
+		/* A vehicle moved between shared order lists can occur in two captures
+		 * of a frozen publication. Count its newest captured ownership once;
+		 * equal generations use the lower OrderList ID. Never consult live pools
+		 * here, since replay must use the same immutable input on every peer. */
+		std::map<VehicleID, std::pair<uint64_t, OrderListID>> owners;
+		if (this->hyperpath) for (const auto *s : services) for (const auto &v : s->vehicles) {
+			if (cooperative) co_await std::suspend_always{};
+			if (v.id == VehicleID::Invalid() || v.capacity[cargo] == 0) continue;
+			auto [it, inserted] = owners.try_emplace(v.id, s->generation, s->id);
+			if (!inserted && (s->generation > it->second.first || (s->generation == it->second.first && s->id < it->second.second))) it->second = {s->generation, s->id};
+		}
 		for (const auto *s : services) {
 			if (cooperative) co_await std::suspend_always{};
-			bool capacity = std::any_of(s->vehicles.begin(), s->vehicles.end(), [cargo](const auto &v) { return v.capacity[cargo] != 0; });
+			bool capacity = std::any_of(s->vehicles.begin(), s->vehicles.end(), [&](const auto &v) { return v.capacity[cargo] != 0 && (!this->hyperpath || (owners.contains(v.id) && owners.at(v.id).second == s->id)); });
 			if (!capacity) { this->unsupported |= s->timetable.period == 0; continue; }
 			if ((this->estimates ? s->timetable.Circuit() : s->timetable.period) <= 0 || s->timetable.stops.size() < 2) { this->unsupported = true; continue; }
 			auto key = PatternKey(*s);
@@ -310,6 +321,7 @@ PassengerBuildTask PassengerPrecomputedTable::BuildGraph(std::vector<const Passe
 				this->service_pattern[s->id.base()] = static_cast<uint32_t>(this->patterns.size());
 				for (const auto &v : s->vehicles) if (v.capacity[cargo]) {
 					if (cooperative) co_await std::suspend_always{};
+					if (this->hyperpath && (!owners.contains(v.id) || owners.at(v.id).second != s->id)) continue;
 					if ((sections || this->estimates) && !physical.insert(v.id).second) continue;
 					seats = std::max(seats, v.capacity[cargo]); unknown |= !v.phase_known;
 					unknown_fleet += !v.phase_known || p.estimated;
