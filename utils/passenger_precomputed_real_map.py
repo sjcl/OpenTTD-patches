@@ -409,7 +409,8 @@ def run(args, measurement_lock_fd=None):
         if args.fixture_estimated:
             setup += "passenger_journey_stats fixture_estimated_od\n"
         start = f"script {log}\ngetfulldate\npassenger_journey_stats inventory\n{setup}passenger_journey_stats reset\n"
-        finish = f"script {log}\ngetfulldate\npassenger_journey_stats inventory\npassenger_journey_stats total\npassenger_journey_stats save_integrity\nsave {result}\nscript\n"
+        # The existing component profiler is printed after the timed ticks.
+        finish = f"script {log}\ngetfulldate\npassenger_journey_stats inventory\npassenger_journey_stats total\nframerate\npassenger_journey_stats save_integrity\nsave {result}\nscript\n"
         if args.quality_probe:
             finish = finish.replace("passenger_journey_stats total\n", "passenger_journey_stats total\npassenger_journey_stats quality_probe\n")
         start += "unpause\nscript\n" if args.ticks else ("unpause\n" if args.unpause_before_save else "") + "script\n" + finish + "quit\n"

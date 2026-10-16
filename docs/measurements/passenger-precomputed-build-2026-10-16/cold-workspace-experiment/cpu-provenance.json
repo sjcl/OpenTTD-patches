@@ -1,0 +1,70 @@
+{
+  "source_head": "faf582bbeb68a831dc0f1b0e284c9d8db3cf122f",
+  "product_sha256": {
+    "passenger_precomputed.cpp": "8cfa2bf893b5eec7f7e3479a0890db4d6917bc13fb954493baec4253233988bb",
+    "passenger_precomputed.h": "a11b11ad1ac0b1308ed6c79cd8c7c45913fd2b040802da5ab93269b07a43ff0a"
+  },
+  "release_flags": {
+    "AdditionalIncludeDirectories": "C:\\Users\\bebe\\.codex\\worktrees\\c430\\OpenTTD-patches\\src\\3rdparty\\squirrel\\include;C:\\Users\\bebe\\.codex\\worktrees\\c430\\OpenTTD-patches\\build-runtime-matched\\generated;C:\\Users\\bebe\\.codex\\worktrees\\c430\\OpenTTD-patches\\build-runtime-matched\\generated\\script\\api;C:\\Users\\bebe\\.codex\\worktrees\\c430\\OpenTTD-patches\\src\\script\\api;C:\\Users\\bebe\\.codex\\worktrees\\c430\\OpenTTD-patches\\build-runtime-matched\\generated\\script;C:\\Users\\bebe\\.codex\\worktrees\\c430\\OpenTTD-patches\\build-runtime-matched\\generated\\script\\api\\ai;C:\\Users\\bebe\\.codex\\worktrees\\c430\\OpenTTD-patches\\src\\script\\api\\ai;C:\\Users\\bebe\\.codex\\worktrees\\c430\\OpenTTD-patches\\build-runtime-matched\\generated\\script\\api\\game;C:\\Users\\bebe\\.codex\\worktrees\\c430\\OpenTTD-patches\\src\\script\\api\\game;C:\\Users\\bebe\\.codex\\worktrees\\c430\\OpenTTD-patches\\build-runtime-matched\\generated\\script\\api\\template;C:\\Users\\bebe\\.codex\\worktrees\\c430\\OpenTTD-patches\\src\\script\\api\\template;%(AdditionalIncludeDirectories)",
+    "AdditionalOptions": "%(AdditionalOptions) /external:I \"C:/Users/bebe/CLionProjects/OpenTTD-patches/cmake-build-release-visual-studio/vcpkg_installed/x64-windows-static/include\" /external:I \"C:/Users/bebe/CLionProjects/OpenTTD-patches/cmake-build-release-visual-studio/vcpkg_installed/x64-windows-static/include/opus\" /external:I \"C:/Users/bebe/CLionProjects/OpenTTD-patches/cmake-build-release-visual-studio/vcpkg_installed/x64-windows-static/include/ogg\" /utf-8 /w34189",
+    "AssemblerListingLocation": "$(IntDir)",
+    "BasicRuntimeChecks": "Default",
+    "EnforceTypeConversionRules": "true",
+    "ExceptionHandling": "Sync",
+    "ExternalWarningLevel": "TurnOffAllWarnings",
+    "InlineFunctionExpansion": "AnySuitable",
+    "LanguageStandard": "stdcpp20",
+    "MinimalRebuild": null,
+    "MultiProcessorCompilation": "true",
+    "Optimization": "MaxSpeed",
+    "PrecompiledHeader": "NotUsing",
+    "RuntimeLibrary": "MultiThreaded",
+    "RuntimeTypeInfo": "true",
+    "SupportJustMyCode": null,
+    "UseFullPaths": "true",
+    "UseStandardPreprocessor": "true",
+    "WarningLevel": "Level3",
+    "PreprocessorDefinitions": "%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;_FORTIFY_SOURCE=2;WITH_PNG;WITH_ZLIB;WITH_LIBLZMA;WITH_LZO;WITH_ZSTD;WITH_OPUSFILE;WITH_OPENGL;WITH_PERSONAL_DIR;PERSONAL_DIR=\"OpenTTD\";WITH_SSE;WITH_ASSERT;UNICODE;_UNICODE;WITH_UNISCRIBE;PSAPI_VERSION=1;POINTER_IS_64BIT;CMAKE_INTDIR=\"Release\"",
+    "ObjectFileName": "$(IntDir)",
+    "DebugInformationFormat": "\n      ",
+    "ScanSourceForModuleDependencies": "false"
+  },
+  "release_flag_differences": {},
+  "compiler": {
+    "CMAKE_CXX_FLAGS": "/DWIN32 /D_WINDOWS /GR /EHsc",
+    "CMAKE_CXX_FLAGS_RELEASE": "/O2 /Ob2 /DNDEBUG",
+    "CMAKE_C_FLAGS": "/DWIN32 /D_WINDOWS",
+    "CMAKE_C_FLAGS_RELEASE": "/O2 /Ob2 /DNDEBUG",
+    "CMAKE_MSVC_RUNTIME_LIBRARY": "MultiThreaded",
+    "CMAKE_PREFIX_PATH": "C:/Users/bebe/CLionProjects/OpenTTD-patches/cmake-build-release-visual-studio/vcpkg_installed/x64-windows-static",
+    "OPTION_NO_LTO": "ON",
+    "OPTION_PASSENGER_BENCHMARK": "OFF",
+    "OPTION_USE_ASSERTS": "ON",
+    "CMAKE_GENERATOR": "Visual Studio 17 2022",
+    "CMAKE_GENERATOR_PLATFORM": "x64",
+    "CMAKE_CXX_COMPILER": "C:/Program Files (x86)/Microsoft Visual Studio/2022/BuildTools/VC/Tools/MSVC/14.44.35207/bin/Hostx64/x64/cl.exe",
+    "CMAKE_CXX_COMPILER_ID": "MSVC",
+    "CMAKE_CXX_COMPILER_VERSION": "19.44.35227.0",
+    "library_sha256": {
+      "libpng16.lib": "2b3e07b20b3a1c48e8d7c0a299c700721dd82c1499269e019a6cd8459774ec3d",
+      "lzma.lib": "14a38a5ef1d68e67c80e96faba4d7bf5d2cde00de7257bdb396d4801e7160c6b",
+      "lzo2.lib": "851b503360b8747a20344cf9fac72b9a9d4067894220d32ed25465616b94515e",
+      "ogg.lib": "027feab8bec33c3cd0e9f286d630c3ccfa0d39d74005c723913a4061c73b5b67",
+      "opus.lib": "7670e882d03cd26214da63a7d0d8de5ba9ae7c5a6b91a2bcba7b350c4bc4a6e8",
+      "opusfile.lib": "472c9c7a425ba4d30c918d272cb7535c685c3b4d88736c9b8888b67be0e97a5a",
+      "zlib.lib": "0d3ce92e180e325c2eaa1f0c39dde62fb4153ebfbec078d740590fd12f0be3f9",
+      "zstd.lib": "9ca9d4b5df6591751b4ccb35dcea0d771601c89aa9528a7a2af430b0e71586ac"
+    }
+  },
+  "binary_sha256": "496b95db8c127e87ea6899c9a0a8e69f2fd0a6c74bea9515feacf7446032354b",
+  "copied_tus": {
+    "save-integrity\\cargopacket.cpp": "368d392cb1591bb7894ea4a9a0462c0ff08433803440486e0d36ef1712c8d1b3",
+    "save-integrity\\cargopacket_sl.cpp": "86827288e5b70cf9de662e6fab9cbf9bb856e1ab9bda8a01ce181c65298faf2c",
+    "save-integrity\\command.cpp": "9717696b882db8664a6bc95034e5d72959acab3e4ed80819e70f38ac0f48ce04",
+    "save-integrity\\console_cmds.cpp": "b5ba1ae5dc35036daccfee6159cdbd202ce24f7628dd74f75c525afcf2b5474e",
+    "save-integrity\\integrity.h": "2ecacaf6f46c42ee7deea410d338886856fa746a5feee7ff09b1d10c9723ecc5",
+    "save-integrity\\passenger_service_database.cpp": "188c1cb5b64e7dc7de09b4370edf76b9f23fe8d0b765e5533d0b7d623470d709",
+    "real-map-driver\\null_v.cpp": "3712ef4e403e11992ea292df19ac08be1fa5c2f653a82863d40627b53b9c9b81",
+    "real-map-driver\\win32.cpp": "5c676b4358912e67262e0984ed36975cba47acdbce577888cdebc9c3fb707e25"
+  }
+}

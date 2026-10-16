@@ -1,0 +1,9 @@
+{
+  "old": "C:\\Users\\bebe\\.codex\\worktrees\\c430\\OpenTTD-patches\\build-reference-matched\\build\\openttd_lib.dir\\Release\\landscape.obj",
+  "new": "C:\\Users\\bebe\\.codex\\worktrees\\c430\\OpenTTD-patches\\build-msvc\\baseline-candidate-objects\\landscape.obj",
+  "common_functions": 165,
+  "identical_functions": 148,
+  "identical_function_bytes": 165,
+  "selected": {},
+  "note": "Relocated bytes zeroed; symbolic relocation targets compared. This describes generated code, not elapsed performance."
+}

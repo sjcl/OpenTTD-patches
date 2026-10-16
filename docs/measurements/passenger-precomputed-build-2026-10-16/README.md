@@ -34,6 +34,10 @@
 
 ## 通常tick・MP・保存
 
+この資料ディレクトリはGitの改行変換を無効にし、測定原文のbyteを保持する。
+生ログに含まれる末尾空白もそのまま保存する。
+`artifact-sha256.json`は、そのmanifest自身を除く資料ファイルのSHA-256を記録する。
+
 通常tickは各ケースの`process.json`に実際のStateTicks、全tick標本、OS peak、
 他ビルドの検出、NewGRF警告・error pauseの測定用解除回数を保存する。
 準備・ロード・保存を含むプロセス時間と、simulationの平均/p95/p99を混同しない。
@@ -89,3 +93,13 @@ cmake -S . -B build-msvc -DCMAKE_PROJECT_INCLUDE=
 
 JSONの引数・入力ハッシュと同じ固定snapshotを使う。CPU時間の比較中には他のビルドや
 ゲームを動かさない。全Plan比較は`--skip-plan`を付けずに行う。
+
+ホストを共有するチャット間では、`%TEMP%/openttd-passenger-routing-measurement.lock`を
+排他的作成で取得し、所有PIDと工程をJSONへ記録する。時間で枠を予約せず、実際の取得・解放で交代する。
+所有プロセスだけがロックを再利用でき、待機側は他の所有者のロックを削除したりプロセスを止めたりしない。
+この記録の`runtime-control-method/run-*.py`類は、ビルド・計測・通常ビルドへの復元まで
+同じ所有者で保持した実行手順である。個別の終了状態とソースhashも合わせて確認する。
+
+`reference-build/`は基点902997e631を同じ通常版・静的CRT環境で新たにビルドした記録、
+`compiled-code-comparison/`はMSVC COFFの再配置部分を除いた関数byte列の比較である。
+後者は時間の測定ではなく、通常tickの不悪化や差の原因を証明するものではない。

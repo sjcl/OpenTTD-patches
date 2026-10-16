@@ -1,6 +1,6 @@
 {
   "checkpoint": "667e1548161d976bbc9f0ef87635572a3d8603de",
-  "source_head": "9e845522aa4544a15ca2c5a454c33488bd193e47",
+  "source_head": "faf582bbeb68a831dc0f1b0e284c9d8db3cf122f",
   "product_core": "3429f283b2",
   "product_source_sha256": {
     "src/passenger_precomputed.cpp": "d89fb2a43a0614a9255addcd31a9cdd69cf47e82d5aceec5fd06ba246883aaec",
@@ -18,14 +18,14 @@
   "matched_binaries": {
     "cpu-binary\\openttd.exe": "9ef09f6e0e8c77ce188b9d7a00fe1ccb0353f514cb93d2472d277e56c0a3dd32",
     "mp-binary\\openttd.exe": "00c27fbcf4bcf57dffdd38dd6d26fe3b790b00f02eb5c29d37ff6e5e789169cb",
-    "Release\\openttd.exe": "f2e377d6ceb8161843e14a40a1358017d54cabcd1f652ec4e4a23e0d4277b06c"
+    "Release\\openttd.exe": "fd4cbb0ececada4ca874d0aba823be7f1e72f86801a8c3f3c86d9017aa53a669"
   },
   "tools": {
     "passenger_precomputed_benchmark.py": "80500c29fa410bfb4adddd716f74357c00aa2e533ea721fd4f6332f19e5f0c8a",
     "passenger_precomputed_diagnostic_readback.py": "5da9ef3983e3e2ade63d70c3c10622d016efcc0a49e6362ad2790fedf66a7378",
     "passenger_precomputed_join.py": "9878d75a371bf4646e8f69937217987db5f5c132952d839d154111382df3f371",
     "passenger_precomputed_join_prepare.py": "b44dbfcb7f91779788750534b702ddb3274d3e3484f322634f7535dbfdfd3898",
-    "passenger_precomputed_real_map.py": "0c7a29f376939374a621644cae1776f57a719bf60eeca54eac49409c3af6cfe0"
+    "passenger_precomputed_real_map.py": "cebe32ab9ae1eca9f3cac950b543ac26dac3a40be75530b93321de63a5f666c7"
   },
   "method": "Copied measurement TUs only; product project restored; no routing or timeout changes after checkpoint."
 }
