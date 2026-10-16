@@ -1,0 +1,3 @@
+Hyperpath capacity: packets=59766; passengers=116914
+Hyperpath local totals: replans=3728; nanoseconds=22887200
+Hyperpath diagnostics: cargo=0; local_replans=53; local_ns=331000; board_events=3127127; accepted=5211467; range_updates=5212324; pushes=14657755; pops=14655748; bytes=299669802; envelope=16275076536; base_bytes=42567680; difference_bytes=66795352; max_candidates=19

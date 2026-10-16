@@ -248,6 +248,10 @@ routing, then changes transfer cost and transports for 1071 ticks. It passes:
 - During ordinary replacement the peers agree on 181 current / 4736 retained
   destination rows and 70,123,520 Work, including packet failure state and saved
   waiting-event fields in their canonical digest.
+- The MP interval exercises actual three-miss adaptation: the server computes
+  3728 shared local policies in 22.8872 ms total (cache misses across generations),
+  while recording 59,766 capacity-missed packet / 116,914 passenger opportunities.
+  These counters reset with the process and exclude the preceding smoke run.
 
 Evidence: [MP result](measurements/passenger-hyperpath-2026-10-16/mp-hyperpath.json),
 [default settings](measurements/passenger-hyperpath-2026-10-16/mp-default-timeouts.txt),
