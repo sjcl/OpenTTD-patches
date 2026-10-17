@@ -1,0 +1,36 @@
+{
+  "product_commit": "8462e6cd8280fe399fbb3b3e4a9cdb4413c935b4",
+  "product_src_tree": "631f498ec2e22d2910bb414d7f3b2f9b780b9e8e",
+  "reused_build": true,
+  "previous_identity": "docs/measurements/passenger-hyperpath-steady-8462e6cd-2026-10-17/build-identity.json",
+  "previous_identity_sha256": "c0803b103435feda15c50c7e56bd3cc3e5e1b58a0e41aee2ba5a0ab2158e9ef7",
+  "executable_sha256": "232ed876ab74fecea3d0e3e16e01b2f787e56492da554d33b9bf72315c573ae0",
+  "pdb_sha256": "af41da80f5f7e3729be213bdbc0f7795c1560291d705d8a73d0af751454b1a5c",
+  "hardware": {
+    "cpu": "AMD Ryzen 9 9950X",
+    "physical_cores": 16,
+    "logical_processors": 32,
+    "windows_build": 26200,
+    "physical_memory_bytes": 100265259008,
+    "main_thread_affinity_mask": 1
+  },
+  "build_flags": {
+    "cxx_release": "/O2 /Ob2 /DNDEBUG /Zi /Zo",
+    "link": "/DEBUG:FULL /OPT:REF /OPT:ICF /INCREMENTAL:NO",
+    "asserts": true,
+    "lto": false,
+    "static_crt": true
+  },
+  "native_tests_previously_passed": {
+    "cases": 728,
+    "assertions": 9930179,
+    "exit_code": 0
+  },
+  "tool_scripts": {
+    "docs/measurements/passenger-routing-steady-pair-8462e6cd-2026-10-18/checks/tools/passenger_precomputed_real_map.py": "ec37f3826575b933a5f519eac2aa856e8bf62f08d120ec4af007e6ef6c45806d",
+    "docs/measurements/passenger-routing-steady-pair-8462e6cd-2026-10-18/checks/tools/passenger_wpr_export.py": "907769a4e6cb159c385668c49163f5a5292229d8938783451f8d7f7497ae09f3",
+    "docs/measurements/passenger-routing-steady-pair-8462e6cd-2026-10-18/checks/tools/passenger_wpr_record.ps1": "3e553dff6ba3e87f1ef6acadc7356338e81ac8b36ba18b190f02f599adfade6e",
+    "docs/measurements/passenger-routing-steady-pair-8462e6cd-2026-10-18/checks/tools/passenger_wpr_summarize.py": "0f7a8bef406d6e73c0f5022b248329e903d6d8b2428857bee3f3599c26ecbf83",
+    "docs/measurements/passenger-routing-steady-pair-8462e6cd-2026-10-18/checks/tools/passenger_wpr_window.py": "20c1241be5dccc850114ce3994ba83e8fdef6a8feaab1587bff6949ba749b548"
+  }
+}

@@ -1,0 +1,64 @@
+{
+  "product_sources_unchanged": true,
+  "frozen_package_all_assets_match": true,
+  "reload_equal_fields": 24,
+  "frozen_input_sha256": "275544f1fd7bb16920ebd325c3a916ee06f164fcbe53abf0c1bb6409e9802f9f",
+  "runs": {
+    "warmup": {
+      "exit_code": 0,
+      "ticks": 8192,
+      "start_tick": 3181119581,
+      "end_tick": 3181127773,
+      "payments_valid": true,
+      "contamination": 0,
+      "result_sha256": "275544f1fd7bb16920ebd325c3a916ee06f164fcbe53abf0c1bb6409e9802f9f"
+    },
+    "reload": {
+      "exit_code": 0,
+      "ticks": 0,
+      "start_tick": 3181127773,
+      "end_tick": 3181127773,
+      "payments_valid": true,
+      "contamination": 0,
+      "result_sha256": "69d17b918c558478a316d9598840db3dda39357bf682b70cabf6cf89ddd59d07"
+    },
+    "legacy": {
+      "exit_code": 0,
+      "ticks": 2048,
+      "start_tick": 3181127773,
+      "end_tick": 3181129821,
+      "payments_valid": true,
+      "contamination": 0,
+      "result_sha256": "f226872297ae1213e6e0119490992cf167ee23a640e8158a9aa9c46910c440d3"
+    },
+    "hyperpath": {
+      "exit_code": 0,
+      "ticks": 2048,
+      "start_tick": 3181127773,
+      "end_tick": 3181129821,
+      "payments_valid": true,
+      "contamination": 0,
+      "result_sha256": "2e0603bb5800c199d143c442c2d753b06409b4ce9dfa8e1022d731cae6441c75"
+    }
+  },
+  "exports": {
+    "legacy": {
+      "csv_count": 2,
+      "raw_gzip_sha256_match": true,
+      "lost_events": 0,
+      "lost_buffers": 0,
+      "unresolved_product_functions": 0,
+      "conservation_checks_passed": true
+    },
+    "hyperpath": {
+      "csv_count": 2,
+      "raw_gzip_sha256_match": true,
+      "lost_events": 0,
+      "lost_buffers": 0,
+      "unresolved_product_functions": 0,
+      "conservation_checks_passed": true
+    }
+  },
+  "original_input_unchanged": true,
+  "frozen_save_read_only": true
+}

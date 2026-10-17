@@ -554,7 +554,7 @@ def run(args, measurement_lock_fd=None):
                     observed[key] = max(observed.get(key, 0), value)
                 if observer is not None and time.monotonic() >= next_observation:
                     stage = "preparation"
-                    if (directory / "actual-ticks.json").exists():
+                    if (directory / "actual-ticks.json").exists() or (wpr_profile and (directory / "wpr-finished.txt").exists()):
                         stage = "after_simulation"
                     elif (directory / "on-1-console.txt").exists() and "Console log file closed." in (directory / "on-1-console.txt").read_text(encoding="utf-8", errors="replace"):
                         stage = "simulation"
@@ -580,7 +580,10 @@ def run(args, measurement_lock_fd=None):
                         # it invalidates whole-process timing, not a later clean
                         # simulation window. Existing sample files delimit it.
                         stage = "preparation"
-                        if (directory / "actual-ticks.json").exists():
+                        # WPR waits for ETL serialization before writing the
+                        # sample file. Its finished gate already delimits the
+                        # completed simulation during that wait.
+                        if (directory / "actual-ticks.json").exists() or (wpr_profile and (directory / "wpr-finished.txt").exists()):
                             stage = "after_simulation"
                         elif (directory / "on-1-console.txt").exists() and "Console log file closed." in (directory / "on-1-console.txt").read_text(encoding="utf-8", errors="replace"):
                             # game_start closes the log immediately after its

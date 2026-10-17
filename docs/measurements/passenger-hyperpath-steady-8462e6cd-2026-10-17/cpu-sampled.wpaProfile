@@ -1,0 +1,55 @@
+<?xml version='1.0' encoding='utf-8'?>
+<WpaProfileContainer xmlns="http://tempuri.org/SerializableElement.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Version="2">
+  <Content xsi:type="WpaProfile2">
+    <Sessions>
+      <Session Index="0" />
+    </Sessions>
+    <Views>
+      <View Guid="3e819555-616f-5e97-80b5-7ded848cf4ba" Title="Passenger CPU sampled" IsVisible="true">
+        <Graphs>
+          <Graph Guid="b855361e-7be0-4bc8-a754-3e8507715ca5" LayoutStyle="DataTable" Color="#FFFF0000" GraphHeight="70" IsShown="true">
+            <Preset Name="Stacks" KeyColumnCount="3" GraphColumnCount="3" RightFrozenColumnCount="5" InitialFilterQuery="[Process Name]:=openttd.exe" InitialFilterShouldKeep="true" InitialExpansionQuery="[Series Depth]:&lt;=1024">
+              <MetadataEntries>
+                <MetadataEntry Guid="05100ece-df05-40c7-aad6-ffff99b60491" Name="Thread ID" ColumnMetadata="EndThreadId" />
+                <MetadataEntry Guid="0bbf4299-0176-445e-b1d9-991df475d631" Name="TimeStamp" ColumnMetadata="StartTime" />
+              </MetadataEntries>
+              <HighlightEntries />
+              <Columns>
+                <Column Guid="5b77e48f-6d24-4f29-8972-69c30e32f87d" Name="Process" Width="200" IsVisible="true" />
+                <Column Guid="05100ece-df05-40c7-aad6-ffff99b60491" Name="Thread ID" TextAlignment="Right" Width="80" IsVisible="true" />
+                <Column Guid="842af11e-661d-477e-b7b6-556ed8181177" Name="Stack" Width="468" IsVisible="true">
+                  <StackOptionsParameter FrameTagFold="True" />
+                </Column>
+                <Column Guid="e0c6cb9e-04c2-4bb5-ba5f-4ed765f4ecaa" Name="Weight" AggregationMode="Sum" Width="80" IsVisible="true" />
+                <Column Guid="01a82c2c-5048-4c9d-ac37-eaf6556f6af5" Name="Count" AggregationMode="Sum" TextAlignment="Right" Width="60" IsVisible="true" />
+                <Column Guid="9c1ceec3-ef4a-4865-b678-d774881187b9" Name="Process Name" Width="180" IsVisible="false" />
+              </Columns>
+            </Preset>
+          </Graph>
+          <Graph Guid="b855361e-7be0-4bc8-a754-3e8507715ca5" LayoutStyle="DataTable" Color="#FFFF0000" GraphHeight="70" IsShown="true">
+            <Preset Name="Exclusive functions" KeyColumnCount="4" GraphColumnCount="4" RightFrozenColumnCount="6" InitialFilterQuery="[Process Name]:=openttd.exe" InitialFilterShouldKeep="true" InitialExpansionQuery="[Series Depth]:&lt;=1024">
+              <MetadataEntries>
+                <MetadataEntry Guid="05100ece-df05-40c7-aad6-ffff99b60491" Name="Thread ID" ColumnMetadata="EndThreadId" />
+                <MetadataEntry Guid="0bbf4299-0176-445e-b1d9-991df475d631" Name="TimeStamp" ColumnMetadata="StartTime" />
+              </MetadataEntries>
+              <HighlightEntries />
+              <Columns>
+                <Column Guid="5b77e48f-6d24-4f29-8972-69c30e32f87d" Name="Process" Width="200" IsVisible="true" />
+                <Column Guid="05100ece-df05-40c7-aad6-ffff99b60491" Name="Thread ID" TextAlignment="Right" Width="80" IsVisible="true" />
+                <Column Guid="ccdb05c1-04a9-4289-aaa6-a376d1d66012" Name="Module" Width="124" IsVisible="true" />
+                <Column Guid="7ad93780-708c-471c-9e3f-5a497cbefdd7" Name="Function" Width="184" IsVisible="true" />
+                <Column Guid="e0c6cb9e-04c2-4bb5-ba5f-4ed765f4ecaa" Name="Weight" AggregationMode="Sum" Width="80" IsVisible="true" />
+                <Column Guid="01a82c2c-5048-4c9d-ac37-eaf6556f6af5" Name="Count" AggregationMode="Sum" TextAlignment="Right" Width="60" IsVisible="true" />
+                <Column Guid="9c1ceec3-ef4a-4865-b678-d774881187b9" Name="Process Name" Width="180" IsVisible="false" />
+              </Columns>
+            </Preset>
+          </Graph>
+        </Graphs>
+        <SessionIndices>
+          <SessionIndex>0</SessionIndex>
+        </SessionIndices>
+      </View>
+    </Views>
+    <ModifiedGraphs />
+  </Content>
+</WpaProfileContainer>

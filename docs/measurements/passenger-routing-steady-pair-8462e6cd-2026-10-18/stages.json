@@ -1,0 +1,353 @@
+{
+  "warmup-legacy": {
+    "start_tick": 3181119581,
+    "end_tick": 3181127773,
+    "ticks": 8192,
+    "input_sha256": "306a8d3094c406286ff1dd3249f1726bf9d10e230ead593eacdd91efc43ac629",
+    "result_sha256": "b276c5de400651f646c129ab394bc97a686f38aa345b3a4a799e07c8a06289ca",
+    "diagnostics": {
+      "Passenger inventory": {
+        "waiting": 327999,
+        "available": "327999,",
+        "reserved": "0)",
+        "deferred": 34,
+        "state_ticks": 3181127773,
+        "scaled_ticks": 3015528675
+      },
+      "Passenger events": {
+        "pending": 205595,
+        "overdue": 178,
+        "oldest_ticks": 0,
+        "maximum_station_backlog": 9768,
+        "on_time": 1795602,
+        "packets": 2842072,
+        "groups": 1548061,
+        "scheduler_us": 14965502,
+        "arrival_candidates": 3782189,
+        "arrival_passengers": 6093753,
+        "unresolved_missed_estimate": 561
+      },
+      "Passenger scheduler cause/new": {
+        "cause": "new",
+        "packets": 291941,
+        "microseconds": 3260611
+      },
+      "Passenger scheduler cause/expiry": {
+        "cause": "expiry",
+        "packets": 632721,
+        "microseconds": 2383143
+      },
+      "Passenger scheduler cause/failure": {
+        "cause": "failure",
+        "packets": 0,
+        "microseconds": 0
+      },
+      "Passenger scheduler cause/migration": {
+        "cause": "migration",
+        "packets": 0,
+        "microseconds": 0
+      },
+      "Passenger scheduler cause/generation": {
+        "cause": "generation",
+        "packets": 1626358,
+        "microseconds": 7694946
+      },
+      "Passenger capacity records": {
+        "packets": 0,
+        "passengers": 0,
+        "microseconds": 0
+      },
+      "Passenger unchanged generation": {
+        "packets": 0
+      },
+      "Passenger hyperpath boarding filter": {
+        "enabled": "false",
+        "mode": "index",
+        "filtered_walks": 0,
+        "unfiltered_walks": 0,
+        "indexed_walks": 0,
+        "groups_checked": 0,
+        "groups_skipped": 0,
+        "groups_admitted": 0
+      },
+      "Passenger hyperpath walk time": {
+        "filtered_us": 0,
+        "filtered_groups": 0,
+        "unfiltered_us": 0,
+        "unfiltered_groups": 0,
+        "indexed_us": 0,
+        "indexed_groups": 0
+      },
+      "Passenger hyperpath lookup": {
+        "rebuilds": 0,
+        "indexed_groups": 0,
+        "validated_groups": 0,
+        "violations": 0
+      }
+    },
+    "quartiles": [
+      {
+        "ticks": 2048,
+        "first_tick": 3181119582,
+        "last_tick": 3181121629,
+        "simulation_wall_ms_per_tick": 20.24755322265625,
+        "journey_wall_ms_per_tick": 1.43034375
+      },
+      {
+        "ticks": 2048,
+        "first_tick": 3181121630,
+        "last_tick": 3181123677,
+        "simulation_wall_ms_per_tick": 25.49615380859375,
+        "journey_wall_ms_per_tick": 3.47627197265625
+      },
+      {
+        "ticks": 2048,
+        "first_tick": 3181123678,
+        "last_tick": 3181125725,
+        "simulation_wall_ms_per_tick": 23.45621923828125,
+        "journey_wall_ms_per_tick": 3.24288720703125
+      },
+      {
+        "ticks": 2048,
+        "first_tick": 3181125726,
+        "last_tick": 3181127773,
+        "simulation_wall_ms_per_tick": 24.93774951171875,
+        "journey_wall_ms_per_tick": 3.45008056640625
+      }
+    ]
+  },
+  "legacy": {
+    "start_tick": 3181127773,
+    "end_tick": 3181129821,
+    "ticks": 2048,
+    "input_sha256": "b276c5de400651f646c129ab394bc97a686f38aa345b3a4a799e07c8a06289ca",
+    "result_sha256": "a204db803bff2b90bd5d3112c08b8e8dca43d34f55c1ca1a570456df24d3cfd1",
+    "diagnostics": {
+      "Passenger inventory": {
+        "waiting": 326124,
+        "available": "326124,",
+        "reserved": "0)",
+        "deferred": 32,
+        "state_ticks": 3181129821,
+        "scaled_ticks": 3015530723
+      },
+      "Passenger events": {
+        "pending": 207711,
+        "overdue": 70,
+        "oldest_ticks": 0,
+        "maximum_station_backlog": 7851,
+        "on_time": 512785,
+        "packets": 771581,
+        "groups": 420205,
+        "scheduler_us": 4322184,
+        "arrival_candidates": 505177,
+        "arrival_passengers": 853495,
+        "unresolved_missed_estimate": 36467
+      },
+      "Passenger scheduler cause/new": {
+        "cause": "new",
+        "packets": 56023,
+        "microseconds": 614866
+      },
+      "Passenger scheduler cause/expiry": {
+        "cause": "expiry",
+        "packets": 150956,
+        "microseconds": 579010
+      },
+      "Passenger scheduler cause/failure": {
+        "cause": "failure",
+        "packets": 0,
+        "microseconds": 0
+      },
+      "Passenger scheduler cause/migration": {
+        "cause": "migration",
+        "packets": 0,
+        "microseconds": 0
+      },
+      "Passenger scheduler cause/generation": {
+        "cause": "generation",
+        "packets": 543325,
+        "microseconds": 2641444
+      },
+      "Passenger capacity records": {
+        "packets": 0,
+        "passengers": 0,
+        "microseconds": 0
+      },
+      "Passenger unchanged generation": {
+        "packets": 0
+      },
+      "Passenger hyperpath boarding filter": {
+        "enabled": "false",
+        "mode": "index",
+        "filtered_walks": 0,
+        "unfiltered_walks": 0,
+        "indexed_walks": 0,
+        "groups_checked": 0,
+        "groups_skipped": 0,
+        "groups_admitted": 0
+      },
+      "Passenger hyperpath walk time": {
+        "filtered_us": 0,
+        "filtered_groups": 0,
+        "unfiltered_us": 0,
+        "unfiltered_groups": 0,
+        "indexed_us": 0,
+        "indexed_groups": 0
+      },
+      "Passenger hyperpath lookup": {
+        "rebuilds": 0,
+        "indexed_groups": 0,
+        "validated_groups": 0,
+        "violations": 0
+      }
+    },
+    "quartiles": [
+      {
+        "ticks": 512,
+        "first_tick": 3181127774,
+        "last_tick": 3181128285,
+        "simulation_wall_ms_per_tick": 28.266802734375,
+        "journey_wall_ms_per_tick": 3.455134765625
+      },
+      {
+        "ticks": 512,
+        "first_tick": 3181128286,
+        "last_tick": 3181128797,
+        "simulation_wall_ms_per_tick": 27.6220078125,
+        "journey_wall_ms_per_tick": 3.569197265625
+      },
+      {
+        "ticks": 512,
+        "first_tick": 3181128798,
+        "last_tick": 3181129309,
+        "simulation_wall_ms_per_tick": 27.289779296875,
+        "journey_wall_ms_per_tick": 3.528033203125
+      },
+      {
+        "ticks": 512,
+        "first_tick": 3181129310,
+        "last_tick": 3181129821,
+        "simulation_wall_ms_per_tick": 27.163634765625,
+        "journey_wall_ms_per_tick": 3.625244140625
+      }
+    ]
+  },
+  "hyperpath": {
+    "start_tick": 3181127773,
+    "end_tick": 3181129821,
+    "ticks": 2048,
+    "input_sha256": "275544f1fd7bb16920ebd325c3a916ee06f164fcbe53abf0c1bb6409e9802f9f",
+    "result_sha256": "2e0603bb5800c199d143c442c2d753b06409b4ce9dfa8e1022d731cae6441c75",
+    "diagnostics": {
+      "Passenger inventory": {
+        "waiting": 287540,
+        "available": "287540,",
+        "reserved": "0)",
+        "deferred": 32,
+        "state_ticks": 3181129821,
+        "scaled_ticks": 3015530723
+      },
+      "Passenger events": {
+        "pending": 172321,
+        "overdue": 172,
+        "oldest_ticks": 1,
+        "maximum_station_backlog": 6859,
+        "on_time": 1351594,
+        "packets": 1784092,
+        "groups": 848416,
+        "scheduler_us": 4939905,
+        "arrival_candidates": 171537,
+        "arrival_passengers": 299747,
+        "unresolved_missed_estimate": 0
+      },
+      "Passenger scheduler cause/new": {
+        "cause": "new",
+        "packets": 42690,
+        "microseconds": 405653
+      },
+      "Passenger scheduler cause/expiry": {
+        "cause": "expiry",
+        "packets": 181993,
+        "microseconds": 578048
+      },
+      "Passenger scheduler cause/failure": {
+        "cause": "failure",
+        "packets": 67652,
+        "microseconds": 357803
+      },
+      "Passenger scheduler cause/migration": {
+        "cause": "migration",
+        "packets": 0,
+        "microseconds": 0
+      },
+      "Passenger scheduler cause/generation": {
+        "cause": "generation",
+        "packets": 1414511,
+        "microseconds": 2715637
+      },
+      "Passenger capacity records": {
+        "packets": 57385,
+        "passengers": 115223,
+        "microseconds": 289530
+      },
+      "Passenger unchanged generation": {
+        "packets": 1323674
+      },
+      "Passenger hyperpath boarding filter": {
+        "enabled": "false",
+        "mode": "index",
+        "filtered_walks": 0,
+        "unfiltered_walks": 0,
+        "indexed_walks": 140375,
+        "groups_checked": 2357531,
+        "groups_skipped": 0,
+        "groups_admitted": 1012591
+      },
+      "Passenger hyperpath walk time": {
+        "filtered_us": 0,
+        "filtered_groups": 0,
+        "unfiltered_us": 0,
+        "unfiltered_groups": 0,
+        "indexed_us": 1748679,
+        "indexed_groups": 2357531
+      },
+      "Passenger hyperpath lookup": {
+        "rebuilds": 2971,
+        "indexed_groups": 140186,
+        "validated_groups": 0,
+        "violations": 0
+      }
+    },
+    "quartiles": [
+      {
+        "ticks": 512,
+        "first_tick": 3181127774,
+        "last_tick": 3181128285,
+        "simulation_wall_ms_per_tick": 25.611720703125,
+        "journey_wall_ms_per_tick": 5.328333984375
+      },
+      {
+        "ticks": 512,
+        "first_tick": 3181128286,
+        "last_tick": 3181128797,
+        "simulation_wall_ms_per_tick": 27.308484375,
+        "journey_wall_ms_per_tick": 5.646412109375
+      },
+      {
+        "ticks": 512,
+        "first_tick": 3181128798,
+        "last_tick": 3181129309,
+        "simulation_wall_ms_per_tick": 30.879951171875,
+        "journey_wall_ms_per_tick": 6.0364296875
+      },
+      {
+        "ticks": 512,
+        "first_tick": 3181129310,
+        "last_tick": 3181129821,
+        "simulation_wall_ms_per_tick": 29.82252734375,
+        "journey_wall_ms_per_tick": 6.03559375
+      }
+    ]
+  }
+}

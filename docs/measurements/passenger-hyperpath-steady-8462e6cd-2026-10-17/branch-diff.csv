@@ -1,0 +1,27 @@
+branch,legacy_ms_per_tick,hyperpath_ms_per_tick,delta_ms_per_tick,legacy_samples,hyperpath_samples
+openttd.exe!PassengerServiceDatabase::Tick,1.174074854,3.022997021,1.848922168,2388,6175
+openttd.exe!RunPassengerWaitingEvents,2.067708789,2.257913672,0.190204883,4234,4624
+openttd.exe!FlushDeferredAspectUpdates,0.011236035,0.013672119,0.002436084,23,28
+openttd.exe!TimerManager<TimerGameTick>::Elapsed,0.000000000,0.001952734,0.001952734,0,4
+openttd.exe!LinkGraphSchedule::JoinNext,0.003906152,0.005371289,0.001465137,8,11
+openttd.exe!RunAuxiliaryTileLoop,0.000000000,0.000977002,0.000977002,0,2
+openttd.exe!PerformanceMeasurer::PerformanceMeasurer,0.000487793,0.000977295,0.000489502,1,2
+openttd.exe!RecordPassengerJourneySimulationTick,0.000000000,0.000488965,0.000488965,0,1
+[StateGameLoop self],0.000000000,0.000487695,0.000487695,0,1
+openttd.exe!OnTick_Companies,0.000488135,0.000489209,0.000001074,1,1
+openttd.exe!PerformanceMeasurer::~PerformanceMeasurer,0.000487695,0.000487891,0.000000195,1,1
+openttd.exe!BasePersistentStorageArray::SwitchMode,0.000488281,0.000000000,-0.000488281,1,0
+openttd.exe!CallWindowGameTickEvent,0.000976318,0.000487744,-0.000488574,2,1
+openttd.exe!NewsLoop,0.001953369,0.001464746,-0.000488623,4,3
+openttd.exe!PassengerServiceDatabase::IsPreparingPrecomputed,0.000493555,0.000000000,-0.000493555,1,0
+openttd.exe!ShowNewspaper,0.000977344,0.000000000,-0.000977344,2,0
+openttd.exe!AnimateAnimatedTiles,0.004394873,0.003417139,-0.000977734,9,7
+openttd.exe!IncreaseDate,0.020514648,0.019050781,-0.001463867,42,39
+openttd.exe!PerformanceAccumulator::Reset,0.001473096,0.000000000,-0.001473096,3,0
+openttd.exe!CheckCaches,0.002467334,0.000491113,-0.001976221,5,1
+openttd.exe!BeginPassengerJourneyTick,0.006386816,0.003936719,-0.002450098,13,8
+[worker threads],0.352710986,0.339066650,-0.013644336,722,694
+openttd.exe!CallLandscapeTick,0.554264941,0.523497656,-0.030767285,1135,1072
+openttd.exe!RunTileLoop,10.359693066,9.703222363,-0.656470703,21217,19873
+openttd.exe!CallVehicleTicks,13.054205371,11.223985352,-1.830220020,26735,22987
+[outside StateGameLoop],4.375433594,1.881671045,-2.493762549,8959,3852

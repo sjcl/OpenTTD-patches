@@ -1,0 +1,29 @@
+{
+  "legacy": {
+    "union_ns": 9238746300,
+    "union_samples": 9223,
+    "maximum_roots_in_one_stack": 1,
+    "cpu_ms_per_tick": 4.511106591796875,
+    "components_ms_per_tick": {
+      "openttd.exe!PassengerServiceDatabase::Tick": 1.20813056640625,
+      "openttd.exe!RunPassengerWaitingEvents": 1.97293017578125,
+      "openttd.exe!LoadUnloadVehicle": 1.330045849609375
+    },
+    "other_state_game_loop_cpu_ms_per_tick": 21.585344873046875
+  },
+  "hyperpath": {
+    "union_ns": 16041633800,
+    "union_samples": 16025,
+    "maximum_roots_in_one_stack": 1,
+    "cpu_ms_per_tick": 7.83282900390625,
+    "components_ms_per_tick": {
+      "openttd.exe!PassengerServiceDatabase::Tick": 3.022997021484375,
+      "openttd.exe!RunPassengerWaitingEvents": 2.257913671875,
+      "openttd.exe!LoadUnloadVehicle": 2.551918310546875
+    },
+    "other_state_game_loop_cpu_ms_per_tick": 18.952539501953126
+  },
+  "delta_union_cpu_ms_per_tick": 3.3217224121093745,
+  "delta_other_state_game_loop_cpu_ms_per_tick": -2.632805371093749,
+  "method": "Main-thread StateGameLoop stacks containing any of the three named roots. Actual traces show at most one root per stack; verify the union instead of summing nested inclusive costs. LoadUnloadVehicle includes all cargo."
+}

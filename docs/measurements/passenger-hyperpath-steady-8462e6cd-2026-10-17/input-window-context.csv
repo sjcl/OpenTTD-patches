@@ -1,0 +1,5 @@
+mode,run,start_tick,end_tick,simulation_wall_ms_per_tick,sampled_state_game_loop_cpu_ms_per_tick,corrected_comparison_valid
+legacy,previous-original-input,3181119581,3181121629,25.5517099609375,24.2767900390625,False
+legacy,new-8192-tick-input,3181127773,3181129821,28.80719970703125,27.266678466796876,False
+hyperpath,previous-original-input,3181119581,3181121629,29.83614453125,27.75981748046875,False
+hyperpath,new-8192-tick-input,3181127773,3181129821,28.4056708984375,26.785368505859374,False

@@ -1,0 +1,77 @@
+{
+  "source_report_commit": "9d7fba0adf390298b2f8c2cafa8acbd37b9d30bb",
+  "source_evidence": "docs/measurements/passenger-hyperpath-steady-8462e6cd-2026-10-17",
+  "source_etl": "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-passenger-steady-8462e6cd\\hyperpath\\cpu.etl",
+  "source_etl_sha256": "27f533197c67d18f74446ac889aabf84b0844a724ad41dc37ee3be55b5466660",
+  "reused_summary_identical": true,
+  "files": {
+    "docs/measurements/passenger-hyperpath-steady-8462e6cd-2026-10-17/hyperpath/actual-ticks.json": {
+      "sha256": "dd15866a2e216b6643de4e1b6a2896d2d31f0e6b26d9076af3bd8cb0f88eeda3",
+      "bytes": 49446
+    },
+    "docs/measurements/passenger-hyperpath-steady-8462e6cd-2026-10-17/hyperpath/CPU_Usage_(Sampled)_Exclusive_functions.csv.gz": {
+      "sha256": "699d51d67b3809398e1cd0298f221bc7a8a851ea458089046a51b22a4ed83464",
+      "bytes": 431722
+    },
+    "docs/measurements/passenger-hyperpath-steady-8462e6cd-2026-10-17/hyperpath/CPU_Usage_(Sampled)_Stacks.csv.gz": {
+      "sha256": "404c3c32f48b919f16aca669a3123ad7b3d3b09d15379b45d890db4b4b6d6032",
+      "bytes": 1588093
+    },
+    "docs/measurements/passenger-hyperpath-steady-8462e6cd-2026-10-17/hyperpath/export-command.json": {
+      "sha256": "aef69975b77193f30f79c1ff37b0e1df68c309aa3179ff70cc97decb6acca5df",
+      "bytes": 1697
+    },
+    "docs/measurements/passenger-hyperpath-steady-8462e6cd-2026-10-17/hyperpath/on-1-console.txt.gz": {
+      "sha256": "2591af8ec3fda6e2181853c6ad1b60c4866c750b57fe1da9cb50a2b4deaf5a03",
+      "bytes": 5440
+    },
+    "docs/measurements/passenger-hyperpath-steady-8462e6cd-2026-10-17/hyperpath/process.json": {
+      "sha256": "0c34dcc4be50e62cc4dd4fa8b5011d779b999ef151ad5e9709ed17f2b131f319",
+      "bytes": 146827
+    },
+    "docs/measurements/passenger-hyperpath-steady-8462e6cd-2026-10-17/hyperpath/save-integrity.json": {
+      "sha256": "254ac9cef93cdf10e25db4b6e232cc198820a82606088fa121d87274151f5649",
+      "bytes": 660
+    },
+    "docs/measurements/passenger-hyperpath-steady-8462e6cd-2026-10-17/hyperpath/scripts/game_start.scr": {
+      "sha256": "a0ed898ee6c4f6db3446a230a6d0fdaa80f66cd61ed518b679113ef975900a42",
+      "bytes": 494
+    },
+    "docs/measurements/passenger-hyperpath-steady-8462e6cd-2026-10-17/hyperpath/scripts/passenger_benchmark_end.scr": {
+      "sha256": "7e5456d6953c8ea23b6597f56ba6b7119e1033962ca6d8e2b9ee56e6c0a207a1",
+      "bytes": 358
+    },
+    "docs/measurements/passenger-hyperpath-steady-8462e6cd-2026-10-17/hyperpath/stderr.txt.gz": {
+      "sha256": "54cdc2872d638cc453e06b9f167510514571e8d4d6413c8ff6a9287e2bb7689d",
+      "bytes": 19917
+    },
+    "docs/measurements/passenger-hyperpath-steady-8462e6cd-2026-10-17/hyperpath/stdout.txt.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20
+    },
+    "docs/measurements/passenger-hyperpath-steady-8462e6cd-2026-10-17/hyperpath/trace-stats.txt": {
+      "sha256": "4720dd4b16c7c451ae4a073888a030de0806a1fbe28f0e063e0fbca351c066b4",
+      "bytes": 985
+    },
+    "docs/measurements/passenger-hyperpath-steady-8462e6cd-2026-10-17/hyperpath/wpa-export.log": {
+      "sha256": "34f23f5cc6086d27f37008b7ef120f485dbf3636916903834533cb5cecac79c7",
+      "bytes": 31032
+    },
+    "docs/measurements/passenger-hyperpath-steady-8462e6cd-2026-10-17/hyperpath/wpr-finished.txt": {
+      "sha256": "f67b5108ac3ef8d1251c3bafda03d4ab89f46bf95fde38dd5386afcc43d86db6",
+      "bytes": 13
+    },
+    "docs/measurements/passenger-hyperpath-steady-8462e6cd-2026-10-17/hyperpath/wpr-go.txt": {
+      "sha256": "4548693a4447015776d38838e4cce8b63b92a951291b1289b395fceb77a8d637",
+      "bytes": 33
+    },
+    "docs/measurements/passenger-hyperpath-steady-8462e6cd-2026-10-17/hyperpath/wpr-ready.txt": {
+      "sha256": "f67b5108ac3ef8d1251c3bafda03d4ab89f46bf95fde38dd5386afcc43d86db6",
+      "bytes": 13
+    },
+    "docs/measurements/passenger-hyperpath-steady-8462e6cd-2026-10-17/hyperpath/wpr-saved.txt": {
+      "sha256": "8376a5904d59eab640d1ad7d270929dedb4caac00daaa2bff6c5686bc833f531",
+      "bytes": 33
+    }
+  }
+}

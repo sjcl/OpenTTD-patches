@@ -1,4 +1,7 @@
-param([Parameter(Mandatory=$true)][string]$Build)
+param(
+    [Parameter(Mandatory=$true)][string]$Build,
+    [ValidateSet('legacy', 'hyperpath')][string[]]$Mode = @('legacy', 'hyperpath')
+)
 $ErrorActionPreference = 'Stop'
 $taskRoot = (Resolve-Path -LiteralPath $Build).Path
 $taskIdentity = [Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()
@@ -19,7 +22,7 @@ function Invoke-TaskWpr([string[]]$WprArgs) {
     & $taskWpr @WprArgs 2>&1 | Out-File -LiteralPath $taskLog -Append -Encoding utf8
     if ($LASTEXITCODE -ne 0) { throw "WPR exit code $LASTEXITCODE" }
 }
-foreach ($taskName in @('legacy', 'hyperpath')) {
+foreach ($taskName in $Mode) {
     $taskDir = Join-Path $taskRoot $taskName
     $taskStarted = $false
     try {

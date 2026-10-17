@@ -1,0 +1,6 @@
+﻿2026-10-18T01:03:59.6529598+09:00 wpr -start CPU
+2026-10-18T01:04:00.0144192+09:00 wpr -marker legacy-begin -flush
+2026-10-18T01:05:05.1630421+09:00 wpr -marker legacy-end -flush
+2026-10-18T01:05:05.3126342+09:00 wpr -stop C:\Users\bebe\.codex\worktrees\8621\OpenTTD-patches\build-passenger-legacy-steady-8462e6cd\legacy\cpu.etl
+Press Ctrl+C to cancel the stop operation.
+The trace was successfully saved.

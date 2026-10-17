@@ -1,0 +1,13 @@
+{
+  "ticks": 2048,
+  "mode": "legacy",
+  "input_sha256": "b276c5de400651f646c129ab394bc97a686f38aa345b3a4a799e07c8a06289ca",
+  "canonical_matches_both_rejected_attempts": true,
+  "simulation_timing_valid": true,
+  "whole_process_timing_valid": false,
+  "post_simulation_observations": 11,
+  "etl_window_valid": true,
+  "process_metadata_unchanged": true,
+  "process_metadata_sha256": "8caec607732a3a67e9b4cac044c5931e2ab594543ad2c7a4c88b8333ddaff2b8",
+  "explanation": "The runner succeeded. The outer retry controller still required whole-process quiescence and failed its stricter assertion. All observed activity was after_simulation; ETL lifetimes independently confirm no competing process overlaps the WPR markers. Preserve raw metadata and use only the 2048-tick window."
+}

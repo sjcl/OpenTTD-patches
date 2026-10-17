@@ -1,0 +1,64 @@
+{
+  "product_sources_unchanged": true,
+  "same_binary_and_pdb": true,
+  "original_input_unchanged": true,
+  "frozen_legacy_save_read_only": true,
+  "frozen_legacy_assets_match": true,
+  "reload_equal_fields_per_mode": 24,
+  "runs": {
+    "warmup": {
+      "exit_code": 0,
+      "ticks": 8192,
+      "start_tick": 3181119581,
+      "end_tick": 3181127773,
+      "simulation_contamination": 0,
+      "post_simulation_observations": 0,
+      "whole_process_timing_valid": true,
+      "payments_valid": true,
+      "result_sha256": "b276c5de400651f646c129ab394bc97a686f38aa345b3a4a799e07c8a06289ca"
+    },
+    "reload": {
+      "exit_code": 0,
+      "ticks": 0,
+      "start_tick": 3181127773,
+      "end_tick": 3181127773,
+      "simulation_contamination": 0,
+      "post_simulation_observations": 0,
+      "whole_process_timing_valid": true,
+      "payments_valid": true,
+      "result_sha256": "291b4c4c5b0fe6f14e3fa26bd22daca05c8a143b7aa8c3caf4d41cc686bee134"
+    },
+    "legacy": {
+      "exit_code": 0,
+      "ticks": 2048,
+      "start_tick": 3181127773,
+      "end_tick": 3181129821,
+      "simulation_contamination": 0,
+      "post_simulation_observations": 11,
+      "whole_process_timing_valid": false,
+      "payments_valid": true,
+      "result_sha256": "a204db803bff2b90bd5d3112c08b8e8dca43d34f55c1ca1a570456df24d3cfd1"
+    }
+  },
+  "exports": {
+    "legacy": {
+      "lost_events": 0,
+      "lost_buffers": 0,
+      "unresolved_product_functions": 0,
+      "conservation_checks_passed": true,
+      "raw_gzip_sha256_match": true,
+      "etl_process_lifetimes_no_competing_overlap": true
+    },
+    "hyperpath": {
+      "lost_events": 0,
+      "lost_buffers": 0,
+      "unresolved_product_functions": 0,
+      "conservation_checks_passed": true,
+      "raw_gzip_sha256_match": true,
+      "etl_process_lifetimes_no_competing_overlap": true
+    }
+  },
+  "hyperpath_capture_reused_byte_identically": true,
+  "legacy_hyperpath_indexed_walks_and_rebuilds_zero": true,
+  "canonical_matches_both_rejected_runs": true
+}

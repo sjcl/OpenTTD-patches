@@ -5,6 +5,7 @@ import json
 import os
 from pathlib import Path
 import subprocess
+from passenger_wpr_window import audit_window
 
 
 def sha(path):
@@ -53,6 +54,7 @@ def main():
         subprocess.run([str(toolkit / 'xperf.exe'), '-i', str(trace), '-o', str(stats), '-a', 'tracestats', '-timespan'], check=True)
         text = stats.read_text(encoding='utf-8-sig')
         assert 'Total # Lost Buffers : 0' in text and 'Total # Lost Events  : 0' in text
+        audit_window(directory, toolkit, mode)
         if Path(args.output_name).name != args.output_name:
             raise ValueError('--output-name must be a directory name')
         output = directory / args.output_name

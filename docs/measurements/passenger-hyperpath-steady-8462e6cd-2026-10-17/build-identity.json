@@ -1,0 +1,35 @@
+{
+  "product_commit": "8462e6cd8280fe399fbb3b3e4a9cdb4413c935b4",
+  "product_src_tree": "631f498ec2e22d2910bb414d7f3b2f9b780b9e8e",
+  "reused_build": true,
+  "previous_evidence": "docs/measurements/passenger-hyperpath-index-8462e6cd-2026-10-17",
+  "previous_identity_sha256": "8b8689ebe24e69bd36882c0ca7a7fc32e544d4d6b8bedb2b0088eb714c44ed23",
+  "executable_sha256": "232ed876ab74fecea3d0e3e16e01b2f787e56492da554d33b9bf72315c573ae0",
+  "pdb_sha256": "af41da80f5f7e3729be213bdbc0f7795c1560291d705d8a73d0af751454b1a5c",
+  "hardware": {
+    "cpu": "AMD Ryzen 9 9950X",
+    "physical_cores": 16,
+    "logical_processors": 32,
+    "windows_build": 26200,
+    "physical_memory_bytes": 100265259008,
+    "main_thread_affinity_mask": 1
+  },
+  "build_flags": {
+    "cxx_release": "/O2 /Ob2 /DNDEBUG /Zi /Zo",
+    "link": "/DEBUG:FULL /OPT:REF /OPT:ICF /INCREMENTAL:NO",
+    "asserts": true,
+    "lto": false,
+    "static_crt": true
+  },
+  "native_tests_previously_passed": {
+    "cases": 728,
+    "assertions": 9930179,
+    "exit_code": 0
+  },
+  "tool_scripts": {
+    "utils/passenger_precomputed_real_map.py": "f448f148405a93bd1c4776be6a5d2b1bf395a7f09df03bfadcf77f010ad043ab",
+    "utils/passenger_wpr_record.ps1": "237fe1ea5c4a58f18df035f59765cc08e9538bd8bb47190e87bdad679c5c13b2",
+    "utils/passenger_wpr_export.py": "369efb3f57f7ce49e8fc4bd9fda8e7e5471d021bf53be6afa3a5df2e3057fad8",
+    "utils/passenger_wpr_summarize.py": "0f7a8bef406d6e73c0f5022b248329e903d6d8b2428857bee3f3599c26ecbf83"
+  }
+}
