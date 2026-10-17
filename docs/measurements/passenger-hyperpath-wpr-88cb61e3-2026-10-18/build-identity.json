@@ -1,0 +1,62 @@
+{
+  "base_commit": "88cb61e3756cdd88021bc87b8dd779a4c93473d5",
+  "windows_build_fix_commit": "b7cdf719e88350ca6b46a787a4fbd676de7f3352",
+  "product_src_tree": "3f434b0f0ae350195bf77febfcee306d34a6b8f3",
+  "configured_on_base_then_built_with_identifier_rename": true,
+  "native_tests": {
+    "cases": 729,
+    "assertions": 10074203,
+    "exit_code": 0,
+    "performance_measurement": false
+  },
+  "files": {
+    "Release/openttd.exe": {
+      "bytes": 14159872,
+      "sha256": "3e97379a69efed86f3c3c4d251d63268c22618b54207bd29e9b0a1192ea244f0"
+    },
+    "Release/openttd.pdb": {
+      "bytes": 143306752,
+      "sha256": "0be9830c3068a7b8c4374cefa4831681ab2321fa9b046feca8320d4987137a8f"
+    },
+    "Release/openttd_test.exe": {
+      "bytes": 19375104,
+      "sha256": "a2373374a130711fe9c4ffcce0efe000f9d8e42fe5ed5dd1916b1e369fab7363"
+    },
+    "Release/openttd_test.pdb": {
+      "bytes": 185708544,
+      "sha256": "22bc8a026b412a90731be13b56bc00904c7486e35442ce3b98539322922040b1"
+    }
+  },
+  "build_flags": {
+    "cxx_release": "/O2 /Ob2 /DNDEBUG /Zi /Zo",
+    "link": "/DEBUG:FULL /OPT:REF /OPT:ICF /INCREMENTAL:NO",
+    "asserts": true,
+    "lto": false,
+    "static_crt": true
+  },
+  "local_build": "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-88cb61e3",
+  "copied_translation_units": {
+    "save-integrity/cargopacket.cpp": "b4e75f95e5d9f81911bd0b62f3072eb4a22831ccde30342ff9bda5ff2ad22a32",
+    "save-integrity/cargopacket_sl.cpp": "4af5f2bee5b276d0859876a4b23c694206fd522b80c891d551a6cad3dc436fc5",
+    "save-integrity/command.cpp": "1b74b0b7454c8f8e9c29ff0c64676fda229b4c2cb4cc86432a932cebf7b81acf",
+    "save-integrity/console_cmds.cpp": "a302b8d794b17d2f2ea7af1ddf076458221de90648260e1a751f4aed39e21777",
+    "save-integrity/integrity.h": "a1829785fd341072840102949c0bb68e0960333f67c39b14c03a25d76d8d4b15",
+    "save-integrity/passenger_service_database.cpp": "fdbacbf55ded8463d2aa6d53232d41ebe85af10a5c302547d922e3b922a3ab72",
+    "save-integrity/wpr_gate.h": "64793e1253d3040ee8b8855b9c23a1d00b3db7690e26caf2716480d8750b8b24",
+    "real-map-driver/null_v.cpp": "ca91a44007c3442f85a1d45821515ec039f64b099aca48a349a605f4402e9b51",
+    "real-map-driver/win32.cpp": "61c5c6cfb7279228676a8215f97e12472c9d3d9a36fa40a9592633cc78ae7c8c"
+  },
+  "tool_scripts": {
+    "utils/passenger_precomputed_real_map.py": "ec37f3826575b933a5f519eac2aa856e8bf62f08d120ec4af007e6ef6c45806d",
+    "utils/passenger_estimated_prepare.py": "77cc792aad71ae0feace516a1d9db83a630f87501385dc8684f8f7684167e48c",
+    "utils/passenger_hyperpath_build.py": "18276cf3a68946a76033898d8073bf8c77ea46b9523e258e3c8d2117c1383b35",
+    "utils/passenger_wpr_compare.py": "240e587f064b3419a0386aa2f021ee68ab0271d7d4d0fd98e58afd4ae976daf4",
+    "utils/passenger_wpr_control.py": "fa483d06004b2fe5e901884b0f3cbc6156588e1a1cc58d78d7a6dc761cee06bb",
+    "utils/passenger_wpr_export.py": "6febbfcdb1da4f82e32181048b3fdebd0f04cf4734a77673a699f8f38ac9431e",
+    "utils/passenger_wpr_prepare.py": "f8e79672ccebc251637a58c2720c699cbfe6bc0a91cbde8b7b1b16011dae0324",
+    "utils/passenger_wpr_profile.py": "4c50bf5585d7051f4ef25f73794630d068a3ae6505335891a6b7344c5075c690",
+    "utils/passenger_wpr_record.ps1": "9486814e5651ea4b0d12b5a9836e9d191b799375f12282839db499751de0dd70",
+    "utils/passenger_wpr_summarize.py": "143743b73ef322a0e405c9a99e58e6191fa756702bec5b909377d2d525c4824d",
+    "utils/passenger_wpr_window.py": "6cefeffec3004455b71fd33bd2c07a3ce73f4cdeeb1bec36428fc9c3d7245929"
+  }
+}

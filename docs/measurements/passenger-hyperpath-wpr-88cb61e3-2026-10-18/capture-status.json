@@ -1,0 +1,28 @@
+{
+  "status": "blocked_missing_inputs",
+  "wpr_recorded": false,
+  "measured_ticks": 0,
+  "canonical_comparison": null,
+  "new_inclusive_cpu_ms_per_tick": null,
+  "reference": "docs/measurements/passenger-routing-steady-pair-8462e6cd-2026-10-18",
+  "previous_inclusive_cpu_ms_per_tick": {
+    "legacy": {
+      "openttd.exe!PassengerPrecomputedTable::StepHyperpath": 0.0,
+      "openttd.exe!PassengerServiceDatabase::TickPrecomputed": 1.194898096
+    },
+    "hyperpath": {
+      "openttd.exe!PassengerPrecomputedTable::StepHyperpath": 2.95458042,
+      "openttd.exe!PassengerServiceDatabase::TickPrecomputed": 3.010732959
+    }
+  },
+  "missing_input_sha256": {
+    "hyperpath": "275544f1fd7bb16920ebd325c3a916ee06f164fcbe53abf0c1bb6409e9802f9f",
+    "legacy": "b276c5de400651f646c129ab394bc97a686f38aa345b3a4a799e07c8a06289ca",
+    "original": "306a8d3094c406286ff1dd3249f1726bf9d10e230ead593eacdd91efc43ac629"
+  },
+  "assets_recovered": 246,
+  "missing_input_guard": {
+    "exit_code": 1,
+    "wpr_started": false
+  }
+}
