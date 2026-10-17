@@ -1,0 +1,7 @@
+{
+  "bytes": 4011851776,
+  "sha256": "f825e895d588ba416070d0dcbe083ed5ae975edd8ffe2429ded4229549f5d95f",
+  "rejected": true,
+  "retained": false,
+  "reason": "Rejected trace; remove only this generated ETL to preserve disk space for the accepted capture. Canonical and diagnostics retained."
+}

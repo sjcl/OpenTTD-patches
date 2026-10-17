@@ -1,0 +1,16 @@
+run,ticks,cause,packets,microseconds,wall_ms_per_tick
+warmup-legacy,8192,new,291941,3260611,0.3980238037109375
+warmup-legacy,8192,expiry,632721,2383143,0.2909110107421875
+warmup-legacy,8192,failure,0,0,0.0
+warmup-legacy,8192,migration,0,0,0.0
+warmup-legacy,8192,generation,1626358,7694946,0.939324462890625
+legacy,2048,new,56023,614866,0.3002275390625
+legacy,2048,expiry,150956,579010,0.2827197265625
+legacy,2048,failure,0,0,0.0
+legacy,2048,migration,0,0,0.0
+legacy,2048,generation,543325,2641444,1.289767578125
+hyperpath,2048,new,42690,405653,0.19807275390625
+hyperpath,2048,expiry,181993,578048,0.28225
+hyperpath,2048,failure,67652,357803,0.17470849609375
+hyperpath,2048,migration,0,0,0.0
+hyperpath,2048,generation,1414511,2715637,1.32599462890625

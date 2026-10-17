@@ -1,0 +1,43 @@
+{
+  "mode": "legacy",
+  "marker_begin_us": 359390,
+  "marker_end_us": 66896908,
+  "game_pid": 15576,
+  "valid": false,
+  "overlapping_competing_processes": [
+    {
+      "name": "cmake.exe",
+      "pid": 113348,
+      "start_us": 57610821,
+      "end_us": 57655341,
+      "own_game": false,
+      "overlaps_window": true
+    }
+  ],
+  "relevant_processes": [
+    {
+      "name": "openttd.exe",
+      "pid": 15576,
+      "start_us": null,
+      "end_us": null,
+      "own_game": true,
+      "overlaps_window": true
+    },
+    {
+      "name": "cmake.exe",
+      "pid": 113348,
+      "start_us": 57610821,
+      "end_us": 57655341,
+      "own_game": false,
+      "overlaps_window": true
+    }
+  ],
+  "method": "Kernel process lifetimes in ETL; MIN/MAX denote trace boundaries. Match the runner build/test/game names, excluding only the measured openttd.exe PID. Units are microseconds.",
+  "source_etl": {
+    "bytes": 4011851776,
+    "sha256": "f825e895d588ba416070d0dcbe083ed5ae975edd8ffe2429ded4229549f5d95f",
+    "rejected": true,
+    "retained": false,
+    "reason": "Rejected trace; remove only this generated ETL to preserve disk space for the accepted capture. Canonical and diagnostics retained."
+  }
+}

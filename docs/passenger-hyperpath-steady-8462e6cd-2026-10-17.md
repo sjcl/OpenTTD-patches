@@ -1,5 +1,9 @@
 # Hyperpath 8,192 tick 後の凍結セーブと WPR 新基準
 
+2026-10-18追記: Legacyも元入力から8,192 tick進めた追加計測は
+[両モードをそれぞれ定常化した比較](passenger-routing-steady-pair-8462e6cd-2026-10-18.md)を参照。
+以下はHyperpathの定常セーブを共通入力にした最初のペアの記録。
+
 `8462e6cd8280fe399fbb3b3e4a9cdb4413c935b4` で元入力を Hyperpath / index のまま
 **8,192 tick 実行して、新しい計測入力を凍結した。再ロードの canonical は24/24一致。**
 この入力から追加2,048 tick 実行した Hyperpath の診断は
