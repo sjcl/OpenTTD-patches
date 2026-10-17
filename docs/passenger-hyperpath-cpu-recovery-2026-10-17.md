@@ -441,3 +441,37 @@ RecordCapacityMiss still uses the full native eligibility visitor.
 
 Evidence: [native test log](measurements/passenger-hyperpath-cpu-recovery-2026-10-17/task4-native-ctest.log)
 and [native completion](measurements/passenger-hyperpath-cpu-recovery-2026-10-17/task4-native-completed.json).
+
+## Flat policy storage
+
+New Hyperpath rows use 24-byte cost/wait/offset/count headers and one candidate
+slab per row. Incoming-carrier variants store base minus that carrier plus
+every addition. An exact full-payload fallback retains correctness if a
+future recurrence introduces an unexpected removal. No candidate is truncated.
+Base/full spans refer directly to the slab; a bounded deterministic cache
+reconstructs other spans. Normal membership and boarding query the stored
+union directly, without materializing a variant span or computing a ride.
+Local failed-carrier policy evaluation retains its existing algorithm.
+
+The frozen admission formula now budgets compact headers, row descriptors,
+the complete candidate bound and both bounded caches. It never reads OS free
+memory or live passenger demand. Logical candidate/header/publication Work
+remains charged at the previous boundaries. Labels retain their existing type.
+
+JPSD v15 preserves the complete v14 prefix/trailer and appends separate current
+and retained flat-storage flags; passenger_periodic is 17. Older generations
+replay their original layout and admission formula, finish their old frontier,
+then migrate to a new flat generation. The guard against starting a replacement
+during load replay remains intact. New saves require a reader supporting the
+new feature version; preserving a prefix does not make old binaries readers.
+
+All 731 native CTest cases pass. Added checks compare every published state,
+candidate, label and exact N/F across 16 synthetic networks and different Work
+slices; retain eleven additions in one variant; replay v14 Work and mixed v15
+generations; reject malformed flat flags; and compare joining peers. Multiple
+large DB peers in the new replay test use heap storage to respect the native
+test stack. The full real-map, separate-process witness and OS-memory comparison
+is recorded in the following measurement section when complete.
+
+Evidence: [native tests](measurements/passenger-hyperpath-cpu-recovery-2026-10-17/task5-native-ctest.log)
+and [native completion](measurements/passenger-hyperpath-cpu-recovery-2026-10-17/task5-native-completed.json).

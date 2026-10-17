@@ -808,6 +808,7 @@ void PassengerServiceDatabase::BeginPrecomputed(int64_t transfer)
 		this->retained_precomputed_hyperpath = this->precomputed_hyperpath;
 		this->retained_precomputed_revisit_dominance = this->precomputed_revisit_dominance;
 		this->retained_precomputed_continuation_witness = this->precomputed_continuation_witness;
+		this->retained_precomputed_flat = this->precomputed_flat;
 		this->retained_precomputed_policy_generation = this->precomputed_policy_generation;
 	}
 	this->precomputed_sections = true;
@@ -816,6 +817,7 @@ void PassengerServiceDatabase::BeginPrecomputed(int64_t transfer)
 	this->precomputed_hyperpath = _settings_game.linkgraph.passenger_journey_hyperpath;
 	this->precomputed_revisit_dominance = true;
 	this->precomputed_continuation_witness = true;
+	this->precomputed_flat = this->precomputed_hyperpath;
 	if (this->precomputed_policy_generation == UINT64_MAX) FatalError("Passenger policy generation exhausted.");
 	++this->precomputed_policy_generation;
 	this->precomputed_revision = this->published_revision;
@@ -842,11 +844,11 @@ void PassengerServiceDatabase::BuildPrecomputedTables()
 		uint64_t bytes = 512 + uint64_t{256} * service.timetable.stops.size() + uint64_t{1024} * service.vehicles.size() + uint64_t{32} * service.dispatch_slots.size();
 		remaining -= std::min(remaining, bytes);
 	}
-	this->BuildPrecomputedTables(this->precomputed, this->precomputed_services, this->precomputed_transfer, remaining, this->precomputed_sections, this->precomputed_estimates, this->precomputed_optimized, this->precomputed_integrated, this->precomputed_hyperpath, this->precomputed_revisit_dominance, this->precomputed_continuation_witness, this->cooperative_graph);
+	this->BuildPrecomputedTables(this->precomputed, this->precomputed_services, this->precomputed_transfer, remaining, this->precomputed_sections, this->precomputed_estimates, this->precomputed_optimized, this->precomputed_integrated, this->precomputed_hyperpath, this->precomputed_revisit_dominance, this->precomputed_continuation_witness, this->precomputed_flat, this->cooperative_graph);
 }
 
 void PassengerServiceDatabase::BuildPrecomputedTables(std::array<PassengerPrecomputedTable, NUM_CARGO> &tables,
-		const std::map<OrderListID, PassengerPeriodicService> &snapshot, int64_t transfer, uint64_t remaining, bool sections, bool estimates, bool optimized, bool integrated, bool hyperpath, bool revisit_dominance, bool continuation_witness, bool cooperative)
+		const std::map<OrderListID, PassengerPeriodicService> &snapshot, int64_t transfer, uint64_t remaining, bool sections, bool estimates, bool optimized, bool integrated, bool hyperpath, bool revisit_dominance, bool continuation_witness, bool flat_storage, bool cooperative)
 {
 	std::vector<const PassengerPeriodicService *> records;
 	for (const auto &[id, service] : snapshot) {
@@ -858,7 +860,7 @@ void PassengerServiceDatabase::BuildPrecomputedTables(std::array<PassengerPrecom
 	auto memory_budget = cooperative ? std::make_shared<uint64_t>(remaining) : nullptr;
 	for (CargoType cargo : EnumRange(NUM_CARGO)) {
 		if (!IsCargoInClass(cargo, CargoClass::Passengers)) continue;
-		tables[cargo].Begin(records, cargo, transfer, remaining, sections, cooperative, memory_budget, estimates, optimized, integrated, hyperpath, revisit_dominance, continuation_witness);
+		tables[cargo].Begin(records, cargo, transfer, remaining, sections, cooperative, memory_budget, estimates, optimized, integrated, hyperpath, revisit_dominance, continuation_witness, flat_storage);
 		remaining -= std::min(remaining, tables[cargo].GetDiagnostic().envelope);
 	}
 }
@@ -874,6 +876,7 @@ void PassengerServiceDatabase::ClearRetainedPrecomputed()
 	this->retained_precomputed_optimized = true; this->retained_precomputed_integrated = true;
 	this->retained_precomputed_revisit_dominance = true;
 	this->retained_precomputed_continuation_witness = true;
+	this->retained_precomputed_flat = false;
 	this->retained_precomputed_hyperpath = false; this->retained_precomputed_policy_generation = 0;
 }
 
@@ -906,7 +909,7 @@ void PassengerServiceDatabase::TickPrecomputed(size_t allowance)
 	 * Actual order/boarding changes still restart; cost-only changes coalesce. */
 	if (this->precomputed_revision == UINT64_MAX && this->services.empty()) return;
 	const bool finished = std::all_of(this->precomputed.begin(), this->precomputed.end(), [](const auto &t) { return t.Finished(); });
-	if (this->precomputed_revision == UINT64_MAX || (finished && (!this->precomputed_sections || !this->precomputed_estimates || !this->precomputed_optimized || !this->precomputed_integrated || this->precomputed_hyperpath != _settings_game.linkgraph.passenger_journey_hyperpath || (this->precomputed_hyperpath && (!this->precomputed_revisit_dominance || !this->precomputed_continuation_witness)) || this->precomputed_invalidated ||
+	if (this->precomputed_revision == UINT64_MAX || (finished && (!this->precomputed_sections || !this->precomputed_estimates || !this->precomputed_optimized || !this->precomputed_integrated || this->precomputed_hyperpath != _settings_game.linkgraph.passenger_journey_hyperpath || (this->precomputed_hyperpath && (!this->precomputed_revisit_dominance || !this->precomputed_continuation_witness || !this->precomputed_flat)) || this->precomputed_invalidated ||
 			this->precomputed_transfer != _settings_game.linkgraph.passenger_transfer_penalty ||
 			(_state_ticks >= this->precomputed_refresh && this->precomputed_revision != this->published_revision))))
 		this->BeginPrecomputed(_settings_game.linkgraph.passenger_transfer_penalty);
@@ -1946,7 +1949,7 @@ std::vector<uint8_t> PassengerServiceDatabase::Save() const
 	std::vector<uint8_t> data;
 	auto put = [&](uint64_t value) { for (uint i = 0; i < 8; ++i) { data.push_back(value & 255); value >>= 8; } };
 	const bool precomputed = this->precomputed_revision != UINT64_MAX;
-	put(14); put(this->generation); put(this->cursor); put(this->sweeping); put(this->dirty_cursor);
+	put(15); put(this->generation); put(this->cursor); put(this->sweeping); put(this->dirty_cursor);
 	put(this->sweeping_since.base());
 	put(this->dirty.size()); for (OrderListID id : this->dirty) { put(id.base()); put(this->dirty_since.at(id).base()); }
 	auto put_service = [&](const PassengerPeriodicService &service) {
@@ -1999,6 +2002,7 @@ std::vector<uint8_t> PassengerServiceDatabase::Save() const
 		}
 	}
 	put((data.size() - trailer) / 8);
+	put(this->precomputed_flat); put(this->retained_precomputed_flat);
 	return data;
 }
 
@@ -2015,7 +2019,7 @@ bool PassengerServiceDatabase::Load(std::span<const uint8_t> data)
 	};
 	auto count = [&](size_t max) { uint64_t n = get(); if (n > max || n > (data.size() - cursor) / 8) { valid = false; return size_t{0}; } return static_cast<size_t>(n); };
 	PassengerServiceDatabase restored;
-	uint64_t version = get(); if (version < 1 || version > 14) return false;
+	uint64_t version = get(); if (version < 1 || version > 15) return false;
 	restored.legacy_precomputed_cursor = version < 6;
 	restored.precomputed_revisit_dominance = restored.retained_precomputed_revisit_dominance = false;
 	restored.precomputed_continuation_witness = restored.retained_precomputed_continuation_witness = false;
@@ -2202,6 +2206,11 @@ bool PassengerServiceDatabase::Load(std::span<const uint8_t> data)
 		const size_t words = (cursor - trailer) / 8;
 		if (get() != words) return false;
 	}
+	if (version >= 15) {
+		uint64_t current = get(), retained = get();
+		if (current > 1 || retained > 1 || (current && !restored.precomputed_hyperpath) || (retained && !restored.retained_precomputed_hyperpath)) return false;
+		restored.precomputed_flat = current != 0; restored.retained_precomputed_flat = retained != 0;
+	}
 	if (restored.retained_precomputed_revision == UINT64_MAX) restored.retained_precomputed_sections = true;
 	if (!valid || cursor != data.size()) return false;
 	if (version == 1) {
@@ -2270,7 +2279,7 @@ void PassengerServiceDatabase::FinishLoad(bool present, bool defer_precomputed)
 		this->load_cargo = CargoType{0};
 		if (this->retained_precomputed_revision != UINT64_MAX) {
 			this->BuildPrecomputedTables(this->retained_precomputed, this->retained_precomputed_services,
-					this->retained_precomputed_transfer, this->retained_precomputed_hyperpath ? PassengerPrecomputedTable::MAX_HYPERPATH_BYTES : PassengerPrecomputedTable::MAX_BYTES, this->retained_precomputed_sections, this->retained_precomputed_estimates, this->retained_precomputed_optimized, this->retained_precomputed_integrated, this->retained_precomputed_hyperpath, this->retained_precomputed_revisit_dominance, this->retained_precomputed_continuation_witness, defer_precomputed);
+					this->retained_precomputed_transfer, this->retained_precomputed_hyperpath ? PassengerPrecomputedTable::MAX_HYPERPATH_BYTES : PassengerPrecomputedTable::MAX_BYTES, this->retained_precomputed_sections, this->retained_precomputed_estimates, this->retained_precomputed_optimized, this->retained_precomputed_integrated, this->retained_precomputed_hyperpath, this->retained_precomputed_revisit_dominance, this->retained_precomputed_continuation_witness, this->retained_precomputed_flat, defer_precomputed);
 		}
 		this->load_current_graph_started = !defer_precomputed;
 		if (!defer_precomputed) this->BuildPrecomputedTables();

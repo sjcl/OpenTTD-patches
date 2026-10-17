@@ -68,7 +68,7 @@ public:
 	static constexpr uint32_t INVALID = UINT32_MAX;
 	static constexpr uint64_t MAX_BYTES = uint64_t{16} * 1024 * 1024 * 1024;
 	static constexpr uint64_t MAX_HYPERPATH_BYTES = uint64_t{32} * 1024 * 1024 * 1024; ///< Canonical admission, including a retained generation; not a physical allocation request.
-	void Begin(std::span<const PassengerPeriodicService *const> services, CargoType cargo, int64_t transfer, uint64_t memory = MAX_BYTES, bool sections = true, bool cooperative = false, std::shared_ptr<uint64_t> memory_budget = {}, bool estimates = true, bool optimized = true, bool integrated = true, bool hyperpath = false, bool revisit_dominance = true, bool continuation_witness = true);
+	void Begin(std::span<const PassengerPeriodicService *const> services, CargoType cargo, int64_t transfer, uint64_t memory = MAX_BYTES, bool sections = true, bool cooperative = false, std::shared_ptr<uint64_t> memory_budget = {}, bool estimates = true, bool optimized = true, bool integrated = true, bool hyperpath = false, bool revisit_dominance = true, bool continuation_witness = true, bool flat_storage = true);
 	bool PrepareGraph(size_t quantum = 1024);
 	bool IsPreparingGraph() const { return static_cast<bool>(this->graph_build); }
 	uint64_t GetGraphWork() const { return this->graph_work; }
@@ -80,6 +80,7 @@ public:
 	bool MemoryRejected() const { return this->failed; }
 	const PassengerPrecomputedDiagnostic &GetDiagnostic() const { return this->diagnostic; }
 	PassengerHyperpathMemoryDiagnostic InspectMemory() const;
+	std::vector<uint64_t> InspectBuildingPolicyRow(StationID destination) const; ///< Explicit diagnostic, called from a row-publication observer only.
 	OrderListID BoardingKey(OrderListID service) const;
 	std::span<const OrderListID> BoardingServices(OrderListID service) const;
 	static uint64_t RawSectionBoardingKey(const PassengerJourneyExecution &ride);
@@ -123,7 +124,20 @@ private:
 		uint32_t board = INVALID, alight = INVALID, legs = 0, distance = 0;
 	};
 	struct Policy { int64_t cost = INT64_MAX, wait = 0; std::vector<uint32_t> candidates; };
-	struct Row { std::vector<Label> labels, alternative; std::vector<uint32_t> policy_index; std::vector<Policy> policies; size_t bytes = 0; };
+	struct FlatPolicy {
+		int64_t cost = INT64_MAX, wait = 0;
+		uint32_t offset = 0, count = 0;
+		static constexpr uint32_t FULL = uint32_t{1} << 31, MASK = FULL - 1;
+	};
+	static_assert(sizeof(FlatPolicy) == 24);
+	struct Row {
+		std::vector<Label> labels, alternative;
+		std::vector<uint32_t> policy_index;
+		std::vector<Policy> policies; ///< Exact old storage for replay generations through v14.
+		std::vector<FlatPolicy> flat_policies;
+		std::vector<uint32_t> flat_candidates; ///< Base payloads and incoming-service addition lists, in policy order.
+		size_t bytes = 0;
+	};
 	struct LabelMetadata {
 		int64_t riding = 0, waiting = 0, first_wait = 0;
 		uint32_t board = INVALID, alight = INVALID, distance = 0;
@@ -163,7 +177,15 @@ private:
 	std::vector<std::vector<uint32_t>> station_boarding;
 	mutable std::map<std::tuple<StationID, uint32_t, OrderListID>, Policy> local_policies;
 	size_t hyperpath_static_bytes = 0, hyperpath_row_bytes = 0, hyperpath_candidate_bytes = 0, prepared_candidate_bytes = 0;
-	mutable size_t local_policy_bytes = 0;
+	mutable size_t local_policy_bytes = 0, expanded_policy_bytes = 0;
+	mutable std::map<std::pair<StationID, uint32_t>, std::vector<uint32_t>> expanded_policies;
+	bool flat_storage = false; ///< v15 physical representation and frozen memory admission.
+	std::span<const uint32_t> FlatPayload(const Row &row, uint32_t policy) const;
+	uint32_t PreviousPattern(uint32_t state) const;
+	bool ContainsStored(const Row &row, uint32_t state, uint32_t occurrence) const;
+	std::pair<int64_t, int64_t> PolicyValues(const Row &row, uint32_t state) const;
+	void ExpandPolicy(const Row &row, uint32_t state, std::vector<uint32_t> &result) const;
+	std::span<const uint32_t> RowCandidates(const Row &row, StationID destination, uint32_t state) const;
 	const Policy &LocalPolicy(const Row &row, StationID destination, uint32_t state, OrderListID failed) const;
 	std::vector<Row> rows;
 	std::vector<std::vector<StationID>> reachable_destinations; ///< Inverse published rows; no waiting-packet dependency.

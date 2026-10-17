@@ -19,6 +19,31 @@ import tempfile
 import passenger_precomputed_real_map as real
 
 
+def verify_wire_upgrade(saved_wire, loaded_wire):
+    """Only append neutral algorithm identity when loading an older JPSD."""
+    version = int.from_bytes(saved_wire[:8], 'little')
+    target = int.from_bytes(loaded_wire[:8], 'little')
+    if version not in (12, 13, 14, 15) or target not in (14, 15) or target < version:
+        raise ValueError('Memory readback expects JPSD v12 through v15')
+    expected = loaded_wire
+    if target >= 15 and version < 15:
+        if len(expected) < 24 or any(expected[-16:]):
+            raise RuntimeError('An old snapshot acquired flat-storage identity')
+        expected = (14).to_bytes(8, 'little') + expected[8:-16]
+    if version < 14:
+        words = int.from_bytes(expected[-8:], 'little')
+        if not 2 <= words < len(expected) // 8 or any(expected[-(words + 1) * 8:-8]):
+            raise RuntimeError('An old snapshot acquired unrecorded witness/facility state')
+        prefix = (13).to_bytes(8, 'little') + expected[8:-(words + 1) * 8]
+        original = (13).to_bytes(8, 'little') + saved_wire[8:] + bytes(16) if version == 12 else saved_wire
+        verified = prefix == original
+    else:
+        verified = expected == saved_wire
+    if not verified:
+        raise RuntimeError('The loader changed saved algorithm state beyond the verified old-prefix wire upgrade')
+    return dict(from_version=version, to_version=target, bytes_verified=True, replay_identical=True)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ('binary', 'package', 'lang', 'output'):
@@ -75,22 +100,10 @@ def main():
                 raise ValueError('Unexpected JPSD chunk type')
             size = (riff & 0xFFFFFF) | ((riff >> 28) << 24)
             saved_wire = decoded[at + 8:at + 8 + size]
-            version = int.from_bytes(saved_wire[:8], 'little')
-            if len(saved_wire) != size or version not in (12, 13, 14):
-                raise ValueError('Memory readback expects JPSD v12, v13 or v14')
+            if len(saved_wire) != size:
+                raise ValueError('Truncated saved JPSD')
             expected_wire = (directory / 'hyperpath-replay-before.bin').read_bytes()
-            if version < 14:
-                words = int.from_bytes(expected_wire[-8:], 'little')
-                if not 2 <= words < len(expected_wire) // 8 or any(expected_wire[-(words + 1) * 8:-8]):
-                    raise RuntimeError('An old snapshot acquired unrecorded witness/facility state')
-                prefix = (13).to_bytes(8, 'little') + expected_wire[8:-(words + 1) * 8]
-                original = (13).to_bytes(8, 'little') + saved_wire[8:] + bytes(16) if version == 12 else saved_wire
-                verified = prefix == original
-            else:
-                verified = expected_wire == saved_wire
-            if not verified:
-                raise RuntimeError('The loader changed saved algorithm state beyond the verified old-prefix wire upgrade')
-            wire_upgrade = dict(from_version=version, to_version=14, bytes_verified=True, replay_identical=True)
+            wire_upgrade = verify_wire_upgrade(saved_wire, expected_wire)
             derived.add('database_digest')
             del raw, decoded, saved_wire, expected_wire
         mismatches = {key:[expected.get(key), actual.get(key)] for key in expected.keys() | actual.keys()

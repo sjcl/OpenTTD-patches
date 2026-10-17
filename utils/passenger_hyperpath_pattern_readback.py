@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Read selected published/frozen patterns from JPSD v9-v14, without game ticks.
+"""Read selected published/frozen patterns from JPSD v9-v15, without game ticks.
 
 This diagnostic accepts an extracted database.bin, not a savegame. Values and
 the complete record layout are checked before output; unknown versions fail.
@@ -32,7 +32,7 @@ def read(data):
         return value
 
     version = take()
-    if not 9 <= version <= 14:
+    if not 9 <= version <= 15:
         raise ValueError(f"Unsupported JPSD version {version}")
 
     def service():
@@ -102,6 +102,10 @@ def read(data):
         expected = at - trailer
         if take() != expected:
             raise ValueError('Invalid v14 trailer length')
+    if version >= 15:
+        flags['flat_storage'] = [take(), take()]
+        if any(value > 1 or (value and not flags['hyperpath'][index]) for index, value in enumerate(flags['flat_storage'])):
+            raise ValueError('Invalid flat-storage identity')
     if at != len(words):
         raise ValueError(f'Unexpected JPSD tail: {len(words) - at} words')
     return dict(version=version, header=header, precomputed=precomputed, retained=retained, flags=flags,
