@@ -52,6 +52,7 @@ struct PassengerPrecomputedTestAccess {
 		VisitPublished(table, [&](uint64_t value) { digest = (digest ^ value) * 0x100000001b3ULL; }); return digest;
 	}
 	static void Hook(PassengerPrecomputedTable &table, void (*hook)(size_t, bool)) { table.parallel_search_hook = hook; }
+	static void StartHook(PassengerPrecomputedTable &table, bool (*hook)(uint)) { table.parallel_start_hook = hook; }
 	static bool Pending(const PassengerPrecomputedTable &table) { return table.parallel_credit != 0; }
 };
 
@@ -216,6 +217,25 @@ TEST_CASE("Slow and failed passenger workers cannot change logical results", "[p
 		rejected.Begin(records, PAX, 20, 1024);
 		rejected.StepParallel(65536, workers);
 		CHECK(rejected.MemoryRejected()); CHECK(rejected.GetParallelDiagnostic().searches == 0);
+	}
+}
+
+TEST_CASE("Passenger worker startup failure and partial scalar searches fall back at the same Work", "[passenger][precomputed][parallel][save]")
+{
+	std::array services{Service(0, {A, B, C}), Service(1, {B, D})};
+	std::vector<const PassengerPeriodicService *> records; for (const auto &s : services) records.push_back(&s);
+	for (bool optimized : {false, true}) for (uint started : {0U, 1U, 4U}) {
+		PassengerPrecomputedTable serial, parallel;
+		for (auto *table : {&serial, &parallel}) table->Begin(records, PAX, 20, PassengerPrecomputedTable::MAX_BYTES, true, false, {}, true, optimized);
+		if (started == 0) PassengerPrecomputedTestAccess::StartHook(parallel, +[](uint) { return false; });
+		if (started == 1) PassengerPrecomputedTestAccess::StartHook(parallel, +[](uint i) { return i == 0; });
+		if (started == 4) { parallel.Step(7); serial.Step(7); } // Partially initialized, including scalar Label scratch.
+		while (!serial.Finished()) {
+			REQUIRE(parallel.StepParallel(13, 4) == serial.Step(13));
+			REQUIRE(PassengerPrecomputedTestAccess::Published(parallel) == PassengerPrecomputedTestAccess::Published(serial));
+		}
+		if (started == 0) CHECK(parallel.GetParallelDiagnostic().fallbacks == 1);
+		if (started == 1) CHECK(parallel.GetParallelDiagnostic().workers == 1);
 	}
 }
 

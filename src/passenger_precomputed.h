@@ -305,6 +305,7 @@ private:
 	bool parallel_unavailable = false;
 	PassengerParallelBuildDiagnostic parallel_diagnostic;
 	void (*parallel_search_hook)(size_t, bool) = nullptr; ///< Native scheduling/failure injection; unset in production.
+	bool (*parallel_start_hook)(uint) = nullptr; ///< Native thread-start failure injection; unset in production.
 	CargoType cargo = INVALID_CARGO;
 	PassengerBuildTask graph_build; ///< Derived preparation only. No row can be published until this completes.
 	uint64_t graph_work = 0; ///< Actual coroutine steps, used only for bounded join progress reports.
