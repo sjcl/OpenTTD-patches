@@ -1,4 +1,4 @@
-## JGR's Patchpack + Yahho's additions version 0.73.3+2
+## JGR's Patchpack + Yahho's additions version 0.73.3+3
 
 This is a collection of features and other modifications applied to [OpenTTD](http://www.openttd.org/).  
 It's a separate version of the game which can be installed and played alongside the standard game, not a loadable mod (NewGRF, script, or so on).
