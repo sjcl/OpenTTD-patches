@@ -781,7 +781,7 @@ bool PassengerServiceDatabase::PreparePrecomputed()
 		this->diagnostic.build_microseconds += std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - started).count();
 	} else {
 		this->cooperative_graph = true;
-		this->TickPrecomputed();
+		this->TickPrecomputed(BUILD_WORK, true);
 		this->cooperative_graph = false;
 	}
 	this->precomputed_preparation_nanoseconds += std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - started).count();
@@ -888,7 +888,7 @@ bool PassengerServiceDatabase::PrecomputedFinished() const
 			std::all_of(this->precomputed.begin(), this->precomputed.end(), [](const auto &t) { return t.Finished(); });
 }
 
-void PassengerServiceDatabase::TickPrecomputed(size_t allowance)
+void PassengerServiceDatabase::TickPrecomputed(size_t allowance, bool initial_parallel)
 {
 	/* Startup callbacks may run before a deferred load has replayed its saved
 	 * frontier. Only StepLoad may advance it; starting a replacement here would
@@ -908,11 +908,16 @@ void PassengerServiceDatabase::TickPrecomputed(size_t allowance)
 		auto &table = this->precomputed[cargo];
 		if (table.Finished()) continue;
 		const auto rows = table.GetDiagnostic().destinations;
-		size_t used = table.Step(allowance, false, [&](StationID destination) {
+		auto published = [&](StationID destination) {
 			auto &retained = this->retained_precomputed[cargo];
 			retained.PrepareRetirement(table); retained.ReleaseDestination(destination);
 			this->BumpHyperpathDestination(destination);
-		});
+		};
+		/* Only the initial simulation barrier spends CPU on joined lookahead.
+		 * Replacement ticks and save replay retain their bounded sequential path.
+		 * Both paths consume precisely the same logical BUILD_WORK allowance. */
+		size_t used = initial_parallel && this->retained_precomputed_revision == UINT64_MAX ?
+				table.StepParallel(allowance, _settings_client.gui.passenger_precomputed_workers, published) : table.Step(allowance, false, published);
 		if (table.GetDiagnostic().destinations != rows) WakePassengerWaitingCargo(cargo);
 		allowance -= used; this->precomputed_operations += used;
 		if (allowance == 0 || table.IsPreparingGraph()) break;
