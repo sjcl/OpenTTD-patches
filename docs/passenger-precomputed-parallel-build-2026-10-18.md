@@ -2,6 +2,8 @@
 
 基点は `sjcl/jgrpp-ya` の `093218f882`。
 ブランチは `perf/passenger-precomputed-parallel-build`。
+作業中に追加されたリリース情報のみの更新 `f15dccd1be`（0.73.3+4）も最後に取り込んだ。
+探索ソースは計測時から変わっていない。
 
 ## 実装範囲
 
@@ -155,6 +157,7 @@ python utils/passenger_parallel_benchmark.py BUILD/openttd_test.exe OUTPUT --rep
 - `3281f8c7ed` — 起動失敗、キャンセル、scratch上限の検証・修正。
 - `cae824221b` — 異なるWorker設定のloopback試験。
 - 本レポートと合成ベンチマーク・生記録のcommit。
+- 最新jgrpp-yaの0.73.3+4リリース情報を取り込むmerge commit。
 
 push先は `sjcl/OpenTTD-patches` の `perf/passenger-precomputed-parallel-build`。
 この作業ツリーの `origin` は別forkを指していたため、指定リポジトリを指す `sjcl` リモートを使用する。
