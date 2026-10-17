@@ -1,0 +1,9 @@
+{
+  "operations": 1928264853,
+  "database_sha256": "7ca9ad50ca3fb134369ad01d9eb1a193dce3cf48c720fdba2ea4e55b15f06a93",
+  "stations_sha256": "dd464e3aa11299a9a05f62caebb95a692607fba83a53cf0aa4d0757aeeb6750c",
+  "flat": true,
+  "revisit_dominance": true,
+  "continuation_witness": true,
+  "transfer": 20
+}

@@ -475,3 +475,54 @@ is recorded in the following measurement section when complete.
 
 Evidence: [native tests](measurements/passenger-hyperpath-cpu-recovery-2026-10-17/task5-native-ctest.log)
 and [native completion](measurements/passenger-hyperpath-cpu-recovery-2026-10-17/task5-native-completed.json).
+
+## Complete frozen-map storage witness
+
+The old-layout, flat-layout and persisted-Work replay processes each publish
+all 4,917 destinations. Their normalized witnesses contain every waiting state,
+all candidate IDs, cost/wait, complete labels and the exact numerator high/low
+and frequency. Old versus flat and flat versus replay each compare
+**9,511,174,912 bytes exactly**. All target public candidate lists match too.
+All three consume **1,928,264,853 logical Work** units; replay uses the persisted
+count with 104,729-unit slices rather than the original 16,777,216-unit slices.
+The equality claim is a full byte comparison, not only matching hashes.
+
+The measured table contains 37,887,369 non-shared incoming-carrier variants,
+10,923,695 additions, 2,028,685 variants with multiple additions and a maximum
+of **21** additions. Unexpected non-carrier removals remain zero. Labels and
+their representation are unchanged.
+
+Memory in decimal GB; each process owns the same frozen map/DB and one table:
+
+| Component | Old layout | Flat layout | Reduction |
+| --- | ---: | ---: | ---: |
+| Policy headers | 3.555 | 2.133 | 40.00% |
+| Candidate arrays/slabs | 0.439 | 0.236 | 46.18% |
+| Policy indices | 0.358 | 0.282 | 21.28% |
+| Labels | 3.383 | 3.383 | 0.00% |
+| Reported table residency | 7.798 | 6.097 | 21.81% |
+| Frozen admission envelope | 16.275 | 14.012 | 13.91% |
+| Process peak working set | 7.730 | 6.171 | 20.16% |
+| Process peak commit | 9.407 | 7.043 | 25.13% |
+
+The replay process reproduces identical component counters; its peak working
+set/commit are 6.161 / 7.043 GB. OS peaks include the fixture, allocator and
+witness-export overhead; component counters describe completed table residency.
+These are separate-process storage comparisons, not an end-game runtime
+inventory or an untraced CPU benchmark.
+
+The recovered construction fixture is a v9 DB/station snapshot, shared exactly
+by all three storage runs. Its 3393→3394 base wait is 3,199 ticks, while the
+loaded later-state departure diagnostic initially observes 4,110. They are
+different frozen service metadata, and must not be silently treated as the
+same simulation frontier. Fixture and binary hashes, exact source-file hashes,
+committed source identity and compiler configuration are preserved below.
+Native JPSD tests and the final real MP/readback separately validate wire and
+mixed-generation replay.
+
+Evidence: [complete comparison and counters](measurements/passenger-hyperpath-cpu-recovery-2026-10-17/task5-flat-comparison.json),
+[persisted Work](measurements/passenger-hyperpath-cpu-recovery-2026-10-17/task5-flat-saved-work.json),
+[source/binary identities](measurements/passenger-hyperpath-cpu-recovery-2026-10-17/task5-flat-source.json),
+[compiler configuration](measurements/passenger-hyperpath-cpu-recovery-2026-10-17/task5-flat-CMakeCache.txt)
+and [replay output](measurements/passenger-hyperpath-cpu-recovery-2026-10-17/task5-flat-replay.log).
+The three 9.51-GB witnesses remain in the ignored build directory.
