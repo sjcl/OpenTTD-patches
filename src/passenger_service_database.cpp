@@ -1088,6 +1088,16 @@ int PassengerServiceDatabase::HyperpathLookupCandidates(CargoType cargo, const P
 	return out.empty() ? HYPERPATH_LOOKUP_NONE : slot;
 }
 
+bool PassengerServiceDatabase::HyperpathDisplayCandidates(CargoType cargo, const PassengerJourneyExecution &intent,
+		OrderListID previous, OrderListID failed, std::vector<PassengerPrecomputedTable::DisplayCandidate> &out, size_t &work) const
+{
+	out.clear();
+	if (cargo >= NUM_CARGO || intent.kind != PassengerRideKind::HyperpathIntent || intent.signature != uint64_t(cargo) + 1 ||
+			!this->IsCurrent(intent)) return false;
+	const auto &table = intent.generation == this->precomputed_policy_generation ? this->precomputed[cargo] : this->retained_precomputed[cargo];
+	return table.DisplayCandidates(intent.boarding, intent.alighting, previous, failed, out, work);
+}
+
 PassengerPrecomputedPlan PassengerServiceDatabase::BoardHyperpath(const PassengerJourneyExecution &intent, CargoType cargo,
 		OrderListID service, VehicleOrderID boarding, OrderListID previous, OrderListID failed) const
 {

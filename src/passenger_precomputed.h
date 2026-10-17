@@ -113,6 +113,12 @@ public:
 	bool BoardingMaskCovers() const;
 	static constexpr uint64_t MAX_BOARDING_MASK_BYTES = uint64_t{64} * 1024 * 1024; ///< Larger maps keep the complete scan.
 	std::span<const uint32_t> Candidates(StationID origin, StationID destination, OrderListID previous = OrderListID::Invalid(), OrderListID failed = OrderListID::Invalid()) const;
+	struct DisplayCandidate { OrderListID service; uint64_t incarnation, generation; VehicleOrderID order; };
+	/** Read published policy storage without expanding/rebuilding policies or evaluating routes.
+	 * False means missing policy or incomplete enumeration. A cold failed-service policy is unknown. */
+	bool DisplayCandidates(StationID origin, StationID destination, OrderListID previous, OrderListID failed,
+			std::vector<DisplayCandidate> &out, size_t &work) const;
+
 	PassengerPrecomputedPlan Board(StationID origin, StationID destination, StateTicks ready, OrderListID service, VehicleOrderID order, OrderListID previous = OrderListID::Invalid(), OrderListID failed = OrderListID::Invalid()) const;
 	struct CandidateDiagnostic { uint32_t occurrence; OrderListID service; VehicleOrderID order; StationID alight; int64_t cost, wait; uint64_t frequency; };
 	std::vector<CandidateDiagnostic> Inspect(StationID origin, StationID destination, OrderListID previous = OrderListID::Invalid()) const;

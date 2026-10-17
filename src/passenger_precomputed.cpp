@@ -1845,6 +1845,40 @@ std::span<const uint32_t> PassengerPrecomputedTable::Candidates(StationID origin
 	return this->RowCandidates(*row, destination, state);
 }
 
+bool PassengerPrecomputedTable::DisplayCandidates(StationID origin, StationID destination, OrderListID previous, OrderListID failed,
+		std::vector<DisplayCandidate> &out, size_t &work) const
+{
+	out.clear();
+	const auto *row = this->FindRow(destination);
+	const uint32_t state = this->PolicyState(origin, previous);
+	if (!this->hyperpath || row == nullptr || state == INVALID) return false;
+	auto emit = [&](std::span<const uint32_t> candidates, uint32_t excluded_pattern = INVALID) {
+		for (uint32_t id : candidates) {
+			if (work == 0) return false;
+			--work;
+			const auto &o = this->occurrences[id]; const auto &p = this->patterns[o.pattern];
+			if (o.pattern == excluded_pattern || o.station != origin || p.members.front().id == previous) continue;
+			for (const auto &m : p.members) {
+				if (work == 0 || out.size() >= 256) return false;
+				--work;
+				/* The cached policy already applies failure exclusion, restoring the failed
+				 * service when no alternative exists. Preserve that reachability fallback. */
+				if (m.id != previous) out.push_back({m.id, m.incarnation, m.generation, o.order});
+			}
+		}
+		return true;
+	};
+	if (failed != OrderListID::Invalid()) {
+		auto found = this->local_policies.find({destination, state, failed});
+		return found != this->local_policies.end() && emit(found->second.candidates);
+	}
+	const uint32_t index = row->indices[state];
+	if (!this->flat_storage) return emit(row->policies[index].candidates);
+	if ((row->flat_policies[index].count & FlatPolicy::FULL) == 0 &&
+			!emit(this->FlatPayload(*row, row->indices[this->waiting_station[state]]), this->PreviousPattern(state))) return false;
+	return emit(this->FlatPayload(*row, index));
+}
+
 const PassengerPrecomputedTable::Policy &PassengerPrecomputedTable::LocalPolicy(const Row &row, StationID destination, uint32_t state, OrderListID failed) const
 {
 	auto key = std::tuple(destination, state, failed);

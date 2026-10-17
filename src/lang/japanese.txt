@@ -3719,9 +3719,13 @@ STR_STATION_VIEW_PLANNED_STATION                                :到着予定 (�
 STR_STATION_VIEW_PLANNED_AMOUNT                                 :到着予定 (貨物量別)
 STR_STATION_VIEW_FROM                                           :{YELLOW}{1:STATION}発: {0:CARGO_SHORT}
 STR_STATION_VIEW_VIA                                            :{YELLOW}{1:STATION}経由: {0:CARGO_SHORT}
-STR_STATION_VIEW_PASSENGER_SERVICE                             :{RAW_STRING}: {CARGO_SHORT}
-STR_STATION_VIEW_PASSENGER_SERVICE_MULTIPLE                    :複数系統
-STR_STATION_VIEW_PASSENGER_SERVICE_UNKNOWN                     :系統未確定
+STR_STATION_VIEW_PASSENGER_SERVICE                             :{YELLOW}{RAW_STRING}: {CARGO_SHORT}
+STR_STATION_VIEW_PASSENGER_SERVICE_MULTIPLE                    :{RAW_STRING} など
+STR_STATION_VIEW_PASSENGER_SERVICE_TRANSFER                    :未確定（{STATION}で乗換予定）
+STR_STATION_VIEW_PASSENGER_SERVICE_UNKNOWN                     :未確定
+STR_STATION_VIEW_GROUP_PASSENGER_TOOLTIP                       :{BLACK}待機中の旅客は常に「目的地 → 出発地 → 乗車系統」で表示します。この設定は一般貨物と「予定」表示に適用されます。
+STR_STATION_VIEW_GROUP_OTHER_CARGO                             :{BLACK}一般貨物:
+STR_STATION_VIEW_PASSENGER_DESTINATION_UNKNOWN                 :{RED}目的地不明: {CARGO_SHORT}
 STR_STATION_VIEW_TO                                             :{YELLOW}{1:STATION}着: {0:CARGO_SHORT}
 STR_STATION_VIEW_FROM_ANY                                       :{RED}出発地不明: {CARGO_SHORT}
 STR_STATION_VIEW_TO_ANY                                         :{RED}目的地不明: {CARGO_SHORT}

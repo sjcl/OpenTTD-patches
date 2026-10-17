@@ -324,6 +324,14 @@ TEST_CASE("Hyperpath local replanning admits a previously rejected service and p
 	}
 	CHECK(table.GetDiagnostic().local_replans == 1);
 	if (alternative) CHECK_FALSE(table.Board(A, D, StateTicks{}, OrderListID{0}, 0, OrderListID::Invalid(), OrderListID{0}).ride);
+	// Display the cached policy's chosen service, including its no-alternative retry.
+	const auto before = table.GetDiagnostic();
+	std::vector<PassengerPrecomputedTable::DisplayCandidate> displayed; size_t work = 4096;
+	REQUIRE(table.DisplayCandidates(A, D, OrderListID::Invalid(), OrderListID{0}, displayed, work));
+	REQUIRE(displayed.size() == 1);
+	CHECK(displayed.front().service == chosen); CHECK(displayed.front().order == 0);
+	CHECK(table.GetDiagnostic().local_replans == before.local_replans);
+	CHECK(table.GetDiagnostic().bytes == before.bytes);
 }
 
 TEST_CASE("Precomputed trees preserve through rides and physical occurrences", "[passenger][precomputed]")
@@ -1250,5 +1258,35 @@ TEST_CASE("Optimized destination queue pops exactly the binary heap order", "[pa
 			REQUIRE(queue.empty());
 			queue.Reset();
 		}
+	}
+}
+
+TEST_CASE("Hyperpath display enumerates frozen policy storage with bounded read-only work", "[passenger][hyperpath][station-gui]")
+{
+	for (bool flat : {false, true}) {
+		std::array services{Service(0, {A, B}), Service(1, {A, B}), Service(2, {A, C, B})};
+		std::vector<const PassengerPeriodicService *> records; for (const auto &service : services) records.push_back(&service);
+		PassengerPrecomputedTable table;
+		table.Begin(records, PAX, 0, PassengerPrecomputedTable::MAX_BYTES, true, false, {}, true, true, true, true, true, true, flat);
+		while (!table.Finished()) table.Step(64);
+		std::vector<PassengerPrecomputedTable::DisplayCandidate> candidates;
+		size_t work = 4096;
+		REQUIRE(table.DisplayCandidates(A, B, OrderListID::Invalid(), OrderListID::Invalid(), candidates, work));
+		REQUIRE(candidates.size() >= 2);
+		for (const auto &candidate : candidates) {
+			CHECK(candidate.order == 0); CHECK(candidate.incarnation == candidate.service.base() + 1);
+			CHECK(table.Board(A, B, StateTicks{}, candidate.service, candidate.order).ride.has_value());
+		}
+		work = 4096;
+		REQUIRE(table.DisplayCandidates(A, B, OrderListID{0}, OrderListID::Invalid(), candidates, work));
+		CHECK_FALSE(candidates.empty());
+		for (const auto &candidate : candidates) CHECK(candidate.service != OrderListID{0});
+		const auto before = table.GetDiagnostic(); work = 4096;
+		CHECK_FALSE(table.DisplayCandidates(A, B, OrderListID::Invalid(), OrderListID{0}, candidates, work));
+		CHECK(candidates.empty()); CHECK(table.GetDiagnostic().local_replans == before.local_replans);
+		CHECK(table.GetDiagnostic().bytes == before.bytes);
+		work = 1;
+		CHECK_FALSE(table.DisplayCandidates(A, B, OrderListID::Invalid(), OrderListID::Invalid(), candidates, work));
+		CHECK(work == 0); CHECK(candidates.empty());
 	}
 }
