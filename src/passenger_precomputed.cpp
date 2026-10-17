@@ -1136,11 +1136,13 @@ bool PassengerPrecomputedTable::PrepareParallelBatch(uint workers)
 				result.operations = 0; result.error = {};
 				const auto search_started = Clock::now();
 				try {
+					if (this->parallel_search_hook) this->parallel_search_hook(this->destination + index, false);
 					result.workspace.counters = {};
 					this->StartDestination(result.workspace, this->destination + index);
 					while (!result.workspace.finishing_row) {
 						result.operations += this->hyperpath ? this->SearchHyperpath(result.workspace, 65536) : this->SearchDestination(result.workspace, 65536);
 					}
+					if (this->parallel_search_hook) this->parallel_search_hook(this->destination + index, true);
 				} catch (...) { result.error = std::current_exception(); }
 				result.nanoseconds = Elapsed(search_started);
 			}
@@ -1150,7 +1152,7 @@ bool PassengerPrecomputedTable::PrepareParallelBatch(uint workers)
 		pool.threads.resize(workers);
 		size_t running = 0;
 		for (auto &thread : pool.threads) {
-			if (!StartNewThread(&thread, "pax-destination", run)) break;
+			if (!StartNewThread(&thread, "pax-destination", [run]() { run(); })) break;
 			++running;
 		}
 		pool.Join();
