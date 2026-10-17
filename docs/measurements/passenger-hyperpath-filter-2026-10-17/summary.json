@@ -1,0 +1,804 @@
+{
+  "runs": [
+    {
+      "run": "off-a",
+      "filter": {
+        "enabled": false,
+        "filtered_walks": 0,
+        "unfiltered_walks": 143512,
+        "groups_checked": 22832661,
+        "groups_skipped": 0,
+        "groups_admitted": 589281
+      },
+      "input_sha256": "306a8d3094c406286ff1dd3249f1726bf9d10e230ead593eacdd91efc43ac629",
+      "binary_sha256": "e34608bca410e03995ac4dd9ea118e243419d9ebe2b29987bb9e39f900d91ac4",
+      "language_sha256": "af5d093144abcc99f3d31b95c531b0b4d019166a8ffec05af8c672e7a890822a",
+      "start_tick": 3181119581,
+      "end_tick": 3181121629,
+      "ticks": 2048,
+      "midpoint": {
+        "runtime_routing_feature": 3,
+        "state_ticks": 3181120605,
+        "packets": 454153,
+        "cargo_units": 1098892,
+        "known_od_units": 627580,
+        "journey_packets": 425781,
+        "packet_state_digest": 7664513473132455282,
+        "payment_digest": 7142729771951188575,
+        "payments_valid": true,
+        "database_digest": 5307129629483105958,
+        "ownership_digest": 10943612104605206733,
+        "loading_digest": 6834175451099877339,
+        "completed_rows": 4917,
+        "retained_rows": 0,
+        "table_operations": 1929817365,
+        "published_revision": 2804,
+        "company_deliveries": 391684,
+        "journey_routing": 1,
+        "precomputed_routing": 1,
+        "legacy_true_packets": 0,
+        "legacy_false_packets": 0,
+        "legacy_true_units": 0,
+        "legacy_false_units": 0,
+        "opposite_history_mergeable_pairs": 0
+      },
+      "final": {
+        "runtime_routing_feature": 3,
+        "state_ticks": 3181121629,
+        "packets": 457058,
+        "cargo_units": 1085472,
+        "known_od_units": 621345,
+        "journey_packets": 430328,
+        "packet_state_digest": 8063874245458473810,
+        "payment_digest": 1916558652712216860,
+        "payments_valid": true,
+        "database_digest": 3801679843316415743,
+        "ownership_digest": 4767397670785987405,
+        "loading_digest": 7045726702935980071,
+        "completed_rows": 4917,
+        "retained_rows": 0,
+        "table_operations": 1930045791,
+        "published_revision": 2805,
+        "company_deliveries": 5704,
+        "journey_routing": 1,
+        "precomputed_routing": 1,
+        "legacy_true_packets": 0,
+        "legacy_false_packets": 0,
+        "legacy_true_units": 0,
+        "legacy_false_units": 0,
+        "opposite_history_mergeable_pairs": 0
+      },
+      "result_sha256": "6be6abea0b26add9eb2ba3e13e803395656e2c2886c7f929a63425cf74e0daad",
+      "simulation": {
+        "completed_ticks": 2048,
+        "total_us": 63699097,
+        "mean_us": 31103,
+        "max_us": 79384
+      },
+      "capacity": {
+        "packets": 75731,
+        "passengers": 138499,
+        "microseconds": 434691
+      },
+      "transport": {
+        "journey": {
+          "boarded": 0,
+          "transferred": 0,
+          "delivered": 0
+        },
+        "schedule": {
+          "boarded": 289835,
+          "transferred": 133611,
+          "delivered": 127877,
+          "expected_wait_person_ticks": 411435441,
+          "actual_wait_person_ticks": 175337145,
+          "wait_people": 289835
+        },
+        "untimed": {
+          "boarded": 4,
+          "transferred": 202,
+          "delivered": 102
+        }
+      },
+      "inclusive": {
+        "waiting_us": 4591178,
+        "fallback_distance_us": 0,
+        "boarding_us": 62795
+      },
+      "process_cpu_seconds": 560.875,
+      "elapsed_seconds": 492.91270300000906,
+      "peak_working_bytes": 8283799552,
+      "peak_commit_bytes": 8758312960,
+      "newgrf_warning_lines": 21165,
+      "script_error_pause_resumes": 1,
+      "all": {
+        "simulation": {
+          "count": 2048,
+          "mean_us": 31103.07470703125,
+          "p95_us": 45227,
+          "p99_us": 55500,
+          "max_us": 79384
+        },
+        "journey": {
+          "count": 2048,
+          "mean_us": 4128.4814453125,
+          "p95_us": 11131,
+          "p99_us": 20546,
+          "max_us": 34689
+        }
+      },
+      "ordinary": {
+        "simulation": {
+          "count": 1024,
+          "mean_us": 28851.75390625,
+          "p95_us": 42759,
+          "p99_us": 55500,
+          "max_us": 79384
+        },
+        "journey": {
+          "count": 1024,
+          "mean_us": 2293.546875,
+          "p95_us": 4650,
+          "p99_us": 23800,
+          "max_us": 34689
+        }
+      },
+      "replacement": {
+        "simulation": {
+          "count": 1024,
+          "mean_us": 33354.3955078125,
+          "p95_us": 46454,
+          "p99_us": 55460,
+          "max_us": 68052
+        },
+        "journey": {
+          "count": 1024,
+          "mean_us": 5963.416015625,
+          "p95_us": 11615,
+          "p99_us": 13686,
+          "max_us": 17100
+        }
+      }
+    },
+    {
+      "run": "on-a",
+      "filter": {
+        "enabled": true,
+        "filtered_walks": 143512,
+        "unfiltered_walks": 0,
+        "groups_checked": 3477938,
+        "groups_skipped": 19354723,
+        "groups_admitted": 589281
+      },
+      "input_sha256": "306a8d3094c406286ff1dd3249f1726bf9d10e230ead593eacdd91efc43ac629",
+      "binary_sha256": "e34608bca410e03995ac4dd9ea118e243419d9ebe2b29987bb9e39f900d91ac4",
+      "language_sha256": "af5d093144abcc99f3d31b95c531b0b4d019166a8ffec05af8c672e7a890822a",
+      "start_tick": 3181119581,
+      "end_tick": 3181121629,
+      "ticks": 2048,
+      "midpoint": {
+        "runtime_routing_feature": 3,
+        "state_ticks": 3181120605,
+        "packets": 454153,
+        "cargo_units": 1098892,
+        "known_od_units": 627580,
+        "journey_packets": 425781,
+        "packet_state_digest": 7664513473132455282,
+        "payment_digest": 7142729771951188575,
+        "payments_valid": true,
+        "database_digest": 5307129629483105958,
+        "ownership_digest": 10943612104605206733,
+        "loading_digest": 6834175451099877339,
+        "completed_rows": 4917,
+        "retained_rows": 0,
+        "table_operations": 1929817365,
+        "published_revision": 2804,
+        "company_deliveries": 391684,
+        "journey_routing": 1,
+        "precomputed_routing": 1,
+        "legacy_true_packets": 0,
+        "legacy_false_packets": 0,
+        "legacy_true_units": 0,
+        "legacy_false_units": 0,
+        "opposite_history_mergeable_pairs": 0
+      },
+      "final": {
+        "runtime_routing_feature": 3,
+        "state_ticks": 3181121629,
+        "packets": 457058,
+        "cargo_units": 1085472,
+        "known_od_units": 621345,
+        "journey_packets": 430328,
+        "packet_state_digest": 8063874245458473810,
+        "payment_digest": 1916558652712216860,
+        "payments_valid": true,
+        "database_digest": 3801679843316415743,
+        "ownership_digest": 4767397670785987405,
+        "loading_digest": 7045726702935980071,
+        "completed_rows": 4917,
+        "retained_rows": 0,
+        "table_operations": 1930045791,
+        "published_revision": 2805,
+        "company_deliveries": 5704,
+        "journey_routing": 1,
+        "precomputed_routing": 1,
+        "legacy_true_packets": 0,
+        "legacy_false_packets": 0,
+        "legacy_true_units": 0,
+        "legacy_false_units": 0,
+        "opposite_history_mergeable_pairs": 0
+      },
+      "result_sha256": "6be6abea0b26add9eb2ba3e13e803395656e2c2886c7f929a63425cf74e0daad",
+      "simulation": {
+        "completed_ticks": 2048,
+        "total_us": 69056884,
+        "mean_us": 33719,
+        "max_us": 77842
+      },
+      "capacity": {
+        "packets": 75731,
+        "passengers": 138499,
+        "microseconds": 442420
+      },
+      "transport": {
+        "journey": {
+          "boarded": 0,
+          "transferred": 0,
+          "delivered": 0
+        },
+        "schedule": {
+          "boarded": 289835,
+          "transferred": 133611,
+          "delivered": 127877,
+          "expected_wait_person_ticks": 411435441,
+          "actual_wait_person_ticks": 175337145,
+          "wait_people": 289835
+        },
+        "untimed": {
+          "boarded": 4,
+          "transferred": 202,
+          "delivered": 102
+        }
+      },
+      "inclusive": {
+        "waiting_us": 5045300,
+        "fallback_distance_us": 0,
+        "boarding_us": 71819
+      },
+      "process_cpu_seconds": 582.140625,
+      "elapsed_seconds": 520.1369292996824,
+      "peak_working_bytes": 8283828224,
+      "peak_commit_bytes": 8751562752,
+      "newgrf_warning_lines": 21165,
+      "script_error_pause_resumes": 1,
+      "all": {
+        "simulation": {
+          "count": 2048,
+          "mean_us": 33719.181640625,
+          "p95_us": 48649,
+          "p99_us": 57865,
+          "max_us": 77842
+        },
+        "journey": {
+          "count": 2048,
+          "mean_us": 4572.80224609375,
+          "p95_us": 12395,
+          "p99_us": 21475,
+          "max_us": 38239
+        }
+      },
+      "ordinary": {
+        "simulation": {
+          "count": 1024,
+          "mean_us": 30093.8251953125,
+          "p95_us": 39280,
+          "p99_us": 53382,
+          "max_us": 76640
+        },
+        "journey": {
+          "count": 1024,
+          "mean_us": 2424.3740234375,
+          "p95_us": 4744,
+          "p99_us": 25106,
+          "max_us": 38239
+        }
+      },
+      "replacement": {
+        "simulation": {
+          "count": 1024,
+          "mean_us": 37344.5380859375,
+          "p95_us": 52210,
+          "p99_us": 58728,
+          "max_us": 77842
+        },
+        "journey": {
+          "count": 1024,
+          "mean_us": 6721.23046875,
+          "p95_us": 13170,
+          "p99_us": 15681,
+          "max_us": 23005
+        }
+      }
+    },
+    {
+      "run": "on-b",
+      "filter": {
+        "enabled": true,
+        "filtered_walks": 143512,
+        "unfiltered_walks": 0,
+        "groups_checked": 3477938,
+        "groups_skipped": 19354723,
+        "groups_admitted": 589281
+      },
+      "input_sha256": "306a8d3094c406286ff1dd3249f1726bf9d10e230ead593eacdd91efc43ac629",
+      "binary_sha256": "e34608bca410e03995ac4dd9ea118e243419d9ebe2b29987bb9e39f900d91ac4",
+      "language_sha256": "af5d093144abcc99f3d31b95c531b0b4d019166a8ffec05af8c672e7a890822a",
+      "start_tick": 3181119581,
+      "end_tick": 3181121629,
+      "ticks": 2048,
+      "midpoint": {
+        "runtime_routing_feature": 3,
+        "state_ticks": 3181120605,
+        "packets": 454153,
+        "cargo_units": 1098892,
+        "known_od_units": 627580,
+        "journey_packets": 425781,
+        "packet_state_digest": 7664513473132455282,
+        "payment_digest": 7142729771951188575,
+        "payments_valid": true,
+        "database_digest": 5307129629483105958,
+        "ownership_digest": 10943612104605206733,
+        "loading_digest": 6834175451099877339,
+        "completed_rows": 4917,
+        "retained_rows": 0,
+        "table_operations": 1929817365,
+        "published_revision": 2804,
+        "company_deliveries": 391684,
+        "journey_routing": 1,
+        "precomputed_routing": 1,
+        "legacy_true_packets": 0,
+        "legacy_false_packets": 0,
+        "legacy_true_units": 0,
+        "legacy_false_units": 0,
+        "opposite_history_mergeable_pairs": 0
+      },
+      "final": {
+        "runtime_routing_feature": 3,
+        "state_ticks": 3181121629,
+        "packets": 457058,
+        "cargo_units": 1085472,
+        "known_od_units": 621345,
+        "journey_packets": 430328,
+        "packet_state_digest": 8063874245458473810,
+        "payment_digest": 1916558652712216860,
+        "payments_valid": true,
+        "database_digest": 3801679843316415743,
+        "ownership_digest": 4767397670785987405,
+        "loading_digest": 7045726702935980071,
+        "completed_rows": 4917,
+        "retained_rows": 0,
+        "table_operations": 1930045791,
+        "published_revision": 2805,
+        "company_deliveries": 5704,
+        "journey_routing": 1,
+        "precomputed_routing": 1,
+        "legacy_true_packets": 0,
+        "legacy_false_packets": 0,
+        "legacy_true_units": 0,
+        "legacy_false_units": 0,
+        "opposite_history_mergeable_pairs": 0
+      },
+      "result_sha256": "6be6abea0b26add9eb2ba3e13e803395656e2c2886c7f929a63425cf74e0daad",
+      "simulation": {
+        "completed_ticks": 2048,
+        "total_us": 64595813,
+        "mean_us": 31540,
+        "max_us": 80748
+      },
+      "capacity": {
+        "packets": 75731,
+        "passengers": 138499,
+        "microseconds": 428686
+      },
+      "transport": {
+        "journey": {
+          "boarded": 0,
+          "transferred": 0,
+          "delivered": 0
+        },
+        "schedule": {
+          "boarded": 289835,
+          "transferred": 133611,
+          "delivered": 127877,
+          "expected_wait_person_ticks": 411435441,
+          "actual_wait_person_ticks": 175337145,
+          "wait_people": 289835
+        },
+        "untimed": {
+          "boarded": 4,
+          "transferred": 202,
+          "delivered": 102
+        }
+      },
+      "inclusive": {
+        "waiting_us": 4966374,
+        "fallback_distance_us": 0,
+        "boarding_us": 67241
+      },
+      "process_cpu_seconds": 594.0625,
+      "elapsed_seconds": 506.3953251997009,
+      "peak_working_bytes": 8285663232,
+      "peak_commit_bytes": 8761831424,
+      "newgrf_warning_lines": 21165,
+      "script_error_pause_resumes": 1,
+      "all": {
+        "simulation": {
+          "count": 2048,
+          "mean_us": 31540.92431640625,
+          "p95_us": 41274,
+          "p99_us": 59408,
+          "max_us": 80748
+        },
+        "journey": {
+          "count": 2048,
+          "mean_us": 4297.38330078125,
+          "p95_us": 10922,
+          "p99_us": 26504,
+          "max_us": 40636
+        }
+      },
+      "ordinary": {
+        "simulation": {
+          "count": 1024,
+          "mean_us": 32268.7587890625,
+          "p95_us": 44248,
+          "p99_us": 64282,
+          "max_us": 80748
+        },
+        "journey": {
+          "count": 1024,
+          "mean_us": 2690.8896484375,
+          "p95_us": 5972,
+          "p99_us": 31458,
+          "max_us": 40636
+        }
+      },
+      "replacement": {
+        "simulation": {
+          "count": 1024,
+          "mean_us": 30813.08984375,
+          "p95_us": 39822,
+          "p99_us": 49243,
+          "max_us": 59454
+        },
+        "journey": {
+          "count": 1024,
+          "mean_us": 5903.876953125,
+          "p95_us": 11166,
+          "p99_us": 13732,
+          "max_us": 17337
+        }
+      }
+    },
+    {
+      "run": "off-b",
+      "filter": {
+        "enabled": false,
+        "filtered_walks": 0,
+        "unfiltered_walks": 143512,
+        "groups_checked": 22832661,
+        "groups_skipped": 0,
+        "groups_admitted": 589281
+      },
+      "input_sha256": "306a8d3094c406286ff1dd3249f1726bf9d10e230ead593eacdd91efc43ac629",
+      "binary_sha256": "e34608bca410e03995ac4dd9ea118e243419d9ebe2b29987bb9e39f900d91ac4",
+      "language_sha256": "af5d093144abcc99f3d31b95c531b0b4d019166a8ffec05af8c672e7a890822a",
+      "start_tick": 3181119581,
+      "end_tick": 3181121629,
+      "ticks": 2048,
+      "midpoint": {
+        "runtime_routing_feature": 3,
+        "state_ticks": 3181120605,
+        "packets": 454153,
+        "cargo_units": 1098892,
+        "known_od_units": 627580,
+        "journey_packets": 425781,
+        "packet_state_digest": 7664513473132455282,
+        "payment_digest": 7142729771951188575,
+        "payments_valid": true,
+        "database_digest": 5307129629483105958,
+        "ownership_digest": 10943612104605206733,
+        "loading_digest": 6834175451099877339,
+        "completed_rows": 4917,
+        "retained_rows": 0,
+        "table_operations": 1929817365,
+        "published_revision": 2804,
+        "company_deliveries": 391684,
+        "journey_routing": 1,
+        "precomputed_routing": 1,
+        "legacy_true_packets": 0,
+        "legacy_false_packets": 0,
+        "legacy_true_units": 0,
+        "legacy_false_units": 0,
+        "opposite_history_mergeable_pairs": 0
+      },
+      "final": {
+        "runtime_routing_feature": 3,
+        "state_ticks": 3181121629,
+        "packets": 457058,
+        "cargo_units": 1085472,
+        "known_od_units": 621345,
+        "journey_packets": 430328,
+        "packet_state_digest": 8063874245458473810,
+        "payment_digest": 1916558652712216860,
+        "payments_valid": true,
+        "database_digest": 3801679843316415743,
+        "ownership_digest": 4767397670785987405,
+        "loading_digest": 7045726702935980071,
+        "completed_rows": 4917,
+        "retained_rows": 0,
+        "table_operations": 1930045791,
+        "published_revision": 2805,
+        "company_deliveries": 5704,
+        "journey_routing": 1,
+        "precomputed_routing": 1,
+        "legacy_true_packets": 0,
+        "legacy_false_packets": 0,
+        "legacy_true_units": 0,
+        "legacy_false_units": 0,
+        "opposite_history_mergeable_pairs": 0
+      },
+      "result_sha256": "6be6abea0b26add9eb2ba3e13e803395656e2c2886c7f929a63425cf74e0daad",
+      "simulation": {
+        "completed_ticks": 2048,
+        "total_us": 68000437,
+        "mean_us": 33203,
+        "max_us": 84130
+      },
+      "capacity": {
+        "packets": 75731,
+        "passengers": 138499,
+        "microseconds": 459000
+      },
+      "transport": {
+        "journey": {
+          "boarded": 0,
+          "transferred": 0,
+          "delivered": 0
+        },
+        "schedule": {
+          "boarded": 289835,
+          "transferred": 133611,
+          "delivered": 127877,
+          "expected_wait_person_ticks": 411435441,
+          "actual_wait_person_ticks": 175337145,
+          "wait_people": 289835
+        },
+        "untimed": {
+          "boarded": 4,
+          "transferred": 202,
+          "delivered": 102
+        }
+      },
+      "inclusive": {
+        "waiting_us": 4808648,
+        "fallback_distance_us": 0,
+        "boarding_us": 76653
+      },
+      "process_cpu_seconds": 546.328125,
+      "elapsed_seconds": 491.8350326004438,
+      "peak_working_bytes": 8290328576,
+      "peak_commit_bytes": 8757649408,
+      "newgrf_warning_lines": 21165,
+      "script_error_pause_resumes": 1,
+      "all": {
+        "simulation": {
+          "count": 2048,
+          "mean_us": 33203.33837890625,
+          "p95_us": 46718,
+          "p99_us": 57770,
+          "max_us": 84130
+        },
+        "journey": {
+          "count": 2048,
+          "mean_us": 4328.322265625,
+          "p95_us": 11568,
+          "p99_us": 21565,
+          "max_us": 38024
+        }
+      },
+      "ordinary": {
+        "simulation": {
+          "count": 1024,
+          "mean_us": 30929.9345703125,
+          "p95_us": 45291,
+          "p99_us": 57659,
+          "max_us": 65177
+        },
+        "journey": {
+          "count": 1024,
+          "mean_us": 2418.4111328125,
+          "p95_us": 4981,
+          "p99_us": 24746,
+          "max_us": 38024
+        }
+      },
+      "replacement": {
+        "simulation": {
+          "count": 1024,
+          "mean_us": 35476.7421875,
+          "p95_us": 48523,
+          "p99_us": 58438,
+          "max_us": 84130
+        },
+        "journey": {
+          "count": 1024,
+          "mean_us": 6238.2333984375,
+          "p95_us": 12067,
+          "p99_us": 14215,
+          "max_us": 20475
+        }
+      }
+    }
+  ],
+  "canonical_comparisons": {
+    "midpoint": {
+      "on-a": {},
+      "on-b": {},
+      "off-b": {}
+    },
+    "final": {
+      "on-a": {},
+      "on-b": {},
+      "off-b": {}
+    },
+    "transport": {
+      "on-a": {},
+      "on-b": {},
+      "off-b": {}
+    }
+  },
+  "pairs": [
+    {
+      "off": "off-a",
+      "on": "on-a",
+      "mean_reduction_percent": {
+        "all": {
+          "simulation": -8.411087836928054,
+          "journey": -10.76233008836056
+        },
+        "ordinary": {
+          "simulation": -4.305011380238599,
+          "journey": -5.70414103428778
+        },
+        "replacement": {
+          "simulation": -11.962868813468376,
+          "journey": -12.70772408195937
+        }
+      }
+    },
+    {
+      "off": "off-b",
+      "on": "on-b",
+      "mean_reduction_percent": {
+        "all": {
+          "simulation": 5.006767824153835,
+          "journey": 0.7148027098042964
+        },
+        "ordinary": {
+          "simulation": -4.328571131330627,
+          "journey": -11.266840113662568
+        },
+        "replacement": {
+          "simulation": 13.145661230960515,
+          "journey": 5.359793774247801
+        }
+      }
+    }
+  ],
+  "modes": {
+    "off": {
+      "all": {
+        "simulation": {
+          "count": 4096,
+          "mean_us": 32153.20654296875,
+          "p95_us": 46233,
+          "p99_us": 56694,
+          "max_us": 84130
+        },
+        "journey": {
+          "count": 4096,
+          "mean_us": 4228.40185546875,
+          "p95_us": 11351,
+          "p99_us": 21031,
+          "max_us": 38024
+        }
+      },
+      "ordinary": {
+        "simulation": {
+          "count": 2048,
+          "mean_us": 29890.84423828125,
+          "p95_us": 43588,
+          "p99_us": 56607,
+          "max_us": 79384
+        },
+        "journey": {
+          "count": 2048,
+          "mean_us": 2355.97900390625,
+          "p95_us": 4981,
+          "p99_us": 24746,
+          "max_us": 38024
+        }
+      },
+      "replacement": {
+        "simulation": {
+          "count": 2048,
+          "mean_us": 34415.56884765625,
+          "p95_us": 47253,
+          "p99_us": 56694,
+          "max_us": 84130
+        },
+        "journey": {
+          "count": 2048,
+          "mean_us": 6100.82470703125,
+          "p95_us": 11911,
+          "p99_us": 14102,
+          "max_us": 20475
+        }
+      }
+    },
+    "on": {
+      "all": {
+        "simulation": {
+          "count": 4096,
+          "mean_us": 32630.052978515625,
+          "p95_us": 46133,
+          "p99_us": 58447,
+          "max_us": 80748
+        },
+        "journey": {
+          "count": 4096,
+          "mean_us": 4435.0927734375,
+          "p95_us": 11578,
+          "p99_us": 22100,
+          "max_us": 40636
+        }
+      },
+      "ordinary": {
+        "simulation": {
+          "count": 2048,
+          "mean_us": 31181.2919921875,
+          "p95_us": 41302,
+          "p99_us": 61164,
+          "max_us": 80748
+        },
+        "journey": {
+          "count": 2048,
+          "mean_us": 2557.6318359375,
+          "p95_us": 5385,
+          "p99_us": 29127,
+          "max_us": 40636
+        }
+      },
+      "replacement": {
+        "simulation": {
+          "count": 2048,
+          "mean_us": 34078.81396484375,
+          "p95_us": 47850,
+          "p99_us": 57258,
+          "max_us": 77842
+        },
+        "journey": {
+          "count": 2048,
+          "mean_us": 6312.5537109375,
+          "p95_us": 12395,
+          "p99_us": 14933,
+          "max_us": 23005
+        }
+      }
+    }
+  },
+  "saved_files_byte_identical": true,
+  "skipped_percent": 84.76770622574391,
+  "note": "Per-tick times are elapsed simulation-thread times. Process CPU/peaks include load, paused builds and save. Two runs per mode are descriptive, not a confidence interval."
+}
