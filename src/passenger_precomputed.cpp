@@ -1356,6 +1356,7 @@ size_t PassengerPrecomputedTable::StepHyperpath(size_t allowance, const std::fun
 						this->prepared.policies.capacity() * sizeof(Policy) + this->prepared.flat_policies.capacity() * sizeof(FlatPolicy) + this->prepared_candidate_bytes;
 				this->hyperpath_row_bytes += this->prepared.bytes;
 				if (this->boarding_mask_words == 0) this->MarkBoardingCandidate(INVALID, false); // Allocate even if no row had a candidate yet.
+				if (this->boarding_mask_words != 0) this->published_rows[this->destination / 64] |= uint64_t{1} << (this->destination % 64);
 				this->rows.push_back(std::move(this->prepared));
 				this->prepared_candidate_bytes = 0;
 				if (published) published(this->stations[this->destination]);
@@ -1582,6 +1583,7 @@ void PassengerPrecomputedTable::ReleaseDestination(StationID destination)
 		if (this->hyperpath) this->hyperpath_row_bytes -= bytes; else this->published_bytes -= bytes;
 		this->diagnostic.bytes -= std::min(this->diagnostic.bytes, bytes);
 		this->rows[row] = {};
+		if (this->boarding_mask_words != 0) this->published_rows[row / 64] &= ~(uint64_t{1} << (row % 64));
 		if (!this->retirement_prepared) for (auto &destinations : this->reachable_destinations) {
 			auto found = std::lower_bound(destinations.begin(), destinations.end(), destination);
 			if (found != destinations.end() && *found == destination) destinations.erase(found);
@@ -1658,6 +1660,7 @@ void PassengerPrecomputedTable::MarkBoardingCandidate(uint32_t occurrence, bool 
 		const size_t words = (this->stations.size() + 63) / 64;
 		if (words == 0 || this->occurrences.size() > MAX_BOARDING_MASK_BYTES / sizeof(uint64_t) / 2 / words) { this->boarding_mask_rejected = true; return; }
 		this->boarding_mask.assign(this->occurrences.size() * 2 * words, 0);
+		this->published_rows.assign(words, 0);
 		this->boarding_mask_words = words;
 	}
 	if (occurrence >= this->occurrences.size()) return;
@@ -1685,6 +1688,14 @@ bool PassengerPrecomputedTable::BoardingMaskCovers() const
 
 std::optional<bool> PassengerPrecomputedTable::ContainsCached(StationID origin, StationID destination, uint32_t occurrence, OrderListID previous, OrderListID failed) const
 {
+	if (failed == OrderListID::Invalid() && previous == OrderListID::Invalid() && this->boarding_mask_words != 0 && this->hyperpath && !this->failed) {
+		/* The station's base state: its base plane bit is exactly the stored base policy of a
+		 * published row, read from two small arrays instead of the row's policy storage. */
+		if (occurrence >= this->occurrences.size() || this->occurrences[occurrence].station != origin || destination.base() >= this->station_index.size()) return false;
+		const uint32_t row = this->station_index[destination.base()];
+		if (row == INVALID || ((this->published_rows[row / 64] >> (row % 64)) & 1) == 0) return false;
+		return ((this->boarding_mask[occurrence * 2 * this->boarding_mask_words + row / 64] >> (row % 64)) & 1) != 0;
+	}
 	const auto *row = this->FindRow(destination); uint32_t state = this->PolicyState(origin, previous);
 	if (row == nullptr || state == INVALID || occurrence >= this->occurrences.size()) return false;
 	const auto &board = this->occurrences[occurrence];

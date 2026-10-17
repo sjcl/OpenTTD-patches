@@ -1444,11 +1444,18 @@ bool PassengerJourneyLoadingContext::MayUseHyperpathPolicy(const CargoPacket &re
 		return HyperpathMembershipKey{HyperpathKey{vehicle->First()->index, cargo, vehicle->First()->cur_real_order_index,
 				policy.generation, policy.boarding, policy.alighting, previous, OrderListID::Invalid()}, vehicle->First()->orders->index, policy.signature, current_occurrences};
 	};
-	auto cached = this->hyperpath_memberships.find(key(intent));
+	/* Without an arriving carrier the table answers base membership exactly from two small
+	 * bit arrays; a memo lookup with this key would cost more than the answer. */
+	const bool direct = previous == OrderListID::Invalid();
+	auto cached = direct ? this->hyperpath_memberships.end() : this->hyperpath_memberships.find(key(intent));
 	const bool current = cached != this->hyperpath_memberships.end() || db.IsCurrent(intent);
 	if (current && intent.boarding != vehicle->First()->last_station_visited) return false;
 	auto inspect = [&](const PassengerJourneyExecution &policy, auto entry) {
 		if (policy.boarding != vehicle->First()->last_station_visited) return false;
+		if (direct) {
+			return (base && db.MayBoardHyperpath(policy, cargo, current_occurrences, previous, OrderListID::Invalid())) ||
+					(adjusted && db.MayBoardHyperpath(policy, cargo, current_occurrences, previous, failure.service));
+		}
 		if (entry == this->hyperpath_memberships.end()) {
 			auto [found, inserted] = this->hyperpath_memberships.try_emplace(key(policy)); entry = found;
 			if (inserted) entry->second = db.MayBoardHyperpath(policy, cargo, current_occurrences, previous, OrderListID::Invalid());

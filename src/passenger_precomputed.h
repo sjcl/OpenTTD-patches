@@ -211,6 +211,7 @@ private:
 	std::vector<uint64_t> boarding_mask; ///< Per occurrence: base-state destination-row bits, then any-state bits.
 	size_t boarding_mask_words = 0; ///< Words per occurrence and plane; zero until allocated.
 	bool boarding_mask_rejected = false; ///< Too large for MAX_BOARDING_MASK_BYTES.
+	std::vector<uint64_t> published_rows; ///< With the mask: rows that FindRow returns, one bit per destination row.
 	void MarkBoardingCandidate(uint32_t occurrence, bool base_state);
 	std::span<const uint32_t> FlatPayload(const Row &row, uint32_t policy) const;
 	uint32_t PreviousPattern(uint32_t state) const;
