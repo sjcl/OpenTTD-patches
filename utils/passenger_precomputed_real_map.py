@@ -356,6 +356,9 @@ def recover_counter(args):
 
 def run(args, measurement_lock_fd=None):
     hyperpath_filter = getattr(args, 'hyperpath_filter', None)
+    hyperpath_filter_alternate = getattr(args, 'hyperpath_filter_alternate', False)
+    if hyperpath_filter_alternate and hyperpath_filter is not None:
+        raise ValueError('--hyperpath-filter-alternate excludes --hyperpath-filter/--no-hyperpath-filter')
     midpoint = getattr(args, 'mid_rebuild_tick', 0)
     finish_rebuild = getattr(args, 'finish_rebuild_precomputed', False)
     if midpoint and (not 0 < midpoint < args.ticks or args.precomputed is not True or not args.warm_precomputed or args.rebuild_precomputed or getattr(args, 'full_rebuild_precomputed', False)):
@@ -433,6 +436,8 @@ def run(args, measurement_lock_fd=None):
             setup += f"setting linkgraph.passenger_journey_hyperpath {'true' if args.hyperpath else 'false'}\n"
         if hyperpath_filter is not None:
             setup += f"passenger_journey_stats hyperpath_filter_{'on' if hyperpath_filter else 'off'}\n"
+        if hyperpath_filter_alternate:
+            setup += "passenger_journey_stats hyperpath_filter_alternate\n"
         if args.fixture_timetable:
             setup += "passenger_journey_stats fixture_timetable\n"
         if args.fixture_estimated:
@@ -596,7 +601,7 @@ def run(args, measurement_lock_fd=None):
             contamination=contamination, input_sha256=PROFILE.sha256(directory / "input.sav"), binary_sha256=PROFILE.sha256(args.binary),
             language_sha256=PROFILE.sha256(directory / "lang/english.lng"),
             resume_settings=args.resume, fixture_timetable=args.fixture_timetable, fixture_estimated=args.fixture_estimated, cold_precomputed=args.cold_precomputed,
-            precomputed=args.precomputed, hyperpath=args.hyperpath, hyperpath_filter=hyperpath_filter, warm_precomputed=args.warm_precomputed,
+            precomputed=args.precomputed, hyperpath=args.hyperpath, hyperpath_filter=hyperpath_filter, hyperpath_filter_alternate=hyperpath_filter_alternate, warm_precomputed=args.warm_precomputed,
             rebuild_precomputed=args.rebuild_precomputed, full_rebuild_precomputed=getattr(args, 'full_rebuild_precomputed', False),
             mid_rebuild_tick=midpoint, finish_rebuild_precomputed=finish_rebuild, command=command, **observed)
         metadata["unpause_before_save"] = args.unpause_before_save
@@ -771,6 +776,8 @@ def main():
     p.add_argument("--hyperpath", action=argparse.BooleanOptionalAction, default=None)
     p.add_argument("--hyperpath-filter", action=argparse.BooleanOptionalAction, default=None,
                    help="Set the local boarding destination filter before resetting diagnostics; routing settings are separate")
+    p.add_argument("--hyperpath-filter-alternate", action="store_true",
+                   help="Alternate the boarding filter per loading context in one process; compare the 'Passenger hyperpath walk time' line")
     p = sub.add_parser("summarize")
     p.add_argument("output", type=pathlib.Path)
     p.add_argument("runs", type=pathlib.Path, nargs='+')

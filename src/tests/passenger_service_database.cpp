@@ -4687,11 +4687,12 @@ TEST_CASE("Hyperpath boarding destination filter preserves every loading decisio
 	 * lines from A, transferring passengers, capacity failures, a sliced cost replacement with
 	 * mixed generations, and a switch back to legacy rows. Every observable outcome must match. */
 	struct Result { std::vector<int64_t> log; PassengerWaitingEventDiagnostic diagnostic; };
-	auto run = [](bool filter, uint32_t seed) {
+	using Mode = PassengerServiceDatabase::HyperpathFilterMode;
+	auto run = [](Mode mode, uint32_t seed) {
 		Result result;
 		Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = _settings_game.linkgraph.passenger_journey_hyperpath = true;
 		_settings_game.linkgraph.passenger_transfer_penalty = 20;
-		auto &db = GetPassengerServiceDatabase(); db.SetHyperpathBoardingFilterEnabled(filter);
+		auto &db = GetPassengerServiceDatabase(); db.SetHyperpathBoardingFilterMode(mode);
 		ResetPassengerWaitingEventDiagnostic();
 		auto log = [&](int64_t value) { result.log.push_back(value); };
 		auto rnd = [&](uint32_t n) { seed = seed * 1664525U + 1013904223U; return (seed >> 8) % n; };
@@ -4776,8 +4777,12 @@ TEST_CASE("Hyperpath boarding destination filter preserves every loading decisio
 	};
 	for (uint32_t seed : {0x2f6a91c3U, 0x91e10da5U, 0x0badc0deU, 0x6d2b79f5U}) {
 		CAPTURE(seed);
-		const auto filtered = run(true, seed), complete = run(false, seed);
+		const auto filtered = run(Mode::On, seed), complete = run(Mode::Off, seed), alternate = run(Mode::Alternate, seed);
 		CHECK(filtered.log == complete.log);
+		CHECK(alternate.log == complete.log);
+		CHECK(alternate.diagnostic.hyperpath_groups_admitted == complete.diagnostic.hyperpath_groups_admitted);
+		CHECK(alternate.diagnostic.hyperpath_walk_groups[0] + alternate.diagnostic.hyperpath_walk_groups[1] == complete.diagnostic.hyperpath_walk_groups[0]);
+		CHECK(alternate.diagnostic.hyperpath_groups_skipped > 0); CHECK(alternate.diagnostic.hyperpath_groups_skipped < filtered.diagnostic.hyperpath_groups_skipped);
 		CHECK(filtered.diagnostic.capacity_missed_packets == complete.diagnostic.capacity_missed_packets);
 		CHECK(filtered.diagnostic.hyperpath_groups_admitted == complete.diagnostic.hyperpath_groups_admitted);
 		CHECK(complete.diagnostic.hyperpath_groups_skipped == 0);

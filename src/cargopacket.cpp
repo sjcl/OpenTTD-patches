@@ -1766,22 +1766,34 @@ bool StationCargoList::VisitBoardingCandidates(std::span<const StationID> next, 
 		 * departure cannot pass it. Without an arriving carrier the policy state is the station's
 		 * base state; otherwise any state is assumed. A live failure may use a local policy and is
 		 * always checked. The full predicate below still decides every remaining group. */
-		const bool filter = scan && !this->hyperpath_boarding_index.empty() && db.HyperpathBoardingFilter(this->passenger_index_cargo);
+		const bool walk = scan && !this->hyperpath_boarding_index.empty();
+		const auto mode = db.GetHyperpathBoardingFilterMode();
+		if (walk && mode == PassengerServiceDatabase::HyperpathFilterMode::Alternate && loading.hyperpath_filter_choice < 0) {
+			static uint64_t contexts = 0; // Local diagnostic sequence only: every mode makes the same decisions.
+			uint64_t z = (contexts++ + 1) * 0x9E3779B97F4A7C15ULL; z = (z ^ (z >> 30)) * 0xBF58476D1CE4E5B9ULL; z = (z ^ (z >> 27)) * 0x94D049BB133111EBULL;
+			loading.hyperpath_filter_choice = static_cast<int8_t>((z ^ (z >> 31)) & 1);
+		}
+		const bool wanted = mode == PassengerServiceDatabase::HyperpathFilterMode::Alternate ? loading.hyperpath_filter_choice > 0 : mode == PassengerServiceDatabase::HyperpathFilterMode::On;
+		const bool filter = walk && wanted && db.HyperpathBoardingFilterAvailable(this->passenger_index_cargo);
 		const auto boarding = !filter ? std::array{PassengerPrecomputedTable::INVALID, PassengerPrecomputedTable::INVALID} : defer_hyperpath ? occurrences :
 				db.HyperpathBoardingOccurrences(this->passenger_index_cargo, vehicle->First()->last_station_visited, service, vehicle->First()->cur_real_order_index);
-		if (scan && !this->hyperpath_boarding_index.empty()) ++(filter ? _passenger_event_diagnostic.hyperpath_filtered_walks : _passenger_event_diagnostic.hyperpath_unfiltered_walks);
-		if (scan) for (const auto &[destination, groups] : this->hyperpath_boarding_index) {
+		const auto walk_started = walk ? std::chrono::steady_clock::now() : std::chrono::steady_clock::time_point{};
+		uint64_t walk_groups = 0;
+		if (walk) for (const auto &[destination, groups] : this->hyperpath_boarding_index) {
 			std::array<int8_t, 2> relevant{-1, -1}; // Lazily evaluated: [0] base state, [1] any state.
 			for (const auto &[key, policy] : groups) {
-				bool base = policy.expiries.empty() || *policy.expiries.begin() <= _state_ticks;
+				++walk_groups;
 				bool adjusted = !policy.expiries.empty() && *policy.expiries.rbegin() > _state_ticks;
-				const auto *packet = CargoPacket::Get(std::get<2>(*policy.packets.begin()));
 				if (filter && !adjusted) {
-					const bool any_state = packet->GetPassengerArrivingService() != OrderListID::Invalid();
+					/* The group key holds the shared arriving carrier: no packet access to skip. */
+					const bool any_state = std::get<3>(key) != OrderListID::Invalid();
 					if (relevant[any_state] < 0) relevant[any_state] = db.MayBeHyperpathCandidate(this->passenger_index_cargo, boarding, destination, any_state);
 					if (relevant[any_state] == 0) { ++_passenger_event_diagnostic.hyperpath_groups_skipped; continue; }
 				}
 				++_passenger_event_diagnostic.hyperpath_groups_checked;
+				bool base = policy.expiries.empty() || *policy.expiries.begin() <= _state_ticks;
+				const auto *packet = CargoPacket::Get(std::get<2>(*policy.packets.begin()));
+				assert(packet->GetPassengerArrivingService() == std::get<3>(key));
 				if (!defer_hyperpath) {
 					if (loading.CanUseHyperpathPolicy(*packet, vehicle, this->passenger_index_cargo, base, adjusted)) { ++_passenger_event_diagnostic.hyperpath_groups_admitted; add_group(policy.packets); }
 				} else if (loading.MayUseHyperpathPolicy(*packet, vehicle, this->passenger_index_cargo, occurrences, base, adjusted)) {
@@ -1789,6 +1801,11 @@ bool StationCargoList::VisitBoardingCandidates(std::span<const StationID> next, 
 					add_group(policy.packets, false, (base ? 1 : 0) | (adjusted ? 2 : 0));
 				}
 			}
+		}
+		if (walk) {
+			++(filter ? _passenger_event_diagnostic.hyperpath_filtered_walks : _passenger_event_diagnostic.hyperpath_unfiltered_walks);
+			_passenger_event_diagnostic.hyperpath_walk_groups[filter] += walk_groups;
+			_passenger_event_diagnostic.hyperpath_walk_nanoseconds[filter] += std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - walk_started).count();
 		}
 	}
 	auto merge_keys = [](auto first, auto second, auto &&accept) {

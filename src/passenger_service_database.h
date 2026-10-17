@@ -173,17 +173,21 @@ public:
 	std::array<uint32_t, 2> HyperpathBoardingOccurrences(CargoType cargo, StationID origin, OrderListID service, VehicleOrderID order) const;
 	bool MayBoardHyperpath(const PassengerJourneyExecution &intent, CargoType cargo, const std::array<uint32_t, 2> &occurrences, OrderListID previous, OrderListID failed, bool cached_only = true) const;
 	/** Derived boarding filter: both generations' stored policies are covered by their masks, so a
-	 * destination without a set bit cannot pass base membership. Local preference; absent from saves. */
-	bool HyperpathBoardingFilter(CargoType cargo) const
+	 * destination without a set bit cannot pass base membership. Independent of the local mode. */
+	bool HyperpathBoardingFilterAvailable(CargoType cargo) const
 	{
-		return this->hyperpath_boarding_filter && cargo < NUM_CARGO && this->precomputed[cargo].BoardingMaskCovers() && this->retained_precomputed[cargo].BoardingMaskCovers();
+		return cargo < NUM_CARGO && this->precomputed[cargo].BoardingMaskCovers() && this->retained_precomputed[cargo].BoardingMaskCovers();
 	}
 	bool MayBeHyperpathCandidate(CargoType cargo, const std::array<uint32_t, 2> &occurrences, StationID destination, bool any_state) const
 	{
 		return this->precomputed[cargo].MayBeStoredCandidate(occurrences[0], destination, any_state) || this->retained_precomputed[cargo].MayBeStoredCandidate(occurrences[1], destination, any_state);
 	}
-	void SetHyperpathBoardingFilterEnabled(bool enabled) { this->hyperpath_boarding_filter = enabled; }
-	bool IsHyperpathBoardingFilterEnabled() const { return this->hyperpath_boarding_filter; }
+	/** Local preference, absent from saves; every mode makes identical decisions. Alternate picks
+	 * on or off per loading context, so both are timed in one process for diagnostics. */
+	enum class HyperpathFilterMode : uint8_t { Off, On, Alternate };
+	void SetHyperpathBoardingFilterMode(HyperpathFilterMode mode) { this->hyperpath_boarding_filter = mode; }
+	void SetHyperpathBoardingFilterEnabled(bool enabled) { this->hyperpath_boarding_filter = enabled ? HyperpathFilterMode::On : HyperpathFilterMode::Off; }
+	HyperpathFilterMode GetHyperpathBoardingFilterMode() const { return this->hyperpath_boarding_filter; }
 	PassengerPrecomputedPlan BoardHyperpath(const PassengerJourneyExecution &intent, CargoType cargo, OrderListID service,
 			VehicleOrderID boarding, OrderListID previous = OrderListID::Invalid(), OrderListID failed = OrderListID::Invalid()) const;
 	PassengerPrecomputedDiagnostic GetPrecomputedDiagnostic(CargoType cargo) const
@@ -359,7 +363,7 @@ private:
 	uint64_t generation = 0;
 	size_t bytes = 0, policy_bytes = 0;
 	bool policy_cache_enabled = true; ///< Local optional accelerator; absent from saves and routing admission.
-	bool hyperpath_boarding_filter = true; ///< Local derived boarding filter; identical decisions, absent from saves.
+	HyperpathFilterMode hyperpath_boarding_filter = HyperpathFilterMode::On; ///< Local derived boarding filter; identical decisions, absent from saves.
 	std::list<PolicyKey> policy_lru;
 	std::map<PolicyKey, CachedPolicy> policies;
 	std::map<std::tuple<bool, CargoType, StationID, StationID>, uint64_t> recent_policy_builds; ///< Bounded diagnostic history, never simulation input.

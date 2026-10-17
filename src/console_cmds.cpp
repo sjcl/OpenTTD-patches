@@ -4855,7 +4855,7 @@ static bool ConPassengerPeriodicCompare(std::span<std::string_view> argv)
 static bool ConPassengerJourneyStats(std::span<std::string_view> argv)
 {
 	if (argv.empty()) {
-		IConsolePrint(CC_HELP, "passenger_journey_stats [total|tick|inventory|hyperpath_memory|reset|cache_on|cache_off|departures_on|departures_off|scratch_on|scratch_off|fallback_cache_on|fallback_cache_off|fallback_validate_on|fallback_validate_off|hyperpath_filter_on|hyperpath_filter_off]: local diagnostics and derived cache preferences");
+		IConsolePrint(CC_HELP, "passenger_journey_stats [total|tick|inventory|hyperpath_memory|reset|cache_on|cache_off|departures_on|departures_off|scratch_on|scratch_off|fallback_cache_on|fallback_cache_off|fallback_validate_on|fallback_validate_off|hyperpath_filter_on|hyperpath_filter_off|hyperpath_filter_alternate]: local diagnostics and derived cache preferences");
 		return true;
 	}
 	if (argv.size() > 2) return false;
@@ -4875,9 +4875,12 @@ static bool ConPassengerJourneyStats(std::span<std::string_view> argv)
 		IConsolePrint(CC_DEFAULT, "OD fallback residency: {}; logical work unchanged", operation == "fallback_cache_on" ? "enabled" : "disabled");
 		return true;
 	}
-	if (operation == "hyperpath_filter_on" || operation == "hyperpath_filter_off") {
-		GetPassengerServiceDatabase().SetHyperpathBoardingFilterEnabled(operation == "hyperpath_filter_on");
-		IConsolePrint(CC_DEFAULT, "Hyperpath boarding destination filter: {}; boarding decisions unchanged", operation == "hyperpath_filter_on" ? "enabled" : "disabled");
+	if (operation == "hyperpath_filter_on" || operation == "hyperpath_filter_off" || operation == "hyperpath_filter_alternate") {
+		using Mode = PassengerServiceDatabase::HyperpathFilterMode;
+		const Mode mode = operation == "hyperpath_filter_on" ? Mode::On : operation == "hyperpath_filter_off" ? Mode::Off : Mode::Alternate;
+		GetPassengerServiceDatabase().SetHyperpathBoardingFilterMode(mode);
+		IConsolePrint(CC_DEFAULT, "Hyperpath boarding destination filter: {}; boarding decisions unchanged",
+				mode == Mode::On ? "enabled" : mode == Mode::Off ? "disabled" : "alternating per loading context");
 		return true;
 	}
 	if (operation == "fallback_validate_on" || operation == "fallback_validate_off") {
@@ -5008,9 +5011,15 @@ static bool ConPassengerJourneyStats(std::span<std::string_view> argv)
 	}
 	IConsolePrint(CC_DEFAULT, "Passenger capacity records: packets={}; passengers={}; microseconds={}", events.capacity_missed_packets, events.capacity_missed_passengers, events.capacity_record_nanoseconds / 1000);
 	IConsolePrint(CC_DEFAULT, "Passenger unchanged generation: packets={}", events.unchanged_generation_packets);
-	IConsolePrint(CC_DEFAULT, "Passenger hyperpath boarding filter: enabled={}; filtered_walks={}; unfiltered_walks={}; groups_checked={}; groups_skipped={}; groups_admitted={}",
-			GetPassengerServiceDatabase().IsHyperpathBoardingFilterEnabled() ? "true" : "false", events.hyperpath_filtered_walks, events.hyperpath_unfiltered_walks,
-			events.hyperpath_groups_checked, events.hyperpath_groups_skipped, events.hyperpath_groups_admitted);
+	{
+		static constexpr std::array filter_modes{"off", "on", "alternate"};
+		const auto mode = GetPassengerServiceDatabase().GetHyperpathBoardingFilterMode();
+		IConsolePrint(CC_DEFAULT, "Passenger hyperpath boarding filter: enabled={}; mode={}; filtered_walks={}; unfiltered_walks={}; groups_checked={}; groups_skipped={}; groups_admitted={}",
+				mode == PassengerServiceDatabase::HyperpathFilterMode::On ? "true" : "false", filter_modes[static_cast<size_t>(mode)], events.hyperpath_filtered_walks, events.hyperpath_unfiltered_walks,
+				events.hyperpath_groups_checked, events.hyperpath_groups_skipped, events.hyperpath_groups_admitted);
+		IConsolePrint(CC_DEFAULT, "Passenger hyperpath walk time: filtered_us={}; filtered_groups={}; unfiltered_us={}; unfiltered_groups={}",
+				events.hyperpath_walk_nanoseconds[1] / 1000, events.hyperpath_walk_groups[1], events.hyperpath_walk_nanoseconds[0] / 1000, events.hyperpath_walk_groups[0]);
+	}
 	for (CargoType cargo : EnumRange(NUM_CARGO)) if (IsCargoInClass(cargo, CargoClass::Passengers)) {
 		const auto p = GetPassengerServiceDatabase().GetPrecomputedDiagnostic(cargo);
 		IConsolePrint(CC_DEFAULT, "Precomputed passenger routes: cargo={}; patterns={}; stations={}; states={}; edges={}; destinations={}; bytes={}; envelope={}; build_ns={}; operations={}; queries={}; query_ns={}; hits={}; missing={}; no_route={}",
