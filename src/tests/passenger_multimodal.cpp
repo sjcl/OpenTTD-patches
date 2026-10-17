@@ -589,7 +589,7 @@ TEST_CASE("Road adapters honor bay drive-through cargo direction and articulated
 	REQUIRE(GetPassengerRouteState(road, &budget));
 	SECTION("Bay bus stop") { MakeRoadStop(road->tile, OWNER_NONE, A, RoadStopType::Bus, ROADTYPE_ROAD, INVALID_ROADTYPE, DiagDirection::NE); road->state = RVSB_IN_ROAD_STOP; }
 	SECTION("Direction mismatch is not boarding") { road->GetOrder(0)->SetRoadVehTravelDirection(DiagDirection::SW); CHECK_FALSE(GetPassengerRouteState(road)); return; }
-	SECTION("Drive-through pass-through state is not loading") { road->state = RVSB_IN_DT_ROAD_STOP; CHECK_FALSE(GetPassengerRouteState(road)); return; }
+	SECTION("Loading behind another bus before the drive-through stop position") { road->state = RVSB_IN_DT_ROAD_STOP; }
 	SECTION("A compatible stop elsewhere at the same StationID") {
 		Station *st = Station::Get(E); MakeRoadStop(st->xy, OWNER_NONE, E, RoadStopType::Bus, ROADTYPE_ROAD, INVALID_ROADTYPE, DiagDirection::NE);
 		RoadStop *extra = RoadStop::Create(st->xy + 5); st->bus_stops->next = extra;
@@ -612,6 +612,105 @@ TEST_CASE("Road adapters honor bay drive-through cargo direction and articulated
 	}
 	CHECK(GetPassengerRouteState(road));
 	const auto graph = f.Graph(); PassengerJourneyPlanner planner(graph); CHECK(planner.Plan(PAX, A, E, NOW).HasJourney());
+}
+
+TEST_CASE("Drive-through buses with shared orders board simultaneously before the stop position", "[passenger][multimodal][boarding][roadstop]")
+{
+	MultimodalFixture f;
+	const auto mode = GENERATE(std::string_view{"Hyperpath"}, "EstimatedServiceIntent", "ServiceIntent", "Timed", "Fallback", "Legacy");
+	CAPTURE(mode);
+	const bool periodic = mode == "Hyperpath" || mode == "EstimatedServiceIntent" || mode == "ServiceIntent";
+	_settings_game.linkgraph.passenger_journey_periodic = periodic;
+	_settings_game.linkgraph.passenger_journey_precomputed = mode == "Hyperpath";
+	_settings_game.linkgraph.passenger_journey_hyperpath = mode == "Hyperpath";
+	std::array<RoadVehicle *, 3> buses;
+	for (auto &bus : buses) bus = RoadVehicle::From(f.Service(VehicleType::Road, {MultiStop(A), MultiStop(E, 100)}));
+	for (size_t i = 1; i < buses.size(); ++i) {
+		buses[i]->orders->FreeChain(); buses[i]->orders = buses[0]->orders; buses[i]->AddToShared(buses[i - 1]);
+	}
+	/* The controller can BeginLoading behind a stopped bus before setting RVS_ENTERED_STOP. */
+	buses[0]->frame = RVC_DRIVE_THROUGH_STOP_FRAME;
+	buses[1]->state = RVSB_IN_DT_ROAD_STOP; buses[1]->frame = 1;
+	buses[2]->current_order = *buses[2]->GetOrder(0); // This bus arrives after the first two leave.
+	if (mode == "EstimatedServiceIntent") for (auto *bus : buses) bus->current_order.Free();
+	ResetPassengerServiceDatabase();
+	auto &db = GetPassengerServiceDatabase();
+	if (periodic) {
+		for (int i = 0; i < 128 && db.IsBuilding(); ++i) db.Tick();
+		REQUIRE_FALSE(db.IsBuilding());
+		if (mode == "Hyperpath") while (!db.PreparePrecomputed()) {}
+	}
+	if (mode == "EstimatedServiceIntent") {
+		f.LoadAt(buses[0], 0); f.LoadAt(buses[1], 0); buses[1]->state = RVSB_IN_DT_ROAD_STOP;
+	}
+	if (!periodic) {
+		const auto graph = f.Graph();
+		CHECK(std::any_of(graph.GetTrips().begin(), graph.GetTrips().end(), [&](const auto &trip) { return trip.vehicle == buses[1]->index; }));
+	}
+	auto *packet = f.Packet(350);
+	if (mode == "Fallback") {
+		buses[0]->GetOrder(0)->SetWaitTimetabled(false);
+		packet->FallbackPassengerJourney(A, NOW, E);
+	} else if (mode != "Legacy") {
+		PassengerJourneyActiveContext context(nullptr, A); REQUIRE(context.PlanWaiting(*packet, PAX, E));
+		const auto expected = mode == "Hyperpath" ? PassengerRideKind::HyperpathIntent : mode == "EstimatedServiceIntent" ?
+				PassengerRideKind::EstimatedServiceIntent : mode == "ServiceIntent" ? PassengerRideKind::ServiceIntent : PassengerRideKind::VehicleSnapshot;
+		REQUIRE(packet->GetPassengerJourney().kind == expected);
+	}
+	f.Waiting().Append(packet, E);
+	Station::Get(A)->loading_vehicles = {buses[0], buses[1]};
+	PassengerJourneyLoadingContext loading; std::array next{E};
+	for (size_t i = 0; i < buses.size(); ++i) {
+		auto *bus = buses[i]; CAPTURE(i);
+		if (i == 2) {
+			buses[0]->current_order.MakeLeaveStation(); buses[1]->current_order.MakeLeaveStation();
+			f.LoadAt(bus, 0); bus->frame = RVC_DRIVE_THROUGH_STOP_FRAME;
+			Station::Get(A)->loading_vehicles = {bus};
+		}
+		if (mode == "Timed") {
+			/* Identical order progress has identical visit times; each snapshot binds its own bus. */
+			auto ride = packet->GetPassengerJourney(); ride.vehicle = bus->index; packet->SetPassengerJourney(ride, E);
+		}
+		const auto state = GetPassengerRouteState(bus); CHECK(state); if (state) CHECK(state->loading);
+		REQUIRE(loading.CanBoard(*packet, bus, PAX));
+		REQUIRE(f.Waiting().HasCargoFor(next, bus, &loading, PAX));
+		REQUIRE(f.Waiting().Reserve(100, &bus->cargo, next, bus->tile, bus, &loading) == 100);
+		CHECK(f.Waiting().Load(40, &bus->cargo, next, bus->tile, bus, &loading) == 40);
+		CHECK(f.Waiting().Load(60, &bus->cargo, next, bus->tile, bus, &loading) == 60);
+		CHECK(bus->cargo.StoredCount() == 100);
+		CHECK(HasBit(bus->state, RVS_ENTERED_STOP) == (i != 1));
+	}
+	CHECK(f.Waiting().AvailableCount() == 50); CHECK(f.Waiting().ReservedCount() == 0);
+}
+
+TEST_CASE("Drive-through loading retains physical stop and boarding restrictions", "[passenger][multimodal][boarding][roadstop]")
+{
+	MultimodalFixture f;
+	AutoRestoreBackup<bool> sharing{_settings_game.economy.infrastructure_sharing[to_underlying(VehicleType::Road)], false};
+	auto *bus = RoadVehicle::From(f.Service(VehicleType::Road, {MultiStop(A), MultiStop(E, 100)}));
+	bus->state = RVSB_IN_DT_ROAD_STOP; bus->frame = 1;
+	/* Plan while loading is valid, then change only the physical state or boarding permission. */
+	auto *packet = f.Packet(); PassengerJourneyActiveContext context(nullptr, A); REQUIRE(context.PlanWaiting(*packet, PAX, E));
+	SECTION("Passing through with a travel order") { bus->current_order = *bus->GetOrder(0); }
+	SECTION("Waiting behind a bus before BeginLoading") { bus->current_order = *bus->GetOrder(0); bus->cur_speed = 0; }
+	SECTION("Leaving the station") { bus->current_order.MakeLeaveStation(); }
+	SECTION("Outside a road stop") { bus->state = 0; }
+	SECTION("Not on a road stop tile") { bus->tile = Station::Get(A)->xy + 1; }
+	SECTION("A different station tile") { bus->tile = Station::Get(E)->xy; }
+	SECTION("Incompatible road type") { bus->compatible_roadtypes.Reset(); }
+	SECTION("Infrastructure permission denied") {
+		bus->owner = Company::Create()->index; SetTileOwner(bus->tile, Company::Create()->index);
+	}
+	SECTION("Wrong stop type") { MakeDriveThroughRoadStop(bus->tile, OWNER_NONE, OWNER_NONE, OWNER_NONE, A, StationType::Truck, ROADTYPE_ROAD, INVALID_ROADTYPE, Axis::X); }
+	SECTION("Direction mismatch") { bus->GetOrder(0)->SetRoadVehTravelDirection(DiagDirection::SW); }
+	SECTION("Stopped by the player") { bus->vehstatus.Set(VehState::Stopped); }
+	SECTION("Crashed") { bus->vehstatus.Set(VehState::Crashed); }
+	SECTION("No loading") { bus->current_order.SetLoadType(OrderLoadType::NoLoad); }
+	PassengerJourneyLoadingContext loading;
+	CHECK_FALSE(loading.CanBoard(*packet, bus, PAX));
+	f.Waiting().Append(packet, E);
+	CHECK_FALSE(f.Waiting().HasCargoFor(std::array{E}, bus, &loading, PAX));
+	CHECK(f.Waiting().Load(10, &bus->cargo, std::array{E}, bus->tile, bus, &loading) == 0);
 }
 
 TEST_CASE("Ships traverse buoys without boarding and retain repeated port occurrences", "[passenger][multimodal][prediction]")
