@@ -30,6 +30,10 @@ def main():
     parser.add_argument("--toggle-precomputed", action="store_true", help="Disable and re-enable routing after joining, then compare the peer preparation barrier")
     parser.add_argument("--wait-server-ready", action="store_true", help="Connect after server preparation instead of testing the server-wait phase")
     parser.add_argument("--replace-precomputed", action="store_true", help="Change transfer cost after joining; compare ordinary replacement ticks with retained rows")
+    parser.add_argument("--server-workers", type=int, choices=range(9), help="Local initial passenger destination workers on the server")
+    parser.add_argument("--client-workers", type=int, choices=range(9), help="Local initial passenger destination workers on the client")
+    parser.add_argument("--hyperpath", action=argparse.BooleanOptionalAction, default=None, help="Routing mode for the isolated loopback fixture")
+    parser.add_argument("--fixture-timetable", action="store_true", help="Enable routing and fixed timetable times in an isolated vanilla regression save")
     parser.add_argument("--observe-timeout", type=int, default=180,
                         help="Harness observation seconds for loading/replay; does not change game/network timeouts")
     args = parser.parse_args()
@@ -64,9 +68,11 @@ def main():
                 shutil.copytree(source, directory / asset, copy_function=link_or_copy)
         shutil.copytree(args.lang, directory / "lang")
         (directory / "scripts").mkdir()
+        workers = args.server_workers if name == "server" else args.client_workers
+        worker_setting = "" if workers is None else f"passenger_precomputed_workers = {workers}\n"
         (directory / "openttd.cfg").write_text(
             "[misc]\nlanguage = english.lng\n[gui]\nautosave = off\nautosave_on_exit = false\n"
-            f"[network]\nclient_name = routing-{name}\nserver_game_type = local\nserver_port = {args.port}\n"
+            + worker_setting + f"[network]\nclient_name = routing-{name}\nserver_game_type = local\nserver_port = {args.port}\n"
             f"pause_on_join = true\nmin_active_clients = 0\nframe_freq = {args.frame_freq}\n[graphicsset]\nname = zBase\n", encoding="utf-8")
         return directory
 
@@ -141,11 +147,16 @@ def main():
     started = time.monotonic()
     try:
         server = prepare("server")
+        result.update(server_workers=args.server_workers, client_workers=args.client_workers, hyperpath=args.hyperpath, fixture_timetable=args.fixture_timetable)
         initial = ("setting linkgraph.passenger_journey_precomputed true\n"
                    "passenger_journey_stats partial_precomputed\n" if args.initial_build else "")
         (server / "scripts/game_start.scr").write_text(
             f"script {(server / 'console.txt').as_posix()}\npause\ngetfulldate\n"
             "setting max_join_time\nsetting max_join_time_total\nsetting max_lag_time\nsetting max_init_time\nsetting max_download_time\n"
+            + ("" if args.hyperpath is None else f"setting linkgraph.passenger_journey_hyperpath {'true' if args.hyperpath else 'false'}\n")
+            + ("setting linkgraph.passenger_journey_routing true\nsetting linkgraph.passenger_journey_periodic true\n"
+               "setting linkgraph.passenger_od_assignment true\nsetting linkgraph.passenger_journey_precomputed true\nsetting linkgraph.distribution_pax 2\n"
+               "passenger_journey_stats fixture_timetable\n" if args.fixture_timetable else "")
             + initial + "passenger_journey_stats total\npassenger_journey_stats save_integrity\nscript\n", encoding="utf-8")
         host = start(server, ["-D", result["address"], "-g", str(args.input.resolve())])
         if not wait(lambda: (server / "save-integrity.json").exists(), args.observe_timeout):
