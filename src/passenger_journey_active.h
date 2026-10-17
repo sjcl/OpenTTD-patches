@@ -34,8 +34,10 @@ struct PassengerWaitingEventDiagnostic {
 	/* Hyperpath boarding enumeration: policy groups whose predicate ran, groups skipped by the
 	 * derived destination filter, predicates that admitted a group, and walks with/without the filter. */
 	uint64_t hyperpath_groups_checked = 0, hyperpath_groups_skipped = 0, hyperpath_groups_admitted = 0;
-	uint64_t hyperpath_filtered_walks = 0, hyperpath_unfiltered_walks = 0;
-	std::array<uint64_t, 2> hyperpath_walk_groups{}, hyperpath_walk_nanoseconds{}; ///< Indexed by whether the filter was applied.
+	/* Indexed by strategy: complete walk, masked walk, occurrence lookup. Groups are those visited. */
+	std::array<uint64_t, 3> hyperpath_walks{}, hyperpath_walk_groups{}, hyperpath_walk_nanoseconds{};
+	uint64_t hyperpath_lookup_rebuilds = 0, hyperpath_lookup_indexed_groups = 0; ///< Lookup maintenance.
+	uint64_t hyperpath_index_validated = 0, hyperpath_index_violations = 0; ///< Validate mode: admitted groups missing from the lookup.
 	std::array<uint64_t, static_cast<size_t>(PassengerWaitingCause::End)> cause_nanoseconds{}, cause_packets{};
 };
 void RecordPassengerWaitingCause(PassengerWaitingCause cause, uint64_t nanoseconds, bool unchanged = false);

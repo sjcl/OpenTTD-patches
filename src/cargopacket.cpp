@@ -1443,7 +1443,7 @@ void StationCargoList::ClearWaitingIndex()
 	this->waiting_entries.clear(); this->merge_index.clear(); this->boarding_index.clear(); this->waiting_wake.clear();
 	this->boarding_services.clear();
 	this->section_boarding_index.clear();
-	this->hyperpath_boarding_index.clear();
+	this->hyperpath_boarding_index.clear(); this->hyperpath_lookup = {};
 	this->legacy_boarding_index.clear(); this->fallback_boarding_index.clear(); this->fallback_destinations.clear(); this->fallback_hops.clear();
 	this->routing_events.clear(); this->routing_packets.clear(); this->legacy_journey_packets.clear();
 	this->waiting_next_sequence = 0;
@@ -1504,7 +1504,10 @@ void StationCargoList::AddBoardingEntry(CargoPacketID id, WaitingEntry &entry) c
 		if (new_ride && packet.GetPassengerJourney().kind == PassengerRideKind::EstimatedServiceIntent)
 			this->section_boarding_index[PassengerPrecomputedTable::RawSectionBoardingKey(packet.GetPassengerJourney())].emplace(ride->first, &ride->second);
 		if (packet.GetPassengerJourney().kind == PassengerRideKind::HyperpathIntent) {
-			auto &policy = this->hyperpath_boarding_index[packet.GetPassengerJourney().alighting][BoardingHyperpathKey(ride->first)];
+			const StationID alighting = packet.GetPassengerJourney().alighting;
+			auto [policy_entry, new_group] = this->hyperpath_boarding_index[alighting].try_emplace(BoardingHyperpathKey(ride->first));
+			auto &policy = policy_entry->second;
+			if (new_group) this->hyperpath_lookup.dirty.insert(alighting);
 			policy.packets.insert(order);
 			if (std::get<3>(ride->first).count >= PassengerBoardingFailure::THRESHOLD) policy.expiries.insert(BoardingHyperpathExpiry(ride->first));
 		}
@@ -1538,8 +1541,11 @@ void StationCargoList::RemoveBoardingEntry(CargoPacketID id, const WaitingEntry 
 				auto expiry = policy->second.expiries.find(BoardingHyperpathExpiry(ride->first));
 				assert(expiry != policy->second.expiries.end()); policy->second.expiries.erase(expiry);
 			}
-			if (policy->second.packets.empty()) destination->second.erase(policy);
-			if (destination->second.empty()) this->hyperpath_boarding_index.erase(destination);
+			if (policy->second.packets.empty()) { this->UnindexHyperpathGroup(policy); destination->second.erase(policy); }
+			if (destination->second.empty()) {
+				this->hyperpath_lookup.versions.erase(destination->first); this->hyperpath_lookup.dirty.erase(destination->first);
+				this->hyperpath_boarding_index.erase(destination);
+			}
 		}
 		ride->second.erase(order);
 		if (ride->second.empty()) {
@@ -1702,6 +1708,74 @@ void StationCargoList::RemoveFromCache(const CargoPacket *packet, uint count)
 	this->Parent::RemoveFromCache(packet, count);
 }
 
+void StationCargoList::UnindexHyperpathGroup(HyperpathGroups::iterator group) const
+{
+	auto &lookup = this->hyperpath_lookup; auto &waiting = group->second;
+	auto drop = [&](std::vector<HyperpathGroupRef> &refs) {
+		auto found = std::find_if(refs.begin(), refs.end(), [&](const HyperpathGroupRef &ref) { return ref.group == group; });
+		assert(found != refs.end());
+		*found = refs.back(); refs.pop_back();
+	};
+	if (waiting.lookup_slot == PassengerServiceDatabase::HYPERPATH_LOOKUP_ALWAYS) drop(lookup.always);
+	else if (waiting.lookup_slot == 0 || waiting.lookup_slot == 1) {
+		auto &table = lookup.occurrences[waiting.lookup_slot];
+		for (uint32_t occurrence : waiting.lookup_occurrences) {
+			auto refs = table.find(occurrence); assert(refs != table.end());
+			drop(refs->second);
+			if (refs->second.empty()) table.erase(refs);
+		}
+	}
+	waiting.lookup_slot = HYPERPATH_UNINDEXED; waiting.lookup_occurrences.clear();
+}
+
+void StationCargoList::IndexHyperpathGroup(StationID destination, HyperpathGroups::iterator group) const
+{
+	auto &lookup = this->hyperpath_lookup; auto &waiting = group->second;
+	assert(waiting.lookup_slot == HYPERPATH_UNINDEXED);
+	const auto &key = group->first;
+	if (std::get<5>(key) != OrderListID::Invalid()) {
+		/* A failed-carrier policy may admit occurrences outside every stored policy. */
+		waiting.lookup_slot = PassengerServiceDatabase::HYPERPATH_LOOKUP_ALWAYS; lookup.always.push_back({destination, group}); return;
+	}
+	const auto *packet = CargoPacket::Get(std::get<2>(*waiting.packets.begin()));
+	waiting.lookup_slot = static_cast<int8_t>(GetPassengerServiceDatabase().HyperpathLookupCandidates(lookup.cargo, packet->GetPassengerJourney(),
+			std::get<3>(key), std::get<4>(key), lookup.station, waiting.lookup_occurrences));
+	if (waiting.lookup_slot == PassengerServiceDatabase::HYPERPATH_LOOKUP_ALWAYS) lookup.always.push_back({destination, group});
+	else if (waiting.lookup_slot == 0 || waiting.lookup_slot == 1) {
+		for (uint32_t occurrence : waiting.lookup_occurrences) lookup.occurrences[waiting.lookup_slot][occurrence].push_back({destination, group});
+	}
+}
+
+void StationCargoList::RefreshHyperpathLookup(StationID station) const
+{
+	auto &lookup = this->hyperpath_lookup;
+	const auto &db = GetPassengerServiceDatabase();
+	if (lookup.epoch != db.HyperpathLookupEpoch() || lookup.station != station || lookup.cargo != this->passenger_index_cargo) {
+		lookup.occurrences = {}; lookup.always.clear(); lookup.versions.clear(); lookup.dirty.clear();
+		for (auto &[destination, groups] : this->hyperpath_boarding_index) {
+			for (auto &[key, waiting] : groups) { waiting.lookup_slot = HYPERPATH_UNINDEXED; waiting.lookup_occurrences.clear(); }
+			lookup.dirty.insert(destination);
+		}
+		lookup.epoch = db.HyperpathLookupEpoch(); lookup.station = station; lookup.cargo = this->passenger_index_cargo;
+		lookup.changes = db.HyperpathDestinationChanges();
+		++_passenger_event_diagnostic.hyperpath_lookup_rebuilds;
+	} else if (lookup.changes != db.HyperpathDestinationChanges()) {
+		for (const auto &[destination, version] : lookup.versions) if (db.HyperpathDestinationVersion(destination) != version) lookup.dirty.insert(destination);
+		lookup.changes = db.HyperpathDestinationChanges();
+	}
+	for (StationID destination : lookup.dirty) {
+		auto groups = this->hyperpath_boarding_index.find(destination);
+		if (groups == this->hyperpath_boarding_index.end()) { lookup.versions.erase(destination); continue; }
+		for (auto group = groups->second.begin(); group != groups->second.end(); ++group) {
+			if (group->second.lookup_slot != HYPERPATH_UNINDEXED) this->UnindexHyperpathGroup(group);
+			this->IndexHyperpathGroup(destination, group);
+			++_passenger_event_diagnostic.hyperpath_lookup_indexed_groups;
+		}
+		lookup.versions[destination] = db.HyperpathDestinationVersion(destination);
+	}
+	lookup.dirty.clear();
+}
+
 template <typename Visitor>
 bool StationCargoList::VisitBoardingCandidates(std::span<const StationID> next, const Vehicle *vehicle, PassengerJourneyLoadingContext &loading, Visitor &&visitor, bool defer_hyperpath) const
 {
@@ -1761,51 +1835,96 @@ bool StationCargoList::VisitBoardingCandidates(std::span<const StationID> next, 
 				vehicle->First()->current_order.GetCargoLoadType(this->passenger_index_cargo) != OrderLoadType::NoLoad);
 		const auto occurrences = defer_hyperpath && scan && !this->hyperpath_boarding_index.empty() ? loading.HyperpathBoardingOccurrences(vehicle, this->passenger_index_cargo) :
 				std::array{PassengerPrecomputedTable::INVALID, PassengerPrecomputedTable::INVALID};
-		/* Identical decisions: base membership (and the plan of a retired intent) only uses stored
-		 * policies of the current/retained generations, so a destination whose masks lack this
-		 * departure cannot pass it. Without an arriving carrier the policy state is the station's
-		 * base state; otherwise any state is assumed. A live failure may use a local policy and is
-		 * always checked. The full predicate below still decides every remaining group. */
+		/* Identical decisions in every strategy: base membership (and the plan of a retired intent)
+		 * only uses stored policies of the current/retained generations. Masked skips destinations
+		 * whose masks lack this departure; Indexed looks up exactly the groups whose stored policies
+		 * contain it. A live failure may use a local policy and is always checked. The full
+		 * predicate still decides every group that is considered. */
+		using Mode = PassengerServiceDatabase::HyperpathFilterMode;
 		const bool walk = scan && !this->hyperpath_boarding_index.empty();
 		const auto mode = db.GetHyperpathBoardingFilterMode();
-		if (walk && mode == PassengerServiceDatabase::HyperpathFilterMode::Alternate && loading.hyperpath_filter_choice < 0) {
+		if (walk && mode == Mode::Alternate && loading.hyperpath_filter_choice < 0) {
 			static uint64_t contexts = 0; // Local diagnostic sequence only: every mode makes the same decisions.
 			uint64_t z = (contexts++ + 1) * 0x9E3779B97F4A7C15ULL; z = (z ^ (z >> 30)) * 0xBF58476D1CE4E5B9ULL; z = (z ^ (z >> 27)) * 0x94D049BB133111EBULL;
 			loading.hyperpath_filter_choice = static_cast<int8_t>((z ^ (z >> 31)) & 1);
 		}
-		const bool wanted = mode == PassengerServiceDatabase::HyperpathFilterMode::Alternate ? loading.hyperpath_filter_choice > 0 : mode == PassengerServiceDatabase::HyperpathFilterMode::On;
-		const bool filter = walk && wanted && db.HyperpathBoardingFilterAvailable(this->passenger_index_cargo);
-		const auto boarding = !filter ? std::array{PassengerPrecomputedTable::INVALID, PassengerPrecomputedTable::INVALID} : defer_hyperpath ? occurrences :
-				db.HyperpathBoardingOccurrences(this->passenger_index_cargo, vehicle->First()->last_station_visited, service, vehicle->First()->cur_real_order_index);
+		enum Strategy : uint8_t { COMPLETE, MASKED, INDEXED };
+		Strategy strategy = COMPLETE;
+		if (mode == Mode::Index || (mode == Mode::Alternate && loading.hyperpath_filter_choice > 0)) strategy = INDEXED;
+		else if ((mode == Mode::On || mode == Mode::Alternate) && db.HyperpathBoardingFilterAvailable(this->passenger_index_cargo)) strategy = MASKED;
+		const bool validate = mode == Mode::Validate;
+		const StationID station = walk ? vehicle->First()->last_station_visited : StationID::Invalid();
+		const auto boarding = strategy == COMPLETE && !validate ? std::array{PassengerPrecomputedTable::INVALID, PassengerPrecomputedTable::INVALID} : defer_hyperpath ? occurrences :
+				db.HyperpathBoardingOccurrences(this->passenger_index_cargo, station, service, vehicle->First()->cur_real_order_index);
 		const auto walk_started = walk ? std::chrono::steady_clock::now() : std::chrono::steady_clock::time_point{};
 		uint64_t walk_groups = 0;
-		if (walk) for (const auto &[destination, groups] : this->hyperpath_boarding_index) {
+		std::set<const HyperpathWaiting *> admitted_groups; // Validate only.
+		auto consider = [&](const HyperpathKey &key, const HyperpathWaiting &policy, bool adjusted) {
+			++_passenger_event_diagnostic.hyperpath_groups_checked;
+			bool base = policy.expiries.empty() || *policy.expiries.begin() <= _state_ticks;
+			const auto *packet = CargoPacket::Get(std::get<2>(*policy.packets.begin()));
+			assert(packet->GetPassengerArrivingService() == std::get<3>(key));
+			bool admitted;
+			if (!defer_hyperpath) {
+				admitted = loading.CanUseHyperpathPolicy(*packet, vehicle, this->passenger_index_cargo, base, adjusted);
+				if (admitted) add_group(policy.packets);
+			} else {
+				admitted = loading.MayUseHyperpathPolicy(*packet, vehicle, this->passenger_index_cargo, occurrences, base, adjusted);
+				if (admitted) add_group(policy.packets, false, (base ? 1 : 0) | (adjusted ? 2 : 0));
+			}
+			if (admitted) {
+				++_passenger_event_diagnostic.hyperpath_groups_admitted;
+				if (validate) admitted_groups.insert(&policy);
+			}
+		};
+		if (walk && strategy == INDEXED) {
+			this->RefreshHyperpathLookup(station);
+			const auto &lookup = this->hyperpath_lookup;
+			auto consider_all = [&](const std::vector<HyperpathGroupRef> &refs) {
+				for (const auto &ref : refs) {
+					++walk_groups;
+					const auto &policy = ref.group->second;
+					consider(ref.group->first, policy, !policy.expiries.empty() && *policy.expiries.rbegin() > _state_ticks);
+				}
+			};
+			for (size_t slot = 0; slot < 2; ++slot) {
+				auto refs = lookup.occurrences[slot].find(boarding[slot]);
+				if (refs != lookup.occurrences[slot].end()) consider_all(refs->second);
+			}
+			consider_all(lookup.always);
+		} else if (walk) for (const auto &[destination, groups] : this->hyperpath_boarding_index) {
 			std::array<int8_t, 2> relevant{-1, -1}; // Lazily evaluated: [0] base state, [1] any state.
 			for (const auto &[key, policy] : groups) {
 				++walk_groups;
 				bool adjusted = !policy.expiries.empty() && *policy.expiries.rbegin() > _state_ticks;
-				if (filter && !adjusted) {
+				if (strategy == MASKED && !adjusted) {
 					/* The group key holds the shared arriving carrier: no packet access to skip. */
 					const bool any_state = std::get<3>(key) != OrderListID::Invalid();
 					if (relevant[any_state] < 0) relevant[any_state] = db.MayBeHyperpathCandidate(this->passenger_index_cargo, boarding, destination, any_state);
 					if (relevant[any_state] == 0) { ++_passenger_event_diagnostic.hyperpath_groups_skipped; continue; }
 				}
-				++_passenger_event_diagnostic.hyperpath_groups_checked;
-				bool base = policy.expiries.empty() || *policy.expiries.begin() <= _state_ticks;
-				const auto *packet = CargoPacket::Get(std::get<2>(*policy.packets.begin()));
-				assert(packet->GetPassengerArrivingService() == std::get<3>(key));
-				if (!defer_hyperpath) {
-					if (loading.CanUseHyperpathPolicy(*packet, vehicle, this->passenger_index_cargo, base, adjusted)) { ++_passenger_event_diagnostic.hyperpath_groups_admitted; add_group(policy.packets); }
-				} else if (loading.MayUseHyperpathPolicy(*packet, vehicle, this->passenger_index_cargo, occurrences, base, adjusted)) {
-					++_passenger_event_diagnostic.hyperpath_groups_admitted;
-					add_group(policy.packets, false, (base ? 1 : 0) | (adjusted ? 2 : 0));
-				}
+				consider(key, policy, adjusted);
+			}
+		}
+		if (walk && validate) {
+			/* Every group the complete walk admitted must be an Index candidate. */
+			this->RefreshHyperpathLookup(station);
+			const auto &lookup = this->hyperpath_lookup;
+			std::set<const HyperpathWaiting *> candidates;
+			for (size_t slot = 0; slot < 2; ++slot) {
+				auto refs = lookup.occurrences[slot].find(boarding[slot]);
+				if (refs != lookup.occurrences[slot].end()) for (const auto &ref : refs->second) candidates.insert(&ref.group->second);
+			}
+			for (const auto &ref : lookup.always) candidates.insert(&ref.group->second);
+			for (const auto *group : admitted_groups) {
+				++_passenger_event_diagnostic.hyperpath_index_validated;
+				if (!candidates.contains(group)) ++_passenger_event_diagnostic.hyperpath_index_violations;
 			}
 		}
 		if (walk) {
-			++(filter ? _passenger_event_diagnostic.hyperpath_filtered_walks : _passenger_event_diagnostic.hyperpath_unfiltered_walks);
-			_passenger_event_diagnostic.hyperpath_walk_groups[filter] += walk_groups;
-			_passenger_event_diagnostic.hyperpath_walk_nanoseconds[filter] += std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - walk_started).count();
+			++_passenger_event_diagnostic.hyperpath_walks[strategy];
+			_passenger_event_diagnostic.hyperpath_walk_groups[strategy] += walk_groups;
+			_passenger_event_diagnostic.hyperpath_walk_nanoseconds[strategy] += std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - walk_started).count();
 		}
 	}
 	auto merge_keys = [](auto first, auto second, auto &&accept) {

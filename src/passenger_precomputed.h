@@ -105,6 +105,8 @@ public:
 	 * state. A superset of stored membership for those states. Failed-carrier local policies are
 	 * not covered. Stale bits of a retired row only cost a check. */
 	bool MayBeStoredCandidate(uint32_t occurrence, StationID destination, bool any_state) const;
+	/** Append exactly the occurrences for which ContainsCached(origin, destination, o, previous, Invalid) is true. */
+	void StoredCandidates(StationID origin, StationID destination, OrderListID previous, std::vector<uint32_t> &out) const;
 	/** No plan or stored membership from this table can bypass MayBeStoredCandidate. */
 	bool BoardingMaskCovers() const;
 	static constexpr uint64_t MAX_BOARDING_MASK_BYTES = uint64_t{64} * 1024 * 1024; ///< Larger maps keep the complete scan.

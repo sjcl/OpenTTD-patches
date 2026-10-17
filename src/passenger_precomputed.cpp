@@ -1686,6 +1686,30 @@ bool PassengerPrecomputedTable::BoardingMaskCovers() const
 	return this->hyperpath && this->boarding_mask_words != 0;
 }
 
+void PassengerPrecomputedTable::StoredCandidates(StationID origin, StationID destination, OrderListID previous, std::vector<uint32_t> &out) const
+{
+	const auto *row = this->FindRow(destination); const uint32_t state = this->PolicyState(origin, previous);
+	if (row == nullptr || state == INVALID) return;
+	/* The same exclusions as ContainsCached and ContainsStored, enumerated instead of queried. */
+	auto emit = [&](uint32_t occurrence) {
+		const auto &board = this->occurrences[occurrence];
+		if (board.station == origin && this->patterns[board.pattern].members.front().id != previous) out.push_back(occurrence);
+	};
+	const uint32_t index = row->indices[state];
+	if (!this->flat_storage) {
+		for (uint32_t occurrence : row->policies[index].candidates) emit(occurrence);
+		return;
+	}
+	const auto payload = this->FlatPayload(*row, index);
+	if ((row->flat_policies[index].count & FlatPolicy::FULL) == 0) {
+		const uint32_t previous_pattern = this->PreviousPattern(state);
+		for (uint32_t occurrence : this->FlatPayload(*row, row->indices[this->waiting_station[state]])) {
+			if (this->occurrences[occurrence].pattern != previous_pattern) emit(occurrence);
+		}
+	}
+	for (uint32_t occurrence : payload) emit(occurrence);
+}
+
 std::optional<bool> PassengerPrecomputedTable::ContainsCached(StationID origin, StationID destination, uint32_t occurrence, OrderListID previous, OrderListID failed) const
 {
 	if (failed == OrderListID::Invalid() && previous == OrderListID::Invalid() && this->boarding_mask_words != 0 && this->hyperpath && !this->failed) {

@@ -790,6 +790,7 @@ bool PassengerServiceDatabase::PreparePrecomputed()
 
 void PassengerServiceDatabase::BeginPrecomputed(int64_t transfer)
 {
+	++this->hyperpath_lookup_epoch;
 	++this->boarding_revision;
 	/* A replacement owns only its new rows. Retire old rows as soon as their
 	 * replacements are public; never allocate a second complete label matrix.
@@ -874,6 +875,7 @@ void PassengerServiceDatabase::BuildPrecomputedTables(std::array<PassengerPrecom
 
 void PassengerServiceDatabase::ClearRetainedPrecomputed()
 {
+	++this->hyperpath_lookup_epoch;
 	this->retained_precomputed = {};
 	this->retained_precomputed_services.clear();
 	this->retained_precomputed_revision = UINT64_MAX;
@@ -889,6 +891,7 @@ void PassengerServiceDatabase::ClearRetainedPrecomputed()
 
 void PassengerServiceDatabase::DiscardPrecomputed()
 {
+	++this->hyperpath_lookup_epoch;
 	this->preparation_capture = {};
 	++this->boarding_revision;
 	this->ClearRetainedPrecomputed();
@@ -928,6 +931,7 @@ void PassengerServiceDatabase::TickPrecomputed(size_t allowance)
 		size_t used = table.Step(allowance, false, [&](StationID destination) {
 			auto &retained = this->retained_precomputed[cargo];
 			retained.PrepareRetirement(table); retained.ReleaseDestination(destination);
+			this->BumpHyperpathDestination(destination);
 		});
 		if (table.GetDiagnostic().destinations != rows) WakePassengerWaitingCargo(cargo);
 		allowance -= used; this->precomputed_operations += used;
@@ -1058,6 +1062,48 @@ bool PassengerServiceDatabase::MayBoardHyperpath(const PassengerJourneyExecution
 		return table.ContainsCached(intent.boarding, intent.alighting, occurrences[index], previous, failed).value_or(true);
 	}
 	return false;
+}
+
+int PassengerServiceDatabase::HyperpathLookupCandidates(CargoType cargo, const PassengerJourneyExecution &intent, OrderListID arriving, uint64_t incarnation,
+		StationID station, std::vector<uint32_t> &out) const
+{
+	/* Mirrors PassengerJourneyLoadingContext::MayUseHyperpathPolicy's base membership: the
+	 * intent itself while current, otherwise the plan that replaces it. An arriving carrier can
+	 * only become invalid, which selects the base state, so a transfer group takes the union of
+	 * both states. Failed-carrier groups never come here; they are always checked. */
+	out.clear();
+	if (cargo >= NUM_CARGO || intent.kind != PassengerRideKind::HyperpathIntent || intent.boarding != station) return HYPERPATH_LOOKUP_NONE;
+	const auto *list = OrderList::GetIfValid(arriving);
+	const OrderListID previous = list != nullptr && list->GetCargoDistRouteGeneration() == incarnation ? list->index : OrderListID::Invalid();
+	auto slot_of = [&](const PassengerJourneyExecution &policy) {
+		if (policy.signature != uint64_t(cargo) + 1 || policy.boarding != station) return HYPERPATH_LOOKUP_NONE;
+		if (policy.generation == this->precomputed_policy_generation) return 0;
+		if (policy.generation == this->retained_precomputed_policy_generation) return 1;
+		return HYPERPATH_LOOKUP_NONE;
+	};
+	auto collect = [&](int slot, const PassengerJourneyExecution &policy) {
+		const auto &table = (slot != 0 ? this->retained_precomputed : this->precomputed)[cargo];
+		table.StoredCandidates(policy.boarding, policy.alighting, previous, out);
+		if (previous != OrderListID::Invalid()) table.StoredCandidates(policy.boarding, policy.alighting, OrderListID::Invalid(), out);
+	};
+	int slot = HYPERPATH_LOOKUP_NONE;
+	if (this->IsCurrent(intent)) {
+		slot = slot_of(intent);
+		if (slot != HYPERPATH_LOOKUP_NONE) collect(slot, intent);
+	} else {
+		const std::array<OrderListID, 2> states{previous, OrderListID::Invalid()};
+		for (size_t i = 0; i < (previous == OrderListID::Invalid() ? 1 : 2); ++i) {
+			auto plan = this->PlanPrecomputed(cargo, intent.boarding, intent.alighting, _state_ticks, states[i]);
+			if (!plan.ride) continue;
+			if (plan.ride->kind != PassengerRideKind::HyperpathIntent) { out.clear(); return HYPERPATH_LOOKUP_ALWAYS; }
+			const int found = slot_of(*plan.ride);
+			if (found == HYPERPATH_LOOKUP_NONE) continue;
+			if (slot != HYPERPATH_LOOKUP_NONE && slot != found) { out.clear(); return HYPERPATH_LOOKUP_ALWAYS; }
+			slot = found; collect(slot, *plan.ride);
+		}
+	}
+	std::sort(out.begin(), out.end()); out.erase(std::unique(out.begin(), out.end()), out.end());
+	return out.empty() ? HYPERPATH_LOOKUP_NONE : slot;
 }
 
 PassengerPrecomputedPlan PassengerServiceDatabase::BoardHyperpath(const PassengerJourneyExecution &intent, CargoType cargo,
@@ -2255,6 +2301,7 @@ bool PassengerServiceDatabase::Load(std::span<const uint8_t> data)
 	restored.departure_index_enabled = this->departure_index_enabled;
 	restored.timed_scratch_enabled = this->timed_scratch_enabled;
 	restored.hyperpath_boarding_filter = this->hyperpath_boarding_filter;
+	restored.hyperpath_lookup_epoch = this->hyperpath_lookup_epoch + 1; restored.hyperpath_destination_changes = this->hyperpath_destination_changes + 1;
 	*this = std::move(restored);
 	return true;
 }
@@ -2311,6 +2358,7 @@ void PassengerServiceDatabase::FinishLoad(bool present, bool defer_precomputed)
 PassengerServiceDatabase::LoadState PassengerServiceDatabase::StepLoad(size_t allowance)
 {
 	if (this->load_state != LoadState::Replaying) return this->load_state;
+	++this->hyperpath_lookup_epoch; // Replay publishes rows in both tables without per-row notifications.
 	if (!this->load_graph_refreshed) {
 		for (auto &table : this->retained_precomputed) {
 			if (table.IsPreparingGraph() && !table.PrepareGraph(1024)) return this->load_state;

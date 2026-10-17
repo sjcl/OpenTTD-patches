@@ -178,13 +178,26 @@ public:
 	{
 		return cargo < NUM_CARGO && this->precomputed[cargo].BoardingMaskCovers() && this->retained_precomputed[cargo].BoardingMaskCovers();
 	}
+	/** Derived station lookup support. The epoch changes with table generations, retained
+	 * clears, discards and load replay; a destination's version changes whenever its row is
+	 * published or retired in either table. Membership of a waiting policy group depends on nothing else. */
+	uint64_t HyperpathLookupEpoch() const { return this->hyperpath_lookup_epoch; }
+	uint64_t HyperpathDestinationChanges() const { return this->hyperpath_destination_changes; }
+	uint32_t HyperpathDestinationVersion(StationID destination) const
+	{ return destination.base() < this->hyperpath_destination_versions.size() ? this->hyperpath_destination_versions[destination.base()] : 0; }
+	static constexpr int HYPERPATH_LOOKUP_NONE = -1, HYPERPATH_LOOKUP_ALWAYS = 2;
+	/** Every vehicle occurrence (in the returned table slot's numbering) for which the base membership
+	 * of this waiting intent may hold at its station: NONE, a table slot 0/1 with out filled, or ALWAYS. */
+	int HyperpathLookupCandidates(CargoType cargo, const PassengerJourneyExecution &intent, OrderListID arriving, uint64_t incarnation, StationID station, std::vector<uint32_t> &out) const;
 	bool MayBeHyperpathCandidate(CargoType cargo, const std::array<uint32_t, 2> &occurrences, StationID destination, bool any_state) const
 	{
 		return this->precomputed[cargo].MayBeStoredCandidate(occurrences[0], destination, any_state) || this->retained_precomputed[cargo].MayBeStoredCandidate(occurrences[1], destination, any_state);
 	}
-	/** Local preference, absent from saves; every mode makes identical decisions. Alternate picks
-	 * on or off per loading context, so both are timed in one process for diagnostics. */
-	enum class HyperpathFilterMode : uint8_t { Off, On, Alternate };
+	/** Local preference, absent from saves; every mode makes identical decisions. Off walks every
+	 * policy group, On walks them with the destination mask, Index looks up only the groups whose
+	 * stored policies contain the departure. Alternate picks Index or On per loading context, so
+	 * both are timed in one process. Validate decides as Off and checks the Index superset. */
+	enum class HyperpathFilterMode : uint8_t { Off, On, Alternate, Index, Validate };
 	void SetHyperpathBoardingFilterMode(HyperpathFilterMode mode) { this->hyperpath_boarding_filter = mode; }
 	void SetHyperpathBoardingFilterEnabled(bool enabled) { this->hyperpath_boarding_filter = enabled ? HyperpathFilterMode::On : HyperpathFilterMode::Off; }
 	HyperpathFilterMode GetHyperpathBoardingFilterMode() const { return this->hyperpath_boarding_filter; }
@@ -364,7 +377,14 @@ private:
 	uint64_t generation = 0;
 	size_t bytes = 0, policy_bytes = 0;
 	bool policy_cache_enabled = true; ///< Local optional accelerator; absent from saves and routing admission.
-	HyperpathFilterMode hyperpath_boarding_filter = HyperpathFilterMode::On; ///< Local derived boarding filter; identical decisions, absent from saves.
+	HyperpathFilterMode hyperpath_boarding_filter = HyperpathFilterMode::Index; ///< Local derived boarding filter; identical decisions, absent from saves.
+	uint64_t hyperpath_lookup_epoch = 1, hyperpath_destination_changes = 0; ///< Derived; monotone across resets and loads.
+	std::vector<uint32_t> hyperpath_destination_versions;
+	void BumpHyperpathDestination(StationID destination)
+	{
+		if (this->hyperpath_destination_versions.size() <= destination.base()) this->hyperpath_destination_versions.resize(StationID::Invalid().base() + 1, 0);
+		++this->hyperpath_destination_versions[destination.base()]; ++this->hyperpath_destination_changes;
+	}
 	std::list<PolicyKey> policy_lru;
 	std::map<PolicyKey, CachedPolicy> policies;
 	std::map<std::tuple<bool, CargoType, StationID, StationID>, uint64_t> recent_policy_builds; ///< Bounded diagnostic history, never simulation input.

@@ -665,7 +665,26 @@ class StationCargoList : public CargoList<StationCargoList, StationCargoPacketMa
 	using JourneyIndex = std::map<JourneyKey, JourneyRides>;
 	static JourneyKey BoardingJourneyKey(const CargoPacket &packet);
 	using HyperpathKey = std::tuple<StationID, uint64_t, uint64_t, OrderListID, uint64_t, OrderListID, uint64_t>;
-	struct HyperpathWaiting { std::set<BoardingOrder> packets; std::multiset<StateTicks> expiries; };
+	struct HyperpathWaiting {
+		std::set<BoardingOrder> packets; std::multiset<StateTicks> expiries;
+		/* Derived lookup state, never saved: HYPERPATH_UNINDEXED, NONE, table slot 0/1 or ALWAYS. */
+		int8_t lookup_slot = -2;
+		std::vector<uint32_t> lookup_occurrences; ///< Entries in the slot table's occurrence numbering.
+	};
+	using HyperpathGroups = std::map<HyperpathKey, HyperpathWaiting>;
+	struct HyperpathGroupRef { StationID destination; HyperpathGroups::iterator group; };
+	/** Derived occurrence -> waiting policy group lookup, replacing the walk over every group.
+	 * Rebuilt lazily from the database epoch and per-destination row versions. */
+	struct HyperpathLookup {
+		uint64_t epoch = UINT64_MAX, changes = UINT64_MAX;
+		StationID station = StationID::Invalid();
+		CargoType cargo = INVALID_CARGO;
+		std::array<std::unordered_map<uint32_t, std::vector<HyperpathGroupRef>>, 2> occurrences;
+		std::vector<HyperpathGroupRef> always; ///< Failed-carrier groups and legacy plans.
+		std::map<StationID, uint32_t> versions;
+		std::set<StationID> dirty;
+	};
+	static constexpr int8_t HYPERPATH_UNINDEXED = -2;
 	static HyperpathKey BoardingHyperpathKey(const JourneyRideKey &ride);
 	static StateTicks BoardingHyperpathExpiry(const JourneyRideKey &ride);
 	struct WaitingEntry {
@@ -688,7 +707,11 @@ class StationCargoList : public CargoList<StationCargoList, StationCargoPacketMa
 	mutable std::unordered_map<uint64_t, std::set<std::pair<uint16_t, CargoPacketID>>> merge_index;
 	mutable JourneyIndex boarding_index;
 	mutable std::map<uint64_t, std::map<JourneyRideKey, const std::set<BoardingOrder> *>> section_boarding_index; ///< Raw saved order-pair keys to shared cohort queues.
-	mutable std::map<StationID, std::map<HyperpathKey, HyperpathWaiting>> hyperpath_boarding_index; ///< Option (b): policy-state queues, independent of per-packet decision timestamps and table publication.
+	mutable std::map<StationID, HyperpathGroups> hyperpath_boarding_index; ///< Option (b): policy-state queues, independent of per-packet decision timestamps and table publication.
+	mutable HyperpathLookup hyperpath_lookup;
+	void IndexHyperpathGroup(StationID destination, HyperpathGroups::iterator group) const;
+	void UnindexHyperpathGroup(HyperpathGroups::iterator group) const;
+	void RefreshHyperpathLookup(StationID station) const;
 	mutable std::map<OrderListID, size_t> boarding_services;
 	mutable std::map<std::pair<bool, StationID>, std::set<BoardingOrder>> legacy_boarding_index;
 	mutable std::map<FallbackKey, std::set<BoardingOrder>> fallback_boarding_index;

@@ -4778,19 +4778,28 @@ TEST_CASE("Hyperpath boarding destination filter preserves every loading decisio
 	for (uint32_t seed : {0x2f6a91c3U, 0x91e10da5U, 0x0badc0deU, 0x6d2b79f5U}) {
 		CAPTURE(seed);
 		const auto filtered = run(Mode::On, seed), complete = run(Mode::Off, seed), alternate = run(Mode::Alternate, seed);
+		const auto indexed = run(Mode::Index, seed), validated = run(Mode::Validate, seed);
 		CHECK(filtered.log == complete.log);
 		CHECK(alternate.log == complete.log);
-		CHECK(alternate.diagnostic.hyperpath_groups_admitted == complete.diagnostic.hyperpath_groups_admitted);
-		CHECK(alternate.diagnostic.hyperpath_walk_groups[0] + alternate.diagnostic.hyperpath_walk_groups[1] == complete.diagnostic.hyperpath_walk_groups[0]);
-		CHECK(alternate.diagnostic.hyperpath_groups_skipped > 0); CHECK(alternate.diagnostic.hyperpath_groups_skipped < filtered.diagnostic.hyperpath_groups_skipped);
-		CHECK(filtered.diagnostic.capacity_missed_packets == complete.diagnostic.capacity_missed_packets);
+		CHECK(indexed.log == complete.log);
+		CHECK(validated.log == complete.log);
+		for (const auto *result : {&filtered, &alternate, &indexed, &validated}) {
+			CHECK(result->diagnostic.capacity_missed_packets == complete.diagnostic.capacity_missed_packets);
+		}
 		CHECK(filtered.diagnostic.hyperpath_groups_admitted == complete.diagnostic.hyperpath_groups_admitted);
 		CHECK(complete.diagnostic.hyperpath_groups_skipped == 0);
-		CHECK(complete.diagnostic.hyperpath_filtered_walks == 0);
-		CHECK(filtered.diagnostic.hyperpath_filtered_walks > 0);
-		CHECK(filtered.diagnostic.hyperpath_unfiltered_walks > 0); // The legacy phase.
+		CHECK(complete.diagnostic.hyperpath_walks[1] == 0); CHECK(complete.diagnostic.hyperpath_walks[2] == 0);
+		CHECK(filtered.diagnostic.hyperpath_walks[1] > 0);
+		CHECK(filtered.diagnostic.hyperpath_walks[0] > 0); // The legacy phase.
 		CHECK(filtered.diagnostic.hyperpath_groups_skipped > 0);
 		CHECK(filtered.diagnostic.hyperpath_groups_checked + filtered.diagnostic.hyperpath_groups_skipped == complete.diagnostic.hyperpath_groups_checked);
+		CHECK(alternate.diagnostic.hyperpath_walks[1] > 0); CHECK(alternate.diagnostic.hyperpath_walks[2] > 0);
+		/* The lookup considers only groups that may board: fewer predicates, the same admissions. */
+		CHECK(indexed.diagnostic.hyperpath_walks[2] > 0); CHECK(indexed.diagnostic.hyperpath_walks[0] == 0);
+		CHECK(indexed.diagnostic.hyperpath_groups_checked < filtered.diagnostic.hyperpath_groups_checked);
+		CHECK(indexed.diagnostic.hyperpath_lookup_indexed_groups > 0);
+		CHECK(validated.diagnostic.hyperpath_index_validated > 0);
+		CHECK(validated.diagnostic.hyperpath_index_violations == 0);
 	}
 }
 
@@ -4817,19 +4826,21 @@ TEST_CASE("Hyperpath boarding filter skips destinations served only by other lin
 			waiting.Append(packet, to);
 		}
 		std::vector<StationID> next; for (uint stop = 0; stop < STOPS; ++stop) next.push_back(StationID{static_cast<uint16_t>(1 + stop)});
-		std::array<int64_t, 2> nanos{};
-		for (bool filter : {false, true, false, true}) {
-			db.SetHyperpathBoardingFilterEnabled(filter); ResetPassengerWaitingEventDiagnostic();
+		using Mode = PassengerServiceDatabase::HyperpathFilterMode;
+		std::map<Mode, int64_t> nanos;
+		for (Mode mode : {Mode::Off, Mode::On, Mode::Index, Mode::Off, Mode::On, Mode::Index}) {
+			db.SetHyperpathBoardingFilterMode(mode); ResetPassengerWaitingEventDiagnostic();
 			auto start = std::chrono::steady_clock::now();
 			for (size_t i = 0; i < 2048; ++i) {
 				PassengerJourneyLoadingContext loading; REQUIRE(waiting.HasCargoFor(next, trains[0], &loading, PAX));
 			}
-			nanos[filter] = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - start).count() / 2048;
+			nanos[mode] = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - start).count() / 2048;
 			const auto d = GetPassengerWaitingEventDiagnostic();
 			CHECK(d.hyperpath_groups_admitted == 2048 * STOPS);
-			CHECK(d.hyperpath_groups_skipped == (filter ? 2048 * (lines - 1) * STOPS : 0));
+			CHECK(d.hyperpath_groups_skipped == (mode == Mode::On ? 2048 * (lines - 1) * STOPS : 0));
+			if (mode == Mode::Index) CHECK(d.hyperpath_groups_checked == 2048 * STOPS); // Only the loading line's groups.
 		}
-		db.SetHyperpathBoardingFilterEnabled(true);
-		std::cout << "hyperpath_filter," << lines * STOPS << ',' << nanos[0] << ',' << nanos[1] << std::endl;
+		db.SetHyperpathBoardingFilterMode(Mode::Index);
+		std::cout << "hyperpath_filter," << lines * STOPS << ",off=" << nanos[Mode::Off] << ",mask=" << nanos[Mode::On] << ",index=" << nanos[Mode::Index] << std::endl;
 	}
 }
