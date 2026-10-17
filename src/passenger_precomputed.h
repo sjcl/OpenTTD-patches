@@ -122,6 +122,11 @@ public:
 	PassengerPrecomputedPlan Board(StationID origin, StationID destination, StateTicks ready, OrderListID service, VehicleOrderID order, OrderListID previous = OrderListID::Invalid(), OrderListID failed = OrderListID::Invalid()) const;
 	struct CandidateDiagnostic { uint32_t occurrence; OrderListID service; VehicleOrderID order; StationID alight; int64_t cost, wait; uint64_t frequency; };
 	std::vector<CandidateDiagnostic> Inspect(StationID origin, StationID destination, OrderListID previous = OrderListID::Invalid()) const;
+	/** GUI-owned results. No query diagnostics, policy cache writes, or simulation Work.
+	 * Probability is relative to the whole policy, including branches omitted by the display limit. */
+	struct RouteCandidate { PassengerJourneyExecution ride; double probability; };
+	struct RouteInspection { PassengerPrecomputedPlan::State state = PassengerPrecomputedPlan::State::Building; std::vector<RouteCandidate> candidates; };
+	RouteInspection InspectRoutes(StationID origin, StationID destination, OrderListID previous, OrderListID failed, size_t &work) const;
 private:
 	struct Member { OrderListID id; uint64_t incarnation, generation; bool estimated; };
 	struct Pattern {

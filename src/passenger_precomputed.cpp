@@ -2011,6 +2011,93 @@ std::vector<PassengerPrecomputedTable::CandidateDiagnostic> PassengerPrecomputed
 	return result;
 }
 
+PassengerPrecomputedTable::RouteInspection PassengerPrecomputedTable::InspectRoutes(
+		StationID origin, StationID destination, OrderListID previous, OrderListID failed, size_t &work) const
+{
+	using State = PassengerPrecomputedPlan::State;
+	if (this->graph_build) return {};
+	if (this->failed) return {State::Memory};
+	if (origin.base() >= this->station_index.size() || destination.base() >= this->station_index.size()) return {State::Unsupported};
+	const uint32_t from = this->station_index[origin.base()], to = this->station_index[destination.base()];
+	if (from == INVALID || to == INVALID || from == to) return {State::Unsupported};
+	if (to >= this->rows.size() || this->rows[to].Empty()) return {};
+	if (work == 0) return {};
+	--work;
+	const auto &row = this->rows[to];
+	const uint32_t state = this->PolicyState(origin, previous);
+	auto evaluate = [&](uint32_t board) -> Label {
+		/* EvaluateRide visits at most one circuit. Reserve that entire bound
+		 * here so the simulation's recurrence and work accounting stay untouched. */
+		const size_t count = this->patterns[this->occurrences[board].pattern].occurrences.size();
+		if (count >= work) { work = 0; return {}; }
+		work -= count;
+		return this->EvaluateRide(row, board, destination);
+	};
+	RouteInspection result{State::Ready};
+	if (!this->hyperpath) {
+		auto plan = this->Select(this->RowLabel(row, from, state), StateTicks{}, previous, 0);
+		result.state = plan.state;
+		if (plan.ride) result.candidates.push_back({*plan.ride, 1.0});
+		return result;
+	}
+
+	std::vector<uint32_t> candidates;
+	if (failed == OrderListID::Invalid()) {
+		/* Expand into caller-owned storage, without RowCandidates' mutable cache.
+		 * Bound both the base payload and the incoming-service additions before copying. */
+		const uint32_t index = row.indices[state];
+		size_t count = this->flat_storage ? this->FlatPayload(row, index).size() : row.policies[index].candidates.size();
+		if (this->flat_storage && !(row.flat_policies[index].count & FlatPolicy::FULL)) count += this->FlatPayload(row, row.indices[from]).size();
+		if (count >= work) { work = 0; return {}; }
+		work -= count;
+		if (this->flat_storage) this->ExpandPolicy(row, state, candidates);
+		else candidates = row.policies[index].candidates;
+	} else {
+		/* Same local preference as LocalPolicy, computed only in display-owned memory.
+		 * A failed service can expose alternatives absent from the stored base policy. */
+		std::vector<std::pair<int64_t, uint32_t>> choices;
+		for (uint32_t board : this->station_boarding[from]) {
+			if (work == 0) return {};
+			--work;
+			const auto &o = this->occurrences[board];
+			if (state != from && this->StateFor(from, o.pattern) == state) continue;
+			auto label = evaluate(board);
+			if (!this->revisits.empty() && this->revisits[board].next != INVALID && this->DominatedRevisit(board,
+					label.cost, evaluate(this->revisits[board].next).cost) &&
+					(!this->continuation_witness || this->HasSameRunContinuationWitness(board, label.alight))) continue;
+			if (label.cost != INT64_MAX) choices.emplace_back(label.cost, board);
+		}
+		if (work == 0) return {};
+		std::sort(choices.begin(), choices.end());
+		auto compute = [&](bool exclude) {
+			PassengerStrategy sum; candidates.clear();
+			for (auto [cost, board] : choices) {
+				const auto &p = this->patterns[this->occurrences[board].pattern];
+				if (exclude && p.members.front().id == failed) continue;
+				if (sum.Add(cost, PassengerStrategy::Frequency(p.wait))) candidates.push_back(board);
+			}
+		};
+		compute(true);
+		if (candidates.empty()) compute(false);
+	}
+
+	double frequency = 0;
+	for (uint32_t board : candidates) frequency += PassengerStrategy::Frequency(this->patterns[this->occurrences[board].pattern].wait);
+	/* Retain the largest branches, without redistributing omitted probability. */
+	std::sort(candidates.begin(), candidates.end(), [&](uint32_t a, uint32_t b) {
+		const auto wa = this->patterns[this->occurrences[a].pattern].wait, wb = this->patterns[this->occurrences[b].pattern].wait;
+		return wa != wb ? wa < wb : a < b;
+	});
+	if (candidates.size() > 64) candidates.resize(64);
+	for (uint32_t board : candidates) {
+		auto label = evaluate(board);
+		if (work == 0) break;
+		auto plan = this->Select(label, StateTicks{}, previous, 0);
+		if (plan.ride) result.candidates.push_back({*plan.ride, PassengerStrategy::Frequency(this->patterns[this->occurrences[board].pattern].wait) / frequency});
+	}
+	return result;
+}
+
 PassengerPrecomputedPlan PassengerPrecomputedTable::Select(const Label &label, StateTicks ready, OrderListID excluded, uint32_t sample) const
 {
 	PassengerPrecomputedPlan result;

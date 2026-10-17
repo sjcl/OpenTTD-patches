@@ -121,6 +121,66 @@ TEST_CASE("Hyperpath frozen graph matches an independent multi-stage rational ev
 	}
 }
 
+TEST_CASE("Route inspection shares Hyperpath frequencies without changing simulation caches", "[passenger][route-overlay]")
+{
+	std::array services{Service(0, {A, B}, 100), Service(1, {B, D}, 100), Service(2, {A, D}, 220)};
+	std::vector<const PassengerPeriodicService *> records; for (const auto &s : services) records.push_back(&s);
+	PassengerPrecomputedTable table;
+	table.Begin(records, PAX, 0, PassengerPrecomputedTable::MAX_BYTES, true, false, {}, true, true, true, true);
+	while (!table.Finished()) table.Step(7);
+	for (auto previous : {OrderListID::Invalid(), OrderListID{0}}) {
+		for (auto failed : {OrderListID::Invalid(), OrderListID{2}}) {
+			const auto before = table.GetDiagnostic(); const auto memory = table.InspectMemory();
+			size_t work = 4096;
+			auto routes = table.InspectRoutes(A, D, previous, failed, work);
+			REQUIRE(routes.state == PassengerPrecomputedPlan::State::Ready);
+			CHECK(table.GetDiagnostic().queries == before.queries);
+			CHECK(table.GetDiagnostic().bytes == before.bytes);
+			CHECK(table.GetDiagnostic().local_replans == before.local_replans);
+			CHECK(table.InspectMemory().local == memory.local);
+			CHECK(table.InspectMemory().reported == memory.reported);
+			auto candidates = table.Candidates(A, D, previous, failed);
+			REQUIRE(routes.candidates.size() == candidates.size());
+			double frequency = 0;
+			for (const auto &route : routes.candidates) frequency += PassengerStrategy::Frequency(*table.ServiceWait(route.ride.service));
+			double probability = 0;
+			for (const auto &route : routes.candidates) {
+				CHECK(route.probability == Approx(PassengerStrategy::Frequency(*table.ServiceWait(route.ride.service)) / frequency));
+				CHECK(route.ride.service != previous);
+				auto actual = table.Board(A, D, StateTicks{}, route.ride.service, route.ride.boarding_order, previous, failed);
+				REQUIRE(actual.ride);
+				CHECK(route.ride.alighting == actual.ride->alighting);
+				probability += route.probability;
+			}
+			CHECK(probability == Approx(1.0));
+		}
+	}
+	size_t work = 0;
+	CHECK(table.InspectRoutes(A, D, OrderListID::Invalid(), OrderListID::Invalid(), work).candidates.empty());
+}
+
+TEST_CASE("Route inspection bounds branches without reallocating their probability or splicing short turns", "[passenger][route-overlay]")
+{
+	std::vector<PassengerPeriodicService> services;
+	for (uint16_t i = 0; i < 80; ++i) services.push_back(Service(i, {A, B, D}));
+	services.push_back(Service(80, {A, B}));
+	std::vector<const PassengerPeriodicService *> records; for (const auto &s : services) records.push_back(&s);
+	PassengerPrecomputedTable table;
+	table.Begin(records, PAX, 0, PassengerPrecomputedTable::MAX_BYTES, true, false, {}, true, true, true, true);
+	while (!table.Finished()) table.Step(65536);
+	size_t work = 65536;
+	auto routes = table.InspectRoutes(A, D, OrderListID::Invalid(), OrderListID::Invalid(), work);
+	REQUIRE(routes.candidates.size() == 64);
+	double probability = 0;
+	for (const auto &candidate : routes.candidates) {
+		if (candidate.ride.service == OrderListID{80}) CHECK(candidate.ride.alighting == B);
+		probability += candidate.probability;
+	}
+	CHECK(probability > 0); CHECK(probability < 1);
+	work = 1;
+	CHECK(table.InspectRoutes(A, D, OrderListID::Invalid(), OrderListID::Invalid(), work).candidates.empty());
+}
+
 TEST_CASE("Hyperpath frozen real map intermediate diagnostic", "[.hyperpath-real][passenger]")
 {
 	const char *path = getenv("OPENTTD_TABLE_DATABASE"); REQUIRE(path != nullptr);
