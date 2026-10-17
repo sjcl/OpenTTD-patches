@@ -471,8 +471,10 @@ static bool IsPassengerVehicleLoadingAtStop(const Vehicle *v, const Order &order
 		case VehicleType::Train: return true; // Train platform/reversal checks remain in LoadUnloadVehicle.
 		case VehicleType::Road: {
 			const RoadVehicle *rv = RoadVehicle::From(v);
+			/* BeginLoading can stop behind another vehicle before RVS_ENTERED_STOP is set.
+			 * The loading order and physical stop checks also cover this case. */
 			return (IsInsideMM(rv->state, RVSB_IN_ROAD_STOP, RVSB_IN_ROAD_STOP_END) ||
-					(IsInsideMM(rv->state, RVSB_IN_DT_ROAD_STOP, RVSB_IN_DT_ROAD_STOP_END) && HasBit(rv->state, RVS_ENTERED_STOP))) &&
+					IsInsideMM(rv->state, RVSB_IN_DT_ROAD_STOP, RVSB_IN_DT_ROAD_STOP_END)) &&
 					IsStationRoadStopTile(v->tile) && GetStationIndex(v->tile) == v->last_station_visited &&
 					HasTileAnyRoadType(v->tile, rv->compatible_roadtypes) && IsInfraTileUsageAllowed(v->type, v->owner, v->tile) &&
 					GetRoadStopType(v->tile) == (IsCargoInClass(v->cargo_type, CargoClass::Passengers) ? RoadStopType::Bus : RoadStopType::Truck) &&
