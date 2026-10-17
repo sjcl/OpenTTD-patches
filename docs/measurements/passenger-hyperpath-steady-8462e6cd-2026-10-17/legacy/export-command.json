@@ -1,0 +1,36 @@
+{
+  "command": [
+    "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-profile\\tools\\wpt\\Windows Kits\\10\\Windows Performance Toolkit\\wpaexporter.exe",
+    "-i",
+    "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-passenger-steady-8462e6cd\\legacy\\cpu.etl",
+    "-symbols",
+    "-marks",
+    "legacy-begin",
+    "legacy-end",
+    "-profile",
+    "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-passenger-steady-8462e6cd\\cpu-sampled.wpaProfile",
+    "-outputfolder",
+    "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-passenger-steady-8462e6cd\\legacy\\wpa",
+    "-outputformat",
+    "CSV"
+  ],
+  "environment": {
+    "_NT_SYMBOL_PATH": "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-passenger-steady-8462e6cd\\Release",
+    "_NT_SYMCACHE_PATH": "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-passenger-steady-8462e6cd\\symcache",
+    "_NT_EXECUTABLE_IMAGE_PATH": "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-passenger-steady-8462e6cd\\Release"
+  },
+  "trace_bytes": 2478833664,
+  "trace_sha256": "5ddb8af6f205071af39927fdcac64ed8aef7c3b0167fa51d12aeb74a108ba851",
+  "pdb_sha256": "af41da80f5f7e3729be213bdbc0f7795c1560291d705d8a73d0af751454b1a5c",
+  "exit_code": 0,
+  "exports": {
+    "CPU_Usage_(Sampled)_Exclusive_functions.csv": {
+      "bytes": 7287013,
+      "sha256": "8f808f276df72f47b80549e6849030f9010e3fe03db4098cb2151c1c071d988c"
+    },
+    "CPU_Usage_(Sampled)_Stacks.csv": {
+      "bytes": 37040378,
+      "sha256": "12fb12a360cb40ddcbe753e47e92ff4959e03f38f0067d00d385eea50b9fe0bf"
+    }
+  }
+}
