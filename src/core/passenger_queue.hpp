@@ -31,7 +31,7 @@ template <typename Item> class PassengerDestinationQueue {
 		Heap<Later> zero;
 		std::vector<std::vector<Item>> ring;
 		std::array<uint64_t, RING / 64> occupied{};
-		Heap<std::greater<Item>> far;
+		Heap<std::greater<Item>> far_heap;
 		uint64_t last = 0, retained_limit = 0;
 		size_t count = 0, bucket_bytes = 0;
 		Radix() : ring(RING) {}
@@ -46,7 +46,7 @@ template <typename Item> class PassengerDestinationQueue {
 				size_t capacity = bucket.capacity(); bucket.push_back(item);
 				this->bucket_bytes += (bucket.capacity() - capacity) * sizeof(Item);
 				this->occupied[slot / 64] |= uint64_t{1} << (slot % 64);
-			} else this->far.push(item);
+			} else this->far_heap.push(item);
 		}
 		/** Distance (1..RING-1) from last to the nearest occupied ring slot, or 0 if none.
 		 * The slot of last itself is always empty: its cost is in the zero heap. */
@@ -71,7 +71,7 @@ template <typename Item> class PassengerDestinationQueue {
 			if (this->zero.empty()) {
 				const uint64_t distance = this->NextOccupied();
 				uint64_t next = distance != 0 ? this->last + distance : UINT64_MAX;
-				if (!this->far.empty()) next = std::min<uint64_t>(next, static_cast<uint64_t>(std::get<0>(this->far.top())));
+				if (!this->far_heap.empty()) next = std::min<uint64_t>(next, static_cast<uint64_t>(std::get<0>(this->far_heap.top())));
 				this->last = next;
 				const size_t slot = next & (RING - 1);
 				auto &bucket = this->ring[slot];
@@ -87,7 +87,7 @@ template <typename Item> class PassengerDestinationQueue {
 						std::vector<Item>().swap(bucket);
 					}
 				}
-				while (!this->far.empty() && static_cast<uint64_t>(std::get<0>(this->far.top())) == next) { this->zero.push(this->far.top()); this->far.pop(); }
+				while (!this->far_heap.empty() && static_cast<uint64_t>(std::get<0>(this->far_heap.top())) == next) { this->zero.push(this->far_heap.top()); this->far_heap.pop(); }
 			}
 			return this->zero.top();
 		}
@@ -113,7 +113,7 @@ public:
 	}
 	size_t AllocatedBytes() const
 	{
-		return this->legacy.Bytes() + (this->radix ? sizeof(Radix) + Radix::RING * sizeof(std::vector<Item>) + this->radix->zero.Bytes() + this->radix->far.Bytes() + this->radix->bucket_bytes : 0);
+		return this->legacy.Bytes() + (this->radix ? sizeof(Radix) + Radix::RING * sizeof(std::vector<Item>) + this->radix->zero.Bytes() + this->radix->far_heap.Bytes() + this->radix->bucket_bytes : 0);
 	}
 };
 
