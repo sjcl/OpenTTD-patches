@@ -1,0 +1,36 @@
+{
+  "simulation_timing_valid": true,
+  "profile_enabled": false,
+  "ticks": 2048,
+  "setup_observation": null,
+  "release_ticks": 0,
+  "calls": 0,
+  "simulation_us": {
+    "mean": 23266.25439453125,
+    "p95": 31551,
+    "p99": 37875,
+    "maximum": 47300
+  },
+  "retirement_us": null,
+  "percentiles": {
+    "p95": {
+      "tick": 3181120522,
+      "simulation_us": 31551,
+      "journey_us": 12311,
+      "retirement_us": 0.0,
+      "calls": 0
+    },
+    "p99": {
+      "tick": 3181120167,
+      "simulation_us": 37875,
+      "journey_us": 14158,
+      "retirement_us": 0.0,
+      "calls": 0
+    }
+  },
+  "tail_release_ticks": {
+    "0.95": 0,
+    "0.99": 0
+  },
+  "worst_retirements": []
+}

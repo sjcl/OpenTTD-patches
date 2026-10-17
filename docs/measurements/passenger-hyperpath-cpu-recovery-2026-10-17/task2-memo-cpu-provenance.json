@@ -1,0 +1,34 @@
+{
+  "revision": "b8bef134b6675847363925bd23feb8a176926f81",
+  "mp": false,
+  "boarding_profile": false,
+  "departure_diagnostic": false,
+  "failure_threshold": null,
+  "failure_threshold_override": null,
+  "files": {
+    "save-integrity\\boarding_profile.h": "6c30914a4c41ac3ffeb68312f8e93f0bffc824e45e5655b880c2b459284f449f",
+    "save-integrity\\cargopacket.cpp": "4de22f8da316f4925d9715fb65370ea80e187343217371d1309e70b05416bbbf",
+    "save-integrity\\cargopacket_sl.cpp": "01f3aa724c405a062682fc1f9251767db0b8ca03ff2bd0759aabfe20c2e70459",
+    "save-integrity\\command.cpp": "2448845810228935a64f761bca62b7e29af553202d61bc3611a6724f03fc7fcd",
+    "save-integrity\\console_cmds.cpp": "7b9f56da43ba122d2417d2c005d6e7fa196de2a6f4c7cb2c2f3984ea292c1e84",
+    "save-integrity\\hyperpath_metrics.h": "2c6b925c3e20c9b1fb78a71facc7c8b5c16123fe8330dbf73fc9f0080fea515e",
+    "save-integrity\\integrity.h": "dcac445f095a810ec12394f606a1d18674a2045c1f24044ea24cf3a142b2e044",
+    "save-integrity\\passenger_precomputed.cpp": "db287763a62d665f72fb2418fdcff23b0fe077b745428ff2b4caca9e5da80033",
+    "save-integrity\\passenger_service_database.cpp": "f418086c94f5a4f63077b8f5f2114037555706c7c5b0168cfc01082c3423146c",
+    "transport-trace\\cargoaction.cpp": "1a1d03adc24462d22acd4a170a29356cd6b7c9c6dee1c9119459177070d69d8d",
+    "transport-trace\\cargopacket.cpp": "bf8156afe5f22b266eb10c562ccecdddcbd17b2bb1c7aee8bbfb7f4cd65d2ac9",
+    "transport-trace\\focus_trace.h": "c93366bf3c73fe75845e5636e41d9ace739defd91ff7ca4bd61967ac6dd10d07",
+    "transport-trace\\passenger_journey_active.cpp": "60888054044d99af058cabdc89714250c862e861a8b7b0c8bba2cc95835dc050",
+    "transport-trace\\passenger_od.cpp": "727f34ced3b3908cb0532a7fbd666d65a8aac9518dcd53f92850210d4456f2ac",
+    "transport-trace\\trace.h": "fff50a15e9f68892f8b91b7acb5b878642eb794e9ac653157dad51e4a447d9a5",
+    "transport-trace\\vehicle.cpp": "a2ae2df10b10c06d787146da16846ea3870b2c40bed2061cc275845abf07555b",
+    "real-map-driver\\null_v.cpp": "9f1e1ead08938ffe9bed533892b3e69fb8b7c7bffcfe2eb0aca851eb2573c108",
+    "real-map-driver\\win32.cpp": "ef0f2bc96d0ed1050fdc7687038bac0f5c64e504a7b6ac6ab769daed5b46c842"
+  },
+  "working_tree_source_files": {
+    "src/passenger_journey_active.cpp": "f76be79783694173e28ae311c60eb26d39a31ab78d6f4d3d4cb0124e18e6ec82",
+    "src/passenger_journey_active.h": "192eb75d71223fbc583f70a6d79b66ef8de3b4c2627c8e5a88272eb3ae7491f6",
+    "src/tests/passenger_service_database.cpp": "116cb8b33b0767a7da1b01b9d1c1c129b919a9479525d7a30fdfd43855bc0fc6"
+  },
+  "working_tree_patch_sha256": "45053f7f3899ff4a7a94dabe4cb4301cc1d2e16697153901bf74e33961a5a0db"
+}

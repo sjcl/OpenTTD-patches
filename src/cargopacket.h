@@ -89,6 +89,7 @@ private:
 	StationID passenger_destination = StationID::Invalid(); ///< Final passenger destination; independent of CargoDist hops and commitments.
 	PassengerRoutingMode passenger_routing_mode = PassengerRoutingMode::Legacy;
 	PassengerJourneyExecution passenger_journey{};
+	PassengerBoardingFailure passenger_boarding_failure{};
 	StationID passenger_legacy_hop = StationID::Invalid(); ///< Current CargoDist hop, revalidated when a waiting journey expires.
 	StationID passenger_retry_station = StationID::Invalid();
 	StateTicks passenger_retry_after{}; ///< Deterministic cooldown, shared by split packets.
@@ -133,6 +134,10 @@ public:
 	StationID GetPassengerDestination() const { return this->passenger_destination; }
 	PassengerRoutingMode GetPassengerRoutingMode() const { return this->passenger_routing_mode; }
 	const PassengerJourneyExecution &GetPassengerJourney() const { return this->passenger_journey; }
+	const PassengerBoardingFailure &GetPassengerBoardingFailure() const { return this->passenger_boarding_failure; }
+	void SetPassengerBoardingFailure(PassengerBoardingFailure failure) { this->passenger_boarding_failure = failure; PassengerWaitingPacketChanged(*this); }
+	void RecordPassengerCapacityFailure(OrderListID service, StateTicks now, int64_t expected_wait = 0);
+	OrderListID GetPassengerFailedService(StateTicks now) const;
 	StationID GetPassengerLegacyHop() const { return this->passenger_legacy_hop; }
 	void SetPassengerLegacyHop(StationID next) { if (this->passenger_legacy_hop != next) { this->passenger_legacy_hop = next; PassengerWaitingRoutingChanged(*this); } }
 	StationID GetPassengerVia() const { return this->passenger_via; }
@@ -160,7 +165,7 @@ public:
 	void ShiftPassengerJourneyTicks(StateTicksDelta delta);
 	bool HasSamePassengerRouting(const CargoPacket &other) const
 	{
-		return this->passenger_routing_mode == other.passenger_routing_mode && this->passenger_journey == other.passenger_journey &&
+		return this->passenger_routing_mode == other.passenger_routing_mode && this->passenger_journey == other.passenger_journey && this->passenger_boarding_failure == other.passenger_boarding_failure &&
 				this->passenger_legacy_hop == other.passenger_legacy_hop && this->passenger_retry_station == other.passenger_retry_station &&
 				this->passenger_retry_after == other.passenger_retry_after && this->passenger_interchange_ready == other.passenger_interchange_ready &&
 				this->passenger_arriving_service == other.passenger_arriving_service && this->passenger_arriving_incarnation == other.passenger_arriving_incarnation && this->passenger_transport == other.passenger_transport &&
@@ -655,10 +660,34 @@ class StationCargoList : public CargoList<StationCargoList, StationCargoPacketMa
 	using FallbackKey = std::tuple<StationID, StationID, OrderListID, uint64_t>; ///< Destination, saved hop, arriving service/incarnation.
 	using BoardingOrder = std::tuple<StationID, uint64_t, CargoPacketID>;
 	using JourneyKey = std::tuple<OrderListID, VehicleID, StationID, VehicleOrderID>;
-	using JourneyRideKey = std::tuple<PassengerJourneyExecution, OrderListID, uint64_t>;
+	using JourneyRideKey = std::tuple<PassengerJourneyExecution, OrderListID, uint64_t, PassengerBoardingFailure>;
 	using JourneyRides = std::map<JourneyRideKey, std::set<BoardingOrder>>;
 	using JourneyIndex = std::map<JourneyKey, JourneyRides>;
 	static JourneyKey BoardingJourneyKey(const CargoPacket &packet);
+	using HyperpathKey = std::tuple<StationID, uint64_t, uint64_t, OrderListID, uint64_t, OrderListID, uint64_t>;
+	struct HyperpathWaiting {
+		std::set<BoardingOrder> packets; std::multiset<StateTicks> expiries;
+		/* Derived lookup state, never saved: HYPERPATH_UNINDEXED, HYPERPATH_PENDING, NONE, table slot 0/1 or ALWAYS. */
+		int8_t lookup_slot = -2;
+		std::vector<uint32_t> lookup_occurrences; ///< Entries in the slot table's occurrence numbering.
+	};
+	using HyperpathGroups = std::map<HyperpathKey, HyperpathWaiting>;
+	struct HyperpathGroupRef { StationID destination; HyperpathGroups::iterator group; };
+	/** Derived occurrence -> waiting policy group lookup, replacing the walk over every group.
+	 * Rebuilt from the database epoch; kept current from its destination change log and the
+	 * groups created since the last refresh. */
+	struct HyperpathLookup {
+		uint64_t epoch = UINT64_MAX, changes = UINT64_MAX;
+		StationID station = StationID::Invalid();
+		CargoType cargo = INVALID_CARGO;
+		std::array<std::unordered_map<uint32_t, std::vector<HyperpathGroupRef>>, 2> occurrences;
+		std::vector<HyperpathGroupRef> always; ///< Failed-carrier groups and legacy plans.
+		std::vector<HyperpathGroupRef> pending; ///< New groups (HYPERPATH_PENDING) awaiting their first index.
+		std::vector<StationID> changed; ///< Scratch for the change log.
+	};
+	static constexpr int8_t HYPERPATH_UNINDEXED = -2, HYPERPATH_PENDING = -3;
+	static HyperpathKey BoardingHyperpathKey(const JourneyRideKey &ride);
+	static StateTicks BoardingHyperpathExpiry(const JourneyRideKey &ride);
 	struct WaitingEntry {
 		StationID key;
 		StationCargoPacketList::iterator position;
@@ -679,6 +708,11 @@ class StationCargoList : public CargoList<StationCargoList, StationCargoPacketMa
 	mutable std::unordered_map<uint64_t, std::set<std::pair<uint16_t, CargoPacketID>>> merge_index;
 	mutable JourneyIndex boarding_index;
 	mutable std::map<uint64_t, std::map<JourneyRideKey, const std::set<BoardingOrder> *>> section_boarding_index; ///< Raw saved order-pair keys to shared cohort queues.
+	mutable std::map<StationID, HyperpathGroups> hyperpath_boarding_index; ///< Option (b): policy-state queues, independent of per-packet decision timestamps and table publication.
+	mutable HyperpathLookup hyperpath_lookup;
+	void IndexHyperpathGroup(StationID destination, HyperpathGroups::iterator group) const;
+	void UnindexHyperpathGroup(HyperpathGroups::iterator group) const;
+	void RefreshHyperpathLookup(StationID station) const;
 	mutable std::map<OrderListID, size_t> boarding_services;
 	mutable std::map<std::pair<bool, StationID>, std::set<BoardingOrder>> legacy_boarding_index;
 	mutable std::map<FallbackKey, std::set<BoardingOrder>> fallback_boarding_index;
@@ -687,6 +721,8 @@ class StationCargoList : public CargoList<StationCargoList, StationCargoPacketMa
 	mutable std::multimap<StateTicks, CargoPacketID> waiting_wake;
 	mutable std::set<std::pair<StateTicks, CargoPacketID>> routing_events; ///< Erasable time priority queue, without stale tombstones.
 	mutable std::set<CargoPacketID> routing_packets; ///< Unresolved OD only; deterministic generation cursor, independent of primary queue order.
+	mutable std::set<CargoPacketID> legacy_journey_packets; ///< Saved legacy intents eligible for budgeted migration when Hyperpath is enabled.
+	CargoPacketID NextPassengerGenerationPacket(uint32_t cursor) const;
 	StationID passenger_station = StationID::Invalid(); ///< Derived owner, assigned when the goods entry is created.
 	mutable StateTicks passenger_scheduled_at = INVALID_STATE_TICKS; ///< Derived national queue handle.
 	mutable bool passenger_unresolved_registered = false;
@@ -694,7 +730,7 @@ class StationCargoList : public CargoList<StationCargoList, StationCargoPacketMa
 	void EnsureWaitingIndex() const;
 	void AddBoardingEntry(CargoPacketID id, WaitingEntry &entry) const;
 	void RemoveBoardingEntry(CargoPacketID id, const WaitingEntry &entry) const;
-	template <typename Visitor> bool VisitBoardingCandidates(std::span<const StationID> next, const Vehicle *vehicle, PassengerJourneyLoadingContext &loading, Visitor &&visitor) const;
+	template <typename Visitor> bool VisitBoardingCandidates(std::span<const StationID> next, const Vehicle *vehicle, PassengerJourneyLoadingContext &loading, Visitor &&visitor, bool defer_hyperpath = true) const;
 	template <class Taction> uint ShiftIndexedJourneyCargo(Taction action, std::span<const StationID> next, const Vehicle *vehicle, PassengerJourneyLoadingContext &loading);
 protected:
 	/** The (direct) parent of this class. */
@@ -776,6 +812,7 @@ public:
 	 * @return If there is any cargo for that station.
 	 */
 	bool HasCargoFor(std::span<const StationID> next, const Vehicle *vehicle = nullptr, PassengerJourneyLoadingContext *loading = nullptr, CargoType cargo = INVALID_CARGO) const;
+	void RecordCapacityMiss(std::span<const StationID> next, const Vehicle *vehicle, CargoType cargo, PassengerJourneyLoadingContext &loading);
 	/** Re-key waiting packets without touching count/payment caches or splitting them. */
 	size_t RoutePassengerJourneys(CargoType cargo, StationID station, bool allow_search = true, PassengerJourneyLoadingContext *loading = nullptr);
 

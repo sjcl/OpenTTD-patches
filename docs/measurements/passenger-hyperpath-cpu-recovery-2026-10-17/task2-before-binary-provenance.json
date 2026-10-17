@@ -1,0 +1,26 @@
+{
+  "revision": "21b7f06ad9cbe7e214ac3762d9e73f56e6f3fc46",
+  "mp": false,
+  "boarding_profile": false,
+  "files": {
+    "save-integrity\\cargopacket.cpp": "795fa95454fcf8fef48270c9ac4924ebafa23bcd271a96de2319a57cab508a95",
+    "save-integrity\\cargopacket_sl.cpp": "9b8cd9f110d7a27166c689f63fc6e2f703f4c3c74274e3c1ac254722046a6f1d",
+    "save-integrity\\command.cpp": "6fa41dae0388156deccaa28daeba508d23023655e2fcab071330b291fe796736",
+    "save-integrity\\console_cmds.cpp": "9a32666d24f30d2044c7cef22868bcfd6f60bbcaf9d2489c6228d66c44efd2db",
+    "save-integrity\\hyperpath_metrics.h": "2c6b925c3e20c9b1fb78a71facc7c8b5c16123fe8330dbf73fc9f0080fea515e",
+    "save-integrity\\integrity.h": "45f35ac76686b74464a54f39e2b6b3c3d7faa21d1a3547eb9d61ed7112a48b9b",
+    "save-integrity\\passenger_precomputed.cpp": "770a2b59eee6950cf5605d674a89cf707a02840e6a421f33f0981f971a117d36",
+    "save-integrity\\passenger_service_database.cpp": "06aba2d82a1d5e0d727cb4687e3e1fb27f9de421f291c4afd00dfe7c79341a72",
+    "transport-trace\\cargoaction.cpp": "1acce74a43422d819ad853f70056724db9c2180826c4f9d2b1dbff6643501462",
+    "transport-trace\\cargopacket.cpp": "5cd3acf24b710195866cf23596dfe918943ee71b98689c085adf1b055df64834",
+    "transport-trace\\focus_trace.h": "45c9db801069e2339fb84e6fb85084a0d28ce736c6f4500e3983f24d99bfd582",
+    "transport-trace\\passenger_journey_active.cpp": "76a821f27758161406041775eeb912cee7c56ca35bd6b459bcdef2e1698af5b1",
+    "transport-trace\\passenger_od.cpp": "1240907bbce9fb3bf4a558c886f635facadc9708b812313d35e7b764156604b9",
+    "transport-trace\\trace.h": "df59725ce52494253b64924fb2b269aa7edeb09483565f339cea7daa43b1c7d5",
+    "transport-trace\\vehicle.cpp": "d6d814a211bb997c2165e1c69d110a3756e74f9b8b4b19506e1556d191d2ec4f",
+    "real-map-driver\\null_v.cpp": "08a448a2a3ef8427bd9795a96d64821f30437e807974fca3a641e68067e67497",
+    "real-map-driver\\win32.cpp": "318ff9df71a1f1edaaf6f3e321e33695521b978d45035c349737f092f4a7e602"
+  },
+  "working_tree_source_files": {},
+  "working_tree_patch_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+}

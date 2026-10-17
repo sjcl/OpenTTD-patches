@@ -1,0 +1,196 @@
+{
+  "validate": {
+    "filter": {
+      "enabled": "false",
+      "mode": "validate",
+      "filtered_walks": 0,
+      "unfiltered_walks": 144211,
+      "indexed_walks": 0,
+      "groups_checked": 22948078,
+      "groups_skipped": 0,
+      "groups_admitted": 583649
+    },
+    "filter_line": "Passenger hyperpath boarding filter: enabled=false; mode=validate; filtered_walks=0; unfiltered_walks=144211; indexed_walks=0; groups_checked=22948078; groups_skipped=0; groups_admitted=583649",
+    "time": {
+      "filtered_us": 0,
+      "filtered_groups": 0,
+      "unfiltered_us": 5222187,
+      "unfiltered_groups": 22948078,
+      "indexed_us": 0,
+      "indexed_groups": 0
+    },
+    "time_line": "Passenger hyperpath walk time: filtered_us=0; filtered_groups=0; unfiltered_us=5222187; unfiltered_groups=22948078; indexed_us=0; indexed_groups=0",
+    "lookup": {
+      "rebuilds": 3299,
+      "indexed_groups": 157966,
+      "validated_groups": 583649,
+      "violations": 0
+    },
+    "lookup_line": "Passenger hyperpath lookup: rebuilds=3299; indexed_groups=157966; validated_groups=583649; violations=0",
+    "ticks": 2048,
+    "canonical_fields_equal": 24,
+    "rebuilds_per_tick": 1.61083984375,
+    "reindexed_groups_per_tick": 77.1318359375
+  },
+  "alternate": {
+    "filter": {
+      "enabled": "false",
+      "mode": "alternate",
+      "filtered_walks": 71953,
+      "unfiltered_walks": 0,
+      "indexed_walks": 72258,
+      "groups_checked": 2555493,
+      "groups_skipped": 9779530,
+      "groups_admitted": 583649
+    },
+    "filter_line": "Passenger hyperpath boarding filter: enabled=false; mode=alternate; filtered_walks=71953; unfiltered_walks=0; indexed_walks=72258; groups_checked=2555493; groups_skipped=9779530; groups_admitted=583649",
+    "time": {
+      "filtered_us": 1051028,
+      "filtered_groups": 11624389,
+      "unfiltered_us": 0,
+      "unfiltered_groups": 0,
+      "indexed_us": 659510,
+      "indexed_groups": 710634
+    },
+    "time_line": "Passenger hyperpath walk time: filtered_us=1051028; filtered_groups=11624389; unfiltered_us=0; unfiltered_groups=0; indexed_us=659510; indexed_groups=710634",
+    "lookup": {
+      "rebuilds": 2778,
+      "indexed_groups": 130874,
+      "validated_groups": 0,
+      "violations": 0
+    },
+    "lookup_line": "Passenger hyperpath lookup: rebuilds=2778; indexed_groups=130874; validated_groups=0; violations=0",
+    "ticks": 2048,
+    "canonical_fields_equal": 24,
+    "rebuilds_per_tick": 1.3564453125,
+    "reindexed_groups_per_tick": 63.9033203125
+  },
+  "legacy": {
+    "filter": {
+      "enabled": "false",
+      "mode": "index",
+      "filtered_walks": 0,
+      "unfiltered_walks": 0,
+      "indexed_walks": 0,
+      "groups_checked": 0,
+      "groups_skipped": 0,
+      "groups_admitted": 0
+    },
+    "filter_line": "Passenger hyperpath boarding filter: enabled=false; mode=index; filtered_walks=0; unfiltered_walks=0; indexed_walks=0; groups_checked=0; groups_skipped=0; groups_admitted=0",
+    "time": {
+      "filtered_us": 0,
+      "filtered_groups": 0,
+      "unfiltered_us": 0,
+      "unfiltered_groups": 0,
+      "indexed_us": 0,
+      "indexed_groups": 0
+    },
+    "time_line": "Passenger hyperpath walk time: filtered_us=0; filtered_groups=0; unfiltered_us=0; unfiltered_groups=0; indexed_us=0; indexed_groups=0",
+    "lookup": {
+      "rebuilds": 0,
+      "indexed_groups": 0,
+      "validated_groups": 0,
+      "violations": 0
+    },
+    "lookup_line": "Passenger hyperpath lookup: rebuilds=0; indexed_groups=0; validated_groups=0; violations=0",
+    "ticks": 2048,
+    "canonical_fields_equal": 24,
+    "rebuilds_per_tick": 0.0,
+    "reindexed_groups_per_tick": 0.0
+  },
+  "hyperpath": {
+    "filter": {
+      "enabled": "false",
+      "mode": "index",
+      "filtered_walks": 0,
+      "unfiltered_walks": 0,
+      "indexed_walks": 144211,
+      "groups_checked": 1645937,
+      "groups_skipped": 0,
+      "groups_admitted": 583649
+    },
+    "filter_line": "Passenger hyperpath boarding filter: enabled=false; mode=index; filtered_walks=0; unfiltered_walks=0; indexed_walks=144211; groups_checked=1645937; groups_skipped=0; groups_admitted=583649",
+    "time": {
+      "filtered_us": 0,
+      "filtered_groups": 0,
+      "unfiltered_us": 0,
+      "unfiltered_groups": 0,
+      "indexed_us": 1399230,
+      "indexed_groups": 1645937
+    },
+    "time_line": "Passenger hyperpath walk time: filtered_us=0; filtered_groups=0; unfiltered_us=0; unfiltered_groups=0; indexed_us=1399230; indexed_groups=1645937",
+    "lookup": {
+      "rebuilds": 3299,
+      "indexed_groups": 157966,
+      "validated_groups": 0,
+      "violations": 0
+    },
+    "lookup_line": "Passenger hyperpath lookup: rebuilds=3299; indexed_groups=157966; validated_groups=0; violations=0",
+    "ticks": 2048,
+    "canonical_fields_equal": 24,
+    "rebuilds_per_tick": 1.61083984375,
+    "reindexed_groups_per_tick": 77.1318359375
+  },
+  "reference_67cbbf32_filter": {
+    "enabled": "true",
+    "mode": "on",
+    "filtered_walks": 144211,
+    "unfiltered_walks": 0,
+    "groups_checked": 3443593,
+    "groups_skipped": 19504485,
+    "groups_admitted": 583649
+  },
+  "previous_2d51a9ca_lookup_comparison": [
+    {
+      "run": "validate",
+      "before_rebuilds": 30582,
+      "after_rebuilds": 3299,
+      "rebuild_reduction_percent": 89.21260872408607,
+      "before_indexed_groups": 2475339,
+      "after_indexed_groups": 157966,
+      "indexed_group_reduction_percent": 93.61840943806081
+    },
+    {
+      "run": "alternate",
+      "before_rebuilds": 15365,
+      "after_rebuilds": 2778,
+      "rebuild_reduction_percent": 81.91994793361536,
+      "before_indexed_groups": 1230198,
+      "after_indexed_groups": 130874,
+      "indexed_group_reduction_percent": 89.36154992936096
+    },
+    {
+      "run": "hyperpath",
+      "before_rebuilds": 30582,
+      "after_rebuilds": 3299,
+      "rebuild_reduction_percent": 89.21260872408607,
+      "before_indexed_groups": 2475339,
+      "after_indexed_groups": 157966,
+      "indexed_group_reduction_percent": 93.61840943806081
+    }
+  ],
+  "alternate_comparison": {
+    "rows": [
+      {
+        "mode": "filtered",
+        "walks": 71953,
+        "total_us": 1051028,
+        "groups": 11624389,
+        "us_per_walk": 14.60714633163315,
+        "groups_per_walk": 161.55530693647242
+      },
+      {
+        "mode": "indexed",
+        "walks": 72258,
+        "total_us": 659510,
+        "groups": 710634,
+        "us_per_walk": 9.127155470674527,
+        "groups_per_walk": 9.834675745246201
+      }
+    ],
+    "walks_per_tick": 70.41552734375,
+    "saved_us_per_walk": 5.4799908609586225,
+    "estimated_saved_ms_per_tick": 0.385876446313332,
+    "mixed_measured_walk_ms_per_tick": 0.8352236328125
+  }
+}

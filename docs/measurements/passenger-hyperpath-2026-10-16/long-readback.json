@@ -1,0 +1,114 @@
+{
+  "runs": [
+    {
+      "run": "previous",
+      "canonical_mismatches": {},
+      "state_ticks": 3181119581,
+      "active_events": {
+        "pending": 205792,
+        "overdue": 42,
+        "oldest_ticks": 0,
+        "maximum_station_backlog": 8676,
+        "on_time": 0,
+        "packets": 0,
+        "groups": 0,
+        "scheduler_us": 0,
+        "arrival_candidates": 0,
+        "arrival_passengers": 0,
+        "unresolved_missed_estimate": 0
+      },
+      "passenger_inventory": {
+        "complete": true,
+        "waiting": 351526,
+        "available": 351526,
+        "reserved": 0,
+        "deferred": 393,
+        "state_ticks": 3181119581,
+        "scaled_ticks": 3015520483,
+        "modes": {
+          "Legacy": {
+            "people": 30168,
+            "packets": 2625,
+            "known_OD": 440
+          },
+          "Journey": {
+            "people": 618764,
+            "packets": 433038,
+            "known_OD": 618764
+          },
+          "Fallback": {
+            "people": 95114,
+            "packets": 21910,
+            "known_OD": 9772
+          }
+        },
+        "total_people": 744046,
+        "physically_onboard_people": 392520
+      },
+      "merge_census": {
+        "station_packets": 216523,
+        "failure_packets": 0,
+        "failure_passengers": 0,
+        "strict_repacked": 209510,
+        "ignore_failure_repacked": 209510,
+        "additional_failure_bins": 0,
+        "repack_allows_splits": true
+      }
+    },
+    {
+      "run": "hyperpath",
+      "canonical_mismatches": {},
+      "state_ticks": 3181119581,
+      "active_events": {
+        "pending": 162707,
+        "overdue": 41,
+        "oldest_ticks": 0,
+        "maximum_station_backlog": 5535,
+        "on_time": 0,
+        "packets": 0,
+        "groups": 0,
+        "scheduler_us": 0,
+        "arrival_candidates": 0,
+        "arrival_passengers": 0,
+        "unresolved_missed_estimate": 0
+      },
+      "passenger_inventory": {
+        "complete": true,
+        "waiting": 300976,
+        "available": 300976,
+        "reserved": 0,
+        "deferred": 378,
+        "state_ticks": 3181119581,
+        "scaled_ticks": 3015520483,
+        "modes": {
+          "Legacy": {
+            "people": 30163,
+            "packets": 2611,
+            "known_OD": 424
+          },
+          "Journey": {
+            "people": 592847,
+            "packets": 426917,
+            "known_OD": 592847
+          },
+          "Fallback": {
+            "people": 99112,
+            "packets": 23611,
+            "known_OD": 9757
+          }
+        },
+        "total_people": 722122,
+        "physically_onboard_people": 421146
+      },
+      "merge_census": {
+        "station_packets": 175103,
+        "failure_packets": 37344,
+        "failure_passengers": 89281,
+        "strict_repacked": 165712,
+        "ignore_failure_repacked": 165522,
+        "additional_failure_bins": 190,
+        "repack_allows_splits": true
+      }
+    }
+  ]
+}

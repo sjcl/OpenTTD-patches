@@ -1,0 +1,30 @@
+{
+  "previous": {
+    "capacity_missed_packets": 0,
+    "capacity_missed_passengers": 0,
+    "local_replans": 0,
+    "departure_observer": false,
+    "input_sha256": "306a8d3094c406286ff1dd3249f1726bf9d10e230ead593eacdd91efc43ac629"
+  },
+  "before_threshold_hyperpath": {
+    "capacity_missed_packets": 658911,
+    "capacity_missed_passengers": 1279457,
+    "local_replans": 10660,
+    "departure_observer": true,
+    "input_sha256": "306a8d3094c406286ff1dd3249f1726bf9d10e230ead593eacdd91efc43ac629"
+  },
+  "2048": {
+    "capacity_missed_packets": 675595,
+    "capacity_missed_passengers": 1358516,
+    "local_replans": 1355972,
+    "departure_observer": false,
+    "input_sha256": "306a8d3094c406286ff1dd3249f1726bf9d10e230ead593eacdd91efc43ac629"
+  },
+  "4096": {
+    "capacity_missed_packets": 663975,
+    "capacity_missed_passengers": 1309587,
+    "local_replans": 395601,
+    "departure_observer": false,
+    "input_sha256": "306a8d3094c406286ff1dd3249f1726bf9d10e230ead593eacdd91efc43ac629"
+  }
+}

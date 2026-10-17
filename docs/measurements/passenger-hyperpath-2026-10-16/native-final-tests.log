@@ -1,0 +1,13 @@
+Test project C:/Users/bebe/.codex/worktrees/33d4/OpenTTD-patches/build-hyperpath
+    Start 387: Hyperpath boards the first attractive local or express and preserves a split policy
+1/4 Test #387: Hyperpath boards the first attractive local or express and preserves a split policy ....................   Passed    0.20 sec
+    Start 388: Hyperpath does not board an express for a local-only destination
+2/4 Test #388: Hyperpath does not board an express for a local-only destination .......................................   Passed    0.18 sec
+    Start 390: Hyperpath capacity misses do not depend on pending-index residency
+3/4 Test #390: Hyperpath capacity misses do not depend on pending-index residency .....................................   Passed    0.22 sec
+    Start 391: Hyperpath reservations retain failures until physical boarding and restore a shared policy on return
+4/4 Test #391: Hyperpath reservations retain failures until physical boarding and restore a shared policy on return ...   Passed    0.19 sec
+
+100% tests passed, 0 tests failed out of 4
+
+Total Test time (real) =   1.20 sec

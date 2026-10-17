@@ -970,6 +970,7 @@ struct LinkGraphSettings {
 	bool passenger_journey_routing = false;            ///< execute explicit-OD passenger train journeys
 	bool passenger_journey_periodic = true;            ///< long-lived periodic service backend
 	bool passenger_journey_precomputed = false;        ///< shared destination trees over static service occurrences
+	bool passenger_journey_hyperpath = true;           ///< shared attractive-service strategies; false retains the old table for controlled comparisons
 	uint16_t passenger_transfer_penalty;                ///< minimum connection time and transfer cost, in ticks
 	uint16_t transfer_penalty_same_mode;                ///< path cost penalty (in days) for transferring between routes of the same vehicle type
 	uint16_t transfer_penalty_mode_change;              ///< path cost penalty (in days) for transferring between routes of different vehicle types

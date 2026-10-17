@@ -46,12 +46,24 @@ namespace {
 		order.SetWaitTime(wait); order.SetWaitTimetabled(true);
 		return order;
 	}
+	std::vector<uint8_t> WithoutWitnessTrailer(std::vector<uint8_t> wire)
+	{
+		if (wire[0] == 15) { REQUIRE(wire.size() >= 24); wire.resize(wire.size() - 16); wire[0] = 14; }
+		if (wire[0] == 14) {
+			uint64_t words = 0; for (size_t i = 0; i < 8; ++i) words |= uint64_t(wire[wire.size() - 8 + i]) << (8 * i);
+			REQUIRE(words >= 2); REQUIRE(words < wire.size() / 8);
+			wire.resize(wire.size() - (words + 1) * 8); wire[0] = 13;
+		}
+		REQUIRE(wire[0] == 13);
+		return wire;
+	}
 	/** Produce the actual pre-estimate record layout for compatibility fixtures.
 	 * Only certified services are used here; dropping estimates is never a
 	 * production save operation. Counts are parsed instead of guessing offsets. */
-	std::vector<uint8_t> LegacyDatabaseWire(const std::vector<uint8_t> &wire, uint8_t version = 8, size_t *current_cursor_offset = nullptr)
+	std::vector<uint8_t> LegacyDatabaseWire(const std::vector<uint8_t> &input, uint8_t version = 8, size_t *current_cursor_offset = nullptr)
 	{
-		REQUIRE(wire[0] == 11); REQUIRE((version == 3 || version == 8));
+		const auto wire = WithoutWitnessTrailer(input);
+		REQUIRE(wire[0] == 13); REQUIRE((version == 3 || version == 8));
 		std::vector<uint8_t> old; size_t cursor = 0;
 		auto value = [&]() { REQUIRE(cursor + 8 <= wire.size()); uint64_t v = 0; for (size_t i = 0; i < 8; ++i) v |= uint64_t{wire[cursor++]} << (8 * i); return v; };
 		auto copy = [&]() { size_t start = cursor; auto v = value(); old.insert(old.end(), wire.begin() + start, wire.begin() + cursor); return v; };
@@ -72,7 +84,8 @@ namespace {
 		if (version == 3) return old;
 		words(5); for (uint64_t n = copy(); n != 0; --n) service();
 		words(2); for (uint64_t n = copy(); n != 0; --n) service();
-		words(2); value(); value(); value(); value(); value(); value(); REQUIRE(cursor == wire.size());
+		words(2); value(); value(); value(); value(); value(); value();
+		REQUIRE(value() == 0); REQUIRE(value() == 0); value(); value(); value(); value(); REQUIRE(cursor == wire.size());
 		return old;
 	}
 	struct PeriodicTrain : Vehicle {
@@ -110,6 +123,7 @@ namespace {
 			REQUIRE(Vehicle::GetNumItems() == 0); REQUIRE(Station::GetNumItems() == 0);
 			AllocateMap(128, 128);
 			_settings_game.linkgraph.passenger_journey_routing = _settings_game.linkgraph.passenger_journey_periodic = true;
+			_settings_game.linkgraph.passenger_journey_hyperpath = false; // This fixture preserves historical routing expectations; strategy tests opt in explicitly.
 			_settings_game.linkgraph.distribution_per_cargo[PAX] = DistributionType::Asymmetric;
 			_settings_game.linkgraph.passenger_transfer_penalty = 0;
 			ResetPassengerServiceDatabase(); BeginPassengerJourneyTick();
@@ -200,11 +214,11 @@ TEST_CASE("JPSD v9 partial trees replay with their original operation sequence",
 	std::array records{service};
 	PassengerPrecomputedTable original;
 	original.Begin(records, PAX, 0, PassengerPrecomputedTable::MAX_BYTES, true, false, {}, true, false);
-	const auto saved = db.Save();
+	const auto saved = WithoutWitnessTrailer(db.Save());
 	size_t offset; LegacyDatabaseWire(saved, 3, &offset);
 	for (size_t allowance : {size_t{1}, size_t{17}, size_t{89}, size_t{300}}) {
 		original.Step(allowance);
-		auto old = saved; old[0] = 9; old.resize(old.size() - 32);
+		auto old = saved; old[0] = 9; old.resize(old.size() - 80);
 		uint64_t operations = original.GetDiagnostic().operations;
 		for (size_t i = 0; i < 8; ++i) old[offset + i] = (operations >> (i * 8)) & 255;
 		PassengerServiceDatabase peer; REQUIRE(peer.Load(old)); peer.FinishLoad(true, true);
@@ -216,11 +230,11 @@ TEST_CASE("JPSD v9 partial trees replay with their original operation sequence",
 			auto a = original.Plan(from, to, NOW), b = peer.PlanPrecomputed(PAX, from, to, NOW);
 			CHECK(a.state == b.state); CHECK(a.ride == b.ride); CHECK(a.cost == b.cost);
 		}
-		auto current = peer.Save(); REQUIRE(current[0] == 11); CHECK(current[current.size() - 32] == 0);
-		PassengerServiceDatabase joined; REQUIRE(joined.Load(current)); joined.FinishLoad(true); CHECK(joined.Save() == current);
+		auto current = WithoutWitnessTrailer(peer.Save()); CHECK(current[current.size() - 80] == 0);
+		PassengerServiceDatabase joined; REQUIRE(joined.Load(current)); joined.FinishLoad(true); CHECK(WithoutWitnessTrailer(joined.Save()) == current);
 		while (!peer.PrecomputedFinished()) peer.TickPrecomputed(7);
 		/* Migration begins only after the old generation has fully finished. */
-		peer.TickPrecomputed(1); CHECK(peer.Save()[peer.Save().size() - 32] == 1);
+		peer.TickPrecomputed(1); auto migrated = WithoutWitnessTrailer(peer.Save()); CHECK(migrated[migrated.size() - 80] == 1);
 	}
 }
 
@@ -231,8 +245,8 @@ TEST_CASE("JPSD v10 optimized cursors retain the pre-range graph and Work sequen
 	std::array records{db.Get(train->orders->index)};
 	PassengerPrecomputedTable original;
 	original.Begin(records, PAX, 0, PassengerPrecomputedTable::MAX_BYTES, true, false, {}, true, true, false);
-	auto wire = db.Save(); size_t offset; LegacyDatabaseWire(wire, 3, &offset);
-	wire[0] = 10; wire.resize(wire.size() - 16);
+	auto wire = WithoutWitnessTrailer(db.Save()); size_t offset; LegacyDatabaseWire(wire, 3, &offset);
+	wire[0] = 10; wire.resize(wire.size() - 64);
 	for (size_t allowance : {size_t{1}, size_t{17}, size_t{89}, size_t{300}}) {
 		original.Step(allowance);
 		uint64_t operations = original.GetDiagnostic().operations;
@@ -246,8 +260,8 @@ TEST_CASE("JPSD v10 optimized cursors retain the pre-range graph and Work sequen
 			auto a = original.Plan(from, to, NOW), b = peer.PlanPrecomputed(PAX, from, to, NOW);
 			CHECK(a.state == b.state); CHECK(a.ride == b.ride); CHECK(a.cost == b.cost);
 		}
-		auto current = peer.Save(); REQUIRE(current[0] == 11);
-		CHECK(current[current.size() - 32] == 1); CHECK(current[current.size() - 16] == 0);
+		auto current = WithoutWitnessTrailer(peer.Save());
+		CHECK(current[current.size() - 80] == 1); CHECK(current[current.size() - 64] == 0);
 	}
 }
 
@@ -1389,9 +1403,18 @@ TEST_CASE("Periodic scheduler progress and captured phases survive save and join
 TEST_CASE("Periodic database rejects malformed and oversized saved state", "[passenger][periodic][save]")
 {
 	Fixture f; f.Train({Stop(A), Stop(D)}); auto &db = f.Build(); auto wire = db.Save(); PassengerServiceDatabase other;
-	wire.pop_back(); CHECK_FALSE(other.Load(wire)); wire = db.Save(); wire[0] = 12; CHECK_FALSE(other.Load(wire));
-	wire = db.Save(); wire[wire.size() - 16] = 2; CHECK_FALSE(other.Load(wire));
-	wire = db.Save(); wire[wire.size() - 8] = 2; CHECK_FALSE(other.Load(wire));
+	wire.pop_back(); CHECK_FALSE(other.Load(wire)); wire = db.Save(); wire[0] = 16; CHECK_FALSE(other.Load(wire));
+	wire = WithoutWitnessTrailer(db.Save()); wire[wire.size() - 48] = 2; CHECK_FALSE(other.Load(wire));
+	wire = WithoutWitnessTrailer(db.Save()); wire[wire.size() - 40] = 2; CHECK_FALSE(other.Load(wire));
+	wire = WithoutWitnessTrailer(db.Save()); wire[wire.size() - 16] = 2; CHECK_FALSE(other.Load(wire));
+	wire = db.Save(); wire.back() = 255; CHECK_FALSE(other.Load(wire));
+	wire = db.Save(); {
+		const size_t witness_end = wire.size() - 16;
+		uint64_t words = 0; for (size_t i = 0; i < 8; ++i) words |= uint64_t(wire[witness_end - 8 + i]) << (8 * i);
+		size_t trailer = witness_end - (words + 1) * 8;
+		wire[trailer] = 2; CHECK_FALSE(other.Load(wire));
+		wire = db.Save(); wire[trailer + 16] |= 7; CHECK_FALSE(other.Load(wire)); // Invalid packed facility key.
+	}
 	CHECK(other.GetDiagnostic().services == 0);
 }
 
@@ -2603,6 +2626,403 @@ TEST_CASE("Depot entry without a wait preserves full cycles and queued saved pub
 	}
 }
 
+TEST_CASE("Hyperpath absorbs a repeated station into its later departure", "[passenger][hyperpath][revisit][replan]")
+{
+	Fixture f;
+	auto *train = f.Train({Stop(A, 1000, 7), Stop(B, 20, 11), Stop(A, 20, 13), Stop(D, 1000, 17)});
+	auto &db = f.Build(); auto service = *db.Get(train->orders->index);
+	VehicleOrderID early = 0, later = 2;
+	bool earlier_needed = false;
+	SECTION("Return within the order list") {}
+	SECTION("Return across the circuit seam") {
+		std::swap(service.timetable.stops[1].station, service.timetable.stops[3].station);
+		early = 2; later = 0;
+	}
+	SECTION("A return which forbids boarding cannot absorb the earlier opportunity") { service.timetable.stops[2].board = 0; earlier_needed = true; }
+	SECTION("Different road-order facility directions are not a boarding proof") {
+		service.vehicles[0].type = VehicleType::Road; service.timetable.stops[0].boarding_facility = 2; service.timetable.stops[2].boarding_facility = 3; earlier_needed = true;
+	}
+	SECTION("Unknown road-order facility access is not a boarding proof") {
+		service.vehicles[0].type = VehicleType::Road; service.timetable.stops[0].boarding_facility = service.timetable.stops[2].boarding_facility = 0; earlier_needed = true;
+	}
+	SECTION("Forced unloading terminates the continuation") { service.timetable.stops[1].forced = uint64_t{1} << PAX; }
+	SECTION("A broken continuation terminates the ride") { service.timetable.stops[1].continues = false; }
+	SECTION("Estimated travel uncertainty and dwell are included") {
+		service.timetable.stops[1].travel_quality = service.timetable.stops[2].travel_quality = 2;
+	}
+	std::array records{&service}; PassengerPrecomputedTable table;
+	table.Begin(records, PAX, 0, PassengerPrecomputedTable::MAX_HYPERPATH_BYTES, true, false, {}, true, true, true, true);
+	while (!table.Finished()) table.Step(7);
+	auto memory = table.InspectMemory();
+	CHECK(memory.unexpected_removals == 0);
+	CHECK(memory.labels + memory.indices + memory.policy_headers + memory.candidate_arrays + memory.graph <= memory.reported);
+	for (OrderListID failed : {OrderListID::Invalid(), OrderListID{123}}) {
+		auto down = table.Board(A, D, NOW, service.id, early, OrderListID::Invalid(), failed);
+		CHECK(bool(down.ride) == earlier_needed);
+		if (service.timetable.stops[2].board != 0) CHECK(table.Board(A, D, NOW, service.id, later, OrderListID::Invalid(), failed).ride);
+		CHECK(table.Board(A, B, NOW, service.id, early, OrderListID::Invalid(), failed).ride);
+	}
+}
+
+TEST_CASE("JPSD v12 and v13 repeat-visit strategies retain their saved event sequence", "[passenger][hyperpath][revisit][save][network]")
+{
+	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = _settings_game.linkgraph.passenger_journey_hyperpath = true;
+	auto *train = f.Train({Stop(A, 1000), Stop(B, 20), Stop(A, 20), Stop(D, 1000)});
+	auto &db = f.Build(); db.TickPrecomputed(1);
+	bool dominance = false;
+	SECTION("v12 independent occurrence frequencies") {}
+	SECTION("v13 numerical dominance without a witness") { dominance = true; }
+	std::array records{db.Get(train->orders->index)}; PassengerPrecomputedTable old;
+	old.Begin(records, PAX, 0, PassengerPrecomputedTable::MAX_HYPERPATH_BYTES, true, false, {}, true, true, true, true, dominance, false, false);
+	size_t offset; auto wire = WithoutWitnessTrailer(db.Save()); LegacyDatabaseWire(wire, 3, &offset);
+	if (!dominance) { wire[0] = 12; wire.resize(wire.size() - 16); }
+	for (size_t work : {size_t{1}, size_t{73}, size_t{181}}) {
+		old.Step(work); const auto operations = old.GetDiagnostic().operations;
+		for (size_t i = 0; i < 8; ++i) wire[offset + i] = (operations >> (8 * i)) & 255;
+		PassengerServiceDatabase peer; REQUIRE(peer.Load(wire)); peer.FinishLoad(true, true);
+		while (peer.GetLoadState() == PassengerServiceDatabase::LoadState::Replaying) {
+			const auto saved = peer.Save(); const auto replay_work = peer.GetLoadWork();
+			/* An initial-build console callback must not migrate the algorithm
+			 * while its original generation is still being reconstructed. */
+			peer.TickPrecomputed(64 * 1024 * 1024);
+			CHECK(peer.Save() == saved); CHECK(peer.GetLoadWork() == replay_work);
+			peer.StepLoad(3);
+		}
+		REQUIRE(peer.GetLoadState() == PassengerServiceDatabase::LoadState::Ready);
+		CHECK(peer.GetPrecomputedDiagnostic(PAX).operations == operations);
+		CHECK(peer.GetPrecomputedDiagnostic(PAX).destinations == old.GetDiagnostic().destinations);
+		CHECK(peer.PlanPrecomputed(PAX, A, D, NOW).cost == old.Plan(A, D, NOW).cost);
+		auto upgraded = WithoutWitnessTrailer(peer.Save()); CHECK(upgraded[upgraded.size() - 16] == dominance);
+		if (work == 181) {
+			while (!old.Finished()) old.Step(7);
+			CHECK(old.Inspect(A, D).size() == (dominance ? 1 : 2));
+			while (!peer.PrecomputedFinished()) peer.TickPrecomputed(7);
+			peer.TickPrecomputed(1); auto replacing = peer.Save(); auto prefix = WithoutWitnessTrailer(replacing);
+			CHECK(prefix[prefix.size() - 16] == 1); CHECK(prefix[prefix.size() - 8] == dominance);
+			PassengerServiceDatabase joined; REQUIRE(joined.Load(replacing)); joined.FinishLoad(true, true);
+			while (joined.StepLoad(3) == PassengerServiceDatabase::LoadState::Replaying) {}
+			REQUIRE(joined.GetLoadState() == PassengerServiceDatabase::LoadState::Ready); CHECK(joined.Save() == replacing);
+			while (!peer.PrecomputedFinished()) { peer.TickPrecomputed(7); joined.TickPrecomputed(7); CHECK(peer.Save() == joined.Save()); }
+			auto plan = peer.PlanPrecomputed(PAX, A, D, NOW); REQUIRE(plan.ride);
+			CHECK_FALSE(peer.BoardHyperpath(*plan.ride, PAX, train->orders->index, 0).ride);
+			CHECK(peer.BoardHyperpath(*plan.ride, PAX, train->orders->index, 2).ride);
+		}
+	}
+}
+
+TEST_CASE("Hyperpath retains a tied optimal alighting before the return visit", "[passenger][hyperpath][revisit][replan][ties]")
+{
+	Fixture f;
+	auto *loop = f.Train({Stop(A, 1000, 0), Stop(B, 10, 0), Stop(A, 10, 0), Stop(D, 52, 0)});
+	auto *connection = f.Train({Stop(B, 60, 0), Stop(D, 20, 0)});
+	auto &db = f.Build(); std::array records{db.Get(loop->orders->index), db.Get(connection->orders->index)};
+	PassengerPrecomputedTable table, sliced;
+	table.Begin(records, PAX, 0, PassengerPrecomputedTable::MAX_HYPERPATH_BYTES, true, false, {}, true, true, true, true);
+	sliced.Begin(records, PAX, 0, PassengerPrecomputedTable::MAX_HYPERPATH_BYTES, true, false, {}, true, true, true, true);
+	while (!table.Finished()) table.Step(1);
+	while (!sliced.Finished()) sliced.Step(93);
+	CHECK(table.GetDiagnostic().operations == sliced.GetDiagnostic().operations);
+	for (OrderListID failed : {OrderListID::Invalid(), OrderListID{123}}) {
+		auto early = table.Board(A, D, NOW, loop->orders->index, 0, OrderListID::Invalid(), failed);
+		REQUIRE(early.ride); CHECK(early.ride->alighting == B); // Equal cost, without the on-board return to A.
+		CHECK(sliced.Board(A, D, NOW, loop->orders->index, 0, OrderListID::Invalid(), failed).ride == early.ride);
+		CHECK(table.Board(A, D, NOW, loop->orders->index, 2, OrderListID::Invalid(), failed).ride);
+	}
+}
+
+TEST_CASE("Hyperpath boarding suppression preserves a through ride from an earlier station", "[passenger][hyperpath][revisit][boarding]")
+{
+	Fixture f; auto *train = f.Train({Stop(C, 1000), Stop(A, 20), Stop(B, 20), Stop(A, 20), Stop(D, 1000)});
+	auto &db = f.Build(); std::array records{db.Get(train->orders->index)}; PassengerPrecomputedTable table;
+	table.Begin(records, PAX, 0, PassengerPrecomputedTable::MAX_HYPERPATH_BYTES, true, false, {}, true, true, true, true);
+	while (!table.Finished()) table.Step(7);
+	CHECK_FALSE(table.Board(A, D, NOW, train->orders->index, 1).ride);
+	auto through = table.Board(C, D, NOW, train->orders->index, 0); REQUIRE(through.ride);
+	CHECK(through.ride->alighting == D); CHECK(through.ride->alighting_order == 4);
+}
+
+TEST_CASE("Hyperpath boards the first attractive local or express and preserves a split policy", "[passenger][hyperpath][boarding]")
+{
+	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = true;
+	_settings_game.linkgraph.passenger_journey_hyperpath = true;
+	auto *local = f.Train({Stop(A), Stop(B), Stop(D)});
+	auto *express = f.Train({Stop(A, 180), Stop(D, 180)});
+	auto &db = f.Build(); while (!db.PreparePrecomputed()) {}
+	SECTION("Local arrives first") {}
+	SECTION("Express arrives first") { std::swap(local, express); }
+	auto *packet = f.Packet(20); PassengerJourneyActiveContext context(nullptr, A);
+	REQUIRE(context.PlanWaiting(*packet, PAX, D));
+	CHECK(packet->GetPassengerJourney().kind == PassengerRideKind::HyperpathIntent);
+	CHECK(packet->GetPassengerJourney().service == OrderListID::Invalid());
+	CHECK(packet->GetPassengerJourney().alighting == D);
+	CHECK(packet->GetPassengerJourney().waiting_limit >= 256);
+	const auto id = packet->index;
+	StationCargoList waiting; waiting.Append(packet, D); PassengerJourneyLoadingContext loading;
+	REQUIRE(waiting.HasCargoFor(std::array{B, D}, local, &loading, PAX));
+	REQUIRE(waiting.Load(7, &local->cargo, std::array{B, D}, TileIndex{0}, local, &loading) == 7);
+	CHECK(local->cargo.Packets()->front()->GetPassengerJourney().service == local->orders->index);
+	CHECK(local->cargo.Packets()->front()->GetPassengerJourney().alighting == D);
+	CHECK(CargoPacket::Get(id)->GetPassengerJourney().kind == PassengerRideKind::HyperpathIntent);
+	REQUIRE(waiting.HasCargoFor(std::array{D}, express, &loading, PAX));
+	REQUIRE(waiting.Load(13, &express->cargo, std::array{D}, TileIndex{0}, express, &loading) == 13);
+	CHECK(express->cargo.Packets()->front()->GetPassengerJourney().service == express->orders->index);
+	CHECK(express->cargo.Packets()->front()->GetPassengerJourney().alighting == D);
+	CHECK(waiting.AvailableCount() == 0);
+}
+
+TEST_CASE("Hyperpath does not board an express for a local-only destination", "[passenger][hyperpath][boarding]")
+{
+	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = true;
+	_settings_game.linkgraph.passenger_journey_hyperpath = true;
+	auto *local = f.Train({Stop(A), Stop(B), Stop(D)});
+	auto *express = f.Train({Stop(A, 180), Stop(D, 180)});
+	auto &db = f.Build(); while (!db.PreparePrecomputed()) {}
+	auto *packet = CargoPacket::Create(20, 0, A, TileIndex{0}, Money{0}); REQUIRE(packet->SetPassengerDestination(PAX, B));
+	PassengerJourneyActiveContext context(nullptr, A); REQUIRE(context.PlanWaiting(*packet, PAX, B));
+	StationCargoList waiting; waiting.Append(packet, B); PassengerJourneyLoadingContext loading;
+	CHECK_FALSE(waiting.HasCargoFor(std::array{D}, express, &loading, PAX));
+	REQUIRE(waiting.Load(20, &local->cargo, std::array{B, D}, TileIndex{0}, local, &loading) == 20);
+	CHECK(local->cargo.Packets()->front()->GetPassengerJourney().alighting == B);
+}
+
+TEST_CASE("Hyperpath capacity failures change the local policy and copy through packet splits", "[passenger][hyperpath][replan][save]")
+{
+	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = _settings_game.linkgraph.passenger_journey_hyperpath = true;
+	auto *fast = f.Train({Stop(A), Stop(D)}); auto *slow = f.Train({Stop(A, 220), Stop(D, 220)});
+	auto &db = f.Build(); while (!db.PreparePrecomputed()) {}
+	fast->cargo.Append(f.Packet(100));
+	auto *packet = f.Packet(20); const auto id = packet->index;
+	PassengerJourneyActiveContext context(nullptr, A); REQUIRE(context.PlanWaiting(*packet, PAX, D));
+	StationCargoList waiting; waiting.Append(packet, D); PassengerJourneyLoadingContext loading;
+	CHECK_FALSE(waiting.HasCargoFor(std::array{D}, slow, &loading, PAX));
+	for (uint8_t count = 1; count <= 3; ++count) {
+		++_state_ticks; // Three separate completed loading opportunities.
+		waiting.RecordCapacityMiss(std::array{D}, fast, PAX, loading);
+		CHECK(packet->GetPassengerBoardingFailure().count == count);
+	}
+	CHECK(packet->GetPassengerFailedService(_state_ticks) == fast->orders->index);
+	REQUIRE(waiting.HasCargoFor(std::array{D}, slow, &loading, PAX));
+	auto *split = packet->Split(2); REQUIRE(split != nullptr);
+	CHECK(split->GetPassengerBoardingFailure() == packet->GetPassengerBoardingFailure());
+	auto failure = split->GetPassengerBoardingFailure(); --failure.count; split->SetPassengerBoardingFailure(failure);
+	CHECK_FALSE(packet->Merge(split)); delete split;
+	CHECK(waiting.Load(7, &slow->cargo, std::array{D}, TileIndex{0}, slow, &loading) == 7);
+	CHECK_FALSE(slow->cargo.Packets()->front()->GetPassengerBoardingFailure().Present());
+	CHECK(CargoPacket::Get(id)->GetPassengerBoardingFailure().count == 3);
+	CHECK(CargoPacket::Get(id)->GetPassengerJourney().kind == PassengerRideKind::HyperpathIntent);
+}
+
+TEST_CASE("Hyperpath capacity misses do not depend on pending-index residency", "[passenger][hyperpath][replan][determinism]")
+{
+	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = _settings_game.linkgraph.passenger_journey_hyperpath = true;
+	auto *train = f.Train({Stop(A), Stop(D)}); auto &db = f.Build(); while (!db.PreparePrecomputed()) {}
+	train->cargo.Append(f.Packet(100));
+	auto plan = db.PlanPrecomputed(PAX, A, D, NOW); REQUIRE(plan.ride);
+	auto intent = *plan.ride; intent.not_before = NOW + 10;
+	auto *packet = f.Packet(); packet->SetPassengerJourney(intent, D);
+	StationCargoList waiting; waiting.passenger_index_cargo = PAX; waiting.Append(packet, D); waiting.RebuildWaitingIndex();
+	_state_ticks = NOW + 10;
+	auto check_failure = [&]() {
+		PassengerJourneyLoadingContext loading;
+		waiting.RecordCapacityMiss(std::array{D}, train, PAX, loading);
+		CHECK(packet->GetPassengerBoardingFailure().count == 1);
+		CHECK(packet->GetPassengerBoardingFailure().service == train->orders->index);
+		CHECK(packet->GetPassengerBoardingFailure().since == NOW + 10);
+		CHECK(packet->GetPassengerBoardingFailure().incarnation == train->orders->GetCargoDistRouteGeneration());
+	};
+	SECTION("Keep the index built before interchange readiness") { check_failure(); }
+	SECTION("Rebuild the same saved packet after readiness") { waiting.ClearWaitingIndex(); waiting.RebuildWaitingIndex(); check_failure(); }
+}
+
+TEST_CASE("Hyperpath reservations retain failures until physical boarding and restore a shared policy on return", "[passenger][hyperpath][boarding][reservation]")
+{
+	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = _settings_game.linkgraph.passenger_journey_hyperpath = true;
+	auto *fast = f.Train({Stop(A), Stop(D)}), *slow = f.Train({Stop(A, 220), Stop(D, 220)});
+	auto &db = f.Build(); while (!db.PreparePrecomputed()) {}
+	fast->cargo.Append(f.Packet(100));
+	auto *packet = f.Packet(20); PassengerJourneyActiveContext context(nullptr, A); REQUIRE(context.PlanWaiting(*packet, PAX, D));
+	StationCargoList waiting; waiting.Append(packet, D); PassengerJourneyLoadingContext loading;
+	for (int i = 0; i < 3; ++i) { ++_state_ticks; waiting.RecordCapacityMiss(std::array{D}, fast, PAX, loading); }
+	const auto failure = packet->GetPassengerBoardingFailure(); REQUIRE(failure.count == 3);
+	REQUIRE(waiting.Reserve(20, &slow->cargo, std::array{D}, TileIndex{0}, slow, &loading) == 20);
+	CHECK(slow->cargo.Packets()->front()->GetPassengerBoardingFailure() == failure);
+	REQUIRE(waiting.Load(7, &slow->cargo, std::array{D}, TileIndex{0}, slow, &loading) == 7);
+	CHECK(slow->cargo.StoredCount() == 7); CHECK(slow->cargo.ReservedCount() == 13);
+	REQUIRE(slow->cargo.Packets()->size() == 2);
+	CHECK_FALSE(slow->cargo.Packets()->front()->GetPassengerBoardingFailure().Present());
+	CHECK(slow->cargo.Packets()->back()->GetPassengerBoardingFailure() == failure);
+	CHECK(slow->cargo.Packets()->back()->Count() == 13);
+	REQUIRE(slow->cargo.Return(13, &waiting, D, TileIndex{0}, PAX) == 13);
+	StationCargoList::ConstIterator returned(waiting.Packets()->begin());
+	CHECK((*returned)->GetPassengerJourney().kind == PassengerRideKind::HyperpathIntent);
+	CHECK((*returned)->GetPassengerBoardingFailure() == failure);
+	REQUIRE(waiting.Load(13, &slow->cargo, std::array{D}, TileIndex{0}, slow, &loading) == 13);
+	CHECK(slow->cargo.StoredCount() == 20); CHECK(slow->cargo.ReservedCount() == 0);
+	for (const auto *loaded : *slow->cargo.Packets()) CHECK_FALSE(loaded->GetPassengerBoardingFailure().Present());
+}
+
+TEST_CASE("Hyperpath partial event replay keeps policy membership and work identical", "[passenger][hyperpath][save][network]")
+{
+	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = _settings_game.linkgraph.passenger_journey_hyperpath = true;
+	f.Train({Stop(A), Stop(B), Stop(D)}); f.Train({Stop(A, 150), Stop(D, 150)});
+	auto &db = f.Build(); db.TickPrecomputed(7);
+	for (size_t iteration = 0; iteration < 1000; ++iteration) {
+		auto wire = db.Save(); PassengerServiceDatabase peer; REQUIRE(peer.Load(wire)); peer.FinishLoad(true, true);
+		while (peer.StepLoad(3) == PassengerServiceDatabase::LoadState::Replaying) {}
+		REQUIRE(peer.GetLoadState() == PassengerServiceDatabase::LoadState::Ready); CHECK(peer.Save() == wire);
+		db.TickPrecomputed(11); peer.TickPrecomputed(11);
+		CHECK(db.Save() == peer.Save());
+		CHECK(db.PlanPrecomputed(PAX, A, D, NOW).ride == peer.PlanPrecomputed(PAX, A, D, NOW).ride);
+		if (db.PrecomputedFinished()) break;
+		REQUIRE(iteration < 999);
+	}
+}
+
+TEST_CASE("Hyperpath and legacy replacements replay both mixed generation directions", "[passenger][hyperpath][save][generation]")
+{
+	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = _settings_game.linkgraph.passenger_journey_hyperpath = true;
+	f.Train({Stop(A), Stop(B), Stop(D)}); f.Train({Stop(A, 150), Stop(D, 150)});
+	auto &db = f.Build(); while (!db.PreparePrecomputed()) {}
+	for (bool mode : {false, true}) {
+		_settings_game.linkgraph.passenger_journey_hyperpath = mode; db.TickPrecomputed(3);
+		auto wire = db.Save(); PassengerServiceDatabase peer; REQUIRE(peer.Load(wire)); peer.FinishLoad(true, true);
+		while (peer.StepLoad(7) == PassengerServiceDatabase::LoadState::Replaying) {}
+		REQUIRE(peer.GetLoadState() == PassengerServiceDatabase::LoadState::Ready); CHECK(peer.Save() == wire);
+		for (size_t iteration = 0; !db.PrecomputedFinished(); ++iteration) {
+			REQUIRE(iteration < 10000); db.TickPrecomputed(19); peer.TickPrecomputed(19);
+			CHECK(db.Save() == peer.Save());
+		}
+		CHECK_FALSE(db.HasRejectedPrecomputedMemory());
+		auto plan = db.PlanPrecomputed(PAX, A, D, NOW); REQUIRE(plan.ride);
+		CHECK(plan.hyperpath == mode); CHECK((plan.ride->kind == PassengerRideKind::HyperpathIntent) == mode);
+	}
+}
+
+TEST_CASE("Hyperpath shared policy queues do not let an expired head hide a ready passenger", "[passenger][hyperpath][boarding][events]")
+{
+	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = _settings_game.linkgraph.passenger_journey_hyperpath = true;
+	auto *train = f.Train({Stop(A), Stop(D)}); auto &db = f.Build(); while (!db.PreparePrecomputed()) {}
+	auto plan = db.PlanPrecomputed(PAX, A, D, NOW); REQUIRE(plan.ride);
+	auto *expired = f.Packet(1), *ready = f.Packet(1);
+	auto old = *plan.ride; old.planned_at = NOW - 1000; old.waiting_limit = 256;
+	expired->SetPassengerJourney(old, D); ready->SetPassengerJourney(*plan.ride, D);
+	StationCargoList waiting; waiting.Append(expired, D); waiting.Append(ready, D);
+	PassengerJourneyLoadingContext loading;
+	REQUIRE(waiting.HasCargoFor(std::array{D}, train, &loading, PAX));
+	REQUIRE(waiting.Load(1, &train->cargo, std::array{D}, TileIndex{0}, train, &loading) == 1);
+	CHECK(train->cargo.Packets()->front()->index == ready->index);
+	CHECK(waiting.AvailableCount() == 1); CHECK(expired->GetPassengerJourney().kind == PassengerRideKind::HyperpathIntent);
+}
+
+TEST_CASE("Hyperpath failure identity survives current saves and defaults in older packets", "[passenger][hyperpath][save]")
+{
+	Fixture f; auto *train = f.Train({Stop(A), Stop(D)});
+	auto *packet = f.Packet();
+	for (int i = 0; i < 3; ++i) packet->RecordPassengerCapacityFailure(train->orders->index, NOW);
+	REQUIRE(packet->GetPassengerFailedService(NOW) == train->orders->index);
+	AutoRestoreBackup version{_sl_version, SAVEGAME_VERSION};
+	AutoRestoreBackup features{_sl_xv_feature_versions, AutoRestoreBackupNoNewValueTag{}};
+	AutoRestoreBackup static_features{_sl_xv_feature_static_versions, AutoRestoreBackupNoNewValueTag{}};
+	SlXvSetStaticCurrentVersions(); _sl_xv_feature_versions = _sl_xv_feature_static_versions;
+	auto *loaded = CargoPacket::Create();
+	SlTestSaveLoadTable(packet, loaded, GetCargoPacketDesc());
+	CHECK(loaded->GetPassengerBoardingFailure() == packet->GetPassengerBoardingFailure());
+	CHECK(loaded->GetPassengerFailedService(NOW + 4096) == OrderListID::Invalid());
+	_sl_xv_feature_versions[XSLFI_PASSENGER_PERIODIC] = 13;
+	auto *old = CargoPacket::Create(); SlTestSaveLoadTable(packet, old, GetCargoPacketDesc());
+	CHECK_FALSE(old->GetPassengerBoardingFailure().Present());
+	CHECK_FALSE(packet->HasSamePassengerRouting(*old));
+}
+
+TEST_CASE("Hyperpath remembers one failed service across interleaved full arrivals", "[passenger][hyperpath][replan]")
+{
+	Fixture f; auto *first = f.Train({Stop(A), Stop(D)}), *other = f.Train({Stop(A), Stop(D)});
+	auto *packet = f.Packet();
+	for (uint8_t count = 1; count <= 3; ++count) {
+		packet->RecordPassengerCapacityFailure(first->orders->index, NOW);
+		packet->RecordPassengerCapacityFailure(other->orders->index, NOW);
+		CHECK(packet->GetPassengerBoardingFailure().service == first->orders->index);
+		CHECK(packet->GetPassengerBoardingFailure().count == count);
+	}
+}
+
+TEST_CASE("Full legacy vehicles do not acquire Hyperpath validation or routing work", "[passenger][hyperpath][legacy]")
+{
+	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = true;
+	auto *train = f.Train({Stop(A), Stop(D)}); auto &db = f.Build(); while (!db.PreparePrecomputed()) {}
+	train->cargo.Append(f.Packet(100));
+	auto *packet = f.Packet(); auto plan = db.PlanPrecomputed(PAX, A, D, NOW); REQUIRE(plan.ride);
+	packet->SetPassengerJourney(*plan.ride, D);
+	StationCargoList waiting; waiting.Append(packet, D); PassengerJourneyLoadingContext loading;
+	waiting.RecordCapacityMiss(std::array{D}, train, PAX, loading);
+	CHECK(loading.GetValidationCount() == 0); CHECK(waiting.boarding_groups_inspected == 0);
+	CHECK_FALSE(packet->GetPassengerBoardingFailure().Present());
+}
+
+TEST_CASE("Hyperpath migrates legacy waiting intents within saved station work slices", "[passenger][hyperpath][events][legacy]")
+{
+	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = true;
+	f.Train({Stop(A), Stop(D)}); auto &db = f.Build(); while (!db.PreparePrecomputed()) {}
+	auto old = db.PlanPrecomputed(PAX, A, D, NOW); REQUIRE(old.ride);
+	REQUIRE(old.ride->kind != PassengerRideKind::HyperpathIntent);
+	auto &waiting = Station::Get(A)->goods[PAX].CreateData().cargo;
+	std::vector<CargoPacket *> packets;
+	for (int i = 0; i < 600; ++i) {
+		auto *packet = CargoPacket::Create(1, i, A, TileIndex{0}, Money{0}); REQUIRE(packet->SetPassengerDestination(PAX, D));
+		auto intent = *old.ride; intent.waiting_limit = int64_t{1} << 22;
+		packet->SetPassengerJourney(intent, D); waiting.Append(packet, D); packets.push_back(packet);
+	}
+	_settings_game.linkgraph.passenger_journey_hyperpath = true;
+	db.TickPrecomputed(1);
+	const auto saved_intent = packets.front()->GetPassengerJourney();
+	PassengerJourneyActiveContext pending(nullptr, A);
+	CHECK_FALSE(pending.PlanWaiting(*packets.front(), PAX, D, true));
+	CHECK(packets.front()->GetPassengerJourney() == saved_intent); // Same expiry while only a retained legacy row exists.
+	while (!db.PreparePrecomputed()) {}
+	while (!db.PrecomputedFinished()) db.TickPrecomputed(7); // A replacement startup barrier prepares only the graph.
+	REQUIRE(db.PlanPrecomputed(PAX, A, D, NOW).hyperpath);
+	InvalidatePassengerWaitingRouting();
+	SECTION("Warm index") {}
+	SECTION("Rebuilt index") { waiting.ClearWaitingIndex(); waiting.RebuildWaitingIndex(); }
+	for (size_t iteration = 0; iteration < 8; ++iteration) {
+		const auto before = waiting.passenger_routing_inspected;
+		waiting.RoutePassengerJourneys(PAX, A);
+		CHECK(waiting.passenger_routing_inspected - before <= StationCargoList::PASSENGER_ROUTING_SLICE);
+		++_state_ticks;
+	}
+	for (const auto *packet : packets) CHECK(packet->GetPassengerJourney().kind == PassengerRideKind::HyperpathIntent);
+}
+
+TEST_CASE("Hyperpath destination scan is independent of unrelated packet population", "[.hyperpath-cpu][passenger]")
+{
+	for (uint population : {128U, 1024U, 8192U, 32768U}) {
+		Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = _settings_game.linkgraph.passenger_journey_hyperpath = true;
+		auto *train = f.Train({Stop(A), Stop(B), Stop(D)}); f.Train({Stop(A), Stop(C)});
+		auto &db = f.Build(); while (!db.PreparePrecomputed()) {}
+		auto other = db.PlanPrecomputed(PAX, A, C, NOW); auto target = db.PlanPrecomputed(PAX, A, D, NOW);
+		REQUIRE(other.ride); REQUIRE(target.ride);
+		StationCargoList waiting;
+		for (uint i = 0; i < population; ++i) {
+			auto *packet = CargoPacket::Create(1, i, A, TileIndex{0}, Money{0}); REQUIRE(packet->SetPassengerDestination(PAX, C));
+			auto intent = *other.ride; intent.planned_at = NOW - i; intent.waiting_limit = int64_t{1} << 22;
+			packet->SetPassengerJourney(intent, C); waiting.Append(packet, C);
+		}
+		auto *packet = f.Packet(1); packet->SetPassengerJourney(*target.ride, D); waiting.Append(packet, D);
+		auto cold_start = std::chrono::steady_clock::now();
+		PassengerJourneyLoadingContext warm; REQUIRE(waiting.HasCargoFor(std::array{B, D}, train, &warm, PAX));
+		auto cold_nanos = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - cold_start).count();
+		const auto inspected = waiting.BoardingCandidatesInspected(), groups = waiting.boarding_groups_inspected;
+		auto start = std::chrono::steady_clock::now();
+		for (size_t i = 0; i < 256; ++i) {
+			PassengerJourneyLoadingContext loading; REQUIRE(waiting.HasCargoFor(std::array{B, D}, train, &loading, PAX));
+			CHECK(loading.GetValidationCount() == 1); // Distinct unrelated timestamps do not cause per-packet membership queries.
+		}
+		auto nanos = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - start).count() / 256;
+		std::cout << "hyperpath_lookup," << population << ',' << nanos << ',' << (waiting.BoardingCandidatesInspected() - inspected) / 256 << ',' << (waiting.boarding_groups_inspected - groups) / 256 << ',' << cold_nanos << std::endl;
+		CHECK(waiting.BoardingCandidatesInspected() - inspected == 256);
+	}
+}
+
 TEST_CASE("Precomputed active journeys bypass OD admission and survive partial-build saves", "[passenger][precomputed][active][determinism]")
 {
 	Fixture f;
@@ -2626,7 +3046,7 @@ TEST_CASE("Precomputed active journeys bypass OD admission and survive partial-b
 	CHECK(db.GetDiagnostic().searches == timed_searches);
 	CHECK(db.GetPrecomputedDiagnostic(PAX).hits == 1);
 	CHECK(GetPassengerJourneyTickDiagnostic().query_cache_hits == 99);
-	auto wire = db.Save(); REQUIRE(wire[0] == 11);
+	auto wire = db.Save(); REQUIRE(wire[0] == 15);
 	PassengerServiceDatabase peer; REQUIRE(peer.Load(wire)); peer.FinishLoad(true);
 	CHECK(peer.Save() == wire);
 	CHECK(peer.PlanPrecomputed(PAX, A, D, NOW).ride == db.PlanPrecomputed(PAX, A, D, NOW).ride);
@@ -2710,6 +3130,30 @@ TEST_CASE("Precomputed cost regrouping wakes queues without a live revision or r
 	CHECK(db.GetPublishedRevision() == revision);
 	CHECK(db.GetPrecomputedDiagnostic(PAX).destinations == rows);
 	CHECK(list.passenger_routing_dirty);
+}
+
+TEST_CASE("Learning access metadata from an old save does not replace an unchanged legacy table", "[passenger][precomputed][save][determinism]")
+{
+	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = true;
+	auto *train = f.Train({Stop(A, 1014), Stop(D, 1014)}); // Epoch is exactly two circuits.
+	auto &db = f.Build(); while (!db.PreparePrecomputed()) {}
+	auto old = WithoutWitnessTrailer(db.Save());
+	REQUIRE(db.Load(old)); db.FinishLoad(true, true);
+	while (db.StepLoad(65536) == PassengerServiceDatabase::LoadState::Replaying) {}
+	REQUIRE(db.GetLoadState() == PassengerServiceDatabase::LoadState::Ready);
+	REQUIRE(db.PrecomputedFinished());
+	const auto id = train->orders->index;
+	REQUIRE(db.Get(id)->timetable.stops.front().boarding_facility == 0);
+	const auto revision = db.GetPublishedRevision(), generation = db.Get(id)->generation;
+	const auto work = db.GetPrecomputedDiagnostic(PAX).operations;
+	db.Invalidate(id); f.PublishUpdates(db);
+	CHECK(db.Get(id)->timetable.stops.front().boarding_facility == 1);
+	CHECK(db.GetPublishedRevision() == revision);
+	CHECK(db.Get(id)->generation == generation);
+	db.TickPrecomputed(1);
+	CHECK(db.PrecomputedFinished());
+	CHECK(db.GetPrecomputedDiagnostic(PAX).operations == work);
+	CHECK(db.GetPrecomputedDiagnostic(PAX).retained_destinations == 0);
 }
 
 TEST_CASE("Precomputed waiting index excludes unrelated packets and preserves partial reservations", "[passenger][precomputed][boarding][cargo]")
@@ -3064,7 +3508,7 @@ TEST_CASE("Precomputed waiting events survive save tables without inventing a ro
 	AutoRestoreBackup static_features{_sl_xv_feature_static_versions, AutoRestoreBackupNoNewValueTag{}};
 	SlXvSetStaticCurrentVersions(); _sl_xv_feature_versions = _sl_xv_feature_static_versions;
 	bool legacy = false;
-	SECTION("Current packet-event save") { REQUIRE(_sl_xv_feature_versions[XSLFI_PASSENGER_PERIODIC] == 13); }
+	SECTION("Current packet-event save") { REQUIRE(_sl_xv_feature_versions[XSLFI_PASSENGER_PERIODIC] == 17); }
 	SECTION("v9 packet events predate the boarding cursor") { _sl_xv_feature_versions[XSLFI_PASSENGER_PERIODIC] = 9; }
 	SECTION("v8 common-section save has no packet-event fields") { legacy = true; _sl_xv_feature_versions[XSLFI_PASSENGER_PERIODIC] = 8; }
 	GoodsEntry source{}, loaded{}; source.CreateData(); loaded.CreateData();
@@ -3133,6 +3577,87 @@ TEST_CASE("Precomputed single packet events leave thousands of sleeping intents 
 	CHECK(waiting.passenger_routing_inspected == ready_inspected + 2);
 	CHECK(added->GetPassengerJourney().planned_at == _state_ticks);
 	CHECK(db.GetPrecomputedDiagnostic(PAX).queries < 205); // One lookup per cohort/slice, not per packet.
+}
+
+TEST_CASE("Hyperpath unchanged fallback decisions retain boarding indices and native retry semantics", "[passenger][hyperpath][events][determinism]")
+{
+	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = _settings_game.linkgraph.passenger_journey_hyperpath = true;
+	auto *carrier = f.Train({Stop(A), Stop(B)}); f.Train({Stop(C), Stop(D)});
+	auto &db = f.Build(); while (!db.PreparePrecomputed()) {}
+	const bool incoming_excluded = GENERATE(false, true);
+	StationID destination = incoming_excluded ? B : D;
+	OrderListID previous = incoming_excluded ? carrier->orders->index : OrderListID::Invalid();
+	if (incoming_excluded) {
+		auto base = db.PrecomputedRouteCost(PAX, A, destination); REQUIRE(base); REQUIRE(*base != INT64_MAX);
+	}
+	REQUIRE_FALSE(db.PlanPrecomputed(PAX, A, destination, NOW, previous).ride);
+	auto &waiting = Station::Get(A)->goods[PAX].CreateData().cargo;
+	auto make_packet = [&](uint8_t age) {
+		auto *p = CargoPacket::Create(1, age, A, TileIndex{0}, Money{0}); REQUIRE(p->SetPassengerDestination(PAX, destination));
+		if (incoming_excluded) p->SetPassengerInterchange(NOW, previous, carrier->orders->GetCargoDistRouteGeneration());
+		return p;
+	};
+	auto *packet = make_packet(0); waiting.Append(packet, D);
+	waiting.RoutePassengerJourneys(PAX, A);
+	REQUIRE(packet->GetPassengerRoutingMode() == PassengerRoutingMode::Fallback);
+	REQUIRE(packet->GetPassengerRoutingEvent() == INVALID_STATE_TICKS);
+	const bool cold = GENERATE(false, true);
+	if (cold) { waiting.ClearWaitingIndex(); waiting.RebuildWaitingIndex(); }
+	++_state_ticks;
+	InvalidatePassengerWaitingRouting();
+	const auto hash = packet->StationMergeHash(), updates = waiting.boarding_index_updates;
+	const auto generation = waiting.passenger_generation_inspected;
+	ResetPassengerWaitingEventDiagnostic();
+	SECTION("Unrelated publication produces the full pass's retry state without rebuilding boarding indices") {
+		StationCargoList control;
+		auto *reference = make_packet(1); reference->FallbackPassengerJourney(A, NOW, packet->GetPassengerLegacyHop());
+		control.Append(reference, StationID::Invalid()); control.RoutePassengerJourneys(PAX, A);
+		ResetPassengerWaitingEventDiagnostic();
+		waiting.RoutePassengerJourneys(PAX, A);
+		CHECK(packet->HasSamePassengerRouting(*reference));
+		CHECK(packet->GetPassengerRoutingEvent() == reference->GetPassengerRoutingEvent());
+		CHECK(packet->StationMergeHash() != hash); // The original retry timestamp is renewed.
+		CHECK(waiting.boarding_index_updates == updates);
+		CHECK(waiting.passenger_generation_inspected == generation + 1);
+		CHECK(GetPassengerWaitingEventDiagnostic().unchanged_generation_packets == 1);
+		CHECK_FALSE(waiting.passenger_routing_sweeping);
+		/* The merge index must follow the new retry timestamp too. */
+		auto *joining = make_packet(0); joining->FallbackPassengerJourney(A, _state_ticks, packet->GetPassengerLegacyHop());
+		waiting.Append(joining, StationID::Invalid());
+		CHECK(packet->Count() == 2);
+		CHECK(waiting.Packets()->find(StationID::Invalid())->second.size() == 1);
+	}
+	SECTION("The packet's own deadline still runs") {
+		packet->SchedulePassengerRouting(_state_ticks);
+		waiting.RoutePassengerJourneys(PAX, A);
+		CHECK(packet->StationMergeHash() != hash);
+		CHECK(waiting.boarding_index_updates > updates);
+		CHECK(GetPassengerWaitingEventDiagnostic().unchanged_generation_packets == 0);
+	}
+	SECTION("An extra future event is rescheduled by the full pass") {
+		packet->SchedulePassengerRouting(_state_ticks + 100);
+		waiting.RoutePassengerJourneys(PAX, A);
+		CHECK(packet->GetPassengerRoutingEvent() == INVALID_STATE_TICKS);
+		CHECK(waiting.boarding_index_updates > updates);
+		CHECK(GetPassengerWaitingEventDiagnostic().unchanged_generation_packets == 0);
+	}
+	SECTION("A changed CargoDist flow still updates the saved hop") {
+		Station::Get(A)->goods[PAX].CreateData().flows.insert(FlowStat(A, B, 10));
+		waiting.RoutePassengerJourneys(PAX, A);
+		CHECK(packet->GetPassengerLegacyHop() == B);
+		CHECK(waiting.boarding_index_updates > updates);
+		CHECK(GetPassengerWaitingEventDiagnostic().unchanged_generation_packets == 0);
+	}
+	SECTION("A newly usable frozen row is applied normally") {
+		auto *train = f.Train({Stop(A), Stop(destination)}); db.Invalidate(train->orders->index);
+		f.PublishUpdates(db); while (!db.PreparePrecomputed()) {}
+		while (!db.PrecomputedFinished()) db.TickPrecomputed();
+		REQUIRE(db.PlanPrecomputed(PAX, A, destination, _state_ticks, previous).ride);
+		waiting.RoutePassengerJourneys(PAX, A);
+		CHECK(packet->GetPassengerRoutingMode() == PassengerRoutingMode::Journey);
+		CHECK(packet->GetPassengerJourney().kind == PassengerRideKind::HyperpathIntent);
+		CHECK(GetPassengerWaitingEventDiagnostic().unchanged_generation_packets == 0);
+	}
 }
 
 TEST_CASE("Precomputed reroutes keep packet event handles valid for split and whole moves", "[passenger][precomputed][events][cargo]")
@@ -3975,5 +4500,357 @@ TEST_CASE("Common section boarding ignores unrelated destinations in the same an
 		auto keys = db.PrecomputedBoardingKeys(PAX, short_train->orders->index, 0);
 		std::cout << count << ',' << elapsed << ',' << (waiting.BoardingCandidatesInspected() - before) / 512 << ','
 				<< db.GetPrecomputedDiagnostic(PAX).shared_sections << ',' << keys.sections[0].size() << '\n';
+	}
+}
+
+TEST_CASE("Hyperpath conservative membership cannot mutate a rejected binding or record a capacity miss", "[passenger][hyperpath][boarding][determinism]")
+{
+	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = _settings_game.linkgraph.passenger_journey_hyperpath = true;
+	auto *train = f.Train({Stop(A), Stop(D)});
+	auto &db = f.Build(); while (!db.PreparePrecomputed()) {}
+	train->cargo.Append(f.Packet(100));
+	auto *packet = f.Packet(20); PassengerJourneyActiveContext context(nullptr, A);
+	REQUIRE(context.PlanWaiting(*packet, PAX, D));
+	StationCargoList waiting; waiting.passenger_index_cargo = PAX; waiting.Append(packet, D);
+	db.Invalidate(train->orders->index); // Frozen membership survives; its concrete binding is unsafe.
+	packet->SchedulePassengerRouting(NOW + 1234);
+	PassengerJourneyLoadingContext loading; loading.EnableWaitingEvents();
+	const auto occurrences = loading.HyperpathBoardingOccurrences(train, PAX);
+	REQUIRE(loading.MayUseHyperpathPolicy(*packet, train, PAX, occurrences, true, false));
+	REQUIRE_FALSE(loading.CanUseHyperpathPolicy(*packet, train, PAX, true, false));
+	const auto before = std::tuple(packet->GetPassengerJourney(), packet->GetPassengerBoardingFailure(), packet->GetPassengerRoutingEvent(),
+			waiting.passenger_boarding_last, waiting.AvailableCount(), waiting.ReservedCount(), train->cargo.ReservedCount(), db.Save());
+	CHECK(waiting.Load(20, &train->cargo, std::array{D}, TileIndex{0}, train, &loading) == 0);
+	waiting.RecordCapacityMiss(std::array{D}, train, PAX, loading);
+	CHECK(std::tuple(packet->GetPassengerJourney(), packet->GetPassengerBoardingFailure(), packet->GetPassengerRoutingEvent(),
+			waiting.passenger_boarding_last, waiting.AvailableCount(), waiting.ReservedCount(), train->cargo.ReservedCount(), db.Save()) == before);
+	CHECK(loading.GetValidationCount() == 0);
+}
+
+TEST_CASE("Hyperpath cold local membership defers evaluation until the FIFO cohort is selected", "[passenger][hyperpath][boarding][replan]")
+{
+	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = _settings_game.linkgraph.passenger_journey_hyperpath = true;
+	auto *fast = f.Train({Stop(A), Stop(D)}), *slow = f.Train({Stop(A, 220), Stop(D, 220)});
+	auto &db = f.Build(); while (!db.PreparePrecomputed()) {}
+	auto *packet = f.Packet(20); PassengerJourneyActiveContext context(nullptr, A);
+	REQUIRE(context.PlanWaiting(*packet, PAX, D));
+	for (int i = 0; i < 3; ++i) packet->RecordPassengerCapacityFailure(fast->orders->index, NOW);
+	StationCargoList waiting; waiting.passenger_index_cargo = PAX; waiting.Append(packet, D);
+	PassengerJourneyLoadingContext loading; loading.EnableWaitingEvents();
+	const auto occurrences = loading.HyperpathBoardingOccurrences(fast, PAX);
+	const auto replans = db.GetPrecomputedDiagnostic(PAX).local_replans;
+	REQUIRE(loading.MayUseHyperpathPolicy(*packet, fast, PAX, occurrences, false, true)); // Unknown is conservative.
+	CHECK(db.GetPrecomputedDiagnostic(PAX).local_replans == replans);
+	const auto intent = packet->GetPassengerJourney(); const auto failure = packet->GetPassengerBoardingFailure();
+	const auto event = packet->GetPassengerRoutingEvent(); const auto saved = db.Save();
+	CHECK(waiting.Load(20, &fast->cargo, std::array{D}, TileIndex{0}, fast, &loading) == 0);
+	CHECK(db.GetPrecomputedDiagnostic(PAX).local_replans == replans + 1);
+	CHECK(packet->GetPassengerJourney() == intent); CHECK(packet->GetPassengerBoardingFailure() == failure);
+	CHECK(packet->GetPassengerRoutingEvent() == event); CHECK(db.Save() == saved);
+	CHECK_FALSE(loading.MayUseHyperpathPolicy(*packet, fast, PAX, occurrences, false, true)); // Cached exact set.
+	REQUIRE(waiting.Load(20, &slow->cargo, std::array{D}, TileIndex{0}, slow, &loading) == 20);
+	CHECK(waiting.AvailableCount() == 0);
+}
+
+TEST_CASE("Hyperpath membership memo releases a retired policy before replanning", "[passenger][hyperpath][boarding][generation]")
+{
+	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = _settings_game.linkgraph.passenger_journey_hyperpath = true;
+	auto *fast = f.Train({Stop(A), Stop(D)}), *slow = f.Train({Stop(A, 220), Stop(D, 220)});
+	auto &db = f.Build(); while (!db.PreparePrecomputed()) {}
+	auto *packet = f.Packet(); PassengerJourneyActiveContext context(nullptr, A); REQUIRE(context.PlanWaiting(*packet, PAX, D));
+	const auto old = packet->GetPassengerJourney(); PassengerJourneyLoadingContext loading;
+	auto occurrence = db.HyperpathBoardingOccurrences(PAX, A, slow->orders->index, 0);
+	for (int i = 0; i < 3; ++i) CHECK_FALSE(loading.MayUseHyperpathPolicy(*packet, slow, PAX, occurrence, true, false));
+	CHECK_FALSE(loading.MayUseHyperpathPolicy(*packet, fast, PAX, std::array{PassengerPrecomputedTable::INVALID, PassengerPrecomputedTable::INVALID}, true, false));
+	CHECK(loading.MayUseHyperpathPolicy(*packet, fast, PAX, db.HyperpathBoardingOccurrences(PAX, A, fast->orders->index, 0), true, false));
+	const auto fast_occurrence = db.HyperpathBoardingOccurrences(PAX, A, fast->orders->index, 0);
+	{
+		AutoRestoreBackup<OrderList *> no_orders{fast->orders, nullptr};
+		CHECK_FALSE(loading.MayUseHyperpathPolicy(*packet, fast, PAX, fast_occurrence, true, false));
+	}
+	fast->GetOrder(0)->SetLoadType(OrderLoadType::NoLoad); db.Invalidate(fast->orders->index); f.PublishUpdates(db);
+	db.TickPrecomputed(1); while (!db.PrecomputedFinished()) db.TickPrecomputed(65536);
+	REQUIRE_FALSE(db.IsCurrent(old));
+	occurrence = db.HyperpathBoardingOccurrences(PAX, A, slow->orders->index, 0);
+	CHECK(loading.MayUseHyperpathPolicy(*packet, slow, PAX, occurrence, true, false));
+	CHECK(loading.CanUseHyperpathPolicy(*packet, slow, PAX, true, false));
+	CHECK(packet->GetPassengerJourney() == old); // Read-only membership cannot migrate the packet.
+	loading.Invalidate(slow);
+	CHECK(loading.MayUseHyperpathPolicy(*packet, slow, PAX, occurrence, true, false));
+}
+
+TEST_CASE("Hyperpath long-headway capacity failure adapts at the first full departure", "[passenger][hyperpath][replan][time]")
+{
+	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = _settings_game.linkgraph.passenger_journey_hyperpath = true;
+	auto *fast = f.Train({Stop(A, 11800), Stop(D, 100)});
+	PeriodicTrain *alternative = nullptr;
+	SECTION("Use a slower alternative") { alternative = f.Train({Stop(A, 16000), Stop(D, 16000)}); }
+	SECTION("Restore reachability when there is no alternative") {}
+	auto &db = f.Build(); while (!db.PreparePrecomputed()) {}
+	fast->cargo.Append(f.Packet(100));
+	auto *packet = f.Packet(20); PassengerJourneyActiveContext context(nullptr, A);
+	REQUIRE(context.PlanWaiting(*packet, PAX, D));
+	StationCargoList waiting; waiting.passenger_index_cargo = PAX; waiting.Append(packet, D);
+	PassengerJourneyLoadingContext loading;
+	if (alternative != nullptr) REQUIRE_FALSE(waiting.HasCargoFor(std::array{D}, alternative, &loading, PAX));
+	const auto diagnostic = GetPassengerWaitingEventDiagnostic();
+	waiting.RecordCapacityMiss(std::array{D}, fast, PAX, loading);
+	CHECK(GetPassengerWaitingEventDiagnostic().capacity_missed_packets == diagnostic.capacity_missed_packets + 1);
+	CHECK(packet->GetPassengerFailedService(_state_ticks) == fast->orders->index);
+	CHECK(packet->GetPassengerBoardingFailure().since == NOW);
+	if (alternative != nullptr) {
+		CHECK_FALSE(waiting.HasCargoFor(std::array{D}, fast, &loading, PAX));
+		REQUIRE(waiting.Load(20, &alternative->cargo, std::array{D}, TileIndex{0}, alternative, &loading) == 20);
+	} else {
+		REQUIRE(waiting.HasCargoFor(std::array{D}, fast, &loading, PAX));
+		fast->cargo.Truncate();
+		REQUIRE(waiting.Load(20, &fast->cargo, std::array{D}, TileIndex{0}, fast, &loading) == 20);
+	}
+	CHECK(waiting.AvailableCount() == 0);
+}
+
+TEST_CASE("Hyperpath failure time is latched only at a real capacity record", "[passenger][hyperpath][replan][time]")
+{
+	Fixture f; auto *train = f.Train({Stop(A), Stop(D)}); auto *packet = f.Packet();
+	packet->RecordPassengerCapacityFailure(train->orders->index, NOW, 32);
+	CHECK(packet->GetPassengerBoardingFailure().count == 1);
+	_state_ticks = NOW + 4064;
+	CHECK(packet->GetPassengerFailedService(_state_ticks) == OrderListID::Invalid());
+	CHECK(packet->GetPassengerBoardingFailure().count == 1);
+	packet->RecordPassengerCapacityFailure(train->orders->index, _state_ticks, 32);
+	CHECK(packet->GetPassengerFailedService(_state_ticks) == train->orders->index);
+	CHECK(packet->GetPassengerBoardingFailure().since == NOW);
+	AutoRestoreBackup version{_sl_version, SAVEGAME_VERSION};
+	AutoRestoreBackup features{_sl_xv_feature_versions, AutoRestoreBackupNoNewValueTag{}};
+	AutoRestoreBackup static_features{_sl_xv_feature_static_versions, AutoRestoreBackupNoNewValueTag{}};
+	SlXvSetStaticCurrentVersions(); _sl_xv_feature_versions = _sl_xv_feature_static_versions;
+	auto *loaded = CargoPacket::Create(); SlTestSaveLoadTable(packet, loaded, GetCargoPacketDesc());
+	CHECK(loaded->GetPassengerBoardingFailure() == packet->GetPassengerBoardingFailure());
+	CHECK(loaded->GetPassengerFailedService(_state_ticks) == train->orders->index);
+}
+
+TEST_CASE("Hyperpath short-headway failures retain the three-opportunity threshold", "[passenger][hyperpath][replan][time]")
+{
+	Fixture f; auto *train = f.Train({Stop(A), Stop(D)}); auto *packet = f.Packet();
+	for (uint8_t count = 1; count <= 3; ++count) {
+		_state_ticks = NOW + count;
+		packet->RecordPassengerCapacityFailure(train->orders->index, _state_ticks, 32);
+		CHECK(packet->GetPassengerBoardingFailure().count == count);
+		CHECK((packet->GetPassengerFailedService(_state_ticks) == train->orders->index) == (count == 3));
+	}
+}
+
+TEST_CASE("An unavailable Hyperpath headway retains count-only capacity failures", "[passenger][hyperpath][replan][time]")
+{
+	Fixture f; auto *train = f.Train({Stop(A), Stop(D)}); auto *packet = f.Packet();
+	packet->RecordPassengerCapacityFailure(train->orders->index, NOW);
+	packet->RecordPassengerCapacityFailure(train->orders->index, NOW + 3072);
+	CHECK(packet->GetPassengerBoardingFailure().count == 2);
+	CHECK(packet->GetPassengerFailedService(NOW + 3072) == OrderListID::Invalid());
+}
+
+TEST_CASE("JPSD v14 storage and admission replay before a flat generation replaces it", "[passenger][hyperpath][flat][save][network]")
+{
+	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = _settings_game.linkgraph.passenger_journey_hyperpath = true;
+	auto *train = f.Train({Stop(A), Stop(B), Stop(A), Stop(D)}); auto &db = f.Build();
+	for (size_t work : {size_t{1}, size_t{73}, size_t{100000}}) {
+		db.TickPrecomputed(work); auto wire = db.Save(); REQUIRE(wire[0] == 15);
+		wire.resize(wire.size() - 16); wire[0] = 14;
+		/* Replay peers contain per-cargo tables; keep multiple peers off the
+		 * limited native test stack, as production's database is global. */
+		auto old_owner = std::make_unique<PassengerServiceDatabase>(), peer_owner = std::make_unique<PassengerServiceDatabase>();
+		auto &old = *old_owner, &peer = *peer_owner;
+		REQUIRE(old.Load(wire)); REQUIRE(peer.Load(wire)); old.FinishLoad(true, true); peer.FinishLoad(true, true);
+		while (old.StepLoad(3) == PassengerServiceDatabase::LoadState::Replaying) {}
+		while (peer.StepLoad(79) == PassengerServiceDatabase::LoadState::Replaying) {}
+		auto replay = old.Save(); REQUIRE(replay[0] == 15); REQUIRE(replay[replay.size() - 16] == 0); REQUIRE(replay.back() == 0);
+		replay.resize(replay.size() - 16); replay[0] = 14; CHECK(replay == wire); CHECK(old.Save() == peer.Save());
+		CHECK(old.GetPrecomputedDiagnostic(PAX).operations == db.GetPrecomputedDiagnostic(PAX).operations);
+		for (size_t i = 0; i < 2000 && !old.PrecomputedFinished(); ++i) { old.TickPrecomputed(7); peer.TickPrecomputed(7); CHECK(old.Save() == peer.Save()); }
+		REQUIRE(old.PrecomputedFinished()); old.TickPrecomputed(1); peer.TickPrecomputed(1); CHECK(old.Save() == peer.Save());
+		auto mixed = old.Save(); REQUIRE(mixed[mixed.size() - 16] == 1); REQUIRE(mixed[mixed.size() - 8] == 0);
+		auto invalid = std::make_unique<PassengerServiceDatabase>();
+		auto malformed = mixed; malformed[malformed.size() - 16] = 2; CHECK_FALSE(invalid->Load(malformed));
+		malformed = mixed; malformed[malformed.size() - 8] = 2; CHECK_FALSE(invalid->Load(malformed));
+		auto joined_owner = std::make_unique<PassengerServiceDatabase>(); auto &joined = *joined_owner;
+		REQUIRE(joined.Load(mixed)); joined.FinishLoad(true, true);
+		while (joined.StepLoad(3) == PassengerServiceDatabase::LoadState::Replaying) {} CHECK(joined.Save() == mixed);
+		while (!old.PrecomputedFinished()) { old.TickPrecomputed(71); joined.TickPrecomputed(71); CHECK(old.Save() == joined.Save()); }
+		auto plan = old.PlanPrecomputed(PAX, A, D, NOW); REQUIRE(plan.ride);
+		CHECK(joined.BoardHyperpath(*plan.ride, PAX, train->orders->index, 2).ride == old.BoardHyperpath(*plan.ride, PAX, train->orders->index, 2).ride);
+	}
+}
+
+TEST_CASE("Hyperpath boarding destination filter preserves every loading decision", "[passenger][hyperpath][boarding][determinism]")
+{
+	/* The same deterministic scenario runs with and without the derived filter: several
+	 * lines from A, transferring passengers, capacity failures, a sliced cost replacement with
+	 * mixed generations, and a switch back to legacy rows. Every observable outcome must match. */
+	struct Result { std::vector<int64_t> log; PassengerWaitingEventDiagnostic diagnostic; uint64_t steady_rebuilds = 0; };
+	using Mode = PassengerServiceDatabase::HyperpathFilterMode;
+	auto run = [](Mode mode, uint32_t seed) {
+		Result result;
+		Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = _settings_game.linkgraph.passenger_journey_hyperpath = true;
+		_settings_game.linkgraph.passenger_transfer_penalty = 20;
+		auto &db = GetPassengerServiceDatabase(); db.SetHyperpathBoardingFilterMode(mode);
+		ResetPassengerWaitingEventDiagnostic();
+		auto log = [&](int64_t value) { result.log.push_back(value); };
+		auto rnd = [&](uint32_t n) { seed = seed * 1664525U + 1013904223U; return (seed >> 8) % n; };
+		const std::vector<std::vector<uint16_t>> routes{{0, 1, 2, 3}, {0, 4, 5, 3}, {0, 1, 6, 7}, {0, 8, 9}, {0, 2, 7, 9}, {4, 5, 6, 7}, {0, 3}, {0, 5, 9}, {0, 1, 2, 3}};
+		std::vector<PeriodicTrain *> trains;
+		for (const auto &route : routes) {
+			std::vector<Order> orders;
+			for (uint16_t station : route) orders.push_back(Stop(StationID{station}, static_cast<TimetableTicks>(60 + rnd(240))));
+			trains.push_back(f.Train(std::move(orders)));
+		}
+		f.Build(); while (!db.PreparePrecomputed()) {}
+		/* Policy generations are deliberately never reused, even across database resets. */
+		const auto first = db.PlanPrecomputed(PAX, A, StationID{3}, _state_ticks); REQUIRE(first.ride);
+		const uint64_t base_generation = first.ride->generation;
+		auto generation = [&](const PassengerJourneyExecution &journey) {
+			return journey.kind == PassengerRideKind::HyperpathIntent ? static_cast<int64_t>(journey.generation - base_generation) : int64_t{db.IsCurrent(journey)} - 2;
+		};
+		StationCargoList waiting; waiting.passenger_index_cargo = PAX;
+		auto add_packets = [&](size_t count) {
+			for (size_t i = 0; i < count; ++i) {
+				StationID destination{static_cast<uint16_t>(1 + rnd(9))};
+				auto *packet = CargoPacket::Create(static_cast<uint16_t>(5 + rnd(20)), 0, A, TileIndex{0}, Money{0});
+				REQUIRE(packet->SetPassengerDestination(PAX, destination));
+				if (rnd(3) == 0) {
+					const auto *arriving = trains[rnd(static_cast<uint32_t>(trains.size()))]->orders;
+					packet->SetPassengerInterchange(_state_ticks, arriving->index, arriving->GetCargoDistRouteGeneration());
+				}
+				PassengerJourneyActiveContext context(nullptr, A);
+				const bool planned = context.PlanWaiting(*packet, PAX, destination);
+				log(planned); log(static_cast<int64_t>(packet->GetPassengerJourney().kind));
+				if (!planned) { delete packet; continue; }
+				waiting.Append(packet, destination);
+			}
+		};
+		auto load_all = [&](uint phase) {
+			PassengerJourneyLoadingContext loading;
+			for (size_t t = 0; t < trains.size(); ++t) {
+				auto *train = trains[t];
+				if (train->last_station_visited != A) continue;
+				std::vector<StationID> next;
+				for (size_t i = 1; i < routes[t].size(); ++i) next.push_back(StationID{routes[t][i]});
+				log(phase * 100 + t); log(waiting.HasCargoFor(next, train, &loading, PAX));
+				const uint moved = waiting.Load(static_cast<uint>(10 + rnd(30)), &train->cargo, next, TileIndex{0}, train, &loading);
+				log(moved); log(waiting.AvailableCount());
+				for (const CargoPacket *packet : *train->cargo.Packets()) {
+					log(packet->index.base()); log(packet->Count()); log(packet->GetPassengerJourney().alighting.base());
+					log(packet->GetPassengerJourney().service.base()); log(static_cast<int64_t>(packet->GetPassengerJourney().kind));
+				}
+				train->cargo.Truncate();
+			}
+			for (const CargoPacket *packet : CargoPacket::Iterate()) {
+				log(packet->index.base()); log(packet->Count()); log(packet->GetPassengerBoardingFailure().count);
+				log(generation(packet->GetPassengerJourney())); log(packet->GetPassengerJourney().alighting.base());
+			}
+		};
+		auto capacity_failures = [&](size_t t) {
+			PassengerJourneyLoadingContext loading;
+			auto *train = trains[t];
+			std::vector<StationID> next;
+			for (size_t i = 1; i < routes[t].size(); ++i) next.push_back(StationID{routes[t][i]});
+			train->cargo.Append(f.Packet(100));
+			for (int i = 0; i < 3; ++i) { ++_state_ticks; waiting.RecordCapacityMiss(next, train, PAX, loading); }
+			train->cargo.Truncate();
+		};
+		add_packets(60); load_all(1);
+		add_packets(60); capacity_failures(0); capacity_failures(6); load_all(2);
+		/* A sliced replacement: retained and current Hyperpath generations both serve intents. */
+		_settings_game.linkgraph.passenger_transfer_penalty = 17; db.TickPrecomputed(1);
+		for (int i = 0; i < 6; ++i) db.TickPrecomputed(97);
+		add_packets(60); capacity_failures(1); load_all(3);
+		while (!db.PrecomputedFinished()) db.TickPrecomputed(65536);
+		add_packets(40); load_all(4);
+		/* Lookups persist across ticks of a finished generation (new groups only), then follow a
+		 * sliced replacement whose rows publish between loading walks (the destination log). */
+		const uint64_t rebuilds = GetPassengerWaitingEventDiagnostic().hyperpath_lookup_rebuilds;
+		for (uint i = 0; i < 4; ++i) { db.TickPrecomputed(65536); ++_state_ticks; add_packets(15); capacity_failures(2 * i); load_all(10 + i); }
+		result.steady_rebuilds = GetPassengerWaitingEventDiagnostic().hyperpath_lookup_rebuilds - rebuilds;
+		_settings_game.linkgraph.passenger_transfer_penalty = 23; db.TickPrecomputed(1);
+		for (uint i = 0; i < 8; ++i) { db.TickPrecomputed(97); add_packets(10); load_all(20 + i); }
+		while (!db.PrecomputedFinished()) db.TickPrecomputed(65536);
+		add_packets(20); load_all(30);
+		/* Back to legacy rows: a retained/current legacy generation must disable the filter. */
+		_settings_game.linkgraph.passenger_journey_hyperpath = false; db.TickPrecomputed(1);
+		for (int i = 0; i < 6; ++i) db.TickPrecomputed(97);
+		add_packets(30); load_all(5); // Unpublished legacy rows cannot plan: still filtered.
+		while (!db.PrecomputedFinished()) db.TickPrecomputed(65536);
+		add_packets(30); load_all(6); // Published legacy rows may plan retired intents: complete scan.
+		result.diagnostic = GetPassengerWaitingEventDiagnostic();
+		db.SetHyperpathBoardingFilterEnabled(true);
+		return result;
+	};
+	for (uint32_t seed : {0x2f6a91c3U, 0x91e10da5U, 0x0badc0deU, 0x6d2b79f5U}) {
+		CAPTURE(seed);
+		const auto filtered = run(Mode::On, seed), complete = run(Mode::Off, seed), alternate = run(Mode::Alternate, seed);
+		const auto indexed = run(Mode::Index, seed), validated = run(Mode::Validate, seed);
+		CHECK(filtered.log == complete.log);
+		CHECK(alternate.log == complete.log);
+		CHECK(indexed.log == complete.log);
+		CHECK(validated.log == complete.log);
+		for (const auto *result : {&filtered, &alternate, &indexed, &validated}) {
+			CHECK(result->diagnostic.capacity_missed_packets == complete.diagnostic.capacity_missed_packets);
+		}
+		CHECK(filtered.diagnostic.hyperpath_groups_admitted == complete.diagnostic.hyperpath_groups_admitted);
+		CHECK(complete.diagnostic.hyperpath_groups_skipped == 0);
+		CHECK(complete.diagnostic.hyperpath_walks[1] == 0); CHECK(complete.diagnostic.hyperpath_walks[2] == 0);
+		CHECK(filtered.diagnostic.hyperpath_walks[1] > 0);
+		CHECK(filtered.diagnostic.hyperpath_walks[0] > 0); // The legacy phase.
+		CHECK(filtered.diagnostic.hyperpath_groups_skipped > 0);
+		CHECK(filtered.diagnostic.hyperpath_groups_checked + filtered.diagnostic.hyperpath_groups_skipped == complete.diagnostic.hyperpath_groups_checked);
+		CHECK(alternate.diagnostic.hyperpath_walks[1] > 0); CHECK(alternate.diagnostic.hyperpath_walks[2] > 0);
+		/* The lookup considers only groups that may board: fewer predicates, the same admissions. */
+		CHECK(indexed.diagnostic.hyperpath_walks[2] > 0); CHECK(indexed.diagnostic.hyperpath_walks[0] == 0);
+		CHECK(indexed.diagnostic.hyperpath_groups_checked < filtered.diagnostic.hyperpath_groups_checked);
+		CHECK(indexed.diagnostic.hyperpath_lookup_indexed_groups > 0);
+		CHECK(indexed.steady_rebuilds == 0); CHECK(validated.steady_rebuilds == 0);
+		CHECK(validated.diagnostic.hyperpath_index_validated > 0);
+		CHECK(validated.diagnostic.hyperpath_index_violations == 0);
+	}
+}
+
+TEST_CASE("Hyperpath boarding filter skips destinations served only by other lines", "[.hyperpath-cpu][passenger]")
+{
+	/* A hub with disjoint radial lines: one waiting policy group per destination, comparable to the
+	 * real map's mean of about 150 groups per loading walk. Only the loading line's groups can board. */
+	for (uint lines : {4U, 20U}) {
+		Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = _settings_game.linkgraph.passenger_journey_hyperpath = true;
+		constexpr uint STOPS = 8;
+		std::vector<PeriodicTrain *> trains;
+		for (uint line = 0; line < lines; ++line) {
+			std::vector<Order> orders{Stop(A, 120 + line)};
+			for (uint stop = 0; stop < STOPS; ++stop) orders.push_back(Stop(StationID{static_cast<uint16_t>(1 + line * STOPS + stop)}));
+			trains.push_back(f.Train(std::move(orders)));
+		}
+		auto &db = f.Build(); while (!db.PreparePrecomputed()) {}
+		StationCargoList waiting; waiting.passenger_index_cargo = PAX;
+		for (uint destination = 1; destination <= lines * STOPS; ++destination) {
+			StationID to{static_cast<uint16_t>(destination)};
+			auto *packet = CargoPacket::Create(5, 0, A, TileIndex{0}, Money{0}); REQUIRE(packet->SetPassengerDestination(PAX, to));
+			PassengerJourneyActiveContext context(nullptr, A); REQUIRE(context.PlanWaiting(*packet, PAX, to));
+			REQUIRE(packet->GetPassengerJourney().kind == PassengerRideKind::HyperpathIntent);
+			waiting.Append(packet, to);
+		}
+		std::vector<StationID> next; for (uint stop = 0; stop < STOPS; ++stop) next.push_back(StationID{static_cast<uint16_t>(1 + stop)});
+		using Mode = PassengerServiceDatabase::HyperpathFilterMode;
+		std::map<Mode, int64_t> nanos;
+		for (Mode mode : {Mode::Off, Mode::On, Mode::Index, Mode::Off, Mode::On, Mode::Index}) {
+			db.SetHyperpathBoardingFilterMode(mode); ResetPassengerWaitingEventDiagnostic();
+			auto start = std::chrono::steady_clock::now();
+			for (size_t i = 0; i < 2048; ++i) {
+				PassengerJourneyLoadingContext loading; REQUIRE(waiting.HasCargoFor(next, trains[0], &loading, PAX));
+			}
+			nanos[mode] = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - start).count() / 2048;
+			const auto d = GetPassengerWaitingEventDiagnostic();
+			CHECK(d.hyperpath_groups_admitted == 2048 * STOPS);
+			CHECK(d.hyperpath_groups_skipped == (mode == Mode::On ? 2048 * (lines - 1) * STOPS : 0));
+			if (mode == Mode::Index) CHECK(d.hyperpath_groups_checked == 2048 * STOPS); // Only the loading line's groups.
+		}
+		db.SetHyperpathBoardingFilterMode(Mode::Index);
+		std::cout << "hyperpath_filter," << lines * STOPS << ",off=" << nanos[Mode::Off] << ",mask=" << nanos[Mode::On] << ",index=" << nanos[Mode::Index] << std::endl;
 	}
 }

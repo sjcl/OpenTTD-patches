@@ -1,0 +1,110 @@
+{
+  "commit": "8462e6cd8280fe399fbb3b3e4a9cdb4413c935b4",
+  "checkout_commit": "8462e6cd8280fe399fbb3b3e4a9cdb4413c935b4",
+  "product_src_tree": "631f498ec2e22d2910bb414d7f3b2f9b780b9e8e",
+  "product_sources_unchanged": true,
+  "baseline_commit": "67cbbf32a48bac840d49037b2f9a90e8a1ca3aba",
+  "baseline_report_commit": "b17a4e7a59d8a395e88fb7ca8b39409130519cd0",
+  "baseline_runtime_src_tree": "a1efff1664b667558bb54260657a4c9108ce643c",
+  "native_tests": {
+    "cases": 728,
+    "assertions": 9930179,
+    "exit_code": 0
+  },
+  "files": {
+    "Release/openttd.exe": {
+      "bytes": 14157824,
+      "sha256": "232ed876ab74fecea3d0e3e16e01b2f787e56492da554d33b9bf72315c573ae0"
+    },
+    "Release/openttd.pdb": {
+      "bytes": 143273984,
+      "sha256": "af41da80f5f7e3729be213bdbc0f7795c1560291d705d8a73d0af751454b1a5c"
+    },
+    "Release/openttd_test.exe": {
+      "bytes": 19360256,
+      "sha256": "73d274f748b09f075b0ea5579dd8d8424ebb38f3ed15808e933e7f6df70a3092"
+    },
+    "Release/openttd_test.pdb": {
+      "bytes": 185610240,
+      "sha256": "12d21800ab016089a7e1f86921c91bc27465fd677cd724aaec81689e1be1c008"
+    },
+    "native-all.log": {
+      "bytes": 7093,
+      "sha256": "b0ed7532becbc063a7e52ea6e77992720fc08a5db318f739c15265bc757040f8"
+    },
+    "cpu-sampled.wpaProfile": {
+      "bytes": 4034,
+      "sha256": "5092304c54ce1f2d1e34f73cc09c6d8b91513a7aba76e6c16fd1f4403067682c"
+    },
+    "build.log": {
+      "bytes": 39584,
+      "sha256": "68a455d6dffc1afa45e4b525d5117ee70032f160ec157b9ead8bbb05a4777557"
+    }
+  },
+  "copied_translation_units": {
+    "save-integrity/cargopacket.cpp": "23ad1fe41862bc558f59f5ca41d990c0dae33057bb4737d89932f016d7b2818b",
+    "save-integrity/cargopacket_sl.cpp": "e1ba6bcbfb886f3c6398b369d6377478b19fb6586acca86f52cd7c3eefe5721b",
+    "save-integrity/command.cpp": "1b74b0b7454c8f8e9c29ff0c64676fda229b4c2cb4cc86432a932cebf7b81acf",
+    "save-integrity/console_cmds.cpp": "3b385845c54ef0535c2c8bc211d42ce967b802e0a2a29345565be7a8638d2aab",
+    "save-integrity/integrity.h": "a1829785fd341072840102949c0bb68e0960333f67c39b14c03a25d76d8d4b15",
+    "save-integrity/passenger_service_database.cpp": "fdbacbf55ded8463d2aa6d53232d41ebe85af10a5c302547d922e3b922a3ab72",
+    "save-integrity/wpr_gate.h": "64793e1253d3040ee8b8855b9c23a1d00b3db7690e26caf2716480d8750b8b24",
+    "real-map-driver/null_v.cpp": "4aa5423870fe4460020a055c971982a1d31bc882c7d4c0abe383f15e2a3bcb03",
+    "real-map-driver/win32.cpp": "61c5c6cfb7279228676a8215f97e12472c9d3d9a36fa40a9592633cc78ae7c8c"
+  },
+  "hardware": {
+    "cpu": "AMD Ryzen 9 9950X",
+    "physical_cores": 16,
+    "logical_processors": 32,
+    "windows_build": 26200,
+    "physical_memory_bytes": 100265259008,
+    "main_thread_affinity_mask": 1
+  },
+  "pdb_rsds": [
+    "01394347-20E1-4A56-A876-447C90462090",
+    "1"
+  ],
+  "build_flags": {
+    "cxx_release": "/O2 /Ob2 /DNDEBUG /Zi /Zo",
+    "link": "/DEBUG:FULL /OPT:REF /OPT:ICF /INCREMENTAL:NO",
+    "asserts": true,
+    "lto": false,
+    "static_crt": true
+  },
+  "tool_scripts": {
+    "utils/passenger_precomputed_real_map.py": "f448f148405a93bd1c4776be6a5d2b1bf395a7f09df03bfadcf77f010ad043ab",
+    "utils/passenger_estimated_prepare.py": "77cc792aad71ae0feace516a1d9db83a630f87501385dc8684f8f7684167e48c",
+    "utils/passenger_hyperpath_build.py": "18276cf3a68946a76033898d8073bf8c77ea46b9523e258e3c8d2117c1383b35",
+    "utils/passenger_wpr_compare.py": "f9533ae65362df62ddc5ff83e438a27303c77f68d7e122c48ffd7385005322c4",
+    "utils/passenger_wpr_control.py": "fa483d06004b2fe5e901884b0f3cbc6156588e1a1cc58d78d7a6dc761cee06bb",
+    "utils/passenger_wpr_export.py": "369efb3f57f7ce49e8fc4bd9fda8e7e5471d021bf53be6afa3a5df2e3057fad8",
+    "utils/passenger_wpr_prepare.py": "824694a1b0bf2bc6d64580f8e975b6caa6d05716b3d256a787ed7668b10dd060",
+    "utils/passenger_wpr_profile.py": "9a379fcbd8f70c92d3a7cb760c6c17283c3287e7fe5bfdf4f293387da44d6e69",
+    "utils/passenger_wpr_record.ps1": "237fe1ea5c4a58f18df035f59765cc08e9538bd8bb47190e87bdad679c5c13b2",
+    "utils/passenger_wpr_summarize.py": "0f7a8bef406d6e73c0f5022b248329e903d6d8b2428857bee3f3599c26ecbf83"
+  },
+  "tools_version": "WPAExporter 11.7.395.48728; built-in WPR 10.0.26100 on Windows 26200",
+  "tools": {
+    "wpr.exe": "b641bcda33b6e77deea90676570fdb96907ecc6ac8145be43ca72e33064ec615",
+    "wpaexporter.exe": "fc603f0316027c024132c9571a02959ad90c89cbc246b49f08958a74e6ceed62",
+    "perfcore.dll": "e606f7ab0da2f732a364e40e9d2088f8cc3d679eae98aeb9c01382e4bd6f0be8"
+  },
+  "symcache": {
+    "symcache/openttd.pdb/0139434720E14A56A876447C904620901/openttd.pdb-v3.1.0.symcache": {
+      "bytes": 15983600,
+      "sha256": "8fe30fd736faeb2147832fb40a44b43aa5e35888d6ec58c0dfe4b80f765123c2"
+    }
+  },
+  "reference_files": {
+    "docs/measurements/passenger-hyperpath-wpr-67cbbf32-2026-10-17/legacy/save-integrity.json": "4f85a9ef960b0698ca73e5d3db4ea7cbb076ea060bc36221a936959daeda8245",
+    "docs/measurements/passenger-hyperpath-wpr-67cbbf32-2026-10-17/legacy/CPU_Usage_(Sampled)_Stacks.csv.gz": "6973e7750277a5796471658f9dc3ea16ae046483dc1207c1c25024448a9ed6f6",
+    "docs/measurements/passenger-hyperpath-wpr-67cbbf32-2026-10-17/hyperpath/save-integrity.json": "8ca2201e3626739cb9bd610b71a14c95caa6b664438c1c3c2cd8abefb74926af",
+    "docs/measurements/passenger-hyperpath-wpr-67cbbf32-2026-10-17/hyperpath/CPU_Usage_(Sampled)_Stacks.csv.gz": "e5bc0c9b209092f31b6ddbc5d21df5f9dba86926ad61b32c14214723fe6ce105",
+    "docs/measurements/passenger-hyperpath-wpr-67cbbf32-2026-10-17/summary.json": "959ba63ac7f5958d6a760f603fdb2182db7116ca2daaae874b05e5ef14d42885",
+    "docs/measurements/passenger-hyperpath-wpr-67cbbf32-2026-10-17/build-identity.json": "e4c96b1639363fde173d3d2d853b61590e9661fdb1b6e611bd7594109bb966ea",
+    "docs/measurements/passenger-hyperpath-wpr-67cbbf32-2026-10-17/legacy-functions.csv": "253e540bfa472b146884c3e633b460cd16b8c9439f2510d73ab68340b19049ed",
+    "docs/measurements/passenger-hyperpath-wpr-67cbbf32-2026-10-17/hyperpath-functions.csv": "b5eddcdd9f0ae14d06e56298146c062a6af336291729251117f77c5ad9759cc3",
+    "docs/measurements/passenger-hyperpath-index-2d51a9ca-2026-10-17/stages.json": "37b7ac4ad560889c4ab7078ce18226aa4b34e85088982ced5c437d2511a2b0f3",
+    "docs/measurements/passenger-hyperpath-index-2d51a9ca-2026-10-17/maintenance.json": "1712118e05781c4b9d7dc25e07714d2f20744ab15c6c64ac61171535399a98f1"
+  }
+}

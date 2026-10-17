@@ -6,7 +6,10 @@
 #include "../3rdparty/catch2/catch.hpp"
 #include "../passenger_precomputed.h"
 #include "../passenger_service_database.h"
+#include "passenger_test_stations.h"
 #include <chrono>
+#include <cstdlib>
+#include <fstream>
 #include <iostream>
 
 namespace {
@@ -32,6 +35,295 @@ namespace {
 		for (size_t i = 0; !table.Finished() && i < 1000000; ++i) table.Step(chunk);
 		REQUIRE(table.Finished()); return table;
 	}
+	template <typename T> std::vector<StationID> DestinationList(const T &destinations)
+	{
+		if constexpr (std::is_same_v<typename T::value_type, StationID>) return {destinations.begin(), destinations.end()};
+		else {
+			std::vector<StationID> result;
+			for (auto span : destinations) {
+				REQUIRE(std::is_sorted(span.begin(), span.end()));
+				result.insert(result.end(), span.begin(), span.end());
+			}
+			REQUIRE(std::is_sorted(result.begin(), result.end()));
+			REQUIRE(std::adjacent_find(result.begin(), result.end()) == result.end());
+			return result;
+		}
+	}
+}
+
+TEST_CASE("Hyperpath fixed point preserves single waits and exact acceptance", "[passenger][hyperpath]")
+{
+	for (int64_t wait : std::initializer_list<int64_t>{1, 2, 3, 100, 65537, PassengerStrategy::MAX_WAIT}) {
+		PassengerStrategy sum;
+		REQUIRE(sum.Add(1234, PassengerStrategy::Frequency(wait)));
+		CHECK(sum.Cost() == wait + 1234); CHECK(sum.Wait() == wait);
+		CHECK_FALSE(sum.Attractive(sum.Cost()));
+	}
+	PassengerStrategy sum;
+	REQUIRE(sum.Add(100, PassengerStrategy::Frequency(100)));
+	CHECK(sum.Cost() == 200);
+	REQUIRE(sum.Add(150, PassengerStrategy::Frequency(100)));
+	CHECK(sum.Cost() == 175);
+	CHECK_FALSE(sum.Add(175, PassengerStrategy::Frequency(1)));
+	PassengerStrategy many;
+	for (size_t i = 0; i < 9; ++i) REQUIRE(many.Add(100, PassengerStrategy::Frequency(100)));
+	CHECK(many.Cost() == 112); // ceil(100 + 100/9), from the independent Fraction oracle.
+	CHECK(PassengerWide::Multiply(UINT64_MAX, UINT64_MAX) == PassengerWide{UINT64_MAX - 1, 1});
+}
+
+TEST_CASE("Hyperpath fixed point matches independent small exact rational strategies", "[passenger][hyperpath][reference]")
+{
+	/* LCM(1..16) is an exact rational unit for this independent oracle.
+	 * Its numerator remains below 20*720720*1024+720720 < 2^34;
+	 * this oracle does not use PassengerWide or PassengerStrategy arithmetic.
+	 * Away from exact ties its smallest possible gap exceeds 1/(20*720720),
+	 * greater than the Q48 rounding bound for these costs/waits. At a tie,
+	 * rounding frequencies upward cannot turn a rejected x into an acceptance. */
+	constexpr uint64_t UNIT = 720720;
+	uint32_t seed = 0x18d2b4a7;
+	for (size_t trial = 0; trial < 256; ++trial) {
+		std::vector<std::tuple<int64_t, int64_t, size_t>> choices;
+		for (size_t i = 0; i < 1 + trial % 20; ++i) {
+			seed = seed * 1664525U + 1013904223U; int64_t wait = 1 + seed % 16;
+			seed = seed * 1664525U + 1013904223U; int64_t cost = seed % 1024;
+			choices.emplace_back(cost, wait, i);
+		}
+		std::sort(choices.begin(), choices.end());
+		uint64_t numerator = UNIT, frequency = 0;
+		PassengerStrategy production;
+		for (auto [cost, wait, id] : choices) {
+			bool accepted = frequency == 0 || uint64_t(cost) * frequency < numerator;
+			CAPTURE(trial, id, cost, wait, numerator, frequency, production.Cost());
+			CHECK(production.Add(cost, PassengerStrategy::Frequency(wait)) == accepted);
+			if (accepted) { frequency += UNIT / wait; numerator += UNIT / wait * cost; }
+			CHECK(production.Cost() == int64_t((numerator + frequency - 1) / frequency));
+		}
+	}
+}
+
+TEST_CASE("Hyperpath frozen graph matches an independent multi-stage rational event oracle", "[passenger][hyperpath][reference]")
+{
+	std::array services{Service(0, {A, B}, 100), Service(1, {B, D}, 100), Service(2, {B, D}, 100), Service(3, {A, D}, 220)};
+	std::vector<const PassengerPeriodicService *> records; for (const auto &service : services) records.push_back(&service);
+	PassengerPrecomputedTable table; table.Begin(records, PAX, 0, PassengerPrecomputedTable::MAX_BYTES, true, false, {}, true, true, true, true);
+	while (!table.Finished()) table.Step(7);
+	// passenger_hyperpath_reference.py: B=159, A=11087/34, attractive A={3,0}.
+	CHECK(table.Plan(B, D, StateTicks{}).cost == 159);
+	CHECK(table.Plan(A, D, StateTicks{}).cost == 327);
+	auto set = table.Inspect(A, D); REQUIRE(set.size() == 2);
+	for (const auto &candidate : set) {
+		REQUIRE((candidate.service == OrderListID{0} || candidate.service == OrderListID{3}));
+		CHECK(candidate.cost == (candidate.service == OrderListID{0} ? 263 : 228));
+		CHECK(candidate.wait == (candidate.service == OrderListID{0} ? 110 : 230));
+		auto ride = table.Board(A, D, StateTicks{}, candidate.service, candidate.order);
+		REQUIRE(ride.ride); CHECK(ride.cost == candidate.cost);
+		CHECK(ride.ride->alighting == (candidate.service == OrderListID{0} ? B : D));
+	}
+}
+
+TEST_CASE("Hyperpath frozen real map intermediate diagnostic", "[.hyperpath-real][passenger]")
+{
+	const char *path = getenv("OPENTTD_TABLE_DATABASE"); REQUIRE(path != nullptr);
+	std::ifstream file(path, std::ios::binary); REQUIRE(file.good());
+	std::vector<uint8_t> wire{std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>()};
+	PassengerServiceDatabase database; REQUIRE(database.Load(wire));
+	PassengerTestStations fixture;
+	if (const char *coordinates = getenv("OPENTTD_TABLE_STATIONS")) {
+		std::ifstream positions(coordinates); uint32_t width, height, id, x, y; REQUIRE(bool(positions >> width >> height));
+		AllocateMap(width, height);
+		while (positions >> id >> x >> y) Station::CreateAtIndex(StationID{static_cast<uint16_t>(id)}, TileIndex{width * y + x});
+	}
+	std::vector<const PassengerPeriodicService *> records;
+	for (uint32_t id = 0; id < OrderListID::Invalid().base(); ++id) if (auto *service = database.Get(OrderListID{static_cast<uint16_t>(id)})) records.push_back(service);
+	std::array<std::pair<StationID, StationID>, 3> ods{{{StationID{3222}, StationID{400}}, {StationID{971}, StationID{916}}, {StationID{3393}, StationID{3394}}}};
+	std::array<int64_t, 3> old_cost{};
+	std::set<StationID> station_set;
+	for (const auto *service : records) for (const auto &stop : service->timetable.stops) if ((stop.board | stop.alight) & 1) station_set.insert(stop.station);
+	std::vector<StationID> all_stations(station_set.begin(), station_set.end());
+	std::vector<int64_t> old_costs; old_costs.reserve(all_stations.size() * all_stations.size());
+	{
+		auto started = std::chrono::steady_clock::now();
+		PassengerPrecomputedTable old; old.Begin(records, PAX, 20);
+		while (!old.Finished()) old.Step(16 * 1024 * 1024);
+		const auto &d = old.GetDiagnostic();
+		std::cout << "hyperpath_previous_build," << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - started).count() << ',' << d.operations << ',' << d.bytes << ',' << d.envelope << std::endl;
+		for (size_t i = 0; i < ods.size(); ++i) old_cost[i] = old.RouteCost(ods[i].first, ods[i].second).value_or(INT64_MAX);
+		for (auto from : all_stations) for (auto to : all_stations) old_costs.push_back(old.RouteCost(from, to).value_or(INT64_MAX));
+	}
+	PassengerPrecomputedTable table;
+	auto start = std::chrono::steady_clock::now();
+	table.Begin(records, PAX, 20, PassengerPrecomputedTable::MAX_BYTES, true, false, {}, true, true, true, true);
+	while (!table.Finished()) table.Step(16 * 1024 * 1024);
+	const auto &d = table.GetDiagnostic();
+	std::cout << "hyperpath_build," << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start).count()
+			<< ',' << d.operations << ',' << d.envelope << ',' << d.bytes << ',' << d.board_events << ',' << d.board_accepts << ',' << d.range_updates
+			<< ',' << d.heap_pushes << ',' << d.heap_pops << ',' << d.base_policy_bytes << ',' << d.difference_policy_bytes << ',' << d.max_candidates << std::endl;
+	REQUIRE_FALSE(table.MemoryRejected());
+	uint64_t improved = 0, equal = 0, worse = 0, newly_reachable = 0, newly_unreachable = 0; int64_t maximum_increase = 0;
+	PassengerWide old_sum, new_sum;
+	size_t position = 0;
+	for (auto from : all_stations) for (auto to : all_stations) {
+		int64_t before = old_costs[position++], after = table.RouteCost(from, to).value_or(INT64_MAX);
+		if (before == INT64_MAX || after == INT64_MAX) {
+			newly_reachable += before == INT64_MAX && after != INT64_MAX;
+			newly_unreachable += before != INT64_MAX && after == INT64_MAX; continue;
+		}
+		old_sum.Add({0, uint64_t(before)}); new_sum.Add({0, uint64_t(after)});
+		improved += after < before; equal += after == before; worse += after > before;
+		if (after > before) maximum_increase = std::max(maximum_increase, after - before);
+	}
+	std::cout << "hyperpath_all_od," << improved << ',' << equal << ',' << worse << ',' << newly_reachable << ',' << newly_unreachable << ',' << maximum_increase << ','
+			<< old_sum.high << ',' << old_sum.low << ',' << new_sum.high << ',' << new_sum.low << std::endl;
+	for (const auto &[size, count] : d.candidate_histogram) std::cout << "hyperpath_histogram," << size << ',' << count << std::endl;
+	for (size_t i = 0; i < ods.size(); ++i) {
+		auto [from, to] = ods[i]; auto plan = table.Plan(from, to, StateTicks{});
+		std::cout << "hyperpath_od," << from.base() << ',' << to.base() << ',' << old_cost[i] << ',' << plan.cost << std::endl;
+		for (const auto &candidate : table.Inspect(from, to)) std::cout << "hyperpath_candidate," << from.base() << ',' << to.base() << ',' << candidate.occurrence << ','
+				<< candidate.service.base() << ',' << candidate.order << ',' << candidate.alight.base() << ',' << candidate.cost << ',' << candidate.wait << ',' << candidate.frequency << std::endl;
+	}
+}
+
+TEST_CASE("Hyperpath keeps all attractive real boarding occurrences", "[passenger][hyperpath]")
+{
+	std::vector<PassengerPeriodicService> services;
+	for (uint16_t i = 0; i < 9; ++i) services.push_back(Service(i, {A, B, D}, 100 + i));
+	services.push_back(Service(9, {A, C}, 100)); // A short turn cannot become a through ride to D.
+	std::vector<const PassengerPeriodicService *> records; for (const auto &s : services) records.push_back(&s);
+	uint64_t work = 0;
+	for (size_t chunk : {size_t{1}, size_t{7}, size_t{65536}}) {
+		PassengerPrecomputedTable table;
+		table.Begin(records, PAX, 20, PassengerPrecomputedTable::MAX_BYTES, true, false, {}, true, true, true, true);
+		while (!table.Finished()) table.Step(chunk);
+		REQUIRE_FALSE(table.MemoryRejected());
+		CAPTURE(chunk);
+		if (work == 0) work = table.GetDiagnostic().operations;
+		CHECK(work == table.GetDiagnostic().operations);
+		auto set = table.Inspect(A, D);
+		REQUIRE(set.size() == 9);
+		CHECK(table.GetDiagnostic().section_rides == 0);
+		CHECK(table.GetDiagnostic().max_candidates >= 9);
+		auto plan = table.Plan(A, D, StateTicks{42}); REQUIRE(plan.ride); CHECK(plan.hyperpath);
+		PassengerStrategy reference;
+		std::sort(set.begin(), set.end(), [](const auto &a, const auto &b) { return std::tie(a.cost, a.occurrence) < std::tie(b.cost, b.occurrence); });
+		for (const auto &candidate : set) {
+			CAPTURE(candidate.service.base(), candidate.cost, candidate.frequency, reference.Cost());
+			REQUIRE(reference.Add(candidate.cost, candidate.frequency));
+			auto board = table.Board(A, D, StateTicks{42}, candidate.service, candidate.order);
+			REQUIRE(board.ride); CHECK(board.ride->alighting == D); CHECK(board.cost == candidate.cost);
+		}
+		CHECK(plan.cost == reference.Cost());
+		CHECK_FALSE(table.Board(A, D, StateTicks{}, OrderListID{9}, 0).ride);
+		CHECK(table.Candidates(A, D, OrderListID{0}).size() == 8);
+	}
+}
+
+TEST_CASE("Hyperpath excludes only the arriving OrderList and handles masks", "[passenger][hyperpath]")
+{
+	std::array services{Service(0, {A, B, D}), Service(1, {A, B, D}), Service(2, {A, C, D}, 100)};
+	SECTION("Identical patterns remain distinct real opportunities") {}
+	SECTION("NoLoad") { services[2].timetable.stops[0].board = 0; }
+	SECTION("NoUnload") { services[2].timetable.stops[2].alight = 0; }
+	SECTION("Forced unloading") { services[2].timetable.stops[1].forced = 1; }
+	SECTION("Zero dwell") { for (auto &s : services) for (auto &stop : s.timetable.stops) stop.departure = stop.arrival; }
+	std::vector<const PassengerPeriodicService *> records; for (const auto &s : services) records.push_back(&s);
+	PassengerPrecomputedTable table; table.Begin(records, PAX, 0, PassengerPrecomputedTable::MAX_BYTES, true, false, {}, true, true, true, true);
+	while (!table.Finished()) table.Step(3);
+	REQUIRE_FALSE(table.MemoryRejected());
+	auto set = table.Inspect(A, D, OrderListID{0});
+	CHECK(std::none_of(set.begin(), set.end(), [](const auto &c) { return c.service == OrderListID{0}; }));
+	CHECK(std::any_of(set.begin(), set.end(), [](const auto &c) { return c.service == OrderListID{1}; }));
+	for (const auto &candidate : set) {
+		auto ride = table.Board(A, D, StateTicks{}, candidate.service, candidate.order, OrderListID{0});
+		REQUIRE(ride.ride); CHECK(ride.cost == candidate.cost);
+		if (candidate.service == OrderListID{2}) {
+			CHECK((services[2].timetable.stops.front().board & 1) != 0);
+			CHECK((services[2].timetable.stops[ride.ride->alighting_order].alight & 1) != 0);
+			if (services[2].timetable.stops[1].forced) CHECK(ride.ride->alighting_order <= 1);
+		}
+	}
+}
+
+TEST_CASE("Hyperpath preserves repeated station occurrences and chooses one alight per departure", "[passenger][hyperpath][occurrence]")
+{
+	std::array services{Service(0, {A, B, A, D}, 100)};
+	for (auto &stop : services[0].timetable.stops) stop.departure = stop.arrival; // Zero dwell at the repeated station too.
+	std::vector<const PassengerPeriodicService *> records{&services[0]};
+	PassengerPrecomputedTable table; table.Begin(records, PAX, 0, PassengerPrecomputedTable::MAX_BYTES, true, false, {}, true, true, true, true);
+	while (!table.Finished()) table.Step(1);
+	auto set = table.Inspect(A, D); REQUIRE_FALSE(set.empty());
+	std::set<VehicleOrderID> boards;
+	for (const auto &candidate : set) {
+		CHECK(boards.insert(candidate.order).second);
+		CHECK((candidate.order == 0 || candidate.order == 2));
+		auto ride = table.Board(A, D, StateTicks{}, candidate.service, candidate.order);
+		REQUIRE(ride.ride); CHECK(ride.ride->alighting_order == 3); CHECK(ride.cost == candidate.cost);
+	}
+	CHECK(boards.contains(2)); CHECK(table.GetDiagnostic().section_rides == 0);
+}
+
+TEST_CASE("Hyperpath orders Board events by cost including risk", "[passenger][hyperpath]")
+{
+	std::array services{Service(0, {A, D}, 100), Service(1, {A, D}, 150)};
+	services[0].vehicles[0].capacity[PAX] = 1;
+	std::vector<const PassengerPeriodicService *> records; for (const auto &s : services) records.push_back(&s);
+	PassengerPrecomputedTable table; table.Begin(records, PAX, 0, PassengerPrecomputedTable::MAX_BYTES, true, false, {}, true, true, true, true);
+	while (!table.Finished()) table.Step(1);
+	auto set = table.Inspect(A, D);
+	REQUIRE(set.size() == 1); CHECK(set[0].service == OrderListID{1});
+	CHECK(set[0].cost == 155); CHECK(set[0].wait == 160);
+	CHECK(table.Plan(A, D, StateTicks{}).cost == 315);
+}
+
+TEST_CASE("Hyperpath counts a frozen physical vehicle in only its newest captured service", "[passenger][hyperpath]")
+{
+	std::array services{Service(0, {A, D}, 100), Service(1, {A, D}, 100)};
+	services[1].vehicles[0].id = services[0].vehicles[0].id;
+	bool refitted = false;
+	SECTION("Newer passenger ownership") {}
+	SECTION("Newer ownership refitted away from passengers") { services[1].vehicles[0].capacity[PAX] = 0; refitted = true; }
+	std::vector<const PassengerPeriodicService *> records{&services[0], &services[1]};
+	PassengerPrecomputedTable table; table.Begin(records, PAX, 0, PassengerPrecomputedTable::MAX_BYTES, true, false, {}, true, true, true, true);
+	while (!table.Finished()) table.Step(1);
+	auto set = table.Inspect(A, D);
+	if (refitted) { CHECK(set.empty()); CHECK_FALSE(table.Plan(A, D, StateTicks{}).ride); return; }
+	REQUIRE(set.size() == 1);
+	CHECK(set[0].service == services[1].id); // The newer frozen generation owns the single real opportunity.
+	CHECK(table.Plan(A, D, StateTicks{}).cost == set[0].cost + set[0].wait);
+}
+
+TEST_CASE("Hyperpath matches single-service certified and estimated costs", "[passenger][hyperpath]")
+{
+	std::array services{Service(0, {A, B, D})};
+	SECTION("Certified") {}
+	SECTION("Unknown phase") { services[0].vehicles[0].phase_known = false; }
+	SECTION("Estimated") { services[0].timetable.estimated_period = services[0].timetable.period; services[0].timetable.period = 0; }
+	std::vector<const PassengerPeriodicService *> records{&services[0]};
+	auto old = Build(services);
+	PassengerPrecomputedTable table; table.Begin(records, PAX, 20, PassengerPrecomputedTable::MAX_BYTES, true, false, {}, true, true, true, true);
+	while (!table.Finished()) table.Step(7);
+	CHECK(table.Plan(A, D, StateTicks{}).cost == old.Plan(A, D, StateTicks{}).cost);
+	auto set = table.Inspect(A, D); REQUIRE(set.size() == 1);
+	CHECK(table.Plan(A, D, StateTicks{}).cost == set[0].cost + set[0].wait);
+}
+
+TEST_CASE("Hyperpath local replanning admits a previously rejected service and preserves reachability", "[passenger][hyperpath][replan]")
+{
+	std::vector<PassengerPeriodicService> services{Service(0, {A, D}, 100)};
+	bool alternative = true;
+	SECTION("Previously unattractive alternative") { services.push_back(Service(1, {A, D}, 220)); }
+	SECTION("No alternative restores the failed service") { alternative = false; }
+	std::vector<const PassengerPeriodicService *> records; for (const auto &s : services) records.push_back(&s);
+	PassengerPrecomputedTable table; table.Begin(records, PAX, 0, PassengerPrecomputedTable::MAX_BYTES, true, false, {}, true, true, true, true);
+	while (!table.Finished()) table.Step(3);
+	REQUIRE(table.Candidates(A, D).size() == 1);
+	CHECK_FALSE(table.Board(A, D, StateTicks{}, OrderListID{1}, 0).ride);
+	OrderListID chosen{static_cast<uint16_t>(alternative ? 1 : 0)};
+	for (size_t i = 0; i < 100; ++i) {
+		auto board = table.Board(A, D, StateTicks{}, chosen, 0, OrderListID::Invalid(), OrderListID{0}); REQUIRE(board.ride);
+		CHECK(board.ride->service == chosen); CHECK(board.ride->alighting == D);
+	}
+	CHECK(table.GetDiagnostic().local_replans == 1);
+	if (alternative) CHECK_FALSE(table.Board(A, D, StateTicks{}, OrderListID{0}, 0, OrderListID::Invalid(), OrderListID{0}).ride);
 }
 
 TEST_CASE("Precomputed trees preserve through rides and physical occurrences", "[passenger][precomputed]")
@@ -506,11 +798,12 @@ TEST_CASE("Precomputed replacement retires rows at publication without retaining
 	auto old = Build(services);
 	std::vector<const PassengerPeriodicService *> records{&services[0]};
 	PassengerPrecomputedTable replacement; replacement.Begin(records, PAX, 30);
+	old.PrepareRetirement(replacement);
 	size_t published = 0;
 	while (!replacement.Finished()) replacement.Step(1, false, [&](StationID destination) {
 		old.ReleaseDestination(destination); ++published;
 		for (StationID origin : {A, B, C, D}) {
-			auto destinations = old.ReachableDestinations(origin);
+			auto destinations = DestinationList(old.ReachableDestinations(origin));
 			CHECK_FALSE(std::binary_search(destinations.begin(), destinations.end(), destination));
 			CHECK_FALSE(old.RouteCost(origin, destination));
 		}
@@ -521,6 +814,120 @@ TEST_CASE("Precomputed replacement retires rows at publication without retaining
 	CHECK(old.GetDiagnostic().bytes < replacement.GetDiagnostic().bytes);
 }
 
+TEST_CASE("Retirement preserves every sliced reachable set across added and missing stations", "[passenger][precomputed][memory][save]")
+{
+	const std::array origins{A, B, C, D, StationID{4}, StationID{7}, StationID{8}, StationID{9}, StationID{10}};
+	std::array previous{Service(0, {A, B, C, D, StationID{7}, StationID{9}}), Service(1, {A, StationID{10}})};
+	std::array next{Service(0, {B, D, StationID{4}, StationID{8}}), Service(1, {StationID{4}, StationID{10}})};
+	/* 3 is Hyperpath: it forces the integrated engine but keeps per-state rows,
+	 * and must share the watermark retirement with compressed rows in either direction. */
+	for (auto [algorithm, replacement_algorithm] : {std::pair{0U, 0U}, std::pair{1U, 1U}, std::pair{2U, 2U}, std::pair{0U, 2U}, std::pair{1U, 2U},
+			std::pair{3U, 3U}, std::pair{2U, 3U}, std::pair{3U, 2U}, std::pair{0U, 3U}}) {
+		uint64_t work = 0;
+		for (size_t quantum : {1U, 2U, 3U, 4U, 5U, 7U, 64U}) {
+			CAPTURE(algorithm, replacement_algorithm, quantum);
+			PassengerPrecomputedTable retained, current;
+			std::vector<const PassengerPeriodicService *> records;
+			for (const auto &s : previous) records.push_back(&s);
+			retained.Begin(records, PAX, 20, PassengerPrecomputedTable::MAX_BYTES, true, false, {}, true, algorithm != 0, algorithm >= 2, algorithm == 3);
+			while (!retained.Finished()) retained.Step(65536);
+			REQUIRE(retained.IsHyperpath() == (algorithm == 3));
+			std::map<StationID, std::vector<StationID>> expected;
+			std::map<std::pair<StationID, StationID>, std::optional<int64_t>> costs;
+			for (StationID origin : origins) {
+				expected[origin] = DestinationList(retained.ReachableDestinations(origin));
+				for (StationID destination : origins) costs[{origin, destination}] = retained.RouteCost(origin, destination);
+			}
+			CHECK(std::any_of(expected.begin(), expected.end(), [](const auto &entry) { return !entry.second.empty(); }));
+			records.clear(); for (const auto &s : next) records.push_back(&s);
+			current.Begin(records, PAX, 30, PassengerPrecomputedTable::MAX_BYTES, true, false, {}, true, replacement_algorithm != 0, replacement_algorithm >= 2, replacement_algorithm == 3);
+			[&]<typename T>(T &old) { if constexpr (requires { old.PrepareRetirement(current); }) old.PrepareRetirement(current); }(retained);
+			std::set<StationID> released;
+			while (!current.Finished()) {
+				CHECK(current.Step(quantum, false, [&](StationID destination) {
+					CHECK((released.empty() || *released.rbegin() < destination));
+					retained.ReleaseDestination(destination); released.insert(destination);
+					for (auto &[origin, destinations] : expected) std::erase(destinations, destination);
+				}) <= quantum);
+				for (StationID origin : origins) {
+					auto actual = DestinationList(retained.ReachableDestinations(origin));
+					CHECK(actual == expected[origin]);
+					/* Match both CargoPacket scan strategies, including calls for a
+					 * reachable destination without a waiting fallback cohort. */
+					for (size_t fallback_count : {size_t{0}, size_t{1}, origins.size()}) {
+						std::vector<StationID> scalar_calls, span_calls;
+						const auto &destinations = expected[origin];
+						if (fallback_count < destinations.size()) {
+							for (size_t i = 0; i < fallback_count; ++i) if (std::binary_search(destinations.begin(), destinations.end(), origins[i])) scalar_calls.push_back(origins[i]);
+						} else scalar_calls = destinations;
+						auto spans = retained.ReachableDestinations(origin);
+						if (fallback_count < spans[0].size() + spans[1].size()) {
+							for (size_t i = 0; i < fallback_count; ++i) if (std::binary_search(spans[0].begin(), spans[0].end(), origins[i]) || std::binary_search(spans[1].begin(), spans[1].end(), origins[i])) span_calls.push_back(origins[i]);
+						} else for (auto span : spans) span_calls.insert(span_calls.end(), span.begin(), span.end());
+						CHECK(span_calls == scalar_calls);
+					}
+					auto fresh = DestinationList(current.ReachableDestinations(origin));
+					for (StationID destination : origins) {
+						CHECK_FALSE((std::binary_search(actual.begin(), actual.end(), destination) && std::binary_search(fresh.begin(), fresh.end(), destination)));
+						CHECK(retained.RouteCost(origin, destination) == (released.contains(destination) ? std::nullopt : costs[{origin, destination}]));
+					}
+				}
+			}
+			if (work == 0) work = current.GetDiagnostic().operations;
+			CHECK(current.GetDiagnostic().operations == work);
+		}
+	}
+}
+
+TEST_CASE("Retained destinations survive repeated replacement epochs without resurrection", "[passenger][precomputed][memory][save]")
+{
+	const std::array origins{A, B, C, D, StationID{4}, StationID{7}, StationID{8}, StationID{9}, StationID{10}};
+	std::array previous{Service(0, {A, B, C, D, StationID{7}, StationID{9}, StationID{10}})};
+	const std::array generations{
+		Service(0, {B, D, StationID{4}, StationID{8}, StationID{10}}),
+		Service(0, {A, StationID{7}, StationID{10}}),
+		Service(0, {C, StationID{9}}),
+		Service(0, {A, B, C, D})};
+	for (unsigned algorithm : {0U, 1U, 2U, 3U}) for (bool hyperpath_replacement : {false, true}) for (size_t quantum : {1U, 4U, 5U}) {
+		CAPTURE(algorithm, hyperpath_replacement, quantum);
+		PassengerPrecomputedTable retained;
+		std::vector<const PassengerPeriodicService *> records{&previous[0]};
+		retained.Begin(records, PAX, 20, PassengerPrecomputedTable::MAX_BYTES, true, false, {}, true, algorithm != 0, algorithm >= 2, algorithm == 3);
+		while (!retained.Finished()) retained.Step(65536);
+		std::map<StationID, std::vector<StationID>> expected;
+		std::map<std::pair<StationID, StationID>, std::optional<int64_t>> costs;
+		for (StationID origin : origins) {
+			expected[origin] = DestinationList(retained.ReachableDestinations(origin));
+			for (StationID destination : origins) costs[{origin, destination}] = retained.RouteCost(origin, destination);
+		}
+		std::set<StationID> retired;
+		for (const auto &generation : generations) {
+			retained.ReuseRetainedDestinations();
+			for (StationID origin : origins) CHECK(DestinationList(retained.ReachableDestinations(origin)) == expected[origin]);
+			records = {&generation};
+			PassengerPrecomputedTable current; current.Begin(records, PAX, 30, PassengerPrecomputedTable::MAX_BYTES, true, false, {}, true, true, true, hyperpath_replacement);
+			retained.PrepareRetirement(current);
+			while (!current.Finished()) {
+				CHECK(current.Step(quantum, false, [&](StationID destination) {
+					retained.ReleaseDestination(destination); retired.insert(destination);
+					for (auto &[origin, destinations] : expected) std::erase(destinations, destination);
+				}) <= quantum);
+				for (StationID origin : origins) {
+					auto actual = DestinationList(retained.ReachableDestinations(origin));
+					CHECK(actual == expected[origin]); CHECK(std::is_sorted(actual.begin(), actual.end()));
+					auto fresh = DestinationList(current.ReachableDestinations(origin));
+					for (StationID destination : origins) {
+						CHECK_FALSE((std::binary_search(actual.begin(), actual.end(), destination) && std::binary_search(fresh.begin(), fresh.end(), destination)));
+						CHECK(retained.RouteCost(origin, destination) == (retired.contains(destination) ? std::nullopt : costs[{origin, destination}]));
+					}
+				}
+			}
+		}
+		retained.ReuseRetainedDestinations();
+		for (StationID origin : origins) CHECK(DestinationList(retained.ReachableDestinations(origin)).empty());
+	}
+}
+
 TEST_CASE("Precomputed inverse destinations contain exactly the published finite rows", "[passenger][precomputed][boarding][save]")
 {
 	std::array services{Service(0, {A, B}), Service(1, {B, D}), Service(2, {C})};
@@ -529,7 +936,7 @@ TEST_CASE("Precomputed inverse destinations contain exactly the published finite
 	while (!table.Finished()) {
 		table.Step(7);
 		for (StationID origin : {A, B, C, D}) {
-			auto destinations = table.ReachableDestinations(origin); REQUIRE(std::is_sorted(destinations.begin(), destinations.end()));
+			auto destinations = DestinationList(table.ReachableDestinations(origin)); REQUIRE(std::is_sorted(destinations.begin(), destinations.end()));
 			for (StationID destination : {A, B, C, D}) {
 				auto cost = table.RouteCost(origin, destination);
 				CHECK(std::binary_search(destinations.begin(), destinations.end(), destination) == (cost && *cost != INT64_MAX));
@@ -602,5 +1009,113 @@ TEST_CASE("Precomputed CPU scaling benchmark", "[.benchmark][passenger][precompu
 		std::sort(samples.begin(), samples.end()); const auto &d = table.GetDiagnostic();
 		std::cout << axis << ',' << scale << ',' << build_us << ',' << total / samples.size() << ',' << samples[samples.size() * 95 / 100] << ',' << samples[samples.size() * 99 / 100]
 				<< ',' << d.bytes << ',' << d.envelope << ',' << d.states << ',' << d.edges << ',' << d.operations << ',' << d.hits << '\n';
+	}
+}
+
+TEST_CASE("Flat Hyperpath policies preserve every published candidate label and N/F across slices", "[passenger][hyperpath][flat][determinism]")
+{
+	uint32_t seed = 0x53d28b17;
+	for (size_t trial = 0; trial < 16; ++trial) {
+		CAPTURE(trial);
+		std::vector<PassengerPeriodicService> services;
+		for (uint16_t id = 0; id < 12; ++id) {
+			seed = seed * 1664525U + 1013904223U;
+			auto service = id % 3 == 0 ? Service(id, {A, B, A, D}, 20 + seed % 200) : id % 3 == 1 ? Service(id, {A, C, D}, 20 + seed % 200) : Service(id, {B, D, C, A}, 20 + seed % 200);
+			if ((seed & 3) == 0) { service.timetable.estimated_period = service.timetable.period; service.timetable.period = 0; }
+			if ((seed & 7) == 0) service.timetable.stops[1].board = 0;
+			services.push_back(std::move(service));
+		}
+		std::vector<const PassengerPeriodicService *> records; for (const auto &service : services) records.push_back(&service);
+		PassengerPrecomputedTable old, flat;
+		old.Begin(records, PAX, 20, PassengerPrecomputedTable::MAX_HYPERPATH_BYTES, true, false, {}, true, true, true, true, true, true, false);
+		flat.Begin(records, PAX, 20, PassengerPrecomputedTable::MAX_HYPERPATH_BYTES, true, false, {}, true, true, true, true, true, true, true);
+		std::map<StationID, std::vector<uint64_t>> expected;
+		while (!old.Finished()) old.Step(1 + trial, false, [&](StationID destination) { expected.emplace(destination, old.InspectBuildingPolicyRow(destination)); });
+		while (!flat.Finished()) flat.Step(73 - trial, false, [&](StationID destination) {
+			REQUIRE(expected.contains(destination));
+			CHECK(flat.InspectBuildingPolicyRow(destination) == expected.at(destination));
+		});
+		REQUIRE_FALSE(old.MemoryRejected()); REQUIRE_FALSE(flat.MemoryRejected()); REQUIRE(expected.size() == 4);
+		CHECK(flat.GetDiagnostic().operations == old.GetDiagnostic().operations);
+		CHECK(flat.GetDiagnostic().candidate_histogram == old.GetDiagnostic().candidate_histogram);
+		CHECK(flat.GetDiagnostic().candidate_count == old.GetDiagnostic().candidate_count);
+		CHECK(flat.GetDiagnostic().envelope < old.GetDiagnostic().envelope);
+		for (auto from : {A, B, C, D}) for (auto to : {A, B, C, D}) for (uint16_t id = 0; id < services.size(); ++id) {
+			auto previous = OrderListID{id};
+			for (auto failed : {OrderListID::Invalid(), previous}) {
+				auto before = old.Candidates(from, to, previous, failed), after = flat.Candidates(from, to, previous, failed);
+				CHECK(std::vector<uint32_t>(before.begin(), before.end()) == std::vector<uint32_t>(after.begin(), after.end()));
+				CHECK(flat.Plan(from, to, StateTicks{42}, previous, 0, failed).ride == old.Plan(from, to, StateTicks{42}, previous, 0, failed).ride);
+				for (const auto &stop : services[id].timetable.stops) if (stop.station == from) {
+					auto occurrence = flat.BoardingOccurrence(from, previous, stop.order);
+					CHECK(flat.ContainsCached(from, to, occurrence, OrderListID::Invalid(), failed) == old.ContainsCached(from, to, occurrence, OrderListID::Invalid(), failed));
+					CHECK(flat.Board(from, to, StateTicks{42}, previous, stop.order, OrderListID::Invalid(), failed).ride == old.Board(from, to, StateTicks{42}, previous, stop.order, OrderListID::Invalid(), failed).ride);
+				}
+			}
+		}
+		auto before = old.InspectMemory(), after = flat.InspectMemory();
+		CHECK(after.labels == before.labels); CHECK(after.policy_headers <= before.policy_headers);
+		CHECK(after.unexpected_removals == before.unexpected_removals);
+		CHECK(after.maximum_additions == before.maximum_additions);
+		CHECK(after.labels + after.indices + after.policy_headers + after.candidate_arrays + after.graph + after.local <= after.reported);
+	}
+}
+
+TEST_CASE("Flat Hyperpath differences retain every addition after excluding a fast carrier", "[passenger][hyperpath][flat]")
+{
+	std::vector<PassengerPeriodicService> services{Service(0, {A, D}, 1)};
+	for (uint16_t id = 1; id <= 11; ++id) services.push_back(Service(id, {A, D}, 100));
+	std::vector<const PassengerPeriodicService *> records; for (const auto &service : services) records.push_back(&service);
+	PassengerPrecomputedTable old, flat;
+	old.Begin(records, PAX, 0, PassengerPrecomputedTable::MAX_HYPERPATH_BYTES, true, false, {}, true, true, true, true, true, true, false);
+	flat.Begin(records, PAX, 0, PassengerPrecomputedTable::MAX_HYPERPATH_BYTES, true, false, {}, true, true, true, true, true, true, true);
+	while (!old.Finished()) old.Step(7); while (!flat.Finished()) flat.Step(3);
+	REQUIRE(flat.Candidates(A, D).size() == 1);
+	auto before = old.Candidates(A, D, OrderListID{0}), after = flat.Candidates(A, D, OrderListID{0});
+	REQUIRE(before.size() == 11); CHECK(std::vector<uint32_t>(before.begin(), before.end()) == std::vector<uint32_t>(after.begin(), after.end()));
+	CHECK(flat.InspectMemory().maximum_additions == 11); CHECK(flat.InspectMemory().multi_addition_differences > 0);
+	for (uint16_t id = 1; id <= 11; ++id) {
+		auto a = old.Board(A, D, StateTicks{}, OrderListID{id}, 0, OrderListID{0}), b = flat.Board(A, D, StateTicks{}, OrderListID{id}, 0, OrderListID{0});
+		REQUIRE(a.ride); CHECK(a.ride == b.ride);
+	}
+}
+
+TEST_CASE("Hyperpath flat real map exact publication witness", "[.hyperpath-flat-real][passenger]")
+{
+	const char *path = getenv("OPENTTD_TABLE_DATABASE"), *coordinates = getenv("OPENTTD_TABLE_STATIONS"), *output = getenv("OPENTTD_TABLE_WITNESS"), *storage = getenv("OPENTTD_TABLE_FLAT");
+	REQUIRE(path != nullptr); REQUIRE(coordinates != nullptr); REQUIRE(output != nullptr); REQUIRE(storage != nullptr);
+	std::ifstream file(path, std::ios::binary); REQUIRE(file.good());
+	std::vector<uint8_t> wire{std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>()};
+	PassengerServiceDatabase database; REQUIRE(database.Load(wire)); PassengerTestStations fixture;
+	std::ifstream positions(coordinates); uint32_t width, height, id, x, y; REQUIRE(bool(positions >> width >> height)); AllocateMap(width, height);
+	while (positions >> id >> x >> y) Station::CreateAtIndex(StationID{static_cast<uint16_t>(id)}, TileIndex{width * y + x});
+	std::vector<const PassengerPeriodicService *> records;
+	for (uint32_t id = 0; id < OrderListID::Invalid().base(); ++id) if (auto *service = database.Get(OrderListID{static_cast<uint16_t>(id)})) records.push_back(service);
+	bool flat = std::string_view(storage) == "1"; REQUIRE((flat || std::string_view(storage) == "0"));
+	std::ofstream witness(output, std::ios::binary); REQUIRE(witness.good());
+	PassengerPrecomputedTable table; auto started = std::chrono::steady_clock::now(); uint64_t rows = 0, words = 0;
+	const char *replay = getenv("OPENTTD_TABLE_REPLAY_WORK"); uint64_t remaining = replay == nullptr ? 0 : std::strtoull(replay, nullptr, 10);
+	table.Begin(records, PAX, 20, PassengerPrecomputedTable::MAX_HYPERPATH_BYTES, true, false, {}, true, true, true, true, true, true, flat);
+	while (!table.Finished()) {
+		REQUIRE((replay == nullptr || remaining != 0));
+		size_t used = table.Step(replay == nullptr ? 16 * 1024 * 1024 : std::min<uint64_t>(remaining, 104729), false, [&](StationID destination) {
+		auto row = table.InspectBuildingPolicyRow(destination); REQUIRE_FALSE(row.empty());
+		uint64_t size = row.size(); witness.write(reinterpret_cast<const char *>(&size), sizeof(size));
+		witness.write(reinterpret_cast<const char *>(row.data()), row.size() * sizeof(uint64_t)); REQUIRE(witness.good());
+		++rows; words += size + 1;
+		});
+		if (replay != nullptr) { REQUIRE(used != 0); remaining -= used; }
+	}
+	REQUIRE_FALSE(table.MemoryRejected()); REQUIRE((replay == nullptr || remaining == 0)); witness.close();
+	const auto &d = table.GetDiagnostic(); auto m = table.InspectMemory();
+	std::cout << "flat_build," << flat << ',' << rows << ',' << words << ',' << d.operations << ',' << d.envelope << ',' << d.bytes << ',' << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - started).count() << std::endl;
+	std::cout << "flat_memory," << m.reported << ',' << m.graph << ',' << m.labels << ',' << m.indices << ',' << m.policy_headers << ',' << m.candidate_arrays << ',' << m.local << ',' << m.differences << ',' << m.additions << ',' << m.maximum_additions << ',' << m.multi_addition_differences << ',' << m.unexpected_removals << std::endl;
+	for (auto [origin, destination] : {std::pair{StationID{971}, StationID{916}}, std::pair{StationID{3222}, StationID{400}}, std::pair{StationID{3393}, StationID{3394}}}) {
+		auto candidates = table.Candidates(origin, destination); auto plan = table.Plan(origin, destination, StateTicks{});
+		std::cout << "flat_target," << origin.base() << ',' << destination.base() << ',' << table.RouteCost(origin, destination).value_or(INT64_MAX) << ',' << (plan.ride ? plan.ride->estimated_wait : -1) << ',' << candidates.size() << std::endl;
+		for (const auto *service : records) for (const auto &stop : service->timetable.stops) if (stop.station == origin) {
+			auto occurrence = table.BoardingOccurrence(origin, service->id, stop.order);
+			if (std::binary_search(candidates.begin(), candidates.end(), occurrence)) std::cout << "flat_target_candidate," << origin.base() << ',' << destination.base() << ',' << service->id.base() << ',' << stop.order << ',' << occurrence << std::endl;
+		}
 	}
 }

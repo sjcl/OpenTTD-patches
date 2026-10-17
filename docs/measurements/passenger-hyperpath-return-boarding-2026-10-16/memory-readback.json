@@ -1,0 +1,198 @@
+{
+  "runs": [
+    {
+      "run": "before",
+      "canonical_mismatches": {},
+      "state_ticks": 3181119581,
+      "active_events": {
+        "pending": 162707,
+        "overdue": 41,
+        "oldest_ticks": 0,
+        "maximum_station_backlog": 5535,
+        "on_time": 0,
+        "packets": 0,
+        "groups": 0,
+        "scheduler_us": 0,
+        "arrival_candidates": 0,
+        "arrival_passengers": 0,
+        "unresolved_missed_estimate": 0
+      },
+      "database_wire": {
+        "from_version": 12,
+        "to_version": 14,
+        "bytes_verified": true,
+        "replay_identical": true
+      },
+      "hyperpath_memory": [
+        {
+          "cargo": 0,
+          "reported": 6168346632,
+          "graph": 6163620,
+          "labels": 2665064064,
+          "indices": 282111396,
+          "policy_headers": 2797027400,
+          "candidate_arrays": 361495512,
+          "local": 0,
+          "differences": 29822103,
+          "additions": 9287515,
+          "maximum_additions": 24,
+          "multi_addition_differences": 1705499,
+          "unexpected_removals": 0,
+          "overlay_bytes": 752880532,
+          "retained": false
+        },
+        {
+          "cargo": 0,
+          "reported": 1713849134,
+          "graph": 6163620,
+          "labels": 718205184,
+          "indices": 76032432,
+          "policy_headers": 758274400,
+          "candidate_arrays": 98686612,
+          "local": 0,
+          "differences": 8123599,
+          "additions": 2497854,
+          "maximum_additions": 14,
+          "multi_addition_differences": 451986,
+          "unexpected_removals": 0,
+          "overlay_bytes": 204957792,
+          "retained": true
+        }
+      ],
+      "passenger_inventory": {
+        "complete": true,
+        "waiting": 300976,
+        "available": 300976,
+        "reserved": 0,
+        "deferred": 378,
+        "state_ticks": 3181119581,
+        "scaled_ticks": 3015520483,
+        "modes": {
+          "Legacy": {
+            "people": 30163,
+            "packets": 2611,
+            "known_OD": 424
+          },
+          "Journey": {
+            "people": 592847,
+            "packets": 426917,
+            "known_OD": 592847
+          },
+          "Fallback": {
+            "people": 99112,
+            "packets": 23611,
+            "known_OD": 9757
+          }
+        },
+        "total_people": 722122,
+        "physically_onboard_people": 421146
+      },
+      "merge_census": {
+        "station_packets": 175103,
+        "failure_packets": 37344,
+        "failure_passengers": 89281,
+        "strict_repacked": 165712,
+        "ignore_failure_repacked": 165522,
+        "additional_failure_bins": 190,
+        "repack_allows_splits": true
+      }
+    },
+    {
+      "run": "after",
+      "canonical_mismatches": {},
+      "state_ticks": 3181119581,
+      "active_events": {
+        "pending": 167467,
+        "overdue": 41,
+        "oldest_ticks": 0,
+        "maximum_station_backlog": 5617,
+        "on_time": 0,
+        "packets": 0,
+        "groups": 0,
+        "scheduler_us": 0,
+        "arrival_candidates": 0,
+        "arrival_passengers": 0,
+        "unresolved_missed_estimate": 0
+      },
+      "database_wire": {
+        "from_version": 14,
+        "to_version": 14,
+        "bytes_verified": true,
+        "replay_identical": true
+      },
+      "hyperpath_memory": [
+        {
+          "cargo": 0,
+          "reported": 5990080964,
+          "graph": 6442740,
+          "labels": 2594894592,
+          "indices": 274648776,
+          "policy_headers": 2722401200,
+          "candidate_arrays": 335213288,
+          "local": 0,
+          "differences": 29049242,
+          "additions": 8073202,
+          "maximum_additions": 21,
+          "multi_addition_differences": 1494466,
+          "unexpected_removals": 0,
+          "overlay_bytes": 729474616,
+          "retained": false
+        },
+        {
+          "cargo": 0,
+          "reported": 1870638190,
+          "graph": 6442740,
+          "labels": 788374656,
+          "indices": 83460888,
+          "policy_headers": 832558960,
+          "candidate_arrays": 103318376,
+          "local": 0,
+          "differences": 8926366,
+          "additions": 2440771,
+          "maximum_additions": 13,
+          "multi_addition_differences": 445574,
+          "unexpected_removals": 0,
+          "overlay_bytes": 223995868,
+          "retained": true
+        }
+      ],
+      "passenger_inventory": {
+        "complete": true,
+        "waiting": 308323,
+        "available": 308323,
+        "reserved": 0,
+        "deferred": 389,
+        "state_ticks": 3181119581,
+        "scaled_ticks": 3015520483,
+        "modes": {
+          "Legacy": {
+            "people": 30182,
+            "packets": 2650,
+            "known_OD": 431
+          },
+          "Journey": {
+            "people": 595668,
+            "packets": 424804,
+            "known_OD": 595668
+          },
+          "Fallback": {
+            "people": 95422,
+            "packets": 22166,
+            "known_OD": 9665
+          }
+        },
+        "total_people": 721272,
+        "physically_onboard_people": 412949
+      },
+      "merge_census": {
+        "station_packets": 178339,
+        "failure_packets": 38568,
+        "failure_passengers": 89886,
+        "strict_repacked": 169462,
+        "ignore_failure_repacked": 169315,
+        "additional_failure_bins": 147,
+        "repack_allows_splits": true
+      }
+    }
+  ]
+}

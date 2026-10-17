@@ -1,0 +1,105 @@
+{
+  "commit": "67cbbf32a48bac840d49037b2f9a90e8a1ca3aba",
+  "checkout_commit": "5e862d93f6e425876c905e22a5f4b84625a11915",
+  "product_src_tree": "a1efff1664b667558bb54260657a4c9108ce643c",
+  "product_sources_unchanged": true,
+  "baseline_commit": "f7c44f0d1aa55e32145b00b5e60ab0754eafe8f4",
+  "baseline_report_commit": "56169842f34bfb9a7813cd67a3a2d62f8ffcd586",
+  "baseline_runtime_src_tree": "919700f79dbad480290d639efba49a413fbd2270",
+  "native_tests": {
+    "cases": 728,
+    "assertions": 9924555,
+    "exit_code": 0
+  },
+  "files": {
+    "Release/openttd.exe": {
+      "bytes": 14139392,
+      "sha256": "3ca1f4e56be584ba22e1d3c5e34cb65351ae40798ee0106740cc984df158c311"
+    },
+    "Release/openttd.pdb": {
+      "bytes": 142888960,
+      "sha256": "138529bb59afdf0dbcfda57244690db7b6546d183b8698b136cbbe88eea46955"
+    },
+    "Release/openttd_test.exe": {
+      "bytes": 19338240,
+      "sha256": "ec28fd648b4f7bedde7a0fa9e5c8b669d215ac01019bb0b51c24b6e8413d02e4"
+    },
+    "Release/openttd_test.pdb": {
+      "bytes": 185085952,
+      "sha256": "2204e2c9d8b959e311458a9a2f0d32f249a10c656cd924b529fd83fb6d04767d"
+    },
+    "native-all.log": {
+      "bytes": 7093,
+      "sha256": "c3500c3d4f76bca82f402a85d0426c71df5b8e3b90994dd0419e9ad8ffcaf457"
+    },
+    "cpu-sampled.wpaProfile": {
+      "bytes": 4034,
+      "sha256": "5092304c54ce1f2d1e34f73cc09c6d8b91513a7aba76e6c16fd1f4403067682c"
+    },
+    "build.log": {
+      "bytes": 39584,
+      "sha256": "9b8667e7a34a0171ca1d9d3583a207e8f0b4c44e7c53a9cc9033e906a516439f"
+    }
+  },
+  "copied_translation_units": {
+    "save-integrity/cargopacket.cpp": "05a93695921f6acad84a9e287fa1458dfd0d480c423c4efa8f312e3b6525dfc8",
+    "save-integrity/cargopacket_sl.cpp": "88b7907f5907115c60b4afefbc418dff66da13248e929fdcac22f787bec9b58d",
+    "save-integrity/command.cpp": "1b74b0b7454c8f8e9c29ff0c64676fda229b4c2cb4cc86432a932cebf7b81acf",
+    "save-integrity/console_cmds.cpp": "b4c4161b746536420156c890aaa48924498d6a252b761e0d24fe33f171a2d3e5",
+    "save-integrity/integrity.h": "a1829785fd341072840102949c0bb68e0960333f67c39b14c03a25d76d8d4b15",
+    "save-integrity/passenger_service_database.cpp": "f988f8cb36d216851b90cb24caaccd6ab3e8eade82f8b379c5a420b1cf452a56",
+    "save-integrity/wpr_gate.h": "64793e1253d3040ee8b8855b9c23a1d00b3db7690e26caf2716480d8750b8b24",
+    "real-map-driver/null_v.cpp": "dec9da31881efa715941aa3a938bb5292fb69579046e1426e27fa3fdc2773c3c",
+    "real-map-driver/win32.cpp": "61c5c6cfb7279228676a8215f97e12472c9d3d9a36fa40a9592633cc78ae7c8c"
+  },
+  "hardware": {
+    "cpu": "AMD Ryzen 9 9950X",
+    "physical_cores": 16,
+    "logical_processors": 32,
+    "windows_build": 26200,
+    "physical_memory_bytes": 100265259008,
+    "main_thread_affinity_mask": 1
+  },
+  "pdb_rsds": "85F088AF-23DA-4CCF-A3B7-29082CBF5CAD age 1",
+  "build_flags": {
+    "cxx_release": "/O2 /Ob2 /DNDEBUG /Zi /Zo",
+    "link": "/DEBUG:FULL /OPT:REF /OPT:ICF /INCREMENTAL:NO",
+    "asserts": true,
+    "lto": false,
+    "static_crt": true
+  },
+  "tool_scripts": {
+    "utils/passenger_precomputed_real_map.py": "a5e120946dbbd917a17160c8934bab84e252691f57ee1a1553f26913f88ab960",
+    "utils/passenger_estimated_prepare.py": "77cc792aad71ae0feace516a1d9db83a630f87501385dc8684f8f7684167e48c",
+    "utils/passenger_hyperpath_build.py": "18276cf3a68946a76033898d8073bf8c77ea46b9523e258e3c8d2117c1383b35",
+    "utils/passenger_wpr_compare.py": "a8f5ab3b6f92abae69a621b03aa3f799fb1e0a6f618a41e92674f178e834819e",
+    "utils/passenger_wpr_control.py": "fa483d06004b2fe5e901884b0f3cbc6156588e1a1cc58d78d7a6dc761cee06bb",
+    "utils/passenger_wpr_export.py": "8d734d1579de0d7c3da8668d5ff0bd9f6c1277fb1f999aa47cb63abce9ca8003",
+    "utils/passenger_wpr_prepare.py": "824694a1b0bf2bc6d64580f8e975b6caa6d05716b3d256a787ed7668b10dd060",
+    "utils/passenger_wpr_profile.py": "9a379fcbd8f70c92d3a7cb760c6c17283c3287e7fe5bfdf4f293387da44d6e69",
+    "utils/passenger_wpr_record.ps1": "237fe1ea5c4a58f18df035f59765cc08e9538bd8bb47190e87bdad679c5c13b2",
+    "utils/passenger_wpr_summarize.py": "0f7a8bef406d6e73c0f5022b248329e903d6d8b2428857bee3f3599c26ecbf83"
+  },
+  "tools_version": "WPAExporter 11.7.395.48728; built-in WPR 10.0.26100 on Windows 26200",
+  "tools": {
+    "wpr.exe": "b641bcda33b6e77deea90676570fdb96907ecc6ac8145be43ca72e33064ec615",
+    "wpaexporter.exe": "fc603f0316027c024132c9571a02959ad90c89cbc246b49f08958a74e6ceed62",
+    "perfcore.dll": "e606f7ab0da2f732a364e40e9d2088f8cc3d679eae98aeb9c01382e4bd6f0be8"
+  },
+  "symcache": {
+    "symcache/openttd.pdb/85F088AF23DA4CCFA3B729082CBF5CAD1/openttd.pdb-v3.1.0.symcache": {
+      "bytes": 15951984,
+      "sha256": "eb5cd3acecaa54d8bcd1b30755f384064319bca2c1752a55da7ca0f76fdd1e36"
+    }
+  },
+  "reference_files": {
+    "docs/measurements/passenger-hyperpath-wpr-f7c44f0d-2026-10-17/legacy/save-integrity.json": "4f85a9ef960b0698ca73e5d3db4ea7cbb076ea060bc36221a936959daeda8245",
+    "docs/measurements/passenger-hyperpath-wpr-f7c44f0d-2026-10-17/legacy/CPU_Usage_(Sampled)_Stacks.csv.gz": "39be71365f1b17b139119d0a07ea0d35014f20da27d89d561b42816b465eac07",
+    "docs/measurements/passenger-hyperpath-wpr-f7c44f0d-2026-10-17/hyperpath/save-integrity.json": "8ca2201e3626739cb9bd610b71a14c95caa6b664438c1c3c2cd8abefb74926af",
+    "docs/measurements/passenger-hyperpath-wpr-f7c44f0d-2026-10-17/hyperpath/CPU_Usage_(Sampled)_Stacks.csv.gz": "b16ae067e4155df5bac8addac43f7afb2e6449c1c2eacddeb7fd05cb86ac09c8",
+    "docs/measurements/passenger-hyperpath-wpr-f7c44f0d-2026-10-17/summary.json": "a7f109720924558c65d05b2c48a729169bbb058f672d020f3716c339c67ac7f1",
+    "docs/measurements/passenger-hyperpath-wpr-f7c44f0d-2026-10-17/build-identity.json": "780aa0d0f86758fd55efd77744bd2b66b38719592982ff49c017ea5130a9ccb1",
+    "docs/measurements/passenger-hyperpath-wpr-f7c44f0d-2026-10-17/legacy-functions.csv": "398fe04fd6d5f48b591fa09899fae563afdb90cfd7181906366a706cb28258db",
+    "docs/measurements/passenger-hyperpath-wpr-f7c44f0d-2026-10-17/hyperpath-functions.csv": "ad5a14543fbb1bced8ffd5843f1a97c76ceec8df88384c011f7394dcca0d8e7b"
+  }
+}

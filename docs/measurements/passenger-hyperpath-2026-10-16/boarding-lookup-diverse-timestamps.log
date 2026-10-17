@@ -1,0 +1,8 @@
+Filters: [.hyperpath-cpu]
+hyperpath_lookup,128,1522,1,1,102800
+hyperpath_lookup,1024,1296,1,1,992200
+hyperpath_lookup,8192,1328,1,1,14755000
+hyperpath_lookup,32768,1158,1,1,74121500
+===============================================================================
+All tests passed (44192 assertions in 1 test case)
+

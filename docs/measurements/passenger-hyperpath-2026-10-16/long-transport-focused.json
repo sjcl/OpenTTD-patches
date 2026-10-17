@@ -1,0 +1,2315 @@
+{
+  "runs": [
+    {
+      "run": "previous",
+      "sampling_method": "target_od_packet_representatives",
+      "target_validation_probes": {
+        "raw_calls": {
+          "candidate:allowed": 353,
+          "board:allowed": 209,
+          "transfer:allowed": 50,
+          "candidate:live_conditions": 12,
+          "candidate:stale_generation": 28,
+          "deliver:allowed": 167
+        },
+        "unique_tick_sample_vehicle_order": {
+          "candidate:allowed": 206,
+          "board:allowed": 209,
+          "transfer:allowed": 50,
+          "candidate:live_conditions": 6,
+          "candidate:stale_generation": 7,
+          "deliver:allowed": 167
+        },
+        "by_od": {
+          "971:916": {
+            "candidate:allowed": 82,
+            "board:allowed": 83,
+            "transfer:allowed": 43,
+            "candidate:live_conditions": 1,
+            "deliver:allowed": 48
+          },
+          "3222:400": {
+            "candidate:stale_generation": 7,
+            "candidate:live_conditions": 5,
+            "candidate:allowed": 14,
+            "board:allowed": 15,
+            "transfer:allowed": 7,
+            "deliver:allowed": 8
+          },
+          "3393:3394": {
+            "candidate:allowed": 110,
+            "board:allowed": 111,
+            "deliver:allowed": 111
+          }
+        },
+        "scope": "Target-OD representatives reached by indexed validation/boarding hooks. Repeated calls in one tick are deduplicated separately; different loading ticks can still describe one arrival. Eligibility probes are not actual capacity misses, and unqueried vehicles/packets are absent. Use the native completed-loading capacity counters for actual full-train opportunities."
+      },
+      "delivered_samples": 167,
+      "complete_trip_samples": 110,
+      "population_transport": {
+        "boarded": 3705586,
+        "transferred": 2165063,
+        "delivered": 1600764,
+        "known_od_boarded": 2511743,
+        "known_od_transferred": 1649054,
+        "known_od_delivered": 934857,
+        "train_boarded": 3106304,
+        "train_boarded_by_group_class": {
+          "rapid": 405429,
+          "semi_express": 61182,
+          "unclassified": 1987865,
+          "express": 57874,
+          "limited_express": 159840,
+          "local": 434114
+        },
+        "known_od_train_boarded_by_group_class": {
+          "rapid": 284752,
+          "semi_express": 40871,
+          "unclassified": 1345050,
+          "express": 36846,
+          "limited_express": 111989,
+          "local": 272812
+        },
+        "train_classified_fraction": 0.36005458577138616,
+        "train_boarded_on_structural_short_turns": 498009,
+        "known_od_train_boarded_on_structural_short_turns": 326474
+      },
+      "population_balance": {
+        "initial": 954776,
+        "generated": 1730357,
+        "delivered": 1600764,
+        "remaining": 744046,
+        "other_removals": 340323,
+        "initial_known": 806628,
+        "assigned_known": 935241,
+        "delivered_known": 934857,
+        "remaining_known": 628976,
+        "known_removals_or_destination_invalidation": 178036
+      },
+      "original_destination_mismatch_samples": 0,
+      "original_destination_mismatch_examples": [],
+      "selected_sample_starts": 224,
+      "fresh_sample_starts": 166,
+      "unaccounted_fresh_sample_starts": 0,
+      "unaccounted_sample_starts": 0,
+      "lost_samples": 22,
+      "lost_new_samples": 22,
+      "all_samples_observed_misses": 0,
+      "fresh_samples_observed_misses": 0,
+      "initial_sample_starts": 54,
+      "initial_fates": {
+        "delivered": 53,
+        "pending": 1
+      },
+      "observed_origin_departure_to_arrival_ticks": {
+        "n": 113,
+        "mean": 735.5309734513274,
+        "median": 529,
+        "p95": 529,
+        "p99": 15664,
+        "maximum": 15664
+      },
+      "initial_remaining_to_arrival_ticks": {
+        "n": 53,
+        "mean": 5777.905660377359,
+        "median": 2333,
+        "p95": 16294,
+        "p99": 16294,
+        "maximum": 16294
+      },
+      "pending_all_metrics": {
+        "riding_ticks": {
+          "n": 35,
+          "mean": 491.1714285714286,
+          "median": 0,
+          "p95": 0,
+          "p99": 17191,
+          "maximum": 17191
+        },
+        "waiting_ticks": {
+          "n": 35,
+          "mean": 1713.4571428571428,
+          "median": 1483,
+          "p95": 2902,
+          "p99": 7385,
+          "maximum": 7385
+        },
+        "origin_waiting_ticks": {
+          "n": 35,
+          "mean": 1502.4571428571428,
+          "median": 1399,
+          "p95": 2889,
+          "p99": 2902,
+          "maximum": 2902
+        },
+        "transfer_waiting_ticks": {
+          "n": 35,
+          "mean": 211,
+          "median": 0,
+          "p95": 0,
+          "p99": 7385,
+          "maximum": 7385
+        },
+        "distance_x16": {
+          "n": 35,
+          "mean": 252.05714285714285,
+          "median": 0,
+          "p95": 0,
+          "p99": 8822,
+          "maximum": 8822
+        },
+        "transfers": {
+          "n": 35,
+          "mean": 0.11428571428571428,
+          "median": 0,
+          "p95": 0,
+          "p99": 4,
+          "maximum": 4
+        },
+        "revisits": {
+          "n": 35,
+          "mean": 0,
+          "median": 0,
+          "p95": 0,
+          "p99": 0,
+          "maximum": 0
+        },
+        "returns": {
+          "n": 35,
+          "mean": 0,
+          "median": 0,
+          "p95": 0,
+          "p99": 0,
+          "maximum": 0
+        },
+        "observed_misses": {
+          "n": 35,
+          "mean": 0,
+          "median": 0,
+          "p95": 0,
+          "p99": 0,
+          "maximum": 0
+        },
+        "maximum_wait": {
+          "n": 35,
+          "mean": 1608.2,
+          "median": 1482,
+          "p95": 2901,
+          "p99": 3735,
+          "maximum": 3735
+        }
+      },
+      "pending_waiting_now_samples": 35,
+      "pending_waiting_now_maximum_wait_ticks": {
+        "n": 35,
+        "mean": 1608.2,
+        "median": 1482,
+        "p95": 2901,
+        "p99": 3735,
+        "maximum": 3735
+      },
+      "pending_longest_wait_od": [
+        {
+          "od": "971:916",
+          "n": 1,
+          "mean": 3735,
+          "median": 3735,
+          "p95": 3735,
+          "p99": 3735,
+          "maximum": 3735
+        },
+        {
+          "od": "3393:3394",
+          "n": 34,
+          "mean": 1545.6470588235295,
+          "median": 1440.0,
+          "p95": 2888,
+          "p99": 2901,
+          "maximum": 2901
+        }
+      ],
+      "pending_samples": 35,
+      "right_censored_new_samples": 34,
+      "trip_ticks": {
+        "n": 110,
+        "mean": 2744.172727272727,
+        "median": 2059.5,
+        "p95": 6636,
+        "p99": 7370,
+        "maximum": 7380
+      },
+      "metrics": {
+        "riding_ticks": {
+          "n": 110,
+          "mean": 465.9818181818182,
+          "median": 529.0,
+          "p95": 529,
+          "p99": 529,
+          "maximum": 529
+        },
+        "waiting_ticks": {
+          "n": 110,
+          "mean": 2278.190909090909,
+          "median": 1530.5,
+          "p95": 6107,
+          "p99": 6841,
+          "maximum": 6851
+        },
+        "origin_waiting_ticks": {
+          "n": 110,
+          "mean": 2278.190909090909,
+          "median": 1530.5,
+          "p95": 6107,
+          "p99": 6841,
+          "maximum": 6851
+        },
+        "transfer_waiting_ticks": {
+          "n": 110,
+          "mean": 0,
+          "median": 0.0,
+          "p95": 0,
+          "p99": 0,
+          "maximum": 0
+        },
+        "distance_x16": {
+          "n": 110,
+          "mean": 208,
+          "median": 208.0,
+          "p95": 208,
+          "p99": 208,
+          "maximum": 208
+        },
+        "transfers": {
+          "n": 110,
+          "mean": 0,
+          "median": 0.0,
+          "p95": 0,
+          "p99": 0,
+          "maximum": 0
+        },
+        "revisits": {
+          "n": 110,
+          "mean": 0,
+          "median": 0.0,
+          "p95": 0,
+          "p99": 0,
+          "maximum": 0
+        },
+        "returns": {
+          "n": 110,
+          "mean": 0,
+          "median": 0.0,
+          "p95": 0,
+          "p99": 0,
+          "maximum": 0
+        },
+        "observed_misses": {
+          "n": 110,
+          "mean": 0,
+          "median": 0.0,
+          "p95": 0,
+          "p99": 0,
+          "maximum": 0
+        },
+        "maximum_wait": {
+          "n": 110,
+          "mean": 2278.190909090909,
+          "median": 1530.5,
+          "p95": 6107,
+          "p99": 6841,
+          "maximum": 6851
+        }
+      },
+      "right_censored_metrics": {
+        "riding_ticks": {
+          "n": 34,
+          "mean": 0,
+          "median": 0.0,
+          "p95": 0,
+          "p99": 0,
+          "maximum": 0
+        },
+        "waiting_ticks": {
+          "n": 34,
+          "mean": 1546.6470588235295,
+          "median": 1441.0,
+          "p95": 2889,
+          "p99": 2902,
+          "maximum": 2902
+        },
+        "origin_waiting_ticks": {
+          "n": 34,
+          "mean": 1546.6470588235295,
+          "median": 1441.0,
+          "p95": 2889,
+          "p99": 2902,
+          "maximum": 2902
+        },
+        "transfer_waiting_ticks": {
+          "n": 34,
+          "mean": 0,
+          "median": 0.0,
+          "p95": 0,
+          "p99": 0,
+          "maximum": 0
+        },
+        "distance_x16": {
+          "n": 34,
+          "mean": 0,
+          "median": 0.0,
+          "p95": 0,
+          "p99": 0,
+          "maximum": 0
+        },
+        "transfers": {
+          "n": 34,
+          "mean": 0,
+          "median": 0.0,
+          "p95": 0,
+          "p99": 0,
+          "maximum": 0
+        },
+        "revisits": {
+          "n": 34,
+          "mean": 0,
+          "median": 0.0,
+          "p95": 0,
+          "p99": 0,
+          "maximum": 0
+        },
+        "returns": {
+          "n": 34,
+          "mean": 0,
+          "median": 0.0,
+          "p95": 0,
+          "p99": 0,
+          "maximum": 0
+        },
+        "observed_misses": {
+          "n": 34,
+          "mean": 0,
+          "median": 0.0,
+          "p95": 0,
+          "p99": 0,
+          "maximum": 0
+        },
+        "maximum_wait": {
+          "n": 34,
+          "mean": 1545.6470588235295,
+          "median": 1440.0,
+          "p95": 2888,
+          "p99": 2901,
+          "maximum": 2901
+        }
+      },
+      "right_censored_elapsed_ticks": {
+        "n": 34,
+        "mean": 1545.6470588235295,
+        "median": 1440.0,
+        "p95": 2888,
+        "p99": 2901,
+        "maximum": 2901
+      },
+      "pending_wait_ticks": {
+        "n": 34,
+        "mean": 1545.6470588235295,
+        "median": 1440.0,
+        "p95": 2888,
+        "p99": 2901,
+        "maximum": 2901
+      },
+      "completed_od_ticks": {
+        "3393:3394": {
+          "n": 110,
+          "mean": 2744.172727272727,
+          "median": 2059.5,
+          "p95": 6636,
+          "p99": 7370,
+          "maximum": 7380
+        }
+      },
+      "completed_od_means": {
+        "3393:3394": {
+          "distance_x16": 208,
+          "transfers": 0,
+          "riding_ticks": 465.9818181818182,
+          "transfer_waiting_ticks": 0
+        }
+      },
+      "sampled_boardings_by_service": {
+        "302": 7,
+        "69": 8,
+        "300": 48,
+        "245": 12,
+        "122": 11,
+        "71": 4,
+        "524": 36,
+        "509": 5,
+        "36": 2,
+        "525": 75,
+        "748": 1
+      },
+      "sampled_boardings_by_order_count": {
+        "2": 18,
+        "30": 9,
+        "66": 48,
+        "32": 12,
+        "58": 4,
+        "92": 36,
+        "22": 5,
+        "6": 2,
+        "188": 75
+      },
+      "sampled_boardings_by_group_class": {
+        "unclassified": 34,
+        "rapid": 64,
+        "local": 111
+      },
+      "elapsed_minus_ride_wait_ticks": {
+        "n": 110,
+        "mean": 0,
+        "median": 0.0,
+        "p95": 0,
+        "p99": 0,
+        "maximum": 0
+      },
+      "trace_classified_boarding_fraction": 0.8373205741626795,
+      "sampled_boardings_on_named_short_turn_groups": 0,
+      "sampled_boardings_on_structural_short_turns": 48,
+      "structural_short_turn_services": {
+        "532": [
+          "533"
+        ],
+        "561": [
+          "562"
+        ],
+        "211": [
+          "157"
+        ],
+        "524": [
+          "525"
+        ],
+        "38": [
+          "168",
+          "538"
+        ],
+        "421": [
+          "38",
+          "39",
+          "168",
+          "538",
+          "611"
+        ],
+        "729": [
+          "182"
+        ],
+        "148": [
+          "182"
+        ],
+        "432": [
+          "433",
+          "447"
+        ],
+        "312": [
+          "505"
+        ],
+        "111": [
+          "115"
+        ],
+        "256": [
+          "268"
+        ],
+        "173": [
+          "63"
+        ],
+        "507": [
+          "508"
+        ],
+        "749": [
+          "670"
+        ],
+        "723": [
+          "11",
+          "159"
+        ],
+        "721": [
+          "634"
+        ],
+        "779": [
+          "776"
+        ],
+        "44": [
+          "6"
+        ],
+        "94": [
+          "99"
+        ],
+        "630": [
+          "570"
+        ],
+        "730": [
+          "377"
+        ],
+        "518": [
+          "226"
+        ],
+        "30": [
+          "93"
+        ],
+        "485": [
+          "676"
+        ],
+        "708": [
+          "707"
+        ],
+        "526": [
+          "525"
+        ],
+        "472": [
+          "267"
+        ],
+        "722": [
+          "612"
+        ],
+        "369": [
+          "327"
+        ],
+        "427": [
+          "2"
+        ],
+        "677": [
+          "676"
+        ],
+        "522": [
+          "400"
+        ],
+        "787": [
+          "786"
+        ],
+        "34": [
+          "150"
+        ],
+        "395": [
+          "112"
+        ],
+        "337": [
+          "525",
+          "526"
+        ],
+        "129": [
+          "556"
+        ],
+        "559": [
+          "55",
+          "124",
+          "560",
+          "583"
+        ],
+        "423": [
+          "424"
+        ],
+        "331": [
+          "528"
+        ],
+        "346": [
+          "209"
+        ],
+        "407": [
+          "595"
+        ],
+        "286": [
+          "285"
+        ],
+        "132": [
+          "656"
+        ],
+        "62": [
+          "347"
+        ],
+        "288": [
+          "259"
+        ],
+        "39": [
+          "611"
+        ],
+        "720": [
+          "613"
+        ],
+        "283": [
+          "285"
+        ],
+        "801": [
+          "235"
+        ],
+        "28": [
+          "6",
+          "42",
+          "44"
+        ],
+        "861": [
+          "860"
+        ],
+        "56": [
+          "6"
+        ],
+        "0": [
+          "42",
+          "78"
+        ],
+        "725": [
+          "1",
+          "8",
+          "633"
+        ],
+        "130": [
+          "45"
+        ],
+        "272": [
+          "2"
+        ],
+        "799": [
+          "798"
+        ],
+        "208": [
+          "637"
+        ],
+        "253": [
+          "268"
+        ],
+        "668": [
+          "670"
+        ],
+        "631": [
+          "378"
+        ],
+        "233": [
+          "778"
+        ],
+        "143": [
+          "78"
+        ],
+        "538": [
+          "168"
+        ],
+        "761": [
+          "261"
+        ],
+        "638": [
+          "305"
+        ],
+        "167": [
+          "86"
+        ],
+        "694": [
+          "693"
+        ],
+        "564": [
+          "562"
+        ],
+        "794": [
+          "279"
+        ],
+        "596": [
+          "849"
+        ],
+        "726": [
+          "235"
+        ],
+        "309": [
+          "304"
+        ],
+        "281": [
+          "652"
+        ],
+        "57": [
+          "59",
+          "103"
+        ],
+        "604": [
+          "605"
+        ],
+        "250": [
+          "290"
+        ],
+        "273": [
+          "290",
+          "505"
+        ],
+        "126": [
+          "292"
+        ],
+        "793": [
+          "446"
+        ],
+        "514": [
+          "411"
+        ],
+        "603": [
+          "605"
+        ],
+        "790": [
+          "789"
+        ],
+        "678": [
+          "676"
+        ],
+        "311": [
+          "254"
+        ],
+        "416": [
+          "385"
+        ],
+        "513": [
+          "409"
+        ],
+        "17": [
+          "625"
+        ],
+        "245": [
+          "71"
+        ],
+        "134": [
+          "5"
+        ],
+        "655": [
+          "86"
+        ],
+        "510": [
+          "475"
+        ],
+        "555": [
+          "246"
+        ],
+        "734": [
+          "735"
+        ],
+        "336": [
+          "161"
+        ],
+        "455": [
+          "221"
+        ],
+        "413": [
+          "414"
+        ],
+        "521": [
+          "294"
+        ],
+        "560": [
+          "55"
+        ],
+        "461": [
+          "483"
+        ],
+        "727": [
+          "550"
+        ],
+        "310": [
+          "154"
+        ],
+        "420": [
+          "401"
+        ],
+        "527": [
+          "259"
+        ],
+        "389": [
+          "386"
+        ],
+        "444": [
+          "443"
+        ],
+        "697": [
+          "698"
+        ],
+        "851": [
+          "848",
+          "849"
+        ],
+        "358": [
+          "16"
+        ],
+        "225": [
+          "777"
+        ],
+        "534": [
+          "533"
+        ],
+        "760": [
+          "261",
+          "750"
+        ],
+        "340": [
+          "341"
+        ],
+        "321": [
+          "348"
+        ],
+        "73": [
+          "88"
+        ],
+        "754": [
+          "753"
+        ],
+        "536": [
+          "417"
+        ],
+        "367": [
+          "361"
+        ],
+        "706": [
+          "689"
+        ],
+        "750": [
+          "261"
+        ],
+        "601": [
+          "66",
+          "298",
+          "339"
+        ],
+        "271": [
+          "243"
+        ],
+        "600": [
+          "409"
+        ],
+        "791": [
+          "267",
+          "472"
+        ],
+        "501": [
+          "13"
+        ],
+        "449": [
+          "451"
+        ],
+        "800": [
+          "243",
+          "271"
+        ],
+        "628": [
+          "412"
+        ],
+        "659": [
+          "660"
+        ],
+        "738": [
+          "402"
+        ],
+        "117": [
+          "112",
+          "116"
+        ],
+        "249": [
+          "231"
+        ],
+        "642": [
+          "641"
+        ],
+        "234": [
+          "242"
+        ],
+        "313": [
+          "348"
+        ],
+        "742": [
+          "576"
+        ],
+        "31": [
+          "63"
+        ],
+        "685": [
+          "709",
+          "710"
+        ],
+        "484": [
+          "259",
+          "527"
+        ],
+        "262": [
+          "260"
+        ],
+        "853": [
+          "848",
+          "849",
+          "851"
+        ],
+        "339": [
+          "66",
+          "298"
+        ],
+        "251": [
+          "454"
+        ],
+        "855": [
+          "856",
+          "857"
+        ],
+        "692": [
+          "688"
+        ],
+        "188": [
+          "355"
+        ],
+        "422": [
+          "462"
+        ],
+        "450": [
+          "449",
+          "451"
+        ],
+        "437": [
+          "229"
+        ],
+        "430": [
+          "431"
+        ]
+      },
+      "complete_single_board_trip_outside_service_route": 0,
+      "new_samples_with_revisit": 0,
+      "new_samples_with_immediate_return": 0,
+      "lost_new_samples_with_revisit": 0,
+      "lost_new_samples_with_immediate_return": 0,
+      "trace_metadata": "selected=224\nfresh_selected=166\ninitial_selected=54\nassigned_packets=851881\nassigned_units=935241\nfresh_assigned_packets=851881\nfresh_assigned_units=935241\ninitial_passengers=954776\ninitial_known_passengers=806628\ngenerated_passengers=1730357\nremaining_passengers=744046\nremaining_known_passengers=628976\ndiscarded=0\nsampling=all packet representatives for the three target ODs; maximum 65536 sample starts\n"
+    },
+    {
+      "run": "hyperpath",
+      "sampling_method": "target_od_packet_representatives",
+      "target_validation_probes": {
+        "raw_calls": {
+          "candidate:allowed": 207,
+          "board:allowed": 207,
+          "candidate:live_conditions": 17,
+          "candidate:capacity_or_reservation": 55,
+          "transfer:allowed": 47,
+          "deliver:allowed": 167
+        },
+        "unique_tick_sample_vehicle_order": {
+          "candidate:allowed": 204,
+          "board:allowed": 207,
+          "candidate:live_conditions": 8,
+          "candidate:capacity_or_reservation": 55,
+          "transfer:allowed": 47,
+          "deliver:allowed": 167
+        },
+        "by_od": {
+          "971:916": {
+            "candidate:allowed": 80,
+            "board:allowed": 82,
+            "candidate:capacity_or_reservation": 51,
+            "transfer:allowed": 40,
+            "candidate:live_conditions": 1,
+            "deliver:allowed": 49
+          },
+          "3222:400": {
+            "candidate:live_conditions": 7,
+            "candidate:allowed": 16,
+            "board:allowed": 16,
+            "candidate:capacity_or_reservation": 4,
+            "transfer:allowed": 7,
+            "deliver:allowed": 9
+          },
+          "3393:3394": {
+            "candidate:allowed": 108,
+            "board:allowed": 109,
+            "deliver:allowed": 109
+          }
+        },
+        "scope": "Target-OD representatives reached by indexed validation/boarding hooks. Repeated calls in one tick are deduplicated separately; different loading ticks can still describe one arrival. Eligibility probes are not actual capacity misses, and unqueried vehicles/packets are absent. Use the native completed-loading capacity counters for actual full-train opportunities."
+      },
+      "delivered_samples": 167,
+      "complete_trip_samples": 108,
+      "population_transport": {
+        "boarded": 3976776,
+        "transferred": 2376105,
+        "delivered": 1632227,
+        "known_od_boarded": 2788632,
+        "known_od_transferred": 1864036,
+        "known_od_delivered": 967714,
+        "train_boarded": 3372029,
+        "train_boarded_by_group_class": {
+          "rapid": 460582,
+          "semi_express": 66058,
+          "unclassified": 2117705,
+          "express": 66063,
+          "limited_express": 191638,
+          "local": 469983
+        },
+        "known_od_train_boarded_by_group_class": {
+          "rapid": 338603,
+          "semi_express": 45483,
+          "unclassified": 1481021,
+          "express": 45596,
+          "limited_express": 145097,
+          "local": 309334
+        },
+        "train_classified_fraction": 0.37197900729797995,
+        "train_boarded_on_structural_short_turns": 558665,
+        "known_od_train_boarded_on_structural_short_turns": 389996
+      },
+      "population_balance": {
+        "initial": 954776,
+        "generated": 1732490,
+        "delivered": 1632227,
+        "remaining": 722122,
+        "other_removals": 332917,
+        "initial_known": 806628,
+        "assigned_known": 935779,
+        "delivered_known": 967714,
+        "remaining_known": 603028,
+        "known_removals_or_destination_invalidation": 171665
+      },
+      "original_destination_mismatch_samples": 0,
+      "original_destination_mismatch_examples": [],
+      "selected_sample_starts": 217,
+      "fresh_sample_starts": 157,
+      "unaccounted_fresh_sample_starts": 0,
+      "unaccounted_sample_starts": 0,
+      "lost_samples": 27,
+      "lost_new_samples": 27,
+      "all_samples_observed_misses": 0,
+      "fresh_samples_observed_misses": 0,
+      "initial_sample_starts": 54,
+      "initial_fates": {
+        "delivered": 53,
+        "pending": 1
+      },
+      "observed_origin_departure_to_arrival_ticks": {
+        "n": 111,
+        "mean": 873.7117117117117,
+        "median": 549,
+        "p95": 549,
+        "p99": 21482,
+        "maximum": 21482
+      },
+      "initial_remaining_to_arrival_ticks": {
+        "n": 53,
+        "mean": 8118.735849056604,
+        "median": 9382,
+        "p95": 21516,
+        "p99": 21516,
+        "maximum": 21516
+      },
+      "pending_all_metrics": {
+        "riding_ticks": {
+          "n": 23,
+          "mean": 718.2173913043479,
+          "median": 0,
+          "p95": 0,
+          "p99": 16519,
+          "maximum": 16519
+        },
+        "waiting_ticks": {
+          "n": 23,
+          "mean": 1374.695652173913,
+          "median": 1399,
+          "p95": 2003,
+          "p99": 8057,
+          "maximum": 8057
+        },
+        "origin_waiting_ticks": {
+          "n": 23,
+          "mean": 1024.391304347826,
+          "median": 774,
+          "p95": 1967,
+          "p99": 2003,
+          "maximum": 2003
+        },
+        "transfer_waiting_ticks": {
+          "n": 23,
+          "mean": 350.30434782608694,
+          "median": 0,
+          "p95": 0,
+          "p99": 8057,
+          "maximum": 8057
+        },
+        "distance_x16": {
+          "n": 23,
+          "mean": 377.82608695652175,
+          "median": 0,
+          "p95": 0,
+          "p99": 8690,
+          "maximum": 8690
+        },
+        "transfers": {
+          "n": 23,
+          "mean": 0.13043478260869565,
+          "median": 0,
+          "p95": 0,
+          "p99": 3,
+          "maximum": 3
+        },
+        "revisits": {
+          "n": 23,
+          "mean": 0,
+          "median": 0,
+          "p95": 0,
+          "p99": 0,
+          "maximum": 0
+        },
+        "returns": {
+          "n": 23,
+          "mean": 0,
+          "median": 0,
+          "p95": 0,
+          "p99": 0,
+          "maximum": 0
+        },
+        "observed_misses": {
+          "n": 23,
+          "mean": 0,
+          "median": 0,
+          "p95": 0,
+          "p99": 0,
+          "maximum": 0
+        },
+        "maximum_wait": {
+          "n": 23,
+          "mean": 1180.4347826086957,
+          "median": 1398,
+          "p95": 2002,
+          "p99": 3611,
+          "maximum": 3611
+        }
+      },
+      "pending_waiting_now_samples": 22,
+      "pending_waiting_now_maximum_wait_ticks": {
+        "n": 22,
+        "mean": 1069.9545454545455,
+        "median": 1085.5,
+        "p95": 1966,
+        "p99": 2002,
+        "maximum": 2002
+      },
+      "pending_longest_wait_od": [
+        {
+          "od": "3393:3394",
+          "n": 22,
+          "mean": 1069.9545454545455,
+          "median": 1085.5,
+          "p95": 1966,
+          "p99": 2002,
+          "maximum": 2002
+        }
+      ],
+      "pending_samples": 23,
+      "right_censored_new_samples": 22,
+      "trip_ticks": {
+        "n": 108,
+        "mean": 3137.814814814815,
+        "median": 2432.5,
+        "p95": 8447,
+        "p99": 8637,
+        "maximum": 8710
+      },
+      "metrics": {
+        "riding_ticks": {
+          "n": 108,
+          "mean": 495.0833333333333,
+          "median": 549.0,
+          "p95": 549,
+          "p99": 549,
+          "maximum": 549
+        },
+        "waiting_ticks": {
+          "n": 108,
+          "mean": 2642.7314814814813,
+          "median": 1883.5,
+          "p95": 7898,
+          "p99": 8088,
+          "maximum": 8161
+        },
+        "origin_waiting_ticks": {
+          "n": 108,
+          "mean": 2642.7314814814813,
+          "median": 1883.5,
+          "p95": 7898,
+          "p99": 8088,
+          "maximum": 8161
+        },
+        "transfer_waiting_ticks": {
+          "n": 108,
+          "mean": 0,
+          "median": 0.0,
+          "p95": 0,
+          "p99": 0,
+          "maximum": 0
+        },
+        "distance_x16": {
+          "n": 108,
+          "mean": 208,
+          "median": 208.0,
+          "p95": 208,
+          "p99": 208,
+          "maximum": 208
+        },
+        "transfers": {
+          "n": 108,
+          "mean": 0,
+          "median": 0.0,
+          "p95": 0,
+          "p99": 0,
+          "maximum": 0
+        },
+        "revisits": {
+          "n": 108,
+          "mean": 0,
+          "median": 0.0,
+          "p95": 0,
+          "p99": 0,
+          "maximum": 0
+        },
+        "returns": {
+          "n": 108,
+          "mean": 0,
+          "median": 0.0,
+          "p95": 0,
+          "p99": 0,
+          "maximum": 0
+        },
+        "observed_misses": {
+          "n": 108,
+          "mean": 0,
+          "median": 0.0,
+          "p95": 0,
+          "p99": 0,
+          "maximum": 0
+        },
+        "maximum_wait": {
+          "n": 108,
+          "mean": 2642.7314814814813,
+          "median": 1883.5,
+          "p95": 7898,
+          "p99": 8088,
+          "maximum": 8161
+        }
+      },
+      "right_censored_metrics": {
+        "riding_ticks": {
+          "n": 22,
+          "mean": 0,
+          "median": 0.0,
+          "p95": 0,
+          "p99": 0,
+          "maximum": 0
+        },
+        "waiting_ticks": {
+          "n": 22,
+          "mean": 1070.9545454545455,
+          "median": 1086.5,
+          "p95": 1967,
+          "p99": 2003,
+          "maximum": 2003
+        },
+        "origin_waiting_ticks": {
+          "n": 22,
+          "mean": 1070.9545454545455,
+          "median": 1086.5,
+          "p95": 1967,
+          "p99": 2003,
+          "maximum": 2003
+        },
+        "transfer_waiting_ticks": {
+          "n": 22,
+          "mean": 0,
+          "median": 0.0,
+          "p95": 0,
+          "p99": 0,
+          "maximum": 0
+        },
+        "distance_x16": {
+          "n": 22,
+          "mean": 0,
+          "median": 0.0,
+          "p95": 0,
+          "p99": 0,
+          "maximum": 0
+        },
+        "transfers": {
+          "n": 22,
+          "mean": 0,
+          "median": 0.0,
+          "p95": 0,
+          "p99": 0,
+          "maximum": 0
+        },
+        "revisits": {
+          "n": 22,
+          "mean": 0,
+          "median": 0.0,
+          "p95": 0,
+          "p99": 0,
+          "maximum": 0
+        },
+        "returns": {
+          "n": 22,
+          "mean": 0,
+          "median": 0.0,
+          "p95": 0,
+          "p99": 0,
+          "maximum": 0
+        },
+        "observed_misses": {
+          "n": 22,
+          "mean": 0,
+          "median": 0.0,
+          "p95": 0,
+          "p99": 0,
+          "maximum": 0
+        },
+        "maximum_wait": {
+          "n": 22,
+          "mean": 1069.9545454545455,
+          "median": 1085.5,
+          "p95": 1966,
+          "p99": 2002,
+          "maximum": 2002
+        }
+      },
+      "right_censored_elapsed_ticks": {
+        "n": 22,
+        "mean": 1069.9545454545455,
+        "median": 1085.5,
+        "p95": 1966,
+        "p99": 2002,
+        "maximum": 2002
+      },
+      "pending_wait_ticks": {
+        "n": 22,
+        "mean": 1069.9545454545455,
+        "median": 1085.5,
+        "p95": 1966,
+        "p99": 2002,
+        "maximum": 2002
+      },
+      "completed_od_ticks": {
+        "3393:3394": {
+          "n": 108,
+          "mean": 3137.814814814815,
+          "median": 2432.5,
+          "p95": 8447,
+          "p99": 8637,
+          "maximum": 8710
+        }
+      },
+      "completed_od_means": {
+        "3393:3394": {
+          "distance_x16": 208,
+          "transfers": 0,
+          "riding_ticks": 495.0833333333333,
+          "transfer_waiting_ticks": 0
+        }
+      },
+      "sampled_boardings_by_service": {
+        "69": 9,
+        "302": 7,
+        "300": 49,
+        "245": 7,
+        "122": 11,
+        "71": 4,
+        "524": 29,
+        "509": 2,
+        "36": 2,
+        "525": 80,
+        "508": 3,
+        "116": 3,
+        "748": 1
+      },
+      "sampled_boardings_by_order_count": {
+        "30": 10,
+        "2": 18,
+        "66": 49,
+        "32": 10,
+        "58": 4,
+        "92": 29,
+        "22": 2,
+        "6": 2,
+        "188": 80,
+        "18": 3
+      },
+      "sampled_boardings_by_group_class": {
+        "unclassified": 35,
+        "rapid": 63,
+        "local": 109
+      },
+      "elapsed_minus_ride_wait_ticks": {
+        "n": 108,
+        "mean": 0,
+        "median": 0.0,
+        "p95": 0,
+        "p99": 0,
+        "maximum": 0
+      },
+      "trace_classified_boarding_fraction": 0.8309178743961353,
+      "sampled_boardings_on_named_short_turn_groups": 0,
+      "sampled_boardings_on_structural_short_turns": 36,
+      "structural_short_turn_services": {
+        "532": [
+          "533"
+        ],
+        "561": [
+          "562"
+        ],
+        "211": [
+          "157"
+        ],
+        "524": [
+          "525"
+        ],
+        "38": [
+          "168",
+          "538"
+        ],
+        "421": [
+          "38",
+          "39",
+          "168",
+          "538",
+          "611"
+        ],
+        "729": [
+          "182"
+        ],
+        "148": [
+          "182"
+        ],
+        "432": [
+          "433",
+          "447"
+        ],
+        "312": [
+          "505"
+        ],
+        "111": [
+          "115"
+        ],
+        "256": [
+          "268"
+        ],
+        "173": [
+          "63"
+        ],
+        "507": [
+          "508"
+        ],
+        "749": [
+          "670"
+        ],
+        "723": [
+          "11",
+          "159"
+        ],
+        "721": [
+          "634"
+        ],
+        "779": [
+          "776"
+        ],
+        "44": [
+          "6"
+        ],
+        "94": [
+          "99"
+        ],
+        "630": [
+          "570"
+        ],
+        "730": [
+          "377"
+        ],
+        "518": [
+          "226"
+        ],
+        "30": [
+          "93"
+        ],
+        "485": [
+          "676"
+        ],
+        "708": [
+          "707"
+        ],
+        "526": [
+          "525"
+        ],
+        "472": [
+          "267"
+        ],
+        "722": [
+          "612"
+        ],
+        "369": [
+          "327"
+        ],
+        "427": [
+          "2"
+        ],
+        "677": [
+          "676"
+        ],
+        "522": [
+          "400"
+        ],
+        "787": [
+          "786"
+        ],
+        "34": [
+          "150"
+        ],
+        "395": [
+          "112"
+        ],
+        "337": [
+          "525",
+          "526"
+        ],
+        "129": [
+          "556"
+        ],
+        "559": [
+          "55",
+          "124",
+          "560",
+          "583"
+        ],
+        "423": [
+          "424"
+        ],
+        "331": [
+          "528"
+        ],
+        "346": [
+          "209"
+        ],
+        "407": [
+          "595"
+        ],
+        "286": [
+          "285"
+        ],
+        "132": [
+          "656"
+        ],
+        "62": [
+          "347"
+        ],
+        "288": [
+          "259"
+        ],
+        "39": [
+          "611"
+        ],
+        "720": [
+          "613"
+        ],
+        "283": [
+          "285"
+        ],
+        "801": [
+          "235"
+        ],
+        "28": [
+          "6",
+          "42",
+          "44"
+        ],
+        "861": [
+          "860"
+        ],
+        "56": [
+          "6"
+        ],
+        "0": [
+          "42",
+          "78"
+        ],
+        "725": [
+          "1",
+          "8",
+          "633"
+        ],
+        "130": [
+          "45"
+        ],
+        "272": [
+          "2"
+        ],
+        "799": [
+          "798"
+        ],
+        "208": [
+          "637"
+        ],
+        "253": [
+          "268"
+        ],
+        "668": [
+          "670"
+        ],
+        "631": [
+          "378"
+        ],
+        "233": [
+          "778"
+        ],
+        "143": [
+          "78"
+        ],
+        "538": [
+          "168"
+        ],
+        "761": [
+          "261"
+        ],
+        "638": [
+          "305"
+        ],
+        "167": [
+          "86"
+        ],
+        "694": [
+          "693"
+        ],
+        "564": [
+          "562"
+        ],
+        "794": [
+          "279"
+        ],
+        "596": [
+          "849"
+        ],
+        "726": [
+          "235"
+        ],
+        "309": [
+          "304"
+        ],
+        "281": [
+          "652"
+        ],
+        "57": [
+          "59",
+          "103"
+        ],
+        "604": [
+          "605"
+        ],
+        "250": [
+          "290"
+        ],
+        "273": [
+          "290",
+          "505"
+        ],
+        "126": [
+          "292"
+        ],
+        "793": [
+          "446"
+        ],
+        "514": [
+          "411"
+        ],
+        "603": [
+          "605"
+        ],
+        "790": [
+          "789"
+        ],
+        "678": [
+          "676"
+        ],
+        "311": [
+          "254"
+        ],
+        "416": [
+          "385"
+        ],
+        "513": [
+          "409"
+        ],
+        "17": [
+          "625"
+        ],
+        "245": [
+          "71"
+        ],
+        "134": [
+          "5"
+        ],
+        "655": [
+          "86"
+        ],
+        "510": [
+          "475"
+        ],
+        "555": [
+          "246"
+        ],
+        "734": [
+          "735"
+        ],
+        "336": [
+          "161"
+        ],
+        "455": [
+          "221"
+        ],
+        "413": [
+          "414"
+        ],
+        "521": [
+          "294"
+        ],
+        "560": [
+          "55"
+        ],
+        "461": [
+          "483"
+        ],
+        "727": [
+          "550"
+        ],
+        "310": [
+          "154"
+        ],
+        "420": [
+          "401"
+        ],
+        "527": [
+          "259"
+        ],
+        "389": [
+          "386"
+        ],
+        "444": [
+          "443"
+        ],
+        "697": [
+          "698"
+        ],
+        "851": [
+          "848",
+          "849"
+        ],
+        "358": [
+          "16"
+        ],
+        "225": [
+          "777"
+        ],
+        "534": [
+          "533"
+        ],
+        "760": [
+          "261",
+          "750"
+        ],
+        "340": [
+          "341"
+        ],
+        "321": [
+          "348"
+        ],
+        "73": [
+          "88"
+        ],
+        "754": [
+          "753"
+        ],
+        "536": [
+          "417"
+        ],
+        "367": [
+          "361"
+        ],
+        "706": [
+          "689"
+        ],
+        "750": [
+          "261"
+        ],
+        "601": [
+          "66",
+          "298",
+          "339"
+        ],
+        "271": [
+          "243"
+        ],
+        "600": [
+          "409"
+        ],
+        "791": [
+          "267",
+          "472"
+        ],
+        "501": [
+          "13"
+        ],
+        "449": [
+          "451"
+        ],
+        "800": [
+          "243",
+          "271"
+        ],
+        "628": [
+          "412"
+        ],
+        "659": [
+          "660"
+        ],
+        "738": [
+          "402"
+        ],
+        "117": [
+          "112",
+          "116"
+        ],
+        "249": [
+          "231"
+        ],
+        "642": [
+          "641"
+        ],
+        "234": [
+          "242"
+        ],
+        "313": [
+          "348"
+        ],
+        "742": [
+          "576"
+        ],
+        "31": [
+          "63"
+        ],
+        "685": [
+          "709",
+          "710"
+        ],
+        "484": [
+          "259",
+          "527"
+        ],
+        "262": [
+          "260"
+        ],
+        "853": [
+          "848",
+          "849",
+          "851"
+        ],
+        "339": [
+          "66",
+          "298"
+        ],
+        "251": [
+          "454"
+        ],
+        "855": [
+          "856",
+          "857"
+        ],
+        "692": [
+          "688"
+        ],
+        "188": [
+          "355"
+        ],
+        "422": [
+          "462"
+        ],
+        "450": [
+          "449",
+          "451"
+        ],
+        "437": [
+          "229"
+        ],
+        "430": [
+          "431"
+        ]
+      },
+      "complete_single_board_trip_outside_service_route": 0,
+      "new_samples_with_revisit": 0,
+      "new_samples_with_immediate_return": 0,
+      "lost_new_samples_with_revisit": 0,
+      "lost_new_samples_with_immediate_return": 0,
+      "trace_metadata": "selected=217\nfresh_selected=157\ninitial_selected=54\nassigned_packets=852043\nassigned_units=935779\nfresh_assigned_packets=852043\nfresh_assigned_units=935779\ninitial_passengers=954776\ninitial_known_passengers=806628\ngenerated_passengers=1732490\nremaining_passengers=722122\nremaining_known_passengers=603028\ndiscarded=0\nsampling=all packet representatives for the three target ODs; maximum 65536 sample starts\n"
+    }
+  ],
+  "limitations": "Each run reports its sampling_method: ordinary runs use deterministic hash sampling of approximately one eligible packet in 64; independent focused runs select all packet representatives for the three target ODs. Each follows one person at the packet midpoint, capped at 65536 starts; neither is a population-weighted travel-time estimate. Do not pool focused and ordinary samples. Initial known-OD people are enrolled before settings change and matched by saved packet ID and offset. Loaded trips are left-censored; fresh full-trip and observed-origin-departure metrics are separate. Pending trips are right-censored; erasure/reduction without delivery is lost. All passenger movement totals use actual vehicle cargo, excluding reservations; population removals are the inventory residual, not a diagnosis of their cause. Service classes use actual vehicles' group names at movement; sampled service summaries use the end manifest. Observed misses cover only queried indexed candidates with positive free capacity, which other passengers may consume, and may undercount collective cache hits. Structural short turns conservatively require two reversal stops, a proper subset of a longer nominal route's stops and edges, and at least one internal reversal. Order count is not a service class. Physical distance is Manhattan displacement in 1/16-tile units.",
+  "matched_od": [
+    {
+      "od": "3393:3394",
+      "left": {
+        "n": 110,
+        "mean": 2744.172727272727,
+        "median": 2059.5,
+        "p95": 6636,
+        "p99": 7370,
+        "maximum": 7380
+      },
+      "right": {
+        "n": 108,
+        "mean": 3137.814814814815,
+        "median": 2432.5,
+        "p95": 8447,
+        "p99": 8637,
+        "maximum": 8710
+      },
+      "mean_ratio": 1.143446541695393,
+      "left_physical_means": {
+        "distance_x16": 208,
+        "transfers": 0,
+        "riding_ticks": 465.9818181818182,
+        "transfer_waiting_ticks": 0
+      },
+      "right_physical_means": {
+        "distance_x16": 208,
+        "transfers": 0,
+        "riding_ticks": 495.0833333333333,
+        "transfer_waiting_ticks": 0
+      },
+      "distance_ratio": 1.0,
+      "transfers_delta": 0
+    }
+  ],
+  "matched_od_mean_ratio": {
+    "n": 1,
+    "mean": 1.143446541695393,
+    "median": 1.143446541695393,
+    "p95": 1.143446541695393,
+    "p99": 1.143446541695393,
+    "maximum": 1.143446541695393
+  },
+  "matched_od_at_least_ten_mean_ratio": {
+    "n": 1,
+    "mean": 1.143446541695393,
+    "median": 1.143446541695393,
+    "p95": 1.143446541695393,
+    "p99": 1.143446541695393,
+    "maximum": 1.143446541695393
+  },
+  "matched_od_distance_ratio": {
+    "n": 1,
+    "mean": 1.0,
+    "median": 1.0,
+    "p95": 1.0,
+    "p99": 1.0,
+    "maximum": 1.0
+  },
+  "matched_od_transfers_delta": {
+    "n": 1,
+    "mean": 0,
+    "median": 0,
+    "p95": 0,
+    "p99": 0,
+    "maximum": 0
+  },
+  "paired_initial_people": {
+    "n": 54,
+    "fates": {
+      "delivered->delivered": 53,
+      "pending->pending": 1
+    },
+    "both_delivered_elapsed_delta_ticks": {
+      "n": 53,
+      "mean": 2340.830188679245,
+      "median": 42,
+      "p95": 7049,
+      "p99": 12665,
+      "maximum": 12665
+    },
+    "both_delivered_physical_delta": {
+      "distance_x16": {
+        "n": 53,
+        "mean": 328.92452830188677,
+        "median": 0,
+        "p95": 1582,
+        "p99": 1582,
+        "maximum": 1582
+      },
+      "transfers": {
+        "n": 53,
+        "mean": -0.03773584905660377,
+        "median": 0,
+        "p95": 1,
+        "p99": 1,
+        "maximum": 1
+      },
+      "riding_ticks": {
+        "n": 53,
+        "mean": 734.0754716981132,
+        "median": 184,
+        "p95": 2469,
+        "p99": 4234,
+        "maximum": 4234
+      },
+      "origin_waiting_ticks": {
+        "n": 53,
+        "mean": -22.49056603773585,
+        "median": 0,
+        "p95": 0,
+        "p99": 0,
+        "maximum": 0
+      },
+      "transfer_waiting_ticks": {
+        "n": 53,
+        "mean": 1629.245283018868,
+        "median": 0,
+        "p95": 6996,
+        "p99": 11351,
+        "maximum": 11351
+      },
+      "revisits": {
+        "n": 53,
+        "mean": 0.6037735849056604,
+        "median": 0,
+        "p95": 2,
+        "p99": 2,
+        "maximum": 2
+      },
+      "returns": {
+        "n": 53,
+        "mean": 0.49056603773584906,
+        "median": 0,
+        "p95": 1,
+        "p99": 1,
+        "maximum": 1
+      }
+    },
+    "both_delivered_elapsed_ratio": {
+      "n": 53,
+      "mean": 2.270742227700972,
+      "median": 1.0180025717959709,
+      "p95": 4.021431633090441,
+      "p99": 6.428632661808829,
+      "maximum": 6.428632661808829
+    },
+    "both_observed_origin_departure_to_arrival_ratio": {
+      "n": 2,
+      "mean": 1.3714249233912155,
+      "median": 1.3714249233912155,
+      "p95": 1.3714249233912155,
+      "p99": 1.3714249233912155,
+      "maximum": 1.3714249233912155
+    },
+    "slowest_ratios": [
+      {
+        "person": "40772:2",
+        "od": "971:916",
+        "left_ticks": 2333,
+        "right_ticks": 14998,
+        "ratio": 6.428632661808829
+      },
+      {
+        "person": "351562:0",
+        "od": "971:916",
+        "left_ticks": 2333,
+        "right_ticks": 14998,
+        "ratio": 6.428632661808829
+      },
+      {
+        "person": "112202:1",
+        "od": "971:916",
+        "left_ticks": 2333,
+        "right_ticks": 9382,
+        "ratio": 4.021431633090441
+      },
+      {
+        "person": "185985:1",
+        "od": "971:916",
+        "left_ticks": 2333,
+        "right_ticks": 9382,
+        "ratio": 4.021431633090441
+      },
+      {
+        "person": "437861:0",
+        "od": "971:916",
+        "left_ticks": 2333,
+        "right_ticks": 9382,
+        "ratio": 4.021431633090441
+      },
+      {
+        "person": "440426:1",
+        "od": "971:916",
+        "left_ticks": 2333,
+        "right_ticks": 9382,
+        "ratio": 4.021431633090441
+      },
+      {
+        "person": "447751:1",
+        "od": "971:916",
+        "left_ticks": 2333,
+        "right_ticks": 9382,
+        "ratio": 4.021431633090441
+      },
+      {
+        "person": "129735:1",
+        "od": "971:916",
+        "left_ticks": 2333,
+        "right_ticks": 9382,
+        "ratio": 4.021431633090441
+      },
+      {
+        "person": "108355:1",
+        "od": "971:916",
+        "left_ticks": 2333,
+        "right_ticks": 9382,
+        "ratio": 4.021431633090441
+      },
+      {
+        "person": "116763:1",
+        "od": "971:916",
+        "left_ticks": 2333,
+        "right_ticks": 9382,
+        "ratio": 4.021431633090441
+      },
+      {
+        "person": "307695:1",
+        "od": "971:916",
+        "left_ticks": 2333,
+        "right_ticks": 9382,
+        "ratio": 4.021431633090441
+      },
+      {
+        "person": "302145:1",
+        "od": "971:916",
+        "left_ticks": 2333,
+        "right_ticks": 9382,
+        "ratio": 4.021431633090441
+      },
+      {
+        "person": "297288:1",
+        "od": "971:916",
+        "left_ticks": 2333,
+        "right_ticks": 9382,
+        "ratio": 4.021431633090441
+      },
+      {
+        "person": "363198:0",
+        "od": "971:916",
+        "left_ticks": 2333,
+        "right_ticks": 9382,
+        "ratio": 4.021431633090441
+      },
+      {
+        "person": "409661:2",
+        "od": "971:916",
+        "left_ticks": 2333,
+        "right_ticks": 9382,
+        "ratio": 4.021431633090441
+      },
+      {
+        "person": "234876:1",
+        "od": "971:916",
+        "left_ticks": 2333,
+        "right_ticks": 9382,
+        "ratio": 4.021431633090441
+      },
+      {
+        "person": "233356:0",
+        "od": "971:916",
+        "left_ticks": 2333,
+        "right_ticks": 9382,
+        "ratio": 4.021431633090441
+      },
+      {
+        "person": "368722:4",
+        "od": "971:916",
+        "left_ticks": 2333,
+        "right_ticks": 9382,
+        "ratio": 4.021431633090441
+      },
+      {
+        "person": "234265:3",
+        "od": "971:916",
+        "left_ticks": 2333,
+        "right_ticks": 9382,
+        "ratio": 4.021431633090441
+      },
+      {
+        "person": "325289:0",
+        "od": "971:916",
+        "left_ticks": 2333,
+        "right_ticks": 9382,
+        "ratio": 4.021431633090441
+      },
+      {
+        "person": "306763:1",
+        "od": "971:916",
+        "left_ticks": 2333,
+        "right_ticks": 9382,
+        "ratio": 4.021431633090441
+      },
+      {
+        "person": "303092:0",
+        "od": "971:916",
+        "left_ticks": 2333,
+        "right_ticks": 9382,
+        "ratio": 4.021431633090441
+      },
+      {
+        "person": "224154:3",
+        "od": "971:916",
+        "left_ticks": 2373,
+        "right_ticks": 9382,
+        "ratio": 3.953645174884113
+      },
+      {
+        "person": "102745:0",
+        "od": "971:916",
+        "left_ticks": 16294,
+        "right_ticks": 21516,
+        "ratio": 1.3204860684914692
+      },
+      {
+        "person": "416839:0",
+        "od": "971:916",
+        "left_ticks": 16294,
+        "right_ticks": 21516,
+        "ratio": 1.3204860684914692
+      },
+      {
+        "person": "343553:0",
+        "od": "971:916",
+        "left_ticks": 16294,
+        "right_ticks": 21516,
+        "ratio": 1.3204860684914692
+      },
+      {
+        "person": "91795:0",
+        "od": "971:916",
+        "left_ticks": 2333,
+        "right_ticks": 2375,
+        "ratio": 1.0180025717959709
+      },
+      {
+        "person": "148158:0",
+        "od": "971:916",
+        "left_ticks": 2333,
+        "right_ticks": 2335,
+        "ratio": 1.0008572653236176
+      },
+      {
+        "person": "55766:2",
+        "od": "971:916",
+        "left_ticks": 2333,
+        "right_ticks": 2335,
+        "ratio": 1.0008572653236176
+      },
+      {
+        "person": "247734:0",
+        "od": "971:916",
+        "left_ticks": 2333,
+        "right_ticks": 2335,
+        "ratio": 1.0008572653236176
+      }
+    ]
+  }
+}

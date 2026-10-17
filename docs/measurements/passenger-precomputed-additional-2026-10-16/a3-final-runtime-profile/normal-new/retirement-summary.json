@@ -1,0 +1,102 @@
+{
+  "simulation_timing_valid": true,
+  "profile_enabled": true,
+  "ticks": 2048,
+  "setup_observation": null,
+  "release_ticks": 115,
+  "calls": 115,
+  "simulation_us": {
+    "mean": 27793.8037109375,
+    "p95": 36508,
+    "p99": 44888,
+    "maximum": 66992
+  },
+  "retirement_us": {
+    "mean": 66.3008695652174,
+    "p95": 98.9,
+    "p99": 118.5,
+    "maximum": 209.0
+  },
+  "percentiles": {
+    "p95": {
+      "tick": 3181120099,
+      "simulation_us": 36508,
+      "journey_us": 2830,
+      "retirement_us": 0.0,
+      "calls": 0
+    },
+    "p99": {
+      "tick": 3181120735,
+      "simulation_us": 44888,
+      "journey_us": 15882,
+      "retirement_us": 71.0,
+      "calls": 1
+    }
+  },
+  "tail_release_ticks": {
+    "0.95": 77,
+    "0.99": 16
+  },
+  "worst_retirements": [
+    {
+      "tick": 3181120203,
+      "simulation_us": 46658,
+      "retirement_us": 209.0,
+      "calls": 1
+    },
+    {
+      "tick": 3181120540,
+      "simulation_us": 41764,
+      "retirement_us": 118.5,
+      "calls": 1
+    },
+    {
+      "tick": 3181120345,
+      "simulation_us": 53108,
+      "retirement_us": 117.7,
+      "calls": 1
+    },
+    {
+      "tick": 3181121355,
+      "simulation_us": 61967,
+      "retirement_us": 104.5,
+      "calls": 1
+    },
+    {
+      "tick": 3181120575,
+      "simulation_us": 43677,
+      "retirement_us": 100.7,
+      "calls": 1
+    },
+    {
+      "tick": 3181120362,
+      "simulation_us": 47804,
+      "retirement_us": 98.9,
+      "calls": 1
+    },
+    {
+      "tick": 3181119777,
+      "simulation_us": 35875,
+      "retirement_us": 98.2,
+      "calls": 1
+    },
+    {
+      "tick": 3181121018,
+      "simulation_us": 34006,
+      "retirement_us": 96.8,
+      "calls": 1
+    },
+    {
+      "tick": 3181121213,
+      "simulation_us": 41807,
+      "retirement_us": 96.3,
+      "calls": 1
+    },
+    {
+      "tick": 3181120114,
+      "simulation_us": 41533,
+      "retirement_us": 95.1,
+      "calls": 1
+    }
+  ]
+}

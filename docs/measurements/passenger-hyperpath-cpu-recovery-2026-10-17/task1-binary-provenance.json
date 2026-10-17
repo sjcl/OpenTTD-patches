@@ -1,0 +1,27 @@
+{
+  "revision": "21b7f06ad9cbe7e214ac3762d9e73f56e6f3fc46",
+  "mp": false,
+  "boarding_profile": true,
+  "files": {
+    "save-integrity\\boarding_profile.h": "87643162c4ca22020f30cb3f3252c6a68e34d6a19f2bcfe82dd4fcb9c7da6ce3",
+    "save-integrity\\cargopacket.cpp": "8afc6d1c1f451f814c3b5275cb5f0538e7938966743028ba697682ad6fee4f9f",
+    "save-integrity\\cargopacket_sl.cpp": "01f3aa724c405a062682fc1f9251767db0b8ca03ff2bd0759aabfe20c2e70459",
+    "save-integrity\\command.cpp": "2448845810228935a64f761bca62b7e29af553202d61bc3611a6724f03fc7fcd",
+    "save-integrity\\console_cmds.cpp": "e17688356fe8703d838f5a29a46fba9f8805cdf1959b4cccdf6a607af64d34c4",
+    "save-integrity\\hyperpath_metrics.h": "2c6b925c3e20c9b1fb78a71facc7c8b5c16123fe8330dbf73fc9f0080fea515e",
+    "save-integrity\\integrity.h": "dcac445f095a810ec12394f606a1d18674a2045c1f24044ea24cf3a142b2e044",
+    "save-integrity\\passenger_precomputed.cpp": "d42a3e29c3caaaf72a61bbcf2fa5579aece247c08b8678e32fbd47995d2f055a",
+    "save-integrity\\passenger_service_database.cpp": "5acd2e5e8f3770dae7e1a0569bc5705d8304fd3cc9bf9b46757464c8ea3a8100",
+    "transport-trace\\cargoaction.cpp": "1a1d03adc24462d22acd4a170a29356cd6b7c9c6dee1c9119459177070d69d8d",
+    "transport-trace\\cargopacket.cpp": "f7a20a75282e5205e3f74e69e4bee8dccb8b49b6f4d31cb88a422ec9f4e2274f",
+    "transport-trace\\focus_trace.h": "c93366bf3c73fe75845e5636e41d9ace739defd91ff7ca4bd61967ac6dd10d07",
+    "transport-trace\\passenger_journey_active.cpp": "6e9f40dad0ca952d6e55725d96b8328557963c46ce51eafb32f6a197cbbb2f6c",
+    "transport-trace\\passenger_od.cpp": "727f34ced3b3908cb0532a7fbd666d65a8aac9518dcd53f92850210d4456f2ac",
+    "transport-trace\\trace.h": "fff50a15e9f68892f8b91b7acb5b878642eb794e9ac653157dad51e4a447d9a5",
+    "transport-trace\\vehicle.cpp": "a2ae2df10b10c06d787146da16846ea3870b2c40bed2061cc275845abf07555b",
+    "real-map-driver\\null_v.cpp": "9342628a85f5bbebf9ee5ab95f715d17fc4d63b3b44855087f3a5afdd81db1ab",
+    "real-map-driver\\win32.cpp": "ef0f2bc96d0ed1050fdc7687038bac0f5c64e504a7b6ac6ab769daed5b46c842"
+  },
+  "working_tree_source_files": {},
+  "working_tree_patch_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+}

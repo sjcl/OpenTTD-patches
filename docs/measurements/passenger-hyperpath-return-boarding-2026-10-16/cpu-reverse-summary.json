@@ -1,0 +1,4547 @@
+{
+  "runs": [
+    {
+      "exit_code": 0,
+      "requested_ticks": 1025,
+      "elapsed_seconds": 335.32949869986624,
+      "trace_enabled": false,
+      "checkpoint_tick": null,
+      "focused_od_trace": false,
+      "contamination": [],
+      "input_sha256": "6783a500f47435a342a36e9a6544e33bb38f041abe91e9e2ff2c654edd16c978",
+      "binary_sha256": "d088e44d7e9bf920e72b97cbf70dbcceb536a0fbfc6f3b051e2b1d3b748fa63a",
+      "language_sha256": "af5d093144abcc99f3d31b95c531b0b4d019166a8ffec05af8c672e7a890822a",
+      "resume_settings": false,
+      "fixture_timetable": false,
+      "fixture_estimated": false,
+      "cold_precomputed": true,
+      "precomputed": true,
+      "hyperpath": true,
+      "warm_precomputed": true,
+      "rebuild_precomputed": false,
+      "full_rebuild_precomputed": false,
+      "mid_rebuild_tick": 1024,
+      "finish_rebuild_precomputed": false,
+      "peak_working_bytes": 10115993600,
+      "peak_commit_bytes": 11162476544,
+      "process_cpu_seconds": 516.296875,
+      "save-integrity.json": {
+        "runtime_routing_feature": 3,
+        "state_ticks": 3181096030,
+        "packets": 506171,
+        "cargo_units": 1326143,
+        "known_od_units": 774494,
+        "journey_packets": 342742,
+        "packet_state_digest": 2688127471356099088,
+        "payment_digest": 12688062341109996479,
+        "payments_valid": true,
+        "database_digest": 14962829880712910852,
+        "ownership_digest": 8903702374346703855,
+        "loading_digest": 16903747025561985914,
+        "completed_rows": 0,
+        "retained_rows": 4917,
+        "table_operations": 0,
+        "published_revision": 2797,
+        "company_deliveries": 70588,
+        "journey_routing": 1,
+        "precomputed_routing": 1,
+        "legacy_true_packets": 0,
+        "legacy_false_packets": 0,
+        "legacy_true_units": 0,
+        "legacy_false_units": 0,
+        "opposite_history_mergeable_pairs": 0
+      },
+      "rebuild-transition.json": {
+        "elapsed_tick": 1024,
+        "state_tick": 3181096029,
+        "cost": 17,
+        "diagnostic_us": 223818,
+        "setting_us": 70
+      },
+      "midpoint-save-integrity.json": {
+        "runtime_routing_feature": 3,
+        "state_ticks": 3181096029,
+        "packets": 506167,
+        "cargo_units": 1326132,
+        "known_od_units": 774510,
+        "journey_packets": 342547,
+        "packet_state_digest": 14200571952928475136,
+        "payment_digest": 13570548200331641820,
+        "payments_valid": true,
+        "database_digest": 5512812734642091856,
+        "ownership_digest": 9020348623247724943,
+        "loading_digest": 14352160972889759509,
+        "completed_rows": 4917,
+        "retained_rows": 0,
+        "table_operations": 1930893153,
+        "published_revision": 2797,
+        "company_deliveries": 70563,
+        "journey_routing": 1,
+        "precomputed_routing": 1,
+        "legacy_true_packets": 0,
+        "legacy_false_packets": 0,
+        "legacy_true_units": 0,
+        "legacy_false_units": 0,
+        "opposite_history_mergeable_pairs": 0
+      },
+      "result_sha256": "a3af6e747d76dbc25dcdf7b38fd1e945b00d1f065784fe20b9c70f484baa50c7",
+      "load_failed": false,
+      "newgrf_warning_lines": 17393,
+      "warm_observations": [
+        "true"
+      ],
+      "warm_complete": true,
+      "script_error_pause_resumes": 1,
+      "run": "hyperpath-first",
+      "simulation": {
+        "count": 1025,
+        "mean_us": 42528.33853658537,
+        "p95_us": 65191,
+        "p99_us": 83074,
+        "max_us": 155266
+      },
+      "journey": {
+        "count": 1025,
+        "mean_us": 2804.173658536585,
+        "p95_us": 5219,
+        "p99_us": 35004,
+        "max_us": 42697
+      },
+      "second_half_simulation": {
+        "count": 513,
+        "mean_us": 41293.09356725146,
+        "p95_us": 62380,
+        "p99_us": 78595,
+        "max_us": 125528
+      },
+      "second_half_journey": {
+        "count": 513,
+        "mean_us": 1827.2358674463937,
+        "p95_us": 3923,
+        "p99_us": 4597,
+        "max_us": 17482
+      },
+      "ordinary_simulation": {
+        "count": 1024,
+        "mean_us": 42521.0380859375,
+        "p95_us": 65191,
+        "p99_us": 83074,
+        "max_us": 155266
+      },
+      "ordinary_journey": {
+        "count": 1024,
+        "mean_us": 2789.83984375,
+        "p95_us": 5162,
+        "p99_us": 35004,
+        "max_us": 42697
+      },
+      "ordinary_tail_simulation": {
+        "count": 512,
+        "mean_us": 41276.080078125,
+        "p95_us": 62380,
+        "p99_us": 78595,
+        "max_us": 125528
+      },
+      "ordinary_tail_journey": {
+        "count": 512,
+        "mean_us": 1796.66015625,
+        "p95_us": 3833,
+        "p99_us": 4576,
+        "max_us": 6234
+      },
+      "replacement_simulation": {
+        "count": 1,
+        "mean_us": 50004.0,
+        "p95_us": 50004,
+        "p99_us": 50004,
+        "max_us": 50004
+      },
+      "replacement_journey": {
+        "count": 1,
+        "mean_us": 17482.0,
+        "p95_us": 17482,
+        "p99_us": 17482,
+        "max_us": 17482
+      },
+      "observations": {
+        "All passenger company deliveries": [
+          {
+            "current_economy_delivered": 21553
+          },
+          {
+            "current_economy_delivered": 70588
+          }
+        ],
+        "Passenger inventory": [
+          {
+            "waiting": 501751,
+            "available": 501751,
+            "reserved": 0,
+            "deferred": 262915,
+            "state_ticks": 3181095005,
+            "scaled_ticks": 3015495907
+          },
+          {
+            "waiting": 444854,
+            "available": 444854,
+            "reserved": 0,
+            "deferred": 116451,
+            "state_ticks": 3181096030,
+            "scaled_ticks": 3015496932
+          }
+        ],
+        "Inventory Legacy": [
+          {
+            "known_OD": 265896
+          },
+          {
+            "known_OD": 116777
+          }
+        ],
+        "Inventory Journey": [
+          {
+            "known_OD": 475060
+          },
+          {
+            "known_OD": 610005
+          }
+        ],
+        "Inventory Fallback": [
+          {
+            "known_OD": 65672
+          },
+          {
+            "known_OD": 47712
+          }
+        ],
+        "Waiting routing": [
+          {
+            "timed": 111,
+            "schedule": 351670,
+            "CargoDist_or_deferred": 96723,
+            "OD_fallback_or_waiting": 53247
+          },
+          {
+            "timed": 0,
+            "schedule": 342269,
+            "CargoDist_or_deferred": 508,
+            "OD_fallback_or_waiting": 102077
+          }
+        ],
+        "Schedule inventory": [
+          {
+            "people": 469837,
+            "packets": 247360,
+            "waiting": 351670,
+            "timed_waiting": 111
+          },
+          {
+            "people": 606015,
+            "packets": 340167,
+            "waiting": 342269,
+            "timed_waiting": 0
+          }
+        ],
+        "Waiting age sample": [
+          {
+            "known_OD_waiting": 427256,
+            "transit_age_ge_256": 1270,
+            "schedule_intent_age_ge_4096": 0
+          },
+          {
+            "known_OD_waiting": 354982,
+            "transit_age_ge_256": 874,
+            "schedule_intent_age_ge_4096": 0
+          }
+        ],
+        "Graph coverage": [
+          {
+            "complete": 0,
+            "eligible_services": 0,
+            "selected_services": 0,
+            "selected_trips": 0,
+            "largest_block_services": 0,
+            "admitted_visits": 0,
+            "max_unpredicted_ticks": 0
+          },
+          {
+            "complete": 0,
+            "eligible_services": 0,
+            "selected_services": 0,
+            "selected_trips": 0,
+            "largest_block_services": 0,
+            "admitted_visits": 0,
+            "max_unpredicted_ticks": 0
+          }
+        ],
+        "First graph failure": [
+          {
+            "work": 0,
+            "memory": 0,
+            "trips": 0,
+            "visits": 0
+          },
+          {
+            "work": 0,
+            "memory": 0,
+            "trips": 0,
+            "visits": 0
+          }
+        ],
+        "First opaque scope": [
+          {
+            "service": 65535,
+            "vehicle": 1048575
+          },
+          {
+            "service": 65535,
+            "vehicle": 1048575
+          }
+        ],
+        "First trip failure": [
+          {
+            "vehicle": 1048575,
+            "work": 0,
+            "memory": 0,
+            "trips": 0,
+            "visits": 0,
+            "cursor": 0,
+            "certified_until": 0,
+            "required_until": 0
+          },
+          {
+            "vehicle": 1048575,
+            "work": 0,
+            "memory": 0,
+            "trips": 0,
+            "visits": 0,
+            "cursor": 0,
+            "certified_until": 0,
+            "required_until": 0
+          }
+        ],
+        "Uncertainty": [
+          {
+            "timing": 0,
+            "path": 0,
+            "OD_resolved": 0,
+            "first_order": 65535,
+            "first_unknown_order": 65535,
+            "tile": 0,
+            "current_order": 65535
+          },
+          {
+            "timing": 0,
+            "path": 0,
+            "OD_resolved": 0,
+            "first_order": 65535,
+            "first_unknown_order": 65535,
+            "tile": 0,
+            "current_order": 65535
+          }
+        ],
+        "Simulation tick time": [
+          {
+            "completed_ticks": 0,
+            "total_us": 0,
+            "mean_us": 0,
+            "max_us": 0
+          },
+          {
+            "completed_ticks": 1025,
+            "total_us": 43591547,
+            "mean_us": 42528,
+            "max_us": 155266
+          }
+        ],
+        "Tick histogram (1ms upper bounds)": [
+          {
+            "simulation_p95_us": 1000,
+            "simulation_p99_us": 1000,
+            "journey_mean_us": 0,
+            "journey_p95_us": 1000,
+            "journey_p99_us": 1000,
+            "journey_max_us": 0
+          },
+          {
+            "simulation_p95_us": 66000,
+            "simulation_p99_us": 84000,
+            "journey_mean_us": 2804,
+            "journey_p95_us": 6000,
+            "journey_p99_us": 36000,
+            "journey_max_us": 42697
+          }
+        ],
+        "Hyperpath capacity": [
+          {
+            "packets": 0,
+            "passengers": 0
+          },
+          {
+            "packets": 84273,
+            "passengers": 149046
+          }
+        ],
+        "Hyperpath local totals": [
+          {
+            "replans": 0,
+            "nanoseconds": 0
+          },
+          {
+            "replans": 3402,
+            "nanoseconds": 23354200
+          }
+        ],
+        "Hyperpath diagnostics": [
+          {
+            "cargo": 0,
+            "local_replans": 0,
+            "local_ns": 0,
+            "board_events": 0,
+            "accepted": 0,
+            "range_updates": 0,
+            "pushes": 0,
+            "pops": 0,
+            "bytes": 0,
+            "envelope": 0,
+            "base_bytes": 0,
+            "difference_bytes": 0,
+            "max_candidates": 0,
+            "work": 0,
+            "build_ns": 0,
+            "transfer": 20
+          },
+          {
+            "cargo": 0,
+            "local_replans": 0,
+            "local_ns": 0,
+            "board_events": 0,
+            "accepted": 0,
+            "range_updates": 0,
+            "pushes": 0,
+            "pops": 0,
+            "bytes": 0,
+            "envelope": 0,
+            "base_bytes": 0,
+            "difference_bytes": 0,
+            "max_candidates": 0,
+            "work": 0,
+            "build_ns": 534600,
+            "transfer": 17
+          }
+        ],
+        "Passenger events": [
+          {
+            "pending": 0,
+            "overdue": 0,
+            "oldest_ticks": 0,
+            "maximum_station_backlog": 9327,
+            "on_time": 0,
+            "packets": 0,
+            "groups": 0,
+            "scheduler_us": 0,
+            "arrival_candidates": 0,
+            "arrival_passengers": 0,
+            "unresolved_missed_estimate": 0
+          },
+          {
+            "pending": 176372,
+            "overdue": 622,
+            "oldest_ticks": 1,
+            "maximum_station_backlog": 9326,
+            "on_time": 38334,
+            "packets": 483177,
+            "groups": 244248,
+            "scheduler_us": 2560006,
+            "arrival_candidates": 250882,
+            "arrival_passengers": 386406,
+            "unresolved_missed_estimate": 0
+          }
+        ],
+        "Passenger scheduler cause/new": [
+          {
+            "packets": 0,
+            "microseconds": 0
+          },
+          {
+            "packets": 127790,
+            "microseconds": 721511
+          }
+        ],
+        "Passenger scheduler cause/expiry": [
+          {
+            "packets": 0,
+            "microseconds": 0
+          },
+          {
+            "packets": 58302,
+            "microseconds": 223564
+          }
+        ],
+        "Passenger scheduler cause/failure": [
+          {
+            "packets": 0,
+            "microseconds": 0
+          },
+          {
+            "packets": 83920,
+            "microseconds": 460725
+          }
+        ],
+        "Passenger scheduler cause/migration": [
+          {
+            "packets": 0,
+            "microseconds": 0
+          },
+          {
+            "packets": 177036,
+            "microseconds": 746175
+          }
+        ],
+        "Passenger scheduler cause/generation": [
+          {
+            "packets": 0,
+            "microseconds": 0
+          },
+          {
+            "packets": 25329,
+            "microseconds": 90224
+          }
+        ],
+        "Passenger capacity records": [
+          {
+            "packets": 0,
+            "passengers": 0,
+            "microseconds": 0
+          },
+          {
+            "packets": 84273,
+            "passengers": 149046,
+            "microseconds": 598653
+          }
+        ],
+        "Passenger unchanged generation": [
+          {
+            "packets": 0
+          },
+          {
+            "packets": 10744
+          }
+        ],
+        "Precomputed passenger routes": [
+          {
+            "cargo": 0,
+            "patterns": 0,
+            "stations": 0,
+            "states": 0,
+            "edges": 0,
+            "destinations": 0,
+            "bytes": 0,
+            "envelope": 0,
+            "build_ns": 0,
+            "operations": 0,
+            "queries": 0,
+            "query_ns": 0,
+            "hits": 0,
+            "missing": 0,
+            "no_route": 0
+          },
+          {
+            "cargo": 0,
+            "patterns": 0,
+            "stations": 0,
+            "states": 0,
+            "edges": 0,
+            "destinations": 0,
+            "bytes": 0,
+            "envelope": 0,
+            "build_ns": 534600,
+            "operations": 0,
+            "queries": 2394,
+            "query_ns": 55100,
+            "hits": 0,
+            "missing": 2394,
+            "no_route": 0
+          }
+        ],
+        "Precomputed common sections": [
+          {
+            "cargo": 0,
+            "sections": 0,
+            "concrete_rides": 0
+          },
+          {
+            "cargo": 0,
+            "sections": 0,
+            "concrete_rides": 0
+          }
+        ],
+        "Precomputed timetable certainty": [
+          {
+            "cargo": 0,
+            "certified_patterns": 0,
+            "estimated_patterns": 0
+          },
+          {
+            "cargo": 0,
+            "certified_patterns": 0,
+            "estimated_patterns": 0
+          }
+        ],
+        "Precomputed retained routes": [
+          {
+            "cargo": 0,
+            "destinations": 0,
+            "bytes": 0,
+            "envelope": 0
+          },
+          {
+            "cargo": 0,
+            "destinations": 4917,
+            "bytes": 7798744582,
+            "envelope": 16275355656
+          }
+        ],
+        "Precomputed memory admission": [
+          {
+            "shared_limit": 17179869184
+          },
+          {
+            "shared_limit": 17179869184
+          }
+        ],
+        "Precomputed initial preparation": [
+          {
+            "elapsed_ns": 0
+          },
+          {
+            "elapsed_ns": 151509321800
+          }
+        ],
+        "Journey inclusive scopes": [
+          {
+            "waiting_us": 61681,
+            "fallback_distance_us": 0,
+            "boarding_us": 0
+          },
+          {
+            "waiting_us": 2442345,
+            "fallback_distance_us": 0,
+            "boarding_us": 77784
+          }
+        ],
+        "Periodic pending age": [
+          {
+            "ticks": 306
+          },
+          {
+            "ticks": 1024
+          }
+        ],
+        "OD fallback cache": [
+          {
+            "hits": 0,
+            "bytes": 0,
+            "work": 0,
+            "searches": 0
+          },
+          {
+            "hits": 0,
+            "bytes": 0,
+            "work": 1877065,
+            "searches": 0
+          }
+        ],
+        "OD fallback bindings": [
+          {
+            "hits": 0,
+            "builds": 0,
+            "validation_nodes": 0,
+            "validation_ns": 0,
+            "build_ns": 0,
+            "reverse_hits": 0,
+            "reverse_builds": 0,
+            "reverse_build_ns": 0
+          },
+          {
+            "hits": 0,
+            "builds": 0,
+            "validation_nodes": 0,
+            "validation_ns": 0,
+            "build_ns": 0,
+            "reverse_hits": 0,
+            "reverse_builds": 0,
+            "reverse_build_ns": 0
+          }
+        ],
+        "Periodic database": [
+          {
+            "services": 864,
+            "timed": 676,
+            "vehicles": 3806,
+            "bytes": 12470688,
+            "policies_bytes": 524280,
+            "pending": 864,
+            "builds": 0,
+            "work": 0,
+            "build_us": 0,
+            "searches": 0,
+            "query_us": 0,
+            "next_departures": 0,
+            "policy_hits": 0,
+            "policy_misses": 0,
+            "invalidations": 1,
+            "rejected_work": 0,
+            "rejected_memory": 0
+          },
+          {
+            "services": 864,
+            "timed": 676,
+            "vehicles": 4092,
+            "bytes": 13760832,
+            "policies_bytes": 524280,
+            "pending": 741,
+            "builds": 0,
+            "work": 0,
+            "build_us": 98587,
+            "searches": 0,
+            "query_us": 0,
+            "next_departures": 0,
+            "policy_hits": 0,
+            "policy_misses": 0,
+            "invalidations": 0,
+            "rejected_work": 0,
+            "rejected_memory": 0
+          }
+        ],
+        "Periodic departures": [
+          {
+            "logical_vehicles": 0,
+            "logical_departures": 0,
+            "physical_calculations": 0,
+            "hits": 0,
+            "fallbacks": 0,
+            "builds": 0,
+            "build_ns": 0,
+            "bytes": 0,
+            "peak_bytes": 0,
+            "forward_us": 0,
+            "search_work": 0
+          },
+          {
+            "logical_vehicles": 0,
+            "logical_departures": 0,
+            "physical_calculations": 0,
+            "hits": 0,
+            "fallbacks": 0,
+            "builds": 0,
+            "build_ns": 0,
+            "bytes": 0,
+            "peak_bytes": 0,
+            "forward_us": 0,
+            "search_work": 0
+          }
+        ],
+        "Timed search storage": [
+          {
+            "labels": 0,
+            "frontier_lookups": 0,
+            "queue_pushes": 0,
+            "queue_pops": 0,
+            "scratch_bytes": 0,
+            "scratch_peak_bytes": 0
+          },
+          {
+            "labels": 0,
+            "frontier_lookups": 0,
+            "queue_pushes": 0,
+            "queue_pops": 0,
+            "scratch_bytes": 0,
+            "scratch_peak_bytes": 0
+          }
+        ],
+        "Timed Work destination geometry": [
+          {
+            "with_destination_label": 0
+          },
+          {
+            "with_destination_label": 0
+          }
+        ],
+        "Timed Work completion": [
+          {
+            "with_complete": 0,
+            "without_complete": 0,
+            "with_queued": 0,
+            "with_popped": 0,
+            "improvement_possible": 0,
+            "reverse_work": 0,
+            "forward_work": 0
+          },
+          {
+            "with_complete": 0,
+            "without_complete": 0,
+            "with_queued": 0,
+            "with_popped": 0,
+            "improvement_possible": 0,
+            "reverse_work": 0,
+            "forward_work": 0
+          }
+        ],
+        "Timed result states": [
+          {
+            "unavailable": 0,
+            "certified": 0,
+            "provisional": 0,
+            "deferred": 0,
+            "no_route": 0,
+            "rescued_unpopped": 0
+          },
+          {
+            "unavailable": 0,
+            "certified": 0,
+            "provisional": 0,
+            "deferred": 0,
+            "no_route": 0,
+            "rescued_unpopped": 0
+          }
+        ],
+        "Timed plan adoption": [
+          {
+            "certified_packets": 0,
+            "provisional_packets": 0,
+            "provisional_passengers": 0
+          },
+          {
+            "certified_packets": 0,
+            "provisional_packets": 0,
+            "provisional_passengers": 0
+          }
+        ],
+        "Timed Work stop None": [
+          {
+            "calls": 0,
+            "observations": 0
+          },
+          {
+            "calls": 0,
+            "observations": 0
+          }
+        ],
+        "Timed Work stop Admission": [
+          {
+            "calls": 0,
+            "observations": 0
+          },
+          {
+            "calls": 0,
+            "observations": 0
+          }
+        ],
+        "Timed Work stop Queue": [
+          {
+            "calls": 0,
+            "observations": 0
+          },
+          {
+            "calls": 0,
+            "observations": 0
+          }
+        ],
+        "Timed Work stop Service": [
+          {
+            "calls": 0,
+            "observations": 0
+          },
+          {
+            "calls": 0,
+            "observations": 0
+          }
+        ],
+        "Timed Work stop Vehicle": [
+          {
+            "calls": 0,
+            "observations": 0
+          },
+          {
+            "calls": 0,
+            "observations": 0
+          }
+        ],
+        "Timed Work stop Dispatch": [
+          {
+            "calls": 0,
+            "observations": 0
+          },
+          {
+            "calls": 0,
+            "observations": 0
+          }
+        ],
+        "Timed Work stop Departure": [
+          {
+            "calls": 0,
+            "observations": 0
+          },
+          {
+            "calls": 0,
+            "observations": 0
+          }
+        ],
+        "Timed Work stop Alighting": [
+          {
+            "calls": 0,
+            "observations": 0
+          },
+          {
+            "calls": 0,
+            "observations": 0
+          }
+        ],
+        "Timed Work stop Dominance": [
+          {
+            "calls": 0,
+            "observations": 0
+          },
+          {
+            "calls": 0,
+            "observations": 0
+          }
+        ],
+        "Timed Work histogram": [
+          {
+            "upper": 0,
+            "count": 0
+          },
+          {
+            "upper": 1024,
+            "count": 0
+          },
+          {
+            "upper": 2048,
+            "count": 0
+          },
+          {
+            "upper": 3072,
+            "count": 0
+          },
+          {
+            "upper": 4096,
+            "count": 0
+          },
+          {
+            "upper": 5120,
+            "count": 0
+          },
+          {
+            "upper": 6144,
+            "count": 0
+          },
+          {
+            "upper": 7168,
+            "count": 0
+          },
+          {
+            "upper": 8192,
+            "count": 0
+          },
+          {
+            "upper": 9216,
+            "count": 0
+          },
+          {
+            "upper": 10240,
+            "count": 0
+          },
+          {
+            "upper": 11264,
+            "count": 0
+          },
+          {
+            "upper": 12288,
+            "count": 0
+          },
+          {
+            "upper": 13312,
+            "count": 0
+          },
+          {
+            "upper": 14336,
+            "count": 0
+          },
+          {
+            "upper": 15360,
+            "count": 0
+          },
+          {
+            "upper": 16384,
+            "count": 0
+          },
+          {
+            "upper": 17408,
+            "count": 0
+          },
+          {
+            "upper": 18432,
+            "count": 0
+          },
+          {
+            "upper": 19456,
+            "count": 0
+          },
+          {
+            "upper": 20480,
+            "count": 0
+          },
+          {
+            "upper": 21504,
+            "count": 0
+          },
+          {
+            "upper": 22528,
+            "count": 0
+          },
+          {
+            "upper": 23552,
+            "count": 0
+          },
+          {
+            "upper": 24576,
+            "count": 0
+          },
+          {
+            "upper": 25600,
+            "count": 0
+          },
+          {
+            "upper": 26624,
+            "count": 0
+          },
+          {
+            "upper": 27648,
+            "count": 0
+          },
+          {
+            "upper": 28672,
+            "count": 0
+          },
+          {
+            "upper": 29696,
+            "count": 0
+          },
+          {
+            "upper": 30720,
+            "count": 0
+          },
+          {
+            "upper": 31744,
+            "count": 0
+          },
+          {
+            "upper": 32768,
+            "count": 0
+          },
+          {
+            "upper": 33792,
+            "count": 0
+          },
+          {
+            "upper": 34816,
+            "count": 0
+          },
+          {
+            "upper": 35840,
+            "count": 0
+          },
+          {
+            "upper": 36864,
+            "count": 0
+          },
+          {
+            "upper": 37888,
+            "count": 0
+          },
+          {
+            "upper": 38912,
+            "count": 0
+          },
+          {
+            "upper": 39936,
+            "count": 0
+          },
+          {
+            "upper": 40960,
+            "count": 0
+          },
+          {
+            "upper": 41984,
+            "count": 0
+          },
+          {
+            "upper": 43008,
+            "count": 0
+          },
+          {
+            "upper": 44032,
+            "count": 0
+          },
+          {
+            "upper": 45056,
+            "count": 0
+          },
+          {
+            "upper": 46080,
+            "count": 0
+          },
+          {
+            "upper": 47104,
+            "count": 0
+          },
+          {
+            "upper": 48128,
+            "count": 0
+          },
+          {
+            "upper": 49152,
+            "count": 0
+          },
+          {
+            "upper": 50176,
+            "count": 0
+          },
+          {
+            "upper": 51200,
+            "count": 0
+          },
+          {
+            "upper": 52224,
+            "count": 0
+          },
+          {
+            "upper": 53248,
+            "count": 0
+          },
+          {
+            "upper": 54272,
+            "count": 0
+          },
+          {
+            "upper": 55296,
+            "count": 0
+          },
+          {
+            "upper": 56320,
+            "count": 0
+          },
+          {
+            "upper": 57344,
+            "count": 0
+          },
+          {
+            "upper": 58368,
+            "count": 0
+          },
+          {
+            "upper": 59392,
+            "count": 0
+          },
+          {
+            "upper": 60416,
+            "count": 0
+          },
+          {
+            "upper": 61440,
+            "count": 0
+          },
+          {
+            "upper": 62464,
+            "count": 0
+          },
+          {
+            "upper": 63488,
+            "count": 0
+          },
+          {
+            "upper": 64512,
+            "count": 0
+          },
+          {
+            "upper": 65536,
+            "count": 0
+          },
+          {
+            "upper": 0,
+            "count": 0
+          },
+          {
+            "upper": 1024,
+            "count": 0
+          },
+          {
+            "upper": 2048,
+            "count": 0
+          },
+          {
+            "upper": 3072,
+            "count": 0
+          },
+          {
+            "upper": 4096,
+            "count": 0
+          },
+          {
+            "upper": 5120,
+            "count": 0
+          },
+          {
+            "upper": 6144,
+            "count": 0
+          },
+          {
+            "upper": 7168,
+            "count": 0
+          },
+          {
+            "upper": 8192,
+            "count": 0
+          },
+          {
+            "upper": 9216,
+            "count": 0
+          },
+          {
+            "upper": 10240,
+            "count": 0
+          },
+          {
+            "upper": 11264,
+            "count": 0
+          },
+          {
+            "upper": 12288,
+            "count": 0
+          },
+          {
+            "upper": 13312,
+            "count": 0
+          },
+          {
+            "upper": 14336,
+            "count": 0
+          },
+          {
+            "upper": 15360,
+            "count": 0
+          },
+          {
+            "upper": 16384,
+            "count": 0
+          },
+          {
+            "upper": 17408,
+            "count": 0
+          },
+          {
+            "upper": 18432,
+            "count": 0
+          },
+          {
+            "upper": 19456,
+            "count": 0
+          },
+          {
+            "upper": 20480,
+            "count": 0
+          },
+          {
+            "upper": 21504,
+            "count": 0
+          },
+          {
+            "upper": 22528,
+            "count": 0
+          },
+          {
+            "upper": 23552,
+            "count": 0
+          },
+          {
+            "upper": 24576,
+            "count": 0
+          },
+          {
+            "upper": 25600,
+            "count": 0
+          },
+          {
+            "upper": 26624,
+            "count": 0
+          },
+          {
+            "upper": 27648,
+            "count": 0
+          },
+          {
+            "upper": 28672,
+            "count": 0
+          },
+          {
+            "upper": 29696,
+            "count": 0
+          },
+          {
+            "upper": 30720,
+            "count": 0
+          },
+          {
+            "upper": 31744,
+            "count": 0
+          },
+          {
+            "upper": 32768,
+            "count": 0
+          },
+          {
+            "upper": 33792,
+            "count": 0
+          },
+          {
+            "upper": 34816,
+            "count": 0
+          },
+          {
+            "upper": 35840,
+            "count": 0
+          },
+          {
+            "upper": 36864,
+            "count": 0
+          },
+          {
+            "upper": 37888,
+            "count": 0
+          },
+          {
+            "upper": 38912,
+            "count": 0
+          },
+          {
+            "upper": 39936,
+            "count": 0
+          },
+          {
+            "upper": 40960,
+            "count": 0
+          },
+          {
+            "upper": 41984,
+            "count": 0
+          },
+          {
+            "upper": 43008,
+            "count": 0
+          },
+          {
+            "upper": 44032,
+            "count": 0
+          },
+          {
+            "upper": 45056,
+            "count": 0
+          },
+          {
+            "upper": 46080,
+            "count": 0
+          },
+          {
+            "upper": 47104,
+            "count": 0
+          },
+          {
+            "upper": 48128,
+            "count": 0
+          },
+          {
+            "upper": 49152,
+            "count": 0
+          },
+          {
+            "upper": 50176,
+            "count": 0
+          },
+          {
+            "upper": 51200,
+            "count": 0
+          },
+          {
+            "upper": 52224,
+            "count": 0
+          },
+          {
+            "upper": 53248,
+            "count": 0
+          },
+          {
+            "upper": 54272,
+            "count": 0
+          },
+          {
+            "upper": 55296,
+            "count": 0
+          },
+          {
+            "upper": 56320,
+            "count": 0
+          },
+          {
+            "upper": 57344,
+            "count": 0
+          },
+          {
+            "upper": 58368,
+            "count": 0
+          },
+          {
+            "upper": 59392,
+            "count": 0
+          },
+          {
+            "upper": 60416,
+            "count": 0
+          },
+          {
+            "upper": 61440,
+            "count": 0
+          },
+          {
+            "upper": 62464,
+            "count": 0
+          },
+          {
+            "upper": 63488,
+            "count": 0
+          },
+          {
+            "upper": 64512,
+            "count": 0
+          },
+          {
+            "upper": 65536,
+            "count": 0
+          }
+        ],
+        "Periodic service pruning": [
+          {
+            "bound_checks": 0,
+            "bound_stops": 0,
+            "pruned_services": 0,
+            "skipped_vehicle_visits": 0
+          },
+          {
+            "bound_checks": 0,
+            "bound_stops": 0,
+            "pruned_services": 0,
+            "skipped_vehicle_visits": 0
+          }
+        ],
+        "Periodic residency": [
+          {
+            "entries": 0,
+            "revision": 2796,
+            "publications": 0,
+            "staged": 0,
+            "staged_bytes": 0,
+            "additions": 0,
+            "removals": 0,
+            "updates": 0,
+            "timetable_notifications": 0
+          },
+          {
+            "entries": 0,
+            "revision": 2797,
+            "publications": 0,
+            "staged": 0,
+            "staged_bytes": 0,
+            "additions": 0,
+            "removals": 0,
+            "updates": 0,
+            "timetable_notifications": 7466
+          }
+        ],
+        "Periodic cache cost": [
+          {
+            "clears": 0,
+            "lost": 0,
+            "maximum_lost": 0,
+            "explicit": 0,
+            "reset": 0,
+            "global": 0,
+            "stale": 0,
+            "evictions": 0,
+            "rebuilds": 0,
+            "compile_us": 0,
+            "validation_us": 0,
+            "eviction_us": 0
+          },
+          {
+            "clears": 0,
+            "lost": 0,
+            "maximum_lost": 0,
+            "explicit": 0,
+            "reset": 0,
+            "global": 0,
+            "stale": 0,
+            "evictions": 0,
+            "rebuilds": 0,
+            "compile_us": 0,
+            "validation_us": 0,
+            "eviction_us": 0
+          }
+        ],
+        "Periodic publication cost": [
+          {
+            "publication_us": 0,
+            "wait_ticks": 0,
+            "wait_samples": 0
+          },
+          {
+            "publication_us": 0,
+            "wait_ticks": 0,
+            "wait_samples": 0
+          }
+        ],
+        "Periodic operating events": [
+          {
+            "physical_passenger_occurrences": 15524,
+            "exchange_passenger_occurrences": 15504,
+            "depot_timed": 149,
+            "depot_untimed": 47,
+            "depot_blocked": 0
+          },
+          {
+            "physical_passenger_occurrences": 17445,
+            "exchange_passenger_occurrences": 17425,
+            "depot_timed": 149,
+            "depot_untimed": 47,
+            "depot_blocked": 0
+          }
+        ],
+        "Schedule policy compilation": [
+          {
+            "compile_us": 0
+          },
+          {
+            "compile_us": 0
+          }
+        ],
+        "Schedule routing": [
+          {
+            "packets": 0,
+            "passengers": 0,
+            "timed_deferred": 0,
+            "hits": 0,
+            "misses": 0,
+            "bytes": 0,
+            "work": 0,
+            "query_us": 0,
+            "stale": 0,
+            "expired": 0
+          },
+          {
+            "packets": 311259,
+            "passengers": 564503,
+            "timed_deferred": 0,
+            "hits": 0,
+            "misses": 0,
+            "bytes": 0,
+            "work": 0,
+            "query_us": 0,
+            "stale": 0,
+            "expired": 12
+          }
+        ],
+        "Schedule transport": [
+          {
+            "boarded": 0,
+            "transferred": 0,
+            "delivered": 0,
+            "expected_wait_person_ticks": 0,
+            "actual_wait_person_ticks": 0,
+            "wait_people": 0
+          },
+          {
+            "boarded": 214653,
+            "transferred": 52437,
+            "delivered": 16611,
+            "expected_wait_person_ticks": 280735001,
+            "actual_wait_person_ticks": 67796665,
+            "wait_people": 214653
+          }
+        ],
+        "Completed interchanges": [
+          {
+            "from_schedule": 0,
+            "from_timed": 0
+          },
+          {
+            "from_schedule": 27269,
+            "from_timed": 5241
+          }
+        ],
+        "Schedule-assisted final OD": [
+          {
+            "delivered": 0
+          },
+          {
+            "delivered": 16630
+          }
+        ],
+        "Periodic passenger census (live OrderLists, cargo-only excluded)": [
+          {
+            "total": 864,
+            "passenger": 798,
+            "complete_cycles": 690,
+            "compile_success": 690,
+            "compile_failure": 108,
+            "unpublished": 0,
+            "dirty": 798,
+            "unknown_vehicles": 668
+          },
+          {
+            "total": 864,
+            "passenger": 798,
+            "complete_cycles": 689,
+            "compile_success": 689,
+            "compile_failure": 109,
+            "unpublished": 0,
+            "dirty": 691,
+            "unknown_vehicles": 650
+          }
+        ],
+        "Periodic passenger pending census": [
+          {
+            "observations": 0
+          },
+          {
+            "observations": 0
+          }
+        ],
+        "Periodic passenger eligibility": [
+          {
+            "declared_complete": 701,
+            "live_compiled_cycles": 690,
+            "published_lists": 798,
+            "published_cycles": 686,
+            "phase_known_lists": 676,
+            "denominator": 798
+          },
+          {
+            "declared_complete": 700,
+            "live_compiled_cycles": 689,
+            "published_lists": 798,
+            "published_cycles": 686,
+            "phase_known_lists": 676,
+            "denominator": 798
+          }
+        ],
+        "Periodic live compilation": [
+          {
+            "None": 690
+          },
+          {
+            "Control": 4
+          },
+          {
+            "Refit": 0
+          },
+          {
+            "Travel": 96
+          },
+          {
+            "Wait": 1
+          },
+          {
+            "Overflow": 0
+          },
+          {
+            "ZeroPeriod": 7
+          },
+          {
+            "TooFewStops": 0
+          },
+          {
+            "None": 689
+          },
+          {
+            "Control": 4
+          },
+          {
+            "Refit": 0
+          },
+          {
+            "Travel": 97
+          },
+          {
+            "Wait": 1
+          },
+          {
+            "Overflow": 0
+          },
+          {
+            "ZeroPeriod": 7
+          },
+          {
+            "TooFewStops": 0
+          }
+        ],
+        "Periodic compilation observations": [
+          {
+            "None": 0
+          },
+          {
+            "Control": 0
+          },
+          {
+            "Refit": 0
+          },
+          {
+            "Travel": 0
+          },
+          {
+            "Wait": 0
+          },
+          {
+            "Overflow": 0
+          },
+          {
+            "ZeroPeriod": 0
+          },
+          {
+            "TooFewStops": 0
+          },
+          {
+            "None": 0
+          },
+          {
+            "Control": 0
+          },
+          {
+            "Refit": 0
+          },
+          {
+            "Travel": 0
+          },
+          {
+            "Wait": 0
+          },
+          {
+            "Overflow": 0
+          },
+          {
+            "ZeroPeriod": 0
+          },
+          {
+            "TooFewStops": 0
+          }
+        ],
+        "Periodic passenger vehicle phase census": [
+          {
+            "Known": 3179
+          },
+          {
+            "NoTimetable": 287
+          },
+          {
+            "VehicleState": 164
+          },
+          {
+            "OrderProgress": 0
+          },
+          {
+            "Facilities": 0
+          },
+          {
+            "Work": 0
+          },
+          {
+            "Unbunching": 0
+          },
+          {
+            "DispatchCompetition": 0
+          },
+          {
+            "DispatchUnsupported": 0
+          },
+          {
+            "Overflow": 0
+          },
+          {
+            "ElapsedTravel": 81
+          },
+          {
+            "AwaitCapture": 136
+          },
+          {
+            "Known": 3197
+          },
+          {
+            "NoTimetable": 287
+          },
+          {
+            "VehicleState": 157
+          },
+          {
+            "OrderProgress": 0
+          },
+          {
+            "Facilities": 0
+          },
+          {
+            "Work": 0
+          },
+          {
+            "Unbunching": 0
+          },
+          {
+            "DispatchCompetition": 0
+          },
+          {
+            "DispatchUnsupported": 0
+          },
+          {
+            "Overflow": 1
+          },
+          {
+            "ElapsedTravel": 27
+          },
+          {
+            "AwaitCapture": 178
+          }
+        ],
+        "Periodic OD calls": [
+          {
+            "outcomes": 0,
+            "overlapping_observations": 0
+          },
+          {
+            "outcomes": 0,
+            "overlapping_observations": 0
+          },
+          {
+            "outcomes": 0,
+            "overlapping_observations": 0
+          },
+          {
+            "outcomes": 0,
+            "overlapping_observations": 0
+          },
+          {
+            "outcomes": 0,
+            "overlapping_observations": 0
+          },
+          {
+            "outcomes": 0,
+            "overlapping_observations": 0
+          },
+          {
+            "outcomes": 0,
+            "overlapping_observations": 0
+          },
+          {
+            "outcomes": 0,
+            "overlapping_observations": 0
+          },
+          {
+            "outcomes": 0,
+            "overlapping_observations": 0
+          },
+          {
+            "outcomes": 0,
+            "overlapping_observations": 0
+          },
+          {
+            "outcomes": 0,
+            "overlapping_observations": 0
+          },
+          {
+            "outcomes": 0,
+            "overlapping_observations": 0
+          },
+          {
+            "outcomes": 0,
+            "overlapping_observations": 0
+          },
+          {
+            "outcomes": 0,
+            "overlapping_observations": 0
+          },
+          {
+            "outcomes": 0,
+            "overlapping_observations": 0
+          },
+          {
+            "outcomes": 0,
+            "overlapping_observations": 0
+          },
+          {
+            "outcomes": 0,
+            "overlapping_observations": 0
+          },
+          {
+            "outcomes": 0,
+            "overlapping_observations": 0
+          },
+          {
+            "outcomes": 0,
+            "overlapping_observations": 0
+          },
+          {
+            "outcomes": 0,
+            "overlapping_observations": 0
+          },
+          {
+            "outcomes": 0,
+            "overlapping_observations": 0
+          },
+          {
+            "outcomes": 0,
+            "overlapping_observations": 0
+          },
+          {
+            "outcomes": 0,
+            "overlapping_observations": 0
+          },
+          {
+            "outcomes": 0,
+            "overlapping_observations": 0
+          },
+          {
+            "outcomes": 0,
+            "overlapping_observations": 0
+          },
+          {
+            "outcomes": 0,
+            "overlapping_observations": 0
+          },
+          {
+            "outcomes": 0,
+            "overlapping_observations": 0
+          },
+          {
+            "outcomes": 0,
+            "overlapping_observations": 0
+          }
+        ],
+        "Periodic execution observations": [
+          {
+            "expired": 0,
+            "failed_same_service_boarding_checks": 0
+          },
+          {
+            "expired": 0,
+            "failed_same_service_boarding_checks": 600
+          }
+        ],
+        "Active journey total": [
+          {
+            "applied": 0,
+            "builds": 0,
+            "static_hits": 0,
+            "searches": 0,
+            "OD_hits": 0
+          },
+          {
+            "applied": 0,
+            "builds": 0,
+            "static_hits": 0,
+            "searches": 0,
+            "OD_hits": 106873
+          }
+        ],
+        "Periodic admission": [
+          {
+            "accepted": 0,
+            "rejected": 0,
+            "reserved": 0,
+            "used": 0,
+            "returned": 0,
+            "max_tick_queries": 0,
+            "max_tick_work": 0
+          },
+          {
+            "accepted": 0,
+            "rejected": 0,
+            "reserved": 0,
+            "used": 0,
+            "returned": 0,
+            "max_tick_queries": 0,
+            "max_tick_work": 0
+          }
+        ],
+        "Periodic allocation": [
+          {
+            "timed": 0,
+            "schedule": 0,
+            "timed_used": 0,
+            "schedule_used": 0
+          },
+          {
+            "timed": 0,
+            "schedule": 0,
+            "timed_used": 0,
+            "schedule_used": 0
+          }
+        ],
+        "Periodic Work outcomes": [
+          {
+            "stopped": 0,
+            "no_route": 0,
+            "schedule_rescued": 0,
+            "complete_unproved": 0,
+            "incomplete_work": 0,
+            "stop_percent": 0.0,
+            "no_route_percent": 0.0
+          },
+          {
+            "stopped": 0,
+            "no_route": 0,
+            "schedule_rescued": 0,
+            "complete_unproved": 0,
+            "incomplete_work": 0,
+            "stop_percent": 0.0,
+            "no_route_percent": 0.0
+          }
+        ],
+        "Periodic missing": [
+          {
+            "published": 0,
+            "building": 0,
+            "retries": 0,
+            "max_od_attempts": 0,
+            "tracking_evictions": 0
+          },
+          {
+            "published": 0,
+            "building": 0,
+            "retries": 0,
+            "max_od_attempts": 0,
+            "tracking_evictions": 0
+          }
+        ],
+        "Trip prediction": [
+          {
+            "executions": 0,
+            "hits": 0,
+            "logical_work": 0,
+            "executed_visits": 0,
+            "predictor_ns": 0,
+            "cache_bytes": 0
+          },
+          {
+            "executions": 0,
+            "hits": 0,
+            "logical_work": 0,
+            "executed_visits": 0,
+            "predictor_ns": 0,
+            "cache_bytes": 0
+          }
+        ],
+        "Graph phase_us": [
+          {
+            "discovery": 0,
+            "capacity": 0,
+            "selection": 0,
+            "orders_dispatch": 0,
+            "pattern": 0,
+            "prediction": 0,
+            "departures": 0
+          },
+          {
+            "discovery": 0,
+            "capacity": 0,
+            "selection": 0,
+            "orders_dispatch": 0,
+            "pattern": 0,
+            "prediction": 0,
+            "departures": 0
+          }
+        ],
+        "Event capture": [
+          {
+            "discovery_hits": 0,
+            "service_hits": 0,
+            "logical_work_replayed": 0,
+            "retained_estimate_including_shared_patterns": 0
+          },
+          {
+            "discovery_hits": 0,
+            "service_hits": 0,
+            "logical_work_replayed": 0,
+            "retained_estimate_including_shared_patterns": 0
+          }
+        ],
+        "Fair waiting shares": [
+          {
+            "claims": 0,
+            "releases": 0,
+            "admission_scan_work": 0,
+            "retained_rides": 0
+          },
+          {
+            "claims": 0,
+            "releases": 0,
+            "admission_scan_work": 0,
+            "retained_rides": 0
+          }
+        ],
+        "OD fallback": [
+          {
+            "work": 0,
+            "path_searches": 0
+          },
+          {
+            "work": 1877065,
+            "path_searches": 0
+          }
+        ],
+        "Journey transport": [
+          {
+            "boarded": 0,
+            "transferred": 0,
+            "delivered": 0
+          },
+          {
+            "boarded": 0,
+            "transferred": 1010,
+            "delivered": 122
+          }
+        ],
+        "Timed depot transport": [
+          {
+            "service_boarded": 0,
+            "service_delivered": 0,
+            "crossing_boarded": 0,
+            "crossing_delivered": 0
+          },
+          {
+            "service_boarded": 0,
+            "service_delivered": 18,
+            "crossing_boarded": 0,
+            "crossing_delivered": 0
+          }
+        ],
+        "Pragmatic routing": [
+          {
+            "timed": 0,
+            "timed_ignoring_unknown": 0,
+            "timed_budget_deferred": 0,
+            "untimed": 0,
+            "untimed_no_route": 0,
+            "untimed_budget_deferred": 0
+          },
+          {
+            "timed": 0,
+            "timed_ignoring_unknown": 0,
+            "timed_budget_deferred": 0,
+            "untimed": 0,
+            "untimed_no_route": 0,
+            "untimed_budget_deferred": 0
+          }
+        ],
+        "Untimed transport": [
+          {
+            "boarded": 0,
+            "transferred": 0,
+            "delivered": 0
+          },
+          {
+            "boarded": 0,
+            "transferred": 95844,
+            "delivered": 8489
+          }
+        ],
+        "Fallback GraphWork": [
+          {
+            "deferred": 0
+          },
+          {
+            "deferred": 0
+          }
+        ],
+        "Fallback GraphMemory": [
+          {
+            "deferred": 0
+          },
+          {
+            "deferred": 0
+          }
+        ],
+        "Fallback SnapshotLimit": [
+          {
+            "deferred": 0
+          },
+          {
+            "deferred": 0
+          }
+        ],
+        "Fallback QueryWork": [
+          {
+            "deferred": 0
+          },
+          {
+            "deferred": 0
+          }
+        ],
+        "Fallback QueryLimit": [
+          {
+            "deferred": 0
+          },
+          {
+            "deferred": 0
+          }
+        ],
+        "Fallback QueryMemory": [
+          {
+            "deferred": 0
+          },
+          {
+            "deferred": 0
+          }
+        ],
+        "Fallback PredictionIncomplete": [
+          {
+            "deferred": 0
+          },
+          {
+            "deferred": 0
+          }
+        ],
+        "Fallback PredictionHorizon": [
+          {
+            "deferred": 0
+          },
+          {
+            "deferred": 0
+          }
+        ],
+        "Fallback NoJourney": [
+          {
+            "deferred": 0
+          },
+          {
+            "deferred": 0
+          }
+        ],
+        "Fallback InvalidLeg": [
+          {
+            "deferred": 0
+          },
+          {
+            "deferred": 0
+          }
+        ],
+        "Fallback StaleLeg": [
+          {
+            "deferred": 0
+          },
+          {
+            "deferred": 0
+          }
+        ],
+        "Fallback Disabled": [
+          {
+            "deferred": 0
+          },
+          {
+            "deferred": 0
+          }
+        ],
+        "Fallback VehicleDeleted": [
+          {
+            "deferred": 0
+          },
+          {
+            "deferred": 0
+          }
+        ],
+        "Precomputed warm": [
+          {
+            "elapsed_us": 151554548
+          }
+        ]
+      }
+    },
+    {
+      "exit_code": 0,
+      "requested_ticks": 1025,
+      "elapsed_seconds": 249.86326130013913,
+      "trace_enabled": false,
+      "checkpoint_tick": null,
+      "focused_od_trace": false,
+      "contamination": [],
+      "input_sha256": "6783a500f47435a342a36e9a6544e33bb38f041abe91e9e2ff2c654edd16c978",
+      "binary_sha256": "d088e44d7e9bf920e72b97cbf70dbcceb536a0fbfc6f3b051e2b1d3b748fa63a",
+      "language_sha256": "af5d093144abcc99f3d31b95c531b0b4d019166a8ffec05af8c672e7a890822a",
+      "resume_settings": false,
+      "fixture_timetable": false,
+      "fixture_estimated": false,
+      "cold_precomputed": true,
+      "precomputed": true,
+      "hyperpath": false,
+      "warm_precomputed": true,
+      "rebuild_precomputed": false,
+      "full_rebuild_precomputed": false,
+      "mid_rebuild_tick": 1024,
+      "finish_rebuild_precomputed": false,
+      "peak_working_bytes": 7111692288,
+      "peak_commit_bytes": 7140208640,
+      "process_cpu_seconds": 377.875,
+      "save-integrity.json": {
+        "runtime_routing_feature": 3,
+        "state_ticks": 3181096030,
+        "packets": 505712,
+        "cargo_units": 1325210,
+        "known_od_units": 774280,
+        "journey_packets": 342300,
+        "packet_state_digest": 17921899814541559099,
+        "payment_digest": 9795142590580593176,
+        "payments_valid": true,
+        "database_digest": 4197855760784168967,
+        "ownership_digest": 4242818895478581045,
+        "loading_digest": 15863433108849762915,
+        "completed_rows": 0,
+        "retained_rows": 4917,
+        "table_operations": 0,
+        "published_revision": 2797,
+        "company_deliveries": 71430,
+        "journey_routing": 1,
+        "precomputed_routing": 1,
+        "legacy_true_packets": 0,
+        "legacy_false_packets": 0,
+        "legacy_true_units": 0,
+        "legacy_false_units": 0,
+        "opposite_history_mergeable_pairs": 0
+      },
+      "rebuild-transition.json": {
+        "elapsed_tick": 1024,
+        "state_tick": 3181096029,
+        "cost": 17,
+        "diagnostic_us": 195028,
+        "setting_us": 93
+      },
+      "midpoint-save-integrity.json": {
+        "runtime_routing_feature": 3,
+        "state_ticks": 3181096029,
+        "packets": 505697,
+        "cargo_units": 1325177,
+        "known_od_units": 774304,
+        "journey_packets": 342094,
+        "packet_state_digest": 5078150327077218202,
+        "payment_digest": 6479583332976725607,
+        "payments_valid": true,
+        "database_digest": 13883393824790702547,
+        "ownership_digest": 8265603818261880774,
+        "loading_digest": 17023459875499344571,
+        "completed_rows": 4917,
+        "retained_rows": 0,
+        "table_operations": 5666973858,
+        "published_revision": 2797,
+        "company_deliveries": 71413,
+        "journey_routing": 1,
+        "precomputed_routing": 1,
+        "legacy_true_packets": 0,
+        "legacy_false_packets": 0,
+        "legacy_true_units": 0,
+        "legacy_false_units": 0,
+        "opposite_history_mergeable_pairs": 0
+      },
+      "result_sha256": "e2c36ebf314cffd5ce0f0517b9e7e883ea75c3e0dee0616e2426a3058a75026c",
+      "load_failed": false,
+      "newgrf_warning_lines": 17237,
+      "warm_observations": [
+        "true"
+      ],
+      "warm_complete": true,
+      "script_error_pause_resumes": 1,
+      "run": "previous-second",
+      "simulation": {
+        "count": 1025,
+        "mean_us": 27551.260487804877,
+        "p95_us": 36161,
+        "p99_us": 45438,
+        "max_us": 80487
+      },
+      "journey": {
+        "count": 1025,
+        "mean_us": 1604.4,
+        "p95_us": 3288,
+        "p99_us": 6621,
+        "max_us": 39853
+      },
+      "second_half_simulation": {
+        "count": 513,
+        "mean_us": 26050.945419103315,
+        "p95_us": 33667,
+        "p99_us": 39790,
+        "max_us": 65939
+      },
+      "second_half_journey": {
+        "count": 513,
+        "mean_us": 1292.076023391813,
+        "p95_us": 2579,
+        "p99_us": 3907,
+        "max_us": 21096
+      },
+      "ordinary_simulation": {
+        "count": 1024,
+        "mean_us": 27537.7197265625,
+        "p95_us": 36121,
+        "p99_us": 45438,
+        "max_us": 80487
+      },
+      "ordinary_journey": {
+        "count": 1024,
+        "mean_us": 1585.365234375,
+        "p95_us": 3270,
+        "p99_us": 6023,
+        "max_us": 39853
+      },
+      "ordinary_tail_simulation": {
+        "count": 512,
+        "mean_us": 26020.93359375,
+        "p95_us": 33588,
+        "p99_us": 37992,
+        "max_us": 65939
+      },
+      "ordinary_tail_journey": {
+        "count": 512,
+        "mean_us": 1253.396484375,
+        "p95_us": 2561,
+        "p99_us": 3819,
+        "max_us": 4545
+      },
+      "replacement_simulation": {
+        "count": 1,
+        "mean_us": 41417.0,
+        "p95_us": 41417,
+        "p99_us": 41417,
+        "max_us": 41417
+      },
+      "replacement_journey": {
+        "count": 1,
+        "mean_us": 21096.0,
+        "p95_us": 21096,
+        "p99_us": 21096,
+        "max_us": 21096
+      },
+      "observations": {
+        "All passenger company deliveries": [
+          {
+            "current_economy_delivered": 21553
+          },
+          {
+            "current_economy_delivered": 71430
+          }
+        ],
+        "Passenger inventory": [
+          {
+            "waiting": 501751,
+            "available": 501751,
+            "reserved": 0,
+            "deferred": 262915,
+            "state_ticks": 3181095005,
+            "scaled_ticks": 3015495907
+          },
+          {
+            "waiting": 486531,
+            "available": 486531,
+            "reserved": 0,
+            "deferred": 116304,
+            "state_ticks": 3181096030,
+            "scaled_ticks": 3015496932
+          }
+        ],
+        "Inventory Legacy": [
+          {
+            "known_OD": 265896
+          },
+          {
+            "known_OD": 116630
+          }
+        ],
+        "Inventory Journey": [
+          {
+            "known_OD": 475060
+          },
+          {
+            "known_OD": 609997
+          }
+        ],
+        "Inventory Fallback": [
+          {
+            "known_OD": 65672
+          },
+          {
+            "known_OD": 47653
+          }
+        ],
+        "Waiting routing": [
+          {
+            "timed": 111,
+            "schedule": 351670,
+            "CargoDist_or_deferred": 96723,
+            "OD_fallback_or_waiting": 53247
+          },
+          {
+            "timed": 0,
+            "schedule": 384166,
+            "CargoDist_or_deferred": 486,
+            "OD_fallback_or_waiting": 101879
+          }
+        ],
+        "Schedule inventory": [
+          {
+            "people": 469837,
+            "packets": 247360,
+            "waiting": 351670,
+            "timed_waiting": 111
+          },
+          {
+            "people": 606024,
+            "packets": 339731,
+            "waiting": 384166,
+            "timed_waiting": 0
+          }
+        ],
+        "Waiting age sample": [
+          {
+            "known_OD_waiting": 427256,
+            "transit_age_ge_256": 1270,
+            "schedule_intent_age_ge_4096": 0
+          },
+          {
+            "known_OD_waiting": 396849,
+            "transit_age_ge_256": 1102,
+            "schedule_intent_age_ge_4096": 4
+          }
+        ],
+        "Graph coverage": [
+          {
+            "complete": 0,
+            "eligible_services": 0,
+            "selected_services": 0,
+            "selected_trips": 0,
+            "largest_block_services": 0,
+            "admitted_visits": 0,
+            "max_unpredicted_ticks": 0
+          },
+          {
+            "complete": 0,
+            "eligible_services": 0,
+            "selected_services": 0,
+            "selected_trips": 0,
+            "largest_block_services": 0,
+            "admitted_visits": 0,
+            "max_unpredicted_ticks": 0
+          }
+        ],
+        "First graph failure": [
+          {
+            "work": 0,
+            "memory": 0,
+            "trips": 0,
+            "visits": 0
+          },
+          {
+            "work": 0,
+            "memory": 0,
+            "trips": 0,
+            "visits": 0
+          }
+        ],
+        "First opaque scope": [
+          {
+            "service": 65535,
+            "vehicle": 1048575
+          },
+          {
+            "service": 65535,
+            "vehicle": 1048575
+          }
+        ],
+        "First trip failure": [
+          {
+            "vehicle": 1048575,
+            "work": 0,
+            "memory": 0,
+            "trips": 0,
+            "visits": 0,
+            "cursor": 0,
+            "certified_until": 0,
+            "required_until": 0
+          },
+          {
+            "vehicle": 1048575,
+            "work": 0,
+            "memory": 0,
+            "trips": 0,
+            "visits": 0,
+            "cursor": 0,
+            "certified_until": 0,
+            "required_until": 0
+          }
+        ],
+        "Uncertainty": [
+          {
+            "timing": 0,
+            "path": 0,
+            "OD_resolved": 0,
+            "first_order": 65535,
+            "first_unknown_order": 65535,
+            "tile": 0,
+            "current_order": 65535
+          },
+          {
+            "timing": 0,
+            "path": 0,
+            "OD_resolved": 0,
+            "first_order": 65535,
+            "first_unknown_order": 65535,
+            "tile": 0,
+            "current_order": 65535
+          }
+        ],
+        "Simulation tick time": [
+          {
+            "completed_ticks": 0,
+            "total_us": 0,
+            "mean_us": 0,
+            "max_us": 0
+          },
+          {
+            "completed_ticks": 1025,
+            "total_us": 28240042,
+            "mean_us": 27551,
+            "max_us": 80487
+          }
+        ],
+        "Tick histogram (1ms upper bounds)": [
+          {
+            "simulation_p95_us": 1000,
+            "simulation_p99_us": 1000,
+            "journey_mean_us": 0,
+            "journey_p95_us": 1000,
+            "journey_p99_us": 1000,
+            "journey_max_us": 0
+          },
+          {
+            "simulation_p95_us": 37000,
+            "simulation_p99_us": 46000,
+            "journey_mean_us": 1604,
+            "journey_p95_us": 4000,
+            "journey_p99_us": 7000,
+            "journey_max_us": 39853
+          }
+        ],
+        "Hyperpath capacity": [
+          {
+            "packets": 0,
+            "passengers": 0
+          },
+          {
+            "packets": 0,
+            "passengers": 0
+          }
+        ],
+        "Hyperpath local totals": [
+          {
+            "replans": 0,
+            "nanoseconds": 0
+          },
+          {
+            "replans": 0,
+            "nanoseconds": 0
+          }
+        ],
+        "Hyperpath diagnostics": [
+          {
+            "cargo": 0,
+            "local_replans": 0,
+            "local_ns": 0,
+            "board_events": 0,
+            "accepted": 0,
+            "range_updates": 0,
+            "pushes": 0,
+            "pops": 0,
+            "bytes": 0,
+            "envelope": 0,
+            "base_bytes": 0,
+            "difference_bytes": 0,
+            "max_candidates": 0,
+            "work": 0,
+            "build_ns": 0,
+            "transfer": 20
+          },
+          {
+            "cargo": 0,
+            "local_replans": 0,
+            "local_ns": 0,
+            "board_events": 0,
+            "accepted": 0,
+            "range_updates": 0,
+            "pushes": 0,
+            "pops": 0,
+            "bytes": 0,
+            "envelope": 0,
+            "base_bytes": 0,
+            "difference_bytes": 0,
+            "max_candidates": 0,
+            "work": 0,
+            "build_ns": 839600,
+            "transfer": 17
+          }
+        ],
+        "Passenger events": [
+          {
+            "pending": 0,
+            "overdue": 0,
+            "oldest_ticks": 0,
+            "maximum_station_backlog": 9327,
+            "on_time": 0,
+            "packets": 0,
+            "groups": 0,
+            "scheduler_us": 0,
+            "arrival_candidates": 0,
+            "arrival_passengers": 0,
+            "unresolved_missed_estimate": 0
+          },
+          {
+            "pending": 202221,
+            "overdue": 612,
+            "oldest_ticks": 1,
+            "maximum_station_backlog": 9329,
+            "on_time": 88204,
+            "packets": 283833,
+            "groups": 186658,
+            "scheduler_us": 1322775,
+            "arrival_candidates": 2374184,
+            "arrival_passengers": 3790982,
+            "unresolved_missed_estimate": 0
+          }
+        ],
+        "Passenger scheduler cause/new": [
+          {
+            "packets": 0,
+            "microseconds": 0
+          },
+          {
+            "packets": 126885,
+            "microseconds": 709883
+          }
+        ],
+        "Passenger scheduler cause/expiry": [
+          {
+            "packets": 0,
+            "microseconds": 0
+          },
+          {
+            "packets": 70626,
+            "microseconds": 321513
+          }
+        ],
+        "Passenger scheduler cause/failure": [
+          {
+            "packets": 0,
+            "microseconds": 0
+          },
+          {
+            "packets": 0,
+            "microseconds": 0
+          }
+        ],
+        "Passenger scheduler cause/migration": [
+          {
+            "packets": 0,
+            "microseconds": 0
+          },
+          {
+            "packets": 0,
+            "microseconds": 0
+          }
+        ],
+        "Passenger scheduler cause/generation": [
+          {
+            "packets": 0,
+            "microseconds": 0
+          },
+          {
+            "packets": 29215,
+            "microseconds": 118968
+          }
+        ],
+        "Passenger capacity records": [
+          {
+            "packets": 0,
+            "passengers": 0,
+            "microseconds": 0
+          },
+          {
+            "packets": 0,
+            "passengers": 0,
+            "microseconds": 0
+          }
+        ],
+        "Passenger unchanged generation": [
+          {
+            "packets": 0
+          },
+          {
+            "packets": 0
+          }
+        ],
+        "Precomputed passenger routes": [
+          {
+            "cargo": 0,
+            "patterns": 0,
+            "stations": 0,
+            "states": 0,
+            "edges": 0,
+            "destinations": 0,
+            "bytes": 0,
+            "envelope": 0,
+            "build_ns": 0,
+            "operations": 0,
+            "queries": 0,
+            "query_ns": 0,
+            "hits": 0,
+            "missing": 0,
+            "no_route": 0
+          },
+          {
+            "cargo": 0,
+            "patterns": 0,
+            "stations": 0,
+            "states": 0,
+            "edges": 0,
+            "destinations": 0,
+            "bytes": 0,
+            "envelope": 0,
+            "build_ns": 839600,
+            "operations": 0,
+            "queries": 2453,
+            "query_ns": 49300,
+            "hits": 0,
+            "missing": 2453,
+            "no_route": 0
+          }
+        ],
+        "Precomputed common sections": [
+          {
+            "cargo": 0,
+            "sections": 0,
+            "concrete_rides": 0
+          },
+          {
+            "cargo": 0,
+            "sections": 0,
+            "concrete_rides": 0
+          }
+        ],
+        "Precomputed timetable certainty": [
+          {
+            "cargo": 0,
+            "certified_patterns": 0,
+            "estimated_patterns": 0
+          },
+          {
+            "cargo": 0,
+            "certified_patterns": 0,
+            "estimated_patterns": 0
+          }
+        ],
+        "Precomputed retained routes": [
+          {
+            "cargo": 0,
+            "destinations": 0,
+            "bytes": 0,
+            "envelope": 0
+          },
+          {
+            "cargo": 0,
+            "destinations": 4917,
+            "bytes": 4635539350,
+            "envelope": 6596276484
+          }
+        ],
+        "Precomputed memory admission": [
+          {
+            "shared_limit": 17179869184
+          },
+          {
+            "shared_limit": 17179869184
+          }
+        ],
+        "Precomputed initial preparation": [
+          {
+            "elapsed_ns": 0
+          },
+          {
+            "elapsed_ns": 93317270800
+          }
+        ],
+        "Journey inclusive scopes": [
+          {
+            "waiting_us": 55701,
+            "fallback_distance_us": 0,
+            "boarding_us": 0
+          },
+          {
+            "waiting_us": 1273235,
+            "fallback_distance_us": 0,
+            "boarding_us": 147261
+          }
+        ],
+        "Periodic pending age": [
+          {
+            "ticks": 306
+          },
+          {
+            "ticks": 1024
+          }
+        ],
+        "OD fallback cache": [
+          {
+            "hits": 0,
+            "bytes": 0,
+            "work": 0,
+            "searches": 0
+          },
+          {
+            "hits": 0,
+            "bytes": 0,
+            "work": 1870743,
+            "searches": 0
+          }
+        ],
+        "OD fallback bindings": [
+          {
+            "hits": 0,
+            "builds": 0,
+            "validation_nodes": 0,
+            "validation_ns": 0,
+            "build_ns": 0,
+            "reverse_hits": 0,
+            "reverse_builds": 0,
+            "reverse_build_ns": 0
+          },
+          {
+            "hits": 0,
+            "builds": 0,
+            "validation_nodes": 0,
+            "validation_ns": 0,
+            "build_ns": 0,
+            "reverse_hits": 0,
+            "reverse_builds": 0,
+            "reverse_build_ns": 0
+          }
+        ],
+        "Periodic database": [
+          {
+            "services": 864,
+            "timed": 676,
+            "vehicles": 3806,
+            "bytes": 12470688,
+            "policies_bytes": 524280,
+            "pending": 864,
+            "builds": 0,
+            "work": 0,
+            "build_us": 0,
+            "searches": 0,
+            "query_us": 0,
+            "next_departures": 0,
+            "policy_hits": 0,
+            "policy_misses": 0,
+            "invalidations": 1,
+            "rejected_work": 0,
+            "rejected_memory": 0
+          },
+          {
+            "services": 864,
+            "timed": 676,
+            "vehicles": 4092,
+            "bytes": 13760832,
+            "policies_bytes": 524280,
+            "pending": 741,
+            "builds": 0,
+            "work": 0,
+            "build_us": 91550,
+            "searches": 0,
+            "query_us": 0,
+            "next_departures": 0,
+            "policy_hits": 0,
+            "policy_misses": 0,
+            "invalidations": 0,
+            "rejected_work": 0,
+            "rejected_memory": 0
+          }
+        ],
+        "Periodic departures": [
+          {
+            "logical_vehicles": 0,
+            "logical_departures": 0,
+            "physical_calculations": 0,
+            "hits": 0,
+            "fallbacks": 0,
+            "builds": 0,
+            "build_ns": 0,
+            "bytes": 0,
+            "peak_bytes": 0,
+            "forward_us": 0,
+            "search_work": 0
+          },
+          {
+            "logical_vehicles": 0,
+            "logical_departures": 0,
+            "physical_calculations": 0,
+            "hits": 0,
+            "fallbacks": 0,
+            "builds": 0,
+            "build_ns": 0,
+            "bytes": 0,
+            "peak_bytes": 0,
+            "forward_us": 0,
+            "search_work": 0
+          }
+        ],
+        "Timed search storage": [
+          {
+            "labels": 0,
+            "frontier_lookups": 0,
+            "queue_pushes": 0,
+            "queue_pops": 0,
+            "scratch_bytes": 0,
+            "scratch_peak_bytes": 0
+          },
+          {
+            "labels": 0,
+            "frontier_lookups": 0,
+            "queue_pushes": 0,
+            "queue_pops": 0,
+            "scratch_bytes": 0,
+            "scratch_peak_bytes": 0
+          }
+        ],
+        "Timed Work destination geometry": [
+          {
+            "with_destination_label": 0
+          },
+          {
+            "with_destination_label": 0
+          }
+        ],
+        "Timed Work completion": [
+          {
+            "with_complete": 0,
+            "without_complete": 0,
+            "with_queued": 0,
+            "with_popped": 0,
+            "improvement_possible": 0,
+            "reverse_work": 0,
+            "forward_work": 0
+          },
+          {
+            "with_complete": 0,
+            "without_complete": 0,
+            "with_queued": 0,
+            "with_popped": 0,
+            "improvement_possible": 0,
+            "reverse_work": 0,
+            "forward_work": 0
+          }
+        ],
+        "Timed result states": [
+          {
+            "unavailable": 0,
+            "certified": 0,
+            "provisional": 0,
+            "deferred": 0,
+            "no_route": 0,
+            "rescued_unpopped": 0
+          },
+          {
+            "unavailable": 0,
+            "certified": 0,
+            "provisional": 0,
+            "deferred": 0,
+            "no_route": 0,
+            "rescued_unpopped": 0
+          }
+        ],
+        "Timed plan adoption": [
+          {
+            "certified_packets": 0,
+            "provisional_packets": 0,
+            "provisional_passengers": 0
+          },
+          {
+            "certified_packets": 0,
+            "provisional_packets": 0,
+            "provisional_passengers": 0
+          }
+        ],
+        "Timed Work stop None": [
+          {
+            "calls": 0,
+            "observations": 0
+          },
+          {
+            "calls": 0,
+            "observations": 0
+          }
+        ],
+        "Timed Work stop Admission": [
+          {
+            "calls": 0,
+            "observations": 0
+          },
+          {
+            "calls": 0,
+            "observations": 0
+          }
+        ],
+        "Timed Work stop Queue": [
+          {
+            "calls": 0,
+            "observations": 0
+          },
+          {
+            "calls": 0,
+            "observations": 0
+          }
+        ],
+        "Timed Work stop Service": [
+          {
+            "calls": 0,
+            "observations": 0
+          },
+          {
+            "calls": 0,
+            "observations": 0
+          }
+        ],
+        "Timed Work stop Vehicle": [
+          {
+            "calls": 0,
+            "observations": 0
+          },
+          {
+            "calls": 0,
+            "observations": 0
+          }
+        ],
+        "Timed Work stop Dispatch": [
+          {
+            "calls": 0,
+            "observations": 0
+          },
+          {
+            "calls": 0,
+            "observations": 0
+          }
+        ],
+        "Timed Work stop Departure": [
+          {
+            "calls": 0,
+            "observations": 0
+          },
+          {
+            "calls": 0,
+            "observations": 0
+          }
+        ],
+        "Timed Work stop Alighting": [
+          {
+            "calls": 0,
+            "observations": 0
+          },
+          {
+            "calls": 0,
+            "observations": 0
+          }
+        ],
+        "Timed Work stop Dominance": [
+          {
+            "calls": 0,
+            "observations": 0
+          },
+          {
+            "calls": 0,
+            "observations": 0
+          }
+        ],
+        "Timed Work histogram": [
+          {
+            "upper": 0,
+            "count": 0
+          },
+          {
+            "upper": 1024,
+            "count": 0
+          },
+          {
+            "upper": 2048,
+            "count": 0
+          },
+          {
+            "upper": 3072,
+            "count": 0
+          },
+          {
+            "upper": 4096,
+            "count": 0
+          },
+          {
+            "upper": 5120,
+            "count": 0
+          },
+          {
+            "upper": 6144,
+            "count": 0
+          },
+          {
+            "upper": 7168,
+            "count": 0
+          },
+          {
+            "upper": 8192,
+            "count": 0
+          },
+          {
+            "upper": 9216,
+            "count": 0
+          },
+          {
+            "upper": 10240,
+            "count": 0
+          },
+          {
+            "upper": 11264,
+            "count": 0
+          },
+          {
+            "upper": 12288,
+            "count": 0
+          },
+          {
+            "upper": 13312,
+            "count": 0
+          },
+          {
+            "upper": 14336,
+            "count": 0
+          },
+          {
+            "upper": 15360,
+            "count": 0
+          },
+          {
+            "upper": 16384,
+            "count": 0
+          },
+          {
+            "upper": 17408,
+            "count": 0
+          },
+          {
+            "upper": 18432,
+            "count": 0
+          },
+          {
+            "upper": 19456,
+            "count": 0
+          },
+          {
+            "upper": 20480,
+            "count": 0
+          },
+          {
+            "upper": 21504,
+            "count": 0
+          },
+          {
+            "upper": 22528,
+            "count": 0
+          },
+          {
+            "upper": 23552,
+            "count": 0
+          },
+          {
+            "upper": 24576,
+            "count": 0
+          },
+          {
+            "upper": 25600,
+            "count": 0
+          },
+          {
+            "upper": 26624,
+            "count": 0
+          },
+          {
+            "upper": 27648,
+            "count": 0
+          },
+          {
+            "upper": 28672,
+            "count": 0
+          },
+          {
+            "upper": 29696,
+            "count": 0
+          },
+          {
+            "upper": 30720,
+            "count": 0
+          },
+          {
+            "upper": 31744,
+            "count": 0
+          },
+          {
+            "upper": 32768,
+            "count": 0
+          },
+          {
+            "upper": 33792,
+            "count": 0
+          },
+          {
+            "upper": 34816,
+            "count": 0
+          },
+          {
+            "upper": 35840,
+            "count": 0
+          },
+          {
+            "upper": 36864,
+            "count": 0
+          },
+          {
+            "upper": 37888,
+            "count": 0
+          },
+          {
+            "upper": 38912,
+            "count": 0
+          },
+          {
+            "upper": 39936,
+            "count": 0
+          },
+          {
+            "upper": 40960,
+            "count": 0
+          },
+          {
+            "upper": 41984,
+            "count": 0
+          },
+          {
+            "upper": 43008,
+            "count": 0
+          },
+          {
+            "upper": 44032,
+            "count": 0
+          },
+          {
+            "upper": 45056,
+            "count": 0
+          },
+          {
+            "upper": 46080,
+            "count": 0
+          },
+          {
+            "upper": 47104,
+            "count": 0
+          },
+          {
+            "upper": 48128,
+            "count": 0
+          },
+          {
+            "upper": 49152,
+            "count": 0
+          },
+          {
+            "upper": 50176,
+            "count": 0
+          },
+          {
+            "upper": 51200,
+            "count": 0
+          },
+          {
+            "upper": 52224,
+            "count": 0
+          },
+          {
+            "upper": 53248,
+            "count": 0
+          },
+          {
+            "upper": 54272,
+            "count": 0
+          },
+          {
+            "upper": 55296,
+            "count": 0
+          },
+          {
+            "upper": 56320,
+            "count": 0
+          },
+          {
+            "upper": 57344,
+            "count": 0
+          },
+          {
+            "upper": 58368,
+            "count": 0
+          },
+          {
+            "upper": 59392,
+            "count": 0
+          },
+          {
+            "upper": 60416,
+            "count": 0
+          },
+          {
+            "upper": 61440,
+            "count": 0
+          },
+          {
+            "upper": 62464,
+            "count": 0
+          },
+          {
+            "upper": 63488,
+            "count": 0
+          },
+          {
+            "upper": 64512,
+            "count": 0
+          },
+          {
+            "upper": 65536,
+            "count": 0
+          },
+          {
+            "upper": 0,
+            "count": 0
+          },
+          {
+            "upper": 1024,
+            "count": 0
+          },
+          {
+            "upper": 2048,
+            "count": 0
+          },
+          {
+            "upper": 3072,
+            "count": 0
+          },
+          {
+            "upper": 4096,
+            "count": 0
+          },
+          {
+            "upper": 5120,
+            "count": 0
+          },
+          {
+            "upper": 6144,
+            "count": 0
+          },
+          {
+            "upper": 7168,
+            "count": 0
+          },
+          {
+            "upper": 8192,
+            "count": 0
+          },
+          {
+            "upper": 9216,
+            "count": 0
+          },
+          {
+            "upper": 10240,
+            "count": 0
+          },
+          {
+            "upper": 11264,
+            "count": 0
+          },
+          {
+            "upper": 12288,
+            "count": 0
+          },
+          {
+            "upper": 13312,
+            "count": 0
+          },
+          {
+            "upper": 14336,
+            "count": 0
+          },
+          {
+            "upper": 15360,
+            "count": 0
+          },
+          {
+            "upper": 16384,
+            "count": 0
+          },
+          {
+            "upper": 17408,
+            "count": 0
+          },
+          {
+            "upper": 18432,
+            "count": 0
+          },
+          {
+            "upper": 19456,
+            "count": 0
+          },
+          {
+            "upper": 20480,
+            "count": 0
+          },
+          {
+            "upper": 21504,
+            "count": 0
+          },
+          {
+            "upper": 22528,
+            "count": 0
+          },
+          {
+            "upper": 23552,
+            "count": 0
+          },
+          {
+            "upper": 24576,
+            "count": 0
+          },
+          {
+            "upper": 25600,
+            "count": 0
+          },
+          {
+            "upper": 26624,
+            "count": 0
+          },
+          {
+            "upper": 27648,
+            "count": 0
+          },
+          {
+            "upper": 28672,
+            "count": 0
+          },
+          {
+            "upper": 29696,
+            "count": 0
+          },
+          {
+            "upper": 30720,
+            "count": 0
+          },
+          {
+            "upper": 31744,
+            "count": 0
+          },
+          {
+            "upper": 32768,
+            "count": 0
+          },
+          {
+            "upper": 33792,
+            "count": 0
+          },
+          {
+            "upper": 34816,
+            "count": 0
+          },
+          {
+            "upper": 35840,
+            "count": 0
+          },
+          {
+            "upper": 36864,
+            "count": 0
+          },
+          {
+            "upper": 37888,
+            "count": 0
+          },
+          {
+            "upper": 38912,
+            "count": 0
+          },
+          {
+            "upper": 39936,
+            "count": 0
+          },
+          {
+            "upper": 40960,
+            "count": 0
+          },
+          {
+            "upper": 41984,
+            "count": 0
+          },
+          {
+            "upper": 43008,
+            "count": 0
+          },
+          {
+            "upper": 44032,
+            "count": 0
+          },
+          {
+            "upper": 45056,
+            "count": 0
+          },
+          {
+            "upper": 46080,
+            "count": 0
+          },
+          {
+            "upper": 47104,
+            "count": 0
+          },
+          {
+            "upper": 48128,
+            "count": 0
+          },
+          {
+            "upper": 49152,
+            "count": 0
+          },
+          {
+            "upper": 50176,
+            "count": 0
+          },
+          {
+            "upper": 51200,
+            "count": 0
+          },
+          {
+            "upper": 52224,
+            "count": 0
+          },
+          {
+            "upper": 53248,
+            "count": 0
+          },
+          {
+            "upper": 54272,
+            "count": 0
+          },
+          {
+            "upper": 55296,
+            "count": 0
+          },
+          {
+            "upper": 56320,
+            "count": 0
+          },
+          {
+            "upper": 57344,
+            "count": 0
+          },
+          {
+            "upper": 58368,
+            "count": 0
+          },
+          {
+            "upper": 59392,
+            "count": 0
+          },
+          {
+            "upper": 60416,
+            "count": 0
+          },
+          {
+            "upper": 61440,
+            "count": 0
+          },
+          {
+            "upper": 62464,
+            "count": 0
+          },
+          {
+            "upper": 63488,
+            "count": 0
+          },
+          {
+            "upper": 64512,
+            "count": 0
+          },
+          {
+            "upper": 65536,
+            "count": 0
+          }
+        ],
+        "Periodic service pruning": [
+          {
+            "bound_checks": 0,
+            "bound_stops": 0,
+            "pruned_services": 0,
+            "skipped_vehicle_visits": 0
+          },
+          {
+            "bound_checks": 0,
+            "bound_stops": 0,
+            "pruned_services": 0,
+            "skipped_vehicle_visits": 0
+          }
+        ],
+        "Periodic residency": [
+          {
+            "entries": 0,
+            "revision": 2796,
+            "publications": 0,
+            "staged": 0,
+            "staged_bytes": 0,
+            "additions": 0,
+            "removals": 0,
+            "updates": 0,
+            "timetable_notifications": 0
+          },
+          {
+            "entries": 0,
+            "revision": 2797,
+            "publications": 0,
+            "staged": 0,
+            "staged_bytes": 0,
+            "additions": 0,
+            "removals": 0,
+            "updates": 0,
+            "timetable_notifications": 7494
+          }
+        ],
+        "Periodic cache cost": [
+          {
+            "clears": 0,
+            "lost": 0,
+            "maximum_lost": 0,
+            "explicit": 0,
+            "reset": 0,
+            "global": 0,
+            "stale": 0,
+            "evictions": 0,
+            "rebuilds": 0,
+            "compile_us": 0,
+            "validation_us": 0,
+            "eviction_us": 0
+          },
+          {
+            "clears": 0,
+            "lost": 0,
+            "maximum_lost": 0,
+            "explicit": 0,
+            "reset": 0,
+            "global": 0,
+            "stale": 0,
+            "evictions": 0,
+            "rebuilds": 0,
+            "compile_us": 0,
+            "validation_us": 0,
+            "eviction_us": 0
+          }
+        ],
+        "Periodic publication cost": [
+          {
+            "publication_us": 0,
+            "wait_ticks": 0,
+            "wait_samples": 0
+          },
+          {
+            "publication_us": 0,
+            "wait_ticks": 0,
+            "wait_samples": 0
+          }
+        ],
+        "Periodic operating events": [
+          {
+            "physical_passenger_occurrences": 15524,
+            "exchange_passenger_occurrences": 15504,
+            "depot_timed": 149,
+            "depot_untimed": 47,
+            "depot_blocked": 0
+          },
+          {
+            "physical_passenger_occurrences": 17445,
+            "exchange_passenger_occurrences": 17425,
+            "depot_timed": 149,
+            "depot_untimed": 47,
+            "depot_blocked": 0
+          }
+        ],
+        "Schedule policy compilation": [
+          {
+            "compile_us": 0
+          },
+          {
+            "compile_us": 0
+          }
+        ],
+        "Schedule routing": [
+          {
+            "packets": 0,
+            "passengers": 0,
+            "timed_deferred": 0,
+            "hits": 0,
+            "misses": 0,
+            "bytes": 0,
+            "work": 0,
+            "query_us": 0,
+            "stale": 0,
+            "expired": 0
+          },
+          {
+            "packets": 142771,
+            "passengers": 229583,
+            "timed_deferred": 0,
+            "hits": 0,
+            "misses": 0,
+            "bytes": 0,
+            "work": 0,
+            "query_us": 0,
+            "stale": 15261,
+            "expired": 70
+          }
+        ],
+        "Schedule transport": [
+          {
+            "boarded": 0,
+            "transferred": 0,
+            "delivered": 0,
+            "expected_wait_person_ticks": 0,
+            "actual_wait_person_ticks": 0,
+            "wait_people": 0
+          },
+          {
+            "boarded": 171181,
+            "transferred": 50547,
+            "delivered": 16918,
+            "expected_wait_person_ticks": 384873785,
+            "actual_wait_person_ticks": 20723698,
+            "wait_people": 171181
+          }
+        ],
+        "Completed interchanges": [
+          {
+            "from_schedule": 0,
+            "from_timed": 0
+          },
+          {
+            "from_schedule": 22403,
+            "from_timed": 4200
+          }
+        ],
+        "Schedule-assisted final OD": [
+          {
+            "delivered": 0
+          },
+          {
+            "delivered": 16937
+          }
+        ],
+        "Periodic passenger census (live OrderLists, cargo-only excluded)": [
+          {
+            "total": 864,
+            "passenger": 798,
+            "complete_cycles": 690,
+            "compile_success": 690,
+            "compile_failure": 108,
+            "unpublished": 0,
+            "dirty": 798,
+            "unknown_vehicles": 668
+          },
+          {
+            "total": 864,
+            "passenger": 798,
+            "complete_cycles": 689,
+            "compile_success": 689,
+            "compile_failure": 109,
+            "unpublished": 0,
+            "dirty": 691,
+            "unknown_vehicles": 650
+          }
+        ],
+        "Periodic passenger pending census": [
+          {
+            "observations": 0
+          },
+          {
+            "observations": 0
+          }
+        ],
+        "Periodic passenger eligibility": [
+          {
+            "declared_complete": 701,
+            "live_compiled_cycles": 690,
+            "published_lists": 798,
+            "published_cycles": 686,
+            "phase_known_lists": 676,
+            "denominator": 798
+          },
+          {
+            "declared_complete": 700,
+            "live_compiled_cycles": 689,
+            "published_lists": 798,
+            "published_cycles": 686,
+            "phase_known_lists": 676,
+            "denominator": 798
+          }
+        ],
+        "Periodic live compilation": [
+          {
+            "None": 690
+          },
+          {
+            "Control": 4
+          },
+          {
+            "Refit": 0
+          },
+          {
+            "Travel": 96
+          },
+          {
+            "Wait": 1
+          },
+          {
+            "Overflow": 0
+          },
+          {
+            "ZeroPeriod": 7
+          },
+          {
+            "TooFewStops": 0
+          },
+          {
+            "None": 689
+          },
+          {
+            "Control": 4
+          },
+          {
+            "Refit": 0
+          },
+          {
+            "Travel": 97
+          },
+          {
+            "Wait": 1
+          },
+          {
+            "Overflow": 0
+          },
+          {
+            "ZeroPeriod": 7
+          },
+          {
+            "TooFewStops": 0
+          }
+        ],
+        "Periodic compilation observations": [
+          {
+            "None": 0
+          },
+          {
+            "Control": 0
+          },
+          {
+            "Refit": 0
+          },
+          {
+            "Travel": 0
+          },
+          {
+            "Wait": 0
+          },
+          {
+            "Overflow": 0
+          },
+          {
+            "ZeroPeriod": 0
+          },
+          {
+            "TooFewStops": 0
+          },
+          {
+            "None": 0
+          },
+          {
+            "Control": 0
+          },
+          {
+            "Refit": 0
+          },
+          {
+            "Travel": 0
+          },
+          {
+            "Wait": 0
+          },
+          {
+            "Overflow": 0
+          },
+          {
+            "ZeroPeriod": 0
+          },
+          {
+            "TooFewStops": 0
+          }
+        ],
+        "Periodic passenger vehicle phase census": [
+          {
+            "Known": 3179
+          },
+          {
+            "NoTimetable": 287
+          },
+          {
+            "VehicleState": 164
+          },
+          {
+            "OrderProgress": 0
+          },
+          {
+            "Facilities": 0
+          },
+          {
+            "Work": 0
+          },
+          {
+            "Unbunching": 0
+          },
+          {
+            "DispatchCompetition": 0
+          },
+          {
+            "DispatchUnsupported": 0
+          },
+          {
+            "Overflow": 0
+          },
+          {
+            "ElapsedTravel": 81
+          },
+          {
+            "AwaitCapture": 136
+          },
+          {
+            "Known": 3197
+          },
+          {
+            "NoTimetable": 287
+          },
+          {
+            "VehicleState": 158
+          },
+          {
+            "OrderProgress": 0
+          },
+          {
+            "Facilities": 0
+          },
+          {
+            "Work": 0
+          },
+          {
+            "Unbunching": 0
+          },
+          {
+            "DispatchCompetition": 0
+          },
+          {
+            "DispatchUnsupported": 0
+          },
+          {
+            "Overflow": 1
+          },
+          {
+            "ElapsedTravel": 30
+          },
+          {
+            "AwaitCapture": 174
+          }
+        ],
+        "Periodic OD calls": [
+          {
+            "outcomes": 0,
+            "overlapping_observations": 0
+          },
+          {
+            "outcomes": 0,
+            "overlapping_observations": 0
+          },
+          {
+            "outcomes": 0,
+            "overlapping_observations": 0
+          },
+          {
+            "outcomes": 0,
+            "overlapping_observations": 0
+          },
+          {
+            "outcomes": 0,
+            "overlapping_observations": 0
+          },
+          {
+            "outcomes": 0,
+            "overlapping_observations": 0
+          },
+          {
+            "outcomes": 0,
+            "overlapping_observations": 0
+          },
+          {
+            "outcomes": 0,
+            "overlapping_observations": 0
+          },
+          {
+            "outcomes": 0,
+            "overlapping_observations": 0
+          },
+          {
+            "outcomes": 0,
+            "overlapping_observations": 0
+          },
+          {
+            "outcomes": 0,
+            "overlapping_observations": 0
+          },
+          {
+            "outcomes": 0,
+            "overlapping_observations": 0
+          },
+          {
+            "outcomes": 0,
+            "overlapping_observations": 0
+          },
+          {
+            "outcomes": 0,
+            "overlapping_observations": 0
+          },
+          {
+            "outcomes": 0,
+            "overlapping_observations": 0
+          },
+          {
+            "outcomes": 0,
+            "overlapping_observations": 0
+          },
+          {
+            "outcomes": 0,
+            "overlapping_observations": 0
+          },
+          {
+            "outcomes": 0,
+            "overlapping_observations": 0
+          },
+          {
+            "outcomes": 0,
+            "overlapping_observations": 0
+          },
+          {
+            "outcomes": 0,
+            "overlapping_observations": 0
+          },
+          {
+            "outcomes": 0,
+            "overlapping_observations": 0
+          },
+          {
+            "outcomes": 0,
+            "overlapping_observations": 0
+          },
+          {
+            "outcomes": 0,
+            "overlapping_observations": 0
+          },
+          {
+            "outcomes": 0,
+            "overlapping_observations": 0
+          },
+          {
+            "outcomes": 0,
+            "overlapping_observations": 0
+          },
+          {
+            "outcomes": 0,
+            "overlapping_observations": 0
+          },
+          {
+            "outcomes": 0,
+            "overlapping_observations": 0
+          },
+          {
+            "outcomes": 0,
+            "overlapping_observations": 0
+          }
+        ],
+        "Periodic execution observations": [
+          {
+            "expired": 0,
+            "failed_same_service_boarding_checks": 0
+          },
+          {
+            "expired": 15276,
+            "failed_same_service_boarding_checks": 485
+          }
+        ],
+        "Active journey total": [
+          {
+            "applied": 0,
+            "builds": 0,
+            "static_hits": 0,
+            "searches": 0,
+            "OD_hits": 0
+          },
+          {
+            "applied": 0,
+            "builds": 0,
+            "static_hits": 0,
+            "searches": 0,
+            "OD_hits": 51000
+          }
+        ],
+        "Periodic admission": [
+          {
+            "accepted": 0,
+            "rejected": 0,
+            "reserved": 0,
+            "used": 0,
+            "returned": 0,
+            "max_tick_queries": 0,
+            "max_tick_work": 0
+          },
+          {
+            "accepted": 0,
+            "rejected": 0,
+            "reserved": 0,
+            "used": 0,
+            "returned": 0,
+            "max_tick_queries": 0,
+            "max_tick_work": 0
+          }
+        ],
+        "Periodic allocation": [
+          {
+            "timed": 0,
+            "schedule": 0,
+            "timed_used": 0,
+            "schedule_used": 0
+          },
+          {
+            "timed": 0,
+            "schedule": 0,
+            "timed_used": 0,
+            "schedule_used": 0
+          }
+        ],
+        "Periodic Work outcomes": [
+          {
+            "stopped": 0,
+            "no_route": 0,
+            "schedule_rescued": 0,
+            "complete_unproved": 0,
+            "incomplete_work": 0,
+            "stop_percent": 0.0,
+            "no_route_percent": 0.0
+          },
+          {
+            "stopped": 0,
+            "no_route": 0,
+            "schedule_rescued": 0,
+            "complete_unproved": 0,
+            "incomplete_work": 0,
+            "stop_percent": 0.0,
+            "no_route_percent": 0.0
+          }
+        ],
+        "Periodic missing": [
+          {
+            "published": 0,
+            "building": 0,
+            "retries": 0,
+            "max_od_attempts": 0,
+            "tracking_evictions": 0
+          },
+          {
+            "published": 0,
+            "building": 0,
+            "retries": 0,
+            "max_od_attempts": 0,
+            "tracking_evictions": 0
+          }
+        ],
+        "Trip prediction": [
+          {
+            "executions": 0,
+            "hits": 0,
+            "logical_work": 0,
+            "executed_visits": 0,
+            "predictor_ns": 0,
+            "cache_bytes": 0
+          },
+          {
+            "executions": 0,
+            "hits": 0,
+            "logical_work": 0,
+            "executed_visits": 0,
+            "predictor_ns": 0,
+            "cache_bytes": 0
+          }
+        ],
+        "Graph phase_us": [
+          {
+            "discovery": 0,
+            "capacity": 0,
+            "selection": 0,
+            "orders_dispatch": 0,
+            "pattern": 0,
+            "prediction": 0,
+            "departures": 0
+          },
+          {
+            "discovery": 0,
+            "capacity": 0,
+            "selection": 0,
+            "orders_dispatch": 0,
+            "pattern": 0,
+            "prediction": 0,
+            "departures": 0
+          }
+        ],
+        "Event capture": [
+          {
+            "discovery_hits": 0,
+            "service_hits": 0,
+            "logical_work_replayed": 0,
+            "retained_estimate_including_shared_patterns": 0
+          },
+          {
+            "discovery_hits": 0,
+            "service_hits": 0,
+            "logical_work_replayed": 0,
+            "retained_estimate_including_shared_patterns": 0
+          }
+        ],
+        "Fair waiting shares": [
+          {
+            "claims": 0,
+            "releases": 0,
+            "admission_scan_work": 0,
+            "retained_rides": 0
+          },
+          {
+            "claims": 0,
+            "releases": 0,
+            "admission_scan_work": 0,
+            "retained_rides": 0
+          }
+        ],
+        "OD fallback": [
+          {
+            "work": 0,
+            "path_searches": 0
+          },
+          {
+            "work": 1870743,
+            "path_searches": 0
+          }
+        ],
+        "Journey transport": [
+          {
+            "boarded": 0,
+            "transferred": 0,
+            "delivered": 0
+          },
+          {
+            "boarded": 0,
+            "transferred": 1010,
+            "delivered": 138
+          }
+        ],
+        "Timed depot transport": [
+          {
+            "service_boarded": 0,
+            "service_delivered": 0,
+            "crossing_boarded": 0,
+            "crossing_delivered": 0
+          },
+          {
+            "service_boarded": 0,
+            "service_delivered": 18,
+            "crossing_boarded": 0,
+            "crossing_delivered": 0
+          }
+        ],
+        "Pragmatic routing": [
+          {
+            "timed": 0,
+            "timed_ignoring_unknown": 0,
+            "timed_budget_deferred": 0,
+            "untimed": 0,
+            "untimed_no_route": 0,
+            "untimed_budget_deferred": 0
+          },
+          {
+            "timed": 0,
+            "timed_ignoring_unknown": 0,
+            "timed_budget_deferred": 0,
+            "untimed": 0,
+            "untimed_no_route": 0,
+            "untimed_budget_deferred": 0
+          }
+        ],
+        "Untimed transport": [
+          {
+            "boarded": 0,
+            "transferred": 0,
+            "delivered": 0
+          },
+          {
+            "boarded": 0,
+            "transferred": 95928,
+            "delivered": 8581
+          }
+        ],
+        "Fallback GraphWork": [
+          {
+            "deferred": 0
+          },
+          {
+            "deferred": 0
+          }
+        ],
+        "Fallback GraphMemory": [
+          {
+            "deferred": 0
+          },
+          {
+            "deferred": 0
+          }
+        ],
+        "Fallback SnapshotLimit": [
+          {
+            "deferred": 0
+          },
+          {
+            "deferred": 0
+          }
+        ],
+        "Fallback QueryWork": [
+          {
+            "deferred": 0
+          },
+          {
+            "deferred": 0
+          }
+        ],
+        "Fallback QueryLimit": [
+          {
+            "deferred": 0
+          },
+          {
+            "deferred": 0
+          }
+        ],
+        "Fallback QueryMemory": [
+          {
+            "deferred": 0
+          },
+          {
+            "deferred": 0
+          }
+        ],
+        "Fallback PredictionIncomplete": [
+          {
+            "deferred": 0
+          },
+          {
+            "deferred": 0
+          }
+        ],
+        "Fallback PredictionHorizon": [
+          {
+            "deferred": 0
+          },
+          {
+            "deferred": 0
+          }
+        ],
+        "Fallback NoJourney": [
+          {
+            "deferred": 0
+          },
+          {
+            "deferred": 0
+          }
+        ],
+        "Fallback InvalidLeg": [
+          {
+            "deferred": 0
+          },
+          {
+            "deferred": 0
+          }
+        ],
+        "Fallback StaleLeg": [
+          {
+            "deferred": 0
+          },
+          {
+            "deferred": 0
+          }
+        ],
+        "Fallback Disabled": [
+          {
+            "deferred": 0
+          },
+          {
+            "deferred": 0
+          }
+        ],
+        "Fallback VehicleDeleted": [
+          {
+            "deferred": 0
+          },
+          {
+            "deferred": 0
+          }
+        ],
+        "Precomputed warm": [
+          {
+            "elapsed_us": 93353157
+          }
+        ]
+      }
+    }
+  ],
+  "note": "Raw tick samples are elapsed simulation-thread times; OS process CPU includes load/save. Transport counts reflect actual moves; reservations are excluded."
+}

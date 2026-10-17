@@ -1,0 +1,602 @@
+{
+  "input_sha256": "306a8d3094c406286ff1dd3249f1726bf9d10e230ead593eacdd91efc43ac629",
+  "binary_sha256": "758e088783a5853cea01800cdd2bc2ca3053e87dcaf93064e5387aec678a2ae0",
+  "ticks": 24576,
+  "services": {
+    "524": {
+      "departures": 10,
+      "cargo_departure_observations": 10,
+      "partial_departures": 0,
+      "boarded_target": 74,
+      "waiting_passenger_opportunities": 297,
+      "waiting_packet_opportunities": 271,
+      "states": {
+        "current_hyperpath": 204,
+        "other_intent": 93,
+        "deferred": 0,
+        "fallback": 0,
+        "legacy": 0,
+        "early": 0,
+        "expired": 0,
+        "pending": 0,
+        "generation_pending": 0,
+        "unindexed": 0,
+        "new_unprocessed": 0,
+        "unknown_event_age": 0
+      },
+      "membership": {
+        "-1": 0,
+        "0": 297,
+        "1": 0
+      },
+      "live_prefix_legality": {
+        "-2": 0,
+        "-1": 297,
+        "0": 0,
+        "1": 0
+      },
+      "reserved_target_passenger_opportunities": 0,
+      "reserved_target_packet_opportunities": 0,
+      "combined_waiting_passenger_opportunities": 297,
+      "reserved_states": {
+        "current_hyperpath": 0,
+        "other_intent": 0,
+        "deferred": 0,
+        "fallback": 0,
+        "legacy": 0,
+        "early": 0,
+        "expired": 0,
+        "new_unprocessed": 0
+      },
+      "target_reservations_cancelled": 0,
+      "native_eligible_target_reservations_cancelled": 0,
+      "potential_loadable_after_cancel": 0,
+      "free_before": {
+        "count": 10,
+        "minimum": 851,
+        "maximum": 960,
+        "mean": 918.7
+      },
+      "free_at_departure": {
+        "count": 10,
+        "minimum": 830,
+        "maximum": 941,
+        "mean": 903.0
+      },
+      "physical_free_before": {
+        "count": 10,
+        "minimum": 822,
+        "maximum": 946,
+        "mean": 903.6
+      },
+      "physical_free_at_departure": {
+        "count": 10,
+        "minimum": 830,
+        "maximum": 941,
+        "mean": 903.0
+      },
+      "reserved_before": {
+        "count": 10,
+        "minimum": 0,
+        "maximum": 0,
+        "mean": 0.0
+      },
+      "reserved_at_departure": {
+        "count": 10,
+        "minimum": 0,
+        "maximum": 0,
+        "mean": 0.0
+      },
+      "eligible_remaining": 0,
+      "loadable_left": 0,
+      "oldest_event_ticks": 0,
+      "loadable_left_states": [],
+      "by_order": {
+        "13": {
+          "departures": 4,
+          "boarded_target": 74,
+          "waiting_passenger_opportunities": 0,
+          "member_passenger_opportunities": 0,
+          "native_prefix_legal_passenger_opportunities": 0,
+          "eligible_remaining": 0,
+          "loadable_left": 0,
+          "free_at_departure": {
+            "count": 4,
+            "minimum": 894,
+            "maximum": 941,
+            "mean": 923.25
+          },
+          "physical_free_at_departure": {
+            "count": 4,
+            "minimum": 894,
+            "maximum": 941,
+            "mean": 923.25
+          },
+          "reserved_at_departure": {
+            "count": 4,
+            "minimum": 0,
+            "maximum": 0,
+            "mean": 0.0
+          }
+        },
+        "79": {
+          "departures": 6,
+          "boarded_target": 0,
+          "waiting_passenger_opportunities": 297,
+          "member_passenger_opportunities": 0,
+          "native_prefix_legal_passenger_opportunities": 0,
+          "eligible_remaining": 0,
+          "loadable_left": 0,
+          "free_at_departure": {
+            "count": 6,
+            "minimum": 830,
+            "maximum": 915,
+            "mean": 889.5
+          },
+          "physical_free_at_departure": {
+            "count": 6,
+            "minimum": 830,
+            "maximum": 915,
+            "mean": 889.5
+          },
+          "reserved_at_departure": {
+            "count": 6,
+            "minimum": 0,
+            "maximum": 0,
+            "mean": 0.0
+          }
+        }
+      }
+    },
+    "525": {
+      "departures": 4,
+      "cargo_departure_observations": 4,
+      "partial_departures": 0,
+      "boarded_target": 140,
+      "waiting_passenger_opportunities": 34,
+      "waiting_packet_opportunities": 29,
+      "states": {
+        "current_hyperpath": 34,
+        "other_intent": 0,
+        "deferred": 0,
+        "fallback": 0,
+        "legacy": 0,
+        "early": 0,
+        "expired": 0,
+        "pending": 0,
+        "generation_pending": 0,
+        "unindexed": 0,
+        "new_unprocessed": 0,
+        "unknown_event_age": 0
+      },
+      "membership": {
+        "-1": 0,
+        "0": 34,
+        "1": 0
+      },
+      "live_prefix_legality": {
+        "-2": 0,
+        "-1": 34,
+        "0": 0,
+        "1": 0
+      },
+      "reserved_target_passenger_opportunities": 0,
+      "reserved_target_packet_opportunities": 0,
+      "combined_waiting_passenger_opportunities": 34,
+      "reserved_states": {
+        "current_hyperpath": 0,
+        "other_intent": 0,
+        "deferred": 0,
+        "fallback": 0,
+        "legacy": 0,
+        "early": 0,
+        "expired": 0,
+        "new_unprocessed": 0
+      },
+      "target_reservations_cancelled": 0,
+      "native_eligible_target_reservations_cancelled": 0,
+      "potential_loadable_after_cancel": 0,
+      "free_before": {
+        "count": 4,
+        "minimum": 331,
+        "maximum": 681,
+        "mean": 560.0
+      },
+      "free_at_departure": {
+        "count": 4,
+        "minimum": 270,
+        "maximum": 600,
+        "mean": 500.5
+      },
+      "physical_free_before": {
+        "count": 4,
+        "minimum": 256,
+        "maximum": 633,
+        "mean": 492.5
+      },
+      "physical_free_at_departure": {
+        "count": 4,
+        "minimum": 270,
+        "maximum": 600,
+        "mean": 500.5
+      },
+      "reserved_before": {
+        "count": 4,
+        "minimum": 0,
+        "maximum": 0,
+        "mean": 0.0
+      },
+      "reserved_at_departure": {
+        "count": 4,
+        "minimum": 0,
+        "maximum": 0,
+        "mean": 0.0
+      },
+      "eligible_remaining": 0,
+      "loadable_left": 0,
+      "oldest_event_ticks": 0,
+      "loadable_left_states": [],
+      "by_order": {
+        "13": {
+          "departures": 2,
+          "boarded_target": 140,
+          "waiting_passenger_opportunities": 0,
+          "member_passenger_opportunities": 0,
+          "native_prefix_legal_passenger_opportunities": 0,
+          "eligible_remaining": 0,
+          "loadable_left": 0,
+          "free_at_departure": {
+            "count": 2,
+            "minimum": 270,
+            "maximum": 600,
+            "mean": 435.0
+          },
+          "physical_free_at_departure": {
+            "count": 2,
+            "minimum": 270,
+            "maximum": 600,
+            "mean": 435.0
+          },
+          "reserved_at_departure": {
+            "count": 2,
+            "minimum": 0,
+            "maximum": 0,
+            "mean": 0.0
+          }
+        },
+        "175": {
+          "departures": 2,
+          "boarded_target": 0,
+          "waiting_passenger_opportunities": 34,
+          "member_passenger_opportunities": 0,
+          "native_prefix_legal_passenger_opportunities": 0,
+          "eligible_remaining": 0,
+          "loadable_left": 0,
+          "free_at_departure": {
+            "count": 2,
+            "minimum": 547,
+            "maximum": 585,
+            "mean": 566.0
+          },
+          "physical_free_at_departure": {
+            "count": 2,
+            "minimum": 547,
+            "maximum": 585,
+            "mean": 566.0
+          },
+          "reserved_at_departure": {
+            "count": 2,
+            "minimum": 0,
+            "maximum": 0,
+            "mean": 0.0
+          }
+        }
+      }
+    },
+    "528": {
+      "departures": 0,
+      "cargo_departure_observations": 0,
+      "partial_departures": 0,
+      "boarded_target": 0,
+      "waiting_passenger_opportunities": 0,
+      "waiting_packet_opportunities": 0,
+      "states": {
+        "current_hyperpath": 0,
+        "other_intent": 0,
+        "deferred": 0,
+        "fallback": 0,
+        "legacy": 0,
+        "early": 0,
+        "expired": 0,
+        "pending": 0,
+        "generation_pending": 0,
+        "unindexed": 0,
+        "new_unprocessed": 0,
+        "unknown_event_age": 0
+      },
+      "membership": {
+        "-1": 0,
+        "0": 0,
+        "1": 0
+      },
+      "live_prefix_legality": {
+        "-2": 0,
+        "-1": 0,
+        "0": 0,
+        "1": 0
+      },
+      "reserved_target_passenger_opportunities": 0,
+      "reserved_target_packet_opportunities": 0,
+      "combined_waiting_passenger_opportunities": 0,
+      "reserved_states": {
+        "current_hyperpath": 0,
+        "other_intent": 0,
+        "deferred": 0,
+        "fallback": 0,
+        "legacy": 0,
+        "early": 0,
+        "expired": 0,
+        "new_unprocessed": 0
+      },
+      "target_reservations_cancelled": 0,
+      "native_eligible_target_reservations_cancelled": 0,
+      "potential_loadable_after_cancel": 0,
+      "free_before": null,
+      "free_at_departure": null,
+      "physical_free_before": null,
+      "physical_free_at_departure": null,
+      "reserved_before": null,
+      "reserved_at_departure": null,
+      "eligible_remaining": 0,
+      "loadable_left": 0,
+      "oldest_event_ticks": 0,
+      "loadable_left_states": [],
+      "by_order": {}
+    }
+  },
+  "service_528": {
+    "order_dispatch_counts": {
+      "0": 1,
+      "1": 1,
+      "2": 1,
+      "3": 1,
+      "4": 1,
+      "5": 1,
+      "6": 1,
+      "7": 1,
+      "8": 1,
+      "9": 1,
+      "10": 1,
+      "11": 1,
+      "94": 1,
+      "95": 1,
+      "96": 1,
+      "97": 1,
+      "98": 1,
+      "99": 1,
+      "100": 1,
+      "101": 1,
+      "102": 1,
+      "103": 1,
+      "104": 1,
+      "105": 1,
+      "106": 1,
+      "107": 1,
+      "108": 1,
+      "109": 1,
+      "110": 1,
+      "111": 1,
+      "112": 1,
+      "113": 1
+    },
+    "observed_order_transitions": {
+      "0": 1,
+      "1": 1,
+      "2": 1,
+      "3": 1,
+      "4": 1,
+      "5": 1,
+      "6": 1,
+      "7": 1,
+      "8": 1,
+      "9": 1,
+      "10": 1,
+      "11": 1,
+      "94": 1,
+      "95": 1,
+      "96": 1,
+      "97": 1,
+      "98": 1,
+      "99": 1,
+      "100": 1,
+      "101": 1,
+      "102": 1,
+      "103": 1,
+      "104": 1,
+      "105": 1,
+      "106": 1,
+      "107": 1,
+      "108": 1,
+      "109": 1,
+      "110": 1,
+      "111": 1,
+      "112": 1,
+      "113": 1
+    },
+    "initial_observations": [
+      {
+        "tick": 3181119582,
+        "vehicle": 4272,
+        "service": 528,
+        "order": 93,
+        "order_type": 1,
+        "initial_observation": 1
+      }
+    ],
+    "order_33_pattern": [
+      {
+        "tick": 3181119581,
+        "service": 528,
+        "incarnation": 529,
+        "generation": 367964,
+        "period": 0,
+        "estimated_period": 82658,
+        "fleet": 1,
+        "stop_count": 111,
+        "station": 3393,
+        "order": 33,
+        "arrival": 26196,
+        "departure": 26418,
+        "board": 18446744073709551615,
+        "alight": 18446744073709551615,
+        "continues": 1,
+        "travel_quality": 1
+      },
+      {
+        "tick": 3181121606,
+        "service": 528,
+        "incarnation": 529,
+        "generation": 368819,
+        "period": 0,
+        "estimated_period": 82510,
+        "fleet": 1,
+        "stop_count": 111,
+        "station": 3393,
+        "order": 33,
+        "arrival": 26196,
+        "departure": 26418,
+        "board": 18446744073709551615,
+        "alight": 18446744073709551615,
+        "continues": 1,
+        "travel_quality": 1
+      },
+      {
+        "tick": 3181128267,
+        "service": 528,
+        "incarnation": 529,
+        "generation": 370438,
+        "period": 0,
+        "estimated_period": 83324,
+        "fleet": 1,
+        "stop_count": 111,
+        "station": 3393,
+        "order": 33,
+        "arrival": 26196,
+        "departure": 26418,
+        "board": 18446744073709551615,
+        "alight": 18446744073709551615,
+        "continues": 1,
+        "travel_quality": 1
+      },
+      {
+        "tick": 3181129791,
+        "service": 528,
+        "incarnation": 529,
+        "generation": 371293,
+        "period": 0,
+        "estimated_period": 83694,
+        "fleet": 1,
+        "stop_count": 111,
+        "station": 3393,
+        "order": 33,
+        "arrival": 26196,
+        "departure": 26418,
+        "board": 18446744073709551615,
+        "alight": 18446744073709551615,
+        "continues": 1,
+        "travel_quality": 1
+      },
+      {
+        "tick": 3181133892,
+        "service": 528,
+        "incarnation": 529,
+        "generation": 372074,
+        "period": 0,
+        "estimated_period": 82584,
+        "fleet": 1,
+        "stop_count": 111,
+        "station": 3393,
+        "order": 33,
+        "arrival": 26196,
+        "departure": 26418,
+        "board": 18446744073709551615,
+        "alight": 18446744073709551615,
+        "continues": 1,
+        "travel_quality": 1
+      },
+      {
+        "tick": 3181137985,
+        "service": 528,
+        "incarnation": 529,
+        "generation": 372898,
+        "period": 0,
+        "estimated_period": 83324,
+        "fleet": 1,
+        "stop_count": 111,
+        "station": 3393,
+        "order": 33,
+        "arrival": 26344,
+        "departure": 26566,
+        "board": 18446744073709551615,
+        "alight": 18446744073709551615,
+        "continues": 1,
+        "travel_quality": 1
+      },
+      {
+        "tick": 3181141704,
+        "service": 528,
+        "incarnation": 529,
+        "generation": 373727,
+        "period": 0,
+        "estimated_period": 82658,
+        "fleet": 1,
+        "stop_count": 111,
+        "station": 3393,
+        "order": 33,
+        "arrival": 25678,
+        "departure": 25900,
+        "board": 18446744073709551615,
+        "alight": 18446744073709551615,
+        "continues": 1,
+        "travel_quality": 1
+      },
+      {
+        "tick": 3181142076,
+        "service": 528,
+        "incarnation": 529,
+        "generation": 374563,
+        "period": 0,
+        "estimated_period": 82584,
+        "fleet": 1,
+        "stop_count": 111,
+        "station": 3393,
+        "order": 33,
+        "arrival": 25604,
+        "departure": 25826,
+        "board": 18446744073709551615,
+        "alight": 18446744073709551615,
+        "continues": 1,
+        "travel_quality": 1
+      }
+    ]
+  },
+  "read_only_departure_checks": 14,
+  "read_only_packet_queries": 300,
+  "expiry_replan_latency": null,
+  "expiry_pending_units": 0,
+  "expiry_pending_max_age": 0,
+  "notes": [
+    "Waiting/state/leftover totals count repeated departure opportunities, not distinct people.",
+    "State flags overlap; the five routing modes partition waiting units.",
+    "Available waiting and virtual reservations are reported separately; their combined total includes every local loading consist at station 3393.",
+    "other_intent includes valid bound reservations as well as older intent kinds; raw kind/current-intent fields distinguish them.",
+    "potential_loadable_after_cancel is a counterfactual bound using native legality immediately before leaving and space after reservation cancellation; it is not a later boarding opportunity.",
+    "live_prefix_legal tests a resolved ride with normalized readiness/age; can_board uses the actual packet.",
+    "live_prefix_legal=-1 means no concrete candidate ride; -2 means membership succeeded but no ride resolved. Neither is a native-prefix rejection.",
+    "free subtracts RemainingCount (kept cargo plus reservations); physical_free subtracts all physically stored cargo.",
+    "oldest_event_ticks=-1 means no existing event due time is available; the raw due tick is retained.",
+    "Leftover allocation follows the existing primary/sequence order; unindexed rows use packet ID as an explicit diagnostic proxy.",
+    "Order dispatches are actual UpdateOrderDest calls, including conditional attempts; PBS forecasts are excluded.",
+    "Expiry latencies cover observed expiry/replan pairs; pending units are right-censored at the measurement end."
+  ]
+}

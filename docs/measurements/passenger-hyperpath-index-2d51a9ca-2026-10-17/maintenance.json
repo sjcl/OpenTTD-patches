@@ -1,0 +1,69 @@
+{
+  "legacy": {
+    "scope": "Main-thread StateGameLoop stacks containing any named maintenance function; union, not inclusive sum",
+    "functions": [
+      "openttd.exe!StationCargoList::RefreshHyperpathLookup",
+      "openttd.exe!StationCargoList::IndexHyperpathGroup",
+      "openttd.exe!StationCargoList::UnindexHyperpathGroup",
+      "openttd.exe!PassengerServiceDatabase::HyperpathLookupCandidates"
+    ],
+    "samples": 0,
+    "raw_cpu_ms_per_tick": 0.0,
+    "corrected_cpu_ms_per_tick": 0.0,
+    "function_rows": []
+  },
+  "hyperpath": {
+    "scope": "Main-thread StateGameLoop stacks containing any named maintenance function; union, not inclusive sum",
+    "functions": [
+      "openttd.exe!StationCargoList::RefreshHyperpathLookup",
+      "openttd.exe!StationCargoList::IndexHyperpathGroup",
+      "openttd.exe!StationCargoList::UnindexHyperpathGroup",
+      "openttd.exe!PassengerServiceDatabase::HyperpathLookupCandidates"
+    ],
+    "samples": 4176,
+    "raw_cpu_ms_per_tick": 2.03899853515625,
+    "corrected_cpu_ms_per_tick": 2.130166631039074,
+    "function_rows": [
+      {
+        "scope": "simulation_stack",
+        "function": "openttd.exe!StationCargoList::IndexHyperpathGroup",
+        "inclusive_ms": "2875.875100",
+        "inclusive_samples": "2876",
+        "exclusive_ms": "750.891300",
+        "exclusive_samples": "751",
+        "inclusive_ms_per_tick": "1.404235889",
+        "exclusive_ms_per_tick": "0.366646143"
+      },
+      {
+        "scope": "simulation_stack",
+        "function": "openttd.exe!StationCargoList::RefreshHyperpathLookup",
+        "inclusive_ms": "4158.866400",
+        "inclusive_samples": "4159",
+        "exclusive_ms": "649.997000",
+        "exclusive_samples": "650",
+        "inclusive_ms_per_tick": "2.030696484",
+        "exclusive_ms_per_tick": "0.317381348"
+      },
+      {
+        "scope": "simulation_stack",
+        "function": "openttd.exe!PassengerServiceDatabase::HyperpathLookupCandidates",
+        "inclusive_ms": "1786.022000",
+        "inclusive_samples": "1786",
+        "exclusive_ms": "334.971800",
+        "exclusive_samples": "335",
+        "inclusive_ms_per_tick": "0.872081055",
+        "exclusive_ms_per_tick": "0.163560449"
+      },
+      {
+        "scope": "simulation_stack",
+        "function": "openttd.exe!StationCargoList::UnindexHyperpathGroup",
+        "inclusive_ms": "17.002600",
+        "inclusive_samples": "17",
+        "exclusive_ms": "17.002600",
+        "exclusive_samples": "17",
+        "inclusive_ms_per_tick": "0.008302051",
+        "exclusive_ms_per_tick": "0.008302051"
+      }
+    ]
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "commit": "544835fc59da1ec5e2d4e6793e9528107f2cb493",
+  "product_src_tree": "3d4a5f6107acae4d81f37108724842cb7ea2e60e",
+  "product_sources_unchanged": true,
+  "binary_sha256": "e34608bca410e03995ac4dd9ea118e243419d9ebe2b29987bb9e39f900d91ac4",
+  "test_binary_sha256": "32623f79b52504637140ef6a78a0bf7d8ddeb80860281b9acf452b2006ffbeae",
+  "runner_sha256": "dd2ac97f8152258e8fd11a255f8975ddb97d7128a2d4f77b9953a553166fc221",
+  "copied_translation_units": {
+    "save-integrity/cargopacket.cpp": "207e78caa2089265df009b28055c1668f0f0eb09a4b97766ea8f3772b5b47684",
+    "save-integrity/cargopacket_sl.cpp": "74e538604c2df4bb743b823cd00c8ac47a61f9930bac3bef79229320b50ed0ef",
+    "save-integrity/command.cpp": "1b74b0b7454c8f8e9c29ff0c64676fda229b4c2cb4cc86432a932cebf7b81acf",
+    "save-integrity/console_cmds.cpp": "316b610a396de9d05768a7f72ac205f4acce84e41dcebe67ef7a525f79c6299f",
+    "save-integrity/integrity.h": "a1829785fd341072840102949c0bb68e0960333f67c39b14c03a25d76d8d4b15",
+    "save-integrity/passenger_service_database.cpp": "f988f8cb36d216851b90cb24caaccd6ab3e8eade82f8b379c5a420b1cf452a56",
+    "real-map-driver/null_v.cpp": "89718da51fc9419d4c53fd67caedde7accf53286a8a83dfdc6c6059c2b501e12",
+    "real-map-driver/win32.cpp": "61c5c6cfb7279228676a8215f97e12472c9d3d9a36fa40a9592633cc78ae7c8c"
+  },
+  "preparation": "passenger_estimated_prepare.py SOURCE BUILD 544835fc59 --cpu; add boarding-failure fields to the copied packet digest",
+  "added_inspector_fields": [
+    "failure.service",
+    "failure.count",
+    "failure.since",
+    "failure.incarnation"
+  ],
+  "note": "Only utils and evidence are modified. Exact-tick driver, paused preparation and read-only inspector use copied TUs; physical tracing is disabled."
+}

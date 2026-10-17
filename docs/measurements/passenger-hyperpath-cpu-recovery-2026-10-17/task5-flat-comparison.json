@@ -1,0 +1,349 @@
+{
+  "previous": {
+    "command": [
+      "C:\\Users\\bebe\\.codex\\worktrees\\5a69\\OpenTTD-patches\\build-hyperpath-cpu\\Release\\openttd_test.exe",
+      "[.hyperpath-flat-real]",
+      "-r",
+      "compact"
+    ],
+    "exit_code": 0,
+    "elapsed_seconds": 101.60043729981408,
+    "contamination": [],
+    "binary_sha256": "dfef13fa660d4f39089aaed635cb0eb14c155de6af8376fd2e2ee29c75a619cb",
+    "database_sha256": "7ca9ad50ca3fb134369ad01d9eb1a193dce3cf48c720fdba2ea4e55b15f06a93",
+    "stations_sha256": "dd464e3aa11299a9a05f62caebb95a692607fba83a53cf0aa4d0757aeeb6750c",
+    "counters": {
+      "flat_build": {
+        "flat": 0,
+        "rows": 4917,
+        "words": 1188896864,
+        "operations": 1928264853,
+        "envelope": 16275355656,
+        "bytes": 7797656330,
+        "elapsed_ms": 99132
+      },
+      "flat_memory": {
+        "reported": 7797656330,
+        "graph": 6678756,
+        "labels": 3382581312,
+        "indices": 358095276,
+        "policy_headers": 3554816280,
+        "candidate_arrays": 439001660,
+        "local": 0,
+        "differences": 37887369,
+        "additions": 10923695,
+        "maximum_additions": 21,
+        "multi_addition_differences": 2028685,
+        "unexpected_removals": 0
+      }
+    },
+    "target_policies": {
+      "971:916": {
+        "cost": 20521,
+        "wait": 1062,
+        "candidate_count": 4,
+        "candidates": [
+          {
+            "service": 154,
+            "order": 9,
+            "occurrence": 15186
+          },
+          {
+            "service": 310,
+            "order": 9,
+            "occurrence": 11017
+          },
+          {
+            "service": 508,
+            "order": 18,
+            "occurrence": 11056
+          },
+          {
+            "service": 509,
+            "order": 17,
+            "occurrence": 6544
+          }
+        ]
+      },
+      "3222:400": {
+        "cost": 5843,
+        "wait": 1379,
+        "candidate_count": 2,
+        "candidates": [
+          {
+            "service": 300,
+            "order": 14,
+            "occurrence": 14448
+          },
+          {
+            "service": 543,
+            "order": 27,
+            "occurrence": 8652
+          }
+        ]
+      },
+      "3393:3394": {
+        "cost": 3832,
+        "wait": 3199,
+        "candidate_count": 3,
+        "candidates": [
+          {
+            "service": 524,
+            "order": 13,
+            "occurrence": 916
+          },
+          {
+            "service": 525,
+            "order": 13,
+            "occurrence": 17112
+          },
+          {
+            "service": 528,
+            "order": 33,
+            "occurrence": 1909
+          }
+        ]
+      }
+    },
+    "peak_working_bytes": 7729537024,
+    "peak_commit_bytes": 9407148032,
+    "process_cpu_seconds": 100.0,
+    "witness_bytes": 9511174912,
+    "witness_sha256": "3be0d93cbd0d667bf99af2fd019e0a0ee7162a09147d4ad8aebc1ece27c82d21"
+  },
+  "flat": {
+    "command": [
+      "C:\\Users\\bebe\\.codex\\worktrees\\5a69\\OpenTTD-patches\\build-hyperpath-cpu\\Release\\openttd_test.exe",
+      "[.hyperpath-flat-real]",
+      "-r",
+      "compact"
+    ],
+    "exit_code": 0,
+    "elapsed_seconds": 95.94167189998552,
+    "contamination": [],
+    "binary_sha256": "dfef13fa660d4f39089aaed635cb0eb14c155de6af8376fd2e2ee29c75a619cb",
+    "database_sha256": "7ca9ad50ca3fb134369ad01d9eb1a193dce3cf48c720fdba2ea4e55b15f06a93",
+    "stations_sha256": "dd464e3aa11299a9a05f62caebb95a692607fba83a53cf0aa4d0757aeeb6750c",
+    "counters": {
+      "flat_build": {
+        "flat": 1,
+        "rows": 4917,
+        "words": 1188896864,
+        "operations": 1928264853,
+        "envelope": 14011834888,
+        "bytes": 6096771914,
+        "elapsed_ms": 94707
+      },
+      "flat_memory": {
+        "reported": 6096771914,
+        "graph": 6678756,
+        "labels": 3382581312,
+        "indices": 281881776,
+        "policy_headers": 2132889768,
+        "candidate_arrays": 236257256,
+        "local": 0,
+        "differences": 37887369,
+        "additions": 10923695,
+        "maximum_additions": 21,
+        "multi_addition_differences": 2028685,
+        "unexpected_removals": 0
+      }
+    },
+    "target_policies": {
+      "971:916": {
+        "cost": 20521,
+        "wait": 1062,
+        "candidate_count": 4,
+        "candidates": [
+          {
+            "service": 154,
+            "order": 9,
+            "occurrence": 15186
+          },
+          {
+            "service": 310,
+            "order": 9,
+            "occurrence": 11017
+          },
+          {
+            "service": 508,
+            "order": 18,
+            "occurrence": 11056
+          },
+          {
+            "service": 509,
+            "order": 17,
+            "occurrence": 6544
+          }
+        ]
+      },
+      "3222:400": {
+        "cost": 5843,
+        "wait": 1379,
+        "candidate_count": 2,
+        "candidates": [
+          {
+            "service": 300,
+            "order": 14,
+            "occurrence": 14448
+          },
+          {
+            "service": 543,
+            "order": 27,
+            "occurrence": 8652
+          }
+        ]
+      },
+      "3393:3394": {
+        "cost": 3832,
+        "wait": 3199,
+        "candidate_count": 3,
+        "candidates": [
+          {
+            "service": 524,
+            "order": 13,
+            "occurrence": 916
+          },
+          {
+            "service": 525,
+            "order": 13,
+            "occurrence": 17112
+          },
+          {
+            "service": 528,
+            "order": 33,
+            "occurrence": 1909
+          }
+        ]
+      }
+    },
+    "peak_working_bytes": 6170877952,
+    "peak_commit_bytes": 7042945024,
+    "process_cpu_seconds": 94.0625,
+    "witness_bytes": 9511174912,
+    "witness_sha256": "3be0d93cbd0d667bf99af2fd019e0a0ee7162a09147d4ad8aebc1ece27c82d21"
+  },
+  "replay": {
+    "command": [
+      "C:\\Users\\bebe\\.codex\\worktrees\\5a69\\OpenTTD-patches\\build-hyperpath-cpu\\Release\\openttd_test.exe",
+      "[.hyperpath-flat-real]",
+      "-r",
+      "compact"
+    ],
+    "exit_code": 0,
+    "elapsed_seconds": 95.6912071001716,
+    "contamination": [],
+    "binary_sha256": "dfef13fa660d4f39089aaed635cb0eb14c155de6af8376fd2e2ee29c75a619cb",
+    "database_sha256": "7ca9ad50ca3fb134369ad01d9eb1a193dce3cf48c720fdba2ea4e55b15f06a93",
+    "stations_sha256": "dd464e3aa11299a9a05f62caebb95a692607fba83a53cf0aa4d0757aeeb6750c",
+    "counters": {
+      "flat_build": {
+        "flat": 1,
+        "rows": 4917,
+        "words": 1188896864,
+        "operations": 1928264853,
+        "envelope": 14011834888,
+        "bytes": 6096771914,
+        "elapsed_ms": 94575
+      },
+      "flat_memory": {
+        "reported": 6096771914,
+        "graph": 6678756,
+        "labels": 3382581312,
+        "indices": 281881776,
+        "policy_headers": 2132889768,
+        "candidate_arrays": 236257256,
+        "local": 0,
+        "differences": 37887369,
+        "additions": 10923695,
+        "maximum_additions": 21,
+        "multi_addition_differences": 2028685,
+        "unexpected_removals": 0
+      }
+    },
+    "target_policies": {
+      "971:916": {
+        "cost": 20521,
+        "wait": 1062,
+        "candidate_count": 4,
+        "candidates": [
+          {
+            "service": 154,
+            "order": 9,
+            "occurrence": 15186
+          },
+          {
+            "service": 310,
+            "order": 9,
+            "occurrence": 11017
+          },
+          {
+            "service": 508,
+            "order": 18,
+            "occurrence": 11056
+          },
+          {
+            "service": 509,
+            "order": 17,
+            "occurrence": 6544
+          }
+        ]
+      },
+      "3222:400": {
+        "cost": 5843,
+        "wait": 1379,
+        "candidate_count": 2,
+        "candidates": [
+          {
+            "service": 300,
+            "order": 14,
+            "occurrence": 14448
+          },
+          {
+            "service": 543,
+            "order": 27,
+            "occurrence": 8652
+          }
+        ]
+      },
+      "3393:3394": {
+        "cost": 3832,
+        "wait": 3199,
+        "candidate_count": 3,
+        "candidates": [
+          {
+            "service": 524,
+            "order": 13,
+            "occurrence": 916
+          },
+          {
+            "service": 525,
+            "order": 13,
+            "occurrence": 17112
+          },
+          {
+            "service": 528,
+            "order": 33,
+            "occurrence": 1909
+          }
+        ]
+      }
+    },
+    "peak_working_bytes": 6161055744,
+    "peak_commit_bytes": 7042871296,
+    "process_cpu_seconds": 94.3125,
+    "witness_bytes": 9511174912,
+    "witness_sha256": "3be0d93cbd0d667bf99af2fd019e0a0ee7162a09147d4ad8aebc1ece27c82d21"
+  },
+  "exact": {
+    "equal": true,
+    "compared_bytes": 9511174912
+  },
+  "exact_replay": {
+    "equal": true,
+    "compared_bytes": 9511174912
+  },
+  "operations_equal": true,
+  "targets_equal": true,
+  "note": "Separate processes include the identical frozen map/DB and one table each. Replay uses the persisted Work count with prime-size slices. OS peaks are process-wide; component counters describe completed table residency. Native JPSD and MP tests separately cover wire identities and mixed generations."
+}

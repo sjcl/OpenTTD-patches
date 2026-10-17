@@ -1,0 +1,148 @@
+{
+  "exit_code": 0,
+  "requested_ticks": 24576,
+  "elapsed_seconds": 1844.9084358997643,
+  "trace_enabled": true,
+  "checkpoint_tick": "4096",
+  "focused_od_trace": false,
+  "contamination": [],
+  "input_sha256": "6783a500f47435a342a36e9a6544e33bb38f041abe91e9e2ff2c654edd16c978",
+  "binary_sha256": "4d24261d3b37ea9b0b85b18966da1ea19f0e73f13fc02dce3de55f25ff0184be",
+  "language_sha256": "af5d093144abcc99f3d31b95c531b0b4d019166a8ffec05af8c672e7a890822a",
+  "resume_settings": false,
+  "fixture_timetable": false,
+  "fixture_estimated": false,
+  "cold_precomputed": true,
+  "precomputed": true,
+  "hyperpath": true,
+  "warm_precomputed": true,
+  "rebuild_precomputed": false,
+  "full_rebuild_precomputed": false,
+  "mid_rebuild_tick": 0,
+  "finish_rebuild_precomputed": false,
+  "command": [
+    "C:\\Users\\bebe\\.codex\\worktrees\\33d4\\OpenTTD-patches\\build-hyperpath\\quality-final-v2\\hyperpath\\openttd.exe",
+    "-x",
+    "-X",
+    "-c",
+    "openttd.cfg",
+    "-g",
+    "input.sav",
+    "-v",
+    "null:ticks=24576",
+    "-snull",
+    "-mnull",
+    "-d",
+    "sl=2"
+  ],
+  "peak_working_bytes": 10476769280,
+  "peak_commit_bytes": 11407126528,
+  "process_cpu_seconds": 2290.578125,
+  "save-integrity.json": {
+    "runtime_routing_feature": 3,
+    "state_ticks": 3181119581,
+    "packets": 458858,
+    "cargo_units": 1084970,
+    "known_od_units": 603028,
+    "journey_packets": 426917,
+    "packet_state_digest": 408680257319319921,
+    "payment_digest": 2500010788872395271,
+    "payments_valid": true,
+    "database_digest": 12201265474001823180,
+    "ownership_digest": 532826669593119103,
+    "loading_digest": 1123642485896348958,
+    "completed_rows": 3873,
+    "retained_rows": 1044,
+    "table_operations": 1478098944,
+    "published_revision": 2803,
+    "company_deliveries": 329568,
+    "journey_routing": 1,
+    "precomputed_routing": 1,
+    "legacy_true_packets": 0,
+    "legacy_false_packets": 0,
+    "legacy_true_units": 0,
+    "legacy_false_units": 0,
+    "opposite_history_mergeable_pairs": 0
+  },
+  "result_sha256": "f3900b4f0ce477a4f5fb5fc5f36330e465573047c1c0305a877e2c47af21d0c7",
+  "load_failed": false,
+  "newgrf_warning_lines": 215781,
+  "warm_observations": [
+    "true"
+  ],
+  "warm_complete": true,
+  "script_error_pause_resumes": 1,
+  "trace_preserved_during_initial_snapshot": true,
+  "actual_ticks": {
+    "start": 3181095005,
+    "end": 3181119581,
+    "samples": 24576,
+    "driver_loops": 24578,
+    "error_resumes": 0,
+    "raw_sample_file": "long-hyperpath-ticks.json",
+    "raw_sample_sha256": "0acbae616e8208110b34cfc144c1231412dafb2e39df8df980b735682a5ffebc"
+  },
+  "local_raw_artifact_directory": "C:\\Users\\bebe\\.codex\\worktrees\\33d4\\OpenTTD-patches\\build-hyperpath\\quality-final-v2\\hyperpath",
+  "raw_artifacts": {
+    "transport-delivered.csv": {
+      "bytes": 2502367,
+      "sha256": "a84c7e33f48c1a500774794ca1424eb4387914c5702e5b8025350f405672438f"
+    },
+    "transport-lost.csv": {
+      "bytes": 533647,
+      "sha256": "d99514b27618565de414eca8b2abaf44482f0b907268f96da04684276a45909b"
+    },
+    "transport-pending.csv": {
+      "bytes": 1871964,
+      "sha256": "1c8f5968817a9d6de1675b9bdbf5497313e5d4c15fe9daa49439d5d4604e3a0a"
+    },
+    "transport-population.csv": {
+      "bytes": 765674,
+      "sha256": "df0a459e4eb4840941e8b06fd96aa96a7eadbc6afa87a32ba2307b2042ff499e"
+    },
+    "transport-services.csv": {
+      "bytes": 698063,
+      "sha256": "fad5a9604810113e06019b0c96f20a8e3d07139900eefd94f2c4a1d1e899c342"
+    },
+    "transport-target-events.csv": {
+      "bytes": 3533,
+      "sha256": "d9b2c97d8c15a260cb468c064038f89683435a8de16763ac5aecf6036052c9a8"
+    },
+    "focused-transport-delivered.csv": {
+      "bytes": 21421,
+      "sha256": "722c78e458d7d6090946d384b1fd8338316fad6c8d57dcc54194dd39986b525e"
+    },
+    "focused-transport-lost.csv": {
+      "bytes": 3386,
+      "sha256": "eea90e02dd872bcf2be5d66a3ecfbb75d91b9a32b307ef13bd19e5abbee4d340"
+    },
+    "focused-transport-pending.csv": {
+      "bytes": 3047,
+      "sha256": "244f9ca404c50ae1f66a4af95bebaa406f32d8a8fe2c88a6ad435bd6d51dea1f"
+    },
+    "focused-transport-population.csv": {
+      "bytes": 765674,
+      "sha256": "df0a459e4eb4840941e8b06fd96aa96a7eadbc6afa87a32ba2307b2042ff499e"
+    },
+    "focused-transport-services.csv": {
+      "bytes": 698063,
+      "sha256": "fad5a9604810113e06019b0c96f20a8e3d07139900eefd94f2c4a1d1e899c342"
+    },
+    "focused-transport-target-events.csv": {
+      "bytes": 94252,
+      "sha256": "e25f75cd12ced16307fc6075d40f41d4fb98f7d5f118d383bd179aea0131dd65"
+    },
+    "focused-transport-trace-meta.txt": {
+      "bytes": 421,
+      "sha256": "17c5b115254acd72f695da910110971ccff2bf095c8016ff89e896e3934def40"
+    },
+    "transport-trace-meta.txt": {
+      "bytes": 450,
+      "sha256": "0b0955b3b66f9f5a3b77064ce63a21084b4de7b4ee2c9e8c2a1781f4b430b9a0"
+    },
+    "result.sav": {
+      "bytes": 39190280,
+      "sha256": "f3900b4f0ce477a4f5fb5fc5f36330e465573047c1c0305a877e2c47af21d0c7"
+    }
+  }
+}

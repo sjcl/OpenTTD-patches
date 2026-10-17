@@ -1,0 +1,4 @@
+station,service,count,full,first,last,maximum_gap,missed_packets,missed_passengers,missed_opportunities
+3393,524,10,0,3181095227,3181119214,4986,0,0,0
+3393,525,5,0,3181096889,3181118136,6738,0,0,0
+3393,528,1,0,3181110539,3181110539,0,0,0,0

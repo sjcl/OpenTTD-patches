@@ -39,8 +39,10 @@ def split_bounded_spans_simd(cpp):
     return cpp
 
 
-def generate(source, build, name, revision, heap="priority", simd=False, contract=False, generation=False):
+def generate(source, build, name, revision, heap="priority", simd=False, contract=False, generation=False, snapshot=None):
     def read(path):
+        if snapshot is not None:
+            return (snapshot / (path + ".txt")).read_text(encoding="utf-8")
         if revision:
             return subprocess.check_output(["git", "show", f"{revision}:src/{path}"], cwd=source).decode()
         return (source / "src" / path).read_text(encoding="utf-8")
@@ -60,12 +62,17 @@ def generate(source, build, name, revision, heap="priority", simd=False, contrac
         uint64_t relaxations = 0, successes = 0, pushes = 0, pops = 0, stale = 0, peak_queue = 0, copies = 0;
         uint64_t section_checks = 0, graph_ns = 0, sections_ns = 0, csr_ns = 0, init_ns = 0, search_ns = 0, finish_ns = 0, publish_ns = 0;
         uint64_t heap_ns = 0, heap_samples = 0;
+        uint64_t push_order = 14695981039346656037ULL, pop_order = 14695981039346656037ULL;
+        uint64_t range_comparisons = 0, invariant_comparisons = 0;
+        uint64_t alternative_base_reads = 0, alternative_skipped = 0, section_actual_reads = 0;
         std::chrono::steady_clock::time_point phase, row_started;
         std::vector<uint64_t> destinations_ns;
-    } metrics;
+    };
+    mutable Metrics metrics;
     template <typename... Args> void MeasuredPush(Args... args)
     {
         if constexpr (PASSENGER_TABLE_COUNT) {
+            std::apply([&](auto... value) { ((this->metrics.push_order = (this->metrics.push_order ^ uint64_t(value)) * 1099511628211ULL), ...); }, QueueItem{args...});
             if ((++this->metrics.pushes & 1023) == 0) {
                 const auto started = std::chrono::steady_clock::now(); this->queue.emplace(args...);
                 this->metrics.heap_ns += std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - started).count();
@@ -77,6 +84,7 @@ def generate(source, build, name, revision, heap="priority", simd=False, contrac
     auto MeasuredPop()
     {
         if constexpr (PASSENGER_TABLE_COUNT) {
+            std::apply([&](auto... value) { ((this->metrics.pop_order = (this->metrics.pop_order ^ uint64_t(value)) * 1099511628211ULL), ...); }, this->queue.top());
             if ((++this->metrics.pops & 1023) == 0) {
                 const auto started = std::chrono::steady_clock::now(); auto item = this->queue.top(); this->queue.pop();
                 this->metrics.heap_ns += std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - started).count();
@@ -117,7 +125,7 @@ def generate(source, build, name, revision, heap="priority", simd=False, contrac
         cpp = re.sub(r'^\s*this->queue\.(SetOptimized|SetCapacityLimit|Reset)\([^\n]*\);\n', '', cpp, flags=re.M)
         cpp = cpp.replace("this->queue.AllocatedBytes()", "PassengerBenchmarkQueueBytes(this->queue)")
     cpp = cpp.replace('#include "passenger_precomputed.h"', f'#include "{name}.h"')
-    cpp = re.sub(r'#include "([^"/]+)"', lambda m: m[0] if m[1] == name + '.h' else '#include "' + (source / "src" / m[1]).as_posix() + '"', cpp)
+    cpp = re.sub(r'#include "([^"]+)"', lambda m: m[0] if m[1] == name + '.h' or not (source / "src" / m[1]).is_file() else '#include "' + (source / "src" / m[1]).as_posix() + '"', cpp)
     cpp = cpp.replace("this->queue.emplace(", "this->MeasuredPush(")
     cpp = cpp.replace("auto [cost, legs, state] = this->queue.top(); this->queue.pop();", "auto [cost, legs, state] = this->MeasuredPop();")
     cpp = cpp.replace("\t\t\t++used;", "\t\t\t++used; this->metrics.peak_queue = std::max<uint64_t>(this->metrics.peak_queue, this->queue.size());")
@@ -131,7 +139,23 @@ def generate(source, build, name, revision, heap="priority", simd=False, contrac
                    "const auto &edge = this->edges[this->optimized ? index : this->incoming[index]];",
                    "const auto &edge = this->integrated ? soa : this->edges[this->optimized ? index : this->incoming[index]];"):
         cpp = cpp.replace(lookup, "++this->metrics.relaxations; " + lookup)
-    cpp = cpp.replace("\t\t\t\t\tconst auto &ride = this->section_rides[this->finishing", "\t\t\t\t\t++this->metrics.section_checks; const auto &ride = this->section_rides[this->finishing")
+    if "alternative_candidates" in header:
+        # Keep the original logical Section-candidate counter at EVERY slice,
+        # although the actual station-local candidate order is different.
+        marker = "const size_t candidate_count = this->occurrences.size() + this->section_rides.size();"
+        assert cpp.count(marker) == 1
+        cpp = cpp.replace(marker, marker + "\n\t\t\t\tif constexpr (PASSENGER_TABLE_COUNT) this->metrics.section_checks += this->finishing < candidate_count && this->finishing >= this->occurrences.size();")
+        marker = "this->finishing += skipped;"
+        assert cpp.count(marker) == 1
+        charge = "if constexpr (PASSENGER_TABLE_COUNT) { this->metrics.alternative_skipped += skipped; this->metrics.section_checks += skipped - std::min<size_t>(skipped, this->occurrences.size() - std::min<size_t>(this->finishing, this->occurrences.size())) - (this->finishing >= this->occurrences.size()); } "
+        cpp = cpp.replace(marker, charge + marker)
+        cpp = cpp.replace("this->alternative_base.cost = this->SearchCost(station);", "++this->metrics.alternative_base_reads; this->alternative_base.cost = this->SearchCost(station);")
+        lookup = "const auto &ride = this->section_rides[candidate - this->occurrences.size()];"
+        assert cpp.count(lookup) == 1
+        cpp = cpp.replace(lookup, "++this->metrics.section_actual_reads; " + lookup)
+    else:
+        cpp = cpp.replace("int64_t best_cost = this->SearchCost(station)", "++this->metrics.alternative_base_reads; int64_t best_cost = this->SearchCost(station)")
+        cpp = cpp.replace("\t\t\t\t\tconst auto &ride = this->section_rides[this->finishing", "\t\t\t\t\t++this->metrics.section_checks; ++this->metrics.section_actual_reads; const auto &ride = this->section_rides[this->finishing")
     cpp = cpp.replace("legs != this->scratch.labels[state].legs) continue;", "legs != this->scratch.labels[state].legs) { ++this->metrics.stale; continue; }")
     cpp = cpp.replace("legs != this->SearchLegs(state)) continue;", "legs != this->SearchLegs(state)) { ++this->metrics.stale; continue; }")
     cpp = cpp.replace("\tthis->scratch.labels.clear();", "\tthis->metrics.phase = this->metrics.row_started = Clock::now();\n\tthis->scratch.labels.clear();")
@@ -177,6 +201,11 @@ def generate(source, build, name, revision, heap="priority", simd=False, contrac
     cpp = cpp.replace("\t\tthis->rows.reserve(this->stations.size());", "\t\tthis->metrics.csr_ns += Elapsed(csr_started);\n\t\tthis->rows.reserve(this->stations.size());")
     if heap == "packed":
         cpp = cpp.replace("\t\tif (!this->stations.empty()) this->StartDestination();", "\t\tthis->queue.SetBounds(nodes, this->hot_edges.cost.empty() ? 0 : *std::max_element(this->hot_edges.cost.begin(), this->hot_edges.cost.end()));\n\t\tif (!this->stations.empty()) this->StartDestination();")
+    # Count actual priority probes, independently of charged virtual Work.
+    probe = "if (cost < this->search.cost[from] || (cost == this->search.cost[from] && legs < this->search.legs[from])) accept(from);"
+    cpp = cpp.replace(probe, "++this->metrics.range_comparisons; " + probe)
+    cpp = cpp.replace("\t\tif (state != this->exception_state[station] && this->SearchLabel(state) != base)", "\t\t++this->metrics.invariant_comparisons; if (state != this->exception_state[station] && this->SearchLabel(state) != base)")
+    cpp = cpp.replace("uint32_t mask = PassengerRangeMask(", "if constexpr (PASSENGER_TABLE_COUNT) this->metrics.range_comparisons += 4; uint32_t mask = PassengerRangeMask(")
     cpp = re.sub(r'\+\+this->metrics\.\w+', lambda m: 'if constexpr (PASSENGER_TABLE_COUNT) ' + m[0], cpp)
     cpp = cpp.replace("this->metrics.peak_queue =", "if constexpr (PASSENGER_TABLE_COUNT) this->metrics.peak_queue =")
     (build / f"{name}.cpp").write_text(cpp, encoding="utf-8")
@@ -187,14 +216,20 @@ def main():
     parser.add_argument("build", type=pathlib.Path)
     parser.add_argument("--source", type=pathlib.Path, default=ROOT)
     parser.add_argument("--candidate", default=None, help="Git ref; default: working tree")
+    parser.add_argument("--candidate-snapshot", type=pathlib.Path, help="Frozen measurement-only h/cpp snapshot; requires --heap product")
     parser.add_argument("--reference", default=BASE, help="Pinned comparison ref; default: original baseline")
     parser.add_argument("--heap", choices=["priority", "indexed", "radix", "four", "packed", "product"], default="priority")
     parser.add_argument("--matrix", action="store_true", help="Compile all three queues over the same candidate graph")
     parser.add_argument("--timing-only", action="store_true", help="Remove diagnostic counter updates from timing runs")
+    parser.add_argument("--validate-invariants", action="store_true", help="Enable full waiting-Label checks in the isolated candidate test TU only")
     parser.add_argument("--simd", action="store_true", help="Isolated scalar/AVX2 ordered range experiment")
     parser.add_argument("--range-split", action="store_true", help="Compare scalar/SIMD before and after span splitting; requires an integrated --reference")
     parser.add_argument("--stages", action="store_true", help="Compile independent integration stages using the product queue")
     args = parser.parse_args()
+    if args.validate_invariants and args.timing_only:
+        parser.error("Full invariant checks belong to correctness trials, not --timing-only")
+    if args.candidate_snapshot and (args.candidate or args.heap != "product" or args.simd or args.matrix or args.stages or args.range_split):
+        parser.error("--candidate-snapshot requires --heap product and excludes another candidate ref or graph/queue experiments")
     if args.range_split and args.reference == BASE:
         parser.error("--range-split requires an integrated --reference")
     if args.range_split and (args.heap != "product" or args.simd or args.matrix or args.stages):
@@ -202,7 +237,8 @@ def main():
     build = args.build.resolve() / "table-build"
     build.mkdir(parents=True, exist_ok=True)
     generate(args.source.resolve(), build, "PassengerTableReference", args.reference, "product" if args.reference != BASE else "priority")
-    generate(args.source.resolve(), build, "PassengerTableCandidate", args.candidate, args.heap, args.simd)
+    generate(args.source.resolve(), build, "PassengerTableCandidate", args.candidate, args.heap, args.simd,
+             snapshot=args.candidate_snapshot.resolve() if args.candidate_snapshot else None)
     sources = [build / "PassengerTableReference.cpp", build / "PassengerTableCandidate.cpp", ROOT / "utils/passenger_table_build_benchmark.cpp"]
     if args.range_split:
         for name, revision in [("PassengerTableBeforeSIMD", args.reference), ("PassengerTableSplitSIMD", args.candidate)]:
@@ -231,10 +267,15 @@ def main():
         cmake = cmake.replace("endfunction()", "  target_compile_definitions(openttd_test PRIVATE WITH_TABLE_BUILD_STAGES)\nendfunction()")
     if args.range_split:
         cmake = cmake.replace("endfunction()", "  target_compile_definitions(openttd_test PRIVATE WITH_TABLE_BUILD_RANGE_SPLIT)\nendfunction()")
+    if args.validate_invariants:
+        check = '  set_property(SOURCE "' + (build / "PassengerTableCandidate.cpp").as_posix() + '" APPEND PROPERTY COMPILE_DEFINITIONS WITH_PASSENGER_TABLE_INVARIANT_CHECKS)\n'
+        cmake = cmake.replace("endfunction()", check + "endfunction()")
     if args.timing_only:
-        cmake = cmake.replace("endfunction()", "  target_compile_definitions(openttd_test PRIVATE PASSENGER_TABLE_COUNT=0)\nendfunction()")
+        definitions = "  set_source_files_properties(\n" + ''.join(f'    "{p.as_posix()}"\n' for p in sources)
+        definitions += "    PROPERTIES COMPILE_DEFINITIONS PASSENGER_TABLE_COUNT=0)\n"
+        cmake = cmake.replace("endfunction()", definitions + "endfunction()")
     (build / "benchmark.cmake").write_text(cmake, encoding="utf-8")
-    manifest = dict(reference=args.reference, candidate=args.candidate, heap=args.heap, timing_only=args.timing_only,
+    manifest = dict(reference=args.reference, candidate=args.candidate, candidate_snapshot=str(args.candidate_snapshot.resolve()) if args.candidate_snapshot else None, heap=args.heap, timing_only=args.timing_only, validate_invariants=args.validate_invariants,
                     source_head=subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=args.source).decode().strip(),
                     simd=args.simd, stages=args.stages, matrix=args.matrix,
                     range_split=args.range_split,

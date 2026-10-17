@@ -25,6 +25,7 @@ struct PassengerPeriodicStop {
 	uint64_t board = 0, alight = 0, forced = 0; ///< Cargo-slot masks, independent of cargo labels.
 	bool continues = true; ///< Safe order traversal from this occurrence to the next, including wraparound.
 	uint8_t travel_quality = 0; ///< Incoming segment: 0 declared, 1 recorded, 2 distance estimate.
+	uint8_t boarding_facility = 0; ///< v14 captured road-order access: 0 unknown, 1 any direction, 2..5 a specific direction.
 	bool operator==(const PassengerPeriodicStop &) const = default;
 };
 
@@ -167,7 +168,44 @@ public:
 	bool HasRejectedPrecomputedMemory() const
 	{ return std::any_of(this->precomputed.begin(), this->precomputed.end(), [](const auto &table) { return table.MemoryRejected(); }); }
 	PassengerPrecomputedPlan PlanPrecomputed(CargoType cargo, StationID origin, StationID destination, StateTicks ready,
-			OrderListID excluded = OrderListID::Invalid(), uint32_t sample = 0) const;
+			OrderListID excluded = OrderListID::Invalid(), uint32_t sample = 0, OrderListID failed = OrderListID::Invalid()) const;
+	std::optional<int64_t> HyperpathServiceWait(const PassengerJourneyExecution &intent, CargoType cargo, OrderListID service) const;
+	std::array<uint32_t, 2> HyperpathBoardingOccurrences(CargoType cargo, StationID origin, OrderListID service, VehicleOrderID order) const;
+	bool MayBoardHyperpath(const PassengerJourneyExecution &intent, CargoType cargo, const std::array<uint32_t, 2> &occurrences, OrderListID previous, OrderListID failed, bool cached_only = true) const;
+	/** Derived boarding filter: both generations' stored policies are covered by their masks, so a
+	 * destination without a set bit cannot pass base membership. Independent of the local mode. */
+	bool HyperpathBoardingFilterAvailable(CargoType cargo) const
+	{
+		return cargo < NUM_CARGO && this->precomputed[cargo].BoardingMaskCovers() && this->retained_precomputed[cargo].BoardingMaskCovers();
+	}
+	/** Derived station lookup support. The epoch changes with table generations, effective
+	 * retained clears, discards and load replay; every row publication or retirement in either
+	 * table appends its destination to a bounded change log. Membership of a waiting policy
+	 * group depends on nothing else. */
+	static constexpr uint64_t HYPERPATH_DESTINATION_LOG = 1024;
+	uint64_t HyperpathLookupEpoch() const { return this->hyperpath_lookup_epoch; }
+	uint64_t HyperpathDestinationChanges() const { return this->hyperpath_destination_changes; }
+	/** Destination of change number @p change; valid while HyperpathDestinationChanges() - change <= HYPERPATH_DESTINATION_LOG. */
+	StationID HyperpathChangedDestination(uint64_t change) const { return this->hyperpath_destination_log[change % HYPERPATH_DESTINATION_LOG]; }
+	static constexpr int HYPERPATH_LOOKUP_NONE = -1, HYPERPATH_LOOKUP_ALWAYS = 2;
+	/** Every vehicle occurrence (in the returned table slot's numbering) for which the base membership
+	 * of this waiting intent may hold at its station: NONE, a table slot 0/1 with out filled, or ALWAYS. */
+	int HyperpathLookupCandidates(CargoType cargo, const PassengerJourneyExecution &intent, OrderListID arriving, uint64_t incarnation, StationID station, std::vector<uint32_t> &out) const;
+	bool MayBeHyperpathCandidate(CargoType cargo, const std::array<uint32_t, 2> &occurrences, StationID destination, bool any_state) const
+	{
+		return this->precomputed[cargo].MayBeStoredCandidate(occurrences[0], destination, any_state) || this->retained_precomputed[cargo].MayBeStoredCandidate(occurrences[1], destination, any_state);
+	}
+	/** Local preference, absent from saves; every mode makes identical decisions. Off walks every
+	 * policy group, On walks them with the destination mask, Index looks up only the groups whose
+	 * stored policies contain the departure. Alternate picks Index or On per loading context, so
+	 * both are timed in one process. Validate decides as Off and checks the Index superset. */
+	enum class HyperpathFilterMode : uint8_t { Off, On, Alternate, Index, Validate };
+	void SetHyperpathBoardingFilterMode(HyperpathFilterMode mode) { this->hyperpath_boarding_filter = mode; }
+	void SetHyperpathBoardingFilterEnabled(bool enabled) { this->hyperpath_boarding_filter = enabled ? HyperpathFilterMode::On : HyperpathFilterMode::Off; }
+	HyperpathFilterMode GetHyperpathBoardingFilterMode() const { return this->hyperpath_boarding_filter; }
+	PassengerPrecomputedPlan BoardHyperpath(const PassengerJourneyExecution &intent, CargoType cargo, OrderListID service,
+			VehicleOrderID boarding, OrderListID previous = OrderListID::Invalid(), OrderListID failed = OrderListID::Invalid()) const;
+	size_t PrecomputedDestinations(CargoType cargo) const { return cargo < NUM_CARGO ? this->precomputed[cargo].GetDiagnostic().destinations : 0; } ///< No diagnostic copy.
 	PassengerPrecomputedDiagnostic GetPrecomputedDiagnostic(CargoType cargo) const
 	{
 		auto result = this->precomputed[cargo].GetDiagnostic();
@@ -175,10 +213,12 @@ public:
 		result.retained_destinations = old.destinations; result.retained_bytes = old.bytes; result.retained_envelope = old.envelope;
 		return result;
 	}
+	PassengerHyperpathMemoryDiagnostic InspectPrecomputedMemory(CargoType cargo, bool retained = false) const
+	{ return (retained ? this->retained_precomputed[cargo] : this->precomputed[cargo]).InspectMemory(); }
 	uint64_t GetPublishedRevision() const { return this->published_revision; }
 	auto BoardingRevision() const { return std::tuple(this->published_revision, this->boarding_revision, this->precomputed_operations); }
-	std::span<const StationID> PrecomputedReachableDestinations(CargoType cargo, StationID origin, bool retained = false) const
-	{ return cargo < NUM_CARGO ? (retained ? this->retained_precomputed[cargo] : this->precomputed[cargo]).ReachableDestinations(origin) : std::span<const StationID>{}; }
+	PassengerPrecomputedTable::DestinationSpans PrecomputedReachableDestinations(CargoType cargo, StationID origin, bool retained = false) const
+	{ return cargo < NUM_CARGO ? (retained ? this->retained_precomputed[cargo] : this->precomputed[cargo]).ReachableDestinations(origin) : PassengerPrecomputedTable::DestinationSpans{}; }
 	std::optional<int64_t> PrecomputedRouteCost(CargoType cargo, StationID origin, StationID destination) const
 	{
 		if (cargo >= NUM_CARGO) return {};
@@ -260,6 +300,11 @@ private:
 	bool precomputed_estimates = true, retained_precomputed_estimates = true; ///< Exact replay of pre-v9 costs and route dispersion.
 	bool precomputed_integrated = true, retained_precomputed_integrated = true; ///< v11 range/CSR work cursor.
 	bool precomputed_optimized = true, retained_precomputed_optimized = true; ///< v10 graph/work cursor algorithm, including retained generations.
+	bool precomputed_revisit_dominance = true, retained_precomputed_revisit_dominance = true; ///< v13 repeat-visit pruning, separately replayed for retained rows.
+	bool precomputed_flat = false, retained_precomputed_flat = false; ///< v15 flat policy payloads; older Work replays the old layout/admission.
+	bool precomputed_continuation_witness = true, retained_precomputed_continuation_witness = true; ///< v14 checked same-run witness and conservative tie handling.
+	bool precomputed_hyperpath = false, retained_precomputed_hyperpath = false; ///< v12 SF event work and set intentions.
+	uint64_t precomputed_policy_generation = 0, retained_precomputed_policy_generation = 0;
 	uint64_t boarding_revision = 0; ///< Event-local validation invalidation; never saved or used for simulation admission.
 	uint64_t precomputed_preparation_nanoseconds = 0; ///< Local elapsed observation, never saved or used for admission.
 	PassengerBuildTask preparation_capture;
@@ -269,7 +314,7 @@ private:
 	void BuildPrecomputedTables();
 	void ClearRetainedPrecomputed();
 	void BuildPrecomputedTables(std::array<PassengerPrecomputedTable, NUM_CARGO> &tables,
-			const std::map<OrderListID, PassengerPeriodicService> &snapshot, int64_t transfer, uint64_t remaining, bool sections, bool estimates, bool optimized, bool integrated, bool cooperative = false);
+			const std::map<OrderListID, PassengerPeriodicService> &snapshot, int64_t transfer, uint64_t remaining, bool sections, bool estimates, bool optimized, bool integrated, bool hyperpath, bool revisit_dominance, bool continuation_witness, bool flat_storage, bool cooperative = false);
 	using Dependencies = std::map<StationID, uint64_t>;
 	struct JourneyPolicy {
 		std::vector<std::pair<StationID, int64_t>> lower_bounds; ///< Relaxed reverse adjacent-stop distances, never winning routes.
@@ -334,6 +379,13 @@ private:
 	uint64_t generation = 0;
 	size_t bytes = 0, policy_bytes = 0;
 	bool policy_cache_enabled = true; ///< Local optional accelerator; absent from saves and routing admission.
+	HyperpathFilterMode hyperpath_boarding_filter = HyperpathFilterMode::Index; ///< Local derived boarding filter; identical decisions, absent from saves.
+	uint64_t hyperpath_lookup_epoch = 1, hyperpath_destination_changes = 0; ///< Derived; monotone across resets and loads.
+	std::array<StationID, HYPERPATH_DESTINATION_LOG> hyperpath_destination_log{}; ///< Derived ring indexed by change number.
+	void BumpHyperpathDestination(StationID destination)
+	{
+		this->hyperpath_destination_log[this->hyperpath_destination_changes % HYPERPATH_DESTINATION_LOG] = destination; ++this->hyperpath_destination_changes;
+	}
 	std::list<PolicyKey> policy_lru;
 	std::map<PolicyKey, CachedPolicy> policies;
 	std::map<std::tuple<bool, CargoType, StationID, StationID>, uint64_t> recent_policy_builds; ///< Bounded diagnostic history, never simulation input.

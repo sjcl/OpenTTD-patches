@@ -4855,7 +4855,7 @@ static bool ConPassengerPeriodicCompare(std::span<std::string_view> argv)
 static bool ConPassengerJourneyStats(std::span<std::string_view> argv)
 {
 	if (argv.empty()) {
-		IConsolePrint(CC_HELP, "passenger_journey_stats [total|tick|inventory|reset|cache_on|cache_off|departures_on|departures_off|scratch_on|scratch_off|fallback_cache_on|fallback_cache_off|fallback_validate_on|fallback_validate_off]: local diagnostics and derived cache preferences");
+		IConsolePrint(CC_HELP, "passenger_journey_stats [total|tick|inventory|hyperpath_memory|reset|cache_on|cache_off|departures_on|departures_off|scratch_on|scratch_off|fallback_cache_on|fallback_cache_off|fallback_validate_on|fallback_validate_off|hyperpath_filter_on|hyperpath_filter_off|hyperpath_filter_index|hyperpath_filter_alternate|hyperpath_filter_validate]: local diagnostics and derived cache preferences");
 		return true;
 	}
 	if (argv.size() > 2) return false;
@@ -4875,6 +4875,18 @@ static bool ConPassengerJourneyStats(std::span<std::string_view> argv)
 		IConsolePrint(CC_DEFAULT, "OD fallback residency: {}; logical work unchanged", operation == "fallback_cache_on" ? "enabled" : "disabled");
 		return true;
 	}
+	if (operation.starts_with("hyperpath_filter_")) {
+		using Mode = PassengerServiceDatabase::HyperpathFilterMode;
+		static constexpr std::array<std::pair<std::string_view, Mode>, 5> modes{{{"hyperpath_filter_off", Mode::Off}, {"hyperpath_filter_on", Mode::On},
+				{"hyperpath_filter_alternate", Mode::Alternate}, {"hyperpath_filter_index", Mode::Index}, {"hyperpath_filter_validate", Mode::Validate}}};
+		static constexpr std::array descriptions{"complete walk", "destination mask walk", "alternating index and mask per loading context", "occurrence index",
+				"complete walk with index superset validation"};
+		auto found = std::find_if(modes.begin(), modes.end(), [&](const auto &m) { return m.first == operation; });
+		if (found == modes.end()) return false;
+		GetPassengerServiceDatabase().SetHyperpathBoardingFilterMode(found->second);
+		IConsolePrint(CC_DEFAULT, "Hyperpath boarding candidates: {}; boarding decisions unchanged", descriptions[static_cast<size_t>(found->second)]);
+		return true;
+	}
 	if (operation == "fallback_validate_on" || operation == "fallback_validate_off") {
 		SetPassengerOdFallbackBindingValidation(operation == "fallback_validate_on");
 		IConsolePrint(CC_DEFAULT, "OD fallback physical binding validation: {}", operation == "fallback_validate_on" ? "enabled" : "disabled");
@@ -4883,6 +4895,14 @@ static bool ConPassengerJourneyStats(std::span<std::string_view> argv)
 	if (operation == "cache_on" || operation == "cache_off") {
 		GetPassengerServiceDatabase().SetPolicyCacheEnabled(operation == "cache_on");
 		IConsolePrint(CC_DEFAULT, "Periodic policy residency: {}; logical query work unchanged", operation == "cache_on" ? "enabled" : "disabled");
+		return true;
+	}
+	if (operation == "hyperpath_memory") {
+		for (CargoType cargo : EnumRange(NUM_CARGO)) if (IsCargoInClass(cargo, CargoClass::Passengers)) for (bool retained : {false, true}) {
+			auto m = GetPassengerServiceDatabase().InspectPrecomputedMemory(cargo, retained);
+			IConsolePrint(CC_DEFAULT, "Hyperpath memory: cargo={}; retained={}; reported={}; graph={}; labels={}; indices={}; policy_headers={}; candidate_arrays={}; local={}; differences={}; additions={}; maximum_additions={}; multi_addition_differences={}; unexpected_removals={}; overlay_bytes={}",
+					cargo, retained, m.reported, m.graph, m.labels, m.indices, m.policy_headers, m.candidate_arrays, m.local, m.differences, m.additions, m.maximum_additions, m.multi_addition_differences, m.unexpected_removals, m.overlay_bytes);
+		}
 		return true;
 	}
 	if (operation == "inventory") {
@@ -4989,6 +5009,25 @@ static bool ConPassengerJourneyStats(std::span<std::string_view> argv)
 	IConsolePrint(CC_DEFAULT, "Passenger events: pending={}; overdue={}; oldest_ticks={}; maximum_station_backlog={}; on_time={}; packets={}; groups={}; scheduler_us={}; arrival_candidates={}; arrival_passengers={}; unresolved_missed_estimate={}",
 			events.pending, events.overdue, events.oldest_ticks, events.maximum_station_backlog, events.on_time, events.packets, events.groups,
 			events.scheduler_microseconds, events.arrival_candidates, events.arrival_passengers, events.unresolved_missed);
+	for (size_t cause = 0; cause < static_cast<size_t>(PassengerWaitingCause::End); ++cause) {
+		static constexpr std::array names{"new", "expiry", "failure", "migration", "generation"};
+		IConsolePrint(CC_DEFAULT, "Passenger scheduler cause: cause={}; packets={}; microseconds={}", names[cause], events.cause_packets[cause], events.cause_nanoseconds[cause] / 1000);
+	}
+	IConsolePrint(CC_DEFAULT, "Passenger capacity records: packets={}; passengers={}; microseconds={}", events.capacity_missed_packets, events.capacity_missed_passengers, events.capacity_record_nanoseconds / 1000);
+	IConsolePrint(CC_DEFAULT, "Passenger unchanged generation: packets={}", events.unchanged_generation_packets);
+	{
+		static constexpr std::array filter_modes{"off", "on", "alternate", "index", "validate"};
+		const auto mode = GetPassengerServiceDatabase().GetHyperpathBoardingFilterMode();
+		/* filtered = destination mask walk, unfiltered = complete walk, indexed = occurrence lookup. */
+		IConsolePrint(CC_DEFAULT, "Passenger hyperpath boarding filter: enabled={}; mode={}; filtered_walks={}; unfiltered_walks={}; indexed_walks={}; groups_checked={}; groups_skipped={}; groups_admitted={}",
+				mode == PassengerServiceDatabase::HyperpathFilterMode::On ? "true" : "false", filter_modes[static_cast<size_t>(mode)], events.hyperpath_walks[1], events.hyperpath_walks[0], events.hyperpath_walks[2],
+				events.hyperpath_groups_checked, events.hyperpath_groups_skipped, events.hyperpath_groups_admitted);
+		IConsolePrint(CC_DEFAULT, "Passenger hyperpath walk time: filtered_us={}; filtered_groups={}; unfiltered_us={}; unfiltered_groups={}; indexed_us={}; indexed_groups={}",
+				events.hyperpath_walk_nanoseconds[1] / 1000, events.hyperpath_walk_groups[1], events.hyperpath_walk_nanoseconds[0] / 1000, events.hyperpath_walk_groups[0],
+				events.hyperpath_walk_nanoseconds[2] / 1000, events.hyperpath_walk_groups[2]);
+		IConsolePrint(CC_DEFAULT, "Passenger hyperpath lookup: rebuilds={}; indexed_groups={}; validated_groups={}; violations={}",
+				events.hyperpath_lookup_rebuilds, events.hyperpath_lookup_indexed_groups, events.hyperpath_index_validated, events.hyperpath_index_violations);
+	}
 	for (CargoType cargo : EnumRange(NUM_CARGO)) if (IsCargoInClass(cargo, CargoClass::Passengers)) {
 		const auto p = GetPassengerServiceDatabase().GetPrecomputedDiagnostic(cargo);
 		IConsolePrint(CC_DEFAULT, "Precomputed passenger routes: cargo={}; patterns={}; stations={}; states={}; edges={}; destinations={}; bytes={}; envelope={}; build_ns={}; operations={}; queries={}; query_ns={}; hits={}; missing={}; no_route={}",

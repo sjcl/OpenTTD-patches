@@ -1,0 +1,31 @@
+branch,legacy_ms_per_tick,hyperpath_ms_per_tick,delta_ms_per_tick,legacy_samples,hyperpath_samples
+openttd.exe!CallVehicleTicks,10.994667090,12.822606543,1.827939453,22517,26260
+openttd.exe!RunTileLoop,11.236416846,12.029701855,0.793285010,23013,24637
+openttd.exe!RunPassengerWaitingEvents,1.276762061,2.016913037,0.740150977,2604,4120
+openttd.exe!PassengerServiceDatabase::Tick,0.119909619,0.178000439,0.058090820,244,363
+openttd.exe!CallLandscapeTick,0.591368848,0.648572217,0.057203369,1211,1328
+openttd.exe!BeginPassengerJourneyTick,0.005878516,0.007839990,0.001961475,12,16
+openttd.exe!FlushDeferredAspectUpdates,0.012692090,0.014645752,0.001953662,26,30
+[StateGameLoop self],0.000487598,0.001965381,0.001477783,1,4
+openttd.exe!TimerManager<TimerGameTick>::Elapsed,0.000488135,0.001953418,0.001465283,1,4
+openttd.exe!PerformanceAccumulator::Reset,0.000000000,0.000978027,0.000978027,0,2
+openttd.exe!IncreaseDate,0.022955420,0.023451611,0.000496191,47,48
+openttd.exe!BasePersistentStorageArray::SwitchMode,0.000000000,0.000495264,0.000495264,0,1
+openttd.exe!AI::GameLoop,0.000000000,0.000488867,0.000488867,0,1
+openttd.exe!ShowNewspaper,0.000000000,0.000488379,0.000488379,0,1
+openttd.exe!UpdateLandscapingLimits,0.000488281,0.000976270,0.000487988,1,2
+openttd.exe!StateGameLoop_LinkGraphPauseControl,0.000000000,0.000487744,0.000487744,0,1
+openttd.exe!PerformanceMeasurer::~PerformanceMeasurer,0.000976855,0.001464307,0.000487451,2,3
+openttd.exe!AnimateAnimatedTiles,0.002443311,0.002930420,0.000487109,5,6
+openttd.exe!PassengerServiceDatabase::IsPreparingPrecomputed,0.000000000,0.000487012,0.000487012,0,1
+openttd.exe!RunAuxiliaryTileLoop,0.000488525,0.000487012,-0.000001514,1,1
+openttd.exe!OnTick_Companies,0.000976709,0.000489990,-0.000486719,2,1
+openttd.exe!Game::GameLoop,0.000487939,0.000000000,-0.000487939,1,0
+openttd.exe!RecordPassengerJourneySimulationTick,0.000488574,0.000000000,-0.000488574,1,0
+openttd.exe!NewsLoop,0.001466211,0.000975537,-0.000490674,3,2
+openttd.exe!LinkGraphSchedule::JoinNext,0.004394531,0.003418408,-0.000976123,9,7
+openttd.exe!CheckCaches,0.000976709,0.000000000,-0.000976709,2,0
+openttd.exe!CallWindowGameTickEvent,0.000977344,0.000000000,-0.000977344,2,0
+openttd.exe!PerformanceMeasurer::PerformanceMeasurer,0.000998828,0.000000000,-0.000998828,2,0
+[worker threads],0.213412646,0.195394629,-0.018018018,437,400
+[outside StateGameLoop],3.766418555,2.260118945,-1.506299609,7712,4627

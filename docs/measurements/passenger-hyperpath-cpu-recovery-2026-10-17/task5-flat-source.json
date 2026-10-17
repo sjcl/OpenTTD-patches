@@ -1,0 +1,21 @@
+{
+  "source_commit": "476bf23c0ae4d06c1029fd216789d5042bf96f10",
+  "source_sha256": {
+    "src/passenger_precomputed.cpp": "c2f414066c95678eb3d6452c678ee7d8cecc0a0711fa4409bd1d194653b84ff8",
+    "src/passenger_precomputed.h": "82ba74e728d35531f58f967f276a0a5dda50b467bea458da0cd913b86b36c521",
+    "src/passenger_service_database.cpp": "679105f9e4ce74cd4e2c5a950d1394dba89f7c91d3284e7048d45c285bf257eb",
+    "src/passenger_service_database.h": "4342f9dc4a8ee304c13d5a39f9c97a2bb41bd72c9777770c9736e972d6ec90ee",
+    "src/sl/extended_ver_sl.cpp": "348fbb5aa39d4f5a842949d7c875f7ca5c87ba0684178fca107ebcad03cd87ff",
+    "src/tests/passenger_precomputed.cpp": "ff183d350b96faa654e12c614f50fe9b91c920316a136e529f14fea361ab7c09",
+    "src/tests/passenger_service_database.cpp": "1774d40778d46119cbaf57813d5c4eab3fa968309d02cbec3900fdfbdf4ea6bd",
+    "src/cargopacket.cpp": "f6347143597e7ecf0730221e2f2cf009d8f5d364d0083e9cfc4a4ae25eb59255",
+    "src/passenger_journey_active.cpp": "3c191d8f5d6680e542c92bbf3de234d8bc651bc2d1748a0d832513e28b3f898f",
+    "src/passenger_journey_active.h": "78b239bb163e9dabe36828377acca04bd11d5ea74966f569a635cc83dbdecc30"
+  },
+  "test_binary_sha256": "dfef13fa660d4f39089aaed635cb0eb14c155de6af8376fd2e2ee29c75a619cb",
+  "native_validation": {
+    "success": true,
+    "product_sha256": "c5bca3438ef7093bb505658981d28dcf40eeee9afd87e24a6419bf17ac982eff"
+  },
+  "note": "Native 731-case validation and all comparison processes use this unchanged compiled source. The embedded revision predates its source commit; source hashes identify the committed content."
+}

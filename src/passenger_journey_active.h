@@ -23,11 +23,24 @@ void RunPassengerWaitingEvents(); ///< National due queue; never enumerates Stat
 void RebuildPassengerWaitingScheduler(); ///< Load/clock rebase only; restores the debit from saved goods entries.
 bool ConsumePassengerRoutingWork();
 void WakePassengerWaitingCargo(CargoType cargo); ///< A newly published row can resolve dormant ODs.
+enum class PassengerWaitingCause : uint8_t { New, Expiry, Failure, Migration, Generation, End };
 struct PassengerWaitingEventDiagnostic {
 	uint64_t pending = 0, overdue = 0, oldest_ticks = 0, maximum_station_backlog = 0;
 	uint64_t on_time = 0, packets = 0, groups = 0, scheduler_microseconds = 0;
 	uint64_t arrival_candidates = 0, arrival_passengers = 0, unresolved_missed = 0;
+	uint64_t capacity_missed_packets = 0, capacity_missed_passengers = 0;
+	uint64_t capacity_record_nanoseconds = 0; ///< Outside the national scheduler; includes candidate visits and index/event mutation.
+	uint64_t unchanged_generation_packets = 0; ///< Unchanged fallback decision; only retry/merge metadata is refreshed.
+	/* Hyperpath boarding enumeration: policy groups whose predicate ran, groups skipped by the
+	 * derived destination filter, predicates that admitted a group, and walks with/without the filter. */
+	uint64_t hyperpath_groups_checked = 0, hyperpath_groups_skipped = 0, hyperpath_groups_admitted = 0;
+	/* Indexed by strategy: complete walk, masked walk, occurrence lookup. Groups are those visited. */
+	std::array<uint64_t, 3> hyperpath_walks{}, hyperpath_walk_groups{}, hyperpath_walk_nanoseconds{};
+	uint64_t hyperpath_lookup_rebuilds = 0, hyperpath_lookup_indexed_groups = 0; ///< Lookup maintenance.
+	uint64_t hyperpath_index_validated = 0, hyperpath_index_violations = 0; ///< Validate mode: admitted groups missing from the lookup.
+	std::array<uint64_t, static_cast<size_t>(PassengerWaitingCause::End)> cause_nanoseconds{}, cause_packets{};
 };
+void RecordPassengerWaitingCause(PassengerWaitingCause cause, uint64_t nanoseconds, bool unchanged = false);
 PassengerWaitingEventDiagnostic GetPassengerWaitingEventDiagnostic();
 void ResetPassengerWaitingEventDiagnostic();
 void RecordPassengerWaitingEvent(StateTicks due);
@@ -208,18 +221,30 @@ class PassengerJourneyLoadingContext {
 	std::map<std::pair<VehicleID, CargoType>, PassengerJourneyBoardingContext> boarding;
 	PassengerOdFallbackContext fallback;
 	bool waiting_events = false;
-	using BoardingState = std::tuple<PassengerRoutingMode, StationID, StationID, StateTicks, OrderListID, uint64_t, bool>;
+	using BoardingState = std::tuple<PassengerRoutingMode, StationID, StationID, StateTicks, OrderListID, uint64_t, bool, PassengerBoardingFailure>;
 	struct Decision { StateTicks tick; std::tuple<uint64_t, uint64_t, uint64_t> revision; bool allowed; };
 	std::map<std::pair<VehicleID, CargoType>, std::map<std::pair<BoardingState, PassengerJourneyExecution>, Decision>> decisions;
 	bool CanBoardUncached(const CargoPacket &packet, const Vehicle *vehicle, CargoType cargo);
 	size_t validations = 0, cache_hits = 0;
-	using PendingKey = std::tuple<CargoType, StationID, StationID, StateTicks, OrderListID>;
+	using PendingKey = std::tuple<CargoType, StationID, StationID, StateTicks, OrderListID, OrderListID>;
 	std::map<PendingKey, PassengerPrecomputedPlan> pending_plans;
 	std::tuple<uint64_t, uint64_t, uint64_t> pending_revision{};
 	const PassengerPrecomputedPlan &PendingPlan(const CargoPacket &packet, const Vehicle *vehicle, CargoType cargo);
+	using HyperpathKey = std::tuple<VehicleID, CargoType, VehicleOrderID, uint64_t, StationID, StationID, OrderListID, OrderListID>;
+	std::map<HyperpathKey, PassengerPrecomputedPlan> hyperpath_rides;
+	using HyperpathBoardingKey = std::tuple<VehicleID, CargoType, OrderListID, VehicleOrderID, StationID>;
+	std::map<HyperpathBoardingKey, std::array<uint32_t, 2>> hyperpath_boardings;
+	using HyperpathMembershipKey = std::tuple<HyperpathKey, OrderListID, uint64_t, std::array<uint32_t, 2>>;
+	std::map<HyperpathMembershipKey, bool> hyperpath_memberships; ///< Base membership only, local to this loading context.
+	std::optional<PassengerJourneyExecution> ResolveHyperpath(const PassengerJourneyExecution &intent, const CargoPacket &packet, const Vehicle *vehicle, CargoType cargo, bool override_failure = false, OrderListID failed = OrderListID::Invalid());
 public:
 	void EnableWaitingEvents() { this->waiting_events = true; } ///< Actual station simulation only; read-only predicates never wake packets.
+	int8_t hyperpath_filter_choice = -1; ///< Alternate boarding-filter diagnostic: fixed at this context's first Hyperpath walk.
 	bool CanBoard(const CargoPacket &packet, const Vehicle *vehicle, CargoType cargo = INVALID_CARGO);
+	const std::array<uint32_t, 2> &HyperpathBoardingOccurrences(const Vehicle *vehicle, CargoType cargo);
+	bool MayUseHyperpathPolicy(const CargoPacket &representative, const Vehicle *vehicle, CargoType cargo, const std::array<uint32_t, 2> &occurrences, bool base, bool adjusted);
+	int64_t ExpectedHyperpathWait(const CargoPacket &packet, const Vehicle *vehicle, CargoType cargo);
+	bool CanUseHyperpathPolicy(const CargoPacket &representative, const Vehicle *vehicle, CargoType cargo, bool base, bool adjusted);
 	void ResolveWaiting(CargoPacket &packet, const Vehicle *vehicle); ///< Selected indexed candidate only, detached before changing its cohort.
 	void ObserveWaitingGroup(const CargoPacket &packet, const Vehicle *vehicle, CargoType cargo, size_t packets);
 	void PrepareBoard(CargoPacket &packet, const Vehicle *vehicle);
@@ -244,7 +269,7 @@ class PassengerJourneyActiveContext {
 		PassengerJourneyFallbackReason failure = PassengerJourneyFallbackReason::QueryWork;
 	};
 	std::map<std::tuple<CargoType, StationID, StateTicks, OrderListID>, PeriodicWaiting> periodic_waiting;
-	std::map<std::tuple<CargoType, StationID, StateTicks, OrderListID>, PassengerPrecomputedPlan> precomputed_waiting;
+	std::map<std::tuple<CargoType, StationID, StateTicks, OrderListID, OrderListID>, PassengerPrecomputedPlan> precomputed_waiting;
 	PassengerOdFallbackContext fallback;
 	size_t work_left = 4194304;
 	size_t memory_left = 256 * 1024 * 1024;
@@ -259,7 +284,8 @@ public:
 	PassengerJourneyActiveContext(const Vehicle *vehicle, StationID station, size_t prediction_cache_bytes = PassengerServiceCapture::MAXIMUM_PREDICTION_BYTES);
 	~PassengerJourneyActiveContext();
 	size_t GetWorkAllowanceUsed() const { return 4194304 - this->work_left; }
-	bool PlanWaiting(CargoPacket &packet, CargoType cargo, StationID legacy_hop);
+	const PassengerPrecomputedPlan &QueryWaiting(const CargoPacket &packet, CargoType cargo); ///< Shared frozen-table lookup; never changes a packet or admits a search.
+	bool PlanWaiting(CargoPacket &packet, CargoType cargo, StationID legacy_hop, bool require_hyperpath = false);
 	std::optional<VehicleCargoList::MoveToAction> Decide(CargoPacket &packet, CargoType cargo, bool accepted, OrderUnloadType unload);
 };
 

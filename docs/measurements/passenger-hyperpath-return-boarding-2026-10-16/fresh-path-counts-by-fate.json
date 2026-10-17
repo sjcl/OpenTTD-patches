@@ -1,0 +1,53 @@
+{
+  "old": {
+    "delivered": {
+      "fresh": 6074,
+      "with_revisit": 5,
+      "with_immediate_return": 4
+    },
+    "pending": {
+      "fresh": 5260,
+      "with_revisit": 17,
+      "with_immediate_return": 17
+    },
+    "lost": {
+      "fresh": 2176,
+      "with_revisit": 2,
+      "with_immediate_return": 2
+    }
+  },
+  "unfixed": {
+    "delivered": {
+      "fresh": 6174,
+      "with_revisit": 215,
+      "with_immediate_return": 215
+    },
+    "pending": {
+      "fresh": 5138,
+      "with_revisit": 177,
+      "with_immediate_return": 175
+    },
+    "lost": {
+      "fresh": 2108,
+      "with_revisit": 1,
+      "with_immediate_return": 1
+    }
+  },
+  "final": {
+    "delivered": {
+      "fresh": 6048,
+      "with_revisit": 5,
+      "with_immediate_return": 5
+    },
+    "pending": {
+      "fresh": 5065,
+      "with_revisit": 11,
+      "with_immediate_return": 11
+    },
+    "lost": {
+      "fresh": 2208,
+      "with_revisit": 0,
+      "with_immediate_return": 0
+    }
+  }
+}

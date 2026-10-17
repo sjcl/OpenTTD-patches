@@ -1,0 +1,27 @@
+branch,legacy_ms_per_tick,hyperpath_ms_per_tick,delta_ms_per_tick,legacy_samples,hyperpath_samples
+openttd.exe!CallVehicleTicks,12.526151514,14.280218701,1.754067188,25653,29246
+openttd.exe!RunPassengerWaitingEvents,1.194678076,1.811577344,0.616899268,2434,3701
+openttd.exe!RunTileLoop,9.890183691,9.987578174,0.097394482,20255,20454
+openttd.exe!PassengerServiceDatabase::Tick,0.124479785,0.146207373,0.021727588,253,298
+openttd.exe!CallLandscapeTick,0.536733887,0.551810693,0.015076807,1099,1130
+openttd.exe!IncreaseDate,0.019578174,0.024027588,0.004449414,40,49
+openttd.exe!BeginPassengerJourneyTick,0.003935205,0.007364551,0.003429346,8,15
+openttd.exe!FlushDeferredAspectUpdates,0.009305615,0.012695264,0.003389648,19,26
+openttd.exe!AnimateAnimatedTiles,0.004393408,0.006346875,0.001953467,9,13
+[worker threads],0.191601660,0.193263379,0.001661719,392,396
+openttd.exe!LinkGraphSchedule::JoinNext,0.002960645,0.004417529,0.001456885,6,9
+openttd.exe!TimerManager<TimerGameTick>::Elapsed,0.000488818,0.001463916,0.000975098,1,3
+openttd.exe!PerformanceAccumulator::Reset,0.000000000,0.000495020,0.000495020,0,1
+[StateGameLoop self],0.000000000,0.000489014,0.000489014,0,1
+openttd.exe!AI::GameLoop,0.000000000,0.000488477,0.000488477,0,1
+openttd.exe!RecordPassengerJourneySimulationTick,0.000488086,0.000976221,0.000488135,1,2
+openttd.exe!CheckCaches,0.000496631,0.000983838,0.000487207,1,2
+openttd.exe!CallWindowGameTickEvent,0.000976123,0.000976562,0.000000439,2,2
+openttd.exe!OnTick_Companies,0.001465186,0.000977441,-0.000487744,3,2
+openttd.exe!LinkGraphSchedule::SpawnNext,0.000488135,0.000000000,-0.000488135,1,0
+openttd.exe!UpdateLandscapingLimits,0.000488330,0.000000000,-0.000488330,1,0
+openttd.exe!Game::GameLoop,0.000489355,0.000000000,-0.000489355,1,0
+openttd.exe!ShowNewspaper,0.000520508,0.000000000,-0.000520508,1,0
+openttd.exe!PassengerServiceDatabase::IsPreparingPrecomputed,0.001464893,0.000487354,-0.000977539,3,1
+openttd.exe!NewsLoop,0.002932520,0.001464014,-0.001468506,6,3
+[outside StateGameLoop],4.162866260,1.710742383,-2.452123877,8524,3502

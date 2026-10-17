@@ -1,0 +1,28 @@
+{
+  "revision": "40b434315af032f3a1438932f170ea6014a0a592",
+  "mp": true,
+  "files": {
+    "save-integrity\\cargopacket.cpp": "cf3c06915591dd17156dab38486f2bf39ef2adeab9d04c86a4bc89c3af3dcb1f",
+    "save-integrity\\cargopacket_sl.cpp": "adca9162da2dea12648fd843f7251dc23ddb2f95beee650b657ea9de84b84812",
+    "save-integrity\\command.cpp": "c17886f262aa07b4559efd28e8213a1d2355602042e31be4b86c6f099f25251f",
+    "save-integrity\\console_cmds.cpp": "3c41023b2f9e3682f210388b3c3552ba826f6b6cd62a58e2f34725bec1d14dec",
+    "save-integrity\\hyperpath_metrics.h": "2c6b925c3e20c9b1fb78a71facc7c8b5c16123fe8330dbf73fc9f0080fea515e",
+    "save-integrity\\integrity.h": "c7725a98fa3666df097c8846e36392a099483f7c282cc63245c2be78a19bec00",
+    "save-integrity\\passenger_precomputed.cpp": "ce3b73df4ed4d887ed4c9fce6944d0d80efbbe3b5f59e6c6b30c208a5853f4ca",
+    "save-integrity\\passenger_service_database.cpp": "79389003b76743b072d79b1c32bb9770e34c02f53c15d1a6666fc815b752aeaf",
+    "transport-trace\\cargoaction.cpp": "7b08c159b6b2755c04a4f52d770034972ad839541a55adbf0aaaac47bd4c6325",
+    "transport-trace\\cargopacket.cpp": "2b0257586d8abaee160767fd213f6526347e2bc89b8215f0e44b2b9664df275d",
+    "transport-trace\\focus_trace.h": "e3ac788bd2f1dfd01af7f9607cf269e89cdcc7c8988364021a54bf6d27796862",
+    "transport-trace\\passenger_journey_active.cpp": "ff90fbca6fc8269147e68f951951941956c4e9eae6fbe6ee37647fc93922ba9d",
+    "transport-trace\\passenger_od.cpp": "3e02be2467e879974271aeec31b96d696a21ed267148d6d06d5a04eb913c922b",
+    "transport-trace\\trace.h": "40c565a4eeb3739f39570300252de7bbf729ed98365fc092477f5857e63d0c8f",
+    "transport-trace\\vehicle.cpp": "1a626588eb97624988ed3b14ea3524d34120d1d7738f3fdf015886d799014e60",
+    "real-map-driver\\null_v.cpp": "d0d5972e4fb38ffaa38d64c0127042d3da417082d1066ced7bb60526e972a000",
+    "real-map-driver\\win32.cpp": "d172d8fd901ae76d812be4c45ecf91cd3a33390cb904ddb062c331ba7ac5b8fa"
+  },
+  "working_tree_source_files": {
+    "src/passenger_service_index.cpp": "28532eea6d75303a683ad1abd54ca729d27bed9efe31cdd85acc1e28564f5c36",
+    "src/tests/passenger_service_graph_index.cpp": "ecd274821cf5dec3117e7597cb3cf2359c197fb60a287c792a1d49c3f8e15f10"
+  },
+  "working_tree_patch_sha256": "254ff86c8b53832cdb8029634c32dd38b2c0f69d1abd019a0c7597c3e4181ee3"
+}

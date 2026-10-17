@@ -1,0 +1,96 @@
+{
+  "runs": [
+    {
+      "run": "previous",
+      "canonical_mismatches": {},
+      "state_ticks": 3181119581,
+      "active_events": {
+        "pending": 205792,
+        "overdue": 42,
+        "oldest_ticks": 0,
+        "maximum_station_backlog": 8676,
+        "on_time": 0,
+        "packets": 0,
+        "groups": 0,
+        "scheduler_us": 0,
+        "arrival_candidates": 0,
+        "arrival_passengers": 0,
+        "unresolved_missed_estimate": 0
+      },
+      "passenger_inventory": {
+        "complete": true,
+        "waiting": 351526,
+        "available": 351526,
+        "reserved": 0,
+        "deferred": 393,
+        "state_ticks": 3181119581,
+        "scaled_ticks": 3015520483,
+        "modes": {
+          "Legacy": {
+            "people": 30168,
+            "packets": 2625,
+            "known_OD": 440
+          },
+          "Journey": {
+            "people": 618764,
+            "packets": 433038,
+            "known_OD": 618764
+          },
+          "Fallback": {
+            "people": 95114,
+            "packets": 21910,
+            "known_OD": 9772
+          }
+        },
+        "total_people": 744046,
+        "physically_onboard_people": 392520
+      }
+    },
+    {
+      "run": "hyperpath",
+      "canonical_mismatches": {},
+      "state_ticks": 3181119581,
+      "active_events": {
+        "pending": 167467,
+        "overdue": 41,
+        "oldest_ticks": 0,
+        "maximum_station_backlog": 5617,
+        "on_time": 0,
+        "packets": 0,
+        "groups": 0,
+        "scheduler_us": 0,
+        "arrival_candidates": 0,
+        "arrival_passengers": 0,
+        "unresolved_missed_estimate": 0
+      },
+      "passenger_inventory": {
+        "complete": true,
+        "waiting": 308323,
+        "available": 308323,
+        "reserved": 0,
+        "deferred": 389,
+        "state_ticks": 3181119581,
+        "scaled_ticks": 3015520483,
+        "modes": {
+          "Legacy": {
+            "people": 30182,
+            "packets": 2650,
+            "known_OD": 431
+          },
+          "Journey": {
+            "people": 595668,
+            "packets": 424804,
+            "known_OD": 595668
+          },
+          "Fallback": {
+            "people": 95422,
+            "packets": 22166,
+            "known_OD": 9665
+          }
+        },
+        "total_people": 721272,
+        "physically_onboard_people": 412949
+      }
+    }
+  ]
+}

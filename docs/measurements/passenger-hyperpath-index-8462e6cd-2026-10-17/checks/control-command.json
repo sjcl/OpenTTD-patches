@@ -1,0 +1,15 @@
+{
+  "command": [
+    "C:\\Users\\bebe\\AppData\\Local\\Programs\\Python\\Python313\\python.exe",
+    "-B",
+    "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\utils\\passenger_wpr_control.py",
+    "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\docs\\measurements\\passenger-hyperpath-wpr-67cbbf32-2026-10-17",
+    "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\docs\\measurements\\passenger-hyperpath-index-8462e6cd-2026-10-17"
+  ],
+  "working_directory": "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches",
+  "stdout": "control.json",
+  "exit_code": 0,
+  "script_sha256": "fa483d06004b2fe5e901884b0f3cbc6156588e1a1cc58d78d7a6dc761cee06bb",
+  "stdout_sha256": "1b45ea77dab85f53f1a36773e5ff0dca82264d4b5528810f508428df80d37333",
+  "defaults_unchanged": true
+}

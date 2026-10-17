@@ -1,0 +1,27 @@
+branch,legacy_ms_per_tick,hyperpath_ms_per_tick,delta_ms_per_tick,legacy_samples,hyperpath_samples
+openttd.exe!CallVehicleTicks,11.291422070,12.436220410,1.144798340,23125,25469
+openttd.exe!RunPassengerWaitingEvents,1.295691602,1.917281494,0.621589893,2643,3916
+openttd.exe!PassengerServiceDatabase::Tick,0.131247998,0.152134082,0.020886084,267,310
+openttd.exe!FlushDeferredAspectUpdates,0.011724902,0.013191699,0.001466797,24,27
+openttd.exe!AnimateAnimatedTiles,0.003414307,0.004394775,0.000980469,7,9
+openttd.exe!NewsLoop,0.002441504,0.003419678,0.000978174,5,7
+openttd.exe!CheckCaches,0.000976807,0.001953027,0.000976221,2,4
+openttd.exe!LinkGraphSchedule::JoinNext,0.002928076,0.003428271,0.000500195,6,7
+openttd.exe!PerformanceMeasurer::~PerformanceMeasurer,0.000000000,0.000489648,0.000489648,0,1
+openttd.exe!LinkGraphSchedule::SpawnNext,0.000000000,0.000489063,0.000489063,0,1
+openttd.exe!PerformanceAccumulator::Reset,0.000000000,0.000488818,0.000488818,0,1
+openttd.exe!OnTick_Companies,0.000978955,0.001464355,0.000485400,2,3
+openttd.exe!IncreaseDate,0.021976074,0.022079932,0.000103857,45,45
+openttd.exe!PassengerServiceDatabase::IsPreparingPrecomputed,0.000487695,0.000488672,0.000000977,1,1
+[StateGameLoop self],0.000488379,0.000488965,0.000000586,1,1
+openttd.exe!RecordPassengerJourneySimulationTick,0.000488281,0.000488184,-0.000000098,1,1
+openttd.exe!ShowNewspaper,0.000488086,0.000000000,-0.000488086,1,0
+openttd.exe!RunAuxiliaryTileLoop,0.000488477,0.000000000,-0.000488477,1,0
+openttd.exe!TimerManager<TimerGameTick>::Elapsed,0.000977295,0.000000000,-0.000977295,2,0
+openttd.exe!Game::GameLoop,0.001462402,0.000000000,-0.001462402,3,0
+openttd.exe!CallWindowGameTickEvent,0.002927930,0.000977393,-0.001950537,6,2
+openttd.exe!BeginPassengerJourneyTick,0.008365234,0.006383252,-0.001981982,17,13
+[worker threads],0.227062646,0.219880371,-0.007182275,465,450
+openttd.exe!CallLandscapeTick,0.611867725,0.596331982,-0.015535742,1253,1221
+openttd.exe!RunTileLoop,11.191309912,11.037677930,-0.153631982,22920,22605
+[outside StateGameLoop],3.836042187,1.799422168,-2.036620020,7855,3683

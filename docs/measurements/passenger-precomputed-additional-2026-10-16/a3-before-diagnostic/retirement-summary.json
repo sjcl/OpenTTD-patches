@@ -1,0 +1,108 @@
+{
+  "simulation_timing_valid": false,
+  "profile_enabled": true,
+  "ticks": 2048,
+  "setup_observation": [
+    3181119582,
+    45935,
+    16503,
+    10650784500,
+    4917
+  ],
+  "release_ticks": 115,
+  "calls": 115,
+  "simulation_us": {
+    "mean": 29537.78759765625,
+    "p95": 44478,
+    "p99": 51132,
+    "maximum": 80308
+  },
+  "retirement_us": {
+    "mean": 4570.350434782608,
+    "p95": 5581.8,
+    "p99": 6317.0,
+    "maximum": 17379.5
+  },
+  "percentiles": {
+    "p95": {
+      "tick": 3181119831,
+      "simulation_us": 44478,
+      "journey_us": 18998,
+      "retirement_us": 4297.9,
+      "calls": 1
+    },
+    "p99": {
+      "tick": 3181120965,
+      "simulation_us": 51132,
+      "journey_us": 23311,
+      "retirement_us": 4460.3,
+      "calls": 1
+    }
+  },
+  "tail_release_ticks": {
+    "0.95": 84,
+    "0.99": 11
+  },
+  "worst_retirements": [
+    {
+      "tick": 3181119919,
+      "simulation_us": 63677,
+      "retirement_us": 17379.5,
+      "calls": 1
+    },
+    {
+      "tick": 3181120114,
+      "simulation_us": 46109,
+      "retirement_us": 6317.0,
+      "calls": 1
+    },
+    {
+      "tick": 3181119813,
+      "simulation_us": 57542,
+      "retirement_us": 5669.4,
+      "calls": 1
+    },
+    {
+      "tick": 3181119760,
+      "simulation_us": 64626,
+      "retirement_us": 5609.5,
+      "calls": 1
+    },
+    {
+      "tick": 3181120930,
+      "simulation_us": 44509,
+      "retirement_us": 5602.2,
+      "calls": 1
+    },
+    {
+      "tick": 3181121160,
+      "simulation_us": 50828,
+      "retirement_us": 5581.8,
+      "calls": 1
+    },
+    {
+      "tick": 3181120841,
+      "simulation_us": 42693,
+      "retirement_us": 5543.9,
+      "calls": 1
+    },
+    {
+      "tick": 3181120894,
+      "simulation_us": 48658,
+      "retirement_us": 5484.0,
+      "calls": 1
+    },
+    {
+      "tick": 3181121302,
+      "simulation_us": 48108,
+      "retirement_us": 5270.0,
+      "calls": 1
+    },
+    {
+      "tick": 3181120043,
+      "simulation_us": 40322,
+      "retirement_us": 5232.7,
+      "calls": 1
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "source_revision": "4f2835adb5d0319be7a0d044204d7bd3b7e092c8",
+  "binary_sha256": "d088e44d7e9bf920e72b97cbf70dbcceb536a0fbfc6f3b051e2b1d3b748fa63a",
+  "runs": [
+    {
+      "name": "previous",
+      "input_sha256": "6783a500f47435a342a36e9a6544e33bb38f041abe91e9e2ff2c654edd16c978",
+      "result_sha256": "4f7b29a34300b819f86f15cf70a49010623e7f797e8c6a00b45d1762d103e144",
+      "binary_sha256": "d088e44d7e9bf920e72b97cbf70dbcceb536a0fbfc6f3b051e2b1d3b748fa63a",
+      "raw_sample_file": "long-previous-ticks.json"
+    },
+    {
+      "name": "hyperpath",
+      "input_sha256": "6783a500f47435a342a36e9a6544e33bb38f041abe91e9e2ff2c654edd16c978",
+      "result_sha256": "c58b1a6a986e1d0c86629c3727ced3449f1bd6ac7a2eb224a45c39ffe8ddf6b0",
+      "binary_sha256": "d088e44d7e9bf920e72b97cbf70dbcceb536a0fbfc6f3b051e2b1d3b748fa63a",
+      "raw_sample_file": "long-hyperpath-ticks.json"
+    }
+  ]
+}

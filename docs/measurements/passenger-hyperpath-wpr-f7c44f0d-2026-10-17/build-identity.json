@@ -1,0 +1,96 @@
+{
+  "commit": "f7c44f0d1aa55e32145b00b5e60ab0754eafe8f4",
+  "product_src_tree": "919700f79dbad480290d639efba49a413fbd2270",
+  "product_sources_unchanged": true,
+  "baseline_commit": "3e0930523af8ada2c2d98ab8a41311362bf23ba1",
+  "baseline_runtime_src_tree": "cb3e0ee59208f17636cbe8a48cd8a7f4660121de",
+  "native_tests": {
+    "cases": 728,
+    "assertions": 9924555,
+    "exit_code": 0
+  },
+  "files": {
+    "Release/openttd.exe": {
+      "bytes": 14139392,
+      "sha256": "c46b558124c90107948516bbbf0127314146f0edf2e6cf8464cdc9109b56f07c"
+    },
+    "Release/openttd.pdb": {
+      "bytes": 142897152,
+      "sha256": "1df39a07d884bf431d118bac81a212aa5cd49036c9066ecc44384da41e1e27bf"
+    },
+    "Release/openttd_test.exe": {
+      "bytes": 19337728,
+      "sha256": "9fbb27d0d8d4eaabfea480b45e6c214bb922cae27a72c50e813547985155836f"
+    },
+    "Release/openttd_test.pdb": {
+      "bytes": 185094144,
+      "sha256": "fe57efb5d46c7408408851e8b31c3e96eb28172ace1a2b97c4387b0247ec3632"
+    },
+    "native-all.log": {
+      "bytes": 7090,
+      "sha256": "e0d61216c3c957def3b4ef45e276ce17fe0cf2baa8d5b4400c58858b664ab370"
+    },
+    "cpu-sampled.wpaProfile": {
+      "bytes": 4034,
+      "sha256": "5092304c54ce1f2d1e34f73cc09c6d8b91513a7aba76e6c16fd1f4403067682c"
+    },
+    "build.log": {
+      "bytes": 39584,
+      "sha256": "d781fae5635bafc22a1d4ac696cb08782f4391a4b8445dbb6e1addb090ebce6c"
+    }
+  },
+  "copied_translation_units": {
+    "save-integrity/cargopacket.cpp": "ff399c76c9a64e41d768a04c66e7f720937dc275176a260151b4a85b070f3101",
+    "save-integrity/cargopacket_sl.cpp": "66e4496a77349e9f4438a5e87d79089bcb2283141bbb08acbaf33c4803badf29",
+    "save-integrity/command.cpp": "1b74b0b7454c8f8e9c29ff0c64676fda229b4c2cb4cc86432a932cebf7b81acf",
+    "save-integrity/console_cmds.cpp": "1525a87ee212e56d370e0b0bbd54673f33f5ed6d7f27830531ea85dada0b1184",
+    "save-integrity/integrity.h": "a1829785fd341072840102949c0bb68e0960333f67c39b14c03a25d76d8d4b15",
+    "save-integrity/passenger_service_database.cpp": "f988f8cb36d216851b90cb24caaccd6ab3e8eade82f8b379c5a420b1cf452a56",
+    "save-integrity/wpr_gate.h": "64793e1253d3040ee8b8855b9c23a1d00b3db7690e26caf2716480d8750b8b24",
+    "real-map-driver/null_v.cpp": "b076c49ee79db3baf265d7dd7335436c789cbf82b947b13144aeb7c5f5665308",
+    "real-map-driver/win32.cpp": "61c5c6cfb7279228676a8215f97e12472c9d3d9a36fa40a9592633cc78ae7c8c"
+  },
+  "hardware": {
+    "cpu": "AMD Ryzen 9 9950X",
+    "physical_cores": 16,
+    "logical_processors": 32,
+    "windows_build": 26200,
+    "physical_memory_bytes": 100265259008,
+    "main_thread_affinity_mask": 1
+  },
+  "pdb_rsds": "F2C3E261-88CB-456E-A6E4-BE700009BBE4 age 1",
+  "build_flags": {
+    "cxx_release": "/O2 /Ob2 /DNDEBUG /Zi /Zo",
+    "link": "/DEBUG:FULL /OPT:REF /OPT:ICF /INCREMENTAL:NO",
+    "asserts": true,
+    "lto": false,
+    "static_crt": true
+  },
+  "tool_scripts": {
+    "utils/passenger_precomputed_real_map.py": "a5e120946dbbd917a17160c8934bab84e252691f57ee1a1553f26913f88ab960",
+    "utils/passenger_wpr_compare.py": "a8f5ab3b6f92abae69a621b03aa3f799fb1e0a6f618a41e92674f178e834819e",
+    "utils/passenger_wpr_export.py": "8d734d1579de0d7c3da8668d5ff0bd9f6c1277fb1f999aa47cb63abce9ca8003",
+    "utils/passenger_wpr_prepare.py": "824694a1b0bf2bc6d64580f8e975b6caa6d05716b3d256a787ed7668b10dd060",
+    "utils/passenger_wpr_profile.py": "9a379fcbd8f70c92d3a7cb760c6c17283c3287e7fe5bfdf4f293387da44d6e69",
+    "utils/passenger_wpr_record.ps1": "237fe1ea5c4a58f18df035f59765cc08e9538bd8bb47190e87bdad679c5c13b2",
+    "utils/passenger_wpr_summarize.py": "0f7a8bef406d6e73c0f5022b248329e903d6d8b2428857bee3f3599c26ecbf83"
+  },
+  "tools_version": "WPAExporter 11.7.395.48728; built-in WPR 10.0.26100 on Windows 26200",
+  "tools": {
+    "wpr.exe": "b641bcda33b6e77deea90676570fdb96907ecc6ac8145be43ca72e33064ec615",
+    "wpaexporter.exe": "fc603f0316027c024132c9571a02959ad90c89cbc246b49f08958a74e6ceed62",
+    "perfcore.dll": "e606f7ab0da2f732a364e40e9d2088f8cc3d679eae98aeb9c01382e4bd6f0be8"
+  },
+  "symcache": {
+    "symcache/openttd.pdb/F2C3E26188CB456EA6E4BE700009BBE41/openttd.pdb-v3.1.0.symcache": {
+      "bytes": 15952192,
+      "sha256": "8297f56c5af0f92dbc73617eb0286ce73697e9859b76a5001e2b9786c63d514a"
+    }
+  },
+  "reference_files": {
+    "docs/measurements/passenger-hyperpath-wpr-2026-10-17/legacy/save-integrity.json": "4f85a9ef960b0698ca73e5d3db4ea7cbb076ea060bc36221a936959daeda8245",
+    "docs/measurements/passenger-hyperpath-wpr-2026-10-17/legacy/CPU_Usage_(Sampled)_Stacks.csv.gz": "f9a7618e8ca57f59c1130f1f024d0729022fa60a64db34cd16c9d3c63e2e283c",
+    "docs/measurements/passenger-hyperpath-wpr-2026-10-17/hyperpath/save-integrity.json": "8ca2201e3626739cb9bd610b71a14c95caa6b664438c1c3c2cd8abefb74926af",
+    "docs/measurements/passenger-hyperpath-wpr-2026-10-17/hyperpath/CPU_Usage_(Sampled)_Stacks.csv.gz": "916aea319ff696aa4b25d6a00fdabb3a2f46ebf6df55e8379a52166d20464383"
+  }
+}

@@ -1,0 +1,16 @@
+Console log output started to 'C:/Users/bebe/.codex/worktrees/33d4/OpenTTD-patches/build-hyperpath/b-validation/mp-hyperpath/server/console.txt'.
+Calendar Date: 117696-07-14 (42987777), fract: 19, sub_fract: 0
+Economy Date: 117696-07-14 (42987777), fract: 19, tick skip: 0
+Period display offset: 0
+Elapsed years: 117695
+Tick counter: 3015496419
+Tick counter (scaled): 3015496419
+State ticks: 3181095517 (offset: 0)
+Effective economy speed reduction factor: 1
+Ticks per calendar day: 74
+Timetable time: 14:57 + 19 ticks
+Current value for 'max_join_time' is: '500' (min: 0, max: 32000, def: 500)
+Current value for 'max_join_time_total' is: '900' (min: 60, max: 3600, def: 900)
+Current value for 'max_lag_time' is: '500' (min: 0, max: 32000, def: 500)
+Current value for 'max_init_time' is: '100' (min: 0, max: 32000, def: 100)
+Current value for 'max_download_time' is: '1000' (min: 0, max: 32000, def: 1000)

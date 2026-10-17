@@ -1,0 +1,295 @@
+{
+  "runs": [
+    {
+      "run": "previous",
+      "canonical_mismatches": {},
+      "state_ticks": 3181144157,
+      "active_events": {
+        "pending": 200676,
+        "overdue": 111,
+        "oldest_ticks": 1,
+        "maximum_station_backlog": 7672,
+        "on_time": 0,
+        "packets": 0,
+        "groups": 0,
+        "scheduler_us": 0,
+        "arrival_candidates": 0,
+        "arrival_passengers": 0,
+        "unresolved_missed_estimate": 0
+      },
+      "database_wire": {
+        "from_version": 14,
+        "to_version": 15,
+        "bytes_verified": true,
+        "replay_identical": true
+      },
+      "hyperpath_memory": [
+        {
+          "cargo": 0,
+          "reported": 0,
+          "graph": 0,
+          "labels": 0,
+          "indices": 0,
+          "policy_headers": 0,
+          "candidate_arrays": 0,
+          "local": 0,
+          "differences": 0,
+          "additions": 0,
+          "maximum_additions": 0,
+          "multi_addition_differences": 0,
+          "unexpected_removals": 0,
+          "overlay_bytes": 0,
+          "retained": false
+        },
+        {
+          "cargo": 0,
+          "reported": 0,
+          "graph": 0,
+          "labels": 0,
+          "indices": 0,
+          "policy_headers": 0,
+          "candidate_arrays": 0,
+          "local": 0,
+          "differences": 0,
+          "additions": 0,
+          "maximum_additions": 0,
+          "multi_addition_differences": 0,
+          "unexpected_removals": 0,
+          "overlay_bytes": 0,
+          "retained": true
+        }
+      ],
+      "passenger_inventory": {
+        "complete": true,
+        "waiting": 296457,
+        "available": 296457,
+        "reserved": 0,
+        "deferred": 0,
+        "state_ticks": 3181144157,
+        "scaled_ticks": 3015545059,
+        "modes": {
+          "Legacy": {
+            "people": 29808,
+            "packets": 2402,
+            "known_OD": 80
+          },
+          "Journey": {
+            "people": 582262,
+            "packets": 445261,
+            "known_OD": 582262
+          },
+          "Fallback": {
+            "people": 25180,
+            "packets": 6523,
+            "known_OD": 8965
+          }
+        },
+        "total_people": 637250,
+        "physically_onboard_people": 340793
+      },
+      "merge_census": {
+        "station_packets": 205751,
+        "failure_packets": 0,
+        "failure_passengers": 0,
+        "strict_repacked": 200206,
+        "ignore_failure_repacked": 200206,
+        "additional_failure_bins": 0,
+        "repack_allows_splits": true
+      }
+    },
+    {
+      "run": "hyperpath",
+      "canonical_mismatches": {},
+      "state_ticks": 3181144157,
+      "active_events": {
+        "pending": 162012,
+        "overdue": 53,
+        "oldest_ticks": 0,
+        "maximum_station_backlog": 6980,
+        "on_time": 0,
+        "packets": 0,
+        "groups": 0,
+        "scheduler_us": 0,
+        "arrival_candidates": 0,
+        "arrival_passengers": 0,
+        "unresolved_missed_estimate": 0
+      },
+      "database_wire": {
+        "from_version": 14,
+        "to_version": 15,
+        "bytes_verified": true,
+        "replay_identical": true
+      },
+      "hyperpath_memory": [
+        {
+          "cargo": 0,
+          "reported": 5982210460,
+          "graph": 6678756,
+          "labels": 2592142848,
+          "indices": 274343076,
+          "policy_headers": 2719344200,
+          "candidate_arrays": 333207544,
+          "local": 0,
+          "differences": 28940177,
+          "additions": 8265468,
+          "maximum_additions": 22,
+          "multi_addition_differences": 1607812,
+          "unexpected_removals": 0,
+          "overlay_bytes": 727626120,
+          "retained": false
+        },
+        {
+          "cargo": 0,
+          "reported": 1876366858,
+          "graph": 6678756,
+          "labels": 791126400,
+          "indices": 83752200,
+          "policy_headers": 835472080,
+          "candidate_arrays": 102855228,
+          "local": 0,
+          "differences": 8914717,
+          "additions": 2494970,
+          "maximum_additions": 15,
+          "multi_addition_differences": 471190,
+          "unexpected_removals": 0,
+          "overlay_bytes": 223933088,
+          "retained": true
+        }
+      ],
+      "passenger_inventory": {
+        "complete": true,
+        "waiting": 253225,
+        "available": 253225,
+        "reserved": 0,
+        "deferred": 0,
+        "state_ticks": 3181144157,
+        "scaled_ticks": 3015545059,
+        "modes": {
+          "Legacy": {
+            "people": 29768,
+            "packets": 2369,
+            "known_OD": 40
+          },
+          "Journey": {
+            "people": 549598,
+            "packets": 428345,
+            "known_OD": 549598
+          },
+          "Fallback": {
+            "people": 24001,
+            "packets": 6098,
+            "known_OD": 8317
+          }
+        },
+        "total_people": 603367,
+        "physically_onboard_people": 350142
+      },
+      "merge_census": {
+        "station_packets": 166910,
+        "failure_packets": 38187,
+        "failure_passengers": 77797,
+        "strict_repacked": 158249,
+        "ignore_failure_repacked": 157975,
+        "additional_failure_bins": 274,
+        "repack_allows_splits": true
+      }
+    },
+    {
+      "run": "threshold-4096",
+      "canonical_mismatches": {},
+      "state_ticks": 3181144157,
+      "active_events": {
+        "pending": 159305,
+        "overdue": 95,
+        "oldest_ticks": 0,
+        "maximum_station_backlog": 7009,
+        "on_time": 0,
+        "packets": 0,
+        "groups": 0,
+        "scheduler_us": 0,
+        "arrival_candidates": 0,
+        "arrival_passengers": 0,
+        "unresolved_missed_estimate": 0
+      },
+      "database_wire": {
+        "from_version": 15,
+        "to_version": 15,
+        "bytes_verified": true,
+        "replay_identical": true
+      },
+      "hyperpath_memory": [
+        {
+          "cargo": 0,
+          "reported": 4683588520,
+          "graph": 6678756,
+          "labels": 2592142848,
+          "indices": 216011904,
+          "policy_headers": 1631644896,
+          "candidate_arrays": 180630984,
+          "local": 0,
+          "differences": 28944525,
+          "additions": 8249317,
+          "maximum_additions": 22,
+          "multi_addition_differences": 1602602,
+          "unexpected_removals": 0,
+          "overlay_bytes": 727665868,
+          "retained": false
+        },
+        {
+          "cargo": 0,
+          "reported": 1477138458,
+          "graph": 6678756,
+          "labels": 791126400,
+          "indices": 65927200,
+          "policy_headers": 501283248,
+          "candidate_arrays": 55640660,
+          "local": 0,
+          "differences": 8914717,
+          "additions": 2494970,
+          "maximum_additions": 15,
+          "multi_addition_differences": 471190,
+          "unexpected_removals": 0,
+          "overlay_bytes": 223933088,
+          "retained": true
+        }
+      ],
+      "passenger_inventory": {
+        "complete": true,
+        "waiting": 251533,
+        "available": 251533,
+        "reserved": 0,
+        "deferred": 0,
+        "state_ticks": 3181144157,
+        "scaled_ticks": 3015545059,
+        "modes": {
+          "Legacy": {
+            "people": 29779,
+            "packets": 2380,
+            "known_OD": 51
+          },
+          "Journey": {
+            "people": 551942,
+            "packets": 429281,
+            "known_OD": 551942
+          },
+          "Fallback": {
+            "people": 24451,
+            "packets": 6393,
+            "known_OD": 8608
+          }
+        },
+        "total_people": 606172,
+        "physically_onboard_people": 354639
+      },
+      "merge_census": {
+        "station_packets": 164507,
+        "failure_packets": 35593,
+        "failure_passengers": 69767,
+        "strict_repacked": 154661,
+        "ignore_failure_repacked": 154277,
+        "additional_failure_bins": 384,
+        "repack_allows_splits": true
+      }
+    }
+  ]
+}

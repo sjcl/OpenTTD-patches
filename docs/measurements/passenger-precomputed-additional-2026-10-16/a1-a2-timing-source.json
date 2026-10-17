@@ -1,0 +1,25 @@
+{
+  "reference": "a1534cd2b1",
+  "candidate": null,
+  "candidate_snapshot": null,
+  "heap": "product",
+  "timing_only": true,
+  "validate_invariants": false,
+  "source_head": "a1534cd2b1df3a4d05033bbfb3775652db7479a4",
+  "simd": false,
+  "stages": false,
+  "matrix": false,
+  "range_split": false,
+  "tools": {
+    "passenger_table_build_prepare.py": "956662e38d8a2b6ff86db2b3166cf4043376b715041e023bd2bb8d8eff2f85a3",
+    "passenger_table_build_benchmark.cpp": "8d9338b1bc1d86e0bf1358a2c21c6b2c3a2d71d179956b2a95878372c09446e4",
+    "passenger_table_build_heaps.h": "04e79da6c7c17a08d5bb800b3e7e1b0fb9d1a8153f68d689f472740aa8cb0fec",
+    "passenger_table_build_simd.h": "6d887ded6f91cae81f6d4e49ebed9f2372b990b7fbd0ed67b4ae190764f7ab28"
+  },
+  "files": {
+    "PassengerTableCandidate.cpp": "d87c6b1728f2e4b082a5019f35d17d858e64d79f332b3e07799709be992627a6",
+    "PassengerTableCandidate.h": "8da998d8a12a10aa06410242053408e766f6c268680f8c3b19cb416e1db632fc",
+    "PassengerTableReference.cpp": "3423e4492e4dd109f74215f8ece97bc39bb1064c2375ec8629b5f07be5817446",
+    "PassengerTableReference.h": "a8bc22c1e90664a8ba573bf96566e7d921f99d1321f9719a1efd5843d1a8f854"
+  }
+}
