@@ -190,6 +190,7 @@ public:
 	HyperpathFilterMode GetHyperpathBoardingFilterMode() const { return this->hyperpath_boarding_filter; }
 	PassengerPrecomputedPlan BoardHyperpath(const PassengerJourneyExecution &intent, CargoType cargo, OrderListID service,
 			VehicleOrderID boarding, OrderListID previous = OrderListID::Invalid(), OrderListID failed = OrderListID::Invalid()) const;
+	size_t PrecomputedDestinations(CargoType cargo) const { return cargo < NUM_CARGO ? this->precomputed[cargo].GetDiagnostic().destinations : 0; } ///< No diagnostic copy.
 	PassengerPrecomputedDiagnostic GetPrecomputedDiagnostic(CargoType cargo) const
 	{
 		auto result = this->precomputed[cargo].GetDiagnostic();

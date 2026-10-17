@@ -1707,7 +1707,7 @@ size_t StationCargoList::RoutePassengerJourneys(CargoType cargo, StationID stati
 	if (this->passenger_index_cargo != cargo) { this->ClearWaitingIndex(); this->passenger_index_cargo = cargo; }
 	const bool precomputed = _settings_game.linkgraph.passenger_journey_precomputed;
 	const auto revision = GetPassengerServiceDatabase().GetPublishedRevision();
-	const auto rows = GetPassengerServiceDatabase().GetPrecomputedDiagnostic(cargo).destinations;
+	const auto rows = GetPassengerServiceDatabase().PrecomputedDestinations(cargo); // Per station call: never copy the diagnostic histogram.
 	const bool events = precomputed && allow_search;
 	if (events) {
 		this->EnsureWaitingIndex();
