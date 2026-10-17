@@ -1,0 +1,37 @@
+{
+  "command": [
+    "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-profile\\tools\\wpt\\Windows Kits\\10\\Windows Performance Toolkit\\wpaexporter.exe",
+    "-i",
+    "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-profile\\legacy\\cpu.etl",
+    "-symbols",
+    "-symcacheonly",
+    "-marks",
+    "legacy-begin",
+    "legacy-end",
+    "-profile",
+    "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-profile\\cpu-sampled.wpaProfile",
+    "-outputfolder",
+    "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-profile\\legacy\\wpa-v3",
+    "-outputformat",
+    "CSV"
+  ],
+  "environment": {
+    "_NT_SYMBOL_PATH": "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-profile\\Release;srv*C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-profile\\symbols*https://msdl.microsoft.com/download/symbols",
+    "_NT_SYMCACHE_PATH": "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-profile\\symcache",
+    "_NT_EXECUTABLE_IMAGE_PATH": "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-profile\\Release"
+  },
+  "trace_bytes": 2194669568,
+  "trace_sha256": "df82bb33cd57ad3aa250fbffd0caf39bd131b2a533d64b46f6cf62b8c624045d",
+  "pdb_sha256": "ce160d678861643231b6a0cd2d9adf8f19e83e7bf404bf881074b571a7b2d305",
+  "exit_code": 0,
+  "exports": {
+    "CPU_Usage_(Sampled)_Exclusive_functions.csv": {
+      "bytes": 5754748,
+      "sha256": "0931b5eaffaa2d186f5a842bbbf4f3689016fa4a8a52cfb2c6919a50a01c14f2"
+    },
+    "CPU_Usage_(Sampled)_Stacks.csv": {
+      "bytes": 32938075,
+      "sha256": "28c3f5d69981f9f0e10059b93f5730c326dacf4c4b0b6ebb90560c8219106847"
+    }
+  }
+}

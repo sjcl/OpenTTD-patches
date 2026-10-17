@@ -355,6 +355,9 @@ def recover_counter(args):
 
 
 def run(args, measurement_lock_fd=None):
+    wpr_profile = getattr(args, 'wpr_profile', False)
+    if wpr_profile and (os.name != 'nt' or not args.ticks):
+        raise ValueError('--wpr-profile requires Windows and a positive tick count')
     hyperpath_filter = getattr(args, 'hyperpath_filter', None)
     hyperpath_filter_alternate = getattr(args, 'hyperpath_filter_alternate', False)
     if hyperpath_filter_alternate and hyperpath_filter is not None:
@@ -467,6 +470,8 @@ def run(args, measurement_lock_fd=None):
             finish = finish.replace('passenger_journey_stats inventory\n', 'passenger_journey_stats build_precomputed\npassenger_journey_stats inventory\n', 1)
         if args.quality_probe:
             finish = finish.replace("passenger_journey_stats total\n", "passenger_journey_stats total\npassenger_journey_stats quality_probe\n")
+        if wpr_profile:
+            start += "passenger_journey_stats wpr_begin\n"
         start += "unpause\nscript\n" if args.ticks else ("unpause\n" if args.unpause_before_save else "") + "script\n" + finish + "quit\n"
         (scripts / "game_start.scr").write_text(start, encoding="utf-8")
         (scripts / "passenger_benchmark_end.scr").write_text(finish, encoding="utf-8")
@@ -474,6 +479,9 @@ def run(args, measurement_lock_fd=None):
                    f"null:ticks={args.ticks}" if args.ticks else "null:until_exit", "-snull", "-mnull", "-d", "sl=2"]
         started, observed, contamination = time.perf_counter(), {}, []
         run_env = dict(os.environ, OPENTTD_PASSENGER_MEASURE='1')
+        run_env.pop('OPENTTD_WPR_PROFILE', None)
+        if wpr_profile:
+            run_env['OPENTTD_WPR_PROFILE'] = '1'
         run_env.pop('OPENTTD_PASSENGER_REBUILD_TICK', None)
         if midpoint:
             run_env['OPENTTD_PASSENGER_REBUILD_TICK'] = str(midpoint)
@@ -605,6 +613,7 @@ def run(args, measurement_lock_fd=None):
             rebuild_precomputed=args.rebuild_precomputed, full_rebuild_precomputed=getattr(args, 'full_rebuild_precomputed', False),
             mid_rebuild_tick=midpoint, finish_rebuild_precomputed=finish_rebuild, command=command, **observed)
         metadata["unpause_before_save"] = args.unpause_before_save
+        metadata['wpr_profile'] = wpr_profile
         metadata["validation_only"] = args.validation_only
         # Copied retirement instrumentation is independent of saved algorithm flags.
         metadata["retirement_profile"] = "OPENTTD_RETIREMENT_PROFILE" in os.environ
@@ -754,6 +763,7 @@ def main():
     p.add_argument("--ticks", type=int, default=4096)
     p.add_argument("--timeout", type=int, default=900)
     p.add_argument("--measurement-wait", type=int, default=60, help="Wait for another measurement/host workload without stopping it")
+    p.add_argument('--wpr-profile', action='store_true', help='Use the copied WPR gate hooks; requires passenger_wpr_prepare.py and the bounded elevated recorder')
     p.add_argument("--input", type=pathlib.Path)
     p.add_argument("--lang", type=pathlib.Path, help="Matching build language directory (defaults beside the binary)")
     p.add_argument("--resume", action="store_true")
