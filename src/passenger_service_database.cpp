@@ -1013,6 +1013,50 @@ PassengerPrecomputedPlan PassengerServiceDatabase::PlanPrecomputed(CargoType car
 	return result;
 }
 
+std::vector<PassengerPrecomputedTable::RouteCandidate> PassengerServiceDatabase::InspectRoutes(CargoType cargo,
+		StationID origin, StationID destination, OrderListID previous, OrderListID failed, size_t &work, const PassengerJourneyExecution *intent) const
+{
+	using State = PassengerPrecomputedPlan::State;
+	if (cargo >= NUM_CARGO || this->precomputed_revision == UINT64_MAX) return {};
+	const PassengerPrecomputedTable *table = &this->precomputed[cargo];
+	/* A waiting Hyperpath cohort belongs to exactly one generation. Mixing the
+	 * two policies would count the same departure streams twice. */
+	if (intent != nullptr && intent->kind == PassengerRideKind::HyperpathIntent && this->IsCurrent(*intent)) {
+		if (intent->signature != uint64_t(cargo) + 1 || intent->boarding != origin || intent->alighting != destination) return {};
+		if (intent->generation == this->retained_precomputed_policy_generation) table = &this->retained_precomputed[cargo];
+	}
+	auto result = table->InspectRoutes(origin, destination, previous, failed, work);
+	if (table == &this->precomputed[cargo] && (result.state == State::Building || result.state == State::Memory || result.state == State::Unsupported) &&
+			this->retained_precomputed_revision != UINT64_MAX) {
+		table = &this->retained_precomputed[cargo];
+		result = table->InspectRoutes(origin, destination, previous, failed, work);
+	}
+	std::vector<PassengerPrecomputedTable::RouteCandidate> routes;
+	for (auto &candidate : result.candidates) {
+		if (!this->IsCurrent(candidate.ride)) {
+			bool found = false;
+			for (OrderListID service : table->BoardingServices(candidate.ride.service)) {
+				if (work == 0) break;
+				--work;
+				auto rebound = candidate.ride;
+				if (table->Rebind(rebound, service) && this->IsCurrent(rebound)) { candidate.ride = rebound; found = true; break; }
+			}
+			if (!found) continue;
+		}
+		/* Shared-section legacy rows can select a carrier which also operates the
+		 * onward leg. Reuse the read-only through-ride check, under the GUI budget. */
+		if (!table->IsHyperpath() && candidate.ride.alighting != destination) {
+			const auto *service = this->Get(candidate.ride.service);
+			if (service != nullptr && service->timetable.stops.size() <= work / 4) {
+				work -= service->timetable.stops.size() * 4;
+				if (auto extended = this->ExtendPrecomputedRide(candidate.ride, cargo, destination)) candidate.ride = *extended;
+			}
+		}
+		routes.push_back(std::move(candidate));
+	}
+	return routes;
+}
+
 std::optional<int64_t> PassengerServiceDatabase::HyperpathServiceWait(const PassengerJourneyExecution &intent, CargoType cargo, OrderListID service) const
 {
 	if (cargo >= NUM_CARGO || intent.kind != PassengerRideKind::HyperpathIntent || intent.signature != uint64_t(cargo) + 1) return {};

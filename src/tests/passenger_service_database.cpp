@@ -8,6 +8,7 @@
 #include "../passenger_service_database.h"
 #include "../station_cargo_gui.h"
 #include "../group.h"
+#include "../linkgraph/passenger_route_overlay.h"
 #include "../passenger_journey_active.h"
 #include "../vehicle_base.h"
 #include "../station_base.h"
@@ -160,6 +161,147 @@ namespace {
 		}
 		return result;
 	}
+}
+
+TEST_CASE("Route overlay draws saved Journey rides with invalid queue keys and continues to the OD", "[passenger][route-overlay]")
+{
+	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = true;
+	auto *ab = f.Train({Stop(A), Stop(B)}); f.Train({Stop(B), Stop(D)});
+	auto &db = f.Build(); while (!db.PreparePrecomputed()) {}
+	auto first = db.PlanPrecomputed(PAX, A, B, NOW); REQUIRE(first.ride);
+	auto *packet = f.Packet(); packet->SetPassengerJourney(*first.ride, B);
+	auto &waiting = Station::Get(A)->goods[PAX].CreateData().cargo;
+	waiting.Append(packet, StationID::Invalid());
+	StationCargoList::ConstIterator queue = waiting.Packets()->begin();
+	REQUIRE(queue.GetKey() == StationID::Invalid());
+	const auto saved = db.Save(); const auto ride = packet->GetPassengerJourney();
+	const auto diagnostic = GetPassengerJourneyTickDiagnostic(); const auto precomputed = db.GetPrecomputedDiagnostic(PAX);
+	SECTION("Complete interchange") {
+		auto routes = BuildStationPassengerRoutes(*Station::Get(A), db);
+		CHECK(routes.links[std::tuple{B, A, B}] == Approx(10));
+		CHECK(routes.links[std::tuple{B, B, D}] == Approx(10));
+		CHECK(routes.alighting[B] == 0); CHECK(routes.alighting[D] == Approx(10));
+	}
+	SECTION("Unknown suffix is not an arrival at the interchange") {
+		Station::Get(D)->facilities.Reset(StationFacility::Train);
+		auto routes = BuildStationPassengerRoutes(*Station::Get(A), db);
+		CHECK(routes.links[std::tuple{B, A, B}] == Approx(10));
+		CHECK(routes.alighting.empty());
+	}
+	SECTION("Stale service leaves other packets visible") {
+		++first.ride->signature; packet->SetPassengerJourney(*first.ride, B);
+		auto *valid = f.Packet(); valid->SetPassengerJourney(ride, B); waiting.Append(valid, StationID::Invalid());
+		auto routes = BuildStationPassengerRoutes(*Station::Get(A), db);
+		CHECK(routes.links[std::tuple{B, A, B}] == Approx(10));
+		packet->SetPassengerJourney(ride, B);
+	}
+	CHECK(db.Save() == saved); CHECK(packet->GetPassengerJourney() == ride);
+	CHECK(db.GetPrecomputedDiagnostic(PAX).queries == precomputed.queries);
+	CHECK(db.GetPrecomputedDiagnostic(PAX).bytes == precomputed.bytes);
+	CHECK(GetPassengerJourneyTickDiagnostic().queries == diagnostic.queries);
+	CHECK(GetPassengerJourneyTickDiagnostic().query_work == diagnostic.query_work);
+	CHECK(GetPassengerJourneyTickDiagnostic().admission.used == diagnostic.admission.used);
+	CHECK(ab->orders->GetCargoDistRouteGeneration() == ride.signature);
+}
+
+TEST_CASE("Route overlay expands Hyperpath transfers using frequency shares and actual destination", "[passenger][route-overlay]")
+{
+	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = _settings_game.linkgraph.passenger_journey_hyperpath = true;
+	f.Train({Stop(A, 100), Stop(B, 100)}); f.Train({Stop(B, 100), Stop(D, 100)});
+	f.Train({Stop(A, 220), Stop(D, 220)}); f.Train({Stop(B, 110), Stop(D, 110)});
+	auto &db = f.Build(); while (!db.PreparePrecomputed()) {}
+	auto intent = db.PlanPrecomputed(PAX, A, D, NOW); REQUIRE(intent.ride);
+	REQUIRE(intent.ride->kind == PassengerRideKind::HyperpathIntent); REQUIRE(intent.ride->alighting == D);
+	auto *packet = f.Packet(100); packet->SetPassengerJourney(*intent.ride, D);
+	Station::Get(A)->goods[PAX].CreateData().cargo.Append(packet, StationID::Invalid());
+	const auto wire = db.Save(); const auto before = db.GetPrecomputedDiagnostic(PAX);
+	auto routes = BuildStationPassengerRoutes(*Station::Get(A), db);
+	CHECK(routes.links[std::tuple{B, A, B}] > 0); CHECK(routes.links[std::tuple{D, A, D}] > 0);
+	CHECK(routes.links[std::tuple{B, B, D}] == Approx(routes.links[std::tuple{B, A, B}]));
+	CHECK(routes.links[std::tuple{B, A, B}] > routes.links[std::tuple{D, A, D}]);
+	CHECK(routes.alighting[D] == Approx(100)); CHECK(routes.alighting[B] == 0);
+	CHECK(db.Save() == wire); CHECK(packet->GetPassengerJourney() == *intent.ride);
+	CHECK(db.GetPrecomputedDiagnostic(PAX).queries == before.queries);
+	CHECK(db.GetPrecomputedDiagnostic(PAX).bytes == before.bytes);
+	CHECK(db.GetPrecomputedDiagnostic(PAX).local_replans == before.local_replans);
+}
+
+TEST_CASE("Route overlay validates stop occurrences, forced unloading and turnaround", "[passenger][route-overlay]")
+{
+	Fixture f; auto *train = f.Train({Stop(A), Stop(B), Stop(A), Stop(D)});
+	auto &db = f.Build(); auto plan = db.PlanEstimated(PAX, A, D, NOW); REQUIRE(plan.ride);
+	auto ride = *plan.ride; ride.boarding_order = 0; ride.boarding = A; ride.alighting_order = 3; ride.alighting = D;
+	size_t work = 4096;
+	SECTION("Through stops keep their occurrence order") { CHECK(GetPassengerRouteStops(ride, PAX, work) == std::vector<StationID>{A, B, A, D}); }
+	SECTION("Wraparound") {
+		ride.boarding = D; ride.boarding_order = 3; ride.alighting = B; ride.alighting_order = 1;
+		CHECK(GetPassengerRouteStops(ride, PAX, work) == std::vector<StationID>{D, A, B});
+	}
+	SECTION("NoLoad") { train->GetOrder(0)->SetLoadType(OrderLoadType::NoLoad); CHECK(GetPassengerRouteStops(ride, PAX, work).empty()); }
+	SECTION("NoUnload") { train->GetOrder(3)->SetUnloadType(OrderUnloadType::NoUnload); CHECK(GetPassengerRouteStops(ride, PAX, work).empty()); }
+	SECTION("Nonstop station is not a visit") {
+		train->GetOrder(1)->SetNonStopType(ONSF_NO_STOP_AT_DESTINATION_STATION);
+		CHECK(GetPassengerRouteStops(ride, PAX, work) == std::vector<StationID>{A, A, D});
+	}
+	SECTION("Conditional suffix is unknown") { train->GetOrder(1)->MakeConditional(0); CHECK(GetPassengerRouteStops(ride, PAX, work).empty()); }
+	SECTION("Forced transfer") { train->GetOrder(1)->SetUnloadType(OrderUnloadType::Transfer); CHECK(GetPassengerRouteStops(ride, PAX, work).empty()); }
+	SECTION("Stale identity") { ++ride.signature; CHECK(GetPassengerRouteStops(ride, PAX, work).empty()); }
+	SECTION("Invalid order") { ride.alighting_order = INVALID_VEH_ORDER_ID; CHECK(GetPassengerRouteStops(ride, PAX, work).empty()); }
+	SECTION("Hyperpath is not a direct ride") { ride.kind = PassengerRideKind::HyperpathIntent; CHECK(GetPassengerRouteStops(ride, PAX, work).empty()); }
+}
+
+TEST_CASE("Route overlay uses OD fallback prefixes without CargoDist destination guesses", "[passenger][route-overlay]")
+{
+	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = true;
+	f.Train({Stop(A), Stop(B)}); f.Train({Stop(B), Stop(D)});
+	auto &db = f.Build(); while (!db.PreparePrecomputed()) {}
+	auto *packet = f.Packet(); packet->FallbackPassengerJourney(A, NOW, B);
+	Station::Get(A)->goods[PAX].CreateData().cargo.Append(packet, B);
+	auto routes = BuildStationPassengerRoutes(*Station::Get(A), db);
+	CHECK(routes.links[std::tuple{B, A, B}] == Approx(10));
+	CHECK(routes.links[std::tuple{B, B, D}] == Approx(10));
+	CHECK(routes.alighting[B] == 0); CHECK(routes.alighting[D] == Approx(10));
+}
+
+TEST_CASE("Route overlay keeps retained policies and incoming and failed service exclusions read-only", "[passenger][route-overlay]")
+{
+	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = _settings_game.linkgraph.passenger_journey_hyperpath = true;
+	auto *one = f.Train({Stop(A), Stop(D)}); auto *two = f.Train({Stop(A), Stop(D)});
+	auto &db = f.Build(); while (!db.PreparePrecomputed()) {}
+	auto intent = db.PlanPrecomputed(PAX, A, D, NOW); REQUIRE(intent.ride);
+	_settings_game.linkgraph.passenger_transfer_penalty = 17; db.TickPrecomputed(1);
+	REQUIRE(db.IsCurrent(*intent.ride));
+	auto saved = db.Save(); const auto before = db.GetPrecomputedDiagnostic(PAX);
+	for (auto previous : {OrderListID::Invalid(), one->orders->index}) {
+		for (auto failed : {OrderListID::Invalid(), two->orders->index}) {
+			size_t work = 4096;
+			auto routes = db.InspectRoutes(PAX, A, D, previous, failed, work, &*intent.ride);
+			REQUIRE_FALSE(routes.empty());
+			double probability = 0;
+			for (const auto &candidate : routes) {
+				CHECK(candidate.ride.service != previous);
+				if (previous == OrderListID::Invalid() && failed == two->orders->index) CHECK(candidate.ride.service == one->orders->index);
+				probability += candidate.probability;
+			}
+			CHECK(probability == Approx(1));
+		}
+	}
+	CHECK(db.Save() == saved); CHECK(db.GetPrecomputedDiagnostic(PAX).bytes == before.bytes);
+	CHECK(db.GetPrecomputedDiagnostic(PAX).queries == before.queries);
+	CHECK(db.GetPrecomputedDiagnostic(PAX).local_replans == before.local_replans);
+}
+
+TEST_CASE("Route overlay retains legacy CargoDist flow estimates without assuming unknown arrivals", "[passenger][route-overlay]")
+{
+	Fixture f; f.Train({Stop(A), Stop(B), Stop(D)}); auto &db = f.Build();
+	auto *packet = CargoPacket::Create(10, 0, A, TileIndex{0}, Money{0});
+	Station::Get(A)->goods[PAX].CreateData().cargo.Append(packet, B);
+	Station::Get(B)->goods[PAX].CreateData().flows.insert(FlowStat(A, D, 10));
+	Station::Get(D)->goods[PAX].CreateData().flows.insert(FlowStat(A, D, 10));
+	auto routes = BuildStationPassengerRoutes(*Station::Get(A), db);
+	CHECK(routes.links[std::tuple{B, A, B}] == Approx(10));
+	CHECK(routes.links[std::tuple{B, B, D}] == Approx(10));
+	CHECK(routes.alighting[B] == 0); CHECK(routes.alighting[D] == Approx(10));
 }
 
 TEST_CASE("Incomplete timetables retain concrete estimated rides and indexed loading", "[passenger][precomputed][estimated][active][save]")

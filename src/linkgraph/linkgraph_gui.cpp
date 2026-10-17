@@ -16,6 +16,8 @@
 #include "../viewport_func.h"
 #include "../zoom_func.h"
 #include "../smallmap_gui.h"
+#include "passenger_route_overlay.h"
+#include "../passenger_service_database.h"
 #include "../zoom_func.h"
 #include "../landscape.h"
 #include "../strings_func.h"
@@ -123,6 +125,7 @@ bool LinkGraphOverlay::RebuildCacheCheckChanged()
 	uint64_t prev_rebuild_counter = this->rebuild_counter;
 
 	if (this->route_station != StationID::Invalid()) {
+		if (std::chrono::steady_clock::now() - this->route_updated < std::chrono::seconds(1)) return false;
 		static std::vector<RouteLinkInfo> prev_route_links;
 		static std::vector<RouteStationInfo> prev_route_stations;
 
@@ -162,6 +165,13 @@ void LinkGraphOverlay::RebuildCache(bool incremental)
 	if (this->route_station != StationID::Invalid()) {
 		/* Route caches are not limited to the visible region, so there is nothing to do for incremental updates */
 		if (incremental) return;
+		/* Dirty viewport updates may arrive every frame. Reuse the route values
+		 * for one second, while still refreshing their screen coordinates. */
+		if (std::chrono::steady_clock::now() - this->route_updated < std::chrono::seconds(1)) {
+			this->dirty = false;
+			this->RefreshDrawCache();
+			return;
+		}
 		this->dirty = false;
 		this->cached_links.clear();
 		this->cached_stations.clear();
@@ -734,13 +744,12 @@ static constexpr std::array<Colours, 14> ROUTE_COLOURS = {
 /**
  * Set the station whose passengers' estimated routes are shown instead of the link graph.
  * @param station Station, or StationID::Invalid() to show the link graph again.
- * @param mode Which passengers of the station to show the routes of.
  */
-void LinkGraphOverlay::SetRouteStation(StationID station, RouteMode mode)
+void LinkGraphOverlay::SetRouteStation(StationID station)
 {
-	if (this->route_station == station && this->route_mode == mode) return;
+	if (this->route_station == station) return;
 	this->route_station = station;
-	this->route_mode = mode;
+	this->route_updated = {};
 	this->route_links.clear();
 	this->route_stations.clear();
 	this->route_max_volume = 0;
@@ -751,13 +760,11 @@ void LinkGraphOverlay::SetRouteStation(StationID station, RouteMode mode)
 
 /**
  * Rebuild the cache of the estimated routes of the passengers waiting at route_station.
- * The routes are estimated in the same way as the destinations shown in the station window:
- * starting from the next hop of the waiting cargo packets, the planned flows for the cargo's origin
- * at each following station are used to split the passengers among the next hops, until they reach
- * the station where the flows say that they will leave the network.
+ * Saved rides and destination policies are inspected using only GUI-owned work and caches.
  */
 void LinkGraphOverlay::RebuildRouteCache()
 {
+	this->route_updated = std::chrono::steady_clock::now();
 	this->route_links.clear();
 	this->route_stations.clear();
 	this->route_max_volume = 0;
@@ -765,92 +772,10 @@ void LinkGraphOverlay::RebuildRouteCache()
 	const Station *st = Station::GetIfValid(this->route_station);
 	if (st == nullptr) return;
 
-	/* Links are keyed by first hop from the selected station, then from and to station */
-	btree::btree_map<std::tuple<StationID, StationID, StationID>, double> links;
-	btree::btree_map<StationID, double> alighting;
-	btree::btree_map<StationID, double> first_hop_volumes;
-
-	/* Amounts below this are dropped, to limit the work done for long or circular routes. */
-	static constexpr double MIN_AMOUNT = 0.05;
-	static constexpr uint MAX_DEPTH = 64;
-	uint budget = 1 << 18;
-
-	auto propagate = [&](auto &self, CargoType cargo, StationID origin, StationID first_hop, StationID from, StationID next, double amount, uint depth) -> void {
-		if (amount < MIN_AMOUNT || budget == 0) return;
-		budget--;
-		if (!Station::IsValidID(next) || next == from) return;
-
-		links[std::make_tuple(first_hop, from, next)] += amount;
-		if (depth == 0) first_hop_volumes[first_hop] += amount;
-
-		const GoodsEntry &ge = Station::Get(next)->goods[cargo];
-		if (ge.data == nullptr || depth >= MAX_DEPTH) {
-			alighting[next] += amount;
-			return;
-		}
-		const FlowStatMap &flowmap = ge.data->flows;
-		FlowStatMap::const_iterator map_it = flowmap.find(origin);
-		if (map_it == flowmap.end()) {
-			/* No planned flow onwards, assume the passengers leave here */
-			alighting[next] += amount;
-			return;
-		}
-
-		uint32_t total = 0;
-		for (FlowStat::const_iterator i = map_it->begin(); i != map_it->end(); ++i) {
-			total = i->first;
-		}
-		if (total == 0) {
-			alighting[next] += amount;
-			return;
-		}
-
-		uint32_t prev_count = 0;
-		for (FlowStat::const_iterator i = map_it->begin(); i != map_it->end(); ++i) {
-			const double part = amount * (i->first - prev_count) / total;
-			prev_count = i->first;
-			if (i->second == next) {
-				alighting[next] += part;
-			} else {
-				self(self, cargo, origin, first_hop, next, i->second, part, depth + 1);
-			}
-		}
-	};
-
-	for (CargoType cargo : EnumRange(NUM_CARGO)) {
-		const CargoSpec *cs = CargoSpec::Get(cargo);
-		if (!cs->IsValid() || !IsCargoInClass(cargo, CargoClass::Passengers)) continue;
-
-		const GoodsEntry &ge = st->goods[cargo];
-		if (ge.data == nullptr) continue;
-
-		/* Group the passengers by origin and next hop */
-		btree::btree_map<std::pair<StationID, StationID>, uint> groups;
-		if (this->route_mode == RouteMode::MonthlyPlanned) {
-			/* Planned monthly flows departing from this station, both originating here and transferring here */
-			for (const FlowStat &flow : ge.data->flows) {
-				if (flow.IsInvalid()) continue;
-				uint32_t prev_count = 0;
-				for (FlowStat::const_iterator i = flow.begin(); i != flow.end(); ++i) {
-					const uint32_t amount = i->first - prev_count;
-					prev_count = i->first;
-					if (i->second == st->index) continue; // Passengers leaving the network here
-					groups[std::make_pair(flow.GetOrigin(), i->second)] += amount;
-				}
-			}
-		} else {
-			/* Waiting passengers */
-			const StationCargoList &packets = ge.data->cargo;
-			for (StationCargoList::ConstIterator it = packets.Packets()->begin(); it != packets.Packets()->end(); it++) {
-				const CargoPacket *cp = *it;
-				groups[std::make_pair(cp->GetFirstStation(), it.GetKey())] += cp->Count();
-			}
-		}
-
-		for (const auto &it : groups) {
-			propagate(propagate, cargo, it.first.first, it.first.second, st->index, it.first.second, it.second, 0);
-		}
-	}
+	auto routes = BuildStationPassengerRoutes(*st, GetPassengerServiceDatabase());
+	const auto &links = routes.links;
+	const auto &alighting = routes.alighting;
+	const auto &first_hop_volumes = routes.first_hops;
 
 	/* Assign colours to the first hops, in order of decreasing volume */
 	std::vector<std::pair<double, StationID>> first_hops;
@@ -978,7 +903,7 @@ bool LinkGraphOverlay::ShowRouteTooltip(Point pt, TooltipCloseCondition close_co
 	for (const RouteStationInfo &i : this->route_stations) {
 		if (i.id == this->route_station || !Station::IsValidID(i.id)) continue;
 		if (abs(pt.x - i.pt.x) <= ScaleGUITrad(6) && abs(pt.y - i.pt.y) <= ScaleGUITrad(6)) {
-			GuiShowTooltips(this->window, GetEncodedString(this->route_mode == RouteMode::MonthlyPlanned ? STR_STATION_ROUTE_OVERLAY_ALIGHTING_TOOLTIP_MONTHLY : STR_STATION_ROUTE_OVERLAY_ALIGHTING_TOOLTIP, i.id, i.volume), close_cond);
+			GuiShowTooltips(this->window, GetEncodedString(STR_STATION_ROUTE_OVERLAY_ALIGHTING_TOOLTIP, i.id, i.volume), close_cond);
 			return true;
 		}
 	}
@@ -1001,7 +926,7 @@ bool LinkGraphOverlay::ShowRouteTooltip(Point pt, TooltipCloseCondition close_co
 				total += j.volume;
 				if (Station::IsValidID(j.first_hop)) AppendStringInPlace(buf, STR_STATION_ROUTE_OVERLAY_LINK_TOOLTIP_FIRST_HOP, j.first_hop, j.volume);
 			}
-			GuiShowTooltips(this->window, GetEncodedString(this->route_mode == RouteMode::MonthlyPlanned ? STR_STATION_ROUTE_OVERLAY_LINK_TOOLTIP_MONTHLY : STR_STATION_ROUTE_OVERLAY_LINK_TOOLTIP, i->from_id, i->to_id, total, (std::string_view)buf), close_cond);
+			GuiShowTooltips(this->window, GetEncodedString(STR_STATION_ROUTE_OVERLAY_LINK_TOOLTIP, i->from_id, i->to_id, total, (std::string_view)buf), close_cond);
 			return true;
 		}
 	}

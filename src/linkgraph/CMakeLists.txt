@@ -9,6 +9,8 @@ add_files(
     linkgraph_base.h
     linkgraph_gui.cpp
     linkgraph_gui.h
+    passenger_route_overlay.cpp
+    passenger_route_overlay.h
     linkgraph_type.h
     linkgraphjob.cpp
     linkgraphjob.h

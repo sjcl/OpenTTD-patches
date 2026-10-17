@@ -1402,13 +1402,12 @@ static bool IsStationPaxRoutesShown(StationID station)
 /**
  * Show or hide the routes of the passengers of the given station in the main viewport.
  * @param station Station, or StationID::Invalid() to hide.
- * @param mode Which passengers of the station to show the routes of.
  */
-static void SetStationPaxRoutesShown(StationID station, LinkGraphOverlay::RouteMode mode = LinkGraphOverlay::RouteMode::Waiting)
+static void SetStationPaxRoutesShown(StationID station)
 {
 	LinkGraphOverlay *overlay = GetMainViewportLinkGraphOverlay();
 	if (overlay == nullptr) return;
-	overlay->SetRouteStation(station, mode);
+	overlay->SetRouteStation(station);
 	SetWindowClassesDirty(WindowClass::StationView);
 }
 
@@ -1416,7 +1415,6 @@ static void SetStationPaxRoutesShown(StationID station, LinkGraphOverlay::RouteM
 enum StationPaxRoutesDropDownItems : int {
 	SPRDD_HIDE,           ///< Hide the routes.
 	SPRDD_WAITING,        ///< Show the routes of the waiting passengers.
-	SPRDD_MONTHLY,        ///< Show the routes of the planned monthly flow of departing passengers.
 };
 
 struct StationViewWindow : public Window {
@@ -2378,11 +2376,9 @@ struct StationViewWindow : public Window {
 				const LinkGraphOverlay *overlay = GetMainViewportLinkGraphOverlay();
 				if (overlay == nullptr) break;
 				const bool shown = IsStationPaxRoutesShown(station);
-				const LinkGraphOverlay::RouteMode mode = overlay->GetRouteMode();
 
 				DropDownList list;
-				list.push_back(MakeDropDownListCheckedItem(shown && mode == LinkGraphOverlay::RouteMode::Waiting, STR_STATION_VIEW_PAX_ROUTES_WAITING, SPRDD_WAITING));
-				list.push_back(MakeDropDownListCheckedItem(shown && mode == LinkGraphOverlay::RouteMode::MonthlyPlanned, STR_STATION_VIEW_PAX_ROUTES_MONTHLY, SPRDD_MONTHLY));
+				list.push_back(MakeDropDownListCheckedItem(shown, STR_STATION_VIEW_PAX_ROUTES_WAITING, SPRDD_WAITING));
 				list.push_back(MakeDropDownListStringItem(STR_STATION_VIEW_PAX_ROUTES_HIDE, SPRDD_HIDE, !shown));
 				ShowDropDownList(this, std::move(list), -1, widget);
 				break;
@@ -2527,10 +2523,7 @@ struct StationViewWindow : public Window {
 					if (IsStationPaxRoutesShown(station)) SetStationPaxRoutesShown(StationID::Invalid());
 					break;
 				case SPRDD_WAITING:
-					SetStationPaxRoutesShown(station, LinkGraphOverlay::RouteMode::Waiting);
-					break;
-				case SPRDD_MONTHLY:
-					SetStationPaxRoutesShown(station, LinkGraphOverlay::RouteMode::MonthlyPlanned);
+					SetStationPaxRoutesShown(station);
 					break;
 			}
 		} else if (widget == WID_SV_SORT_BY) {
