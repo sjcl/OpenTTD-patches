@@ -1,0 +1,11 @@
+{
+  "base": "093218f882a879a002f82903b3c488f3d2406535",
+  "cpu": "AMD Ryzen 9 9950X",
+  "cores": 16,
+  "logical_cpus": 32,
+  "native_tests": 735,
+  "native_assertions": 10115392,
+  "benchmark_binary_sha256": "ca4f490a0a7af954bec608a00fa3c278017f030ac4cf0cae285b0faf0baead0b",
+  "routing_library_flags": "/O2 /Ob2 /MT, C++20, WITH_ASSERT, no /GL",
+  "note": "Timing trials use product routing code in openttd_test; loopback probe copies only diagnostic/driver TUs. No save feature, network protocol or timeout edits."
+}

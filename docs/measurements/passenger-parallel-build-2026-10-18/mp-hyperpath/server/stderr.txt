@@ -1,0 +1,30 @@
+dbg: [net:3] Starting dedicated server, version jgrpp-ya-0.73.3+3-14-g52f201b38-m
+dbg: [net:3] Starting network
+dbg: [net:3] Initializing UDP listeners
+dbg: [net:3] Network online, multiplayer available
+dbg: [net:3] Detected broadcast addresses:
+dbg: [net:3]   0) 172.25.15.255
+dbg: [net:3]   1) 192.168.1.255
+dbg: [net:3]   2) 169.254.255.255
+dbg: [net:3] Network revision name: jgrpp-ya-0.73.3+3-14-g52f201b38-
+[2026-10-18 04:14:12] dbg: [net:1] No "server_name" has been set, using "Unnamed Server" instead. Please set this now using the "server_name <new name>" command
+[2026-10-18 04:14:12] dbg: [net:3] Initializing UDP listeners
+[2026-10-18 04:14:12] dbg: [net:3] Initializing UDP listeners
+[2026-10-18 04:14:12] dbg: [net:3] Listening on 127.0.0.1:17571 (IPv4)
+[2026-10-18 04:14:12] dbg: [net:3] Listening on 127.0.0.1:17571 (IPv4)
+[2026-10-18 04:14:12] dbg: [script:0] The savegame has an AI by the name 'Stationlist', version 1 which is no longer available.
+[2026-10-18 04:14:12] dbg: [script:0] Configuration switched to Random AI.
+[2026-10-18 04:14:12] dbg: [script:0] The savegame has an AI by the name 'Stationlist', version 1 which is no longer available.
+[2026-10-18 04:14:12] dbg: [script:0] A random other AI will be loaded in its place.
+[2026-10-18 04:14:12] dbg: [script:0] No suitable AI found, loading 'dummy' AI.
+[2026-10-18 04:14:12] dbg: [net:2] [server] Preparing initial passenger tables at frame 1
+[2026-10-18 04:14:12] dbg: [net:2] [server] Initial passenger tables ready at frame 1
+[2026-10-18 04:14:16] dbg: [net:3] [server] Client connected from 127.0.0.1 on frame 129
+[2026-10-18 04:14:16] dbg: [net:3] [server] Client #2 map replay progress 309/4294967561
+[2026-10-18 04:14:16] dbg: [net:2] [server] Client #2 map ready: server_preparation_ms=0; client_join_ms=190
+[2026-10-18 04:14:16] dbg: [net:3] [server] Client #2 (127.0.0.1) joined as routing-client, pubkey: 26205FB9995323EBC9AA28F7DD67ABAB03748FE0CF5AD36C6FBD2F82AB304F3B
+[2026-10-18 04:14:18] dbg: [net:2] [server] Preparing initial passenger tables at frame 199
+[2026-10-18 04:14:18] dbg: [net:2] [server] Initial passenger tables ready at frame 199
+[2026-10-18 04:14:49] dbg: [net:3] [server] Client #2 closed connection
+[2026-10-18 04:14:49] dbg: [net:3] Initializing UDP listeners
+[2026-10-18 04:14:49] dbg: [net:3] Shutting down network
