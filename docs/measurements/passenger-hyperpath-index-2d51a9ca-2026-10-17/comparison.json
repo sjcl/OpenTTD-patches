@@ -1,0 +1,154 @@
+{
+  "reference": "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\docs\\measurements\\passenger-hyperpath-wpr-67cbbf32-2026-10-17",
+  "yapf_scope": "Main-thread sample with Yapf in any openttd.exe frame; inclusive counts a function once per stack; exclusive is its stack leaf.",
+  "modes": {
+    "legacy": {
+      "filter_before": "on",
+      "filter_after": "index",
+      "canonical_fields": 24,
+      "canonical_equal": true,
+      "mismatches": [],
+      "before": {
+        "ticks": 2048,
+        "yapf_ns": 1442033800,
+        "yapf_samples": 1442,
+        "yapf_cpu_ms_per_tick": 0.70411806640625,
+        "heap_union_ns": 380065800,
+        "heap_union_samples": 380,
+        "heap_union_ms_per_tick": 0.18557900390625
+      },
+      "after": {
+        "ticks": 2048,
+        "yapf_ns": 1389010500,
+        "yapf_samples": 1389,
+        "yapf_cpu_ms_per_tick": 0.678227783203125,
+        "heap_union_ns": 323057500,
+        "heap_union_samples": 323,
+        "heap_union_ms_per_tick": 0.157742919921875
+      },
+      "targets": {
+        "ntdll.dll!RtlpFindEntry": {
+          "mode": "legacy",
+          "function": "ntdll.dll!RtlpFindEntry",
+          "before_inclusive_ms_per_tick": "0.136767969",
+          "after_inclusive_ms_per_tick": "0.103535889",
+          "delta_inclusive_ms_per_tick": "-0.033232080",
+          "before_exclusive_ms_per_tick": "0.136767969",
+          "after_exclusive_ms_per_tick": "0.103535889",
+          "delta_exclusive_ms_per_tick": "-0.033232080",
+          "inclusive_reduction_percent": "24.298146",
+          "exclusive_reduction_percent": "24.298146",
+          "before_inclusive_samples": 280,
+          "after_inclusive_samples": 212,
+          "before_exclusive_samples": 280,
+          "after_exclusive_samples": 212
+        },
+        "ntdll.dll!RtlpInsertFreeBlock": {
+          "mode": "legacy",
+          "function": "ntdll.dll!RtlpInsertFreeBlock",
+          "before_inclusive_ms_per_tick": "0.017089258",
+          "after_inclusive_ms_per_tick": "0.012695654",
+          "delta_inclusive_ms_per_tick": "-0.004393604",
+          "before_exclusive_ms_per_tick": "0.017089258",
+          "after_exclusive_ms_per_tick": "0.012695654",
+          "delta_exclusive_ms_per_tick": "-0.004393604",
+          "inclusive_reduction_percent": "25.709739",
+          "exclusive_reduction_percent": "25.709739",
+          "before_inclusive_samples": 35,
+          "after_inclusive_samples": 26,
+          "before_exclusive_samples": 35,
+          "after_exclusive_samples": 26
+        }
+      },
+      "targets_reduced": true,
+      "whole_tick_before_after": {
+        "before_simulation_wall_ms_per_tick": 26.362677734375,
+        "after_simulation_wall_ms_per_tick": 24.81313623046875,
+        "before_sampled_cpu_ms_per_tick": {
+          "all": 29.083302099609377,
+          "main": 28.859556005859375,
+          "simulation_stack": 24.97426904296875
+        },
+        "after_sampled_cpu_ms_per_tick": {
+          "all": 27.52195361328125,
+          "main": 27.298839453125,
+          "simulation_stack": 23.597857568359377
+        }
+      }
+    },
+    "hyperpath": {
+      "filter_before": "on",
+      "filter_after": "index",
+      "canonical_fields": 24,
+      "canonical_equal": true,
+      "mismatches": [],
+      "before": {
+        "ticks": 2048,
+        "yapf_ns": 1513106200,
+        "yapf_samples": 1513,
+        "yapf_cpu_ms_per_tick": 0.73882138671875,
+        "heap_union_ns": 447046800,
+        "heap_union_samples": 447,
+        "heap_union_ms_per_tick": 0.2182845703125
+      },
+      "after": {
+        "ticks": 2048,
+        "yapf_ns": 1461103700,
+        "yapf_samples": 1461,
+        "yapf_cpu_ms_per_tick": 0.713429541015625,
+        "heap_union_ns": 412008500,
+        "heap_union_samples": 412,
+        "heap_union_ms_per_tick": 0.201176025390625
+      },
+      "targets": {
+        "ntdll.dll!RtlpFindEntry": {
+          "mode": "hyperpath",
+          "function": "ntdll.dll!RtlpFindEntry",
+          "before_inclusive_ms_per_tick": "0.159691016",
+          "after_inclusive_ms_per_tick": "0.142596826",
+          "delta_inclusive_ms_per_tick": "-0.017094189",
+          "before_exclusive_ms_per_tick": "0.159202246",
+          "after_exclusive_ms_per_tick": "0.141620898",
+          "delta_exclusive_ms_per_tick": "-0.017581348",
+          "inclusive_reduction_percent": "10.704541",
+          "exclusive_reduction_percent": "11.043404",
+          "before_inclusive_samples": 327,
+          "after_inclusive_samples": 292,
+          "before_exclusive_samples": 326,
+          "after_exclusive_samples": 290
+        },
+        "ntdll.dll!RtlpInsertFreeBlock": {
+          "mode": "hyperpath",
+          "function": "ntdll.dll!RtlpInsertFreeBlock",
+          "before_inclusive_ms_per_tick": "0.015625781",
+          "after_inclusive_ms_per_tick": "0.015616162",
+          "delta_inclusive_ms_per_tick": "-0.000009619",
+          "before_exclusive_ms_per_tick": "0.015625781",
+          "after_exclusive_ms_per_tick": "0.015616162",
+          "delta_exclusive_ms_per_tick": "-0.000009619",
+          "inclusive_reduction_percent": "0.061559",
+          "exclusive_reduction_percent": "0.061559",
+          "before_inclusive_samples": 32,
+          "after_inclusive_samples": 32,
+          "before_exclusive_samples": 32,
+          "after_exclusive_samples": 32
+        }
+      },
+      "targets_reduced": true,
+      "whole_tick_before_after": {
+        "before_simulation_wall_ms_per_tick": 26.1326337890625,
+        "after_simulation_wall_ms_per_tick": 26.981591796875,
+        "before_sampled_cpu_ms_per_tick": {
+          "all": 26.62658251953125,
+          "main": 26.425825244140626,
+          "simulation_stack": 25.0573703125
+        },
+        "after_sampled_cpu_ms_per_tick": {
+          "all": 27.339704833984374,
+          "main": 27.150168603515624,
+          "simulation_stack": 25.511445263671874
+        }
+      }
+    }
+  }
+}

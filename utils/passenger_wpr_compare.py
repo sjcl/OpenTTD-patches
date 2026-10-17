@@ -54,6 +54,8 @@ def main():
     parser = argparse.ArgumentParser(__doc__)
     parser.add_argument('before', type=Path)
     parser.add_argument('after', type=Path)
+    parser.add_argument('--allow-hyperpath-filter-change', action='store_true',
+                        help='Compare identical ticks across mask/index strategies; canonical equality is still required')
     args = parser.parse_args()
     summary = dict(reference=str(args.before), yapf_scope='Main-thread sample with Yapf in any openttd.exe frame; inclusive counts a function once per stack; exclusive is its stack leaf.', modes={})
     rows, canonical_rows, branch_rows = [], [], []
@@ -61,9 +63,20 @@ def main():
     for mode in ['legacy', 'hyperpath']:
         before, after = args.before / mode, args.after / mode
         oldmeta, newmeta = read_json(before/'process.json'), read_json(after/'process.json')
-        for key in ['input_sha256', 'language_sha256', 'precomputed', 'hyperpath', 'hyperpath_filter',
+        for key in ['input_sha256', 'language_sha256', 'precomputed', 'hyperpath',
                     'hyperpath_filter_alternate', 'cold_precomputed', 'warm_precomputed', 'mid_rebuild_tick', 'main_thread_affinity_mask']:
             assert oldmeta[key] == newmeta[key], (mode, key)
+        def filter_mode(meta):
+            explicit = meta.get('hyperpath_filter_mode')
+            if explicit is not None:
+                assert meta['hyperpath_filter'] is None and not meta['hyperpath_filter_alternate']
+                return explicit
+            return 'alternate' if meta['hyperpath_filter_alternate'] else {True: 'on', False: 'off', None: 'default'}[meta['hyperpath_filter']]
+        oldfilter, newfilter = filter_mode(oldmeta), filter_mode(newmeta)
+        if args.allow_hyperpath_filter_change:
+            assert oldfilter in ['on', 'index'] and newfilter in ['on', 'index'], (mode, oldfilter, newfilter)
+        else:
+            assert oldfilter == newfilter, (mode, oldfilter, newfilter)
         assert newmeta['exit_code'] == 0 and newmeta['simulation_timing_valid'] and newmeta['warm_complete']
         oldstate, newstate = read_json(before/'save-integrity.json'), read_json(after/'save-integrity.json')
         mismatches = []
@@ -93,7 +106,8 @@ def main():
                 targets[function] = row
         for function in ['ntdll.dll!RtlpFindEntry', 'ntdll.dll!RtlpInsertFreeBlock']:
             assert function in targets and int(targets[function]['before_inclusive_samples']) > 0
-        summary['modes'][mode] = dict(canonical_fields=len(oldstate), canonical_equal=oldstate == newstate,
+        summary['modes'][mode] = dict(filter_before=oldfilter, filter_after=newfilter,
+                                     canonical_fields=len(oldstate), canonical_equal=oldstate == newstate,
                                      mismatches=mismatches, before=old_summary, after=new_summary, targets=targets,
                                      targets_reduced=all(Decimal(row['after_inclusive_ms_per_tick']) < Decimal(row['before_inclusive_ms_per_tick']) for row in targets.values()))
         summary['modes'][mode]['whole_tick_before_after'] = {

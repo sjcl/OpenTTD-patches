@@ -40,7 +40,13 @@ def main():
         clock = metadata['actual-ticks.json']
         assert metadata['exit_code'] == 0 and metadata['simulation_timing_valid']
         assert clock['end_tick'] - clock['start_tick'] == len(clock['samples']) == 2048
-        assert metadata['hyperpath'] == (mode == 'hyperpath') and metadata['hyperpath_filter'] is True
+        assert metadata['hyperpath'] == (mode == 'hyperpath')
+        filter_mode = metadata.get('hyperpath_filter_mode')
+        assert not metadata.get('hyperpath_filter_alternate', False)
+        if filter_mode is None:
+            assert metadata['hyperpath_filter'] is True  # Historical mask captures.
+        else:
+            assert filter_mode in ['on', 'index'] and metadata['hyperpath_filter'] is None
         assert (directory / 'wpr-saved.txt').is_file()
         trace = directory / 'cpu.etl'
         stats = directory / 'trace-stats.txt'

@@ -1,0 +1,167 @@
+{
+  "validate": {
+    "filter": {
+      "enabled": "false",
+      "mode": "validate",
+      "filtered_walks": 0,
+      "unfiltered_walks": 144211,
+      "indexed_walks": 0,
+      "groups_checked": 22948078,
+      "groups_skipped": 0,
+      "groups_admitted": 583649
+    },
+    "filter_line": "Passenger hyperpath boarding filter: enabled=false; mode=validate; filtered_walks=0; unfiltered_walks=144211; indexed_walks=0; groups_checked=22948078; groups_skipped=0; groups_admitted=583649",
+    "time": {
+      "filtered_us": 0,
+      "filtered_groups": 0,
+      "unfiltered_us": 7677300,
+      "unfiltered_groups": 22948078,
+      "indexed_us": 0,
+      "indexed_groups": 0
+    },
+    "time_line": "Passenger hyperpath walk time: filtered_us=0; filtered_groups=0; unfiltered_us=7677300; unfiltered_groups=22948078; indexed_us=0; indexed_groups=0",
+    "lookup": {
+      "rebuilds": 30582,
+      "indexed_groups": 2475339,
+      "validated_groups": 583649,
+      "violations": 0
+    },
+    "lookup_line": "Passenger hyperpath lookup: rebuilds=30582; indexed_groups=2475339; validated_groups=583649; violations=0",
+    "ticks": 2048,
+    "canonical_fields_equal": 24,
+    "rebuilds_per_tick": 14.9326171875,
+    "reindexed_groups_per_tick": 1208.66162109375
+  },
+  "alternate": {
+    "filter": {
+      "enabled": "false",
+      "mode": "alternate",
+      "filtered_walks": 71953,
+      "unfiltered_walks": 0,
+      "indexed_walks": 72258,
+      "groups_checked": 2555493,
+      "groups_skipped": 9779530,
+      "groups_admitted": 583649
+    },
+    "filter_line": "Passenger hyperpath boarding filter: enabled=false; mode=alternate; filtered_walks=71953; unfiltered_walks=0; indexed_walks=72258; groups_checked=2555493; groups_skipped=9779530; groups_admitted=583649",
+    "time": {
+      "filtered_us": 1059101,
+      "filtered_groups": 11624389,
+      "unfiltered_us": 0,
+      "unfiltered_groups": 0,
+      "indexed_us": 2562997,
+      "indexed_groups": 710634
+    },
+    "time_line": "Passenger hyperpath walk time: filtered_us=1059101; filtered_groups=11624389; unfiltered_us=0; unfiltered_groups=0; indexed_us=2562997; indexed_groups=710634",
+    "lookup": {
+      "rebuilds": 15365,
+      "indexed_groups": 1230198,
+      "validated_groups": 0,
+      "violations": 0
+    },
+    "lookup_line": "Passenger hyperpath lookup: rebuilds=15365; indexed_groups=1230198; validated_groups=0; violations=0",
+    "ticks": 2048,
+    "canonical_fields_equal": 24,
+    "rebuilds_per_tick": 7.50244140625,
+    "reindexed_groups_per_tick": 600.6826171875
+  },
+  "legacy": {
+    "filter": {
+      "enabled": "false",
+      "mode": "index",
+      "filtered_walks": 0,
+      "unfiltered_walks": 0,
+      "indexed_walks": 0,
+      "groups_checked": 0,
+      "groups_skipped": 0,
+      "groups_admitted": 0
+    },
+    "filter_line": "Passenger hyperpath boarding filter: enabled=false; mode=index; filtered_walks=0; unfiltered_walks=0; indexed_walks=0; groups_checked=0; groups_skipped=0; groups_admitted=0",
+    "time": {
+      "filtered_us": 0,
+      "filtered_groups": 0,
+      "unfiltered_us": 0,
+      "unfiltered_groups": 0,
+      "indexed_us": 0,
+      "indexed_groups": 0
+    },
+    "time_line": "Passenger hyperpath walk time: filtered_us=0; filtered_groups=0; unfiltered_us=0; unfiltered_groups=0; indexed_us=0; indexed_groups=0",
+    "lookup": {
+      "rebuilds": 0,
+      "indexed_groups": 0,
+      "validated_groups": 0,
+      "violations": 0
+    },
+    "lookup_line": "Passenger hyperpath lookup: rebuilds=0; indexed_groups=0; validated_groups=0; violations=0",
+    "ticks": 2048,
+    "canonical_fields_equal": 24,
+    "rebuilds_per_tick": 0.0,
+    "reindexed_groups_per_tick": 0.0
+  },
+  "hyperpath": {
+    "filter": {
+      "enabled": "false",
+      "mode": "index",
+      "filtered_walks": 0,
+      "unfiltered_walks": 0,
+      "indexed_walks": 144211,
+      "groups_checked": 1645937,
+      "groups_skipped": 0,
+      "groups_admitted": 583649
+    },
+    "filter_line": "Passenger hyperpath boarding filter: enabled=false; mode=index; filtered_walks=0; unfiltered_walks=0; indexed_walks=144211; groups_checked=1645937; groups_skipped=0; groups_admitted=583649",
+    "time": {
+      "filtered_us": 0,
+      "filtered_groups": 0,
+      "unfiltered_us": 0,
+      "unfiltered_groups": 0,
+      "indexed_us": 5071677,
+      "indexed_groups": 1645937
+    },
+    "time_line": "Passenger hyperpath walk time: filtered_us=0; filtered_groups=0; unfiltered_us=0; unfiltered_groups=0; indexed_us=5071677; indexed_groups=1645937",
+    "lookup": {
+      "rebuilds": 30582,
+      "indexed_groups": 2475339,
+      "validated_groups": 0,
+      "violations": 0
+    },
+    "lookup_line": "Passenger hyperpath lookup: rebuilds=30582; indexed_groups=2475339; validated_groups=0; violations=0",
+    "ticks": 2048,
+    "canonical_fields_equal": 24,
+    "rebuilds_per_tick": 14.9326171875,
+    "reindexed_groups_per_tick": 1208.66162109375
+  },
+  "reference_67cbbf32_filter": {
+    "enabled": "true",
+    "mode": "on",
+    "filtered_walks": 144211,
+    "unfiltered_walks": 0,
+    "groups_checked": 3443593,
+    "groups_skipped": 19504485,
+    "groups_admitted": 583649
+  },
+  "alternate_comparison": {
+    "rows": [
+      {
+        "mode": "filtered",
+        "walks": 71953,
+        "total_us": 1059101,
+        "groups": 11624389,
+        "us_per_walk": 14.719344572151265,
+        "groups_per_walk": 161.55530693647242
+      },
+      {
+        "mode": "indexed",
+        "walks": 72258,
+        "total_us": 2562997,
+        "groups": 710634,
+        "us_per_walk": 35.470079437570924,
+        "groups_per_walk": 9.834675745246201
+      }
+    ],
+    "walks_per_tick": 70.41552734375,
+    "saved_us_per_walk": -20.75073486541966,
+    "estimated_saved_ms_per_tick": -1.4611739383188644,
+    "mixed_measured_walk_ms_per_tick": 1.7686025390625
+  }
+}
