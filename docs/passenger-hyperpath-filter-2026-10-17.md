@@ -114,3 +114,8 @@ MSVC 19.44 x64 Release、assert ON、LTO OFF、静的CRT。
 [証跡のSHA-256](measurements/passenger-hyperpath-filter-2026-10-17/evidence-sha256.json)。
 生のtick列・console原文・中間/終了状態・使用したコピーTUを保存し、
 セーブ・バイナリ・NewGRF資産そのものは含めない。
+
+後続の `594bbecad3` をMSVCでビルドした
+[alternateモード1プロセス測定](passenger-hyperpath-filter-alternate-2026-10-17.md) では、
+走査区間の差を約1.735 ms/tickの節約と推定した。
+このページの4試行は変更前 `544835fc59` の測定結果として保持する。
