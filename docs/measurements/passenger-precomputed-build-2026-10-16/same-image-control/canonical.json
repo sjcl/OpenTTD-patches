@@ -1,0 +1,26 @@
+{
+  "integrated-a": {
+    "reference": "runtime-main-reverse-new",
+    "ignored": [],
+    "mismatches": {}
+  },
+  "legacy-a": {
+    "reference": "runtime-reference-fresh-steady",
+    "ignored": [
+      "database_digest"
+    ],
+    "mismatches": {}
+  },
+  "legacy-b": {
+    "reference": "runtime-reference-fresh-steady",
+    "ignored": [
+      "database_digest"
+    ],
+    "mismatches": {}
+  },
+  "integrated-b": {
+    "reference": "runtime-main-reverse-new",
+    "ignored": [],
+    "mismatches": {}
+  }
+}

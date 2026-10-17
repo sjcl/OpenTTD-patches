@@ -1,0 +1,178 @@
+dbg: [net:3] Starting dedicated server, version jgrpp-ya-0.73.3+2-173-g667e15481-m
+dbg: [net:3] Starting network
+dbg: [net:3] Initializing UDP listeners
+dbg: [net:3] Network online, multiplayer available
+dbg: [net:3] Detected broadcast addresses:
+dbg: [net:3]   0) 172.25.15.255
+dbg: [net:3]   1) 192.168.1.255
+dbg: [net:3]   2) 169.254.255.255
+dbg: [net:3] Network revision name: jgrpp-ya-0.73.3+2-173-g667e15481
+[2026-10-16 12:39:43] dbg: [net:1] No "server_name" has been set, using "Unnamed Server" instead. Please set this now using the "server_name <new name>" command
+[2026-10-16 12:39:43] dbg: [net:3] Initializing UDP listeners
+[2026-10-16 12:39:43] dbg: [net:3] Initializing UDP listeners
+[2026-10-16 12:39:43] dbg: [net:3] Listening on 127.0.0.1:17529 (IPv4)
+[2026-10-16 12:39:43] dbg: [net:3] Listening on 127.0.0.1:17529 (IPv4)
+[2026-10-16 12:39:55] dbg: [net:2] [server] Preparing initial passenger tables at frame 1
+[2026-10-16 12:40:00] dbg: [net:3] [server] Client connected from 127.0.0.1 on frame 1
+[2026-10-16 12:44:38] dbg: [net:2] [server] Initial passenger tables ready at frame 1
+[2026-10-16 12:44:45] dbg: [net:3] [server] Client #2 map replay progress 49152/9960609524
+[2026-10-16 12:44:46] dbg: [net:3] [server] Client #2 map replay progress 1606656/9960609524
+[2026-10-16 12:44:47] dbg: [net:3] [server] Client #2 map replay progress 1804288/9960609524
+[2026-10-16 12:44:48] dbg: [net:3] [server] Client #2 map replay progress 1859584/9960609524
+[2026-10-16 12:44:49] dbg: [net:3] [server] Client #2 map replay progress 1934336/9960609524
+[2026-10-16 12:44:50] dbg: [net:3] [server] Client #2 map replay progress 2253824/9960609524
+[2026-10-16 12:44:51] dbg: [net:3] [server] Client #2 map replay progress 2704384/9960609524
+[2026-10-16 12:44:52] dbg: [net:3] [server] Client #2 map replay progress 18977842/9960609524
+[2026-10-16 12:44:53] dbg: [net:3] [server] Client #2 map replay progress 59479090/9960609524
+[2026-10-16 12:44:54] dbg: [net:3] [server] Client #2 map replay progress 99062834/9960609524
+[2026-10-16 12:44:55] dbg: [net:3] [server] Client #2 map replay progress 137466930/9960609524
+[2026-10-16 12:44:56] dbg: [net:3] [server] Client #2 map replay progress 176722994/9960609524
+[2026-10-16 12:44:57] dbg: [net:3] [server] Client #2 map replay progress 214733874/9960609524
+[2026-10-16 12:44:58] dbg: [net:3] [server] Client #2 map replay progress 253531186/9960609524
+[2026-10-16 12:44:59] dbg: [net:3] [server] Client #2 map replay progress 291935282/9960609524
+[2026-10-16 12:45:00] dbg: [net:3] [server] Client #2 map replay progress 331256882/9960609524
+[2026-10-16 12:45:01] dbg: [net:3] [server] Client #2 map replay progress 369529906/9960609524
+[2026-10-16 12:45:02] dbg: [net:3] [server] Client #2 map replay progress 405574706/9960609524
+[2026-10-16 12:45:03] dbg: [net:3] [server] Client #2 map replay progress 442864690/9960609524
+[2026-10-16 12:45:04] dbg: [net:3] [server] Client #2 map replay progress 481465394/9960609524
+[2026-10-16 12:45:05] dbg: [net:3] [server] Client #2 map replay progress 521442354/9960609524
+[2026-10-16 12:45:06] dbg: [net:3] [server] Client #2 map replay progress 558928946/9960609524
+[2026-10-16 12:45:07] dbg: [net:3] [server] Client #2 map replay progress 596481074/9960609524
+[2026-10-16 12:45:08] dbg: [net:3] [server] Client #2 map replay progress 636916786/9960609524
+[2026-10-16 12:45:09] dbg: [net:3] [server] Client #2 map replay progress 675124274/9960609524
+[2026-10-16 12:45:10] dbg: [net:3] [server] Client #2 map replay progress 712676402/9960609524
+[2026-10-16 12:45:11] dbg: [net:3] [server] Client #2 map replay progress 750425138/9960609524
+[2026-10-16 12:45:12] dbg: [net:3] [server] Client #2 map replay progress 787846194/9960609524
+[2026-10-16 12:45:13] dbg: [net:3] [server] Client #2 map replay progress 828609586/9960609524
+[2026-10-16 12:45:14] dbg: [net:3] [server] Client #2 map replay progress 868914226/9960609524
+[2026-10-16 12:45:15] dbg: [net:3] [server] Client #2 map replay progress 909808690/9960609524
+[2026-10-16 12:45:16] dbg: [net:3] [server] Client #2 map replay progress 951751730/9960609524
+[2026-10-16 12:45:17] dbg: [net:3] [server] Client #2 map replay progress 990417970/9960609524
+[2026-10-16 12:45:18] dbg: [net:3] [server] Client #2 map replay progress 1032426546/9960609524
+[2026-10-16 12:45:19] dbg: [net:3] [server] Client #2 map replay progress 1074369586/9960609524
+[2026-10-16 12:45:20] dbg: [net:3] [server] Client #2 map replay progress 1115526194/9960609524
+[2026-10-16 12:45:21] dbg: [net:3] [server] Client #2 map replay progress 1157207090/9960609524
+[2026-10-16 12:45:22] dbg: [net:3] [server] Client #2 map replay progress 1198756914/9960609524
+[2026-10-16 12:45:23] dbg: [net:3] [server] Client #2 map replay progress 1240634418/9960609524
+[2026-10-16 12:45:24] dbg: [net:3] [server] Client #2 map replay progress 1281201202/9960609524
+[2026-10-16 12:45:25] dbg: [net:3] [server] Client #2 map replay progress 1321964594/9960609524
+[2026-10-16 12:45:26] dbg: [net:3] [server] Client #2 map replay progress 1361482802/9960609524
+[2026-10-16 12:45:27] dbg: [net:3] [server] Client #2 map replay progress 1400542258/9960609524
+[2026-10-16 12:45:28] dbg: [net:3] [server] Client #2 map replay progress 1437176882/9960609524
+[2026-10-16 12:45:29] dbg: [net:3] [server] Client #2 map replay progress 1468437554/9960609524
+[2026-10-16 12:45:30] dbg: [net:3] [server] Client #2 map replay progress 1498977330/9960609524
+[2026-10-16 12:45:31] dbg: [net:3] [server] Client #2 map replay progress 1529189426/9960609524
+[2026-10-16 12:45:32] dbg: [net:3] [server] Client #2 map replay progress 1566020658/9960609524
+[2026-10-16 12:45:33] dbg: [net:3] [server] Client #2 map replay progress 1604621362/9960609524
+[2026-10-16 12:45:34] dbg: [net:3] [server] Client #2 map replay progress 1642435634/9960609524
+[2026-10-16 12:45:35] dbg: [net:3] [server] Client #2 map replay progress 1683330098/9960609524
+[2026-10-16 12:45:36] dbg: [net:3] [server] Client #2 map replay progress 1724945458/9960609524
+[2026-10-16 12:45:37] dbg: [net:3] [server] Client #2 map replay progress 1764594738/9960609524
+[2026-10-16 12:45:38] dbg: [net:3] [server] Client #2 map replay progress 1803588658/9960609524
+[2026-10-16 12:45:39] dbg: [net:3] [server] Client #2 map replay progress 1840354354/9960609524
+[2026-10-16 12:45:40] dbg: [net:3] [server] Client #2 map replay progress 1880790066/9960609524
+[2026-10-16 12:45:41] dbg: [net:3] [server] Client #2 map replay progress 1922798642/9960609524
+[2026-10-16 12:45:42] dbg: [net:3] [server] Client #2 map replay progress 1963955250/9960609524
+[2026-10-16 12:45:43] dbg: [net:3] [server] Client #2 map replay progress 2005374002/9960609524
+[2026-10-16 12:45:44] dbg: [net:3] [server] Client #2 map replay progress 2045875250/9960609524
+[2026-10-16 12:45:45] dbg: [net:3] [server] Client #2 map replay progress 2090636338/9960609524
+[2026-10-16 12:45:46] dbg: [net:3] [server] Client #2 map replay progress 2131399730/9960609524
+[2026-10-16 12:45:47] dbg: [net:3] [server] Client #2 map replay progress 2171638834/9960609524
+[2026-10-16 12:45:48] dbg: [net:3] [server] Client #2 map replay progress 2210305074/9960609524
+[2026-10-16 12:45:49] dbg: [net:3] [server] Client #2 map replay progress 2253296690/9960609524
+[2026-10-16 12:45:50] dbg: [net:3] [server] Client #2 map replay progress 2291700786/9960609524
+[2026-10-16 12:45:51] dbg: [net:3] [server] Client #2 map replay progress 2331350066/9960609524
+[2026-10-16 12:45:52] dbg: [net:3] [server] Client #2 map replay progress 2370671666/9960609524
+[2026-10-16 12:45:53] dbg: [net:3] [server] Client #2 map replay progress 2408485938/9960609524
+[2026-10-16 12:45:54] dbg: [net:3] [server] Client #2 map replay progress 2447283250/9960609524
+[2026-10-16 12:45:55] dbg: [net:3] [server] Client #2 map replay progress 2486211634/9960609524
+[2026-10-16 12:45:56] dbg: [net:3] [server] Client #2 map replay progress 2526516274/9960609524
+[2026-10-16 12:45:57] dbg: [net:3] [server] Client #2 map replay progress 2565575730/9960609524
+[2026-10-16 12:45:58] dbg: [net:3] [server] Client #2 map replay progress 2608698418/9960609524
+[2026-10-16 12:45:59] dbg: [net:3] [server] Client #2 map replay progress 2648216626/9960609524
+[2026-10-16 12:46:00] dbg: [net:3] [server] Client #2 map replay progress 2685310002/9960609524
+[2026-10-16 12:46:01] dbg: [net:3] [server] Client #2 map replay progress 2720371762/9960609524
+[2026-10-16 12:46:02] dbg: [net:3] [server] Client #2 map replay progress 2761856050/9960609524
+[2026-10-16 12:46:03] dbg: [net:3] [server] Client #2 map replay progress 2801308722/9960609524
+[2026-10-16 12:46:04] dbg: [net:3] [server] Client #2 map replay progress 2841220146/9960609524
+[2026-10-16 12:46:05] dbg: [net:3] [server] Client #2 map replay progress 2879951922/9960609524
+[2026-10-16 12:46:07] dbg: [net:3] [server] Client #2 map replay progress 2918093874/9960609524
+[2026-10-16 12:46:08] dbg: [net:3] [server] Client #2 map replay progress 2956563506/9960609524
+[2026-10-16 12:46:09] dbg: [net:3] [server] Client #2 map replay progress 2996343858/9960609524
+[2026-10-16 12:46:10] dbg: [net:3] [server] Client #2 map replay progress 3034813490/9960609524
+[2026-10-16 12:46:11] dbg: [net:3] [server] Client #2 map replay progress 3072234546/9960609524
+[2026-10-16 12:46:12] dbg: [net:3] [server] Client #2 map replay progress 3111359538/9960609524
+[2026-10-16 12:46:13] dbg: [net:3] [server] Client #2 map replay progress 3146617906/9960609524
+[2026-10-16 12:46:14] dbg: [net:3] [server] Client #2 map replay progress 3184301106/9960609524
+[2026-10-16 12:46:15] dbg: [net:3] [server] Client #2 map replay progress 3222246450/9960609524
+[2026-10-16 12:46:16] dbg: [net:3] [server] Client #2 map replay progress 3260191794/9960609524
+[2026-10-16 12:46:17] dbg: [net:3] [server] Client #2 map replay progress 3298726962/9960609524
+[2026-10-16 12:46:18] dbg: [net:3] [server] Client #2 map replay progress 3336934450/9960609524
+[2026-10-16 12:46:19] dbg: [net:3] [server] Client #2 map replay progress 3375469618/9960609524
+[2026-10-16 12:46:20] dbg: [net:3] [server] Client #2 map replay progress 3414463538/9960609524
+[2026-10-16 12:46:21] dbg: [net:3] [server] Client #2 map replay progress 3453129778/9960609524
+[2026-10-16 12:46:22] dbg: [net:3] [server] Client #2 map replay progress 3492385842/9960609524
+[2026-10-16 12:46:23] dbg: [net:3] [server] Client #2 map replay progress 3530527794/9960609524
+[2026-10-16 12:46:24] dbg: [net:3] [server] Client #2 map replay progress 3567096882/9960609524
+[2026-10-16 12:46:25] dbg: [net:3] [server] Client #2 map replay progress 3605304370/9960609524
+[2026-10-16 12:46:26] dbg: [net:3] [server] Client #2 map replay progress 3643774002/9960609524
+[2026-10-16 12:46:27] dbg: [net:3] [server] Client #2 map replay progress 3682178098/9960609524
+[2026-10-16 12:46:28] dbg: [net:3] [server] Client #2 map replay progress 3719140402/9960609524
+[2026-10-16 12:46:29] dbg: [net:3] [server] Client #2 map replay progress 3753808946/9960609524
+[2026-10-16 12:46:30] dbg: [net:3] [server] Client #2 map replay progress 3791623218/9960609524
+[2026-10-16 12:46:31] dbg: [net:3] [server] Client #2 map replay progress 3830617138/9960609524
+[2026-10-16 12:46:32] dbg: [net:3] [server] Client #2 map replay progress 3868300338/9960609524
+[2026-10-16 12:46:33] dbg: [net:3] [server] Client #2 map replay progress 3907228722/9960609524
+[2026-10-16 12:46:34] dbg: [net:3] [server] Client #2 map replay progress 3944649778/9960609524
+[2026-10-16 12:46:35] dbg: [net:3] [server] Client #2 map replay progress 3980301362/9960609524
+[2026-10-16 12:46:36] dbg: [net:3] [server] Client #2 map replay progress 4020343858/9960609524
+[2026-10-16 12:46:37] dbg: [net:3] [server] Client #2 map replay progress 4059206706/9960609524
+[2026-10-16 12:46:38] dbg: [net:3] [server] Client #2 map replay progress 4097479730/9960609524
+[2026-10-16 12:46:39] dbg: [net:3] [server] Client #2 map replay progress 4136604722/9960609524
+[2026-10-16 12:46:40] dbg: [net:3] [server] Client #2 map replay progress 4174746674/9960609524
+[2026-10-16 12:46:41] dbg: [net:3] [server] Client #2 map replay progress 4212757554/9960609524
+[2026-10-16 12:46:42] dbg: [net:3] [server] Client #2 map replay progress 4252341298/9960609524
+[2026-10-16 12:46:43] dbg: [net:3] [server] Client #2 map replay progress 4290810930/9960609524
+[2026-10-16 12:46:44] dbg: [net:3] [server] Client #2 map replay progress 4330591282/9960609524
+[2026-10-16 12:46:45] dbg: [net:3] [server] Client #2 map replay progress 4367946802/9960609524
+[2026-10-16 12:46:46] dbg: [net:3] [server] Client #2 map replay progress 4406088754/9960609524
+[2026-10-16 12:46:47] dbg: [net:3] [server] Client #2 map replay progress 4445344818/9960609524
+[2026-10-16 12:46:48] dbg: [net:3] [server] Client #2 map replay progress 4483224626/9960609524
+[2026-10-16 12:46:49] dbg: [net:3] [server] Client #2 map replay progress 4520514610/9960609524
+[2026-10-16 12:46:50] dbg: [net:3] [server] Client #2 map replay progress 4557607986/9960609524
+[2026-10-16 12:46:51] dbg: [net:3] [server] Client #2 map replay progress 4595618866/9960609524
+[2026-10-16 12:46:52] dbg: [net:3] [server] Client #2 map replay progress 4634022962/9960609524
+[2026-10-16 12:46:53] dbg: [net:3] [server] Client #2 map replay progress 4673541170/9960609524
+[2026-10-16 12:46:54] dbg: [net:3] [server] Client #2 map replay progress 4712993842/9960609524
+[2026-10-16 12:46:55] dbg: [net:3] [server] Client #2 map replay progress 4749235250/9960609524
+[2026-10-16 12:46:56] dbg: [net:3] [server] Client #2 map replay progress 4785804338/9960609524
+[2026-10-16 12:46:57] dbg: [net:3] [server] Client #2 map replay progress 4820866098/9960609524
+[2026-10-16 12:46:58] dbg: [net:3] [server] Client #2 map replay progress 4859270194/9960609524
+[2026-10-16 12:46:59] dbg: [net:3] [server] Client #2 map replay progress 4897739826/9960609524
+[2026-10-16 12:47:00] dbg: [net:3] [server] Client #2 map replay progress 4936143922/9960609524
+[2026-10-16 12:47:01] dbg: [net:3] [server] Client #2 map replay progress 4975334450/9960609524
+[2026-10-16 12:47:02] dbg: [net:3] [server] Client #2 map replay progress 5013214258/9960609524
+[2026-10-16 12:47:03] dbg: [net:3] [server] Client #2 map replay progress 5053322290/9960609524
+[2026-10-16 12:47:04] dbg: [net:3] [server] Client #2 map replay progress 5090350130/9960609524
+[2026-10-16 12:47:05] dbg: [net:3] [server] Client #2 map replay progress 5127312434/9960609524
+[2026-10-16 12:47:06] dbg: [net:3] [server] Client #2 map replay progress 5165650994/9960609524
+[2026-10-16 12:47:07] dbg: [net:3] [server] Client #2 map replay progress 5203399730/9960609524
+[2026-10-16 12:47:08] dbg: [net:3] [server] Client #2 map replay progress 5240493106/9960609524
+[2026-10-16 12:47:09] dbg: [net:3] [server] Client #2 map replay progress 5277127730/9960609524
+[2026-10-16 12:47:10] dbg: [net:3] [server] Client #2 map replay progress 5313893426/9960609524
+[2026-10-16 12:47:11] dbg: [net:3] [server] Client #2 map replay progress 5351248946/9960609524
+[2026-10-16 12:47:12] dbg: [net:3] [server] Client #2 map replay progress 5389521970/9960609524
+[2026-10-16 12:47:13] dbg: [net:3] [server] Client #2 map replay progress 5427663922/9960609524
+[2026-10-16 12:47:14] dbg: [net:3] [server] Client #2 map replay progress 5464888370/9960609524
+[2026-10-16 12:47:15] dbg: [net:3] [server] Client #2 map replay progress 5504013362/9960609524
+[2026-10-16 12:47:16] dbg: [net:3] [server] Client #2 map replay progress 5541827634/9960609524
+[2026-10-16 12:47:17] dbg: [net:3] [server] Client #2 map replay progress 5579838514/9960609524
+[2026-10-16 12:47:18] dbg: [net:3] [server] Client #2 map replay progress 5616931890/9960609524
+[2026-10-16 12:47:19] dbg: [net:3] [server] Client #2 map replay progress 5653959730/9960609524
+[2026-10-16 12:47:19] dbg: [net:2] [server] Client #2 map ready: server_preparation_ms=277806; client_join_ms=161038
+[2026-10-16 12:47:19] dbg: [net:3] [server] Client #2 (127.0.0.1) joined as routing-client, pubkey: CFB2EE580D0ABF9B3AA2F8A4AEC0DDC1D86DA7FD9D5A98B3F67A18C5F2229953
+[2026-10-16 12:47:20] dbg: [net:2] [server] Preparing initial passenger tables at frame 5965
+[2026-10-16 12:47:28] dbg: [net:2] [server] Initial passenger tables ready at frame 5965
+[2026-10-16 12:47:51] dbg: [net:3] [server] Client #2 closed connection
+[2026-10-16 12:47:51] dbg: [net:3] Initializing UDP listeners
+[2026-10-16 12:47:51] dbg: [net:3] Shutting down network

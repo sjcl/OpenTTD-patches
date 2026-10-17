@@ -1,0 +1,14 @@
+dbg: [net:3] Starting network
+dbg: [net:3] Initializing UDP listeners
+dbg: [net:3] Network online, multiplayer available
+dbg: [net:3] Detected broadcast addresses:
+dbg: [net:3]   0) 172.25.15.255
+dbg: [net:3]   1) 192.168.1.255
+dbg: [net:3]   2) 169.254.255.255
+dbg: [net:3] Network revision name: jgrpp-ya-0.73.3+2-172-gd324c1627
+[2026-10-16 12:27:32] dbg: [net:3] Initializing UDP listeners
+[2026-10-16 12:27:32] dbg: [net:3] Connected to 127.0.0.1:17529
+[2026-10-16 12:27:32] dbg: [net:3] [crypto] Creating a new random key
+[2026-10-16 12:33:55] dbg: [net:3] Closed client connection 0
+[2026-10-16 12:33:55] dbg: [net:1] Shutdown client connection 0
+[2026-10-16 12:33:55] dbg: [net:4] Survey: not possible to send survey; most likely due to missing JSON library at compile-time

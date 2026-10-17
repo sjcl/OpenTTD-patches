@@ -1,0 +1,17 @@
+{
+  "reference": "01648fd6ea",
+  "product_sha256": "f636bc5d6a2785c75fe6635aba0b7593e130dd8c25d5da45791dfbaec733b9d6",
+  "files": {
+    "real-map-driver/passenger_precomputed.cpp": "1c0426facff976fba67c6f45a75524b4698d5b611f5117c36b3b1b6963093bd6",
+    "real-map-driver/null_v.cpp": "bed1856969c50a04a8579801769229848ee09ff271bc0eab08e9a3e12ae323af",
+    "save-integrity/console_cmds.cpp": "63f113155e2fa667b79776a765e79bc66a6b2b8dd0048d426ec3ad2a7ec2b1a6"
+  },
+  "note": "Copied translation units only; profiling requires OPENTTD_RETIREMENT_PROFILE; reference path requires OPENTTD_RETIREMENT_REFERENCE",
+  "frozen_product_tree": "7cfdf488ff479eae7e4cac35bb111cabe9bc22db",
+  "retirement_methods_unchanged_after_reuse_fix": {
+    "PrepareRetirement": "74a6260eeb862da828858388545d975e1d42e907ccf8318a40c10d988e7e57b4",
+    "ReleaseDestination": "711e0c05149d87edba416b4b9226ace45e6e8c64d0fda339c50ab339bf1a06d5",
+    "ReachableDestinations": "149dee7acf8f5b0e133f2c05479f4603f19fcab3c276fdae524355c560b914cb"
+  },
+  "unmeasured_delta": "ReuseRetainedDestinations and its BeginPrecomputed call; a later epoch after a cross-cargo rejection, not reached in the one-epoch runtime fixture"
+}

@@ -1,0 +1,121 @@
+{
+  "counter_paths": {
+    "cpu0_performance_percent": "\\Processor Information(0,0)\\% Processor Performance",
+    "cpu0_frequency_mhz": "\\Processor Information(0,0)\\Processor Frequency",
+    "cpu0_time_percent": "\\Processor Information(0,0)\\% Processor Time",
+    "cpu0_utility_percent": "\\Processor Information(0,0)\\% Processor Utility",
+    "total_time_percent": "\\Processor Information(_Total)\\% Processor Time",
+    "total_performance_percent": "\\Processor Information(_Total)\\% Processor Performance"
+  },
+  "counter_errors": {},
+  "worker_affinity_snapshot": [
+    {
+      "thread_id": 51412,
+      "mask": 4294967295,
+      "group": 0
+    }
+  ],
+  "samples": [
+    {
+      "elapsed_seconds": 5,
+      "stage": "preparation",
+      "counters": {
+        "cpu0_performance_percent": {
+          "api_status": "0x0",
+          "data_status": 0,
+          "value": 126.45209568564901
+        },
+        "cpu0_frequency_mhz": {
+          "api_status": "0x0",
+          "data_status": 0,
+          "value": 4300.0
+        },
+        "cpu0_time_percent": {
+          "api_status": "0x0",
+          "data_status": 0,
+          "value": 37.53352178371916
+        },
+        "cpu0_utility_percent": {
+          "api_status": "0x0",
+          "data_status": 0,
+          "value": 49.33892658924321
+        },
+        "total_time_percent": {
+          "api_status": "0x0",
+          "data_status": 0,
+          "value": 25.99851188948331
+        },
+        "total_performance_percent": {
+          "api_status": "0x0",
+          "data_status": 0,
+          "value": 123.32853091391249
+        }
+      },
+      "main_cpu_100ns": 9687500,
+      "main_cycles": 4042723690,
+      "process_power": {
+        "version": 1,
+        "control_mask": 0,
+        "state_mask": 0
+      },
+      "main_thread_power": {
+        "version": 1,
+        "control_mask": 0,
+        "state_mask": 0
+      },
+      "priority_class": 32,
+      "observation_cost_us": 158542.9
+    },
+    {
+      "elapsed_seconds": 6,
+      "stage": "preparation",
+      "counters": {
+        "cpu0_performance_percent": {
+          "api_status": "0x0",
+          "data_status": 0,
+          "value": 126.92484184604933
+        },
+        "cpu0_frequency_mhz": {
+          "api_status": "0x0",
+          "data_status": 0,
+          "value": 4300.0
+        },
+        "cpu0_time_percent": {
+          "api_status": "0x0",
+          "data_status": 0,
+          "value": 26.771632027282145
+        },
+        "cpu0_utility_percent": {
+          "api_status": "0x0",
+          "data_status": 0,
+          "value": 37.99447902818695
+        },
+        "total_time_percent": {
+          "api_status": "0x0",
+          "data_status": 0,
+          "value": 15.174554187681633
+        },
+        "total_performance_percent": {
+          "api_status": "0x0",
+          "data_status": 0,
+          "value": 122.97253131470858
+        }
+      },
+      "main_cpu_100ns": 11250000,
+      "main_cycles": 4717052700,
+      "process_power": {
+        "version": 1,
+        "control_mask": 0,
+        "state_mask": 0
+      },
+      "main_thread_power": {
+        "version": 1,
+        "control_mask": 0,
+        "state_mask": 0
+      },
+      "priority_class": 32,
+      "observation_cost_us": 700.2
+    }
+  ],
+  "note": "Read-only OS observations at approximately 1s intervals. Values are unadjusted provider data; unavailable counters are null, not zero. No power or scheduler setting was changed."
+}

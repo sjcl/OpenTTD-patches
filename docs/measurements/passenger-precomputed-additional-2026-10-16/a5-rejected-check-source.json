@@ -1,0 +1,24 @@
+{
+  "reference": "881cec768f",
+  "candidate": null,
+  "candidate_snapshot": "C:\\Users\\bebe\\.codex\\worktrees\\4ba5\\OpenTTD-patches\\utils\\passenger_table_build_experiments\\section_flat_initial",
+  "heap": "product",
+  "timing_only": false,
+  "source_head": "881cec768fbbac0e434ac89de54a176bc091c732",
+  "simd": false,
+  "stages": false,
+  "matrix": false,
+  "range_split": false,
+  "tools": {
+    "passenger_table_build_prepare.py": "21cddf60b971682eae11c5ee1d6bfd79db0f2a0165963643097280b722e7d23b",
+    "passenger_table_build_benchmark.cpp": "466793ce19db6956c30e08155fad62ee6d03887ff7a7febc61587a7108df5fd3",
+    "passenger_table_build_heaps.h": "04e79da6c7c17a08d5bb800b3e7e1b0fb9d1a8153f68d689f472740aa8cb0fec",
+    "passenger_table_build_simd.h": "6d887ded6f91cae81f6d4e49ebed9f2372b990b7fbd0ed67b4ae190764f7ab28"
+  },
+  "files": {
+    "PassengerTableCandidate.cpp": "313e982a309ba025b2f2b693774b361d3d594724f9bf48dbfbdc691fab7ec7d8",
+    "PassengerTableCandidate.h": "b91c83f64808bd43d7715f43cb3adf1b1bbb49bf903abc4f12a9a249297108be",
+    "PassengerTableReference.cpp": "3423e4492e4dd109f74215f8ece97bc39bb1064c2375ec8629b5f07be5817446",
+    "PassengerTableReference.h": "a8bc22c1e90664a8ba573bf96566e7d921f99d1321f9719a1efd5843d1a8f854"
+  }
+}

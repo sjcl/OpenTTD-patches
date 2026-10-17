@@ -1,0 +1,29 @@
+{
+  "legacy_to_integrated": {
+    "Precomputed passenger routes": {
+      "bytes": [
+        81177570,
+        41350526
+      ],
+      "edges": [
+        810897,
+        219728
+      ],
+      "envelope": [
+        6699030020,
+        6596276484
+      ]
+    },
+    "Precomputed retained routes": {
+      "bytes": [
+        4673962810,
+        4634621558
+      ],
+      "envelope": [
+        6699030020,
+        6596276484
+      ]
+    }
+  },
+  "note": "Descriptive console counter comparison; elapsed fields omitted. Not a result-equivalence test; canonical state checked separately."
+}

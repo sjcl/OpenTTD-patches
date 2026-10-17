@@ -1,0 +1,70 @@
+{
+  "block_size": 256,
+  "rows": [
+    {
+      "first": 1,
+      "last": 256,
+      "old_sim_us": 21655.63671875,
+      "new_sim_us": 24368.28125,
+      "old_journey_us": 1201.45703125,
+      "new_journey_us": 1297.37890625
+    },
+    {
+      "first": 257,
+      "last": 512,
+      "old_sim_us": 24384.94921875,
+      "new_sim_us": 24432.8515625,
+      "old_journey_us": 1237.484375,
+      "new_journey_us": 1259.1171875
+    },
+    {
+      "first": 513,
+      "last": 768,
+      "old_sim_us": 23776.4765625,
+      "new_sim_us": 25983.484375,
+      "old_journey_us": 1281.71484375,
+      "new_journey_us": 1334.4375
+    },
+    {
+      "first": 769,
+      "last": 1024,
+      "old_sim_us": 26552.58984375,
+      "new_sim_us": 25104.625,
+      "old_journey_us": 1425.39453125,
+      "new_journey_us": 1353.94921875
+    },
+    {
+      "first": 1025,
+      "last": 1280,
+      "old_sim_us": 26864.33984375,
+      "new_sim_us": 28765.83984375,
+      "old_journey_us": 1364.80078125,
+      "new_journey_us": 1427.4375
+    },
+    {
+      "first": 1281,
+      "last": 1536,
+      "old_sim_us": 25660.00390625,
+      "new_sim_us": 28393.203125,
+      "old_journey_us": 1374.35546875,
+      "new_journey_us": 1413.27734375
+    },
+    {
+      "first": 1537,
+      "last": 1792,
+      "old_sim_us": 26518.16796875,
+      "new_sim_us": 27184.33984375,
+      "old_journey_us": 1436.8984375,
+      "new_journey_us": 1427.421875
+    },
+    {
+      "first": 1793,
+      "last": 2048,
+      "old_sim_us": 25515.32421875,
+      "new_sim_us": 22673.23046875,
+      "old_journey_us": 1704.5078125,
+      "new_journey_us": 1540.3046875
+    }
+  ],
+  "note": "Adjacent ticks are correlated; these are descriptive blocks, not independent replicates."
+}

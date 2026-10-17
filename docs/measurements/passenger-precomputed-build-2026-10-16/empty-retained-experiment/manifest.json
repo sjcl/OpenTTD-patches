@@ -1,0 +1,6 @@
+{
+  "source_head": "faf582bbeb68a831dc0f1b0e284c9d8db3cf122f",
+  "experiment": "Skip empty retained table array assignment; always reset all scalar flags as before.",
+  "binary_sha256": "08b0f24b113be9772d75fed62e6d0d4523a5fc305d4dcc0ef60632ef8dfaccc3",
+  "copied_database_sha256": "4b46530491e65f0a27f330c00de4132eee000a7f5160b05737db3b24c31cc5d7"
+}

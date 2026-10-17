@@ -1,0 +1,19 @@
+{
+  "status": "Tested; not adopted",
+  "hypothesis": "Keep original completed-row fields compact; allocate added construction-only vector headers only for active tables.",
+  "product_files_unchanged": true,
+  "candidate": {
+    "passenger_precomputed.cpp": "8cfa2bf893b5eec7f7e3479a0890db4d6917bc13fb954493baec4253233988bb",
+    "passenger_precomputed.h": "a11b11ad1ac0b1308ed6c79cd8c7c45913fd2b040802da5ab93269b07a43ff0a"
+  },
+  "note": "Keep the hot range cursor beside the CSR cursor; move only added vector headers into the allocated workspace.",
+  "core_text_audit": "Exact original cpp after reverting member paths, allocation, and null guards for empty-table byte diagnostics.",
+  "validation": {
+    "ctest_passed": 693,
+    "canonical_mismatches": {
+      "steady": {},
+      "retained": {}
+    }
+  },
+  "decision": "No established normal-tick improvement; exact original source and normal builds restored."
+}

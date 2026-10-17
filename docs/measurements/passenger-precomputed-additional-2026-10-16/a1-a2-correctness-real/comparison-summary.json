@@ -1,0 +1,20 @@
+{
+  "assertions": 1689000453,
+  "existing_counters_equal": true,
+  "counters": {
+    "relaxations": 3916843139,
+    "improvements": 340556902,
+    "queue_updates": 340598358,
+    "pops": 340598358,
+    "stale": 69176273,
+    "max_queue": 11050,
+    "label_copies": 271451913,
+    "section_checks": 690745077,
+    "operations": 5665642229
+  },
+  "queue_order_hashes": [
+    18395651037570925272,
+    1092350618695548736
+  ],
+  "timing_eligible": false
+}

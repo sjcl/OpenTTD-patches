@@ -185,8 +185,8 @@ public:
 	{ return (retained ? this->retained_precomputed[cargo] : this->precomputed[cargo]).InspectMemory(); }
 	uint64_t GetPublishedRevision() const { return this->published_revision; }
 	auto BoardingRevision() const { return std::tuple(this->published_revision, this->boarding_revision, this->precomputed_operations); }
-	std::span<const StationID> PrecomputedReachableDestinations(CargoType cargo, StationID origin, bool retained = false) const
-	{ return cargo < NUM_CARGO ? (retained ? this->retained_precomputed[cargo] : this->precomputed[cargo]).ReachableDestinations(origin) : std::span<const StationID>{}; }
+	PassengerPrecomputedTable::DestinationSpans PrecomputedReachableDestinations(CargoType cargo, StationID origin, bool retained = false) const
+	{ return cargo < NUM_CARGO ? (retained ? this->retained_precomputed[cargo] : this->precomputed[cargo]).ReachableDestinations(origin) : PassengerPrecomputedTable::DestinationSpans{}; }
 	std::optional<int64_t> PrecomputedRouteCost(CargoType cargo, StationID origin, StationID destination) const
 	{
 		if (cargo >= NUM_CARGO) return {};

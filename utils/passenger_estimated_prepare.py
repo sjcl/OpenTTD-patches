@@ -54,7 +54,7 @@ def main():
         for (Station *station : Station::Iterate()) for (CargoType cargo : EnumRange(NUM_CARGO)) {
             if (!IsCargoInClass(cargo, CargoClass::Passengers) || station->goods[cargo].data == nullptr) continue;
             StationID target = StationID::Invalid();
-            for (auto destination : db.PrecomputedReachableDestinations(cargo, station->index)) {
+            for (auto span : db.PrecomputedReachableDestinations(cargo, station->index)) for (auto destination : span) {
                 if (destination != station->index && Station::IsValidID(destination)) { target = destination; break; }
             }
             if (target == StationID::Invalid()) continue;

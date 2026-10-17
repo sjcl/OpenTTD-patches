@@ -74,6 +74,8 @@ public:
 	uint64_t GetGraphWork() const { return this->graph_work; }
 	size_t Step(size_t operations, bool legacy_publication = false, const std::function<void(StationID)> &published = {});
 	void ReleaseDestination(StationID destination); ///< Retire a row immediately after its replacement is published.
+	void PrepareRetirement(const PassengerPrecomputedTable &replacement); ///< Freeze the few destinations absent from the replacement before retiring its ascending rows.
+	void ReuseRetainedDestinations(); ///< Start another retirement epoch after the previous replacement finished.
 	uint64_t LegacyPublicationWork() const { return uint64_t(this->rows.size()) * this->waiting_state_count; }
 	PassengerPrecomputedPlan Plan(StationID origin, StationID destination, StateTicks ready, OrderListID excluded = OrderListID::Invalid(), uint32_t sample = 0, OrderListID failed = OrderListID::Invalid()) const;
 	bool Finished() const { return !this->graph_build && (this->failed || this->destination == this->stations.size()); }
@@ -88,7 +90,8 @@ public:
 	std::optional<uint64_t> SectionBoardingKey(const PassengerJourneyExecution &ride) const;
 	std::span<const uint64_t> SectionBoardingKeys(OrderListID service, VehicleOrderID boarding) const;
 	bool RefreshService(const PassengerPeriodicService &service); ///< Refresh bindings, retaining the frozen estimated costs.
-	std::span<const StationID> ReachableDestinations(StationID origin) const;
+	using DestinationSpans = std::array<std::span<const StationID>, 2>; ///< Sorted surviving prefix, then sorted suffix; no overlap.
+	DestinationSpans ReachableDestinations(StationID origin) const;
 	std::optional<int64_t> RouteCost(StationID origin, StationID destination) const; ///< Missing row differs from a proved infinite cost.
 	bool IsHyperpath() const { return this->hyperpath; }
 	bool HasPolicy(StationID origin, StationID destination) const { return this->FindRow(destination) != nullptr && this->PolicyState(origin, OrderListID::Invalid()) != INVALID; }
@@ -122,6 +125,7 @@ private:
 		int64_t cost = INT64_MAX, riding = 0, waiting = 0;
 		int64_t first_wait = 0;
 		uint32_t board = INVALID, alight = INVALID, legs = 0, distance = 0;
+		bool operator==(const Label &) const = default;
 	};
 	struct Policy { int64_t cost = INT64_MAX, wait = 0; std::vector<uint32_t> candidates; };
 	struct FlatPolicy {
@@ -130,13 +134,25 @@ private:
 		static constexpr uint32_t FULL = uint32_t{1} << 31, MASK = FULL - 1;
 	};
 	static_assert(sizeof(FlatPolicy) == 24);
+	/** One storage layout per table algorithm, never mixed within a table:
+	 * - Compressed (integrated, non-Hyperpath): labels per station, sparse alternatives,
+	 *   one dense exception per station with waiting states.
+	 * - Hyperpath: labels for every waiting state; indices holds the policy index of
+	 *   every waiting state; policies (through v14) or flat_* (v15) hold the strategies.
+	 * - Older engines: labels per waiting state and alternatives per station. */
 	struct Row {
-		std::vector<Label> labels, alternative;
-		std::vector<uint32_t> policy_index;
-		std::vector<Policy> policies; ///< Exact old storage for replay generations through v14.
-		std::vector<FlatPolicy> flat_policies;
-		std::vector<uint32_t> flat_candidates; ///< Base payloads and incoming-service addition lists, in policy order.
-		size_t bytes = 0;
+		std::vector<Label> labels, alternative, exception_labels;
+		std::vector<uint32_t> indices; ///< Compressed: alternative indices, then exception state IDs. Hyperpath: policy index per waiting state.
+		std::vector<Policy> policies; ///< Hyperpath only: exact old storage for replay generations through v14.
+		std::vector<FlatPolicy> flat_policies; ///< Hyperpath v15 only.
+		std::vector<uint32_t> flat_candidates; ///< Hyperpath v15 only: base payloads and incoming-service addition lists, in policy order.
+		size_t bytes = 0; ///< Hyperpath only: payload charged at publication.
+		bool Empty() const { return this->labels.empty(); }
+		size_t AllocatedBytes() const ///< Non-Hyperpath rows only; Hyperpath rows report bytes.
+		{
+			return (this->labels.capacity() + this->alternative.capacity() + this->exception_labels.capacity()) * sizeof(Label) +
+					this->indices.capacity() * sizeof(uint32_t);
+		}
 	};
 	struct LabelMetadata {
 		int64_t riding = 0, waiting = 0, first_wait = 0;
@@ -147,6 +163,7 @@ private:
 		std::vector<uint32_t> legs;
 		std::vector<LabelMetadata> metadata;
 	} search;
+	std::vector<uint32_t> exception_state; ///< At descriptor boundaries, only this wait may differ from the station base.
 	using QueueItem = std::tuple<int64_t, uint32_t, uint32_t>;
 	std::vector<uint32_t> station_index, service_pattern;
 	std::vector<StationID> stations;
@@ -172,6 +189,8 @@ private:
 	std::vector<uint32_t> landings; ///< Section arrivals have no on-board continuation.
 	std::vector<uint32_t> incoming_offsets, incoming;
 	std::vector<uint32_t> seed_offsets, seed_occurrences; ///< Alighting occurrences in original order, indexed by destination station.
+	std::vector<uint32_t> exception_slots; ///< Dense exception slot only for stations with waiting states.
+	uint32_t exception_slot_count = 0;
 	std::vector<std::vector<std::pair<uint32_t, uint32_t>>> waiting_states;
 	std::vector<uint32_t> waiting_station;
 	std::vector<std::vector<uint32_t>> station_boarding;
@@ -189,9 +208,14 @@ private:
 	const Policy &LocalPolicy(const Row &row, StationID destination, uint32_t state, OrderListID failed) const;
 	std::vector<Row> rows;
 	std::vector<std::vector<StationID>> reachable_destinations; ///< Inverse published rows; no waiting-packet dependency.
+	std::vector<std::vector<StationID>> retirement_survivors; ///< Only destinations absent from the frozen replacement.
+	std::optional<StationID> retirement_watermark;
+	bool retirement_prepared = false;
 	size_t reachable_bytes = 0;
 	Row scratch, prepared;
 	size_t waiting_state_count = 0;
+	size_t publication_cursor = 0; ///< Original virtual query-state copy position, independent of compressed storage.
+	size_t published_bytes = 0;
 	PassengerDestinationQueue<QueueItem> queue;
 	size_t destination = 0, cursor = 0;
 	uint32_t range_offset = 0; ///< Next virtual edge: zero is the separate base station, then begin..end.
@@ -227,6 +251,11 @@ private:
 	const Member *FindMember(OrderListID service) const;
 	const Section *FindSection(const PassengerJourneyExecution &ride) const;
 	void StartDestination();
+	bool UseCompressedRows() const;
+	const Label &RowLabel(const Row &row, uint32_t origin, uint32_t state) const;
+	const Label &AlternativeLabel(const Row &row, uint32_t origin) const;
+	void PrepareCompressedRow();
+	void CopyStationLabel(uint32_t origin);
 	int64_t SearchCost(uint32_t state) const { return this->optimized ? this->search.cost[state] : this->scratch.labels[state].cost; }
 	uint32_t SearchLegs(uint32_t state) const { return this->optimized ? this->search.legs[state] : this->scratch.labels[state].legs; }
 	uint32_t SearchBoard(uint32_t state) const { return this->optimized ? this->search.metadata[state].board : this->scratch.labels[state].board; }
@@ -234,6 +263,7 @@ private:
 	int64_t SearchRiding(uint32_t state) const { return this->optimized ? this->search.metadata[state].riding : this->scratch.labels[state].riding; }
 	Label SearchLabel(uint32_t state) const;
 	void SetSearchLabel(uint32_t state, const Label &label);
+	bool WaitingStationInvariant(uint32_t station) const; ///< Defined only in the invariant-checking test TU.
 	size_t RelaxIncoming(size_t allowance);
 	size_t StepHyperpath(size_t allowance, const std::function<void(StationID)> &published);
 	void PushHyperpath(int64_t key, uint32_t kind, uint32_t id);

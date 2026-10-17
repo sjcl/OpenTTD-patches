@@ -1,0 +1,45 @@
+{
+  "rows": 4917,
+  "stations": 4917,
+  "cells": 24176889,
+  "exceptions": 23668744,
+  "exception_fraction": 0.9789822007289689,
+  "alternative_valid": 8754889,
+  "alternative_empty_fraction": 0.6378819044915167,
+  "metadata_priority_ties": 85894,
+  "payload": {
+    "original": 4543071984,
+    "dense_exception_dense_alternative": 3578179572,
+    "sparse_exception_dense_alternative": 3743138564,
+    "sparse_both": 3099590120,
+    "dense_exception_sparse_alternative": 2934650796
+  },
+  "including_headers": {
+    "a": 3578671272,
+    "b": 3743610596,
+    "c": 3100180160,
+    "d": 2935122828
+  },
+  "chosen": "d: dense exceptions for stations with waiting states, sparse alternatives",
+  "reason": "Measured exception density makes sparse exceptions larger; omit the many empty alternatives. Access remains O(1).",
+  "raw": [
+    4917,
+    4917,
+    24176889,
+    24176889,
+    23668744,
+    8754889,
+    85894,
+    4543071984,
+    3578179572,
+    3578199240,
+    3743138564,
+    3099590120,
+    56,
+    472032,
+    590040,
+    2934650796
+  ],
+  "selected_header_vectors": 4,
+  "selected_indices_layout": "Alternative indices followed by dense exception state IDs in one vector; four vector headers fit the existing 128-byte charge in MSVC Debug."
+}

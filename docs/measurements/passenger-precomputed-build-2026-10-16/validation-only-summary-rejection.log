@@ -1,0 +1,10 @@
+Traceback (most recent call last):
+  File "C:\Users\bebe\.codex\worktrees\c430\OpenTTD-patches\utils\passenger_precomputed_real_map.py", line 553, in <module>
+    main()
+    ~~~~^^
+  File "C:\Users\bebe\.codex\worktrees\c430\OpenTTD-patches\utils\passenger_precomputed_real_map.py", line 549, in main
+    globals()[args.action](args)
+    ~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "C:\Users\bebe\.codex\worktrees\c430\OpenTTD-patches\utils\passenger_precomputed_real_map.py", line 469, in summarize
+    raise ValueError(f"Correctness-only run cannot be summarized as performance: {directory}")
+ValueError: Correctness-only run cannot be summarized as performance: build-msvc\runtime-legacy-load

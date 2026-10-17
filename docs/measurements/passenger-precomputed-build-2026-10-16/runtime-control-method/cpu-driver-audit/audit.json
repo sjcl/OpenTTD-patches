@@ -1,0 +1,6 @@
+{
+  "recorded_cpu_driver_sha256": "3712ef4e403e11992ea292df19ac08be1fa5c2f653a82863d40627b53b9c9b81",
+  "regenerated_sha256": "3712ef4e403e11992ea292df19ac08be1fa5c2f653a82863d40627b53b9c9b81",
+  "exact_match": true,
+  "note": "Only initial timestamp parsing differs after source-path normalization; tick timing uses identical product diagnostics."
+}

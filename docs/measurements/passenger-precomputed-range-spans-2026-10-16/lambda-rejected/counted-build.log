@@ -1,0 +1,87 @@
+MSBuild のバージョン 17.14.40+3e7442088 (.NET Framework)
+
+  1>Checking Build System
+  Building Custom Rule C:/Users/bebe/.codex/worktrees/c430/OpenTTD-patches/src/strgen/CMakeLists.txt
+  Building Custom Rule C:/Users/bebe/.codex/worktrees/c430/OpenTTD-patches/src/settingsgen/CMakeLists.txt
+  strgen.vcxproj -> C:\Users\bebe\.codex\worktrees\c430\OpenTTD-patches\build-msvc\src\strgen\Release\strgen.exe
+  settingsgen.vcxproj -> C:\Users\bebe\.codex\worktrees\c430\OpenTTD-patches\build-msvc\src\settingsgen\Release\settingsgen.exe
+  -- Version string: jgrpp-ya-0.73.3+2-178-g5dc3b990f-m, Release: 0.73.3+2, Online contents compatible jgrpp version: 0.73.3
+  -- Generating rev.cpp
+  -- Generating ottdres.rc
+  -- Generating CPackProperties.cmake
+  -- Generating Doxyfile
+  -- Generating Doxyfile_AI
+  -- Generating Doxyfile_GS
+  Building Custom Rule C:/Users/bebe/.codex/worktrees/c430/OpenTTD-patches/CMakeLists.txt
+  Building Custom Rule C:/Users/bebe/.codex/worktrees/c430/OpenTTD-patches/CMakeLists.txt
+  openttd_lib.vcxproj -> C:\Users\bebe\.codex\worktrees\c430\OpenTTD-patches\build-msvc\openttd_lib.dir\Release\openttd_lib.lib
+  Building Custom Rule C:/Users/bebe/.codex/worktrees/c430/OpenTTD-patches/CMakeLists.txt
+  openttd.vcxproj -> C:\Users\bebe\.codex\worktrees\c430\OpenTTD-patches\build-msvc\Release\openttd.exe
+MSBuild のバージョン 17.14.40+3e7442088 (.NET Framework)
+
+  settingsgen.vcxproj -> C:\Users\bebe\.codex\worktrees\c430\OpenTTD-patches\build-msvc\src\settingsgen\Release\settingsgen.exe
+  strgen.vcxproj -> C:\Users\bebe\.codex\worktrees\c430\OpenTTD-patches\build-msvc\src\strgen\Release\strgen.exe
+  -- Version string: jgrpp-ya-0.73.3+2-178-g5dc3b990f-m, Release: 0.73.3+2, Online contents compatible jgrpp version: 0.73.3
+  -- Generating rev.cpp
+  -- Generating ottdres.rc
+  -- Generating CPackProperties.cmake
+  -- Generating Doxyfile
+  -- Generating Doxyfile_AI
+  -- Generating Doxyfile_GS
+  openttd_lib.vcxproj -> C:\Users\bebe\.codex\worktrees\c430\OpenTTD-patches\build-msvc\openttd_lib.dir\Release\openttd_lib.lib
+  Building Custom Rule C:/Users/bebe/.codex/worktrees/c430/OpenTTD-patches/CMakeLists.txt
+  PassengerTableReference.cpp
+  PassengerTableCandidate.cpp
+  passenger_table_build_benchmark.cpp
+  PassengerTableBeforeSIMD.cpp
+  PassengerTableSplitSIMD.cpp
+  test_ring_buffer.cpp
+  alternating_iterator.cpp
+C:\Users\bebe\.codex\worktrees\c430\OpenTTD-patches\utils\passenger_table_build_simd.h(55,53): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [C:\Users\bebe\.codex\worktrees\c430\OpenTTD-patches\build-msvc\openttd_test.vcxproj]
+  (ソース ファイル 'split-range-counted/table-build/PassengerTableBeforeSIMD.cpp' をコンパイルしています)
+  
+C:\Users\bebe\.codex\worktrees\c430\OpenTTD-patches\utils\passenger_table_build_simd.h(55,53): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [C:\Users\bebe\.codex\worktrees\c430\OpenTTD-patches\build-msvc\openttd_test.vcxproj]
+  (ソース ファイル 'split-range-counted/table-build/PassengerTableSplitSIMD.cpp' をコンパイルしています)
+  
+  bitmath_func.cpp
+  command.cpp
+  enum_over_optimisation.cpp
+  flatset_type.cpp
+  format_target.cpp
+  history_func.cpp
+  landscape_partial_pixel_z.cpp
+  linkgraph_route_penalties.cpp
+  math_func.cpp
+  passenger_routing.cpp
+  passenger_od.cpp
+  passenger_od_assignment.cpp
+  passenger_service_graph.cpp
+  passenger_service_database.cpp
+  passenger_precomputed.cpp
+  passenger_service_graph_index.cpp
+  passenger_journey_planner.cpp
+  passenger_journey_shadow.cpp
+  passenger_journey_active.cpp
+  passenger_multimodal.cpp
+  mock_spritecache.cpp
+  serialisation.cpp
+  string_consumer.cpp
+  string_func.cpp
+  strings_func.cpp
+  test_bitset.cpp
+  test_main.cpp
+  station_cargo_gui.cpp
+  test_map.cpp
+  test_network_crypto.cpp
+  test_network_debug.cpp
+  test_script_admin.cpp
+  test_window_desc.cpp
+  tilearea.cpp
+  town_auto_fund.cpp
+C:\Users\bebe\.codex\worktrees\c430\OpenTTD-patches\src\tests\passenger_service_graph.cpp(1644,3): warning C4267: '引数': 'size_t' から 'VehicleOrderID' に変換しました。データが失われているかもしれません。 [C:\Users\bebe\.codex\worktrees\c430\OpenTTD-patches\build-msvc\openttd_test.vcxproj]
+C:\Users\bebe\.codex\worktrees\c430\OpenTTD-patches\src\tests\passenger_service_graph.cpp(1645,3): warning C4267: '引数': 'size_t' から 'VehicleOrderID' に変換しました。データが失われているかもしれません。 [C:\Users\bebe\.codex\worktrees\c430\OpenTTD-patches\build-msvc\openttd_test.vcxproj]
+C:\Users\bebe\.codex\worktrees\c430\OpenTTD-patches\src\tests\passenger_service_graph.cpp(1646,3): warning C4267: '引数': 'size_t' から 'VehicleOrderID' に変換しました。データが失われているかもしれません。 [C:\Users\bebe\.codex\worktrees\c430\OpenTTD-patches\build-msvc\openttd_test.vcxproj]
+  utf8.cpp
+C:\Users\bebe\.codex\worktrees\c430\OpenTTD-patches\src\tests\passenger_journey_active.cpp(2322,15): warning C4189: 'train': ローカル変数が初期化されましたが、参照されていません [C:\Users\bebe\.codex\worktrees\c430\OpenTTD-patches\build-msvc\openttd_test.vcxproj]
+LINK : warning LNK4098: defaultlib 'LIBCMT' は他のライブラリの使用と競合しています。/NODEFAULTLIB:library を使用してください。 [C:\Users\bebe\.codex\worktrees\c430\OpenTTD-patches\build-msvc\openttd_test.vcxproj]
+  openttd_test.vcxproj -> C:\Users\bebe\.codex\worktrees\c430\OpenTTD-patches\build-msvc\Release\openttd_test.exe

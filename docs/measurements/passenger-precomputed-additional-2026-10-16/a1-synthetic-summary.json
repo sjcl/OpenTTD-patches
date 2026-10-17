@@ -1,0 +1,52 @@
+{
+  "assertions": 130311640,
+  "test_cases": 6,
+  "synthetic_seeds": [
+    0,
+    1,
+    2
+  ],
+  "services_per_seed": 500,
+  "all_existing_counters_equal": true,
+  "total_counters": {
+    "relaxations": 70936064,
+    "improvements": 13414859,
+    "queue_updates": 13442637,
+    "pops": 13442637,
+    "stale": 1574221,
+    "label_copies": 9084818,
+    "section_checks": 38912,
+    "operations": 116896048
+  },
+  "max_queue": 6528,
+  "range_priority_probes_before": 56412416,
+  "range_priority_probes_after": 6576671,
+  "priority_probe_reduction": 0.883418022727479,
+  "debug_invariant_state_visits": 58886400,
+  "timing_eligible": false,
+  "reason": "Counted correctness run, assertions ON; native timing series separate",
+  "queue_order_hashes": [
+    {
+      "seed": 0,
+      "push": 11853983576388825654,
+      "pop": 10341878468460418536
+    },
+    {
+      "seed": 1,
+      "push": 11335876259500892196,
+      "pop": 3100843496729700664
+    },
+    {
+      "seed": 2,
+      "push": 11916739426844605857,
+      "pop": 11192720010265639337
+    }
+  ],
+  "assertion_coverage": [
+    "manual ranges at budgets 1,2,3,4,5,7,64",
+    "existing experimental queue checks",
+    "80 small complete-table comparisons",
+    "80 small exact heap/label/cursor/graph-frontier comparisons at all seven budgets",
+    "three 500-service complete-table comparisons"
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "old-a": {
+    "reference": "runtime-reference-fresh-retained",
+    "mismatches": {}
+  },
+  "new-a": {
+    "reference": "runtime-matched-new-retained",
+    "mismatches": {}
+  },
+  "new-b": {
+    "reference": "runtime-matched-new-retained",
+    "mismatches": {}
+  },
+  "old-b": {
+    "reference": "runtime-reference-fresh-retained",
+    "mismatches": {}
+  }
+}

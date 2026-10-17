@@ -1,0 +1,10 @@
+{
+  "reference_commit": "881cec768f",
+  "description": "Draft using repository robin_hood flat maps for prefix interning and minimum-service owners",
+  "files": {
+    "passenger_precomputed.cpp.txt": "c94c16bfbca711df109d6ac6771f104f2117ca6055867bbf337080a27b98cad6",
+    "passenger_precomputed.h.txt": "074577209c63bb7fb7981f8d152d5668c8d33d6264268ae83ef6d911d5caef06"
+  },
+  "adopted": false,
+  "reason": "Short paired Section probe improves by about 0.11 seconds, similar to repeat variation; no full-table performance claim."
+}

@@ -91,8 +91,35 @@ def main():
     text = console.read_text(encoding="utf-8")
     anchor = '    if (operation == "build_precomputed") {'
     assert text.count(anchor) == 1
+    text = text.replace(anchor, r'''    if (operation == "wait_background_ready") {
+        if (GetPassengerServiceDatabase().GetLoadState() != PassengerServiceDatabase::LoadState::Ready) {
+            IConsolePrint(CC_ERROR, "Background wait requires completed passenger save replay.");
+            return false;
+        }
+        const int64_t background_tick = _state_ticks.base();
+        const auto background_started = std::chrono::steady_clock::now();
+        uint32_t initial = 0, total = 0;
+        for (const LinkGraphJob *job : LinkGraphJob::Iterate()) { ++total; initial += !job->IsJobCompleted(); }
+        bool complete = initial == 0;
+        while (!complete) {
+            complete = true;
+            for (const LinkGraphJob *job : LinkGraphJob::Iterate()) complete &= job->IsJobCompleted();
+            if (complete || std::chrono::steady_clock::now() - background_started > std::chrono::seconds(600)) break;
+            CSleep(10);
+        }
+        IConsolePrint(CC_DEFAULT, "Background jobs ready: completed={}; initial={}; total={}; elapsed_us={}; tick_before={}; tick_after={}",
+            complete, initial, total, std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - background_started).count(),
+            background_tick, _state_ticks.base());
+        return complete && background_tick == _state_ticks.base();
+    }
+''' + anchor)
     text = text.replace(anchor, '''    if (operation == "partial_precomputed") {
-        GetPassengerServiceDatabase().TickPrecomputed(64 * 1024 * 1024);
+        auto &db = GetPassengerServiceDatabase();
+        if (db.GetLoadState() != PassengerServiceDatabase::LoadState::Ready) {
+            IConsolePrint(CC_ERROR, "Partial build probe requires completed passenger save replay.");
+            return false;
+        }
+        db.TickPrecomputed(64 * 1024 * 1024);
         return true;
     }
 ''' + anchor)

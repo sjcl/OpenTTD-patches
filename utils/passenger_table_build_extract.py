@@ -44,7 +44,7 @@ def main():
     assert riff & 0x0F000000 == 0
     length = (riff & 0xFFFFFF) | ((riff >> 28) << 24)
     blob = data[pos + 8:pos + 8 + length]
-    assert len(blob) == length and len(blob) % 8 == 0 and int.from_bytes(blob[:8], "little") in (8, 9, 10)
+    assert len(blob) == length and len(blob) % 8 == 0 and int.from_bytes(blob[:8], "little") in (8, 9, 10, 11)
     header, pos = table(data, b"MAPS")
     assert header == b"\x06\x05dim_x\x06\x05dim_y\x00"
     length, pos = gamma(data, pos)

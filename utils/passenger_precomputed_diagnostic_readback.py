@@ -111,7 +111,8 @@ def main():
         if mismatches:
             raise RuntimeError(f'Readback changed canonical state: {run.name}: {mismatches}')
         console = (directory / 'console.txt').read_text(encoding='utf-8')
-        line = next(line for line in console.splitlines() if 'Passenger events: ' in line)
+        line = next(line.split('Passenger events: ', 1)[1] for line in console.splitlines()
+                    if 'Passenger events: ' in line)
         events = {key:int(value) for key, value in re.findall(r'(\w+)=(-?\d+)', line)}
         results.append(dict(run=run.name, canonical_mismatches=mismatches, state_ticks=actual['state_ticks'],
                             active_events=events))

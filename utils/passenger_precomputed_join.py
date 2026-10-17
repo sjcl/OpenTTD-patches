@@ -42,6 +42,7 @@ def main():
                   input=str(args.input.resolve()), joined=False, packet_payment_equal=False,
                   binary_sha256=real.PROFILE.sha256(args.binary), input_sha256=real.PROFILE.sha256(args.input),
                   requested_ticks=args.ticks, initial_build=args.initial_build, stall_test=args.stall, frame_freq=args.frame_freq,
+                  toggle_precomputed=args.toggle_precomputed, replace_precomputed=args.replace_precomputed,
                   wait_server_ready=args.wait_server_ready,
                   observation_timeout_seconds=args.observe_timeout)
 
@@ -149,6 +150,8 @@ def main():
         host = start(server, ["-D", result["address"], "-g", str(args.input.resolve())])
         if not wait(lambda: (server / "save-integrity.json").exists(), args.observe_timeout):
             raise RuntimeError("Server did not finish loading")
+        if args.initial_build and "Partial build probe requires completed passenger save replay." in read(server, "console.txt"):
+            raise RuntimeError("Partial build probe cannot mutate an unfinished save replay; use an input without an active saved table")
         # Console settings/pause are synchronized commands; let them execute
         # before comparing the server with the subsequently downloaded map.
         wait(lambda: False, 1)

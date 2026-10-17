@@ -1,0 +1,5 @@
+{
+  "product_sha256": "9b736819cf55cce78c4f92ad77005461f9670a474fb695b083b8f9cc7c697439",
+  "copied_sha256": "3e5076c86d362ebf555e2899d7ccbb56ee8876b0891792d71b6b7e4b0d5d4efe",
+  "note": "Only the out-of-line derived Row predicate changes; identical class/header ABI and saved v11 flags. Dense mode has the new empty Row container headers and shared slot map overhead. No product environment switch."
+}

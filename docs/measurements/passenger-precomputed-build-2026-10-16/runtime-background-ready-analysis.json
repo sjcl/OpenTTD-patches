@@ -1,0 +1,821 @@
+{
+  "cohorts": {
+    "background-ready": {
+      "order": [
+        "old-a",
+        "new-a",
+        "new-b",
+        "old-b"
+      ],
+      "runs": {
+        "old-a": {
+          "binary_sha256": "0aa5ea3ffac300395bca7eb1e590b3b8f5179cb505704fb7cd718cc5ee2e6694",
+          "input_sha256": "ca42a90f558ed2c07323b66b5cf2f5632d1c522b6bc79a7371b3d0797ccd1c97",
+          "process_source_sha256": "badb3b760e6ce1873242094f9fb55f96399bf2db3f3fcca124a0c8b0037a5188",
+          "tick_source_sha256": "24064b0bce9cdbb8a6f154a6f7c0d9316fe3142ae8878557966e0a9a8c56e182",
+          "host_source_sha256": "29ac71cf11ea81d19bb028519d0db8e194c353ce852d2532fef830ddf0736908",
+          "background_ready": {
+            "completed": true,
+            "initial": 1,
+            "total": 15,
+            "elapsed_us": 3965157,
+            "tick_before": 3181119581,
+            "tick_after": 3181119581
+          },
+          "warm_us": 177625298,
+          "simulation_us": {
+            "count": 2048,
+            "mean": 23982.31103515625,
+            "p95": 30486,
+            "p99": 34003,
+            "maximum": 57910
+          },
+          "journey_us": {
+            "count": 2048,
+            "mean": 1297.19580078125,
+            "p95": 1910,
+            "p99": 3517,
+            "maximum": 27187
+          },
+          "host_counters": {
+            "cpu0_performance_percent": {
+              "count": 45,
+              "mean": 127.42944930425234,
+              "p95": 128.11201633538425,
+              "p99": 128.16789858186507,
+              "maximum": 128.16789858186507
+            },
+            "cpu0_frequency_mhz": {
+              "count": 45,
+              "mean": 4300.0,
+              "p95": 4300.0,
+              "p99": 4300.0,
+              "maximum": 4300.0
+            },
+            "cpu0_time_percent": {
+              "count": 45,
+              "mean": 99.72396126887878,
+              "p95": 100.0,
+              "p99": 100.0,
+              "maximum": 100.0
+            },
+            "cpu0_utility_percent": {
+              "count": 45,
+              "mean": 127.03927368855332,
+              "p95": 128.0722638923776,
+              "p99": 128.13902383524893,
+              "maximum": 128.13902383524893
+            },
+            "total_time_percent": {
+              "count": 45,
+              "mean": 18.874599166130093,
+              "p95": 31.77731153719411,
+              "p99": 33.07304316527284,
+              "maximum": 33.07304316527284
+            },
+            "total_performance_percent": {
+              "count": 45,
+              "mean": 124.07127707122834,
+              "p95": 124.46466084595221,
+              "p99": 124.711814226573,
+              "maximum": 124.711814226573
+            }
+          },
+          "monitor_interval": {
+            "samples": 45,
+            "elapsed_seconds": 52.87258249986917,
+            "main_cpu_seconds": 51.546875,
+            "other_process_thread_cpu_seconds": 0.3125
+          },
+          "observation_cost_us": {
+            "count": 45,
+            "mean": 356.3622222222222,
+            "p95": 660.4,
+            "p99": 823.8,
+            "maximum": 823.8
+          },
+          "result_sha256": "29edf5c890d5e6054491e6dbe105ce8fd281fd8b1d97c1a994c3a89b6d81663f"
+        },
+        "new-a": {
+          "binary_sha256": "720c2a5f93226260816e5e5c7a413ab8818975991306300ed7e32aaee87a4a54",
+          "input_sha256": "ca42a90f558ed2c07323b66b5cf2f5632d1c522b6bc79a7371b3d0797ccd1c97",
+          "process_source_sha256": "d6d53c5b5fe0b6fc48ae9c647b93d63be136c0cfc5f97b2370a4ccc44194ae0d",
+          "tick_source_sha256": "897ff62e1a92dd31c13816466cbfa9dc86e2937eac0a93f6afa7738318c30b0f",
+          "host_source_sha256": "c630098d8e0032546e4b4da3afc0246e27b3b15d2be76eee9836760b7d49bda1",
+          "background_ready": {
+            "completed": true,
+            "initial": 1,
+            "total": 15,
+            "elapsed_us": 62565942,
+            "tick_before": 3181119581,
+            "tick_after": 3181119581
+          },
+          "warm_us": 84695541,
+          "simulation_us": {
+            "count": 2048,
+            "mean": 22796.2177734375,
+            "p95": 29293,
+            "p99": 32979,
+            "maximum": 58929
+          },
+          "journey_us": {
+            "count": 2048,
+            "mean": 1250.1455078125,
+            "p95": 1876,
+            "p99": 2654,
+            "maximum": 20400
+          },
+          "host_counters": {
+            "cpu0_performance_percent": {
+              "count": 44,
+              "mean": 127.8146096318747,
+              "p95": 128.1852336362437,
+              "p99": 128.23923560716014,
+              "maximum": 128.23923560716014
+            },
+            "cpu0_frequency_mhz": {
+              "count": 44,
+              "mean": 4300.0,
+              "p95": 4300.0,
+              "p99": 4300.0,
+              "maximum": 4300.0
+            },
+            "cpu0_time_percent": {
+              "count": 44,
+              "mean": 98.3764776128609,
+              "p95": 100.0,
+              "p99": 100.0,
+              "maximum": 100.0
+            },
+            "cpu0_utility_percent": {
+              "count": 44,
+              "mean": 125.8202649736125,
+              "p95": 128.16918191186198,
+              "p99": 128.22656907820527,
+              "maximum": 128.22656907820527
+            },
+            "total_time_percent": {
+              "count": 44,
+              "mean": 16.620937186109213,
+              "p95": 23.500542777566835,
+              "p99": 27.749699516394056,
+              "maximum": 27.749699516394056
+            },
+            "total_performance_percent": {
+              "count": 44,
+              "mean": 124.20818270971851,
+              "p95": 124.74535724886077,
+              "p99": 125.1368310755183,
+              "maximum": 125.1368310755183
+            }
+          },
+          "monitor_interval": {
+            "samples": 44,
+            "elapsed_seconds": 51.571900699753314,
+            "main_cpu_seconds": 50.265625,
+            "other_process_thread_cpu_seconds": 0.296875
+          },
+          "observation_cost_us": {
+            "count": 44,
+            "mean": 454.4636363636364,
+            "p95": 745.8,
+            "p99": 4576.1,
+            "maximum": 4576.1
+          },
+          "result_sha256": "334689e9509684dc94aa6d4593905d36f0772cda667915042a67d766ada6c343"
+        },
+        "new-b": {
+          "binary_sha256": "720c2a5f93226260816e5e5c7a413ab8818975991306300ed7e32aaee87a4a54",
+          "input_sha256": "ca42a90f558ed2c07323b66b5cf2f5632d1c522b6bc79a7371b3d0797ccd1c97",
+          "process_source_sha256": "4df05e056bd715496672ca1381355cf69d691521de4c021b5cfa6b470d7634ef",
+          "tick_source_sha256": "3d7e19c9cf00625cbcab8aac25d2044200943e08ce0b4e0c28e4e3c6c41f38fc",
+          "host_source_sha256": "ed6347be5fbc24f700f9d4d1a8190f75d2aa8bac0da2b3f111f757323136e65a",
+          "background_ready": {
+            "completed": true,
+            "initial": 1,
+            "total": 15,
+            "elapsed_us": 65078561,
+            "tick_before": 3181119581,
+            "tick_after": 3181119581
+          },
+          "warm_us": 81814053,
+          "simulation_us": {
+            "count": 2048,
+            "mean": 24603.984375,
+            "p95": 30770,
+            "p99": 34583,
+            "maximum": 57118
+          },
+          "journey_us": {
+            "count": 2048,
+            "mean": 1315.5,
+            "p95": 1981,
+            "p99": 2599,
+            "maximum": 22034
+          },
+          "host_counters": {
+            "cpu0_performance_percent": {
+              "count": 47,
+              "mean": 127.33037494886302,
+              "p95": 128.1760678000585,
+              "p99": 128.357609339096,
+              "maximum": 128.357609339096
+            },
+            "cpu0_frequency_mhz": {
+              "count": 47,
+              "mean": 4300.0,
+              "p95": 4300.0,
+              "p99": 4300.0,
+              "maximum": 4300.0
+            },
+            "cpu0_time_percent": {
+              "count": 47,
+              "mean": 98.61243810982695,
+              "p95": 100.0,
+              "p99": 100.0,
+              "maximum": 100.0
+            },
+            "cpu0_utility_percent": {
+              "count": 47,
+              "mean": 125.51417087163145,
+              "p95": 128.1690780177915,
+              "p99": 128.33972948418702,
+              "maximum": 128.33972948418702
+            },
+            "total_time_percent": {
+              "count": 47,
+              "mean": 20.05978166961592,
+              "p95": 31.491361106503856,
+              "p99": 34.3767900029028,
+              "maximum": 34.3767900029028
+            },
+            "total_performance_percent": {
+              "count": 47,
+              "mean": 124.240860425718,
+              "p95": 124.79081685916843,
+              "p99": 125.21842684226262,
+              "maximum": 125.21842684226262
+            }
+          },
+          "monitor_interval": {
+            "samples": 47,
+            "elapsed_seconds": 54.877121000085026,
+            "main_cpu_seconds": 52.9375,
+            "other_process_thread_cpu_seconds": 0.328125
+          },
+          "observation_cost_us": {
+            "count": 47,
+            "mean": 405.48936170212767,
+            "p95": 1108.7,
+            "p99": 1499.6,
+            "maximum": 1499.6
+          },
+          "result_sha256": "334689e9509684dc94aa6d4593905d36f0772cda667915042a67d766ada6c343"
+        },
+        "old-b": {
+          "binary_sha256": "0aa5ea3ffac300395bca7eb1e590b3b8f5179cb505704fb7cd718cc5ee2e6694",
+          "input_sha256": "ca42a90f558ed2c07323b66b5cf2f5632d1c522b6bc79a7371b3d0797ccd1c97",
+          "process_source_sha256": "19fc081c00278b6df5a3300d3c3773675b50dcf253182431cd02b88d11ab19cd",
+          "tick_source_sha256": "70852ee9fd02b36d5d55abfd75fb20a759baa9cafcd99418db781a5a44a9ef38",
+          "host_source_sha256": "73047feffc31f695642a389e7df7d87e41be767a87bd2a400b2c90b45e16b555",
+          "background_ready": {
+            "completed": true,
+            "initial": 0,
+            "total": 15,
+            "elapsed_us": 1,
+            "tick_before": 3181119581,
+            "tick_after": 3181119581
+          },
+          "warm_us": 176054721,
+          "simulation_us": {
+            "count": 2048,
+            "mean": 24407.5966796875,
+            "p95": 30927,
+            "p99": 34873,
+            "maximum": 59075
+          },
+          "journey_us": {
+            "count": 2048,
+            "mean": 1327.74951171875,
+            "p95": 1952,
+            "p99": 3326,
+            "maximum": 21821
+          },
+          "host_counters": {
+            "cpu0_performance_percent": {
+              "count": 48,
+              "mean": 127.10199728717971,
+              "p95": 127.83701603845921,
+              "p99": 127.92233190390145,
+              "maximum": 127.92233190390145
+            },
+            "cpu0_frequency_mhz": {
+              "count": 48,
+              "mean": 4300.0,
+              "p95": 4300.0,
+              "p99": 4300.0,
+              "maximum": 4300.0
+            },
+            "cpu0_time_percent": {
+              "count": 48,
+              "mean": 100.0,
+              "p95": 100.0,
+              "p99": 100.0,
+              "maximum": 100.0
+            },
+            "cpu0_utility_percent": {
+              "count": 48,
+              "mean": 127.07782529247031,
+              "p95": 127.81470383341762,
+              "p99": 127.89045084528522,
+              "maximum": 127.89045084528522
+            },
+            "total_time_percent": {
+              "count": 48,
+              "mean": 20.5234792669046,
+              "p95": 27.9067415911314,
+              "p99": 29.105296332919906,
+              "maximum": 29.105296332919906
+            },
+            "total_performance_percent": {
+              "count": 48,
+              "mean": 124.20328812123206,
+              "p95": 124.69769559674243,
+              "p99": 125.12185484300869,
+              "maximum": 125.12185484300869
+            }
+          },
+          "monitor_interval": {
+            "samples": 48,
+            "elapsed_seconds": 54.46781249996275,
+            "main_cpu_seconds": 51.4375,
+            "other_process_thread_cpu_seconds": 0.359375
+          },
+          "observation_cost_us": {
+            "count": 48,
+            "mean": 415.73333333333335,
+            "p95": 715.4,
+            "p99": 1213.3,
+            "maximum": 1213.3
+          },
+          "result_sha256": "29edf5c890d5e6054491e6dbe105ce8fd281fd8b1d97c1a994c3a89b6d81663f"
+        }
+      },
+      "pooled_us": {
+        "old": {
+          "simulation": {
+            "count": 4096,
+            "mean": 24194.953857421875,
+            "p95": 30745,
+            "p99": 34653,
+            "maximum": 59075
+          },
+          "journey": {
+            "count": 4096,
+            "mean": 1312.47265625,
+            "p95": 1928,
+            "p99": 3411,
+            "maximum": 27187
+          }
+        },
+        "new": {
+          "simulation": {
+            "count": 4096,
+            "mean": 23700.10107421875,
+            "p95": 30172,
+            "p99": 33943,
+            "maximum": 58929
+          },
+          "journey": {
+            "count": 4096,
+            "mean": 1282.82275390625,
+            "p95": 1929,
+            "p99": 2628,
+            "maximum": 22034
+          }
+        }
+      },
+      "new_vs_old_percent": {
+        "simulation": {
+          "mean": -2.045272688343347,
+          "p95": -1.8637176776711617,
+          "p99": -2.0488846564511
+        },
+        "journey": {
+          "mean": -2.2590872428889908,
+          "p95": 0.051867219917012264,
+          "p99": -22.955145118733512
+        }
+      }
+    },
+    "background-ready-retained": {
+      "order": [
+        "old-a",
+        "new-a",
+        "new-b",
+        "old-b"
+      ],
+      "runs": {
+        "old-a": {
+          "binary_sha256": "0aa5ea3ffac300395bca7eb1e590b3b8f5179cb505704fb7cd718cc5ee2e6694",
+          "input_sha256": "ca42a90f558ed2c07323b66b5cf2f5632d1c522b6bc79a7371b3d0797ccd1c97",
+          "process_source_sha256": "ec9463a341848a81d8ec44a77d5bf85bb3848f5227e4118fa5a89c55c57f3b71",
+          "tick_source_sha256": "aa8aecb5631c91653b815a7d590b2aac1da091d3b3b8470d2164c0d316cbd240",
+          "host_source_sha256": "699a2b6d2806037345aa4df8d442f8501b6850c71f811f6c06ebf633404516dd",
+          "background_ready": {
+            "completed": true,
+            "initial": 0,
+            "total": 15,
+            "elapsed_us": 0,
+            "tick_before": 3181119581,
+            "tick_after": 3181119581
+          },
+          "warm_us": 195229407,
+          "simulation_us": {
+            "count": 2048,
+            "mean": 32494.60888671875,
+            "p95": 44383,
+            "p99": 53888,
+            "maximum": 75525
+          },
+          "journey_us": {
+            "count": 2048,
+            "mean": 5105.21435546875,
+            "p95": 18047,
+            "p99": 23299,
+            "maximum": 28737
+          },
+          "host_counters": {
+            "cpu0_performance_percent": {
+              "count": 62,
+              "mean": 125.9624487643893,
+              "p95": 126.62211963979894,
+              "p99": 126.69955785065495,
+              "maximum": 126.69955785065495
+            },
+            "cpu0_frequency_mhz": {
+              "count": 62,
+              "mean": 4300.0,
+              "p95": 4300.0,
+              "p99": 4300.0,
+              "maximum": 4300.0
+            },
+            "cpu0_time_percent": {
+              "count": 62,
+              "mean": 99.9749772919525,
+              "p95": 100.0,
+              "p99": 100.0,
+              "maximum": 100.0
+            },
+            "cpu0_utility_percent": {
+              "count": 62,
+              "mean": 125.94627060550428,
+              "p95": 126.60738300342956,
+              "p99": 126.67749433223659,
+              "maximum": 126.67749433223659
+            },
+            "total_time_percent": {
+              "count": 62,
+              "mean": 29.76595689884351,
+              "p95": 41.9762167524483,
+              "p99": 44.50239434898439,
+              "maximum": 44.50239434898439
+            },
+            "total_performance_percent": {
+              "count": 62,
+              "mean": 123.94329303946508,
+              "p95": 124.66546778506097,
+              "p99": 124.69942385112783,
+              "maximum": 124.69942385112783
+            }
+          },
+          "monitor_interval": {
+            "samples": 62,
+            "elapsed_seconds": 72.671991399955,
+            "main_cpu_seconds": 64.34375,
+            "other_process_thread_cpu_seconds": 0.359375
+          },
+          "observation_cost_us": {
+            "count": 62,
+            "mean": 508.4,
+            "p95": 742.2,
+            "p99": 2568.8,
+            "maximum": 2568.8
+          },
+          "result_sha256": "80b53abefecab12af15b69016eecd0fec6e33fcb789fb9cc5c0e61b9685a0add"
+        },
+        "new-a": {
+          "binary_sha256": "720c2a5f93226260816e5e5c7a413ab8818975991306300ed7e32aaee87a4a54",
+          "input_sha256": "ca42a90f558ed2c07323b66b5cf2f5632d1c522b6bc79a7371b3d0797ccd1c97",
+          "process_source_sha256": "348a3a9d42b5c9107d7ba5b36a4eb66df429ae81f0b5b61239492f300acc33df",
+          "tick_source_sha256": "173e8af94e2e1b3ba3339343455c421371d47b20b698e3cea8f814e535bc0d48",
+          "host_source_sha256": "cfba378400f3ee8b7f137b41e49d26a1e8fafa4157250f118d4bc6bd41fc98ed",
+          "background_ready": {
+            "completed": true,
+            "initial": 1,
+            "total": 15,
+            "elapsed_us": 59810360,
+            "tick_before": 3181119581,
+            "tick_after": 3181119581
+          },
+          "warm_us": 97511498,
+          "simulation_us": {
+            "count": 2048,
+            "mean": 31314.68408203125,
+            "p95": 44240,
+            "p99": 54101,
+            "maximum": 80030
+          },
+          "journey_us": {
+            "count": 2048,
+            "mean": 3941.81982421875,
+            "p95": 17647,
+            "p99": 22034,
+            "maximum": 26096
+          },
+          "host_counters": {
+            "cpu0_performance_percent": {
+              "count": 60,
+              "mean": 125.72754400724273,
+              "p95": 126.3494118283264,
+              "p99": 126.52616524631682,
+              "maximum": 126.52616524631682
+            },
+            "cpu0_frequency_mhz": {
+              "count": 60,
+              "mean": 4300.0,
+              "p95": 4300.0,
+              "p99": 4300.0,
+              "maximum": 4300.0
+            },
+            "cpu0_time_percent": {
+              "count": 60,
+              "mean": 99.43079178903918,
+              "p95": 100.0,
+              "p99": 100.0,
+              "maximum": 100.0
+            },
+            "cpu0_utility_percent": {
+              "count": 60,
+              "mean": 125.05625908485169,
+              "p95": 126.32779817724692,
+              "p99": 126.52304669789935,
+              "maximum": 126.52304669789935
+            },
+            "total_time_percent": {
+              "count": 60,
+              "mean": 28.463111710058634,
+              "p95": 39.916699617767236,
+              "p99": 46.185006565083775,
+              "maximum": 46.185006565083775
+            },
+            "total_performance_percent": {
+              "count": 59,
+              "mean": 123.61918249740235,
+              "p95": 124.25868879376668,
+              "p99": 124.33992211319207,
+              "maximum": 124.33992211319207
+            }
+          },
+          "monitor_interval": {
+            "samples": 60,
+            "elapsed_seconds": 70.49799229996279,
+            "main_cpu_seconds": 59.640625,
+            "other_process_thread_cpu_seconds": 0.296875
+          },
+          "observation_cost_us": {
+            "count": 60,
+            "mean": 506.31333333333333,
+            "p95": 1086.2,
+            "p99": 1815.4,
+            "maximum": 1815.4
+          },
+          "result_sha256": "d11a3c723afa9f9286b2b143e7bb777a7484c1e36d084d0813c5a4f0b3e4ace3"
+        },
+        "new-b": {
+          "binary_sha256": "720c2a5f93226260816e5e5c7a413ab8818975991306300ed7e32aaee87a4a54",
+          "input_sha256": "ca42a90f558ed2c07323b66b5cf2f5632d1c522b6bc79a7371b3d0797ccd1c97",
+          "process_source_sha256": "f860ff069656b0ada5ae6a4f279f6cecc71278202e37a2ceed26aecb05edbd8a",
+          "tick_source_sha256": "5775f63630cd410a1bca6216fa01e3e11b7e5c4a2f4986b8d62d3095b3963d0a",
+          "host_source_sha256": "f23f2151e6e9256cad99ba05430aa9068806a9b4efe163eb448aaef899b75e23",
+          "background_ready": {
+            "completed": true,
+            "initial": 1,
+            "total": 15,
+            "elapsed_us": 57547034,
+            "tick_before": 3181119581,
+            "tick_after": 3181119581
+          },
+          "warm_us": 102635824,
+          "simulation_us": {
+            "count": 2048,
+            "mean": 33738.35595703125,
+            "p95": 48428,
+            "p99": 59042,
+            "maximum": 80634
+          },
+          "journey_us": {
+            "count": 2048,
+            "mean": 4230.5224609375,
+            "p95": 18981,
+            "p99": 23275,
+            "maximum": 34579
+          },
+          "host_counters": {
+            "cpu0_performance_percent": {
+              "count": 63,
+              "mean": 124.42959785595811,
+              "p95": 126.24695142818486,
+              "p99": 126.32356620982762,
+              "maximum": 126.32356620982762
+            },
+            "cpu0_frequency_mhz": {
+              "count": 63,
+              "mean": 4300.0,
+              "p95": 4300.0,
+              "p99": 4300.0,
+              "maximum": 4300.0
+            },
+            "cpu0_time_percent": {
+              "count": 63,
+              "mean": 99.35950813176392,
+              "p95": 100.0,
+              "p99": 100.0,
+              "maximum": 100.0
+            },
+            "cpu0_utility_percent": {
+              "count": 63,
+              "mean": 123.68175469130715,
+              "p95": 126.22512695278343,
+              "p99": 126.315852554073,
+              "maximum": 126.315852554073
+            },
+            "total_time_percent": {
+              "count": 63,
+              "mean": 37.31186452236921,
+              "p95": 50.54300368304374,
+              "p99": 58.26233463095352,
+              "maximum": 58.26233463095352
+            },
+            "total_performance_percent": {
+              "count": 63,
+              "mean": 122.4846212671951,
+              "p95": 123.97739328609413,
+              "p99": 124.17862263256255,
+              "maximum": 124.17862263256255
+            }
+          },
+          "monitor_interval": {
+            "samples": 63,
+            "elapsed_seconds": 75.78487069997936,
+            "main_cpu_seconds": 66.515625,
+            "other_process_thread_cpu_seconds": 0.359375
+          },
+          "observation_cost_us": {
+            "count": 63,
+            "mean": 613.115873015873,
+            "p95": 1155.2,
+            "p99": 1771.9,
+            "maximum": 1771.9
+          },
+          "result_sha256": "d11a3c723afa9f9286b2b143e7bb777a7484c1e36d084d0813c5a4f0b3e4ace3"
+        },
+        "old-b": {
+          "binary_sha256": "0aa5ea3ffac300395bca7eb1e590b3b8f5179cb505704fb7cd718cc5ee2e6694",
+          "input_sha256": "ca42a90f558ed2c07323b66b5cf2f5632d1c522b6bc79a7371b3d0797ccd1c97",
+          "process_source_sha256": "4276500bd1077a053ff1a64c4b6c5ba9dd1081ca3ddf5add6b9b6417546a4c43",
+          "tick_source_sha256": "e25b8f21255d5a0f33875393367ad1a0c31cdb60feb991c068a1d169c4141b12",
+          "host_source_sha256": "db9cca3ceb3c83b6e2f666c9e1cea859804c94e869927c6f93c9cb5d33204ac1",
+          "background_ready": {
+            "completed": true,
+            "initial": 0,
+            "total": 15,
+            "elapsed_us": 1,
+            "tick_before": 3181119581,
+            "tick_after": 3181119581
+          },
+          "warm_us": 202220334,
+          "simulation_us": {
+            "count": 2048,
+            "mean": 32821.48095703125,
+            "p95": 44528,
+            "p99": 54522,
+            "maximum": 68691
+          },
+          "journey_us": {
+            "count": 2048,
+            "mean": 5220.255859375,
+            "p95": 17567,
+            "p99": 22935,
+            "maximum": 27346
+          },
+          "host_counters": {
+            "cpu0_performance_percent": {
+              "count": 63,
+              "mean": 124.97365346717305,
+              "p95": 126.02475101121881,
+              "p99": 126.06405861290006,
+              "maximum": 126.06405861290006
+            },
+            "cpu0_frequency_mhz": {
+              "count": 63,
+              "mean": 4300.0,
+              "p95": 4300.0,
+              "p99": 4300.0,
+              "maximum": 4300.0
+            },
+            "cpu0_time_percent": {
+              "count": 63,
+              "mean": 100.0,
+              "p95": 100.0,
+              "p99": 100.0,
+              "maximum": 100.0
+            },
+            "cpu0_utility_percent": {
+              "count": 63,
+              "mean": 124.95936092615366,
+              "p95": 126.02250208279011,
+              "p99": 126.04239060859565,
+              "maximum": 126.04239060859565
+            },
+            "total_time_percent": {
+              "count": 63,
+              "mean": 31.328200009297515,
+              "p95": 42.88448760846818,
+              "p99": 46.16833131033551,
+              "maximum": 46.16833131033551
+            },
+            "total_performance_percent": {
+              "count": 62,
+              "mean": 123.04369944369186,
+              "p95": 124.01898855783692,
+              "p99": 124.11354231326298,
+              "maximum": 124.11354231326298
+            }
+          },
+          "monitor_interval": {
+            "samples": 63,
+            "elapsed_seconds": 73.5062977001071,
+            "main_cpu_seconds": 61.40625,
+            "other_process_thread_cpu_seconds": 0.359375
+          },
+          "observation_cost_us": {
+            "count": 63,
+            "mean": 538.7428571428571,
+            "p95": 1038.6,
+            "p99": 1642.0,
+            "maximum": 1642.0
+          },
+          "result_sha256": "80b53abefecab12af15b69016eecd0fec6e33fcb789fb9cc5c0e61b9685a0add"
+        }
+      },
+      "pooled_us": {
+        "old": {
+          "simulation": {
+            "count": 4096,
+            "mean": 32658.044921875,
+            "p95": 44456,
+            "p99": 54247,
+            "maximum": 75525
+          },
+          "journey": {
+            "count": 4096,
+            "mean": 5162.735107421875,
+            "p95": 17717,
+            "p99": 23134,
+            "maximum": 28737
+          }
+        },
+        "new": {
+          "simulation": {
+            "count": 4096,
+            "mean": 32526.52001953125,
+            "p95": 46143,
+            "p99": 56976,
+            "maximum": 80634
+          },
+          "journey": {
+            "count": 4096,
+            "mean": 4086.171142578125,
+            "p95": 18397,
+            "p99": 22894,
+            "maximum": 34579
+          }
+        }
+      },
+      "new_vs_old_percent": {
+        "simulation": {
+          "mean": -0.40273354592531563,
+          "p95": 3.794763361525999,
+          "p99": 5.030692941545145
+        },
+        "journey": {
+          "mean": -20.852589614681115,
+          "p95": 3.8381215781452926,
+          "p99": -1.0374340797095205
+        }
+      }
+    }
+  },
+  "note": "All 2048 raw ticks in every run included, with no correction or exclusions. Pooled percentiles use 4096 ticks per version. External monitor intervals cover only the interior of the observed simulation stage, not exact StateGameLoop boundaries; non-main CPU includes every other game thread. Background-job readiness is a measurement-only barrier while simulation ticks remain frozen; no early publication is performed. Other applications remain active, so small differences are not evidence of a universal speedup."
+}

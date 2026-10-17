@@ -1,0 +1,115 @@
+{
+  "runs": {
+    "runtime-reference-fresh-steady": {
+      "source_sha256": "11e7aaaae33fc6a024038655eaa751e53b1ff9ee2fee5b1e0a36b354e2b108dd",
+      "samples": 2048,
+      "start_tick": 3181119581,
+      "end_tick": 3181121629,
+      "block_size": 256,
+      "simulation_block_mean_us": [
+        23305.5234375,
+        24195.65625,
+        22861.55078125,
+        22047.3359375,
+        26567.74609375,
+        23292.26171875,
+        23366.1328125,
+        28633.74609375
+      ],
+      "pre_refresh_prefix": {
+        "samples": 2024,
+        "simulation_mean_us": 24248.841403162056,
+        "journey_mean_us": 1285.8073122529645
+      }
+    },
+    "runtime-main-core-old": {
+      "source_sha256": "4e8542440e5a591365a84b60330e82edcc7152322bf19662118f17ebc37e1bcf",
+      "samples": 2048,
+      "start_tick": 3181119581,
+      "end_tick": 3181121629,
+      "block_size": 256,
+      "simulation_block_mean_us": [
+        21655.63671875,
+        24384.94921875,
+        23776.4765625,
+        26552.58984375,
+        26864.33984375,
+        25660.00390625,
+        26518.16796875,
+        25515.32421875
+      ],
+      "pre_refresh_prefix": {
+        "samples": 2024,
+        "simulation_mean_us": 25125.420454545456,
+        "journey_mean_us": 1347.4199604743083
+      }
+    },
+    "runtime-main-core-new": {
+      "source_sha256": "e9243054ad9303139516ad7e46929141311cbb8c60dfeea2be5d1112abc668e6",
+      "samples": 2048,
+      "start_tick": 3181119581,
+      "end_tick": 3181121629,
+      "block_size": 256,
+      "simulation_block_mean_us": [
+        24368.28125,
+        24432.8515625,
+        25983.484375,
+        25104.625,
+        28765.83984375,
+        28393.203125,
+        27184.33984375,
+        22673.23046875
+      ],
+      "pre_refresh_prefix": {
+        "samples": 2024,
+        "simulation_mean_us": 25855.732213438736,
+        "journey_mean_us": 1357.9975296442688
+      }
+    },
+    "runtime-main-reverse-old": {
+      "source_sha256": "9ac580f840b7ff5a9267522d383c9614994d0a53d1e11d7daab129a923a36414",
+      "samples": 2048,
+      "start_tick": 3181119581,
+      "end_tick": 3181121629,
+      "block_size": 256,
+      "simulation_block_mean_us": [
+        23303.95703125,
+        24096.93359375,
+        22684.4921875,
+        20972.921875,
+        20442.80078125,
+        22252.0703125,
+        26846.078125,
+        23127.22265625
+      ],
+      "pre_refresh_prefix": {
+        "samples": 2024,
+        "simulation_mean_us": 22937.41304347826,
+        "journey_mean_us": 1258.669466403162
+      }
+    },
+    "runtime-main-reverse-new": {
+      "source_sha256": "ec1246595c6cad4aeafe9a80dae1bf8540d56d26c0d42b08e20964ff8abd9e92",
+      "samples": 2048,
+      "start_tick": 3181119581,
+      "end_tick": 3181121629,
+      "block_size": 256,
+      "simulation_block_mean_us": [
+        25323.375,
+        26355.4375,
+        25040.328125,
+        23914.83984375,
+        24906.24609375,
+        24904.4765625,
+        27182.03515625,
+        26756.828125
+      ],
+      "pre_refresh_prefix": {
+        "samples": 2024,
+        "simulation_mean_us": 25516.763339920948,
+        "journey_mean_us": 1337.0375494071145
+      }
+    }
+  },
+  "note": "Descriptive segmentation of existing runs; no samples excluded from primary statistics. First 2024 ticks precede the current table refresh."
+}

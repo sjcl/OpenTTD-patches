@@ -1,0 +1,69 @@
+MSBuild のバージョン 17.14.40+3e7442088 (.NET Framework)
+
+  strgen.vcxproj -> C:\Users\bebe\.codex\worktrees\c430\OpenTTD-patches\build-msvc\src\strgen\Release\strgen.exe
+  settingsgen.vcxproj -> C:\Users\bebe\.codex\worktrees\c430\OpenTTD-patches\build-msvc\src\settingsgen\Release\settingsgen.exe
+  -- Version string: jgrpp-ya-0.73.3+2-178-g5dc3b990f-m, Release: 0.73.3+2, Online contents compatible jgrpp version: 0.73.3
+  -- Generating rev.cpp
+  -- Generating ottdres.rc
+  -- Generating CPackProperties.cmake
+  -- Generating Doxyfile
+  -- Generating Doxyfile_AI
+  -- Generating Doxyfile_GS
+  rev.cpp
+  autoreplace_cmd.cpp
+  cargoaction.cpp
+  cargopacket.cpp
+  command.cpp
+  console_cmds.cpp
+  date.cpp
+  economy.cpp
+  network_client.cpp
+  network_server.cpp
+  openttd.cpp
+  order_cmd.cpp
+  passenger_departure_index.cpp
+  passenger_journey_active.cpp
+  passenger_journey_schedule.cpp
+  passenger_precomputed.cpp
+  passenger_service_database.cpp
+  schdispatch_cmd.cpp
+  settings_table.cpp
+  afterload.cpp
+  station.cpp
+  station_gui.cpp
+  statusbar_gui.cpp
+  timetable_cmd.cpp
+  train_cmd.cpp
+  vehicle.cpp
+  vehicle_cmd.cpp
+C:\Users\bebe\.codex\worktrees\c430\OpenTTD-patches\src\passenger_journey_active.cpp(399,66): warning C4267: '引数': 'size_t' から 'VehicleOrderID' に変換しました。データが失われているかもしれません。 [C:\Users\bebe\.codex\worktrees\c430\OpenTTD-patches\build-msvc\openttd_lib.vcxproj]
+  cargopacket_sl.cpp
+  openttd_lib.vcxproj -> C:\Users\bebe\.codex\worktrees\c430\OpenTTD-patches\build-msvc\openttd_lib.dir\Release\openttd_lib.lib
+LINK : warning LNK4098: defaultlib 'LIBCMT' は他のライブラリの使用と競合しています。/NODEFAULTLIB:library を使用してください。 [C:\Users\bebe\.codex\worktrees\c430\OpenTTD-patches\build-msvc\openttd.vcxproj]
+  openttd.vcxproj -> C:\Users\bebe\.codex\worktrees\c430\OpenTTD-patches\build-msvc\Release\openttd.exe
+MSBuild のバージョン 17.14.40+3e7442088 (.NET Framework)
+
+  settingsgen.vcxproj -> C:\Users\bebe\.codex\worktrees\c430\OpenTTD-patches\build-msvc\src\settingsgen\Release\settingsgen.exe
+  strgen.vcxproj -> C:\Users\bebe\.codex\worktrees\c430\OpenTTD-patches\build-msvc\src\strgen\Release\strgen.exe
+  -- Version string: jgrpp-ya-0.73.3+2-178-g5dc3b990f-m, Release: 0.73.3+2, Online contents compatible jgrpp version: 0.73.3
+  -- Generating rev.cpp
+  -- Generating ottdres.rc
+  -- Generating CPackProperties.cmake
+  -- Generating Doxyfile
+  -- Generating Doxyfile_AI
+  -- Generating Doxyfile_GS
+  openttd_lib.vcxproj -> C:\Users\bebe\.codex\worktrees\c430\OpenTTD-patches\build-msvc\openttd_lib.dir\Release\openttd_lib.lib
+  passenger_journey_active.cpp
+  passenger_journey_planner.cpp
+  passenger_multimodal.cpp
+  passenger_precomputed.cpp
+  passenger_service_database.cpp
+  passenger_service_graph.cpp
+  passenger_service_graph_index.cpp
+  station_cargo_gui.cpp
+C:\Users\bebe\.codex\worktrees\c430\OpenTTD-patches\src\tests\passenger_service_graph.cpp(1644,3): warning C4267: '引数': 'size_t' から 'VehicleOrderID' に変換しました。データが失われているかもしれません。 [C:\Users\bebe\.codex\worktrees\c430\OpenTTD-patches\build-msvc\openttd_test.vcxproj]
+C:\Users\bebe\.codex\worktrees\c430\OpenTTD-patches\src\tests\passenger_service_graph.cpp(1645,3): warning C4267: '引数': 'size_t' から 'VehicleOrderID' に変換しました。データが失われているかもしれません。 [C:\Users\bebe\.codex\worktrees\c430\OpenTTD-patches\build-msvc\openttd_test.vcxproj]
+C:\Users\bebe\.codex\worktrees\c430\OpenTTD-patches\src\tests\passenger_service_graph.cpp(1646,3): warning C4267: '引数': 'size_t' から 'VehicleOrderID' に変換しました。データが失われているかもしれません。 [C:\Users\bebe\.codex\worktrees\c430\OpenTTD-patches\build-msvc\openttd_test.vcxproj]
+C:\Users\bebe\.codex\worktrees\c430\OpenTTD-patches\src\tests\passenger_journey_active.cpp(2322,15): warning C4189: 'train': ローカル変数が初期化されましたが、参照されていません [C:\Users\bebe\.codex\worktrees\c430\OpenTTD-patches\build-msvc\openttd_test.vcxproj]
+LINK : warning LNK4098: defaultlib 'LIBCMT' は他のライブラリの使用と競合しています。/NODEFAULTLIB:library を使用してください。 [C:\Users\bebe\.codex\worktrees\c430\OpenTTD-patches\build-msvc\openttd_test.vcxproj]
+  openttd_test.vcxproj -> C:\Users\bebe\.codex\worktrees\c430\OpenTTD-patches\build-msvc\Release\openttd_test.exe

@@ -1,0 +1,285 @@
+--- a/src/passenger_precomputed.h
++++ b/src/passenger_precomputed.h
+@@ -12,6 +12,7 @@
+ #include "passenger_build_task.h"
+ #include "core/passenger_queue.hpp"
+ #include <queue>
++#include <memory>
+ #include <functional>
+ #include <unordered_map>
+ 
+@@ -105,7 +106,7 @@
+ 		std::vector<int64_t> cost;
+ 		std::vector<uint32_t> legs;
+ 		std::vector<LabelMetadata> metadata;
+-	} search;
++	};
+ 	using QueueItem = std::tuple<int64_t, uint32_t, uint32_t>;
+ 	std::vector<uint32_t> station_index, service_pattern;
+ 	std::vector<StationID> stations;
+@@ -117,10 +118,8 @@
+ 		std::vector<int64_t> cost;
+ 		std::vector<uint8_t> legs;
+ 		std::vector<uint32_t> range;
+-	} hot_edges;
+-	std::vector<RangeEdge> range_edges;
++	};
+ 	struct ColdEdge { uint32_t occurrence, distance; int64_t uncertainty; EdgeKind kind; };
+-	std::vector<ColdEdge> cold_edges;
+ 	std::vector<SectionRide> section_rides;
+ 	std::vector<Section> sections;
+ 	std::unordered_map<uint64_t, SectionPath> section_paths; ///< Packed pattern and saved order pair; lookup only, never iterated for decisions.
+@@ -128,7 +127,6 @@
+ 	size_t binding_bytes = 0; ///< Computed once during graph preparation.
+ 	std::vector<uint32_t> landings; ///< Section arrivals have no on-board continuation.
+ 	std::vector<uint32_t> incoming_offsets, incoming;
+-	std::vector<uint32_t> seed_offsets, seed_occurrences; ///< Alighting occurrences in original order, indexed by destination station.
+ 	std::vector<std::vector<std::pair<uint32_t, uint32_t>>> waiting_states;
+ 	std::vector<Row> rows;
+ 	std::vector<std::vector<StationID>> reachable_destinations; ///< Inverse published rows; no waiting-packet dependency.
+@@ -148,6 +146,16 @@
+ 	bool optimized = true; ///< Saved algorithm identity; old work cursors always use the original graph and operation sequence.
+ 	bool integrated = true; ///< v11 bounded range/CSR engine; never reinterpret a v10 operation cursor.
+ 	CargoType cargo = INVALID_CARGO;
++	/** Construction-only storage is allocated for active cargo tables, keeping
++	 * empty table objects and completed-row lookup fields compact. */
++	struct BuildWorkspace {
++		SearchWorkspace search;
++		HotEdges hot_edges;
++		std::vector<RangeEdge> range_edges;
++		std::vector<ColdEdge> cold_edges;
++		std::vector<uint32_t> seed_offsets, seed_occurrences;
++	};
++	std::unique_ptr<BuildWorkspace> workspace; ///< Destroyed after the graph coroutine.
+ 	PassengerBuildTask graph_build; ///< Derived preparation only. No row can be published until this completes.
+ 	uint64_t graph_work = 0; ///< Actual coroutine steps, used only for bounded join progress reports.
+ 	PassengerBuildTask BuildGraph(std::vector<const PassengerPeriodicService *> services, CargoType cargo, int64_t transfer, uint64_t memory, bool sections, bool cooperative, std::shared_ptr<uint64_t> memory_budget);
+@@ -156,11 +164,11 @@
+ 	const Member *FindMember(OrderListID service) const;
+ 	const Section *FindSection(const PassengerJourneyExecution &ride) const;
+ 	void StartDestination();
+-	int64_t SearchCost(uint32_t state) const { return this->optimized ? this->search.cost[state] : this->scratch.labels[state].cost; }
+-	uint32_t SearchLegs(uint32_t state) const { return this->optimized ? this->search.legs[state] : this->scratch.labels[state].legs; }
+-	uint32_t SearchBoard(uint32_t state) const { return this->optimized ? this->search.metadata[state].board : this->scratch.labels[state].board; }
+-	uint32_t SearchAlight(uint32_t state) const { return this->optimized ? this->search.metadata[state].alight : this->scratch.labels[state].alight; }
+-	int64_t SearchRiding(uint32_t state) const { return this->optimized ? this->search.metadata[state].riding : this->scratch.labels[state].riding; }
++	int64_t SearchCost(uint32_t state) const { return this->optimized ? this->workspace->search.cost[state] : this->scratch.labels[state].cost; }
++	uint32_t SearchLegs(uint32_t state) const { return this->optimized ? this->workspace->search.legs[state] : this->scratch.labels[state].legs; }
++	uint32_t SearchBoard(uint32_t state) const { return this->optimized ? this->workspace->search.metadata[state].board : this->scratch.labels[state].board; }
++	uint32_t SearchAlight(uint32_t state) const { return this->optimized ? this->workspace->search.metadata[state].alight : this->scratch.labels[state].alight; }
++	int64_t SearchRiding(uint32_t state) const { return this->optimized ? this->workspace->search.metadata[state].riding : this->scratch.labels[state].riding; }
+ 	Label SearchLabel(uint32_t state) const;
+ 	void SetSearchLabel(uint32_t state, const Label &label);
+ 	size_t RelaxIncoming(size_t allowance);
+--- a/src/passenger_precomputed.cpp
++++ b/src/passenger_precomputed.cpp
+@@ -217,8 +217,8 @@
+ 	if (states.empty()) return;
+ 	uint32_t excluded = this->patterns[pattern].members.size() == 1 ? this->StateFor(station, pattern) : INVALID;
+ 	if (excluded == station) excluded = INVALID; // No waiting state exists for this previous pattern.
+-	this->edges.back().range = static_cast<uint32_t>(this->range_edges.size());
+-	this->range_edges.push_back({states.front().second, states.back().second + 1, excluded});
++	this->edges.back().range = static_cast<uint32_t>(this->workspace->range_edges.size());
++	this->workspace->range_edges.push_back({states.front().second, states.back().second + 1, excluded});
+ }
+ 
+ void PassengerPrecomputedTable::Begin(std::span<const PassengerPeriodicService *const> services, CargoType cargo, int64_t transfer, uint64_t memory, bool sections, bool cooperative, std::shared_ptr<uint64_t> memory_budget, bool estimates, bool optimized, bool integrated)
+@@ -266,6 +266,7 @@
+ 		}
+ 	}
+ 	try {
++		this->workspace = std::make_unique<BuildWorkspace>();
+ 		this->queue.SetOptimized(this->optimized);
+ 		this->station_index.assign(StationID::Invalid().base(), INVALID);
+ 		this->service_pattern.assign(OrderListID::Invalid().base(), INVALID);
+@@ -425,21 +426,21 @@
+ 		if (this->integrated) {
+ 			/* Write each stream directly into its stable reverse-CSR position.
+ 			 * The builder AoS and destination ids are released before searching. */
+-			this->hot_edges.from.resize(this->edges.size());
+-			this->hot_edges.cost.resize(this->edges.size());
+-			this->hot_edges.legs.resize(this->edges.size());
+-			this->hot_edges.range.resize(this->edges.size());
+-			this->cold_edges.resize(this->edges.size());
++			this->workspace->hot_edges.from.resize(this->edges.size());
++			this->workspace->hot_edges.cost.resize(this->edges.size());
++			this->workspace->hot_edges.legs.resize(this->edges.size());
++			this->workspace->hot_edges.range.resize(this->edges.size());
++			this->workspace->cold_edges.resize(this->edges.size());
+ 			for (const auto &edge : this->edges) {
+ 				uint32_t at = cursor[edge.to]++;
+-				this->hot_edges.range[at] = edge.range;
+-				this->hot_edges.from[at] = edge.from; this->hot_edges.cost[at] = edge.cost;
+-				this->hot_edges.legs[at] = edge.kind == EdgeKind::Board || edge.kind == EdgeKind::Section;
+-				this->cold_edges[at] = {edge.occurrence, edge.distance, edge.uncertainty, edge.kind};
++				this->workspace->hot_edges.range[at] = edge.range;
++				this->workspace->hot_edges.from[at] = edge.from; this->workspace->hot_edges.cost[at] = edge.cost;
++				this->workspace->hot_edges.legs[at] = edge.kind == EdgeKind::Board || edge.kind == EdgeKind::Section;
++				this->workspace->cold_edges[at] = {edge.occurrence, edge.distance, edge.uncertainty, edge.kind};
+ 			}
+ 			this->diagnostic.logical_edges = this->edges.size();
+-			for (const auto &range : this->range_edges) this->diagnostic.logical_edges += range.end - range.begin - (range.excluded >= range.begin && range.excluded < range.end);
+-			this->diagnostic.range_edges = this->range_edges.size();
++			for (const auto &range : this->workspace->range_edges) this->diagnostic.logical_edges += range.end - range.begin - (range.excluded >= range.begin && range.excluded < range.end);
++			this->diagnostic.range_edges = this->workspace->range_edges.size();
+ 			std::vector<Edge>().swap(this->edges);
+ 		} else if (this->optimized) {
+ 			/* Stable reverse CSR: the incoming order at each state is exactly
+@@ -452,22 +453,22 @@
+ 			for (uint32_t i = 0; i < this->edges.size(); ++i) this->incoming[cursor[this->edges[i].to]++] = i;
+ 		}
+ 		if (this->optimized) {
+-			this->seed_offsets.assign(this->stations.size() + 1, 0);
++			this->workspace->seed_offsets.assign(this->stations.size() + 1, 0);
+ 			for (const auto &o : this->occurrences) {
+ 				if (cooperative) co_await std::suspend_always{};
+-				if (o.alight) ++this->seed_offsets[this->station_index[o.station.base()] + 1];
+-			}
+-			for (size_t i = 1; i < this->seed_offsets.size(); ++i) this->seed_offsets[i] += this->seed_offsets[i - 1];
+-			this->seed_occurrences.resize(this->seed_offsets.back()); auto cursor = this->seed_offsets;
++				if (o.alight) ++this->workspace->seed_offsets[this->station_index[o.station.base()] + 1];
++			}
++			for (size_t i = 1; i < this->workspace->seed_offsets.size(); ++i) this->workspace->seed_offsets[i] += this->workspace->seed_offsets[i - 1];
++			this->workspace->seed_occurrences.resize(this->workspace->seed_offsets.back()); auto cursor = this->workspace->seed_offsets;
+ 			for (uint32_t id = 0; id < this->occurrences.size(); ++id) {
+ 				if (cooperative) co_await std::suspend_always{};
+ 				const auto &o = this->occurrences[id];
+-				if (o.alight) this->seed_occurrences[cursor[this->station_index[o.station.base()]]++] = id;
++				if (o.alight) this->workspace->seed_occurrences[cursor[this->station_index[o.station.base()]]++] = id;
+ 			}
+ 		}
+ 		this->rows.reserve(this->stations.size());
+ 		this->diagnostic.stations = this->stations.size(); this->diagnostic.patterns = this->patterns.size();
+-		this->diagnostic.states = nodes; this->diagnostic.edges = this->integrated ? this->hot_edges.from.size() : this->edges.size();
++		this->diagnostic.states = nodes; this->diagnostic.edges = this->integrated ? this->workspace->hot_edges.from.size() : this->edges.size();
+ 		this->queue.SetCapacityLimit(uint64_t(this->integrated ? this->diagnostic.logical_edges : this->diagnostic.edges) + nodes);
+ 		if (!this->stations.empty()) this->StartDestination();
+ 	} catch (const std::bad_alloc &) {
+@@ -491,7 +492,7 @@
+ 	if (uint64_t(candidates) * this->stations.size() * 8 <= uint64_t(this->edges.size()) * 2) return;
+ 	if (this->integrated) {
+ 		uint64_t logical = this->edges.size();
+-		for (const auto &range : this->range_edges) logical += range.end - range.begin - (range.excluded >= range.begin && range.excluded < range.end);
++		for (const auto &range : this->workspace->range_edges) logical += range.end - range.begin - (range.excluded >= range.begin && range.excluded < range.end);
+ 		/* Range compression can make the physical graph tiny without reducing
+ 		 * virtual search work. Require at least a one-percent upper bound on
+ 		 * saved per-row work before paying for degree/rank construction. */
+@@ -750,11 +751,11 @@
+ 	this->queue.Reset();
+ 	this->scratch.labels.clear();
+ 	if (this->optimized) {
+-		this->search.cost.clear(); this->search.legs.clear();
+-		this->search.cost.reserve(this->diagnostic.states); this->search.legs.reserve(this->diagnostic.states);
++		this->workspace->search.cost.clear(); this->workspace->search.legs.clear();
++		this->workspace->search.cost.reserve(this->diagnostic.states); this->workspace->search.legs.reserve(this->diagnostic.states);
+ 		/* Infinite priorities make old payloads unobservable. Only successful
+ 		 * relaxations/zero seeds write metadata; every row resets all hot keys. */
+-		this->search.metadata.resize(this->diagnostic.states);
++		this->workspace->search.metadata.resize(this->diagnostic.states);
+ 	} else this->scratch.labels.reserve(this->incoming_offsets.size() - 1);
+ 	this->scratch.alternative.assign(this->stations.size(), Label{});
+ 	this->prepared.labels.clear(); this->prepared.labels.reserve(this->waiting_state_count);
+@@ -765,16 +766,16 @@
+ PassengerPrecomputedTable::Label PassengerPrecomputedTable::SearchLabel(uint32_t state) const
+ {
+ 	if (!this->optimized) return this->scratch.labels[state];
+-	if (this->search.cost[state] == INT64_MAX) return {};
+-	const auto &m = this->search.metadata[state];
+-	return {this->search.cost[state], m.riding, m.waiting, m.first_wait, m.board, m.alight, this->search.legs[state], m.distance};
++	if (this->workspace->search.cost[state] == INT64_MAX) return {};
++	const auto &m = this->workspace->search.metadata[state];
++	return {this->workspace->search.cost[state], m.riding, m.waiting, m.first_wait, m.board, m.alight, this->workspace->search.legs[state], m.distance};
+ }
+ 
+ void PassengerPrecomputedTable::SetSearchLabel(uint32_t state, const Label &label)
+ {
+ 	if (!this->optimized) { this->scratch.labels[state] = label; return; }
+-	this->search.cost[state] = label.cost; this->search.legs[state] = label.legs;
+-	this->search.metadata[state] = {label.riding, label.waiting, label.first_wait, label.board, label.alight, label.distance};
++	this->workspace->search.cost[state] = label.cost; this->workspace->search.legs[state] = label.legs;
++	this->workspace->search.metadata[state] = {label.riding, label.waiting, label.first_wait, label.board, label.alight, label.distance};
+ }
+ 
+ /** One descriptor is one original contiguous incoming-edge subsequence.
+@@ -787,28 +788,28 @@
+ 	/* Every edge is nonnegative in (cost, legs), so relaxing an incoming
+ 	 * edge cannot improve the expanded state itself. Keep its priorities
+ 	 * outside the descriptor loop, including at a saved slice boundary. */
+-	const int64_t source_cost = this->search.cost[this->expanding];
+-	const uint32_t source_legs = this->search.legs[this->expanding];
++	const int64_t source_cost = this->workspace->search.cost[this->expanding];
++	const uint32_t source_legs = this->workspace->search.legs[this->expanding];
+ 	do {
+ 		const uint32_t index = static_cast<uint32_t>(this->cursor);
+-		const uint32_t range_id = this->hot_edges.range[index];
+-		const auto range = range_id == INVALID ? RangeEdge{0, 0, INVALID} : this->range_edges[range_id];
++		const uint32_t range_id = this->workspace->hot_edges.range[index];
++		const auto range = range_id == INVALID ? RangeEdge{0, 0, INVALID} : this->workspace->range_edges[range_id];
+ 		const uint32_t count = 1 + range.end - range.begin;
+-		const int64_t edge_cost = this->hot_edges.cost[index];
+-		const uint32_t delta = this->hot_edges.legs[index];
++		const int64_t edge_cost = this->workspace->hot_edges.cost[index];
++		const uint32_t delta = this->workspace->hot_edges.legs[index];
+ 		const bool finite = source_cost <= INT64_MAX - edge_cost && source_legs <= UINT32_MAX - delta;
+ 		const int64_t cost = finite ? source_cost + edge_cost : INT64_MAX;
+ 		const uint32_t legs = finite ? source_legs + delta : UINT32_MAX;
+ 		size_t used = 0;
+ 		Label next; bool materialized = false;
+ 		while (this->range_offset < count && used < allowance) {
+-			uint32_t from = this->range_offset == 0 ? this->hot_edges.from[index] : range.begin + this->range_offset - 1;
++			uint32_t from = this->range_offset == 0 ? this->workspace->hot_edges.from[index] : range.begin + this->range_offset - 1;
+ 			++this->range_offset;
+ 			if (from == range.excluded) continue;
+ 			++used;
+-			if (!finite || std::tuple(cost, legs) >= std::tuple(this->search.cost[from], this->search.legs[from])) continue;
++			if (!finite || std::tuple(cost, legs) >= std::tuple(this->workspace->search.cost[from], this->workspace->search.legs[from])) continue;
+ 			if (!materialized) {
+-				const auto &edge = this->cold_edges[index];
++				const auto &edge = this->workspace->cold_edges[index];
+ 				next = this->SearchLabel(this->expanding); next.cost = cost; next.legs = legs;
+ 				next.distance = static_cast<uint32_t>(std::min<uint64_t>(UINT32_MAX, uint64_t(next.distance) + edge.distance));
+ 				if (edge.kind == EdgeKind::Board) {
+@@ -848,12 +849,12 @@
+ 			++used;
+ 			if (this->initializing_row) {
+ 				if (this->optimized) {
+-					if (this->search.cost.size() < this->diagnostic.states) {
++					if (this->workspace->search.cost.size() < this->diagnostic.states) {
+ 						/* Resize only the budgeted prefix. Retained capacity is reused;
+ 						 * no uncharged full-array reset occurs at a row boundary. */
+-						size_t count = this->integrated ? std::min(this->diagnostic.states - this->search.cost.size(), allowance - used + 1) : 1;
+-						this->search.cost.resize(this->search.cost.size() + count, INT64_MAX);
+-						this->search.legs.resize(this->search.legs.size() + count, 0);
++						size_t count = this->integrated ? std::min(this->diagnostic.states - this->workspace->search.cost.size(), allowance - used + 1) : 1;
++						this->workspace->search.cost.resize(this->workspace->search.cost.size() + count, INT64_MAX);
++						this->workspace->search.legs.resize(this->workspace->search.legs.size() + count, 0);
+ 						used += count - 1; continue;
+ 					}
+ 				} else if (this->scratch.labels.size() < this->diagnostic.states) { this->scratch.labels.emplace_back(); continue; }
+@@ -865,9 +866,9 @@
+ 					seed(static_cast<uint32_t>(this->destination));
+ 					for (const auto &[pattern, state] : this->waiting_states[this->destination]) seed(state);
+ 				}
+-				size_t seed_count = this->optimized ? this->seed_offsets[this->destination + 1] - this->seed_offsets[this->destination] : this->occurrences.size();
++				size_t seed_count = this->optimized ? this->workspace->seed_offsets[this->destination + 1] - this->workspace->seed_offsets[this->destination] : this->occurrences.size();
+ 				if (this->seeding < seed_count) {
+-					uint32_t id = this->optimized ? this->seed_occurrences[this->seed_offsets[this->destination] + this->seeding++] : static_cast<uint32_t>(this->seeding++);
++					uint32_t id = this->optimized ? this->workspace->seed_occurrences[this->workspace->seed_offsets[this->destination] + this->seeding++] : static_cast<uint32_t>(this->seeding++);
+ 					const auto &o = this->occurrences[id];
+ 					if (o.alight && o.station == this->stations[this->destination]) {
+ 						seed(o.arrival, id);
+@@ -986,11 +987,11 @@
+ 			(this->incoming.capacity() + this->incoming_offsets.capacity()) * 4 + this->rows.size() * this->diagnostic.stored_states * sizeof(Label) +
+ 			(this->scratch.labels.capacity() + this->scratch.alternative.capacity() + this->prepared.labels.capacity()) * sizeof(Label) +
+ 			this->section_rides.capacity() * sizeof(SectionRide) + this->landings.capacity() * sizeof(uint32_t);
+-	this->diagnostic.bytes += this->hot_edges.from.capacity() * 4 + this->hot_edges.cost.capacity() * 8 + this->hot_edges.legs.capacity() + this->hot_edges.range.capacity() * 4 + this->range_edges.capacity() * sizeof(RangeEdge) + this->cold_edges.capacity() * sizeof(ColdEdge);
++	if (this->workspace) this->diagnostic.bytes += this->workspace->hot_edges.from.capacity() * 4 + this->workspace->hot_edges.cost.capacity() * 8 + this->workspace->hot_edges.legs.capacity() + this->workspace->hot_edges.range.capacity() * 4 + this->workspace->range_edges.capacity() * sizeof(RangeEdge) + this->workspace->cold_edges.capacity() * sizeof(ColdEdge);
+ 	this->diagnostic.bytes += this->binding_bytes + this->reachable_bytes;
+-	this->diagnostic.bytes += (this->seed_offsets.capacity() + this->seed_occurrences.capacity()) * sizeof(uint32_t);
++	if (this->workspace) this->diagnostic.bytes += (this->workspace->seed_offsets.capacity() + this->workspace->seed_occurrences.capacity()) * sizeof(uint32_t);
+ 	this->diagnostic.bytes += this->queue.AllocatedBytes();
+-	this->diagnostic.bytes += this->search.cost.capacity() * sizeof(int64_t) + this->search.legs.capacity() * sizeof(uint32_t) + this->search.metadata.capacity() * sizeof(LabelMetadata);
++	if (this->workspace) this->diagnostic.bytes += this->workspace->search.cost.capacity() * sizeof(int64_t) + this->workspace->search.legs.capacity() * sizeof(uint32_t) + this->workspace->search.metadata.capacity() * sizeof(LabelMetadata);
+ 	return used;
+ }
+ 

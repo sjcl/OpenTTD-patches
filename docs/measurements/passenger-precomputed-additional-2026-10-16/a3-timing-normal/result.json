@@ -1,0 +1,202 @@
+{
+  "command": [
+    "C:\\Users\\bebe\\.codex\\worktrees\\4ba5\\OpenTTD-patches\\build-msvc\\a3-timing-bin\\openttd_test.exe",
+    "[.table-real]"
+  ],
+  "binary_sha256": "f21a9dfec5a50a5cbabbd6979aba731ad11dd2d996a180fc9aaa274179932fa3",
+  "exit_code": 0,
+  "elapsed_seconds": 245.58607430011034,
+  "skip_plan": true,
+  "destination_limit": null,
+  "rows": [
+    {
+      "name": "warm-real",
+      "services": 864,
+      "occurrences": 17445,
+      "nodes": 58929,
+      "edges": 219728,
+      "graph_ns": 4023209900,
+      "rows_ns": 71826348800,
+      "init_ns": 464067600,
+      "search_ns": 63449458000,
+      "alternative_ns": 5966266200,
+      "publication_ns": 1946287300,
+      "relaxations": 0,
+      "improvements": 0,
+      "queue_updates": 0,
+      "pops": 0,
+      "stale": 0,
+      "max_queue": 0,
+      "label_copies": 0,
+      "section_checks": 0,
+      "array_bytes": 4635480774,
+      "operations": 5665642229
+    },
+    {
+      "name": "reference-real",
+      "services": 864,
+      "occurrences": 17445,
+      "nodes": 58929,
+      "edges": 219728,
+      "graph_ns": 4035808200,
+      "rows_ns": 77880092100,
+      "init_ns": 490156900,
+      "search_ns": 68865288800,
+      "alternative_ns": 6452444100,
+      "publication_ns": 2071179300,
+      "relaxations": 0,
+      "improvements": 0,
+      "queue_updates": 0,
+      "pops": 0,
+      "stale": 0,
+      "max_queue": 0,
+      "label_copies": 0,
+      "section_checks": 0,
+      "array_bytes": 4635480774,
+      "operations": 5665642229
+    },
+    {
+      "name": "candidate-real",
+      "services": 864,
+      "occurrences": 17445,
+      "nodes": 58929,
+      "edges": 219728,
+      "graph_ns": 4083240200,
+      "rows_ns": 76453206400,
+      "init_ns": 585361600,
+      "search_ns": 67517787800,
+      "alternative_ns": 6294530000,
+      "publication_ns": 2054173400,
+      "relaxations": 0,
+      "improvements": 0,
+      "queue_updates": 0,
+      "pops": 0,
+      "stale": 0,
+      "max_queue": 0,
+      "label_copies": 0,
+      "section_checks": 0,
+      "array_bytes": 4635480774,
+      "operations": 5665642229
+    }
+  ],
+  "details": {
+    "warm-real": {
+      "table_window": [
+        0,
+        4917
+      ],
+      "heap_stats": [
+        0
+      ],
+      "heap_sample": [
+        0,
+        0
+      ],
+      "queue_order": [
+        14695981039346656037,
+        14695981039346656037
+      ],
+      "memory": [
+        4543071984,
+        935752,
+        0,
+        3064308
+      ],
+      "graph_layout": [
+        61923,
+        157805,
+        810897,
+        6620300
+      ],
+      "phases": [
+        3934001900,
+        488900,
+        14957000,
+        18341800,
+        28289100
+      ]
+    },
+    "reference-real": {
+      "table_window": [
+        0,
+        4917
+      ],
+      "heap_stats": [
+        0
+      ],
+      "heap_sample": [
+        0,
+        0
+      ],
+      "queue_order": [
+        14695981039346656037,
+        14695981039346656037
+      ],
+      "memory": [
+        4543071984,
+        935752,
+        0,
+        3064308
+      ],
+      "graph_layout": [
+        61923,
+        157805,
+        810897,
+        3944200
+      ],
+      "phases": [
+        3969055900,
+        514900,
+        16166200,
+        19539600,
+        35444000
+      ]
+    },
+    "candidate-real": {
+      "table_window": [
+        0,
+        4917
+      ],
+      "heap_stats": [
+        0
+      ],
+      "heap_sample": [
+        0,
+        0
+      ],
+      "queue_order": [
+        14695981039346656037,
+        14695981039346656037
+      ],
+      "memory": [
+        4543071984,
+        935752,
+        0,
+        3064308
+      ],
+      "graph_layout": [
+        61923,
+        157805,
+        810897,
+        3560600
+      ],
+      "phases": [
+        4017424100,
+        551900,
+        15909500,
+        19227700,
+        39103800
+      ]
+    }
+  },
+  "peak_working_bytes": 9371521024,
+  "peak_commit_bytes": 10267267072,
+  "process_cpu_seconds": 238.125,
+  "isolated_timing": true,
+  "contamination": [],
+  "performance_valid": true,
+  "limitations": [
+    "Array residency excludes allocator overhead; OS peak includes both compared tables and the map.",
+    "This runner does not exclude unrelated host activity."
+  ]
+}

@@ -1,0 +1,15 @@
+--- old-null-driver
++++ new-null-driver
+@@ -97,8 +97,10 @@
+                 std::string line;
+                 while (std::getline(clock, line)) {
+                     constexpr std::string_view prefix = "State ticks: ";
+-                    if (!line.starts_with(prefix)) continue;
+-                    auto parsed = std::from_chars(line.data() + prefix.size(), line.data() + line.size(), start);
++                    /* Console logging can prefix each line with a timestamp. */
++                    const auto offset = line.find(prefix);
++                    if (offset == std::string::npos) continue;
++                    auto parsed = std::from_chars(line.data() + offset + prefix.size(), line.data() + line.size(), start);
+                     if (parsed.ec != std::errc{}) continue;
+                     started = true;
+                     before = start;

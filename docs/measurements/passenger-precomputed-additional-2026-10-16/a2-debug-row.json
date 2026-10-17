@@ -1,0 +1,14 @@
+{
+  "configurations": [
+    {
+      "condition": {
+        "Condition": "'$(Configuration)|$(Platform)'=='Release|x64'"
+      },
+      "definitions": "%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;_FORTIFY_SOURCE=2;_DEBUG;_ITERATOR_DEBUG_LEVEL=2;WITH_ASSERT;WITH_PNG;WITH_ZLIB;WITH_LIBLZMA;WITH_LZO;WITH_ZSTD;WITH_PERSONAL_DIR;PERSONAL_DIR=\"OpenTTD\";WITH_SSE;DEDICATED;UNICODE;_UNICODE;WITH_UNISCRIBE;PSAPI_VERSION=1;POINTER_IS_64BIT;CMAKE_INTDIR=\"Release\"",
+      "runtime": "MultiThreadedDebug"
+    }
+  ],
+  "header_sha256": "074577209c63bb7fb7981f8d152d5668c8d33d6264268ae83ef6d911d5caef06",
+  "source_sha256": "9b736819cf55cce78c4f92ad77005461f9670a474fb695b083b8f9cc7c697439",
+  "note": "Compile-only validation of Row <= 128 bytes with MSVC debug iterator headers; no mixed-runtime binary is linked."
+}
