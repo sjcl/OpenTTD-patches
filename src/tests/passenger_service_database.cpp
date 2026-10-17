@@ -4614,7 +4614,7 @@ TEST_CASE("Hyperpath failure time is latched only at a real capacity record", "[
 	Fixture f; auto *train = f.Train({Stop(A), Stop(D)}); auto *packet = f.Packet();
 	packet->RecordPassengerCapacityFailure(train->orders->index, NOW, 32);
 	CHECK(packet->GetPassengerBoardingFailure().count == 1);
-	_state_ticks = NOW + 2016;
+	_state_ticks = NOW + 4064;
 	CHECK(packet->GetPassengerFailedService(_state_ticks) == OrderListID::Invalid());
 	CHECK(packet->GetPassengerBoardingFailure().count == 1);
 	packet->RecordPassengerCapacityFailure(train->orders->index, _state_ticks, 32);

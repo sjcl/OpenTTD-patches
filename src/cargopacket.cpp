@@ -306,7 +306,7 @@ void CargoPacket::RecordPassengerCapacityFailure(OrderListID service, StateTicks
 	 * The hold/start identity and exact split/merge comparison remain unchanged;
 	 * no timer event or saved field is introduced. Actual opportunity counts
 	 * remain in the capacity diagnostic, independently of this saturated latch. */
-	static constexpr int64_t T_FAIL = 2048;
+	static constexpr int64_t T_FAIL = 4096;
 	/* Subtraction avoids overflowing elapsed time plus the expected wait. */
 	if (expected_wait > 0 && failure.service == service && failure.incarnation == incarnation && now >= failure.since &&
 			(expected_wait >= T_FAIL || uint64_t(now.base()) - uint64_t(failure.since.base()) >= uint64_t(T_FAIL - expected_wait))) {

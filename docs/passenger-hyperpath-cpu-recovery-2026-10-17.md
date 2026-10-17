@@ -526,3 +526,62 @@ Evidence: [complete comparison and counters](measurements/passenger-hyperpath-cp
 [compiler configuration](measurements/passenger-hyperpath-cpu-recovery-2026-10-17/task5-flat-CMakeCache.txt)
 and [replay output](measurements/passenger-hyperpath-cpu-recovery-2026-10-17/task5-flat-replay.log).
 The three 9.51-GB witnesses remain in the ignored build directory.
+
+## Failure threshold selection
+
+**The selected native T_FAIL is 4,096 ticks.** Both traced 24,576-tick cases
+complete exclusively from the same recovered later input, with identical
+initial warming and independent ordinary/focused samples. The 4,096 native
+constant and its record-time boundary test pass all 731 CTest cases again.
+
+| Measure | T_FAIL 2,048 | T_FAIL 4,096 |
+| --- | ---: | ---: |
+| Actual passenger deliveries | 1,577,534 | 1,576,439 |
+| End waiting people | 257,480 | 251,533 |
+| End physically onboard people | 351,468 | 354,639 |
+| HP capacity-missed packet opportunities | 675,595 | 663,975 |
+| HP capacity-missed passenger opportunities | 1,358,516 | 1,309,587 |
+| LocalPolicy cache constructions | 1,355,972 | 395,601 |
+| Fresh complete ordinary sample trip mean / p95 / p99, ticks | 4,309.74 / 12,519 / 18,201 | 4,399.84 / 12,961 / 18,383 |
+| Pending-new sample maximum-wait p95 / p99, ticks | 6,736 / 15,796 | 7,324 / 16,990 |
+| Fresh samples with revisit / immediate return | 157 / 139 | 143 / 128 |
+| Complete fresh sample mean transfers | 0.6077 | 0.6313 |
+| 3393→3394 fresh complete mean / p95 / p99, ticks | 2,345.79 / 5,219 / 6,091 | 2,137.99 / 4,941 / 5,377 |
+| Traced simulation mean / p95 / p99, ms | 40.368 / 51.604 / 76.056 | 39.585 / 49.146 / 59.580 |
+
+4,096 reduces local-policy construction churn by 70.8%, end waiting by 2.31%
+and observed capacity-missed passenger opportunities by 3.60%. Its delivery
+count is only 1,095 people (0.069%) lower; generated population also differs
+(1,730,237 / 1,724,959), so this is not a paired service-rate estimate. It
+improves the observed 3393 target tail and sampled revisit/return counts.
+Among the same 6,931 initially present ordinary representatives, 5,471 / 5,489
+arrive, 1,145 / 1,127 remain pending and 315 / 315 are lost. For the 5,279
+delivered in both cases, the mean elapsed delta is -23.99 ticks, median ratio
+1.0 and mean ratio 1.000066: broadly similar, with individual regressions.
+
+The tradeoff is explicit: 2,048 has better fresh-completed ordinary sample
+means, a lower mean transfer count and better pending-wait p95/p99. 4,096
+has more onboard people. The selection prioritizes substantially lower
+recomputation cost and observed target/CPU tails over the very small delivery
+difference; it is not a claim that every quality metric improves.
+
+Before the time rule, observed HP records 658,911 packet / 1,279,457 passenger
+capacity opportunities and 10,660 local-policy constructions. 4,096 still
+raises local construction count 37.1-fold. These counts are cache misses,
+including reconstruction after eviction, not distinct passengers replanned.
+Capacity totals count eligible recorded opportunities, not unique people.
+Legacy's zero HP-capacity counter means that this HP-only diagnostic does not
+cover legacy capacity failures. No target samples establish a fresh 971→916
+or 3222→400 comparison in this later interval.
+
+All traced timings include transport observations and ordinary table refreshes;
+the primary CPU conclusion awaits the separate untraced ordinary/replacement
+triplet and reversed ordinary control. The requested original input remains
+unavailable, so the threshold evidence applies to this recovered interval.
+
+Evidence: [selection and tradeoffs](measurements/passenger-hyperpath-cpu-recovery-2026-10-17/threshold-selected.json),
+[complete review](measurements/passenger-hyperpath-cpu-recovery-2026-10-17/threshold-review.json),
+[ordinary comparison](measurements/passenger-hyperpath-cpu-recovery-2026-10-17/threshold-2048-vs-4096-ordinary.json),
+[focused comparison](measurements/passenger-hyperpath-cpu-recovery-2026-10-17/threshold-2048-vs-4096-focused.json),
+[capacity context](measurements/passenger-hyperpath-cpu-recovery-2026-10-17/threshold-capacity-threshold-context.json)
+and [selected-constant tests](measurements/passenger-hyperpath-cpu-recovery-2026-10-17/selected-4096-native-ctest.log).
