@@ -10,6 +10,7 @@
 #include "sortlist_type.h"
 #include "passenger_journey_type.h"
 #include <map>
+#include <optional>
 #include <set>
 #include <span>
 #include <tuple>
@@ -20,6 +21,7 @@ struct CargoPacket;
 struct StationPassengerService {
 	GroupID group = GroupID::Invalid();
 	bool multiple = false;
+	StationID transfer = StationID::Invalid(); ///< Only a validated concrete Journey ride can supply this optional hint.
 	auto operator<=>(const StationPassengerService &) const = default;
 };
 
@@ -27,19 +29,24 @@ struct StationPassengerService {
 class StationPassengerServiceCache {
 public:
 	StationPassengerService Resolve(CargoType cargo, const PassengerJourneyExecution &ride);
-	void Clear() { this->services.clear(); this->work_left = MAX_WORK; }
+	StationPassengerService Resolve(CargoType cargo, const CargoPacket &packet, StationID station);
+	void Clear() { this->services.clear(); this->hyperpaths.clear(); this->work_left = MAX_WORK; }
 
 private:
-	static constexpr size_t MAX_WORK = 16384;
+	static constexpr size_t MAX_WORK = 16384; ///< Shared candidate/vehicle/consist budget per real-time refresh.
 	using Key = std::tuple<CargoType, OrderListID, uint64_t, StationID, StationID, VehicleOrderID, VehicleOrderID>;
+	StationPassengerService ResolveFleet(CargoType cargo, const PassengerJourneyExecution &ride, bool boarding_only = false);
 	std::map<Key, StationPassengerService> services;
+	using HyperpathKey = std::tuple<CargoType, uint64_t, StationID, StationID, OrderListID, OrderListID>;
+	std::map<HyperpathKey, StationPassengerService> hyperpaths;
+	uint64_t lookup_epoch = 0;
 	size_t work_left = MAX_WORK;
 };
 
 StationID GetStationCargoVia(CargoType cargo, const CargoPacket &packet, StationID queue_key, StationID station = StationID::Invalid());
 
 /** Existing cargo/from/via/to columns, independently ordered by the station window. */
-enum StationCargoGrouping : uint8_t { GR_SOURCE, GR_NEXT, GR_DESTINATION, GR_CARGO };
+enum StationCargoGrouping : uint8_t { GR_SOURCE, GR_NEXT, GR_DESTINATION, GR_CARGO, GR_SERVICE };
 
 class CargoDataEntry;
 
@@ -183,14 +190,10 @@ public:
 	 */
 	uint GetNumChildren() const { return this->num_children; }
 
-	/** Number of descendant screen rows, including service annotations. */
-	uint GetNumRows() const { return this->num_children + this->num_service_rows; }
-	void AddService(StationPassengerService service, uint count);
-	const std::map<StationPassengerService, uint> &GetServices() const
-	{
-		static const std::map<StationPassengerService, uint> empty;
-		return this->services != nullptr ? *this->services : empty;
-	}
+	/** Service summaries are ordinary leaf rows with their own typed key. */
+	bool IsService() const { return this->service.has_value(); }
+	StationPassengerService GetService() const { return *this->service; }
+	CargoDataEntry &InsertOrRetrieve(StationPassengerService service) { return this->InsertOrRetrieve<StationPassengerService>(service); }
 
 	/**
 	 * Get an iterator pointing to the begin of the set of children.
@@ -222,6 +225,8 @@ public:
 	CargoDataEntry(CargoType cargo, uint count, CargoDataEntry *parent);
 	CargoDataEntry(StationID station);
 	CargoDataEntry(CargoType cargo);
+	CargoDataEntry(StationPassengerService service);
+	CargoDataEntry(StationPassengerService service, uint count, CargoDataEntry *parent);
 
 private:
 	CargoDataEntry *Retrieve(CargoDataSet::iterator i) const;
@@ -231,27 +236,22 @@ private:
 
 	void Remove(CargoDataEntry &entry);
 	void IncrementSize();
-	void IncrementServiceRows();
 
 	CargoDataEntry *parent;   ///< the parent of this entry.
-	const union {
-		StationID station;    ///< ID of the station this entry is associated with.
-		struct {
-			CargoType cargo;  ///< ID of the cargo this entry is associated with.
-			bool transfers;   ///< If there are transfers for this cargo.
-		};
-	};
+	StationID station = StationID::Invalid(); ///< Station key; never used for a service ID.
+	CargoType cargo = INVALID_CARGO;
+	bool transfers = false;
+	std::optional<StationPassengerService> service;
+
 	uint num_children;        ///< the number of subentries belonging to this entry.
 	uint count;               ///< sum of counts of all children or amount of cargo for this entry.
 	std::unique_ptr<CargoDataSet> children;   ///< the children of this entry.
-	std::unique_ptr<std::map<StationPassengerService, uint>> services; ///< Allocated only for visible passenger via rows; counts do not propagate.
-	uint num_service_rows = 0; ///< Number of descendant service annotation rows.
 };
-/** Add cargo once, returning its visible via row (if expanded far enough to show it). */
+/** Add conventional CargoDist cargo once, returning its visible via row if present. */
 CargoDataEntry *ShowStationCargo(CargoDataEntry &root, const CargoDataEntry &expanded, std::span<const StationCargoGrouping, 4> groupings,
 		StationID station, bool auto_distributed, CargoType cargo, StationID source, StationID next, StationID dest, uint count);
 
-/** Waiting passengers without a stored ride have an unknown service, never an inferred carrier. */
+/** Waiting passengers always use destination/source/service, independently of cargo grouping preferences. */
 CargoDataEntry *ShowStationWaitingCargo(CargoDataEntry &root, const CargoDataEntry &expanded, std::span<const StationCargoGrouping, 4> groupings,
 		StationID station, bool auto_distributed, CargoType cargo, const CargoPacket &packet, StationID next, StationID dest, uint count,
 		StationPassengerServiceCache &services);

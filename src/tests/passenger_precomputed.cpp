@@ -1119,3 +1119,33 @@ TEST_CASE("Hyperpath flat real map exact publication witness", "[.hyperpath-flat
 		}
 	}
 }
+
+TEST_CASE("Hyperpath display enumerates frozen policy storage with bounded read-only work", "[passenger][hyperpath][station-gui]")
+{
+	for (bool flat : {false, true}) {
+		std::array services{Service(0, {A, B}), Service(1, {A, B}), Service(2, {A, C, B})};
+		std::vector<const PassengerPeriodicService *> records; for (const auto &service : services) records.push_back(&service);
+		PassengerPrecomputedTable table;
+		table.Begin(records, PAX, 0, PassengerPrecomputedTable::MAX_BYTES, true, false, {}, true, true, true, true, true, true, flat);
+		while (!table.Finished()) table.Step(64);
+		std::vector<PassengerPrecomputedTable::DisplayCandidate> candidates;
+		size_t work = 4096;
+		REQUIRE(table.DisplayCandidates(A, B, OrderListID::Invalid(), OrderListID::Invalid(), candidates, work));
+		REQUIRE(candidates.size() >= 2);
+		for (const auto &candidate : candidates) {
+			CHECK(candidate.order == 0); CHECK(candidate.incarnation == candidate.service.base() + 1);
+			CHECK(table.Board(A, B, StateTicks{}, candidate.service, candidate.order).ride.has_value());
+		}
+		work = 4096;
+		REQUIRE(table.DisplayCandidates(A, B, OrderListID{0}, OrderListID::Invalid(), candidates, work));
+		CHECK_FALSE(candidates.empty());
+		for (const auto &candidate : candidates) CHECK(candidate.service != OrderListID{0});
+		const auto before = table.GetDiagnostic(); work = 4096;
+		CHECK_FALSE(table.DisplayCandidates(A, B, OrderListID::Invalid(), OrderListID{0}, candidates, work));
+		CHECK(candidates.empty()); CHECK(table.GetDiagnostic().local_replans == before.local_replans);
+		CHECK(table.GetDiagnostic().bytes == before.bytes);
+		work = 1;
+		CHECK_FALSE(table.DisplayCandidates(A, B, OrderListID::Invalid(), OrderListID::Invalid(), candidates, work));
+		CHECK(work == 0); CHECK(candidates.empty());
+	}
+}

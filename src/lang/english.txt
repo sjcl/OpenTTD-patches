@@ -3938,9 +3938,13 @@ STR_STATION_VIEW_PASSENGER_ROUTING_TITLE                        :Passenger routi
 STR_STATION_VIEW_PASSENGER_ROUTING_TOTAL                        :{STRING}: {COMMA} total
 STR_STATION_VIEW_PASSENGER_ROUTING_DETAIL                       :Timed Journey: {COMMA}  CargoDist/deferred: {COMMA}  OD Fallback/waiting: {COMMA}
 STR_STATION_VIEW_PASSENGER_ROUTING_RESERVED                     :{COMMA} available + {COMMA} reserved
-STR_STATION_VIEW_PASSENGER_SERVICE                             :{RAW_STRING}: {CARGO_SHORT}
-STR_STATION_VIEW_PASSENGER_SERVICE_MULTIPLE                    :Multiple services
-STR_STATION_VIEW_PASSENGER_SERVICE_UNKNOWN                     :Service undecided
+STR_STATION_VIEW_PASSENGER_SERVICE                             :{YELLOW}{RAW_STRING}: {CARGO_SHORT}
+STR_STATION_VIEW_PASSENGER_SERVICE_MULTIPLE                    :{RAW_STRING} and others
+STR_STATION_VIEW_PASSENGER_SERVICE_TRANSFER                    :Undecided (transfer at {STATION})
+STR_STATION_VIEW_PASSENGER_SERVICE_UNKNOWN                     :Undecided
+STR_STATION_VIEW_GROUP_PASSENGER_TOOLTIP                       :{BLACK}Waiting passengers are always grouped by destination, source and boarding service. This selection controls other cargo and planned flows.
+STR_STATION_VIEW_GROUP_OTHER_CARGO                             :{BLACK}Other cargo
+STR_STATION_VIEW_PASSENGER_DESTINATION_UNKNOWN                 :{RED}{CARGO_SHORT} to unknown destination
 STR_STATION_VIEW_RESERVED                                       :{YELLOW}({CARGO_SHORT} reserved for loading)
 
 STR_STATION_VIEW_ACCEPTS_BUTTON                                 :{BLACK}Accepts
