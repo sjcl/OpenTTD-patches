@@ -212,11 +212,38 @@ def summarize(directory):
                                   initial_known=meta['initial_known_passengers'], assigned_known=meta['assigned_units'],
                                   delivered_known=population['known_od_delivered'], remaining_known=meta['remaining_known_passengers'],
                                   known_removals_or_destination_invalidation=meta['initial_known_passengers'] + meta['assigned_units'] - population['known_od_delivered'] - meta['remaining_known_passengers'])
+    target_outcomes = {}
+    for origin, destination in ((971, 916), (3222, 400), (3393, 3394)):
+        matches = lambda row: row['origin'] == origin and row['destination'] == destination and row['complete_origin']
+        fresh = [row for row in all_rows if matches(row)]
+        unfinished = [row for row in pending if matches(row)]
+        initial_matches = lambda row: row['origin'] == origin and row['destination'] == destination and row.get('initial')
+        initially_present = [row for row in all_rows if initial_matches(row)]
+        initial_completed = [row for row in delivered if initial_matches(row) and original_arrival(row)]
+        initial_pending = [row for row in pending if initial_matches(row)]
+        target_outcomes[f'{origin}:{destination}'] = dict(
+            fresh_samples=len(fresh), completed_samples=len(od_rows.get(f'{origin}:{destination}', [])),
+            delivered_elsewhere_samples=sum(matches(row) and not original_arrival(row) for row in delivered),
+            lost_samples=sum(matches(row) for row in lost), right_censored_samples=len(unfinished),
+            pending_onboard_samples=sum(bool(row.get('onboard', 0)) for row in unfinished),
+            pending_elapsed_ticks=distribution([row['at'] - row['born'] for row in unfinished]),
+            pending_metrics={key: distribution([row[key] for row in unfinished]) for key in metrics},
+            initial_samples=len(initially_present), initial_delivered_samples=len(initial_completed),
+            initial_delivered_elsewhere_samples=sum(bool(initial_matches(row)) and not original_arrival(row) for row in delivered),
+            initial_lost_samples=sum(bool(initial_matches(row)) for row in lost), initial_pending_samples=len(initial_pending),
+            initial_remaining_to_arrival_ticks=distribution([row['at'] - row['born'] for row in initial_completed]),
+            initial_pending_metrics={key: distribution([row[key] for row in initial_pending]) for key in metrics},
+            new_samples_with_revisit=sum(row['revisits'] > 0 for row in fresh),
+            new_samples_with_immediate_return=sum(row['returns'] > 0 for row in fresh))
+        outcomes = target_outcomes[f'{origin}:{destination}']
+        if outcomes['fresh_samples'] != sum(outcomes[key] for key in ('completed_samples', 'delivered_elsewhere_samples', 'lost_samples', 'right_censored_samples')) or outcomes['initial_samples'] != sum(outcomes[key] for key in ('initial_delivered_samples', 'initial_delivered_elsewhere_samples', 'initial_lost_samples', 'initial_pending_samples')):
+            raise ValueError(f'Inconsistent target-OD fate accounting: {origin}:{destination}')
     return dict(run=directory.parent.name if focused and directory.name == 'focus-view' else directory.name,
                 sampling_method=('target_od_packet_representatives' if focused else 'hash_one_in_64_packet_representatives'),
                 target_validation_probes=target_probe_summary(directory),
                 delivered_samples=len(delivered), complete_trip_samples=len(complete),
                 population_transport=population, population_balance=population_balance,
+                target_od_all_outcomes=target_outcomes,
                 original_destination_mismatch_samples=len(destination_mismatches),
                 original_destination_mismatch_examples=destination_mismatches[:20],
                 selected_sample_starts=selected,

@@ -1,0 +1,8 @@
+{
+  "timings_accepted": false,
+  "reason": "Explicit transport-only analysis; raw process competition evidence is unchanged",
+  "competition": {
+    "previous": [],
+    "hyperpath": []
+  }
+}

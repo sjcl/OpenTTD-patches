@@ -375,3 +375,46 @@ Evidence: [departure report](measurements/passenger-hyperpath-cpu-recovery-2026-
 [final patterns](measurements/passenger-hyperpath-cpu-recovery-2026-10-17/task3-final-patterns.json),
 [read-only guards](measurements/passenger-hyperpath-cpu-recovery-2026-10-17/task3-target-readonly-checks.csv)
 and [state control](measurements/passenger-hyperpath-cpu-recovery-2026-10-17/task3-observer-state-control.json).
+
+## Matched transport context for the diagnosis
+
+The later fixed-input control also completes 24,576 ticks. For fresh completed
+3393→3394 packet representatives, previous/Hyperpath mean is 2,206.198 /
+2,266.631 ticks (+2.74%); median is 1,813 / 1,689, p95 5,062 / 5,522 and
+p99 5,705 / 6,811. Mean riding falls 461.000 → 438.477 ticks, while origin
+wait rises 1,745.198 → 1,828.153. Both travel the same 208 distance units,
+with zero transfers, revisits and immediate returns in these fresh samples.
+The observed degradation is in origin waiting, not a longer ridden route.
+
+Actual target-boarding batches differ between modes. Vehicle 319 / service
+524 / order 13 boards at elapsed tick 9,473 in previous mode and 8,559 in
+Hyperpath. The following vehicle 1354 / 525 / 13 first boards at 14,939 /
+15,097. That observed inter-batch gap grows 5,466 → 6,538 ticks. The longer
+gap corresponds to the waiting tail, despite all observed Hyperpath forward
+departures clearing the target queue. These are actual sampled boarding
+batches, not asserted departure timestamps or a counterfactual proof of the
+entire mean change. Changed vehicle timing/headway and sample composition
+remain supported explanations; a candidate-filter loading failure does not.
+
+There are 286 / 294 fresh target representatives, of which 182 / 176 arrive,
+50 / 42 are lost and 54 / 76 remain waiting at the horizon. The completed
+means therefore compare different selected cohorts. Do not treat them as a
+population-weighted or paired causal estimate. Initially present target
+people comprise the same 36 representatives: 29 / 25 arrive and 7 / 11 are
+lost; none remain pending. Their arrival remaining-time is 5,423 / 5,315 ticks.
+
+This interval has **no fresh 971→916 or 3222→400 samples**. 971→916 has one
+initially present representative, arriving after 4,275 / 4,471 ticks.
+3222→400 has no initial representative either. These are unavailable
+comparisons, not zero travel times or evidence of improvement. The extended
+report now separates fresh, initially present, completed, lost and censored
+outcomes for all three targets and verifies their fate accounting.
+
+The original input's reported 2,744 → 2,902 means are not reproduced by this
+later save. The diagnosis narrows causes for the observed interval and must
+not be promoted to a definitive explanation of that missing interval.
+
+Evidence: [focused outcomes](measurements/passenger-hyperpath-cpu-recovery-2026-10-17/task3-transport-focused.json),
+[ordinary transport](measurements/passenger-hyperpath-cpu-recovery-2026-10-17/task3-transport-ordinary.json),
+[boarding batches](measurements/passenger-hyperpath-cpu-recovery-2026-10-17/task3-target-boarding-batches.json)
+and [completed control](measurements/passenger-hyperpath-cpu-recovery-2026-10-17/task3-completed.json).
