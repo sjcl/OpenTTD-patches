@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Read selected published/frozen patterns from JPSD v9-v15, without game ticks.
+"""Read selected published/frozen patterns from JPSD v1, without game ticks.
 
 This diagnostic accepts an extracted database.bin, not a savegame. Values and
 the complete record layout are checked before output; unknown versions fail.
@@ -32,7 +32,7 @@ def read(data):
         return value
 
     version = take()
-    if not 9 <= version <= 15:
+    if version != 1:
         raise ValueError(f"Unsupported JPSD version {version}")
 
     def service():
@@ -80,32 +80,25 @@ def read(data):
     frozen = network()
     retained = {key: take() for key in ('revision', 'transfer')}
     retained_frozen = network()
-    flags = {}
-    for name, introduced in [('sections', 8), ('estimates', 9), ('optimized', 10), ('integrated', 11), ('hyperpath', 12)]:
-        if version >= introduced:
-            flags[name] = [take(), take()]
-            if any(value > 1 for value in flags[name]):
-                raise ValueError('Invalid construction identity')
-    if version >= 12:
-        flags['policy_generation'] = [take(), take()]
-    if version >= 13:
-        flags['revisit_dominance'] = [take(), take()]
-    if version >= 14:
-        trailer = at
-        flags['continuation_witness'] = [take(), take()]
-        for snapshot in (published, building, frozen, retained_frozen):
-            for row in snapshot:
-                for offset in range(0, len(row['stops']), 21):
-                    keys = take()
-                    for index, stop in enumerate(row['stops'][offset:offset + 21]):
-                        stop['boarding_facility'] = (keys >> (3 * index)) & 7
-        expected = at - trailer
-        if take() != expected:
-            raise ValueError('Invalid v14 trailer length')
-    if version >= 15:
-        flags['flat_storage'] = [take(), take()]
-        if any(value > 1 or (value and not flags['hyperpath'][index]) for index, value in enumerate(flags['flat_storage'])):
-            raise ValueError('Invalid flat-storage identity')
+    flags = dict(hyperpath=[take(), take()], policy_generation=[take(), take()])
+    if any(value > 1 for value in flags['hyperpath']):
+        raise ValueError('Invalid routing mode')
+    if any(mode and not generation for mode, generation in zip(flags['hyperpath'], flags['policy_generation'])):
+        raise ValueError('Invalid policy generation')
+    if flags['policy_generation'][1] > flags['policy_generation'][0]:
+        raise ValueError('Retained policy generation exceeds current generation')
+    for snapshot in (published, building, frozen, retained_frozen):
+        for row in snapshot:
+            for offset in range(0, len(row['stops']), 21):
+                keys = take()
+                for stop in row['stops'][offset:offset + 21]:
+                    key = keys & 7
+                    keys >>= 3
+                    if key > 5:
+                        raise ValueError('Invalid boarding facility')
+                    stop['boarding_facility'] = key
+                if keys:
+                    raise ValueError('Unexpected boarding facility bits')
     if at != len(words):
         raise ValueError(f'Unexpected JPSD tail: {len(words) - at} words')
     return dict(version=version, header=header, precomputed=precomputed, retained=retained, flags=flags,

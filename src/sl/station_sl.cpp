@@ -452,9 +452,9 @@ struct PassengerOdStructHandler final : public TypedSaveLoadStructHandler<Passen
 			NSL("source_node", SLE_VAR(PassengerOdDistribution, source_node, SLE_UINT16)),
 			NSL("revision", SLE_VAR(PassengerOdDistribution, revision, SLE_UINT64)),
 			NSL("total_weight", SLE_VAR(PassengerOdDistribution, total_weight, SLE_UINT64)),
-			NSL("cursor", SLE_CONDVAR_X(PassengerOdDistribution, cursor, SLE_UINT16, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_PASSENGER_OD_ASSIGNMENT, 2))),
-			NSL("unassigned_weight", SLE_CONDVAR_X(PassengerOdDistribution, unassigned_weight, SLE_UINT64, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_PASSENGER_OD_ASSIGNMENT, 3))),
-			NSL("unassigned_credit", SLE_CONDVAR_X(PassengerOdDistribution, unassigned_credit, SLE_INT64, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_PASSENGER_OD_ASSIGNMENT, 3))),
+			NSL("cursor", SLE_VAR(PassengerOdDistribution, cursor, SLE_UINT16)),
+			NSL("unassigned_weight", SLE_VAR(PassengerOdDistribution, unassigned_weight, SLE_UINT64)),
+			NSL("unassigned_credit", SLE_VAR(PassengerOdDistribution, unassigned_credit, SLE_INT64)),
 			NSLT_STRUCTLIST<PassengerOdEntryStructHandler>("entries"),
 		};
 		return fields;
@@ -486,12 +486,12 @@ NamedSaveLoadTable GetPassengerWaitingEventDesc()
 		NSL("revision", SLE_VAR(StationCargoList, passenger_routing_revision, SLE_UINT64)),
 		NSL("rows", SLE_VAR(StationCargoList, passenger_routing_rows, SLE_UINT64)),
 		NSL("due", SLE_VAR(StationCargoList, passenger_routing_due, SLE_INT64)),
-		NSL("sweeping", SLE_CONDVAR_X(StationCargoList, passenger_routing_sweeping, SLE_BOOL, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_PASSENGER_PERIODIC, 9))),
-		NSL("cursor", SLE_CONDVAR_X(StationCargoList, passenger_routing_cursor, SLE_UINT32, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_PASSENGER_PERIODIC, 9))),
-		NSL("end", SLE_CONDVAR_X(StationCargoList, passenger_routing_end, SLE_UINT32, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_PASSENGER_PERIODIC, 9))),
-		NSL("tick", SLE_CONDVAR_X(StationCargoList, passenger_routing_tick, SLE_INT64, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_PASSENGER_PERIODIC, 9))),
-		NSL("work", SLE_CONDVAR_X(StationCargoList, passenger_routing_work, SLE_UINT16, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_PASSENGER_PERIODIC, 9))),
-		NSL("boarding_last", SLE_CONDVAR_X(StationCargoList, passenger_boarding_last, SLE_UINT16, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_PASSENGER_PERIODIC, 10))),
+		NSL("sweeping", SLE_VAR(StationCargoList, passenger_routing_sweeping, SLE_BOOL)),
+		NSL("cursor", SLE_VAR(StationCargoList, passenger_routing_cursor, SLE_UINT32)),
+		NSL("end", SLE_VAR(StationCargoList, passenger_routing_end, SLE_UINT32)),
+		NSL("tick", SLE_VAR(StationCargoList, passenger_routing_tick, SLE_INT64)),
+		NSL("work", SLE_VAR(StationCargoList, passenger_routing_work, SLE_UINT16)),
+		NSL("boarding_last", SLE_VAR(StationCargoList, passenger_boarding_last, SLE_UINT16)),
 	};
 	return fields;
 }
@@ -541,7 +541,7 @@ NamedSaveLoadTable GetGoodsDesc()
 		NSLT_STRUCTLIST<StationGoodsFlowStructHandler>("flow"),
 		NSLT_STRUCTLIST<StationGoodsCargoStructHandler>("cargo"),
 		NSLT_STRUCTLIST<PassengerOdStructHandler>("passenger_od", SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_PASSENGER_OD_ASSIGNMENT)),
-		NSLT_STRUCTLIST<PassengerWaitingEventsStructHandler>("passenger_waiting_events", SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_PASSENGER_PERIODIC, 4)),
+		NSLT_STRUCTLIST<PassengerWaitingEventsStructHandler>("passenger_waiting_events", SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_PASSENGER_PERIODIC)),
 	};
 
 	return goods_desc;

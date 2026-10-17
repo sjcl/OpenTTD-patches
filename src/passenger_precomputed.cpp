@@ -191,7 +191,7 @@ bool PassengerPrecomputedTable::RefreshService(const PassengerPeriodicService &s
 	auto member = std::lower_bound(p.members.begin(), p.members.end(), service.id, [](const auto &m, OrderListID id) { return m.id < id; });
 	if (member == p.members.end() || member->id != service.id || member->incarnation != service.incarnation ||
 			service.timetable.Circuit() <= 0 || p.occurrences.size() != service.timetable.stops.size()) return false;
-	if (!this->estimates && p.estimated != (service.timetable.period == 0)) return false; // Exact legacy binding replay.
+	if (!this->estimates && p.estimated != (service.timetable.period == 0)) return false; // Reference binding without duration estimates.
 	uint64_t mask = uint64_t{1} << this->cargo;
 	for (size_t i = 0; i < p.occurrences.size(); ++i) {
 		const auto &old = this->occurrences[p.occurrences[i]];
@@ -1446,7 +1446,7 @@ size_t PassengerPrecomputedTable::StepHyperpath(size_t allowance, const std::fun
 				uint32_t board = this->cold_edges[id].occurrence;
 				if (!this->revisits.empty() && this->revisits[board].next != INVALID && this->DominatedRevisit(board,
 						this->SearchCost(this->occurrences[board].departure), this->SearchCost(this->occurrences[this->revisits[board].next].departure))) {
-					if (!this->continuation_witness) continue; // Exact v13 event replay.
+					if (!this->continuation_witness) continue; // Reference event sequence without continuation witnesses.
 					if (this->strategy.settled[this->occurrences[board].departure] && this->strategy.settled[this->occurrences[this->revisits[board].next].departure]) {
 						this->strategy.witness_edge = id; this->strategy.witness_at = board; this->strategy.witness_cost = 0; continue;
 					}

@@ -3,6 +3,7 @@
 * * *
 
 ### Unreleased
+* Consolidate unreleased passenger save formats into version 1 and use the current precomputed algorithms for saved construction progress; retain loading of v0.73.3+2 saves, without compatibility for intervening development builds
 * Import automatic renewal of the fund new buildings town action from ns2091/OpenTTD-patches, with a per-company toggle in each town's local authority window
 * Import optional markers above vehicles in the selected group, coloured by the immediate child group and including sub-groups, ungrouped vehicles, and all vehicles
 * Keep diagonal rail tunnels and tunnel/bridge station platforms excluded

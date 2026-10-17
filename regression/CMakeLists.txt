@@ -36,6 +36,16 @@
     )
     set_tests_properties(passenger_od_load PROPERTIES TIMEOUT 60)
 
+    add_test(NAME passenger_previous_release_load
+        COMMAND ${CMAKE_COMMAND}
+            -DOPENTTD_EXECUTABLE=$<TARGET_FILE:openttd>
+            -DEDITBIN_EXECUTABLE=${EDITBIN_EXECUTABLE}
+            -DLEGACY_SAVE=${CMAKE_CURRENT_SOURCE_DIR}/stationlist/jgrpp-ya-0.73.3+2.sav
+            -DWORK_DIR=${CMAKE_CURRENT_BINARY_DIR}/passenger_previous_release
+            -P ${CMAKE_SOURCE_DIR}/cmake/scripts/PassengerReleaseLoad.cmake
+    )
+    set_tests_properties(passenger_previous_release_load PROPERTIES TIMEOUT 180 RUN_SERIAL TRUE)
+
     add_test(NAME passenger_journey_active_production
         COMMAND ${CMAKE_COMMAND}
             -DOPENTTD_EXECUTABLE=$<TARGET_FILE:openttd>

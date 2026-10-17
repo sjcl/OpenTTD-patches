@@ -19,28 +19,14 @@ import tempfile
 import passenger_precomputed_real_map as real
 
 
-def verify_wire_upgrade(saved_wire, loaded_wire):
-    """Only append neutral algorithm identity when loading an older JPSD."""
+def verify_wire_replay(saved_wire, loaded_wire):
+    """The current format must preserve every saved byte through replay."""
     version = int.from_bytes(saved_wire[:8], 'little')
     target = int.from_bytes(loaded_wire[:8], 'little')
-    if version not in (12, 13, 14, 15) or target not in (14, 15) or target < version:
-        raise ValueError('Memory readback expects JPSD v12 through v15')
-    expected = loaded_wire
-    if target >= 15 and version < 15:
-        if len(expected) < 24 or any(expected[-16:]):
-            raise RuntimeError('An old snapshot acquired flat-storage identity')
-        expected = (14).to_bytes(8, 'little') + expected[8:-16]
-    if version < 14:
-        words = int.from_bytes(expected[-8:], 'little')
-        if not 2 <= words < len(expected) // 8 or any(expected[-(words + 1) * 8:-8]):
-            raise RuntimeError('An old snapshot acquired unrecorded witness/facility state')
-        prefix = (13).to_bytes(8, 'little') + expected[8:-(words + 1) * 8]
-        original = (13).to_bytes(8, 'little') + saved_wire[8:] + bytes(16) if version == 12 else saved_wire
-        verified = prefix == original
-    else:
-        verified = expected == saved_wire
-    if not verified:
-        raise RuntimeError('The loader changed saved algorithm state beyond the verified old-prefix wire upgrade')
+    if version != 1 or target != 1:
+        raise ValueError('Memory readback expects JPSD v1')
+    if saved_wire != loaded_wire:
+        raise RuntimeError('The loader changed saved database state')
     return dict(from_version=version, to_version=target, bytes_verified=True, replay_identical=True)
 
 
@@ -85,7 +71,7 @@ def main():
         expected = json.loads((run / 'save-integrity.json').read_text(encoding='utf-8'))
         actual = json.loads((directory / 'save-integrity.json').read_text(encoding='utf-8'))
         derived = {'completed_rows', 'retained_rows', 'table_operations'}
-        wire_upgrade = None
+        wire_replay = None
         if args.replay_memory:
             console = (directory / 'console.txt').read_text(encoding='utf-8')
             if 'Hyperpath replay: ready=true; saved_state_identical=true;' not in console:
@@ -103,7 +89,7 @@ def main():
             if len(saved_wire) != size:
                 raise ValueError('Truncated saved JPSD')
             expected_wire = (directory / 'hyperpath-replay-before.bin').read_bytes()
-            wire_upgrade = verify_wire_upgrade(saved_wire, expected_wire)
+            wire_replay = verify_wire_replay(saved_wire, expected_wire)
             derived.add('database_digest')
             del raw, decoded, saved_wire, expected_wire
         mismatches = {key:[expected.get(key), actual.get(key)] for key in expected.keys() | actual.keys()
@@ -117,7 +103,7 @@ def main():
         results.append(dict(run=run.name, canonical_mismatches=mismatches, state_ticks=actual['state_ticks'],
                             active_events=events))
         if args.replay_memory:
-            results[-1]['database_wire'] = wire_upgrade
+            results[-1]['database_wire'] = wire_replay
             results[-1]['hyperpath_memory'] = [{key:int(value) for key, value in re.findall(r'(\w+)=(-?\d+)', line)} |
                 {'retained': 'retained=true' in line} for line in console.splitlines() if 'Hyperpath memory: ' in line]
         inventory_line = next(line for line in console.splitlines() if 'Passenger inventory: ' in line)

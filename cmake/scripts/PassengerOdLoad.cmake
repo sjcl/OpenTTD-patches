@@ -50,7 +50,7 @@ load_game(legacy "${LEGACY_SAVE}" true 0 false
 if(NOT EXISTS "${WORK_DIR}/enabled.sav")
     message(FATAL_ERROR "Saving a current-format game failed")
 endif()
-load_game(enabled "${WORK_DIR}/enabled.sav" false 3 true
+load_game(enabled "${WORK_DIR}/enabled.sav" false 1 true
     "setting ${setting} false\nsave \"${WORK_DIR}/disabled\"")
-load_game(disabled "${WORK_DIR}/disabled.sav" true 3 false "")
+load_game(disabled "${WORK_DIR}/disabled.sav" true 1 false "")
 message(STATUS "Passenger OD production save/load and legacy migration passed")

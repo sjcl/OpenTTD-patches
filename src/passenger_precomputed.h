@@ -68,6 +68,8 @@ public:
 	static constexpr uint32_t INVALID = UINT32_MAX;
 	static constexpr uint64_t MAX_BYTES = uint64_t{16} * 1024 * 1024 * 1024;
 	static constexpr uint64_t MAX_HYPERPATH_BYTES = uint64_t{32} * 1024 * 1024 * 1024; ///< Canonical admission, including a retained generation; not a physical allocation request.
+	/** Production uses the current algorithms. Alternate controls are differential
+	 * test/benchmark references, never saved construction-format identities. */
 	void Begin(std::span<const PassengerPeriodicService *const> services, CargoType cargo, int64_t transfer, uint64_t memory = MAX_BYTES, bool sections = true, bool cooperative = false, std::shared_ptr<uint64_t> memory_budget = {}, bool estimates = true, bool optimized = true, bool integrated = true, bool hyperpath = false, bool revisit_dominance = true, bool continuation_witness = true, bool flat_storage = true);
 	bool PrepareGraph(size_t quantum = 1024);
 	bool IsPreparingGraph() const { return static_cast<bool>(this->graph_build); }
@@ -149,14 +151,14 @@ private:
 	 * - Compressed (integrated, non-Hyperpath): labels per station, sparse alternatives,
 	 *   one dense exception per station with waiting states.
 	 * - Hyperpath: labels for every waiting state; indices holds the policy index of
-	 *   every waiting state; policies (through v14) or flat_* (v15) hold the strategies.
-	 * - Older engines: labels per waiting state and alternatives per station. */
+	 *   every waiting state; flat_* hold the strategies, with policies as a reference.
+	 * - Reference engines: labels per waiting state and alternatives per station. */
 	struct Row {
 		std::vector<Label> labels, alternative, exception_labels;
 		std::vector<uint32_t> indices; ///< Compressed: alternative indices, then exception state IDs. Hyperpath: policy index per waiting state.
-		std::vector<Policy> policies; ///< Hyperpath only: exact old storage for replay generations through v14.
-		std::vector<FlatPolicy> flat_policies; ///< Hyperpath v15 only.
-		std::vector<uint32_t> flat_candidates; ///< Hyperpath v15 only: base payloads and incoming-service addition lists, in policy order.
+		std::vector<Policy> policies; ///< Hyperpath only: full policy storage for differential validation.
+		std::vector<FlatPolicy> flat_policies; ///< Hyperpath only.
+		std::vector<uint32_t> flat_candidates; ///< Hyperpath only: base payloads and incoming-service addition lists, in policy order.
 		size_t bytes = 0; ///< Hyperpath only: payload charged at publication.
 		bool Empty() const { return this->labels.empty(); }
 		size_t AllocatedBytes() const ///< Non-Hyperpath rows only; Hyperpath rows report bytes.
@@ -209,7 +211,7 @@ private:
 	size_t hyperpath_static_bytes = 0, hyperpath_row_bytes = 0, hyperpath_candidate_bytes = 0, prepared_candidate_bytes = 0;
 	mutable size_t local_policy_bytes = 0, expanded_policy_bytes = 0;
 	mutable std::map<std::pair<StationID, uint32_t>, std::vector<uint32_t>> expanded_policies;
-	bool flat_storage = false; ///< v15 physical representation and frozen memory admission.
+	bool flat_storage = false; ///< Compact strategy storage; full policies remain a differential reference.
 	std::vector<uint64_t> boarding_mask; ///< Per occurrence: base-state destination-row bits, then any-state bits.
 	size_t boarding_mask_words = 0; ///< Words per occurrence and plane; zero until allocated.
 	bool boarding_mask_rejected = false; ///< Too large for MAX_BOARDING_MASK_BYTES.
@@ -242,11 +244,11 @@ private:
 	size_t seeding = 0;
 	bool failed = false, unsupported = false;
 	bool estimates = true;
-	bool optimized = true; ///< Saved algorithm identity; old work cursors always use the original graph and operation sequence.
-	bool integrated = true; ///< v11 bounded range/CSR engine; never reinterpret a v10 operation cursor.
-	bool hyperpath = false; ///< A separate algorithm identity; legacy work never enters the strategy queue.
-	bool revisit_dominance = true; ///< JPSD v12 strategies replay without the v13 occurrence dominance rule.
-	bool continuation_witness = true; ///< v14: require equality and a selected same-run continuation, preserving earlier tied alighting.
+	bool optimized = true; ///< False selects the scalar graph/queue reference.
+	bool integrated = true; ///< Bounded ranges/CSR; false selects the explicit-edge reference.
+	bool hyperpath = false; ///< Separate game routing mode, with its own strategy queue.
+	bool revisit_dominance = true; ///< Suppress dominated repeat departures; disabled only by reference comparisons.
+	bool continuation_witness = true; ///< Require equality and a selected same-run continuation, preserving earlier tied alighting.
 	int64_t transfer_cost = 0;
 	struct StrategyWorkspace {
 		std::vector<PassengerStrategy> sums;
