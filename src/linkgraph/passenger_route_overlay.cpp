@@ -9,8 +9,9 @@
 #include "../date_func.h"
 #include "../vehicle_base.h"
 
-std::vector<StationID> GetPassengerRouteStops(const PassengerJourneyExecution &ride, CargoType cargo, size_t &work)
+std::vector<StationID> GetPassengerRouteStops(const PassengerJourneyExecution &ride, CargoType cargo, size_t &work, size_t *usable_vehicles)
 {
+	if (usable_vehicles != nullptr) *usable_vehicles = 0;
 	if (cargo >= NUM_CARGO || ride.kind == PassengerRideKind::HyperpathIntent) return {};
 	const OrderList *list = OrderList::GetIfValid(ride.service);
 	if (list == nullptr || ride.boarding_order >= list->GetNumOrders() || ride.alighting_order >= list->GetNumOrders()) return {};
@@ -47,8 +48,9 @@ std::vector<StationID> GetPassengerRouteStops(const PassengerJourneyExecution &r
 	}
 	if (!complete) return {};
 
-	/* At least one physical carrier must still be able to operate the entire
-	 * prefix. These shared routing helpers only read pools and the caller's budget. */
+	/* Fallback frequency counts every usable physical carrier, while fixed rides
+	 * only need one. These helpers read pools and the caller's display budget. */
+	size_t vehicles = 0;
 	for (const Vehicle *vehicle = list->GetFirstSharedVehicle(); vehicle != nullptr; vehicle = vehicle->NextShared()) {
 		if (work == 0) return {};
 		--work;
@@ -60,12 +62,15 @@ std::vector<StationID> GetPassengerRouteStops(const PassengerJourneyExecution &r
 			if (!CanPassengerVehicleUseStation(vehicle, station, order, work)) { usable = false; break; }
 		}
 		if (usable && work != 0) {
-			std::vector<StationID> result;
-			for (const auto &[station, order] : stops) result.push_back(station);
-			return result;
+			++vehicles;
+			if (usable_vehicles == nullptr) break;
 		}
 	}
-	return {};
+	if (vehicles == 0 || work == 0) return {};
+	if (usable_vehicles != nullptr) *usable_vehicles = vehicles;
+	std::vector<StationID> result;
+	for (const auto &[station, order] : stops) result.push_back(station);
+	return result;
 }
 
 namespace {
@@ -80,19 +85,23 @@ namespace {
 		StationPassengerRoutes result;
 		size_t work = 1 << 18;
 		std::map<PolicyKey, std::vector<PassengerPrecomputedTable::RouteCandidate>> policies;
-		std::map<RideKey, std::vector<StationID>> rides;
+		struct RidePath { std::vector<StationID> stops; std::optional<size_t> vehicles; };
+		std::map<RideKey, RidePath> rides;
 		std::vector<StationID> transfers; ///< Branch-local transfer history; intermediate through stops may repeat.
 
-		const std::vector<StationID> &Stops(CargoType cargo, const PassengerJourneyExecution &ride)
+		const std::vector<StationID> &Stops(CargoType cargo, const PassengerJourneyExecution &ride, size_t *usable_vehicles = nullptr)
 		{
 			RideKey key{cargo, ride.service, ride.signature, ride.vehicle, ride.kind, ride.boarding, ride.alighting, ride.boarding_order, ride.alighting_order};
 			auto [it, inserted] = this->rides.try_emplace(key);
-			if (inserted) {
+			if (inserted || (usable_vehicles != nullptr && !it->second.vehicles.has_value())) {
 				size_t allowance = std::min(this->work, size_t{4096}), left = allowance;
-				it->second = GetPassengerRouteStops(ride, cargo, left);
+				size_t vehicles = 0;
+				it->second.stops = GetPassengerRouteStops(ride, cargo, left, usable_vehicles != nullptr ? &vehicles : nullptr);
+				if (usable_vehicles != nullptr) it->second.vehicles = vehicles;
 				this->work -= allowance - left;
 			}
-			return it->second;
+			if (usable_vehicles != nullptr) *usable_vehicles = it->second.vehicles.value_or(0);
+			return it->second.stops;
 		}
 
 		void Ride(CargoType cargo, StationID destination, const PassengerJourneyExecution &ride, StationID first, double amount, size_t depth)
@@ -164,8 +173,11 @@ namespace {
 						if (stop.station == destination) break;
 					}
 				}
-				if (ride.alighting == StationID::Invalid() || this->Stops(cargo, ride).empty()) continue;
-				double frequency = double(PassengerStrategy::Frequency(service->timetable.Circuit()));
+				size_t vehicles = 0;
+				if (ride.alighting == StationID::Invalid() || this->Stops(cargo, ride, &vehicles).empty()) continue;
+				/* Display-only departures per tick. Circuit can exceed the Hyperpath
+				 * fixed-point wait range; floating point preserves those long periods. */
+				double frequency = double(vehicles) / double(service->timetable.Circuit());
 				candidates.emplace_back(ride, frequency); total += frequency;
 			}
 			if (candidates.empty()) {

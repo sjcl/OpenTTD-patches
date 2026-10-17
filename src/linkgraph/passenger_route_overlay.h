@@ -18,8 +18,9 @@ struct StationPassengerRoutes {
 	std::map<StationID, double> alighting, first_hops;
 };
 
-/** Validate a whole saved ride before displaying it. Empty means unresolved, never direct to alighting. */
-std::vector<StationID> GetPassengerRouteStops(const PassengerJourneyExecution &ride, CargoType cargo, size_t &work);
+/** Validate a whole saved ride before displaying it. Empty means unresolved, never direct to alighting.
+ * If requested, count all usable live carriers; incomplete enumeration returns no route and a zero count. */
+std::vector<StationID> GetPassengerRouteStops(const PassengerJourneyExecution &ride, CargoType cargo, size_t &work, size_t *usable_vehicles = nullptr);
 StationPassengerRoutes BuildStationPassengerRoutes(const Station &station, const PassengerServiceDatabase &database);
 
 #endif

@@ -263,6 +263,67 @@ TEST_CASE("Route overlay uses OD fallback prefixes without CargoDist destination
 	CHECK(routes.alighting[B] == 0); CHECK(routes.alighting[D] == Approx(10));
 }
 
+TEST_CASE("Fallback route overlay frequency follows usable live fleet size", "[passenger][route-overlay]")
+{
+	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = false;
+	auto *first = f.Train({Stop(A, 50, 0), Stop(B, 25, 0), Stop(D, 25, 0)});
+	std::vector<PeriodicTrain *> fleet{first};
+	for (size_t i = 1; i < 10; ++i) fleet.push_back(Vehicle::Create<PeriodicTrain>(first));
+	f.Train({Stop(A, 50, 0), Stop(C, 25, 0), Stop(D, 25, 0)});
+	auto &db = f.Build();
+	REQUIRE(db.Get(first->orders->index)->timetable.Circuit() == 100);
+	REQUIRE(db.Get(first->orders->index)->vehicles.size() == 10);
+	size_t usable = 10;
+	SECTION("Ten to one fleet splits passengers ten to one") {}
+	SECTION("Stopped, crashed and non-passenger vehicles do not contribute") {
+		fleet[0]->vehstatus.Set(VehState::Stopped); fleet[1]->vehstatus.Set(VehState::Crashed);
+		fleet[2]->cargo_type = CargoType{1}; fleet[3]->cargo_cap = 0;
+		usable = 6;
+	}
+	SECTION("An unavailable fleet leaves the other service visible") {
+		for (auto *vehicle : fleet) vehicle->vehstatus.Set(VehState::Stopped);
+		usable = 0;
+	}
+	SECTION("An incomplete carrier census does not report a partial fleet") {
+		const auto *service = db.Get(first->orders->index);
+		PassengerJourneyExecution ride;
+		ride.service = service->id; ride.signature = service->incarnation; ride.generation = service->generation;
+		ride.kind = PassengerRideKind::EstimatedServiceIntent; ride.boarding = A; ride.boarding_order = 0; ride.alighting = D; ride.alighting_order = 2;
+		size_t work = 8, count = 123;
+		CHECK(GetPassengerRouteStops(ride, PAX, work, &count).empty());
+		CHECK(count == 0); CHECK(work == 0);
+	}
+	auto *packet = f.Packet(110); packet->FallbackPassengerJourney(A, NOW, D);
+	Station::Get(A)->goods[PAX].CreateData().cargo.Append(packet, D);
+	const auto wire = db.Save(); const auto diagnostic = GetPassengerJourneyTickDiagnostic();
+	auto routes = BuildStationPassengerRoutes(*Station::Get(A), db);
+	CHECK(routes.links[std::tuple{B, A, B}] == Approx(110.0 * usable / (usable + 1)));
+	CHECK(routes.links[std::tuple{C, A, C}] == Approx(110.0 / (usable + 1)));
+	CHECK(routes.alighting[D] == Approx(110));
+	CHECK(db.Save() == wire);
+	CHECK(GetPassengerJourneyTickDiagnostic().admission.used == diagnostic.admission.used);
+	CHECK(GetPassengerJourneyTickDiagnostic().query_work == diagnostic.query_work);
+}
+
+TEST_CASE("Fallback route overlay supports circuits beyond the Hyperpath wait range", "[passenger][route-overlay]")
+{
+	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = false;
+	TimetableTicks travel = GENERATE(TimetableTicks{1} << 24, TimetableTicks{1} << 30);
+	auto *first = f.Train({Stop(A, travel, 0), Stop(B, travel, 0), Stop(D, travel, 0)});
+	auto *second = f.Train({Stop(A, 2 * travel, 0), Stop(C, 2 * travel, 0), Stop(D, 2 * travel, 0)});
+	auto &db = f.Build();
+	REQUIRE(db.Get(first->orders->index)->timetable.Circuit() > PassengerStrategy::MAX_WAIT);
+	REQUIRE(db.Get(second->orders->index)->timetable.Circuit() == 2 * db.Get(first->orders->index)->timetable.Circuit());
+	auto *packet = f.Packet(90); packet->FallbackPassengerJourney(A, NOW, D);
+	Station::Get(A)->goods[PAX].CreateData().cargo.Append(packet, D);
+	const auto wire = db.Save();
+	auto routes = BuildStationPassengerRoutes(*Station::Get(A), db);
+	CHECK(routes.links[std::tuple{B, A, B}] == Approx(60));
+	CHECK(routes.links[std::tuple{C, A, C}] == Approx(30));
+	CHECK(routes.alighting[D] == Approx(90));
+	CHECK(db.Save() == wire);
+}
+
 TEST_CASE("Route overlay keeps retained policies and incoming and failed service exclusions read-only", "[passenger][route-overlay]")
 {
 	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = _settings_game.linkgraph.passenger_journey_hyperpath = true;

@@ -37,9 +37,15 @@ existing through-ride extension check.
 
 OD fallback packets prefer published, live-valid direct rides to their destination
 or rides to their saved CargoDist hop, followed by destination policies where
-available. These fallback first rides use inverse-circuit weights. Without such a
-prefix, a destination policy can supply an estimate. Packets without an OD retain
-the origin-specific CargoDist flow estimate. An unresolved suffix is never counted
+available. Fallback first rides use `usable_live_vehicles / circuit_ticks` as their
+relative frequency, assuming roughly even spacing rather than predicting a
+timetable. The complete live shared fleet is counted with the same capacity,
+stopped/crashed and station-access checks as ride validation. The count is cached
+with the ride for this rebuild; an incomplete census omits the candidate instead
+of using a partial count. Double division supports long circuits, including the
+timetable limit of 2^40 ticks, without Hyperpath's fixed-point wait restriction.
+Without such a prefix, a destination policy can supply an estimate. Packets
+without an OD retain the origin-specific CargoDist flow estimate. An unresolved suffix is never counted
 as an arrival; only a real OD arrival or an explicit legacy self-flow adds an
 alighting marker.
 
@@ -63,10 +69,13 @@ Regression coverage is in `tests/passenger_precomputed.cpp` and
 invalid queue keys, frequency shares, transfer branching, retained generations,
 incoming/failed services, stop occurrences, fallback/legacy handling, display
 limits, unchanged database serialization, diagnostic counters and admission work.
+Fallback regressions cover 10:1 fleet shares, exclusion of unavailable vehicles,
+incomplete fleet censuses and preserved frequency ratios above the Hyperpath wait
+limit.
 
 Validation: MSVC x64 Release builds of `openttd` and `openttd_test`, with assertions
 enabled and LTO disabled, succeeded. The combined filter
 `[route-overlay],[hyperpath]~[scaling],[precomputed]~[scaling],[station-gui]` passed
-146 test cases / 7,682,215 assertions after integration with `jgrpp-ya` at
+148 test cases / 7,682,296 assertions after integration with `jgrpp-ya` at
 `093218f882`. `git diff --check` passed. No long real-map run or large benchmark
 was performed.
