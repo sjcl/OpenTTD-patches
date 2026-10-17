@@ -10,6 +10,7 @@
 #ifndef ARENA_ALLOC_HPP
 #define ARENA_ALLOC_HPP
 
+#include <algorithm>
 #include <type_traits>
 #include <vector>
 
@@ -20,16 +21,46 @@ template <size_t SIZE, uint N_PER_CHUNK>
 class UniformBumpAllocator {
 	static_assert(SIZE > 0);
 	static_assert(N_PER_CHUNK > 0);
+	static constexpr size_t BLOCK_BYTES = SIZE * N_PER_CHUNK;
 	std::vector<char *> used_blocks;
 
 	char *next_ptr = nullptr;
 	char *end_ptr = nullptr;
 
+	/**
+	 * Short-lived containers (e.g. one pathfinder node list per search) would otherwise
+	 * allocate and free a large block on every use. Blocks above the small-object range go
+	 * to the general heap, whose cost grows with process heap size and fragmentation.
+	 * Keep a few freed blocks per thread for reuse. Block addresses never affect results.
+	 */
+	struct BlockCache {
+		static constexpr size_t MIN_BLOCK_BYTES = 16 * 1024; ///< Smaller blocks are cheap to allocate.
+		static constexpr size_t MAX_BYTES = 4 * 1024 * 1024; ///< Per thread and allocator instantiation.
+		static constexpr size_t MAX_BLOCKS = std::max<size_t>(1, std::min<size_t>(8, MAX_BYTES / BLOCK_BYTES));
+		std::vector<char *> blocks;
+		~BlockCache() { for (char *block : this->blocks) free(block); }
+	};
+	static BlockCache *GetBlockCache()
+	{
+		if constexpr (BLOCK_BYTES < BlockCache::MIN_BLOCK_BYTES || BLOCK_BYTES > BlockCache::MAX_BYTES) {
+			return nullptr;
+		} else {
+			thread_local BlockCache cache;
+			return &cache;
+		}
+	}
+
 	void NewBlock()
 	{
-		this->next_ptr = static_cast<char *>(malloc(SIZE * N_PER_CHUNK));
+		BlockCache *cache = GetBlockCache();
+		if (cache != nullptr && !cache->blocks.empty()) {
+			this->next_ptr = cache->blocks.back();
+			cache->blocks.pop_back();
+		} else {
+			this->next_ptr = static_cast<char *>(malloc(BLOCK_BYTES));
+		}
 		assert(this->next_ptr != nullptr);
-		this->end_ptr = this->next_ptr + (SIZE * N_PER_CHUNK);
+		this->end_ptr = this->next_ptr + BLOCK_BYTES;
 		this->used_blocks.push_back(this->next_ptr);
 	}
 
@@ -47,8 +78,13 @@ public:
 	{
 		this->next_ptr = nullptr;
 		this->end_ptr = nullptr;
+		BlockCache *cache = GetBlockCache();
 		for (char *block : this->used_blocks) {
-			free(block);
+			if (cache != nullptr && cache->blocks.size() < BlockCache::MAX_BLOCKS) {
+				cache->blocks.push_back(block);
+			} else {
+				free(block);
+			}
 		}
 		this->used_blocks.clear();
 	}

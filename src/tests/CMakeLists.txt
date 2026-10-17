@@ -1,5 +1,6 @@
 add_test_files(
     alternating_iterator.cpp
+    arena_alloc.cpp
     bitmath_func.cpp
     command.cpp
     enum_over_optimisation.cpp
