@@ -53,6 +53,13 @@ struct PassengerHyperpathMemoryDiagnostic {
 	uint64_t differences = 0, additions = 0, maximum_additions = 0, multi_addition_differences = 0, unexpected_removals = 0, overlay_bytes = 0;
 };
 
+/** Local performance data only; never saved or used for logical admission. */
+struct PassengerParallelBuildDiagnostic {
+	uint64_t batches = 0, searches = 0, batch_nanoseconds = 0, search_nanoseconds = 0, integration_nanoseconds = 0, fallbacks = 0;
+	uint64_t minimum_work = UINT64_MAX, maximum_work = 0, search_work = 0;
+	size_t workers = 0, peak_pending = 0, estimated_workspace_bytes = 0;
+};
+
 /** Mandatory derived state, independent of the optional Timed/Schedule caches.
  * A fixed number of reverse-tree operations is executed per tick. The operation
  * cursor is saved; replay from the saved published DB restores precisely the same
@@ -75,6 +82,10 @@ public:
 	bool IsPreparingGraph() const { return static_cast<bool>(this->graph_build); }
 	uint64_t GetGraphWork() const { return this->graph_work; }
 	size_t Step(size_t operations, bool legacy_publication = false, const std::function<void(StationID)> &published = {});
+	/** Initial preparation barrier only. Work/publication exactly match Step;
+	 * all CPU workers are joined before this call returns. Zero selects Step. */
+	size_t StepParallel(size_t operations, uint workers = 4, const std::function<void(StationID)> &published = {});
+	const PassengerParallelBuildDiagnostic &GetParallelDiagnostic() const { return this->parallel_diagnostic; }
 	void ReleaseDestination(StationID destination); ///< Retire a row immediately after its replacement is published.
 	void PrepareRetirement(const PassengerPrecomputedTable &replacement); ///< Freeze the few destinations absent from the replacement before retiring its ascending rows.
 	void ReuseRetainedDestinations(); ///< Start another retirement epoch after the previous replacement finished.
@@ -123,6 +134,7 @@ public:
 	struct CandidateDiagnostic { uint32_t occurrence; OrderListID service; VehicleOrderID order; StationID alight; int64_t cost, wait; uint64_t frequency; };
 	std::vector<CandidateDiagnostic> Inspect(StationID origin, StationID destination, OrderListID previous = OrderListID::Invalid()) const;
 private:
+	friend struct PassengerPrecomputedTestAccess;
 	struct Member { OrderListID id; uint64_t incarnation, generation; bool estimated; };
 	struct Pattern {
 		std::vector<Member> members;
@@ -274,12 +286,24 @@ private:
 		std::vector<uint32_t> flat_candidate_buffer;
 		size_t destination = 0, cursor = 0, finishing = 0, seeding = 0, publication_cursor = 0;
 		uint32_t range_offset = 0, expanding = INVALID;
-		bool finishing_row = false, initializing_row = false;
+		bool finishing_row = false, initializing_row = false, queues_configured = false;
 		size_t hyperpath_candidate_bytes = 0, prepared_candidate_bytes = 0;
 		struct Counters {
 			uint64_t board_events = 0, board_accepts = 0, range_updates = 0, heap_pushes = 0, heap_pops = 0;
 		} counters;
 	} work;
+	struct DestinationBuildResult {
+		DestinationWorkspace workspace;
+		uint64_t operations = 0, nanoseconds = 0;
+		std::exception_ptr error;
+	};
+	/** Joined, derived lookahead. No threads, graph references or service pointers
+	 * survive a call. Moving/resetting/discarding the table is consequently safe. */
+	std::vector<DestinationBuildResult> parallel_results;
+	size_t parallel_count = 0, parallel_next = 0;
+	uint64_t parallel_credit = 0;
+	bool parallel_unavailable = false;
+	PassengerParallelBuildDiagnostic parallel_diagnostic;
 	CargoType cargo = INVALID_CARGO;
 	PassengerBuildTask graph_build; ///< Derived preparation only. No row can be published until this completes.
 	uint64_t graph_work = 0; ///< Actual coroutine steps, used only for bounded join progress reports.
@@ -293,6 +317,10 @@ private:
 	size_t SearchDestination(DestinationWorkspace &work, size_t allowance) const;
 	size_t SearchHyperpath(DestinationWorkspace &work, size_t allowance) const;
 	void CollectSearchCounters();
+	bool PrepareParallelBatch(uint workers);
+	void CancelParallel();
+	size_t AdvanceSearch(size_t allowance, uint workers);
+	size_t StepImpl(size_t allowance, bool legacy_publication, const std::function<void(StationID)> &published, uint workers);
 	bool UseCompressedRows() const;
 	const Label &RowLabel(const Row &row, uint32_t origin, uint32_t state) const;
 	const Label &AlternativeLabel(const Row &row, uint32_t origin) const;
@@ -307,7 +335,7 @@ private:
 	void SetSearchLabel(DestinationWorkspace &work, uint32_t state, const Label &label) const;
 	bool WaitingStationInvariant(const DestinationWorkspace &work, uint32_t station) const; ///< Defined only in the invariant-checking test TU.
 	size_t RelaxIncoming(DestinationWorkspace &work, size_t allowance) const;
-	size_t StepHyperpath(size_t allowance, const std::function<void(StationID)> &published);
+	size_t StepHyperpath(size_t allowance, const std::function<void(StationID)> &published, uint workers);
 	void PushHyperpath(DestinationWorkspace &work, int64_t key, uint32_t kind, uint32_t id) const;
 	uint32_t PolicyState(StationID origin, OrderListID previous) const;
 	const Row *FindRow(StationID destination) const;

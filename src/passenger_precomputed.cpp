@@ -9,6 +9,8 @@
 #include "station_base.h"
 #include "map_func.h"
 #include "error_func.h"
+#include "thread.h"
+#include <atomic>
 #include <chrono>
 #include <numeric>
 #include "safeguards.h"
@@ -865,10 +867,15 @@ void PassengerPrecomputedTable::StartDestination()
 void PassengerPrecomputedTable::StartDestination(DestinationWorkspace &work, size_t destination) const
 {
 	work.destination = destination;
-	work.queue.SetOptimized(this->optimized);
-	work.queue.SetCapacityLimit(uint64_t(this->integrated ? this->diagnostic.logical_edges : this->diagnostic.edges) + this->diagnostic.states);
-	work.strategy.events.SetOptimized(true);
-	work.strategy.events.SetCapacityLimit(uint64_t(this->diagnostic.logical_edges) + this->diagnostic.states);
+	if (!work.queues_configured) {
+		work.queue.SetOptimized(this->optimized);
+		work.queue.SetCapacityLimit(uint64_t(this->integrated ? this->diagnostic.logical_edges : this->diagnostic.edges) + this->diagnostic.states);
+		if (this->hyperpath) {
+			work.strategy.events.SetOptimized(true);
+			work.strategy.events.SetCapacityLimit(uint64_t(this->diagnostic.logical_edges) + this->diagnostic.states);
+		}
+		work.queues_configured = true;
+	}
 	if (this->hyperpath) {
 		work.strategy.events.Reset(); work.strategy.last = 0; work.strategy.board_edge = INVALID;
 		work.strategy.witness_edge = INVALID;
@@ -1097,6 +1104,129 @@ void PassengerPrecomputedTable::CollectSearchCounters()
 	this->diagnostic.heap_pops += std::exchange(this->work.counters.heap_pops, 0);
 }
 
+/** Bounded batches keep the immutable graph on the calling thread's stack of
+ * ownership. Only independent contexts are mutated until every thread joins.
+ * An allocation/start failure discards lookahead, never rejects a logical row. */
+bool PassengerPrecomputedTable::PrepareParallelBatch(uint workers)
+{
+	assert(!this->graph_build && !this->work.finishing_row && this->parallel_next == this->parallel_count);
+	/* A partly searched row from ordinary Step must finish with its own cursor.
+	 * Parallel construction can start at the next row without restarting Work. */
+	if (this->parallel_unavailable || !this->work.initializing_row || !this->work.search.cost.empty() || this->work.seeding != 0) return false;
+	const size_t cpus = std::max(1U, std::thread::hardware_concurrency());
+	/* This local scratch limit affects concurrency alone, never the canonical
+	 * envelope. Use a conservative graph-based estimate, with OOM fallback too. */
+	const uint64_t bytes = uint64_t(this->diagnostic.states) * 256 + uint64_t(this->diagnostic.logical_edges) * 32 + 65536;
+	const size_t slots = std::max<uint64_t>(1, (uint64_t{512} * 1024 * 1024) / bytes);
+	workers = static_cast<uint>(std::min<size_t>({workers, 8, cpus, std::max<size_t>(1, slots / 2), this->stations.size() - this->destination}));
+	if (workers == 0) return false;
+	const size_t count = std::min<size_t>(workers * 2, this->stations.size() - this->destination);
+	const auto started = Clock::now();
+	struct JoinedThreads {
+		std::vector<std::thread> threads;
+		void Join() { for (auto &thread : this->threads) if (thread.joinable()) thread.join(); }
+		~JoinedThreads() { this->Join(); }
+	} pool;
+	std::atomic<size_t> next{0};
+	auto run = [&]() noexcept {
+			while (true) {
+				size_t index = next.fetch_add(1, std::memory_order_relaxed);
+				if (index >= count) return;
+				auto &result = this->parallel_results[index];
+				result.operations = 0; result.error = {};
+				const auto search_started = Clock::now();
+				try {
+					result.workspace.counters = {};
+					this->StartDestination(result.workspace, this->destination + index);
+					while (!result.workspace.finishing_row) {
+						result.operations += this->hyperpath ? this->SearchHyperpath(result.workspace, 65536) : this->SearchDestination(result.workspace, 65536);
+					}
+				} catch (...) { result.error = std::current_exception(); }
+				result.nanoseconds = Elapsed(search_started);
+			}
+	};
+	try {
+		this->parallel_results.resize(count);
+		pool.threads.resize(workers);
+		size_t running = 0;
+		for (auto &thread : pool.threads) {
+			if (!StartNewThread(&thread, "pax-destination", run)) break;
+			++running;
+		}
+		pool.Join();
+		if (running == 0) throw std::bad_alloc{}; // Same local fallback as scratch allocation failure.
+		for (const auto &result : this->parallel_results) if (result.error) std::rethrow_exception(result.error);
+		this->parallel_diagnostic.workers = std::max(this->parallel_diagnostic.workers, running);
+		this->parallel_diagnostic.peak_pending = std::max(this->parallel_diagnostic.peak_pending, count);
+		this->parallel_diagnostic.estimated_workspace_bytes = static_cast<size_t>(count * bytes);
+		++this->parallel_diagnostic.batches;
+		this->parallel_diagnostic.searches += count;
+		for (const auto &result : this->parallel_results) {
+			this->parallel_diagnostic.search_nanoseconds += result.nanoseconds;
+			this->parallel_diagnostic.search_work += result.operations;
+			this->parallel_diagnostic.minimum_work = std::min(this->parallel_diagnostic.minimum_work, result.operations);
+			this->parallel_diagnostic.maximum_work = std::max(this->parallel_diagnostic.maximum_work, result.operations);
+		}
+		this->parallel_count = count; this->parallel_next = 0; this->parallel_credit = 0;
+		this->parallel_diagnostic.batch_nanoseconds += Elapsed(started);
+		return true;
+	} catch (...) {
+		/* Join before releasing contexts, even if thread startup itself throws. */
+		pool.Join();
+		this->parallel_results.clear(); this->parallel_count = this->parallel_next = 0;
+		this->parallel_unavailable = true;
+		++this->parallel_diagnostic.fallbacks;
+		this->parallel_diagnostic.batch_nanoseconds += Elapsed(started);
+		return false;
+	}
+}
+
+void PassengerPrecomputedTable::CancelParallel()
+{
+	if (this->parallel_credit != 0) {
+		/* The primary context is still at the start of this row. Recreate exactly
+		 * the virtually consumed prefix without charging it a second time. No
+		 * search step can publish or modify inverse indices or boarding masks. */
+		while (this->parallel_credit != 0) {
+			size_t quantum = static_cast<size_t>(std::min<uint64_t>(this->parallel_credit, 65536));
+			size_t used = this->hyperpath ? this->SearchHyperpath(this->work, quantum) : this->SearchDestination(this->work, quantum);
+			assert(used == quantum);
+			this->parallel_credit -= used;
+		}
+		this->CollectSearchCounters();
+	}
+	this->parallel_results.clear(); this->parallel_count = this->parallel_next = 0;
+}
+
+size_t PassengerPrecomputedTable::AdvanceSearch(size_t allowance, uint workers)
+{
+	if (workers != 0 && (this->parallel_next < this->parallel_count || this->PrepareParallelBatch(workers))) {
+		auto &result = this->parallel_results[this->parallel_next];
+		assert(result.workspace.destination == this->destination && result.operations > this->parallel_credit);
+		size_t used = static_cast<size_t>(std::min<uint64_t>(allowance, result.operations - this->parallel_credit));
+		this->parallel_credit += used;
+		if (this->parallel_credit == result.operations) {
+			this->CollectSearchCounters();
+			std::swap(this->work, result.workspace);
+			this->CollectSearchCounters();
+			++this->parallel_next; this->parallel_credit = 0;
+		}
+		return used;
+	}
+	return this->hyperpath ? this->SearchHyperpath(this->work, allowance) : this->SearchDestination(this->work, allowance);
+}
+
+size_t PassengerPrecomputedTable::StepParallel(size_t allowance, uint workers, const std::function<void(StationID)> &published)
+{
+	if (workers == 0) return this->Step(allowance, false, published);
+	const auto started = Clock::now();
+	uint64_t batch_before = this->parallel_diagnostic.batch_nanoseconds;
+	size_t used = this->StepImpl(allowance, false, published, workers);
+	this->parallel_diagnostic.integration_nanoseconds += Elapsed(started) - (this->parallel_diagnostic.batch_nanoseconds - batch_before);
+	if (this->Finished()) this->CancelParallel();
+	return used;
+}
+
 size_t PassengerPrecomputedTable::SearchDestination(DestinationWorkspace &work, size_t allowance) const
 {
 	size_t used = 0;
@@ -1171,8 +1301,14 @@ size_t PassengerPrecomputedTable::SearchDestination(DestinationWorkspace &work, 
 
 size_t PassengerPrecomputedTable::Step(size_t allowance, bool legacy_publication, const std::function<void(StationID)> &published)
 {
+	this->CancelParallel();
+	return this->StepImpl(allowance, legacy_publication, published, 0);
+}
+
+size_t PassengerPrecomputedTable::StepImpl(size_t allowance, bool legacy_publication, const std::function<void(StationID)> &published, uint workers)
+{
 	if (!this->PrepareGraph(std::min<size_t>(allowance, 1024))) return 0;
-	if (this->hyperpath) return this->StepHyperpath(allowance, published);
+	if (this->hyperpath) return this->StepHyperpath(allowance, published, workers);
 	const auto started = Clock::now(); size_t used = 0;
 	auto index_origin = [&](size_t from) {
 		if (from >= this->stations.size() || this->SearchCost(this->work, static_cast<uint32_t>(from)) == INT64_MAX) return;
@@ -1183,7 +1319,7 @@ size_t PassengerPrecomputedTable::Step(size_t allowance, bool legacy_publication
 	try {
 		while (used < allowance && !this->Finished()) {
 			if (!this->work.finishing_row) {
-				used += this->SearchDestination(this->work, allowance - used); continue;
+				used += this->AdvanceSearch(allowance - used, workers); continue;
 			}
 			++used;
 			if (this->work.finishing_row) {
@@ -1429,13 +1565,13 @@ size_t PassengerPrecomputedTable::SearchHyperpath(DestinationWorkspace &work, si
 	return used;
 }
 
-size_t PassengerPrecomputedTable::StepHyperpath(size_t allowance, const std::function<void(StationID)> &published)
+size_t PassengerPrecomputedTable::StepHyperpath(size_t allowance, const std::function<void(StationID)> &published, uint workers)
 {
 	const auto started = Clock::now(); size_t used = 0;
 	try {
 		while (used < allowance && !this->Finished()) {
 			if (!this->work.finishing_row) {
-				used += this->SearchHyperpath(this->work, allowance - used); continue;
+				used += this->AdvanceSearch(allowance - used, workers); continue;
 			}
 			++used;
 			if (this->work.finishing_row) {
