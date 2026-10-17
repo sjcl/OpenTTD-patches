@@ -569,6 +569,7 @@ PassengerBuildTask PassengerPrecomputedTable::BuildGraph(std::vector<const Passe
 		this->diagnostic.stations = this->stations.size(); this->diagnostic.patterns = this->patterns.size();
 		this->diagnostic.states = nodes; this->diagnostic.edges = this->integrated ? this->hot_edges.from.size() : this->edges.size();
 		this->queue.SetCapacityLimit(uint64_t(this->integrated ? this->diagnostic.logical_edges : this->diagnostic.edges) + nodes);
+		if (this->hyperpath) this->strategy.events.SetCapacityLimit(uint64_t(this->diagnostic.logical_edges) + nodes);
 		if (this->hyperpath) {
 			this->hyperpath_static_bytes = this->revisits.capacity() * sizeof(Revisit) + (this->station_index.capacity() + this->service_pattern.capacity() + this->waiting_station.capacity() +
 					this->incoming_offsets.capacity() + this->seed_offsets.capacity() + this->seed_occurrences.capacity()) * 4 + this->stations.capacity() * sizeof(StationID) +
