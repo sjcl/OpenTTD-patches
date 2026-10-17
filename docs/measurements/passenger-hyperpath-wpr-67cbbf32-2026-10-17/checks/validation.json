@@ -1,0 +1,49 @@
+{
+  "modes": {
+    "legacy": {
+      "canonical_fields_equal": 24,
+      "ticks": 2048,
+      "contamination_events": 0,
+      "lost_events": 0,
+      "lost_buffers": 0,
+      "unresolved_product_functions": 0
+    },
+    "hyperpath": {
+      "canonical_fields_equal": 24,
+      "ticks": 2048,
+      "contamination_events": 0,
+      "lost_events": 0,
+      "lost_buffers": 0,
+      "unresolved_product_functions": 0
+    }
+  },
+  "raw_csv_hashes": {
+    "legacy/CPU_Usage_(Sampled)_Exclusive_functions.csv": "784434b255ecd7001438439d2ab3ef0490473a75c13279955582ee9e05ee0b98",
+    "legacy/CPU_Usage_(Sampled)_Stacks.csv": "a3ca87a56ded2936e36c4f68a854fa353e8ac6af397839745f5bb22a61e220f7",
+    "hyperpath/CPU_Usage_(Sampled)_Exclusive_functions.csv": "4f9bbc16d1ce1d8c58614f8ce1b7584a16e612aa56af048d190a9df49f070f7c",
+    "hyperpath/CPU_Usage_(Sampled)_Stacks.csv": "cf5ef642b861141ed8555d0b58e08abe9caec19223665bd677e82b881d3d8cda"
+  },
+  "copied_tu_hashes": {
+    "save-integrity/cargopacket.cpp": "05a93695921f6acad84a9e287fa1458dfd0d480c423c4efa8f312e3b6525dfc8",
+    "save-integrity/cargopacket_sl.cpp": "88b7907f5907115c60b4afefbc418dff66da13248e929fdcac22f787bec9b58d",
+    "save-integrity/command.cpp": "1b74b0b7454c8f8e9c29ff0c64676fda229b4c2cb4cc86432a932cebf7b81acf",
+    "save-integrity/console_cmds.cpp": "b4c4161b746536420156c890aaa48924498d6a252b761e0d24fe33f171a2d3e5",
+    "save-integrity/integrity.h": "a1829785fd341072840102949c0bb68e0960333f67c39b14c03a25d76d8d4b15",
+    "save-integrity/passenger_service_database.cpp": "f988f8cb36d216851b90cb24caaccd6ab3e8eade82f8b379c5a420b1cf452a56",
+    "save-integrity/wpr_gate.h": "64793e1253d3040ee8b8855b9c23a1d00b3db7690e26caf2716480d8750b8b24",
+    "real-map-driver/null_v.cpp": "dec9da31881efa715941aa3a938bb5292fb69579046e1426e27fa3fdc2773c3c",
+    "real-map-driver/win32.cpp": "61c5c6cfb7279228676a8215f97e12472c9d3d9a36fa40a9592633cc78ae7c8c"
+  },
+  "reference_hashes": {
+    "docs/measurements/passenger-hyperpath-wpr-f7c44f0d-2026-10-17/legacy/save-integrity.json": "4f85a9ef960b0698ca73e5d3db4ea7cbb076ea060bc36221a936959daeda8245",
+    "docs/measurements/passenger-hyperpath-wpr-f7c44f0d-2026-10-17/legacy/CPU_Usage_(Sampled)_Stacks.csv.gz": "39be71365f1b17b139119d0a07ea0d35014f20da27d89d561b42816b465eac07",
+    "docs/measurements/passenger-hyperpath-wpr-f7c44f0d-2026-10-17/hyperpath/save-integrity.json": "8ca2201e3626739cb9bd610b71a14c95caa6b664438c1c3c2cd8abefb74926af",
+    "docs/measurements/passenger-hyperpath-wpr-f7c44f0d-2026-10-17/hyperpath/CPU_Usage_(Sampled)_Stacks.csv.gz": "b16ae067e4155df5bac8addac43f7afb2e6449c1c2eacddeb7fd05cb86ac09c8",
+    "docs/measurements/passenger-hyperpath-wpr-f7c44f0d-2026-10-17/summary.json": "a7f109720924558c65d05b2c48a729169bbb058f672d020f3716c339c67ac7f1",
+    "docs/measurements/passenger-hyperpath-wpr-f7c44f0d-2026-10-17/build-identity.json": "780aa0d0f86758fd55efd77744bd2b66b38719592982ff49c017ea5130a9ccb1",
+    "docs/measurements/passenger-hyperpath-wpr-f7c44f0d-2026-10-17/legacy-functions.csv": "398fe04fd6d5f48b591fa09899fae563afdb90cfd7181906366a706cb28258db",
+    "docs/measurements/passenger-hyperpath-wpr-f7c44f0d-2026-10-17/hyperpath-functions.csv": "ad5a14543fbb1bced8ffd5843f1a97c76ceec8df88384c011f7394dcca0d8e7b"
+  },
+  "canonical_rows": 48,
+  "membership_inclusive_scopes_equal": true
+}

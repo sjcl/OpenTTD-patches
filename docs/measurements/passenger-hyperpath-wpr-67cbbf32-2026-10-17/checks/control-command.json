@@ -1,0 +1,31 @@
+{
+  "command": [
+    "C:\\Users\\bebe\\AppData\\Local\\Programs\\Python\\Python313\\python.exe",
+    "-B",
+    "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\utils\\passenger_wpr_control.py",
+    "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\docs\\measurements\\passenger-hyperpath-wpr-f7c44f0d-2026-10-17",
+    "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\docs\\measurements\\passenger-hyperpath-wpr-67cbbf32-2026-10-17"
+  ],
+  "working_directory": "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches",
+  "stdout": "control.json",
+  "script_commit": "5e862d93f6e425876c905e22a5f4b84625a11915",
+  "script_sha256": "fa483d06004b2fe5e901884b0f3cbc6156588e1a1cc58d78d7a6dc761cee06bb",
+  "defaults": {
+    "ticks": 2048,
+    "mode": [
+      "legacy",
+      "hyperpath"
+    ],
+    "touched": [
+      "Yapf",
+      "NodeList",
+      "BumpAlloc",
+      "Passenger",
+      "StationCargoList",
+      "LoadUnload",
+      "CargoList"
+    ]
+  },
+  "exit_code": 0,
+  "stdout_sha256": "34a6833123753ad4343ebff9744a3e51e234055b1838380c99fb2b9288d112be"
+}
