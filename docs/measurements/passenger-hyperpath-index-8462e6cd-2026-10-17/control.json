@@ -1,0 +1,36 @@
+{
+  "legacy": {
+    "old_ms_per_tick": {
+      "untouched": 19.954624658203063,
+      "touched": 3.5952041503906202,
+      "heap": 1.4244402343749953
+    },
+    "new_ms_per_tick": {
+      "untouched": 19.441170117187546,
+      "touched": 3.445707861328122,
+      "heap": 1.3899120605468742
+    },
+    "machine_factor": 0.9742688950651627,
+    "raw_delta_ms_per_tick": -0.6974790039061354,
+    "corrected_delta_ms_per_tick": -0.056312447999253834,
+    "corrected_touched_delta": -0.05849279813333608,
+    "corrected_heap_delta": 0.0021803501340809106
+  },
+  "hyperpath": {
+    "old_ms_per_tick": {
+      "untouched": 18.52457343750011,
+      "touched": 4.895379492187493,
+      "heap": 1.637417382812499
+    },
+    "new_ms_per_tick": {
+      "untouched": 21.019736376953194,
+      "touched": 4.890171972656274,
+      "heap": 1.849909130859374
+    },
+    "machine_factor": 1.134694758174675,
+    "raw_delta_ms_per_tick": 2.7024471679687423,
+    "corrected_delta_ms_per_tick": -0.5928019512919889,
+    "corrected_touched_delta": -0.5856989041473728,
+    "corrected_heap_delta": -0.00710304714461607
+  }
+}
