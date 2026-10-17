@@ -2,6 +2,12 @@
 
 * * *
 
+### v0.73.3+4 (2026-10-18)
+* Group waiting passengers by destination, source and boarding service in station windows, including current and retained Hyperpath alternatives and retry services
+* Allow passengers to board buses queued at drive-through road stops
+* Reduce Hyperpath table construction CPU work with a ring queue, compact boarding masks and reusable row buffers, while preserving route results
+* Close the multiplayer join status window after map processing
+
 ### v0.73.3+3 (2026-10-18)
 * Add optional explicit passenger destinations and deterministic sparse OD assignment
 * Add periodic and schedule-aware passenger journeys, shared precomputed destination policies, and optional Hyperpath strategies with replanning after capacity misses
