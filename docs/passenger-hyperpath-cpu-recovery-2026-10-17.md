@@ -1,8 +1,29 @@
 # Hyperpath boarding CPU recovery
 
 Work on `feat/passenger-hyperpath-routing`, starting at
-`21b7f06ad9cbe7e214ac3762d9e73f56e6f3fc46`. Task 1 was measured before the
-Task 2 optimization. The measurements and subsequent changes are recorded below.
+`21b7f06ad9cbe7e214ac3762d9e73f56e6f3fc46`. Membership/ride separation,
+measurement-only target departures, time-based capacity failure and flat policy
+storage are implemented. The selected T_FAIL is **4,096 ticks**.
+
+Final untraced ordinary simulation improves **27.522 → 25.136 ms/tick** against
+previous HP; an independent reversed sequence confirms **28.548 → 26.253**.
+That is an observed **8–9% mean reduction**, with **24.3–27.5% still remaining above
+legacy**. The enumeration observer improves about 26%, and normal boarding
+enumeration performs zero EvaluateRide calls. CPU recovery is partial.
+
+The identical frozen-map storage comparison reduces reported table bytes
+**21.81%** and process peak commit **25.13%**, with full candidate/label/exact
+N/F and saved-Work witnesses equal. The Task 2-only 4,096-tick comparison
+matches all 24 canonical fields. All **731 native tests**, real MP join,
+disable/enable, replacement and three old/new saved-Work readbacks pass.
+
+The requested original input is missing. All new paired runs use the same
+recovered save, exactly 24,576 ticks later. Fresh 971→916 and 3222→400 samples
+are absent there. Transport gains, adverse metrics and that limitation are
+reported with the [final CPU](#final-untraced-cpu-result),
+[transport](#final-24576-tick-transport-result) and
+[MP/readback](#final-native-saved-work-and-multiplayer-checks) evidence below.
+Earlier sections retain the diagnostic sequence and intermediate results.
 
 ## Measurement instrumentation
 
@@ -69,7 +90,7 @@ launch attempts timed out in the incomplete asset layout; no product edit
 was needed. The instrumented executable also passes a 64-tick exact-driver
 smoke with replacement at tick 32. The first real-map attribution pair has
 completed as described below. No
-CPU-recovery result is claimed yet.
+CPU-recovery result was claimed at that initial stage; final results appear below.
 
 ## First attribution result and gate
 
@@ -431,9 +452,10 @@ split/merge comparison, saved field or event is changed. Actual opportunity
 counts remain separate in the capacity diagnostic; the saved saturated count
 is the exclusion latch. No-alternative restoration remains intact.
 
-The provisional native constant is 2,048 ticks. Both 2,048 and 4,096 will be
-measured in copied binaries after flat-storage validation; the final choice
-and evidence are reported below. All 728 native CTest cases pass, including
+The initial provisional native constant was 2,048 ticks. Both 2,048 and 4,096
+were subsequently measured in copied binaries after flat-storage validation;
+the final 4,096 choice and evidence are reported below. All 728 native CTest
+cases passed at this stage, including
 first-full-departure diversion on a long-headway carrier, no-alternative
 restoration, short-headway three-count behavior, unknown-headway count-only
 behavior, record-time-only latching and a packet Save/Load round trip.
@@ -470,8 +492,8 @@ candidate, label and exact N/F across 16 synthetic networks and different Work
 slices; retain eleven additions in one variant; replay v14 Work and mixed v15
 generations; reject malformed flat flags; and compare joining peers. Multiple
 large DB peers in the new replay test use heap storage to respect the native
-test stack. The full real-map, separate-process witness and OS-memory comparison
-is recorded in the following measurement section when complete.
+test stack. The completed full real-map, separate-process witness and OS-memory
+comparison is recorded in the following measurement section.
 
 Evidence: [native tests](measurements/passenger-hyperpath-cpu-recovery-2026-10-17/task5-native-ctest.log)
 and [native completion](measurements/passenger-hyperpath-cpu-recovery-2026-10-17/task5-native-completed.json).
@@ -575,8 +597,8 @@ cover legacy capacity failures. No target samples establish a fresh 971→916
 or 3222→400 comparison in this later interval.
 
 All traced timings include transport observations and ordinary table refreshes;
-the primary CPU conclusion awaits the separate untraced ordinary/replacement
-triplet and reversed ordinary control. The requested original input remains
+the primary CPU conclusion uses the separate untraced ordinary/replacement
+triplet and reversed ordinary control below. The requested original input remains
 unavailable, so the threshold evidence applies to this recovered interval.
 
 Evidence: [selection and tradeoffs](measurements/passenger-hyperpath-cpu-recovery-2026-10-17/threshold-selected.json),
@@ -585,3 +607,247 @@ Evidence: [selection and tradeoffs](measurements/passenger-hyperpath-cpu-recover
 [focused comparison](measurements/passenger-hyperpath-cpu-recovery-2026-10-17/threshold-2048-vs-4096-focused.json),
 [capacity context](measurements/passenger-hyperpath-cpu-recovery-2026-10-17/threshold-capacity-threshold-context.json)
 and [selected-constant tests](measurements/passenger-hyperpath-cpu-recovery-2026-10-17/selected-4096-native-ctest.log).
+
+## Final untraced CPU result
+
+All three 2,048-tick runs start from the identical recovered save, complete an
+initial cold table, replace transfer cost 20 with 17 at tick 1,024, and finish
+the replacement after the measured interval. Transport tracing and boarding
+timers are disabled. The immutable legacy and pre-change HP controls reproduce
+all 24 canonical end fields from their earlier controls exactly. The last
+post-interval warm-up contributes to process peaks, but not per-tick times.
+
+Values below are mean / p95 / p99 in milliseconds. Ordinary is ticks 1–1,024;
+replacement is ticks 1,025–2,048. The tail is ordinary ticks 513–1,024.
+
+| Interval and measure | Legacy | Previous HP | Final HP |
+| --- | ---: | ---: | ---: |
+| Ordinary simulation | 20.217 / 23.155 / 25.589 | 27.522 / 38.556 / 54.379 | 25.136 / 35.196 / 48.371 |
+| Ordinary Journey | 1.271 / 1.862 / 2.229 | 2.109 / 3.212 / 26.189 | 2.094 / 3.925 / 23.118 |
+| Ordinary tail simulation | 20.272 / 23.189 / 25.589 | 26.697 / 34.312 / 42.600 | 24.615 / 32.694 / 40.665 |
+| Replacement simulation | 22.492 / 33.814 / 38.710 | 31.803 / 40.249 / 48.137 | 29.463 / 38.881 / 46.407 |
+| Replacement Journey | 3.224 / 15.164 / 17.412 | 6.876 / 12.072 / 13.303 | 6.681 / 12.403 / 14.018 |
+
+The primary sequence improves ordinary mean by 8.67% and replacement mean by
+7.36% against previous HP. Ordinary remains 24.33% above legacy; the excess
+shrinks by 32.66%. The tail mean improves 7.80% against previous HP, while
+remaining 21.42% above legacy. This is partial CPU recovery. The Journey mean
+barely changes in the ordinary interval, consistent with the removed work
+being outside that timer.
+
+These timings compare the combined final changes, including flat storage and
+the new capacity rule. They are not an isolated causal estimate for the Task 2
+memo. Its behavior-preserving canonical comparison is reported separately.
+
+The independent reverse sequence runs final → previous HP → legacy. It accepts
+only the first 1,024 ordinary ticks; its single replacement tick is excluded.
+All 24 midpoint canonical fields agree with each corresponding primary run.
+
+| Reversed ordinary measure | Legacy | Previous HP | Final HP |
+| --- | ---: | ---: | ---: |
+| Simulation mean / p95 / p99, ms | 20.598 / 23.457 / 26.192 | 28.548 / 39.066 / 52.884 | 26.253 / 38.653 / 52.575 |
+| Journey mean / p95 / p99, ms | 1.294 / 1.900 / 2.288 | 2.008 / 3.312 / 24.096 | 2.225 / 4.530 / 23.656 |
+| Tail simulation mean / p95 / p99, ms | 20.582 / 23.371 / 26.192 | 27.873 / 35.244 / 43.558 | 25.132 / 34.079 / 42.420 |
+
+The reverse ordinary mean improves 8.04% against previous HP, and its tail
+improves 9.84%. Final remains 27.45% above legacy. Both observed orders therefore
+show an approximately 8–9% ordinary mean improvement, while latency tails vary
+and the reverse Journey mean worsens. Two ordered runs are not a randomized
+confidence interval or a claim of full CPU recovery.
+
+Final CPU process peak working set / commit are 8.273 / 8.735 decimal GB,
+against previous HP 10.232 / 11.103 and legacy 7.187 / 7.214. These include
+initial/replacement construction and must be kept separate from the identical
+single-table frozen-map storage comparison above.
+
+The final copied-TU boarding observer also completes 2,048 ticks and agrees
+with the uninstrumented final run in all 24 canonical end fields. Its counts
+are shown alongside the original and the behavior-preserving Task 2 memo run.
+Times are observer measurements, with nested scopes and timer overhead.
+
+| Full interval counter | Before Task 2 | Task 2 memo only | Final combined HP |
+| --- | ---: | ---: | ---: |
+| Visitor calls | 154,940 | 154,940 | 154,046 |
+| Enumerated cohorts | 22,842,650 | 22,842,650 | 22,832,661 |
+| Enumeration seconds | 7.849864 | 5.800545 | 5.827620 |
+| Light/full enumeration predicate calls | 22,842,650 | 22,767,827 | 22,755,865 |
+| Enumeration predicate seconds | 4.583700 | 3.064429 | 3.069754 |
+| ResolveHyperpath calls | 23,374,464 | 778,822 | 785,719 |
+| ResolveHyperpath seconds | 2.557902 | 0.234133 | 0.237094 |
+| All EvaluateRide calls / visited stops | 215,829 / 3,690,603 | 144,933 / 2,835,865 | 404,541 / 10,622,684 |
+| All EvaluateRide seconds | 0.174049 | 0.129091 | 0.243642 |
+| Enumeration EvaluateRide calls / stops | 208,740 / 3,506,823 | 17,570 / 220,438 | 22,013 / 339,879 |
+
+All remaining enumeration ride evaluations in both after runs are inside
+RecordCapacityMiss; ordinary boarding enumeration has **zero calls and stops**.
+Final base/currentness memo hits are 20,265,093 of 22,755,865 light predicates
+(89.05%). The Task 2 memo run preserves the same cohort population and reduces
+enumeration time 26.11%; its ordinary tail falls 2.206051 → 1.659134 seconds.
+The combined final run is 5.827620 seconds overall and 1.700346 in that tail.
+Its new time rule changes passenger behavior, so these final counters are not
+a behavior-identical optimization experiment.
+
+The new failure rule raises total ride work above the original run, even
+though the normal boarding pre-scan remains removed. The visitor still walks
+22.8 million cohorts. Final enumeration contains 3.070 seconds in the measured
+light-predicate scope and about 2.758 seconds outside it, including traversal
+and the capacity-only full checks. These nested times must not be added to
+the full visitor/Journey scopes. The results support residual cohort traversal
+and membership cost, while not accounting for every simulation-time increment.
+The original attribution remains 59.88% of the ordinary-tail simulation
+increment in enumeration, with EvaluateRide itself only a small part of that
+cost. Repeated ResolveHyperpath/predicate calls, rather than repeated complete
+ride-cache misses, were the material pre-scan work.
+
+Evidence: [primary CPU](measurements/passenger-hyperpath-cpu-recovery-2026-10-17/final-cpu-summary.json),
+[reverse CPU](measurements/passenger-hyperpath-cpu-recovery-2026-10-17/final-reverse-summary.json),
+[reverse state controls](measurements/passenger-hyperpath-cpu-recovery-2026-10-17/final-reverse-controls.json),
+[final observer](measurements/passenger-hyperpath-cpu-recovery-2026-10-17/final-final-profile-report.json),
+[observer state control](measurements/passenger-hyperpath-cpu-recovery-2026-10-17/final-final-profile-state-control.json)
+and [per-tick observer counters](measurements/passenger-hyperpath-cpu-recovery-2026-10-17/final-boarding-profile.csv).
+
+## Final 24,576-tick transport result
+
+The legacy and selected 4,096 cases use the same recovered later input. Full
+population transport counts and end-save inventory are distinct from the
+unweighted one-in-64 packet representatives used for trip distributions.
+The focused representatives cover all three requested ODs independently.
+
+| Measure | Legacy | Final HP, T_FAIL 4,096 |
+| --- | ---: | ---: |
+| Initial passengers | 743,298 | 743,298 |
+| Generated passengers | 1,726,505 | 1,724,959 |
+| Delivered passengers | 1,546,349 | 1,576,439 |
+| Remaining passengers | 637,250 | 606,172 |
+| Waiting passengers | 296,457 | 251,533 |
+| Physically onboard passengers | 340,793 | 354,639 |
+| Other removals | 286,204 | 285,646 |
+| Population transfer events | 1,522,326 | 1,766,167 |
+| Fresh complete ordinary representatives | 13,820 | 14,222 |
+| Fresh complete trip mean / p95 / p99, ticks | 4,412.93 / 12,807 / 18,619 | 4,399.84 / 12,961 / 18,383 |
+| Mean transfers per complete fresh representative | 0.5664 | 0.6313 |
+| Fresh representatives with revisit / immediate return | 64 / 58 | 143 / 128 |
+| Right-censored fresh representatives | 6,833 | 6,697 |
+| Pending maximum-wait mean / p95 / p99, ticks | 2,845.96 / 10,647 / 18,065 | 2,252.86 / 7,324 / 16,990 |
+| Traced simulation mean / p95 / p99, ms | 34.151 / 45.934 / 52.711 | 39.585 / 49.146 / 59.580 |
+| Traced Journey mean / p95 / p99, ms | 3.286 / 15.536 / 18.732 | 6.287 / 11.904 / 13.510 |
+| Process peak working set / commit, GB | 7.305 / 7.338 | 8.356 / 8.842 |
+
+Delivered population is 1.95% higher and waiting population is 15.15% lower,
+with 4.06% more physically onboard. Transfers and sampled revisit/return counts
+increase. Completed-trip mean improves only 0.30%, p95 worsens and p99 improves.
+Completed and censored samples have different fates across runs; these are
+descriptive distributions, not paired causal estimates of all travelers.
+The longer traced run has ongoing table refreshes and observer overhead, and
+does not replace the untraced CPU result.
+
+The final HP records 663,975 eligible packet / 1,309,587 passenger capacity-miss
+opportunities and 395,601 LocalPolicy cache constructions. These are repeated
+opportunities/cache misses, not unique failed people or unique replans. Legacy
+has no corresponding HP failure counter. The threshold comparison and its
+37.1-fold construction increase against count-only HP remain material CPU
+limitations, despite selecting the less costly 4,096 alternative.
+
+For 3393→3394, fresh completed mean / p95 / p99 are 2,206.20 / 5,062 / 5,705
+legacy versus 2,137.99 / 4,941 / 5,377 final HP. There are 182 / 194 completions
+from 286 / 312 starts, 50 / 57 losses and 54 / 61 censored representatives.
+All pending target representatives are waiting, with elapsed mean 2,799.83 /
+3,076.70 and p95 6,346 / 6,448. Both completed populations have zero transfers,
+revisits and immediate returns and distance 208 sixteenth-tile units. Mean
+riding time is 461 / 453.96; corresponding origin wait is 1,745.20 / 1,684.03.
+Among the same 36 initially present representatives, 29 / 25 complete and
+7 / 11 are lost, with no pending representatives. Their remaining arrival
+time is 5,423 / 5,405 ticks. The better completed fresh target distribution
+does not erase the worse loss/censoring counts or establish the missing
+original interval's cause.
+
+Neither run generates a fresh 971→916 or 3222→400 representative. The single
+initial 971→916 representative arrives after 4,275 / 4,369 ticks. 3222→400 has
+no initial representative. Fresh comparisons for those ODs are unavailable.
+
+## Final native, saved-Work and multiplayer checks
+
+The selected native source passes all **731 CTest cases**. The real loopback
+MP test also passes with no network/desync error: join, routing disable/enable
+and replacement all match the 18 compared canonical/derived fields on both
+peers. It requests 1,024 transport ticks and observes **1,071 actual ticks**
+because the asynchronous network probe can overshoot; the final peer snapshots
+have identical StateTicks and state. This is an MP synchronization check, not
+an exact-duration CPU measurement.
+
+The test uses frame_freq 20, paused join, the completed final 24,576-tick save,
+and transfer-cost replacement 20 → 17. Server preparation takes 497.610 seconds
+without advancing paused simulation. The client reports 197 replay progress
+packets and replays 3,407,850,773 actual Work in 17,758 slices. Its start/end
+StateTicks are both 3,181,144,157 and its replay frame remains 97; maximum
+outer replay loop is 15.379 ms. Client join-budget time is 201.266 seconds.
+The larger progress denominator is an upper estimate, not the actual replay
+Work. Join, toggle and transport mismatch lists are all empty.
+
+The observed network timeout settings remain their defaults: max_join_time
+500, max_join_time_total 900, max_lag_time 500, max_init_time 100 and
+max_download_time 1,000. The harness's 600-second observation bound is separate
+from these product settings. It completes without raising that bound or
+altering a product timeout. Configuration and observed-setting lines are
+preserved with the result.
+
+All three end saves load and replay their saved Work without advancing
+StateTicks (3,181,144,157 in each case). Legacy and count-only HP upgrade JPSD
+14 → 15 with neutral flat flags and byte-verified original prefixes. The final
+HP save verifies its v15 bytes unchanged. Each then reports identical saved DB
+bytes across forced replay. Every non-derived canonical field matches the
+corresponding end snapshot; current/retained row counters and table operations
+are reconstructed, and the known v14 → v15 database-digest change is covered
+by the independent wire comparison.
+
+| Replayed end save | Current rows | Retained rows | Current saved table Work | Waiting / physically onboard people |
+| --- | ---: | ---: | ---: | ---: |
+| Legacy, v14 → v15 | 1,272 | 3,645 | 1,477,967,872 | 296,457 / 340,793 |
+| Count-only HP, v14 → v15 | 3,767 | 1,150 | 1,477,902,336 | 253,225 / 350,142 |
+| Final flat HP, v15 | 3,767 | 1,150 | 1,478,033,408 | 251,533 / 354,639 |
+
+The complete end-save census agrees with live transport metadata, including
+virtual reservations being excluded from physically onboard people. All three
+have zero reserved people at this endpoint. Pending event gauges after load
+are 200,676 / 162,012 / 159,305 respectively; these are reconstructed live
+gauges, not the cumulative scheduler-work counters reset on load. Their oldest
+overdue ages are 1 / 0 / 0 ticks.
+
+Actual replayed HP table components below use decimal GB and cold derived
+caches. Reported table bytes and component counters do not include all process
+allocations; the OS peaks are reported separately above.
+
+| End-save table | Reported bytes, GB | Labels | Policy headers | Candidates | Indices |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Count-only HP current | 5.982 | 2.592 | 2.719 | 0.333 | 0.274 |
+| Count-only HP retained | 1.876 | 0.791 | 0.835 | 0.103 | 0.084 |
+| Final flat HP current | 4.684 | 2.592 | 1.632 | 0.181 | 0.216 |
+| Final flat HP retained | 1.477 | 0.791 | 0.501 | 0.056 | 0.066 |
+
+Their combined reported HP bytes are 7.859 / 6.161 GB. These are different
+simulation outcomes/frozen generations; matching row counts do not make this
+an isolated layout experiment. Use the identical frozen-map witness comparison
+for the storage-only reduction. Legacy's HP-specific component API returns
+zero because it uses another table mode; that is not zero legacy allocation.
+
+Evidence: [MP result and snapshots](measurements/passenger-hyperpath-cpu-recovery-2026-10-17/final-mp-result.json),
+[observed default limits](measurements/passenger-hyperpath-cpu-recovery-2026-10-17/final-mp-default-limits.json),
+[readback/wire/inventory results](measurements/passenger-hyperpath-cpu-recovery-2026-10-17/final-readback-result.json),
+[old HP replay console](measurements/passenger-hyperpath-cpu-recovery-2026-10-17/final-readback-hyperpath-console.txt),
+[final flat replay console](measurements/passenger-hyperpath-cpu-recovery-2026-10-17/final-readback-threshold-4096-console.txt)
+and [combined final evidence](measurements/passenger-hyperpath-cpu-recovery-2026-10-17/final-summary.json).
+
+## Remaining limits
+
+The Task 2 behavior-preserving 4,096-tick canonical check, flat-map full witness
+and saved-Work proofs establish the intended correctness properties. The
+boarding pre-enumeration ride scan is removed. Ordinary CPU has residual
+cohort-walk/membership work and other costs; it has not returned to legacy
+speed. The final time rule also increases local-policy reconstruction churn.
+No excluded reverse index, shared frozen ride-evaluation cache, narrowed label
+type, learned effective frequency or new passenger event has been introduced.
+
+The missing original input prevents the requested same-interval reproduction.
+All newly paired evidence uses SHA256 306a8d…c629, exactly 24,576 StateTicks
+later than the requested SHA256 6783a5…978. This report must not be read as
+having reproduced the former 2,744 → 2,902 target-OD result.

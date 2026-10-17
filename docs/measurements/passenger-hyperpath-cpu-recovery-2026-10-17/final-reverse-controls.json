@@ -1,0 +1,17 @@
+{
+  "controls": {
+    "final": {
+      "compared_fields": 24,
+      "mismatches": {}
+    },
+    "before": {
+      "compared_fields": 24,
+      "mismatches": {}
+    },
+    "legacy": {
+      "compared_fields": 24,
+      "mismatches": {}
+    }
+  },
+  "note": "Only the first 1024 ordinary ticks and their 513-1024 tail are accepted. One replacement tick is excluded from CPU claims."
+}
