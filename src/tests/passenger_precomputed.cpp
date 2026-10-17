@@ -1119,3 +1119,136 @@ TEST_CASE("Hyperpath flat real map exact publication witness", "[.hyperpath-flat
 		}
 	}
 }
+
+namespace {
+	/** Random-walk lines over a square station grid; out-and-back or circular, 1-6 vehicles. */
+	std::vector<PassengerPeriodicService> SyntheticNetwork(uint16_t side, uint16_t lines, uint32_t seed)
+	{
+		auto rnd = [&](uint32_t n) { seed = seed * 1664525U + 1013904223U; return (seed >> 8) % n; };
+		std::vector<PassengerPeriodicService> services;
+		for (uint16_t line = 0; line < lines; ++line) {
+			PassengerPeriodicService s; s.id = OrderListID{line}; s.incarnation = line + 1; s.generation = line + 10;
+			int x = static_cast<int>(rnd(side)), y = static_cast<int>(rnd(side));
+			const uint32_t length = 6 + rnd(18);
+			std::vector<StationID> stops;
+			for (uint32_t i = 0; i < length; ++i) {
+				const StationID station{static_cast<uint16_t>(y * side + x)};
+				if (std::find(stops.begin(), stops.end(), station) == stops.end()) stops.push_back(station);
+				switch (rnd(4)) {
+					case 0: x = std::min<int>(side - 1, x + 1); break;
+					case 1: x = std::max(0, x - 1); break;
+					case 2: y = std::min<int>(side - 1, y + 1); break;
+					default: y = std::max(0, y - 1); break;
+				}
+			}
+			if (stops.size() < 2) continue;
+			if (rnd(3) != 0) for (size_t i = stops.size() - 1; i-- > 1;) stops.push_back(stops[i]); // Out and back.
+			int64_t cursor = 0;
+			for (StationID station : stops) {
+				const int64_t dwell = 5 + rnd(20);
+				s.timetable.stops.push_back({station, static_cast<VehicleOrderID>(s.timetable.stops.size()), cursor, cursor + dwell, 1, 1, 0});
+				cursor += dwell + 40 + rnd(200);
+			}
+			s.timetable.period = cursor;
+			const uint32_t vehicles = 1 + rnd(6);
+			for (uint32_t i = 0; i < vehicles; ++i) {
+				PassengerPeriodicVehicle v; v.id = VehicleID{static_cast<uint32_t>(line * 8 + i)}; v.type = VehicleType::Train; v.phase_known = true;
+				v.base = StateTicks{static_cast<int64_t>(cursor * i / vehicles)}; v.capacity[PAX] = 100;
+				s.vehicles.push_back(v);
+			}
+			services.push_back(std::move(s));
+		}
+		return services;
+	}
+}
+
+TEST_CASE("Hyperpath table build CPU on a national-scale synthetic network", "[.hyperpath-build-cpu][passenger]")
+{
+	/* Sized like the real map (about 800 patterns and 4,000-5,000 stations). Reports nanoseconds
+	 * per Work unit over a fixed slice, and a digest of every row of a small complete table so a
+	 * CPU-only change can show that it publishes exactly the same strategies. */
+	if (const char *skip = getenv("OPENTTD_HYPERPATH_BUILD_DIGEST"); skip == nullptr || std::string_view{skip} != "0") for (bool hyperpath : {true, false}) {
+		const auto services = SyntheticNetwork(24, 160, 0x0d16e57U);
+		std::vector<const PassengerPeriodicService *> records; for (const auto &s : services) records.push_back(&s);
+		PassengerPrecomputedTable table;
+		table.Begin(records, PAX, 20, hyperpath ? PassengerPrecomputedTable::MAX_HYPERPATH_BYTES : PassengerPrecomputedTable::MAX_BYTES, true, false, {}, true, true, true, hyperpath);
+		const auto started = std::chrono::steady_clock::now();
+		while (!table.Finished()) table.Step(65536);
+		const auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - started).count();
+		REQUIRE_FALSE(table.MemoryRejected());
+		uint64_t digest = 0xcbf29ce484222325ULL;
+		auto mix = [&](uint64_t value) { digest = (digest ^ value) * 0x100000001b3ULL; };
+		std::vector<uint32_t> stored;
+		for (uint16_t origin = 0; origin < 24 * 24; ++origin) for (uint16_t destination = 0; destination < 24 * 24; ++destination) {
+			const StationID from{origin}, to{destination};
+			mix(static_cast<uint64_t>(table.RouteCost(from, to).value_or(-1)));
+			const auto plan = table.Plan(from, to, StateTicks{});
+			mix(static_cast<uint64_t>(plan.state)); mix(static_cast<uint64_t>(plan.cost)); mix(static_cast<uint64_t>(plan.riding)); mix(static_cast<uint64_t>(plan.waiting));
+			mix(plan.distance); mix(plan.transfers); mix(plan.ride ? static_cast<uint64_t>(plan.ride->estimated_wait) : 0);
+			for (const auto &service : services) {
+				if (std::none_of(service.timetable.stops.begin(), service.timetable.stops.end(), [&](const auto &stop) { return stop.station == from; })) continue;
+				stored.clear(); table.StoredCandidates(from, to, service.id, stored);
+				for (uint32_t occurrence : stored) mix(occurrence);
+				mix(UINT64_MAX);
+			}
+			for (const auto &candidate : table.Inspect(from, to)) { mix(candidate.occurrence); mix(static_cast<uint64_t>(candidate.cost)); mix(static_cast<uint64_t>(candidate.wait)); }
+		}
+		std::cout << (hyperpath ? "hyperpath" : "legacy") << "_build_digest,destinations=" << table.GetDiagnostic().destinations << ",operations=" << table.GetDiagnostic().operations
+				<< ",ms=" << ms << ",digest=" << std::hex << digest << std::dec << std::endl;
+	}
+	const char *env_ops = getenv("OPENTTD_HYPERPATH_BUILD_OPS");
+	const uint64_t ops = env_ops != nullptr ? std::strtoull(env_ops, nullptr, 10) : uint64_t{64} * 65536;
+	const auto services = SyntheticNetwork(70, 800, 0x5eed1234U);
+	std::vector<const PassengerPeriodicService *> records; for (const auto &s : services) records.push_back(&s);
+	PassengerPrecomputedTable table;
+	table.Begin(records, PAX, 20, PassengerPrecomputedTable::MAX_HYPERPATH_BYTES, true, false, {}, true, true, true, true);
+	while (table.IsPreparingGraph() && !table.Finished()) table.Step(65536);
+	REQUIRE_FALSE(table.MemoryRejected());
+	const auto started = std::chrono::steady_clock::now();
+	const uint64_t before = table.GetDiagnostic().operations;
+	while (!table.Finished() && table.GetDiagnostic().operations - before < ops) table.Step(65536);
+	const auto ns = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - started).count();
+	const auto &d = table.GetDiagnostic();
+	std::cout << "hyperpath_build_cpu,patterns=" << d.patterns << ",stations=" << d.stations << ",states=" << d.states << ",edges=" << d.logical_edges
+			<< ",destinations=" << d.destinations << ",operations=" << d.operations - before << ",ns_per_op=" << double(ns) / double(d.operations - before)
+			<< ",board_events=" << d.board_events << ",board_accepts=" << d.board_accepts << ",range_updates=" << d.range_updates
+			<< ",heap_pushes=" << d.heap_pushes << ",heap_pops=" << d.heap_pops << ",bytes=" << d.bytes << std::endl;
+}
+
+TEST_CASE("Optimized destination queue pops exactly the binary heap order", "[passenger][precomputed][queue]")
+{
+	/* Monotone pushes with ties, same-cost pushes after pops, near ring slots and far jumps
+	 * beyond the ring (including exactly RING ahead): the exact (cost, kind, id) order. */
+	using Item = std::tuple<int64_t, uint32_t, uint32_t>;
+	for (uint32_t seed : {1U, 0x9e3779b9U, 0x2545f491U, 0xdeadbeefU}) {
+		auto rnd = [&](uint32_t n) { seed = seed * 1664525U + 1013904223U; return (seed >> 8) % n; };
+		PassengerDestinationQueue<Item> queue; queue.SetOptimized(true); queue.SetCapacityLimit(64);
+		std::priority_queue<Item, std::vector<Item>, std::greater<Item>> oracle;
+		for (int destination = 0; destination < 6; ++destination) {
+			int64_t last = 0;
+			for (int step = 0; step < 6000; ++step) {
+				if (oracle.empty() || rnd(5) < 3) {
+					int64_t delta;
+					switch (rnd(6)) {
+						case 0: delta = 0; break;
+						case 1: delta = rnd(4); break;
+						case 2: delta = rnd(1100); break;
+						case 3: delta = 1024; break;
+						case 4: delta = 1023 + rnd(3); break;
+						default: delta = rnd(50000); break;
+					}
+					Item item{last + delta, rnd(3), rnd(64)};
+					queue.emplace(std::get<0>(item), std::get<1>(item), std::get<2>(item)); oracle.push(item);
+				} else {
+					REQUIRE(queue.size() == oracle.size());
+					REQUIRE(queue.top() == oracle.top());
+					last = std::get<0>(oracle.top());
+					queue.pop(); oracle.pop();
+				}
+			}
+			while (!oracle.empty()) { REQUIRE(queue.top() == oracle.top()); queue.pop(); oracle.pop(); }
+			REQUIRE(queue.empty());
+			queue.Reset();
+		}
+	}
+}

@@ -168,7 +168,9 @@ private:
 	struct LabelMetadata {
 		int64_t riding = 0, waiting = 0, first_wait = 0;
 		uint32_t board = INVALID, alight = INVALID, distance = 0;
+		uint32_t legs = 0; ///< Hyperpath only, in former padding: one cache line per relaxation. Legacy priorities keep legs beside cost.
 	};
+	static_assert(sizeof(LabelMetadata) == 40);
 	struct SearchWorkspace {
 		std::vector<int64_t> cost;
 		std::vector<uint32_t> legs;
@@ -210,11 +212,17 @@ private:
 	mutable size_t local_policy_bytes = 0, expanded_policy_bytes = 0;
 	mutable std::map<std::pair<StationID, uint32_t>, std::vector<uint32_t>> expanded_policies;
 	bool flat_storage = false; ///< v15 physical representation and frozen memory admission.
-	std::vector<uint64_t> boarding_mask; ///< Per occurrence: base-state destination-row bits, then any-state bits.
-	size_t boarding_mask_words = 0; ///< Words per occurrence and plane; zero until allocated.
+	/** Per block of 64 destination rows: a base-state plane, then an any-state plane, each one
+	 * word per occurrence. One row's publication then writes within two occurrence-sized arrays. */
+	std::vector<uint64_t> boarding_mask;
+	size_t boarding_mask_words = 0; ///< Blocks of 64 destination rows; zero until allocated.
 	bool boarding_mask_rejected = false; ///< Too large for MAX_BOARDING_MASK_BYTES.
 	std::vector<uint64_t> published_rows; ///< With the mask: rows that FindRow returns, one bit per destination row.
+	size_t BoardingMaskWord(uint32_t occurrence, bool any_state, uint32_t row) const { return (size_t{row / 64} * 2 + any_state) * this->occurrences.size() + occurrence; }
 	void MarkBoardingCandidate(uint32_t occurrence, bool base_state);
+	/** Working capacity of the row being built; each published row receives an exact copy. */
+	std::vector<FlatPolicy> flat_policy_buffer;
+	std::vector<uint32_t> flat_candidate_buffer;
 	std::span<const uint32_t> FlatPayload(const Row &row, uint32_t policy) const;
 	uint32_t PreviousPattern(uint32_t state) const;
 	bool ContainsStored(const Row &row, uint32_t state, uint32_t occurrence) const;

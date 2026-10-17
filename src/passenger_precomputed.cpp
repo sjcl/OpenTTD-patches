@@ -864,8 +864,13 @@ void PassengerPrecomputedTable::StartDestination()
 		this->strategy.witness_edge = INVALID;
 		this->strategy.sums.clear(); this->strategy.settled.clear();
 		this->prepared = {};
-		if (this->flat_storage) this->prepared.indices.reserve(this->waiting_state_count);
 		this->prepared_candidate_bytes = 0;
+		if (this->flat_storage) {
+			this->prepared.indices.reserve(this->waiting_state_count);
+			/* Grow in the working buffers only once per build, not once per row. */
+			this->prepared.flat_policies.swap(this->flat_policy_buffer); this->prepared.flat_candidates.swap(this->flat_candidate_buffer);
+			this->prepared_candidate_bytes = this->prepared.flat_candidates.capacity() * 4;
+		}
 	}
 	this->queue.Reset();
 	this->scratch.labels.clear();
@@ -954,13 +959,15 @@ PassengerPrecomputedTable::Label PassengerPrecomputedTable::SearchLabel(uint32_t
 	if (!this->optimized) return this->scratch.labels[state];
 	if (this->search.cost[state] == INT64_MAX) return {};
 	const auto &m = this->search.metadata[state];
-	return {this->search.cost[state], m.riding, m.waiting, m.first_wait, m.board, m.alight, this->search.legs[state], m.distance};
+	return {this->search.cost[state], m.riding, m.waiting, m.first_wait, m.board, m.alight, this->hyperpath ? m.legs : this->search.legs[state], m.distance};
 }
 
 void PassengerPrecomputedTable::SetSearchLabel(uint32_t state, const Label &label)
 {
 	if (!this->optimized) { this->scratch.labels[state] = label; return; }
-	this->search.cost[state] = label.cost; this->search.legs[state] = label.legs;
+	this->search.cost[state] = label.cost;
+	if (this->hyperpath) { this->search.metadata[state] = {label.riding, label.waiting, label.first_wait, label.board, label.alight, label.distance, label.legs}; return; }
+	this->search.legs[state] = label.legs;
 	this->search.metadata[state] = {label.riding, label.waiting, label.first_wait, label.board, label.alight, label.distance};
 }
 
@@ -1352,6 +1359,11 @@ size_t PassengerPrecomputedTable::StepHyperpath(size_t allowance, const std::fun
 					else this->diagnostic.difference_policy_bytes += bytes;
 					++this->finishing; this->strategy.offset = 0; continue;
 				}
+				if (this->flat_storage) {
+					auto exact = [](auto &working, auto &buffer) { buffer.swap(working); working.assign(buffer.begin(), buffer.end()); buffer.clear(); };
+					exact(this->prepared.flat_policies, this->flat_policy_buffer); exact(this->prepared.flat_candidates, this->flat_candidate_buffer);
+					this->prepared_candidate_bytes = this->prepared.flat_candidates.capacity() * 4;
+				}
 				this->prepared.bytes = this->prepared.labels.capacity() * sizeof(Label) + this->prepared.indices.capacity() * 4 +
 						this->prepared.policies.capacity() * sizeof(Policy) + this->prepared.flat_policies.capacity() * sizeof(FlatPolicy) + this->prepared_candidate_bytes;
 				this->hyperpath_row_bytes += this->prepared.bytes;
@@ -1465,6 +1477,7 @@ size_t PassengerPrecomputedTable::StepHyperpath(size_t allowance, const std::fun
 			this->search.cost.capacity() * 8 + this->search.legs.capacity() * 4 + this->search.metadata.capacity() * sizeof(LabelMetadata) +
 			this->strategy.sums.capacity() * sizeof(PassengerStrategy) + this->strategy.candidates.capacity() * sizeof(this->strategy.candidates[0]) +
 			this->strategy.settled.capacity() / 8 + this->strategy.events.AllocatedBytes() + this->prepared_candidate_bytes +
+			this->flat_policy_buffer.capacity() * sizeof(FlatPolicy) + this->flat_candidate_buffer.capacity() * 4 +
 			this->prepared.labels.capacity() * sizeof(Label) + this->prepared.indices.capacity() * 4 + this->prepared.policies.capacity() * sizeof(Policy) + this->prepared.flat_policies.capacity() * sizeof(FlatPolicy);
 	return used;
 }
@@ -1665,9 +1678,9 @@ void PassengerPrecomputedTable::MarkBoardingCandidate(uint32_t occurrence, bool 
 	}
 	if (occurrence >= this->occurrences.size()) return;
 	const uint64_t bit = uint64_t{1} << (this->destination % 64);
-	uint64_t *planes = this->boarding_mask.data() + occurrence * 2 * this->boarding_mask_words + this->destination / 64;
-	if (base_state) planes[0] |= bit;
-	planes[this->boarding_mask_words] |= bit;
+	const uint32_t row = static_cast<uint32_t>(this->destination);
+	if (base_state) this->boarding_mask[this->BoardingMaskWord(occurrence, false, row)] |= bit;
+	this->boarding_mask[this->BoardingMaskWord(occurrence, true, row)] |= bit;
 }
 
 bool PassengerPrecomputedTable::MayBeStoredCandidate(uint32_t occurrence, StationID destination, bool any_state) const
@@ -1675,8 +1688,7 @@ bool PassengerPrecomputedTable::MayBeStoredCandidate(uint32_t occurrence, Statio
 	if (this->boarding_mask_words == 0 || occurrence >= this->occurrences.size() || destination.base() >= this->station_index.size()) return false;
 	const uint32_t row = this->station_index[destination.base()];
 	if (row == INVALID) return false;
-	const size_t word = occurrence * 2 * this->boarding_mask_words + (any_state ? this->boarding_mask_words : 0) + row / 64;
-	return ((this->boarding_mask[word] >> (row % 64)) & 1) != 0;
+	return ((this->boarding_mask[this->BoardingMaskWord(occurrence, any_state, row)] >> (row % 64)) & 1) != 0;
 }
 
 bool PassengerPrecomputedTable::BoardingMaskCovers() const
@@ -1718,7 +1730,7 @@ std::optional<bool> PassengerPrecomputedTable::ContainsCached(StationID origin, 
 		if (occurrence >= this->occurrences.size() || this->occurrences[occurrence].station != origin || destination.base() >= this->station_index.size()) return false;
 		const uint32_t row = this->station_index[destination.base()];
 		if (row == INVALID || ((this->published_rows[row / 64] >> (row % 64)) & 1) == 0) return false;
-		return ((this->boarding_mask[occurrence * 2 * this->boarding_mask_words + row / 64] >> (row % 64)) & 1) != 0;
+		return ((this->boarding_mask[this->BoardingMaskWord(occurrence, false, row)] >> (row % 64)) & 1) != 0;
 	}
 	const auto *row = this->FindRow(destination); uint32_t state = this->PolicyState(origin, previous);
 	if (row == nullptr || state == INVALID || occurrence >= this->occurrences.size()) return false;
