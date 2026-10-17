@@ -4686,7 +4686,7 @@ TEST_CASE("Hyperpath boarding destination filter preserves every loading decisio
 	/* The same deterministic scenario runs with and without the derived filter: several
 	 * lines from A, transferring passengers, capacity failures, a sliced cost replacement with
 	 * mixed generations, and a switch back to legacy rows. Every observable outcome must match. */
-	struct Result { std::vector<int64_t> log; PassengerWaitingEventDiagnostic diagnostic; };
+	struct Result { std::vector<int64_t> log; PassengerWaitingEventDiagnostic diagnostic; uint64_t steady_rebuilds = 0; };
 	using Mode = PassengerServiceDatabase::HyperpathFilterMode;
 	auto run = [](Mode mode, uint32_t seed) {
 		Result result;
@@ -4765,6 +4765,15 @@ TEST_CASE("Hyperpath boarding destination filter preserves every loading decisio
 		add_packets(60); capacity_failures(1); load_all(3);
 		while (!db.PrecomputedFinished()) db.TickPrecomputed(65536);
 		add_packets(40); load_all(4);
+		/* Lookups persist across ticks of a finished generation (new groups only), then follow a
+		 * sliced replacement whose rows publish between loading walks (the destination log). */
+		const uint64_t rebuilds = GetPassengerWaitingEventDiagnostic().hyperpath_lookup_rebuilds;
+		for (uint i = 0; i < 4; ++i) { db.TickPrecomputed(65536); ++_state_ticks; add_packets(15); capacity_failures(2 * i); load_all(10 + i); }
+		result.steady_rebuilds = GetPassengerWaitingEventDiagnostic().hyperpath_lookup_rebuilds - rebuilds;
+		_settings_game.linkgraph.passenger_transfer_penalty = 23; db.TickPrecomputed(1);
+		for (uint i = 0; i < 8; ++i) { db.TickPrecomputed(97); add_packets(10); load_all(20 + i); }
+		while (!db.PrecomputedFinished()) db.TickPrecomputed(65536);
+		add_packets(20); load_all(30);
 		/* Back to legacy rows: a retained/current legacy generation must disable the filter. */
 		_settings_game.linkgraph.passenger_journey_hyperpath = false; db.TickPrecomputed(1);
 		for (int i = 0; i < 6; ++i) db.TickPrecomputed(97);
@@ -4798,6 +4807,7 @@ TEST_CASE("Hyperpath boarding destination filter preserves every loading decisio
 		CHECK(indexed.diagnostic.hyperpath_walks[2] > 0); CHECK(indexed.diagnostic.hyperpath_walks[0] == 0);
 		CHECK(indexed.diagnostic.hyperpath_groups_checked < filtered.diagnostic.hyperpath_groups_checked);
 		CHECK(indexed.diagnostic.hyperpath_lookup_indexed_groups > 0);
+		CHECK(indexed.steady_rebuilds == 0); CHECK(validated.steady_rebuilds == 0);
 		CHECK(validated.diagnostic.hyperpath_index_validated > 0);
 		CHECK(validated.diagnostic.hyperpath_index_violations == 0);
 	}

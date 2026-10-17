@@ -178,13 +178,15 @@ public:
 	{
 		return cargo < NUM_CARGO && this->precomputed[cargo].BoardingMaskCovers() && this->retained_precomputed[cargo].BoardingMaskCovers();
 	}
-	/** Derived station lookup support. The epoch changes with table generations, retained
-	 * clears, discards and load replay; a destination's version changes whenever its row is
-	 * published or retired in either table. Membership of a waiting policy group depends on nothing else. */
+	/** Derived station lookup support. The epoch changes with table generations, effective
+	 * retained clears, discards and load replay; every row publication or retirement in either
+	 * table appends its destination to a bounded change log. Membership of a waiting policy
+	 * group depends on nothing else. */
+	static constexpr uint64_t HYPERPATH_DESTINATION_LOG = 1024;
 	uint64_t HyperpathLookupEpoch() const { return this->hyperpath_lookup_epoch; }
 	uint64_t HyperpathDestinationChanges() const { return this->hyperpath_destination_changes; }
-	uint32_t HyperpathDestinationVersion(StationID destination) const
-	{ return destination.base() < this->hyperpath_destination_versions.size() ? this->hyperpath_destination_versions[destination.base()] : 0; }
+	/** Destination of change number @p change; valid while HyperpathDestinationChanges() - change <= HYPERPATH_DESTINATION_LOG. */
+	StationID HyperpathChangedDestination(uint64_t change) const { return this->hyperpath_destination_log[change % HYPERPATH_DESTINATION_LOG]; }
 	static constexpr int HYPERPATH_LOOKUP_NONE = -1, HYPERPATH_LOOKUP_ALWAYS = 2;
 	/** Every vehicle occurrence (in the returned table slot's numbering) for which the base membership
 	 * of this waiting intent may hold at its station: NONE, a table slot 0/1 with out filled, or ALWAYS. */
@@ -379,11 +381,10 @@ private:
 	bool policy_cache_enabled = true; ///< Local optional accelerator; absent from saves and routing admission.
 	HyperpathFilterMode hyperpath_boarding_filter = HyperpathFilterMode::Index; ///< Local derived boarding filter; identical decisions, absent from saves.
 	uint64_t hyperpath_lookup_epoch = 1, hyperpath_destination_changes = 0; ///< Derived; monotone across resets and loads.
-	std::vector<uint32_t> hyperpath_destination_versions;
+	std::array<StationID, HYPERPATH_DESTINATION_LOG> hyperpath_destination_log{}; ///< Derived ring indexed by change number.
 	void BumpHyperpathDestination(StationID destination)
 	{
-		if (this->hyperpath_destination_versions.size() <= destination.base()) this->hyperpath_destination_versions.resize(StationID::Invalid().base() + 1, 0);
-		++this->hyperpath_destination_versions[destination.base()]; ++this->hyperpath_destination_changes;
+		this->hyperpath_destination_log[this->hyperpath_destination_changes % HYPERPATH_DESTINATION_LOG] = destination; ++this->hyperpath_destination_changes;
 	}
 	std::list<PolicyKey> policy_lru;
 	std::map<PolicyKey, CachedPolicy> policies;

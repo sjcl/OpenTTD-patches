@@ -667,24 +667,25 @@ class StationCargoList : public CargoList<StationCargoList, StationCargoPacketMa
 	using HyperpathKey = std::tuple<StationID, uint64_t, uint64_t, OrderListID, uint64_t, OrderListID, uint64_t>;
 	struct HyperpathWaiting {
 		std::set<BoardingOrder> packets; std::multiset<StateTicks> expiries;
-		/* Derived lookup state, never saved: HYPERPATH_UNINDEXED, NONE, table slot 0/1 or ALWAYS. */
+		/* Derived lookup state, never saved: HYPERPATH_UNINDEXED, HYPERPATH_PENDING, NONE, table slot 0/1 or ALWAYS. */
 		int8_t lookup_slot = -2;
 		std::vector<uint32_t> lookup_occurrences; ///< Entries in the slot table's occurrence numbering.
 	};
 	using HyperpathGroups = std::map<HyperpathKey, HyperpathWaiting>;
 	struct HyperpathGroupRef { StationID destination; HyperpathGroups::iterator group; };
 	/** Derived occurrence -> waiting policy group lookup, replacing the walk over every group.
-	 * Rebuilt lazily from the database epoch and per-destination row versions. */
+	 * Rebuilt from the database epoch; kept current from its destination change log and the
+	 * groups created since the last refresh. */
 	struct HyperpathLookup {
 		uint64_t epoch = UINT64_MAX, changes = UINT64_MAX;
 		StationID station = StationID::Invalid();
 		CargoType cargo = INVALID_CARGO;
 		std::array<std::unordered_map<uint32_t, std::vector<HyperpathGroupRef>>, 2> occurrences;
 		std::vector<HyperpathGroupRef> always; ///< Failed-carrier groups and legacy plans.
-		std::map<StationID, uint32_t> versions;
-		std::set<StationID> dirty;
+		std::vector<HyperpathGroupRef> pending; ///< New groups (HYPERPATH_PENDING) awaiting their first index.
+		std::vector<StationID> changed; ///< Scratch for the change log.
 	};
-	static constexpr int8_t HYPERPATH_UNINDEXED = -2;
+	static constexpr int8_t HYPERPATH_UNINDEXED = -2, HYPERPATH_PENDING = -3;
 	static HyperpathKey BoardingHyperpathKey(const JourneyRideKey &ride);
 	static StateTicks BoardingHyperpathExpiry(const JourneyRideKey &ride);
 	struct WaitingEntry {

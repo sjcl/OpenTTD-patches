@@ -875,7 +875,10 @@ void PassengerServiceDatabase::BuildPrecomputedTables(std::array<PassengerPrecom
 
 void PassengerServiceDatabase::ClearRetainedPrecomputed()
 {
-	++this->hyperpath_lookup_epoch;
+	/* Called every tick while the current generation is finished. Without a retained revision
+	 * or generation no lookup consults the retained tables, so only an effective clear changes
+	 * station lookups. */
+	if (this->retained_precomputed_revision != UINT64_MAX || this->retained_precomputed_policy_generation != 0) ++this->hyperpath_lookup_epoch;
 	this->retained_precomputed = {};
 	this->retained_precomputed_services.clear();
 	this->retained_precomputed_revision = UINT64_MAX;
@@ -1091,6 +1094,9 @@ int PassengerServiceDatabase::HyperpathLookupCandidates(CargoType cargo, const P
 		slot = slot_of(intent);
 		if (slot != HYPERPATH_LOOKUP_NONE) collect(slot, intent);
 	} else {
+		/* A legacy plan's currency also depends on its service, which no lookup change tracks. */
+		if ((this->precomputed_revision != UINT64_MAX && !this->precomputed_hyperpath) ||
+				(this->retained_precomputed_revision != UINT64_MAX && !this->retained_precomputed_hyperpath)) return HYPERPATH_LOOKUP_ALWAYS;
 		const std::array<OrderListID, 2> states{previous, OrderListID::Invalid()};
 		for (size_t i = 0; i < (previous == OrderListID::Invalid() ? 1 : 2); ++i) {
 			auto plan = this->PlanPrecomputed(cargo, intent.boarding, intent.alighting, _state_ticks, states[i]);

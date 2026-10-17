@@ -1507,7 +1507,10 @@ void StationCargoList::AddBoardingEntry(CargoPacketID id, WaitingEntry &entry) c
 			const StationID alighting = packet.GetPassengerJourney().alighting;
 			auto [policy_entry, new_group] = this->hyperpath_boarding_index[alighting].try_emplace(BoardingHyperpathKey(ride->first));
 			auto &policy = policy_entry->second;
-			if (new_group) this->hyperpath_lookup.dirty.insert(alighting);
+			if (new_group && this->hyperpath_lookup.epoch != UINT64_MAX) {
+				/* A lookup that was never built indexes every group on its first refresh. */
+				policy.lookup_slot = HYPERPATH_PENDING; this->hyperpath_lookup.pending.push_back({alighting, policy_entry});
+			}
 			policy.packets.insert(order);
 			if (std::get<3>(ride->first).count >= PassengerBoardingFailure::THRESHOLD) policy.expiries.insert(BoardingHyperpathExpiry(ride->first));
 		}
@@ -1542,10 +1545,7 @@ void StationCargoList::RemoveBoardingEntry(CargoPacketID id, const WaitingEntry 
 				assert(expiry != policy->second.expiries.end()); policy->second.expiries.erase(expiry);
 			}
 			if (policy->second.packets.empty()) { this->UnindexHyperpathGroup(policy); destination->second.erase(policy); }
-			if (destination->second.empty()) {
-				this->hyperpath_lookup.versions.erase(destination->first); this->hyperpath_lookup.dirty.erase(destination->first);
-				this->hyperpath_boarding_index.erase(destination);
-			}
+			if (destination->second.empty()) this->hyperpath_boarding_index.erase(destination);
 		}
 		ride->second.erase(order);
 		if (ride->second.empty()) {
@@ -1717,6 +1717,7 @@ void StationCargoList::UnindexHyperpathGroup(HyperpathGroups::iterator group) co
 		*found = refs.back(); refs.pop_back();
 	};
 	if (waiting.lookup_slot == PassengerServiceDatabase::HYPERPATH_LOOKUP_ALWAYS) drop(lookup.always);
+	else if (waiting.lookup_slot == HYPERPATH_PENDING) drop(lookup.pending);
 	else if (waiting.lookup_slot == 0 || waiting.lookup_slot == 1) {
 		auto &table = lookup.occurrences[waiting.lookup_slot];
 		for (uint32_t occurrence : waiting.lookup_occurrences) {
@@ -1750,30 +1751,43 @@ void StationCargoList::RefreshHyperpathLookup(StationID station) const
 {
 	auto &lookup = this->hyperpath_lookup;
 	const auto &db = GetPassengerServiceDatabase();
-	if (lookup.epoch != db.HyperpathLookupEpoch() || lookup.station != station || lookup.cargo != this->passenger_index_cargo) {
-		lookup.occurrences = {}; lookup.always.clear(); lookup.versions.clear(); lookup.dirty.clear();
-		for (auto &[destination, groups] : this->hyperpath_boarding_index) {
-			for (auto &[key, waiting] : groups) { waiting.lookup_slot = HYPERPATH_UNINDEXED; waiting.lookup_occurrences.clear(); }
-			lookup.dirty.insert(destination);
-		}
-		lookup.epoch = db.HyperpathLookupEpoch(); lookup.station = station; lookup.cargo = this->passenger_index_cargo;
-		lookup.changes = db.HyperpathDestinationChanges();
+	const uint64_t changes = db.HyperpathDestinationChanges();
+	auto reindex = [&](StationID destination, HyperpathGroups::iterator group) {
+		if (group->second.lookup_slot != HYPERPATH_UNINDEXED) this->UnindexHyperpathGroup(group);
+		this->IndexHyperpathGroup(destination, group);
+		++_passenger_event_diagnostic.hyperpath_lookup_indexed_groups;
+	};
+	if (lookup.epoch != db.HyperpathLookupEpoch() || lookup.station != station || lookup.cargo != this->passenger_index_cargo ||
+			changes < lookup.changes || changes - lookup.changes > PassengerServiceDatabase::HYPERPATH_DESTINATION_LOG) {
+		/* Keep bucket and vector storage: rebuilds follow every table generation. */
+		for (auto &table : lookup.occurrences) table.clear();
+		lookup.always.clear(); lookup.pending.clear();
+		lookup.epoch = db.HyperpathLookupEpoch(); lookup.station = station; lookup.cargo = this->passenger_index_cargo; lookup.changes = changes;
 		++_passenger_event_diagnostic.hyperpath_lookup_rebuilds;
-	} else if (lookup.changes != db.HyperpathDestinationChanges()) {
-		for (const auto &[destination, version] : lookup.versions) if (db.HyperpathDestinationVersion(destination) != version) lookup.dirty.insert(destination);
-		lookup.changes = db.HyperpathDestinationChanges();
-	}
-	for (StationID destination : lookup.dirty) {
-		auto groups = this->hyperpath_boarding_index.find(destination);
-		if (groups == this->hyperpath_boarding_index.end()) { lookup.versions.erase(destination); continue; }
-		for (auto group = groups->second.begin(); group != groups->second.end(); ++group) {
-			if (group->second.lookup_slot != HYPERPATH_UNINDEXED) this->UnindexHyperpathGroup(group);
-			this->IndexHyperpathGroup(destination, group);
-			++_passenger_event_diagnostic.hyperpath_lookup_indexed_groups;
+		for (auto &[destination, groups] : this->hyperpath_boarding_index) {
+			for (auto group = groups.begin(); group != groups.end(); ++group) {
+				group->second.lookup_slot = HYPERPATH_UNINDEXED; group->second.lookup_occurrences.clear();
+				reindex(destination, group);
+			}
 		}
-		lookup.versions[destination] = db.HyperpathDestinationVersion(destination);
+		return;
 	}
-	lookup.dirty.clear();
+	if (lookup.changes != changes) {
+		lookup.changed.clear();
+		for (uint64_t change = lookup.changes; change != changes; ++change) lookup.changed.push_back(db.HyperpathChangedDestination(change));
+		std::sort(lookup.changed.begin(), lookup.changed.end()); lookup.changed.erase(std::unique(lookup.changed.begin(), lookup.changed.end()), lookup.changed.end());
+		for (StationID destination : lookup.changed) {
+			auto groups = this->hyperpath_boarding_index.find(destination);
+			if (groups == this->hyperpath_boarding_index.end()) continue;
+			for (auto group = groups->second.begin(); group != groups->second.end(); ++group) reindex(destination, group);
+		}
+		lookup.changes = changes;
+	}
+	while (!lookup.pending.empty()) {
+		/* Unindex takes the group out of pending, as for removal. */
+		const auto ref = lookup.pending.back();
+		reindex(ref.destination, ref.group);
+	}
 }
 
 template <typename Visitor>
