@@ -2254,6 +2254,7 @@ bool PassengerServiceDatabase::Load(std::span<const uint8_t> data)
 	restored.policy_cache_enabled = this->policy_cache_enabled; // Local optional preference survives loading; absent from simulation state.
 	restored.departure_index_enabled = this->departure_index_enabled;
 	restored.timed_scratch_enabled = this->timed_scratch_enabled;
+	restored.hyperpath_boarding_filter = this->hyperpath_boarding_filter;
 	*this = std::move(restored);
 	return true;
 }

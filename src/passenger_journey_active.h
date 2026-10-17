@@ -31,6 +31,10 @@ struct PassengerWaitingEventDiagnostic {
 	uint64_t capacity_missed_packets = 0, capacity_missed_passengers = 0;
 	uint64_t capacity_record_nanoseconds = 0; ///< Outside the national scheduler; includes candidate visits and index/event mutation.
 	uint64_t unchanged_generation_packets = 0; ///< Unchanged fallback decision; only retry/merge metadata is refreshed.
+	/* Hyperpath boarding enumeration: policy groups whose predicate ran, groups skipped by the
+	 * derived destination filter, predicates that admitted a group, and walks with/without the filter. */
+	uint64_t hyperpath_groups_checked = 0, hyperpath_groups_skipped = 0, hyperpath_groups_admitted = 0;
+	uint64_t hyperpath_filtered_walks = 0, hyperpath_unfiltered_walks = 0;
 	std::array<uint64_t, static_cast<size_t>(PassengerWaitingCause::End)> cause_nanoseconds{}, cause_packets{};
 };
 void RecordPassengerWaitingCause(PassengerWaitingCause cause, uint64_t nanoseconds, bool unchanged = false);

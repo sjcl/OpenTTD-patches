@@ -4680,3 +4680,151 @@ TEST_CASE("JPSD v14 storage and admission replay before a flat generation replac
 		CHECK(joined.BoardHyperpath(*plan.ride, PAX, train->orders->index, 2).ride == old.BoardHyperpath(*plan.ride, PAX, train->orders->index, 2).ride);
 	}
 }
+
+TEST_CASE("Hyperpath boarding destination filter preserves every loading decision", "[passenger][hyperpath][boarding][determinism]")
+{
+	/* The same deterministic scenario runs with and without the derived filter: several
+	 * lines from A, transferring passengers, capacity failures, a sliced cost replacement with
+	 * mixed generations, and a switch back to legacy rows. Every observable outcome must match. */
+	struct Result { std::vector<int64_t> log; PassengerWaitingEventDiagnostic diagnostic; };
+	auto run = [](bool filter, uint32_t seed) {
+		Result result;
+		Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = _settings_game.linkgraph.passenger_journey_hyperpath = true;
+		_settings_game.linkgraph.passenger_transfer_penalty = 20;
+		auto &db = GetPassengerServiceDatabase(); db.SetHyperpathBoardingFilterEnabled(filter);
+		ResetPassengerWaitingEventDiagnostic();
+		auto log = [&](int64_t value) { result.log.push_back(value); };
+		auto rnd = [&](uint32_t n) { seed = seed * 1664525U + 1013904223U; return (seed >> 8) % n; };
+		const std::vector<std::vector<uint16_t>> routes{{0, 1, 2, 3}, {0, 4, 5, 3}, {0, 1, 6, 7}, {0, 8, 9}, {0, 2, 7, 9}, {4, 5, 6, 7}, {0, 3}, {0, 5, 9}, {0, 1, 2, 3}};
+		std::vector<PeriodicTrain *> trains;
+		for (const auto &route : routes) {
+			std::vector<Order> orders;
+			for (uint16_t station : route) orders.push_back(Stop(StationID{station}, static_cast<TimetableTicks>(60 + rnd(240))));
+			trains.push_back(f.Train(std::move(orders)));
+		}
+		f.Build(); while (!db.PreparePrecomputed()) {}
+		/* Policy generations are deliberately never reused, even across database resets. */
+		const auto first = db.PlanPrecomputed(PAX, A, StationID{3}, _state_ticks); REQUIRE(first.ride);
+		const uint64_t base_generation = first.ride->generation;
+		auto generation = [&](const PassengerJourneyExecution &journey) {
+			return journey.kind == PassengerRideKind::HyperpathIntent ? static_cast<int64_t>(journey.generation - base_generation) : int64_t{db.IsCurrent(journey)} - 2;
+		};
+		StationCargoList waiting; waiting.passenger_index_cargo = PAX;
+		auto add_packets = [&](size_t count) {
+			for (size_t i = 0; i < count; ++i) {
+				StationID destination{static_cast<uint16_t>(1 + rnd(9))};
+				auto *packet = CargoPacket::Create(static_cast<uint16_t>(5 + rnd(20)), 0, A, TileIndex{0}, Money{0});
+				REQUIRE(packet->SetPassengerDestination(PAX, destination));
+				if (rnd(3) == 0) {
+					const auto *arriving = trains[rnd(static_cast<uint32_t>(trains.size()))]->orders;
+					packet->SetPassengerInterchange(_state_ticks, arriving->index, arriving->GetCargoDistRouteGeneration());
+				}
+				PassengerJourneyActiveContext context(nullptr, A);
+				const bool planned = context.PlanWaiting(*packet, PAX, destination);
+				log(planned); log(static_cast<int64_t>(packet->GetPassengerJourney().kind));
+				if (!planned) { delete packet; continue; }
+				waiting.Append(packet, destination);
+			}
+		};
+		auto load_all = [&](uint phase) {
+			PassengerJourneyLoadingContext loading;
+			for (size_t t = 0; t < trains.size(); ++t) {
+				auto *train = trains[t];
+				if (train->last_station_visited != A) continue;
+				std::vector<StationID> next;
+				for (size_t i = 1; i < routes[t].size(); ++i) next.push_back(StationID{routes[t][i]});
+				log(phase * 100 + t); log(waiting.HasCargoFor(next, train, &loading, PAX));
+				const uint moved = waiting.Load(static_cast<uint>(10 + rnd(30)), &train->cargo, next, TileIndex{0}, train, &loading);
+				log(moved); log(waiting.AvailableCount());
+				for (const CargoPacket *packet : *train->cargo.Packets()) {
+					log(packet->index.base()); log(packet->Count()); log(packet->GetPassengerJourney().alighting.base());
+					log(packet->GetPassengerJourney().service.base()); log(static_cast<int64_t>(packet->GetPassengerJourney().kind));
+				}
+				train->cargo.Truncate();
+			}
+			for (const CargoPacket *packet : CargoPacket::Iterate()) {
+				log(packet->index.base()); log(packet->Count()); log(packet->GetPassengerBoardingFailure().count);
+				log(generation(packet->GetPassengerJourney())); log(packet->GetPassengerJourney().alighting.base());
+			}
+		};
+		auto capacity_failures = [&](size_t t) {
+			PassengerJourneyLoadingContext loading;
+			auto *train = trains[t];
+			std::vector<StationID> next;
+			for (size_t i = 1; i < routes[t].size(); ++i) next.push_back(StationID{routes[t][i]});
+			train->cargo.Append(f.Packet(100));
+			for (int i = 0; i < 3; ++i) { ++_state_ticks; waiting.RecordCapacityMiss(next, train, PAX, loading); }
+			train->cargo.Truncate();
+		};
+		add_packets(60); load_all(1);
+		add_packets(60); capacity_failures(0); capacity_failures(6); load_all(2);
+		/* A sliced replacement: retained and current Hyperpath generations both serve intents. */
+		_settings_game.linkgraph.passenger_transfer_penalty = 17; db.TickPrecomputed(1);
+		for (int i = 0; i < 6; ++i) db.TickPrecomputed(97);
+		add_packets(60); capacity_failures(1); load_all(3);
+		while (!db.PrecomputedFinished()) db.TickPrecomputed(65536);
+		add_packets(40); load_all(4);
+		/* Back to legacy rows: a retained/current legacy generation must disable the filter. */
+		_settings_game.linkgraph.passenger_journey_hyperpath = false; db.TickPrecomputed(1);
+		for (int i = 0; i < 6; ++i) db.TickPrecomputed(97);
+		add_packets(30); load_all(5); // Unpublished legacy rows cannot plan: still filtered.
+		while (!db.PrecomputedFinished()) db.TickPrecomputed(65536);
+		add_packets(30); load_all(6); // Published legacy rows may plan retired intents: complete scan.
+		result.diagnostic = GetPassengerWaitingEventDiagnostic();
+		db.SetHyperpathBoardingFilterEnabled(true);
+		return result;
+	};
+	for (uint32_t seed : {0x2f6a91c3U, 0x91e10da5U, 0x0badc0deU, 0x6d2b79f5U}) {
+		CAPTURE(seed);
+		const auto filtered = run(true, seed), complete = run(false, seed);
+		CHECK(filtered.log == complete.log);
+		CHECK(filtered.diagnostic.capacity_missed_packets == complete.diagnostic.capacity_missed_packets);
+		CHECK(filtered.diagnostic.hyperpath_groups_admitted == complete.diagnostic.hyperpath_groups_admitted);
+		CHECK(complete.diagnostic.hyperpath_groups_skipped == 0);
+		CHECK(complete.diagnostic.hyperpath_filtered_walks == 0);
+		CHECK(filtered.diagnostic.hyperpath_filtered_walks > 0);
+		CHECK(filtered.diagnostic.hyperpath_unfiltered_walks > 0); // The legacy phase.
+		CHECK(filtered.diagnostic.hyperpath_groups_skipped > 0);
+		CHECK(filtered.diagnostic.hyperpath_groups_checked + filtered.diagnostic.hyperpath_groups_skipped == complete.diagnostic.hyperpath_groups_checked);
+	}
+}
+
+TEST_CASE("Hyperpath boarding filter skips destinations served only by other lines", "[.hyperpath-cpu][passenger]")
+{
+	/* A hub with disjoint radial lines: one waiting policy group per destination, comparable to the
+	 * real map's mean of about 150 groups per loading walk. Only the loading line's groups can board. */
+	for (uint lines : {4U, 20U}) {
+		Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = _settings_game.linkgraph.passenger_journey_hyperpath = true;
+		constexpr uint STOPS = 8;
+		std::vector<PeriodicTrain *> trains;
+		for (uint line = 0; line < lines; ++line) {
+			std::vector<Order> orders{Stop(A, 120 + line)};
+			for (uint stop = 0; stop < STOPS; ++stop) orders.push_back(Stop(StationID{static_cast<uint16_t>(1 + line * STOPS + stop)}));
+			trains.push_back(f.Train(std::move(orders)));
+		}
+		auto &db = f.Build(); while (!db.PreparePrecomputed()) {}
+		StationCargoList waiting; waiting.passenger_index_cargo = PAX;
+		for (uint destination = 1; destination <= lines * STOPS; ++destination) {
+			StationID to{static_cast<uint16_t>(destination)};
+			auto *packet = CargoPacket::Create(5, 0, A, TileIndex{0}, Money{0}); REQUIRE(packet->SetPassengerDestination(PAX, to));
+			PassengerJourneyActiveContext context(nullptr, A); REQUIRE(context.PlanWaiting(*packet, PAX, to));
+			REQUIRE(packet->GetPassengerJourney().kind == PassengerRideKind::HyperpathIntent);
+			waiting.Append(packet, to);
+		}
+		std::vector<StationID> next; for (uint stop = 0; stop < STOPS; ++stop) next.push_back(StationID{static_cast<uint16_t>(1 + stop)});
+		std::array<int64_t, 2> nanos{};
+		for (bool filter : {false, true, false, true}) {
+			db.SetHyperpathBoardingFilterEnabled(filter); ResetPassengerWaitingEventDiagnostic();
+			auto start = std::chrono::steady_clock::now();
+			for (size_t i = 0; i < 2048; ++i) {
+				PassengerJourneyLoadingContext loading; REQUIRE(waiting.HasCargoFor(next, trains[0], &loading, PAX));
+			}
+			nanos[filter] = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - start).count() / 2048;
+			const auto d = GetPassengerWaitingEventDiagnostic();
+			CHECK(d.hyperpath_groups_admitted == 2048 * STOPS);
+			CHECK(d.hyperpath_groups_skipped == (filter ? 2048 * (lines - 1) * STOPS : 0));
+		}
+		db.SetHyperpathBoardingFilterEnabled(true);
+		std::cout << "hyperpath_filter," << lines * STOPS << ',' << nanos[0] << ',' << nanos[1] << std::endl;
+	}
+}

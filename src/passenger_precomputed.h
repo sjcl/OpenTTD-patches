@@ -99,6 +99,15 @@ public:
 	uint32_t BoardingOccurrence(StationID origin, OrderListID service, VehicleOrderID order) const;
 	/** Null means the local-policy cache is cold: collect conservatively and validate at the FIFO front. */
 	std::optional<bool> ContainsCached(StationID origin, StationID destination, uint32_t occurrence, OrderListID previous, OrderListID failed) const;
+	/** Derived boarding filter, never saved and never part of admission or Work.
+	 * True when the occurrence appears in a stored policy of the destination's published or
+	 * building row: only the station's base state, or with any_state also an incoming-carrier
+	 * state. A superset of stored membership for those states. Failed-carrier local policies are
+	 * not covered. Stale bits of a retired row only cost a check. */
+	bool MayBeStoredCandidate(uint32_t occurrence, StationID destination, bool any_state) const;
+	/** No plan or stored membership from this table can bypass MayBeStoredCandidate. */
+	bool BoardingMaskCovers() const;
+	static constexpr uint64_t MAX_BOARDING_MASK_BYTES = uint64_t{64} * 1024 * 1024; ///< Larger maps keep the complete scan.
 	std::span<const uint32_t> Candidates(StationID origin, StationID destination, OrderListID previous = OrderListID::Invalid(), OrderListID failed = OrderListID::Invalid()) const;
 	PassengerPrecomputedPlan Board(StationID origin, StationID destination, StateTicks ready, OrderListID service, VehicleOrderID order, OrderListID previous = OrderListID::Invalid(), OrderListID failed = OrderListID::Invalid()) const;
 	struct CandidateDiagnostic { uint32_t occurrence; OrderListID service; VehicleOrderID order; StationID alight; int64_t cost, wait; uint64_t frequency; };
@@ -199,6 +208,10 @@ private:
 	mutable size_t local_policy_bytes = 0, expanded_policy_bytes = 0;
 	mutable std::map<std::pair<StationID, uint32_t>, std::vector<uint32_t>> expanded_policies;
 	bool flat_storage = false; ///< v15 physical representation and frozen memory admission.
+	std::vector<uint64_t> boarding_mask; ///< Per occurrence: base-state destination-row bits, then any-state bits.
+	size_t boarding_mask_words = 0; ///< Words per occurrence and plane; zero until allocated.
+	bool boarding_mask_rejected = false; ///< Too large for MAX_BOARDING_MASK_BYTES.
+	void MarkBoardingCandidate(uint32_t occurrence, bool base_state);
 	std::span<const uint32_t> FlatPayload(const Row &row, uint32_t policy) const;
 	uint32_t PreviousPattern(uint32_t state) const;
 	bool ContainsStored(const Row &row, uint32_t state, uint32_t occurrence) const;

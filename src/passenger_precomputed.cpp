@@ -1335,6 +1335,7 @@ size_t PassengerPrecomputedTable::StepHyperpath(size_t allowance, const std::fun
 						uint32_t board = candidates[this->strategy.offset++ - 1];
 						assert(this->EvaluateRide(this->prepared, board, this->stations[this->destination]).cost ==
 								this->SearchCost(this->occurrences[board].departure) + this->patterns[this->occurrences[board].pattern].risk);
+						this->MarkBoardingCandidate(board, state < this->stations.size()); // A shared state equals its base, marked in both planes.
 						if (this->flat_storage) {
 							auto &policy = this->prepared.flat_policies.back(); const auto &base = this->strategy.candidates[this->waiting_station[state]];
 							if ((policy.count & FlatPolicy::FULL) || !std::binary_search(base.begin(), base.end(), board)) {
@@ -1354,6 +1355,7 @@ size_t PassengerPrecomputedTable::StepHyperpath(size_t allowance, const std::fun
 				this->prepared.bytes = this->prepared.labels.capacity() * sizeof(Label) + this->prepared.indices.capacity() * 4 +
 						this->prepared.policies.capacity() * sizeof(Policy) + this->prepared.flat_policies.capacity() * sizeof(FlatPolicy) + this->prepared_candidate_bytes;
 				this->hyperpath_row_bytes += this->prepared.bytes;
+				if (this->boarding_mask_words == 0) this->MarkBoardingCandidate(INVALID, false); // Allocate even if no row had a candidate yet.
 				this->rows.push_back(std::move(this->prepared));
 				this->prepared_candidate_bytes = 0;
 				if (published) published(this->stations[this->destination]);
@@ -1456,7 +1458,7 @@ size_t PassengerPrecomputedTable::StepHyperpath(size_t allowance, const std::fun
 		}
 	} catch (const std::bad_alloc &) { FatalError("Insufficient memory for passenger strategies."); }
 	this->diagnostic.operations += used; this->diagnostic.build_nanoseconds += Elapsed(started);
-	this->diagnostic.bytes = this->hyperpath_static_bytes + this->hyperpath_row_bytes + this->hyperpath_candidate_bytes + this->local_policy_bytes + this->expanded_policy_bytes +
+	this->diagnostic.bytes = this->hyperpath_static_bytes + this->hyperpath_row_bytes + this->hyperpath_candidate_bytes + this->local_policy_bytes + this->expanded_policy_bytes + this->boarding_mask.capacity() * sizeof(uint64_t) +
 			this->reachable_bytes + this->reachable_destinations.capacity() * sizeof(this->reachable_destinations[0]) + this->queue.AllocatedBytes() +
 			(this->scratch.labels.capacity() + this->scratch.alternative.capacity()) * sizeof(Label) +
 			this->search.cost.capacity() * 8 + this->search.legs.capacity() * 4 + this->search.metadata.capacity() * sizeof(LabelMetadata) +
@@ -1647,6 +1649,38 @@ uint32_t PassengerPrecomputedTable::BoardingOccurrence(StationID origin, OrderLi
 	const auto &stops = this->patterns[pattern].occurrences;
 	auto at = std::lower_bound(stops.begin(), stops.end(), order, [&](uint32_t id, VehicleOrderID value) { return this->occurrences[id].order < value; });
 	return at != stops.end() && this->occurrences[*at].order == order && this->occurrences[*at].station == origin && this->occurrences[*at].board ? *at : INVALID;
+}
+
+void PassengerPrecomputedTable::MarkBoardingCandidate(uint32_t occurrence, bool base_state)
+{
+	if (this->boarding_mask_rejected) return;
+	if (this->boarding_mask_words == 0) {
+		const size_t words = (this->stations.size() + 63) / 64;
+		if (words == 0 || this->occurrences.size() > MAX_BOARDING_MASK_BYTES / sizeof(uint64_t) / 2 / words) { this->boarding_mask_rejected = true; return; }
+		this->boarding_mask.assign(this->occurrences.size() * 2 * words, 0);
+		this->boarding_mask_words = words;
+	}
+	if (occurrence >= this->occurrences.size()) return;
+	const uint64_t bit = uint64_t{1} << (this->destination % 64);
+	uint64_t *planes = this->boarding_mask.data() + occurrence * 2 * this->boarding_mask_words + this->destination / 64;
+	if (base_state) planes[0] |= bit;
+	planes[this->boarding_mask_words] |= bit;
+}
+
+bool PassengerPrecomputedTable::MayBeStoredCandidate(uint32_t occurrence, StationID destination, bool any_state) const
+{
+	if (this->boarding_mask_words == 0 || occurrence >= this->occurrences.size() || destination.base() >= this->station_index.size()) return false;
+	const uint32_t row = this->station_index[destination.base()];
+	if (row == INVALID) return false;
+	const size_t word = occurrence * 2 * this->boarding_mask_words + (any_state ? this->boarding_mask_words : 0) + row / 64;
+	return ((this->boarding_mask[word] >> (row % 64)) & 1) != 0;
+}
+
+bool PassengerPrecomputedTable::BoardingMaskCovers() const
+{
+	/* A rejected or unpublished table yields neither plans nor stored membership. */
+	if (this->failed || this->rows.empty()) return true;
+	return this->hyperpath && this->boarding_mask_words != 0;
 }
 
 std::optional<bool> PassengerPrecomputedTable::ContainsCached(StationID origin, StationID destination, uint32_t occurrence, OrderListID previous, OrderListID failed) const

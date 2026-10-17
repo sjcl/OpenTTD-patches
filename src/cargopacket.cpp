@@ -1761,14 +1761,31 @@ bool StationCargoList::VisitBoardingCandidates(std::span<const StationID> next, 
 				vehicle->First()->current_order.GetCargoLoadType(this->passenger_index_cargo) != OrderLoadType::NoLoad);
 		const auto occurrences = defer_hyperpath && scan && !this->hyperpath_boarding_index.empty() ? loading.HyperpathBoardingOccurrences(vehicle, this->passenger_index_cargo) :
 				std::array{PassengerPrecomputedTable::INVALID, PassengerPrecomputedTable::INVALID};
+		/* Identical decisions: base membership (and the plan of a retired intent) only uses stored
+		 * policies of the current/retained generations, so a destination whose masks lack this
+		 * departure cannot pass it. Without an arriving carrier the policy state is the station's
+		 * base state; otherwise any state is assumed. A live failure may use a local policy and is
+		 * always checked. The full predicate below still decides every remaining group. */
+		const bool filter = scan && !this->hyperpath_boarding_index.empty() && db.HyperpathBoardingFilter(this->passenger_index_cargo);
+		const auto boarding = !filter ? std::array{PassengerPrecomputedTable::INVALID, PassengerPrecomputedTable::INVALID} : defer_hyperpath ? occurrences :
+				db.HyperpathBoardingOccurrences(this->passenger_index_cargo, vehicle->First()->last_station_visited, service, vehicle->First()->cur_real_order_index);
+		if (scan && !this->hyperpath_boarding_index.empty()) ++(filter ? _passenger_event_diagnostic.hyperpath_filtered_walks : _passenger_event_diagnostic.hyperpath_unfiltered_walks);
 		if (scan) for (const auto &[destination, groups] : this->hyperpath_boarding_index) {
+			std::array<int8_t, 2> relevant{-1, -1}; // Lazily evaluated: [0] base state, [1] any state.
 			for (const auto &[key, policy] : groups) {
-				const auto *packet = CargoPacket::Get(std::get<2>(*policy.packets.begin()));
 				bool base = policy.expiries.empty() || *policy.expiries.begin() <= _state_ticks;
 				bool adjusted = !policy.expiries.empty() && *policy.expiries.rbegin() > _state_ticks;
+				const auto *packet = CargoPacket::Get(std::get<2>(*policy.packets.begin()));
+				if (filter && !adjusted) {
+					const bool any_state = packet->GetPassengerArrivingService() != OrderListID::Invalid();
+					if (relevant[any_state] < 0) relevant[any_state] = db.MayBeHyperpathCandidate(this->passenger_index_cargo, boarding, destination, any_state);
+					if (relevant[any_state] == 0) { ++_passenger_event_diagnostic.hyperpath_groups_skipped; continue; }
+				}
+				++_passenger_event_diagnostic.hyperpath_groups_checked;
 				if (!defer_hyperpath) {
-					if (loading.CanUseHyperpathPolicy(*packet, vehicle, this->passenger_index_cargo, base, adjusted)) add_group(policy.packets);
+					if (loading.CanUseHyperpathPolicy(*packet, vehicle, this->passenger_index_cargo, base, adjusted)) { ++_passenger_event_diagnostic.hyperpath_groups_admitted; add_group(policy.packets); }
 				} else if (loading.MayUseHyperpathPolicy(*packet, vehicle, this->passenger_index_cargo, occurrences, base, adjusted)) {
+					++_passenger_event_diagnostic.hyperpath_groups_admitted;
 					add_group(policy.packets, false, (base ? 1 : 0) | (adjusted ? 2 : 0));
 				}
 			}
