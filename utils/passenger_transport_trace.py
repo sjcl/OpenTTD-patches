@@ -39,8 +39,12 @@ def main():
         assert xml.count(str(active)) == 1, (name, "project")
         xml = xml.replace(str(active), str(output))
 
+    capacity_calls = [line for line in (source / "src/cargopacket.cpp").read_text(encoding="utf-8").splitlines() if line.startswith('\t\tpacket->RecordPassengerCapacityFailure(')]
+    if len(capacity_calls) != 1:
+        raise ValueError("Expected one native capacity-record call")
+    capacity_call = capacity_calls[0]
     copy("cargopacket.cpp", [
-        ('\t\tpacket->RecordPassengerCapacityFailure(vehicle->First()->orders->index, _state_ticks);', '\t\tpacket->RecordPassengerCapacityFailure(vehicle->First()->orders->index, _state_ticks);\n\t\tPassengerTransportTrace::CapacityMiss(*packet, *vehicle, this->passenger_station);'),
+        (capacity_call, capacity_call + '\n\t\tPassengerTransportTrace::CapacityMiss(*packet, *vehicle, this->passenger_station);'),
         ('void StationCargoList::IndexPacket(CargoPacket *packet, StationID key, StationCargoPacketList::iterator position, std::optional<uint64_t> sequence) const\n{', 'void StationCargoList::IndexPacket(CargoPacket *packet, StationID key, StationCargoPacketList::iterator position, std::optional<uint64_t> sequence) const\n{\n\tPassengerTransportTrace::Wait(*packet, this->passenger_station, this->passenger_index_cargo);'),
         ('\t\tfirst_station(first_station)\n{\n\tdbg_assert(count != 0);\n}', '\t\tfirst_station(first_station)\n{\n\tdbg_assert(count != 0);\n\tPassengerTransportTrace::Birth(*this);\n}'),
         ('\tif (CleaningPool()) return;\n\tUnregisterPassengerJourneyPacket(*this);', '\tPassengerTransportTrace::Erase(this->index);\n\tif (CleaningPool()) return;\n\tUnregisterPassengerJourneyPacket(*this);'),

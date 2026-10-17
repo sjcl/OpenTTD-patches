@@ -1017,6 +1017,14 @@ PassengerPrecomputedPlan PassengerServiceDatabase::PlanPrecomputed(CargoType car
 	return result;
 }
 
+std::optional<int64_t> PassengerServiceDatabase::HyperpathServiceWait(const PassengerJourneyExecution &intent, CargoType cargo, OrderListID service) const
+{
+	if (cargo >= NUM_CARGO || intent.kind != PassengerRideKind::HyperpathIntent || intent.signature != uint64_t(cargo) + 1) return {};
+	if (intent.generation == this->precomputed_policy_generation) return this->precomputed[cargo].ServiceWait(service);
+	if (intent.generation == this->retained_precomputed_policy_generation) return this->retained_precomputed[cargo].ServiceWait(service);
+	return {};
+}
+
 std::array<uint32_t, 2> PassengerServiceDatabase::HyperpathBoardingOccurrences(CargoType cargo, StationID origin, OrderListID service, VehicleOrderID order) const
 {
 	if (cargo >= NUM_CARGO) return {PassengerPrecomputedTable::INVALID, PassengerPrecomputedTable::INVALID};

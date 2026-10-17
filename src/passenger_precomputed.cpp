@@ -1389,6 +1389,13 @@ uint32_t PassengerPrecomputedTable::PolicyState(StationID origin, OrderListID pr
 	return pattern == INVALID ? station : this->StateFor(station, pattern);
 }
 
+std::optional<int64_t> PassengerPrecomputedTable::ServiceWait(OrderListID service) const
+{
+	if (!this->hyperpath || service.base() >= this->service_pattern.size()) return {};
+	uint32_t pattern = this->service_pattern[service.base()];
+	return pattern == INVALID ? std::nullopt : std::optional{this->patterns[pattern].wait};
+}
+
 uint32_t PassengerPrecomputedTable::BoardingOccurrence(StationID origin, OrderListID service, VehicleOrderID order) const
 {
 	if (!this->hyperpath || service.base() >= this->service_pattern.size()) return INVALID;

@@ -382,7 +382,7 @@ The later fixed-input control also completes 24,576 ticks. For fresh completed
 3393→3394 packet representatives, previous/Hyperpath mean is 2,206.198 /
 2,266.631 ticks (+2.74%); median is 1,813 / 1,689, p95 5,062 / 5,522 and
 p99 5,705 / 6,811. Mean riding falls 461.000 → 438.477 ticks, while origin
-wait rises 1,745.198 → 1,828.153. Both travel the same 208 distance units,
+wait rises 1,745.198 → 1,828.153. Both travel 208 sixteenth-tile units,
 with zero transfers, revisits and immediate returns in these fresh samples.
 The observed degradation is in origin waiting, not a longer ridden route.
 
@@ -418,3 +418,26 @@ Evidence: [focused outcomes](measurements/passenger-hyperpath-cpu-recovery-2026-
 [ordinary transport](measurements/passenger-hyperpath-cpu-recovery-2026-10-17/task3-transport-ordinary.json),
 [boarding batches](measurements/passenger-hyperpath-cpu-recovery-2026-10-17/task3-target-boarding-batches.json)
 and [completed control](measurements/passenger-hyperpath-cpu-recovery-2026-10-17/task3-completed.json).
+
+## Capacity failure recording
+
+At a fully eligible capacity-miss record, exclusion now uses the existing
+three-count latch when either three opportunities fail, or elapsed time since
+the first failure plus the failed carrier's frozen Pattern.wait reaches T_FAIL.
+The expected wait comes from the intent's current/retained table generation;
+a retired intent uses the already selected pending plan. An unavailable wait
+retains the count-only rule. No expiry/holding rule, failure identity,
+split/merge comparison, saved field or event is changed. Actual opportunity
+counts remain separate in the capacity diagnostic; the saved saturated count
+is the exclusion latch. No-alternative restoration remains intact.
+
+The provisional native constant is 2,048 ticks. Both 2,048 and 4,096 will be
+measured in copied binaries after flat-storage validation; the final choice
+and evidence are reported below. All 728 native CTest cases pass, including
+first-full-departure diversion on a long-headway carrier, no-alternative
+restoration, short-headway three-count behavior, unknown-headway count-only
+behavior, record-time-only latching and a packet Save/Load round trip.
+RecordCapacityMiss still uses the full native eligibility visitor.
+
+Evidence: [native test log](measurements/passenger-hyperpath-cpu-recovery-2026-10-17/task4-native-ctest.log)
+and [native completion](measurements/passenger-hyperpath-cpu-recovery-2026-10-17/task4-native-completed.json).

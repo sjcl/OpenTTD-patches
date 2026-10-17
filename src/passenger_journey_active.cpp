@@ -1465,6 +1465,18 @@ bool PassengerJourneyLoadingContext::MayUseHyperpathPolicy(const CargoPacket &re
 	return inspect(*plan.ride, this->hyperpath_memberships.end());
 }
 
+int64_t PassengerJourneyLoadingContext::ExpectedHyperpathWait(const CargoPacket &packet, const Vehicle *vehicle, CargoType cargo)
+{
+	if (vehicle == nullptr || vehicle->First()->orders == nullptr) return 0;
+	auto &db = GetPassengerServiceDatabase(); auto intent = packet.GetPassengerJourney();
+	if (!db.IsCurrent(intent)) {
+		const auto &plan = this->PendingPlan(packet, vehicle, cargo);
+		if (!plan.ride) return 0;
+		intent = *plan.ride;
+	}
+	return db.HyperpathServiceWait(intent, cargo, vehicle->First()->orders->index).value_or(0);
+}
+
 bool PassengerJourneyLoadingContext::CanUseHyperpathPolicy(const CargoPacket &representative, const Vehicle *vehicle, CargoType cargo, bool base, bool adjusted)
 {
 	if (vehicle == nullptr || !IsPassengerJourneyRoutingEnabled(cargo) ||

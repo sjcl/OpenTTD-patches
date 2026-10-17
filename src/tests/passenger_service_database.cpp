@@ -4576,3 +4576,73 @@ TEST_CASE("Hyperpath membership memo releases a retired policy before replanning
 	loading.Invalidate(slow);
 	CHECK(loading.MayUseHyperpathPolicy(*packet, slow, PAX, occurrence, true, false));
 }
+
+TEST_CASE("Hyperpath long-headway capacity failure adapts at the first full departure", "[passenger][hyperpath][replan][time]")
+{
+	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = _settings_game.linkgraph.passenger_journey_hyperpath = true;
+	auto *fast = f.Train({Stop(A, 11800), Stop(D, 100)});
+	PeriodicTrain *alternative = nullptr;
+	SECTION("Use a slower alternative") { alternative = f.Train({Stop(A, 16000), Stop(D, 16000)}); }
+	SECTION("Restore reachability when there is no alternative") {}
+	auto &db = f.Build(); while (!db.PreparePrecomputed()) {}
+	fast->cargo.Append(f.Packet(100));
+	auto *packet = f.Packet(20); PassengerJourneyActiveContext context(nullptr, A);
+	REQUIRE(context.PlanWaiting(*packet, PAX, D));
+	StationCargoList waiting; waiting.passenger_index_cargo = PAX; waiting.Append(packet, D);
+	PassengerJourneyLoadingContext loading;
+	if (alternative != nullptr) REQUIRE_FALSE(waiting.HasCargoFor(std::array{D}, alternative, &loading, PAX));
+	const auto diagnostic = GetPassengerWaitingEventDiagnostic();
+	waiting.RecordCapacityMiss(std::array{D}, fast, PAX, loading);
+	CHECK(GetPassengerWaitingEventDiagnostic().capacity_missed_packets == diagnostic.capacity_missed_packets + 1);
+	CHECK(packet->GetPassengerFailedService(_state_ticks) == fast->orders->index);
+	CHECK(packet->GetPassengerBoardingFailure().since == NOW);
+	if (alternative != nullptr) {
+		CHECK_FALSE(waiting.HasCargoFor(std::array{D}, fast, &loading, PAX));
+		REQUIRE(waiting.Load(20, &alternative->cargo, std::array{D}, TileIndex{0}, alternative, &loading) == 20);
+	} else {
+		REQUIRE(waiting.HasCargoFor(std::array{D}, fast, &loading, PAX));
+		fast->cargo.Truncate();
+		REQUIRE(waiting.Load(20, &fast->cargo, std::array{D}, TileIndex{0}, fast, &loading) == 20);
+	}
+	CHECK(waiting.AvailableCount() == 0);
+}
+
+TEST_CASE("Hyperpath failure time is latched only at a real capacity record", "[passenger][hyperpath][replan][time]")
+{
+	Fixture f; auto *train = f.Train({Stop(A), Stop(D)}); auto *packet = f.Packet();
+	packet->RecordPassengerCapacityFailure(train->orders->index, NOW, 32);
+	CHECK(packet->GetPassengerBoardingFailure().count == 1);
+	_state_ticks = NOW + 2016;
+	CHECK(packet->GetPassengerFailedService(_state_ticks) == OrderListID::Invalid());
+	CHECK(packet->GetPassengerBoardingFailure().count == 1);
+	packet->RecordPassengerCapacityFailure(train->orders->index, _state_ticks, 32);
+	CHECK(packet->GetPassengerFailedService(_state_ticks) == train->orders->index);
+	CHECK(packet->GetPassengerBoardingFailure().since == NOW);
+	AutoRestoreBackup version{_sl_version, SAVEGAME_VERSION};
+	AutoRestoreBackup features{_sl_xv_feature_versions, AutoRestoreBackupNoNewValueTag{}};
+	AutoRestoreBackup static_features{_sl_xv_feature_static_versions, AutoRestoreBackupNoNewValueTag{}};
+	SlXvSetStaticCurrentVersions(); _sl_xv_feature_versions = _sl_xv_feature_static_versions;
+	auto *loaded = CargoPacket::Create(); SlTestSaveLoadTable(packet, loaded, GetCargoPacketDesc());
+	CHECK(loaded->GetPassengerBoardingFailure() == packet->GetPassengerBoardingFailure());
+	CHECK(loaded->GetPassengerFailedService(_state_ticks) == train->orders->index);
+}
+
+TEST_CASE("Hyperpath short-headway failures retain the three-opportunity threshold", "[passenger][hyperpath][replan][time]")
+{
+	Fixture f; auto *train = f.Train({Stop(A), Stop(D)}); auto *packet = f.Packet();
+	for (uint8_t count = 1; count <= 3; ++count) {
+		_state_ticks = NOW + count;
+		packet->RecordPassengerCapacityFailure(train->orders->index, _state_ticks, 32);
+		CHECK(packet->GetPassengerBoardingFailure().count == count);
+		CHECK((packet->GetPassengerFailedService(_state_ticks) == train->orders->index) == (count == 3));
+	}
+}
+
+TEST_CASE("An unavailable Hyperpath headway retains count-only capacity failures", "[passenger][hyperpath][replan][time]")
+{
+	Fixture f; auto *train = f.Train({Stop(A), Stop(D)}); auto *packet = f.Packet();
+	packet->RecordPassengerCapacityFailure(train->orders->index, NOW);
+	packet->RecordPassengerCapacityFailure(train->orders->index, NOW + 3072);
+	CHECK(packet->GetPassengerBoardingFailure().count == 2);
+	CHECK(packet->GetPassengerFailedService(NOW + 3072) == OrderListID::Invalid());
+}

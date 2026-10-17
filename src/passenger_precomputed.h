@@ -91,6 +91,7 @@ public:
 	std::optional<int64_t> RouteCost(StationID origin, StationID destination) const; ///< Missing row differs from a proved infinite cost.
 	bool IsHyperpath() const { return this->hyperpath; }
 	bool HasPolicy(StationID origin, StationID destination) const { return this->FindRow(destination) != nullptr && this->PolicyState(origin, OrderListID::Invalid()) != INVALID; }
+	std::optional<int64_t> ServiceWait(OrderListID service) const;
 	uint32_t BoardingOccurrence(StationID origin, OrderListID service, VehicleOrderID order) const;
 	/** Null means the local-policy cache is cold: collect conservatively and validate at the FIFO front. */
 	std::optional<bool> ContainsCached(StationID origin, StationID destination, uint32_t occurrence, OrderListID previous, OrderListID failed) const;

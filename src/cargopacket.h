@@ -136,7 +136,7 @@ public:
 	const PassengerJourneyExecution &GetPassengerJourney() const { return this->passenger_journey; }
 	const PassengerBoardingFailure &GetPassengerBoardingFailure() const { return this->passenger_boarding_failure; }
 	void SetPassengerBoardingFailure(PassengerBoardingFailure failure) { this->passenger_boarding_failure = failure; PassengerWaitingPacketChanged(*this); }
-	void RecordPassengerCapacityFailure(OrderListID service, StateTicks now);
+	void RecordPassengerCapacityFailure(OrderListID service, StateTicks now, int64_t expected_wait = 0);
 	OrderListID GetPassengerFailedService(StateTicks now) const;
 	StationID GetPassengerLegacyHop() const { return this->passenger_legacy_hop; }
 	void SetPassengerLegacyHop(StationID next) { if (this->passenger_legacy_hop != next) { this->passenger_legacy_hop = next; PassengerWaitingRoutingChanged(*this); } }

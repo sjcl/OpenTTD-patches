@@ -294,7 +294,7 @@ void CargoPacket::SetPassengerJourney(PassengerJourneyExecution journey, Station
 	PassengerWaitingRoutingChanged(*this);
 }
 
-void CargoPacket::RecordPassengerCapacityFailure(OrderListID service, StateTicks now)
+void CargoPacket::RecordPassengerCapacityFailure(OrderListID service, StateTicks now, int64_t expected_wait)
 {
 	if (service == OrderListID::Invalid()) return;
 	const auto *list = OrderList::GetIfValid(service); if (list == nullptr) return;
@@ -302,6 +302,16 @@ void CargoPacket::RecordPassengerCapacityFailure(OrderListID service, StateTicks
 	auto &failure = this->passenger_boarding_failure;
 	if (!failure.Present() || failure.Expired(now, this->passenger_journey.waiting_limit) || (failure.service == service && failure.incarnation != incarnation)) failure = {service, 1, now, incarnation};
 	else if (failure.service == service && failure.count < PassengerBoardingFailure::THRESHOLD) ++failure.count;
+	/* Saturate the existing exclusion latch at the recording opportunity only.
+	 * The hold/start identity and exact split/merge comparison remain unchanged;
+	 * no timer event or saved field is introduced. Actual opportunity counts
+	 * remain in the capacity diagnostic, independently of this saturated latch. */
+	static constexpr int64_t T_FAIL = 2048;
+	/* Subtraction avoids overflowing elapsed time plus the expected wait. */
+	if (expected_wait > 0 && failure.service == service && failure.incarnation == incarnation && now >= failure.since &&
+			(expected_wait >= T_FAIL || uint64_t(now.base()) - uint64_t(failure.since.base()) >= uint64_t(T_FAIL - expected_wait))) {
+		failure.count = PassengerBoardingFailure::THRESHOLD;
+	}
 	/* Interleaved full services must not reset this counter forever. Track one
 	 * identity until success/expiry, including before it reaches the threshold. */
 	PassengerWaitingRoutingChanged(*this);
@@ -2191,7 +2201,7 @@ void StationCargoList::RecordCapacityMiss(std::span<const StationID> next, const
 		const auto key = entry->second.key; const auto position = entry->second.position; const auto sequence = entry->second.sequence;
 		this->ForgetWaitingPacket(id);
 		++_passenger_event_diagnostic.capacity_missed_packets; _passenger_event_diagnostic.capacity_missed_passengers += packet->Count();
-		packet->RecordPassengerCapacityFailure(vehicle->First()->orders->index, _state_ticks);
+		packet->RecordPassengerCapacityFailure(vehicle->First()->orders->index, _state_ticks, loading.ExpectedHyperpathWait(*packet, vehicle, cargo));
 		this->IndexPacket(packet, key, position, sequence);
 		return true;
 	}, false); // Capacity failures retain the original full eligibility scan.
