@@ -21,13 +21,17 @@ def main():
     parser.add_argument('toolkit', type=Path)
     parser.add_argument('--mode', choices=['legacy', 'hyperpath'], nargs='+', default=['legacy', 'hyperpath'])
     parser.add_argument('--output-name', default='wpa')
-    parser.add_argument('--cached-symbols-only', action='store_true')
+    symbols = parser.add_mutually_exclusive_group()
+    symbols.add_argument('--cached-symbols-only', action='store_true')
+    symbols.add_argument('--local-symbols-only', action='store_true', help='Build missing game symcache from the local PDB; reuse existing Windows symcaches without network lookups')
     args = parser.parse_args()
     build, toolkit = args.build.resolve(), args.toolkit.resolve()
     env = dict(os.environ)
     for directory in ['symbols', 'symcache']:
         (build / directory).mkdir(exist_ok=True)
     env['_NT_SYMBOL_PATH'] = str(build / 'Release') + ';srv*' + str(build / 'symbols') + '*https://msdl.microsoft.com/download/symbols'
+    if args.local_symbols_only:
+        env['_NT_SYMBOL_PATH'] = str(build / 'Release')
     env['_NT_SYMCACHE_PATH'] = str(build / 'symcache')
     env['_NT_EXECUTABLE_IMAGE_PATH'] = str(build / 'Release')
     for mode in args.mode:

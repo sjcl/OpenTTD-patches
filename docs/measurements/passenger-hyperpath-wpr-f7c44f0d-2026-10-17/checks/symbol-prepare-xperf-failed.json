@@ -1,0 +1,23 @@
+{
+  "command": [
+    "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-profile\\tools\\wpt\\Windows Kits\\10\\Windows Performance Toolkit\\xperf.exe",
+    "-i",
+    "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-f7c44f0d\\legacy\\cpu.etl",
+    "-symbols",
+    "-o",
+    "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-f7c44f0d\\symbol-prepare.txt",
+    "-a",
+    "symcache",
+    "-build",
+    "-image",
+    "openttd.exe"
+  ],
+  "environment": {
+    "_NT_SYMBOL_PATH": "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-f7c44f0d\\Release",
+    "_NT_SYMCACHE_PATH": "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-f7c44f0d\\symcache",
+    "_NT_EXECUTABLE_IMAGE_PATH": "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-f7c44f0d\\Release"
+  },
+  "exit_code": 3221225477,
+  "hex_exit_code": "0xc0000005",
+  "outcome": "failed; final exports use WPA local-symbols-only"
+}

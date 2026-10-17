@@ -1,0 +1,7 @@
+
+Warning: EventSink {13399e05-4afd-48fd-ba25-6b673a7a2b92} signaled an Invalid Event:
+         Event#: 26174410 (T#0:#26174410)
+         TimeStamp:   80805495, Process: 28452, Thread: 101736, Cpu:  28
+         ClassicEventGuid: {01853a65-418f-4f36-aefc-dc0f1d2fd235}
+         ClassicEventDescriptor: 0x0c  0x00 0x0002
+         MofLength: 112
