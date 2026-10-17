@@ -1849,7 +1849,9 @@ bool PassengerPrecomputedTable::DisplayCandidates(StationID origin, StationID de
 			for (const auto &m : p.members) {
 				if (work == 0 || out.size() >= 256) return false;
 				--work;
-				if (m.id != previous && m.id != failed) out.push_back({m.id, m.incarnation, m.generation, o.order});
+				/* The cached policy already applies failure exclusion, restoring the failed
+				 * service when no alternative exists. Preserve that reachability fallback. */
+				if (m.id != previous) out.push_back({m.id, m.incarnation, m.generation, o.order});
 			}
 		}
 		return true;

@@ -324,6 +324,14 @@ TEST_CASE("Hyperpath local replanning admits a previously rejected service and p
 	}
 	CHECK(table.GetDiagnostic().local_replans == 1);
 	if (alternative) CHECK_FALSE(table.Board(A, D, StateTicks{}, OrderListID{0}, 0, OrderListID::Invalid(), OrderListID{0}).ride);
+	// Display the cached policy's chosen service, including its no-alternative retry.
+	const auto before = table.GetDiagnostic();
+	std::vector<PassengerPrecomputedTable::DisplayCandidate> displayed; size_t work = 4096;
+	REQUIRE(table.DisplayCandidates(A, D, OrderListID::Invalid(), OrderListID{0}, displayed, work));
+	REQUIRE(displayed.size() == 1);
+	CHECK(displayed.front().service == chosen); CHECK(displayed.front().order == 0);
+	CHECK(table.GetDiagnostic().local_replans == before.local_replans);
+	CHECK(table.GetDiagnostic().bytes == before.bytes);
 }
 
 TEST_CASE("Precomputed trees preserve through rides and physical occurrences", "[passenger][precomputed]")

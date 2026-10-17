@@ -4692,3 +4692,33 @@ TEST_CASE("Station Hyperpath display reads retained policies and rejects retired
 	CHECK_FALSE(db.HyperpathDisplayCandidates(PAX, intent, OrderListID::Invalid(), OrderListID::Invalid(), candidates, work));
 	CHECK(candidates.empty());
 }
+
+TEST_CASE("Station Hyperpath display retains a failed service when its cached policy has no alternative", "[passenger][hyperpath][station-gui][determinism]")
+{
+	struct GroupCleanup { ~GroupCleanup() { _group_pool.CleanPool(); } } groups;
+	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = _settings_game.linkgraph.passenger_journey_hyperpath = true;
+	auto *train = f.Train({Stop(A), Stop(D)});
+	train->group_id = Group::Create(train->owner, train->type)->index;
+	auto &db = f.Build(); while (!db.PreparePrecomputed()) {}
+	auto *packet = f.Packet(); REQUIRE(PassengerJourneyActiveContext(nullptr, A).PlanWaiting(*packet, PAX, D));
+	REQUIRE(packet->GetPassengerJourney().kind == PassengerRideKind::HyperpathIntent);
+	for (int i = 0; i < 3; ++i) packet->RecordPassengerCapacityFailure(train->orders->index, NOW);
+	const auto failed = packet->GetPassengerFailedService(NOW); REQUIRE(failed == train->orders->index);
+	StationPassengerServiceCache cache;
+	const auto cold_replans = db.GetPrecomputedDiagnostic(PAX).local_replans;
+	CHECK(cache.Resolve(PAX, *packet, A) == StationPassengerService{});
+	CHECK(db.GetPrecomputedDiagnostic(PAX).local_replans == cold_replans);
+	// Actual boarding warms the local policy and restores the only reachable service.
+	auto board = db.BoardHyperpath(packet->GetPassengerJourney(), PAX, train->orders->index, 0, OrderListID::Invalid(), failed);
+	REQUIRE(board.ride); REQUIRE(board.ride->service == failed);
+	const auto intent = packet->GetPassengerJourney(); const auto failure = packet->GetPassengerBoardingFailure();
+	const auto before = db.Save(); const auto diagnostic = db.GetPrecomputedDiagnostic(PAX);
+	GameRandomSeedChecker seeds;
+	cache.Clear();
+	CHECK(cache.Resolve(PAX, *packet, A) == StationPassengerService{train->group_id});
+	CHECK(packet->GetPassengerJourney() == intent); CHECK(packet->GetPassengerBoardingFailure() == failure);
+	CHECK(db.Save() == before); CHECK(seeds.Check());
+	CHECK(db.GetPrecomputedDiagnostic(PAX).local_replans == diagnostic.local_replans);
+	CHECK(db.GetPrecomputedDiagnostic(PAX).queries == diagnostic.queries);
+	CHECK(db.GetPrecomputedDiagnostic(PAX).bytes == diagnostic.bytes);
+}
