@@ -261,6 +261,34 @@ TEST_CASE("A late passenger row is discarded after the first serial Work unit", 
 	}
 }
 
+TEST_CASE("Persistently late passenger workers back off without delaying any logical row", "[passenger][precomputed][parallel][network]")
+{
+	auto service = Service(0, {}); int64_t cursor = 0;
+	for (uint16_t station = 0; station < 24; ++station) {
+		service.timetable.stops.push_back({StationID{station}, station, cursor, cursor + 10, 1, 1, 0}); cursor += 110;
+	}
+	service.timetable.period = cursor;
+	std::vector<const PassengerPeriodicService *> records{&service};
+	static std::atomic<bool> release{true}; static std::atomic<uint> entered{0};
+	struct Release { ~Release() { release.store(true); } } guard;
+	for (bool hyperpath : {false, true}) {
+		release.store(false); entered.store(0);
+		PassengerPrecomputedTable serial, parallel;
+		for (auto *table : {&serial, &parallel}) table->Begin(records, PAX, 20, PassengerPrecomputedTable::MAX_HYPERPATH_BYTES, true, false, {}, true, true, true, hyperpath);
+		PassengerPrecomputedTestAccess::Hook(parallel, +[](size_t, bool done) {
+			if (!done) { ++entered; while (!release.load()) std::this_thread::sleep_for(std::chrono::milliseconds(1)); }
+		});
+		REQUIRE(PassengerPrecomputedTestAccess::Prime(parallel, 4));
+		WaitForPassengerWorkers([&]() { return entered.load() != 0; });
+		while (!serial.Finished()) {
+			REQUIRE(parallel.StepParallel(97, 4) == serial.Step(97));
+			REQUIRE(PassengerPrecomputedTestAccess::Published(parallel) == PassengerPrecomputedTestAccess::Published(serial));
+		}
+		CHECK_FALSE(release.load()); CHECK(parallel.GetParallelDiagnostic().throttles == 1); CHECK(parallel.GetParallelDiagnostic().cache_hits == 0);
+		release.store(true); WaitForPassengerWorkers([&]() { return PassengerPrecomputedTestAccess::Idle(parallel); });
+	}
+}
+
 TEST_CASE("Passenger search snapshots survive move reset and opposite-mode replacement", "[passenger][precomputed][parallel][memory]")
 {
 	std::array services{Service(0, {A, B, C}), Service(1, {B, D})};
@@ -1507,12 +1535,26 @@ namespace {
 		}
 		return services;
 	}
-	std::atomic<uint64_t> passenger_benchmark_worker_cpu{0};
+	struct PassengerBenchmarkWorkers {
+		std::mutex mutex;
+		std::vector<PassengerBenchmarkThread> threads;
+		PassengerBenchmarkWorkers() { this->threads.reserve(8); }
+		~PassengerBenchmarkWorkers() { for (auto thread : this->threads) PassengerBenchmarkReleaseThread(thread); }
+	};
+	PassengerBenchmarkWorkers &PassengerBenchmarkWorkerThreads() { static PassengerBenchmarkWorkers workers; return workers; }
 	void PassengerBenchmarkWorkerCPU(size_t, bool done)
 	{
-		thread_local uint64_t started = 0;
-		if (!done) started = PassengerBenchmarkThreadCPU();
-		else passenger_benchmark_worker_cpu += PassengerBenchmarkThreadCPU() - started;
+		if (done) return;
+		thread_local bool registered = false;
+		if (registered) return;
+		auto thread = PassengerBenchmarkCaptureThread();
+		auto &workers = PassengerBenchmarkWorkerThreads(); std::lock_guard lock(workers.mutex);
+		workers.threads.push_back(thread); registered = true;
+	}
+	uint64_t PassengerBenchmarkWorkersCPU()
+	{
+		auto &workers = PassengerBenchmarkWorkerThreads(); std::lock_guard lock(workers.mutex);
+		uint64_t total = 0; for (auto thread : workers.threads) total += PassengerBenchmarkCPU(thread); return total;
 	}
 	unsigned PassengerBenchmarkNumber(const char *name, unsigned fallback)
 	{
@@ -1532,15 +1574,24 @@ TEST_CASE("Passenger parallel complete construction benchmark", "[.passenger-par
 	const auto started = std::chrono::steady_clock::now();
 	table.Begin(records, PAX, 20, PassengerPrecomputedTable::MAX_HYPERPATH_BYTES, true, false, {}, true, true, true, hyperpath);
 	const auto graph_done = std::chrono::steady_clock::now(); const uint64_t cpu_graph = PassengerBenchmarkThreadCPU();
-	passenger_benchmark_worker_cpu.store(0); PassengerPrecomputedTestAccess::Hook(table, PassengerBenchmarkWorkerCPU);
-	while (!table.Finished()) table.StepParallel(65536, workers);
+	const uint64_t worker_cpu_before = PassengerBenchmarkWorkersCPU(); PassengerPrecomputedTestAccess::Hook(table, PassengerBenchmarkWorkerCPU);
+	uint64_t progress = 0xcbf29ce484222325ULL;
+	while (!table.Finished()) {
+		table.StepParallel(65536, workers);
+		progress = (progress ^ table.GetDiagnostic().operations) * 0x100000001b3ULL;
+		progress = (progress ^ table.GetDiagnostic().destinations) * 0x100000001b3ULL;
+	}
 	const auto finished = std::chrono::steady_clock::now();
 	const uint64_t cpu_finished = PassengerBenchmarkThreadCPU();
 	WaitForPassengerWorkers([&]() { return PassengerPrecomputedTestAccess::Idle(table); });
+	/* Let the cancelled idle contexts park before reading their OS CPU totals.
+	 * This settling interval is outside every reported build/tick wall window. */
+	std::this_thread::sleep_for(std::chrono::milliseconds(25));
+	const uint64_t worker_cpu_finished = PassengerBenchmarkWorkersCPU();
 	REQUIRE_FALSE(table.MemoryRejected());
 	const auto &d = table.GetDiagnostic(); const auto &p = table.GetParallelDiagnostic();
 	std::cout << "passenger_parallel,mode=" << (hyperpath ? "hyperpath" : "legacy") << ",requested=" << workers << ",workers=" << p.workers
-			<< ",main_cpu_ns=" << cpu_finished - cpu_started << ",row_main_cpu_ns=" << cpu_finished - cpu_graph
+			<< ",progress_digest=" << progress << ",main_cpu_ns=" << cpu_finished - cpu_started << ",row_main_cpu_ns=" << cpu_finished - cpu_graph
 			<< ",cache_hits=" << p.cache_hits << ",cache_work=" << p.cache_work << ",serial_rows=" << p.serial_rows << ",main_search_ns=" << p.main_search_nanoseconds
 			<< ",serial_work=" << p.serial_search_work << ",cancelled_work=" << p.cancelled_search_work << ",thread_starts=" << p.thread_starts << ",workspace_bound=" << p.estimated_workspace_bytes << ",worker_wait_ns=0"
 			<< ",wall_ns=" << std::chrono::duration_cast<std::chrono::nanoseconds>(finished - started).count()
@@ -1548,7 +1599,7 @@ TEST_CASE("Passenger parallel complete construction benchmark", "[.passenger-par
 			<< ",row_ns=" << std::chrono::duration_cast<std::chrono::nanoseconds>(finished - graph_done).count()
 			<< ",batch_ns=" << p.batch_nanoseconds << ",search_ns=" << p.search_nanoseconds << ",integration_ns=" << p.integration_nanoseconds
 			<< ",batches=" << p.batches << ",searches=" << p.searches << ",pending=" << p.peak_pending << ",work_min=" << p.minimum_work << ",work_max=" << p.maximum_work
-			<< ",worker_cpu_ns=" << passenger_benchmark_worker_cpu.load() << ",workspace_reuses=" << p.workspace_reuses << ",duplicate_work=" << (p.search_work - p.cache_work)
+			<< ",throttles=" << p.throttles << ",worker_cpu_ns=" << (worker_cpu_finished - worker_cpu_before) << ",workspace_reuses=" << p.workspace_reuses << ",duplicate_work=" << (p.search_work - p.cache_work)
 			<< ",search_work=" << p.search_work << ",stations=" << d.stations << ",states=" << d.states << ",edges=" << d.logical_edges << ",operations=" << d.operations
 			<< ",bytes=" << d.bytes << ",digest=" << PassengerPrecomputedTestAccess::Digest(table) << std::endl;
 }
@@ -1578,34 +1629,43 @@ TEST_CASE("Passenger asynchronous replacement TickPrecomputed benchmark", "[.pas
 	const uint64_t graph_cpu_ns = PassengerBenchmarkThreadCPU() - graph_cpu;
 	const auto graph_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - graph_started).count();
 	auto &table = PassengerServiceDatabaseTestAccess::Table(db, PAX);
-	passenger_benchmark_worker_cpu.store(0); PassengerPrecomputedTestAccess::Hook(table, PassengerBenchmarkWorkerCPU);
+	const uint64_t worker_cpu_before = PassengerBenchmarkWorkersCPU(); PassengerPrecomputedTestAccess::Hook(table, PassengerBenchmarkWorkerCPU);
 	static std::atomic<bool> release{true}; release.store(scenario != 2);
 	struct Release { ~Release() { release.store(true); } } guard;
 	if (scenario == 2) PassengerPrecomputedTestAccess::QuantumHook(table, +[](size_t, uint64_t) { while (!release.load()) std::this_thread::sleep_for(std::chrono::milliseconds(1)); });
 	_settings_client.gui.passenger_precomputed_workers = static_cast<uint8_t>(workers);
-	uint64_t tick_ns = 0, tick_cpu = 0; std::vector<uint64_t> samples;
+	uint64_t tick_ns = 0, progress = 0xcbf29ce484222325ULL; std::vector<uint64_t> samples;
+	std::this_thread::sleep_for(std::chrono::milliseconds(25));
+	const uint64_t main_cpu_started = PassengerBenchmarkThreadCPU();
 	const auto started = std::chrono::steady_clock::now();
 	while (!db.PrecomputedFinished()) {
 		if (scenario == 1 && workers != 0 && PassengerPrecomputedTestAccess::Prime(table, workers)) WaitForPassengerWorkers([&]() { return PassengerPrecomputedTestAccess::Ready(table); });
-		const auto tick_started = std::chrono::steady_clock::now(); const uint64_t cpu = PassengerBenchmarkThreadCPU();
+		const auto tick_started = std::chrono::steady_clock::now();
 		db.TickPrecomputed();
-		tick_cpu += PassengerBenchmarkThreadCPU() - cpu;
 		const uint64_t duration = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - tick_started).count();
 		tick_ns += duration; samples.push_back(duration);
+		progress = (progress ^ table.GetDiagnostic().operations) * 0x100000001b3ULL;
+		progress = (progress ^ table.GetDiagnostic().destinations) * 0x100000001b3ULL;
+		progress = (progress ^ PassengerServiceDatabaseTestAccess::Retained(db, PAX).GetDiagnostic().destinations) * 0x100000001b3ULL;
 	}
 	const auto finished = std::chrono::steady_clock::now();
 	release.store(true); WaitForPassengerWorkers([&]() { return PassengerPrecomputedTestAccess::Idle(table); });
+	/* Let the cancelled idle contexts park before reading their OS CPU totals.
+	 * This settling interval is outside every reported build/tick wall window. */
+	std::this_thread::sleep_for(std::chrono::milliseconds(25));
+	const uint64_t worker_cpu_finished = PassengerBenchmarkWorkersCPU();
+	const uint64_t main_cpu_finished = PassengerBenchmarkThreadCPU();
 	REQUIRE_FALSE(table.MemoryRejected()); std::sort(samples.begin(), samples.end());
 	const auto &d = table.GetDiagnostic(); const auto p = table.GetParallelDiagnostic();
 	uint64_t database = 0xcbf29ce484222325ULL; for (uint8_t value : db.Save()) database = (database ^ value) * 0x100000001b3ULL;
 	std::cout << "passenger_parallel,mode=" << (hyperpath ? "hyperpath" : "legacy") << ",requested=" << workers << ",workers=" << p.workers << ",scenario=" << scenario
 			<< ",wall_ns=" << std::chrono::duration_cast<std::chrono::nanoseconds>(finished - started).count() << ",graph_ns=" << graph_ns << ",graph_cpu_ns=" << graph_cpu_ns
-			<< ",tick_ns=" << tick_ns << ",main_cpu_ns=" << tick_cpu << ",ticks=" << samples.size() << ",tick_p50_ns=" << samples[samples.size() / 2]
+			<< ",progress_digest=" << progress << ",tick_ns=" << tick_ns << ",main_cpu_ns=" << main_cpu_finished - main_cpu_started << ",ticks=" << samples.size() << ",tick_p50_ns=" << samples[samples.size() / 2]
 			<< ",tick_p95_ns=" << samples[samples.size() * 95 / 100] << ",tick_max_ns=" << samples.back() << ",worker_wait_ns=0"
 			<< ",cache_hits=" << p.cache_hits << ",cache_work=" << p.cache_work << ",serial_rows=" << p.serial_rows << ",main_search_ns=" << p.main_search_nanoseconds
 			<< ",serial_work=" << p.serial_search_work << ",cancelled_work=" << p.cancelled_search_work << ",thread_starts=" << p.thread_starts << ",workspace_bound=" << p.estimated_workspace_bytes
 			<< ",search_ns=" << p.search_nanoseconds << ",searches=" << p.searches << ",pending=" << p.peak_pending << ",work_min=" << p.minimum_work << ",work_max=" << p.maximum_work
-			<< ",worker_cpu_ns=" << passenger_benchmark_worker_cpu.load() << ",workspace_reuses=" << p.workspace_reuses << ",duplicate_work=" << (p.search_work - p.cache_work)
+			<< ",throttles=" << p.throttles << ",worker_cpu_ns=" << (worker_cpu_finished - worker_cpu_before) << ",workspace_reuses=" << p.workspace_reuses << ",duplicate_work=" << (p.search_work - p.cache_work)
 			<< ",search_work=" << p.search_work << ",stations=" << d.stations << ",states=" << d.states << ",edges=" << d.logical_edges << ",operations=" << d.operations
 			<< ",bytes=" << d.bytes << ",database_digest=" << database << ",digest=" << PassengerPrecomputedTestAccess::Digest(table) << std::endl;
 }

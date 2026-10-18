@@ -1,0 +1,52 @@
+{
+  "source": "C:\\Users\\bebe\\.codex\\worktrees\\d83e\\OpenTTD-patches",
+  "source_revision": "async-tick-stage8-final",
+  "original_driver_sha256": "13347d9dbd3e759701d9ede65c53858f044363fbf25a01b13cf08970e5288881",
+  "instrumented_driver_sha256": "c684345ca16bc80bbc239623629e995dda6cc2f449273575703dd2ca731dbcdd",
+  "compiler": {
+    "CMAKE_CXX_FLAGS": "/DWIN32 /D_WINDOWS /GR /EHsc",
+    "CMAKE_CXX_FLAGS_RELEASE": "/O2 /Ob2 /DNDEBUG",
+    "CMAKE_C_FLAGS": "/DWIN32 /D_WINDOWS",
+    "CMAKE_C_FLAGS_RELEASE": "/O2 /Ob2 /DNDEBUG",
+    "OPTION_PASSENGER_BENCHMARK": "OFF",
+    "OPTION_USE_ASSERTS": "ON",
+    "CMAKE_GENERATOR": "Ninja",
+    "CMAKE_GENERATOR_PLATFORM": "",
+    "library_sha256": {
+      "libpng16d.lib": "7b7f861dec57dc4b3ccda31909e3f3e3d9e3c343453998f9eb72850421213492",
+      "lzma.lib": "14a38a5ef1d68e67c80e96faba4d7bf5d2cde00de7257bdb396d4801e7160c6b",
+      "zlibd.lib": "d47366984da8865d42f8bec6c4c710d16dbe327b11be0e4a07ea73d340d402ca",
+      "libpng16.lib": "2b3e07b20b3a1c48e8d7c0a299c700721dd82c1499269e019a6cd8459774ec3d",
+      "lzo2.lib": "851b503360b8747a20344cf9fac72b9a9d4067894220d32ed25465616b94515e",
+      "zlib.lib": "0d3ce92e180e325c2eaa1f0c39dde62fb4153ebfbec078d740590fd12f0be3f9",
+      "zstd.lib": "9ca9d4b5df6591751b4ccb35dcea0d771601c89aa9528a7a2af430b0e71586ac"
+    }
+  },
+  "note": "Copied TUs only; exact StateTicks; error resumptions retained; read-only packet/payment inspector.",
+  "translation_units": [
+    {
+      "path": "save-integrity/cargopacket.cpp",
+      "sha256": "bdbd76931381664e17514b9818313f605fc339276b384303cadfac213d6b65e6"
+    },
+    {
+      "path": "save-integrity/cargopacket_sl.cpp",
+      "sha256": "966e2f54365b00e8a9f2bfa99c2b1cc9a265b24bee3201e84d92ebb4c6a09c38"
+    },
+    {
+      "path": "save-integrity/console_cmds.cpp",
+      "sha256": "379d37303fbb96e73886ff2f14997ba96a619c8e5a12b4e07b9f00c368b4c503"
+    },
+    {
+      "path": "save-integrity/integrity.h",
+      "sha256": "19d8714fd43f2ac65da807288acf6e0833c196ad1d47a6d351c26e0df80eef51"
+    },
+    {
+      "path": "real-map-driver/null_v.cpp",
+      "sha256": "c684345ca16bc80bbc239623629e995dda6cc2f449273575703dd2ca731dbcdd"
+    },
+    {
+      "path": "real-map-driver/win32.cpp",
+      "sha256": "4add595f4fdee0b96c53caa15cc0b095e944c04314a0458f1b4eb00992fc6ea0"
+    }
+  ]
+}

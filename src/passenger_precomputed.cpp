@@ -1051,7 +1051,12 @@ struct PassengerPrecomputedTable::DestinationWorkerPool {
 		RetiredJobs retired; // Destroy cancelled graph/context owners after unlocking.
 		std::lock_guard lock(this->mutex); this->Prune(retired);
 		if (this->jobs.size() >= 16) return false;
-		this->jobs.push_back(job); ++job->generation->metrics->outstanding; this->wake.notify_all(); return true;
+		this->jobs.push_back(job); ++job->generation->metrics->outstanding;
+		/* With a full-size generation every sleeping thread is eligible. Avoid
+		 * waking all eight for a single replenished slot. Smaller generations
+		 * must also wake their eligible low-index workers in a larger pool. */
+		if (job->generation->workers == this->threads.size()) this->wake.notify_one(); else this->wake.notify_all();
+		return true;
 	}
 	void Run(size_t index)
 	{
@@ -1219,6 +1224,13 @@ size_t PassengerPrecomputedTable::AdvanceSearch(size_t allowance, uint workers)
 			} else job->cancelled.store(true);
 		}
 		if (!this->parallel_result) { this->serial_destination = this->destination; ++this->parallel_diagnostic.serial_rows; }
+		if (this->parallel_result) this->parallel_misses = 0;
+		else if (this->parallel && !this->parallel_unavailable && ++this->parallel_misses >= 16) {
+			/* A persistently late cache can otherwise burn a second CPU on rows
+			 * the main thread already owns. Disable speculation locally for this
+			 * generation; the same serial Work/publication path remains in use. */
+			this->parallel_unavailable = true; ++this->parallel_diagnostic.throttles; this->CancelParallel();
+		}
 		this->PrepareParallelBatch(workers);
 	}
 	if (this->parallel_result) {

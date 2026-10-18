@@ -59,7 +59,7 @@ struct PassengerParallelBuildDiagnostic {
 	uint64_t batches = 0, searches = 0, batch_nanoseconds = 0, search_nanoseconds = 0, integration_nanoseconds = 0, fallbacks = 0;
 	uint64_t minimum_work = UINT64_MAX, maximum_work = 0, search_work = 0;
 	uint64_t cache_hits = 0, cache_work = 0, serial_rows = 0, main_search_nanoseconds = 0, serial_search_work = 0;
-	uint64_t cancelled_search_work = 0, thread_starts = 0, workspace_reuses = 0;
+	uint64_t cancelled_search_work = 0, thread_starts = 0, workspace_reuses = 0, throttles = 0;
 	size_t workers = 0, peak_pending = 0, estimated_workspace_bytes = 0;
 };
 
@@ -345,6 +345,7 @@ private:
 	std::shared_ptr<DestinationBuildResult> parallel_result;
 	uint64_t parallel_credit = 0;
 	size_t serial_destination = SIZE_MAX;
+	uint parallel_misses = 0; ///< Local CPU backoff only; never part of Work or saves.
 	bool parallel_unavailable = false;
 	PassengerParallelBuildDiagnostic parallel_diagnostic;
 	void (*parallel_quantum_hook)(size_t, uint64_t) = nullptr; ///< Native cancellation/failure scheduling tests.

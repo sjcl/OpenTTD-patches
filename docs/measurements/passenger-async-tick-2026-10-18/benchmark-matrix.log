@@ -1,0 +1,16 @@
+START initial-uniform
+PASS initial-uniform trials=30
+START natural-uniform
+PASS natural-uniform trials=30
+START ahead-uniform
+PASS ahead-uniform trials=12
+START late-uniform
+PASS late-uniform trials=12
+START initial-uneven
+PASS initial-uneven trials=30
+START natural-uneven
+PASS natural-uneven trials=12
+START ahead-uneven
+PASS ahead-uneven trials=12
+START late-uneven
+PASS late-uneven trials=12

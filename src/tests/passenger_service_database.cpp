@@ -4025,6 +4025,80 @@ TEST_CASE("Asymmetric passenger workers preserve initial saves joins and replace
 	}
 }
 
+TEST_CASE("Async passenger replacement preserves saved intents across actual two-carrier loading", "[passenger][precomputed][parallel][active][save][network]")
+{
+	for (bool hyperpath : {false, true}) {
+		Fixture f; AutoRestoreBackup workers{_settings_client.gui.passenger_precomputed_workers, uint8_t{0}};
+		_settings_game.linkgraph.passenger_journey_precomputed = true; _settings_game.linkgraph.passenger_journey_hyperpath = hyperpath;
+		auto *ab = f.Train({Stop(A), Stop(B)}), *bd = f.Train({Stop(B), Stop(D)});
+		for (uint16_t station = 4; station < 40; ++station) f.Train({Stop(A, 10000), Stop(StationID{station}, 10000), Stop(D, 10000)});
+		auto &db = f.Build(); while (!db.PreparePrecomputed()) {}
+		const auto base = db.Save();
+		AutoRestoreBackup version{_sl_version, SAVEGAME_VERSION};
+		AutoRestoreBackup features{_sl_xv_feature_versions, AutoRestoreBackupNoNewValueTag{}};
+		AutoRestoreBackup static_features{_sl_xv_feature_static_versions, AutoRestoreBackupNoNewValueTag{}};
+		SlXvSetStaticCurrentVersions(); _sl_xv_feature_versions = _sl_xv_feature_static_versions;
+		struct Result { std::vector<std::vector<uint8_t>> saves, packets; std::vector<uint64_t> actions, ownership; };
+		auto wait = [](auto ready) {
+			const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(10);
+			while (!ready() && std::chrono::steady_clock::now() < deadline) std::this_thread::sleep_for(std::chrono::milliseconds(1));
+			REQUIRE(ready());
+		};
+		auto run = [&](uint8_t count, uint schedule) {
+			Result result; _state_ticks = NOW; _settings_client.gui.passenger_precomputed_workers = count;
+			ab->LoadAt(0); bd->LoadAt(0); REQUIRE(db.Load(base)); db.FinishLoad(true);
+			_settings_game.linkgraph.passenger_transfer_penalty = 17; db.TickPrecomputed(1);
+			auto &table = PassengerServiceDatabaseTestAccess::Table(db, PAX); table.Step(0);
+			if (schedule == 1) PassengerPrecomputedTestAccess::QuantumHook(table, +[](size_t, uint64_t) { std::this_thread::sleep_for(std::chrono::milliseconds(2)); });
+			if (schedule == 2) PassengerPrecomputedTestAccess::QuantumHook(table, +[](size_t d, uint64_t) { if (d == 1) throw std::bad_alloc{}; });
+			if (count != 0) { PassengerPrecomputedTestAccess::Prime(table, count); if (schedule == 2) wait([&]() { return PassengerPrecomputedTestAccess::Ready(table); }); }
+			for (size_t tick = 0; !db.PrecomputedFinished(); ++tick) {
+				REQUIRE(tick < 1000);
+				if (count != 0 && schedule == 0 && PassengerPrecomputedTestAccess::Prime(table, count)) wait([&]() { return PassengerPrecomputedTestAccess::Ready(table); });
+				db.TickPrecomputed(std::array<size_t, 3>{1, 97, 65536}[tick % 3]); result.saves.push_back(db.Save());
+			}
+			wait([&]() { return PassengerPrecomputedTestAccess::Idle(table); });
+			if (count != 0 && schedule == 0) CHECK(table.GetParallelDiagnostic().cache_hits > 0);
+			if (schedule == 2) CHECK(table.GetParallelDiagnostic().fallbacks == 1);
+			StationCargoList at_a, at_b; at_a.passenger_index_cargo = at_b.passenger_index_cargo = PAX;
+			auto capture = [&](CargoPacket *packet) {
+				auto *copy = CargoPacket::Create(); result.packets.push_back(SlTestSaveLoadTable(packet, copy, GetCargoPacketDesc()));
+				CHECK(copy->HasSamePassengerRouting(*packet)); delete copy;
+				result.ownership.insert(result.ownership.end(), {at_a.TotalCount(), ab->cargo.TotalCount(), at_b.TotalCount(), bd->cargo.TotalCount()});
+			};
+			auto *packet = f.Packet(10); REQUIRE(PassengerJourneyActiveContext(nullptr, A).PlanWaiting(*packet, PAX, B));
+			at_a.Append(packet, B); capture(packet);
+			PassengerJourneyLoadingContext first;
+			REQUIRE(at_a.Load(10, &ab->cargo, std::array{B}, TileIndex{0}, ab, &first) == 10); capture(packet);
+			_state_ticks += 100; ab->LoadAt(1);
+			PassengerJourneyActiveContext interchange(ab, B);
+			auto transfer = interchange.Decide(*packet, PAX, false, OrderUnloadType::UnloadIfPossible);
+			REQUIRE(transfer == VehicleCargoList::MoveToAction::Transfer); result.actions.push_back(to_underlying(*transfer)); capture(packet);
+			/* Save/reload the transferred cohort before placing it in the next
+			 * station list; this also checks every intent/arrival/transport field. */
+			auto *continued = CargoPacket::Create(); SlTestSaveLoadTable(packet, continued, GetCargoPacketDesc());
+			ab->cargo.Truncate(); packet = continued; at_b.Append(packet, D); capture(packet);
+			PassengerJourneyLoadingContext second;
+			CHECK_FALSE(second.CanBoard(*packet, bd)); _state_ticks += 17;
+			REQUIRE(second.CanBoard(*packet, bd)); REQUIRE_FALSE(second.CanBoard(*packet, ab));
+			REQUIRE(at_b.Load(10, &bd->cargo, std::array{D}, TileIndex{0}, bd, &second) == 10); capture(packet);
+			_state_ticks += 100; bd->LoadAt(1);
+			PassengerJourneyActiveContext destination(bd, D);
+			auto delivery = destination.Decide(*packet, PAX, true, OrderUnloadType::UnloadIfPossible);
+			REQUIRE(delivery == VehicleCargoList::MoveToAction::Deliver); result.actions.push_back(to_underlying(*delivery)); capture(packet);
+			bd->cargo.Truncate(); REQUIRE(CargoPacket::GetNumItems() == 0); _cargopacket_pool.CleanPool();
+			return result;
+		};
+		const auto serial = run(0, 0);
+		for (const auto config : {std::pair<uint8_t, uint>{8, 0}, {4, 1}, {4, 2}}) {
+			CAPTURE(hyperpath, config.first, config.second);
+			const auto parallel = run(config.first, config.second);
+			CHECK(parallel.saves == serial.saves); CHECK(parallel.packets == serial.packets);
+			CHECK(parallel.actions == serial.actions); CHECK(parallel.ownership == serial.ownership);
+		}
+	}
+}
+
 TEST_CASE("Replacement preparation completes only the graph and retains the row frontier", "[passenger][precomputed][startup][generation][determinism]")
 {
 	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = true;
