@@ -30,6 +30,8 @@
 #include "passenger_index_allocations.h"
 #include <iostream>
 #include <chrono>
+#include <thread>
+#include "passenger_async_access.h"
 
 extern SaveLoadVersion _sl_version;
 extern NamedSaveLoadTable GetGoodsDesc();
@@ -3949,34 +3951,76 @@ TEST_CASE("Saving suspended initial fleet capture resumes the same publication",
 	CHECK(db.PlanPrecomputed(PAX, A, D, NOW).ride == peer.PlanPrecomputed(PAX, A, D, NOW).ride);
 }
 
-TEST_CASE("Local passenger worker counts preserve initial saves joining peers and replacement ticks", "[passenger][precomputed][parallel][save][network]")
+TEST_CASE("Asymmetric passenger workers preserve initial saves joins and replacement tick rows", "[passenger][precomputed][parallel][save][network]")
 {
 	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = true;
 	AutoRestoreBackup workers{_settings_client.gui.passenger_precomputed_workers, uint8_t{0}};
 	for (uint16_t i = 1; i < 40; ++i) f.Train({Stop(A), Stop(StationID{i}), Stop(D)});
-	auto &source = GetPassengerServiceDatabase();
-	/* Save suspended discovery before either peer has an initial table. */
-	source.PreparePrecomputed(); const auto seed = source.Save();
-	for (bool hyperpath : {false, true}) {
-		_settings_game.linkgraph.passenger_journey_hyperpath = hyperpath;
-		auto serial_storage = std::make_unique<PassengerServiceDatabase>(), parallel_storage = std::make_unique<PassengerServiceDatabase>();
-		auto &serial = *serial_storage; auto &parallel = *parallel_storage;
-		for (auto *db : {&serial, &parallel}) { REQUIRE(db->Load(seed)); db->FinishLoad(true); }
-		for (size_t slice = 0; serial.IsPreparingPrecomputed() || parallel.IsPreparingPrecomputed(); ++slice) {
-			REQUIRE(slice < 5000);
-			_settings_client.gui.passenger_precomputed_workers = 0; serial.PreparePrecomputed();
-			_settings_client.gui.passenger_precomputed_workers = 8; parallel.PreparePrecomputed();
-			CHECK(_state_ticks == NOW); REQUIRE(serial.Save() == parallel.Save());
-			auto joined = std::make_unique<PassengerServiceDatabase>(); REQUIRE(joined->Load(parallel.Save())); joined->FinishLoad(true, true);
-			while (joined->StepLoad(19) == PassengerServiceDatabase::LoadState::Replaying) {}
-			CHECK(joined->Save() == parallel.Save());
-			CHECK(joined->GetLoadWork() <= joined->GetLoadWorkLimit());
+	auto &source = GetPassengerServiceDatabase(); source.PreparePrecomputed(); const auto seed = source.Save();
+	auto wait = [](auto ready) {
+		const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(10);
+		while (!ready() && std::chrono::steady_clock::now() < deadline) std::this_thread::sleep_for(std::chrono::milliseconds(1));
+		REQUIRE(ready());
+	};
+	auto same = [](const PassengerServiceDatabase &a, const PassengerServiceDatabase &b) {
+		REQUIRE(a.Save() == b.Save());
+		for (CargoType cargo : EnumRange(NUM_CARGO)) {
+			CHECK(a.GetPrecomputedDiagnostic(cargo).operations == b.GetPrecomputedDiagnostic(cargo).operations);
+			CHECK(a.GetPrecomputedDiagnostic(cargo).destinations == b.GetPrecomputedDiagnostic(cargo).destinations);
+			REQUIRE(PassengerPrecomputedTestAccess::Published(PassengerServiceDatabaseTestAccess::Retained(a, cargo)) ==
+					PassengerPrecomputedTestAccess::Published(PassengerServiceDatabaseTestAccess::Retained(b, cargo)));
 		}
-		CHECK(serial.PlanPrecomputed(PAX, A, D, NOW).ride == parallel.PlanPrecomputed(PAX, A, D, NOW).ride);
-		_settings_game.linkgraph.passenger_transfer_penalty += 17;
-		for (size_t slice = 0; slice < 100; ++slice) {
-			serial.TickPrecomputed(31); parallel.TickPrecomputed(31);
-			REQUIRE(serial.Save() == parallel.Save()); CHECK(_state_ticks == NOW);
+	};
+	for (bool hyperpath : {false, true}) {
+		_state_ticks = NOW; _settings_game.linkgraph.passenger_journey_hyperpath = hyperpath; _settings_game.linkgraph.passenger_transfer_penalty = 0;
+		auto serial = std::make_unique<PassengerServiceDatabase>(), parallel = std::make_unique<PassengerServiceDatabase>();
+		for (auto *db : {serial.get(), parallel.get()}) { REQUIRE(db->Load(seed)); db->FinishLoad(true); }
+		for (size_t slice = 0; serial->IsPreparingPrecomputed() || parallel->IsPreparingPrecomputed(); ++slice) {
+			REQUIRE(slice < 5000);
+			_settings_client.gui.passenger_precomputed_workers = 0; serial->PreparePrecomputed();
+			_settings_client.gui.passenger_precomputed_workers = 8; parallel->PreparePrecomputed();
+			CHECK(_state_ticks == NOW); same(*serial, *parallel);
+		}
+		const auto ready = serial->Save();
+		struct Peers { uint8_t host, client; uint host_schedule, client_schedule; };
+		for (const auto peers : {Peers{8, 0, 0, 0}, Peers{0, 8, 0, 0}, Peers{4, 1, 0, 1}, Peers{4, 4, 0, 2}, Peers{4, 4, 1, 0}}) {
+			CAPTURE(hyperpath, peers.host, peers.client, peers.host_schedule, peers.client_schedule);
+			_state_ticks = NOW; _settings_game.linkgraph.passenger_transfer_penalty = 17;
+			auto host = std::make_unique<PassengerServiceDatabase>(), client = std::make_unique<PassengerServiceDatabase>();
+			for (auto *db : {host.get(), client.get()}) { REQUIRE(db->Load(ready)); db->FinishLoad(true); }
+			auto setup = [&](PassengerServiceDatabase &db, uint8_t count, uint schedule) {
+				_settings_client.gui.passenger_precomputed_workers = count; db.TickPrecomputed(1);
+				auto &table = PassengerServiceDatabaseTestAccess::Table(db, PAX);
+				table.Step(0); // Replace only local speculative jobs; preserve the saved serial prefix.
+				if (schedule == 1) PassengerPrecomputedTestAccess::QuantumHook(table, +[](size_t, uint64_t) { std::this_thread::sleep_for(std::chrono::milliseconds(2)); });
+				if (schedule == 2) PassengerPrecomputedTestAccess::QuantumHook(table, +[](size_t d, uint64_t) { if (d == 1) throw std::bad_alloc{}; });
+				if (count != 0) { PassengerPrecomputedTestAccess::Prime(table, count); if (schedule == 2) wait([&]() { return PassengerPrecomputedTestAccess::Ready(table); }); }
+			};
+			setup(*host, peers.host, peers.host_schedule); setup(*client, peers.client, peers.client_schedule); same(*host, *client);
+			for (size_t tick = 0; !host->PrecomputedFinished() || !client->PrecomputedFinished(); ++tick) {
+				REQUIRE(tick < 1000); _state_ticks = NOW + tick + 1;
+				const size_t allowance = std::array<size_t, 4>{1, 97, 65536, 31}[tick % 4];
+				auto step = [&](PassengerServiceDatabase &db, uint8_t count, uint schedule) {
+					auto &table = PassengerServiceDatabaseTestAccess::Table(db, PAX);
+					if (count != 0 && schedule == 0 && PassengerPrecomputedTestAccess::Prime(table, count)) wait([&]() { return PassengerPrecomputedTestAccess::Ready(table); });
+					_settings_client.gui.passenger_precomputed_workers = count; db.TickPrecomputed(allowance);
+				};
+				step(*host, peers.host, peers.host_schedule); step(*client, peers.client, peers.client_schedule); same(*host, *client);
+				REQUIRE(PassengerPrecomputedTestAccess::Published(PassengerServiceDatabaseTestAccess::Table(*host, PAX)) ==
+						PassengerPrecomputedTestAccess::Published(PassengerServiceDatabaseTestAccess::Table(*client, PAX)));
+				/* A joining peer knows no threads/results, and reconstructs both generations. */
+				auto joined = std::make_unique<PassengerServiceDatabase>(); REQUIRE(joined->Load(host->Save())); joined->FinishLoad(true, true);
+				while (joined->StepLoad(19) == PassengerServiceDatabase::LoadState::Replaying) {}
+				same(*joined, *host);
+				REQUIRE(PassengerPrecomputedTestAccess::Published(PassengerServiceDatabaseTestAccess::Table(*joined, PAX)) ==
+						PassengerPrecomputedTestAccess::Published(PassengerServiceDatabaseTestAccess::Table(*host, PAX)));
+				CHECK(joined->GetLoadWork() <= joined->GetLoadWorkLimit());
+			}
+			for (auto *db : {host.get(), client.get()}) wait([&]() { return PassengerPrecomputedTestAccess::Idle(PassengerServiceDatabaseTestAccess::Table(*db, PAX)); });
+			const auto hp = PassengerServiceDatabaseTestAccess::Table(*host, PAX).GetParallelDiagnostic(), cp = PassengerServiceDatabaseTestAccess::Table(*client, PAX).GetParallelDiagnostic();
+			if (peers.host != 0 && peers.host_schedule == 0) CHECK(hp.cache_hits > 0);
+			if (peers.client != 0 && peers.client_schedule == 0) CHECK(cp.cache_hits > 0);
+			if (peers.client_schedule == 2) CHECK(cp.fallbacks == 1);
 		}
 	}
 }
@@ -4481,12 +4525,22 @@ TEST_CASE("Hyperpath boarding destination filter preserves every loading decisio
 	 * mixed generations, and a switch back to legacy rows. Every observable outcome must match. */
 	struct Result { std::vector<int64_t> log; PassengerWaitingEventDiagnostic diagnostic; uint64_t steady_rebuilds = 0; };
 	using Mode = PassengerServiceDatabase::HyperpathFilterMode;
-	auto run = [](Mode mode, uint32_t seed) {
+	auto run = [](Mode mode, uint32_t seed, uint8_t worker_count = 0) {
+		AutoRestoreBackup workers{_settings_client.gui.passenger_precomputed_workers, worker_count};
 		Result result;
 		Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = _settings_game.linkgraph.passenger_journey_hyperpath = true;
 		_settings_game.linkgraph.passenger_transfer_penalty = 20;
 		auto &db = GetPassengerServiceDatabase(); db.SetHyperpathBoardingFilterMode(mode);
 		ResetPassengerWaitingEventDiagnostic();
+		auto tick = [&](size_t work) {
+			auto &table = PassengerServiceDatabaseTestAccess::Table(db, PAX);
+			if (worker_count != 0 && PassengerPrecomputedTestAccess::Prime(table, worker_count)) {
+				const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(10);
+				while (!PassengerPrecomputedTestAccess::Ready(table) && std::chrono::steady_clock::now() < deadline) std::this_thread::sleep_for(std::chrono::milliseconds(1));
+				REQUIRE(PassengerPrecomputedTestAccess::Ready(table));
+			}
+			db.TickPrecomputed(work);
+		};
 		auto log = [&](int64_t value) { result.log.push_back(value); };
 		auto rnd = [&](uint32_t n) { seed = seed * 1664525U + 1013904223U; return (seed >> 8) % n; };
 		const std::vector<std::vector<uint16_t>> routes{{0, 1, 2, 3}, {0, 4, 5, 3}, {0, 1, 6, 7}, {0, 8, 9}, {0, 2, 7, 9}, {4, 5, 6, 7}, {0, 3}, {0, 5, 9}, {0, 1, 2, 3}};
@@ -4553,25 +4607,25 @@ TEST_CASE("Hyperpath boarding destination filter preserves every loading decisio
 		add_packets(60); load_all(1);
 		add_packets(60); capacity_failures(0); capacity_failures(6); load_all(2);
 		/* A sliced replacement: retained and current Hyperpath generations both serve intents. */
-		_settings_game.linkgraph.passenger_transfer_penalty = 17; db.TickPrecomputed(1);
-		for (int i = 0; i < 6; ++i) db.TickPrecomputed(97);
+		_settings_game.linkgraph.passenger_transfer_penalty = 17; tick(1);
+		for (int i = 0; i < 6; ++i) tick(97);
 		add_packets(60); capacity_failures(1); load_all(3);
-		while (!db.PrecomputedFinished()) db.TickPrecomputed(65536);
+		while (!db.PrecomputedFinished()) tick(65536);
 		add_packets(40); load_all(4);
 		/* Lookups persist across ticks of a finished generation (new groups only), then follow a
 		 * sliced replacement whose rows publish between loading walks (the destination log). */
 		const uint64_t rebuilds = GetPassengerWaitingEventDiagnostic().hyperpath_lookup_rebuilds;
-		for (uint i = 0; i < 4; ++i) { db.TickPrecomputed(65536); ++_state_ticks; add_packets(15); capacity_failures(2 * i); load_all(10 + i); }
+		for (uint i = 0; i < 4; ++i) { tick(65536); ++_state_ticks; add_packets(15); capacity_failures(2 * i); load_all(10 + i); }
 		result.steady_rebuilds = GetPassengerWaitingEventDiagnostic().hyperpath_lookup_rebuilds - rebuilds;
-		_settings_game.linkgraph.passenger_transfer_penalty = 23; db.TickPrecomputed(1);
-		for (uint i = 0; i < 8; ++i) { db.TickPrecomputed(97); add_packets(10); load_all(20 + i); }
-		while (!db.PrecomputedFinished()) db.TickPrecomputed(65536);
+		_settings_game.linkgraph.passenger_transfer_penalty = 23; tick(1);
+		for (uint i = 0; i < 8; ++i) { tick(97); add_packets(10); load_all(20 + i); }
+		while (!db.PrecomputedFinished()) tick(65536);
 		add_packets(20); load_all(30);
 		/* Back to legacy rows: a retained/current legacy generation must disable the filter. */
-		_settings_game.linkgraph.passenger_journey_hyperpath = false; db.TickPrecomputed(1);
-		for (int i = 0; i < 6; ++i) db.TickPrecomputed(97);
+		_settings_game.linkgraph.passenger_journey_hyperpath = false; tick(1);
+		for (int i = 0; i < 6; ++i) tick(97);
 		add_packets(30); load_all(5); // Unpublished legacy rows cannot plan: still filtered.
-		while (!db.PrecomputedFinished()) db.TickPrecomputed(65536);
+		while (!db.PrecomputedFinished()) tick(65536);
 		add_packets(30); load_all(6); // Published legacy rows may plan retired intents: complete scan.
 		result.diagnostic = GetPassengerWaitingEventDiagnostic();
 		db.SetHyperpathBoardingFilterEnabled(true);
@@ -4581,6 +4635,8 @@ TEST_CASE("Hyperpath boarding destination filter preserves every loading decisio
 		CAPTURE(seed);
 		const auto filtered = run(Mode::On, seed), complete = run(Mode::Off, seed), alternate = run(Mode::Alternate, seed);
 		const auto indexed = run(Mode::Index, seed), validated = run(Mode::Validate, seed);
+		const auto asynchronous = run(Mode::Index, seed, 8);
+		CHECK(asynchronous.log == complete.log);
 		CHECK(filtered.log == complete.log);
 		CHECK(alternate.log == complete.log);
 		CHECK(indexed.log == complete.log);
