@@ -12,6 +12,7 @@
 
 #include "core/geometry_type.hpp"
 #include "tilearea_type.h"
+#include "order_type.h"
 #include "window_type.h"
 
 struct Station;
@@ -35,6 +36,8 @@ using StationPickerCmdProc = std::function<bool(bool test, StationID to_join)>;
 void ShowSelectStationIfNeeded(TileArea ta, StationPickerCmdProc proc);
 void ShowSelectRailWaypointIfNeeded(TileArea ta, StationPickerCmdProc proc);
 void ShowSelectRoadWaypointIfNeeded(TileArea ta, StationPickerCmdProc proc);
+
+void InvalidateStationPassengerServiceDisplay(OrderListID service = OrderListID::Invalid());
 
 void GuiShowStationRatingTooltip(Window *parent, const Station *st, const CargoSpec *cs);
 

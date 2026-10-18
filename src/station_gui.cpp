@@ -1514,9 +1514,14 @@ struct StationViewWindow : public Window {
 
 		if (widget == WID_SV_PASSENGER_ROUTING) {
 			auto d = this->passenger_services.GetDiagnostics();
-			GuiShowTooltips(this, GetEncodedString(STR_STATION_VIEW_PASSENGER_SERVICE_DIAGNOSTICS,
+			auto text = GetString(STR_STATION_VIEW_PASSENGER_SERVICE_DIAGNOSTICS,
 					d.pending, d.partial, d.complete, d.unavailable, d.work_exhausted, d.no_candidates,
-					d.stale_policy, d.stale_service, d.no_shared_vehicle, d.ungrouped, d.invalid_vehicle, d.work), close_cond);
+					d.stale_policy, d.stale_service, d.no_shared_vehicle, d.ungrouped, d.invalid_vehicle, d.work + d.validation_work);
+			text += "\n" + GetString(STR_STATION_VIEW_PASSENGER_SERVICE_DIAGNOSTICS_CACHE,
+					d.searches, d.results, d.estimated_bytes, d.search_releases, d.result_evictions,
+					d.periodic_revalidations, d.policy_revalidations, d.representative_lost,
+					d.display_regressions, d.capacity_regressions, d.resolved, d.waiting_work, d.capacity_waits);
+			GuiShowTooltips(this, GetEncodedString(STR_JUST_RAW_STRING, text), close_cond);
 			return true;
 		}
 
@@ -1561,6 +1566,7 @@ struct StationViewWindow : public Window {
 	{
 		const Station *st = Station::Get(this->window_number);
 		CargoDataEntry cargo;
+		this->passenger_services.BeginRefresh();
 		BuildCargoList(&cargo, st);
 		if (this->UpdateGroupingMenu(cargo)) return;
 		int routing_lines = 1;
@@ -2465,7 +2471,7 @@ struct StationViewWindow : public Window {
 	{
 		this->passenger_service_changed |= this->current_mode == MODE_WAITING && this->has_waiting_passengers && this->passenger_services.Advance(delta_ms);
 		this->passenger_service_age += delta_ms;
-		if (this->passenger_service_age < 100 || (!this->passenger_service_changed && this->passenger_service_age < 1000)) return;
+		if (this->passenger_service_age < 100 || !this->passenger_service_changed) return;
 		this->passenger_service_age = 0; this->passenger_service_changed = false;
 		if (this->current_mode == MODE_WAITING && this->has_waiting_passengers) this->SetWidgetDirty(WID_SV_WAITING);
 	}
@@ -2496,6 +2502,17 @@ static WindowDesc _station_view_desc(__FILE__, __LINE__,
 void ShowStationViewWindow(StationID station)
 {
 	AllocateWindowDescFront<StationViewWindow>(_station_view_desc, station);
+}
+
+/** Group commands already dispatch GUI invalidations. Keep service changes client-local too. */
+void InvalidateStationPassengerServiceDisplay(OrderListID service)
+{
+	for (Window *window : Window::Iterate()) {
+		if (window->window_class != WindowClass::StationView) continue;
+		auto *station = static_cast<StationViewWindow *>(window);
+		station->passenger_services.Invalidate(service);
+		station->SetWidgetDirty(WID_SV_WAITING);
+	}
 }
 
 /** Struct containing TileIndex and StationID */

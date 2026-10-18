@@ -3943,6 +3943,7 @@ STR_STATION_VIEW_PASSENGER_SERVICE_MULTIPLE                    :{RAW_STRING} and
 STR_STATION_VIEW_PASSENGER_SERVICE_TRANSFER                    :Undecided (transfer at {STATION})
 STR_STATION_VIEW_PASSENGER_SERVICE_UNKNOWN                     :Undecided
 STR_STATION_VIEW_PASSENGER_SERVICE_DIAGNOSTICS                 :{BLACK}GUI service cache: {COMMA} pending, {COMMA} partial, {COMMA} complete, {COMMA} unavailable{}Work exhausted: {COMMA}; no candidates: {COMMA}{}Stale policy: {COMMA}; stale service: {COMMA}; no shared vehicles: {COMMA}{}Ungrouped vehicles: {COMMA}; invalid vehicles: {COMMA}; GUI Work: {COMMA}
+STR_STATION_VIEW_PASSENGER_SERVICE_DIAGNOSTICS_CACHE           :{BLACK}Search workspaces: {COMMA}; display results: {COMMA}; estimated bytes: {COMMA}{}Released searches: {COMMA}; evicted results: {COMMA}{}Simulation-time audits: {COMMA}; policy refreshes: {COMMA}; lost representatives: {COMMA}{}Display regressions: refresh {COMMA}, capacity {COMMA}; newly resolved: {COMMA}{}Queued work: {COMMA}; capacity waits: {COMMA}
 STR_STATION_VIEW_PASSENGER_GROUPING                            :{BLACK}Passengers: Service → Destination → Source
 STR_STATION_VIEW_PASSENGER_SERVICE_RESERVED                    :Reserved for boarding
 STR_STATION_VIEW_PASSENGER_SERVICE_UPDATING                    :Waiting for service update

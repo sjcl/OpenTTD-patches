@@ -5150,3 +5150,69 @@ TEST_CASE("Station completed Hyperpath caches invalidate on publication retireme
 	auto plan = db.PlanPrecomputed(PAX, A, D, NOW); REQUIRE(plan.ride); packet->SetPassengerJourney(*plan.ride, D);
 	CHECK(ResolveStationService(cache, *packet).group == train->group_id);
 }
+
+TEST_CASE("Station paused cold Hyperpath retries keep the settled waiting label", "[passenger][hyperpath][station-gui][service-stability]")
+{
+	struct GroupCleanup { ~GroupCleanup() { _group_pool.CleanPool(); } } groups;
+	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = _settings_game.linkgraph.passenger_journey_hyperpath = true;
+	auto *train = f.Train({Stop(A), Stop(D)}); train->group_id = Group::Create(train->owner, train->type)->index;
+	auto &db = f.Build(); while (!db.PreparePrecomputed()) {}
+	auto *packet = f.Packet(); REQUIRE(PassengerJourneyActiveContext(nullptr, A).PlanWaiting(*packet, PAX, D));
+	for (int i = 0; i < 3; ++i) packet->RecordPassengerCapacityFailure(train->orders->index, NOW);
+	StationPassengerServiceCache cache; auto waiting = ResolveStationService(cache, *packet);
+	REQUIRE(waiting.label == StationPassengerServiceLabel::Updating);
+	const auto tick = _state_ticks; const auto wire = db.Save(); GameRandomSeedChecker seeds;
+	for (size_t second = 0; second < 180; ++second) {
+		cache.Advance(1000, 0); CHECK(cache.Resolve(PAX, *packet, A) == waiting);
+		cache.Advance(0); CHECK(cache.Resolve(PAX, *packet, A) == waiting);
+	}
+	CHECK(_state_ticks == tick); CHECK(db.Save() == wire); CHECK(seeds.Check());
+	REQUIRE(db.BoardHyperpath(packet->GetPassengerJourney(), PAX, train->orders->index, 0, OrderListID::Invalid(), train->orders->index).ride);
+	cache.Advance(12000); CHECK(ResolveStationService(cache, *packet).group == train->group_id);
+}
+
+TEST_CASE("Station publication notifications only revalidate the affected destination", "[passenger][hyperpath][station-gui][service-stability][determinism]")
+{
+	struct GroupCleanup { ~GroupCleanup() { _group_pool.CleanPool(); } } groups;
+	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = _settings_game.linkgraph.passenger_journey_hyperpath = true;
+	auto *train = f.Train({Stop(A), Stop(B), Stop(D)}); train->group_id = Group::Create(train->owner, train->type)->index;
+	auto &db = f.Build(); while (!db.PreparePrecomputed()) {}
+	auto *packet = f.Packet(); REQUIRE(PassengerJourneyActiveContext(nullptr, A).PlanWaiting(*packet, PAX, D));
+	StationPassengerServiceCache cache; const auto expected = ResolveStationService(cache, *packet);
+	REQUIRE(expected.group == train->group_id); const auto candidates = cache.GetDiagnostics().candidates;
+	const auto wire = db.Save(); const auto execution = packet->GetPassengerJourney(); GameRandomSeedChecker seeds;
+	PassengerServiceDatabaseTestAccess::DestinationChanged(db, B);
+	CHECK_FALSE(cache.Advance(100)); CHECK(cache.Resolve(PAX, *packet, A) == expected);
+	CHECK(cache.GetDiagnostics().candidates == candidates); CHECK(cache.GetDiagnostics().policy_revalidations == 0);
+	PassengerServiceDatabaseTestAccess::DestinationChanged(db, D);
+	cache.Advance(100); CHECK(ResolveStationService(cache, *packet) == expected);
+	CHECK(cache.GetDiagnostics().policy_revalidations == 1); CHECK(cache.GetDiagnostics().candidates > candidates);
+	CHECK(cache.GetDiagnostics().display_regressions == 0);
+	CHECK(db.Save() == wire); CHECK(packet->GetPassengerJourney() == execution); CHECK(seeds.Check());
+}
+
+TEST_CASE("Station bounded policy results reserve fleet space and release dependencies after merging", "[passenger][hyperpath][station-gui][service-stability]")
+{
+	struct GroupCleanup { ~GroupCleanup() { _group_pool.CleanPool(); } } groups;
+	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = _settings_game.linkgraph.passenger_journey_hyperpath = true;
+	std::vector<Order> stops; for (uint16_t i = 10; i < 30; ++i) stops.push_back(Stop(StationID{i})); stops.push_back(Stop(D));
+	auto *train = f.Train(stops); train->group_id = Group::Create(train->owner, train->type)->index;
+	auto &db = f.Build(); while (!db.PreparePrecomputed()) {}
+	StationPassengerServiceCache cache(8192);
+	std::vector<CargoPacket *> packets; size_t admitted = 0;
+	for (uint16_t i = 10; i < 30; ++i) {
+		auto *packet = f.Packet(); auto plan = db.PlanPrecomputed(PAX, StationID{i}, D, NOW); REQUIRE(plan.ride);
+		packet->SetPassengerJourney(*plan.ride, D); packets.push_back(packet);
+		if (cache.Resolve(PAX, *packet, StationID{i}).label == StationPassengerServiceLabel::Checking) ++admitted;
+	}
+	REQUIRE(admitted > 0); REQUIRE(admitted < packets.size());
+	size_t named = 0;
+	for (size_t update = 0; update < 500; ++update) {
+		cache.Advance(100, 64); named = 0;
+		for (size_t i = 0; i < packets.size(); ++i) if (cache.Resolve(PAX, *packets[i], StationID{static_cast<uint16_t>(i + 10)}).group == train->group_id) ++named;
+		if (named == admitted) break;
+	}
+	CHECK(named == admitted); CHECK(cache.GetDiagnostics().results <= cache.GetDiagnostics().result_capacity);
+	CHECK(cache.GetDiagnostics().result_evictions > 0); CHECK(cache.GetDiagnostics().capacity_regressions == 0);
+	CHECK(cache.GetDiagnostics().display_regressions == 0);
+}
