@@ -159,7 +159,7 @@ public:
 	void Invalidate(OrderListID id = OrderListID::Invalid());
 	void TimetableChanged(OrderListID id); ///< Keep safe published timing until the next deterministic update epoch.
 	void Tick(size_t allowance = BUILD_WORK, bool build_precomputed = true, bool prepare_graphs = false);
-	void TickPrecomputed(size_t allowance = BUILD_WORK, bool initial_parallel = false);
+	void TickPrecomputed(size_t allowance = BUILD_WORK);
 	bool PreparePrecomputed(); ///< Initial trees or replacement graph barrier: one slice, without advancing StateTicks.
 	bool IsPreparingPrecomputed() const;
 	uint64_t GetPrecomputedPreparationNanoseconds() const { return this->precomputed_preparation_nanoseconds; }
@@ -294,6 +294,7 @@ public:
 	enum class Publication : uint8_t { Published, TimingDirty, Dirty, SweepPending, Unpublished };
 	Publication GetPublication(OrderListID id) const;
 private:
+	friend struct PassengerServiceDatabaseTestAccess;
 	friend class PassengerSchedulePlanner;
 	PassengerSchedulePlanner schedule;
 	std::array<PassengerPrecomputedTable, NUM_CARGO> precomputed;
