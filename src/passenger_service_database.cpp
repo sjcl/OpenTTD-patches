@@ -1137,6 +1137,23 @@ int PassengerServiceDatabase::HyperpathLookupCandidates(CargoType cargo, const P
 	return out.empty() ? HYPERPATH_LOOKUP_NONE : slot;
 }
 
+PassengerPrecomputedTable::DisplayRead PassengerServiceDatabase::NextHyperpathDisplayCandidate(CargoType cargo,
+		const PassengerJourneyExecution &intent, OrderListID previous, OrderListID failed, PassengerPrecomputedTable::DisplayCursor &cursor,
+		PassengerPrecomputedTable::DisplayCandidate &out, size_t &work) const
+{
+	using Read = PassengerPrecomputedTable::DisplayRead;
+	if (cargo >= NUM_CARGO || intent.kind != PassengerRideKind::HyperpathIntent || intent.signature != uint64_t(cargo) + 1 || !this->IsCurrent(intent)) return Read::Unavailable;
+	bool changed = cursor.cargo != cargo || cursor.epoch != this->HyperpathLookupEpoch() || cursor.generation != intent.generation ||
+			this->HyperpathDestinationChanges() - cursor.changes > HYPERPATH_DESTINATION_LOG;
+	if (!changed) for (uint64_t change = cursor.changes; change < this->HyperpathDestinationChanges(); ++change) {
+		if (this->HyperpathChangedDestination(change) == intent.alighting) { changed = true; break; }
+	}
+	if (changed) cursor = {};
+	cursor.cargo = cargo; cursor.epoch = this->HyperpathLookupEpoch(); cursor.generation = intent.generation; cursor.changes = this->HyperpathDestinationChanges();
+	const auto &table = intent.generation == this->precomputed_policy_generation ? this->precomputed[cargo] : this->retained_precomputed[cargo];
+	return table.NextDisplayCandidate(intent.boarding, intent.alighting, previous, failed, cursor, out, work);
+}
+
 bool PassengerServiceDatabase::HyperpathDisplayCandidates(CargoType cargo, const PassengerJourneyExecution &intent,
 		OrderListID previous, OrderListID failed, std::vector<PassengerPrecomputedTable::DisplayCandidate> &out, size_t &work) const
 {

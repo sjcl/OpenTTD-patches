@@ -14,33 +14,60 @@
 #include <set>
 #include <span>
 #include <tuple>
+#include <variant>
 
 struct CargoPacket;
+
+enum class StationPassengerServiceState : uint8_t { Pending, Partial, Complete, Unavailable };
+enum class StationPassengerServiceLabel : uint8_t { Undecided, Checking, Ungrouped, Updating, Reserved };
+
+/** Per-window diagnostics only; neither saved nor used by simulation admission. */
+struct StationPassengerServiceDiagnostics {
+	uint64_t cache_hits = 0, work = 0, work_exhausted = 0, candidates = 0, vehicles = 0;
+	uint64_t no_candidates = 0, stale_policy = 0, stale_service = 0, no_shared_vehicle = 0;
+	uint64_t ungrouped = 0, invalid_vehicle = 0, unusable_vehicle = 0, refreshes = 0, evictions = 0;
+	size_t pending = 0, partial = 0, complete = 0, unavailable = 0, entries = 0;
+};
 
 /** One passenger belongs to exactly one named, ambiguous, or unknown service summary. */
 struct StationPassengerService {
 	GroupID group = GroupID::Invalid();
 	bool multiple = false;
-	StationID transfer = StationID::Invalid(); ///< Only a validated concrete Journey ride can supply this optional hint.
+	StationID transfer = StationID::Invalid(); ///< Optional concrete Journey hint.
+	StationPassengerServiceLabel label = StationPassengerServiceLabel::Undecided;
 	auto operator<=>(const StationPassengerService &) const = default;
 };
 
-/** Read-only, bounded service lookup. Only IDs are retained, never vehicle/group pointers or names. */
+using StationCargoKey = std::variant<CargoType, StationID, StationPassengerService>;
+
+/** Ambiguity may settle without changing the expansion identity of a named service. */
+inline StationPassengerService PassengerServiceExpansionKey(StationPassengerService service)
+{
+	if (service.group != GroupID::Invalid()) { service.multiple = false; service.transfer = StationID::Invalid(); service.label = StationPassengerServiceLabel::Undecided; }
+	return service;
+}
+
+enum class StationCargoGroupingMode : uint8_t { Conventional, Passengers, Mixed };
+inline StationCargoGroupingMode GetStationCargoGroupingMode(bool planned, bool passengers, bool other)
+{
+	return planned || !passengers ? StationCargoGroupingMode::Conventional : other ? StationCargoGroupingMode::Mixed : StationCargoGroupingMode::Passengers;
+}
+
+/** Persistent, bounded, incremental GUI lookup. No live game pointers or names are retained. */
 class StationPassengerServiceCache {
 public:
+	StationPassengerServiceCache();
+	~StationPassengerServiceCache();
 	StationPassengerService Resolve(CargoType cargo, const PassengerJourneyExecution &ride);
 	StationPassengerService Resolve(CargoType cargo, const CargoPacket &packet, StationID station);
-	void Clear() { this->services.clear(); this->hyperpaths.clear(); this->work_left = MAX_WORK; }
+	/** Refill the independent GUI budget at 16,384 Work/second and round-robin pending tasks. */
+	bool Advance(uint delta_ms, size_t work_limit = 16384);
+	void Clear(); ///< Explicit reset, never called by the periodic GUI update.
+	StationPassengerServiceDiagnostics GetDiagnostics() const;
 
 private:
-	static constexpr size_t MAX_WORK = 16384; ///< Shared candidate/vehicle/consist budget per real-time refresh.
-	using Key = std::tuple<CargoType, OrderListID, uint64_t, StationID, StationID, VehicleOrderID, VehicleOrderID>;
-	StationPassengerService ResolveFleet(CargoType cargo, const PassengerJourneyExecution &ride, bool boarding_only = false);
-	std::map<Key, StationPassengerService> services;
-	using HyperpathKey = std::tuple<CargoType, uint64_t, StationID, StationID, OrderListID, OrderListID>;
-	std::map<HyperpathKey, StationPassengerService> hyperpaths;
-	uint64_t lookup_epoch = 0;
-	size_t work_left = MAX_WORK;
+	struct Impl;
+	std::unique_ptr<Impl> impl;
 };
 
 StationID GetStationCargoVia(CargoType cargo, const CargoPacket &packet, StationID queue_key, StationID station = StationID::Invalid());
@@ -158,6 +185,22 @@ public:
 		return this->Retrieve(this->children->find(t));
 	}
 
+	CargoDataEntry *Retrieve(StationPassengerService service) const
+	{
+		CargoDataEntry key(service);
+		return this->Retrieve(this->children->find(key));
+	}
+	void Remove(StationPassengerService service) { CargoDataEntry key(service); this->Remove(key); }
+
+	CargoDataEntry &InsertOrRetrieve(const StationCargoKey &key) { return std::visit([&](auto value) -> CargoDataEntry & { return this->InsertOrRetrieve(value); }, key); }
+	CargoDataEntry *Retrieve(const StationCargoKey &key) const { return std::visit([&](auto value) { return this->Retrieve(value); }, key); }
+	void Remove(const StationCargoKey &key) { std::visit([&](auto value) { this->Remove(value); }, key); }
+	StationCargoKey GetKey() const
+	{
+		if (this->service) return *this->service;
+		return this->cargo != INVALID_CARGO ? StationCargoKey{this->cargo} : StationCargoKey{this->station};
+	}
+
 	void Resort(CargoSortType type, SortOrder order);
 
 	/**
@@ -190,7 +233,7 @@ public:
 	 */
 	uint GetNumChildren() const { return this->num_children; }
 
-	/** Service summaries are ordinary leaf rows with their own typed key. */
+	/** Service summaries are ordinary hierarchy rows with their own typed key. */
 	bool IsService() const { return this->service.has_value(); }
 	StationPassengerService GetService() const { return *this->service; }
 	CargoDataEntry &InsertOrRetrieve(StationPassengerService service) { return this->InsertOrRetrieve<StationPassengerService>(service); }
@@ -251,7 +294,7 @@ private:
 CargoDataEntry *ShowStationCargo(CargoDataEntry &root, const CargoDataEntry &expanded, std::span<const StationCargoGrouping, 4> groupings,
 		StationID station, bool auto_distributed, CargoType cargo, StationID source, StationID next, StationID dest, uint count);
 
-/** Waiting passengers always use destination/source/service, independently of cargo grouping preferences. */
+/** Waiting passengers always use service/destination/source, independently of cargo grouping preferences. */
 CargoDataEntry *ShowStationWaitingCargo(CargoDataEntry &root, const CargoDataEntry &expanded, std::span<const StationCargoGrouping, 4> groupings,
 		StationID station, bool auto_distributed, CargoType cargo, const CargoPacket &packet, StationID next, StationID dest, uint count,
 		StationPassengerServiceCache &services);

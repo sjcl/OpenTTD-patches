@@ -34,6 +34,10 @@ enum StationViewWidgets : WidgetID {
 	WID_SV_DEPARTURES,         ///< Departures button.
 	WID_SV_HISTORY,            ///< Cargo history button.
 	WID_SV_PAX_ROUTES,         ///< Toggle waiting passenger routes overlay.
+	WID_SV_PASSENGER_GROUPING_SEL, ///< Fixed waiting-passenger order row.
+	WID_SV_PASSENGER_GROUPING,
+	WID_SV_CARGO_GROUPING_SEL,     ///< Original grouping controls for general cargo/planned flows.
+
 };
 
 /** Widgets of the #CompanyStationsWindow class. */

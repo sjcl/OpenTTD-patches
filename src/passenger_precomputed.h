@@ -125,6 +125,20 @@ public:
 	static constexpr uint64_t MAX_BOARDING_MASK_BYTES = uint64_t{64} * 1024 * 1024; ///< Larger maps keep the complete scan.
 	std::span<const uint32_t> Candidates(StationID origin, StationID destination, OrderListID previous = OrderListID::Invalid(), OrderListID failed = OrderListID::Invalid()) const;
 	struct DisplayCandidate { OrderListID service; uint64_t incarnation, generation; VehicleOrderID order; };
+	enum class DisplayRead : uint8_t { Candidate, Partial, Complete, Unavailable };
+	/** Indices only. The database binds this cursor to a policy generation/publication. */
+	struct DisplayCursor {
+		uint8_t phase = 0;
+		bool inspected = false, bound = false;
+		CargoType cargo = INVALID_CARGO;
+		StationID origin = StationID::Invalid(), destination = StationID::Invalid();
+		OrderListID previous = OrderListID::Invalid(), failed = OrderListID::Invalid();
+		size_t occurrence = 0, member = 0;
+		uint64_t epoch = 0, generation = 0, changes = 0;
+	};
+	DisplayRead NextDisplayCandidate(StationID origin, StationID destination, OrderListID previous, OrderListID failed,
+			DisplayCursor &cursor, DisplayCandidate &out, size_t &work) const;
+
 	/** Read published policy storage without expanding/rebuilding policies or evaluating routes.
 	 * False means missing policy or incomplete enumeration. A cold failed-service policy is unknown. */
 	bool DisplayCandidates(StationID origin, StationID destination, OrderListID previous, OrderListID failed,

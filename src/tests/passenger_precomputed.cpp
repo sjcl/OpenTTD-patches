@@ -1543,3 +1543,29 @@ TEST_CASE("Hyperpath display enumerates frozen policy storage with bounded read-
 		CHECK(work == 0); CHECK(candidates.empty());
 	}
 }
+
+TEST_CASE("Hyperpath display cursor advances beyond old candidate limits with single-work pages", "[passenger][hyperpath][station-gui][service-progress]")
+{
+	std::vector<PassengerPeriodicService> services;
+	for (uint16_t id = 0; id < 270; ++id) services.push_back(Service(id, {A, B}));
+	std::vector<const PassengerPeriodicService *> records; for (const auto &service : services) records.push_back(&service);
+	PassengerPrecomputedTable table;
+	table.Begin(records, PAX, 0, PassengerPrecomputedTable::MAX_BYTES, true, false, {}, true, true, true, true);
+	while (!table.Finished()) table.Step(65536);
+	const auto diagnostic = table.GetDiagnostic();
+	PassengerPrecomputedTable::DisplayCursor cursor; PassengerPrecomputedTable::DisplayCandidate candidate;
+	std::set<OrderListID> found; bool complete = false;
+	for (size_t page = 0; page < 2000 && !complete; ++page) {
+		size_t work = 1;
+		auto result = table.NextDisplayCandidate(A, B, OrderListID::Invalid(), OrderListID::Invalid(), cursor, candidate, work);
+		if (result == PassengerPrecomputedTable::DisplayRead::Candidate) CHECK(found.insert(candidate.service).second);
+		else REQUIRE(result != PassengerPrecomputedTable::DisplayRead::Unavailable);
+		complete = result == PassengerPrecomputedTable::DisplayRead::Complete;
+	}
+	CHECK(complete); CHECK(found.size() == 270);
+	size_t work = 4;
+	REQUIRE(table.NextDisplayCandidate(B, A, OrderListID::Invalid(), OrderListID::Invalid(), cursor, candidate, work) == PassengerPrecomputedTable::DisplayRead::Candidate);
+	CHECK(candidate.service == OrderListID{0}); CHECK(candidate.order == 1); // Rebinding a cursor changes its query, not just its position.
+
+	CHECK(table.GetDiagnostic().bytes == diagnostic.bytes); CHECK(table.GetDiagnostic().local_replans == diagnostic.local_replans);
+}
