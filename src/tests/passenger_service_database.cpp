@@ -3707,14 +3707,14 @@ TEST_CASE("Hyperpath unchanged fallback decisions retain boarding indices and na
 		packet->SchedulePassengerRouting(_state_ticks);
 		waiting.RoutePassengerJourneys(PAX, A);
 		CHECK(packet->StationMergeHash() != hash);
-		CHECK(waiting.boarding_index_updates > updates);
+		CHECK(waiting.boarding_index_updates == updates); // The full pass refreshes in place; an unchanged boarding entry stays.
 		CHECK(GetPassengerWaitingEventDiagnostic().unchanged_generation_packets == 0);
 	}
 	SECTION("An extra future event is rescheduled by the full pass") {
 		packet->SchedulePassengerRouting(_state_ticks + 100);
 		waiting.RoutePassengerJourneys(PAX, A);
 		CHECK(packet->GetPassengerRoutingEvent() == INVALID_STATE_TICKS);
-		CHECK(waiting.boarding_index_updates > updates);
+		CHECK(waiting.boarding_index_updates == updates); // The full pass refreshes in place; an unchanged boarding entry stays.
 		CHECK(GetPassengerWaitingEventDiagnostic().unchanged_generation_packets == 0);
 	}
 	SECTION("A changed CargoDist flow still updates the saved hop") {

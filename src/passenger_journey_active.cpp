@@ -1949,12 +1949,16 @@ size_t StationCargoList::RoutePassengerJourneys(CargoType cargo, StationID stati
 					continue;
 				}
 			}
-			this->ForgetWaitingPacket(id);
+			/* Index once after routing. The entry still describes the old state until then, so a
+			 * moved packet is forgotten from exactly the indices it was in. */
+			SetPassengerWaitingRefreshDeferred(id);
 			const StationID key = route(packet, entry.key);
 			schedule(*packet);
+			SetPassengerWaitingRefreshDeferred(CargoPacketID::Invalid());
 			if (key == entry.key) {
-				this->IndexPacket(packet, key, entry.position, entry.sequence);
+				this->RefreshWaitingPacket(*packet);
 			} else {
+				this->ForgetWaitingPacket(id);
 				auto bucket = queues.find(entry.key);
 				auto &list = queues[key];
 				list.splice(list.end(), bucket->second, entry.position);

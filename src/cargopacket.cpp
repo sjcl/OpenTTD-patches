@@ -244,8 +244,12 @@ void ShiftPassengerWaitingEventTicks(StateTicksDelta delta)
 	RebuildPassengerWaitingScheduler();
 }
 
+static CargoPacketID _passenger_refresh_deferred = CargoPacketID::Invalid();
+void SetPassengerWaitingRefreshDeferred(CargoPacketID id) { _passenger_refresh_deferred = id; }
+
 void PassengerWaitingPacketChanged(const CargoPacket &packet)
 {
+	if (packet.index == _passenger_refresh_deferred) return; // Its owner refreshes once, afterwards.
 	auto owner = _passenger_waiting_owners.find(packet.index.base());
 	if (owner != _passenger_waiting_owners.end()) owner->second->RefreshWaitingPacket(packet);
 }
@@ -1518,29 +1522,35 @@ StateTicks StationCargoList::BoardingHyperpathExpiry(const JourneyRideKey &key)
 void StationCargoList::AddBoardingEntry(CargoPacketID id, WaitingEntry &entry) const
 {
 	++this->boarding_index_updates;
-	entry.journey_group.reset();
+	entry.journey_group.reset(); entry.hyperpath_group.reset();
 	BoardingOrder order{entry.key, entry.sequence, id};
 	if (!entry.journey) this->legacy_boarding_index[{entry.fallback.has_value(), entry.key}].insert(order);
 	if (entry.pending) return;
 	if (entry.journey) {
 		const auto &packet = *CargoPacket::Get(id);
-		auto [group, inserted] = this->boarding_index.try_emplace(BoardingJourneyKey(packet));
-		if (inserted) ++this->boarding_services[entry.service];
-		auto [ride, new_ride] = group->second.try_emplace(JourneyRideKey{packet.GetPassengerJourney(), packet.GetPassengerArrivingService(), packet.GetPassengerArrivingIncarnation(), packet.GetPassengerBoardingFailure()});
-		ride->second.insert(order); entry.journey_group = std::pair(group, ride);
-		if (new_ride && packet.GetPassengerJourney().kind == PassengerRideKind::EstimatedServiceIntent)
-			this->section_boarding_index[PassengerPrecomputedTable::RawSectionBoardingKey(packet.GetPassengerJourney())].emplace(ride->first, &ride->second);
+		const JourneyRideKey ride{packet.GetPassengerJourney(), packet.GetPassengerArrivingService(), packet.GetPassengerArrivingIncarnation(), packet.GetPassengerBoardingFailure()};
 		if (packet.GetPassengerJourney().kind == PassengerRideKind::HyperpathIntent) {
 			const StationID alighting = packet.GetPassengerJourney().alighting;
-			auto [policy_entry, new_group] = this->hyperpath_boarding_index[alighting].try_emplace(BoardingHyperpathKey(ride->first));
+			auto destination = this->hyperpath_boarding_index.try_emplace(alighting).first;
+			auto [policy_entry, new_group] = destination->second.try_emplace(BoardingHyperpathKey(ride));
 			auto &policy = policy_entry->second;
 			if (new_group && this->hyperpath_lookup.epoch != UINT64_MAX) {
 				/* A lookup that was never built indexes every group on its first refresh. */
 				policy.lookup_slot = HYPERPATH_PENDING; this->hyperpath_lookup.pending.push_back({alighting, policy_entry});
 			}
 			policy.packets.insert(order);
-			if (std::get<3>(ride->first).count >= PassengerBoardingFailure::THRESHOLD) policy.expiries.insert(BoardingHyperpathExpiry(ride->first));
+			const bool adjusted = std::get<3>(ride).count >= PassengerBoardingFailure::THRESHOLD;
+			const StateTicks expiry = adjusted ? BoardingHyperpathExpiry(ride) : StateTicks{};
+			if (adjusted) policy.expiries.insert(expiry);
+			entry.hyperpath_group = HyperpathSlot{destination, policy_entry, expiry, adjusted};
+			return;
 		}
+		auto [group, inserted] = this->boarding_index.try_emplace(BoardingJourneyKey(packet));
+		if (inserted) ++this->boarding_services[entry.service];
+		auto [ride_group, new_ride] = group->second.try_emplace(ride);
+		ride_group->second.insert(order); entry.journey_group = std::pair(group, ride_group);
+		if (new_ride && packet.GetPassengerJourney().kind == PassengerRideKind::EstimatedServiceIntent)
+			this->section_boarding_index[PassengerPrecomputedTable::RawSectionBoardingKey(packet.GetPassengerJourney())].emplace(ride_group->first, &ride_group->second);
 	}
 	else if (entry.fallback) {
 		auto [group, inserted] = this->fallback_boarding_index.try_emplace(*entry.fallback);
@@ -1561,19 +1571,20 @@ void StationCargoList::RemoveBoardingEntry(CargoPacketID id, const WaitingEntry 
 		if (group != this->legacy_boarding_index.end()) { group->second.erase(order); if (group->second.empty()) this->legacy_boarding_index.erase(group); }
 	}
 	if (entry.pending) return;
+	if (entry.journey && entry.hyperpath_group) {
+		const auto &slot = *entry.hyperpath_group;
+		auto policy = slot.group;
+		policy->second.packets.erase(order);
+		if (slot.adjusted) {
+			auto expiry = policy->second.expiries.find(slot.expiry);
+			assert(expiry != policy->second.expiries.end()); policy->second.expiries.erase(expiry);
+		}
+		if (policy->second.packets.empty()) { this->UnindexHyperpathGroup(policy); slot.destination->second.erase(policy); }
+		if (slot.destination->second.empty()) this->hyperpath_boarding_index.erase(slot.destination);
+		return;
+	}
 	if (entry.journey) {
 		auto [group, ride] = *entry.journey_group;
-		if (std::get<0>(ride->first).kind == PassengerRideKind::HyperpathIntent) {
-			auto destination = this->hyperpath_boarding_index.find(std::get<0>(ride->first).alighting);
-			auto policy = destination->second.find(BoardingHyperpathKey(ride->first));
-			policy->second.packets.erase(order);
-			if (std::get<3>(ride->first).count >= PassengerBoardingFailure::THRESHOLD) {
-				auto expiry = policy->second.expiries.find(BoardingHyperpathExpiry(ride->first));
-				assert(expiry != policy->second.expiries.end()); policy->second.expiries.erase(expiry);
-			}
-			if (policy->second.packets.empty()) { this->UnindexHyperpathGroup(policy); destination->second.erase(policy); }
-			if (destination->second.empty()) this->hyperpath_boarding_index.erase(destination);
-		}
 		ride->second.erase(order);
 		if (ride->second.empty()) {
 			const auto &intent = std::get<0>(ride->first);
@@ -1655,8 +1666,20 @@ void StationCargoList::RefreshWaitingPacket(const CargoPacket &packet) const
 	StateTicks ready = journey ? packet.GetPassengerJourney().not_before : StateTicks{};
 	if (Station::IsValidID(packet.GetPassengerDestination()) && packet.GetPassengerArrivingService() != OrderListID::Invalid()) ready = std::max(ready, packet.GetPassengerInterchangeReady());
 	const bool pending = ready > _state_ticks;
-	bool same_ride = !journey || !entry.journey || entry.pending ||
-			(entry.journey_group->first->first == BoardingJourneyKey(packet) && entry.journey_group->second->first == JourneyRideKey{packet.GetPassengerJourney(), packet.GetPassengerArrivingService(), packet.GetPassengerArrivingIncarnation(), packet.GetPassengerBoardingFailure()});
+	bool same_ride = !journey || !entry.journey || entry.pending;
+	if (!same_ride) {
+		const JourneyRideKey ride{packet.GetPassengerJourney(), packet.GetPassengerArrivingService(), packet.GetPassengerArrivingIncarnation(), packet.GetPassengerBoardingFailure()};
+		if (entry.hyperpath_group) {
+			/* A Hyperpath entry is its policy group: a replanned intent in the same group moves nothing. */
+			const auto &slot = *entry.hyperpath_group;
+			const bool adjusted = std::get<3>(ride).count >= PassengerBoardingFailure::THRESHOLD;
+			same_ride = packet.GetPassengerJourney().kind == PassengerRideKind::HyperpathIntent && slot.destination->first == packet.GetPassengerJourney().alighting &&
+					slot.group->first == BoardingHyperpathKey(ride) && slot.adjusted == adjusted && (!adjusted || slot.expiry == BoardingHyperpathExpiry(ride));
+		} else {
+			same_ride = packet.GetPassengerJourney().kind != PassengerRideKind::HyperpathIntent &&
+					entry.journey_group->first->first == BoardingJourneyKey(packet) && entry.journey_group->second->first == ride;
+		}
+	}
 	if (entry.journey != journey || entry.service != service || entry.fallback != fallback || entry.pending != pending || !same_ride || (pending && entry.wake->first != ready)) {
 		this->RemoveBoardingEntry(packet.index, entry);
 		if (entry.pending) this->waiting_wake.erase(entry.wake);
@@ -2393,11 +2416,13 @@ void StationCargoList::RecordCapacityMiss(std::span<const StationID> next, const
 		auto entry = this->waiting_entries.find(id); if (entry == this->waiting_entries.end()) return true;
 		auto *packet = CargoPacket::Get(id);
 		if (packet->GetPassengerJourney().kind != PassengerRideKind::HyperpathIntent || !loading.CanBoard(*packet, vehicle, cargo)) return true;
-		const auto key = entry->second.key; const auto position = entry->second.position; const auto sequence = entry->second.sequence;
-		this->ForgetWaitingPacket(id);
 		++_passenger_event_diagnostic.capacity_missed_packets; _passenger_event_diagnostic.capacity_missed_passengers += packet->Count();
+		/* Refresh in place: the entry keeps its bucket position and FIFO sequence, and an unchanged
+		 * policy group (below the failure threshold) is not touched at all. */
+		SetPassengerWaitingRefreshDeferred(id);
 		packet->RecordPassengerCapacityFailure(vehicle->First()->orders->index, _state_ticks, loading.ExpectedHyperpathWait(*packet, vehicle, cargo));
-		this->IndexPacket(packet, key, position, sequence);
+		SetPassengerWaitingRefreshDeferred(CargoPacketID::Invalid());
+		this->RefreshWaitingPacket(*packet);
 		return true;
 	}, false); // Capacity failures retain the original full eligibility scan.
 	_passenger_event_diagnostic.capacity_record_nanoseconds += std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - started).count();
