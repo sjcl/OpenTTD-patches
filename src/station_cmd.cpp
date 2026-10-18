@@ -4684,11 +4684,13 @@ void DeleteStaleLinks(Station *from)
 					result = LinkGraph::EdgeIterationResult::EraseEdge;
 					if (ge.data != nullptr) ge.data->flows.DeleteFlows(to->index);
 					RerouteCargo(from, cargo, to->index, from->index);
+					PassengerWaitingFlowsChanged(ge, cargo);
 				}
 			} else if (edge.LastUnrestrictedUpdate() != EconTime::INVALID_DATE && (EconTime::CurDate() - edge.LastUnrestrictedUpdate()) > timeout) {
 				edge.Restrict();
 				if (ge.data != nullptr) ge.data->flows.RestrictFlows(to->index);
 				RerouteCargo(from, cargo, to->index, from->index);
+				PassengerWaitingFlowsChanged(ge, cargo);
 			} else if (edge.LastRestrictedUpdate() != EconTime::INVALID_DATE && (EconTime::CurDate() - edge.LastRestrictedUpdate()) > timeout) {
 				edge.Release();
 			}

@@ -152,6 +152,7 @@ Station::~Station()
 				if (ged != nullptr) ged->flows.DeleteFlows(this->index);
 				RerouteCargo(st, cargo, this->index, st->index);
 			}
+			if (st != this) PassengerWaitingFlowsChanged(st->goods[cargo], cargo);
 		}
 		lg->RemoveNode(this->goods[cargo].node);
 		if (lg->Size() == 0) {

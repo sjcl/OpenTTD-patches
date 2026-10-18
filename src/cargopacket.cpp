@@ -190,6 +190,19 @@ void RecordPassengerWaitingArrival(uint64_t packets, uint64_t passengers, bool m
 	if (missed) _passenger_event_diagnostic.unresolved_missed += passengers;
 }
 
+void PassengerWaitingFlowsChanged(GoodsEntry &ge, CargoType cargo)
+{
+	/* Precomputed waiting cohorts are indexed by their saved CargoDist hop; a flow change is
+	 * their routing event. Every client merges flows at the same tick, so this saved request
+	 * is deterministic irrespective of derived index residency. */
+	if (ge.data == nullptr || !_settings_game.linkgraph.passenger_journey_precomputed || !IsCargoInClass(cargo, CargoClass::Passengers) ||
+			!IsPassengerJourneyRoutingEnabled(cargo)) return;
+	auto &list = ge.data->cargo;
+	if (!list.passenger_routing_sweeping && !list.passenger_routing_dirty) list.passenger_routing_due = _state_ticks;
+	list.passenger_routing_dirty = true;
+	list.UpdatePassengerRoutingSchedule();
+}
+
 void InvalidatePassengerWaitingRouting()
 {
 	/* Index residency is derived. In particular a joining peer rebuilds lists
@@ -213,6 +226,7 @@ void ShiftPassengerWaitingEventTicks(StateTicksDelta delta)
 		auto &list = station->goods[cargo].data->cargo;
 		if (list.passenger_routing_due != INVALID_STATE_TICKS) list.passenger_routing_due += delta;
 		if (list.passenger_routing_tick != INVALID_STATE_TICKS) list.passenger_routing_tick += delta;
+		if (list.passenger_routing_swept != INVALID_STATE_TICKS) list.passenger_routing_swept += delta;
 	}
 	RebuildPassengerWaitingScheduler();
 }

@@ -42,6 +42,8 @@ void PassengerWaitingPacketChanged(const CargoPacket &packet);
 void PassengerWaitingRoutingChanged(CargoPacket &packet);
 void InvalidatePassengerWaitingRouting();
 void ShiftPassengerWaitingEventTicks(StateTicksDelta delta);
+struct GoodsEntry;
+void PassengerWaitingFlowsChanged(GoodsEntry &ge, CargoType cargo); ///< The station's CargoDist flows for this cargo changed.
 
 /** Type of the pool for cargo packets for a little over 16 million packets. */
 using CargoPacketPool = Pool<CargoPacket, CargoPacketID, 1024, PoolType::Normal, true>;
@@ -762,15 +764,21 @@ public:
 	uint32_t passenger_routing_cursor = 0, passenger_routing_end = 0;
 	StateTicks passenger_routing_tick = INVALID_STATE_TICKS;
 	uint16_t passenger_routing_work = 0;
+	StateTicks passenger_routing_swept = INVALID_STATE_TICKS; ///< Saved start of the latest generation sweep; bounds sweeps due only to publications.
 	/** Empty cargo may still own saved scheduling state. In particular, dropping
 	 * it on load must not reset a slice or pass its cursor to a reused goods entry. */
 	bool HasPassengerRoutingState() const
 	{
 		return this->passenger_boarding_last != StationID::Invalid() || !this->passenger_routing_dirty || this->passenger_routing_revision != UINT64_MAX || this->passenger_routing_rows != UINT64_MAX ||
 				this->passenger_routing_due != INVALID_STATE_TICKS || this->passenger_routing_sweeping || this->passenger_routing_cursor != 0 ||
-				this->passenger_routing_end != 0 || this->passenger_routing_tick != INVALID_STATE_TICKS || this->passenger_routing_work != 0;
+				this->passenger_routing_end != 0 || this->passenger_routing_tick != INVALID_STATE_TICKS || this->passenger_routing_work != 0 ||
+				this->passenger_routing_swept != INVALID_STATE_TICKS;
 	}
 	static constexpr uint16_t PASSENGER_ROUTING_SLICE = 256; ///< Cheap table events; national budget and station fairness also apply.
+	/** A service publication alone starts a generation sweep at most this often. It cannot resolve
+	 * a waiting packet through Hyperpath rows at all (a rare safety pass only); legacy rows keep a
+	 * shorter bound. Table changes, flow changes and invalidations still sweep immediately. */
+	static constexpr int64_t PASSENGER_REVISION_SWEEP_TICKS = 1024, PASSENGER_TABLE_REVISION_SWEEP_TICKS = 8192;
 	uint64_t passenger_routing_inspected = 0, passenger_generation_inspected = 0; ///< Diagnostics only.
 	void RebuildWaitingIndex() const { this->EnsureWaitingIndex(); }
 	CargoType passenger_index_cargo = INVALID_CARGO; ///< Derived owning cargo, supplied by routing/boarding events.

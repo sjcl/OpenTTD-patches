@@ -492,6 +492,7 @@ NamedSaveLoadTable GetPassengerWaitingEventDesc()
 		NSL("tick", SLE_VAR(StationCargoList, passenger_routing_tick, SLE_INT64)),
 		NSL("work", SLE_VAR(StationCargoList, passenger_routing_work, SLE_UINT16)),
 		NSL("boarding_last", SLE_VAR(StationCargoList, passenger_boarding_last, SLE_UINT16)),
+		NSL("swept", SLE_VAR(StationCargoList, passenger_routing_swept, SLE_INT64)),
 	};
 	return fields;
 }

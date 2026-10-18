@@ -227,6 +227,14 @@ public:
 	PassengerHyperpathMemoryDiagnostic InspectPrecomputedMemory(CargoType cargo, bool retained = false) const
 	{ return (retained ? this->retained_precomputed[cargo] : this->precomputed[cargo]).InspectMemory(); }
 	uint64_t GetPublishedRevision() const { return this->published_revision; }
+	/** Whether a publication alone can change a waiting packet's precomputed plan. Legacy rides
+	 * are validated against live service generations; Hyperpath plans change only with their table
+	 * (row publication, retirement or a new generation), which wakes waiting lists itself. */
+	bool RevisionAffectsWaitingPlans() const
+	{
+		return (this->precomputed_revision != UINT64_MAX && !this->precomputed_hyperpath) ||
+				(this->retained_precomputed_revision != UINT64_MAX && !this->retained_precomputed_hyperpath);
+	}
 	auto BoardingRevision() const { return std::tuple(this->published_revision, this->boarding_revision, this->precomputed_operations); }
 	PassengerPrecomputedTable::DestinationSpans PrecomputedReachableDestinations(CargoType cargo, StationID origin, bool retained = false) const
 	{ return cargo < NUM_CARGO ? (retained ? this->retained_precomputed[cargo] : this->precomputed[cargo]).ReachableDestinations(origin) : PassengerPrecomputedTable::DestinationSpans{}; }

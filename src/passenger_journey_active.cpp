@@ -1723,9 +1723,13 @@ size_t StationCargoList::RoutePassengerJourneys(CargoType cargo, StationID stati
 			this->passenger_routing_work = 0;
 		}
 		/* Do not restart an in-progress sweep on another publication. Finish its
-		 * saved cursor first, then coalesce newer generations into the next one. */
-		if (!this->passenger_routing_sweeping && (this->passenger_routing_dirty ||
-				this->passenger_routing_revision != revision || this->passenger_routing_rows != rows)) {
+		 * saved cursor first, then coalesce newer generations into the next one.
+		 * A publication alone is bounded per list: a busy map publishes almost every tick. */
+		const int64_t revision_interval = GetPassengerServiceDatabase().RevisionAffectsWaitingPlans() ? PASSENGER_REVISION_SWEEP_TICKS : PASSENGER_TABLE_REVISION_SWEEP_TICKS;
+		const bool revision_due = this->passenger_routing_revision != revision && (this->passenger_routing_swept == INVALID_STATE_TICKS ||
+				this->passenger_routing_swept > _state_ticks || _state_ticks.base() - this->passenger_routing_swept.base() >= revision_interval);
+		if (!this->passenger_routing_sweeping && (this->passenger_routing_dirty || revision_due || this->passenger_routing_rows != rows)) {
+			this->passenger_routing_swept = _state_ticks;
 			this->passenger_routing_sweeping = true;
 			this->passenger_routing_cursor = 0;
 			this->passenger_routing_end = this->routing_packets.empty() ? 0 : this->routing_packets.rbegin()->base();

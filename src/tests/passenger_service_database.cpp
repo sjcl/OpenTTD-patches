@@ -3550,20 +3550,55 @@ TEST_CASE("Precomputed waiting events survive save tables without inventing a ro
 	a.passenger_routing_dirty = false; a.passenger_routing_revision = 17; a.passenger_routing_rows = 23; a.passenger_routing_due = NOW + 100;
 	a.passenger_routing_sweeping = true; a.passenger_routing_cursor = 7; a.passenger_routing_end = 103;
 	a.passenger_routing_tick = NOW; a.passenger_routing_work = 31;
-	a.passenger_boarding_last = B;
+	a.passenger_boarding_last = B; a.passenger_routing_swept = NOW - 7;
 	CHECK_FALSE(source.data->MayBeRemoved());
 	REQUIRE_FALSE(SlTestSaveLoadTable(&source, &loaded, GetGoodsDesc()).empty());
 	auto &b = loaded.data->cargo; b.RebuildWaitingIndex();
 	CHECK_FALSE(b.passenger_routing_dirty); CHECK(b.passenger_routing_revision == 17); CHECK(b.passenger_routing_rows == 23); CHECK(b.passenger_routing_due == NOW + 100);
 	CHECK(b.passenger_routing_sweeping); CHECK(b.passenger_routing_cursor == 7); CHECK(b.passenger_routing_end == 103);
 	CHECK(b.passenger_routing_tick == NOW); CHECK(b.passenger_routing_work == 31);
-	CHECK(b.passenger_boarding_last == B);
+	CHECK(b.passenger_boarding_last == B); CHECK(b.passenger_routing_swept == NOW - 7);
 	CHECK_FALSE(loaded.data->MayBeRemoved());
 	auto *packet = CargoPacket::Create(10, 0, A, TileIndex{0}, Money{0});
 	auto *copy = CargoPacket::Create(); packet->SchedulePassengerRouting(NOW + 150);
 	REQUIRE_FALSE(SlTestSaveLoadTable(packet, copy, GetCargoPacketDesc()).empty());
 	CHECK(copy->GetPassengerRoutingEvent() == NOW + 150);
 	delete packet; delete copy;
+}
+
+TEST_CASE("A publication alone sweeps waiting fallback packets at a bounded rate", "[passenger][precomputed][events][determinism]")
+{
+	const bool hyperpath = GENERATE(false, true);
+	CAPTURE(hyperpath);
+	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = true; _settings_game.linkgraph.passenger_journey_hyperpath = hyperpath;
+	f.Train({Stop(A), Stop(B)}); f.Train({Stop(C), Stop(D)}); auto &db = f.Build(); while (!db.PreparePrecomputed()) {}
+	CHECK(db.RevisionAffectsWaitingPlans() == !hyperpath);
+	const int64_t interval = hyperpath ? StationCargoList::PASSENGER_TABLE_REVISION_SWEEP_TICKS : StationCargoList::PASSENGER_REVISION_SWEEP_TICKS;
+	auto &goods = Station::Get(A)->goods[PAX]; auto &waiting = goods.CreateData().cargo;
+	auto *packet = CargoPacket::Create(3, 0, A, TileIndex{0}, Money{0});
+	REQUIRE(packet->SetPassengerDestination(PAX, D)); waiting.Append(packet, D); // No service reaches D.
+	for (int i = 0; i < 8 && (waiting.passenger_routing_dirty || waiting.passenger_routing_sweeping || i == 0); ++i) waiting.RoutePassengerJourneys(PAX, A);
+	REQUIRE(packet->GetPassengerRoutingMode() != PassengerRoutingMode::Journey);
+	REQUIRE_FALSE(waiting.passenger_routing_dirty); REQUIRE_FALSE(waiting.passenger_routing_sweeping);
+	const StateTicks swept = waiting.passenger_routing_swept; REQUIRE(swept != INVALID_STATE_TICKS);
+	auto generations = waiting.passenger_generation_inspected;
+	auto publish = [&]() { --waiting.passenger_routing_revision; }; // A later publication, as this list sees it.
+	auto route_at = [&](StateTicks now) { _state_ticks = now; waiting.RoutePassengerJourneys(PAX, A); };
+	publish();
+	route_at(swept + 1); CHECK(waiting.passenger_generation_inspected == generations);
+	route_at(swept + interval - 1); CHECK(waiting.passenger_generation_inspected == generations);
+	route_at(swept + interval); CHECK(waiting.passenger_generation_inspected == generations + 1);
+	CHECK(waiting.passenger_routing_swept == swept + interval);
+	/* Table changes, flow changes and invalidations are not bounded. */
+	generations = waiting.passenger_generation_inspected;
+	PassengerWaitingFlowsChanged(goods, PAX); CHECK(waiting.passenger_routing_dirty);
+	route_at(swept + interval + 1); CHECK(waiting.passenger_generation_inspected == generations + 1);
+	--waiting.passenger_routing_rows;
+	route_at(swept + interval + 2); CHECK(waiting.passenger_generation_inspected == generations + 2);
+	InvalidatePassengerWaitingRouting();
+	route_at(swept + interval + 3); CHECK(waiting.passenger_generation_inspected == generations + 3);
+	/* An unchanged publication state never sweeps, however long it waits. */
+	route_at(swept + 4 * interval); CHECK(waiting.passenger_generation_inspected == generations + 3);
 }
 
 TEST_CASE("Precomputed single packet events leave thousands of sleeping intents untouched", "[passenger][precomputed][events][scaling]")
