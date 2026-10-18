@@ -1217,8 +1217,8 @@ TEST_CASE("Hyperpath table build CPU on a national-scale synthetic network", "[.
 
 TEST_CASE("Optimized destination queue pops exactly the binary heap order", "[passenger][precomputed][queue]")
 {
-	/* Monotone pushes with ties, same-cost pushes after pops, near ring slots and far jumps
-	 * beyond the ring (including exactly RING ahead): the exact (cost, kind, id) order. */
+	/* Monotone pushes with ties, same-cost pushes after pops, short and long jumps across
+	 * radix buckets: the exact (cost, kind, id) order of a binary heap. */
 	using Item = std::tuple<int64_t, uint32_t, uint32_t>;
 	for (uint32_t seed : {1U, 0x9e3779b9U, 0x2545f491U, 0xdeadbeefU}) {
 		auto rnd = [&](uint32_t n) { seed = seed * 1664525U + 1013904223U; return (seed >> 8) % n; };
