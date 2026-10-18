@@ -11,6 +11,8 @@
 #include "error_func.h"
 #include "thread.h"
 #include <atomic>
+#include <condition_variable>
+#include <deque>
 #include <chrono>
 #include <numeric>
 #include "safeguards.h"
@@ -1104,6 +1106,54 @@ void PassengerPrecomputedTable::CollectSearchCounters()
 	this->diagnostic.heap_pops += std::exchange(this->work.counters.heap_pops, 0);
 }
 
+/** Process-lifetime workers. Only shutdown joins; destination contexts travel
+	* back through result slots, retaining their allocation capacity between jobs. */
+struct PassengerPrecomputedTable::DestinationWorkerPool {
+	std::mutex mutex;
+	std::condition_variable wake;
+	std::deque<std::function<void(DestinationWorkspace &)>> jobs;
+	std::vector<std::thread> threads;
+	bool stopping = false;
+	size_t Ensure(size_t count)
+	{
+		std::lock_guard lock(this->mutex);
+		this->threads.reserve(8);
+		while (this->threads.size() < count) {
+			std::thread thread;
+			if (!StartNewThread(&thread, "pax-destination", [this]() { this->Run(); })) break;
+			this->threads.push_back(std::move(thread));
+		}
+		return this->threads.size();
+	}
+	bool Submit(std::function<void(DestinationWorkspace &)> job)
+	{
+		std::lock_guard lock(this->mutex);
+		if (this->threads.empty() || this->jobs.size() >= 16) return false;
+		this->jobs.push_back(std::move(job)); this->wake.notify_one(); return true;
+	}
+	void Run()
+	{
+		DestinationWorkspace workspace;
+		std::unique_lock lock(this->mutex);
+		for (;;) {
+			this->wake.wait(lock, [&]() { return this->stopping || !this->jobs.empty(); });
+			if (this->stopping && this->jobs.empty()) return;
+			auto job = std::move(this->jobs.front()); this->jobs.pop_front();
+			lock.unlock(); job(workspace); lock.lock();
+		}
+	}
+	~DestinationWorkerPool()
+	{
+		{ std::lock_guard lock(this->mutex); this->stopping = true; this->wake.notify_all(); }
+		for (auto &thread : this->threads) thread.join();
+	}
+};
+
+PassengerPrecomputedTable::DestinationWorkerPool &PassengerPrecomputedTable::WorkerPool()
+{
+	static DestinationWorkerPool pool; return pool;
+}
+
 /** Bounded batches keep the immutable graph on the calling thread's stack of
  * ownership. Only independent contexts are mutated until every thread joins.
  * An allocation/start failure discards lookahead, never rejects a logical row. */
@@ -1123,43 +1173,42 @@ bool PassengerPrecomputedTable::PrepareParallelBatch(uint workers)
 	if (workers == 0) return false;
 	const size_t count = std::min<size_t>(workers * 2, this->stations.size() - this->destination);
 	const auto started = Clock::now();
-	struct JoinedThreads {
-		std::vector<std::thread> threads;
-		void Join() { for (auto &thread : this->threads) if (thread.joinable()) thread.join(); }
-		~JoinedThreads() { this->Join(); }
-	} pool;
-	std::atomic<size_t> next{0};
+	std::mutex done_mutex;
+	std::condition_variable done_cv;
+	size_t pending = 0;
 	std::atomic<bool> cancelled{false};
-	auto run = [&]() noexcept {
-		while (!cancelled.load(std::memory_order_relaxed)) {
-			size_t index = next.fetch_add(1, std::memory_order_relaxed);
-			if (index >= count) return;
-			auto &result = this->parallel_results[index];
-			result.operations = 0; result.error = {};
-			const auto search_started = Clock::now();
-			try {
-				if (this->parallel_search_hook) this->parallel_search_hook(this->destination + index, false);
-				result.workspace.counters = {};
-				this->StartDestination(result.workspace, this->destination + index);
-				while (!result.workspace.finishing_row && !cancelled.load(std::memory_order_relaxed)) {
-					result.operations += this->hyperpath ? this->SearchHyperpath(result.workspace, 65536) : this->SearchDestination(result.workspace, 65536);
-				}
-				if (this->parallel_search_hook) this->parallel_search_hook(this->destination + index, true);
-			} catch (...) { result.error = std::current_exception(); cancelled.store(true, std::memory_order_relaxed); }
-			result.nanoseconds = Elapsed(search_started);
-		}
-	};
 	try {
 		this->parallel_results.resize(count);
-		pool.threads.resize(workers);
-		size_t running = 0;
-		for (auto &thread : pool.threads) {
-			if (this->parallel_start_hook && !this->parallel_start_hook(static_cast<uint>(running))) break;
-			if (!StartNewThread(&thread, "pax-destination", [run]() { run(); })) break;
-			++running;
+		size_t permitted = 0;
+		while (permitted < workers && (!this->parallel_start_hook || this->parallel_start_hook(static_cast<uint>(permitted)))) ++permitted;
+		size_t running = permitted == 0 ? 0 : std::min(permitted, WorkerPool().Ensure(permitted));
+		if (running == 0) throw std::bad_alloc{};
+		std::unique_lock done_lock(done_mutex);
+		for (size_t index = 0; index < count; ++index) {
+			++pending;
+			bool submitted = false;
+			try { submitted = WorkerPool().Submit([&, index](DestinationWorkspace &workspace) {
+				auto &result = this->parallel_results[index];
+				result.operations = 0; result.error = {};
+				const auto search_started = Clock::now();
+				try {
+					if (!cancelled.load()) {
+						if (this->parallel_search_hook) this->parallel_search_hook(this->destination + index, false);
+						workspace.counters = {};
+						this->StartDestination(workspace, this->destination + index);
+						while (!workspace.finishing_row && !cancelled.load()) result.operations += this->hyperpath ? this->SearchHyperpath(workspace, 65536) : this->SearchDestination(workspace, 65536);
+						if (this->parallel_search_hook) this->parallel_search_hook(this->destination + index, true);
+						std::swap(result.workspace, workspace);
+						if (!workspace.queue.empty() || !workspace.strategy.events.empty()) workspace = {};
+					}
+				} catch (...) { result.error = std::current_exception(); cancelled.store(true); workspace = {}; }
+				result.nanoseconds = Elapsed(search_started);
+				std::lock_guard lock(done_mutex); --pending; done_cv.notify_one();
+			}); } catch (...) {}
+			if (!submitted) { --pending; cancelled.store(true); break; }
 		}
-		pool.Join();
-		if (running == 0) throw std::bad_alloc{}; // Same local fallback as scratch allocation failure.
+		done_cv.wait(done_lock, [&]() { return pending == 0; });
+		if (cancelled.load()) throw std::bad_alloc{};
 		for (const auto &result : this->parallel_results) if (result.error) std::rethrow_exception(result.error);
 		this->parallel_diagnostic.workers = std::max(this->parallel_diagnostic.workers, running);
 		this->parallel_diagnostic.peak_pending = std::max(this->parallel_diagnostic.peak_pending, count);
@@ -1177,7 +1226,6 @@ bool PassengerPrecomputedTable::PrepareParallelBatch(uint workers)
 		return true;
 	} catch (...) {
 		/* Join before releasing contexts, even if thread startup itself throws. */
-		pool.Join();
 		this->parallel_results.clear(); this->parallel_count = this->parallel_next = 0;
 		this->parallel_unavailable = true;
 		++this->parallel_diagnostic.fallbacks;

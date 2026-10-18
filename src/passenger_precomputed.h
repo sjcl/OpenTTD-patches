@@ -297,6 +297,8 @@ private:
 		uint64_t operations = 0, nanoseconds = 0;
 		std::exception_ptr error;
 	};
+	struct DestinationWorkerPool;
+	static DestinationWorkerPool &WorkerPool();
 	/** Joined, derived lookahead. No threads, graph references or service pointers
 	 * survive a call. Moving/resetting/discarding the table is consequently safe. */
 	std::vector<DestinationBuildResult> parallel_results;
