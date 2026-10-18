@@ -1111,7 +1111,12 @@ void PassengerPrecomputedTable::CollectSearchCounters()
 struct PassengerPrecomputedTable::DestinationWorkerPool {
 	std::mutex mutex;
 	std::condition_variable wake;
-	std::deque<std::function<void(DestinationWorkspace &)>> jobs;
+	struct Job {
+		std::function<void(DestinationWorkspace &)> run;
+		std::atomic<bool> ready{false};
+	};
+	std::condition_variable completed;
+	std::deque<std::shared_ptr<Job>> jobs;
 	std::vector<std::thread> threads;
 	bool stopping = false;
 	size_t Ensure(size_t count)
@@ -1125,11 +1130,18 @@ struct PassengerPrecomputedTable::DestinationWorkerPool {
 		}
 		return this->threads.size();
 	}
-	bool Submit(std::function<void(DestinationWorkspace &)> job)
+	std::shared_ptr<Job> Submit(std::function<void(DestinationWorkspace &)> run)
 	{
+		auto job = std::make_shared<Job>(); job->run = std::move(run);
 		std::lock_guard lock(this->mutex);
-		if (this->threads.empty() || this->jobs.size() >= 16) return false;
-		this->jobs.push_back(std::move(job)); this->wake.notify_one(); return true;
+		if (this->threads.empty() || this->jobs.size() >= 16) return {};
+		this->jobs.push_back(job); this->wake.notify_one(); return job;
+	}
+	static bool Ready(const std::shared_ptr<Job> &job) { return job->ready.load(std::memory_order_acquire); }
+	void Wait(const std::vector<std::shared_ptr<Job>> &jobs)
+	{
+		std::unique_lock lock(this->mutex);
+		this->completed.wait(lock, [&]() { return std::all_of(jobs.begin(), jobs.end(), Ready); });
 	}
 	void Run()
 	{
@@ -1139,7 +1151,7 @@ struct PassengerPrecomputedTable::DestinationWorkerPool {
 			this->wake.wait(lock, [&]() { return this->stopping || !this->jobs.empty(); });
 			if (this->stopping && this->jobs.empty()) return;
 			auto job = std::move(this->jobs.front()); this->jobs.pop_front();
-			lock.unlock(); job(workspace); lock.lock();
+			lock.unlock(); job->run(workspace); job->ready.store(true, std::memory_order_release); lock.lock(); this->completed.notify_all();
 		}
 	}
 	~DestinationWorkerPool()
@@ -1173,9 +1185,7 @@ bool PassengerPrecomputedTable::PrepareParallelBatch(uint workers)
 	if (workers == 0) return false;
 	const size_t count = std::min<size_t>(workers * 2, this->stations.size() - this->destination);
 	const auto started = Clock::now();
-	std::mutex done_mutex;
-	std::condition_variable done_cv;
-	size_t pending = 0;
+	std::vector<std::shared_ptr<DestinationWorkerPool::Job>> jobs;
 	std::atomic<bool> cancelled{false};
 	try {
 		this->parallel_results.resize(count);
@@ -1183,10 +1193,9 @@ bool PassengerPrecomputedTable::PrepareParallelBatch(uint workers)
 		while (permitted < workers && (!this->parallel_start_hook || this->parallel_start_hook(static_cast<uint>(permitted)))) ++permitted;
 		size_t running = permitted == 0 ? 0 : std::min(permitted, WorkerPool().Ensure(permitted));
 		if (running == 0) throw std::bad_alloc{};
-		std::unique_lock done_lock(done_mutex);
+		jobs.reserve(count);
 		for (size_t index = 0; index < count; ++index) {
-			++pending;
-			bool submitted = false;
+			std::shared_ptr<DestinationWorkerPool::Job> submitted;
 			try { submitted = WorkerPool().Submit([&, index](DestinationWorkspace &workspace) {
 				auto &result = this->parallel_results[index];
 				result.operations = 0; result.error = {};
@@ -1203,11 +1212,11 @@ bool PassengerPrecomputedTable::PrepareParallelBatch(uint workers)
 					}
 				} catch (...) { result.error = std::current_exception(); cancelled.store(true); workspace = {}; }
 				result.nanoseconds = Elapsed(search_started);
-				std::lock_guard lock(done_mutex); --pending; done_cv.notify_one();
 			}); } catch (...) {}
-			if (!submitted) { --pending; cancelled.store(true); break; }
+			if (!submitted) { cancelled.store(true); break; }
+			jobs.push_back(std::move(submitted));
 		}
-		done_cv.wait(done_lock, [&]() { return pending == 0; });
+		WorkerPool().Wait(jobs);
 		if (cancelled.load()) throw std::bad_alloc{};
 		for (const auto &result : this->parallel_results) if (result.error) std::rethrow_exception(result.error);
 		this->parallel_diagnostic.workers = std::max(this->parallel_diagnostic.workers, running);
