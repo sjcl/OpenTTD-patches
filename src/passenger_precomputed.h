@@ -89,9 +89,9 @@ public:
 	void ReleaseDestination(StationID destination); ///< Retire a row immediately after its replacement is published.
 	void PrepareRetirement(const PassengerPrecomputedTable &replacement); ///< Freeze the few destinations absent from the replacement before retiring its ascending rows.
 	void ReuseRetainedDestinations(); ///< Start another retirement epoch after the previous replacement finished.
-	uint64_t LegacyPublicationWork() const { return uint64_t(this->rows.size()) * this->waiting_state_count; }
+	uint64_t LegacyPublicationWork() const { return uint64_t(this->rows.size()) * this->graph->waiting_state_count; }
 	PassengerPrecomputedPlan Plan(StationID origin, StationID destination, StateTicks ready, OrderListID excluded = OrderListID::Invalid(), uint32_t sample = 0, OrderListID failed = OrderListID::Invalid()) const;
-	bool Finished() const { return !this->graph_build && (this->failed || this->destination == this->stations.size()); }
+	bool Finished() const { return !this->graph_build && (this->failed || this->destination == this->graph->stations.size()); }
 	bool MemoryRejected() const { return this->failed; }
 	const PassengerPrecomputedDiagnostic &GetDiagnostic() const { return this->diagnostic; }
 	PassengerHyperpathMemoryDiagnostic InspectMemory() const;
@@ -106,7 +106,7 @@ public:
 	using DestinationSpans = std::array<std::span<const StationID>, 2>; ///< Sorted surviving prefix, then sorted suffix; no overlap.
 	DestinationSpans ReachableDestinations(StationID origin) const;
 	std::optional<int64_t> RouteCost(StationID origin, StationID destination) const; ///< Missing row differs from a proved infinite cost.
-	bool IsHyperpath() const { return this->hyperpath; }
+	bool IsHyperpath() const { return this->graph->hyperpath; }
 	bool HasPolicy(StationID origin, StationID destination) const { return this->FindRow(destination) != nullptr && this->PolicyState(origin, OrderListID::Invalid()) != INVALID; }
 	std::optional<int64_t> ServiceWait(OrderListID service) const;
 	uint32_t BoardingOccurrence(StationID origin, OrderListID service, VehicleOrderID order) const;
@@ -197,47 +197,18 @@ private:
 		std::vector<LabelMetadata> metadata;
 	};
 	using QueueItem = std::tuple<int64_t, uint32_t, uint32_t>;
-	std::vector<uint32_t> station_index, service_pattern;
-	std::vector<StationID> stations;
-	std::vector<Pattern> patterns;
-	std::vector<Occurrence> occurrences;
-	struct Revisit { uint32_t next = INVALID; int64_t cost = 0; };
-	std::vector<Revisit> revisits; ///< Departure-to-departure continuation to the next boardable visit to the same station.
-	std::vector<Edge> edges;
-	struct HotEdges {
-		std::vector<uint32_t> from;
-		std::vector<int64_t> cost;
-		std::vector<uint8_t> legs;
-		std::vector<uint32_t> range;
-	} hot_edges;
-	std::vector<RangeEdge> range_edges;
-	struct ColdEdge { uint32_t occurrence, distance; int64_t uncertainty; EdgeKind kind; };
-	std::vector<ColdEdge> cold_edges;
-	std::vector<SectionRide> section_rides;
-	std::vector<Section> sections;
-	std::unordered_map<uint64_t, SectionPath> section_paths; ///< Packed pattern and saved order pair; lookup only, never iterated for decisions.
-	std::vector<std::vector<uint64_t>> boarding_sections; ///< Keys for each concrete boarding occurrence, independent of fleet size.
-	size_t binding_bytes = 0; ///< Computed once during graph preparation.
-	std::vector<uint32_t> landings; ///< Section arrivals have no on-board continuation.
-	std::vector<uint32_t> incoming_offsets, incoming;
-	std::vector<uint32_t> seed_offsets, seed_occurrences; ///< Alighting occurrences in original order, indexed by destination station.
-	std::vector<uint32_t> exception_slots; ///< Dense exception slot only for stations with waiting states.
-	uint32_t exception_slot_count = 0;
-	std::vector<std::vector<std::pair<uint32_t, uint32_t>>> waiting_states;
-	std::vector<uint32_t> waiting_station;
-	std::vector<std::vector<uint32_t>> station_boarding;
+
 	mutable std::map<std::tuple<StationID, uint32_t, OrderListID>, Policy> local_policies;
 	size_t hyperpath_static_bytes = 0, hyperpath_row_bytes = 0;
 	mutable size_t local_policy_bytes = 0, expanded_policy_bytes = 0;
 	mutable std::map<std::pair<StationID, uint32_t>, std::vector<uint32_t>> expanded_policies;
-	bool flat_storage = false; ///< Compact strategy storage; full policies remain a differential reference.
 	/** Per block of 64 destination rows: a base-state plane, then an any-state plane, each one
 	 * word per occurrence. One row's publication then writes within two occurrence-sized arrays. */
 	std::vector<uint64_t> boarding_mask;
 	size_t boarding_mask_words = 0; ///< Blocks of 64 destination rows; zero until allocated.
 	bool boarding_mask_rejected = false; ///< Too large for MAX_BOARDING_MASK_BYTES.
 	std::vector<uint64_t> published_rows; ///< With the mask: rows that FindRow returns, one bit per destination row.
-	size_t BoardingMaskWord(uint32_t occurrence, bool any_state, uint32_t row) const { return (size_t{row / 64} * 2 + any_state) * this->occurrences.size() + occurrence; }
+	size_t BoardingMaskWord(uint32_t occurrence, bool any_state, uint32_t row) const { return (size_t{row / 64} * 2 + any_state) * this->graph->occurrences.size() + occurrence; }
 	void MarkBoardingCandidate(uint32_t occurrence, bool base_state);
 	/** Working capacity of the row being built; each published row receives an exact copy. */
 	std::span<const uint32_t> FlatPayload(const Row &row, uint32_t policy) const;
@@ -253,17 +224,9 @@ private:
 	std::optional<StationID> retirement_watermark;
 	bool retirement_prepared = false;
 	size_t reachable_bytes = 0;
-	size_t waiting_state_count = 0;
 	size_t published_bytes = 0;
 	size_t destination = 0;
 	bool failed = false, unsupported = false;
-	bool estimates = true;
-	bool optimized = true; ///< False selects the scalar graph/queue reference.
-	bool integrated = true; ///< Bounded ranges/CSR; false selects the explicit-edge reference.
-	bool hyperpath = false; ///< Separate game routing mode, with its own strategy queue.
-	bool revisit_dominance = true; ///< Suppress dominated repeat departures; disabled only by reference comparisons.
-	bool continuation_witness = true; ///< Require equality and a selected same-run continuation, preserving earlier tied alighting.
-	int64_t transfer_cost = 0;
 	struct StrategyWorkspace {
 		std::vector<PassengerStrategy> sums;
 		std::vector<std::vector<uint32_t>> candidates;
@@ -292,6 +255,71 @@ private:
 			uint64_t board_events = 0, board_accepts = 0, range_updates = 0, heap_pushes = 0, heap_pops = 0;
 		} counters;
 	} work;
+	/** Prepared on the simulation thread, then frozen. Jobs own a const shared
+	 * reference, so a table move, reset or retirement cannot invalidate searches. */
+	struct GraphSnapshot {
+		std::vector<uint32_t> station_index, service_pattern;
+		std::vector<StationID> stations;
+		std::vector<Pattern> patterns;
+		std::vector<Occurrence> occurrences;
+		struct Revisit { uint32_t next = INVALID; int64_t cost = 0; };
+		std::vector<Revisit> revisits; ///< Departure-to-departure continuation to the next boardable visit to the same station.
+		std::vector<Edge> edges;
+		struct HotEdges {
+			std::vector<uint32_t> from;
+			std::vector<int64_t> cost;
+			std::vector<uint8_t> legs;
+			std::vector<uint32_t> range;
+		} hot_edges;
+		std::vector<RangeEdge> range_edges;
+		struct ColdEdge { uint32_t occurrence, distance; int64_t uncertainty; EdgeKind kind; };
+		std::vector<ColdEdge> cold_edges;
+		std::vector<SectionRide> section_rides;
+		std::vector<Section> sections;
+		std::unordered_map<uint64_t, SectionPath> section_paths; ///< Packed pattern and saved order pair; lookup only, never iterated for decisions.
+		std::vector<std::vector<uint64_t>> boarding_sections; ///< Keys for each concrete boarding occurrence, independent of fleet size.
+		size_t binding_bytes = 0; ///< Computed once during graph preparation.
+		std::vector<uint32_t> landings; ///< Section arrivals have no on-board continuation.
+		std::vector<uint32_t> incoming_offsets, incoming;
+		std::vector<uint32_t> seed_offsets, seed_occurrences; ///< Alighting occurrences in original order, indexed by destination station.
+		std::vector<uint32_t> exception_slots; ///< Dense exception slot only for stations with waiting states.
+		uint32_t exception_slot_count = 0;
+		std::vector<std::vector<std::pair<uint32_t, uint32_t>>> waiting_states;
+		std::vector<uint32_t> waiting_station;
+		std::vector<std::vector<uint32_t>> station_boarding;
+		bool flat_storage = false; ///< Compact strategy storage.
+		size_t waiting_state_count = 0;
+		bool estimates = true;
+		bool optimized = true; ///< False selects the scalar graph/queue reference.
+		bool integrated = true; ///< Bounded ranges/CSR; false selects the explicit-edge reference.
+		bool hyperpath = false;
+		bool revisit_dominance = true; ///< Suppress dominated repeat departures; disabled only by reference comparisons.
+		bool continuation_witness = true; ///< Require equality and a selected same-run continuation, preserving earlier tied alighting.
+		int64_t transfer_cost = 0;
+		size_t states = 0, edge_count = 0, logical_edges = 0;
+		void StartDestination(DestinationWorkspace &work, size_t destination) const;
+		size_t SearchDestination(DestinationWorkspace &work, size_t allowance) const;
+		size_t SearchHyperpath(DestinationWorkspace &work, size_t allowance) const;
+		bool UseCompressedRows() const;
+		Label SearchLabel(const DestinationWorkspace &work, uint32_t state) const;
+		void SetSearchLabel(DestinationWorkspace &work, uint32_t state, const Label &label) const;
+		bool WaitingStationInvariant(const DestinationWorkspace &work, uint32_t station) const;
+		size_t RelaxIncoming(DestinationWorkspace &work, size_t allowance) const;
+		void PushHyperpath(DestinationWorkspace &work, int64_t key, uint32_t kind, uint32_t id) const;
+		uint32_t StateFor(uint32_t station, uint32_t pattern) const;
+		bool DominatedRevisit(uint32_t board, int64_t cost, int64_t next_cost) const;
+		bool HasSameRunContinuationWitness(uint32_t board, uint32_t alight) const;
+		int64_t SearchCost(const DestinationWorkspace &work, uint32_t state) const { return this->optimized ? work.search.cost[state] : work.scratch.labels[state].cost; }
+		uint32_t SearchLegs(const DestinationWorkspace &work, uint32_t state) const { return this->optimized ? work.search.legs[state] : work.scratch.labels[state].legs; }
+		uint32_t SearchBoard(const DestinationWorkspace &work, uint32_t state) const { return this->optimized ? work.search.metadata[state].board : work.scratch.labels[state].board; }
+		uint32_t SearchAlight(const DestinationWorkspace &work, uint32_t state) const { return this->optimized ? work.search.metadata[state].alight : work.scratch.labels[state].alight; }
+		int64_t SearchRiding(const DestinationWorkspace &work, uint32_t state) const { return this->optimized ? work.search.metadata[state].riding : work.scratch.labels[state].riding; }
+	};
+	using Revisit = GraphSnapshot::Revisit;
+	using ColdEdge = GraphSnapshot::ColdEdge;
+	std::shared_ptr<GraphSnapshot> graph = std::make_shared<GraphSnapshot>();
+	std::map<OrderListID, Member> refreshed_members; ///< Live bindings never mutate the frozen graph.
+
 	struct DestinationBuildResult {
 		DestinationWorkspace workspace;
 		uint64_t operations = 0, nanoseconds = 0;
@@ -330,11 +358,11 @@ private:
 	const Label &AlternativeLabel(const Row &row, uint32_t origin) const;
 	void PrepareCompressedRow(DestinationWorkspace &work) const;
 	void CopyStationLabel(DestinationWorkspace &work, uint32_t origin) const;
-	int64_t SearchCost(const DestinationWorkspace &work, uint32_t state) const { return this->optimized ? work.search.cost[state] : work.scratch.labels[state].cost; }
-	uint32_t SearchLegs(const DestinationWorkspace &work, uint32_t state) const { return this->optimized ? work.search.legs[state] : work.scratch.labels[state].legs; }
-	uint32_t SearchBoard(const DestinationWorkspace &work, uint32_t state) const { return this->optimized ? work.search.metadata[state].board : work.scratch.labels[state].board; }
-	uint32_t SearchAlight(const DestinationWorkspace &work, uint32_t state) const { return this->optimized ? work.search.metadata[state].alight : work.scratch.labels[state].alight; }
-	int64_t SearchRiding(const DestinationWorkspace &work, uint32_t state) const { return this->optimized ? work.search.metadata[state].riding : work.scratch.labels[state].riding; }
+	int64_t SearchCost(const DestinationWorkspace &work, uint32_t state) const { return this->graph->optimized ? work.search.cost[state] : work.scratch.labels[state].cost; }
+	uint32_t SearchLegs(const DestinationWorkspace &work, uint32_t state) const { return this->graph->optimized ? work.search.legs[state] : work.scratch.labels[state].legs; }
+	uint32_t SearchBoard(const DestinationWorkspace &work, uint32_t state) const { return this->graph->optimized ? work.search.metadata[state].board : work.scratch.labels[state].board; }
+	uint32_t SearchAlight(const DestinationWorkspace &work, uint32_t state) const { return this->graph->optimized ? work.search.metadata[state].alight : work.scratch.labels[state].alight; }
+	int64_t SearchRiding(const DestinationWorkspace &work, uint32_t state) const { return this->graph->optimized ? work.search.metadata[state].riding : work.scratch.labels[state].riding; }
 	Label SearchLabel(const DestinationWorkspace &work, uint32_t state) const;
 	void SetSearchLabel(DestinationWorkspace &work, uint32_t state, const Label &label) const;
 	bool WaitingStationInvariant(const DestinationWorkspace &work, uint32_t station) const; ///< Defined only in the invariant-checking test TU.
