@@ -127,8 +127,10 @@ def main():
         for (OrderList *list : OrderList::Iterate()) {
             for (VehicleOrderID i = 0; i < list->GetNumOrders(); ++i) {
                 Order *order = list->GetOrderAt(i);
+                const Ticks old_duration = order->GetTravelTime() + order->GetWaitTime();
                 order->SetTravelTime(128); order->SetTravelTimetabled(true);
                 order->SetWaitTime(32); order->SetWaitTimetabled(true);
+                if (!order->IsType(OT_CONDITIONAL)) list->UpdateTotalDuration(160 - old_duration);
             }
             list->RecalculateTimetableDuration();
         }

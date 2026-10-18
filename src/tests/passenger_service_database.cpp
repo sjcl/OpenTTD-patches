@@ -4152,6 +4152,38 @@ TEST_CASE("Saving suspended initial fleet capture resumes the same publication",
 	CHECK(db.PlanPrecomputed(PAX, A, D, NOW).ride == peer.PlanPrecomputed(PAX, A, D, NOW).ride);
 }
 
+TEST_CASE("Local passenger worker counts preserve initial saves joining peers and replacement ticks", "[passenger][precomputed][parallel][save][network]")
+{
+	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = true;
+	AutoRestoreBackup workers{_settings_client.gui.passenger_precomputed_workers, uint8_t{0}};
+	for (uint16_t i = 1; i < 40; ++i) f.Train({Stop(A), Stop(StationID{i}), Stop(D)});
+	auto &source = GetPassengerServiceDatabase();
+	/* Save suspended discovery before either peer has an initial table. */
+	source.PreparePrecomputed(); const auto seed = source.Save();
+	for (bool hyperpath : {false, true}) {
+		_settings_game.linkgraph.passenger_journey_hyperpath = hyperpath;
+		auto serial_storage = std::make_unique<PassengerServiceDatabase>(), parallel_storage = std::make_unique<PassengerServiceDatabase>();
+		auto &serial = *serial_storage; auto &parallel = *parallel_storage;
+		for (auto *db : {&serial, &parallel}) { REQUIRE(db->Load(seed)); db->FinishLoad(true); }
+		for (size_t slice = 0; serial.IsPreparingPrecomputed() || parallel.IsPreparingPrecomputed(); ++slice) {
+			REQUIRE(slice < 5000);
+			_settings_client.gui.passenger_precomputed_workers = 0; serial.PreparePrecomputed();
+			_settings_client.gui.passenger_precomputed_workers = 8; parallel.PreparePrecomputed();
+			CHECK(_state_ticks == NOW); REQUIRE(serial.Save() == parallel.Save());
+			auto joined = std::make_unique<PassengerServiceDatabase>(); REQUIRE(joined->Load(parallel.Save())); joined->FinishLoad(true, true);
+			while (joined->StepLoad(19) == PassengerServiceDatabase::LoadState::Replaying) {}
+			CHECK(joined->Save() == parallel.Save());
+			CHECK(joined->GetLoadWork() <= joined->GetLoadWorkLimit());
+		}
+		CHECK(serial.PlanPrecomputed(PAX, A, D, NOW).ride == parallel.PlanPrecomputed(PAX, A, D, NOW).ride);
+		_settings_game.linkgraph.passenger_transfer_penalty += 17;
+		for (size_t slice = 0; slice < 100; ++slice) {
+			serial.TickPrecomputed(31); parallel.TickPrecomputed(31);
+			REQUIRE(serial.Save() == parallel.Save()); CHECK(_state_ticks == NOW);
+		}
+	}
+}
+
 TEST_CASE("Replacement preparation completes only the graph and retains the row frontier", "[passenger][precomputed][startup][generation][determinism]")
 {
 	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = true;

@@ -1,0 +1,3 @@
+passenger_parallel,mode=hyperpath,requested=2,workers=2,wall_ns=955765300,graph_ns=2421200,row_ns=953344100,batch_ns=746853900,search_ns=1353681500,integration_ns=205926000,batches=224,searches=894,pending=4,work_min=62757,work_max=63020,search_work=56231397,stations=894,states=9971,edges=21148,operations=67268128,bytes=208157892,digest=3368325780556954667
+Passed 1 test case with 1 assertion.
+

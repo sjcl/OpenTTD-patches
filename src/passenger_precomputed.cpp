@@ -9,6 +9,8 @@
 #include "station_base.h"
 #include "map_func.h"
 #include "error_func.h"
+#include "thread.h"
+#include <atomic>
 #include <chrono>
 #include <numeric>
 #include "safeguards.h"
@@ -228,7 +230,7 @@ void PassengerPrecomputedTable::Begin(std::span<const PassengerPeriodicService *
 	this->hyperpath = hyperpath; this->transfer_cost = transfer >= 0 && transfer <= INT64_MAX / 2 ? 2 * transfer : 0;
 	this->revisit_dominance = revisit_dominance;
 	this->continuation_witness = revisit_dominance && continuation_witness;
-	if (hyperpath) { this->optimized = this->integrated = true; this->strategy.events.SetOptimized(true); }
+	if (hyperpath) { this->optimized = this->integrated = true; this->work.strategy.events.SetOptimized(true); }
 	this->graph_build = this->BuildGraph({services.begin(), services.end()}, cargo, transfer, memory, sections, cooperative, std::move(memory_budget));
 	if (!cooperative) this->PrepareGraph(SIZE_MAX);
 }
@@ -273,7 +275,7 @@ PassengerBuildTask PassengerPrecomputedTable::BuildGraph(std::vector<const Passe
 		}
 	}
 	try {
-		this->queue.SetOptimized(this->optimized);
+		this->work.queue.SetOptimized(this->optimized);
 		this->station_index.assign(StationID::Invalid().base(), INVALID);
 		this->service_pattern.assign(OrderListID::Invalid().base(), INVALID);
 		std::map<std::vector<int64_t>, std::vector<const PassengerPeriodicService *>> groups;
@@ -568,8 +570,8 @@ PassengerBuildTask PassengerPrecomputedTable::BuildGraph(std::vector<const Passe
 		this->rows.reserve(this->stations.size());
 		this->diagnostic.stations = this->stations.size(); this->diagnostic.patterns = this->patterns.size();
 		this->diagnostic.states = nodes; this->diagnostic.edges = this->integrated ? this->hot_edges.from.size() : this->edges.size();
-		this->queue.SetCapacityLimit(uint64_t(this->integrated ? this->diagnostic.logical_edges : this->diagnostic.edges) + nodes);
-		if (this->hyperpath) this->strategy.events.SetCapacityLimit(uint64_t(this->diagnostic.logical_edges) + nodes);
+		this->work.queue.SetCapacityLimit(uint64_t(this->integrated ? this->diagnostic.logical_edges : this->diagnostic.edges) + nodes);
+		if (this->hyperpath) this->work.strategy.events.SetCapacityLimit(uint64_t(this->diagnostic.logical_edges) + nodes);
 		if (this->hyperpath) {
 			this->hyperpath_static_bytes = this->revisits.capacity() * sizeof(Revisit) + (this->station_index.capacity() + this->service_pattern.capacity() + this->waiting_station.capacity() +
 					this->incoming_offsets.capacity() + this->seed_offsets.capacity() + this->seed_occurrences.capacity()) * 4 + this->stations.capacity() * sizeof(StationID) +
@@ -859,34 +861,49 @@ PassengerBuildTask PassengerPrecomputedTable::BuildSections(const std::vector<st
 
 void PassengerPrecomputedTable::StartDestination()
 {
+	this->StartDestination(this->work, this->destination);
+}
+
+void PassengerPrecomputedTable::StartDestination(DestinationWorkspace &work, size_t destination) const
+{
+	work.destination = destination;
+	if (!work.queues_configured) {
+		work.queue.SetOptimized(this->optimized);
+		work.queue.SetCapacityLimit(uint64_t(this->integrated ? this->diagnostic.logical_edges : this->diagnostic.edges) + this->diagnostic.states);
+		if (this->hyperpath) {
+			work.strategy.events.SetOptimized(true);
+			work.strategy.events.SetCapacityLimit(uint64_t(this->diagnostic.logical_edges) + this->diagnostic.states);
+		}
+		work.queues_configured = true;
+	}
 	if (this->hyperpath) {
-		this->strategy.events.Reset(); this->strategy.last = 0; this->strategy.board_edge = INVALID;
-		this->strategy.witness_edge = INVALID;
-		this->strategy.sums.clear(); this->strategy.settled.clear();
-		this->prepared = {};
-		this->prepared_candidate_bytes = 0;
+		work.strategy.events.Reset(); work.strategy.last = 0; work.strategy.board_edge = INVALID;
+		work.strategy.witness_edge = INVALID;
+		work.strategy.sums.clear(); work.strategy.settled.clear();
+		work.prepared = {};
+		work.prepared_candidate_bytes = 0;
 		if (this->flat_storage) {
-			this->prepared.indices.reserve(this->waiting_state_count);
+			work.prepared.indices.reserve(this->waiting_state_count);
 			/* Grow in the working buffers only once per build, not once per row. */
-			this->prepared.flat_policies.swap(this->flat_policy_buffer); this->prepared.flat_candidates.swap(this->flat_candidate_buffer);
-			this->prepared_candidate_bytes = this->prepared.flat_candidates.capacity() * 4;
+			work.prepared.flat_policies.swap(work.flat_policy_buffer); work.prepared.flat_candidates.swap(work.flat_candidate_buffer);
+			work.prepared_candidate_bytes = work.prepared.flat_candidates.capacity() * 4;
 		}
 	}
-	this->queue.Reset();
-	this->scratch.labels.clear();
+	work.queue.Reset();
+	work.scratch.labels.clear();
 	if (this->optimized) {
-		this->search.cost.clear(); this->search.legs.clear();
-		this->search.cost.reserve(this->diagnostic.states); this->search.legs.reserve(this->diagnostic.states);
+		work.search.cost.clear(); work.search.legs.clear();
+		work.search.cost.reserve(this->diagnostic.states); work.search.legs.reserve(this->diagnostic.states);
 		/* Infinite priorities make old payloads unobservable. Only successful
 		 * relaxations/zero seeds write metadata; every row resets all hot keys. */
-		this->search.metadata.resize(this->diagnostic.states);
-	} else this->scratch.labels.reserve(this->incoming_offsets.size() - 1);
-	if (this->UseCompressedRows()) this->exception_state.assign(this->stations.size(), INVALID);
-	this->scratch.alternative.assign(this->stations.size(), Label{});
-	this->publication_cursor = 0;
-	this->prepared.labels.clear(); this->prepared.labels.reserve(this->UseCompressedRows() ? this->stations.size() : this->waiting_state_count);
-	this->expanding = INVALID; this->finishing_row = false; this->finishing = 0;
-	this->initializing_row = true; this->seeding = 0;
+		work.search.metadata.resize(this->diagnostic.states);
+	} else work.scratch.labels.reserve(this->incoming_offsets.size() - 1);
+	if (this->UseCompressedRows()) work.exception_state.assign(this->stations.size(), INVALID);
+	work.scratch.alternative.assign(this->stations.size(), Label{});
+	work.publication_cursor = 0;
+	work.prepared.labels.clear(); work.prepared.labels.reserve(this->UseCompressedRows() ? this->stations.size() : this->waiting_state_count);
+	work.expanding = INVALID; work.finishing_row = false; work.finishing = 0;
+	work.initializing_row = true; work.seeding = 0;
 }
 
 bool PassengerPrecomputedTable::UseCompressedRows() const
@@ -914,7 +931,7 @@ const PassengerPrecomputedTable::Label &PassengerPrecomputedTable::AlternativeLa
 	return index == INVALID ? empty : row.alternative[index];
 }
 
-void PassengerPrecomputedTable::PrepareCompressedRow()
+void PassengerPrecomputedTable::PrepareCompressedRow(DestinationWorkspace &work) const
 {
 	/* Keep the original conservative admission charge: at most 100*n + 52*w
 	 * payload bytes versus the reserved 128*n + 64*w per row. The shared Row also
@@ -923,60 +940,60 @@ void PassengerPrecomputedTable::PrepareCompressedRow()
 	 * n >= 5, and the 1 MiB base envelope for smaller tables. Never turn a saved
 	 * v11 memory rejection into success. */
 	static_assert(sizeof(Label) == 48 && sizeof(Row) <= 256);
-	this->prepared.exception_labels.reserve(this->exception_slot_count);
-	this->prepared.indices.reserve(this->stations.size() + this->exception_slot_count);
-	this->prepared.indices.assign(this->stations.size() + this->exception_slot_count, INVALID);
-	size_t alternatives = std::count_if(this->scratch.alternative.begin(), this->scratch.alternative.end(), [](const Label &label) { return label.board != INVALID; });
-	this->prepared.alternative.reserve(alternatives);
+	work.prepared.exception_labels.reserve(this->exception_slot_count);
+	work.prepared.indices.reserve(this->stations.size() + this->exception_slot_count);
+	work.prepared.indices.assign(this->stations.size() + this->exception_slot_count, INVALID);
+	size_t alternatives = std::count_if(work.scratch.alternative.begin(), work.scratch.alternative.end(), [](const Label &label) { return label.board != INVALID; });
+	work.prepared.alternative.reserve(alternatives);
 }
 
-void PassengerPrecomputedTable::CopyStationLabel(uint32_t origin)
+void PassengerPrecomputedTable::CopyStationLabel(DestinationWorkspace &work, uint32_t origin) const
 {
-	const Label base = this->SearchLabel(origin);
-	this->prepared.labels.push_back(base);
+	const Label base = this->SearchLabel(work, origin);
+	work.prepared.labels.push_back(base);
 	uint32_t slot = this->exception_slots[origin];
 	if (slot != INVALID) {
-		assert(slot == this->prepared.exception_labels.size());
-		uint32_t state = this->exception_state[origin];
+		assert(slot == work.prepared.exception_labels.size());
+		uint32_t state = work.exception_state[origin];
 		assert(state == INVALID || (state >= this->waiting_states[origin].front().second && state <= this->waiting_states[origin].back().second));
-		Label exception = state == INVALID ? Label{} : this->SearchLabel(state);
+		Label exception = state == INVALID ? Label{} : this->SearchLabel(work, state);
 		/* Priority ties may retain different metadata. Omit the cached ID only
 		 * when every Label field equals the base, matching the scalar row form. */
 		if (state != INVALID && exception == base) { state = INVALID; exception = {}; }
-		this->prepared.indices[this->stations.size() + slot] = state; this->prepared.exception_labels.push_back(exception);
+		work.prepared.indices[this->stations.size() + slot] = state; work.prepared.exception_labels.push_back(exception);
 	}
-	const auto &alternative = this->scratch.alternative[origin];
+	const auto &alternative = work.scratch.alternative[origin];
 	if (alternative.board == INVALID) {
 		assert(alternative == Label{});
 	} else {
-		this->prepared.indices[origin] = static_cast<uint32_t>(this->prepared.alternative.size());
-		this->prepared.alternative.push_back(alternative);
+		work.prepared.indices[origin] = static_cast<uint32_t>(work.prepared.alternative.size());
+		work.prepared.alternative.push_back(alternative);
 	}
 }
 
-PassengerPrecomputedTable::Label PassengerPrecomputedTable::SearchLabel(uint32_t state) const
+PassengerPrecomputedTable::Label PassengerPrecomputedTable::SearchLabel(const DestinationWorkspace &work, uint32_t state) const
 {
-	if (!this->optimized) return this->scratch.labels[state];
-	if (this->search.cost[state] == INT64_MAX) return {};
-	const auto &m = this->search.metadata[state];
-	return {this->search.cost[state], m.riding, m.waiting, m.first_wait, m.board, m.alight, this->hyperpath ? m.legs : this->search.legs[state], m.distance};
+	if (!this->optimized) return work.scratch.labels[state];
+	if (work.search.cost[state] == INT64_MAX) return {};
+	const auto &m = work.search.metadata[state];
+	return {work.search.cost[state], m.riding, m.waiting, m.first_wait, m.board, m.alight, this->hyperpath ? m.legs : work.search.legs[state], m.distance};
 }
 
-void PassengerPrecomputedTable::SetSearchLabel(uint32_t state, const Label &label)
+void PassengerPrecomputedTable::SetSearchLabel(DestinationWorkspace &work, uint32_t state, const Label &label) const
 {
-	if (!this->optimized) { this->scratch.labels[state] = label; return; }
-	this->search.cost[state] = label.cost;
-	if (this->hyperpath) { this->search.metadata[state] = {label.riding, label.waiting, label.first_wait, label.board, label.alight, label.distance, label.legs}; return; }
-	this->search.legs[state] = label.legs;
-	this->search.metadata[state] = {label.riding, label.waiting, label.first_wait, label.board, label.alight, label.distance};
+	if (!this->optimized) { work.scratch.labels[state] = label; return; }
+	work.search.cost[state] = label.cost;
+	if (this->hyperpath) { work.search.metadata[state] = {label.riding, label.waiting, label.first_wait, label.board, label.alight, label.distance, label.legs}; return; }
+	work.search.legs[state] = label.legs;
+	work.search.metadata[state] = {label.riding, label.waiting, label.first_wait, label.board, label.alight, label.distance};
 }
 
 #ifdef WITH_PASSENGER_TABLE_INVARIANT_CHECKS
-bool PassengerPrecomputedTable::WaitingStationInvariant(uint32_t station) const
+bool PassengerPrecomputedTable::WaitingStationInvariant(const DestinationWorkspace &work, uint32_t station) const
 {
-	const auto base = this->SearchLabel(station);
+	const auto base = this->SearchLabel(work, station);
 	for (const auto &[pattern, state] : this->waiting_states[station]) {
-		if (state != this->exception_state[station] && this->SearchLabel(state) != base) return false;
+		if (state != work.exception_state[station] && this->SearchLabel(work, state) != base) return false;
 	}
 	return true;
 }
@@ -987,16 +1004,16 @@ bool PassengerPrecomputedTable::WaitingStationInvariant(uint32_t station) const
  * Each virtual relaxation costs exactly one Work unit. Excluded states were
  * never edges; skipping them is free. The base station always precedes waits.
  * Only the accepted states touch cold metadata, in original state order. */
-size_t PassengerPrecomputedTable::RelaxIncoming(size_t allowance)
+size_t PassengerPrecomputedTable::RelaxIncoming(DestinationWorkspace &work, size_t allowance) const
 {
 	size_t total = 0;
 	/* Every edge is nonnegative in (cost, legs), so relaxing an incoming
 	 * edge cannot improve the expanded state itself. Keep its priorities
 	 * outside the descriptor loop, including at a saved slice boundary. */
-	const int64_t source_cost = this->search.cost[this->expanding];
-	const uint32_t source_legs = this->search.legs[this->expanding];
+	const int64_t source_cost = work.search.cost[work.expanding];
+	const uint32_t source_legs = work.search.legs[work.expanding];
 	do {
-		const uint32_t index = static_cast<uint32_t>(this->cursor);
+		const uint32_t index = static_cast<uint32_t>(work.cursor);
 		const uint32_t range_id = this->hot_edges.range[index];
 		const auto range = range_id == INVALID ? RangeEdge{0, 0, INVALID} : this->range_edges[range_id];
 		const uint32_t count = 1 + range.end - range.begin;
@@ -1010,7 +1027,7 @@ size_t PassengerPrecomputedTable::RelaxIncoming(size_t allowance)
 		auto accept = [&, index, cost, legs, edge_cost](uint32_t from) {
 			if (!materialized) {
 				const auto &edge = this->cold_edges[index];
-				next = this->SearchLabel(this->expanding); next.cost = cost; next.legs = legs;
+				next = this->SearchLabel(work, work.expanding); next.cost = cost; next.legs = legs;
 				next.distance = static_cast<uint32_t>(std::min<uint64_t>(UINT32_MAX, uint64_t(next.distance) + edge.distance));
 				if (edge.kind == EdgeKind::Board) {
 					next.board = edge.occurrence;
@@ -1023,22 +1040,22 @@ size_t PassengerPrecomputedTable::RelaxIncoming(size_t allowance)
 				else if (edge.kind == EdgeKind::Alight) { next.board = INVALID; next.alight = edge.occurrence; next.waiting += edge_cost / 2; }
 				materialized = true;
 			}
-			this->SetSearchLabel(from, next); this->queue.emplace(cost, legs, from);
+			this->SetSearchLabel(work, from, next); work.queue.emplace(cost, legs, from);
 		};
 		const uint32_t base = this->hot_edges.from[index];
 		/* A resumed descriptor uses the original scalar scan. Its cursor owns
 		 * the expansion until completion, so no other update can interleave. */
 		bool compare_all = true;
-		if (this->range_offset == 0) {
-			const bool improves_base = finite && (cost < this->search.cost[base] || (cost == this->search.cost[base] && legs < this->search.legs[base]));
+		if (work.range_offset == 0) {
+			const bool improves_base = finite && (cost < work.search.cost[base] || (cost == work.search.cost[base] && legs < work.search.legs[base]));
 			if (improves_base) accept(base);
 			if (range_id != INVALID) {
 				compare_all = improves_base;
-				if (improves_base) this->exception_state[base] = range.excluded >= range.begin && range.excluded < range.end ? range.excluded : INVALID;
+				if (improves_base) work.exception_state[base] = range.excluded >= range.begin && range.excluded < range.end ? range.excluded : INVALID;
 			}
-			this->range_offset = 1; used = 1;
+			work.range_offset = 1; used = 1;
 		}
-		const uint32_t first = range.begin + this->range_offset - 1;
+		const uint32_t first = range.begin + work.range_offset - 1;
 		const bool excluded = range.excluded >= first && range.excluded < range.end;
 		const size_t waiting = std::min<size_t>(range.end - first - excluded, allowance - used);
 		/* Include the free hole even when the budget ends immediately before it. */
@@ -1047,157 +1064,349 @@ size_t PassengerPrecomputedTable::RelaxIncoming(size_t allowance)
 		/* Bounded waiting spans: only an improving state enters the cold path. */
 		if (finite && compare_all) {
 			for (uint32_t from = first; from < middle; ++from) {
-				if (cost < this->search.cost[from] || (cost == this->search.cost[from] && legs < this->search.legs[from])) accept(from);
+				if (cost < work.search.cost[from] || (cost == work.search.cost[from] && legs < work.search.legs[from])) accept(from);
 			}
 			if (excluded && range.excluded < last) {
 				for (uint32_t from = range.excluded + 1; from < last; ++from) {
-					if (cost < this->search.cost[from] || (cost == this->search.cost[from] && legs < this->search.legs[from])) accept(from);
+					if (cost < work.search.cost[from] || (cost == work.search.cost[from] && legs < work.search.legs[from])) accept(from);
 				}
 			}
 		}
 		if (finite && !compare_all) {
-			const uint32_t from = this->exception_state[base];
+			const uint32_t from = work.exception_state[base];
 			if (from >= first && from < last && from != range.excluded) {
-				if (cost < this->search.cost[from] || (cost == this->search.cost[from] && legs < this->search.legs[from])) accept(from);
+				if (cost < work.search.cost[from] || (cost == work.search.cost[from] && legs < work.search.legs[from])) accept(from);
 			}
 		}
-		this->range_offset += last - first; used += waiting;
-		if (this->range_offset == count) {
+		work.range_offset += last - first; used += waiting;
+		if (work.range_offset == count) {
 			if (range_id != INVALID) {
-				const uint32_t exception = this->exception_state[base];
+				const uint32_t exception = work.exception_state[base];
 				assert(exception == INVALID || (exception >= range.begin && exception < range.end));
 #ifdef WITH_PASSENGER_TABLE_INVARIANT_CHECKS
-				assert(this->WaitingStationInvariant(base));
+				assert(this->WaitingStationInvariant(work, base));
 #endif
 			}
-			++this->cursor; this->range_offset = 0;
+			++work.cursor; work.range_offset = 0;
 		}
 		assert(used > 0);
 		total += used; allowance -= used;
-	} while (allowance != 0 && this->cursor < this->incoming_offsets[this->expanding + 1]);
+	} while (allowance != 0 && work.cursor < this->incoming_offsets[work.expanding + 1]);
 	return total;
+}
+
+void PassengerPrecomputedTable::CollectSearchCounters()
+{
+	this->diagnostic.board_events += std::exchange(this->work.counters.board_events, 0);
+	this->diagnostic.board_accepts += std::exchange(this->work.counters.board_accepts, 0);
+	this->diagnostic.range_updates += std::exchange(this->work.counters.range_updates, 0);
+	this->diagnostic.heap_pushes += std::exchange(this->work.counters.heap_pushes, 0);
+	this->diagnostic.heap_pops += std::exchange(this->work.counters.heap_pops, 0);
+}
+
+/** Bounded batches keep the immutable graph on the calling thread's stack of
+ * ownership. Only independent contexts are mutated until every thread joins.
+ * An allocation/start failure discards lookahead, never rejects a logical row. */
+bool PassengerPrecomputedTable::PrepareParallelBatch(uint workers)
+{
+	assert(!this->graph_build && !this->work.finishing_row && this->parallel_next == this->parallel_count);
+	/* A partly searched row from ordinary Step must finish with its own cursor.
+	 * Parallel construction can start at the next row without restarting Work. */
+	if (this->parallel_unavailable || !this->work.initializing_row || !this->work.search.cost.empty() || !this->work.scratch.labels.empty() || this->work.seeding != 0) return false;
+	const size_t cpus = std::max(1U, std::thread::hardware_concurrency());
+	/* This local scratch limit affects concurrency alone, never the canonical
+	 * envelope. Use a conservative graph-based estimate, with OOM fallback too. */
+	const uint64_t bytes = uint64_t(this->diagnostic.states) * 256 + uint64_t(this->integrated ? this->diagnostic.logical_edges : this->diagnostic.edges) * 32 + 65536;
+	const size_t slots = (uint64_t{512} * 1024 * 1024) / bytes;
+	if (slots < 2) return false;
+	workers = static_cast<uint>(std::min<size_t>({workers, 8, cpus, slots / 2, this->stations.size() - this->destination}));
+	if (workers == 0) return false;
+	const size_t count = std::min<size_t>(workers * 2, this->stations.size() - this->destination);
+	const auto started = Clock::now();
+	struct JoinedThreads {
+		std::vector<std::thread> threads;
+		void Join() { for (auto &thread : this->threads) if (thread.joinable()) thread.join(); }
+		~JoinedThreads() { this->Join(); }
+	} pool;
+	std::atomic<size_t> next{0};
+	std::atomic<bool> cancelled{false};
+	auto run = [&]() noexcept {
+		while (!cancelled.load(std::memory_order_relaxed)) {
+			size_t index = next.fetch_add(1, std::memory_order_relaxed);
+			if (index >= count) return;
+			auto &result = this->parallel_results[index];
+			result.operations = 0; result.error = {};
+			const auto search_started = Clock::now();
+			try {
+				if (this->parallel_search_hook) this->parallel_search_hook(this->destination + index, false);
+				result.workspace.counters = {};
+				this->StartDestination(result.workspace, this->destination + index);
+				while (!result.workspace.finishing_row && !cancelled.load(std::memory_order_relaxed)) {
+					result.operations += this->hyperpath ? this->SearchHyperpath(result.workspace, 65536) : this->SearchDestination(result.workspace, 65536);
+				}
+				if (this->parallel_search_hook) this->parallel_search_hook(this->destination + index, true);
+			} catch (...) { result.error = std::current_exception(); cancelled.store(true, std::memory_order_relaxed); }
+			result.nanoseconds = Elapsed(search_started);
+		}
+	};
+	try {
+		this->parallel_results.resize(count);
+		pool.threads.resize(workers);
+		size_t running = 0;
+		for (auto &thread : pool.threads) {
+			if (this->parallel_start_hook && !this->parallel_start_hook(static_cast<uint>(running))) break;
+			if (!StartNewThread(&thread, "pax-destination", [run]() { run(); })) break;
+			++running;
+		}
+		pool.Join();
+		if (running == 0) throw std::bad_alloc{}; // Same local fallback as scratch allocation failure.
+		for (const auto &result : this->parallel_results) if (result.error) std::rethrow_exception(result.error);
+		this->parallel_diagnostic.workers = std::max(this->parallel_diagnostic.workers, running);
+		this->parallel_diagnostic.peak_pending = std::max(this->parallel_diagnostic.peak_pending, count);
+		this->parallel_diagnostic.estimated_workspace_bytes = static_cast<size_t>(count * bytes);
+		++this->parallel_diagnostic.batches;
+		this->parallel_diagnostic.searches += count;
+		for (const auto &result : this->parallel_results) {
+			this->parallel_diagnostic.search_nanoseconds += result.nanoseconds;
+			this->parallel_diagnostic.search_work += result.operations;
+			this->parallel_diagnostic.minimum_work = std::min(this->parallel_diagnostic.minimum_work, result.operations);
+			this->parallel_diagnostic.maximum_work = std::max(this->parallel_diagnostic.maximum_work, result.operations);
+		}
+		this->parallel_count = count; this->parallel_next = 0; this->parallel_credit = 0;
+		this->parallel_diagnostic.batch_nanoseconds += Elapsed(started);
+		return true;
+	} catch (...) {
+		/* Join before releasing contexts, even if thread startup itself throws. */
+		pool.Join();
+		this->parallel_results.clear(); this->parallel_count = this->parallel_next = 0;
+		this->parallel_unavailable = true;
+		++this->parallel_diagnostic.fallbacks;
+		this->parallel_diagnostic.batch_nanoseconds += Elapsed(started);
+		return false;
+	}
+}
+
+void PassengerPrecomputedTable::CancelParallel()
+{
+	if (this->parallel_credit != 0) {
+		/* The primary context is still at the start of this row. Recreate exactly
+		 * the virtually consumed prefix without charging it a second time. No
+		 * search step can publish or modify inverse indices or boarding masks. */
+		while (this->parallel_credit != 0) {
+			size_t quantum = static_cast<size_t>(std::min<uint64_t>(this->parallel_credit, 65536));
+			size_t used = this->hyperpath ? this->SearchHyperpath(this->work, quantum) : this->SearchDestination(this->work, quantum);
+			assert(used == quantum);
+			this->parallel_credit -= used;
+		}
+		this->CollectSearchCounters();
+	}
+	this->parallel_results.clear(); this->parallel_count = this->parallel_next = 0;
+}
+
+size_t PassengerPrecomputedTable::AdvanceSearch(size_t allowance, uint workers)
+{
+	if (workers != 0 && (this->parallel_next < this->parallel_count || this->PrepareParallelBatch(workers))) {
+		auto &result = this->parallel_results[this->parallel_next];
+		assert(result.workspace.destination == this->destination && result.operations > this->parallel_credit);
+		size_t used = static_cast<size_t>(std::min<uint64_t>(allowance, result.operations - this->parallel_credit));
+		this->parallel_credit += used;
+		if (this->parallel_credit == result.operations) {
+			this->CollectSearchCounters();
+			std::swap(this->work, result.workspace);
+			this->CollectSearchCounters();
+			++this->parallel_next; this->parallel_credit = 0;
+		}
+		return used;
+	}
+	return this->hyperpath ? this->SearchHyperpath(this->work, allowance) : this->SearchDestination(this->work, allowance);
+}
+
+size_t PassengerPrecomputedTable::StepParallel(size_t allowance, uint workers, const std::function<void(StationID)> &published)
+{
+	if (workers == 0) return this->Step(allowance, false, published);
+	const auto started = Clock::now();
+	uint64_t batch_before = this->parallel_diagnostic.batch_nanoseconds;
+	size_t used = this->StepImpl(allowance, false, published, workers);
+	this->parallel_diagnostic.integration_nanoseconds += Elapsed(started) - (this->parallel_diagnostic.batch_nanoseconds - batch_before);
+	if (this->Finished()) this->CancelParallel();
+	return used;
+}
+
+size_t PassengerPrecomputedTable::SearchDestination(DestinationWorkspace &work, size_t allowance) const
+{
+	size_t used = 0;
+	while (used < allowance && !work.finishing_row) {
+		++used;
+		if (work.initializing_row) {
+			if (this->optimized) {
+				if (work.search.cost.size() < this->diagnostic.states) {
+					/* Resize only the budgeted prefix. Retained capacity is reused;
+					 * no uncharged full-array reset occurs at a row boundary. */
+					size_t count = this->integrated ? std::min(this->diagnostic.states - work.search.cost.size(), allowance - used + 1) : 1;
+					work.search.cost.resize(work.search.cost.size() + count, INT64_MAX);
+					work.search.legs.resize(work.search.legs.size() + count, 0);
+					used += count - 1; continue;
+				}
+			} else if (work.scratch.labels.size() < this->diagnostic.states) { work.scratch.labels.emplace_back(); continue; }
+			auto seed = [&](uint32_t state, uint32_t alight = INVALID) {
+				auto label = this->SearchLabel(work, state); label.cost = 0; label.alight = alight; this->SetSearchLabel(work, state, label);
+				work.queue.emplace(0, 0, state);
+			};
+			if (work.seeding == 0) {
+				seed(static_cast<uint32_t>(work.destination));
+				for (const auto &[pattern, state] : this->waiting_states[work.destination]) seed(state);
+			}
+			size_t seed_count = this->optimized ? this->seed_offsets[work.destination + 1] - this->seed_offsets[work.destination] : this->occurrences.size();
+			if (work.seeding < seed_count) {
+				uint32_t id = this->optimized ? this->seed_occurrences[this->seed_offsets[work.destination] + work.seeding++] : static_cast<uint32_t>(work.seeding++);
+				const auto &o = this->occurrences[id];
+				if (o.alight && o.station == this->stations[work.destination]) {
+					seed(o.arrival, id);
+					if (!this->landings.empty() && this->landings[id] != INVALID) seed(this->landings[id], id);
+				}
+			} else work.initializing_row = false;
+			continue;
+		}
+		if (work.expanding == INVALID) {
+			if (work.queue.empty()) { work.finishing_row = true; continue; }
+			auto [cost, legs, state] = work.queue.top(); work.queue.pop();
+			if (cost != this->SearchCost(work, state) || legs != this->SearchLegs(work, state)) continue;
+			work.expanding = state; work.cursor = this->incoming_offsets[state]; work.range_offset = 0;
+		} else if (work.cursor == this->incoming_offsets[work.expanding + 1]) {
+			work.expanding = INVALID;
+		} else if (this->integrated) {
+			used += this->RelaxIncoming(work, allowance - used + 1) - 1;
+		} else {
+			uint32_t index = static_cast<uint32_t>(work.cursor++);
+			const auto &edge = this->edges[this->optimized ? index : this->incoming[index]];
+			int64_t cost = this->SearchCost(work, edge.to);
+			if (cost > INT64_MAX - edge.cost) continue;
+			cost += edge.cost;
+			uint32_t legs = this->SearchLegs(work, edge.to) + (edge.kind == EdgeKind::Board || edge.kind == EdgeKind::Section);
+			if (std::tuple(cost, legs) >= std::tuple(this->SearchCost(work, edge.from), this->SearchLegs(work, edge.from))) continue;
+			Label next = this->SearchLabel(work, edge.to);
+			next.cost = cost; next.legs = legs;
+			next.distance = static_cast<uint32_t>(std::min<uint64_t>(UINT32_MAX, uint64_t(next.distance) + edge.distance));
+			if (edge.kind == EdgeKind::Board) {
+				next.board = edge.occurrence;
+				next.first_wait = this->patterns[this->occurrences[edge.occurrence].pattern].wait; next.waiting += next.first_wait;
+			}
+			if (edge.kind == EdgeKind::Section) {
+				const auto &ride = this->section_rides[edge.occurrence];
+				next.board = ride.board; next.alight = ride.alight;
+				next.first_wait = ride.waiting; next.waiting += ride.waiting; next.riding += ride.riding;
+			}
+			if (edge.kind == EdgeKind::Ride) next.riding += edge.cost - edge.uncertainty;
+			if (edge.kind == EdgeKind::Alight) { next.board = INVALID; next.alight = edge.occurrence; next.waiting += edge.cost / 2; }
+			this->SetSearchLabel(work, edge.from, next); work.queue.emplace(next.cost, next.legs, edge.from);
+		}
+	}
+	return used;
 }
 
 size_t PassengerPrecomputedTable::Step(size_t allowance, bool legacy_publication, const std::function<void(StationID)> &published)
 {
+	try {
+		this->CancelParallel();
+	} catch (const std::bad_alloc &) {
+		FatalError("Insufficient memory for passenger routing. Disable passenger_journey_precomputed or free memory before resuming.");
+	}
+	return this->StepImpl(allowance, legacy_publication, published, 0);
+}
+
+size_t PassengerPrecomputedTable::StepImpl(size_t allowance, bool legacy_publication, const std::function<void(StationID)> &published, uint workers)
+{
 	if (!this->PrepareGraph(std::min<size_t>(allowance, 1024))) return 0;
-	if (this->hyperpath) return this->StepHyperpath(allowance, published);
+	if (this->hyperpath) return this->StepHyperpath(allowance, published, workers);
 	const auto started = Clock::now(); size_t used = 0;
 	auto index_origin = [&](size_t from) {
-		if (from >= this->stations.size() || this->SearchCost(static_cast<uint32_t>(from)) == INT64_MAX) return;
+		if (from >= this->stations.size() || this->SearchCost(this->work, static_cast<uint32_t>(from)) == INT64_MAX) return;
 		auto &destinations = this->reachable_destinations[from]; size_t capacity = destinations.capacity();
 		destinations.push_back(this->stations[this->destination]);
 		this->reachable_bytes += (destinations.capacity() - capacity) * sizeof(StationID);
 	};
 	try {
 		while (used < allowance && !this->Finished()) {
-			++used;
-			if (this->initializing_row) {
-				if (this->optimized) {
-					if (this->search.cost.size() < this->diagnostic.states) {
-						/* Resize only the budgeted prefix. Retained capacity is reused;
-						 * no uncharged full-array reset occurs at a row boundary. */
-						size_t count = this->integrated ? std::min(this->diagnostic.states - this->search.cost.size(), allowance - used + 1) : 1;
-						this->search.cost.resize(this->search.cost.size() + count, INT64_MAX);
-						this->search.legs.resize(this->search.legs.size() + count, 0);
-						used += count - 1; continue;
-					}
-				} else if (this->scratch.labels.size() < this->diagnostic.states) { this->scratch.labels.emplace_back(); continue; }
-				auto seed = [&](uint32_t state, uint32_t alight = INVALID) {
-					auto label = this->SearchLabel(state); label.cost = 0; label.alight = alight; this->SetSearchLabel(state, label);
-					this->queue.emplace(0, 0, state);
-				};
-				if (this->seeding == 0) {
-					seed(static_cast<uint32_t>(this->destination));
-					for (const auto &[pattern, state] : this->waiting_states[this->destination]) seed(state);
-				}
-				size_t seed_count = this->optimized ? this->seed_offsets[this->destination + 1] - this->seed_offsets[this->destination] : this->occurrences.size();
-				if (this->seeding < seed_count) {
-					uint32_t id = this->optimized ? this->seed_occurrences[this->seed_offsets[this->destination] + this->seeding++] : static_cast<uint32_t>(this->seeding++);
-					const auto &o = this->occurrences[id];
-					if (o.alight && o.station == this->stations[this->destination]) {
-						seed(o.arrival, id);
-						if (!this->landings.empty() && this->landings[id] != INVALID) seed(this->landings[id], id);
-					}
-				} else this->initializing_row = false;
-				continue;
+			if (!this->work.finishing_row) {
+				used += this->AdvanceSearch(allowance - used, workers); continue;
 			}
-			if (this->finishing_row) {
-				if (this->finishing >= this->occurrences.size() && this->finishing - this->occurrences.size() < this->section_rides.size()) {
-					const auto &ride = this->section_rides[this->finishing++ - this->occurrences.size()];
+			++used;
+			if (this->work.finishing_row) {
+				if (this->work.finishing >= this->occurrences.size() && this->work.finishing - this->occurrences.size() < this->section_rides.size()) {
+					const auto &ride = this->section_rides[this->work.finishing++ - this->occurrences.size()];
 					const auto &board = this->occurrences[ride.board];
 					uint32_t station = this->station_index[board.station.base()];
-					int64_t best_cost = this->SearchCost(station);
+					int64_t best_cost = this->SearchCost(this->work, station);
 					if (best_cost == INT64_MAX) continue;
-					uint32_t best_board = this->SearchBoard(station);
+					uint32_t best_board = this->SearchBoard(this->work, station);
 					if (best_board == INVALID || this->occurrences[best_board].pattern == board.pattern) continue;
 					uint32_t landing = this->landings[ride.alight];
-					int64_t suffix_cost = this->SearchCost(landing);
+					int64_t suffix_cost = this->SearchCost(this->work, landing);
 					if (suffix_cost > INT64_MAX - ride.cost) continue;
 					int64_t cost = suffix_cost + ride.cost;
 					if (cost == INT64_MAX || cost - best_cost > best_cost / 4) continue;
-					int64_t best_riding = this->SearchRiding(station);
-					if (this->estimates && (this->SearchRiding(landing) + ride.riding > best_riding + std::max<int64_t>(32, best_riding / 4) ||
-							this->SearchLegs(landing) + 1 > this->SearchLegs(station) + 1)) continue;
-					auto &alt = this->scratch.alternative[station];
+					int64_t best_riding = this->SearchRiding(this->work, station);
+					if (this->estimates && (this->SearchRiding(this->work, landing) + ride.riding > best_riding + std::max<int64_t>(32, best_riding / 4) ||
+							this->SearchLegs(this->work, landing) + 1 > this->SearchLegs(this->work, station) + 1)) continue;
+					auto &alt = this->work.scratch.alternative[station];
 					if (cost < alt.cost) {
-						alt = this->SearchLabel(landing); alt.board = ride.board; alt.alight = ride.alight; ++alt.legs;
+						alt = this->SearchLabel(this->work, landing); alt.board = ride.board; alt.alight = ride.alight; ++alt.legs;
 						alt.cost = cost; alt.waiting += ride.waiting; alt.riding += ride.riding; alt.first_wait = ride.waiting;
 					}
-				} else if (this->finishing < this->occurrences.size()) {
-					uint32_t id = static_cast<uint32_t>(this->finishing++); const auto &o = this->occurrences[id];
+				} else if (this->work.finishing < this->occurrences.size()) {
+					uint32_t id = static_cast<uint32_t>(this->work.finishing++); const auto &o = this->occurrences[id];
 					if (this->optimized && !o.board) continue;
 					uint32_t station = this->station_index[o.station.base()]; if (station == INVALID) continue;
-					int64_t best_cost = this->SearchCost(station), suffix_cost = this->SearchCost(o.departure);
+					int64_t best_cost = this->SearchCost(this->work, station), suffix_cost = this->SearchCost(this->work, o.departure);
 					if (best_cost == INT64_MAX || suffix_cost == INT64_MAX || suffix_cost >= best_cost) continue;
-					uint32_t best_board = this->SearchBoard(station);
+					uint32_t best_board = this->SearchBoard(this->work, station);
 					const auto &p = this->patterns[o.pattern];
-					if (best_board == INVALID || this->SearchAlight(o.departure) == INVALID ||
+					if (best_board == INVALID || this->SearchAlight(this->work, o.departure) == INVALID ||
 							this->occurrences[best_board].pattern == o.pattern || suffix_cost > INT64_MAX - p.wait - p.risk) continue;
 					int64_t cost = suffix_cost + p.wait + p.risk;
 					if (cost - best_cost > best_cost / 4) continue;
 					/* Dispersion may pay a modest cost premium, but a waiting-time
 					 * estimate alone must not randomly select a much longer ride or
 					 * several extra transfers. Faster winning routes stay unrestricted. */
-					int64_t best_riding = this->SearchRiding(station);
-					if (this->estimates && (this->SearchRiding(o.departure) > best_riding + std::max<int64_t>(32, best_riding / 4) ||
-							this->SearchLegs(o.departure) + 1 > this->SearchLegs(station) + 1)) continue;
+					int64_t best_riding = this->SearchRiding(this->work, station);
+					if (this->estimates && (this->SearchRiding(this->work, o.departure) > best_riding + std::max<int64_t>(32, best_riding / 4) ||
+							this->SearchLegs(this->work, o.departure) + 1 > this->SearchLegs(this->work, station) + 1)) continue;
 					/* Only real Board edges are alternatives; NoLoad stops never enter. */
 					if (!o.board) continue;
-					auto &alt = this->scratch.alternative[station];
+					auto &alt = this->work.scratch.alternative[station];
 					if (cost < alt.cost) {
-						alt = this->SearchLabel(o.departure); alt.board = id; ++alt.legs;
+						alt = this->SearchLabel(this->work, o.departure); alt.board = id; ++alt.legs;
 						alt.cost = cost; alt.waiting += p.wait; alt.first_wait = p.wait;
 					}
 				} else {
 					/* Arrival/departure labels are construction scratch. Queries use
 					 * only initial/transfer waits and one complete dispersion label. */
 					if (this->UseCompressedRows()) {
-						if (this->publication_cursor == 0) this->PrepareCompressedRow();
+						if (this->work.publication_cursor == 0) this->PrepareCompressedRow(this->work);
 						if (legacy_publication) {
-							for (uint32_t origin = 0; origin < this->stations.size(); ++origin) { index_origin(origin); this->CopyStationLabel(origin); }
-						} else if (this->publication_cursor < this->waiting_state_count) {
+							for (uint32_t origin = 0; origin < this->stations.size(); ++origin) { index_origin(origin); this->CopyStationLabel(this->work, origin); }
+						} else if (this->work.publication_cursor < this->waiting_state_count) {
 							/* Stage each station's base/exception together, but consume
 							 * every original virtual copy before making the row public. */
-							size_t count = std::min(this->waiting_state_count - this->publication_cursor, allowance - used + 1);
-							for (size_t origin = this->publication_cursor; origin < std::min(this->stations.size(), this->publication_cursor + count); ++origin) {
-								index_origin(origin); this->CopyStationLabel(static_cast<uint32_t>(origin));
+							size_t count = std::min(this->waiting_state_count - this->work.publication_cursor, allowance - used + 1);
+							for (size_t origin = this->work.publication_cursor; origin < std::min(this->stations.size(), this->work.publication_cursor + count); ++origin) {
+								index_origin(origin); this->CopyStationLabel(this->work, static_cast<uint32_t>(origin));
 							}
-							this->publication_cursor += count; used += count - 1; continue;
+							this->work.publication_cursor += count; used += count - 1; continue;
 						}
 					} else {
 						if (legacy_publication) {
 							if (this->optimized) {
-								for (uint32_t state = 0; state < this->waiting_state_count; ++state) this->prepared.labels.push_back(this->SearchLabel(state));
-							} else this->prepared.labels.assign(this->scratch.labels.begin(), this->scratch.labels.begin() + this->waiting_state_count);
+								for (uint32_t state = 0; state < this->waiting_state_count; ++state) this->work.prepared.labels.push_back(this->SearchLabel(this->work, state));
+							} else this->work.prepared.labels.assign(this->work.scratch.labels.begin(), this->work.scratch.labels.begin() + this->waiting_state_count);
 							for (size_t from = 0; from < this->stations.size(); ++from) index_origin(from);
-						} else if (this->prepared.labels.size() < this->waiting_state_count) {
-							index_origin(this->prepared.labels.size());
-							this->prepared.labels.push_back(this->SearchLabel(static_cast<uint32_t>(this->prepared.labels.size()))); continue;
+						} else if (this->work.prepared.labels.size() < this->waiting_state_count) {
+							index_origin(this->work.prepared.labels.size());
+							this->work.prepared.labels.push_back(this->SearchLabel(this->work, static_cast<uint32_t>(this->work.prepared.labels.size()))); continue;
 						}
-						this->prepared.alternative = std::move(this->scratch.alternative);
+						this->work.prepared.alternative = std::move(this->work.scratch.alternative);
 					}
-					this->rows.push_back(std::move(this->prepared)); this->publication_cursor = 0;
+					this->rows.push_back(std::move(this->work.prepared)); this->work.publication_cursor = 0;
 					this->published_bytes += this->rows.back().AllocatedBytes();
 					if (published) published(this->stations[this->destination]);
 					++this->destination;
@@ -1206,62 +1415,31 @@ size_t PassengerPrecomputedTable::Step(size_t allowance, bool legacy_publication
 				}
 				continue;
 			}
-			if (this->expanding == INVALID) {
-				if (this->queue.empty()) { this->finishing_row = true; continue; }
-				auto [cost, legs, state] = this->queue.top(); this->queue.pop();
-				if (cost != this->SearchCost(state) || legs != this->SearchLegs(state)) continue;
-				this->expanding = state; this->cursor = this->incoming_offsets[state]; this->range_offset = 0;
-			} else if (this->cursor == this->incoming_offsets[this->expanding + 1]) {
-				this->expanding = INVALID;
-			} else if (this->integrated) {
-				used += this->RelaxIncoming(allowance - used + 1) - 1;
-			} else {
-				uint32_t index = static_cast<uint32_t>(this->cursor++);
-				const auto &edge = this->edges[this->optimized ? index : this->incoming[index]];
-				int64_t cost = this->SearchCost(edge.to);
-				if (cost > INT64_MAX - edge.cost) continue;
-				cost += edge.cost;
-				uint32_t legs = this->SearchLegs(edge.to) + (edge.kind == EdgeKind::Board || edge.kind == EdgeKind::Section);
-				if (std::tuple(cost, legs) >= std::tuple(this->SearchCost(edge.from), this->SearchLegs(edge.from))) continue;
-				Label next = this->SearchLabel(edge.to);
-				next.cost = cost; next.legs = legs;
-				next.distance = static_cast<uint32_t>(std::min<uint64_t>(UINT32_MAX, uint64_t(next.distance) + edge.distance));
-				if (edge.kind == EdgeKind::Board) {
-					next.board = edge.occurrence;
-					next.first_wait = this->patterns[this->occurrences[edge.occurrence].pattern].wait; next.waiting += next.first_wait;
-				}
-				if (edge.kind == EdgeKind::Section) {
-					const auto &ride = this->section_rides[edge.occurrence];
-					next.board = ride.board; next.alight = ride.alight;
-					next.first_wait = ride.waiting; next.waiting += ride.waiting; next.riding += ride.riding;
-				}
-				if (edge.kind == EdgeKind::Ride) next.riding += edge.cost - edge.uncertainty;
-				if (edge.kind == EdgeKind::Alight) { next.board = INVALID; next.alight = edge.occurrence; next.waiting += edge.cost / 2; }
-				this->SetSearchLabel(edge.from, next); this->queue.emplace(next.cost, next.legs, edge.from);
-			}
+
 		}
 	} catch (const std::bad_alloc &) { FatalError("Insufficient memory for passenger routing. Disable passenger_journey_precomputed or free memory before resuming."); }
+	this->CollectSearchCounters();
 	this->diagnostic.operations += used; this->diagnostic.build_nanoseconds += Elapsed(started);
 	this->diagnostic.bytes = this->station_index.capacity() * 4 + this->service_pattern.capacity() * 4 + this->edges.capacity() * sizeof(Edge) +
 			(this->incoming.capacity() + this->incoming_offsets.capacity()) * 4 + (this->UseCompressedRows() ? this->published_bytes : this->rows.size() * this->diagnostic.stored_states * sizeof(Label)) +
-			(this->scratch.labels.capacity() + this->scratch.alternative.capacity() + this->prepared.labels.capacity()) * sizeof(Label) +
+			(this->work.scratch.labels.capacity() + this->work.scratch.alternative.capacity() + this->work.prepared.labels.capacity()) * sizeof(Label) +
 			this->section_rides.capacity() * sizeof(SectionRide) + this->landings.capacity() * sizeof(uint32_t);
 	this->diagnostic.bytes += this->hot_edges.from.capacity() * 4 + this->hot_edges.cost.capacity() * 8 + this->hot_edges.legs.capacity() + this->hot_edges.range.capacity() * 4 + this->range_edges.capacity() * sizeof(RangeEdge) + this->cold_edges.capacity() * sizeof(ColdEdge);
 	this->diagnostic.bytes += this->binding_bytes + this->reachable_bytes;
-	this->diagnostic.bytes += (this->exception_slots.capacity() + this->exception_state.capacity()) * sizeof(uint32_t);
-	this->diagnostic.bytes += (this->prepared.exception_labels.capacity() + this->prepared.alternative.capacity() + this->scratch.exception_labels.capacity()) * sizeof(Label);
-	this->diagnostic.bytes += (this->prepared.indices.capacity() + this->scratch.indices.capacity()) * sizeof(uint32_t);
+	this->diagnostic.bytes += (this->exception_slots.capacity() + this->work.exception_state.capacity()) * sizeof(uint32_t);
+	this->diagnostic.bytes += (this->work.prepared.exception_labels.capacity() + this->work.prepared.alternative.capacity() + this->work.scratch.exception_labels.capacity()) * sizeof(Label);
+	this->diagnostic.bytes += (this->work.prepared.indices.capacity() + this->work.scratch.indices.capacity()) * sizeof(uint32_t);
 	this->diagnostic.bytes += (this->seed_offsets.capacity() + this->seed_occurrences.capacity()) * sizeof(uint32_t);
-	this->diagnostic.bytes += this->queue.AllocatedBytes();
-	this->diagnostic.bytes += this->search.cost.capacity() * sizeof(int64_t) + this->search.legs.capacity() * sizeof(uint32_t) + this->search.metadata.capacity() * sizeof(LabelMetadata);
+	this->diagnostic.bytes += this->work.queue.AllocatedBytes();
+	this->diagnostic.bytes += this->work.search.cost.capacity() * sizeof(int64_t) + this->work.search.legs.capacity() * sizeof(uint32_t) + this->work.search.metadata.capacity() * sizeof(LabelMetadata);
 	return used;
 }
 
-void PassengerPrecomputedTable::PushHyperpath(int64_t key, uint32_t kind, uint32_t id)
+void PassengerPrecomputedTable::PushHyperpath(DestinationWorkspace &work, int64_t key, uint32_t kind, uint32_t id) const
 {
-	assert(key >= this->strategy.last);
+	assert(key >= work.strategy.last);
 	if (key == INT64_MAX) return;
-	this->strategy.events.emplace(key, kind, id); ++this->diagnostic.heap_pushes;
+	work.strategy.events.emplace(key, kind, id); ++work.counters.heap_pushes;
 }
 
 /** Work units: one state initialization, seed, heap pop, incoming descriptor
@@ -1270,55 +1448,159 @@ void PassengerPrecomputedTable::PushHyperpath(int64_t key, uint32_t kind, uint32
  * All cursors survive arbitrary slice boundaries; replay uses the saved total.
  * A v14 continuation-witness prefix stop also consumes one Work unit.
  * Event order is (ceil cost, Board/min/strategy, stable edge/state rank). */
-size_t PassengerPrecomputedTable::StepHyperpath(size_t allowance, const std::function<void(StationID)> &published)
+size_t PassengerPrecomputedTable::SearchHyperpath(DestinationWorkspace &work, size_t allowance) const
+{
+	size_t used = 0;
+	while (used < allowance && !work.finishing_row) {
+		++used;
+		if (work.initializing_row) {
+			if (work.search.cost.size() < this->diagnostic.states) {
+				work.search.cost.push_back(INT64_MAX); work.search.legs.push_back(0);
+				work.strategy.settled.push_back(false);
+				if (work.strategy.sums.size() < this->waiting_state_count) {
+					work.strategy.sums.emplace_back();
+					if (work.strategy.candidates.size() < work.strategy.sums.size()) work.strategy.candidates.emplace_back();
+					else work.strategy.candidates[work.strategy.sums.size() - 1].clear();
+				}
+				continue;
+			}
+			const auto &waits = this->waiting_states[work.destination];
+			const size_t seeds = this->seed_offsets[work.destination + 1] - this->seed_offsets[work.destination];
+			uint32_t state, alight = INVALID;
+			if (work.seeding == 0) state = static_cast<uint32_t>(work.destination);
+			else if (work.seeding <= waits.size()) state = waits[work.seeding - 1].second;
+			else if (work.seeding <= waits.size() + seeds) {
+				alight = this->seed_occurrences[this->seed_offsets[work.destination] + work.seeding - waits.size() - 1];
+				state = this->occurrences[alight].arrival;
+			} else { work.initializing_row = false; continue; }
+			++work.seeding;
+			Label label; label.cost = 0; label.alight = alight;
+			this->SetSearchLabel(work, state, label); this->PushHyperpath(work, 0, 1, state);
+			continue;
+		}
+		if (work.strategy.witness_edge != INVALID) {
+			/* One prefix stop is one Work unit. Costs alone cannot discard a
+			 * tied, earlier alighting. Certify that every optimal first alighting
+			 * lies beyond b's departure, using the same frozen suffix labels as
+			 * EvaluateRide. Unsettled suffixes cannot tie: travel is positive and
+			 * their priorities are at least the already popped Board key. */
+			uint32_t edge = work.strategy.witness_edge, board = this->cold_edges[edge].occurrence;
+			const auto &first = this->occurrences[board]; const auto &stops = this->patterns[first.pattern].occurrences;
+			const auto &from = this->occurrences[work.strategy.witness_at];
+			int64_t step = from.travel + from.uncertainty;
+			if (work.strategy.witness_at != board) step += from.dwell;
+			work.strategy.witness_cost += step; // Bounded by the precomputed, checked departure-to-departure delta.
+			work.strategy.witness_at = work.strategy.witness_at == stops.back() ? stops.front() : work.strategy.witness_at + 1;
+			const auto &to = this->occurrences[work.strategy.witness_at];
+			bool earlier = false;
+			if (to.alight) {
+				int64_t suffix = to.station == this->stations[work.destination] ? 0 : this->SearchCost(work, this->StateFor(this->station_index[to.station.base()], first.pattern));
+				int64_t alight = to.station == this->stations[work.destination] ? 0 : this->transfer_cost;
+				if (suffix <= INT64_MAX - alight && suffix + alight <= INT64_MAX - work.strategy.witness_cost)
+					earlier = suffix + alight + work.strategy.witness_cost <= this->SearchCost(work, first.departure);
+			}
+			if (earlier || work.strategy.witness_at == this->revisits[board].next) {
+				if (earlier || !this->HasSameRunContinuationWitness(board, this->SearchAlight(work, first.departure))) {
+					work.strategy.board_edge = edge; work.strategy.offset = 0;
+				}
+				work.strategy.witness_edge = INVALID;
+			}
+			continue;
+		}
+		if (work.strategy.board_edge != INVALID) {
+			uint32_t edge = work.strategy.board_edge, r = this->hot_edges.range[edge];
+			auto range = r == INVALID ? RangeEdge{0, 0, INVALID} : this->range_edges[r];
+			uint32_t from = work.strategy.offset == 0 ? this->hot_edges.from[edge] : range.begin + work.strategy.offset - 1;
+			++work.strategy.offset;
+			if (from != range.excluded && !work.strategy.settled[from]) {
+				++work.counters.range_updates;
+				uint32_t board = this->cold_edges[edge].occurrence;
+				const auto &o = this->occurrences[board]; const auto &pattern = this->patterns[o.pattern];
+				auto label = this->SearchLabel(work, o.departure);
+				int64_t x = label.cost <= INT64_MAX - pattern.risk ? label.cost + pattern.risk : INT64_MAX;
+				auto &sum = work.strategy.sums[from];
+				if (sum.Add(x, PassengerStrategy::Frequency(pattern.wait))) {
+					auto &set = work.strategy.candidates[from];
+					size_t capacity = set.capacity();
+					set.insert(std::lower_bound(set.begin(), set.end(), board), board);
+					work.hyperpath_candidate_bytes += (set.capacity() - capacity) * 4;
+					++work.counters.board_accepts;
+					if (set.size() == 1) { label.board = board; ++label.legs; label.waiting += sum.Wait(); }
+					else { label = this->SearchLabel(work, from); label.waiting += sum.Wait() - label.first_wait; }
+					label.cost = sum.Cost(); label.first_wait = sum.Wait();
+					this->SetSearchLabel(work, from, label); this->PushHyperpath(work, label.cost, 2, from);
+				}
+			}
+			if (work.strategy.offset == 1 + range.end - range.begin) { work.strategy.board_edge = INVALID; work.strategy.offset = 0; }
+			continue;
+		}
+		if (work.expanding != INVALID) {
+			if (work.cursor == this->incoming_offsets[work.expanding + 1]) { work.expanding = INVALID; continue; }
+			uint32_t edge = static_cast<uint32_t>(work.cursor++);
+			const auto &cold = this->cold_edges[edge];
+			if (cold.kind == EdgeKind::Board) {
+				int64_t cost = this->SearchCost(work, work.expanding), risk = this->patterns[this->occurrences[cold.occurrence].pattern].risk;
+				if (cost <= INT64_MAX - risk) { this->PushHyperpath(work, cost + risk, 0, edge); ++work.counters.board_events; }
+				continue;
+			}
+			assert(cold.kind != EdgeKind::Section);
+			uint32_t from = this->hot_edges.from[edge]; int64_t cost = this->hot_edges.cost[edge];
+			if (work.strategy.settled[from] || this->SearchCost(work, work.expanding) > INT64_MAX - cost) continue;
+			auto label = this->SearchLabel(work, work.expanding); label.cost += cost;
+			if (label.cost >= this->SearchCost(work, from)) continue;
+			label.distance = static_cast<uint32_t>(std::min<uint64_t>(UINT32_MAX, uint64_t(label.distance) + cold.distance));
+			if (cold.kind == EdgeKind::Ride) label.riding += cost - cold.uncertainty;
+			if (cold.kind == EdgeKind::Alight) { label.board = INVALID; label.alight = cold.occurrence; label.waiting += cost / 2; }
+			this->SetSearchLabel(work, from, label); this->PushHyperpath(work, label.cost, 1, from); continue;
+		}
+		if (work.strategy.events.empty()) { work.finishing_row = true; work.strategy.offset = 0; continue; }
+		auto [key, kind, id] = work.strategy.events.top(); work.strategy.events.pop();
+		++work.counters.heap_pops; work.strategy.last = key;
+		if (kind == 0) {
+			uint32_t board = this->cold_edges[id].occurrence;
+			if (!this->revisits.empty() && this->revisits[board].next != INVALID && this->DominatedRevisit(board,
+					this->SearchCost(work, this->occurrences[board].departure), this->SearchCost(work, this->occurrences[this->revisits[board].next].departure))) {
+				if (!this->continuation_witness) continue; // Reference event sequence without continuation witnesses.
+				if (work.strategy.settled[this->occurrences[board].departure] && work.strategy.settled[this->occurrences[this->revisits[board].next].departure]) {
+					work.strategy.witness_edge = id; work.strategy.witness_at = board; work.strategy.witness_cost = 0; continue;
+				}
+			}
+			work.strategy.board_edge = id; work.strategy.offset = 0; continue;
+		}
+		if (work.strategy.settled[id] || key != this->SearchCost(work, id)) continue;
+		work.strategy.settled[id] = true;
+		work.expanding = id; work.cursor = this->incoming_offsets[id];
+	}
+	return used;
+}
+
+size_t PassengerPrecomputedTable::StepHyperpath(size_t allowance, const std::function<void(StationID)> &published, uint workers)
 {
 	const auto started = Clock::now(); size_t used = 0;
 	try {
 		while (used < allowance && !this->Finished()) {
-			++used;
-			if (this->initializing_row) {
-				if (this->search.cost.size() < this->diagnostic.states) {
-					this->search.cost.push_back(INT64_MAX); this->search.legs.push_back(0);
-					this->strategy.settled.push_back(false);
-					if (this->strategy.sums.size() < this->waiting_state_count) {
-						this->strategy.sums.emplace_back();
-						if (this->strategy.candidates.size() < this->strategy.sums.size()) this->strategy.candidates.emplace_back();
-						else this->strategy.candidates[this->strategy.sums.size() - 1].clear();
-					}
-					continue;
-				}
-				const auto &waits = this->waiting_states[this->destination];
-				const size_t seeds = this->seed_offsets[this->destination + 1] - this->seed_offsets[this->destination];
-				uint32_t state, alight = INVALID;
-				if (this->seeding == 0) state = static_cast<uint32_t>(this->destination);
-				else if (this->seeding <= waits.size()) state = waits[this->seeding - 1].second;
-				else if (this->seeding <= waits.size() + seeds) {
-					alight = this->seed_occurrences[this->seed_offsets[this->destination] + this->seeding - waits.size() - 1];
-					state = this->occurrences[alight].arrival;
-				} else { this->initializing_row = false; continue; }
-				++this->seeding;
-				Label label; label.cost = 0; label.alight = alight;
-				this->SetSearchLabel(state, label); this->PushHyperpath(0, 1, state);
-				continue;
+			if (!this->work.finishing_row) {
+				used += this->AdvanceSearch(allowance - used, workers); continue;
 			}
-			if (this->finishing_row) {
-				if (this->prepared.labels.size() < this->waiting_state_count) {
-					uint32_t state = static_cast<uint32_t>(this->prepared.labels.size());
-					this->prepared.labels.push_back(this->SearchLabel(state));
-					if (state < this->stations.size() && this->SearchCost(state) != INT64_MAX) {
+			++used;
+			if (this->work.finishing_row) {
+				if (this->work.prepared.labels.size() < this->waiting_state_count) {
+					uint32_t state = static_cast<uint32_t>(this->work.prepared.labels.size());
+					this->work.prepared.labels.push_back(this->SearchLabel(this->work, state));
+					if (state < this->stations.size() && this->SearchCost(this->work, state) != INT64_MAX) {
 						auto &destinations = this->reachable_destinations[state]; size_t capacity = destinations.capacity();
 						destinations.push_back(this->stations[this->destination]); this->reachable_bytes += (destinations.capacity() - capacity) * sizeof(StationID);
 					}
 					continue;
 				}
-				if (this->finishing < this->waiting_state_count) {
-					uint32_t state = static_cast<uint32_t>(this->finishing);
-					const auto &candidates = this->strategy.candidates[state];
-					if (this->strategy.offset == 0) {
+				if (this->work.finishing < this->waiting_state_count) {
+					uint32_t state = static_cast<uint32_t>(this->work.finishing);
+					const auto &candidates = this->work.strategy.candidates[state];
+					if (this->work.strategy.offset == 0) {
 						++this->diagnostic.candidate_histogram[candidates.size()];
 						uint32_t base = this->waiting_station[state];
-						if (base != state && candidates == this->strategy.candidates[base] && this->SearchCost(state) == this->SearchCost(base)) {
-							this->prepared.indices.push_back(this->prepared.indices[base]); ++this->finishing; continue;
+						if (base != state && candidates == this->work.strategy.candidates[base] && this->SearchCost(this->work, state) == this->SearchCost(this->work, base)) {
+							this->work.prepared.indices.push_back(this->work.prepared.indices[base]); ++this->work.finishing; continue;
 						}
 						if (this->flat_storage) {
 							uint32_t previous = this->PreviousPattern(state);
@@ -1326,159 +1608,69 @@ size_t PassengerPrecomputedTable::StepHyperpath(size_t allowance, const std::fun
 							/* The ordinary difference is base minus the incoming service,
 							 * plus every addition. Keep an exact full payload if a future
 							 * recurrence violates that inclusion property. */
-							if (!full) for (uint32_t board : this->strategy.candidates[base]) if (this->occurrences[board].pattern != previous && !std::binary_search(candidates.begin(), candidates.end(), board)) { full = true; break; }
+							if (!full) for (uint32_t board : this->work.strategy.candidates[base]) if (this->occurrences[board].pattern != previous && !std::binary_search(candidates.begin(), candidates.end(), board)) { full = true; break; }
 							if (!full) for (uint32_t board : candidates) if (this->occurrences[board].pattern == previous) { full = true; break; }
-							this->prepared.indices.push_back(static_cast<uint32_t>(this->prepared.flat_policies.size()));
-							this->prepared.flat_policies.push_back({this->SearchCost(state), this->strategy.sums[state].Wait(), static_cast<uint32_t>(this->prepared.flat_candidates.size()), full ? FlatPolicy::FULL : 0});
+							this->work.prepared.indices.push_back(static_cast<uint32_t>(this->work.prepared.flat_policies.size()));
+							this->work.prepared.flat_policies.push_back({this->SearchCost(this->work, state), this->work.strategy.sums[state].Wait(), static_cast<uint32_t>(this->work.prepared.flat_candidates.size()), full ? FlatPolicy::FULL : 0});
 						} else {
-							this->prepared.indices.push_back(static_cast<uint32_t>(this->prepared.policies.size()));
-							this->prepared.policies.push_back({this->SearchCost(state), this->strategy.sums[state].Wait(), {}});
-							this->prepared.policies.back().candidates.reserve(candidates.size());
-							this->prepared_candidate_bytes += this->prepared.policies.back().candidates.capacity() * 4;
+							this->work.prepared.indices.push_back(static_cast<uint32_t>(this->work.prepared.policies.size()));
+							this->work.prepared.policies.push_back({this->SearchCost(this->work, state), this->work.strategy.sums[state].Wait(), {}});
+							this->work.prepared.policies.back().candidates.reserve(candidates.size());
+							this->work.prepared_candidate_bytes += this->work.prepared.policies.back().candidates.capacity() * 4;
 						}
-						++this->strategy.offset; continue;
+						++this->work.strategy.offset; continue;
 					}
-					if (this->strategy.offset <= candidates.size()) {
-						uint32_t board = candidates[this->strategy.offset++ - 1];
-						assert(this->EvaluateRide(this->prepared, board, this->stations[this->destination]).cost ==
-								this->SearchCost(this->occurrences[board].departure) + this->patterns[this->occurrences[board].pattern].risk);
+					if (this->work.strategy.offset <= candidates.size()) {
+						uint32_t board = candidates[this->work.strategy.offset++ - 1];
+						assert(this->EvaluateRide(this->work.prepared, board, this->stations[this->destination]).cost ==
+								this->SearchCost(this->work, this->occurrences[board].departure) + this->patterns[this->occurrences[board].pattern].risk);
 						this->MarkBoardingCandidate(board, state < this->stations.size()); // A shared state equals its base, marked in both planes.
 						if (this->flat_storage) {
-							auto &policy = this->prepared.flat_policies.back(); const auto &base = this->strategy.candidates[this->waiting_station[state]];
+							auto &policy = this->work.prepared.flat_policies.back(); const auto &base = this->work.strategy.candidates[this->waiting_station[state]];
 							if ((policy.count & FlatPolicy::FULL) || !std::binary_search(base.begin(), base.end(), board)) {
-								size_t capacity = this->prepared.flat_candidates.capacity(); this->prepared.flat_candidates.push_back(board); ++policy.count;
-								this->prepared_candidate_bytes += (this->prepared.flat_candidates.capacity() - capacity) * 4;
+								size_t capacity = this->work.prepared.flat_candidates.capacity(); this->work.prepared.flat_candidates.push_back(board); ++policy.count;
+								this->work.prepared_candidate_bytes += (this->work.prepared.flat_candidates.capacity() - capacity) * 4;
 							}
-						} else this->prepared.policies.back().candidates.push_back(board);
+						} else this->work.prepared.policies.back().candidates.push_back(board);
 						continue;
 					}
 					++this->diagnostic.policy_count; this->diagnostic.candidate_count += candidates.size();
 					this->diagnostic.max_candidates = std::max(this->diagnostic.max_candidates, candidates.size());
-					auto bytes = this->flat_storage ? sizeof(FlatPolicy) + (this->prepared.flat_policies.back().count & FlatPolicy::MASK) * 4 : sizeof(Policy) + candidates.size() * 4;
+					auto bytes = this->flat_storage ? sizeof(FlatPolicy) + (this->work.prepared.flat_policies.back().count & FlatPolicy::MASK) * 4 : sizeof(Policy) + candidates.size() * 4;
 					if (state < this->stations.size()) this->diagnostic.base_policy_bytes += bytes;
 					else this->diagnostic.difference_policy_bytes += bytes;
-					++this->finishing; this->strategy.offset = 0; continue;
+					++this->work.finishing; this->work.strategy.offset = 0; continue;
 				}
 				if (this->flat_storage) {
 					auto exact = [](auto &working, auto &buffer) { buffer.swap(working); working.assign(buffer.begin(), buffer.end()); buffer.clear(); };
-					exact(this->prepared.flat_policies, this->flat_policy_buffer); exact(this->prepared.flat_candidates, this->flat_candidate_buffer);
-					this->prepared_candidate_bytes = this->prepared.flat_candidates.capacity() * 4;
+					exact(this->work.prepared.flat_policies, this->work.flat_policy_buffer); exact(this->work.prepared.flat_candidates, this->work.flat_candidate_buffer);
+					this->work.prepared_candidate_bytes = this->work.prepared.flat_candidates.capacity() * 4;
 				}
-				this->prepared.bytes = this->prepared.labels.capacity() * sizeof(Label) + this->prepared.indices.capacity() * 4 +
-						this->prepared.policies.capacity() * sizeof(Policy) + this->prepared.flat_policies.capacity() * sizeof(FlatPolicy) + this->prepared_candidate_bytes;
-				this->hyperpath_row_bytes += this->prepared.bytes;
+				this->work.prepared.bytes = this->work.prepared.labels.capacity() * sizeof(Label) + this->work.prepared.indices.capacity() * 4 +
+						this->work.prepared.policies.capacity() * sizeof(Policy) + this->work.prepared.flat_policies.capacity() * sizeof(FlatPolicy) + this->work.prepared_candidate_bytes;
+				this->hyperpath_row_bytes += this->work.prepared.bytes;
 				if (this->boarding_mask_words == 0) this->MarkBoardingCandidate(INVALID, false); // Allocate even if no row had a candidate yet.
 				if (this->boarding_mask_words != 0) this->published_rows[this->destination / 64] |= uint64_t{1} << (this->destination % 64);
-				this->rows.push_back(std::move(this->prepared));
-				this->prepared_candidate_bytes = 0;
+				this->rows.push_back(std::move(this->work.prepared));
+				this->work.prepared_candidate_bytes = 0;
 				if (published) published(this->stations[this->destination]);
 				++this->destination; this->diagnostic.destinations = this->destination;
 				if (!this->Finished()) this->StartDestination();
 				continue;
 			}
-			if (this->strategy.witness_edge != INVALID) {
-				/* One prefix stop is one Work unit. Costs alone cannot discard a
-				 * tied, earlier alighting. Certify that every optimal first alighting
-				 * lies beyond b's departure, using the same frozen suffix labels as
-				 * EvaluateRide. Unsettled suffixes cannot tie: travel is positive and
-				 * their priorities are at least the already popped Board key. */
-				uint32_t edge = this->strategy.witness_edge, board = this->cold_edges[edge].occurrence;
-				const auto &first = this->occurrences[board]; const auto &stops = this->patterns[first.pattern].occurrences;
-				const auto &from = this->occurrences[this->strategy.witness_at];
-				int64_t step = from.travel + from.uncertainty;
-				if (this->strategy.witness_at != board) step += from.dwell;
-				this->strategy.witness_cost += step; // Bounded by the precomputed, checked departure-to-departure delta.
-				this->strategy.witness_at = this->strategy.witness_at == stops.back() ? stops.front() : this->strategy.witness_at + 1;
-				const auto &to = this->occurrences[this->strategy.witness_at];
-				bool earlier = false;
-				if (to.alight) {
-					int64_t suffix = to.station == this->stations[this->destination] ? 0 : this->SearchCost(this->StateFor(this->station_index[to.station.base()], first.pattern));
-					int64_t alight = to.station == this->stations[this->destination] ? 0 : this->transfer_cost;
-					if (suffix <= INT64_MAX - alight && suffix + alight <= INT64_MAX - this->strategy.witness_cost)
-						earlier = suffix + alight + this->strategy.witness_cost <= this->SearchCost(first.departure);
-				}
-				if (earlier || this->strategy.witness_at == this->revisits[board].next) {
-					if (earlier || !this->HasSameRunContinuationWitness(board, this->SearchAlight(first.departure))) {
-						this->strategy.board_edge = edge; this->strategy.offset = 0;
-					}
-					this->strategy.witness_edge = INVALID;
-				}
-				continue;
-			}
-			if (this->strategy.board_edge != INVALID) {
-				uint32_t edge = this->strategy.board_edge, r = this->hot_edges.range[edge];
-				auto range = r == INVALID ? RangeEdge{0, 0, INVALID} : this->range_edges[r];
-				uint32_t from = this->strategy.offset == 0 ? this->hot_edges.from[edge] : range.begin + this->strategy.offset - 1;
-				++this->strategy.offset;
-				if (from != range.excluded && !this->strategy.settled[from]) {
-					++this->diagnostic.range_updates;
-					uint32_t board = this->cold_edges[edge].occurrence;
-					const auto &o = this->occurrences[board]; const auto &pattern = this->patterns[o.pattern];
-					auto label = this->SearchLabel(o.departure);
-					int64_t x = label.cost <= INT64_MAX - pattern.risk ? label.cost + pattern.risk : INT64_MAX;
-					auto &sum = this->strategy.sums[from];
-					if (sum.Add(x, PassengerStrategy::Frequency(pattern.wait))) {
-						auto &set = this->strategy.candidates[from];
-						size_t capacity = set.capacity();
-						set.insert(std::lower_bound(set.begin(), set.end(), board), board);
-						this->hyperpath_candidate_bytes += (set.capacity() - capacity) * 4;
-						++this->diagnostic.board_accepts;
-						if (set.size() == 1) { label.board = board; ++label.legs; label.waiting += sum.Wait(); }
-						else { label = this->SearchLabel(from); label.waiting += sum.Wait() - label.first_wait; }
-						label.cost = sum.Cost(); label.first_wait = sum.Wait();
-						this->SetSearchLabel(from, label); this->PushHyperpath(label.cost, 2, from);
-					}
-				}
-				if (this->strategy.offset == 1 + range.end - range.begin) { this->strategy.board_edge = INVALID; this->strategy.offset = 0; }
-				continue;
-			}
-			if (this->expanding != INVALID) {
-				if (this->cursor == this->incoming_offsets[this->expanding + 1]) { this->expanding = INVALID; continue; }
-				uint32_t edge = static_cast<uint32_t>(this->cursor++);
-				const auto &cold = this->cold_edges[edge];
-				if (cold.kind == EdgeKind::Board) {
-					int64_t cost = this->SearchCost(this->expanding), risk = this->patterns[this->occurrences[cold.occurrence].pattern].risk;
-					if (cost <= INT64_MAX - risk) { this->PushHyperpath(cost + risk, 0, edge); ++this->diagnostic.board_events; }
-					continue;
-				}
-				assert(cold.kind != EdgeKind::Section);
-				uint32_t from = this->hot_edges.from[edge]; int64_t cost = this->hot_edges.cost[edge];
-				if (this->strategy.settled[from] || this->SearchCost(this->expanding) > INT64_MAX - cost) continue;
-				auto label = this->SearchLabel(this->expanding); label.cost += cost;
-				if (label.cost >= this->SearchCost(from)) continue;
-				label.distance = static_cast<uint32_t>(std::min<uint64_t>(UINT32_MAX, uint64_t(label.distance) + cold.distance));
-				if (cold.kind == EdgeKind::Ride) label.riding += cost - cold.uncertainty;
-				if (cold.kind == EdgeKind::Alight) { label.board = INVALID; label.alight = cold.occurrence; label.waiting += cost / 2; }
-				this->SetSearchLabel(from, label); this->PushHyperpath(label.cost, 1, from); continue;
-			}
-			if (this->strategy.events.empty()) { this->finishing_row = true; this->strategy.offset = 0; continue; }
-			auto [key, kind, id] = this->strategy.events.top(); this->strategy.events.pop();
-			++this->diagnostic.heap_pops; this->strategy.last = key;
-			if (kind == 0) {
-				uint32_t board = this->cold_edges[id].occurrence;
-				if (!this->revisits.empty() && this->revisits[board].next != INVALID && this->DominatedRevisit(board,
-						this->SearchCost(this->occurrences[board].departure), this->SearchCost(this->occurrences[this->revisits[board].next].departure))) {
-					if (!this->continuation_witness) continue; // Reference event sequence without continuation witnesses.
-					if (this->strategy.settled[this->occurrences[board].departure] && this->strategy.settled[this->occurrences[this->revisits[board].next].departure]) {
-						this->strategy.witness_edge = id; this->strategy.witness_at = board; this->strategy.witness_cost = 0; continue;
-					}
-				}
-				this->strategy.board_edge = id; this->strategy.offset = 0; continue;
-			}
-			if (this->strategy.settled[id] || key != this->SearchCost(id)) continue;
-			this->strategy.settled[id] = true;
-			this->expanding = id; this->cursor = this->incoming_offsets[id];
+
 		}
 	} catch (const std::bad_alloc &) { FatalError("Insufficient memory for passenger strategies."); }
+	this->CollectSearchCounters();
 	this->diagnostic.operations += used; this->diagnostic.build_nanoseconds += Elapsed(started);
-	this->diagnostic.bytes = this->hyperpath_static_bytes + this->hyperpath_row_bytes + this->hyperpath_candidate_bytes + this->local_policy_bytes + this->expanded_policy_bytes + this->boarding_mask.capacity() * sizeof(uint64_t) +
-			this->reachable_bytes + this->reachable_destinations.capacity() * sizeof(this->reachable_destinations[0]) + this->queue.AllocatedBytes() +
-			(this->scratch.labels.capacity() + this->scratch.alternative.capacity()) * sizeof(Label) +
-			this->search.cost.capacity() * 8 + this->search.legs.capacity() * 4 + this->search.metadata.capacity() * sizeof(LabelMetadata) +
-			this->strategy.sums.capacity() * sizeof(PassengerStrategy) + this->strategy.candidates.capacity() * sizeof(this->strategy.candidates[0]) +
-			this->strategy.settled.capacity() / 8 + this->strategy.events.AllocatedBytes() + this->prepared_candidate_bytes +
-			this->flat_policy_buffer.capacity() * sizeof(FlatPolicy) + this->flat_candidate_buffer.capacity() * 4 +
-			this->prepared.labels.capacity() * sizeof(Label) + this->prepared.indices.capacity() * 4 + this->prepared.policies.capacity() * sizeof(Policy) + this->prepared.flat_policies.capacity() * sizeof(FlatPolicy);
+	this->diagnostic.bytes = this->hyperpath_static_bytes + this->hyperpath_row_bytes + this->work.hyperpath_candidate_bytes + this->local_policy_bytes + this->expanded_policy_bytes + this->boarding_mask.capacity() * sizeof(uint64_t) +
+			this->reachable_bytes + this->reachable_destinations.capacity() * sizeof(this->reachable_destinations[0]) + this->work.queue.AllocatedBytes() +
+			(this->work.scratch.labels.capacity() + this->work.scratch.alternative.capacity()) * sizeof(Label) +
+			this->work.search.cost.capacity() * 8 + this->work.search.legs.capacity() * 4 + this->work.search.metadata.capacity() * sizeof(LabelMetadata) +
+			this->work.strategy.sums.capacity() * sizeof(PassengerStrategy) + this->work.strategy.candidates.capacity() * sizeof(this->work.strategy.candidates[0]) +
+			this->work.strategy.settled.capacity() / 8 + this->work.strategy.events.AllocatedBytes() + this->work.prepared_candidate_bytes +
+			this->work.flat_policy_buffer.capacity() * sizeof(FlatPolicy) + this->work.flat_candidate_buffer.capacity() * 4 +
+			this->work.prepared.labels.capacity() * sizeof(Label) + this->work.prepared.indices.capacity() * 4 + this->work.prepared.policies.capacity() * sizeof(Policy) + this->work.prepared.flat_policies.capacity() * sizeof(FlatPolicy);
 	return used;
 }
 
@@ -1510,7 +1702,7 @@ PassengerHyperpathMemoryDiagnostic PassengerPrecomputedTable::InspectMemory() co
 		}
 	};
 	for (const auto &row : this->rows) inspect(row, true);
-	inspect(this->prepared, false);
+	inspect(this->work.prepared, false);
 	/* Cost + wait + an offset/count pair for a flat addition array. Previous
 	 * service comes from the waiting state. This is a representation estimate,
 	 * excluding allocator overhead and any cache needed by span-based callers. */
@@ -1828,7 +2020,7 @@ std::vector<uint64_t> PassengerPrecomputedTable::InspectBuildingPolicyRow(Statio
 		std::span<const uint32_t> candidates;
 		if (this->flat_storage) { this->ExpandPolicy(*row, state, expanded); candidates = expanded; }
 		else candidates = row->policies[row->indices[state]].candidates;
-		auto [cost, wait] = this->PolicyValues(*row, state); const auto &sum = this->strategy.sums[state];
+		auto [cost, wait] = this->PolicyValues(*row, state); const auto &sum = this->work.strategy.sums[state];
 		result.insert(result.end(), {state, uint64_t(cost), uint64_t(wait), sum.numerator.high, sum.numerator.low, sum.frequency, candidates.size()});
 		for (uint32_t board : candidates) result.push_back(board);
 		const auto &label = row->labels[state];
