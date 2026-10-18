@@ -7,6 +7,8 @@
 #ifndef PASSENGER_SERVICE_DATABASE_H
 #define PASSENGER_SERVICE_DATABASE_H
 
+#include "passenger_precomputed_progress.h"
+
 #include "passenger_journey_planner.h"
 #include "passenger_journey_type.h"
 #include "passenger_journey_schedule.h"
@@ -162,6 +164,7 @@ public:
 	void TickPrecomputed(size_t allowance = BUILD_WORK);
 	bool PreparePrecomputed(); ///< Initial trees or replacement graph barrier: one slice, without advancing StateTicks.
 	bool IsPreparingPrecomputed() const;
+	PassengerPrecomputedProgress GetPrecomputedProgress() const; ///< O(NUM_CARGO), no diagnostic copies or worker reads.
 	uint64_t GetPrecomputedPreparationNanoseconds() const { return this->precomputed_preparation_nanoseconds; }
 	void DiscardPrecomputed();
 	bool PrecomputedFinished() const;

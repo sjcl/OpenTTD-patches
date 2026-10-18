@@ -10,6 +10,7 @@
 #include "stdafx.h"
 #include "passenger_journey_active.h"
 #include "passenger_service_database.h"
+#include "passenger_precomputed_gui.h"
 
 #include "blitter/factory.hpp"
 #include "sound/sound_driver.hpp"
@@ -1843,6 +1844,7 @@ void GameLoop()
 	if (_network_available) NetworkBackgroundLoop();
 
 	DebugSendRemoteMessages();
+	UpdateInitialPassengerProgress();
 
 	/* Initial trees and replacement graph preparation yield to video/input
 	 * between slices, including while paused. Network peers use the shared
@@ -1850,9 +1852,21 @@ void GameLoop()
 	if (!_networking && _game_mode == GameMode::Normal && !HasModalProgress()) {
 		const auto started = std::chrono::steady_clock::now();
 		bool ready;
-		do {
-			ready = GetPassengerServiceDatabase().PreparePrecomputed();
-		} while (!ready && std::chrono::steady_clock::now() - started < std::chrono::milliseconds(8));
+		try {
+			do {
+				ready = GetPassengerServiceDatabase().PreparePrecomputed();
+			} while (!ready && std::chrono::steady_clock::now() - started < std::chrono::milliseconds(8));
+		} catch (const std::exception &) {
+			/* Deferred singleplayer replay now runs outside SafeLoad's error
+			 * boundary. An invalid saved cursor must still return to the menu. */
+			if (GetPassengerServiceDatabase().GetLoadState() != PassengerServiceDatabase::LoadState::Invalid) throw;
+			auto type = GetSaveLoadErrorType();
+			auto message = GetSaveLoadErrorMessage();
+			SwitchToMode(SwitchMode::Menu);
+			ShowErrorMessage(std::move(type), std::move(message), WarningLevel::Critical);
+			return;
+		}
+		UpdateInitialPassengerProgress();
 		if (!ready) {
 			SetWindowDirty(WindowClass::Statusbar, 0);
 			ExecuteCommandQueue();
@@ -1866,6 +1880,7 @@ void GameLoop()
 	if (_networking && !HasModalProgress()) {
 		/* Multiplayer */
 		NetworkGameLoop();
+		UpdateInitialPassengerProgress();
 	} else {
 		if (_network_reconnect > 0 && --_network_reconnect == 0) {
 			/* This means that we want to reconnect to the last host

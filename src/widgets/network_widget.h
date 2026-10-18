@@ -94,6 +94,8 @@ enum NetworkJoinStatusWidgets : WidgetID {
 	WID_NJS_PROGRESS_BAR,  ///< Simple progress bar.
 	WID_NJS_PROGRESS_TEXT, ///< Text explaining what is happening.
 	WID_NJS_CANCELOK,      ///< Cancel / OK button.
+	WID_NJS_PASSENGER_PANEL, ///< Optional local passenger construction progress.
+	WID_NJS_PASSENGER_PROGRESS, ///< Phase and published destination fraction.
 };
 
 /** Widgets of the #NetworkCompanyPasswordWindow class. */

@@ -2402,6 +2402,17 @@ STR_NETWORK_START_SERVER_NEW_GAME_NAME_OSKTITLE                 :{BLACK}ネッ�
 # Network connecting window
 STR_NETWORK_CONNECTING_CAPTION                                  :{WHITE}接続中…
 
+STR_PASSENGER_PRECOMPUTED_CAPTION                               :{WHITE}旅客経路表を構築しています
+STR_PASSENGER_PRECOMPUTED_SERVICES                              :{BLACK}運行データの準備
+STR_PASSENGER_PRECOMPUTED_GRAPH                                 :{BLACK}経路グラフの構築
+STR_PASSENGER_PRECOMPUTED_RESTORING                             :{BLACK}以前の経路表の復元
+STR_PASSENGER_PRECOMPUTED_TABLES                                :{BLACK}経路表の構築
+STR_PASSENGER_PRECOMPUTED_COMPLETE                              :{BLACK}ローカルの構築完了
+STR_PASSENGER_PRECOMPUTED_MEMORY                                :{BLACK}メモリ制限のため構築を停止しました
+STR_PASSENGER_PRECOMPUTED_INVALID                               :{BLACK}経路表を復元できませんでした
+STR_PASSENGER_PRECOMPUTED_PERCENT                               :{BLACK}{NUM}%
+STR_PASSENGER_PRECOMPUTED_DESTINATIONS                          :{BLACK}構築済み目的地数: {NUM} / {NUM}
+
 STR_NETWORK_CONNECTING_WAITING                                  :{BLACK}あなたより先に{NUM}人が待機しています
 STR_NETWORK_CONNECTING_DOWNLOADING_1                            :{BLACK}{BYTES}ダウンロード済
 STR_NETWORK_CONNECTING_DOWNLOADING_2                            :{BLACK}{1:BYTES}中、{0:BYTES}ダウンロード済

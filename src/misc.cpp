@@ -43,6 +43,7 @@
 #include "string_func.h"
 #include "plans_func.h"
 #include "session_stats.h"
+#include "passenger_precomputed_gui.h"
 #include "core/format.hpp"
 #include "3rdparty/monocypher/monocypher.h"
 
@@ -113,6 +114,7 @@ void InitializeGame(uint size_x, uint size_y, bool reset_date, bool reset_settin
 	/* Make sure there isn't any window that can influence anything
 	 * related to the new game we're about to start/load. */
 	UnInitWindowSystem();
+	ResetInitialPassengerProgress(true);
 
 	/* Clear link graph schedule and stop any link graph threads before
 	 * changing the map size. This avoids data races on the map size variables. */
