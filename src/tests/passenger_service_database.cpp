@@ -3571,7 +3571,7 @@ TEST_CASE("A publication alone sweeps waiting fallback packets at a bounded rate
 	const bool hyperpath = GENERATE(false, true);
 	CAPTURE(hyperpath);
 	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = true; _settings_game.linkgraph.passenger_journey_hyperpath = hyperpath;
-	f.Train({Stop(A), Stop(B)}); f.Train({Stop(C), Stop(D)}); auto &db = f.Build(); while (!db.PreparePrecomputed()) {}
+	auto *carrier = f.Train({Stop(A), Stop(B)}); f.Train({Stop(C), Stop(D)}); auto &db = f.Build(); while (!db.PreparePrecomputed()) {}
 	CHECK(db.RevisionAffectsWaitingPlans() == !hyperpath);
 	const int64_t interval = hyperpath ? StationCargoList::PASSENGER_TABLE_REVISION_SWEEP_TICKS : StationCargoList::PASSENGER_REVISION_SWEEP_TICKS;
 	auto &goods = Station::Get(A)->goods[PAX]; auto &waiting = goods.CreateData().cargo;
@@ -3598,7 +3598,14 @@ TEST_CASE("A publication alone sweeps waiting fallback packets at a bounded rate
 	InvalidatePassengerWaitingRouting();
 	route_at(swept + interval + 3); CHECK(waiting.passenger_generation_inspected == generations + 3);
 	/* An unchanged publication state never sweeps, however long it waits. */
-	route_at(swept + 4 * interval); CHECK(waiting.passenger_generation_inspected == generations + 3);
+	const StateTicks later = swept + 4 * interval;
+	route_at(later); CHECK(waiting.passenger_generation_inspected == generations + 3);
+	/* A service invalidation is a pending publication: bounded the same way, not dirty. */
+	db.Invalidate(carrier->orders->index); CHECK_FALSE(waiting.passenger_routing_dirty);
+	route_at(later + 1); CHECK(waiting.passenger_generation_inspected == generations + 4);
+	db.Invalidate(carrier->orders->index);
+	route_at(later + 2); CHECK(waiting.passenger_generation_inspected == generations + 4);
+	route_at(later + 1 + interval); CHECK(waiting.passenger_generation_inspected == generations + 5);
 }
 
 TEST_CASE("Precomputed single packet events leave thousands of sleeping intents untouched", "[passenger][precomputed][events][scaling]")
@@ -4098,7 +4105,9 @@ TEST_CASE("Precomputed idle loading passes do not rescan or replan waiting passe
 		CHECK(db.GetPrecomputedDiagnostic(PAX).queries == 1); CHECK(db.GetPrecomputedDiagnostic(PAX).operations == operations);
 		CHECK(GetPassengerJourneyTickDiagnostic().fair_share_work == 0);
 	}
-	db.Invalidate(); CHECK(waiting.passenger_routing_dirty);
+	/* An invalidation is a bounded generation request, like a publication. */
+	db.Invalidate(); CHECK_FALSE(waiting.passenger_routing_dirty);
+	CHECK(waiting.passenger_routing_revision == StationCargoList::PASSENGER_ROUTING_STALE_REVISION);
 }
 
 TEST_CASE("Precomputed waiting event CPU scaling", "[.benchmark][passenger][precomputed][events][scaling][cpu]")

@@ -2026,6 +2026,7 @@ void PassengerJourneySettingsChanged(int32_t)
 {
 	if (!_settings_game.linkgraph.passenger_journey_precomputed) GetPassengerServiceDatabase().DiscardPrecomputed();
 	InvalidatePassengerServiceDatabase();
+	InvalidatePassengerWaitingRouting(); // A mode change re-routes every waiting list at once.
 	/* Reserved cargo lives on vehicles. Return it before changing queue keys or mode. */
 	for (Station *station : Station::Iterate()) {
 		for (Vehicle *front : station->loading_vehicles) {

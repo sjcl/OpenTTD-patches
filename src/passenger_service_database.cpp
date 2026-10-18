@@ -455,7 +455,7 @@ void PassengerServiceDatabase::Invalidate(OrderListID id)
 	 * can be deleted or its order vector changed. Network commands stay queued. */
 	this->preparation_capture = {};
 	++this->boarding_revision;
-	InvalidatePassengerWaitingRouting();
+	RequestPassengerWaitingGeneration();
 	++this->diagnostic.invalidations;
 	if (id == OrderListID::Invalid()) {
 		++this->diagnostic.global_invalidations;

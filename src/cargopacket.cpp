@@ -203,6 +203,19 @@ void PassengerWaitingFlowsChanged(GoodsEntry &ge, CargoType cargo)
 	list.UpdatePassengerRoutingSchedule();
 }
 
+void RequestPassengerWaitingGeneration()
+{
+	/* An invalidated service only becomes unsafe: no waiting fallback packet can gain a plan from
+	 * it, and its later publication is a revision change anyway. Busy maps invalidate services
+	 * several times per tick (construction, capacity changes); sweep at the publication rate. */
+	for (const auto &[owner, list] : _passenger_station_lists) {
+		list->passenger_routing_revision = StationCargoList::PASSENGER_ROUTING_STALE_REVISION;
+		if (_settings_game.linkgraph.passenger_journey_precomputed && IsPassengerJourneyRoutingEnabled(owner.second)) list->RebuildWaitingIndex();
+		list->UpdatePassengerRoutingSchedule();
+	}
+	for (auto *list : _passenger_waiting_lists) list->passenger_routing_revision = StationCargoList::PASSENGER_ROUTING_STALE_REVISION;
+}
+
 void InvalidatePassengerWaitingRouting()
 {
 	/* Index residency is derived. In particular a joining peer rebuilds lists

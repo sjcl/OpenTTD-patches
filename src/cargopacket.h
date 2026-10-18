@@ -41,6 +41,7 @@ struct CargoPacket;
 void PassengerWaitingPacketChanged(const CargoPacket &packet);
 void PassengerWaitingRoutingChanged(CargoPacket &packet);
 void InvalidatePassengerWaitingRouting();
+void RequestPassengerWaitingGeneration(); ///< Services were invalidated: sweep at the bounded publication rate.
 void ShiftPassengerWaitingEventTicks(StateTicksDelta delta);
 struct GoodsEntry;
 void PassengerWaitingFlowsChanged(GoodsEntry &ge, CargoType cargo); ///< The station's CargoDist flows for this cargo changed.
@@ -779,6 +780,7 @@ public:
 	 * a waiting packet through Hyperpath rows at all (a rare safety pass only); legacy rows keep a
 	 * shorter bound. Table changes, flow changes and invalidations still sweep immediately. */
 	static constexpr int64_t PASSENGER_REVISION_SWEEP_TICKS = 1024, PASSENGER_TABLE_REVISION_SWEEP_TICKS = 8192;
+	static constexpr uint64_t PASSENGER_ROUTING_STALE_REVISION = UINT64_MAX - 1; ///< Saved: a service invalidation is pending, like a publication.
 	uint64_t passenger_routing_inspected = 0, passenger_generation_inspected = 0; ///< Diagnostics only.
 	void RebuildWaitingIndex() const { this->EnsureWaitingIndex(); }
 	CargoType passenger_index_cargo = INVALID_CARGO; ///< Derived owning cargo, supplied by routing/boarding events.
