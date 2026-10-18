@@ -1,0 +1,138 @@
+{
+  "legacy": {
+    "previous": {
+      "events": {
+        "pending": 87000,
+        "overdue": 87000,
+        "oldest_ticks": 2576,
+        "maximum_station_backlog": 3580,
+        "on_time": 283,
+        "packets": 15946005,
+        "groups": 890083,
+        "scheduler_us": 32386904,
+        "arrival_candidates": 958791,
+        "arrival_passengers": 1391531,
+        "unresolved_missed_estimate": 0
+      },
+      "generation": {
+        "packets": 15776304,
+        "microseconds": 27351315,
+        "packets_per_tick": 7703.2734375,
+        "diagnostic_wall_ms_per_tick": 13.35513427734375
+      },
+      "unchanged_generation_packets": 0,
+      "RunPassengerWaitingEvents": {
+        "inclusive_cpu_ms_per_tick": 15.314483887,
+        "inclusive_samples": 31366
+      }
+    },
+    "current": {
+      "events": {
+        "pending": 87035,
+        "overdue": 87035,
+        "oldest_ticks": 588,
+        "maximum_station_backlog": 3564,
+        "on_time": 296,
+        "packets": 15947357,
+        "groups": 898694,
+        "scheduler_us": 36244730,
+        "arrival_candidates": 1025743,
+        "arrival_passengers": 1458520,
+        "unresolved_missed_estimate": 0
+      },
+      "generation": {
+        "packets": 15778297,
+        "microseconds": 30720418,
+        "packets_per_tick": 7704.24658203125,
+        "diagnostic_wall_ms_per_tick": 15.0002041015625
+      },
+      "unchanged_generation_packets": 0,
+      "RunPassengerWaitingEvents": {
+        "inclusive_cpu_ms_per_tick": 16.226173145,
+        "inclusive_samples": 33231
+      }
+    },
+    "input_sha256": "de7d27c10998a09da118d7448d654c40bde1df4c64c7219cab6e9637136815c0",
+    "source_input_sha256": "02e4ea48dbed6116a5db569509e0c3fcda98c21090f8e22382c527caec22b671",
+    "input_format_conversion_validated": true,
+    "generation_packet_percent": 0.012632870157669451,
+    "generation_diagnostic_time_percent": 12.317883070704273,
+    "waiting_inclusive_cpu_percent": 5.953117746095948,
+    "overdue_cleared_at_end": false,
+    "canonical_equality_checked": false,
+    "machine_adjustment_is_reference_only": true,
+    "reference_files": {
+      "docs/measurements/passenger-wpr-rebaseline-88cb61e3-2026-10-18/candidate/legacy-functions.csv": "7fae1ceddec7c3fe1a829c47d3081792998b2593743868f77b68503edaa8897c",
+      "docs/measurements/passenger-wpr-rebaseline-88cb61e3-2026-10-18/candidate/legacy/process.json": "f3d1440963f76d3bd66bc2a6c5f1ae5b8ff2ea6089555a0ed6171c8ff40ac3f2",
+      "docs/measurements/passenger-wpr-rebaseline-88cb61e3-2026-10-18/candidate/legacy/on-1-console.txt.gz": "0868146c56fb0cefe81b8b55d6e151bec6d752a4e0101b8f8632c375b7897689"
+    }
+  },
+  "hyperpath": {
+    "previous": {
+      "events": {
+        "pending": 116611,
+        "overdue": 6215,
+        "oldest_ticks": 42,
+        "maximum_station_backlog": 3677,
+        "on_time": 20122,
+        "packets": 6166588,
+        "groups": 465408,
+        "scheduler_us": 6783482,
+        "arrival_candidates": 113007,
+        "arrival_passengers": 126907,
+        "unresolved_missed_estimate": 0
+      },
+      "generation": {
+        "packets": 5978149,
+        "microseconds": 3622378,
+        "packets_per_tick": 2919.01806640625,
+        "diagnostic_wall_ms_per_tick": 1.7687392578125
+      },
+      "unchanged_generation_packets": 5964461,
+      "RunPassengerWaitingEvents": {
+        "inclusive_cpu_ms_per_tick": 2.958418262,
+        "inclusive_samples": 6059
+      }
+    },
+    "current": {
+      "events": {
+        "pending": 116391,
+        "overdue": 5954,
+        "oldest_ticks": 42,
+        "maximum_station_backlog": 3351,
+        "on_time": 20359,
+        "packets": 6014268,
+        "groups": 451515,
+        "scheduler_us": 8098481,
+        "arrival_candidates": 116204,
+        "arrival_passengers": 131086,
+        "unresolved_missed_estimate": 0
+      },
+      "generation": {
+        "packets": 5825854,
+        "microseconds": 4352659,
+        "packets_per_tick": 2844.6552734375,
+        "diagnostic_wall_ms_per_tick": 2.12532177734375
+      },
+      "unchanged_generation_packets": 5812177,
+      "RunPassengerWaitingEvents": {
+        "inclusive_cpu_ms_per_tick": 3.655130469,
+        "inclusive_samples": 7486
+      }
+    },
+    "input_sha256": "413a8b765d2b70b4920d30538b2a4ec34b2e89b702804c4c6b1ffe11f148711a",
+    "source_input_sha256": "3e8cfab5e70b3843c56b989891ab327bc75daa72ee7f5b232250d86eb6fade7e",
+    "input_format_conversion_validated": true,
+    "generation_packet_percent": -2.5475276711905304,
+    "generation_diagnostic_time_percent": 20.16026488676774,
+    "waiting_inclusive_cpu_percent": 23.550159081596433,
+    "overdue_cleared_at_end": false,
+    "canonical_equality_checked": false,
+    "machine_adjustment_is_reference_only": true,
+    "reference_files": {
+      "docs/measurements/passenger-wpr-rebaseline-88cb61e3-2026-10-18/candidate/hyperpath-functions.csv": "eb5a4c11d193721e026d9bb98406c0d6fa5b3e76a0e3a5007ecd38520edff784",
+      "docs/measurements/passenger-wpr-rebaseline-88cb61e3-2026-10-18/candidate/hyperpath/process.json": "6a2cc086472afa9223d6399e5318c72fb7519ac2cadfed9b88cd48ac1c309ca0",
+      "docs/measurements/passenger-wpr-rebaseline-88cb61e3-2026-10-18/candidate/hyperpath/on-1-console.txt.gz": "c582ca04b2ba92b41a5d4bdb3e025436b13c283d588236c70fb1d9d1391b1c49"
+    }
+  }
+}

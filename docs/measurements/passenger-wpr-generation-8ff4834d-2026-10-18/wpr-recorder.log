@@ -1,0 +1,12 @@
+﻿2026-10-18T19:57:06.2830539+09:00 wpr -start CPU
+2026-10-18T19:57:06.9645427+09:00 wpr -marker legacy-begin -flush
+2026-10-18T19:58:14.5406498+09:00 wpr -marker legacy-end -flush
+2026-10-18T19:58:14.6374303+09:00 wpr -stop C:\Users\bebe\.codex\worktrees\8621\OpenTTD-patches\build-wpr-8ff4834d\legacy\cpu.etl
+Press Ctrl+C to cancel the stop operation.
+The trace was successfully saved.
+2026-10-18T20:02:51.1038244+09:00 wpr -start CPU
+2026-10-18T20:02:51.3637261+09:00 wpr -marker hyperpath-begin -flush
+2026-10-18T20:03:32.9158115+09:00 wpr -marker hyperpath-end -flush
+2026-10-18T20:03:33.0222297+09:00 wpr -stop C:\Users\bebe\.codex\worktrees\8621\OpenTTD-patches\build-wpr-8ff4834d\hyperpath\cpu.etl
+Press Ctrl+C to cancel the stop operation.
+The trace was successfully saved.

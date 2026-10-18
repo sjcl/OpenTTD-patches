@@ -1,0 +1,132 @@
+{
+  "legacy": {
+    "source_input_sha256": "02e4ea48dbed6116a5db569509e0c3fcda98c21090f8e22382c527caec22b671",
+    "input_sha256": "de7d27c10998a09da118d7448d654c40bde1df4c64c7219cab6e9637136815c0",
+    "state_ticks_advanced": 0,
+    "input_uncompressed_sha256": "0d945de1948ecfc33e7bc3681a56a7fd9d4ee9dc639f96e7d249b0981686fa50",
+    "output_uncompressed_sha256": "aad99deb0613bc72934ce727f0edf3f800bb1fb6ac4a0a78da9311701ed9e761",
+    "feature_versions": [
+      {
+        "feature": "passenger_od_assignment",
+        "from_version": 3,
+        "to_version": 1,
+        "offset": 4310
+      },
+      {
+        "feature": "passenger_journey_routing",
+        "from_version": 3,
+        "to_version": 1,
+        "offset": 4352
+      },
+      {
+        "feature": "passenger_periodic",
+        "from_version": 17,
+        "to_version": 1,
+        "offset": 4384
+      }
+    ],
+    "database": {
+      "from_version": 15,
+      "to_version": 1,
+      "input_bytes": 7181136,
+      "output_bytes": 7181016,
+      "output_sha256": "cc38dcc1e8932ae618103dce28a77f61a37d585a51c536ac493a5a0fc68ed021",
+      "networks": [
+        5371,
+        120,
+        5371,
+        0
+      ],
+      "retired_algorithm_pairs": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "retired_revisit": [
+        1,
+        1
+      ],
+      "retired_witness": [
+        1,
+        1
+      ],
+      "retired_flat": [
+        0,
+        0
+      ],
+      "active_flags_match_current_hardwired_algorithms": true,
+      "retained_generation_absent": true
+    },
+    "untouched_uncompressed_prefix_sha256": "3342a3f78d8bd295ec2a5a4ea2ba77d0f18fb90d11e0cd8d3688b9f73463d842"
+  },
+  "hyperpath": {
+    "source_input_sha256": "3e8cfab5e70b3843c56b989891ab327bc75daa72ee7f5b232250d86eb6fade7e",
+    "input_sha256": "413a8b765d2b70b4920d30538b2a4ec34b2e89b702804c4c6b1ffe11f148711a",
+    "state_ticks_advanced": 0,
+    "input_uncompressed_sha256": "b1a9b8068246a99494cc453b6a79024d2171fe3d98542b8f8ecf1bda56432579",
+    "output_uncompressed_sha256": "cdf0e0d8feedd1c7af86250f505340b677cce9eddfdcf252af7eaf9990f8cb6b",
+    "feature_versions": [
+      {
+        "feature": "passenger_od_assignment",
+        "from_version": 3,
+        "to_version": 1,
+        "offset": 4310
+      },
+      {
+        "feature": "passenger_journey_routing",
+        "from_version": 3,
+        "to_version": 1,
+        "offset": 4352
+      },
+      {
+        "feature": "passenger_periodic",
+        "from_version": 17,
+        "to_version": 1,
+        "offset": 4384
+      }
+    ],
+    "database": {
+      "from_version": 15,
+      "to_version": 1,
+      "input_bytes": 7196800,
+      "output_bytes": 7196680,
+      "output_sha256": "e5882938468f5dd90f95fe0918fc0c3b1a727a69d62af74709460e2049a003a6",
+      "networks": [
+        5371,
+        278,
+        5371,
+        0
+      ],
+      "retired_algorithm_pairs": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "retired_revisit": [
+        1,
+        1
+      ],
+      "retired_witness": [
+        1,
+        1
+      ],
+      "retired_flat": [
+        1,
+        0
+      ],
+      "active_flags_match_current_hardwired_algorithms": true,
+      "retained_generation_absent": true
+    },
+    "untouched_uncompressed_prefix_sha256": "3342a3f78d8bd295ec2a5a4ea2ba77d0f18fb90d11e0cd8d3688b9f73463d842"
+  }
+}
