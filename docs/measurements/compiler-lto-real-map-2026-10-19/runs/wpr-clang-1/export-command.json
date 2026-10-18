@@ -1,0 +1,24 @@
+{
+  "command": [
+    "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-9ab0228d\\tools\\wpt\\Windows Kits\\10\\Windows Performance Toolkit\\wpaexporter.exe",
+    "-i",
+    "C:\\Users\\bebe\\.codex\\worktrees\\6d2b\\OpenTTD-patches\\build-compiler-lto-comparison\\runs\\wpr-clang-1\\cpu.etl",
+    "-symbols",
+    "-marks",
+    "simulation-begin",
+    "simulation-end",
+    "-profile",
+    "C:\\Users\\bebe\\.codex\\worktrees\\6d2b\\OpenTTD-patches\\build-compiler-lto-comparison\\clang\\cpu-sampled.wpaProfile",
+    "-outputfolder",
+    "C:\\Users\\bebe\\.codex\\worktrees\\6d2b\\OpenTTD-patches\\build-compiler-lto-comparison\\runs\\wpr-clang-1\\wpa",
+    "-outputformat",
+    "CSV"
+  ],
+  "environment": {
+    "_NT_SYMBOL_PATH": "C:\\Users\\bebe\\.codex\\worktrees\\6d2b\\OpenTTD-patches\\build-compiler-lto-comparison\\clang\\Release",
+    "_NT_SYMCACHE_PATH": "C:\\Users\\bebe\\.codex\\worktrees\\6d2b\\OpenTTD-patches\\build-compiler-lto-comparison\\clang\\symcache",
+    "_NT_EXECUTABLE_IMAGE_PATH": "C:\\Users\\bebe\\.codex\\worktrees\\6d2b\\OpenTTD-patches\\build-compiler-lto-comparison\\clang\\Release"
+  },
+  "etl_sha256": "0d5eb5ce701d6e87d2eaa63c882e3899c3aea79dae719b5d3d4d2f0de508d97a",
+  "pdb_sha256": "b003a369c8289a274fb9253069af80f2f99d3c7e37ece033f03d0bbe54cb348d"
+}
