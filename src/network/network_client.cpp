@@ -10,6 +10,7 @@
 #include "../stdafx.h"
 #include "network_gui.h"
 #include "../passenger_service_database.h"
+#include "../passenger_precomputed_gui.h"
 #include "../sl/saveload_filter.h"
 #include "../sl/saveload_func.h"
 #include "../command_func.h"
@@ -220,6 +221,7 @@ NetworkRecvStatus ClientNetworkGameSocketHandler::CloseConnection(NetworkRecvSta
 void ClientNetworkGameSocketHandler::ClientError(NetworkRecvStatus res)
 {
 	if (this->IsPendingDeletion()) return;
+	ResetInitialPassengerProgress(false);
 
 	/* We just want to close the connection.. */
 	if (res == NetworkRecvStatus::CloseQuery) {

@@ -2052,7 +2052,10 @@ void PassengerJourneySettingsChanged(int32_t)
 void AfterLoadPassengerJourneys()
 {
 	ClearPassengerOdFallbackCache();
-	GetPassengerServiceDatabase().FinishLoad(SlXvIsFeaturePresent(XSLFI_PASSENGER_PERIODIC), _networking);
+	/* Use the existing cooperative replay/barrier in singleplayer too, so
+	 * initial restoration can display progress and yield to video/input. */
+	GetPassengerServiceDatabase().FinishLoad(SlXvIsFeaturePresent(XSLFI_PASSENGER_PERIODIC), _networking ||
+			(_settings_game.linkgraph.passenger_journey_routing && _settings_game.linkgraph.passenger_journey_precomputed));
 	if (SlXvIsFeatureMissing(XSLFI_PASSENGER_PERIODIC)) _settings_game.linkgraph.passenger_journey_precomputed = false;
 	if (SlXvIsFeatureMissing(XSLFI_PASSENGER_PERIODIC)) _settings_game.linkgraph.passenger_journey_periodic = true;
 	InvalidatePassengerServiceIndex();
