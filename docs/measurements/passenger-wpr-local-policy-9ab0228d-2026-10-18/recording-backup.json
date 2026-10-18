@@ -1,0 +1,38 @@
+{
+  "path": "C:\\Users\\bebe\\.codex\\visualizations\\2026\\10\\17\\01a14897-d705-7e72-a972-7f5e9758a329\\passenger-wpr-recordings-9ab0228d-2026-10-18",
+  "files": {
+    "legacy/cpu.etl": {
+      "bytes": 2823815168,
+      "sha256": "fb4e9f177e882556209a8a4d2d974b1cc786e3ceaa8b88b8096785f354f28c4c",
+      "read_only": true
+    },
+    "hyperpath/cpu.etl": {
+      "bytes": 6441402368,
+      "sha256": "a8a236ac93bda96814e89c69a0eba1517dd7d8259e12d9634d9c49976087e6fb",
+      "read_only": true
+    },
+    "Release/openttd.exe": {
+      "bytes": 14234624,
+      "sha256": "4f0bcaa3de4834275aab59ee48e26926fd19b40a431c2868d03d5b1326b821c8"
+    },
+    "Release/openttd.pdb": {
+      "bytes": 150695936,
+      "sha256": "df53d3ab89e7f4e405c5f47647b1faa72da9d73b93ad75ee234f7b32d296e98e"
+    },
+    "cpu-sampled.wpaProfile": {
+      "bytes": 4034,
+      "sha256": "5092304c54ce1f2d1e34f73cc09c6d8b91513a7aba76e6c16fd1f4403067682c"
+    },
+    "build-identity.json": {
+      "bytes": 812,
+      "sha256": "70f74c3286922bb935f6a50a9298e3ae79b618a198073ad35bd35922f7c5042e"
+    },
+    "input-identity.json": {
+      "bytes": 913,
+      "sha256": "4b26939e49976feb544b49b2ac2b260d4bee2b02eb6527995387d0beac99ad5a"
+    }
+  },
+  "matching_binary_and_pdb_copied": true,
+  "traces_read_only": true,
+  "note": "Only the current 9ab0228d artifacts are retained. Old untracked measurements and external backups were deleted at the user request."
+}

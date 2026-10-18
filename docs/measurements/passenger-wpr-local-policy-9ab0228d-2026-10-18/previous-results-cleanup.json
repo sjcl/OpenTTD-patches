@@ -1,0 +1,86 @@
+{
+  "request": "User requested deletion of all previous untracked measurement results",
+  "keep": [
+    "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-9ab0228d",
+    "Git-tracked reports, CSVs, canonical results and source files",
+    "Original gc3833d807.sav"
+  ],
+  "free_before": 9665597440,
+  "targets": [
+    {
+      "path": "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-rebaseline-88cb61e3",
+      "files": 21474,
+      "logical_bytes": 78195144163,
+      "exists": true,
+      "validated_within_named_root": true,
+      "removed": true
+    },
+    {
+      "path": "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-88cb61e3",
+      "files": 2977,
+      "logical_bytes": 2250312440,
+      "exists": true,
+      "validated_within_named_root": true,
+      "removed": true
+    },
+    {
+      "path": "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-8ff4834d",
+      "files": 2804,
+      "logical_bytes": 12904810712,
+      "exists": true,
+      "validated_within_named_root": true,
+      "removed": true
+    },
+    {
+      "path": "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-f9c4a85b",
+      "files": 2293,
+      "logical_bytes": 12130683760,
+      "exists": true,
+      "validated_within_named_root": true,
+      "removed": true
+    },
+    {
+      "path": "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-merge-jgrpp-ya-20261018",
+      "files": 2960,
+      "logical_bytes": 1697140726,
+      "exists": true,
+      "validated_within_named_root": true,
+      "removed": true
+    },
+    {
+      "path": "C:\\Users\\bebe\\.codex\\visualizations\\2026\\10\\17\\01a14897-d705-7e72-a972-7f5e9758a329\\passenger-wpr-recordings-88cb61e3-2026-10-18",
+      "files": 50,
+      "logical_bytes": 22205714550,
+      "exists": true,
+      "validated_within_named_root": true,
+      "removed": true
+    },
+    {
+      "path": "C:\\Users\\bebe\\.codex\\visualizations\\2026\\10\\17\\01a14897-d705-7e72-a972-7f5e9758a329\\passenger-wpr-recordings-8ff4834d-2026-10-18",
+      "files": 16,
+      "logical_bytes": 5326787396,
+      "exists": true,
+      "validated_within_named_root": true,
+      "removed": true
+    },
+    {
+      "path": "C:\\Users\\bebe\\.codex\\visualizations\\2026\\10\\17\\01a14897-d705-7e72-a972-7f5e9758a329\\passenger-wpr-recordings-f9c4a85b-2026-10-18",
+      "files": 17,
+      "logical_bytes": 6730198940,
+      "exists": true,
+      "validated_within_named_root": true,
+      "removed": true
+    },
+    {
+      "path": "C:\\Users\\bebe\\.codex\\visualizations\\2026\\10\\17\\01a14897-d705-7e72-a972-7f5e9758a329\\passenger-wpr-inputs-88cb61e3-2026-10-18.zip",
+      "files": 1,
+      "logical_bytes": 519158266,
+      "exists": true,
+      "validated_within_named_root": true,
+      "removed": true
+    }
+  ],
+  "free_after": 124829519872,
+  "free_change_bytes": 115163922432,
+  "all_previous_targets_removed": true
+}

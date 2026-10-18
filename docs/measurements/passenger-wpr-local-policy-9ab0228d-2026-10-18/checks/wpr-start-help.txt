@@ -1,0 +1,23 @@
+
+  wpr -start ...	Starts WPR recording with the given profile
+	Usage:	wpr -start [<filename.wprp>!]<profile> [-start <profile> ...]
+			[-shutdown [<KSR>]]
+			[-filemode]
+			[-recordtempto <temp folder path>]
+			[-container [ID] ... [up to 64 IDs] [-host]]
+	Ex>	wpr -start MyCustom.wprp!AudioPerf.Verbose -filemode
+	Ex>	wpr -start CPU.light -start Handle.light -recordtempto d:\test
+
+	-start	[<filename.wprp>!]<profile> is either a built-in profile or a path to
+			(and name of) a user-defined custom profile.
+			The user can specify up to 64 profiles on the command line.
+			Each profile is specified as:
+			[<filename.wprp>!]<profile name>[.{light|verbose}]
+			Each profile can define both light and verbose variants or just one.
+			If neither option is specified, the verbose variant is used unless
+			the profile has only a light variant.
+	-shutdown	Specifies that session info and recordings will persist over the reboot.
+			Add KSR to trace for Kernel Soft Reboot.
+	-filemode	Specifies that recording is done in file mode, the default is memory mode.
+	-container	Not to be used with OnOffScenario. See wpr -help advanced for more info.
+	-instancename	Specifies unique session name. See wpr -help advanced for more info.

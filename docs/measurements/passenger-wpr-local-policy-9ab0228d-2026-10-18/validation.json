@@ -1,0 +1,132 @@
+{
+  "product_commit": "9ab0228db17178ef931de961305ebec544162f6a",
+  "same_input": true,
+  "canonical_equality_checked": true,
+  "canonical": {
+    "legacy": {
+      "equal": true,
+      "fields": 24,
+      "differences": {}
+    },
+    "hyperpath": {
+      "equal": true,
+      "fields": 24,
+      "differences": {}
+    }
+  },
+  "native_tests": 763,
+  "native_assertions": 10586649,
+  "previous_results_deleted": true,
+  "runs": {
+    "legacy": {
+      "exact_ticks": 2048,
+      "input_sha256": "916cfa88eab18342199ec0c77f0c15c5477c961be7fa60d71e2d22a1b878992a",
+      "simulation_timing_valid": true,
+      "whole_process_timing_valid": true,
+      "phase_contamination": [],
+      "kernel_window_valid": true,
+      "lost_events": 0,
+      "lost_buffers": 0,
+      "unresolved_product_functions": {},
+      "canonical_equal": true,
+      "canonical_fields": 24,
+      "payments_valid": true,
+      "raw_csv_hashes_match": true,
+      "conservation_checks": {
+        "all": {
+          "stack_total_ns": 65452057000,
+          "stack_samples": 65441,
+          "exclusive_total_ns": 65452057000,
+          "exclusive_samples": 65441
+        },
+        "main": {
+          "stack_total_ns": 63147680600,
+          "stack_samples": 63139,
+          "exclusive_total_ns": 63147680600,
+          "exclusive_samples": 63139
+        },
+        "simulation_stack": {
+          "stack_total_ns": 50206582400,
+          "stack_samples": 50199,
+          "exclusive_total_ns": 50206582400,
+          "exclusive_samples": 50199
+        }
+      },
+      "unavailable_stack": {
+        "all": {
+          "ns": 861087200,
+          "samples": 861
+        },
+        "main": {
+          "ns": 828030000,
+          "samples": 828
+        }
+      },
+      "wpa_invalid_event_warning": [
+        "Warning: EventSink {13399e05-4afd-48fd-ba25-6b673a7a2b92} signaled an Invalid Event:\n         Event#: 30151032 (T#0:#30151032)\n         TimeStamp:   86321811, Process: 60172, Thread: 24420, Cpu:   1\n         ClassicEventGuid: {01853a65-418f-4f36-aefc-dc0f1d2fd235}\n         ClassicEventDescriptor: 0x0c  0x00 0x0002\n         MofLength: 112"
+      ],
+      "invalid_event_times_us": [
+        86321811
+      ],
+      "invalid_events_outside_markers": true
+    },
+    "hyperpath": {
+      "exact_ticks": 2048,
+      "input_sha256": "916cfa88eab18342199ec0c77f0c15c5477c961be7fa60d71e2d22a1b878992a",
+      "simulation_timing_valid": true,
+      "whole_process_timing_valid": true,
+      "phase_contamination": [],
+      "kernel_window_valid": true,
+      "lost_events": 0,
+      "lost_buffers": 0,
+      "unresolved_product_functions": {},
+      "canonical_equal": true,
+      "canonical_fields": 24,
+      "payments_valid": true,
+      "raw_csv_hashes_match": true,
+      "conservation_checks": {
+        "all": {
+          "stack_total_ns": 67327311200,
+          "stack_samples": 67307,
+          "exclusive_total_ns": 67327311200,
+          "exclusive_samples": 67307
+        },
+        "main": {
+          "stack_total_ns": 61479983600,
+          "stack_samples": 61467,
+          "exclusive_total_ns": 61479983600,
+          "exclusive_samples": 61467
+        },
+        "simulation_stack": {
+          "stack_total_ns": 56138865800,
+          "stack_samples": 56127,
+          "exclusive_total_ns": 56138865800,
+          "exclusive_samples": 56127
+        }
+      },
+      "unavailable_stack": {
+        "all": {
+          "ns": 1027498800,
+          "samples": 1027
+        },
+        "main": {
+          "ns": 920413700,
+          "samples": 920
+        }
+      },
+      "wpa_invalid_event_warning": [
+        "Warning: EventSink {39cda801-59d8-472d-bc00-601a4150c4c4} signaled an Invalid Event:\n         Event#: 64085159 (T#0:#64085159)\n         TimeStamp:   85642733, Process: 122704, Thread: 19828, Cpu:  12\n         ProviderId: {a669021c-c450-4609-a035-5af59af4df18}\n         EventDescriptor: 0x0096 0x0001 0x2a   0x00    0x00    0x05  0x0000000000020000\n         UserDataLength: 21\n\nWarning: EventSink {39cda801-59d8-472d-bc00-601a4150c4c4} signaled an Invalid Event:\n         Event#: 64212047 (T#0:#64212047)\n         TimeStamp:   85655248, Process: 122704, Thread: 19828, Cpu:  16\n         ProviderId: {a669021c-c450-4609-a035-5af59af4df18}\n         EventDescriptor: 0x0096 0x0001 0x2a   0x00    0x00    0x05  0x0000000000020000\n         UserDataLength: 21\n\nWarning: EventSink {39cda801-59d8-472d-bc00-601a4150c4c4} signaled an Invalid Event:\n         Event#: 64212336 (T#0:#64212336)\n         TimeStamp:   85655279, Process: 122704, Thread: 19828, Cpu:  16\n         ProviderId: {a669021c-c450-4609-a035-5af59af4df18}\n         EventDescriptor: 0x0096 0x0001 0x2a   0x00    0x00    0x05  0x0000000000020000\n         UserDataLength: 21\n\nWarning: EventSink {39cda801-59d8-472d-bc00-601a4150c4c4} signaled an Invalid Event:\n         Event#: 64212637 (T#0:#64212637)\n         TimeStamp:   85655311, Process: 122704, Thread: 19828, Cpu:  16\n         ProviderId: {a669021c-c450-4609-a035-5af59af4df18}\n         EventDescriptor: 0x0096 0x0001 0x2a   0x00    0x00    0x05  0x0000000000020000\n         UserDataLength: 21\n\nWarning: EventSink {39cda801-59d8-472d-bc00-601a4150c4c4} signaled an Invalid Event:\n         Event#: 64255995 (T#0:#64255995)\n         TimeStamp:   85660465, Process: 122704, Thread: 19828, Cpu:  18\n         ProviderId: {a669021c-c450-4609-a035-5af59af4df18}\n         EventDescriptor: 0x0096 0x0001 0x2a   0x00    0x00    0x05  0x0000000000020000\n         UserDataLength: 21\n\nWarning: EventSink {39cda801-59d8-472d-bc00-601a4150c4c4} signaled an Invalid Event:\n         Event#: 64318856 (T#0:#64318856)\n         TimeStamp:   85668089, Process: 122704, Thread: 19828, Cpu:  12\n         ProviderId: {a669021c-c450-4609-a035-5af59af4df18}\n         EventDescriptor: 0x0096 0x0001 0x2a   0x00    0x00    0x05  0x0000000000020000\n         UserDataLength: 21\n\nWarning: EventSink {13399e05-4afd-48fd-ba25-6b673a7a2b92} signaled an Invalid Event:\n         Event#: 65147260 (T#0:#65147260)\n         TimeStamp:   86034888, Process: 109896, Thread: 120940, Cpu:  15\n         ClassicEventGuid: {01853a65-418f-4f36-aefc-dc0f1d2fd235}\n         ClassicEventDescriptor: 0x0c  0x00 0x0002\n         MofLength: 112"
+      ],
+      "invalid_event_times_us": [
+        85642733,
+        85655248,
+        85655279,
+        85655311,
+        85660465,
+        85668089,
+        86034888
+      ],
+      "invalid_events_outside_markers": true
+    }
+  }
+}

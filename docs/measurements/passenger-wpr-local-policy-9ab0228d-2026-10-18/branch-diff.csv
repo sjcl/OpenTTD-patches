@@ -1,0 +1,30 @@
+branch,legacy_ms_per_tick,hyperpath_ms_per_tick,delta_ms_per_tick,legacy_samples,hyperpath_samples
+[worker threads],1.125183789,2.855140430,1.729956641,2302,5840
+openttd.exe!RunTileLoop,9.814093848,11.072493652,1.258399805,20098,22675
+openttd.exe!CallVehicleTicks,12.887509424,13.662662842,0.775153418,26393,27981
+openttd.exe!PassengerServiceDatabase::Tick,0.239952588,0.734514209,0.494561621,490,1499
+openttd.exe!RunPassengerWaitingEvents,0.981813477,1.285472900,0.303659424,2007,2628
+openttd.exe!CallLandscapeTick,0.527963135,0.594792773,0.066829639,1081,1218
+openttd.exe!AnimateAnimatedTiles,0.001464063,0.003908057,0.002443994,3,8
+openttd.exe!CallWindowGameTickEvent,0.000000000,0.001463184,0.001463184,0,3
+openttd.exe!BasePersistentStorageArray::SwitchMode,0.000000000,0.000975439,0.000975439,0,2
+openttd.exe!UpdateLandscapingLimits,0.000000000,0.000974512,0.000974512,0,2
+openttd.exe!PerformanceMeasurer::PerformanceMeasurer,0.000487695,0.000979736,0.000492041,1,2
+openttd.exe!CheckCaches,0.000000000,0.000488281,0.000488281,0,1
+openttd.exe!std::chrono::steady_clock::now,0.000000000,0.000488037,0.000488037,0,1
+openttd.exe!OnTick_LinkGraph,0.000000000,0.000487500,0.000487500,0,1
+openttd.exe!LinkGraphSchedule::JoinNext,0.003423633,0.003910107,0.000486475,7,8
+openttd.exe!NewsLoop,0.001954590,0.002440137,0.000485547,4,5
+openttd.exe!ShowNewspaper,0.000487256,0.000514502,0.000027246,1,1
+openttd.exe!TimerManager<TimerGameTick>::Elapsed,0.000976758,0.000976367,-0.000000391,2,2
+openttd.exe!Game::GameLoop,0.000488281,0.000000000,-0.000488281,1,0
+openttd.exe!OnTick_Companies,0.001952979,0.001461768,-0.000491211,4,3
+openttd.exe!PerformanceAccumulator::Reset,0.000493799,0.000000000,-0.000493799,1,0
+[StateGameLoop self],0.000972461,0.000000000,-0.000972461,2,0
+openttd.exe!PassengerServiceDatabase::IsPreparingPrecomputed,0.000975635,0.000000000,-0.000975635,2,0
+openttd.exe!RecordPassengerJourneySimulationTick,0.000976709,0.000000000,-0.000976709,2,0
+openttd.exe!PerformanceMeasurer::~PerformanceMeasurer,0.000977588,0.000000000,-0.000977588,2,0
+openttd.exe!FlushDeferredAspectUpdates,0.013675000,0.012207959,-0.001467041,28,25
+openttd.exe!BeginPassengerJourneyTick,0.008833740,0.007365771,-0.001467969,18,15
+openttd.exe!IncreaseDate,0.025460156,0.022977832,-0.002482324,52,47
+[outside StateGameLoop],6.318895605,2.607967676,-3.710927930,12940,5340

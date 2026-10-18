@@ -1,0 +1,5 @@
+{
+  "source": "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-rebaseline-88cb61e3\\tools",
+  "destination": "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-9ab0228d\\tools",
+  "purpose": "WPAExporter and xperf required for current 9ab0228d exports; preserved before old-results deletion"
+}
