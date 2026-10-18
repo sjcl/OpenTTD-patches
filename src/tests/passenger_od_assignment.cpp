@@ -421,30 +421,6 @@ TEST_CASE("Passenger OD legacy saves omit distribution and load safely", "[passe
 	CHECK(WaitingOd(f.Goods())[0] == 10);
 }
 
-TEST_CASE("Earlier passenger OD saves initialise absent cursor and unknown state", "[passenger][od_assignment][saveload]")
-{
-	OdAssignmentFixture f;
-	AutoRestoreBackup version{_sl_version, SAVEGAME_VERSION};
-	AutoRestoreBackup features{_sl_xv_feature_versions, AutoRestoreBackupNoNewValueTag{}};
-	AutoRestoreBackup static_features{_sl_xv_feature_static_versions, AutoRestoreBackupNoNewValueTag{}};
-	SlXvSetStaticCurrentVersions();
-	_sl_xv_feature_versions = _sl_xv_feature_static_versions;
-	SECTION("Version one") { _sl_xv_feature_versions[XSLFI_PASSENGER_OD_ASSIGNMENT] = 1; }
-	SECTION("Version two") { _sl_xv_feature_versions[XSLFI_PASSENGER_OD_ASSIGNMENT] = 2; }
-	std::array<LinkGraphJob::DemandAnnotation, 2> demand{{ {1, 90, 0}, {2, 10, 0} }};
-	f.Install(demand);
-	f.Od().Allocate(7);
-	f.Od().cursor = 1;
-	GoodsEntry loaded;
-	loaded.CreateData();
-	SlTestSaveLoadTable(&f.Goods(), &loaded, GetGoodsDesc());
-	REQUIRE(loaded.data->passenger_od != nullptr);
-	CHECK(loaded.data->passenger_od->cursor == (_sl_xv_feature_versions[XSLFI_PASSENGER_OD_ASSIGNMENT] == 1 ? 0 : 1));
-	CHECK(loaded.data->passenger_od->unassigned_weight == 0);
-	CHECK(loaded.data->passenger_od->unassigned_credit == 0);
-	CHECK(loaded.data->passenger_od->entries == f.Od().entries);
-}
-
 struct PassengerOdRevisionTestState { uint64_t revision = 0; };
 
 /** Exercise the actual SLXI extra-data callbacks with the isolated serializer's buffer. */
@@ -533,7 +509,7 @@ TEST_CASE("Passenger OD afterload rejects graph and pending job revisions beyond
 {
 	OdAssignmentFixture f;
 	AutoRestoreBackup features{_sl_xv_feature_versions, AutoRestoreBackupNoNewValueTag{}};
-	_sl_xv_feature_versions[XSLFI_PASSENGER_OD_ASSIGNMENT] = 2;
+	_sl_xv_feature_versions[XSLFI_PASSENGER_OD_ASSIGNMENT] = 1;
 	std::unique_ptr<LinkGraphJob> pending(LinkGraphJob::Create(*f.graph, 1));
 	SECTION("Live graph") { _passenger_od_revision = f.graph->PassengerOdRevision() - 1; }
 	SECTION("Pending snapshot") {

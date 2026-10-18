@@ -1,0 +1,3 @@
+passenger_parallel,mode=legacy,requested=8,workers=8,wall_ns=519945200,graph_ns=212190900,row_ns=307754300,batch_ns=175460700,search_ns=1038801600,integration_ns=130386600,batches=56,searches=894,pending=16,work_min=69837,work_max=70120,search_work=62573430,stations=894,states=11579,edges=34868,operations=71559024,bytes=109252465,digest=6174672423852192508
+Passed 1 test case with 1 assertion.
+

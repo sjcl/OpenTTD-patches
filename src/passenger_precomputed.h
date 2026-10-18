@@ -16,6 +16,7 @@
 #include <functional>
 #include <unordered_map>
 #include <map>
+#include <atomic>
 
 struct PassengerPeriodicService;
 
@@ -53,6 +54,15 @@ struct PassengerHyperpathMemoryDiagnostic {
 	uint64_t differences = 0, additions = 0, maximum_additions = 0, multi_addition_differences = 0, unexpected_removals = 0, overlay_bytes = 0;
 };
 
+/** Local performance data only; never saved or used for logical admission. */
+struct PassengerParallelBuildDiagnostic {
+	uint64_t batches = 0, searches = 0, batch_nanoseconds = 0, search_nanoseconds = 0, integration_nanoseconds = 0, fallbacks = 0;
+	uint64_t minimum_work = UINT64_MAX, maximum_work = 0, search_work = 0;
+	uint64_t cache_hits = 0, cache_work = 0, serial_rows = 0, main_search_nanoseconds = 0, serial_search_work = 0;
+	uint64_t cancelled_search_work = 0, thread_starts = 0, workspace_reuses = 0, throttles = 0;
+	size_t workers = 0, peak_pending = 0, estimated_workspace_bytes = 0;
+};
+
 /** Mandatory derived state, independent of the optional Timed/Schedule caches.
  * A fixed number of reverse-tree operations is executed per tick. The operation
  * cursor is saved; replay from the saved published DB restores precisely the same
@@ -68,17 +78,23 @@ public:
 	static constexpr uint32_t INVALID = UINT32_MAX;
 	static constexpr uint64_t MAX_BYTES = uint64_t{16} * 1024 * 1024 * 1024;
 	static constexpr uint64_t MAX_HYPERPATH_BYTES = uint64_t{32} * 1024 * 1024 * 1024; ///< Canonical admission, including a retained generation; not a physical allocation request.
+	/** Production uses the current algorithms. Alternate controls are differential
+	 * test/benchmark references, never saved construction-format identities. */
 	void Begin(std::span<const PassengerPeriodicService *const> services, CargoType cargo, int64_t transfer, uint64_t memory = MAX_BYTES, bool sections = true, bool cooperative = false, std::shared_ptr<uint64_t> memory_budget = {}, bool estimates = true, bool optimized = true, bool integrated = true, bool hyperpath = false, bool revisit_dominance = true, bool continuation_witness = true, bool flat_storage = true);
 	bool PrepareGraph(size_t quantum = 1024);
 	bool IsPreparingGraph() const { return static_cast<bool>(this->graph_build); }
 	uint64_t GetGraphWork() const { return this->graph_work; }
 	size_t Step(size_t operations, bool legacy_publication = false, const std::function<void(StationID)> &published = {});
+	/** Nonblocking speculative searches. Work/publication exactly match Step;
+	 * a cache miss latches serial execution for the whole row. Zero selects Step. */
+	size_t StepParallel(size_t operations, uint workers = 4, const std::function<void(StationID)> &published = {});
+	PassengerParallelBuildDiagnostic GetParallelDiagnostic() const;
 	void ReleaseDestination(StationID destination); ///< Retire a row immediately after its replacement is published.
 	void PrepareRetirement(const PassengerPrecomputedTable &replacement); ///< Freeze the few destinations absent from the replacement before retiring its ascending rows.
 	void ReuseRetainedDestinations(); ///< Start another retirement epoch after the previous replacement finished.
-	uint64_t LegacyPublicationWork() const { return uint64_t(this->rows.size()) * this->waiting_state_count; }
+	uint64_t LegacyPublicationWork() const { return uint64_t(this->rows.size()) * this->graph->waiting_state_count; }
 	PassengerPrecomputedPlan Plan(StationID origin, StationID destination, StateTicks ready, OrderListID excluded = OrderListID::Invalid(), uint32_t sample = 0, OrderListID failed = OrderListID::Invalid()) const;
-	bool Finished() const { return !this->graph_build && (this->failed || this->destination == this->stations.size()); }
+	bool Finished() const { return !this->graph_build && (this->failed || this->destination == this->graph->stations.size()); }
 	bool MemoryRejected() const { return this->failed; }
 	const PassengerPrecomputedDiagnostic &GetDiagnostic() const { return this->diagnostic; }
 	PassengerHyperpathMemoryDiagnostic InspectMemory() const;
@@ -93,7 +109,7 @@ public:
 	using DestinationSpans = std::array<std::span<const StationID>, 2>; ///< Sorted surviving prefix, then sorted suffix; no overlap.
 	DestinationSpans ReachableDestinations(StationID origin) const;
 	std::optional<int64_t> RouteCost(StationID origin, StationID destination) const; ///< Missing row differs from a proved infinite cost.
-	bool IsHyperpath() const { return this->hyperpath; }
+	bool IsHyperpath() const { return this->graph->hyperpath; }
 	bool HasPolicy(StationID origin, StationID destination) const { return this->FindRow(destination) != nullptr && this->PolicyState(origin, OrderListID::Invalid()) != INVALID; }
 	std::optional<int64_t> ServiceWait(OrderListID service) const;
 	uint32_t BoardingOccurrence(StationID origin, OrderListID service, VehicleOrderID order) const;
@@ -111,10 +127,36 @@ public:
 	bool BoardingMaskCovers() const;
 	static constexpr uint64_t MAX_BOARDING_MASK_BYTES = uint64_t{64} * 1024 * 1024; ///< Larger maps keep the complete scan.
 	std::span<const uint32_t> Candidates(StationID origin, StationID destination, OrderListID previous = OrderListID::Invalid(), OrderListID failed = OrderListID::Invalid()) const;
+	struct DisplayCandidate { OrderListID service; uint64_t incarnation, generation; VehicleOrderID order; };
+	enum class DisplayRead : uint8_t { Candidate, Partial, Complete, Unavailable };
+	/** Indices only. The database binds this cursor to a policy generation/publication. */
+	struct DisplayCursor {
+		uint8_t phase = 0;
+		bool inspected = false, bound = false;
+		CargoType cargo = INVALID_CARGO;
+		StationID origin = StationID::Invalid(), destination = StationID::Invalid();
+		OrderListID previous = OrderListID::Invalid(), failed = OrderListID::Invalid();
+		size_t occurrence = 0, member = 0;
+		uint64_t epoch = 0, generation = 0, changes = 0;
+	};
+	DisplayRead NextDisplayCandidate(StationID origin, StationID destination, OrderListID previous, OrderListID failed,
+			DisplayCursor &cursor, DisplayCandidate &out, size_t &work) const;
+
+	/** Read published policy storage without expanding/rebuilding policies or evaluating routes.
+	 * False means missing policy or incomplete enumeration. A cold failed-service policy is unknown. */
+	bool DisplayCandidates(StationID origin, StationID destination, OrderListID previous, OrderListID failed,
+			std::vector<DisplayCandidate> &out, size_t &work) const;
+
 	PassengerPrecomputedPlan Board(StationID origin, StationID destination, StateTicks ready, OrderListID service, VehicleOrderID order, OrderListID previous = OrderListID::Invalid(), OrderListID failed = OrderListID::Invalid()) const;
 	struct CandidateDiagnostic { uint32_t occurrence; OrderListID service; VehicleOrderID order; StationID alight; int64_t cost, wait; uint64_t frequency; };
 	std::vector<CandidateDiagnostic> Inspect(StationID origin, StationID destination, OrderListID previous = OrderListID::Invalid()) const;
+	/** GUI-owned results. No query diagnostics, policy cache writes, or simulation Work.
+	 * Probability is relative to the whole policy, including branches omitted by the display limit. */
+	struct RouteCandidate { PassengerJourneyExecution ride; double probability; };
+	struct RouteInspection { PassengerPrecomputedPlan::State state = PassengerPrecomputedPlan::State::Building; std::vector<RouteCandidate> candidates; };
+	RouteInspection InspectRoutes(StationID origin, StationID destination, OrderListID previous, OrderListID failed, size_t &work) const;
 private:
+	friend struct PassengerPrecomputedTestAccess;
 	struct Member { OrderListID id; uint64_t incarnation, generation; bool estimated; };
 	struct Pattern {
 		std::vector<Member> members;
@@ -149,14 +191,14 @@ private:
 	 * - Compressed (integrated, non-Hyperpath): labels per station, sparse alternatives,
 	 *   one dense exception per station with waiting states.
 	 * - Hyperpath: labels for every waiting state; indices holds the policy index of
-	 *   every waiting state; policies (through v14) or flat_* (v15) hold the strategies.
-	 * - Older engines: labels per waiting state and alternatives per station. */
+	 *   every waiting state; flat_* hold the strategies, with policies as a reference.
+	 * - Reference engines: labels per waiting state and alternatives per station. */
 	struct Row {
 		std::vector<Label> labels, alternative, exception_labels;
 		std::vector<uint32_t> indices; ///< Compressed: alternative indices, then exception state IDs. Hyperpath: policy index per waiting state.
-		std::vector<Policy> policies; ///< Hyperpath only: exact old storage for replay generations through v14.
-		std::vector<FlatPolicy> flat_policies; ///< Hyperpath v15 only.
-		std::vector<uint32_t> flat_candidates; ///< Hyperpath v15 only: base payloads and incoming-service addition lists, in policy order.
+		std::vector<Policy> policies; ///< Hyperpath only: full policy storage for differential validation.
+		std::vector<FlatPolicy> flat_policies; ///< Hyperpath only.
+		std::vector<uint32_t> flat_candidates; ///< Hyperpath only: base payloads and incoming-service addition lists, in policy order.
 		size_t bytes = 0; ///< Hyperpath only: payload charged at publication.
 		bool Empty() const { return this->labels.empty(); }
 		size_t AllocatedBytes() const ///< Non-Hyperpath rows only; Hyperpath rows report bytes.
@@ -175,54 +217,22 @@ private:
 		std::vector<int64_t> cost;
 		std::vector<uint32_t> legs;
 		std::vector<LabelMetadata> metadata;
-	} search;
-	std::vector<uint32_t> exception_state; ///< At descriptor boundaries, only this wait may differ from the station base.
+	};
 	using QueueItem = std::tuple<int64_t, uint32_t, uint32_t>;
-	std::vector<uint32_t> station_index, service_pattern;
-	std::vector<StationID> stations;
-	std::vector<Pattern> patterns;
-	std::vector<Occurrence> occurrences;
-	struct Revisit { uint32_t next = INVALID; int64_t cost = 0; };
-	std::vector<Revisit> revisits; ///< Departure-to-departure continuation to the next boardable visit to the same station.
-	std::vector<Edge> edges;
-	struct HotEdges {
-		std::vector<uint32_t> from;
-		std::vector<int64_t> cost;
-		std::vector<uint8_t> legs;
-		std::vector<uint32_t> range;
-	} hot_edges;
-	std::vector<RangeEdge> range_edges;
-	struct ColdEdge { uint32_t occurrence, distance; int64_t uncertainty; EdgeKind kind; };
-	std::vector<ColdEdge> cold_edges;
-	std::vector<SectionRide> section_rides;
-	std::vector<Section> sections;
-	std::unordered_map<uint64_t, SectionPath> section_paths; ///< Packed pattern and saved order pair; lookup only, never iterated for decisions.
-	std::vector<std::vector<uint64_t>> boarding_sections; ///< Keys for each concrete boarding occurrence, independent of fleet size.
-	size_t binding_bytes = 0; ///< Computed once during graph preparation.
-	std::vector<uint32_t> landings; ///< Section arrivals have no on-board continuation.
-	std::vector<uint32_t> incoming_offsets, incoming;
-	std::vector<uint32_t> seed_offsets, seed_occurrences; ///< Alighting occurrences in original order, indexed by destination station.
-	std::vector<uint32_t> exception_slots; ///< Dense exception slot only for stations with waiting states.
-	uint32_t exception_slot_count = 0;
-	std::vector<std::vector<std::pair<uint32_t, uint32_t>>> waiting_states;
-	std::vector<uint32_t> waiting_station;
-	std::vector<std::vector<uint32_t>> station_boarding;
+
 	mutable std::map<std::tuple<StationID, uint32_t, OrderListID>, Policy> local_policies;
-	size_t hyperpath_static_bytes = 0, hyperpath_row_bytes = 0, hyperpath_candidate_bytes = 0, prepared_candidate_bytes = 0;
+	size_t hyperpath_static_bytes = 0, hyperpath_row_bytes = 0;
 	mutable size_t local_policy_bytes = 0, expanded_policy_bytes = 0;
 	mutable std::map<std::pair<StationID, uint32_t>, std::vector<uint32_t>> expanded_policies;
-	bool flat_storage = false; ///< v15 physical representation and frozen memory admission.
 	/** Per block of 64 destination rows: a base-state plane, then an any-state plane, each one
 	 * word per occurrence. One row's publication then writes within two occurrence-sized arrays. */
 	std::vector<uint64_t> boarding_mask;
 	size_t boarding_mask_words = 0; ///< Blocks of 64 destination rows; zero until allocated.
 	bool boarding_mask_rejected = false; ///< Too large for MAX_BOARDING_MASK_BYTES.
 	std::vector<uint64_t> published_rows; ///< With the mask: rows that FindRow returns, one bit per destination row.
-	size_t BoardingMaskWord(uint32_t occurrence, bool any_state, uint32_t row) const { return (size_t{row / 64} * 2 + any_state) * this->occurrences.size() + occurrence; }
+	size_t BoardingMaskWord(uint32_t occurrence, bool any_state, uint32_t row) const { return (size_t{row / 64} * 2 + any_state) * this->graph->occurrences.size() + occurrence; }
 	void MarkBoardingCandidate(uint32_t occurrence, bool base_state);
 	/** Working capacity of the row being built; each published row receives an exact copy. */
-	std::vector<FlatPolicy> flat_policy_buffer;
-	std::vector<uint32_t> flat_candidate_buffer;
 	std::span<const uint32_t> FlatPayload(const Row &row, uint32_t policy) const;
 	uint32_t PreviousPattern(uint32_t state) const;
 	bool ContainsStored(const Row &row, uint32_t state, uint32_t occurrence) const;
@@ -236,26 +246,9 @@ private:
 	std::optional<StationID> retirement_watermark;
 	bool retirement_prepared = false;
 	size_t reachable_bytes = 0;
-	Row scratch, prepared;
-	size_t waiting_state_count = 0;
-	size_t publication_cursor = 0; ///< Original virtual query-state copy position, independent of compressed storage.
 	size_t published_bytes = 0;
-	PassengerDestinationQueue<QueueItem> queue;
-	size_t destination = 0, cursor = 0;
-	uint32_t range_offset = 0; ///< Next virtual edge: zero is the separate base station, then begin..end.
-	uint32_t expanding = INVALID;
-	size_t finishing = 0;
-	bool finishing_row = false;
-	bool initializing_row = false;
-	size_t seeding = 0;
+	size_t destination = 0;
 	bool failed = false, unsupported = false;
-	bool estimates = true;
-	bool optimized = true; ///< Saved algorithm identity; old work cursors always use the original graph and operation sequence.
-	bool integrated = true; ///< v11 bounded range/CSR engine; never reinterpret a v10 operation cursor.
-	bool hyperpath = false; ///< A separate algorithm identity; legacy work never enters the strategy queue.
-	bool revisit_dominance = true; ///< JPSD v12 strategies replay without the v13 occurrence dominance rule.
-	bool continuation_witness = true; ///< v14: require equality and a selected same-run continuation, preserving earlier tied alighting.
-	int64_t transfer_cost = 0;
 	struct StrategyWorkspace {
 		std::vector<PassengerStrategy> sums;
 		std::vector<std::vector<uint32_t>> candidates;
@@ -265,7 +258,118 @@ private:
 		uint32_t witness_edge = INVALID, witness_at = INVALID;
 		int64_t witness_cost = 0;
 		int64_t last = 0;
-	} strategy;
+	};
+	/** No pointers to services or live game objects. Search reads the frozen table
+	 * and changes only this context; publication stays on the simulation thread. */
+	struct DestinationWorkspace {
+		SearchWorkspace search;
+		StrategyWorkspace strategy;
+		PassengerDestinationQueue<QueueItem> queue;
+		Row scratch, prepared;
+		std::vector<uint32_t> exception_state;
+		std::vector<FlatPolicy> flat_policy_buffer;
+		std::vector<uint32_t> flat_candidate_buffer;
+		size_t destination = 0, cursor = 0, finishing = 0, seeding = 0, publication_cursor = 0;
+		uint32_t range_offset = 0, expanding = INVALID;
+		bool finishing_row = false, initializing_row = false, queues_configured = false;
+		size_t hyperpath_candidate_bytes = 0, prepared_candidate_bytes = 0;
+		struct Counters {
+			uint64_t board_events = 0, board_accepts = 0, range_updates = 0, heap_pushes = 0, heap_pops = 0;
+		} counters;
+	} work;
+	/** Prepared on the simulation thread, then frozen. Jobs own a const shared
+	 * reference, so a table move, reset or retirement cannot invalidate searches. */
+	struct GraphSnapshot {
+		std::vector<uint32_t> station_index, service_pattern;
+		std::vector<StationID> stations;
+		std::vector<Pattern> patterns;
+		std::vector<Occurrence> occurrences;
+		struct Revisit { uint32_t next = INVALID; int64_t cost = 0; };
+		std::vector<Revisit> revisits; ///< Departure-to-departure continuation to the next boardable visit to the same station.
+		std::vector<Edge> edges;
+		struct HotEdges {
+			std::vector<uint32_t> from;
+			std::vector<int64_t> cost;
+			std::vector<uint8_t> legs;
+			std::vector<uint32_t> range;
+		} hot_edges;
+		std::vector<RangeEdge> range_edges;
+		struct ColdEdge { uint32_t occurrence, distance; int64_t uncertainty; EdgeKind kind; };
+		std::vector<ColdEdge> cold_edges;
+		std::vector<SectionRide> section_rides;
+		std::vector<Section> sections;
+		std::unordered_map<uint64_t, SectionPath> section_paths; ///< Packed pattern and saved order pair; lookup only, never iterated for decisions.
+		std::vector<std::vector<uint64_t>> boarding_sections; ///< Keys for each concrete boarding occurrence, independent of fleet size.
+		size_t binding_bytes = 0; ///< Computed once during graph preparation.
+		std::vector<uint32_t> landings; ///< Section arrivals have no on-board continuation.
+		std::vector<uint32_t> incoming_offsets, incoming;
+		std::vector<uint32_t> seed_offsets, seed_occurrences; ///< Alighting occurrences in original order, indexed by destination station.
+		std::vector<uint32_t> exception_slots; ///< Dense exception slot only for stations with waiting states.
+		uint32_t exception_slot_count = 0;
+		std::vector<std::vector<std::pair<uint32_t, uint32_t>>> waiting_states;
+		std::vector<uint32_t> waiting_station;
+		std::vector<std::vector<uint32_t>> station_boarding;
+		bool flat_storage = false; ///< Compact strategy storage.
+		size_t waiting_state_count = 0;
+		bool estimates = true;
+		bool optimized = true; ///< False selects the scalar graph/queue reference.
+		bool integrated = true; ///< Bounded ranges/CSR; false selects the explicit-edge reference.
+		bool hyperpath = false;
+		bool revisit_dominance = true; ///< Suppress dominated repeat departures; disabled only by reference comparisons.
+		bool continuation_witness = true; ///< Require equality and a selected same-run continuation, preserving earlier tied alighting.
+		int64_t transfer_cost = 0;
+		size_t states = 0, edge_count = 0, logical_edges = 0;
+		void StartDestination(DestinationWorkspace &work, size_t destination) const;
+		size_t SearchDestination(DestinationWorkspace &work, size_t allowance) const;
+		size_t SearchHyperpath(DestinationWorkspace &work, size_t allowance) const;
+		bool UseCompressedRows() const;
+		Label SearchLabel(const DestinationWorkspace &work, uint32_t state) const;
+		void SetSearchLabel(DestinationWorkspace &work, uint32_t state, const Label &label) const;
+		bool WaitingStationInvariant(const DestinationWorkspace &work, uint32_t station) const;
+		size_t RelaxIncoming(DestinationWorkspace &work, size_t allowance) const;
+		void PushHyperpath(DestinationWorkspace &work, int64_t key, uint32_t kind, uint32_t id) const;
+		uint32_t StateFor(uint32_t station, uint32_t pattern) const;
+		bool DominatedRevisit(uint32_t board, int64_t cost, int64_t next_cost) const;
+		bool HasSameRunContinuationWitness(uint32_t board, uint32_t alight) const;
+		int64_t SearchCost(const DestinationWorkspace &work, uint32_t state) const { return this->optimized ? work.search.cost[state] : work.scratch.labels[state].cost; }
+		uint32_t SearchLegs(const DestinationWorkspace &work, uint32_t state) const { return this->optimized ? work.search.legs[state] : work.scratch.labels[state].legs; }
+		uint32_t SearchBoard(const DestinationWorkspace &work, uint32_t state) const { return this->optimized ? work.search.metadata[state].board : work.scratch.labels[state].board; }
+		uint32_t SearchAlight(const DestinationWorkspace &work, uint32_t state) const { return this->optimized ? work.search.metadata[state].alight : work.scratch.labels[state].alight; }
+		int64_t SearchRiding(const DestinationWorkspace &work, uint32_t state) const { return this->optimized ? work.search.metadata[state].riding : work.scratch.labels[state].riding; }
+	};
+	using Revisit = GraphSnapshot::Revisit;
+	using ColdEdge = GraphSnapshot::ColdEdge;
+	std::shared_ptr<const GraphSnapshot> graph = std::make_shared<GraphSnapshot>();
+	std::shared_ptr<GraphSnapshot> building_graph; ///< Exists only during cooperative preparation.
+	std::map<OrderListID, Member> refreshed_members; ///< Live bindings never mutate the frozen graph.
+
+	struct WorkerGeneration;
+	struct WorkerMetrics;
+	std::vector<std::shared_ptr<WorkerMetrics>> parallel_statistics;
+	struct DestinationBuildResult {
+		std::shared_ptr<WorkerGeneration> generation;
+		DestinationWorkspace workspace;
+		size_t destination = 0;
+		StationID station = StationID::Invalid();
+		uint64_t generation_id = 0, operations = 0, nanoseconds = 0;
+		std::atomic<bool> ready{false}, cancelled{false};
+		bool error = false; ///< Read only after acquiring ready.
+	};
+	struct DestinationWorkerPool;
+	struct ParallelState;
+	static DestinationWorkerPool &WorkerPool();
+	/** Main-thread ownership cancels on destruction. Workers own only the frozen
+	 * graph, cancellation token and their result; never a table or this state. */
+	std::shared_ptr<ParallelState> parallel;
+	std::shared_ptr<DestinationBuildResult> parallel_result;
+	uint64_t parallel_credit = 0;
+	size_t serial_destination = SIZE_MAX;
+	uint parallel_misses = 0; ///< Local CPU backoff only; never part of Work or saves.
+	bool parallel_unavailable = false;
+	PassengerParallelBuildDiagnostic parallel_diagnostic;
+	void (*parallel_quantum_hook)(size_t, uint64_t) = nullptr; ///< Native cancellation/failure scheduling tests.
+	void (*parallel_search_hook)(size_t, bool) = nullptr; ///< Native scheduling/failure injection; unset in production.
+	bool (*parallel_start_hook)(uint) = nullptr; ///< Native thread-start failure injection; unset in production.
 	CargoType cargo = INVALID_CARGO;
 	PassengerBuildTask graph_build; ///< Derived preparation only. No row can be published until this completes.
 	uint64_t graph_work = 0; ///< Actual coroutine steps, used only for bounded join progress reports.
@@ -275,22 +379,32 @@ private:
 	const Member *FindMember(OrderListID service) const;
 	const Section *FindSection(const PassengerJourneyExecution &ride) const;
 	void StartDestination();
+	void StartDestination(DestinationWorkspace &work, size_t destination) const;
+	size_t SearchDestination(DestinationWorkspace &work, size_t allowance) const;
+	size_t SearchHyperpath(DestinationWorkspace &work, size_t allowance) const;
+	void CollectSearchCounters();
+	bool PrepareParallelBatch(uint workers);
+	bool ParallelCacheReady() const;
+	bool ParallelIdle() const; ///< Native tests may poll outside simulation ticks.
+	void CancelParallel();
+	size_t AdvanceSearch(size_t allowance, uint workers);
+	size_t StepImpl(size_t allowance, bool legacy_publication, const std::function<void(StationID)> &published, uint workers);
 	bool UseCompressedRows() const;
 	const Label &RowLabel(const Row &row, uint32_t origin, uint32_t state) const;
 	const Label &AlternativeLabel(const Row &row, uint32_t origin) const;
-	void PrepareCompressedRow();
-	void CopyStationLabel(uint32_t origin);
-	int64_t SearchCost(uint32_t state) const { return this->optimized ? this->search.cost[state] : this->scratch.labels[state].cost; }
-	uint32_t SearchLegs(uint32_t state) const { return this->optimized ? this->search.legs[state] : this->scratch.labels[state].legs; }
-	uint32_t SearchBoard(uint32_t state) const { return this->optimized ? this->search.metadata[state].board : this->scratch.labels[state].board; }
-	uint32_t SearchAlight(uint32_t state) const { return this->optimized ? this->search.metadata[state].alight : this->scratch.labels[state].alight; }
-	int64_t SearchRiding(uint32_t state) const { return this->optimized ? this->search.metadata[state].riding : this->scratch.labels[state].riding; }
-	Label SearchLabel(uint32_t state) const;
-	void SetSearchLabel(uint32_t state, const Label &label);
-	bool WaitingStationInvariant(uint32_t station) const; ///< Defined only in the invariant-checking test TU.
-	size_t RelaxIncoming(size_t allowance);
-	size_t StepHyperpath(size_t allowance, const std::function<void(StationID)> &published);
-	void PushHyperpath(int64_t key, uint32_t kind, uint32_t id);
+	void PrepareCompressedRow(DestinationWorkspace &work) const;
+	void CopyStationLabel(DestinationWorkspace &work, uint32_t origin) const;
+	int64_t SearchCost(const DestinationWorkspace &work, uint32_t state) const { return this->graph->optimized ? work.search.cost[state] : work.scratch.labels[state].cost; }
+	uint32_t SearchLegs(const DestinationWorkspace &work, uint32_t state) const { return this->graph->optimized ? work.search.legs[state] : work.scratch.labels[state].legs; }
+	uint32_t SearchBoard(const DestinationWorkspace &work, uint32_t state) const { return this->graph->optimized ? work.search.metadata[state].board : work.scratch.labels[state].board; }
+	uint32_t SearchAlight(const DestinationWorkspace &work, uint32_t state) const { return this->graph->optimized ? work.search.metadata[state].alight : work.scratch.labels[state].alight; }
+	int64_t SearchRiding(const DestinationWorkspace &work, uint32_t state) const { return this->graph->optimized ? work.search.metadata[state].riding : work.scratch.labels[state].riding; }
+	Label SearchLabel(const DestinationWorkspace &work, uint32_t state) const;
+	void SetSearchLabel(DestinationWorkspace &work, uint32_t state, const Label &label) const;
+	bool WaitingStationInvariant(const DestinationWorkspace &work, uint32_t station) const; ///< Defined only in the invariant-checking test TU.
+	size_t RelaxIncoming(DestinationWorkspace &work, size_t allowance) const;
+	size_t StepHyperpath(size_t allowance, const std::function<void(StationID)> &published, uint workers);
+	void PushHyperpath(DestinationWorkspace &work, int64_t key, uint32_t kind, uint32_t id) const;
 	uint32_t PolicyState(StationID origin, OrderListID previous) const;
 	const Row *FindRow(StationID destination) const;
 	Label EvaluateRide(const Row &row, uint32_t board, StationID destination) const;

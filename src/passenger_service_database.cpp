@@ -23,6 +23,7 @@
 
 namespace {
 	PassengerServiceDatabase database;
+	constexpr uint64_t DATABASE_FORMAT_VERSION = 1;
 	constexpr int64_t MAX_PERIOD = int64_t{1} << 40;
 	bool AddTicks(int64_t &value, int64_t delta)
 	{
@@ -423,7 +424,6 @@ void PassengerServiceDatabase::Reset()
 	this->sweeping_since = this->batch_started = _state_ticks;
 	this->cursor = 0; this->dirty_cursor = 65534; this->sweeping = true; this->publishing = false; this->bootstrap = true; this->restoring = false;
 	this->load_state = LoadState::Ready; this->load_remaining = this->load_work = 0;
-	this->load_legacy_wire.clear();
 	this->generation = this->published_revision = 0; this->bytes = this->building_bytes = 0;
 	this->diagnostic = {}; this->schedule.ResetDiagnostic();
 	this->DiscardPrecomputed(); this->precomputed_refresh = {};
@@ -774,14 +774,19 @@ bool PassengerServiceDatabase::PreparePrecomputed()
 	} else if (this->retained_precomputed_revision != UINT64_MAX) {
 		/* A normal replacement pauses only its graph preparation. Keep every
 		 * old row; row publication resumes at the ordinary saved tick budget. */
-		for (auto &table : this->precomputed) if (table.IsPreparingGraph() && !table.PrepareGraph(1024)) break;
+		for (auto &table : this->precomputed) {
+			if (table.IsPreparingGraph() && !table.PrepareGraph(1024)) break;
+			/* The frozen graph can already warm its local cache while the UI /
+			 * network preparation barrier returns control. Consume no row Work. */
+			if (!table.Finished()) table.StepParallel(0, _settings_client.gui.passenger_precomputed_workers);
+		}
 	} else if (this->preparation_capture || (this->precomputed_revision == UINT64_MAX && (this->sweeping || !this->build_queue.empty() || !this->building.empty()))) {
 		if (!this->preparation_capture) this->preparation_capture = this->TickBuild(BUILD_WORK, false, true);
 		if (this->preparation_capture.Resume(64)) this->preparation_capture = {};
 		this->diagnostic.build_microseconds += std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - started).count();
 	} else {
 		this->cooperative_graph = true;
-		this->TickPrecomputed();
+		this->TickPrecomputed(BUILD_WORK);
 		this->cooperative_graph = false;
 	}
 	this->precomputed_preparation_nanoseconds += std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - started).count();
@@ -802,14 +807,7 @@ void PassengerServiceDatabase::BeginPrecomputed(int64_t transfer)
 		this->retained_precomputed_services = std::move(this->precomputed_services);
 		this->retained_precomputed_revision = this->precomputed_revision;
 		this->retained_precomputed_transfer = this->precomputed_transfer;
-		this->retained_precomputed_sections = this->precomputed_sections;
-		this->retained_precomputed_estimates = this->precomputed_estimates;
-		this->retained_precomputed_optimized = this->precomputed_optimized;
-		this->retained_precomputed_integrated = this->precomputed_integrated;
 		this->retained_precomputed_hyperpath = this->precomputed_hyperpath;
-		this->retained_precomputed_revisit_dominance = this->precomputed_revisit_dominance;
-		this->retained_precomputed_continuation_witness = this->precomputed_continuation_witness;
-		this->retained_precomputed_flat = this->precomputed_flat;
 		this->retained_precomputed_policy_generation = this->precomputed_policy_generation;
 	} else {
 		for (CargoType cargo : EnumRange(NUM_CARGO)) {
@@ -819,13 +817,7 @@ void PassengerServiceDatabase::BeginPrecomputed(int64_t transfer)
 			this->retained_precomputed[cargo].ReuseRetainedDestinations();
 		}
 	}
-	this->precomputed_sections = true;
-	this->precomputed_estimates = true;
-	this->precomputed_optimized = true; this->precomputed_integrated = true;
 	this->precomputed_hyperpath = _settings_game.linkgraph.passenger_journey_hyperpath;
-	this->precomputed_revisit_dominance = true;
-	this->precomputed_continuation_witness = true;
-	this->precomputed_flat = this->precomputed_hyperpath;
 	if (this->precomputed_policy_generation == UINT64_MAX) FatalError("Passenger policy generation exhausted.");
 	++this->precomputed_policy_generation;
 	this->precomputed_revision = this->published_revision;
@@ -844,19 +836,18 @@ void PassengerServiceDatabase::BuildPrecomputedTables()
 {
 	this->precomputed = {}; this->precomputed_operations = 0;
 	/* A mixed replacement still owns the larger strategy generation. Switching
-	 * back must not strand it behind the legacy-only combined envelope. Old
-	 * saved generations (neither flag set) retain their exact original budget. */
+	 * back must not strand it behind the non-Hyperpath combined envelope. */
 	uint64_t remaining = this->precomputed_hyperpath || this->retained_precomputed_hyperpath ? PassengerPrecomputedTable::MAX_HYPERPATH_BYTES : PassengerPrecomputedTable::MAX_BYTES;
 	for (const auto &table : this->retained_precomputed) remaining -= std::min(remaining, table.GetDiagnostic().envelope);
 	for (const auto &[id, service] : this->retained_precomputed_services) {
 		uint64_t bytes = 512 + uint64_t{256} * service.timetable.stops.size() + uint64_t{1024} * service.vehicles.size() + uint64_t{32} * service.dispatch_slots.size();
 		remaining -= std::min(remaining, bytes);
 	}
-	this->BuildPrecomputedTables(this->precomputed, this->precomputed_services, this->precomputed_transfer, remaining, this->precomputed_sections, this->precomputed_estimates, this->precomputed_optimized, this->precomputed_integrated, this->precomputed_hyperpath, this->precomputed_revisit_dominance, this->precomputed_continuation_witness, this->precomputed_flat, this->cooperative_graph);
+	this->BuildPrecomputedTables(this->precomputed, this->precomputed_services, this->precomputed_transfer, remaining, this->precomputed_hyperpath, this->cooperative_graph);
 }
 
 void PassengerServiceDatabase::BuildPrecomputedTables(std::array<PassengerPrecomputedTable, NUM_CARGO> &tables,
-		const std::map<OrderListID, PassengerPeriodicService> &snapshot, int64_t transfer, uint64_t remaining, bool sections, bool estimates, bool optimized, bool integrated, bool hyperpath, bool revisit_dominance, bool continuation_witness, bool flat_storage, bool cooperative)
+		const std::map<OrderListID, PassengerPeriodicService> &snapshot, int64_t transfer, uint64_t remaining, bool hyperpath, bool cooperative)
 {
 	std::vector<const PassengerPeriodicService *> records;
 	for (const auto &[id, service] : snapshot) {
@@ -868,7 +859,7 @@ void PassengerServiceDatabase::BuildPrecomputedTables(std::array<PassengerPrecom
 	auto memory_budget = cooperative ? std::make_shared<uint64_t>(remaining) : nullptr;
 	for (CargoType cargo : EnumRange(NUM_CARGO)) {
 		if (!IsCargoInClass(cargo, CargoClass::Passengers)) continue;
-		tables[cargo].Begin(records, cargo, transfer, remaining, sections, cooperative, memory_budget, estimates, optimized, integrated, hyperpath, revisit_dominance, continuation_witness, flat_storage);
+		tables[cargo].Begin(records, cargo, transfer, remaining, true, cooperative, memory_budget, true, true, true, hyperpath);
 		remaining -= std::min(remaining, tables[cargo].GetDiagnostic().envelope);
 	}
 }
@@ -883,12 +874,6 @@ void PassengerServiceDatabase::ClearRetainedPrecomputed()
 	this->retained_precomputed_services.clear();
 	this->retained_precomputed_revision = UINT64_MAX;
 	this->retained_precomputed_transfer = 0;
-	this->retained_precomputed_sections = true;
-	this->retained_precomputed_estimates = true;
-	this->retained_precomputed_optimized = true; this->retained_precomputed_integrated = true;
-	this->retained_precomputed_revisit_dominance = true;
-	this->retained_precomputed_continuation_witness = true;
-	this->retained_precomputed_flat = false;
 	this->retained_precomputed_hyperpath = false; this->retained_precomputed_policy_generation = 0;
 }
 
@@ -900,9 +885,6 @@ void PassengerServiceDatabase::DiscardPrecomputed()
 	this->ClearRetainedPrecomputed();
 	this->precomputed = {}; this->precomputed_services.clear();
 	this->precomputed_revision = UINT64_MAX; this->precomputed_operations = 0; this->precomputed_invalidated = false;
-	this->precomputed_sections = true;
-	this->precomputed_estimates = true;
-	this->precomputed_optimized = true; this->precomputed_integrated = true;
 }
 
 bool PassengerServiceDatabase::PrecomputedFinished() const
@@ -922,7 +904,7 @@ void PassengerServiceDatabase::TickPrecomputed(size_t allowance)
 	 * Actual order/boarding changes still restart; cost-only changes coalesce. */
 	if (this->precomputed_revision == UINT64_MAX && this->services.empty()) return;
 	const bool finished = std::all_of(this->precomputed.begin(), this->precomputed.end(), [](const auto &t) { return t.Finished(); });
-	if (this->precomputed_revision == UINT64_MAX || (finished && (!this->precomputed_sections || !this->precomputed_estimates || !this->precomputed_optimized || !this->precomputed_integrated || this->precomputed_hyperpath != _settings_game.linkgraph.passenger_journey_hyperpath || (this->precomputed_hyperpath && (!this->precomputed_revisit_dominance || !this->precomputed_continuation_witness || !this->precomputed_flat)) || this->precomputed_invalidated ||
+	if (this->precomputed_revision == UINT64_MAX || (finished && (this->precomputed_hyperpath != _settings_game.linkgraph.passenger_journey_hyperpath || this->precomputed_invalidated ||
 			this->precomputed_transfer != _settings_game.linkgraph.passenger_transfer_penalty ||
 			(_state_ticks >= this->precomputed_refresh && this->precomputed_revision != this->published_revision))))
 		this->BeginPrecomputed(_settings_game.linkgraph.passenger_transfer_penalty);
@@ -931,11 +913,15 @@ void PassengerServiceDatabase::TickPrecomputed(size_t allowance)
 		auto &table = this->precomputed[cargo];
 		if (table.Finished()) continue;
 		const auto rows = table.GetDiagnostic().destinations;
-		size_t used = table.Step(allowance, false, [&](StationID destination) {
+		auto published = [&](StationID destination) {
 			auto &retained = this->retained_precomputed[cargo];
 			retained.PrepareRetirement(table); retained.ReleaseDestination(destination);
 			this->BumpHyperpathDestination(destination);
-		});
+		};
+		/* Speculation is a local CPU cache in initial and replacement builds.
+		 * A miss executes the same serial search; BUILD_WORK and all publication
+		 * decisions are independent of completion order or local worker count. */
+		size_t used = table.StepParallel(allowance, _settings_client.gui.passenger_precomputed_workers, published);
 		if (table.GetDiagnostic().destinations != rows) WakePassengerWaitingCargo(cargo);
 		allowance -= used; this->precomputed_operations += used;
 		if (allowance == 0 || table.IsPreparingGraph()) break;
@@ -983,7 +969,6 @@ std::optional<PassengerJourneyExecution> PassengerServiceDatabase::ExtendPrecomp
 			!Station::IsValidID(destination) || !this->IsCurrent(ride)) return {};
 	const uint64_t mask = uint64_t{1} << cargo;
 	for (bool retained : {false, true}) {
-		if (!(retained ? this->retained_precomputed_estimates : this->precomputed_estimates)) continue;
 		const auto &snapshot = retained ? this->retained_precomputed_services : this->precomputed_services;
 		const auto &table = (retained ? this->retained_precomputed : this->precomputed)[cargo];
 		auto suffix = table.RouteCost(ride.alighting, destination);
@@ -1035,6 +1020,50 @@ PassengerPrecomputedPlan PassengerServiceDatabase::PlanPrecomputed(CargoType car
 	if (result.state == PassengerPrecomputedPlan::State::NoRoute && this->IsBuilding()) result.state = PassengerPrecomputedPlan::State::Building;
 	if (result.ride && !this->IsCurrent(*result.ride)) { result.ride.reset(); result.state = PassengerPrecomputedPlan::State::Building; }
 	return result;
+}
+
+std::vector<PassengerPrecomputedTable::RouteCandidate> PassengerServiceDatabase::InspectRoutes(CargoType cargo,
+		StationID origin, StationID destination, OrderListID previous, OrderListID failed, size_t &work, const PassengerJourneyExecution *intent) const
+{
+	using State = PassengerPrecomputedPlan::State;
+	if (cargo >= NUM_CARGO || this->precomputed_revision == UINT64_MAX) return {};
+	const PassengerPrecomputedTable *table = &this->precomputed[cargo];
+	/* A waiting Hyperpath cohort belongs to exactly one generation. Mixing the
+	 * two policies would count the same departure streams twice. */
+	if (intent != nullptr && intent->kind == PassengerRideKind::HyperpathIntent && this->IsCurrent(*intent)) {
+		if (intent->signature != uint64_t(cargo) + 1 || intent->boarding != origin || intent->alighting != destination) return {};
+		if (intent->generation == this->retained_precomputed_policy_generation) table = &this->retained_precomputed[cargo];
+	}
+	auto result = table->InspectRoutes(origin, destination, previous, failed, work);
+	if (table == &this->precomputed[cargo] && (result.state == State::Building || result.state == State::Memory || result.state == State::Unsupported) &&
+			this->retained_precomputed_revision != UINT64_MAX) {
+		table = &this->retained_precomputed[cargo];
+		result = table->InspectRoutes(origin, destination, previous, failed, work);
+	}
+	std::vector<PassengerPrecomputedTable::RouteCandidate> routes;
+	for (auto &candidate : result.candidates) {
+		if (!this->IsCurrent(candidate.ride)) {
+			bool found = false;
+			for (OrderListID service : table->BoardingServices(candidate.ride.service)) {
+				if (work == 0) break;
+				--work;
+				auto rebound = candidate.ride;
+				if (table->Rebind(rebound, service) && this->IsCurrent(rebound)) { candidate.ride = rebound; found = true; break; }
+			}
+			if (!found) continue;
+		}
+		/* Shared-section legacy rows can select a carrier which also operates the
+		 * onward leg. Reuse the read-only through-ride check, under the GUI budget. */
+		if (!table->IsHyperpath() && candidate.ride.alighting != destination) {
+			const auto *service = this->Get(candidate.ride.service);
+			if (service != nullptr && service->timetable.stops.size() <= work / 4) {
+				work -= service->timetable.stops.size() * 4;
+				if (auto extended = this->ExtendPrecomputedRide(candidate.ride, cargo, destination)) candidate.ride = *extended;
+			}
+		}
+		routes.push_back(std::move(candidate));
+	}
+	return routes;
 }
 
 std::optional<int64_t> PassengerServiceDatabase::HyperpathServiceWait(const PassengerJourneyExecution &intent, CargoType cargo, OrderListID service) const
@@ -1110,6 +1139,33 @@ int PassengerServiceDatabase::HyperpathLookupCandidates(CargoType cargo, const P
 	}
 	std::sort(out.begin(), out.end()); out.erase(std::unique(out.begin(), out.end()), out.end());
 	return out.empty() ? HYPERPATH_LOOKUP_NONE : slot;
+}
+
+PassengerPrecomputedTable::DisplayRead PassengerServiceDatabase::NextHyperpathDisplayCandidate(CargoType cargo,
+		const PassengerJourneyExecution &intent, OrderListID previous, OrderListID failed, PassengerPrecomputedTable::DisplayCursor &cursor,
+		PassengerPrecomputedTable::DisplayCandidate &out, size_t &work) const
+{
+	using Read = PassengerPrecomputedTable::DisplayRead;
+	if (cargo >= NUM_CARGO || intent.kind != PassengerRideKind::HyperpathIntent || intent.signature != uint64_t(cargo) + 1 || !this->IsCurrent(intent)) return Read::Unavailable;
+	bool changed = cursor.cargo != cargo || cursor.epoch != this->HyperpathLookupEpoch() || cursor.generation != intent.generation ||
+			this->HyperpathDestinationChanges() - cursor.changes > HYPERPATH_DESTINATION_LOG;
+	if (!changed) for (uint64_t change = cursor.changes; change < this->HyperpathDestinationChanges(); ++change) {
+		if (this->HyperpathChangedDestination(change) == intent.alighting) { changed = true; break; }
+	}
+	if (changed) cursor = {};
+	cursor.cargo = cargo; cursor.epoch = this->HyperpathLookupEpoch(); cursor.generation = intent.generation; cursor.changes = this->HyperpathDestinationChanges();
+	const auto &table = intent.generation == this->precomputed_policy_generation ? this->precomputed[cargo] : this->retained_precomputed[cargo];
+	return table.NextDisplayCandidate(intent.boarding, intent.alighting, previous, failed, cursor, out, work);
+}
+
+bool PassengerServiceDatabase::HyperpathDisplayCandidates(CargoType cargo, const PassengerJourneyExecution &intent,
+		OrderListID previous, OrderListID failed, std::vector<PassengerPrecomputedTable::DisplayCandidate> &out, size_t &work) const
+{
+	out.clear();
+	if (cargo >= NUM_CARGO || intent.kind != PassengerRideKind::HyperpathIntent || intent.signature != uint64_t(cargo) + 1 ||
+			!this->IsCurrent(intent)) return false;
+	const auto &table = intent.generation == this->precomputed_policy_generation ? this->precomputed[cargo] : this->retained_precomputed[cargo];
+	return table.DisplayCandidates(intent.boarding, intent.alighting, previous, failed, out, work);
 }
 
 PassengerPrecomputedPlan PassengerServiceDatabase::BoardHyperpath(const PassengerJourneyExecution &intent, CargoType cargo,
@@ -2007,11 +2063,10 @@ bool ValidatePassengerServiceRide(const PassengerJourneyExecution &ride, const V
  * Optional policies and wall-clock observations are deliberately absent. */
 std::vector<uint8_t> PassengerServiceDatabase::Save() const
 {
-	if (this->load_state == LoadState::Replaying && this->legacy_precomputed_cursor) return this->load_legacy_wire;
 	std::vector<uint8_t> data;
 	auto put = [&](uint64_t value) { for (uint i = 0; i < 8; ++i) { data.push_back(value & 255); value >>= 8; } };
 	const bool precomputed = this->precomputed_revision != UINT64_MAX;
-	put(15); put(this->generation); put(this->cursor); put(this->sweeping); put(this->dirty_cursor);
+	put(DATABASE_FORMAT_VERSION); put(this->generation); put(this->cursor); put(this->sweeping); put(this->dirty_cursor);
 	put(this->sweeping_since.base());
 	put(this->dirty.size()); for (OrderListID id : this->dirty) { put(id.base()); put(this->dirty_since.at(id).base()); }
 	auto put_service = [&](const PassengerPeriodicService &service) {
@@ -2043,19 +2098,10 @@ std::vector<uint8_t> PassengerServiceDatabase::Save() const
 		put(this->precomputed_services.size()); for (const auto &[id, service] : this->precomputed_services) put_service(service);
 		put(this->retained_precomputed_revision); put(this->retained_precomputed_transfer);
 		put(this->retained_precomputed_services.size()); for (const auto &[id, service] : this->retained_precomputed_services) put_service(service);
-		put(this->precomputed_sections); put(this->retained_precomputed_sections);
-		put(this->precomputed_estimates); put(this->retained_precomputed_estimates);
-		put(this->precomputed_optimized); put(this->retained_precomputed_optimized);
-		put(this->precomputed_integrated); put(this->retained_precomputed_integrated);
 		put(this->precomputed_hyperpath); put(this->retained_precomputed_hyperpath);
 		put(this->precomputed_policy_generation); put(this->retained_precomputed_policy_generation);
-		put(this->precomputed_revisit_dominance); put(this->retained_precomputed_revisit_dominance);
 	}
-	/* Phase 6 compatibility: retain the complete v13 record prefix. Only new
-	 * generations use witness events. Freeze the road-order access keys rather
-	 * than reading live orders during replay. Twenty-one 3-bit keys fit a word. */
-	const size_t trailer = data.size();
-	put(this->precomputed_continuation_witness); put(this->retained_precomputed_continuation_witness);
+	/* Freeze facility keys with the service snapshots. Twenty-one 3-bit keys fit a word. */
 	for (const auto *snapshot : {&this->services, &this->building, &this->precomputed_services, &this->retained_precomputed_services}) {
 		for (const auto &[id, service] : *snapshot) for (size_t at = 0; at < service.timetable.stops.size(); at += 21) {
 			uint64_t keys = 0;
@@ -2063,8 +2109,6 @@ std::vector<uint8_t> PassengerServiceDatabase::Save() const
 			put(keys);
 		}
 	}
-	put((data.size() - trailer) / 8);
-	put(this->precomputed_flat); put(this->retained_precomputed_flat);
 	return data;
 }
 
@@ -2081,14 +2125,7 @@ bool PassengerServiceDatabase::Load(std::span<const uint8_t> data)
 	};
 	auto count = [&](size_t max) { uint64_t n = get(); if (n > max || n > (data.size() - cursor) / 8) { valid = false; return size_t{0}; } return static_cast<size_t>(n); };
 	PassengerServiceDatabase restored;
-	uint64_t version = get(); if (version < 1 || version > 15) return false;
-	restored.legacy_precomputed_cursor = version < 6;
-	restored.precomputed_revisit_dominance = restored.retained_precomputed_revisit_dominance = false;
-	restored.precomputed_continuation_witness = restored.retained_precomputed_continuation_witness = false;
-	restored.precomputed_sections = restored.retained_precomputed_sections = version >= 8;
-	restored.precomputed_estimates = restored.retained_precomputed_estimates = version >= 9;
-	restored.precomputed_optimized = restored.retained_precomputed_optimized = version >= 10;
-	restored.precomputed_integrated = restored.retained_precomputed_integrated = version >= 11;
+	if (get() != DATABASE_FORMAT_VERSION) return false;
 	restored.generation = get();
 	uint64_t saved_cursor = get(); if (saved_cursor > OrderListID::Invalid().base()) return false;
 	restored.cursor = static_cast<uint32_t>(saved_cursor);
@@ -2108,7 +2145,7 @@ bool PassengerServiceDatabase::Load(std::span<const uint8_t> data)
 		service.id = loaded_id = OrderListID{static_cast<uint16_t>(id)};
 		service.incarnation = get(); service.generation = get(); service.timetable.period = static_cast<int64_t>(get());
 		if (service.generation == 0 || service.generation > restored.generation || service.timetable.period < 0 || service.timetable.period > MAX_PERIOD) return false;
-		if (version >= 9) service.timetable.estimated_period = static_cast<int64_t>(get());
+		service.timetable.estimated_period = static_cast<int64_t>(get());
 		if (service.timetable.estimated_period < 0 || service.timetable.estimated_period > MAX_PERIOD ||
 				(service.timetable.period > 0 && service.timetable.estimated_period != 0)) return false;
 		int64_t previous = 0;
@@ -2119,11 +2156,9 @@ bool PassengerServiceDatabase::Load(std::span<const uint8_t> data)
 			stop.station = StationID{static_cast<uint16_t>(station)}; stop.order = static_cast<VehicleOrderID>(order);
 			stop.arrival = static_cast<int64_t>(get()); stop.departure = static_cast<int64_t>(get());
 			stop.board = get(); stop.alight = get(); stop.forced = get();
-			if (version >= 9) {
-				uint64_t continues = get(), quality = get();
-				if (continues > 1 || quality > 2 || (service.timetable.period > 0 && (!continues || quality != 0))) return false;
-				stop.continues = continues != 0; stop.travel_quality = static_cast<uint8_t>(quality);
-			}
+			uint64_t continues = get(), quality = get();
+			if (continues > 1 || quality > 2 || (service.timetable.period > 0 && (!continues || quality != 0))) return false;
+			stop.continues = continues != 0; stop.travel_quality = static_cast<uint8_t>(quality);
 			if (stop.arrival < previous || stop.departure < stop.arrival || stop.departure > service.timetable.Circuit()) return false;
 			previous = stop.departure; service.timetable.stops.push_back(stop);
 		}
@@ -2145,164 +2180,83 @@ bool PassengerServiceDatabase::Load(std::span<const uint8_t> data)
 			service.dispatch_slots.push_back(static_cast<uint32_t>(slot));
 		}
 		if (service.dispatch_period && (service.timetable.period == 0 || service.dispatch_slots.empty() || service.vehicles.size() != 1 || service.dispatch_stop >= service.timetable.stops.size())) return false;
-		if (version >= 2) service.uncertain_dispatch_period = static_cast<int64_t>(get());
+		service.uncertain_dispatch_period = static_cast<int64_t>(get());
 		if (service.uncertain_dispatch_period < 0 || service.uncertain_dispatch_period > MAX_PERIOD) return false;
 		size_t bytes = ServiceBytes(service);
 		if (network_bytes + bytes > MAX_BYTES || !network.emplace(service.id, std::move(service)).second) return false;
 		network_bytes += bytes; return valid;
 	};
 	for (size_t n = count(OrderListID::Invalid().base()); n > 0 && valid; --n) if (!get_service(restored.services, restored.bytes)) return false;
-	if (version >= 3) {
-		restored.published_revision = get(); restored.batch_started = StateTicks{static_cast<int64_t>(get())};
-		uint64_t publishing = get(); if (publishing > 1 || restored.published_revision == UINT64_MAX) return false;
-		restored.publishing = publishing != 0;
-		uint64_t bootstrap = get(); if (bootstrap > 1) return false; restored.bootstrap = bootstrap != 0;
-		for (size_t n = count(OrderListID::Invalid().base()); n > 0 && valid; --n) {
-			uint64_t id = get(); if (id >= OrderListID::Invalid().base()) return false;
-			OrderListID key{static_cast<uint16_t>(id)};
-			if (!restored.build_queue.insert(key).second) return false;
-			restored.build_since.emplace(key, StateTicks{static_cast<int64_t>(get())});
-		}
-		for (size_t n = count(OrderListID::Invalid().base()); n > 0 && valid; --n) {
-			uint64_t id = get(); if (id >= OrderListID::Invalid().base() || !restored.unsafe.insert(OrderListID{static_cast<uint16_t>(id)}).second) return false;
-		}
-		for (size_t n = count(OrderListID::Invalid().base()); n > 0 && valid; --n) {
-			size_t before = restored.building.size();
-			if (!get_service(restored.building, restored.building_bytes) || restored.building.size() != before + 1) return false;
-			/* The wire is ordered by service ID, independently of map allocation. */
-			OrderListID id = loaded_id;
-			if (restored.build_queue.contains(id)) return false;
-			const auto &staged = restored.building.at(id); const auto *old = restored.Get(id);
-			size_t publication_work = 64 + 2 * (staged.timetable.stops.size() + (old == nullptr ? 0 : old->timetable.stops.size())) +
-					4 * staged.vehicles.size() + (staged.dispatch_slots.size() + 15) / 16;
-			if (publication_work > (version >= 4 ? PRECOMPUTED_CAPTURE_WORK : BUILD_WORK)) return false;
-			restored.staged_since.emplace(id, StateTicks{static_cast<int64_t>(get())});
-		}
-		if (restored.publishing && restored.building.empty()) return false;
-	} else {
-		restored.published_revision = restored.generation; restored.bootstrap = restored.services.empty();
-		restored.batch_started = restored.sweeping_since;
-		/* Version 1/2 dirty tasks already had admission to the old scheduler. */
-		restored.build_queue.swap(restored.dirty); restored.build_since.swap(restored.dirty_since);
+	restored.published_revision = get(); restored.batch_started = StateTicks{static_cast<int64_t>(get())};
+	uint64_t publishing = get(); if (publishing > 1 || restored.published_revision == UINT64_MAX) return false;
+	restored.publishing = publishing != 0;
+	uint64_t bootstrap = get(); if (bootstrap > 1) return false; restored.bootstrap = bootstrap != 0;
+	for (size_t n = count(OrderListID::Invalid().base()); n > 0 && valid; --n) {
+		uint64_t id = get(); if (id >= OrderListID::Invalid().base()) return false;
+		OrderListID key{static_cast<uint16_t>(id)};
+		if (!restored.build_queue.insert(key).second) return false;
+		restored.build_since.emplace(key, StateTicks{static_cast<int64_t>(get())});
 	}
-	if (version >= 4) {
-		restored.precomputed_operations = get(); restored.precomputed_transfer = static_cast<int64_t>(get());
-		const bool started = restored.precomputed_operations != UINT64_MAX;
-		if (restored.precomputed_transfer < 0 || restored.precomputed_transfer > 65535) return false;
-		if (restored.precomputed_operations == UINT64_MAX) restored.precomputed_operations = 0;
-		else restored.precomputed_revision = restored.published_revision;
-		if (version >= 5) {
-			restored.precomputed_revision = get(); restored.precomputed_refresh = StateTicks{static_cast<int64_t>(get())};
-			if (started != (restored.precomputed_revision != UINT64_MAX)) return false;
-			uint64_t invalidated = get(); if (invalidated > 1) return false;
-			restored.precomputed_invalidated = invalidated != 0;
-			size_t bytes = 0;
-			for (size_t n = count(OrderListID::Invalid().base()); n > 0 && valid; --n) if (!get_service(restored.precomputed_services, bytes)) return false;
-			if (restored.precomputed_revision == UINT64_MAX) {
-				if (!restored.precomputed_services.empty() || restored.precomputed_operations != 0) return false;
-			} else if (restored.precomputed_revision > restored.published_revision) return false;
-		} else if (restored.precomputed_revision != UINT64_MAX) {
-			restored.precomputed_services = restored.services;
-			int64_t refresh = restored.batch_started.base();
-			if (!AddTicks(refresh, TIMETABLE_EPOCH)) refresh = INT64_MAX;
-			restored.precomputed_refresh = StateTicks{refresh};
-		}
+	for (size_t n = count(OrderListID::Invalid().base()); n > 0 && valid; --n) {
+		uint64_t id = get(); if (id >= OrderListID::Invalid().base() || !restored.unsafe.insert(OrderListID{static_cast<uint16_t>(id)}).second) return false;
 	}
-	if (version >= 7) {
-		restored.retained_precomputed_revision = get(); restored.retained_precomputed_transfer = static_cast<int64_t>(get());
-		if (restored.retained_precomputed_transfer < 0 || restored.retained_precomputed_transfer > 65535) return false;
-		size_t bytes = 0;
-		for (size_t n = count(OrderListID::Invalid().base()); n > 0 && valid; --n) if (!get_service(restored.retained_precomputed_services, bytes)) return false;
-		if (restored.retained_precomputed_revision == UINT64_MAX) {
-			if (!restored.retained_precomputed_services.empty() || restored.retained_precomputed_transfer != 0) return false;
-		} else if (restored.precomputed_revision == UINT64_MAX || restored.retained_precomputed_revision > restored.precomputed_revision) return false;
+	for (size_t n = count(OrderListID::Invalid().base()); n > 0 && valid; --n) {
+		size_t before = restored.building.size();
+		if (!get_service(restored.building, restored.building_bytes) || restored.building.size() != before + 1) return false;
+		/* The wire is ordered by service ID, independently of map allocation. */
+		OrderListID id = loaded_id;
+		if (restored.build_queue.contains(id)) return false;
+		const auto &staged = restored.building.at(id); const auto *old = restored.Get(id);
+		size_t publication_work = 64 + 2 * (staged.timetable.stops.size() + (old == nullptr ? 0 : old->timetable.stops.size())) +
+				4 * staged.vehicles.size() + (staged.dispatch_slots.size() + 15) / 16;
+		if (publication_work > PRECOMPUTED_CAPTURE_WORK) return false;
+		restored.staged_since.emplace(id, StateTicks{static_cast<int64_t>(get())});
 	}
-	if (version >= 8) {
-		uint64_t current = get(), retained = get();
-		if (current > 1 || retained > 1) return false;
-		restored.precomputed_sections = current != 0; restored.retained_precomputed_sections = retained != 0;
-	}
-	if (version >= 9) {
-		uint64_t current = get(), retained = get();
-		if (current > 1 || retained > 1) return false;
-		restored.precomputed_estimates = current != 0; restored.retained_precomputed_estimates = retained != 0;
-	}
-	if (version >= 10) {
-		uint64_t current = get(), retained = get();
-		if (current > 1 || retained > 1) return false;
-		restored.precomputed_optimized = current != 0; restored.retained_precomputed_optimized = retained != 0;
-	}
-	if (version >= 11) {
-		uint64_t current = get(), retained = get();
-		if (current > 1 || retained > 1 || (current && !restored.precomputed_optimized) || (retained && !restored.retained_precomputed_optimized)) return false;
-		restored.precomputed_integrated = current != 0; restored.retained_precomputed_integrated = retained != 0;
-	}
-	if (version >= 12) {
-		uint64_t current = get(), retained = get();
-		if (current > 1 || retained > 1 || (current && !restored.precomputed_integrated) || (retained && !restored.retained_precomputed_integrated)) return false;
-		restored.precomputed_hyperpath = current != 0; restored.retained_precomputed_hyperpath = retained != 0;
-		restored.precomputed_policy_generation = get(); restored.retained_precomputed_policy_generation = get();
-		if ((current && restored.precomputed_policy_generation == 0) || (retained && restored.retained_precomputed_policy_generation == 0) ||
-				restored.retained_precomputed_policy_generation > restored.precomputed_policy_generation) return false;
-	}
-	if (version >= 13) {
-		uint64_t current = get(), retained = get();
-		if (current > 1 || retained > 1) return false;
-		restored.precomputed_revisit_dominance = current != 0; restored.retained_precomputed_revisit_dominance = retained != 0;
-	}
-	if (version >= 14) {
-		const size_t trailer = cursor;
-		uint64_t current = get(), retained = get();
-		if (current > 1 || retained > 1 || (current && !restored.precomputed_revisit_dominance) || (retained && !restored.retained_precomputed_revisit_dominance)) return false;
-		restored.precomputed_continuation_witness = current != 0; restored.retained_precomputed_continuation_witness = retained != 0;
-		for (auto *snapshot : {&restored.services, &restored.building, &restored.precomputed_services, &restored.retained_precomputed_services}) {
-			for (auto &[id, service] : *snapshot) for (size_t at = 0; at < service.timetable.stops.size(); at += 21) {
-				uint64_t keys = get();
-				for (size_t i = 0; i < 21 && at + i < service.timetable.stops.size(); ++i) {
-					uint8_t key = keys & 7; keys >>= 3; if (key > 5) return false;
-					service.timetable.stops[at + i].boarding_facility = key;
-				}
-				if (keys != 0) return false;
+	if (restored.publishing && restored.building.empty()) return false;
+
+	restored.precomputed_operations = get(); restored.precomputed_transfer = static_cast<int64_t>(get());
+	const bool started = restored.precomputed_operations != UINT64_MAX;
+	if (restored.precomputed_transfer < 0 || restored.precomputed_transfer > 65535) return false;
+	if (restored.precomputed_operations == UINT64_MAX) restored.precomputed_operations = 0;
+	restored.precomputed_revision = get(); restored.precomputed_refresh = StateTicks{static_cast<int64_t>(get())};
+	if (started != (restored.precomputed_revision != UINT64_MAX)) return false;
+	uint64_t invalidated = get(); if (invalidated > 1) return false;
+	restored.precomputed_invalidated = invalidated != 0;
+	size_t bytes = 0;
+	for (size_t n = count(OrderListID::Invalid().base()); n > 0 && valid; --n) if (!get_service(restored.precomputed_services, bytes)) return false;
+	if (restored.precomputed_revision == UINT64_MAX) {
+		if (!restored.precomputed_services.empty() || restored.precomputed_operations != 0) return false;
+	} else if (restored.precomputed_revision > restored.published_revision) return false;
+	restored.retained_precomputed_revision = get(); restored.retained_precomputed_transfer = static_cast<int64_t>(get());
+	if (restored.retained_precomputed_transfer < 0 || restored.retained_precomputed_transfer > 65535) return false;
+	bytes = 0;
+	for (size_t n = count(OrderListID::Invalid().base()); n > 0 && valid; --n) if (!get_service(restored.retained_precomputed_services, bytes)) return false;
+	if (restored.retained_precomputed_revision == UINT64_MAX) {
+		if (!restored.retained_precomputed_services.empty() || restored.retained_precomputed_transfer != 0) return false;
+	} else if (restored.precomputed_revision == UINT64_MAX || restored.retained_precomputed_revision > restored.precomputed_revision) return false;
+
+	uint64_t current = get(), retained = get();
+	if (current > 1 || retained > 1) return false;
+	restored.precomputed_hyperpath = current != 0; restored.retained_precomputed_hyperpath = retained != 0;
+	restored.precomputed_policy_generation = get(); restored.retained_precomputed_policy_generation = get();
+	if ((current && restored.precomputed_policy_generation == 0) || (retained && restored.retained_precomputed_policy_generation == 0) ||
+			restored.retained_precomputed_policy_generation > restored.precomputed_policy_generation) return false;
+	for (auto *snapshot : {&restored.services, &restored.building, &restored.precomputed_services, &restored.retained_precomputed_services}) {
+		for (auto &[id, service] : *snapshot) for (size_t at = 0; at < service.timetable.stops.size(); at += 21) {
+			uint64_t keys = get();
+			for (size_t i = 0; i < 21 && at + i < service.timetable.stops.size(); ++i) {
+				uint8_t key = keys & 7; keys >>= 3; if (key > 5) return false;
+				service.timetable.stops[at + i].boarding_facility = key;
 			}
+			if (keys != 0) return false;
 		}
-		const size_t words = (cursor - trailer) / 8;
-		if (get() != words) return false;
 	}
-	if (version >= 15) {
-		uint64_t current = get(), retained = get();
-		if (current > 1 || retained > 1 || (current && !restored.precomputed_hyperpath) || (retained && !restored.retained_precomputed_hyperpath)) return false;
-		restored.precomputed_flat = current != 0; restored.retained_precomputed_flat = retained != 0;
-	}
-	if (restored.retained_precomputed_revision == UINT64_MAX) restored.retained_precomputed_sections = true;
 	if (!valid || cursor != data.size()) return false;
-	if (version == 1) {
-		/* Old publications used unknown phase for both timing uncertainty and
-		 * incompatible facilities. Recheck their uncertified fleet with ordinary
-		 * build admission. Certified vehicles and the saved sweep keep progress. */
-		for (auto it = restored.services.begin(); it != restored.services.end();) {
-			auto &service = it->second;
-			if (std::none_of(service.vehicles.begin(), service.vehicles.end(), [](const auto &v) { return !v.phase_known; })) { ++it; continue; }
-			restored.bytes -= ServiceBytes(service);
-			std::erase_if(service.vehicles, [](const auto &v) { return !v.phase_known; });
-			restored.build_queue.insert(service.id); restored.build_since.try_emplace(service.id, restored.sweeping_since);
-			if (service.vehicles.empty()) it = restored.services.erase(it);
-			else { restored.bytes += ServiceBytes(service); ++it; }
-		}
-	}
-	if (version < 9) {
-		/* Reconstruct old rows with their original algorithm first. Missing
-		 * patterns enter the ordinary saved update queue, at a simulation epoch,
-		 * never via different live input during a server/client load. */
-		for (const auto &[id, service] : restored.services) if (service.timetable.period == 0) {
-			restored.dirty.insert(id); restored.dirty_since.try_emplace(id, restored.sweeping_since);
-		}
-	}
 	for (const auto &[id, service] : restored.services) { restored.Index(service); restored.TouchStations(service); }
 	restored.service_lookup.resize(OrderListID::Invalid().base(), nullptr);
 	for (const auto &[id, service] : restored.services) restored.service_lookup[id.base()] = &service;
 	for (OrderListID id : restored.unsafe) restored.unsafe_lookup.set(id.base());
 	restored.restoring = true;
-	if (version < 6 && restored.precomputed_revision != UINT64_MAX) restored.load_legacy_wire.assign(data.begin(), data.end());
 	restored.policy_cache_enabled = this->policy_cache_enabled; // Local optional preference survives loading; absent from simulation state.
 	restored.departure_index_enabled = this->departure_index_enabled;
 	restored.timed_scratch_enabled = this->timed_scratch_enabled;
@@ -2325,9 +2279,7 @@ uint64_t PassengerServiceDatabase::GetLoadProgress() const
 uint64_t PassengerServiceDatabase::GetLoadWorkLimit() const
 {
 	uint64_t work = this->precomputed_operations + uint64_t{UINT32_MAX};
-	/* Legacy cursors did not charge row publication. Include that charge for
-	 * retained tables that may have originated in an older savegame. */
-	for (const auto &table : this->retained_precomputed) work += table.GetDiagnostic().operations + table.LegacyPublicationWork();
+	for (const auto &table : this->retained_precomputed) work += table.GetDiagnostic().operations;
 	return work;
 }
 
@@ -2343,7 +2295,7 @@ void PassengerServiceDatabase::FinishLoad(bool present, bool defer_precomputed)
 		this->load_cargo = CargoType{0};
 		if (this->retained_precomputed_revision != UINT64_MAX) {
 			this->BuildPrecomputedTables(this->retained_precomputed, this->retained_precomputed_services,
-					this->retained_precomputed_transfer, this->retained_precomputed_hyperpath ? PassengerPrecomputedTable::MAX_HYPERPATH_BYTES : PassengerPrecomputedTable::MAX_BYTES, this->retained_precomputed_sections, this->retained_precomputed_estimates, this->retained_precomputed_optimized, this->retained_precomputed_integrated, this->retained_precomputed_hyperpath, this->retained_precomputed_revisit_dominance, this->retained_precomputed_continuation_witness, this->retained_precomputed_flat, defer_precomputed);
+					this->retained_precomputed_transfer, this->retained_precomputed_hyperpath ? PassengerPrecomputedTable::MAX_HYPERPATH_BYTES : PassengerPrecomputedTable::MAX_BYTES, this->retained_precomputed_hyperpath, defer_precomputed);
 		}
 		this->load_current_graph_started = !defer_precomputed;
 		if (!defer_precomputed) this->BuildPrecomputedTables();
@@ -2387,9 +2339,6 @@ PassengerServiceDatabase::LoadState PassengerServiceDatabase::StepLoad(size_t al
 		if (this->load_cargo == NUM_CARGO || (!this->load_retained && this->load_remaining == 0)) {
 			if (this->load_retained) { this->load_retained = false; this->load_cargo = CargoType{0}; continue; }
 			if (this->load_remaining != 0) return this->load_state = LoadState::Invalid;
-			if (this->legacy_precomputed_cursor) for (const auto &table : this->precomputed) this->precomputed_operations += table.LegacyPublicationWork();
-			this->legacy_precomputed_cursor = false;
-			this->load_legacy_wire.clear();
 			return this->load_state = LoadState::Ready;
 		}
 		auto &table = (this->load_retained ? this->retained_precomputed : this->precomputed)[this->load_cargo];
@@ -2399,7 +2348,7 @@ PassengerServiceDatabase::LoadState PassengerServiceDatabase::StepLoad(size_t al
 		if (this->load_retained) {
 			used = table.Step(allowance);
 		} else {
-			used = table.Step(static_cast<size_t>(std::min<uint64_t>(this->load_remaining, allowance)), this->legacy_precomputed_cursor,
+			used = table.Step(static_cast<size_t>(std::min<uint64_t>(this->load_remaining, allowance)), false,
 					[&](StationID destination) {
 						auto &retained = this->retained_precomputed[this->load_cargo];
 						retained.PrepareRetirement(table); retained.ReleaseDestination(destination);

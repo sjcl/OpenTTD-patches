@@ -9,6 +9,7 @@
 
 #include "stdafx.h"
 #include "passenger_journey_active.h"
+#include "passenger_service_database.h"
 #include "debug.h"
 #include "gui.h"
 #include "querystring_gui.h"
@@ -938,9 +939,16 @@ static constexpr std::initializer_list<NWidgetPart> _nested_station_view_widgets
 		NWidget(WWT_DEFSIZEBOX, Colours::Grey),
 		NWidget(WWT_STICKYBOX, Colours::Grey),
 	EndContainer(),
-	NWidget(NWID_HORIZONTAL),
-		NWidget(WWT_TEXTBTN, Colours::Grey, WID_SV_GROUP), SetMinimalSize(81, 12), SetFill(1, 1), SetStringTip(STR_STATION_VIEW_GROUP),
-		NWidget(WWT_DROPDOWN, Colours::Grey, WID_SV_GROUP_BY), SetMinimalSize(168, 12), SetResize(1, 0), SetFill(0, 1), SetToolTip(STR_TOOLTIP_GROUP_ORDER),
+	NWidget(NWID_SELECTION, Colours::Invalid, WID_SV_PASSENGER_GROUPING_SEL),
+		NWidget(WWT_PANEL, Colours::Grey),
+			NWidget(WWT_TEXT, Colours::Invalid, WID_SV_PASSENGER_GROUPING), SetMinimalSize(0, 12), SetFill(1, 0), SetStringTip(STR_STATION_VIEW_PASSENGER_GROUPING, STR_STATION_VIEW_GROUP_PASSENGER_TOOLTIP),
+		EndContainer(),
+	EndContainer(),
+	NWidget(NWID_SELECTION, Colours::Invalid, WID_SV_CARGO_GROUPING_SEL),
+		NWidget(NWID_HORIZONTAL),
+			NWidget(WWT_TEXTBTN, Colours::Grey, WID_SV_GROUP), SetMinimalSize(81, 12), SetFill(1, 1), SetStringTip(STR_STATION_VIEW_GROUP),
+			NWidget(WWT_DROPDOWN, Colours::Grey, WID_SV_GROUP_BY), SetMinimalSize(168, 12), SetResize(1, 0), SetFill(0, 1), SetToolTip(STR_TOOLTIP_GROUP_ORDER),
+		EndContainer(),
 	EndContainer(),
 	NWidget(NWID_HORIZONTAL),
 		NWidget(WWT_PUSHTXTBTN, Colours::Grey, WID_SV_SORT_ORDER), SetMinimalSize(81, 12), SetFill(1, 1), SetStringTip(STR_BUTTON_SORT_BY, STR_TOOLTIP_SORT_ORDER),
@@ -1025,8 +1033,6 @@ CargoDataEntry::~CargoDataEntry()
 void CargoDataEntry::Clear()
 {
 	if (this->children != nullptr) this->children->clear();
-	this->services.reset();
-	this->num_service_rows = 0;
 	if (this->parent != nullptr) this->parent->count -= this->count;
 	this->count = 0;
 	this->num_children = 0;
@@ -1087,22 +1093,6 @@ void CargoDataEntry::IncrementSize()
 	 if (this->parent != nullptr) this->parent->IncrementSize();
 }
 
-/** Insert a supplemental via row without increasing any passenger totals. */
-void CargoDataEntry::AddService(StationPassengerService service, uint count)
-{
-	if (count == 0) return;
-	if (this->services == nullptr) this->services = std::make_unique<std::map<StationPassengerService, uint>>();
-	auto [it, inserted] = this->services->try_emplace(service, 0);
-	it->second += count;
-	if (inserted) this->IncrementServiceRows();
-}
-
-void CargoDataEntry::IncrementServiceRows()
-{
-	++this->num_service_rows;
-	if (this->parent != nullptr) this->parent->IncrementServiceRows();
-}
-
 /** The internal Journey queue key is deliberately invalid; use the stored next ride for display only. */
 StationID GetStationCargoVia(CargoType cargo, const CargoPacket &packet, StationID queue_key, StationID station)
 {
@@ -1117,51 +1107,30 @@ StationID GetStationCargoVia(CargoType cargo, const CargoPacket &packet, Station
 	return hop != station && Station::IsValidID(hop) ? hop : StationID::Invalid();
 }
 
-/** Read the current name's ID, retaining ungrouped candidates as unknown rather than ignoring them. */
-static StationPassengerService GetPassengerVehicleGroup(const Vehicle *vehicle)
-{
-	const Group *group = Group::GetIfValid(vehicle->group_id);
-	if (group == nullptr || group->owner != vehicle->owner || group->vehicle_type != vehicle->type) return {};
-	return {group->index};
-}
+CargoDataEntry::CargoDataEntry(StationPassengerService service) :
+	parent(nullptr), service(service), num_children(0), count(0), children(nullptr)
+{}
 
-StationPassengerService StationPassengerServiceCache::Resolve(CargoType cargo, const PassengerJourneyExecution &ride)
-{
-	const OrderList *orders = OrderList::GetIfValid(ride.service);
-	if (orders == nullptr || ride.boarding_order >= orders->GetNumOrders() || ride.alighting_order >= orders->GetNumOrders()) return {};
-	const Order *board = orders->GetOrderAt(ride.boarding_order), *alight = orders->GetOrderAt(ride.alighting_order);
-	if (!IsPassengerStationStop(*board) || !IsPassengerStationStop(*alight) ||
-			board->GetDestination() != ride.boarding || alight->GetDestination() != ride.alighting ||
-			board->GetCargoLoadType(cargo) == OrderLoadType::NoLoad || alight->GetCargoUnloadType(cargo) == OrderUnloadType::NoUnload) return {};
-	const bool intent = ride.kind == PassengerRideKind::ServiceIntent || ride.kind == PassengerRideKind::EstimatedServiceIntent;
-	if (ride.kind != PassengerRideKind::VehicleSnapshot && orders->GetCargoDistRouteGeneration() != ride.signature) return {};
-	if (!intent) {
-		const Vehicle *vehicle = Vehicle::GetIfValid(ride.vehicle);
-		if (!IsPassengerServiceVehicle(vehicle) || vehicle->orders != orders) return {};
-		return GetPassengerVehicleGroup(vehicle);
-	}
+CargoDataEntry::CargoDataEntry(StationPassengerService service, uint count, CargoDataEntry *parent) :
+	parent(parent), service(service), num_children(0), count(count), children(std::make_unique<CargoDataSet>())
+{}
 
-	Key key{cargo, ride.service, orders->GetCargoDistRouteGeneration(), ride.boarding, ride.alighting, ride.boarding_order, ride.alighting_order};
-	if (auto it = this->services.find(key); it != this->services.end()) return it->second;
-	StationPassengerService result;
-	bool found = false;
-	for (const Vehicle *vehicle = orders->GetFirstSharedVehicle(); vehicle != nullptr; vehicle = vehicle->NextShared()) {
-		/* A partially inspected fleet must never be presented as a unique group. */
-		if (this->work_left == 0) { result = {}; break; }
-		--this->work_left;
-		if (!IsPassengerServiceVehicle(vehicle) || vehicle->vehstatus.Test(VehState::Crashed)) continue;
-		bool usable = HasPassengerVehicleCapacity(vehicle, cargo, this->work_left) &&
-				CanPassengerVehicleUseStation(vehicle, ride.boarding, board, this->work_left) &&
-				CanPassengerVehicleUseStation(vehicle, ride.alighting, alight, this->work_left);
-		if (this->work_left == 0) { result = {}; break; }
-		if (!usable) continue;
-		StationPassengerService group = GetPassengerVehicleGroup(vehicle);
-		if (!found) { result = group; found = true; }
-		else if (result != group) { result = {GroupID::Invalid(), true}; break; }
+template CargoDataEntry &CargoDataEntry::InsertOrRetrieve<StationPassengerService>(StationPassengerService);
+
+static std::string GetPassengerServiceName(StationPassengerService service)
+{
+	if (Group::IsValidID(service.group)) {
+		std::string name = GetString(STR_GROUP_NAME, service.group);
+		return service.multiple ? GetString(STR_STATION_VIEW_PASSENGER_SERVICE_MULTIPLE, name) : name;
 	}
-	/* Both work and retained records are bounded until the next GUI refresh. */
-	if (this->services.size() < 4096) this->services.emplace(key, result);
-	return result;
+	switch (service.label) {
+		case StationPassengerServiceLabel::Checking: return GetString(STR_STATION_VIEW_PASSENGER_SERVICE_CHECKING);
+		case StationPassengerServiceLabel::Ungrouped: return GetString(STR_STATION_VIEW_PASSENGER_SERVICE_UNGROUPED);
+		case StationPassengerServiceLabel::Updating: return GetString(STR_STATION_VIEW_PASSENGER_SERVICE_UPDATING);
+		case StationPassengerServiceLabel::Reserved: return GetString(STR_STATION_VIEW_PASSENGER_SERVICE_RESERVED);
+		case StationPassengerServiceLabel::Undecided: return Station::IsValidID(service.transfer) ? GetString(STR_STATION_VIEW_PASSENGER_SERVICE_TRANSFER, service.transfer) : GetString(STR_STATION_VIEW_PASSENGER_SERVICE_UNKNOWN);
+	}
+	NOT_REACHED();
 }
 
 CargoDataEntry *ShowStationCargo(CargoDataEntry &root, const CargoDataEntry &expanded, std::span<const StationCargoGrouping, 4> groupings,
@@ -1191,6 +1160,7 @@ CargoDataEntry *ShowStationCargo(CargoDataEntry &root, const CargoDataEntry &exp
 					expand = expand->Retrieve(next);
 				}
 				break;
+			case GR_SERVICE: NOT_REACHED();
 			case GR_DESTINATION:
 				if (auto_distributed) {
 					data = &data->InsertOrRetrieve(dest);
@@ -1207,16 +1177,29 @@ CargoDataEntry *ShowStationWaitingCargo(CargoDataEntry &root, const CargoDataEnt
 		StationID station, bool auto_distributed, CargoType cargo, const CargoPacket &packet, StationID next, StationID dest, uint count,
 		StationPassengerServiceCache &services)
 {
-	CargoDataEntry *via = ShowStationCargo(root, expanded, groupings, station, auto_distributed, cargo, packet.GetFirstStation(), next, dest, count);
-	if (via != nullptr && IsCargoInClass(cargo, CargoClass::Passengers) &&
-			(packet.GetPassengerRoutingMode() == PassengerRoutingMode::Journey || IsPassengerJourneyRoutingEnabled(cargo))) {
-		/* CargoDist/deferred/Fallback packets have no promised service. Keep their
-		 * counts visible without assigning them to a Journey passenger's group. */
-		StationPassengerService service = packet.GetPassengerRoutingMode() == PassengerRoutingMode::Journey ?
-				services.Resolve(cargo, packet.GetPassengerJourney()) : StationPassengerService{};
-		via->AddService(service, count);
+	if (!IsCargoInClass(cargo, CargoClass::Passengers)) {
+		return ShowStationCargo(root, expanded, groupings, station, auto_distributed, cargo, packet.GetFirstStation(), next, dest, count);
 	}
-	return via;
+	if (count == 0) return nullptr;
+	CargoDataEntry *data = &root.InsertOrRetrieve(cargo);
+	data->SetTransfers(true); // Even locally originating passengers have service/destination/source children.
+	const CargoDataEntry *expand = expanded.Retrieve(cargo);
+	if (expand != nullptr) {
+		StationPassengerService service = services.Resolve(cargo, packet, station);
+		data = &data->InsertOrRetrieve(service);
+		expand = expand->Retrieve(PassengerServiceExpansionKey(service));
+	}
+	StationID destination = packet.GetPassengerDestination();
+	if (!Station::IsValidID(destination)) destination = StationID::Invalid();
+	StationID source = packet.GetFirstStation();
+	if (!Station::IsValidID(source)) source = StationID::Invalid();
+	for (StationID key : {destination, source}) {
+		if (expand == nullptr) break;
+		data = &data->InsertOrRetrieve(key);
+		expand = expand->Retrieve(key);
+	}
+	data->Update(count);
+	return data;
 }
 
 void CargoDataEntry::Resort(CargoSortType type, SortOrder order)
@@ -1238,6 +1221,16 @@ CargoDataEntry *CargoDataEntry::Retrieve(CargoDataSet::iterator i) const
 
 bool CargoSorter::operator()(const CargoDataEntry &cd1, const CargoDataEntry &cd2) const
 {
+	if (cd1.IsService() || cd2.IsService()) {
+		if (cd1.IsService() != cd2.IsService()) return this->SortId(cd1.IsService(), cd2.IsService());
+		if (this->type == CargoSortType::Count && cd1.GetCount() != cd2.GetCount()) return this->SortId(cd1.GetCount(), cd2.GetCount());
+		if (this->type == CargoSortType::StationString || this->type == CargoSortType::Count) {
+			int res = StrNaturalCompare(GetPassengerServiceName(cd1.GetService()), GetPassengerServiceName(cd2.GetService()));
+			if (res != 0) return this->order == SO_ASCENDING ? res < 0 : res > 0;
+		}
+		return this->SortId(cd1.GetService(), cd2.GetService());
+	}
+
 	switch (this->type) {
 		case CargoSortType::StationID:
 			return this->SortId<StationID>(cd1.GetStation(), cd2.GetStation());
@@ -1315,13 +1308,12 @@ static bool IsStationPaxRoutesShown(StationID station)
 /**
  * Show or hide the routes of the passengers of the given station in the main viewport.
  * @param station Station, or StationID::Invalid() to hide.
- * @param mode Which passengers of the station to show the routes of.
  */
-static void SetStationPaxRoutesShown(StationID station, LinkGraphOverlay::RouteMode mode = LinkGraphOverlay::RouteMode::Waiting)
+static void SetStationPaxRoutesShown(StationID station)
 {
 	LinkGraphOverlay *overlay = GetMainViewportLinkGraphOverlay();
 	if (overlay == nullptr) return;
-	overlay->SetRouteStation(station, mode);
+	overlay->SetRouteStation(station);
 	SetWindowClassesDirty(WindowClass::StationView);
 }
 
@@ -1329,7 +1321,6 @@ static void SetStationPaxRoutesShown(StationID station, LinkGraphOverlay::RouteM
 enum StationPaxRoutesDropDownItems : int {
 	SPRDD_HIDE,           ///< Hide the routes.
 	SPRDD_WAITING,        ///< Show the routes of the waiting passengers.
-	SPRDD_MONTHLY,        ///< Show the routes of the planned monthly flow of departing passengers.
 };
 
 struct StationViewWindow : public Window {
@@ -1337,24 +1328,8 @@ struct StationViewWindow : public Window {
 	 * A row being displayed in the cargo view (as opposed to being "hidden" behind a plus sign).
 	 */
 	struct RowDisplay {
-		RowDisplay(CargoDataEntry *f, StationID n) : filter(f), next_station(n) {}
-		RowDisplay(CargoDataEntry *f, CargoType n) : filter(f), next_cargo(n) {}
-
-		/**
-		 * Parent of the cargo entry belonging to the row.
-		 */
-		CargoDataEntry *filter;
-		union {
-			/**
-			 * ID of the station belonging to the entry actually displayed if it's to/from/via.
-			 */
-			StationID next_station;
-
-			/**
-			 * ID of the cargo belonging to the entry actually displayed if it's cargo.
-			 */
-			CargoType next_cargo;
-		};
+		std::vector<StationCargoKey> path; ///< IDs only; remains safe if a partial service classification moves.
+		StationID station = StationID::Invalid(); ///< Service rows never act as station links.
 	};
 
 	typedef std::vector<RowDisplay> CargoDataVector;
@@ -1429,12 +1404,15 @@ struct StationViewWindow : public Window {
 	Mode current_mode{};                         ///< Currently selected display mode of cargo view.
 	std::array<Grouping, NUM_COLUMNS> groupings; ///< Grouping modes for the different columns.
 
-	CargoDataEntry expanded_rows{}; ///< Parent entry of currently expanded rows.
+	CargoDataEntry expanded_rows{}; ///< Expansion state for conventional CargoDist rows.
+	CargoDataEntry passenger_expanded_rows{}; ///< Separate waiting passenger paths, independent of cargo grouping preferences.
 	CargoDataEntry cached_destinations{}; ///< Cache for the flows passing through this station.
 	CargoDataVector displayed_rows{}; ///< Parent entry of currently displayed rows (including collapsed ones).
-	StationPassengerServiceCache passenger_services; ///< At most one shared-fleet scan per visible ride per second.
+	StationPassengerServiceCache passenger_services; ///< Persistent ID cache and fair, resumable GUI work.
+	StationCargoGroupingMode grouping_mode = StationCargoGroupingMode::Conventional;
 	uint passenger_service_age = 0;
-	bool has_passenger_service_rows = false;
+	bool passenger_service_changed = false;
+	bool has_waiting_passengers = false;
 
 	bool place_object_active = false;
 
@@ -1534,6 +1512,14 @@ struct StationViewWindow : public Window {
 			return true;
 		}
 
+		if (widget == WID_SV_PASSENGER_ROUTING) {
+			auto d = this->passenger_services.GetDiagnostics();
+			GuiShowTooltips(this, GetEncodedString(STR_STATION_VIEW_PASSENGER_SERVICE_DIAGNOSTICS,
+					d.pending, d.partial, d.complete, d.unavailable, d.work_exhausted, d.no_candidates,
+					d.stale_policy, d.stale_service, d.no_shared_vehicle, d.ungrouped, d.invalid_vehicle, d.work), close_cond);
+			return true;
+		}
+
 		if (widget != WID_SV_ACCEPT_RATING_LIST || this->GetWidget<NWidgetCore>(WID_SV_ACCEPTS_RATINGS)->GetString() == STR_STATION_VIEW_RATINGS_BUTTON ||
 				_settings_client.gui.station_rating_tooltip_mode == SRTM_OFF) {
 			return false;
@@ -1556,19 +1542,35 @@ struct StationViewWindow : public Window {
 		return true;
 	}
 
+	bool UpdateGroupingMenu(const CargoDataEntry &cargo)
+	{
+		bool passengers = false, other = false;
+		for (auto it = cargo.Begin(); it != cargo.End(); ++it) {
+			if (IsCargoInClass((*it)->GetCargo(), CargoClass::Passengers)) passengers = true;
+			else other = true;
+		}
+		auto mode = GetStationCargoGroupingMode(this->current_mode == MODE_PLANNED, passengers, other);
+		this->GetWidget<NWidgetStacked>(WID_SV_PASSENGER_GROUPING_SEL)->SetDisplayedPlane(mode == StationCargoGroupingMode::Conventional ? SZSP_NONE : 0);
+		this->GetWidget<NWidgetStacked>(WID_SV_CARGO_GROUPING_SEL)->SetDisplayedPlane(mode == StationCargoGroupingMode::Passengers ? SZSP_NONE : 0);
+		this->GetWidget<NWidgetCore>(WID_SV_GROUP)->SetString(mode == StationCargoGroupingMode::Mixed ? STR_STATION_VIEW_GROUP_OTHER_CARGO : STR_STATION_VIEW_GROUP);
+		if (mode == this->grouping_mode) return false;
+		this->grouping_mode = mode; this->ReInit(); return true;
+	}
+
 	void OnPaint() override
 	{
 		const Station *st = Station::Get(this->window_number);
 		CargoDataEntry cargo;
 		BuildCargoList(&cargo, st);
+		if (this->UpdateGroupingMenu(cargo)) return;
 		int routing_lines = 1;
 		for (CargoType cid : EnumRange(NUM_CARGO)) {
 			if (IsCargoInClass(cid, CargoClass::Passengers) && st->goods[cid].CargoTotalCount() > 0) routing_lines += 3;
 		}
 		if (routing_lines != this->passenger_routing_lines) { this->passenger_routing_lines = routing_lines; this->ReInit(); return; }
 
-		this->vscroll->SetCount(cargo.GetNumRows()); // update scrollbar
-		this->has_passenger_service_rows = cargo.GetNumRows() != cargo.GetNumChildren();
+		this->vscroll->SetCount(cargo.GetNumChildren()); // update scrollbar
+		this->has_waiting_passengers = std::any_of(cargo.Begin(), cargo.End(), [](const auto &row) { return IsCargoInClass(row->GetCargo(), CargoClass::Passengers); });
 
 		EnumBitSet<VehicleType, uint8_t> have_veh_types{};
 		IterateOrderRefcountMapForDestinationID(st->index, [&](CompanyID cid, OrderType order_type, VehicleType veh_type, uint32_t refcount) {
@@ -1785,11 +1787,11 @@ struct StationViewWindow : public Window {
 			const CargoPacket *cp = *it;
 			StationID next = GetStationCargoVia(cargo, *cp, it.GetKey(), static_cast<StationID>(this->window_number));
 			auto show_waiting = [&](StationID dest, uint count) {
-				ShowStationWaitingCargo(*entry, this->expanded_rows, this->groupings, static_cast<StationID>(this->window_number),
+				ShowStationWaitingCargo(*entry, IsCargoInClass(cargo, CargoClass::Passengers) ? this->passenger_expanded_rows : this->expanded_rows, this->groupings, static_cast<StationID>(this->window_number),
 						auto_distributed, cargo, *cp, next, dest, count, this->passenger_services);
 			};
 			if (IsCargoInClass(cargo, CargoClass::Passengers)) this->passenger_routing_counts[cargo][to_underlying(cp->GetPassengerRoutingMode())] += cp->Count();
-			if (cp->GetPassengerDestination() != StationID::Invalid()) {
+			if (IsCargoInClass(cargo, CargoClass::Passengers)) {
 				show_waiting(cp->GetPassengerDestination(), cp->Count());
 				continue;
 			}
@@ -1826,7 +1828,16 @@ struct StationViewWindow : public Window {
 				show_waiting(dest_entry.GetStation(), val);
 			}
 		}
-		this->ShowCargo(entry, cargo, NEW_STATION, NEW_STATION, NEW_STATION, packets.ReservedCount());
+		if (IsCargoInClass(cargo, CargoClass::Passengers)) {
+			if (packets.ReservedCount() > 0) {
+				CargoDataEntry *reserved = &entry->InsertOrRetrieve(cargo);
+				reserved->SetTransfers(true);
+				if (this->passenger_expanded_rows.Retrieve(cargo) != nullptr) reserved = &reserved->InsertOrRetrieve(StationPassengerService{GroupID::Invalid(), false, StationID::Invalid(), StationPassengerServiceLabel::Reserved});
+				reserved->Update(packets.ReservedCount());
+			}
+		} else {
+			this->ShowCargo(entry, cargo, NEW_STATION, NEW_STATION, NEW_STATION, packets.ReservedCount());
+		}
 	}
 
 	/**
@@ -1838,7 +1849,8 @@ struct StationViewWindow : public Window {
 	{
 		for (CargoType cargo : EnumRange(NUM_CARGO)) {
 			this->passenger_routing_counts[cargo] = {};
-			if (this->cached_destinations.Retrieve(cargo) == nullptr) {
+			if (this->cached_destinations.Retrieve(cargo) == nullptr &&
+					(this->current_mode != MODE_WAITING || !IsCargoInClass(cargo, CargoClass::Passengers))) {
 				this->RecalcDestinations(cargo);
 			}
 
@@ -1855,33 +1867,22 @@ struct StationViewWindow : public Window {
 		}
 	}
 
-	/**
-	 * Mark a specific row, characterized by its CargoDataEntry, as expanded.
-	 * @param entry The row to be marked as expanded.
-	 */
+	/** Waiting passenger expansion paths never share the CargoDist grouping namespace. */
+	CargoDataEntry &ExpansionRoot(CargoType cargo)
+	{
+		return this->current_mode == MODE_WAITING && IsCargoInClass(cargo, CargoClass::Passengers) ? this->passenger_expanded_rows : this->expanded_rows;
+	}
+
+	/** Store the typed path instead of pointers into an expansion branch that may move. */
 	void SetDisplayedRow(const CargoDataEntry &entry)
 	{
-		std::vector<StationID> stations;
-		const CargoDataEntry *parent = entry.GetParent();
-		if (parent->GetParent() == nullptr) {
-			this->displayed_rows.push_back(RowDisplay(&this->expanded_rows, entry.GetCargo()));
-			return;
+		RowDisplay row;
+		row.station = entry.IsService() ? StationID::Invalid() : entry.GetStation();
+		for (const CargoDataEntry *node = &entry; node->GetParent() != nullptr; node = node->GetParent()) {
+			row.path.push_back(node->IsService() ? StationCargoKey{PassengerServiceExpansionKey(node->GetService())} : node->GetKey());
 		}
-
-		StationID next = entry.GetStation();
-		while (parent->GetParent()->GetParent() != nullptr) {
-			stations.push_back(parent->GetStation());
-			parent = parent->GetParent();
-		}
-
-		CargoType cargo = parent->GetCargo();
-		CargoDataEntry *filter = this->expanded_rows.Retrieve(cargo);
-		while (!stations.empty()) {
-			filter = filter->Retrieve(stations.back());
-			stations.pop_back();
-		}
-
-		this->displayed_rows.push_back(RowDisplay(filter, next));
+		std::reverse(row.path.begin(), row.path.end());
+		this->displayed_rows.push_back(std::move(row));
 	}
 
 	/**
@@ -1996,9 +1997,10 @@ struct StationViewWindow : public Window {
 		for (CargoDataSet::iterator i = entry.Begin(); i != entry.End(); ++i) {
 			CargoDataEntry &cd = **i;
 
-			Grouping grouping = this->groupings[column];
+			const bool passengers = this->current_mode == MODE_WAITING && column > 0 && IsCargoInClass(cargo, CargoClass::Passengers);
+			Grouping grouping = passengers ? (column == 1 ? GR_SERVICE : column == 2 ? GR_DESTINATION : GR_SOURCE) : this->groupings[column];
 			if (grouping == GR_CARGO) cargo = cd.GetCargo();
-			bool auto_distributed = _settings_game.linkgraph.GetDistributionType(cargo) != DistributionType::Manual;
+			bool auto_distributed = passengers || _settings_game.linkgraph.GetDistributionType(cargo) != DistributionType::Manual;
 
 			if (pos > -maxrows && pos <= 0) {
 				StringID str = STR_EMPTY;
@@ -2007,10 +2009,13 @@ struct StationViewWindow : public Window {
 				if (this->groupings[column] == GR_CARGO) {
 					str = STR_STATION_VIEW_WAITING_CARGO;
 					this->DrawCargoIcons(cd.GetCargo(), cd.GetCount(), Rect(r.left + this->expand_shrink_width, y, r.right - this->expand_shrink_width, y + this->line_height - 1));
+				} else if (cd.IsService()) {
+					str = STR_STATION_VIEW_PASSENGER_SERVICE;
 				} else {
 					if (!auto_distributed) grouping = GR_SOURCE;
 					station = cd.GetStation();
-					str = this->GetGroupingString(grouping, station);
+					str = passengers && grouping == GR_DESTINATION && station == StationID::Invalid() ?
+							STR_STATION_VIEW_PASSENGER_DESTINATION_UNKNOWN : this->GetGroupingString(grouping, station);
 					if (grouping == GR_NEXT && str == STR_STATION_VIEW_VIA) str = this->SearchNonStop(cd, station, column);
 
 					if (pos == -this->scroll_to_row && Station::IsValidID(station)) {
@@ -2022,13 +2027,14 @@ struct StationViewWindow : public Window {
 				Rect text = r.Indent(column * WidgetDimensions::scaled.hsep_indent, rtl).Indent(this->expand_shrink_width, !rtl);
 				Rect shrink = r.WithWidth(this->expand_shrink_width, !rtl);
 
-				DrawString(text.left, text.right, y + text_y_offset, GetString(str, cargo, cd.GetCount(), station));
+				DrawString(text.left, text.right, y + text_y_offset, cd.IsService() ?
+						GetString(str, GetPassengerServiceName(cd.GetService()), cargo, cd.GetCount()) : GetString(str, cargo, cd.GetCount(), station));
 
 				if (column < NUM_COLUMNS - 1) {
 					std::string_view sym;
 					if (cd.GetNumChildren() > 0) {
 						sym = "-";
-					} else if (auto_distributed && str != STR_STATION_VIEW_RESERVED) {
+					} else if (auto_distributed && str != STR_STATION_VIEW_RESERVED && (!cd.IsService() || cd.GetService().label != StationPassengerServiceLabel::Reserved)) {
 						sym = "+";
 					} else {
 						/* Only draw '+' if there is something to be shown. */
@@ -2042,22 +2048,6 @@ struct StationViewWindow : public Window {
 				this->SetDisplayedRow(cd);
 			}
 			--pos;
-			for (const auto &[service, count] : cd.GetServices()) {
-				if (pos > -maxrows && pos <= 0) {
-					bool rtl = _current_text_dir == TD_RTL;
-					Rect text = r.Indent((column + 1) * WidgetDimensions::scaled.hsep_indent, rtl).Indent(this->expand_shrink_width, !rtl);
-					int y = r.top - pos * this->line_height + (this->line_height - GetCharacterHeight(FontSize::Small)) / 2;
-					StringID label = service.multiple ? STR_STATION_VIEW_PASSENGER_SERVICE_MULTIPLE : STR_STATION_VIEW_PASSENGER_SERVICE_UNKNOWN;
-					bool named = Group::IsValidID(service.group);
-					std::string name = named ? GetString(STR_GROUP_NAME, service.group) : GetString(label);
-					DrawString(text.left, text.right, y, GetString(STR_STATION_VIEW_PASSENGER_SERVICE, name, cargo, count),
-							TextColour::Yellow, AlignmentH::Start, false, FontSize::Small);
-					if (pos == -this->scroll_to_row && Station::IsValidID(cd.GetStation())) ScrollMainWindowToTile(Station::Get(cd.GetStation())->xy);
-					/* Annotation clicks act on the associated via row, never on a synthetic station/group ID. */
-					this->SetDisplayedRow(cd);
-				}
-				--pos;
-			}
 			if ((auto_distributed || column == 0) && column < NUM_COLUMNS - 1) {
 				pos = this->DrawEntries(cd, r, pos, maxrows, column + 1, cargo);
 			}
@@ -2158,16 +2148,21 @@ struct StationViewWindow : public Window {
 	void HandleCargoWaitingClick(int row)
 	{
 		if (row < 0 || (uint)row >= this->displayed_rows.size()) return;
+		const RowDisplay &display = this->displayed_rows[row];
 		if (_ctrl_pressed) {
-			this->scroll_to_row = row;
-		} else {
-			RowDisplay &display = this->displayed_rows[row];
-			if (display.filter == &this->expanded_rows) {
-				this->HandleCargoWaitingClick<CargoType>(display.filter, display.next_cargo);
-			} else {
-				this->HandleCargoWaitingClick<StationID>(display.filter, display.next_station);
-			}
+			if (const Station *station = Station::GetIfValid(display.station)) ScrollMainWindowToTile(station->xy);
+			return;
 		}
+		if (display.path.empty() || display.path.size() >= NUM_COLUMNS) return;
+		CargoType cargo = std::get<CargoType>(display.path.front());
+		CargoDataEntry *filter = &this->ExpansionRoot(cargo);
+		for (size_t i = 0; i + 1 < display.path.size(); ++i) {
+			filter = filter->Retrieve(display.path[i]);
+			if (filter == nullptr) return;
+		}
+		const auto &key = display.path.back();
+		if (const auto *service = std::get_if<StationPassengerService>(&key); service != nullptr && service->label == StationPassengerServiceLabel::Reserved) return;
+		this->HandleCargoWaitingClick(filter, key);
 		this->SetWidgetDirty(WID_SV_WAITING);
 		this->SetWidgetDirty(WID_SV_SCROLLBAR);
 	}
@@ -2282,11 +2277,9 @@ struct StationViewWindow : public Window {
 				const LinkGraphOverlay *overlay = GetMainViewportLinkGraphOverlay();
 				if (overlay == nullptr) break;
 				const bool shown = IsStationPaxRoutesShown(station);
-				const LinkGraphOverlay::RouteMode mode = overlay->GetRouteMode();
 
 				DropDownList list;
-				list.push_back(MakeDropDownListCheckedItem(shown && mode == LinkGraphOverlay::RouteMode::Waiting, STR_STATION_VIEW_PAX_ROUTES_WAITING, SPRDD_WAITING));
-				list.push_back(MakeDropDownListCheckedItem(shown && mode == LinkGraphOverlay::RouteMode::MonthlyPlanned, STR_STATION_VIEW_PAX_ROUTES_MONTHLY, SPRDD_MONTHLY));
+				list.push_back(MakeDropDownListCheckedItem(shown, STR_STATION_VIEW_PAX_ROUTES_WAITING, SPRDD_WAITING));
 				list.push_back(MakeDropDownListStringItem(STR_STATION_VIEW_PAX_ROUTES_HIDE, SPRDD_HIDE, !shown));
 				ShowDropDownList(this, std::move(list), -1, widget);
 				break;
@@ -2371,6 +2364,7 @@ struct StationViewWindow : public Window {
 			default:
 				NOT_REACHED();
 		}
+		this->GetWidget<NWidgetCore>(WID_SV_GROUP_BY)->SetToolTip(STR_STATION_VIEW_GROUP_PASSENGER_TOOLTIP);
 		/* Display the current sort variant */
 		this->GetWidget<NWidgetCore>(WID_SV_SORT_BY)->SetString(StationViewWindow::sort_names[index]);
 		this->SetDirty();
@@ -2429,10 +2423,7 @@ struct StationViewWindow : public Window {
 					if (IsStationPaxRoutesShown(station)) SetStationPaxRoutesShown(StationID::Invalid());
 					break;
 				case SPRDD_WAITING:
-					SetStationPaxRoutesShown(station, LinkGraphOverlay::RouteMode::Waiting);
-					break;
-				case SPRDD_MONTHLY:
-					SetStationPaxRoutesShown(station, LinkGraphOverlay::RouteMode::MonthlyPlanned);
+					SetStationPaxRoutesShown(station);
 					break;
 			}
 		} else if (widget == WID_SV_SORT_BY) {
@@ -2472,11 +2463,11 @@ struct StationViewWindow : public Window {
 
 	void OnRealtimeTick(uint delta_ms) override
 	{
+		this->passenger_service_changed |= this->current_mode == MODE_WAITING && this->has_waiting_passengers && this->passenger_services.Advance(delta_ms);
 		this->passenger_service_age += delta_ms;
-		if (this->passenger_service_age < 1000) return;
-		this->passenger_service_age = 0;
-		this->passenger_services.Clear();
-		if (this->current_mode == MODE_WAITING && this->has_passenger_service_rows) this->SetWidgetDirty(WID_SV_WAITING);
+		if (this->passenger_service_age < 100 || (!this->passenger_service_changed && this->passenger_service_age < 1000)) return;
+		this->passenger_service_age = 0; this->passenger_service_changed = false;
+		if (this->current_mode == MODE_WAITING && this->has_waiting_passengers) this->SetWidgetDirty(WID_SV_WAITING);
 	}
 
 	bool IsNewGRFInspectable() const override

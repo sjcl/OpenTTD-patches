@@ -1,0 +1,41 @@
+dbg: [net:3] Starting network
+dbg: [net:3] Initializing UDP listeners
+dbg: [net:3] Network online, multiplayer available
+dbg: [net:3] Detected broadcast addresses:
+dbg: [net:3]   0) 172.25.15.255
+dbg: [net:3]   1) 192.168.1.255
+dbg: [net:3]   2) 169.254.255.255
+dbg: [net:3] Network revision name: jgrpp-ya-0.73.3+3-14-g52f201b38-
+[2026-10-18 04:14:16] dbg: [net:3] Initializing UDP listeners
+[2026-10-18 04:14:16] dbg: [net:3] Connected to 127.0.0.1:17571
+[2026-10-18 04:14:16] dbg: [net:3] [crypto] Creating a new random key
+[2026-10-18 04:14:18] dbg: [net:4] [client] Passenger tables ready at predicted frame 199; waiting for server barrier
+[2026-10-18 04:14:18] dbg: [net:4] [client] Passenger tables ready at predicted frame 199; waiting for server barrier
+[2026-10-18 04:14:18] dbg: [net:4] [client] Passenger tables ready at predicted frame 199; waiting for server barrier
+[2026-10-18 04:14:18] dbg: [net:4] [client] Passenger tables ready at predicted frame 199; waiting for server barrier
+[2026-10-18 04:14:18] dbg: [net:4] [client] Passenger tables ready at predicted frame 199; waiting for server barrier
+[2026-10-18 04:14:18] dbg: [net:4] [client] Passenger tables ready at predicted frame 199; waiting for server barrier
+[2026-10-18 04:14:18] dbg: [net:4] [client] Passenger tables ready at predicted frame 199; waiting for server barrier
+[2026-10-18 04:14:18] dbg: [net:4] [client] Passenger tables ready at predicted frame 199; waiting for server barrier
+[2026-10-18 04:14:18] dbg: [net:4] [client] Passenger tables ready at predicted frame 199; waiting for server barrier
+[2026-10-18 04:14:18] dbg: [net:4] [client] Passenger tables ready at predicted frame 199; waiting for server barrier
+[2026-10-18 04:14:18] dbg: [net:4] [client] Passenger tables ready at predicted frame 199; waiting for server barrier
+[2026-10-18 04:14:18] dbg: [net:4] [client] Passenger tables ready at predicted frame 199; waiting for server barrier
+[2026-10-18 04:14:18] dbg: [net:4] [client] Passenger tables ready at predicted frame 199; waiting for server barrier
+[2026-10-18 04:14:18] dbg: [net:4] [client] Passenger tables ready at predicted frame 199; waiting for server barrier
+[2026-10-18 04:14:18] dbg: [net:4] [client] Passenger tables ready at predicted frame 199; waiting for server barrier
+[2026-10-18 04:14:18] dbg: [net:4] [client] Passenger tables ready at predicted frame 199; waiting for server barrier
+[2026-10-18 04:14:18] dbg: [net:4] [client] Passenger tables ready at predicted frame 199; waiting for server barrier
+[2026-10-18 04:14:18] dbg: [net:4] [client] Passenger tables ready at predicted frame 199; waiting for server barrier
+[2026-10-18 04:14:20] dbg: [net:1] Missed frame for sync-test: 300 / 301
+[2026-10-18 04:14:23] dbg: [net:1] Missed frame for sync-test: 400 / 401
+[2026-10-18 04:14:26] dbg: [net:1] Missed frame for sync-test: 500 / 501
+[2026-10-18 04:14:29] dbg: [net:1] Missed frame for sync-test: 600 / 601
+[2026-10-18 04:14:31] dbg: [net:1] Missed frame for sync-test: 700 / 701
+[2026-10-18 04:14:34] dbg: [net:1] Missed frame for sync-test: 800 / 801
+[2026-10-18 04:14:37] dbg: [net:1] Missed frame for sync-test: 900 / 901
+[2026-10-18 04:14:39] dbg: [net:1] Missed frame for sync-test: 1000 / 1001
+[2026-10-18 04:14:42] dbg: [net:1] Missed frame for sync-test: 1100 / 1101
+[2026-10-18 04:14:45] dbg: [net:1] Missed frame for sync-test: 1200 / 1201
+[2026-10-18 04:14:47] dbg: [net:1] Missed frame for sync-test: 1300 / 1301
+[2026-10-18 04:14:49] dbg: [net:3] Closed client connection 0

@@ -2053,7 +2053,7 @@ void AfterLoadPassengerJourneys()
 {
 	ClearPassengerOdFallbackCache();
 	GetPassengerServiceDatabase().FinishLoad(SlXvIsFeaturePresent(XSLFI_PASSENGER_PERIODIC), _networking);
-	if (SlXvIsFeatureMissing(XSLFI_PASSENGER_PERIODIC, 4)) _settings_game.linkgraph.passenger_journey_precomputed = false;
+	if (SlXvIsFeatureMissing(XSLFI_PASSENGER_PERIODIC)) _settings_game.linkgraph.passenger_journey_precomputed = false;
 	if (SlXvIsFeatureMissing(XSLFI_PASSENGER_PERIODIC)) _settings_game.linkgraph.passenger_journey_periodic = true;
 	InvalidatePassengerServiceIndex();
 	BeginPassengerJourneyTick();

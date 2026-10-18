@@ -2,7 +2,18 @@
 
 * * *
 
-### Unreleased
+### v0.73.3+4 (2026-10-18)
+* Group waiting passengers by destination, source and boarding service in station windows, including current and retained Hyperpath alternatives and retry services
+* Allow passengers to board buses queued at drive-through road stops
+* Reduce Hyperpath table construction CPU work with a ring queue, compact boarding masks and reusable row buffers, while preserving route results
+* Close the multiplayer join status window after map processing
+
+### v0.73.3+3 (2026-10-18)
+* Add optional explicit passenger destinations and deterministic sparse OD assignment
+* Add periodic and schedule-aware passenger journeys, shared precomputed destination policies, and optional Hyperpath strategies with replanning after capacity misses
+* Bound passenger calculation work, retain usable routes during replacement, and restore saved construction progress deterministically when loading or joining multiplayer games
+* Add station passenger routing status and diagnostics, and aircraft link cost additions
+* Consolidate unreleased passenger save formats into version 1 and use the current precomputed algorithms for saved construction progress; retain loading of v0.73.3+2 saves, without compatibility for intervening development builds
 * Import automatic renewal of the fund new buildings town action from ns2091/OpenTTD-patches, with a per-company toggle in each town's local authority window
 * Import optional markers above vehicles in the selected group, coloured by the immediate child group and including sub-groups, ungrouped vehicles, and all vehicles
 * Keep diagonal rail tunnels and tunnel/bridge station platforms excluded

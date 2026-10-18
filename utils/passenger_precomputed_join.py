@@ -30,6 +30,16 @@ def main():
     parser.add_argument("--toggle-precomputed", action="store_true", help="Disable and re-enable routing after joining, then compare the peer preparation barrier")
     parser.add_argument("--wait-server-ready", action="store_true", help="Connect after server preparation instead of testing the server-wait phase")
     parser.add_argument("--replace-precomputed", action="store_true", help="Change transfer cost after joining; compare ordinary replacement ticks with retained rows")
+    parser.add_argument("--server-workers", type=int, choices=range(9), help="Local initial passenger destination workers on the server")
+    parser.add_argument("--client-workers", type=int, choices=range(9), help="Local initial passenger destination workers on the client")
+    parser.add_argument("--hyperpath", action=argparse.BooleanOptionalAction, default=None, help="Routing mode for the isolated loopback fixture")
+    parser.add_argument("--fixture-timetable", action="store_true", help="Enable routing and fixed timetable times in an isolated vanilla regression save")
+    parser.add_argument("--require-journey-movement", action="store_true", help="Require known-OD fixture packets and actual journey boarding/delivery")
+    for peer in ("server", "client"):
+        parser.add_argument(f"--{peer}-worker-delay-us", type=int, default=0)
+        parser.add_argument(f"--{peer}-worker-fail-work", type=int, default=0)
+        parser.add_argument(f"--{peer}-main-headstart-us", type=int, default=0,
+                            help="Copied probe only: give Workers CPU before the first row decision")
     parser.add_argument("--observe-timeout", type=int, default=180,
                         help="Harness observation seconds for loading/replay; does not change game/network timeouts")
     args = parser.parse_args()
@@ -44,6 +54,9 @@ def main():
                   requested_ticks=args.ticks, initial_build=args.initial_build, stall_test=args.stall, frame_freq=args.frame_freq,
                   toggle_precomputed=args.toggle_precomputed, replace_precomputed=args.replace_precomputed,
                   wait_server_ready=args.wait_server_ready,
+                  worker_hooks={peer: {key: getattr(args, peer + "_" + key) for key in
+                                       ("worker_delay_us", "worker_fail_work", "main_headstart_us")}
+                                for peer in ("server", "client")},
                   observation_timeout_seconds=args.observe_timeout)
 
     def read(directory, name):
@@ -64,9 +77,11 @@ def main():
                 shutil.copytree(source, directory / asset, copy_function=link_or_copy)
         shutil.copytree(args.lang, directory / "lang")
         (directory / "scripts").mkdir()
+        workers = args.server_workers if name == "server" else args.client_workers
+        worker_setting = "" if workers is None else f"passenger_precomputed_workers = {workers}\n"
         (directory / "openttd.cfg").write_text(
             "[misc]\nlanguage = english.lng\n[gui]\nautosave = off\nautosave_on_exit = false\n"
-            f"[network]\nclient_name = routing-{name}\nserver_game_type = local\nserver_port = {args.port}\n"
+            + worker_setting + f"[network]\nclient_name = routing-{name}\nserver_game_type = local\nserver_port = {args.port}\n"
             f"pause_on_join = true\nmin_active_clients = 0\nframe_freq = {args.frame_freq}\n[graphicsset]\nname = zBase\n", encoding="utf-8")
         return directory
 
@@ -77,7 +92,10 @@ def main():
                                     "-d", f"net={4 if args.frame_freq else 3},desync=1", *arguments], cwd=directory,
                                    stdin=subprocess.PIPE, stdout=out, stderr=err, text=True, encoding="utf-8",
                                    creationflags=subprocess.CREATE_NO_WINDOW,
-                                   env=dict(os.environ, OPENTTD_PASSENGER_MEASURE="1"))
+                                   env=dict(os.environ, OPENTTD_PASSENGER_MEASURE="1",
+                                            OPENTTD_PASSENGER_WORKER_DELAY_US=str(getattr(args, directory.name + "_worker_delay_us")),
+                                            OPENTTD_PASSENGER_WORKER_FAIL_WORK=str(getattr(args, directory.name + "_worker_fail_work")),
+                                            OPENTTD_PASSENGER_MAIN_HEADSTART_US=str(getattr(args, directory.name + "_main_headstart_us"))))
         processes.append(process)
         return process
 
@@ -132,6 +150,8 @@ def main():
                 "packet_state_digest", "payment_digest", "payments_valid", "database_digest",
                 "ownership_digest", "loading_digest", "completed_rows", "retained_rows",
                 "table_operations", "published_revision", "company_deliveries", "journey_routing", "precomputed_routing")
+        if "table_digest" in server:
+            keys += ("table_digest", "retained_table_digest", "finance_digest")
         return [key for key in keys if server[key] != client[key]]
 
     def errors(server, client):
@@ -141,11 +161,16 @@ def main():
     started = time.monotonic()
     try:
         server = prepare("server")
+        result.update(server_workers=args.server_workers, client_workers=args.client_workers, hyperpath=args.hyperpath, fixture_timetable=args.fixture_timetable)
         initial = ("setting linkgraph.passenger_journey_precomputed true\n"
                    "passenger_journey_stats partial_precomputed\n" if args.initial_build else "")
         (server / "scripts/game_start.scr").write_text(
             f"script {(server / 'console.txt').as_posix()}\npause\ngetfulldate\n"
             "setting max_join_time\nsetting max_join_time_total\nsetting max_lag_time\nsetting max_init_time\nsetting max_download_time\n"
+            + ("" if args.hyperpath is None else f"setting linkgraph.passenger_journey_hyperpath {'true' if args.hyperpath else 'false'}\n")
+            + ("setting linkgraph.passenger_journey_routing true\nsetting linkgraph.passenger_journey_periodic true\n"
+               "setting linkgraph.passenger_od_assignment true\nsetting linkgraph.passenger_journey_precomputed true\nsetting linkgraph.distribution_pax 2\n"
+               "passenger_journey_stats fixture_timetable\n" if args.fixture_timetable else "")
             + initial + "passenger_journey_stats total\npassenger_journey_stats save_integrity\nscript\n", encoding="utf-8")
         host = start(server, ["-D", result["address"], "-g", str(args.input.resolve())])
         if not wait(lambda: (server / "save-integrity.json").exists(), args.observe_timeout):
@@ -156,6 +181,8 @@ def main():
         # before comparing the server with the subsequently downloaded map.
         wait(lambda: False, 1)
         result["server_snapshot"] = snapshot_server(host, server)
+        if args.require_journey_movement and result["server_snapshot"]["known_od_units"] == 0:
+            raise RuntimeError("Fixture seeded no known-OD passenger packets")
         if args.wait_server_ready:
             preparation_started = time.monotonic()
             if not wait(lambda: "Initial passenger tables ready at frame" in read(server, "stderr.txt"), args.observe_timeout):
@@ -269,10 +296,21 @@ def main():
             result["transport_server"] = server_end
             result["transport_client"] = client_end
             result["transport_mismatches"] = compare(result["transport_server"], result["transport_client"])
+            if "journey_boarded" in server_end:
+                movement_keys = ("journey_boarded", "journey_transferred", "journey_delivered")
+                server_base = result.get("toggle_server", result["server_snapshot"])
+                client_base = result.get("toggle_client", result["client_snapshot"])
+                result["journey_movement_server"] = {key: server_end[key] - server_base[key] for key in movement_keys}
+                result["journey_movement_client"] = {key: client_end[key] - client_base[key] for key in movement_keys}
+                result["transport_mismatches"] += [key for key in movement_keys if result["journey_movement_server"][key] != result["journey_movement_client"][key]]
             result["actual_ticks"] = result["transport_server"]["state_ticks"] - initial_tick
             result["transport_equal"] = not result["transport_mismatches"]
         else:
             result["transport_equal"] = True
+        if args.require_journey_movement:
+            movement = result.get("journey_movement_server", {})
+            if not movement.get("journey_boarded", 0) or not movement.get("journey_delivered", 0):
+                raise RuntimeError("Fixture did not exercise real journey boarding and delivery")
         command(host, f"script {(server / 'end-console.txt').as_posix()}")
         command(host, "clients")
         command(host, "passenger_journey_stats total")

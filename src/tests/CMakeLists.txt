@@ -16,6 +16,8 @@ add_test_files(
     passenger_service_graph.cpp
     passenger_service_database.cpp
     passenger_precomputed.cpp
+    passenger_async_access.h
+    passenger_benchmark_cpu.h
     passenger_service_graph_index.cpp
     passenger_journey_planner.cpp
     passenger_journey_shadow.cpp

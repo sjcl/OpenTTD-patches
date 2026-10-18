@@ -1,0 +1,8 @@
+{
+  "src/passenger_precomputed.cpp": "21745d6b405674761b66713cec8ef32de77f29011ebd3cbc8d19e435d194938d",
+  "src/passenger_precomputed.h": "ccecacb13e3a3005d27b539623835714e96ed1a743b0389ebed15ca9d0ac7aa6",
+  "src/passenger_service_database.cpp": "ed9246e7836917b167594123131fc96de91fed64206ef714548207553cc70189",
+  "src/passenger_service_database.h": "0a11f8a83b19222d32b0f4236ad3f3d667c3fb772fb7e93e9c94f2125494822f",
+  "src/settings_type.h": "7ab321b7f485e07e011c4a0aef51ac1a8ff02b89f008a621c611ee36264d5a4d",
+  "src/table/settings/gui_settings.ini": "0e6b0012d80c44f74f1142decfc2785412c946c642ca2ca40c0dd33e50402682"
+}

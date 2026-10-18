@@ -11,6 +11,17 @@
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
+#include <atomic>
+#include <thread>
+#include <mutex>
+#ifdef WITH_PASSENGER_PARALLEL_REFERENCE
+#include "PassengerSequentialReference.h"
+#endif
+
+#include "passenger_async_access.h"
+#include "passenger_benchmark_cpu.h"
+#include "../settings_type.h"
+#include "../date_func.h"
 
 namespace {
 	constexpr CargoType PAX{0};
@@ -51,6 +62,20 @@ namespace {
 	}
 }
 
+namespace {
+	template <typename Predicate> void WaitForPassengerWorkers(Predicate ready)
+	{
+		const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(10);
+		while (!ready() && std::chrono::steady_clock::now() < deadline) std::this_thread::sleep_for(std::chrono::milliseconds(1));
+		REQUIRE(ready());
+	}
+	void PrimePassengerWorkers(PassengerPrecomputedTable &table, uint workers)
+	{
+		PassengerPrecomputedTestAccess::Prime(table, workers);
+		WaitForPassengerWorkers([&]() { return PassengerPrecomputedTestAccess::Ready(table); });
+	}
+}
+
 TEST_CASE("Hyperpath fixed point preserves single waits and exact acceptance", "[passenger][hyperpath]")
 {
 	for (int64_t wait : std::initializer_list<int64_t>{1, 2, 3, 100, 65537, PassengerStrategy::MAX_WAIT}) {
@@ -69,6 +94,281 @@ TEST_CASE("Hyperpath fixed point preserves single waits and exact acceptance", "
 	for (size_t i = 0; i < 9; ++i) REQUIRE(many.Add(100, PassengerStrategy::Frequency(100)));
 	CHECK(many.Cost() == 112); // ceil(100 + 100/9), from the independent Fraction oracle.
 	CHECK(PassengerWide::Multiply(UINT64_MAX, UINT64_MAX) == PassengerWide{UINT64_MAX - 1, 1});
+}
+
+TEST_CASE("Parallel passenger searches preserve every publication boundary and stored field", "[passenger][precomputed][parallel][save][network]")
+{
+	std::array services{Service(0, {A, B, C}), Service(1, {B, D}), Service(2, {A, C, D}, 170), Service(3, {A, B, A, D}, 73)};
+	std::vector<const PassengerPeriodicService *> records; for (const auto &s : services) records.push_back(&s);
+	for (bool hyperpath : {false, true}) for (bool flat : {false, true}) for (uint workers : {0U, 1U, 2U, 4U, 8U}) {
+		CAPTURE(hyperpath, flat, workers);
+		PassengerPrecomputedTable serial, parallel;
+		for (auto *table : {&serial, &parallel}) table->Begin(records, PAX, 20, PassengerPrecomputedTable::MAX_HYPERPATH_BYTES, true, false, {}, true, true, true, hyperpath, true, true, flat);
+		std::vector<StationID> expected, actual;
+		size_t step = 0;
+		while (!serial.Finished()) {
+			const size_t chunk = std::array<size_t, 5>{1, 7, 31, 97, 13}[step++ % 5];
+			REQUIRE(parallel.StepParallel(chunk, workers, [&](StationID d) { actual.push_back(d); }) == serial.Step(chunk, false, [&](StationID d) { expected.push_back(d); }));
+			REQUIRE(actual == expected);
+			REQUIRE(PassengerPrecomputedTestAccess::Published(parallel) == PassengerPrecomputedTestAccess::Published(serial));
+			if (step % 17 == 0) {
+				/* A loader reconstructs this same prefix with ordinary Step. */
+				PassengerPrecomputedTable replay;
+				replay.Begin(records, PAX, 20, PassengerPrecomputedTable::MAX_HYPERPATH_BYTES, true, false, {}, true, true, true, hyperpath, true, true, flat);
+				replay.Step(static_cast<size_t>(parallel.GetDiagnostic().operations));
+				REQUIRE(PassengerPrecomputedTestAccess::Published(replay) == PassengerPrecomputedTestAccess::Published(parallel));
+			}
+		}
+		CHECK(parallel.Finished());
+		for (auto from : {A, B, C, D}) for (auto to : {A, B, C, D}) for (const auto &s : services) {
+			for (uint32_t sample : {0U, 17U, UINT32_MAX}) {
+				auto a = serial.Plan(from, to, StateTicks{42}, s.id, sample), b = parallel.Plan(from, to, StateTicks{42}, s.id, sample);
+				CHECK(a.state == b.state); CHECK(a.ride == b.ride); CHECK(a.cost == b.cost); CHECK(a.riding == b.riding); CHECK(a.waiting == b.waiting); CHECK(a.transfers == b.transfers); CHECK(a.distance == b.distance);
+			}
+		}
+		CHECK(parallel.GetDiagnostic().board_events == serial.GetDiagnostic().board_events);
+		CHECK(parallel.GetDiagnostic().heap_pops == serial.GetDiagnostic().heap_pops);
+		CHECK(parallel.GetParallelDiagnostic().peak_pending <= workers * 2);
+	}
+}
+
+TEST_CASE("Parallel lookahead can be discarded midway without double charging search Work", "[passenger][precomputed][parallel][save]")
+{
+	std::array services{Service(0, {A, B, C}), Service(1, {B, D})};
+	std::vector<const PassengerPeriodicService *> records; for (const auto &s : services) records.push_back(&s);
+	for (bool hyperpath : {false, true}) for (size_t prefix : {size_t{1}, size_t{31}, size_t{97}}) {
+		PassengerPrecomputedTable serial, parallel;
+		for (auto *table : {&serial, &parallel}) table->Begin(records, PAX, 20, PassengerPrecomputedTable::MAX_HYPERPATH_BYTES, true, false, {}, true, true, true, hyperpath);
+		PrimePassengerWorkers(parallel, 4);
+		serial.Step(prefix); parallel.StepParallel(prefix, 4);
+		if (prefix == 1) REQUIRE(PassengerPrecomputedTestAccess::Pending(parallel));
+		CHECK(PassengerPrecomputedTestAccess::Published(parallel) == PassengerPrecomputedTestAccess::Published(serial));
+		while (!serial.Finished()) {
+			CHECK(parallel.Step(7) == serial.Step(7));
+			REQUIRE(PassengerPrecomputedTestAccess::Published(parallel) == PassengerPrecomputedTestAccess::Published(serial));
+		}
+		/* Reset may abandon jobs without retaining a pointer into the table. */
+		parallel.Begin(records, PAX, 20); parallel.StepParallel(1); parallel.Begin(records, PAX, 20);
+		while (!parallel.Finished()) parallel.StepParallel(65536);
+		CHECK_FALSE(parallel.MemoryRejected());
+	}
+}
+
+#ifdef WITH_PASSENGER_PARALLEL_REFERENCE
+TEST_CASE("Passenger destination refactor matches the pinned original engine at every sliced frontier", "[passenger][precomputed][parallel][reference]")
+{
+	std::array services{Service(0, {A, B, C}), Service(1, {B, D}), Service(2, {A, C, D}, 170), Service(3, {A, B, A, D}, 73)};
+	std::vector<const PassengerPeriodicService *> records; for (const auto &s : services) records.push_back(&s);
+	for (bool hyperpath : {false, true}) for (bool flat : {false, true}) for (uint workers : {0U, 4U}) {
+		PassengerSequentialReference reference; PassengerPrecomputedTable candidate;
+		reference.Begin(records, PAX, 20, PassengerPrecomputedTable::MAX_HYPERPATH_BYTES, true, false, {}, true, true, true, hyperpath, true, true, flat);
+		candidate.Begin(records, PAX, 20, PassengerPrecomputedTable::MAX_HYPERPATH_BYTES, true, false, {}, true, true, true, hyperpath, true, true, flat);
+		if (workers != 0) PrimePassengerWorkers(candidate, workers);
+		while (!reference.Finished()) {
+			REQUIRE(candidate.StepParallel(17, workers) == reference.Step(17));
+			REQUIRE(PassengerPrecomputedTestAccess::Published(reference) == PassengerPrecomputedTestAccess::Published(candidate));
+		}
+	}
+}
+#endif
+
+TEST_CASE("Slow and failed passenger workers cannot change logical results", "[passenger][precomputed][parallel][network][memory]")
+{
+	std::array services{Service(0, {A, B, C}), Service(1, {B, D})};
+	std::vector<const PassengerPeriodicService *> records; for (const auto &s : services) records.push_back(&s);
+	static std::mutex mutex;
+	static std::vector<size_t> completed;
+	static std::atomic<size_t> active{0}, peak{0};
+	for (bool hyperpath : {false, true}) for (bool fail : {false, true}) {
+		completed.clear(); active = 0; peak = 0;
+		PassengerPrecomputedTable serial, parallel;
+		for (auto *table : {&serial, &parallel}) table->Begin(records, PAX, 20, PassengerPrecomputedTable::MAX_HYPERPATH_BYTES, true, false, {}, true, true, true, hyperpath);
+		PassengerPrecomputedTestAccess::Hook(parallel, fail ? +[](size_t d, bool done) { if (d == 0 && !done) throw std::bad_alloc{}; } : +[](size_t d, bool done) {
+			if (!done) {
+				size_t n = ++active, previous = peak.load(); while (previous < n && !peak.compare_exchange_weak(previous, n)) {}
+				if (d == 0) std::this_thread::sleep_for(std::chrono::milliseconds(30));
+			} else { --active; std::lock_guard<std::mutex> lock(mutex); completed.push_back(d); }
+		});
+		PrimePassengerWorkers(parallel, 4);
+		while (!serial.Finished()) {
+			CHECK(parallel.StepParallel(17, 4) == serial.Step(17));
+			REQUIRE(PassengerPrecomputedTestAccess::Published(parallel) == PassengerPrecomputedTestAccess::Published(serial));
+		}
+		WaitForPassengerWorkers([&]() { return PassengerPrecomputedTestAccess::Idle(parallel); });
+		if (fail) CHECK(parallel.GetParallelDiagnostic().fallbacks == 1);
+		else if (std::thread::hardware_concurrency() > 1) { REQUIRE_FALSE(completed.empty()); CHECK(completed.front() != 0); CHECK(peak > 1); }
+	}
+	for (uint workers : {0U, 1U, 2U, 4U, 8U}) {
+		PassengerPrecomputedTable rejected;
+		rejected.Begin(records, PAX, 20, 1024);
+		rejected.StepParallel(65536, workers);
+		CHECK(rejected.MemoryRejected()); CHECK(rejected.GetParallelDiagnostic().searches == 0);
+	}
+}
+
+TEST_CASE("Passenger worker startup failure and partial scalar searches fall back at the same Work", "[passenger][precomputed][parallel][save]")
+{
+	std::array services{Service(0, {A, B, C}), Service(1, {B, D})};
+	std::vector<const PassengerPeriodicService *> records; for (const auto &s : services) records.push_back(&s);
+	for (bool optimized : {false, true}) for (uint started : {0U, 1U, 4U}) {
+		PassengerPrecomputedTable serial, parallel;
+		for (auto *table : {&serial, &parallel}) table->Begin(records, PAX, 20, PassengerPrecomputedTable::MAX_BYTES, true, false, {}, true, optimized);
+		if (started == 0) PassengerPrecomputedTestAccess::StartHook(parallel, +[](uint) { return false; });
+		if (started == 1) PassengerPrecomputedTestAccess::StartHook(parallel, +[](uint i) { return i == 0; });
+		if (started == 4) { parallel.Step(7); serial.Step(7); } // Partially initialized, including scalar Label scratch.
+		while (!serial.Finished()) {
+			REQUIRE(parallel.StepParallel(13, 4) == serial.Step(13));
+			REQUIRE(PassengerPrecomputedTestAccess::Published(parallel) == PassengerPrecomputedTestAccess::Published(serial));
+		}
+		if (started == 0) CHECK(parallel.GetParallelDiagnostic().fallbacks == 1);
+		if (started == 1) CHECK(parallel.GetParallelDiagnostic().workers == 1);
+	}
+}
+
+
+TEST_CASE("A late passenger row is discarded after the first serial Work unit", "[passenger][precomputed][parallel][network][save]")
+{
+	std::array services{Service(0, {A, B, C}), Service(1, {B, D})};
+	std::vector<const PassengerPeriodicService *> records; for (const auto &service : services) records.push_back(&service);
+	static std::atomic<bool> release{true};
+	static std::atomic<uint> entered{0};
+	struct Release { ~Release() { release.store(true); } } guard;
+	for (bool hyperpath : {false, true}) {
+		release.store(false); entered.store(0);
+		PassengerPrecomputedTable serial, parallel;
+		for (auto *table : {&serial, &parallel}) table->Begin(records, PAX, 20, PassengerPrecomputedTable::MAX_HYPERPATH_BYTES, true, false, {}, true, true, true, hyperpath);
+		PassengerPrecomputedTestAccess::Hook(parallel, +[](size_t d, bool done) {
+			if (d != 0 || done) return;
+			++entered; while (!release.load()) std::this_thread::sleep_for(std::chrono::milliseconds(1));
+		});
+		REQUIRE(PassengerPrecomputedTestAccess::Prime(parallel, 4));
+		WaitForPassengerWorkers([&]() { return entered.load() != 0; });
+		auto refreshed = services.front(); ++refreshed.generation;
+		REQUIRE(parallel.RefreshService(refreshed)); REQUIRE(serial.RefreshService(refreshed));
+		REQUIRE(parallel.StepParallel(7, 4) == serial.Step(7));
+		CHECK_FALSE(release.load()); // This returned while the required Worker was blocked.
+		REQUIRE(PassengerPrecomputedTestAccess::Serial(parallel));
+		REQUIRE_FALSE(PassengerPrecomputedTestAccess::Pending(parallel));
+		release.store(true);
+		WaitForPassengerWorkers([&]() { return PassengerPrecomputedTestAccess::Idle(parallel); });
+		while (!serial.Finished()) {
+			REQUIRE(parallel.StepParallel(7, 4) == serial.Step(7));
+			REQUIRE(PassengerPrecomputedTestAccess::Published(parallel) == PassengerPrecomputedTestAccess::Published(serial));
+			if (parallel.GetDiagnostic().destinations == 0) CHECK(parallel.GetParallelDiagnostic().cache_hits == 0);
+		}
+		CHECK(parallel.GetParallelDiagnostic().cache_hits > 0); // Future rows still use completed lookahead.
+		CHECK(parallel.Plan(A, D, StateTicks{}).ride == serial.Plan(A, D, StateTicks{}).ride);
+	}
+}
+
+TEST_CASE("Persistently late passenger workers back off without delaying any logical row", "[passenger][precomputed][parallel][network]")
+{
+	auto service = Service(0, {}); int64_t cursor = 0;
+	for (uint16_t station = 0; station < 24; ++station) {
+		service.timetable.stops.push_back({StationID{station}, station, cursor, cursor + 10, 1, 1, 0}); cursor += 110;
+	}
+	service.timetable.period = cursor;
+	std::vector<const PassengerPeriodicService *> records{&service};
+	static std::atomic<bool> release{true}; static std::atomic<uint> entered{0};
+	struct Release { ~Release() { release.store(true); } } guard;
+	for (bool hyperpath : {false, true}) {
+		release.store(false); entered.store(0);
+		PassengerPrecomputedTable serial, parallel;
+		for (auto *table : {&serial, &parallel}) table->Begin(records, PAX, 20, PassengerPrecomputedTable::MAX_HYPERPATH_BYTES, true, false, {}, true, true, true, hyperpath);
+		PassengerPrecomputedTestAccess::Hook(parallel, +[](size_t, bool done) {
+			if (!done) { ++entered; while (!release.load()) std::this_thread::sleep_for(std::chrono::milliseconds(1)); }
+		});
+		REQUIRE(PassengerPrecomputedTestAccess::Prime(parallel, 4));
+		WaitForPassengerWorkers([&]() { return entered.load() != 0; });
+		while (!serial.Finished()) {
+			REQUIRE(parallel.StepParallel(97, 4) == serial.Step(97));
+			REQUIRE(PassengerPrecomputedTestAccess::Published(parallel) == PassengerPrecomputedTestAccess::Published(serial));
+		}
+		CHECK_FALSE(release.load()); CHECK(parallel.GetParallelDiagnostic().throttles == 1); CHECK(parallel.GetParallelDiagnostic().cache_hits == 0);
+		release.store(true); WaitForPassengerWorkers([&]() { return PassengerPrecomputedTestAccess::Idle(parallel); });
+	}
+}
+
+TEST_CASE("Passenger search snapshots survive move reset and opposite-mode replacement", "[passenger][precomputed][parallel][memory]")
+{
+	std::array services{Service(0, {A, B, C}), Service(1, {B, D})};
+	std::vector<const PassengerPeriodicService *> records; for (const auto &service : services) records.push_back(&service);
+	static std::atomic<bool> release{true}; static std::atomic<uint> active{0};
+	struct Release { ~Release() { release.store(true); } } guard;
+	for (bool hyperpath : {false, true}) {
+		release.store(false); active.store(0);
+		PassengerPrecomputedTable original;
+		original.Begin(records, PAX, 20, PassengerPrecomputedTable::MAX_HYPERPATH_BYTES, true, false, {}, true, true, true, hyperpath);
+		PassengerPrecomputedTestAccess::Hook(original, +[](size_t d, bool done) {
+			if (d != 0) return;
+			if (!done) { ++active; while (!release.load()) std::this_thread::sleep_for(std::chrono::milliseconds(1)); }
+			else --active;
+		});
+		REQUIRE(PassengerPrecomputedTestAccess::Prime(original, 4));
+		WaitForPassengerWorkers([&]() { return active.load() != 0; });
+		auto moved = std::move(original); original = {};
+		moved.Begin(records, PAX, 37, PassengerPrecomputedTable::MAX_HYPERPATH_BYTES, true, false, {}, true, true, true, !hyperpath);
+		PassengerPrecomputedTable serial; serial.Begin(records, PAX, 37, PassengerPrecomputedTable::MAX_HYPERPATH_BYTES, true, false, {}, true, true, true, !hyperpath);
+		while (!serial.Finished()) {
+			REQUIRE(moved.StepParallel(31, 0) == serial.Step(31));
+			REQUIRE(PassengerPrecomputedTestAccess::Published(moved) == PassengerPrecomputedTestAccess::Published(serial));
+		}
+		CHECK_FALSE(release.load()); // Reset and a complete build never waited for the old graph.
+		release.store(true); WaitForPassengerWorkers([&]() { return active.load() == 0; });
+	}
+}
+
+TEST_CASE("Passenger workers may finish in strictly reversed destination order", "[passenger][precomputed][parallel][network]")
+{
+	if (std::thread::hardware_concurrency() < 4) return;
+	std::array services{Service(0, {A, B, C, D})};
+	std::vector<const PassengerPeriodicService *> records{&services.front()};
+	static std::atomic<int> next{3}; static std::atomic<bool> abort{false};
+	static std::vector<size_t> completion; static std::mutex mutex;
+	struct Release { ~Release() { abort.store(true); } } guard;
+	for (bool hyperpath : {false, true}) {
+		next.store(3); abort.store(false); completion.clear();
+		PassengerPrecomputedTable serial, parallel;
+		for (auto *table : {&serial, &parallel}) table->Begin(records, PAX, 20, PassengerPrecomputedTable::MAX_HYPERPATH_BYTES, true, false, {}, true, true, true, hyperpath);
+		PassengerPrecomputedTestAccess::Hook(parallel, +[](size_t d, bool done) {
+			if (!done) return;
+			while (next.load() != static_cast<int>(d) && !abort.load()) std::this_thread::sleep_for(std::chrono::milliseconds(1));
+			{ std::lock_guard lock(mutex); completion.push_back(d); } --next;
+		});
+		PrimePassengerWorkers(parallel, 4);
+		CHECK((completion == std::vector<size_t>{3, 2, 1, 0}));
+		while (!serial.Finished()) {
+			REQUIRE(parallel.StepParallel(1, 4) == serial.Step(1));
+			REQUIRE(PassengerPrecomputedTestAccess::Published(parallel) == PassengerPrecomputedTestAccess::Published(serial));
+		}
+		CHECK(parallel.GetParallelDiagnostic().cache_hits == 4);
+	}
+}
+
+TEST_CASE("A worker exception after a search quantum preserves every later Work boundary", "[passenger][precomputed][parallel][memory][network]")
+{
+	std::vector<PassengerPeriodicService> services;
+	for (uint16_t line = 0; line < 24; ++line) {
+		auto service = Service(line, {}); int64_t cursor = 0;
+		for (uint16_t station = 0; station < 48; ++station) {
+			service.timetable.stops.push_back({StationID{station}, station, cursor, cursor + 10, 1, 1, 0}); cursor += 110 + line;
+		}
+		service.timetable.period = cursor; services.push_back(std::move(service));
+	}
+	std::vector<const PassengerPeriodicService *> records; for (const auto &service : services) records.push_back(&service);
+	for (bool hyperpath : {false, true}) {
+		PassengerPrecomputedTable serial, parallel;
+		for (auto *table : {&serial, &parallel}) table->Begin(records, PAX, 20, PassengerPrecomputedTable::MAX_HYPERPATH_BYTES, true, false, {}, true, true, true, hyperpath);
+		PassengerPrecomputedTestAccess::QuantumHook(parallel, +[](size_t d, uint64_t work) { if (d == 0 && work >= 4096) throw std::bad_alloc{}; });
+		PrimePassengerWorkers(parallel, 4);
+		while (!serial.Finished()) {
+			REQUIRE(parallel.StepParallel(65536, 4) == serial.Step(65536));
+			REQUIRE(PassengerPrecomputedTestAccess::Published(parallel) == PassengerPrecomputedTestAccess::Published(serial));
+		}
+		WaitForPassengerWorkers([&]() { return PassengerPrecomputedTestAccess::Idle(parallel); });
+		CHECK(parallel.GetParallelDiagnostic().fallbacks == 1);
+		CHECK(parallel.GetParallelDiagnostic().cancelled_search_work >= 4096);
+	}
 }
 
 TEST_CASE("Hyperpath fixed point matches independent small exact rational strategies", "[passenger][hyperpath][reference]")
@@ -119,6 +419,66 @@ TEST_CASE("Hyperpath frozen graph matches an independent multi-stage rational ev
 		REQUIRE(ride.ride); CHECK(ride.cost == candidate.cost);
 		CHECK(ride.ride->alighting == (candidate.service == OrderListID{0} ? B : D));
 	}
+}
+
+TEST_CASE("Route inspection shares Hyperpath frequencies without changing simulation caches", "[passenger][route-overlay]")
+{
+	std::array services{Service(0, {A, B}, 100), Service(1, {B, D}, 100), Service(2, {A, D}, 220)};
+	std::vector<const PassengerPeriodicService *> records; for (const auto &s : services) records.push_back(&s);
+	PassengerPrecomputedTable table;
+	table.Begin(records, PAX, 0, PassengerPrecomputedTable::MAX_BYTES, true, false, {}, true, true, true, true);
+	while (!table.Finished()) table.Step(7);
+	for (auto previous : {OrderListID::Invalid(), OrderListID{0}}) {
+		for (auto failed : {OrderListID::Invalid(), OrderListID{2}}) {
+			const auto before = table.GetDiagnostic(); const auto memory = table.InspectMemory();
+			size_t work = 4096;
+			auto routes = table.InspectRoutes(A, D, previous, failed, work);
+			REQUIRE(routes.state == PassengerPrecomputedPlan::State::Ready);
+			CHECK(table.GetDiagnostic().queries == before.queries);
+			CHECK(table.GetDiagnostic().bytes == before.bytes);
+			CHECK(table.GetDiagnostic().local_replans == before.local_replans);
+			CHECK(table.InspectMemory().local == memory.local);
+			CHECK(table.InspectMemory().reported == memory.reported);
+			auto candidates = table.Candidates(A, D, previous, failed);
+			REQUIRE(routes.candidates.size() == candidates.size());
+			double frequency = 0;
+			for (const auto &route : routes.candidates) frequency += PassengerStrategy::Frequency(*table.ServiceWait(route.ride.service));
+			double probability = 0;
+			for (const auto &route : routes.candidates) {
+				CHECK(route.probability == Approx(PassengerStrategy::Frequency(*table.ServiceWait(route.ride.service)) / frequency));
+				CHECK(route.ride.service != previous);
+				auto actual = table.Board(A, D, StateTicks{}, route.ride.service, route.ride.boarding_order, previous, failed);
+				REQUIRE(actual.ride);
+				CHECK(route.ride.alighting == actual.ride->alighting);
+				probability += route.probability;
+			}
+			CHECK(probability == Approx(1.0));
+		}
+	}
+	size_t work = 0;
+	CHECK(table.InspectRoutes(A, D, OrderListID::Invalid(), OrderListID::Invalid(), work).candidates.empty());
+}
+
+TEST_CASE("Route inspection bounds branches without reallocating their probability or splicing short turns", "[passenger][route-overlay]")
+{
+	std::vector<PassengerPeriodicService> services;
+	for (uint16_t i = 0; i < 80; ++i) services.push_back(Service(i, {A, B, D}));
+	services.push_back(Service(80, {A, B}));
+	std::vector<const PassengerPeriodicService *> records; for (const auto &s : services) records.push_back(&s);
+	PassengerPrecomputedTable table;
+	table.Begin(records, PAX, 0, PassengerPrecomputedTable::MAX_BYTES, true, false, {}, true, true, true, true);
+	while (!table.Finished()) table.Step(65536);
+	size_t work = 65536;
+	auto routes = table.InspectRoutes(A, D, OrderListID::Invalid(), OrderListID::Invalid(), work);
+	REQUIRE(routes.candidates.size() == 64);
+	double probability = 0;
+	for (const auto &candidate : routes.candidates) {
+		if (candidate.ride.service == OrderListID{80}) CHECK(candidate.ride.alighting == B);
+		probability += candidate.probability;
+	}
+	CHECK(probability > 0); CHECK(probability < 1);
+	work = 1;
+	CHECK(table.InspectRoutes(A, D, OrderListID::Invalid(), OrderListID::Invalid(), work).candidates.empty());
 }
 
 TEST_CASE("Hyperpath frozen real map intermediate diagnostic", "[.hyperpath-real][passenger]")
@@ -324,6 +684,14 @@ TEST_CASE("Hyperpath local replanning admits a previously rejected service and p
 	}
 	CHECK(table.GetDiagnostic().local_replans == 1);
 	if (alternative) CHECK_FALSE(table.Board(A, D, StateTicks{}, OrderListID{0}, 0, OrderListID::Invalid(), OrderListID{0}).ride);
+	// Display the cached policy's chosen service, including its no-alternative retry.
+	const auto before = table.GetDiagnostic();
+	std::vector<PassengerPrecomputedTable::DisplayCandidate> displayed; size_t work = 4096;
+	REQUIRE(table.DisplayCandidates(A, D, OrderListID::Invalid(), OrderListID{0}, displayed, work));
+	REQUIRE(displayed.size() == 1);
+	CHECK(displayed.front().service == chosen); CHECK(displayed.front().order == 0);
+	CHECK(table.GetDiagnostic().local_replans == before.local_replans);
+	CHECK(table.GetDiagnostic().bytes == before.bytes);
 }
 
 TEST_CASE("Precomputed trees preserve through rides and physical occurrences", "[passenger][precomputed]")
@@ -1215,6 +1583,153 @@ TEST_CASE("Hyperpath table build CPU on a national-scale synthetic network", "[.
 			<< ",heap_pushes=" << d.heap_pushes << ",heap_pops=" << d.heap_pops << ",bytes=" << d.bytes << std::endl;
 }
 
+namespace {
+	std::vector<PassengerPeriodicService> PassengerBenchmarkNetwork(uint16_t side, uint16_t lines, bool uneven)
+	{
+		auto services = SyntheticNetwork(side, lines, 0x0d16e57U);
+		if (uneven) for (uint16_t i = 0; i < 32; ++i) {
+			const uint16_t station = static_cast<uint16_t>(side * side + i * 2);
+			auto service = Service(static_cast<uint16_t>(lines + i), {StationID{station}, StationID{static_cast<uint16_t>(station + 1)}}, 37);
+			service.vehicles.front().id = VehicleID{static_cast<uint32_t>((lines + i) * 8)};
+			services.push_back(std::move(service));
+		}
+		return services;
+	}
+	struct PassengerBenchmarkWorkers {
+		std::mutex mutex;
+		std::vector<PassengerBenchmarkThread> threads;
+		PassengerBenchmarkWorkers() { this->threads.reserve(8); }
+		~PassengerBenchmarkWorkers() { for (auto thread : this->threads) PassengerBenchmarkReleaseThread(thread); }
+	};
+	PassengerBenchmarkWorkers &PassengerBenchmarkWorkerThreads() { static PassengerBenchmarkWorkers workers; return workers; }
+	void PassengerBenchmarkWorkerCPU(size_t, bool done)
+	{
+		if (done) return;
+		thread_local bool registered = false;
+		if (registered) return;
+		auto thread = PassengerBenchmarkCaptureThread();
+		auto &workers = PassengerBenchmarkWorkerThreads(); std::lock_guard lock(workers.mutex);
+		workers.threads.push_back(thread); registered = true;
+	}
+	uint64_t PassengerBenchmarkWorkersCPU()
+	{
+		auto &workers = PassengerBenchmarkWorkerThreads(); std::lock_guard lock(workers.mutex);
+		uint64_t total = 0; for (auto thread : workers.threads) total += PassengerBenchmarkCPU(thread); return total;
+	}
+	unsigned PassengerBenchmarkNumber(const char *name, unsigned fallback)
+	{
+		const char *value = getenv(name); return value ? static_cast<unsigned>(std::strtoul(value, nullptr, 10)) : fallback;
+	}
+}
+
+TEST_CASE("Passenger parallel complete construction benchmark", "[.passenger-parallel-benchmark][passenger]")
+{
+	auto number = [](const char *name, unsigned fallback) { const char *value = getenv(name); return value ? static_cast<unsigned>(std::strtoul(value, nullptr, 10)) : fallback; };
+	const uint workers = number("OPENTTD_PARALLEL_WORKERS", 4);
+	const bool hyperpath = number("OPENTTD_PARALLEL_HYPERPATH", 1) != 0;
+	const auto services = PassengerBenchmarkNetwork(static_cast<uint16_t>(number("OPENTTD_PARALLEL_SIDE", 32)), static_cast<uint16_t>(number("OPENTTD_PARALLEL_LINES", 240)), number("OPENTTD_PARALLEL_UNEVEN", 0) != 0);
+	std::vector<const PassengerPeriodicService *> records; for (const auto &s : services) records.push_back(&s);
+	PassengerPrecomputedTable table;
+	const uint64_t cpu_started = PassengerBenchmarkThreadCPU();
+	const auto started = std::chrono::steady_clock::now();
+	table.Begin(records, PAX, 20, PassengerPrecomputedTable::MAX_HYPERPATH_BYTES, true, false, {}, true, true, true, hyperpath);
+	const auto graph_done = std::chrono::steady_clock::now(); const uint64_t cpu_graph = PassengerBenchmarkThreadCPU();
+	const uint64_t worker_cpu_before = PassengerBenchmarkWorkersCPU(); PassengerPrecomputedTestAccess::Hook(table, PassengerBenchmarkWorkerCPU);
+	uint64_t progress = 0xcbf29ce484222325ULL;
+	while (!table.Finished()) {
+		table.StepParallel(65536, workers);
+		progress = (progress ^ table.GetDiagnostic().operations) * 0x100000001b3ULL;
+		progress = (progress ^ table.GetDiagnostic().destinations) * 0x100000001b3ULL;
+	}
+	const auto finished = std::chrono::steady_clock::now();
+	const uint64_t cpu_finished = PassengerBenchmarkThreadCPU();
+	WaitForPassengerWorkers([&]() { return PassengerPrecomputedTestAccess::Idle(table); });
+	/* Let the cancelled idle contexts park before reading their OS CPU totals.
+	 * This settling interval is outside every reported build/tick wall window. */
+	std::this_thread::sleep_for(std::chrono::milliseconds(25));
+	const uint64_t worker_cpu_finished = PassengerBenchmarkWorkersCPU();
+	REQUIRE_FALSE(table.MemoryRejected());
+	const auto &d = table.GetDiagnostic(); const auto &p = table.GetParallelDiagnostic();
+	std::cout << "passenger_parallel,mode=" << (hyperpath ? "hyperpath" : "legacy") << ",requested=" << workers << ",workers=" << p.workers
+			<< ",progress_digest=" << progress << ",main_cpu_ns=" << cpu_finished - cpu_started << ",row_main_cpu_ns=" << cpu_finished - cpu_graph
+			<< ",cache_hits=" << p.cache_hits << ",cache_work=" << p.cache_work << ",serial_rows=" << p.serial_rows << ",main_search_ns=" << p.main_search_nanoseconds
+			<< ",serial_work=" << p.serial_search_work << ",cancelled_work=" << p.cancelled_search_work << ",thread_starts=" << p.thread_starts << ",workspace_bound=" << p.estimated_workspace_bytes << ",worker_wait_ns=0"
+			<< ",wall_ns=" << std::chrono::duration_cast<std::chrono::nanoseconds>(finished - started).count()
+			<< ",graph_ns=" << std::chrono::duration_cast<std::chrono::nanoseconds>(graph_done - started).count()
+			<< ",row_ns=" << std::chrono::duration_cast<std::chrono::nanoseconds>(finished - graph_done).count()
+			<< ",batch_ns=" << p.batch_nanoseconds << ",search_ns=" << p.search_nanoseconds << ",integration_ns=" << p.integration_nanoseconds
+			<< ",batches=" << p.batches << ",searches=" << p.searches << ",pending=" << p.peak_pending << ",work_min=" << p.minimum_work << ",work_max=" << p.maximum_work
+			<< ",throttles=" << p.throttles << ",worker_cpu_ns=" << (worker_cpu_finished - worker_cpu_before) << ",workspace_reuses=" << p.workspace_reuses << ",duplicate_work=" << (p.search_work - p.cache_work)
+			<< ",search_work=" << p.search_work << ",stations=" << d.stations << ",states=" << d.states << ",edges=" << d.logical_edges << ",operations=" << d.operations
+			<< ",bytes=" << d.bytes << ",digest=" << PassengerPrecomputedTestAccess::Digest(table) << std::endl;
+}
+
+TEST_CASE("Passenger asynchronous replacement TickPrecomputed benchmark", "[.passenger-async-tick-benchmark][passenger]")
+{
+	PassengerTestStations fixture;
+	const uint workers = PassengerBenchmarkNumber("OPENTTD_PARALLEL_WORKERS", 4), scenario = PassengerBenchmarkNumber("OPENTTD_ASYNC_SCENARIO", 0);
+	const bool hyperpath = PassengerBenchmarkNumber("OPENTTD_PARALLEL_HYPERPATH", 1) != 0;
+	const uint16_t side = static_cast<uint16_t>(PassengerBenchmarkNumber("OPENTTD_PARALLEL_SIDE", 32));
+	const auto services = PassengerBenchmarkNetwork(side, static_cast<uint16_t>(PassengerBenchmarkNumber("OPENTTD_PARALLEL_LINES", 240)), PassengerBenchmarkNumber("OPENTTD_PARALLEL_UNEVEN", 0) != 0);
+	for (const auto &service : services) for (const auto &stop : service.timetable.stops) if (!Station::IsValidID(stop.station)) {
+		auto *station = Station::CreateAtIndex(stop.station, TileIndex{static_cast<uint32_t>((stop.station.base() / side) * 256 + stop.station.base() % side)});
+		station->owner = OWNER_NONE; station->facilities.Set(StationFacility::Train);
+	}
+	AutoRestoreBackup settings{_settings_game.linkgraph, AutoRestoreBackupNoNewValueTag{}};
+	AutoRestoreBackup worker_setting{_settings_client.gui.passenger_precomputed_workers, uint8_t{0}};
+	_settings_game.linkgraph.passenger_journey_precomputed = true; _settings_game.linkgraph.passenger_journey_hyperpath = hyperpath;
+	_settings_game.linkgraph.passenger_transfer_penalty = 20;
+	auto storage = std::make_unique<PassengerServiceDatabase>(); auto &db = *storage;
+	PassengerServiceDatabaseTestAccess::Seed(db, services);
+	while (!db.PrecomputedFinished()) db.TickPrecomputed();
+	/* Isolate the ordinary destination-row tick path from graph preparation;
+	 * report the synchronous generation-start cost separately, including its CPU. */
+	const auto graph_started = std::chrono::steady_clock::now(); const uint64_t graph_cpu = PassengerBenchmarkThreadCPU();
+	PassengerServiceDatabaseTestAccess::BeginReplacement(db, 17); _settings_game.linkgraph.passenger_transfer_penalty = 17;
+	const uint64_t graph_cpu_ns = PassengerBenchmarkThreadCPU() - graph_cpu;
+	const auto graph_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - graph_started).count();
+	auto &table = PassengerServiceDatabaseTestAccess::Table(db, PAX);
+	const uint64_t worker_cpu_before = PassengerBenchmarkWorkersCPU(); PassengerPrecomputedTestAccess::Hook(table, PassengerBenchmarkWorkerCPU);
+	static std::atomic<bool> release{true}; release.store(scenario != 2);
+	struct Release { ~Release() { release.store(true); } } guard;
+	if (scenario == 2) PassengerPrecomputedTestAccess::QuantumHook(table, +[](size_t, uint64_t) { while (!release.load()) std::this_thread::sleep_for(std::chrono::milliseconds(1)); });
+	_settings_client.gui.passenger_precomputed_workers = static_cast<uint8_t>(workers);
+	uint64_t tick_ns = 0, progress = 0xcbf29ce484222325ULL; std::vector<uint64_t> samples;
+	std::this_thread::sleep_for(std::chrono::milliseconds(25));
+	const uint64_t main_cpu_started = PassengerBenchmarkThreadCPU();
+	const auto started = std::chrono::steady_clock::now();
+	while (!db.PrecomputedFinished()) {
+		if (scenario == 1 && workers != 0 && PassengerPrecomputedTestAccess::Prime(table, workers)) WaitForPassengerWorkers([&]() { return PassengerPrecomputedTestAccess::Ready(table); });
+		const auto tick_started = std::chrono::steady_clock::now();
+		db.TickPrecomputed();
+		const uint64_t duration = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - tick_started).count();
+		tick_ns += duration; samples.push_back(duration);
+		progress = (progress ^ table.GetDiagnostic().operations) * 0x100000001b3ULL;
+		progress = (progress ^ table.GetDiagnostic().destinations) * 0x100000001b3ULL;
+		progress = (progress ^ PassengerServiceDatabaseTestAccess::Retained(db, PAX).GetDiagnostic().destinations) * 0x100000001b3ULL;
+	}
+	const auto finished = std::chrono::steady_clock::now();
+	release.store(true); WaitForPassengerWorkers([&]() { return PassengerPrecomputedTestAccess::Idle(table); });
+	/* Let the cancelled idle contexts park before reading their OS CPU totals.
+	 * This settling interval is outside every reported build/tick wall window. */
+	std::this_thread::sleep_for(std::chrono::milliseconds(25));
+	const uint64_t worker_cpu_finished = PassengerBenchmarkWorkersCPU();
+	const uint64_t main_cpu_finished = PassengerBenchmarkThreadCPU();
+	REQUIRE_FALSE(table.MemoryRejected()); std::sort(samples.begin(), samples.end());
+	const auto &d = table.GetDiagnostic(); const auto p = table.GetParallelDiagnostic();
+	uint64_t database = 0xcbf29ce484222325ULL; for (uint8_t value : db.Save()) database = (database ^ value) * 0x100000001b3ULL;
+	std::cout << "passenger_parallel,mode=" << (hyperpath ? "hyperpath" : "legacy") << ",requested=" << workers << ",workers=" << p.workers << ",scenario=" << scenario
+			<< ",wall_ns=" << std::chrono::duration_cast<std::chrono::nanoseconds>(finished - started).count() << ",graph_ns=" << graph_ns << ",graph_cpu_ns=" << graph_cpu_ns
+			<< ",progress_digest=" << progress << ",tick_ns=" << tick_ns << ",main_cpu_ns=" << main_cpu_finished - main_cpu_started << ",ticks=" << samples.size() << ",tick_p50_ns=" << samples[samples.size() / 2]
+			<< ",tick_p95_ns=" << samples[samples.size() * 95 / 100] << ",tick_max_ns=" << samples.back() << ",worker_wait_ns=0"
+			<< ",cache_hits=" << p.cache_hits << ",cache_work=" << p.cache_work << ",serial_rows=" << p.serial_rows << ",main_search_ns=" << p.main_search_nanoseconds
+			<< ",serial_work=" << p.serial_search_work << ",cancelled_work=" << p.cancelled_search_work << ",thread_starts=" << p.thread_starts << ",workspace_bound=" << p.estimated_workspace_bytes
+			<< ",search_ns=" << p.search_nanoseconds << ",searches=" << p.searches << ",pending=" << p.peak_pending << ",work_min=" << p.minimum_work << ",work_max=" << p.maximum_work
+			<< ",throttles=" << p.throttles << ",worker_cpu_ns=" << (worker_cpu_finished - worker_cpu_before) << ",workspace_reuses=" << p.workspace_reuses << ",duplicate_work=" << (p.search_work - p.cache_work)
+			<< ",search_work=" << p.search_work << ",stations=" << d.stations << ",states=" << d.states << ",edges=" << d.logical_edges << ",operations=" << d.operations
+			<< ",bytes=" << d.bytes << ",database_digest=" << database << ",digest=" << PassengerPrecomputedTestAccess::Digest(table) << std::endl;
+}
+
 TEST_CASE("Optimized destination queue pops exactly the binary heap order", "[passenger][precomputed][queue]")
 {
 	/* Monotone pushes with ties, same-cost pushes after pops, short and long jumps across
@@ -1251,4 +1766,73 @@ TEST_CASE("Optimized destination queue pops exactly the binary heap order", "[pa
 			queue.Reset();
 		}
 	}
+}
+
+TEST_CASE("Hyperpath display enumerates frozen policy storage with bounded read-only work", "[passenger][hyperpath][station-gui]")
+{
+	for (bool flat : {false, true}) {
+		std::array services{Service(0, {A, B}), Service(1, {A, B}), Service(2, {A, C, B})};
+		std::vector<const PassengerPeriodicService *> records; for (const auto &service : services) records.push_back(&service);
+		PassengerPrecomputedTable table;
+		table.Begin(records, PAX, 0, PassengerPrecomputedTable::MAX_BYTES, true, false, {}, true, true, true, true, true, true, flat);
+		while (!table.Finished()) table.Step(64);
+		std::vector<PassengerPrecomputedTable::DisplayCandidate> candidates;
+		size_t work = 4096;
+		REQUIRE(table.DisplayCandidates(A, B, OrderListID::Invalid(), OrderListID::Invalid(), candidates, work));
+		REQUIRE(candidates.size() >= 2);
+		for (const auto &candidate : candidates) {
+			CHECK(candidate.order == 0); CHECK(candidate.incarnation == candidate.service.base() + 1);
+			CHECK(table.Board(A, B, StateTicks{}, candidate.service, candidate.order).ride.has_value());
+		}
+		work = 4096;
+		REQUIRE(table.DisplayCandidates(A, B, OrderListID{0}, OrderListID::Invalid(), candidates, work));
+		CHECK_FALSE(candidates.empty());
+		for (const auto &candidate : candidates) CHECK(candidate.service != OrderListID{0});
+		const auto before = table.GetDiagnostic(); work = 4096;
+		CHECK_FALSE(table.DisplayCandidates(A, B, OrderListID::Invalid(), OrderListID{0}, candidates, work));
+		CHECK(candidates.empty()); CHECK(table.GetDiagnostic().local_replans == before.local_replans);
+		CHECK(table.GetDiagnostic().bytes == before.bytes);
+		work = 1;
+		CHECK_FALSE(table.DisplayCandidates(A, B, OrderListID::Invalid(), OrderListID::Invalid(), candidates, work));
+		CHECK(work == 0); CHECK(candidates.empty());
+	}
+}
+
+TEST_CASE("Hyperpath display cursor advances beyond old candidate limits with single-work pages", "[passenger][hyperpath][station-gui][service-progress]")
+{
+	std::vector<PassengerPeriodicService> services;
+	for (uint16_t id = 0; id < 270; ++id) services.push_back(Service(id, {A, B}));
+	std::vector<const PassengerPeriodicService *> records; for (const auto &service : services) records.push_back(&service);
+	PassengerPrecomputedTable table;
+	table.Begin(records, PAX, 0, PassengerPrecomputedTable::MAX_BYTES, true, false, {}, true, true, true, true);
+	while (!table.Finished()) table.Step(65536);
+	const auto diagnostic = table.GetDiagnostic();
+	PassengerPrecomputedTable::DisplayCursor cursor; PassengerPrecomputedTable::DisplayCandidate candidate;
+	std::set<OrderListID> found; bool complete = false;
+	for (size_t page = 0; page < 2000 && !complete; ++page) {
+		size_t work = 1;
+		auto result = table.NextDisplayCandidate(A, B, OrderListID::Invalid(), OrderListID::Invalid(), cursor, candidate, work);
+		if (result == PassengerPrecomputedTable::DisplayRead::Candidate) CHECK(found.insert(candidate.service).second);
+		else REQUIRE(result != PassengerPrecomputedTable::DisplayRead::Unavailable);
+		complete = result == PassengerPrecomputedTable::DisplayRead::Complete;
+	}
+	CHECK(complete); CHECK(found.size() == 270);
+	size_t work = 4;
+	REQUIRE(table.NextDisplayCandidate(B, A, OrderListID::Invalid(), OrderListID::Invalid(), cursor, candidate, work) == PassengerPrecomputedTable::DisplayRead::Candidate);
+	CHECK(candidate.service == OrderListID{0}); CHECK(candidate.order == 1); // Rebinding a cursor changes its query, not just its position.
+
+	/* Live bindings stay outside the frozen worker graph. Both display paths
+	 * must report the refreshed generation rather than the snapshot's member. */
+	services[0].generation += 100;
+	REQUIRE(table.RefreshService(services[0]));
+	cursor = {}; work = 4;
+	REQUIRE(table.NextDisplayCandidate(B, A, OrderListID::Invalid(), OrderListID::Invalid(), cursor, candidate, work) == PassengerPrecomputedTable::DisplayRead::Candidate);
+	CHECK(candidate.service == services[0].id); CHECK(candidate.generation == services[0].generation);
+	work = 4096;
+	const auto routes = table.InspectRoutes(A, B, OrderListID::Invalid(), OrderListID::Invalid(), work);
+	REQUIRE_FALSE(routes.candidates.empty());
+	CHECK(routes.candidates.front().ride.service == services[0].id);
+	CHECK(routes.candidates.front().ride.generation == services[0].generation);
+
+	CHECK(table.GetDiagnostic().bytes == diagnostic.bytes); CHECK(table.GetDiagnostic().local_replans == diagnostic.local_replans);
 }

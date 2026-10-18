@@ -1,0 +1,10 @@
+PASS legacy-0-8: ticks=2090, movement={'journey_boarded': 67, 'journey_transferred': 0, 'journey_delivered': 52}
+PASS legacy-8-0: ticks=2088, movement={'journey_boarded': 67, 'journey_transferred': 0, 'journey_delivered': 52}
+PASS legacy-4-1-slow-client: ticks=2090, movement={'journey_boarded': 67, 'journey_transferred': 0, 'journey_delivered': 52}
+PASS legacy-worker-failure: ticks=2088, movement={'journey_boarded': 67, 'journey_transferred': 0, 'journey_delivered': 52}
+PASS legacy-slow-host-fast-client: ticks=2088, movement={'journey_boarded': 67, 'journey_transferred': 0, 'journey_delivered': 52}
+PASS hyperpath-8-0: ticks=2090, movement={'journey_boarded': 67, 'journey_transferred': 0, 'journey_delivered': 52}
+PASS hyperpath-0-8: ticks=2090, movement={'journey_boarded': 67, 'journey_transferred': 0, 'journey_delivered': 52}
+PASS hyperpath-worker-failure: ticks=2088, movement={'journey_boarded': 67, 'journey_transferred': 0, 'journey_delivered': 52}
+PASS hyperpath-4-1-slow-client: ticks=2090, movement={'journey_boarded': 67, 'journey_transferred': 0, 'journey_delivered': 52}
+PASS hyperpath-slow-host-fast-client: ticks=2090, movement={'journey_boarded': 67, 'journey_transferred': 0, 'journey_delivered': 52}

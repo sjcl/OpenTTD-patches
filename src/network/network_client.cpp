@@ -1226,6 +1226,7 @@ NetworkRecvStatus ClientNetworkGameSocketHandler::FinishMapLoad()
 {
 	/* Say we received the map and restored its exact saved frontier! */
 	SendMapOk();
+	CloseWindowById(WindowClass::NetworkStatus, NetworkStatusWindowNumber::Join);
 
 	/* As we skipped switch-mode, update the time we "switched". */
 	_game_session_stats.start_time = std::chrono::steady_clock::now();
