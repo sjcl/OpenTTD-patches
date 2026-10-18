@@ -59,7 +59,7 @@ struct PassengerParallelBuildDiagnostic {
 	uint64_t batches = 0, searches = 0, batch_nanoseconds = 0, search_nanoseconds = 0, integration_nanoseconds = 0, fallbacks = 0;
 	uint64_t minimum_work = UINT64_MAX, maximum_work = 0, search_work = 0;
 	uint64_t cache_hits = 0, cache_work = 0, serial_rows = 0, main_search_nanoseconds = 0, serial_search_work = 0;
-	uint64_t cancelled_search_work = 0, thread_starts = 0;
+	uint64_t cancelled_search_work = 0, thread_starts = 0, workspace_reuses = 0;
 	size_t workers = 0, peak_pending = 0, estimated_workspace_bytes = 0;
 };
 
@@ -320,10 +320,13 @@ private:
 	};
 	using Revisit = GraphSnapshot::Revisit;
 	using ColdEdge = GraphSnapshot::ColdEdge;
-	std::shared_ptr<GraphSnapshot> graph = std::make_shared<GraphSnapshot>();
+	std::shared_ptr<const GraphSnapshot> graph = std::make_shared<GraphSnapshot>();
+	std::shared_ptr<GraphSnapshot> building_graph; ///< Exists only during cooperative preparation.
 	std::map<OrderListID, Member> refreshed_members; ///< Live bindings never mutate the frozen graph.
 
 	struct WorkerGeneration;
+	struct WorkerMetrics;
+	std::vector<std::shared_ptr<WorkerMetrics>> parallel_statistics;
 	struct DestinationBuildResult {
 		std::shared_ptr<WorkerGeneration> generation;
 		DestinationWorkspace workspace;
@@ -344,6 +347,7 @@ private:
 	size_t serial_destination = SIZE_MAX;
 	bool parallel_unavailable = false;
 	PassengerParallelBuildDiagnostic parallel_diagnostic;
+	void (*parallel_quantum_hook)(size_t, uint64_t) = nullptr; ///< Native cancellation/failure scheduling tests.
 	void (*parallel_search_hook)(size_t, bool) = nullptr; ///< Native scheduling/failure injection; unset in production.
 	bool (*parallel_start_hook)(uint) = nullptr; ///< Native thread-start failure injection; unset in production.
 	CargoType cargo = INVALID_CARGO;
@@ -360,7 +364,8 @@ private:
 	size_t SearchHyperpath(DestinationWorkspace &work, size_t allowance) const;
 	void CollectSearchCounters();
 	bool PrepareParallelBatch(uint workers);
-	bool ParallelCacheReady() const; ///< Native tests may poll outside simulation ticks.
+	bool ParallelCacheReady() const;
+	bool ParallelIdle() const; ///< Native tests may poll outside simulation ticks.
 	void CancelParallel();
 	size_t AdvanceSearch(size_t allowance, uint workers);
 	size_t StepImpl(size_t allowance, bool legacy_publication, const std::function<void(StationID)> &published, uint workers);

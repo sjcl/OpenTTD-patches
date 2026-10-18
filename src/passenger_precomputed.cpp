@@ -11,6 +11,7 @@
 #include "error_func.h"
 #include "thread.h"
 #include <atomic>
+#include <array>
 #include <condition_variable>
 #include <deque>
 #include <chrono>
@@ -211,28 +212,28 @@ bool PassengerPrecomputedTable::RefreshService(const PassengerPeriodicService &s
 void PassengerPrecomputedTable::AddEdge(uint32_t from, uint32_t to, int64_t cost, EdgeKind kind, uint32_t occurrence, uint32_t distance, int64_t uncertainty)
 {
 	assert(cost >= 0);
-	this->graph->edges.push_back({from, to, occurrence, cost, distance, kind, uncertainty});
+	this->building_graph->edges.push_back({from, to, occurrence, cost, distance, kind, uncertainty});
 }
 
 void PassengerPrecomputedTable::AddBoardEdges(uint32_t station, uint32_t to, uint32_t pattern, int64_t cost, EdgeKind kind, uint32_t occurrence, uint32_t distance)
 {
 	this->AddEdge(station, to, cost, kind, occurrence, distance);
-	const auto &states = this->graph->waiting_states[station];
+	const auto &states = this->building_graph->waiting_states[station];
 	if (states.empty()) return;
-	uint32_t excluded = this->graph->patterns[pattern].members.size() == 1 ? this->StateFor(station, pattern) : INVALID;
+	uint32_t excluded = this->building_graph->patterns[pattern].members.size() == 1 ? this->StateFor(station, pattern) : INVALID;
 	if (excluded == station) excluded = INVALID; // No waiting state exists for this previous pattern.
-	this->graph->edges.back().range = static_cast<uint32_t>(this->graph->range_edges.size());
-	this->graph->range_edges.push_back({states.front().second, states.back().second + 1, excluded});
+	this->building_graph->edges.back().range = static_cast<uint32_t>(this->building_graph->range_edges.size());
+	this->building_graph->range_edges.push_back({states.front().second, states.back().second + 1, excluded});
 }
 
 void PassengerPrecomputedTable::Begin(std::span<const PassengerPeriodicService *const> services, CargoType cargo, int64_t transfer, uint64_t memory, bool sections, bool cooperative, std::shared_ptr<uint64_t> memory_budget, bool estimates, bool optimized, bool integrated, bool hyperpath, bool revisit_dominance, bool continuation_witness, bool flat_storage)
 {
-	*this = {}; this->cargo = cargo; this->graph->estimates = estimates; this->graph->optimized = optimized; this->graph->integrated = optimized && integrated;
-	this->graph->flat_storage = hyperpath && flat_storage;
-	this->graph->hyperpath = hyperpath; this->graph->transfer_cost = transfer >= 0 && transfer <= INT64_MAX / 2 ? 2 * transfer : 0;
-	this->graph->revisit_dominance = revisit_dominance;
-	this->graph->continuation_witness = revisit_dominance && continuation_witness;
-	if (hyperpath) { this->graph->optimized = this->graph->integrated = true; this->work.strategy.events.SetOptimized(true); }
+	*this = {}; this->building_graph = std::make_shared<GraphSnapshot>(); this->graph = this->building_graph; this->cargo = cargo; this->building_graph->estimates = estimates; this->building_graph->optimized = optimized; this->building_graph->integrated = optimized && integrated;
+	this->building_graph->flat_storage = hyperpath && flat_storage;
+	this->building_graph->hyperpath = hyperpath; this->building_graph->transfer_cost = transfer >= 0 && transfer <= INT64_MAX / 2 ? 2 * transfer : 0;
+	this->building_graph->revisit_dominance = revisit_dominance;
+	this->building_graph->continuation_witness = revisit_dominance && continuation_witness;
+	if (hyperpath) { this->building_graph->optimized = this->building_graph->integrated = true; this->work.strategy.events.SetOptimized(true); }
 	this->graph_build = this->BuildGraph({services.begin(), services.end()}, cargo, transfer, memory, sections, cooperative, std::move(memory_budget));
 	if (!cooperative) this->PrepareGraph(SIZE_MAX);
 }
@@ -247,7 +248,7 @@ bool PassengerPrecomputedTable::PrepareGraph(size_t quantum)
 	}
 	const bool ready = !this->graph_build;
 	this->diagnostic.build_nanoseconds += Elapsed(started);
-	if (ready) this->graph_build = {};
+	if (ready) { this->graph_build = {}; this->building_graph.reset(); }
 	return ready;
 }
 
@@ -261,7 +262,7 @@ PassengerBuildTask PassengerPrecomputedTable::BuildGraph(std::vector<const Passe
 	this->diagnostic.builds = 1;
 	if (cargo >= NUM_CARGO || transfer < 0 || transfer > INT64_MAX / 2) { this->failed = true; co_return; }
 	const uint64_t mask = uint64_t{1} << cargo;
-	memory = std::min(memory, this->graph->hyperpath ? MAX_HYPERPATH_BYTES : MAX_BYTES);
+	memory = std::min(memory, this->building_graph->hyperpath ? MAX_HYPERPATH_BYTES : MAX_BYTES);
 	/* Canonical byte charges are identical on 32/64-bit peers. Native sizeof
 	 * and allocator residency are diagnostics only, never routing admission. */
 	static_assert(sizeof(Label) <= 64 && sizeof(Edge) <= 64 && sizeof(QueueItem) <= 32 && sizeof(Row) <= 256);
@@ -272,14 +273,14 @@ PassengerBuildTask PassengerPrecomputedTable::BuildGraph(std::vector<const Passe
 	for (const auto *s : services) {
 		if (cooperative) co_await std::suspend_always{};
 		if (!Product(1, 256, envelope, memory) || !Product(s->timetable.stops.size(), 256, envelope, memory) ||
-				!Product(s->vehicles.size(), this->graph->hyperpath ? 128 : 64, envelope, memory) || !Product(s->dispatch_slots.size(), 32, envelope, memory)) {
+				!Product(s->vehicles.size(), this->building_graph->hyperpath ? 128 : 64, envelope, memory) || !Product(s->dispatch_slots.size(), 32, envelope, memory)) {
 			this->failed = true; this->diagnostic.envelope = memory; co_return;
 		}
 	}
 	try {
-		this->work.queue.SetOptimized(this->graph->optimized);
-		this->graph->station_index.assign(StationID::Invalid().base(), INVALID);
-		this->graph->service_pattern.assign(OrderListID::Invalid().base(), INVALID);
+		this->work.queue.SetOptimized(this->building_graph->optimized);
+		this->building_graph->station_index.assign(StationID::Invalid().base(), INVALID);
+		this->building_graph->service_pattern.assign(OrderListID::Invalid().base(), INVALID);
 		std::map<std::vector<int64_t>, std::vector<const PassengerPeriodicService *>> groups;
 		std::set<StationID> station_ids;
 		/* A vehicle moved between shared order lists can occur in two captures
@@ -287,7 +288,7 @@ PassengerBuildTask PassengerPrecomputedTable::BuildGraph(std::vector<const Passe
 		 * equal generations use the lower OrderList ID. Never consult live pools
 		 * here, since replay must use the same immutable input on every peer. */
 		std::map<VehicleID, std::pair<uint64_t, OrderListID>> owners;
-		if (this->graph->hyperpath) for (const auto *s : services) for (const auto &v : s->vehicles) {
+		if (this->building_graph->hyperpath) for (const auto *s : services) for (const auto &v : s->vehicles) {
 			if (cooperative) co_await std::suspend_always{};
 			if (v.id == VehicleID::Invalid()) continue;
 			auto [it, inserted] = owners.try_emplace(v.id, s->generation, s->id);
@@ -295,22 +296,22 @@ PassengerBuildTask PassengerPrecomputedTable::BuildGraph(std::vector<const Passe
 		}
 		for (const auto *s : services) {
 			if (cooperative) co_await std::suspend_always{};
-			bool capacity = std::any_of(s->vehicles.begin(), s->vehicles.end(), [&](const auto &v) { return v.capacity[cargo] != 0 && (!this->graph->hyperpath || (owners.contains(v.id) && owners.at(v.id).second == s->id)); });
+			bool capacity = std::any_of(s->vehicles.begin(), s->vehicles.end(), [&](const auto &v) { return v.capacity[cargo] != 0 && (!this->building_graph->hyperpath || (owners.contains(v.id) && owners.at(v.id).second == s->id)); });
 			if (!capacity) { this->unsupported |= s->timetable.period == 0; continue; }
-			if ((this->graph->estimates ? s->timetable.Circuit() : s->timetable.period) <= 0 || s->timetable.stops.size() < 2) { this->unsupported = true; continue; }
+			if ((this->building_graph->estimates ? s->timetable.Circuit() : s->timetable.period) <= 0 || s->timetable.stops.size() < 2) { this->unsupported = true; continue; }
 			auto key = PatternKey(*s);
 			/* A strategy distinguishes actual services, even when their stop
 			 * patterns coincide. This makes exclusion remove exactly the arriving
 			 * OrderList's frequency, while retaining its identical neighbours. */
-			if (this->graph->hyperpath) key.push_back(s->id.base());
+			if (this->building_graph->hyperpath) key.push_back(s->id.base());
 			groups[std::move(key)].push_back(s);
 			for (const auto &stop : s->timetable.stops) if ((stop.board | stop.alight) & mask) station_ids.insert(stop.station);
 		}
-		this->graph->stations.assign(station_ids.begin(), station_ids.end());
-		assert(std::is_sorted(this->graph->stations.begin(), this->graph->stations.end()));
-		assert(std::adjacent_find(this->graph->stations.begin(), this->graph->stations.end()) == this->graph->stations.end());
-		for (uint32_t i = 0; i < this->graph->stations.size(); ++i) this->graph->station_index[this->graph->stations[i].base()] = i;
-		this->graph->waiting_states.resize(this->graph->stations.size());
+		this->building_graph->stations.assign(station_ids.begin(), station_ids.end());
+		assert(std::is_sorted(this->building_graph->stations.begin(), this->building_graph->stations.end()));
+		assert(std::adjacent_find(this->building_graph->stations.begin(), this->building_graph->stations.end()) == this->building_graph->stations.end());
+		for (uint32_t i = 0; i < this->building_graph->stations.size(); ++i) this->building_graph->station_index[this->building_graph->stations[i].base()] = i;
+		this->building_graph->waiting_states.resize(this->building_graph->stations.size());
 		std::vector<const PassengerPeriodicService *> representatives;
 		std::vector<std::vector<const PassengerPeriodicService *>> pattern_members;
 		for (auto &[key, members] : groups) {
@@ -329,14 +330,14 @@ PassengerBuildTask PassengerPrecomputedTable::BuildGraph(std::vector<const Passe
 			for (const auto *s : members) {
 				if (cooperative) co_await std::suspend_always{};
 				p.members.push_back({s->id, s->incarnation, s->generation, s->timetable.period == 0});
-				this->graph->service_pattern[s->id.base()] = static_cast<uint32_t>(this->graph->patterns.size());
+				this->building_graph->service_pattern[s->id.base()] = static_cast<uint32_t>(this->building_graph->patterns.size());
 				for (const auto &v : s->vehicles) if (v.capacity[cargo]) {
 					if (cooperative) co_await std::suspend_always{};
-					if (this->graph->hyperpath && (!owners.contains(v.id) || owners.at(v.id).second != s->id)) continue;
-					if ((sections || this->graph->estimates) && !physical.insert(v.id).second) continue;
+					if (this->building_graph->hyperpath && (!owners.contains(v.id) || owners.at(v.id).second != s->id)) continue;
+					if ((sections || this->building_graph->estimates) && !physical.insert(v.id).second) continue;
 					seats = std::max(seats, v.capacity[cargo]); unknown |= !v.phase_known;
 					unknown_fleet += !v.phase_known || p.estimated;
-					if (this->graph->estimates && (!v.phase_known || p.estimated)) continue;
+					if (this->building_graph->estimates && (!v.phase_known || p.estimated)) continue;
 					if (s->dispatch_period > 0) {
 						p.circuit = s->dispatch_period;
 						for (uint32_t slot : s->dispatch_slots) {
@@ -355,118 +356,118 @@ PassengerBuildTask PassengerPrecomputedTable::BuildGraph(std::vector<const Passe
 			std::sort(phases.begin(), phases.end());
 			phases.erase(std::unique(phases.begin(), phases.end()), phases.end());
 			int64_t gap = p.circuit;
-			if ((!unknown || this->graph->estimates) && !phases.empty()) {
+			if ((!unknown || this->building_graph->estimates) && !phases.empty()) {
 				gap = 0;
 				for (size_t i = 0; i < phases.size(); ++i) gap = std::max(gap, (i + 1 < phases.size() ? phases[i + 1] : p.circuit + phases.front()) - phases[i]);
 			}
 			/* Unknown phases retain a conservative circuit estimate. No departure
 			 * timestamps or evenly spaced synthetic trains are generated. */
 			p.wait = unknown ? p.circuit : (gap + 1) / 2;
-			if (this->graph->estimates && (unknown || p.estimated)) {
+			if (this->building_graph->estimates && (unknown || p.estimated)) {
 				p.wait = UnknownWait(p.circuit, unknown_fleet, members.front()->uncertain_dispatch_period > 0);
 				if (!phases.empty()) p.wait = std::min(p.wait, (gap + 1) / 2);
 				gap = std::max<int64_t>(1, 2 * p.wait);
 			}
 			p.risk = (gap + std::min<uint64_t>(seats, 64) - 1) / std::min<uint64_t>(seats, 64);
-			if (this->graph->estimates && (unknown || p.estimated)) p.risk += std::min<int64_t>(64, (p.wait + 7) / 8);
+			if (this->building_graph->estimates && (unknown || p.estimated)) p.risk += std::min<int64_t>(64, (p.wait + 7) / 8);
 			p.weight = std::clamp<uint64_t>(std::min<uint64_t>(seats, 65535) * 65536 / std::max<int64_t>(1, gap), 1, UINT32_MAX / 2);
-			uint32_t pattern = static_cast<uint32_t>(this->graph->patterns.size());
+			uint32_t pattern = static_cast<uint32_t>(this->building_graph->patterns.size());
 			for (const auto &stop : t.stops) {
 				if (cooperative) co_await std::suspend_always{};
-				p.occurrences.push_back(static_cast<uint32_t>(this->graph->occurrences.size()));
-				this->graph->occurrences.push_back({stop.station, stop.order, pattern, 0, 0, (stop.board & mask) != 0, (stop.alight & mask) != 0, (stop.forced & mask) != 0, stop.continues});
-				if (stop.alight & mask) this->graph->waiting_states[this->graph->station_index[stop.station.base()]].emplace_back(pattern, 0);
+				p.occurrences.push_back(static_cast<uint32_t>(this->building_graph->occurrences.size()));
+				this->building_graph->occurrences.push_back({stop.station, stop.order, pattern, 0, 0, (stop.board & mask) != 0, (stop.alight & mask) != 0, (stop.forced & mask) != 0, stop.continues});
+				if (stop.alight & mask) this->building_graph->waiting_states[this->building_graph->station_index[stop.station.base()]].emplace_back(pattern, 0);
 			}
-			this->graph->patterns.push_back(std::move(p)); representatives.push_back(members.front());
+			this->building_graph->patterns.push_back(std::move(p)); representatives.push_back(members.front());
 			pattern_members.push_back(members);
 		}
-		size_t nodes = this->graph->stations.size();
-		if (this->UseCompressedRows()) this->graph->exception_slots.assign(this->graph->stations.size(), INVALID);
-		for (uint32_t station = 0; station < this->graph->waiting_states.size(); ++station) {
-			auto &states = this->graph->waiting_states[station];
+		size_t nodes = this->building_graph->stations.size();
+		if (this->UseCompressedRows()) this->building_graph->exception_slots.assign(this->building_graph->stations.size(), INVALID);
+		for (uint32_t station = 0; station < this->building_graph->waiting_states.size(); ++station) {
+			auto &states = this->building_graph->waiting_states[station];
 			if (cooperative) co_await std::suspend_always{};
 			std::sort(states.begin(), states.end()); states.erase(std::unique(states.begin(), states.end()), states.end());
 			for (auto &state : states) state.second = static_cast<uint32_t>(nodes++);
-			if (this->UseCompressedRows() && !states.empty()) this->graph->exception_slots[station] = this->graph->exception_slot_count++;
+			if (this->UseCompressedRows() && !states.empty()) this->building_graph->exception_slots[station] = this->building_graph->exception_slot_count++;
 		}
-		this->graph->waiting_state_count = nodes;
-		if (this->graph->hyperpath) {
-			this->graph->waiting_station.resize(nodes);
-			for (uint32_t s = 0; s < this->graph->stations.size(); ++s) {
-				this->graph->waiting_station[s] = s;
-				for (const auto &[p, state] : this->graph->waiting_states[s]) this->graph->waiting_station[state] = s;
+		this->building_graph->waiting_state_count = nodes;
+		if (this->building_graph->hyperpath) {
+			this->building_graph->waiting_station.resize(nodes);
+			for (uint32_t s = 0; s < this->building_graph->stations.size(); ++s) {
+				this->building_graph->waiting_station[s] = s;
+				for (const auto &[p, state] : this->building_graph->waiting_states[s]) this->building_graph->waiting_station[state] = s;
 			}
 		}
-		for (auto &o : this->graph->occurrences) { o.arrival = static_cast<uint32_t>(nodes++); o.departure = static_cast<uint32_t>(nodes++); }
-		if (this->graph->hyperpath) {
-			std::vector<uint64_t> frequency(this->graph->stations.size());
-			this->graph->station_boarding.resize(this->graph->stations.size());
+		for (auto &o : this->building_graph->occurrences) { o.arrival = static_cast<uint32_t>(nodes++); o.departure = static_cast<uint32_t>(nodes++); }
+		if (this->building_graph->hyperpath) {
+			std::vector<uint64_t> frequency(this->building_graph->stations.size());
+			this->building_graph->station_boarding.resize(this->building_graph->stations.size());
 			uint64_t candidate_bound = 0;
-			for (uint32_t id = 0; id < this->graph->occurrences.size(); ++id) if (this->graph->occurrences[id].board) {
-				const auto &o = this->graph->occurrences[id];
-				this->graph->station_boarding[this->graph->station_index[o.station.base()]].push_back(id);
-				const auto wait = this->graph->patterns[o.pattern].wait;
+			for (uint32_t id = 0; id < this->building_graph->occurrences.size(); ++id) if (this->building_graph->occurrences[id].board) {
+				const auto &o = this->building_graph->occurrences[id];
+				this->building_graph->station_boarding[this->building_graph->station_index[o.station.base()]].push_back(id);
+				const auto wait = this->building_graph->patterns[o.pattern].wait;
 				if (wait <= 0 || wait > PassengerStrategy::MAX_WAIT) { this->failed = true; co_return; }
-				auto &sum = frequency[this->graph->station_index[o.station.base()]];
+				auto &sum = frequency[this->building_graph->station_index[o.station.base()]];
 				uint64_t f = PassengerStrategy::Frequency(wait);
 				if (f >= (uint64_t{1} << 63) - sum) { this->failed = true; co_return; }
 				sum += f;
-				candidate_bound += 1 + this->graph->waiting_states[this->graph->station_index[o.station.base()]].size();
+				candidate_bound += 1 + this->building_graph->waiting_states[this->building_graph->station_index[o.station.base()]].size();
 			}
 			size_t max_boarding = 0;
-			for (const auto &boards : this->graph->station_boarding) max_boarding = std::max(max_boarding, boards.size());
+			for (const auto &boards : this->building_graph->station_boarding) max_boarding = std::max(max_boarding, boards.size());
 			/* Full sparse sets, including worst-case differences; never truncate
 			 * to K candidates. Admission is based solely on the frozen graph. */
-			if ((this->graph->flat_storage && (candidate_bound >= INVALID || max_boarding >= FlatPolicy::FULL)) ||
-					!(this->graph->flat_storage ? Product(4096, uint64_t{256} + uint64_t(max_boarding) * 16, envelope, memory) : Product(max_boarding, uint64_t{4096} * 64, envelope, memory)) ||
-					!Product(candidate_bound, uint64_t(this->graph->stations.size()) * 8, envelope, memory) ||
-					!Product(this->graph->waiting_state_count, uint64_t(this->graph->stations.size()) * (this->graph->flat_storage ? 64 : 96) + 128, envelope, memory)) {
+			if ((this->building_graph->flat_storage && (candidate_bound >= INVALID || max_boarding >= FlatPolicy::FULL)) ||
+					!(this->building_graph->flat_storage ? Product(4096, uint64_t{256} + uint64_t(max_boarding) * 16, envelope, memory) : Product(max_boarding, uint64_t{4096} * 64, envelope, memory)) ||
+					!Product(candidate_bound, uint64_t(this->building_graph->stations.size()) * 8, envelope, memory) ||
+					!Product(this->building_graph->waiting_state_count, uint64_t(this->building_graph->stations.size()) * (this->building_graph->flat_storage ? 64 : 96) + 128, envelope, memory)) {
 				this->failed = true; this->diagnostic.envelope = memory; co_return;
 			}
 		}
 		size_t edge_count = 0; uint64_t logical_edge_bound = 0;
-		for (size_t p = 0; p < this->graph->patterns.size(); ++p) for (const auto &stop : representatives[p]->timetable.stops) {
+		for (size_t p = 0; p < this->building_graph->patterns.size(); ++p) for (const auto &stop : representatives[p]->timetable.stops) {
 			if (cooperative) co_await std::suspend_always{};
 			size_t contribution = 2 + ((stop.alight & mask) != 0);
-			if (stop.board & mask) contribution += 1 + this->graph->waiting_states[this->graph->station_index[stop.station.base()]].size();
+			if (stop.board & mask) contribution += 1 + this->building_graph->waiting_states[this->building_graph->station_index[stop.station.base()]].size();
 			if (contribution > INVALID - edge_count) { this->failed = true; co_return; }
 			logical_edge_bound += contribution;
-			if (this->graph->integrated && (stop.board & mask)) contribution -= this->graph->waiting_states[this->graph->station_index[stop.station.base()]].size();
+			if (this->building_graph->integrated && (stop.board & mask)) contribution -= this->building_graph->waiting_states[this->building_graph->station_index[stop.station.base()]].size();
 			edge_count += contribution;
 		}
 		/* Every product is checked before route/scratch allocation. Queue storage
 		 * is bounded by successful edge relaxations, never by passengers or OD calls. */
-		this->diagnostic.stations = this->graph->stations.size(); this->diagnostic.patterns = this->graph->patterns.size();
+		this->diagnostic.stations = this->building_graph->stations.size(); this->diagnostic.patterns = this->building_graph->patterns.size();
 		this->diagnostic.states = nodes; this->diagnostic.edges = edge_count;
-		this->diagnostic.stored_states = this->graph->waiting_state_count + this->graph->stations.size();
+		this->diagnostic.stored_states = this->building_graph->waiting_state_count + this->building_graph->stations.size();
 		bool fits = nodes < INVALID && edge_count < INVALID && nodes <= memory / 128 &&
-				Product(this->graph->stations.size(), uint64_t(this->diagnostic.stored_states) * 64 + (this->graph->flat_storage ? 512 : 128), envelope, memory) &&
-				Product(this->graph->stations.size(), uint64_t(this->graph->stations.size()) * 8 + 64, envelope, memory) &&
-				Product(edge_count, this->graph->integrated ? 128 : 264, envelope, memory) &&
-				(!this->graph->integrated || Product(logical_edge_bound, 128, envelope, memory)) && Product(nodes, this->graph->integrated ? 160 : 144, envelope, memory);
+				Product(this->building_graph->stations.size(), uint64_t(this->diagnostic.stored_states) * 64 + (this->building_graph->flat_storage ? 512 : 128), envelope, memory) &&
+				Product(this->building_graph->stations.size(), uint64_t(this->building_graph->stations.size()) * 8 + 64, envelope, memory) &&
+				Product(edge_count, this->building_graph->integrated ? 128 : 264, envelope, memory) &&
+				(!this->building_graph->integrated || Product(logical_edge_bound, 128, envelope, memory)) && Product(nodes, this->building_graph->integrated ? 160 : 144, envelope, memory);
 		this->diagnostic.envelope = envelope;
 		if (!fits) { this->failed = true; co_return; }
-		this->graph->edges.reserve(edge_count);
-		this->reachable_destinations.resize(this->graph->stations.size());
-		for (uint32_t p = 0; p < this->graph->patterns.size(); ++p) {
+		this->building_graph->edges.reserve(edge_count);
+		this->reachable_destinations.resize(this->building_graph->stations.size());
+		for (uint32_t p = 0; p < this->building_graph->patterns.size(); ++p) {
 			if (cooperative) co_await std::suspend_always{};
-			const auto &pattern = this->graph->patterns[p]; const auto &t = representatives[p]->timetable;
+			const auto &pattern = this->building_graph->patterns[p]; const auto &t = representatives[p]->timetable;
 			for (size_t i = 0; i < t.stops.size(); ++i) {
 				if (cooperative) co_await std::suspend_always{};
-				const auto &stop = t.stops[i]; uint32_t id = pattern.occurrences[i]; auto &o = this->graph->occurrences[id];
+				const auto &stop = t.stops[i]; uint32_t id = pattern.occurrences[i]; auto &o = this->building_graph->occurrences[id];
 				o.dwell = stop.departure - stop.arrival;
 				if (stop.board & mask) {
-					uint32_t station = this->graph->station_index[stop.station.base()];
-					if (this->graph->integrated) this->AddBoardEdges(station, o.departure, p, pattern.wait + pattern.risk, EdgeKind::Board, id);
+					uint32_t station = this->building_graph->station_index[stop.station.base()];
+					if (this->building_graph->integrated) this->AddBoardEdges(station, o.departure, p, pattern.wait + pattern.risk, EdgeKind::Board, id);
 					else {
 					this->AddEdge(station, o.departure, pattern.wait + pattern.risk, EdgeKind::Board, id);
-					for (const auto &[previous, state] : this->graph->waiting_states[station]) {
+					for (const auto &[previous, state] : this->building_graph->waiting_states[station]) {
 						if (cooperative) co_await std::suspend_always{};
 						if (previous != p || pattern.members.size() > 1) this->AddEdge(state, o.departure, pattern.wait + pattern.risk, EdgeKind::Board, id);
 					}
 					}
 				}
-				if (stop.alight & mask) this->AddEdge(o.arrival, this->StateFor(this->graph->station_index[stop.station.base()], p), 2 * transfer, EdgeKind::Alight, id);
+				if (stop.alight & mask) this->AddEdge(o.arrival, this->StateFor(this->building_graph->station_index[stop.station.base()], p), 2 * transfer, EdgeKind::Alight, id);
 				if (!(stop.forced & mask)) this->AddEdge(o.arrival, o.departure, stop.departure - stop.arrival, EdgeKind::Ride);
 				if (!stop.continues) continue;
 				size_t next = (i + 1) % t.stops.size();
@@ -475,118 +476,118 @@ PassengerBuildTask PassengerPrecomputedTable::BuildGraph(std::vector<const Passe
 				if (const auto *a = Station::GetIfValid(stop.station)) if (const auto *b = Station::GetIfValid(t.stops[next].station)) distance = DistanceManhattan(a->xy, b->xy);
 				int64_t uncertainty = TravelUncertainty(travel, t.stops[next].travel_quality);
 				o.travel = travel; o.uncertainty = uncertainty; o.distance = distance;
-				this->AddEdge(o.departure, this->graph->occurrences[pattern.occurrences[next]].arrival, travel + uncertainty, EdgeKind::Ride, INVALID, distance, uncertainty);
+				this->AddEdge(o.departure, this->building_graph->occurrences[pattern.occurrences[next]].arrival, travel + uncertainty, EdgeKind::Ride, INVALID, distance, uncertainty);
 			}
 		}
-		if (this->graph->hyperpath && this->graph->revisit_dominance) {
-			if (!Product(this->graph->occurrences.size(), 16, envelope, memory)) { this->failed = true; this->diagnostic.envelope = memory; co_return; }
-			this->graph->revisits.resize(this->graph->occurrences.size());
+		if (this->building_graph->hyperpath && this->building_graph->revisit_dominance) {
+			if (!Product(this->building_graph->occurrences.size(), 16, envelope, memory)) { this->failed = true; this->diagnostic.envelope = memory; co_return; }
+			this->building_graph->revisits.resize(this->building_graph->occurrences.size());
 			/* Two backwards passes find the next visit across the circuit seam.
 			 * A forced unload or broken continuation severs physical occupancy.
 			 * Prefix costs include travel uncertainty and the arrival stop's dwell,
 			 * exactly as the two Ride edges between departures do. */
-			for (size_t p = 0; p < this->graph->patterns.size(); ++p) {
-				const auto &pattern = this->graph->patterns[p];
+			for (size_t p = 0; p < this->building_graph->patterns.size(); ++p) {
+				const auto &pattern = this->building_graph->patterns[p];
 				bool road = std::any_of(representatives[p]->vehicles.begin(), representatives[p]->vehicles.end(), [](const auto &v) { return v.type == VehicleType::Road; });
 				std::map<StationID, std::pair<uint32_t, int64_t>> next;
 				int64_t cost = 0;
 				for (size_t k = 2 * pattern.occurrences.size(); k-- > 0;) {
 					if (cooperative) co_await std::suspend_always{};
 					uint32_t id = pattern.occurrences[k % pattern.occurrences.size()];
-					const auto &o = this->graph->occurrences[id];
-					const auto &to = this->graph->occurrences[pattern.occurrences[(k + 1) % pattern.occurrences.size()]];
+					const auto &o = this->building_graph->occurrences[id];
+					const auto &to = this->building_graph->occurrences[pattern.occurrences[(k + 1) % pattern.occurrences.size()]];
 					if (!o.continues || to.forced || cost > INT64_MAX - o.travel ||
 							cost + o.travel > INT64_MAX - o.uncertainty || cost + o.travel + o.uncertainty > INT64_MAX - to.dwell) {
 						next.clear(); cost = 0;
 					} else cost += o.travel + o.uncertainty + to.dwell;
 					auto found = next.find(o.station);
-					if (k < pattern.occurrences.size() && o.board && found != next.end() && found->second.first != id && this->graph->occurrences[found->second.first].board) {
+					if (k < pattern.occurrences.size() && o.board && found != next.end() && found->second.first != id && this->building_graph->occurrences[found->second.first].board) {
 						/* Road orders can request different bay/drive-through directions at
 						 * the same station. With no captured proof of equal facility access,
 						 * retain the earlier opportunity. Other supported modes depend only
 						 * on the same station/vehicle; refits and control flow are unsupported. */
 						const auto &a = representatives[p]->timetable.stops[k];
 						const auto &b = representatives[p]->timetable.stops[found->second.first - pattern.occurrences.front()];
-						if (!this->graph->continuation_witness || !road || (a.boarding_facility != 0 && a.boarding_facility == b.boarding_facility))
-							this->graph->revisits[id] = {found->second.first, cost - found->second.second};
+						if (!this->building_graph->continuation_witness || !road || (a.boarding_facility != 0 && a.boarding_facility == b.boarding_facility))
+							this->building_graph->revisits[id] = {found->second.first, cost - found->second.second};
 					}
 					next[o.station] = {id, cost};
 				}
 			}
 		}
-		if (sections && !this->graph->hyperpath) {
+		if (sections && !this->building_graph->hyperpath) {
 			bool success = false;
 			auto task = this->BuildSections(pattern_members, transfer, nodes, envelope, memory, cooperative, success);
 			while (!task.Resume(1)) co_await std::suspend_always{};
 			if (!success) { this->failed = true; this->diagnostic.envelope = memory; co_return; }
 		}
 		this->diagnostic.envelope = envelope;
-		if (this->graph->optimized) this->ContractGraph(nodes);
-		this->graph->incoming_offsets.assign(nodes + 1, 0);
-		for (const auto &edge : this->graph->edges) ++this->graph->incoming_offsets[edge.to + 1];
-		for (size_t i = 1; i < this->graph->incoming_offsets.size(); ++i) this->graph->incoming_offsets[i] += this->graph->incoming_offsets[i - 1];
-		auto cursor = this->graph->incoming_offsets;
-		if (this->graph->integrated) {
+		if (this->building_graph->optimized) this->ContractGraph(nodes);
+		this->building_graph->incoming_offsets.assign(nodes + 1, 0);
+		for (const auto &edge : this->building_graph->edges) ++this->building_graph->incoming_offsets[edge.to + 1];
+		for (size_t i = 1; i < this->building_graph->incoming_offsets.size(); ++i) this->building_graph->incoming_offsets[i] += this->building_graph->incoming_offsets[i - 1];
+		auto cursor = this->building_graph->incoming_offsets;
+		if (this->building_graph->integrated) {
 			/* Write each stream directly into its stable reverse-CSR position.
 			 * The builder AoS and destination ids are released before searching. */
-			this->graph->hot_edges.from.resize(this->graph->edges.size());
-			this->graph->hot_edges.cost.resize(this->graph->edges.size());
-			this->graph->hot_edges.legs.resize(this->graph->edges.size());
-			this->graph->hot_edges.range.resize(this->graph->edges.size());
-			this->graph->cold_edges.resize(this->graph->edges.size());
-			for (const auto &edge : this->graph->edges) {
+			this->building_graph->hot_edges.from.resize(this->building_graph->edges.size());
+			this->building_graph->hot_edges.cost.resize(this->building_graph->edges.size());
+			this->building_graph->hot_edges.legs.resize(this->building_graph->edges.size());
+			this->building_graph->hot_edges.range.resize(this->building_graph->edges.size());
+			this->building_graph->cold_edges.resize(this->building_graph->edges.size());
+			for (const auto &edge : this->building_graph->edges) {
 				uint32_t at = cursor[edge.to]++;
-				this->graph->hot_edges.range[at] = edge.range;
-				this->graph->hot_edges.from[at] = edge.from; this->graph->hot_edges.cost[at] = edge.cost;
-				this->graph->hot_edges.legs[at] = edge.kind == EdgeKind::Board || edge.kind == EdgeKind::Section;
-				this->graph->cold_edges[at] = {edge.occurrence, edge.distance, edge.uncertainty, edge.kind};
+				this->building_graph->hot_edges.range[at] = edge.range;
+				this->building_graph->hot_edges.from[at] = edge.from; this->building_graph->hot_edges.cost[at] = edge.cost;
+				this->building_graph->hot_edges.legs[at] = edge.kind == EdgeKind::Board || edge.kind == EdgeKind::Section;
+				this->building_graph->cold_edges[at] = {edge.occurrence, edge.distance, edge.uncertainty, edge.kind};
 			}
-			this->diagnostic.logical_edges = this->graph->edges.size();
-			for (const auto &range : this->graph->range_edges) this->diagnostic.logical_edges += range.end - range.begin - (range.excluded >= range.begin && range.excluded < range.end);
-			this->diagnostic.range_edges = this->graph->range_edges.size();
-			std::vector<Edge>().swap(this->graph->edges);
-		} else if (this->graph->optimized) {
+			this->diagnostic.logical_edges = this->building_graph->edges.size();
+			for (const auto &range : this->building_graph->range_edges) this->diagnostic.logical_edges += range.end - range.begin - (range.excluded >= range.begin && range.excluded < range.end);
+			this->diagnostic.range_edges = this->building_graph->range_edges.size();
+			std::vector<Edge>().swap(this->building_graph->edges);
+		} else if (this->building_graph->optimized) {
 			/* Stable reverse CSR: the incoming order at each state is exactly
 			 * the original insertion order, including equal-cost alternatives. */
-			std::vector<Edge> reverse(this->graph->edges.size());
-			for (const auto &edge : this->graph->edges) reverse[cursor[edge.to]++] = edge;
-			this->graph->edges.swap(reverse);
+			std::vector<Edge> reverse(this->building_graph->edges.size());
+			for (const auto &edge : this->building_graph->edges) reverse[cursor[edge.to]++] = edge;
+			this->building_graph->edges.swap(reverse);
 		} else {
-			this->graph->incoming.resize(this->graph->edges.size());
-			for (uint32_t i = 0; i < this->graph->edges.size(); ++i) this->graph->incoming[cursor[this->graph->edges[i].to]++] = i;
+			this->building_graph->incoming.resize(this->building_graph->edges.size());
+			for (uint32_t i = 0; i < this->building_graph->edges.size(); ++i) this->building_graph->incoming[cursor[this->building_graph->edges[i].to]++] = i;
 		}
-		if (this->graph->optimized) {
-			this->graph->seed_offsets.assign(this->graph->stations.size() + 1, 0);
-			for (const auto &o : this->graph->occurrences) {
+		if (this->building_graph->optimized) {
+			this->building_graph->seed_offsets.assign(this->building_graph->stations.size() + 1, 0);
+			for (const auto &o : this->building_graph->occurrences) {
 				if (cooperative) co_await std::suspend_always{};
-				if (o.alight) ++this->graph->seed_offsets[this->graph->station_index[o.station.base()] + 1];
+				if (o.alight) ++this->building_graph->seed_offsets[this->building_graph->station_index[o.station.base()] + 1];
 			}
-			for (size_t i = 1; i < this->graph->seed_offsets.size(); ++i) this->graph->seed_offsets[i] += this->graph->seed_offsets[i - 1];
-			this->graph->seed_occurrences.resize(this->graph->seed_offsets.back()); auto cursor = this->graph->seed_offsets;
-			for (uint32_t id = 0; id < this->graph->occurrences.size(); ++id) {
+			for (size_t i = 1; i < this->building_graph->seed_offsets.size(); ++i) this->building_graph->seed_offsets[i] += this->building_graph->seed_offsets[i - 1];
+			this->building_graph->seed_occurrences.resize(this->building_graph->seed_offsets.back()); auto cursor = this->building_graph->seed_offsets;
+			for (uint32_t id = 0; id < this->building_graph->occurrences.size(); ++id) {
 				if (cooperative) co_await std::suspend_always{};
-				const auto &o = this->graph->occurrences[id];
-				if (o.alight) this->graph->seed_occurrences[cursor[this->graph->station_index[o.station.base()]]++] = id;
+				const auto &o = this->building_graph->occurrences[id];
+				if (o.alight) this->building_graph->seed_occurrences[cursor[this->building_graph->station_index[o.station.base()]]++] = id;
 			}
 		}
-		this->rows.reserve(this->graph->stations.size());
-		this->diagnostic.stations = this->graph->stations.size(); this->diagnostic.patterns = this->graph->patterns.size();
-		this->diagnostic.states = nodes; this->diagnostic.edges = this->graph->integrated ? this->graph->hot_edges.from.size() : this->graph->edges.size();
-		this->work.queue.SetCapacityLimit(uint64_t(this->graph->integrated ? this->diagnostic.logical_edges : this->diagnostic.edges) + nodes);
-		if (this->graph->hyperpath) this->work.strategy.events.SetCapacityLimit(uint64_t(this->diagnostic.logical_edges) + nodes);
-		if (this->graph->hyperpath) {
-			this->hyperpath_static_bytes = this->graph->revisits.capacity() * sizeof(Revisit) + (this->graph->station_index.capacity() + this->graph->service_pattern.capacity() + this->graph->waiting_station.capacity() +
-					this->graph->incoming_offsets.capacity() + this->graph->seed_offsets.capacity() + this->graph->seed_occurrences.capacity()) * 4 + this->graph->stations.capacity() * sizeof(StationID) +
-					this->graph->patterns.capacity() * sizeof(Pattern) + this->graph->occurrences.capacity() * sizeof(Occurrence) + this->graph->range_edges.capacity() * sizeof(RangeEdge) +
-					this->graph->cold_edges.capacity() * sizeof(ColdEdge) + this->graph->hot_edges.from.capacity() * 4 + this->graph->hot_edges.cost.capacity() * 8 +
-					this->graph->hot_edges.legs.capacity() + this->graph->hot_edges.range.capacity() * 4 + this->rows.capacity() * sizeof(Row) +
-					this->graph->waiting_states.capacity() * sizeof(this->graph->waiting_states[0]) + this->graph->station_boarding.capacity() * sizeof(this->graph->station_boarding[0]);
-			for (const auto &p : this->graph->patterns) this->hyperpath_static_bytes += p.members.capacity() * sizeof(Member) + p.boarding_services.capacity() * sizeof(OrderListID) + p.occurrences.capacity() * 4;
-			for (const auto &waits : this->graph->waiting_states) this->hyperpath_static_bytes += waits.capacity() * sizeof(waits[0]);
-			for (const auto &boards : this->graph->station_boarding) this->hyperpath_static_bytes += boards.capacity() * 4;
+		this->rows.reserve(this->building_graph->stations.size());
+		this->diagnostic.stations = this->building_graph->stations.size(); this->diagnostic.patterns = this->building_graph->patterns.size();
+		this->diagnostic.states = nodes; this->diagnostic.edges = this->building_graph->integrated ? this->building_graph->hot_edges.from.size() : this->building_graph->edges.size();
+		this->work.queue.SetCapacityLimit(uint64_t(this->building_graph->integrated ? this->diagnostic.logical_edges : this->diagnostic.edges) + nodes);
+		if (this->building_graph->hyperpath) this->work.strategy.events.SetCapacityLimit(uint64_t(this->diagnostic.logical_edges) + nodes);
+		if (this->building_graph->hyperpath) {
+			this->hyperpath_static_bytes = this->building_graph->revisits.capacity() * sizeof(Revisit) + (this->building_graph->station_index.capacity() + this->building_graph->service_pattern.capacity() + this->building_graph->waiting_station.capacity() +
+					this->building_graph->incoming_offsets.capacity() + this->building_graph->seed_offsets.capacity() + this->building_graph->seed_occurrences.capacity()) * 4 + this->building_graph->stations.capacity() * sizeof(StationID) +
+					this->building_graph->patterns.capacity() * sizeof(Pattern) + this->building_graph->occurrences.capacity() * sizeof(Occurrence) + this->building_graph->range_edges.capacity() * sizeof(RangeEdge) +
+					this->building_graph->cold_edges.capacity() * sizeof(ColdEdge) + this->building_graph->hot_edges.from.capacity() * 4 + this->building_graph->hot_edges.cost.capacity() * 8 +
+					this->building_graph->hot_edges.legs.capacity() + this->building_graph->hot_edges.range.capacity() * 4 + this->rows.capacity() * sizeof(Row) +
+					this->building_graph->waiting_states.capacity() * sizeof(this->building_graph->waiting_states[0]) + this->building_graph->station_boarding.capacity() * sizeof(this->building_graph->station_boarding[0]);
+			for (const auto &p : this->building_graph->patterns) this->hyperpath_static_bytes += p.members.capacity() * sizeof(Member) + p.boarding_services.capacity() * sizeof(OrderListID) + p.occurrences.capacity() * 4;
+			for (const auto &waits : this->building_graph->waiting_states) this->hyperpath_static_bytes += waits.capacity() * sizeof(waits[0]);
+			for (const auto &boards : this->building_graph->station_boarding) this->hyperpath_static_bytes += boards.capacity() * 4;
 		}
-		this->graph->states = this->diagnostic.states; this->graph->edge_count = this->diagnostic.edges; this->graph->logical_edges = this->diagnostic.logical_edges;
-		if (!this->graph->stations.empty()) this->StartDestination();
+		this->building_graph->states = this->diagnostic.states; this->building_graph->edge_count = this->diagnostic.edges; this->building_graph->logical_edges = this->diagnostic.logical_edges;
+		if (!this->building_graph->stations.empty()) this->StartDestination();
 	} catch (const std::bad_alloc &) {
 		/* Local OOM cannot select different routes on one network peer. The
 		 * deterministic envelope uses legacy fallback; physical OOM stops play. */
@@ -604,11 +605,11 @@ void PassengerPrecomputedTable::ContractGraph(size_t &nodes)
 	/* Even the upper bound on saved row work must amortize the two full
 	 * edge passes below. This uses only frozen graph sizes, never elapsed time
 	 * or available memory. Tiny pass-through populations keep the old graph. */
-	size_t candidates = std::count_if(this->graph->occurrences.begin(), this->graph->occurrences.end(), [](const auto &o) { return !o.board && !o.alight && !o.forced && o.continues; });
-	if (uint64_t(candidates) * this->graph->stations.size() * 8 <= uint64_t(this->graph->edges.size()) * 2) return;
-	if (this->graph->integrated) {
-		uint64_t logical = this->graph->edges.size();
-		for (const auto &range : this->graph->range_edges) logical += range.end - range.begin - (range.excluded >= range.begin && range.excluded < range.end);
+	size_t candidates = std::count_if(this->building_graph->occurrences.begin(), this->building_graph->occurrences.end(), [](const auto &o) { return !o.board && !o.alight && !o.forced && o.continues; });
+	if (uint64_t(candidates) * this->building_graph->stations.size() * 8 <= uint64_t(this->building_graph->edges.size()) * 2) return;
+	if (this->building_graph->integrated) {
+		uint64_t logical = this->building_graph->edges.size();
+		for (const auto &range : this->building_graph->range_edges) logical += range.end - range.begin - (range.excluded >= range.begin && range.excluded < range.end);
 		/* Range compression can make the physical graph tiny without reducing
 		 * virtual search work. Require at least a one-percent upper bound on
 		 * saved per-row work before paying for degree/rank construction. */
@@ -617,37 +618,37 @@ void PassengerPrecomputedTable::ContractGraph(size_t &nodes)
 	/* Ranges refer only to the waiting-state prefix, whose ranks never move.
 	 * Their missing per-wait degrees cannot affect pure occurrence nodes. */
 	std::vector<uint32_t> in_degree(nodes), out_degree(nodes), successor(nodes, INVALID), rank(nodes, INVALID);
-	for (uint32_t i = 0; i < this->graph->edges.size(); ++i) {
-		const auto &edge = this->graph->edges[i];
+	for (uint32_t i = 0; i < this->building_graph->edges.size(); ++i) {
+		const auto &edge = this->building_graph->edges[i];
 		++in_degree[edge.to]; ++out_degree[edge.from]; successor[edge.from] = i;
 	}
 	std::vector<bool> remove(nodes);
-	for (const auto &o : this->graph->occurrences) {
+	for (const auto &o : this->building_graph->occurrences) {
 		if (o.board || o.alight || o.forced || !o.continues || in_degree[o.arrival] != 1 || out_degree[o.arrival] != 1 ||
 				in_degree[o.departure] != 1 || out_degree[o.departure] != 1) continue;
-		const auto &dwell = this->graph->edges[successor[o.arrival]], &travel = this->graph->edges[successor[o.departure]];
+		const auto &dwell = this->building_graph->edges[successor[o.arrival]], &travel = this->building_graph->edges[successor[o.departure]];
 		if (dwell.kind != EdgeKind::Ride || dwell.to != o.departure || travel.kind != EdgeKind::Ride || travel.cost <= 0) continue;
 		remove[o.arrival] = remove[o.departure] = true;
 	}
 	/* Validate all sums before mutating anything. Closed, unobservable cycles
 	 * have no surviving predecessor and are simply unreachable from any seed. */
-	for (const auto &edge : this->graph->edges) {
+	for (const auto &edge : this->building_graph->edges) {
 		if (remove[edge.from]) continue;
 		int64_t cost = edge.cost, uncertainty = edge.uncertainty;
 		uint32_t to = edge.to;
 		while (remove[to]) {
-			const auto &next = this->graph->edges[successor[to]];
+			const auto &next = this->building_graph->edges[successor[to]];
 			if (edge.kind != EdgeKind::Ride || cost > INT64_MAX - next.cost || uncertainty > INT64_MAX - next.uncertainty) return;
 			cost += next.cost; uncertainty += next.uncertainty; to = next.to;
 		}
 	}
 	uint32_t count = 0;
 	for (uint32_t state = 0; state < nodes; ++state) if (!remove[state]) rank[state] = count++;
-	std::vector<Edge> contracted; contracted.reserve(this->graph->edges.size());
-	for (auto edge : this->graph->edges) {
+	std::vector<Edge> contracted; contracted.reserve(this->building_graph->edges.size());
+	for (auto edge : this->building_graph->edges) {
 		if (remove[edge.from]) continue;
 		while (remove[edge.to]) {
-			const auto &next = this->graph->edges[successor[edge.to]];
+			const auto &next = this->building_graph->edges[successor[edge.to]];
 			edge.cost += next.cost; edge.uncertainty += next.uncertainty;
 			edge.distance = static_cast<uint32_t>(std::min<uint64_t>(UINT32_MAX, uint64_t(edge.distance) + next.distance));
 			edge.to = next.to;
@@ -655,9 +656,9 @@ void PassengerPrecomputedTable::ContractGraph(size_t &nodes)
 		edge.from = rank[edge.from]; edge.to = rank[edge.to];
 		contracted.push_back(edge);
 	}
-	this->graph->edges.swap(contracted);
-	for (auto &o : this->graph->occurrences) { o.arrival = rank[o.arrival]; o.departure = rank[o.departure]; }
-	for (auto &state : this->graph->landings) if (state != INVALID) state = rank[state];
+	this->building_graph->edges.swap(contracted);
+	for (auto &o : this->building_graph->occurrences) { o.arrival = rank[o.arrival]; o.departure = rank[o.departure]; }
+	for (auto &state : this->building_graph->landings) if (state != INVALID) state = rank[state];
 	nodes = count;
 }
 
@@ -673,23 +674,23 @@ PassengerBuildTask PassengerPrecomputedTable::BuildSections(const std::vector<st
 	std::map<Key, uint32_t> index;
 	std::vector<Prefix> prefixes;
 	std::map<StationID, std::set<uint32_t>> starters;
-	for (uint32_t p = 0; p < this->graph->patterns.size(); ++p) for (uint32_t id : this->graph->patterns[p].occurrences) {
+	for (uint32_t p = 0; p < this->building_graph->patterns.size(); ++p) for (uint32_t id : this->building_graph->patterns[p].occurrences) {
 		if (cooperative) co_await std::suspend_always{};
-		if (this->graph->occurrences[id].board) starters[this->graph->occurrences[id].station].insert(p);
+		if (this->building_graph->occurrences[id].board) starters[this->building_graph->occurrences[id].station].insert(p);
 	}
-	for (uint32_t p = 0; p < this->graph->patterns.size(); ++p) {
+	for (uint32_t p = 0; p < this->building_graph->patterns.size(); ++p) {
 		if (cooperative) co_await std::suspend_always{};
-		const auto &pattern = this->graph->patterns[p]; const auto &t = members[p].front()->timetable;
+		const auto &pattern = this->building_graph->patterns[p]; const auto &t = members[p].front()->timetable;
 		for (size_t start = 0; start < t.stops.size(); ++start) {
 			if (cooperative) co_await std::suspend_always{};
-			uint32_t board = pattern.occurrences[start]; const auto &b = this->graph->occurrences[board];
+			uint32_t board = pattern.occurrences[start]; const auto &b = this->building_graph->occurrences[board];
 			if (!b.board || starters[b.station].size() < 2) continue;
 			uint32_t prefix = INVALID, distance = 0;
 			int64_t uncertainty = 0;
 			for (size_t length = 0; length < t.stops.size(); ++length) {
 				if (cooperative) co_await std::suspend_always{};
 				size_t stop = (start + length) % t.stops.size();
-				uint32_t alight = pattern.occurrences[stop]; const auto &a = this->graph->occurrences[alight];
+				uint32_t alight = pattern.occurrences[stop]; const auto &a = this->building_graph->occurrences[alight];
 				Key key{prefix, a.station, uint8_t((a.board ? 1 : 0) | (a.alight ? 2 : 0) | (a.forced ? 4 : 0))};
 				auto found = index.find(key);
 				if (found == index.end()) {
@@ -718,10 +719,10 @@ PassengerBuildTask PassengerPrecomputedTable::BuildSections(const std::vector<st
 		if (cooperative) co_await std::suspend_always{};
 		const auto &paths = prefix.paths;
 		if (paths.empty()) continue;
-		uint32_t first = this->graph->occurrences[paths.front().board].pattern;
-		if (std::none_of(paths.begin(), paths.end(), [&](const Path &path) { return this->graph->occurrences[path.board].pattern != first; })) continue;
+		uint32_t first = this->building_graph->occurrences[paths.front().board].pattern;
+		if (std::none_of(paths.begin(), paths.end(), [&](const Path &path) { return this->building_graph->occurrences[path.board].pattern != first; })) continue;
 		uint64_t candidates = 0;
-		for (const auto &path : paths) for (const auto *service : members[this->graph->occurrences[path.board].pattern]) {
+		for (const auto &path : paths) for (const auto *service : members[this->building_graph->occurrences[path.board].pattern]) {
 			if (cooperative) co_await std::suspend_always{};
 			candidates += service->vehicles.size() + service->dispatch_slots.size();
 		}
@@ -732,7 +733,7 @@ PassengerBuildTask PassengerPrecomputedTable::BuildSections(const std::vector<st
 			event_memory = candidates;
 		}
 		std::map<VehicleID, OrderListID> owners;
-		for (const auto &path : paths) for (const auto *s : members[this->graph->occurrences[path.board].pattern]) for (const auto &v : s->vehicles) {
+		for (const auto &path : paths) for (const auto *s : members[this->building_graph->occurrences[path.board].pattern]) for (const auto &v : s->vehicles) {
 			if (cooperative) co_await std::suspend_always{};
 			if (!v.capacity[this->cargo]) continue;
 			auto [it, inserted] = owners.emplace(v.id, s->id);
@@ -746,8 +747,8 @@ PassengerBuildTask PassengerPrecomputedTable::BuildSections(const std::vector<st
 		bool uncertain_dispatch = false;
 		for (const auto &path : paths) {
 			if (cooperative) co_await std::suspend_always{};
-			uint32_t p = this->graph->occurrences[path.board].pattern;
-			size_t stop = path.board - this->graph->patterns[p].occurrences.front();
+			uint32_t p = this->building_graph->occurrences[path.board].pattern;
+			size_t stop = path.board - this->building_graph->patterns[p].occurrences.front();
 			for (const auto *s : members[p]) for (const auto &v : s->vehicles) {
 				if (cooperative) co_await std::suspend_always{};
 				if (!v.capacity[this->cargo] || owners.at(v.id) != s->id) continue;
@@ -772,93 +773,93 @@ PassengerBuildTask PassengerPrecomputedTable::BuildSections(const std::vector<st
 		int64_t gap = events.empty() ? unknown_gap : SectionGap(events);
 		if (gap == INT64_MAX) continue;
 		int64_t wait = events.empty() ? gap : gap / 2 + gap % 2;
-		if (this->graph->estimates && !unknown_vehicles.empty()) {
+		if (this->building_graph->estimates && !unknown_vehicles.empty()) {
 			/* Use the longest unknown circuit for fleet credit; heterogeneous
 			 * long routes must not inherit a short shuttle's headway. */
 			int64_t longest = 0;
-			for (const auto &path : paths) for (const auto *s : members[this->graph->occurrences[path.board].pattern])
+			for (const auto &path : paths) for (const auto *s : members[this->building_graph->occurrences[path.board].pattern])
 				longest = std::max(longest, std::max(s->timetable.Circuit(), s->uncertain_dispatch_period));
 			int64_t estimated = std::min(UnknownWait(unknown_circuit, 1, uncertain_dispatch), UnknownWait(longest, unknown_vehicles.size(), uncertain_dispatch));
 			wait = events.empty() ? estimated : std::min(wait, estimated);
 			gap = std::max<int64_t>(1, 2 * wait);
 		}
 		int64_t risk = gap / seats + (gap % seats != 0);
-		if (this->graph->estimates && !unknown_vehicles.empty()) risk += std::min<int64_t>(64, (wait + 7) / 8);
+		if (this->building_graph->estimates && !unknown_vehicles.empty()) risk += std::min<int64_t>(64, (wait + 7) / 8);
 		++this->diagnostic.shared_sections;
-		if (this->graph->landings.empty()) {
-			if (!Product(this->graph->occurrences.size(), 36, envelope, memory)) co_return;
-			this->graph->landings.assign(this->graph->occurrences.size(), INVALID);
-			this->graph->boarding_sections.resize(this->graph->occurrences.size());
+		if (this->building_graph->landings.empty()) {
+			if (!Product(this->building_graph->occurrences.size(), 36, envelope, memory)) co_return;
+			this->building_graph->landings.assign(this->building_graph->occurrences.size(), INVALID);
+			this->building_graph->boarding_sections.resize(this->building_graph->occurrences.size());
 		}
 		/* Persist the same complete paths used by the frequency estimate. Each
 		 * pattern refers to its existing member vector, rather than copying this
 		 * binding once per vehicle or shared order list. The saved concrete order
 		 * pair identifies the section without adding anything to CargoPacket. */
-		if (this->graph->sections.size() >= INVALID || !Product(1, 128, envelope, memory) || !Product(paths.size(), 128, envelope, memory)) co_return;
+		if (this->building_graph->sections.size() >= INVALID || !Product(1, 128, envelope, memory) || !Product(paths.size(), 128, envelope, memory)) co_return;
 		Section section{UINT64_MAX, {}};
 		section.bindings.reserve(paths.size());
 		uint64_t key_count = 0;
-		for (const auto &path : paths) key_count += this->graph->patterns[this->graph->occurrences[path.board].pattern].members.size();
+		for (const auto &path : paths) key_count += this->building_graph->patterns[this->building_graph->occurrences[path.board].pattern].members.size();
 		if (!Product(key_count, 16, envelope, memory) || !Product(key_count, uint64_t(paths.size()) * 16, envelope, memory)) co_return;
 		std::vector<uint64_t> raw_keys;
 		raw_keys.reserve(static_cast<size_t>(key_count));
 		for (const auto &path : paths) {
 			if (cooperative) co_await std::suspend_always{};
-			const auto &board = this->graph->occurrences[path.board], &alight = this->graph->occurrences[path.alight];
+			const auto &board = this->building_graph->occurrences[path.board], &alight = this->building_graph->occurrences[path.alight];
 			section.key = std::min(section.key, (uint64_t{1} << 63) |
-					SectionPathKey(this->graph->patterns[board.pattern].members.front().id.base(), board.order, alight.order));
-			for (const auto &member : this->graph->patterns[board.pattern].members) raw_keys.push_back((uint64_t{1} << 63) | SectionPathKey(member.id.base(), board.order, alight.order));
+					SectionPathKey(this->building_graph->patterns[board.pattern].members.front().id.base(), board.order, alight.order));
+			for (const auto &member : this->building_graph->patterns[board.pattern].members) raw_keys.push_back((uint64_t{1} << 63) | SectionPathKey(member.id.base(), board.order, alight.order));
 		}
 		std::sort(raw_keys.begin(), raw_keys.end()); raw_keys.erase(std::unique(raw_keys.begin(), raw_keys.end()), raw_keys.end());
 		for (const auto &path : paths) {
 			if (cooperative) co_await std::suspend_always{};
-			const auto &board = this->graph->occurrences[path.board], &alight = this->graph->occurrences[path.alight];
+			const auto &board = this->building_graph->occurrences[path.board], &alight = this->building_graph->occurrences[path.alight];
 			section.bindings.push_back({path.board, path.alight});
-			this->graph->section_paths.emplace(SectionPathKey(board.pattern, board.order, alight.order),
-					SectionPath{static_cast<uint32_t>(this->graph->sections.size()), path.board, path.alight});
-			this->graph->boarding_sections[path.board].insert(this->graph->boarding_sections[path.board].end(), raw_keys.begin(), raw_keys.end());
+			this->building_graph->section_paths.emplace(SectionPathKey(board.pattern, board.order, alight.order),
+					SectionPath{static_cast<uint32_t>(this->building_graph->sections.size()), path.board, path.alight});
+			this->building_graph->boarding_sections[path.board].insert(this->building_graph->boarding_sections[path.board].end(), raw_keys.begin(), raw_keys.end());
 		}
 		std::sort(section.bindings.begin(), section.bindings.end(), [&](const SectionBinding &a, const SectionBinding &b) {
-			const auto &x = this->graph->occurrences[a.board], &y = this->graph->occurrences[b.board]; return std::tie(x.pattern, x.order) < std::tie(y.pattern, y.order);
+			const auto &x = this->building_graph->occurrences[a.board], &y = this->building_graph->occurrences[b.board]; return std::tie(x.pattern, x.order) < std::tie(y.pattern, y.order);
 		});
-		this->graph->sections.push_back(std::move(section));
+		this->building_graph->sections.push_back(std::move(section));
 		for (const auto &path : paths) {
 			if (cooperative) co_await std::suspend_always{};
-			const auto &board = this->graph->occurrences[path.board], &alight = this->graph->occurrences[path.alight];
-			uint32_t station = this->graph->station_index[board.station.base()];
-			size_t edges = 1 + this->graph->waiting_states[station].size();
-			if (this->graph->section_rides.size() >= INVALID || edges >= INVALID - this->graph->edges.size() ||
-					!Product(1, 64, envelope, memory) || !Product(this->graph->integrated ? 1 : edges, this->graph->integrated ? 128 : 264, envelope, memory) ||
-					(this->graph->integrated && !Product(edges, 128, envelope, memory))) co_return;
-			if (this->graph->landings[path.alight] == INVALID) {
+			const auto &board = this->building_graph->occurrences[path.board], &alight = this->building_graph->occurrences[path.alight];
+			uint32_t station = this->building_graph->station_index[board.station.base()];
+			size_t edges = 1 + this->building_graph->waiting_states[station].size();
+			if (this->building_graph->section_rides.size() >= INVALID || edges >= INVALID - this->building_graph->edges.size() ||
+					!Product(1, 64, envelope, memory) || !Product(this->building_graph->integrated ? 1 : edges, this->building_graph->integrated ? 128 : 264, envelope, memory) ||
+					(this->building_graph->integrated && !Product(edges, 128, envelope, memory))) co_return;
+			if (this->building_graph->landings[path.alight] == INVALID) {
 				if (nodes >= INVALID || !Product(1, 144 + 264, envelope, memory)) co_return;
-				this->graph->landings[path.alight] = static_cast<uint32_t>(nodes++);
-				this->AddEdge(this->graph->landings[path.alight], this->StateFor(this->graph->station_index[alight.station.base()], alight.pattern),
+				this->building_graph->landings[path.alight] = static_cast<uint32_t>(nodes++);
+				this->AddEdge(this->building_graph->landings[path.alight], this->StateFor(this->building_graph->station_index[alight.station.base()], alight.pattern),
 						2 * transfer, EdgeKind::Alight, path.alight);
 			}
-			uint32_t id = static_cast<uint32_t>(this->graph->section_rides.size());
+			uint32_t id = static_cast<uint32_t>(this->building_graph->section_rides.size());
 			int64_t cost = path.riding + path.uncertainty + wait + risk;
-			this->graph->section_rides.push_back({path.board, path.alight, path.riding, wait, cost});
-			if (this->graph->integrated) this->AddBoardEdges(station, this->graph->landings[path.alight], board.pattern, cost, EdgeKind::Section, id, path.distance);
+			this->building_graph->section_rides.push_back({path.board, path.alight, path.riding, wait, cost});
+			if (this->building_graph->integrated) this->AddBoardEdges(station, this->building_graph->landings[path.alight], board.pattern, cost, EdgeKind::Section, id, path.distance);
 			else {
-			this->AddEdge(station, this->graph->landings[path.alight], cost, EdgeKind::Section, id, path.distance);
-			for (const auto &[previous, state] : this->graph->waiting_states[station]) {
+			this->AddEdge(station, this->building_graph->landings[path.alight], cost, EdgeKind::Section, id, path.distance);
+			for (const auto &[previous, state] : this->building_graph->waiting_states[station]) {
 				if (cooperative) co_await std::suspend_always{};
-				if (previous != board.pattern || this->graph->patterns[board.pattern].members.size() > 1) {
-					this->AddEdge(state, this->graph->landings[path.alight], cost, EdgeKind::Section, id, path.distance);
+				if (previous != board.pattern || this->building_graph->patterns[board.pattern].members.size() > 1) {
+					this->AddEdge(state, this->building_graph->landings[path.alight], cost, EdgeKind::Section, id, path.distance);
 				}
 			}
 			}
 		}
 	}
-	for (auto &keys : this->graph->boarding_sections) {
+	for (auto &keys : this->building_graph->boarding_sections) {
 		if (cooperative) co_await std::suspend_always{};
 		std::sort(keys.begin(), keys.end()); keys.erase(std::unique(keys.begin(), keys.end()), keys.end());
 	}
-	this->graph->binding_bytes = this->graph->sections.capacity() * sizeof(Section) + this->graph->boarding_sections.capacity() * sizeof(std::vector<uint64_t>) + this->graph->section_paths.size() * 64;
-	for (const auto &section : this->graph->sections) this->graph->binding_bytes += section.bindings.capacity() * sizeof(SectionBinding);
-	for (const auto &keys : this->graph->boarding_sections) this->graph->binding_bytes += keys.capacity() * sizeof(uint64_t);
-	this->diagnostic.section_rides = this->graph->section_rides.size();
+	this->building_graph->binding_bytes = this->building_graph->sections.capacity() * sizeof(Section) + this->building_graph->boarding_sections.capacity() * sizeof(std::vector<uint64_t>) + this->building_graph->section_paths.size() * 64;
+	for (const auto &section : this->building_graph->sections) this->building_graph->binding_bytes += section.bindings.capacity() * sizeof(SectionBinding);
+	for (const auto &keys : this->building_graph->boarding_sections) this->building_graph->binding_bytes += keys.capacity() * sizeof(uint64_t);
+	this->diagnostic.section_rides = this->building_graph->section_rides.size();
 	success = true; co_return;
 }
 
@@ -974,14 +975,25 @@ void PassengerPrecomputedTable::CollectSearchCounters()
 /** Reservations cover 2*workers output slots, workers in-flight cancelled
  * jobs and workers reusable contexts, across ALL tables and retired generations.
  * This local cap changes cache availability alone, never canonical admission. */
+struct PassengerPrecomputedTable::WorkerMetrics {
+	std::atomic<uint64_t> searches{0}, operations{0}, nanoseconds{0}, cancelled_work{0}, minimum{UINT64_MAX}, maximum{0}, outstanding{0}, workspace_reuses{0};
+	void Add(PassengerParallelBuildDiagnostic &result) const
+	{
+		result.workspace_reuses += this->workspace_reuses.load(); result.searches += this->searches.load(); result.search_work += this->operations.load();
+		result.search_nanoseconds += this->nanoseconds.load(); result.cancelled_search_work += this->cancelled_work.load();
+		result.minimum_work = std::min(result.minimum_work, this->minimum.load()); result.maximum_work = std::max(result.maximum_work, this->maximum.load());
+	}
+};
+
 struct PassengerPrecomputedTable::WorkerGeneration {
 	std::shared_ptr<const GraphSnapshot> graph;
 	std::shared_ptr<std::atomic<uint64_t>> budget;
 	uint64_t reserved = 0, id = 0;
 	size_t workers = 0;
 	void (*hook)(size_t, bool) = nullptr;
+	void (*quantum_hook)(size_t, uint64_t) = nullptr;
 	std::atomic<bool> cancelled{false}, failed{false};
-	std::atomic<uint64_t> searches{0}, operations{0}, nanoseconds{0}, cancelled_work{0}, minimum{UINT64_MAX}, maximum{0};
+	std::shared_ptr<WorkerMetrics> metrics = std::make_shared<WorkerMetrics>();
 	~WorkerGeneration() { if (this->reserved != 0) this->budget->fetch_sub(this->reserved); }
 };
 
@@ -1024,18 +1036,22 @@ struct PassengerPrecomputedTable::DestinationWorkerPool {
 		generation->budget = this->budget; generation->reserved = charge;
 		generation->workers = workers; generation->id = ++this->next_generation; return generation;
 	}
-	void Prune()
+	using RetiredJobs = std::array<std::shared_ptr<DestinationBuildResult>, 16>;
+	void Prune(RetiredJobs &retired)
 	{
-		std::erase_if(this->jobs, [](const auto &job) {
+		size_t count = 0;
+		std::erase_if(this->jobs, [&](auto &job) {
 			if (!job->cancelled.load(std::memory_order_relaxed) && !job->generation->cancelled.load(std::memory_order_relaxed)) return false;
-			job->cancelled.store(true); job->ready.store(true, std::memory_order_release); return true;
+			job->cancelled.store(true); --job->generation->metrics->outstanding; job->ready.store(true, std::memory_order_release);
+			retired[count++] = std::move(job); return true;
 		});
 	}
 	bool Submit(const std::shared_ptr<DestinationBuildResult> &job)
 	{
-		std::lock_guard lock(this->mutex); this->Prune();
+		RetiredJobs retired; // Destroy cancelled graph/context owners after unlocking.
+		std::lock_guard lock(this->mutex); this->Prune(retired);
 		if (this->jobs.size() >= 16) return false;
-		this->jobs.push_back(job); this->wake.notify_all(); return true;
+		this->jobs.push_back(job); ++job->generation->metrics->outstanding; this->wake.notify_all(); return true;
 	}
 	void Run(size_t index)
 	{
@@ -1048,7 +1064,8 @@ struct PassengerPrecomputedTable::DestinationWorkerPool {
 			if (owner && owner->cancelled.load(std::memory_order_relaxed)) {
 				lock.unlock(); workspace = {}; owner.reset(); lock.lock();
 			}
-			this->Prune();
+			RetiredJobs retired; this->Prune(retired);
+			if (retired.front()) { lock.unlock(); retired = {}; lock.lock(); }
 			if (this->stopping.load()) return;
 			auto selected = std::find_if(this->jobs.begin(), this->jobs.end(), [&](const auto &job) { return index < job->generation->workers; });
 			if (selected == this->jobs.end()) { this->wake.wait_for(lock, std::chrono::milliseconds(20)); continue; }
@@ -1061,28 +1078,32 @@ struct PassengerPrecomputedTable::DestinationWorkerPool {
 				if (!cancelled()) {
 					if (owner->hook) owner->hook(job->destination, false);
 					if (!cancelled()) {
+						if (workspace.queues_configured) ++owner->metrics->workspace_reuses;
 						workspace.counters = {}; owner->graph->StartDestination(workspace, job->destination);
-						while (!workspace.finishing_row && !cancelled()) operations += owner->graph->hyperpath ? owner->graph->SearchHyperpath(workspace, 4096) : owner->graph->SearchDestination(workspace, 4096);
+						while (!workspace.finishing_row && !cancelled()) {
+							operations += owner->graph->hyperpath ? owner->graph->SearchHyperpath(workspace, 4096) : owner->graph->SearchDestination(workspace, 4096);
+							if (owner->quantum_hook) owner->quantum_hook(job->destination, operations);
+						}
 					}
 					if (owner->hook) owner->hook(job->destination, true);
 				}
 				if (!cancelled() && workspace.finishing_row) {
 					job->operations = operations; std::swap(job->workspace, workspace);
-					++owner->searches;
-					uint64_t previous = owner->minimum.load(); while (operations < previous && !owner->minimum.compare_exchange_weak(previous, operations)) {}
-					previous = owner->maximum.load(); while (operations > previous && !owner->maximum.compare_exchange_weak(previous, operations)) {}
-				} else { owner->cancelled_work += operations; workspace = {}; }
-			} catch (...) { job->error = true; owner->failed.store(true); owner->cancelled.store(true); owner->cancelled_work += operations; workspace = {}; }
-			job->nanoseconds = Elapsed(started); owner->nanoseconds += job->nanoseconds; owner->operations += operations;
+					++owner->metrics->searches;
+					uint64_t previous = owner->metrics->minimum.load(); while (operations < previous && !owner->metrics->minimum.compare_exchange_weak(previous, operations)) {}
+					previous = owner->metrics->maximum.load(); while (operations > previous && !owner->metrics->maximum.compare_exchange_weak(previous, operations)) {}
+				} else { job->cancelled.store(true); owner->metrics->cancelled_work += operations; workspace = {}; }
+			} catch (...) { job->error = true; owner->failed.store(true); owner->cancelled.store(true); owner->metrics->cancelled_work += operations; workspace = {}; }
+			job->nanoseconds = Elapsed(started); owner->metrics->nanoseconds += job->nanoseconds; owner->metrics->operations += operations;
 			/* This is the final access to the job's non-atomic fields. A ready
 			 * result may now be adopted/recycled by the simulation thread. */
-			job->ready.store(true, std::memory_order_release);
+			--owner->metrics->outstanding; job->ready.store(true, std::memory_order_release);
 			lock.lock();
 		}
 	}
 	~DestinationWorkerPool()
 	{
-		{ std::lock_guard lock(this->mutex); this->stopping.store(true); for (const auto &job : this->jobs) job->generation->cancelled.store(true); this->jobs.clear(); this->wake.notify_all(); }
+		{ std::lock_guard lock(this->mutex); this->stopping.store(true); for (const auto &job : this->jobs) { job->generation->cancelled.store(true); --job->generation->metrics->outstanding; } this->jobs.clear(); this->wake.notify_all(); }
 		for (auto &thread : this->threads) thread.join();
 	}
 };
@@ -1095,13 +1116,13 @@ PassengerPrecomputedTable::DestinationWorkerPool &PassengerPrecomputedTable::Wor
 PassengerParallelBuildDiagnostic PassengerPrecomputedTable::GetParallelDiagnostic() const
 {
 	auto result = this->parallel_diagnostic;
-	if (this->parallel) {
-		const auto &generation = *this->parallel->generation;
-		result.searches += generation.searches.load(); result.search_work += generation.operations.load();
-		result.search_nanoseconds += generation.nanoseconds.load(); result.cancelled_search_work += generation.cancelled_work.load();
-		result.minimum_work = std::min(result.minimum_work, generation.minimum.load()); result.maximum_work = std::max(result.maximum_work, generation.maximum.load());
-	}
+	for (const auto &statistics : this->parallel_statistics) statistics->Add(result);
 	return result;
+}
+
+bool PassengerPrecomputedTable::ParallelIdle() const
+{
+	return std::all_of(this->parallel_statistics.begin(), this->parallel_statistics.end(), [](const auto &metrics) { return metrics->outstanding.load() == 0; });
 }
 
 bool PassengerPrecomputedTable::ParallelCacheReady() const
@@ -1126,13 +1147,19 @@ bool PassengerPrecomputedTable::PrepareParallelBatch(uint workers)
 			auto &pool = WorkerPool();
 			permitted = std::min(permitted, pool.Ensure(permitted, this->parallel_diagnostic.thread_starts));
 			if (permitted == 0) throw std::bad_alloc{};
-			auto generation = pool.Reserve(permitted, bytes);
+			std::shared_ptr<WorkerGeneration> generation;
+			while (permitted != 0 && !(generation = pool.Reserve(permitted, bytes))) --permitted;
 			if (!generation) return false;
-			generation->graph = this->graph; generation->hook = this->parallel_search_hook;
+			generation->graph = this->graph; generation->hook = this->parallel_search_hook; generation->quantum_hook = this->parallel_quantum_hook;
 			auto state = std::make_shared<ParallelState>(); state->generation = std::move(generation); state->next = this->destination;
+			std::erase_if(this->parallel_statistics, [&](const auto &metrics) {
+				if (metrics->outstanding.load() != 0) return false;
+				metrics->Add(this->parallel_diagnostic); return true;
+			});
+			this->parallel_statistics.push_back(state->generation->metrics);
 			this->parallel = std::move(state);
-			this->parallel_diagnostic.workers = permitted;
-			this->parallel_diagnostic.estimated_workspace_bytes = static_cast<size_t>(this->parallel->generation->reserved);
+			this->parallel_diagnostic.workers = std::max(this->parallel_diagnostic.workers, permitted);
+			this->parallel_diagnostic.estimated_workspace_bytes = std::max(this->parallel_diagnostic.estimated_workspace_bytes, static_cast<size_t>(this->parallel->generation->reserved));
 		}
 		auto &state = *this->parallel;
 		if (state.generation->failed.load()) { this->parallel_unavailable = true; ++this->parallel_diagnostic.fallbacks; state.pending.clear(); return false; }
@@ -1140,7 +1167,7 @@ bool PassengerPrecomputedTable::PrepareParallelBatch(uint workers)
 		while (!state.pending.empty() && state.pending.front()->destination < this->destination) { state.pending.front()->cancelled.store(true); state.pending.pop_front(); }
 		state.next = std::max(state.next, this->destination + (this->serial_destination == this->destination));
 		size_t submitted = 0;
-		while (state.pending.size() < state.generation->workers * 2 && state.next < this->graph->stations.size()) {
+		while (state.pending.size() + (this->parallel_result ? 1 : 0) < state.generation->workers * 2 && state.next < this->graph->stations.size()) {
 			std::shared_ptr<DestinationBuildResult> job;
 			if (!state.recycled.empty()) { job = std::move(state.recycled.front()); state.recycled.pop_front(); }
 			else job = std::make_shared<DestinationBuildResult>();
@@ -1151,11 +1178,11 @@ bool PassengerPrecomputedTable::PrepareParallelBatch(uint workers)
 			state.pending.push_back(std::move(job)); ++state.next; ++submitted;
 		}
 		if (submitted != 0) ++this->parallel_diagnostic.batches;
-		this->parallel_diagnostic.peak_pending = std::max(this->parallel_diagnostic.peak_pending, state.pending.size());
+		this->parallel_diagnostic.peak_pending = std::max(this->parallel_diagnostic.peak_pending, state.pending.size() + (this->parallel_result ? 1 : 0));
 		this->parallel_diagnostic.batch_nanoseconds += Elapsed(started);
 		return true;
 	} catch (...) {
-		if (this->parallel) this->parallel->generation->cancelled.store(true);
+		if (this->parallel) { this->parallel->generation->cancelled.store(true); this->parallel->pending.clear(); }
 		this->parallel_unavailable = true; ++this->parallel_diagnostic.fallbacks; return false;
 	}
 }
@@ -1174,7 +1201,7 @@ void PassengerPrecomputedTable::CancelParallel()
 		this->CollectSearchCounters(); this->serial_destination = this->destination;
 	}
 	this->parallel_result.reset();
-	if (this->parallel) { this->parallel->generation->cancelled.store(true); this->parallel->pending.clear(); this->parallel->recycled.clear(); }
+	if (this->parallel) { this->parallel->generation->cancelled.store(true); this->parallel->pending.clear(); this->parallel->recycled.clear(); this->parallel.reset(); }
 }
 
 size_t PassengerPrecomputedTable::AdvanceSearch(size_t allowance, uint workers)
@@ -1186,7 +1213,8 @@ size_t PassengerPrecomputedTable::AdvanceSearch(size_t allowance, uint workers)
 		const bool pristine = this->work.initializing_row && this->work.search.cost.empty() && this->work.scratch.labels.empty() && this->work.seeding == 0;
 		if (this->parallel && !this->parallel->pending.empty() && this->parallel->pending.front()->destination == this->destination) {
 			auto job = std::move(this->parallel->pending.front()); this->parallel->pending.pop_front();
-			if (pristine && job->ready.load(std::memory_order_acquire) && !job->cancelled.load() && !job->error && job->generation_id == this->parallel->generation->id && job->station == this->graph->stations[this->destination]) {
+			if (pristine && job->ready.load(std::memory_order_acquire) && !job->cancelled.load() && !job->error &&
+					job->operations != 0 && job->workspace.finishing_row && job->generation_id == this->parallel->generation->id && job->station == this->graph->stations[this->destination]) {
 				this->parallel_result = std::move(job); ++this->parallel_diagnostic.cache_hits;
 			} else job->cancelled.store(true);
 		}
@@ -1200,7 +1228,9 @@ size_t PassengerPrecomputedTable::AdvanceSearch(size_t allowance, uint workers)
 		this->parallel_credit += used; this->parallel_diagnostic.cache_work += used;
 		if (this->parallel_credit == result.operations) {
 			this->CollectSearchCounters(); std::swap(this->work, result.workspace); this->CollectSearchCounters();
-			if (this->parallel && !this->parallel->generation->cancelled.load()) this->parallel->recycled.push_back(std::move(this->parallel_result));
+			if (this->parallel && !this->parallel->generation->cancelled.load()) {
+				try { this->parallel->recycled.push_back(this->parallel_result); } catch (const std::bad_alloc &) { /* Reuse is optional. */ }
+			}
 			this->parallel_result.reset(); this->parallel_credit = 0;
 		}
 		return used;

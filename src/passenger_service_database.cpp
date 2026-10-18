@@ -774,7 +774,12 @@ bool PassengerServiceDatabase::PreparePrecomputed()
 	} else if (this->retained_precomputed_revision != UINT64_MAX) {
 		/* A normal replacement pauses only its graph preparation. Keep every
 		 * old row; row publication resumes at the ordinary saved tick budget. */
-		for (auto &table : this->precomputed) if (table.IsPreparingGraph() && !table.PrepareGraph(1024)) break;
+		for (auto &table : this->precomputed) {
+			if (table.IsPreparingGraph() && !table.PrepareGraph(1024)) break;
+			/* The frozen graph can already warm its local cache while the UI /
+			 * network preparation barrier returns control. Consume no row Work. */
+			if (!table.Finished()) table.StepParallel(0, _settings_client.gui.passenger_precomputed_workers);
+		}
 	} else if (this->preparation_capture || (this->precomputed_revision == UINT64_MAX && (this->sweeping || !this->build_queue.empty() || !this->building.empty()))) {
 		if (!this->preparation_capture) this->preparation_capture = this->TickBuild(BUILD_WORK, false, true);
 		if (this->preparation_capture.Resume(64)) this->preparation_capture = {};

@@ -287,6 +287,7 @@ public:
 	enum class Publication : uint8_t { Published, TimingDirty, Dirty, SweepPending, Unpublished };
 	Publication GetPublication(OrderListID id) const;
 private:
+	friend struct PassengerServiceDatabaseTestAccess;
 	friend class PassengerSchedulePlanner;
 	PassengerSchedulePlanner schedule;
 	std::array<PassengerPrecomputedTable, NUM_CARGO> precomputed;
