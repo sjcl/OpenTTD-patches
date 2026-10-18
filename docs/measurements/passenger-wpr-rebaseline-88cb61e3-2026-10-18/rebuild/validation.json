@@ -1,0 +1,331 @@
+{
+  "seed_reload_fields": 24,
+  "runs": {
+    "baseline/legacy": {
+      "exact_ticks": 2048,
+      "start": 13647872,
+      "end": 13649920,
+      "replacement_table_operations": 134152192,
+      "simulation_timing_valid": true,
+      "whole_process_timing_valid": true,
+      "phase_contamination": [],
+      "kernel_window_valid": true,
+      "lost_events": 0,
+      "lost_buffers": 0,
+      "unresolved_product_functions": {}
+    },
+    "candidate/legacy": {
+      "exact_ticks": 2048,
+      "start": 13647872,
+      "end": 13649920,
+      "replacement_table_operations": 134152192,
+      "simulation_timing_valid": true,
+      "whole_process_timing_valid": true,
+      "phase_contamination": [],
+      "kernel_window_valid": true,
+      "lost_events": 0,
+      "lost_buffers": 0,
+      "unresolved_product_functions": {}
+    },
+    "baseline/hyperpath": {
+      "exact_ticks": 2048,
+      "start": 13647872,
+      "end": 13649920,
+      "replacement_table_operations": 134152192,
+      "simulation_timing_valid": true,
+      "whole_process_timing_valid": true,
+      "phase_contamination": [],
+      "kernel_window_valid": true,
+      "lost_events": 0,
+      "lost_buffers": 0,
+      "unresolved_product_functions": {}
+    },
+    "candidate/hyperpath": {
+      "exact_ticks": 2048,
+      "start": 13647872,
+      "end": 13649920,
+      "replacement_table_operations": 134152192,
+      "simulation_timing_valid": true,
+      "whole_process_timing_valid": false,
+      "phase_contamination": [
+        {
+          "elapsed_seconds": 146.428615400102,
+          "stage": "after_simulation",
+          "processes": [
+            "cmake:141756",
+            "ninja:68180",
+            "cmake:83544"
+          ]
+        },
+        {
+          "elapsed_seconds": 208.05317780002952,
+          "stage": "after_simulation",
+          "processes": [
+            "cmake:95212"
+          ]
+        },
+        {
+          "elapsed_seconds": 221.0083093000576,
+          "stage": "after_simulation",
+          "processes": [
+            "cmake:67228",
+            "ninja:80088",
+            "cl:126864",
+            "cl:127488",
+            "cl:64616",
+            "cl:107468",
+            "cl:88484",
+            "cl:6352",
+            "cl:81756",
+            "cl:89060",
+            "cl:90196",
+            "cl:81084",
+            "cl:77204",
+            "cl:141756"
+          ]
+        },
+        {
+          "elapsed_seconds": 234.49567840015516,
+          "stage": "after_simulation",
+          "processes": [
+            "cmake:67228",
+            "ninja:80088",
+            "cl:89412",
+            "cl:69984",
+            "cl:125424",
+            "cl:136744",
+            "cl:123024",
+            "cl:69712",
+            "cl:49940",
+            "cl:98068",
+            "cl:109144",
+            "cl:10116",
+            "cl:38140",
+            "cl:36556"
+          ]
+        },
+        {
+          "elapsed_seconds": 247.138798000291,
+          "stage": "after_simulation",
+          "processes": [
+            "cmake:67228",
+            "ninja:80088",
+            "cl:118544",
+            "cl:112776",
+            "cl:124612",
+            "cl:114060",
+            "cl:5068",
+            "cl:117152",
+            "cl:34288",
+            "cl:41792",
+            "cl:97292",
+            "cl:62756",
+            "cl:52396",
+            "cl:129836"
+          ]
+        },
+        {
+          "elapsed_seconds": 259.8137712003663,
+          "stage": "after_simulation",
+          "processes": [
+            "cmake:67228",
+            "ninja:80088",
+            "cl:2208",
+            "cl:52064",
+            "cl:67276",
+            "cl:136236",
+            "cl:38652",
+            "cl:101720",
+            "cl:103964",
+            "cl:33104",
+            "cl:40732",
+            "cl:131340",
+            "cl:124672",
+            "cl:89116"
+          ]
+        }
+      ],
+      "kernel_window_valid": true,
+      "lost_events": 0,
+      "lost_buffers": 0,
+      "unresolved_product_functions": {}
+    }
+  },
+  "exports": {
+    "baseline/legacy": {
+      "raw_tables": 2,
+      "gzip_hashes_match": true,
+      "conservation_checks": {
+        "all": {
+          "stack_total_ns": 80369508100,
+          "stack_samples": 80367,
+          "exclusive_total_ns": 80369508100,
+          "exclusive_samples": 80367
+        },
+        "main": {
+          "stack_total_ns": 79569580900,
+          "stack_samples": 79568,
+          "exclusive_total_ns": 79569580900,
+          "exclusive_samples": 79568
+        },
+        "simulation_stack": {
+          "stack_total_ns": 75976003800,
+          "stack_samples": 75975,
+          "exclusive_total_ns": 75976003800,
+          "exclusive_samples": 75975
+        }
+      },
+      "unavailable_stack": {
+        "all": {
+          "ns": 1206337100,
+          "samples": 1206
+        },
+        "main": {
+          "ns": 1189337100,
+          "samples": 1189
+        }
+      },
+      "wpa_invalid_event_warning": [
+        "Warning: EventSink {13399e05-4afd-48fd-ba25-6b673a7a2b92} signaled an Invalid Event:\n         Event#: 50585004 (T#0:#50585004)\n         TimeStamp:  103598196, Process: 44884, Thread: 129916, Cpu:  28\n         ClassicEventGuid: {01853a65-418f-4f36-aefc-dc0f1d2fd235}\n         ClassicEventDescriptor: 0x0c  0x00 0x0002\n         MofLength: 112"
+      ],
+      "invalid_event_times_us": [
+        103598196
+      ],
+      "invalid_events_outside_markers": true
+    },
+    "candidate/legacy": {
+      "raw_tables": 2,
+      "gzip_hashes_match": true,
+      "conservation_checks": {
+        "all": {
+          "stack_total_ns": 77856494100,
+          "stack_samples": 77856,
+          "exclusive_total_ns": 77856494100,
+          "exclusive_samples": 77856
+        },
+        "main": {
+          "stack_total_ns": 77057177100,
+          "stack_samples": 77057,
+          "exclusive_total_ns": 77057177100,
+          "exclusive_samples": 77057
+        },
+        "simulation_stack": {
+          "stack_total_ns": 72937188900,
+          "stack_samples": 72937,
+          "exclusive_total_ns": 72937188900,
+          "exclusive_samples": 72937
+        }
+      },
+      "unavailable_stack": {
+        "all": {
+          "ns": 977089200,
+          "samples": 977
+        },
+        "main": {
+          "ns": 947087200,
+          "samples": 947
+        }
+      },
+      "wpa_invalid_event_warning": [
+        "Warning: EventSink {13399e05-4afd-48fd-ba25-6b673a7a2b92} signaled an Invalid Event:\n         Event#: 43653614 (T#0:#43653614)\n         TimeStamp:   99842008, Process: 139636, Thread: 117356, Cpu:  28\n         ClassicEventGuid: {01853a65-418f-4f36-aefc-dc0f1d2fd235}\n         ClassicEventDescriptor: 0x0c  0x00 0x0002\n         MofLength: 112"
+      ],
+      "invalid_event_times_us": [
+        99842008
+      ],
+      "invalid_events_outside_markers": true
+    },
+    "baseline/hyperpath": {
+      "raw_tables": 2,
+      "gzip_hashes_match": true,
+      "conservation_checks": {
+        "all": {
+          "stack_total_ns": 52172508500,
+          "stack_samples": 52171,
+          "exclusive_total_ns": 52172508500,
+          "exclusive_samples": 52171
+        },
+        "main": {
+          "stack_total_ns": 51454398300,
+          "stack_samples": 51454,
+          "exclusive_total_ns": 51454398300,
+          "exclusive_samples": 51454
+        },
+        "simulation_stack": {
+          "stack_total_ns": 46540980400,
+          "stack_samples": 46541,
+          "exclusive_total_ns": 46540980400,
+          "exclusive_samples": 46541
+        }
+      },
+      "unavailable_stack": {
+        "all": {
+          "ns": 920963800,
+          "samples": 921
+        },
+        "main": {
+          "ns": 904967800,
+          "samples": 905
+        }
+      },
+      "wpa_invalid_event_warning": [
+        "Warning: EventSink {13399e05-4afd-48fd-ba25-6b673a7a2b92} signaled an Invalid Event:\n         Event#: 28528281 (T#0:#28528281)\n         TimeStamp:   74243135, Process: 58704, Thread: 32220, Cpu:   0\n         ClassicEventGuid: {01853a65-418f-4f36-aefc-dc0f1d2fd235}\n         ClassicEventDescriptor: 0x0c  0x00 0x0002\n         MofLength: 112"
+      ],
+      "invalid_event_times_us": [
+        74243135
+      ],
+      "invalid_events_outside_markers": true
+    },
+    "candidate/hyperpath": {
+      "raw_tables": 2,
+      "gzip_hashes_match": true,
+      "conservation_checks": {
+        "all": {
+          "stack_total_ns": 52662331500,
+          "stack_samples": 52662,
+          "exclusive_total_ns": 52662331500,
+          "exclusive_samples": 52662
+        },
+        "main": {
+          "stack_total_ns": 51979010200,
+          "stack_samples": 51979,
+          "exclusive_total_ns": 51979010200,
+          "exclusive_samples": 51979
+        },
+        "simulation_stack": {
+          "stack_total_ns": 49520016500,
+          "stack_samples": 49520,
+          "exclusive_total_ns": 49520016500,
+          "exclusive_samples": 49520
+        }
+      },
+      "unavailable_stack": {
+        "all": {
+          "ns": 715037500,
+          "samples": 715
+        },
+        "main": {
+          "ns": 695035400,
+          "samples": 695
+        }
+      },
+      "wpa_invalid_event_warning": [
+        "Warning: EventSink {13399e05-4afd-48fd-ba25-6b673a7a2b92} signaled an Invalid Event:\n         Event#: 26581900 (T#0:#26581900)\n         TimeStamp:   74328291, Process: 61548, Thread: 109000, Cpu:  10\n         ClassicEventGuid: {01853a65-418f-4f36-aefc-dc0f1d2fd235}\n         ClassicEventDescriptor: 0x0c  0x00 0x0002\n         MofLength: 112"
+      ],
+      "invalid_event_times_us": [
+        74328291
+      ],
+      "invalid_events_outside_markers": true
+    }
+  },
+  "canonical": {
+    "legacy": {
+      "equal": true,
+      "fields": 24
+    },
+    "hyperpath": {
+      "equal": true,
+      "fields": 24
+    }
+  },
+  "input_backup_verified": true
+}

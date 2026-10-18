@@ -1,0 +1,212 @@
+{
+  "mode": "legacy",
+  "marker_begin_us": 933212,
+  "marker_end_us": 72615369,
+  "game_pid": 54468,
+  "valid": false,
+  "overlapping_competing_processes": [
+    {
+      "name": "cmake.exe",
+      "pid": 14320,
+      "start_us": 64498305,
+      "end_us": 72100596,
+      "own_game": false,
+      "overlaps_window": true
+    },
+    {
+      "name": "ninja.exe",
+      "pid": 24592,
+      "start_us": 64538924,
+      "end_us": 72085232,
+      "own_game": false,
+      "overlaps_window": true
+    },
+    {
+      "name": "ninja.exe",
+      "pid": 38944,
+      "start_us": 25030506,
+      "end_us": 28177685,
+      "own_game": false,
+      "overlaps_window": true
+    },
+    {
+      "name": "cmake.exe",
+      "pid": 55484,
+      "start_us": 25130033,
+      "end_us": 25703449,
+      "own_game": false,
+      "overlaps_window": true
+    },
+    {
+      "name": "cmake.exe",
+      "pid": 83932,
+      "start_us": 43213203,
+      "end_us": 46300013,
+      "own_game": false,
+      "overlaps_window": true
+    },
+    {
+      "name": "cl.exe",
+      "pid": 85588,
+      "start_us": 25757003,
+      "end_us": 28172048,
+      "own_game": false,
+      "overlaps_window": true
+    },
+    {
+      "name": "cl.exe",
+      "pid": 99648,
+      "start_us": 44037235,
+      "end_us": 46285824,
+      "own_game": false,
+      "overlaps_window": true
+    },
+    {
+      "name": "ninja.exe",
+      "pid": 107612,
+      "start_us": 43254718,
+      "end_us": 46290833,
+      "own_game": false,
+      "overlaps_window": true
+    },
+    {
+      "name": "cmake.exe",
+      "pid": 116256,
+      "start_us": 24987407,
+      "end_us": 28185464,
+      "own_game": false,
+      "overlaps_window": true
+    },
+    {
+      "name": "cmake.exe",
+      "pid": 124468,
+      "start_us": 64629420,
+      "end_us": 65202801,
+      "own_game": false,
+      "overlaps_window": true
+    },
+    {
+      "name": "cl.exe",
+      "pid": 129432,
+      "start_us": 65251819,
+      "end_us": 72062592,
+      "own_game": false,
+      "overlaps_window": true
+    },
+    {
+      "name": "cmake.exe",
+      "pid": 131488,
+      "start_us": 43342104,
+      "end_us": 43982210,
+      "own_game": false,
+      "overlaps_window": true
+    }
+  ],
+  "relevant_processes": [
+    {
+      "name": "cmake.exe",
+      "pid": 14320,
+      "start_us": 64498305,
+      "end_us": 72100596,
+      "own_game": false,
+      "overlaps_window": true
+    },
+    {
+      "name": "ninja.exe",
+      "pid": 24592,
+      "start_us": 64538924,
+      "end_us": 72085232,
+      "own_game": false,
+      "overlaps_window": true
+    },
+    {
+      "name": "ninja.exe",
+      "pid": 38944,
+      "start_us": 25030506,
+      "end_us": 28177685,
+      "own_game": false,
+      "overlaps_window": true
+    },
+    {
+      "name": "openttd.exe",
+      "pid": 54468,
+      "start_us": null,
+      "end_us": null,
+      "own_game": true,
+      "overlaps_window": true
+    },
+    {
+      "name": "cmake.exe",
+      "pid": 55484,
+      "start_us": 25130033,
+      "end_us": 25703449,
+      "own_game": false,
+      "overlaps_window": true
+    },
+    {
+      "name": "cmake.exe",
+      "pid": 83932,
+      "start_us": 43213203,
+      "end_us": 46300013,
+      "own_game": false,
+      "overlaps_window": true
+    },
+    {
+      "name": "cl.exe",
+      "pid": 85588,
+      "start_us": 25757003,
+      "end_us": 28172048,
+      "own_game": false,
+      "overlaps_window": true
+    },
+    {
+      "name": "cl.exe",
+      "pid": 99648,
+      "start_us": 44037235,
+      "end_us": 46285824,
+      "own_game": false,
+      "overlaps_window": true
+    },
+    {
+      "name": "ninja.exe",
+      "pid": 107612,
+      "start_us": 43254718,
+      "end_us": 46290833,
+      "own_game": false,
+      "overlaps_window": true
+    },
+    {
+      "name": "cmake.exe",
+      "pid": 116256,
+      "start_us": 24987407,
+      "end_us": 28185464,
+      "own_game": false,
+      "overlaps_window": true
+    },
+    {
+      "name": "cmake.exe",
+      "pid": 124468,
+      "start_us": 64629420,
+      "end_us": 65202801,
+      "own_game": false,
+      "overlaps_window": true
+    },
+    {
+      "name": "cl.exe",
+      "pid": 129432,
+      "start_us": 65251819,
+      "end_us": 72062592,
+      "own_game": false,
+      "overlaps_window": true
+    },
+    {
+      "name": "cmake.exe",
+      "pid": 131488,
+      "start_us": 43342104,
+      "end_us": 43982210,
+      "own_game": false,
+      "overlaps_window": true
+    }
+  ],
+  "method": "Kernel process lifetimes in ETL; MIN/MAX denote trace boundaries. Match the runner build/test/game names, excluding only the measured openttd.exe PID. Units are microseconds."
+}

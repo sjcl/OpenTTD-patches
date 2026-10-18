@@ -1,0 +1,112 @@
+{
+  "path": "C:\\Users\\bebe\\.codex\\visualizations\\2026\\10\\17\\01a14897-d705-7e72-a972-7f5e9758a329\\passenger-wpr-recordings-88cb61e3-2026-10-18\\rebuild",
+  "scenario": "steady seed; transfer penalty 20 -> 17; ordinary tick replacement",
+  "shared_binary_and_pdb_archive": "C:\\Users\\bebe\\.codex\\visualizations\\2026\\10\\17\\01a14897-d705-7e72-a972-7f5e9758a329\\passenger-wpr-recordings-88cb61e3-2026-10-18",
+  "immutable_trace_links": true,
+  "files": {
+    "baseline/legacy/cpu.etl": {
+      "bytes": 4817158144,
+      "sha256": "700acab991c33555af07ebc815a7b41a37ad7f510cc9467b6801b662fb42c46f",
+      "method": "copy",
+      "read_only": true
+    },
+    "baseline/legacy/process.json": {
+      "bytes": 144546,
+      "sha256": "9071779d61d4e5f9f55535ef99665d336837c5e78c4b75f5bba07c680b79490d",
+      "method": "copy"
+    },
+    "baseline/legacy/actual-ticks.json": {
+      "bytes": 47173,
+      "sha256": "8bab163b73fce1b59f513c9c4a07d33d7f6be38cc46e2a741568e2ac1ec45c7f",
+      "method": "copy"
+    },
+    "baseline/legacy/save-integrity.json": {
+      "bytes": 651,
+      "sha256": "3363543170b57f12162116e6c95cb229e95af2f2feeff9ad750ccb6060c5d722",
+      "method": "copy"
+    },
+    "baseline/legacy/window-audit.json": {
+      "bytes": 561,
+      "sha256": "3d66047ac5e2007baee9c8e81c75224b26fc9cd66aa4fe5fa6f93a2146e0c41e",
+      "method": "copy"
+    },
+    "baseline/hyperpath/cpu.etl": {
+      "bytes": 2694840320,
+      "sha256": "0e700487740ab0d5cbc2371d22c25985a8e53299c9d80bd696dbce21ea0d3a55",
+      "method": "copy",
+      "read_only": true
+    },
+    "baseline/hyperpath/process.json": {
+      "bytes": 143500,
+      "sha256": "6720d1906f817410aefabde834e06e9cdb162796a01411e339892f1e9b9f6161",
+      "method": "copy"
+    },
+    "baseline/hyperpath/actual-ticks.json": {
+      "bytes": 46119,
+      "sha256": "aab5e2608c54d7d8dcbe1f849db957fcaa56b2ddcba82b2ac1f2a06cad701a54",
+      "method": "copy"
+    },
+    "baseline/hyperpath/save-integrity.json": {
+      "bytes": 657,
+      "sha256": "a673e837c3f8f453cdb23019bdbcb932f2de32591506acc9e73743a40d2f96e7",
+      "method": "copy"
+    },
+    "baseline/hyperpath/window-audit.json": {
+      "bytes": 564,
+      "sha256": "e46c58fef4b1b077420173c92bb50759fd23e5473097dbdcbbd451d91370848d",
+      "method": "copy"
+    },
+    "candidate/legacy/cpu.etl": {
+      "bytes": 4105175040,
+      "sha256": "d0e88e2d5c9e66c0ae07cef19989e7c9b7f8d286605cd20de18532c71ef94fca",
+      "method": "copy",
+      "read_only": true
+    },
+    "candidate/legacy/process.json": {
+      "bytes": 144547,
+      "sha256": "e35b38df34ae6378880ae54556c7b1eb25c7f0c379833759d84e21e95d9a83f7",
+      "method": "copy"
+    },
+    "candidate/legacy/actual-ticks.json": {
+      "bytes": 47174,
+      "sha256": "bed3ad3a6758b45c1c0fc16c835e7336bb8666ad1f15eb91c9190b3ed8b4f0b8",
+      "method": "copy"
+    },
+    "candidate/legacy/save-integrity.json": {
+      "bytes": 651,
+      "sha256": "3363543170b57f12162116e6c95cb229e95af2f2feeff9ad750ccb6060c5d722",
+      "method": "copy"
+    },
+    "candidate/legacy/window-audit.json": {
+      "bytes": 561,
+      "sha256": "29b3aefa5bb3d600b6461d20cf709f7743863b2e7362e38982ad57c9c8d2aad3",
+      "method": "copy"
+    },
+    "candidate/hyperpath/cpu.etl": {
+      "bytes": 2499805184,
+      "sha256": "a7650459ce4d1681d48b81e0d7f2995ad89fdc859572a058b0f4aab34903cd36",
+      "method": "copy",
+      "read_only": true
+    },
+    "candidate/hyperpath/process.json": {
+      "bytes": 146962,
+      "sha256": "b132875ab4b15bc2d35b3d08444cffebf8e233bc1a368b110b8258c76e61db5b",
+      "method": "copy"
+    },
+    "candidate/hyperpath/actual-ticks.json": {
+      "bytes": 46229,
+      "sha256": "61888dac8d2d52cb69843370a809bcfa04ec2008e601ae4d06ad76fb5f02f3d6",
+      "method": "copy"
+    },
+    "candidate/hyperpath/save-integrity.json": {
+      "bytes": 657,
+      "sha256": "a673e837c3f8f453cdb23019bdbcb932f2de32591506acc9e73743a40d2f96e7",
+      "method": "copy"
+    },
+    "candidate/hyperpath/window-audit.json": {
+      "bytes": 566,
+      "sha256": "4212bd4b5c9f2203bfbea97ab7ae07790e53f08dddeef54d4bef825ef1b97389",
+      "method": "copy"
+    }
+  }
+}

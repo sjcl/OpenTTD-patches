@@ -1,0 +1,83 @@
+{
+  "baseline": {
+    "product_commit": "8462e6cd8280fe399fbb3b3e4a9cdb4413c935b4",
+    "src_tree": "631f498ec2e22d2910bb414d7f3b2f9b780b9e8e",
+    "files": {
+      "Release/openttd.exe": {
+        "bytes": 14174208,
+        "sha256": "8507d0db3e99e8fe510e2ae6c49ab5ae955658a8052da28574db207a46128623"
+      },
+      "Release/openttd.pdb": {
+        "bytes": 143454208,
+        "sha256": "8b4f5537cac426d535401aaf95c26ff6f2fdc30e53a7c704e90cbec51b0ca2f9"
+      }
+    },
+    "build_flags": {
+      "cxx_release": "/O2 /Ob2 /DNDEBUG /Zi /Zo",
+      "c_release": "/O2 /Ob2 /DNDEBUG /Zi",
+      "link": "/DEBUG:FULL /OPT:REF /OPT:ICF /INCREMENTAL:NO",
+      "static_crt": true,
+      "asserts": true,
+      "lto": false
+    },
+    "local_build": "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-rebaseline-88cb61e3\\baseline",
+    "native_tests": {
+      "cases": 728,
+      "assertions": 9930179,
+      "exit_code": 0
+    },
+    "source_archive_sha256": "4defe4b2828f99c90caf9fb9b03921231170cf81e7edd3c6c775058963f3358c",
+    "source_archive_windows_line_endings": true,
+    "revision_metadata_note": "Source archive retains its committed .ottdrev-vc release label; src contents are independently verified against 8462e6cd. The copied measurement driver explicitly identifies 8462e6cd."
+  },
+  "candidate": {
+    "product_commit": "88cb61e3756cdd88021bc87b8dd779a4c93473d5",
+    "src_tree": "3f434b0f0ae350195bf77febfcee306d34a6b8f3",
+    "files": {
+      "Release/openttd.exe": {
+        "bytes": 14159872,
+        "sha256": "3e97379a69efed86f3c3c4d251d63268c22618b54207bd29e9b0a1192ea244f0"
+      },
+      "Release/openttd.pdb": {
+        "bytes": 143306752,
+        "sha256": "0be9830c3068a7b8c4374cefa4831681ab2321fa9b046feca8320d4987137a8f"
+      }
+    },
+    "build_flags": {
+      "cxx_release": "/O2 /Ob2 /DNDEBUG /Zi /Zo",
+      "c_release": "/O2 /Ob2 /DNDEBUG /Zi",
+      "link": "/DEBUG:FULL /OPT:REF /OPT:ICF /INCREMENTAL:NO",
+      "static_crt": true,
+      "asserts": true,
+      "lto": false
+    },
+    "local_build": "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-rebaseline-88cb61e3\\candidate",
+    "windows_identifier_fix_commit": "b7cdf719e88350ca6b46a787a4fbd676de7f3352",
+    "native_tests": {
+      "cases": 729,
+      "assertions": 10074203,
+      "exit_code": 0
+    },
+    "reused_verified_preflight_binary": true
+  },
+  "tools": {
+    "wpr.exe": {
+      "bytes": 389120,
+      "sha256": "b641bcda33b6e77deea90676570fdb96907ecc6ac8145be43ca72e33064ec615"
+    },
+    "wpaexporter.exe": {
+      "bytes": 237600,
+      "sha256": "fc603f0316027c024132c9571a02959ad90c89cbc246b49f08958a74e6ceed62"
+    },
+    "xperf.exe": {
+      "bytes": 461256,
+      "sha256": "a8a4bda9be21bf567874c5896fd5bfe7fb889604c7cc8ede7e36219fb7ed6653"
+    },
+    "perfcore.dll": {
+      "bytes": 334272,
+      "sha256": "e606f7ab0da2f732a364e40e9d2088f8cc3d679eae98aeb9c01382e4bd6f0be8"
+    }
+  },
+  "tool_source": "https://learn.microsoft.com/en-us/windows-hardware/get-started/adk-install",
+  "wpaexporter_version": "11.7.395.48728"
+}

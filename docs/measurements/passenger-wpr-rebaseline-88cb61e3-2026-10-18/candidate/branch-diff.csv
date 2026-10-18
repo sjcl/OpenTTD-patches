@@ -1,0 +1,26 @@
+branch,legacy_ms_per_tick,hyperpath_ms_per_tick,delta_ms_per_tick,legacy_samples,hyperpath_samples
+[outside StateGameLoop],1.162070703,2.112241846,0.950171143,2380,4326
+[worker threads],0.298533447,0.318029492,0.019496045,611,651
+openttd.exe!AI::GameLoop,0.000000000,0.000977295,0.000977295,0,2
+[StateGameLoop self],0.000000000,0.000491797,0.000491797,0,1
+openttd.exe!CallWindowGameTickEvent,0.000976660,0.001466016,0.000489355,2,3
+openttd.exe!OnTick_Companies,0.000000000,0.000488477,0.000488477,0,1
+openttd.exe!Game::GameLoop,0.000000000,0.000488428,0.000488428,0,1
+openttd.exe!PerformanceMeasurer::~PerformanceMeasurer,0.000000000,0.000487891,0.000487891,0,1
+openttd.exe!PerformanceMeasurer::PerformanceMeasurer,0.000487549,0.000488574,0.000001025,1,1
+openttd.exe!LinkGraphSchedule::SpawnNext,0.000976514,0.000975342,-0.000001172,2,2
+openttd.exe!TimerManager<TimerGameTick>::Elapsed,0.001465918,0.001464697,-0.000001221,3,3
+openttd.exe!RunAuxiliaryTileLoop,0.000487061,0.000000000,-0.000487061,1,0
+openttd.exe!BasePersistentStorageArray::SwitchMode,0.000487598,0.000000000,-0.000487598,1,0
+openttd.exe!LinkGraphSchedule::JoinNext,0.017582666,0.017094629,-0.000488037,36,35
+openttd.exe!PassengerServiceDatabase::IsPreparingPrecomputed,0.000488525,0.000000000,-0.000488525,1,0
+openttd.exe!MoveToNextNewsItem,0.001463965,0.000487354,-0.000976611,3,1
+openttd.exe!BeginPassengerJourneyTick,0.008301660,0.005860693,-0.002440967,17,12
+openttd.exe!NewsLoop,0.004394873,0.000487549,-0.003907324,9,1
+openttd.exe!PassengerServiceDatabase::Tick,0.165560010,0.142155469,-0.023404541,339,291
+openttd.exe!AnimateAnimatedTiles,0.223149512,0.149422070,-0.073727441,457,306
+openttd.exe!CallLandscapeTick,0.749579834,0.673842334,-0.075737500,1535,1380
+openttd.exe!IncreaseDate,0.327635010,0.204098926,-0.123536084,671,418
+openttd.exe!RunTileLoop,4.995159180,4.300245068,-0.694914111,10230,8807
+openttd.exe!CallVehicleTicks,6.113180908,5.139495508,-0.973685400,12520,10526
+openttd.exe!RunPassengerWaitingEvents,15.314483887,2.958418262,-12.356065625,31366,6059

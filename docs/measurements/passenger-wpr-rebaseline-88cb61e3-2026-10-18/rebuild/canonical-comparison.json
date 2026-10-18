@@ -1,0 +1,14 @@
+{
+  "legacy": {
+    "equal": true,
+    "fields": 24,
+    "differences": {},
+    "input_sha256": "02e4ea48dbed6116a5db569509e0c3fcda98c21090f8e22382c527caec22b671"
+  },
+  "hyperpath": {
+    "equal": true,
+    "fields": 24,
+    "differences": {},
+    "input_sha256": "3e8cfab5e70b3843c56b989891ab327bc75daa72ee7f5b232250d86eb6fade7e"
+  }
+}

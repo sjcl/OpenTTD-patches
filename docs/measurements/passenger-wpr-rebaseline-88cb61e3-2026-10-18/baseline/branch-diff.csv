@@ -1,0 +1,28 @@
+branch,legacy_ms_per_tick,hyperpath_ms_per_tick,delta_ms_per_tick,legacy_samples,hyperpath_samples
+[outside StateGameLoop],1.138734082,1.504108789,0.365374707,2332,3080
+openttd.exe!PassengerServiceDatabase::Tick,0.150885303,0.162612402,0.011727100,309,333
+openttd.exe!TimerManager<TimerGameTick>::Elapsed,0.000488184,0.002931543,0.002443359,1,6
+openttd.exe!LinkGraphSchedule::SpawnNext,0.000977637,0.001952588,0.000974951,2,4
+openttd.exe!PerformanceMeasurer::PerformanceMeasurer,0.000488135,0.000978125,0.000489990,1,2
+openttd.exe!PassengerServiceDatabase::IsPreparingPrecomputed,0.000000000,0.000489014,0.000489014,0,1
+openttd.exe!UpdateLandscapingLimits,0.000487793,0.000976172,0.000488379,1,2
+openttd.exe!CheckCaches,0.000488281,0.000976367,0.000488086,1,2
+openttd.exe!LinkGraphSchedule::JoinNext,0.017085889,0.017097607,0.000011719,35,35
+openttd.exe!RecordPassengerJourneySimulationTick,0.000488330,0.000487939,-0.000000391,1,1
+openttd.exe!PerformanceMeasurer::~PerformanceMeasurer,0.000491113,0.000488623,-0.000002490,1,1
+[StateGameLoop self],0.000487988,0.000000000,-0.000487988,1,0
+openttd.exe!BasePersistentStorageArray::SwitchMode,0.000488525,0.000000000,-0.000488525,1,0
+openttd.exe!ShowNewspaper,0.000488721,0.000000000,-0.000488721,1,0
+openttd.exe!BeginPassengerJourneyTick,0.006348486,0.005859180,-0.000489307,13,12
+openttd.exe!MoveToNextNewsItem,0.000979199,0.000487695,-0.000491504,2,1
+openttd.exe!OnTick_Companies,0.001464209,0.000488037,-0.000976172,3,1
+openttd.exe!AI::GameLoop,0.000976709,0.000000000,-0.000976709,2,0
+openttd.exe!CallWindowGameTickEvent,0.001955273,0.000000000,-0.001955273,4,0
+openttd.exe!NewsLoop,0.002445898,0.000488428,-0.001957471,5,1
+[worker threads],0.323881689,0.312006055,-0.011875635,663,639
+openttd.exe!CallLandscapeTick,0.726676270,0.697283594,-0.029392676,1488,1428
+openttd.exe!AnimateAnimatedTiles,0.212922266,0.172857324,-0.040064941,436,354
+openttd.exe!IncreaseDate,0.337895752,0.210946777,-0.126948975,692,432
+openttd.exe!RunTileLoop,4.928249121,4.533093457,-0.395155664,10093,9284
+openttd.exe!CallVehicleTicks,5.978292188,5.399661914,-0.578630273,12244,11059
+openttd.exe!RunPassengerWaitingEvents,15.121139014,3.157670215,-11.963468799,30970,6467
