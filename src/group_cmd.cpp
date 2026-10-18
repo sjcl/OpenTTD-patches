@@ -22,6 +22,7 @@
 #include "tbtr_template_vehicle.h"
 #include "tracerestrict.h"
 #include "group_cmd.h"
+#include "station_gui.h"
 
 #include "table/strings.h"
 
@@ -483,6 +484,14 @@ static void BulkUpdateVehicleWindowsOnGroupChange(VehicleID veh_id = VehicleID::
 
 void GroupChangeDeferredUpdates::Flush()
 {
+	if (this->changed_groups || this->veh_id_count > MAX_VEHS || this->new_group) {
+		InvalidateStationPassengerServiceDisplay();
+	} else {
+		for (uint i = 0; i < this->veh_id_count; ++i) {
+			const auto *orders = this->veh_ids[i]->orders;
+			if (orders != nullptr) InvalidateStationPassengerServiceDisplay(orders->index);
+		}
+	}
 	if (this->veh_id_count > MAX_VEHS) {
 		this->changed_groups = true; // Handle many vehicle changes as a bulk group update
 		this->veh_id_count = 0;

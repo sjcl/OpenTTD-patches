@@ -48,6 +48,7 @@ struct PassengerPrecomputedTestAccess {
 };
 
 struct PassengerServiceDatabaseTestAccess {
+	static void DestinationChanged(PassengerServiceDatabase &db, StationID destination) { db.BumpHyperpathDestination(destination); }
 	static void Seed(PassengerServiceDatabase &db, std::span<const PassengerPeriodicService> services)
 	{
 		for (const auto &service : services) db.services.emplace(service.id, service);
