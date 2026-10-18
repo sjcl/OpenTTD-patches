@@ -1615,6 +1615,11 @@ void PassengerPrecomputedTable::ReleaseDestination(StationID destination)
 				it = this->local_policies.erase(it);
 			} else ++it;
 		}
+		for (auto it = this->station_choices.lower_bound({destination, 0}); it != this->station_choices.end() && it->first.first == destination;) {
+			size_t bytes = 128 + it->second.capacity() * sizeof(it->second[0]);
+			this->local_policy_bytes -= bytes; this->diagnostic.bytes -= std::min(this->diagnostic.bytes, bytes);
+			it = this->station_choices.erase(it);
+		}
 	}
 	for (auto it = this->expanded_policies.begin(); it != this->expanded_policies.end();) {
 		if (it->first.first == destination) {
@@ -1938,16 +1943,13 @@ bool PassengerPrecomputedTable::DisplayCandidates(StationID origin, StationID de
 	return false;
 }
 
-const PassengerPrecomputedTable::Policy &PassengerPrecomputedTable::LocalPolicy(const Row &row, StationID destination, uint32_t state, OrderListID failed) const
+const std::vector<std::pair<int64_t, uint32_t>> &PassengerPrecomputedTable::StationChoices(const Row &row, StationID destination, uint32_t station) const
 {
-	auto key = std::tuple(destination, state, failed);
-	auto found = this->local_policies.find(key);
-	if (found != this->local_policies.end()) return found->second;
-	const auto started = Clock::now();
+	auto key = std::pair(destination, station);
+	auto found = this->station_choices.find(key);
+	if (found != this->station_choices.end()) return found->second;
 	std::vector<std::pair<int64_t, uint32_t>> choices;
-	for (uint32_t board : this->graph->station_boarding[this->graph->waiting_station[state]]) {
-		const auto &o = this->graph->occurrences[board];
-		if (state != this->graph->waiting_station[state] && this->StateFor(this->graph->waiting_station[state], o.pattern) == state) continue;
+	for (uint32_t board : this->graph->station_boarding[station]) {
 		auto label = this->EvaluateRide(row, board, destination);
 		if (!this->graph->revisits.empty() && this->graph->revisits[board].next != INVALID && this->DominatedRevisit(board,
 				label.cost, this->EvaluateRide(row, this->graph->revisits[board].next, destination).cost) &&
@@ -1955,11 +1957,36 @@ const PassengerPrecomputedTable::Policy &PassengerPrecomputedTable::LocalPolicy(
 		if (label.cost != INT64_MAX) choices.emplace_back(label.cost, board);
 	}
 	std::sort(choices.begin(), choices.end());
+	if (this->station_choices.size() >= 16384) {
+		/* Evict the next key rather than always the lowest destinations. Residency is derived. */
+		auto victim = this->station_choices.upper_bound(key);
+		if (victim == this->station_choices.end()) victim = this->station_choices.begin();
+		size_t bytes = 128 + victim->second.capacity() * sizeof(choices[0]);
+		this->local_policy_bytes -= bytes; this->diagnostic.bytes -= std::min(this->diagnostic.bytes, bytes);
+		this->station_choices.erase(victim);
+	}
+	size_t bytes = 128 + choices.capacity() * sizeof(choices[0]);
+	this->local_policy_bytes += bytes; this->diagnostic.bytes += bytes;
+	return this->station_choices.emplace(key, std::move(choices)).first->second;
+}
+
+const PassengerPrecomputedTable::Policy &PassengerPrecomputedTable::LocalPolicy(const Row &row, StationID destination, uint32_t state, OrderListID failed) const
+{
+	auto key = std::tuple(destination, state, failed);
+	auto found = this->local_policies.find(key);
+	if (found != this->local_policies.end()) return found->second;
+	const auto started = Clock::now();
+	/* Every state and failed carrier of a station shares its rides' costs: evaluate them once.
+	 * Filtering a sorted list keeps the order of the former per-state sort exactly. */
+	const uint32_t station = this->graph->waiting_station[state];
+	const auto &choices = this->StationChoices(row, destination, station);
 	Policy policy;
 	auto compute = [&](bool exclude) {
 		PassengerStrategy sum; policy.candidates.clear();
 		for (auto [cost, board] : choices) {
-			const auto &p = this->graph->patterns[this->graph->occurrences[board].pattern];
+			const auto &o = this->graph->occurrences[board];
+			if (state != station && this->StateFor(station, o.pattern) == state) continue;
+			const auto &p = this->graph->patterns[o.pattern];
 			if (exclude && p.members.front().id == failed) continue;
 			if (sum.Add(cost, PassengerStrategy::Frequency(p.wait))) policy.candidates.push_back(board);
 		}
@@ -1969,9 +1996,13 @@ const PassengerPrecomputedTable::Policy &PassengerPrecomputedTable::LocalPolicy(
 	if (policy.candidates.empty()) compute(false); // Preserve reachability when there is no alternative.
 	std::sort(policy.candidates.begin(), policy.candidates.end());
 	if (this->local_policies.size() >= 4096) {
-		size_t bytes = 128 + this->local_policies.begin()->second.candidates.capacity() * 4;
+		/* Evict the next key rather than always the lowest destinations. An evicted policy is only
+		 * "unknown" to ContainsCached, so residency never changes a decision. */
+		auto victim = this->local_policies.upper_bound(key);
+		if (victim == this->local_policies.end()) victim = this->local_policies.begin();
+		size_t bytes = 128 + victim->second.candidates.capacity() * 4;
 		this->local_policy_bytes -= bytes; this->diagnostic.bytes -= std::min(this->diagnostic.bytes, bytes);
-		this->local_policies.erase(this->local_policies.begin());
+		this->local_policies.erase(victim);
 	}
 	size_t bytes = 128 + policy.candidates.capacity() * 4;
 	this->local_policy_bytes += bytes; this->diagnostic.bytes += bytes;

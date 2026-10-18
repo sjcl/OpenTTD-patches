@@ -224,6 +224,10 @@ private:
 	size_t hyperpath_static_bytes = 0, hyperpath_row_bytes = 0;
 	mutable size_t local_policy_bytes = 0, expanded_policy_bytes = 0;
 	mutable std::map<std::pair<StationID, uint32_t>, std::vector<uint32_t>> expanded_policies;
+	/** Derived (destination, waiting station) -> every finite, non-dominated ride from that station,
+	 * sorted by (cost, occurrence). Shared by the local policies of all its states and failed carriers. */
+	mutable std::map<std::pair<StationID, uint32_t>, std::vector<std::pair<int64_t, uint32_t>>> station_choices;
+	const std::vector<std::pair<int64_t, uint32_t>> &StationChoices(const Row &row, StationID destination, uint32_t station) const;
 	/** Per block of 64 destination rows: a base-state plane, then an any-state plane, each one
 	 * word per occurrence. One row's publication then writes within two occurrence-sized arrays. */
 	std::vector<uint64_t> boarding_mask;

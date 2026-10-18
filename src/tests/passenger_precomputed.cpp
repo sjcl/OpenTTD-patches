@@ -1547,22 +1547,31 @@ TEST_CASE("Hyperpath table build CPU on a national-scale synthetic network", "[.
 		uint64_t digest = 0xcbf29ce484222325ULL;
 		auto mix = [&](uint64_t value) { digest = (digest ^ value) * 0x100000001b3ULL; };
 		std::vector<uint32_t> stored;
+		const auto queried = std::chrono::steady_clock::now();
 		for (uint16_t origin = 0; origin < 24 * 24; ++origin) for (uint16_t destination = 0; destination < 24 * 24; ++destination) {
 			const StationID from{origin}, to{destination};
 			mix(static_cast<uint64_t>(table.RouteCost(from, to).value_or(-1)));
 			const auto plan = table.Plan(from, to, StateTicks{});
 			mix(static_cast<uint64_t>(plan.state)); mix(static_cast<uint64_t>(plan.cost)); mix(static_cast<uint64_t>(plan.riding)); mix(static_cast<uint64_t>(plan.waiting));
 			mix(plan.distance); mix(plan.transfers); mix(plan.ride ? static_cast<uint64_t>(plan.ride->estimated_wait) : 0);
+			OrderListID earlier = OrderListID::Invalid();
 			for (const auto &service : services) {
 				if (std::none_of(service.timetable.stops.begin(), service.timetable.stops.end(), [&](const auto &stop) { return stop.station == from; })) continue;
 				stored.clear(); table.StoredCandidates(from, to, service.id, stored);
 				for (uint32_t occurrence : stored) mix(occurrence);
 				mix(UINT64_MAX);
+				if (!hyperpath || (origin + destination) % 3 != 0) continue; // Local (failed-carrier) policies, sampled.
+				for (uint32_t occurrence : table.Candidates(from, to, OrderListID::Invalid(), service.id)) mix(occurrence);
+				if (earlier != OrderListID::Invalid()) for (uint32_t occurrence : table.Candidates(from, to, earlier, service.id)) mix(occurrence);
+				const auto local = table.Plan(from, to, StateTicks{}, earlier, 0, service.id);
+				mix(static_cast<uint64_t>(local.state)); mix(static_cast<uint64_t>(local.cost)); mix(local.ride ? static_cast<uint64_t>(local.ride->estimated_wait) : 0);
+				earlier = service.id;
 			}
 			for (const auto &candidate : table.Inspect(from, to)) { mix(candidate.occurrence); mix(static_cast<uint64_t>(candidate.cost)); mix(static_cast<uint64_t>(candidate.wait)); }
 		}
 		std::cout << (hyperpath ? "hyperpath" : "legacy") << "_build_digest,destinations=" << table.GetDiagnostic().destinations << ",operations=" << table.GetDiagnostic().operations
-				<< ",ms=" << ms << ",digest=" << std::hex << digest << std::dec << std::endl;
+				<< ",ms=" << ms << ",query_ms=" << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - queried).count()
+				<< ",digest=" << std::hex << digest << std::dec << std::endl;
 	}
 	const char *env_ops = getenv("OPENTTD_HYPERPATH_BUILD_OPS");
 	const uint64_t ops = env_ops != nullptr ? std::strtoull(env_ops, nullptr, 10) : uint64_t{64} * 65536;
