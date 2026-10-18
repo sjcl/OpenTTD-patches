@@ -971,57 +971,118 @@ void PassengerPrecomputedTable::CollectSearchCounters()
 	this->diagnostic.heap_pops += std::exchange(this->work.counters.heap_pops, 0);
 }
 
-/** Process-lifetime workers. Only shutdown joins; destination contexts travel
-	* back through result slots, retaining their allocation capacity between jobs. */
+/** Reservations cover 2*workers output slots, workers in-flight cancelled
+ * jobs and workers reusable contexts, across ALL tables and retired generations.
+ * This local cap changes cache availability alone, never canonical admission. */
+struct PassengerPrecomputedTable::WorkerGeneration {
+	std::shared_ptr<const GraphSnapshot> graph;
+	std::shared_ptr<std::atomic<uint64_t>> budget;
+	uint64_t reserved = 0, id = 0;
+	size_t workers = 0;
+	void (*hook)(size_t, bool) = nullptr;
+	std::atomic<bool> cancelled{false}, failed{false};
+	std::atomic<uint64_t> searches{0}, operations{0}, nanoseconds{0}, cancelled_work{0}, minimum{UINT64_MAX}, maximum{0};
+	~WorkerGeneration() { if (this->reserved != 0) this->budget->fetch_sub(this->reserved); }
+};
+
+struct PassengerPrecomputedTable::ParallelState {
+	std::shared_ptr<WorkerGeneration> generation;
+	std::deque<std::shared_ptr<DestinationBuildResult>> pending, recycled;
+	size_t next = 0;
+	~ParallelState() { this->generation->cancelled.store(true, std::memory_order_relaxed); }
+};
+
+/** Process-lifetime workers. Only process shutdown joins. Queue operations never
+ * wait for a search. Cancelled generations keep their own graph alive until the
+ * last running job/idle context releases it; the table can immediately disappear. */
 struct PassengerPrecomputedTable::DestinationWorkerPool {
+	static constexpr uint64_t SCRATCH_LIMIT = uint64_t{512} * 1024 * 1024;
 	std::mutex mutex;
 	std::condition_variable wake;
-	struct Job {
-		std::function<void(DestinationWorkspace &)> run;
-		std::atomic<bool> ready{false};
-	};
-	std::condition_variable completed;
-	std::deque<std::shared_ptr<Job>> jobs;
+	std::deque<std::shared_ptr<DestinationBuildResult>> jobs;
 	std::vector<std::thread> threads;
-	bool stopping = false;
-	size_t Ensure(size_t count)
+	std::shared_ptr<std::atomic<uint64_t>> budget = std::make_shared<std::atomic<uint64_t>>(0);
+	std::atomic<bool> stopping{false};
+	uint64_t next_generation = 0; ///< Main-thread only; never saved or used by simulation.
+	size_t Ensure(size_t count, uint64_t &starts)
 	{
 		std::lock_guard lock(this->mutex);
 		this->threads.reserve(8);
 		while (this->threads.size() < count) {
-			std::thread thread;
-			if (!StartNewThread(&thread, "pax-destination", [this]() { this->Run(); })) break;
-			this->threads.push_back(std::move(thread));
+			std::thread thread; size_t index = this->threads.size();
+			if (!StartNewThread(&thread, "pax-destination", [this, index]() { this->Run(index); })) break;
+			this->threads.push_back(std::move(thread)); ++starts;
 		}
 		return this->threads.size();
 	}
-	std::shared_ptr<Job> Submit(std::function<void(DestinationWorkspace &)> run)
+	std::shared_ptr<WorkerGeneration> Reserve(size_t workers, uint64_t bytes)
 	{
-		auto job = std::make_shared<Job>(); job->run = std::move(run);
-		std::lock_guard lock(this->mutex);
-		if (this->threads.empty() || this->jobs.size() >= 16) return {};
-		this->jobs.push_back(job); this->wake.notify_one(); return job;
+		auto generation = std::make_shared<WorkerGeneration>();
+		const uint64_t charge = workers * 4 * bytes;
+		uint64_t used = this->budget->load();
+		do { if (charge > SCRATCH_LIMIT - used) return {}; } while (!this->budget->compare_exchange_weak(used, used + charge));
+		generation->budget = this->budget; generation->reserved = charge;
+		generation->workers = workers; generation->id = ++this->next_generation; return generation;
 	}
-	static bool Ready(const std::shared_ptr<Job> &job) { return job->ready.load(std::memory_order_acquire); }
-	void Wait(const std::vector<std::shared_ptr<Job>> &jobs)
+	void Prune()
 	{
-		std::unique_lock lock(this->mutex);
-		this->completed.wait(lock, [&]() { return std::all_of(jobs.begin(), jobs.end(), Ready); });
+		std::erase_if(this->jobs, [](const auto &job) {
+			if (!job->cancelled.load(std::memory_order_relaxed) && !job->generation->cancelled.load(std::memory_order_relaxed)) return false;
+			job->cancelled.store(true); job->ready.store(true, std::memory_order_release); return true;
+		});
 	}
-	void Run()
+	bool Submit(const std::shared_ptr<DestinationBuildResult> &job)
+	{
+		std::lock_guard lock(this->mutex); this->Prune();
+		if (this->jobs.size() >= 16) return false;
+		this->jobs.push_back(job); this->wake.notify_all(); return true;
+	}
+	void Run(size_t index)
 	{
 		DestinationWorkspace workspace;
+		std::shared_ptr<WorkerGeneration> owner;
 		std::unique_lock lock(this->mutex);
 		for (;;) {
-			this->wake.wait(lock, [&]() { return this->stopping || !this->jobs.empty(); });
-			if (this->stopping && this->jobs.empty()) return;
-			auto job = std::move(this->jobs.front()); this->jobs.pop_front();
-			lock.unlock(); job->run(workspace); job->ready.store(true, std::memory_order_release); lock.lock(); this->completed.notify_all();
+			/* A cancelled idle context must relinquish its reservation too. No
+			 * destructor calls back into this pool (including at static teardown). */
+			if (owner && owner->cancelled.load(std::memory_order_relaxed)) {
+				lock.unlock(); workspace = {}; owner.reset(); lock.lock();
+			}
+			this->Prune();
+			if (this->stopping.load()) return;
+			auto selected = std::find_if(this->jobs.begin(), this->jobs.end(), [&](const auto &job) { return index < job->generation->workers; });
+			if (selected == this->jobs.end()) { this->wake.wait_for(lock, std::chrono::milliseconds(20)); continue; }
+			auto job = std::move(*selected); this->jobs.erase(selected);
+			lock.unlock();
+			if (owner != job->generation) { workspace = {}; owner = job->generation; }
+			const auto started = Clock::now(); uint64_t operations = 0;
+			auto cancelled = [&]() { return job->cancelled.load(std::memory_order_relaxed) || owner->cancelled.load(std::memory_order_relaxed) || this->stopping.load(std::memory_order_relaxed); };
+			try {
+				if (!cancelled()) {
+					if (owner->hook) owner->hook(job->destination, false);
+					if (!cancelled()) {
+						workspace.counters = {}; owner->graph->StartDestination(workspace, job->destination);
+						while (!workspace.finishing_row && !cancelled()) operations += owner->graph->hyperpath ? owner->graph->SearchHyperpath(workspace, 4096) : owner->graph->SearchDestination(workspace, 4096);
+					}
+					if (owner->hook) owner->hook(job->destination, true);
+				}
+				if (!cancelled() && workspace.finishing_row) {
+					job->operations = operations; std::swap(job->workspace, workspace);
+					++owner->searches;
+					uint64_t previous = owner->minimum.load(); while (operations < previous && !owner->minimum.compare_exchange_weak(previous, operations)) {}
+					previous = owner->maximum.load(); while (operations > previous && !owner->maximum.compare_exchange_weak(previous, operations)) {}
+				} else { owner->cancelled_work += operations; workspace = {}; }
+			} catch (...) { job->error = true; owner->failed.store(true); owner->cancelled.store(true); owner->cancelled_work += operations; workspace = {}; }
+			job->nanoseconds = Elapsed(started); owner->nanoseconds += job->nanoseconds; owner->operations += operations;
+			/* This is the final access to the job's non-atomic fields. A ready
+			 * result may now be adopted/recycled by the simulation thread. */
+			job->ready.store(true, std::memory_order_release);
+			lock.lock();
 		}
 	}
 	~DestinationWorkerPool()
 	{
-		{ std::lock_guard lock(this->mutex); this->stopping = true; this->wake.notify_all(); }
+		{ std::lock_guard lock(this->mutex); this->stopping.store(true); for (const auto &job : this->jobs) job->generation->cancelled.store(true); this->jobs.clear(); this->wake.notify_all(); }
 		for (auto &thread : this->threads) thread.join();
 	}
 };
@@ -1031,129 +1092,131 @@ PassengerPrecomputedTable::DestinationWorkerPool &PassengerPrecomputedTable::Wor
 	static DestinationWorkerPool pool; return pool;
 }
 
-/** Bounded batches keep the immutable graph on the calling thread's stack of
- * ownership. Only independent contexts are mutated until every thread joins.
- * An allocation/start failure discards lookahead, never rejects a logical row. */
+PassengerParallelBuildDiagnostic PassengerPrecomputedTable::GetParallelDiagnostic() const
+{
+	auto result = this->parallel_diagnostic;
+	if (this->parallel) {
+		const auto &generation = *this->parallel->generation;
+		result.searches += generation.searches.load(); result.search_work += generation.operations.load();
+		result.search_nanoseconds += generation.nanoseconds.load(); result.cancelled_search_work += generation.cancelled_work.load();
+		result.minimum_work = std::min(result.minimum_work, generation.minimum.load()); result.maximum_work = std::max(result.maximum_work, generation.maximum.load());
+	}
+	return result;
+}
+
+bool PassengerPrecomputedTable::ParallelCacheReady() const
+{
+	return this->parallel && (this->parallel->generation->failed.load() || std::all_of(this->parallel->pending.begin(), this->parallel->pending.end(), [](const auto &job) { return job->ready.load(std::memory_order_acquire); }));
+}
+
+/** Bounded, nonblocking lookahead. Startup, resource admission and failure affect
+ * only local cache hits. All game Work, memory admission and publication remain
+ * in StepImpl; no caller polls completion to choose a logical allowance. */
 bool PassengerPrecomputedTable::PrepareParallelBatch(uint workers)
 {
-	assert(!this->graph_build && !this->work.finishing_row && this->parallel_next == this->parallel_count);
-	/* A partly searched row from ordinary Step must finish with its own cursor.
-	 * Parallel construction can start at the next row without restarting Work. */
-	if (this->parallel_unavailable || !this->work.initializing_row || !this->work.search.cost.empty() || !this->work.scratch.labels.empty() || this->work.seeding != 0) return false;
-	const size_t cpus = std::max(1U, std::thread::hardware_concurrency());
-	/* This local scratch limit affects concurrency alone, never the canonical
-	 * envelope. Use a conservative graph-based estimate, with OOM fallback too. */
-	const uint64_t bytes = uint64_t(this->diagnostic.states) * 256 + uint64_t(this->graph->integrated ? this->diagnostic.logical_edges : this->diagnostic.edges) * 32 + 65536;
-	const size_t slots = (uint64_t{512} * 1024 * 1024) / bytes;
-	if (slots < 2) return false;
-	workers = static_cast<uint>(std::min<size_t>({workers, 8, cpus, slots / 2, this->graph->stations.size() - this->destination}));
-	if (workers == 0) return false;
-	const size_t count = std::min<size_t>(workers * 2, this->graph->stations.size() - this->destination);
+	if (workers == 0 || this->parallel_unavailable || this->graph_build || this->Finished()) return false;
 	const auto started = Clock::now();
-	std::vector<std::shared_ptr<DestinationWorkerPool::Job>> jobs;
-	std::atomic<bool> cancelled{false};
 	try {
-		this->parallel_results.resize(count);
-		size_t permitted = 0;
-		while (permitted < workers && (!this->parallel_start_hook || this->parallel_start_hook(static_cast<uint>(permitted)))) ++permitted;
-		size_t running = permitted == 0 ? 0 : std::min(permitted, WorkerPool().Ensure(permitted));
-		if (running == 0) throw std::bad_alloc{};
-		jobs.reserve(count);
-		for (size_t index = 0; index < count; ++index) {
-			auto graph = std::shared_ptr<const GraphSnapshot>(this->graph);
-			const size_t target = this->destination + index; const auto hook = this->parallel_search_hook;
-			std::shared_ptr<DestinationWorkerPool::Job> submitted;
-			try { submitted = WorkerPool().Submit([&, index, graph, target, hook](DestinationWorkspace &workspace) {
-				auto &result = this->parallel_results[index];
-				result.operations = 0; result.error = {};
-				const auto search_started = Clock::now();
-				try {
-					if (!cancelled.load()) {
-						if (hook) hook(target, false);
-						workspace.counters = {};
-						/* Contexts are reusable within a frozen search mode; reset on a mode change. */
-						if (workspace.queues_configured) workspace.queues_configured = false;
-						graph->StartDestination(workspace, target);
-						while (!workspace.finishing_row && !cancelled.load()) result.operations += graph->hyperpath ? graph->SearchHyperpath(workspace, 65536) : graph->SearchDestination(workspace, 65536);
-						if (hook) hook(target, true);
-						std::swap(result.workspace, workspace);
-						if (!workspace.queue.empty() || !workspace.strategy.events.empty()) workspace = {};
-					}
-				} catch (...) { result.error = std::current_exception(); cancelled.store(true); workspace = {}; }
-				result.nanoseconds = Elapsed(search_started);
-			}); } catch (...) {}
-			if (!submitted) { cancelled.store(true); break; }
-			jobs.push_back(std::move(submitted));
+		if (!this->parallel) {
+			const size_t cpus = std::max(1U, std::thread::hardware_concurrency());
+			const uint64_t bytes = uint64_t(this->graph->states) * 256 + uint64_t(this->graph->integrated ? this->graph->logical_edges : this->graph->edge_count) * 32 + 65536;
+			workers = static_cast<uint>(std::min<size_t>({workers, 8, cpus, DestinationWorkerPool::SCRATCH_LIMIT / bytes / 4, this->graph->stations.size() - this->destination}));
+			size_t permitted = 0; while (permitted < workers && (!this->parallel_start_hook || this->parallel_start_hook(static_cast<uint>(permitted)))) ++permitted;
+			if (permitted == 0) { if (workers != 0) { this->parallel_unavailable = true; ++this->parallel_diagnostic.fallbacks; } return false; }
+			auto &pool = WorkerPool();
+			permitted = std::min(permitted, pool.Ensure(permitted, this->parallel_diagnostic.thread_starts));
+			if (permitted == 0) throw std::bad_alloc{};
+			auto generation = pool.Reserve(permitted, bytes);
+			if (!generation) return false;
+			generation->graph = this->graph; generation->hook = this->parallel_search_hook;
+			auto state = std::make_shared<ParallelState>(); state->generation = std::move(generation); state->next = this->destination;
+			this->parallel = std::move(state);
+			this->parallel_diagnostic.workers = permitted;
+			this->parallel_diagnostic.estimated_workspace_bytes = static_cast<size_t>(this->parallel->generation->reserved);
 		}
-		WorkerPool().Wait(jobs);
-		if (cancelled.load()) throw std::bad_alloc{};
-		for (const auto &result : this->parallel_results) if (result.error) std::rethrow_exception(result.error);
-		this->parallel_diagnostic.workers = std::max(this->parallel_diagnostic.workers, running);
-		this->parallel_diagnostic.peak_pending = std::max(this->parallel_diagnostic.peak_pending, count);
-		this->parallel_diagnostic.estimated_workspace_bytes = static_cast<size_t>(count * bytes);
-		++this->parallel_diagnostic.batches;
-		this->parallel_diagnostic.searches += count;
-		for (const auto &result : this->parallel_results) {
-			this->parallel_diagnostic.search_nanoseconds += result.nanoseconds;
-			this->parallel_diagnostic.search_work += result.operations;
-			this->parallel_diagnostic.minimum_work = std::min(this->parallel_diagnostic.minimum_work, result.operations);
-			this->parallel_diagnostic.maximum_work = std::max(this->parallel_diagnostic.maximum_work, result.operations);
+		auto &state = *this->parallel;
+		if (state.generation->failed.load()) { this->parallel_unavailable = true; ++this->parallel_diagnostic.fallbacks; state.pending.clear(); return false; }
+		if (state.generation->cancelled.load()) return false;
+		while (!state.pending.empty() && state.pending.front()->destination < this->destination) { state.pending.front()->cancelled.store(true); state.pending.pop_front(); }
+		state.next = std::max(state.next, this->destination + (this->serial_destination == this->destination));
+		size_t submitted = 0;
+		while (state.pending.size() < state.generation->workers * 2 && state.next < this->graph->stations.size()) {
+			std::shared_ptr<DestinationBuildResult> job;
+			if (!state.recycled.empty()) { job = std::move(state.recycled.front()); state.recycled.pop_front(); }
+			else job = std::make_shared<DestinationBuildResult>();
+			job->generation = state.generation; job->generation_id = state.generation->id;
+			job->destination = state.next; job->station = this->graph->stations[state.next]; job->operations = 0; job->error = false;
+			job->ready.store(false); job->cancelled.store(false);
+			if (!WorkerPool().Submit(job)) break;
+			state.pending.push_back(std::move(job)); ++state.next; ++submitted;
 		}
-		this->parallel_count = count; this->parallel_next = 0; this->parallel_credit = 0;
+		if (submitted != 0) ++this->parallel_diagnostic.batches;
+		this->parallel_diagnostic.peak_pending = std::max(this->parallel_diagnostic.peak_pending, state.pending.size());
 		this->parallel_diagnostic.batch_nanoseconds += Elapsed(started);
 		return true;
 	} catch (...) {
-		/* Join before releasing contexts, even if thread startup itself throws. */
-		this->parallel_results.clear(); this->parallel_count = this->parallel_next = 0;
-		this->parallel_unavailable = true;
-		++this->parallel_diagnostic.fallbacks;
-		this->parallel_diagnostic.batch_nanoseconds += Elapsed(started);
-		return false;
+		if (this->parallel) this->parallel->generation->cancelled.store(true);
+		this->parallel_unavailable = true; ++this->parallel_diagnostic.fallbacks; return false;
 	}
 }
 
 void PassengerPrecomputedTable::CancelParallel()
 {
 	if (this->parallel_credit != 0) {
-		/* The primary context is still at the start of this row. Recreate exactly
-		 * the virtually consumed prefix without charging it a second time. No
-		 * search step can publish or modify inverse indices or boarding masks. */
+		/* Reconstruct exactly the virtual prefix when switching to saved replay /
+		 * scalar stepping. It is never charged again; no partial serial row can
+		 * switch back to a late result. */
 		while (this->parallel_credit != 0) {
 			size_t quantum = static_cast<size_t>(std::min<uint64_t>(this->parallel_credit, 65536));
 			size_t used = this->graph->hyperpath ? this->SearchHyperpath(this->work, quantum) : this->SearchDestination(this->work, quantum);
-			assert(used == quantum);
-			this->parallel_credit -= used;
+			assert(used == quantum); this->parallel_credit -= used;
 		}
-		this->CollectSearchCounters();
+		this->CollectSearchCounters(); this->serial_destination = this->destination;
 	}
-	this->parallel_results.clear(); this->parallel_count = this->parallel_next = 0;
+	this->parallel_result.reset();
+	if (this->parallel) { this->parallel->generation->cancelled.store(true); this->parallel->pending.clear(); this->parallel->recycled.clear(); }
 }
 
 size_t PassengerPrecomputedTable::AdvanceSearch(size_t allowance, uint workers)
 {
-	if (workers != 0 && (this->parallel_next < this->parallel_count || this->PrepareParallelBatch(workers))) {
-		auto &result = this->parallel_results[this->parallel_next];
-		assert(result.workspace.destination == this->destination && result.operations > this->parallel_credit);
+	if (workers != 0 && !this->parallel_result && this->serial_destination != this->destination) {
+		this->PrepareParallelBatch(workers);
+		/* Make this choice exactly once, at the unsearched row boundary. A miss
+		 * owns the serial cursor through completion, including across ticks. */
+		const bool pristine = this->work.initializing_row && this->work.search.cost.empty() && this->work.scratch.labels.empty() && this->work.seeding == 0;
+		if (this->parallel && !this->parallel->pending.empty() && this->parallel->pending.front()->destination == this->destination) {
+			auto job = std::move(this->parallel->pending.front()); this->parallel->pending.pop_front();
+			if (pristine && job->ready.load(std::memory_order_acquire) && !job->cancelled.load() && !job->error && job->generation_id == this->parallel->generation->id && job->station == this->graph->stations[this->destination]) {
+				this->parallel_result = std::move(job); ++this->parallel_diagnostic.cache_hits;
+			} else job->cancelled.store(true);
+		}
+		if (!this->parallel_result) { this->serial_destination = this->destination; ++this->parallel_diagnostic.serial_rows; }
+		this->PrepareParallelBatch(workers);
+	}
+	if (this->parallel_result) {
+		auto &result = *this->parallel_result;
+		assert(result.destination == this->destination && result.operations > this->parallel_credit);
 		size_t used = static_cast<size_t>(std::min<uint64_t>(allowance, result.operations - this->parallel_credit));
-		this->parallel_credit += used;
+		this->parallel_credit += used; this->parallel_diagnostic.cache_work += used;
 		if (this->parallel_credit == result.operations) {
-			this->CollectSearchCounters();
-			std::swap(this->work, result.workspace);
-			this->CollectSearchCounters();
-			++this->parallel_next; this->parallel_credit = 0;
+			this->CollectSearchCounters(); std::swap(this->work, result.workspace); this->CollectSearchCounters();
+			if (this->parallel && !this->parallel->generation->cancelled.load()) this->parallel->recycled.push_back(std::move(this->parallel_result));
+			this->parallel_result.reset(); this->parallel_credit = 0;
 		}
 		return used;
 	}
-	return this->graph->hyperpath ? this->SearchHyperpath(this->work, allowance) : this->SearchDestination(this->work, allowance);
+	const auto started = Clock::now();
+	size_t used = this->graph->hyperpath ? this->SearchHyperpath(this->work, allowance) : this->SearchDestination(this->work, allowance);
+	this->parallel_diagnostic.main_search_nanoseconds += Elapsed(started); this->parallel_diagnostic.serial_search_work += used;
+	return used;
 }
 
 size_t PassengerPrecomputedTable::StepParallel(size_t allowance, uint workers, const std::function<void(StationID)> &published)
 {
 	if (workers == 0) return this->Step(allowance, false, published);
 	const auto started = Clock::now();
-	uint64_t batch_before = this->parallel_diagnostic.batch_nanoseconds;
 	size_t used = this->StepImpl(allowance, false, published, workers);
-	this->parallel_diagnostic.integration_nanoseconds += Elapsed(started) - (this->parallel_diagnostic.batch_nanoseconds - batch_before);
+	this->parallel_diagnostic.integration_nanoseconds += Elapsed(started);
 	if (this->Finished()) this->CancelParallel();
 	return used;
 }
@@ -1176,6 +1239,7 @@ size_t PassengerPrecomputedTable::Step(size_t allowance, bool legacy_publication
 size_t PassengerPrecomputedTable::StepImpl(size_t allowance, bool legacy_publication, const std::function<void(StationID)> &published, uint workers)
 {
 	if (!this->PrepareGraph(std::min<size_t>(allowance, 1024))) return 0;
+	if (workers != 0) this->PrepareParallelBatch(workers);
 	if (this->graph->hyperpath) return this->StepHyperpath(allowance, published, workers);
 	const auto started = Clock::now(); size_t used = 0;
 	auto index_origin = [&](size_t from) {

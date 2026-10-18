@@ -16,6 +16,7 @@
 #include <functional>
 #include <unordered_map>
 #include <map>
+#include <atomic>
 
 struct PassengerPeriodicService;
 
@@ -57,6 +58,8 @@ struct PassengerHyperpathMemoryDiagnostic {
 struct PassengerParallelBuildDiagnostic {
 	uint64_t batches = 0, searches = 0, batch_nanoseconds = 0, search_nanoseconds = 0, integration_nanoseconds = 0, fallbacks = 0;
 	uint64_t minimum_work = UINT64_MAX, maximum_work = 0, search_work = 0;
+	uint64_t cache_hits = 0, cache_work = 0, serial_rows = 0, main_search_nanoseconds = 0, serial_search_work = 0;
+	uint64_t cancelled_search_work = 0, thread_starts = 0;
 	size_t workers = 0, peak_pending = 0, estimated_workspace_bytes = 0;
 };
 
@@ -82,10 +85,10 @@ public:
 	bool IsPreparingGraph() const { return static_cast<bool>(this->graph_build); }
 	uint64_t GetGraphWork() const { return this->graph_work; }
 	size_t Step(size_t operations, bool legacy_publication = false, const std::function<void(StationID)> &published = {});
-	/** Initial preparation barrier only. Work/publication exactly match Step;
-	 * all CPU workers are joined before this call returns. Zero selects Step. */
+	/** Nonblocking speculative searches. Work/publication exactly match Step;
+	 * a cache miss latches serial execution for the whole row. Zero selects Step. */
 	size_t StepParallel(size_t operations, uint workers = 4, const std::function<void(StationID)> &published = {});
-	const PassengerParallelBuildDiagnostic &GetParallelDiagnostic() const { return this->parallel_diagnostic; }
+	PassengerParallelBuildDiagnostic GetParallelDiagnostic() const;
 	void ReleaseDestination(StationID destination); ///< Retire a row immediately after its replacement is published.
 	void PrepareRetirement(const PassengerPrecomputedTable &replacement); ///< Freeze the few destinations absent from the replacement before retiring its ascending rows.
 	void ReuseRetainedDestinations(); ///< Start another retirement epoch after the previous replacement finished.
@@ -320,18 +323,25 @@ private:
 	std::shared_ptr<GraphSnapshot> graph = std::make_shared<GraphSnapshot>();
 	std::map<OrderListID, Member> refreshed_members; ///< Live bindings never mutate the frozen graph.
 
+	struct WorkerGeneration;
 	struct DestinationBuildResult {
+		std::shared_ptr<WorkerGeneration> generation;
 		DestinationWorkspace workspace;
-		uint64_t operations = 0, nanoseconds = 0;
-		std::exception_ptr error;
+		size_t destination = 0;
+		StationID station = StationID::Invalid();
+		uint64_t generation_id = 0, operations = 0, nanoseconds = 0;
+		std::atomic<bool> ready{false}, cancelled{false};
+		bool error = false; ///< Read only after acquiring ready.
 	};
 	struct DestinationWorkerPool;
+	struct ParallelState;
 	static DestinationWorkerPool &WorkerPool();
-	/** Joined, derived lookahead. No threads, graph references or service pointers
-	 * survive a call. Moving/resetting/discarding the table is consequently safe. */
-	std::vector<DestinationBuildResult> parallel_results;
-	size_t parallel_count = 0, parallel_next = 0;
+	/** Main-thread ownership cancels on destruction. Workers own only the frozen
+	 * graph, cancellation token and their result; never a table or this state. */
+	std::shared_ptr<ParallelState> parallel;
+	std::shared_ptr<DestinationBuildResult> parallel_result;
 	uint64_t parallel_credit = 0;
+	size_t serial_destination = SIZE_MAX;
 	bool parallel_unavailable = false;
 	PassengerParallelBuildDiagnostic parallel_diagnostic;
 	void (*parallel_search_hook)(size_t, bool) = nullptr; ///< Native scheduling/failure injection; unset in production.
@@ -350,6 +360,7 @@ private:
 	size_t SearchHyperpath(DestinationWorkspace &work, size_t allowance) const;
 	void CollectSearchCounters();
 	bool PrepareParallelBatch(uint workers);
+	bool ParallelCacheReady() const; ///< Native tests may poll outside simulation ticks.
 	void CancelParallel();
 	size_t AdvanceSearch(size_t allowance, uint workers);
 	size_t StepImpl(size_t allowance, bool legacy_publication, const std::function<void(StationID)> &published, uint workers);
