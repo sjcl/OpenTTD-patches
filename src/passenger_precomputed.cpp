@@ -1845,38 +1845,63 @@ std::span<const uint32_t> PassengerPrecomputedTable::Candidates(StationID origin
 	return this->RowCandidates(*row, destination, state);
 }
 
+PassengerPrecomputedTable::DisplayRead PassengerPrecomputedTable::NextDisplayCandidate(StationID origin, StationID destination,
+		OrderListID previous, OrderListID failed, DisplayCursor &cursor, DisplayCandidate &out, size_t &work) const
+{
+	if (!cursor.bound || cursor.origin != origin || cursor.destination != destination || cursor.previous != previous || cursor.failed != failed) {
+		cursor.phase = 0; cursor.occurrence = cursor.member = 0; cursor.inspected = false; cursor.bound = true;
+		cursor.origin = origin; cursor.destination = destination; cursor.previous = previous; cursor.failed = failed;
+	}
+	const auto *row = this->FindRow(destination); const uint32_t state = this->PolicyState(origin, previous);
+	if (!this->hyperpath || row == nullptr || state == INVALID) return DisplayRead::Unavailable;
+	std::array<std::span<const uint32_t>, 2> spans{};
+	uint32_t excluded = INVALID;
+	size_t phases = 1;
+	if (failed != OrderListID::Invalid()) {
+		auto found = this->local_policies.find({destination, state, failed});
+		if (found == this->local_policies.end()) return DisplayRead::Unavailable;
+		spans[0] = found->second.candidates;
+	} else {
+		const uint32_t index = row->indices[state];
+		if (!this->flat_storage) spans[0] = row->policies[index].candidates;
+		else if (row->flat_policies[index].count & FlatPolicy::FULL) spans[0] = this->FlatPayload(*row, index);
+		else {
+			spans[0] = this->FlatPayload(*row, row->indices[this->waiting_station[state]]);
+			spans[1] = this->FlatPayload(*row, index); phases = 2; excluded = this->PreviousPattern(state);
+		}
+	}
+	while (cursor.phase < phases) {
+		const auto candidates = spans[cursor.phase];
+		if (cursor.occurrence >= candidates.size()) { ++cursor.phase; cursor.occurrence = cursor.member = 0; cursor.inspected = false; continue; }
+		const auto &o = this->occurrences[candidates[cursor.occurrence]]; const auto &p = this->patterns[o.pattern];
+		if (!cursor.inspected) {
+			if (work == 0) return DisplayRead::Partial;
+			--work; cursor.inspected = true;
+			if ((cursor.phase == 0 && o.pattern == excluded) || o.station != origin || p.members.front().id == previous) {
+				++cursor.occurrence; cursor.inspected = false; continue;
+			}
+		}
+		if (cursor.member >= p.members.size()) { ++cursor.occurrence; cursor.member = 0; cursor.inspected = false; continue; }
+		if (work == 0) return DisplayRead::Partial;
+		--work;
+		const auto &m = p.members[cursor.member++];
+		/* The cached policy already applies failure exclusion, including no-alternative retries. */
+		if (m.id != previous) { out = {m.id, m.incarnation, m.generation, o.order}; return DisplayRead::Candidate; }
+	}
+	return DisplayRead::Complete;
+}
+
 bool PassengerPrecomputedTable::DisplayCandidates(StationID origin, StationID destination, OrderListID previous, OrderListID failed,
 		std::vector<DisplayCandidate> &out, size_t &work) const
 {
-	out.clear();
-	const auto *row = this->FindRow(destination);
-	const uint32_t state = this->PolicyState(origin, previous);
-	if (!this->hyperpath || row == nullptr || state == INVALID) return false;
-	auto emit = [&](std::span<const uint32_t> candidates, uint32_t excluded_pattern = INVALID) {
-		for (uint32_t id : candidates) {
-			if (work == 0) return false;
-			--work;
-			const auto &o = this->occurrences[id]; const auto &p = this->patterns[o.pattern];
-			if (o.pattern == excluded_pattern || o.station != origin || p.members.front().id == previous) continue;
-			for (const auto &m : p.members) {
-				if (work == 0 || out.size() >= 256) return false;
-				--work;
-				/* The cached policy already applies failure exclusion, restoring the failed
-				 * service when no alternative exists. Preserve that reachability fallback. */
-				if (m.id != previous) out.push_back({m.id, m.incarnation, m.generation, o.order});
-			}
-		}
-		return true;
-	};
-	if (failed != OrderListID::Invalid()) {
-		auto found = this->local_policies.find({destination, state, failed});
-		return found != this->local_policies.end() && emit(found->second.candidates);
+	out.clear(); DisplayCursor cursor; DisplayCandidate candidate;
+	while (out.size() < 256) {
+		auto result = this->NextDisplayCandidate(origin, destination, previous, failed, cursor, candidate, work);
+		if (result == DisplayRead::Complete) return true;
+		if (result != DisplayRead::Candidate) return false;
+		out.push_back(candidate);
 	}
-	const uint32_t index = row->indices[state];
-	if (!this->flat_storage) return emit(row->policies[index].candidates);
-	if ((row->flat_policies[index].count & FlatPolicy::FULL) == 0 &&
-			!emit(this->FlatPayload(*row, row->indices[this->waiting_station[state]]), this->PreviousPattern(state))) return false;
-	return emit(this->FlatPayload(*row, index));
+	return false;
 }
 
 const PassengerPrecomputedTable::Policy &PassengerPrecomputedTable::LocalPolicy(const Row &row, StationID destination, uint32_t state, OrderListID failed) const

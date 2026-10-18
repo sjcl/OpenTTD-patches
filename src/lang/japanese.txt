@@ -3723,7 +3723,13 @@ STR_STATION_VIEW_PASSENGER_SERVICE                             :{YELLOW}{RAW_STR
 STR_STATION_VIEW_PASSENGER_SERVICE_MULTIPLE                    :{RAW_STRING} など
 STR_STATION_VIEW_PASSENGER_SERVICE_TRANSFER                    :未確定（{STATION}で乗換予定）
 STR_STATION_VIEW_PASSENGER_SERVICE_UNKNOWN                     :未確定
-STR_STATION_VIEW_GROUP_PASSENGER_TOOLTIP                       :{BLACK}待機中の旅客は常に「目的地 → 出発地 → 乗車系統」で表示します。この設定は一般貨物と「予定」表示に適用されます。
+STR_STATION_VIEW_PASSENGER_SERVICE_DIAGNOSTICS                 :{BLACK}GUI系統キャッシュ: 未処理 {COMMA}、一部確認 {COMMA}、完了 {COMMA}、参照不可 {COMMA}{}Work不足 {COMMA}、候補なし {COMMA}{}旧policy {COMMA}、旧系統 {COMMA}、共有車両なし {COMMA}{}グループ未設定車両 {COMMA}、無効車両 {COMMA}、GUI Work {COMMA}
+STR_STATION_VIEW_PASSENGER_GROUPING                            :{BLACK}旅客: 系統 → 目的地 → 出発地
+STR_STATION_VIEW_PASSENGER_SERVICE_RESERVED                    :乗車予約済み
+STR_STATION_VIEW_PASSENGER_SERVICE_UPDATING                    :系統情報更新待ち
+STR_STATION_VIEW_PASSENGER_SERVICE_UNGROUPED                   :グループ未設定
+STR_STATION_VIEW_PASSENGER_SERVICE_CHECKING                    :系統確認中
+STR_STATION_VIEW_GROUP_PASSENGER_TOOLTIP                       :{BLACK}待機中の旅客は「乗車系統 → 最終目的地 → 出発地」で表示します。系統別人数は代表候補で分類した人数で、実際の乗車人数の予測ではありません。一般貨物と「予定」表示にはグループ化設定が適用されます。
 STR_STATION_VIEW_GROUP_OTHER_CARGO                             :{BLACK}一般貨物:
 STR_STATION_VIEW_PASSENGER_DESTINATION_UNKNOWN                 :{RED}目的地不明: {CARGO_SHORT}
 STR_STATION_VIEW_TO                                             :{YELLOW}{1:STATION}着: {0:CARGO_SHORT}

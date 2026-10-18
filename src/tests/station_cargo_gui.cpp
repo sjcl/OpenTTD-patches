@@ -1,6 +1,6 @@
 /* This file is part of OpenTTD, licensed under the GNU General Public License, version 2. */
 
-/** @file station_cargo_gui.cpp Read-only passenger destination/source/service hierarchy regressions. */
+/** @file station_cargo_gui.cpp Read-only passenger service/destination/source hierarchy regressions. */
 #include "../stdafx.h"
 #include "../3rdparty/catch2/catch.hpp"
 #include "../station_cargo_gui.h"
@@ -197,44 +197,41 @@ TEST_CASE("Station group and carrier removal and stale intentions remain safe", 
 	CHECK(cache.Resolve(PAX, intent).group == GroupID::Invalid());
 }
 
-static CargoDataEntry &ExpandPassenger(CargoDataEntry &expanded, StationID destination = B, StationID source = A)
+static CargoDataEntry &ExpandPassenger(CargoDataEntry &expanded, StationID destination = B, StationID source = A, StationPassengerService service = {})
 {
-	return expanded.InsertOrRetrieve(PAX).InsertOrRetrieve(destination).InsertOrRetrieve(source);
+	return expanded.InsertOrRetrieve(PAX).InsertOrRetrieve(PassengerServiceExpansionKey(service)).InsertOrRetrieve(destination).InsertOrRetrieve(source);
 }
 
-TEST_CASE("Station waiting passengers use final destination source and typed service for every cargo preference", "[passenger][station-gui]")
+TEST_CASE("Station waiting passengers use service final destination and source for every cargo preference", "[passenger][station-gui]")
 {
 	GuiFixture f; GuiTrain rapid(VehicleID{100}), local(VehicleID{101});
 	rapid.group_id = f.GroupFor(rapid); local.group_id = f.GroupFor(local);
 	Station::CreateAtIndex(C, TileIndex{0}); Station::CreateAtIndex(D, TileIndex{0});
-	CargoPacket *packet = CargoPacket::Create(10, 0, A, TileIndex{0}, Money{0});
-	REQUIRE(packet->SetPassengerDestination(PAX, D));
+	CargoPacket *packet = CargoPacket::Create(10, 0, A, TileIndex{0}, Money{0}); REQUIRE(packet->SetPassengerDestination(PAX, D));
 	std::array<StationCargoGrouping, 4> order{GR_CARGO, GR_SOURCE, GR_NEXT, GR_DESTINATION};
 	do {
-		CargoDataEntry expanded, data; ExpandPassenger(expanded, D);
+		CargoDataEntry expanded, data;
+		ExpandPassenger(expanded, D, A, {rapid.group_id}); ExpandPassenger(expanded, D, A, {local.group_id});
 		StationPassengerServiceCache cache;
 		auto show = [&](GuiTrain &train, uint count) {
 			packet->SetPassengerJourney(train.Ride(), D);
 			return ShowStationWaitingCargo(data, expanded, order, A, false, PAX, *packet, B, C, count, cache);
 		};
 		CargoDataEntry *rapid_row = show(rapid, 70), *local_row = show(local, 40);
-		REQUIRE(rapid_row->IsService()); REQUIRE(local_row->IsService());
+		CHECK(rapid_row->GetStation() == A); CHECK(local_row->GetStation() == A);
 		CHECK(rapid_row != local_row); CHECK(show(rapid, 10) == rapid_row);
-		CHECK(rapid_row->GetService().group == rapid.group_id); CHECK(rapid_row->GetCount() == 80);
-		CHECK(local_row->GetCount() == 40); CHECK(data.GetCount() == 120);
-		auto *destination = data.Retrieve(PAX)->Retrieve(D);
-		REQUIRE(destination != nullptr); CHECK(destination->GetCount() == 120);
-		auto *source = destination->Retrieve(A); REQUIRE(source != nullptr);
-		CHECK(source->GetCount() == 120); CHECK(source->GetNumChildren() == 2);
-		CHECK(data.GetNumChildren() == 5);
-		source->Resort(CargoSortType::Count, SO_DESCENDING);
-		CHECK((**source->Begin()).GetCount() == 80);
-		CHECK(data.GetNumChildren() == 5); CHECK(data.GetCount() == 120);
+		CHECK(rapid_row->GetCount() == 80); CHECK(local_row->GetCount() == 40); CHECK(data.GetCount() == 120);
+		auto *services = data.Retrieve(PAX);
+		CHECK(services->Retrieve(StationPassengerService{rapid.group_id})->GetCount() == 80);
+		CHECK(services->Retrieve(StationPassengerService{rapid.group_id})->Retrieve(D)->Retrieve(A) == rapid_row);
+		CHECK(services->Retrieve(StationPassengerService{local.group_id})->Retrieve(D)->GetCount() == 40);
+		CHECK(data.GetNumChildren() == 7);
+		services->Resort(CargoSortType::Count, SO_DESCENDING); CHECK((**services->Begin()).GetCount() == 80);
 		data.Clear(); CHECK(data.GetNumChildren() == 0); CHECK(data.GetCount() == 0);
 	} while (std::next_permutation(order.begin() + 1, order.end()));
 }
 
-TEST_CASE("Station passenger tree expansion hides descendants and conserves totals", "[passenger][station-gui]")
+TEST_CASE("Station typed service and destination expansion hides descendants and conserves totals", "[passenger][station-gui]")
 {
 	GuiFixture f; CargoPacket *packet = f.Packet();
 	std::array<StationCargoGrouping, 4> order{GR_CARGO, GR_NEXT, GR_SOURCE, GR_DESTINATION};
@@ -242,13 +239,13 @@ TEST_CASE("Station passenger tree expansion hides descendants and conserves tota
 	auto show = [&]() { return ShowStationWaitingCargo(data, expanded, order, A, true, PAX, *packet, C, D, 10, cache); };
 	CHECK(show()->GetCargo() == PAX); CHECK(data.GetNumChildren() == 1); CHECK(data.GetCount() == 10);
 	expanded.InsertOrRetrieve(PAX); data.Clear();
-	CHECK(show()->GetStation() == B); CHECK(data.GetNumChildren() == 2); CHECK(data.GetCount() == 10);
-	expanded.Retrieve(PAX)->InsertOrRetrieve(B); data.Clear();
-	CHECK(show()->GetStation() == A); CHECK(data.GetNumChildren() == 3); CHECK(data.GetCount() == 10);
+	CHECK(show()->IsService()); CHECK(data.GetNumChildren() == 2); CHECK(data.GetCount() == 10);
+	expanded.Retrieve(PAX)->InsertOrRetrieve(StationPassengerService{}); data.Clear();
+	CHECK(show()->GetStation() == B); CHECK(data.GetNumChildren() == 3); CHECK(data.GetCount() == 10);
 	ExpandPassenger(expanded); data.Clear();
-	CHECK(show()->IsService()); CHECK(data.GetNumChildren() == 4); CHECK(data.GetCount() == 10);
-	expanded.Retrieve(PAX)->Remove(B); data.Clear();
-	CHECK(show()->GetStation() == B); CHECK(data.GetNumChildren() == 2); CHECK(data.GetCount() == 10);
+	CHECK(show()->GetStation() == A); CHECK(data.GetNumChildren() == 4); CHECK(data.GetCount() == 10);
+	expanded.Retrieve(PAX)->Remove(StationPassengerService{}); data.Clear();
+	CHECK(show()->IsService()); CHECK(data.GetNumChildren() == 2); CHECK(data.GetCount() == 10);
 }
 
 TEST_CASE("Station GUI service reads do not mutate passenger execution or RNG", "[passenger][station-gui][determinism]")
@@ -281,10 +278,10 @@ TEST_CASE("Station unknown and Fallback passengers have no inferred destination 
 	std::array<StationCargoGrouping, 4> order{GR_CARGO, GR_NEXT, GR_DESTINATION, GR_SOURCE};
 	StationPassengerServiceCache cache;
 	auto show = [&](uint count) { return ShowStationWaitingCargo(data, expanded, order, A, true, PAX, *packet, B, B, count, cache); };
-	CargoDataEntry *row = show(3); REQUIRE(row->IsService()); CHECK(row->GetService().group == GroupID::Invalid());
+	CargoDataEntry *row = show(3); REQUIRE(row->GetStation() == A); CHECK(row->GetParent()->GetParent()->GetService().group == GroupID::Invalid());
 	CHECK(show(7) == row); CHECK(show(0) == nullptr);
 	CHECK(row->GetCount() == 10); CHECK(data.GetCount() == 10);
-	CHECK(data.Retrieve(PAX)->Retrieve(StationID::Invalid())->GetCount() == 10);
+	CHECK(data.Retrieve(PAX)->Retrieve(StationPassengerService{})->Retrieve(StationID::Invalid())->GetCount() == 10);
 	packet->SetPassengerJourney(train.Ride(), B); packet->FallbackPassengerJourney(A, StateTicks{});
 	CHECK(cache.Resolve(PAX, *packet, A).group == GroupID::Invalid());
 }
@@ -331,41 +328,42 @@ TEST_CASE("Station service fleet inspection remains bounded and never guesses an
 	for (auto it = fleet.rbegin(); it != fleet.rend(); ++it) delete *it;
 }
 
-TEST_CASE("Station passenger totals match across destinations origins and ambiguous service leaves", "[passenger][station-gui]")
+TEST_CASE("Station passenger totals match across services destinations and sources", "[passenger][station-gui]")
 {
 	GuiFixture f; GuiTrain unique(VehicleID{100}), mixed(VehicleID{101}), other(VehicleID{102});
 	unique.group_id = mixed.group_id = f.GroupFor(unique); other.group_id = f.GroupFor(other); other.Share(mixed);
 	Station::CreateAtIndex(C, TileIndex{0}); Station::CreateAtIndex(D, TileIndex{0});
-	CargoDataEntry expanded, data; ExpandPassenger(expanded, D, A); ExpandPassenger(expanded, D, C); ExpandPassenger(expanded, B, C);
+	CargoDataEntry expanded, data;
+	ExpandPassenger(expanded, D, A, {unique.group_id}); ExpandPassenger(expanded, D, C, {unique.group_id});
+	ExpandPassenger(expanded, D, A, {unique.group_id, true}); ExpandPassenger(expanded, B, C, {unique.group_id, true});
+	ExpandPassenger(expanded, D, A);
 	StationPassengerServiceCache cache;
 	std::array<StationCargoGrouping, 4> order{GR_CARGO, GR_NEXT, GR_SOURCE, GR_DESTINATION};
 	auto show = [&](StationID destination, StationID origin, GuiTrain *train, uint16_t count) {
-		auto *packet = CargoPacket::Create(count, 0, origin, TileIndex{0}, Money{0});
-		REQUIRE(packet->SetPassengerDestination(PAX, destination));
+		auto *packet = CargoPacket::Create(count, 0, origin, TileIndex{0}, Money{0}); REQUIRE(packet->SetPassengerDestination(PAX, destination));
 		if (train != nullptr) packet->SetPassengerJourney(train->Ride(), B);
 		ShowStationWaitingCargo(data, expanded, order, A, true, PAX, *packet, B, destination, count, cache);
 	};
 	show(D, A, &unique, 70); show(D, A, &mixed, 40); show(D, A, nullptr, 10);
 	show(D, C, &unique, 60); show(B, C, &mixed, 70);
-	CHECK(data.GetCount() == 250); CHECK(data.Retrieve(PAX)->GetCount() == 250);
-	auto *destination = data.Retrieve(PAX)->Retrieve(D); REQUIRE(destination != nullptr);
-	CHECK(destination->GetCount() == 180); CHECK(destination->Retrieve(A)->GetCount() == 120);
-	CHECK(destination->Retrieve(C)->GetCount() == 60);
-	CHECK(destination->Retrieve(A)->GetNumChildren() == 3); // Named, representative + others, and unknown are separate typed leaves.
-	CHECK(data.Retrieve(PAX)->Retrieve(B)->GetCount() == 70);
-	CHECK(data.Retrieve(PAX)->Retrieve(B)->Retrieve(C)->GetCount() == 70);
-	for (auto di = data.Retrieve(PAX)->Begin(); di != data.Retrieve(PAX)->End(); ++di) {
-		uint origins = 0;
-		for (auto si = (*di)->Begin(); si != (*di)->End(); ++si) {
-			uint services = 0;
-			for (auto gi = (*si)->Begin(); gi != (*si)->End(); ++gi) { CHECK((*gi)->IsService()); services += (*gi)->GetCount(); }
-			CHECK(services == (*si)->GetCount()); origins += (*si)->GetCount();
+	auto *cargo = data.Retrieve(PAX); CHECK(data.GetCount() == 250); CHECK(cargo->GetCount() == 250);
+	CHECK(cargo->Retrieve(StationPassengerService{unique.group_id})->GetCount() == 130);
+	CHECK(cargo->Retrieve(StationPassengerService{unique.group_id, true})->GetCount() == 110);
+	CHECK(cargo->Retrieve(StationPassengerService{})->GetCount() == 10);
+	uint total = 0;
+	for (auto gi = cargo->Begin(); gi != cargo->End(); ++gi) {
+		CHECK((*gi)->IsService()); uint destinations = 0;
+		for (auto di = (*gi)->Begin(); di != (*gi)->End(); ++di) {
+			uint sources = 0;
+			for (auto si = (*di)->Begin(); si != (*di)->End(); ++si) sources += (*si)->GetCount();
+			CHECK(sources == (*di)->GetCount()); destinations += (*di)->GetCount();
 		}
-		CHECK(origins == (*di)->GetCount());
+		CHECK(destinations == (*gi)->GetCount()); total += (*gi)->GetCount();
 	}
+	CHECK(total == 250);
 }
 
-TEST_CASE("Station undecided Journey transfer hints never describe a direct final destination as a transfer", "[passenger][station-gui]")
+TEST_CASE("Station completed ungrouped Journey rides share one classification without a false transfer hint", "[passenger][station-gui]")
 {
 	GuiFixture f; GuiTrain train(VehicleID{100});
 	Station::CreateAtIndex(D, TileIndex{0});
@@ -374,11 +372,162 @@ TEST_CASE("Station undecided Journey transfer hints never describe a direct fina
 	packet->SetPassengerJourney(train.Ride(), B);
 	StationPassengerServiceCache cache;
 	CHECK(cache.Resolve(PAX, *packet, A).group == GroupID::Invalid());
-	CHECK(cache.Resolve(PAX, *packet, A).transfer == B);
+	CHECK(cache.Resolve(PAX, *packet, A).label == StationPassengerServiceLabel::Ungrouped);
+	CHECK(cache.Resolve(PAX, *packet, A).transfer == StationID::Invalid());
 	auto *direct = f.Packet(); direct->SetPassengerJourney(train.Ride(), B);
-	CHECK(cache.Resolve(PAX, *direct, A) == StationPassengerService{});
+	CHECK(cache.Resolve(PAX, *direct, A).label == StationPassengerServiceLabel::Ungrouped);
 	auto stale = train.Ride(); ++stale.signature; packet->SetPassengerJourney(stale, B);
-	CHECK(cache.Resolve(PAX, *packet, A) == StationPassengerService{});
+	cache.Advance(0); CHECK(cache.Resolve(PAX, *packet, A).group == GroupID::Invalid());
 	train.group_id = f.GroupFor(train); cache.Clear(); packet->SetPassengerJourney(train.Ride(), B);
 	CHECK(cache.Resolve(PAX, *packet, A) == StationPassengerService{train.group_id});
+}
+
+TEST_CASE("Station exhausted display work does not permanently hide another named fleet", "[passenger][station-gui][service-progress]")
+{
+	GuiFixture f;
+	std::vector<GuiTrain *> fleet;
+	for (size_t i = 0; i < 5000; ++i) {
+		auto *train = Vehicle::Create<GuiTrain>();
+		if (fleet.empty()) train->group_id = f.GroupFor(*train);
+		else { train->Share(*fleet.front()); train->group_id = fleet.front()->group_id; }
+		fleet.push_back(train);
+	}
+	GuiTrain small(VehicleID{60000}); small.group_id = f.GroupFor(small);
+	StationPassengerServiceCache cache;
+	cache.Resolve(PAX, fleet.front()->Ride());
+	for (size_t i = 0; i < 10; ++i) cache.Resolve(PAX, small.Ride());
+	CHECK(cache.Resolve(PAX, small.Ride()).group == small.group_id);
+	CHECK(cache.GetDiagnostics().partial == 1);
+	for (size_t update = 0; update < 128 && cache.GetDiagnostics().partial != 0; ++update) cache.Advance(100, 512);
+	CHECK(cache.GetDiagnostics().partial == 0); CHECK(cache.GetDiagnostics().complete == 2);
+	CHECK(cache.GetDiagnostics().vehicles == 5001); // Each shared carrier is inspected once, not once per update.
+	CHECK_FALSE(cache.Resolve(PAX, fleet.front()->Ride()).multiple);
+	fleet.front()->orders->GetOrderAt(0)->SetLoadType(OrderLoadType::NoLoad);
+	cache.Advance(11000); cache.Resolve(PAX, fleet.front()->Ride()); cache.Advance(0);
+	CHECK(cache.Resolve(PAX, fleet.front()->Ride()).group == GroupID::Invalid());
+	CHECK(cache.GetDiagnostics().unusable_vehicle > 0);
+	for (auto it = fleet.rbegin(); it != fleet.rend(); ++it) delete *it;
+}
+
+TEST_CASE("Station complete services survive real-time seconds and revalidate live group changes", "[passenger][station-gui][service-progress]")
+{
+	GuiFixture f; GuiTrain *train = Vehicle::Create<GuiTrain>(); train->group_id = f.GroupFor(*train);
+	StationPassengerServiceCache cache; auto ride = train->Ride();
+	CHECK(cache.Resolve(PAX, ride).group == train->group_id);
+	auto before = cache.GetDiagnostics(); size_t checks = train->primary_checks;
+	cache.Advance(1000);
+	CHECK(cache.Resolve(PAX, ride).group == train->group_id);
+	CHECK(cache.GetDiagnostics().work == before.work); CHECK(train->primary_checks == checks);
+	Group::Get(train->group_id)->name = "Renamed service";
+	CHECK(Group::Get(cache.Resolve(PAX, ride).group)->name == "Renamed service");
+	GroupID old = train->group_id; train->group_id = f.GroupFor(*train);
+	cache.Resolve(PAX, ride); cache.Advance(0);
+	CHECK(cache.Resolve(PAX, ride).group == train->group_id); CHECK(cache.Resolve(PAX, ride).group != old);
+	delete train; cache.Resolve(PAX, ride); cache.Advance(0);
+	CHECK(cache.Resolve(PAX, ride).group == GroupID::Invalid()); CHECK(cache.GetDiagnostics().stale_service > 0);
+}
+
+TEST_CASE("Station long consists resume with tiny slices and move counts out of checking exactly once", "[passenger][station-gui][service-progress][determinism]")
+{
+	GuiFixture f; auto *train = Vehicle::Create<GuiTrain>(); train->group_id = f.GroupFor(*train);
+	train->cargo_type = CargoType{1}; train->cargo_cap = 0;
+	std::vector<GuiCoach *> parts; Vehicle *tail = train;
+	for (size_t i = 0; i < 150; ++i) {
+		auto *part = Vehicle::Create<GuiCoach>(); part->cargo_type = CargoType{1}; tail->SetNext(part); tail = part; parts.push_back(part);
+	}
+	parts.back()->cargo_type = PAX;
+	auto *packet = f.Packet(); packet->SetPassengerJourney(train->Ride(), B);
+	const auto execution = packet->GetPassengerJourney(); GameRandomSeedChecker seeds;
+	StationPassengerServiceCache cache;
+	CargoDataEntry expanded, data; expanded.InsertOrRetrieve(PAX);
+	std::array<StationCargoGrouping, 4> order{GR_CARGO, GR_NEXT, GR_SOURCE, GR_DESTINATION};
+	auto show = [&]() {
+		data.Clear(); ShowStationWaitingCargo(data, expanded, order, A, true, PAX, *packet, B, B, 100, cache);
+		CHECK(data.GetCount() == 100); CHECK(data.Retrieve(PAX)->GetCount() == 100);
+		CHECK(data.Retrieve(PAX)->GetNumChildren() == 1);
+	};
+	show(); CHECK((**data.Retrieve(PAX)->Begin()).GetService().label == StationPassengerServiceLabel::Checking);
+	for (size_t i = 0; i < 300 && cache.GetDiagnostics().complete == 0; ++i) { cache.Advance(100, 1); show(); }
+	REQUIRE(cache.GetDiagnostics().complete == 1);
+	CHECK((**data.Retrieve(PAX)->Begin()).GetService().group == train->group_id);
+	CHECK(cache.GetDiagnostics().vehicles == 1); CHECK(cache.GetDiagnostics().work < 180);
+	CHECK(cache.GetDiagnostics().work_exhausted > 0);
+	CHECK(packet->GetPassengerJourney() == execution); CHECK(packet->Count() == 10); CHECK(seeds.Check());
+	train->SetNext(nullptr); for (auto *part : parts) { part->SetNext(nullptr); delete part; } delete train;
+}
+
+TEST_CASE("Station ungrouped fleets refresh without clearing unrelated completed entries", "[passenger][station-gui][service-progress]")
+{
+	GuiFixture f; GuiTrain first(VehicleID{100}), second(VehicleID{101});
+	StationPassengerServiceCache cache;
+	CHECK(cache.Resolve(PAX, first.Ride()).label == StationPassengerServiceLabel::Ungrouped);
+	second.group_id = f.GroupFor(second); CHECK(cache.Resolve(PAX, second.Ride()).group == second.group_id);
+	first.group_id = f.GroupFor(first); cache.Advance(11000);
+	cache.Resolve(PAX, first.Ride()); cache.Advance(0);
+	CHECK(cache.Resolve(PAX, first.Ride()).group == first.group_id);
+	CHECK(cache.GetDiagnostics().ungrouped > 0); CHECK(cache.GetDiagnostics().refreshes > 0);
+}
+
+TEST_CASE("Station service caches have bounded records under many stale ride conditions", "[passenger][station-gui][service-progress]")
+{
+	GuiFixture f; GuiTrain train(VehicleID{100});
+	StationPassengerServiceCache cache;
+	for (size_t i = 0; i < 5000; ++i) { auto ride = train.Ride(); ride.signature += i + 1; cache.Resolve(PAX, ride); }
+	CHECK(cache.GetDiagnostics().entries <= 4096); CHECK(cache.GetDiagnostics().evictions > 0);
+	CHECK(cache.GetDiagnostics().stale_service > 0);
+}
+
+TEST_CASE("Station passenger grouping controls match cargo presence and planned mode", "[passenger][station-gui]")
+{
+	using Mode = StationCargoGroupingMode;
+	CHECK(GetStationCargoGroupingMode(false, true, false) == Mode::Passengers);
+	CHECK(GetStationCargoGroupingMode(false, true, true) == Mode::Mixed);
+	CHECK(GetStationCargoGroupingMode(false, false, true) == Mode::Conventional);
+	CHECK(GetStationCargoGroupingMode(false, false, false) == Mode::Conventional);
+	CHECK(GetStationCargoGroupingMode(true, true, false) == Mode::Conventional);
+	CHECK(GetStationCargoGroupingMode(true, true, true) == Mode::Conventional);
+	StationPassengerService partial{GroupID{10}, true}, complete{GroupID{10}};
+	CHECK(PassengerServiceExpansionKey(partial) == PassengerServiceExpansionKey(complete));
+	CargoDataEntry expanded; ExpandPassenger(expanded, B, A, partial);
+	REQUIRE(expanded.Retrieve(PAX)->Retrieve(PassengerServiceExpansionKey(complete)) != nullptr);
+	expanded.Retrieve(PAX)->Remove(PassengerServiceExpansionKey(complete));
+	CHECK(expanded.Retrieve(PAX)->Retrieve(PassengerServiceExpansionKey(partial)) == nullptr);
+}
+
+TEST_CASE("Station round robin lets a short pending consist finish while a large one is still checking", "[passenger][station-gui][service-progress]")
+{
+	GuiFixture f; auto *large = Vehicle::Create<GuiTrain>(), *small = Vehicle::Create<GuiTrain>();
+	large->group_id = f.GroupFor(*large); small->group_id = f.GroupFor(*small);
+	std::vector<GuiCoach *> large_parts, small_parts;
+	auto attach = [&](GuiTrain *train, size_t count, std::vector<GuiCoach *> &parts) {
+		train->cargo_type = CargoType{1}; train->cargo_cap = 0; Vehicle *tail = train;
+		for (size_t i = 0; i < count; ++i) { auto *part = Vehicle::Create<GuiCoach>(); part->cargo_type = CargoType{1}; tail->SetNext(part); tail = part; parts.push_back(part); }
+		parts.back()->cargo_type = PAX;
+	};
+	attach(large, 1000, large_parts); attach(small, 80, small_parts);
+	StationPassengerServiceCache cache;
+	CHECK(cache.Resolve(PAX, large->Ride()).label == StationPassengerServiceLabel::Checking);
+	CHECK(cache.Resolve(PAX, small->Ride()).label == StationPassengerServiceLabel::Checking);
+	for (size_t update = 0; update < 8; ++update) cache.Advance(100, 16);
+	CHECK(cache.Resolve(PAX, small->Ride()).group == small->group_id);
+	CHECK(cache.Resolve(PAX, large->Ride()).label == StationPassengerServiceLabel::Checking);
+	CHECK(cache.GetDiagnostics().partial == 1); CHECK(cache.GetDiagnostics().complete == 1);
+	CHECK(cache.GetDiagnostics().vehicles == 2);
+	large->SetNext(nullptr); small->SetNext(nullptr);
+	for (auto *part : large_parts) { part->SetNext(nullptr); delete part; }
+	for (auto *part : small_parts) { part->SetNext(nullptr); delete part; }
+	delete small; delete large;
+}
+
+TEST_CASE("Station concrete Journey cache does not require a Hyperpath database generation", "[passenger][station-gui][service-progress]")
+{
+	GuiFixture f; auto *train = Vehicle::Create<GuiTrain>(); train->group_id = f.GroupFor(*train);
+	StationPassengerServiceCache cache;
+	for (auto kind : {PassengerRideKind::VehicleSnapshot, PassengerRideKind::ServiceIntent, PassengerRideKind::BoundService}) {
+		auto ride = train->Ride(kind); ride.generation = 123456;
+		CHECK(cache.Resolve(PAX, ride).group == train->group_id);
+		auto work = cache.GetDiagnostics().work;
+		CHECK(cache.Resolve(PAX, ride).group == train->group_id); CHECK(cache.GetDiagnostics().work == work);
+	}
+	delete train;
 }

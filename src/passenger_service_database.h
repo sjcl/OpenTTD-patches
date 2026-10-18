@@ -206,6 +206,10 @@ public:
 	void SetHyperpathBoardingFilterMode(HyperpathFilterMode mode) { this->hyperpath_boarding_filter = mode; }
 	void SetHyperpathBoardingFilterEnabled(bool enabled) { this->hyperpath_boarding_filter = enabled ? HyperpathFilterMode::On : HyperpathFilterMode::Off; }
 	HyperpathFilterMode GetHyperpathBoardingFilterMode() const { return this->hyperpath_boarding_filter; }
+	PassengerPrecomputedTable::DisplayRead NextHyperpathDisplayCandidate(CargoType cargo, const PassengerJourneyExecution &intent,
+			OrderListID previous, OrderListID failed, PassengerPrecomputedTable::DisplayCursor &cursor,
+			PassengerPrecomputedTable::DisplayCandidate &out, size_t &work) const;
+
 	/** GUI-only read of the intent's current/retained published policy. Never replans a stale intent. */
 	bool HyperpathDisplayCandidates(CargoType cargo, const PassengerJourneyExecution &intent, OrderListID previous, OrderListID failed,
 			std::vector<PassengerPrecomputedTable::DisplayCandidate> &out, size_t &work) const;
