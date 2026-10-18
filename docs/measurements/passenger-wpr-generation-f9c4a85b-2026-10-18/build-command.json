@@ -1,0 +1,36 @@
+{
+  "configure_command": [
+    "cmake",
+    "-S",
+    "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches",
+    "-B",
+    "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-merge-jgrpp-ya-20261018",
+    "-G",
+    "Visual Studio 17 2022",
+    "-A",
+    "x64",
+    "-DCMAKE_PREFIX_PATH=C:/Users/bebe/CLionProjects/OpenTTD-patches/cmake-build-release-visual-studio/vcpkg_installed/x64-windows-static",
+    "-DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded",
+    "-DOPTION_USE_ASSERTS=ON",
+    "-DOPTION_NO_LTO=ON",
+    "-DOPTION_DEDICATED=OFF",
+    "-DCMAKE_CXX_FLAGS_RELEASE=/O2 /Ob2 /DNDEBUG /Zi /Zo",
+    "-DCMAKE_C_FLAGS_RELEASE=/O2 /Ob2 /DNDEBUG /Zi",
+    "-DCMAKE_EXE_LINKER_FLAGS_RELEASE=/DEBUG:FULL /OPT:REF /OPT:ICF /INCREMENTAL:NO"
+  ],
+  "checkout_commit": "f9c4a85b721073bbf86747f4a4cec7ac5ccd2f89",
+  "measurement_target": "f9c4a85b721073bbf86747f4a4cec7ac5ccd2f89",
+  "native_test_command": [
+    "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-merge-jgrpp-ya-20261018\\Release\\openttd_test.exe",
+    "--reporter",
+    "compact"
+  ],
+  "cleared_probe_environment": [
+    "OPENTTD_PASSENGER_TRACE",
+    "OPENTTD_PASSENGER_CHECKPOINT_TICK",
+    "OPENTTD_PASSENGER_FOCUS_TRACE",
+    "OPENTTD_PASSENGER_DEPARTURE_DIAGNOSTIC",
+    "OPENTTD_RETIREMENT_PROFILE",
+    "OPENTTD_RETIREMENT_REFERENCE"
+  ]
+}
