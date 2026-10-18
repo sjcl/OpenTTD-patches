@@ -1,0 +1,83 @@
+{
+  "address": "127.0.0.1:17740",
+  "default_timeouts": true,
+  "paused_join": true,
+  "input": "C:\\Users\\bebe\\.codex\\worktrees\\6d2b\\OpenTTD-patches\\build-compiler-comparison\\input\\input.sav",
+  "joined": false,
+  "packet_payment_equal": false,
+  "binary_sha256": "3d456404db2bb6a30c09f019c5e53b1950fbaa0211746c918ce5feda4b7224d9",
+  "input_sha256": "916cfa88eab18342199ec0c77f0c15c5477c961be7fa60d71e2d22a1b878992a",
+  "requested_ticks": 256,
+  "initial_build": false,
+  "stall_test": false,
+  "frame_freq": 1,
+  "toggle_precomputed": false,
+  "replace_precomputed": false,
+  "wait_server_ready": false,
+  "worker_hooks": {
+    "server": {
+      "worker_delay_us": 0,
+      "worker_fail_work": 0,
+      "main_headstart_us": 0
+    },
+    "client": {
+      "worker_delay_us": 0,
+      "worker_fail_work": 0,
+      "main_headstart_us": 0
+    }
+  },
+  "observation_timeout_seconds": 300,
+  "server_workers": 4,
+  "client_workers": 4,
+  "hyperpath": null,
+  "fixture_timetable": false,
+  "server_binary_sha256": "3d456404db2bb6a30c09f019c5e53b1950fbaa0211746c918ce5feda4b7224d9",
+  "server_snapshot": {
+    "runtime_routing_feature": 1,
+    "state_ticks": 3197276448,
+    "packets": 468892,
+    "cargo_units": 545597,
+    "known_od_units": 467362,
+    "journey_packets": 456289,
+    "packet_state_digest": 9398247111417590064,
+    "payment_digest": 2970175517398790604,
+    "payments_valid": true,
+    "database_digest": 1972075791501265560,
+    "ownership_digest": 2176262457920458624,
+    "loading_digest": 9369444908887142034,
+    "completed_rows": 0,
+    "retained_rows": 19,
+    "table_operations": 0,
+    "published_revision": 1775,
+    "company_deliveries": 75678,
+    "journey_routing": 1,
+    "precomputed_routing": 1,
+    "legacy_true_packets": 0,
+    "legacy_false_packets": 0,
+    "legacy_true_units": 0,
+    "legacy_false_units": 0,
+    "opposite_history_mergeable_pairs": 0
+  },
+  "client_binary_sha256": "3eb39146323f9900b724b15ba6dd9816749ac21eec1f7a80e3978c2d3e5276fe",
+  "join_elapsed_seconds": 300.2705435999669,
+  "client_exit_code": null,
+  "network_error": false,
+  "completed_observation": false,
+  "replay": null,
+  "progress_packets": 0,
+  "error": "Join or canonical snapshot comparison failed",
+  "pass": false,
+  "elapsed_seconds": 319.74732010019943,
+  "process_observations": {
+    "0_peak_working_bytes": 8172830720,
+    "0_peak_commit_bytes": 8201867264,
+    "0_process_cpu_seconds": 140.59375,
+    "1_peak_working_bytes": 29597696,
+    "1_peak_commit_bytes": 13553664,
+    "1_process_cpu_seconds": 2.921875
+  },
+  "newgrf_warning_lines": {
+    "server": 5589,
+    "client": 0
+  }
+}
