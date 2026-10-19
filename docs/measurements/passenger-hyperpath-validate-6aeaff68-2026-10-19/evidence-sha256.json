@@ -20,8 +20,8 @@
     "sha256": "02ffc3969159d86f68e15ccb0a4e6db457d7c0519d51665b6cdacfc0be46e9f8"
   },
   "checks/package.py": {
-    "bytes": 8076,
-    "sha256": "a554a663b50c15c9592c8c08f674da2bec26438b63c81e30f7e2554d4607bfcc"
+    "bytes": 8090,
+    "sha256": "4d7c1851cab547f33ae19b42f8ec479f5f4e2d18512175cd74590ccf32105f5d"
   },
   "checks/prepare.py": {
     "bytes": 5860,
@@ -72,8 +72,8 @@
     "sha256": "4c182a112dcab4df404db679654eb96ffa6c51d5d2b24a27906afb68adcb5bcb"
   },
   "report-sha256.json": {
-    "bytes": 157,
-    "sha256": "686d0227ddb9c5d1a6c73fd6435eaffb175a65ed96503eab89ae2372d73e0113"
+    "bytes": 153,
+    "sha256": "097c1f1964354d61b62b1b646523e13fc33ec60360531278505d8538f07fabc2"
   },
   "validate/actual-ticks.json": {
     "bytes": 48150,

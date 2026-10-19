@@ -262,6 +262,7 @@ buildディレクトリを消しても復元・再集計できる状態にする
 Gitにはレポート、関数別inclusive/exclusive CSV、圧縮生CSV、tick・canonical・validate・品質・区間監査JSON、入力manifest、ビルド/採取/exportレシピとハッシュを含める。
 当日の補助スクリプトも再現資料として保存し、採用したスクリプトと不採用資料を明記する。`.etl` / `.sav` / `.exe` / `.pdb` はコミットしない。
 stage後にblobのハッシュとmanifestの対応、および `git diff --cached --check` を確認する。
+WindowsのPythonでハッシュ対象のレポートを生成する場合は `write_text(..., newline='\n')` と対応する `eol=lf` 属性等で改行を固定する。作業ファイルだけでなくstage済みblobを照合し、検査が非0で終わったらcommit・pushへ進まない。
 報告は結果、同一性・検証の成否、時間の生値と比較条件、ばらつき、失敗の理由を明記する。
 この比較系列のpush先は `sjcl` の `merge/hyperpath-with-table-build`。現在のremote/branchを確認し、force pushせず、push後にremoteのcommit IDを照合する。
 

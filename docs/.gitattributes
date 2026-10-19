@@ -1,0 +1,3 @@
+# Keep the report hash and runbook line endings stable across Windows checkouts.
+passenger-hyperpath-validate-6aeaff68-2026-10-19.md text eol=lf
+passenger-wpr-runbook.md text eol=lf

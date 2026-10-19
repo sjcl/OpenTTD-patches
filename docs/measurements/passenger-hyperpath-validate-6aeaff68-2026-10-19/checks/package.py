@@ -112,7 +112,7 @@ exe/PDBと終了セーブは作業ツリー外に保存し、[バックアップ
 採用した補助スクリプトはchecks配下に保存している。当日のパスとrevisionを含む再現資料であり、その場所から直接実行する汎用runnerではない。
 '''
 report_path = ROOT / 'docs' / (NAME + '.md')
-report_path.write_text(report, encoding='utf-8')
+report_path.write_text(report, encoding='utf-8', newline='\n')
 dump(OUT / 'report-sha256.json', dict(path=report_path.relative_to(ROOT).as_posix(), sha256=sha(report_path)))
 inventory = {p.relative_to(OUT).as_posix(): dict(bytes=p.stat().st_size, sha256=sha(p))
              for p in sorted(OUT.rglob('*')) if p.is_file()}
