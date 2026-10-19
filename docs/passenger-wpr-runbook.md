@@ -75,6 +75,16 @@ buildは `cmake --build BUILD --config Release --target openttd_test openttd --p
 対象commit、`src` tree ID、exe/PDBのSHA-256を `build-identity.json` に残す。対応しないPDBや言語ファイルを混ぜない。
 起動環境から以前の `OPENTTD_*` を除き、今回のrunnerに必要なものだけを設定させる。古いtrace/probe設定を持ち込まない。
 
+### Clang / LLVM ThinLTOの場合
+
+上のMSVC例に固定せず、依頼されたビルド条件を明示する。Windows既定PGOがUSEの版でPGOなしを求められた場合は、`OPTION_PGO=OFF`を明示してprofile生成・使用フラグがないことを確認する。
+`openttd_lib`とexeの両方に`-flto=thin`、`/O2 /Ob2 /MT /Z7`が入ることを、生成プロジェクトと実際のコンパイルコマンドで確認する。ClangCLのコマンド履歴は`clang-cl.command.1.tlog`であり、MSVCの`CL.command.1.tlog`と同じ名前とは限らない。
+bitcodeオブジェクト、compiler-rt builtinsの実リンク先・ハッシュも確認する。runtimeのディレクトリとファイル名はLLVM配布版で異なるので、固定パスを推測せず実リンク指定からたどる。
+
+リンク後にSDKの`mt.exe`で元の`os/windows/openttd.manifest`を再埋め込みし、取り出した内容を検証する。`/Z7`を付けて内部化された関数のCodeView情報を残し、対応PDBの`StateGameLoop`や旅客関数名を採取前に確認する。
+`llvm-pdbutil pretty`がDIAの読込に失敗する環境では、DIA登録を変更せずnativeの`dump --symbols` / `dump --ids`を使える。実WPA出力でも製品関数の未解決とtick全体のサンプル範囲を確認する。
+LTOによる完全なインライン化で関数境界が消える場合があるため、特定関数の0サンプルを処理時間0と解釈しない。
+
 ## 3. WPRの短いpilotを先に通す
 
 採取には [utils/passenger_wpr_cpu.wprp](../utils/passenger_wpr_cpu.wprp) を使う。
@@ -234,7 +244,8 @@ loading walkはCargoLoad用の `StationCargoList::VisitBoardingCandidates<…>` 
 PDBで表示される型名にはICFの別名があり得るため、表示名だけから処理内容を断定しない。サンプル0は時間0の証明ではない。
 
 `passenger_wpr_control.py` のuntouched新/旧比は機械状態の変動を仮定した補正で、CPU周波数の実測ではない。
-生値、サンプル数、補正係数、補正後、tick実時間を併記する。各組合せ1回の小差を確定的な高速化と断言しない。
+コンパイラ・LTO・assert等を変更した比較では全コードの生成が変わるため、「untouched」を不変の対照として扱わない。この場合は生のCPU時間と変更した条件を報告し、機械補正やコンパイラ単独の効果と称しない。
+補正を使う場合は生値、サンプル数、補正係数、補正後、tick実時間を併記する。各組合せ1回の小差を確定的な高速化と断言しない。
 ETW設定を変更した場合は同設定で採った基準を主比較にし、以前の採取設定との比較を別表にする。
 
 ## 8. 失敗時は必要な段階だけ戻す

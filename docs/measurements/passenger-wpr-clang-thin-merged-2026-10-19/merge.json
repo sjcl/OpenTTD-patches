@@ -1,0 +1,10 @@
+{
+  "commit": "f97bac717c840852d8240f0eac51a92bad0abb9b",
+  "parents": [
+    "c0aab201b7a8fa26643a085af5a615bf5abfb6fa",
+    "82a587e2c6fc68ceb1f585c324618c521e47516d"
+  ],
+  "merged_ref": "sjcl/jgrpp-ya",
+  "merged_commit": "82a587e2c6fc68ceb1f585c324618c521e47516d",
+  "premerge_commit": "c0aab201b7a8fa26643a085af5a615bf5abfb6fa"
+}

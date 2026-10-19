@@ -1,0 +1,18 @@
+
+Warning: EventSink {13399e05-4afd-48fd-ba25-6b673a7a2b92} signaled an Invalid Event:
+         Event#: 1853178  (T#0:#1853178)
+         TimeStamp:   65548821, Process: 69984, Thread: 102144, Cpu:  10
+         ClassicEventGuid: {01853a65-418f-4f36-aefc-dc0f1d2fd235}
+         ClassicEventDescriptor: 0x0c  0x00 0x0002
+         MofLength: 112
+WPA export: legacy
+Exported: CPU_Usage_(Sampled)_Exclusive_functions.csv, CPU_Usage_(Sampled)_Stacks.csv
+
+Warning: EventSink {13399e05-4afd-48fd-ba25-6b673a7a2b92} signaled an Invalid Event:
+         Event#: 1562809  (T#0:#1562809)
+         TimeStamp:   60350966, Process: 132552, Thread: 112612, Cpu:   4
+         ClassicEventGuid: {01853a65-418f-4f36-aefc-dc0f1d2fd235}
+         ClassicEventDescriptor: 0x0c  0x00 0x0002
+         MofLength: 112
+WPA export: hyperpath
+Exported: CPU_Usage_(Sampled)_Exclusive_functions.csv, CPU_Usage_(Sampled)_Stacks.csv

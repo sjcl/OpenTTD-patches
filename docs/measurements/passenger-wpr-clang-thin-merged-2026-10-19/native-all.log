@@ -1,0 +1,66 @@
+C:\Users\bebe\.codex\worktrees\8621\OpenTTD-patches\src\tests\passenger_od_assignment.cpp(573): warning: 'OD benchmark: 12886 us / 10000 batches; entries=256; bytes=4168'
+C:\Users\bebe\.codex\worktrees\8621\OpenTTD-patches\src\tests\passenger_od_assignment.cpp(760): warning: 'National OD generation: 117818 us / 400 batches; destinations=8000; passengers=512 per batch'
+C:\Users\bebe\.codex\worktrees\8621\OpenTTD-patches\src\tests\passenger_service_graph.cpp(817): warning: 'Actual-visit fleet: trips=4000; visits=104000; work=132058; bound=37896128; retained=12685708; cold_us=17088; warm_us=17564'
+C:\Users\bebe\.codex\worktrees\8621\OpenTTD-patches\src\tests\passenger_service_database.cpp(659): warning: 'Anytime Work boundaries 0..65536: rescued=20; inferior_to_reference=16; after_generation=2; before_pop=6'
+C:\Users\bebe\.codex\worktrees\8621\OpenTTD-patches\src\tests\passenger_service_database.cpp(1342): warning: 'Timed Work boundaries: old_admitted=349; new_admitted=446; newly_admitted=97; route_quality_changes=0'
+C:\Users\bebe\.codex\worktrees\8621\OpenTTD-patches\src\tests\passenger_service_database.cpp(2237): warning: 'Schedule 8000-station benchmark: queries=4097; work_per_query=7; total_query_us=21; policy_bytes=1056'
+C:\Users\bebe\.codex\worktrees\8621\OpenTTD-patches\src\tests\passenger_service_database.cpp(2612): warning: 'Shared LRU: evictions=906; eviction_us=7; validation_us=0; entries=4096; bytes=4718584'
+C:\Users\bebe\.codex\worktrees\8621\OpenTTD-patches\src\tests\passenger_journey_planner.cpp(209): warning: 'Scoped national standard: cold=12762 us; warm=2604 us; visits=1010; logical work=1424164; retained bytes=312354; memory bound=42500096; query work=33861'
+C:\Users\bebe\.codex\worktrees\8621\OpenTTD-patches\src\tests\passenger_journey_planner.cpp(892): warning: 'National journey defaults: 560 us; trips=800; visits=80800; work=35630; reverse work=4901; scratch peak=891080'
+C:\Users\bebe\.codex\worktrees\8621\OpenTTD-patches\src\tests\passenger_journey_planner.cpp(892): warning: 'National journey defaults: 530 us; trips=801; visits=80802; work=50114; reverse work=4907; scratch peak=894544'
+C:\Users\bebe\.codex\worktrees\8621\OpenTTD-patches\src\tests\passenger_journey_planner.cpp(946): warning: 'transfers := 0' with 1 message: 'Transfer chain: transfers=0; rounds=1; extensions=0; work=12; labels=2; scratch=28088'
+C:\Users\bebe\.codex\worktrees\8621\OpenTTD-patches\src\tests\passenger_journey_planner.cpp(946): warning: 'transfers := 4' with 1 message: 'Transfer chain: transfers=4; rounds=5; extensions=0; work=70; labels=6; scratch=30744'
+C:\Users\bebe\.codex\worktrees\8621\OpenTTD-patches\src\tests\passenger_journey_planner.cpp(946): warning: 'transfers := 5' with 1 message: 'Transfer chain: transfers=5; rounds=6; extensions=1; work=87; labels=7; scratch=31408'
+C:\Users\bebe\.codex\worktrees\8621\OpenTTD-patches\src\tests\passenger_journey_planner.cpp(946): warning: 'transfers := 9' with 1 message: 'Transfer chain: transfers=9; rounds=10; extensions=2; work=165; labels=11; scratch=34064'
+C:\Users\bebe\.codex\worktrees\8621\OpenTTD-patches\src\tests\passenger_journey_planner.cpp(946): warning: 'transfers := 15' with 1 message: 'Transfer chain: transfers=15; rounds=16; extensions=2; work=312; labels=17; scratch=38048'
+C:\Users\bebe\.codex\worktrees\8621\OpenTTD-patches\src\tests\passenger_journey_planner.cpp(946): warning: 'transfers := 33' with 1 message: 'Transfer chain: transfers=33; rounds=34; extensions=4; work=969; labels=35; scratch=77136'
+C:\Users\bebe\.codex\worktrees\8621\OpenTTD-patches\src\tests\passenger_journey_planner.cpp(946): warning: 'transfers := 300 (0x12c)' with 1 message: 'Transfer chain: transfers=300; rounds=301; extensions=7; work=48762; labels=302; scratch=634328'
+C:\Users\bebe\.codex\worktrees\8621\OpenTTD-patches\src\tests\passenger_journey_shadow.cpp(427): warning: 'Untimed national fixture: 8004 declared stations, 4001 trains; trunk reverse work=7; graph memory envelope=18436608'
+C:\Users\bebe\.codex\worktrees\8621\OpenTTD-patches\src\tests\passenger_journey_shadow.cpp(453): warning: 'National shadow: 18318 us total; graph=18034 us; search=247 us; work=6003; scratch=127352; graph envelope=110131200'
+C:\Users\bebe\.codex\worktrees\8621\OpenTTD-patches\src\tests\passenger_journey_active.cpp(1644): warning: 'Active routing: CargoPacket=224 bytes; leg=96 bytes; 4096 identical OD queries use=65923 work allowance; pool=0'
+C:\Users\bebe\.codex\worktrees\8621\OpenTTD-patches\src\tests\passenger_journey_active.cpp(2086): warning: 'Due loading admission: stations=4801; applied=14; waiting-share claims=1'
+C:\Users\bebe\.codex\worktrees\8621\OpenTTD-patches\src\tests\passenger_journey_active.cpp(2209): warning: 'Production national: stations=8001; journey packets=64; builds=1; work=1389604; build us=8027; retained=312354; static=1397232; cache hits=63'
+C:\Users\bebe\.codex\worktrees\8621\OpenTTD-patches\src\tests\passenger_multimodal.cpp(954): warning: 'Mixed national network: stations=2402; trips=480; graph_us=3841; query_us=86; graph_work=86520; query_work=2229; scratch=112640; envelope=14469120'
+dbg: [misc:0] Source buffer too short: 1 > 0
+dbg: [misc:0] Source buffer too short: 1 > 0
+dbg: [misc:0] Source buffer too short: 1 > 0
+dbg: [misc:0] Source buffer too short: 1 > 0
+dbg: [misc:0] Source buffer too short: 1 > 0
+dbg: [misc:0] Source buffer too short: 2 > 0
+dbg: [misc:0] Source buffer too short: 2 > 0
+dbg: [misc:0] Source buffer too short: 2 > 0
+dbg: [misc:0] Source buffer too short: 4 > 0
+dbg: [misc:0] Source buffer too short: 4 > 0
+dbg: [misc:0] Source buffer too short: 4 > 0
+dbg: [misc:0] Source buffer too short: 8 > 0
+dbg: [misc:0] Source buffer too short: 8 > 0
+dbg: [misc:0] Source buffer too short: 8 > 0
+dbg: [misc:0] Source buffer too short: 1 > 0
+dbg: [misc:0] Source buffer too short: 2 > 0
+dbg: [misc:0] Cannot parse integer: ''+'-2 -'
+dbg: [misc:0] Cannot parse integer: 'ffffFFFF'+' fff'
+dbg: [misc:0] Cannot parse integer: ''+'-1aa'
+dbg: [misc:0] Cannot parse integer: '1234567890123'+' 123'
+dbg: [misc:0] Cannot parse integer: '1234567890123'+' 123'
+dbg: [misc:0] Cannot parse integer: 'ffffFFFFffffFFFE'+' fff'
+dbg: [misc:0] Cannot parse integer: 'ffffFFFFffffFFFE'+' fff'
+dbg: [misc:0] Cannot parse integer: 'ffffFFFFffffFFFE'+' fff'
+dbg: [misc:0] Cannot parse integer: ''+' '
+dbg: [misc:0] Cannot parse integer: ''+' '
+dbg: [misc:0] Cannot parse integer: ''+' '
+dbg: [misc:0] Cannot parse integer: ''+' '
+dbg: [misc:0] Cannot parse integer: ''+' '
+dbg: [misc:0] Cannot parse integer: ''+' '
+dbg: [misc:0] Cannot parse integer: ''+' '
+dbg: [misc:0] Cannot parse integer: ''+' '
+dbg: [misc:0] Cannot parse integer: ''+''
+dbg: [misc:0] Cannot parse integer: ''+''
+dbg: [misc:0] Cannot parse integer: ''+''
+dbg: [misc:0] Cannot parse integer: ''+''
+dbg: [misc:0] Cannot parse integer: ''+''
+dbg: [misc:0] Cannot parse integer: ''+''
+dbg: [misc:0] Cannot parse integer: ''+''
+dbg: [misc:0] Cannot parse integer: ''+''
+Station 10000 paused conditions: results=10000, capacity=46603, search_workspaces=0, estimated_bytes=3600000, work=40000, result_evictions=0
+Passed all 779 test cases with 10745600 assertions.
+
