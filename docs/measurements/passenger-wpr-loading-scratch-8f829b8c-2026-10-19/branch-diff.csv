@@ -1,0 +1,28 @@
+branch,legacy_ms_per_tick,hyperpath_ms_per_tick,delta_ms_per_tick,legacy_samples,hyperpath_samples
+[worker threads],1.093603320,2.436716699,1.343113379,2239,4988
+openttd.exe!PassengerServiceDatabase::Tick,0.216343945,0.425786670,0.209442725,442,870
+openttd.exe!RunPassengerWaitingEvents,0.756026123,0.771595264,0.015569141,1546,1577
+openttd.exe!NewsLoop,0.000488672,0.001951709,0.001463037,1,4
+openttd.exe!IncreaseDate,0.021997217,0.023455566,0.001458350,45,48
+openttd.exe!UpdateLandscapingLimits,0.000000000,0.000976953,0.000976953,0,2
+openttd.exe!StateGameLoop_LinkGraphPauseControl,0.000000000,0.000486914,0.000486914,0,1
+openttd.exe!OnTick_Companies,0.000490088,0.000975146,0.000485059,1,2
+openttd.exe!Game::GameLoop,0.000488379,0.000492188,0.000003809,1,1
+openttd.exe!PerformanceMeasurer::~PerformanceMeasurer,0.000974268,0.000974658,0.000000391,2,2
+openttd.exe!CallWindowGameTickEvent,0.000487354,0.000000000,-0.000487354,1,0
+openttd.exe!CheckCaches,0.000975488,0.000488037,-0.000487451,2,1
+openttd.exe!RunAuxiliaryTileLoop,0.000487939,0.000000000,-0.000487939,1,0
+[StateGameLoop self],0.000488379,0.000000000,-0.000488379,1,0
+openttd.exe!BasePersistentStorageArray::SwitchMode,0.000489209,0.000000000,-0.000489209,1,0
+openttd.exe!PerformanceMeasurer::PerformanceMeasurer,0.000489404,0.000000000,-0.000489404,1,0
+openttd.exe!PassengerServiceDatabase::IsPreparingPrecomputed,0.000979541,0.000489404,-0.000490137,2,1
+openttd.exe!AnimateAnimatedTiles,0.005381396,0.004405811,-0.000975586,11,9
+openttd.exe!TimerManager<TimerGameTick>::Elapsed,0.002930273,0.001465527,-0.001464746,6,3
+openttd.exe!RecordPassengerJourneySimulationTick,0.001466064,0.000000000,-0.001466064,3,0
+openttd.exe!LinkGraphSchedule::JoinNext,0.004887988,0.003417871,-0.001470117,10,7
+openttd.exe!BeginPassengerJourneyTick,0.009302734,0.005879102,-0.003423633,19,12
+openttd.exe!FlushDeferredAspectUpdates,0.019534375,0.012204004,-0.007330371,40,25
+openttd.exe!CallLandscapeTick,0.583051953,0.483425928,-0.099626025,1194,990
+openttd.exe!RunTileLoop,11.123163623,8.742055566,-2.381108057,22779,17901
+openttd.exe!CallVehicleTicks,13.794900977,11.179437256,-2.615463721,28252,22896
+[outside StateGameLoop],4.197925049,0.877025049,-3.320900000,8597,1796

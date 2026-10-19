@@ -1,0 +1,47 @@
+parent,child,legacy_ms_per_tick,hyperpath_ms_per_tick,delta_ms_per_tick
+openttd.exe!LoadUnloadVehicle,openttd.exe!StationCargoList::RecordCapacityMiss,0.209962305,0.229972949,0.020010645
+openttd.exe!RunPassengerWaitingEvents,openttd.exe!StationCargoList::RoutePassengerJourneys,0.754563135,0.770111426,0.015548291
+openttd.exe!LoadUnloadVehicle,openttd.exe!Train::MarkDirty,0.007319189,0.010736182,0.003416992
+openttd.exe!LoadUnloadVehicle,openttd.exe!_free_base,0.000487842,0.002438818,0.001950977
+openttd.exe!LoadUnloadVehicle,openttd.exe!Station::GetPlatformLength,0.003418506,0.004888916,0.001470410
+openttd.exe!PassengerJourneyLoadingContext::MayUseHyperpathPolicy,openttd.exe!PassengerServiceDatabase::IsCurrent,0.020989844,0.021487744,0.000497900
+openttd.exe!RunPassengerWaitingEvents,openttd.exe!std::chrono::steady_clock::now,0.000000000,0.000489697,0.000489697
+openttd.exe!PassengerJourneyLoadingContext::MayUseHyperpathPolicy,ntoskrnl.exe!KiDpcInterrupt,0.000000000,0.000488770,0.000488770
+openttd.exe!LoadUnloadVehicle,"openttd.exe!std::vector<CargoMaskedStationIDVector,std::allocator<CargoMaskedStationIDVector> >::_Tidy",0.000000000,0.000488428,0.000488428
+openttd.exe!LoadUnloadVehicle,openttd.exe!GoodsEntry::CreateData,0.000000000,0.000487842,0.000487842
+openttd.exe!LoadUnloadVehicle,openttd.exe!Ship::MarkDirty,0.000000000,0.000487451,0.000487451
+openttd.exe!LoadUnloadVehicle,openttd.exe!ShowFillingPercent,0.006348682,0.006835107,0.000486426
+openttd.exe!PassengerJourneyLoadingContext::MayUseHyperpathPolicy,openttd.exe!PassengerJourneyLoadingContext::RefreshBoardingRevision,0.000970166,0.000974902,0.000004736
+openttd.exe!PassengerJourneyLoadingContext::MayUseHyperpathPolicy,openttd.exe!GetPassengerServiceDatabase,0.000488135,0.000487939,-0.000000195
+openttd.exe!RunPassengerWaitingEvents,[self],0.001462988,0.000994141,-0.000468848
+openttd.exe!LoadUnloadVehicle,openttd.exe!Station::MarkTilesDirty,0.003910107,0.003424463,-0.000485645
+openttd.exe!PassengerJourneyLoadingContext::MayUseHyperpathPolicy,openttd.exe!IsPassengerJourneyRoutingEnabled,0.002438818,0.001952783,-0.000486035
+openttd.exe!PassengerJourneyLoadingContext::MayUseHyperpathPolicy,ntoskrnl.exe!KiInterruptDispatchNoLockNoEtw,0.000486377,0.000000000,-0.000486377
+openttd.exe!LoadUnloadVehicle,openttd.exe!Order::SetLeaveType,0.000487744,0.000000000,-0.000487744
+openttd.exe!PassengerServiceDatabase::PreparePrecomputed,openttd.exe!std::chrono::steady_clock::now,0.000488086,0.000000000,-0.000488086
+openttd.exe!LoadUnloadVehicle,"openttd.exe!GroundVehicle<RoadVehicle,1>::CargoChanged",0.000488379,0.000000000,-0.000488379
+openttd.exe!LoadUnloadVehicle,"openttd.exe!GroundVehicle<RoadVehicle,1>::PowerChanged",0.000977295,0.000488916,-0.000488379
+openttd.exe!LoadUnloadVehicle,openttd.exe!TriggerAirportAnimation,0.000489111,0.000000000,-0.000489111
+openttd.exe!LoadUnloadVehicle,openttd.exe!CalcPercentVehicleFilled,0.000974170,0.000000000,-0.000974170
+openttd.exe!LoadUnloadVehicle,openttd.exe!Vehicle::GetCargoTile,0.000975244,0.000000000,-0.000975244
+openttd.exe!LoadUnloadVehicle,openttd.exe!`LoadUnloadVehicle'::`2'::<lambda_2>::operator(),0.001464014,0.000487695,-0.000976318
+openttd.exe!PassengerServiceDatabase::PreparePrecomputed,openttd.exe!PassengerServiceDatabase::IsPreparingPrecomputed,0.000980273,0.000000000,-0.000980273
+openttd.exe!LoadUnloadVehicle,openttd.exe!UpdateTextEffect,0.002925928,0.001460156,-0.001465771
+openttd.exe!LoadUnloadVehicle,openttd.exe!RoadVehicle::MarkDirty,0.001467432,0.000000000,-0.001467432
+openttd.exe!LoadUnloadVehicle,openttd.exe!Train::UpdateAcceleration,0.001469482,0.000000000,-0.001469482
+openttd.exe!LoadUnloadVehicle,openttd.exe!GetLoadAmount,0.018562256,0.015632275,-0.002929980
+openttd.exe!PassengerJourneyLoadingContext::MayUseHyperpathPolicy,openttd.exe!__security_check_cookie,0.004395117,0.000975586,-0.003419531
+openttd.exe!PassengerJourneyLoadingContext::MayUseHyperpathPolicy,openttd.exe!Order::GetCargoLoadType,0.004884912,0.001463135,-0.003421777
+openttd.exe!LoadUnloadVehicle,[self],0.019528320,0.015131543,-0.004396777
+openttd.exe!LoadUnloadVehicle,openttd.exe!Vehicle::GetNextStoppingStation,0.010250977,0.004881543,-0.005369434
+openttd.exe!LoadUnloadVehicle,openttd.exe!TriggerStationRandomisation,0.012690479,0.006356006,-0.006334473
+openttd.exe!LoadUnloadVehicle,openttd.exe!TriggerVehicleRandomisation,0.015136572,0.008787646,-0.006348926
+openttd.exe!PassengerJourneyLoadingContext::MayUseHyperpathPolicy,"openttd.exe!std::less<std::tuple<std::tuple<PoolID<VehicleIDTag>,enum CargoType,unsigned short,unsigned __int64,PoolID<StationIDTag>,PoolID<StationIDTag>,PoolID<OrderListIDTag>,PoolID<OrderListIDTag> >,PoolID<OrderListIDTag>,unsigned __int64,std::array<unsigned int,2> > >::operator()",0.009275977,0.002441455,-0.006834521
+openttd.exe!LoadUnloadVehicle,openttd.exe!VehicleCargoList::Unload,0.176276270,0.152351563,-0.023924707
+openttd.exe!PassengerJourneyLoadingContext::MayUseHyperpathPolicy,"openttd.exe!std::_Tree<std::_Tmap_traits<std::tuple<std::tuple<PoolID<VehicleIDTag>,enum CargoType,unsigned short,unsigned __int64,PoolID<StationIDTag>,PoolID<StationIDTag>,PoolID<OrderListIDTag>,PoolID<OrderListIDTag> >,PoolID<OrderListIDTag>,unsigned __int64,std::array<unsigned int,2> >,bool,std::less<std::tuple<std::tuple<PoolID<VehicleIDTag>,enum CargoType,unsigned short,unsigned __int64,PoolID<StationIDTag>,PoolID<StationIDTag>,PoolID<OrderListIDTag>,PoolID<OrderListIDTag> >,PoolID<OrderListIDTag>,unsigned __int64,std::array<unsigned int,2> > >,std::allocator<std::pair<std::tuple<std::tuple<PoolID<VehicleIDTag>,enum CargoType,unsigned short,unsigned __int64,PoolID<StationIDTag>,PoolID<StationIDTag>,PoolID<OrderListIDTag>,PoolID<OrderListIDTag> >,PoolID<OrderListIDTag>,unsigned __int64,std::array<unsigned int,2> > const ,bool> >,0> >::_Find_lower_bound<std::tuple<std::tuple<PoolID<VehicleIDTag>,enum CargoType,unsigned short,unsigned __int64,PoolID<StationIDTag>,PoolID<StationIDTag>,PoolID<OrderListIDTag>,PoolID<OrderListIDTag> >,PoolID<OrderListIDTag>,unsigned __int64,std::array<unsigned int,2> > >",0.106458838,0.078614355,-0.027844482
+openttd.exe!PassengerJourneyLoadingContext::MayUseHyperpathPolicy,"openttd.exe!`PassengerJourneyLoadingContext::MayUseHyperpathPolicy'::`2'::<lambda_3>::operator()<std::_Tree_iterator<std::_Tree_val<std::_Tree_simple_types<std::pair<std::tuple<std::tuple<PoolID<VehicleIDTag>,enum CargoType,unsigned short,unsigned __int64,PoolID<StationIDTag>,PoolID<StationIDTag>,PoolID<OrderListIDTag>,PoolID<OrderListIDTag> >,PoolID<OrderListIDTag>,unsigned __int64,std::array<unsigned int,2> > const ,bool> > > > >",0.315912988,0.271435498,-0.044477490
+openttd.exe!LoadUnloadVehicle,openttd.exe!CargoPayment::~CargoPayment,0.185036719,0.112298633,-0.072738086
+openttd.exe!PassengerJourneyLoadingContext::MayUseHyperpathPolicy,[self],0.172328857,0.080577197,-0.091751660
+openttd.exe!PassengerJourneyLoadingContext::MayUseHyperpathPolicy,openttd.exe!PassengerJourneyLoadingContext::RetiredPlan,0.462416602,0.126470508,-0.335946094
+openttd.exe!LoadUnloadVehicle,openttd.exe!StationCargoList::Load,2.242645996,1.461908594,-0.780737402
+openttd.exe!PassengerServiceDatabase::PreparePrecomputed,openttd.exe!PassengerPrecomputedTable::PrepareGraph,3.183101611,0.008298535,-3.174803076

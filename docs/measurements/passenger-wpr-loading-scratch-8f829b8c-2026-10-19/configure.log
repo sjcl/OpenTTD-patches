@@ -1,0 +1,29 @@
+-- Selecting Windows SDK version 10.0.26100.0 to target Windows 10.0.26200.
+-- Finding editbin.exe
+-- Finding editbin.exe - found
+-- Could NOT find Grfcodec (missing: GRFCODEC_EXECUTABLE GRFID_EXECUTABLE NFORENUM_EXECUTABLE) 
+-- Option Package Dependencies - OFF
+-- Option Dedicated - OFF
+-- Option Install FHS - OFF
+-- Option Use assert - ON
+-- Option Use NSIS - OFF
+-- Option Survey Key - NOT USED
+-- PNG found -- -DWITH_PNG -- PNG::PNG
+-- ZLIB found -- -DWITH_ZLIB -- ZLIB::ZLIB
+-- LIBLZMA found -- -DWITH_LIBLZMA -- LibLZMA::LibLZMA
+-- LZO found -- -DWITH_LZO -- C:/Users/bebe/CLionProjects/OpenTTD-patches/cmake-build-release-visual-studio/vcpkg_installed/x64-windows-static/include C:/Users/bebe/CLionProjects/OpenTTD-patches/cmake-build-release-visual-studio/vcpkg_installed/x64-windows-static/include -- C:/Users/bebe/CLionProjects/OpenTTD-patches/cmake-build-release-visual-studio/vcpkg_installed/x64-windows-static/lib/lzo2.lib C:/Users/bebe/CLionProjects/OpenTTD-patches/cmake-build-release-visual-studio/vcpkg_installed/x64-windows-static/lib/lzo2.lib
+-- ZSTD found -- -DWITH_ZSTD -- C:/Users/bebe/CLionProjects/OpenTTD-patches/cmake-build-release-visual-studio/vcpkg_installed/x64-windows-static/include C:/Users/bebe/CLionProjects/OpenTTD-patches/cmake-build-release-visual-studio/vcpkg_installed/x64-windows-static/include -- C:/Users/bebe/CLionProjects/OpenTTD-patches/cmake-build-release-visual-studio/vcpkg_installed/x64-windows-static/lib/zstd.lib C:/Users/bebe/CLionProjects/OpenTTD-patches/cmake-build-release-visual-studio/vcpkg_installed/x64-windows-static/lib/zstd.lib
+-- OpusFile found -- -DWITH_OPUSFILE -- OpusFile::opusfile
+-- OpenGL found -- -DWITH_OPENGL -- OpenGL::GL
+-- SSE found -- -DWITH_SSE --   --  
+CMake Warning (dev) at cmake/InstallAndPackage.cmake:61 (install):
+  Policy CMP0177 is not set: install() DESTINATION paths are normalized.  Run
+  "cmake --help-policy CMP0177" for policy details.  Use the cmake_policy
+  command to set the policy and suppress this warning.
+Call Stack (most recent call first):
+  CMakeLists.txt:558 (include)
+This warning is for project developers.  Use -Wno-dev to suppress it.
+
+-- Configuring done (5.9s)
+-- Generating done (8.1s)
+-- Build files have been written to: C:/Users/bebe/.codex/worktrees/8621/OpenTTD-patches/build-wpr-97cdc0ad/compile

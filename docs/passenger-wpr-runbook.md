@@ -91,6 +91,7 @@ SHA-256は `e0a89dab28d5379469aa3ad23f65e8c87256014951065dae14b9429998251a82`。
 この設定はCPUサンプリング用であり、CSwitchや待機時間の分析が必要な別課題では別採取を設計する。
 
 新しい出力先で、管理者のrecorderから以下の短い試験を行う。`PROFILE` / `TEMP` / `PILOT` / `XPERF` は今回の絶対パスに置換する。
+`-recordtempto` の `TEMP` ディレクトリは起動前に明示的に作成する。以前の試行で作られたフォルダーに依存しない。
 
 ```text
 wpr -start "PROFILE!CPU" -filemode -recordtempto "TEMP"
@@ -113,6 +114,7 @@ XPERF -i "PILOT/cpu.etl" -a marks -summary -ao "PILOT/markers.txt"
 WPR用に1つの管理者recorderを起動し、pilotと必要な全ジョブを順番に処理する。ゲーム本体は通常権限で実行する。
 別のWPRセッションが動いていたら用途を確認し、自分が開始していないセッションをcancel/stopしない。
 UACの起動には非表示ウィンドウを使う（`Start-Process ... -Verb RunAs -WindowStyle Hidden`）。開始失敗や取消しを成功扱いしない。
+Windows PowerShell 5の `ErrorActionPreference=Stop` で外部コマンドのstderrを統合すると、終了コードを確認する前に `NativeCommandError` で止まる場合がある。外部呼出しの間だけ設定を切り替える等でstdout/stderrを最後まで保存し、`LASTEXITCODE` を必ず確認する。非0ならそこで止め、WPRの実状態を確認してから再開する。
 
 再利用の参考は成功した [record_minimal.ps1](measurements/passenger-wpr-coach-memo-0b8a21c0-2026-10-19/checks/record_minimal.ps1) と [run_minimal_matched.py](measurements/passenger-wpr-coach-memo-0b8a21c0-2026-10-19/checks/run_minimal_matched.py)。
 **これらは当日の再現資料で、その場所から直接実行する汎用ツールではない。** パス、revision、旧試行の移動・停止処理、待ち合わせファイルが固定されている。

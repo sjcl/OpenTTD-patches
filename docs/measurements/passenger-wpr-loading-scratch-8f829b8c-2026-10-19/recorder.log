@@ -1,0 +1,26 @@
+﻿2026-10-19T21:19:48.1269374+09:00 wpr -start C:\Users\bebe\.codex\worktrees\8621\OpenTTD-patches\build-wpr-8f829b8c\cpu-minimal.wprp!CPU -filemode -recordtempto C:\Users\bebe\.codex\worktrees\8621\OpenTTD-patches\build-wpr-8f829b8c\wpr-temp
+wpr.exe : 
+発生場所 C:\Users\bebe\.codex\worktrees\8621\OpenTTD-patches\build-wpr-8f829b8c\record.ps1:20 文字:5
++     & $taskWpr @WprArgs 2>&1 | Out-File -LiteralPath $taskLog -Append ...
++     ~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+2026-10-19T21:21:09.1407114+09:00 wpr -start C:\Users\bebe\.codex\worktrees\8621\OpenTTD-patches\build-wpr-8f829b8c\cpu-minimal.wprp!CPU -filemode -recordtempto C:\Users\bebe\.codex\worktrees\8621\OpenTTD-patches\build-wpr-8f829b8c\wpr-temp
+2026-10-19T21:21:11.2580305+09:00 wpr -marker pilot-begin -flush
+2026-10-19T21:21:14.3485725+09:00 wpr -marker pilot-end -flush
+2026-10-19T21:21:14.4417095+09:00 wpr -stop C:\Users\bebe\.codex\worktrees\8621\OpenTTD-patches\build-wpr-8f829b8c\pilot-2\cpu.etl
+Press Ctrl+C to cancel the stop operation.
+The trace was successfully saved.
+2026-10-19T21:24:51.8666012+09:00 wpr -start C:\Users\bebe\.codex\worktrees\8621\OpenTTD-patches\build-wpr-8f829b8c\cpu-minimal.wprp!CPU -filemode -recordtempto C:\Users\bebe\.codex\worktrees\8621\OpenTTD-patches\build-wpr-8f829b8c\wpr-temp
+2026-10-19T21:24:53.7901795+09:00 wpr -marker legacy-begin -flush
+2026-10-19T21:25:57.5254917+09:00 wpr -marker legacy-end -flush
+2026-10-19T21:25:57.6197788+09:00 wpr -stop C:\Users\bebe\.codex\worktrees\8621\OpenTTD-patches\build-wpr-8f829b8c\legacy\cpu.etl
+Press Ctrl+C to cancel the stop operation.
+The trace was successfully saved.
+2026-10-19T21:29:46.0124181+09:00 wpr -start C:\Users\bebe\.codex\worktrees\8621\OpenTTD-patches\build-wpr-8f829b8c\cpu-minimal.wprp!CPU -filemode -recordtempto C:\Users\bebe\.codex\worktrees\8621\OpenTTD-patches\build-wpr-8f829b8c\wpr-temp
+2026-10-19T21:29:47.9003774+09:00 wpr -marker hyperpath-begin -flush
+2026-10-19T21:30:34.6315285+09:00 wpr -marker hyperpath-end -flush
+2026-10-19T21:30:34.7359885+09:00 wpr -stop C:\Users\bebe\.codex\worktrees\8621\OpenTTD-patches\build-wpr-8f829b8c\hyperpath\cpu.etl
+Press Ctrl+C to cancel the stop operation.
+The trace was successfully saved.
