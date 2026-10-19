@@ -1,0 +1,26 @@
+2026-10-19T11:08:27.0816676+09:00 wpr -start C:\Users\bebe\.codex\worktrees\6d2b\OpenTTD-patches\build-clang-lto-comparison\cpu-sampled.wprp!CPU -filemode
+2026-10-19T11:08:29.3259387+09:00 wpr -marker simulation-begin -flush
+2026-10-19T11:08:53.0939767+09:00 wpr -marker simulation-end -flush
+2026-10-19T11:08:53.3220944+09:00 wpr -stop C:\Users\bebe\.codex\worktrees\6d2b\OpenTTD-patches\build-clang-lto-comparison\runs\wpr-thin-1\cpu.etl
+Press Ctrl+C to cancel the stop operation.
+The trace was successfully saved.
+2026-10-19T11:12:00.6384484+09:00 wpr -start C:\Users\bebe\.codex\worktrees\6d2b\OpenTTD-patches\build-clang-lto-comparison\cpu-sampled.wprp!CPU -filemode
+2026-10-19T11:12:02.8853536+09:00 wpr -marker simulation-begin -flush
+2026-10-19T11:12:26.7353247+09:00 wpr -marker simulation-end -flush
+2026-10-19T11:12:26.9698566+09:00 wpr -stop C:\Users\bebe\.codex\worktrees\6d2b\OpenTTD-patches\build-clang-lto-comparison\runs\wpr-full-1\cpu.etl
+Press Ctrl+C to cancel the stop operation.
+The trace was successfully saved.
+2026-10-19T11:15:32.0498871+09:00 wpr -start C:\Users\bebe\.codex\worktrees\6d2b\OpenTTD-patches\build-clang-lto-comparison\cpu-sampled.wprp!CPU -filemode
+2026-10-19T11:15:34.1424327+09:00 wpr -marker simulation-begin -flush
+2026-10-19T11:15:57.6233857+09:00 wpr -marker simulation-end -flush
+2026-10-19T11:15:57.8540626+09:00 wpr -stop C:\Users\bebe\.codex\worktrees\6d2b\OpenTTD-patches\build-clang-lto-comparison\runs\wpr-full-2\cpu.etl
+Press Ctrl+C to cancel the stop operation.
+The trace was successfully saved.
+2026-10-19T11:19:03.3895636+09:00 wpr -start C:\Users\bebe\.codex\worktrees\6d2b\OpenTTD-patches\build-clang-lto-comparison\cpu-sampled.wprp!CPU -filemode
+2026-10-19T11:19:05.5288227+09:00 wpr -marker simulation-begin -flush
+2026-10-19T11:19:29.3792953+09:00 wpr -marker simulation-end -flush
+2026-10-19T11:19:29.6158657+09:00 wpr -stop C:\Users\bebe\.codex\worktrees\6d2b\OpenTTD-patches\build-clang-lto-comparison\runs\wpr-thin-2\cpu.etl
+Press Ctrl+C to cancel the stop operation.
+The trace was successfully saved.
+
+This trace has dropped 1449719 events. Please record this trace again.
