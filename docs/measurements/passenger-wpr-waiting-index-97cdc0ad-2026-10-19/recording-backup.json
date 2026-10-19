@@ -1,0 +1,49 @@
+{
+  "path": "C:\\Users\\bebe\\.codex\\visualizations\\2026\\10\\17\\01a14897-d705-7e72-a972-7f5e9758a329\\passenger-wpr-recordings-97cdc0ad-2026-10-19",
+  "files": {
+    "legacy/cpu.etl": {
+      "bytes": 4131389440,
+      "sha256": "dca225fbf772e1476b61ecfea48f7f8b437f6e69e258d5c9260a62f142e61936",
+      "read_only": true
+    },
+    "hyperpath/cpu.etl": {
+      "bytes": 4372561920,
+      "sha256": "b58ffd8366dd74249637963e944de7ae9c61ea9d2c410c4ab024ff4fc937fb85",
+      "read_only": true
+    },
+    "Release/openttd.exe": {
+      "bytes": 14235136,
+      "sha256": "78344114c4bdd202d06b2d2bf44b4038c48ac75f8a3f938e180738f43378d73d"
+    },
+    "Release/openttd.pdb": {
+      "bytes": 144617472,
+      "sha256": "7f8291220fee359b85410ebc06738ae91e835c274abe916a56b5ee226f625c88"
+    },
+    "cpu-sampled.wpaProfile": {
+      "bytes": 4034,
+      "sha256": "5092304c54ce1f2d1e34f73cc09c6d8b91513a7aba76e6c16fd1f4403067682c"
+    },
+    "build-identity.json": {
+      "bytes": 808,
+      "sha256": "0702b4d00993e8ccf5c746931fe0174bb5c8ee5844f5c91deeee19ef5f8ec2f0"
+    },
+    "input-identity.json": {
+      "bytes": 801,
+      "sha256": "148407d075aff0984284d5ee51e95c8504ee3965d35f8636cf47846a24e62d8a"
+    },
+    "recorder-settings.json": {
+      "bytes": 1088,
+      "sha256": "79bc16efa00757aceb6082263e5a740592f37287d736b6cabf7d0577636fa44f"
+    },
+    "cpu-memory.wprp": {
+      "bytes": 7466,
+      "sha256": "7290106dd0e036aea3d2855b1eac0776845cd16604262c12a837eeb79b4ba7fb"
+    },
+    "cpu-file.wprp": {
+      "bytes": 7458,
+      "sha256": "86b0a4a1c25be15fd4fc5fb4fb6f954d6653881522fed608ed7fd9efa9f88449"
+    }
+  },
+  "matching_binary_and_pdb_copied": true,
+  "traces_read_only": true
+}

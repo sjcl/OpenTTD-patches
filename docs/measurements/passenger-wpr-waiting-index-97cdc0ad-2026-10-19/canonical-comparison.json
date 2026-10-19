@@ -1,0 +1,12 @@
+{
+  "legacy": {
+    "equal": true,
+    "fields": 24,
+    "differences": {}
+  },
+  "hyperpath": {
+    "equal": true,
+    "fields": 24,
+    "differences": {}
+  }
+}
