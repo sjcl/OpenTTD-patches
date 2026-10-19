@@ -1860,21 +1860,32 @@ bool StationCargoList::VisitBoardingCandidates(std::span<const StationID> next, 
 	std::set<const std::set<BoardingOrder> *> selected_groups;
 	auto rank = [last](const BoardingOrder &order) { return std::pair(last != StationID::Invalid() && std::get<0>(order) <= last, order); };
 	auto later = [&](const Cursor &a, const Cursor &b) { return rank(a.order) > rank(b.order); };
-	std::priority_queue<Cursor, std::vector<Cursor>, decltype(later)> candidates(later);
+	/* Every cohort is collected before the first pop: one heapify instead of a push each.
+	 * Ranks are distinct (packet IDs), so the pop sequence is the same either way. */
+	std::vector<Cursor> initial;
 	auto cursor = [](Position begin, Position end, std::optional<StationID> ceiling, bool validate, uint8_t hyperpath = 0, size_t packets = 0) {
 		auto next = std::next(begin);
 		if (next != end && ceiling && std::get<0>(*next) > *ceiling) next = end;
 		return Cursor{*begin, next, end, ceiling, validate, hyperpath, packets};
 	};
-	auto add_group = [&](const std::set<BoardingOrder> &group, bool validate = false, uint8_t hyperpath = 0) {
-		if (group.empty() || !selected_groups.insert(&group).second) return;
+	const bool validate_mode = GetPassengerServiceDatabase().GetHyperpathBoardingFilterMode() == PassengerServiceDatabase::HyperpathFilterMode::Validate;
+	/* A Hyperpath policy group is reached once per walk (one lookup slot, or one map entry) and
+	 * never through a service cohort, so it skips the identity set; validate mode checks that. */
+	auto add_group = [&](const std::set<BoardingOrder> &group, bool validate = false, uint8_t hyperpath = 0, bool unique = false) {
+		if (group.empty()) return;
+		if (!unique || validate_mode) {
+			if (!selected_groups.insert(&group).second) {
+				if (unique) ++_passenger_event_diagnostic.hyperpath_memo_violations;
+				return;
+			}
+		}
 		if (hyperpath == 0) loading.ObserveWaitingGroup(*CargoPacket::Get(std::get<2>(*group.begin())), vehicle, this->passenger_index_cargo, group.size());
 		++this->boarding_groups_inspected;
 		auto split = last == StationID::Invalid() ? group.begin() : group.upper_bound({last, UINT64_MAX, CargoPacketID::Invalid()});
-		if (split != group.end()) candidates.push(cursor(split, group.end(), {}, validate, hyperpath, group.size()));
+		if (split != group.end()) initial.push_back(cursor(split, group.end(), {}, validate, hyperpath, group.size()));
 		/* A real node cannot be an end sentinel: the earlier circular range
 		 * may erase that node before this range is visited. */
-		if (group.begin() != split) candidates.push(cursor(group.begin(), group.end(), last, validate, hyperpath, group.size()));
+		if (group.begin() != split) initial.push_back(cursor(group.begin(), group.end(), last, validate, hyperpath, group.size()));
 	};
 	auto add_service = [&](OrderListID id) {
 		if (vehicle == nullptr) return;
@@ -1931,10 +1942,35 @@ bool StationCargoList::VisitBoardingCandidates(std::span<const StationID> next, 
 			bool admitted;
 			if (!defer_hyperpath) {
 				admitted = loading.CanUseHyperpathPolicy(*packet, vehicle, this->passenger_index_cargo, base, adjusted);
-				if (admitted) add_group(policy.packets);
+				if (admitted) add_group(policy.packets, false, 0, true);
 			} else {
-				admitted = loading.MayUseHyperpathPolicy(*packet, vehicle, this->passenger_index_cargo, occurrences, base, adjusted);
-				if (admitted) add_group(policy.packets, false, (base ? 1 : 0) | (adjusted ? 2 : 0));
+				/* Every input of the pre-filter is fixed by the group key (intent, arriving and
+				 * failed carriers), the consist and the context's memo generation, so each coach
+				 * of a consist reuses the first coach's answer for the same base/adjusted state. */
+				const uint8_t bit = uint8_t{1} << ((base ? 1 : 0) | (adjusted ? 2 : 0));
+				const uint64_t serial = loading.HyperpathMemoSerial();
+				const auto *front = vehicle->First();
+				if (policy.memo_serial != serial || policy.memo_vehicle != front->index || policy.memo_order != front->cur_real_order_index) {
+					policy.memo_serial = serial; policy.memo_vehicle = front->index; policy.memo_order = front->cur_real_order_index;
+					policy.memo_known = 0; policy.memo_value = 0;
+				}
+				if ((policy.memo_known & bit) != 0 && !validate) {
+					admitted = (policy.memo_value & bit) != 0;
+					++_passenger_event_diagnostic.hyperpath_memo_hits;
+				} else {
+					admitted = loading.MayUseHyperpathPolicy(*packet, vehicle, this->passenger_index_cargo, occurrences, base, adjusted);
+					if ((policy.memo_known & bit) != 0) {
+						++_passenger_event_diagnostic.hyperpath_memo_validated;
+						if (admitted != ((policy.memo_value & bit) != 0)) ++_passenger_event_diagnostic.hyperpath_memo_violations;
+					}
+					/* A failed-carrier answer of true can stand for a cold local policy (conservatively
+					 * admitted, decided at the FIFO front). Only exact answers are kept. */
+					if (!adjusted || !admitted) {
+						policy.memo_known |= bit;
+						if (admitted) policy.memo_value |= bit; else policy.memo_value &= static_cast<uint8_t>(~bit);
+					}
+				}
+				if (admitted) add_group(policy.packets, false, (base ? 1 : 0) | (adjusted ? 2 : 0), true);
 			}
 			if (admitted) {
 				++_passenger_event_diagnostic.hyperpath_groups_admitted;
@@ -2064,6 +2100,7 @@ bool StationCargoList::VisitBoardingCandidates(std::span<const StationID> next, 
 			}
 		}
 	}
+	std::priority_queue<Cursor, std::vector<Cursor>, decltype(later)> candidates(later, std::move(initial));
 	while (!candidates.empty()) {
 		auto current = candidates.top(); candidates.pop();
 		if (current.hyperpath != 0) {

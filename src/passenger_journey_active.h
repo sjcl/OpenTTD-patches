@@ -38,6 +38,9 @@ struct PassengerWaitingEventDiagnostic {
 	std::array<uint64_t, 3> hyperpath_walks{}, hyperpath_walk_groups{}, hyperpath_walk_nanoseconds{};
 	uint64_t hyperpath_lookup_rebuilds = 0, hyperpath_lookup_indexed_groups = 0; ///< Lookup maintenance.
 	uint64_t hyperpath_index_validated = 0, hyperpath_index_violations = 0; ///< Validate mode: admitted groups missing from the lookup.
+	/* Group pre-filter memo: answers reused for another coach/pass of the same consist, and in
+	 * validate mode the recomputed answers that disagreed with a memo (or a group seen twice). */
+	uint64_t hyperpath_memo_hits = 0, hyperpath_memo_validated = 0, hyperpath_memo_violations = 0;
 	std::array<uint64_t, static_cast<size_t>(PassengerWaitingCause::End)> cause_nanoseconds{}, cause_packets{};
 };
 void RecordPassengerWaitingCause(PassengerWaitingCause cause, uint64_t nanoseconds, bool unchanged = false);
@@ -236,8 +239,14 @@ class PassengerJourneyLoadingContext {
 	std::map<HyperpathBoardingKey, std::array<uint32_t, 2>> hyperpath_boardings;
 	using HyperpathMembershipKey = std::tuple<HyperpathKey, OrderListID, uint64_t, std::array<uint32_t, 2>>;
 	std::map<HyperpathMembershipKey, bool> hyperpath_memberships; ///< Base membership only, local to this loading context.
+	uint64_t hyperpath_memo_serial;
+	void RefreshBoardingRevision(); ///< Clears every revision-bound memo when the database's boarding revision moved.
 	std::optional<PassengerJourneyExecution> ResolveHyperpath(const PassengerJourneyExecution &intent, const CargoPacket &packet, const Vehicle *vehicle, CargoType cargo, bool override_failure = false, OrderListID failed = OrderListID::Invalid());
 public:
+	PassengerJourneyLoadingContext();
+	/** Identity of this context's revision-bound memos, renewed whenever they are cleared or a
+	 * consist is invalidated. Unique per process; only compared for equality, never ordering. */
+	uint64_t HyperpathMemoSerial() { this->RefreshBoardingRevision(); return this->hyperpath_memo_serial; }
 	void EnableWaitingEvents() { this->waiting_events = true; } ///< Actual station simulation only; read-only predicates never wake packets.
 	int8_t hyperpath_filter_choice = -1; ///< Alternate boarding-filter diagnostic: fixed at this context's first Hyperpath walk.
 	bool CanBoard(const CargoPacket &packet, const Vehicle *vehicle, CargoType cargo = INVALID_CARGO);

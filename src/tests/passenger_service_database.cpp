@@ -5162,7 +5162,58 @@ TEST_CASE("Hyperpath boarding destination filter preserves every loading decisio
 		CHECK(indexed.steady_rebuilds == 0); CHECK(validated.steady_rebuilds == 0);
 		CHECK(validated.diagnostic.hyperpath_index_validated > 0);
 		CHECK(validated.diagnostic.hyperpath_index_violations == 0);
+		/* HasCargoFor and Load walk the same consist in one context: the second walk reuses the
+		 * group pre-filter answers. Validate mode recomputes each reused answer instead. */
+		CHECK(indexed.diagnostic.hyperpath_memo_hits > 0); CHECK(complete.diagnostic.hyperpath_memo_hits > 0);
+		CHECK(validated.diagnostic.hyperpath_memo_hits == 0);
+		CHECK(validated.diagnostic.hyperpath_memo_validated > 0);
+		for (const auto *result : {&filtered, &complete, &alternate, &indexed, &validated, &asynchronous}) CHECK(result->diagnostic.hyperpath_memo_violations == 0);
 	}
+}
+
+TEST_CASE("Hyperpath pre-filter answers are reused only for the same consist and memo generation", "[passenger][hyperpath][boarding][determinism]")
+{
+	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = _settings_game.linkgraph.passenger_journey_hyperpath = true;
+	const StationID B1{1}, B2{2}, B3{3};
+	auto *first = f.Train({Stop(A, 120), Stop(B1), Stop(B2)});
+	auto *second = f.Train({Stop(A, 150), Stop(B1), Stop(B3)});
+	auto &db = f.Build(); while (!db.PreparePrecomputed()) {}
+	StationCargoList waiting; waiting.passenger_index_cargo = PAX;
+	for (StationID to : {B1, B2, B3}) {
+		auto *packet = CargoPacket::Create(5, 0, A, TileIndex{0}, Money{0}); REQUIRE(packet->SetPassengerDestination(PAX, to));
+		PassengerJourneyActiveContext context(nullptr, A); REQUIRE(context.PlanWaiting(*packet, PAX, to));
+		REQUIRE(packet->GetPassengerJourney().kind == PassengerRideKind::HyperpathIntent);
+		waiting.Append(packet, to);
+	}
+	using Mode = PassengerServiceDatabase::HyperpathFilterMode;
+	const std::vector<StationID> next_first{B1, B2}, next_second{B1, B3};
+	for (Mode mode : {Mode::Index, Mode::Off}) {
+		CAPTURE(static_cast<int>(mode));
+		db.SetHyperpathBoardingFilterMode(mode); ResetPassengerWaitingEventDiagnostic();
+		PassengerJourneyLoadingContext loading;
+		auto hits = [] { return GetPassengerWaitingEventDiagnostic().hyperpath_memo_hits; };
+		REQUIRE(waiting.HasCargoFor(next_first, first, &loading, PAX));
+		REQUIRE(waiting.HasCargoFor(next_second, second, &loading, PAX));
+		CHECK(hits() == 0); // B1's group is shared, but its first answer belongs to the other consist.
+		REQUIRE(waiting.HasCargoFor(next_second, second, &loading, PAX));
+		const auto reused = hits(); CHECK(reused > 0);
+		loading.Invalidate(second); // A refit drops every answer of this context.
+		REQUIRE(waiting.HasCargoFor(next_second, second, &loading, PAX));
+		CHECK(hits() == reused);
+		PassengerJourneyLoadingContext other; // Another station pass never reuses this one's answers.
+		REQUIRE(waiting.HasCargoFor(next_second, second, &other, PAX));
+		CHECK(hits() == reused);
+		CHECK(GetPassengerWaitingEventDiagnostic().hyperpath_memo_violations == 0);
+	}
+	db.SetHyperpathBoardingFilterMode(Mode::Validate); ResetPassengerWaitingEventDiagnostic();
+	PassengerJourneyLoadingContext loading;
+	for (int i = 0; i < 2; ++i) {
+		REQUIRE(waiting.HasCargoFor(next_first, first, &loading, PAX)); REQUIRE(waiting.HasCargoFor(next_first, first, &loading, PAX));
+		REQUIRE(waiting.HasCargoFor(next_second, second, &loading, PAX)); REQUIRE(waiting.HasCargoFor(next_second, second, &loading, PAX));
+	}
+	const auto d = GetPassengerWaitingEventDiagnostic();
+	CHECK(d.hyperpath_memo_hits == 0); CHECK(d.hyperpath_memo_validated > 0); CHECK(d.hyperpath_memo_violations == 0);
+	db.SetHyperpathBoardingFilterMode(Mode::Index);
 }
 
 TEST_CASE("Hyperpath boarding filter skips destinations served only by other lines", "[.hyperpath-cpu][passenger]")

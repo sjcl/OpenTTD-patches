@@ -674,6 +674,13 @@ class StationCargoList : public CargoList<StationCargoList, StationCargoPacketMa
 		/* Derived lookup state, never saved: HYPERPATH_UNINDEXED, HYPERPATH_PENDING, NONE, table slot 0/1 or ALWAYS. */
 		int8_t lookup_slot = -2;
 		std::vector<uint32_t> lookup_occurrences; ///< Entries in the slot table's occurrence numbering.
+		/* Derived memo of the loading pre-filter, never saved and never ordering. The predicate
+		 * is a function of this group's key, one consist and one loading context generation
+		 * (PassengerJourneyLoadingContext::HyperpathMemoSerial); bit (base | adjusted << 1). */
+		mutable uint64_t memo_serial = 0;
+		mutable VehicleID memo_vehicle = VehicleID::Invalid();
+		mutable VehicleOrderID memo_order = INVALID_VEH_ORDER_ID;
+		mutable uint8_t memo_known = 0, memo_value = 0;
 	};
 	using HyperpathGroups = std::map<HyperpathKey, HyperpathWaiting>;
 	struct HyperpathGroupRef { StationID destination; HyperpathGroups::iterator group; };

@@ -1393,15 +1393,31 @@ bool PassengerJourneyLoadingContext::CanBoardUncached(const CargoPacket &packet,
 	return this->boarding.try_emplace(key, vehicle, cargo).first->second.CanBoard(packet);
 }
 
+/** Process-local identities for loading-context memo generations; zero is never issued. */
+static uint64_t NextHyperpathMemoSerial()
+{
+	static uint64_t serial = 0;
+	return ++serial;
+}
+
+PassengerJourneyLoadingContext::PassengerJourneyLoadingContext() : hyperpath_memo_serial(NextHyperpathMemoSerial()) {}
+
+void PassengerJourneyLoadingContext::RefreshBoardingRevision()
+{
+	const auto revision = GetPassengerServiceDatabase().BoardingRevision();
+	if (this->pending_revision == revision) return;
+	this->pending_plans.clear(); this->hyperpath_rides.clear(); this->hyperpath_boardings.clear(); this->hyperpath_memberships.clear();
+	this->pending_revision = revision;
+	this->hyperpath_memo_serial = NextHyperpathMemoSerial();
+}
+
 std::optional<PassengerJourneyExecution> PassengerJourneyLoadingContext::ResolveHyperpath(const PassengerJourneyExecution &intent,
 		const CargoPacket &packet, const Vehicle *vehicle, CargoType cargo, bool override_failure, OrderListID failed)
 {
 	const auto *front = vehicle == nullptr ? nullptr : vehicle->First();
 	if (front == nullptr || front->orders == nullptr || intent.boarding != front->last_station_visited) return {};
 	auto &db = GetPassengerServiceDatabase();
-	if (this->pending_revision != db.BoardingRevision()) {
-		this->pending_plans.clear(); this->hyperpath_rides.clear(); this->hyperpath_boardings.clear(); this->hyperpath_memberships.clear(); this->pending_revision = db.BoardingRevision();
-	}
+	this->RefreshBoardingRevision();
 	const auto *arriving = OrderList::GetIfValid(packet.GetPassengerArrivingService());
 	OrderListID previous = arriving != nullptr && arriving->GetCargoDistRouteGeneration() == packet.GetPassengerArrivingIncarnation() ? arriving->index : OrderListID::Invalid();
 	if (!override_failure) failed = packet.GetPassengerFailedService(_state_ticks);
@@ -1416,9 +1432,7 @@ std::optional<PassengerJourneyExecution> PassengerJourneyLoadingContext::Resolve
 const std::array<uint32_t, 2> &PassengerJourneyLoadingContext::HyperpathBoardingOccurrences(const Vehicle *vehicle, CargoType cargo)
 {
 	auto &db = GetPassengerServiceDatabase();
-	if (this->pending_revision != db.BoardingRevision()) {
-		this->pending_plans.clear(); this->hyperpath_rides.clear(); this->hyperpath_boardings.clear(); this->hyperpath_memberships.clear(); this->pending_revision = db.BoardingRevision();
-	}
+	this->RefreshBoardingRevision();
 	const auto *front = vehicle->First();
 	auto key = HyperpathBoardingKey{front->index, cargo, front->orders->index, front->cur_real_order_index, front->last_station_visited};
 	auto [found, inserted] = this->hyperpath_boardings.try_emplace(key);
@@ -1437,7 +1451,7 @@ bool PassengerJourneyLoadingContext::MayUseHyperpathPolicy(const CargoPacket &re
 	const auto *failed_list = OrderList::GetIfValid(failure.service);
 	if (failed_list == nullptr || failed_list->GetCargoDistRouteGeneration() != failure.incarnation) { base = true; adjusted = false; }
 	auto &db = GetPassengerServiceDatabase(); auto current_occurrences = occurrences;
-	if (this->pending_revision != db.BoardingRevision()) this->HyperpathBoardingOccurrences(vehicle, cargo);
+	this->RefreshBoardingRevision();
 	const auto *arriving = OrderList::GetIfValid(representative.GetPassengerArrivingService());
 	auto previous = arriving != nullptr && arriving->GetCargoDistRouteGeneration() == representative.GetPassengerArrivingIncarnation() ? arriving->index : OrderListID::Invalid();
 	auto key = [&](const PassengerJourneyExecution &policy) {
@@ -1514,8 +1528,7 @@ bool PassengerJourneyLoadingContext::CanUseHyperpathPolicy(const CargoPacket &re
 const PassengerPrecomputedPlan &PassengerJourneyLoadingContext::PendingPlan(const CargoPacket &packet, const Vehicle *vehicle, CargoType cargo)
 {
 	auto &db = GetPassengerServiceDatabase();
-	const auto revision = db.BoardingRevision();
-	if (this->pending_revision != revision) { this->pending_plans.clear(); this->hyperpath_rides.clear(); this->hyperpath_boardings.clear(); this->hyperpath_memberships.clear(); this->pending_revision = revision; }
+	this->RefreshBoardingRevision();
 	const auto *arriving = OrderList::GetIfValid(packet.GetPassengerArrivingService());
 	const auto excluded = arriving != nullptr && arriving->GetCargoDistRouteGeneration() == packet.GetPassengerArrivingIncarnation() ? arriving->index : OrderListID::Invalid();
 	const auto station = vehicle->First()->last_station_visited;
@@ -1594,6 +1607,7 @@ void PassengerJourneyLoadingContext::Invalidate(const Vehicle *vehicle)
 	for (auto it = this->decisions.lower_bound({id, CargoType{0}}); it != this->decisions.end() && it->first.first == id;) it = this->decisions.erase(it);
 	std::erase_if(this->hyperpath_boardings, [id](const auto &item) { return std::get<0>(item.first) == id; });
 	std::erase_if(this->hyperpath_memberships, [id](const auto &item) { return std::get<0>(std::get<0>(item.first)) == id; });
+	this->hyperpath_memo_serial = NextHyperpathMemoSerial(); // Group memos are keyed by consist; drop them all.
 }
 
 size_t PassengerJourneyLoadingContext::GetPredictionCount() const

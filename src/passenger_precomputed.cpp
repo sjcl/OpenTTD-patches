@@ -1608,12 +1608,11 @@ void PassengerPrecomputedTable::ReleaseDestination(StationID destination)
 		this->retirement_watermark = destination;
 	}
 	if (this->graph->hyperpath) {
-		for (auto it = this->local_policies.begin(); it != this->local_policies.end();) {
-			if (std::get<0>(it->first) == destination) {
-				size_t bytes = 128 + it->second.candidates.capacity() * 4;
-				this->local_policy_bytes -= bytes; this->diagnostic.bytes -= std::min(this->diagnostic.bytes, bytes);
-				it = this->local_policies.erase(it);
-			} else ++it;
+		/* Both caches are keyed by destination first: erase that range only. */
+		for (auto it = this->local_policies.lower_bound({destination, 0, OrderListID::Begin()}); it != this->local_policies.end() && std::get<0>(it->first) == destination;) {
+			size_t bytes = 128 + it->second.candidates.capacity() * 4;
+			this->local_policy_bytes -= bytes; this->diagnostic.bytes -= std::min(this->diagnostic.bytes, bytes);
+			it = this->local_policies.erase(it);
 		}
 		for (auto it = this->station_choices.lower_bound({destination, 0}); it != this->station_choices.end() && it->first.first == destination;) {
 			size_t bytes = 128 + it->second.capacity() * sizeof(it->second[0]);
@@ -1621,11 +1620,9 @@ void PassengerPrecomputedTable::ReleaseDestination(StationID destination)
 			it = this->station_choices.erase(it);
 		}
 	}
-	for (auto it = this->expanded_policies.begin(); it != this->expanded_policies.end();) {
-		if (it->first.first == destination) {
-			size_t bytes = 128 + it->second.capacity() * 4; this->expanded_policy_bytes -= bytes; this->diagnostic.bytes -= std::min(this->diagnostic.bytes, bytes);
-			it = this->expanded_policies.erase(it);
-		} else ++it;
+	for (auto it = this->expanded_policies.lower_bound({destination, 0}); it != this->expanded_policies.end() && it->first.first == destination;) {
+		size_t bytes = 128 + it->second.capacity() * 4; this->expanded_policy_bytes -= bytes; this->diagnostic.bytes -= std::min(this->diagnostic.bytes, bytes);
+		it = this->expanded_policies.erase(it);
 	}
 	if (destination.base() >= this->graph->station_index.size()) return;
 	uint32_t row = this->graph->station_index[destination.base()];
@@ -2271,6 +2268,14 @@ void PassengerPrecomputedTable::GraphSnapshot::StartDestination(DestinationWorks
 		work.strategy.events.Reset(); work.strategy.last = 0; work.strategy.board_edge = INVALID;
 		work.strategy.witness_edge = INVALID;
 		work.strategy.sums.clear(); work.strategy.settled.clear();
+		if (this->flat_storage) {
+			/* After StartDestination the grown storage is in the row, not the buffer. A workspace
+			 * that travels between the main thread and a worker restarts in that state; keep the
+			 * larger allocation instead of growing the next row from empty on the main thread. */
+			if (work.prepared.flat_policies.capacity() > work.flat_policy_buffer.capacity()) work.flat_policy_buffer.swap(work.prepared.flat_policies);
+			if (work.prepared.flat_candidates.capacity() > work.flat_candidate_buffer.capacity()) work.flat_candidate_buffer.swap(work.prepared.flat_candidates);
+			work.flat_policy_buffer.clear(); work.flat_candidate_buffer.clear();
+		}
 		work.prepared = {};
 		work.prepared_candidate_bytes = 0;
 		if (this->flat_storage) {
