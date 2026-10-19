@@ -1131,25 +1131,31 @@ bool PassengerServiceDatabase::MayBoardHyperpath(const PassengerJourneyExecution
 	return false;
 }
 
+PassengerServiceDatabase::RowPlanSlot &PassengerServiceDatabase::RowPlan(std::vector<RowPlanSlot> &cache, const std::array<uint64_t, 2> &key, StationID destination, bool &valid) const
+{
+	if (cache.empty()) cache.resize(ROW_PLAN_SLOTS);
+	uint64_t hash = (key[0] * 0x9E3779B97F4A7C15ULL) ^ ((key[1] + 0x632BE59BD9B4E019ULL) * 0xC2B2AE3D27D4EB4FULL);
+	hash ^= hash >> 31;
+	auto &slot = cache[hash & (ROW_PLAN_SLOTS - 1)];
+	const uint64_t changed = destination.base() < this->hyperpath_destination_changed.size() ? this->hyperpath_destination_changed[destination.base()] : 0;
+	valid = slot.epoch == this->hyperpath_lookup_epoch && slot.key == key && slot.changes >= changed;
+	if (!valid) { slot.key = key; slot.epoch = this->hyperpath_lookup_epoch; slot.changes = this->hyperpath_destination_changes; }
+	return slot;
+}
+
 const PassengerPrecomputedPlan *PassengerServiceDatabase::SharedHyperpathPlan(CargoType cargo, StationID origin, StationID destination, OrderListID previous) const
 {
 	if (this->RevisionAffectsWaitingPlans()) return nullptr;
-	const uint64_t changed = destination.base() < this->hyperpath_destination_changed.size() ? this->hyperpath_destination_changed[destination.base()] : 0;
-	const auto key = std::tuple(cargo, origin, destination, previous);
-	auto found = this->shared_hyperpath_plans.find(key);
-	if (found != this->shared_hyperpath_plans.end() && found->second.epoch == this->hyperpath_lookup_epoch && found->second.changes >= changed) return &found->second.plan;
-	if (found == this->shared_hyperpath_plans.end()) {
-		if (this->shared_hyperpath_plans.size() >= 32768) {
-			/* Evict the next key, not always the lowest stations. Residency never changes an identity. */
-			auto victim = this->shared_hyperpath_plans.upper_bound(key);
-			if (victim == this->shared_hyperpath_plans.end()) victim = this->shared_hyperpath_plans.begin();
-			this->shared_hyperpath_plans.erase(victim);
-		}
-		found = this->shared_hyperpath_plans.try_emplace(key).first;
+	static_assert(sizeof(StationID) <= 2 && sizeof(OrderListID) <= 2 && sizeof(CargoType) <= 1);
+	const std::array<uint64_t, 2> key{(uint64_t{cargo} << 48) | (uint64_t{origin.base()} << 32) | (uint64_t{destination.base()} << 16) | previous.base(), 0};
+	bool valid; auto &slot = this->RowPlan(this->shared_hyperpath_plans, key, destination, valid);
+	if (!valid) {
+		slot.plan = this->PlanPrecomputed(cargo, origin, destination, _state_ticks, previous);
+	} else if (slot.plan.ride) {
+		/* The only time-dependent fields: exactly what planning now would set. */
+		slot.plan.ride->not_before = slot.plan.ride->planned_at = _state_ticks;
 	}
-	found->second.epoch = this->hyperpath_lookup_epoch; found->second.changes = this->hyperpath_destination_changes;
-	found->second.plan = this->PlanPrecomputed(cargo, origin, destination, _state_ticks, previous);
-	return &found->second.plan;
+	return &slot.plan;
 }
 
 std::optional<bool> PassengerServiceDatabase::CachedHyperpathMembership(const PassengerJourneyExecution &intent, CargoType cargo,
@@ -1247,7 +1253,20 @@ PassengerPrecomputedPlan PassengerServiceDatabase::BoardHyperpath(const Passenge
 	for (bool retained : {false, true}) {
 		if (intent.generation != (retained ? this->retained_precomputed_policy_generation : this->precomputed_policy_generation)) continue;
 		const auto &table = (retained ? this->retained_precomputed : this->precomputed)[cargo];
-		auto plan = table.Board(intent.boarding, intent.alighting, intent.not_before, service, boarding, previous, failed);
+		PassengerPrecomputedPlan plan;
+		if (this->RevisionAffectsWaitingPlans()) {
+			plan = table.Board(intent.boarding, intent.alighting, intent.not_before, service, boarding, previous, failed);
+		} else {
+			/* The table's answer depends only on its rows and graph; the ready time only sets
+			 * not_before/planned_at. The ride's service currency is checked below on every call. */
+			static_assert(sizeof(VehicleOrderID) <= 2);
+			const std::array<uint64_t, 2> key{(uint64_t{cargo} << 56) | (uint64_t{retained} << 48) | (uint64_t{intent.boarding.base()} << 32) | (uint64_t{intent.alighting.base()} << 16) | service.base(),
+					(uint64_t{boarding} << 32) | (uint64_t{previous.base()} << 16) | failed.base()};
+			bool valid; auto &slot = this->RowPlan(this->shared_hyperpath_boards, key, intent.alighting, valid);
+			if (!valid) slot.plan = table.Board(intent.boarding, intent.alighting, intent.not_before, service, boarding, previous, failed);
+			plan = slot.plan;
+			if (plan.ride) plan.ride->not_before = plan.ride->planned_at = intent.not_before;
+		}
 		if (plan.ride && !this->IsCurrent(*plan.ride)) { plan.ride.reset(); plan.state = PassengerPrecomputedPlan::State::Building; }
 		return plan;
 	}

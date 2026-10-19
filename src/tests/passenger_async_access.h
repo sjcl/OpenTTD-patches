@@ -67,5 +67,17 @@ struct PassengerServiceDatabaseTestAccess {
 	static void BeginReplacement(PassengerServiceDatabase &db, int64_t transfer) { db.BeginPrecomputed(transfer); }
 	static PassengerPrecomputedTable &Table(PassengerServiceDatabase &db, CargoType cargo) { return db.precomputed[cargo]; }
 	static const PassengerPrecomputedTable &Retained(const PassengerServiceDatabase &db, CargoType cargo) { return db.retained_precomputed[cargo]; }
+	/** BoardHyperpath without its derived row-plan cache. */
+	static PassengerPrecomputedPlan UncachedBoardHyperpath(const PassengerServiceDatabase &db, const PassengerJourneyExecution &intent, CargoType cargo,
+			OrderListID service, VehicleOrderID order, OrderListID previous, OrderListID failed)
+	{
+		for (bool retained : {false, true}) {
+			if (intent.generation != (retained ? db.retained_precomputed_policy_generation : db.precomputed_policy_generation)) continue;
+			auto plan = (retained ? db.retained_precomputed : db.precomputed)[cargo].Board(intent.boarding, intent.alighting, intent.not_before, service, order, previous, failed);
+			if (plan.ride && !db.IsCurrent(*plan.ride)) { plan.ride.reset(); plan.state = PassengerPrecomputedPlan::State::Building; }
+			return plan;
+		}
+		return {};
+	}
 };
 #endif

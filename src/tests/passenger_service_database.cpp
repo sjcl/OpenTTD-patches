@@ -508,7 +508,20 @@ TEST_CASE("Shared Hyperpath plan identities follow every row publication and gen
 	lists.push_back(f.Train({Stop(A), Stop(B), Stop(C)})->orders); lists.push_back(f.Train({Stop(A), Stop(D)})->orders);
 	lists.push_back(f.Train({Stop(B, 130), Stop(D), Stop(C)})->orders);
 	auto &db = f.Build(); while (!db.PreparePrecomputed()) {}
-	size_t compared = 0;
+	size_t compared = 0, boards = 0;
+	std::vector<PassengerJourneyExecution> intents; // Every generation's intents, retired ones included.
+	auto check_boards = [&]() {
+		for (const auto &stored : intents) for (const OrderList *list : lists) for (VehicleOrderID order = 0; order < list->GetNumOrders(); ++order) {
+			for (const OrderList *previous : {static_cast<const OrderList *>(nullptr), lists[0], lists[1], lists[2]}) for (const OrderList *failed : {static_cast<const OrderList *>(nullptr), lists[0], lists[2]}) {
+				auto intent = stored; intent.not_before = _state_ticks + order; // Reuse must not keep another caller's time.
+				const OrderListID p = previous == nullptr ? OrderListID::Invalid() : previous->index, x = failed == nullptr ? OrderListID::Invalid() : failed->index;
+				const auto actual = db.BoardHyperpath(intent, PAX, list->index, order, p, x);
+				const auto expected = PassengerServiceDatabaseTestAccess::UncachedBoardHyperpath(db, intent, PAX, list->index, order, p, x);
+				CHECK(actual.state == expected.state); CHECK(actual.ride == expected.ride); CHECK(actual.cost == expected.cost);
+				if (expected.ride) ++boards;
+			}
+		}
+	};
 	auto check = [&]() {
 		for (StationID from : {A, B, C, D}) for (StationID to : {A, B, C, D}) for (const OrderList *previous : {static_cast<const OrderList *>(nullptr), lists[0], lists[1], lists[2]}) {
 			const OrderListID excluded = previous == nullptr ? OrderListID::Invalid() : previous->index;
@@ -518,12 +531,13 @@ TEST_CASE("Shared Hyperpath plan identities follow every row publication and gen
 			REQUIRE(shared != nullptr);
 			REQUIRE(shared->ride.has_value() == fresh.ride.has_value());
 			if (fresh.ride) {
-				/* Only the planning time may differ: the identity is time-independent. */
-				auto identity = *shared->ride; identity.not_before = fresh.ride->not_before; identity.planned_at = fresh.ride->planned_at;
-				CHECK(identity == *fresh.ride);
+				CHECK(*shared->ride == *fresh.ride); // Including the planning time, set as planning now would.
+				auto identity = *fresh.ride; identity.not_before = identity.planned_at = StateTicks{};
+				if (identity.kind == PassengerRideKind::HyperpathIntent && std::find(intents.begin(), intents.end(), identity) == intents.end()) intents.push_back(identity);
 				++compared;
 			}
 		}
+		check_boards();
 	};
 	check(); _state_ticks += 500; check();
 	/* A sliced replacement: rows publish (and retained rows retire) between the checks. */
@@ -532,7 +546,7 @@ TEST_CASE("Shared Hyperpath plan identities follow every row publication and gen
 		REQUIRE(step < 10000); db.TickPrecomputed(29); ++_state_ticks; check();
 	}
 	check();
-	CHECK(compared > 0);
+	CHECK(compared > 0); CHECK(boards > 0);
 	/* A legacy generation's plans depend on services too: never shared. */
 	_settings_game.linkgraph.passenger_journey_hyperpath = false; db.TickPrecomputed(1);
 	REQUIRE(db.RevisionAffectsWaitingPlans());

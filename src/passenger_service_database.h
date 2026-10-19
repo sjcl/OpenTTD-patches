@@ -182,7 +182,7 @@ public:
 	 * ride identity (presence, kind, generation, stations, signature), shared across ticks. With only
 	 * Hyperpath tables that identity depends on the destination's rows alone, so it is invalidated by
 	 * the lookup epoch and the destination's changes. Otherwise (a legacy ride's currency also depends
-	 * on its service) nullptr: the caller plans itself. */
+	 * on its service) nullptr: the caller plans itself. Valid until the next call. */
 	const PassengerPrecomputedPlan *SharedHyperpathPlan(CargoType cargo, StationID origin, StationID destination, OrderListID previous) const;
 	/** Cached-only membership as MayBoardHyperpath, but std::nullopt where a cold (or evicted) failed-carrier
 	 * local policy leaves it unknown; MayBoardHyperpath admits such an unknown conservatively. */
@@ -413,8 +413,12 @@ private:
 		if (destination.base() >= this->hyperpath_destination_changed.size()) this->hyperpath_destination_changed.resize(destination.base() + 1, 0);
 		this->hyperpath_destination_changed[destination.base()] = this->hyperpath_destination_changes;
 	}
-	struct SharedPlan { uint64_t epoch = 0, changes = 0; PassengerPrecomputedPlan plan; };
-	mutable std::map<std::tuple<CargoType, StationID, StationID, OrderListID>, SharedPlan> shared_hyperpath_plans; ///< Derived, bounded; never saved.
+	/* Derived direct-mapped caches of plans that depend only on Hyperpath rows, never saved. A slot is
+	 * valid for its key while the lookup epoch is unchanged and its destination did not change since. */
+	struct RowPlanSlot { std::array<uint64_t, 2> key{}; uint64_t epoch = 0, changes = 0; PassengerPrecomputedPlan plan; };
+	static constexpr size_t ROW_PLAN_SLOTS = size_t{1} << 14;
+	mutable std::vector<RowPlanSlot> shared_hyperpath_plans, shared_hyperpath_boards;
+	RowPlanSlot &RowPlan(std::vector<RowPlanSlot> &cache, const std::array<uint64_t, 2> &key, StationID destination, bool &valid) const;
 	std::list<PolicyKey> policy_lru;
 	std::map<PolicyKey, CachedPolicy> policies;
 	std::map<std::tuple<bool, CargoType, StationID, StationID>, uint64_t> recent_policy_builds; ///< Bounded diagnostic history, never simulation input.
