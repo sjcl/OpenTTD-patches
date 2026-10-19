@@ -67,6 +67,17 @@ struct PassengerServiceDatabaseTestAccess {
 	static void BeginReplacement(PassengerServiceDatabase &db, int64_t transfer) { db.BeginPrecomputed(transfer); }
 	static PassengerPrecomputedTable &Table(PassengerServiceDatabase &db, CargoType cargo) { return db.precomputed[cargo]; }
 	static const PassengerPrecomputedTable &Retained(const PassengerServiceDatabase &db, CargoType cargo) { return db.retained_precomputed[cargo]; }
+	/** Cached-only membership without the derived row cache. */
+	static std::optional<bool> UncachedMembership(const PassengerServiceDatabase &db, const PassengerJourneyExecution &intent, CargoType cargo,
+			const std::array<uint32_t, 2> &occurrences, OrderListID previous, OrderListID failed)
+	{
+		if (intent.signature != uint64_t(cargo) + 1) return false;
+		for (size_t index = 0; index < 2; ++index) {
+			if (intent.generation != (index != 0 ? db.retained_precomputed_policy_generation : db.precomputed_policy_generation)) continue;
+			return (index != 0 ? db.retained_precomputed : db.precomputed)[cargo].ContainsCached(intent.boarding, intent.alighting, occurrences[index], previous, failed);
+		}
+		return false;
+	}
 	/** BoardHyperpath without its derived row-plan cache. */
 	static PassengerPrecomputedPlan UncachedBoardHyperpath(const PassengerServiceDatabase &db, const PassengerJourneyExecution &intent, CargoType cargo,
 			OrderListID service, VehicleOrderID order, OrderListID previous, OrderListID failed)

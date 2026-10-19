@@ -508,7 +508,7 @@ TEST_CASE("Shared Hyperpath plan identities follow every row publication and gen
 	lists.push_back(f.Train({Stop(A), Stop(B), Stop(C)})->orders); lists.push_back(f.Train({Stop(A), Stop(D)})->orders);
 	lists.push_back(f.Train({Stop(B, 130), Stop(D), Stop(C)})->orders);
 	auto &db = f.Build(); while (!db.PreparePrecomputed()) {}
-	size_t compared = 0, boards = 0;
+	size_t compared = 0, boards = 0, members = 0;
 	std::vector<PassengerJourneyExecution> intents; // Every generation's intents, retired ones included.
 	auto check_boards = [&]() {
 		for (const auto &stored : intents) for (const OrderList *list : lists) for (VehicleOrderID order = 0; order < list->GetNumOrders(); ++order) {
@@ -519,6 +519,10 @@ TEST_CASE("Shared Hyperpath plan identities follow every row publication and gen
 				const auto expected = PassengerServiceDatabaseTestAccess::UncachedBoardHyperpath(db, intent, PAX, list->index, order, p, x);
 				CHECK(actual.state == expected.state); CHECK(actual.ride == expected.ride); CHECK(actual.cost == expected.cost);
 				if (expected.ride) ++boards;
+				const auto occurrences = db.HyperpathBoardingOccurrences(PAX, intent.boarding, list->index, order);
+				const auto member = db.CachedHyperpathMembership(intent, PAX, occurrences, p, x);
+				CHECK(member == PassengerServiceDatabaseTestAccess::UncachedMembership(db, intent, PAX, occurrences, p, x));
+				if (member == std::optional<bool>{true}) ++members;
 			}
 		}
 	};
@@ -546,7 +550,7 @@ TEST_CASE("Shared Hyperpath plan identities follow every row publication and gen
 		REQUIRE(step < 10000); db.TickPrecomputed(29); ++_state_ticks; check();
 	}
 	check();
-	CHECK(compared > 0); CHECK(boards > 0);
+	CHECK(compared > 0); CHECK(boards > 0); CHECK(members > 0);
 	/* A legacy generation's plans depend on services too: never shared. */
 	_settings_game.linkgraph.passenger_journey_hyperpath = false; db.TickPrecomputed(1);
 	REQUIRE(db.RevisionAffectsWaitingPlans());

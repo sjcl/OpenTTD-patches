@@ -240,8 +240,6 @@ class PassengerJourneyLoadingContext {
 	std::map<HyperpathKey, PassengerPrecomputedPlan> hyperpath_rides;
 	using HyperpathBoardingKey = std::tuple<VehicleID, CargoType, OrderListID, VehicleOrderID, StationID>;
 	std::map<HyperpathBoardingKey, std::array<uint32_t, 2>> hyperpath_boardings;
-	using HyperpathMembershipKey = std::tuple<HyperpathKey, OrderListID, uint64_t, std::array<uint32_t, 2>>;
-	std::map<HyperpathMembershipKey, bool> hyperpath_memberships; ///< Base membership only, local to this loading context.
 	uint64_t hyperpath_memo_serial;
 	StateTicks hyperpath_memo_ticks{}; ///< A context normally lives within one tick; a later tick renews the serial.
 	using RetiredPlanKey = std::tuple<CargoType, StationID, StationID, StateTicks, OrderListID>;
