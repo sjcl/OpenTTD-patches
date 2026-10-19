@@ -165,6 +165,16 @@ public:
 	bool PreparePrecomputed(); ///< Initial trees or replacement graph barrier: one slice, without advancing StateTicks.
 	bool IsPreparingPrecomputed() const;
 	PassengerPrecomputedProgress GetPrecomputedProgress() const; ///< O(NUM_CARGO), no diagnostic copies or worker reads.
+	PassengerParallelBuildDiagnostic GetPrecomputedParallelDiagnostic(CargoType cargo, bool retained = false) const { return (retained ? this->retained_precomputed : this->precomputed)[cargo].GetParallelDiagnostic(); }
+	struct PreparationDiagnostic {
+		std::array<uint64_t, 8> phase_nanoseconds{}; ///< Time inside slices, including result waits; indexed by progress Phase.
+		std::array<uint64_t, 8> phase_wall_nanoseconds{}; ///< Also includes GUI/network intervals between active slices.
+		std::chrono::steady_clock::time_point last_slice_end{};
+		PassengerPrecomputedProgress::Phase last_phase = PassengerPrecomputedProgress::Phase::Disabled;
+		uint64_t main_cpu_nanoseconds = 0, slices = 0;
+		size_t restored_destinations = 0, retained_destinations = 0;
+	};
+	const PreparationDiagnostic &GetPreparationDiagnostic() const { return this->preparation_diagnostic; }
 	uint64_t GetPrecomputedPreparationNanoseconds() const { return this->precomputed_preparation_nanoseconds; }
 	void DiscardPrecomputed();
 	bool PrecomputedFinished() const;
@@ -314,9 +324,12 @@ private:
 	uint64_t precomputed_policy_generation = 0, retained_precomputed_policy_generation = 0;
 	uint64_t boarding_revision = 0; ///< Event-local validation invalidation; never saved or used for simulation admission.
 	uint64_t precomputed_preparation_nanoseconds = 0; ///< Local elapsed observation, never saved or used for admission.
+	PreparationDiagnostic preparation_diagnostic;
+	size_t capture_quantum = 64, graph_quantum = 1024; ///< Local coroutine resumption granularity only.
 	PassengerBuildTask preparation_capture;
 	PassengerBuildTask TickBuild(size_t allowance, bool build_precomputed, bool cooperative);
 	bool cooperative_graph = false, load_graph_refreshed = false, load_current_graph_started = false;
+	bool preparation_step = false; ///< Scoped to the stopped-simulation preparation entry point, never ordinary Tick.
 	void BeginPrecomputed(int64_t transfer);
 	void BuildPrecomputedTables();
 	void ClearRetainedPrecomputed();

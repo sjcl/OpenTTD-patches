@@ -5040,6 +5040,20 @@ static bool ConPassengerJourneyStats(std::span<std::string_view> argv)
 	IConsolePrint(CC_DEFAULT, "Precomputed memory admission: rejected={}; shared_limit={}", GetPassengerServiceDatabase().HasRejectedPrecomputedMemory(), PassengerPrecomputedTable::MAX_BYTES);
 	IConsolePrint(CC_DEFAULT, "Precomputed initial preparation: pending={}; elapsed_ns={}; simulation_advanced=false",
 			GetPassengerServiceDatabase().IsPreparingPrecomputed(), GetPassengerServiceDatabase().GetPrecomputedPreparationNanoseconds());
+	const auto &preparation = GetPassengerServiceDatabase().GetPreparationDiagnostic();
+	IConsolePrint(CC_DEFAULT, "Passenger preparation slices: count={}; main_cpu_ns={}; services_ns={}; graph_ns={}; retained_ns={}; tables_ns={}",
+			preparation.slices, preparation.main_cpu_nanoseconds, preparation.phase_nanoseconds[1], preparation.phase_nanoseconds[2], preparation.phase_nanoseconds[3], preparation.phase_nanoseconds[4]);
+	IConsolePrint(CC_DEFAULT, "Passenger preparation phase wall: services_ns={}; graph_ns={}; retained_ns={}; tables_ns={}",
+			preparation.phase_wall_nanoseconds[1], preparation.phase_wall_nanoseconds[2], preparation.phase_wall_nanoseconds[3], preparation.phase_wall_nanoseconds[4]);
+	IConsolePrint(CC_DEFAULT, "Passenger retained replay: restored={}; total={}; work={}", preparation.restored_destinations, preparation.retained_destinations, GetPassengerServiceDatabase().GetLoadWork());
+	for (CargoType cargo : EnumRange(NUM_CARGO)) {
+		if (!IsCargoInClass(cargo, CargoClass::Passengers)) continue;
+		for (bool retained : {false, true}) {
+			const auto parallel = GetPassengerServiceDatabase().GetPrecomputedParallelDiagnostic(cargo, retained);
+			IConsolePrint(CC_DEFAULT, "Passenger workers: cargo={}; retained={}; workers={}; outstanding={}; running={}; searches={}; search_ns={}; hits={}; serial_rows={}; fallbacks={}; waits={}; wait_ns={}; timeouts={}; scratch_bound={}",
+					cargo, retained, parallel.workers, parallel.outstanding, parallel.running, parallel.searches, parallel.search_nanoseconds, parallel.cache_hits, parallel.serial_rows, parallel.fallbacks, parallel.waits, parallel.wait_nanoseconds, parallel.wait_timeouts, parallel.estimated_workspace_bytes);
+		}
+	}
 	IConsolePrint(CC_DEFAULT, "Journey inclusive scopes: waiting_us={}; fallback_distance_us={}; boarding_us={}", stats.waiting_microseconds, stats.fallback_distance_microseconds, stats.boarding_microseconds);
 	IConsolePrint(CC_DEFAULT, "Periodic pending age: ticks={}", periodic.maximum_pending_ticks);
 	IConsolePrint(CC_DEFAULT, "OD fallback cache: hits={}; bytes={}; work={}; searches={}", stats.od_fallback_cache_hits, stats.od_fallback_cache_bytes, stats.od_fallback_work, stats.od_fallback_searches);

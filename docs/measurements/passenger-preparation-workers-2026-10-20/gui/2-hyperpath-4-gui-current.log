@@ -1,0 +1,2 @@
+passenger_gui,mode=hyperpath,requested=4,workers=4,old_cadence=0,wall_ns=185174200,main_cpu_ns=156250000,loops=23,slice_max_ns=8243400,services_ns=3293300,graph_ns=2396200,tables_ns=179456700,cache_hits=858,serial_rows=0,operations=51088057,digest=799348197281116969
+Passed 1 test case with 5 assertions.

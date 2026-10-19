@@ -15,6 +15,8 @@
 #include "settings_type.h"
 #include "sl/saveload.h"
 #include "error_func.h"
+#include "core/thread_cpu_timer.hpp"
+#include "core/backup_type.hpp"
 #include <chrono>
 #include <queue>
 #include <bitset>
@@ -23,6 +25,36 @@
 
 namespace {
 	PassengerServiceDatabase database;
+	/** Local observations and coroutine batching only. Logical Work budgets never use a timer. */
+	struct PreparationTimer {
+		PassengerServiceDatabase &database;
+		PassengerServiceDatabase::PreparationDiagnostic &diagnostic;
+		uint64_t &total_nanoseconds;
+		PassengerPrecomputedProgress::Phase phase;
+		std::chrono::steady_clock::time_point started = std::chrono::steady_clock::now();
+		uint64_t cpu = GetCurrentThreadCPUTime();
+		~PreparationTimer()
+		{
+			const auto finished = std::chrono::steady_clock::now();
+			const uint64_t elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(finished - this->started).count();
+			this->diagnostic.phase_nanoseconds[static_cast<size_t>(this->phase)] += elapsed;
+			if (this->diagnostic.last_slice_end != std::chrono::steady_clock::time_point{}) {
+				this->diagnostic.phase_wall_nanoseconds[static_cast<size_t>(this->diagnostic.last_phase)] += std::chrono::duration_cast<std::chrono::nanoseconds>(this->started - this->diagnostic.last_slice_end).count();
+			}
+			this->diagnostic.phase_wall_nanoseconds[static_cast<size_t>(this->phase)] += elapsed;
+			this->diagnostic.last_phase = this->phase;
+			this->diagnostic.last_slice_end = this->database.IsPreparingPrecomputed() ? finished : std::chrono::steady_clock::time_point{};
+			this->total_nanoseconds += elapsed;
+			this->diagnostic.main_cpu_nanoseconds += GetCurrentThreadCPUTime() - this->cpu;
+			++this->diagnostic.slices;
+		}
+	};
+	void AdjustPreparationQuantum(size_t &quantum, std::chrono::steady_clock::time_point started, size_t minimum, size_t maximum)
+	{
+		const auto elapsed = std::chrono::steady_clock::now() - started;
+		if (elapsed < std::chrono::microseconds(250)) quantum = std::min(maximum, quantum * 2);
+		else if (elapsed > std::chrono::milliseconds(1)) quantum = std::max(minimum, quantum / 2);
+	}
 	constexpr uint64_t DATABASE_FORMAT_VERSION = 1;
 	constexpr int64_t MAX_PERIOD = int64_t{1} << 40;
 	bool AddTicks(int64_t &value, int64_t delta)
@@ -790,9 +822,12 @@ PassengerPrecomputedProgress PassengerServiceDatabase::GetPrecomputedProgress() 
 		for (const auto &table : this->retained_precomputed) {
 			graph |= table.IsPreparingGraph();
 			rejected |= table.MemoryRejected();
+			result.restored_destinations += table.GetDiagnostic().destinations;
+			result.retained_stations += table.GetDiagnostic().stations;
 		}
 	}
 	const bool restoring = this->load_state == LoadState::Replaying && this->load_retained;
+	result.retained_total_known = restoring && !graph;
 	result.total_known = !graph && !restoring;
 	result.phase = rejected ? Phase::MemoryRejected : graph ? Phase::Graph : restoring ? Phase::Restoring :
 			result.preparing ? Phase::Tables : Phase::Complete;
@@ -802,31 +837,39 @@ PassengerPrecomputedProgress PassengerServiceDatabase::GetPrecomputedProgress() 
 bool PassengerServiceDatabase::PreparePrecomputed()
 {
 	if (!this->IsPreparingPrecomputed()) return true;
+	/* StepLoad records its own slices, including direct multiplayer map replay. */
+	if (this->load_state == LoadState::Replaying) {
+		if (this->StepLoad() == LoadState::Invalid) SlErrorCorrupt("Invalid passenger routing construction cursor");
+		return !this->IsPreparingPrecomputed();
+	}
+	PreparationTimer observation{*this, this->preparation_diagnostic, this->precomputed_preparation_nanoseconds, this->GetPrecomputedProgress().phase};
 	PassengerJourneyWorkTimer timer;
 	const auto started = std::chrono::steady_clock::now();
 	/* Complete initial discovery before freezing its input. Subsequent timing
 	 * dirtiness is deliberately left to the ordinary publication epochs. */
-	if (this->load_state == LoadState::Replaying) {
-		if (this->StepLoad() == LoadState::Invalid) SlErrorCorrupt("Invalid passenger routing construction cursor");
-	} else if (this->retained_precomputed_revision != UINT64_MAX) {
+	if (this->retained_precomputed_revision != UINT64_MAX) {
 		/* A normal replacement pauses only its graph preparation. Keep every
 		 * old row; row publication resumes at the ordinary saved tick budget. */
 		for (auto &table : this->precomputed) {
-			if (table.IsPreparingGraph() && !table.PrepareGraph(1024)) break;
+			if (table.IsPreparingGraph()) {
+				const bool ready = table.PrepareGraph(this->graph_quantum);
+				AdjustPreparationQuantum(this->graph_quantum, started, 128, 4096);
+				if (!ready) break;
+			}
 			/* The frozen graph can already warm its local cache while the UI /
 			 * network preparation barrier returns control. Consume no row Work. */
 			if (!table.Finished()) table.StepParallel(0, _settings_client.gui.passenger_precomputed_workers);
 		}
 	} else if (this->preparation_capture || (this->precomputed_revision == UINT64_MAX && (this->sweeping || !this->build_queue.empty() || !this->building.empty()))) {
 		if (!this->preparation_capture) this->preparation_capture = this->TickBuild(BUILD_WORK, false, true);
-		if (this->preparation_capture.Resume(64)) this->preparation_capture = {};
+		if (this->preparation_capture.Resume(this->capture_quantum)) this->preparation_capture = {};
+		AdjustPreparationQuantum(this->capture_quantum, started, 16, 512);
 		this->diagnostic.build_microseconds += std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - started).count();
 	} else {
-		this->cooperative_graph = true;
+		AutoRestoreBackup preparing{this->preparation_step, true};
+		AutoRestoreBackup graph{this->cooperative_graph, true};
 		this->TickPrecomputed(BUILD_WORK);
-		this->cooperative_graph = false;
 	}
-	this->precomputed_preparation_nanoseconds += std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - started).count();
 	return !this->IsPreparingPrecomputed();
 }
 
@@ -949,6 +992,12 @@ void PassengerServiceDatabase::TickPrecomputed(size_t allowance)
 	for (CargoType cargo : EnumRange(NUM_CARGO)) {
 		auto &table = this->precomputed[cargo];
 		if (table.Finished()) continue;
+		if (this->preparation_step && table.IsPreparingGraph()) {
+			const auto started = std::chrono::steady_clock::now();
+			const bool ready = table.PrepareGraph(this->graph_quantum);
+			AdjustPreparationQuantum(this->graph_quantum, started, 128, 4096);
+			if (!ready) break;
+		}
 		const auto rows = table.GetDiagnostic().destinations;
 		auto published = [&](StationID destination) {
 			auto &retained = this->retained_precomputed[cargo];
@@ -958,7 +1007,8 @@ void PassengerServiceDatabase::TickPrecomputed(size_t allowance)
 		/* Speculation is a local CPU cache in initial and replacement builds.
 		 * A miss executes the same serial search; BUILD_WORK and all publication
 		 * decisions are independent of completion order or local worker count. */
-		size_t used = table.StepParallel(allowance, _settings_client.gui.passenger_precomputed_workers, published);
+		size_t used = this->preparation_step ? table.StepPreparation(allowance, _settings_client.gui.passenger_precomputed_workers, published) :
+				table.StepParallel(allowance, _settings_client.gui.passenger_precomputed_workers, published);
 		if (table.GetDiagnostic().destinations != rows) WakePassengerWaitingCargo(cargo);
 		allowance -= used; this->precomputed_operations += used;
 		if (allowance == 0 || table.IsPreparingGraph()) break;
@@ -2353,10 +2403,19 @@ void PassengerServiceDatabase::FinishLoad(bool present, bool defer_precomputed)
 PassengerServiceDatabase::LoadState PassengerServiceDatabase::StepLoad(size_t allowance)
 {
 	if (this->load_state != LoadState::Replaying) return this->load_state;
+	PreparationTimer observation{*this, this->preparation_diagnostic, this->precomputed_preparation_nanoseconds, this->GetPrecomputedProgress().phase};
+	allowance = std::min<size_t>(allowance, 4096); // Local slice bound; the saved operation position is unchanged.
 	++this->hyperpath_lookup_epoch; // Replay publishes rows in both tables without per-row notifications.
 	if (!this->load_graph_refreshed) {
+		auto prepare = [&](PassengerPrecomputedTable &table) {
+			if (!table.IsPreparingGraph()) return true;
+			const auto started = std::chrono::steady_clock::now();
+			const bool ready = table.PrepareGraph(this->graph_quantum);
+			AdjustPreparationQuantum(this->graph_quantum, started, 128, 4096);
+			return ready;
+		};
 		for (auto &table : this->retained_precomputed) {
-			if (table.IsPreparingGraph() && !table.PrepareGraph(1024)) return this->load_state;
+			if (!prepare(table)) return this->load_state;
 		}
 		if (!this->load_current_graph_started) {
 			this->cooperative_graph = true; this->BuildPrecomputedTables(); this->cooperative_graph = false;
@@ -2364,13 +2423,14 @@ PassengerServiceDatabase::LoadState PassengerServiceDatabase::StepLoad(size_t al
 			this->load_current_graph_started = true;
 		}
 		for (auto &table : this->precomputed) {
-			if (table.IsPreparingGraph() && !table.PrepareGraph(1024)) return this->load_state;
+			if (!prepare(table)) return this->load_state;
 		}
 		for (const auto &[id, service] : this->services) {
 			for (auto &table : this->precomputed) table.RefreshService(service);
 			for (auto &table : this->retained_precomputed) table.RefreshService(service);
 		}
 		this->load_graph_refreshed = true;
+		for (const auto &table : this->retained_precomputed) this->preparation_diagnostic.retained_destinations += table.GetDiagnostic().stations;
 	}
 	while (true) {
 		if (this->load_cargo == NUM_CARGO || (!this->load_retained && this->load_remaining == 0)) {
@@ -2383,9 +2443,11 @@ PassengerServiceDatabase::LoadState PassengerServiceDatabase::StepLoad(size_t al
 		if (allowance == 0) return this->load_state;
 		size_t used;
 		if (this->load_retained) {
-			used = table.Step(allowance);
+			const auto before = table.GetDiagnostic().destinations;
+			used = table.StepPreparation(allowance, _settings_client.gui.passenger_precomputed_workers);
+			this->preparation_diagnostic.restored_destinations += table.GetDiagnostic().destinations - before;
 		} else {
-			used = table.Step(static_cast<size_t>(std::min<uint64_t>(this->load_remaining, allowance)), false,
+			used = table.StepPreparation(static_cast<size_t>(std::min<uint64_t>(this->load_remaining, allowance)), _settings_client.gui.passenger_precomputed_workers,
 					[&](StationID destination) {
 						auto &retained = this->retained_precomputed[this->load_cargo];
 						retained.PrepareRetirement(table); retained.ReleaseDestination(destination);
@@ -2394,5 +2456,6 @@ PassengerServiceDatabase::LoadState PassengerServiceDatabase::StepLoad(size_t al
 		}
 		this->load_work += used;
 		allowance -= used;
+		if (used == 0) return this->load_state; // Result pending: yield to input/network without consuming saved Work.
 	}
 }

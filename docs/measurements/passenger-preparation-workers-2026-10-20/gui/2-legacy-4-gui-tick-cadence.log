@@ -1,0 +1,2 @@
+passenger_gui,mode=legacy,requested=4,workers=4,old_cadence=1,wall_ns=591693600,main_cpu_ns=93750000,loops=20,slice_max_ns=8523500,services_ns=3495600,graph_ns=35742600,tables_ns=552420600,cache_hits=858,serial_rows=0,operations=48177664,digest=12348418506732503985
+Passed 1 test case with 5 assertions.

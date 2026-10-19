@@ -10,6 +10,7 @@
 #include "map_func.h"
 #include "error_func.h"
 #include "thread.h"
+#include "core/backup_type.hpp"
 #include <atomic>
 #include <array>
 #include <condition_variable>
@@ -976,12 +977,14 @@ void PassengerPrecomputedTable::CollectSearchCounters()
  * jobs and workers reusable contexts, across ALL tables and retired generations.
  * This local cap changes cache availability alone, never canonical admission. */
 struct PassengerPrecomputedTable::WorkerMetrics {
-	std::atomic<uint64_t> searches{0}, operations{0}, nanoseconds{0}, cancelled_work{0}, minimum{UINT64_MAX}, maximum{0}, outstanding{0}, workspace_reuses{0};
+	std::atomic<uint64_t> searches{0}, operations{0}, nanoseconds{0}, cancelled_work{0}, minimum{UINT64_MAX}, maximum{0}, outstanding{0}, running{0}, workspace_reuses{0};
 	void Add(PassengerParallelBuildDiagnostic &result) const
 	{
 		result.workspace_reuses += this->workspace_reuses.load(); result.searches += this->searches.load(); result.search_work += this->operations.load();
 		result.search_nanoseconds += this->nanoseconds.load(); result.cancelled_search_work += this->cancelled_work.load();
 		result.minimum_work = std::min(result.minimum_work, this->minimum.load()); result.maximum_work = std::max(result.maximum_work, this->maximum.load());
+		result.outstanding += this->outstanding.load();
+		result.running += this->running.load();
 	}
 };
 
@@ -1011,6 +1014,7 @@ struct PassengerPrecomputedTable::DestinationWorkerPool {
 	static constexpr uint64_t SCRATCH_LIMIT = uint64_t{512} * 1024 * 1024;
 	std::mutex mutex;
 	std::condition_variable wake;
+	std::condition_variable completed;
 	std::deque<std::shared_ptr<DestinationBuildResult>> jobs;
 	std::vector<std::thread> threads;
 	std::shared_ptr<std::atomic<uint64_t>> budget = std::make_shared<std::atomic<uint64_t>>(0);
@@ -1045,6 +1049,7 @@ struct PassengerPrecomputedTable::DestinationWorkerPool {
 			job->cancelled.store(true); --job->generation->metrics->outstanding; job->ready.store(true, std::memory_order_release);
 			retired[count++] = std::move(job); return true;
 		});
+		if (count != 0) this->completed.notify_all();
 	}
 	bool Submit(const std::shared_ptr<DestinationBuildResult> &job)
 	{
@@ -1075,6 +1080,7 @@ struct PassengerPrecomputedTable::DestinationWorkerPool {
 			auto selected = std::find_if(this->jobs.begin(), this->jobs.end(), [&](const auto &job) { return index < job->generation->workers; });
 			if (selected == this->jobs.end()) { this->wake.wait_for(lock, std::chrono::milliseconds(20)); continue; }
 			auto job = std::move(*selected); this->jobs.erase(selected);
+			++job->generation->metrics->running;
 			lock.unlock();
 			if (owner != job->generation) { workspace = {}; owner = job->generation; }
 			const auto started = Clock::now(); uint64_t operations = 0;
@@ -1102,8 +1108,9 @@ struct PassengerPrecomputedTable::DestinationWorkerPool {
 			job->nanoseconds = Elapsed(started); owner->metrics->nanoseconds += job->nanoseconds; owner->metrics->operations += operations;
 			/* This is the final access to the job's non-atomic fields. A ready
 			 * result may now be adopted/recycled by the simulation thread. */
-			--owner->metrics->outstanding; job->ready.store(true, std::memory_order_release);
 			lock.lock();
+			--owner->metrics->running; --owner->metrics->outstanding; job->ready.store(true, std::memory_order_release);
+			this->completed.notify_all();
 		}
 	}
 	~DestinationWorkerPool()
@@ -1178,6 +1185,7 @@ bool PassengerPrecomputedTable::PrepareParallelBatch(uint workers)
 			else job = std::make_shared<DestinationBuildResult>();
 			job->generation = state.generation; job->generation_id = state.generation->id;
 			job->destination = state.next; job->station = this->graph->stations[state.next]; job->operations = 0; job->error = false;
+			job->wait_started = {};
 			job->ready.store(false); job->cancelled.store(false);
 			if (!WorkerPool().Submit(job)) break;
 			state.pending.push_back(std::move(job)); ++state.next; ++submitted;
@@ -1217,6 +1225,27 @@ size_t PassengerPrecomputedTable::AdvanceSearch(size_t allowance, uint workers)
 		 * owns the serial cursor through completion, including across ticks. */
 		const bool pristine = this->work.initializing_row && this->work.search.cost.empty() && this->work.scratch.labels.empty() && this->work.seeding == 0;
 		if (this->parallel && !this->parallel->pending.empty() && this->parallel->pending.front()->destination == this->destination) {
+			const auto &pending = this->parallel->pending.front();
+			if (this->preparation_step && pristine && !pending->ready.load(std::memory_order_acquire)) {
+				const auto started = Clock::now();
+				if (pending->wait_started == Clock::time_point{}) pending->wait_started = started;
+				auto &pool = WorkerPool();
+				{
+					std::unique_lock lock(pool.mutex);
+					pool.completed.wait_until(lock, this->preparation_deadline, [&]() {
+						return pending->ready.load(std::memory_order_acquire) || pending->generation->cancelled.load() || pool.stopping.load();
+					});
+				}
+				++this->parallel_diagnostic.waits; this->parallel_diagnostic.wait_nanoseconds += Elapsed(started);
+				if (!pending->ready.load(std::memory_order_acquire) && !pending->generation->cancelled.load() && !pool.stopping.load()) {
+					/* Yield without charging Work or latching a serial row. A stuck worker
+					 * eventually loses ownership, but no single UI slice waits for it. */
+					if (Clock::now() - pending->wait_started < this->preparation_wait_limit) return 0;
+					++this->parallel_diagnostic.wait_timeouts;
+					pending->cancelled.store(true); pending->generation->cancelled.store(true);
+					this->parallel_unavailable = true; ++this->parallel_diagnostic.fallbacks;
+				}
+			}
 			auto job = std::move(this->parallel->pending.front()); this->parallel->pending.pop_front();
 			if (pristine && job->ready.load(std::memory_order_acquire) && !job->cancelled.load() && !job->error &&
 					job->operations != 0 && job->workspace.finishing_row && job->generation_id == this->parallel->generation->id && job->station == this->graph->stations[this->destination]) {
@@ -1225,7 +1254,7 @@ size_t PassengerPrecomputedTable::AdvanceSearch(size_t allowance, uint workers)
 		}
 		if (!this->parallel_result) { this->serial_destination = this->destination; ++this->parallel_diagnostic.serial_rows; }
 		if (this->parallel_result) this->parallel_misses = 0;
-		else if (this->parallel && !this->parallel_unavailable && ++this->parallel_misses >= 16) {
+		else if (this->parallel && !this->parallel_unavailable && (!this->preparation_step || this->parallel_diagnostic.wait_timeouts != 0) && ++this->parallel_misses >= 16) {
 			/* A persistently late cache can otherwise burn a second CPU on rows
 			 * the main thread already owns. Disable speculation locally for this
 			 * generation; the same serial Work/publication path remains in use. */
@@ -1263,6 +1292,13 @@ size_t PassengerPrecomputedTable::StepParallel(size_t allowance, uint workers, c
 	return used;
 }
 
+size_t PassengerPrecomputedTable::StepPreparation(size_t allowance, uint workers, const std::function<void(StationID)> &published)
+{
+	AutoRestoreBackup mode{this->preparation_step, true};
+	this->preparation_deadline = Clock::now() + std::chrono::milliseconds(1);
+	return this->StepParallel(std::min<size_t>(allowance, 4096), workers, published);
+}
+
 size_t PassengerPrecomputedTable::SearchDestination(DestinationWorkspace &work, size_t allowance) const
 {
 	return this->graph->SearchDestination(work, allowance);
@@ -1293,7 +1329,8 @@ size_t PassengerPrecomputedTable::StepImpl(size_t allowance, bool legacy_publica
 	try {
 		while (used < allowance && !this->Finished()) {
 			if (!this->work.finishing_row) {
-				used += this->AdvanceSearch(allowance - used, workers); continue;
+				const size_t searched = this->AdvanceSearch(allowance - used, workers);
+				used += searched; if (searched == 0 && !this->work.finishing_row) break; continue;
 			}
 			++used;
 			if (this->work.finishing_row) {
@@ -1422,7 +1459,8 @@ size_t PassengerPrecomputedTable::StepHyperpath(size_t allowance, const std::fun
 	try {
 		while (used < allowance && !this->Finished()) {
 			if (!this->work.finishing_row) {
-				used += this->AdvanceSearch(allowance - used, workers); continue;
+				const size_t searched = this->AdvanceSearch(allowance - used, workers);
+				used += searched; if (searched == 0 && !this->work.finishing_row) break; continue;
 			}
 			++used;
 			if (this->work.finishing_row) {

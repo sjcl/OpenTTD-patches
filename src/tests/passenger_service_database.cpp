@@ -46,6 +46,14 @@
 #include "../widgets/network_widget.h"
 #include "mock_environment.h"
 #include "network_passenger_preparation.h"
+#include "../video/null_v.h"
+#include "passenger_benchmark_cpu.h"
+
+struct PassengerVideoDriverTestAccess {
+	static void Loop(VideoDriver &driver) { driver.GameLoop(); }
+	static auto Next(const VideoDriver &driver) { return driver.next_game_tick; }
+	static bool Unlocked(VideoDriver &driver) { if (!driver.game_state_mutex.try_lock()) return false; driver.game_state_mutex.unlock(); return true; }
+};
 
 extern SaveLoadVersion _sl_version;
 extern NamedSaveLoadTable GetGoodsDesc();
@@ -4149,6 +4157,92 @@ TEST_CASE("Precomputed startup completes discovery and all rows without simulati
 	CHECK(joined.PlanPrecomputed(PAX, A, D, NOW).ride == db.PlanPrecomputed(PAX, A, D, NOW).ride);
 }
 
+TEST_CASE("GUI passenger preparation removes tick sleep and releases its game lock between slices", "[passenger][precomputed][preparation][video]")
+{
+	MockEnvironment::Instance();
+	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = true;
+	AutoRestoreBackup workers{_settings_client.gui.passenger_precomputed_workers, uint8_t{0}};
+	f.Train({Stop(A), Stop(B), Stop(C), Stop(D)});
+	auto &db = GetPassengerServiceDatabase();
+	for (uint i = 0; db.IsBuilding(); ++i) { REQUIRE(i < 128); db.Tick(PassengerServiceDatabase::BUILD_WORK, false); }
+	db.TickPrecomputed(0);
+	AutoRestoreBackup mode{_game_mode, GameMode::Normal};
+	AutoRestoreBackup paused{_pause_mode, PauseModes{PauseMode::Normal}};
+	AutoRestoreBackup networking{_networking, false};
+	DriverFactoryBase::SelectDriver("null", Driver::Type::Sound);
+	DriverFactoryBase::SelectDriver("null", Driver::Type::Music);
+	struct Gui : VideoDriver_Null { bool HasGUI() const override { return true; } } driver;
+	static std::atomic<bool> release{false}; release = false;
+	struct Release { ~Release() { release = true; } } guard;
+	auto &table = PassengerServiceDatabaseTestAccess::Table(db, PAX);
+	PassengerPrecomputedTestAccess::Hook(table, +[](size_t, bool done) { if (!done) while (!release.load()) std::this_thread::sleep_for(std::chrono::milliseconds(1)); });
+	_settings_client.gui.passenger_precomputed_workers = 4;
+	PassengerVideoDriverTestAccess::Loop(driver);
+	REQUIRE(db.IsPreparingPrecomputed());
+	CHECK(PassengerVideoDriverTestAccess::Next(driver) <= std::chrono::steady_clock::now());
+	CHECK(_state_ticks == NOW);
+	bool available = false;
+	std::thread drawing([&]() { available = PassengerVideoDriverTestAccess::Unlocked(driver); }); drawing.join();
+	CHECK(available);
+	release = true;
+	while (!db.PreparePrecomputed()) {}
+	/* After local completion the regular interval applies, including a paused
+	 * peer waiting on the network. No extra simulation or preparation slice. */
+	const auto slices = db.GetPreparationDiagnostic().slices;
+	PassengerVideoDriverTestAccess::Loop(driver);
+	CHECK(db.GetPreparationDiagnostic().slices == slices);
+	CHECK(PassengerVideoDriverTestAccess::Next(driver) > std::chrono::steady_clock::now());
+	CHECK(_state_ticks == NOW);
+}
+
+TEST_CASE("Passenger GUI complete initial preparation benchmark", "[.passenger-preparation-loop-benchmark][passenger]")
+{
+	auto number = [](const char *name, uint fallback) { const char *value = std::getenv(name); return value ? static_cast<uint>(std::strtoul(value, nullptr, 10)) : fallback; };
+	MockEnvironment::Instance();
+	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = true;
+	const bool hyperpath = number("OPENTTD_PARALLEL_HYPERPATH", 1) != 0, old_cadence = number("OPENTTD_PREPARATION_OLD_CADENCE", 0) != 0;
+	const uint requested = number("OPENTTD_PARALLEL_WORKERS", 4);
+	_settings_game.linkgraph.passenger_journey_hyperpath = hyperpath;
+	AutoRestoreBackup workers{_settings_client.gui.passenger_precomputed_workers, static_cast<uint8_t>(requested)};
+	AutoRestoreBackup mode{_game_mode, GameMode::Normal};
+	AutoRestoreBackup paused{_pause_mode, PauseModes{PauseMode::Normal}};
+	AutoRestoreBackup networking{_networking, false};
+	uint32_t seed = 0x0d16e57;
+	auto random = [&](uint n) { seed = seed * 1664525U + 1013904223U; return (seed >> 8) % n; };
+	for (uint line = 0; line < 240; ++line) {
+		int x = random(32), y = random(32); std::vector<Order> orders;
+		for (uint at = 0; at < 12; ++at) {
+			orders.push_back(Stop(StationID{static_cast<uint16_t>(y * 32 + x)}));
+			switch (random(4)) {
+				case 0: x = std::min(31, x + 1); break;
+				case 1: x = std::max(0, x - 1); break;
+				case 2: y = std::min(31, y + 1); break;
+				default: y = std::max(0, y - 1); break;
+			}
+		}
+		f.Train(std::move(orders));
+	}
+	DriverFactoryBase::SelectDriver("null", Driver::Type::Sound); DriverFactoryBase::SelectDriver("null", Driver::Type::Music);
+	struct Gui : VideoDriver_Null { bool HasGUI() const override { return true; } } driver;
+	auto &db = GetPassengerServiceDatabase();
+	const uint64_t cpu = PassengerBenchmarkThreadCPU(); const auto started = std::chrono::steady_clock::now();
+	uint64_t max_slice = 0, loops = 0;
+	while (db.IsPreparingPrecomputed()) {
+		const auto slice = std::chrono::steady_clock::now(); PassengerVideoDriverTestAccess::Loop(driver); ++loops;
+		max_slice = std::max(max_slice, static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - slice).count()));
+		if (old_cadence && db.IsPreparingPrecomputed()) std::this_thread::sleep_until(slice + std::chrono::milliseconds(MILLISECONDS_PER_TICK));
+	}
+	const auto wall = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - started).count();
+	const uint64_t main_cpu = PassengerBenchmarkThreadCPU() - cpu;
+	REQUIRE(_state_ticks == NOW); REQUIRE(db.PrecomputedFinished()); REQUIRE_FALSE(db.HasRejectedPrecomputedMemory());
+	const auto &d = db.GetPreparationDiagnostic(); const auto parallel = db.GetPrecomputedParallelDiagnostic(PAX);
+	std::cout << "passenger_gui,mode=" << (hyperpath ? "hyperpath" : "legacy") << ",requested=" << requested
+			<< ",workers=" << parallel.workers << ",old_cadence=" << old_cadence << ",wall_ns=" << wall << ",main_cpu_ns=" << main_cpu << ",loops=" << loops << ",slice_max_ns=" << max_slice
+			<< ",services_ns=" << d.phase_wall_nanoseconds[1] << ",graph_ns=" << d.phase_wall_nanoseconds[2] << ",tables_ns=" << d.phase_wall_nanoseconds[4]
+			<< ",cache_hits=" << parallel.cache_hits << ",serial_rows=" << parallel.serial_rows << ",operations=" << db.GetPrecomputedDiagnostic(PAX).operations
+			<< ",digest=" << PassengerPrecomputedTestAccess::Digest(PassengerServiceDatabaseTestAccess::Table(db, PAX)) << std::endl;
+}
+
 TEST_CASE("Saving suspended initial fleet capture resumes the same publication", "[passenger][precomputed][startup][save][determinism]")
 {
 	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = true;
@@ -4684,6 +4778,51 @@ TEST_CASE("Precomputed replacement retains pending destination rows across every
 	const auto completed = db.Save(); REQUIRE(joined.Load(completed)); joined.FinishLoad(true);
 	CHECK(joined.Save() == completed);
 	CHECK(db.PlanPrecomputed(PAX, A, D, NOW).cost == old.cost);
+}
+
+TEST_CASE("Parallel saved passenger replay restores retained and current publications at the saved operation", "[passenger][precomputed][preparation][save][network]")
+{
+	for (bool retained_hyperpath : {false, true}) for (bool current_hyperpath : {false, true}) {
+		Fixture f; f.Train({Stop(A), Stop(B), Stop(C), Stop(D)}); f.Train({Stop(A), Stop(C), Stop(D)});
+		AutoRestoreBackup worker_setting{_settings_client.gui.passenger_precomputed_workers, uint8_t{0}};
+		_settings_game.linkgraph.passenger_journey_precomputed = true;
+		_settings_game.linkgraph.passenger_journey_hyperpath = retained_hyperpath;
+		auto &db = f.Build(); while (!db.PreparePrecomputed()) {}
+		_settings_game.linkgraph.passenger_journey_hyperpath = current_hyperpath;
+		PassengerServiceDatabaseTestAccess::BeginReplacement(db, 17);
+		/* A mixed generation after retirement, followed by a partial next row. */
+		while (db.GetPrecomputedDiagnostic(PAX).destinations == 0) db.TickPrecomputed(1);
+		db.TickPrecomputed(7);
+		REQUIRE_FALSE(db.PrecomputedFinished());
+		const auto wire = db.Save();
+		const auto current = PassengerPrecomputedTestAccess::Published(PassengerServiceDatabaseTestAccess::Table(db, PAX));
+		const auto retained = PassengerPrecomputedTestAccess::Published(PassengerServiceDatabaseTestAccess::Retained(db, PAX));
+		for (uint8_t workers : {0, 1, 4, 8}) for (size_t quantum : {1U, 19U, 65536U}) {
+			CAPTURE(retained_hyperpath, current_hyperpath, workers, quantum);
+			_settings_client.gui.passenger_precomputed_workers = workers;
+			PassengerServiceDatabase peer; REQUIRE(peer.Load(wire)); peer.FinishLoad(true, true);
+			for (uint i = 0; peer.GetLoadState() == PassengerServiceDatabase::LoadState::Replaying; ++i) {
+				REQUIRE(i < 100000);
+				const auto before = peer.GetLoadWork();
+				peer.StepLoad(quantum);
+				REQUIRE(peer.GetLoadWork() - before <= quantum);
+				REQUIRE(peer.Save() == wire);
+				REQUIRE(_state_ticks == NOW);
+				const auto progress = peer.GetPrecomputedProgress();
+				if (progress.phase == PassengerPrecomputedProgress::Phase::Restoring) {
+					CHECK(progress.retained_total_known); CHECK(progress.retained_stations == 4);
+					CHECK(progress.restored_destinations <= progress.retained_stations);
+				}
+			}
+			CHECK(peer.GetLoadState() == PassengerServiceDatabase::LoadState::Ready);
+			CHECK(PassengerPrecomputedTestAccess::Published(PassengerServiceDatabaseTestAccess::Table(peer, PAX)) == current);
+			CHECK(PassengerPrecomputedTestAccess::Published(PassengerServiceDatabaseTestAccess::Retained(peer, PAX)) == retained);
+			if (workers != 0) {
+				CHECK(peer.GetPrecomputedParallelDiagnostic(PAX, true).cache_hits == 4);
+				CHECK(peer.GetPrecomputedParallelDiagnostic(PAX, true).serial_rows == 0);
+			}
+		}
+	}
 }
 
 TEST_CASE("Precomputed join replay yields at exact work boundaries for all publication states", "[passenger][precomputed][save][network]")

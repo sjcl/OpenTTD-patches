@@ -1,0 +1,5 @@
+docs/measurements/passenger-preparation-workers-2026-10-20/** text eol=lf
+docs/measurements/passenger-preparation-workers-2026-10-20/**/*.gz -text
+docs/passenger-preparation-workers-2026-10-20.md text eol=lf
+docs/passenger-preparation-benchmark.md text eol=lf
+utils/passenger_preparation_benchmark.py text eol=lf

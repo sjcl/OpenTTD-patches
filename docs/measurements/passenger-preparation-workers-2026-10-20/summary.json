@@ -1,0 +1,5688 @@
+[
+  {
+    "scenario": "gui-current",
+    "mode": "hyperpath",
+    "requested": 4,
+    "repeats": 2,
+    "peak_working_set": {
+      "mean": 223428608,
+      "min": 223223808,
+      "max": 223633408
+    },
+    "workers": {
+      "mean": 4,
+      "min": 4,
+      "max": 4
+    },
+    "old_cadence": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "wall_ns": {
+      "mean": 184243800,
+      "min": 183313400,
+      "max": 185174200
+    },
+    "main_cpu_ns": {
+      "mean": 156250000,
+      "min": 156250000,
+      "max": 156250000
+    },
+    "loops": {
+      "mean": 23,
+      "min": 23,
+      "max": 23
+    },
+    "slice_max_ns": {
+      "mean": 8732550,
+      "min": 8243400,
+      "max": 9221700
+    },
+    "services_ns": {
+      "mean": 3619550,
+      "min": 3293300,
+      "max": 3945800
+    },
+    "graph_ns": {
+      "mean": 2441100,
+      "min": 2396200,
+      "max": 2486000
+    },
+    "tables_ns": {
+      "mean": 178154550,
+      "min": 176852400,
+      "max": 179456700
+    },
+    "cache_hits": {
+      "mean": 858,
+      "min": 858,
+      "max": 858
+    },
+    "serial_rows": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "operations": {
+      "mean": 51088057,
+      "min": 51088057,
+      "max": 51088057
+    }
+  },
+  {
+    "scenario": "gui-current",
+    "mode": "legacy",
+    "requested": 4,
+    "repeats": 2,
+    "peak_working_set": {
+      "mean": 136415232,
+      "min": 136380416,
+      "max": 136450048
+    },
+    "workers": {
+      "mean": 4,
+      "min": 4,
+      "max": 4
+    },
+    "old_cadence": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "wall_ns": {
+      "mean": 165411850,
+      "min": 164346300,
+      "max": 166477400
+    },
+    "main_cpu_ns": {
+      "mean": 132812500,
+      "min": 109375000,
+      "max": 156250000
+    },
+    "loops": {
+      "mean": 21,
+      "min": 21,
+      "max": 21
+    },
+    "slice_max_ns": {
+      "mean": 8288250,
+      "min": 8273500,
+      "max": 8303000
+    },
+    "services_ns": {
+      "mean": 3862400,
+      "min": 3553500,
+      "max": 4171300
+    },
+    "graph_ns": {
+      "mean": 10393950,
+      "min": 9623600,
+      "max": 11164300
+    },
+    "tables_ns": {
+      "mean": 151120550,
+      "min": 149592800,
+      "max": 152648300
+    },
+    "cache_hits": {
+      "mean": 858,
+      "min": 858,
+      "max": 858
+    },
+    "serial_rows": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "operations": {
+      "mean": 48177664,
+      "min": 48177664,
+      "max": 48177664
+    }
+  },
+  {
+    "scenario": "gui-tick-cadence",
+    "mode": "hyperpath",
+    "requested": 4,
+    "repeats": 2,
+    "peak_working_set": {
+      "mean": 223715328,
+      "min": 223633408,
+      "max": 223797248
+    },
+    "workers": {
+      "mean": 4,
+      "min": 4,
+      "max": 4
+    },
+    "old_cadence": {
+      "mean": 1,
+      "min": 1,
+      "max": 1
+    },
+    "wall_ns": {
+      "mean": 818005850,
+      "min": 817471700,
+      "max": 818540000
+    },
+    "main_cpu_ns": {
+      "mean": 164062500,
+      "min": 156250000,
+      "max": 171875000
+    },
+    "loops": {
+      "mean": 27,
+      "min": 27,
+      "max": 27
+    },
+    "slice_max_ns": {
+      "mean": 8292300,
+      "min": 8276600,
+      "max": 8308000
+    },
+    "services_ns": {
+      "mean": 3409750,
+      "min": 3365200,
+      "max": 3454300
+    },
+    "graph_ns": {
+      "mean": 2674400,
+      "min": 2623000,
+      "max": 2725800
+    },
+    "tables_ns": {
+      "mean": 811889550,
+      "min": 811257400,
+      "max": 812521700
+    },
+    "cache_hits": {
+      "mean": 858,
+      "min": 858,
+      "max": 858
+    },
+    "serial_rows": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "operations": {
+      "mean": 51088057,
+      "min": 51088057,
+      "max": 51088057
+    }
+  },
+  {
+    "scenario": "gui-tick-cadence",
+    "mode": "legacy",
+    "requested": 4,
+    "repeats": 2,
+    "peak_working_set": {
+      "mean": 136546304,
+      "min": 136130560,
+      "max": 136962048
+    },
+    "workers": {
+      "mean": 4,
+      "min": 4,
+      "max": 4
+    },
+    "old_cadence": {
+      "mean": 1,
+      "min": 1,
+      "max": 1
+    },
+    "wall_ns": {
+      "mean": 592469500,
+      "min": 591693600,
+      "max": 593245400
+    },
+    "main_cpu_ns": {
+      "mean": 46875000,
+      "min": 0,
+      "max": 93750000
+    },
+    "loops": {
+      "mean": 20,
+      "min": 20,
+      "max": 20
+    },
+    "slice_max_ns": {
+      "mean": 8477300,
+      "min": 8431100,
+      "max": 8523500
+    },
+    "services_ns": {
+      "mean": 3908600,
+      "min": 3495600,
+      "max": 4321600
+    },
+    "graph_ns": {
+      "mean": 46930800,
+      "min": 35742600,
+      "max": 58119000
+    },
+    "tables_ns": {
+      "mean": 541598250,
+      "min": 530775900,
+      "max": 552420600
+    },
+    "cache_hits": {
+      "mean": 858,
+      "min": 858,
+      "max": 858
+    },
+    "serial_rows": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "operations": {
+      "mean": 48177664,
+      "min": 48177664,
+      "max": 48177664
+    }
+  },
+  {
+    "scenario": "initial-preparation",
+    "mode": "hyperpath",
+    "requested": 0,
+    "repeats": 2,
+    "peak_working_set": {
+      "mean": 227295232,
+      "min": 227205120,
+      "max": 227385344
+    },
+    "workers": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "main_cpu_ns": {
+      "mean": 867187500,
+      "min": 859375000,
+      "max": 875000000
+    },
+    "row_main_cpu_ns": {
+      "mean": 867187500,
+      "min": 859375000,
+      "max": 875000000
+    },
+    "cache_hits": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "cache_work": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "serial_rows": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "main_search_ns": {
+      "mean": 734853850,
+      "min": 726920200,
+      "max": 742787500
+    },
+    "fallbacks": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "serial_work": {
+      "mean": 56231397,
+      "min": 56231397,
+      "max": 56231397
+    },
+    "cancelled_work": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "thread_starts": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "workspace_bound": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "worker_wait_ns": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "preparation": {
+      "mean": 1,
+      "min": 1,
+      "max": 1
+    },
+    "wall_ns": {
+      "mean": 889766550,
+      "min": 881263400,
+      "max": 898269700
+    },
+    "graph_ns": {
+      "mean": 2184850,
+      "min": 2179900,
+      "max": 2189800
+    },
+    "row_ns": {
+      "mean": 887581700,
+      "min": 879083500,
+      "max": 896079900
+    },
+    "batch_ns": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "search_ns": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "integration_ns": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "batches": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "searches": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "pending": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "work_min": {
+      "mean": 18446744073709551615,
+      "min": 18446744073709551615,
+      "max": 18446744073709551615
+    },
+    "work_max": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "throttles": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "worker_cpu_ns": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "workspace_reuses": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "duplicate_work": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "search_work": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "stations": {
+      "mean": 894,
+      "min": 894,
+      "max": 894
+    },
+    "states": {
+      "mean": 9971,
+      "min": 9971,
+      "max": 9971
+    },
+    "edges": {
+      "mean": 21148,
+      "min": 21148,
+      "max": 21148
+    },
+    "operations": {
+      "mean": 67268128,
+      "min": 67268128,
+      "max": 67268128
+    },
+    "bytes": {
+      "mean": 208201608,
+      "min": 208201608,
+      "max": 208201608
+    }
+  },
+  {
+    "scenario": "initial-preparation",
+    "mode": "hyperpath",
+    "requested": 1,
+    "repeats": 2,
+    "peak_working_set": {
+      "mean": 232339456,
+      "min": 232243200,
+      "max": 232435712
+    },
+    "workers": {
+      "mean": 1,
+      "min": 1,
+      "max": 1
+    },
+    "main_cpu_ns": {
+      "mean": 234375000,
+      "min": 125000000,
+      "max": 343750000
+    },
+    "row_main_cpu_ns": {
+      "mean": 234375000,
+      "min": 125000000,
+      "max": 343750000
+    },
+    "cache_hits": {
+      "mean": 894,
+      "min": 894,
+      "max": 894
+    },
+    "cache_work": {
+      "mean": 56231397,
+      "min": 56231397,
+      "max": 56231397
+    },
+    "serial_rows": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "main_search_ns": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "fallbacks": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "serial_work": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "cancelled_work": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "thread_starts": {
+      "mean": 1,
+      "min": 1,
+      "max": 1
+    },
+    "workspace_bound": {
+      "mean": 13179392,
+      "min": 13179392,
+      "max": 13179392
+    },
+    "worker_wait_ns": {
+      "mean": 680774650,
+      "min": 672183100,
+      "max": 689366200
+    },
+    "preparation": {
+      "mean": 1,
+      "min": 1,
+      "max": 1
+    },
+    "wall_ns": {
+      "mean": 881968400,
+      "min": 869184700,
+      "max": 894752100
+    },
+    "graph_ns": {
+      "mean": 2027400,
+      "min": 1929100,
+      "max": 2125700
+    },
+    "row_ns": {
+      "mean": 879941000,
+      "min": 867059000,
+      "max": 892823000
+    },
+    "batch_ns": {
+      "mean": 1232400,
+      "min": 1204300,
+      "max": 1260500
+    },
+    "search_ns": {
+      "mean": 876917850,
+      "min": 864143700,
+      "max": 889692000
+    },
+    "integration_ns": {
+      "mean": 878996550,
+      "min": 866115800,
+      "max": 891877300
+    },
+    "batches": {
+      "mean": 893,
+      "min": 893,
+      "max": 893
+    },
+    "searches": {
+      "mean": 894,
+      "min": 894,
+      "max": 894
+    },
+    "pending": {
+      "mean": 2,
+      "min": 2,
+      "max": 2
+    },
+    "work_min": {
+      "mean": 62757,
+      "min": 62757,
+      "max": 62757
+    },
+    "work_max": {
+      "mean": 63020,
+      "min": 63020,
+      "max": 63020
+    },
+    "throttles": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "worker_cpu_ns": {
+      "mean": 882812500,
+      "min": 875000000,
+      "max": 890625000
+    },
+    "workspace_reuses": {
+      "mean": 891,
+      "min": 891,
+      "max": 891
+    },
+    "duplicate_work": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "search_work": {
+      "mean": 56231397,
+      "min": 56231397,
+      "max": 56231397
+    },
+    "stations": {
+      "mean": 894,
+      "min": 894,
+      "max": 894
+    },
+    "states": {
+      "mean": 9971,
+      "min": 9971,
+      "max": 9971
+    },
+    "edges": {
+      "mean": 21148,
+      "min": 21148,
+      "max": 21148
+    },
+    "operations": {
+      "mean": 67268128,
+      "min": 67268128,
+      "max": 67268128
+    },
+    "bytes": {
+      "mean": 208162608,
+      "min": 208162608,
+      "max": 208162608
+    },
+    "worker_utilization": {
+      "mean": 1.0033483460814643,
+      "min": 0.9975381458586976,
+      "max": 1.0091585463042307
+    }
+  },
+  {
+    "scenario": "initial-preparation",
+    "mode": "hyperpath",
+    "requested": 4,
+    "repeats": 2,
+    "peak_working_set": {
+      "mean": 244520960,
+      "min": 244490240,
+      "max": 244551680
+    },
+    "workers": {
+      "mean": 4,
+      "min": 4,
+      "max": 4
+    },
+    "main_cpu_ns": {
+      "mean": 242187500,
+      "min": 234375000,
+      "max": 250000000
+    },
+    "row_main_cpu_ns": {
+      "mean": 242187500,
+      "min": 234375000,
+      "max": 250000000
+    },
+    "cache_hits": {
+      "mean": 894,
+      "min": 894,
+      "max": 894
+    },
+    "cache_work": {
+      "mean": 56231397,
+      "min": 56231397,
+      "max": 56231397
+    },
+    "serial_rows": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "main_search_ns": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "fallbacks": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "serial_work": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "cancelled_work": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "thread_starts": {
+      "mean": 4,
+      "min": 4,
+      "max": 4
+    },
+    "workspace_bound": {
+      "mean": 52717568,
+      "min": 52717568,
+      "max": 52717568
+    },
+    "worker_wait_ns": {
+      "mean": 47206100,
+      "min": 38266400,
+      "max": 56145800
+    },
+    "preparation": {
+      "mean": 1,
+      "min": 1,
+      "max": 1
+    },
+    "wall_ns": {
+      "mean": 246476200,
+      "min": 240778600,
+      "max": 252173800
+    },
+    "graph_ns": {
+      "mean": 2027050,
+      "min": 2022300,
+      "max": 2031800
+    },
+    "row_ns": {
+      "mean": 244449150,
+      "min": 238756300,
+      "max": 250142000
+    },
+    "batch_ns": {
+      "mean": 1026950,
+      "min": 975400,
+      "max": 1078500
+    },
+    "search_ns": {
+      "mean": 963625550,
+      "min": 941906500,
+      "max": 985344600
+    },
+    "integration_ns": {
+      "mean": 242356250,
+      "min": 236734700,
+      "max": 247977800
+    },
+    "batches": {
+      "mean": 887,
+      "min": 887,
+      "max": 887
+    },
+    "searches": {
+      "mean": 894,
+      "min": 894,
+      "max": 894
+    },
+    "pending": {
+      "mean": 8,
+      "min": 8,
+      "max": 8
+    },
+    "work_min": {
+      "mean": 62757,
+      "min": 62757,
+      "max": 62757
+    },
+    "work_max": {
+      "mean": 63020,
+      "min": 63020,
+      "max": 63020
+    },
+    "throttles": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "worker_cpu_ns": {
+      "mean": 960937500,
+      "min": 937500000,
+      "max": 984375000
+    },
+    "workspace_reuses": {
+      "mean": 882,
+      "min": 882,
+      "max": 882
+    },
+    "duplicate_work": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "search_work": {
+      "mean": 56231397,
+      "min": 56231397,
+      "max": 56231397
+    },
+    "stations": {
+      "mean": 894,
+      "min": 894,
+      "max": 894
+    },
+    "states": {
+      "mean": 9971,
+      "min": 9971,
+      "max": 9971
+    },
+    "edges": {
+      "mean": 21148,
+      "min": 21148,
+      "max": 21148
+    },
+    "operations": {
+      "mean": 67268128,
+      "min": 67268128,
+      "max": 67268128
+    },
+    "bytes": {
+      "mean": 208130640,
+      "min": 208129636,
+      "max": 208131644
+    },
+    "worker_utilization": {
+      "mean": 0.9827328409306066,
+      "min": 0.9816494894584981,
+      "max": 0.9838161924027152
+    }
+  },
+  {
+    "scenario": "initial-preparation",
+    "mode": "hyperpath",
+    "requested": 8,
+    "repeats": 2,
+    "peak_working_set": {
+      "mean": 259403776,
+      "min": 259280896,
+      "max": 259526656
+    },
+    "workers": {
+      "mean": 8,
+      "min": 8,
+      "max": 8
+    },
+    "main_cpu_ns": {
+      "mean": 226562500,
+      "min": 218750000,
+      "max": 234375000
+    },
+    "row_main_cpu_ns": {
+      "mean": 226562500,
+      "min": 218750000,
+      "max": 234375000
+    },
+    "cache_hits": {
+      "mean": 894,
+      "min": 894,
+      "max": 894
+    },
+    "cache_work": {
+      "mean": 56231397,
+      "min": 56231397,
+      "max": 56231397
+    },
+    "serial_rows": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "main_search_ns": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "fallbacks": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "serial_work": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "cancelled_work": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "thread_starts": {
+      "mean": 8,
+      "min": 8,
+      "max": 8
+    },
+    "workspace_bound": {
+      "mean": 105435136,
+      "min": 105435136,
+      "max": 105435136
+    },
+    "worker_wait_ns": {
+      "mean": 4117650,
+      "min": 3983600,
+      "max": 4251700
+    },
+    "preparation": {
+      "mean": 1,
+      "min": 1,
+      "max": 1
+    },
+    "wall_ns": {
+      "mean": 225368750,
+      "min": 213193800,
+      "max": 237543700
+    },
+    "graph_ns": {
+      "mean": 2062050,
+      "min": 2009400,
+      "max": 2114700
+    },
+    "row_ns": {
+      "mean": 223306700,
+      "min": 211184400,
+      "max": 235429000
+    },
+    "batch_ns": {
+      "mean": 2702450,
+      "min": 2446500,
+      "max": 2958400
+    },
+    "search_ns": {
+      "mean": 1177422150,
+      "min": 1164608600,
+      "max": 1190235700
+    },
+    "integration_ns": {
+      "mean": 218728000,
+      "min": 207268600,
+      "max": 230187400
+    },
+    "batches": {
+      "mean": 879,
+      "min": 879,
+      "max": 879
+    },
+    "searches": {
+      "mean": 894,
+      "min": 894,
+      "max": 894
+    },
+    "pending": {
+      "mean": 16,
+      "min": 16,
+      "max": 16
+    },
+    "work_min": {
+      "mean": 62757,
+      "min": 62757,
+      "max": 62757
+    },
+    "work_max": {
+      "mean": 63020,
+      "min": 63020,
+      "max": 63020
+    },
+    "throttles": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "worker_cpu_ns": {
+      "mean": 1171875000,
+      "min": 1125000000,
+      "max": 1218750000
+    },
+    "workspace_reuses": {
+      "mean": 870,
+      "min": 870,
+      "max": 870
+    },
+    "duplicate_work": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "search_work": {
+      "mean": 56231397,
+      "min": 56231397,
+      "max": 56231397
+    },
+    "stations": {
+      "mean": 894,
+      "min": 894,
+      "max": 894
+    },
+    "states": {
+      "mean": 9971,
+      "min": 9971,
+      "max": 9971
+    },
+    "edges": {
+      "mean": 21148,
+      "min": 21148,
+      "max": 21148
+    },
+    "operations": {
+      "mean": 67268128,
+      "min": 67268128,
+      "max": 67268128
+    },
+    "bytes": {
+      "mean": 208113556,
+      "min": 208113088,
+      "max": 208114024
+    },
+    "worker_utilization": {
+      "mean": 0.6564886230985779,
+      "min": 0.6470899931614202,
+      "max": 0.6658872530357356
+    }
+  },
+  {
+    "scenario": "initial-preparation",
+    "mode": "legacy",
+    "requested": 0,
+    "repeats": 2,
+    "peak_working_set": {
+      "mean": 128952320,
+      "min": 128937984,
+      "max": 128966656
+    },
+    "workers": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "main_cpu_ns": {
+      "mean": 757812500,
+      "min": 750000000,
+      "max": 765625000
+    },
+    "row_main_cpu_ns": {
+      "mean": 648437500,
+      "min": 640625000,
+      "max": 656250000
+    },
+    "cache_hits": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "cache_work": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "serial_rows": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "main_search_ns": {
+      "mean": 552282950,
+      "min": 541734600,
+      "max": 562831300
+    },
+    "fallbacks": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "serial_work": {
+      "mean": 62573430,
+      "min": 62573430,
+      "max": 62573430
+    },
+    "cancelled_work": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "thread_starts": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "workspace_bound": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "worker_wait_ns": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "preparation": {
+      "mean": 1,
+      "min": 1,
+      "max": 1
+    },
+    "wall_ns": {
+      "mean": 764712600,
+      "min": 749890900,
+      "max": 779534300
+    },
+    "graph_ns": {
+      "mean": 103655400,
+      "min": 102786500,
+      "max": 104524300
+    },
+    "row_ns": {
+      "mean": 661057200,
+      "min": 647104400,
+      "max": 675010000
+    },
+    "batch_ns": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "search_ns": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "integration_ns": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "batches": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "searches": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "pending": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "work_min": {
+      "mean": 18446744073709551615,
+      "min": 18446744073709551615,
+      "max": 18446744073709551615
+    },
+    "work_max": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "throttles": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "worker_cpu_ns": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "workspace_reuses": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "duplicate_work": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "search_work": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "stations": {
+      "mean": 894,
+      "min": 894,
+      "max": 894
+    },
+    "states": {
+      "mean": 11579,
+      "min": 11579,
+      "max": 11579
+    },
+    "edges": {
+      "mean": 34868,
+      "min": 34868,
+      "max": 34868
+    },
+    "operations": {
+      "mean": 71559024,
+      "min": 71559024,
+      "max": 71559024
+    },
+    "bytes": {
+      "mean": 109364097,
+      "min": 109364097,
+      "max": 109364097
+    }
+  },
+  {
+    "scenario": "initial-preparation",
+    "mode": "legacy",
+    "requested": 1,
+    "repeats": 2,
+    "peak_working_set": {
+      "mean": 133083136,
+      "min": 132923392,
+      "max": 133242880
+    },
+    "workers": {
+      "mean": 1,
+      "min": 1,
+      "max": 1
+    },
+    "main_cpu_ns": {
+      "mean": 218750000,
+      "min": 203125000,
+      "max": 234375000
+    },
+    "row_main_cpu_ns": {
+      "mean": 117187500,
+      "min": 109375000,
+      "max": 125000000
+    },
+    "cache_hits": {
+      "mean": 894,
+      "min": 894,
+      "max": 894
+    },
+    "cache_work": {
+      "mean": 62573430,
+      "min": 62573430,
+      "max": 62573430
+    },
+    "serial_rows": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "main_search_ns": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "fallbacks": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "serial_work": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "cancelled_work": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "thread_starts": {
+      "mean": 1,
+      "min": 1,
+      "max": 1
+    },
+    "workspace_bound": {
+      "mean": 16582144,
+      "min": 16582144,
+      "max": 16582144
+    },
+    "worker_wait_ns": {
+      "mean": 525559800,
+      "min": 480700700,
+      "max": 570418900
+    },
+    "preparation": {
+      "mean": 1,
+      "min": 1,
+      "max": 1
+    },
+    "wall_ns": {
+      "mean": 757993000,
+      "min": 701580700,
+      "max": 814405300
+    },
+    "graph_ns": {
+      "mean": 108157200,
+      "min": 104696600,
+      "max": 111617800
+    },
+    "row_ns": {
+      "mean": 649835800,
+      "min": 596884100,
+      "max": 702787500
+    },
+    "batch_ns": {
+      "mean": 1258600,
+      "min": 1163700,
+      "max": 1353500
+    },
+    "search_ns": {
+      "mean": 646944900,
+      "min": 593994600,
+      "max": 699895200
+    },
+    "integration_ns": {
+      "mean": 648919450,
+      "min": 596004200,
+      "max": 701834700
+    },
+    "batches": {
+      "mean": 893,
+      "min": 893,
+      "max": 893
+    },
+    "searches": {
+      "mean": 894,
+      "min": 894,
+      "max": 894
+    },
+    "pending": {
+      "mean": 2,
+      "min": 2,
+      "max": 2
+    },
+    "work_min": {
+      "mean": 69837,
+      "min": 69837,
+      "max": 69837
+    },
+    "work_max": {
+      "mean": 70120,
+      "min": 70120,
+      "max": 70120
+    },
+    "throttles": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "worker_cpu_ns": {
+      "mean": 632812500,
+      "min": 609375000,
+      "max": 656250000
+    },
+    "workspace_reuses": {
+      "mean": 891,
+      "min": 891,
+      "max": 891
+    },
+    "duplicate_work": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "search_work": {
+      "mean": 62573430,
+      "min": 62573430,
+      "max": 62573430
+    },
+    "stations": {
+      "mean": 894,
+      "min": 894,
+      "max": 894
+    },
+    "states": {
+      "mean": 11579,
+      "min": 11579,
+      "max": 11579
+    },
+    "edges": {
+      "mean": 34868,
+      "min": 34868,
+      "max": 34868
+    },
+    "operations": {
+      "mean": 71559024,
+      "min": 71559024,
+      "max": 71559024
+    },
+    "bytes": {
+      "mean": 109313937,
+      "min": 109313937,
+      "max": 109313937
+    },
+    "worker_utilization": {
+      "mean": 0.9773541958640405,
+      "min": 0.9337815484766021,
+      "max": 1.0209268432514789
+    }
+  },
+  {
+    "scenario": "initial-preparation",
+    "mode": "legacy",
+    "requested": 4,
+    "repeats": 2,
+    "peak_working_set": {
+      "mean": 143280128,
+      "min": 143245312,
+      "max": 143314944
+    },
+    "workers": {
+      "mean": 4,
+      "min": 4,
+      "max": 4
+    },
+    "main_cpu_ns": {
+      "mean": 218750000,
+      "min": 187500000,
+      "max": 250000000
+    },
+    "row_main_cpu_ns": {
+      "mean": 109375000,
+      "min": 78125000,
+      "max": 140625000
+    },
+    "cache_hits": {
+      "mean": 894,
+      "min": 894,
+      "max": 894
+    },
+    "cache_work": {
+      "mean": 62573430,
+      "min": 62573430,
+      "max": 62573430
+    },
+    "serial_rows": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "main_search_ns": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "fallbacks": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "serial_work": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "cancelled_work": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "thread_starts": {
+      "mean": 4,
+      "min": 4,
+      "max": 4
+    },
+    "workspace_bound": {
+      "mean": 66328576,
+      "min": 66328576,
+      "max": 66328576
+    },
+    "worker_wait_ns": {
+      "mean": 83522500,
+      "min": 73535000,
+      "max": 93510000
+    },
+    "preparation": {
+      "mean": 1,
+      "min": 1,
+      "max": 1
+    },
+    "wall_ns": {
+      "mean": 317858250,
+      "min": 307489500,
+      "max": 328227000
+    },
+    "graph_ns": {
+      "mean": 107507800,
+      "min": 104548000,
+      "max": 110467600
+    },
+    "row_ns": {
+      "mean": 210350450,
+      "min": 197021900,
+      "max": 223679000
+    },
+    "batch_ns": {
+      "mean": 1075750,
+      "min": 1063300,
+      "max": 1088200
+    },
+    "search_ns": {
+      "mean": 831312850,
+      "min": 779189200,
+      "max": 883436500
+    },
+    "integration_ns": {
+      "mean": 209133350,
+      "min": 195906900,
+      "max": 222359800
+    },
+    "batches": {
+      "mean": 887,
+      "min": 887,
+      "max": 887
+    },
+    "searches": {
+      "mean": 894,
+      "min": 894,
+      "max": 894
+    },
+    "pending": {
+      "mean": 8,
+      "min": 8,
+      "max": 8
+    },
+    "work_min": {
+      "mean": 69837,
+      "min": 69837,
+      "max": 69837
+    },
+    "work_max": {
+      "mean": 70120,
+      "min": 70120,
+      "max": 70120
+    },
+    "throttles": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "worker_cpu_ns": {
+      "mean": 843750000,
+      "min": 812500000,
+      "max": 875000000
+    },
+    "workspace_reuses": {
+      "mean": 882,
+      "min": 882,
+      "max": 882
+    },
+    "duplicate_work": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "search_work": {
+      "mean": 62573430,
+      "min": 62573430,
+      "max": 62573430
+    },
+    "stations": {
+      "mean": 894,
+      "min": 894,
+      "max": 894
+    },
+    "states": {
+      "mean": 11579,
+      "min": 11579,
+      "max": 11579
+    },
+    "edges": {
+      "mean": 34868,
+      "min": 34868,
+      "max": 34868
+    },
+    "operations": {
+      "mean": 71559024,
+      "min": 71559024,
+      "max": 71559024
+    },
+    "bytes": {
+      "mean": 109263817,
+      "min": 109263281,
+      "max": 109264353
+    },
+    "worker_utilization": {
+      "mean": 1.0044703583572256,
+      "min": 0.9779639572780636,
+      "max": 1.0309767594363874
+    }
+  },
+  {
+    "scenario": "initial-preparation",
+    "mode": "legacy",
+    "requested": 8,
+    "repeats": 2,
+    "peak_working_set": {
+      "mean": 155703296,
+      "min": 155484160,
+      "max": 155922432
+    },
+    "workers": {
+      "mean": 8,
+      "min": 8,
+      "max": 8
+    },
+    "main_cpu_ns": {
+      "mean": 234375000,
+      "min": 234375000,
+      "max": 234375000
+    },
+    "row_main_cpu_ns": {
+      "mean": 125000000,
+      "min": 125000000,
+      "max": 125000000
+    },
+    "cache_hits": {
+      "mean": 894,
+      "min": 894,
+      "max": 894
+    },
+    "cache_work": {
+      "mean": 62573430,
+      "min": 62573430,
+      "max": 62573430
+    },
+    "serial_rows": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "main_search_ns": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "fallbacks": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "serial_work": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "cancelled_work": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "thread_starts": {
+      "mean": 8,
+      "min": 8,
+      "max": 8
+    },
+    "workspace_bound": {
+      "mean": 132657152,
+      "min": 132657152,
+      "max": 132657152
+    },
+    "worker_wait_ns": {
+      "mean": 8556050,
+      "min": 5259600,
+      "max": 11852500
+    },
+    "preparation": {
+      "mean": 1,
+      "min": 1,
+      "max": 1
+    },
+    "wall_ns": {
+      "mean": 253561100,
+      "min": 240002600,
+      "max": 267119600
+    },
+    "graph_ns": {
+      "mean": 105296100,
+      "min": 103576300,
+      "max": 107015900
+    },
+    "row_ns": {
+      "mean": 148265000,
+      "min": 136426300,
+      "max": 160103700
+    },
+    "batch_ns": {
+      "mean": 1824450,
+      "min": 1792400,
+      "max": 1856500
+    },
+    "search_ns": {
+      "mean": 1077915300,
+      "min": 973384200,
+      "max": 1182446400
+    },
+    "integration_ns": {
+      "mean": 145491000,
+      "min": 133655100,
+      "max": 157326900
+    },
+    "batches": {
+      "mean": 879,
+      "min": 879,
+      "max": 879
+    },
+    "searches": {
+      "mean": 894,
+      "min": 894,
+      "max": 894
+    },
+    "pending": {
+      "mean": 16,
+      "min": 16,
+      "max": 16
+    },
+    "work_min": {
+      "mean": 69837,
+      "min": 69837,
+      "max": 69837
+    },
+    "work_max": {
+      "mean": 70120,
+      "min": 70120,
+      "max": 70120
+    },
+    "throttles": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "worker_cpu_ns": {
+      "mean": 1085937500,
+      "min": 1015625000,
+      "max": 1156250000
+    },
+    "workspace_reuses": {
+      "mean": 870,
+      "min": 870,
+      "max": 870
+    },
+    "duplicate_work": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "search_work": {
+      "mean": 62573430,
+      "min": 62573430,
+      "max": 62573430
+    },
+    "stations": {
+      "mean": 894,
+      "min": 894,
+      "max": 894
+    },
+    "states": {
+      "mean": 11579,
+      "min": 11579,
+      "max": 11579
+    },
+    "edges": {
+      "mean": 34868,
+      "min": 34868,
+      "max": 34868
+    },
+    "operations": {
+      "mean": 71559024,
+      "min": 71559024,
+      "max": 71559024
+    },
+    "bytes": {
+      "mean": 109231761,
+      "min": 109231297,
+      "max": 109232225
+    },
+    "worker_utilization": {
+      "mean": 0.9166485931626243,
+      "min": 0.902735227230851,
+      "max": 0.9305619590943975
+    }
+  },
+  {
+    "scenario": "initial-reference",
+    "mode": "hyperpath",
+    "requested": 0,
+    "repeats": 2,
+    "peak_working_set": {
+      "mean": 227332096,
+      "min": 227332096,
+      "max": 227332096
+    },
+    "workers": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "main_cpu_ns": {
+      "mean": 859375000,
+      "min": 843750000,
+      "max": 875000000
+    },
+    "row_main_cpu_ns": {
+      "mean": 859375000,
+      "min": 843750000,
+      "max": 875000000
+    },
+    "cache_hits": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "cache_work": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "serial_rows": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "main_search_ns": {
+      "mean": 725629650,
+      "min": 724400300,
+      "max": 726859000
+    },
+    "fallbacks": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "serial_work": {
+      "mean": 56231397,
+      "min": 56231397,
+      "max": 56231397
+    },
+    "cancelled_work": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "thread_starts": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "workspace_bound": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "worker_wait_ns": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "preparation": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "wall_ns": {
+      "mean": 876382600,
+      "min": 875068400,
+      "max": 877696800
+    },
+    "graph_ns": {
+      "mean": 2200250,
+      "min": 2158300,
+      "max": 2242200
+    },
+    "row_ns": {
+      "mean": 874182350,
+      "min": 872910100,
+      "max": 875454600
+    },
+    "batch_ns": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "search_ns": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "integration_ns": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "batches": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "searches": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "pending": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "work_min": {
+      "mean": 18446744073709551615,
+      "min": 18446744073709551615,
+      "max": 18446744073709551615
+    },
+    "work_max": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "throttles": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "worker_cpu_ns": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "workspace_reuses": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "duplicate_work": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "search_work": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "stations": {
+      "mean": 894,
+      "min": 894,
+      "max": 894
+    },
+    "states": {
+      "mean": 9971,
+      "min": 9971,
+      "max": 9971
+    },
+    "edges": {
+      "mean": 21148,
+      "min": 21148,
+      "max": 21148
+    },
+    "operations": {
+      "mean": 67268128,
+      "min": 67268128,
+      "max": 67268128
+    },
+    "bytes": {
+      "mean": 208201608,
+      "min": 208201608,
+      "max": 208201608
+    }
+  },
+  {
+    "scenario": "initial-reference",
+    "mode": "hyperpath",
+    "requested": 1,
+    "repeats": 2,
+    "peak_working_set": {
+      "mean": 227737600,
+      "min": 227622912,
+      "max": 227852288
+    },
+    "workers": {
+      "mean": 1,
+      "min": 1,
+      "max": 1
+    },
+    "main_cpu_ns": {
+      "mean": 859375000,
+      "min": 828125000,
+      "max": 890625000
+    },
+    "row_main_cpu_ns": {
+      "mean": 859375000,
+      "min": 828125000,
+      "max": 890625000
+    },
+    "cache_hits": {
+      "mean": 0.5,
+      "min": 0,
+      "max": 1
+    },
+    "cache_work": {
+      "mean": 31423,
+      "min": 0,
+      "max": 62846
+    },
+    "serial_rows": {
+      "mean": 893.5,
+      "min": 893,
+      "max": 894
+    },
+    "main_search_ns": {
+      "mean": 733497100,
+      "min": 728868500,
+      "max": 738125700
+    },
+    "fallbacks": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "serial_work": {
+      "mean": 56199974,
+      "min": 56168551,
+      "max": 56231397
+    },
+    "cancelled_work": {
+      "mean": 522240,
+      "min": 516096,
+      "max": 528384
+    },
+    "thread_starts": {
+      "mean": 1,
+      "min": 1,
+      "max": 1
+    },
+    "workspace_bound": {
+      "mean": 13179392,
+      "min": 13179392,
+      "max": 13179392
+    },
+    "worker_wait_ns": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "preparation": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "wall_ns": {
+      "mean": 886114400,
+      "min": 878664500,
+      "max": 893564300
+    },
+    "graph_ns": {
+      "mean": 2104950,
+      "min": 2002900,
+      "max": 2207000
+    },
+    "row_ns": {
+      "mean": 884009450,
+      "min": 876661600,
+      "max": 891357300
+    },
+    "batch_ns": {
+      "mean": 98500,
+      "min": 93300,
+      "max": 103700
+    },
+    "search_ns": {
+      "mean": 16444550,
+      "min": 14929300,
+      "max": 17959800
+    },
+    "integration_ns": {
+      "mean": 883927550,
+      "min": 876588900,
+      "max": 891266200
+    },
+    "batches": {
+      "mean": 17.5,
+      "min": 16,
+      "max": 19
+    },
+    "searches": {
+      "mean": 0.5,
+      "min": 0,
+      "max": 1
+    },
+    "pending": {
+      "mean": 2,
+      "min": 2,
+      "max": 2
+    },
+    "work_min": {
+      "mean": 9.223372036854807e+18,
+      "min": 62846,
+      "max": 18446744073709551615
+    },
+    "work_max": {
+      "mean": 31423,
+      "min": 0,
+      "max": 62846
+    },
+    "throttles": {
+      "mean": 1,
+      "min": 1,
+      "max": 1
+    },
+    "worker_cpu_ns": {
+      "mean": 15625000,
+      "min": 15625000,
+      "max": 15625000
+    },
+    "workspace_reuses": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "duplicate_work": {
+      "mean": 522240,
+      "min": 516096,
+      "max": 528384
+    },
+    "search_work": {
+      "mean": 553663,
+      "min": 528384,
+      "max": 578942
+    },
+    "stations": {
+      "mean": 894,
+      "min": 894,
+      "max": 894
+    },
+    "states": {
+      "mean": 9971,
+      "min": 9971,
+      "max": 9971
+    },
+    "edges": {
+      "mean": 21148,
+      "min": 21148,
+      "max": 21148
+    },
+    "operations": {
+      "mean": 67268128,
+      "min": 67268128,
+      "max": 67268128
+    },
+    "bytes": {
+      "mean": 208201608,
+      "min": 208201608,
+      "max": 208201608
+    },
+    "worker_utilization": {
+      "mean": 0.017676371655131078,
+      "min": 0.017529446384743807,
+      "max": 0.017823296925518352
+    }
+  },
+  {
+    "scenario": "initial-reference",
+    "mode": "hyperpath",
+    "requested": 4,
+    "repeats": 2,
+    "peak_working_set": {
+      "mean": 245217280,
+      "min": 245215232,
+      "max": 245219328
+    },
+    "workers": {
+      "mean": 4,
+      "min": 4,
+      "max": 4
+    },
+    "main_cpu_ns": {
+      "mean": 273437500,
+      "min": 265625000,
+      "max": 281250000
+    },
+    "row_main_cpu_ns": {
+      "mean": 273437500,
+      "min": 265625000,
+      "max": 281250000
+    },
+    "cache_hits": {
+      "mean": 779.5,
+      "min": 771,
+      "max": 788
+    },
+    "cache_work": {
+      "mean": 49029808.5,
+      "min": 48495195,
+      "max": 49564422
+    },
+    "serial_rows": {
+      "mean": 114.5,
+      "min": 106,
+      "max": 123
+    },
+    "main_search_ns": {
+      "mean": 115396650,
+      "min": 105908300,
+      "max": 124885000
+    },
+    "fallbacks": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "serial_work": {
+      "mean": 7201588.5,
+      "min": 6666975,
+      "max": 7736202
+    },
+    "cancelled_work": {
+      "mean": 5846025,
+      "min": 5499284,
+      "max": 6192766
+    },
+    "thread_starts": {
+      "mean": 4,
+      "min": 4,
+      "max": 4
+    },
+    "workspace_bound": {
+      "mean": 52717568,
+      "min": 52717568,
+      "max": 52717568
+    },
+    "worker_wait_ns": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "preparation": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "wall_ns": {
+      "mean": 278570300,
+      "min": 276375700,
+      "max": 280764900
+    },
+    "graph_ns": {
+      "mean": 2082950,
+      "min": 2066200,
+      "max": 2099700
+    },
+    "row_ns": {
+      "mean": 276487350,
+      "min": 274309500,
+      "max": 278665200
+    },
+    "batch_ns": {
+      "mean": 807150,
+      "min": 744300,
+      "max": 870000
+    },
+    "search_ns": {
+      "mean": 1044651900,
+      "min": 1035914700,
+      "max": 1053389100
+    },
+    "integration_ns": {
+      "mean": 275653500,
+      "min": 273677800,
+      "max": 277629200
+    },
+    "batches": {
+      "mean": 887,
+      "min": 887,
+      "max": 887
+    },
+    "searches": {
+      "mean": 779.5,
+      "min": 771,
+      "max": 788
+    },
+    "pending": {
+      "mean": 8,
+      "min": 8,
+      "max": 8
+    },
+    "work_min": {
+      "mean": 62757,
+      "min": 62757,
+      "max": 62757
+    },
+    "work_max": {
+      "mean": 63020,
+      "min": 63020,
+      "max": 63020
+    },
+    "throttles": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "worker_cpu_ns": {
+      "mean": 1031250000,
+      "min": 984375000,
+      "max": 1078125000
+    },
+    "workspace_reuses": {
+      "mean": 674,
+      "min": 662,
+      "max": 686
+    },
+    "duplicate_work": {
+      "mean": 5846025,
+      "min": 5499284,
+      "max": 6192766
+    },
+    "search_work": {
+      "mean": 54875833.5,
+      "min": 54687961,
+      "max": 55063706
+    },
+    "stations": {
+      "mean": 894,
+      "min": 894,
+      "max": 894
+    },
+    "states": {
+      "mean": 9971,
+      "min": 9971,
+      "max": 9971
+    },
+    "edges": {
+      "mean": 21148,
+      "min": 21148,
+      "max": 21148
+    },
+    "operations": {
+      "mean": 67268128,
+      "min": 67268128,
+      "max": 67268128
+    },
+    "bytes": {
+      "mean": 208066590,
+      "min": 208037012,
+      "max": 208096168
+    },
+    "worker_utilization": {
+      "mean": 0.9321807465267193,
+      "min": 0.8971389981025083,
+      "max": 0.9672224949509304
+    }
+  },
+  {
+    "scenario": "initial-reference",
+    "mode": "hyperpath",
+    "requested": 8,
+    "repeats": 2,
+    "peak_working_set": {
+      "mean": 259379200,
+      "min": 259362816,
+      "max": 259395584
+    },
+    "workers": {
+      "mean": 8,
+      "min": 8,
+      "max": 8
+    },
+    "main_cpu_ns": {
+      "mean": 218750000,
+      "min": 218750000,
+      "max": 218750000
+    },
+    "row_main_cpu_ns": {
+      "mean": 210937500,
+      "min": 203125000,
+      "max": 218750000
+    },
+    "cache_hits": {
+      "mean": 891.5,
+      "min": 891,
+      "max": 892
+    },
+    "cache_work": {
+      "mean": 56074267,
+      "min": 56042844,
+      "max": 56105690
+    },
+    "serial_rows": {
+      "mean": 2.5,
+      "min": 2,
+      "max": 3
+    },
+    "main_search_ns": {
+      "mean": 4480600,
+      "min": 3761600,
+      "max": 5199600
+    },
+    "fallbacks": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "serial_work": {
+      "mean": 157130,
+      "min": 125707,
+      "max": 188553
+    },
+    "cancelled_work": {
+      "mean": 55296,
+      "min": 20480,
+      "max": 90112
+    },
+    "thread_starts": {
+      "mean": 8,
+      "min": 8,
+      "max": 8
+    },
+    "workspace_bound": {
+      "mean": 105435136,
+      "min": 105435136,
+      "max": 105435136
+    },
+    "worker_wait_ns": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "preparation": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "wall_ns": {
+      "mean": 225953500,
+      "min": 212125900,
+      "max": 239781100
+    },
+    "graph_ns": {
+      "mean": 2023750,
+      "min": 2002500,
+      "max": 2045000
+    },
+    "row_ns": {
+      "mean": 223929750,
+      "min": 210080900,
+      "max": 237778600
+    },
+    "batch_ns": {
+      "mean": 2278400,
+      "min": 2148600,
+      "max": 2408200
+    },
+    "search_ns": {
+      "mean": 1159665200,
+      "min": 1086415500,
+      "max": 1232914900
+    },
+    "integration_ns": {
+      "mean": 220069000,
+      "min": 206853400,
+      "max": 233284600
+    },
+    "batches": {
+      "mean": 879,
+      "min": 879,
+      "max": 879
+    },
+    "searches": {
+      "mean": 891.5,
+      "min": 891,
+      "max": 892
+    },
+    "pending": {
+      "mean": 16,
+      "min": 16,
+      "max": 16
+    },
+    "work_min": {
+      "mean": 62757,
+      "min": 62757,
+      "max": 62757
+    },
+    "work_max": {
+      "mean": 63020,
+      "min": 63020,
+      "max": 63020
+    },
+    "throttles": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "worker_cpu_ns": {
+      "mean": 1203125000,
+      "min": 1156250000,
+      "max": 1250000000
+    },
+    "workspace_reuses": {
+      "mean": 867.5,
+      "min": 867,
+      "max": 868
+    },
+    "duplicate_work": {
+      "mean": 55296,
+      "min": 20480,
+      "max": 90112
+    },
+    "search_work": {
+      "mean": 56129563,
+      "min": 56126170,
+      "max": 56132956
+    },
+    "stations": {
+      "mean": 894,
+      "min": 894,
+      "max": 894
+    },
+    "states": {
+      "mean": 9971,
+      "min": 9971,
+      "max": 9971
+    },
+    "edges": {
+      "mean": 21148,
+      "min": 21148,
+      "max": 21148
+    },
+    "operations": {
+      "mean": 67268128,
+      "min": 67268128,
+      "max": 67268128
+    },
+    "bytes": {
+      "mean": 208112662,
+      "min": 208111184,
+      "max": 208114140
+    },
+    "worker_utilization": {
+      "mean": 0.6725514539108282,
+      "min": 0.657123895926715,
+      "max": 0.6879790118949414
+    }
+  },
+  {
+    "scenario": "initial-reference",
+    "mode": "legacy",
+    "requested": 0,
+    "repeats": 2,
+    "peak_working_set": {
+      "mean": 129153024,
+      "min": 129052672,
+      "max": 129253376
+    },
+    "workers": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "main_cpu_ns": {
+      "mean": 796875000,
+      "min": 781250000,
+      "max": 812500000
+    },
+    "row_main_cpu_ns": {
+      "mean": 687500000,
+      "min": 671875000,
+      "max": 703125000
+    },
+    "cache_hits": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "cache_work": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "serial_rows": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "main_search_ns": {
+      "mean": 574806350,
+      "min": 563346800,
+      "max": 586265900
+    },
+    "fallbacks": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "serial_work": {
+      "mean": 62573430,
+      "min": 62573430,
+      "max": 62573430
+    },
+    "cancelled_work": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "thread_starts": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "workspace_bound": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "worker_wait_ns": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "preparation": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "wall_ns": {
+      "mean": 792199400,
+      "min": 777770100,
+      "max": 806628700
+    },
+    "graph_ns": {
+      "mean": 105391050,
+      "min": 105123500,
+      "max": 105658600
+    },
+    "row_ns": {
+      "mean": 686808350,
+      "min": 672111500,
+      "max": 701505200
+    },
+    "batch_ns": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "search_ns": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "integration_ns": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "batches": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "searches": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "pending": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "work_min": {
+      "mean": 18446744073709551615,
+      "min": 18446744073709551615,
+      "max": 18446744073709551615
+    },
+    "work_max": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "throttles": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "worker_cpu_ns": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "workspace_reuses": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "duplicate_work": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "search_work": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "stations": {
+      "mean": 894,
+      "min": 894,
+      "max": 894
+    },
+    "states": {
+      "mean": 11579,
+      "min": 11579,
+      "max": 11579
+    },
+    "edges": {
+      "mean": 34868,
+      "min": 34868,
+      "max": 34868
+    },
+    "operations": {
+      "mean": 71559024,
+      "min": 71559024,
+      "max": 71559024
+    },
+    "bytes": {
+      "mean": 109364097,
+      "min": 109364097,
+      "max": 109364097
+    }
+  },
+  {
+    "scenario": "initial-reference",
+    "mode": "legacy",
+    "requested": 1,
+    "repeats": 2,
+    "peak_working_set": {
+      "mean": 129347584,
+      "min": 129171456,
+      "max": 129523712
+    },
+    "workers": {
+      "mean": 1,
+      "min": 1,
+      "max": 1
+    },
+    "main_cpu_ns": {
+      "mean": 750000000,
+      "min": 750000000,
+      "max": 750000000
+    },
+    "row_main_cpu_ns": {
+      "mean": 640625000,
+      "min": 640625000,
+      "max": 640625000
+    },
+    "cache_hits": {
+      "mean": 0.5,
+      "min": 0,
+      "max": 1
+    },
+    "cache_work": {
+      "mean": 34980,
+      "min": 0,
+      "max": 69960
+    },
+    "serial_rows": {
+      "mean": 893.5,
+      "min": 893,
+      "max": 894
+    },
+    "main_search_ns": {
+      "mean": 552676350,
+      "min": 547184600,
+      "max": 558168100
+    },
+    "fallbacks": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "serial_work": {
+      "mean": 62538450,
+      "min": 62503470,
+      "max": 62573430
+    },
+    "cancelled_work": {
+      "mean": 737280,
+      "min": 724992,
+      "max": 749568
+    },
+    "thread_starts": {
+      "mean": 1,
+      "min": 1,
+      "max": 1
+    },
+    "workspace_bound": {
+      "mean": 16582144,
+      "min": 16582144,
+      "max": 16582144
+    },
+    "worker_wait_ns": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "preparation": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "wall_ns": {
+      "mean": 763757650,
+      "min": 756015600,
+      "max": 771499700
+    },
+    "graph_ns": {
+      "mean": 104297650,
+      "min": 103461200,
+      "max": 105134100
+    },
+    "row_ns": {
+      "mean": 659460000,
+      "min": 652554400,
+      "max": 666365600
+    },
+    "batch_ns": {
+      "mean": 115750,
+      "min": 107800,
+      "max": 123700
+    },
+    "search_ns": {
+      "mean": 13114050,
+      "min": 10552400,
+      "max": 15675700
+    },
+    "integration_ns": {
+      "mean": 659377400,
+      "min": 652474500,
+      "max": 666280300
+    },
+    "batches": {
+      "mean": 17.5,
+      "min": 16,
+      "max": 19
+    },
+    "searches": {
+      "mean": 0.5,
+      "min": 0,
+      "max": 1
+    },
+    "pending": {
+      "mean": 2,
+      "min": 2,
+      "max": 2
+    },
+    "work_min": {
+      "mean": 9.22337203685481e+18,
+      "min": 69960,
+      "max": 18446744073709551615
+    },
+    "work_max": {
+      "mean": 34980,
+      "min": 0,
+      "max": 69960
+    },
+    "throttles": {
+      "mean": 1,
+      "min": 1,
+      "max": 1
+    },
+    "worker_cpu_ns": {
+      "mean": 15625000,
+      "min": 0,
+      "max": 31250000
+    },
+    "workspace_reuses": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "duplicate_work": {
+      "mean": 737280,
+      "min": 724992,
+      "max": 749568
+    },
+    "search_work": {
+      "mean": 772260,
+      "min": 724992,
+      "max": 819528
+    },
+    "stations": {
+      "mean": 894,
+      "min": 894,
+      "max": 894
+    },
+    "states": {
+      "mean": 11579,
+      "min": 11579,
+      "max": 11579
+    },
+    "edges": {
+      "mean": 34868,
+      "min": 34868,
+      "max": 34868
+    },
+    "operations": {
+      "mean": 71559024,
+      "min": 71559024,
+      "max": 71559024
+    },
+    "bytes": {
+      "mean": 109364097,
+      "min": 109364097,
+      "max": 109364097
+    },
+    "worker_utilization": {
+      "mean": 0.02344808915706333,
+      "min": 0.0,
+      "max": 0.04689617831412666
+    }
+  },
+  {
+    "scenario": "initial-reference",
+    "mode": "legacy",
+    "requested": 4,
+    "repeats": 2,
+    "peak_working_set": {
+      "mean": 140417024,
+      "min": 140414976,
+      "max": 140419072
+    },
+    "workers": {
+      "mean": 4,
+      "min": 4,
+      "max": 4
+    },
+    "main_cpu_ns": {
+      "mean": 343750000,
+      "min": 328125000,
+      "max": 359375000
+    },
+    "row_main_cpu_ns": {
+      "mean": 234375000,
+      "min": 218750000,
+      "max": 250000000
+    },
+    "cache_hits": {
+      "mean": 745.5,
+      "min": 737,
+      "max": 754
+    },
+    "cache_work": {
+      "mean": 52179509.5,
+      "min": 51584378,
+      "max": 52774641
+    },
+    "serial_rows": {
+      "mean": 148.5,
+      "min": 140,
+      "max": 157
+    },
+    "main_search_ns": {
+      "mean": 131498450,
+      "min": 125794900,
+      "max": 137202000
+    },
+    "fallbacks": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "serial_work": {
+      "mean": 10393920.5,
+      "min": 9798789,
+      "max": 10989052
+    },
+    "cancelled_work": {
+      "mean": 8688347.5,
+      "min": 8172366,
+      "max": 9204329
+    },
+    "thread_starts": {
+      "mean": 4,
+      "min": 4,
+      "max": 4
+    },
+    "workspace_bound": {
+      "mean": 66328576,
+      "min": 66328576,
+      "max": 66328576
+    },
+    "worker_wait_ns": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "preparation": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "wall_ns": {
+      "mean": 350028650,
+      "min": 343739200,
+      "max": 356318100
+    },
+    "graph_ns": {
+      "mean": 113533100,
+      "min": 109266300,
+      "max": 117799900
+    },
+    "row_ns": {
+      "mean": 236495550,
+      "min": 234472900,
+      "max": 238518200
+    },
+    "batch_ns": {
+      "mean": 840900,
+      "min": 834400,
+      "max": 847400
+    },
+    "search_ns": {
+      "mean": 889084800,
+      "min": 883929800,
+      "max": 894239800
+    },
+    "integration_ns": {
+      "mean": 235997300,
+      "min": 233852200,
+      "max": 238142400
+    },
+    "batches": {
+      "mean": 887,
+      "min": 887,
+      "max": 887
+    },
+    "searches": {
+      "mean": 746.5,
+      "min": 737,
+      "max": 756
+    },
+    "pending": {
+      "mean": 8,
+      "min": 8,
+      "max": 8
+    },
+    "work_min": {
+      "mean": 69837,
+      "min": 69837,
+      "max": 69837
+    },
+    "work_max": {
+      "mean": 70118,
+      "min": 70116,
+      "max": 70120
+    },
+    "throttles": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "worker_cpu_ns": {
+      "mean": 851562500,
+      "min": 843750000,
+      "max": 859375000
+    },
+    "workspace_reuses": {
+      "mean": 609,
+      "min": 600,
+      "max": 618
+    },
+    "duplicate_work": {
+      "mean": 8758298,
+      "min": 8312267,
+      "max": 9204329
+    },
+    "search_work": {
+      "mean": 60937807.5,
+      "min": 60788707,
+      "max": 61086908
+    },
+    "stations": {
+      "mean": 894,
+      "min": 894,
+      "max": 894
+    },
+    "states": {
+      "mean": 11579,
+      "min": 11579,
+      "max": 11579
+    },
+    "edges": {
+      "mean": 34868,
+      "min": 34868,
+      "max": 34868
+    },
+    "operations": {
+      "mean": 71559024,
+      "min": 71559024,
+      "max": 71559024
+    },
+    "bytes": {
+      "mean": 109148881,
+      "min": 109135393,
+      "max": 109162369
+    },
+    "worker_utilization": {
+      "mean": 0.9001839269730179,
+      "min": 0.899624220965408,
+      "max": 0.9007436329806279
+    }
+  },
+  {
+    "scenario": "initial-reference",
+    "mode": "legacy",
+    "requested": 8,
+    "repeats": 2,
+    "peak_working_set": {
+      "mean": 154759168,
+      "min": 154370048,
+      "max": 155148288
+    },
+    "workers": {
+      "mean": 8,
+      "min": 8,
+      "max": 8
+    },
+    "main_cpu_ns": {
+      "mean": 257812500,
+      "min": 250000000,
+      "max": 265625000
+    },
+    "row_main_cpu_ns": {
+      "mean": 148437500,
+      "min": 140625000,
+      "max": 156250000
+    },
+    "cache_hits": {
+      "mean": 877,
+      "min": 873,
+      "max": 881
+    },
+    "cache_work": {
+      "mean": 61383776.5,
+      "min": 61103906,
+      "max": 61663647
+    },
+    "serial_rows": {
+      "mean": 17,
+      "min": 13,
+      "max": 21
+    },
+    "main_search_ns": {
+      "mean": 18082350,
+      "min": 13524000,
+      "max": 22640700
+    },
+    "fallbacks": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "serial_work": {
+      "mean": 1189653.5,
+      "min": 909783,
+      "max": 1469524
+    },
+    "cancelled_work": {
+      "mean": 991561,
+      "min": 704512,
+      "max": 1278610
+    },
+    "thread_starts": {
+      "mean": 8,
+      "min": 8,
+      "max": 8
+    },
+    "workspace_bound": {
+      "mean": 132657152,
+      "min": 132657152,
+      "max": 132657152
+    },
+    "worker_wait_ns": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "preparation": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "wall_ns": {
+      "mean": 267456350,
+      "min": 252599700,
+      "max": 282313000
+    },
+    "graph_ns": {
+      "mean": 106533100,
+      "min": 105081400,
+      "max": 107984800
+    },
+    "row_ns": {
+      "mean": 160923250,
+      "min": 147518300,
+      "max": 174328200
+    },
+    "batch_ns": {
+      "mean": 1548350,
+      "min": 1462500,
+      "max": 1634200
+    },
+    "search_ns": {
+      "mean": 1125144400,
+      "min": 1033902300,
+      "max": 1216386500
+    },
+    "integration_ns": {
+      "mean": 158911350,
+      "min": 145458200,
+      "max": 172364500
+    },
+    "batches": {
+      "mean": 879,
+      "min": 879,
+      "max": 879
+    },
+    "searches": {
+      "mean": 877,
+      "min": 873,
+      "max": 881
+    },
+    "pending": {
+      "mean": 16,
+      "min": 16,
+      "max": 16
+    },
+    "work_min": {
+      "mean": 69837,
+      "min": 69837,
+      "max": 69837
+    },
+    "work_max": {
+      "mean": 70120,
+      "min": 70120,
+      "max": 70120
+    },
+    "throttles": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "worker_cpu_ns": {
+      "mean": 1093750000,
+      "min": 906250000,
+      "max": 1281250000
+    },
+    "workspace_reuses": {
+      "mean": 839,
+      "min": 831,
+      "max": 847
+    },
+    "duplicate_work": {
+      "mean": 991561,
+      "min": 704512,
+      "max": 1278610
+    },
+    "search_work": {
+      "mean": 62375337.5,
+      "min": 62368159,
+      "max": 62382516
+    },
+    "stations": {
+      "mean": 894,
+      "min": 894,
+      "max": 894
+    },
+    "states": {
+      "mean": 11579,
+      "min": 11579,
+      "max": 11579
+    },
+    "edges": {
+      "mean": 34868,
+      "min": 34868,
+      "max": 34868
+    },
+    "operations": {
+      "mean": 71559024,
+      "min": 71559024,
+      "max": 71559024
+    },
+    "bytes": {
+      "mean": 109129729,
+      "min": 109090593,
+      "max": 109168865
+    },
+    "worker_utilization": {
+      "mean": 0.8433092756505458,
+      "min": 0.7679132012774008,
+      "max": 0.9187053500236909
+    }
+  },
+  {
+    "scenario": "nonblocking-current",
+    "mode": "hyperpath",
+    "requested": 0,
+    "repeats": 2,
+    "peak_working_set": {
+      "mean": 227241984,
+      "min": 227119104,
+      "max": 227364864
+    },
+    "workers": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "main_cpu_ns": {
+      "mean": 882812500,
+      "min": 875000000,
+      "max": 890625000
+    },
+    "row_main_cpu_ns": {
+      "mean": 882812500,
+      "min": 875000000,
+      "max": 890625000
+    },
+    "cache_hits": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "cache_work": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "serial_rows": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "main_search_ns": {
+      "mean": 730575050,
+      "min": 724234900,
+      "max": 736915200
+    },
+    "fallbacks": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "serial_work": {
+      "mean": 56231397,
+      "min": 56231397,
+      "max": 56231397
+    },
+    "cancelled_work": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "thread_starts": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "workspace_bound": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "worker_wait_ns": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "preparation": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "wall_ns": {
+      "mean": 881408450,
+      "min": 874126100,
+      "max": 888690800
+    },
+    "graph_ns": {
+      "mean": 2004200,
+      "min": 1958300,
+      "max": 2050100
+    },
+    "row_ns": {
+      "mean": 879404250,
+      "min": 872167800,
+      "max": 886640700
+    },
+    "batch_ns": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "search_ns": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "integration_ns": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "batches": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "searches": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "pending": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "work_min": {
+      "mean": 18446744073709551615,
+      "min": 18446744073709551615,
+      "max": 18446744073709551615
+    },
+    "work_max": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "throttles": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "worker_cpu_ns": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "workspace_reuses": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "duplicate_work": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "search_work": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "stations": {
+      "mean": 894,
+      "min": 894,
+      "max": 894
+    },
+    "states": {
+      "mean": 9971,
+      "min": 9971,
+      "max": 9971
+    },
+    "edges": {
+      "mean": 21148,
+      "min": 21148,
+      "max": 21148
+    },
+    "operations": {
+      "mean": 67268128,
+      "min": 67268128,
+      "max": 67268128
+    },
+    "bytes": {
+      "mean": 208201608,
+      "min": 208201608,
+      "max": 208201608
+    }
+  },
+  {
+    "scenario": "nonblocking-current",
+    "mode": "hyperpath",
+    "requested": 1,
+    "repeats": 2,
+    "peak_working_set": {
+      "mean": 227577856,
+      "min": 227557376,
+      "max": 227598336
+    },
+    "workers": {
+      "mean": 1,
+      "min": 1,
+      "max": 1
+    },
+    "main_cpu_ns": {
+      "mean": 921875000,
+      "min": 890625000,
+      "max": 953125000
+    },
+    "row_main_cpu_ns": {
+      "mean": 921875000,
+      "min": 890625000,
+      "max": 953125000
+    },
+    "cache_hits": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "cache_work": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "serial_rows": {
+      "mean": 894,
+      "min": 894,
+      "max": 894
+    },
+    "main_search_ns": {
+      "mean": 759255850,
+      "min": 726897500,
+      "max": 791614200
+    },
+    "fallbacks": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "serial_work": {
+      "mean": 56231397,
+      "min": 56231397,
+      "max": 56231397
+    },
+    "cancelled_work": {
+      "mean": 575488,
+      "min": 561152,
+      "max": 589824
+    },
+    "thread_starts": {
+      "mean": 1,
+      "min": 1,
+      "max": 1
+    },
+    "workspace_bound": {
+      "mean": 13179392,
+      "min": 13179392,
+      "max": 13179392
+    },
+    "worker_wait_ns": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "preparation": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "wall_ns": {
+      "mean": 921018450,
+      "min": 878016100,
+      "max": 964020800
+    },
+    "graph_ns": {
+      "mean": 2063600,
+      "min": 1887500,
+      "max": 2239700
+    },
+    "row_ns": {
+      "mean": 918954850,
+      "min": 876128600,
+      "max": 961781100
+    },
+    "batch_ns": {
+      "mean": 112950,
+      "min": 102200,
+      "max": 123700
+    },
+    "search_ns": {
+      "mean": 15235800,
+      "min": 14629700,
+      "max": 15841900
+    },
+    "integration_ns": {
+      "mean": 918841200,
+      "min": 876038000,
+      "max": 961644400
+    },
+    "batches": {
+      "mean": 16,
+      "min": 16,
+      "max": 16
+    },
+    "searches": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "pending": {
+      "mean": 2,
+      "min": 2,
+      "max": 2
+    },
+    "work_min": {
+      "mean": 18446744073709551615,
+      "min": 18446744073709551615,
+      "max": 18446744073709551615
+    },
+    "work_max": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "throttles": {
+      "mean": 1,
+      "min": 1,
+      "max": 1
+    },
+    "worker_cpu_ns": {
+      "mean": 7812500,
+      "min": 0,
+      "max": 15625000
+    },
+    "workspace_reuses": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "duplicate_work": {
+      "mean": 575488,
+      "min": 561152,
+      "max": 589824
+    },
+    "search_work": {
+      "mean": 575488,
+      "min": 561152,
+      "max": 589824
+    },
+    "stations": {
+      "mean": 894,
+      "min": 894,
+      "max": 894
+    },
+    "states": {
+      "mean": 9971,
+      "min": 9971,
+      "max": 9971
+    },
+    "edges": {
+      "mean": 21148,
+      "min": 21148,
+      "max": 21148
+    },
+    "operations": {
+      "mean": 67268128,
+      "min": 67268128,
+      "max": 67268128
+    },
+    "bytes": {
+      "mean": 208201608,
+      "min": 208201608,
+      "max": 208201608
+    },
+    "worker_utilization": {
+      "mean": 0.008122950222249117,
+      "min": 0.0,
+      "max": 0.016245900444498234
+    }
+  },
+  {
+    "scenario": "nonblocking-current",
+    "mode": "hyperpath",
+    "requested": 4,
+    "repeats": 2,
+    "peak_working_set": {
+      "mean": 245088256,
+      "min": 244981760,
+      "max": 245194752
+    },
+    "workers": {
+      "mean": 4,
+      "min": 4,
+      "max": 4
+    },
+    "main_cpu_ns": {
+      "mean": 289062500,
+      "min": 281250000,
+      "max": 296875000
+    },
+    "row_main_cpu_ns": {
+      "mean": 289062500,
+      "min": 281250000,
+      "max": 296875000
+    },
+    "cache_hits": {
+      "mean": 782,
+      "min": 780,
+      "max": 784
+    },
+    "cache_work": {
+      "mean": 49186781.5,
+      "min": 49060946,
+      "max": 49312617
+    },
+    "serial_rows": {
+      "mean": 112,
+      "min": 110,
+      "max": 114
+    },
+    "main_search_ns": {
+      "mean": 112042900,
+      "min": 110633900,
+      "max": 113451900
+    },
+    "fallbacks": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "serial_work": {
+      "mean": 7044615.5,
+      "min": 6918780,
+      "max": 7170451
+    },
+    "cancelled_work": {
+      "mean": 5888024,
+      "min": 5724541,
+      "max": 6051507
+    },
+    "thread_starts": {
+      "mean": 4,
+      "min": 4,
+      "max": 4
+    },
+    "workspace_bound": {
+      "mean": 52717568,
+      "min": 52717568,
+      "max": 52717568
+    },
+    "worker_wait_ns": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "preparation": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "wall_ns": {
+      "mean": 286053100,
+      "min": 283106000,
+      "max": 289000200
+    },
+    "graph_ns": {
+      "mean": 2126900,
+      "min": 1981800,
+      "max": 2272000
+    },
+    "row_ns": {
+      "mean": 283926200,
+      "min": 281124200,
+      "max": 286728200
+    },
+    "batch_ns": {
+      "mean": 888400,
+      "min": 871200,
+      "max": 905600
+    },
+    "search_ns": {
+      "mean": 1072265550,
+      "min": 1055505600,
+      "max": 1089025500
+    },
+    "integration_ns": {
+      "mean": 282915000,
+      "min": 279867300,
+      "max": 285962700
+    },
+    "batches": {
+      "mean": 887,
+      "min": 887,
+      "max": 887
+    },
+    "searches": {
+      "mean": 782,
+      "min": 780,
+      "max": 784
+    },
+    "pending": {
+      "mean": 8,
+      "min": 8,
+      "max": 8
+    },
+    "work_min": {
+      "mean": 62757.5,
+      "min": 62757,
+      "max": 62758
+    },
+    "work_max": {
+      "mean": 63020,
+      "min": 63020,
+      "max": 63020
+    },
+    "throttles": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "worker_cpu_ns": {
+      "mean": 1109375000,
+      "min": 1093750000,
+      "max": 1125000000
+    },
+    "workspace_reuses": {
+      "mean": 673.5,
+      "min": 670,
+      "max": 677
+    },
+    "duplicate_work": {
+      "mean": 5888024,
+      "min": 5724541,
+      "max": 6051507
+    },
+    "search_work": {
+      "mean": 55074805.5,
+      "min": 55037158,
+      "max": 55112453
+    },
+    "stations": {
+      "mean": 894,
+      "min": 894,
+      "max": 894
+    },
+    "states": {
+      "mean": 9971,
+      "min": 9971,
+      "max": 9971
+    },
+    "edges": {
+      "mean": 21148,
+      "min": 21148,
+      "max": 21148
+    },
+    "operations": {
+      "mean": 67268128,
+      "min": 67268128,
+      "max": 67268128
+    },
+    "bytes": {
+      "mean": 208044794,
+      "min": 208019120,
+      "max": 208070468
+    },
+    "worker_utilization": {
+      "mean": 0.9767756910600661,
+      "min": 0.9726572810167179,
+      "max": 0.9808941011034144
+    }
+  },
+  {
+    "scenario": "nonblocking-current",
+    "mode": "hyperpath",
+    "requested": 8,
+    "repeats": 2,
+    "peak_working_set": {
+      "mean": 259860480,
+      "min": 259735552,
+      "max": 259985408
+    },
+    "workers": {
+      "mean": 8,
+      "min": 8,
+      "max": 8
+    },
+    "main_cpu_ns": {
+      "mean": 218750000,
+      "min": 203125000,
+      "max": 234375000
+    },
+    "row_main_cpu_ns": {
+      "mean": 210937500,
+      "min": 203125000,
+      "max": 218750000
+    },
+    "cache_hits": {
+      "mean": 891.5,
+      "min": 891,
+      "max": 892
+    },
+    "cache_work": {
+      "mean": 56074267,
+      "min": 56042844,
+      "max": 56105690
+    },
+    "serial_rows": {
+      "mean": 2.5,
+      "min": 2,
+      "max": 3
+    },
+    "main_search_ns": {
+      "mean": 3564550,
+      "min": 3426300,
+      "max": 3702800
+    },
+    "fallbacks": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "serial_work": {
+      "mean": 157130,
+      "min": 125707,
+      "max": 188553
+    },
+    "cancelled_work": {
+      "mean": 28672,
+      "min": 12288,
+      "max": 45056
+    },
+    "thread_starts": {
+      "mean": 8,
+      "min": 8,
+      "max": 8
+    },
+    "workspace_bound": {
+      "mean": 105435136,
+      "min": 105435136,
+      "max": 105435136
+    },
+    "worker_wait_ns": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "preparation": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "wall_ns": {
+      "mean": 221838050,
+      "min": 211901100,
+      "max": 231775000
+    },
+    "graph_ns": {
+      "mean": 2166050,
+      "min": 2144100,
+      "max": 2188000
+    },
+    "row_ns": {
+      "mean": 219672000,
+      "min": 209757000,
+      "max": 229587000
+    },
+    "batch_ns": {
+      "mean": 2192250,
+      "min": 2080900,
+      "max": 2303600
+    },
+    "search_ns": {
+      "mean": 1174453350,
+      "min": 1151132600,
+      "max": 1197774100
+    },
+    "integration_ns": {
+      "mean": 215157050,
+      "min": 205714200,
+      "max": 224599900
+    },
+    "batches": {
+      "mean": 879,
+      "min": 879,
+      "max": 879
+    },
+    "searches": {
+      "mean": 891.5,
+      "min": 891,
+      "max": 892
+    },
+    "pending": {
+      "mean": 16,
+      "min": 16,
+      "max": 16
+    },
+    "work_min": {
+      "mean": 62757,
+      "min": 62757,
+      "max": 62757
+    },
+    "work_max": {
+      "mean": 63020,
+      "min": 63020,
+      "max": 63020
+    },
+    "throttles": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "worker_cpu_ns": {
+      "mean": 1132812500,
+      "min": 1062500000,
+      "max": 1203125000
+    },
+    "workspace_reuses": {
+      "mean": 867.5,
+      "min": 867,
+      "max": 868
+    },
+    "duplicate_work": {
+      "mean": 28672,
+      "min": 12288,
+      "max": 45056
+    },
+    "search_work": {
+      "mean": 56102939,
+      "min": 56087900,
+      "max": 56117978
+    },
+    "stations": {
+      "mean": 894,
+      "min": 894,
+      "max": 894
+    },
+    "states": {
+      "mean": 9971,
+      "min": 9971,
+      "max": 9971
+    },
+    "edges": {
+      "mean": 21148,
+      "min": 21148,
+      "max": 21148
+    },
+    "operations": {
+      "mean": 67268128,
+      "min": 67268128,
+      "max": 67268128
+    },
+    "bytes": {
+      "mean": 208112744,
+      "min": 208110804,
+      "max": 208114684
+    },
+    "worker_utilization": {
+      "mean": 0.6441108349435376,
+      "min": 0.6331731479759912,
+      "max": 0.6550485219110839
+    }
+  },
+  {
+    "scenario": "nonblocking-current",
+    "mode": "legacy",
+    "requested": 0,
+    "repeats": 2,
+    "peak_working_set": {
+      "mean": 129087488,
+      "min": 128864256,
+      "max": 129310720
+    },
+    "workers": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "main_cpu_ns": {
+      "mean": 750000000,
+      "min": 750000000,
+      "max": 750000000
+    },
+    "row_main_cpu_ns": {
+      "mean": 648437500,
+      "min": 640625000,
+      "max": 656250000
+    },
+    "cache_hits": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "cache_work": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "serial_rows": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "main_search_ns": {
+      "mean": 545266800,
+      "min": 542460300,
+      "max": 548073300
+    },
+    "fallbacks": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "serial_work": {
+      "mean": 62573430,
+      "min": 62573430,
+      "max": 62573430
+    },
+    "cancelled_work": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "thread_starts": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "workspace_bound": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "worker_wait_ns": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "preparation": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "wall_ns": {
+      "mean": 754689550,
+      "min": 750226300,
+      "max": 759152800
+    },
+    "graph_ns": {
+      "mean": 104180150,
+      "min": 102269500,
+      "max": 106090800
+    },
+    "row_ns": {
+      "mean": 650509400,
+      "min": 647956800,
+      "max": 653062000
+    },
+    "batch_ns": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "search_ns": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "integration_ns": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "batches": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "searches": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "pending": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "work_min": {
+      "mean": 18446744073709551615,
+      "min": 18446744073709551615,
+      "max": 18446744073709551615
+    },
+    "work_max": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "throttles": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "worker_cpu_ns": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "workspace_reuses": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "duplicate_work": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "search_work": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "stations": {
+      "mean": 894,
+      "min": 894,
+      "max": 894
+    },
+    "states": {
+      "mean": 11579,
+      "min": 11579,
+      "max": 11579
+    },
+    "edges": {
+      "mean": 34868,
+      "min": 34868,
+      "max": 34868
+    },
+    "operations": {
+      "mean": 71559024,
+      "min": 71559024,
+      "max": 71559024
+    },
+    "bytes": {
+      "mean": 109364097,
+      "min": 109364097,
+      "max": 109364097
+    }
+  },
+  {
+    "scenario": "nonblocking-current",
+    "mode": "legacy",
+    "requested": 1,
+    "repeats": 2,
+    "peak_working_set": {
+      "mean": 129263616,
+      "min": 129253376,
+      "max": 129273856
+    },
+    "workers": {
+      "mean": 1,
+      "min": 1,
+      "max": 1
+    },
+    "main_cpu_ns": {
+      "mean": 773437500,
+      "min": 765625000,
+      "max": 781250000
+    },
+    "row_main_cpu_ns": {
+      "mean": 664062500,
+      "min": 656250000,
+      "max": 671875000
+    },
+    "cache_hits": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "cache_work": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "serial_rows": {
+      "mean": 894,
+      "min": 894,
+      "max": 894
+    },
+    "main_search_ns": {
+      "mean": 562581900,
+      "min": 559824400,
+      "max": 565339400
+    },
+    "fallbacks": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "serial_work": {
+      "mean": 62573430,
+      "min": 62573430,
+      "max": 62573430
+    },
+    "cancelled_work": {
+      "mean": 720896,
+      "min": 671744,
+      "max": 770048
+    },
+    "thread_starts": {
+      "mean": 1,
+      "min": 1,
+      "max": 1
+    },
+    "workspace_bound": {
+      "mean": 16582144,
+      "min": 16582144,
+      "max": 16582144
+    },
+    "worker_wait_ns": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "preparation": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "wall_ns": {
+      "mean": 778252800,
+      "min": 778128800,
+      "max": 778376800
+    },
+    "graph_ns": {
+      "mean": 106087800,
+      "min": 104011900,
+      "max": 108163700
+    },
+    "row_ns": {
+      "mean": 672165000,
+      "min": 670213100,
+      "max": 674116900
+    },
+    "batch_ns": {
+      "mean": 117500,
+      "min": 115700,
+      "max": 119300
+    },
+    "search_ns": {
+      "mean": 11728200,
+      "min": 11011400,
+      "max": 12445000
+    },
+    "integration_ns": {
+      "mean": 672068200,
+      "min": 670118700,
+      "max": 674017700
+    },
+    "batches": {
+      "mean": 16,
+      "min": 16,
+      "max": 16
+    },
+    "searches": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "pending": {
+      "mean": 2,
+      "min": 2,
+      "max": 2
+    },
+    "work_min": {
+      "mean": 18446744073709551615,
+      "min": 18446744073709551615,
+      "max": 18446744073709551615
+    },
+    "work_max": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "throttles": {
+      "mean": 1,
+      "min": 1,
+      "max": 1
+    },
+    "worker_cpu_ns": {
+      "mean": 15625000,
+      "min": 15625000,
+      "max": 15625000
+    },
+    "workspace_reuses": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "duplicate_work": {
+      "mean": 720896,
+      "min": 671744,
+      "max": 770048
+    },
+    "search_work": {
+      "mean": 720896,
+      "min": 671744,
+      "max": 770048
+    },
+    "stations": {
+      "mean": 894,
+      "min": 894,
+      "max": 894
+    },
+    "states": {
+      "mean": 11579,
+      "min": 11579,
+      "max": 11579
+    },
+    "edges": {
+      "mean": 34868,
+      "min": 34868,
+      "max": 34868
+    },
+    "operations": {
+      "mean": 71559024,
+      "min": 71559024,
+      "max": 71559024
+    },
+    "bytes": {
+      "mean": 109364097,
+      "min": 109364097,
+      "max": 109364097
+    },
+    "worker_utilization": {
+      "mean": 0.023245976450787943,
+      "min": 0.023178472457818518,
+      "max": 0.023313480443757365
+    }
+  },
+  {
+    "scenario": "nonblocking-current",
+    "mode": "legacy",
+    "requested": 4,
+    "repeats": 2,
+    "peak_working_set": {
+      "mean": 140249088,
+      "min": 140165120,
+      "max": 140333056
+    },
+    "workers": {
+      "mean": 4,
+      "min": 4,
+      "max": 4
+    },
+    "main_cpu_ns": {
+      "mean": 304687500,
+      "min": 296875000,
+      "max": 312500000
+    },
+    "row_main_cpu_ns": {
+      "mean": 210937500,
+      "min": 203125000,
+      "max": 218750000
+    },
+    "cache_hits": {
+      "mean": 758,
+      "min": 756,
+      "max": 760
+    },
+    "cache_work": {
+      "mean": 53054728.5,
+      "min": 52914376,
+      "max": 53195081
+    },
+    "serial_rows": {
+      "mean": 136,
+      "min": 134,
+      "max": 138
+    },
+    "main_search_ns": {
+      "mean": 98740450,
+      "min": 96301700,
+      "max": 101179200
+    },
+    "fallbacks": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "serial_work": {
+      "mean": 9518701.5,
+      "min": 9378349,
+      "max": 9659054
+    },
+    "cancelled_work": {
+      "mean": 7884427,
+      "min": 7882472,
+      "max": 7886382
+    },
+    "thread_starts": {
+      "mean": 4,
+      "min": 4,
+      "max": 4
+    },
+    "workspace_bound": {
+      "mean": 66328576,
+      "min": 66328576,
+      "max": 66328576
+    },
+    "worker_wait_ns": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "preparation": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "wall_ns": {
+      "mean": 305067400,
+      "min": 298370300,
+      "max": 311764500
+    },
+    "graph_ns": {
+      "mean": 103932900,
+      "min": 102632600,
+      "max": 105233200
+    },
+    "row_ns": {
+      "mean": 201134500,
+      "min": 195737700,
+      "max": 206531300
+    },
+    "batch_ns": {
+      "mean": 864150,
+      "min": 777700,
+      "max": 950600
+    },
+    "search_ns": {
+      "mean": 772306500,
+      "min": 751387400,
+      "max": 793225600
+    },
+    "integration_ns": {
+      "mean": 200838550,
+      "min": 195346200,
+      "max": 206330900
+    },
+    "batches": {
+      "mean": 887,
+      "min": 887,
+      "max": 887
+    },
+    "searches": {
+      "mean": 759,
+      "min": 758,
+      "max": 760
+    },
+    "pending": {
+      "mean": 8,
+      "min": 8,
+      "max": 8
+    },
+    "work_min": {
+      "mean": 69837,
+      "min": 69837,
+      "max": 69837
+    },
+    "work_max": {
+      "mean": 70120,
+      "min": 70120,
+      "max": 70120
+    },
+    "throttles": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "worker_cpu_ns": {
+      "mean": 812500000,
+      "min": 781250000,
+      "max": 843750000
+    },
+    "workspace_reuses": {
+      "mean": 641,
+      "min": 636,
+      "max": 646
+    },
+    "duplicate_work": {
+      "mean": 7954443.5,
+      "min": 7882472,
+      "max": 8026415
+    },
+    "search_work": {
+      "mean": 61009172,
+      "min": 60940791,
+      "max": 61077553
+    },
+    "stations": {
+      "mean": 894,
+      "min": 894,
+      "max": 894
+    },
+    "states": {
+      "mean": 11579,
+      "min": 11579,
+      "max": 11579
+    },
+    "edges": {
+      "mean": 34868,
+      "min": 34868,
+      "max": 34868
+    },
+    "operations": {
+      "mean": 71559024,
+      "min": 71559024,
+      "max": 71559024
+    },
+    "bytes": {
+      "mean": 109132025,
+      "min": 109108993,
+      "max": 109155057
+    },
+    "worker_utilization": {
+      "mean": 1.0095810008414658,
+      "min": 0.9978277051380495,
+      "max": 1.0213342965448822
+    }
+  },
+  {
+    "scenario": "nonblocking-current",
+    "mode": "legacy",
+    "requested": 8,
+    "repeats": 2,
+    "peak_working_set": {
+      "mean": 154349568,
+      "min": 154284032,
+      "max": 154415104
+    },
+    "workers": {
+      "mean": 8,
+      "min": 8,
+      "max": 8
+    },
+    "main_cpu_ns": {
+      "mean": 250000000,
+      "min": 250000000,
+      "max": 250000000
+    },
+    "row_main_cpu_ns": {
+      "mean": 148437500,
+      "min": 140625000,
+      "max": 156250000
+    },
+    "cache_hits": {
+      "mean": 876,
+      "min": 874,
+      "max": 878
+    },
+    "cache_work": {
+      "mean": 61313609,
+      "min": 61173802,
+      "max": 61453416
+    },
+    "serial_rows": {
+      "mean": 18,
+      "min": 16,
+      "max": 20
+    },
+    "main_search_ns": {
+      "mean": 19372400,
+      "min": 16369200,
+      "max": 22375600
+    },
+    "fallbacks": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "serial_work": {
+      "mean": 1259821,
+      "min": 1120014,
+      "max": 1399628
+    },
+    "cancelled_work": {
+      "mean": 1021952,
+      "min": 925696,
+      "max": 1118208
+    },
+    "thread_starts": {
+      "mean": 8,
+      "min": 8,
+      "max": 8
+    },
+    "workspace_bound": {
+      "mean": 132657152,
+      "min": 132657152,
+      "max": 132657152
+    },
+    "worker_wait_ns": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "preparation": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "wall_ns": {
+      "mean": 259581400,
+      "min": 251062500,
+      "max": 268100300
+    },
+    "graph_ns": {
+      "mean": 104720550,
+      "min": 104369600,
+      "max": 105071500
+    },
+    "row_ns": {
+      "mean": 154860850,
+      "min": 145991000,
+      "max": 163730700
+    },
+    "batch_ns": {
+      "mean": 1392850,
+      "min": 1305400,
+      "max": 1480300
+    },
+    "search_ns": {
+      "mean": 1101376300,
+      "min": 1022184300,
+      "max": 1180568300
+    },
+    "integration_ns": {
+      "mean": 153080050,
+      "min": 144093500,
+      "max": 162066600
+    },
+    "batches": {
+      "mean": 879,
+      "min": 879,
+      "max": 879
+    },
+    "searches": {
+      "mean": 876.5,
+      "min": 875,
+      "max": 878
+    },
+    "pending": {
+      "mean": 16,
+      "min": 16,
+      "max": 16
+    },
+    "work_min": {
+      "mean": 69837,
+      "min": 69837,
+      "max": 69837
+    },
+    "work_max": {
+      "mean": 70120,
+      "min": 70120,
+      "max": 70120
+    },
+    "throttles": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "worker_cpu_ns": {
+      "mean": 1117187500,
+      "min": 1078125000,
+      "max": 1156250000
+    },
+    "workspace_reuses": {
+      "mean": 837.5,
+      "min": 834,
+      "max": 841
+    },
+    "duplicate_work": {
+      "mean": 1056924.5,
+      "min": 925696,
+      "max": 1188153
+    },
+    "search_work": {
+      "mean": 62370533.5,
+      "min": 62361955,
+      "max": 62379112
+    },
+    "stations": {
+      "mean": 894,
+      "min": 894,
+      "max": 894
+    },
+    "states": {
+      "mean": 11579,
+      "min": 11579,
+      "max": 11579
+    },
+    "edges": {
+      "mean": 34868,
+      "min": 34868,
+      "max": 34868
+    },
+    "operations": {
+      "mean": 71559024,
+      "min": 71559024,
+      "max": 71559024
+    },
+    "bytes": {
+      "mean": 109156033,
+      "min": 109149153,
+      "max": 109162913
+    },
+    "worker_utilization": {
+      "mean": 0.9029233797746076,
+      "min": 0.8827376295343512,
+      "max": 0.9231091300148639
+    }
+  },
+  {
+    "scenario": "replay",
+    "mode": "hyperpath",
+    "requested": 0,
+    "repeats": 2,
+    "peak_working_set": {
+      "mean": 244983808,
+      "min": 244944896,
+      "max": 245022720
+    },
+    "workers": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "wall_ns": {
+      "mean": 888695400,
+      "min": 886091400,
+      "max": 891299400
+    },
+    "retained_ns": {
+      "mean": 875570750,
+      "min": 872965900,
+      "max": 878175600
+    },
+    "graph_ns": {
+      "mean": 4319100,
+      "min": 4211400,
+      "max": 4426800
+    },
+    "tables_ns": {
+      "mean": 2378050,
+      "min": 2335300,
+      "max": 2420800
+    },
+    "main_cpu_ns": {
+      "mean": 867187500,
+      "min": 859375000,
+      "max": 875000000
+    },
+    "worker_cpu_ns": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "slice_max_ns": {
+      "mean": 1015800,
+      "min": 1007300,
+      "max": 1024300
+    },
+    "cache_hits": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "serial_rows": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "fallbacks": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "worker_wait_ns": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "search_ns": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "search_work": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "cache_work": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "cancelled_work": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "workspace_bound": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "destinations": {
+      "mean": 894,
+      "min": 894,
+      "max": 894
+    },
+    "operations": {
+      "mean": 67333664,
+      "min": 67333664,
+      "max": 67333664
+    }
+  },
+  {
+    "scenario": "replay",
+    "mode": "hyperpath",
+    "requested": 1,
+    "repeats": 2,
+    "peak_working_set": {
+      "mean": 249470976,
+      "min": 249094144,
+      "max": 249847808
+    },
+    "workers": {
+      "mean": 1,
+      "min": 1,
+      "max": 1
+    },
+    "wall_ns": {
+      "mean": 946881900,
+      "min": 940024500,
+      "max": 953739300
+    },
+    "retained_ns": {
+      "mean": 933637850,
+      "min": 926671600,
+      "max": 940604100
+    },
+    "graph_ns": {
+      "mean": 7730300,
+      "min": 7689000,
+      "max": 7771600
+    },
+    "tables_ns": {
+      "mean": 58800,
+      "min": 53200,
+      "max": 64400
+    },
+    "main_cpu_ns": {
+      "mean": 250000000,
+      "min": 218750000,
+      "max": 281250000
+    },
+    "worker_cpu_ns": {
+      "mean": 929687500,
+      "min": 906250000,
+      "max": 953125000
+    },
+    "slice_max_ns": {
+      "mean": 3105300,
+      "min": 3010100,
+      "max": 3200500
+    },
+    "cache_hits": {
+      "mean": 894,
+      "min": 894,
+      "max": 894
+    },
+    "serial_rows": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "fallbacks": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "worker_wait_ns": {
+      "mean": 709808200,
+      "min": 697748400,
+      "max": 721868000
+    },
+    "search_ns": {
+      "mean": 936381850,
+      "min": 929469800,
+      "max": 943293900
+    },
+    "search_work": {
+      "mean": 56231397,
+      "min": 56231397,
+      "max": 56231397
+    },
+    "cache_work": {
+      "mean": 56231397,
+      "min": 56231397,
+      "max": 56231397
+    },
+    "cancelled_work": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "workspace_bound": {
+      "mean": 13179392,
+      "min": 13179392,
+      "max": 13179392
+    },
+    "destinations": {
+      "mean": 894,
+      "min": 894,
+      "max": 894
+    },
+    "operations": {
+      "mean": 67333664,
+      "min": 67333664,
+      "max": 67333664
+    }
+  },
+  {
+    "scenario": "replay",
+    "mode": "hyperpath",
+    "requested": 4,
+    "repeats": 2,
+    "peak_working_set": {
+      "mean": 261904384,
+      "min": 261820416,
+      "max": 261988352
+    },
+    "workers": {
+      "mean": 4,
+      "min": 4,
+      "max": 4
+    },
+    "wall_ns": {
+      "mean": 261831350,
+      "min": 253724100,
+      "max": 269938600
+    },
+    "retained_ns": {
+      "mean": 249347250,
+      "min": 241513100,
+      "max": 257181400
+    },
+    "graph_ns": {
+      "mean": 7746950,
+      "min": 7530100,
+      "max": 7963800
+    },
+    "tables_ns": {
+      "mean": 117900,
+      "min": 95700,
+      "max": 140100
+    },
+    "main_cpu_ns": {
+      "mean": 218750000,
+      "min": 203125000,
+      "max": 234375000
+    },
+    "worker_cpu_ns": {
+      "mean": 968750000,
+      "min": 968750000,
+      "max": 968750000
+    },
+    "slice_max_ns": {
+      "mean": 4371700,
+      "min": 3790600,
+      "max": 4952800
+    },
+    "cache_hits": {
+      "mean": 894,
+      "min": 894,
+      "max": 894
+    },
+    "serial_rows": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "fallbacks": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "worker_wait_ns": {
+      "mean": 43532150,
+      "min": 41004800,
+      "max": 46059500
+    },
+    "search_ns": {
+      "mean": 1001988350,
+      "min": 967731700,
+      "max": 1036245000
+    },
+    "search_work": {
+      "mean": 56231397,
+      "min": 56231397,
+      "max": 56231397
+    },
+    "cache_work": {
+      "mean": 56231397,
+      "min": 56231397,
+      "max": 56231397
+    },
+    "cancelled_work": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "workspace_bound": {
+      "mean": 52717568,
+      "min": 52717568,
+      "max": 52717568
+    },
+    "destinations": {
+      "mean": 894,
+      "min": 894,
+      "max": 894
+    },
+    "operations": {
+      "mean": 67333664,
+      "min": 67333664,
+      "max": 67333664
+    }
+  },
+  {
+    "scenario": "replay",
+    "mode": "hyperpath",
+    "requested": 8,
+    "repeats": 2,
+    "peak_working_set": {
+      "mean": 271824896,
+      "min": 271794176,
+      "max": 271855616
+    },
+    "workers": {
+      "mean": 8,
+      "min": 8,
+      "max": 8
+    },
+    "wall_ns": {
+      "mean": 235530500,
+      "min": 223655300,
+      "max": 247405700
+    },
+    "retained_ns": {
+      "mean": 222251800,
+      "min": 210602100,
+      "max": 233901500
+    },
+    "graph_ns": {
+      "mean": 8349750,
+      "min": 8001500,
+      "max": 8698000
+    },
+    "tables_ns": {
+      "mean": 267150,
+      "min": 121700,
+      "max": 412600
+    },
+    "main_cpu_ns": {
+      "mean": 234375000,
+      "min": 218750000,
+      "max": 250000000
+    },
+    "worker_cpu_ns": {
+      "mean": 1218750000,
+      "min": 1187500000,
+      "max": 1250000000
+    },
+    "slice_max_ns": {
+      "mean": 7298950,
+      "min": 6837000,
+      "max": 7760900
+    },
+    "cache_hits": {
+      "mean": 894,
+      "min": 894,
+      "max": 894
+    },
+    "serial_rows": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "fallbacks": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "worker_wait_ns": {
+      "mean": 3796700,
+      "min": 3581500,
+      "max": 4011900
+    },
+    "search_ns": {
+      "mean": 1183632150,
+      "min": 1158745200,
+      "max": 1208519100
+    },
+    "search_work": {
+      "mean": 56231397,
+      "min": 56231397,
+      "max": 56231397
+    },
+    "cache_work": {
+      "mean": 56231397,
+      "min": 56231397,
+      "max": 56231397
+    },
+    "cancelled_work": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "workspace_bound": {
+      "mean": 105435136,
+      "min": 105435136,
+      "max": 105435136
+    },
+    "destinations": {
+      "mean": 894,
+      "min": 894,
+      "max": 894
+    },
+    "operations": {
+      "mean": 67333664,
+      "min": 67333664,
+      "max": 67333664
+    }
+  },
+  {
+    "scenario": "replay",
+    "mode": "legacy",
+    "requested": 0,
+    "repeats": 2,
+    "peak_working_set": {
+      "mean": 148230144,
+      "min": 148217856,
+      "max": 148242432
+    },
+    "workers": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "wall_ns": {
+      "mean": 884795000,
+      "min": 878413100,
+      "max": 891176900
+    },
+    "retained_ns": {
+      "mean": 659509550,
+      "min": 658096400,
+      "max": 660922700
+    },
+    "graph_ns": {
+      "mean": 216390800,
+      "min": 211487400,
+      "max": 221294200
+    },
+    "tables_ns": {
+      "mean": 1790550,
+      "min": 1699100,
+      "max": 1882000
+    },
+    "main_cpu_ns": {
+      "mean": 882812500,
+      "min": 875000000,
+      "max": 890625000
+    },
+    "worker_cpu_ns": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "slice_max_ns": {
+      "mean": 5110400,
+      "min": 5098000,
+      "max": 5122800
+    },
+    "cache_hits": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "serial_rows": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "fallbacks": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "worker_wait_ns": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "search_ns": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "search_work": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "cache_work": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "cancelled_work": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "workspace_bound": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "destinations": {
+      "mean": 894,
+      "min": 894,
+      "max": 894
+    },
+    "operations": {
+      "mean": 71624560,
+      "min": 71624560,
+      "max": 71624560
+    }
+  },
+  {
+    "scenario": "replay",
+    "mode": "legacy",
+    "requested": 1,
+    "repeats": 2,
+    "peak_working_set": {
+      "mean": 151087104,
+      "min": 150986752,
+      "max": 151187456
+    },
+    "workers": {
+      "mean": 1,
+      "min": 1,
+      "max": 1
+    },
+    "wall_ns": {
+      "mean": 894135500,
+      "min": 820732300,
+      "max": 967538700
+    },
+    "retained_ns": {
+      "mean": 664521450,
+      "min": 592860000,
+      "max": 736182900
+    },
+    "graph_ns": {
+      "mean": 224003350,
+      "min": 222391000,
+      "max": 225615700
+    },
+    "tables_ns": {
+      "mean": 4750,
+      "min": 4700,
+      "max": 4800
+    },
+    "main_cpu_ns": {
+      "mean": 335937500,
+      "min": 328125000,
+      "max": 343750000
+    },
+    "worker_cpu_ns": {
+      "mean": 671875000,
+      "min": 593750000,
+      "max": 750000000
+    },
+    "slice_max_ns": {
+      "mean": 5186350,
+      "min": 5074600,
+      "max": 5298100
+    },
+    "cache_hits": {
+      "mean": 894,
+      "min": 894,
+      "max": 894
+    },
+    "serial_rows": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "fallbacks": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "worker_wait_ns": {
+      "mean": 537007700,
+      "min": 475784200,
+      "max": 598231200
+    },
+    "search_ns": {
+      "mean": 668050200,
+      "min": 596391400,
+      "max": 739709000
+    },
+    "search_work": {
+      "mean": 62573430,
+      "min": 62573430,
+      "max": 62573430
+    },
+    "cache_work": {
+      "mean": 62573430,
+      "min": 62573430,
+      "max": 62573430
+    },
+    "cancelled_work": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "workspace_bound": {
+      "mean": 16582144,
+      "min": 16582144,
+      "max": 16582144
+    },
+    "destinations": {
+      "mean": 894,
+      "min": 894,
+      "max": 894
+    },
+    "operations": {
+      "mean": 71624560,
+      "min": 71624560,
+      "max": 71624560
+    }
+  },
+  {
+    "scenario": "replay",
+    "mode": "legacy",
+    "requested": 4,
+    "repeats": 2,
+    "peak_working_set": {
+      "mean": 160096256,
+      "min": 158834688,
+      "max": 161357824
+    },
+    "workers": {
+      "mean": 4,
+      "min": 4,
+      "max": 4
+    },
+    "wall_ns": {
+      "mean": 439857400,
+      "min": 415429300,
+      "max": 464285500
+    },
+    "retained_ns": {
+      "mean": 209479850,
+      "min": 185469300,
+      "max": 233490400
+    },
+    "graph_ns": {
+      "mean": 225331050,
+      "min": 225008100,
+      "max": 225654000
+    },
+    "tables_ns": {
+      "mean": 5150,
+      "min": 4900,
+      "max": 5400
+    },
+    "main_cpu_ns": {
+      "mean": 367187500,
+      "min": 359375000,
+      "max": 375000000
+    },
+    "worker_cpu_ns": {
+      "mean": 835937500,
+      "min": 750000000,
+      "max": 921875000
+    },
+    "slice_max_ns": {
+      "mean": 5828600,
+      "min": 5703800,
+      "max": 5953400
+    },
+    "cache_hits": {
+      "mean": 894,
+      "min": 894,
+      "max": 894
+    },
+    "serial_rows": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "fallbacks": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "worker_wait_ns": {
+      "mean": 79563950,
+      "min": 63770500,
+      "max": 95357400
+    },
+    "search_ns": {
+      "mean": 849176200,
+      "min": 754588900,
+      "max": 943763500
+    },
+    "search_work": {
+      "mean": 62573430,
+      "min": 62573430,
+      "max": 62573430
+    },
+    "cache_work": {
+      "mean": 62573430,
+      "min": 62573430,
+      "max": 62573430
+    },
+    "cancelled_work": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "workspace_bound": {
+      "mean": 66328576,
+      "min": 66328576,
+      "max": 66328576
+    },
+    "destinations": {
+      "mean": 894,
+      "min": 894,
+      "max": 894
+    },
+    "operations": {
+      "mean": 71624560,
+      "min": 71624560,
+      "max": 71624560
+    }
+  },
+  {
+    "scenario": "replay",
+    "mode": "legacy",
+    "requested": 8,
+    "repeats": 2,
+    "peak_working_set": {
+      "mean": 170233856,
+      "min": 169508864,
+      "max": 170958848
+    },
+    "workers": {
+      "mean": 8,
+      "min": 8,
+      "max": 8
+    },
+    "wall_ns": {
+      "mean": 376525350,
+      "min": 373813300,
+      "max": 379237400
+    },
+    "retained_ns": {
+      "mean": 147529400,
+      "min": 143649200,
+      "max": 151409600
+    },
+    "graph_ns": {
+      "mean": 223457850,
+      "min": 221704700,
+      "max": 225211000
+    },
+    "tables_ns": {
+      "mean": 531300,
+      "min": 6100,
+      "max": 1056500
+    },
+    "main_cpu_ns": {
+      "mean": 359375000,
+      "min": 343750000,
+      "max": 375000000
+    },
+    "worker_cpu_ns": {
+      "mean": 960937500,
+      "min": 890625000,
+      "max": 1031250000
+    },
+    "slice_max_ns": {
+      "mean": 5155700,
+      "min": 5014700,
+      "max": 5296700
+    },
+    "cache_hits": {
+      "mean": 894,
+      "min": 894,
+      "max": 894
+    },
+    "serial_rows": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "fallbacks": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "worker_wait_ns": {
+      "mean": 4312250,
+      "min": 2930300,
+      "max": 5694200
+    },
+    "search_ns": {
+      "mean": 1024845700,
+      "min": 936659700,
+      "max": 1113031700
+    },
+    "search_work": {
+      "mean": 62573430,
+      "min": 62573430,
+      "max": 62573430
+    },
+    "cache_work": {
+      "mean": 62573430,
+      "min": 62573430,
+      "max": 62573430
+    },
+    "cancelled_work": {
+      "mean": 0,
+      "min": 0,
+      "max": 0
+    },
+    "workspace_bound": {
+      "mean": 132657152,
+      "min": 132657152,
+      "max": 132657152
+    },
+    "destinations": {
+      "mean": 894,
+      "min": 894,
+      "max": 894
+    },
+    "operations": {
+      "mean": 71624560,
+      "min": 71624560,
+      "max": 71624560
+    }
+  }
+]

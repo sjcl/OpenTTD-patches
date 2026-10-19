@@ -1,0 +1,29 @@
+{
+  "native": {
+    "exit_code": 0,
+    "cases": 783,
+    "assertions": 10514867,
+    "command": [
+      "openttd_test.exe",
+      "--reporter",
+      "compact"
+    ]
+  },
+  "progress_widgets": {
+    "exit_code": 0,
+    "cases": 1,
+    "assertions": 100,
+    "command": [
+      "openttd_test.exe",
+      "[progress-gui]",
+      "--reporter",
+      "compact"
+    ],
+    "OPENTTD_TEST_PROGRESS_LANGUAGE": "C:\\Users\\bebe\\.codex\\worktrees\\ba19\\OpenTTD-patches\\build-preparation\\lang\\english.lng"
+  },
+  "benchmarks": {
+    "exit_code": 0,
+    "cases": 72,
+    "work_and_published_digests_equal": true
+  }
+}

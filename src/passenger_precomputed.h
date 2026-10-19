@@ -17,6 +17,7 @@
 #include <unordered_map>
 #include <map>
 #include <atomic>
+#include <chrono>
 
 struct PassengerPeriodicService;
 
@@ -60,6 +61,9 @@ struct PassengerParallelBuildDiagnostic {
 	uint64_t minimum_work = UINT64_MAX, maximum_work = 0, search_work = 0;
 	uint64_t cache_hits = 0, cache_work = 0, serial_rows = 0, main_search_nanoseconds = 0, serial_search_work = 0;
 	uint64_t cancelled_search_work = 0, thread_starts = 0, workspace_reuses = 0, throttles = 0;
+	uint64_t wait_nanoseconds = 0, waits = 0, wait_timeouts = 0;
+	size_t outstanding = 0; ///< Queued or executing searches, observed locally.
+	size_t running = 0;
 	size_t workers = 0, peak_pending = 0, estimated_workspace_bytes = 0;
 };
 
@@ -88,6 +92,9 @@ public:
 	/** Nonblocking speculative searches. Work/publication exactly match Step;
 	 * a cache miss latches serial execution for the whole row. Zero selects Step. */
 	size_t StepParallel(size_t operations, uint workers = 4, const std::function<void(StationID)> &published = {});
+	/** Stopped simulation only: keep lookahead alive and wait at most 1ms per call.
+	 * May consume less than operations when yielding for a result. Same Work frontier as Step. */
+	size_t StepPreparation(size_t operations, uint workers, const std::function<void(StationID)> &published = {});
 	PassengerParallelBuildDiagnostic GetParallelDiagnostic() const;
 	void ReleaseDestination(StationID destination); ///< Retire a row immediately after its replacement is published.
 	void PrepareRetirement(const PassengerPrecomputedTable &replacement); ///< Freeze the few destinations absent from the replacement before retiring its ascending rows.
@@ -352,6 +359,7 @@ private:
 		size_t destination = 0;
 		StationID station = StationID::Invalid();
 		uint64_t generation_id = 0, operations = 0, nanoseconds = 0;
+		std::chrono::steady_clock::time_point wait_started{}; ///< Main-thread only, never serialized.
 		std::atomic<bool> ready{false}, cancelled{false};
 		bool error = false; ///< Read only after acquiring ready.
 	};
@@ -366,6 +374,9 @@ private:
 	size_t serial_destination = SIZE_MAX;
 	uint parallel_misses = 0; ///< Local CPU backoff only; never part of Work or saves.
 	bool parallel_unavailable = false;
+	bool preparation_step = false; ///< Local scheduling mode, scoped to StepPreparation.
+	std::chrono::steady_clock::time_point preparation_deadline{};
+	std::chrono::milliseconds preparation_wait_limit{2000}; ///< Failure bound; native tests may inject expiry.
 	PassengerParallelBuildDiagnostic parallel_diagnostic;
 	void (*parallel_quantum_hook)(size_t, uint64_t) = nullptr; ///< Native cancellation/failure scheduling tests.
 	void (*parallel_search_hook)(size_t, bool) = nullptr; ///< Native scheduling/failure injection; unset in production.

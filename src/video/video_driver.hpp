@@ -220,6 +220,7 @@ protected:
 	static void GameThreadThunk(VideoDriver *drv);
 
 private:
+	friend struct PassengerVideoDriverTestAccess;
 	std::mutex cmd_queue_mutex;
 	std::vector<std::function<void()>> cmd_queue;
 

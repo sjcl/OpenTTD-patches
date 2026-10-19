@@ -1,0 +1,2 @@
+passenger_replay,mode=hyperpath,requested=0,workers=0,wall_ns=891299400,retained_ns=878175600,graph_ns=4211400,tables_ns=2420800,main_cpu_ns=875000000,worker_cpu_ns=0,slice_max_ns=1024300,cache_hits=0,serial_rows=0,fallbacks=0,worker_wait_ns=0,search_ns=0,search_work=0,cache_work=0,cancelled_work=0,workspace_bound=0,destinations=894,operations=67333664,digest=3830470904923046124,current_digest=16279598197700780115
+Passed 1 test case with 7 assertions.

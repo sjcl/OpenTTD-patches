@@ -1,0 +1,6 @@
+function(add_passenger_parallel_reference)
+  target_sources(openttd_test PRIVATE "C:/Users/bebe/.codex/worktrees/ba19/OpenTTD-patches/build-preparation/parallel-reference/PassengerSequentialReference.cpp")
+  target_include_directories(openttd_test PRIVATE "C:/Users/bebe/.codex/worktrees/ba19/OpenTTD-patches/build-preparation/parallel-reference")
+  target_compile_definitions(openttd_test PRIVATE WITH_PASSENGER_PARALLEL_REFERENCE)
+endfunction()
+cmake_language(DEFER CALL add_passenger_parallel_reference)

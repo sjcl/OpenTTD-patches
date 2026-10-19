@@ -132,6 +132,78 @@ TEST_CASE("Parallel passenger searches preserve every publication boundary and s
 	}
 }
 
+TEST_CASE("Stopped passenger preparation matches scalar publication at every consumed Work prefix", "[passenger][precomputed][parallel][preparation][save]")
+{
+	std::array services{Service(0, {A, B, C}), Service(1, {B, D}), Service(2, {A, B, A, D}, 73)};
+	std::vector<const PassengerPeriodicService *> records; for (const auto &service : services) records.push_back(&service);
+	for (bool hyperpath : {false, true}) for (uint workers : {0U, 1U, 4U, 8U}) {
+		CAPTURE(hyperpath, workers);
+#ifdef WITH_PASSENGER_PARALLEL_REFERENCE
+		PassengerSequentialReference serial;
+#else
+		PassengerPrecomputedTable serial;
+#endif
+		PassengerPrecomputedTable parallel;
+		serial.Begin(records, PAX, 20, PassengerPrecomputedTable::MAX_HYPERPATH_BYTES, true, false, {}, true, true, true, hyperpath);
+		parallel.Begin(records, PAX, 20, PassengerPrecomputedTable::MAX_HYPERPATH_BYTES, true, false, {}, true, true, true, hyperpath);
+		std::vector<StationID> expected, actual;
+		for (size_t slice = 0; !parallel.Finished(); ++slice) {
+			REQUIRE(slice < 100000);
+			const size_t quantum = std::array<size_t, 4>{1, 7, 97, 65536}[slice % 4];
+			const size_t used = parallel.StepPreparation(quantum, workers, [&](StationID d) { actual.push_back(d); });
+			REQUIRE(used <= quantum);
+			REQUIRE(serial.Step(used, false, [&](StationID d) { expected.push_back(d); }) == used);
+			REQUIRE(actual == expected);
+			REQUIRE(PassengerPrecomputedTestAccess::Published(parallel) == PassengerPrecomputedTestAccess::Published(serial));
+		}
+		CHECK(serial.Finished());
+		CHECK(parallel.GetParallelDiagnostic().throttles == 0);
+		if (workers != 0) { CHECK(parallel.GetParallelDiagnostic().cache_hits == 4); CHECK(parallel.GetParallelDiagnostic().serial_rows == 0); }
+	}
+}
+
+TEST_CASE("Stopped passenger preparation yields to delayed workers and survives failure or cancellation", "[passenger][precomputed][parallel][preparation][network][memory]")
+{
+	std::array services{Service(0, {A, B, C}), Service(1, {B, D})};
+	std::vector<const PassengerPeriodicService *> records; for (const auto &service : services) records.push_back(&service);
+	static std::atomic<bool> release{true};
+	struct Release { ~Release() { release.store(true); } } guard;
+	for (bool hyperpath : {false, true}) for (uint scenario : {0U, 1U, 2U, 3U}) {
+		CAPTURE(hyperpath, scenario);
+		release = false;
+		PassengerPrecomputedTable serial, parallel;
+		for (auto *table : {&serial, &parallel}) table->Begin(records, PAX, 20, PassengerPrecomputedTable::MAX_HYPERPATH_BYTES, true, false, {}, true, true, true, hyperpath);
+		if (scenario == 1) PassengerPrecomputedTestAccess::Hook(parallel, +[](size_t, bool done) { if (!done) throw std::bad_alloc{}; });
+		else PassengerPrecomputedTestAccess::Hook(parallel, +[](size_t d, bool done) { if (d == 0 && !done) while (!release.load()) std::this_thread::sleep_for(std::chrono::milliseconds(1)); });
+		if (scenario != 1) {
+			for (uint i = 0; i < 20; ++i) CHECK(parallel.StepPreparation(7, 4) == 0);
+			CHECK(parallel.GetDiagnostic().operations == 0);
+			CHECK(parallel.GetParallelDiagnostic().serial_rows == 0);
+			CHECK(parallel.GetParallelDiagnostic().throttles == 0);
+		}
+		if (scenario == 2) PassengerPrecomputedTestAccess::ExpirePreparationWait(parallel);
+		if (scenario == 3) {
+			/* Disconnect/reset abandons a wait without joining its workers. */
+			parallel.Step(0);
+			release = true;
+			WaitForPassengerWorkers([&]() { return PassengerPrecomputedTestAccess::Idle(parallel); });
+			parallel = PassengerPrecomputedTable{};
+			continue;
+		}
+		if (scenario == 0) release = true;
+		for (uint i = 0; !parallel.Finished(); ++i) {
+			REQUIRE(i < 100000);
+			const size_t used = parallel.StepPreparation(17, 4);
+			REQUIRE(serial.Step(used) == used);
+			REQUIRE(PassengerPrecomputedTestAccess::Published(parallel) == PassengerPrecomputedTestAccess::Published(serial));
+		}
+		release = true;
+		WaitForPassengerWorkers([&]() { return PassengerPrecomputedTestAccess::Idle(parallel); });
+		if (scenario == 1 || scenario == 2) CHECK(parallel.GetParallelDiagnostic().fallbacks == 1);
+		if (scenario == 2) CHECK(parallel.GetParallelDiagnostic().wait_timeouts == 1);
+	}
+}
+
 TEST_CASE("Parallel lookahead can be discarded midway without double charging search Work", "[passenger][precomputed][parallel][save]")
 {
 	std::array services{Service(0, {A, B, C}), Service(1, {B, D})};
@@ -1626,10 +1698,14 @@ TEST_CASE("Passenger parallel complete construction benchmark", "[.passenger-par
 {
 	auto number = [](const char *name, unsigned fallback) { const char *value = getenv(name); return value ? static_cast<unsigned>(std::strtoul(value, nullptr, 10)) : fallback; };
 	const uint workers = number("OPENTTD_PARALLEL_WORKERS", 4);
+	const bool preparation = number("OPENTTD_PREPARATION_MODE", 0) != 0;
+#ifndef WITH_PASSENGER_PARALLEL_REFERENCE
+	REQUIRE(number("OPENTTD_PINNED_REFERENCE", 0) == 0);
+#endif
 	const bool hyperpath = number("OPENTTD_PARALLEL_HYPERPATH", 1) != 0;
 	const auto services = PassengerBenchmarkNetwork(static_cast<uint16_t>(number("OPENTTD_PARALLEL_SIDE", 32)), static_cast<uint16_t>(number("OPENTTD_PARALLEL_LINES", 240)), number("OPENTTD_PARALLEL_UNEVEN", 0) != 0);
 	std::vector<const PassengerPeriodicService *> records; for (const auto &s : services) records.push_back(&s);
-	PassengerPrecomputedTable table;
+	auto measure = [&](auto &table) {
 	const uint64_t cpu_started = PassengerBenchmarkThreadCPU();
 	const auto started = std::chrono::steady_clock::now();
 	table.Begin(records, PAX, 20, PassengerPrecomputedTable::MAX_HYPERPATH_BYTES, true, false, {}, true, true, true, hyperpath);
@@ -1637,7 +1713,9 @@ TEST_CASE("Passenger parallel complete construction benchmark", "[.passenger-par
 	const uint64_t worker_cpu_before = PassengerBenchmarkWorkersCPU(); PassengerPrecomputedTestAccess::Hook(table, PassengerBenchmarkWorkerCPU);
 	uint64_t progress = 0xcbf29ce484222325ULL;
 	while (!table.Finished()) {
-		table.StepParallel(65536, workers);
+		if constexpr (requires { table.StepPreparation(65536, workers); }) {
+			if (preparation) table.StepPreparation(65536, workers); else table.StepParallel(65536, workers);
+		} else table.StepParallel(65536, workers);
 		progress = (progress ^ table.GetDiagnostic().operations) * 0x100000001b3ULL;
 		progress = (progress ^ table.GetDiagnostic().destinations) * 0x100000001b3ULL;
 	}
@@ -1652,8 +1730,8 @@ TEST_CASE("Passenger parallel complete construction benchmark", "[.passenger-par
 	const auto &d = table.GetDiagnostic(); const auto &p = table.GetParallelDiagnostic();
 	std::cout << "passenger_parallel,mode=" << (hyperpath ? "hyperpath" : "legacy") << ",requested=" << workers << ",workers=" << p.workers
 			<< ",progress_digest=" << progress << ",main_cpu_ns=" << cpu_finished - cpu_started << ",row_main_cpu_ns=" << cpu_finished - cpu_graph
-			<< ",cache_hits=" << p.cache_hits << ",cache_work=" << p.cache_work << ",serial_rows=" << p.serial_rows << ",main_search_ns=" << p.main_search_nanoseconds
-			<< ",serial_work=" << p.serial_search_work << ",cancelled_work=" << p.cancelled_search_work << ",thread_starts=" << p.thread_starts << ",workspace_bound=" << p.estimated_workspace_bytes << ",worker_wait_ns=0"
+			<< ",cache_hits=" << p.cache_hits << ",cache_work=" << p.cache_work << ",serial_rows=" << p.serial_rows << ",main_search_ns=" << p.main_search_nanoseconds << ",fallbacks=" << p.fallbacks
+			<< ",serial_work=" << p.serial_search_work << ",cancelled_work=" << p.cancelled_search_work << ",thread_starts=" << p.thread_starts << ",workspace_bound=" << p.estimated_workspace_bytes << ",worker_wait_ns=" << p.wait_nanoseconds << ",preparation=" << preparation
 			<< ",wall_ns=" << std::chrono::duration_cast<std::chrono::nanoseconds>(finished - started).count()
 			<< ",graph_ns=" << std::chrono::duration_cast<std::chrono::nanoseconds>(graph_done - started).count()
 			<< ",row_ns=" << std::chrono::duration_cast<std::chrono::nanoseconds>(finished - graph_done).count()
@@ -1662,6 +1740,65 @@ TEST_CASE("Passenger parallel complete construction benchmark", "[.passenger-par
 			<< ",throttles=" << p.throttles << ",worker_cpu_ns=" << (worker_cpu_finished - worker_cpu_before) << ",workspace_reuses=" << p.workspace_reuses << ",duplicate_work=" << (p.search_work - p.cache_work)
 			<< ",search_work=" << p.search_work << ",stations=" << d.stations << ",states=" << d.states << ",edges=" << d.logical_edges << ",operations=" << d.operations
 			<< ",bytes=" << d.bytes << ",digest=" << PassengerPrecomputedTestAccess::Digest(table) << std::endl;
+	};
+#ifdef WITH_PASSENGER_PARALLEL_REFERENCE
+	if (number("OPENTTD_PINNED_REFERENCE", 0)) { PassengerSequentialReference table; measure(table); return; }
+#endif
+	PassengerPrecomputedTable table; measure(table);
+}
+
+TEST_CASE("Passenger retained save replay benchmark", "[.passenger-replay-benchmark][passenger]")
+{
+	PassengerTestStations fixture;
+	const uint workers = PassengerBenchmarkNumber("OPENTTD_PARALLEL_WORKERS", 4);
+	const bool hyperpath = PassengerBenchmarkNumber("OPENTTD_PARALLEL_HYPERPATH", 1) != 0;
+	const uint16_t side = static_cast<uint16_t>(PassengerBenchmarkNumber("OPENTTD_PARALLEL_SIDE", 16));
+	const auto services = PassengerBenchmarkNetwork(side, static_cast<uint16_t>(PassengerBenchmarkNumber("OPENTTD_PARALLEL_LINES", 100)), false);
+	for (const auto &service : services) for (const auto &stop : service.timetable.stops) if (!Station::IsValidID(stop.station)) {
+		auto *station = Station::CreateAtIndex(stop.station, TileIndex{static_cast<uint32_t>((stop.station.base() / side) * 256 + stop.station.base() % side)});
+		station->owner = OWNER_NONE; station->facilities.Set(StationFacility::Train);
+	}
+	AutoRestoreBackup settings{_settings_game.linkgraph, AutoRestoreBackupNoNewValueTag{}};
+	AutoRestoreBackup worker_setting{_settings_client.gui.passenger_precomputed_workers, uint8_t{0}};
+	_settings_game.linkgraph.passenger_journey_routing = true;
+	_settings_game.linkgraph.passenger_journey_precomputed = true; _settings_game.linkgraph.passenger_journey_hyperpath = hyperpath;
+	_settings_game.linkgraph.passenger_transfer_penalty = 20;
+	auto host = std::make_unique<PassengerServiceDatabase>();
+	PassengerServiceDatabaseTestAccess::Seed(*host, services);
+	while (!host->PrecomputedFinished()) host->TickPrecomputed();
+	PassengerServiceDatabaseTestAccess::BeginReplacement(*host, 17); host->TickPrecomputed(65536);
+	const auto wire = host->Save();
+	const auto current_digest = PassengerPrecomputedTestAccess::Digest(PassengerServiceDatabaseTestAccess::Table(*host, PAX));
+	const auto retained_digest = PassengerPrecomputedTestAccess::Digest(PassengerServiceDatabaseTestAccess::Retained(*host, PAX));
+	host.reset();
+	auto peer = std::make_unique<PassengerServiceDatabase>(); REQUIRE(peer->Load(wire));
+	_settings_client.gui.passenger_precomputed_workers = static_cast<uint8_t>(workers);
+	const uint64_t cpu_started = PassengerBenchmarkThreadCPU(), worker_cpu_before = PassengerBenchmarkWorkersCPU();
+	const auto started = std::chrono::steady_clock::now();
+	peer->FinishLoad(true, true);
+	auto &retained = PassengerServiceDatabaseTestAccess::Retained(*peer, PAX);
+	PassengerPrecomputedTestAccess::Hook(retained, PassengerBenchmarkWorkerCPU);
+	uint64_t maximum_slice = 0;
+	while (peer->GetLoadState() == PassengerServiceDatabase::LoadState::Replaying) {
+		const auto slice = std::chrono::steady_clock::now(); peer->StepLoad();
+		maximum_slice = std::max(maximum_slice, static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - slice).count()));
+	}
+	const uint64_t wall = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - started).count();
+	const uint64_t main_cpu = PassengerBenchmarkThreadCPU() - cpu_started;
+	REQUIRE(peer->GetLoadState() == PassengerServiceDatabase::LoadState::Ready);
+	REQUIRE(peer->Save() == wire);
+	REQUIRE(PassengerPrecomputedTestAccess::Digest(PassengerServiceDatabaseTestAccess::Table(*peer, PAX)) == current_digest);
+	REQUIRE(PassengerPrecomputedTestAccess::Digest(retained) == retained_digest);
+	WaitForPassengerWorkers([&]() { return PassengerPrecomputedTestAccess::Idle(retained); });
+	const auto p = retained.GetParallelDiagnostic();
+	const auto &d = peer->GetPreparationDiagnostic();
+	std::cout << "passenger_replay,mode=" << (hyperpath ? "hyperpath" : "legacy") << ",requested=" << workers << ",workers=" << p.workers
+			<< ",wall_ns=" << wall << ",retained_ns=" << d.phase_nanoseconds[3] << ",graph_ns=" << d.phase_nanoseconds[2] << ",tables_ns=" << d.phase_nanoseconds[4]
+			<< ",main_cpu_ns=" << main_cpu << ",worker_cpu_ns=" << PassengerBenchmarkWorkersCPU() - worker_cpu_before << ",slice_max_ns=" << maximum_slice
+			<< ",cache_hits=" << p.cache_hits << ",serial_rows=" << p.serial_rows << ",fallbacks=" << p.fallbacks << ",worker_wait_ns=" << p.wait_nanoseconds
+			<< ",search_ns=" << p.search_nanoseconds << ",search_work=" << p.search_work << ",cache_work=" << p.cache_work << ",cancelled_work=" << p.cancelled_search_work
+			<< ",workspace_bound=" << p.estimated_workspace_bytes << ",destinations=" << retained.GetDiagnostic().destinations
+			<< ",operations=" << peer->GetLoadWork() << ",digest=" << retained_digest << ",current_digest=" << current_digest << std::endl;
 }
 
 TEST_CASE("Passenger asynchronous replacement TickPrecomputed benchmark", "[.passenger-async-tick-benchmark][passenger]")

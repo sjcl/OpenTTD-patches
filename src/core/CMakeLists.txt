@@ -4,6 +4,7 @@ add_files(
     alloc_func.hpp
     alloc_type.hpp
     backup_type.hpp
+    thread_cpu_timer.hpp
     base_bitset_type.hpp
     bit_cast.hpp
     bitmath_func.hpp

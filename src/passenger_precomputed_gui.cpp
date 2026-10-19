@@ -73,7 +73,10 @@ void DrawPassengerProgress(const Rect &r, const PassengerPrecomputedProgress &pr
 		const int offset = (inner.Width() - width) * (_progress_indicator % 10) / 9;
 		DrawFrameRect(inner.WithWidth(width, false).Translate(offset, 0), Colours::Mauve, {});
 	}
-	if (progress.total_known) {
+	if (progress.phase == PassengerPrecomputedProgress::Phase::Restoring && progress.retained_total_known) {
+		DrawString(r.left, r.right, bar.bottom + 1 + WidgetDimensions::scaled.vsep_normal,
+				GetString(STR_PASSENGER_PRECOMPUTED_DESTINATIONS, progress.restored_destinations, progress.retained_stations), TextColour::FromString, AlignmentH::Centre);
+	} else if (progress.total_known) {
 		DrawString(r.left, r.right, bar.bottom + 1 + WidgetDimensions::scaled.vsep_normal,
 				GetString(STR_PASSENGER_PRECOMPUTED_DESTINATIONS, progress.destinations, progress.stations), TextColour::FromString, AlignmentH::Centre);
 	}
