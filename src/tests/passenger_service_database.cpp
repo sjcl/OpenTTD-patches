@@ -5167,7 +5167,9 @@ TEST_CASE("Hyperpath boarding destination filter preserves every loading decisio
 		CHECK(indexed.diagnostic.hyperpath_memo_hits > 0); CHECK(complete.diagnostic.hyperpath_memo_hits > 0);
 		CHECK(validated.diagnostic.hyperpath_memo_hits == 0);
 		CHECK(validated.diagnostic.hyperpath_memo_validated > 0);
-		for (const auto *result : {&filtered, &complete, &alternate, &indexed, &validated, &asynchronous}) CHECK(result->diagnostic.hyperpath_memo_violations == 0);
+		for (const auto *result : {&filtered, &complete, &alternate, &indexed, &validated, &asynchronous}) {
+			CHECK(result->diagnostic.hyperpath_memo_violations == 0); CHECK(result->diagnostic.hyperpath_lookup_duplicates == 0);
+		}
 	}
 }
 
@@ -5214,6 +5216,42 @@ TEST_CASE("Hyperpath pre-filter answers are reused only for the same consist and
 	const auto d = GetPassengerWaitingEventDiagnostic();
 	CHECK(d.hyperpath_memo_hits == 0); CHECK(d.hyperpath_memo_validated > 0); CHECK(d.hyperpath_memo_violations == 0);
 	db.SetHyperpathBoardingFilterMode(Mode::Index);
+}
+
+TEST_CASE("Validate mode tells an evicted failed-carrier policy from a wrong kept pre-filter answer", "[passenger][hyperpath][boarding][determinism]")
+{
+	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = _settings_game.linkgraph.passenger_journey_hyperpath = true;
+	const StationID B1{1};
+	auto *first = f.Train({Stop(A, 120), Stop(B1)});
+	f.Train({Stop(A, 150), Stop(B1)}); // The alternative the failed-carrier policy keeps.
+	auto &db = f.Build(); while (!db.PreparePrecomputed()) {}
+	StationCargoList waiting; waiting.passenger_index_cargo = PAX;
+	auto *packet = CargoPacket::Create(5, 0, A, TileIndex{0}, Money{0}); REQUIRE(packet->SetPassengerDestination(PAX, B1));
+	PassengerJourneyActiveContext context(nullptr, A); REQUIRE(context.PlanWaiting(*packet, PAX, B1));
+	REQUIRE(packet->GetPassengerJourney().kind == PassengerRideKind::HyperpathIntent);
+	for (uint8_t count = 1; count <= PassengerBoardingFailure::THRESHOLD; ++count) {
+		_state_ticks = NOW + count; packet->RecordPassengerCapacityFailure(first->orders->index, _state_ticks, 32);
+	}
+	REQUIRE(packet->GetPassengerFailedService(_state_ticks) == first->orders->index);
+	waiting.Append(packet, B1);
+	db.SetHyperpathBoardingFilterMode(PassengerServiceDatabase::HyperpathFilterMode::Validate); ResetPassengerWaitingEventDiagnostic();
+	const auto &table = PassengerServiceDatabaseTestAccess::Table(db, PAX);
+	const std::vector<StationID> next{B1};
+	PassengerJourneyLoadingContext loading;
+	/* Cold: admitted as unknown and not kept; the FIFO front builds the policy, which excludes
+	 * this consist. The next walk keeps that exact refusal; after an eviction the recomputation
+	 * admits as unknown again, which is conservative, not a violation. */
+	CHECK_FALSE(waiting.HasCargoFor(next, first, &loading, PAX));
+	CHECK(PassengerPrecomputedTestAccess::LocalPolicies(table) > 0);
+	CHECK_FALSE(waiting.HasCargoFor(next, first, &loading, PAX));
+	PassengerPrecomputedTestAccess::EvictLocalPolicies(table);
+	CHECK_FALSE(waiting.HasCargoFor(next, first, &loading, PAX));
+	const auto d = GetPassengerWaitingEventDiagnostic();
+	CHECK(d.hyperpath_memo_validated > 0);
+	CHECK(d.hyperpath_memo_conservative > 0);
+	CHECK(d.hyperpath_memo_violations == 0);
+	CHECK(d.hyperpath_lookup_duplicates == 0);
+	db.SetHyperpathBoardingFilterMode(PassengerServiceDatabase::HyperpathFilterMode::Index);
 }
 
 TEST_CASE("Hyperpath boarding filter skips destinations served only by other lines", "[.hyperpath-cpu][passenger]")

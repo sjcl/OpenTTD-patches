@@ -1875,7 +1875,7 @@ bool StationCargoList::VisitBoardingCandidates(std::span<const StationID> next, 
 		if (group.empty()) return;
 		if (!unique || validate_mode) {
 			if (!selected_groups.insert(&group).second) {
-				if (unique) ++_passenger_event_diagnostic.hyperpath_memo_violations;
+				if (unique) ++_passenger_event_diagnostic.hyperpath_lookup_duplicates;
 				return;
 			}
 		}
@@ -1946,7 +1946,8 @@ bool StationCargoList::VisitBoardingCandidates(std::span<const StationID> next, 
 			} else {
 				/* Every input of the pre-filter is fixed by the group key (intent, arriving and
 				 * failed carriers), the consist and the context's memo generation, so each coach
-				 * of a consist reuses the first coach's answer for the same base/adjusted state. */
+				 * of a consist reuses the first coach's answer for the same base/adjusted state.
+				 * Only certain answers are kept: a cold failed-carrier policy admits as unknown. */
 				const uint8_t bit = uint8_t{1} << ((base ? 1 : 0) | (adjusted ? 2 : 0));
 				const uint64_t serial = loading.HyperpathMemoSerial();
 				const auto *front = vehicle->First();
@@ -1958,14 +1959,21 @@ bool StationCargoList::VisitBoardingCandidates(std::span<const StationID> next, 
 					admitted = (policy.memo_value & bit) != 0;
 					++_passenger_event_diagnostic.hyperpath_memo_hits;
 				} else {
-					admitted = loading.MayUseHyperpathPolicy(*packet, vehicle, this->passenger_index_cargo, occurrences, base, adjusted);
+					bool certain = true;
+					admitted = loading.MayUseHyperpathPolicy(*packet, vehicle, this->passenger_index_cargo, occurrences, base, adjusted, &certain);
 					if ((policy.memo_known & bit) != 0) {
+						const bool kept = (policy.memo_value & bit) != 0;
 						++_passenger_event_diagnostic.hyperpath_memo_validated;
-						if (admitted != ((policy.memo_value & bit) != 0)) ++_passenger_event_diagnostic.hyperpath_memo_violations;
+						if (admitted != kept) {
+							/* The local policy evicted since the kept answer: compare with the exact answer. */
+							if (certain || loading.MayUseHyperpathPolicy(*packet, vehicle, this->passenger_index_cargo, occurrences, base, adjusted, nullptr, true) != kept) {
+								++_passenger_event_diagnostic.hyperpath_memo_violations;
+							} else {
+								++_passenger_event_diagnostic.hyperpath_memo_conservative;
+							}
+						}
 					}
-					/* A failed-carrier answer of true can stand for a cold local policy (conservatively
-					 * admitted, decided at the FIFO front). Only exact answers are kept. */
-					if (!adjusted || !admitted) {
+					if (certain) {
 						policy.memo_known |= bit;
 						if (admitted) policy.memo_value |= bit; else policy.memo_value &= static_cast<uint8_t>(~bit);
 					}
@@ -2010,12 +2018,14 @@ bool StationCargoList::VisitBoardingCandidates(std::span<const StationID> next, 
 			/* Every group the complete walk admitted must be an Index candidate. */
 			this->RefreshHyperpathLookup(station);
 			const auto &lookup = this->hyperpath_lookup;
+			/* The Index walk visits these lists without an identity set: each group at most once. */
 			std::set<const HyperpathWaiting *> candidates;
+			auto candidate = [&](const HyperpathGroupRef &ref) { if (!candidates.insert(&ref.group->second).second) ++_passenger_event_diagnostic.hyperpath_lookup_duplicates; };
 			for (size_t slot = 0; slot < 2; ++slot) {
 				auto refs = lookup.occurrences[slot].find(boarding[slot]);
-				if (refs != lookup.occurrences[slot].end()) for (const auto &ref : refs->second) candidates.insert(&ref.group->second);
+				if (refs != lookup.occurrences[slot].end()) for (const auto &ref : refs->second) candidate(ref);
 			}
-			for (const auto &ref : lookup.always) candidates.insert(&ref.group->second);
+			for (const auto &ref : lookup.always) candidate(ref);
 			for (const auto *group : admitted_groups) {
 				++_passenger_event_diagnostic.hyperpath_index_validated;
 				if (!candidates.contains(group)) ++_passenger_event_diagnostic.hyperpath_index_violations;

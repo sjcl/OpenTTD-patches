@@ -38,9 +38,12 @@ struct PassengerWaitingEventDiagnostic {
 	std::array<uint64_t, 3> hyperpath_walks{}, hyperpath_walk_groups{}, hyperpath_walk_nanoseconds{};
 	uint64_t hyperpath_lookup_rebuilds = 0, hyperpath_lookup_indexed_groups = 0; ///< Lookup maintenance.
 	uint64_t hyperpath_index_validated = 0, hyperpath_index_violations = 0; ///< Validate mode: admitted groups missing from the lookup.
-	/* Group pre-filter memo: answers reused for another coach/pass of the same consist, and in
-	 * validate mode the recomputed answers that disagreed with a memo (or a group seen twice). */
-	uint64_t hyperpath_memo_hits = 0, hyperpath_memo_validated = 0, hyperpath_memo_violations = 0;
+	/* Group pre-filter memo: answers reused for another coach/pass of the same consist. Validate
+	 * mode recomputes each kept answer: a disagreement is conservative when only an evicted
+	 * failed-carrier policy made the recomputation unknown and the exact answer equals the kept
+	 * one, otherwise a violation. Duplicates: a Hyperpath group reachable twice in one lookup walk. */
+	uint64_t hyperpath_memo_hits = 0, hyperpath_memo_validated = 0, hyperpath_memo_conservative = 0, hyperpath_memo_violations = 0;
+	uint64_t hyperpath_lookup_duplicates = 0;
 	std::array<uint64_t, static_cast<size_t>(PassengerWaitingCause::End)> cause_nanoseconds{}, cause_packets{};
 };
 void RecordPassengerWaitingCause(PassengerWaitingCause cause, uint64_t nanoseconds, bool unchanged = false);
@@ -251,7 +254,10 @@ public:
 	int8_t hyperpath_filter_choice = -1; ///< Alternate boarding-filter diagnostic: fixed at this context's first Hyperpath walk.
 	bool CanBoard(const CargoPacket &packet, const Vehicle *vehicle, CargoType cargo = INVALID_CARGO);
 	const std::array<uint32_t, 2> &HyperpathBoardingOccurrences(const Vehicle *vehicle, CargoType cargo);
-	bool MayUseHyperpathPolicy(const CargoPacket &representative, const Vehicle *vehicle, CargoType cargo, const std::array<uint32_t, 2> &occurrences, bool base, bool adjusted);
+	/** Conservative group pre-filter. @p certain (optional) is cleared when a cold failed-carrier
+	 * policy was admitted as unknown; @p exact builds that policy instead (validation only). */
+	bool MayUseHyperpathPolicy(const CargoPacket &representative, const Vehicle *vehicle, CargoType cargo, const std::array<uint32_t, 2> &occurrences, bool base, bool adjusted,
+			bool *certain = nullptr, bool exact = false);
 	int64_t ExpectedHyperpathWait(const CargoPacket &packet, const Vehicle *vehicle, CargoType cargo);
 	bool CanUseHyperpathPolicy(const CargoPacket &representative, const Vehicle *vehicle, CargoType cargo, bool base, bool adjusted);
 	void ResolveWaiting(CargoPacket &packet, const Vehicle *vehicle); ///< Selected indexed candidate only, detached before changing its cohort.

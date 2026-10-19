@@ -178,6 +178,9 @@ public:
 	std::optional<int64_t> HyperpathServiceWait(const PassengerJourneyExecution &intent, CargoType cargo, OrderListID service) const;
 	std::array<uint32_t, 2> HyperpathBoardingOccurrences(CargoType cargo, StationID origin, OrderListID service, VehicleOrderID order) const;
 	bool MayBoardHyperpath(const PassengerJourneyExecution &intent, CargoType cargo, const std::array<uint32_t, 2> &occurrences, OrderListID previous, OrderListID failed, bool cached_only = true) const;
+	/** Cached-only membership as MayBoardHyperpath, but std::nullopt where a cold (or evicted) failed-carrier
+	 * local policy leaves it unknown; MayBoardHyperpath admits such an unknown conservatively. */
+	std::optional<bool> CachedHyperpathMembership(const PassengerJourneyExecution &intent, CargoType cargo, const std::array<uint32_t, 2> &occurrences, OrderListID previous, OrderListID failed) const;
 	/** Derived boarding filter: both generations' stored policies are covered by their masks, so a
 	 * destination without a set bit cannot pass base membership. Independent of the local mode. */
 	bool HyperpathBoardingFilterAvailable(CargoType cargo) const

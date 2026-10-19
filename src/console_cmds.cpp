@@ -5027,8 +5027,9 @@ static bool ConPassengerJourneyStats(std::span<std::string_view> argv)
 				events.hyperpath_walk_nanoseconds[2] / 1000, events.hyperpath_walk_groups[2]);
 		IConsolePrint(CC_DEFAULT, "Passenger hyperpath lookup: rebuilds={}; indexed_groups={}; validated_groups={}; violations={}",
 				events.hyperpath_lookup_rebuilds, events.hyperpath_lookup_indexed_groups, events.hyperpath_index_validated, events.hyperpath_index_violations);
-		IConsolePrint(CC_DEFAULT, "Passenger hyperpath memo: hits={}; validated={}; violations={}",
-				events.hyperpath_memo_hits, events.hyperpath_memo_validated, events.hyperpath_memo_violations);
+		IConsolePrint(CC_DEFAULT, "Passenger hyperpath memo: hits={}; validated={}; conservative={}; violations={}; lookup_duplicates={}",
+				events.hyperpath_memo_hits, events.hyperpath_memo_validated, events.hyperpath_memo_conservative, events.hyperpath_memo_violations,
+				events.hyperpath_lookup_duplicates);
 	}
 	for (CargoType cargo : EnumRange(NUM_CARGO)) if (IsCargoInClass(cargo, CargoClass::Passengers)) {
 		const auto p = GetPassengerServiceDatabase().GetPrecomputedDiagnostic(cargo);

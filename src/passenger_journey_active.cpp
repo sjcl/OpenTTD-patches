@@ -1441,8 +1441,9 @@ const std::array<uint32_t, 2> &PassengerJourneyLoadingContext::HyperpathBoarding
 }
 
 bool PassengerJourneyLoadingContext::MayUseHyperpathPolicy(const CargoPacket &representative, const Vehicle *vehicle, CargoType cargo,
-		const std::array<uint32_t, 2> &occurrences, bool base, bool adjusted)
+		const std::array<uint32_t, 2> &occurrences, bool base, bool adjusted, bool *certain, bool exact)
 {
+	if (certain != nullptr) *certain = true;
 	if (vehicle == nullptr || vehicle->First()->orders == nullptr || !IsPassengerJourneyRoutingEnabled(cargo) ||
 			vehicle->First()->current_order.GetCargoLoadType(cargo) == OrderLoadType::NoLoad) return false;
 	const auto &intent = representative.GetPassengerJourney();
@@ -1464,11 +1465,19 @@ bool PassengerJourneyLoadingContext::MayUseHyperpathPolicy(const CargoPacket &re
 	auto cached = direct ? this->hyperpath_memberships.end() : this->hyperpath_memberships.find(key(intent));
 	const bool current = cached != this->hyperpath_memberships.end() || db.IsCurrent(intent);
 	if (current && intent.boarding != vehicle->First()->last_station_visited) return false;
+	/* A failed carrier's local policy may be cold or evicted: unknown, admitted conservatively and
+	 * reported as uncertain. Base membership is always known. Exact mode builds the local policy. */
+	auto failed_member = [&](const PassengerJourneyExecution &policy) {
+		if (exact) return db.MayBoardHyperpath(policy, cargo, current_occurrences, previous, failure.service, false);
+		const auto known = db.CachedHyperpathMembership(policy, cargo, current_occurrences, previous, failure.service);
+		if (!known.has_value() && certain != nullptr) *certain = false;
+		return known.value_or(true);
+	};
 	auto inspect = [&](const PassengerJourneyExecution &policy, auto entry) {
 		if (policy.boarding != vehicle->First()->last_station_visited) return false;
 		if (direct) {
 			return (base && db.MayBoardHyperpath(policy, cargo, current_occurrences, previous, OrderListID::Invalid())) ||
-					(adjusted && db.MayBoardHyperpath(policy, cargo, current_occurrences, previous, failure.service));
+					(adjusted && failed_member(policy));
 		}
 		if (entry == this->hyperpath_memberships.end()) {
 			auto [found, inserted] = this->hyperpath_memberships.try_emplace(key(policy)); entry = found;
@@ -1477,7 +1486,7 @@ bool PassengerJourneyLoadingContext::MayUseHyperpathPolicy(const CargoPacket &re
 		/* Base membership is exact and immutable for this frozen revision. Keep
 		 * failed policies on the table's cache so a cold unknown is never latched.
 		 * Membership entries contain neither a concrete ride nor live legality. */
-		return (base && entry->second) || (adjusted && db.MayBoardHyperpath(policy, cargo, current_occurrences, previous, failure.service));
+		return (base && entry->second) || (adjusted && failed_member(policy));
 	};
 	if (current) return inspect(intent, cached);
 	auto plan = db.PlanPrecomputed(cargo, intent.boarding, intent.alighting, _state_ticks, previous);

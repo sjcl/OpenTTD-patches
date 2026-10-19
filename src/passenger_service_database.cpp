@@ -1120,15 +1120,25 @@ std::array<uint32_t, 2> PassengerServiceDatabase::HyperpathBoardingOccurrences(C
 bool PassengerServiceDatabase::MayBoardHyperpath(const PassengerJourneyExecution &intent, CargoType cargo,
 		const std::array<uint32_t, 2> &occurrences, OrderListID previous, OrderListID failed, bool cached_only) const
 {
+	if (cached_only) return this->CachedHyperpathMembership(intent, cargo, occurrences, previous, failed).value_or(true);
 	if (cargo >= NUM_CARGO || intent.kind != PassengerRideKind::HyperpathIntent || intent.signature != uint64_t(cargo) + 1) return false;
 	for (size_t index = 0; index < 2; ++index) {
 		if (intent.generation != (index != 0 ? this->retained_precomputed_policy_generation : this->precomputed_policy_generation)) continue;
 		const auto &table = (index != 0 ? this->retained_precomputed : this->precomputed)[cargo];
-		if (!cached_only) {
-			const auto candidates = table.Candidates(intent.boarding, intent.alighting, previous, failed);
-			return std::binary_search(candidates.begin(), candidates.end(), occurrences[index]);
-		}
-		return table.ContainsCached(intent.boarding, intent.alighting, occurrences[index], previous, failed).value_or(true);
+		const auto candidates = table.Candidates(intent.boarding, intent.alighting, previous, failed);
+		return std::binary_search(candidates.begin(), candidates.end(), occurrences[index]);
+	}
+	return false;
+}
+
+std::optional<bool> PassengerServiceDatabase::CachedHyperpathMembership(const PassengerJourneyExecution &intent, CargoType cargo,
+		const std::array<uint32_t, 2> &occurrences, OrderListID previous, OrderListID failed) const
+{
+	if (cargo >= NUM_CARGO || intent.kind != PassengerRideKind::HyperpathIntent || intent.signature != uint64_t(cargo) + 1) return false;
+	for (size_t index = 0; index < 2; ++index) {
+		if (intent.generation != (index != 0 ? this->retained_precomputed_policy_generation : this->precomputed_policy_generation)) continue;
+		const auto &table = (index != 0 ? this->retained_precomputed : this->precomputed)[cargo];
+		return table.ContainsCached(intent.boarding, intent.alighting, occurrences[index], previous, failed);
 	}
 	return false;
 }
