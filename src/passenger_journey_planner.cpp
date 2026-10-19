@@ -87,12 +87,17 @@ namespace {
 		return pa->boardings == pb->boardings;
 	}
 
-	static bool Dominates(const JourneyLabel &a, const JourneyLabel &b, bool aircraft_costs)
+	static bool Dominates(const JourneyLabel &a, const JourneyLabel &b, const PassengerJourneyEvaluation &evaluation)
 	{
-		/* Different clock times can carry different flight discounts. Keeping
-		 * both avoids assuming that the earlier label can wait for free. */
-		if (aircraft_costs && a.arrival != b.arrival) return false;
-		return a.arrival <= b.arrival && a.waiting <= b.waiting && a.score <= b.score && a.penalty <= b.penalty && a.transfers <= b.transfers &&
+		/* At the same onward departure the elapsed-time part is identical. The
+		 * earlier prefix must also have no greater aircraft adjustment. This keeps
+		 * cheaper later discounted rides, while retaining the original dominance
+		 * for rail paths and for earlier rides with equal or smaller surcharges.
+		 * Weighted waiting must include the earlier label's extra wait until that
+		 * departure; comparing waiting minus arrival avoids a potentially large sum. */
+		return a.arrival <= b.arrival && a.aircraft_adjustment <= b.aircraft_adjustment &&
+				(evaluation.waiting_weight == 0 || a.waiting - a.arrival.base() <= b.waiting - b.arrival.base()) &&
+				a.waiting <= b.waiting && a.score <= b.score && a.penalty <= b.penalty && a.transfers <= b.transfers &&
 				a.prediction_status <= b.prediction_status && a.capacity_uncertain <= b.capacity_uncertain &&
 				(a.minimum_free.has_value() == b.minimum_free.has_value()) && (!a.minimum_free || *a.minimum_free >= *b.minimum_free);
 	}
@@ -474,7 +479,7 @@ PassengerJourneyResult PassengerJourneyPlanner::Search(StationID origin, Station
 								std::optional<size_t> completed_to_replace;
 								for (size_t id : bucket) {
 									if (!spend(1 + label.boardings)) { stopped = true; break; }
-									if (SamePath(labels[id], label, labels) && Dominates(labels[id], label, this->graph.UsesAircraftCosts())) { dominated = true; break; }
+									if (SamePath(labels[id], label, labels) && Dominates(labels[id], label, evaluation)) { dominated = true; break; }
 								}
 								if (stopped) break;
 								if (!dominated && stop.station == destination && bucket.size() >= limits.candidates) {
@@ -492,7 +497,7 @@ PassengerJourneyResult PassengerJourneyPlanner::Search(StationID origin, Station
 										limits.labels = std::min(limits.labels, (limits.memory_bytes - auxiliary_bytes) / LABEL_BYTES);
 										if (labels.size() == limits.labels) { limit(PassengerJourneyStopReason::MemoryLimit); stopped = true; break; }
 									}
-									std::erase_if(bucket, [&](size_t id) { return id == completed_to_replace || (SamePath(label, labels[id], labels) && Dominates(label, labels[id], this->graph.UsesAircraftCosts())); });
+									std::erase_if(bucket, [&](size_t id) { return id == completed_to_replace || (SamePath(label, labels[id], labels) && Dominates(label, labels[id], evaluation)); });
 									if (bucket.size() >= limits.labels_per_station) {
 									limit(PassengerJourneyStopReason::LabelLimit);
 										auto worst = std::max_element(bucket.begin(), bucket.end(), [&](size_t a, size_t b) { return LabelOrder(labels[a]) < LabelOrder(labels[b]); });

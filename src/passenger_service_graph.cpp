@@ -472,7 +472,9 @@ PassengerServiceGraph PassengerServiceGraph::Build(CargoType cargo, StateTicks n
 		graph.service_index.emplace(service.id, graph.services.size());
 		graph.services.push_back(std::move(service));
 		Service &stored = graph.services.back();
+		bool can_board = scope && scope->onboard_service == stored.id, can_alight = false;
 		for (const Stop &stop : stored.stops) {
+			can_board |= stop.can_board; can_alight |= stop.can_alight;
 			if (!stop.can_board && !stop.can_alight) continue;
 			auto &ids = graph.station_services[stop.station];
 			if (ids.empty() || ids.back() != stored.id) ids.push_back(stored.id);
@@ -495,6 +497,12 @@ PassengerServiceGraph PassengerServiceGraph::Build(CargoType cargo, StateTicks n
 					v->vehicle_flags.Test(VehicleFlag::ScheduledDispatch), capacity, operation, {} };
 			trip.occupants = occupants; trip.current_free = capacity - std::min(capacity, occupants);
 			trip.type = v->type;
+			/* Scope selection includes the onboard service even on a dead-end excursion.
+			 * Only the actual OD corridor can justify discount-driven horizon extension.
+			 * Do not require a predicted flight here: its first departure can be beyond end.
+			 * An unscoped graph may also serve an onboard query at a NoLoad stop. */
+			if (graph.aircraft_cost.scale < 100 && trip.type == VehicleType::Aircraft && operation == Operation::Running && capacity != 0 &&
+					can_alight && (!scope || (can_board && (stored.id != scope->onboard_service || selection.onboard_on_corridor)))) graph.has_aircraft_discount = true;
 			trip.prediction.start = trip.prediction.complete_until = now;
 			trip.prediction.stopped_at = now;
 			if (operation == Operation::Running && capacity == 0 && v->current_order.IsRefit()) {

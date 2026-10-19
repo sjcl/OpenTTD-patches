@@ -152,6 +152,118 @@ struct AircraftCostFixture : MultimodalFixture {
 	}
 };
 
+struct PassengerJourneyActiveTestAccess {
+	static void Queries(PassengerJourneyActiveContext &context, size_t remaining) { context.queries_left = remaining; }
+	static void Work(PassengerJourneyActiveContext &context, size_t remaining) { context.work_left = remaining; }
+	static void Memory(PassengerJourneyActiveContext &context, size_t remaining) { context.memory_left = remaining; }
+};
+
+TEST_CASE("Aircraft discounts do not widen Timed rail corridors without a usable flight", "[passenger][aircraft_cost][active][pruning]")
+{
+	AircraftCostFixture f; _settings_game.linkgraph.passenger_journey_periodic = false;
+	_settings_game.linkgraph.aircraft_link_scale = 50;
+	auto *rail = f.Service(VehicleType::Train, {MultiStop(A, 10000, 0), MultiStop(E, 100, 0)});
+	OrderListID forced_onboard = OrderListID::Invalid();
+	SECTION("No aircraft") {}
+	SECTION("Disconnected aircraft") { f.Service(VehicleType::Aircraft, {MultiStop(B), MultiStop(C, 10)}); }
+	SECTION("Dead-end aircraft excursion") { f.Service(VehicleType::Aircraft, {MultiStop(A), MultiStop(B, 10)}); }
+	SECTION("Onboard dead-end aircraft is captured but is outside the corridor") {
+		forced_onboard = f.Service(VehicleType::Aircraft, {MultiStop(A), MultiStop(B, 10)})->orders->index;
+	}
+	SECTION("Stopped aircraft on the same corridor") {
+		auto *air = f.Service(VehicleType::Aircraft, {MultiStop(A), MultiStop(E, 10)}); air->vehstatus.Set(VehState::Stopped);
+	}
+	SECTION("Aircraft cannot board this cargo") {
+		auto *air = f.Service(VehicleType::Aircraft, {MultiStop(A), MultiStop(E, 10)});
+		for (VehicleOrderID i = 0; i < air->GetNumOrders(); ++i) air->GetOrder(i)->SetLoadType(OrderLoadType::NoLoad);
+	}
+	PassengerServiceScope scope{A, E}; auto limits = ActivePassengerServiceGraphLimits(); limits.horizon = 4096;
+	scope.onboard_service = forced_onboard;
+	const auto graph = PassengerServiceGraph::Build(PAX, NOW, limits, scope);
+	if (forced_onboard != OrderListID::Invalid()) CHECK(graph.GetService(forced_onboard) != nullptr);
+	CHECK_FALSE(graph.HasAircraftDiscount());
+	ResetPassengerJourneyDiagnostic(); PassengerJourneyActiveContext context(nullptr, A);
+	for (int i = 0; i < 3; ++i) {
+		auto *packet = f.Packet(); REQUIRE(context.PlanWaiting(*packet, PAX, E));
+		CHECK(packet->GetPassengerJourney().vehicle == rail->index); CHECK(packet->GetPassengerJourney().arrival == NOW + 100);
+	}
+	CHECK(GetPassengerJourneyTickDiagnostic().builds == 1); CHECK(GetPassengerJourneyTickDiagnostic().queries == 1);
+	CHECK(GetPassengerJourneyTickDiagnostic().query_cache_hits == 2);
+}
+
+TEST_CASE("A discounted flight outside the first Timed horizon still competes", "[passenger][aircraft_cost][active][pruning]")
+{
+	AircraftCostFixture f; _settings_game.linkgraph.passenger_journey_periodic = false;
+	_settings_game.linkgraph.aircraft_link_scale = 10;
+	f.Service(VehicleType::Train, {MultiStop(A, 10000, 0), MultiStop(E, 3000, 0)});
+	auto *air = f.Service(VehicleType::Aircraft, {MultiStop(A, 10000, 0), MultiStop(E, 8000, 0)});
+	auto *packet = f.Packet(); PassengerJourneyActiveContext context(nullptr, A);
+	REQUIRE(context.PlanWaiting(*packet, PAX, E)); CHECK(packet->GetPassengerJourney().vehicle == air->index);
+	CHECK(packet->GetPassengerJourney().arrival == NOW + 8000);
+}
+
+TEST_CASE("Optional aircraft horizon extensions preserve validated waiting and onboard plans at budget limits", "[passenger][aircraft_cost][active][pruning]")
+{
+	AircraftCostFixture f; _settings_game.linkgraph.passenger_journey_periodic = false;
+	auto *rail = f.Service(VehicleType::Train, {MultiStop(A, 10000, 0), MultiStop(E, 3000, 0)});
+	f.Service(VehicleType::Aircraft, {MultiStop(A, 10000, 0), MultiStop(E, 8000, 0)});
+	const bool onboard = GENERATE(false, true); const int limit = GENERATE(0, 1, 2);
+	CAPTURE(onboard, limit);
+	auto *seed = f.Packet(); PassengerJourneyActiveContext initial(nullptr, A);
+	REQUIRE(initial.PlanWaiting(*seed, PAX, E)); const auto original = seed->GetPassengerJourney();
+	_settings_game.linkgraph.aircraft_link_scale = 10;
+	auto limits = ActivePassengerServiceGraphLimits(); limits.horizon = 4096;
+	PassengerServiceScope scope{A, E}; if (onboard) scope.onboard_service = rail->orders->index;
+	const auto graph = PassengerServiceGraph::Build(PAX, NOW, limits, scope, nullptr, PassengerTimingPolicy::AssumeTimetable);
+	ResetPassengerJourneyDiagnostic(); PassengerJourneyActiveContext context(onboard ? rail : nullptr, A);
+	if (limit == 0) PassengerJourneyActiveTestAccess::Queries(context, 1);
+	/* Leave room to validate the first leg's service signature after query admission. */
+	if (limit == 1) PassengerJourneyActiveTestAccess::Work(context, graph.GetWork() + 65536 + 1024);
+	if (limit == 2) PassengerJourneyActiveTestAccess::Memory(context, graph.GetMemoryBound());
+	for (int i = 0; i < 3; ++i) {
+		auto *packet = f.Packet();
+		if (onboard) {
+			packet->SetPassengerJourney(original, E);
+			CHECK(context.Decide(*packet, PAX, false, OrderUnloadType::UnloadIfPossible) == Action::Keep);
+		} else REQUIRE(context.PlanWaiting(*packet, PAX, E));
+		CHECK(packet->GetPassengerRoutingMode() == PassengerRoutingMode::Journey);
+		CHECK(packet->GetPassengerJourney().vehicle == rail->index); CHECK(packet->GetPassengerJourney().arrival == NOW + 3000);
+	}
+	CHECK(GetPassengerJourneyTickDiagnostic().builds == 1); CHECK(GetPassengerJourneyTickDiagnostic().queries == 1);
+	CHECK(GetPassengerJourneyTickDiagnostic().timed_budget_deferred == 0);
+}
+
+TEST_CASE("Timed dominance prunes surcharged prefixes and keeps cheaper later flight prefixes", "[passenger][aircraft_cost][journey][pruning]")
+{
+	AircraftCostFixture f; const uint16_t scale = GENERATE(uint16_t{50}, uint16_t{100}, uint16_t{300});
+	const bool weighted_wait = GENERATE(false, true); CAPTURE(scale, weighted_wait);
+	_settings_game.linkgraph.aircraft_link_scale = scale;
+	f.Service(VehicleType::Aircraft, {MultiStop(A, 10000, 0), MultiStop(B, 10, 0), MultiStop(A, 100, 0), MultiStop(B, 100, 0)});
+	f.Service(VehicleType::Train, {MultiStop(B, 10000, 300), MultiStop(E, 10, 0)});
+	/* Hold seat certainty equal so this specifically exercises cost/time dominance. */
+	struct Seats : PassengerJourneyCapacityProvider {
+		uint64_t Revision() const override { return 0; }
+		PassengerJourneyCapacity Estimate(const PassengerServiceGraph &, PassengerServiceGraph::VisitID, PassengerServiceGraph::VisitID) const override
+		{
+			PassengerJourneyCapacity capacity; capacity.certainty = PassengerCapacityCertainty::Confirmed;
+			capacity.future_total = capacity.future_free = 100; return capacity;
+		}
+	} seats;
+	auto graph = f.Graph(1000); PassengerJourneyPlanner planner(graph, &seats); PassengerJourneyLimits limits; limits.candidates = 1;
+	PassengerJourneyEvaluation evaluation; if (weighted_wait) evaluation.waiting_weight = 1000;
+	auto result = planner.Plan(PAX, A, E, NOW, limits, evaluation); REQUIRE(result.HasJourney());
+	const auto &journey = result.journeys.front(); REQUIRE(journey.legs.size() == 2);
+	CHECK(journey.arrival == NOW + 310);
+	if (scale == 50 || (weighted_wait && scale == 100)) {
+		CHECK(journey.generalized_time.base() == 100 + 210 * scale / 100 + (weighted_wait ? 90 : 0));
+		CHECK(journey.legs.front().arrival == NOW + 210);
+	} else {
+		CHECK(journey.generalized_time.base() == 300 + 10 * scale / 100 + (weighted_wait ? 290 : 0));
+		CHECK(journey.legs.front().arrival == NOW + 10);
+	}
+	if (!weighted_wait) CHECK(result.diagnostic.labels == (scale == 50 ? 5 : 3));
+}
+
 TEST_CASE("Aircraft preferences choose the same corridor in every passenger planner", "[passenger][aircraft_cost][multimodal]")
 {
 	AircraftCostFixture f;

@@ -188,8 +188,8 @@ public:
 	static PassengerServiceGraph Build(CargoType cargo, StateTicks now, PassengerServiceGraphLimits limits = {},
 			std::optional<PassengerServiceScope> scope = {}, PassengerServiceCapture *capture = nullptr,
 			PassengerTimingPolicy timing = PassengerTimingPolicy::Conservative);
-	bool HasAircraftDiscount() const { return this->aircraft_cost.scale < 100; }
-	bool UsesAircraftCosts() const { return !this->aircraft_cost.IsDefault(); }
+	/** Running, passenger-capable aircraft in the captured corridor, including departures beyond this horizon. */
+	bool HasAircraftDiscount() const { return this->has_aircraft_discount; }
 	int64_t AircraftAdjustment(VisitID from, VisitID to) const
 	{
 		const auto &prefix = this->trips[from.trip].aircraft_adjustments;
@@ -251,6 +251,7 @@ public:
 private:
 	friend struct PassengerServiceGraphTestAccess;
 	PassengerAircraftCost aircraft_cost;
+	bool has_aircraft_discount = false;
 	CargoType cargo = INVALID_CARGO;
 	StateTicks start{};
 	StateTicks end{};

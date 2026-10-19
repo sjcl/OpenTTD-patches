@@ -19,6 +19,7 @@ struct PassengerServiceScope {
 
 struct PassengerServiceSelection {
 	std::set<OrderListID> services;
+	bool onboard_on_corridor = false; ///< The onboard service was selected by the OD corridor, rather than added only for capture.
 	PassengerPredictionStatus status = PassengerPredictionStatus::Complete;
 	size_t memory_bound = 0;
 	size_t resident_bound = 0; ///< Cold decomposition scratch is gone before dynamic capture begins.

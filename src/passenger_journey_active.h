@@ -277,6 +277,7 @@ public:
 
 /** Shares snapshots/query caches across all coaches and packets at an arrival. */
 class PassengerJourneyActiveContext {
+	friend struct PassengerJourneyActiveTestAccess;
 	struct Snapshot;
 	PassengerServiceCapture capture;
 	const Vehicle *vehicle;
