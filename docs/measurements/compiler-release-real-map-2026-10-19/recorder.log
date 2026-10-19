@@ -1,0 +1,24 @@
+﻿2026-10-19T01:58:42.0684000+09:00 wpr -start C:\Users\bebe\.codex\worktrees\6d2b\OpenTTD-patches\build-compiler-comparison\cpu-sampled.wprp!CPU -filemode
+2026-10-19T01:58:44.2463251+09:00 wpr -marker simulation-begin -flush
+2026-10-19T01:59:11.6730291+09:00 wpr -marker simulation-end -flush
+2026-10-19T01:59:11.7670231+09:00 wpr -stop C:\Users\bebe\.codex\worktrees\6d2b\OpenTTD-patches\build-compiler-comparison\runs\wpr-msvc-1\cpu.etl
+Press Ctrl+C to cancel the stop operation.
+The trace was successfully saved.
+2026-10-19T02:05:11.4923983+09:00 wpr -start C:\Users\bebe\.codex\worktrees\6d2b\OpenTTD-patches\build-compiler-comparison\cpu-sampled.wprp!CPU -filemode
+2026-10-19T02:05:13.5579325+09:00 wpr -marker simulation-begin -flush
+2026-10-19T02:05:39.4388137+09:00 wpr -marker simulation-end -flush
+2026-10-19T02:05:39.5378215+09:00 wpr -stop C:\Users\bebe\.codex\worktrees\6d2b\OpenTTD-patches\build-compiler-comparison\runs\wpr-clang-1\cpu.etl
+Press Ctrl+C to cancel the stop operation.
+The trace was successfully saved.
+2026-10-19T02:09:06.3961816+09:00 wpr -start C:\Users\bebe\.codex\worktrees\6d2b\OpenTTD-patches\build-compiler-comparison\cpu-sampled.wprp!CPU -filemode
+2026-10-19T02:09:08.3100151+09:00 wpr -marker simulation-begin -flush
+2026-10-19T02:09:38.3354074+09:00 wpr -marker simulation-end -flush
+2026-10-19T02:09:38.4522726+09:00 wpr -stop C:\Users\bebe\.codex\worktrees\6d2b\OpenTTD-patches\build-compiler-comparison\runs\wpr-clang-2\cpu.etl
+Press Ctrl+C to cancel the stop operation.
+The trace was successfully saved.
+2026-10-19T02:13:02.6036682+09:00 wpr -start C:\Users\bebe\.codex\worktrees\6d2b\OpenTTD-patches\build-compiler-comparison\cpu-sampled.wprp!CPU -filemode
+2026-10-19T02:13:04.5797246+09:00 wpr -marker simulation-begin -flush
+2026-10-19T02:13:31.6665090+09:00 wpr -marker simulation-end -flush
+2026-10-19T02:13:31.7566515+09:00 wpr -stop C:\Users\bebe\.codex\worktrees\6d2b\OpenTTD-patches\build-compiler-comparison\runs\wpr-msvc-2\cpu.etl
+Press Ctrl+C to cancel the stop operation.
+The trace was successfully saved.

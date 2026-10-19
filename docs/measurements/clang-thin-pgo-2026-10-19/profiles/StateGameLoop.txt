@@ -1,0 +1,14 @@
+Counters:
+  ?StateGameLoop@@YAXXZ:
+    Hash: 0x0c111b5fd0748ba1
+    Counters: 65
+    Block counts: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4096, 4096, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4096, 0, 0, 0, 4096, 4096, 0, 0, 4096, 0, 4096, 0, 4096, 0, 0, 4096, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4096, 0, 0, 0]
+  ?StateGameLoop_LinkGraphPauseControl@@YAXXZ:
+    Hash: 0x08fc489560932aec
+    Counters: 12
+    Block counts: [0, 0, 0, 38, 24, 24, 4096, 0, 0, 4096, 14, 0]
+Instrumentation level: IR  entry_first = 0
+Functions shown: 2
+Total functions: 31279
+Maximum function count: 2556743809
+Maximum internal block count: 4448871763

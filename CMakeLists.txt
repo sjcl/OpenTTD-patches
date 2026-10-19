@@ -4,6 +4,8 @@ if(NOT BINARY_NAME)
     set(BINARY_NAME openttd)
 endif()
 
+include(cmake/WindowsDefaults.cmake)
+
 project(${BINARY_NAME}
     VERSION 16.0
 )
@@ -377,13 +379,13 @@ if(HAIKU)
     target_link_libraries(openttd "be" "network" "midi")
 endif()
 
-if(IPO_FOUND AND NOT OPTION_NO_LTO)
-    set_target_properties(openttd PROPERTIES INTERPROCEDURAL_OPTIMIZATION_RELEASE True)
-    set_target_properties(openttd PROPERTIES INTERPROCEDURAL_OPTIMIZATION_MINSIZEREL True)
-    set_target_properties(openttd PROPERTIES INTERPROCEDURAL_OPTIMIZATION_RELWITHDEBINFO True)
-endif()
+include(LinkTimeOptimization)
+configure_lto()
 set_target_properties(openttd PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_BINARY_DIR}")
 process_compile_flags()
+
+include(ProfileGuidedOptimization)
+configure_pgo()
 
 include(LinkPackage)
 link_package(PNG TARGET PNG::PNG ENCOURAGED)

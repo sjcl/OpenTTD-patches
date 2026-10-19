@@ -1,0 +1,8 @@
+[
+  {
+    "name": "wpr-thin-2",
+    "reason": "WPR dropped events",
+    "lost_events": 1449719,
+    "retry": "Administrator launch cancelled by Windows; no valid replacement run"
+  }
+]

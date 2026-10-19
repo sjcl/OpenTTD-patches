@@ -1,0 +1,310 @@
+{
+  "runs": [
+    {
+      "name": "wpr-msvc-1",
+      "compiler": "msvc",
+      "ticks": 1024,
+      "start_tick": 3197276448,
+      "end_tick": 3197277472,
+      "sampled_cpu_ms": {
+        "all_threads_ms": 27250.772499999977,
+        "main_thread_ms": 27119.641399999975,
+        "world_ms": 26480.364499999945,
+        "passenger_ms": 3397.8881000000015,
+        "route_ms": 577.9137000000006,
+        "boarding_ms": 841.0531000000004,
+        "route_or_boarding_ms": 1144.9534000000017
+      },
+      "sampled_counts": {
+        "world_ms": 26482,
+        "passenger_ms": 3396,
+        "route_ms": 578,
+        "boarding_ms": 841,
+        "route_or_boarding_ms": 1145
+      },
+      "per_tick_cpu_ms": {
+        "all_threads_ms": 26.612082519531228,
+        "main_thread_ms": 26.484024804687476,
+        "world_ms": 25.859730957031196,
+        "passenger_ms": 3.3182500976562515,
+        "route_ms": 0.5643688476562506,
+        "boarding_ms": 0.8213409179687504,
+        "route_or_boarding_ms": 1.1181185546875017
+      },
+      "world_thread_counter_ms": 26062.5,
+      "build_wall_seconds": 16.127216,
+      "build_cpu_seconds": 74.921875,
+      "warning_lines": 14163,
+      "error_resumes": 0,
+      "initial_error_resumes": 1
+    },
+    {
+      "name": "wpr-clang-1",
+      "compiler": "clang",
+      "ticks": 1024,
+      "start_tick": 3197276448,
+      "end_tick": 3197277472,
+      "sampled_cpu_ms": {
+        "all_threads_ms": 25800.163300000102,
+        "main_thread_ms": 25652.8868000001,
+        "world_ms": 25012.92410000009,
+        "passenger_ms": 3327.715900000002,
+        "boarding_ms": 805.4826000000002,
+        "route_or_boarding_ms": 1058.6397,
+        "route_ms": 463.6494999999999
+      },
+      "sampled_counts": {
+        "world_ms": 25014,
+        "passenger_ms": 3327,
+        "boarding_ms": 806,
+        "route_or_boarding_ms": 1059,
+        "route_ms": 464
+      },
+      "per_tick_cpu_ms": {
+        "all_threads_ms": 25.19547197265635,
+        "main_thread_ms": 25.051647265625096,
+        "world_ms": 24.42668369140634,
+        "passenger_ms": 3.249722558593752,
+        "boarding_ms": 0.7866041015625002,
+        "route_or_boarding_ms": 1.03382783203125,
+        "route_ms": 0.4527827148437499
+      },
+      "world_thread_counter_ms": 24781.25,
+      "build_wall_seconds": 15.518931,
+      "build_cpu_seconds": 72.21875,
+      "warning_lines": 14163,
+      "error_resumes": 0,
+      "initial_error_resumes": 1
+    },
+    {
+      "name": "wpr-clang-2",
+      "compiler": "clang",
+      "ticks": 1024,
+      "start_tick": 3197276448,
+      "end_tick": 3197277472,
+      "sampled_cpu_ms": {
+        "all_threads_ms": 29991.394099999987,
+        "main_thread_ms": 29836.393499999987,
+        "world_ms": 29009.08300000004,
+        "passenger_ms": 3850.5852000000077,
+        "route_ms": 506.02129999999977,
+        "route_or_boarding_ms": 1202.0469,
+        "boarding_ms": 937.994399999999
+      },
+      "sampled_counts": {
+        "world_ms": 29003,
+        "passenger_ms": 3849,
+        "route_ms": 506,
+        "route_or_boarding_ms": 1202,
+        "boarding_ms": 938
+      },
+      "per_tick_cpu_ms": {
+        "all_threads_ms": 29.288470800781237,
+        "main_thread_ms": 29.137103027343738,
+        "world_ms": 28.329182617187538,
+        "passenger_ms": 3.7603371093750075,
+        "route_ms": 0.4941614257812498,
+        "route_or_boarding_ms": 1.17387392578125,
+        "boarding_ms": 0.916010156249999
+      },
+      "world_thread_counter_ms": 28656.25,
+      "build_wall_seconds": 16.295337,
+      "build_cpu_seconds": 75.984375,
+      "warning_lines": 14163,
+      "error_resumes": 0,
+      "initial_error_resumes": 1
+    },
+    {
+      "name": "wpr-msvc-2",
+      "compiler": "msvc",
+      "ticks": 1024,
+      "start_tick": 3197276448,
+      "end_tick": 3197277472,
+      "sampled_cpu_ms": {
+        "all_threads_ms": 27045.54150000006,
+        "main_thread_ms": 26894.42450000006,
+        "world_ms": 26110.05020000008,
+        "passenger_ms": 3418.694099999998,
+        "route_ms": 546.9958000000003,
+        "route_or_boarding_ms": 1121.1004,
+        "boarding_ms": 833.9463000000012
+      },
+      "sampled_counts": {
+        "world_ms": 26110,
+        "passenger_ms": 3417,
+        "route_ms": 547,
+        "route_or_boarding_ms": 1121,
+        "boarding_ms": 834
+      },
+      "per_tick_cpu_ms": {
+        "all_threads_ms": 26.41166162109381,
+        "main_thread_ms": 26.264086425781308,
+        "world_ms": 25.49809589843758,
+        "passenger_ms": 3.338568457031248,
+        "route_ms": 0.5341755859375003,
+        "route_or_boarding_ms": 1.094824609375,
+        "boarding_ms": 0.8144006835937512
+      },
+      "world_thread_counter_ms": 25796.875,
+      "build_wall_seconds": 15.142089,
+      "build_cpu_seconds": 71.328125,
+      "warning_lines": 14163,
+      "error_resumes": 0,
+      "initial_error_resumes": 1
+    }
+  ],
+  "medians": {
+    "msvc": {
+      "build_wall_seconds": 15.634652500000001,
+      "build_cpu_seconds": 73.125,
+      "world_thread_counter_ms": 25929.6875,
+      "cpu_ms_per_tick": {
+        "all_threads_ms": 26.51187207031252,
+        "main_thread_ms": 26.37405561523439,
+        "world_ms": 25.678913427734386,
+        "passenger_ms": 3.3284092773437495,
+        "route_ms": 0.5492722167968754,
+        "boarding_ms": 0.8178708007812507,
+        "route_or_boarding_ms": 1.1064715820312507
+      }
+    },
+    "clang": {
+      "build_wall_seconds": 15.907134,
+      "build_cpu_seconds": 74.1015625,
+      "world_thread_counter_ms": 26718.75,
+      "cpu_ms_per_tick": {
+        "all_threads_ms": 27.241971386718795,
+        "main_thread_ms": 27.094375146484417,
+        "world_ms": 26.37793315429694,
+        "passenger_ms": 3.5050298339843797,
+        "route_ms": 0.4734720703124998,
+        "boarding_ms": 0.8513071289062496,
+        "route_or_boarding_ms": 1.10385087890625
+      }
+    }
+  },
+  "canonical": {
+    "wpr-msvc-1": {
+      "runtime_routing_feature": 1,
+      "state_ticks": 3197277472,
+      "packets": 468937,
+      "cargo_units": 545759,
+      "known_od_units": 467473,
+      "journey_packets": 456285,
+      "packet_state_digest": 14168532269542370959,
+      "payment_digest": 5684627927906326875,
+      "payments_valid": true,
+      "database_digest": 4293480760840559131,
+      "ownership_digest": 7538573873666253069,
+      "loading_digest": 11144545727402337527,
+      "completed_rows": 4936,
+      "retained_rows": 0,
+      "table_operations": 1976379656,
+      "published_revision": 1776,
+      "company_deliveries": 455,
+      "journey_routing": 1,
+      "precomputed_routing": 1,
+      "legacy_true_packets": 0,
+      "legacy_false_packets": 0,
+      "legacy_true_units": 0,
+      "legacy_false_units": 0,
+      "opposite_history_mergeable_pairs": 0
+    },
+    "wpr-clang-1": {
+      "runtime_routing_feature": 1,
+      "state_ticks": 3197277472,
+      "packets": 468937,
+      "cargo_units": 545759,
+      "known_od_units": 467473,
+      "journey_packets": 456285,
+      "packet_state_digest": 14168532269542370959,
+      "payment_digest": 5684627927906326875,
+      "payments_valid": true,
+      "database_digest": 4293480760840559131,
+      "ownership_digest": 7538573873666253069,
+      "loading_digest": 11144545727402337527,
+      "completed_rows": 4936,
+      "retained_rows": 0,
+      "table_operations": 1976379656,
+      "published_revision": 1776,
+      "company_deliveries": 455,
+      "journey_routing": 1,
+      "precomputed_routing": 1,
+      "legacy_true_packets": 0,
+      "legacy_false_packets": 0,
+      "legacy_true_units": 0,
+      "legacy_false_units": 0,
+      "opposite_history_mergeable_pairs": 0
+    },
+    "wpr-clang-2": {
+      "runtime_routing_feature": 1,
+      "state_ticks": 3197277472,
+      "packets": 468937,
+      "cargo_units": 545759,
+      "known_od_units": 467473,
+      "journey_packets": 456285,
+      "packet_state_digest": 14168532269542370959,
+      "payment_digest": 5684627927906326875,
+      "payments_valid": true,
+      "database_digest": 4293480760840559131,
+      "ownership_digest": 7538573873666253069,
+      "loading_digest": 11144545727402337527,
+      "completed_rows": 4936,
+      "retained_rows": 0,
+      "table_operations": 1976379656,
+      "published_revision": 1776,
+      "company_deliveries": 455,
+      "journey_routing": 1,
+      "precomputed_routing": 1,
+      "legacy_true_packets": 0,
+      "legacy_false_packets": 0,
+      "legacy_true_units": 0,
+      "legacy_false_units": 0,
+      "opposite_history_mergeable_pairs": 0
+    },
+    "wpr-msvc-2": {
+      "runtime_routing_feature": 1,
+      "state_ticks": 3197277472,
+      "packets": 468937,
+      "cargo_units": 545759,
+      "known_od_units": 467473,
+      "journey_packets": 456285,
+      "packet_state_digest": 14168532269542370959,
+      "payment_digest": 5684627927906326875,
+      "payments_valid": true,
+      "database_digest": 4293480760840559131,
+      "ownership_digest": 7538573873666253069,
+      "loading_digest": 11144545727402337527,
+      "completed_rows": 4936,
+      "retained_rows": 0,
+      "table_operations": 1976379656,
+      "published_revision": 1776,
+      "company_deliveries": 455,
+      "journey_routing": 1,
+      "precomputed_routing": 1,
+      "legacy_true_packets": 0,
+      "legacy_false_packets": 0,
+      "legacy_true_units": 0,
+      "legacy_false_units": 0,
+      "opposite_history_mergeable_pairs": 0
+    }
+  },
+  "mismatches": {
+    "wpr-msvc-1": {},
+    "wpr-clang-1": {},
+    "wpr-clang-2": {},
+    "wpr-msvc-2": {}
+  },
+  "route_roots": [
+    "PassengerServiceDatabase::PlanPrecomputed",
+    "PassengerServiceDatabase::PlanInternal",
+    "PassengerPrecomputedTable::Plan",
+    "PassengerJourneyPlanner::Plan",
+    "PassengerJourneyPlanner::PlanOnboard",
+    "PassengerSchedulePlanner::Plan"
+  ],
+  "boarding_roots": [
+    "PassengerJourneyLoadingContext::CanBoard",
+    "PassengerJourneyLoadingContext::MayUseHyperpathPolicy"
+  ]
+}

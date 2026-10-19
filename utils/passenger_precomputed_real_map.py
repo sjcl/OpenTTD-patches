@@ -78,6 +78,18 @@ def census(args):
 ''' + '\t\t/* Explicit read-only census.')
     if (source / "src/passenger_precomputed.h").is_file():
         warm = '''
+    if (operation == "wait_saved_replay") {
+        auto &db = GetPassengerServiceDatabase();
+        const auto started = std::chrono::steady_clock::now();
+        while (db.GetLoadState() == PassengerServiceDatabase::LoadState::Replaying) {
+            db.StepLoad(16 * 1024 * 1024);
+            if (std::chrono::steady_clock::now() - started > std::chrono::seconds(600)) break;
+        }
+        const bool ready = db.GetLoadState() == PassengerServiceDatabase::LoadState::Ready;
+        IConsolePrint(CC_DEFAULT, "Saved passenger replay: ready={}; elapsed_us={}", ready,
+            std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - started).count());
+        return ready;
+    }
     if (operation == "build_precomputed") {
         auto &db = GetPassengerServiceDatabase();
         if (db.GetLoadState() != PassengerServiceDatabase::LoadState::Ready) {
@@ -465,7 +477,8 @@ def run(args, measurement_lock_fd=None):
             setup += "passenger_journey_stats quality_probe\n"
         if args.fixture_estimated:
             setup += "passenger_journey_stats fixture_estimated_od\n"
-        start = f"script {log}\ngetfulldate\npassenger_journey_stats inventory\n{setup}passenger_journey_stats reset\n"
+        replay = "passenger_journey_stats wait_saved_replay\n" if getattr(args, "wait_saved_replay", False) else ""
+        start = f"script {log}\ngetfulldate\n{replay}passenger_journey_stats inventory\n{setup}passenger_journey_stats reset\n"
         # The existing component profiler is printed after the timed ticks.
         finish = f"script {log}\ngetfulldate\npassenger_journey_stats inventory\npassenger_journey_stats total\nfps\npassenger_journey_stats save_integrity\nsave {result}\nscript\n"
         if finish_rebuild:
@@ -645,6 +658,13 @@ def run(args, measurement_lock_fd=None):
         metadata["load_failed"] = "Game load failed" in stderr
         metadata["newgrf_warning_lines"] = sum("[grf:0]" in line for line in stderr.splitlines())
         console = (directory / "on-1-console.txt").read_text(encoding="utf-8", errors="replace") if (directory / "on-1-console.txt").is_file() else ""
+        if getattr(args, "wait_saved_replay", False):
+            replay = re.search(r"Saved passenger replay: ready=(true|false); elapsed_us=(\d+)", console)
+            metadata["saved_replay"] = dict(ready=replay[1] == "true", elapsed_us=int(replay[2])) if replay else None
+            if replay is None or replay[1] != "true":
+                metadata["simulation_timing_valid"] = False
+                dump(directory / "process.json", metadata)
+                raise RuntimeError(f"Saved passenger replay did not complete; see {directory}")
         warms = re.findall(r'Precomputed warm: ready=(true|false);', console)
         metadata['warm_observations'] = warms
         required_warms = 2 if getattr(args, 'full_rebuild_precomputed', False) or finish_rebuild else 1
@@ -772,6 +792,7 @@ def main():
     p.add_argument("--input", type=pathlib.Path)
     p.add_argument("--lang", type=pathlib.Path, help="Matching build language directory (defaults beside the binary)")
     p.add_argument("--resume", action="store_true")
+    p.add_argument("--wait-saved-replay", action="store_true", help="Complete validated saved passenger replay before changing measurement settings; requires freshly prepared copied TUs")
     p.add_argument("--quality-probe", action="store_true", help="Read-only OD/service diagnostics in the copied estimated-pattern measurement TUs")
     p.add_argument("--fixture-timetable", action="store_true", help="Synthetic MP fixture only: assign fixed timetable times using the copied join console hook")
     p.add_argument("--fixture-estimated", action="store_true", help="Synthetic MP fixture only: clear timing certification and assign waiting passengers to reachable OD pairs")

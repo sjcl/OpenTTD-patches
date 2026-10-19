@@ -42,7 +42,7 @@ struct PassengerWide {
 		assert(divisor != 0);
 		if (!(*this < Multiply(INT64_MAX, divisor))) return INT64_MAX;
 		uint64_t quotient, remainder;
-#if defined(_MSC_VER) && defined(_M_X64)
+#if defined(_MSC_VER) && defined(_M_X64) && !defined(__clang__)
 		quotient = _udiv128(this->high, this->low, divisor, &remainder);
 #elif defined(__SIZEOF_INT128__)
 		__uint128_t n = (__uint128_t(this->high) << 64) | this->low;

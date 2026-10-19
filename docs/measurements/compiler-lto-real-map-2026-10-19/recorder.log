@@ -1,0 +1,24 @@
+2026-10-19T03:28:13.2276888+09:00 wpr -start C:\Users\bebe\.codex\worktrees\6d2b\OpenTTD-patches\build-compiler-lto-comparison\cpu-sampled.wprp!CPU -filemode
+2026-10-19T03:28:15.8253112+09:00 wpr -marker simulation-begin -flush
+2026-10-19T03:28:43.2659099+09:00 wpr -marker simulation-end -flush
+2026-10-19T03:28:43.5221765+09:00 wpr -stop C:\Users\bebe\.codex\worktrees\6d2b\OpenTTD-patches\build-compiler-lto-comparison\runs\wpr-msvc-1\cpu.etl
+Press Ctrl+C to cancel the stop operation.
+The trace was successfully saved.
+2026-10-19T03:31:59.5504204+09:00 wpr -start C:\Users\bebe\.codex\worktrees\6d2b\OpenTTD-patches\build-compiler-lto-comparison\cpu-sampled.wprp!CPU -filemode
+2026-10-19T03:32:01.8221415+09:00 wpr -marker simulation-begin -flush
+2026-10-19T03:32:25.9361506+09:00 wpr -marker simulation-end -flush
+2026-10-19T03:32:26.1993730+09:00 wpr -stop C:\Users\bebe\.codex\worktrees\6d2b\OpenTTD-patches\build-compiler-lto-comparison\runs\wpr-clang-1\cpu.etl
+Press Ctrl+C to cancel the stop operation.
+The trace was successfully saved.
+2026-10-19T03:35:43.0589619+09:00 wpr -start C:\Users\bebe\.codex\worktrees\6d2b\OpenTTD-patches\build-compiler-lto-comparison\cpu-sampled.wprp!CPU -filemode
+2026-10-19T03:35:45.2366468+09:00 wpr -marker simulation-begin -flush
+2026-10-19T03:36:09.1585284+09:00 wpr -marker simulation-end -flush
+2026-10-19T03:36:09.3894383+09:00 wpr -stop C:\Users\bebe\.codex\worktrees\6d2b\OpenTTD-patches\build-compiler-lto-comparison\runs\wpr-clang-2\cpu.etl
+Press Ctrl+C to cancel the stop operation.
+The trace was successfully saved.
+2026-10-19T03:39:24.0525630+09:00 wpr -start C:\Users\bebe\.codex\worktrees\6d2b\OpenTTD-patches\build-compiler-lto-comparison\cpu-sampled.wprp!CPU -filemode
+2026-10-19T03:39:26.2657683+09:00 wpr -marker simulation-begin -flush
+2026-10-19T03:39:53.9236959+09:00 wpr -marker simulation-end -flush
+2026-10-19T03:39:54.1677296+09:00 wpr -stop C:\Users\bebe\.codex\worktrees\6d2b\OpenTTD-patches\build-compiler-lto-comparison\runs\wpr-msvc-2\cpu.etl
+Press Ctrl+C to cancel the stop operation.
+The trace was successfully saved.

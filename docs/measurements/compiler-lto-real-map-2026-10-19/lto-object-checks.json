@@ -1,0 +1,36 @@
+{
+  "msvc": {
+    "openttd.obj": {
+      "sha256": "da94da07fb89206a2865b8626fde1b71c5d91999484ac15f5250335da40e727b",
+      "first_32_bytes": "0000ffff01006486f40dd56a38feb30ca5d9ab4dac9bd6b6222653c263a34401",
+      "size": 21275523
+    },
+    "passenger_precomputed.obj": {
+      "sha256": "d4fce9585e3ec5a14a94f25b91a62b7eec1ba4f59c5602a2721e5c03fa942508",
+      "first_32_bytes": "0000ffff01006486450ed56a38feb30ca5d9ab4dac9bd6b6222653c2f1c12501",
+      "size": 19251729
+    },
+    "passenger_service_database.obj": {
+      "sha256": "bc19140a52b9227a4b58dd1e99d821ab744dcb9930052b94861042bee9c6568a",
+      "first_32_bytes": "0000ffff01006486f40dd56a38feb30ca5d9ab4dac9bd6b6222653c24ee22a01",
+      "size": 19587694
+    }
+  },
+  "clang": {
+    "openttd.obj": {
+      "sha256": "675a965f66511e88d7b9ca889a75a478943d9407a7e0e0a5f30dab212ea57884",
+      "first_32_bytes": "4243c0de3514000005000000620c30244a59be66ddfbb59f0b51804c01000000",
+      "size": 232020
+    },
+    "passenger_precomputed.obj": {
+      "sha256": "92ca42dd30c8f8648db6951e0ec63218e8a7829d57627594d0c9ace36772fe5b",
+      "first_32_bytes": "4243c0de3514000005000000620c30244a59be66ddfbb59f0b51804c01000000",
+      "size": 665268
+    },
+    "passenger_service_database.obj": {
+      "sha256": "66a2422c279d89e8f23efdee2e4b588e03b498141d655c89066205ef0c979695",
+      "first_32_bytes": "4243c0de3514000005000000620c30244a59be66ddfbb59f0b51804c01000000",
+      "size": 628988
+    }
+  }
+}

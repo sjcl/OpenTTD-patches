@@ -643,8 +643,12 @@ void Win32SetCurrentLocaleName(std::string iso_code)
 
 static LibraryLoader::Function GetKernel32Function(const std::string &symbol_name)
 {
-	static LibraryLoader _kernel32("Kernel32.dll");
-	return _kernel32.GetFunction(symbol_name);
+	/* Kernel32 is already resident for the process lifetime. A function-local
+	 * LibraryLoader would register an atexit destructor on first use. A late
+	 * worker setting its name could then block behind the CRT exit lock while
+	 * the main thread holds that lock and joins the worker. */
+	HMODULE kernel32 = GetModuleHandleW(L"Kernel32.dll");
+	return LibraryLoader::Function(kernel32 == nullptr ? nullptr : reinterpret_cast<void *>(GetProcAddress(kernel32, symbol_name.c_str())));
 }
 
 int OTTDStringCompare(std::string_view s1, std::string_view s2)

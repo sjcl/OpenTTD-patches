@@ -1,0 +1,10 @@
+Counters:
+  ?PlanPrecomputed@PassengerServiceDatabase@@QEBA?AUPassengerPrecomputedPlan@@W4CargoType@@U?$PoolID@UStationIDTag@@@@1U?$ST@UStateTicksTag@@@@U?$PoolID@UOrderListIDTag@@@@I3@Z:
+    Hash: 0x0c33e965fe2e987f
+    Counters: 17
+    Block counts: [2157225, 0, 1118093, 1039132, 0, 2155740, 1118083, 1039132, 1037657, 0, 0, 1037657, 0, 1118083, 0, 0, 0]
+Instrumentation level: IR  entry_first = 0
+Functions shown: 1
+Total functions: 31279
+Maximum function count: 2556743809
+Maximum internal block count: 4448871763

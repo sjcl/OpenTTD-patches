@@ -1,0 +1,46 @@
+{
+  "status": "recorded_and_exported",
+  "attempts": [
+    {
+      "action": "Initial WPR helper launch",
+      "status": "cancelled_by_windows"
+    },
+    {
+      "action": "User-approved Start-Process pwsh -Verb RunAs -WindowStyle Hidden -File build-clang-thin-pgo/record.ps1",
+      "recording_started": "unconfirmed",
+      "status": "returned_process_id",
+      "process_id": 91660
+    },
+    {
+      "action": "Start measurement and query WPR status with sandbox escalation",
+      "errors": [
+        "Automatic approval review failed: Selected model is at capacity",
+        "The automatic permission approval review did not finish before its deadline"
+      ],
+      "status": "not_executed",
+      "retry": "Retried after waiting at the user request; still unavailable"
+    },
+    {
+      "action": "User-requested WPR retry on 2026-10-19; status queries and helper restart",
+      "status": "not_executed",
+      "errors": [
+        "Automatic approval review failed: Selected model is at capacity",
+        "The automatic permission approval review did not finish before its deadline"
+      ],
+      "retry": "Waited and retried; helper restart timed out twice"
+    },
+    {
+      "action": "User-approved WPR helper restart and sequential real-map measurement",
+      "status": "completed",
+      "process_id": 21148,
+      "runs": [
+        "wpr-baseline-1",
+        "wpr-pgo-1"
+      ],
+      "lost_buffers": 0,
+      "lost_events": 0
+    }
+  ],
+  "measurement": "WPR sampled CPU recorded for the same 1024 ticks in baseline and PGO; both traces lost buffers/events = 0",
+  "cleanup": "Stop marker requested after successful export"
+}

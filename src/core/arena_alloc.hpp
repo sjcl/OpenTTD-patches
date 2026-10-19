@@ -26,6 +26,7 @@ class UniformBumpAllocator {
 
 	char *next_ptr = nullptr;
 	char *end_ptr = nullptr;
+	inline static thread_local bool block_cache_destroyed = false;
 
 	/**
 	 * Short-lived containers (e.g. one pathfinder node list per search) would otherwise
@@ -38,13 +39,20 @@ class UniformBumpAllocator {
 		static constexpr size_t MAX_BYTES = 4 * 1024 * 1024; ///< Per thread and allocator instantiation.
 		static constexpr size_t MAX_BLOCKS = std::max<size_t>(1, std::min<size_t>(8, MAX_BYTES / BLOCK_BYTES));
 		std::vector<char *> blocks;
-		~BlockCache() { for (char *block : this->blocks) free(block); }
+		~BlockCache()
+		{
+			/* Main-thread TLS is destroyed before global YAPF caches. Their
+			 * allocators must not put blocks back into this dead vector. */
+			block_cache_destroyed = true;
+			for (char *block : this->blocks) free(block);
+		}
 	};
 	static BlockCache *GetBlockCache()
 	{
 		if constexpr (BLOCK_BYTES < BlockCache::MIN_BLOCK_BYTES || BLOCK_BYTES > BlockCache::MAX_BYTES) {
 			return nullptr;
 		} else {
+			if (block_cache_destroyed) return nullptr;
 			thread_local BlockCache cache;
 			return &cache;
 		}
@@ -78,6 +86,7 @@ public:
 	{
 		this->next_ptr = nullptr;
 		this->end_ptr = nullptr;
+		if (this->used_blocks.empty()) return;
 		BlockCache *cache = GetBlockCache();
 		for (char *block : this->used_blocks) {
 			if (cache != nullptr && cache->blocks.size() < BlockCache::MAX_BLOCKS) {

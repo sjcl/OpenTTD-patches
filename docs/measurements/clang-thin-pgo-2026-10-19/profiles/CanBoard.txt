@@ -1,0 +1,22 @@
+Counters:
+  ?CanBoardUncached@PassengerJourneyLoadingContext@@AEAA_NAEBUCargoPacket@@PEBUVehicle@@W4CargoType@@@Z:
+    Hash: 0x09a701b432224fe3
+    Counters: 66
+    Block counts: [0, 0, 0, 0, 435621, 435621, 433949, 120403, 0, 435621, 433949, 120403, 315218, 0, 0, 433960, 0, 118731, 120403, 1672, 315218, 0, 433960, 0, 120403, 1672, 315218, 433949, 118742, 11, 315218, 433949, 118742, 11, 315218, 433949, 118731, 0, 315218, 357679, 118731, 0, 315218, 357679, 118731, 0, 315218, 357679, 118731, 315218, 0, 118731, 118731, 315218, 315218, 315218, 315218, 315218, 435621, 433960, 435621, 118742, 11, 315218, 315218, 0]
+  ?CanBoard@PassengerJourneyBoardingContext@@QEBA_NAEBUCargoPacket@@@Z:
+    Hash: 0x025a12a210b76bdf
+    Counters: 70
+    Block counts: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+  ?CanBoard@PassengerOdFallbackContext@@QEAA_NAEBUCargoPacket@@PEBUVehicle@@W4CargoType@@@Z:
+    Hash: 0x0a4d0ad3efffffff
+    Counters: 1
+    Block counts: [0]
+  ?CanBoard@PassengerJourneyLoadingContext@@QEAA_NAEBUCargoPacket@@PEBUVehicle@@W4CargoType@@@Z:
+    Hash: 0x03be7ed603887a7f
+    Counters: 20
+    Block counts: [599830, 599830, 0, 599830, 435621, 164209, 599830, 597281, 424159, 599830, 164209, 156218, 597292, 164209, 164209, 0, 0, 599830, 597292, 164209]
+Instrumentation level: IR  entry_first = 0
+Functions shown: 4
+Total functions: 31279
+Maximum function count: 2556743809
+Maximum internal block count: 4448871763
