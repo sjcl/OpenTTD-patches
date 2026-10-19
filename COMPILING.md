@@ -29,7 +29,7 @@ open most older savegames or use the content downloading system.
 
 ## Windows
 
-The default Windows release toolchain is **Clang/LLVM 23.1.3 + ThinLTO + PGO**.
+The default Windows release toolchain is **Clang/LLVM 23.1.3 + Full LTO + PGO**.
 Both local builds and the Windows CI/release workflows consume the prepared
 profile in `cmake/pgo/windows.profdata`; CI does not build an instrumented
 executable or run training. See [the profile documentation](cmake/pgo/README.md).
@@ -48,7 +48,7 @@ $env:VCPKG_ROOT = 'C:/path/to/vcpkg'
 ./os/windows/Build.ps1 -Test
 ```
 
-This selects Release, clang-cl, LLD, the static CRT, ThinLTO for the game object
+This selects Release, clang-cl, LLD, the static CRT, Full LTO for the game object
 library and executables, and the bundled PGO profile. The executable and PDB
 are written to `build/`. Use `-Architecture x86` for a 32-bit build or
 `-Architecture arm64` on an ARM64 developer machine. A configured developer

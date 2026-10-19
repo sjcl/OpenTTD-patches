@@ -3,7 +3,7 @@
   "configurePresets": [
     {
       "name": "windows-release",
-      "displayName": "Windows Clang + LLVM ThinLTO + shared PGO",
+      "displayName": "Windows Clang + LLVM Full LTO + shared PGO",
       "generator": "Ninja",
       "binaryDir": "${sourceDir}/build",
       "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Windows" },
