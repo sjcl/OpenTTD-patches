@@ -12,6 +12,7 @@
 #include "../date_func.h"
 #include "../fios.h"
 #include "network_client.h"
+#include "../passenger_service_database.h"
 #include "network_gui.h"
 #include "network_gamelist.h"
 #include "network.h"
@@ -2144,6 +2145,10 @@ struct NetworkJoinStatusWindow : Window {
 			}
 
 			case WID_NJS_PROGRESS_TEXT:
+				if (ClientNetworkGameSocketHandler::IsWaitingForPassengerPreparation() && !GetPassengerServiceDatabase().IsPreparingPrecomputed()) {
+					DrawStringMultiLine(r, STR_NETWORK_CONNECTING_PASSENGER_SYNC, TextColour::FromString, {AlignmentH::Centre, AlignmentV::Middle});
+					break;
+				}
 				switch (_network_join_status) {
 					case NetworkJoinStatus::Waiting:
 						DrawStringMultiLine(r, GetString(STR_NETWORK_CONNECTING_WAITING, _network_join_waiting), TextColour::FromString, {AlignmentH::Centre, AlignmentV::Middle});

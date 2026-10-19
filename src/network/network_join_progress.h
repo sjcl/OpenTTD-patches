@@ -16,8 +16,6 @@ public:
 	enum class Result { Accepted, Invalid, Flood };
 private:
 	std::optional<Clock::time_point> started;
-	std::optional<Clock::time_point> server_preparation_started;
-	Clock::duration server_preparation{};
 	Clock::time_point progress{}, refill{};
 	uint64_t work = 0, limit = 0;
 	static constexpr uint BURST = 16;
@@ -33,23 +31,8 @@ public:
 		this->work = 0; this->limit = limit;
 		this->progress = this->refill = now; this->tokens = BURST;
 	}
-	/** Only the server may exclude its own preparation while a map request waits.
-	 * Ordinary map queues and client replay never qualify. Neither budget resets. */
-	void SetServerPreparing(bool preparing, Clock::time_point now)
-	{
-		if (!this->started) return;
-		if (preparing && !this->server_preparation_started) this->server_preparation_started = now;
-		if (!preparing && this->server_preparation_started) {
-			this->server_preparation += now - *this->server_preparation_started;
-			this->server_preparation_started.reset();
-		}
-	}
-	Clock::duration GetServerPreparationTime(Clock::time_point now) const
-	{ return this->server_preparation + (this->server_preparation_started ? now - *this->server_preparation_started : Clock::duration::zero()); }
-	Clock::duration GetClientJoinTime(Clock::time_point now) const
-	{ return this->started ? now - *this->started - this->GetServerPreparationTime(now) : Clock::duration::zero(); }
-	bool ServerPreparationExpired(Clock::time_point now, std::chrono::seconds maximum) const
-	{ return this->started && this->GetServerPreparationTime(now) >= maximum; }
+	Clock::duration GetJoinTime(Clock::time_point now) const
+	{ return this->started ? now - *this->started : Clock::duration::zero(); }
 	Result Report(uint64_t value, Clock::time_point now)
 	{
 		if (value <= this->work || value > this->limit) return Result::Invalid;
@@ -66,9 +49,7 @@ public:
 	}
 	bool Expired(Clock::time_point now, std::chrono::seconds maximum) const
 	{
-		/* A stalled server is bounded too: elapsed time after authorization is less than
-		 * twice maximum, even across repeated preparation/queue transitions. */
-		return this->started && (this->GetClientJoinTime(now) >= maximum || this->ServerPreparationExpired(now, maximum));
+		return this->started && this->GetJoinTime(now) >= maximum;
 	}
 	bool Idle(Clock::time_point now, std::chrono::milliseconds maximum) const
 	{ return now - this->progress > maximum; }

@@ -26,6 +26,7 @@
 #include "../waypoint_base.h"
 #include "../core/backup_type.hpp"
 #include "../core/random_func.hpp"
+#include "../core/checksum_func.hpp"
 #include "../sl/saveload.h"
 #include "passenger_test_stations.h"
 #include "passenger_index_allocations.h"
@@ -44,6 +45,7 @@
 #include "../network/network_internal.h"
 #include "../widgets/network_widget.h"
 #include "mock_environment.h"
+#include "network_passenger_preparation.h"
 
 extern SaveLoadVersion _sl_version;
 extern NamedSaveLoadTable GetGoodsDesc();
@@ -64,7 +66,7 @@ namespace {
 	}
 	struct DatabaseWireLayout {
 		size_t publication, precomputed, modes;
-		std::vector<size_t> facilities;
+		std::vector<size_t> facilities, movement_waits;
 	};
 	/** Parse record counts so corruption fixtures address fields in the current format. */
 	DatabaseWireLayout InspectDatabaseWire(const std::vector<uint8_t> &wire)
@@ -77,11 +79,12 @@ namespace {
 		};
 		auto words = [&](size_t n) { while (n-- != 0) value(); };
 		auto service = [&]() {
-			words(5); auto stops = value(); facility_words += (stops + 20) / 21; words(static_cast<size_t>(stops) * 9);
+			words(5); auto stops = value(); facility_words += (stops + 20) / 21;
+			for (size_t i = 0; i < stops; ++i) { words(9); result.movement_waits.push_back(cursor); words(1); }
 			words(static_cast<size_t>(value()) * (4 + NUM_CARGO));
 			words(4); auto slots = value(); words(static_cast<size_t>(slots)); value();
 		};
-		REQUIRE(value() == 1); words(5);
+		REQUIRE(value() == 2); words(5);
 		words(static_cast<size_t>(value()) * 2);
 		for (uint64_t n = value(); n != 0; --n) service();
 		result.publication = cursor;
@@ -92,7 +95,7 @@ namespace {
 		words(2); for (uint64_t n = value(); n != 0; --n) service();
 		result.modes = cursor; words(4);
 		for (size_t i = 0; i < facility_words; ++i) { result.facilities.push_back(cursor); value(); }
-		REQUIRE(cursor == wire.size());
+		words(6); REQUIRE(cursor == wire.size());
 		return result;
 	}
 	struct PeriodicTrain : Vehicle {
@@ -1563,7 +1566,7 @@ TEST_CASE("Periodic database rejects malformed and oversized saved state", "[pas
 	Fixture f; f.Train({Stop(A), Stop(D)}); auto &db = f.Build(); auto wire = db.Save(); PassengerServiceDatabase other;
 	const auto original = wire; const auto layout = InspectDatabaseWire(wire);
 	wire.pop_back(); CHECK_FALSE(other.Load(wire));
-	for (uint8_t version : {0, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16}) {
+	for (uint8_t version : {0, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17}) {
 		wire = original; wire[0] = version; CHECK_FALSE(other.Load(wire));
 	}
 	for (size_t offset : {layout.modes, layout.modes + 8}) {
@@ -2059,6 +2062,42 @@ TEST_CASE("Waypoint waits and reversals are operating events in periodic and sna
 		CHECK(plan.arrival == NOW + 10 + waypoint.GetTravelTime() + dwell + 40);
 		PassengerJourneyPlanner planner(graph); auto old = planner.Plan(PAX, A, D, NOW); REQUIRE(old.HasJourney()); CHECK(old.journeys.front().arrival == plan.arrival);
 	}
+}
+
+TEST_CASE("Aircraft scaling excludes intermediate depot waiting in both timetable compilers", "[passenger][aircraft_cost][periodic]")
+{
+	Fixture f;
+	Order depot; depot.MakeGoToDepot(DepotID{0}, {OrderDepotTypeFlag::PartOfOrders});
+	depot.SetTravelTime(30); depot.SetTravelTimetabled(true); depot.SetWaitTime(75); depot.SetWaitTimetabled(true);
+	std::vector orders{Stop(A, 1000, 10), depot, Stop(D, 70, 10)};
+	f.Train(orders); // Install physical station fixtures for the estimated compiler.
+	for (bool estimated : {false, true}) {
+		PassengerPeriodicService service;
+		service.timetable = estimated ? PassengerPeriodicTimetable::CompileEstimated(orders, VehicleType::Aircraft) : PassengerPeriodicTimetable::Compile(orders);
+		REQUIRE(service.timetable.stops.size() == 2);
+		CHECK(service.timetable.stops[1].arrival == 185); CHECK(service.timetable.stops[1].intermediate_wait == 75);
+		PassengerPeriodicVehicle air; air.type = VehicleType::Aircraft; service.vehicles.push_back(air);
+		service.BuildAircraftCosts({50, 74}); CHECK(service.AircraftAdjustment(0, 1) == 24);
+	}
+	PassengerServiceGraphLimits limits; limits.horizon = 2000;
+	const auto graph = PassengerServiceGraph::Build(PAX, NOW, limits);
+	REQUIRE_FALSE(graph.GetTrips().empty()); const auto &visits = graph.GetTrips().front().prediction.visits;
+	REQUIRE(visits.size() >= 2); CHECK(visits[1].arrival == NOW + 185); CHECK(visits[1].movement_from_previous.base() == 100);
+}
+
+TEST_CASE("Old passenger database wires recapture missing movement metadata once", "[passenger][aircraft_cost][save]")
+{
+	Fixture f; f.Train({Stop(A), Stop(D)}); auto &db = f.Build(); auto wire = db.Save();
+	const auto layout = InspectDatabaseWire(wire);
+	wire.resize(wire.size() - 48); // v1 has neither the three snapshots nor incoming wait fields.
+	for (auto it = layout.movement_waits.rbegin(); it != layout.movement_waits.rend(); ++it) wire.erase(wire.begin() + *it, wire.begin() + *it + 8);
+	wire[0] = 1;
+	PassengerServiceDatabase loaded; REQUIRE(loaded.Load(wire)); loaded.FinishLoad(true);
+	CHECK(loaded.IsBuilding()); CHECK(loaded.GetDiagnostic().services == 0);
+	for (int i = 0; i < 128 && loaded.IsBuilding(); ++i) loaded.Tick();
+	REQUIRE_FALSE(loaded.IsBuilding()); REQUIRE(loaded.Plan(PAX, A, D, NOW).ride);
+	PassengerServiceDatabase peer; REQUIRE(peer.Load(loaded.Save())); peer.FinishLoad(true);
+	CHECK(peer.Save() == loaded.Save());
 }
 
 TEST_CASE("Depot traversal separates passenger continuity from timing certainty", "[passenger][periodic][operational][depot][active]")
@@ -2713,7 +2752,8 @@ TEST_CASE("A staging memory boundary remains bounded and loadable during deletio
 {
 	Fixture f; f.Train({Stop(A), Stop(D)}); auto &db = f.Build(); auto wire = db.Save();
 	const auto layout = InspectDatabaseWire(wire);
-	const std::vector<uint8_t> suffix(wire.begin() + layout.precomputed, wire.end());
+	const std::vector<uint8_t> suffix(wire.begin() + layout.precomputed, wire.end() - 48);
+	const std::vector<uint8_t> costs(wire.end() - 48, wire.end());
 	wire.resize(layout.publication);
 	auto put = [&](uint64_t value) { for (uint i = 0; i < 8; ++i) { wire.push_back(value & 255); value >>= 8; } };
 	put(1); put(NOW.base()); put(0); put(0); // Published revision, batch tick, publishing, bootstrap.
@@ -2722,11 +2762,12 @@ TEST_CASE("A staging memory boundary remains bounded and loadable during deletio
 	for (uint16_t index = 0; index < 32; ++index) {
 		put(1000 + index); put(1); put(1); put(1); put(0);
 		size_t stops = index == 31 ? 4062 : 4096; put(stops);
-		for (size_t i = 0; i < stops; ++i) { put(A.base()); put(0); put(0); put(0); put(1); put(1); put(0); put(1); put(0); }
+		for (size_t i = 0; i < stops; ++i) { put(A.base()); put(0); put(0); put(0); put(1); put(1); put(0); put(1); put(0); put(0); }
 		put(0); put(0); put(0); put(0); put(0); put(0); put(0); put(NOW.base()); // Fleet, dispatch fields, estimate and staged age.
 	}
 	wire.insert(wire.end(), suffix.begin(), suffix.end());
 	for (uint16_t index = 0; index < 32; ++index) for (size_t at = 0; at < (index == 31 ? 4062 : 4096); at += 21) put(0);
+	wire.insert(wire.end(), costs.begin(), costs.end());
 	REQUIRE(db.Load(wire)); db.FinishLoad(true);
 	REQUIRE(db.GetDiagnostic().staged_bytes == PassengerServiceDatabase::MAX_BYTES - 1024);
 	db.Tick(); CHECK(db.GetDiagnostic().staged_bytes <= PassengerServiceDatabase::MAX_BYTES);
@@ -3159,7 +3200,7 @@ TEST_CASE("Precomputed active journeys bypass OD admission and survive partial-b
 	CHECK(db.GetDiagnostic().searches == timed_searches);
 	CHECK(db.GetPrecomputedDiagnostic(PAX).hits == 1);
 	CHECK(GetPassengerJourneyTickDiagnostic().query_cache_hits == 99);
-	auto wire = db.Save(); REQUIRE(wire[0] == 1);
+	auto wire = db.Save(); REQUIRE(wire[0] == 2);
 	PassengerServiceDatabase peer; REQUIRE(peer.Load(wire)); peer.FinishLoad(true);
 	CHECK(peer.Save() == wire);
 	CHECK(peer.PlanPrecomputed(PAX, A, D, NOW).ride == db.PlanPrecomputed(PAX, A, D, NOW).ride);
@@ -3596,7 +3637,7 @@ TEST_CASE("Precomputed waiting events survive save tables without inventing a ro
 	AutoRestoreBackup features{_sl_xv_feature_versions, AutoRestoreBackupNoNewValueTag{}};
 	AutoRestoreBackup static_features{_sl_xv_feature_static_versions, AutoRestoreBackupNoNewValueTag{}};
 	SlXvSetStaticCurrentVersions(); _sl_xv_feature_versions = _sl_xv_feature_static_versions;
-	REQUIRE(_sl_xv_feature_versions[XSLFI_PASSENGER_PERIODIC] == 1);
+	REQUIRE(_sl_xv_feature_versions[XSLFI_PASSENGER_PERIODIC] == 2);
 	GoodsEntry source{}, loaded{}; source.CreateData(); loaded.CreateData();
 	auto &a = source.data->cargo;
 	a.passenger_routing_dirty = false; a.passenger_routing_revision = 17; a.passenger_routing_rows = 23; a.passenger_routing_due = NOW + 100;
@@ -4248,6 +4289,148 @@ TEST_CASE("Saving suspended initial fleet capture resumes the same publication",
 	}
 	CHECK(db.Save() == peer.Save());
 	CHECK(db.PlanPrecomputed(PAX, A, D, NOW).ride == peer.PlanPrecomputed(PAX, A, D, NOW).ride);
+}
+
+TEST_CASE("Joining during preparation restores every public frontier independently", "[passenger][precomputed][join-preparation][save]")
+{
+	for (bool hyperpath : {false, true}) {
+		Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = true;
+		_settings_game.linkgraph.passenger_journey_hyperpath = hyperpath;
+		AutoRestoreBackup workers{_settings_client.gui.passenger_precomputed_workers, uint8_t{8}};
+		auto *first = f.Train({Stop(A), Stop(B), Stop(C), Stop(D)});
+		for (uint i = 0; i < 2000; ++i) Vehicle::Create<PeriodicTrain>(first);
+		auto &host = GetPassengerServiceDatabase();
+		auto discover = [&]() {
+			for (uint i = 0; host.IsBuilding(); ++i) { REQUIRE(i < 10000); host.Tick(PassengerServiceDatabase::BUILD_WORK, false); }
+		};
+		auto join = [&](bool host_first) {
+			const auto wire = host.Save();
+			PassengerServiceDatabase client; REQUIRE(client.Load(wire)); client.FinishLoad(true, true);
+			/* Restoring graph scratch can put the client ahead of the saved host
+			 * graph, but cannot change the saved/public frontier. */
+			for (uint i = 0; client.GetLoadState() == PassengerServiceDatabase::LoadState::Replaying; ++i) {
+				REQUIRE(i < 100000); client.StepLoad(17); REQUIRE(client.Save() == wire);
+			}
+			CHECK(host.Save() == wire); // No cancellation or restart on the host.
+			auto finish = [&](PassengerServiceDatabase &db, uint8_t count) {
+				_settings_client.gui.passenger_precomputed_workers = count;
+				for (uint i = 0; !db.PreparePrecomputed(); ++i) REQUIRE(i < 10000);
+			};
+			if (host_first) { finish(host, 8); finish(client, 0); }
+			else { finish(client, 8); finish(host, 0); }
+			REQUIRE(host.Save() == client.Save()); CHECK(_state_ticks == NOW);
+			for (CargoType cargo : EnumRange(NUM_CARGO)) {
+				CHECK(PassengerPrecomputedTestAccess::Published(PassengerServiceDatabaseTestAccess::Table(host, cargo)) ==
+						PassengerPrecomputedTestAccess::Published(PassengerServiceDatabaseTestAccess::Table(client, cargo)));
+				CHECK(PassengerPrecomputedTestAccess::Published(PassengerServiceDatabaseTestAccess::Retained(host, cargo)) ==
+						PassengerPrecomputedTestAccess::Published(PassengerServiceDatabaseTestAccess::Retained(client, cargo)));
+			}
+		};
+		SECTION("Before service discovery") { join(true); }
+		SECTION("Suspended service capture") { REQUIRE_FALSE(host.PreparePrecomputed()); join(false); }
+		SECTION("Partially built graph") {
+			discover(); host.Tick(PassengerServiceDatabase::BUILD_WORK, true, true);
+			REQUIRE(PassengerServiceDatabaseTestAccess::Table(host, PAX).IsPreparingGraph()); join(true);
+		}
+		SECTION("Destination search and speculative workers") {
+			discover(); host.TickPrecomputed(1);
+			REQUIRE_FALSE(host.PrecomputedFinished());
+			PassengerServiceDatabaseTestAccess::Table(host, PAX).StepParallel(0, 8); join(false);
+		}
+		SECTION("Replacement graph retains old generation") {
+			while (!host.PreparePrecomputed()) {}
+			_settings_game.linkgraph.passenger_transfer_penalty = 17;
+			host.Tick(PassengerServiceDatabase::BUILD_WORK, true, true);
+			REQUIRE(host.IsPreparingPrecomputed());
+			REQUIRE(host.GetPrecomputedDiagnostic(PAX).retained_destinations != 0); join(true);
+		}
+	}
+}
+
+TEST_CASE("Passenger barrier retains downloading and replaying joiners after host completion", "[network][passenger][join-preparation]")
+{
+	Fixture f; f.Train({Stop(A), Stop(B), Stop(C), Stop(D)});
+	AutoRestoreBackup server{_network_server, true};
+	AutoRestoreBackup deadline{_settings_client.network.max_join_time_total, uint16_t{900}};
+	_settings_game.linkgraph.passenger_journey_precomputed = true;
+	AutoRestoreBackup frame{_frame_counter, uint32_t{123}};
+	ServerNetworkGameSocketHandler::ResetPassengerPreparation();
+	auto first = std::unique_ptr<NetworkClientSocket>(NetworkClientSocket::Create(INVALID_SOCKET));
+	first->status = NetworkClientSocket::ClientStatus::Map;
+	REQUIRE_FALSE(ServerNetworkGameSocketHandler::PreparePassengerRouting());
+	CHECK(NetworkPassengerPreparationTestAccess::Frame(*first) == 123);
+	while (!GetPassengerServiceDatabase().PreparePrecomputed()) {}
+	REQUIRE_FALSE(ServerNetworkGameSocketHandler::PreparePassengerRouting());
+	first->status = NetworkClientSocket::ClientStatus::DoneMap;
+	REQUIRE_FALSE(ServerNetworkGameSocketHandler::PreparePassengerRouting());
+	auto second = std::unique_ptr<NetworkClientSocket>(NetworkClientSocket::Create(INVALID_SOCKET));
+	second->status = NetworkClientSocket::ClientStatus::Map;
+	first->status = NetworkClientSocket::ClientStatus::PreActive;
+	REQUIRE_FALSE(ServerNetworkGameSocketHandler::PreparePassengerRouting());
+	REQUIRE(NetworkPassengerPreparationTestAccess::Ready(*first, 123) == NetworkRecvStatus::Okay);
+	REQUIRE_FALSE(ServerNetworkGameSocketHandler::PreparePassengerRouting());
+	CHECK(NetworkPassengerPreparationTestAccess::Frame(*second) == 123);
+	SECTION("Second client completes replay and preparation") {
+		second->status = NetworkClientSocket::ClientStatus::PreActive;
+		REQUIRE(NetworkPassengerPreparationTestAccess::Ready(*second, 123) == NetworkRecvStatus::Okay);
+	}
+	SECTION("Second client disconnects during transfer") { second.reset(); }
+	SECTION("Second client disconnects during computation") { second->status = NetworkClientSocket::ClientStatus::ClosePending; }
+	CHECK(ServerNetworkGameSocketHandler::PreparePassengerRouting());
+	CHECK_FALSE(NetworkPassengerPreparationTestAccess::Frame(*first)); CHECK(_frame_counter == 123);
+	ServerNetworkGameSocketHandler::ResetPassengerPreparation();
+}
+
+TEST_CASE("Client preparation completion and server announcement can arrive in either order", "[network][passenger][join-preparation]")
+{
+	Fixture f; f.Train({Stop(A), Stop(B), Stop(C), Stop(D)});
+	_settings_game.linkgraph.passenger_journey_precomputed = true;
+	AutoRestoreBackup frame{_frame_counter, uint32_t{123}};
+	auto client = std::make_unique<ClientNetworkGameSocketHandler>(INVALID_SOCKET, "test");
+	NetworkPassengerPreparationTestAccess::Activate(*client);
+	SECTION("Client completes before server announcement") {
+		while (GetPassengerServiceDatabase().IsPreparingPrecomputed()) CHECK_FALSE(ClientNetworkGameSocketHandler::PreparePassengerRouting());
+		CHECK_FALSE(NetworkPassengerPreparationTestAccess::Prepared(*client));
+	}
+	SECTION("Server announces while client is still computing") {
+		CHECK_FALSE(ClientNetworkGameSocketHandler::PreparePassengerRouting());
+		REQUIRE(NetworkPassengerPreparationTestAccess::Announce(*client, true, 123) == NetworkRecvStatus::Okay);
+		CHECK(NetworkPassengerPreparationTestAccess::Announce(*client, false, 123) == NetworkRecvStatus::MalformedPacket);
+	}
+	REQUIRE(NetworkPassengerPreparationTestAccess::Announce(*client, true, 123) == NetworkRecvStatus::Okay);
+	for (uint i = 0; !NetworkPassengerPreparationTestAccess::Prepared(*client); ++i) {
+		REQUIRE(i < 10000); CHECK_FALSE(ClientNetworkGameSocketHandler::PreparePassengerRouting());
+	}
+	CHECK_FALSE(ClientNetworkGameSocketHandler::PreparePassengerRouting()); // Wait for all peers.
+	REQUIRE(NetworkPassengerPreparationTestAccess::Announce(*client, false, 123) == NetworkRecvStatus::Okay);
+	CHECK(ClientNetworkGameSocketHandler::PreparePassengerRouting()); CHECK(_frame_counter == 123);
+}
+
+TEST_CASE("A sync received at the completed frame finishes joining without an extra frame", "[network][join-preparation][sync]")
+{
+	AutoRestoreBackup frame{_frame_counter, uint32_t{123}};
+	AutoRestoreBackup first{_network_first_time, true};
+	AutoRestoreBackup sync{_sync_frame, uint32_t{0}};
+	AutoRestoreBackup seed{_sync_seed_1, AutoRestoreBackupNoNewValueTag{}};
+	AutoRestoreBackup checksum{_sync_state_checksum, AutoRestoreBackupNoNewValueTag{}};
+	AutoRestoreBackup last{_last_sync_frame_counter, AutoRestoreBackupNoNewValueTag{}};
+	AutoRestoreBackup date{_last_sync_date, AutoRestoreBackupNoNewValueTag{}};
+	AutoRestoreBackup fract{_last_sync_date_fract, AutoRestoreBackupNoNewValueTag{}};
+	AutoRestoreBackup skip{_last_sync_tick_skip_counter, AutoRestoreBackupNoNewValueTag{}};
+	auto client = std::make_unique<ClientNetworkGameSocketHandler>(INVALID_SOCKET, "test");
+	NetworkPassengerPreparationTestAccess::Activate(*client);
+	uint32_t target = 123;
+	SECTION("Notification arrives at an already completed frame") {}
+	SECTION("Notification arrives before its frame") { target = 124; }
+	REQUIRE(NetworkPassengerPreparationTestAccess::Sync(*client, target, _random.state[0], _state_checksum.state) == NetworkRecvStatus::Okay);
+	if (target != _frame_counter) {
+		CHECK(NetworkPassengerPreparationTestAccess::CheckSync());
+		CHECK(_network_first_time); CHECK(_sync_frame == target);
+		_frame_counter = target;
+	}
+	CHECK(NetworkPassengerPreparationTestAccess::CheckSync());
+	CHECK_FALSE(_network_first_time); CHECK(_sync_frame == 0);
+	CHECK(_last_sync_frame_counter == target); CHECK(_frame_counter == target);
 }
 
 TEST_CASE("Asymmetric passenger workers preserve initial saves joins and replacement tick rows", "[passenger][precomputed][parallel][save][network]")

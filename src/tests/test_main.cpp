@@ -12,3 +12,17 @@
 #define CATCH_CONFIG_MAIN
 #define DO_NOT_USE_WMAIN
 #include "../3rdparty/catch2/catch.hpp"
+
+#include "../settings_type.h"
+
+/* Unit fixtures do not run the game's settings loader. Supply the existing
+ * aircraft preference defaults now that the passenger snapshots capture them. */
+struct AircraftCostDefaults : Catch::TestEventListenerBase {
+	using TestEventListenerBase::TestEventListenerBase;
+	void testRunStarting(const Catch::TestRunInfo &) override
+	{
+		_settings_game.linkgraph.aircraft_link_scale = 100;
+		_settings_game.linkgraph.aircraft_link_add = 0;
+	}
+};
+CATCH_REGISTER_LISTENER(AircraftCostDefaults)

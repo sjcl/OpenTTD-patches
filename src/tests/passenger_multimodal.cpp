@@ -21,6 +21,7 @@
 #include "../core/random_func.hpp"
 #include "../sl/saveload.h"
 #include "../linkgraph/linkgraph.h"
+#include "passenger_async_access.h"
 #include <chrono>
 
 static constexpr CargoType PAX{0}, MAIL{1};
@@ -129,6 +130,206 @@ struct MultimodalFixture {
 		return packet;
 	}
 };
+
+struct AircraftCostFixture : MultimodalFixture {
+	AutoRestoreBackup<uint8_t> days{DateDetail::_effective_day_length, uint8_t{1}};
+	AircraftCostFixture()
+	{
+		_settings_game.linkgraph.aircraft_link_scale = 100;
+		_settings_game.linkgraph.aircraft_link_add = 0;
+		_settings_game.linkgraph.passenger_transfer_penalty = 0;
+		_settings_game.linkgraph.passenger_journey_periodic = true;
+		_settings_game.linkgraph.passenger_journey_precomputed = false;
+		ResetPassengerServiceDatabase();
+	}
+	~AircraftCostFixture() { ResetPassengerServiceDatabase(); }
+	PassengerServiceDatabase &Build()
+	{
+		auto &db = GetPassengerServiceDatabase();
+		for (int i = 0; i < 128 && db.IsBuilding(); ++i) db.Tick();
+		REQUIRE_FALSE(db.IsBuilding());
+		return db;
+	}
+};
+
+TEST_CASE("Aircraft preferences choose the same corridor in every passenger planner", "[passenger][aircraft_cost][multimodal]")
+{
+	AircraftCostFixture f;
+	const uint16_t scale = GENERATE(50, 100, 300);
+	_settings_game.linkgraph.aircraft_link_scale = scale;
+	auto *air = f.Service(VehicleType::Aircraft, {MultiStop(A, 1000, 10), MultiStop(E, 100, 10)});
+	auto *rail = f.Service(VehicleType::Train, {MultiStop(A, 1000, 10), MultiStop(E, 80, 10)});
+	auto *expected = scale == 50 ? air : rail;
+	auto graph = f.Graph(); PassengerJourneyPlanner timed(graph);
+	PassengerJourneyLimits limits; limits.candidates = 1;
+	auto route = timed.Plan(PAX, A, E, NOW, limits);
+	REQUIRE(route.HasJourney()); CHECK(route.journeys.front().legs.front().vehicle == expected->index);
+	auto &db = f.Build();
+	auto periodic = db.Plan(PAX, A, E, NOW, limits);
+	REQUIRE(periodic.ride); CHECK(periodic.ride->service == expected->orders->index);
+	CHECK(periodic.cost == route.journeys.front().generalized_time.base());
+	CHECK(periodic.arrival == route.journeys.front().arrival);
+	CHECK(db.PlanWithoutServicePruning(PAX, A, E, NOW, limits).route == periodic.route);
+	std::array records{db.Get(air->orders->index), db.Get(rail->orders->index)};
+	for (bool hyperpath : {false, true}) {
+		PassengerPrecomputedTable table;
+		table.Begin(records, PAX, 0, PassengerPrecomputedTable::MAX_BYTES, true, false, {}, true, true, true, hyperpath);
+		while (!table.Finished()) table.Step(65536);
+		if (hyperpath) {
+			auto candidates = table.InspectRoutes(A, E, OrderListID::Invalid(), OrderListID::Invalid(), limits.work);
+			REQUIRE_FALSE(candidates.candidates.empty());
+			CHECK(std::any_of(candidates.candidates.begin(), candidates.candidates.end(), [&](const auto &c) { return c.ride.service == expected->orders->index; }));
+		} else {
+			auto plan = table.Plan(A, E, NOW, OrderListID::Invalid(), UINT32_MAX); REQUIRE(plan.ride); CHECK(plan.ride->service == expected->orders->index);
+		}
+	}
+}
+
+TEST_CASE("Aircraft through segments change preference without changing clocks or dwell", "[passenger][aircraft_cost][journey][periodic]")
+{
+	AircraftCostFixture f; DateDetail::_effective_day_length = 3;
+	_settings_game.linkgraph.aircraft_link_scale = 50; _settings_game.linkgraph.aircraft_link_add = 2;
+	auto *air = f.Service(VehicleType::Aircraft, {MultiStop(A, 1000, 10), MultiStop(B, 100, 30), MultiStop(E, 200, 10)});
+	auto graph = f.Graph(); PassengerJourneyPlanner timed(graph);
+	auto route = timed.Plan(PAX, A, E, NOW);
+	REQUIRE(route.HasJourney()); const auto &journey = route.journeys.front();
+	CHECK(journey.arrival == NOW + 340); CHECK(journey.riding.base() == 330);
+	CHECK(journey.generalized_time.base() == 340 - 150 + 2 * 2 * DAY_TICKS * 3);
+	auto &db = f.Build(); auto periodic = db.Plan(PAX, A, E, NOW);
+	REQUIRE(periodic.ride); CHECK(periodic.arrival == journey.arrival); CHECK(periodic.cost == journey.generalized_time.base());
+	std::array records{db.Get(air->orders->index)};
+	for (bool hyperpath : {false, true}) {
+		PassengerPrecomputedTable table;
+		table.Begin(records, PAX, 0, PassengerPrecomputedTable::MAX_BYTES, true, false, {}, true, true, true, hyperpath);
+		while (!table.Finished()) table.Step(65536);
+		auto plan = table.Plan(A, E, NOW); REQUIRE(plan.ride);
+		CHECK(plan.riding == 330); // Includes the unscaled intermediate dwell.
+		CHECK(plan.cost - plan.waiting >= 330 - 150 + 4 * DAY_TICKS * 3);
+	}
+	_state_ticks = NOW + 110; f.LoadAt(air, 1);
+	auto onboard_graph = f.Graph(); PassengerJourneyPlanner onboard(onboard_graph);
+	auto visit = onboard_graph.FindOnboardVisit(air->index, B, 1); REQUIRE(visit);
+	auto remaining = onboard.PlanOnboard(PAX, *visit, E); REQUIRE(remaining.HasJourney());
+	CHECK(remaining.journeys.front().arrival == NOW + 340);
+	CHECK(remaining.journeys.front().generalized_time.base() == 30 + 100 + 2 * DAY_TICKS * 3);
+}
+
+TEST_CASE("Large aircraft preference costs remain physically reachable in active Timed routing", "[passenger][aircraft_cost][active]")
+{
+	AircraftCostFixture f;
+	_settings_game.linkgraph.passenger_journey_periodic = false;
+	_settings_game.linkgraph.aircraft_link_add = 365;
+	DateDetail::_effective_day_length = 255;
+	auto *air = f.Service(VehicleType::Aircraft, {MultiStop(A, 1000, 10), MultiStop(E, 100, 10)});
+	auto *packet = f.Packet(); PassengerJourneyActiveContext context(nullptr, A);
+	REQUIRE(context.PlanWaiting(*packet, PAX, E));
+	CHECK(packet->GetPassengerJourney().vehicle == air->index);
+	CHECK(packet->GetPassengerJourney().arrival == NOW + 110);
+}
+
+TEST_CASE("Discounted flight suffixes keep admissible bounds after a rail connection", "[passenger][aircraft_cost][pruning]")
+{
+	AircraftCostFixture f; _settings_game.linkgraph.aircraft_link_scale = 10;
+	auto *rail = f.Service(VehicleType::Train, {MultiStop(A, 10000, 0), MultiStop(B, 100, 0)});
+	f.Service(VehicleType::Aircraft, {MultiStop(B, 10000, 100), MultiStop(E, 500, 0)});
+	f.Service(VehicleType::Train, {MultiStop(A, 10000, 0), MultiStop(E, 200, 0)});
+	auto graph = f.Graph(1000); PassengerJourneyPlanner planner(graph);
+	PassengerJourneyLimits limits; limits.candidates = 1;
+	auto timed = planner.Plan(PAX, A, E, NOW, limits); REQUIRE(timed.HasJourney());
+	CHECK(timed.journeys.front().legs.size() == 2); CHECK(timed.journeys.front().legs.front().vehicle == rail->index);
+	CHECK(timed.journeys.front().arrival == NOW + 600); CHECK(timed.journeys.front().generalized_time.base() == 150);
+	auto &db = f.Build(); auto periodic = db.Plan(PAX, A, E, NOW, limits); REQUIRE(periodic.ride);
+	CHECK(periodic.route.size() == 2); CHECK(periodic.cost == 150); CHECK(periodic.arrival == NOW + 600);
+	CHECK(db.PlanWithoutServicePruning(PAX, A, E, NOW, limits).route == periodic.route);
+}
+
+TEST_CASE("Aircraft changes discard old tables and preserve captured service generations", "[passenger][aircraft_cost][precomputed][save][network]")
+{
+	AircraftCostFixture f;
+	auto *air = f.Service(VehicleType::Aircraft, {MultiStop(A, 1000, 10), MultiStop(E, 100, 10)});
+	auto *rail = f.Service(VehicleType::Train, {MultiStop(A, 1000, 10), MultiStop(E, 150, 10)});
+	_settings_game.linkgraph.passenger_journey_precomputed = true;
+	for (bool hyperpath : {false, true}) {
+		_settings_game.linkgraph.passenger_journey_hyperpath = hyperpath;
+		ResetPassengerServiceDatabase(); auto &db = f.Build();
+		for (int i = 0; !db.PrecomputedFinished() && i < 128; ++i) db.Tick();
+		REQUIRE(db.PrecomputedFinished());
+		const auto generation = db.Get(air->orders->index)->generation;
+		REQUIRE(db.Plan(PAX, A, E, NOW).ride->service == air->orders->index);
+		_settings_game.linkgraph.aircraft_link_add = 30;
+		PassengerAircraftCostSettingsChanged(0);
+		CHECK_FALSE(db.PrecomputedFinished());
+		CHECK(db.Get(air->orders->index)->generation == generation);
+		auto changed = db.Plan(PAX, A, E, NOW); REQUIRE(changed.ride); CHECK(changed.ride->service == rail->orders->index);
+		// Save during graph preparation and replay with another local worker setting.
+		db.Tick(1, true, true); const auto wire = db.Save();
+		PassengerServiceDatabase loaded; REQUIRE(loaded.Load(wire)); loaded.FinishLoad(true);
+		CHECK(loaded.Save() == wire);
+		for (int i = 0; !db.PrecomputedFinished() && i < 128; ++i) db.Tick();
+		REQUIRE(db.PrecomputedFinished()); auto plan = db.PlanPrecomputed(PAX, A, E, NOW, OrderListID::Invalid(), UINT32_MAX); REQUIRE(plan.ride);
+		if (!hyperpath) CHECK(plan.ride->service == rail->orders->index);
+		_settings_game.linkgraph.aircraft_link_add = 0; PassengerAircraftCostSettingsChanged(0);
+	}
+}
+
+TEST_CASE("A discounted later arrival survives periodic dominance before a shared connection", "[passenger][aircraft_cost][pruning]")
+{
+	AircraftCostFixture f; _settings_game.linkgraph.aircraft_link_scale = 60;
+	f.Service(VehicleType::Train, {MultiStop(A, 10000, 0), MultiStop(B, 100, 0)});
+	auto *air = f.Service(VehicleType::Aircraft, {MultiStop(A, 10000, 0), MultiStop(B, 200, 0)});
+	f.Service(VehicleType::Train, {MultiStop(B, 10000, 300), MultiStop(E, 100, 0)});
+	f.Service(VehicleType::Train, {MultiStop(A, 10000, 0), MultiStop(E, 350, 0)});
+	auto &db = f.Build(); auto plan = db.Plan(PAX, A, E, NOW);
+	REQUIRE(plan.ride); CHECK(plan.ride->service == air->orders->index); CHECK(plan.cost == 320); CHECK(plan.arrival == NOW + 400);
+}
+
+TEST_CASE("Penalized untimed aircraft respect the existing CargoDist transfer hop", "[passenger][aircraft_cost][fallback]")
+{
+	AircraftCostFixture f; _settings_game.linkgraph.aircraft_link_add = 2;
+	auto *air = f.Service(VehicleType::Aircraft, {MultiStop(A), MultiStop(E, 100)});
+	auto *rail = f.Service(VehicleType::Train, {MultiStop(A), MultiStop(B, 100)});
+	Station::Get(A)->goods[PAX].CreateData().flows.insert(FlowStat(A, B, 10));
+	auto *packet = f.Packet(); packet->FallbackPassengerJourney(A, NOW);
+	PassengerOdFallbackContext fallback;
+	CHECK_FALSE(fallback.CanBoard(*packet, air, PAX)); CHECK(fallback.CanBoard(*packet, rail, PAX));
+}
+
+TEST_CASE("Aircraft edits cancel speculative old rows before publishing their replacements", "[passenger][aircraft_cost][parallel][network]")
+{
+	AircraftCostFixture f;
+	auto *air = f.Service(VehicleType::Aircraft, {MultiStop(A, 1000, 10), MultiStop(B, 50, 10), MultiStop(E, 50, 10)});
+	auto *rail = f.Service(VehicleType::Train, {MultiStop(A, 1000, 10), MultiStop(E, 200, 10)});
+	auto &db = f.Build(); _settings_game.linkgraph.passenger_journey_precomputed = true;
+	for (bool hyperpath : {false, true}) {
+		_settings_game.linkgraph.passenger_journey_hyperpath = hyperpath;
+		_settings_game.linkgraph.aircraft_link_add = 0; PassengerAircraftCostSettingsChanged(0);
+		PassengerServiceDatabaseTestAccess::BeginReplacement(db, 0);
+		PassengerPrecomputedTestAccess::Prime(PassengerServiceDatabaseTestAccess::Table(db, PAX), 4);
+		_settings_game.linkgraph.aircraft_link_add = 30; PassengerAircraftCostSettingsChanged(0);
+		CHECK_FALSE(db.PrecomputedFinished());
+		for (int i = 0; !db.PrecomputedFinished() && i < 128; ++i) db.Tick();
+		REQUIRE(db.PrecomputedFinished());
+		std::array records{db.Get(air->orders->index), db.Get(rail->orders->index)};
+		PassengerPrecomputedTable reference;
+		reference.Begin(records, PAX, 0, PassengerPrecomputedTable::MAX_BYTES, true, false, {}, true, true, true, hyperpath);
+		while (!reference.Finished()) reference.Step(65536);
+		CHECK(db.PrecomputedRouteCost(PAX, A, E) == reference.RouteCost(A, E));
+		CHECK(db.Plan(PAX, A, E, NOW).ride->service == rail->orders->index);
+	}
+}
+
+TEST_CASE("Aircraft additions cannot overflow an extreme periodic departure wait", "[passenger][aircraft_cost][periodic]")
+{
+	AircraftCostFixture f; DateDetail::_effective_day_length = 255;
+	_settings_game.linkgraph.aircraft_link_add = 365;
+	auto *air = f.Service(VehicleType::Aircraft, {MultiStop(A, 1000, 10), MultiStop(E, 100, 10)});
+	auto &db = f.Build();
+	air->current_order.Free(); // Keep the captured phase; no current-loading override.
+	auto *captured = const_cast<PassengerPeriodicService *>(db.Get(air->orders->index)); REQUIRE(captured);
+	captured->vehicles.front().base = StateTicks{INT64_MAX - 1000};
+	auto plan = db.Plan(PAX, A, E, NOW);
+	CHECK_FALSE(plan.ride); CHECK(plan.observations[static_cast<size_t>(PassengerPeriodicPlan::Reason::Evaluation)]);
+}
 
 TEST_CASE("Every passenger transport uses the same planner and production boarding", "[passenger][multimodal][active]")
 {

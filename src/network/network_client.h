@@ -14,6 +14,7 @@
 
 /** Class for handling the client side of the game connection. */
 class ClientNetworkGameSocketHandler : public NetworkGameSocketHandler {
+	friend struct NetworkPassengerPreparationTestAccess;
 private:
 	std::unique_ptr<class NetworkAuthenticationClientHandler> authentication_handler; ///< The handler for the authentication.
 	std::string connection_string;                   ///< Address we are connected to.
@@ -95,6 +96,7 @@ protected:
 	static NetworkRecvStatus SendGetMap();
 	static NetworkRecvStatus SendMapOk();
 	NetworkRecvStatus FinishMapLoad();
+	static bool CheckSync();
 	static NetworkRecvStatus SendIdentify();
 	void CheckConnection();
 
@@ -145,6 +147,7 @@ public:
 	static bool Receive();
 	static bool GameLoop();
 	static bool PreparePassengerRouting();
+	static bool IsWaitingForPassengerPreparation();
 	static bool ProcessMapLoad(); ///< Return to receive/send between bounded replay slices.
 
 	static bool EmergencySavePossible();
