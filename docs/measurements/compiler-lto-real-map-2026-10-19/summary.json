@@ -1,0 +1,310 @@
+{
+  "runs": [
+    {
+      "name": "wpr-msvc-1",
+      "compiler": "msvc",
+      "ticks": 1024,
+      "start_tick": 3197276448,
+      "end_tick": 3197277472,
+      "sampled_cpu_ms": {
+        "all_threads_ms": 27334.307200000138,
+        "main_thread_ms": 27147.888400000138,
+        "world_ms": 26430.50850000016,
+        "passenger_ms": 3295.330499999994,
+        "route_ms": 570.5392999999999,
+        "route_or_boarding_ms": 1118.129499999999,
+        "boarding_ms": 831.5353000000001
+      },
+      "sampled_counts": {
+        "world_ms": 26407,
+        "passenger_ms": 3291,
+        "route_ms": 570,
+        "route_or_boarding_ms": 1117,
+        "boarding_ms": 831
+      },
+      "per_tick_cpu_ms": {
+        "all_threads_ms": 26.693659375000134,
+        "main_thread_ms": 26.511609765625135,
+        "world_ms": 25.811043457031406,
+        "passenger_ms": 3.2180961914062443,
+        "route_ms": 0.5571672851562499,
+        "route_or_boarding_ms": 1.0919233398437491,
+        "boarding_ms": 0.8120461914062501
+      },
+      "world_thread_counter_ms": 26093.75,
+      "build_wall_seconds": 14.590811,
+      "build_cpu_seconds": 67.1875,
+      "warning_lines": 14163,
+      "error_resumes": 0,
+      "initial_error_resumes": 1
+    },
+    {
+      "name": "wpr-clang-1",
+      "compiler": "clang",
+      "ticks": 1024,
+      "start_tick": 3197276448,
+      "end_tick": 3197277472,
+      "sampled_cpu_ms": {
+        "all_threads_ms": 23871.650100000148,
+        "main_thread_ms": 23714.401100000152,
+        "world_ms": 22972.24710000013,
+        "passenger_ms": 3250.2057999999975,
+        "route_ms": 473.37820000000016,
+        "route_or_boarding_ms": 1101.9764000000005,
+        "boarding_ms": 850.8868000000006
+      },
+      "sampled_counts": {
+        "world_ms": 22948,
+        "passenger_ms": 3247,
+        "route_ms": 473,
+        "route_or_boarding_ms": 1101,
+        "boarding_ms": 850
+      },
+      "per_tick_cpu_ms": {
+        "all_threads_ms": 23.312158300781395,
+        "main_thread_ms": 23.1585948242189,
+        "world_ms": 22.43383505859388,
+        "passenger_ms": 3.1740291015624975,
+        "route_ms": 0.46228339843750016,
+        "route_or_boarding_ms": 1.0761488281250005,
+        "boarding_ms": 0.8309441406250005
+      },
+      "world_thread_counter_ms": 22953.125,
+      "build_wall_seconds": 15.312425,
+      "build_cpu_seconds": 71.421875,
+      "warning_lines": 14163,
+      "error_resumes": 0,
+      "initial_error_resumes": 1
+    },
+    {
+      "name": "wpr-clang-2",
+      "compiler": "clang",
+      "ticks": 1024,
+      "start_tick": 3197276448,
+      "end_tick": 3197277472,
+      "sampled_cpu_ms": {
+        "all_threads_ms": 23702.97310000011,
+        "main_thread_ms": 23538.961200000107,
+        "world_ms": 22850.11200000008,
+        "passenger_ms": 3230.4632999999994,
+        "boarding_ms": 793.3867999999991,
+        "route_or_boarding_ms": 1059.1613,
+        "route_ms": 487.0793999999997
+      },
+      "sampled_counts": {
+        "world_ms": 22825,
+        "passenger_ms": 3227,
+        "boarding_ms": 792,
+        "route_or_boarding_ms": 1058,
+        "route_ms": 487
+      },
+      "per_tick_cpu_ms": {
+        "all_threads_ms": 23.147434667968856,
+        "main_thread_ms": 22.987266796875105,
+        "world_ms": 22.31456250000008,
+        "passenger_ms": 3.1547493164062494,
+        "boarding_ms": 0.7747917968749991,
+        "route_or_boarding_ms": 1.03433720703125,
+        "route_ms": 0.4756634765624997
+      },
+      "world_thread_counter_ms": 22953.125,
+      "build_wall_seconds": 14.44251,
+      "build_cpu_seconds": 67.609375,
+      "warning_lines": 14163,
+      "error_resumes": 0,
+      "initial_error_resumes": 1
+    },
+    {
+      "name": "wpr-msvc-2",
+      "compiler": "msvc",
+      "ticks": 1024,
+      "start_tick": 3197276448,
+      "end_tick": 3197277472,
+      "sampled_cpu_ms": {
+        "all_threads_ms": 27425.585600000013,
+        "main_thread_ms": 27256.417000000012,
+        "world_ms": 26467.22150000003,
+        "passenger_ms": 3285.170800000004,
+        "boarding_ms": 855.5459999999998,
+        "route_or_boarding_ms": 1147.1439000000005,
+        "route_ms": 566.7143999999996
+      },
+      "sampled_counts": {
+        "world_ms": 26432,
+        "passenger_ms": 3281,
+        "boarding_ms": 855,
+        "route_or_boarding_ms": 1146,
+        "route_ms": 566
+      },
+      "per_tick_cpu_ms": {
+        "all_threads_ms": 26.782798437500013,
+        "main_thread_ms": 26.617594726562512,
+        "world_ms": 25.846895996093778,
+        "passenger_ms": 3.208174609375004,
+        "boarding_ms": 0.8354941406249998,
+        "route_or_boarding_ms": 1.1202577148437505,
+        "route_ms": 0.5534320312499996
+      },
+      "world_thread_counter_ms": 26406.25,
+      "build_wall_seconds": 14.465588,
+      "build_cpu_seconds": 67.359375,
+      "warning_lines": 14163,
+      "error_resumes": 0,
+      "initial_error_resumes": 1
+    }
+  ],
+  "medians": {
+    "msvc": {
+      "build_wall_seconds": 14.5281995,
+      "build_cpu_seconds": 67.2734375,
+      "world_thread_counter_ms": 26250.0,
+      "cpu_ms_per_tick": {
+        "all_threads_ms": 26.73822890625007,
+        "main_thread_ms": 26.564602246093823,
+        "world_ms": 25.82896972656259,
+        "passenger_ms": 3.213135400390624,
+        "route_ms": 0.5552996582031248,
+        "route_or_boarding_ms": 1.1060905273437498,
+        "boarding_ms": 0.8237701660156249
+      }
+    },
+    "clang": {
+      "build_wall_seconds": 14.8774675,
+      "build_cpu_seconds": 69.515625,
+      "world_thread_counter_ms": 22953.125,
+      "cpu_ms_per_tick": {
+        "all_threads_ms": 23.229796484375125,
+        "main_thread_ms": 23.072930810547,
+        "world_ms": 22.37419877929698,
+        "passenger_ms": 3.1643892089843737,
+        "route_ms": 0.4689734374999999,
+        "route_or_boarding_ms": 1.055243017578125,
+        "boarding_ms": 0.8028679687499998
+      }
+    }
+  },
+  "canonical": {
+    "wpr-msvc-1": {
+      "runtime_routing_feature": 1,
+      "state_ticks": 3197277472,
+      "packets": 468937,
+      "cargo_units": 545759,
+      "known_od_units": 467473,
+      "journey_packets": 456285,
+      "packet_state_digest": 14168532269542370959,
+      "payment_digest": 5684627927906326875,
+      "payments_valid": true,
+      "database_digest": 4293480760840559131,
+      "ownership_digest": 7538573873666253069,
+      "loading_digest": 11144545727402337527,
+      "completed_rows": 4936,
+      "retained_rows": 0,
+      "table_operations": 1976379656,
+      "published_revision": 1776,
+      "company_deliveries": 455,
+      "journey_routing": 1,
+      "precomputed_routing": 1,
+      "legacy_true_packets": 0,
+      "legacy_false_packets": 0,
+      "legacy_true_units": 0,
+      "legacy_false_units": 0,
+      "opposite_history_mergeable_pairs": 0
+    },
+    "wpr-clang-1": {
+      "runtime_routing_feature": 1,
+      "state_ticks": 3197277472,
+      "packets": 468937,
+      "cargo_units": 545759,
+      "known_od_units": 467473,
+      "journey_packets": 456285,
+      "packet_state_digest": 14168532269542370959,
+      "payment_digest": 5684627927906326875,
+      "payments_valid": true,
+      "database_digest": 4293480760840559131,
+      "ownership_digest": 7538573873666253069,
+      "loading_digest": 11144545727402337527,
+      "completed_rows": 4936,
+      "retained_rows": 0,
+      "table_operations": 1976379656,
+      "published_revision": 1776,
+      "company_deliveries": 455,
+      "journey_routing": 1,
+      "precomputed_routing": 1,
+      "legacy_true_packets": 0,
+      "legacy_false_packets": 0,
+      "legacy_true_units": 0,
+      "legacy_false_units": 0,
+      "opposite_history_mergeable_pairs": 0
+    },
+    "wpr-clang-2": {
+      "runtime_routing_feature": 1,
+      "state_ticks": 3197277472,
+      "packets": 468937,
+      "cargo_units": 545759,
+      "known_od_units": 467473,
+      "journey_packets": 456285,
+      "packet_state_digest": 14168532269542370959,
+      "payment_digest": 5684627927906326875,
+      "payments_valid": true,
+      "database_digest": 4293480760840559131,
+      "ownership_digest": 7538573873666253069,
+      "loading_digest": 11144545727402337527,
+      "completed_rows": 4936,
+      "retained_rows": 0,
+      "table_operations": 1976379656,
+      "published_revision": 1776,
+      "company_deliveries": 455,
+      "journey_routing": 1,
+      "precomputed_routing": 1,
+      "legacy_true_packets": 0,
+      "legacy_false_packets": 0,
+      "legacy_true_units": 0,
+      "legacy_false_units": 0,
+      "opposite_history_mergeable_pairs": 0
+    },
+    "wpr-msvc-2": {
+      "runtime_routing_feature": 1,
+      "state_ticks": 3197277472,
+      "packets": 468937,
+      "cargo_units": 545759,
+      "known_od_units": 467473,
+      "journey_packets": 456285,
+      "packet_state_digest": 14168532269542370959,
+      "payment_digest": 5684627927906326875,
+      "payments_valid": true,
+      "database_digest": 4293480760840559131,
+      "ownership_digest": 7538573873666253069,
+      "loading_digest": 11144545727402337527,
+      "completed_rows": 4936,
+      "retained_rows": 0,
+      "table_operations": 1976379656,
+      "published_revision": 1776,
+      "company_deliveries": 455,
+      "journey_routing": 1,
+      "precomputed_routing": 1,
+      "legacy_true_packets": 0,
+      "legacy_false_packets": 0,
+      "legacy_true_units": 0,
+      "legacy_false_units": 0,
+      "opposite_history_mergeable_pairs": 0
+    }
+  },
+  "mismatches": {
+    "wpr-msvc-1": {},
+    "wpr-clang-1": {},
+    "wpr-clang-2": {},
+    "wpr-msvc-2": {}
+  },
+  "route_roots": [
+    "PassengerServiceDatabase::PlanPrecomputed",
+    "PassengerServiceDatabase::PlanInternal",
+    "PassengerPrecomputedTable::Plan",
+    "PassengerJourneyPlanner::Plan",
+    "PassengerJourneyPlanner::PlanOnboard",
+    "PassengerSchedulePlanner::Plan"
+  ],
+  "boarding_roots": [
+    "PassengerJourneyLoadingContext::CanBoard",
+    "PassengerJourneyLoadingContext::MayUseHyperpathPolicy"
+  ]
+}

@@ -1,0 +1,7 @@
+cmake_minimum_required(VERSION 3.17)
+project(strategy_arithmetic LANGUAGES CXX)
+set(CMAKE_CXX_STANDARD 20)
+add_executable(strategy_arithmetic check.cpp)
+if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+  target_link_libraries(strategy_arithmetic "C:/Program Files (x86)/Microsoft Visual Studio/2022/BuildTools/VC/Tools/Llvm/x64/lib/clang/19/lib/windows/clang_rt.builtins-x86_64.lib")
+endif()

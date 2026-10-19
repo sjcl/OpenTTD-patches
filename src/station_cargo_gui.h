@@ -26,6 +26,10 @@ struct StationPassengerServiceDiagnostics {
 	uint64_t cache_hits = 0, work = 0, work_exhausted = 0, candidates = 0, vehicles = 0;
 	uint64_t no_candidates = 0, stale_policy = 0, stale_service = 0, no_shared_vehicle = 0;
 	uint64_t ungrouped = 0, invalid_vehicle = 0, unusable_vehicle = 0, refreshes = 0, evictions = 0;
+	uint64_t search_releases = 0, capacity_regressions = 0;
+	uint64_t result_evictions = 0, capacity_waits = 0, periodic_revalidations = 0, policy_revalidations = 0;
+	uint64_t representative_lost = 0, display_regressions = 0, resolved = 0, validation_work = 0;
+	size_t results = 0, searches = 0, result_capacity = 0, estimated_bytes = 0, waiting_work = 0;
 	size_t pending = 0, partial = 0, complete = 0, unavailable = 0, entries = 0;
 };
 
@@ -56,13 +60,15 @@ inline StationCargoGroupingMode GetStationCargoGroupingMode(bool planned, bool p
 /** Persistent, bounded, incremental GUI lookup. No live game pointers or names are retained. */
 class StationPassengerServiceCache {
 public:
-	StationPassengerServiceCache();
+	explicit StationPassengerServiceCache(size_t result_budget = 16 * 1024 * 1024);
 	~StationPassengerServiceCache();
 	StationPassengerService Resolve(CargoType cargo, const PassengerJourneyExecution &ride);
 	StationPassengerService Resolve(CargoType cargo, const CargoPacket &packet, StationID station);
 	/** Refill the independent GUI budget at 16,384 Work/second and round-robin pending tasks. */
 	bool Advance(uint delta_ms, size_t work_limit = 16384);
 	void Clear(); ///< Explicit reset, never called by the periodic GUI update.
+	void BeginRefresh(); ///< Mark results referenced by the current window refresh.
+	void Invalidate(OrderListID service = OrderListID::Invalid()); ///< GUI-only notification; never invalidates passenger routing.
 	StationPassengerServiceDiagnostics GetDiagnostics() const;
 
 private:

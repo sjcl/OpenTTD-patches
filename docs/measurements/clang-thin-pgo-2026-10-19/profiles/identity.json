@@ -1,0 +1,40 @@
+{
+  "command": [
+    "C:\\Users\\bebe\\AppData\\Local\\Programs\\Python\\Python313\\python.exe",
+    "C:\\Users\\bebe\\.codex\\worktrees\\6d2b\\OpenTTD-patches\\utils\\passenger_precomputed_real_map.py",
+    "run",
+    "C:\\Users\\bebe\\.codex\\worktrees\\6d2b\\OpenTTD-patches\\build-clang-thin-pgo\\generate\\Release\\openttd.exe",
+    "C:\\Users\\bebe\\.codex\\worktrees\\6d2b\\OpenTTD-patches\\build-clang-thin-pgo\\input",
+    "C:\\Users\\bebe\\.codex\\worktrees\\6d2b\\OpenTTD-patches\\build-clang-thin-pgo\\training",
+    "--lang",
+    "C:\\Users\\bebe\\.codex\\worktrees\\6d2b\\OpenTTD-patches\\build-clang-thin-pgo\\generate\\lang",
+    "--ticks",
+    "4096",
+    "--timeout",
+    "1800",
+    "--resume",
+    "--wait-saved-replay",
+    "--precomputed",
+    "--cold-precomputed",
+    "--warm-precomputed"
+  ],
+  "environment": {
+    "LLVM_PROFILE_FILE": "C:\\Users\\bebe\\.codex\\worktrees\\6d2b\\OpenTTD-patches\\build-clang-thin-pgo\\profiles\\raw\\real-map-%p-%m.profraw"
+  },
+  "merge_command": [
+    "C:/Program Files (x86)/Microsoft Visual Studio/2022/BuildTools/VC/Tools/Llvm/x64/bin/llvm-profdata.exe",
+    "merge",
+    "-o",
+    "C:\\Users\\bebe\\.codex\\worktrees\\6d2b\\OpenTTD-patches\\build-clang-thin-pgo\\profiles\\real-map.profdata",
+    "C:\\Users\\bebe\\.codex\\worktrees\\6d2b\\OpenTTD-patches\\build-clang-thin-pgo\\profiles\\raw\\real-map-86512-2073061960108917829_0.profraw"
+  ],
+  "binary_sha256": "35bb377979da699f5611957c910bf59393da7fee1dc644cff1486f2e0e5d859f",
+  "input_sha256": "916cfa88eab18342199ec0c77f0c15c5477c961be7fa60d71e2d22a1b878992a",
+  "raw_profiles": {
+    "C:\\Users\\bebe\\.codex\\worktrees\\6d2b\\OpenTTD-patches\\build-clang-thin-pgo\\profiles\\raw\\real-map-86512-2073061960108917829_0.profraw": {
+      "sha256": "1291cc6a0f56a3efc6e7bb6f6cf1e162274734c14b50340b4000b89f5f6c7c57",
+      "size": 11902664
+    }
+  },
+  "profile_sha256": "3efb8693f20a28440b1f6802b9fb08bb0da42d9cb16d5e9a4bf5ba55611f488d"
+}

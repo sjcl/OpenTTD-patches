@@ -2402,6 +2402,17 @@ STR_NETWORK_START_SERVER_NEW_GAME_NAME_OSKTITLE                 :{BLACK}ネッ�
 # Network connecting window
 STR_NETWORK_CONNECTING_CAPTION                                  :{WHITE}接続中…
 
+STR_PASSENGER_PRECOMPUTED_CAPTION                               :{WHITE}旅客経路表を構築しています
+STR_PASSENGER_PRECOMPUTED_SERVICES                              :{BLACK}運行データの準備
+STR_PASSENGER_PRECOMPUTED_GRAPH                                 :{BLACK}経路グラフの構築
+STR_PASSENGER_PRECOMPUTED_RESTORING                             :{BLACK}以前の経路表の復元
+STR_PASSENGER_PRECOMPUTED_TABLES                                :{BLACK}経路表の構築
+STR_PASSENGER_PRECOMPUTED_COMPLETE                              :{BLACK}ローカルの構築完了
+STR_PASSENGER_PRECOMPUTED_MEMORY                                :{BLACK}メモリ制限のため構築を停止しました
+STR_PASSENGER_PRECOMPUTED_INVALID                               :{BLACK}経路表を復元できませんでした
+STR_PASSENGER_PRECOMPUTED_PERCENT                               :{BLACK}{NUM}%
+STR_PASSENGER_PRECOMPUTED_DESTINATIONS                          :{BLACK}構築済み目的地数: {NUM} / {NUM}
+
 STR_NETWORK_CONNECTING_WAITING                                  :{BLACK}あなたより先に{NUM}人が待機しています
 STR_NETWORK_CONNECTING_DOWNLOADING_1                            :{BLACK}{BYTES}ダウンロード済
 STR_NETWORK_CONNECTING_DOWNLOADING_2                            :{BLACK}{1:BYTES}中、{0:BYTES}ダウンロード済
@@ -3724,6 +3735,7 @@ STR_STATION_VIEW_PASSENGER_SERVICE_MULTIPLE                    :{RAW_STRING} な
 STR_STATION_VIEW_PASSENGER_SERVICE_TRANSFER                    :未確定（{STATION}で乗換予定）
 STR_STATION_VIEW_PASSENGER_SERVICE_UNKNOWN                     :未確定
 STR_STATION_VIEW_PASSENGER_SERVICE_DIAGNOSTICS                 :{BLACK}GUI系統キャッシュ: 未処理 {COMMA}、一部確認 {COMMA}、完了 {COMMA}、参照不可 {COMMA}{}Work不足 {COMMA}、候補なし {COMMA}{}旧policy {COMMA}、旧系統 {COMMA}、共有車両なし {COMMA}{}グループ未設定車両 {COMMA}、無効車両 {COMMA}、GUI Work {COMMA}
+STR_STATION_VIEW_PASSENGER_SERVICE_DIAGNOSTICS_CACHE           :{BLACK}検索キャッシュ {COMMA}、表示結果 {COMMA}、推定バイト数 {COMMA}{}検索状態解放 {COMMA}、結果破棄 {COMMA}{}進行中の定期検証 {COMMA}、policy再検証 {COMMA}、代表車両失効 {COMMA}{}表示退行: 再検証 {COMMA}、容量 {COMMA}、新規解決 {COMMA}{}処理待ち {COMMA}、容量待ち {COMMA}
 STR_STATION_VIEW_PASSENGER_GROUPING                            :{BLACK}旅客: 系統 → 目的地 → 出発地
 STR_STATION_VIEW_PASSENGER_SERVICE_RESERVED                    :乗車予約済み
 STR_STATION_VIEW_PASSENGER_SERVICE_UPDATING                    :系統情報更新待ち

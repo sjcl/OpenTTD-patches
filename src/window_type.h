@@ -849,6 +849,7 @@ enum class WindowClass : uint16_t {
 	 */
 	ModifierKeyToggle,
 
+	PassengerPrecomputedProgress, ///< Local initial passenger table construction; window number 0.
 	End,              ///< End sentinel.
 	Invalid = 0xFFFF, ///< Invalid window.
 };

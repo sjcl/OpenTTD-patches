@@ -33,6 +33,17 @@
 #include <chrono>
 #include <thread>
 #include "passenger_async_access.h"
+#include "../passenger_precomputed_progress.h"
+#include "../passenger_precomputed_gui.h"
+#include "../window_gui.h"
+#include "../window_func.h"
+#include "../language.h"
+#include "../gfx_func.h"
+#include "../openttd.h"
+#include "../network/network_gui.h"
+#include "../network/network_internal.h"
+#include "../widgets/network_widget.h"
+#include "mock_environment.h"
 
 extern SaveLoadVersion _sl_version;
 extern NamedSaveLoadTable GetGoodsDesc();
@@ -4346,6 +4357,177 @@ TEST_CASE("Async passenger replacement preserves saved intents across actual two
 	}
 }
 
+TEST_CASE("Initial passenger progress is scoped to one game initialization", "[passenger][precomputed][progress]")
+{
+	PassengerInitialBuildProgress session;
+	session.Reset(true); session.Observe(true);
+	REQUIRE(session.ShowWindow());
+	session.Dismiss(); CHECK(session.Active()); CHECK_FALSE(session.ShowWindow());
+	session.Observe(false); CHECK_FALSE(session.Active());
+	session.Observe(true); CHECK_FALSE(session.Active()); // Ordinary rebuild, including settings changes.
+	session.Reset(true); session.Observe(true); CHECK(session.ShowWindow()); // Another loaded game.
+	session.Reset(false); session.Observe(true); CHECK_FALSE(session.Active()); // Disconnect/menu.
+	session.Reset(true); session.Observe(false); session.Observe(true);
+	CHECK_FALSE(session.Active()); // Initially disabled/unnecessary cannot arm a later rebuild.
+}
+
+/** Opt-in real widget lifecycle smoke test. Supply a freshly built language
+ * pack in OPENTTD_TEST_PROGRESS_LANGUAGE; no video window or map benchmark. */
+TEST_CASE("Initial passenger progress windows update close and share the join window", "[.][passenger][progress-gui]")
+{
+	const char *language = std::getenv("OPENTTD_TEST_PROGRESS_LANGUAGE"); REQUIRE(language != nullptr);
+	MockEnvironment::Instance();
+	static LanguageMetadata metadata; metadata.file = language;
+	REQUIRE(ReadLanguagePack(&metadata));
+	AutoRestoreBackup mode{_game_mode, GameMode::Normal};
+	AutoRestoreBackup dedicated{_network_dedicated, false};
+	AutoRestoreBackup width{_screen.width, 1024}, height{_screen.height, 768};
+	SetupWidgetDimensions();
+	struct Cleanup {
+		~Cleanup() { ResetInitialPassengerProgress(false); UnInitWindowSystem(); }
+	} cleanup;
+	Fixture f; f.Train({Stop(A), Stop(B), Stop(C), Stop(D)});
+	_settings_game.linkgraph.passenger_journey_precomputed = true;
+	auto &db = GetPassengerServiceDatabase();
+	auto show = [&]() {
+		ResetInitialPassengerProgress(true);
+		std::this_thread::sleep_for(std::chrono::milliseconds(210));
+		UpdateInitialPassengerProgress();
+		REQUIRE(FindWindowById(WindowClass::PassengerPrecomputedProgress, 0) != nullptr);
+		REQUIRE(GetInitialPassengerProgress() != nullptr);
+	};
+	show();
+	CHECK(GetInitialPassengerProgress()->phase == PassengerPrecomputedProgress::Phase::Services);
+	const auto wire = db.Save();
+	CloseWindowById(WindowClass::PassengerPrecomputedProgress, 0);
+	std::this_thread::sleep_for(std::chrono::milliseconds(210)); UpdateInitialPassengerProgress();
+	CHECK(FindWindowById(WindowClass::PassengerPrecomputedProgress, 0) == nullptr); CHECK(db.Save() == wire);
+	show(); // A different initialization clears the prior dismissal.
+	ShowJoinStatusWindow(); UpdateInitialPassengerProgress();
+	CHECK(FindWindowById(WindowClass::PassengerPrecomputedProgress, 0) == nullptr);
+	auto *join = FindWindowById(WindowClass::NetworkStatus, NetworkStatusWindowNumber::Join); REQUIRE(join != nullptr);
+	join->OnInvalidateData(0, true);
+	CHECK(join->GetWidget<NWidgetStacked>(WID_NJS_PASSENGER_PANEL)->shown_plane == 0);
+	while (!db.PreparePrecomputed()) {}
+	UpdateInitialPassengerProgress();
+	CHECK(GetInitialPassengerProgress()->phase == PassengerPrecomputedProgress::Phase::Complete);
+	CHECK_FALSE(GetInitialPassengerProgress()->preparing);
+	CHECK(FindWindowById(WindowClass::NetworkStatus, NetworkStatusWindowNumber::Join) == join);
+	CloseWindowById(WindowClass::NetworkStatus, NetworkStatusWindowNumber::Join);
+	PassengerServiceDatabaseTestAccess::BeginReplacement(db, 17); db.TickPrecomputed(1);
+	UpdateInitialPassengerProgress();
+	CHECK(FindWindowById(WindowClass::PassengerPrecomputedProgress, 0) == nullptr);
+	CHECK(FindWindowById(WindowClass::NetworkStatus, NetworkStatusWindowNumber::Join) == nullptr);
+	ResetInitialPassengerProgress(false); UpdateInitialPassengerProgress();
+	CHECK(GetInitialPassengerProgress() == nullptr);
+	/* Observe real table publication, then automatic closure of the standalone
+	 * window without advancing game ticks or creating a network window. */
+	db.Reset();
+	for (uint i = 0; db.IsBuilding(); ++i) { REQUIRE(i < 128); db.Tick(PassengerServiceDatabase::BUILD_WORK, false); }
+	db.TickPrecomputed(0); show();
+	CHECK(GetInitialPassengerProgress()->destinations == 0);
+	auto &table = PassengerServiceDatabaseTestAccess::Table(db, PAX);
+	for (uint i = 0; table.GetDiagnostic().destinations == 0; ++i) { REQUIRE(i < 100000); table.Step(1); }
+	std::this_thread::sleep_for(std::chrono::milliseconds(210)); UpdateInitialPassengerProgress();
+	CHECK(GetInitialPassengerProgress()->destinations == 1);
+	CHECK(FindWindowById(WindowClass::PassengerPrecomputedProgress, 0) != nullptr);
+	while (!db.PreparePrecomputed()) {}
+	UpdateInitialPassengerProgress();
+	CHECK(FindWindowById(WindowClass::PassengerPrecomputedProgress, 0) == nullptr);
+	CHECK(_state_ticks == NOW);
+}
+
+TEST_CASE("Empty initial passenger progress has no percentage or later rebuild window", "[passenger][precomputed][progress]")
+{
+	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = true;
+	auto &db = GetPassengerServiceDatabase();
+	PassengerInitialBuildProgress session; session.Reset(true);
+	while (!db.PreparePrecomputed()) session.Observe(db.GetPrecomputedProgress().preparing);
+	const auto progress = db.GetPrecomputedProgress(); session.Observe(progress.preparing);
+	CHECK(progress.stations == 0); CHECK(progress.destinations == 0); CHECK_FALSE(progress.Percent());
+	CHECK_FALSE(session.Active()); session.Observe(true); CHECK_FALSE(session.ShowWindow());
+}
+
+TEST_CASE("Passenger progress counts only current published destinations across cargos", "[passenger][precomputed][progress]")
+{
+	Fixture f;
+	_settings_game.linkgraph.passenger_journey_precomputed = false;
+	auto *train = f.Train({Stop(A), Stop(B), Stop(C), Stop(D)});
+	auto &db = f.Build();
+	CHECK(db.GetPrecomputedProgress().phase == PassengerPrecomputedProgress::Phase::Disabled);
+	_settings_game.linkgraph.passenger_journey_precomputed = true;
+	db.TickPrecomputed(0);
+	constexpr CargoType second{1}, unused{2};
+	AutoRestoreBackup second_classes{CargoSpec::Get(second)->classes, CargoClasses{CargoClass::Passengers}};
+	AutoRestoreBackup unused_classes{CargoSpec::Get(unused)->classes, CargoClasses{CargoClass::Passengers}};
+	auto service = *db.Get(train->orders->index);
+	service.vehicles.front().capacity[second] = 50;
+	const std::array records{&service};
+	auto &table = PassengerServiceDatabaseTestAccess::Table(db, second);
+	table.Begin(records, second, 0, PassengerPrecomputedTable::MAX_BYTES, true, true);
+	auto progress = db.GetPrecomputedProgress();
+	CHECK(progress.phase == PassengerPrecomputedProgress::Phase::Graph);
+	CHECK_FALSE(progress.total_known); CHECK_FALSE(progress.Percent());
+	while (!table.PrepareGraph()) {}
+	progress = db.GetPrecomputedProgress();
+	REQUIRE(progress.stations == 8); CHECK(progress.destinations == 0); CHECK(progress.Percent() == 0);
+	const auto wire = db.Save();
+	const auto published = PassengerPrecomputedTestAccess::Published(table);
+	for (uint i = 0; i < 20; ++i) CHECK(db.GetPrecomputedProgress().destinations == 0);
+	CHECK(db.Save() == wire); CHECK(PassengerPrecomputedTestAccess::Published(table) == published);
+	/* Speculation alone is never counted as public progress. */
+	table.StepParallel(0, 2);
+	CHECK(db.GetPrecomputedProgress().destinations == 0);
+	for (uint i = 0; table.GetDiagnostic().destinations == 0; ++i) { REQUIRE(i < 100000); table.Step(1); }
+	progress = db.GetPrecomputedProgress(); CHECK(progress.destinations == 1); CHECK(progress.Percent() == 12);
+	while (!db.PreparePrecomputed()) {}
+	progress = db.GetPrecomputedProgress(); CHECK(progress.phase == PassengerPrecomputedProgress::Phase::Complete);
+	CHECK(progress.destinations == 8); CHECK(progress.Percent() == 100);
+	PassengerServiceDatabaseTestAccess::BeginReplacement(db, 17);
+	progress = db.GetPrecomputedProgress();
+	CHECK(db.GetPrecomputedDiagnostic(PAX).retained_destinations == 4);
+	CHECK(progress.destinations == 0); CHECK(progress.stations == 4); // Frozen live services use only PAX.
+	/* Finished includes memory rejection; the display must not call it success. */
+	PassengerServiceDatabaseTestAccess::Table(db, PAX).Begin(records, PAX, 0, 1);
+	progress = db.GetPrecomputedProgress();
+	CHECK(progress.phase == PassengerPrecomputedProgress::Phase::MemoryRejected); CHECK_FALSE(progress.Percent());
+	PassengerPrecomputedProgress empty;
+	empty.total_known = true; empty.phase = PassengerPrecomputedProgress::Phase::Complete;
+	CHECK_FALSE(empty.Percent());
+}
+
+TEST_CASE("Passenger replay progress is local and cannot extend a join barrier", "[passenger][precomputed][progress][network][save]")
+{
+	Fixture f; f.Train({Stop(A), Stop(B), Stop(C), Stop(D)});
+	_settings_game.linkgraph.passenger_journey_precomputed = true;
+	auto &db = GetPassengerServiceDatabase();
+	CHECK(db.GetPrecomputedProgress().phase == PassengerPrecomputedProgress::Phase::Services);
+	while (!db.PreparePrecomputed()) {}
+	SECTION("Completed initial generation") {}
+	SECTION("Replacement with retained generation") {
+		PassengerServiceDatabaseTestAccess::BeginReplacement(db, 17); db.TickPrecomputed(1);
+	}
+	const auto wire = db.Save();
+	for (size_t quantum : {size_t{1}, PassengerServiceDatabase::BUILD_WORK}) {
+		PassengerServiceDatabase peer; REQUIRE(peer.Load(wire)); peer.FinishLoad(true, true);
+		PassengerInitialBuildProgress session; session.Reset(true);
+		for (uint i = 0; peer.GetLoadState() == PassengerServiceDatabase::LoadState::Replaying; ++i) {
+			REQUIRE(i < 100000);
+			const auto progress = peer.GetPrecomputedProgress(); session.Observe(progress.preparing);
+			CHECK(progress.preparing); CHECK(peer.Save() == wire);
+			CHECK(progress.destinations == peer.GetPrecomputedDiagnostic(PAX).destinations);
+			peer.StepLoad(quantum);
+		}
+		const auto progress = peer.GetPrecomputedProgress();
+		CHECK_FALSE(progress.preparing); session.Observe(progress.preparing); CHECK_FALSE(session.Active());
+		CHECK(progress.phase == PassengerPrecomputedProgress::Phase::Complete);
+		CHECK(peer.Save() == wire);
+		/* Waiting for a slower host cannot reactivate local construction. */
+		session.Observe(false); CHECK_FALSE(session.ShowWindow());
+		session.Observe(true); CHECK_FALSE(session.ShowWindow());
+	}
+}
+
 TEST_CASE("Replacement preparation completes only the graph and retains the row frontier", "[passenger][precomputed][startup][generation][determinism]")
 {
 	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = true;
@@ -5193,4 +5375,70 @@ TEST_CASE("Station completed Hyperpath caches invalidate on publication retireme
 	CHECK(cache.GetDiagnostics().stale_policy > 0);
 	auto plan = db.PlanPrecomputed(PAX, A, D, NOW); REQUIRE(plan.ride); packet->SetPassengerJourney(*plan.ride, D);
 	CHECK(ResolveStationService(cache, *packet).group == train->group_id);
+}
+
+TEST_CASE("Station paused cold Hyperpath retries keep the settled waiting label", "[passenger][hyperpath][station-gui][service-stability]")
+{
+	struct GroupCleanup { ~GroupCleanup() { _group_pool.CleanPool(); } } groups;
+	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = _settings_game.linkgraph.passenger_journey_hyperpath = true;
+	auto *train = f.Train({Stop(A), Stop(D)}); train->group_id = Group::Create(train->owner, train->type)->index;
+	auto &db = f.Build(); while (!db.PreparePrecomputed()) {}
+	auto *packet = f.Packet(); REQUIRE(PassengerJourneyActiveContext(nullptr, A).PlanWaiting(*packet, PAX, D));
+	for (int i = 0; i < 3; ++i) packet->RecordPassengerCapacityFailure(train->orders->index, NOW);
+	StationPassengerServiceCache cache; auto waiting = ResolveStationService(cache, *packet);
+	REQUIRE(waiting.label == StationPassengerServiceLabel::Updating);
+	const auto tick = _state_ticks; const auto wire = db.Save(); GameRandomSeedChecker seeds;
+	for (size_t second = 0; second < 180; ++second) {
+		cache.Advance(1000, 0); CHECK(cache.Resolve(PAX, *packet, A) == waiting);
+		cache.Advance(0); CHECK(cache.Resolve(PAX, *packet, A) == waiting);
+	}
+	CHECK(_state_ticks == tick); CHECK(db.Save() == wire); CHECK(seeds.Check());
+	REQUIRE(db.BoardHyperpath(packet->GetPassengerJourney(), PAX, train->orders->index, 0, OrderListID::Invalid(), train->orders->index).ride);
+	cache.Advance(12000); CHECK(ResolveStationService(cache, *packet).group == train->group_id);
+}
+
+TEST_CASE("Station publication notifications only revalidate the affected destination", "[passenger][hyperpath][station-gui][service-stability][determinism]")
+{
+	struct GroupCleanup { ~GroupCleanup() { _group_pool.CleanPool(); } } groups;
+	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = _settings_game.linkgraph.passenger_journey_hyperpath = true;
+	auto *train = f.Train({Stop(A), Stop(B), Stop(D)}); train->group_id = Group::Create(train->owner, train->type)->index;
+	auto &db = f.Build(); while (!db.PreparePrecomputed()) {}
+	auto *packet = f.Packet(); REQUIRE(PassengerJourneyActiveContext(nullptr, A).PlanWaiting(*packet, PAX, D));
+	StationPassengerServiceCache cache; const auto expected = ResolveStationService(cache, *packet);
+	REQUIRE(expected.group == train->group_id); const auto candidates = cache.GetDiagnostics().candidates;
+	const auto wire = db.Save(); const auto execution = packet->GetPassengerJourney(); GameRandomSeedChecker seeds;
+	PassengerServiceDatabaseTestAccess::DestinationChanged(db, B);
+	CHECK_FALSE(cache.Advance(100)); CHECK(cache.Resolve(PAX, *packet, A) == expected);
+	CHECK(cache.GetDiagnostics().candidates == candidates); CHECK(cache.GetDiagnostics().policy_revalidations == 0);
+	PassengerServiceDatabaseTestAccess::DestinationChanged(db, D);
+	cache.Advance(100); CHECK(ResolveStationService(cache, *packet) == expected);
+	CHECK(cache.GetDiagnostics().policy_revalidations == 1); CHECK(cache.GetDiagnostics().candidates > candidates);
+	CHECK(cache.GetDiagnostics().display_regressions == 0);
+	CHECK(db.Save() == wire); CHECK(packet->GetPassengerJourney() == execution); CHECK(seeds.Check());
+}
+
+TEST_CASE("Station bounded policy results reserve fleet space and release dependencies after merging", "[passenger][hyperpath][station-gui][service-stability]")
+{
+	struct GroupCleanup { ~GroupCleanup() { _group_pool.CleanPool(); } } groups;
+	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = _settings_game.linkgraph.passenger_journey_hyperpath = true;
+	std::vector<Order> stops; for (uint16_t i = 10; i < 30; ++i) stops.push_back(Stop(StationID{i})); stops.push_back(Stop(D));
+	auto *train = f.Train(stops); train->group_id = Group::Create(train->owner, train->type)->index;
+	auto &db = f.Build(); while (!db.PreparePrecomputed()) {}
+	StationPassengerServiceCache cache(8192);
+	std::vector<CargoPacket *> packets; size_t admitted = 0;
+	for (uint16_t i = 10; i < 30; ++i) {
+		auto *packet = f.Packet(); auto plan = db.PlanPrecomputed(PAX, StationID{i}, D, NOW); REQUIRE(plan.ride);
+		packet->SetPassengerJourney(*plan.ride, D); packets.push_back(packet);
+		if (cache.Resolve(PAX, *packet, StationID{i}).label == StationPassengerServiceLabel::Checking) ++admitted;
+	}
+	REQUIRE(admitted > 0); REQUIRE(admitted < packets.size());
+	size_t named = 0;
+	for (size_t update = 0; update < 500; ++update) {
+		cache.Advance(100, 64); named = 0;
+		for (size_t i = 0; i < packets.size(); ++i) if (cache.Resolve(PAX, *packets[i], StationID{static_cast<uint16_t>(i + 10)}).group == train->group_id) ++named;
+		if (named == admitted) break;
+	}
+	CHECK(named == admitted); CHECK(cache.GetDiagnostics().results <= cache.GetDiagnostics().result_capacity);
+	CHECK(cache.GetDiagnostics().result_evictions > 0); CHECK(cache.GetDiagnostics().capacity_regressions == 0);
+	CHECK(cache.GetDiagnostics().display_regressions == 0);
 }

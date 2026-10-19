@@ -1,0 +1,42 @@
+{
+  "configure_command": [
+    "cmake",
+    "-S",
+    "C:\\Users\\bebe\\.codex\\worktrees\\6d2b\\OpenTTD-patches\\build-clang-thin-pgo\\invalidation",
+    "-B",
+    "C:\\Users\\bebe\\.codex\\worktrees\\6d2b\\OpenTTD-patches\\build-clang-thin-pgo\\invalidation\\build",
+    "-G",
+    "Visual Studio 17 2022",
+    "-A",
+    "x64",
+    "-T",
+    "ClangCL,host=x64",
+    "-DOPTION_PGO=USE",
+    "-DPGO_PROFILE_FILE=C:/Users/bebe/.codex/worktrees/6d2b/OpenTTD-patches/build-clang-thin-pgo/invalidation/current.profdata"
+  ],
+  "build_command": [
+    "cmake",
+    "--build",
+    "C:\\Users\\bebe\\.codex\\worktrees\\6d2b\\OpenTTD-patches\\build-clang-thin-pgo\\invalidation\\build",
+    "--config",
+    "Release",
+    "--target",
+    "openttd",
+    "--",
+    "/nodeReuse:false"
+  ],
+  "merge_command": [
+    "C:/Program Files (x86)/Microsoft Visual Studio/2022/BuildTools/VC/Tools/Llvm/x64/bin/llvm-profdata.exe",
+    "merge",
+    "--weighted-input=2,C:\\Users\\bebe\\.codex\\worktrees\\6d2b\\OpenTTD-patches\\build-clang-thin-pgo\\profiles\\real-map.profdata",
+    "-o",
+    "C:\\Users\\bebe\\.codex\\worktrees\\6d2b\\OpenTTD-patches\\build-clang-thin-pgo\\invalidation\\current.profdata"
+  ],
+  "initial_profile_sha256": "3efb8693f20a28440b1f6802b9fb08bb0da42d9cb16d5e9a4bf5ba55611f488d",
+  "updated_profile_sha256": "bff3220a9d0aba20ae863e428e62cf4bceb13f2d86b226a3b0f8825d867d9b1a",
+  "initial_object_mtime_ns": 1792381696379719700,
+  "updated_object_mtime_ns": 1792381701218270400,
+  "auto_reconfigure": true,
+  "object_recompiled": true,
+  "executable_exit_code": 0
+}

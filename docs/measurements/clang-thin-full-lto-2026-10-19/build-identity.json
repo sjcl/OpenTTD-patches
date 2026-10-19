@@ -1,0 +1,93 @@
+{
+  "base_commit": "258af9a456400997b4d24e1a981e5f178d8b5cdd",
+  "compiler": "clang-cl / LLD 19.1.5",
+  "original_input": "C:\\Users\\bebe\\OneDrive\\ドキュメント\\OpenTTD\\save\\gc3833d807.sav",
+  "input_sha256": "916cfa88eab18342199ec0c77f0c15c5477c961be7fa60d71e2d22a1b878992a",
+  "config": "[misc]\ngraphicsset = zBase\nlanguage = english.lng\n[gui]\nautosave = off\nautosave_on_exit = false\nautosave_interval = 0\n",
+  "source_files": {
+    "src/core/passenger_strategy.hpp": "3077290cc54729f1668f2b5ce2d129257b6205ce312329dc23a7ef83a910853d",
+    "utils/passenger_precomputed_real_map.py": "52d1562303b28b59a190ff58fe06cdaf5fb09779a882aa7dc25e0195e5279e28",
+    "utils/passenger_precomputed_join.py": "b9e4b9136ee0bf6eea2d0d436d6693e34d1379c36bfd35b4eee6844980bf30fb"
+  },
+  "builds": {
+    "thin": {
+      "exe_sha256": "a3f9fed08e1d8944ff39e0025f8c008cffe7fa5738f19ce37d2ab0564a4f1e23",
+      "pdb_sha256": "a7e0ec02915975265ac8774e485524d920a1527816d8eead33fdd224f30db924",
+      "language_sha256": "c7864bc7e19f9542189be35250ff47d07613a4a5a4acd56dbc697026b65781d1",
+      "flags": "CMAKE_CXX_FLAGS:STRING=/DWIN32 /D_WINDOWS /GR /EHsc\nCMAKE_CXX_FLAGS_DEBUG:STRING=/Zi /Ob0 /Od /RTC1\nCMAKE_CXX_FLAGS_MINSIZEREL:STRING=/O1 /Ob1 /DNDEBUG\nCMAKE_CXX_FLAGS_RELEASE:STRING=/O2 /Ob2 /DNDEBUG /Z7\nCMAKE_CXX_FLAGS_RELWITHDEBINFO:STRING=/Zi /O2 /Ob1 /DNDEBUG\nCMAKE_EXE_LINKER_FLAGS:STRING=/DEBUG:FULL /OPT:REF /OPT:ICF /INCREMENTAL:NO /DEFAULTLIB:\"C:/Program Files (x86)/Microsoft Visual Studio/2022/BuildTools/VC/Tools/Llvm/x64/lib/clang/19/lib/windows/clang_rt.builtins-x86_64.lib\"\nCMAKE_MSVC_RUNTIME_LIBRARY:UNINITIALIZED=MultiThreaded\nOPTION_NO_LTO:UNINITIALIZED=OFF\nOPTION_PASSENGER_BENCHMARK:BOOL=ON\nOPTION_USE_ASSERTS:BOOL=OFF\nCMAKE_CXX_FLAGS-ADVANCED:INTERNAL=1\nCMAKE_CXX_FLAGS_DEBUG-ADVANCED:INTERNAL=1\nCMAKE_CXX_FLAGS_MINSIZEREL-ADVANCED:INTERNAL=1\nCMAKE_CXX_FLAGS_RELEASE-ADVANCED:INTERNAL=1\nCMAKE_CXX_FLAGS_RELWITHDEBINFO-ADVANCED:INTERNAL=1\nCMAKE_GENERATOR:INTERNAL=Visual Studio 17 2022\nCMAKE_GENERATOR_TOOLSET:INTERNAL=ClangCL,host=x64",
+      "lto": "-flto=thin",
+      "revision": "jgrpp-ya-0.73.3+4-29-g258af9a45",
+      "copied_tus": {
+        "save-integrity/cargopacket.cpp": "7ede19cdafaf9a18d1635b3fde7bb8a0d925fefb6b57662171a92d2129958dc6",
+        "save-integrity/cargopacket_sl.cpp": "3545aed58f61b4c02676eb7f75d2643942622b4ee06a494671a302337428e6c2",
+        "save-integrity/console_cmds.cpp": "d4a956246f242e4e32eafdce4702b6e1276338155893debe4c3277c46e7da7a7",
+        "save-integrity/integrity.h": "ed9aa540e2638fe10cb52af333710154ad7dbce655af3b0540e286b0957df60a",
+        "save-integrity/wpr_gate.h": "64793e1253d3040ee8b8855b9c23a1d00b3db7690e26caf2716480d8750b8b24",
+        "real-map-driver/null_v.cpp": "9e1ae87fab99d10d0fce0bbebe701531e5624938da667e769b4b9077dd35c2bc",
+        "real-map-driver/win32.cpp": "2ed975b61ce4c439e69d617263ebafa29f0b0cc5185e9993826275af393240b6",
+        "cpu-measurement/cpu_clock.h": "6b30922b9a7e4446cc81294ee6b3c1d2c1187f3b0dee1f009ffb74f1c66b7c27",
+        "cpu-measurement/openttd.cpp": "c04b19c368841769cd9f33a8c37269378f861c4bd28738523e010e6aa4aa402d",
+        "cpu-measurement/passenger_journey_active.cpp": "8a87bf7900ce865200868b6478cd3652da9903a25c0fda4dd4ba43d8cf49080f",
+        "cpu-measurement/passenger_journey_schedule.cpp": "3e1007a6eb0d9c587717374b8ee012b16536dabd40d477afe9e4b50a4ea4c1e5",
+        "cpu-measurement/passenger_service_database.cpp": "6afa28cb33c5e84ee83ac99e0613616569ab60d5d180fbdc5147879dcf553dde"
+      },
+      "objects": {
+        "openttd.obj": {
+          "sha256": "8305e3c269af7d83740b05c4413ac57fcadb25fa3fe53cd5e247451e3309ec6f",
+          "first_32_bytes": "4243c0de3514000005000000620c30244a59be66ddfbb59f0b51804c01000000",
+          "size": 3081624
+        },
+        "passenger_precomputed.obj": {
+          "sha256": "dc55ab332a5ee454b6cbe9c267ab947d27672664f9ad93c7a9e1d61ba65b60eb",
+          "first_32_bytes": "4243c0de3514000005000000620c30244a59be66ddfbb59f0b51804c01000000",
+          "size": 6079000
+        },
+        "passenger_service_database.obj": {
+          "sha256": "012254a0a3826d4aa2edf955c13143026fdf0634ce00bf7fca066fe717efc9f3",
+          "first_32_bytes": "4243c0de3514000005000000620c30244a59be66ddfbb59f0b51804c01000000",
+          "size": 6400972
+        }
+      }
+    },
+    "full": {
+      "exe_sha256": "efba092c4c8d91fc4686a15a02d98f793796bf3ab3466dd7c0e083810cd9ad9b",
+      "pdb_sha256": "11e44f087f50e979dd5150e8fa62bcec547520000a735ed4041f151d2c79216b",
+      "language_sha256": "c7864bc7e19f9542189be35250ff47d07613a4a5a4acd56dbc697026b65781d1",
+      "flags": "CMAKE_CXX_FLAGS:STRING=/DWIN32 /D_WINDOWS /GR /EHsc\nCMAKE_CXX_FLAGS_DEBUG:STRING=/Zi /Ob0 /Od /RTC1\nCMAKE_CXX_FLAGS_MINSIZEREL:STRING=/O1 /Ob1 /DNDEBUG\nCMAKE_CXX_FLAGS_RELEASE:STRING=/O2 /Ob2 /DNDEBUG /Z7\nCMAKE_CXX_FLAGS_RELWITHDEBINFO:STRING=/Zi /O2 /Ob1 /DNDEBUG\nCMAKE_EXE_LINKER_FLAGS:STRING=/DEBUG:FULL /OPT:REF /OPT:ICF /INCREMENTAL:NO /DEFAULTLIB:\"C:/Program Files (x86)/Microsoft Visual Studio/2022/BuildTools/VC/Tools/Llvm/x64/lib/clang/19/lib/windows/clang_rt.builtins-x86_64.lib\"\nCMAKE_MSVC_RUNTIME_LIBRARY:UNINITIALIZED=MultiThreaded\nOPTION_NO_LTO:UNINITIALIZED=OFF\nOPTION_PASSENGER_BENCHMARK:BOOL=ON\nOPTION_USE_ASSERTS:BOOL=OFF\nCMAKE_CXX_FLAGS-ADVANCED:INTERNAL=1\nCMAKE_CXX_FLAGS_DEBUG-ADVANCED:INTERNAL=1\nCMAKE_CXX_FLAGS_MINSIZEREL-ADVANCED:INTERNAL=1\nCMAKE_CXX_FLAGS_RELEASE-ADVANCED:INTERNAL=1\nCMAKE_CXX_FLAGS_RELWITHDEBINFO-ADVANCED:INTERNAL=1\nCMAKE_GENERATOR:INTERNAL=Visual Studio 17 2022\nCMAKE_GENERATOR_TOOLSET:INTERNAL=ClangCL,host=x64",
+      "lto": "-flto",
+      "revision": "jgrpp-ya-0.73.3+4-29-g258af9a45",
+      "copied_tus": {
+        "save-integrity/cargopacket.cpp": "3287f32db28ecb92ec260c6c3f9edc606218eb7f25fcaba2a58d83e89a6041d2",
+        "save-integrity/cargopacket_sl.cpp": "c230a080c7b5e8e2c427272db5f49013e7cfbcb6413db2d07242fbc293b673ce",
+        "save-integrity/console_cmds.cpp": "d853e756d262dc6acbea77a5f26c8e3fb94af5f569d8a934aa53046819e82953",
+        "save-integrity/integrity.h": "ed9aa540e2638fe10cb52af333710154ad7dbce655af3b0540e286b0957df60a",
+        "save-integrity/wpr_gate.h": "64793e1253d3040ee8b8855b9c23a1d00b3db7690e26caf2716480d8750b8b24",
+        "real-map-driver/null_v.cpp": "28adaa7a16dd0a977877c6f220a259cd424b0f28e71d06109a151a4d1e3e7fbd",
+        "real-map-driver/win32.cpp": "2ed975b61ce4c439e69d617263ebafa29f0b0cc5185e9993826275af393240b6",
+        "cpu-measurement/cpu_clock.h": "6b30922b9a7e4446cc81294ee6b3c1d2c1187f3b0dee1f009ffb74f1c66b7c27",
+        "cpu-measurement/openttd.cpp": "a44056e22cd984c637220599efc95f2478689e9c8664b45ec3803c677fa66018",
+        "cpu-measurement/passenger_journey_active.cpp": "517b68c54db113e15a6b69ef2ba74f4eb6255e64abff3cc9c9fa042649de1146",
+        "cpu-measurement/passenger_journey_schedule.cpp": "b7dd17ebcb76d849afc1575ea642a1409f5853068382986f9a61033dbf5a3b52",
+        "cpu-measurement/passenger_service_database.cpp": "4199826171f6085ff15fba18f99e9991f69d100cd5f4576b1a7a0fc46f68a9f2"
+      },
+      "objects": {
+        "openttd.obj": {
+          "sha256": "cbac60ab7e4b625c19f5a71359c2e67abfbde7194bfe4cf3ec377f58a4a9c062",
+          "first_32_bytes": "4243c0de3514000005000000620c30244a59be66ddfbb59f0b51804c01000000",
+          "size": 3105720
+        },
+        "passenger_precomputed.obj": {
+          "sha256": "ea7d6f87fe17dcdc5218077dbc7be207f7202ff61bc61d229ed3add4040c281f",
+          "first_32_bytes": "4243c0de3514000005000000620c30244a59be66ddfbb59f0b51804c01000000",
+          "size": 6084880
+        },
+        "passenger_service_database.obj": {
+          "sha256": "e339da9225d7eb4a71ac3731244bbcc6862d104ab38aaae110da008dcc31d1d4",
+          "first_32_bytes": "4243c0de3514000005000000620c30244a59be66ddfbb59f0b51804c01000000",
+          "size": 6402140
+        }
+      }
+    }
+  },
+  "multiplayer_complete": true
+}

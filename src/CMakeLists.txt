@@ -62,6 +62,9 @@ add_files(
     passenger_service_database.h
     passenger_precomputed.cpp
     passenger_precomputed.h
+    passenger_precomputed_progress.h
+    passenger_precomputed_gui.cpp
+    passenger_precomputed_gui.h
     passenger_build_task.h
     passenger_timed_search.h
     passenger_departure_index.cpp

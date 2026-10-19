@@ -1,0 +1,44 @@
+Instrumentation level: IR  entry_first = 0
+Total functions: 31279
+Maximum function count: 2556743809
+Maximum internal block count: 4448871763
+Top 20 functions with the largest internal block counts:
+  ?SearchHyperpath@GraphSnapshot@PassengerPrecomputedTable@@QEBA_KAEAUDestinationWorkspace@2@_K@Z, max count = 4448871763
+  ??$_Pop_heap_hole_by_index@PEAV?$tuple@_JII@std@@V12@U?$greater@V?$tuple@_JII@std@@@2@@std@@YAXPEAV?$tuple@_JII@0@_J1$$QEAV10@U?$greater@V?$tuple@_JII@std@@@0@@Z, max count = 2556743809
+  ??$_Push_heap_by_index@PEAV?$tuple@_JII@std@@V12@ULater@?$PassengerDestinationQueue@V?$tuple@_JII@std@@@@@std@@YAXPEAV?$tuple@_JII@0@_J1$$QEAV10@ULater@?$PassengerDestinationQueue@V?$tuple@_JII@std@@@@@Z, max count = 1248438719
+  ?RunTileLoop@@YAX_N@Z, max count = 1073741808
+  ??$emplace@_JII@?$PassengerDestinationQueue@V?$tuple@_JII@std@@@@QEAAX_JII@Z, max count = 1056284277
+  ?Top@Radix@?$PassengerDestinationQueue@V?$tuple@_JII@std@@@@QEAAAEBV?$tuple@_JII@std@@XZ, max count = 1054422062
+  ?pop@?$PassengerDestinationQueue@V?$tuple@_JII@std@@@@QEAAXXZ, max count = 1054422062
+  ??$_Pop_heap_unchecked@PEAV?$tuple@_JII@std@@ULater@?$PassengerDestinationQueue@V?$tuple@_JII@std@@@@@std@@YAXPEAV?$tuple@_JII@0@0ULater@?$PassengerDestinationQueue@V?$tuple@_JII@std@@@@@Z, max count = 1054422062
+  ?push@?$priority_queue@V?$tuple@_JII@std@@V?$vector@V?$tuple@_JII@std@@V?$allocator@V?$tuple@_JII@std@@@2@@2@ULater@?$PassengerDestinationQueue@V?$tuple@_JII@std@@@@@std@@QEAAXAEBV?$tuple@_JII@2@@Z, max count = 1054401282
+  ?TileLoop_Water@@YAXU?$ST@UTileIndexTag@@@@@Z, max count = 913498130
+  ?SetSearchLabel@GraphSnapshot@PassengerPrecomputedTable@@QEBAXAEAUDestinationWorkspace@2@IAEBULabel@2@@Z, max count = 826532811
+  ?StepHyperpath@PassengerPrecomputedTable@@AEAA_K_KAEBV?$function@$$A6AXU?$PoolID@UStationIDTag@@@@@Z@std@@I@Z, max count = 800212633
+  ??$_Pop_heap_hole_by_index@PEA_K_KV<lambda_3>@?0???$DijkstraRoutes@VDistanceAnnotation@@VGraphEdgeIterator@@@MultiCommodityFlow@@IEAAXGAEAV?$vector@PEAVPath@@V?$allocator@PEAVPath@@@std@@@std@@AEAU?$DijkstraState@VDistanceAnnotation@@@2@@Z@@std@@YAXPEA_K_J1$$QEA_KV<lambda_3>@?0???$DijkstraRoutes@VDistanceAnnotation@@VGraphEdgeIterator@@@MultiCommodityFlow@@IEAAXGAEAV?$vector@PEAVPath@@V?$allocator@PEAVPath@@@std@@@0@AEAU?$DijkstraState@VDistanceAnnotation@@@2@@Z@@Z, max count = 788181539
+  ??$_Try_emplace@_K$$V@?$map@_K_KU?$less@_K@std@@V?$allocator@U?$pair@$$CB_K_K@std@@@2@@std@@AEAA?AU?$pair@PEAU?$_Tree_node@U?$pair@$$CB_K_K@std@@PEAX@std@@_N@1@$$QEA_K@Z, max count = 781269993
+  ?Insert@Radix@?$PassengerDestinationQueue@V?$tuple@_JII@std@@@@QEAAXAEBV?$tuple@_JII@std@@@Z, max count = 780358832
+  ??$_Push_heap_by_index@PEAV?$tuple@_JII@std@@V12@U?$greater@V?$tuple@_JII@std@@@2@@std@@YAXPEAV?$tuple@_JII@0@_J1$$QEAV10@U?$greater@V?$tuple@_JII@std@@@0@@Z, max count = 696745421
+  ??$fill_n@V?$_Vb_iterator@U?$_Wrap_alloc@V?$allocator@I@std@@@std@@@std@@_K_N@std@@YA?AV?$_Vb_iterator@U?$_Wrap_alloc@V?$allocator@I@std@@@std@@@0@V10@_KAEB_N@Z, max count = 665450798
+  ??$_Fill_vbool@V?$_Vb_iterator@U?$_Wrap_alloc@V?$allocator@I@std@@@std@@@std@@@std@@YAXV?$_Vb_iterator@U?$_Wrap_alloc@V?$allocator@I@std@@@std@@@0@0_N@Z, max count = 665450798
+  ?_Insert_x@?$vector@_NV?$allocator@_N@std@@@std@@QEAA_KV?$_Vb_const_iterator@U?$_Wrap_alloc@V?$allocator@I@std@@@std@@@2@_K@Z, max count = 665450798
+  ?_Insert_n@?$vector@_NV?$allocator@_N@std@@@std@@QEAA?AV?$_Vb_iterator@U?$_Wrap_alloc@V?$allocator@I@std@@@std@@@2@V?$_Vb_const_iterator@U?$_Wrap_alloc@V?$allocator@I@std@@@std@@@2@_KAEB_N@Z, max count = 665450798
+Total number of blocks: 271526
+Total count: 119335127652
+Detailed summary:
+1 blocks with count >= 4448871763 account for 1 percentage of the total counts.
+7 blocks with count >= 1073741808 account for 10 percentage of the total counts.
+18 blocks with count >= 911870299 account for 20 percentage of the total counts.
+36 blocks with count >= 665450798 account for 30 percentage of the total counts.
+54 blocks with count >= 580363024 account for 40 percentage of the total counts.
+79 blocks with count >= 410543204 account for 50 percentage of the total counts.
+115 blocks with count >= 263346745 account for 60 percentage of the total counts.
+169 blocks with count >= 184796485 account for 70 percentage of the total counts.
+259 blocks with count >= 96884687 account for 80 percentage of the total counts.
+540 blocks with count >= 18924960 account for 90 percentage of the total counts.
+1126 blocks with count >= 5914636 account for 95 percentage of the total counts.
+3693 blocks with count >= 538138 account for 99 percentage of the total counts.
+10003 blocks with count >= 40417 account for 99.9 percentage of the total counts.
+17421 blocks with count >= 4054 account for 99.99 percentage of the total counts.
+23751 blocks with count >= 426 account for 99.999 percentage of the total counts.
+31257 blocks with count >= 32 account for 99.9999 percentage of the total counts.

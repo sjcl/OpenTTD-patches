@@ -1,0 +1,24 @@
+{
+  "command": [
+    "C:\\Users\\bebe\\AppData\\Local\\Programs\\Python\\Python313\\python.exe",
+    "C:\\Users\\bebe\\.codex\\worktrees\\6d2b\\OpenTTD-patches\\utils\\passenger_precomputed_real_map.py",
+    "run",
+    "C:\\Users\\bebe\\.codex\\worktrees\\6d2b\\OpenTTD-patches\\build-clang-thin-pgo\\pgo\\Release\\openttd.exe",
+    "C:\\Users\\bebe\\.codex\\worktrees\\6d2b\\OpenTTD-patches\\build-clang-thin-pgo\\input",
+    "C:\\Users\\bebe\\.codex\\worktrees\\6d2b\\OpenTTD-patches\\build-clang-thin-pgo\\runs\\plain-pgo-1",
+    "--lang",
+    "C:\\Users\\bebe\\.codex\\worktrees\\6d2b\\OpenTTD-patches\\build-clang-thin-pgo\\pgo\\lang",
+    "--ticks",
+    "1024",
+    "--timeout",
+    "900",
+    "--resume",
+    "--wait-saved-replay",
+    "--precomputed",
+    "--cold-precomputed",
+    "--warm-precomputed"
+  ],
+  "environment": {
+    "LLVM_PROFILE_FILE": "C:\\Users\\bebe\\.codex\\worktrees\\6d2b\\OpenTTD-patches\\build-clang-thin-pgo\\profiles\\verification-%p-%m.profraw"
+  }
+}

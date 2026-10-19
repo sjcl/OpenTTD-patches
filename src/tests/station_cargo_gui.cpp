@@ -9,10 +9,12 @@
 #include "../core/backup_type.hpp"
 #include "../settings_type.h"
 #include "../cargopacket.h"
+#include "../date_func.h"
 #include "../vehicle_base.h"
 #include "../group.h"
 #include "../core/random_func.hpp"
 #include "passenger_test_stations.h"
+#include <iostream>
 
 static constexpr CargoType PAX{0};
 static constexpr StationID A{0}, B{1}, C{2}, D{3};
@@ -473,7 +475,7 @@ TEST_CASE("Station service caches have bounded records under many stale ride con
 	GuiFixture f; GuiTrain train(VehicleID{100});
 	StationPassengerServiceCache cache;
 	for (size_t i = 0; i < 5000; ++i) { auto ride = train.Ride(); ride.signature += i + 1; cache.Resolve(PAX, ride); }
-	CHECK(cache.GetDiagnostics().entries <= 4096); CHECK(cache.GetDiagnostics().evictions > 0);
+	CHECK(cache.GetDiagnostics().results <= cache.GetDiagnostics().result_capacity); CHECK(cache.GetDiagnostics().searches <= 4096);
 	CHECK(cache.GetDiagnostics().stale_service > 0);
 }
 
@@ -529,5 +531,128 @@ TEST_CASE("Station concrete Journey cache does not require a Hyperpath database 
 		auto work = cache.GetDiagnostics().work;
 		CHECK(cache.Resolve(PAX, ride).group == train->group_id); CHECK(cache.GetDiagnostics().work == work);
 	}
+	delete train;
+}
+
+TEST_CASE("Station paused completed results do not change classification on a refresh timer", "[passenger][station-gui][service-stability]")
+{
+	GuiFixture f; auto *train = Vehicle::Create<GuiTrain>(); train->group_id = f.GroupFor(*train);
+	StationPassengerServiceCache cache; const auto ride = train->Ride();
+	const auto expected = cache.Resolve(PAX, ride); REQUIRE(expected.group == train->group_id);
+	const auto tick = _state_ticks; const auto work = cache.GetDiagnostics().work;
+	for (size_t second = 0; second < 300; ++second) {
+		cache.Advance(1000, 0); CHECK(cache.Resolve(PAX, ride) == expected);
+		cache.Advance(0); CHECK(cache.Resolve(PAX, ride) == expected);
+	}
+	CHECK(cache.GetDiagnostics().work == work); CHECK(_state_ticks == tick);
+	delete train;
+}
+
+TEST_CASE("Station ten thousand paused conditions accumulate stable completed results", "[passenger][station-gui][service-stability]")
+{
+	GuiFixture f; auto *train = Vehicle::Create<GuiTrain>(); train->group_id = f.GroupFor(*train);
+	StationPassengerServiceCache cache; auto ride = train->Ride(PassengerRideKind::VehicleSnapshot);
+	const auto tick = _state_ticks; const auto signature = ride.signature;
+	size_t named = 0;
+	for (size_t frame = 0; frame < 20; ++frame) {
+		named = 0;
+		for (size_t condition = 0; condition < 10000; ++condition) {
+			ride.signature = signature + condition;
+			if (cache.Resolve(PAX, ride) == StationPassengerService{train->group_id}) ++named;
+		}
+		cache.Advance(1000);
+	}
+	CHECK(named == 10000); CHECK(_state_ticks == tick);
+	const auto work = cache.GetDiagnostics().work;
+	for (size_t frame = 0; frame < 15; ++frame) {
+		cache.Advance(1000);
+		for (size_t condition = 0; condition < 10000; ++condition) {
+			ride.signature = signature + condition; CHECK(cache.Resolve(PAX, ride) == StationPassengerService{train->group_id});
+		}
+	}
+	CHECK(cache.GetDiagnostics().work == work);
+	const auto d = cache.GetDiagnostics();
+	CHECK(d.results == 10000); CHECK(d.searches == 0); CHECK(d.result_evictions == 0); CHECK(d.display_regressions == 0);
+	std::cout << "Station 10000 paused conditions: results=" << d.results << ", capacity=" << d.result_capacity << ", search_workspaces=" << d.searches << ", estimated_bytes=" << d.estimated_bytes << ", work=" << d.work << ", result_evictions=" << d.result_evictions << std::endl;
+	delete train;
+}
+
+TEST_CASE("Station capacity pressure preserves active results and declines excess work without churn", "[passenger][station-gui][service-stability]")
+{
+	GuiFixture f; auto *train = Vehicle::Create<GuiTrain>(); train->group_id = f.GroupFor(*train);
+	StationPassengerServiceCache cache(64 * 1024); auto ride = train->Ride(PassengerRideKind::VehicleSnapshot);
+	const auto signature = ride.signature, capacity = cache.GetDiagnostics().result_capacity;
+	REQUIRE(capacity > 0); REQUIRE(capacity < 500);
+	for (size_t frame = 0; frame < 20; ++frame) {
+		cache.BeginRefresh();
+		for (size_t query = 0; query < capacity + 50; ++query) {
+			ride.signature = signature + query;
+			auto result = cache.Resolve(PAX, ride);
+			if (query < capacity) CHECK(result == StationPassengerService{train->group_id});
+			else CHECK(result.label == StationPassengerServiceLabel::Updating);
+		}
+		CHECK_FALSE(cache.Advance(1000));
+	}
+	auto diagnostic = cache.GetDiagnostics();
+	CHECK(diagnostic.results == capacity); CHECK(diagnostic.result_evictions == 0); CHECK(diagnostic.capacity_waits == 1000);
+	CHECK(diagnostic.capacity_regressions == 0); CHECK(diagnostic.display_regressions == 0); CHECK(diagnostic.searches == 0);
+	const auto work = diagnostic.work;
+	// Once old conditions leave the window's working set their compact results can be replaced.
+	for (size_t frame = 0; frame < 3; ++frame) { cache.BeginRefresh(); ride.signature = signature; cache.Resolve(PAX, ride); }
+	ride.signature = signature + capacity + 100; CHECK(cache.Resolve(PAX, ride).group == train->group_id);
+	CHECK(cache.GetDiagnostics().result_evictions > 0); CHECK(cache.GetDiagnostics().work > work);
+	ride.signature = signature; CHECK(cache.Resolve(PAX, ride).group == train->group_id);
+	delete train;
+}
+
+TEST_CASE("Station group notifications refresh other candidates without resetting unrelated results", "[passenger][station-gui][service-stability]")
+{
+	GuiFixture f; auto *first = Vehicle::Create<GuiTrain>(), *second = Vehicle::Create<GuiTrain>(), *unrelated = Vehicle::Create<GuiTrain>();
+	first->group_id = second->group_id = f.GroupFor(*first); second->Share(*first); unrelated->group_id = f.GroupFor(*unrelated);
+	StationPassengerServiceCache cache; const auto expected = StationPassengerService{first->group_id};
+	REQUIRE(cache.Resolve(PAX, first->Ride()) == expected); REQUIRE(cache.Resolve(PAX, unrelated->Ride()).group == unrelated->group_id);
+	const auto vehicles = cache.GetDiagnostics().vehicles;
+	second->group_id = f.GroupFor(*second); cache.Invalidate(first->orders->index);
+	CHECK(cache.Resolve(PAX, first->Ride()) == expected); // Hold the valid published display while work is pending.
+	CHECK(cache.Resolve(PAX, unrelated->Ride()) == StationPassengerService{unrelated->group_id});
+	cache.Advance(100);
+	CHECK(cache.Resolve(PAX, first->Ride()) == StationPassengerService{first->group_id, true});
+	CHECK(cache.GetDiagnostics().vehicles == vehicles + 2);
+	CHECK(cache.GetDiagnostics().display_regressions == 0);
+	second->group_id = first->group_id; cache.Invalidate(first->orders->index); cache.Resolve(PAX, first->Ride()); cache.Advance(100);
+	CHECK(cache.Resolve(PAX, first->Ride()) == expected);
+	delete unrelated; delete second; delete first;
+}
+
+TEST_CASE("Station background validation preserves a settled name and invisible work does not redraw", "[passenger][station-gui][service-stability]")
+{
+	GuiFixture f; auto *train = Vehicle::Create<GuiTrain>(); train->group_id = f.GroupFor(*train);
+	std::vector<GuiCoach *> parts; Vehicle *tail = train; train->cargo_cap = 0;
+	for (size_t i = 0; i < 250; ++i) { auto *part = Vehicle::Create<GuiCoach>(); part->cargo_cap = 0; tail->SetNext(part); tail = part; parts.push_back(part); }
+	parts.back()->cargo_cap = 50;
+	StationPassengerServiceCache cache; auto ride = train->Ride(); cache.Resolve(PAX, ride);
+	CHECK_FALSE(cache.Advance(100, 1)); // Work advanced but the visible checking category did not change.
+	for (size_t update = 0; cache.GetDiagnostics().complete == 0 && update < 1000; ++update) cache.Advance(100, 1);
+	const auto expected = cache.Resolve(PAX, ride); REQUIRE(expected == StationPassengerService{train->group_id});
+	AutoRestoreBackup tick{_state_ticks, _state_ticks + 1};
+	cache.Advance(45000, 0); CHECK(cache.Resolve(PAX, ride) == expected);
+	for (size_t update = 0; update < 300; ++update) { CHECK_FALSE(cache.Advance(100, 1)); CHECK(cache.Resolve(PAX, ride) == expected); }
+	CHECK(cache.GetDiagnostics().periodic_revalidations > 0); CHECK(cache.GetDiagnostics().display_regressions == 0);
+	train->SetNext(nullptr); for (auto *part : parts) { part->SetNext(nullptr); delete part; } delete train;
+}
+
+TEST_CASE("Station capacity admission resumes after the displayed working set changes", "[passenger][station-gui][service-stability]")
+{
+	GuiFixture f; auto *train = Vehicle::Create<GuiTrain>(); train->group_id = f.GroupFor(*train);
+	StationPassengerServiceCache cache(4096); auto ride = train->Ride(PassengerRideKind::VehicleSnapshot);
+	const auto signature = ride.signature, capacity = cache.GetDiagnostics().result_capacity;
+	cache.BeginRefresh();
+	for (size_t i = 0; i < capacity; ++i) { ride.signature = signature + i; REQUIRE(cache.Resolve(PAX, ride).group == train->group_id); }
+	cache.BeginRefresh();
+	for (size_t i = 0; i < capacity; ++i) { ride.signature = signature + capacity + i; CHECK(cache.Resolve(PAX, ride).label == StationPassengerServiceLabel::Updating); }
+	CHECK(cache.Advance(1000)); // Free obsolete results and request one admission retry paint.
+	cache.BeginRefresh();
+	for (size_t i = 0; i < capacity; ++i) { ride.signature = signature + capacity + i; CHECK(cache.Resolve(PAX, ride).group == train->group_id); }
+	CHECK(cache.GetDiagnostics().capacity_regressions == 0); CHECK(cache.GetDiagnostics().display_regressions == 0);
 	delete train;
 }

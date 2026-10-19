@@ -1,0 +1,875 @@
+function,inclusive_cpu_ms,cpu_ms_per_tick
+openttd_main,26467.22150000003,25.846895996093778
+GameLoop,26467.22150000003,25.846895996093778
+__scrt_common_main_seh,26467.22150000003,25.846895996093778
+WinMain,26467.22150000003,25.846895996093778
+VideoDriver_Null::MainLoop,26467.22150000003,25.846895996093778
+StateGameLoop,26467.22150000003,25.846895996093778
+CallVehicleTicks,12877.70699999999,12.57588574218749
+RunTileLoop,11944.322099999994,11.664377050781244
+TrainController,7152.507100000001,6.984870214843751
+ReserveCargoAction::operator(),3126.723900000001,3.053441308593751
+StationCargoList::Load,2419.8598999999986,2.3631444335937486
+StationCargoList::VisitBoardingCandidates<`StationCargoList::ShiftIndexedJourneyCargo<CargoLoad>'::`2'::<lambda_1> >,2391.7842,2.3357267578125
+UpdateAllTownVirtCoords,1951.6253999999976,1.9058841796874977
+TileLoop_Water,1713.4329999999995,1.6732744140624995
+_malloc_base,1195.9055999999987,1.1678765624999987
+RoadVehicle::Tick,1169.8977999999995,1.1424783203124995
+`StationCargoList::VisitBoardingCandidates<`StationCargoList::ShiftIndexedJourneyCargo<CargoLoad>'::`2'::<lambda_1> >'::`21'::<lambda_7>::operator(),1135.9877999999999,1.1093630859374999
+operator new,1052.7150000000001,1.0280419921875001
+CmdBulkTree,1040.3416,1.01595859375
+StationCargoList::RoutePassengerJourneys,1003.6503000000005,0.9801272460937505
+RunPassengerWaitingEvents,984.5841000000005,0.9615079101562505
+Train::GetCurrentMaxSpeedInfoInternal,940.7141999999996,0.9186662109374996
+Vehicle::ShowVisualEffect,900.0571,0.87896201171875
+AmbientSoundEffect,748.0891,0.73055576171875
+PassengerJourneyLoadingContext::MayUseHyperpathPolicy,682.5344,0.6665375
+StationCargoList::ForgetWaitingPacket,651.8367000000002,0.6365592773437502
+IndividualRoadVehicleController,643.6100000000001,0.6285253906250001
+VehicleOrderSaver::AdvanceOrdersFromLookahead,627.7282000000006,0.6130158203125006
+PassengerJourneyLoadingContext::CanUseHyperpathPolicy,596.5796999999999,0.5825973632812499
+PassengerServiceDatabase::PlanPrecomputed,566.7143999999996,0.5534320312499996
+"SpecializedVehicle<Train,0,BaseGroundVehicle>::UpdateViewport",566.698,0.553416015625
+_free_base,556.8334999999998,0.5437827148437498
+StationCargoList::IndexPacket,552.1126000000003,0.5391724609375003
+PassengerPrecomputedTable::Plan,547.6691999999996,0.5348332031249996
+DeterministicSpriteGroup::Resolve,538.4468,0.525826953125
+PassengerJourneyLoadingContext::ResolveHyperpath,519.4352000000002,0.5072609375000002
+LimitSpeedFromLookAhead,513.1299000000001,0.5011034179687501
+UpdateNearestTownForRoadTiles,480.75669999999997,0.46948896484374997
+PassengerServiceDatabase::BoardHyperpath,471.36760000000027,0.46031992187500026
+GetHouseCallback,470.99499999999995,0.45995605468749995
+PassengerPrecomputedTable::Board,468.36750000000023,0.45739013671875023
+CallLandscapeTick,457.54990000000015,0.44682607421875015
+PassengerPrecomputedTable::LocalPolicy,449.5209000000002,0.4389852539062502
+RoadVehicle::GetOrderStationLocation,430.2645,0.42018017578125
+ProcessOrders,426.04639999999984,0.41606093749999984
+Train::Crash,404.86469999999986,0.39537568359374986
+"GroundVehicle<Train,0>::UpdateInclination",394.4859,0.38524013671875
+MoveGoodsToStation,393.3434000000001,0.3841244140625001
+OnTick_Station,390.3057000000003,0.3811579101562503
+Vehicle::BeginLoading,386.5266,0.3774673828125
+PassengerPrecomputedTable::Candidates,386.3758000000003,0.3773201171875003
+Train::MarkDirty,384.4643999999998,0.3754535156249998
+"CYapfFollowRailT<CYapfRail_TypesT<CYapfRailNo90,CFollowTrackT<0,Train,0,0>,CYapfDestinationTileOrStationRailT,CYapfFollowRailT> >::ChooseRailTrack",383.4820000000003,0.3744941406250003
+ModifyStationRatingAround,381.34680000000014,0.37240898437500014
+"CYapfBaseT<CYapfRail_TypesT<CYapfRailNo90,CFollowTrackT<0,Train,0,0>,CYapfDestinationTileOrStationRailT,CYapfFollowRailT> >::FindPath",364.5857000000002,0.3560407226562502
+Aircraft::Tick,363.38259999999997,0.35486582031249997
+ViewportSign::UpdatePosition,355.45809999999983,0.34712705078124984
+PassengerPrecomputedTable::EvaluateRide,346.3337000000002,0.3382165039062502
+UpdateVehicleTileHash,327.33710000000025,0.31966513671875024
+Layouter::Layouter,319.2759999999998,0.3117929687499998
+GenerateStationCargo,318.3149000000001,0.3108543945312501
+TryPathReserveWithResultFlags,299.10820000000007,0.29209785156250007
+`StationCargoList::ShiftJourneyCargo<CargoLoad>'::`2'::<lambda_1>::operator(),291.05890000000005,0.28423720703125005
+StationCargoList::RecordCapacityMiss,291.05890000000005,0.28423720703125005
+GetAircraftFlightLevelBounds,282.19590000000017,0.27558193359375016
+VehicleCargoList::Stage,278.57159999999993,0.27204257812499993
+DrawCustomSpriteIDForRocks,278.33759999999995,0.27181406249999995
+StationCargoList::RefreshHyperpathLookup,273.40260000000006,0.26699472656250006
+Vehicle::UpdateViewport,271.30740000000014,0.26494863281250014
+__security_check_cookie,269.30439999999993,0.26299257812499993
+StationCargoList::Append,268.5451,0.26225107421875
+StationCargoList::RemoveBoardingEntry,267.2526,0.2609888671875
+GetTownRadiusGroup,265.49480000000005,0.25927226562500005
+`StationCargoList::VisitBoardingCandidates<`StationCargoList::ShiftIndexedJourneyCargo<CargoLoad>'::`2'::<lambda_1> >'::`2'::<lambda_4>::operator(),264.30949999999996,0.25811474609374996
+Vehicle::UpdateRealOrderIndex,255.63399999999996,0.24964257812499996
+"CYapfFollowRoadT<CYapfRoad_TypesT<CYapfRoad,CYapfDestinationTileRoadT> >::ChooseRoadTrack",255.6141,0.24962314453125
+Vehicle::HandleLoading,253.10589999999988,0.24717373046874988
+"CYapfBaseT<CYapfRoad_TypesT<CYapfRoad,CYapfDestinationTileRoadT> >::FindPath",250.61849999999998,0.24474462890624998
+TileLoopWaterFlooding,242.36300000000006,0.23668261718750006
+"CYapfFollowRailT<CYapfRail_TypesT<CYapfRailNo90,CFollowTrackT<0,Train,0,0>,CYapfDestinationTileOrStationRailT,CYapfFollowRailT> >::PfFollowNode",236.44219999999999,0.23090058593749999
+StationCargoList::AddBoardingEntry,231.15800000000002,0.22574023437500002
+Town::UpdateVirtCoord,228.32180000000005,0.22297050781250005
+Vehicle::LeaveStation,222.10719999999998,0.21690156249999998
+PassengerPrecomputedTable::Select,215.5251,0.21047373046875
+"CYapfBaseT<CYapfRail_TypesT<CYapfRailNo90,CFollowTrackT<0,Train,0,0>,CYapfDestinationTileOrStationRailT,CYapfFollowRailT> >::AddNewNode",213.31379999999996,0.20831425781249996
+"robin_hood::detail::Table<1,80,unsigned int,CYapfRailNode * ptr64,robin_hood::hash<unsigned int,void>,std::equal_to<unsigned int> >::insertKeyPrepareEmptySpot<unsigned int>",208.28009999999995,0.20339853515624995
+VehiclesNearTileXYBaseIterator::VehiclesNearTileXYBaseIterator,186.19020000000003,0.18182636718750003
+Train::PlayLeaveStationSound,183.9842,0.1796720703125
+PassengerJourneyActiveContext::Decide,180.4006,0.1761724609375
+"GroundVehicle<Train,0>::GetAcceleration",180.1842,0.1759611328125
+UniscribeParagraphLayout::`scalar deleting destructor',179.20210000000006,0.17500205078125006
+"robin_hood::detail::Table<1,80,unsigned int,CYapfRegionNodeT<CYapfRegionPatchNodeKey> * ptr64,robin_hood::hash<unsigned int,void>,std::equal_to<unsigned int> >::rehashPowerOfTwo",177.21479999999997,0.17306132812499997
+PassengerJourneyActiveContext::PlanWaiting,176.40139999999994,0.17226699218749994
+VehiclesNearTileXYBaseIterator::SkipEmptyBuckets,175.4602,0.1713478515625
+PassengerJourneyActiveContext::QueryWaiting,174.40079999999995,0.17031328124999995
+_Query_perf_counter,173.14239999999998,0.16908437499999998
+PassengerServiceDatabase::MayBoardHyperpath,173.108,0.16905078125
+PassengerJourneyLoadingContext::CanBoard,173.0116,0.168956640625
+"std::priority_queue<`StationCargoList::VisitBoardingCandidates<`StationCargoList::ShiftIndexedJourneyCargo<CargoLoad>'::`2'::<lambda_1> >'::`2'::Cursor,std::vector<`StationCargoList::VisitBoardingCandidates<`StationCargoList::ShiftIndexedJourneyCargo<CargoLoad>'::`2'::<lambda_1> >'::`2'::Cursor,std::allocator<`StationCargoList::VisitBoardingCandidates<`StationCargoList::ShiftIndexedJourneyCargo<CargoLoad>'::`2'::<lambda_1> >'::`2'::Cursor> >,`StationCargoList::VisitBoardingCandidates<`StationCargoList::ShiftIndexedJourneyCargo<CargoLoad>'::`2'::<lambda_1> >'::`2'::<lambda_2> >::push",164.21769999999998,0.16036884765624998
+SetAircraftPosition,161.17309999999992,0.15739560546874992
+VehicleTickCargoAging,160.91409999999996,0.15714267578124996
+"CYapfCostRailT<CYapfRail_TypesT<CYapfRailNo90,CFollowTrackT<0,Train,0,0>,CYapfDestinationTileOrStationRailT,CYapfFollowRailT> >::PfCalcCost",159.25959999999995,0.15552695312499995
+RailTrackToFence,157.14170000000004,0.15345869140625004
+std::chrono::steady_clock::now,155.1167,0.15148115234375
+"robin_hood::detail::Table<1,80,unsigned int,CYapfRegionNodeT<CYapfRegionPatchNodeKey> * ptr64,robin_hood::hash<unsigned int,void>,std::equal_to<unsigned int> >::initData",154.1617,0.15054853515625
+"std::_Allocate<16,std::_Default_allocate_traits>",152.1358,0.1485701171875
+PassengerPrecomputedTable::FindMember,151.3625,0.14781494140625
+LinkRefresher::Run,148.9937,0.14550166015625
+"CYapfFollowRoadT<CYapfRoad_TypesT<CYapfRoad,CYapfDestinationTileRoadT> >::PfFollowNode",148.47869999999998,0.14499873046874998
+CargoPayment::`scalar deleting destructor',148.16680000000005,0.14469414062500005
+AddTextEffect,145.14530000000008,0.14174345703125008
+StationCargoList::UpdatePassengerRoutingSchedule,143.29430000000002,0.13993583984375002
+CargoPayment::~CargoPayment,143.14200000000008,0.13978710937500008
+LinkRefresher::RefreshLinks,138.99470000000002,0.13573701171875002
+PassengerServiceDatabase::Tick,138.06019999999998,0.13482441406249998
+ClearTownHouse,137.1,0.13388671875
+SysFreeString,136.05519999999999,0.13286640624999999
+PassengerPrecomputedTable::GraphSnapshot::StateFor,134.09380000000002,0.13095097656250002
+VehicleCargoList::ShiftCargo<CargoTransfer>,129.49099999999999,0.12645605468749999
+SpriteGroup::Resolve,129.2464,0.1262171875
+HashTable<CYapfRailNode>::Push,114.12409999999997,0.11144931640624997
+LinkRefresher::RefreshStats,113.13250000000001,0.11048095703125001
+StationFinder::GetStations,110.11120000000003,0.10753046875000002
+PassengerServiceDatabase::TickPrecomputed,110.04710000000001,0.10746787109375001
+PassengerServiceDatabase::ClearRetainedPrecomputed,109.04710000000001,0.10649130859375001
+CmdTownAutoFundBuildings,107.26499999999997,0.10475097656249997
+"Kdtree<PoolID<TownIDTag>,Kdtree_TownXYFunc,unsigned int,int>::FreeSubtree",107.26499999999997,0.10475097656249997
+IncreaseStats,107.03260000000002,0.10452402343750002
+`StationCargoList::VisitBoardingCandidates<`StationCargoList::ShiftIndexedJourneyCargo<CargoLoad>'::`2'::<lambda_1> >'::`2'::<lambda_3>::operator(),107.0168,0.10450859375
+Vehicle::~Vehicle,106.75190000000005,0.10424990234375005
+"std::_Tree<std::_Tmap_traits<std::tuple<std::tuple<PoolID<VehicleIDTag>,enum CargoType,unsigned short,unsigned __int64,PoolID<StationIDTag>,PoolID<StationIDTag>,PoolID<OrderListIDTag>,PoolID<OrderListIDTag> >,PoolID<OrderListIDTag>,unsigned __int64,std::array<unsigned int,2> >,bool,std::less<std::tuple<std::tuple<PoolID<VehicleIDTag>,enum CargoType,unsigned short,unsigned __int64,PoolID<StationIDTag>,PoolID<StationIDTag>,PoolID<OrderListIDTag>,PoolID<OrderListIDTag> >,PoolID<OrderListIDTag>,unsigned __int64,std::array<unsigned int,2> > >,std::allocator<std::pair<std::tuple<std::tuple<PoolID<VehicleIDTag>,enum CargoType,unsigned short,unsigned __int64,PoolID<StationIDTag>,PoolID<StationIDTag>,PoolID<OrderListIDTag>,PoolID<OrderListIDTag> >,PoolID<OrderListIDTag>,unsigned __int64,std::array<unsigned int,2> > const ,bool> >,0> >::_Find_lower_bound<std::tuple<std::tuple<PoolID<VehicleIDTag>,enum CargoType,unsigned short,unsigned __int64,PoolID<StationIDTag>,PoolID<StationIDTag>,PoolID<OrderListIDTag>,PoolID<OrderListIDTag> >,PoolID<OrderListIDTag>,unsigned __int64,std::array<unsigned int,2> > >",103.29039999999999,0.10086953124999999
+"std::_Tree<std::_Tset_traits<std::pair<ST<StateTicksTag>,PoolID<CargoPacketIDTag> >,std::less<std::pair<ST<StateTicksTag>,PoolID<CargoPacketIDTag> > >,std::allocator<std::pair<ST<StateTicksTag>,PoolID<CargoPacketIDTag> > >,0> >::erase",102.8287,0.10041865234375
+"CYapfCostRoadT<CYapfRoad_TypesT<CYapfRoad,CYapfDestinationTileRoadT> >::PfCalcCost",102.28150000000001,0.09988427734375001
+PassengerPrecomputedTable::StoredCandidates,101.1601,0.09878916015625
+GetFloodingBehaviour,101.02039999999998,0.09865273437499998
+HashTable<CYapfRoadNode>::Push,100.14549999999998,0.09779833984374998
+VehicleTickMotion,99.18639999999999,0.09686171874999999
+GenericGetRailTypeByEntryDir,98.11600000000003,0.09581640625000003
+Train::ConsistChanged,92.21270000000001,0.09005146484375001
+PassengerWaitingRoutingChanged,91.1246,0.0889888671875
+TriggerStationRandomisation,90.12410000000003,0.08801181640625003
+RoadVehicle::GetCurrentMaxSpeed,90.07660000000003,0.08796542968750003
+"std::_Tree<std::_Tset_traits<std::tuple<PoolID<StationIDTag>,unsigned __int64,PoolID<CargoPacketIDTag> >,std::less<std::tuple<PoolID<StationIDTag>,unsigned __int64,PoolID<CargoPacketIDTag> > >,std::allocator<std::tuple<PoolID<StationIDTag>,unsigned __int64,PoolID<CargoPacketIDTag> > >,0> >::erase",89.2699,0.08717763671875
+CanDeleteHouse,89.16409999999998,0.08707431640624998
+GetTilePixelSlope,88.01729999999999,0.08595439453124999
+Rail90DegTurnDisallowedTilesFromDiagDir,86.25330000000002,0.08423173828125002
+"std::_Tree<std::_Tset_traits<std::set<std::tuple<PoolID<StationIDTag>,unsigned __int64,PoolID<CargoPacketIDTag> >,std::less<std::tuple<PoolID<StationIDTag>,unsigned __int64,PoolID<CargoPacketIDTag> > >,std::allocator<std::tuple<PoolID<StationIDTag>,unsigned __int64,PoolID<CargoPacketIDTag> > > > const * ptr64,std::less<std::set<std::tuple<PoolID<StationIDTag>,unsigned __int64,PoolID<CargoPacketIDTag> >,std::less<std::tuple<PoolID<StationIDTag>,unsigned __int64,PoolID<CargoPacketIDTag> > >,std::allocator<std::tuple<PoolID<StationIDTag>,unsigned __int64,PoolID<CargoPacketIDTag> > > > const * ptr64>,std::allocator<std::set<std::tuple<PoolID<StationIDTag>,unsigned __int64,PoolID<CargoPacketIDTag> >,std::less<std::tuple<PoolID<StationIDTag>,unsigned __int64,PoolID<CargoPacketIDTag> > >,std::allocator<std::tuple<PoolID<StationIDTag>,unsigned __int64,PoolID<CargoPacketIDTag> > > > const * ptr64>,0> >::insert<0,0>",86.0961,0.08407822265625
+"GroundVehicle<RoadVehicle,1>::IsFrontEngine",83.9903,0.08202177734375
+SpriteGroupDumper::DumpStandardGRFFileProps,82.22700000000003,0.08029980468750003
+Train::UpdateDeltaXY,82.1364,0.080211328125
+GetEngineProperty,81.7192,0.07980390625
+"btree::btree<btree::btree_map_params<std::pair<unsigned short,unsigned short>,LinkGraph::BaseEdge,std::less<std::pair<unsigned short,unsigned short> >,std::allocator<std::pair<std::pair<unsigned short,unsigned short> const ,LinkGraph::BaseEdge> >,256> >::internal_locate",78.9772,0.077126171875
+"GroundVehicle<RoadVehicle,1>::GetAcceleration",77.9845,0.07615673828125
+YapfTrainChooseTrack,77.22699999999999,0.07541699218749999
+GetForwardAspectFollowingTrack,75.95989999999998,0.07417958984374998
+HouseSpec::Get,75.1948,0.073432421875
+GetWaitingCargoRating,75.11540000000001,0.07335488281250001
+UpdateVehicleTimetable,74.0886,0.0723521484375
+"std::vector<ST<BadgeClassIDTag>,std::allocator<ST<BadgeClassIDTag> > >::_Emplace_reallocate<ST<BadgeClassIDTag> const & ptr64>",73.09540000000001,0.07138222656250001
+PassengerOdDistribution::Allocate,73.0048,0.07129375
+TriggerWatchedCargoCallbacks,70.11189999999999,0.06846865234374999
+GetAnimatedTileSpeed_Station,68.04729999999999,0.06645244140624999
+SubtractRailTunnelBridgeInfrastructure,67.98519999999999,0.06639179687499999
+GenericGetRailTypeByTrackBit,67.2134,0.0656380859375
+UpdateStationAcceptance,67.1232,0.06555
+GetTileSlope,66.0504,0.06450234375
+ShowNewGrfVehicleError,65.1655,0.06363818359375
+"std::_Hash<std::_Umap_traits<unsigned int,StationCargoList * ptr64,std::_Uhash_compare<unsigned int,std::hash<unsigned int>,std::equal_to<unsigned int> >,std::allocator<std::pair<unsigned int const ,StationCargoList * ptr64> >,0> >::erase",65.0823,0.06355693359375
+"CFollowTrackT<1,RoadVehicle,1,0>::Follow",64.2561,0.06275009765625
+IsShipDestinationTile,64.12419999999999,0.06262128906249999
+PassengerWaitingPacketChanged,63.1836,0.061702734375
+IsDepotTile,62.09759999999999,0.06064218749999999
+MarkAllViewportsDirty,61.06299999999999,0.05963183593749999
+"btree::btree<btree::btree_map_params<std::pair<unsigned short,unsigned short>,LinkGraph::BaseEdge,std::less<std::pair<unsigned short,unsigned short> >,std::allocator<std::pair<std::pair<unsigned short,unsigned short> const ,LinkGraph::BaseEdge> >,256> >::internal_find_unique",60.98199999999999,0.05955273437499999
+StationCargoList::Truncate,60.1151,0.05870615234375
+HouseScopeResolver::GetVariable,60.01000000000002,0.05860351562500002
+"SpecializedVehicle<RoadVehicle,1,BaseGroundVehicle>::UpdateViewport",60.0049,0.05859853515625
+ShowCostOrIncomeAnimation,59.06179999999999,0.05767753906249999
+UniscribeParagraphLayout::NextLine,58.06310000000001,0.05670224609375001
+GenerateTerrainPerlin,58.03989999999999,0.05667958984374999
+UnreserveRailTrack,57.057900000000004,0.055720605468750004
+BaseStation::IsInUse,56.99020000000001,0.05565449218750001
+"robin_hood::detail::Table<1,80,ST<TileIndexTag>,PoolID<VehicleIDTag>,robin_hood::hash<ST<TileIndexTag>,void>,std::equal_to<ST<TileIndexTag> > >::insertKeyPrepareEmptySpot<ST<TileIndexTag> >",56.058400000000006,0.054744531250000006
+"fmt::v11::detail::value<fmt::v11::context>::format_custom<GeneralFmtDumper<BaseStation,BaseStation const * ptr64>,fmt::v11::formatter<GeneralFmtDumper<BaseStation,BaseStation const * ptr64>,char,void> >",55.171599999999984,0.053878515624999984
+"GroundVehicle<RoadVehicle,1>::UpdateInclination",55.1388,0.053846484375
+__builtin_array_init_helper_eh<PassengerPrecomputedTable>,55.0413,0.05375126953125
+NextSignalType,54.94869999999999,0.05366083984374999
+"std::_Tree<std::_Tset_traits<std::pair<ST<StateTicksTag>,PoolID<CargoPacketIDTag> >,std::less<std::pair<ST<StateTicksTag>,PoolID<CargoPacketIDTag> > >,std::allocator<std::pair<ST<StateTicksTag>,PoolID<CargoPacketIDTag> > >,0> >::_Eqrange<std::pair<ST<StateTicksTag>,PoolID<CargoPacketIDTag> > >",54.7707,0.05348701171875
+PlayVehicleSound,53.178900000000006,0.051932519531250006
+DebugIntlVFmt,53.158800000000014,0.05191289062500001
+Train::OnPeriodic,53.1281,0.05188291015625
+"CFollowTrackT<0,Train,1,1>::Follow",53.05669999999999,0.05181318359374999
+PassengerPrecomputedTable::PassengerPrecomputedTable,53.0427,0.05179951171875
+PassengerJourneyBoardingContext::ValidateServiceRide,52.0617,0.05084150390625
+PassengerPrecomputedTable::ContainsStored,52.0126,0.0507935546875
+"std::_Synth_three_way::operator()<PassengerJourneyExecution,PassengerJourneyExecution>",51.854499999999994,0.050639160156249995
+fputs,51.16130000000001,0.04996220703125001
+debug_print_intl,51.16130000000001,0.04996220703125001
+FollowTrainReservation,51.0325,0.04983642578125
+<lambda_3c69d32035295ec542f8d3d5890cad7e>::operator(),50.16210000000001,0.04898642578125001
+_write_internal,50.16210000000001,0.04898642578125001
+_fwrite_nolock_internal,50.16210000000001,0.04898642578125001
+"__crt_seh_guarded_call<int>::operator()<<lambda_74fa16c76a7d77b4fd7ac71f50607dae>,<lambda_3c69d32035295ec542f8d3d5890cad7e> &,<lambda_8185ecdad0883b4996ee6ebac1654953> >",50.16210000000001,0.04898642578125001
+"CYapfFollowRailT<CYapfRail_TypesT<CYapfRailNo90,CFollowTrackT<0,Train,0,0>,CYapfDestinationTileOrStationRailT,CYapfFollowRailT> >::stCheckReverseTrain",50.156,0.04898046875
+StationCargoList::RefreshWaitingPacket,49.928900000000006,0.048758691406250006
+_write_nolock,49.16210000000001,0.04800986328125001
+YapfTrainCheckReverse,49.156,0.04800390625
+GetFoundationSlope,47.05740000000001,0.04595449218750001
+"btree::btree_map_container<btree::btree<btree::btree_map_params<unsigned __int64,OverflowSafeInt<__int64>,std::less<unsigned __int64>,std::allocator<std::pair<unsigned __int64 const ,OverflowSafeInt<__int64> > >,256> > >::operator[]",47.04070000000001,0.04593818359375001
+Station::GetPlatformLength,46.027699999999996,0.044948925781249996
+PassengerJourneyLoadingContext::CanBoardUncached,46.011599999999994,0.044933203124999994
+PassengerJourneyLoadingContext::PassengerJourneyLoadingContext,45.0875,0.04403076171875
+IsHangarTile,45.0711,0.04401474609375
+"std::_Tree<std::_Tmap_traits<std::tuple<PoolID<StationIDTag>,unsigned int,PoolID<OrderListIDTag> >,PassengerPrecomputedTable::Policy,std::less<std::tuple<PoolID<StationIDTag>,unsigned int,PoolID<OrderListIDTag> > >,std::allocator<std::pair<std::tuple<PoolID<StationIDTag>,unsigned int,PoolID<OrderListIDTag> > const ,PassengerPrecomputedTable::Policy> >,0> >::find",45.01210000000001,0.04395712890625001
+HasStationTileRail,45.0072,0.04395234375
+"GroundVehicle<Train,0>::CargoChanged",44.996900000000004,0.043942285156250004
+GetFirstVehicleOnTile,44.9851,0.04393076171875
+StationPickerDrawSprite,44.117599999999996,0.043083593749999996
+CargoPacket::StationMergeHash,42.11379999999999,0.04112675781249999
+"std::operator<=><PoolID<VehicleIDTag>,enum CargoType,unsigned short,unsigned __int64,PoolID<StationIDTag>,PoolID<StationIDTag>,PoolID<OrderListIDTag>,PoolID<OrderListIDTag>,PoolID<VehicleIDTag>,enum CargoType,unsigned short,unsigned __int64,PoolID<StationIDTag>,PoolID<StationIDTag>,PoolID<OrderListIDTag>,PoolID<OrderListIDTag> >",42.078199999999995,0.041091992187499995
+DrawBridgeMiddle,41.99649999999999,0.04101220703124999
+CargoPacket::FallbackPassengerJourney,41.114799999999995,0.040151171874999995
+"std::_Tree<std::_Tset_traits<PoolID<CargoPacketIDTag>,std::less<PoolID<CargoPacketIDTag> >,std::allocator<PoolID<CargoPacketIDTag> >,0> >::erase",41.10699999999999,0.04014355468749999
+DrawTrackBits,41.05079999999999,0.04008867187499999
+CheckTownRoadTypes,40.1559,0.03921474609375
+PassengerJourneyLoadingContext::~PassengerJourneyLoadingContext,39.192699999999995,0.038274121093749995
+"SpecializedVehicle<Aircraft,3,Vehicle>::UpdateViewport",39.0509,0.03813564453125
+PassengerPrecomputedTable::operator=,39.00570000000001,0.03809150390625001
+ValidatePassengerOd,38.05530000000001,0.03716337890625001
+"std::_Tree_val<std::_Tree_simple_types<std::unique_ptr<CargoDataEntry,std::default_delete<CargoDataEntry> > > >::_Extract",38.040800000000004,0.037149218750000004
+DeterministicSpriteGroup::HandleResultGroup,38.0408,0.03714921875
+PassengerJourneyLoadingContext::PrepareBoard,38.006699999999995,0.037115917968749995
+ValidatePassengerServiceRide,37.0764,0.036207421875
+VehicleCargoList::ShiftCargo<CargoDelivery>,37.018100000000004,0.036150488281250004
+PassengerJourneyExecution::operator<,36.991,0.0361240234375
+GetTileSlopeZ,36.9649,0.03609853515625
+GetStringWithArgs,36.19179999999999,0.035343554687499994
+IntSqrt,36.1597,0.03531220703125
+Ship::GetEffectiveMaxSpeed,36.0696,0.03522421875
+UpdateSeparationOrder,35.9945,0.03515087890625
+CYapfRailNo90::CYapfRailNo90,35.9785,0.03513525390625
+write_text_ansi_nolock,35.1664,0.0343421875
+GetPassengerRouteState,35.0717,0.03424970703125
+TicksToLeaveDepot,35.052800000000005,0.034231250000000005
+GetTileMaxZ,35.0301,0.03420908203125
+ConvertCargoQuantityToDisplayQuantity,34.1124,0.033312890625
+"std::_Hash<std::_Umap_traits<unsigned __int64,std::set<std::pair<unsigned short,PoolID<CargoPacketIDTag> >,std::less<std::pair<unsigned short,PoolID<CargoPacketIDTag> > >,std::allocator<std::pair<unsigned short,PoolID<CargoPacketIDTag> > > >,std::_Uhash_compare<unsigned __int64,std::hash<unsigned __int64>,std::equal_to<unsigned __int64> >,std::allocator<std::pair<unsigned __int64 const ,std::set<std::pair<unsigned short,PoolID<CargoPacketIDTag> >,std::less<std::pair<unsigned short,PoolID<CargoPacketIDTag> > >,std::allocator<std::pair<unsigned short,PoolID<CargoPacketIDTag> > > > > >,0> >::erase<std::_List_iterator<std::_List_val<std::_List_simple_types<std::pair<unsigned __int64 const ,std::set<std::pair<unsigned short,PoolID<CargoPacketIDTag> >,std::less<std::pair<unsigned short,PoolID<CargoPacketIDTag> > >,std::allocator<std::pair<unsigned short,PoolID<CargoPacketIDTag> > > > > > > >,0>",34.0934,0.0332943359375
+PassengerServiceDatabase::IsCurrent,34.03209999999999,0.03323447265624999
+ForAllStationsAroundTilesIntl,33.0201,0.03224619140625
+SpiralTileIterator::Increment,32.101600000000005,0.031349218750000005
+HouseResolverObject::GetScope,32.021100000000004,0.031270605468750004
+Town::GetOrCreateCargoSupplied,32.0073,0.03125712890625
+Order::Equals,32.006299999999996,0.031256152343749996
+CargoPacket::~CargoPacket,31.084999999999997,0.030356445312499997
+Train::Tick,31.052,0.03032421875
+CargoPacket::SetPassengerJourney,31.009199999999996,0.030282421874999996
+"std::vector<CapacityAnnotation,std::allocator<CapacityAnnotation> >::~vector<CapacityAnnotation,std::allocator<CapacityAnnotation> >",31.001399999999997,0.030274804687499997
+NodeList<CYapfRailNode>::NodeList<CYapfRailNode>,30.9805,0.03025439453125
+"HasVehicleOnTile<0,FindSpaceBetweenTrainsChecker & ptr64>",30.799699999999998,0.030077832031249998
+IncreaseCalendarDate,30.0303,0.02932646484375
+"std::vector<Rect,std::allocator<Rect> >::push_back",30.0286,0.0293248046875
+CYapfFollowShipT<CYapfShip_TypesT<CYapfShip> >::ChooseShipTrack,30.026899999999998,0.029323144531249998
+GetTrainStopLocation,30.0107,0.02930732421875
+PopulateSeparationState,30.005700000000008,0.029302441406250008
+"robin_hood::detail::Table<1,80,unsigned int,unsigned int,robin_hood::hash<unsigned int,void>,std::equal_to<unsigned int> >::find",29.9767,0.02927412109375
+TrainDecelerationStats::TrainDecelerationStats,29.9672,0.02926484375
+GetTrackdirBitsForRoad,29.088700000000003,0.028406933593750003
+PassengerJourneyActiveContext::PassengerJourneyActiveContext,29.084900000000005,0.028403222656250005
+"std::binary_search<std::_Span_iterator<unsigned int const >,unsigned int>",29.001,0.0283212890625
+"std::_Tree<std::_Tmap_traits<std::tuple<PoolID<StationIDTag>,unsigned __int64,unsigned __int64,PoolID<OrderListIDTag>,unsigned __int64,PoolID<OrderListIDTag>,unsigned __int64>,StationCargoList::HyperpathWaiting,std::less<std::tuple<PoolID<StationIDTag>,unsigned __int64,unsigned __int64,PoolID<OrderListIDTag>,unsigned __int64,PoolID<OrderListIDTag>,unsigned __int64> >,std::allocator<std::pair<std::tuple<PoolID<StationIDTag>,unsigned __int64,unsigned __int64,PoolID<OrderListIDTag>,unsigned __int64,PoolID<OrderListIDTag>,unsigned __int64> const ,StationCargoList::HyperpathWaiting> >,0> >::_Find_lower_bound<std::tuple<PoolID<StationIDTag>,unsigned __int64,unsigned __int64,PoolID<OrderListIDTag>,unsigned __int64,PoolID<OrderListIDTag>,unsigned __int64> >",28.969200000000004,0.028290234375000004
+RouteWaitingPassengerJourneys,28.2101,0.02754892578125
+HasPowerOnRail,28.121299999999998,0.027462207031249998
+GetVehicleCallback,28.0817,0.02742353515625
+"std::_Tree<std::_Tset_traits<std::tuple<PoolID<StationIDTag>,unsigned __int64,PoolID<CargoPacketIDTag> >,std::less<std::tuple<PoolID<StationIDTag>,unsigned __int64,PoolID<CargoPacketIDTag> > >,std::allocator<std::tuple<PoolID<StationIDTag>,unsigned __int64,PoolID<CargoPacketIDTag> > >,0> >::insert<0,0>",27.938200000000002,0.027283398437500002
+PassengerServiceDatabase::TimetableChanged,27.0992,0.0264640625
+AddAcceptedCargoOfHouse,27.069700000000005,0.026435253906250004
+GetWagonOverrideSpriteSet,27.0644,0.026430078125
+PassengerPrecomputedTable::FindRow,26.9961,0.02636337890625
+Train::GetRunningCost,26.1412,0.025528515625
+GetPartialPixelZ,26.044400000000003,0.025433984375000003
+"btree::btree<btree::btree_map_params<std::pair<unsigned short,unsigned short>,LinkGraph::BaseEdge,std::less<std::pair<unsigned short,unsigned short> >,std::allocator<std::pair<std::pair<unsigned short,unsigned short> const ,LinkGraph::BaseEdge> >,256> >::insert_unique_args<std::piecewise_construct_t const & ptr64,std::tuple<std::pair<unsigned short,unsigned short> const & ptr64>,std::tuple<> >",26.0294,0.0254193359375
+CargoPacket::`scalar deleting destructor',25.991999999999997,0.025382812499999997
+"std::map<std::tuple<PoolID<StationIDTag>,unsigned __int64,unsigned __int64,PoolID<OrderListIDTag>,unsigned __int64,PoolID<OrderListIDTag>,unsigned __int64>,StationCargoList::HyperpathWaiting,std::less<std::tuple<PoolID<StationIDTag>,unsigned __int64,unsigned __int64,PoolID<OrderListIDTag>,unsigned __int64,PoolID<OrderListIDTag>,unsigned __int64> >,std::allocator<std::pair<std::tuple<PoolID<StationIDTag>,unsigned __int64,unsigned __int64,PoolID<OrderListIDTag>,unsigned __int64,PoolID<OrderListIDTag>,unsigned __int64> const ,StationCargoList::HyperpathWaiting> > >::try_emplace<>",25.1028,0.024514453125
+"std::_Tree<std::_Tset_traits<PoolID<CargoPacketIDTag>,std::less<PoolID<CargoPacketIDTag> >,std::allocator<PoolID<CargoPacketIDTag> >,0> >::insert<0,0>",25.026200000000003,0.024439648437500003
+FillTrainReservationLookAhead,24.999200000000002,0.024413281250000002
+"GroundVehicle<Train,0>::DoUpdateSpeed",24.9992,0.02441328125
+StationCargoList::UnindexHyperpathGroup,24.9906,0.0244048828125
+"std::operator<=><PoolID<VehicleIDTag> const & ptr64,PoolID<OrderListIDTag> const & ptr64,PoolID<StationIDTag> const & ptr64,PoolID<StationIDTag> const & ptr64,unsigned short const & ptr64,unsigned short const & ptr64,ST<StateTicksTag> const & ptr64,ST<StateTicksTag> const & ptr64,unsigned __int64 const & ptr64,enum PassengerRideKind const & ptr64,unsigned __int64 const & ptr64,ST<StateTicksTag> const & ptr64,ST<StateTicksTag> const & ptr64,__int64 const & ptr64,__int64 const & ptr64,bool const & ptr64,PoolID<VehicleIDTag> const & ptr64,PoolID<OrderListIDTag> const & ptr64,PoolID<StationIDTag> const & ptr64,PoolID<StationIDTag> const & ptr64,unsigned short const & ptr64,unsigned short const & ptr64,ST<StateTicksTag> const & ptr64,ST<StateTicksTag> const & ptr64,unsigned __int64 const & ptr64,enum PassengerRideKind const & ptr64,unsigned __int64 const & ptr64,ST<StateTicksTag> const & ptr64,ST<StateTicksTag> const & ptr64,__int64 const & ptr64,__int64 const & ptr64,bool const & ptr64>",24.9897,0.02440400390625
+"std::_Tree<std::_Tset_traits<PoolID<OrderListIDTag>,std::less<PoolID<OrderListIDTag> >,std::allocator<PoolID<OrderListIDTag> >,0> >::insert<0,0>",24.1542,0.0235880859375
+DoCommandImplementation,24.052500000000002,0.023488769531250002
+Layouter::LineCacheItem::~LineCacheItem,23.925700000000003,0.023364941406250003
+IsSafeWaitingPosition,23.0899,0.02254873046875
+AircraftLeaveHangar,23.081699999999998,0.022540722656249998
+CargoLoad::operator(),23.0263,0.02248662109375
+TryReserveRailTrack,23.016899999999996,0.022477441406249996
+PassengerPrecomputedTable::HasPolicy,22.9987,0.02245966796875
+"GroundVehicle<Train,0>::CalculatePower",22.9849,0.02244619140625
+Train::GetAccelerationStatus,22.953000000000003,0.022415039062500003
+CYapfCostBase::stSlopeCost,22.105900000000002,0.021587792968750002
+MarkTileGroundDirtyByTile,22.0215,0.02150537109375
+TryReserveRailTrackdir,22.0159,0.02149990234375
+"`anonymous namespace'::__std_minmax_disp<2,`anonymous namespace'::_Minmax_traits_4,0>",22.006699999999995,0.021490917968749995
+"std::_Tree_val<std::_Tree_simple_types<std::unique_ptr<CargoDataEntry,std::default_delete<CargoDataEntry> > > >::_Insert_node",22.001099999999997,0.021485449218749997
+GetSlopePixelZ_MaxZ,21.9987,0.02148310546875
+"robin_hood::detail::Table<1,80,unsigned int,CYapfRailNode * ptr64,robin_hood::hash<unsigned int,void>,std::equal_to<unsigned int> >::find",21.0758,0.0205818359375
+Vehicle::NeedsAutomaticServicing,21.039199999999997,0.020546093749999998
+VehicleCargoList::Append,21.025399999999998,0.020532617187499998
+"std::_Hash<std::_Umap_traits<unsigned __int64,std::set<std::pair<unsigned short,PoolID<CargoPacketIDTag> >,std::less<std::pair<unsigned short,PoolID<CargoPacketIDTag> > >,std::allocator<std::pair<unsigned short,PoolID<CargoPacketIDTag> > > >,std::_Uhash_compare<unsigned __int64,std::hash<unsigned __int64>,std::equal_to<unsigned __int64> >,std::allocator<std::pair<unsigned __int64 const ,std::set<std::pair<unsigned short,PoolID<CargoPacketIDTag> >,std::less<std::pair<unsigned short,PoolID<CargoPacketIDTag> > >,std::allocator<std::pair<unsigned short,PoolID<CargoPacketIDTag> > > > > >,0> >::find",21.0087,0.02051630859375
+IsHangar,20.9858,0.0204939453125
+"CFollowTrackT<0,Train,0,0>::Follow",20.124799999999997,0.019653124999999997
+NodeList<CYapfRoadNode>::InsertOpenNode,19.0763,0.01862919921875
+CSegmentCostCacheT<CYapfRailSegment>::Get,18.986900000000002,0.018541894531250002
+CanPassengerVehicleUseStation,18.077200000000005,0.017653515625000005
+HouseResolverObject::HouseResolverObject,18.0718,0.0176482421875
+"CFollowTrackT<0,Train,0,1>::QueryNewTileTrackStatus",18.0315,0.01760888671875
+"std::_Tree_val<std::_Tree_simple_types<std::pair<int const ,unsigned int> > >::_Erase_tree<std::allocator<std::_Tree_node<std::pair<int const ,unsigned int>,void * ptr64> > >",17.999800000000004,0.017577929687500004
+GetRailFoundation,17.0303,0.01663115234375
+"CYapfFollowRegionT<CYapfRegion_TypesT<CYapfRegionWater,NodeList<CYapfRegionNodeT<CYapfRegionPatchNodeKey> > > >::FindWaterRegionPath",17.027,0.0166279296875
+"CYapfBaseT<CYapfRegion_TypesT<CYapfRegionWater,NodeList<CYapfRegionNodeT<CYapfRegionPatchNodeKey> > > >::FindPath",17.027,0.0166279296875
+VisitWaterRegionPatchNeighbours,17.027,0.0166279296875
+PassengerOdFallbackContext::PassengerOdFallbackContext,17.016099999999998,0.016617285156249998
+GenericGetRailTypeByTrack,17.0155,0.01661669921875
+CreateEffectVehicle,17.0149,0.01661611328125
+"std::_Push_heap_by_index<`StationCargoList::VisitBoardingCandidates<`StationCargoList::ShiftIndexedJourneyCargo<CargoReservation>'::`2'::<lambda_1> >'::`2'::Cursor * ptr64,`StationCargoList::VisitBoardingCandidates<`StationCargoList::ShiftIndexedJourneyCargo<CargoReservation>'::`2'::<lambda_1> >'::`2'::Cursor,`StationCargoList::VisitBoardingCandidates<`StationCargoList::ShiftIndexedJourneyCargo<CargoReservation>'::`2'::<lambda_1> >'::`2'::<lambda_2> >",17.011400000000002,0.016612695312500002
+PassengerPrecomputedTable::GraphSnapshot::GraphSnapshot,16.9955,0.01659716796875
+Order::AssignOrder,16.8706,0.0164751953125
+IsDepotTypeTile,16.148200000000003,0.015769726562500003
+"GroundVehicle<Train,0>::SetLastSpeed",16.1189,0.01574111328125
+ClosestTownFromTile,16.096700000000002,0.015719433593750002
+PassengerRoutingContext::~PassengerRoutingContext,16.0805,0.01570361328125
+"std::_Tree_node<std::pair<std::tuple<PoolID<StationIDTag>,unsigned __int64,unsigned __int64,PoolID<OrderListIDTag>,unsigned __int64,PoolID<OrderListIDTag>,unsigned __int64> const ,StationCargoList::HyperpathWaiting>,void * ptr64>::_Freenode<std::allocator<std::_Tree_node<std::pair<std::tuple<PoolID<StationIDTag>,unsigned __int64,unsigned __int64,PoolID<OrderListIDTag>,unsigned __int64,PoolID<OrderListIDTag>,unsigned __int64> const ,StationCargoList::HyperpathWaiting>,void * ptr64> > >",16.0432,0.0156671875
+InvalidateWaterRegion,16.0135,0.01563818359375
+NodeList<CYapfRailNode>::~NodeList<CYapfRailNode>,16.005300000000002,0.015630175781250002
+PassengerOdDistribution::Validate,16.005,0.0156298828125
+RemoveFromRailBaseStation<Waypoint>,16.0047,0.01562958984375
+"CYapfRailNode::IterateTiles<CYapfReserveTrack<CYapfRail_TypesT<CYapfRailNo90,CFollowTrackT<0,Train,0,0>,CYapfDestinationTileOrStationRailT,CYapfFollowRailT> >,CYapfRailNo90,CYapfReserveTrack<CYapfRail_TypesT<CYapfRailNo90,CFollowTrackT<0,Train,0,0>,CYapfDestinationTileOrStationRailT,CYapfFollowRailT> > >",16.003700000000002,0.015628613281250002
+"`CYapfReserveTrack<CYapfRail_TypesT<CYapfRailNo90,CFollowTrackT<0,Train,0,0>,CYapfDestinationTileOrStationRailT,CYapfFollowRailT> >::TryReservePath'::`9'::<lambda_1>::operator()",15.9958,0.0156208984375
+"std::_Tree<std::_Tmap_traits<std::pair<std::tuple<enum PassengerRoutingMode,PoolID<StationIDTag>,PoolID<StationIDTag>,ST<StateTicksTag>,PoolID<OrderListIDTag>,unsigned __int64,bool,PassengerBoardingFailure>,PassengerJourneyExecution>,PassengerJourneyLoadingContext::Decision,std::less<std::pair<std::tuple<enum PassengerRoutingMode,PoolID<StationIDTag>,PoolID<StationIDTag>,ST<StateTicksTag>,PoolID<OrderListIDTag>,unsigned __int64,bool,PassengerBoardingFailure>,PassengerJourneyExecution> >,std::allocator<std::pair<std::pair<std::tuple<enum PassengerRoutingMode,PoolID<StationIDTag>,PoolID<StationIDTag>,ST<StateTicksTag>,PoolID<OrderListIDTag>,unsigned __int64,bool,PassengerBoardingFailure>,PassengerJourneyExecution> const ,PassengerJourneyLoadingContext::Decision> >,0> >::_Find_lower_bound<std::pair<std::tuple<enum PassengerRoutingMode,PoolID<StationIDTag>,PoolID<StationIDTag>,ST<StateTicksTag>,PoolID<OrderListIDTag>,unsigned __int64,bool,PassengerBoardingFailure>,PassengerJourneyExecution> >",15.9928,0.01561796875
+ObservePassengerPeriodicVehicle,15.9885,0.01561376953125
+"btree::btree_unique_container<btree::btree<btree::btree_map_params<SpriteGroup const * ptr64,unsigned __int64,std::less<SpriteGroup const * ptr64>,std::allocator<std::pair<SpriteGroup const * ptr64 const,unsigned __int64> >,256> > >::find",15.9872,0.0156125
+NodeList<CYapfRailNode>::InsertOpenNode,15.984000000000002,0.015609375000000002
+"std::_Tree<std::_Tmap_traits<std::tuple<std::tuple<PoolID<VehicleIDTag>,enum CargoType,unsigned short,unsigned __int64,PoolID<StationIDTag>,PoolID<StationIDTag>,PoolID<OrderListIDTag>,PoolID<OrderListIDTag> >,PoolID<OrderListIDTag>,unsigned __int64,std::array<unsigned int,2> >,bool,std::less<std::tuple<std::tuple<PoolID<VehicleIDTag>,enum CargoType,unsigned short,unsigned __int64,PoolID<StationIDTag>,PoolID<StationIDTag>,PoolID<OrderListIDTag>,PoolID<OrderListIDTag> >,PoolID<OrderListIDTag>,unsigned __int64,std::array<unsigned int,2> > >,std::allocator<std::pair<std::tuple<std::tuple<PoolID<VehicleIDTag>,enum CargoType,unsigned short,unsigned __int64,PoolID<StationIDTag>,PoolID<StationIDTag>,PoolID<OrderListIDTag>,PoolID<OrderListIDTag> >,PoolID<OrderListIDTag>,unsigned __int64,std::array<unsigned int,2> > const ,bool> >,0> >::~_Tree<std::_Tmap_traits<std::tuple<std::tuple<PoolID<VehicleIDTag>,enum CargoType,unsigned short,unsigned __int64,PoolID<StationIDTag>,PoolID<StationIDTag>,PoolID<OrderListIDTag>,PoolID<OrderListIDTag> >,PoolID<OrderListIDTag>,unsigned __int64,std::array<unsigned int,2> >,bool,std::less<std::tuple<std::tuple<PoolID<VehicleIDTag>,enum CargoType,unsigned short,unsigned __int64,PoolID<StationIDTag>,PoolID<StationIDTag>,PoolID<OrderListIDTag>,PoolID<OrderListIDTag> >,PoolID<OrderListIDTag>,unsigned __int64,std::array<unsigned int,2> > >,std::allocator<std::pair<std::tuple<std::tuple<PoolID<VehicleIDTag>,enum CargoType,unsigned short,unsigned __int64,PoolID<StationIDTag>,PoolID<StationIDTag>,PoolID<OrderListIDTag>,PoolID<OrderListIDTag> >,PoolID<OrderListIDTag>,unsigned __int64,std::array<unsigned int,2> > const ,bool> >,0> >",15.182299999999998,0.014826464843749998
+"std::_Tree_val<std::_Tree_simple_types<std::pair<std::tuple<std::tuple<PoolID<VehicleIDTag>,enum CargoType,unsigned short,unsigned __int64,PoolID<StationIDTag>,PoolID<StationIDTag>,PoolID<OrderListIDTag>,PoolID<OrderListIDTag> >,PoolID<OrderListIDTag>,unsigned __int64,std::array<unsigned int,2> > const ,bool> > >::_Erase_tree<std::allocator<std::_Tree_node<std::pair<std::tuple<std::tuple<PoolID<VehicleIDTag>,enum CargoType,unsigned short,unsigned __int64,PoolID<StationIDTag>,PoolID<StationIDTag>,PoolID<OrderListIDTag>,PoolID<OrderListIDTag> >,PoolID<OrderListIDTag>,unsigned __int64,std::array<unsigned int,2> > const ,bool>,void * ptr64> > >",15.182299999999998,0.014826464843749998
+Vehicle::HandleBreakdown,15.0918,0.0147380859375
+GetDirectionTowards,15.0139,0.01466201171875
+`eh vector destructor iterator',15.0001,0.01464853515625
+RoadVehicle::OnPeriodic,14.998800000000001,0.014647265625000001
+"Kdtree<ViewportSignKdtreeItem,Kdtree_ViewportSignXYFunc,int,int>::Remove",14.997399999999999,0.014645898437499999
+"Kdtree<ViewportSignKdtreeItem,Kdtree_ViewportSignXYFunc,int,int>::RemoveRecursive",14.997399999999999,0.014645898437499999
+"btree::btree<btree::btree_map_params<unsigned __int64,OverflowSafeInt<__int64>,std::less<unsigned __int64>,std::allocator<std::pair<unsigned __int64 const ,OverflowSafeInt<__int64> > >,256> >::rebalance_or_split",14.9781,0.01462705078125
+"CYapfCostRailT<CYapfRail_TypesT<CYapfRailNo90,CFollowTrackT<0,Train,0,0>,CYapfDestinationTileOrStationRailT,CYapfFollowRailT> >::SignalCost",14.0791,0.01374912109375
+"btree::btree<btree::btree_set_params<LinkRefresher::Hop,std::less<LinkRefresher::Hop>,std::allocator<LinkRefresher::Hop>,256> >::internal_insert<LinkRefresher::Hop const & ptr64>",14.068300000000002,0.013738574218750002
+PredictStationStoppingLocation,14.067,0.0137373046875
+WaterRegionReference::ForceUpdate,14.0154,0.0136869140625
+WaterRegionReference::PrintDebugInfo,14.0154,0.0136869140625
+"std::_Tree<std::_Tmap_traits<std::tuple<enum CargoType,PoolID<StationIDTag>,PoolID<StationIDTag>,ST<StateTicksTag>,PoolID<OrderListIDTag>,PoolID<OrderListIDTag> >,PassengerPrecomputedPlan,std::less<std::tuple<enum CargoType,PoolID<StationIDTag>,PoolID<StationIDTag>,ST<StateTicksTag>,PoolID<OrderListIDTag>,PoolID<OrderListIDTag> > >,std::allocator<std::pair<std::tuple<enum CargoType,PoolID<StationIDTag>,PoolID<StationIDTag>,ST<StateTicksTag>,PoolID<OrderListIDTag>,PoolID<OrderListIDTag> > const ,PassengerPrecomputedPlan> >,0> >::~_Tree<std::_Tmap_traits<std::tuple<enum CargoType,PoolID<StationIDTag>,PoolID<StationIDTag>,ST<StateTicksTag>,PoolID<OrderListIDTag>,PoolID<OrderListIDTag> >,PassengerPrecomputedPlan,std::less<std::tuple<enum CargoType,PoolID<StationIDTag>,PoolID<StationIDTag>,ST<StateTicksTag>,PoolID<OrderListIDTag>,PoolID<OrderListIDTag> > >,std::allocator<std::pair<std::tuple<enum CargoType,PoolID<StationIDTag>,PoolID<StationIDTag>,ST<StateTicksTag>,PoolID<OrderListIDTag>,PoolID<OrderListIDTag> > const ,PassengerPrecomputedPlan> >,0> >",14.0117,0.01368330078125
+IsCrossingOccupiedByRoadVehicle,14.0091,0.01368076171875
+Order::ShouldStopAtStation,14.0031,0.01367490234375
+StationScopeResolver::GetVariable,13.999200000000002,0.013671093750000002
+"CYapfReserveTrack<CYapfRail_TypesT<CYapfAnySafeTileRail,CFollowTrackT<0,Train,1,1>,CYapfDestinationAnySafeTileRailT,CYapfFollowAnySafeTileRailT> >::ReserveRailStationPlatform",13.995900000000002,0.013667871093750002
+common_lseek_nolock<__int64>,13.9957,0.01366767578125
+"std::map<PoolID<StationIDTag>,std::list<CargoPacket * ptr64,std::allocator<CargoPacket * ptr64> >,std::less<PoolID<StationIDTag> >,std::allocator<std::pair<PoolID<StationIDTag> const ,std::list<CargoPacket * ptr64,std::allocator<CargoPacket * ptr64> > > > >::operator[]",13.979300000000002,0.013651660156250002
+"std::_Tree<std::_Tmap_traits<std::tuple<PoolID<StationIDTag>,unsigned int,PoolID<OrderListIDTag> >,PassengerPrecomputedTable::Policy,std::less<std::tuple<PoolID<StationIDTag>,unsigned int,PoolID<OrderListIDTag> > >,std::allocator<std::pair<std::tuple<PoolID<StationIDTag>,unsigned int,PoolID<OrderListIDTag> > const ,PassengerPrecomputedTable::Policy> >,0> >::_Emplace<std::tuple<PoolID<StationIDTag>,unsigned int,PoolID<OrderListIDTag> > & ptr64,PassengerPrecomputedTable::Policy>",13.062899999999999,0.012756738281249999
+TupleCmdDataDetail::FmtSimpleTupleArgs,13.058500000000002,0.012752441406250002
+UniscribeRun::~UniscribeRun,13.0207,0.01271552734375
+"btree::btree_const_iterator<btree::btree_map_params<ST<TileIndexTag>,EnumBitSet<enum StationRandomTrigger,unsigned char,8>,std::less<ST<TileIndexTag> >,std::allocator<std::pair<ST<TileIndexTag> const ,EnumBitSet<enum StationRandomTrigger,unsigned char,8> > >,256> >::increment",13.005,0.0127001953125
+FreeTrainTrackReservation,13.0043,0.01269951171875
+ShowTransparencyToolbar,12.998899999999999,0.012694238281249999
+VehicleResolverObject::GetScope,12.9976,0.01269296875
+"btree::btree<btree::btree_map_params<std::pair<unsigned short,unsigned short>,LinkGraph::BaseEdge,std::less<std::pair<unsigned short,unsigned short> >,std::allocator<std::pair<std::pair<unsigned short,unsigned short> const ,LinkGraph::BaseEdge> >,256> >::internal_lower_bound",12.997399999999999,0.012692773437499999
+PassengerPrecomputedTable::GraphSnapshot::~GraphSnapshot,12.9963,0.01269169921875
+"std::vector<PoolID<OrderListIDTag>,std::allocator<PoolID<OrderListIDTag> > >::vector<PoolID<OrderListIDTag>,std::allocator<PoolID<OrderListIDTag> > >",12.9947,0.01269013671875
+PassengerJourneyLoadingContext::ObserveWaitingGroup,12.987200000000001,0.012682812500000001
+TownsMonthlyLoop,12.980899999999998,0.012676660156249998
+Aircraft::Crash,12.0864,0.011803125
+"std::vector<UniscribeRun,std::allocator<UniscribeRun> >::~vector<UniscribeRun,std::allocator<UniscribeRun> >",12.0261,0.01174423828125
+"std::_Tree_val<std::_Tree_simple_types<std::pair<std::tuple<enum CargoType,PoolID<StationIDTag>,PoolID<StationIDTag>,ST<StateTicksTag>,PoolID<OrderListIDTag>,PoolID<OrderListIDTag> > const ,PassengerPrecomputedPlan> > >::_Erase_tree<std::allocator<std::_Tree_node<std::pair<std::tuple<enum CargoType,PoolID<StationIDTag>,PoolID<StationIDTag>,ST<StateTicksTag>,PoolID<OrderListIDTag>,PoolID<OrderListIDTag> > const ,PassengerPrecomputedPlan>,void * ptr64> > >",12.0115,0.01172998046875
+PassengerPrecomputedTable::~PassengerPrecomputedTable,12.0108,0.011729296875
+"std::map<PoolID<StationIDTag>,std::set<unsigned int,std::less<unsigned int>,std::allocator<unsigned int> >,std::less<PoolID<StationIDTag> >,std::allocator<std::pair<PoolID<StationIDTag> const ,std::set<unsigned int,std::less<unsigned int>,std::allocator<unsigned int> > > > >::map<PoolID<StationIDTag>,std::set<unsigned int,std::less<unsigned int>,std::allocator<unsigned int> >,std::less<PoolID<StationIDTag> >,std::allocator<std::pair<PoolID<StationIDTag> const ,std::set<unsigned int,std::less<unsigned int>,std::allocator<unsigned int> > > > >",12.0049,0.01172353515625
+Vehicle::NeedsServicing,11.996400000000001,0.011715234375000001
+VehicleCargoList::AreMergable,11.9923,0.01171123046875
+"TemporaryStorageArray<int,272>::ClearChanges",11.1502,0.0108888671875
+"Pool<CargoPacket,PoolID<CargoPacketIDTag>,1024,0,1,DefaultPoolOps<CargoPacket> >::PoolItem<&_cargopacket_pool>::Create<CargoPacket,PoolID<StationIDTag> const & ptr64,unsigned int & ptr64,Source & ptr64>",11.085099999999999,0.010825292968749999
+Vehicle::GetNextStoppingStation,11.0214,0.0107630859375
+GetTunnelBridgeGroundType,11.006400000000001,0.010748437500000001
+AgeVehicle,10.9978,0.0107400390625
+TriggerVehicleRandomisation,10.9966,0.0107388671875
+PassengerJourneyLoadingContext::PendingPlan,10.991999999999999,0.010734374999999999
+GetAvailableFreeTilesInSignalledTunnelBridge,10.9862,0.0107287109375
+"CYapfBaseT<CYapfRail_TypesT<CYapfRailNo90,CFollowTrackT<0,Train,0,0>,CYapfDestinationTileOrStationRailT,CYapfFollowRailT> >::AddStartupNode",10.978700000000002,0.010721386718750002
+PassengerPrecomputedTable::PolicyState,10.978100000000001,0.010720800781250001
+PassengerJourneyWorkTimer::~PassengerJourneyWorkTimer,10.9636,0.010706640625
+UniscribeParagraphLayout::UniscribeVisualRun::`vector deleting destructor',10.9068,0.010651171875
+"Pool<CargoPacket,PoolID<CargoPacketIDTag>,1024,0,1,DefaultPoolOps<CargoPacket> >::GetNew",10.0848,0.0098484375
+CargoPayment::PayFinalDelivery,10.020800000000001,0.009785937500000001
+PropagateAspectChange,10.0202,0.0097853515625
+CargoStationIDVectorSet::FillNextStoppingStation,10.0196,0.009784765625
+OrthogonalTileIterator::operator++,10.0097,0.00977509765625
+VehicleScopeResolver::GetVariable,10.0085,0.00977392578125
+"btree::btree<btree::btree_map_params<PoolID<StationIDTag>,unsigned short,std::less<PoolID<StationIDTag> >,std::allocator<std::pair<PoolID<StationIDTag> const ,unsigned short> >,256> >::internal_find_unique",10.004500000000002,0.009770019531250002
+"std::vector<unsigned short,std::allocator<unsigned short> >::resize",10.0032,0.00976875
+PassengerServiceDatabase::GetPublication,10.0022,0.0097677734375
+"std::vector<unsigned int,std::allocator<unsigned int> >::vector<unsigned int,std::allocator<unsigned int> ><std::allocator<unsigned int>,0>",10.0006,0.0097662109375
+"SpecializedVehicle<Train,0,BaseGroundVehicle>::IsMovingFront",9.9993,0.00976494140625
+"std::vector<unsigned char,std::allocator<unsigned char> >::reserve",9.9942,0.0097599609375
+Station::MarkTilesDirty,9.987000000000002,0.009752929687500002
+"std::vector<std::unique_ptr<ButtonLine,std::default_delete<ButtonLine> >,std::allocator<std::unique_ptr<ButtonLine,std::default_delete<ButtonLine> > > >::~vector<std::unique_ptr<ButtonLine,std::default_delete<ButtonLine> >,std::allocator<std::unique_ptr<ButtonLine,std::default_delete<ButtonLine> > > >",9.899600000000001,0.009667578125000001
+Order::AllocExtraInfo,9.869800000000001,0.009638476562500001
+VehicleOrderSaver::VehicleOrderSaver,9.779300000000001,0.009550097656250001
+Aircraft::OnPeriodic,9.643099999999999,0.009417089843749999
+"btree::btree<btree::btree_map_params<unsigned __int64,OverflowSafeInt<__int64>,std::less<unsigned __int64>,std::allocator<std::pair<unsigned __int64 const ,OverflowSafeInt<__int64> > >,256> >::erase",9.0846,0.0088716796875
+"std::multimap<ST<StateTicksTag>,PoolID<CargoPacketIDTag>,std::less<ST<StateTicksTag> >,std::allocator<std::pair<ST<StateTicksTag> const ,PoolID<CargoPacketIDTag> > > >::emplace<ST<StateTicksTag> & ptr64,PoolID<CargoPacketIDTag> const & ptr64>",9.059000000000001,0.008846679687500001
+DeliverGoodsToIndustryEqually,9.0152,0.00880390625
+PassengerPrecomputedTable::DestinationWorkspace::operator=,9.0105,0.00879931640625
+SetSmall8,9.0097,0.00879853515625
+EconTime::UsingWallclockUnits,9.003400000000001,0.008792382812500001
+BeginPassengerJourneyTick,9.0016,0.008790625
+ReleasePassengerJourneyWaitingShare,9.001,0.0087900390625
+TriggerStationAnimation,8.9971,0.00878623046875
+TestVehicleBuildProbability,8.9966,0.0087857421875
+"CYapfReserveTrack<CYapfRail_TypesT<CYapfRailNo90,CFollowTrackT<0,Train,0,0>,CYapfDestinationTileOrStationRailT,CYapfFollowRailT> >::FindSafePositionProc",8.9963,0.00878544921875
+ApplyFoundationToSlope,8.995,0.0087841796875
+"Kdtree<ViewportSignKdtreeItem,Kdtree_ViewportSignXYFunc,int,int>::FreeSubtree",8.993400000000001,0.008782617187500001
+VehicleSpriteSeq::GetBounds,8.992199999999999,0.008781445312499999
+GetCargoTypeByLabel,8.9908,0.008780078125
+FlushDeferredAspectUpdates,8.9873,0.00877666015625
+"std::vector<unsigned __int64,std::allocator<unsigned __int64> >::vector<unsigned __int64,std::allocator<unsigned __int64> ><std::allocator<unsigned __int64>,0>",8.985500000000002,0.008774902343750002
+OrderList::GetNextStoppingStation,8.9682,0.0087580078125
+UniscribeParagraphLayout::UniscribeLine::`scalar deleting destructor',8.8996,0.008691015625
+"std::vector<UniscribeParagraphLayout::UniscribeVisualRun,std::allocator<UniscribeParagraphLayout::UniscribeVisualRun> >::~vector<UniscribeParagraphLayout::UniscribeVisualRun,std::allocator<UniscribeParagraphLayout::UniscribeVisualRun> >",8.8996,0.008691015625
+Aircraft::GetRunningCost,8.6441,0.00844150390625
+"std::_Tree<std::_Tset_traits<std::pair<ST<StateTicksTag>,PoolID<CargoPacketIDTag> >,std::less<std::pair<ST<StateTicksTag>,PoolID<CargoPacketIDTag> > >,std::allocator<std::pair<ST<StateTicksTag>,PoolID<CargoPacketIDTag> > >,0> >::_Emplace<ST<StateTicksTag> & ptr64,PoolID<CargoPacketIDTag> const & ptr64>",8.1045,0.00791455078125
+"std::_Tree_val<std::_Tree_simple_types<std::pair<PoolID<StationIDTag> const ,std::set<PassengerServiceDatabase::StopRef,std::less<PassengerServiceDatabase::StopRef>,std::allocator<PassengerServiceDatabase::StopRef> > > > >::_Lrotate",8.0792,0.00788984375
+"btree::btree_map_container<btree::btree<btree::btree_map_params<ST<TileIndexTag>,EnumBitSet<enum StationRandomTrigger,unsigned char,8>,std::less<ST<TileIndexTag> >,std::allocator<std::pair<ST<TileIndexTag> const ,EnumBitSet<enum StationRandomTrigger,unsigned char,8> > >,256> > >::operator[]",8.0455,0.00785693359375
+GetReservedTrackbits,8.0383,0.00784990234375
+"std::_Tree<std::_Tmap_traits<PoolID<OrderListIDTag>,ST<StateTicksTag>,std::less<PoolID<OrderListIDTag> >,std::allocator<std::pair<PoolID<OrderListIDTag> const ,ST<StateTicksTag> > >,0> >::emplace<PoolID<OrderListIDTag> & ptr64,ST<StateTicksTag> & ptr64>",8.0261,0.00783798828125
+"std::less<std::tuple<std::tuple<PoolID<VehicleIDTag>,enum CargoType,unsigned short,unsigned __int64,PoolID<StationIDTag>,PoolID<StationIDTag>,PoolID<OrderListIDTag>,PoolID<OrderListIDTag> >,PoolID<OrderListIDTag>,unsigned __int64,std::array<unsigned int,2> > >::operator()",8.0121,0.00782431640625
+Station::UpdateCargoHistory,8.0029,0.00781533203125
+UpdateAircraftCache,7.998799999999999,0.007811328124999999
+"std::map<PoolID<StationIDTag>,std::set<std::tuple<PoolID<StationIDTag>,PoolID<StationIDTag>,PoolID<OrderListIDTag>,unsigned __int64>,std::less<std::tuple<PoolID<StationIDTag>,PoolID<StationIDTag>,PoolID<OrderListIDTag>,unsigned __int64> >,std::allocator<std::tuple<PoolID<StationIDTag>,PoolID<StationIDTag>,PoolID<OrderListIDTag>,unsigned __int64> > >,std::less<PoolID<StationIDTag> >,std::allocator<std::pair<PoolID<StationIDTag> const ,std::set<std::tuple<PoolID<StationIDTag>,PoolID<StationIDTag>,PoolID<OrderListIDTag>,unsigned __int64>,std::less<std::tuple<PoolID<StationIDTag>,PoolID<StationIDTag>,PoolID<OrderListIDTag>,unsigned __int64> >,std::allocator<std::tuple<PoolID<StationIDTag>,PoolID<StationIDTag>,PoolID<OrderListIDTag>,unsigned __int64> > > > > >::operator[]",7.9986,0.0078111328125
+Town::LabelParam2,7.9985,0.00781103515625
+GetRawSprite,7.9939,0.00780654296875
+GetTrainClosestToTunnelBridgeEnd,7.9932,0.007805859375
+PassengerJourneyLoadingContext::HyperpathBoardingOccurrences,7.9857000000000005,0.0077985351562500005
+"std::vector<unsigned __int64,std::allocator<unsigned __int64> >::vector<unsigned __int64,std::allocator<unsigned __int64> >",7.9845999999999995,0.0077974609374999995
+"std::_Tree<std::_Tset_traits<std::tuple<PoolID<StationIDTag>,PoolID<StationIDTag>,PoolID<OrderListIDTag>,unsigned __int64>,std::less<std::tuple<PoolID<StationIDTag>,PoolID<StationIDTag>,PoolID<OrderListIDTag>,unsigned __int64> >,std::allocator<std::tuple<PoolID<StationIDTag>,PoolID<StationIDTag>,PoolID<OrderListIDTag>,unsigned __int64> >,0> >::_Eqrange<std::tuple<PoolID<StationIDTag>,PoolID<StationIDTag>,PoolID<OrderListIDTag>,unsigned __int64> >",7.8717,0.00768720703125
+"std::vector<Path * ptr64,std::allocator<Path * ptr64> >::push_back",7.0888,0.00692265625
+NodeList<CYapfRegionNodeT<CYapfRegionPatchNodeKey> >::~NodeList<CYapfRegionNodeT<CYapfRegionPatchNodeKey> >,7.064,0.0068984375
+"std::vector<tag_SCRIPT_VISATTR,std::allocator<tag_SCRIPT_VISATTR> >::resize",7.0635,0.00689794921875
+HashTable<CYapfRoadNode>::Pop,7.0476,0.006882421875
+"std::vector<ParagraphLayouter::Position,std::allocator<ParagraphLayouter::Position> >::reserve",7.0442,0.0068791015625
+"Pool<Vehicle,PoolID<VehicleIDTag>,512,0,0,VehiclePoolOps>::PoolItem<&_vehicle_pool>::NewWithParam",7.0154000000000005,0.0068509765625000005
+"Kdtree<ViewportSignKdtreeItem,Kdtree_ViewportSignXYFunc,int,int>::Insert",7.0108,0.006846484375
+CmdLandscapeClear,7.008699999999999,0.006844433593749999
+"std::map<std::tuple<PoolID<StationIDTag>,PoolID<StationIDTag>,PoolID<OrderListIDTag>,unsigned __int64>,std::set<std::tuple<PoolID<StationIDTag>,unsigned __int64,PoolID<CargoPacketIDTag> >,std::less<std::tuple<PoolID<StationIDTag>,unsigned __int64,PoolID<CargoPacketIDTag> > >,std::allocator<std::tuple<PoolID<StationIDTag>,unsigned __int64,PoolID<CargoPacketIDTag> > > >,std::less<std::tuple<PoolID<StationIDTag>,PoolID<StationIDTag>,PoolID<OrderListIDTag>,unsigned __int64> >,std::allocator<std::pair<std::tuple<PoolID<StationIDTag>,PoolID<StationIDTag>,PoolID<OrderListIDTag>,unsigned __int64> const ,std::set<std::tuple<PoolID<StationIDTag>,unsigned __int64,PoolID<CargoPacketIDTag> >,std::less<std::tuple<PoolID<StationIDTag>,unsigned __int64,PoolID<CargoPacketIDTag> > >,std::allocator<std::tuple<PoolID<StationIDTag>,unsigned __int64,PoolID<CargoPacketIDTag> > > > > > >::_Try_emplace<std::tuple<PoolID<StationIDTag>,PoolID<StationIDTag>,PoolID<OrderListIDTag>,unsigned __int64> const & ptr64>",7.007300000000001,0.006843066406250001
+"std::map<std::tuple<PoolID<StationIDTag>,PoolID<StationIDTag>,PoolID<OrderListIDTag>,unsigned __int64>,std::set<std::tuple<PoolID<StationIDTag>,unsigned __int64,PoolID<CargoPacketIDTag> >,std::less<std::tuple<PoolID<StationIDTag>,unsigned __int64,PoolID<CargoPacketIDTag> > >,std::allocator<std::tuple<PoolID<StationIDTag>,unsigned __int64,PoolID<CargoPacketIDTag> > > >,std::less<std::tuple<PoolID<StationIDTag>,PoolID<StationIDTag>,PoolID<OrderListIDTag>,unsigned __int64> >,std::allocator<std::pair<std::tuple<PoolID<StationIDTag>,PoolID<StationIDTag>,PoolID<OrderListIDTag>,unsigned __int64> const ,std::set<std::tuple<PoolID<StationIDTag>,unsigned __int64,PoolID<CargoPacketIDTag> >,std::less<std::tuple<PoolID<StationIDTag>,unsigned __int64,PoolID<CargoPacketIDTag> > >,std::allocator<std::tuple<PoolID<StationIDTag>,unsigned __int64,PoolID<CargoPacketIDTag> > > > > > >::try_emplace<>",7.007300000000001,0.006843066406250001
+Train::CalculateOverallZPos,7.0044,0.006840234375
+GetTileZ,7.003699999999999,0.006839550781249999
+"std::_Sort_unchecked<std::pair<__int64,unsigned int> * ptr64,std::less<void> >",7.0024,0.00683828125
+"std::_Tree<std::_Tset_traits<ST<StateTicksTag>,std::less<ST<StateTicksTag> >,std::allocator<ST<StateTicksTag> >,1> >::insert<1,0>",7.0024,0.00683828125
+PassengerServiceDatabase::Publish,7.0023,0.00683818359375
+AirportSpec::Get,7.0016,0.0068375
+"std::_Tree_val<std::_Tree_simple_types<std::pair<std::pair<PoolID<VehicleIDTag>,enum CargoType> const ,std::map<std::pair<std::tuple<enum PassengerRoutingMode,PoolID<StationIDTag>,PoolID<StationIDTag>,ST<StateTicksTag>,PoolID<OrderListIDTag>,unsigned __int64,bool,PassengerBoardingFailure>,PassengerJourneyExecution>,PassengerJourneyLoadingContext::Decision,std::less<std::pair<std::tuple<enum PassengerRoutingMode,PoolID<StationIDTag>,PoolID<StationIDTag>,ST<StateTicksTag>,PoolID<OrderListIDTag>,unsigned __int64,bool,PassengerBoardingFailure>,PassengerJourneyExecution> >,std::allocator<std::pair<std::pair<std::tuple<enum PassengerRoutingMode,PoolID<StationIDTag>,PoolID<StationIDTag>,ST<StateTicksTag>,PoolID<OrderListIDTag>,unsigned __int64,bool,PassengerBoardingFailure>,PassengerJourneyExecution> const ,PassengerJourneyLoadingContext::Decision> > > > > >::_Erase_tree<std::allocator<std::_Tree_node<std::pair<std::pair<PoolID<VehicleIDTag>,enum CargoType> const ,std::map<std::pair<std::tuple<enum PassengerRoutingMode,PoolID<StationIDTag>,PoolID<StationIDTag>,ST<StateTicksTag>,PoolID<OrderListIDTag>,unsigned __int64,bool,PassengerBoardingFailure>,PassengerJourneyExecution>,PassengerJourneyLoadingContext::Decision,std::less<std::pair<std::tuple<enum PassengerRoutingMode,PoolID<StationIDTag>,PoolID<StationIDTag>,ST<StateTicksTag>,PoolID<OrderListIDTag>,unsigned __int64,bool,PassengerBoardingFailure>,PassengerJourneyExecution> >,std::allocator<std::pair<std::pair<std::tuple<enum PassengerRoutingMode,PoolID<StationIDTag>,PoolID<StationIDTag>,ST<StateTicksTag>,PoolID<OrderListIDTag>,unsigned __int64,bool,PassengerBoardingFailure>,PassengerJourneyExecution> const ,PassengerJourneyLoadingContext::Decision> > > >,void * ptr64> > >",7.0,0.0068359375
+"std::_Tree<std::_Tmap_traits<std::pair<std::tuple<enum PassengerRoutingMode,PoolID<StationIDTag>,PoolID<StationIDTag>,ST<StateTicksTag>,PoolID<OrderListIDTag>,unsigned __int64,bool,PassengerBoardingFailure>,PassengerJourneyExecution>,PassengerJourneyLoadingContext::Decision,std::less<std::pair<std::tuple<enum PassengerRoutingMode,PoolID<StationIDTag>,PoolID<StationIDTag>,ST<StateTicksTag>,PoolID<OrderListIDTag>,unsigned __int64,bool,PassengerBoardingFailure>,PassengerJourneyExecution> >,std::allocator<std::pair<std::pair<std::tuple<enum PassengerRoutingMode,PoolID<StationIDTag>,PoolID<StationIDTag>,ST<StateTicksTag>,PoolID<OrderListIDTag>,unsigned __int64,bool,PassengerBoardingFailure>,PassengerJourneyExecution> const ,PassengerJourneyLoadingContext::Decision> >,0> >::~_Tree<std::_Tmap_traits<std::pair<std::tuple<enum PassengerRoutingMode,PoolID<StationIDTag>,PoolID<StationIDTag>,ST<StateTicksTag>,PoolID<OrderListIDTag>,unsigned __int64,bool,PassengerBoardingFailure>,PassengerJourneyExecution>,PassengerJourneyLoadingContext::Decision,std::less<std::pair<std::tuple<enum PassengerRoutingMode,PoolID<StationIDTag>,PoolID<StationIDTag>,ST<StateTicksTag>,PoolID<OrderListIDTag>,unsigned __int64,bool,PassengerBoardingFailure>,PassengerJourneyExecution> >,std::allocator<std::pair<std::pair<std::tuple<enum PassengerRoutingMode,PoolID<StationIDTag>,PoolID<StationIDTag>,ST<StateTicksTag>,PoolID<OrderListIDTag>,unsigned __int64,bool,PassengerBoardingFailure>,PassengerJourneyExecution> const ,PassengerJourneyLoadingContext::Decision> >,0> >",7.0,0.0068359375
+GetTerrainType,6.9999,0.00683583984375
+"std::vector<ST<BadgeIDTag>,std::allocator<ST<BadgeIDTag> > >::vector<ST<BadgeIDTag>,std::allocator<ST<BadgeIDTag> > >",6.9996,0.006835546875
+"std::_Tree<std::_Tset_traits<StationCargoList::HyperpathWaiting const * ptr64,std::less<StationCargoList::HyperpathWaiting const * ptr64>,std::allocator<StationCargoList::HyperpathWaiting const * ptr64>,0> >::~_Tree<std::_Tset_traits<StationCargoList::HyperpathWaiting const * ptr64,std::less<StationCargoList::HyperpathWaiting const * ptr64>,std::allocator<StationCargoList::HyperpathWaiting const * ptr64>,0> >",6.9991,0.00683505859375
+CBinaryHeapT<CYapfRailNode>::Include,6.9973,0.00683330078125
+"std::_Tree<std::_Tmap_traits<std::tuple<PoolID<StationIDTag>,unsigned int,PoolID<OrderListIDTag> >,PassengerPrecomputedTable::Policy,std::less<std::tuple<PoolID<StationIDTag>,unsigned int,PoolID<OrderListIDTag> > >,std::allocator<std::pair<std::tuple<PoolID<StationIDTag>,unsigned int,PoolID<OrderListIDTag> > const ,PassengerPrecomputedTable::Policy> >,0> >::erase<std::_Tree_iterator<std::_Tree_val<std::_Tree_simple_types<std::pair<std::tuple<PoolID<StationIDTag>,unsigned int,PoolID<OrderListIDTag> > const ,PassengerPrecomputedTable::Policy> > > >,0>",6.9968,0.0068328125
+HashTable<CYapfRailNode>::Pop,6.9934,0.0068294921875
+"jgr::ring_buffer<CargoPacket * ptr64,std::allocator<CargoPacket * ptr64> >::push_back",6.0336,0.0058921875
+AnimateAnimatedTiles,6.005,0.0058642578125
+GetAircraftFlightLevel<Aircraft>,6.0014,0.0058607421875
+NodeList<CYapfRoadNode>::NodeList<CYapfRoadNode>,6.0,0.005859375
+CBinaryHeapT<CYapfRegionNodeT<CYapfRegionPatchNodeKey> >::CBinaryHeapT<CYapfRegionNodeT<CYapfRegionPatchNodeKey> >,6.0,0.005859375
+"std::_Tree_val<std::_Tree_simple_types<std::pair<std::pair<std::tuple<enum PassengerRoutingMode,PoolID<StationIDTag>,PoolID<StationIDTag>,ST<StateTicksTag>,PoolID<OrderListIDTag>,unsigned __int64,bool,PassengerBoardingFailure>,PassengerJourneyExecution> const ,PassengerJourneyLoadingContext::Decision> > >::_Erase_tree<std::allocator<std::_Tree_node<std::pair<std::pair<std::tuple<enum PassengerRoutingMode,PoolID<StationIDTag>,PoolID<StationIDTag>,ST<StateTicksTag>,PoolID<OrderListIDTag>,unsigned __int64,bool,PassengerBoardingFailure>,PassengerJourneyExecution> const ,PassengerJourneyLoadingContext::Decision>,void * ptr64> > >",5.9989,0.00585830078125
+GetRoadFoundation,5.9986,0.0058580078125
+ClearLookAheadIfInvalid,5.9985,0.00585791015625
+StringBuilder::PutUtf8,5.9984,0.0058578125
+BitmapTileIterator::advance,5.997,0.0058564453125
+CargoPacket::SetPassengerDestination,5.996700000000001,0.005856152343750001
+"std::_Tree<std::_Tmap_traits<PoolID<StationIDTag>,std::list<CargoPacket * ptr64,std::allocator<CargoPacket * ptr64> >,std::less<PoolID<StationIDTag> >,std::allocator<std::pair<PoolID<StationIDTag> const ,std::list<CargoPacket * ptr64,std::allocator<CargoPacket * ptr64> > > >,0> >::erase<std::_Tree_iterator<std::_Tree_val<std::_Tree_simple_types<std::pair<PoolID<StationIDTag> const ,std::list<CargoPacket * ptr64,std::allocator<CargoPacket * ptr64> > > > > >,0>",5.996700000000001,0.005856152343750001
+Station::TileBelongsToRailStation,5.9962,0.0058556640625
+IsWaitingPositionFree,5.9953,0.00585478515625
+"std::_Tree<std::_Tmap_traits<ST<StateTicksTag>,PoolID<CargoPacketIDTag>,std::less<ST<StateTicksTag> >,std::allocator<std::pair<ST<StateTicksTag> const ,PoolID<CargoPacketIDTag> > >,1> >::erase<std::_Tree_iterator<std::_Tree_val<std::_Tree_simple_types<std::pair<ST<StateTicksTag> const ,PoolID<CargoPacketIDTag> > > > >,0>",5.980600000000001,0.005840429687500001
+"std::map<enum CargoType,PassengerJourneyBoardingContext,std::less<enum CargoType>,std::allocator<std::pair<enum CargoType const ,PassengerJourneyBoardingContext> > >::try_emplace<Vehicle const * ptr64 & ptr64,enum CargoType & ptr64>",5.180400000000001,0.0050589843750000005
+"std::_Tree<std::_Tset_traits<PoolID<OrderListIDTag>,std::less<PoolID<OrderListIDTag> >,std::allocator<PoolID<OrderListIDTag> >,0> >::clear",5.0888,0.00496953125
+GetOtherBridgeEnd,5.0575,0.00493896484375
+"std::vector<unsigned int,std::allocator<unsigned int> >::_Resize<std::_Value_init_tag>",5.0563,0.00493779296875
+Engine::DetermineCapacity,5.045599999999999,0.004927343749999999
+RoadVehicle::Crash,5.0107,0.00489326171875
+"Pool<Vehicle,PoolID<VehicleIDTag>,512,0,0,VehiclePoolOps>::AllocateItem",5.0102,0.0048927734375
+MayTownModifyRoad,5.0045,0.00488720703125
+VehicleOrderSaver::SwitchToNextOrder,5.0024,0.00488515625
+"std::_Hash_vec<std::allocator<std::_List_unchecked_iterator<std::_List_val<std::_List_simple_types<std::pair<unsigned int const ,std::vector<StationCargoList::HyperpathGroupRef,std::allocator<StationCargoList::HyperpathGroupRef> > > > > > > >::_Assign_grow",5.0023,0.00488505859375
+IsCustomBridgeHeadTile,5.0022,0.0048849609375
+HasTileAnyRoadType,5.0015,0.00488427734375
+LinkGraph::operator[],5.0012,0.004883984375
+RoadVehicle::GetEffectiveMaxSpeed,5.0003,0.00488310546875
+memcpy,5.0,0.0048828125
+GetHouseNorthPart,4.9999,0.00488271484375
+"SmallSet<enum DiagDirection,256>::Add",4.9989,0.00488173828125
+TriggerAirportAnimation,4.9983,0.00488115234375
+Train::GetCurveSpeedLimit,4.9959999999999996,0.0048789062499999996
+"CYapfDestinationTileOrStationRailT<CYapfRail_TypesT<CYapfRailNo90,CFollowTrackT<0,Train,0,0>,CYapfDestinationTileOrStationRailT,CYapfFollowRailT> >::PfDetectDestination",4.9954,0.0048783203125
+DecodeUtf8,4.9954,0.0048783203125
+Vehicle::GetOrder,4.9907,0.00487373046875
+VehicleOrderSaver::Restore,4.0905000000000005,0.0039946289062500005
+TraceRestrictProgram::Execute,4.084099999999999,0.003988378906249999
+Train::UpdateAcceleration,4.0378,0.0039431640625
+MoveSmall4,4.0355,0.00394091796875
+"std::_Hash<std::_Umap_traits<PoolID<CargoPacketIDTag>,StationCargoList::WaitingEntry,std::_Uhash_compare<PoolID<CargoPacketIDTag>,StationCargoList::PacketHash,std::equal_to<PoolID<CargoPacketIDTag> > >,std::allocator<std::pair<PoolID<CargoPacketIDTag> const ,StationCargoList::WaitingEntry> >,0> >::_Find_last<PoolID<CargoPacketIDTag> >",4.0343,0.00393974609375
+"jgr::ring_buffer<LinkGraph * ptr64,std::allocator<LinkGraph * ptr64> >::memcpy_to",4.033799999999999,0.003939257812499999
+"BumpAllocContainer<CYapfRailSegment,1024>::New<CYapfRailSegmentKey & ptr64>",4.011,0.0039169921875
+PassengerServiceDatabase::Remove,4.0084,0.003914453125
+StationResolverObject::GetScope,4.0083,0.00391435546875
+"std::lexicographical_compare_three_way<unsigned int const * ptr64,unsigned int const * ptr64,std::_Synth_three_way>",4.0079,0.00391396484375
+"`anonymous namespace'::__std_mismatch_impl<`anonymous namespace'::_Find_traits_4,unsigned int>",4.0079,0.00391396484375
+"std::set<PoolID<StationIDTag>,std::less<PoolID<StationIDTag> >,std::allocator<PoolID<StationIDTag> > >::set<PoolID<StationIDTag>,std::less<PoolID<StationIDTag> >,std::allocator<PoolID<StationIDTag> > ><std::_Span_iterator<PoolID<StationIDTag> const > >",4.0074000000000005,0.0039134765625000005
+NodeList<CYapfRailNode>::CreateNewNode,4.0072,0.00391328125
+DrawShipDepotSprite,4.004,0.00391015625
+"btree::btree<btree::btree_set_params<Station * ptr64,StationCompare,std::allocator<Station * ptr64>,256> >::internal_insert_common",4.0039,0.00391005859375
+"std::less<std::tuple<PassengerJourneyExecution,PoolID<OrderListIDTag>,unsigned __int64,PassengerBoardingFailure> >::operator()",4.0032,0.003909375
+HasTownOwnedRoad,4.003,0.0039091796875
+"DeserialiseCmdPayload<CmdDataT<bool,bool,VehicleListIdentifier,enum CargoType> >",4.003,0.0039091796875
+SetWindowWidgetDirty,4.003,0.0039091796875
+NewsLoop,4.0027,0.00390888671875
+CmdBuildRoad,4.0024999999999995,0.0039086914062499995
+"`anonymous namespace'::__std_minmax_disp<1,`anonymous namespace'::_Minmax_traits_4,0>",4.0024999999999995,0.0039086914062499995
+GetTileHeightBelowAircraft,4.0014,0.0039076171875
+UniscribeParagraphLayout::UniscribeLine::GetWidth,4.001,0.0039072265625
+RecordPassengerJourneyMovement,4.0009,0.00390712890625
+InitializeSound,4.0008,0.00390703125
+Layouter::GetFont,4.0007,0.00390693359375
+VehicleEnterDepot,4.0007,0.00390693359375
+ValidateLookAhead,4.0006,0.0039068359375
+"std::_Tree<std::_Tset_traits<std::tuple<PoolID<StationIDTag>,PoolID<StationIDTag>,PoolID<OrderListIDTag>,unsigned __int64>,std::less<std::tuple<PoolID<StationIDTag>,PoolID<StationIDTag>,PoolID<OrderListIDTag>,unsigned __int64> >,std::allocator<std::tuple<PoolID<StationIDTag>,PoolID<StationIDTag>,PoolID<OrderListIDTag>,unsigned __int64> >,0> >::_Erase",3.9993,0.00390556640625
+PassengerOdFallbackContext::~PassengerOdFallbackContext,3.9987,0.00390498046875
+"GroundVehicle<RoadVehicle,1>::DoUpdateSpeed",3.9987,0.00390498046875
+Station::GetNewGRFVariable,3.9985,0.00390478515625
+"std::vector<Label<CargoLabelTag>,std::allocator<Label<CargoLabelTag> > >::reserve",3.998,0.003904296875
+"btree::btree<btree::btree_set_params<LinkRefresher::Hop,std::less<LinkRefresher::Hop>,std::allocator<LinkRefresher::Hop>,256> >::rebalance_or_split",3.9977,0.00390400390625
+"std::_Uninitialized_move<`StationCargoList::VisitBoardingCandidates<`StationCargoList::ShiftIndexedJourneyCargo<CargoReservation>'::`2'::<lambda_1> >'::`2'::Cursor * ptr64,std::allocator<`StationCargoList::VisitBoardingCandidates<`StationCargoList::ShiftIndexedJourneyCargo<CargoReservation>'::`2'::<lambda_1> >'::`2'::Cursor> >",3.9974,0.0039037109375
+"SpecializedVehicle<Ship,2,Vehicle>::UpdateViewport",3.9943999999999997,0.0039007812499999997
+UpdateOrderDest,3.9941,0.00390048828125
+FileHandle::Open,3.9933,0.00389970703125
+IConsoleCmdExec,3.9933,0.00389970703125
+_wsopen_nolock,3.9933,0.00389970703125
+FileList::~FileList,3.9933,0.00389970703125
+FioFOpenFile,3.9933,0.00389970703125
+IConsoleCmdExecTokens,3.9933,0.00389970703125
+_wsopen_s,3.9933,0.00389970703125
+IncreaseDate,3.9933,0.00389970703125
+common_sopen_dispatch<wchar_t>,3.9933,0.00389970703125
+_wopenfile,3.9933,0.00389970703125
+common_fsopen<wchar_t>,3.9933,0.00389970703125
+StationCargoList::NextPassengerGenerationPacket,3.9925,0.00389892578125
+memcmp,3.9916,0.003898046875
+CheckOrders,3.9902,0.0038966796875
+Train::GetStationLoadingVehicle,3.9876,0.003894140625
+PassengerPrecomputedTable::BoardingOccurrence,3.9861,0.00389267578125
+"btree::btree_unique_container<btree::btree<btree::btree_map_params<unsigned __int64,OverflowSafeInt<__int64>,std::less<unsigned __int64>,std::allocator<std::pair<unsigned __int64 const ,OverflowSafeInt<__int64> > >,256> > >::erase",3.0930999999999997,0.0030206054687499997
+PassengerJourneyLoadingContext::ResolveWaiting,3.0842,0.0030119140625
+"UniformBumpAllocator<40,4096>::Allocate",3.0746,0.0030025390625
+UpdateCompanyRatingAndValue,3.0547999999999997,0.0029832031249999997
+StoryPage::`scalar deleting destructor',3.0547999999999997,0.0029832031249999997
+SpriteLayoutProcessor::~SpriteLayoutProcessor,3.0479000000000003,0.0029764648437500003
+CheckSubsidised,3.0189,0.00294814453125
+"Kdtree<ViewportSignKdtreeItem,Kdtree_ViewportSignXYFunc,int,int>::Build<std::_Vector_iterator<std::_Vector_val<std::_Simple_types<ViewportSignKdtreeItem> > > >",3.0122999999999998,0.0029416992187499998
+"Kdtree<ViewportSignKdtreeItem,Kdtree_ViewportSignXYFunc,int,int>::BuildSubtree<std::_Vector_iterator<std::_Vector_val<std::_Simple_types<ViewportSignKdtreeItem> > > >",3.0122999999999998,0.0029416992187499998
+Vehicle::UpdateVisualEffect,3.0102,0.0029396484375
+RerouteCargo,3.0073,0.00293681640625
+SetTrackReservation,3.0068,0.002936328125
+"CYapfT<CYapfRail_TypesT<CYapfAnySafeTileRail,CFollowTrackT<0,Train,1,1>,CYapfDestinationAnySafeTileRailT,CYapfFollowAnySafeTileRailT> >::~CYapfT<CYapfRail_TypesT<CYapfAnySafeTileRail,CFollowTrackT<0,Train,1,1>,CYapfDestinationAnySafeTileRailT,CYapfFollowAnySafeTileRailT> >",3.0066,0.0029361328125
+CmdAutoreplaceVehicle,3.0057,0.00293525390625
+EnsureNoTrainOnTrackBits,3.004,0.00293359375
+"PassengerDestinationQueue<std::tuple<__int64,unsigned int,unsigned int> >::operator=",3.0039,0.00293349609375
+MarkSingleSignalDirty,3.0035,0.00293310546875
+"btree::btree_unique_container<btree::btree<btree::btree_set_params<Station * ptr64,StationCompare,std::allocator<Station * ptr64>,256> > >::insert",3.0033000000000003,0.0029329101562500003
+"Pool<LinkGraph,PoolID<LinkGraphIDTag>,32,0,0,DefaultPoolOps<LinkGraph> >::PoolItem<&_link_graph_pool>::Create<LinkGraph,enum CargoType & ptr64>",3.0033000000000003,0.0029329101562500003
+"Pool<Vehicle,PoolID<VehicleIDTag>,512,0,0,VehiclePoolOps>::PoolItem<&_vehicle_pool>::operator delete",3.0033000000000003,0.0029329101562500003
+UpdateSignalsOnSegment,3.0026,0.0029322265625
+std::allocator<HotkeyList * ptr64>::deallocate,3.002,0.002931640625
+Train::GetWeightWithoutCargo,3.0011,0.00293076171875
+UnreserveTrack,3.0002,0.0029298828125
+IsTileMaxZAbove,3.0,0.0029296875
+ScriptEventGoalQuestionAnswer::GetUniqueID,3.0,0.0029296875
+PassengerJourneyExecution::operator==,3.0,0.0029296875
+"std::vector<bool,std::allocator<bool> >::_Insert_n",3.0,0.0029296875
+"std::vector<EnumBitSet<enum StationSpec::TileFlag,unsigned char,8>,std::allocator<EnumBitSet<enum StationSpec::TileFlag,unsigned char,8> > >::~vector<EnumBitSet<enum StationSpec::TileFlag,unsigned char,8>,std::allocator<EnumBitSet<enum StationSpec::TileFlag,unsigned char,8> > >",3.0,0.0029296875
+UpdateLevelCrossing,2.9996,0.002929296875
+PassengerPeriodicTimetable::Compile,2.9991,0.00292880859375
+"std::_Sort_unchecked<TimetableProgress * ptr64,std::less<void> >",2.9983,0.00292802734375
+"`anonymous namespace'::__std_find_trivial_impl<`anonymous namespace'::_Find_traits_1,unsigned char>",2.9981,0.00292783203125
+BitmapTileIterator::operator++,2.9977,0.00292744140625
+GetGlobalVariable,2.9977,0.00292744140625
+Train::GetImage,2.9948,0.002924609375
+VehicleResolverObject::`vector deleting destructor',2.9948,0.002924609375
+RoadStop::GetByTile,2.9939,0.00292373046875
+RoadVehicle::MarkDirty,2.9929,0.00292275390625
+Tunnel::GetByTile,2.9914,0.0029212890625
+NewsWindow::GetNewVehicleMessageString,2.9913,0.00292119140625
+GetRailReservationTrackBits,2.9909,0.00292080078125
+fread_s,2.9909,0.00292080078125
+_read_nolock,2.9909,0.00292080078125
+RandomAccessFile::ReadByteIntl,2.9909,0.00292080078125
+fread,2.9909,0.00292080078125
+_fread_nolock_s,2.9909,0.00292080078125
+"std::_Tree_val<std::_Tree_simple_types<PoolID<VehicleIDTag> > >::_Erase_tree<std::allocator<std::_Tree_node<PoolID<VehicleIDTag>,void * ptr64> > >",2.9882,0.0029181640625
+"std::vector<std::pair<int,Font * ptr64>,std::allocator<std::pair<int,Font * ptr64> > >::emplace_back<__int64,Font * ptr64 & ptr64>",2.9866,0.0029166015625
+malloc,2.9821999999999997,0.0029123046874999997
+MeasurementCpuClock::now,2.9798,0.0029099609375
+VehicleCargoList::RemoveFromMeta,2.0903,0.00204130859375
+"Pool<CargoPacket,PoolID<CargoPacketIDTag>,1024,0,1,DefaultPoolOps<CargoPacket> >::AllocateItem",2.0861,0.00203720703125
+RandomizedSpriteGroup::Resolve,2.0777,0.00202900390625
+NodeList<CYapfRoadNode>::PopOpenNode,2.0512,0.002003125
+CmdTerraformLand,2.0479000000000003,0.0019999023437500003
+GetHighestSlopeCorner,2.0265,0.00197900390625
+PlantRandomFarmField,2.0168999999999997,0.0019696289062499997
+__RTDynamicCast,2.0114,0.0019642578125
+MarkTunnelBridgeSignalDirty,2.0090000000000003,0.0019619140625000003
+std::_Tree_val<std::_Tree_simple_types<ST<StateTicksTag> > >::_Rrotate,2.0080999999999998,0.0019610351562499998
+fmt::v11::detail::buffer<char>::append<char>,2.0074,0.0019603515625
+"btree::btree<btree::btree_set_params<PoolID<VehicleIDTag>,std::less<PoolID<VehicleIDTag> >,std::allocator<PoolID<VehicleIDTag> >,256> >::insert_unique_args<PoolID<VehicleIDTag> const & ptr64>",2.0073,0.00196025390625
+"CYapfDestinationTileOrStationRailT<CYapfRail_TypesT<CYapfRail,CFollowTrackT<0,Train,1,0>,CYapfDestinationTileOrStationRailT,CYapfFollowRailT> >::SetDestination",2.0065,0.00195947265625
+CalcClosestStationTile,2.0065,0.00195947265625
+"std::vector<unsigned int,std::allocator<unsigned int> >::operator=",2.0061,0.00195908203125
+Town::GetCachedName,2.0058,0.0019587890625
+"std::_Tree<std::_Tmap_traits<PoolID<OrderListIDTag>,PassengerPeriodicService,std::less<PoolID<OrderListIDTag> >,std::allocator<std::pair<PoolID<OrderListIDTag> const ,PassengerPeriodicService> >,0> >::contains",2.0046,0.0019576171875
+"std::vector<unsigned char,std::allocator<unsigned char> >::push_back",2.0046,0.0019576171875
+PassengerJourneyShadowContext::PassengerJourneyShadowContext,2.0039,0.00195693359375
+DoClearSquare,2.0036,0.001956640625
+ResolverObject::ResetState,2.0036,0.001956640625
+"std::vector<unsigned short,std::allocator<unsigned short> >::~vector<unsigned short,std::allocator<unsigned short> >",2.0035,0.00195654296875
+AnimateTile_Station,2.0034,0.0019564453125
+ViewportSign::MarkDirty,2.0029,0.00195595703125
+GetExistingTraceRestrictProgram,2.0022,0.0019552734375
+PassengerServiceDatabase::PrecomputedBoardingKeys,2.0017,0.00195478515625
+CargoPacket::Merge,2.0016999999999996,0.0019547851562499996
+StringParameters::GetNextParameter<int>,2.0016,0.0019546875
+MapAircraftMovementState,2.0012999999999996,0.0019543945312499996
+VehicleResolverObject::VehicleResolverObject,2.0008,0.00195390625
+FindClearedObject,2.0006,0.0019537109375
+"std::vector<std::pair<ST<TileIndexTag>,enum Trackdir>,std::allocator<std::pair<ST<TileIndexTag>,enum Trackdir> > >::push_back",2.0006,0.0019537109375
+UpdateAspectDeferredWithVehicleRail,2.0006,0.0019537109375
+GetPrice,2.0004,0.001953515625
+"robin_hood::detail::Table<1,80,PoolID<GroupIDTag>,PoolID<TemplateIDTag>,robin_hood::hash<PoolID<GroupIDTag>,void>,std::equal_to<PoolID<GroupIDTag> > >::findIdx<PoolID<GroupIDTag> >",2.0004,0.001953515625
+GetTemplateVehicleByGroupIDRecursive,2.0004,0.001953515625
+LoadSoundData,2.0003,0.00195341796875
+UniscribeParagraphLayout::UniscribeLine::GetLeading,2.0,0.001953125
+UniscribeParagraphLayout::UniscribeVisualRun::GetLeading,2.0,0.001953125
+CalcPercentVehicleFilled,2.0,0.001953125
+"std::map<std::pair<PoolID<VehicleIDTag>,enum CargoType>,PassengerJourneyBoardingContext,std::less<std::pair<PoolID<VehicleIDTag>,enum CargoType> >,std::allocator<std::pair<std::pair<PoolID<VehicleIDTag>,enum CargoType> const ,PassengerJourneyBoardingContext> > >::_Try_emplace<std::pair<PoolID<VehicleIDTag>,enum CargoType>,Vehicle const * ptr64 & ptr64,enum CargoType & ptr64>",2.0,0.001953125
+"btree::btree<btree::btree_set_params<BaseTimer<TimerGameCalendar> * ptr64,TimerManager<TimerGameCalendar>::base_timer_sorter,std::allocator<BaseTimer<TimerGameCalendar> * ptr64>,256> >::internal_clear",2.0,0.001953125
+"ankerl::v1_0_3::svector<PoolID<StationIDTag>,1>::svector<PoolID<StationIDTag>,1>",2.0,0.001953125
+EncodeUtf8,2.0,0.001953125
+"robin_hood::detail::Table<0,80,Layouter::LineCacheKey,Layouter::LineCacheItem,Layouter::LineCacheHash,Layouter::LineCacheEqual>::DataNode<robin_hood::detail::Table<0,80,Layouter::LineCacheKey,Layouter::LineCacheItem,Layouter::LineCacheHash,Layouter::LineCacheEqual>,0>::DataNode<robin_hood::detail::Table<0,80,Layouter::LineCacheKey,Layouter::LineCacheItem,Layouter::LineCacheHash,Layouter::LineCacheEqual>,0><std::piecewise_construct_t const & ptr64,std::tuple<FontState const & ptr64,std::basic_string_view<char,std::char_traits<char> > & ptr64>,std::tuple<> >",2.0,0.001953125
+"jgr::ring_buffer<CargoPacket * ptr64,std::allocator<CargoPacket * ptr64> >::setup_insert",2.0,0.001953125
+GetTransportedGoodsIncome,2.0,0.001953125
+"std::_Tree<std::_Tmap_traits<unsigned __int64,std::pair<CargoPacket const * ptr64,CargoPacket const * ptr64>,std::less<unsigned __int64>,std::allocator<std::pair<unsigned __int64 const ,std::pair<CargoPacket const * ptr64,CargoPacket const * ptr64> > >,0> >::~_Tree<std::_Tmap_traits<unsigned __int64,std::pair<CargoPacket const * ptr64,CargoPacket const * ptr64>,std::less<unsigned __int64>,std::allocator<std::pair<unsigned __int64 const ,std::pair<CargoPacket const * ptr64,CargoPacket const * ptr64> > >,0> >",2.0,0.001953125
+"std::_Hash<std::_Umap_traits<unsigned int,std::vector<StationCargoList::HyperpathGroupRef,std::allocator<StationCargoList::HyperpathGroupRef> >,std::_Uhash_compare<unsigned int,std::hash<unsigned int>,std::equal_to<unsigned int> >,std::allocator<std::pair<unsigned int const ,std::vector<StationCargoList::HyperpathGroupRef,std::allocator<StationCargoList::HyperpathGroupRef> > > >,0> >::find",2.0,0.001953125
+_Query_perf_frequency,2.0,0.001953125
+Vehicle::IncrementImplicitOrderIndex,2.0,0.001953125
+HasBlockSignalOnTrackdir,2.0,0.001953125
+GetRailTileArea,1.9997,0.00195283203125
+PassengerPrecomputedTable::ServiceWait,1.9997,0.00195283203125
+ReverseTrainSwapVehicles,1.9996,0.001952734375
+"std::_Tree<std::_Tmap_traits<std::tuple<PoolID<StationIDTag>,PoolID<StationIDTag>,PoolID<OrderListIDTag>,unsigned __int64>,std::set<std::tuple<PoolID<StationIDTag>,unsigned __int64,PoolID<CargoPacketIDTag> >,std::less<std::tuple<PoolID<StationIDTag>,unsigned __int64,PoolID<CargoPacketIDTag> > >,std::allocator<std::tuple<PoolID<StationIDTag>,unsigned __int64,PoolID<CargoPacketIDTag> > > >,std::less<std::tuple<PoolID<StationIDTag>,PoolID<StationIDTag>,PoolID<OrderListIDTag>,unsigned __int64> >,std::allocator<std::pair<std::tuple<PoolID<StationIDTag>,PoolID<StationIDTag>,PoolID<OrderListIDTag>,unsigned __int64> const ,std::set<std::tuple<PoolID<StationIDTag>,unsigned __int64,PoolID<CargoPacketIDTag> >,std::less<std::tuple<PoolID<StationIDTag>,unsigned __int64,PoolID<CargoPacketIDTag> > >,std::allocator<std::tuple<PoolID<StationIDTag>,unsigned __int64,PoolID<CargoPacketIDTag> > > > > >,0> >::find",1.9996,0.001952734375
+GetNearbyTileInformation,1.9994,0.0019525390625
+SubtractMoneyFromCompany,1.9992999999999999,0.0019524414062499999
+PreparePassengerJourneyLoading,1.9992,0.00195234375
+GetHouseType,1.9992,0.00195234375
+FlushAdvanceOrderIndexDeferred,1.9991,0.00195224609375
+Vehicle::ReleaseUnitNumber,1.9991,0.00195224609375
+"std::vector<SaveLoad,std::allocator<SaveLoad> >::push_back",1.9990999999999999,0.0019522460937499999
+PassengerPeriodicService::~PassengerPeriodicService,1.999,0.0019521484375
+"std::_Tree<std::_Tmap_traits<PoolID<OrderListIDTag>,PassengerPeriodicService,std::less<PoolID<OrderListIDTag> >,std::allocator<std::pair<PoolID<OrderListIDTag> const ,PassengerPeriodicService> >,0> >::erase<std::_Tree_iterator<std::_Tree_val<std::_Tree_simple_types<std::pair<PoolID<OrderListIDTag> const ,PassengerPeriodicService> > > >,0>",1.999,0.0019521484375
+Station::GetPrimaryRoadStop,1.999,0.0019521484375
+"std::_Tree<std::_Tmap_traits<std::tuple<std::tuple<PoolID<VehicleIDTag>,enum CargoType,unsigned short,unsigned __int64,PoolID<StationIDTag>,PoolID<StationIDTag>,PoolID<OrderListIDTag>,PoolID<OrderListIDTag> >,PoolID<OrderListIDTag>,unsigned __int64,std::array<unsigned int,2> >,bool,std::less<std::tuple<std::tuple<PoolID<VehicleIDTag>,enum CargoType,unsigned short,unsigned __int64,PoolID<StationIDTag>,PoolID<StationIDTag>,PoolID<OrderListIDTag>,PoolID<OrderListIDTag> >,PoolID<OrderListIDTag>,unsigned __int64,std::array<unsigned int,2> > >,std::allocator<std::pair<std::tuple<std::tuple<PoolID<VehicleIDTag>,enum CargoType,unsigned short,unsigned __int64,PoolID<StationIDTag>,PoolID<StationIDTag>,PoolID<OrderListIDTag>,PoolID<OrderListIDTag> >,PoolID<OrderListIDTag>,unsigned __int64,std::array<unsigned int,2> > const ,bool> >,0> >::clear",1.9985,0.00195166015625
+VehicleOrderSaver::AdvanceOrdersFromVehiclePosition,1.9985,0.00195166015625
+"std::_Func_impl_no_alloc<`CYapfFollowRegionT<CYapfRegion_TypesT<CYapfRegionWater,NodeList<CYapfRegionNodeT<CYapfRegionPatchNodeKey> > > >::PfFollowNode'::`2'::<lambda_1>,void,WaterRegionPatchDesc const & ptr64>::_Do_call",1.9981,0.00195126953125
+StationResolverObject::StationResolverObject,1.9977,0.00195087890625
+GetAvailableFreeTilesInSignalledTunnelBridgeWithStartOffset,1.9977,0.00195087890625
+"SpecializedStation<Station,0>::IsValidID<PoolID<StationIDTag> >",1.9976,0.00195078125
+CheckCompanyHasMoney,1.9973999999999998,0.0019505859374999998
+IsPassengerJourneyRoutingEnabled,1.9973999999999998,0.0019505859374999998
+AdvanceTrainReservationLookaheadEnd,1.9965000000000002,0.0019497070312500002
+"btree::btree<btree::btree_set_params<PoolID<VehicleIDTag>,std::less<PoolID<VehicleIDTag> >,std::allocator<PoolID<VehicleIDTag> >,256> >::internal_find_unique",1.9963,0.00194951171875
+"btree::btree_unique_container<btree::btree<btree::btree_set_params<PoolID<VehicleIDTag>,std::less<PoolID<VehicleIDTag> >,std::allocator<PoolID<VehicleIDTag> >,256> > >::erase",1.9963,0.00194951171875
+EffectVehicle::~EffectVehicle,1.9961,0.00194931640625
+"std::_Uninitialized_move<UniscribeRun * ptr64,std::allocator<UniscribeRun> >",1.996,0.00194921875
+Train::IsInDepot,1.9956,0.001948828125
+TriggerRoadStopAnimation,1.9952,0.0019484375
+CheckVehicleBreakdown,1.995,0.0019482421875
+SetWindowDirty,1.9949,0.00194814453125
+"std::basic_string<char,std::char_traits<char>,std::allocator<char> >::append",1.9935,0.00194677734375
+SpriteLoaderGrf::LoadSprite,1.9926,0.0019458984375
+RandomAccessFile::ReadDword,1.9926,0.0019458984375
+GetSpriteLocalID,1.9926,0.0019458984375
+HasBridgeFlatRamp,1.9918,0.0019451171875
+Vehicle::GetCargoTile,1.9914,0.0019447265625
+PassengerServiceDatabase::Invalidate,1.9909,0.00194423828125
+InvalidatePassengerWaitingRouting,1.9909,0.00194423828125
+FontState::operator=,1.9882,0.0019416015625
+HasSignalOnTrack,1.9882,0.0019416015625
+"std::_Tree<std::_Tset_traits<PoolID<StationIDTag>,std::less<PoolID<StationIDTag> >,std::allocator<PoolID<StationIDTag> >,0> >::~_Tree<std::_Tset_traits<PoolID<StationIDTag>,std::less<PoolID<StationIDTag> >,std::allocator<PoolID<StationIDTag> >,0> >",1.9882,0.0019416015625
+Ship::GetCurrentMaxSpeed,1.987,0.0019404296875
+PassengerJourneyBoardingContext::PassengerJourneyBoardingContext,1.0839,0.00105849609375
+DiagdirBetweenTiles,1.0777,0.00105244140625
+"std::less<std::pair<ST<StateTicksTag>,PoolID<CargoPacketIDTag> > >::operator()",1.0628,0.001037890625
+IsTunnelInWay,1.0479,0.00102333984375
+Tunnel::UpdateIndexes,1.0479,0.00102333984375
+"std::set<std::set<std::tuple<PoolID<StationIDTag>,unsigned __int64,PoolID<CargoPacketIDTag> >,std::less<std::tuple<PoolID<StationIDTag>,unsigned __int64,PoolID<CargoPacketIDTag> > >,std::allocator<std::tuple<PoolID<StationIDTag>,unsigned __int64,PoolID<CargoPacketIDTag> > > > const * ptr64,std::less<std::set<std::tuple<PoolID<StationIDTag>,unsigned __int64,PoolID<CargoPacketIDTag> >,std::less<std::tuple<PoolID<StationIDTag>,unsigned __int64,PoolID<CargoPacketIDTag> > >,std::allocator<std::tuple<PoolID<StationIDTag>,unsigned __int64,PoolID<CargoPacketIDTag> > > > const * ptr64>,std::allocator<std::set<std::tuple<PoolID<StationIDTag>,unsigned __int64,PoolID<CargoPacketIDTag> >,std::less<std::tuple<PoolID<StationIDTag>,unsigned __int64,PoolID<CargoPacketIDTag> > >,std::allocator<std::tuple<PoolID<StationIDTag>,unsigned __int64,PoolID<CargoPacketIDTag> > > > const * ptr64> >::~set<std::set<std::tuple<PoolID<StationIDTag>,unsigned __int64,PoolID<CargoPacketIDTag> >,std::less<std::tuple<PoolID<StationIDTag>,unsigned __int64,PoolID<CargoPacketIDTag> > >,std::allocator<std::tuple<PoolID<StationIDTag>,unsigned __int64,PoolID<CargoPacketIDTag> > > > const * ptr64,std::less<std::set<std::tuple<PoolID<StationIDTag>,unsigned __int64,PoolID<CargoPacketIDTag> >,std::less<std::tuple<PoolID<StationIDTag>,unsigned __int64,PoolID<CargoPacketIDTag> > >,std::allocator<std::tuple<PoolID<StationIDTag>,unsigned __int64,PoolID<CargoPacketIDTag> > > > const * ptr64>,std::allocator<std::set<std::tuple<PoolID<StationIDTag>,unsigned __int64,PoolID<CargoPacketIDTag> >,std::less<std::tuple<PoolID<StationIDTag>,unsigned __int64,PoolID<CargoPacketIDTag> > >,std::allocator<std::tuple<PoolID<StationIDTag>,unsigned __int64,PoolID<CargoPacketIDTag> > > > const * ptr64> >",1.0305,0.00100634765625
+Engine::CanCarryCargo,1.0206,0.0009966796875
+"std::_Tree<std::_Tmap_traits<PoolID<VehicleIDTag>,std::set<PoolID<CargoPacketIDTag>,std::less<PoolID<CargoPacketIDTag> >,std::allocator<PoolID<CargoPacketIDTag> > >,std::less<PoolID<VehicleIDTag> >,std::allocator<std::pair<PoolID<VehicleIDTag> const ,std::set<PoolID<CargoPacketIDTag>,std::less<PoolID<CargoPacketIDTag> >,std::allocator<PoolID<CargoPacketIDTag> > > > >,0> >::erase<std::_Tree_iterator<std::_Tree_val<std::_Tree_simple_types<std::pair<PoolID<VehicleIDTag> const ,std::set<PoolID<CargoPacketIDTag>,std::less<PoolID<CargoPacketIDTag> >,std::allocator<PoolID<CargoPacketIDTag> > > > > > >,0>",1.0201,0.00099619140625
+"std::_Tree_val<std::_Tree_simple_types<std::pair<unsigned __int64 const ,std::pair<CargoPacket const * ptr64,CargoPacket const * ptr64> > > >::_Erase_tree<std::allocator<std::_Tree_node<std::pair<unsigned __int64 const ,std::pair<CargoPacket const * ptr64,CargoPacket const * ptr64> >,void * ptr64> > >",1.0144,0.000990625
+"btree::btree<btree::btree_set_params<LinkRefresher::Hop,std::less<LinkRefresher::Hop>,std::allocator<LinkRefresher::Hop>,256> >::compare_keys",1.0131,0.00098935546875
+"std::_Tree<std::_Tmap_traits<PoolID<StationIDTag>,std::vector<unsigned __int64,std::allocator<unsigned __int64> >,std::less<PoolID<StationIDTag> >,std::allocator<std::pair<PoolID<StationIDTag> const ,std::vector<unsigned __int64,std::allocator<unsigned __int64> > > >,0> >::_Find<PoolID<StationIDTag> >",1.0094,0.0009857421875
+GoodsEntry::CreateData,1.0092,0.000985546875
+StringBuilder::operator+=,1.0074,0.0009837890625
+Vehicle::HasUnbunchingOrder,1.0074,0.0009837890625
+Vehicle::IsWaitingForUnbunching,1.0074,0.0009837890625
+"btree::btree<btree::btree_set_params<PoolID<VehicleIDTag>,std::less<PoolID<VehicleIDTag> >,std::allocator<PoolID<VehicleIDTag> >,256> >::internal_insert<PoolID<VehicleIDTag> const & ptr64>",1.0073,0.00098369140625
+"std::vector<GRFVariableMapEntry,std::allocator<GRFVariableMapEntry> >::~vector<GRFVariableMapEntry,std::allocator<GRFVariableMapEntry> >",1.0061,0.00098251953125
+"std::vector<enum CargoType,std::allocator<enum CargoType> >::_Change_array",1.006,0.000982421875
+IsTrainSignalSideRight,1.0058,0.0009822265625
+GetSignalAspectGeneric,1.0057,0.00098212890625
+LinkRefresher::UpdateTimetableTravelSoFar,1.0057,0.00098212890625
+CheckCargoCapacity,1.0053,0.00098173828125
+Aircraft::IsNormalAircraft,1.0051,0.00098154296875
+RoadVehicle::SetRoadVehicleOvertaking,1.0048,0.00098125
+RoadStop::Enter,1.0048,0.00098125
+StationCargoList::EnsureWaitingIndex,1.0031,0.00097958984375
+IsValidDisallowedRoadDirections,1.0029,0.00097939453125
+SetTownRatingTestMode,1.0027,0.00097919921875
+RecordSyncEvent,1.0027,0.00097919921875
+"SmallSet<enum DiagDirection,128>::Add",1.0026,0.0009791015625
+AddCargoDelivery,1.0023,0.00097880859375
+PassengerPrecomputedTable::DestinationWorkspace::DestinationWorkspace,1.0021,0.00097861328125
+GetStringPtr,1.002,0.000978515625
+SndPlayTileFx,1.002,0.000978515625
+SoundLoader_Wav::Load,1.002,0.000978515625
+"std::unique_ptr<void,void (cdecl*)(void * ptr64)>::operator=<void (cdecl*)(void * ptr64),0>",1.0019,0.00097841796875
+Ship::UpdateCache,1.0017,0.00097822265625
+write_buffer_nolock<char>,1.0016,0.000978125
+__acrt_stdio_flush_and_write_narrow_nolock,1.0016,0.000978125
+GetOtherTunnelBridgeEnd,1.0015,0.00097802734375
+HasAcrossTunnelBridgeReservation,1.0015,0.00097802734375
+CalculateCompanyValue,1.0011,0.00097763671875
+CalculateCompanyValueExcludingShares,1.0011,0.00097763671875
+GetTileMarginInFrontOfTrain,1.0011,0.00097763671875
+"std::vector<std::vector<std::pair<unsigned int,unsigned int>,std::allocator<std::pair<unsigned int,unsigned int> > >,std::allocator<std::vector<std::pair<unsigned int,unsigned int>,std::allocator<std::pair<unsigned int,unsigned int> > > > >::~vector<std::vector<std::pair<unsigned int,unsigned int>,std::allocator<std::pair<unsigned int,unsigned int> > >,std::allocator<std::vector<std::pair<unsigned int,unsigned int>,std::allocator<std::pair<unsigned int,unsigned int> > > > >",1.0009,0.00097744140625
+Order::IsType,1.0007,0.00097724609375
+"std::_Tree_val<std::_Tree_simple_types<std::pair<std::tuple<PoolID<StationIDTag>,unsigned int,PoolID<OrderListIDTag> > const ,PassengerPrecomputedTable::Policy> > >::_Erase_tree<std::allocator<std::_Tree_node<std::pair<std::tuple<PoolID<StationIDTag>,unsigned int,PoolID<OrderListIDTag> > const ,PassengerPrecomputedTable::Policy>,void * ptr64> > >",1.0007,0.00097724609375
+GetTunnelBridgeEntranceTrackdir,1.0006,0.0009771484375
+SubtractMoneyFromCompanyFract,1.0006,0.0009771484375
+"std::allocator<std::pair<PoolID<StationIDTag>,bool> >::deallocate",1.0006,0.0009771484375
+CmdBuildRoadDepot,1.0006,0.0009771484375
+PassengerBoardingFailure::Expired,1.0005,0.00097705078125
+GetWaitTimeRating,1.0004,0.000976953125
+Layouter::LineCacheHash::hash_font_state,1.0003,0.00097685546875
+CeilDivT<OverflowSafeInt<__int64> >,1.0002,0.0009767578125
+"btree::btree_node<btree::btree_map_params<SignalReference,SignalProgram * ptr64,std::less<SignalReference>,std::allocator<std::pair<SignalReference const ,SignalProgram * ptr64> >,256> >::insert_value_common",1.0002,0.0009767578125
+Train::GetOrderStationLocation,1.0,0.0009765625
+CmdPlaceHouseArea,1.0,0.0009765625
+memset,1.0,0.0009765625
+"Pool<Town,PoolID<TownIDTag>,64,0,0,DefaultPoolOps<Town> >::PoolItem<&_town_pool>::Create<Town,ST<TileIndexTag> & ptr64>",1.0,0.0009765625
+"jgr::ring_buffer<TraceRestrictProgramBackup,std::allocator<TraceRestrictProgramBackup> >::deallocate_storage",1.0,0.0009765625
+"IsInsideMM<enum StringControlCode,1>",1.0,0.0009765625
+std::_Destroy_range<std::allocator<LanguageMetadata> >,1.0,0.0009765625
+"std::unique_ptr<TrainReservationLookAhead,std::default_delete<TrainReservationLookAhead> >::reset",1.0,0.0009765625
+"std::_Hash<std::_Umap_traits<unsigned int,std::vector<StationCargoList::HyperpathGroupRef,std::allocator<StationCargoList::HyperpathGroupRef> >,std::_Uhash_compare<unsigned int,std::hash<unsigned int>,std::equal_to<unsigned int> >,std::allocator<std::pair<unsigned int const ,std::vector<StationCargoList::HyperpathGroupRef,std::allocator<StationCargoList::HyperpathGroupRef> > > >,0> >::clear",1.0,0.0009765625
+"std::map<PoolID<OrderListIDTag>,unsigned __int64,std::less<PoolID<OrderListIDTag> >,std::allocator<std::pair<PoolID<OrderListIDTag> const ,unsigned __int64> > >::operator[]",1.0,0.0009765625
+memcpy_repmovs,1.0,0.0009765625
+EconomyAgeVehicle,1.0,0.0009765625
+"std::_Tree_val<std::_Tree_simple_types<std::pair<unsigned __int64 const ,unsigned __int64> > >::_Erase_head<std::allocator<std::_Tree_node<std::pair<unsigned __int64 const ,unsigned __int64>,void * ptr64> > >",1.0,0.0009765625
+FlushDeferredDetermineCombineNormalShuntMode,1.0,0.0009765625
+HasPbsSignalOnTrackdir,1.0,0.0009765625
+"btree::btree<btree::btree_set_params<LinkRefresher::Hop,std::less<LinkRefresher::Hop>,std::allocator<LinkRefresher::Hop>,256> >::new_leaf_root_node",1.0,0.0009765625
+FontState::FontState,1.0,0.0009765625
+IsOnewaySignal,1.0,0.0009765625
+"std::vector<std::vector<PoolID<StationIDTag>,std::allocator<PoolID<StationIDTag> > >,std::allocator<std::vector<PoolID<StationIDTag>,std::allocator<PoolID<StationIDTag> > > > >::operator=",1.0,0.0009765625
+MarkBridgeOrTunnelDirtyOnReservationChange,1.0,0.0009765625
+"btree::btree_node<btree::btree_map_params<SignalReference,SignalProgram * ptr64,std::less<SignalReference>,std::allocator<std::pair<SignalReference const ,SignalProgram * ptr64> >,256> >::rebalance_right_to_left",1.0,0.0009765625
+Win32FontCache::MapCharToGlyph,1.0,0.0009765625
+"btree::btree_iterator<btree::btree_map_params<ST<TileIndexTag>,ST<TileIndexTag>,BridgeSetXComparator,std::allocator<std::pair<ST<TileIndexTag> const ,ST<TileIndexTag> > >,256> >::operator--",1.0,0.0009765625
+"std::basic_string<char,std::char_traits<char>,std::allocator<char> >::_Construct<1,char const * ptr64>",1.0,0.0009765625
+FindSITargetTypeInstance,1.0,0.0009765625
+NWidgetLeaf::SetupSmallestSize,1.0,0.0009765625
+NewsWindow::UpdateWidgetSize,1.0,0.0009765625
+NewsWindow::NewsWindow,1.0,0.0009765625
+NWidgetVertical::SetupSmallestSize,1.0,0.0009765625
+Window::FinishInitNested,1.0,0.0009765625
+NWidgetBackground::SetupSmallestSize,1.0,0.0009765625
+GetGRFStringPtr,1.0,0.0009765625
+PassengerPrecomputedTable::GraphSnapshot::HotEdges::~HotEdges,1.0,0.0009765625
+"btree::btree_node<btree::btree_set_params<LinkRefresher::Hop,std::less<LinkRefresher::Hop>,std::allocator<LinkRefresher::Hop>,256> >::split",1.0,0.0009765625
+UpdateAspectDeferredWithVehicleTunnelBridgeExit,1.0,0.0009765625
+std::codecvt_base::do_max_length,1.0,0.0009765625
+BasePersistentStorageArray::SwitchMode,1.0,0.0009765625
+"btree::btree_unique_container<btree::btree<btree::btree_set_params<ST<TileIndexTag>,std::less<ST<TileIndexTag> >,std::allocator<ST<TileIndexTag> >,256> > >::insert",1.0,0.0009765625
+GetTemplateVehicleEstimatedMaxAchievableSpeed,1.0,0.0009765625
+"jgr::ring_buffer<TrainReservationLookAheadItem,std::allocator<TrainReservationLookAheadItem> >::move_on_reallocate",1.0,0.0009765625
+"jgr::ring_buffer<TrainReservationLookAheadItem,std::allocator<TrainReservationLookAheadItem> >::push_back",1.0,0.0009765625
+TrainReservationLookAhead::AddStation,1.0,0.0009765625
+HouseScopeResolver::GetOtherHouseID,1.0,0.0009765625
+"std::_Tree<std::_Tset_traits<PoolID<OrderListIDTag>,std::less<PoolID<OrderListIDTag> >,std::allocator<PoolID<OrderListIDTag> >,0> >::erase",1.0,0.0009765625
+"GroundVehicle<RoadVehicle,1>::CargoChanged",1.0,0.0009765625
+SetTimetableWindowsDirty,1.0,0.0009765625
+MarkTileDirtyByTile,1.0,0.0009765625
+"CYapfDestinationTileRoadT<CYapfRoad_TypesT<CYapfRoad,CYapfDestinationTileRoadT> >::SetDestination",1.0,0.0009765625
+"btree::btree_node<btree::btree_set_params<LinkRefresher::Hop,std::less<LinkRefresher::Hop>,std::allocator<LinkRefresher::Hop>,256> >::insert_value_common",1.0,0.0009765625
+WouldObjectLeaveWaterBehind,1.0,0.0009765625
+OrderList::GetNextDecisionNode,1.0,0.0009765625
+FlowStat::upper_bound,1.0,0.0009765625
+IsBayRoadStopTile,1.0,0.0009765625
+"CFollowTrackT<1,RoadVehicle,1,0>::TryReverse",1.0,0.0009765625
+PassengerPrecomputedTable::RowLabel,1.0,0.0009765625
+CargoPacket::GetPassengerFailedService,1.0,0.0009765625
+"ankerl::v1_0_3::svector<PoolID<GroupIDTag>,16>::calculate_new_capacity",1.0,0.0009765625
+LinkRefresher::Hop::operator==,1.0,0.0009765625
+"CYapfDestinationTileRoadT<CYapfRoad_TypesT<CYapfRoad,CYapfDestinationTileRoadT> >::PfDetectDestinationTile",1.0,0.0009765625
+PerformanceMeasurer::~PerformanceMeasurer,1.0,0.0009765625
+"UniformBumpAllocator<40,4096>::~UniformBumpAllocator<40,4096>",1.0,0.0009765625
+std::function<void cdecl(WaterRegionPatchDesc const & ptr64)>::~function<void cdecl(WaterRegionPatchDesc const & ptr64)>,1.0,0.0009765625
+CheckCaches,1.0,0.0009765625
+TriggerHouseAnimation_ConstructionStageChanged,1.0,0.0009765625
+FindFirstBit<enum TrackdirBits>,1.0,0.0009765625
+DebugIntlSetup,1.0,0.0009765625
+fmt::v11::detail::vformat_to,1.0,0.0009765625
+fmt::v11::detail::format_handler<char>::on_replacement_field,1.0,0.0009765625
+fmt::v11::basic_format_arg<fmt::v11::context>::visit<fmt::v11::detail::default_arg_formatter<char> >,1.0,0.0009765625
+PassengerServiceDatabase::Get,1.0,0.0009765625
+EngineHasReplacementForCompany,1.0,0.0009765625
+robin_hood::hash_bytes,1.0,0.0009765625
+"robin_hood::detail::Table<1,80,unsigned int,unsigned int,robin_hood::hash<unsigned int,void>,std::equal_to<unsigned int> >::clear",0.9999,0.00097646484375
+"std::less<std::tuple<ST<StateTicksTag>,PoolID<StationIDTag>,enum CargoType> >::operator()",0.9999,0.00097646484375
+"btree::btree_unique_container<btree::btree<btree::btree_map_params<unsigned int,TraceRestrictMappingItem,std::less<unsigned int>,std::allocator<std::pair<unsigned int const ,TraceRestrictMappingItem> >,256> > >::find",0.9998,0.0009763671875
+OnTick_Trees,0.9997,0.00097626953125
+Train::GetVehicleTrackdir,0.9994,0.0009759765625
+RoadStop::Leave,0.9993,0.00097587890625
+std::allocator<StationCargoList::HyperpathGroupRef>::deallocate,0.9993,0.00097587890625
+"`anonymous namespace'::__std_find_trivial_impl<`anonymous namespace'::_Find_traits_8,unsigned __int64>",0.9993,0.00097587890625
+Ship::UpdateDeltaXY,0.9993,0.00097587890625
+SpriteFontCache::GetGlyphWidth,0.9987,0.00097529296875
+std::allocator<PoolID<OrderListIDTag> >::deallocate,0.9986,0.0009751953125
+OverflowSafeInt<__int64>::operator*=,0.9984,0.000975
+Ship::IsInDepot,0.9984,0.000975
+CommandCost::ReleaseAuxiliary,0.9983,0.00097490234375
+HasRoadTypeAvail,0.9983,0.00097490234375
+ValParamRoadType,0.9983,0.00097490234375
+free,0.9981,0.00097470703125
+__std_remove_8,0.9978,0.0009744140625
+"fmt::v11::detail::iterator_buffer<std::back_insert_iterator<fmt::v11::basic_memory_buffer<char,500,fmt::v11::detail::allocator<char> > >,char,fmt::v11::detail::buffer_traits>::flush",0.9975,0.00097412109375
+Order::GetTimetabledTravel,0.9971,0.00097373046875
+"std::_Tree<std::_Tmap_traits<std::tuple<enum CargoType,PoolID<StationIDTag>,ST<StateTicksTag>,PoolID<OrderListIDTag>,PoolID<OrderListIDTag> >,PassengerPrecomputedPlan,std::less<std::tuple<enum CargoType,PoolID<StationIDTag>,ST<StateTicksTag>,PoolID<OrderListIDTag>,PoolID<OrderListIDTag> > >,std::allocator<std::pair<std::tuple<enum CargoType,PoolID<StationIDTag>,ST<StateTicksTag>,PoolID<OrderListIDTag>,PoolID<OrderListIDTag> > const ,PassengerPrecomputedPlan> >,0> >::~_Tree<std::_Tmap_traits<std::tuple<enum CargoType,PoolID<StationIDTag>,ST<StateTicksTag>,PoolID<OrderListIDTag>,PoolID<OrderListIDTag> >,PassengerPrecomputedPlan,std::less<std::tuple<enum CargoType,PoolID<StationIDTag>,ST<StateTicksTag>,PoolID<OrderListIDTag>,PoolID<OrderListIDTag> > >,std::allocator<std::pair<std::tuple<enum CargoType,PoolID<StationIDTag>,ST<StateTicksTag>,PoolID<OrderListIDTag>,PoolID<OrderListIDTag> > const ,PassengerPrecomputedPlan> >,0> >",0.997,0.0009736328125
+"std::_Tree_val<std::_Tree_simple_types<std::pair<std::tuple<enum CargoType,PoolID<StationIDTag>,ST<StateTicksTag>,PoolID<OrderListIDTag>,PoolID<OrderListIDTag> > const ,PassengerPrecomputedPlan> > >::_Erase_tree<std::allocator<std::_Tree_node<std::pair<std::tuple<enum CargoType,PoolID<StationIDTag>,ST<StateTicksTag>,PoolID<OrderListIDTag>,PoolID<OrderListIDTag> > const ,PassengerPrecomputedPlan>,void * ptr64> > >",0.997,0.0009736328125
+AdjustSignalAspectIfNonIncStyle,0.997,0.0009736328125
+"UniformBumpAllocator<24,1024>::ClearArena",0.9969,0.00097353515625
+ApplyAvailableFreeTunnelBridgeTiles,0.9966,0.0009732421875
+"btree::btree_node<btree::btree_map_params<unsigned __int64,OverflowSafeInt<__int64>,std::less<unsigned __int64>,std::allocator<std::pair<unsigned __int64 const ,OverflowSafeInt<__int64> > >,256> >::split",0.9957,0.00097236328125
+Vehicle::MarkAllViewportsDirty,0.9956,0.000972265625
+"std::unique_ptr<ParagraphLayouter,std::default_delete<ParagraphLayouter> >::operator=<std::default_delete<ParagraphLayouter>,0>",0.9955,0.00097216796875
+"btree::btree_node<btree::btree_map_params<SignalReference,SignalProgram * ptr64,std::less<SignalReference>,std::allocator<std::pair<SignalReference const ,SignalProgram * ptr64> >,256> >::rebalance_left_to_right",0.9949,0.00097158203125
+std::_Destroy_range<std::allocator<UniscribeRun> >,0.9946,0.0009712890625
+PassengerPrecomputedTable::RefreshService,0.994,0.000970703125
+PassengerJourneyBoardingContext::CanContinue,0.9937,0.00097041015625
+MarkViewportDirty,0.9934,0.0009701171875
+IntSettingDesc::ChangeValue,0.993,0.0009697265625
+strlen,0.993,0.0009697265625
+GetSettingFromName,0.993,0.0009697265625
+__chkstk,0.9906,0.0009673828125
+Ship::OnPeriodic,0.9905,0.00096728515625
+Set3YmmBlocks,0.9868,0.000963671875

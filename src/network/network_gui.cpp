@@ -37,6 +37,7 @@
 #include "../newgrf.h"
 #include "../error.h"
 #include "../guitimer_func.h"
+#include "../passenger_precomputed_gui.h"
 #include "../zoom_func.h"
 #include "../sprite.h"
 #include "../settings_internal.h"
@@ -2095,7 +2096,16 @@ struct NetworkJoinStatusWindow : Window {
 	NetworkJoinStatusWindow(WindowDesc &desc) : Window(desc)
 	{
 		this->parent = FindWindowById(WindowClass::Network, NetworkWindowNumber::Game);
-		this->InitNested(NetworkStatusWindowNumber::Join);
+		this->CreateNestedTree();
+		this->GetWidget<NWidgetStacked>(WID_NJS_PASSENGER_PANEL)->SetDisplayedPlane(GetInitialPassengerProgress() != nullptr ? 0 : SZSP_NONE);
+		this->FinishInitNested(NetworkStatusWindowNumber::Join);
+	}
+
+	void OnInvalidateData(int, bool gui_scope) override
+	{
+		if (!gui_scope) return;
+		if (this->GetWidget<NWidgetStacked>(WID_NJS_PASSENGER_PANEL)->SetDisplayedPlane(GetInitialPassengerProgress() != nullptr ? 0 : SZSP_NONE)) this->ReInit();
+		this->SetDirty();
 	}
 
 	void DrawWidget(const Rect &r, WidgetID widget) const override
@@ -2119,11 +2129,14 @@ struct NetworkJoinStatusWindow : Window {
 							progress = 15; // We don't have the final size yet; the server is still compressing!
 							break;
 						}
-						[[fallthrough]];
-
-					default: // Waiting is 15%, so the remaining downloading of the map is maximum 70%
 						progress = 15 + _network_join_bytes * (100 - 15) / _network_join_bytes_total;
 						break;
+
+					case NetworkJoinStatus::Processing:
+					case NetworkJoinStatus::Registering:
+						progress = 100; // Download complete; local construction is shown separately below.
+						break;
+					default: NOT_REACHED();
 				}
 				DrawFrameRect(ir.WithWidth(ir.Width() * progress / 100, _current_text_dir == TD_RTL), Colours::Mauve, {});
 				DrawString(ir.left, ir.right, CentreBounds(ir.top, ir.bottom, GetCharacterHeight(FontSize::Normal)), STR_NETWORK_CONNECTING_1 + to_underlying(_network_join_status), TextColour::FromString, AlignmentH::Centre);
@@ -2147,6 +2160,10 @@ struct NetworkJoinStatusWindow : Window {
 					default:
 						break;
 				}
+				break;
+
+			case WID_NJS_PASSENGER_PROGRESS:
+				if (const auto *progress = GetInitialPassengerProgress()) DrawPassengerProgress(r, *progress);
 				break;
 		}
 	}
@@ -2173,6 +2190,9 @@ struct NetworkJoinStatusWindow : Window {
 				size = maxdim(size, GetStringBoundingBox(GetString(STR_NETWORK_CONNECTING_DOWNLOADING_1, max_digits, max_digits)));
 				break;
 			}
+			case WID_NJS_PASSENGER_PROGRESS:
+				size = maxdim(size, GetPassengerProgressSize());
+				break;
 		}
 	}
 
@@ -2203,6 +2223,9 @@ static constexpr std::initializer_list<NWidgetPart> _nested_network_join_status_
 		NWidget(NWID_VERTICAL), SetPIP(0, WidgetDimensions::unscaled.vsep_wide, 0), SetPadding(WidgetDimensions::unscaled.modalpopup),
 			NWidget(WWT_EMPTY, Colours::Invalid, WID_NJS_PROGRESS_BAR), SetFill(1, 0),
 			NWidget(WWT_EMPTY, Colours::Invalid, WID_NJS_PROGRESS_TEXT), SetFill(1, 0), SetMinimalSize(350, 0),
+			NWidget(NWID_SELECTION, Colours::Invalid, WID_NJS_PASSENGER_PANEL),
+				NWidget(WWT_EMPTY, Colours::Invalid, WID_NJS_PASSENGER_PROGRESS), SetFill(1, 0), SetMinimalSize(350, 0),
+			EndContainer(),
 			NWidget(WWT_PUSHTXTBTN, Colours::White, WID_NJS_CANCELOK), SetMinimalSize(101, 12), SetStringTip(STR_NETWORK_CONNECTION_DISCONNECT), SetFill(1, 0),
 		EndContainer(),
 	EndContainer(),

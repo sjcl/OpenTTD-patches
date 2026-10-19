@@ -1,0 +1,245 @@
+{
+  "runs": [
+    {
+      "name": "wpr-thin-1",
+      "compiler": "thin",
+      "ticks": 1024,
+      "start_tick": 3197276448,
+      "end_tick": 3197277472,
+      "sampled_cpu_ms": {
+        "all_threads_ms": 23726.11200000008,
+        "main_thread_ms": 23570.857900000083,
+        "world_ms": 22932.2341000001,
+        "passenger_ms": 3274.650099999997,
+        "boarding_ms": 843.2259999999998,
+        "route_or_boarding_ms": 1111.4064999999996,
+        "route_ms": 490.35439999999994
+      },
+      "sampled_counts": {
+        "world_ms": 22902,
+        "passenger_ms": 3270,
+        "boarding_ms": 842,
+        "route_or_boarding_ms": 1110,
+        "route_ms": 490
+      },
+      "per_tick_cpu_ms": {
+        "all_threads_ms": 23.17003125000008,
+        "main_thread_ms": 23.01841591796883,
+        "world_ms": 22.394759863281347,
+        "passenger_ms": 3.197900488281247,
+        "boarding_ms": 0.8234628906249998,
+        "route_or_boarding_ms": 1.0853579101562496,
+        "route_ms": 0.47886171874999994
+      },
+      "world_thread_counter_ms": 22687.5,
+      "build_wall_seconds": 14.054331,
+      "build_cpu_seconds": 65.9375,
+      "warning_lines": 14163,
+      "error_resumes": 0,
+      "initial_error_resumes": 1
+    },
+    {
+      "name": "wpr-full-1",
+      "compiler": "full",
+      "ticks": 1024,
+      "start_tick": 3197276448,
+      "end_tick": 3197277472,
+      "sampled_cpu_ms": {
+        "all_threads_ms": 23824.659400000033,
+        "main_thread_ms": 23636.307000000033,
+        "world_ms": 22975.7361000001,
+        "passenger_ms": 3195.543799999995,
+        "boarding_ms": 846.1644999999992,
+        "route_or_boarding_ms": 1133.2201999999995,
+        "route_ms": 530.8667999999999
+      },
+      "sampled_counts": {
+        "world_ms": 22951,
+        "passenger_ms": 3193,
+        "boarding_ms": 846,
+        "route_or_boarding_ms": 1133,
+        "route_ms": 531
+      },
+      "per_tick_cpu_ms": {
+        "all_threads_ms": 23.266268945312532,
+        "main_thread_ms": 23.082331054687533,
+        "world_ms": 22.437242285156348,
+        "passenger_ms": 3.120648242187495,
+        "boarding_ms": 0.8263325195312492,
+        "route_or_boarding_ms": 1.1066603515624995,
+        "route_ms": 0.5184246093749999
+      },
+      "world_thread_counter_ms": 22750.0,
+      "build_wall_seconds": 14.057934,
+      "build_cpu_seconds": 65.90625,
+      "warning_lines": 14163,
+      "error_resumes": 0,
+      "initial_error_resumes": 1
+    },
+    {
+      "name": "wpr-full-2",
+      "compiler": "full",
+      "ticks": 1024,
+      "start_tick": 3197276448,
+      "end_tick": 3197277472,
+      "sampled_cpu_ms": {
+        "all_threads_ms": 23296.740900000037,
+        "main_thread_ms": 23165.585800000037,
+        "world_ms": 22486.711700000084,
+        "passenger_ms": 3084.9934999999964,
+        "boarding_ms": 786.8143999999999,
+        "route_or_boarding_ms": 1072.4165000000003,
+        "route_ms": 493.71870000000007
+      },
+      "sampled_counts": {
+        "world_ms": 22460,
+        "passenger_ms": 3080,
+        "boarding_ms": 786,
+        "route_or_boarding_ms": 1071,
+        "route_ms": 493
+      },
+      "per_tick_cpu_ms": {
+        "all_threads_ms": 22.750723535156286,
+        "main_thread_ms": 22.622642382812536,
+        "world_ms": 21.95967939453133,
+        "passenger_ms": 3.0126889648437465,
+        "boarding_ms": 0.7683734374999999,
+        "route_or_boarding_ms": 1.0472817382812503,
+        "route_ms": 0.48214716796875007
+      },
+      "world_thread_counter_ms": 22171.875,
+      "build_wall_seconds": 14.049295,
+      "build_cpu_seconds": 65.6875,
+      "warning_lines": 14163,
+      "error_resumes": 0,
+      "initial_error_resumes": 1
+    }
+  ],
+  "medians": {
+    "thin": {
+      "build_wall_seconds": 14.054331,
+      "build_cpu_seconds": 65.9375,
+      "world_thread_counter_ms": 22687.5,
+      "cpu_ms_per_tick": {
+        "all_threads_ms": 23.17003125000008,
+        "main_thread_ms": 23.01841591796883,
+        "world_ms": 22.394759863281347,
+        "passenger_ms": 3.197900488281247,
+        "boarding_ms": 0.8234628906249998,
+        "route_or_boarding_ms": 1.0853579101562496,
+        "route_ms": 0.47886171874999994
+      }
+    },
+    "full": {
+      "build_wall_seconds": 14.0536145,
+      "build_cpu_seconds": 65.796875,
+      "world_thread_counter_ms": 22460.9375,
+      "cpu_ms_per_tick": {
+        "all_threads_ms": 23.008496240234408,
+        "main_thread_ms": 22.852486718750036,
+        "world_ms": 22.19846083984384,
+        "passenger_ms": 3.0666686035156205,
+        "boarding_ms": 0.7973529785156246,
+        "route_or_boarding_ms": 1.076971044921875,
+        "route_ms": 0.500285888671875
+      }
+    }
+  },
+  "canonical": {
+    "wpr-thin-1": {
+      "runtime_routing_feature": 1,
+      "state_ticks": 3197277472,
+      "packets": 468937,
+      "cargo_units": 545759,
+      "known_od_units": 467473,
+      "journey_packets": 456285,
+      "packet_state_digest": 14168532269542370959,
+      "payment_digest": 5684627927906326875,
+      "payments_valid": true,
+      "database_digest": 4293480760840559131,
+      "ownership_digest": 7538573873666253069,
+      "loading_digest": 11144545727402337527,
+      "completed_rows": 4936,
+      "retained_rows": 0,
+      "table_operations": 1976379656,
+      "published_revision": 1776,
+      "company_deliveries": 455,
+      "journey_routing": 1,
+      "precomputed_routing": 1,
+      "legacy_true_packets": 0,
+      "legacy_false_packets": 0,
+      "legacy_true_units": 0,
+      "legacy_false_units": 0,
+      "opposite_history_mergeable_pairs": 0
+    },
+    "wpr-full-1": {
+      "runtime_routing_feature": 1,
+      "state_ticks": 3197277472,
+      "packets": 468937,
+      "cargo_units": 545759,
+      "known_od_units": 467473,
+      "journey_packets": 456285,
+      "packet_state_digest": 14168532269542370959,
+      "payment_digest": 5684627927906326875,
+      "payments_valid": true,
+      "database_digest": 4293480760840559131,
+      "ownership_digest": 7538573873666253069,
+      "loading_digest": 11144545727402337527,
+      "completed_rows": 4936,
+      "retained_rows": 0,
+      "table_operations": 1976379656,
+      "published_revision": 1776,
+      "company_deliveries": 455,
+      "journey_routing": 1,
+      "precomputed_routing": 1,
+      "legacy_true_packets": 0,
+      "legacy_false_packets": 0,
+      "legacy_true_units": 0,
+      "legacy_false_units": 0,
+      "opposite_history_mergeable_pairs": 0
+    },
+    "wpr-full-2": {
+      "runtime_routing_feature": 1,
+      "state_ticks": 3197277472,
+      "packets": 468937,
+      "cargo_units": 545759,
+      "known_od_units": 467473,
+      "journey_packets": 456285,
+      "packet_state_digest": 14168532269542370959,
+      "payment_digest": 5684627927906326875,
+      "payments_valid": true,
+      "database_digest": 4293480760840559131,
+      "ownership_digest": 7538573873666253069,
+      "loading_digest": 11144545727402337527,
+      "completed_rows": 4936,
+      "retained_rows": 0,
+      "table_operations": 1976379656,
+      "published_revision": 1776,
+      "company_deliveries": 455,
+      "journey_routing": 1,
+      "precomputed_routing": 1,
+      "legacy_true_packets": 0,
+      "legacy_false_packets": 0,
+      "legacy_true_units": 0,
+      "legacy_false_units": 0,
+      "opposite_history_mergeable_pairs": 0
+    }
+  },
+  "mismatches": {
+    "wpr-thin-1": {},
+    "wpr-full-1": {},
+    "wpr-full-2": {}
+  },
+  "route_roots": [
+    "PassengerServiceDatabase::PlanPrecomputed",
+    "PassengerServiceDatabase::PlanInternal",
+    "PassengerPrecomputedTable::Plan",
+    "PassengerJourneyPlanner::Plan",
+    "PassengerJourneyPlanner::PlanOnboard",
+    "PassengerSchedulePlanner::Plan"
+  ],
+  "boarding_roots": [
+    "PassengerJourneyLoadingContext::CanBoard",
+    "PassengerJourneyLoadingContext::MayUseHyperpathPolicy"
+  ]
+}

@@ -762,6 +762,43 @@ bool PassengerServiceDatabase::IsPreparingPrecomputed() const
 			(!this->services.empty() || this->sweeping || !this->build_queue.empty() || !this->building.empty())));
 }
 
+PassengerPrecomputedProgress PassengerServiceDatabase::GetPrecomputedProgress() const
+{
+	using Phase = PassengerPrecomputedProgress::Phase;
+	PassengerPrecomputedProgress result;
+	if (!_settings_game.linkgraph.passenger_journey_routing || !_settings_game.linkgraph.passenger_journey_precomputed) return result;
+	result.preparing = this->IsPreparingPrecomputed();
+	if (this->load_state == LoadState::Invalid) { result.phase = Phase::Invalid; return result; }
+	if (this->precomputed_revision == UINT64_MAX) {
+		result.phase = result.preparing ? Phase::Services : Phase::Complete;
+		return result;
+	}
+	/* Only current-generation public rows count. In particular, speculative
+	 * worker results and retained rows must not inflate this fraction. During
+	 * replay the retained generation is restored first; its Work is not a
+	 * percentage of the current generation's destination tables. */
+	bool graph = this->load_state == LoadState::Replaying && !this->load_current_graph_started;
+	bool rejected = false;
+	for (const auto &table : this->precomputed) {
+		graph |= table.IsPreparingGraph();
+		rejected |= table.MemoryRejected();
+		const auto &diagnostic = table.GetDiagnostic();
+		result.destinations += diagnostic.destinations;
+		result.stations += diagnostic.stations;
+	}
+	if (this->load_state == LoadState::Replaying) {
+		for (const auto &table : this->retained_precomputed) {
+			graph |= table.IsPreparingGraph();
+			rejected |= table.MemoryRejected();
+		}
+	}
+	const bool restoring = this->load_state == LoadState::Replaying && this->load_retained;
+	result.total_known = !graph && !restoring;
+	result.phase = rejected ? Phase::MemoryRejected : graph ? Phase::Graph : restoring ? Phase::Restoring :
+			result.preparing ? Phase::Tables : Phase::Complete;
+	return result;
+}
+
 bool PassengerServiceDatabase::PreparePrecomputed()
 {
 	if (!this->IsPreparingPrecomputed()) return true;

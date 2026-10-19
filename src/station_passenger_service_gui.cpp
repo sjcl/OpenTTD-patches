@@ -80,8 +80,8 @@ void Merge(Evidence &a, const Evidence &b)
 
 struct Progress {
 	State state = State::Pending;
-	Evidence evidence, previous;
-	uint64_t serial = 0, due = 0;
+	Evidence evidence;
+	uint64_t serial = 0, due = 0, source_revision = 0;
 	bool queued = false;
 };
 
@@ -93,7 +93,6 @@ struct Fleet : Progress {
 	Phase phase = Phase::Vehicle;
 	uint vehicle_count = 0;
 	uint64_t route_generation = 0;
-	size_t pins = 0;
 	bool started = false, stop_started = false;
 };
 struct Policy : Progress {
@@ -107,12 +106,21 @@ static_assert((sizeof(Fleet) + sizeof(Policy) + 512) * MAX_ENTRIES < 8 * 1024 * 
 using JobKey = std::variant<FleetKey, PolicyKey>;
 struct Job { JobKey key; uint64_t serial; };
 
-Evidence VisibleEvidence(const Progress &p)
-{
-	Evidence result = p.evidence;
-	if ((p.state == State::Pending || p.state == State::Partial) && ValidRepresentative(p.previous)) Merge(result, p.previous);
-	return result;
-}
+/** Compact published results are independent of evictable search workspaces. */
+struct Result : Progress {
+	StationPassengerService display{GroupID::Invalid(), false, StationID::Invalid(), DisplayLabel::Checking};
+	bool settled = false, refreshing = false;
+	uint64_t seen = 0, used = 0, epoch = 0, destination_revision = 0, route_generation = 0, service_generation = 0;
+	StateTicks checked_tick{};
+	size_t pins = 0;
+	VehicleID first = VehicleID::Invalid();
+	GroupID first_group = GroupID::Invalid();
+	uint vehicle_count = 0;
+};
+constexpr size_t RESULT_BYTES = sizeof(Result) + sizeof(JobKey) + 128; // map node, allocator and eviction clock allowance
+constexpr size_t RESULT_BUDGET = 16 * 1024 * 1024;
+
+Evidence VisibleEvidence(const Progress &p) { return p.evidence; }
 
 StationPassengerService Summary(const Progress &p, const Evidence &e)
 {
@@ -128,16 +136,112 @@ StationPassengerService Summary(const Progress &p, const Evidence &e)
 } // namespace
 
 struct StationPassengerServiceCache::Impl {
+	std::map<JobKey, Result> results;
+	std::deque<JobKey> result_clock;
+	size_t result_capacity, policy_results = 0;
+	bool capacity_pressure = false;
+	uint64_t frame = 0, input_revision = 0, all_revision = 0;
+	std::map<OrderListID, uint64_t> fleet_revisions;
 	std::map<FleetKey, Fleet> fleets;
 	std::map<PolicyKey, Policy> policies;
-	std::deque<FleetKey> fleet_eviction;
-	std::deque<PolicyKey> policy_eviction;
 	std::deque<Job> jobs;
 	std::map<StationID, uint64_t> destination_revisions;
 	StationPassengerServiceDiagnostics diagnostic;
+	std::array<size_t, 4> states{};
 	uint64_t now = 0, serial = 0, lookup_epoch = 0, changes = 0, policy_epoch = 1, version = 0;
 	size_t credit = MAX_WORK;
 	uint64_t fractional_credit = 0;
+
+	explicit Impl(size_t budget) : result_capacity(std::clamp(budget, RESULT_BYTES, RESULT_BUDGET) / RESULT_BYTES)
+	{}
+
+	uint64_t SourceRevision(const FleetKey &key) const
+	{
+		auto it = this->fleet_revisions.find(key.service);
+		return it == this->fleet_revisions.end() ? this->all_revision : std::max(this->all_revision, it->second);
+	}
+
+	Result *UseResult(const JobKey &key, bool touch = true)
+	{
+		auto it = this->results.find(key);
+		if (it == this->results.end()) {
+			const bool policy = std::holds_alternative<PolicyKey>(key);
+			// Leave bounded room for a policy's fleet dependencies, even before any work runs.
+			const size_t policy_limit = this->result_capacity - std::min(MAX_ENTRIES, std::max(size_t{1}, this->result_capacity / 4));
+			const bool policy_full = policy && this->policy_results >= policy_limit;
+			if (policy_full || this->results.size() >= this->result_capacity) {
+				// Never churn the currently referenced working set. Excess conditions get a stable
+				// update-waiting label without spending work on results we cannot retain.
+				bool room = false;
+				for (size_t i = 0; i < 64 && !this->result_clock.empty(); ++i) {
+					auto old = this->result_clock.front(); this->result_clock.pop_front();
+					auto found = this->results.find(old);
+					if (found == this->results.end()) continue;
+					const auto *fleet = std::get_if<FleetKey>(&old);
+					const bool dependency = fleet != nullptr && fleet->policy;
+					if ((!policy_full || std::holds_alternative<PolicyKey>(old)) && found->second.pins == 0 &&
+							(found->second.seen + 1 < this->frame || dependency) && !found->second.refreshing) {
+						--this->states[static_cast<size_t>(found->second.state)];
+						if (!dependency && found->second.settled && found->second.seen + 1 >= this->frame) ++this->diagnostic.capacity_regressions;
+						if (std::holds_alternative<PolicyKey>(old)) --this->policy_results;
+						this->results.erase(found); ++this->diagnostic.result_evictions; room = true; break;
+					}
+					this->result_clock.push_back(old);
+				}
+				if (!room) { ++this->diagnostic.capacity_waits; this->capacity_pressure = true; return nullptr; }
+			}
+			it = this->results.try_emplace(key).first; if (policy) ++this->policy_results; ++this->states[static_cast<size_t>(State::Pending)]; this->result_clock.push_back(key);
+		} else ++this->diagnostic.cache_hits;
+		if (touch) { it->second.seen = this->frame; it->second.used = this->now; }
+		return &it->second;
+	}
+
+	void Display(Result &result, StationPassengerService display)
+	{
+		if (result.display == display) return;
+		if (result.settled && display.label == DisplayLabel::Checking && display.group == GroupID::Invalid()) ++this->diagnostic.display_regressions;
+		result.display = display;
+		if (result.seen + 1 >= this->frame) ++this->version;
+	}
+
+	void LoseRepresentative(Result &result)
+	{
+		if (result.evidence.group != GroupID::Invalid()) ++this->diagnostic.representative_lost;
+		result.evidence = {};
+		this->Display(result, {GroupID::Invalid(), false, StationID::Invalid(), DisplayLabel::Updating});
+	}
+
+	template <typename Key> void Publish(const Key &key, const Progress &progress, const Evidence &evidence)
+	{
+		auto it = this->results.find(JobKey{key}); if (it == this->results.end()) return;
+		auto &result = it->second;
+		const bool settled = progress.state == State::Complete || progress.state == State::Unavailable;
+		if (settled || !result.settled || (result.display.group == GroupID::Invalid() && evidence.group != GroupID::Invalid())) {
+			auto display = Summary(progress, evidence);
+			// A retry is internal work, not a new initial search. Keep settled failure labels.
+			if (!settled && result.settled && display.group == GroupID::Invalid()) display = result.display;
+			if (display.group != GroupID::Invalid() && result.display.group == GroupID::Invalid()) ++this->diagnostic.resolved;
+			if (!settled && display.group != GroupID::Invalid()) result.evidence = evidence;
+			this->Display(result, display);
+		}
+		if (!settled) {
+			if (!result.settled && result.state != progress.state) { --this->states[static_cast<size_t>(result.state)]; result.state = progress.state; ++this->states[static_cast<size_t>(result.state)]; }
+			return;
+		}
+		--this->states[static_cast<size_t>(result.state)]; ++this->states[static_cast<size_t>(progress.state)];
+		result.evidence = evidence; result.state = progress.state; result.settled = true; result.refreshing = false;
+		result.checked_tick = _state_ticks;
+		result.due = this->now + (progress.state == State::Unavailable ? 2000 : 30000) + progress.serial % 10000;
+		if constexpr (std::is_same_v<Key, FleetKey>) {
+			const auto &fleet = this->fleets.at(key);
+			result.first = fleet.first; result.vehicle_count = fleet.vehicle_count; result.route_generation = fleet.route_generation;
+			const auto *list = OrderList::GetIfValid(key.service);
+			const auto *first = list == nullptr ? nullptr : list->GetFirstSharedVehicle();
+			result.first_group = first == nullptr ? GroupID::Invalid() : first->group_id;
+			result.first = first == nullptr ? VehicleID::Invalid() : first->index;
+			if (list != nullptr) { result.vehicle_count = list->GetNumVehicles(); result.route_generation = list->GetCargoDistRouteGeneration(); }
+		}
+	}
 
 	template <typename Key> void Enqueue(const Key &key, Progress &p)
 	{
@@ -163,24 +267,6 @@ struct StationPassengerServiceCache::Impl {
 		}, job.key);
 	}
 
-	template <typename Map, typename Queue> bool MakeRoom(Map &map, Queue &queue)
-	{
-		if (map.size() < MAX_ENTRIES) return true;
-		// Protect work in progress. Rotate a bounded clock, preferring settled entries for eviction.
-		for (size_t i = 0; i < 64 && !queue.empty(); ++i) {
-			auto key = queue.front(); queue.pop_front(); auto it = map.find(key);
-			if (it == map.end()) continue;
-			bool pinned = false;
-			if constexpr (std::is_same_v<typename Map::mapped_type, Fleet>) pinned = it->second.pins != 0;
-			if (!pinned && (it->second.state == State::Complete || it->second.state == State::Unavailable)) {
-				if constexpr (std::is_same_v<typename Map::mapped_type, Policy>) this->ReleaseWaiting(it->second);
-				map.erase(it); ++this->diagnostic.evictions; return true;
-			}
-			queue.push_back(key);
-		}
-		return false;
-	}
-
 	uint64_t Revision(StationID destination) const
 	{
 		auto it = this->destination_revisions.find(destination);
@@ -192,7 +278,7 @@ struct StationPassengerServiceCache::Impl {
 		const auto &db = GetPassengerServiceDatabase();
 		const uint64_t epoch = db.HyperpathLookupEpoch(), latest = db.HyperpathDestinationChanges();
 		if (epoch == this->lookup_epoch && latest == this->changes) return;
-		if (epoch != this->lookup_epoch || latest - this->changes > PassengerServiceDatabase::HYPERPATH_DESTINATION_LOG) {
+		if (latest - this->changes > PassengerServiceDatabase::HYPERPATH_DESTINATION_LOG) {
 			++this->policy_epoch; this->destination_revisions.clear();
 		} else {
 			for (uint64_t n = this->changes; n < latest; ++n) this->destination_revisions[db.HyperpathChangedDestination(n)] = n + 1;
@@ -201,39 +287,34 @@ struct StationPassengerServiceCache::Impl {
 		this->lookup_epoch = epoch; this->changes = latest;
 	}
 
-	void Restart(Fleet &entry, bool retain)
+	void Restart(Fleet &entry)
 	{
-		Evidence previous = VisibleEvidence(entry);
-		entry.evidence = {}; entry.previous = retain && ValidRepresentative(previous) ? previous : Evidence{};
-		entry.state = State::Pending; entry.started = false; entry.phase = Phase::Vehicle;
+		entry.evidence = {}; entry.state = State::Pending; entry.started = false; entry.phase = Phase::Vehicle;
 		entry.next = entry.part = entry.capacity_part = VehicleID::Invalid(); entry.stop_started = false;
-		++this->diagnostic.refreshes; ++this->version;
+		++this->diagnostic.refreshes;
 	}
 
 	void ReleaseWaiting(Policy &entry)
 	{
 		if (entry.waiting_held && entry.waiting) {
-			auto it = this->fleets.find(*entry.waiting);
-			if (it != this->fleets.end() && it->second.pins != 0) --it->second.pins;
+			auto it = this->results.find(JobKey{*entry.waiting});
+			if (it != this->results.end() && it->second.pins != 0) --it->second.pins;
 		}
 		entry.waiting.reset(); entry.waiting_held = false;
 	}
 
-	void Restart(Policy &entry, bool retain)
+	void Restart(Policy &entry)
 	{
-		Evidence previous = VisibleEvidence(entry);
-		entry.evidence = {}; entry.previous = retain && ValidRepresentative(previous) ? previous : Evidence{};
-		entry.state = State::Pending; entry.cursor = {}; this->ReleaseWaiting(entry); entry.saw_candidate = entry.uncertain = false;
+		entry.evidence = {}; entry.state = State::Pending; entry.cursor = {}; this->ReleaseWaiting(entry);
+		entry.saw_candidate = entry.uncertain = false;
 		entry.epoch = this->policy_epoch; entry.destination_revision = this->Revision(entry.intent.alighting);
-		++this->diagnostic.refreshes; ++this->version;
+		++this->diagnostic.refreshes;
 	}
 
 	void Settle(Progress &entry, State state)
 	{
-		entry.state = state; entry.previous = {};
+		entry.state = state;
 		if (state == State::Unavailable) entry.evidence = {};
-		entry.due = this->now + (state == State::Unavailable ? 1000 : 5000) + (entry.serial * 2654435761ULL) % (state == State::Unavailable ? 1000 : 5000);
-		++this->version;
 	}
 
 	/** Road stop chains, like consists, can span updates. The simulation helper remains unchanged. */
@@ -285,8 +366,8 @@ struct StationPassengerServiceCache::Impl {
 			--work; ++this->diagnostic.unusable_vehicle; entry.evidence = {}; this->Settle(entry, State::Complete); return;
 		}
 		const Vehicle *first = orders->GetFirstSharedVehicle();
-		if (entry.started && entry.route_generation != orders->GetCargoDistRouteGeneration()) this->Restart(entry, false);
-		if (entry.started && (entry.first != (first == nullptr ? VehicleID::Invalid() : first->index) || entry.vehicle_count != orders->GetNumVehicles())) this->Restart(entry, true);
+		if (entry.started && entry.route_generation != orders->GetCargoDistRouteGeneration()) this->Restart(entry);
+		if (entry.started && (entry.first != (first == nullptr ? VehicleID::Invalid() : first->index) || entry.vehicle_count != orders->GetNumVehicles())) this->Restart(entry);
 		const bool fixed = key.kind != PassengerRideKind::ServiceIntent;
 		const Vehicle *v = !entry.started ? (fixed ? Vehicle::GetIfValid(key.vehicle) : first) : Vehicle::GetIfValid(entry.next);
 		if (!entry.started) {
@@ -294,7 +375,7 @@ struct StationPassengerServiceCache::Impl {
 			entry.vehicle_count = orders->GetNumVehicles(); entry.route_generation = orders->GetCargoDistRouteGeneration(); entry.started = true;
 			if (v == nullptr) { --work; ++this->diagnostic.no_shared_vehicle; this->Settle(entry, State::Unavailable); return; }
 		} else if (v == nullptr && entry.next != VehicleID::Invalid()) {
-			--work; ++this->diagnostic.invalid_vehicle; this->Restart(entry, false); return;
+			--work; ++this->diagnostic.invalid_vehicle; this->Restart(entry); return;
 		}
 		entry.state = State::Partial;
 		while (v != nullptr && work > 0) {
@@ -346,39 +427,53 @@ struct StationPassengerServiceCache::Impl {
 		if (v == nullptr) this->Settle(entry, State::Complete);
 	}
 
-	Fleet *GetFleet(const FleetKey &key, const PassengerJourneyExecution &ride, bool immediate)
+	Progress *GetFleet(const FleetKey &key, const PassengerJourneyExecution &ride, bool immediate, bool touch = true)
 	{
-		auto it = this->fleets.find(key);
-		if (it == this->fleets.end()) {
-			if (!this->MakeRoom(this->fleets, this->fleet_eviction)) return nullptr;
-			it = this->fleets.try_emplace(key).first; it->second.serial = ++this->serial; it->second.ride = ride;
-			this->fleet_eviction.push_back(key);
-			if (immediate && this->credit != 0) {
-				size_t allowance = std::min(this->credit, SLICE), left = allowance;
-				this->Process(key, it->second, left); this->credit -= allowance - left; this->diagnostic.work += allowance - left;
-			}
-		} else {
-			++this->diagnostic.cache_hits;
-			auto &entry = it->second;
-			entry.ride = ride;
-			entry.evidence.generation = entry.previous.generation = ride.generation;
-			Evidence evidence = VisibleEvidence(entry);
-			const OrderList *list = OrderList::GetIfValid(key.service);
-			bool stale = list == nullptr || (key.kind != PassengerRideKind::VehicleSnapshot && list->GetCargoDistRouteGeneration() != key.signature);
-			bool changed = !stale && (entry.started && (entry.route_generation != list->GetCargoDistRouteGeneration() || list->GetNumVehicles() != entry.vehicle_count ||
-					(list->GetFirstSharedVehicle() == nullptr ? VehicleID::Invalid() : list->GetFirstSharedVehicle()->index) != entry.first));
-			if (stale) {
-				if (entry.state != State::Unavailable) { ++this->diagnostic.stale_service; entry.evidence = entry.previous = {}; this->Settle(entry, State::Unavailable); }
-			} else if ((changed || !ValidRepresentative(evidence)) && (entry.state != State::Unavailable || this->now >= entry.due)) this->Restart(entry, false);
-			else if ((entry.state == State::Complete || entry.state == State::Unavailable) && this->now >= entry.due) this->Restart(entry, true);
+		Result *result = this->UseResult(key, touch); if (result == nullptr) return nullptr;
+		result->service_generation = ride.generation; result->evidence.generation = ride.generation;
+		const OrderList *list = OrderList::GetIfValid(key.service);
+		const Vehicle *first = list == nullptr ? nullptr : list->GetFirstSharedVehicle();
+		bool stale = list == nullptr || (key.kind != PassengerRideKind::VehicleSnapshot && list->GetCargoDistRouteGeneration() != key.signature);
+		bool changed = result->settled && !stale && (result->route_generation != list->GetCargoDistRouteGeneration() || result->vehicle_count != list->GetNumVehicles() ||
+				result->first != (first == nullptr ? VehicleID::Invalid() : first->index) || result->first_group != (first == nullptr ? GroupID::Invalid() : first->group_id));
+		bool invalid = !ValidRepresentative(result->evidence);
+		bool source = result->source_revision != this->SourceRevision(key);
+		if (!stale && result->evidence.usable) {
+			const Order *board = key.board < list->GetNumOrders() ? list->GetOrderAt(key.board) : nullptr;
+			const Order *alight = key.alight < list->GetNumOrders() ? list->GetOrderAt(key.alight) : nullptr;
+			source |= board == nullptr || !IsPassengerStationStop(*board) || board->GetDestination() != key.boarding || board->GetCargoLoadType(key.cargo) == OrderLoadType::NoLoad ||
+					(key.alight != INVALID_VEH_ORDER_ID && (alight == nullptr || !IsPassengerStationStop(*alight) || alight->GetDestination() != key.alighting || alight->GetCargoUnloadType(key.cargo) == OrderUnloadType::NoUnload));
 		}
-		this->Enqueue(key, it->second);
-		return &it->second;
+		bool periodic = result->settled && this->now >= result->due && _state_ticks != result->checked_tick;
+		bool retry = result->settled && result->state == State::Unavailable && this->now >= result->due;
+		if ((stale || invalid) && result->display.group != GroupID::Invalid()) this->LoseRepresentative(*result);
+		if (!result->refreshing && result->settled && !changed && !invalid && !source && !periodic && !retry && !stale) return result;
+		// A known stale source cannot become usable through the GUI timer alone.
+		if (stale && result->settled && result->state == State::Unavailable && !source) return result;
+		auto it = this->fleets.find(key);
+		const bool new_search = it == this->fleets.end();
+		if (new_search) {
+			if (result->settled) ++this->diagnostic.refreshes;
+			if (this->fleets.size() >= MAX_ENTRIES) return result;
+			it = this->fleets.try_emplace(key).first; it->second.serial = ++this->serial;
+		} else if (it->second.state == State::Complete || it->second.state == State::Unavailable || source || invalid) this->Restart(it->second);
+		if (!result->refreshing && periodic) ++this->diagnostic.periodic_revalidations;
+		result->source_revision = this->SourceRevision(key); result->refreshing = true;
+		it->second.ride = ride;
+		if (new_search && immediate && !result->settled && this->credit != 0) {
+			size_t allowance = std::min(this->credit, SLICE), left = allowance;
+			this->Process(key, it->second, left); this->credit -= allowance - left; this->diagnostic.work += allowance - left;
+			this->Publish(key, it->second, it->second.evidence);
+		}
+		if (it->second.state == State::Complete || it->second.state == State::Unavailable) {
+			this->fleets.erase(it); ++this->diagnostic.search_releases; return result;
+		}
+		this->Enqueue(key, it->second); return &it->second;
 	}
 
 	void Process(const PolicyKey &key, Policy &entry, size_t &work)
 	{
-		if (entry.epoch != this->policy_epoch || entry.destination_revision != this->Revision(entry.intent.alighting)) this->Restart(entry, false);
+		if (entry.epoch != this->policy_epoch || entry.destination_revision != this->Revision(entry.intent.alighting)) this->Restart(entry);
 		auto &db = GetPassengerServiceDatabase();
 		const auto [cargo, generation, station, destination, previous, failed] = key;
 		while (work > 0) {
@@ -387,9 +482,9 @@ struct StationPassengerServiceCache::Impl {
 				--work;
 				if (!db.IsCurrent(entry.current)) { ++this->diagnostic.stale_service; entry.uncertain = true; }
 				else {
-					Fleet *fleet = this->GetFleet(*entry.waiting, entry.current, false);
+					Progress *fleet = this->GetFleet(*entry.waiting, entry.current, false);
 					if (fleet == nullptr) return;
-					if (!entry.waiting_held) { ++fleet->pins; entry.waiting_held = true; }
+					if (!entry.waiting_held) { ++this->results.at(JobKey{*entry.waiting}).pins; entry.waiting_held = true; }
 					if (fleet->state == State::Pending || fleet->state == State::Partial) { entry.state = State::Partial; return; }
 					Merge(entry.evidence, fleet->evidence);
 					entry.uncertain |= fleet->state == State::Unavailable;
@@ -427,40 +522,97 @@ struct StationPassengerServiceCache::Impl {
 		return evidence;
 	}
 
+	Result *GetPolicy(const PolicyKey &key, const PassengerJourneyExecution &intent, bool touch = true)
+	{
+		Result *result = this->UseResult(key, touch); if (result == nullptr) return nullptr;
+		const bool current = GetPassengerServiceDatabase().IsCurrent(intent);
+		const bool policy = result->epoch != this->policy_epoch || result->destination_revision != this->Revision(intent.alighting);
+		const bool source = result->source_revision != this->input_revision;
+		const bool invalid = !ValidRepresentative(result->evidence);
+		const bool periodic = result->settled && this->now >= result->due && _state_ticks != result->checked_tick;
+		const bool retry = result->settled && result->state == State::Unavailable && this->now >= result->due;
+		if (result->display.group != GroupID::Invalid()) {
+			if (invalid) this->LoseRepresentative(*result);
+			else if (!current || policy) {
+				result->evidence = {};
+				this->Display(*result, {GroupID::Invalid(), false, StationID::Invalid(), DisplayLabel::Updating});
+			}
+		}
+		if (result->settled && !result->refreshing && !policy && !source && !invalid && !periodic && !retry && current) return result;
+		if (!current && result->settled && result->state == State::Unavailable && !policy && !source) return result;
+		auto it = this->policies.find(key);
+		if (it == this->policies.end()) {
+			if (this->policies.size() >= MAX_ENTRIES) return result;
+			it = this->policies.try_emplace(key).first; it->second.serial = ++this->serial;
+			it->second.intent = intent;
+			this->Restart(it->second);
+		} else if (it->second.state == State::Complete || it->second.state == State::Unavailable || policy || source || invalid) this->Restart(it->second);
+		if (!result->refreshing) {
+			if (policy && result->settled) ++this->diagnostic.policy_revalidations;
+			else if (periodic) ++this->diagnostic.periodic_revalidations;
+		}
+		result->epoch = this->policy_epoch; result->destination_revision = this->Revision(intent.alighting);
+		result->source_revision = this->input_revision; result->refreshing = true;
+		this->Enqueue(key, it->second); return result;
+	}
+
 	StationPassengerService ResolvePolicy(CargoType cargo, const CargoPacket &packet)
 	{
-		this->Synchronize();
-		const auto &intent = packet.GetPassengerJourney();
+		this->Synchronize(); const auto &intent = packet.GetPassengerJourney();
 		if (intent.signature != uint64_t(cargo) + 1) return {};
 		const auto *arriving = OrderList::GetIfValid(packet.GetPassengerArrivingService());
 		OrderListID previous = arriving != nullptr && arriving->GetCargoDistRouteGeneration() == packet.GetPassengerArrivingIncarnation() ? arriving->index : OrderListID::Invalid();
 		PolicyKey key{cargo, intent.generation, intent.boarding, intent.alighting, previous, packet.GetPassengerFailedService(_state_ticks)};
-		auto it = this->policies.find(key);
-		if (it == this->policies.end()) {
-			if (!this->MakeRoom(this->policies, this->policy_eviction)) return {GroupID::Invalid(), false, StationID::Invalid(), DisplayLabel::Checking};
-			it = this->policies.try_emplace(key).first; auto &entry = it->second;
-			entry.intent = intent; entry.serial = ++this->serial; entry.epoch = this->policy_epoch; entry.destination_revision = this->Revision(intent.alighting);
-			this->policy_eviction.push_back(key);
-		} else {
-			++this->diagnostic.cache_hits; auto &entry = it->second;
-			if (entry.epoch != this->policy_epoch || entry.destination_revision != this->Revision(intent.alighting) || !ValidRepresentative(this->PolicyEvidence(entry))) this->Restart(entry, false);
-			else if ((entry.state == State::Complete || entry.state == State::Unavailable) && this->now >= entry.due) this->Restart(entry, true);
-		}
-		this->Enqueue(key, it->second);
-		return Summary(it->second, this->PolicyEvidence(it->second));
+		auto *result = this->GetPolicy(key, intent);
+		return result == nullptr ? StationPassengerService{GroupID::Invalid(), false, StationID::Invalid(), DisplayLabel::Updating} : result->display;
 	}
+
+	PassengerJourneyExecution FleetRide(const FleetKey &key, const Result &result) const
+	{
+		PassengerJourneyExecution ride; ride.kind = key.kind; ride.service = key.service; ride.signature = key.signature;
+		ride.boarding = key.boarding; ride.alighting = key.alighting; ride.boarding_order = key.board; ride.alighting_order = key.alight;
+		ride.vehicle = key.vehicle; ride.generation = result.service_generation; return ride;
+	}
+
+	bool Probe(const JobKey &key)
+	{
+		auto it = this->results.find(key);
+		if (it == this->results.end()) return true;
+		// A paint has now visited all displayed conditions. Retire unused results under
+		// pressure here, not halfway through building the next paint's reference set.
+		if (this->capacity_pressure && it->second.seen < this->frame && !it->second.refreshing && it->second.pins == 0) {
+			--this->states[static_cast<size_t>(it->second.state)];
+			if (std::holds_alternative<PolicyKey>(key)) --this->policy_results;
+			this->results.erase(it); ++this->diagnostic.result_evictions;
+			++this->version; // Previously capacity-limited visible conditions can now be admitted.
+			return true;
+		}
+		if (it->second.seen + 1 < this->frame) return false;
+		std::visit([&](const auto &query) {
+			using Key = std::decay_t<decltype(query)>;
+			if constexpr (std::is_same_v<Key, FleetKey>) this->GetFleet(query, this->FleetRide(query, it->second), false, false);
+			else {
+				const auto [cargo, generation, station, destination, previous, failed] = query;
+				PassengerJourneyExecution intent; intent.kind = PassengerRideKind::HyperpathIntent; intent.signature = uint64_t(cargo) + 1;
+				intent.generation = generation; intent.boarding = station; intent.alighting = destination;
+				this->GetPolicy(query, intent, false);
+			}
+		}, key);
+		return false;
+	}
+
 };
 
-StationPassengerServiceCache::StationPassengerServiceCache() : impl(std::make_unique<Impl>()) {}
+StationPassengerServiceCache::StationPassengerServiceCache(size_t result_budget) : impl(std::make_unique<Impl>(result_budget)) {}
 StationPassengerServiceCache::~StationPassengerServiceCache() = default;
-void StationPassengerServiceCache::Clear() { this->impl = std::make_unique<Impl>(); }
+void StationPassengerServiceCache::Clear() { this->impl = std::make_unique<Impl>(this->impl->result_capacity * RESULT_BYTES); }
 
 StationPassengerService StationPassengerServiceCache::Resolve(CargoType cargo, const PassengerJourneyExecution &ride)
 {
 	if (cargo >= NUM_CARGO || !IsCargoInClass(cargo, CargoClass::Passengers) || ride.kind == PassengerRideKind::HyperpathIntent) return {};
 	auto *entry = this->impl->GetFleet(KeyFor(cargo, ride), ride, true);
-	if (entry == nullptr) return {GroupID::Invalid(), false, StationID::Invalid(), DisplayLabel::Checking};
-	auto result = Summary(*entry, VisibleEvidence(*entry));
+	if (entry == nullptr) return {GroupID::Invalid(), false, StationID::Invalid(), DisplayLabel::Updating};
+	auto result = this->impl->results.at(JobKey{KeyFor(cargo, ride)}).display;
 	if (result.label == DisplayLabel::Undecided && result.group == GroupID::Invalid() && entry->evidence.usable && Station::IsValidID(ride.alighting)) result.transfer = ride.alighting;
 	return result;
 }
@@ -481,6 +633,14 @@ bool StationPassengerServiceCache::Advance(uint delta_ms, size_t work_limit)
 	impl.credit = std::min(MAX_WORK, impl.credit + static_cast<size_t>(impl.fractional_credit / 1000)); impl.fractional_credit %= 1000;
 	impl.Synchronize();
 	size_t allowance = std::min(impl.credit, work_limit), left = allowance;
+	const auto validation_before = impl.diagnostic.validation_work;
+	// Cheap live-ID probes also detect edits while paused. They never enumerate fleets
+	// solely because GUI time passed, and use at most a quarter of available GUI Work.
+	for (size_t i = 0, probes = std::min({size_t{64}, left / 4, impl.results.size()}); i < probes && !impl.result_clock.empty(); ++i) {
+		auto key = impl.result_clock.front(); impl.result_clock.pop_front();
+		--left; ++impl.diagnostic.validation_work;
+		if (!impl.Probe(key)) impl.result_clock.push_back(key);
+	}
 	while (left != 0 && !impl.jobs.empty()) {
 		auto job = impl.jobs.front(); impl.jobs.pop_front();
 		Progress *progress = impl.Find(job);
@@ -491,12 +651,17 @@ bool StationPassengerServiceCache::Advance(uint delta_ms, size_t work_limit)
 			using Key = std::decay_t<decltype(key)>;
 			if constexpr (std::is_same_v<Key, FleetKey>) impl.Process(key, impl.fleets.at(key), remaining);
 			else impl.Process(key, impl.policies.at(key), remaining);
-			impl.Enqueue(key, *progress);
+			if constexpr (std::is_same_v<Key, FleetKey>) impl.Publish(key, *progress, progress->evidence);
+			else impl.Publish(key, *progress, impl.PolicyEvidence(impl.policies.at(key)));
+			if (progress->state == State::Complete || progress->state == State::Unavailable) {
+				if constexpr (std::is_same_v<Key, FleetKey>) impl.fleets.erase(key);
+				else impl.policies.erase(key);
+				++impl.diagnostic.search_releases;
+			} else impl.Enqueue(key, *progress);
 		}, job.key);
 		left -= slice - remaining;
-		++impl.version; // Partial evidence can change a visible representative before completion.
 	}
-	impl.credit -= allowance - left; impl.diagnostic.work += allowance - left;
+	impl.credit -= allowance - left; impl.diagnostic.work += allowance - left - (impl.diagnostic.validation_work - validation_before);
 	if (left == 0 && !impl.jobs.empty()) ++impl.diagnostic.work_exhausted;
 	return impl.version != before;
 }
@@ -504,15 +669,24 @@ bool StationPassengerServiceCache::Advance(uint delta_ms, size_t work_limit)
 StationPassengerServiceDiagnostics StationPassengerServiceCache::GetDiagnostics() const
 {
 	auto result = this->impl->diagnostic;
-	auto count = [&](const auto &entries) {
-		result.entries += entries.size();
-		for (const auto &[key, entry] : entries) switch (entry.state) {
-			case State::Pending: ++result.pending; break;
-			case State::Partial: ++result.partial; break;
-			case State::Complete: ++result.complete; break;
-			case State::Unavailable: ++result.unavailable; break;
-		}
-	};
-	count(this->impl->fleets); count(this->impl->policies);
+	result.pending = this->impl->states[static_cast<size_t>(State::Pending)];
+	result.partial = this->impl->states[static_cast<size_t>(State::Partial)];
+	result.complete = this->impl->states[static_cast<size_t>(State::Complete)];
+	result.unavailable = this->impl->states[static_cast<size_t>(State::Unavailable)];
+	result.entries = this->impl->results.size();
+	result.results = this->impl->results.size(); result.result_capacity = this->impl->result_capacity;
+	result.searches = this->impl->fleets.size() + this->impl->policies.size();
+	result.waiting_work = this->impl->jobs.size();
+	result.estimated_bytes = result.results * RESULT_BYTES + result.searches * (std::max(sizeof(Fleet), sizeof(Policy)) + sizeof(JobKey) + 128) + this->impl->jobs.size() * sizeof(Job);
 	return result;
+}
+
+void StationPassengerServiceCache::BeginRefresh() { ++this->impl->frame; this->impl->capacity_pressure = false; }
+
+void StationPassengerServiceCache::Invalidate(OrderListID service)
+{
+	auto &impl = *this->impl; ++impl.input_revision;
+	if (service == OrderListID::Invalid() || impl.fleet_revisions.size() >= MAX_ENTRIES) {
+		impl.all_revision = impl.input_revision; impl.fleet_revisions.clear();
+	} else impl.fleet_revisions[service] = impl.input_revision;
 }

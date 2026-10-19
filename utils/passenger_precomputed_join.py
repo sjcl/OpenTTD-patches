@@ -22,6 +22,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ("binary", "package", "input", "output", "lang"):
         parser.add_argument(name, type=pathlib.Path)
+    parser.add_argument("--client-binary", type=pathlib.Path, help="Use a separately built client for cross-compiler synchronization checks")
     parser.add_argument("--port", type=int, default=17529)
     parser.add_argument("--frame-freq", type=int, default=0)
     parser.add_argument("--ticks", type=int, default=1024)
@@ -29,6 +30,7 @@ def main():
     parser.add_argument("--stall", action="store_true")
     parser.add_argument("--toggle-precomputed", action="store_true", help="Disable and re-enable routing after joining, then compare the peer preparation barrier")
     parser.add_argument("--wait-server-ready", action="store_true", help="Connect after server preparation instead of testing the server-wait phase")
+    parser.add_argument("--wait-saved-replay", action="store_true", help="Complete validated saved passenger replay in the server setup script before connecting")
     parser.add_argument("--replace-precomputed", action="store_true", help="Change transfer cost after joining; compare ordinary replacement ticks with retained rows")
     parser.add_argument("--server-workers", type=int, choices=range(9), help="Local initial passenger destination workers on the server")
     parser.add_argument("--client-workers", type=int, choices=range(9), help="Local initial passenger destination workers on the client")
@@ -88,7 +90,9 @@ def main():
     def start(directory, arguments):
         out, err = (directory / "stdout.txt").open("w"), (directory / "stderr.txt").open("w")
         streams.extend((out, err))
-        process = subprocess.Popen([str(args.binary.resolve()), "-x", "-X", "-c", "openttd.cfg", "-snull", "-mnull",
+        binary = args.client_binary if directory.name == "client" and args.client_binary else args.binary
+        result[directory.name + "_binary_sha256"] = real.PROFILE.sha256(binary)
+        process = subprocess.Popen([str(binary.resolve()), "-x", "-X", "-c", "openttd.cfg", "-snull", "-mnull",
                                     "-d", f"net={4 if args.frame_freq else 3},desync=1", *arguments], cwd=directory,
                                    stdin=subprocess.PIPE, stdout=out, stderr=err, text=True, encoding="utf-8",
                                    creationflags=subprocess.CREATE_NO_WINDOW,
@@ -166,7 +170,8 @@ def main():
                    "passenger_journey_stats partial_precomputed\n" if args.initial_build else "")
         (server / "scripts/game_start.scr").write_text(
             f"script {(server / 'console.txt').as_posix()}\npause\ngetfulldate\n"
-            "setting max_join_time\nsetting max_join_time_total\nsetting max_lag_time\nsetting max_init_time\nsetting max_download_time\n"
+            + ("passenger_journey_stats wait_saved_replay\n" if args.wait_saved_replay else "")
+            + "setting max_join_time\nsetting max_join_time_total\nsetting max_lag_time\nsetting max_init_time\nsetting max_download_time\n"
             + ("" if args.hyperpath is None else f"setting linkgraph.passenger_journey_hyperpath {'true' if args.hyperpath else 'false'}\n")
             + ("setting linkgraph.passenger_journey_routing true\nsetting linkgraph.passenger_journey_periodic true\n"
                "setting linkgraph.passenger_od_assignment true\nsetting linkgraph.passenger_journey_precomputed true\nsetting linkgraph.distribution_pax 2\n"
@@ -175,6 +180,8 @@ def main():
         host = start(server, ["-D", result["address"], "-g", str(args.input.resolve())])
         if not wait(lambda: (server / "save-integrity.json").exists(), args.observe_timeout):
             raise RuntimeError("Server did not finish loading")
+        if args.wait_saved_replay and "Saved passenger replay: ready=true;" not in read(server, "console.txt"):
+            raise RuntimeError("Server saved passenger replay did not complete")
         if args.initial_build and "Partial build probe requires completed passenger save replay." in read(server, "console.txt"):
             raise RuntimeError("Partial build probe cannot mutate an unfinished save replay; use an input without an active saved table")
         # Console settings/pause are synchronized commands; let them execute
@@ -185,7 +192,10 @@ def main():
             raise RuntimeError("Fixture seeded no known-OD passenger packets")
         if args.wait_server_ready:
             preparation_started = time.monotonic()
-            if not wait(lambda: "Initial passenger tables ready at frame" in read(server, "stderr.txt"), args.observe_timeout):
+            prepared_in_setup = (args.wait_saved_replay and not args.initial_build and not args.fixture_timetable and
+                                 args.hyperpath is None and "Precomputed initial preparation: pending=false;" in read(server, "console.txt"))
+            if not wait(lambda: "Initial passenger tables ready at frame" in read(server, "stderr.txt") or
+                        prepared_in_setup, args.observe_timeout):
                 raise RuntimeError("Server initial passenger preparation did not finish")
             result["server_preparation_wait_seconds"] = time.monotonic() - preparation_started
             prepared = snapshot_server(host, server)

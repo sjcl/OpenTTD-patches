@@ -29,6 +29,7 @@
 #include "../3rdparty/md5/md5.h"
 #include "../core/random_func.hpp"
 #include "../window_func.h"
+#include "../passenger_precomputed_gui.h"
 #include "../company_func.h"
 #include "../company_base.h"
 #include "../landscape_type.h"
@@ -1153,6 +1154,7 @@ void NetworkReboot()
  */
 void NetworkDisconnect(bool close_admins)
 {
+	ResetInitialPassengerProgress(false);
 	if (_network_server) {
 		for (NetworkClientSocket *cs : NetworkClientSocket::Iterate()) {
 			cs->SendShutdown();
